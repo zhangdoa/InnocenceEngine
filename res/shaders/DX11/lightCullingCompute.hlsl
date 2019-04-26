@@ -47,17 +47,17 @@ Texture2D DepthTextureVS : register(t0);
 
 StructuredBuffer<Frustum> in_Frustums : register(t1);
 
-RWStructuredBuffer<uint> LightIndexCounter : register(u0);
-RWStructuredBuffer<uint> LightIndexList : register(u1);
-RWTexture2D<uint2> LightGrid : register(u2);
-RWTexture2D<float4> DebugTexture : register(u3);
+RWStructuredBuffer<uint> g_LightIndexCounter : register(u0);
+RWStructuredBuffer<uint> g_LightIndexList : register(u1);
+RWTexture2D<uint2> g_LightGrid : register(u2);
+RWTexture2D<float4> g_DebugTexture : register(u3);
 
-groupshared uint uMinDepth;
-groupshared uint uMaxDepth;
-groupshared Frustum GroupFrustum;
-groupshared uint LightCount;
-groupshared uint LightIndexStartOffset;
-groupshared uint LightList[1024];
+groupshared uint l_uMinDepth;
+groupshared uint l_uMaxDepth;
+groupshared Frustum l_TileFrustum;
+groupshared uint l_LightCount;
+groupshared uint l_LightIndexStartOffset;
+groupshared uint l_LightList[256];
 
 static float4 heatArray[8] = {
 	float4(0.0f, 0.0f, 0.5f, 1.0f),
@@ -73,10 +73,10 @@ static float4 heatArray[8] = {
 void AppendLight(uint lightIndex)
 {
 	uint index; // Index into the visible lights array.
-	InterlockedAdd(LightCount, 1, index);
-	if (index < 1024)
+	InterlockedAdd(l_LightCount, 1, index);
+	if (index < 256)
 	{
-		LightList[index] = lightIndex;
+		l_LightList[index] = lightIndex;
 	}
 }
 
@@ -89,23 +89,26 @@ void main(ComputeInputType input)
 
 	uint uDepth = asuint(fDepth);
 
-	if (input.groupIndex == 0) // Avoid contention by other threads in the group.
+	// Initialize group local variables
+	// Avoid contention by other threads in the group.
+	if (input.groupIndex == 0)
 	{
-		uMinDepth = 0xffffffff;
-		uMaxDepth = 0;
-		LightCount = 0;
-		GroupFrustum = in_Frustums[input.groupID.x + (input.groupID.y * numThreadGroups.x)];
+		l_uMinDepth = 0xffffffff;
+		l_uMaxDepth = 0;
+		l_LightCount = 0;
+		l_TileFrustum = in_Frustums[input.groupID.x + (input.groupID.y * numThreadGroups.x)];
 	}
 
 	GroupMemoryBarrierWithGroupSync();
 
-	InterlockedMin(uMinDepth, uDepth);
-	InterlockedMax(uMaxDepth, uDepth);
+	// Get min/max depth
+	InterlockedMin(l_uMinDepth, uDepth);
+	InterlockedMax(l_uMaxDepth, uDepth);
 
 	GroupMemoryBarrierWithGroupSync();
 
-	float fMinDepth = asfloat(uMinDepth);
-	float fMaxDepth = asfloat(uMaxDepth);
+	float fMinDepth = asfloat(l_uMinDepth);
+	float fMaxDepth = asfloat(l_uMaxDepth);
 
 	// Convert depth values to view space.
 	float minDepthVS = ClipToView(float4(0, 0, fMinDepth, 1), p_inv).z;
@@ -115,15 +118,17 @@ void main(ComputeInputType input)
 	// Clipping plane for minimum depth value
 	Plane minPlane = { float3(0, 0, -1), -minDepthVS };
 
+	// Cull point light
 	for (uint i = input.groupIndex; i < NR_POINT_LIGHTS; i += BLOCK_SIZE * BLOCK_SIZE)
 	{
 		pointLight light = pointLights[i];
+		// w component of luminance is the attenuation radius
 		if (light.luminance.w > 0.0f)
 		{
-			float4 lightPos_VS = mul(light.position, cam_r);
-			lightPos_VS = mul(lightPos_VS, cam_t);
+			float4 lightPos_VS = mul(light.position, cam_t);
+			lightPos_VS = mul(lightPos_VS, cam_r);
 			Sphere sphere = { lightPos_VS.xyz, light.luminance.w };
-			if (SphereInsideFrustum(sphere, GroupFrustum, nearClipVS, maxDepthVS))
+			if (SphereInsideFrustum(sphere, l_TileFrustum, nearClipVS, maxDepthVS))
 			{
 				if (!SphereInsidePlane(sphere, minPlane))
 				{
@@ -135,43 +140,48 @@ void main(ComputeInputType input)
 
 	GroupMemoryBarrierWithGroupSync();
 
+	// Only local thread 0 could write to the global light index counter and light grid
 	if (input.groupIndex == 0)
 	{
-		InterlockedAdd(LightIndexCounter[0], LightCount, LightIndexStartOffset);
-		LightGrid[input.groupID.xy] = uint2(LightIndexStartOffset, LightCount);
+		InterlockedAdd(g_LightIndexCounter[0], l_LightCount, l_LightIndexStartOffset);
+		g_LightGrid[input.groupID.xy] = uint2(l_LightIndexStartOffset, l_LightCount);
 	}
 
 	GroupMemoryBarrierWithGroupSync();
 
-	for (i = input.groupIndex; i < LightCount; i += BLOCK_SIZE * BLOCK_SIZE)
+	// Write to global light index list
+	for (i = input.groupIndex; i < l_LightCount; i += BLOCK_SIZE * BLOCK_SIZE)
 	{
-		LightIndexList[LightIndexStartOffset + i] = LightList[i];
+		g_LightIndexList[l_LightIndexStartOffset + i] = l_LightList[i];
 	}
+
+	// Write to debug heat map texture
+	g_DebugTexture[texCoord] = float4(0, 0, 0, 0);
 
 	if (input.groupThreadID.x == 0 || input.groupThreadID.y == 0)
 	{
-		DebugTexture[texCoord] = float4(0, 0, 0, 0.9f);
+		g_DebugTexture[texCoord] = float4(0, 0, 0, 0.9f);
 	}
 	else if (input.groupThreadID.x == 1 || input.groupThreadID.y == 1)
 	{
-		DebugTexture[texCoord] = float4(1, 1, 1, 0.5f);
+		g_DebugTexture[texCoord] = float4(1, 1, 1, 0.5f);
 	}
-	else if (LightCount > 0)
+	else if (l_LightCount > 0)
 	{
 		float4 heat;
 
-		if (LightCount >= 8)
+		if (l_LightCount >= 8)
 		{
 			heat = heatArray[7];
 		}
 		else
 		{
-			heat = heatArray[LightCount - 1];
+			heat = heatArray[l_LightCount - 1];
 		}
-		DebugTexture[texCoord] = heat;
+		g_DebugTexture[texCoord] = heat;
 	}
 	else
 	{
-		DebugTexture[texCoord] = float4(0, 0, 0, 1);
+		g_DebugTexture[texCoord] = float4(0, 0, 0, 1);
 	}
 }

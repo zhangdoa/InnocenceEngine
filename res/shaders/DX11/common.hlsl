@@ -78,7 +78,7 @@ bool SphereInsideFrustum(Sphere sphere, Frustum frustum, float zNear, float zFar
 float4 ClipToView(float4 clip, matrix in_p_inv)
 {
 	// View space position.
-	float4 view = mul(in_p_inv, clip);
+	float4 view = mul(clip, in_p_inv);
 	// Perspective projection.
 	view = view / view.w;
 
