@@ -255,7 +255,7 @@ void GLVXGIPass::updateVoxelizationPass()
 {
 	auto l_sceneAABB = g_pCoreSystem->getPhysicsSystem()->getSceneAABB();
 
-	auto axisSize = l_sceneAABB.m_extend * 2.0f;
+	auto axisSize = l_sceneAABB.m_extend;
 	auto center = l_sceneAABB.m_center;
 	m_volumeGridSize = std::max(axisSize.x, std::max(axisSize.y, axisSize.z));
 	auto l_voxelSize = m_volumeGridSize / m_volumeDimension;
@@ -274,7 +274,7 @@ void GLVXGIPass::updateVoxelizationPass()
 
 	for (size_t i = 0; i < 3; i++)
 	{
-		m_VP[i] = l_p * m_VP[i];
+		m_VP[i] = m_VP[i] * l_p;
 		m_VP_inv[i] = m_VP[i].inverse();
 	}
 
@@ -329,13 +329,18 @@ void GLVXGIPass::updateVoxelizationPass()
 	}
 
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+	// reset status
+	glDepthMask(true);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 }
 
 void GLVXGIPass::updateIrradianceInjectionPass()
 {
+	glDepthMask(false);
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 	auto l_sceneAABB = g_pCoreSystem->getPhysicsSystem()->getSceneAABB();
 
-	auto axisSize = l_sceneAABB.m_extend * 2.0f;
+	auto axisSize = l_sceneAABB.m_extend;
 	m_volumeGridSize = std::max(axisSize.x, std::max(axisSize.y, axisSize.z));
 	auto l_voxelSize = m_volumeGridSize / m_volumeDimension;
 
@@ -376,7 +381,7 @@ void GLVXGIPass::updateVoxelVisualizationPass()
 
 	auto l_sceneAABB = g_pCoreSystem->getPhysicsSystem()->getSceneAABB();
 
-	auto axisSize = l_sceneAABB.m_extend * 2.0f;
+	auto axisSize = l_sceneAABB.m_extend;
 	m_volumeGridSize = std::max(axisSize.x, std::max(axisSize.y, axisSize.z));
 	auto l_voxelSize = m_volumeGridSize / m_volumeDimension;
 

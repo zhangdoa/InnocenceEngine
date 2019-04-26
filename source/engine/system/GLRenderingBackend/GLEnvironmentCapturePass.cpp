@@ -11,6 +11,8 @@ using namespace GLRenderingSystemNS;
 
 INNO_PRIVATE_SCOPE GLEnvironmentCapturePass
 {
+	bool render(vec4 pos);
+
 	EntityID m_entityID;
 
 	GLRenderPassComponent* m_GLRPC;
@@ -21,6 +23,8 @@ INNO_PRIVATE_SCOPE GLEnvironmentCapturePass
 	TextureDataDesc m_textureDesc = TextureDataDesc();
 
 	ShaderFilePaths m_shaderFilePaths = { "GL//environmentCapturePass.vert" , "", "GL//environmentCapturePass.frag" };
+
+	const unsigned int m_subDivideDimension = 16;
 }
 
 bool GLEnvironmentCapturePass::initialize()
@@ -53,11 +57,8 @@ bool GLEnvironmentCapturePass::initialize()
 	return true;
 }
 
-bool GLEnvironmentCapturePass::update()
+bool GLEnvironmentCapturePass::render(vec4 pos)
 {
-	auto l_mainCapture = g_pCoreSystem->getGameSystem()->get<EnvironmentCaptureComponent>()[0];
-	auto l_mainCaptureTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_mainCapture->m_parentEntity);
-	//auto l_capturePos = l_mainCaptureTransformComponent->m_localTransformVector.m_pos;
 	auto l_capturePos = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	mat4 l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, 10.0f);
 	std::vector<mat4> l_v =
@@ -156,6 +157,43 @@ bool GLEnvironmentCapturePass::update()
 			l_copy.pop();
 		}
 	}
+
+	return true;
+}
+
+bool GLEnvironmentCapturePass::update()
+{
+	auto l_sceneAABB = g_pCoreSystem->getPhysicsSystem()->getSceneAABB();
+
+	auto axisSize = l_sceneAABB.m_extend;
+	auto l_voxelSize = axisSize / m_subDivideDimension;
+	auto l_startPos = l_sceneAABB.m_boundMin;
+	auto l_currentPos = l_startPos;
+
+	RenderingFrontendSystemComponent::get().m_debuggerPassGPUDataQueue.clear();
+
+	for (size_t i = 0; i < m_subDivideDimension; i++)
+	{
+		l_currentPos.y = l_startPos.y;
+		for (size_t j = 0; j < m_subDivideDimension; j++)
+		{
+			l_currentPos.z = l_startPos.z;
+			for (size_t k = 0; k < m_subDivideDimension; k++)
+			{
+				DebuggerPassGPUData l_debuggerPassGPUData = {};
+				l_debuggerPassGPUData.m = InnoMath::toTranslationMatrix(l_currentPos);
+				l_debuggerPassGPUData.MDC = getGLMeshDataComponent(MeshShapeType::SPHERE);
+
+				RenderingFrontendSystemComponent::get().m_debuggerPassGPUDataQueue.push(l_debuggerPassGPUData);
+
+				l_currentPos.z += l_voxelSize.z;
+			}
+			l_currentPos.y += l_voxelSize.y;
+		}
+		l_currentPos.x += l_voxelSize.x;
+	}
+
+	render(l_sceneAABB.m_center);
 
 	RenderingFrontendSystemComponent::get().m_GIPassGPUDataQueue.clear();
 

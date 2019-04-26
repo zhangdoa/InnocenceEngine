@@ -120,6 +120,16 @@ bool GLDebuggerPass::update()
 			drawMesh(l_MDC);
 		}
 	}
+
+	auto l_copy = RenderingFrontendSystemComponent::get().m_debuggerPassGPUDataQueue.getRawData();
+	while (l_copy.size() > 0)
+	{
+		DebuggerPassGPUData l_debuggerPassGPUData = l_copy.front();
+		updateUniform(3, l_debuggerPassGPUData.m);
+		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_debuggerPassGPUData.MDC));
+		l_copy.pop();
+	}
+
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glDisable(GL_DEPTH_TEST);
 
