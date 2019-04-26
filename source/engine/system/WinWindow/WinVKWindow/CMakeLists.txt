@@ -1,4 +1,3 @@
-aux_source_directory(. DIR_SRCS)
-if (VULKAN)
-add_library(WinVKWindow ${DIR_SRCS})
-endif (VULKAN)
+file(GLOB HEADERS "*.h")
+file(GLOB SOURCES "*.cpp")
+add_library(WinVKWindow ${HEADERS} ${SOURCES})

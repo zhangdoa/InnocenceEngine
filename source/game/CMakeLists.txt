@@ -1,5 +1,6 @@
-aux_source_directory(. DIR_SRCS)
-add_library(InnoGame SHARED ${DIR_SRCS})
+file(GLOB HEADERS "*.h")
+file(GLOB SOURCES "*.cpp")
+add_library(InnoGame SHARED ${HEADERS} ${SOURCES})
 include (GenerateExportHeader)
 GENERATE_EXPORT_HEADER (InnoGame
     BASE_NAME INNO_GAME

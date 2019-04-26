@@ -4,8 +4,9 @@ if (VULKAN)
 add_subdirectory("WinVKWindow")
 endif (VULKAN)
 
-aux_source_directory(. DIR_SRCS)
-add_library(WinWindow ${DIR_SRCS})
+file(GLOB HEADERS "*.h")
+file(GLOB SOURCES "*.cpp")
+add_library(WinWindow ${HEADERS} ${SOURCES})
 
 target_link_libraries(WinWindow WinDXWindow)
 target_link_libraries(WinWindow WinGLWindow)

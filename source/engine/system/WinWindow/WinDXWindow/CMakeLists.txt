@@ -1,2 +1,3 @@
-aux_source_directory(. DIR_SRCS)
-add_library(WinDXWindow ${DIR_SRCS})
+file(GLOB HEADERS "*.h")
+file(GLOB SOURCES "*.cpp")
+add_library(WinDXWindow ${HEADERS} ${SOURCES})

@@ -1,2 +1,3 @@
-aux_source_directory(. DIR_SRCS)
-add_library(InnoCore ${DIR_SRCS})
+file(GLOB HEADERS "*.h")
+file(GLOB SOURCES "*.cpp")
+add_library(InnoCore ${HEADERS} ${SOURCES})

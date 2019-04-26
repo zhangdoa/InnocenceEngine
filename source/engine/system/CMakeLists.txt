@@ -21,8 +21,9 @@ add_subdirectory("MTRenderingBackend")
 add_subdirectory("MacWindow")
 endif (INNO_PLATFORM_MAC)
 
-aux_source_directory(. DIR_SRCS)
-add_library(InnoSystem SHARED ${DIR_SRCS})
+file(GLOB HEADERS "*.h")
+file(GLOB SOURCES "*.cpp")
+add_library(InnoSystem SHARED ${HEADERS} ${SOURCES})
 
 include (GenerateExportHeader)
 GENERATE_EXPORT_HEADER (InnoSystem
