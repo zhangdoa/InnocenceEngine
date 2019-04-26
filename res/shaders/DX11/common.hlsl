@@ -6,6 +6,8 @@ static const float PI = 3.14159265359;
 static const int NR_POINT_LIGHTS = 1024;
 static const int NR_SPHERE_LIGHTS = 128;
 
+#define BLOCK_SIZE 16
+
 // w component of luminance is attenuationRadius
 struct pointLight {
 	float4 position;

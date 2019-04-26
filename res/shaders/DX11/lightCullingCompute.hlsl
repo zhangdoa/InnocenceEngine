@@ -1,6 +1,5 @@
 // shadertype=hlsl
 #include "common.hlsl"
-#define BLOCK_SIZE 16
 
 struct ComputeInputType
 {
@@ -57,7 +56,7 @@ groupshared uint l_uMaxDepth;
 groupshared Frustum l_TileFrustum;
 groupshared uint l_LightCount;
 groupshared uint l_LightIndexStartOffset;
-groupshared uint l_LightList[256];
+groupshared uint l_LightList[1024];
 
 static float4 heatArray[8] = {
 	float4(0.0f, 0.0f, 0.5f, 1.0f),
@@ -74,7 +73,7 @@ void AppendLight(uint lightIndex)
 {
 	uint index; // Index into the visible lights array.
 	InterlockedAdd(l_LightCount, 1, index);
-	if (index < 256)
+	if (index < 1024)
 	{
 		l_LightList[index] = lightIndex;
 	}
@@ -96,6 +95,7 @@ void main(ComputeInputType input)
 		l_uMinDepth = 0xffffffff;
 		l_uMaxDepth = 0;
 		l_LightCount = 0;
+		l_LightIndexStartOffset = 0;
 		l_TileFrustum = in_Frustums[input.groupID.x + (input.groupID.y * numThreadGroups.x)];
 	}
 

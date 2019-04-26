@@ -1,10 +1,11 @@
 // shadertype=hlsl
-
 #include "common.hlsl"
 
 Texture2D in_geometryPassRT0 : register(t0);
 Texture2D in_geometryPassRT1 : register(t1);
 Texture2D in_geometryPassRT2 : register(t2);
+StructuredBuffer<uint> in_LightIndexList : register(t3);
+Texture2D<uint2> in_LightGrid : register(t4);
 
 SamplerState SampleTypePoint : register(s0);
 
@@ -35,6 +36,14 @@ cbuffer pointLightCBuffer : register(b2)
 cbuffer sphereLightCBuffer : register(b3)
 {
 	sphereLight sphereLights[NR_SPHERE_LIGHTS];
+};
+
+cbuffer skyCBuffer : register(b4)
+{
+	matrix p_inv;
+	matrix v_inv;
+	float2 viewportSize;
+	float2 padding1;
 };
 
 struct PixelInputType
@@ -292,31 +301,38 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	//Lo += SGGetIlluminance(SG_directionalLight, albedo, metallic, roughness, F0, N, V, L);
 
 	// point punctual light
-	for (int i = 0; i < NR_POINT_LIGHTS; ++i)
+	// Get the index of the current pixel in the light grid.
+	uint2 tileIndex = uint2(floor(input.position.xy / BLOCK_SIZE));
+
+	// Get the start position and offset of the light in the light index list.
+	uint startOffset = in_LightGrid[tileIndex].x;
+	uint lightCount = in_LightGrid[tileIndex].y;
+
+	for (int i = 0; i < lightCount; ++i)
 	{
-		float3 unormalizedL = pointLights[i].position.xyz - posWS;
-		float lightAttRadius = pointLights[i].luminance.w;
-		float distance = length(unormalizedL);
-		if (distance < lightAttRadius)
-		{
-			L = normalize(unormalizedL);
-			H = normalize(V + L);
+		uint lightIndex = in_LightIndexList[startOffset + i];
+		pointLight light = pointLights[lightIndex];
 
-			LdotH = max(dot(L, H), 0.0);
-			NdotH = max(dot(N, H), 0.0);
-			NdotL = max(dot(N, L), 0.0);
+		float3 unormalizedL = light.position.xyz - posWS;
+		float lightAttRadius = light.luminance.w;
 
-			float attenuation = 1.0;
-			float invSqrAttRadius = 1.0 / max(lightAttRadius * lightAttRadius, eps);
-			attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
+		L = normalize(unormalizedL);
+		H = normalize(V + L);
 
-			float3 lightLuminance = pointLights[i].luminance.xyz * attenuation;
-			Lo += getIlluminance(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL, lightLuminance);
+		LdotH = max(dot(L, H), 0.0);
+		NdotH = max(dot(N, H), 0.0);
+		NdotL = max(dot(N, L), 0.0);
 
-			//use 1cm sphere light to represent point light
-			SG SG_pointLight = SphereLightToSG(L, 0.01, lightLuminance, distance);
-			//Lo += SGGetIlluminance(SG_pointLight, albedo, metallic, roughness, F0, N, V, L);
-		}
+		float attenuation = 1.0;
+		float invSqrAttRadius = 1.0 / max(lightAttRadius * lightAttRadius, eps);
+		attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
+
+		float3 lightLuminance = light.luminance.xyz * attenuation;
+		Lo += getIlluminance(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL, lightLuminance);
+
+		//use 1cm sphere light to represent point light
+		//SG SG_pointLight = SphereLightToSG(L, 0.01, lightLuminance, distance);
+		//Lo += SGGetIlluminance(SG_pointLight, albedo, metallic, roughness, F0, N, V, L);
 	}
 
 	// sphere area light

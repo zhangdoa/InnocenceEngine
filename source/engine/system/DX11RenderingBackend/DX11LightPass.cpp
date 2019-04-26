@@ -2,6 +2,7 @@
 #include "DX11RenderingSystemUtilities.h"
 
 #include "DX11OpaquePass.h"
+#include "DX11LightCullingPass.h"
 
 #include "../../component/DX11RenderingSystemComponent.h"
 #include "../../component/RenderingFrontendSystemComponent.h"
@@ -125,11 +126,15 @@ bool DX11LightPass::update()
 	bindConstantBuffer(ShaderType::FRAGMENT, 1, DX11RenderingSystemComponent::get().m_sunConstantBuffer);
 	bindConstantBuffer(ShaderType::FRAGMENT, 2, DX11RenderingSystemComponent::get().m_pointLightConstantBuffer);
 	bindConstantBuffer(ShaderType::FRAGMENT, 3, DX11RenderingSystemComponent::get().m_sphereLightConstantBuffer);
+	bindConstantBuffer(ShaderType::FRAGMENT, 4, DX11RenderingSystemComponent::get().m_skyConstantBuffer);
 
 	// bind to previous pass render target textures
 	bindTextureForRead(ShaderType::FRAGMENT, 0, DX11OpaquePass::getDX11RPC()->m_DXTDCs[0]);
 	bindTextureForRead(ShaderType::FRAGMENT, 1, DX11OpaquePass::getDX11RPC()->m_DXTDCs[1]);
 	bindTextureForRead(ShaderType::FRAGMENT, 2, DX11OpaquePass::getDX11RPC()->m_DXTDCs[2]);
+
+	bindStructuredBufferForRead(ShaderType::FRAGMENT, 3, DX11RenderingSystemComponent::get().m_lightIndexListStructuredBuffer);
+	bindTextureForRead(ShaderType::FRAGMENT, 4, DX11LightCullingPass::getLightGrid());
 
 	// draw
 	auto l_MDC = getDX11MeshDataComponent(MeshShapeType::QUAD);
@@ -138,6 +143,8 @@ bool DX11LightPass::update()
 	unbindTextureForRead(ShaderType::FRAGMENT, 0);
 	unbindTextureForRead(ShaderType::FRAGMENT, 1);
 	unbindTextureForRead(ShaderType::FRAGMENT, 2);
+	unbindStructuredBufferForRead(ShaderType::FRAGMENT, 3);
+	unbindTextureForRead(ShaderType::FRAGMENT, 4);
 
 	return true;
 }
