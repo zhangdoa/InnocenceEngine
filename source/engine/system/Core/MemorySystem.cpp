@@ -85,14 +85,15 @@ public:
 		auto l_result = m_memo.find(ptr);
 		if (l_result != m_memo.end())
 		{
-			auto l_ptrStr = InnoUtility::pointerToString(ptr);
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "MemorySystem: MemoryWatchdog: deallocate collision happened at " + l_ptrStr + " !");
-			return false;
+			m_memo.erase(ptr);
+			return true;
+
 		}
 		else
 		{
-			m_memo.erase(ptr);
-			return true;
+			auto l_ptrStr = InnoUtility::pointerToString(ptr);
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "MemorySystem: MemoryWatchdog: deallocate collision happened at " + l_ptrStr + " !");
+			return false;
 		}
 	}
 
