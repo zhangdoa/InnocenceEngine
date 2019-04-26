@@ -339,6 +339,8 @@ bool InnoRenderingFrontendSystemNS::updateMeshData()
 
 bool InnoRenderingFrontendSystemNS::updateBillboardPassData()
 {
+	RenderingFrontendSystemComponent::get().m_billboardPassGPUDataQueue.clear();
+
 	for (auto i : g_pCoreSystem->getGameSystem()->get<DirectionalLightComponent>())
 	{
 		BillboardPassGPUData l_billboardPAssGPUData;
@@ -379,6 +381,8 @@ bool InnoRenderingFrontendSystemNS::updateDebuggerPassData()
 
 bool InnoRenderingFrontendSystemNS::gatherStaticMeshData()
 {
+	RenderingFrontendSystemComponent::get().m_GIPassGPUDataQueue.clear();
+
 	for (auto visibleComponent : g_pCoreSystem->getGameSystem()->get<VisibleComponent>())
 	{
 		if (visibleComponent->m_visiblilityType != VisiblilityType::INNO_INVISIBLE
