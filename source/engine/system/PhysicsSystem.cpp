@@ -49,7 +49,7 @@ namespace InnoPhysicsSystemNS
 
 	vec4 m_sceneBoundMax;
 	vec4 m_sceneBoundMin;
-	AABB m_SceneAABB;
+	AABB m_sceneAABB;
 
 	void* m_PhysicsDataComponentPool;
 
@@ -302,10 +302,10 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	auto l_tCamera = InnoMath::toTranslationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_pos);
 
 	// extend AABB to include the bound sphere, for to eliminate rotation conflict
-	auto sphereRadius = (m_SceneAABB.m_boundMax - m_SceneAABB.m_center).length();
-	auto l_boundMax = m_SceneAABB.m_center + sphereRadius;
+	auto sphereRadius = (m_sceneAABB.m_boundMax - m_sceneAABB.m_center).length();
+	auto l_boundMax = m_sceneAABB.m_center + sphereRadius;
 	l_boundMax.w = 1.0f;
-	auto l_boundMin = m_SceneAABB.m_center - sphereRadius;
+	auto l_boundMin = m_sceneAABB.m_center - sphereRadius;
 	l_boundMin.w = 1.0f;
 
 	auto l_sceneAABBVertices = generateAABBVertices(l_boundMax, l_boundMin);
@@ -805,16 +805,32 @@ void InnoPhysicsSystemNS::updateSceneAABB(AABB rhs)
 	auto boundMax = rhs.m_boundMax;
 	auto boundMin = rhs.m_boundMin;
 
-	if (InnoMath::isAGreaterThanBVec3(boundMax, InnoPhysicsSystemNS::m_sceneBoundMax))
+	if (boundMax.x > m_sceneBoundMax.x)
 	{
-		InnoPhysicsSystemNS::m_sceneBoundMax = boundMax;
+		m_sceneBoundMax.x = boundMax.x;
 	}
-	if (InnoMath::isALessThanBVec3(boundMin, InnoPhysicsSystemNS::m_sceneBoundMin))
+	if (boundMax.y > m_sceneBoundMax.y)
 	{
-		InnoPhysicsSystemNS::m_sceneBoundMin = boundMin;
+		m_sceneBoundMax.y = boundMax.y;
+	}
+	if (boundMax.z > m_sceneBoundMax.z)
+	{
+		m_sceneBoundMax.z = boundMax.z;
+	}
+	if (boundMin.x < m_sceneBoundMin.x)
+	{
+		m_sceneBoundMin.x = boundMin.x;
+	}
+	if (boundMin.y < m_sceneBoundMin.y)
+	{
+		m_sceneBoundMin.y = boundMin.y;
+	}
+	if (boundMin.z < m_sceneBoundMin.z)
+	{
+		m_sceneBoundMin.z = boundMin.z;
 	}
 
-	m_SceneAABB = generateAABB(InnoPhysicsSystemNS::m_sceneBoundMax, InnoPhysicsSystemNS::m_sceneBoundMin);
+	m_sceneAABB = generateAABB(InnoPhysicsSystemNS::m_sceneBoundMax, InnoPhysicsSystemNS::m_sceneBoundMin);
 }
 
 bool InnoPhysicsSystemNS::update()
@@ -882,7 +898,7 @@ INNO_SYSTEM_EXPORT std::optional<std::vector<CullingDataPack>> InnoPhysicsSystem
 
 INNO_SYSTEM_EXPORT AABB InnoPhysicsSystem::getSceneAABB()
 {
-	return InnoPhysicsSystemNS::m_SceneAABB;
+	return InnoPhysicsSystemNS::m_sceneAABB;
 }
 
 INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::generatePhysicsDataComponent(VisibleComponent * VC)
