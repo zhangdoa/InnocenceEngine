@@ -1,12 +1,14 @@
 // shadertype=glsl
 #version 450
-layout(location = 0) out vec4 uni_lightPassRT0;
 
 layout(location = 0) in vec2 TexCoords;
+
+layout(location = 0) out vec4 uni_lightPassRT0;
 
 struct dirLight {
 	vec4 direction;
 	vec4 luminance;
+	mat4 r;
 };
 
 // w component of luminance is attenuationRadius
@@ -23,11 +25,17 @@ struct sphereLight {
 	//float sphereRadius;
 };
 
+struct CSM {
+	mat4 p;
+	mat4 v;
+	vec4 splitCorners;
+};
+
 const float eps = 0.00001;
 const float PI = 3.14159265359;
-const int NR_POINT_LIGHTS = 256;
-const int NR_SPHERE_LIGHTS = 128;
-
+const int NR_POINT_LIGHTS = 64;
+const int NR_SPHERE_LIGHTS = 64;
+const int NR_CSM_SPLITS = 4;
 const float MAX_REFLECTION_LOD = 4.0;
 
 layout(location = 0, binding = 0) uniform sampler2D uni_opaquePassRT0;
@@ -40,18 +48,39 @@ layout(location = 6, binding = 6) uniform sampler2D uni_brdfMSLUT;
 layout(location = 7, binding = 7) uniform samplerCube uni_irradianceMap;
 layout(location = 8, binding = 8) uniform samplerCube uni_preFiltedMap;
 
-const int NR_CSM_SPLITS = 4;
-uniform mat4 uni_dirLightProjs[NR_CSM_SPLITS];
-uniform mat4 uni_dirLightViews[NR_CSM_SPLITS];
-uniform vec4 uni_shadowSplitAreas[NR_CSM_SPLITS];
+layout(std140, row_major, binding = 0) uniform cameraUBO
+{
+	mat4 uni_p_camera_original;
+	mat4 uni_p_camera_jittered;
+	mat4 uni_r_camera;
+	mat4 uni_t_camera;
+	mat4 uni_r_camera_prev;
+	mat4 uni_t_camera_prev;
+	vec4 uni_globalPos;
+	float WHRatio;
+};
+
+layout(std140, row_major, binding = 3) uniform sunUBO
+{
+	dirLight uni_dirLight;
+};
+
+layout(std140, row_major, binding = 4) uniform pointLightUBO
+{
+	pointLight uni_pointLights[NR_POINT_LIGHTS];
+};
+
+layout(std140, row_major, binding = 5) uniform sphereLightUBO
+{
+	sphereLight uni_sphereLights[NR_SPHERE_LIGHTS];
+};
+
+layout(std140, row_major, binding = 6) uniform CSMUBO
+{
+	CSM uni_CSMs[NR_CSM_SPLITS];
+};
 
 bool uni_drawCSMSplitedArea = false;
-
-uniform vec4 uni_viewPos;
-uniform dirLight uni_dirLight;
-uniform pointLight uni_pointLights[NR_POINT_LIGHTS];
-uniform sphereLight uni_sphereLights[NR_SPHERE_LIGHTS];
-
 uniform bool uni_isEmissive;
 
 // Oren-Nayar diffuse BRDF [https://github.com/glslify/glsl-diffuse-oren-nayar]
@@ -272,10 +301,10 @@ float ShadowCalculation(float NdotL, vec3 fragPos)
 	int splitIndex = NR_CSM_SPLITS;
 	for (int i = 0; i < NR_CSM_SPLITS; i++)
 	{
-		if (fragPos.x >= uni_shadowSplitAreas[i].x &&
-			fragPos.z >= uni_shadowSplitAreas[i].y &&
-			fragPos.x <= uni_shadowSplitAreas[i].z &&
-			fragPos.z <= uni_shadowSplitAreas[i].w)
+		if (fragPos.x >= uni_CSMs[i].splitCorners.x &&
+			fragPos.z >= uni_CSMs[i].splitCorners.y &&
+			fragPos.x <= uni_CSMs[i].splitCorners.z &&
+			fragPos.z <= uni_CSMs[i].splitCorners.w)
 		{
 			splitIndex = i;
 			break;
@@ -290,7 +319,7 @@ float ShadowCalculation(float NdotL, vec3 fragPos)
 	}
 	else
 	{
-		vec4 lightSpacePos = uni_dirLightProjs[splitIndex] * uni_dirLightViews[splitIndex] * vec4(fragPos, 1.0f);
+		vec4 lightSpacePos = uni_CSMs[splitIndex].p * uni_CSMs[splitIndex].v * vec4(fragPos, 1.0f);
 		lightSpacePos = lightSpacePos / lightSpacePos.w;
 		projCoords = lightSpacePos.xyz;
 
@@ -350,7 +379,7 @@ void main()
 		F0 = mix(F0, Albedo, Metallic);
 
 		vec3 N = normalize(Normal);
-		vec3 V = normalize(uni_viewPos.xyz - FragPos);
+		vec3 V = normalize(uni_globalPos.xyz - FragPos);
 
 		float NdotV = max(dot(N, V), 0.0);
 
@@ -368,10 +397,10 @@ void main()
 
 		// point punctual light
 		for (int i = 0; i < NR_POINT_LIGHTS; ++i)
-		{			
+		{
 			float lightRadius = uni_pointLights[i].luminance.w;
-			if(lightRadius > 0)
-			{			
+			if (lightRadius > 0)
+			{
 				vec3 unormalizedL = uni_pointLights[i].position.xyz - FragPos;
 
 				if (length(unormalizedL) < lightRadius)
@@ -396,9 +425,9 @@ void main()
 
 		// sphere area light
 		for (int i = 0; i < NR_SPHERE_LIGHTS; ++i)
-		{		
+		{
 			float lightRadius = uni_sphereLights[i].luminance.w;
-			if(lightRadius > 0)
+			if (lightRadius > 0)
 			{
 				vec3 unormalizedL = uni_sphereLights[i].position.xyz - FragPos;
 				L = normalize(unormalizedL);
@@ -455,10 +484,10 @@ void main()
 		int splitIndex = NR_CSM_SPLITS;
 		for (int i = 0; i < NR_CSM_SPLITS; i++)
 		{
-			if (FragPos.x >= uni_shadowSplitAreas[i].x &&
-				FragPos.z >= uni_shadowSplitAreas[i].y &&
-				FragPos.x <= uni_shadowSplitAreas[i].z &&
-				FragPos.z <= uni_shadowSplitAreas[i].w)
+			if (FragPos.x >= uni_CSMs[i].splitCorners.x &&
+				FragPos.z >= uni_CSMs[i].splitCorners.y &&
+				FragPos.x <= uni_CSMs[i].splitCorners.z &&
+				FragPos.z <= uni_CSMs[i].splitCorners.w)
 			{
 				splitIndex = i;
 				break;

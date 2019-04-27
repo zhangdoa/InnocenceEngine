@@ -27,6 +27,11 @@ public:
 	GLuint m_cameraUBO;
 	GLuint m_meshUBO;
 	GLuint m_materialUBO;
+	GLuint m_sunUBO;
+	GLuint m_pointLightUBO;
+	GLuint m_sphereLightUBO;
+	GLuint m_CSMUBO;
+
 private:
 	GLRenderingSystemComponent() {};
 };

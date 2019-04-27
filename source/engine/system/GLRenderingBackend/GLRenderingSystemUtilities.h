@@ -61,6 +61,12 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 		updateUBOImpl(UBO, sizeof(T), &UBOValue);
 	}
 
+	template<typename T>
+	void updateUBO(const GLint& UBO, const std::vector<T>& UBOValue)
+	{
+		updateUBOImpl(UBO, sizeof(T) * UBOValue.size(), &UBOValue[0]);
+	}
+
 	void updateUniform(const GLint uniformLocation, bool uniformValue);
 	void updateUniform(const GLint uniformLocation, int uniformValue);
 	void updateUniform(const GLint uniformLocation, unsigned int uniformValue);

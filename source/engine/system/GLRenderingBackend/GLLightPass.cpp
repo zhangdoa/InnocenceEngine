@@ -30,21 +30,6 @@ INNO_PRIVATE_SCOPE GLLightPass
 
 	ShaderFilePaths m_shaderFilePaths = { "GL//lightPass.vert" , "", "GL//lightPass.frag" };
 
-	std::vector<GLuint> m_uni_shadowSplitAreas;
-	std::vector<GLuint> m_uni_dirLightProjs;
-	std::vector<GLuint> m_uni_dirLightViews;
-
-	GLuint m_uni_viewPos;
-	GLuint m_uni_dirLight_direction;
-	GLuint m_uni_dirLight_luminance;
-	GLuint m_uni_dirLight_rot;
-
-	std::vector<GLuint> m_uni_pointLights_position;
-	std::vector<GLuint> m_uni_pointLights_luminance;
-
-	std::vector<GLuint> m_uni_sphereLights_position;
-	std::vector<GLuint> m_uni_sphereLights_luminance;
-
 	GLuint m_uni_isEmissive;
 }
 
@@ -71,59 +56,6 @@ void GLLightPass::initializeLightPassShaders()
 
 void GLLightPass::bindLightPassUniformLocations(GLShaderProgramComponent* rhs)
 {
-	m_uni_shadowSplitAreas.reserve(4);
-	m_uni_dirLightProjs.reserve(4);
-	m_uni_dirLightViews.reserve(4);
-
-	for (size_t i = 0; i < 4; i++)
-	{
-		m_uni_shadowSplitAreas.emplace_back(
-			getUniformLocation(rhs->m_program, "uni_shadowSplitAreas[" + std::to_string(i) + "]")
-		);
-		m_uni_dirLightProjs.emplace_back(
-			getUniformLocation(rhs->m_program, "uni_dirLightProjs[" + std::to_string(i) + "]")
-		);
-		m_uni_dirLightViews.emplace_back(
-			getUniformLocation(rhs->m_program, "uni_dirLightViews[" + std::to_string(i) + "]")
-		);
-	}
-
-	m_uni_viewPos = getUniformLocation(
-		rhs->m_program,
-		"uni_viewPos");
-	m_uni_dirLight_direction = getUniformLocation(
-		rhs->m_program,
-		"uni_dirLight.direction");
-	m_uni_dirLight_luminance = getUniformLocation(
-		rhs->m_program,
-		"uni_dirLight.luminance");
-
-	m_uni_pointLights_position.reserve(RenderingFrontendSystemComponent::get().m_maxPointLights);
-	m_uni_pointLights_luminance.reserve(RenderingFrontendSystemComponent::get().m_maxPointLights);
-
-	for (size_t i = 0; i < RenderingFrontendSystemComponent::get().m_maxPointLights; i++)
-	{
-		m_uni_pointLights_position.emplace_back(
-			getUniformLocation(rhs->m_program, "uni_pointLights[" + std::to_string(i) + "].position")
-		);
-		m_uni_pointLights_luminance.emplace_back(
-			getUniformLocation(rhs->m_program, "uni_pointLights[" + std::to_string(i) + "].luminance")
-		);
-	}
-
-	m_uni_sphereLights_position.reserve(RenderingFrontendSystemComponent::get().m_maxSphereLights);
-	m_uni_sphereLights_luminance.reserve(RenderingFrontendSystemComponent::get().m_maxSphereLights);
-
-	for (size_t i = 0; i < RenderingFrontendSystemComponent::get().m_maxSphereLights; i++)
-	{
-		m_uni_sphereLights_position.emplace_back(
-			getUniformLocation(rhs->m_program, "uni_sphereLights[" + std::to_string(i) + "].position")
-		);
-		m_uni_sphereLights_luminance.emplace_back(
-			getUniformLocation(rhs->m_program, "uni_sphereLights[" + std::to_string(i) + "].luminance")
-		);
-	}
-
 	m_uni_isEmissive = getUniformLocation(
 		rhs->m_program,
 		"uni_isEmissive");
@@ -186,59 +118,6 @@ void GLLightPass::update()
 	updateUniform(
 		m_uni_isEmissive,
 		false);
-
-	updateUniform(
-		m_uni_viewPos,
-		RenderingFrontendSystemComponent::get().m_cameraGPUData.globalPos);
-
-	updateUniform(
-		m_uni_dirLight_direction,
-		RenderingFrontendSystemComponent::get().m_sunGPUData.dir);
-	updateUniform(
-		m_uni_dirLight_luminance,
-		RenderingFrontendSystemComponent::get().m_sunGPUData.luminance);
-
-	if (RenderingFrontendSystemComponent::get().m_CSMGPUDataVector.size())
-	{
-		for (size_t j = 0; j < 4; j++)
-		{
-			updateUniform(
-				m_uni_shadowSplitAreas[j],
-				RenderingFrontendSystemComponent::get().m_CSMGPUDataVector[j].splitCorners);
-			updateUniform(
-				m_uni_dirLightProjs[j],
-				RenderingFrontendSystemComponent::get().m_CSMGPUDataVector[j].p);
-			updateUniform(
-				m_uni_dirLightViews[j],
-				RenderingFrontendSystemComponent::get().m_CSMGPUDataVector[j].v);
-		}
-	}
-
-	for (size_t i = 0; i < RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector.size(); i++)
-	{
-		auto l_pos = RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector[i].pos;
-		auto l_luminance = RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector[i].luminance;
-
-		updateUniform(
-			m_uni_pointLights_position[i],
-			l_pos);
-		updateUniform(
-			m_uni_pointLights_luminance[i],
-			l_luminance);
-	}
-
-	for (size_t i = 0; i < RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector.size(); i++)
-	{
-		auto l_pos = RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector[i].pos;
-		auto l_luminance = RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector[i].luminance;
-
-		updateUniform(
-			m_uni_sphereLights_position[i],
-			l_pos);
-		updateUniform(
-			m_uni_sphereLights_luminance[i],
-			l_luminance);
-	}
 
 	// draw light pass rectangle
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);

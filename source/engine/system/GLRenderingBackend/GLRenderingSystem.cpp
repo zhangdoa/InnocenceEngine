@@ -342,6 +342,14 @@ bool GLRenderingSystemNS::generateGPUBuffers()
 
 	GLRenderingSystemComponent::get().m_materialUBO = generateUBO(sizeof(MaterialGPUData), 2);
 
+	GLRenderingSystemComponent::get().m_sunUBO = generateUBO(sizeof(SunGPUData), 3);
+
+	GLRenderingSystemComponent::get().m_pointLightUBO = generateUBO(sizeof(PointLightGPUData) * RenderingFrontendSystemComponent::get().m_maxPointLights, 4);
+
+	GLRenderingSystemComponent::get().m_sphereLightUBO = generateUBO(sizeof(SphereLightGPUData) * RenderingFrontendSystemComponent::get().m_maxSphereLights, 5);
+
+	GLRenderingSystemComponent::get().m_CSMUBO = generateUBO(sizeof(CSMGPUData) * RenderingFrontendSystemComponent::get().m_maxCSMSplit, 6);
+
 	return true;
 }
 
@@ -384,6 +392,10 @@ bool GLRenderingSystemNS::render()
 	glFrontFace(GL_CCW);
 
 	updateUBO(GLRenderingSystemComponent::get().m_cameraUBO, RenderingFrontendSystemComponent::get().m_cameraGPUData);
+	updateUBO(GLRenderingSystemComponent::get().m_sunUBO, RenderingFrontendSystemComponent::get().m_sunGPUData);
+	updateUBO(GLRenderingSystemComponent::get().m_pointLightUBO, RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector);
+	updateUBO(GLRenderingSystemComponent::get().m_sphereLightUBO, RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector);
+	updateUBO(GLRenderingSystemComponent::get().m_CSMUBO, RenderingFrontendSystemComponent::get().m_CSMGPUDataVector);
 
 	if (!m_isBaked)
 	{
