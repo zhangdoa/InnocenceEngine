@@ -61,6 +61,7 @@ INNO_PRIVATE_SCOPE InnoLogSystemNS
 	}
 #endif
 
+	unsigned int m_logLevel = 0;
 	std::ofstream m_logFile;
 
 	std::mutex m_mutex;
@@ -152,10 +153,18 @@ void InnoLogSystem::printLog(LogType LogType, const std::string & logMessage)
 #if defined INNO_PLATFORM_WIN
 	switch (LogType)
 	{
-	case LogType::INNO_DEV_VERBOSE: std::cout << InnoLogSystemNS::blueColor << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl; break;
-	case LogType::INNO_WARNING: std::cout << InnoLogSystemNS::yellowColor << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl; break;
-	case LogType::INNO_ERROR: std::cout << InnoLogSystemNS::redColor << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl; break;
-	case LogType::INNO_DEV_SUCCESS: std::cout << InnoLogSystemNS::greenColor << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl; break;
+	case LogType::INNO_DEV_VERBOSE:
+		if (InnoLogSystemNS::m_logLevel == 1)
+		{
+			std::cout << InnoLogSystemNS::blueColor << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl;
+		}
+		break;
+	case LogType::INNO_WARNING:
+		std::cout << InnoLogSystemNS::yellowColor << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl; break;
+	case LogType::INNO_ERROR:
+		std::cout << InnoLogSystemNS::redColor << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl; break;
+	case LogType::INNO_DEV_SUCCESS:
+		std::cout << InnoLogSystemNS::greenColor << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl; break;
 	default: std::cout << InnoLogSystemNS::whiteColor << InnoLogSystemNS::getLogTimeHeader() << logMessage << std::endl; break;
 	}
 #else
