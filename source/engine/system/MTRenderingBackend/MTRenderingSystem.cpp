@@ -87,6 +87,8 @@ bool MTRenderingSystemNS::initialize()
 
 	bool result = MTRenderingSystemNS::m_bridge->initialize();
 
+	loadDefaultAssets();
+
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingSystem has been initialized.");
 	return true;
 }
@@ -129,6 +131,76 @@ void MTRenderingSystemNS::loadDefaultAssets()
 	auto l_iconTemplate_DirectionalLight = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoWorldEditorIcons_DirectionalLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 	auto l_iconTemplate_PointLight = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoWorldEditorIcons_PointLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 	auto l_iconTemplate_SphereLight = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//InnoWorldEditorIcons_SphereLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+
+	m_basicNormalTDC = reinterpret_cast<MTTextureDataComponent*>(l_basicNormalTDC);
+	m_basicAlbedoTDC = reinterpret_cast<MTTextureDataComponent*>(l_basicAlbedoTDC);
+	m_basicMetallicTDC = reinterpret_cast<MTTextureDataComponent*>(l_basicMetallicTDC);
+	m_basicRoughnessTDC = reinterpret_cast<MTTextureDataComponent*>(l_basicRoughnessTDC);
+	m_basicAOTDC = reinterpret_cast<MTTextureDataComponent*>(l_basicAOTDC);
+
+	m_iconTemplate_OBJ = reinterpret_cast<MTTextureDataComponent*>(l_iconTemplate_OBJ);
+	m_iconTemplate_PNG = reinterpret_cast<MTTextureDataComponent*>(l_iconTemplate_PNG);
+	m_iconTemplate_SHADER = reinterpret_cast<MTTextureDataComponent*>(l_iconTemplate_SHADER);
+	m_iconTemplate_UNKNOWN = reinterpret_cast<MTTextureDataComponent*>(l_iconTemplate_UNKNOWN);
+
+	m_iconTemplate_DirectionalLight = reinterpret_cast<MTTextureDataComponent*>(l_iconTemplate_DirectionalLight);
+	m_iconTemplate_PointLight = reinterpret_cast<MTTextureDataComponent*>(l_iconTemplate_PointLight);
+	m_iconTemplate_SphereLight = reinterpret_cast<MTTextureDataComponent*>(l_iconTemplate_SphereLight);
+
+	m_unitLineMDC = addMTMeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addUnitLine(*m_unitLineMDC);
+	m_unitLineMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	m_unitLineMDC->m_meshShapeType = MeshShapeType::LINE;
+	m_unitLineMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMDC);
+
+	m_unitQuadMDC = addMTMeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addUnitQuad(*m_unitQuadMDC);
+	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_unitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
+	m_unitQuadMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMDC);
+
+	m_unitCubeMDC = addMTMeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addUnitCube(*m_unitCubeMDC);
+	m_unitCubeMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_unitCubeMDC->m_meshShapeType = MeshShapeType::CUBE;
+	m_unitCubeMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMDC);
+
+	m_unitSphereMDC = addMTMeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addUnitSphere(*m_unitSphereMDC);
+	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_unitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
+	m_unitSphereMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMDC);
+
+	m_terrainMDC = addMTMeshDataComponent();
+	g_pCoreSystem->getAssetSystem()->addTerrain(*m_terrainMDC);
+	m_terrainMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_terrainMDC->m_objectStatus = ObjectStatus::STANDBY;
+	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMDC);
+
+	m_bridge->initializeMTMeshDataComponent(m_unitLineMDC);
+	m_bridge->initializeMTMeshDataComponent(m_unitQuadMDC);
+	m_bridge->initializeMTMeshDataComponent(m_unitCubeMDC);
+	m_bridge->initializeMTMeshDataComponent(m_unitSphereMDC);
+	m_bridge->initializeMTMeshDataComponent(m_terrainMDC);
+
+	m_bridge->initializeMTTextureDataComponent(m_basicNormalTDC);
+	m_bridge->initializeMTTextureDataComponent(m_basicAlbedoTDC);
+	m_bridge->initializeMTTextureDataComponent(m_basicMetallicTDC);
+	m_bridge->initializeMTTextureDataComponent(m_basicRoughnessTDC);
+	m_bridge->initializeMTTextureDataComponent(m_basicAOTDC);
+
+	m_bridge->initializeMTTextureDataComponent(m_iconTemplate_OBJ);
+	m_bridge->initializeMTTextureDataComponent(m_iconTemplate_PNG);
+	m_bridge->initializeMTTextureDataComponent(m_iconTemplate_SHADER);
+	m_bridge->initializeMTTextureDataComponent(m_iconTemplate_UNKNOWN);
+
+	m_bridge->initializeMTTextureDataComponent(m_iconTemplate_DirectionalLight);
+	m_bridge->initializeMTTextureDataComponent(m_iconTemplate_PointLight);
+	m_bridge->initializeMTTextureDataComponent(m_iconTemplate_SphereLight);
 }
 
 MTMeshDataComponent* MTRenderingSystemNS::addMTMeshDataComponent()

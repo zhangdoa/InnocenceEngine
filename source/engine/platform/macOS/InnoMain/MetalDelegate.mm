@@ -149,4 +149,12 @@ static matrix_float4x4 rotationMatrix2D(float radians)
     return _view;
 }
 
+
+- (void)submitGPUData:(void *)vertices :(unsigned int)verticesSize {
+    id<MTLBuffer> l_vertexBuffer = [_device newBufferWithBytes:vertices
+                         length:verticesSize
+                        options:MTLResourceCPUCacheModeDefaultCache];
+    NSLog(@"VBO has been generated: %@", l_vertexBuffer);
+}
+
 @end

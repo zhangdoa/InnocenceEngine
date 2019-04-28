@@ -29,6 +29,10 @@ public:
     bool resize() override;
     bool reloadShader(RenderPassType renderPassType) override;
     bool bakeGI() override;
+    
+    bool initializeMTMeshDataComponent(MTMeshDataComponent* rhs) override;
+    bool initializeMTTextureDataComponent(MTTextureDataComponent* rhs) override;
+    
 private:
     ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
     MacWindowDelegate* m_macWindowDelegate = nullptr;

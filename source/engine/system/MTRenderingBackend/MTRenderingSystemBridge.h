@@ -2,6 +2,8 @@
 #define MTRenderingSystemBridge_h
 
 #include "../../common/InnoType.h"
+#include "../../component/MTMeshDataComponent.h"
+#include "../../component/MTTextureDataComponent.h"
 
 class MTRenderingSystemBridge
 {
@@ -19,6 +21,9 @@ public:
 	virtual bool resize() = 0;
 	virtual bool reloadShader(RenderPassType renderPassType) = 0;
 	virtual bool bakeGI() = 0;
+
+  virtual bool initializeMTMeshDataComponent(MTMeshDataComponent* rhs) = 0;
+  virtual bool initializeMTTextureDataComponent(MTTextureDataComponent* rhs) = 0;
 };
 
 #endif /* MTRenderingSystemBridge_h */

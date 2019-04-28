@@ -1,5 +1,6 @@
 #pragma once
 #include "../common/InnoType.h"
+#include "../common/InnoContainer.h"
 #include "../system/GPUDataStructureHeader.h"
 
 class RenderingFrontendSystemComponent

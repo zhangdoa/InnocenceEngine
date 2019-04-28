@@ -59,3 +59,23 @@ MTRenderingSystemBridgeImpl::MTRenderingSystemBridgeImpl(MacWindowDelegate* macW
 MTRenderingSystemBridgeImpl::~MTRenderingSystemBridgeImpl() {
 }
 
+bool MTRenderingSystemBridgeImpl::initializeMTMeshDataComponent(MTMeshDataComponent *rhs) {
+    if (rhs->m_objectStatus == ObjectStatus::ALIVE)
+    {
+        return true;
+    }
+    else
+    {
+        [m_metalDelegate submitGPUData:rhs->m_vertices.data() :(unsigned int)rhs->m_vertices.size()];
+        
+        rhs->m_objectStatus = ObjectStatus::ALIVE;
+        
+        return true;
+    }
+}
+
+bool MTRenderingSystemBridgeImpl::initializeMTTextureDataComponent(MTTextureDataComponent *rhs) { 
+        return true;
+}
+
+
