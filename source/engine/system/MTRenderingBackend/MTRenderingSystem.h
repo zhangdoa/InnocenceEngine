@@ -34,5 +34,5 @@ public:
 	bool reloadShader(RenderPassType renderPassType) override;
 	bool bakeGI() override;
 
-	void MTRenderingSystem::setBridge(MTRenderingSystemBridge* bridge);
+	void setBridge(MTRenderingSystemBridge* bridge);
 };

@@ -164,8 +164,8 @@ public:
 		m_condition.notify_one();
 	}
 
-	template <class... T>
-	void emplace_back(T&&... values)
+	template <class... Args>
+	void emplace_back(Args&&... values)
 	{
 		std::lock_guard<std::shared_mutex> lock{ m_mutex };
 		m_vector.emplace_back(values ...);

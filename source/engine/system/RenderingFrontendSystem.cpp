@@ -438,7 +438,7 @@ bool InnoRenderingFrontendSystemNS::update()
 	updateLightData();
 
 	// copy culling data pack for local scope
-	auto& l_cullingDataPack = g_pCoreSystem->getPhysicsSystem()->getCullingDataPack();
+	auto l_cullingDataPack = g_pCoreSystem->getPhysicsSystem()->getCullingDataPack();
 	if (l_cullingDataPack.has_value() && l_cullingDataPack.value().size() > 0)
 	{
 		m_cullingDataPack.setRawData(std::move(l_cullingDataPack.value()));
