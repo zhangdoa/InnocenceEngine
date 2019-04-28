@@ -350,6 +350,8 @@ bool GLRenderingSystemNS::generateGPUBuffers()
 
 	GLRenderingSystemComponent::get().m_CSMUBO = generateUBO(sizeof(CSMGPUData) * RenderingFrontendSystemComponent::get().m_maxCSMSplit, 6);
 
+	GLRenderingSystemComponent::get().m_skyUBO = generateUBO(sizeof(SkyGPUData), 7);
+
 	return true;
 }
 
@@ -396,6 +398,7 @@ bool GLRenderingSystemNS::render()
 	updateUBO(GLRenderingSystemComponent::get().m_pointLightUBO, RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector);
 	updateUBO(GLRenderingSystemComponent::get().m_sphereLightUBO, RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector);
 	updateUBO(GLRenderingSystemComponent::get().m_CSMUBO, RenderingFrontendSystemComponent::get().m_CSMGPUDataVector);
+	updateUBO(GLRenderingSystemComponent::get().m_skyUBO, RenderingFrontendSystemComponent::get().m_skyGPUData);
 
 	if (!m_isBaked)
 	{

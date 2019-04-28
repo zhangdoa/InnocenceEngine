@@ -59,32 +59,6 @@ bool GLSkyPass::update()
 
 		activateShaderProgram(m_GLSPC);
 
-		// uni_p
-		updateUniform(
-			0,
-			RenderingFrontendSystemComponent::get().m_cameraGPUData.p_original);
-		// uni_r
-		updateUniform(
-			1,
-			RenderingFrontendSystemComponent::get().m_cameraGPUData.r);
-
-		vec2 l_viewportSize = vec2((float)GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX, (float)GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY);
-
-		// uni_viewportSize
-		updateUniform(
-			2,
-			l_viewportSize);
-
-		// uni_eyePos
-		updateUniform(
-			3,
-			RenderingFrontendSystemComponent::get().m_cameraGPUData.globalPos);
-
-		// uni_lightDir
-		updateUniform(
-			4,
-			RenderingFrontendSystemComponent::get().m_sunGPUData.dir);
-
 		auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
 		drawMesh(l_MDC);
 

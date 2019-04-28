@@ -31,6 +31,7 @@ public:
 	GLuint m_pointLightUBO;
 	GLuint m_sphereLightUBO;
 	GLuint m_CSMUBO;
+	GLuint m_skyUBO;
 
 private:
 	GLRenderingSystemComponent() {};

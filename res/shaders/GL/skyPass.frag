@@ -3,22 +3,46 @@
 layout(location = 0) out vec4 uni_skyPassRT0;
 
 layout(location = 0) in vec3 TexCoords;
-layout(location = 1) in mat4 inv_p;
-layout(location = 5) in mat4 inv_v;
-
-layout(location = 2) uniform vec2 uni_viewportSize;
-layout(location = 3) uniform vec4 uni_eyePos;
-layout(location = 4) uniform vec4 uni_lightDir;
 
 const float PI = 3.14159265359;
+
+struct dirLight {
+	vec4 direction;
+	vec4 luminance;
+	mat4 r;
+};
+
+layout(std140, row_major, binding = 0) uniform cameraUBO
+{
+	mat4 uni_p_camera_original;
+	mat4 uni_p_camera_jittered;
+	mat4 uni_r_camera;
+	mat4 uni_t_camera;
+	mat4 uni_r_camera_prev;
+	mat4 uni_t_camera_prev;
+	vec4 uni_globalPos;
+	float WHRatio;
+};
+
+layout(std140, row_major, binding = 3) uniform sunUBO
+{
+	dirLight uni_dirLight;
+};
+
+layout(std140, row_major, binding = 7) uniform skyUBO
+{
+	mat4 uni_p_inv;
+	mat4 uni_v_inv;
+	vec2 uni_viewportSize;
+};
 
 vec3 get_world_normal() {
 	vec2 frag_coord = gl_FragCoord.xy / uni_viewportSize;
 	frag_coord = (frag_coord - 0.5) * 2.0;
 	vec4 device_normal = vec4(frag_coord, 0.0, 1.0);
-	vec4 eye_normal = inv_p * device_normal;
+	vec4 eye_normal = uni_p_inv * device_normal;
 	eye_normal = eye_normal / eye_normal.w;
-	vec3 world_normal = normalize(inv_v * eye_normal).xyz;
+	vec3 world_normal = normalize(uni_v_inv * eye_normal).xyz;
 	return world_normal;
 }
 
@@ -152,10 +176,10 @@ void main()
 	vec3 color = vec3(0.0);
 
 	vec3 eyedir = get_world_normal();
-	vec3 lightdir = -uni_lightDir.xyz;
+	vec3 lightdir = -uni_dirLight.direction.xyz;
 	float planetRadius = 6371e3;
 	float atmosphereHeight = 100e3;
-	vec3 eye_position = uni_eyePos.xyz + vec3(0.0, planetRadius, 0.0);
+	vec3 eye_position = uni_globalPos.xyz + vec3(0.0, planetRadius, 0.0);
 
 	color = atmosphere(
 		eyedir,           // normalized ray direction
