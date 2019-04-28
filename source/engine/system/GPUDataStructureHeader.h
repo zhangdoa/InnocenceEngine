@@ -70,6 +70,19 @@ struct alignas(16) MaterialGPUData
 	mat4 padding4;
 };
 
+struct alignas(16) SkyGPUData
+{
+	mat4 p_inv;
+	mat4 r_inv;
+	vec2 viewportSize;
+};
+
+struct alignas(16) DispatchParamsGPUData
+{
+	TVec4<unsigned int> numThreadGroups;
+	TVec4<unsigned int> numThreads;
+};
+
 struct GeometryPassGPUData
 {
 	MeshDataComponent* MDC;

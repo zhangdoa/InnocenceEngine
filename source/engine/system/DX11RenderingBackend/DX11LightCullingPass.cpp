@@ -4,6 +4,7 @@
 #include "DX11OpaquePass.h"
 
 #include "../../component/DX11RenderingSystemComponent.h"
+#include "../../component/RenderingFrontendSystemComponent.h"
 
 #include "../ICoreSystem.h"
 
@@ -163,9 +164,9 @@ bool DX11LightCullingPass::initializeShaders()
 
 bool DX11LightCullingPass::calculateFrustums()
 {
-	DX11RenderingSystemComponent::get().m_dispatchParamsConstantBufferData.numThreadGroups = m_tileFrustumNumThreadGroups;
-	DX11RenderingSystemComponent::get().m_dispatchParamsConstantBufferData.numThreads = m_tileFrustumNumThreads;
-	updateConstantBuffer(DX11RenderingSystemComponent::get().m_dispatchParamsConstantBuffer, &DX11RenderingSystemComponent::get().m_dispatchParamsConstantBufferData);
+	RenderingFrontendSystemComponent::get().m_dispatchParamsGPUData.numThreadGroups = m_tileFrustumNumThreadGroups;
+	RenderingFrontendSystemComponent::get().m_dispatchParamsGPUData.numThreads = m_tileFrustumNumThreads;
+	updateConstantBuffer(DX11RenderingSystemComponent::get().m_dispatchParamsConstantBuffer, &RenderingFrontendSystemComponent::get().m_dispatchParamsGPUData);
 
 	activateDX11ShaderProgramComponent(m_tileFrustumDXSPC);
 
@@ -182,9 +183,9 @@ bool DX11LightCullingPass::calculateFrustums()
 
 bool DX11LightCullingPass::cullLights()
 {
-	DX11RenderingSystemComponent::get().m_dispatchParamsConstantBufferData.numThreadGroups = m_lightCullingNumThreadGroups;
-	DX11RenderingSystemComponent::get().m_dispatchParamsConstantBufferData.numThreads = m_lightCullingNumThreads;
-	updateConstantBuffer(DX11RenderingSystemComponent::get().m_dispatchParamsConstantBuffer, &DX11RenderingSystemComponent::get().m_dispatchParamsConstantBufferData);
+	RenderingFrontendSystemComponent::get().m_dispatchParamsGPUData.numThreadGroups = m_lightCullingNumThreadGroups;
+	RenderingFrontendSystemComponent::get().m_dispatchParamsGPUData.numThreads = m_lightCullingNumThreads;
+	updateConstantBuffer(DX11RenderingSystemComponent::get().m_dispatchParamsConstantBuffer, &RenderingFrontendSystemComponent::get().m_dispatchParamsGPUData);
 
 	activateDX11ShaderProgramComponent(m_lightCullingDXSPC);
 

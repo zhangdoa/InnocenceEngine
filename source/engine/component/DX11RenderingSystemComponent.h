@@ -3,20 +3,6 @@
 #include "../component/DX11MeshDataComponent.h"
 #include "../component/DX11TextureDataComponent.h"
 
-struct SkyConstantBufferData
-{
-	mat4 p_inv;
-	mat4 r_inv;
-	vec2 viewportSize;
-	vec2 padding1;
-};
-
-struct DispatchParamsConstantBufferData
-{
-	TVec4<unsigned int> numThreadGroups;
-	TVec4<unsigned int> numThreads;
-};
-
 class DX11RenderingSystemComponent
 {
 public:
@@ -78,10 +64,8 @@ public:
 	DX11ConstantBuffer m_sphereLightConstantBuffer;
 
 	DX11ConstantBuffer m_skyConstantBuffer;
-	SkyConstantBufferData m_skyConstantBufferData;
 
 	DX11ConstantBuffer m_dispatchParamsConstantBuffer;
-	DispatchParamsConstantBufferData m_dispatchParamsConstantBufferData;
 
 	DX11StructuredBuffer m_gridFrustumsStructuredBuffer;
 	DX11StructuredBuffer m_lightIndexListStructuredBuffer;

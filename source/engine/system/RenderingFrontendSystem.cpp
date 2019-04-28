@@ -450,6 +450,11 @@ bool InnoRenderingFrontendSystemNS::update()
 
 	updateDebuggerPassData();
 
+	RenderingFrontendSystemComponent::get().m_skyGPUData.p_inv = RenderingFrontendSystemComponent::get().m_cameraGPUData.p_original.inverse();
+	RenderingFrontendSystemComponent::get().m_skyGPUData.r_inv = RenderingFrontendSystemComponent::get().m_cameraGPUData.r.inverse();
+	RenderingFrontendSystemComponent::get().m_skyGPUData.viewportSize.x = (float)m_screenResolution.x;
+	RenderingFrontendSystemComponent::get().m_skyGPUData.viewportSize.y = (float)m_screenResolution.y;
+
 	return true;
 }
 
@@ -539,20 +544,6 @@ INNO_SYSTEM_EXPORT bool InnoRenderingFrontendSystem::removeTextureDataComponent(
 {
 	return InnoRenderingFrontendSystemNS::m_renderingBackendSystem->removeTextureDataComponent(entityID);
 }
-
-//INNO_SYSTEM_EXPORT bool registerUninitializedMeshDataComponent(MeshDataComponent * rhs)
-//{
-//	InnoRenderingFrontendSystemNS::m_renderingBackendSystem->registerUninitializedMeshDataComponent(rhs);
-//
-//	return true;
-//}
-//
-//INNO_SYSTEM_EXPORT bool registerUninitializedTextureDataComponent(TextureDataComponent * rhs)
-//{
-//	InnoRenderingFrontendSystemNS::m_renderingBackendSystem->registerUninitializedTextureDataComponent(rhs);
-//
-//	return true;
-//}
 
 INNO_SYSTEM_EXPORT TVec2<unsigned int> InnoRenderingFrontendSystem::getScreenResolution()
 {

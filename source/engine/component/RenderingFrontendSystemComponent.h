@@ -38,6 +38,9 @@ public:
 
 	ThreadSafeQueue<GeometryPassGPUData> m_GIPassGPUDataQueue;
 
+	SkyGPUData m_skyGPUData;
+	DispatchParamsGPUData m_dispatchParamsGPUData;
+
 private:
 	RenderingFrontendSystemComponent() {};
 };
