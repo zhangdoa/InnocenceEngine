@@ -22,7 +22,7 @@ void InnoFileExplorer::initialize()
     connect(this, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(DoubleClick(QModelIndex)));
 
     auto l_workingDir = g_pCoreSystem->getFileSystem()->getWorkingDirectory();
-    l_workingDir += "//res//";
+    l_workingDir += "res//";
     m_rootDir = l_workingDir.c_str();
 
     SetRootDirectory(m_rootDir.toStdString());
@@ -69,8 +69,7 @@ QString InnoFileExplorer::GetSelectionPath()
     else if(l_fileInfo.suffix().toStdString() == "obj")
     {
         QDir l_RootDir(m_rootDir);
-        auto l_relativePath = m_rootDir + l_RootDir.relativeFilePath(l_fileInfo.filePath());
-
+        auto l_relativePath = l_RootDir.relativeFilePath(l_fileInfo.filePath());
         switch( QMessageBox::question(
                     this,
                     tr(""),
@@ -83,7 +82,7 @@ QString InnoFileExplorer::GetSelectionPath()
                     QMessageBox::Cancel ) )
         {
           case QMessageBox::Yes:
-            g_pCoreSystem->getFileSystem()->convertModel(l_relativePath.toStdString(), (m_rootDir + QString("convertedAssets/")).toStdString());
+            g_pCoreSystem->getFileSystem()->convertModel("res/" + l_relativePath.toStdString(), "res/convertedAssets/");
             break;
           case QMessageBox::No:
             break;
@@ -96,7 +95,7 @@ QString InnoFileExplorer::GetSelectionPath()
     else if(l_fileInfo.suffix().toStdString() == "InnoScene")
     {
         QDir l_RootDir(m_rootDir);
-        auto l_relativePath = m_rootDir + l_RootDir.relativeFilePath(l_fileInfo.filePath());
+        auto l_relativePath = l_RootDir.relativeFilePath(l_fileInfo.filePath());
 
         switch( QMessageBox::question(
                     this,
@@ -110,7 +109,7 @@ QString InnoFileExplorer::GetSelectionPath()
                     QMessageBox::Cancel ) )
         {
           case QMessageBox::Yes:
-            g_pCoreSystem->getFileSystem()->loadScene(l_relativePath.toStdString());
+            g_pCoreSystem->getFileSystem()->loadScene("res/" + l_relativePath.toStdString());
             break;
           case QMessageBox::No:
             break;

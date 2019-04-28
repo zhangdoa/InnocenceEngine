@@ -48,6 +48,8 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	std::string loadTextFile(const std::string & fileName);
 	std::vector<char> loadBinaryFile(const std::string & fileName);
 
+	bool isFileExist(const std::string & fileName);
+
 	bool convertModel(const std::string & fileName, const std::string & exportPath);
 
 	void to_json(json& j, const EntityNamePair& p);
@@ -194,7 +196,7 @@ std::string InnoFileSystemNS::loadTextFile(const std::string & fileName)
 {
 	std::ifstream file;
 
-	file.open((fileName).c_str());
+	file.open((m_workingDir + fileName).c_str());
 
 	if (!file.is_open())
 	{
@@ -215,7 +217,7 @@ std::string InnoFileSystemNS::loadTextFile(const std::string & fileName)
 std::vector<char> InnoFileSystemNS::loadBinaryFile(const std::string & fileName)
 {
 	std::ifstream file;
-	file.open((fileName).c_str(), std::ios::ate | std::ios::binary);
+	file.open((m_workingDir + fileName).c_str(), std::ios::ate | std::ios::binary);
 
 	if (!file.is_open())
 	{
@@ -232,6 +234,18 @@ std::vector<char> InnoFileSystemNS::loadBinaryFile(const std::string & fileName)
 	file.close();
 
 	return buffer;
+}
+
+bool InnoFileSystemNS::isFileExist(const std::string & fileName)
+{
+	if (fs::exists(fs::path(m_workingDir + fileName)))
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 bool InnoFileSystemNS::convertModel(const std::string & fileName, const std::string & exportPath)
@@ -516,7 +530,7 @@ void InnoFileSystemNS::from_json(const json & j, EnvironmentCaptureComponent & p
 
 bool InnoFileSystemNS::loadJsonDataFromDisk(const std::string & fileName, json & data)
 {
-	std::ifstream i(fileName);
+	std::ifstream i(m_workingDir + fileName);
 
 	if (!i.is_open())
 	{
@@ -533,7 +547,7 @@ bool InnoFileSystemNS::loadJsonDataFromDisk(const std::string & fileName, json &
 bool InnoFileSystemNS::saveJsonDataToDisk(const std::string & fileName, const json & data)
 {
 	std::ofstream o;
-	o.open(fileName, std::ios::out | std::ios::trunc);
+	o.open(m_workingDir + fileName, std::ios::out | std::ios::trunc);
 	o << std::setw(4) << data << std::endl;
 	o.close();
 
@@ -724,7 +738,11 @@ bool InnoFileSystemNS::saveScene(const std::string& fileName)
 
 INNO_SYSTEM_EXPORT bool InnoFileSystem::setup()
 {
+#if defined INNO_PLATFORM_WIN
+	InnoFileSystemNS::m_workingDir = std::filesystem::current_path().parent_path().generic_string();
+#else
 	InnoFileSystemNS::m_workingDir = std::filesystem::current_path().generic_string();
+#endif
 	InnoFileSystemNS::m_workingDir = InnoFileSystemNS::m_workingDir + "//";
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: current working directory is " + InnoFileSystemNS::m_workingDir);
 	InnoFileSystemNS::m_objectStatus = ObjectStatus::ALIVE;
@@ -768,7 +786,7 @@ INNO_SYSTEM_EXPORT std::string InnoFileSystem::getWorkingDirectory()
 
 std::string InnoFileSystem::loadTextFile(const std::string & fileName)
 {
-	return InnoFileSystemNS::loadTextFile(InnoFileSystemNS::m_workingDir + fileName);
+	return InnoFileSystemNS::loadTextFile(fileName);
 }
 
 INNO_SYSTEM_EXPORT std::vector<char> InnoFileSystem::loadBinaryFile(const std::string & fileName)
@@ -813,7 +831,7 @@ INNO_SYSTEM_EXPORT ModelMap InnoFileSystem::loadModel(const std::string & fileNa
 	auto l_extension = fs::path(fileName).extension().generic_string();
 	if (l_extension == ".InnoModel")
 	{
-		return InnoFileSystemNS::ModelLoader::loadModelFromDisk(InnoFileSystemNS::m_workingDir + fileName);
+		return InnoFileSystemNS::ModelLoader::loadModelFromDisk(fileName);
 	}
 	else
 	{
@@ -831,7 +849,7 @@ INNO_SYSTEM_EXPORT bool InnoFileSystem::addCPPClassFiles(const CPPClassDesc & de
 {
 	// Build header file
 	auto l_headerFileName = desc.filePath + desc.className + ".h";
-	std::ofstream l_headerFile(l_headerFileName, std::ios::out | std::ios::trunc);
+	std::ofstream l_headerFile(InnoFileSystemNS::m_workingDir + l_headerFileName, std::ios::out | std::ios::trunc);
 
 	if (!l_headerFile.is_open())
 	{
@@ -930,9 +948,9 @@ INNO_SYSTEM_EXPORT bool InnoFileSystem::addCPPClassFiles(const CPPClassDesc & de
 bool InnoFileSystemNS::AssimpWrapper::convertModel(const std::string & fileName, const std::string & exportPath)
 {
 	auto l_exportFileName = fs::path(fileName).stem().generic_string();
-	auto l_exportFileFullPath = exportPath + l_exportFileName + ".InnoModel";
+	auto l_exportFileRelativePath = exportPath + l_exportFileName + ".InnoModel";
 
-	if (fs::exists(fs::path(l_exportFileFullPath)))
+	if (isFileExist(l_exportFileRelativePath))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: AssimpWrapper: " + fileName + " has already been converted!");
 		return true;
@@ -942,9 +960,9 @@ bool InnoFileSystemNS::AssimpWrapper::convertModel(const std::string & fileName,
 	Assimp::Importer l_assImporter;
 	const aiScene* l_assScene;
 
-	if (fs::exists(fs::path(fileName)))
+	if (isFileExist(fileName))
 	{
-		l_assScene = l_assImporter.ReadFile(fileName, aiProcess_Triangulate | aiProcess_FlipUVs);
+		l_assScene = l_assImporter.ReadFile(m_workingDir + fileName, aiProcess_Triangulate | aiProcess_FlipUVs);
 	}
 	else
 	{
@@ -958,7 +976,7 @@ bool InnoFileSystemNS::AssimpWrapper::convertModel(const std::string & fileName,
 	}
 
 	auto l_result = processAssimpScene(l_assScene);
-	saveJsonDataToDisk(l_exportFileFullPath, l_result);
+	saveJsonDataToDisk(l_exportFileRelativePath, l_result);
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: AssimpWrapper: " + fileName + " has been converted.");
 
@@ -1123,16 +1141,16 @@ std::pair<EntityID, size_t> InnoFileSystemNS::AssimpWrapper::processMeshData(con
 		l_exportFileName = InnoMath::createEntityID();
 	}
 
-	auto l_exportFileFullPath = m_workingDir + "//res//convertedAssets//" + l_exportFileName + ".InnoRaw";
+	auto l_exportFileRelativePath = "//res//convertedAssets//" + l_exportFileName + ".InnoRaw";
 
-	std::ofstream l_file(l_exportFileFullPath, std::ios::binary);
+	std::ofstream l_file(m_workingDir + l_exportFileRelativePath, std::ios::binary);
 
 	serializeVector(l_file, l_vertices);
 	serializeVector(l_file, l_indices);
 
 	l_file.close();
 
-	return std::pair<EntityID, size_t>(l_exportFileFullPath, l_indiceSize);
+	return std::pair<EntityID, size_t>(l_exportFileRelativePath, l_indiceSize);
 }
 
 /*
@@ -1342,7 +1360,7 @@ ModelPair InnoFileSystemNS::ModelLoader::processMeshJsonData(const json & j)
 	}
 	else
 	{
-		std::ifstream l_meshFile(l_meshFileName, std::ios::binary);
+		std::ifstream l_meshFile(m_workingDir + l_meshFileName, std::ios::binary);
 
 		if (!l_meshFile.is_open())
 		{
@@ -1447,15 +1465,16 @@ TextureDataComponent* InnoFileSystemNS::ModelLoader::loadTextureFromDisk(const s
 	stbi_set_flip_vertically_on_load(true);
 
 	void* l_rawData;
-	auto l_isHDR = stbi_is_hdr(fileName.c_str());
+	auto l_fullPath = m_workingDir + fileName;
+	auto l_isHDR = stbi_is_hdr(l_fullPath.c_str());
 
 	if (l_isHDR)
 	{
-		l_rawData = stbi_loadf(fileName.c_str(), &width, &height, &nrChannels, 0);
+		l_rawData = stbi_loadf(l_fullPath.c_str(), &width, &height, &nrChannels, 0);
 	}
 	else
 	{
-		l_rawData = stbi_load(fileName.c_str(), &width, &height, &nrChannels, 0);
+		l_rawData = stbi_load(l_fullPath.c_str(), &width, &height, &nrChannels, 0);
 	}
 	if (l_rawData)
 	{
@@ -1470,7 +1489,7 @@ TextureDataComponent* InnoFileSystemNS::ModelLoader::loadTextureFromDisk(const s
 		l_TDC->m_textureDataDesc.height = height;
 		l_TDC->m_textureData.emplace_back(l_rawData);
 
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: ModelLoader: STB_Image: " + fileName + " has been loaded.");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: ModelLoader: STB_Image: " + l_fullPath + " has been loaded.");
 
 		m_loadedTexture.emplace(fileName, l_TDC);
 
@@ -1480,7 +1499,7 @@ TextureDataComponent* InnoFileSystemNS::ModelLoader::loadTextureFromDisk(const s
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: ModelLoader: STB_Image: Failed to load texture: " + fileName);
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: ModelLoader: STB_Image: Failed to load texture: " + l_fullPath);
 
 		return nullptr;
 	}

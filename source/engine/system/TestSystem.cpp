@@ -41,22 +41,22 @@ bool InnoTestSystemNS::terminate()
 
 INNO_SYSTEM_EXPORT bool InnoTestSystem::setup()
 {
-	return true;
+	return InnoTestSystemNS::setup();
 }
 
 INNO_SYSTEM_EXPORT bool InnoTestSystem::initialize()
 {
-	return true;
+	return InnoTestSystemNS::initialize();
 }
 
 INNO_SYSTEM_EXPORT bool InnoTestSystem::update()
 {
-	return true;
+	return InnoTestSystemNS::update();
 }
 
 INNO_SYSTEM_EXPORT bool InnoTestSystem::terminate()
 {
-	return true;
+	return InnoTestSystemNS::terminate();
 }
 
 INNO_SYSTEM_EXPORT ObjectStatus InnoTestSystem::getStatus()
