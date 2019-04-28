@@ -32,6 +32,11 @@ public:
 	GLuint m_sphereLightUBO;
 	GLuint m_CSMUBO;
 	GLuint m_skyUBO;
+	GLuint m_dispatchParamsUBO;
+
+	GLuint m_gridFrustumsSSBO;
+	GLuint m_lightIndexListSSBO;
+	GLuint m_lightListIndexCounterSSBO;
 
 private:
 	GLRenderingSystemComponent() {};

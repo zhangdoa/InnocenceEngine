@@ -17,6 +17,7 @@
 #include "GLSSAOBlurPass.h"
 #include "GLTerrainPass.h"
 
+#include "GLLightCullingPass.h"
 #include "GLLightPass.h"
 
 #include "GLSkyPass.h"
@@ -146,7 +147,7 @@ bool GLRenderingSystemNS::setup()
 	f_toggleVisualizeVXGI = [&]() {
 		m_visualizeVXGI = !m_visualizeVXGI;
 	};
-	g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_T, ButtonStatus::PRESSED }, &f_toggleVisualizeVXGI);
+	g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_G, ButtonStatus::PRESSED }, &f_toggleVisualizeVXGI);
 
 	g_pCoreSystem->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
@@ -227,6 +228,7 @@ bool GLRenderingSystemNS::initialize()
 	GLSSAOBlurPass::initialize();
 	GLTerrainPass::initialize();
 
+	GLLightCullingPass::initialize();
 	GLLightPass::initialize();
 
 	GLSkyPass::initialize();
@@ -352,6 +354,8 @@ bool GLRenderingSystemNS::generateGPUBuffers()
 
 	GLRenderingSystemComponent::get().m_skyUBO = generateUBO(sizeof(SkyGPUData), 7);
 
+	GLRenderingSystemComponent::get().m_dispatchParamsUBO = generateUBO(sizeof(DispatchParamsGPUData), 8);
+
 	return true;
 }
 
@@ -418,6 +422,7 @@ bool GLRenderingSystemNS::render()
 
 	GLTerrainPass::update();
 
+	GLLightCullingPass::update();
 	GLLightPass::update();
 
 	auto l_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
@@ -656,6 +661,7 @@ bool GLRenderingSystemNS::resize()
 
 	GLTerrainPass::resize(l_screenResolution.x, l_screenResolution.y);
 
+	GLLightCullingPass::resize(l_screenResolution.x, l_screenResolution.y);
 	GLLightPass::resize(l_screenResolution.x, l_screenResolution.y);
 
 	GLSkyPass::resize(l_screenResolution.x, l_screenResolution.y);
@@ -817,6 +823,7 @@ bool GLRenderingSystem::reloadShader(RenderPassType renderPassType)
 		GLSSAOBlurPass::reloadShader();
 		break;
 	case RenderPassType::Light:
+		GLLightCullingPass::reloadShader();
 		GLLightPass::reloadShader();
 		break;
 	case RenderPassType::Transparent:

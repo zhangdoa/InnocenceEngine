@@ -1,6 +1,7 @@
 #include "GLFinalBlendPass.h"
 #include "GLBillboardPass.h"
 #include "GLDebuggerPass.h"
+#include "GLLightCullingPass.h"
 
 #include "GLRenderingSystemUtilities.h"
 #include "../../component/GLRenderingSystemComponent.h"
@@ -20,6 +21,9 @@ INNO_PRIVATE_SCOPE GLFinalBlendPass
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
 	ShaderFilePaths m_shaderFilePaths = { "GL//finalBlendPass.vert", "", "GL//finalBlendPass.frag" };
+
+	bool m_visualizeLightCulling = false;
+	std::function<void()> f_toggleVisualizeLightCulling;
 }
 
 bool GLFinalBlendPass::initialize()
@@ -29,6 +33,11 @@ bool GLFinalBlendPass::initialize()
 	m_GLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
 
 	initializeShaders();
+
+	f_toggleVisualizeLightCulling = [&]() {
+		m_visualizeLightCulling = !m_visualizeLightCulling;
+	};
+	g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_T, ButtonStatus::PRESSED }, &f_toggleVisualizeLightCulling);
 
 	return true;
 }
@@ -49,18 +58,20 @@ bool GLFinalBlendPass::update(GLRenderPassComponent* prePassGLRPC)
 
 	activateShaderProgram(m_GLSPC);
 
-	// last pass rendering target as the mixing background
-	activateTexture(
-		prePassGLRPC->m_GLTDCs[0],
-		0);
+	if (m_visualizeLightCulling)
+	{
+		activateTexture(GLLightCullingPass::getHeatMap(), 0);
+	}
+	else
+	{	// last pass rendering target as the mixing background
+		activateTexture(prePassGLRPC->m_GLTDCs[0], 0);
+	}
+
 	// billboard pass rendering target
-	activateTexture(
-		GLBillboardPass::getGLRPC()->m_GLTDCs[0],
-		1);
+	activateTexture(GLBillboardPass::getGLRPC()->m_GLTDCs[0], 1);
 	// debugger pass rendering target
-	activateTexture(
-		GLDebuggerPass::getGLRPC()->m_GLTDCs[0],
-		2);
+	activateTexture(GLDebuggerPass::getGLRPC()->m_GLTDCs[0], 2);
+
 	// draw final pass rectangle
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);

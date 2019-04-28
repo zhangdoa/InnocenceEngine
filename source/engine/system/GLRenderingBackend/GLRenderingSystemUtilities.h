@@ -76,6 +76,22 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void updateUniform(const GLint uniformLocation, const mat4& mat);
 	void updateUniform(const GLint uniformLocation, const std::vector<vec4>& uniformValue);
 
+	GLuint generateSSBO(GLuint SSBOSize, GLuint bufferBlockBindingPoint);
+
+	void updateSSBOImpl(const GLint& SSBO, size_t size, const void* SSBOValue);
+
+	template<typename T>
+	void updateSSBO(const GLint& SSBO, const T& SSBOValue)
+	{
+		updateSSBOImpl(SSBO, sizeof(T), &SSBOValue);
+	}
+
+	template<typename T>
+	void updateSSBO(const GLint& SSBO, const std::vector<T>& SSBOValue)
+	{
+		updateSSBOImpl(SSBO, sizeof(T) * SSBOValue.size(), &SSBOValue[0]);
+	}
+
 	void attach2DDepthRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC);
 	void attachCubemapDepthRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int textureIndex, unsigned int mipLevel);
 	void attach2DColorRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex);

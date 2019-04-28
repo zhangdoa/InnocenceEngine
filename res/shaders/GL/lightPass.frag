@@ -33,8 +33,8 @@ struct CSM {
 
 const float eps = 0.00001;
 const float PI = 3.14159265359;
-const int NR_POINT_LIGHTS = 64;
-const int NR_SPHERE_LIGHTS = 64;
+const int NR_POINT_LIGHTS = 1024;
+const int NR_SPHERE_LIGHTS = 128;
 const int NR_CSM_SPLITS = 4;
 const float MAX_REFLECTION_LOD = 4.0;
 

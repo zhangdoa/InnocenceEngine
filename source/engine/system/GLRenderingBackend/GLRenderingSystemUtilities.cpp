@@ -926,6 +926,24 @@ void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, const std::
 	glUniform4fv(uniformLocation, (GLsizei)uniformValue.size(), (float*)&uniformValue[0]);
 }
 
+GLuint GLRenderingSystemNS::generateSSBO(GLuint SSBOSize, GLuint bufferBlockBindingPoint)
+{
+	GLuint l_SSBO;
+	glGenBuffers(1, &l_SSBO);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, l_SSBO);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, SSBOSize, NULL, GL_DYNAMIC_DRAW);
+	glBindBufferRange(GL_SHADER_STORAGE_BUFFER, bufferBlockBindingPoint, l_SSBO, 0, SSBOSize);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+	return l_SSBO;
+}
+
+void GLRenderingSystemNS::updateSSBOImpl(const GLint & SSBO, size_t size, const void * SSBOValue)
+{
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBO);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, size, SSBOValue);
+}
+
 void GLRenderingSystemNS::attach2DDepthRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
