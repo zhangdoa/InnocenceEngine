@@ -14,7 +14,6 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 
 	void OutputShaderErrorMessage(ID3DBlob * errorMessage, HWND hwnd, const std::string & shaderFilename);
 	ID3DBlob* loadShaderBuffer(ShaderType shaderType, const std::wstring & shaderFilePath);
-	bool createCBuffer(DX12CBuffer& arg);
 	bool initializeVertexShader(DX12ShaderProgramComponent* rhs, const std::wstring& VSShaderPath);
 	bool initializePixelShader(DX12ShaderProgramComponent* rhs, const std::wstring& PSShaderPath);
 
@@ -107,8 +106,39 @@ ID3DBlob* DX12RenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const s
 	return l_shaderBuffer;
 }
 
-bool DX12RenderingSystemNS::createCBuffer(DX12CBuffer& arg)
+bool DX12RenderingSystemNS::createConstantBuffer(DX12ConstantBuffer& arg)
 {
+	arg.m_CBVHeapDesc.NumDescriptors = 1;
+	arg.m_CBVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	arg.m_CBVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+
+	auto l_result = DX12RenderingSystemComponent::get().m_device->CreateDescriptorHeap(&arg.m_CBVHeapDesc, IID_PPV_ARGS(&arg.m_CBVHeap));
+	if (FAILED(l_result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create DescriptorHeap for CBV!");
+		return false;
+	}
+
+	arg.m_CBVHandle = arg.m_CBVHeap->GetCPUDescriptorHandleForHeapStart();
+
+	l_result = DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(arg.m_CBVDesc.SizeInBytes),
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&arg.m_ConstantBufferPtr));
+
+	if (FAILED(l_result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't create ConstantBuffer!");
+		return false;
+	}
+
+	arg.m_CBVDesc.BufferLocation = arg.m_ConstantBufferPtr->GetGPUVirtualAddress();
+
+	DX12RenderingSystemComponent::get().m_device->CreateConstantBufferView(&arg.m_CBVDesc, arg.m_CBVHandle);
+
 	return true;
 }
 
@@ -248,7 +278,7 @@ bool DX12RenderingSystemNS::initializeDX12RenderPassComponent(DX12RenderPassComp
 
 	result &= createRenderTargets(DXRPC);
 
-	result = createDescriptorHeap(DXRPC);
+	result = createRTVDescriptorHeap(DXRPC);
 	result = createRootSignature(DXRPC);
 	result = createPSO(DXRPC, DXSPC);
 	result &= createCommandLists(DXRPC);
@@ -316,18 +346,20 @@ bool DX12RenderingSystemNS::createRenderTargets(DX12RenderPassComponent* DXRPC)
 	return true;
 }
 
-bool DX12RenderingSystemNS::createDescriptorHeap(DX12RenderPassComponent* DXRPC)
+bool DX12RenderingSystemNS::createRTVDescriptorHeap(DX12RenderPassComponent* DXRPC)
 {
-	auto l_result = DX12RenderingSystemComponent::get().m_device->CreateDescriptorHeap(&DXRPC->m_RTVHeapDesc, IID_PPV_ARGS(&DXRPC->m_RTVHeap));
-	if (FAILED(l_result))
+	if (DXRPC->m_RTVHeapDesc.NumDescriptors)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create DescriptorHeap!");
-		return false;
+		auto l_result = DX12RenderingSystemComponent::get().m_device->CreateDescriptorHeap(&DXRPC->m_RTVHeapDesc, IID_PPV_ARGS(&DXRPC->m_RTVHeap));
+		if (FAILED(l_result))
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create DescriptorHeap for RTV!");
+			return false;
+		}
+		DXRPC->m_RTVDescHandle = DXRPC->m_RTVHeap->GetCPUDescriptorHandleForHeapStart();
 	}
 
-	DXRPC->m_RTVDescHandle = DXRPC->m_RTVHeap->GetCPUDescriptorHandleForHeapStart();
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: DescriptorHeap has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: RTV DescriptorHeap has been created.");
 
 	return true;
 }

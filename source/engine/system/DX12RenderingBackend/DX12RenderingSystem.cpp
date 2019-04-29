@@ -1,11 +1,12 @@
 #include "DX12RenderingSystem.h"
 
-#include "../../component/DX12RenderingSystemComponent.h"
-#include "../../component/WinWindowSystemComponent.h"
-
 #include "DX12RenderingSystemUtilities.h"
 
 #include "DX12OpaquePass.h"
+
+#include "../../component/DX12RenderingSystemComponent.h"
+#include "../../component/WinWindowSystemComponent.h"
+#include "../../component/RenderingFrontendSystemComponent.h"
 
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -303,7 +304,7 @@ bool DX12RenderingSystemNS::createSwapChainDXRPC()
 
 	l_result &= reserveRenderTargets(l_DXRPC);
 
-	l_result &= createDescriptorHeap(l_DXRPC);
+	l_result &= createRTVDescriptorHeap(l_DXRPC);
 
 	auto l_RTVDescSize = g_DXRenderingSystemComponent->m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
@@ -471,6 +472,8 @@ bool DX12RenderingSystemNS::initialize()
 	l_result = l_result && createCommandAllocator();
 
 	loadDefaultAssets();
+
+	generateGPUBuffers();
 
 	l_result = l_result && createSwapChain();
 	l_result = l_result && createSwapChainDXRPC();
@@ -662,6 +665,20 @@ void DX12RenderingSystemNS::loadDefaultAssets()
 	initializeDX12TextureDataComponent(m_iconTemplate_DirectionalLight);
 	initializeDX12TextureDataComponent(m_iconTemplate_PointLight);
 	initializeDX12TextureDataComponent(m_iconTemplate_SphereLight);
+}
+
+bool DX12RenderingSystemNS::generateGPUBuffers()
+{
+	g_DXRenderingSystemComponent->m_cameraConstantBuffer.m_CBVDesc.SizeInBytes = sizeof(CameraGPUData);
+	createConstantBuffer(g_DXRenderingSystemComponent->m_cameraConstantBuffer);
+
+	g_DXRenderingSystemComponent->m_meshConstantBuffer.m_CBVDesc.SizeInBytes = sizeof(MeshGPUData);
+	createConstantBuffer(g_DXRenderingSystemComponent->m_meshConstantBuffer);
+
+	g_DXRenderingSystemComponent->m_materialConstantBuffer.m_CBVDesc.SizeInBytes = sizeof(MaterialGPUData);
+	createConstantBuffer(g_DXRenderingSystemComponent->m_materialConstantBuffer);
+
+	return true;
 }
 
 DX12MeshDataComponent* DX12RenderingSystemNS::addDX12MeshDataComponent()
