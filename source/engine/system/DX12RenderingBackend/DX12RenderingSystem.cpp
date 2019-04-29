@@ -5,6 +5,8 @@
 
 #include "DX12RenderingSystemUtilities.h"
 
+#include "DX12OpaquePass.h"
+
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3dcompiler.lib")
@@ -316,8 +318,8 @@ bool DX12RenderingSystemNS::createSwapChainDXRPC()
 			return false;
 		}
 		g_DXRenderingSystemComponent->m_device->CreateRenderTargetView(l_DXRPC->m_RTVs[i], NULL, l_DXRPC->m_RTVDescHandle);
-
 		l_DXRPC->m_RTVDescHandle.ptr += l_RTVDescSize;
+		l_DXRPC->m_DXTDCs[i]->m_DX12TextureDataDesc = l_DXRPC->m_RTVs[i]->GetDesc();
 	}
 
 	// Create an empty root signature.
@@ -475,6 +477,8 @@ bool DX12RenderingSystemNS::initialize()
 	l_result = l_result && createSwapChainCommandLists();
 
 	l_result = l_result && createSyncPrimitives();
+
+	DX12OpaquePass::initialize();
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem has been initialized.");
 

@@ -10,7 +10,8 @@ public:
 	~DX12TextureDataComponent() {};
 
 	ID3D12Resource* m_texture = 0;
+	D3D12_RESOURCE_DESC m_DX12TextureDataDesc = {};
 	ID3D12DescriptorHeap* m_SRVHeap = 0;
 	ID3D12Resource* m_SRV = 0;
-	D3D12_SHADER_RESOURCE_VIEW_DESC m_SRVDesc = D3D12_SHADER_RESOURCE_VIEW_DESC();
+	D3D12_SHADER_RESOURCE_VIEW_DESC m_SRVDesc = {};
 };

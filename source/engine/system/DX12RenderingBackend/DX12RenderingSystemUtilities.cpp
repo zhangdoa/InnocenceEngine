@@ -20,7 +20,10 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 
 	bool summitGPUData(DX12MeshDataComponent* rhs);
 
+	D3D12_RESOURCE_DESC getDX12TextureDataDesc(TextureDataDesc textureDataDesc);
 	DXGI_FORMAT getTextureFormat(TextureDataDesc textureDataDesc);
+	unsigned int getTextureMipLevels(TextureDataDesc textureDataDesc);
+	D3D12_RESOURCE_FLAGS getTextureBindFlags(TextureDataDesc textureDataDesc);
 
 	bool summitGPUData(DX12TextureDataComponent* rhs);
 
@@ -416,6 +419,11 @@ bool DX12RenderingSystemNS::createPSO(DX12RenderPassComponent* DXRPC, DX12Shader
 	DXRPC->m_PSODesc.InputLayout = { l_polygonLayout, l_numElements };
 	DXRPC->m_PSODesc.VS = l_vsBytecode;
 	DXRPC->m_PSODesc.PS = l_psBytecode;
+	DXRPC->m_PSODesc.NumRenderTargets = DXRPC->m_renderPassDesc.RTNumber;
+	for (size_t i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
+	{
+		DXRPC->m_PSODesc.RTVFormats[i] = DXRPC->m_DXTDCs[i]->m_DX12TextureDataDesc.Format;
+	}
 
 	auto l_result = DX12RenderingSystemComponent::get().m_device->CreateGraphicsPipelineState(&DXRPC->m_PSODesc, IID_PPV_ARGS(&DXRPC->m_PSO));
 
@@ -737,30 +745,56 @@ DXGI_FORMAT DX12RenderingSystemNS::getTextureFormat(TextureDataDesc textureDataD
 	return l_internalFormat;
 }
 
-bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
+unsigned int DX12RenderingSystemNS::getTextureMipLevels(TextureDataDesc textureDataDesc)
 {
 	unsigned int textureMipLevels = 1;
-	unsigned int miscFlags = 0;
-	if (rhs->m_textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
+	if (textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
 	{
 		textureMipLevels = 0;
 	}
 
-	D3D12_RESOURCE_DESC D3DTextureDesc = {};
-	D3DTextureDesc.MipLevels = 1;
-	D3DTextureDesc.Format = getTextureFormat(rhs->m_textureDataDesc);
-	D3DTextureDesc.Width = rhs->m_textureDataDesc.height;
-	D3DTextureDesc.Height = rhs->m_textureDataDesc.width;
-	D3DTextureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-	D3DTextureDesc.DepthOrArraySize = 1;
-	D3DTextureDesc.SampleDesc.Count = 1;
-	D3DTextureDesc.SampleDesc.Quality = 0;
-	D3DTextureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	return textureMipLevels;
+}
 
-	if (rhs->m_textureDataDesc.usageType != TextureUsageType::COLOR_ATTACHMENT)
+D3D12_RESOURCE_FLAGS DX12RenderingSystemNS::getTextureBindFlags(TextureDataDesc textureDataDesc)
+{
+	D3D12_RESOURCE_FLAGS textureBindFlags = {};
+	if (textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT)
 	{
-		D3DTextureDesc.SampleDesc.Quality = 0;
+		textureBindFlags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 	}
+	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
+	{
+		textureBindFlags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+	}
+	else if (textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
+	{
+		textureBindFlags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+	}
+
+	return textureBindFlags;
+}
+
+D3D12_RESOURCE_DESC DX12RenderingSystemNS::getDX12TextureDataDesc(TextureDataDesc textureDataDesc)
+{
+	D3D12_RESOURCE_DESC DX12TextureDataDesc = {};
+
+	DX12TextureDataDesc.Height = textureDataDesc.height;
+	DX12TextureDataDesc.Width = textureDataDesc.width;
+	DX12TextureDataDesc.MipLevels = getTextureMipLevels(textureDataDesc);
+	DX12TextureDataDesc.DepthOrArraySize = 1;
+	DX12TextureDataDesc.Format = getTextureFormat(textureDataDesc);
+	DX12TextureDataDesc.SampleDesc.Count = 1;
+	DX12TextureDataDesc.SampleDesc.Quality = 0;
+	DX12TextureDataDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	DX12TextureDataDesc.Flags = getTextureBindFlags(textureDataDesc);
+
+	return DX12TextureDataDesc;
+}
+
+bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
+{
+	rhs->m_DX12TextureDataDesc = getDX12TextureDataDesc(rhs->m_textureDataDesc);
 
 	unsigned int SRVMipLevels = -1;
 	if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT)
@@ -773,7 +807,7 @@ bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
 	hResult = DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
-		&D3DTextureDesc,
+		&rhs->m_DX12TextureDataDesc,
 		D3D12_RESOURCE_STATE_COPY_DEST,
 		nullptr,
 		IID_PPV_ARGS(&rhs->m_texture));
@@ -784,39 +818,42 @@ bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
 		return false;
 	}
 
-	const UINT64 uploadBufferSize = GetRequiredIntermediateSize(rhs->m_texture, 0, 1);
-
-	ID3D12Resource* textureUploadHeap;
-
-	// Create the GPU upload buffer.
-	hResult = DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize),
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&textureUploadHeap));
-
-	if (FAILED(hResult))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't create upload buffer!");
-		return false;
-	}
-
-	// Copy data to the intermediate upload heap and then schedule a copy
-	// from the upload heap to the Texture2D.
-	D3D12_SUBRESOURCE_DATA textureData = {};
-	textureData.pData = rhs->m_textureData[0];
-	textureData.RowPitch = rhs->m_textureDataDesc.width * ((unsigned int)rhs->m_textureDataDesc.pixelDataFormat + 1);
-	textureData.SlicePitch = textureData.RowPitch * rhs->m_textureDataDesc.height;
-
 	auto l_commandList = beginSingleTimeCommands();
 
-	UpdateSubresources(l_commandList, rhs->m_texture, textureUploadHeap, 0, 0, 1, &textureData);
+	if (rhs->m_textureDataDesc.usageType != TextureUsageType::COLOR_ATTACHMENT)
+	{
+		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(rhs->m_texture, 0, 1);
 
-	l_commandList->ResourceBarrier(
-		1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(rhs->m_texture, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+		ID3D12Resource* textureUploadHeap;
+
+		// Create the GPU upload buffer.
+		hResult = DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&textureUploadHeap));
+
+		if (FAILED(hResult))
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't create upload buffer!");
+			return false;
+		}
+
+		// Copy data to the intermediate upload heap and then schedule a copy
+		// from the upload heap to the Texture2D.
+		D3D12_SUBRESOURCE_DATA textureData = {};
+		textureData.pData = rhs->m_textureData[0];
+		textureData.RowPitch = rhs->m_textureDataDesc.width * ((unsigned int)rhs->m_textureDataDesc.pixelDataFormat + 1);
+		textureData.SlicePitch = textureData.RowPitch * rhs->m_textureDataDesc.height;
+
+		UpdateSubresources(l_commandList, rhs->m_texture, textureUploadHeap, 0, 0, 1, &textureData);
+
+		l_commandList->ResourceBarrier(
+			1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(rhs->m_texture, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+	}
 
 	// Describe and create a shader resource view (SRV) heap for the texture.
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
@@ -834,7 +871,7 @@ bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
 	// Describe and create a SRV for the texture.
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Format = D3DTextureDesc.Format;
+	srvDesc.Format = rhs->m_DX12TextureDataDesc.Format;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MostDetailedMip = 0;
 	srvDesc.Texture2D.MipLevels = SRVMipLevels;
