@@ -11,4 +11,5 @@ struct DX12ConstantBuffer
 	D3D12_DESCRIPTOR_HEAP_DESC m_CBVHeapDesc = {};
 	D3D12_CONSTANT_BUFFER_VIEW_DESC m_CBVDesc = {};
 	D3D12_CPU_DESCRIPTOR_HANDLE m_CBVHandle;
+	void* m_mappedPtr = 0;
 };

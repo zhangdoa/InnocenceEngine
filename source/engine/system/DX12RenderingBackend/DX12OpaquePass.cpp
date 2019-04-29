@@ -37,6 +37,9 @@ bool DX12OpaquePass::initialize()
 	m_DXRPC->m_RTVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	m_DXRPC->m_RTVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
+	m_DXRPC->m_RTVDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+	m_DXRPC->m_RTVDesc.Texture2D.MipSlice = 0;
+
 	CD3DX12_DESCRIPTOR_RANGE1 l_descRange[3];
 	l_descRange[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 3, 0);
 	l_descRange[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5, 0);
@@ -100,6 +103,45 @@ bool DX12OpaquePass::initializeShaders()
 
 bool DX12OpaquePass::update()
 {
+	recordCommandBegin(m_DXRPC, 0);
+
+	recordActivateRenderPass(m_DXRPC, 0);
+
+	while (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.size() > 0)
+	{
+		GeometryPassGPUData l_geometryPassGPUData = {};
+
+		if (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.tryPop(l_geometryPassGPUData))
+		{
+			recordDrawCall(m_DXRPC, 0, reinterpret_cast<DX12MeshDataComponent*>(l_geometryPassGPUData.MDC));
+		}
+	}
+
+	recordCommandEnd(m_DXRPC, 0);
+
+	return true;
+}
+
+bool DX12OpaquePass::render()
+{
+	// Execute the command list.
+	ID3D12CommandList* ppCommandLists[] = { m_DXRPC->m_commandLists[m_DXRPC->m_frameIndex] };
+	DX12RenderingSystemComponent::get().m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+	// Schedule a Signal command in the queue.
+	const UINT64 currentFenceValue = m_DXRPC->m_fenceValues[m_DXRPC->m_frameIndex];
+	DX12RenderingSystemComponent::get().m_commandQueue->Signal(m_DXRPC->m_fence, currentFenceValue);
+
+	// If the next frame is not ready to be rendered yet, wait until it is ready.
+	if (m_DXRPC->m_fence->GetCompletedValue() < m_DXRPC->m_fenceValues[m_DXRPC->m_frameIndex])
+	{
+		m_DXRPC->m_fence->SetEventOnCompletion(m_DXRPC->m_fenceValues[m_DXRPC->m_frameIndex], m_DXRPC->m_fenceEvent);
+		WaitForSingleObjectEx(m_DXRPC->m_fenceEvent, INFINITE, FALSE);
+	}
+
+	// Set the fence value for the next frame.
+	m_DXRPC->m_fenceValues[m_DXRPC->m_frameIndex] = currentFenceValue + 1;
+
 	return true;
 }
 

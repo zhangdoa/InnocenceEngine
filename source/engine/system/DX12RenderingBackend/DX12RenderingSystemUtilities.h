@@ -40,18 +40,22 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 	bool reserveRenderTargets(DX12RenderPassComponent* DXRPC);
 	bool createRenderTargets(DX12RenderPassComponent* DXRPC);
 	bool createRTVDescriptorHeap(DX12RenderPassComponent* DXRPC);
+	bool createRTV(DX12RenderPassComponent* DXRPC);
 	bool createRootSignature(DX12RenderPassComponent* DXRPC);
 	bool createPSO(DX12RenderPassComponent* DXRPC, DX12ShaderProgramComponent* DXSPC);
 	bool createCommandLists(DX12RenderPassComponent* DXRPC);
+	bool createSyncPrimitives(DX12RenderPassComponent* DXRPC);
 
 	bool initializeDX12MeshDataComponent(DX12MeshDataComponent* rhs);
 	bool initializeDX12TextureDataComponent(DX12TextureDataComponent* rhs);
 
-	bool createConstantBuffer(DX12ConstantBuffer& arg);
+	bool createConstantBuffer(DX12ConstantBuffer& arg, const std::wstring& name);
+	void updateConstantBuffer(const DX12ConstantBuffer& ConstantBuffer, void* ConstantBufferValue);
 
-	bool recordCommand(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, const std::function<void()>& commands);
-
+	bool recordCommandBegin(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex);
+	bool recordActivateRenderPass(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex);
 	bool recordDrawCall(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, DX12MeshDataComponent * DXMDC);
+	bool recordCommandEnd(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex);
 
 	DX12ShaderProgramComponent* addDX12ShaderProgramComponent(EntityID rhs);
 

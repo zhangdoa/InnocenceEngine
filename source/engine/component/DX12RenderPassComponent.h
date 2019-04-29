@@ -21,8 +21,7 @@ public:
 	D3D12_DESCRIPTOR_HEAP_DESC m_RTVHeapDesc = {};
 	D3D12_CPU_DESCRIPTOR_HANDLE m_RTVDescHandle;
 
-	std::vector<D3D12_RENDER_TARGET_VIEW_DESC*> m_RTVDescs = {};
-	std::vector<ID3D12Resource*> m_RTVs;
+	D3D12_RENDER_TARGET_VIEW_DESC m_RTVDesc = {};
 
 	D3D12_VERSIONED_ROOT_SIGNATURE_DESC m_rootSignatureDesc = {};
 	ID3D12RootSignature* m_rootSignature;
