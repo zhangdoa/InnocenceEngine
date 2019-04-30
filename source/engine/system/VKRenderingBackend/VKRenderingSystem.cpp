@@ -602,9 +602,9 @@ bool VKRenderingSystemNS::generateGPUBuffers()
 {
 	generateUBO(VKRenderingSystemComponent::get().m_cameraUBO, sizeof(CameraGPUData), VKRenderingSystemComponent::get().m_cameraUBOMemory);
 
-	generateUBO(VKRenderingSystemComponent::get().m_meshUBO, sizeof(MeshGPUData) * VKRenderingSystemComponent::get().m_maxMeshes, VKRenderingSystemComponent::get().m_meshUBOMemory);
+	generateUBO(VKRenderingSystemComponent::get().m_meshUBO, sizeof(MeshGPUData) * RenderingFrontendSystemComponent::get().m_maxMeshes, VKRenderingSystemComponent::get().m_meshUBOMemory);
 
-	generateUBO(VKRenderingSystemComponent::get().m_materialUBO, sizeof(MaterialGPUData) * VKRenderingSystemComponent::get().m_maxMaterials, VKRenderingSystemComponent::get().m_materialUBOMemory);
+	generateUBO(VKRenderingSystemComponent::get().m_materialUBO, sizeof(MaterialGPUData) * RenderingFrontendSystemComponent::get().m_maxMaterials, VKRenderingSystemComponent::get().m_materialUBOMemory);
 
 	generateUBO(VKRenderingSystemComponent::get().m_sunUBO, sizeof(SunGPUData), VKRenderingSystemComponent::get().m_sunUBOMemory);
 
@@ -646,9 +646,9 @@ bool VKRenderingSystemNS::setup()
 
 bool VKRenderingSystemNS::initialize()
 {
-	m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKMeshDataComponent), VKRenderingSystemComponent::get().m_maxMeshes);
-	m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), VKRenderingSystemComponent::get().m_maxMaterials);
-	m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKTextureDataComponent), VKRenderingSystemComponent::get().m_maxTextures);
+	m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKMeshDataComponent), RenderingFrontendSystemComponent::get().m_maxMeshes);
+	m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), RenderingFrontendSystemComponent::get().m_maxMaterials);
+	m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKTextureDataComponent), RenderingFrontendSystemComponent::get().m_maxTextures);
 
 	bool result = true;
 

@@ -433,8 +433,6 @@ bool DX11RenderingSystemNS::createRasterizer()
 
 bool DX11RenderingSystemNS::setup()
 {
-	initializeComponentPool();
-
 	g_DXRenderingSystemComponent = &DX11RenderingSystemComponent::get();
 
 	bool result = true;
@@ -468,9 +466,9 @@ bool DX11RenderingSystemNS::setup()
 
 bool DX11RenderingSystemNS::initialize()
 {
-	m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX11MeshDataComponent), 16384);
-	m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), 32768);
-	m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX11TextureDataComponent), 32768);
+	m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX11MeshDataComponent), RenderingFrontendSystemComponent::get().m_maxMeshes);
+	m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), RenderingFrontendSystemComponent::get().m_maxMaterials);
+	m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX11TextureDataComponent), RenderingFrontendSystemComponent::get().m_maxTextures);
 
 	loadDefaultAssets();
 

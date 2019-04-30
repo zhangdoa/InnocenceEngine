@@ -81,9 +81,6 @@ public:
 
 	VkSampler m_deferredRTSampler;
 
-	const unsigned int m_maxMeshes = 16384;
-	const unsigned int m_maxMaterials = 32768;
-	const unsigned int m_maxTextures = 32768;
 	RenderPassDesc m_deferredRenderPassDesc = RenderPassDesc();
 private:
 	VKRenderingSystemComponent() {};
