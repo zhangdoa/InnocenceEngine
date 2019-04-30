@@ -49,6 +49,7 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 	bool createPhysicalDevices();
 	bool createCommandAllocator();
 
+	bool createCSUHeap();
 	bool createSwapChain();
 	bool createSwapChainDXRPC();
 	bool createSwapChainCommandLists();
@@ -216,6 +217,31 @@ bool DX12RenderingSystemNS::createCommandAllocator()
 	return true;
 }
 
+bool DX12RenderingSystemNS::createCSUHeap()
+{
+	g_DXRenderingSystemComponent->m_CSUHeapDesc.NumDescriptors = 65536;
+	g_DXRenderingSystemComponent->m_CSUHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	g_DXRenderingSystemComponent->m_CSUHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+
+	auto l_result = DX12RenderingSystemComponent::get().m_device->CreateDescriptorHeap(&g_DXRenderingSystemComponent->m_CSUHeapDesc, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_CSUHeap));
+	if (FAILED(l_result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create DescriptorHeap for CBV/SRV/UAV!");
+		m_objectStatus = ObjectStatus::STANDBY;
+		return false;
+	}
+
+	g_DXRenderingSystemComponent->m_initialCSUCPUHandle = g_DXRenderingSystemComponent->m_CSUHeap->GetCPUDescriptorHandleForHeapStart();
+	g_DXRenderingSystemComponent->m_initialCSUGPUHandle = g_DXRenderingSystemComponent->m_CSUHeap->GetGPUDescriptorHandleForHeapStart();
+
+	g_DXRenderingSystemComponent->m_currentCSUCPUHandle = g_DXRenderingSystemComponent->m_initialCSUCPUHandle;
+	g_DXRenderingSystemComponent->m_currentCSUGPUHandle = g_DXRenderingSystemComponent->m_initialCSUGPUHandle;
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: DescriptorHeap for CBV/SRV/UAV has been created.");
+
+	return true;
+}
+
 bool DX12RenderingSystemNS::createSwapChain()
 {
 	HRESULT l_result;
@@ -363,8 +389,6 @@ bool DX12RenderingSystemNS::createSwapChainDXRPC()
 	l_DXRPC->m_PSODesc.DepthStencilState.StencilEnable = false;
 	l_DXRPC->m_PSODesc.SampleMask = UINT_MAX;
 	l_DXRPC->m_PSODesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	l_DXRPC->m_PSODesc.NumRenderTargets = 1;
-	l_DXRPC->m_PSODesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	l_DXRPC->m_PSODesc.SampleDesc.Count = 1;
 
 	l_result = createRootSignature(l_DXRPC);
@@ -443,13 +467,15 @@ bool DX12RenderingSystemNS::setup()
 
 bool DX12RenderingSystemNS::initialize()
 {
-	m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX12MeshDataComponent), 16384);
-	m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), 32768);
-	m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX12TextureDataComponent), 32768);
+	m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX12MeshDataComponent), RenderingFrontendSystemComponent::get().m_maxMeshes);
+	m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), RenderingFrontendSystemComponent::get().m_maxMaterials);
+	m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX12TextureDataComponent), RenderingFrontendSystemComponent::get().m_maxTextures);
 
 	bool l_result = true;
 
 	l_result = l_result && createCommandAllocator();
+
+	l_result = l_result && createCSUHeap();
 
 	loadDefaultAssets();
 
@@ -471,6 +497,27 @@ bool DX12RenderingSystemNS::initialize()
 bool DX12RenderingSystemNS::update()
 {
 	updateConstantBuffer(DX12RenderingSystemComponent::get().m_cameraConstantBuffer, &RenderingFrontendSystemComponent::get().m_cameraGPUData);
+	// @TODO: prepare in rendering frontend
+	auto l_queueCopy = RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.getRawData();
+
+	if (l_queueCopy.size() > 0)
+	{
+		std::vector<MeshGPUData> l_meshGPUData;
+		l_meshGPUData.reserve(l_queueCopy.size());
+
+		std::vector<MaterialGPUData> l_materialGPUData;
+		l_materialGPUData.reserve(l_queueCopy.size());
+
+		while (l_queueCopy.size() > 0)
+		{
+			auto l_geometryPassGPUData = l_queueCopy.front();
+			l_meshGPUData.emplace_back(l_geometryPassGPUData.meshGPUData);
+			l_materialGPUData.emplace_back(l_geometryPassGPUData.materialGPUData);
+			l_queueCopy.pop();
+		}
+		updateConstantBuffer(DX12RenderingSystemComponent::get().m_meshConstantBuffer, &l_meshGPUData[0]);
+		updateConstantBuffer(DX12RenderingSystemComponent::get().m_materialConstantBuffer, &l_materialGPUData[0]);
+	}
 
 	DX12OpaquePass::update();
 

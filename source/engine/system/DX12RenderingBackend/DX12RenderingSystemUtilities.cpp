@@ -53,7 +53,7 @@ ID3DBlob* DX12RenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const s
 	l_shaderName = l_shaderName.substr(l_shaderName.find(".") + 1, l_shaderName.find("//") - l_shaderName.find(".") - 1);
 	std::reverse(l_shaderName.begin(), l_shaderName.end());
 
-	HRESULT result;
+	HRESULT l_result;
 	ID3DBlob* l_errorMessage;
 	ID3DBlob* l_shaderBuffer;
 
@@ -84,9 +84,9 @@ ID3DBlob* DX12RenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const s
 	auto l_workingDir = g_pCoreSystem->getFileSystem()->getWorkingDirectory();
 	auto l_workingDirW = std::wstring(l_workingDir.begin(), l_workingDir.end());
 
-	result = D3DCompileFromFile((l_workingDirW + m_shaderRelativePath + shaderFilePath).c_str(), NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", l_shaderTypeName.c_str(), compileFlags, 0,
+	l_result = D3DCompileFromFile((l_workingDirW + m_shaderRelativePath + shaderFilePath).c_str(), NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", l_shaderTypeName.c_str(), compileFlags, 0,
 		&l_shaderBuffer, &l_errorMessage);
-	if (FAILED(result))
+	if (FAILED(l_result))
 	{
 		// If the shader failed to compile it should have writen something to the error message.
 		if (l_errorMessage)
@@ -108,20 +108,8 @@ ID3DBlob* DX12RenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const s
 
 bool DX12RenderingSystemNS::createConstantBuffer(DX12ConstantBuffer& arg, const std::wstring& name)
 {
-	arg.m_CBVHeapDesc.NumDescriptors = 1;
-	arg.m_CBVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	arg.m_CBVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-
-	auto l_result = DX12RenderingSystemComponent::get().m_device->CreateDescriptorHeap(&arg.m_CBVHeapDesc, IID_PPV_ARGS(&arg.m_CBVHeap));
-	if (FAILED(l_result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create DescriptorHeap for CBV!");
-		return false;
-	}
-
-	arg.m_CBVHandle = arg.m_CBVHeap->GetCPUDescriptorHandleForHeapStart();
-
-	l_result = DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(
+	// Create ConstantBuffer
+	auto l_result = DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(arg.m_CBVDesc.SizeInBytes),
@@ -135,20 +123,30 @@ bool DX12RenderingSystemNS::createConstantBuffer(DX12ConstantBuffer& arg, const 
 		return false;
 	}
 
+	// Map ConstantBuffer
 	CD3DX12_RANGE constantBufferReadRange(0, 0);
 	arg.m_ConstantBufferPtr->Map(0, &constantBufferReadRange, &arg.m_mappedPtr);
 	arg.m_ConstantBufferPtr->SetName(name.c_str());
 
+	// Create CBV
 	arg.m_CBVDesc.BufferLocation = arg.m_ConstantBufferPtr->GetGPUVirtualAddress();
 
-	DX12RenderingSystemComponent::get().m_device->CreateConstantBufferView(&arg.m_CBVDesc, arg.m_CBVHandle);
+	arg.m_CBVCPUHandle = DX12RenderingSystemComponent::get().m_currentCSUCPUHandle;
+	arg.m_CBVGPUHandle = DX12RenderingSystemComponent::get().m_currentCSUGPUHandle;
+
+	DX12RenderingSystemComponent::get().m_device->CreateConstantBufferView(&arg.m_CBVDesc, arg.m_CBVCPUHandle);
+
+	auto l_CSUDescSize = DX12RenderingSystemComponent::get().m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	DX12RenderingSystemComponent::get().m_currentCSUCPUHandle.ptr += l_CSUDescSize;
+	DX12RenderingSystemComponent::get().m_currentCSUGPUHandle.ptr += l_CSUDescSize;
 
 	return true;
 }
 
-void DX12RenderingSystemNS::updateConstantBuffer(const DX12ConstantBuffer& ConstantBuffer, void* ConstantBufferValue)
+void DX12RenderingSystemNS::updateConstantBufferImpl(const DX12ConstantBuffer& ConstantBuffer, size_t size, const void* ConstantBufferValue)
 {
-	std::memcpy(ConstantBuffer.m_mappedPtr, &ConstantBufferValue, ConstantBuffer.m_CBVDesc.SizeInBytes);
+	std::memcpy(ConstantBuffer.m_mappedPtr, &ConstantBufferValue, size);
 }
 
 bool DX12RenderingSystemNS::initializeVertexShader(DX12ShaderProgramComponent* rhs, const std::wstring& VSShaderPath)
@@ -199,8 +197,8 @@ ID3D12GraphicsCommandList* DX12RenderingSystemNS::beginSingleTimeCommands()
 	ID3D12GraphicsCommandList* l_commandList;
 
 	// Create a basic command list.
-	auto hResult = DX12RenderingSystemComponent::get().m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, DX12RenderingSystemComponent::get().m_commandAllocator, NULL, IID_PPV_ARGS(&l_commandList));
-	if (FAILED(hResult))
+	auto l_result = DX12RenderingSystemComponent::get().m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, DX12RenderingSystemComponent::get().m_commandAllocator, NULL, IID_PPV_ARGS(&l_commandList));
+	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create command list!");
 		return nullptr;
@@ -211,15 +209,15 @@ ID3D12GraphicsCommandList* DX12RenderingSystemNS::beginSingleTimeCommands()
 
 void DX12RenderingSystemNS::endSingleTimeCommands(ID3D12GraphicsCommandList* commandList)
 {
-	auto hResult = commandList->Close();
-	if (FAILED(hResult))
+	auto l_result = commandList->Close();
+	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't close the command list!");
 	}
 
 	ID3D12Fence1* l_uploadFinishFence;
-	hResult = DX12RenderingSystemComponent::get().m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&l_uploadFinishFence));
-	if (FAILED(hResult))
+	l_result = DX12RenderingSystemComponent::get().m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&l_uploadFinishFence));
+	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create fence!");
 	}
@@ -281,18 +279,18 @@ DX12RenderPassComponent* DX12RenderingSystemNS::addDX12RenderPassComponent(Entit
 
 bool DX12RenderingSystemNS::initializeDX12RenderPassComponent(DX12RenderPassComponent* DXRPC, DX12ShaderProgramComponent* DXSPC)
 {
-	bool result = true;
+	bool l_result = true;
 
-	result &= reserveRenderTargets(DXRPC);
+	l_result &= reserveRenderTargets(DXRPC);
 
-	result &= createRenderTargets(DXRPC);
+	l_result &= createRenderTargets(DXRPC);
 
-	result &= createRTVDescriptorHeap(DXRPC);
-	result &= createRTV(DXRPC);
-	result &= createRootSignature(DXRPC);
-	result &= createPSO(DXRPC, DXSPC);
-	result &= createCommandLists(DXRPC);
-	result &= createSyncPrimitives(DXRPC);
+	l_result &= createRTVDescriptorHeap(DXRPC);
+	l_result &= createRTV(DXRPC);
+	l_result &= createRootSignature(DXRPC);
+	l_result &= createPSO(DXRPC, DXSPC);
+	l_result &= createCommandLists(DXRPC);
+	l_result &= createSyncPrimitives(DXRPC);
 
 	DXRPC->m_objectStatus = ObjectStatus::ALIVE;
 
@@ -497,9 +495,9 @@ bool DX12RenderingSystemNS::createCommandLists(DX12RenderPassComponent* DXRPC)
 
 	for (size_t i = 0; i < DXRPC->m_commandLists.size(); i++)
 	{
-		auto hResult = DX12RenderingSystemComponent::get().m_device->CreateCommandList
+		auto l_result = DX12RenderingSystemComponent::get().m_device->CreateCommandList
 		(0, D3D12_COMMAND_LIST_TYPE_DIRECT, DX12RenderingSystemComponent::get().m_commandAllocator, NULL, IID_PPV_ARGS(&DXRPC->m_commandLists[i]));
-		if (FAILED(hResult))
+		if (FAILED(l_result))
 		{
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create CommandList!");
 			return false;
@@ -606,7 +604,7 @@ bool DX12RenderingSystemNS::summitGPUData(DX12MeshDataComponent * rhs)
 {
 	auto l_verticesDataSize = unsigned int(sizeof(Vertex) * rhs->m_vertices.size());
 
-	auto hResult = DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(
+	auto l_result = DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(l_verticesDataSize),
@@ -614,7 +612,7 @@ bool DX12RenderingSystemNS::summitGPUData(DX12MeshDataComponent * rhs)
 		nullptr,
 		IID_PPV_ARGS(&rhs->m_vertexBuffer));
 
-	if (FAILED(hResult))
+	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't create vertex buffer!");
 		return false;
@@ -623,9 +621,9 @@ bool DX12RenderingSystemNS::summitGPUData(DX12MeshDataComponent * rhs)
 	// Copy the triangle data to the vertex buffer.
 	UINT8* pVertexDataBegin;
 	CD3DX12_RANGE vertexReadRange(0, 0);        // We do not intend to read from this resource on the CPU.
-	hResult = rhs->m_vertexBuffer->Map(0, &vertexReadRange, reinterpret_cast<void**>(&pVertexDataBegin));
+	l_result = rhs->m_vertexBuffer->Map(0, &vertexReadRange, reinterpret_cast<void**>(&pVertexDataBegin));
 
-	if (FAILED(hResult))
+	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't map vertex buffer device memory!");
 		return false;
@@ -650,7 +648,7 @@ bool DX12RenderingSystemNS::summitGPUData(DX12MeshDataComponent * rhs)
 		nullptr,
 		IID_PPV_ARGS(&rhs->m_indexBuffer));
 
-	if (FAILED(hResult))
+	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't create index buffer!");
 		return false;
@@ -659,9 +657,9 @@ bool DX12RenderingSystemNS::summitGPUData(DX12MeshDataComponent * rhs)
 	// Copy the indice data to the index buffer.
 	UINT8* pIndexDataBegin;
 	CD3DX12_RANGE indexReadRange(0, 0);        // We do not intend to read from this resource on the CPU.
-	hResult = rhs->m_indexBuffer->Map(0, &indexReadRange, reinterpret_cast<void**>(&pIndexDataBegin));
+	l_result = rhs->m_indexBuffer->Map(0, &indexReadRange, reinterpret_cast<void**>(&pIndexDataBegin));
 
-	if (FAILED(hResult))
+	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't map index buffer device memory!");
 		return false;
@@ -892,17 +890,32 @@ bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
 		SRVMipLevels = 1;
 	}
 
-	// Create the empty texture.
-	HRESULT hResult;
-	hResult = DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-		D3D12_HEAP_FLAG_NONE,
-		&rhs->m_DX12TextureDataDesc,
-		D3D12_RESOURCE_STATE_COPY_DEST,
-		nullptr,
-		IID_PPV_ARGS(&rhs->m_texture));
+	HRESULT l_result;
 
-	if (FAILED(hResult))
+	// Create the empty texture.
+	if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT)
+	{
+		auto l_clearValue = D3D12_CLEAR_VALUE{ rhs->m_DX12TextureDataDesc.Format, { 0.0f, 0.0f, 0.0f, 1.0f } };
+		l_result = DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&rhs->m_DX12TextureDataDesc,
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			&l_clearValue,
+			IID_PPV_ARGS(&rhs->m_texture));
+	}
+	else
+	{
+		l_result = DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&rhs->m_DX12TextureDataDesc,
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			NULL,
+			IID_PPV_ARGS(&rhs->m_texture));
+	}
+
+	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't create texture!");
 		return false;
@@ -910,14 +923,20 @@ bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
 
 	auto l_commandList = beginSingleTimeCommands();
 
-	if (rhs->m_textureDataDesc.usageType != TextureUsageType::COLOR_ATTACHMENT)
+	if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT)
+	{
+		l_commandList->ResourceBarrier(
+			1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(rhs->m_texture, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_RENDER_TARGET));
+	}
+	else
 	{
 		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(rhs->m_texture, 0, 1);
 
 		ID3D12Resource* textureUploadHeap;
 
 		// Create the GPU upload buffer.
-		hResult = DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(
+		l_result = DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize),
@@ -925,7 +944,7 @@ bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
 			nullptr,
 			IID_PPV_ARGS(&textureUploadHeap));
 
-		if (FAILED(hResult))
+		if (FAILED(l_result))
 		{
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't create upload buffer!");
 			return false;
@@ -950,9 +969,9 @@ bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
 	srvHeapDesc.NumDescriptors = 1;
 	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	hResult = DX12RenderingSystemComponent::get().m_device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&rhs->m_SRVHeap));
+	l_result = DX12RenderingSystemComponent::get().m_device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&rhs->m_SRVHeap));
 
-	if (FAILED(hResult))
+	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't create SRV heap!");
 		return false;
@@ -991,6 +1010,8 @@ bool DX12RenderingSystemNS::recordActivateRenderPass(DX12RenderPassComponent* DX
 	DXRPC->m_commandLists[commandListIndex]->RSSetViewports(1, &DXRPC->m_viewport);
 	DXRPC->m_commandLists[commandListIndex]->RSSetScissorRects(1, &DXRPC->m_scissor);
 
+	DXRPC->m_commandLists[commandListIndex]->SetPipelineState(DXRPC->m_PSO);
+
 	const float l_clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 
 	if (DXRPC->m_renderPassDesc.useMultipleFramebuffers)
@@ -1007,6 +1028,12 @@ bool DX12RenderingSystemNS::recordActivateRenderPass(DX12RenderPassComponent* DX
 		DXRPC->m_commandLists[commandListIndex]->ClearRenderTargetView(DXRPC->m_RTVDescHandle, l_clearColor, 0, nullptr);
 	}
 
+	return true;
+}
+
+bool DX12RenderingSystemNS::recordBindCBV(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int startSlot, const DX12ConstantBuffer& ConstantBuffer)
+{
+	DXRPC->m_commandLists[commandListIndex]->SetGraphicsRootConstantBufferView(startSlot, ConstantBuffer.m_ConstantBufferPtr->GetGPUVirtualAddress());
 	return true;
 }
 

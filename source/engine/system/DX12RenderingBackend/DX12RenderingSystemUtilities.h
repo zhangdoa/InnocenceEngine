@@ -50,10 +50,23 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 	bool initializeDX12TextureDataComponent(DX12TextureDataComponent* rhs);
 
 	bool createConstantBuffer(DX12ConstantBuffer& arg, const std::wstring& name);
-	void updateConstantBuffer(const DX12ConstantBuffer& ConstantBuffer, void* ConstantBufferValue);
+	void updateConstantBufferImpl(const DX12ConstantBuffer& ConstantBuffer, size_t size, const void* ConstantBufferValue);
+
+	template <class T>
+	void updateConstantBuffer(const DX12ConstantBuffer& ConstantBuffer, const T& ConstantBufferValue)
+	{
+		updateConstantBufferImpl(ConstantBuffer, sizeof(T), ConstantBufferValue);
+	}
+
+	template <class T>
+		void updateConstantBuffer(const DX12ConstantBuffer& ConstantBuffer, const std::vector<T>& ConstantBufferValue)
+	{
+		updateConstantBufferImpl(ConstantBuffer, sizeof(T) * ConstantBufferValue.size(), &ConstantBufferValue[0]);
+	}
 
 	bool recordCommandBegin(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex);
 	bool recordActivateRenderPass(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex);
+	bool recordBindCBV(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int startSlot, const DX12ConstantBuffer& ConstantBuffer);
 	bool recordDrawCall(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, DX12MeshDataComponent * DXMDC);
 	bool recordCommandEnd(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex);
 

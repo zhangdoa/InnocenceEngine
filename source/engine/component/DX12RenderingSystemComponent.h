@@ -58,6 +58,13 @@ public:
 
 	RenderPassDesc m_deferredRenderPassDesc = RenderPassDesc();
 
+	ID3D12DescriptorHeap* m_CSUHeap;
+	D3D12_DESCRIPTOR_HEAP_DESC m_CSUHeapDesc = {};
+	D3D12_CPU_DESCRIPTOR_HANDLE m_initialCSUCPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE m_initialCSUGPUHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE m_currentCSUCPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE m_currentCSUGPUHandle;
+
 	DX12ConstantBuffer m_cameraConstantBuffer;
 	DX12ConstantBuffer m_meshConstantBuffer;
 	DX12ConstantBuffer m_materialConstantBuffer;

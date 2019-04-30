@@ -40,17 +40,22 @@ bool DX12OpaquePass::initialize()
 	m_DXRPC->m_RTVDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 	m_DXRPC->m_RTVDesc.Texture2D.MipSlice = 0;
 
-	CD3DX12_DESCRIPTOR_RANGE1 l_descRange[3];
-	l_descRange[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 3, 0);
-	l_descRange[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5, 0);
-	l_descRange[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);
+	CD3DX12_ROOT_PARAMETER1 l_rootParams[5];
+	l_rootParams[0].InitAsConstantBufferView(0);
+	l_rootParams[1].InitAsConstantBufferView(1);
+	l_rootParams[2].InitAsConstantBufferView(2);
 
-	CD3DX12_ROOT_PARAMETER1 l_rootParams[3];
-	l_rootParams[0].InitAsDescriptorTable(1, &l_descRange[0]);
-	l_rootParams[1].InitAsDescriptorTable(1, &l_descRange[1]);
-	l_rootParams[2].InitAsDescriptorTable(1, &l_descRange[2]);
+	CD3DX12_DESCRIPTOR_RANGE1 l_descRangeSRV;
+	l_descRangeSRV.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5, 0);
 
-	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC l_rootSigDesc(3, l_rootParams);
+	l_rootParams[3].InitAsDescriptorTable(1, &l_descRangeSRV);
+
+	CD3DX12_DESCRIPTOR_RANGE1 l_descRangeSampler;
+	l_descRangeSampler.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);
+
+	l_rootParams[4].InitAsDescriptorTable(1, &l_descRangeSampler);
+
+	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC l_rootSigDesc(5, l_rootParams);
 	m_DXRPC->m_rootSignatureDesc = l_rootSigDesc;
 	m_DXRPC->m_rootSignatureDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
@@ -106,6 +111,15 @@ bool DX12OpaquePass::update()
 	recordCommandBegin(m_DXRPC, 0);
 
 	recordActivateRenderPass(m_DXRPC, 0);
+
+	ID3D12DescriptorHeap* l_heaps[] = {
+		DX12RenderingSystemComponent::get().m_CSUHeap,
+	};
+	m_DXRPC->m_commandLists[0]->SetDescriptorHeaps(_countof(l_heaps), l_heaps);
+
+	recordBindCBV(m_DXRPC, 0, 0, DX12RenderingSystemComponent::get().m_cameraConstantBuffer);
+	recordBindCBV(m_DXRPC, 0, 1, DX12RenderingSystemComponent::get().m_meshConstantBuffer);
+	recordBindCBV(m_DXRPC, 0, 2, DX12RenderingSystemComponent::get().m_materialConstantBuffer);
 
 	while (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.size() > 0)
 	{

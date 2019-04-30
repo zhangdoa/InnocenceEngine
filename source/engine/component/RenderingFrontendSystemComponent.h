@@ -29,6 +29,10 @@ public:
 	const unsigned int m_maxSphereLights = 128;
 	std::vector<SphereLightGPUData> m_sphereLightGPUDataVector;
 
+	const unsigned int m_maxMeshes = 16384;
+	const unsigned int m_maxMaterials = 32768;
+	const unsigned int m_maxTextures = 32768;
+
 	ThreadSafeQueue<GeometryPassGPUData> m_opaquePassGPUDataQueue;
 
 	ThreadSafeQueue<GeometryPassGPUData> m_transparentPassGPUDataQueue;
