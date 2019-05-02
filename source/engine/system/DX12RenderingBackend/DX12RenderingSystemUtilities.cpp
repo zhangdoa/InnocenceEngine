@@ -1037,6 +1037,13 @@ bool DX12RenderingSystemNS::recordBindCBV(DX12RenderPassComponent* DXRPC, unsign
 	return true;
 }
 
+bool DX12RenderingSystemNS::recordBindSRV(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int startSlot, const DX12TextureDataComponent* DXTDC)
+{
+	DXRPC->m_commandLists[commandListIndex]->SetGraphicsRootShaderResourceView(startSlot, DXTDC->m_SRV->GetGPUVirtualAddress());
+
+	return true;
+}
+
 bool DX12RenderingSystemNS::recordDrawCall(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, DX12MeshDataComponent * DXMDC)
 {
 	DXRPC->m_commandLists[commandListIndex]->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

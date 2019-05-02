@@ -67,7 +67,9 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 	bool recordCommandBegin(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex);
 	bool recordActivateRenderPass(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex);
 	bool recordBindCBV(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int startSlot, const DX12ConstantBuffer& ConstantBuffer);
-	bool recordDrawCall(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, DX12MeshDataComponent * DXMDC);
+	bool recordBindSRV(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int startSlot, const DX12TextureDataComponent* DXTDC);
+
+	bool recordDrawCall(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, DX12MeshDataComponent* DXMDC);
 	bool recordCommandEnd(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex);
 
 	DX12ShaderProgramComponent* addDX12ShaderProgramComponent(EntityID rhs);

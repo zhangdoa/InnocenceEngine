@@ -219,6 +219,7 @@ bool DX12RenderingSystemNS::createCommandAllocator()
 
 bool DX12RenderingSystemNS::createCSUHeap()
 {
+	// @TODO: one render pass component has one CSU heap, decouple CBV from DX12ConstantBuffer
 	g_DXRenderingSystemComponent->m_CSUHeapDesc.NumDescriptors = 65536;
 	g_DXRenderingSystemComponent->m_CSUHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	g_DXRenderingSystemComponent->m_CSUHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
@@ -230,6 +231,8 @@ bool DX12RenderingSystemNS::createCSUHeap()
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
+
+	g_DXRenderingSystemComponent->m_CSUHeap->SetName(L"GlobalCSUHeap");
 
 	g_DXRenderingSystemComponent->m_initialCSUCPUHandle = g_DXRenderingSystemComponent->m_CSUHeap->GetCPUDescriptorHandleForHeapStart();
 	g_DXRenderingSystemComponent->m_initialCSUGPUHandle = g_DXRenderingSystemComponent->m_CSUHeap->GetGPUDescriptorHandleForHeapStart();

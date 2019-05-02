@@ -40,22 +40,12 @@ bool DX12OpaquePass::initialize()
 	m_DXRPC->m_RTVDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 	m_DXRPC->m_RTVDesc.Texture2D.MipSlice = 0;
 
-	CD3DX12_ROOT_PARAMETER1 l_rootParams[5];
-	l_rootParams[0].InitAsConstantBufferView(0);
-	l_rootParams[1].InitAsConstantBufferView(1);
-	l_rootParams[2].InitAsConstantBufferView(2);
+	CD3DX12_ROOT_PARAMETER1 l_rootParams[3];
+	l_rootParams[0].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_VERTEX);
+	l_rootParams[1].InitAsConstantBufferView(1, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_VERTEX);
+	l_rootParams[2].InitAsConstantBufferView(2, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
 
-	CD3DX12_DESCRIPTOR_RANGE1 l_descRangeSRV;
-	l_descRangeSRV.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5, 0);
-
-	l_rootParams[3].InitAsDescriptorTable(1, &l_descRangeSRV);
-
-	CD3DX12_DESCRIPTOR_RANGE1 l_descRangeSampler;
-	l_descRangeSampler.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);
-
-	l_rootParams[4].InitAsDescriptorTable(1, &l_descRangeSampler);
-
-	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC l_rootSigDesc(5, l_rootParams);
+	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC l_rootSigDesc(sizeof(l_rootParams) / sizeof(l_rootParams[0]), l_rootParams);
 	m_DXRPC->m_rootSignatureDesc = l_rootSigDesc;
 	m_DXRPC->m_rootSignatureDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
