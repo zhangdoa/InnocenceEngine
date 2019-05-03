@@ -21,6 +21,10 @@ add_subdirectory("MTRenderingBackend")
 add_subdirectory("MacWindow")
 endif (INNO_PLATFORM_MAC)
 
+if (INNO_PLATFORM_LINUX)
+add_subdirectory("LinuxWindow")
+endif (INNO_PLATFORM_LINUX)
+
 file(GLOB HEADERS "*.h")
 file(GLOB SOURCES "*.cpp")
 add_library(InnoSystem SHARED ${HEADERS} ${SOURCES})
@@ -54,6 +58,10 @@ if (INNO_PLATFORM_MAC)
 target_link_libraries(InnoSystem InnoMTRenderingBackend)
 target_link_libraries(InnoSystem MacWindow)
 endif (INNO_PLATFORM_MAC)
+
+if (INNO_PLATFORM_LINUX)
+target_link_libraries(InnoSystem LinuxWindow)
+endif (INNO_PLATFORM_LINUX)
 
 find_library(ASSIMP assimp)
 target_link_libraries(InnoSystem "${ASSIMP}")

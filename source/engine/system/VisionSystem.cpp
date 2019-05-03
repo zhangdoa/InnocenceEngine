@@ -17,6 +17,10 @@
 #include "MTRenderingBackend/MTRenderingSystem.h"
 #endif
 
+#if defined INNO_PLATFORM_LINUX
+#include "LinuxWindow/LinuxWindowSystem.h"
+#endif
+
 #if defined INNO_RENDERER_VULKAN
 #include "VKRenderingBackend/VKRenderingSystem.h"
 #endif
@@ -157,6 +161,10 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* appHook, void* extraHook, 
 
 #if defined INNO_PLATFORM_MAC
 	InnoVisionSystemNS::m_windowSystem = new MacWindowSystem();
+#endif
+
+#if defined INNO_PLATFORM_LINUX
+InnoVisionSystemNS::m_windowSystem = new LinuxWindowSystem();
 #endif
 
 	switch (InnoVisionSystemNS::m_initConfig.renderingBackend)
