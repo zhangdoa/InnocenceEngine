@@ -22,7 +22,11 @@ bool GLEarlyZPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_GLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
+	auto l_textureDesc = GLRenderingSystemComponent::get().deferredPassTextureDesc;
+	l_textureDesc.pixelDataFormat = TexturePixelDataFormat::R;
+	l_textureDesc.pixelDataType = TexturePixelDataType::UINT32;
+
+	m_GLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, l_textureDesc);
 
 	initializeShaders();
 

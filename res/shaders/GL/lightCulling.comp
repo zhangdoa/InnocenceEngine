@@ -73,10 +73,10 @@ vec4 ClipToView(vec4 clip, mat4 in_p_inv)
 vec4 ScreenToView(vec4 screen, vec2 in_viewportSize, mat4 in_p_inv)
 {
 	// Convert to normalized texture coordinates
-	vec2 texCoord = screen.xy / in_viewportSize;
+	vec2 writeTexCoord = screen.xy / in_viewportSize;
 
 	// Convert to clip space
-	vec4 clip = vec4(vec2(texCoord.x, 1.0f - texCoord.y) * 2.0f - 1.0f, screen.z, screen.w);
+	vec4 clip = vec4(vec2(writeTexCoord.x, 1.0f - writeTexCoord.y) * 2.0f - 1.0f, screen.z, screen.w);
 
 	return ClipToView(clip, in_p_inv);
 }
@@ -137,8 +137,8 @@ layout(std430, binding = 2) buffer lightIndexListSSBO
 	uint lightIndexList[];
 };
 
-layout(binding = 0) uniform sampler2D depthTexture;
-layout(binding = 1, rg32ui) uniform volatile coherent uimage2D uni_lightGrid;
+layout(binding = 0) uniform usampler2D depthTexture;
+layout(binding = 1, rgba16f) uniform volatile coherent image2D uni_lightGrid;
 layout(binding = 2, rgba16f) uniform volatile coherent image2D uni_debugTexture;
 
 shared uint l_uMinDepth;
@@ -169,14 +169,24 @@ void AppendLight(uint lightIndex)
 	}
 }
 
+vec4 RG32UI2RGBA16F(uvec2 rhs)
+{
+	return vec4(float(rhs.x & 0x0000FFFF),
+		float((rhs.x & 0xFFFF0000) >> 16U),
+		float(rhs.y & 0x0000FFFF),
+		float((rhs.y & 0xFFFF0000) >> 16U));
+}
+
 void main()
 {
 	// Calculate min & max depth in threadgroup / tile.
-	ivec2 texCoord = ivec2(gl_GlobalInvocationID.xy);
-	texCoord.y = int(viewportSize.y) - texCoord.y;
-	float fDepth = texture(depthTexture, texCoord).r;
+	vec2 readTextureCoord = vec2(gl_GlobalInvocationID.xy) / viewportSize;
+	readTextureCoord.y = 1.0f - readTextureCoord.y;
 
-	uint uDepth = uint(fDepth);
+	uint uDepth = texture(depthTexture, readTextureCoord).r;
+
+	ivec2 writeTexCoord = ivec2(gl_GlobalInvocationID.xy);
+	writeTexCoord.y = int(viewportSize.y) - writeTexCoord.y;
 
 	// Initialize group local variables
 	// Avoid contention by other threads in the group.
@@ -197,11 +207,8 @@ void main()
 
 	groupMemoryBarrier();
 
-	//float fMinDepth = float(l_uMinDepth);
-	//float fMaxDepth = float(l_uMaxDepth);
-
-	float fMinDepth = -1;
-	float fMaxDepth = 1;
+	float fMinDepth = uintBitsToFloat(l_uMinDepth);
+	float fMaxDepth = uintBitsToFloat(l_uMaxDepth);
 
 	// Convert depth values to view space.
 	float minDepthVS = ClipToView(vec4(0, 0, fMinDepth, 1), p_inv).z;
@@ -238,7 +245,9 @@ void main()
 	{
 		l_LightIndexStartOffset = lightListIndexCounter;
 		atomicAdd(lightListIndexCounter, l_LightCount);
-		//imageStore(uni_lightGrid, ivec2(gl_WorkGroupID.xy), uvec2(l_LightIndexStartOffset, l_LightCount));
+		uvec2 l_lightGridValueOrig = uvec2(l_LightIndexStartOffset, l_LightCount);
+		vec4 l_lightGridValueWrite = RG32UI2RGBA16F(l_lightGridValueOrig);
+		imageStore(uni_lightGrid, ivec2(gl_WorkGroupID.xy), l_lightGridValueWrite);
 	}
 
 	groupMemoryBarrier();
@@ -250,15 +259,15 @@ void main()
 	}
 
 	// Write to debug heat map texture
-	imageStore(uni_debugTexture, texCoord, vec4(0, 0, 0, 0));
+	imageStore(uni_debugTexture, writeTexCoord, vec4(0, 0, 0, 0));
 
 	if (gl_LocalInvocationID.x == 0 || gl_LocalInvocationID.y == 0)
 	{
-		imageStore(uni_debugTexture, texCoord, vec4(0, 0, 0, 0.9f));
+		imageStore(uni_debugTexture, writeTexCoord, vec4(0, 0, 0, 0.9f));
 	}
 	else if (gl_LocalInvocationID.x == 1 || gl_LocalInvocationID.y == 1)
 	{
-		imageStore(uni_debugTexture, texCoord, vec4(0, 0, 0, 0.5f));
+		imageStore(uni_debugTexture, writeTexCoord, vec4(0, 0, 0, 0.5f));
 	}
 	else if (l_LightCount > 0)
 	{
@@ -272,10 +281,10 @@ void main()
 		{
 			heat = heatArray[l_LightCount - 1];
 		}
-		imageStore(uni_debugTexture, texCoord, heat);
+		imageStore(uni_debugTexture, writeTexCoord, heat);
 	}
 	else
 	{
-		imageStore(uni_debugTexture, texCoord, vec4(0, 0, 0, 1));
+		imageStore(uni_debugTexture, writeTexCoord, vec4(0, 0, 0, 1));
 	}
 }

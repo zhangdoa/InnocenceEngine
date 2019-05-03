@@ -1,7 +1,7 @@
 #include "GLLightCullingPass.h"
 #include "GLRenderingSystemUtilities.h"
 
-#include "GLOpaquePass.h"
+#include "GLEarlyZPass.h"
 
 #include "../../component/GLRenderingSystemComponent.h"
 #include "../../component/RenderingFrontendSystemComponent.h"
@@ -99,8 +99,8 @@ bool GLLightCullingPass::createLightGridGLTDC()
 	m_lightGridGLTDC->m_textureDataDesc.width = m_lightCullingNumThreadGroups.x;
 	m_lightGridGLTDC->m_textureDataDesc.height = m_lightCullingNumThreadGroups.y;
 	m_lightGridGLTDC->m_textureDataDesc.usageType = TextureUsageType::RAW_IMAGE;
-	m_lightGridGLTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RG;
-	m_lightGridGLTDC->m_textureDataDesc.pixelDataType = TexturePixelDataType::UINT32;
+	m_lightGridGLTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
+	m_lightGridGLTDC->m_textureDataDesc.pixelDataType = TexturePixelDataType::FLOAT16;
 	m_lightGridGLTDC->m_textureData = { nullptr };
 	initializeGLTextureDataComponent(m_lightGridGLTDC);
 
@@ -167,7 +167,9 @@ bool GLLightCullingPass::cullLights()
 
 	activateShaderProgram(m_lightCullingGLSPC);
 
-	glBindImageTexture(1, m_lightGridGLTDC->m_TO, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG32UI);
+	activateTexture(GLEarlyZPass::getGLRPC()->m_GLTDCs[0], 0);
+
+	glBindImageTexture(1, m_lightGridGLTDC->m_TO, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
 	glBindImageTexture(2, m_debugGLTDC->m_TO, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
 
 	glDispatchCompute(m_lightCullingNumThreadGroups.x, m_lightCullingNumThreadGroups.y, m_lightCullingNumThreadGroups.z);
