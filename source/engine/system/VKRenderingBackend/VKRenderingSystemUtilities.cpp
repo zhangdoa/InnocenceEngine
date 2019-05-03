@@ -1,4 +1,3 @@
-#pragma once
 #include "VKRenderingSystemUtilities.h"
 #include "../../component/VKRenderingSystemComponent.h"
 
@@ -38,9 +37,6 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 
 	std::unordered_map<EntityID, VKMeshDataComponent*> m_initializedVKMDC;
 	std::unordered_map<EntityID, VKTextureDataComponent*> m_initializedVKTDC;
-
-	std::unordered_map<EntityID, VKMeshDataComponent*> m_meshMap;
-	std::unordered_map<EntityID, VKTextureDataComponent*> m_textureMap;
 
 	void* m_VKRenderPassComponentPool;
 	void* m_VKShaderProgramComponentPool;

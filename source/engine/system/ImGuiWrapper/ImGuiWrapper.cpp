@@ -10,6 +10,10 @@
 #include "ImGuiWrapperMacGL.h"
 #endif
 
+#if defined INNO_PLATFORM_LINUX
+#include "ImGuiWrapperLinuxGL.h"
+#endif
+
 #include "../ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
@@ -87,6 +91,11 @@ bool ImGuiWrapper::setup()
 	default:
 		break;
 	}
+#endif
+
+#if defined INNO_PLATFORM_LINUX
+		ImGuiWrapperNS::m_wrapperImpl = new ImGuiWrapperLinuxGL();
+		ImGuiWrapperNS::m_isParity = false;
 #endif
 
 	if (ImGuiWrapperNS::m_isParity)

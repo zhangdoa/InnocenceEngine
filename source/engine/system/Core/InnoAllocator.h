@@ -2,13 +2,12 @@
 #include "../../common/stl14.h"
 
 #ifndef INNO_DECLSPEC_ALLOCATOR
-#ifdef __clang__
-#define INNO_DECLSPEC_ALLOCATOR
-#else /* ^^^ Clang ^^^ // vvv non-Clang vvv */
+#ifdef _MSC_VER
 #define INNO_DECLSPEC_ALLOCATOR	__declspec(allocator)
-#endif /* ^^^ non-Clang ^^^ */
-
-#endif /* _DECLSPEC_ALLOCATOR */
+#else
+#define INNO_DECLSPEC_ALLOCATOR
+#endif
+#endif
 
 namespace innoHeapAllocator
 {

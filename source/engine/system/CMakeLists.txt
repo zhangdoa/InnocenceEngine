@@ -63,7 +63,7 @@ target_link_libraries(InnoSystem STB_Image)
 target_link_libraries(InnoSystem ImGuiWrapper)
 
 if (INNO_PLATFORM_LINUX)
-target_link_libraries(InnoSystem -lX11 -lXrandr -lXinerama -lXi -lXxf86vm -lXcursor -ldl -lGL -lm -lpthread -lstdc++fs)
+target_link_libraries(InnoSystem -lX11 -lXrandr -lXinerama -lXi -lXxf86vm -lXcursor -ldl -lm -lpthread -lstdc++fs)
 endif (INNO_PLATFORM_LINUX)
 
 if (INNO_PLATFORM_MAC)

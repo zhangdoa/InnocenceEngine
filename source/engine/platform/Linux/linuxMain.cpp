@@ -1,10 +1,8 @@
-#include "stdafx.h"
-#include "config.h"
-#include "InnoApplication.h"
+#include "../../common/InnoApplication.h"
 
 int main(int argc, char *argv[])
 {
-	if (!InnoApplication::setup(nullptr, argv[1]))
+	if (!InnoApplication::setup(nullptr, nullptr, argv[1]))
 	{
 		return 0;
 	}
