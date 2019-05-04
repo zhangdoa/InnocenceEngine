@@ -72,8 +72,8 @@ void GLSSAONoisePass::generateSSAONoiseTexture()
 		// scale samples s.t. they're more aligned to center of kernel
 		auto alpha = scale * scale;
 		scale = 0.1f + 0.9f * alpha;
-		sample = sample * scale;
-
+		sample.x = sample.x * scale;
+		sample.y = sample.y * scale;
 		m_SSAOKernel.emplace_back(sample);
 	}
 
@@ -93,7 +93,7 @@ void GLSSAONoisePass::generateSSAONoiseTexture()
 
 	m_SSAONoiseGLTDC->m_textureDataDesc.samplerType = TextureSamplerType::SAMPLER_2D;
 	m_SSAONoiseGLTDC->m_textureDataDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	m_SSAONoiseGLTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RGB;
+	m_SSAONoiseGLTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
 	m_SSAONoiseGLTDC->m_textureDataDesc.minFilterMethod = TextureFilterMethod::NEAREST;
 	m_SSAONoiseGLTDC->m_textureDataDesc.magFilterMethod = TextureFilterMethod::NEAREST;
 	m_SSAONoiseGLTDC->m_textureDataDesc.wrapMethod = TextureWrapMethod::REPEAT;
@@ -128,10 +128,7 @@ bool GLSSAONoisePass::update()
 	activateTexture(GLOpaquePass::getGLRPC()->m_GLTDCs[1], 1);
 	activateTexture(m_SSAONoiseGLTDC, 2);
 
-	updateUniform(0, RenderingFrontendSystemComponent::get().m_cameraGPUData.p_jittered);
-	updateUniform(1, RenderingFrontendSystemComponent::get().m_cameraGPUData.r);
-	updateUniform(2, RenderingFrontendSystemComponent::get().m_cameraGPUData.t);
-	updateUniform(6, m_SSAOKernel);
+	updateUniform(3, m_SSAOKernel);
 
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);

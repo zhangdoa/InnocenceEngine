@@ -4,38 +4,46 @@ layout(location = 0) out vec4 uni_SSAOPassRT0;
 
 layout(location = 0) in vec2 TexCoords;
 
-layout(location = 0) uniform mat4 uni_p;
-layout(location = 1) uniform mat4 uni_r;
-layout(location = 2) uniform mat4 uni_t;
+layout(std140, row_major, binding = 0) uniform cameraUBO
+{
+	mat4 uni_p_camera_original;
+	mat4 uni_p_camera_jittered;
+	mat4 uni_r_camera;
+	mat4 uni_t_camera;
+	mat4 uni_r_camera_prev;
+	mat4 uni_t_camera_prev;
+	vec4 uni_globalPos;
+	float WHRatio;
+};
 
-layout(location = 3, binding = 0) uniform sampler2D uni_Position;
-layout(location = 4, binding = 1) uniform sampler2D uni_Normal;
-layout(location = 5, binding = 2) uniform sampler2D uni_texNoise;
+layout(location = 0, binding = 0) uniform sampler2D uni_Position;
+layout(location = 1, binding = 1) uniform sampler2D uni_Normal;
+layout(location = 2, binding = 2) uniform sampler2D uni_randomRot;
 
 const int kernelSize = 64;
 
-layout(location = 6) uniform vec4 uni_samples[kernelSize];
+layout(location = 3) uniform vec4 uni_kernels[kernelSize];
 
 float radius = 0.5f;
-float bias = 0.025f;
+float bias = 0.05f;
 
 void main()
 {
-	vec2 noiseScale = vec2(textureSize(uni_Position, 0) / textureSize(uni_texNoise, 0));
+	vec2 noiseScale = vec2(textureSize(uni_Position, 0)) / vec2(textureSize(uni_randomRot, 0));
+	vec3 randomRot = texture(uni_randomRot, TexCoords * noiseScale).xyz;
 
 	// alpha channel is used previously, remove its unwanted influence
-	// get input for SSAO algorithm
+	// world space position to view space
 	vec3 fragPos = texture(uni_Position, TexCoords).xyz;
-	fragPos = (uni_r * uni_t * vec4(fragPos, 1.0f)).xyz;
+	fragPos = (uni_r_camera * uni_t_camera * vec4(fragPos, 1.0f)).xyz;
 
+	// world space normal to view space
 	vec3 normal = texture(uni_Normal, TexCoords).xyz;
-	normal = (uni_r * uni_t * vec4(normal, 0.0f)).xyz;
+	normal = (uni_r_camera * vec4(normal, 0.0f)).xyz;
 	normal = normalize(normal);
 
-	vec3 randomVec = texture(uni_texNoise, TexCoords * noiseScale).xyz;
-
 	// create TBN change-of-basis matrix: from tangent-space to view-space
-	vec3 tangent = normalize(randomVec - normal * dot(randomVec, normal));
+	vec3 tangent = normalize(randomRot - normal * dot(randomRot, normal));
 	vec3 bitangent = cross(normal, tangent);
 	mat3 TBN = mat3(tangent, bitangent, normal);
 
@@ -44,29 +52,28 @@ void main()
 	for (int i = 0; i < kernelSize; ++i)
 	{
 		// get sample position
-		vec3 ssaoSample = TBN * uni_samples[i].xyz; // from tangent to view-space
-		ssaoSample = fragPos + ssaoSample * radius;
+		vec3 randomHemisphereSampleDir = TBN * uni_kernels[i].xyz; // from tangent to view-space
+		vec3 randomHemisphereSamplePos = fragPos + randomHemisphereSampleDir * radius;
 
 		// project sample position (to sample texture) (to get position on screen/texture)
-		vec4 offset = vec4(ssaoSample, 1.0f);
-		offset = uni_p * offset; // from view to clip-space
-		offset.xyz /= offset.w; // perspective divide
-		offset.xyz = offset.xyz * 0.5f + 0.5f; // transform to range 0.0 - 1.0
+		vec4 randomFragSampleCoord = vec4(randomHemisphereSamplePos, 1.0f);
+		randomFragSampleCoord = uni_p_camera_jittered * randomFragSampleCoord; // from view to clip-space
+		randomFragSampleCoord.xyz /= randomFragSampleCoord.w; // perspective divide
+		randomFragSampleCoord.xyz = randomFragSampleCoord.xyz * 0.5f + 0.5f; // transform to range 0.0 - 1.0
 
 		// get sample depth
-		vec4 samplePos = texture(uni_Position, offset.xy);
+		vec4 randomFragSamplePos = texture(uni_Position, randomFragSampleCoord.xy);
 
 		// alpha channel is used previously, remove its unwanted influence
-		samplePos.w = 1.0f;
-		samplePos = uni_r * uni_t * samplePos;
-		float sampleDepth = samplePos.z; // get depth value of kernel sample
+		randomFragSamplePos.w = 1.0f;
+		randomFragSamplePos = uni_r_camera * uni_t_camera * randomFragSamplePos;
 
 		// range check & accumulate
-		float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragPos.z - sampleDepth));
-		occlusion += (sampleDepth >= ssaoSample.z + bias ? 1.0 : 0.0) * rangeCheck;
+		float rangeCheck = smoothstep(0.0, 1.0, radius / max(abs(fragPos.z - randomFragSamplePos.z), 0.0001f));
+		occlusion += (randomFragSamplePos.z > randomHemisphereSamplePos.z + bias ? 1.0 : 0.0) * rangeCheck;
 	}
 
-	occlusion = 1.0 - (occlusion / kernelSize);
+	occlusion = 1.0 - (occlusion / float(kernelSize));
 
 	uni_SSAOPassRT0 = vec4(vec3(occlusion), 1.0);
 }
