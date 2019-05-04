@@ -20,7 +20,6 @@ using namespace GLRenderingSystemNS;
 INNO_PRIVATE_SCOPE GLLightPass
 {
 	void initializeLightPassShaders();
-	void bindLightPassUniformLocations(GLShaderProgramComponent* rhs);
 
 	EntityID m_entityID;
 
@@ -29,8 +28,6 @@ INNO_PRIVATE_SCOPE GLLightPass
 	GLShaderProgramComponent* m_GLSPC;
 
 	ShaderFilePaths m_shaderFilePaths = { "GL//lightPass.vert" , "", "GL//lightPass.frag" };
-
-	GLuint m_uni_isEmissive;
 }
 
 void GLLightPass::initialize()
@@ -49,16 +46,7 @@ void GLLightPass::initializeLightPassShaders()
 
 	initializeGLShaderProgramComponent(l_GLSPC, m_shaderFilePaths);
 
-	bindLightPassUniformLocations(l_GLSPC);
-
 	m_GLSPC = l_GLSPC;
-}
-
-void GLLightPass::bindLightPassUniformLocations(GLShaderProgramComponent* rhs)
-{
-	m_uni_isEmissive = getUniformLocation(
-		rhs->m_program,
-		"uni_isEmissive");
 }
 
 void GLLightPass::update()
@@ -115,10 +103,6 @@ void GLLightPass::update()
 		GLEnvironmentPreFilterPass::getGLRPC()->m_GLTDCs[0],
 		8);
 
-	updateUniform(
-		m_uni_isEmissive,
-		false);
-
 	// draw light pass rectangle
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
@@ -132,10 +116,6 @@ void GLLightPass::update()
 
 	// copy stencil buffer of emmisive objects from G-Pass
 	copyStencilBuffer(GLOpaquePass::getGLRPC(), m_GLRPC);
-
-	updateUniform(
-		m_uni_isEmissive,
-		true);
 
 	// draw light pass rectangle
 	drawMesh(l_MDC);
@@ -155,8 +135,6 @@ bool GLLightPass::reloadShader()
 	deleteShaderProgram(m_GLSPC);
 
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
-
-	bindLightPassUniformLocations(m_GLSPC);
 
 	return true;
 }

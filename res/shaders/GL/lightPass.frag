@@ -81,7 +81,6 @@ layout(std140, row_major, binding = 6) uniform CSMUBO
 };
 
 bool uni_drawCSMSplitedArea = false;
-uniform bool uni_isEmissive;
 
 // Oren-Nayar diffuse BRDF [https://github.com/glslify/glsl-diffuse-oren-nayar]
 // ----------------------------------------------------------------------------
@@ -126,14 +125,14 @@ vec3 fr_F_Schlick(vec3 f0, float f90, float u)
 float fd_DisneyDiffuse(float NdotV, float NdotL, float LdotH, float linearRoughness)
 {
 	float NdotV_ = max(NdotV, eps);
-	float	NdotL_ = max(NdotL, eps);
+	float NdotL_ = max(NdotL, eps);
 	float energyBias = mix(0.0, 0.5, linearRoughness);
 	float energyFactor = mix(1.0, 1.0 / 1.51, linearRoughness);
 	float fd90 = energyBias + 2.0 * LdotH * LdotH * linearRoughness;
 	vec3 f0 = vec3(1.0, 1.0, 1.0);
 	float lightScatter = fr_F_Schlick(f0, fd90, NdotL_).r;
 	float viewScatter = fr_F_Schlick(f0, fd90, NdotV_).r;
-	return lightScatter * viewScatter * energyFactor;
+	return lightScatter * viewScatter * energyFactor / PI;
 }
 // Specular Visibility Component
 // ----------------------------------------------------------------------------
@@ -232,7 +231,7 @@ vec3 getIlluminance(float NdotV, float LdotH, float NdotH, float NdotL, float ro
 	vec3 Fr = Frss + Frms;
 
 	// Diffuse BRDF
-	vec3 Fd = fd_DisneyDiffuse(NdotV, NdotL, LdotH, roughness * roughness) * Albedo / PI;
+	vec3 Fd = fd_DisneyDiffuse(NdotV, NdotL, LdotH, roughness * roughness) * Albedo;
 
 	return (Fd + Fr) * lightLuminance * NdotL;
 }
@@ -365,71 +364,40 @@ void main()
 	float safe_roughness = (Roughness + eps) / (1.0 + eps);
 	float AO = RT2.a;
 	float SSAO = texture(uni_SSAOBlurPassRT0, TexCoords).x;
-	AO *= SSAO * SSAO;
+	AO *= pow(SSAO, 2.0f);
 
 	vec3 Lo = vec3(0.0);
 
-	if (uni_isEmissive)
+	vec3 F0 = vec3(0.04);
+	F0 = mix(F0, Albedo, Metallic);
+
+	vec3 N = normalize(Normal);
+	vec3 V = normalize(uni_globalPos.xyz - FragPos);
+
+	float NdotV = max(dot(N, V), 0.0);
+
+	// direction light, sun light
+	vec3 L = normalize(-uni_dirLight.direction.xyz);
+	vec3 H = normalize(V + L);
+
+	float LdotH = max(dot(L, H), 0.0);
+	float NdotH = max(dot(N, H), 0.0);
+	float NdotL = max(dot(N, L), 0.0);
+
+	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, uni_dirLight.luminance.xyz);
+
+	Lo *= 1 - ShadowCalculation(NdotL, FragPos);
+
+	// point punctual light
+	for (int i = 0; i < NR_POINT_LIGHTS; ++i)
 	{
-		Lo = Albedo;
-	}
-	else
-	{
-		vec3 F0 = vec3(0.04);
-		F0 = mix(F0, Albedo, Metallic);
-
-		vec3 N = normalize(Normal);
-		vec3 V = normalize(uni_globalPos.xyz - FragPos);
-
-		float NdotV = max(dot(N, V), 0.0);
-
-		// direction light, sun light
-		vec3 L = normalize(-uni_dirLight.direction.xyz);
-		vec3 H = normalize(V + L);
-
-		float LdotH = max(dot(L, H), 0.0);
-		float NdotH = max(dot(N, H), 0.0);
-		float NdotL = max(dot(N, L), 0.0);
-
-		Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, uni_dirLight.luminance.xyz);
-
-		Lo *= 1 - ShadowCalculation(NdotL, FragPos);
-
-		// point punctual light
-		for (int i = 0; i < NR_POINT_LIGHTS; ++i)
+		float lightRadius = uni_pointLights[i].luminance.w;
+		if (lightRadius > 0)
 		{
-			float lightRadius = uni_pointLights[i].luminance.w;
-			if (lightRadius > 0)
+			vec3 unormalizedL = uni_pointLights[i].position.xyz - FragPos;
+
+			if (length(unormalizedL) < lightRadius)
 			{
-				vec3 unormalizedL = uni_pointLights[i].position.xyz - FragPos;
-
-				if (length(unormalizedL) < lightRadius)
-				{
-					L = normalize(unormalizedL);
-					H = normalize(V + L);
-
-					LdotH = max(dot(L, H), 0.0);
-					NdotH = max(dot(N, H), 0.0);
-					NdotL = max(dot(N, L), 0.0);
-
-					float attenuation = 1.0;
-					float invSqrAttRadius = 1.0 / max(lightRadius * lightRadius, eps);
-					attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
-
-					vec3 lightLuminance = uni_pointLights[i].luminance.xyz * attenuation;
-
-					Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, lightLuminance);
-				}
-			}
-		}
-
-		// sphere area light
-		for (int i = 0; i < NR_SPHERE_LIGHTS; ++i)
-		{
-			float lightRadius = uni_sphereLights[i].luminance.w;
-			if (lightRadius > 0)
-			{
-				vec3 unormalizedL = uni_sphereLights[i].position.xyz - FragPos;
 				L = normalize(unormalizedL);
 				H = normalize(V + L);
 
@@ -437,39 +405,64 @@ void main()
 				NdotH = max(dot(N, H), 0.0);
 				NdotL = max(dot(N, L), 0.0);
 
-				float sqrDist = dot(unormalizedL, unormalizedL);
+				float attenuation = 1.0;
+				float invSqrAttRadius = 1.0 / max(lightRadius * lightRadius, eps);
+				attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
 
-				float Beta = acos(NdotL);
-				float H2 = sqrt(sqrDist);
-				float h = H2 / lightRadius;
-				float x = sqrt(max(h * h - 1, eps));
-				float y = -x * (1 / tan(Beta));
-				y = clamp(y, -1.0, 1.0);
-				float illuminance = 0;
+				vec3 lightLuminance = uni_pointLights[i].luminance.xyz * attenuation;
 
-				if (h * cos(Beta) > 1)
-				{
-					illuminance = cos(Beta) / (h * h);
-				}
-				else
-				{
-					illuminance = (1 / max(PI * h * h, eps))
-						* (cos(Beta) * acos(y) - x * sin(Beta) * sqrt(max(1 - y * y, eps)))
-						+ (1 / PI) * atan((sin(Beta) * sqrt(max(1 - y * y, eps)) / x));
-				}
-				illuminance *= PI;
-
-				Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, illuminance * uni_sphereLights[i].luminance.xyz);
+				Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, lightLuminance);
 			}
 		}
-
-		// environment capture light
-		vec3 R = reflect(-V, N);
-		Lo += imageBasedLight(N, NdotV, R, Albedo, Metallic, safe_roughness, F0);
-
-		// ambient occlusion
-		Lo *= AO;
 	}
+
+	// sphere area light
+	for (int i = 0; i < NR_SPHERE_LIGHTS; ++i)
+	{
+		float lightRadius = uni_sphereLights[i].luminance.w;
+		if (lightRadius > 0)
+		{
+			vec3 unormalizedL = uni_sphereLights[i].position.xyz - FragPos;
+			L = normalize(unormalizedL);
+			H = normalize(V + L);
+
+			LdotH = max(dot(L, H), 0.0);
+			NdotH = max(dot(N, H), 0.0);
+			NdotL = max(dot(N, L), 0.0);
+
+			float sqrDist = dot(unormalizedL, unormalizedL);
+
+			float Beta = acos(NdotL);
+			float H2 = sqrt(sqrDist);
+			float h = H2 / lightRadius;
+			float x = sqrt(max(h * h - 1, eps));
+			float y = -x * (1 / tan(Beta));
+			y = clamp(y, -1.0, 1.0);
+			float illuminance = 0;
+
+			if (h * cos(Beta) > 1)
+			{
+				illuminance = cos(Beta) / (h * h);
+			}
+			else
+			{
+				illuminance = (1 / max(PI * h * h, eps))
+					* (cos(Beta) * acos(y) - x * sin(Beta) * sqrt(max(1 - y * y, eps)))
+					+ (1 / PI) * atan((sin(Beta) * sqrt(max(1 - y * y, eps)) / x));
+			}
+			illuminance *= PI;
+
+			Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, illuminance * uni_sphereLights[i].luminance.xyz);
+		}
+	}
+
+	// environment capture light
+	vec3 R = -reflect(-V, N);
+	Lo += imageBasedLight(N, NdotV, R, Albedo, Metallic, safe_roughness, F0);
+
+	// ambient occlusion
+	Lo *= AO;
+
 	if (uni_drawCSMSplitedArea)
 	{
 		vec3 N = normalize(Normal);
