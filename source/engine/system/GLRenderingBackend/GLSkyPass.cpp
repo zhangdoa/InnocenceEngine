@@ -93,3 +93,8 @@ GLRenderPassComponent * GLSkyPass::getGLRPC()
 {
 	return m_GLRPC;
 }
+
+GLShaderProgramComponent * GLSkyPass::getGLSPC()
+{
+	return m_GLSPC;
+}

@@ -1474,28 +1474,28 @@ namespace InnoMath
 		TMat4<T> l_m;
 		TVec4<T> l_X;
 		TVec4<T> l_Y = upDir;
-		TVec4<T> l_Z = TVec4<T>(centerPos.x - eyePos.x, centerPos.y - eyePos.y, centerPos.z - eyePos.z, T()).normalize();
+		TVec4<T> l_Z = TVec4<T>(eyePos.x - centerPos.x, eyePos.y - centerPos.y, eyePos.y - centerPos.y, T()).normalize();
 
-		l_X = l_Z.cross(l_Y);
+		l_X = l_Y.cross(l_Z);
 		l_X = l_X.normalize();
-		l_Y = l_X.cross(l_Z);
+		l_Y = l_Z.cross(l_X);
 		l_Y = l_Y.normalize();
 
 		l_m.m00 = l_X.x;
 		l_m.m01 = l_Y.x;
-		l_m.m02 = -l_Z.x;
+		l_m.m02 = l_Z.x;
 		l_m.m03 = T();
 		l_m.m10 = l_X.y;
 		l_m.m11 = l_Y.y;
-		l_m.m12 = -l_Z.y;
+		l_m.m12 = l_Z.y;
 		l_m.m13 = T();
 		l_m.m20 = l_X.z;
 		l_m.m21 = l_Y.z;
-		l_m.m22 = -l_Z.z;
+		l_m.m22 = l_Z.z;
 		l_m.m23 = T();
 		l_m.m30 = -(l_X * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
 		l_m.m31 = -(l_Y * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
-		l_m.m32 = (l_Z * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
+		l_m.m32 = -(l_Z * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
 		l_m.m33 = one<T>;
 
 		return l_m;
@@ -1509,11 +1509,11 @@ namespace InnoMath
 		TMat4<T> l_m;
 		TVec4<T> l_X;
 		TVec4<T> l_Y = upDir;
-		TVec4<T> l_Z = TVec4<T>(centerPos.x - eyePos.x, centerPos.y - eyePos.y, centerPos.z - eyePos.z, T()).normalize();
+		TVec4<T> l_Z = TVec4<T>(eyePos.x - centerPos.x, eyePos.y - centerPos.y, eyePos.y - centerPos.y, T()).normalize();
 
-		l_X = l_Z.cross(l_Y);
+		l_X = l_Y.cross(l_Z);
 		l_X = l_X.normalize();
-		l_Y = l_X.cross(l_Z);
+		l_Y = l_Z.cross(l_X);
 		l_Y = l_Y.normalize();
 
 		l_m.m00 = l_X.x;
@@ -1524,10 +1524,10 @@ namespace InnoMath
 		l_m.m11 = l_Y.y;
 		l_m.m12 = l_Y.z;
 		l_m.m13 = -(l_Y * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
-		l_m.m20 = -l_Z.x;
-		l_m.m21 = -l_Z.y;
-		l_m.m22 = -l_Z.z;
-		l_m.m23 = (l_Z * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
+		l_m.m20 = l_Z.x;
+		l_m.m21 = l_Z.y;
+		l_m.m22 = l_Z.z;
+		l_m.m23 = -(l_Z * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
 		l_m.m30 = T();
 		l_m.m31 = T();
 		l_m.m32 = T();
@@ -1852,7 +1852,7 @@ namespace InnoMath
 	template<class T>
 	auto caclLookAtMatrix(const TVec4<T> globalPos, const TVec4<T> & localRot) -> TMat4<T>
 	{
-		return TMat4<T>().lookAt(globalPos, globalPos + getDirection(direction::BACKWARD, localRot), getDirection(direction::UP, localRot));
+		return TMat4<T>().lookAt(globalPos, globalPos + getDirection(direction::FORWARD, localRot), getDirection(direction::UP, localRot));
 	}
 
 	template<class T>

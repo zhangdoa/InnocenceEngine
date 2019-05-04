@@ -457,7 +457,7 @@ void main()
 	}
 
 	// environment capture light
-	vec3 R = -reflect(-V, N);
+	vec3 R = reflect(-V, N);
 	Lo += imageBasedLight(N, NdotV, R, Albedo, Metallic, safe_roughness, F0);
 
 	// ambient occlusion

@@ -1,6 +1,7 @@
 #pragma once
 #include "../../common/InnoType.h"
 #include "../../component/GLRenderPassComponent.h"
+#include "../../component/GLShaderProgramComponent.h"
 
 INNO_PRIVATE_SCOPE GLSkyPass
 {
@@ -10,4 +11,5 @@ INNO_PRIVATE_SCOPE GLSkyPass
 	bool reloadShader();
 
 	GLRenderPassComponent* getGLRPC();
+	GLShaderProgramComponent* getGLSPC();
 }

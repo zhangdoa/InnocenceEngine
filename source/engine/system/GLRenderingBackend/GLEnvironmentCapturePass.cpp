@@ -1,5 +1,8 @@
 #include "GLEnvironmentCapturePass.h"
 #include "GLRenderingSystemUtilities.h"
+
+#include "GLSkyPass.h"
+
 #include "../../component/GLRenderingSystemComponent.h"
 #include "../../component/RenderingFrontendSystemComponent.h"
 
@@ -59,16 +62,18 @@ bool GLEnvironmentCapturePass::initialize()
 
 bool GLEnvironmentCapturePass::render(vec4 pos)
 {
-	auto l_capturePos = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	mat4 l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, 10.0f);
+	auto l_capturePos = vec4(0.0f, 2.0f, 0.0f, 1.0f);
+	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, 10.0f);
+
+	auto l_rPX = InnoMath::toRotationMatrix(InnoMath::getQuatRotator(vec4(0.0f, 1.0f, 0.0f, 0.0f), 90.0f)).inverse();
+	auto l_rNX = InnoMath::toRotationMatrix(InnoMath::getQuatRotator(vec4(0.0f, 1.0f, 0.0f, 0.0f), -90.0f)).inverse();
+	auto l_rPY = InnoMath::toRotationMatrix(InnoMath::getQuatRotator(vec4(1.0f, 0.0f, 0.0f, 0.0f), -90.0f)).inverse();
+	auto l_rNY = InnoMath::toRotationMatrix(InnoMath::getQuatRotator(vec4(1.0f, 0.0f, 0.0f, 0.0f), 90.0f)).inverse();
+	auto l_rPZ = InnoMath::toRotationMatrix(InnoMath::getQuatRotator(vec4(0.0f, 1.0f, 0.0f, 0.0f), 0.0f)).inverse();
+	auto l_rNZ = InnoMath::toRotationMatrix(InnoMath::getQuatRotator(vec4(0.0f, 1.0f, 0.0f, 0.0f), 180.0f)).inverse();
 	std::vector<mat4> l_v =
 	{
-		InnoMath::lookAt(l_capturePos, l_capturePos + vec4(1.0f,  0.0f,  0.0f, 0.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
-		InnoMath::lookAt(l_capturePos, l_capturePos + vec4(-1.0f,  0.0f,  0.0f, 0.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
-		InnoMath::lookAt(l_capturePos, l_capturePos + vec4(0.0f,  1.0f,  0.0f, 0.0f), vec4(0.0f,  0.0f,  1.0f, 0.0f)),
-		InnoMath::lookAt(l_capturePos, l_capturePos + vec4(0.0f, -1.0f,  0.0f, 0.0f), vec4(0.0f,  0.0f, -1.0f, 0.0f)),
-		InnoMath::lookAt(l_capturePos, l_capturePos + vec4(0.0f,  0.0f,  1.0f, 0.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
-		InnoMath::lookAt(l_capturePos, l_capturePos + vec4(0.0f,  0.0f, -1.0f, 0.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f))
+		l_rPX, l_rNX, l_rPY, l_rNY, l_rPZ, l_rNZ
 	};
 
 	auto l_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
@@ -83,39 +88,34 @@ bool GLEnvironmentCapturePass::render(vec4 pos)
 	// @TODO: optimize
 	if (l_renderingConfig.drawSky)
 	{
-		//glEnable(GL_DEPTH_TEST);
-		//glDepthFunc(GL_LEQUAL);
+		activateShaderProgram(GLSkyPass::getGLSPC());
 
-		//activateShaderProgram(GLFinalRenderPassComponent::get().m_skyPassGLSPC);
+		SkyGPUData l_skyGPUData;
+		l_skyGPUData.p_inv = l_p.inverse();
+		l_skyGPUData.viewportSize = vec2(2048.0f, 2048.0f);
 
-		//updateUniform(
-		//	GLFinalRenderPassComponent::get().m_skyPass_uni_p,
-		//	l_p);
+		CameraGPUData l_cameraGPUData = RenderingFrontendSystemComponent::get().m_cameraGPUData;
+		l_cameraGPUData.p_original = l_p;
+		l_cameraGPUData.globalPos = l_capturePos;
 
-		//updateUniform(
-		//	GLFinalRenderPassComponent::get().m_skyPass_uni_viewportSize,
-		//	2048.0f, 2048.0f);
+		for (unsigned int i = 0; i < 6; ++i)
+		{
+			l_cameraGPUData.r = l_v[i];
+			l_skyGPUData.r_inv = l_v[i].inverse();
 
-		//updateUniform(
-		//	GLFinalRenderPassComponent::get().m_skyPass_uni_eyePos,
-		//	l_cameraDataPack.globalPos.x, l_cameraDataPack.globalPos.y, l_cameraDataPack.globalPos.z);
-		//updateUniform(
-		//	GLFinalRenderPassComponent::get().m_skyPass_uni_lightDir,
-		//	l_sunDataPack.dir.x, l_sunDataPack.dir.y, l_sunDataPack.dir.z);
+			updateUBO(GLRenderingSystemComponent::get().m_skyUBO, l_skyGPUData);
+			updateUBO(GLRenderingSystemComponent::get().m_cameraUBO, l_cameraGPUData);
 
-		//for (unsigned int i = 0; i < 6; ++i)
-		//{
-		//	updateUniform(GLFinalRenderPassComponent::get().m_skyPass_uni_r, l_v[i]);
-		//	attachCubemapColorRT(l_GLTDC, m_GLRPC, 0, i, 0);
-		//	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		//	drawMesh(l_MDC);
-		//}
-		//glDisable(GL_CULL_FACE);
-		//glDisable(GL_DEPTH_TEST);
+			attachCubemapColorRT(l_GLTDC, m_GLRPC, 0, i, 0);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			drawMesh(l_MDC);
+		}
 	}
 
 	// draw opaque meshes
 	activateShaderProgram(m_GLSPC);
+
+	auto l_t = InnoMath::getInvertTranslationMatrix(l_capturePos);
 
 	// uni_p
 	updateUniform(0, l_p);
@@ -123,7 +123,7 @@ bool GLEnvironmentCapturePass::render(vec4 pos)
 	for (unsigned int i = 0; i < 6; ++i)
 	{
 		// uni_v
-		updateUniform(1, l_v[i]);
+		updateUniform(1, l_v[i] * l_t);
 		attachCubemapColorRT(l_GLTDC, m_GLRPC, 0, i, 0);
 
 		auto l_copy = RenderingFrontendSystemComponent::get().m_GIPassGPUDataQueue.getRawData();
