@@ -107,6 +107,7 @@
           "ComponentType": 1,
           "MeshPrimitiveTopology": 2,
           "MeshShapeType": 5,
+          "MeshUsageType": 0,
           "ModelFileName": "res//convertedAssets//sponza.InnoModel",
           "TextureWrapMethod": 1,
           "VisiblilityType": 2,
@@ -145,10 +146,10 @@
           "ComponentType": 1,
           "MeshPrimitiveTopology": 2,
           "MeshShapeType": 2,
+          "MeshUsageType": 0,
           "ModelFileName": "",
           "TextureWrapMethod": 1,
           "VisiblilityType": 2,
-          "drawAABB": false,
           "SimulatePhysics": true
         }
       ],
@@ -183,11 +184,11 @@
           "ComponentType": 1,
           "MeshPrimitiveTopology": 3,
           "MeshShapeType": 3,
+          "MeshUsageType": 1,
           "ModelFileName": "",
           "TextureWrapMethod": 1,
           "VisiblilityType": 3,
-          "drawAABB": true,
-          "SimulatePhysics": false
+          "SimulatePhysics": true
         }
       ],
       "EntityID": "3c1ad32f03803d38938f073c5b45e6b1",
@@ -253,10 +254,10 @@
           "ComponentType": 1,
           "MeshPrimitiveTopology": 3,
           "MeshShapeType": 3,
+          "MeshUsageType": 1,
           "ModelFileName": "",
           "TextureWrapMethod": 1,
           "VisiblilityType": 2,
-          "drawAABB": true,
           "SimulatePhysics": true
         }
       ],
@@ -291,11 +292,11 @@
           "ComponentType": 1,
           "MeshPrimitiveTopology": 2,
           "MeshShapeType": 5,
+          "MeshUsageType": 1,
           "ModelFileName": "",
           "TextureWrapMethod": 1,
           "VisiblilityType": 3,
-          "drawAABB": false,
-          "SimulatePhysics": false
+          "SimulatePhysics": true
         }
       ],
       "EntityID": "51fed505c9584a37daf68df67af610c2",
@@ -329,11 +330,11 @@
           "ComponentType": 1,
           "MeshPrimitiveTopology": 2,
           "MeshShapeType": 5,
+          "MeshUsageType": 1,
           "ModelFileName": "res//convertedAssets//Orb.InnoModel",
           "TextureWrapMethod": 1,
           "VisiblilityType": 2,
-          "drawAABB": true,
-          "SimulatePhysics": false
+          "SimulatePhysics": true
         }
       ],
       "EntityID": "038c1d165dd678461749f5c3a8e30e44",

@@ -32,10 +32,10 @@
           "ComponentType": 1,
           "MeshPrimitiveTopology": 2,
           "MeshShapeType": 2,
+          "MeshUsageType": 0,
           "ModelFileName": "",
           "TextureWrapMethod": 1,
           "VisiblilityType": 2,
-          "drawAABB": false,
           "SimulatePhysics": true
         }
       ],
@@ -106,10 +106,10 @@
           "ComponentType": 1,
           "MeshPrimitiveTopology": 2,
           "MeshShapeType": 5,
+          "MeshUsageType": 0,
           "ModelFileName": "",
           "TextureWrapMethod": 1,
           "VisiblilityType": 2,
-          "drawAABB": false,
           "SimulatePhysics": false
         }
       ],
@@ -144,11 +144,11 @@
           "ComponentType": 1,
           "MeshPrimitiveTopology": 2,
           "MeshShapeType": 5,
+          "MeshUsageType": 1,
           "ModelFileName": "",
           "TextureWrapMethod": 1,
           "VisiblilityType": 3,
-          "drawAABB": false,
-          "SimulatePhysics": false
+          "SimulatePhysics": true
         }
       ],
       "EntityID": "2bd45e8c187d8d8c02a0bd423cf57f24",
@@ -214,10 +214,10 @@
           "ComponentType": 1,
           "MeshPrimitiveTopology": 3,
           "MeshShapeType": 3,
+          "MeshUsageType": 1,
           "ModelFileName": "",
           "TextureWrapMethod": 1,
           "VisiblilityType": 2,
-          "drawAABB": true,
           "SimulatePhysics": true
         }
       ],
@@ -291,11 +291,11 @@
           "ComponentType": 1,
           "MeshPrimitiveTopology": 3,
           "MeshShapeType": 3,
+          "MeshUsageType": 1,
           "ModelFileName": "",
           "TextureWrapMethod": 1,
           "VisiblilityType": 2,
-          "drawAABB": true,
-          "SimulatePhysics": false
+          "SimulatePhysics": true
         }
       ],
       "EntityID": "34d2a44f04bc21109a963c8683dd5e45",
@@ -406,10 +406,10 @@
           "ComponentType": 1,
           "MeshPrimitiveTopology": 3,
           "MeshShapeType": 3,
+          "MeshUsageType": 1,
           "ModelFileName": "",
           "TextureWrapMethod": 1,
           "VisiblilityType": 3,
-          "drawAABB": true,
           "SimulatePhysics": true
         }
       ],
