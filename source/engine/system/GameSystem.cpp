@@ -17,6 +17,7 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 	void updateTransformComponent();
 
 	EntityID createEntity(const std::string & entityName);
+	bool removeEntity(const std::string & entityName);
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
@@ -61,7 +62,7 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 
 std::string InnoGameSystemNS::getEntityName(const EntityID& entityID)
 {
-	auto result = std::find_if(
+	auto l_result = std::find_if(
 		m_entityNameMap.begin(),
 		m_entityNameMap.end(),
 		[&](auto& val)-> bool {
@@ -69,18 +70,18 @@ std::string InnoGameSystemNS::getEntityName(const EntityID& entityID)
 	}
 	);
 
-	if (result == m_entityNameMap.end())
+	if (l_result == m_entityNameMap.end())
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't find entity name by ID " + entityID + " !");
 		return "AbnormalEntityName";
 	}
 
-	return result->second;
+	return l_result->second;
 }
 
 EntityID InnoGameSystemNS::getEntityID(const std::string& entityName)
 {
-	auto result = std::find_if(
+	auto l_result = std::find_if(
 		m_entityNameMap.begin(),
 		m_entityNameMap.end(),
 		[&](auto& val)-> bool {
@@ -88,13 +89,13 @@ EntityID InnoGameSystemNS::getEntityID(const std::string& entityName)
 	}
 	);
 
-	if (result == m_entityNameMap.end())
+	if (l_result == m_entityNameMap.end())
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't find entity ID by name " + entityName + " !");
 		return "AbnormalEntityID";
 	}
 
-	return result->first;
+	return l_result->first;
 }
 
 bool InnoGameSystemNS::setup()
@@ -237,14 +238,14 @@ void InnoGameSystem::saveComponentsCapture()
 
 EntityID InnoGameSystemNS::createEntity(const std::string & entityName)
 {
-	auto result = std::find_if(
+	auto l_result = std::find_if(
 		m_entityNameMap.begin(),
 		m_entityNameMap.end(),
 		[&](auto& val) -> bool {
 		return val.second == entityName;
 	});
 
-	if (result != m_entityNameMap.end())
+	if (l_result != m_entityNameMap.end())
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: duplicated entity name " + entityName + "!");
 		return 0;
@@ -263,20 +264,30 @@ EntityID InnoGameSystem::createEntity(const std::string & entityName)
 	return InnoGameSystemNS::createEntity(entityName);
 }
 
+bool InnoGameSystemNS::removeEntity(const std::string & entityName)
+{
+	auto l_result = std::find_if(
+		m_entityNameMap.begin(),
+		m_entityNameMap.end(),
+		[&](auto& val) -> bool {
+		return val.second == entityName;
+	});
+
+	if (l_result != m_entityNameMap.end())
+	{
+		InnoGameSystemNS::m_entityNameMap.erase(l_result->first);
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GameSystem: entity " + entityName + " has been removed.");
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GameSystem: can't find entity " + entityName + " to remove.");
+	}
+	return true;
+}
+
 bool InnoGameSystem::removeEntity(const std::string & entityName)
 {
-	for (auto i : InnoGameSystemNS::m_entityNameMap)
-	{
-		if (i.second == entityName)
-		{
-			InnoGameSystemNS::m_entityNameMap.erase(i.first);
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GameSystem: entity " + entityName + " has been removed.");
-			return true;
-		}
-	}
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "GameSystem: can't remove entity " + entityName + "!");
-	return false;
+	return InnoGameSystemNS::removeEntity(entityName);
 }
 
 std::string InnoGameSystem::getEntityName(const EntityID & entityID)
@@ -371,10 +382,10 @@ void InnoGameSystem::registerComponent(className* rhs, const EntityID& parentEnt
 	auto l_componentType = InnoUtility::getComponentType<className>(); \
 	auto l_componentMetaDataPair = ComponentMetadataPair(l_componentType, l_componentName); \
 \
-	auto result = InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.find(parentEntity); \
-	if (result != InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.end()) \
+	auto l_result = InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.find(parentEntity); \
+	if (l_result != InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.end()) \
 	{ \
-		auto l_componentMetadataMap = &result->second; \
+		auto l_componentMetadataMap = &l_result->second; \
 		l_componentMetadataMap->emplace(rhs, l_componentMetaDataPair); \
 	} \
 	else \
@@ -397,10 +408,10 @@ registerComponentImplDefi(EnvironmentCaptureComponent)
 #define  unregisterComponentImplDefi( className ) \
 void InnoGameSystem::unregisterComponent(className* rhs) \
 { \
-	auto result = InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.find(rhs->m_parentEntity); \
-	if (result != InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.end()) \
+	auto l_result = InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.find(rhs->m_parentEntity); \
+	if (l_result != InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.end()) \
 	{ \
-		auto l_componentMetadataMap = &result->second; \
+		auto l_componentMetadataMap = &l_result->second; \
 		l_componentMetadataMap->erase(rhs); \
 	} \
 	else \
@@ -421,10 +432,10 @@ unregisterComponentImplDefi(EnvironmentCaptureComponent)
 #define getComponentImplDefi( className ) \
 className* InnoGameSystem::get##className(const EntityID& parentEntity) \
 { \
-	auto result = InnoGameSystemNS::m_##className##sMap.find(parentEntity); \
-	if (result != InnoGameSystemNS::m_##className##sMap.end()) \
+	auto l_result = InnoGameSystemNS::m_##className##sMap.find(parentEntity); \
+	if (l_result != InnoGameSystemNS::m_##className##sMap.end()) \
 	{ \
-		return result->second; \
+		return l_result->second; \
 	} \
 	else \
 	{ \
