@@ -94,7 +94,7 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool recordDrawCall(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex, VKMeshDataComponent * VKMDC);
 
 	bool waitForFence(VKRenderPassComponent* VKRPC);
-	bool summitCommand(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex);
+	bool submitCommand(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex);
 
 	bool updateUBOImpl(VkDeviceMemory&  UBOMemory, size_t size, const void* UBOValue);
 

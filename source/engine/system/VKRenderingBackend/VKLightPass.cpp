@@ -363,7 +363,7 @@ bool VKLightPass::render()
 	m_VKRPC->submitInfo.pWaitSemaphores = l_availableSemaphores;
 	m_VKRPC->submitInfo.pWaitDstStageMask = waitStages;
 
-	summitCommand(m_VKRPC, 0);
+	submitCommand(m_VKRPC, 0);
 
 	return true;
 }

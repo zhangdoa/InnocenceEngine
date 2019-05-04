@@ -428,10 +428,16 @@ bool VKRenderingSystemNS::createSwapChain()
 
 	// create descriptor pool
 	VkDescriptorPoolSize l_RTSamplerDescriptorPoolSize = {};
-	l_RTSamplerDescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	l_RTSamplerDescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_SAMPLER;
 	l_RTSamplerDescriptorPoolSize.descriptorCount = 1;
 
-	l_result &= createDescriptorPool(&l_RTSamplerDescriptorPoolSize, 1, 1, l_VKRPC->m_descriptorPool);
+	VkDescriptorPoolSize l_RTTextureDescriptorPoolSize = {};
+	l_RTTextureDescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+	l_RTTextureDescriptorPoolSize.descriptorCount = 1;
+
+	VkDescriptorPoolSize l_descriptorPoolSize[] = { l_RTSamplerDescriptorPoolSize , l_RTTextureDescriptorPoolSize };
+
+	l_result &= createDescriptorPool(l_descriptorPoolSize, 2, 1, l_VKRPC->m_descriptorPool);
 
 	// sub-pass
 	VkAttachmentReference l_attachmentRef = {};
@@ -458,22 +464,29 @@ bool VKRenderingSystemNS::createSwapChain()
 	VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
 	samplerLayoutBinding.binding = 0;
 	samplerLayoutBinding.descriptorCount = 1;
-	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	samplerLayoutBinding.pImmutableSamplers = nullptr;
+	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+	samplerLayoutBinding.pImmutableSamplers = &VKRenderingSystemComponent::get().m_deferredRTSampler;
 	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 	l_VKRPC->descriptorSetLayoutBindings.emplace_back(samplerLayoutBinding);
+
+	VkDescriptorSetLayoutBinding textureLayoutBinding = {};
+	textureLayoutBinding.binding = 1;
+	textureLayoutBinding.descriptorCount = 1;
+	textureLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+	textureLayoutBinding.pImmutableSamplers = nullptr;
+	textureLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	l_VKRPC->descriptorSetLayoutBindings.emplace_back(textureLayoutBinding);
 
 	// set descriptor image info
 	VkDescriptorImageInfo imageInfo;
 	imageInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	imageInfo.imageView = VKLightPass::getVKRPC()->m_VKTDCs[0]->m_imageView;
-	imageInfo.sampler = VKRenderingSystemComponent::get().m_deferredRTSampler;
 
 	VkWriteDescriptorSet basePassRTWriteDescriptorSet = {};
 	basePassRTWriteDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	basePassRTWriteDescriptorSet.dstBinding = 0;
+	basePassRTWriteDescriptorSet.dstBinding = 1;
 	basePassRTWriteDescriptorSet.dstArrayElement = 0;
-	basePassRTWriteDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	basePassRTWriteDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 	basePassRTWriteDescriptorSet.descriptorCount = 1;
 	basePassRTWriteDescriptorSet.pImageInfo = &imageInfo;
 	l_VKRPC->writeDescriptorSets.emplace_back(basePassRTWriteDescriptorSet);
@@ -859,7 +872,7 @@ bool VKRenderingSystemNS::render()
 	VKRenderingSystemComponent::get().m_swapChainVKRPC->submitInfo.pWaitSemaphores = l_availableSemaphores;
 	VKRenderingSystemComponent::get().m_swapChainVKRPC->submitInfo.pWaitDstStageMask = waitStages;
 
-	summitCommand(VKRenderingSystemComponent::get().m_swapChainVKRPC, imageIndex);
+	submitCommand(VKRenderingSystemComponent::get().m_swapChainVKRPC, imageIndex);
 
 	// present the swap chain image to the front screen
 	VkPresentInfoKHR presentInfo = {};

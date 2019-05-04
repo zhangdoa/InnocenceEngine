@@ -17,12 +17,12 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 
 	bool createShaderModule(VkShaderModule& vkShaderModule, const std::string& shaderFilePath);
 
-	bool summitGPUData(VKMeshDataComponent * rhs);
+	bool submitGPUData(VKMeshDataComponent * rhs);
 
 	bool createVBO(const std::vector<Vertex>& vertices, VkBuffer& VBO);
 	bool createIBO(const std::vector<Index>& indices, VkBuffer& IBO);
 
-	bool summitGPUData(VKTextureDataComponent * rhs);
+	bool submitGPUData(VKTextureDataComponent * rhs);
 	void transitionImageLayout(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout);
 	void copyBufferToImage(VkBuffer buffer, VkImage image, VkImageAspectFlags aspectFlags, uint32_t width, uint32_t height);
 
@@ -795,7 +795,7 @@ bool VKRenderingSystemNS::initializeVKMeshDataComponent(VKMeshDataComponent* rhs
 	}
 	else
 	{
-		summitGPUData(rhs);
+		submitGPUData(rhs);
 
 		rhs->m_objectStatus = ObjectStatus::ALIVE;
 
@@ -803,7 +803,7 @@ bool VKRenderingSystemNS::initializeVKMeshDataComponent(VKMeshDataComponent* rhs
 	}
 }
 
-bool VKRenderingSystemNS::summitGPUData(VKMeshDataComponent * rhs)
+bool VKRenderingSystemNS::submitGPUData(VKMeshDataComponent * rhs)
 {
 	createVBO(rhs->m_vertices, rhs->m_VBO);
 	createIBO(rhs->m_indices, rhs->m_IBO);
@@ -882,7 +882,7 @@ bool VKRenderingSystemNS::initializeVKTextureDataComponent(VKTextureDataComponen
 		{
 			if (rhs->m_textureData.size() > 0)
 			{
-				summitGPUData(rhs);
+				submitGPUData(rhs);
 
 				rhs->m_objectStatus = ObjectStatus::ALIVE;
 
@@ -902,7 +902,7 @@ bool VKRenderingSystemNS::initializeVKTextureDataComponent(VKTextureDataComponen
 	}
 }
 
-bool VKRenderingSystemNS::summitGPUData(VKTextureDataComponent * rhs)
+bool VKRenderingSystemNS::submitGPUData(VKTextureDataComponent * rhs)
 {
 	rhs->m_VkTextureDataDesc = getVKTextureDataDesc(rhs->m_textureDataDesc);
 
@@ -1210,7 +1210,7 @@ bool VKRenderingSystemNS::waitForFence(VKRenderPassComponent* VKRPC)
 	return true;
 }
 
-bool VKRenderingSystemNS::summitCommand(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex)
+bool VKRenderingSystemNS::submitCommand(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex)
 {
 	// submit the draw command buffer with a rendering finished signal semaphore
 	// command buffer

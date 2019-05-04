@@ -283,7 +283,7 @@ bool VKOpaquePass::update()
 
 bool VKOpaquePass::render()
 {
-	summitCommand(m_VKRPC, 0);
+	submitCommand(m_VKRPC, 0);
 
 	return true;
 }

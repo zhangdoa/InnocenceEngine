@@ -5,7 +5,8 @@ layout(location = 0) in vec2 outTexCoord;
 
 layout(location = 0) out vec4 outColor;
 
-layout(set = 0, binding = 0) uniform sampler2D basePassRT0;
+layout(set = 0, binding = 0) uniform sampler immutableSampler;
+layout(set = 0, binding = 1) uniform texture2D basePassRT0;
 
 // Academy Color Encoding System [http://www.oscars.org/science-technology/sci-tech-projects/aces]
 vec3 acesFilm(const vec3 x) {
@@ -31,7 +32,7 @@ vec3 accurateLinearToSRGB(in vec3 linearCol)
 void main()
 {
 	vec3 finalColor;
-	vec4 basePassResult = texture(basePassRT0, outTexCoord);
+	vec4 basePassResult = texture(sampler2D(basePassRT0, immutableSampler), outTexCoord);
 
 	finalColor = basePassResult.rgb;
 
