@@ -65,6 +65,13 @@ public:
 	D3D12_CPU_DESCRIPTOR_HANDLE m_currentCSUCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_currentCSUGPUHandle;
 
+	ID3D12DescriptorHeap* m_samplerHeap;
+	D3D12_DESCRIPTOR_HEAP_DESC m_samplerHeapDesc = {};
+	D3D12_CPU_DESCRIPTOR_HANDLE m_initialSamplerCPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE m_initialSamplerGPUHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE m_currentSamplerCPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE m_currentSamplerGPUHandle;
+
 	DX12ConstantBuffer m_cameraConstantBuffer;
 	DX12ConstantBuffer m_meshConstantBuffer;
 	DX12ConstantBuffer m_materialConstantBuffer;

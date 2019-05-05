@@ -50,9 +50,9 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 	bool createCommandAllocator();
 
 	bool createCSUHeap();
+	bool createSamplerHeap();
 	bool createSwapChain();
 	bool createSwapChainDXRPC();
-	bool createSwapChainCommandLists();
 	bool createSwapChainSyncPrimitives();
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
@@ -219,7 +219,6 @@ bool DX12RenderingSystemNS::createCommandAllocator()
 
 bool DX12RenderingSystemNS::createCSUHeap()
 {
-	// @TODO: one render pass component has one CSU heap, decouple CBV from DX12ConstantBuffer
 	g_DXRenderingSystemComponent->m_CSUHeapDesc.NumDescriptors = 65536;
 	g_DXRenderingSystemComponent->m_CSUHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	g_DXRenderingSystemComponent->m_CSUHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
@@ -241,6 +240,33 @@ bool DX12RenderingSystemNS::createCSUHeap()
 	g_DXRenderingSystemComponent->m_currentCSUGPUHandle = g_DXRenderingSystemComponent->m_initialCSUGPUHandle;
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: DescriptorHeap for CBV/SRV/UAV has been created.");
+
+	return true;
+}
+
+bool DX12RenderingSystemNS::createSamplerHeap()
+{
+	g_DXRenderingSystemComponent->m_samplerHeapDesc.NumDescriptors = 128;
+	g_DXRenderingSystemComponent->m_samplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+	g_DXRenderingSystemComponent->m_samplerHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+
+	auto l_result = DX12RenderingSystemComponent::get().m_device->CreateDescriptorHeap(&g_DXRenderingSystemComponent->m_samplerHeapDesc, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_samplerHeap));
+	if (FAILED(l_result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create DescriptorHeap for Sampler!");
+		m_objectStatus = ObjectStatus::STANDBY;
+		return false;
+	}
+
+	g_DXRenderingSystemComponent->m_samplerHeap->SetName(L"GlobalSamplerHeap");
+
+	g_DXRenderingSystemComponent->m_initialSamplerCPUHandle = g_DXRenderingSystemComponent->m_samplerHeap->GetCPUDescriptorHandleForHeapStart();
+	g_DXRenderingSystemComponent->m_initialSamplerGPUHandle = g_DXRenderingSystemComponent->m_samplerHeap->GetGPUDescriptorHandleForHeapStart();
+
+	g_DXRenderingSystemComponent->m_currentSamplerCPUHandle = g_DXRenderingSystemComponent->m_initialSamplerCPUHandle;
+	g_DXRenderingSystemComponent->m_currentSamplerGPUHandle = g_DXRenderingSystemComponent->m_initialSamplerGPUHandle;
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: DescriptorHeap for Sampler has been created.");
 
 	return true;
 }
@@ -316,6 +342,20 @@ bool DX12RenderingSystemNS::createSwapChainDXRPC()
 
 	ShaderFilePaths m_shaderFilePaths = { "DX12//finalBlendPassVertex.hlsl" , "", "DX12//finalBlendPassPixel.hlsl" };
 
+	l_DXSPC->m_samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	l_DXSPC->m_samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	l_DXSPC->m_samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	l_DXSPC->m_samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	l_DXSPC->m_samplerDesc.MipLODBias = 0.0f;
+	l_DXSPC->m_samplerDesc.MaxAnisotropy = 1;
+	l_DXSPC->m_samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	l_DXSPC->m_samplerDesc.BorderColor[0] = 0;
+	l_DXSPC->m_samplerDesc.BorderColor[1] = 0;
+	l_DXSPC->m_samplerDesc.BorderColor[2] = 0;
+	l_DXSPC->m_samplerDesc.BorderColor[3] = 0;
+	l_DXSPC->m_samplerDesc.MinLOD = 0;
+	l_DXSPC->m_samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
+
 	initializeDX12ShaderProgramComponent(l_DXSPC, m_shaderFilePaths);
 
 	auto l_DXRPC = addDX12RenderPassComponent(m_entityID);
@@ -348,14 +388,20 @@ bool DX12RenderingSystemNS::createSwapChainDXRPC()
 
 	l_result &= createRTV(l_DXRPC);
 
-	// Create an empty root signature.
-	l_DXRPC->m_rootSignatureDesc.Version = D3D_ROOT_SIGNATURE_VERSION_1_1;
+	// Create root signature.
+	CD3DX12_DESCRIPTOR_RANGE1 l_bassPassRT0DescRange;
+	l_bassPassRT0DescRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
 
-	l_DXRPC->m_rootSignatureDesc.Desc_1_1.NumParameters = 0;
-	l_DXRPC->m_rootSignatureDesc.Desc_1_1.pParameters = nullptr;
-	l_DXRPC->m_rootSignatureDesc.Desc_1_1.NumStaticSamplers = 0;
-	l_DXRPC->m_rootSignatureDesc.Desc_1_1.pStaticSamplers = nullptr;
-	l_DXRPC->m_rootSignatureDesc.Desc_1_1.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+	CD3DX12_DESCRIPTOR_RANGE1 l_samplerDescRange;
+	l_samplerDescRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);
+
+	CD3DX12_ROOT_PARAMETER1 l_rootParams[2];
+	l_rootParams[0].InitAsDescriptorTable(1, &l_bassPassRT0DescRange, D3D12_SHADER_VISIBILITY_PIXEL);
+	l_rootParams[1].InitAsDescriptorTable(1, &l_samplerDescRange, D3D12_SHADER_VISIBILITY_PIXEL);
+
+	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC l_rootSigDesc(sizeof(l_rootParams) / sizeof(l_rootParams[0]), l_rootParams);
+	l_DXRPC->m_rootSignatureDesc = l_rootSigDesc;
+	l_DXRPC->m_rootSignatureDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
 	l_DXRPC->m_rasterizerDesc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	l_DXRPC->m_blendDesc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
@@ -394,34 +440,6 @@ bool DX12RenderingSystemNS::createSwapChainDXRPC()
 
 	DX12RenderingSystemComponent::get().m_swapChainDXRPC = l_DXRPC;
 	DX12RenderingSystemComponent::get().m_swapChainDXSPC = l_DXSPC;
-
-	return true;
-}
-
-bool DX12RenderingSystemNS::createSwapChainCommandLists()
-{
-	HRESULT l_result;
-	l_result = DX12RenderingSystemComponent::get().m_commandAllocator->Reset();
-
-	auto l_MDC = getDX12MeshDataComponent(MeshShapeType::QUAD);
-
-	for (size_t i = 0; i < DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_commandLists.size(); i++)
-	{
-		auto l_commandIndex = (unsigned int)i;
-		recordCommandBegin(DX12RenderingSystemComponent::get().m_swapChainDXRPC, l_commandIndex);
-
-		DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_commandLists[l_commandIndex]->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_DXTDCs[l_commandIndex]->m_texture, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
-
-		recordActivateRenderPass(DX12RenderingSystemComponent::get().m_swapChainDXRPC, l_commandIndex);
-
-		recordDrawCall(DX12RenderingSystemComponent::get().m_swapChainDXRPC, l_commandIndex, l_MDC);
-
-		DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_commandLists[l_commandIndex]->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_DXTDCs[l_commandIndex]->m_texture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
-
-		recordCommandEnd(DX12RenderingSystemComponent::get().m_swapChainDXRPC, l_commandIndex);
-	}
 
 	return true;
 }
@@ -473,6 +491,7 @@ bool DX12RenderingSystemNS::initialize()
 	l_result = l_result && createCommandAllocator();
 
 	l_result = l_result && createCSUHeap();
+	l_result = l_result && createSamplerHeap();
 
 	loadDefaultAssets();
 
@@ -480,7 +499,6 @@ bool DX12RenderingSystemNS::initialize()
 
 	l_result = l_result && createSwapChain();
 	l_result = l_result && createSwapChainDXRPC();
-	l_result = l_result && createSwapChainCommandLists();
 
 	l_result = l_result && createSwapChainSyncPrimitives();
 
@@ -514,6 +532,38 @@ bool DX12RenderingSystemNS::update()
 		}
 		updateConstantBuffer(DX12RenderingSystemComponent::get().m_meshConstantBuffer, l_meshGPUData);
 		updateConstantBuffer(DX12RenderingSystemComponent::get().m_materialConstantBuffer, l_materialGPUData);
+	}
+
+	auto l_MDC = getDX12MeshDataComponent(MeshShapeType::QUAD);
+
+	for (size_t i = 0; i < DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_commandLists.size(); i++)
+	{
+		auto l_commandIndex = (unsigned int)i;
+		recordCommandBegin(DX12RenderingSystemComponent::get().m_swapChainDXRPC, l_commandIndex);
+
+		DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_commandLists[l_commandIndex]->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_DXTDCs[l_commandIndex]->m_texture, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+
+		recordActivateRenderPass(DX12RenderingSystemComponent::get().m_swapChainDXRPC, l_commandIndex);
+
+		ID3D12DescriptorHeap* l_heaps[] = { DX12RenderingSystemComponent::get().m_CSUHeap, DX12RenderingSystemComponent::get().m_samplerHeap };
+		recordBindDescHeaps(DX12RenderingSystemComponent::get().m_swapChainDXRPC, l_commandIndex, 2, l_heaps);
+
+		DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_commandLists[l_commandIndex]->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(DX12OpaquePass::getDX12RPC()->m_DXTDCs[0]->m_texture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+
+		recordBindSRVDescTable(DX12RenderingSystemComponent::get().m_swapChainDXRPC, l_commandIndex, 0, DX12OpaquePass::getDX12RPC()->m_DXTDCs[0]);
+		recordBindSamplerDescTable(DX12RenderingSystemComponent::get().m_swapChainDXRPC, l_commandIndex, 1, DX12RenderingSystemComponent::get().m_swapChainDXSPC);
+
+		recordDrawCall(DX12RenderingSystemComponent::get().m_swapChainDXRPC, l_commandIndex, l_MDC);
+
+		DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_commandLists[l_commandIndex]->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(DX12OpaquePass::getDX12RPC()->m_DXTDCs[0]->m_texture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));
+
+		DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_commandLists[l_commandIndex]->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_DXTDCs[l_commandIndex]->m_texture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+
+		recordCommandEnd(DX12RenderingSystemComponent::get().m_swapChainDXRPC, l_commandIndex);
 	}
 
 	DX12OpaquePass::update();
@@ -645,11 +695,6 @@ void DX12RenderingSystemNS::loadDefaultAssets()
 
 	m_unitQuadMDC = addDX12MeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addUnitQuad(*m_unitQuadMDC);
-	// Flip y texture coordinate
-	for (auto& i : m_unitQuadMDC->m_vertices)
-	{
-		i.m_texCoord.y = 1.0f - i.m_texCoord.y;
-	}
 	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
 	m_unitQuadMDC->m_objectStatus = ObjectStatus::STANDBY;

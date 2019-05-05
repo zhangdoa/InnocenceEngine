@@ -67,15 +67,15 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 
 	bool recordCommandBegin(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex);
 	bool recordActivateRenderPass(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex);
+	bool recordBindDescHeaps(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int heapsCount, ID3D12DescriptorHeap** heaps);
 	bool recordBindCBV(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int startSlot, const DX12ConstantBuffer& ConstantBuffer, size_t offset);
 	bool recordBindSRV(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int startSlot, const DX12TextureDataComponent* DXTDC);
-
+	bool recordBindSRVDescTable(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int startSlot, const DX12TextureDataComponent* DXTDC);
+	bool recordBindSamplerDescTable(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int startSlot, DX12ShaderProgramComponent* DXSPC);
 	bool recordDrawCall(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, DX12MeshDataComponent* DXMDC);
 	bool recordCommandEnd(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex);
 
 	DX12ShaderProgramComponent* addDX12ShaderProgramComponent(EntityID rhs);
 
 	bool initializeDX12ShaderProgramComponent(DX12ShaderProgramComponent* rhs, const ShaderFilePaths& shaderFilePaths);
-
-	bool activateDX12ShaderProgramComponent(DX12ShaderProgramComponent* rhs);
 }

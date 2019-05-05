@@ -91,6 +91,20 @@ bool DX12OpaquePass::initializeShaders()
 {
 	m_DXSPC = addDX12ShaderProgramComponent(m_entityID);
 
+	m_DXSPC->m_samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	m_DXSPC->m_samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	m_DXSPC->m_samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	m_DXSPC->m_samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	m_DXSPC->m_samplerDesc.MipLODBias = 0.0f;
+	m_DXSPC->m_samplerDesc.MaxAnisotropy = 1;
+	m_DXSPC->m_samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	m_DXSPC->m_samplerDesc.BorderColor[0] = 0;
+	m_DXSPC->m_samplerDesc.BorderColor[1] = 0;
+	m_DXSPC->m_samplerDesc.BorderColor[2] = 0;
+	m_DXSPC->m_samplerDesc.BorderColor[3] = 0;
+	m_DXSPC->m_samplerDesc.MinLOD = 0;
+	m_DXSPC->m_samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
+
 	initializeDX12ShaderProgramComponent(m_DXSPC, m_shaderFilePaths);
 
 	return true;
@@ -102,10 +116,9 @@ bool DX12OpaquePass::update()
 
 	recordActivateRenderPass(m_DXRPC, 0);
 
-	ID3D12DescriptorHeap* l_heaps[] = {
-		DX12RenderingSystemComponent::get().m_CSUHeap,
-	};
-	m_DXRPC->m_commandLists[0]->SetDescriptorHeaps(_countof(l_heaps), l_heaps);
+	ID3D12DescriptorHeap* l_heaps[] = { DX12RenderingSystemComponent::get().m_CSUHeap };
+
+	recordBindDescHeaps(m_DXRPC, 0, 1, l_heaps);
 
 	recordBindCBV(m_DXRPC, 0, 0, DX12RenderingSystemComponent::get().m_cameraConstantBuffer, 0);
 

@@ -6,6 +6,9 @@ struct PixelInputType
 	float2 texcoord : TEXCOORD0;
 };
 
+Texture2D basePassRT0 : register(t0);
+SamplerState SamplerTypePoint: register(s0);
+
 //Academy Color Encoding System
 //http://www.oscars.org/science-technology/sci-tech-projects/aces
 float3 acesFilm(const float3 x) {
@@ -19,7 +22,7 @@ float3 acesFilm(const float3 x) {
 
 float4 main(PixelInputType input) : SV_TARGET
 {
-	float3 finalColor = float3(0.2, 0.3, 0.6);
+	float3 finalColor = basePassRT0.Sample(SamplerTypePoint, input.texcoord).xyz;
 
 	//HDR to LDR
 	finalColor = acesFilm(finalColor);

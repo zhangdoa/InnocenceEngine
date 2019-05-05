@@ -16,6 +16,7 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 	ID3DBlob* loadShaderBuffer(ShaderType shaderType, const std::wstring & shaderFilePath);
 	bool initializeVertexShader(DX12ShaderProgramComponent* rhs, const std::wstring& VSShaderPath);
 	bool initializePixelShader(DX12ShaderProgramComponent* rhs, const std::wstring& PSShaderPath);
+	bool createSampler(DX12ShaderProgramComponent* rhs);
 
 	bool summitGPUData(DX12MeshDataComponent* rhs);
 
@@ -178,6 +179,21 @@ bool DX12RenderingSystemNS::initializePixelShader(DX12ShaderProgramComponent* rh
 	return true;
 }
 
+bool DX12RenderingSystemNS::createSampler(DX12ShaderProgramComponent* rhs)
+{
+	rhs->m_CPUHandle = DX12RenderingSystemComponent::get().m_currentSamplerCPUHandle;
+	rhs->m_GPUHandle = DX12RenderingSystemComponent::get().m_currentSamplerGPUHandle;
+
+	DX12RenderingSystemComponent::get().m_device->CreateSampler(&rhs->m_samplerDesc, rhs->m_CPUHandle);
+
+	auto l_samplerDescSize = DX12RenderingSystemComponent::get().m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+
+	DX12RenderingSystemComponent::get().m_currentSamplerCPUHandle.ptr += l_samplerDescSize;
+	DX12RenderingSystemComponent::get().m_currentSamplerGPUHandle.ptr += l_samplerDescSize;
+
+	return true;
+}
+
 DX12ShaderProgramComponent* DX12RenderingSystemNS::addDX12ShaderProgramComponent(EntityID rhs)
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DX12ShaderProgramComponentPool, sizeof(DX12ShaderProgramComponent));
@@ -191,12 +207,14 @@ bool DX12RenderingSystemNS::initializeDX12ShaderProgramComponent(DX12ShaderProgr
 	bool l_result = true;
 	if (shaderFilePaths.m_VSPath != "")
 	{
-		l_result = l_result && initializeVertexShader(rhs, std::wstring(shaderFilePaths.m_VSPath.begin(), shaderFilePaths.m_VSPath.end()));
+		l_result &= initializeVertexShader(rhs, std::wstring(shaderFilePaths.m_VSPath.begin(), shaderFilePaths.m_VSPath.end()));
 	}
 	if (shaderFilePaths.m_FSPath != "")
 	{
-		l_result = l_result && initializePixelShader(rhs, std::wstring(shaderFilePaths.m_FSPath.begin(), shaderFilePaths.m_FSPath.end()));
+		l_result &= initializePixelShader(rhs, std::wstring(shaderFilePaths.m_FSPath.begin(), shaderFilePaths.m_FSPath.end()));
 	}
+
+	l_result &= createSampler(rhs);
 
 	return l_result;
 }
@@ -271,11 +289,6 @@ void DX12RenderingSystemNS::OutputShaderErrorMessage(ID3DBlob * errorMessage, HW
 
 	MessageBox(WinWindowSystemComponent::get().m_hwnd, errorSStream.str().c_str(), shaderFilename.c_str(), MB_OK);
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: innoShader: " + shaderFilename + " compile error: " + errorSStream.str() + "\n -- --------------------------------------------------- -- ");
-}
-
-bool DX12RenderingSystemNS::activateDX12ShaderProgramComponent(DX12ShaderProgramComponent * rhs)
-{
-	return true;
 }
 
 DX12RenderPassComponent* DX12RenderingSystemNS::addDX12RenderPassComponent(EntityID rhs)
@@ -989,27 +1002,22 @@ bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
 			&CD3DX12_RESOURCE_BARRIER::Transition(rhs->m_texture, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 	}
 
-	// Describe and create a shader resource view (SRV) heap for the texture.
-	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-	srvHeapDesc.NumDescriptors = 1;
-	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	l_result = DX12RenderingSystemComponent::get().m_device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&rhs->m_SRVHeap));
-
-	if (FAILED(l_result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't create SRV heap!");
-		return false;
-	}
-
 	// Describe and create a SRV for the texture.
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Format = rhs->m_DX12TextureDataDesc.Format;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MostDetailedMip = 0;
-	srvDesc.Texture2D.MipLevels = SRVMipLevels;
-	DX12RenderingSystemComponent::get().m_device->CreateShaderResourceView(rhs->m_texture, &srvDesc, rhs->m_SRVHeap->GetCPUDescriptorHandleForHeapStart());
+	rhs->m_SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	rhs->m_SRVDesc.Format = rhs->m_DX12TextureDataDesc.Format;
+	rhs->m_SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	rhs->m_SRVDesc.Texture2D.MostDetailedMip = 0;
+	rhs->m_SRVDesc.Texture2D.MipLevels = SRVMipLevels;
+
+	rhs->m_CPUHandle = DX12RenderingSystemComponent::get().m_currentCSUCPUHandle;
+	rhs->m_GPUHandle = DX12RenderingSystemComponent::get().m_currentCSUGPUHandle;
+
+	auto l_CSUDescSize = DX12RenderingSystemComponent::get().m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	DX12RenderingSystemComponent::get().m_currentCSUCPUHandle.ptr += l_CSUDescSize;
+	DX12RenderingSystemComponent::get().m_currentCSUGPUHandle.ptr += l_CSUDescSize;
+
+	DX12RenderingSystemComponent::get().m_device->CreateShaderResourceView(rhs->m_texture, &rhs->m_SRVDesc, rhs->m_CPUHandle);
 
 	endSingleTimeCommands(l_commandList);
 
@@ -1056,6 +1064,12 @@ bool DX12RenderingSystemNS::recordActivateRenderPass(DX12RenderPassComponent* DX
 	return true;
 }
 
+bool DX12RenderingSystemNS::recordBindDescHeaps(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int heapsCount, ID3D12DescriptorHeap** heaps)
+{
+	DXRPC->m_commandLists[commandListIndex]->SetDescriptorHeaps(heapsCount, heaps);
+	return true;
+}
+
 bool DX12RenderingSystemNS::recordBindCBV(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int startSlot, const DX12ConstantBuffer& ConstantBuffer, size_t offset)
 {
 	DXRPC->m_commandLists[commandListIndex]->SetGraphicsRootConstantBufferView(startSlot, ConstantBuffer.m_constantBuffer->GetGPUVirtualAddress() + offset * ConstantBuffer.elementSize);
@@ -1065,6 +1079,20 @@ bool DX12RenderingSystemNS::recordBindCBV(DX12RenderPassComponent* DXRPC, unsign
 bool DX12RenderingSystemNS::recordBindSRV(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int startSlot, const DX12TextureDataComponent* DXTDC)
 {
 	DXRPC->m_commandLists[commandListIndex]->SetGraphicsRootShaderResourceView(startSlot, DXTDC->m_SRV->GetGPUVirtualAddress());
+
+	return true;
+}
+
+bool DX12RenderingSystemNS::recordBindSRVDescTable(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int startSlot, const DX12TextureDataComponent* DXTDC)
+{
+	DXRPC->m_commandLists[commandListIndex]->SetGraphicsRootDescriptorTable(startSlot, DXTDC->m_GPUHandle);
+
+	return true;
+}
+
+bool DX12RenderingSystemNS::recordBindSamplerDescTable(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int startSlot, DX12ShaderProgramComponent* DXSPC)
+{
+	DXRPC->m_commandLists[commandListIndex]->SetGraphicsRootDescriptorTable(startSlot, DXSPC->m_GPUHandle);
 
 	return true;
 }
