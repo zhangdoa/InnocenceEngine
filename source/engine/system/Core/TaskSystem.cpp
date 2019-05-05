@@ -31,17 +31,18 @@ INNO_PRIVATE_SCOPE InnoTaskSystemNS
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TaskSystem: Thread " + getThreadId() + " has been occupied.");
 
 		auto l_id = std::this_thread::get_id();
-		InnoTaskSystemNS::m_threadStatus.emplace(l_id, WorkerStatus::IDLE);
+		m_threadStatus.emplace(l_id, WorkerStatus::IDLE);
 		auto l_it = m_threadStatus.find(l_id);
+		auto& l_status = l_it->second;
 
 		while (!m_done)
 		{
 			std::unique_ptr<IThreadTask> pTask{ nullptr };
 			if (m_workQueue.waitPop(pTask))
 			{
-				l_it->second = WorkerStatus::BUSY;
+				l_status = WorkerStatus::BUSY;
 				pTask->execute();
-				l_it->second = WorkerStatus::IDLE;
+				l_status = WorkerStatus::IDLE;
 			}
 		}
 	}
