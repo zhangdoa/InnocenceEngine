@@ -330,16 +330,10 @@ bool DX12RenderingSystemNS::createSwapChainDXRPC()
 
 	// initialize manually
 	bool l_result = true;
-
 	l_result &= reserveRenderTargets(l_DXRPC);
-
 	l_result &= createRTVDescriptorHeap(l_DXRPC);
 
-	auto l_RTVDescSize = g_DXRenderingSystemComponent->m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-	D3D12_CPU_DESCRIPTOR_HANDLE l_handle = l_DXRPC->m_RTVDescHandle;
-
-	// use device created swap chain RTV
+	// use device created swap chain textures
 	for (size_t i = 0; i < l_imageCount; i++)
 	{
 		auto l_result = g_DXRenderingSystemComponent->m_swapChain->GetBuffer((unsigned int)i, IID_PPV_ARGS(&l_DXRPC->m_DXTDCs[i]->m_texture));
@@ -349,10 +343,10 @@ bool DX12RenderingSystemNS::createSwapChainDXRPC()
 			m_objectStatus = ObjectStatus::STANDBY;
 			return false;
 		}
-		g_DXRenderingSystemComponent->m_device->CreateRenderTargetView(l_DXRPC->m_DXTDCs[i]->m_texture, NULL, l_handle);
-		l_handle.ptr += l_RTVDescSize;
 		l_DXRPC->m_DXTDCs[i]->m_DX12TextureDataDesc = l_DXRPC->m_DXTDCs[i]->m_texture->GetDesc();
 	}
+
+	l_result &= createRTV(l_DXRPC);
 
 	// Create an empty root signature.
 	l_DXRPC->m_rootSignatureDesc.Version = D3D_ROOT_SIGNATURE_VERSION_1_1;

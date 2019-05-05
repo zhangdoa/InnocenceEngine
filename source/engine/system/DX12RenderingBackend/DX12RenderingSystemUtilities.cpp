@@ -308,7 +308,12 @@ bool DX12RenderingSystemNS::initializeDX12RenderPassComponent(DX12RenderPassComp
 
 bool DX12RenderingSystemNS::reserveRenderTargets(DX12RenderPassComponent* DXRPC)
 {
-	// reserve vectors and emplace empty objects
+	DXRPC->m_RTVCPUDescHandles.reserve(DXRPC->m_renderPassDesc.RTNumber);
+	for (size_t i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
+	{
+		DXRPC->m_RTVCPUDescHandles.emplace_back();
+	}
+
 	DXRPC->m_DXTDCs.reserve(DXRPC->m_renderPassDesc.RTNumber);
 	for (size_t i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
 	{
@@ -358,7 +363,7 @@ bool DX12RenderingSystemNS::createRTVDescriptorHeap(DX12RenderPassComponent* DXR
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create DescriptorHeap for RTV!");
 			return false;
 		}
-		DXRPC->m_RTVDescHandle = DXRPC->m_RTVHeap->GetCPUDescriptorHandleForHeapStart();
+		DXRPC->m_RTVCPUDescHandles[0] = DXRPC->m_RTVHeap->GetCPUDescriptorHandleForHeapStart();
 	}
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: RTV DescriptorHeap has been created.");
@@ -371,13 +376,16 @@ bool DX12RenderingSystemNS::createRTV(DX12RenderPassComponent* DXRPC)
 	auto l_RTVDescSize = DX12RenderingSystemComponent::get().m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
 	DXRPC->m_RTVDesc.Format = DXRPC->m_DXTDCs[0]->m_DX12TextureDataDesc.Format;
+	DXRPC->m_RTVDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 
-	D3D12_CPU_DESCRIPTOR_HANDLE l_handle = DXRPC->m_RTVDescHandle;
+	for (size_t i = 1; i < DXRPC->m_renderPassDesc.RTNumber; i++)
+	{
+		DXRPC->m_RTVCPUDescHandles[i].ptr = DXRPC->m_RTVCPUDescHandles[i - 1].ptr + l_RTVDescSize;
+	}
 
 	for (size_t i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
 	{
-		DX12RenderingSystemComponent::get().m_device->CreateRenderTargetView(DXRPC->m_DXTDCs[i]->m_texture, &DXRPC->m_RTVDesc, l_handle);
-		l_handle.ptr += l_RTVDescSize;
+		DX12RenderingSystemComponent::get().m_device->CreateRenderTargetView(DXRPC->m_DXTDCs[i]->m_texture, &DXRPC->m_RTVDesc, DXRPC->m_RTVCPUDescHandles[i]);
 	}
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: RTV has been created.");
@@ -1033,16 +1041,16 @@ bool DX12RenderingSystemNS::recordActivateRenderPass(DX12RenderPassComponent* DX
 
 	if (DXRPC->m_renderPassDesc.useMultipleFramebuffers)
 	{
-		CD3DX12_CPU_DESCRIPTOR_HANDLE l_RTVHandle(DXRPC->m_RTVHeap->GetCPUDescriptorHandleForHeapStart(), commandListIndex,
-			DX12RenderingSystemComponent::get().m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
-
-		DXRPC->m_commandLists[commandListIndex]->OMSetRenderTargets(1, &l_RTVHandle, FALSE, nullptr);
-		DXRPC->m_commandLists[commandListIndex]->ClearRenderTargetView(l_RTVHandle, l_clearColor, 0, nullptr);
+		DXRPC->m_commandLists[commandListIndex]->OMSetRenderTargets(1, &DXRPC->m_RTVCPUDescHandles[commandListIndex], FALSE, nullptr);
+		DXRPC->m_commandLists[commandListIndex]->ClearRenderTargetView(DXRPC->m_RTVCPUDescHandles[commandListIndex], l_clearColor, 0, nullptr);
 	}
 	else
 	{
-		DXRPC->m_commandLists[commandListIndex]->OMSetRenderTargets(1, &DXRPC->m_RTVDescHandle, FALSE, nullptr);
-		DXRPC->m_commandLists[commandListIndex]->ClearRenderTargetView(DXRPC->m_RTVDescHandle, l_clearColor, 0, nullptr);
+		DXRPC->m_commandLists[commandListIndex]->OMSetRenderTargets(DXRPC->m_renderPassDesc.RTNumber, &DXRPC->m_RTVCPUDescHandles[0], FALSE, nullptr);
+		for (size_t i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
+		{
+			DXRPC->m_commandLists[commandListIndex]->ClearRenderTargetView(DXRPC->m_RTVCPUDescHandles[i], l_clearColor, 0, nullptr);
+		}
 	}
 
 	return true;
