@@ -49,13 +49,14 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 	bool initializeDX12MeshDataComponent(DX12MeshDataComponent* rhs);
 	bool initializeDX12TextureDataComponent(DX12TextureDataComponent* rhs);
 
-	bool createConstantBuffer(DX12ConstantBuffer& arg, const std::wstring& name);
+	DX12ConstantBuffer createConstantBuffer(size_t elementSize, size_t elementCount, const std::wstring& name);
+	DX12CBV createCBV(const DX12ConstantBuffer& arg, size_t offset);
 	void updateConstantBufferImpl(const DX12ConstantBuffer& ConstantBuffer, size_t size, const void* ConstantBufferValue);
 
 	template <class T>
 	void updateConstantBuffer(const DX12ConstantBuffer& ConstantBuffer, const T& ConstantBufferValue)
 	{
-		updateConstantBufferImpl(ConstantBuffer, sizeof(T), ConstantBufferValue);
+		updateConstantBufferImpl(ConstantBuffer, sizeof(T), &ConstantBufferValue);
 	}
 
 	template <class T>
@@ -66,7 +67,7 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 
 	bool recordCommandBegin(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex);
 	bool recordActivateRenderPass(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex);
-	bool recordBindCBV(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int startSlot, const DX12ConstantBuffer& ConstantBuffer);
+	bool recordBindCBV(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int startSlot, const DX12ConstantBuffer& ConstantBuffer, size_t offset);
 	bool recordBindSRV(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int startSlot, const DX12TextureDataComponent* DXTDC);
 
 	bool recordDrawCall(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, DX12MeshDataComponent* DXMDC);

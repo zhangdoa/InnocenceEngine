@@ -499,7 +499,7 @@ bool DX12RenderingSystemNS::initialize()
 
 bool DX12RenderingSystemNS::update()
 {
-	updateConstantBuffer(DX12RenderingSystemComponent::get().m_cameraConstantBuffer, &RenderingFrontendSystemComponent::get().m_cameraGPUData);
+	updateConstantBuffer(DX12RenderingSystemComponent::get().m_cameraConstantBuffer, RenderingFrontendSystemComponent::get().m_cameraGPUData);
 	// @TODO: prepare in rendering frontend
 	auto l_queueCopy = RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.getRawData();
 
@@ -518,8 +518,8 @@ bool DX12RenderingSystemNS::update()
 			l_materialGPUData.emplace_back(l_geometryPassGPUData.materialGPUData);
 			l_queueCopy.pop();
 		}
-		updateConstantBuffer(DX12RenderingSystemComponent::get().m_meshConstantBuffer, &l_meshGPUData[0]);
-		updateConstantBuffer(DX12RenderingSystemComponent::get().m_materialConstantBuffer, &l_materialGPUData[0]);
+		updateConstantBuffer(DX12RenderingSystemComponent::get().m_meshConstantBuffer, l_meshGPUData);
+		updateConstantBuffer(DX12RenderingSystemComponent::get().m_materialConstantBuffer, l_materialGPUData);
 	}
 
 	DX12OpaquePass::update();
@@ -705,14 +705,9 @@ void DX12RenderingSystemNS::loadDefaultAssets()
 
 bool DX12RenderingSystemNS::generateGPUBuffers()
 {
-	g_DXRenderingSystemComponent->m_cameraConstantBuffer.m_CBVDesc.SizeInBytes = sizeof(CameraGPUData);
-	createConstantBuffer(g_DXRenderingSystemComponent->m_cameraConstantBuffer, L"cameraConstantBuffer");
-
-	g_DXRenderingSystemComponent->m_meshConstantBuffer.m_CBVDesc.SizeInBytes = sizeof(MeshGPUData);
-	createConstantBuffer(g_DXRenderingSystemComponent->m_meshConstantBuffer, L"meshConstantBuffer");
-
-	g_DXRenderingSystemComponent->m_materialConstantBuffer.m_CBVDesc.SizeInBytes = sizeof(MaterialGPUData);
-	createConstantBuffer(g_DXRenderingSystemComponent->m_materialConstantBuffer, L"materialConstantBuffer");
+	g_DXRenderingSystemComponent->m_cameraConstantBuffer = createConstantBuffer(sizeof(CameraGPUData), 1, L"cameraConstantBuffer");
+	g_DXRenderingSystemComponent->m_meshConstantBuffer = createConstantBuffer(sizeof(MeshGPUData), RenderingFrontendSystemComponent::get().m_maxMeshes, L"meshConstantBuffer");
+	g_DXRenderingSystemComponent->m_materialConstantBuffer = createConstantBuffer(sizeof(MaterialGPUData), RenderingFrontendSystemComponent::get().m_maxMaterials, L"materialConstantBuffer");
 
 	return true;
 }

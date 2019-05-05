@@ -106,47 +106,56 @@ ID3DBlob* DX12RenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const s
 	return l_shaderBuffer;
 }
 
-bool DX12RenderingSystemNS::createConstantBuffer(DX12ConstantBuffer& arg, const std::wstring& name)
+DX12ConstantBuffer DX12RenderingSystemNS::createConstantBuffer(size_t elementSize, size_t elementCount, const std::wstring& name)
 {
+	DX12ConstantBuffer l_result;
+	l_result.elementSize = elementSize;
+	l_result.elementCount = elementCount;
+
 	// Create ConstantBuffer
-	auto l_result = DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(
+	auto l_hResult = DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(arg.m_CBVDesc.SizeInBytes),
+		&CD3DX12_RESOURCE_DESC::Buffer(l_result.elementSize * l_result.elementCount),
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
-		IID_PPV_ARGS(&arg.m_ConstantBufferPtr));
+		IID_PPV_ARGS(&l_result.m_constantBuffer));
 
-	if (FAILED(l_result))
+	if (FAILED(l_hResult))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: can't create ConstantBuffer!");
-		return false;
 	}
 
 	// Map ConstantBuffer
 	CD3DX12_RANGE constantBufferReadRange(0, 0);
-	arg.m_ConstantBufferPtr->Map(0, &constantBufferReadRange, &arg.m_mappedPtr);
-	arg.m_ConstantBufferPtr->SetName(name.c_str());
+	l_result.m_constantBuffer->Map(0, &constantBufferReadRange, &l_result.mappedMemory);
+	l_result.m_constantBuffer->SetName(name.c_str());
 
-	// Create CBV
-	arg.m_CBVDesc.BufferLocation = arg.m_ConstantBufferPtr->GetGPUVirtualAddress();
+	return l_result;
+}
 
-	arg.m_CBVCPUHandle = DX12RenderingSystemComponent::get().m_currentCSUCPUHandle;
-	arg.m_CBVGPUHandle = DX12RenderingSystemComponent::get().m_currentCSUGPUHandle;
+DX12CBV DX12RenderingSystemNS::createCBV(const DX12ConstantBuffer& arg, size_t offset)
+{
+	DX12CBV l_result = {};
+	l_result.CBVDesc.BufferLocation = arg.m_constantBuffer->GetGPUVirtualAddress() + offset * arg.elementSize;
+	l_result.CBVDesc.SizeInBytes = (unsigned int)arg.elementSize;
 
-	DX12RenderingSystemComponent::get().m_device->CreateConstantBufferView(&arg.m_CBVDesc, arg.m_CBVCPUHandle);
+	l_result.CPUHandle = DX12RenderingSystemComponent::get().m_currentCSUCPUHandle;
+	l_result.GPUHandle = DX12RenderingSystemComponent::get().m_currentCSUGPUHandle;
+
+	DX12RenderingSystemComponent::get().m_device->CreateConstantBufferView(&l_result.CBVDesc, l_result.CPUHandle);
 
 	auto l_CSUDescSize = DX12RenderingSystemComponent::get().m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	DX12RenderingSystemComponent::get().m_currentCSUCPUHandle.ptr += l_CSUDescSize;
 	DX12RenderingSystemComponent::get().m_currentCSUGPUHandle.ptr += l_CSUDescSize;
 
-	return true;
+	return l_result;
 }
 
 void DX12RenderingSystemNS::updateConstantBufferImpl(const DX12ConstantBuffer& ConstantBuffer, size_t size, const void* ConstantBufferValue)
 {
-	std::memcpy(ConstantBuffer.m_mappedPtr, &ConstantBufferValue, size);
+	std::memcpy(ConstantBuffer.mappedMemory, ConstantBufferValue, size);
 }
 
 bool DX12RenderingSystemNS::initializeVertexShader(DX12ShaderProgramComponent* rhs, const std::wstring& VSShaderPath)
@@ -1039,9 +1048,9 @@ bool DX12RenderingSystemNS::recordActivateRenderPass(DX12RenderPassComponent* DX
 	return true;
 }
 
-bool DX12RenderingSystemNS::recordBindCBV(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int startSlot, const DX12ConstantBuffer& ConstantBuffer)
+bool DX12RenderingSystemNS::recordBindCBV(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int startSlot, const DX12ConstantBuffer& ConstantBuffer, size_t offset)
 {
-	DXRPC->m_commandLists[commandListIndex]->SetGraphicsRootConstantBufferView(startSlot, ConstantBuffer.m_ConstantBufferPtr->GetGPUVirtualAddress());
+	DXRPC->m_commandLists[commandListIndex]->SetGraphicsRootConstantBufferView(startSlot, ConstantBuffer.m_constantBuffer->GetGPUVirtualAddress() + offset * ConstantBuffer.elementSize);
 	return true;
 }
 

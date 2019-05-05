@@ -107,9 +107,9 @@ bool DX12OpaquePass::update()
 	};
 	m_DXRPC->m_commandLists[0]->SetDescriptorHeaps(_countof(l_heaps), l_heaps);
 
-	recordBindCBV(m_DXRPC, 0, 0, DX12RenderingSystemComponent::get().m_cameraConstantBuffer);
-	recordBindCBV(m_DXRPC, 0, 1, DX12RenderingSystemComponent::get().m_meshConstantBuffer);
-	recordBindCBV(m_DXRPC, 0, 2, DX12RenderingSystemComponent::get().m_materialConstantBuffer);
+	recordBindCBV(m_DXRPC, 0, 0, DX12RenderingSystemComponent::get().m_cameraConstantBuffer, 0);
+
+	unsigned int l_offset = 0;
 
 	while (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.size() > 0)
 	{
@@ -117,7 +117,10 @@ bool DX12OpaquePass::update()
 
 		if (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.tryPop(l_geometryPassGPUData))
 		{
+			recordBindCBV(m_DXRPC, 0, 1, DX12RenderingSystemComponent::get().m_meshConstantBuffer, l_offset);
+			recordBindCBV(m_DXRPC, 0, 2, DX12RenderingSystemComponent::get().m_materialConstantBuffer, l_offset);
 			recordDrawCall(m_DXRPC, 0, reinterpret_cast<DX12MeshDataComponent*>(l_geometryPassGPUData.MDC));
+			l_offset++;
 		}
 	}
 
