@@ -941,6 +941,10 @@ bool VKRenderingSystemNS::submitGPUData(VKTextureDataComponent * rhs)
 	{
 		imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 	}
+	else if (rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
+	{
+		imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	}
 	else
 	{
 		imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -973,6 +977,10 @@ bool VKRenderingSystemNS::submitGPUData(VKTextureDataComponent * rhs)
 		transitionImageLayout(rhs->m_image, imageInfo.format, rhs->m_VkTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	}
 	else if (rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
+	{
+		transitionImageLayout(rhs->m_image, imageInfo.format, rhs->m_VkTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+	}
+	else if (rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
 	{
 		transitionImageLayout(rhs->m_image, imageInfo.format, rhs->m_VkTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 	}
@@ -1415,6 +1423,10 @@ VkFormat VKRenderingSystemNS::getTextureFormat(TextureDataDesc textureDataDesc)
 	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
 	{
 		l_internalFormat = VkFormat::VK_FORMAT_D32_SFLOAT;
+	}
+	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
+	{
+		l_internalFormat = VkFormat::VK_FORMAT_D32_SFLOAT_S8_UINT;
 	}
 	else
 	{

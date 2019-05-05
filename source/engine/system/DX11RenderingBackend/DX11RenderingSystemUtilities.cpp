@@ -473,7 +473,7 @@ DX11RenderPassComponent* DX11RenderingSystemNS::addDX11RenderPassComponent(unsig
 
 	l_DXRPC->m_depthStencilDXTDC = addDX11TextureDataComponent();
 	l_DXRPC->m_depthStencilDXTDC->m_textureDataDesc = DX11RenderingSystemComponent::get().deferredPassTextureDesc;
-	l_DXRPC->m_depthStencilDXTDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
+	l_DXRPC->m_depthStencilDXTDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_STENCIL_ATTACHMENT;
 	l_DXRPC->m_depthStencilDXTDC->m_textureData = { nullptr };
 
 	initializeDX11TextureDataComponent(l_DXRPC->m_depthStencilDXTDC);
@@ -638,6 +638,10 @@ DXGI_FORMAT DX11RenderingSystemNS::getTextureFormat(TextureDataDesc textureDataD
 	}
 	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
 	{
+		l_internalFormat = DXGI_FORMAT_R32_TYPELESS;
+	}
+	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
+	{
 		l_internalFormat = DXGI_FORMAT_R24G8_TYPELESS;
 	}
 	else
@@ -801,6 +805,10 @@ unsigned int DX11RenderingSystemNS::getTextureBindFlags(TextureDataDesc textureD
 	{
 		textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_DEPTH_STENCIL;
 	}
+	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
+	{
+		textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_DEPTH_STENCIL;
+	}
 	else if (textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
 	{
 		textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
@@ -858,6 +866,7 @@ bool DX11RenderingSystemNS::submitGPUData(DX11TextureDataComponent * rhs)
 	// Submit raw data to GPU memory
 	if (rhs->m_textureDataDesc.usageType != TextureUsageType::COLOR_ATTACHMENT
 		&& rhs->m_textureDataDesc.usageType != TextureUsageType::DEPTH_ATTACHMENT
+		&& rhs->m_textureDataDesc.usageType != TextureUsageType::DEPTH_STENCIL_ATTACHMENT
 		&& rhs->m_textureDataDesc.usageType != TextureUsageType::RAW_IMAGE)
 	{
 		unsigned int rowPitch;
@@ -867,6 +876,10 @@ bool DX11RenderingSystemNS::submitGPUData(DX11TextureDataComponent * rhs)
 
 	// Get SRV desc
 	if (rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
+	{
+		rhs->m_SRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	}
+	else if (rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
 	{
 		rhs->m_SRVDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 	}
@@ -880,6 +893,7 @@ bool DX11RenderingSystemNS::submitGPUData(DX11TextureDataComponent * rhs)
 
 	if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
 		|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
+		|| rhs->m_textureDataDesc.usageType != TextureUsageType::DEPTH_STENCIL_ATTACHMENT
 		|| rhs->m_textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
 	{
 		rhs->m_SRVDesc.Texture2D.MipLevels = 1;

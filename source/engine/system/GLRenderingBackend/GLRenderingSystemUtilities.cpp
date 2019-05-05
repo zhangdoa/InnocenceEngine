@@ -572,7 +572,11 @@ GLenum GLRenderingSystemNS::getTextureInternalFormat(TextureDataDesc textureData
 	}
 	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
 	{
-		l_internalFormat = GL_DEPTH24_STENCIL8;
+		l_internalFormat = GL_DEPTH_COMPONENT32F;
+	}
+	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
+	{
+		l_internalFormat = GL_DEPTH32F_STENCIL8;
 	}
 	else
 	{

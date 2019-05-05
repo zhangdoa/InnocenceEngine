@@ -34,7 +34,7 @@ void GLShadowRenderPass::initialize()
 	m_entityID = InnoMath::createEntityID();
 
 	DirLightShadowPassFBDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
-	DirLightShadowPassFBDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT32;
+	DirLightShadowPassFBDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT32F;
 	DirLightShadowPassFBDesc.sizeX = 4096;
 	DirLightShadowPassFBDesc.sizeY = 4096;
 	DirLightShadowPassFBDesc.drawColorBuffers = false;
@@ -47,7 +47,7 @@ void GLShadowRenderPass::initialize()
 	DirLightShadowPassTextureDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_BORDER;
 	DirLightShadowPassTextureDesc.width = DirLightShadowPassFBDesc.sizeX;
 	DirLightShadowPassTextureDesc.height = DirLightShadowPassFBDesc.sizeY;
-	DirLightShadowPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT16;
+	DirLightShadowPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT32;
 	DirLightShadowPassTextureDesc.borderColor[0] = 1.0f;
 	DirLightShadowPassTextureDesc.borderColor[1] = 1.0f;
 	DirLightShadowPassTextureDesc.borderColor[2] = 1.0f;
@@ -56,7 +56,7 @@ void GLShadowRenderPass::initialize()
 	m_DirLight_GLRPC = addGLRenderPassComponent(1, DirLightShadowPassFBDesc, DirLightShadowPassTextureDesc);
 
 	PointLightShadowPassFBDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
-	PointLightShadowPassFBDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT32;
+	PointLightShadowPassFBDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT32F;
 	PointLightShadowPassFBDesc.sizeX = 4096;
 	PointLightShadowPassFBDesc.sizeY = 4096;
 	PointLightShadowPassFBDesc.drawColorBuffers = false;

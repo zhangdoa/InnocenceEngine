@@ -692,6 +692,10 @@ DXGI_FORMAT DX12RenderingSystemNS::getTextureFormat(TextureDataDesc textureDataD
 	}
 	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
 	{
+		l_internalFormat = DXGI_FORMAT_R32_TYPELESS;
+	}
+	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
+	{
 		l_internalFormat = DXGI_FORMAT_R24G8_TYPELESS;
 	}
 	else
@@ -852,6 +856,10 @@ D3D12_RESOURCE_FLAGS DX12RenderingSystemNS::getTextureBindFlags(TextureDataDesc 
 		textureBindFlags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 	}
 	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
+	{
+		textureBindFlags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+	}
+	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
 	{
 		textureBindFlags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 	}

@@ -154,7 +154,7 @@ bool GLRenderingSystemNS::setup()
 	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 
 	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
-	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT24;
+	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT32F;
 	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeX = l_screenResolution.x;
 	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeY = l_screenResolution.y;
 	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.drawColorBuffers = false;
@@ -167,7 +167,7 @@ bool GLRenderingSystemNS::setup()
 	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
 	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.width = GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeX;
 	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.height = GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeY;
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT16;
+	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT32;
 
 	GLRenderingSystemComponent::get().deferredPassFBDesc.renderBufferAttachmentType = GL_DEPTH_STENCIL_ATTACHMENT;
 	GLRenderingSystemComponent::get().deferredPassFBDesc.renderBufferInternalFormat = GL_DEPTH24_STENCIL8;
