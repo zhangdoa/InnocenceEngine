@@ -35,10 +35,9 @@ public:
 
 	ID3D12Device2* m_device;
 
-	ID3D12CommandAllocator* m_commandAllocator;
-
-	D3D12_COMMAND_QUEUE_DESC m_commandQueueDesc;
-	ID3D12CommandQueue* m_commandQueue;
+	ID3D12CommandAllocator* m_globalCommandAllocator;
+	D3D12_COMMAND_QUEUE_DESC m_globalCommandQueueDesc;
+	ID3D12CommandQueue* m_globalCommandQueue;
 
 	DXGI_SWAP_CHAIN_DESC1 m_swapChainDesc;
 	IDXGISwapChain4* m_swapChain;

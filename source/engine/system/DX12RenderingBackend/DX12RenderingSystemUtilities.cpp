@@ -224,7 +224,7 @@ ID3D12GraphicsCommandList* DX12RenderingSystemNS::beginSingleTimeCommands()
 	ID3D12GraphicsCommandList* l_commandList;
 
 	// Create a basic command list.
-	auto l_result = DX12RenderingSystemComponent::get().m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, DX12RenderingSystemComponent::get().m_commandAllocator, NULL, IID_PPV_ARGS(&l_commandList));
+	auto l_result = DX12RenderingSystemComponent::get().m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, DX12RenderingSystemComponent::get().m_globalCommandAllocator, NULL, IID_PPV_ARGS(&l_commandList));
 	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create command list!");
@@ -256,8 +256,8 @@ void DX12RenderingSystemNS::endSingleTimeCommands(ID3D12GraphicsCommandList* com
 	}
 
 	ID3D12CommandList* ppCommandLists[] = { commandList };
-	DX12RenderingSystemComponent::get().m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-	DX12RenderingSystemComponent::get().m_commandQueue->Signal(l_uploadFinishFence, 1);
+	DX12RenderingSystemComponent::get().m_globalCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+	DX12RenderingSystemComponent::get().m_globalCommandQueue->Signal(l_uploadFinishFence, 1);
 	l_uploadFinishFence->SetEventOnCompletion(1, l_fenceEvent);
 	WaitForSingleObject(l_fenceEvent, INFINITE);
 	CloseHandle(l_fenceEvent);
@@ -311,6 +311,8 @@ bool DX12RenderingSystemNS::initializeDX12RenderPassComponent(DX12RenderPassComp
 	l_result &= createRTV(DXRPC);
 	l_result &= createRootSignature(DXRPC);
 	l_result &= createPSO(DXRPC, DXSPC);
+	l_result &= createCommandQueue(DXRPC);
+	l_result &= createCommandAllocators(DXRPC);
 	l_result &= createCommandLists(DXRPC);
 	l_result &= createSyncPrimitives(DXRPC);
 
@@ -512,21 +514,64 @@ bool DX12RenderingSystemNS::createPSO(DX12RenderPassComponent* DXRPC, DX12Shader
 	return true;
 }
 
-bool DX12RenderingSystemNS::createCommandLists(DX12RenderPassComponent* DXRPC)
+bool DX12RenderingSystemNS::createCommandQueue(DX12RenderPassComponent* DXRPC)
+{
+	// Set up the description of the command queue.
+	DXRPC->m_commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+	DXRPC->m_commandQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
+	DXRPC->m_commandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+	DXRPC->m_commandQueueDesc.NodeMask = 0;
+
+	// Create the command queue.
+	auto l_result = DX12RenderingSystemComponent::get().m_device->CreateCommandQueue(&DXRPC->m_commandQueueDesc, IID_PPV_ARGS(&DXRPC->m_commandQueue));
+	if (FAILED(l_result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create CommandQueue!");
+		return false;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: CommandQueue has been created.");
+
+	return true;
+}
+
+bool DX12RenderingSystemNS::createCommandAllocators(DX12RenderPassComponent* DXRPC)
 {
 	if (DXRPC->m_renderPassDesc.useMultipleFramebuffers)
 	{
-		DXRPC->m_commandLists.resize(DXRPC->m_renderPassDesc.RTNumber);
+		DXRPC->m_commandAllocators.resize(DXRPC->m_renderPassDesc.RTNumber);
 	}
 	else
 	{
-		DXRPC->m_commandLists.resize(1);
+		DXRPC->m_commandAllocators.resize(1);
 	}
 
-	for (size_t i = 0; i < DXRPC->m_commandLists.size(); i++)
+	HRESULT l_result;
+
+	for (size_t i = 0; i < DXRPC->m_commandAllocators.size(); i++)
+	{
+		// Create a command allocator.
+		l_result = DX12RenderingSystemComponent::get().m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&DXRPC->m_commandAllocators[i]));
+		if (FAILED(l_result))
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create CommandAllocator!");
+			return false;
+		}
+
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: CommandAllocator has been created.");
+	}
+
+	return true;
+}
+
+bool DX12RenderingSystemNS::createCommandLists(DX12RenderPassComponent* DXRPC)
+{
+	DXRPC->m_commandLists.resize(DXRPC->m_commandAllocators.size());
+
+	for (size_t i = 0; i < DXRPC->m_commandAllocators.size(); i++)
 	{
 		auto l_result = DX12RenderingSystemComponent::get().m_device->CreateCommandList
-		(0, D3D12_COMMAND_LIST_TYPE_DIRECT, DX12RenderingSystemComponent::get().m_commandAllocator, NULL, IID_PPV_ARGS(&DXRPC->m_commandLists[i]));
+		(0, D3D12_COMMAND_LIST_TYPE_DIRECT, DXRPC->m_commandAllocators[i], NULL, IID_PPV_ARGS(&DXRPC->m_commandLists[i]));
 		if (FAILED(l_result))
 		{
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create CommandList!");
@@ -543,6 +588,13 @@ bool DX12RenderingSystemNS::createCommandLists(DX12RenderPassComponent* DXRPC)
 bool DX12RenderingSystemNS::createSyncPrimitives(DX12RenderPassComponent* DXRPC)
 {
 	HRESULT l_result;
+
+	DXRPC->m_fenceStatus.reserve(DXRPC->m_commandLists.size());
+
+	for (size_t i = 0; i < DXRPC->m_commandLists.size(); i++)
+	{
+		DXRPC->m_fenceStatus.emplace_back();
+	}
 
 	// Create a fence for GPU synchronization.
 	l_result = DX12RenderingSystemComponent::get().m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&DXRPC->m_fence));
@@ -563,16 +615,6 @@ bool DX12RenderingSystemNS::createSyncPrimitives(DX12RenderPassComponent* DXRPC)
 	}
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Fence event has been created.");
-
-	// Initialize the starting fence value.
-	DXRPC->m_fenceValues.reserve(
-		DXRPC->m_commandLists.size()
-	);
-
-	for (size_t i = 0; i < DXRPC->m_commandLists.size(); i++)
-	{
-		DXRPC->m_fenceValues.emplace_back();
-	}
 
 	return true;
 }
@@ -1030,86 +1072,114 @@ bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
 	return true;
 }
 
-bool DX12RenderingSystemNS::recordCommandBegin(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex)
+bool DX12RenderingSystemNS::recordCommandBegin(DX12RenderPassComponent* DXRPC, unsigned int frameIndex)
 {
-	DXRPC->m_commandLists[commandListIndex]->Reset(DX12RenderingSystemComponent::get().m_commandAllocator, DXRPC->m_PSO);
+	DXRPC->m_commandAllocators[frameIndex]->Reset();
+	DXRPC->m_commandLists[frameIndex]->Reset(DXRPC->m_commandAllocators[frameIndex], DXRPC->m_PSO);
 
 	return true;
 }
 
-bool DX12RenderingSystemNS::recordActivateRenderPass(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex)
+bool DX12RenderingSystemNS::recordActivateRenderPass(DX12RenderPassComponent* DXRPC, unsigned int frameIndex)
 {
-	DXRPC->m_commandLists[commandListIndex]->SetGraphicsRootSignature(DXRPC->m_rootSignature);
-	DXRPC->m_commandLists[commandListIndex]->RSSetViewports(1, &DXRPC->m_viewport);
-	DXRPC->m_commandLists[commandListIndex]->RSSetScissorRects(1, &DXRPC->m_scissor);
+	DXRPC->m_commandLists[frameIndex]->SetGraphicsRootSignature(DXRPC->m_rootSignature);
+	DXRPC->m_commandLists[frameIndex]->RSSetViewports(1, &DXRPC->m_viewport);
+	DXRPC->m_commandLists[frameIndex]->RSSetScissorRects(1, &DXRPC->m_scissor);
 
-	DXRPC->m_commandLists[commandListIndex]->SetPipelineState(DXRPC->m_PSO);
+	DXRPC->m_commandLists[frameIndex]->SetPipelineState(DXRPC->m_PSO);
 
 	const float l_clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 
 	if (DXRPC->m_renderPassDesc.useMultipleFramebuffers)
 	{
-		DXRPC->m_commandLists[commandListIndex]->OMSetRenderTargets(1, &DXRPC->m_RTVCPUDescHandles[commandListIndex], FALSE, nullptr);
-		DXRPC->m_commandLists[commandListIndex]->ClearRenderTargetView(DXRPC->m_RTVCPUDescHandles[commandListIndex], l_clearColor, 0, nullptr);
+		DXRPC->m_commandLists[frameIndex]->OMSetRenderTargets(1, &DXRPC->m_RTVCPUDescHandles[frameIndex], FALSE, nullptr);
+		DXRPC->m_commandLists[frameIndex]->ClearRenderTargetView(DXRPC->m_RTVCPUDescHandles[frameIndex], l_clearColor, 0, nullptr);
 	}
 	else
 	{
-		DXRPC->m_commandLists[commandListIndex]->OMSetRenderTargets(DXRPC->m_renderPassDesc.RTNumber, &DXRPC->m_RTVCPUDescHandles[0], FALSE, nullptr);
+		DXRPC->m_commandLists[frameIndex]->OMSetRenderTargets(DXRPC->m_renderPassDesc.RTNumber, &DXRPC->m_RTVCPUDescHandles[0], FALSE, nullptr);
 		for (size_t i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
 		{
-			DXRPC->m_commandLists[commandListIndex]->ClearRenderTargetView(DXRPC->m_RTVCPUDescHandles[i], l_clearColor, 0, nullptr);
+			DXRPC->m_commandLists[frameIndex]->ClearRenderTargetView(DXRPC->m_RTVCPUDescHandles[i], l_clearColor, 0, nullptr);
 		}
 	}
 
 	return true;
 }
 
-bool DX12RenderingSystemNS::recordBindDescHeaps(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int heapsCount, ID3D12DescriptorHeap** heaps)
+bool DX12RenderingSystemNS::recordBindDescHeaps(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int heapsCount, ID3D12DescriptorHeap** heaps)
 {
-	DXRPC->m_commandLists[commandListIndex]->SetDescriptorHeaps(heapsCount, heaps);
+	DXRPC->m_commandLists[frameIndex]->SetDescriptorHeaps(heapsCount, heaps);
 	return true;
 }
 
-bool DX12RenderingSystemNS::recordBindCBV(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int startSlot, const DX12ConstantBuffer& ConstantBuffer, size_t offset)
+bool DX12RenderingSystemNS::recordBindCBV(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int startSlot, const DX12ConstantBuffer& ConstantBuffer, size_t offset)
 {
-	DXRPC->m_commandLists[commandListIndex]->SetGraphicsRootConstantBufferView(startSlot, ConstantBuffer.m_constantBuffer->GetGPUVirtualAddress() + offset * ConstantBuffer.elementSize);
+	DXRPC->m_commandLists[frameIndex]->SetGraphicsRootConstantBufferView(startSlot, ConstantBuffer.m_constantBuffer->GetGPUVirtualAddress() + offset * ConstantBuffer.elementSize);
 	return true;
 }
 
-bool DX12RenderingSystemNS::recordBindSRV(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int startSlot, const DX12TextureDataComponent* DXTDC)
+bool DX12RenderingSystemNS::recordBindSRV(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int startSlot, const DX12TextureDataComponent* DXTDC)
 {
-	DXRPC->m_commandLists[commandListIndex]->SetGraphicsRootShaderResourceView(startSlot, DXTDC->m_SRV->GetGPUVirtualAddress());
-
-	return true;
-}
-
-bool DX12RenderingSystemNS::recordBindSRVDescTable(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int startSlot, const DX12TextureDataComponent* DXTDC)
-{
-	DXRPC->m_commandLists[commandListIndex]->SetGraphicsRootDescriptorTable(startSlot, DXTDC->m_GPUHandle);
+	DXRPC->m_commandLists[frameIndex]->SetGraphicsRootShaderResourceView(startSlot, DXTDC->m_SRV->GetGPUVirtualAddress());
 
 	return true;
 }
 
-bool DX12RenderingSystemNS::recordBindSamplerDescTable(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, unsigned int startSlot, DX12ShaderProgramComponent* DXSPC)
+bool DX12RenderingSystemNS::recordBindSRVDescTable(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int startSlot, const DX12TextureDataComponent* DXTDC)
 {
-	DXRPC->m_commandLists[commandListIndex]->SetGraphicsRootDescriptorTable(startSlot, DXSPC->m_GPUHandle);
+	DXRPC->m_commandLists[frameIndex]->SetGraphicsRootDescriptorTable(startSlot, DXTDC->m_GPUHandle);
 
 	return true;
 }
 
-bool DX12RenderingSystemNS::recordDrawCall(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex, DX12MeshDataComponent * DXMDC)
+bool DX12RenderingSystemNS::recordBindSamplerDescTable(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int startSlot, DX12ShaderProgramComponent* DXSPC)
 {
-	DXRPC->m_commandLists[commandListIndex]->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	DXRPC->m_commandLists[commandListIndex]->IASetVertexBuffers(0, 1, &DXMDC->m_vertexBufferView);
-	DXRPC->m_commandLists[commandListIndex]->IASetIndexBuffer(&DXMDC->m_indexBufferView);
-	DXRPC->m_commandLists[commandListIndex]->DrawIndexedInstanced((unsigned int)DXMDC->m_indicesSize, 1, 0, 0, 0);
+	DXRPC->m_commandLists[frameIndex]->SetGraphicsRootDescriptorTable(startSlot, DXSPC->m_GPUHandle);
 
 	return true;
 }
 
-bool DX12RenderingSystemNS::recordCommandEnd(DX12RenderPassComponent* DXRPC, unsigned int commandListIndex)
+bool DX12RenderingSystemNS::recordDrawCall(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, DX12MeshDataComponent * DXMDC)
 {
-	DXRPC->m_commandLists[commandListIndex]->Close();
+	DXRPC->m_commandLists[frameIndex]->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	DXRPC->m_commandLists[frameIndex]->IASetVertexBuffers(0, 1, &DXMDC->m_vertexBufferView);
+	DXRPC->m_commandLists[frameIndex]->IASetIndexBuffer(&DXMDC->m_indexBufferView);
+	DXRPC->m_commandLists[frameIndex]->DrawIndexedInstanced((unsigned int)DXMDC->m_indicesSize, 1, 0, 0, 0);
+
+	return true;
+}
+
+bool DX12RenderingSystemNS::recordCommandEnd(DX12RenderPassComponent* DXRPC, unsigned int frameIndex)
+{
+	DXRPC->m_commandLists[frameIndex]->Close();
+
+	return true;
+}
+
+bool DX12RenderingSystemNS::executeCommandList(DX12RenderPassComponent* DXRPC, unsigned int frameIndex)
+{
+	ID3D12CommandList* ppCommandLists[] = { DXRPC->m_commandLists[frameIndex] };
+	DXRPC->m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+	// Schedule a Signal command in the queue.
+	const UINT64 finishedFenceValue = DXRPC->m_fenceStatus[frameIndex] + 1;
+	DXRPC->m_commandQueue->Signal(DXRPC->m_fence, finishedFenceValue);
+
+	return true;
+}
+
+bool DX12RenderingSystemNS::waitFrame(DX12RenderPassComponent* DXRPC, unsigned int frameIndex)
+{
+	const UINT64 currentFenceValue = DXRPC->m_fence->GetCompletedValue();
+	const UINT64 expectedFenceValue = DXRPC->m_fenceStatus[frameIndex] + 1;
+
+	if (currentFenceValue < expectedFenceValue)
+	{
+		DXRPC->m_fence->SetEventOnCompletion(expectedFenceValue, DXRPC->m_fenceEvent);
+		WaitForSingleObjectEx(DXRPC->m_fenceEvent, INFINITE, FALSE);
+	}
+
+	DXRPC->m_fenceStatus[frameIndex] = expectedFenceValue;
 
 	return true;
 }

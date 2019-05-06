@@ -47,10 +47,10 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 
 	bool createDebugCallback();
 	bool createPhysicalDevices();
-	bool createCommandAllocator();
+	bool createGlobalCommandAllocator();
 
-	bool createCSUHeap();
-	bool createSamplerHeap();
+	bool createGlobalCSUHeap();
+	bool createGlobalSamplerHeap();
 	bool createSwapChain();
 	bool createSwapChainDXRPC();
 	bool createSwapChainSyncPrimitives();
@@ -173,24 +173,26 @@ bool DX12RenderingSystemNS::createPhysicalDevices()
 	//l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, TRUE);
 
 	// Initialize the description of the command queue.
-	ZeroMemory(&g_DXRenderingSystemComponent->m_commandQueueDesc, sizeof(g_DXRenderingSystemComponent->m_commandQueueDesc));
+	ZeroMemory(&g_DXRenderingSystemComponent->m_globalCommandQueueDesc, sizeof(g_DXRenderingSystemComponent->m_globalCommandQueueDesc));
 
 	// Set up the description of the command queue.
-	g_DXRenderingSystemComponent->m_commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-	g_DXRenderingSystemComponent->m_commandQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
-	g_DXRenderingSystemComponent->m_commandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-	g_DXRenderingSystemComponent->m_commandQueueDesc.NodeMask = 0;
+	g_DXRenderingSystemComponent->m_globalCommandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+	g_DXRenderingSystemComponent->m_globalCommandQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
+	g_DXRenderingSystemComponent->m_globalCommandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+	g_DXRenderingSystemComponent->m_globalCommandQueueDesc.NodeMask = 0;
 
 	// Create the command queue.
-	l_result = g_DXRenderingSystemComponent->m_device->CreateCommandQueue(&g_DXRenderingSystemComponent->m_commandQueueDesc, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_commandQueue));
+	l_result = g_DXRenderingSystemComponent->m_device->CreateCommandQueue(&g_DXRenderingSystemComponent->m_globalCommandQueueDesc, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_globalCommandQueue));
 	if (FAILED(l_result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create command queue!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create global CommandQueue!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Command queue has been created.");
+	g_DXRenderingSystemComponent->m_globalCommandQueue->SetName(L"GlobalCommandQueue");
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Global CommandQueue has been created.");
 
 	// Release the adapter.
 	g_DXRenderingSystemComponent->m_adapter->Release();
@@ -199,25 +201,27 @@ bool DX12RenderingSystemNS::createPhysicalDevices()
 	return true;
 }
 
-bool DX12RenderingSystemNS::createCommandAllocator()
+bool DX12RenderingSystemNS::createGlobalCommandAllocator()
 {
 	HRESULT l_result;
 
 	// Create a command allocator.
-	l_result = g_DXRenderingSystemComponent->m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_commandAllocator));
+	l_result = g_DXRenderingSystemComponent->m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_DXRenderingSystemComponent->m_globalCommandAllocator));
 	if (FAILED(l_result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create command allocator!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create global CommandAllocator!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Command allocator has been created.");
+	g_DXRenderingSystemComponent->m_globalCommandAllocator->SetName(L"GlobalCommandAllocator");
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Global CommandAllocator has been created.");
 
 	return true;
 }
 
-bool DX12RenderingSystemNS::createCSUHeap()
+bool DX12RenderingSystemNS::createGlobalCSUHeap()
 {
 	g_DXRenderingSystemComponent->m_CSUHeapDesc.NumDescriptors = 65536;
 	g_DXRenderingSystemComponent->m_CSUHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
@@ -244,7 +248,7 @@ bool DX12RenderingSystemNS::createCSUHeap()
 	return true;
 }
 
-bool DX12RenderingSystemNS::createSamplerHeap()
+bool DX12RenderingSystemNS::createGlobalSamplerHeap()
 {
 	g_DXRenderingSystemComponent->m_samplerHeapDesc.NumDescriptors = 128;
 	g_DXRenderingSystemComponent->m_samplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
@@ -309,7 +313,7 @@ bool DX12RenderingSystemNS::createSwapChain()
 	// Finally create the swap chain using the swap chain description.
 	IDXGISwapChain1* l_swapChain1;
 	l_result = g_DXRenderingSystemComponent->m_factory->CreateSwapChainForHwnd(
-		g_DXRenderingSystemComponent->m_commandQueue,
+		g_DXRenderingSystemComponent->m_globalCommandQueue,
 		WinWindowSystemComponent::get().m_hwnd,
 		&g_DXRenderingSystemComponent->m_swapChainDesc,
 		nullptr,
@@ -436,6 +440,8 @@ bool DX12RenderingSystemNS::createSwapChainDXRPC()
 
 	l_result = createRootSignature(l_DXRPC);
 	l_result = createPSO(l_DXRPC, l_DXSPC);
+	l_result = createCommandQueue(l_DXRPC);
+	l_result = createCommandAllocators(l_DXRPC);
 	l_result = createCommandLists(l_DXRPC);
 
 	DX12RenderingSystemComponent::get().m_swapChainDXRPC = l_DXRPC;
@@ -488,10 +494,10 @@ bool DX12RenderingSystemNS::initialize()
 
 	bool l_result = true;
 
-	l_result = l_result && createCommandAllocator();
+	l_result = l_result && createGlobalCommandAllocator();
 
-	l_result = l_result && createCSUHeap();
-	l_result = l_result && createSamplerHeap();
+	l_result = l_result && createGlobalCSUHeap();
+	l_result = l_result && createGlobalSamplerHeap();
 
 	loadDefaultAssets();
 
@@ -535,36 +541,34 @@ bool DX12RenderingSystemNS::update()
 	}
 
 	auto l_MDC = getDX12MeshDataComponent(MeshShapeType::QUAD);
+	auto l_swapChainDXRPC = DX12RenderingSystemComponent::get().m_swapChainDXRPC;
+	auto l_frameIndex = l_swapChainDXRPC->m_frameIndex;
 
-	for (size_t i = 0; i < DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_commandLists.size(); i++)
-	{
-		auto l_commandIndex = (unsigned int)i;
-		recordCommandBegin(DX12RenderingSystemComponent::get().m_swapChainDXRPC, l_commandIndex);
+	recordCommandBegin(l_swapChainDXRPC, l_frameIndex);
 
-		DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_commandLists[l_commandIndex]->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_DXTDCs[l_commandIndex]->m_texture, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+	l_swapChainDXRPC->m_commandLists[l_frameIndex]->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(l_swapChainDXRPC->m_DXTDCs[l_frameIndex]->m_texture, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
-		recordActivateRenderPass(DX12RenderingSystemComponent::get().m_swapChainDXRPC, l_commandIndex);
+	recordActivateRenderPass(l_swapChainDXRPC, l_frameIndex);
 
-		ID3D12DescriptorHeap* l_heaps[] = { DX12RenderingSystemComponent::get().m_CSUHeap, DX12RenderingSystemComponent::get().m_samplerHeap };
-		recordBindDescHeaps(DX12RenderingSystemComponent::get().m_swapChainDXRPC, l_commandIndex, 2, l_heaps);
+	ID3D12DescriptorHeap* l_heaps[] = { DX12RenderingSystemComponent::get().m_CSUHeap, DX12RenderingSystemComponent::get().m_samplerHeap };
+	recordBindDescHeaps(l_swapChainDXRPC, l_frameIndex, 2, l_heaps);
 
-		DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_commandLists[l_commandIndex]->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(DX12OpaquePass::getDX12RPC()->m_DXTDCs[0]->m_texture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+	l_swapChainDXRPC->m_commandLists[l_frameIndex]->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(DX12OpaquePass::getDX12RPC()->m_DXTDCs[0]->m_texture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 
-		recordBindSRVDescTable(DX12RenderingSystemComponent::get().m_swapChainDXRPC, l_commandIndex, 0, DX12OpaquePass::getDX12RPC()->m_DXTDCs[0]);
-		recordBindSamplerDescTable(DX12RenderingSystemComponent::get().m_swapChainDXRPC, l_commandIndex, 1, DX12RenderingSystemComponent::get().m_swapChainDXSPC);
+	recordBindSRVDescTable(l_swapChainDXRPC, l_frameIndex, 0, DX12OpaquePass::getDX12RPC()->m_DXTDCs[0]);
+	recordBindSamplerDescTable(l_swapChainDXRPC, l_frameIndex, 1, DX12RenderingSystemComponent::get().m_swapChainDXSPC);
 
-		recordDrawCall(DX12RenderingSystemComponent::get().m_swapChainDXRPC, l_commandIndex, l_MDC);
+	recordDrawCall(l_swapChainDXRPC, l_frameIndex, l_MDC);
 
-		DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_commandLists[l_commandIndex]->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(DX12OpaquePass::getDX12RPC()->m_DXTDCs[0]->m_texture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));
+	l_swapChainDXRPC->m_commandLists[l_frameIndex]->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(DX12OpaquePass::getDX12RPC()->m_DXTDCs[0]->m_texture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
-		DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_commandLists[l_commandIndex]->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_DXTDCs[l_commandIndex]->m_texture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+	l_swapChainDXRPC->m_commandLists[l_frameIndex]->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(l_swapChainDXRPC->m_DXTDCs[l_frameIndex]->m_texture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 
-		recordCommandEnd(DX12RenderingSystemComponent::get().m_swapChainDXRPC, l_commandIndex);
-	}
+	recordCommandEnd(l_swapChainDXRPC, l_frameIndex);
 
 	DX12OpaquePass::update();
 
@@ -575,29 +579,30 @@ bool DX12RenderingSystemNS::render()
 {
 	DX12OpaquePass::render();
 
+	auto l_swapChainDXRPC = DX12RenderingSystemComponent::get().m_swapChainDXRPC;
+
 	// Execute the command list.
-	ID3D12CommandList* ppCommandLists[] = { DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_commandLists[DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_frameIndex] };
-	DX12RenderingSystemComponent::get().m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+	ID3D12CommandList* ppCommandLists[] = { l_swapChainDXRPC->m_commandLists[l_swapChainDXRPC->m_frameIndex] };
+	g_DXRenderingSystemComponent->m_globalCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
 	// Present the frame.
 	DX12RenderingSystemComponent::get().m_swapChain->Present(1, 0);
 
 	// Schedule a Signal command in the queue.
-	const UINT64 currentFenceValue = DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fenceValues[DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_frameIndex];
-	DX12RenderingSystemComponent::get().m_commandQueue->Signal(DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fence, currentFenceValue);
+	const UINT64 currentFenceValue = l_swapChainDXRPC->m_fenceStatus[l_swapChainDXRPC->m_frameIndex];
+	g_DXRenderingSystemComponent->m_globalCommandQueue->Signal(l_swapChainDXRPC->m_fence, currentFenceValue);
 
 	// Update the frame index.
-	DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_frameIndex = DX12RenderingSystemComponent::get().m_swapChain->GetCurrentBackBufferIndex();
+	l_swapChainDXRPC->m_frameIndex = DX12RenderingSystemComponent::get().m_swapChain->GetCurrentBackBufferIndex();
 
 	// If the next frame is not ready to be rendered yet, wait until it is ready.
-	if (DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fence->GetCompletedValue() < DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fenceValues[DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_frameIndex])
+	if (l_swapChainDXRPC->m_fence->GetCompletedValue() < currentFenceValue)
 	{
-		DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fence->SetEventOnCompletion(DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fenceValues[DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_frameIndex], DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fenceEvent);
-		WaitForSingleObjectEx(DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fenceEvent, INFINITE, FALSE);
+		waitFrame(l_swapChainDXRPC, l_swapChainDXRPC->m_frameIndex);
 	}
 
 	// Set the fence value for the next frame.
-	DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fenceValues[DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_frameIndex] = currentFenceValue + 1;
+	l_swapChainDXRPC->m_fenceStatus[l_swapChainDXRPC->m_frameIndex] = currentFenceValue + 1;
 
 	return true;
 }
@@ -610,24 +615,11 @@ bool DX12RenderingSystemNS::terminate()
 		g_DXRenderingSystemComponent->m_swapChain->SetFullscreenState(false, NULL);
 	}
 
-	// Close the object handle to the fence event.
-	auto error = CloseHandle(DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fenceEvent);
-	if (error == 0)
-	{
-	}
-
-	// Release the fence.
-	if (DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fence)
-	{
-		DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fence->Release();
-		DX12RenderingSystemComponent::get().m_swapChainDXRPC->m_fence = 0;
-	}
-
 	// Release the command allocator.
-	if (g_DXRenderingSystemComponent->m_commandAllocator)
+	if (g_DXRenderingSystemComponent->m_globalCommandAllocator)
 	{
-		g_DXRenderingSystemComponent->m_commandAllocator->Release();
-		g_DXRenderingSystemComponent->m_commandAllocator = 0;
+		g_DXRenderingSystemComponent->m_globalCommandAllocator->Release();
+		g_DXRenderingSystemComponent->m_globalCommandAllocator = 0;
 	}
 
 	if (g_DXRenderingSystemComponent->m_swapChain)
@@ -637,10 +629,10 @@ bool DX12RenderingSystemNS::terminate()
 	}
 
 	// Release the command queue.
-	if (g_DXRenderingSystemComponent->m_commandQueue)
+	if (g_DXRenderingSystemComponent->m_globalCommandQueue)
 	{
-		g_DXRenderingSystemComponent->m_commandQueue->Release();
-		g_DXRenderingSystemComponent->m_commandQueue = 0;
+		g_DXRenderingSystemComponent->m_globalCommandQueue->Release();
+		g_DXRenderingSystemComponent->m_globalCommandQueue = 0;
 	}
 
 	if (g_DXRenderingSystemComponent->m_device)

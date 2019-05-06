@@ -145,22 +145,8 @@ bool DX12OpaquePass::update()
 bool DX12OpaquePass::render()
 {
 	// Execute the command list.
-	ID3D12CommandList* ppCommandLists[] = { m_DXRPC->m_commandLists[m_DXRPC->m_frameIndex] };
-	DX12RenderingSystemComponent::get().m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
-	// Schedule a Signal command in the queue.
-	const UINT64 currentFenceValue = m_DXRPC->m_fenceValues[m_DXRPC->m_frameIndex];
-	DX12RenderingSystemComponent::get().m_commandQueue->Signal(m_DXRPC->m_fence, currentFenceValue);
-
-	// If the next frame is not ready to be rendered yet, wait until it is ready.
-	if (m_DXRPC->m_fence->GetCompletedValue() < m_DXRPC->m_fenceValues[m_DXRPC->m_frameIndex])
-	{
-		m_DXRPC->m_fence->SetEventOnCompletion(m_DXRPC->m_fenceValues[m_DXRPC->m_frameIndex], m_DXRPC->m_fenceEvent);
-		WaitForSingleObjectEx(m_DXRPC->m_fenceEvent, INFINITE, FALSE);
-	}
-
-	// Set the fence value for the next frame.
-	m_DXRPC->m_fenceValues[m_DXRPC->m_frameIndex] = currentFenceValue + 1;
+	executeCommandList(m_DXRPC, 0);
+	waitFrame(m_DXRPC, 0);
 
 	return true;
 }

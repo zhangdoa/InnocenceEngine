@@ -4,6 +4,7 @@
 #include "TextureDataComponent.h"
 #include "DX12TextureDataComponent.h"
 
+enum class FenceStatus { IDLE, WORKING };
 class DX12RenderPassComponent
 {
 public:
@@ -15,6 +16,9 @@ public:
 
 	RenderPassDesc m_renderPassDesc;
 
+	std::vector<ID3D12CommandAllocator*> m_commandAllocators;
+	D3D12_COMMAND_QUEUE_DESC m_commandQueueDesc = {};
+	ID3D12CommandQueue* m_commandQueue;
 	std::vector<ID3D12GraphicsCommandList*> m_commandLists;
 
 	ID3D12DescriptorHeap* m_RTVHeap;
@@ -46,7 +50,8 @@ public:
 	D3D12_RECT m_scissor = {};
 
 	unsigned int m_frameIndex = 0;
+
 	ID3D12Fence* m_fence;
 	HANDLE m_fenceEvent;
-	std::vector<unsigned long long> m_fenceValues;
+	std::vector<unsigned long long> m_fenceStatus;
 };
