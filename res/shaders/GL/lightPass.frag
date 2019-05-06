@@ -489,26 +489,22 @@ void main()
 
 		if (splitIndex == 0)
 		{
-			Lo.r += 0.1;
+			Lo.g = 0;
+			Lo.b = 0;
 		}
 		else if (splitIndex == 1)
 		{
-			Lo.r += 0.1;
-			Lo.g += 0.1;
+			Lo.b = 0;
 		}
 		else if (splitIndex == 2)
 		{
-			Lo.g += 0.1;
+			Lo.r = 0;
+			Lo.b = 0;
 		}
 		else if (splitIndex == 3)
 		{
-			Lo.b += 0.1;
-		}
-		else
-		{
-			Lo.r += 0.1;
-			Lo.g += 0.1;
-			Lo.b += 0.1;
+			Lo.r = 0;
+			Lo.g = 0;
 		}
 	}
 

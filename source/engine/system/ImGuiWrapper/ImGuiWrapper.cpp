@@ -94,8 +94,8 @@ bool ImGuiWrapper::setup()
 #endif
 
 #if defined INNO_PLATFORM_LINUX
-		ImGuiWrapperNS::m_wrapperImpl = new ImGuiWrapperLinuxGL();
-		ImGuiWrapperNS::m_isParity = false;
+	ImGuiWrapperNS::m_wrapperImpl = new ImGuiWrapperLinuxGL();
+	ImGuiWrapperNS::m_isParity = false;
 #endif
 
 	if (ImGuiWrapperNS::m_isParity)
@@ -188,7 +188,7 @@ bool ImGuiWrapper::update()
 
 		ImGui::NewFrame();
 		{
-			//ImGuiWrapperNS::showApplicationProfiler();
+			ImGuiWrapperNS::showApplicationProfiler();
 			//ImGuiWrapperNS::showFileExplorer();
 			//ImGuiWrapperNS::showWorldExplorer();
 		}

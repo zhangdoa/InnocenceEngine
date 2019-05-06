@@ -16,6 +16,8 @@ INNO_PRIVATE_SCOPE GLDebuggerPass
 {
 	void initializeShaders();
 
+	bool draw();
+
 	EntityID m_entityID;
 
 	std::function<void()> f_mouseSelect;
@@ -23,6 +25,8 @@ INNO_PRIVATE_SCOPE GLDebuggerPass
 	VisibleComponent* m_pickedVisibleComponent;
 
 	GLRenderPassComponent* m_GLRPC;
+	GLRenderPassComponent* m_topViewGLRPC;
+
 	GLShaderProgramComponent* m_GLSPC;
 	ShaderFilePaths m_shaderFilePaths = { "GL//wireframeOverlayPass.vert", "", "GL//wireframeOverlayPass.frag" };
 	//ShaderFilePaths m_shaderFilePaths = { "GL//debuggerPass.vert", "GL//debuggerPass.geom", "GL//debuggerPass.frag" };
@@ -54,7 +58,17 @@ bool GLDebuggerPass::initialize()
 
 	m_entityID = InnoMath::createEntityID();
 
-	m_GLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
+	auto l_FBDesc = GLRenderingSystemComponent::get().deferredPassFBDesc;
+	auto l_textureDesc = GLRenderingSystemComponent::get().deferredPassTextureDesc;
+
+	m_GLRPC = addGLRenderPassComponent(1, l_FBDesc, l_textureDesc);
+
+	l_FBDesc.sizeX /= 4;
+	l_FBDesc.sizeY /= 4;
+	l_textureDesc.width /= 4;
+	l_textureDesc.height /= 4;
+
+	m_topViewGLRPC = addGLRenderPassComponent(1, l_FBDesc, l_textureDesc);
 
 	initializeShaders();
 
@@ -71,19 +85,92 @@ void GLDebuggerPass::initializeShaders()
 	m_GLSPC = rhs;
 }
 
-bool GLDebuggerPass::update()
+bool GLDebuggerPass::draw()
 {
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::SPHERE);
 
+	static bool l_drawPointLightRange = false;
+
+	if (l_drawPointLightRange)
+	{
+		for (auto i : RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector)
+		{
+			if (i.luminance.w > 0.0f)
+			{
+				auto l_t = InnoMath::toTranslationMatrix(i.pos);
+				auto l_s = InnoMath::toScaleMatrix(vec4(i.luminance.w, i.luminance.w, i.luminance.w, 1.0f));
+				auto l_m = l_t * l_s;
+				updateUniform(3, l_m);
+				drawMesh(l_MDC);
+			}
+		}
+	}
+
+	static bool l_drawSphereLightShape = false;
+
+	if (l_drawSphereLightShape)
+	{
+		for (auto i : RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector)
+		{
+			if (i.luminance.w > 0.0f)
+			{
+				auto l_t = InnoMath::toTranslationMatrix(i.pos);
+				auto l_s = InnoMath::toScaleMatrix(vec4(i.luminance.w, i.luminance.w, i.luminance.w, 1.0f));
+				auto l_m = l_t * l_s;
+				updateUniform(3, l_m);
+				drawMesh(l_MDC);
+			}
+		}
+	}
+
+	static bool l_drawCSMAABBRange = false;
+	l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
+
+	if (l_drawCSMAABBRange)
+	{
+		auto l_directionalLightComponents = g_pCoreSystem->getGameSystem()->get<DirectionalLightComponent>();
+		auto l_directionalLight = l_directionalLightComponents[0];
+
+		for (auto i : l_directionalLight->m_AABBsInWorldSpace)
+		{
+			auto l_t = InnoMath::toTranslationMatrix(i.m_center);
+			auto l_extend = i.m_extend;
+			auto l_s = InnoMath::toScaleMatrix(l_extend);
+			auto l_m = l_t * l_s;
+			updateUniform(3, l_m);
+			drawMesh(l_MDC);
+		}
+	}
+
+	static bool l_drawDebugMesh = false;
+
+	if (l_drawDebugMesh)
+	{
+		auto l_copy = RenderingFrontendSystemComponent::get().m_debuggerPassGPUDataQueue.getRawData();
+		while (l_copy.size() > 0)
+		{
+			DebuggerPassGPUData l_debuggerPassGPUData = l_copy.front();
+			updateUniform(3, l_debuggerPassGPUData.m);
+			drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_debuggerPassGPUData.MDC));
+			l_copy.pop();
+		}
+	}
+
+	return true;
+}
+
+bool GLDebuggerPass::update()
+{
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+	activateShaderProgram(m_GLSPC);
 
 	activateRenderPass(m_GLRPC);
 
 	// copy depth buffer from G-Pass
 	copyDepthBuffer(GLOpaquePass::getGLRPC(), m_GLRPC);
-
-	activateShaderProgram(m_GLSPC);
 
 	updateUniform(
 		0,
@@ -95,40 +182,21 @@ bool GLDebuggerPass::update()
 		2,
 		RenderingFrontendSystemComponent::get().m_cameraGPUData.t);
 
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	draw();
 
-	for (auto i : RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector)
-	{
-		if (i.luminance.w > 0.0f)
-		{
-			auto l_t = InnoMath::toTranslationMatrix(i.pos);
-			auto l_s = InnoMath::toScaleMatrix(vec4(i.luminance.w, i.luminance.w, i.luminance.w, 1.0f));
-			auto l_m = l_t * l_s;
-			updateUniform(3, l_m);
-			drawMesh(l_MDC);
-		}
-	}
+	activateRenderPass(m_topViewGLRPC);
 
-	for (auto i : RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector)
-	{
-		if (i.luminance.w > 0.0f)
-		{
-			auto l_t = InnoMath::toTranslationMatrix(i.pos);
-			auto l_s = InnoMath::toScaleMatrix(vec4(i.luminance.w, i.luminance.w, i.luminance.w, 1.0f));
-			auto l_m = l_t * l_s;
-			updateUniform(3, l_m);
-			drawMesh(l_MDC);
-		}
-	}
-
-	auto l_copy = RenderingFrontendSystemComponent::get().m_debuggerPassGPUDataQueue.getRawData();
-	while (l_copy.size() > 0)
-	{
-		DebuggerPassGPUData l_debuggerPassGPUData = l_copy.front();
-		updateUniform(3, l_debuggerPassGPUData.m);
-		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_debuggerPassGPUData.MDC));
-		l_copy.pop();
-	}
+	auto l_r = InnoMath::toRotationMatrix(InnoMath::getQuatRotator(vec4(1.0f, 0.0f, 0.0f, 0.0f), 90.0f)).inverse();
+	auto l_t = InnoMath::toTranslationMatrix(vec4(0.0f, 512.0f, 0.0f, 1.0f)).inverse();
+	updateUniform(
+		0,
+		RenderingFrontendSystemComponent::get().m_cameraGPUData.p_original);
+	updateUniform(
+		1,
+		l_r);
+	updateUniform(
+		2,
+		l_t);
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glDisable(GL_DEPTH_TEST);
@@ -152,7 +220,7 @@ bool GLDebuggerPass::reloadShader()
 	return true;
 }
 
-GLRenderPassComponent * GLDebuggerPass::getGLRPC()
+GLRenderPassComponent * GLDebuggerPass::getGLRPC(unsigned int index)
 {
 	return m_GLRPC;
 }

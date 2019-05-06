@@ -9,5 +9,5 @@ INNO_PRIVATE_SCOPE GLDebuggerPass
 	bool resize(unsigned int newSizeX,  unsigned int newSizeY);
 	bool reloadShader();
 
-	GLRenderPassComponent* getGLRPC();
+	GLRenderPassComponent* getGLRPC(unsigned int index);
 }

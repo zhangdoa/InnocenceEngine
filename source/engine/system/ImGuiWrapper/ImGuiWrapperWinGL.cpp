@@ -200,7 +200,7 @@ void ImGuiWrapperWinGL::showRenderResult()
 		{
 			ImGui::BeginChild("Debugger Pass", l_renderTargetSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			ImGui::Text("Debugger Pass");
-			ImGui::Image(ImTextureID((GLuint64)GLDebuggerPass::getGLRPC()->m_GLTDCs[0]->m_TO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::Image(ImTextureID((GLuint64)GLDebuggerPass::getGLRPC(0)->m_GLTDCs[0]->m_TO), l_renderTargetSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			ImGui::EndChild();
 
 			ImGui::SameLine();

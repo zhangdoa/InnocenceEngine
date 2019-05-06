@@ -48,6 +48,9 @@ INNO_PRIVATE_SCOPE InnoVisionSystemNS
 	InitConfig m_initConfig;
 
 	InitConfig parseInitConfig(const std::string& arg);
+
+	bool m_showImGui = false;
+	std::function<void()> f_toggleshowImGui;
 }
 
 InitConfig InnoVisionSystemNS::parseInitConfig(const std::string& arg)
@@ -149,6 +152,11 @@ InitConfig InnoVisionSystemNS::parseInitConfig(const std::string& arg)
 
 INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* appHook, void* extraHook, char* pScmdline)
 {
+	InnoVisionSystemNS::f_toggleshowImGui = [&]() {
+		InnoVisionSystemNS::m_showImGui = !InnoVisionSystemNS::m_showImGui;
+	};
+	g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_I, ButtonStatus::PRESSED }, &InnoVisionSystemNS::f_toggleshowImGui);
+
 	InnoVisionSystemNS::m_renderingFrontendSystem = new InnoRenderingFrontendSystem();
 
 	std::string l_windowArguments = pScmdline;
@@ -164,7 +172,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* appHook, void* extraHook, 
 #endif
 
 #if defined INNO_PLATFORM_LINUX
-InnoVisionSystemNS::m_windowSystem = new LinuxWindowSystem();
+	InnoVisionSystemNS::m_windowSystem = new LinuxWindowSystem();
 #endif
 
 	switch (InnoVisionSystemNS::m_initConfig.renderingBackend)
@@ -229,7 +237,7 @@ InnoVisionSystemNS::m_windowSystem = new LinuxWindowSystem();
 	}
 
 	return true;
-}
+	}
 
 bool InnoVisionSystemNS::setupWindow(void* hInstance, void* hwnd)
 {
@@ -307,7 +315,10 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 
 			InnoVisionSystemNS::m_renderingBackendSystem->render();
 
-			//ImGuiWrapper::get().update();
+			if (InnoVisionSystemNS::m_showImGui)
+			{
+				ImGuiWrapper::get().update();
+			}
 
 			InnoVisionSystemNS::m_windowSystem->swapBuffer();
 

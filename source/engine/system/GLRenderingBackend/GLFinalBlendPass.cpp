@@ -70,7 +70,7 @@ bool GLFinalBlendPass::update(GLRenderPassComponent* prePassGLRPC)
 	// billboard pass rendering target
 	activateTexture(GLBillboardPass::getGLRPC()->m_GLTDCs[0], 1);
 	// debugger pass rendering target
-	activateTexture(GLDebuggerPass::getGLRPC()->m_GLTDCs[0], 2);
+	activateTexture(GLDebuggerPass::getGLRPC(0)->m_GLTDCs[0], 2);
 
 	// draw final pass rectangle
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);

@@ -485,7 +485,7 @@ bool GLRenderingSystemNS::render()
 	}
 	else
 	{
-		cleanRenderBuffers(GLDebuggerPass::getGLRPC());
+		cleanRenderBuffers(GLDebuggerPass::getGLRPC(0));
 	}
 
 	if (m_visualizeVXGI)
