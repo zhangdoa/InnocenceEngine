@@ -43,7 +43,7 @@ namespace InnoPhysicsSystemNS
 	void updateVisibleComponents();
 	void updateCulling();
 	AABB transformAABBtoWorldSpace(AABB rhs, mat4 globalTm);
-	void updateSceneAABB(AABB rhs);
+	void updateSceneBoundary(AABB rhs);
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
@@ -64,12 +64,6 @@ namespace InnoPhysicsSystemNS
 bool InnoPhysicsSystemNS::setup()
 {
 	m_PhysicsDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(PhysicsDataComponent), 16384);
-
-	m_sceneBoundMax = InnoMath::minVec4<float>;
-	m_sceneBoundMax.w = 1.0f;
-
-	m_sceneBoundMin = InnoMath::maxVec4<float>;
-	m_sceneBoundMin.w = 1.0f;
 
 #if defined INNO_PLATFORM_WIN
 	PhysXWrapper::get().setup();
@@ -312,7 +306,7 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	l_sceneAABBVertices = toViewSpace(l_sceneAABBVertices, l_tCamera, l_rCamera);
 
 	// find the farest one vertex
-	vec4 l_farPoint = InnoMath::minVec4<float>;
+	vec4 l_farPoint = InnoMath::maxVec4<float>;
 
 	for (auto i : l_sceneAABBVertices)
 	{
@@ -323,32 +317,37 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	}
 
 	// compare draw distance and z component of the farest scene AABB vertex in view space
-	auto l_distance_original = l_camera->m_zFar - l_camera->m_zNear;
-
 	auto l_frustumVerticesInViewSpace = toViewSpace(l_frustumVerticesInWorldSpace, l_tCamera, l_rCamera);
 
-	auto l_distance_adjust = std::abs(l_farPoint.z - l_frustumVerticesInViewSpace[0].m_pos.z);
+	auto l_distance_original = std::abs(l_frustumVerticesInViewSpace[4].m_pos.z - l_frustumVerticesInViewSpace[0].m_pos.z);
+	auto l_distance_adjust = l_frustumVerticesInViewSpace[0].m_pos.z - l_farPoint.z;
 
-	// adjust draw distance and frustum vertices
-	if (l_distance_adjust < l_distance_original)
+	// scene is inside the view frustum
+	// @TODO: eliminate false positive off the side plane
+	if (l_distance_adjust > 0)
 	{
-		// move the far plane closer to the new far point
-		l_frustumVerticesInViewSpace[4].m_pos.x = l_frustumVerticesInViewSpace[4].m_pos.x * l_distance_adjust / l_distance_original;
-		l_frustumVerticesInViewSpace[4].m_pos.y = l_frustumVerticesInViewSpace[4].m_pos.y * l_distance_adjust / l_distance_original;
-		l_frustumVerticesInViewSpace[4].m_pos.z = l_farPoint.z;
-		l_frustumVerticesInViewSpace[5].m_pos.x = l_frustumVerticesInViewSpace[5].m_pos.x * l_distance_adjust / l_distance_original;
-		l_frustumVerticesInViewSpace[5].m_pos.y = l_frustumVerticesInViewSpace[5].m_pos.y * l_distance_adjust / l_distance_original;
-		l_frustumVerticesInViewSpace[5].m_pos.z = l_farPoint.z;
-		l_frustumVerticesInViewSpace[6].m_pos.x = l_frustumVerticesInViewSpace[6].m_pos.x * l_distance_adjust / l_distance_original;
-		l_frustumVerticesInViewSpace[6].m_pos.y = l_frustumVerticesInViewSpace[6].m_pos.y * l_distance_adjust / l_distance_original;
-		l_frustumVerticesInViewSpace[6].m_pos.z = l_farPoint.z;
-		l_frustumVerticesInViewSpace[7].m_pos.x = l_frustumVerticesInViewSpace[7].m_pos.x * l_distance_adjust / l_distance_original;
-		l_frustumVerticesInViewSpace[7].m_pos.y = l_frustumVerticesInViewSpace[7].m_pos.y * l_distance_adjust / l_distance_original;
-		l_frustumVerticesInViewSpace[7].m_pos.z = l_farPoint.z;
+		// adjust draw distance and frustum vertices
+		if (l_distance_adjust < l_distance_original)
+		{
+			// move the far plane closer to the new far point
+			l_frustumVerticesInViewSpace[4].m_pos.x = l_frustumVerticesInViewSpace[4].m_pos.x * l_distance_adjust / l_distance_original;
+			l_frustumVerticesInViewSpace[4].m_pos.y = l_frustumVerticesInViewSpace[4].m_pos.y * l_distance_adjust / l_distance_original;
+			l_frustumVerticesInViewSpace[4].m_pos.z = l_farPoint.z;
+			l_frustumVerticesInViewSpace[5].m_pos.x = l_frustumVerticesInViewSpace[5].m_pos.x * l_distance_adjust / l_distance_original;
+			l_frustumVerticesInViewSpace[5].m_pos.y = l_frustumVerticesInViewSpace[5].m_pos.y * l_distance_adjust / l_distance_original;
+			l_frustumVerticesInViewSpace[5].m_pos.z = l_farPoint.z;
+			l_frustumVerticesInViewSpace[6].m_pos.x = l_frustumVerticesInViewSpace[6].m_pos.x * l_distance_adjust / l_distance_original;
+			l_frustumVerticesInViewSpace[6].m_pos.y = l_frustumVerticesInViewSpace[6].m_pos.y * l_distance_adjust / l_distance_original;
+			l_frustumVerticesInViewSpace[6].m_pos.z = l_farPoint.z;
+			l_frustumVerticesInViewSpace[7].m_pos.x = l_frustumVerticesInViewSpace[7].m_pos.x * l_distance_adjust / l_distance_original;
+			l_frustumVerticesInViewSpace[7].m_pos.y = l_frustumVerticesInViewSpace[7].m_pos.y * l_distance_adjust / l_distance_original;
+			l_frustumVerticesInViewSpace[7].m_pos.z = l_farPoint.z;
 
-		l_frustumVerticesInWorldSpace = fromViewSpace(l_frustumVerticesInViewSpace, l_tCamera, l_rCamera);
+			l_frustumVerticesInWorldSpace = fromViewSpace(l_frustumVerticesInViewSpace, l_tCamera, l_rCamera);
+		}
 	}
-	std::vector<float> l_CSMSplitFactors = { 0.25f, 0.5f, 0.75f, 1.0f };
+
+	std::vector<float> l_CSMSplitFactors = { 0.05f, 0.25f, 0.55f, 1.0f };
 
 	//2. calculate AABBs in world space
 	auto l_AABBsWS = frustumsVerticesToAABBs(l_frustumVerticesInWorldSpace, l_CSMSplitFactors);
@@ -362,7 +361,7 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	{
 		//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-		l_frustumVertices[i].m_pos = InnoMath::mul(l_frustumVertices[i].m_pos, l_lightRotMat);
+		l_frustumVerticesInWorldSpace[i].m_pos = InnoMath::mul(l_frustumVerticesInWorldSpace[i].m_pos, l_lightRotMat);
 #endif
 		//Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
@@ -501,6 +500,7 @@ AABB InnoPhysicsSystemNS::generateAABB(vec4 boundMax, vec4 boundMin)
 
 	l_AABB.m_center = (boundMax + boundMin) * 0.5f;
 	l_AABB.m_extend = boundMax - boundMin;
+	l_AABB.m_extend.w = 1.0f;
 
 	return l_AABB;
 }
@@ -680,6 +680,7 @@ AABB InnoPhysicsSystemNS::transformAABBtoWorldSpace(AABB rhs, mat4 globalTm)
 #endif
 
 	l_AABB.m_extend = l_AABB.m_boundMax - l_AABB.m_boundMin;
+	l_AABB.m_extend.w = 1.0f;
 
 	return l_AABB;
 }
@@ -752,6 +753,12 @@ void InnoPhysicsSystemNS::updateCulling()
 
 	m_cullingDataPack.clear();
 
+	m_sceneBoundMax = InnoMath::minVec4<float>;
+	m_sceneBoundMax.w = 1.0f;
+
+	m_sceneBoundMin = InnoMath::maxVec4<float>;
+	m_sceneBoundMin.w = 1.0f;
+
 	if (g_pCoreSystem->getGameSystem()->get<CameraComponent>().size() > 0)
 	{
 		auto l_cameraComponents = g_pCoreSystem->getGameSystem()->get<CameraComponent>();
@@ -773,7 +780,6 @@ void InnoPhysicsSystemNS::updateCulling()
 					{
 						auto l_PDC = l_modelPair.first->m_PDC;
 						auto l_OBBws = transformAABBtoWorldSpace(l_PDC->m_AABB, l_globalTm);
-						updateSceneAABB(l_OBBws);
 
 						auto l_boundingSphere = Sphere();
 						l_boundingSphere.m_center = l_OBBws.m_center;
@@ -781,6 +787,8 @@ void InnoPhysicsSystemNS::updateCulling()
 
 						if (InnoMath::intersectCheck(l_cameraFrustum, l_boundingSphere))
 						{
+							updateSceneBoundary(l_OBBws);
+
 							thread_local CullingDataPack l_cullingDataPack;
 
 							l_cullingDataPack.m = l_globalTm;
@@ -797,10 +805,12 @@ void InnoPhysicsSystemNS::updateCulling()
 		}
 	}
 
+	m_sceneAABB = generateAABB(InnoPhysicsSystemNS::m_sceneBoundMax, InnoPhysicsSystemNS::m_sceneBoundMin);
+
 	m_isCullingDataPackValid = true;
 }
 
-void InnoPhysicsSystemNS::updateSceneAABB(AABB rhs)
+void InnoPhysicsSystemNS::updateSceneBoundary(AABB rhs)
 {
 	auto boundMax = rhs.m_boundMax;
 	auto boundMin = rhs.m_boundMin;
@@ -829,8 +839,6 @@ void InnoPhysicsSystemNS::updateSceneAABB(AABB rhs)
 	{
 		m_sceneBoundMin.z = boundMin.z;
 	}
-
-	m_sceneAABB = generateAABB(InnoPhysicsSystemNS::m_sceneBoundMax, InnoPhysicsSystemNS::m_sceneBoundMin);
 }
 
 bool InnoPhysicsSystemNS::update()
