@@ -88,7 +88,7 @@ bool InnoRenderingFrontendSystemNS::setup(IRenderingBackendSystem* renderingBack
 	//m_renderingConfig.useBloom = true;
 	m_renderingConfig.drawSky = true;
 	//m_renderingConfig.drawTerrain = true;
-	m_renderingConfig.drawDebugObject = true;
+	//m_renderingConfig.drawDebugObject = true;
 
 	f_sceneLoadingStartCallback = [&]() {
 		m_cullingDataPack.clear();
