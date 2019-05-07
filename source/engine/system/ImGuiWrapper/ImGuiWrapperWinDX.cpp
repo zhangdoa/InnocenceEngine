@@ -72,7 +72,7 @@ ObjectStatus ImGuiWrapperWinDX11::getStatus()
 	return ImGuiWrapperWinDXNS::m_objectStatus;
 }
 
-void ImGuiWrapperWinDX11::showRenderResult()
+void ImGuiWrapperWinDX11::showRenderResult(RenderPassType renderPassType)
 {
 	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 	auto l_renderTargetSize = ImVec2((float)l_screenResolution.x / 4.0f, (float)l_screenResolution.y / 4.0f);

@@ -107,10 +107,6 @@ bool ImGuiWrapper::setup()
 		ImGuiWrapperNS::m_wrapperImpl->setup();
 	}
 
-	ImGuiWrapperNS::m_renderingConfig.useMotionBlur = true;
-	ImGuiWrapperNS::m_renderingConfig.useTAA = true;
-	ImGuiWrapperNS::m_renderingConfig.drawSky = true;
-
 	return true;
 }
 
@@ -175,6 +171,8 @@ bool ImGuiWrapper::initialize()
 		auto l_workingDir = g_pCoreSystem->getFileSystem()->getWorkingDirectory();
 		l_workingDir += "res//fonts//FreeSans.otf";
 		io.Fonts->AddFontFromFileTTF(l_workingDir.c_str(), 16.0f);
+
+		ImGuiWrapperNS::m_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
 	}
 
 	return true;
@@ -217,18 +215,32 @@ void ImGuiWrapperNS::showApplicationProfiler()
 	ImGui::Checkbox("Use Bloom", &m_renderingConfig.useBloom);
 	ImGui::Checkbox("Draw terrain", &m_renderingConfig.drawTerrain);
 	ImGui::Checkbox("Draw sky", &m_renderingConfig.drawSky);
-	ImGui::Checkbox("Draw debug object", &m_renderingConfig.drawDebugObject);
+	if (ImGui::Checkbox("Draw debug object", &m_renderingConfig.drawDebugObject))
+	{
+	}
 	ImGui::Checkbox("Use zoom", &m_useZoom);
-	ImGui::Checkbox("Show render pass result", &m_showRenderPassResult);
 
-	const char* items[] = { "OpaquePass", "TransparentPass", "TerrainPass", "LightPass", "FinalPass" };
-	static int item_current = 0;
-	ImGui::Combo("Choose shader", &item_current, items, IM_ARRAYSIZE(items));
+	const char* items[] = { "Shadow", "GI", "Opaque", "Light", "Transparent", "Terrain", "Post-processing", "Development" };
+	static int l_reloadShaderItem = 0;
+
+	ImGui::Combo("Choose shader", &l_reloadShaderItem, items, IM_ARRAYSIZE(items));
 
 	if (ImGui::Button("Reload Shader"))
 	{
-		g_pCoreSystem->getVisionSystem()->getRenderingBackend()->reloadShader(RenderPassType(item_current));
+		g_pCoreSystem->getVisionSystem()->getRenderingBackend()->reloadShader(RenderPassType(l_reloadShaderItem));
 	}
+
+	static int l_showRenderPassResultItem = 0;
+
+	ImGui::Combo("Choose render pass", &l_showRenderPassResultItem, items, IM_ARRAYSIZE(items));
+
+	ImGui::Checkbox("Show render pass result", &m_showRenderPassResult);
+
+	if (m_showRenderPassResult)
+	{
+		ImGuiWrapperNS::m_wrapperImpl->showRenderResult(RenderPassType(l_showRenderPassResultItem));
+	}
+
 	if (ImGui::Button("Bake GI"))
 	{
 		g_pCoreSystem->getVisionSystem()->getRenderingBackend()->bakeGI();
@@ -244,11 +256,6 @@ void ImGuiWrapperNS::showApplicationProfiler()
 	if (ImGui::Button("Load scene"))
 	{
 		g_pCoreSystem->getFileSystem()->loadScene(scene_filePath);
-	}
-
-	if (m_showRenderPassResult)
-	{
-		ImGuiWrapperNS::m_wrapperImpl->showRenderResult();
 	}
 
 	ImGui::End();

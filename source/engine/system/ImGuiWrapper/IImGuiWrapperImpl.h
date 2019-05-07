@@ -16,6 +16,6 @@ public:
 
 	virtual ObjectStatus getStatus() = 0;
 
-	virtual void showRenderResult() = 0;
+	virtual void showRenderResult(RenderPassType renderPassType) = 0;
 	virtual ImTextureID getFileExplorerIconTextureID(const FileExplorerIconType iconType) = 0;
 };

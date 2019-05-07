@@ -48,7 +48,7 @@ ObjectStatus ImGuiWrapperWinVK::getStatus()
 	return ImGuiWrapperWinVKNS::m_objectStatus;
 }
 
-void ImGuiWrapperWinVK::showRenderResult()
+void ImGuiWrapperWinVK::showRenderResult(RenderPassType renderPassType)
 {
 }
 

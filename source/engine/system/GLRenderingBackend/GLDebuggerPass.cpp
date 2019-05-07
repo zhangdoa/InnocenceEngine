@@ -16,7 +16,11 @@ INNO_PRIVATE_SCOPE GLDebuggerPass
 {
 	void initializeShaders();
 
-	bool draw();
+	bool drawDebugObjects();
+
+	bool drawRightView();
+	bool drawTopView();
+	bool drawFrontView();
 
 	EntityID m_entityID;
 
@@ -25,7 +29,9 @@ INNO_PRIVATE_SCOPE GLDebuggerPass
 	VisibleComponent* m_pickedVisibleComponent;
 
 	GLRenderPassComponent* m_GLRPC;
+	GLRenderPassComponent* m_rightViewGLRPC;
 	GLRenderPassComponent* m_topViewGLRPC;
+	GLRenderPassComponent* m_frontViewGLRPC;
 
 	GLShaderProgramComponent* m_GLSPC;
 	ShaderFilePaths m_shaderFilePaths = { "GL//wireframeOverlayPass.vert", "", "GL//wireframeOverlayPass.frag" };
@@ -63,12 +69,14 @@ bool GLDebuggerPass::initialize()
 
 	m_GLRPC = addGLRenderPassComponent(1, l_FBDesc, l_textureDesc);
 
-	l_FBDesc.sizeX /= 4;
-	l_FBDesc.sizeY /= 4;
-	l_textureDesc.width /= 4;
-	l_textureDesc.height /= 4;
+	l_FBDesc.sizeX /= 2;
+	l_FBDesc.sizeY /= 2;
+	l_textureDesc.width /= 2;
+	l_textureDesc.height /= 2;
 
+	m_rightViewGLRPC = addGLRenderPassComponent(1, l_FBDesc, l_textureDesc);
 	m_topViewGLRPC = addGLRenderPassComponent(1, l_FBDesc, l_textureDesc);
+	m_frontViewGLRPC = addGLRenderPassComponent(1, l_FBDesc, l_textureDesc);
 
 	initializeShaders();
 
@@ -85,11 +93,11 @@ void GLDebuggerPass::initializeShaders()
 	m_GLSPC = rhs;
 }
 
-bool GLDebuggerPass::draw()
+bool GLDebuggerPass::drawDebugObjects()
 {
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::SPHERE);
 
-	static bool l_drawPointLightRange = false;
+	static bool l_drawPointLightRange = true;
 
 	if (l_drawPointLightRange)
 	{
@@ -123,7 +131,7 @@ bool GLDebuggerPass::draw()
 		}
 	}
 
-	static bool l_drawCSMAABBRange = false;
+	static bool l_drawCSMAABBRange = true;
 	l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
 
 	if (l_drawCSMAABBRange)
@@ -159,6 +167,65 @@ bool GLDebuggerPass::draw()
 	return true;
 }
 
+bool GLDebuggerPass::drawRightView()
+{
+	auto l_p = RenderingFrontendSystemComponent::get().m_cameraGPUData.p_original;
+	auto l_r = InnoMath::toRotationMatrix(InnoMath::getQuatRotator(vec4(0.0f, 1.0f, 0.0f, 0.0f), 90.0f)).inverse();
+	auto l_pos = RenderingFrontendSystemComponent::get().m_cameraGPUData.globalPos;
+	l_pos.x += 512.0f;
+	auto l_t = InnoMath::toTranslationMatrix(l_pos).inverse();
+
+	updateUniform(0, l_p);
+	updateUniform(1, l_r);
+	updateUniform(2, l_t);
+
+	activateRenderPass(m_rightViewGLRPC);
+
+	drawDebugObjects();
+
+	return true;
+}
+
+bool GLDebuggerPass::drawTopView()
+{
+	auto l_p = RenderingFrontendSystemComponent::get().m_cameraGPUData.p_original;
+	auto l_qX = InnoMath::getQuatRotator(vec4(1.0f, 0.0f, 0.0f, 0.0f), -90.0f);
+	auto l_qY = InnoMath::getQuatRotator(vec4(0.0f, 1.0f, 0.0f, 0.0f), 0.0f);
+	auto l_r = InnoMath::toRotationMatrix(l_qX.quatMul(l_qY)).inverse();
+	auto l_pos = RenderingFrontendSystemComponent::get().m_cameraGPUData.globalPos;
+	l_pos.y += 512.0f;
+	auto l_t = InnoMath::toTranslationMatrix(l_pos).inverse();
+
+	updateUniform(0, l_p);
+	updateUniform(1, l_r);
+	updateUniform(2, l_t);
+
+	activateRenderPass(m_topViewGLRPC);
+
+	drawDebugObjects();
+
+	return true;
+}
+
+bool GLDebuggerPass::drawFrontView()
+{
+	auto l_p = RenderingFrontendSystemComponent::get().m_cameraGPUData.p_original;
+	auto l_r = InnoMath::toRotationMatrix(InnoMath::getQuatRotator(vec4(1.0f, 0.0f, 0.0f, 0.0f), 0.0f)).inverse();
+	auto l_pos = RenderingFrontendSystemComponent::get().m_cameraGPUData.globalPos;
+	l_pos.z += 512.0f;
+	auto l_t = InnoMath::toTranslationMatrix(l_pos).inverse();
+
+	updateUniform(0, l_p);
+	updateUniform(1, l_r);
+	updateUniform(2, l_t);
+
+	activateRenderPass(m_frontViewGLRPC);
+
+	drawDebugObjects();
+
+	return true;
+}
+
 bool GLDebuggerPass::update()
 {
 	glEnable(GL_DEPTH_TEST);
@@ -172,34 +239,19 @@ bool GLDebuggerPass::update()
 	// copy depth buffer from G-Pass
 	copyDepthBuffer(GLOpaquePass::getGLRPC(), m_GLRPC);
 
-	updateUniform(
-		0,
-		RenderingFrontendSystemComponent::get().m_cameraGPUData.p_original);
-	updateUniform(
-		1,
-		RenderingFrontendSystemComponent::get().m_cameraGPUData.r);
-	updateUniform(
-		2,
-		RenderingFrontendSystemComponent::get().m_cameraGPUData.t);
+	updateUniform(0, RenderingFrontendSystemComponent::get().m_cameraGPUData.p_original);
+	updateUniform(1, RenderingFrontendSystemComponent::get().m_cameraGPUData.r);
+	updateUniform(2, RenderingFrontendSystemComponent::get().m_cameraGPUData.t);
 
-	draw();
+	drawDebugObjects();
 
-	activateRenderPass(m_topViewGLRPC);
+	glDisable(GL_DEPTH_TEST);
 
-	auto l_r = InnoMath::toRotationMatrix(InnoMath::getQuatRotator(vec4(1.0f, 0.0f, 0.0f, 0.0f), 90.0f)).inverse();
-	auto l_t = InnoMath::toTranslationMatrix(vec4(0.0f, 512.0f, 0.0f, 1.0f)).inverse();
-	updateUniform(
-		0,
-		RenderingFrontendSystemComponent::get().m_cameraGPUData.p_original);
-	updateUniform(
-		1,
-		l_r);
-	updateUniform(
-		2,
-		l_t);
+	drawRightView();
+	drawTopView();
+	drawFrontView();
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glDisable(GL_DEPTH_TEST);
 
 	return true;
 }
@@ -222,5 +274,20 @@ bool GLDebuggerPass::reloadShader()
 
 GLRenderPassComponent * GLDebuggerPass::getGLRPC(unsigned int index)
 {
-	return m_GLRPC;
+	if (index == 0)
+	{
+		return m_GLRPC;
+	}
+	else if (index == 1)
+	{
+		return m_rightViewGLRPC;
+	}
+	else if (index == 2)
+	{
+		return m_topViewGLRPC;
+	}
+	else
+	{
+		return m_frontViewGLRPC;
+	}
 }
