@@ -76,56 +76,56 @@ public:
 	{
 	}
 
-	auto operator+(const TVec2<T>& rhs) -> TVec2<T>
+	auto operator+(const TVec2<T>& rhs) const -> TVec2<T>
 	{
 		return TVec2<T>(x + rhs.x, y + rhs.y);
 	}
 
-	auto operator+(T rhs) -> TVec2<T>
+	auto operator+(T rhs) const -> TVec2<T>
 	{
 		return TVec2<T>(x + rhs, y + rhs);
 	}
 
-	auto operator-(const TVec2<T>& rhs) -> TVec2<T>
+	auto operator-(const TVec2<T>& rhs) const -> TVec2<T>
 	{
 		return TVec2<T>(x - rhs.x, y - rhs.y);
 	}
 
-	auto operator-(T rhs) -> TVec2<T>
+	auto operator-(T rhs) const -> TVec2<T>
 	{
 		return TVec2<T>(x - rhs, y - rhs);
 	}
 
-	auto operator*(const TVec2<T>& rhs) -> T
+	auto operator*(const TVec2<T>& rhs) const -> T
 	{
 		return x * rhs.x + y * rhs.y;
 	}
 
-	auto scale(const TVec2<T>& rhs) -> TVec2<T>
+	auto scale(const TVec2<T>& rhs) const -> TVec2<T>
 	{
 		return TVec2<T>(x * rhs.x, y * rhs.y);
 	}
 
-	auto scale(T rhs) -> TVec2<T>
+	auto scale(T rhs) const -> TVec2<T>
 	{
 		return TVec2<T>(x * rhs, y * rhs);
 	}
-	auto operator*(T rhs) -> TVec2<T>
+	auto operator*(T rhs) const -> TVec2<T>
 	{
 		return TVec2<T>(x * rhs, y * rhs);
 	}
 
-	auto operator/(T rhs) -> TVec2<T>
+	auto operator/(T rhs) const -> TVec2<T>
 	{
 		return TVec2<T>(x / rhs, y / rhs);
 	}
 
-	auto length() -> T
+	auto length() const -> T
 	{
 		return std::sqrt(x * x + y * y);
 	}
 
-	auto normalize() -> TVec2<T>
+	auto normalize() const -> TVec2<T>
 	{
 		return TVec2<T>(x / length(), y / length());
 	}
@@ -157,6 +157,7 @@ public:
 		z = rhsZ;
 		w = rhsW;
 	}
+
 	TVec4(const TVec4& rhs)
 	{
 		x = rhs.x;
@@ -164,6 +165,7 @@ public:
 		z = rhs.z;
 		w = rhs.w;
 	}
+
 	auto operator=(const TVec4<T> & rhs) -> TVec4<T>&
 	{
 		x = rhs.x;
@@ -265,20 +267,20 @@ public:
 		return TVec4<T>(result_x, result_y, result_z, result_w);
 	}
 
-	auto length() -> T
+	auto length() const -> T
 	{
 		// @TODO: replace with SIMD impl
 		return std::sqrt(x * x + y * y + z * z + w * w);
 	}
 
-	auto normalize() -> TVec4<T>
+	auto normalize() const -> TVec4<T>
 	{
 		// @TODO: replace with SIMD impl
 		auto l_length = length();
 		return TVec4(x / l_length, y / l_length, z / l_length, w / l_length);
 	}
 
-	bool operator!=(const TVec4<T> & rhs)
+	bool operator!=(const TVec4<T> & rhs) const
 	{
 		// @TODO: replace with SIMD impl
 		if (x != rhs.x)
@@ -303,13 +305,13 @@ public:
 		}
 	}
 
-	bool operator==(const TVec4<T> & rhs)
+	bool operator==(const TVec4<T> & rhs) const
 	{
 		// @TODO: replace with SIMD impl
 		return !(*this != rhs);
 	}
 
-	auto rotateDirectionByQuat(const TVec4<T> & rhs) -> TVec4<T>
+	auto rotateDirectionByQuat(const TVec4<T> & rhs) const -> TVec4<T>
 	{
 		// V' = QVQ^-1, for unit quaternion, the conjugated quaternion is as same as the inverse quaternion
 
@@ -457,6 +459,7 @@ public:
 		m32 = T();
 		m33 = T();
 	}
+
 	TMat4(const TMat4<T>& rhs)
 	{
 		m00 = rhs.m00;
@@ -476,6 +479,7 @@ public:
 		m32 = rhs.m32;
 		m33 = rhs.m33;
 	}
+
 	auto operator=(const TMat4<T>& rhs) -> TMat4<T>&
 	{
 		m00 = rhs.m00;
@@ -497,9 +501,9 @@ public:
 
 		return *this;
 	}
-	//Column-Major memory layout
+
 #if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
-	auto TMat4::operator*(const TMat4<T> & rhs) -> TMat4<T>
+	auto TMat4::operator*(const TMat4<T> & rhs) const -> TMat4<T>
 	{
 		// @TODO: replace with SIMD impl
 		TMat4<T> l_m;
@@ -526,9 +530,8 @@ public:
 
 		return l_m;
 	}
-	//Row-Major memory layout
 #elif defined (USE_ROW_MAJOR_MEMORY_LAYOUT)
-	auto operator*(const TMat4<T> & rhs) -> TMat4<T>
+	auto operator*(const TMat4<T> & rhs) const -> TMat4<T>
 	{
 		// @TODO: replace with SIMD impl
 		TMat4<T> l_m;
@@ -557,7 +560,7 @@ public:
 	}
 #endif
 
-	auto operator*(const T rhs) -> TMat4<T>
+	auto operator*(const T rhs) const -> TMat4<T>
 	{
 		// @TODO: replace with SIMD impl
 		TMat4<T> l_m;
@@ -582,7 +585,7 @@ public:
 		return l_m;
 	}
 
-	auto transpose() -> TMat4<T>
+	auto transpose() const -> TMat4<T>
 	{
 		// @TODO: replace with SIMD impl
 		TMat4<T> l_m;
@@ -606,7 +609,8 @@ public:
 
 		return l_m;
 	}
-	auto inverse() -> TMat4<T>
+
+	auto inverse() const -> TMat4<T>
 	{
 		// @TODO: replace with SIMD impl
 		TMat4<T> l_m;
@@ -631,7 +635,8 @@ public:
 		l_m = (l_m * (one<T> / this->getDeterminant()));
 		return l_m;
 	}
-	auto getDeterminant() -> T
+
+	auto getDeterminant() const -> T
 	{
 		T value;
 
@@ -651,7 +656,7 @@ template<class T>
 class TVertex
 {
 public:
-	TVertex() :
+	TVertex() noexcept :
 		m_pos(TVec4<T>(T(), T(), T(), one<T>)),
 		m_texCoord(TVec2<T>(T(), T())),
 		m_pad1(TVec2<T>(T(), T())),
@@ -698,9 +703,11 @@ public:
 	TRay() noexcept :
 		m_origin(TVec4<T>(T(), T(), T(), one<T>)),
 		m_direction(TVec4<T>(T(), T(), T(), T())) {};
+
 	TRay(const TRay<T>& rhs) :
 		m_origin(rhs.m_origin),
 		m_direction(rhs.m_direction) {};
+
 	auto operator=(const TRay<T> & rhs) -> TRay<T>&
 	{
 		m_origin = rhs.m_origin;
@@ -708,6 +715,7 @@ public:
 
 		return *this;
 	}
+
 	~TRay() {};
 
 	TVec4<T> m_origin; // 4 * sizeof(T)
@@ -720,17 +728,19 @@ class TSphere
 public:
 	TSphere() noexcept :
 		m_center(TVec4<T>(T(), T(), T(), one<T>)),
-		m_radius(T())
-	{};
+		m_radius(T()) {};
+
 	TSphere(const TSphere<T>& rhs) :
 		m_center(rhs.m_center),
 		m_radius(rhs.m_radius) {};
+
 	auto operator=(const TSphere<T> & rhs) -> TSphere<T>&
 	{
 		m_center = rhs.m_center;
 		m_radius = rhs.m_radius;
 		return *this;
 	}
+
 	~TSphere() {};
 
 	TVec4<T> m_center; // 4 * sizeof(T)
@@ -743,17 +753,19 @@ class TPlane
 public:
 	TPlane() noexcept :
 		m_normal(TVec4<T>(T(), T(), T(), one<T>)),
-		m_distance(T())
-	{};
+		m_distance(T()) {};
+
 	TPlane(const TPlane<T>& rhs) :
 		m_normal(rhs.m_normal),
 		m_distance(rhs.m_distance) {};
+
 	auto operator=(const TPlane<T> & rhs) -> TPlane<T>&
 	{
 		m_normal = rhs.m_normal;
 		m_distance = rhs.m_distance;
 		return *this;
 	}
+
 	~TPlane() {};
 
 	TVec4<T> m_normal; // 4 * sizeof(T)
@@ -769,11 +781,13 @@ public:
 		m_extend(TVec4<T>(T(), T(), T(), one<T>)),
 		m_boundMin(TVec4<T>(T(), T(), T(), one<T>)),
 		m_boundMax(TVec4<T>(T(), T(), T(), one<T>)) {};
+
 	TAABB(const TAABB<T>& rhs) :
 		m_center(rhs.m_center),
 		m_extend(rhs.m_extend),
 		m_boundMin(rhs.m_boundMin),
 		m_boundMax(rhs.m_boundMax) {};
+
 	auto operator=(const TAABB<T> & rhs) -> TAABB<T>&
 	{
 		m_center = rhs.m_center;
@@ -782,6 +796,7 @@ public:
 		m_boundMax = rhs.m_boundMax;
 		return *this;
 	}
+
 	~TAABB() {};
 
 	TVec4<T> m_center; // 4 * sizeof(T)
@@ -795,6 +810,7 @@ class TFrustum
 {
 public:
 	TFrustum() noexcept {};
+
 	TFrustum(const TFrustum<T>& rhs) :
 		m_px(rhs.m_px),
 		m_nx(rhs.m_nx),
@@ -802,6 +818,7 @@ public:
 		m_ny(rhs.m_ny),
 		m_pz(rhs.m_pz),
 		m_nz(rhs.m_nz) {};
+
 	auto operator=(const TFrustum<T> & rhs) -> TFrustum<T>&
 	{
 		m_px = rhs.m_px;
@@ -812,6 +829,7 @@ public:
 		m_nz = rhs.m_nz;
 		return *this;
 	}
+
 	~TFrustum() {};
 
 	TPlane<T> m_px; // 5 * sizeof(T)
@@ -831,6 +849,7 @@ public:
 		m_rot(TVec4<T>(T(), T(), T(), one<T>)),
 		m_scale(TVec4<T>(one<T>, one<T>, one<T>, one<T>)),
 		m_pad1(T(), T(), T(), T()) {}
+
 	~TTransformVector() {};
 
 	TVec4<T> m_pos; // 4 * sizeof(T)
@@ -853,6 +872,18 @@ public:
 };
 
 enum direction { FORWARD, BACKWARD, UP, DOWN, RIGHT, LEFT };
+
+using vec2 = TVec2<float>;
+using vec4 = TVec4<float>;
+using mat4 = TMat4<float>;
+using Vertex = TVertex<float>;
+using Ray = TRay<float>;
+using AABB = TAABB<float>;
+using Sphere = TSphere<float>;
+using Plane = TPlane<float>;
+using Frustum = TFrustum<float>;
+using TransformVector = TTransformVector<float>;
+using TransformMatrix = TTransformMatrix<float>;
 
 namespace InnoMath
 {
@@ -1054,7 +1085,6 @@ namespace InnoMath
 	 | w' = a30(0.0) * x  + a31(0.0) * y + a32(0.0) * z + a33(1.0) * w |
 	 */
 
-	 //Column-Major memory layout
 #if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
 	template<class T>
 	auto toTranslationMatrix(const TVec4<T>& rhs) -> TMat4<T>
@@ -1072,7 +1102,6 @@ namespace InnoMath
 
 		return l_m;
 	}
-	//Row-Major memory layout
 #elif defined (USE_ROW_MAJOR_MEMORY_LAYOUT)
 	template<class T>
 	auto toTranslationMatrix(const TVec4<T>& rhs) -> TMat4<T>
@@ -1141,7 +1170,6 @@ namespace InnoMath
 	 | w' = a30(       0.0       ) * x  + a31(       0.0       ) * y + a32(       0.0       ) * z + a33(       1.0       ) * w |
 	 */
 
-	 //Column-Major memory layout
 #if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
 	template<class T>
 	auto toRotationMatrix(const TVec4<T>& rhs) -> TMat4<T>
@@ -1171,7 +1199,6 @@ namespace InnoMath
 
 		return l_m;
 	}
-	//Row-Major memory layout
 #elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
 	template<class T>
 	auto toRotationMatrix(const TVec4<T>& rhs) -> TMat4<T>
@@ -1217,7 +1244,6 @@ namespace InnoMath
 		return l_m;
 	}
 
-	//Column-Major memory layout
 #if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
 	template<class T>
 	auto toPosVector(const TMat4<T>& rhs) -> TVec4<T>
@@ -1232,7 +1258,6 @@ namespace InnoMath
 
 		return l_result;
 	}
-	//Row-Major memory layout
 #elif defined (USE_ROW_MAJOR_MEMORY_LAYOUT)
 	template<class T>
 	auto toPosVector(const TMat4<T>& rhs) -> TVec4<T>
@@ -1249,7 +1274,6 @@ namespace InnoMath
 	}
 #endif
 
-	//Column-Major memory layout
 #if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
 	template<class T>
 	auto toQuatRotator(const TVec4<T>& rhs) -> TMat4<T>
@@ -1295,7 +1319,6 @@ namespace InnoMath
 
 		return l_result;
 	}
-	//Row-Major memory layout
 #elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
 	template<class T>
 	auto toQuatRotator(const TMat4<T>& rhs) -> TVec4<T>
@@ -1398,7 +1421,6 @@ namespace InnoMath
 	matrix4x4 * vector4 :
 	*/
 
-	//Column-Major memory layout
 #if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
 	template<class T>
 	auto TMat4::generatePerspectiveMatrix(T FOV, T WHRatio, T zNear, T zFar) ->TMat4<T>
@@ -1413,7 +1435,6 @@ namespace InnoMath
 
 		return l_m;
 	}
-	//Row-Major memory layout
 #elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
 	template<class T>
 	auto generatePerspectiveMatrix(T FOV, T WHRatio, T zNear, T zFar) ->TMat4<T>
@@ -1430,7 +1451,6 @@ namespace InnoMath
 	}
 #endif
 
-	//Column-Major memory layout
 #if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
 	template<class T>
 	auto generateOrthographicMatrix(T left, T right, T bottom, T up, T zNear, T zFar) ->TMat4<T>
@@ -1447,7 +1467,6 @@ namespace InnoMath
 
 		return l_m;
 	}
-	//Row-Major memory layout
 #elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
 	template<class T>
 	auto generateOrthographicMatrix(T left, T right, T bottom, T up, T zNear, T zFar) ->TMat4<T>
@@ -1465,7 +1484,7 @@ namespace InnoMath
 		return l_m;
 	}
 #endif
-	//Column-Major memory layout
+
 #if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
 	template<class T>
 	auto lookAt(const TVec4<T> & eyePos, const TVec4<T> & centerPos, const TVec4<T> & upDir) -> TMat4<T>
@@ -1500,7 +1519,6 @@ namespace InnoMath
 
 		return l_m;
 	}
-	//Row-Major memory layout
 #elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
 	template<class T>
 	auto lookAt(const TVec4<T>& eyePos, const TVec4<T>& centerPos, const TVec4<T>& upDir) -> TMat4<T>
@@ -1536,6 +1554,68 @@ namespace InnoMath
 		return l_m;
 	}
 #endif
+
+	template<class T>
+	auto worldToViewSpace(const TVec4<T>& rhs, const TMat4<T>& cameraT, const TMat4<T>& cameraR) ->TVec4<T>
+	{
+		TVec4<T> l_result;
+		l_result = rhs;
+#if defined USE_COLUMN_MAJOR_MEMORY_LAYOUT
+		l_mulPos = mul(l_result, cameraT.inverse());
+		l_mulPos = mul(l_result, cameraR.inverse());
+#elif defined USE_ROW_MAJOR_MEMORY_LAYOUT
+		l_result = mul(cameraT.inverse(), l_result);
+		l_result = mul(cameraR.inverse(), l_result);
+#endif
+		return l_result;
+	}
+
+	template<class T>
+	auto viewToWorldSpace(const TVec4<T>& rhs, const TMat4<T>& cameraT, const TMat4<T>& cameraR) ->TVec4<T>
+	{
+		TVec4<T> l_result;
+		l_result = rhs;
+#if defined USE_COLUMN_MAJOR_MEMORY_LAYOUT
+		l_mulPos = mul(l_result, cameraR);
+		l_mulPos = mul(l_result, cameraT);
+#elif defined USE_ROW_MAJOR_MEMORY_LAYOUT
+		l_result = mul(cameraR, l_result);
+		l_result = mul(cameraT, l_result);
+#endif
+		return l_result;
+	}
+
+	template<class T>
+	auto viewToClipSpace(const TVec4<T>& rhs, const TMat4<T>& cameraP) ->TVec4<T>
+	{
+		TVec4<T> l_result;
+		l_result = rhs;
+#if defined USE_COLUMN_MAJOR_MEMORY_LAYOUT
+		l_result = InnoMath::mul(l_result, cameraP);
+#elif defined USE_ROW_MAJOR_MEMORY_LAYOUT
+		l_result = InnoMath::mul(cameraP, l_result);
+#endif
+		// perspective division
+		l_result = l_result * (one<T> / l_result.w);
+
+		return l_result;
+	}
+
+	template<class T>
+	auto clipToViewSpace(const TVec4<T>& rhs, const TMat4<T>& cameraP) ->TVec4<T>
+	{
+		TVec4<T> l_result;
+		l_result = rhs;
+#if defined USE_COLUMN_MAJOR_MEMORY_LAYOUT
+		l_result = InnoMath::mul(l_result, cameraP.inverse());
+#elif defined USE_ROW_MAJOR_MEMORY_LAYOUT
+		l_result = InnoMath::mul(cameraP.inverse(), l_result);
+#endif
+		// perspective division
+		l_result = l_result * (one<T> / l_result.w);
+
+		return l_result;
+	}
 
 	template<class T>
 	bool isPointOnSphere(const TVec4<T> & lhs, const TSphere<T> & rhs)
@@ -1726,7 +1806,7 @@ namespace InnoMath
 	}
 
 	template<class T, class U>
-	auto precisionConvert(TMat4<T> rhs) ->TMat4<U>
+	auto precisionConvert(const TMat4<T>& rhs) ->TMat4<U>
 	{
 		TMat4<U> l_m;
 
@@ -1793,15 +1873,12 @@ namespace InnoMath
 	template<class T>
 	auto caclGlobalPos(const TMat4<T> & parentTransformationMatrix, const TVec4<T> & localPos) -> TVec4<T>
 	{
-		//Column-Major memory layout
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+#if defined USE_COLUMN_MAJOR_MEMORY_LAYOUT
 		auto result = TVec4<T>();
 		result = InnoMath::mul(localPos, parentTransformationMatrix);
 		result = result * (one<T> / result.w);
 		return result;
-#endif
-		//Row-Major memory layout
-#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+#elif defined USE_ROW_MAJOR_MEMORY_LAYOUT
 		auto result = TVec4<T>();
 		result = InnoMath::mul(parentTransformationMatrix, localPos);
 		result = result * (one<T> / result.w);
@@ -1816,7 +1893,7 @@ namespace InnoMath
 	}
 
 	template<class T>
-	auto caclGlobalScale(const TVec4<T> parentScale, const TVec4<T> & localScale) -> TVec4<T>
+	auto caclGlobalScale(const TVec4<T> & parentScale, const TVec4<T> & localScale) -> TVec4<T>
 	{
 		return parentScale.scale(localScale);
 	}
@@ -1832,7 +1909,7 @@ namespace InnoMath
 	}
 
 	template<class T>
-	auto caclTransformationMatrix(TTransformMatrix<T> & transform) -> TMat4<T>
+	auto caclTransformationMatrix(const TTransformMatrix<T> & transform) -> TMat4<T>
 	{
 		// @TODO: calculate by hand
 		return transform.m_translationMat * transform.m_rotationMat * transform.m_scaleMat;
@@ -1850,25 +1927,25 @@ namespace InnoMath
 	}
 
 	template<class T>
-	auto caclLookAtMatrix(const TVec4<T> globalPos, const TVec4<T> & localRot) -> TMat4<T>
+	auto caclLookAtMatrix(const TVec4<T> & globalPos, const TVec4<T> & localRot) -> TMat4<T>
 	{
 		return TMat4<T>().lookAt(globalPos, globalPos + getDirection(direction::FORWARD, localRot), getDirection(direction::UP, localRot));
 	}
 
 	template<class T>
-	auto getInvertTranslationMatrix(const TVec4<T> pos) -> TMat4<T>
+	auto getInvertTranslationMatrix(const TVec4<T> & pos) -> TMat4<T>
 	{
 		return InnoMath::toTranslationMatrix(pos * -one<T>);
 	}
 
 	template<class T>
-	auto getInvertRotationMatrix(const TVec4<T> rot) -> TMat4<T>
+	auto getInvertRotationMatrix(const TVec4<T> & rot) -> TMat4<T>
 	{
 		return InnoMath::toRotationMatrix(rot.quatConjugate());
 	}
 
 	template<class T>
-	auto getInvertScaleMatrix(const TVec4<T> scale) -> TMat4<T>
+	auto getInvertScaleMatrix(const TVec4<T> & scale) -> TMat4<T>
 	{
 		return InnoMath::toScaleMatrix(scale.reciprocal());
 	}
@@ -2100,15 +2177,3 @@ namespace InnoMath
 		return l_result;
 	};
 }
-
-using vec2 = TVec2<float>;
-using vec4 = TVec4<float>;
-using mat4 = TMat4<float>;
-using Vertex = TVertex<float>;
-using Ray = TRay<float>;
-using AABB = TAABB<float>;
-using Sphere = TSphere<float>;
-using Plane = TPlane<float>;
-using Frustum = TFrustum<float>;
-using TransformVector = TTransformVector<float>;
-using TransformMatrix = TTransformMatrix<float>;
