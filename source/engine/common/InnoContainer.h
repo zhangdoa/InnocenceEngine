@@ -12,22 +12,12 @@ public:
 
 	FixedSizeString(const FixedSizeString<size>& rhs)
 	{
-		auto l_rhsCStr = rhs.c_str();
-
-		for (size_t i = 0; i < size; i++)
-		{
-			m_content[i] = l_rhsCStr[i];
-		}
+		std::memcpy(m_content, rhs.c_str(), size);
 	};
 
 	FixedSizeString<size>& operator=(const FixedSizeString<size>& rhs)
 	{
-		auto l_rhsCStr = rhs.c_str();
-
-		for (size_t i = 0; i < size; i++)
-		{
-			m_content[i] = l_rhsCStr[i];
-		}
+		std::memcpy(m_content, rhs.c_str(), size);
 
 		return *this;
 	}
@@ -35,11 +25,7 @@ public:
 	FixedSizeString(const char* content)
 	{
 		auto l_sizeOfContent = strlen(content);
-
-		for (size_t i = 0; i < l_sizeOfContent; i++)
-		{
-			m_content[i] = content[i];
-		}
+		std::memcpy(m_content, content, l_sizeOfContent);
 		m_content[l_sizeOfContent - 1] = '\0';
 	};
 
