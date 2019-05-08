@@ -4,6 +4,83 @@
 
 #include "../system/Core/InnoAllocator.h"
 
+template<size_t size>
+class FixedSizeString
+{
+public:
+	FixedSizeString() = default;
+
+	FixedSizeString(const FixedSizeString<size>& rhs)
+	{
+		auto l_rhsCStr = rhs.c_str();
+
+		for (size_t i = 0; i < size; i++)
+		{
+			m_content[i] = l_rhsCStr[i];
+		}
+	};
+
+	FixedSizeString<size>& operator=(const FixedSizeString<size>& rhs)
+	{
+		auto l_rhsCStr = rhs.c_str();
+
+		for (size_t i = 0; i < size; i++)
+		{
+			m_content[i] = l_rhsCStr[i];
+		}
+
+		return *this;
+	}
+
+	FixedSizeString(const char* content)
+	{
+		auto l_sizeOfContent = strlen(content);
+
+		for (size_t i = 0; i < l_sizeOfContent; i++)
+		{
+			m_content[i] = content[i];
+		}
+		m_content[l_sizeOfContent - 1] = '\0';
+	};
+
+	~FixedSizeString() = default;
+
+	bool operator==(const FixedSizeString<size> &rhs) const
+	{
+		auto l_rhsCStr = rhs.c_str();
+
+		auto l_result = strcmp(m_content, l_rhsCStr);
+
+		if (l_result != 0)
+		{
+			return false;
+		}
+		else
+		{
+			return true;
+		}
+	}
+
+	const char* c_str() const
+	{
+		return &m_content[0];
+	}
+
+private:
+	char m_content[size];
+};
+
+namespace std {
+	template <size_t size>
+	struct hash<FixedSizeString<size>>
+	{
+		std::size_t operator()(const FixedSizeString<size>& k) const
+		{
+			return std::hash<std::string>()(std::string(k.c_str()));
+		}
+	};
+}
+
 template <typename T>
 class ThreadSafeQueue
 {

@@ -821,30 +821,30 @@ DX12TextureDataComponent* DX12RenderingSystemNS::addDX12TextureDataComponent()
 	return l_TDC;
 }
 
-DX12MeshDataComponent* DX12RenderingSystemNS::getDX12MeshDataComponent(EntityID EntityID)
+DX12MeshDataComponent* DX12RenderingSystemNS::getDX12MeshDataComponent(EntityID entityID)
 {
-	auto l_result = DX12RenderingSystemNS::m_meshMap.find(EntityID);
+	auto l_result = DX12RenderingSystemNS::m_meshMap.find(entityID);
 	if (l_result != DX12RenderingSystemNS::m_meshMap.end())
 	{
 		return l_result->second;
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find MeshDataComponent by EntityID: " + EntityID + " !");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find MeshDataComponent by EntityID: " + std::string(entityID.c_str()) + " !");
 		return nullptr;
 	}
 }
 
-DX12TextureDataComponent * DX12RenderingSystemNS::getDX12TextureDataComponent(EntityID EntityID)
+DX12TextureDataComponent * DX12RenderingSystemNS::getDX12TextureDataComponent(EntityID entityID)
 {
-	auto l_result = DX12RenderingSystemNS::m_textureMap.find(EntityID);
+	auto l_result = DX12RenderingSystemNS::m_textureMap.find(entityID);
 	if (l_result != DX12RenderingSystemNS::m_textureMap.end())
 	{
 		return l_result->second;
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find TextureDataComponent by EntityID: " + EntityID + " !");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find TextureDataComponent by EntityID: " + std::string(entityID.c_str()) + " !");
 		return nullptr;
 	}
 }
@@ -1006,27 +1006,27 @@ TextureDataComponent * DX12RenderingSystem::getTextureDataComponent(WorldEditorI
 	return DX12RenderingSystemNS::getDX12TextureDataComponent(iconType);
 }
 
-bool DX12RenderingSystem::removeMeshDataComponent(EntityID EntityID)
+bool DX12RenderingSystem::removeMeshDataComponent(EntityID entityID)
 {
 	auto l_meshMap = &DX12RenderingSystemNS::m_meshMap;
-	auto l_mesh = l_meshMap->find(EntityID);
+	auto l_mesh = l_meshMap->find(entityID);
 	if (l_mesh != l_meshMap->end())
 	{
 		g_pCoreSystem->getMemorySystem()->destroyObject(DX12RenderingSystemNS::m_MeshDataComponentPool, sizeof(DX12MeshDataComponent), l_mesh->second);
-		l_meshMap->erase(EntityID);
+		l_meshMap->erase(entityID);
 		return true;
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove MeshDataComponent by EntityID: " + EntityID + " !");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove MeshDataComponent by EntityID: " + std::string(entityID.c_str()) + " !");
 		return false;
 	}
 }
 
-bool DX12RenderingSystem::removeTextureDataComponent(EntityID EntityID)
+bool DX12RenderingSystem::removeTextureDataComponent(EntityID entityID)
 {
 	auto l_textureMap = &DX12RenderingSystemNS::m_textureMap;
-	auto l_texture = l_textureMap->find(EntityID);
+	auto l_texture = l_textureMap->find(entityID);
 	if (l_texture != l_textureMap->end())
 	{
 		for (auto& i : l_texture->second->m_textureData)
@@ -1035,12 +1035,12 @@ bool DX12RenderingSystem::removeTextureDataComponent(EntityID EntityID)
 		}
 
 		g_pCoreSystem->getMemorySystem()->destroyObject(DX12RenderingSystemNS::m_TextureDataComponentPool, sizeof(DX12TextureDataComponent), l_texture->second);
-		l_textureMap->erase(EntityID);
+		l_textureMap->erase(entityID);
 		return true;
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove TextureDataComponent by EntityID: " + EntityID + " !");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove TextureDataComponent by EntityID: " + std::string(entityID.c_str()) + " !");
 		return false;
 	}
 }

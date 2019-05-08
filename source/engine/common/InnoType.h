@@ -1,6 +1,6 @@
 #pragma once
-#include "../common/stl14.h"
-#include "../common/config.h"
+#include "config.h"
+#include "InnoContainer.h"
 
 #define INNO_INTERFACE class
 #define INNO_CONCRETE class
@@ -19,7 +19,7 @@ enum class ObjectStatus
 	SHUTDOWN,
 };
 
-using EntityID = std::string;
+using EntityID = FixedSizeString<32>;
 
 enum class ComponentType { TransformComponent, VisibleComponent, DirectionalLightComponent, PointLightComponent, SphereLightComponent, CameraComponent, InputComponent, EnvironmentCaptureComponent, PhysicsDataComponent, MeshDataComponent, MaterialDataComponent, TextureDataComponent };
 

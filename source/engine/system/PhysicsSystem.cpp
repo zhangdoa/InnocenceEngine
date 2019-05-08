@@ -539,7 +539,7 @@ bool InnoPhysicsSystemNS::generatePhysicsDataComponent(MeshDataComponent* MDC)
 	l_PDC->m_AABB = l_AABB;
 	l_PDC->m_sphere = l_sphere;
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysicsSystem: PhysicsDataComponent has been generated for MeshDataComponent:" + MDC->m_parentEntity + ".");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysicsSystem: PhysicsDataComponent has been generated for MeshDataComponent:" + std::string(MDC->m_parentEntity.c_str()) + ".");
 
 	MDC->m_PDC = l_PDC;
 
@@ -602,7 +602,7 @@ bool InnoPhysicsSystemNS::generatePhysicsDataComponent(VisibleComponent* VC)
 #endif
 
 	VC->m_PDC = l_PDC;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysicsSystem: PhysicsDataComponent has been generated for VisibleComponent:" + VC->m_parentEntity + ".");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysicsSystem: PhysicsDataComponent has been generated for VisibleComponent:" + std::string(VC->m_parentEntity.c_str()) + ".");
 
 	return true;
 }

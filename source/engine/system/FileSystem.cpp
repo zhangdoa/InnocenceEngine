@@ -26,8 +26,6 @@ namespace fs = std::experimental::filesystem;
 namespace fs = std::filesystem;
 #endif
 
-
-
 INNO_PRIVATE_SCOPE InnoFileSystemNS
 {
 	namespace AssimpWrapper
@@ -36,7 +34,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 		json processAssimpScene(const aiScene* aiScene);
 		json processAssimpNode(const aiNode * node, const aiScene * scene);
 		json processAssimpMesh(const aiScene * scene, unsigned int meshIndex);
-		std::pair<EntityID, size_t> processMeshData(const aiMesh * aiMesh);
+		std::pair<std::string, size_t> processMeshData(const aiMesh * aiMesh);
 		json processAssimpMaterial(const aiMaterial * aiMaterial);
 		json processTextureData(const std::string & fileName, TextureSamplerType samplerType, TextureUsageType usageType);
 	};
@@ -101,7 +99,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 			topLevel["SceneEntities"].begin(),
 			topLevel["SceneEntities"].end(),
 			[&](auto& val) -> bool {
-			return val["EntityID"] == rhs->m_parentEntity;
+			return val["EntityID"] == rhs->m_parentEntity.c_str();
 		});
 
 		if (result != topLevel["SceneEntities"].end())
@@ -111,7 +109,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 		}
 		else
 		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: saveComponentData<T>: Entity ID " + rhs->m_parentEntity + " is invalid.");
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: saveComponentData<T>: Entity ID " + std::string(rhs->m_parentEntity.c_str()) + " is invalid.");
 			return false;
 		}
 	}
@@ -279,7 +277,7 @@ bool InnoFileSystemNS::convertModel(const std::string & fileName, const std::str
 void InnoFileSystemNS::to_json(json& j, const EntityNamePair& p)
 {
 	j = json{
-		{"EntityID", p.first},
+		{"EntityID", p.first.c_str()},
 		{"EntityName", p.second},
 	};
 }
@@ -1061,7 +1059,7 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, u
 	return l_meshData;
 }
 
-std::pair<EntityID, size_t> InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh)
+std::pair<std::string, size_t> InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh)
 {
 	auto l_verticesNumber = aiMesh->mNumVertices;
 
@@ -1147,7 +1145,7 @@ std::pair<EntityID, size_t> InnoFileSystemNS::AssimpWrapper::processMeshData(con
 	}
 	else
 	{
-		l_exportFileName = InnoMath::createEntityID();
+		l_exportFileName = std::string(InnoMath::createEntityID().c_str());
 	}
 
 	auto l_exportFileRelativePath = "//res//convertedAssets//" + l_exportFileName + ".InnoRaw";
@@ -1159,7 +1157,7 @@ std::pair<EntityID, size_t> InnoFileSystemNS::AssimpWrapper::processMeshData(con
 
 	l_file.close();
 
-	return std::pair<EntityID, size_t>(l_exportFileRelativePath, l_indiceSize);
+	return std::pair<std::string, size_t>(l_exportFileRelativePath, l_indiceSize);
 }
 
 /*

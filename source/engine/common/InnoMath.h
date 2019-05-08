@@ -1984,7 +1984,8 @@ namespace InnoMath
 			ss << (hex.length() < 2 ? '0' + hex : hex);
 		}
 
-		EntityID result = ss.str();
+		auto l_str = ss.str();
+		EntityID result = l_str.c_str();
 		return result;
 	}
 

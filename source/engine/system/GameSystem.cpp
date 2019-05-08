@@ -72,7 +72,7 @@ std::string InnoGameSystemNS::getEntityName(const EntityID& entityID)
 
 	if (l_result == m_entityNameMap.end())
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't find entity name by ID " + entityID + " !");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't find entity name by ID " + std::string(entityID.c_str()) + "!");
 		return "AbnormalEntityName";
 	}
 
@@ -91,7 +91,7 @@ EntityID InnoGameSystemNS::getEntityID(const std::string& entityName)
 
 	if (l_result == m_entityNameMap.end())
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't find entity ID by name " + entityName + " !");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't find entity ID by name " + std::string(entityName.c_str()) + "!");
 		return "AbnormalEntityID";
 	}
 
@@ -416,7 +416,7 @@ void InnoGameSystem::unregisterComponent(className* rhs) \
 	} \
 	else \
 	{ \
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't unregister " + std::string(#className) + " by EntityID: " + rhs->m_parentEntity + " !"); \
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't unregister " + std::string(#className) + " by EntityID: " + std::string(rhs->m_parentEntity.c_str()) + " !"); \
 	} \
 }
 
@@ -439,7 +439,7 @@ className* InnoGameSystem::get##className(const EntityID& parentEntity) \
 	} \
 	else \
 	{ \
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't find " + std::string(#className) + " by EntityID: " + parentEntity + " !"); \
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't find " + std::string(#className) + " by EntityID: " + std::string(parentEntity.c_str()) + "!"); \
 		return nullptr; \
 	} \
 }
