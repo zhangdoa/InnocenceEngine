@@ -41,6 +41,8 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 	bool createRenderTargets(DX12RenderPassComponent* DXRPC);
 	bool createRTVDescriptorHeap(DX12RenderPassComponent* DXRPC);
 	bool createRTV(DX12RenderPassComponent* DXRPC);
+	bool createDSVDescriptorHeap(DX12RenderPassComponent* DXRPC);
+	bool createDSV(DX12RenderPassComponent* DXRPC);
 	bool createRootSignature(DX12RenderPassComponent* DXRPC);
 	bool createPSO(DX12RenderPassComponent* DXRPC, DX12ShaderProgramComponent* DXSPC);
 	bool createCommandQueue(DX12RenderPassComponent* DXRPC);

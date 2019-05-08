@@ -23,23 +23,19 @@ public:
 
 	ID3D12DescriptorHeap* m_RTVHeap;
 	D3D12_DESCRIPTOR_HEAP_DESC m_RTVHeapDesc = {};
-	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_RTVCPUDescHandles;
-
 	D3D12_RENDER_TARGET_VIEW_DESC m_RTVDesc = {};
+	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_RTVCPUDescHandles;
+	std::vector<DX12TextureDataComponent*> m_DXTDCs;
+
+	ID3D12DescriptorHeap* m_DSVHeap;
+	D3D12_DESCRIPTOR_HEAP_DESC m_DSVHeapDesc = {};
+	D3D12_DEPTH_STENCIL_VIEW_DESC m_DSVDesc = {};
+	D3D12_CPU_DESCRIPTOR_HANDLE m_DSVCPUDescHandle;
+	D3D12_DEPTH_STENCIL_DESC m_depthStencilDesc = {};
+	DX12TextureDataComponent* m_depthStencilDXTDC;
 
 	D3D12_VERSIONED_ROOT_SIGNATURE_DESC m_rootSignatureDesc = {};
 	ID3D12RootSignature* m_rootSignature;
-
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC m_PSODesc = {};
-	ID3D12PipelineState* m_PSO;
-
-	std::vector<DX12TextureDataComponent*> m_DXTDCs;
-
-	D3D12_DEPTH_STENCIL_DESC m_depthStencilBufferDesc = {};
-	ID3D12Resource* m_depthStencilBuffer = 0;
-
-	D3D12_DEPTH_STENCIL_VIEW_DESC m_depthStencilViewDesc = {};
-	ID3D12Resource* m_depthStencilView = 0;
 
 	D3D12_BLEND_DESC m_blendDesc = {};
 
@@ -48,6 +44,9 @@ public:
 	D3D12_VIEWPORT m_viewport = {};
 
 	D3D12_RECT m_scissor = {};
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC m_PSODesc = {};
+	ID3D12PipelineState* m_PSO;
 
 	unsigned int m_frameIndex = 0;
 

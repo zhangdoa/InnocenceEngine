@@ -369,9 +369,21 @@ bool DX12RenderingSystemNS::createSwapChainDXRPC()
 	l_DXRPC->m_renderPassDesc.RTNumber = l_imageCount;
 	l_DXRPC->m_renderPassDesc.useMultipleFramebuffers = true;
 
+	// Setup the RTV description.
 	l_DXRPC->m_RTVHeapDesc.NumDescriptors = l_imageCount;
 	l_DXRPC->m_RTVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	l_DXRPC->m_RTVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	l_DXRPC->m_RTVDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+	l_DXRPC->m_RTVDesc.Texture2D.MipSlice = 0;
+
+	// Setup the DSV description.
+	l_DXRPC->m_DSVHeapDesc.NumDescriptors = 1;
+	l_DXRPC->m_DSVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	l_DXRPC->m_DSVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	l_DXRPC->m_DSVDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	l_DXRPC->m_DSVDesc.Texture2D.MipSlice = 0;
 
 	// initialize manually
 	bool l_result = true;
@@ -393,7 +405,17 @@ bool DX12RenderingSystemNS::createSwapChainDXRPC()
 
 	l_result &= createRTV(l_DXRPC);
 
-	// Create root signature.
+	l_DXRPC->m_depthStencilDXTDC = addDX12TextureDataComponent();
+	l_DXRPC->m_depthStencilDXTDC->m_textureDataDesc = DX12RenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc;
+	l_DXRPC->m_depthStencilDXTDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_STENCIL_ATTACHMENT;
+	l_DXRPC->m_depthStencilDXTDC->m_textureData = { nullptr };
+
+	initializeDX12TextureDataComponent(l_DXRPC->m_depthStencilDXTDC);
+
+	l_result &= createDSVDescriptorHeap(l_DXRPC);
+	l_result &= createDSV(l_DXRPC);
+
+	// Setup root signature.
 	CD3DX12_DESCRIPTOR_RANGE1 l_bassPassRT0DescRange;
 	l_bassPassRT0DescRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
 
@@ -408,15 +430,31 @@ bool DX12RenderingSystemNS::createSwapChainDXRPC()
 	l_DXRPC->m_rootSignatureDesc = l_rootSigDesc;
 	l_DXRPC->m_rootSignatureDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
+	// Setup the description of the depth stencil state.
+	l_DXRPC->m_depthStencilDesc.DepthEnable = true;
+	l_DXRPC->m_depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+	l_DXRPC->m_depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+
+	l_DXRPC->m_depthStencilDesc.StencilEnable = true;
+	l_DXRPC->m_depthStencilDesc.StencilReadMask = 0xFF;
+	l_DXRPC->m_depthStencilDesc.StencilWriteMask = 0xFF;
+
+	// Stencil operations if pixel is front-facing.
+	l_DXRPC->m_depthStencilDesc.FrontFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+	l_DXRPC->m_depthStencilDesc.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+	l_DXRPC->m_depthStencilDesc.FrontFace.StencilPassOp = D3D12_STENCIL_OP_REPLACE;
+	l_DXRPC->m_depthStencilDesc.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+
+	// Stencil operations if pixel is back-facing.
+	l_DXRPC->m_depthStencilDesc.BackFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+	l_DXRPC->m_depthStencilDesc.BackFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+	l_DXRPC->m_depthStencilDesc.BackFace.StencilPassOp = D3D12_STENCIL_OP_REPLACE;
+	l_DXRPC->m_depthStencilDesc.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+
 	l_DXRPC->m_rasterizerDesc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	l_DXRPC->m_blendDesc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 
-	// Set up the depth stencil view description.
-	l_DXRPC->m_depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	l_DXRPC->m_depthStencilViewDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	l_DXRPC->m_depthStencilViewDesc.Texture2D.MipSlice = 0;
-
-	// Setup the viewport for rendering.
+	// Setup the viewport.
 	l_DXRPC->m_viewport.Width = (float)l_DXRPC->m_renderPassDesc.RTDesc.width;
 	l_DXRPC->m_viewport.Height = (float)l_DXRPC->m_renderPassDesc.RTDesc.height;
 	l_DXRPC->m_viewport.MinDepth = 0.0f;
@@ -424,17 +462,13 @@ bool DX12RenderingSystemNS::createSwapChainDXRPC()
 	l_DXRPC->m_viewport.TopLeftX = 0.0f;
 	l_DXRPC->m_viewport.TopLeftY = 0.0f;
 
-	// Setup the scissor rect
+	// Setup the scissor rect.
 	l_DXRPC->m_scissor.left = 0;
 	l_DXRPC->m_scissor.top = 0;
 	l_DXRPC->m_scissor.right = (unsigned long)l_DXRPC->m_viewport.Width;
 	l_DXRPC->m_scissor.bottom = (unsigned long)l_DXRPC->m_viewport.Height;
 
-	// Describe and create the graphics pipeline state object (PSO).
-	l_DXRPC->m_PSODesc.RasterizerState = l_DXRPC->m_rasterizerDesc;
-	l_DXRPC->m_PSODesc.BlendState = l_DXRPC->m_blendDesc;
-	l_DXRPC->m_PSODesc.DepthStencilState.DepthEnable = false;
-	l_DXRPC->m_PSODesc.DepthStencilState.StencilEnable = false;
+	// Setup PSO.
 	l_DXRPC->m_PSODesc.SampleMask = UINT_MAX;
 	l_DXRPC->m_PSODesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	l_DXRPC->m_PSODesc.SampleDesc.Count = 1;

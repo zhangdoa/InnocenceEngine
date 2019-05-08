@@ -309,6 +309,8 @@ bool DX12RenderingSystemNS::initializeDX12RenderPassComponent(DX12RenderPassComp
 
 	l_result &= createRTVDescriptorHeap(DXRPC);
 	l_result &= createRTV(DXRPC);
+	l_result &= createDSVDescriptorHeap(DXRPC);
+	l_result &= createDSV(DXRPC);
 	l_result &= createRootSignature(DXRPC);
 	l_result &= createPSO(DXRPC, DXSPC);
 	l_result &= createCommandQueue(DXRPC);
@@ -363,6 +365,13 @@ bool DX12RenderingSystemNS::createRenderTargets(DX12RenderPassComponent* DXRPC)
 		initializeDX12TextureDataComponent(l_TDC);
 	}
 
+	DXRPC->m_depthStencilDXTDC = addDX12TextureDataComponent();
+	DXRPC->m_depthStencilDXTDC->m_textureDataDesc = DX12RenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc;
+	DXRPC->m_depthStencilDXTDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_STENCIL_ATTACHMENT;
+	DXRPC->m_depthStencilDXTDC->m_textureData = { nullptr };
+
+	initializeDX12TextureDataComponent(DXRPC->m_depthStencilDXTDC);
+
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Render targets have been created.");
 
 	return true;
@@ -404,6 +413,38 @@ bool DX12RenderingSystemNS::createRTV(DX12RenderPassComponent* DXRPC)
 	}
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: RTV has been created.");
+
+	return true;
+}
+
+bool DX12RenderingSystemNS::createDSVDescriptorHeap(DX12RenderPassComponent* DXRPC)
+{
+	auto l_result = DX12RenderingSystemComponent::get().m_device->CreateDescriptorHeap(&DXRPC->m_DSVHeapDesc, IID_PPV_ARGS(&DXRPC->m_DSVHeap));
+
+	if (FAILED(l_result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create DescriptorHeap for DSV!");
+		return false;
+	}
+
+	DXRPC->m_DSVCPUDescHandle = DXRPC->m_DSVHeap->GetCPUDescriptorHandleForHeapStart();
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: DSV DescriptorHeap has been created.");
+
+	return true;
+}
+
+bool DX12RenderingSystemNS::createDSV(DX12RenderPassComponent* DXRPC)
+{
+	auto l_DSVDescSize = DX12RenderingSystemComponent::get().m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+
+	DXRPC->m_DSVDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	DXRPC->m_DSVDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	DXRPC->m_DSVDesc.Texture2D.MipSlice = 0;
+
+	DX12RenderingSystemComponent::get().m_device->CreateDepthStencilView(DXRPC->m_depthStencilDXTDC->m_texture, &DXRPC->m_DSVDesc, DXRPC->m_DSVCPUDescHandle);
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: DSV has been created.");
 
 	return true;
 }
@@ -495,11 +536,17 @@ bool DX12RenderingSystemNS::createPSO(DX12RenderPassComponent* DXRPC, DX12Shader
 	DXRPC->m_PSODesc.InputLayout = { l_polygonLayout, l_numElements };
 	DXRPC->m_PSODesc.VS = l_vsBytecode;
 	DXRPC->m_PSODesc.PS = l_psBytecode;
+
 	DXRPC->m_PSODesc.NumRenderTargets = DXRPC->m_renderPassDesc.RTNumber;
 	for (size_t i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
 	{
 		DXRPC->m_PSODesc.RTVFormats[i] = DXRPC->m_DXTDCs[i]->m_DX12TextureDataDesc.Format;
 	}
+
+	DXRPC->m_PSODesc.DSVFormat = DXRPC->m_DSVDesc.Format;
+	DXRPC->m_PSODesc.DepthStencilState = DXRPC->m_depthStencilDesc;
+	DXRPC->m_PSODesc.RasterizerState = DXRPC->m_rasterizerDesc;
+	DXRPC->m_PSODesc.BlendState = DXRPC->m_blendDesc;
 
 	auto l_result = DX12RenderingSystemComponent::get().m_device->CreateGraphicsPipelineState(&DXRPC->m_PSODesc, IID_PPV_ARGS(&DXRPC->m_PSO));
 
@@ -764,11 +811,11 @@ DXGI_FORMAT DX12RenderingSystemNS::getTextureFormat(TextureDataDesc textureDataD
 	}
 	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
 	{
-		l_internalFormat = DXGI_FORMAT_R32_TYPELESS;
+		l_internalFormat = DXGI_FORMAT_D32_FLOAT;
 	}
 	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
 	{
-		l_internalFormat = DXGI_FORMAT_R24G8_TYPELESS;
+		l_internalFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	}
 	else
 	{
@@ -965,7 +1012,10 @@ bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
 	rhs->m_DX12TextureDataDesc = getDX12TextureDataDesc(rhs->m_textureDataDesc);
 
 	unsigned int SRVMipLevels = -1;
-	if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT)
+	if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
+		|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
+		|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT
+		|| rhs->m_textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
 	{
 		SRVMipLevels = 1;
 	}
@@ -976,6 +1026,19 @@ bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
 	if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT)
 	{
 		auto l_clearValue = D3D12_CLEAR_VALUE{ rhs->m_DX12TextureDataDesc.Format, { 0.0f, 0.0f, 0.0f, 1.0f } };
+		l_result = DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&rhs->m_DX12TextureDataDesc,
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			&l_clearValue,
+			IID_PPV_ARGS(&rhs->m_texture));
+	}
+	else if (rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT || rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
+	{
+		auto l_clearValue = D3D12_CLEAR_VALUE();
+		l_clearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		l_clearValue.DepthStencil = D3D12_DEPTH_STENCIL_VALUE{ 1.0f, 0x00 };
 		l_result = DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
@@ -1008,6 +1071,18 @@ bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
 		l_commandList->ResourceBarrier(
 			1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(rhs->m_texture, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_RENDER_TARGET));
+	}
+	else if (rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT || rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
+	{
+		l_commandList->ResourceBarrier(
+			1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(rhs->m_texture, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_DEPTH_WRITE));
+	}
+	else if (rhs->m_textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
+	{
+		l_commandList->ResourceBarrier(
+			1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(rhs->m_texture, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 	}
 	else
 	{
@@ -1046,10 +1121,22 @@ bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
 
 	// Describe and create a SRV for the texture.
 	rhs->m_SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	rhs->m_SRVDesc.Format = rhs->m_DX12TextureDataDesc.Format;
 	rhs->m_SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	rhs->m_SRVDesc.Texture2D.MostDetailedMip = 0;
 	rhs->m_SRVDesc.Texture2D.MipLevels = SRVMipLevels;
+
+	if (rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
+	{
+		rhs->m_SRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	}
+	else if (rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
+	{
+		rhs->m_SRVDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+	}
+	else
+	{
+		rhs->m_SRVDesc.Format = rhs->m_DX12TextureDataDesc.Format;
+	}
 
 	rhs->m_CPUHandle = DX12RenderingSystemComponent::get().m_currentCSUCPUHandle;
 	rhs->m_GPUHandle = DX12RenderingSystemComponent::get().m_currentCSUGPUHandle;
@@ -1063,11 +1150,11 @@ bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
 
 	endSingleTimeCommands(l_commandList);
 
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingSystem: SRV " + InnoUtility::pointerToString(rhs->m_SRV) + " is initialized.");
+
 	rhs->m_objectStatus = ObjectStatus::ALIVE;
 
 	m_initializedDXTDC.emplace(rhs->m_parentEntity, rhs);
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingSystem: SRV " + InnoUtility::pointerToString(rhs->m_SRV) + " is initialized.");
 
 	return true;
 }
@@ -1092,18 +1179,19 @@ bool DX12RenderingSystemNS::recordActivateRenderPass(DX12RenderPassComponent* DX
 
 	if (DXRPC->m_renderPassDesc.useMultipleFramebuffers)
 	{
-		DXRPC->m_commandLists[frameIndex]->OMSetRenderTargets(1, &DXRPC->m_RTVCPUDescHandles[frameIndex], FALSE, nullptr);
+		DXRPC->m_commandLists[frameIndex]->OMSetRenderTargets(1, &DXRPC->m_RTVCPUDescHandles[frameIndex], FALSE, &DXRPC->m_DSVCPUDescHandle);
 		DXRPC->m_commandLists[frameIndex]->ClearRenderTargetView(DXRPC->m_RTVCPUDescHandles[frameIndex], l_clearColor, 0, nullptr);
 	}
 	else
 	{
-		DXRPC->m_commandLists[frameIndex]->OMSetRenderTargets(DXRPC->m_renderPassDesc.RTNumber, &DXRPC->m_RTVCPUDescHandles[0], FALSE, nullptr);
+		DXRPC->m_commandLists[frameIndex]->OMSetRenderTargets(DXRPC->m_renderPassDesc.RTNumber, &DXRPC->m_RTVCPUDescHandles[0], FALSE, &DXRPC->m_DSVCPUDescHandle);
 		for (size_t i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
 		{
 			DXRPC->m_commandLists[frameIndex]->ClearRenderTargetView(DXRPC->m_RTVCPUDescHandles[i], l_clearColor, 0, nullptr);
 		}
 	}
 
+	DXRPC->m_commandLists[frameIndex]->ClearDepthStencilView(DXRPC->m_DSVCPUDescHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0x00, 0, nullptr);
 	return true;
 }
 

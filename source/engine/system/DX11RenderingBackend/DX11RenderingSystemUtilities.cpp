@@ -893,7 +893,7 @@ bool DX11RenderingSystemNS::submitGPUData(DX11TextureDataComponent * rhs)
 
 	if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
 		|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
-		|| rhs->m_textureDataDesc.usageType != TextureUsageType::DEPTH_STENCIL_ATTACHMENT
+		|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT
 		|| rhs->m_textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
 	{
 		rhs->m_SRVDesc.Texture2D.MipLevels = 1;

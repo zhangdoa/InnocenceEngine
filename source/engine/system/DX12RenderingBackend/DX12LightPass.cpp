@@ -35,6 +35,7 @@ bool DX12LightPass::initialize()
 	m_DXRPC->m_renderPassDesc.RTNumber = 1;
 	m_DXRPC->m_renderPassDesc.useMultipleFramebuffers = false;
 
+	// Setup the RTV description.
 	m_DXRPC->m_RTVHeapDesc.NumDescriptors = 1;
 	m_DXRPC->m_RTVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	m_DXRPC->m_RTVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
@@ -42,7 +43,15 @@ bool DX12LightPass::initialize()
 	m_DXRPC->m_RTVDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 	m_DXRPC->m_RTVDesc.Texture2D.MipSlice = 0;
 
-	// Create root signature.
+	// Setup the DSV description.
+	m_DXRPC->m_DSVHeapDesc.NumDescriptors = 1;
+	m_DXRPC->m_DSVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	m_DXRPC->m_DSVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	m_DXRPC->m_DSVDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	m_DXRPC->m_DSVDesc.Texture2D.MipSlice = 0;
+
+	// Setup root signature.
 	CD3DX12_ROOT_PARAMETER1 l_rootParams[7];
 	l_rootParams[0].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
 	l_rootParams[1].InitAsConstantBufferView(1, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
@@ -63,15 +72,31 @@ bool DX12LightPass::initialize()
 	m_DXRPC->m_rootSignatureDesc = l_rootSigDesc;
 	m_DXRPC->m_rootSignatureDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
+	// Setup the description of the depth stencil state.
+	m_DXRPC->m_depthStencilDesc.DepthEnable = true;
+	m_DXRPC->m_depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+	m_DXRPC->m_depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+
+	m_DXRPC->m_depthStencilDesc.StencilEnable = true;
+	m_DXRPC->m_depthStencilDesc.StencilReadMask = 0xFF;
+	m_DXRPC->m_depthStencilDesc.StencilWriteMask = 0xFF;
+
+	// Stencil operations if pixel is front-facing.
+	m_DXRPC->m_depthStencilDesc.FrontFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+	m_DXRPC->m_depthStencilDesc.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+	m_DXRPC->m_depthStencilDesc.FrontFace.StencilPassOp = D3D12_STENCIL_OP_REPLACE;
+	m_DXRPC->m_depthStencilDesc.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+
+	// Stencil operations if pixel is back-facing.
+	m_DXRPC->m_depthStencilDesc.BackFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+	m_DXRPC->m_depthStencilDesc.BackFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+	m_DXRPC->m_depthStencilDesc.BackFace.StencilPassOp = D3D12_STENCIL_OP_REPLACE;
+	m_DXRPC->m_depthStencilDesc.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+
 	m_DXRPC->m_rasterizerDesc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	m_DXRPC->m_blendDesc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 
-	// Set up the depth stencil view description.
-	m_DXRPC->m_depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	m_DXRPC->m_depthStencilViewDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	m_DXRPC->m_depthStencilViewDesc.Texture2D.MipSlice = 0;
-
-	// Setup the viewport for rendering.
+	// Setup the viewport.
 	m_DXRPC->m_viewport.Width = (float)m_DXRPC->m_renderPassDesc.RTDesc.width;
 	m_DXRPC->m_viewport.Height = (float)m_DXRPC->m_renderPassDesc.RTDesc.height;
 	m_DXRPC->m_viewport.MinDepth = 0.0f;
@@ -79,17 +104,13 @@ bool DX12LightPass::initialize()
 	m_DXRPC->m_viewport.TopLeftX = 0.0f;
 	m_DXRPC->m_viewport.TopLeftY = 0.0f;
 
-	// Setup the scissor rect
+	// Setup the scissor rect.
 	m_DXRPC->m_scissor.left = 0;
 	m_DXRPC->m_scissor.top = 0;
 	m_DXRPC->m_scissor.right = (unsigned long)m_DXRPC->m_viewport.Width;
 	m_DXRPC->m_scissor.bottom = (unsigned long)m_DXRPC->m_viewport.Height;
 
-	// Describe and create the graphics pipeline state object (PSO).
-	m_DXRPC->m_PSODesc.RasterizerState = m_DXRPC->m_rasterizerDesc;
-	m_DXRPC->m_PSODesc.BlendState = m_DXRPC->m_blendDesc;
-	m_DXRPC->m_PSODesc.DepthStencilState.DepthEnable = false;
-	m_DXRPC->m_PSODesc.DepthStencilState.StencilEnable = false;
+	// Setup PSO.
 	m_DXRPC->m_PSODesc.SampleMask = UINT_MAX;
 	m_DXRPC->m_PSODesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	m_DXRPC->m_PSODesc.SampleDesc.Count = 1;

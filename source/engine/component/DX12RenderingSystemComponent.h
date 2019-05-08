@@ -45,16 +45,6 @@ public:
 	DX12ShaderProgramComponent* m_swapChainDXSPC;
 	DX12RenderPassComponent* m_swapChainDXRPC;
 
-	D3D12_DEPTH_STENCIL_DESC m_depthStencilDesc;
-
-	D3D12_DEPTH_STENCIL_VIEW_DESC m_depthStencilViewDesc;
-
-	D3D12_RASTERIZER_DESC m_rasterDescForward;
-
-	D3D12_RASTERIZER_DESC m_rasterDescDeferred;
-
-	D3D12_VIEWPORT m_viewport;
-
 	RenderPassDesc m_deferredRenderPassDesc = RenderPassDesc();
 
 	ID3D12DescriptorHeap* m_CSUHeap;
