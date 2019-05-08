@@ -29,27 +29,12 @@ bool DX12LightPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_DXRPC = addDX12RenderPassComponent(m_entityID);
+	m_DXRPC = addDX12RenderPassComponent(m_entityID, "LightPassDXRPC\\");
 
 	m_DXRPC->m_renderPassDesc = DX12RenderingSystemComponent::get().m_deferredRenderPassDesc;
 	m_DXRPC->m_renderPassDesc.RTNumber = 1;
-	m_DXRPC->m_renderPassDesc.useMultipleFramebuffers = false;
-
-	// Setup the RTV description.
-	m_DXRPC->m_RTVHeapDesc.NumDescriptors = 1;
-	m_DXRPC->m_RTVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	m_DXRPC->m_RTVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-
-	m_DXRPC->m_RTVDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-	m_DXRPC->m_RTVDesc.Texture2D.MipSlice = 0;
-
-	// Setup the DSV description.
-	m_DXRPC->m_DSVHeapDesc.NumDescriptors = 1;
-	m_DXRPC->m_DSVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-	m_DXRPC->m_DSVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-
-	m_DXRPC->m_DSVDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	m_DXRPC->m_DSVDesc.Texture2D.MipSlice = 0;
+	m_DXRPC->m_renderPassDesc.useDepthAttachment = true;
+	m_DXRPC->m_renderPassDesc.useStencilAttachment = true;
 
 	// Setup root signature.
 	CD3DX12_ROOT_PARAMETER1 l_rootParams[7];

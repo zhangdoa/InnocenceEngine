@@ -1,20 +1,15 @@
 #pragma once
 #include "../common/InnoType.h"
 #include "../system/DX12RenderingBackend/DX12Headers.h"
-#include "TextureDataComponent.h"
+#include "RenderPassComponent.h"
 #include "DX12TextureDataComponent.h"
 
 enum class FenceStatus { IDLE, WORKING };
-class DX12RenderPassComponent
+class DX12RenderPassComponent : public RenderPassComponent
 {
 public:
 	DX12RenderPassComponent() {};
 	~DX12RenderPassComponent() {};
-
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
-	EntityID m_parentEntity;
-
-	RenderPassDesc m_renderPassDesc;
 
 	std::vector<ID3D12CommandAllocator*> m_commandAllocators;
 	D3D12_COMMAND_QUEUE_DESC m_commandQueueDesc = {};

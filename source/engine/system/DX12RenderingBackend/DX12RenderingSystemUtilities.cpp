@@ -291,11 +291,12 @@ void DX12RenderingSystemNS::OutputShaderErrorMessage(ID3DBlob * errorMessage, HW
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: innoShader: " + shaderFilename + " compile error: " + errorSStream.str() + "\n -- --------------------------------------------------- -- ");
 }
 
-DX12RenderPassComponent* DX12RenderingSystemNS::addDX12RenderPassComponent(EntityID rhs)
+DX12RenderPassComponent* DX12RenderingSystemNS::addDX12RenderPassComponent(const EntityID& parentEntity, const char* name)
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DX12RenderPassComponentPool, sizeof(DX12RenderPassComponent));
 	auto l_DXRPC = new(l_rawPtr)DX12RenderPassComponent();
-	l_DXRPC->m_parentEntity = rhs;
+	l_DXRPC->m_parentEntity = parentEntity;
+	l_DXRPC->m_name = name;
 	return l_DXRPC;
 }
 
@@ -303,14 +304,38 @@ bool DX12RenderingSystemNS::initializeDX12RenderPassComponent(DX12RenderPassComp
 {
 	bool l_result = true;
 
+	// Setup the RTV description.
+	DXRPC->m_RTVHeapDesc.NumDescriptors = DXRPC->m_renderPassDesc.RTNumber;
+	DXRPC->m_RTVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	DXRPC->m_RTVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	DXRPC->m_RTVDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+	DXRPC->m_RTVDesc.Texture2D.MipSlice = 0;
+
+	if (DXRPC->m_renderPassDesc.useDepthAttachment)
+	{
+		// Setup the DSV description.
+		DXRPC->m_DSVHeapDesc.NumDescriptors = 1;
+		DXRPC->m_DSVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+		DXRPC->m_DSVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+		DXRPC->m_DSVDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+		DXRPC->m_DSVDesc.Texture2D.MipSlice = 0;
+	}
+
 	l_result &= reserveRenderTargets(DXRPC);
 
 	l_result &= createRenderTargets(DXRPC);
 
 	l_result &= createRTVDescriptorHeap(DXRPC);
 	l_result &= createRTV(DXRPC);
-	l_result &= createDSVDescriptorHeap(DXRPC);
-	l_result &= createDSV(DXRPC);
+
+	if (DXRPC->m_renderPassDesc.useDepthAttachment)
+	{
+		l_result &= createDSVDescriptorHeap(DXRPC);
+		l_result &= createDSV(DXRPC);
+	}
+
 	l_result &= createRootSignature(DXRPC);
 	l_result &= createPSO(DXRPC, DXSPC);
 	l_result &= createCommandQueue(DXRPC);
@@ -342,6 +367,8 @@ bool DX12RenderingSystemNS::reserveRenderTargets(DX12RenderPassComponent* DXRPC)
 		DXRPC->m_DXTDCs[i] = addDX12TextureDataComponent();
 	}
 
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " render targets have been allocated.");
+
 	return true;
 }
 
@@ -365,14 +392,26 @@ bool DX12RenderingSystemNS::createRenderTargets(DX12RenderPassComponent* DXRPC)
 		initializeDX12TextureDataComponent(l_TDC);
 	}
 
-	DXRPC->m_depthStencilDXTDC = addDX12TextureDataComponent();
-	DXRPC->m_depthStencilDXTDC->m_textureDataDesc = DX12RenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc;
-	DXRPC->m_depthStencilDXTDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_STENCIL_ATTACHMENT;
-	DXRPC->m_depthStencilDXTDC->m_textureData = { nullptr };
+	if (DXRPC->m_renderPassDesc.useDepthAttachment)
+	{
+		DXRPC->m_depthStencilDXTDC = addDX12TextureDataComponent();
+		DXRPC->m_depthStencilDXTDC->m_textureDataDesc = DX12RenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc;
 
-	initializeDX12TextureDataComponent(DXRPC->m_depthStencilDXTDC);
+		if (DXRPC->m_renderPassDesc.useStencilAttachment)
+		{
+			DXRPC->m_depthStencilDXTDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_STENCIL_ATTACHMENT;
+		}
+		else
+		{
+			DXRPC->m_depthStencilDXTDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
+		}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Render targets have been created.");
+		DXRPC->m_depthStencilDXTDC->m_textureData = { nullptr };
+
+		initializeDX12TextureDataComponent(DXRPC->m_depthStencilDXTDC);
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " render targets have been created.");
 
 	return true;
 }
@@ -384,13 +423,13 @@ bool DX12RenderingSystemNS::createRTVDescriptorHeap(DX12RenderPassComponent* DXR
 		auto l_result = DX12RenderingSystemComponent::get().m_device->CreateDescriptorHeap(&DXRPC->m_RTVHeapDesc, IID_PPV_ARGS(&DXRPC->m_RTVHeap));
 		if (FAILED(l_result))
 		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create DescriptorHeap for RTV!");
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " can't create DescriptorHeap for RTV!");
 			return false;
 		}
 		DXRPC->m_RTVCPUDescHandles[0] = DXRPC->m_RTVHeap->GetCPUDescriptorHandleForHeapStart();
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: RTV DescriptorHeap has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " RTV DescriptorHeap has been created.");
 
 	return true;
 }
@@ -412,7 +451,7 @@ bool DX12RenderingSystemNS::createRTV(DX12RenderPassComponent* DXRPC)
 		DX12RenderingSystemComponent::get().m_device->CreateRenderTargetView(DXRPC->m_DXTDCs[i]->m_texture, &DXRPC->m_RTVDesc, DXRPC->m_RTVCPUDescHandles[i]);
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: RTV has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " RTV has been created.");
 
 	return true;
 }
@@ -423,13 +462,13 @@ bool DX12RenderingSystemNS::createDSVDescriptorHeap(DX12RenderPassComponent* DXR
 
 	if (FAILED(l_result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create DescriptorHeap for DSV!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " can't create DescriptorHeap for DSV!");
 		return false;
 	}
 
 	DXRPC->m_DSVCPUDescHandle = DXRPC->m_DSVHeap->GetCPUDescriptorHandleForHeapStart();
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: DSV DescriptorHeap has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " DSV DescriptorHeap has been created.");
 
 	return true;
 }
@@ -444,7 +483,7 @@ bool DX12RenderingSystemNS::createDSV(DX12RenderPassComponent* DXRPC)
 
 	DX12RenderingSystemComponent::get().m_device->CreateDepthStencilView(DXRPC->m_depthStencilDXTDC->m_texture, &DXRPC->m_DSVDesc, DXRPC->m_DSVCPUDescHandle);
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: DSV has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " DSV has been created.");
 
 	return true;
 }
@@ -458,7 +497,7 @@ bool DX12RenderingSystemNS::createRootSignature(DX12RenderPassComponent* DXRPC)
 
 	if (FAILED(l_result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't serialize RootSignature!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " can't serialize RootSignature!");
 		return false;
 	}
 
@@ -466,11 +505,11 @@ bool DX12RenderingSystemNS::createRootSignature(DX12RenderPassComponent* DXRPC)
 
 	if (FAILED(l_result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create Root Signature!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " can't create Root Signature!");
 		return false;
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: RootSignature has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " RootSignature has been created.");
 
 	return true;
 }
@@ -552,11 +591,11 @@ bool DX12RenderingSystemNS::createPSO(DX12RenderPassComponent* DXRPC, DX12Shader
 
 	if (FAILED(l_result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create PSO!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " can't create PSO!");
 		return false;
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: PSO has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " PSO has been created.");
 
 	return true;
 }
@@ -573,11 +612,11 @@ bool DX12RenderingSystemNS::createCommandQueue(DX12RenderPassComponent* DXRPC)
 	auto l_result = DX12RenderingSystemComponent::get().m_device->CreateCommandQueue(&DXRPC->m_commandQueueDesc, IID_PPV_ARGS(&DXRPC->m_commandQueue));
 	if (FAILED(l_result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create CommandQueue!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " can't create CommandQueue!");
 		return false;
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: CommandQueue has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " CommandQueue has been created.");
 
 	return true;
 }
@@ -601,11 +640,11 @@ bool DX12RenderingSystemNS::createCommandAllocators(DX12RenderPassComponent* DXR
 		l_result = DX12RenderingSystemComponent::get().m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&DXRPC->m_commandAllocators[i]));
 		if (FAILED(l_result))
 		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create CommandAllocator!");
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " can't create CommandAllocator!");
 			return false;
 		}
 
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: CommandAllocator has been created.");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " CommandAllocator has been created.");
 	}
 
 	return true;
@@ -621,13 +660,13 @@ bool DX12RenderingSystemNS::createCommandLists(DX12RenderPassComponent* DXRPC)
 		(0, D3D12_COMMAND_LIST_TYPE_DIRECT, DXRPC->m_commandAllocators[i], NULL, IID_PPV_ARGS(&DXRPC->m_commandLists[i]));
 		if (FAILED(l_result))
 		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create CommandList!");
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " can't create CommandList!");
 			return false;
 		}
 		DXRPC->m_commandLists[i]->Close();
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: CommandList has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " CommandList has been created.");
 
 	return true;
 }
@@ -647,21 +686,21 @@ bool DX12RenderingSystemNS::createSyncPrimitives(DX12RenderPassComponent* DXRPC)
 	l_result = DX12RenderingSystemComponent::get().m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&DXRPC->m_fence));
 	if (FAILED(l_result))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create fence!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " can't create Fence!");
 		return false;
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Fence has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " Fence has been created.");
 
 	// Create an event object for the fence.
 	DXRPC->m_fenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
 	if (DXRPC->m_fenceEvent == NULL)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create fence event!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " can't create fence event!");
 		return false;
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: Fence event has been created.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " Fence event has been created.");
 
 	return true;
 }
@@ -1023,22 +1062,26 @@ bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
 	HRESULT l_result;
 
 	// Create the empty texture.
-	if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT)
+	if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
+		|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
+		|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT
+		|| rhs->m_textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
 	{
-		auto l_clearValue = D3D12_CLEAR_VALUE{ rhs->m_DX12TextureDataDesc.Format, { 0.0f, 0.0f, 0.0f, 1.0f } };
-		l_result = DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-			D3D12_HEAP_FLAG_NONE,
-			&rhs->m_DX12TextureDataDesc,
-			D3D12_RESOURCE_STATE_COPY_DEST,
-			&l_clearValue,
-			IID_PPV_ARGS(&rhs->m_texture));
-	}
-	else if (rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT || rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
-	{
-		auto l_clearValue = D3D12_CLEAR_VALUE();
-		l_clearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-		l_clearValue.DepthStencil = D3D12_DEPTH_STENCIL_VALUE{ 1.0f, 0x00 };
+		D3D12_CLEAR_VALUE l_clearValue;
+		if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT)
+		{
+			l_clearValue = D3D12_CLEAR_VALUE{ rhs->m_DX12TextureDataDesc.Format, { 0.0f, 0.0f, 0.0f, 1.0f } };
+		}
+		else if (rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
+		{
+			l_clearValue.Format = DXGI_FORMAT_D32_FLOAT;
+			l_clearValue.DepthStencil = D3D12_DEPTH_STENCIL_VALUE{ 1.0f, 0x00 };
+		}
+		else if (rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
+		{
+			l_clearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+			l_clearValue.DepthStencil = D3D12_DEPTH_STENCIL_VALUE{ 1.0f, 0x00 };
+		}
 		l_result = DX12RenderingSystemComponent::get().m_device->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,

@@ -363,11 +363,13 @@ bool DX12RenderingSystemNS::createSwapChainDXRPC()
 
 	initializeDX12ShaderProgramComponent(l_DXSPC, m_shaderFilePaths);
 
-	auto l_DXRPC = addDX12RenderPassComponent(m_entityID);
+	auto l_DXRPC = addDX12RenderPassComponent(m_entityID, "SwapChainDXRPC\\");
 
 	l_DXRPC->m_renderPassDesc = DX12RenderingSystemComponent::get().m_deferredRenderPassDesc;
 	l_DXRPC->m_renderPassDesc.RTNumber = l_imageCount;
 	l_DXRPC->m_renderPassDesc.useMultipleFramebuffers = true;
+	l_DXRPC->m_renderPassDesc.useDepthAttachment = true;
+	l_DXRPC->m_renderPassDesc.useStencilAttachment = true;
 
 	// Setup the RTV description.
 	l_DXRPC->m_RTVHeapDesc.NumDescriptors = l_imageCount;

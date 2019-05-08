@@ -34,7 +34,7 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 	DX12TextureDataComponent* getDX12TextureDataComponent(FileExplorerIconType iconType);
 	DX12TextureDataComponent* getDX12TextureDataComponent(WorldEditorIconType iconType);
 
-	DX12RenderPassComponent* addDX12RenderPassComponent(EntityID rhs);
+	DX12RenderPassComponent* addDX12RenderPassComponent(const EntityID& parentEntity, const char* name);
 	bool initializeDX12RenderPassComponent(DX12RenderPassComponent* DXRPC, DX12ShaderProgramComponent* DXSPC);
 
 	bool reserveRenderTargets(DX12RenderPassComponent* DXRPC);

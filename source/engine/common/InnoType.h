@@ -101,6 +101,7 @@ struct RenderPassDesc
 	unsigned int RTNumber = 0;
 	bool useMultipleFramebuffers = false;
 	bool useDepthAttachment = false;
+	bool useStencilAttachment = false;
 	TextureDataDesc RTDesc = TextureDataDesc();
 };
 
