@@ -253,9 +253,12 @@ vec3 imageBasedLight(vec3 N, float NdotV, vec3 R, vec3 albedo, float metallic, f
 	vec3 diffuse = irradiance * albedo;
 
 	// sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
-	vec3 prefilteredColor = textureLod(uni_preFiltedMap, R, roughness * MAX_REFLECTION_LOD).rgb;
-	vec2 brdf = texture(uni_brdfLUT, vec2(NdotV, roughness)).rg;
-	vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
+	vec3 L = R;
+	float NdotL = max(dot(N, L), 0.0);
+	vec3 prefilteredColor = textureLod(uni_preFiltedMap, L, roughness * MAX_REFLECTION_LOD).rgb;
+	vec2 Frss = texture(uni_brdfLUT, vec2(NdotV, roughness)).rg;
+	vec3 Frms = getFrMS(NdotL, NdotV, F0, roughness);
+	vec3 specular = prefilteredColor * ((F * Frss.x + Frss.y) + Frms);
 
 	return (kD * diffuse + specular);
 }

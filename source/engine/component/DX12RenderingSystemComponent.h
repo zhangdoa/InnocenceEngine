@@ -74,6 +74,10 @@ public:
 	DX12ConstantBuffer m_cameraConstantBuffer;
 	DX12ConstantBuffer m_meshConstantBuffer;
 	DX12ConstantBuffer m_materialConstantBuffer;
+	DX12ConstantBuffer m_sunConstantBuffer;
+	DX12ConstantBuffer m_pointLightConstantBuffer;
+	DX12ConstantBuffer m_sphereLightConstantBuffer;
+	DX12ConstantBuffer m_skyConstantBuffer;
 
 private:
 	DX12RenderingSystemComponent() {};

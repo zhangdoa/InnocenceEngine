@@ -1119,6 +1119,22 @@ bool DX12RenderingSystemNS::recordBindCBV(DX12RenderPassComponent* DXRPC, unsign
 	return true;
 }
 
+bool DX12RenderingSystemNS::recordBindTextureForWrite(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, DX12TextureDataComponent* DXTDC)
+{
+	DXRPC->m_commandLists[frameIndex]->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(DXTDC->m_texture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));
+
+	return true;
+}
+
+bool DX12RenderingSystemNS::recordBindTextureForRead(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, DX12TextureDataComponent* DXTDC)
+{
+	DXRPC->m_commandLists[frameIndex]->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(DXTDC->m_texture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+
+	return true;
+}
+
 bool DX12RenderingSystemNS::recordBindSRV(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int startSlot, const DX12TextureDataComponent* DXTDC)
 {
 	DXRPC->m_commandLists[frameIndex]->SetGraphicsRootShaderResourceView(startSlot, DXTDC->m_SRV->GetGPUVirtualAddress());

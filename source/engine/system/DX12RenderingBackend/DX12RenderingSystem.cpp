@@ -3,6 +3,7 @@
 #include "DX12RenderingSystemUtilities.h"
 
 #include "DX12OpaquePass.h"
+#include "DX12LightPass.h"
 
 #include "../../component/DX12RenderingSystemComponent.h"
 #include "../../component/WinWindowSystemComponent.h"
@@ -509,6 +510,7 @@ bool DX12RenderingSystemNS::initialize()
 	l_result = l_result && createSwapChainSyncPrimitives();
 
 	DX12OpaquePass::initialize();
+	DX12LightPass::initialize();
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem has been initialized.");
 
@@ -518,6 +520,11 @@ bool DX12RenderingSystemNS::initialize()
 bool DX12RenderingSystemNS::update()
 {
 	updateConstantBuffer(DX12RenderingSystemComponent::get().m_cameraConstantBuffer, RenderingFrontendSystemComponent::get().m_cameraGPUData);
+	updateConstantBuffer(DX12RenderingSystemComponent::get().m_sunConstantBuffer, RenderingFrontendSystemComponent::get().m_sunGPUData);
+	updateConstantBuffer(DX12RenderingSystemComponent::get().m_pointLightConstantBuffer, RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector);
+	updateConstantBuffer(DX12RenderingSystemComponent::get().m_sphereLightConstantBuffer, RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector);
+	updateConstantBuffer(DX12RenderingSystemComponent::get().m_skyConstantBuffer, RenderingFrontendSystemComponent::get().m_skyGPUData);
+
 	// @TODO: prepare in rendering frontend
 	auto l_queueCopy = RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.getRawData();
 
@@ -540,6 +547,9 @@ bool DX12RenderingSystemNS::update()
 		updateConstantBuffer(DX12RenderingSystemComponent::get().m_materialConstantBuffer, l_materialGPUData);
 	}
 
+	DX12OpaquePass::update();
+	DX12LightPass::update();
+
 	auto l_MDC = getDX12MeshDataComponent(MeshShapeType::QUAD);
 	auto l_swapChainDXRPC = DX12RenderingSystemComponent::get().m_swapChainDXRPC;
 	auto l_frameIndex = l_swapChainDXRPC->m_frameIndex;
@@ -554,23 +564,19 @@ bool DX12RenderingSystemNS::update()
 	ID3D12DescriptorHeap* l_heaps[] = { DX12RenderingSystemComponent::get().m_CSUHeap, DX12RenderingSystemComponent::get().m_samplerHeap };
 	recordBindDescHeaps(l_swapChainDXRPC, l_frameIndex, 2, l_heaps);
 
-	l_swapChainDXRPC->m_commandLists[l_frameIndex]->ResourceBarrier(1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(DX12OpaquePass::getDX12RPC()->m_DXTDCs[0]->m_texture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+	recordBindTextureForRead(l_swapChainDXRPC, l_frameIndex, DX12LightPass::getDX12RPC()->m_DXTDCs[0]);
 
-	recordBindSRVDescTable(l_swapChainDXRPC, l_frameIndex, 0, DX12OpaquePass::getDX12RPC()->m_DXTDCs[0]);
+	recordBindSRVDescTable(l_swapChainDXRPC, l_frameIndex, 0, DX12LightPass::getDX12RPC()->m_DXTDCs[0]);
 	recordBindSamplerDescTable(l_swapChainDXRPC, l_frameIndex, 1, DX12RenderingSystemComponent::get().m_swapChainDXSPC);
 
 	recordDrawCall(l_swapChainDXRPC, l_frameIndex, l_MDC);
 
-	l_swapChainDXRPC->m_commandLists[l_frameIndex]->ResourceBarrier(1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(DX12OpaquePass::getDX12RPC()->m_DXTDCs[0]->m_texture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));
+	recordBindTextureForWrite(l_swapChainDXRPC, l_frameIndex, DX12LightPass::getDX12RPC()->m_DXTDCs[0]);
 
 	l_swapChainDXRPC->m_commandLists[l_frameIndex]->ResourceBarrier(1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(l_swapChainDXRPC->m_DXTDCs[l_frameIndex]->m_texture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 
 	recordCommandEnd(l_swapChainDXRPC, l_frameIndex);
-
-	DX12OpaquePass::update();
 
 	return true;
 }
@@ -578,6 +584,7 @@ bool DX12RenderingSystemNS::update()
 bool DX12RenderingSystemNS::render()
 {
 	DX12OpaquePass::render();
+	DX12LightPass::render();
 
 	auto l_swapChainDXRPC = DX12RenderingSystemComponent::get().m_swapChainDXRPC;
 
@@ -739,6 +746,10 @@ bool DX12RenderingSystemNS::generateGPUBuffers()
 	g_DXRenderingSystemComponent->m_cameraConstantBuffer = createConstantBuffer(sizeof(CameraGPUData), 1, L"cameraConstantBuffer");
 	g_DXRenderingSystemComponent->m_meshConstantBuffer = createConstantBuffer(sizeof(MeshGPUData), RenderingFrontendSystemComponent::get().m_maxMeshes, L"meshConstantBuffer");
 	g_DXRenderingSystemComponent->m_materialConstantBuffer = createConstantBuffer(sizeof(MaterialGPUData), RenderingFrontendSystemComponent::get().m_maxMaterials, L"materialConstantBuffer");
+	g_DXRenderingSystemComponent->m_sunConstantBuffer = createConstantBuffer(sizeof(SunGPUData), 1, L"sunConstantBuffer");
+	g_DXRenderingSystemComponent->m_pointLightConstantBuffer = createConstantBuffer(sizeof(PointLightGPUData), RenderingFrontendSystemComponent::get().m_maxPointLights, L"pointLightConstantBuffer");
+	g_DXRenderingSystemComponent->m_sphereLightConstantBuffer = createConstantBuffer(sizeof(SphereLightGPUData), RenderingFrontendSystemComponent::get().m_maxSphereLights, L"sphereLightConstantBuffer");
+	g_DXRenderingSystemComponent->m_skyConstantBuffer = createConstantBuffer(sizeof(SkyGPUData), 1, L"skyConstantBuffer");
 
 	return true;
 }
