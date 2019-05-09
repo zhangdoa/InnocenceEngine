@@ -1,8 +1,8 @@
-#include "DX11TAAPass.h"
+#include "DX11MotionBlurPass.h"
 #include "DX11RenderingSystemUtilities.h"
 
-#include "DX11PreTAAPass.h"
 #include "DX11OpaquePass.h"
+#include "DX11TAAPass.h"
 
 #include "../../component/DX11RenderingSystemComponent.h"
 
@@ -12,7 +12,7 @@ extern ICoreSystem* g_pCoreSystem;
 
 using namespace DX11RenderingSystemNS;
 
-INNO_PRIVATE_SCOPE DX11TAAPass
+INNO_PRIVATE_SCOPE DX11MotionBlurPass
 {
 	bool initializeShaders();
 
@@ -20,21 +20,19 @@ INNO_PRIVATE_SCOPE DX11TAAPass
 
 	DX11ShaderProgramComponent* m_DXSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "DX11//TAAPassVertex.hlsl/", "", "", "", "DX11//TAAPassPixel.hlsl/" };
+	ShaderFilePaths m_shaderFilePaths = { "DX11//motionBlurPassVertex.hlsl/", "", "", "", "DX11//motionBlurPassPixel.hlsl/" };
 
 	EntityID m_entityID;
-
-	bool m_isTAAPingPass = true;
 }
 
-bool DX11TAAPass::initialize()
+bool DX11MotionBlurPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_DXRPC = addDX11RenderPassComponent(m_entityID, "TAAPassDXRPC\\");
+	m_DXRPC = addDX11RenderPassComponent(m_entityID, "MotionBlurPassDXRPC\\");
 
 	m_DXRPC->m_renderPassDesc = DX11RenderingSystemComponent::get().m_deferredRenderPassDesc;
-	m_DXRPC->m_renderPassDesc.RTNumber = 2;
+	m_DXRPC->m_renderPassDesc.RTNumber = 1;
 	m_DXRPC->m_renderPassDesc.useDepthAttachment = false;
 	m_DXRPC->m_renderPassDesc.useStencilAttachment = false;
 
@@ -56,7 +54,7 @@ bool DX11TAAPass::initialize()
 	return true;
 }
 
-bool DX11TAAPass::initializeShaders()
+bool DX11MotionBlurPass::initializeShaders()
 {
 	m_DXSPC = addDX11ShaderProgramComponent(m_entityID);
 
@@ -79,44 +77,15 @@ bool DX11TAAPass::initializeShaders()
 	return true;
 }
 
-bool DX11TAAPass::update()
+bool DX11MotionBlurPass::update()
 {
-	DX11TextureDataComponent* l_lastFrameDXTDC;
-	ID3D11RenderTargetView* l_currentFrameDXRTV;
-
-	if (m_isTAAPingPass)
-	{
-		l_lastFrameDXTDC = m_DXRPC->m_DXTDCs[1];
-		l_currentFrameDXRTV = m_DXRPC->m_RTVs[0];
-		m_isTAAPingPass = false;
-	}
-	else
-	{
-		l_lastFrameDXTDC = m_DXRPC->m_DXTDCs[0];
-		l_currentFrameDXRTV = m_DXRPC->m_RTVs[1];
-		m_isTAAPingPass = true;
-	}
-
 	activateShader(m_DXSPC);
 
-	// Set the render buffers to be the render target.
-	// Bind the render target view array and depth stencil buffer to the output render pipeline.
-	DX11RenderingSystemComponent::get().m_deviceContext->OMSetRenderTargets(
-		1,
-		&l_currentFrameDXRTV,
-		m_DXRPC->m_DSV);
-
-	// Set the viewport.
-	DX11RenderingSystemComponent::get().m_deviceContext->RSSetViewports(
-		1,
-		&m_DXRPC->m_viewport);
-
-	cleanRTV(vec4(0.0f, 0.0f, 0.0f, 0.0f), l_currentFrameDXRTV);
+	activateRenderPass(m_DXRPC);
 
 	// bind to previous pass render target textures
-	bindTextureForRead(ShaderType::FRAGMENT, 0, DX11PreTAAPass::getDX11RPC()->m_DXTDCs[0]);
-	bindTextureForRead(ShaderType::FRAGMENT, 1, l_lastFrameDXTDC);
-	bindTextureForRead(ShaderType::FRAGMENT, 2, DX11OpaquePass::getDX11RPC()->m_DXTDCs[3]);
+	bindTextureForRead(ShaderType::FRAGMENT, 0, DX11OpaquePass::getDX11RPC()->m_DXTDCs[3]);
+	bindTextureForRead(ShaderType::FRAGMENT, 1, DX11TAAPass::getResult());
 
 	// draw
 	auto l_MDC = getDX11MeshDataComponent(MeshShapeType::QUAD);
@@ -124,34 +93,21 @@ bool DX11TAAPass::update()
 
 	unbindTextureForRead(ShaderType::FRAGMENT, 0);
 	unbindTextureForRead(ShaderType::FRAGMENT, 1);
-	unbindTextureForRead(ShaderType::FRAGMENT, 2);
 
 	return true;
 }
 
-bool DX11TAAPass::resize()
+bool DX11MotionBlurPass::resize()
 {
 	return true;
 }
 
-bool DX11TAAPass::reloadShaders()
+bool DX11MotionBlurPass::reloadShaders()
 {
 	return true;
 }
 
-DX11RenderPassComponent * DX11TAAPass::getDX11RPC()
+DX11RenderPassComponent * DX11MotionBlurPass::getDX11RPC()
 {
 	return m_DXRPC;
-}
-
-DX11TextureDataComponent* DX11TAAPass::getResult()
-{
-	if (m_isTAAPingPass)
-	{
-		return m_DXRPC->m_DXTDCs[1];
-	}
-	else
-	{
-		return m_DXRPC->m_DXTDCs[0];
-	}
 }

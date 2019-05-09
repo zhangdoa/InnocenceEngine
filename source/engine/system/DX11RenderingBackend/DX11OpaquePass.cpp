@@ -54,14 +54,14 @@ bool DX11OpaquePass::initialize()
 	m_DXRPC->m_depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
 
 	// Setup the raster description.
-	m_DXRPC->m_rasterizerDesc.AntialiasedLineEnable = false;
+	m_DXRPC->m_rasterizerDesc.AntialiasedLineEnable = true;
 	m_DXRPC->m_rasterizerDesc.CullMode = D3D11_CULL_BACK;
 	m_DXRPC->m_rasterizerDesc.DepthBias = 0;
 	m_DXRPC->m_rasterizerDesc.DepthBiasClamp = 0.0f;
 	m_DXRPC->m_rasterizerDesc.DepthClipEnable = true;
 	m_DXRPC->m_rasterizerDesc.FillMode = D3D11_FILL_SOLID;
 	m_DXRPC->m_rasterizerDesc.FrontCounterClockwise = true;
-	m_DXRPC->m_rasterizerDesc.MultisampleEnable = false;
+	m_DXRPC->m_rasterizerDesc.MultisampleEnable = true;
 	m_DXRPC->m_rasterizerDesc.ScissorEnable = false;
 	m_DXRPC->m_rasterizerDesc.SlopeScaledDepthBias = 0.0f;
 

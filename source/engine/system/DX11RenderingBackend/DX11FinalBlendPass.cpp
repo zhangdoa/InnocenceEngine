@@ -1,7 +1,7 @@
 #include "DX11FinalBlendPass.h"
 #include "DX11RenderingSystemUtilities.h"
 
-#include "DX11TAAPass.h"
+#include "DX11MotionBlurPass.h"
 #include "DX11LightCullingPass.h"
 
 #include "../../component/DX11RenderingSystemComponent.h"
@@ -62,7 +62,7 @@ bool DX11FinalBlendPass::update()
 	activateRenderPass(DX11RenderingSystemComponent::get().m_swapChainDXRPC);
 
 	// bind to previous pass render target textures
-	auto l_canvasDXTDC = DX11TAAPass::getResult();
+	auto l_canvasDXTDC = DX11MotionBlurPass::getDX11RPC()->m_DXTDCs[0];
 	if (m_visualizeLightCulling)
 	{
 		l_canvasDXTDC = DX11LightCullingPass::getHeatMap();

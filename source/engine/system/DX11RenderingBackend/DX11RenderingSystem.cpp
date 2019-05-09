@@ -8,6 +8,7 @@
 #include "DX11SkyPass.h"
 #include "DX11PreTAAPass.h"
 #include "DX11TAAPass.h"
+#include "DX11MotionBlurPass.h"
 #include "DX11FinalBlendPass.h"
 
 #include "../../component/DX11RenderingSystemComponent.h"
@@ -265,14 +266,14 @@ bool DX11RenderingSystemNS::createSwapChainDXRPC()
 	l_DXRPC->m_renderPassDesc.useStencilAttachment = false;
 
 	// Setup the raster description.
-	l_DXRPC->m_rasterizerDesc.AntialiasedLineEnable = false;
+	l_DXRPC->m_rasterizerDesc.AntialiasedLineEnable = true;
 	l_DXRPC->m_rasterizerDesc.CullMode = D3D11_CULL_NONE;
 	l_DXRPC->m_rasterizerDesc.DepthBias = 0;
 	l_DXRPC->m_rasterizerDesc.DepthBiasClamp = 0.0f;
 	l_DXRPC->m_rasterizerDesc.DepthClipEnable = true;
 	l_DXRPC->m_rasterizerDesc.FillMode = D3D11_FILL_SOLID;
 	l_DXRPC->m_rasterizerDesc.FrontCounterClockwise = false;
-	l_DXRPC->m_rasterizerDesc.MultisampleEnable = false;
+	l_DXRPC->m_rasterizerDesc.MultisampleEnable = true;
 	l_DXRPC->m_rasterizerDesc.ScissorEnable = false;
 	l_DXRPC->m_rasterizerDesc.SlopeScaledDepthBias = 0.0f;
 
@@ -353,6 +354,7 @@ bool DX11RenderingSystemNS::initialize()
 	DX11SkyPass::initialize();
 	DX11PreTAAPass::initialize();
 	DX11TAAPass::initialize();
+	DX11MotionBlurPass::initialize();
 	DX11FinalBlendPass::initialize();
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingSystem has been initialized.");
@@ -576,6 +578,8 @@ bool DX11RenderingSystemNS::render()
 
 	DX11TAAPass::update();
 
+	DX11MotionBlurPass::update();
+
 	DX11FinalBlendPass::update();
 
 	return true;
@@ -766,6 +770,7 @@ bool DX11RenderingSystemNS::resize()
 	DX11SkyPass::resize();
 	DX11PreTAAPass::resize();
 	DX11TAAPass::resize();
+	DX11MotionBlurPass::resize();
 	DX11FinalBlendPass::resize();
 
 	return true;
@@ -920,6 +925,7 @@ bool DX11RenderingSystem::reloadShader(RenderPassType renderPassType)
 		DX11SkyPass::reloadShaders();
 		DX11PreTAAPass::reloadShaders();
 		DX11TAAPass::reloadShaders();
+		DX11MotionBlurPass::reloadShaders();
 		DX11FinalBlendPass::reloadShaders();
 		break;
 	default: break;
