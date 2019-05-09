@@ -62,7 +62,12 @@ namespace std {
 	{
 		std::size_t operator()(const FixedSizeString<size>& k) const
 		{
-			return std::hash<std::string>()(std::string(k.c_str()));
+			std::size_t h = 5381;
+			int c;
+			auto l_cStr = k.c_str();
+			while ((c = *l_cStr++))
+				h = ((h << 5) + h) + c;
+			return h;
 		}
 	};
 }
