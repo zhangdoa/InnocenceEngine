@@ -245,7 +245,7 @@ MTMeshDataComponent* MTRenderingSystemNS::getMTMeshDataComponent(EntityID Entity
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find MeshDataComponent by EntityID: " + EntityID + " !");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find MeshDataComponent by EntityID: " + std::string(EntityID.c_str()) + " !");
 		return nullptr;
 	}
 }
@@ -259,7 +259,7 @@ MTTextureDataComponent * MTRenderingSystemNS::getMTTextureDataComponent(EntityID
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find TextureDataComponent by EntityID: " + EntityID + " !");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find TextureDataComponent by EntityID: " + std::string(EntityID.c_str()) + " !");
 		return nullptr;
 	}
 }
@@ -433,7 +433,7 @@ bool MTRenderingSystem::removeMeshDataComponent(EntityID EntityID)
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove MeshDataComponent by EntityID: " + EntityID + " !");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove MeshDataComponent by EntityID: " + std::string(EntityID.c_str()) + " !");
 		return false;
 	}
 }
@@ -455,7 +455,7 @@ bool MTRenderingSystem::removeTextureDataComponent(EntityID EntityID)
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove TextureDataComponent by EntityID: " + EntityID + " !");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove TextureDataComponent by EntityID: " + std::string(EntityID.c_str()) + " !");
 		return false;
 	}
 }

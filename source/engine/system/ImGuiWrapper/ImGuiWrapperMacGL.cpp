@@ -47,7 +47,7 @@ ObjectStatus ImGuiWrapperMacGL::getStatus()
 	return ImGuiWrapperMacGLNS::m_objectStatus;
 }
 
-void ImGuiWrapperMacGL::showRenderResult()
+void ImGuiWrapperMacGL::showRenderResult(RenderPassType renderPassType)
 {
 }
 
