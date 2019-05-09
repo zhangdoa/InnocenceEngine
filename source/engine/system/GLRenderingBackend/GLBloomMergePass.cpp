@@ -19,7 +19,7 @@ INNO_PRIVATE_SCOPE GLBloomMergePass
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
-	ShaderFilePaths m_shaderFilePaths = { "GL//bloomMergePass.vert", "", "GL//bloomMergePass.frag" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//bloomMergePass.vert/", "", "", "", "GL//bloomMergePass.frag/" };
 }
 
 bool GLBloomMergePass::initialize()

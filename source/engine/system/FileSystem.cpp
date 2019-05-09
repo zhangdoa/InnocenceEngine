@@ -190,7 +190,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	std::string m_nextLoadingScene;
 	std::string m_currentScene;
 
-	ThreadSafeQueue<std::pair<TransformComponent*, std::string>> m_orphanTransformComponents;
+	ThreadSafeQueue<std::pair<TransformComponent*, ComponentName>> m_orphanTransformComponents;
 
 	std::unordered_map<std::string, ModelMap> m_loadedModelMap;
 	std::unordered_map<std::string, ModelPair> m_loadedModelPair;
@@ -278,7 +278,7 @@ void InnoFileSystemNS::to_json(json& j, const EntityNamePair& p)
 {
 	j = json{
 		{"EntityID", p.first.c_str()},
-		{"EntityName", p.second},
+		{"EntityName", p.second.c_str()},
 	};
 }
 
@@ -364,7 +364,7 @@ void InnoFileSystemNS::to_json(json& j, const TransformComponent& p)
 	j = json
 	{
 		{"ComponentType", InnoUtility::getComponentType<TransformComponent>()},
-		{"ParentTransformComponentEntityName", parentTransformComponentEntityName},
+		{"ParentTransformComponentEntityName", parentTransformComponentEntityName.c_str()},
 		{"LocalTransformVector",
 			localTransformVector
 		},
@@ -460,7 +460,8 @@ void InnoFileSystemNS::from_json(const json & j, TransformComponent & p)
 	else
 	{
 		// JSON is an order-irrelevant format, so the parent transform component would always be instanciated in random point, then it's necessary to assign it later
-		m_orphanTransformComponents.push({ &p, l_parentTransformComponentEntityName });
+		std::string l_parentName = l_parentTransformComponentEntityName;
+		m_orphanTransformComponents.push({ &p, ComponentName(l_parentName.c_str()) });
 	}
 }
 
@@ -620,9 +621,10 @@ bool InnoFileSystemNS::loadComponents(const json& j)
 	{
 		if (i["EntityName"] != "RootTransform")
 		{
-			g_pCoreSystem->getGameSystem()->removeEntity(i["EntityName"]);
+			std::string l_entityName = i["EntityName"];
+			g_pCoreSystem->getGameSystem()->removeEntity(EntityName(l_entityName.c_str()));
 
-			auto l_EntityID = g_pCoreSystem->getGameSystem()->createEntity(i["EntityName"]);
+			auto l_EntityID = g_pCoreSystem->getGameSystem()->createEntity(EntityName(l_entityName.c_str()));
 
 			for (auto k : i["ChildrenComponents"])
 			{
@@ -668,7 +670,7 @@ bool InnoFileSystemNS::assignComponentRuntimeData()
 {
 	while (InnoFileSystemNS::m_orphanTransformComponents.size() > 0)
 	{
-		std::pair<TransformComponent*, std::string> l_orphan;
+		std::pair<TransformComponent*, ComponentName> l_orphan;
 		if (InnoFileSystemNS::m_orphanTransformComponents.tryPop(l_orphan))
 		{
 			auto t = g_pCoreSystem->getGameSystem()->get<TransformComponent>(g_pCoreSystem->getGameSystem()->getEntityID(l_orphan.second));
@@ -678,7 +680,7 @@ bool InnoFileSystemNS::assignComponentRuntimeData()
 			}
 			else
 			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: can't find TransformComponent with entity name" + l_orphan.second + "!");
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: can't find TransformComponent with entity name" + std::string(l_orphan.second.c_str()) + "!");
 			}
 		}
 	}

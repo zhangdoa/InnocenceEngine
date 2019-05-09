@@ -20,7 +20,7 @@ INNO_PRIVATE_SCOPE GLFinalBlendPass
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
-	ShaderFilePaths m_shaderFilePaths = { "GL//finalBlendPass.vert", "", "GL//finalBlendPass.frag" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//finalBlendPass.vert/", "", "", "", "GL//finalBlendPass.frag/" };
 
 	bool m_visualizeLightCulling = false;
 	std::function<void()> f_toggleVisualizeLightCulling;

@@ -94,12 +94,12 @@ void GLVXGIPass::initializeVoxelizationPass()
 	initializeGLRenderPassComponent(m_voxelizationPassGLRPC);
 
 	// shader programs and shaders
-	ShaderFilePaths m_voxelizationPassShaderFilePaths;
+	ShaderFilePaths m_voxelizationPassShaderFilePaths = {};
 
 	////
-	m_voxelizationPassShaderFilePaths.m_VSPath = "GL//GIVoxelizationPass.vert";
-	m_voxelizationPassShaderFilePaths.m_GSPath = "GL//GIVoxelizationPass.geom";
-	m_voxelizationPassShaderFilePaths.m_FSPath = "GL//GIVoxelizationPass.frag";
+	m_voxelizationPassShaderFilePaths.m_VSPath = "GL//GIVoxelizationPass.vert/";
+	m_voxelizationPassShaderFilePaths.m_GSPath = "GL//GIVoxelizationPass.geom/";
+	m_voxelizationPassShaderFilePaths.m_FSPath = "GL//GIVoxelizationPass.frag/";
 
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_voxelizationPassShaderFilePaths);
@@ -164,10 +164,10 @@ void GLVXGIPass::initializeIrradianceInjectionPass()
 	m_irradianceInjectionPassGLRPC->m_drawColorBuffers = false;
 	initializeGLRenderPassComponent(m_irradianceInjectionPassGLRPC);
 
-	ShaderFilePaths m_irradianceInjectionPassShaderFilePaths;
+	ShaderFilePaths m_irradianceInjectionPassShaderFilePaths = {};
 
 	////
-	m_irradianceInjectionPassShaderFilePaths.m_CSPath = "GL//GIIrradianceInjectionPass.comp";
+	m_irradianceInjectionPassShaderFilePaths.m_CSPath = "GL//GIIrradianceInjectionPass.comp/";
 
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_irradianceInjectionPassShaderFilePaths);
@@ -201,12 +201,12 @@ void GLVXGIPass::initializeVoxelVisualizationPass()
 	m_voxelVisualizationGLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
 	initializeGLRenderPassComponent(m_voxelVisualizationGLRPC);
 
-	ShaderFilePaths m_voxelVisualizationPassShaderFilePaths;
+	ShaderFilePaths m_voxelVisualizationPassShaderFilePaths = {};
 
 	////
-	m_voxelVisualizationPassShaderFilePaths.m_VSPath = "GL//GIVoxelVisualizationPass.vert";
-	m_voxelVisualizationPassShaderFilePaths.m_GSPath = "GL//GIVoxelVisualizationPass.geom";
-	m_voxelVisualizationPassShaderFilePaths.m_FSPath = "GL//GIVoxelVisualizationPass.frag";
+	m_voxelVisualizationPassShaderFilePaths.m_VSPath = "GL//GIVoxelVisualizationPass.vert/";
+	m_voxelVisualizationPassShaderFilePaths.m_GSPath = "GL//GIVoxelVisualizationPass.geom/";
+	m_voxelVisualizationPassShaderFilePaths.m_FSPath = "GL//GIVoxelVisualizationPass.frag/";
 
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_voxelVisualizationPassShaderFilePaths);

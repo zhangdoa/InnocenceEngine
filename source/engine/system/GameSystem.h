@@ -95,8 +95,8 @@ public:
 
 	void saveComponentsCapture() override;
 
-	EntityID createEntity(const std::string& entityName) override;
-	bool removeEntity(const std::string& entityName) override;
-	std::string getEntityName(const EntityID & entityID) override;
-	EntityID getEntityID(const std::string & entityName) override;
+	EntityID createEntity(const EntityName& entityName) override;
+	bool removeEntity(const EntityName& entityName) override;
+	EntityName getEntityName(const EntityID& entityID) override;
+	EntityID getEntityID(const EntityName& entityName) override;
 };

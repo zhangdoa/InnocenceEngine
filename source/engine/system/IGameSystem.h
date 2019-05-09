@@ -133,10 +133,10 @@ public:
 
 	virtual void saveComponentsCapture() = 0;
 
-	virtual EntityID createEntity(const std::string& entityName) = 0;
-	virtual bool removeEntity(const std::string& entityName) = 0;
-	virtual std::string getEntityName(const EntityID & entityID) = 0;
-	virtual EntityID getEntityID(const std::string & entityName) = 0;
+	virtual EntityID createEntity(const EntityName& entityName) = 0;
+	virtual bool removeEntity(const EntityName& entityName) = 0;
+	virtual EntityName getEntityName(const EntityID& entityID) = 0;
+	virtual EntityID getEntityID(const EntityName& entityName) = 0;
 };
 
 template <> inline TransformComponent * IGameSystem::spawn(const EntityID& parentEntity)

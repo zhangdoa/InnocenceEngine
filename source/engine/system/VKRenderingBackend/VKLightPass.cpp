@@ -18,7 +18,7 @@ INNO_PRIVATE_SCOPE VKLightPass
 
 	VKShaderProgramComponent* m_VKSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "VK//lightPass.vert.spv" , "", "VK//lightPass.frag.spv" };
+	ShaderFilePaths m_shaderFilePaths = { "VK//lightPass.vert.spv/", "", "", "", "VK//lightPass.frag.spv/" };
 }
 
 bool VKLightPass::initialize()

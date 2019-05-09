@@ -36,8 +36,8 @@ INNO_PRIVATE_SCOPE GLDebuggerPass
 	GLRenderPassComponent* m_frontViewGLRPC;
 
 	GLShaderProgramComponent* m_GLSPC;
-	ShaderFilePaths m_shaderFilePaths = { "GL//wireframeOverlayPass.vert", "", "GL//wireframeOverlayPass.frag" };
-	//ShaderFilePaths m_shaderFilePaths = { "GL//debuggerPass.vert", "GL//debuggerPass.geom", "GL//debuggerPass.frag" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//wireframeOverlayPass.vert/", "", "", "", "GL//wireframeOverlayPass.frag/" };
+	//ShaderFilePaths m_shaderFilePaths = { "GL//debuggerPass.vert/", "", "", "GL//debuggerPass.geom/", "GL//debuggerPass.frag/" };
 }
 
 bool GLDebuggerPass::initialize()

@@ -20,14 +20,16 @@ enum class ObjectStatus
 };
 
 using EntityID = FixedSizeString<32>;
+using ComponentName = FixedSizeString<128>;
+using EntityName = FixedSizeString<128>;
 
 enum class ComponentType { TransformComponent, VisibleComponent, DirectionalLightComponent, PointLightComponent, SphereLightComponent, CameraComponent, InputComponent, EnvironmentCaptureComponent, PhysicsDataComponent, MeshDataComponent, MaterialDataComponent, TextureDataComponent };
 
-using ComponentMetadataPair = std::pair<ComponentType, std::string>;
+using ComponentMetadataPair = std::pair<ComponentType, ComponentName>;
 using ComponentMetadataMap = std::unordered_map<void*, ComponentMetadataPair>;
 using EntityChildrenComponentsMetadataMap = std::unordered_map<EntityID, ComponentMetadataMap>;
-using EntityNamePair = std::pair<EntityID, std::string>;
-using EntityNameMap = std::unordered_map<EntityID, std::string>;
+using EntityNamePair = std::pair<EntityID, EntityName>;
+using EntityNameMap = std::unordered_map<EntityID, EntityName>;
 
 struct TimeData
 {
@@ -106,15 +108,21 @@ struct RenderPassDesc
 };
 
 // shader custom types
-enum class ShaderType { VERTEX, GEOMETRY, FRAGMENT, COMPUTE };
+enum class ShaderType { VERTEX, TCS, TES, GEOMETRY, FRAGMENT, COMPUTE };
+
+using ShaderFilePath = FixedSizeString<128>;
 
 struct ShaderFilePaths
 {
-	std::string m_VSPath;
-	std::string m_GSPath;
-	std::string m_FSPath;
-	std::string m_CSPath;
+	ShaderFilePath m_VSPath;
+	ShaderFilePath m_TCSPath;
+	ShaderFilePath m_TESPath;
+	ShaderFilePath m_GSPath;
+	ShaderFilePath m_FSPath;
+	ShaderFilePath m_CSPath;
 };
+
+using TextureFileName = FixedSizeString<128>;
 
 #ifdef INNO_PLATFORM_MAC
 struct EnumClassHash
@@ -125,11 +133,11 @@ struct EnumClassHash
 		return static_cast<std::size_t>(t);
 	}
 };
-using textureFileNamePair = std::pair<TextureUsageType, std::string>;
-using textureFileNameMap = std::unordered_map<TextureUsageType, std::string, EnumClassHash>;
+using textureFileNamePair = std::pair<TextureUsageType, TextureFileName>;
+using textureFileNameMap = std::unordered_map<TextureUsageType, TextureFileName, EnumClassHash>;
 #else
-using TextureFileNamePair = std::pair<TextureUsageType, std::string>;
-using TextureFileNameMap = std::unordered_map<TextureUsageType, std::string>;
+using TextureFileNamePair = std::pair<TextureUsageType, TextureFileName>;
+using TextureFileNameMap = std::unordered_map<TextureUsageType, TextureFileName>;
 #endif
 
 struct MeshCustomMaterial

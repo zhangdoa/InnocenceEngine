@@ -19,7 +19,7 @@ INNO_PRIVATE_SCOPE GLEnvironmentConvolutionPass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//environmentConvolutionPass.vert" , "", "GL//environmentConvolutionPass.frag" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//environmentConvolutionPass.vert/" , "", "", "", "GL//environmentConvolutionPass.frag/" };
 }
 
 bool GLEnvironmentConvolutionPass::initialize()

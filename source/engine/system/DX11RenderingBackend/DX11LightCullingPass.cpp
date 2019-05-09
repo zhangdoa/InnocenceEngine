@@ -28,8 +28,8 @@ INNO_PRIVATE_SCOPE DX11LightCullingPass
 	DX11ShaderProgramComponent* m_tileFrustumDXSPC;
 	DX11ShaderProgramComponent* m_lightCullingDXSPC;
 
-	ShaderFilePaths m_tileFrustumShaderFilePaths = { "" , "", "", "DX11//tileFrustumCompute.hlsl" };
-	ShaderFilePaths m_lightCullingShaderFilePaths = { "" , "", "", "DX11//lightCullingCompute.hlsl" };
+	ShaderFilePaths m_tileFrustumShaderFilePaths = { "", "", "", "", "", "DX11//tileFrustumCompute.hlsl/" };
+	ShaderFilePaths m_lightCullingShaderFilePaths = { "", "", "", "", "", "DX11//lightCullingCompute.hlsl/" };
 
 	DX11TextureDataComponent* m_lightGridDXTDC;
 	DX11TextureDataComponent* m_debugDXTDC;

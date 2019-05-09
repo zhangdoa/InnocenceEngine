@@ -345,7 +345,7 @@ bool DX12RenderingSystemNS::createSwapChainDXRPC()
 
 	auto l_DXSPC = addDX12ShaderProgramComponent(m_entityID);
 
-	ShaderFilePaths m_shaderFilePaths = { "DX12//finalBlendPassVertex.hlsl" , "", "DX12//finalBlendPassPixel.hlsl" };
+	ShaderFilePaths m_shaderFilePaths = { "DX12//finalBlendPassVertex.hlsl/", "", "", "", "DX12//finalBlendPassPixel.hlsl/" };
 
 	l_DXSPC->m_samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 	l_DXSPC->m_samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;

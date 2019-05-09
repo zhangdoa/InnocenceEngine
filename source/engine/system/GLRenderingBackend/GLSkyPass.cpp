@@ -17,7 +17,7 @@ INNO_PRIVATE_SCOPE GLSkyPass
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
-	ShaderFilePaths m_shaderFilePaths = { "GL//skyPass.vert", "", "GL//skyPass.frag" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//skyPass.vert/", "", "", "", "GL//skyPass.frag/" };
 }
 
 bool GLSkyPass::initialize()

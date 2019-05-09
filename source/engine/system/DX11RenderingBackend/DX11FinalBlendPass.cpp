@@ -18,7 +18,7 @@ INNO_PRIVATE_SCOPE DX11FinalBlendPass
 
 	DX11ShaderProgramComponent* m_DXSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "DX11//finalBlendPassVertex.hlsl" , "", "DX11//finalBlendPassPixel.hlsl" };
+	ShaderFilePaths m_shaderFilePaths = { "DX11//finalBlendPassVertex.hlsl/" , "", "", "", "DX11//finalBlendPassPixel.hlsl/" };
 
 	std::function<void()> f_toggleVisualizeLightCulling;
 	bool m_visualizeLightCulling = false;

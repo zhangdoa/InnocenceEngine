@@ -20,7 +20,7 @@ INNO_PRIVATE_SCOPE GLSSAOBlurPass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//SSAOBlurPass.vert" , "", "GL//SSAOBlurPass.frag" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//SSAOBlurPass.vert/", "", "", "", "GL//SSAOBlurPass.frag/" };
 }
 
 bool GLSSAOBlurPass::initialize()

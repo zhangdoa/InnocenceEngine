@@ -31,11 +31,9 @@ public:
 
 	~FixedSizeString() = default;
 
-	bool operator==(const FixedSizeString<size> &rhs) const
+	bool operator==(const char* rhs) const
 	{
-		auto l_rhsCStr = rhs.c_str();
-
-		auto l_result = strcmp(m_content, l_rhsCStr);
+		auto l_result = strcmp(m_content, rhs);
 
 		if (l_result != 0)
 		{
@@ -47,9 +45,41 @@ public:
 		}
 	}
 
+	bool operator==(const FixedSizeString<size> &rhs) const
+	{
+		auto l_rhsCStr = rhs.c_str();
+
+		return (*this == l_rhsCStr);
+	}
+
+	bool operator!=(const char* rhs) const
+	{
+		return !(*this == rhs);
+	}
+
+	bool operator!=(const FixedSizeString<size> &rhs) const
+	{
+		return !(*this == rhs);
+	}
+
 	const char* c_str() const
 	{
 		return &m_content[0];
+	}
+
+	const char* begin() const
+	{
+		return &m_content[0];
+	}
+
+	const char* end() const
+	{
+		return &m_content[size - 1];
+	}
+
+	const char* find(const char* rhs) const
+	{
+		return strstr(&m_content[0], rhs);
 	}
 
 private:

@@ -11,11 +11,11 @@ INNO_PRIVATE_SCOPE GLBRDFLUTPass
 
 	GLRenderPassComponent* m_BRDFSplitSumLUTPassGLRPC;
 	GLShaderProgramComponent* m_BRDFSplitSumLUTPassSPC;
-	ShaderFilePaths m_BRDFSplitSumShaderFilePaths = { "GL//BRDFLUTPass.vert" , "", "GL//BRDFLUTPass.frag" };
+	ShaderFilePaths m_BRDFSplitSumShaderFilePaths = { "GL//BRDFLUTPass.vert/" , "", "", "", "GL//BRDFLUTPass.frag/" };
 
 	GLRenderPassComponent* m_BRDFMSAverageLUTPassGLRPC;
 	GLShaderProgramComponent* m_BRDFMSAverageLUTPassSPC;
-	ShaderFilePaths m_BRDFMSAverageShaderFilePaths = { "GL//BRDFLUTMSPass.vert" , "", "GL//BRDFLUTMSPass.frag" };
+	ShaderFilePaths m_BRDFMSAverageShaderFilePaths = { "GL//BRDFLUTMSPass.vert/" , "", "", "", "GL//BRDFLUTMSPass.frag/" };
 }
 
 bool GLBRDFLUTPass::initialize()

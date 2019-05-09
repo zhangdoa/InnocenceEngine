@@ -21,7 +21,7 @@ INNO_PRIVATE_SCOPE GLEnvironmentPreFilterPass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//environmentPreFilterPass.vert" , "", "GL//environmentPreFilterPass.frag" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//environmentPreFilterPass.vert/" , "", "", "", "GL//environmentPreFilterPass.frag/" };
 }
 
 bool GLEnvironmentPreFilterPass::initialize()

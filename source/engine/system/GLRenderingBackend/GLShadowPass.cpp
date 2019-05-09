@@ -20,7 +20,7 @@ INNO_PRIVATE_SCOPE GLShadowPass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//shadowPass.vert" , "", "GL//shadowPass.frag" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//shadowPass.vert/" , "", "", "", "GL//shadowPass.frag/" };
 }
 
 void GLShadowPass::initialize()

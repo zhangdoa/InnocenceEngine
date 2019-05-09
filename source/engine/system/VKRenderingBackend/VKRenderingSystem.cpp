@@ -392,9 +392,9 @@ bool VKRenderingSystemNS::createSwapChain()
 	// add shader component
 	auto l_VKSPC = addVKShaderProgramComponent(m_entityID);
 
-	ShaderFilePaths l_shaderFilePaths;
-	l_shaderFilePaths.m_VSPath = "VK//finalBlendPass.vert.spv";
-	l_shaderFilePaths.m_FSPath = "VK//finalBlendPass.frag.spv";
+	ShaderFilePaths l_shaderFilePaths = {};
+	l_shaderFilePaths.m_VSPath = "VK//finalBlendPass.vert.spv/";
+	l_shaderFilePaths.m_FSPath = "VK//finalBlendPass.frag.spv/";
 
 	initializeVKShaderProgramComponent(l_VKSPC, l_shaderFilePaths);
 

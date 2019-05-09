@@ -18,7 +18,7 @@ INNO_PRIVATE_SCOPE GLBloomBlurPass
 	GLRenderPassComponent* m_PingPassGLRPC;
 	GLRenderPassComponent* m_PongPassGLRPC;
 	GLShaderProgramComponent* m_GLSPC;
-	ShaderFilePaths m_shaderFilePaths = { "GL//bloomBlurPass.vert", "", "GL//bloomBlurPass.frag" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//bloomBlurPass.vert/", "", "", "", "GL//bloomBlurPass.frag/" };
 }
 
 bool GLBloomBlurPass::initialize()

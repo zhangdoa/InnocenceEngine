@@ -21,7 +21,7 @@ INNO_PRIVATE_SCOPE DX11LightPass
 
 	DX11ShaderProgramComponent* m_DXSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "DX11//lightPassVertex.hlsl" , "", "DX11//lightPassPixel.hlsl" };
+	ShaderFilePaths m_shaderFilePaths = { "DX11//lightPassVertex.hlsl/", "", "", "", "DX11//lightPassPixel.hlsl/" };
 
 	EntityID m_entityID;
 }

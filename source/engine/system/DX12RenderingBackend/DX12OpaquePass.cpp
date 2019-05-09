@@ -18,7 +18,7 @@ INNO_PRIVATE_SCOPE DX12OpaquePass
 
 	DX12ShaderProgramComponent* m_DXSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "DX12//opaquePassVertex.hlsl" , "", "DX12//opaquePassPixel.hlsl" };
+	ShaderFilePaths m_shaderFilePaths = { "DX12//opaquePassVertex.hlsl/", "", "", "", "DX12//opaquePassPixel.hlsl/" };
 
 	EntityID m_entityID;
 }

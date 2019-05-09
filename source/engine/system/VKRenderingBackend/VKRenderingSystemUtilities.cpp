@@ -15,7 +15,7 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	bool copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
-	bool createShaderModule(VkShaderModule& vkShaderModule, const std::string& shaderFilePath);
+	bool createShaderModule(VkShaderModule& vkShaderModule, const ShaderFilePath& shaderFilePath);
 
 	bool submitGPUData(VKMeshDataComponent * rhs);
 
@@ -1287,9 +1287,9 @@ bool VKRenderingSystemNS::initializeVKShaderProgramComponent(VKShaderProgramComp
 	return l_result;
 }
 
-bool VKRenderingSystemNS::createShaderModule(VkShaderModule& vkShaderModule, const std::string& shaderFilePath)
+bool VKRenderingSystemNS::createShaderModule(VkShaderModule& vkShaderModule, const ShaderFilePath& shaderFilePath)
 {
-	auto l_binData = g_pCoreSystem->getFileSystem()->loadBinaryFile(m_shaderRelativePath + shaderFilePath);
+	auto l_binData = g_pCoreSystem->getFileSystem()->loadBinaryFile(m_shaderRelativePath + std::string(shaderFilePath.c_str()));
 
 	VkShaderModuleCreateInfo l_createInfo = {};
 	l_createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -1298,11 +1298,11 @@ bool VKRenderingSystemNS::createShaderModule(VkShaderModule& vkShaderModule, con
 
 	if (vkCreateShaderModule(VKRenderingSystemComponent::get().m_device, &l_createInfo, nullptr, &vkShaderModule) != VK_SUCCESS)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkShaderModule for: " + shaderFilePath + "!");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkShaderModule for: " + std::string(shaderFilePath.c_str()) + "!");
 		return false;
 	}
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: innoShader: " + shaderFilePath + " has been loaded.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem: innoShader: " + std::string(shaderFilePath.c_str()) + " has been loaded.");
 	return true;
 }
 

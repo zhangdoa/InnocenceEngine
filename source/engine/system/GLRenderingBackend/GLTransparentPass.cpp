@@ -20,7 +20,7 @@ INNO_PRIVATE_SCOPE GLTransparentPass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//transparentPass.vert" , "", "GL//transparentPass.frag" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//transparentPass.vert/", "", "", "", "GL//transparentPass.frag/" };
 }
 
 bool GLTransparentPass::initialize()

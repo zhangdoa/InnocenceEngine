@@ -22,7 +22,7 @@ INNO_PRIVATE_SCOPE GLEnvironmentCapturePass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//environmentCapturePass.vert" , "", "GL//environmentCapturePass.frag" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//environmentCapturePass.vert/" , "", "", "", "GL//environmentCapturePass.frag/" };
 
 	const unsigned int m_subDivideDimension = 16;
 }

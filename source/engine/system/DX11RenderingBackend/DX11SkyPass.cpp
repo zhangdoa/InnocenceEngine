@@ -20,7 +20,7 @@ INNO_PRIVATE_SCOPE DX11SkyPass
 
 	DX11ShaderProgramComponent* m_DXSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "DX11//skyPassVertex.hlsl" , "", "DX11//skyPassPixel.hlsl" };
+	ShaderFilePaths m_shaderFilePaths = { "DX11//skyPassVertex.hlsl/", "", "", "", "DX11//skyPassPixel.hlsl/" };
 
 	EntityID m_entityID;
 }

@@ -17,7 +17,7 @@ INNO_PRIVATE_SCOPE VKOpaquePass
 
 	VKShaderProgramComponent* m_VKSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "VK//opaquePass.vert.spv" , "", "VK//opaquePass.frag.spv" };
+	ShaderFilePaths m_shaderFilePaths = { "VK//opaquePass.vert.spv/", "", "", "", "VK//opaquePass.frag.spv/" };
 }
 
 bool VKOpaquePass::initialize()

@@ -21,7 +21,7 @@ INNO_PRIVATE_SCOPE GLTerrainPass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//terrainPass.vert" , "", "GL//terrainPass.frag" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//terrainPass.vert/", "", "", "", "GL//terrainPass.frag/" };
 
 	static float perlinNoiseFade(float t)
 	{
