@@ -18,11 +18,7 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 	EntityID m_parentEntity;
 
-	GLFrameBufferDesc depthOnlyPassFBDesc = GLFrameBufferDesc();
-	TextureDataDesc depthOnlyPassTextureDesc = TextureDataDesc();
-
-	GLFrameBufferDesc deferredPassFBDesc = GLFrameBufferDesc();
-	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();
+	RenderPassDesc m_deferredRenderPassDesc = RenderPassDesc();
 
 	GLuint m_cameraUBO;
 	GLuint m_meshUBO;

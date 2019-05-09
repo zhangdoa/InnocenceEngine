@@ -2,7 +2,7 @@
 #include "../../common/InnoType.h"
 #include "../../component/GLRenderPassComponent.h"
 
-INNO_PRIVATE_SCOPE GLShadowRenderPass
+INNO_PRIVATE_SCOPE GLShadowPass
 {
 	void initialize();
 

@@ -26,10 +26,14 @@ bool GLBloomBlurPass::initialize()
 	m_entityID = InnoMath::createEntityID();
 
 	//Ping pass
-	m_PingPassGLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
+	m_PingPassGLRPC = addGLRenderPassComponent(m_entityID, "BloomBlurPingPassGLRPC//");
+	m_PingPassGLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
+	initializeGLRenderPassComponent(m_PingPassGLRPC);
 
 	//Pong pass
-	m_PongPassGLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
+	m_PongPassGLRPC = addGLRenderPassComponent(m_entityID, "BloomBlurPongPassGLRPC//");
+	m_PongPassGLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
+	initializeGLRenderPassComponent(m_PongPassGLRPC);
 
 	initializeShaders();
 

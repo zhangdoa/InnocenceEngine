@@ -28,32 +28,32 @@ bool GLBloomExtractPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	auto l_FBDesc = GLRenderingSystemComponent::get().deferredPassFBDesc;
-	auto l_TextureDesc = GLRenderingSystemComponent::get().deferredPassTextureDesc;
-	l_TextureDesc.magFilterMethod = TextureFilterMethod::LINEAR;
-	l_TextureDesc.minFilterMethod = TextureFilterMethod::LINEAR;
-	m_baseGLRPC = addGLRenderPassComponent(1, l_FBDesc, l_TextureDesc);
+	auto l_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
 
-	l_FBDesc.sizeX = l_FBDesc.sizeX / 2;
-	l_FBDesc.sizeY = l_FBDesc.sizeY / 2;
-	l_TextureDesc.width = l_TextureDesc.width / 2;
-	l_TextureDesc.height = l_TextureDesc.height / 2;
+	m_baseGLRPC = addGLRenderPassComponent(m_entityID, "BloomExtractBasePassGLRPC//");
+	m_baseGLRPC->m_renderPassDesc = l_renderPassDesc;
+	initializeGLRenderPassComponent(m_baseGLRPC);
 
-	m_downsampleGLRPC_Half = addGLRenderPassComponent(1, l_FBDesc, l_TextureDesc);
+	l_renderPassDesc.RTDesc.width /= 2;
+	l_renderPassDesc.RTDesc.height /= 2;
 
-	l_FBDesc.sizeX = l_FBDesc.sizeX / 2;
-	l_FBDesc.sizeY = l_FBDesc.sizeY / 2;
-	l_TextureDesc.width = l_TextureDesc.width / 2;
-	l_TextureDesc.height = l_TextureDesc.height / 2;
+	m_downsampleGLRPC_Half = addGLRenderPassComponent(m_entityID, "BloomExtractHalfPassGLRPC//");
+	m_downsampleGLRPC_Half->m_renderPassDesc = l_renderPassDesc;
+	initializeGLRenderPassComponent(m_downsampleGLRPC_Half);
 
-	m_downsampleGLRPC_Quarter = addGLRenderPassComponent(1, l_FBDesc, l_TextureDesc);
+	l_renderPassDesc.RTDesc.width /= 2;
+	l_renderPassDesc.RTDesc.height /= 2;
 
-	l_FBDesc.sizeX = l_FBDesc.sizeX / 2;
-	l_FBDesc.sizeY = l_FBDesc.sizeY / 2;
-	l_TextureDesc.width = l_TextureDesc.width / 2;
-	l_TextureDesc.height = l_TextureDesc.height / 2;
+	m_downsampleGLRPC_Quarter = addGLRenderPassComponent(m_entityID, "BloomExtractQuarterPassGLRPC//");
+	m_downsampleGLRPC_Quarter->m_renderPassDesc = l_renderPassDesc;
+	initializeGLRenderPassComponent(m_downsampleGLRPC_Quarter);
 
-	m_downsampleGLRPC_Eighth = addGLRenderPassComponent(1, l_FBDesc, l_TextureDesc);
+	l_renderPassDesc.RTDesc.width /= 2;
+	l_renderPassDesc.RTDesc.height /= 2;
+
+	m_downsampleGLRPC_Eighth = addGLRenderPassComponent(m_entityID, "BloomExtractEighthPassGLRPC//");
+	m_downsampleGLRPC_Eighth->m_renderPassDesc = l_renderPassDesc;
+	initializeGLRenderPassComponent(m_downsampleGLRPC_Eighth);
 
 	initializeShaders();
 

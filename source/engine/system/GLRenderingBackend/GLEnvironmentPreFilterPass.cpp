@@ -21,9 +21,6 @@ INNO_PRIVATE_SCOPE GLEnvironmentPreFilterPass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	GLFrameBufferDesc m_frameBufferDesc = GLFrameBufferDesc();
-	TextureDataDesc m_textureDesc = TextureDataDesc();
-
 	ShaderFilePaths m_shaderFilePaths = { "GL//environmentPreFilterPass.vert" , "", "GL//environmentPreFilterPass.frag" };
 }
 
@@ -31,28 +28,26 @@ bool GLEnvironmentPreFilterPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_textureDesc.samplerType = TextureSamplerType::CUBEMAP;
-	m_textureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	m_textureDesc.pixelDataFormat = TexturePixelDataFormat::RGB;
-	m_textureDesc.minFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
-	m_textureDesc.magFilterMethod = TextureFilterMethod::LINEAR;
-	m_textureDesc.wrapMethod = TextureWrapMethod::REPEAT;
-	m_textureDesc.width = 128;
-	m_textureDesc.height = 128;
-	m_textureDesc.pixelDataType = TexturePixelDataType::FLOAT16;
+	auto l_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
 
-	m_frameBufferDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
-	m_frameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT24;
-	m_frameBufferDesc.sizeX = m_textureDesc.width;
-	m_frameBufferDesc.sizeY = m_textureDesc.height;
-	m_frameBufferDesc.drawColorBuffers = true;
+	l_renderPassDesc.RTDesc.samplerType = TextureSamplerType::CUBEMAP;
+	l_renderPassDesc.RTDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
+	l_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RGB;
+	l_renderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
+	l_renderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::LINEAR;
+	l_renderPassDesc.RTDesc.wrapMethod = TextureWrapMethod::REPEAT;
+	l_renderPassDesc.RTDesc.width = 128;
+	l_renderPassDesc.RTDesc.height = 128;
+	l_renderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::FLOAT16;
+	l_renderPassDesc.useDepthAttachment = true;
 
-	m_GLRPC = addGLRenderPassComponent(1, m_frameBufferDesc, m_textureDesc);
+	m_GLRPC = addGLRenderPassComponent(m_entityID, "EnvironmentPreFilterPassGLRPC//");
+	m_GLRPC->m_renderPassDesc = l_renderPassDesc;
+	m_GLRPC->m_drawColorBuffers = true;
+	initializeGLRenderPassComponent(m_GLRPC);
 
-	auto rhs = addGLShaderProgramComponent(m_entityID);
-	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
-
-	m_GLSPC = rhs;
+	m_GLSPC = addGLShaderProgramComponent(m_entityID);
+	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
 
 	return true;
 }

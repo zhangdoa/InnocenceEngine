@@ -19,6 +19,7 @@ INNO_PRIVATE_SCOPE GLLightCullingPass
 	bool createLightIndexCountBuffer();
 	bool createLightIndexListBuffer();
 	bool createLightGridGLTDC();
+	bool createDebugGLTDC();
 
 	bool calculateFrustums();
 	bool cullLights();
@@ -94,8 +95,7 @@ bool GLLightCullingPass::createLightIndexListBuffer()
 bool GLLightCullingPass::createLightGridGLTDC()
 {
 	m_lightGridGLTDC = addGLTextureDataComponent();
-	m_lightGridGLTDC->m_textureDataDesc = GLRenderingSystemComponent::get().deferredPassTextureDesc;
-
+	m_lightGridGLTDC->m_textureDataDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc;
 	m_lightGridGLTDC->m_textureDataDesc.width = m_lightCullingNumThreadGroups.x;
 	m_lightGridGLTDC->m_textureDataDesc.height = m_lightCullingNumThreadGroups.y;
 	m_lightGridGLTDC->m_textureDataDesc.usageType = TextureUsageType::RAW_IMAGE;
@@ -107,11 +107,28 @@ bool GLLightCullingPass::createLightGridGLTDC()
 	return true;
 }
 
+bool GLLightCullingPass::createDebugGLTDC()
+{
+	m_debugGLTDC = addGLTextureDataComponent();
+	m_debugGLTDC->m_textureDataDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc;
+	m_debugGLTDC->m_textureDataDesc.usageType = TextureUsageType::RAW_IMAGE;
+	m_debugGLTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
+	m_debugGLTDC->m_textureDataDesc.pixelDataType = TexturePixelDataType::FLOAT16;
+	m_debugGLTDC->m_textureData = { nullptr };
+	initializeGLTextureDataComponent(m_debugGLTDC);
+
+	return true;
+}
+
 bool GLLightCullingPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_GLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
+	m_GLRPC = addGLRenderPassComponent(m_entityID, "LightCullingGLRPC//");
+	m_GLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
+	m_GLRPC->m_renderPassDesc.useDepthAttachment = true;
+	m_GLRPC->m_renderPassDesc.useStencilAttachment = true;
+	initializeGLRenderPassComponent(m_GLRPC);
 
 	initializeShaders();
 
@@ -119,14 +136,7 @@ bool GLLightCullingPass::initialize()
 
 	createLightIndexListBuffer();
 	createLightGridGLTDC();
-
-	m_debugGLTDC = addGLTextureDataComponent();
-	m_debugGLTDC->m_textureDataDesc = GLRenderingSystemComponent::get().deferredPassTextureDesc;
-	m_debugGLTDC->m_textureDataDesc.usageType = TextureUsageType::RAW_IMAGE;
-	m_debugGLTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_debugGLTDC->m_textureDataDesc.pixelDataType = TexturePixelDataType::FLOAT16;
-	m_debugGLTDC->m_textureData = { nullptr };
-	initializeGLTextureDataComponent(m_debugGLTDC);
+	createDebugGLTDC();
 
 	return true;
 }

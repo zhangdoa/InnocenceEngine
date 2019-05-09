@@ -24,7 +24,9 @@ bool GLSkyPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_GLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
+	m_GLRPC = addGLRenderPassComponent(m_entityID, "SkyGLRPC//");
+	m_GLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
+	initializeGLRenderPassComponent(m_GLRPC);
 
 	initializeShaders();
 

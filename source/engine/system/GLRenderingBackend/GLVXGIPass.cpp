@@ -24,8 +24,6 @@ INNO_PRIVATE_SCOPE GLVXGIPass
 	EntityID m_entityID;
 
 	GLRenderPassComponent* m_voxelizationPassGLRPC;
-	GLFrameBufferDesc m_voxelizationPassFrameBufferDesc = GLFrameBufferDesc();
-	TextureDataDesc m_voxelizationPassTextureDesc = TextureDataDesc();
 	GLShaderProgramComponent* m_voxelizationPassSPC;
 	GLuint m_voxelizationPass_uni_m;
 	std::vector<GLuint> m_voxelizationPass_uni_VP;
@@ -41,8 +39,6 @@ INNO_PRIVATE_SCOPE GLVXGIPass
 	float m_volumeGridSize;
 
 	GLRenderPassComponent* m_irradianceInjectionPassGLRPC;
-	GLFrameBufferDesc m_irradianceInjectionPassFrameBufferDesc = GLFrameBufferDesc();
-	TextureDataDesc m_irradianceInjectionPassTextureDesc = TextureDataDesc();
 	GLShaderProgramComponent* m_irradianceInjectionPassSPC;
 	GLuint m_irradianceInjectionPass_uni_dirLight_direction;
 	GLuint m_irradianceInjectionPass_uni_dirLight_luminance;
@@ -68,40 +64,6 @@ void GLVXGIPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_voxelizationPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_3D;
-	m_voxelizationPassTextureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	m_voxelizationPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_voxelizationPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;
-	m_voxelizationPassTextureDesc.magFilterMethod = TextureFilterMethod::NEAREST;
-	m_voxelizationPassTextureDesc.wrapMethod = TextureWrapMethod::REPEAT;
-	m_voxelizationPassTextureDesc.width = m_volumeDimension;
-	m_voxelizationPassTextureDesc.height = m_volumeDimension;
-	m_voxelizationPassTextureDesc.depth = m_volumeDimension;
-	m_voxelizationPassTextureDesc.pixelDataType = TexturePixelDataType::UBYTE;
-
-	m_voxelizationPassFrameBufferDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
-	m_voxelizationPassFrameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT32;
-	m_voxelizationPassFrameBufferDesc.sizeX = m_voxelizationPassTextureDesc.width;
-	m_voxelizationPassFrameBufferDesc.sizeY = m_voxelizationPassTextureDesc.height;
-	m_voxelizationPassFrameBufferDesc.drawColorBuffers = false;
-
-	m_irradianceInjectionPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_3D;
-	m_irradianceInjectionPassTextureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	m_irradianceInjectionPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_irradianceInjectionPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;
-	m_irradianceInjectionPassTextureDesc.magFilterMethod = TextureFilterMethod::NEAREST;
-	m_irradianceInjectionPassTextureDesc.wrapMethod = TextureWrapMethod::REPEAT;
-	m_irradianceInjectionPassTextureDesc.width = m_volumeDimension;
-	m_irradianceInjectionPassTextureDesc.height = m_volumeDimension;
-	m_irradianceInjectionPassTextureDesc.depth = m_volumeDimension;
-	m_irradianceInjectionPassTextureDesc.pixelDataType = TexturePixelDataType::UBYTE;
-
-	m_irradianceInjectionPassFrameBufferDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
-	m_irradianceInjectionPassFrameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT32;
-	m_irradianceInjectionPassFrameBufferDesc.sizeX = m_irradianceInjectionPassTextureDesc.width;
-	m_irradianceInjectionPassFrameBufferDesc.sizeY = m_irradianceInjectionPassTextureDesc.height;
-	m_irradianceInjectionPassFrameBufferDesc.drawColorBuffers = false;
-
 	initializeVoxelizationPass();
 
 	initializeIrradianceInjectionPass();
@@ -111,15 +73,33 @@ void GLVXGIPass::initialize()
 
 void GLVXGIPass::initializeVoxelizationPass()
 {
-	m_voxelizationPassGLRPC = addGLRenderPassComponent(2, m_voxelizationPassFrameBufferDesc, m_voxelizationPassTextureDesc);
+	auto l_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
+
+	l_renderPassDesc.RTNumber = 2;
+	l_renderPassDesc.RTDesc.samplerType = TextureSamplerType::SAMPLER_3D;
+	l_renderPassDesc.RTDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
+	l_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
+	l_renderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::NEAREST;
+	l_renderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::NEAREST;
+	l_renderPassDesc.RTDesc.wrapMethod = TextureWrapMethod::REPEAT;
+	l_renderPassDesc.RTDesc.width = m_volumeDimension;
+	l_renderPassDesc.RTDesc.height = m_volumeDimension;
+	l_renderPassDesc.RTDesc.depth = m_volumeDimension;
+	l_renderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::UBYTE;
+
+	m_voxelizationPassGLRPC = addGLRenderPassComponent(m_entityID, "VoxelizationPassGLRPC//");
+	m_voxelizationPassGLRPC->m_renderPassDesc = l_renderPassDesc;
+	m_voxelizationPassGLRPC->m_renderPassDesc.useDepthAttachment = true;
+	m_voxelizationPassGLRPC->m_drawColorBuffers = false;
+	initializeGLRenderPassComponent(m_voxelizationPassGLRPC);
 
 	// shader programs and shaders
 	ShaderFilePaths m_voxelizationPassShaderFilePaths;
 
 	////
-	m_voxelizationPassShaderFilePaths.m_VSPath = "GL//GIvoxelizationPass.vert";
-	m_voxelizationPassShaderFilePaths.m_GSPath = "GL//GIvoxelizationPass.geom";
-	m_voxelizationPassShaderFilePaths.m_FSPath = "GL//GIvoxelizationPass.frag";
+	m_voxelizationPassShaderFilePaths.m_VSPath = "GL//GIVoxelizationPass.vert";
+	m_voxelizationPassShaderFilePaths.m_GSPath = "GL//GIVoxelizationPass.geom";
+	m_voxelizationPassShaderFilePaths.m_FSPath = "GL//GIVoxelizationPass.frag";
 
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_voxelizationPassShaderFilePaths);
@@ -165,12 +145,29 @@ void GLVXGIPass::initializeVoxelizationPass()
 
 void GLVXGIPass::initializeIrradianceInjectionPass()
 {
-	m_irradianceInjectionPassGLRPC = addGLRenderPassComponent(1, m_irradianceInjectionPassFrameBufferDesc, m_irradianceInjectionPassTextureDesc);
+	auto l_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
+
+	l_renderPassDesc.RTDesc.samplerType = TextureSamplerType::SAMPLER_3D;
+	l_renderPassDesc.RTDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
+	l_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
+	l_renderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::NEAREST;
+	l_renderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::NEAREST;
+	l_renderPassDesc.RTDesc.wrapMethod = TextureWrapMethod::REPEAT;
+	l_renderPassDesc.RTDesc.width = m_volumeDimension;
+	l_renderPassDesc.RTDesc.height = m_volumeDimension;
+	l_renderPassDesc.RTDesc.depth = m_volumeDimension;
+	l_renderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::UBYTE;
+	l_renderPassDesc.useDepthAttachment = true;
+
+	m_irradianceInjectionPassGLRPC = addGLRenderPassComponent(m_entityID, "IrradianceInjectionPassGLRPC//");
+	m_irradianceInjectionPassGLRPC->m_renderPassDesc = l_renderPassDesc;
+	m_irradianceInjectionPassGLRPC->m_drawColorBuffers = false;
+	initializeGLRenderPassComponent(m_irradianceInjectionPassGLRPC);
 
 	ShaderFilePaths m_irradianceInjectionPassShaderFilePaths;
 
 	////
-	m_irradianceInjectionPassShaderFilePaths.m_CSPath = "GL//GIirradianceInjectionPass.comp";
+	m_irradianceInjectionPassShaderFilePaths.m_CSPath = "GL//GIIrradianceInjectionPass.comp";
 
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_irradianceInjectionPassShaderFilePaths);
@@ -200,14 +197,16 @@ void GLVXGIPass::initializeIrradianceInjectionPass()
 void GLVXGIPass::initializeVoxelVisualizationPass()
 {
 	// generate and bind framebuffer
-	m_voxelVisualizationGLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
+	m_voxelVisualizationGLRPC = addGLRenderPassComponent(m_entityID, "VoxelVisualizationPassGLRPC//");
+	m_voxelVisualizationGLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
+	initializeGLRenderPassComponent(m_voxelVisualizationGLRPC);
 
 	ShaderFilePaths m_voxelVisualizationPassShaderFilePaths;
 
 	////
-	m_voxelVisualizationPassShaderFilePaths.m_VSPath = "GL//GIvoxelVisualizationPass.vert";
-	m_voxelVisualizationPassShaderFilePaths.m_GSPath = "GL//GIvoxelVisualizationPass.geom";
-	m_voxelVisualizationPassShaderFilePaths.m_FSPath = "GL//GIvoxelVisualizationPass.frag";
+	m_voxelVisualizationPassShaderFilePaths.m_VSPath = "GL//GIVoxelVisualizationPass.vert";
+	m_voxelVisualizationPassShaderFilePaths.m_GSPath = "GL//GIVoxelVisualizationPass.geom";
+	m_voxelVisualizationPassShaderFilePaths.m_FSPath = "GL//GIVoxelVisualizationPass.frag";
 
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_voxelVisualizationPassShaderFilePaths);

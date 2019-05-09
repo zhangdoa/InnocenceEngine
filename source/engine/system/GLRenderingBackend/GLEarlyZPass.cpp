@@ -22,11 +22,15 @@ bool GLEarlyZPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	auto l_textureDesc = GLRenderingSystemComponent::get().deferredPassTextureDesc;
-	l_textureDesc.pixelDataFormat = TexturePixelDataFormat::R;
-	l_textureDesc.pixelDataType = TexturePixelDataType::UINT32;
+	auto l_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
+	l_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::R;
+	l_renderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::UINT32;
+	l_renderPassDesc.useDepthAttachment = true;
+	l_renderPassDesc.useStencilAttachment = true;
 
-	m_GLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, l_textureDesc);
+	m_GLRPC = addGLRenderPassComponent(m_entityID, "EarlyZPassGLRPC//");
+	m_GLRPC->m_renderPassDesc = l_renderPassDesc;
+	initializeGLRenderPassComponent(m_GLRPC);
 
 	initializeShaders();
 

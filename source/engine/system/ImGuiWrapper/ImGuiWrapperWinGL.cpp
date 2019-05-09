@@ -1,7 +1,7 @@
 #include "ImGuiWrapperWinGL.h"
 #include "../../component/WinWindowSystemComponent.h"
 
-#include "../GLRenderingBackend/GLShadowRenderPass.h"
+#include "../GLRenderingBackend/GLShadowPass.h"
 
 #include "../GLRenderingBackend/GLBRDFLUTPass.h"
 #include "../GLRenderingBackend/GLVXGIPass.h"
@@ -105,7 +105,7 @@ void ImGuiWrapperWinGL::showRenderResult(RenderPassType renderPassType)
 	case RenderPassType::Shadow:
 		ImGui::Begin("Shadow Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
 		ImGui::Text("CSM Depth Buffer");
-		ImGui::Image(ImTextureID((GLuint64)GLShadowRenderPass::getGLRPC(0)->m_GLTDCs[0]->m_TO), l_shadowRTSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+		ImGui::Image(ImTextureID((GLuint64)GLShadowPass::getGLRPC(0)->m_GLTDCs[0]->m_TO), l_shadowRTSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 		ImGui::End();
 		break;
 	case RenderPassType::GI:

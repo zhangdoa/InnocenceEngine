@@ -34,7 +34,8 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	GLTextureDataComponent* getGLTextureDataComponent(FileExplorerIconType iconType);
 	GLTextureDataComponent* getGLTextureDataComponent(WorldEditorIconType iconType);
 
-	GLRenderPassComponent* addGLRenderPassComponent(unsigned int RTNum, GLFrameBufferDesc glFrameBufferDesc, TextureDataDesc RTDesc);
+	GLRenderPassComponent* addGLRenderPassComponent(const EntityID& parentEntity, const char* name);
+	bool initializeGLRenderPassComponent(GLRenderPassComponent* GLRPC);
 
 	bool resizeGLRenderPassComponent(GLRenderPassComponent * GLRPC, unsigned int newSizeX, unsigned int newSizeY);
 

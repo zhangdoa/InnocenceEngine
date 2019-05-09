@@ -4,7 +4,7 @@
 #include "GLBRDFLUTPass.h"
 #include "GLEnvironmentConvolutionPass.h"
 #include "GLEnvironmentPreFilterPass.h"
-#include "GLShadowRenderPass.h"
+#include "GLShadowPass.h"
 
 #include "../../component/GLRenderingSystemComponent.h"
 #include "../../component/RenderingFrontendSystemComponent.h"
@@ -34,7 +34,12 @@ void GLLightPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_GLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
+	m_GLRPC = addGLRenderPassComponent(m_entityID, "LightPassGLRPC//");
+	m_GLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
+	m_GLRPC->m_renderPassDesc.useDepthAttachment = true;
+	m_GLRPC->m_renderPassDesc.useStencilAttachment = true;
+
+	initializeGLRenderPassComponent(m_GLRPC);
 
 	initializeLightPassShaders();
 }
@@ -84,7 +89,7 @@ void GLLightPass::update()
 		3);
 	// shadow map
 	activateTexture(
-		GLShadowRenderPass::getGLRPC(0)->m_GLTDCs[0],
+		GLShadowPass::getGLRPC(0)->m_GLTDCs[0],
 		4);
 	// BRDF look-up table 1
 	activateTexture(

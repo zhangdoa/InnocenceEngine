@@ -27,7 +27,13 @@ bool GLOpaquePass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_GLRPC = addGLRenderPassComponent(4, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
+	m_GLRPC = addGLRenderPassComponent(m_entityID, "OpaquePassGLRPC//");
+	m_GLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
+	m_GLRPC->m_renderPassDesc.RTNumber = 4;
+	m_GLRPC->m_renderPassDesc.useDepthAttachment = true;
+	m_GLRPC->m_renderPassDesc.useStencilAttachment = true;
+
+	initializeGLRenderPassComponent(m_GLRPC);
 
 	initializeShaders();
 

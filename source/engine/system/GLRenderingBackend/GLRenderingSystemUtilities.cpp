@@ -16,8 +16,10 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	}
 
 	void generateFBO(GLRenderPassComponent* GLRPC);
-	void addRenderTargetTextures(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc);
-	void attachRenderTargetTextures(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc, unsigned int colorAttachmentIndex);
+	void generateRBO(GLRenderPassComponent* GLRPC);
+
+	void addRenderTargets(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc);
+	void attachRenderTargets(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc, unsigned int colorAttachmentIndex);
 
 	void setDrawBuffers(unsigned int RTNum);
 
@@ -54,28 +56,64 @@ bool GLRenderingSystemNS::initializeComponentPool()
 	return true;
 }
 
-GLRenderPassComponent* GLRenderingSystemNS::addGLRenderPassComponent(unsigned int RTNum, GLFrameBufferDesc glFrameBufferDesc, TextureDataDesc RTDesc)
+GLRenderPassComponent* GLRenderingSystemNS::addGLRenderPassComponent(const EntityID& parentEntity, const char* name)
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_GLRenderPassComponentPool, sizeof(GLRenderPassComponent));
 	auto l_GLRPC = new(l_rawPtr)GLRenderPassComponent();
+	l_GLRPC->m_parentEntity = parentEntity;
+	l_GLRPC->m_name = name;
 
-	// generate and bind framebuffer
-	l_GLRPC->m_GLFrameBufferDesc = glFrameBufferDesc;
+	return l_GLRPC;
+}
 
-	generateFBO(l_GLRPC);
-
-	// generate and bind texture
-	l_GLRPC->m_GLTDCs.reserve(RTNum);
-
-	for (unsigned int i = 0; i < RTNum; i++)
+bool GLRenderingSystemNS::initializeGLRenderPassComponent(GLRenderPassComponent* GLRPC)
+{
+	generateFBO(GLRPC);
+	if (GLRPC->m_renderPassDesc.useDepthAttachment)
 	{
-		addRenderTargetTextures(l_GLRPC, RTDesc);
-		attachRenderTargetTextures(l_GLRPC, RTDesc, i);
+		GLRPC->m_renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
+		GLRPC->m_renderBufferInternalFormat = GL_DEPTH_COMPONENT32F;
+
+		if (GLRPC->m_renderPassDesc.useStencilAttachment)
+		{
+			GLRPC->m_renderBufferAttachmentType = GL_DEPTH_STENCIL_ATTACHMENT;
+			GLRPC->m_renderBufferInternalFormat = GL_DEPTH24_STENCIL8;
+		}
+		generateRBO(GLRPC);
 	}
 
-	if (glFrameBufferDesc.drawColorBuffers)
+	GLRPC->m_GLTDCs.reserve(GLRPC->m_renderPassDesc.RTNumber);
+
+	for (unsigned int i = 0; i < GLRPC->m_renderPassDesc.RTNumber; i++)
 	{
-		setDrawBuffers(RTNum);
+		GLRPC->m_GLTDCs.emplace_back();
+	}
+
+	for (unsigned int i = 0; i < GLRPC->m_renderPassDesc.RTNumber; i++)
+	{
+		auto l_TDC = addGLTextureDataComponent();
+
+		l_TDC->m_textureDataDesc = GLRPC->m_renderPassDesc.RTDesc;
+
+		if (l_TDC->m_textureDataDesc.samplerType == TextureSamplerType::CUBEMAP)
+		{
+			l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+		}
+		else
+		{
+			l_TDC->m_textureData = { nullptr };
+		}
+
+		initializeGLTextureDataComponent(l_TDC);
+
+		GLRPC->m_GLTDCs[i] = l_TDC;
+
+		attachRenderTargets(GLRPC, GLRPC->m_renderPassDesc.RTDesc, i);
+	}
+
+	if (GLRPC->m_drawColorBuffers)
+	{
+		setDrawBuffers(GLRPC->m_renderPassDesc.RTNumber);
 	}
 	else
 	{
@@ -83,51 +121,41 @@ GLRenderPassComponent* GLRenderingSystemNS::addGLRenderPassComponent(unsigned in
 		glReadBuffer(GL_NONE);
 	}
 
-	return l_GLRPC;
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+	return true;
 }
 
 void GLRenderingSystemNS::generateFBO(GLRenderPassComponent* GLRPC)
 {
-	// generate and bind framebuffer
 	glGenFramebuffers(1, &GLRPC->m_FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
 
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingSystem: " + std::string(GLRPC->m_name.c_str()) + " FBO has been generated.");
+}
+
+void GLRenderingSystemNS::generateRBO(GLRenderPassComponent* GLRPC)
+{
 	// generate and bind renderbuffer
 	glGenRenderbuffers(1, &GLRPC->m_RBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, GLRPC->m_RBO);
 
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GLRPC->m_GLFrameBufferDesc.renderBufferAttachmentType, GL_RENDERBUFFER, GLRPC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GLRPC->m_GLFrameBufferDesc.renderBufferInternalFormat, GLRPC->m_GLFrameBufferDesc.sizeX, GLRPC->m_GLFrameBufferDesc.sizeY);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GLRPC->m_renderBufferAttachmentType, GL_RENDERBUFFER, GLRPC->m_RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GLRPC->m_renderBufferInternalFormat, GLRPC->m_renderPassDesc.RTDesc.width, GLRPC->m_renderPassDesc.RTDesc.height);
 
-	// finally check if framebuffer is complete
 	auto l_result = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (l_result != GL_FRAMEBUFFER_COMPLETE)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: Framebuffer is not completed: " + std::to_string(l_result));
-	}
-}
-
-void GLRenderingSystemNS::addRenderTargetTextures(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc)
-{
-	auto l_TDC = addGLTextureDataComponent();
-
-	l_TDC->m_textureDataDesc = RTDesc;
-
-	if (RTDesc.samplerType == TextureSamplerType::CUBEMAP)
-	{
-		l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: " + std::string(GLRPC->m_name.c_str()) + " Framebuffer is not completed: " + std::to_string(l_result));
 	}
 	else
 	{
-		l_TDC->m_textureData = { nullptr };
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingSystem: " + std::string(GLRPC->m_name.c_str()) + " RBO has been generated.");
 	}
-
-	initializeGLTextureDataComponent(l_TDC);
-
-	GLRPC->m_GLTDCs.emplace_back(l_TDC);
 }
 
-void GLRenderingSystemNS::attachRenderTargetTextures(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc, unsigned int colorAttachmentIndex)
+void GLRenderingSystemNS::attachRenderTargets(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc, unsigned int colorAttachmentIndex)
 {
 	if (RTDesc.samplerType == TextureSamplerType::SAMPLER_2D)
 	{
@@ -151,6 +179,8 @@ void GLRenderingSystemNS::attachRenderTargetTextures(GLRenderPassComponent* GLRP
 			attach3DColorRT(GLRPC->m_GLTDCs[colorAttachmentIndex], GLRPC, colorAttachmentIndex, 0);
 		}
 	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingSystem: " + std::string(GLRPC->m_name.c_str()) + " render target has been attached.");
 }
 
 void GLRenderingSystemNS::setDrawBuffers(unsigned int RTNum)
@@ -165,13 +195,14 @@ void GLRenderingSystemNS::setDrawBuffers(unsigned int RTNum)
 
 bool GLRenderingSystemNS::resizeGLRenderPassComponent(GLRenderPassComponent * GLRPC, unsigned int newSizeX, unsigned int newSizeY)
 {
-	GLRPC->m_GLFrameBufferDesc.sizeX = newSizeX;
-	GLRPC->m_GLFrameBufferDesc.sizeY = newSizeY;
+	GLRPC->m_renderPassDesc.RTDesc.width = newSizeX;
+	GLRPC->m_renderPassDesc.RTDesc.height = newSizeY;
 
 	glDeleteFramebuffers(1, &GLRPC->m_FBO);
 	glDeleteRenderbuffers(1, &GLRPC->m_RBO);
 
 	generateFBO(GLRPC);
+	generateRBO(GLRPC);
 
 	for (unsigned int i = 0; i < GLRPC->m_GLTDCs.size(); i++)
 	{
@@ -184,10 +215,10 @@ bool GLRenderingSystemNS::resizeGLRenderPassComponent(GLRenderPassComponent * GL
 
 		generateTO(GLRPC->m_GLTDCs[i]->m_TO, GLRPC->m_GLTDCs[i]->m_GLTextureDataDesc, l_textureDesc.width, l_textureDesc.height, l_textureDesc.depth, GLRPC->m_GLTDCs[i]->m_textureData);
 
-		attachRenderTargetTextures(GLRPC, l_textureDesc, i);
+		attachRenderTargets(GLRPC, l_textureDesc, i);
 	}
 
-	if (GLRPC->m_GLFrameBufferDesc.drawColorBuffers)
+	if (GLRPC->m_drawColorBuffers)
 	{
 		setDrawBuffers((unsigned int)GLRPC->m_GLTDCs.size());
 	}
@@ -1011,8 +1042,11 @@ void GLRenderingSystemNS::activateRenderPass(GLRenderPassComponent* val)
 	cleanRenderBuffers(val);
 
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, val->m_FBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, val->m_GLFrameBufferDesc.renderBufferInternalFormat, val->m_GLFrameBufferDesc.sizeX, val->m_GLFrameBufferDesc.sizeY);
-	glViewport(0, 0, val->m_GLFrameBufferDesc.sizeX, val->m_GLFrameBufferDesc.sizeY);
+	if (val->m_renderPassDesc.useDepthAttachment)
+	{
+		glRenderbufferStorage(GL_RENDERBUFFER, val->m_renderBufferInternalFormat, val->m_renderPassDesc.RTDesc.width, val->m_renderPassDesc.RTDesc.height);
+	}
+	glViewport(0, 0, val->m_renderPassDesc.RTDesc.width, val->m_renderPassDesc.RTDesc.height);
 };
 
 void GLRenderingSystemNS::cleanRenderBuffers(GLRenderPassComponent* val)
@@ -1030,14 +1064,14 @@ void GLRenderingSystemNS::copyDepthBuffer(GLRenderPassComponent* src, GLRenderPa
 {
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, src->m_FBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest->m_FBO);
-	glBlitFramebuffer(0, 0, src->m_GLFrameBufferDesc.sizeX, src->m_GLFrameBufferDesc.sizeY, 0, 0, dest->m_GLFrameBufferDesc.sizeX, dest->m_GLFrameBufferDesc.sizeY, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, src->m_renderPassDesc.RTDesc.width, src->m_renderPassDesc.RTDesc.height, 0, 0, dest->m_renderPassDesc.RTDesc.width, dest->m_renderPassDesc.RTDesc.height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 };
 
 void GLRenderingSystemNS::copyStencilBuffer(GLRenderPassComponent* src, GLRenderPassComponent* dest)
 {
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, src->m_FBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest->m_FBO);
-	glBlitFramebuffer(0, 0, src->m_GLFrameBufferDesc.sizeX, src->m_GLFrameBufferDesc.sizeY, 0, 0, dest->m_GLFrameBufferDesc.sizeX, dest->m_GLFrameBufferDesc.sizeY, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebuffer(0, 0, src->m_renderPassDesc.RTDesc.width, src->m_renderPassDesc.RTDesc.height, 0, 0, dest->m_renderPassDesc.RTDesc.width, dest->m_renderPassDesc.RTDesc.height, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 };
 
 void GLRenderingSystemNS::copyColorBuffer(GLRenderPassComponent* src, unsigned int srcIndex, GLRenderPassComponent* dest, unsigned int destIndex)
@@ -1046,7 +1080,7 @@ void GLRenderingSystemNS::copyColorBuffer(GLRenderPassComponent* src, unsigned i
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest->m_FBO);
 	glReadBuffer(GL_COLOR_ATTACHMENT0 + srcIndex);
 	glDrawBuffer(GL_COLOR_ATTACHMENT0 + destIndex);
-	glBlitFramebuffer(0, 0, src->m_GLFrameBufferDesc.sizeX, src->m_GLFrameBufferDesc.sizeY, 0, 0, dest->m_GLFrameBufferDesc.sizeX, dest->m_GLFrameBufferDesc.sizeY, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+	glBlitFramebuffer(0, 0, src->m_renderPassDesc.RTDesc.width, src->m_renderPassDesc.RTDesc.height, 0, 0, dest->m_renderPassDesc.RTDesc.width, dest->m_renderPassDesc.RTDesc.height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 };
 
 vec4 GLRenderingSystemNS::readPixel(GLRenderPassComponent* GLRPC, unsigned int colorAttachmentIndex, GLint x, GLint y)

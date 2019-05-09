@@ -10,66 +10,36 @@ INNO_PRIVATE_SCOPE GLBRDFLUTPass
 	EntityID m_entityID;
 
 	GLRenderPassComponent* m_BRDFSplitSumLUTPassGLRPC;
-	GLFrameBufferDesc m_BRDFSplitSumLUTPassFrameBufferDesc = GLFrameBufferDesc();
-	TextureDataDesc m_BRDFSplitSumLUTPassTextureDesc = TextureDataDesc();
 	GLShaderProgramComponent* m_BRDFSplitSumLUTPassSPC;
 	ShaderFilePaths m_BRDFSplitSumShaderFilePaths = { "GL//BRDFLUTPass.vert" , "", "GL//BRDFLUTPass.frag" };
 
 	GLRenderPassComponent* m_BRDFMSAverageLUTPassGLRPC;
-	GLFrameBufferDesc m_BRDFMSAverageLUTPassFrameBufferDesc = GLFrameBufferDesc();
-	TextureDataDesc m_BRDFMSAverageLUTPassTextureDesc = TextureDataDesc();
 	GLShaderProgramComponent* m_BRDFMSAverageLUTPassSPC;
 	ShaderFilePaths m_BRDFMSAverageShaderFilePaths = { "GL//BRDFLUTMSPass.vert" , "", "GL//BRDFLUTMSPass.frag" };
 }
 
 bool GLBRDFLUTPass::initialize()
 {
-	m_BRDFSplitSumLUTPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
-	m_BRDFSplitSumLUTPassTextureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	m_BRDFSplitSumLUTPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_BRDFSplitSumLUTPassTextureDesc.minFilterMethod = TextureFilterMethod::LINEAR;
-	m_BRDFSplitSumLUTPassTextureDesc.magFilterMethod = TextureFilterMethod::LINEAR;
-	m_BRDFSplitSumLUTPassTextureDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-	m_BRDFSplitSumLUTPassTextureDesc.width = 512;
-	m_BRDFSplitSumLUTPassTextureDesc.height = 512;
-	m_BRDFSplitSumLUTPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT16;
+	m_entityID = InnoMath::createEntityID();
 
-	m_BRDFSplitSumLUTPassFrameBufferDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
-	m_BRDFSplitSumLUTPassFrameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT24;
-	m_BRDFSplitSumLUTPassFrameBufferDesc.sizeX = m_BRDFSplitSumLUTPassTextureDesc.width;
-	m_BRDFSplitSumLUTPassFrameBufferDesc.sizeY = m_BRDFSplitSumLUTPassTextureDesc.height;
-	m_BRDFSplitSumLUTPassFrameBufferDesc.drawColorBuffers = true;
+	m_BRDFSplitSumLUTPassGLRPC = addGLRenderPassComponent(m_entityID, "BRDFSplitSumLUTPassGLRPC//");
+	m_BRDFSplitSumLUTPassGLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
+	m_BRDFSplitSumLUTPassGLRPC->m_renderPassDesc.RTDesc.width = 512;
+	m_BRDFSplitSumLUTPassGLRPC->m_renderPassDesc.RTDesc.height = 512;
+	initializeGLRenderPassComponent(m_BRDFSplitSumLUTPassGLRPC);
 
-	m_BRDFMSAverageLUTPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
-	m_BRDFMSAverageLUTPassTextureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	m_BRDFMSAverageLUTPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RG;
-	m_BRDFMSAverageLUTPassTextureDesc.minFilterMethod = TextureFilterMethod::LINEAR;
-	m_BRDFMSAverageLUTPassTextureDesc.magFilterMethod = TextureFilterMethod::LINEAR;
-	m_BRDFMSAverageLUTPassTextureDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-	m_BRDFMSAverageLUTPassTextureDesc.width = 512;
-	m_BRDFMSAverageLUTPassTextureDesc.height = 512;
-	m_BRDFMSAverageLUTPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT16;
+	m_BRDFMSAverageLUTPassGLRPC = addGLRenderPassComponent(m_entityID, "BRDFMSAverageLUTPassGLRPC//");
+	m_BRDFMSAverageLUTPassGLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
+	m_BRDFMSAverageLUTPassGLRPC->m_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RG;
+	m_BRDFMSAverageLUTPassGLRPC->m_renderPassDesc.RTDesc.width = 512;
+	m_BRDFMSAverageLUTPassGLRPC->m_renderPassDesc.RTDesc.height = 512;
+	initializeGLRenderPassComponent(m_BRDFMSAverageLUTPassGLRPC);
 
-	m_BRDFMSAverageLUTPassFrameBufferDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
-	m_BRDFMSAverageLUTPassFrameBufferDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT24;
-	m_BRDFMSAverageLUTPassFrameBufferDesc.sizeX = m_BRDFMSAverageLUTPassTextureDesc.width;
-	m_BRDFMSAverageLUTPassFrameBufferDesc.sizeY = m_BRDFMSAverageLUTPassTextureDesc.height;
-	m_BRDFMSAverageLUTPassFrameBufferDesc.drawColorBuffers = true;
+	m_BRDFSplitSumLUTPassSPC = addGLShaderProgramComponent(m_entityID);
+	initializeGLShaderProgramComponent(m_BRDFSplitSumLUTPassSPC, m_BRDFSplitSumShaderFilePaths);
 
-	// generate and bind framebuffer
-	m_BRDFSplitSumLUTPassGLRPC = addGLRenderPassComponent(1, m_BRDFSplitSumLUTPassFrameBufferDesc, m_BRDFSplitSumLUTPassTextureDesc);
-
-	m_BRDFMSAverageLUTPassGLRPC = addGLRenderPassComponent(1, m_BRDFMSAverageLUTPassFrameBufferDesc, m_BRDFMSAverageLUTPassTextureDesc);
-
-	auto rhs = addGLShaderProgramComponent(m_entityID);
-	initializeGLShaderProgramComponent(rhs, m_BRDFSplitSumShaderFilePaths);
-
-	m_BRDFSplitSumLUTPassSPC = rhs;
-
-	rhs = addGLShaderProgramComponent(m_entityID);
-	initializeGLShaderProgramComponent(rhs, m_BRDFMSAverageShaderFilePaths);
-
-	m_BRDFMSAverageLUTPassSPC = rhs;
+	m_BRDFMSAverageLUTPassSPC = addGLShaderProgramComponent(m_entityID);
+	initializeGLShaderProgramComponent(m_BRDFMSAverageLUTPassSPC, m_BRDFMSAverageShaderFilePaths);
 
 	update();
 

@@ -9,7 +9,7 @@
 
 #include "GLVXGIPass.h"
 
-#include "GLShadowRenderPass.h"
+#include "GLShadowPass.h"
 
 #include "GLEarlyZPass.h"
 #include "GLOpaquePass.h"
@@ -153,37 +153,17 @@ bool GLRenderingSystemNS::setup()
 
 	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 
-	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
-	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.renderBufferInternalFormat = GL_DEPTH_COMPONENT32F;
-	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeX = l_screenResolution.x;
-	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeY = l_screenResolution.y;
-	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.drawColorBuffers = false;
-
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.magFilterMethod = TextureFilterMethod::NEAREST;
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.width = GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeX;
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.height = GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeY;
-	GLRenderingSystemComponent::get().depthOnlyPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT32;
-
-	GLRenderingSystemComponent::get().deferredPassFBDesc.renderBufferAttachmentType = GL_DEPTH_STENCIL_ATTACHMENT;
-	GLRenderingSystemComponent::get().deferredPassFBDesc.renderBufferInternalFormat = GL_DEPTH24_STENCIL8;
-	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX = l_screenResolution.x;
-	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY = l_screenResolution.y;
-	GLRenderingSystemComponent::get().deferredPassFBDesc.drawColorBuffers = true;
-
-	GLRenderingSystemComponent::get().deferredPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
-	GLRenderingSystemComponent::get().deferredPassTextureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	GLRenderingSystemComponent::get().deferredPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
-	GLRenderingSystemComponent::get().deferredPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;
-	GLRenderingSystemComponent::get().deferredPassTextureDesc.magFilterMethod = TextureFilterMethod::NEAREST;
-	GLRenderingSystemComponent::get().deferredPassTextureDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-	GLRenderingSystemComponent::get().deferredPassTextureDesc.width = GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX;
-	GLRenderingSystemComponent::get().deferredPassTextureDesc.height = GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY;
-	GLRenderingSystemComponent::get().deferredPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT16;
+	// general render pass desc
+	GLRenderingSystemComponent::get().m_deferredRenderPassDesc.RTNumber = 1;
+	GLRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.samplerType = TextureSamplerType::SAMPLER_2D;
+	GLRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
+	GLRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
+	GLRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::NEAREST;
+	GLRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::NEAREST;
+	GLRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+	GLRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.width = l_screenResolution.x;
+	GLRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.height = l_screenResolution.y;
+	GLRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::FLOAT16;
 
 	if (g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig().MSAAdepth)
 	{
@@ -220,7 +200,7 @@ bool GLRenderingSystemNS::initialize()
 	GLEnvironmentPreFilterPass::initialize();
 	GLVXGIPass::initialize();
 
-	GLShadowRenderPass::initialize();
+	GLShadowPass::initialize();
 
 	GLEarlyZPass::initialize();
 	GLOpaquePass::initialize();
@@ -413,7 +393,7 @@ bool GLRenderingSystemNS::render()
 		m_isBaked = true;
 	}
 
-	GLShadowRenderPass::update();
+	GLShadowPass::update();
 
 	GLEarlyZPass::update();
 	GLOpaquePass::update();
@@ -488,11 +468,11 @@ bool GLRenderingSystemNS::render()
 		cleanRenderBuffers(GLDebuggerPass::getGLRPC(0));
 	}
 
-	if (m_visualizeVXGI)
-	{
-		GLVXGIPass::draw();
-		l_canvasGLRPC = GLVXGIPass::getGLRPC();
-	}
+	//if (m_visualizeVXGI)
+	//{
+	//	GLVXGIPass::draw();
+	//	l_canvasGLRPC = GLVXGIPass::getGLRPC();
+	//}
 
 	GLFinalBlendPass::update(l_canvasGLRPC);
 
@@ -648,11 +628,8 @@ bool GLRenderingSystemNS::resize()
 {
 	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 
-	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeX = l_screenResolution.x;
-	GLRenderingSystemComponent::get().depthOnlyPassFBDesc.sizeY = l_screenResolution.y;
-
-	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeX = l_screenResolution.x;
-	GLRenderingSystemComponent::get().deferredPassFBDesc.sizeY = l_screenResolution.y;
+	GLRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.width = l_screenResolution.x;
+	GLRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.height = l_screenResolution.y;
 
 	GLEarlyZPass::resize(l_screenResolution.x, l_screenResolution.y);
 	GLOpaquePass::resize(l_screenResolution.x, l_screenResolution.y);

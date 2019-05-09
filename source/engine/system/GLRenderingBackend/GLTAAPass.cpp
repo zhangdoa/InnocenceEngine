@@ -34,15 +34,27 @@ bool GLTAAPass::initialize()
 	m_entityID = InnoMath::createEntityID();
 
 	// history buffer pass
-	m_History0PassGLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
-	m_History1PassGLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
-	m_History2PassGLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
+	m_History0PassGLRPC = addGLRenderPassComponent(m_entityID, "TAAPassHistory0GLRPC//");
+	m_History0PassGLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
+	initializeGLRenderPassComponent(m_History0PassGLRPC);
+
+	m_History1PassGLRPC = addGLRenderPassComponent(m_entityID, "TAAPassHistory1GLRPC//");
+	m_History1PassGLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
+	initializeGLRenderPassComponent(m_History1PassGLRPC);
+
+	m_History2PassGLRPC = addGLRenderPassComponent(m_entityID, "TAAPassHistory2GLRPC//");
+	m_History2PassGLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
+	initializeGLRenderPassComponent(m_History2PassGLRPC);
 
 	// Ping pass
-	m_PingPassGLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
+	m_PingPassGLRPC = addGLRenderPassComponent(m_entityID, "TAAPingPassGLRPC//");
+	m_PingPassGLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
+	initializeGLRenderPassComponent(m_PingPassGLRPC);
 
 	// Pong pass
-	m_PongPassGLRPC = addGLRenderPassComponent(1, GLRenderingSystemComponent::get().deferredPassFBDesc, GLRenderingSystemComponent::get().deferredPassTextureDesc);
+	m_PongPassGLRPC = addGLRenderPassComponent(m_entityID, "TAAPongPassGLRPC//");
+	m_PongPassGLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
+	initializeGLRenderPassComponent(m_PongPassGLRPC);
 
 	initializeShaders();
 
