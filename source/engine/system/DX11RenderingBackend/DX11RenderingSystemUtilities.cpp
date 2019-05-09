@@ -420,23 +420,70 @@ void DX11RenderingSystemNS::OutputShaderErrorMessage(ID3D10Blob * errorMessage, 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: innoShader: " + shaderFilename + " compile error: " + errorSStream.str() + "\n -- --------------------------------------------------- -- ");
 }
 
-DX11RenderPassComponent* DX11RenderingSystemNS::addDX11RenderPassComponent(unsigned int RTNum, D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc, TextureDataDesc RTDesc)
+DX11RenderPassComponent* DX11RenderingSystemNS::addDX11RenderPassComponent(const EntityID& parentEntity, const char* name)
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_DX11RenderPassComponentPool, sizeof(DX11RenderPassComponent));
 	auto l_DXRPC = new(l_rawPtr)DX11RenderPassComponent();
+	l_DXRPC->m_parentEntity = parentEntity;
+	l_DXRPC->m_name = name;
+	return l_DXRPC;
+}
 
-	HRESULT result;
+bool DX11RenderingSystemNS::initializeDX11RenderPassComponent(DX11RenderPassComponent* DXRPC)
+{
+	bool l_result = true;
 
-	// generate DXTDC
-	l_DXRPC->m_DXTDCs.reserve(RTNum);
+	l_result &= reserveRenderTargets(DXRPC);
 
-	for (unsigned int i = 0; i < RTNum; i++)
+	l_result &= createRenderTargets(DXRPC);
+
+	l_result &= createRTV(DXRPC);
+
+	if (DXRPC->m_renderPassDesc.useDepthAttachment)
 	{
-		auto l_TDC = addDX11TextureDataComponent();
+		l_result &= createDSV(DXRPC);
+	}
 
-		l_TDC->m_textureDataDesc = RTDesc;
+	l_result &= setupPipeline(DXRPC);
 
-		if (RTDesc.samplerType == TextureSamplerType::CUBEMAP)
+	DXRPC->m_objectStatus = ObjectStatus::ALIVE;
+
+	return l_result;
+}
+
+bool DX11RenderingSystemNS::reserveRenderTargets(DX11RenderPassComponent* DXRPC)
+{
+	DXRPC->m_RTVs.reserve(DXRPC->m_renderPassDesc.RTNumber);
+	for (size_t i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
+	{
+		DXRPC->m_RTVs.emplace_back();
+	}
+
+	DXRPC->m_DXTDCs.reserve(DXRPC->m_renderPassDesc.RTNumber);
+	for (size_t i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
+	{
+		DXRPC->m_DXTDCs.emplace_back();
+	}
+
+	for (size_t i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
+	{
+		DXRPC->m_DXTDCs[i] = addDX11TextureDataComponent();
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " render targets have been allocated.");
+
+	return true;
+}
+
+bool DX11RenderingSystemNS::createRenderTargets(DX11RenderPassComponent* DXRPC)
+{
+	for (unsigned int i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
+	{
+		auto l_TDC = DXRPC->m_DXTDCs[i];
+
+		l_TDC->m_textureDataDesc = DXRPC->m_renderPassDesc.RTDesc;
+
+		if (l_TDC->m_textureDataDesc.samplerType == TextureSamplerType::CUBEMAP)
 		{
 			l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
 		}
@@ -446,69 +493,117 @@ DX11RenderPassComponent* DX11RenderingSystemNS::addDX11RenderPassComponent(unsig
 		}
 
 		initializeDX11TextureDataComponent(l_TDC);
-
-		l_DXRPC->m_DXTDCs.emplace_back(l_TDC);
 	}
 
-	// Create the render target views.
-	l_DXRPC->m_renderTargetViews.reserve(RTNum);
-
-	for (unsigned int i = 0; i < RTNum; i++)
+	if (DXRPC->m_renderPassDesc.useDepthAttachment)
 	{
-		l_DXRPC->m_renderTargetViews.emplace_back();
-		result = DX11RenderingSystemComponent::get().m_device->CreateRenderTargetView(
-			l_DXRPC->m_DXTDCs[i]->m_texture,
-			&renderTargetViewDesc,
-			&l_DXRPC->m_renderTargetViews[i]);
-		if (FAILED(result))
+		DXRPC->m_depthStencilDXTDC = addDX11TextureDataComponent();
+		DXRPC->m_depthStencilDXTDC->m_textureDataDesc = DXRPC->m_renderPassDesc.RTDesc;
+
+		if (DXRPC->m_renderPassDesc.useStencilAttachment)
 		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create render target view!");
-			return nullptr;
+			DXRPC->m_depthStencilDXTDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_STENCIL_ATTACHMENT;
+		}
+		else
+		{
+			DXRPC->m_depthStencilDXTDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
+		}
+
+		DXRPC->m_depthStencilDXTDC->m_textureData = { nullptr };
+
+		initializeDX11TextureDataComponent(DXRPC->m_depthStencilDXTDC);
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " render targets have been created.");
+
+	return true;
+}
+
+bool DX11RenderingSystemNS::createRTV(DX11RenderPassComponent* DXRPC)
+{
+	DXRPC->m_RTVDesc.Format = DXRPC->m_DXTDCs[0]->m_DX11TextureDataDesc.Format;
+	DXRPC->m_RTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	DXRPC->m_RTVDesc.Texture2D.MipSlice = 0;
+
+	for (unsigned int i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
+	{
+		auto l_result = DX11RenderingSystemComponent::get().m_device->CreateRenderTargetView(DXRPC->m_DXTDCs[i]->m_texture, &DXRPC->m_RTVDesc, &DXRPC->m_RTVs[i]);
+		if (FAILED(l_result))
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create RTV for " + std::string(DXRPC->m_name.c_str()) + "!");
+			return false;
 		}
 	}
 
-	// use default depth stencil state
-	l_DXRPC->m_depthStencilDesc = DX11RenderingSystemComponent::get().m_depthStencilDesc;
-	l_DXRPC->m_depthStencilState = DX11RenderingSystemComponent::get().m_defaultDepthStencilState;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " RTV has been created.");
 
-	l_DXRPC->m_depthStencilDXTDC = addDX11TextureDataComponent();
-	l_DXRPC->m_depthStencilDXTDC->m_textureDataDesc = DX11RenderingSystemComponent::get().deferredPassTextureDesc;
-	l_DXRPC->m_depthStencilDXTDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_STENCIL_ATTACHMENT;
-	l_DXRPC->m_depthStencilDXTDC->m_textureData = { nullptr };
+	return true;
+}
 
-	initializeDX11TextureDataComponent(l_DXRPC->m_depthStencilDXTDC);
-
-	// Initailze the depth stencil view description.
-	ZeroMemory(&l_DXRPC->m_depthStencilViewDesc,
-		sizeof(l_DXRPC->m_depthStencilViewDesc));
-
-	// Set up the depth stencil view description.
-	l_DXRPC->m_depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	l_DXRPC->m_depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-	l_DXRPC->m_depthStencilViewDesc.Texture2D.MipSlice = 0;
-
-	// Create the depth stencil view.
-	result = DX11RenderingSystemComponent::get().m_device->CreateDepthStencilView(
-		l_DXRPC->m_depthStencilDXTDC->m_texture,
-		&l_DXRPC->m_depthStencilViewDesc,
-		&l_DXRPC->m_depthStencilView);
-	if (FAILED(result))
+bool DX11RenderingSystemNS::createDSV(DX11RenderPassComponent* DXRPC)
+{
+	if (DXRPC->m_renderPassDesc.useStencilAttachment)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create the depth stencil view!");
-		return nullptr;
+		DXRPC->m_DSVDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	}
+	else
+	{
+		DXRPC->m_DSVDesc.Format = DXGI_FORMAT_D32_FLOAT;
 	}
 
-	// Setup the viewport for rendering.
-	l_DXRPC->m_viewport.Width = (float)RTDesc.width;
-	l_DXRPC->m_viewport.Height = (float)RTDesc.height;
-	l_DXRPC->m_viewport.MinDepth = 0.0f;
-	l_DXRPC->m_viewport.MaxDepth = 1.0f;
-	l_DXRPC->m_viewport.TopLeftX = 0.0f;
-	l_DXRPC->m_viewport.TopLeftY = 0.0f;
+	DXRPC->m_DSVDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	DXRPC->m_DSVDesc.Texture2D.MipSlice = 0;
 
-	l_DXRPC->m_objectStatus = ObjectStatus::ALIVE;
+	auto l_result = DX11RenderingSystemComponent::get().m_device->CreateDepthStencilView(DXRPC->m_depthStencilDXTDC->m_texture, &DXRPC->m_DSVDesc, &DXRPC->m_DSV);
 
-	return l_DXRPC;
+	if (FAILED(l_result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create the DSV for " + std::string(DXRPC->m_name.c_str()) + "!");
+		return false;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " DSV has been created.");
+
+	return true;
+}
+
+bool DX11RenderingSystemNS::setupPipeline(DX11RenderPassComponent* DXRPC)
+{
+	if (DXRPC->m_renderPassDesc.useDepthAttachment)
+	{
+		DXRPC->m_depthStencilDesc.DepthEnable = true;
+		if (DXRPC->m_renderPassDesc.useStencilAttachment)
+		{
+			DXRPC->m_depthStencilDesc.StencilEnable = true;
+		}
+
+		auto l_result = DX11RenderingSystemComponent::get().m_device->CreateDepthStencilState(&DXRPC->m_depthStencilDesc, &DXRPC->m_depthStencilState);
+		if (FAILED(l_result))
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create the depth stencil state for for " + std::string(DXRPC->m_name.c_str()) + "!");
+			return false;
+		}
+	}
+
+	// Setup the viewport.
+	DXRPC->m_viewport.Width = (float)DXRPC->m_renderPassDesc.RTDesc.width;
+	DXRPC->m_viewport.Height = (float)DXRPC->m_renderPassDesc.RTDesc.height;
+	DXRPC->m_viewport.MinDepth = 0.0f;
+	DXRPC->m_viewport.MaxDepth = 1.0f;
+	DXRPC->m_viewport.TopLeftX = 0.0f;
+	DXRPC->m_viewport.TopLeftY = 0.0f;
+
+	// Create the rasterizer state.
+	auto l_result = DX11RenderingSystemComponent::get().m_device->CreateRasterizerState(&DXRPC->m_rasterizerDesc, &DXRPC->m_rasterizerState);
+	if (FAILED(l_result))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create the rasterizer state for " + std::string(DXRPC->m_name.c_str()) + "!");
+		return false;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingSystem: " + std::string(DXRPC->m_name.c_str()) + " pipeline state has been setup.");
+
+	return true;
 }
 
 bool DX11RenderingSystemNS::initializeDX11MeshDataComponent(DX11MeshDataComponent* rhs)
@@ -1063,48 +1158,37 @@ void DX11RenderingSystemNS::unbindTextureForRead(ShaderType shaderType, unsigned
 
 void DX11RenderingSystemNS::activateRenderPass(DX11RenderPassComponent * DXRPC)
 {
-	DX11RenderingSystemComponent::get().m_deviceContext->OMSetRenderTargets(
-		(unsigned int)DXRPC->m_renderTargetViews.size(),
-		&DXRPC->m_renderTargetViews[0],
-		DXRPC->m_depthStencilView);
+	DX11RenderingSystemComponent::get().m_deviceContext->OMSetRenderTargets((unsigned int)DXRPC->m_RTVs.size(), &DXRPC->m_RTVs[0], DXRPC->m_DSV);
+	DX11RenderingSystemComponent::get().m_deviceContext->RSSetViewports(1, &DXRPC->m_viewport);
+	DX11RenderingSystemComponent::get().m_deviceContext->RSSetState(DXRPC->m_rasterizerState);
 
-	DX11RenderingSystemComponent::get().m_deviceContext->RSSetViewports(
-		1,
-		&DXRPC->m_viewport);
+	if (DXRPC->m_renderPassDesc.useDepthAttachment)
+	{
+		DX11RenderingSystemComponent::get().m_deviceContext->OMSetDepthStencilState(DXRPC->m_depthStencilState, 0x01);
+		cleanDSV(DXRPC->m_DSV);
+	}
 
-	for (auto i : DXRPC->m_renderTargetViews)
+	for (auto i : DXRPC->m_RTVs)
 	{
 		cleanRTV(vec4(0.0f, 0.0f, 0.0f, 0.0f), i);
 	}
-	cleanDSV(DXRPC->m_depthStencilView);
 }
 
-bool DX11RenderingSystemNS::activateDX11ShaderProgramComponent(DX11ShaderProgramComponent * rhs)
+bool DX11RenderingSystemNS::activateShader(DX11ShaderProgramComponent * rhs)
 {
 	if (rhs->m_vertexShader)
 	{
-		DX11RenderingSystemComponent::get().m_deviceContext->VSSetShader(
-			rhs->m_vertexShader,
-			NULL,
-			0);
-
+		DX11RenderingSystemComponent::get().m_deviceContext->VSSetShader(rhs->m_vertexShader, NULL, 0);
 		DX11RenderingSystemComponent::get().m_deviceContext->IASetInputLayout(rhs->m_inputLayout);
 	}
 	if (rhs->m_pixelShader)
 	{
-		DX11RenderingSystemComponent::get().m_deviceContext->PSSetShader(
-			rhs->m_pixelShader,
-			NULL,
-			0);
-
+		DX11RenderingSystemComponent::get().m_deviceContext->PSSetShader(rhs->m_pixelShader, NULL, 0);
 		DX11RenderingSystemComponent::get().m_deviceContext->PSSetSamplers(0, 1, &rhs->m_samplerState);
 	}
 	if (rhs->m_computeShader)
 	{
-		DX11RenderingSystemComponent::get().m_deviceContext->CSSetShader(
-			rhs->m_computeShader,
-			NULL,
-			0);
+		DX11RenderingSystemComponent::get().m_deviceContext->CSSetShader(rhs->m_computeShader, NULL, 0);
 	}
 
 	return true;

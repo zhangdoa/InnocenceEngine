@@ -26,10 +26,11 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 {
 	bool createPhysicalDevices();
 	bool createSwapChain();
-	bool createBackBuffer();
-	bool createRasterizer();
+	bool createSwapChainDXRPC();
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	EntityID m_entityID;
+
 	static DX11RenderingSystemComponent* g_DXRenderingSystemComponent;
 
 	ThreadSafeUnorderedMap<EntityID, DX11MeshDataComponent*> m_meshMap;
@@ -251,217 +252,85 @@ bool DX11RenderingSystemNS::createSwapChain()
 	return true;
 }
 
-bool DX11RenderingSystemNS::createBackBuffer()
+bool DX11RenderingSystemNS::createSwapChainDXRPC()
 {
-	HRESULT result;
+	auto l_imageCount = 1;
+
+	auto l_DXRPC = addDX11RenderPassComponent(m_entityID, "SwapChainDXRPC\\");
+
+	l_DXRPC->m_renderPassDesc = DX11RenderingSystemComponent::get().m_deferredRenderPassDesc;
+	l_DXRPC->m_renderPassDesc.RTNumber = l_imageCount;
+	l_DXRPC->m_renderPassDesc.useMultipleFramebuffers = false;
+	l_DXRPC->m_renderPassDesc.useDepthAttachment = false;
+	l_DXRPC->m_renderPassDesc.useStencilAttachment = false;
+
+	// Setup the raster description.
+	l_DXRPC->m_rasterizerDesc.AntialiasedLineEnable = false;
+	l_DXRPC->m_rasterizerDesc.CullMode = D3D11_CULL_NONE;
+	l_DXRPC->m_rasterizerDesc.DepthBias = 0;
+	l_DXRPC->m_rasterizerDesc.DepthBiasClamp = 0.0f;
+	l_DXRPC->m_rasterizerDesc.DepthClipEnable = true;
+	l_DXRPC->m_rasterizerDesc.FillMode = D3D11_FILL_SOLID;
+	l_DXRPC->m_rasterizerDesc.FrontCounterClockwise = false;
+	l_DXRPC->m_rasterizerDesc.MultisampleEnable = false;
+	l_DXRPC->m_rasterizerDesc.ScissorEnable = false;
+	l_DXRPC->m_rasterizerDesc.SlopeScaledDepthBias = 0.0f;
+
+	// initialize manually
+	bool l_result = true;
+	l_result &= reserveRenderTargets(l_DXRPC);
+
+	HRESULT l_hResult;
 
 	// Get the pointer to the back buffer.
-	result = g_DXRenderingSystemComponent->m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&g_DXRenderingSystemComponent->m_renderTargetTexture);
-	if (FAILED(result))
+	l_hResult = g_DXRenderingSystemComponent->m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&l_DXRPC->m_DXTDCs[0]->m_texture);
+	if (FAILED(l_hResult))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't get back buffer pointer!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
 
-	// Create the render target view with the back buffer pointer.
-	result = g_DXRenderingSystemComponent->m_device->CreateRenderTargetView(g_DXRenderingSystemComponent->m_renderTargetTexture, NULL, &g_DXRenderingSystemComponent->m_renderTargetView);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create render target view!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
+	l_result &= createRTV(l_DXRPC);
 
-	// Release pointer to the back buffer as we no longer need it.
-	g_DXRenderingSystemComponent->m_renderTargetTexture->Release();
-	g_DXRenderingSystemComponent->m_renderTargetTexture = 0;
+	l_result &= setupPipeline(l_DXRPC);
 
-	// Initialize the description of the depth buffer.
-	ZeroMemory(&g_DXRenderingSystemComponent->m_depthTextureDesc, sizeof(g_DXRenderingSystemComponent->m_depthTextureDesc));
+	l_DXRPC->m_objectStatus = ObjectStatus::ALIVE;
 
-	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
-
-	// Set up the description of the depth buffer.
-	g_DXRenderingSystemComponent->m_depthTextureDesc.Width = l_screenResolution.x;
-	g_DXRenderingSystemComponent->m_depthTextureDesc.Height = l_screenResolution.y;
-	g_DXRenderingSystemComponent->m_depthTextureDesc.MipLevels = 1;
-	g_DXRenderingSystemComponent->m_depthTextureDesc.ArraySize = 1;
-	g_DXRenderingSystemComponent->m_depthTextureDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	g_DXRenderingSystemComponent->m_depthTextureDesc.SampleDesc.Count = 1;
-	g_DXRenderingSystemComponent->m_depthTextureDesc.SampleDesc.Quality = 0;
-	g_DXRenderingSystemComponent->m_depthTextureDesc.Usage = D3D11_USAGE_DEFAULT;
-	g_DXRenderingSystemComponent->m_depthTextureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	g_DXRenderingSystemComponent->m_depthTextureDesc.CPUAccessFlags = 0;
-	g_DXRenderingSystemComponent->m_depthTextureDesc.MiscFlags = 0;
-
-	// Create the texture for the depth buffer using the filled out description.
-	result = g_DXRenderingSystemComponent->m_device->CreateTexture2D(&g_DXRenderingSystemComponent->m_depthTextureDesc, NULL, &g_DXRenderingSystemComponent->m_depthStencilTexture);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create the texture for the depth buffer!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	// Initialize the description of the stencil state.
-	ZeroMemory(&g_DXRenderingSystemComponent->m_depthStencilDesc, sizeof(g_DXRenderingSystemComponent->m_depthStencilDesc));
-
-	// Set up the description of the stencil state.
-	g_DXRenderingSystemComponent->m_depthStencilDesc.DepthEnable = true;
-	g_DXRenderingSystemComponent->m_depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	g_DXRenderingSystemComponent->m_depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
-
-	g_DXRenderingSystemComponent->m_depthStencilDesc.StencilEnable = true;
-	g_DXRenderingSystemComponent->m_depthStencilDesc.StencilReadMask = 0xFF;
-	g_DXRenderingSystemComponent->m_depthStencilDesc.StencilWriteMask = 0xFF;
-
-	// Stencil operations if pixel is front-facing.
-	g_DXRenderingSystemComponent->m_depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	g_DXRenderingSystemComponent->m_depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
-	g_DXRenderingSystemComponent->m_depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	g_DXRenderingSystemComponent->m_depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-
-	// Stencil operations if pixel is back-facing.
-	g_DXRenderingSystemComponent->m_depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	g_DXRenderingSystemComponent->m_depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
-	g_DXRenderingSystemComponent->m_depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	g_DXRenderingSystemComponent->m_depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-
-	// Create the depth stencil state.
-	result = g_DXRenderingSystemComponent->m_device->CreateDepthStencilState(
-		&g_DXRenderingSystemComponent->m_depthStencilDesc,
-		&g_DXRenderingSystemComponent->m_defaultDepthStencilState);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create the depth stencil state!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	// Initialize the depth stencil view.
-	ZeroMemory(&g_DXRenderingSystemComponent->m_depthStencilViewDesc, sizeof(
-		g_DXRenderingSystemComponent->m_depthStencilViewDesc));
-
-	// Set up the depth stencil view description.
-	g_DXRenderingSystemComponent->m_depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	g_DXRenderingSystemComponent->m_depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-	g_DXRenderingSystemComponent->m_depthStencilViewDesc.Texture2D.MipSlice = 0;
-
-	// Create the depth stencil view.
-	result = g_DXRenderingSystemComponent->m_device->CreateDepthStencilView(
-		g_DXRenderingSystemComponent->m_depthStencilTexture,
-		&g_DXRenderingSystemComponent->m_depthStencilViewDesc,
-		&g_DXRenderingSystemComponent->m_depthStencilView);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create the depth stencil view!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	// Bind the render target view and depth stencil buffer to the output render pipeline.
-	g_DXRenderingSystemComponent->m_deviceContext->OMSetRenderTargets(
-		1,
-		&g_DXRenderingSystemComponent->m_renderTargetView,
-		g_DXRenderingSystemComponent->m_depthStencilView);
-
-	return true;
-}
-
-bool DX11RenderingSystemNS::createRasterizer()
-{
-	HRESULT result;
-
-	// Setup the raster description which will determine how and what polygons will be drawn.
-	g_DXRenderingSystemComponent->m_rasterDescForward.AntialiasedLineEnable = false;
-	g_DXRenderingSystemComponent->m_rasterDescForward.CullMode = D3D11_CULL_NONE;
-	g_DXRenderingSystemComponent->m_rasterDescForward.DepthBias = 0;
-	g_DXRenderingSystemComponent->m_rasterDescForward.DepthBiasClamp = 0.0f;
-	g_DXRenderingSystemComponent->m_rasterDescForward.DepthClipEnable = true;
-	g_DXRenderingSystemComponent->m_rasterDescForward.FillMode = D3D11_FILL_SOLID;
-	g_DXRenderingSystemComponent->m_rasterDescForward.FrontCounterClockwise = true;
-	g_DXRenderingSystemComponent->m_rasterDescForward.MultisampleEnable = false;
-	g_DXRenderingSystemComponent->m_rasterDescForward.ScissorEnable = false;
-	g_DXRenderingSystemComponent->m_rasterDescForward.SlopeScaledDepthBias = 0.0f;
-
-	// Create the rasterizer state for forward pass
-	result = g_DXRenderingSystemComponent->m_device->CreateRasterizerState(
-		&g_DXRenderingSystemComponent->m_rasterDescForward,
-		&g_DXRenderingSystemComponent->m_rasterStateForward);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create the rasterizer state for forward pass!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	g_DXRenderingSystemComponent->m_rasterDescDeferred.AntialiasedLineEnable = false;
-	g_DXRenderingSystemComponent->m_rasterDescDeferred.CullMode = D3D11_CULL_NONE;
-	g_DXRenderingSystemComponent->m_rasterDescDeferred.DepthBias = 0;
-	g_DXRenderingSystemComponent->m_rasterDescDeferred.DepthBiasClamp = 0.0f;
-	g_DXRenderingSystemComponent->m_rasterDescDeferred.DepthClipEnable = true;
-	g_DXRenderingSystemComponent->m_rasterDescDeferred.FillMode = D3D11_FILL_SOLID;
-	g_DXRenderingSystemComponent->m_rasterDescDeferred.FrontCounterClockwise = false;
-	g_DXRenderingSystemComponent->m_rasterDescDeferred.MultisampleEnable = false;
-	g_DXRenderingSystemComponent->m_rasterDescDeferred.ScissorEnable = false;
-	g_DXRenderingSystemComponent->m_rasterDescDeferred.SlopeScaledDepthBias = 0.0f;
-
-	// Create the rasterizer state for deferred pass
-	result = g_DXRenderingSystemComponent->m_device->CreateRasterizerState(
-		&g_DXRenderingSystemComponent->m_rasterDescDeferred,
-		&g_DXRenderingSystemComponent->m_rasterStateDeferred);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create the rasterizer state for deferred pass!");
-		m_objectStatus = ObjectStatus::STANDBY;
-		return false;
-	}
-
-	// Setup the viewport for rendering.
-	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
-
-	g_DXRenderingSystemComponent->m_viewport.Width = (float)l_screenResolution.x;
-	g_DXRenderingSystemComponent->m_viewport.Height = (float)l_screenResolution.y;
-	g_DXRenderingSystemComponent->m_viewport.MinDepth = 0.0f;
-	g_DXRenderingSystemComponent->m_viewport.MaxDepth = 1.0f;
-	g_DXRenderingSystemComponent->m_viewport.TopLeftX = 0.0f;
-	g_DXRenderingSystemComponent->m_viewport.TopLeftY = 0.0f;
+	DX11RenderingSystemComponent::get().m_swapChainDXRPC = l_DXRPC;
 
 	return true;
 }
 
 bool DX11RenderingSystemNS::setup()
 {
-	g_DXRenderingSystemComponent = &DX11RenderingSystemComponent::get();
+	m_entityID = InnoMath::createEntityID();
 
-	bool result = true;
-	result = result && initializeComponentPool();
-	result = result && createPhysicalDevices();
-	result = result && createSwapChain();
-	result = result && createBackBuffer();
-	result = result && createRasterizer();
+	g_DXRenderingSystemComponent = &DX11RenderingSystemComponent::get();
 
 	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
 
-	// Setup the description of the deferred pass.
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.samplerType = TextureSamplerType::SAMPLER_2D;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.minFilterMethod = TextureFilterMethod::NEAREST;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.magFilterMethod = TextureFilterMethod::NEAREST;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.width = l_screenResolution.x;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.height = l_screenResolution.y;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.pixelDataType = TexturePixelDataType::FLOAT16;
+	// general render pass desc
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTNumber = 1;
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.samplerType = TextureSamplerType::SAMPLER_2D;
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::NEAREST;
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::NEAREST;
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.width = l_screenResolution.x;
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.height = l_screenResolution.y;
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::FLOAT16;
 
-	g_DXRenderingSystemComponent->deferredPassRTVDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	g_DXRenderingSystemComponent->deferredPassRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-	g_DXRenderingSystemComponent->deferredPassRTVDesc.Texture2D.MipSlice = 0;
+	bool l_result = true;
+	l_result = l_result && initializeComponentPool();
+	l_result = l_result && createPhysicalDevices();
+	l_result = l_result && createSwapChain();
 
 	m_objectStatus = ObjectStatus::ALIVE;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingSystem setup finished.");
-	return result;
+
+	return l_result;
 }
 
 bool DX11RenderingSystemNS::initialize()
@@ -474,6 +343,10 @@ bool DX11RenderingSystemNS::initialize()
 
 	generateGPUBuffers();
 
+	bool l_result = true;
+
+	l_result = l_result && createSwapChainDXRPC();
+
 	DX11OpaquePass::initialize();
 	DX11LightCullingPass::initialize();
 	DX11LightPass::initialize();
@@ -484,7 +357,7 @@ bool DX11RenderingSystemNS::initialize()
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingSystem has been initialized.");
 
-	return true;
+	return l_result;
 }
 
 void DX11RenderingSystemNS::loadDefaultAssets()
@@ -716,36 +589,6 @@ bool DX11RenderingSystemNS::terminate()
 		g_DXRenderingSystemComponent->m_swapChain->SetFullscreenState(false, NULL);
 	}
 
-	if (g_DXRenderingSystemComponent->m_rasterStateDeferred)
-	{
-		g_DXRenderingSystemComponent->m_rasterStateDeferred->Release();
-		g_DXRenderingSystemComponent->m_rasterStateDeferred = 0;
-	}
-
-	if (g_DXRenderingSystemComponent->m_depthStencilView)
-	{
-		g_DXRenderingSystemComponent->m_depthStencilView->Release();
-		g_DXRenderingSystemComponent->m_depthStencilView = 0;
-	}
-
-	if (g_DXRenderingSystemComponent->m_defaultDepthStencilState)
-	{
-		g_DXRenderingSystemComponent->m_defaultDepthStencilState->Release();
-		g_DXRenderingSystemComponent->m_defaultDepthStencilState = 0;
-	}
-
-	if (g_DXRenderingSystemComponent->m_depthStencilTexture)
-	{
-		g_DXRenderingSystemComponent->m_depthStencilTexture->Release();
-		g_DXRenderingSystemComponent->m_depthStencilTexture = 0;
-	}
-
-	if (g_DXRenderingSystemComponent->m_renderTargetView)
-	{
-		g_DXRenderingSystemComponent->m_renderTargetView->Release();
-		g_DXRenderingSystemComponent->m_renderTargetView = 0;
-	}
-
 	if (g_DXRenderingSystemComponent->m_deviceContext)
 	{
 		g_DXRenderingSystemComponent->m_deviceContext->Release();
@@ -914,14 +757,8 @@ bool DX11RenderingSystemNS::resize()
 	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Width = l_screenResolution.x;
 	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Height = l_screenResolution.y;
 
-	g_DXRenderingSystemComponent->m_depthTextureDesc.Width = l_screenResolution.x;
-	g_DXRenderingSystemComponent->m_depthTextureDesc.Height = l_screenResolution.y;
-
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.width = l_screenResolution.x;
-	g_DXRenderingSystemComponent->deferredPassTextureDesc.height = l_screenResolution.y;
-
-	g_DXRenderingSystemComponent->m_viewport.Width = (float)l_screenResolution.x;
-	g_DXRenderingSystemComponent->m_viewport.Height = (float)l_screenResolution.y;
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.width = l_screenResolution.x;
+	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTDesc.height = l_screenResolution.y;
 
 	DX11OpaquePass::resize();
 	DX11LightCullingPass::resize();

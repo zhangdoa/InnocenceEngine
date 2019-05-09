@@ -43,14 +43,7 @@ bool ImGuiWrapperWinDX11::newFrame()
 
 bool ImGuiWrapperWinDX11::render()
 {
-	DX11RenderingSystemComponent::get().m_deviceContext->OMSetRenderTargets(
-		1,
-		&DX11RenderingSystemComponent::get().m_renderTargetView,
-		NULL);
-
-	DX11RenderingSystemComponent::get().m_deviceContext->RSSetViewports(
-		1,
-		&DX11RenderingSystemComponent::get().m_viewport);
+	DX11RenderingSystemNS::activateRenderPass(DX11RenderingSystemComponent::get().m_swapChainDXRPC);
 
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 

@@ -29,9 +29,27 @@ bool DX11PreTAAPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_DXRPC = addDX11RenderPassComponent(1, DX11RenderingSystemComponent::get().deferredPassRTVDesc, DX11RenderingSystemComponent::get().deferredPassTextureDesc);
+	m_DXRPC = addDX11RenderPassComponent(m_entityID, "PreTAAPassDXRPC\\");
+
+	m_DXRPC->m_renderPassDesc = DX11RenderingSystemComponent::get().m_deferredRenderPassDesc;
+	m_DXRPC->m_renderPassDesc.RTNumber = 1;
+	m_DXRPC->m_renderPassDesc.useDepthAttachment = false;
+	m_DXRPC->m_renderPassDesc.useStencilAttachment = false;
+
+	// Setup the raster description.
+	m_DXRPC->m_rasterizerDesc.AntialiasedLineEnable = false;
+	m_DXRPC->m_rasterizerDesc.CullMode = D3D11_CULL_NONE;
+	m_DXRPC->m_rasterizerDesc.DepthBias = 0;
+	m_DXRPC->m_rasterizerDesc.DepthBiasClamp = 0.0f;
+	m_DXRPC->m_rasterizerDesc.DepthClipEnable = true;
+	m_DXRPC->m_rasterizerDesc.FillMode = D3D11_FILL_SOLID;
+	m_DXRPC->m_rasterizerDesc.FrontCounterClockwise = false;
+	m_DXRPC->m_rasterizerDesc.MultisampleEnable = false;
+	m_DXRPC->m_rasterizerDesc.ScissorEnable = false;
+	m_DXRPC->m_rasterizerDesc.SlopeScaledDepthBias = 0.0f;
 
 	initializeShaders();
+	initializeDX11RenderPassComponent(m_DXRPC);
 
 	return true;
 }
@@ -61,15 +79,7 @@ bool DX11PreTAAPass::initializeShaders()
 
 bool DX11PreTAAPass::update()
 {
-	// Set the depth stencil state.
-	DX11RenderingSystemComponent::get().m_deviceContext->OMSetDepthStencilState(
-		m_DXRPC->m_depthStencilState, 1);
-
-	// Set Rasterizer State
-	DX11RenderingSystemComponent::get().m_deviceContext->RSSetState(
-		DX11RenderingSystemComponent::get().m_rasterStateDeferred);
-
-	activateDX11ShaderProgramComponent(m_DXSPC);
+	activateShader(m_DXSPC);
 
 	activateRenderPass(m_DXRPC);
 

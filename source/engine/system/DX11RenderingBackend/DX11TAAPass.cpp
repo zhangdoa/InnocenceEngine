@@ -31,9 +31,27 @@ bool DX11TAAPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_DXRPC = addDX11RenderPassComponent(2, DX11RenderingSystemComponent::get().deferredPassRTVDesc, DX11RenderingSystemComponent::get().deferredPassTextureDesc);
+	m_DXRPC = addDX11RenderPassComponent(m_entityID, "TAAPassDXRPC\\");
+
+	m_DXRPC->m_renderPassDesc = DX11RenderingSystemComponent::get().m_deferredRenderPassDesc;
+	m_DXRPC->m_renderPassDesc.RTNumber = 2;
+	m_DXRPC->m_renderPassDesc.useDepthAttachment = false;
+	m_DXRPC->m_renderPassDesc.useStencilAttachment = false;
+
+	// Setup the raster description.
+	m_DXRPC->m_rasterizerDesc.AntialiasedLineEnable = false;
+	m_DXRPC->m_rasterizerDesc.CullMode = D3D11_CULL_NONE;
+	m_DXRPC->m_rasterizerDesc.DepthBias = 0;
+	m_DXRPC->m_rasterizerDesc.DepthBiasClamp = 0.0f;
+	m_DXRPC->m_rasterizerDesc.DepthClipEnable = true;
+	m_DXRPC->m_rasterizerDesc.FillMode = D3D11_FILL_SOLID;
+	m_DXRPC->m_rasterizerDesc.FrontCounterClockwise = false;
+	m_DXRPC->m_rasterizerDesc.MultisampleEnable = false;
+	m_DXRPC->m_rasterizerDesc.ScissorEnable = false;
+	m_DXRPC->m_rasterizerDesc.SlopeScaledDepthBias = 0.0f;
 
 	initializeShaders();
+	initializeDX11RenderPassComponent(m_DXRPC);
 
 	return true;
 }
@@ -69,32 +87,24 @@ bool DX11TAAPass::update()
 	if (m_isTAAPingPass)
 	{
 		l_lastFrameDXTDC = m_DXRPC->m_DXTDCs[1];
-		l_currentFrameDXRTV = m_DXRPC->m_renderTargetViews[0];
+		l_currentFrameDXRTV = m_DXRPC->m_RTVs[0];
 		m_isTAAPingPass = false;
 	}
 	else
 	{
 		l_lastFrameDXTDC = m_DXRPC->m_DXTDCs[0];
-		l_currentFrameDXRTV = m_DXRPC->m_renderTargetViews[1];
+		l_currentFrameDXRTV = m_DXRPC->m_RTVs[1];
 		m_isTAAPingPass = true;
 	}
 
-	// Set the depth stencil state.
-	DX11RenderingSystemComponent::get().m_deviceContext->OMSetDepthStencilState(
-		m_DXRPC->m_depthStencilState, 1);
-
-	// Set Rasterizer State
-	DX11RenderingSystemComponent::get().m_deviceContext->RSSetState(
-		DX11RenderingSystemComponent::get().m_rasterStateDeferred);
-
-	activateDX11ShaderProgramComponent(m_DXSPC);
+	activateShader(m_DXSPC);
 
 	// Set the render buffers to be the render target.
 	// Bind the render target view array and depth stencil buffer to the output render pipeline.
 	DX11RenderingSystemComponent::get().m_deviceContext->OMSetRenderTargets(
 		1,
 		&l_currentFrameDXRTV,
-		m_DXRPC->m_depthStencilView);
+		m_DXRPC->m_DSV);
 
 	// Set the viewport.
 	DX11RenderingSystemComponent::get().m_deviceContext->RSSetViewports(
@@ -102,8 +112,6 @@ bool DX11TAAPass::update()
 		&m_DXRPC->m_viewport);
 
 	cleanRTV(vec4(0.0f, 0.0f, 0.0f, 0.0f), l_currentFrameDXRTV);
-
-	cleanDSV(m_DXRPC->m_depthStencilView);
 
 	// bind to previous pass render target textures
 	bindTextureForRead(ShaderType::FRAGMENT, 0, DX11PreTAAPass::getDX11RPC()->m_DXTDCs[0]);

@@ -114,8 +114,7 @@ bool DX11LightCullingPass::createLightIndexListBuffer()
 bool DX11LightCullingPass::createLightGridDXTDC()
 {
 	m_lightGridDXTDC = addDX11TextureDataComponent();
-	m_lightGridDXTDC->m_textureDataDesc = DX11RenderingSystemComponent::get().deferredPassTextureDesc;
-
+	m_lightGridDXTDC->m_textureDataDesc = DX11RenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc;
 	m_lightGridDXTDC->m_textureDataDesc.width = m_lightCullingNumThreadGroups.x;
 	m_lightGridDXTDC->m_textureDataDesc.height = m_lightCullingNumThreadGroups.y;
 	m_lightGridDXTDC->m_textureDataDesc.usageType = TextureUsageType::RAW_IMAGE;
@@ -131,9 +130,26 @@ bool DX11LightCullingPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_DXRPC = addDX11RenderPassComponent(1, DX11RenderingSystemComponent::get().deferredPassRTVDesc, DX11RenderingSystemComponent::get().deferredPassTextureDesc);
+	m_DXRPC = addDX11RenderPassComponent(m_entityID, "LightCullingPassDXRPC\\");
+
+	m_DXRPC->m_renderPassDesc = DX11RenderingSystemComponent::get().m_deferredRenderPassDesc;
+	m_DXRPC->m_renderPassDesc.RTNumber = 1;
+	m_DXRPC->m_renderPassDesc.useDepthAttachment = false;
+	m_DXRPC->m_renderPassDesc.useStencilAttachment = false;
+
+	m_DXRPC->m_rasterizerDesc.AntialiasedLineEnable = false;
+	m_DXRPC->m_rasterizerDesc.CullMode = D3D11_CULL_NONE;
+	m_DXRPC->m_rasterizerDesc.DepthBias = 0;
+	m_DXRPC->m_rasterizerDesc.DepthBiasClamp = 0.0f;
+	m_DXRPC->m_rasterizerDesc.DepthClipEnable = true;
+	m_DXRPC->m_rasterizerDesc.FillMode = D3D11_FILL_SOLID;
+	m_DXRPC->m_rasterizerDesc.FrontCounterClockwise = false;
+	m_DXRPC->m_rasterizerDesc.MultisampleEnable = false;
+	m_DXRPC->m_rasterizerDesc.ScissorEnable = false;
+	m_DXRPC->m_rasterizerDesc.SlopeScaledDepthBias = 0.0f;
 
 	initializeShaders();
+	initializeDX11RenderPassComponent(m_DXRPC);
 
 	createGridFrustumsBuffer();
 
@@ -141,7 +157,7 @@ bool DX11LightCullingPass::initialize()
 	createLightGridDXTDC();
 
 	m_debugDXTDC = addDX11TextureDataComponent();
-	m_debugDXTDC->m_textureDataDesc = DX11RenderingSystemComponent::get().deferredPassTextureDesc;
+	m_debugDXTDC->m_textureDataDesc = DX11RenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc;
 	m_debugDXTDC->m_textureDataDesc.usageType = TextureUsageType::RAW_IMAGE;
 	m_debugDXTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
 	m_debugDXTDC->m_textureDataDesc.pixelDataType = TexturePixelDataType::FLOAT16;
@@ -168,7 +184,7 @@ bool DX11LightCullingPass::calculateFrustums()
 	RenderingFrontendSystemComponent::get().m_dispatchParamsGPUData.numThreads = m_tileFrustumNumThreads;
 	updateConstantBuffer(DX11RenderingSystemComponent::get().m_dispatchParamsConstantBuffer, &RenderingFrontendSystemComponent::get().m_dispatchParamsGPUData);
 
-	activateDX11ShaderProgramComponent(m_tileFrustumDXSPC);
+	activateShader(m_tileFrustumDXSPC);
 
 	bindConstantBuffer(ShaderType::COMPUTE, 0, DX11RenderingSystemComponent::get().m_dispatchParamsConstantBuffer);
 	bindConstantBuffer(ShaderType::COMPUTE, 1, DX11RenderingSystemComponent::get().m_skyConstantBuffer);
@@ -187,7 +203,7 @@ bool DX11LightCullingPass::cullLights()
 	RenderingFrontendSystemComponent::get().m_dispatchParamsGPUData.numThreads = m_lightCullingNumThreads;
 	updateConstantBuffer(DX11RenderingSystemComponent::get().m_dispatchParamsConstantBuffer, &RenderingFrontendSystemComponent::get().m_dispatchParamsGPUData);
 
-	activateDX11ShaderProgramComponent(m_lightCullingDXSPC);
+	activateShader(m_lightCullingDXSPC);
 
 	bindConstantBuffer(ShaderType::COMPUTE, 0, DX11RenderingSystemComponent::get().m_dispatchParamsConstantBuffer);
 	bindConstantBuffer(ShaderType::COMPUTE, 1, DX11RenderingSystemComponent::get().m_cameraConstantBuffer);

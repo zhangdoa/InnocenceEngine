@@ -30,14 +30,17 @@ bool DX11LightPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_DXRPC = addDX11RenderPassComponent(1, DX11RenderingSystemComponent::get().deferredPassRTVDesc, DX11RenderingSystemComponent::get().deferredPassTextureDesc);
+	m_DXRPC = addDX11RenderPassComponent(m_entityID, "LightPassDXRPC\\");
 
-	// Set up the description of the stencil state.
-	m_DXRPC->m_depthStencilDesc.DepthEnable = true;
+	m_DXRPC->m_renderPassDesc = DX11RenderingSystemComponent::get().m_deferredRenderPassDesc;
+	m_DXRPC->m_renderPassDesc.RTNumber = 1;
+	m_DXRPC->m_renderPassDesc.useDepthAttachment = true;
+	m_DXRPC->m_renderPassDesc.useStencilAttachment = true;
+
+	// Set up the description of the depth stencil state.
 	m_DXRPC->m_depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 	m_DXRPC->m_depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
 
-	m_DXRPC->m_depthStencilDesc.StencilEnable = true;
 	m_DXRPC->m_depthStencilDesc.StencilReadMask = 0xFF;
 	m_DXRPC->m_depthStencilDesc.StencilWriteMask = 0xFF;
 
@@ -53,17 +56,20 @@ bool DX11LightPass::initialize()
 	m_DXRPC->m_depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
 	m_DXRPC->m_depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_EQUAL;
 
-	// Create the depth stencil state.
-	auto result = DX11RenderingSystemComponent::get().m_device->CreateDepthStencilState(
-		&m_DXRPC->m_depthStencilDesc,
-		&m_DXRPC->m_depthStencilState);
-	if (FAILED(result))
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create the depth stencil state for light pass!");
-		return false;
-	}
+	// Setup the raster description.
+	m_DXRPC->m_rasterizerDesc.AntialiasedLineEnable = false;
+	m_DXRPC->m_rasterizerDesc.CullMode = D3D11_CULL_NONE;
+	m_DXRPC->m_rasterizerDesc.DepthBias = 0;
+	m_DXRPC->m_rasterizerDesc.DepthBiasClamp = 0.0f;
+	m_DXRPC->m_rasterizerDesc.DepthClipEnable = true;
+	m_DXRPC->m_rasterizerDesc.FillMode = D3D11_FILL_SOLID;
+	m_DXRPC->m_rasterizerDesc.FrontCounterClockwise = false;
+	m_DXRPC->m_rasterizerDesc.MultisampleEnable = false;
+	m_DXRPC->m_rasterizerDesc.ScissorEnable = false;
+	m_DXRPC->m_rasterizerDesc.SlopeScaledDepthBias = 0.0f;
 
 	initializeShaders();
+	initializeDX11RenderPassComponent(m_DXRPC);
 
 	return true;
 }
@@ -93,34 +99,20 @@ bool DX11LightPass::initializeShaders()
 
 bool DX11LightPass::update()
 {
-	// Set the depth stencil state.
-	DX11RenderingSystemComponent::get().m_deviceContext->OMSetDepthStencilState(
-		m_DXRPC->m_depthStencilState, 0x01);
+	activateShader(m_DXSPC);
 
-	// Set Rasterizer State
-	DX11RenderingSystemComponent::get().m_deviceContext->RSSetState(
-		DX11RenderingSystemComponent::get().m_rasterStateDeferred);
+	DX11RenderingSystemComponent::get().m_deviceContext->OMSetDepthStencilState(m_DXRPC->m_depthStencilState, 0x01);
 
-	activateDX11ShaderProgramComponent(m_DXSPC);
+	DX11RenderingSystemComponent::get().m_deviceContext->RSSetState(m_DXRPC->m_rasterizerState);
 
-	// Set the render buffers to be the render target.
-	// Bind the render target view array and depth stencil buffer to the output render pipeline.
-	DX11RenderingSystemComponent::get().m_deviceContext->OMSetRenderTargets(
-		(unsigned int)m_DXRPC->m_renderTargetViews.size(),
-		&m_DXRPC->m_renderTargetViews[0],
-		DX11OpaquePass::getDX11RPC()->m_depthStencilView);
+	DX11RenderingSystemComponent::get().m_deviceContext->OMSetRenderTargets((unsigned int)m_DXRPC->m_RTVs.size(), &m_DXRPC->m_RTVs[0], DX11OpaquePass::getDX11RPC()->m_DSV);
 
-	// Set the viewport.
-	DX11RenderingSystemComponent::get().m_deviceContext->RSSetViewports(
-		1,
-		&m_DXRPC->m_viewport);
+	DX11RenderingSystemComponent::get().m_deviceContext->RSSetViewports(1, &m_DXRPC->m_viewport);
 
-	// Clear the render buffers.
-	for (auto i : m_DXRPC->m_renderTargetViews)
+	for (auto i : m_DXRPC->m_RTVs)
 	{
 		cleanRTV(vec4(0.0f, 0.0f, 0.0f, 0.0f), i);
 	}
-	cleanDSV(m_DXRPC->m_depthStencilView);
 
 	bindConstantBuffer(ShaderType::FRAGMENT, 0, DX11RenderingSystemComponent::get().m_cameraConstantBuffer);
 	bindConstantBuffer(ShaderType::FRAGMENT, 1, DX11RenderingSystemComponent::get().m_sunConstantBuffer);

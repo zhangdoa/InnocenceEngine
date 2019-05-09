@@ -27,6 +27,9 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 	MaterialDataComponent* addMaterialDataComponent();
 	DX11TextureDataComponent* addDX11TextureDataComponent();
 
+	bool initializeDX11MeshDataComponent(DX11MeshDataComponent* rhs);
+	bool initializeDX11TextureDataComponent(DX11TextureDataComponent* rhs);
+
 	DX11MeshDataComponent* getDX11MeshDataComponent(EntityID meshID);
 	DX11TextureDataComponent* getDX11TextureDataComponent(EntityID textureID);
 
@@ -35,28 +38,28 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 	DX11TextureDataComponent* getDX11TextureDataComponent(FileExplorerIconType iconType);
 	DX11TextureDataComponent* getDX11TextureDataComponent(WorldEditorIconType iconType);
 
-	DX11RenderPassComponent* addDX11RenderPassComponent(unsigned int RTNum, D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc, TextureDataDesc RTDesc);
+	DX11RenderPassComponent* addDX11RenderPassComponent(const EntityID& parentEntity, const char* name);
+	bool initializeDX11RenderPassComponent(DX11RenderPassComponent* DXRPC);
 
-	bool initializeDX11MeshDataComponent(DX11MeshDataComponent* rhs);
-	bool initializeDX11TextureDataComponent(DX11TextureDataComponent* rhs);
-
-	void drawMesh(DX11MeshDataComponent * DXMDC);
-	void bindTextureForWrite(ShaderType shaderType, unsigned int startSlot, DX11TextureDataComponent* DXTDC);
-	void bindTextureForRead(ShaderType shaderType, unsigned int startSlot, DX11TextureDataComponent* DXTDC);
-	void unbindTextureForWrite(ShaderType shaderType, unsigned int startSlot);
-	void unbindTextureForRead(ShaderType shaderType, unsigned int startSlot);
+	bool reserveRenderTargets(DX11RenderPassComponent* DXRPC);
+	bool createRenderTargets(DX11RenderPassComponent* DXRPC);
+	bool createRTV(DX11RenderPassComponent* DXRPC);
+	bool createDSV(DX11RenderPassComponent* DXRPC);
+	bool setupPipeline(DX11RenderPassComponent* DXRPC);
 
 	DX11ShaderProgramComponent* addDX11ShaderProgramComponent(EntityID rhs);
+	bool initializeDX11ShaderProgramComponent(DX11ShaderProgramComponent* rhs, const ShaderFilePaths& shaderFilePaths);
 
 	bool createConstantBuffer(DX11ConstantBuffer& arg);
 	bool createStructuredBuffer(void* initialData, DX11StructuredBuffer& arg);
 
 	bool destroyStructuredBuffer(DX11StructuredBuffer& arg);
 
-	bool initializeDX11ShaderProgramComponent(DX11ShaderProgramComponent* rhs, const ShaderFilePaths& shaderFilePaths);
-
 	void activateRenderPass(DX11RenderPassComponent * DXRPC);
-	bool activateDX11ShaderProgramComponent(DX11ShaderProgramComponent* rhs);
+	bool activateShader(DX11ShaderProgramComponent* rhs);
+
+	void cleanRTV(vec4 color, ID3D11RenderTargetView* RTV);
+	void cleanDSV(ID3D11DepthStencilView* DSV);
 
 	void updateConstantBuffer(const DX11ConstantBuffer& ConstantBuffer, void* ConstantBufferValue);
 	void bindConstantBuffer(ShaderType shaderType, unsigned int startSlot, const DX11ConstantBuffer& ConstantBuffer);
@@ -65,7 +68,9 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 	void bindStructuredBufferForRead(ShaderType shaderType, unsigned int startSlot, const DX11StructuredBuffer& StructuredBuffer);
 	void unbindStructuredBufferForWrite(ShaderType shaderType, unsigned int startSlot);
 	void unbindStructuredBufferForRead(ShaderType shaderType, unsigned int startSlot);
-
-	void cleanRTV(vec4 color, ID3D11RenderTargetView* RTV);
-	void cleanDSV(ID3D11DepthStencilView* DSV);
+	void bindTextureForWrite(ShaderType shaderType, unsigned int startSlot, DX11TextureDataComponent* DXTDC);
+	void bindTextureForRead(ShaderType shaderType, unsigned int startSlot, DX11TextureDataComponent* DXTDC);
+	void unbindTextureForWrite(ShaderType shaderType, unsigned int startSlot);
+	void unbindTextureForRead(ShaderType shaderType, unsigned int startSlot);
+	void drawMesh(DX11MeshDataComponent * DXMDC);
 }

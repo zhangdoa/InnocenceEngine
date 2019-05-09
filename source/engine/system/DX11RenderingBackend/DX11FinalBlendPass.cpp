@@ -57,31 +57,9 @@ bool DX11FinalBlendPass::initialize()
 
 bool DX11FinalBlendPass::update()
 {
-	// Set the depth stencil state.
-	DX11RenderingSystemComponent::get().m_deviceContext->OMSetDepthStencilState(
-		DX11RenderingSystemComponent::get().m_defaultDepthStencilState, 1);
+	activateShader(m_DXSPC);
 
-	// Set Rasterizer State
-	DX11RenderingSystemComponent::get().m_deviceContext->RSSetState(
-		DX11RenderingSystemComponent::get().m_rasterStateDeferred);
-
-	activateDX11ShaderProgramComponent(m_DXSPC);
-
-	// Set the render buffers to be the render target.
-	// Bind the render target view array and depth stencil buffer to the output render pipeline.
-	DX11RenderingSystemComponent::get().m_deviceContext->OMSetRenderTargets(
-		1,
-		&DX11RenderingSystemComponent::get().m_renderTargetView,
-		DX11RenderingSystemComponent::get().m_depthStencilView);
-
-	// Set the viewport.
-	DX11RenderingSystemComponent::get().m_deviceContext->RSSetViewports(
-		1,
-		&DX11RenderingSystemComponent::get().m_viewport);
-
-	// Clear the render buffers.
-	cleanRTV(vec4(0.0f, 0.0f, 0.0f, 0.0f), DX11RenderingSystemComponent::get().m_renderTargetView);
-	cleanDSV(DX11RenderingSystemComponent::get().m_depthStencilView);
+	activateRenderPass(DX11RenderingSystemComponent::get().m_swapChainDXRPC);
 
 	// bind to previous pass render target textures
 	auto l_canvasDXTDC = DX11TAAPass::getResult();

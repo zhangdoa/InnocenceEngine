@@ -1,5 +1,6 @@
 #pragma once
 #include "../common/InnoType.h"
+#include "../component/DX11RenderPassComponent.h"
 #include "../component/DX11MeshDataComponent.h"
 #include "../component/DX11TextureDataComponent.h"
 
@@ -34,27 +35,9 @@ public:
 	DXGI_SWAP_CHAIN_DESC m_swapChainDesc;
 	IDXGISwapChain* m_swapChain;
 
-	ID3D11Texture2D* m_renderTargetTexture;
-	ID3D11RenderTargetView* m_renderTargetView;
+	DX11RenderPassComponent* m_swapChainDXRPC;
 
-	D3D11_TEXTURE2D_DESC m_depthTextureDesc;
-	D3D11_DEPTH_STENCIL_DESC m_depthStencilDesc;
-	ID3D11Texture2D* m_depthStencilTexture;
-	ID3D11DepthStencilState* m_defaultDepthStencilState;
-
-	D3D11_DEPTH_STENCIL_VIEW_DESC m_depthStencilViewDesc;
-	ID3D11DepthStencilView* m_depthStencilView;
-
-	D3D11_RASTERIZER_DESC m_rasterDescForward;
-	ID3D11RasterizerState* m_rasterStateForward;
-
-	D3D11_RASTERIZER_DESC m_rasterDescDeferred;
-	ID3D11RasterizerState* m_rasterStateDeferred;
-
-	D3D11_VIEWPORT m_viewport;
-
-	TextureDataDesc deferredPassTextureDesc = TextureDataDesc();
-	D3D11_RENDER_TARGET_VIEW_DESC deferredPassRTVDesc = D3D11_RENDER_TARGET_VIEW_DESC();
+	RenderPassDesc m_deferredRenderPassDesc = RenderPassDesc();
 
 	DX11ConstantBuffer m_cameraConstantBuffer;
 	DX11ConstantBuffer m_materialConstantBuffer;
