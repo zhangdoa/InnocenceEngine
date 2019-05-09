@@ -371,26 +371,9 @@ bool DX12RenderingSystemNS::createSwapChainDXRPC()
 	l_DXRPC->m_renderPassDesc.useDepthAttachment = true;
 	l_DXRPC->m_renderPassDesc.useStencilAttachment = true;
 
-	// Setup the RTV description.
-	l_DXRPC->m_RTVHeapDesc.NumDescriptors = l_imageCount;
-	l_DXRPC->m_RTVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	l_DXRPC->m_RTVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-
-	l_DXRPC->m_RTVDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-	l_DXRPC->m_RTVDesc.Texture2D.MipSlice = 0;
-
-	// Setup the DSV description.
-	l_DXRPC->m_DSVHeapDesc.NumDescriptors = 1;
-	l_DXRPC->m_DSVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-	l_DXRPC->m_DSVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-
-	l_DXRPC->m_DSVDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	l_DXRPC->m_DSVDesc.Texture2D.MipSlice = 0;
-
 	// initialize manually
 	bool l_result = true;
 	l_result &= reserveRenderTargets(l_DXRPC);
-	l_result &= createRTVDescriptorHeap(l_DXRPC);
 
 	// use device created swap chain textures
 	for (size_t i = 0; i < l_imageCount; i++)
@@ -405,14 +388,15 @@ bool DX12RenderingSystemNS::createSwapChainDXRPC()
 		l_DXRPC->m_DXTDCs[i]->m_DX12TextureDataDesc = l_DXRPC->m_DXTDCs[i]->m_texture->GetDesc();
 	}
 
-	l_result &= createRTV(l_DXRPC);
-
 	l_DXRPC->m_depthStencilDXTDC = addDX12TextureDataComponent();
 	l_DXRPC->m_depthStencilDXTDC->m_textureDataDesc = DX12RenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc;
 	l_DXRPC->m_depthStencilDXTDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_STENCIL_ATTACHMENT;
 	l_DXRPC->m_depthStencilDXTDC->m_textureData = { nullptr };
 
 	initializeDX12TextureDataComponent(l_DXRPC->m_depthStencilDXTDC);
+
+	l_result &= createRTVDescriptorHeap(l_DXRPC);
+	l_result &= createRTV(l_DXRPC);
 
 	l_result &= createDSVDescriptorHeap(l_DXRPC);
 	l_result &= createDSV(l_DXRPC);
@@ -520,6 +504,7 @@ bool DX12RenderingSystemNS::setup()
 
 	m_objectStatus = ObjectStatus::ALIVE;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem setup finished.");
+
 	return l_result;
 }
 

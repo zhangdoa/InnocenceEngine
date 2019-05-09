@@ -304,25 +304,6 @@ bool DX12RenderingSystemNS::initializeDX12RenderPassComponent(DX12RenderPassComp
 {
 	bool l_result = true;
 
-	// Setup the RTV description.
-	DXRPC->m_RTVHeapDesc.NumDescriptors = DXRPC->m_renderPassDesc.RTNumber;
-	DXRPC->m_RTVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	DXRPC->m_RTVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-
-	DXRPC->m_RTVDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-	DXRPC->m_RTVDesc.Texture2D.MipSlice = 0;
-
-	if (DXRPC->m_renderPassDesc.useDepthAttachment)
-	{
-		// Setup the DSV description.
-		DXRPC->m_DSVHeapDesc.NumDescriptors = 1;
-		DXRPC->m_DSVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-		DXRPC->m_DSVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-
-		DXRPC->m_DSVDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-		DXRPC->m_DSVDesc.Texture2D.MipSlice = 0;
-	}
-
 	l_result &= reserveRenderTargets(DXRPC);
 
 	l_result &= createRenderTargets(DXRPC);
@@ -345,7 +326,7 @@ bool DX12RenderingSystemNS::initializeDX12RenderPassComponent(DX12RenderPassComp
 
 	DXRPC->m_objectStatus = ObjectStatus::ALIVE;
 
-	return DXRPC;
+	return l_result;
 }
 
 bool DX12RenderingSystemNS::reserveRenderTargets(DX12RenderPassComponent* DXRPC)
@@ -395,7 +376,7 @@ bool DX12RenderingSystemNS::createRenderTargets(DX12RenderPassComponent* DXRPC)
 	if (DXRPC->m_renderPassDesc.useDepthAttachment)
 	{
 		DXRPC->m_depthStencilDXTDC = addDX12TextureDataComponent();
-		DXRPC->m_depthStencilDXTDC->m_textureDataDesc = DX12RenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc;
+		DXRPC->m_depthStencilDXTDC->m_textureDataDesc = DXRPC->m_renderPassDesc.RTDesc;
 
 		if (DXRPC->m_renderPassDesc.useStencilAttachment)
 		{
@@ -418,6 +399,10 @@ bool DX12RenderingSystemNS::createRenderTargets(DX12RenderPassComponent* DXRPC)
 
 bool DX12RenderingSystemNS::createRTVDescriptorHeap(DX12RenderPassComponent* DXRPC)
 {
+	DXRPC->m_RTVHeapDesc.NumDescriptors = DXRPC->m_renderPassDesc.RTNumber;
+	DXRPC->m_RTVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	DXRPC->m_RTVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
 	if (DXRPC->m_RTVHeapDesc.NumDescriptors)
 	{
 		auto l_result = DX12RenderingSystemComponent::get().m_device->CreateDescriptorHeap(&DXRPC->m_RTVHeapDesc, IID_PPV_ARGS(&DXRPC->m_RTVHeap));
@@ -440,6 +425,7 @@ bool DX12RenderingSystemNS::createRTV(DX12RenderPassComponent* DXRPC)
 
 	DXRPC->m_RTVDesc.Format = DXRPC->m_DXTDCs[0]->m_DX12TextureDataDesc.Format;
 	DXRPC->m_RTVDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+	DXRPC->m_RTVDesc.Texture2D.MipSlice = 0;
 
 	for (size_t i = 1; i < DXRPC->m_renderPassDesc.RTNumber; i++)
 	{
@@ -458,6 +444,10 @@ bool DX12RenderingSystemNS::createRTV(DX12RenderPassComponent* DXRPC)
 
 bool DX12RenderingSystemNS::createDSVDescriptorHeap(DX12RenderPassComponent* DXRPC)
 {
+	DXRPC->m_DSVHeapDesc.NumDescriptors = 1;
+	DXRPC->m_DSVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	DXRPC->m_DSVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
 	auto l_result = DX12RenderingSystemComponent::get().m_device->CreateDescriptorHeap(&DXRPC->m_DSVHeapDesc, IID_PPV_ARGS(&DXRPC->m_DSVHeap));
 
 	if (FAILED(l_result))
@@ -477,7 +467,15 @@ bool DX12RenderingSystemNS::createDSV(DX12RenderPassComponent* DXRPC)
 {
 	auto l_DSVDescSize = DX12RenderingSystemComponent::get().m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
-	DXRPC->m_DSVDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	if (DXRPC->m_renderPassDesc.useStencilAttachment)
+	{
+		DXRPC->m_DSVDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	}
+	else
+	{
+		DXRPC->m_DSVDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	}
+
 	DXRPC->m_DSVDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 	DXRPC->m_DSVDesc.Texture2D.MipSlice = 0;
 
