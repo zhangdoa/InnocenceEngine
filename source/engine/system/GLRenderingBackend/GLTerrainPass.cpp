@@ -21,7 +21,7 @@ INNO_PRIVATE_SCOPE GLTerrainPass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//terrainPass.vert/", "", "", "", "GL//terrainPass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//terrainPass.vert/", "GL//terrainPass.tcs/", "GL//terrainPass.tes/", "", "GL//terrainPass.frag/" };
 
 	static float perlinNoiseFade(float t)
 	{
@@ -219,28 +219,14 @@ bool GLTerrainPass::update()
 
 		activateShaderProgram(m_GLSPC);
 
-		mat4 m = InnoMath::generateIdentityMatrix<float>();
-
-		updateUniform(
-			0,
-			RenderingFrontendSystemComponent::get().m_cameraGPUData.p_original);
-		updateUniform(
-			1,
-			RenderingFrontendSystemComponent::get().m_cameraGPUData.r);
-		updateUniform(
-			2,
-			RenderingFrontendSystemComponent::get().m_cameraGPUData.t);
-		updateUniform(
-			3,
-			m);
-
-		auto l_MDC = getGLMeshDataComponent(MeshShapeType::TERRAIN);
+		auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);
 
 		activateTexture(m_terrainNoiseGLTDC, 0);
-		activateTexture(getGLTextureDataComponent(TextureUsageType::ALBEDO), 1);
 
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		drawMesh(l_MDC);
+		glBindVertexArray(l_MDC->m_VAO);
+		glPatchParameteri(GL_PATCH_VERTICES, 4);
+		glDrawArrays(GL_PATCHES, 0, 4);
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 		glDisable(GL_DEPTH_TEST);

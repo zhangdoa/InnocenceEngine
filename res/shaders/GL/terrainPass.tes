@@ -1,0 +1,45 @@
+// shadertype=glsl
+#version 450
+#extension GL_ARB_tessellation_shader : enable
+
+layout(quads, equal_spacing, ccw) in;
+
+layout(std140, row_major, binding = 0) uniform cameraUBO
+{
+	mat4 uni_p_camera_original;
+	mat4 uni_p_camera_jittered;
+	mat4 uni_r_camera;
+	mat4 uni_t_camera;
+	mat4 uni_r_camera_prev;
+	mat4 uni_t_camera_prev;
+	vec4 uni_globalPos;
+	float WHRatio;
+};
+
+layout(location = 0, binding = 0) uniform sampler2D uni_heightTexture;
+
+void main()
+{
+	vec2 renderTargetSize = vec2(textureSize(uni_heightTexture, 0));
+	int textureSize = int(renderTargetSize.x);
+	vec3 height = texture(uni_heightTexture, gl_TessCoord.xy).rgb;
+	height = height * 2.0f - 1.0f;
+
+	vec4 p = vec4(0.0);
+
+	for(int i = 0; i < 4; i++)
+	{
+		for(int j = 0; j < 4; j++)
+		{
+			p +=  gl_in[4 * j + i].gl_Position;
+		}
+	}
+
+	vec4 localSpacePos = vec4(p.xyz, 1.0);
+
+	//localSpacePos.y = height.y * textureSize / 8.0f;
+
+	vec4 thefrag_CameraSpacePos = uni_r_camera * uni_t_camera * localSpacePos;
+
+	gl_Position = uni_p_camera_jittered * thefrag_CameraSpacePos;
+}

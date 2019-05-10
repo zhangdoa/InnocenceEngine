@@ -410,6 +410,14 @@ bool GLRenderingSystemNS::initializeGLShaderProgramComponent(GLShaderProgramComp
 	{
 		addShader(rhs->m_program, rhs->m_VSID, GL_VERTEX_SHADER, ShaderFilePaths.m_VSPath);
 	}
+	if (ShaderFilePaths.m_TCSPath != "")
+	{
+		addShader(rhs->m_program, rhs->m_TCSID, GL_TESS_CONTROL_SHADER, ShaderFilePaths.m_TCSPath);
+	}
+	if (ShaderFilePaths.m_TESPath != "")
+	{
+		addShader(rhs->m_program, rhs->m_TESID, GL_TESS_EVALUATION_SHADER, ShaderFilePaths.m_TESPath);
+	}
 	if (ShaderFilePaths.m_GSPath != "")
 	{
 		addShader(rhs->m_program, rhs->m_GSID, GL_GEOMETRY_SHADER, ShaderFilePaths.m_GSPath);
