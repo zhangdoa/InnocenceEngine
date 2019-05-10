@@ -19,7 +19,7 @@ void main()
 	vec2 MotionVector = texture(uni_motionVectorTexture, screenTexCoords).xy;
 	MotionVector.y = -MotionVector.y;
 
-	vec4 preTAAPassRT0Result = texture(uni_preTAAPassRT0, TexCoords);
+	vec4 preTAAPassRT0Result = texture(uni_preTAAPassRT0, screenTexCoords);
 
 	vec3 currentColor = preTAAPassRT0Result.rgb;
 
