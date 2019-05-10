@@ -5,7 +5,7 @@
 INNO_PRIVATE_SCOPE GLMotionBlurPass
 {
 	bool initialize();
-	bool update();
+	bool update(GLRenderPassComponent* prePassGLRPC);
 	bool resize(unsigned int newSizeX,  unsigned int newSizeY);
 	bool reloadShader();
 

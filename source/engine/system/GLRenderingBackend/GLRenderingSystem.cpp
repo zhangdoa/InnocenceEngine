@@ -452,9 +452,13 @@ bool GLRenderingSystemNS::render()
 
 	if (l_renderingConfig.useMotionBlur)
 	{
-		GLMotionBlurPass::update();
+		GLMotionBlurPass::update(l_canvasGLRPC);
 
 		l_canvasGLRPC = GLMotionBlurPass::getGLRPC();
+	}
+	else
+	{
+		cleanRenderBuffers(GLMotionBlurPass::getGLRPC());
 	}
 
 	GLBillboardPass::update();
