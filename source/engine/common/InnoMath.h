@@ -1380,8 +1380,11 @@ namespace InnoMath
 		return l_result;
 	}
 
+#if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
 	/*
-	Column-Major memory layout and
+	Assume symmetric view frustum
+
+	Column-Major matrix memory layout and
 	Row-Major vector4 mathematical convention
 
 	vector4(a matrix1x4) :
@@ -1389,18 +1392,29 @@ namespace InnoMath
 
 	matrix4x4
 	[columnIndex][rowIndex]
-	| m00 <-> a00(1.0 / (tan(FOV / 2.0) * HWRatio)) m10 <->  a01(         0.0         ) m20 <->  a02(                   0.0                  ) m30 <->  a03(                   0.0                  ) |
-	| m01 <-> a10(               0.0              ) m11 <->  a11(1.0 / (tan(FOV / 2.0)) m21 <->  a12(                   0.0                  ) m31 <->  a13(                   0.0                  ) |
-	| m02 <-> a20(               0.0              ) m12 <->  a21(         0.0         ) m22 <->  a22(   -(zFar + zNear) / ((zFar - zNear))   ) m32 <->  a23(-(2.0 * zFar * zNear) / ((zFar - zNear))) |
-	| m03 <-> a30(               0.0              ) m13 <->  a31(         0.0         ) m23 <->  a32(                  -1.0                  ) m33 <->  a33(                   1.0                  ) |
+	| m00 <-> a00(1.0/tan(FOVX/2.0)) m10 <->  a01(             0.0             ) m20 <->  a02(                0.0               ) m30 <->  a03(                   0.0                  ) |
+	| m01 <-> a10(       0.0       ) m11 <->  a11(1.0/(tan(FOVX/2.0) / WHRatio)) m21 <->  a12(                0.0               ) m31 <->  a13(                   0.0                  ) |
+	| m02 <-> a20(       0.0       ) m12 <->  a21(             0.0             ) m22 <->  a22(-(zFar + zNear) / ((zFar - zNear))) m32 <->  a23(-(2.0 * zFar * zNear) / ((zFar - zNear))) |
+	| m03 <-> a30(       0.0       ) m13 <->  a31(              0.0            ) m23 <->  a32(               -1.0               ) m33 <->  a33(                   1.0                  ) |
+	*/
+	template<class T>
+	auto TMat4::generatePerspectiveMatrix(T FOV, T WHRatio, T zNear, T zFar) ->TMat4<T>
+	{
+		TMat4<T> l_m;
 
-	in
+		l_m.m00 = one<T> / tan(FOVX / two<T>);
+		l_m.m11 = one<T> / (tan(FOVX / two<T>) / WHRatio);
+		l_m.m22 = (-(zFar + zNear) / ((zFar - zNear)));
+		l_m.m23 = -one<T>;
+		l_m.m32 = (-(two<T> * zFar * zNear) / ((zFar - zNear)));
 
-	vector4 * matrix4x4 :
+		return l_m;
+	}
+#elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
+	/*
+	Assume symmetric view frustum
 
-	--------------------------------------------
-
-	Row-Major memory layout and
+	Row-Major matrix memory layout and
 	Column-Major vector4 mathematical convention
 
 	vector4(a matrix4x1) :
@@ -1409,40 +1423,19 @@ namespace InnoMath
 	| z |
 	| w |
 
-	matrix4x4
 	[rowIndex][columnIndex]
-	| m00 <-> a00(1.0 / (tan(FOV / 2.0) * HWRatio)) m10 <->  a01(         0.0         ) m20 <->  a02(                   0.0                  ) m30 <->  a03( 0.0) |
-	| m01 <-> a01(               0.0              ) m11 <->  a11(1.0 / (tan(FOV / 2.0)) m21 <->  a21(                   0.0                  ) m31 <->  a31( 0.0) |
-	| m02 <-> a02(               0.0              ) m12 <->  a12(         0.0         ) m22 <->  a22(   -(zFar + zNear) / ((zFar - zNear))   ) m32 <->  a32(-1.0) |
-	| m03 <-> a03(               0.0              ) m13 <->  a13(         0.0         ) m23 <->  a23(-(2.0 * zFar * zNear) / ((zFar - zNear))) m33 <->  a33( 1.0) |
-
-	in
-
-	matrix4x4 * vector4 :
+	| m00 <-> a00(1.0/tan(FOVX/2.0)) m10 <-> a01(              0.0            ) m20 <-> a02(                   0.0                  ) m30 <-> a03( 0.0) |
+	| m01 <-> a01(       0.0       ) m11 <-> a11(1.0/(tan(FOVX/2.0) / WHRatio)) m21 <-> a21(                   0.0                  ) m31 <-> a31( 0.0) |
+	| m02 <-> a02(       0.0       ) m12 <-> a12(              0.0            ) m22 <-> a22(   -(zFar + zNear) / ((zFar - zNear))   ) m32 <-> a32(-1.0) |
+	| m03 <-> a03(       0.0       ) m13 <-> a13(              0.0            ) m23 <-> a23(-(2.0 * zFar * zNear) / ((zFar - zNear))) m33 <-> a33( 1.0) |
 	*/
-
-#if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
 	template<class T>
-	auto TMat4::generatePerspectiveMatrix(T FOV, T WHRatio, T zNear, T zFar) ->TMat4<T>
+	auto generatePerspectiveMatrix(T FOVX, T WHRatio, T zNear, T zFar) ->TMat4<T>
 	{
 		TMat4<T> l_m;
 
-		l_m.m00 = (one<T> / (tan(FOV / two<T>) * WHRatio));
-		l_m.m11 = (one<T> / tan(FOV / two<T>));
-		l_m.m22 = (-(zFar + zNear) / ((zFar - zNear)));
-		l_m.m23 = -one<T>;
-		l_m.m32 = (-(two<T> * zFar * zNear) / ((zFar - zNear)));
-
-		return l_m;
-	}
-#elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
-	template<class T>
-	auto generatePerspectiveMatrix(T FOV, T WHRatio, T zNear, T zFar) ->TMat4<T>
-	{
-		TMat4<T> l_m;
-
-		l_m.m00 = (one<T> / (tan(FOV / two<T>) * WHRatio));
-		l_m.m11 = (one<T> / tan(FOV / two<T>));
+		l_m.m00 = one<T> / tan(FOVX / two<T>);
+		l_m.m11 = one<T> / (tan(FOVX / two<T>) / WHRatio);
 		l_m.m22 = (-(zFar + zNear) / ((zFar - zNear)));
 		l_m.m23 = (-(two<T> * zFar * zNear) / ((zFar - zNear)));
 		l_m.m32 = -one<T>;

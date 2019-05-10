@@ -68,7 +68,7 @@
         },
         {
           "ComponentType": 5,
-          "FOVX": 60.0,
+          "FOVX": 90.0,
           "widthScale": 16.0,
           "heightScale": 9.0,
           "zNear": 0.1,
