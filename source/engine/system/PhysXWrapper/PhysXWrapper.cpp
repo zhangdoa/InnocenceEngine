@@ -21,7 +21,7 @@ INNO_PRIVATE_SCOPE PhysXWrapperNS
 	bool terminate();
 
 	bool createPxSphere(void* component, vec4 globalPos, float radius);
-	bool createPxBox(void* component, vec4 globalPos, vec4 size);
+	bool createPxBox(void* component, vec4 globalPos, vec4 rot, vec4 size);
 
 	std::vector<PxRigidActor*> PxRigidActors;
 
@@ -136,12 +136,15 @@ bool PhysXWrapperNS::update()
 				{
 					PxTransform t = i->getGlobalPose();
 					PxVec3 p = t.p;
+					PxQuat q = t.q;
+
 					auto l_rigidBody = reinterpret_cast<PxRigidDynamic*>(i);
 
 					if (l_rigidBody->userData)
 					{
 						auto l_transformComponent = reinterpret_cast<TransformComponent*>(l_rigidBody->userData);
 						l_transformComponent->m_localTransformVector.m_pos = vec4(p.x, p.y, p.z, 1.0f);
+						l_transformComponent->m_localTransformVector.m_rot = vec4(q.x, q.y, q.z, q.w);
 					}
 				}
 				m_allowUpdate = true;
@@ -186,12 +189,12 @@ bool PhysXWrapperNS::createPxSphere(void* component, vec4 globalPos, float radiu
 	return true;
 }
 
-bool PhysXWrapperNS::createPxBox(void* component, vec4 globalPos, vec4 size)
+bool PhysXWrapperNS::createPxBox(void* component, vec4 globalPos, vec4 rot, vec4 size)
 {
 	std::lock_guard<std::mutex> lock{ PhysXWrapperNS::m_mutex };
 
 	PxShape* shape = gPhysics->createShape(PxBoxGeometry(size.x, size.y, size.z), *gMaterial);
-	PxTransform globalTm(PxVec3(globalPos.x, globalPos.y, globalPos.z));
+	PxTransform globalTm(PxVec3(globalPos.x, globalPos.y, globalPos.z), PxQuat(rot.x, rot.y, rot.z, rot.w));
 	PxRigidDynamic* body = gPhysics->createRigidDynamic(globalTm);
 	body->userData = component;
 	body->attachShape(*shape);
@@ -229,7 +232,7 @@ bool PhysXWrapper::createPxSphere(void* component, vec4 globalPos, float radius)
 	return PhysXWrapperNS::createPxSphere(component, globalPos, radius);
 }
 
-bool PhysXWrapper::createPxBox(void* component, vec4 globalPos, vec4 size)
+bool PhysXWrapper::createPxBox(void* component, vec4 globalPos, vec4 rot, vec4 size)
 {
-	return PhysXWrapperNS::createPxBox(component, globalPos, size);
+	return PhysXWrapperNS::createPxBox(component, globalPos, rot, size);
 }

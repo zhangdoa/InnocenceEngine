@@ -259,7 +259,7 @@ bool GameInstanceNS::setupOpaqueSpheres()
 	{
 		m_opaqueSphereTransformComponents.emplace_back();
 		m_opaqueSphereVisibleComponents.emplace_back();
-		auto l_entityName = EntityName(("PhysicsTestOpaqueSphere_" + std::to_string(i)).c_str());
+		auto l_entityName = EntityName(("PhysicsTestOpaqueObject_" + std::to_string(i)).c_str());
 		g_pCoreSystem->getGameSystem()->removeEntity(l_entityName);
 		m_opaqueSphereEntitys.emplace_back(g_pCoreSystem->getGameSystem()->createEntity(l_entityName));
 	}
@@ -271,7 +271,7 @@ bool GameInstanceNS::setupOpaqueSpheres()
 		m_opaqueSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_opaqueSphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_opaqueSphereEntitys[i]);
 		m_opaqueSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
-		m_opaqueSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::SPHERE;
+		m_opaqueSphereVisibleComponents[i]->m_meshShapeType = (i & 0x00000001) ? MeshShapeType::SPHERE : MeshShapeType::CUBE;
 		m_opaqueSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::DYNAMIC;
 		m_opaqueSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 		m_opaqueSphereVisibleComponents[i]->m_simulatePhysics = true;
@@ -279,17 +279,24 @@ bool GameInstanceNS::setupOpaqueSpheres()
 
 	std::default_random_engine l_generator;
 	std::uniform_real_distribution<float> l_randomPosDelta(0.0f, 1.0f);
+	std::uniform_real_distribution<float> l_randomRotDelta(0.0f, 180.0f);
 
 	for (unsigned int i = 0; i < l_matrixDim; i++)
 	{
 		for (unsigned int j = 0; j < l_matrixDim; j++)
 		{
-			m_opaqueSphereTransformComponents[i * l_matrixDim + j]->m_localTransformVector.m_pos =
+			auto l_currentComponent = m_opaqueSphereTransformComponents[i * l_matrixDim + j];
+			l_currentComponent->m_localTransformVector.m_pos =
 				vec4(
 				(-(l_matrixDim - 1.0f) * l_breadthInterval / 2.0f) + (i * l_breadthInterval),
 					l_randomPosDelta(l_generator) * 50.0f,
 					(j * l_breadthInterval) - 2.0f * (l_matrixDim - 1),
 					1.0f);
+
+			l_currentComponent->m_localTransformVector.m_rot =
+				InnoMath::caclRotatedLocalRotator(l_currentComponent->m_localTransformVector.m_rot,
+					vec4(l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), 0.0f).normalize(),
+					l_randomRotDelta(l_generator));
 		}
 	}
 
