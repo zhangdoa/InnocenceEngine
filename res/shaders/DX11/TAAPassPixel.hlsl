@@ -28,7 +28,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float2 screenTexCoords = input.position.xy * texelSize;
 	float2 MotionVector = in_opaquePassRT3.Sample(SampleTypePoint, screenTexCoords).xy;
 
-	float4 preTAAPassRT0 = in_preTAAPassRT0.Sample(SampleTypePoint, input.texcoord);
+	float4 preTAAPassRT0 = in_preTAAPassRT0.Sample(SampleTypePoint, screenTexCoords);
 
 	float3 currentColor = preTAAPassRT0.rgb;
 

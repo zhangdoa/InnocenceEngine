@@ -30,7 +30,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 
 	if (MotionVector.x == 0.0 && MotionVector.y == 0.0)
 	{
-		output.motionBlurPassRT0 = in_TAAPassRT0.Sample(SampleTypePoint, input.texcoord);
+		output.motionBlurPassRT0 = in_TAAPassRT0.Sample(SampleTypePoint, screenTexCoords);
 	}
 	else
 	{

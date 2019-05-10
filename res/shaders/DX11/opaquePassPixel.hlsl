@@ -129,7 +129,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 
 	float4 motionVec = (input.frag_ClipSpacePos_orig / input.frag_ClipSpacePos_orig.w - input.frag_ClipSpacePos_prev / input.frag_ClipSpacePos_prev.w);
 
-	output.geometryPassRT3 = float4(motionVec.xyz, transparency);
+	output.geometryPassRT3 = float4(motionVec.xyz * 0.5, transparency);
 
   return output;
 }
