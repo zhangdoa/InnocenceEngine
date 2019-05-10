@@ -199,10 +199,13 @@ bool GLRenderingSystemNS::resizeGLRenderPassComponent(GLRenderPassComponent * GL
 	GLRPC->m_renderPassDesc.RTDesc.height = newSizeY;
 
 	glDeleteFramebuffers(1, &GLRPC->m_FBO);
-	glDeleteRenderbuffers(1, &GLRPC->m_RBO);
-
 	generateFBO(GLRPC);
-	generateRBO(GLRPC);
+
+	if (GLRPC->m_renderPassDesc.useDepthAttachment)
+	{
+		glDeleteRenderbuffers(1, &GLRPC->m_RBO);
+		generateRBO(GLRPC);
+	}
 
 	for (unsigned int i = 0; i < GLRPC->m_GLTDCs.size(); i++)
 	{
