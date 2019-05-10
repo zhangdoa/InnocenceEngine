@@ -11,8 +11,10 @@ struct CullingDataPack
 	mat4 m;
 	mat4 m_prev;
 	mat4 normalMat;
-	VisibleComponent* visibleComponent;
-	MeshDataComponent* MDC;
+	MeshDataComponent* mesh;
+	MaterialDataComponent* material;
+	VisiblilityType visiblilityType;
+	unsigned int UUID;
 };
 
 INNO_INTERFACE IPhysicsSystem

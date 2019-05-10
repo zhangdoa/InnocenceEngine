@@ -274,28 +274,26 @@ bool InnoRenderingFrontendSystemNS::updateMeshData()
 
 	for (auto& i : m_cullingDataPack)
 	{
-		if (i.visibleComponent != nullptr && i.MDC != nullptr)
+		if (i.mesh != nullptr)
 		{
-			if (i.MDC->m_objectStatus == ObjectStatus::ALIVE)
+			if (i.mesh->m_objectStatus == ObjectStatus::ALIVE)
 			{
-				auto l_modelPair = i.visibleComponent->m_modelMap.find(i.MDC);
-
-				if (l_modelPair != i.visibleComponent->m_modelMap.end())
+				if (i.material != nullptr)
 				{
 					GeometryPassGPUData l_geometryPassGPUData;
 
-					l_geometryPassGPUData.MDC = i.MDC;
+					l_geometryPassGPUData.MDC = i.mesh;
 
 					l_geometryPassGPUData.meshGPUData.m = i.m;
 					l_geometryPassGPUData.meshGPUData.m_prev = i.m_prev;
 					l_geometryPassGPUData.meshGPUData.normalMat = i.normalMat;
-					l_geometryPassGPUData.meshGPUData.UUID = (float)i.visibleComponent->m_UUID;
+					l_geometryPassGPUData.meshGPUData.UUID = (float)i.UUID;
 
-					l_geometryPassGPUData.normalTDC = l_modelPair->second->m_texturePack.m_normalTDC.second;
-					l_geometryPassGPUData.albedoTDC = l_modelPair->second->m_texturePack.m_albedoTDC.second;
-					l_geometryPassGPUData.metallicTDC = l_modelPair->second->m_texturePack.m_metallicTDC.second;
-					l_geometryPassGPUData.roughnessTDC = l_modelPair->second->m_texturePack.m_roughnessTDC.second;
-					l_geometryPassGPUData.AOTDC = l_modelPair->second->m_texturePack.m_aoTDC.second;
+					l_geometryPassGPUData.normalTDC = i.material->m_texturePack.m_normalTDC.second;
+					l_geometryPassGPUData.albedoTDC = i.material->m_texturePack.m_albedoTDC.second;
+					l_geometryPassGPUData.metallicTDC = i.material->m_texturePack.m_metallicTDC.second;
+					l_geometryPassGPUData.roughnessTDC = i.material->m_texturePack.m_roughnessTDC.second;
+					l_geometryPassGPUData.AOTDC = i.material->m_texturePack.m_aoTDC.second;
 
 					l_geometryPassGPUData.materialGPUData.useNormalTexture = !(l_geometryPassGPUData.normalTDC == nullptr);
 					l_geometryPassGPUData.materialGPUData.useAlbedoTexture = !(l_geometryPassGPUData.albedoTDC == nullptr);
@@ -303,14 +301,14 @@ bool InnoRenderingFrontendSystemNS::updateMeshData()
 					l_geometryPassGPUData.materialGPUData.useRoughnessTexture = !(l_geometryPassGPUData.roughnessTDC == nullptr);
 					l_geometryPassGPUData.materialGPUData.useAOTexture = !(l_geometryPassGPUData.AOTDC == nullptr);
 
-					l_geometryPassGPUData.materialGPUData.customMaterial = l_modelPair->second->m_meshCustomMaterial;
+					l_geometryPassGPUData.materialGPUData.customMaterial = i.material->m_meshCustomMaterial;
 
-					if (i.visibleComponent->m_visiblilityType == VisiblilityType::INNO_OPAQUE)
+					if (i.visiblilityType == VisiblilityType::INNO_OPAQUE)
 					{
 						RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.push(l_geometryPassGPUData);
 					}
 
-					else if (i.visibleComponent->m_visiblilityType == VisiblilityType::INNO_TRANSPARENT)
+					else if (i.visiblilityType == VisiblilityType::INNO_TRANSPARENT)
 					{
 						l_sortedTransparentPassGPUDataVector.emplace_back(l_geometryPassGPUData);
 					}

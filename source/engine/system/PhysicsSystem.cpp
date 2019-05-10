@@ -704,6 +704,8 @@ void InnoPhysicsSystemNS::updateCulling()
 	m_sceneBoundMin = InnoMath::maxVec4<float>;
 	m_sceneBoundMin.w = 1.0f;
 
+	std::vector<CullingDataPack> l_cullingDataPacks;
+
 	if (g_pCoreSystem->getGameSystem()->get<CameraComponent>().size() > 0)
 	{
 		auto l_cameraComponents = g_pCoreSystem->getGameSystem()->get<CameraComponent>();
@@ -719,6 +721,7 @@ void InnoPhysicsSystemNS::updateCulling()
 			{
 				auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(visibleComponent->m_parentEntity);
 				auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
+
 				if (visibleComponent->m_PDC)
 				{
 					for (auto& l_modelPair : visibleComponent->m_modelMap)
@@ -739,10 +742,12 @@ void InnoPhysicsSystemNS::updateCulling()
 							l_cullingDataPack.m = l_globalTm;
 							l_cullingDataPack.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
 							l_cullingDataPack.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-							l_cullingDataPack.visibleComponent = visibleComponent;
-							l_cullingDataPack.MDC = l_modelPair.first;
+							l_cullingDataPack.mesh = l_modelPair.first;
+							l_cullingDataPack.material = l_modelPair.second;
+							l_cullingDataPack.visiblilityType = visibleComponent->m_visiblilityType;
+							l_cullingDataPack.UUID = visibleComponent->m_UUID;
 
-							m_cullingDataPack.emplace_back(l_cullingDataPack);
+							l_cullingDataPacks.emplace_back(l_cullingDataPack);
 						}
 					}
 				}
@@ -751,6 +756,8 @@ void InnoPhysicsSystemNS::updateCulling()
 	}
 
 	m_sceneAABB = generateAABB(InnoPhysicsSystemNS::m_sceneBoundMax, InnoPhysicsSystemNS::m_sceneBoundMin);
+
+	m_cullingDataPack.setRawData(std::move(l_cullingDataPacks));
 
 	m_isCullingDataPackValid = true;
 }
