@@ -4,20 +4,20 @@
 
 #include "../system/Core/InnoAllocator.h"
 
-template<size_t size>
+template<size_t S>
 class FixedSizeString
 {
 public:
 	FixedSizeString() = default;
 
-	FixedSizeString(const FixedSizeString<size>& rhs)
+	FixedSizeString(const FixedSizeString<S>& rhs)
 	{
-		std::memcpy(m_content, rhs.c_str(), size);
+		std::memcpy(m_content, rhs.c_str(), S);
 	};
 
-	FixedSizeString<size>& operator=(const FixedSizeString<size>& rhs)
+	FixedSizeString<S>& operator=(const FixedSizeString<S>& rhs)
 	{
-		std::memcpy(m_content, rhs.c_str(), size);
+		std::memcpy(m_content, rhs.c_str(), S);
 
 		return *this;
 	}
@@ -45,7 +45,7 @@ public:
 		}
 	}
 
-	bool operator==(const FixedSizeString<size> &rhs) const
+	bool operator==(const FixedSizeString<S> &rhs) const
 	{
 		auto l_rhsCStr = rhs.c_str();
 
@@ -57,7 +57,7 @@ public:
 		return !(*this == rhs);
 	}
 
-	bool operator!=(const FixedSizeString<size> &rhs) const
+	bool operator!=(const FixedSizeString<S> &rhs) const
 	{
 		return !(*this == rhs);
 	}
@@ -74,7 +74,7 @@ public:
 
 	const char* end() const
 	{
-		return &m_content[size - 1];
+		return &m_content[S - 1];
 	}
 
 	const char* find(const char* rhs) const
@@ -82,15 +82,20 @@ public:
 		return strstr(&m_content[0], rhs);
 	}
 
+	const size_t size() const
+	{
+		return strlen(m_content);
+	}
+
 private:
-	char m_content[size];
+	char m_content[S];
 };
 
 namespace std {
-	template <size_t size>
-	struct hash<FixedSizeString<size>>
+	template <size_t S>
+	struct hash<FixedSizeString<S>>
 	{
-		std::size_t operator()(const FixedSizeString<size>& k) const
+		std::size_t operator()(const FixedSizeString<S>& k) const
 		{
 			std::size_t h = 5381;
 			int c;
