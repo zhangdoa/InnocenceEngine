@@ -17,8 +17,8 @@ namespace InnoPhysicsSystemNS
 	void generateRayOfEye(CameraComponent* cameraComponent);
 	std::vector<Vertex> worldToViewSpace(const std::vector<Vertex>& rhs, mat4 t, mat4 r);
 	std::vector<Vertex> viewToWorldSpace(const std::vector<Vertex>& rhs, mat4 t, mat4 r);
-	std::vector<Vertex> toClipSpace(const std::vector<Vertex>& rhs, mat4 t, mat4 r, mat4 p);
-	std::vector<Vertex> fromClipSpace(const std::vector<Vertex>& rhs, mat4 t, mat4 r, mat4 p);
+	std::vector<Vertex> WorldToClipSpace(const std::vector<Vertex>& rhs, mat4 t, mat4 r, mat4 p);
+	std::vector<Vertex> clipSpaceToWorldSpace(const std::vector<Vertex>& rhs, mat4 t, mat4 r, mat4 p);
 	std::vector<Vertex> generateFrustumVertices(CameraComponent* cameraComponent);
 
 	void generateFrustum(CameraComponent* cameraComponent);
@@ -26,14 +26,14 @@ namespace InnoPhysicsSystemNS
 	void generateSphereLightComponentScale(SphereLightComponent* sphereLightComponent);
 
 	void generateAABB(DirectionalLightComponent* directionalLightComponent);
-	std::vector<AABB> frustumsVerticesToAABBs(const std::vector<Vertex>& frustumsVertices, const std::vector<float>& splitFactors);
+	std::vector<AABB> splitVerticesToAABBs(const std::vector<Vertex>& frustumsVertices, const std::vector<float>& splitFactors);
 
 	AABB generateAABB(const std::vector<Vertex>& vertices);
 	AABB generateAABB(vec4 boundMax, vec4 boundMin);
-	Sphere generateBoundSphere(AABB rhs);
+	Sphere generateBoundSphere(const AABB& rhs);
 
 	std::vector<Vertex> generateAABBVertices(vec4 boundMax, vec4 boundMin);
-	std::vector<Vertex> generateAABBVertices(AABB rhs);
+	std::vector<Vertex> generateAABBVertices(const AABB& rhs);
 
 	bool generatePhysicsDataComponent(MeshDataComponent* MDC);
 	bool generatePhysicsDataComponent(VisibleComponent* VC);
@@ -42,14 +42,19 @@ namespace InnoPhysicsSystemNS
 	void updateLightComponents();
 	void updateVisibleComponents();
 	void updateCulling();
-	AABB transformAABBtoWorldSpace(AABB rhs, mat4 globalTm);
-	void updateSceneBoundary(AABB rhs);
+	AABB transformAABBtoWorldSpace(const AABB& rhs, mat4 globalTm);
+	void updateVisibleSceneBoundary(const AABB& rhs);
+	void updateTotalSceneBoundary(const AABB& rhs);
 
 	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
 
-	vec4 m_sceneBoundMax;
-	vec4 m_sceneBoundMin;
-	AABB m_sceneAABB;
+	vec4 m_visibleSceneBoundMax;
+	vec4 m_visibleSceneBoundMin;
+	AABB m_visibleSceneAABB;
+
+	vec4 m_totalSceneBoundMax;
+	vec4 m_totalSceneBoundMin;
+	AABB m_totalSceneAABB;
 
 	void* m_PhysicsDataComponentPool;
 
@@ -136,7 +141,7 @@ std::vector<Vertex> InnoPhysicsSystemNS::viewToWorldSpace(const std::vector<Vert
 	return l_result;
 }
 
-std::vector<Vertex> InnoPhysicsSystemNS::toClipSpace(const std::vector<Vertex>& rhs, mat4 t, mat4 r, mat4 p)
+std::vector<Vertex> InnoPhysicsSystemNS::WorldToClipSpace(const std::vector<Vertex>& rhs, mat4 t, mat4 r, mat4 p)
 {
 	auto l_result = rhs;
 
@@ -155,7 +160,7 @@ std::vector<Vertex> InnoPhysicsSystemNS::toClipSpace(const std::vector<Vertex>& 
 	return l_result;
 }
 
-std::vector<Vertex> InnoPhysicsSystemNS::fromClipSpace(const std::vector<Vertex>& rhs, mat4 t, mat4 r, mat4 p)
+std::vector<Vertex> InnoPhysicsSystemNS::clipSpaceToWorldSpace(const std::vector<Vertex>& rhs, mat4 t, mat4 r, mat4 p)
 {
 	auto l_result = rhs;
 
@@ -183,7 +188,7 @@ std::vector<Vertex> InnoPhysicsSystemNS::generateFrustumVertices(CameraComponent
 
 	auto rhs = InnoMath::generateNDC<float>();
 
-	rhs = fromClipSpace(rhs, l_tCamera, l_rCamera, l_pCamera);
+	rhs = clipSpaceToWorldSpace(rhs, l_tCamera, l_rCamera, l_pCamera);
 
 	// near clip plane first
 	std::reverse(rhs.begin(), rhs.end());
@@ -233,7 +238,6 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	//1. get frustum vertices (fit to scene) and the maxium draw distance
 	auto l_cameraComponents = g_pCoreSystem->getGameSystem()->get<CameraComponent>();
 	auto l_camera = l_cameraComponents[0];
-	auto l_frustumVerticesInWorldSpace = generateFrustumVertices(l_camera);
 
 	// transform scene AABB vertices to view space
 	auto l_cameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_camera->m_parentEntity);
@@ -241,19 +245,19 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	auto l_tCamera = InnoMath::toTranslationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_pos);
 
 	// extend AABB to include the bound sphere, for to eliminate rotation conflict
-	auto sphereRadius = (m_sceneAABB.m_boundMax - m_sceneAABB.m_center).length();
-	auto l_boundMax = m_sceneAABB.m_center + sphereRadius;
+	auto l_sphereRadius = (m_totalSceneAABB.m_boundMax - m_totalSceneAABB.m_center).length();
+	auto l_boundMax = m_totalSceneAABB.m_center + l_sphereRadius;
 	l_boundMax.w = 1.0f;
-	auto l_boundMin = m_sceneAABB.m_center - sphereRadius;
+	auto l_boundMin = m_totalSceneAABB.m_center - l_sphereRadius;
 	l_boundMin.w = 1.0f;
 
-	auto l_sceneAABBVertices = generateAABBVertices(l_boundMax, l_boundMin);
-	l_sceneAABBVertices = worldToViewSpace(l_sceneAABBVertices, l_tCamera, l_rCamera);
+	auto l_sceneAABBVerticesWS = generateAABBVertices(l_boundMax, l_boundMin);
+	auto l_sceneAABBVerticesVS = worldToViewSpace(l_sceneAABBVerticesWS, l_tCamera, l_rCamera);
 
 	// find the farest one vertex
 	vec4 l_farPoint = InnoMath::maxVec4<float>;
 
-	for (auto i : l_sceneAABBVertices)
+	for (auto i : l_sceneAABBVerticesVS)
 	{
 		if (i.m_pos.z < l_farPoint.z)
 		{
@@ -262,60 +266,95 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	}
 
 	// compare draw distance and z component of the farest scene AABB vertex in view space
-	auto l_frustumVerticesInViewSpace = worldToViewSpace(l_frustumVerticesInWorldSpace, l_tCamera, l_rCamera);
+	auto l_frustumVerticesWS = generateFrustumVertices(l_camera);
+	auto l_frustumVerticesVS = worldToViewSpace(l_frustumVerticesWS, l_tCamera, l_rCamera);
 
-	auto l_distance_original = std::abs(l_frustumVerticesInViewSpace[4].m_pos.z - l_frustumVerticesInViewSpace[0].m_pos.z);
-	auto l_distance_adjust = l_frustumVerticesInViewSpace[0].m_pos.z - l_farPoint.z;
+	auto l_distance_original = std::abs(l_frustumVerticesVS[4].m_pos.z - l_frustumVerticesVS[0].m_pos.z);
+	auto l_distance_adjusted = l_frustumVerticesVS[0].m_pos.z - l_farPoint.z;
 
 	// scene is inside the view frustum
 	// @TODO: eliminate false positive off the side plane
-	if (l_distance_adjust > 0)
+	if (l_distance_adjusted > 0)
 	{
 		// adjust draw distance and frustum vertices
-		if (l_distance_adjust < l_distance_original)
+		if (l_distance_adjusted < l_distance_original)
 		{
 			// move the far plane closer to the new far point
-			l_frustumVerticesInViewSpace[4].m_pos.x = l_frustumVerticesInViewSpace[4].m_pos.x * l_distance_adjust / l_distance_original;
-			l_frustumVerticesInViewSpace[4].m_pos.y = l_frustumVerticesInViewSpace[4].m_pos.y * l_distance_adjust / l_distance_original;
-			l_frustumVerticesInViewSpace[4].m_pos.z = l_farPoint.z;
-			l_frustumVerticesInViewSpace[5].m_pos.x = l_frustumVerticesInViewSpace[5].m_pos.x * l_distance_adjust / l_distance_original;
-			l_frustumVerticesInViewSpace[5].m_pos.y = l_frustumVerticesInViewSpace[5].m_pos.y * l_distance_adjust / l_distance_original;
-			l_frustumVerticesInViewSpace[5].m_pos.z = l_farPoint.z;
-			l_frustumVerticesInViewSpace[6].m_pos.x = l_frustumVerticesInViewSpace[6].m_pos.x * l_distance_adjust / l_distance_original;
-			l_frustumVerticesInViewSpace[6].m_pos.y = l_frustumVerticesInViewSpace[6].m_pos.y * l_distance_adjust / l_distance_original;
-			l_frustumVerticesInViewSpace[6].m_pos.z = l_farPoint.z;
-			l_frustumVerticesInViewSpace[7].m_pos.x = l_frustumVerticesInViewSpace[7].m_pos.x * l_distance_adjust / l_distance_original;
-			l_frustumVerticesInViewSpace[7].m_pos.y = l_frustumVerticesInViewSpace[7].m_pos.y * l_distance_adjust / l_distance_original;
-			l_frustumVerticesInViewSpace[7].m_pos.z = l_farPoint.z;
+			for (size_t i = 4; i < l_frustumVerticesVS.size(); i++)
+			{
+				l_frustumVerticesVS[i].m_pos.x = l_frustumVerticesVS[i].m_pos.x * l_distance_adjusted / l_distance_original;
+				l_frustumVerticesVS[i].m_pos.y = l_frustumVerticesVS[i].m_pos.y * l_distance_adjusted / l_distance_original;
+				l_frustumVerticesVS[i].m_pos.z = l_farPoint.z;
+			}
 
-			l_frustumVerticesInWorldSpace = viewToWorldSpace(l_frustumVerticesInViewSpace, l_tCamera, l_rCamera);
+			l_frustumVerticesWS = viewToWorldSpace(l_frustumVerticesVS, l_tCamera, l_rCamera);
+		}
+	}
+
+	static bool l_adjustSidePlane = false;
+	if (l_adjustSidePlane)
+	{
+		// Adjast x and y to include the scene
+		// +x axis
+		if (m_totalSceneAABB.m_boundMax.x > l_frustumVerticesWS[2].m_pos.x)
+		{
+			l_frustumVerticesWS[2].m_pos.x = m_totalSceneAABB.m_boundMax.x;
+			l_frustumVerticesWS[3].m_pos.x = m_totalSceneAABB.m_boundMax.x;
+			l_frustumVerticesWS[6].m_pos.x = m_totalSceneAABB.m_boundMax.x;
+			l_frustumVerticesWS[7].m_pos.x = m_totalSceneAABB.m_boundMax.x;
+		}
+		// -x axis
+		if (m_totalSceneAABB.m_boundMin.x < l_frustumVerticesWS[0].m_pos.x)
+		{
+			l_frustumVerticesWS[0].m_pos.x = m_totalSceneAABB.m_boundMin.x;
+			l_frustumVerticesWS[1].m_pos.x = m_totalSceneAABB.m_boundMin.x;
+			l_frustumVerticesWS[4].m_pos.x = m_totalSceneAABB.m_boundMin.x;
+			l_frustumVerticesWS[5].m_pos.x = m_totalSceneAABB.m_boundMin.x;
+		}
+		// +y axis
+		if (m_totalSceneAABB.m_boundMax.y > l_frustumVerticesWS[0].m_pos.y)
+		{
+			l_frustumVerticesWS[0].m_pos.y = m_totalSceneAABB.m_boundMax.y;
+			l_frustumVerticesWS[1].m_pos.y = m_totalSceneAABB.m_boundMax.y;
+			l_frustumVerticesWS[4].m_pos.y = m_totalSceneAABB.m_boundMax.y;
+			l_frustumVerticesWS[7].m_pos.y = m_totalSceneAABB.m_boundMax.y;
+		}
+		// -y axis
+		if (m_totalSceneAABB.m_boundMin.y < l_frustumVerticesWS[1].m_pos.y)
+		{
+			l_frustumVerticesWS[1].m_pos.y = m_totalSceneAABB.m_boundMin.y;
+			l_frustumVerticesWS[2].m_pos.y = m_totalSceneAABB.m_boundMin.y;
+			l_frustumVerticesWS[5].m_pos.y = m_totalSceneAABB.m_boundMin.y;
+			l_frustumVerticesWS[6].m_pos.y = m_totalSceneAABB.m_boundMin.y;
 		}
 	}
 
 	std::vector<float> l_CSMSplitFactors = { 0.05f, 0.25f, 0.55f, 1.0f };
 
 	//2. calculate AABBs in world space
-	auto l_AABBsWS = frustumsVerticesToAABBs(l_frustumVerticesInWorldSpace, l_CSMSplitFactors);
+	auto l_frustumsAABBsWS = splitVerticesToAABBs(l_frustumVerticesWS, l_CSMSplitFactors);
 
 	//3. save the AABB for bound area detection
-	directionalLightComponent->m_AABBsInWorldSpace.setRawData(std::move(l_AABBsWS));
+	directionalLightComponent->m_AABBsInWorldSpace.setRawData(std::move(l_frustumsAABBsWS));
 
 	//4. transform frustum vertices to light space
 	auto l_lightRotMat = g_pCoreSystem->getGameSystem()->get<TransformComponent>(directionalLightComponent->m_parentEntity)->m_globalTransformMatrix.m_rotationMat.inverse();
-	for (size_t i = 0; i < l_frustumVerticesInWorldSpace.size(); i++)
+	auto l_frustumVerticesLS = l_frustumVerticesWS;
+
+	for (size_t i = 0; i < l_frustumVerticesLS.size(); i++)
 	{
 		//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-		l_frustumVerticesInWorldSpace[i].m_pos = InnoMath::mul(l_frustumVerticesInWorldSpace[i].m_pos, l_lightRotMat);
+		l_frustumVerticesLS[i].m_pos = InnoMath::mul(l_frustumVerticesLS[i].m_pos, l_lightRotMat);
 #endif
 		//Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-		l_frustumVerticesInWorldSpace[i].m_pos = InnoMath::mul(l_lightRotMat, l_frustumVerticesInWorldSpace[i].m_pos);
+		l_frustumVerticesLS[i].m_pos = InnoMath::mul(l_lightRotMat, l_frustumVerticesLS[i].m_pos);
 #endif
 	}
 
 	//5.calculate AABBs in light space
-	auto l_AABBsLS = frustumsVerticesToAABBs(l_frustumVerticesInWorldSpace, l_CSMSplitFactors);
+	auto l_AABBsLS = splitVerticesToAABBs(l_frustumVerticesLS, l_CSMSplitFactors);
 
 	//6. extend AABB to include the bound sphere, for to eliminate rotation conflict
 	for (size_t i = 0; i < 4; i++)
@@ -341,7 +380,7 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	}
 }
 
-std::vector<AABB> InnoPhysicsSystemNS::frustumsVerticesToAABBs(const std::vector<Vertex>& frustumsVertices, const std::vector<float>& splitFactors)
+std::vector<AABB> InnoPhysicsSystemNS::splitVerticesToAABBs(const std::vector<Vertex>& frustumsVertices, const std::vector<float>& splitFactors)
 {
 	std::vector<vec4> l_frustumsCornerPos;
 	l_frustumsCornerPos.reserve(20);
@@ -450,7 +489,7 @@ AABB InnoPhysicsSystemNS::generateAABB(vec4 boundMax, vec4 boundMin)
 	return l_AABB;
 }
 
-Sphere InnoPhysicsSystemNS::generateBoundSphere(AABB rhs)
+Sphere InnoPhysicsSystemNS::generateBoundSphere(const AABB& rhs)
 {
 	Sphere l_result;
 	l_result.m_center = rhs.m_center;
@@ -504,7 +543,7 @@ std::vector<Vertex> InnoPhysicsSystemNS::generateAABBVertices(vec4 boundMax, vec
 	return l_vertices;
 }
 
-std::vector<Vertex> InnoPhysicsSystemNS::generateAABBVertices(AABB rhs)
+std::vector<Vertex> InnoPhysicsSystemNS::generateAABBVertices(const AABB& rhs)
 {
 	auto boundMax = rhs.m_boundMax;
 	auto boundMin = rhs.m_boundMin;
@@ -607,7 +646,7 @@ bool InnoPhysicsSystemNS::generatePhysicsDataComponent(VisibleComponent* VC)
 	return true;
 }
 
-AABB InnoPhysicsSystemNS::transformAABBtoWorldSpace(AABB rhs, mat4 globalTm)
+AABB InnoPhysicsSystemNS::transformAABBtoWorldSpace(const AABB& rhs, mat4 globalTm)
 {
 	AABB l_AABB;
 
@@ -698,11 +737,17 @@ void InnoPhysicsSystemNS::updateCulling()
 
 	m_cullingDataPack.clear();
 
-	m_sceneBoundMax = InnoMath::minVec4<float>;
-	m_sceneBoundMax.w = 1.0f;
+	m_visibleSceneBoundMax = InnoMath::minVec4<float>;
+	m_visibleSceneBoundMax.w = 1.0f;
 
-	m_sceneBoundMin = InnoMath::maxVec4<float>;
-	m_sceneBoundMin.w = 1.0f;
+	m_visibleSceneBoundMin = InnoMath::maxVec4<float>;
+	m_visibleSceneBoundMin.w = 1.0f;
+
+	m_totalSceneBoundMax = InnoMath::minVec4<float>;
+	m_totalSceneBoundMax.w = 1.0f;
+
+	m_totalSceneBoundMin = InnoMath::maxVec4<float>;
+	m_totalSceneBoundMin.w = 1.0f;
 
 	std::vector<CullingDataPack> l_cullingDataPacks;
 
@@ -735,7 +780,7 @@ void InnoPhysicsSystemNS::updateCulling()
 
 						if (InnoMath::intersectCheck(l_cameraFrustum, l_boundingSphere))
 						{
-							updateSceneBoundary(l_OBBws);
+							updateVisibleSceneBoundary(l_OBBws);
 
 							thread_local CullingDataPack l_cullingDataPack;
 
@@ -749,47 +794,81 @@ void InnoPhysicsSystemNS::updateCulling()
 
 							l_cullingDataPacks.emplace_back(l_cullingDataPack);
 						}
+
+						updateTotalSceneBoundary(l_OBBws);
 					}
 				}
 			}
 		}
 	}
 
-	m_sceneAABB = generateAABB(InnoPhysicsSystemNS::m_sceneBoundMax, InnoPhysicsSystemNS::m_sceneBoundMin);
+	m_visibleSceneAABB = generateAABB(InnoPhysicsSystemNS::m_visibleSceneBoundMax, InnoPhysicsSystemNS::m_visibleSceneBoundMin);
+	m_totalSceneAABB = generateAABB(InnoPhysicsSystemNS::m_totalSceneBoundMax, InnoPhysicsSystemNS::m_totalSceneBoundMin);
 
 	m_cullingDataPack.setRawData(std::move(l_cullingDataPacks));
 
 	m_isCullingDataPackValid = true;
 }
 
-void InnoPhysicsSystemNS::updateSceneBoundary(AABB rhs)
+void InnoPhysicsSystemNS::updateVisibleSceneBoundary(const AABB& rhs)
 {
 	auto boundMax = rhs.m_boundMax;
 	auto boundMin = rhs.m_boundMin;
 
-	if (boundMax.x > m_sceneBoundMax.x)
+	if (boundMax.x > m_visibleSceneBoundMax.x)
 	{
-		m_sceneBoundMax.x = boundMax.x;
+		m_visibleSceneBoundMax.x = boundMax.x;
 	}
-	if (boundMax.y > m_sceneBoundMax.y)
+	if (boundMax.y > m_visibleSceneBoundMax.y)
 	{
-		m_sceneBoundMax.y = boundMax.y;
+		m_visibleSceneBoundMax.y = boundMax.y;
 	}
-	if (boundMax.z > m_sceneBoundMax.z)
+	if (boundMax.z > m_visibleSceneBoundMax.z)
 	{
-		m_sceneBoundMax.z = boundMax.z;
+		m_visibleSceneBoundMax.z = boundMax.z;
 	}
-	if (boundMin.x < m_sceneBoundMin.x)
+	if (boundMin.x < m_visibleSceneBoundMin.x)
 	{
-		m_sceneBoundMin.x = boundMin.x;
+		m_visibleSceneBoundMin.x = boundMin.x;
 	}
-	if (boundMin.y < m_sceneBoundMin.y)
+	if (boundMin.y < m_visibleSceneBoundMin.y)
 	{
-		m_sceneBoundMin.y = boundMin.y;
+		m_visibleSceneBoundMin.y = boundMin.y;
 	}
-	if (boundMin.z < m_sceneBoundMin.z)
+	if (boundMin.z < m_visibleSceneBoundMin.z)
 	{
-		m_sceneBoundMin.z = boundMin.z;
+		m_visibleSceneBoundMin.z = boundMin.z;
+	}
+}
+
+void InnoPhysicsSystemNS::updateTotalSceneBoundary(const AABB& rhs)
+{
+	auto boundMax = rhs.m_boundMax;
+	auto boundMin = rhs.m_boundMin;
+
+	if (boundMax.x > m_totalSceneBoundMax.x)
+	{
+		m_totalSceneBoundMax.x = boundMax.x;
+	}
+	if (boundMax.y > m_totalSceneBoundMax.y)
+	{
+		m_totalSceneBoundMax.y = boundMax.y;
+	}
+	if (boundMax.z > m_totalSceneBoundMax.z)
+	{
+		m_totalSceneBoundMax.z = boundMax.z;
+	}
+	if (boundMin.x < m_totalSceneBoundMin.x)
+	{
+		m_totalSceneBoundMin.x = boundMin.x;
+	}
+	if (boundMin.y < m_totalSceneBoundMin.y)
+	{
+		m_totalSceneBoundMin.y = boundMin.y;
+	}
+	if (boundMin.z < m_totalSceneBoundMin.z)
+	{
+		m_totalSceneBoundMin.z = boundMin.z;
 	}
 }
 
@@ -858,7 +937,7 @@ INNO_SYSTEM_EXPORT std::optional<std::vector<CullingDataPack>> InnoPhysicsSystem
 
 INNO_SYSTEM_EXPORT AABB InnoPhysicsSystem::getSceneAABB()
 {
-	return InnoPhysicsSystemNS::m_sceneAABB;
+	return InnoPhysicsSystemNS::m_visibleSceneAABB;
 }
 
 INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::generatePhysicsDataComponent(VisibleComponent * VC)
