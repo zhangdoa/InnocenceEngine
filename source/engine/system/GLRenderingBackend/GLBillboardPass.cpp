@@ -27,7 +27,7 @@ bool GLBillboardPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "BillboardPassGLRPC//");
+	m_GLRPC = addGLRenderPassComponent(m_entityID, "BillboardPassGLRPC/");
 	m_GLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
 	m_GLRPC->m_renderPassDesc.useDepthAttachment = true;
 	m_GLRPC->m_renderPassDesc.useStencilAttachment = true;

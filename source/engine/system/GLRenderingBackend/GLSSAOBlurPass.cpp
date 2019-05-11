@@ -27,7 +27,7 @@ bool GLSSAOBlurPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "SSAOBlurPassGLRPC//");
+	m_GLRPC = addGLRenderPassComponent(m_entityID, "SSAOBlurPassGLRPC/");
 	m_GLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
 	initializeGLRenderPassComponent(m_GLRPC);
 

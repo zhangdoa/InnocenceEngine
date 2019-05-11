@@ -67,7 +67,7 @@ bool GLDebuggerPass::initialize()
 	m_entityID = InnoMath::createEntityID();
 
 	auto l_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "DebugPassGLRPC//");
+	m_GLRPC = addGLRenderPassComponent(m_entityID, "DebugPassGLRPC/");
 	m_GLRPC->m_renderPassDesc = l_renderPassDesc;
 	m_GLRPC->m_renderPassDesc.useDepthAttachment = true;
 	m_GLRPC->m_renderPassDesc.useStencilAttachment = true;
@@ -76,15 +76,15 @@ bool GLDebuggerPass::initialize()
 	l_renderPassDesc.RTDesc.width /= 2;
 	l_renderPassDesc.RTDesc.height /= 2;
 
-	m_rightViewGLRPC = addGLRenderPassComponent(m_entityID, "DebugRightViewPassGLRPC//");
+	m_rightViewGLRPC = addGLRenderPassComponent(m_entityID, "DebugRightViewPassGLRPC/");
 	m_rightViewGLRPC->m_renderPassDesc = l_renderPassDesc;
 	initializeGLRenderPassComponent(m_rightViewGLRPC);
 
-	m_topViewGLRPC = addGLRenderPassComponent(m_entityID, "DebugTopViewPassGLRPC//");
+	m_topViewGLRPC = addGLRenderPassComponent(m_entityID, "DebugTopViewPassGLRPC/");
 	m_topViewGLRPC->m_renderPassDesc = l_renderPassDesc;
 	initializeGLRenderPassComponent(m_topViewGLRPC);
 
-	m_frontViewGLRPC = addGLRenderPassComponent(m_entityID, "DebugFrontViewPassGLRPC//");
+	m_frontViewGLRPC = addGLRenderPassComponent(m_entityID, "DebugFrontViewPassGLRPC/");
 	m_frontViewGLRPC->m_renderPassDesc = l_renderPassDesc;
 	initializeGLRenderPassComponent(m_frontViewGLRPC);
 

@@ -22,13 +22,13 @@ bool GLBRDFLUTPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_BRDFSplitSumLUTPassGLRPC = addGLRenderPassComponent(m_entityID, "BRDFSplitSumLUTPassGLRPC//");
+	m_BRDFSplitSumLUTPassGLRPC = addGLRenderPassComponent(m_entityID, "BRDFSplitSumLUTPassGLRPC/");
 	m_BRDFSplitSumLUTPassGLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
 	m_BRDFSplitSumLUTPassGLRPC->m_renderPassDesc.RTDesc.width = 512;
 	m_BRDFSplitSumLUTPassGLRPC->m_renderPassDesc.RTDesc.height = 512;
 	initializeGLRenderPassComponent(m_BRDFSplitSumLUTPassGLRPC);
 
-	m_BRDFMSAverageLUTPassGLRPC = addGLRenderPassComponent(m_entityID, "BRDFMSAverageLUTPassGLRPC//");
+	m_BRDFMSAverageLUTPassGLRPC = addGLRenderPassComponent(m_entityID, "BRDFMSAverageLUTPassGLRPC/");
 	m_BRDFMSAverageLUTPassGLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
 	m_BRDFMSAverageLUTPassGLRPC->m_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RG;
 	m_BRDFMSAverageLUTPassGLRPC->m_renderPassDesc.RTDesc.width = 512;

@@ -30,7 +30,7 @@ bool GLBloomMergePass::initialize()
 	l_renderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::LINEAR;
 	l_renderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
 
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "BloomMergePassGLRPC//");
+	m_GLRPC = addGLRenderPassComponent(m_entityID, "BloomMergePassGLRPC/");
 	m_GLRPC->m_renderPassDesc = l_renderPassDesc;
 	initializeGLRenderPassComponent(m_GLRPC);
 

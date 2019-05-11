@@ -131,6 +131,7 @@ void GLRenderingSystemNS::generateFBO(GLRenderPassComponent* GLRPC)
 {
 	glGenFramebuffers(1, &GLRPC->m_FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
+	glObjectLabel(GL_FRAMEBUFFER, GLRPC->m_FBO, (GLsizei)GLRPC->m_name.size(), GLRPC->m_name.c_str());
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingSystem: " + std::string(GLRPC->m_name.c_str()) + " FBO has been generated.");
 }
@@ -140,6 +141,7 @@ void GLRenderingSystemNS::generateRBO(GLRenderPassComponent* GLRPC)
 	// generate and bind renderbuffer
 	glGenRenderbuffers(1, &GLRPC->m_RBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, GLRPC->m_RBO);
+	glObjectLabel(GL_RENDERBUFFER, GLRPC->m_RBO, (GLsizei)GLRPC->m_name.size(), GLRPC->m_name.c_str());
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GLRPC->m_renderBufferAttachmentType, GL_RENDERBUFFER, GLRPC->m_RBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GLRPC->m_renderBufferInternalFormat, GLRPC->m_renderPassDesc.RTDesc.width, GLRPC->m_renderPassDesc.RTDesc.height);
@@ -301,6 +303,7 @@ bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponen
 void GLRenderingSystemNS::addShader(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const ShaderFilePath& shaderFilePath)
 {
 	shaderID = glCreateShader(shaderType);
+	glObjectLabel(GL_SHADER, shaderID, (GLsizei)shaderFilePath.size(), shaderFilePath.c_str());
 
 	if (shaderID == 0)
 	{

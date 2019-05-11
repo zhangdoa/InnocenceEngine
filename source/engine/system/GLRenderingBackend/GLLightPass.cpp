@@ -34,7 +34,7 @@ void GLLightPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "LightPassGLRPC//");
+	m_GLRPC = addGLRenderPassComponent(m_entityID, "LightPassGLRPC/");
 	m_GLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
 	m_GLRPC->m_renderPassDesc.useDepthAttachment = true;
 	m_GLRPC->m_renderPassDesc.useStencilAttachment = true;

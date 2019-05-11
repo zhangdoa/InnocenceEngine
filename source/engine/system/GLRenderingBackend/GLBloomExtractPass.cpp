@@ -30,28 +30,28 @@ bool GLBloomExtractPass::initialize()
 
 	auto l_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
 
-	m_baseGLRPC = addGLRenderPassComponent(m_entityID, "BloomExtractBasePassGLRPC//");
+	m_baseGLRPC = addGLRenderPassComponent(m_entityID, "BloomExtractBasePassGLRPC/");
 	m_baseGLRPC->m_renderPassDesc = l_renderPassDesc;
 	initializeGLRenderPassComponent(m_baseGLRPC);
 
 	l_renderPassDesc.RTDesc.width /= 2;
 	l_renderPassDesc.RTDesc.height /= 2;
 
-	m_downsampleGLRPC_Half = addGLRenderPassComponent(m_entityID, "BloomExtractHalfPassGLRPC//");
+	m_downsampleGLRPC_Half = addGLRenderPassComponent(m_entityID, "BloomExtractHalfPassGLRPC/");
 	m_downsampleGLRPC_Half->m_renderPassDesc = l_renderPassDesc;
 	initializeGLRenderPassComponent(m_downsampleGLRPC_Half);
 
 	l_renderPassDesc.RTDesc.width /= 2;
 	l_renderPassDesc.RTDesc.height /= 2;
 
-	m_downsampleGLRPC_Quarter = addGLRenderPassComponent(m_entityID, "BloomExtractQuarterPassGLRPC//");
+	m_downsampleGLRPC_Quarter = addGLRenderPassComponent(m_entityID, "BloomExtractQuarterPassGLRPC/");
 	m_downsampleGLRPC_Quarter->m_renderPassDesc = l_renderPassDesc;
 	initializeGLRenderPassComponent(m_downsampleGLRPC_Quarter);
 
 	l_renderPassDesc.RTDesc.width /= 2;
 	l_renderPassDesc.RTDesc.height /= 2;
 
-	m_downsampleGLRPC_Eighth = addGLRenderPassComponent(m_entityID, "BloomExtractEighthPassGLRPC//");
+	m_downsampleGLRPC_Eighth = addGLRenderPassComponent(m_entityID, "BloomExtractEighthPassGLRPC/");
 	m_downsampleGLRPC_Eighth->m_renderPassDesc = l_renderPassDesc;
 	initializeGLRenderPassComponent(m_downsampleGLRPC_Eighth);
 

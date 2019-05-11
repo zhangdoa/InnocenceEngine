@@ -42,7 +42,7 @@ void GLShadowPass::initialize()
 	l_renderPassDesc.RTDesc.borderColor[2] = 1.0f;
 	l_renderPassDesc.RTDesc.borderColor[3] = 1.0f;
 
-	m_DirLight_GLRPC = addGLRenderPassComponent(m_entityID, "DirectionalLightShadowPassGLRPC//");
+	m_DirLight_GLRPC = addGLRenderPassComponent(m_entityID, "DirectionalLightShadowPassGLRPC/");
 	m_DirLight_GLRPC->m_renderPassDesc = l_renderPassDesc;
 	m_DirLight_GLRPC->m_renderPassDesc.useDepthAttachment = true;
 	m_DirLight_GLRPC->m_drawColorBuffers = false;
@@ -62,7 +62,7 @@ void GLShadowPass::initialize()
 	l_renderPassDesc.RTDesc.borderColor[2] = 1.0f;
 	l_renderPassDesc.RTDesc.borderColor[3] = 1.0f;
 
-	m_PointLight_GLRPC = addGLRenderPassComponent(m_entityID, "PointLightShadowPassGLRPC//");
+	m_PointLight_GLRPC = addGLRenderPassComponent(m_entityID, "PointLightShadowPassGLRPC/");
 	m_PointLight_GLRPC->m_renderPassDesc = l_renderPassDesc;
 	m_PointLight_GLRPC->m_renderPassDesc.useDepthAttachment = true;
 	m_PointLight_GLRPC->m_drawColorBuffers = false;

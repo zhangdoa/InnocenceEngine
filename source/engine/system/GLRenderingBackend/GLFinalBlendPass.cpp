@@ -30,7 +30,7 @@ bool GLFinalBlendPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "FinalBlendPassGLRPC//");
+	m_GLRPC = addGLRenderPassComponent(m_entityID, "FinalBlendPassGLRPC/");
 	m_GLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
 	initializeGLRenderPassComponent(m_GLRPC);
 

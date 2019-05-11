@@ -25,7 +25,7 @@ bool GLMotionBlurPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "MotionBlurPassGLRPC//");
+	m_GLRPC = addGLRenderPassComponent(m_entityID, "MotionBlurPassGLRPC/");
 	m_GLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
 	initializeGLRenderPassComponent(m_GLRPC);
 

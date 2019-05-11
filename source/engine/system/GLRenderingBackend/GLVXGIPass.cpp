@@ -87,7 +87,7 @@ void GLVXGIPass::initializeVoxelizationPass()
 	l_renderPassDesc.RTDesc.depth = m_volumeDimension;
 	l_renderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::UBYTE;
 
-	m_voxelizationPassGLRPC = addGLRenderPassComponent(m_entityID, "VoxelizationPassGLRPC//");
+	m_voxelizationPassGLRPC = addGLRenderPassComponent(m_entityID, "VoxelizationPassGLRPC/");
 	m_voxelizationPassGLRPC->m_renderPassDesc = l_renderPassDesc;
 	m_voxelizationPassGLRPC->m_renderPassDesc.useDepthAttachment = true;
 	m_voxelizationPassGLRPC->m_drawColorBuffers = false;
@@ -159,7 +159,7 @@ void GLVXGIPass::initializeIrradianceInjectionPass()
 	l_renderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::UBYTE;
 	l_renderPassDesc.useDepthAttachment = true;
 
-	m_irradianceInjectionPassGLRPC = addGLRenderPassComponent(m_entityID, "IrradianceInjectionPassGLRPC//");
+	m_irradianceInjectionPassGLRPC = addGLRenderPassComponent(m_entityID, "IrradianceInjectionPassGLRPC/");
 	m_irradianceInjectionPassGLRPC->m_renderPassDesc = l_renderPassDesc;
 	m_irradianceInjectionPassGLRPC->m_drawColorBuffers = false;
 	initializeGLRenderPassComponent(m_irradianceInjectionPassGLRPC);
@@ -197,7 +197,7 @@ void GLVXGIPass::initializeIrradianceInjectionPass()
 void GLVXGIPass::initializeVoxelVisualizationPass()
 {
 	// generate and bind framebuffer
-	m_voxelVisualizationGLRPC = addGLRenderPassComponent(m_entityID, "VoxelVisualizationPassGLRPC//");
+	m_voxelVisualizationGLRPC = addGLRenderPassComponent(m_entityID, "VoxelVisualizationPassGLRPC/");
 	m_voxelVisualizationGLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
 	initializeGLRenderPassComponent(m_voxelVisualizationGLRPC);
 

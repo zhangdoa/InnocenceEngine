@@ -28,7 +28,7 @@ bool GLEarlyZPass::initialize()
 	l_renderPassDesc.useDepthAttachment = true;
 	l_renderPassDesc.useStencilAttachment = true;
 
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "EarlyZPassGLRPC//");
+	m_GLRPC = addGLRenderPassComponent(m_entityID, "EarlyZPassGLRPC/");
 	m_GLRPC->m_renderPassDesc = l_renderPassDesc;
 	initializeGLRenderPassComponent(m_GLRPC);
 

@@ -39,7 +39,7 @@ bool GLEnvironmentConvolutionPass::initialize()
 	l_renderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::FLOAT16;
 	l_renderPassDesc.useDepthAttachment = true;
 
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "EnvironmentConvolutionPassGLRPC//");
+	m_GLRPC = addGLRenderPassComponent(m_entityID, "EnvironmentConvolutionPassGLRPC/");
 	m_GLRPC->m_renderPassDesc = l_renderPassDesc;
 	m_GLRPC->m_drawColorBuffers = true;
 	initializeGLRenderPassComponent(m_GLRPC);
