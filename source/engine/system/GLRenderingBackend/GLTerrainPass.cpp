@@ -21,7 +21,7 @@ INNO_PRIVATE_SCOPE GLTerrainPass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//terrainPass.vert/", "GL//terrainPass.tcs/", "GL//terrainPass.tes/", "", "GL//terrainPass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//terrainPass.vert/", "GL//terrainPass.tcs/", "GL//terrainPass.tes/", "GL//terrainPass.geom/", "GL//terrainPass.frag/" };
 
 	static float perlinNoiseFade(float t)
 	{
@@ -169,8 +169,8 @@ bool GLTerrainPass::initialize()
 	m_terrainNoiseGLTDC->m_textureDataDesc.samplerType = TextureSamplerType::SAMPLER_2D;
 	m_terrainNoiseGLTDC->m_textureDataDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
 	m_terrainNoiseGLTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_terrainNoiseGLTDC->m_textureDataDesc.minFilterMethod = TextureFilterMethod::NEAREST;
-	m_terrainNoiseGLTDC->m_textureDataDesc.magFilterMethod = TextureFilterMethod::NEAREST;
+	m_terrainNoiseGLTDC->m_textureDataDesc.minFilterMethod = TextureFilterMethod::LINEAR;
+	m_terrainNoiseGLTDC->m_textureDataDesc.magFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
 	m_terrainNoiseGLTDC->m_textureDataDesc.wrapMethod = TextureWrapMethod::REPEAT;
 	m_terrainNoiseGLTDC->m_textureDataDesc.width = l_textureSize;
 	m_terrainNoiseGLTDC->m_textureDataDesc.height = l_textureSize;
@@ -219,14 +219,14 @@ bool GLTerrainPass::update()
 
 		activateShaderProgram(m_GLSPC);
 
-		auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);
+		auto l_MDC = getGLMeshDataComponent(MeshShapeType::TERRAIN);
 
 		activateTexture(m_terrainNoiseGLTDC, 0);
 
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glBindVertexArray(l_MDC->m_VAO);
 		glPatchParameteri(GL_PATCH_VERTICES, 4);
-		glDrawArrays(GL_PATCHES, 0, 4);
+		glDrawArrays(GL_PATCHES, 0, (GLsizei)l_MDC->m_vertices.size());
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 		glDisable(GL_DEPTH_TEST);
