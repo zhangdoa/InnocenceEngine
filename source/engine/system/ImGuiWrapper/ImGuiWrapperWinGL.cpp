@@ -201,6 +201,21 @@ void ImGuiWrapperWinGL::showRenderResult(RenderPassType renderPassType)
 			ImGui::Image(ImTextureID((GLuint64)GLTerrainPass::getGLRPC()->m_GLTDCs[0]->m_TO), l_RTSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 		}
 		ImGui::End();
+		ImGui::Begin("Height Map", 0, ImGuiWindowFlags_AlwaysAutoResize);
+		{
+			ImGui::BeginChild("Height Map", l_shadowRTSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Text("Height Map");
+			ImGui::Image(ImTextureID((GLuint64)GLTerrainPass::getHeightMap(0)->m_TO), l_shadowRTSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::EndChild();
+
+			ImGui::SameLine();
+
+			ImGui::BeginChild("Height Map Normal", l_shadowRTSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Text("Height Map Normal");
+			ImGui::Image(ImTextureID((GLuint64)GLTerrainPass::getHeightMap(1)->m_TO), l_shadowRTSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::EndChild();
+		}
+		ImGui::End();
 		break;
 	case RenderPassType::PostProcessing:
 		ImGui::Begin("Post-processing Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);

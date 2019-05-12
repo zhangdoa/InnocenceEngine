@@ -21,7 +21,15 @@ INNO_PRIVATE_SCOPE GLTerrainPass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//terrainPass.vert/", "GL//terrainPass.tcs/", "GL//terrainPass.tes/", "GL//terrainPass.geom/", "GL//terrainPass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//terrainPass.vert/", "GL//terrainPass.tesc/", "GL//terrainPass.tese/", "GL//terrainPass.geom/", "GL//terrainPass.frag/" };
+
+	GLRenderPassComponent* m_h2nGLRPC;
+
+	GLShaderProgramComponent* m_h2nGLSPC;
+
+	ShaderFilePaths m_h2nShaderFilePaths = { "GL//heightToNormalPass.vert/", "", "", "", "GL//heightToNormalPass.frag/" };
+
+	bool generateNormal();
 
 	static float perlinNoiseFade(float t)
 	{
@@ -164,13 +172,20 @@ bool GLTerrainPass::initialize()
 
 	m_terrainNoise = generatePerlinNoise(l_textureSize, 6.0, 8);
 
+	for (auto& i : m_terrainNoise)
+	{
+		i.x *= 4.0f;
+		i.y *= 4.0f;
+		i.z *= 4.0f;
+	}
+
 	m_terrainNoiseGLTDC = addGLTextureDataComponent();
 
 	m_terrainNoiseGLTDC->m_textureDataDesc.samplerType = TextureSamplerType::SAMPLER_2D;
 	m_terrainNoiseGLTDC->m_textureDataDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
 	m_terrainNoiseGLTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_terrainNoiseGLTDC->m_textureDataDesc.minFilterMethod = TextureFilterMethod::LINEAR;
-	m_terrainNoiseGLTDC->m_textureDataDesc.magFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
+	m_terrainNoiseGLTDC->m_textureDataDesc.minFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
+	m_terrainNoiseGLTDC->m_textureDataDesc.magFilterMethod = TextureFilterMethod::LINEAR;
 	m_terrainNoiseGLTDC->m_textureDataDesc.wrapMethod = TextureWrapMethod::REPEAT;
 	m_terrainNoiseGLTDC->m_textureDataDesc.width = l_textureSize;
 	m_terrainNoiseGLTDC->m_textureDataDesc.height = l_textureSize;
@@ -192,17 +207,43 @@ bool GLTerrainPass::initialize()
 
 	initializeGLTextureDataComponent(m_terrainNoiseGLTDC);
 
+	m_h2nGLRPC = addGLRenderPassComponent(m_entityID, "HeightToNormalGLRPC/");
+	m_h2nGLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
+	m_h2nGLRPC->m_renderPassDesc.RTDesc.wrapMethod = TextureWrapMethod::REPEAT;
+	m_h2nGLRPC->m_renderPassDesc.RTDesc.width = l_textureSize;
+	m_h2nGLRPC->m_renderPassDesc.RTDesc.height = l_textureSize;
+	initializeGLRenderPassComponent(m_h2nGLRPC);
+
+	generateNormal();
+
 	return true;
 }
 
 void GLTerrainPass::initializeShaders()
 {
 	// shader programs and shaders
-	auto rhs = addGLShaderProgramComponent(m_entityID);
+	m_GLSPC = addGLShaderProgramComponent(m_entityID);
 
-	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
+	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
 
-	m_GLSPC = rhs;
+	m_h2nGLSPC = addGLShaderProgramComponent(m_entityID);
+
+	initializeGLShaderProgramComponent(m_h2nGLSPC, m_h2nShaderFilePaths);
+}
+
+bool GLTerrainPass::generateNormal()
+{
+	activateRenderPass(m_h2nGLRPC);
+
+	activateShaderProgram(m_h2nGLSPC);
+
+	auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);
+
+	activateTexture(m_terrainNoiseGLTDC, 0);
+
+	drawMesh(l_MDC);
+
+	return true;
 }
 
 bool GLTerrainPass::update()
@@ -222,6 +263,7 @@ bool GLTerrainPass::update()
 		auto l_MDC = getGLMeshDataComponent(MeshShapeType::TERRAIN);
 
 		activateTexture(m_terrainNoiseGLTDC, 0);
+		activateTexture(m_h2nGLRPC->m_GLTDCs[0], 1);
 
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glBindVertexArray(l_MDC->m_VAO);
@@ -247,10 +289,26 @@ bool GLTerrainPass::resize(unsigned int newSizeX, unsigned int newSizeY)
 
 bool GLTerrainPass::reloadShader()
 {
+	deleteShaderProgram(m_GLSPC);
+
+	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
+
 	return true;
 }
 
 GLRenderPassComponent * GLTerrainPass::getGLRPC()
 {
 	return m_GLRPC;
+}
+
+GLTextureDataComponent* GLTerrainPass::getHeightMap(unsigned int index)
+{
+	if (index == 0)
+	{
+		return m_terrainNoiseGLTDC;
+	}
+	else
+	{
+		return m_h2nGLRPC->m_GLTDCs[0];
+	}
 }

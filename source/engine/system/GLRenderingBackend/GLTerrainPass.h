@@ -10,4 +10,5 @@ INNO_PRIVATE_SCOPE GLTerrainPass
 	bool reloadShader();
 
 	GLRenderPassComponent* getGLRPC();
+	GLTextureDataComponent* getHeightMap(unsigned int index);
 }
