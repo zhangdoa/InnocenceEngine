@@ -461,6 +461,7 @@ void InnoFileSystemNS::from_json(const json & j, TransformComponent & p)
 	{
 		// JSON is an order-irrelevant format, so the parent transform component would always be instanciated in random point, then it's necessary to assign it later
 		std::string l_parentName = l_parentTransformComponentEntityName;
+		l_parentName += "/";
 		m_orphanTransformComponents.push({ &p, ComponentName(l_parentName.c_str()) });
 	}
 }
@@ -622,6 +623,7 @@ bool InnoFileSystemNS::loadComponents(const json& j)
 		if (i["EntityName"] != "RootTransform")
 		{
 			std::string l_entityName = i["EntityName"];
+			l_entityName += "/";
 			g_pCoreSystem->getGameSystem()->removeEntity(EntityName(l_entityName.c_str()));
 
 			auto l_EntityID = g_pCoreSystem->getGameSystem()->createEntity(EntityName(l_entityName.c_str()));

@@ -114,7 +114,7 @@ bool InnoGameSystemNS::setup()
 	m_rootTransformComponent = new TransformComponent();
 	m_rootTransformComponent->m_parentTransformComponent = nullptr;
 
-	m_rootTransformComponent->m_parentEntity = createEntity("RootTransform");
+	m_rootTransformComponent->m_parentEntity = createEntity("RootTransform/");
 
 	m_rootTransformComponent->m_localTransformMatrix = InnoMath::TransformVectorToTransformMatrix(m_rootTransformComponent->m_localTransformVector);
 	m_rootTransformComponent->m_globalTransformVector = m_rootTransformComponent->m_localTransformVector;

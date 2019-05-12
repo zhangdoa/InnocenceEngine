@@ -55,7 +55,7 @@ namespace PlayerComponentCollection
 bool PlayerComponentCollection::setup()
 {
 	f_sceneLoadingFinishCallback = [&]() {
-		m_cameraParentEntity = g_pCoreSystem->getGameSystem()->getEntityID("playerCharacterCamera");
+		m_cameraParentEntity = g_pCoreSystem->getGameSystem()->getEntityID("playerCharacterCamera/");
 		m_cameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(m_cameraParentEntity);
 		m_cameraComponent = g_pCoreSystem->getGameSystem()->get<CameraComponent>(m_cameraParentEntity);
 
@@ -207,7 +207,7 @@ bool GameInstanceNS::setupReferenceSpheres()
 	{
 		m_referenceSphereTransformComponents.emplace_back();
 		m_referenceSphereVisibleComponents.emplace_back();
-		auto l_entityName = EntityName(("MaterialReferenceSphere_" + std::to_string(i)).c_str());
+		auto l_entityName = EntityName(("MaterialReferenceSphere_" + std::to_string(i) + "/").c_str());
 		g_pCoreSystem->getGameSystem()->removeEntity(l_entityName);
 		m_referenceSphereEntitys.emplace_back(g_pCoreSystem->getGameSystem()->createEntity(l_entityName));
 	}
@@ -259,7 +259,7 @@ bool GameInstanceNS::setupOpaqueSpheres()
 	{
 		m_opaqueSphereTransformComponents.emplace_back();
 		m_opaqueSphereVisibleComponents.emplace_back();
-		auto l_entityName = EntityName(("PhysicsTestOpaqueObject_" + std::to_string(i)).c_str());
+		auto l_entityName = EntityName(("PhysicsTestOpaqueObject_" + std::to_string(i) + "/").c_str());
 		g_pCoreSystem->getGameSystem()->removeEntity(l_entityName);
 		m_opaqueSphereEntitys.emplace_back(g_pCoreSystem->getGameSystem()->createEntity(l_entityName));
 	}
@@ -321,7 +321,7 @@ bool GameInstanceNS::setupTransparentSpheres()
 	{
 		m_transparentSphereTransformComponents.emplace_back();
 		m_transparentSphereVisibleComponents.emplace_back();
-		auto l_entityName = EntityName(("PhysicsTestTransparentSphere_" + std::to_string(i)).c_str());
+		auto l_entityName = EntityName(("PhysicsTestTransparentSphere_" + std::to_string(i) + "/").c_str());
 		g_pCoreSystem->getGameSystem()->removeEntity(l_entityName);
 		m_transparentSphereEntitys.emplace_back(g_pCoreSystem->getGameSystem()->createEntity(l_entityName));
 	}
@@ -378,7 +378,7 @@ bool GameInstanceNS::setupPointLights()
 	{
 		m_pointLightTransformComponents.emplace_back();
 		m_pointLightComponents.emplace_back();
-		auto l_entityName = EntityName(("TestPointLight_" + std::to_string(i)).c_str());
+		auto l_entityName = EntityName(("TestPointLight_" + std::to_string(i) + "/").c_str());
 		g_pCoreSystem->getGameSystem()->removeEntity(l_entityName);
 		m_pointLightEntitys.emplace_back(g_pCoreSystem->getGameSystem()->createEntity(l_entityName));
 	}
