@@ -140,3 +140,8 @@ GLRenderPassComponent * GLOpaquePass::getGLRPC()
 {
 	return m_GLRPC;
 }
+
+GLShaderProgramComponent * GLOpaquePass::getGLSPC()
+{
+	return m_GLSPC;
+}

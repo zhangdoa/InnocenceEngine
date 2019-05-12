@@ -1,6 +1,7 @@
 #pragma once
 #include "../../common/InnoType.h"
 #include "../../component/GLRenderPassComponent.h"
+#include "../../component/GLShaderProgramComponent.h"
 
 INNO_PRIVATE_SCOPE GLOpaquePass
 {
@@ -10,4 +11,5 @@ INNO_PRIVATE_SCOPE GLOpaquePass
 	bool reloadShader();
 
 	GLRenderPassComponent* getGLRPC();
+	GLShaderProgramComponent* getGLSPC();
 }
