@@ -29,11 +29,11 @@ public:
 	IDXGIAdapter* m_adapter;
 	IDXGIOutput* m_adapterOutput;
 
-	ID3D11Device* m_device;
-	ID3D11DeviceContext* m_deviceContext;
+	ID3D11Device5* m_device;
+	ID3D11DeviceContext4* m_deviceContext;
 
 	DXGI_SWAP_CHAIN_DESC m_swapChainDesc;
-	IDXGISwapChain* m_swapChain;
+	IDXGISwapChain4* m_swapChain;
 
 	DX11RenderPassComponent* m_swapChainDXRPC;
 

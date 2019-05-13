@@ -50,7 +50,7 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 	DX11ShaderProgramComponent* addDX11ShaderProgramComponent(EntityID rhs);
 	bool initializeDX11ShaderProgramComponent(DX11ShaderProgramComponent* rhs, const ShaderFilePaths& shaderFilePaths);
 
-	bool createConstantBuffer(DX11ConstantBuffer& arg);
+	DX11ConstantBuffer createConstantBuffer(size_t elementSize, size_t elementCount, const std::string& name);
 	bool createStructuredBuffer(void* initialData, DX11StructuredBuffer& arg);
 
 	bool destroyStructuredBuffer(DX11StructuredBuffer& arg);
@@ -61,8 +61,22 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 	void cleanRTV(vec4 color, ID3D11RenderTargetView* RTV);
 	void cleanDSV(ID3D11DepthStencilView* DSV);
 
-	void updateConstantBuffer(const DX11ConstantBuffer& ConstantBuffer, void* ConstantBufferValue);
+	void updateConstantBufferImpl(const DX11ConstantBuffer& ConstantBuffer, size_t size, const void* ConstantBufferValue);
+
+	template <class T>
+	void updateConstantBuffer(const DX11ConstantBuffer& ConstantBuffer, const T& ConstantBufferValue)
+	{
+		updateConstantBufferImpl(ConstantBuffer, sizeof(T), &ConstantBufferValue);
+	}
+
+	template <class T>
+	void updateConstantBuffer(const DX11ConstantBuffer& ConstantBuffer, const std::vector<T>& ConstantBufferValue)
+	{
+		updateConstantBufferImpl(ConstantBuffer, sizeof(T) * ConstantBufferValue.size(), &ConstantBufferValue[0]);
+	}
+
 	void bindConstantBuffer(ShaderType shaderType, unsigned int startSlot, const DX11ConstantBuffer& ConstantBuffer);
+	void bindConstantBuffer(ShaderType shaderType, unsigned int startSlot, const DX11ConstantBuffer& ConstantBuffer, unsigned int offset);
 
 	void bindStructuredBufferForWrite(ShaderType shaderType, unsigned int startSlot, const DX11StructuredBuffer& StructuredBuffer);
 	void bindStructuredBufferForRead(ShaderType shaderType, unsigned int startSlot, const DX11StructuredBuffer& StructuredBuffer);

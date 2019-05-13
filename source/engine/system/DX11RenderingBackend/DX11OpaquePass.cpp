@@ -102,6 +102,8 @@ bool DX11OpaquePass::update()
 
 	activateRenderPass(m_DXRPC);
 
+	unsigned int l_offset = 0;
+
 	// draw
 	while (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.size() > 0)
 	{
@@ -135,13 +137,13 @@ bool DX11OpaquePass::update()
 			{
 				bindTextureForRead(ShaderType::FRAGMENT, 4, reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.AOTDC));
 			}
-			updateConstantBuffer(DX11RenderingSystemComponent::get().m_meshConstantBuffer, &l_geometryPassGPUData.meshGPUData);
-			updateConstantBuffer(DX11RenderingSystemComponent::get().m_materialConstantBuffer, &l_geometryPassGPUData.materialGPUData);
 
-			bindConstantBuffer(ShaderType::VERTEX, 1, DX11RenderingSystemComponent::get().m_meshConstantBuffer);
-			bindConstantBuffer(ShaderType::FRAGMENT, 0, DX11RenderingSystemComponent::get().m_materialConstantBuffer);
+			bindConstantBuffer(ShaderType::VERTEX, 1, DX11RenderingSystemComponent::get().m_meshConstantBuffer, l_offset);
+			bindConstantBuffer(ShaderType::FRAGMENT, 0, DX11RenderingSystemComponent::get().m_materialConstantBuffer, l_offset);
 
 			drawMesh(reinterpret_cast<DX11MeshDataComponent*>(l_geometryPassGPUData.MDC));
+
+			l_offset++;
 		}
 	}
 

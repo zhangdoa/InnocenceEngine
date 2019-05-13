@@ -99,26 +99,36 @@ ID3D10Blob* DX11RenderingSystemNS::loadShaderBuffer(ShaderType shaderType, const
 	return l_shaderBuffer;
 }
 
-bool DX11RenderingSystemNS::createConstantBuffer(DX11ConstantBuffer& arg)
+DX11ConstantBuffer DX11RenderingSystemNS::createConstantBuffer(size_t elementSize, size_t elementCount, const std::string& name)
 {
-	if (arg.m_ConstantBufferDesc.ByteWidth > 0)
-	{
-		// Create the constant buffer pointer
-		auto result = DX11RenderingSystemComponent::get().m_device->CreateBuffer(&arg.m_ConstantBufferDesc, NULL, &arg.m_ConstantBufferPtr);
+	DX11ConstantBuffer l_result;
+	l_result.elementSize = elementSize;
+	l_result.elementCount = elementCount;
 
-		if (FAILED(result))
-		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create constant buffer pointer!");
-			return false;
-		}
+	l_result.m_ConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	l_result.m_ConstantBufferDesc.ByteWidth = (unsigned int)(l_result.elementSize * l_result.elementCount);
+	l_result.m_ConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	l_result.m_ConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	l_result.m_ConstantBufferDesc.MiscFlags = 0;
+	l_result.m_ConstantBufferDesc.StructureByteStride = 0;
 
-		return true;
-	}
-	else
+	// Create the constant buffer pointer
+	auto l_hResult = DX11RenderingSystemComponent::get().m_device->CreateBuffer(&l_result.m_ConstantBufferDesc, NULL, &l_result.m_ConstantBufferPtr);
+
+	if (FAILED(l_hResult))
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: constant buffer byte width is 0!");
-		return false;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create constant buffer pointer!");
 	}
+
+	// Set name
+	l_hResult = l_result.m_ConstantBufferPtr->SetPrivateData(WKPDID_D3DDebugObjectName, (unsigned int)name.size(), name.c_str());
+
+	if (FAILED(l_hResult))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't set name for constant buffer!");
+	}
+
+	return l_result;
 }
 
 bool DX11RenderingSystemNS::createStructuredBuffer(void* initialData, DX11StructuredBuffer& arg)
@@ -1039,20 +1049,6 @@ void DX11RenderingSystemNS::drawMesh(DX11MeshDataComponent * DXMDC)
 {
 	if (DXMDC->m_vertexBuffer)
 	{
-		// Set the type of primitive that should be rendered from this vertex buffer.
-		D3D_PRIMITIVE_TOPOLOGY l_primitiveTopology;
-
-		if (DXMDC->m_meshPrimitiveTopology == MeshPrimitiveTopology::TRIANGLE)
-		{
-			l_primitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		}
-		else
-		{
-			l_primitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
-		}
-
-		DX11RenderingSystemComponent::get().m_deviceContext->IASetPrimitiveTopology(l_primitiveTopology);
-
 		// Set vertex buffer stride and offset.
 		unsigned int stride = sizeof(Vertex);
 		unsigned int offset = 0;
@@ -1194,21 +1190,21 @@ bool DX11RenderingSystemNS::activateShader(DX11ShaderProgramComponent * rhs)
 	return true;
 }
 
-void DX11RenderingSystemNS::updateConstantBuffer(const DX11ConstantBuffer& ConstantBuffer, void* ConstantBufferValue)
+void DX11RenderingSystemNS::updateConstantBufferImpl(const DX11ConstantBuffer& ConstantBuffer, size_t size, const void* ConstantBufferValue)
 {
-	HRESULT result;
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	HRESULT l_result;
+	D3D11_MAPPED_SUBRESOURCE l_mappedResource;
 
 	// Lock the constant buffer so it can be written to.
-	result = DX11RenderingSystemComponent::get().m_deviceContext->Map(ConstantBuffer.m_ConstantBufferPtr, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	if (FAILED(result))
+	l_result = DX11RenderingSystemComponent::get().m_deviceContext->Map(ConstantBuffer.m_ConstantBufferPtr, 0, D3D11_MAP_WRITE_DISCARD, 0, &l_mappedResource);
+	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't lock the shader buffer!");
 		return;
 	}
 
-	auto dataPtr = mappedResource.pData;
-	std::memcpy(dataPtr, ConstantBufferValue, ConstantBuffer.m_ConstantBufferDesc.ByteWidth);
+	auto l_dataPtr = l_mappedResource.pData;
+	std::memcpy(l_dataPtr, ConstantBufferValue, size);
 
 	// Unlock the constant buffer.
 	DX11RenderingSystemComponent::get().m_deviceContext->Unmap(ConstantBuffer.m_ConstantBufferPtr, 0);
@@ -1229,6 +1225,30 @@ void DX11RenderingSystemNS::bindConstantBuffer(ShaderType shaderType, unsigned i
 		break;
 	case ShaderType::COMPUTE:
 		DX11RenderingSystemComponent::get().m_deviceContext->CSSetConstantBuffers(startSlot, 1, &ConstantBuffer.m_ConstantBufferPtr);
+		break;
+	default:
+		break;
+	}
+}
+
+void DX11RenderingSystemNS::bindConstantBuffer(ShaderType shaderType, unsigned int startSlot, const DX11ConstantBuffer& ConstantBuffer, unsigned int offset)
+{
+	unsigned int l_constantCount = (unsigned int)ConstantBuffer.elementSize / 16;
+	unsigned int l_firstConstant = offset * l_constantCount;
+
+	switch (shaderType)
+	{
+	case ShaderType::VERTEX:
+		DX11RenderingSystemComponent::get().m_deviceContext->VSSetConstantBuffers1(startSlot, 1, &ConstantBuffer.m_ConstantBufferPtr, &l_firstConstant, &l_constantCount);
+		break;
+	case ShaderType::GEOMETRY:
+		DX11RenderingSystemComponent::get().m_deviceContext->GSSetConstantBuffers1(startSlot, 1, &ConstantBuffer.m_ConstantBufferPtr, &l_firstConstant, &l_constantCount);
+		break;
+	case ShaderType::FRAGMENT:
+		DX11RenderingSystemComponent::get().m_deviceContext->PSSetConstantBuffers1(startSlot, 1, &ConstantBuffer.m_ConstantBufferPtr, &l_firstConstant, &l_constantCount);
+		break;
+	case ShaderType::COMPUTE:
+		DX11RenderingSystemComponent::get().m_deviceContext->CSSetConstantBuffers1(startSlot, 1, &ConstantBuffer.m_ConstantBufferPtr, &l_firstConstant, &l_constantCount);
 		break;
 	default:
 		break;

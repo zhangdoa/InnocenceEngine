@@ -18,6 +18,7 @@
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3dcompiler.lib")
+#pragma comment(lib, "dxguid.lib")
 
 #include "../ICoreSystem.h"
 
@@ -233,7 +234,7 @@ bool DX11RenderingSystemNS::createSwapChain()
 	g_DXRenderingSystemComponent->m_swapChainDesc.Flags = 0;
 
 	// Set the feature level to DirectX 11.
-	featureLevel = D3D_FEATURE_LEVEL_11_0;
+	featureLevel = D3D_FEATURE_LEVEL_11_1;
 
 	// Create the swap chain, Direct3D device, and Direct3D device context.
 	unsigned int creationFlags = 0;
@@ -241,14 +242,22 @@ bool DX11RenderingSystemNS::createSwapChain()
 	creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif // _DEBUG
 
+	ID3D11Device* l_device;
+	ID3D11DeviceContext* l_deviceContext;
+	IDXGISwapChain* l_swapChain;
+
 	result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, creationFlags, &featureLevel, 1,
-		D3D11_SDK_VERSION, &g_DXRenderingSystemComponent->m_swapChainDesc, &g_DXRenderingSystemComponent->m_swapChain, &g_DXRenderingSystemComponent->m_device, NULL, &g_DXRenderingSystemComponent->m_deviceContext);
+		D3D11_SDK_VERSION, &g_DXRenderingSystemComponent->m_swapChainDesc, &l_swapChain, &l_device, NULL, &l_deviceContext);
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create the swap chain/D3D device/D3D device context!");
 		m_objectStatus = ObjectStatus::STANDBY;
 		return false;
 	}
+
+	g_DXRenderingSystemComponent->m_device = reinterpret_cast<ID3D11Device5*>(l_device);
+	g_DXRenderingSystemComponent->m_deviceContext = reinterpret_cast<ID3D11DeviceContext4*>(l_deviceContext);
+	g_DXRenderingSystemComponent->m_swapChain = reinterpret_cast<IDXGISwapChain4*>(l_swapChain);
 
 	return true;
 }
@@ -457,69 +466,14 @@ void DX11RenderingSystemNS::loadDefaultAssets()
 
 bool DX11RenderingSystemNS::generateGPUBuffers()
 {
-	g_DXRenderingSystemComponent->m_cameraConstantBuffer.m_ConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	g_DXRenderingSystemComponent->m_cameraConstantBuffer.m_ConstantBufferDesc.ByteWidth = sizeof(CameraGPUData);
-	g_DXRenderingSystemComponent->m_cameraConstantBuffer.m_ConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	g_DXRenderingSystemComponent->m_cameraConstantBuffer.m_ConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	g_DXRenderingSystemComponent->m_cameraConstantBuffer.m_ConstantBufferDesc.MiscFlags = 0;
-	g_DXRenderingSystemComponent->m_cameraConstantBuffer.m_ConstantBufferDesc.StructureByteStride = 0;
-	createConstantBuffer(g_DXRenderingSystemComponent->m_cameraConstantBuffer);
-
-	g_DXRenderingSystemComponent->m_meshConstantBuffer.m_ConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	g_DXRenderingSystemComponent->m_meshConstantBuffer.m_ConstantBufferDesc.ByteWidth = sizeof(MeshGPUData);
-	g_DXRenderingSystemComponent->m_meshConstantBuffer.m_ConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	g_DXRenderingSystemComponent->m_meshConstantBuffer.m_ConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	g_DXRenderingSystemComponent->m_meshConstantBuffer.m_ConstantBufferDesc.MiscFlags = 0;
-	g_DXRenderingSystemComponent->m_meshConstantBuffer.m_ConstantBufferDesc.StructureByteStride = 0;
-	createConstantBuffer(g_DXRenderingSystemComponent->m_meshConstantBuffer);
-
-	g_DXRenderingSystemComponent->m_materialConstantBuffer.m_ConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	g_DXRenderingSystemComponent->m_materialConstantBuffer.m_ConstantBufferDesc.ByteWidth = sizeof(MaterialGPUData);
-	g_DXRenderingSystemComponent->m_materialConstantBuffer.m_ConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	g_DXRenderingSystemComponent->m_materialConstantBuffer.m_ConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	g_DXRenderingSystemComponent->m_materialConstantBuffer.m_ConstantBufferDesc.MiscFlags = 0;
-	g_DXRenderingSystemComponent->m_materialConstantBuffer.m_ConstantBufferDesc.StructureByteStride = 0;
-	createConstantBuffer(g_DXRenderingSystemComponent->m_materialConstantBuffer);
-
-	g_DXRenderingSystemComponent->m_sunConstantBuffer.m_ConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	g_DXRenderingSystemComponent->m_sunConstantBuffer.m_ConstantBufferDesc.ByteWidth = sizeof(SunGPUData);
-	g_DXRenderingSystemComponent->m_sunConstantBuffer.m_ConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	g_DXRenderingSystemComponent->m_sunConstantBuffer.m_ConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	g_DXRenderingSystemComponent->m_sunConstantBuffer.m_ConstantBufferDesc.MiscFlags = 0;
-	g_DXRenderingSystemComponent->m_sunConstantBuffer.m_ConstantBufferDesc.StructureByteStride = 0;
-	createConstantBuffer(g_DXRenderingSystemComponent->m_sunConstantBuffer);
-
-	g_DXRenderingSystemComponent->m_pointLightConstantBuffer.m_ConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	g_DXRenderingSystemComponent->m_pointLightConstantBuffer.m_ConstantBufferDesc.ByteWidth = sizeof(PointLightGPUData) * RenderingFrontendSystemComponent::get().m_maxPointLights;
-	g_DXRenderingSystemComponent->m_pointLightConstantBuffer.m_ConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	g_DXRenderingSystemComponent->m_pointLightConstantBuffer.m_ConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	g_DXRenderingSystemComponent->m_pointLightConstantBuffer.m_ConstantBufferDesc.MiscFlags = 0;
-	g_DXRenderingSystemComponent->m_pointLightConstantBuffer.m_ConstantBufferDesc.StructureByteStride = 0;
-	createConstantBuffer(g_DXRenderingSystemComponent->m_pointLightConstantBuffer);
-
-	g_DXRenderingSystemComponent->m_sphereLightConstantBuffer.m_ConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	g_DXRenderingSystemComponent->m_sphereLightConstantBuffer.m_ConstantBufferDesc.ByteWidth = sizeof(SphereLightGPUData)* RenderingFrontendSystemComponent::get().m_maxSphereLights;
-	g_DXRenderingSystemComponent->m_sphereLightConstantBuffer.m_ConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	g_DXRenderingSystemComponent->m_sphereLightConstantBuffer.m_ConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	g_DXRenderingSystemComponent->m_sphereLightConstantBuffer.m_ConstantBufferDesc.MiscFlags = 0;
-	g_DXRenderingSystemComponent->m_sphereLightConstantBuffer.m_ConstantBufferDesc.StructureByteStride = 0;
-	createConstantBuffer(g_DXRenderingSystemComponent->m_sphereLightConstantBuffer);
-
-	g_DXRenderingSystemComponent->m_skyConstantBuffer.m_ConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	g_DXRenderingSystemComponent->m_skyConstantBuffer.m_ConstantBufferDesc.ByteWidth = sizeof(SkyGPUData);
-	g_DXRenderingSystemComponent->m_skyConstantBuffer.m_ConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	g_DXRenderingSystemComponent->m_skyConstantBuffer.m_ConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	g_DXRenderingSystemComponent->m_skyConstantBuffer.m_ConstantBufferDesc.MiscFlags = 0;
-	g_DXRenderingSystemComponent->m_skyConstantBuffer.m_ConstantBufferDesc.StructureByteStride = 0;
-	createConstantBuffer(g_DXRenderingSystemComponent->m_skyConstantBuffer);
-
-	g_DXRenderingSystemComponent->m_dispatchParamsConstantBuffer.m_ConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	g_DXRenderingSystemComponent->m_dispatchParamsConstantBuffer.m_ConstantBufferDesc.ByteWidth = sizeof(DispatchParamsGPUData);
-	g_DXRenderingSystemComponent->m_dispatchParamsConstantBuffer.m_ConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	g_DXRenderingSystemComponent->m_dispatchParamsConstantBuffer.m_ConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	g_DXRenderingSystemComponent->m_dispatchParamsConstantBuffer.m_ConstantBufferDesc.MiscFlags = 0;
-	g_DXRenderingSystemComponent->m_dispatchParamsConstantBuffer.m_ConstantBufferDesc.StructureByteStride = 0;
-	createConstantBuffer(g_DXRenderingSystemComponent->m_dispatchParamsConstantBuffer);
+	g_DXRenderingSystemComponent->m_cameraConstantBuffer = createConstantBuffer(sizeof(CameraGPUData), 1, "cameraConstantBuffer");
+	g_DXRenderingSystemComponent->m_meshConstantBuffer = createConstantBuffer(sizeof(MeshGPUData), RenderingFrontendSystemComponent::get().m_maxMeshes, "meshConstantBuffer");
+	g_DXRenderingSystemComponent->m_materialConstantBuffer = createConstantBuffer(sizeof(MaterialGPUData), RenderingFrontendSystemComponent::get().m_maxMaterials, "materialConstantBuffer");
+	g_DXRenderingSystemComponent->m_sunConstantBuffer = createConstantBuffer(sizeof(SunGPUData), 1, "sunConstantBuffer");
+	g_DXRenderingSystemComponent->m_pointLightConstantBuffer = createConstantBuffer(sizeof(PointLightGPUData), RenderingFrontendSystemComponent::get().m_maxPointLights, "pointLightConstantBuffer");
+	g_DXRenderingSystemComponent->m_sphereLightConstantBuffer = createConstantBuffer(sizeof(SphereLightGPUData), RenderingFrontendSystemComponent::get().m_maxSphereLights, "sphereLightConstantBuffer");
+	g_DXRenderingSystemComponent->m_skyConstantBuffer = createConstantBuffer(sizeof(SkyGPUData), 1, "skyConstantBuffer");
+	g_DXRenderingSystemComponent->m_dispatchParamsConstantBuffer = createConstantBuffer(sizeof(DispatchParamsGPUData), 1, "dispatchParamsConstantBuffer");
 
 	return true;
 }
@@ -560,11 +514,35 @@ bool DX11RenderingSystemNS::update()
 
 bool DX11RenderingSystemNS::render()
 {
-	updateConstantBuffer(DX11RenderingSystemComponent::get().m_cameraConstantBuffer, &RenderingFrontendSystemComponent::get().m_cameraGPUData);
-	updateConstantBuffer(DX11RenderingSystemComponent::get().m_sunConstantBuffer, &RenderingFrontendSystemComponent::get().m_sunGPUData);
-	updateConstantBuffer(DX11RenderingSystemComponent::get().m_pointLightConstantBuffer, &RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector[0]);
-	updateConstantBuffer(DX11RenderingSystemComponent::get().m_sphereLightConstantBuffer, &RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector[0]);
-	updateConstantBuffer(DX11RenderingSystemComponent::get().m_skyConstantBuffer, &RenderingFrontendSystemComponent::get().m_skyGPUData);
+	updateConstantBuffer(DX11RenderingSystemComponent::get().m_cameraConstantBuffer, RenderingFrontendSystemComponent::get().m_cameraGPUData);
+	updateConstantBuffer(DX11RenderingSystemComponent::get().m_sunConstantBuffer, RenderingFrontendSystemComponent::get().m_sunGPUData);
+	updateConstantBuffer(DX11RenderingSystemComponent::get().m_pointLightConstantBuffer, RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector[0]);
+	updateConstantBuffer(DX11RenderingSystemComponent::get().m_sphereLightConstantBuffer, RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector[0]);
+	updateConstantBuffer(DX11RenderingSystemComponent::get().m_skyConstantBuffer, RenderingFrontendSystemComponent::get().m_skyGPUData);
+
+	// @TODO: prepare in rendering frontend
+	auto l_queueCopy = RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.getRawData();
+
+	if (l_queueCopy.size() > 0)
+	{
+		std::vector<MeshGPUData> l_meshGPUData;
+		l_meshGPUData.reserve(l_queueCopy.size());
+
+		std::vector<MaterialGPUData> l_materialGPUData;
+		l_materialGPUData.reserve(l_queueCopy.size());
+
+		while (l_queueCopy.size() > 0)
+		{
+			auto l_geometryPassGPUData = l_queueCopy.front();
+			l_meshGPUData.emplace_back(l_geometryPassGPUData.meshGPUData);
+			l_materialGPUData.emplace_back(l_geometryPassGPUData.materialGPUData);
+			l_queueCopy.pop();
+		}
+		updateConstantBuffer(DX11RenderingSystemComponent::get().m_meshConstantBuffer, l_meshGPUData);
+		updateConstantBuffer(DX11RenderingSystemComponent::get().m_materialConstantBuffer, l_materialGPUData);
+	}
+
+	DX11RenderingSystemComponent::get().m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	DX11OpaquePass::update();
 
