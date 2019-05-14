@@ -131,7 +131,7 @@ DX11ConstantBuffer DX11RenderingSystemNS::createConstantBuffer(size_t elementSiz
 	return l_result;
 }
 
-bool DX11RenderingSystemNS::createStructuredBuffer(void* initialData, DX11StructuredBuffer& arg)
+bool DX11RenderingSystemNS::createStructuredBuffer(void* initialData, DX11StructuredBuffer& arg, const std::string& name)
 {
 	if (arg.m_StructuredBufferDesc.ByteWidth > 0)
 	{
@@ -151,12 +151,20 @@ bool DX11RenderingSystemNS::createStructuredBuffer(void* initialData, DX11Struct
 		subResourceData.SysMemSlicePitch = 0;
 
 		// Create the structured buffer pointer
-		auto result = DX11RenderingSystemComponent::get().m_device->CreateBuffer(&arg.m_StructuredBufferDesc, &subResourceData, &arg.m_StructuredBufferPtr);
+		auto l_hResult = DX11RenderingSystemComponent::get().m_device->CreateBuffer(&arg.m_StructuredBufferDesc, &subResourceData, &arg.m_StructuredBufferPtr);
 
-		if (FAILED(result))
+		if (FAILED(l_hResult))
 		{
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create structured buffer pointer!");
 			return false;
+		}
+
+		// Set name
+		l_hResult = arg.m_StructuredBufferPtr->SetPrivateData(WKPDID_D3DDebugObjectName, (unsigned int)name.size(), name.c_str());
+
+		if (FAILED(l_hResult))
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't set name for structured buffer!");
 		}
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
@@ -165,11 +173,11 @@ bool DX11RenderingSystemNS::createStructuredBuffer(void* initialData, DX11Struct
 		srvDesc.Buffer.FirstElement = 0;
 		srvDesc.Buffer.NumElements = arg.elementCount;
 
-		result = DX11RenderingSystemComponent::get().m_device->CreateShaderResourceView(arg.m_StructuredBufferPtr, &srvDesc, &arg.SRV);
+		l_hResult = DX11RenderingSystemComponent::get().m_device->CreateShaderResourceView(arg.m_StructuredBufferPtr, &srvDesc, &arg.SRV);
 
-		if (FAILED(result))
+		if (FAILED(l_hResult))
 		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create shader resource view!");
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create SRV!");
 			return false;
 		}
 
@@ -180,11 +188,11 @@ bool DX11RenderingSystemNS::createStructuredBuffer(void* initialData, DX11Struct
 		uavDesc.Buffer.NumElements = arg.elementCount;
 		uavDesc.Buffer.Flags = 0;
 
-		result = DX11RenderingSystemComponent::get().m_device->CreateUnorderedAccessView(arg.m_StructuredBufferPtr, &uavDesc, &arg.UAV);
+		l_hResult = DX11RenderingSystemComponent::get().m_device->CreateUnorderedAccessView(arg.m_StructuredBufferPtr, &uavDesc, &arg.UAV);
 
-		if (FAILED(result))
+		if (FAILED(l_hResult))
 		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create unordered access view!");
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create UAV!");
 			return false;
 		}
 

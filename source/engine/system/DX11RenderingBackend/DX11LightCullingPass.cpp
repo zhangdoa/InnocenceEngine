@@ -65,7 +65,7 @@ bool DX11LightCullingPass::createGridFrustumsBuffer()
 	DX11RenderingSystemComponent::get().m_gridFrustumsStructuredBuffer.m_StructuredBufferDesc.ByteWidth = l_elementCount * 64;
 	DX11RenderingSystemComponent::get().m_gridFrustumsStructuredBuffer.elementCount = l_elementCount;
 
-	createStructuredBuffer(nullptr, DX11RenderingSystemComponent::get().m_gridFrustumsStructuredBuffer);
+	createStructuredBuffer(nullptr, DX11RenderingSystemComponent::get().m_gridFrustumsStructuredBuffer, "gridFrustumsStructuredBuffer");
 
 	return true;
 }
@@ -80,7 +80,7 @@ bool DX11LightCullingPass::createLightIndexCountBuffer()
 	DX11RenderingSystemComponent::get().m_lightListIndexCounterStructuredBuffer.elementCount = 1;
 
 	auto l_initialIndexCount = 1;
-	createStructuredBuffer(&l_initialIndexCount, DX11RenderingSystemComponent::get().m_lightListIndexCounterStructuredBuffer);
+	createStructuredBuffer(&l_initialIndexCount, DX11RenderingSystemComponent::get().m_lightListIndexCounterStructuredBuffer, "lightListIndexCounterStructuredBuffer");
 
 	return true;
 }
@@ -106,7 +106,7 @@ bool DX11LightCullingPass::createLightIndexListBuffer()
 	DX11RenderingSystemComponent::get().m_lightIndexListStructuredBuffer.m_StructuredBufferDesc.ByteWidth = l_elementCount * sizeof(uint32_t);
 	DX11RenderingSystemComponent::get().m_lightIndexListStructuredBuffer.elementCount = l_elementCount;
 
-	createStructuredBuffer(nullptr, DX11RenderingSystemComponent::get().m_lightIndexListStructuredBuffer);
+	createStructuredBuffer(nullptr, DX11RenderingSystemComponent::get().m_lightIndexListStructuredBuffer, "lightIndexListStructuredBuffer");
 
 	return true;
 }

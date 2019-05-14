@@ -51,7 +51,7 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 	bool initializeDX11ShaderProgramComponent(DX11ShaderProgramComponent* rhs, const ShaderFilePaths& shaderFilePaths);
 
 	DX11ConstantBuffer createConstantBuffer(size_t elementSize, size_t elementCount, const std::string& name);
-	bool createStructuredBuffer(void* initialData, DX11StructuredBuffer& arg);
+	bool createStructuredBuffer(void* initialData, DX11StructuredBuffer& arg, const std::string& name);
 
 	bool destroyStructuredBuffer(DX11StructuredBuffer& arg);
 

@@ -516,8 +516,8 @@ bool DX11RenderingSystemNS::render()
 {
 	updateConstantBuffer(DX11RenderingSystemComponent::get().m_cameraConstantBuffer, RenderingFrontendSystemComponent::get().m_cameraGPUData);
 	updateConstantBuffer(DX11RenderingSystemComponent::get().m_sunConstantBuffer, RenderingFrontendSystemComponent::get().m_sunGPUData);
-	updateConstantBuffer(DX11RenderingSystemComponent::get().m_pointLightConstantBuffer, RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector[0]);
-	updateConstantBuffer(DX11RenderingSystemComponent::get().m_sphereLightConstantBuffer, RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector[0]);
+	updateConstantBuffer(DX11RenderingSystemComponent::get().m_pointLightConstantBuffer, RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector);
+	updateConstantBuffer(DX11RenderingSystemComponent::get().m_sphereLightConstantBuffer, RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector);
 	updateConstantBuffer(DX11RenderingSystemComponent::get().m_skyConstantBuffer, RenderingFrontendSystemComponent::get().m_skyGPUData);
 
 	// @TODO: prepare in rendering frontend
