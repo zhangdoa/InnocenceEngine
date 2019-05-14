@@ -1,5 +1,7 @@
 // shadertype=glsl
 #version 450
+#extension GL_ARB_shader_image_load_store : require
+#define BLOCK_SIZE 16
 
 layout(location = 0) in vec2 TexCoords;
 
@@ -47,6 +49,7 @@ layout(location = 5, binding = 5) uniform sampler2D uni_brdfLUT;
 layout(location = 6, binding = 6) uniform sampler2D uni_brdfMSLUT;
 layout(location = 7, binding = 7) uniform samplerCube uni_irradianceMap;
 layout(location = 8, binding = 8) uniform samplerCube uni_preFiltedMap;
+layout(binding = 0, rgba16f) uniform image2D uni_lightGrid;
 
 layout(std140, row_major, binding = 0) uniform cameraUBO
 {
@@ -80,7 +83,19 @@ layout(std140, row_major, binding = 6) uniform CSMUBO
 	CSM uni_CSMs[NR_CSM_SPLITS];
 };
 
+layout(std430, binding = 2) buffer lightIndexListSSBO
+{
+	uint lightIndexList[];
+};
+
 bool uni_drawCSMSplitedArea = false;
+
+uvec2 RGBA16F2RG32UI(vec4 rhs)
+{
+	uint x = (uint(rhs.x) & 0x0000FFFF) | (uint(rhs.y) & 0x0000FFFF << 16U);
+	uint y = (uint(rhs.z) & 0x0000FFFF) | (uint(rhs.w) & 0x0000FFFF << 16U);
+	return uvec2(x, y);
+}
 
 // Oren-Nayar diffuse BRDF [https://github.com/glslify/glsl-diffuse-oren-nayar]
 // ----------------------------------------------------------------------------
@@ -392,12 +407,26 @@ void main()
 	Lo *= 1 - ShadowCalculation(NdotL, FragPos);
 
 	// point punctual light
+	// Get the index of the current pixel in the light grid.
+	ivec2 tileIndex = ivec2(floor(gl_FragCoord.xy / BLOCK_SIZE));
+
+	// Get the start position and offset of the light in the light index list.
+	vec4 lightGridRGBA16F = imageLoad(uni_lightGrid, tileIndex);
+	uvec2 lightGrid = RGBA16F2RG32UI(lightGridRGBA16F);
+	uint startOffset = lightGrid.x;
+	uint lightCount = lightGrid.y;
+
+	//for (int i = 0; i < lightCount; ++i)
 	for (int i = 0; i < NR_POINT_LIGHTS; ++i)
 	{
-		float lightRadius = uni_pointLights[i].luminance.w;
+		//uint lightIndex = lightIndexList[startOffset + i];
+		uint lightIndex = i;
+		pointLight light = uni_pointLights[lightIndex];
+
+		float lightRadius = light.luminance.w;
 		if (lightRadius > 0)
 		{
-			vec3 unormalizedL = uni_pointLights[i].position.xyz - FragPos;
+			vec3 unormalizedL = light.position.xyz - FragPos;
 
 			if (length(unormalizedL) < lightRadius)
 			{
@@ -412,7 +441,7 @@ void main()
 				float invSqrAttRadius = 1.0 / max(lightRadius * lightRadius, eps);
 				attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
 
-				vec3 lightLuminance = uni_pointLights[i].luminance.xyz * attenuation;
+				vec3 lightLuminance = light.luminance.xyz * attenuation;
 
 				Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, lightLuminance);
 			}

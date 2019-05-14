@@ -50,7 +50,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 
 	GLuint getUniformLocation(GLuint shaderProgram, const std::string& uniformName);
 	GLuint getUniformBlockIndex(GLuint shaderProgram, const std::string& uniformBlockName);
-	GLuint generateUBO(GLuint UBOSize, GLuint uniformBlockBindingPoint);
+	GLuint generateUBO(GLuint UBOSize, GLuint uniformBlockBindingPoint, const std::string& UBOName);
 	void bindUniformBlock(GLuint UBO, GLuint UBOSize, GLuint program, const std::string & uniformBlockName, GLuint uniformBlockBindingPoint);
 	void updateTextureUniformLocations(GLuint program, const std::vector<std::string>& UniformNames);
 
@@ -77,7 +77,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	void updateUniform(const GLint uniformLocation, const mat4& mat);
 	void updateUniform(const GLint uniformLocation, const std::vector<vec4>& uniformValue);
 
-	GLuint generateSSBO(GLuint SSBOSize, GLuint bufferBlockBindingPoint);
+	GLuint generateSSBO(GLuint SSBOSize, GLuint bufferBlockBindingPoint, const std::string& SSBOName);
 
 	void updateSSBOImpl(const GLint& SSBO, size_t size, const void* SSBOValue);
 

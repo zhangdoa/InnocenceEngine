@@ -896,13 +896,14 @@ GLuint GLRenderingSystemNS::getUniformBlockIndex(GLuint shaderProgram, const std
 	return uniformBlockIndex;
 }
 
-GLuint GLRenderingSystemNS::generateUBO(GLuint UBOSize, GLuint uniformBlockBindingPoint)
+GLuint GLRenderingSystemNS::generateUBO(GLuint UBOSize, GLuint uniformBlockBindingPoint, const std::string& UBOName)
 {
 	GLuint l_UBO;
 	glGenBuffers(1, &l_UBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, l_UBO);
 	glBufferData(GL_UNIFORM_BUFFER, UBOSize, NULL, GL_DYNAMIC_DRAW);
 	glBindBufferRange(GL_UNIFORM_BUFFER, uniformBlockBindingPoint, l_UBO, 0, UBOSize);
+	glObjectLabel(GL_BUFFER, l_UBO, (GLsizei)UBOName.size(), UBOName.c_str());
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	return l_UBO;
@@ -973,13 +974,14 @@ void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, const std::
 	glUniform4fv(uniformLocation, (GLsizei)uniformValue.size(), (float*)&uniformValue[0]);
 }
 
-GLuint GLRenderingSystemNS::generateSSBO(GLuint SSBOSize, GLuint bufferBlockBindingPoint)
+GLuint GLRenderingSystemNS::generateSSBO(GLuint SSBOSize, GLuint bufferBlockBindingPoint, const std::string& SSBOName)
 {
 	GLuint l_SSBO;
 	glGenBuffers(1, &l_SSBO);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, l_SSBO);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, SSBOSize, NULL, GL_DYNAMIC_DRAW);
 	glBindBufferRange(GL_SHADER_STORAGE_BUFFER, bufferBlockBindingPoint, l_SSBO, 0, SSBOSize);
+	glObjectLabel(GL_BUFFER, l_SSBO, (GLsizei)SSBOName.size(), SSBOName.c_str());
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 	return l_SSBO;

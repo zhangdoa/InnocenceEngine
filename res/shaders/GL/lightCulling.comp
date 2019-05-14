@@ -76,7 +76,7 @@ vec4 ScreenToView(vec4 screen, vec2 in_viewportSize, mat4 in_p_inv)
 	vec2 writeTexCoord = screen.xy / in_viewportSize;
 
 	// Convert to clip space
-	vec4 clip = vec4(vec2(writeTexCoord.x, 1.0f - writeTexCoord.y) * 2.0f - 1.0f, screen.z, screen.w);
+	vec4 clip = vec4(vec2(writeTexCoord.x, writeTexCoord.y) * 2.0f - 1.0f, screen.z, screen.w);
 
 	return ClipToView(clip, in_p_inv);
 }
@@ -171,22 +171,21 @@ void AppendLight(uint lightIndex)
 
 vec4 RG32UI2RGBA16F(uvec2 rhs)
 {
-	return vec4(float(rhs.x & 0x0000FFFF),
-		float((rhs.x & 0xFFFF0000) >> 16U),
-		float(rhs.y & 0x0000FFFF),
-		float((rhs.y & 0xFFFF0000) >> 16U));
+	return vec4(float(rhs.x & 0x0000FFFF), float((rhs.x & 0xFFFF0000) >> 16U), float(rhs.y & 0x0000FFFF), float((rhs.y & 0xFFFF0000) >> 16U));
+	//return vec4(uintBitsToFloat(rhs.x & 0x0000FFFF),
+	//	uintBitsToFloat((rhs.x & 0xFFFF0000) >> 16U),
+	//	uintBitsToFloat(rhs.y & 0x0000FFFF),
+	//	uintBitsToFloat((rhs.y & 0xFFFF0000) >> 16U));
 }
 
 void main()
 {
 	// Calculate min & max depth in threadgroup / tile.
 	vec2 readTextureCoord = vec2(gl_GlobalInvocationID.xy) / viewportSize;
-	readTextureCoord.y = 1.0f - readTextureCoord.y;
 
 	uint uDepth = texture(depthTexture, readTextureCoord).r;
 
 	ivec2 writeTexCoord = ivec2(gl_GlobalInvocationID.xy);
-	writeTexCoord.y = int(viewportSize.y) - writeTexCoord.y;
 
 	// Initialize group local variables
 	// Avoid contention by other threads in the group.
@@ -214,6 +213,7 @@ void main()
 	float minDepthVS = ClipToView(vec4(0, 0, fMinDepth, 1), p_inv).z;
 	float maxDepthVS = ClipToView(vec4(0, 0, fMaxDepth, 1), p_inv).z;
 	float nearClipVS = ClipToView(vec4(0, 0, -1, 1), p_inv).z;
+	float farClipVS = ClipToView(vec4(0, 0, 1, 1), p_inv).z;
 
 	// Clipping plane for minimum depth value
 	Plane minPlane = { vec3(0, 0, -1), -minDepthVS };
@@ -228,12 +228,12 @@ void main()
 			vec4 lightPos_VS = uni_t_camera * light.position;
 			lightPos_VS = uni_r_camera * lightPos_VS;
 			Sphere sphere = { lightPos_VS.xyz, light.luminance.w };
-			if (SphereInsideFrustum(sphere, l_TileFrustum, nearClipVS, maxDepthVS))
+			if (SphereInsideFrustum(sphere, l_TileFrustum, nearClipVS, farClipVS))
 			{
-				if (!SphereInsidePlane(sphere, minPlane))
-				{
-					AppendLight(i);
-				}
+				//if (!SphereInsidePlane(sphere, minPlane))
+				//{
+				AppendLight(i);
+				//}
 			}
 		}
 	}

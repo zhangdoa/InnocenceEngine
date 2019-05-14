@@ -75,7 +75,7 @@ vec4 ScreenToView(vec4 screen, vec2 in_viewportSize, mat4 in_p_inv)
 	vec2 texCoord = screen.xy / in_viewportSize;
 
 	// Convert to clip space
-	vec4 clip = vec4(vec2(texCoord.x, 1.0f - texCoord.y) * 2.0f - 1.0f, screen.z, screen.w);
+	vec4 clip = vec4(vec2(texCoord.x, texCoord.y) * 2.0f - 1.0f, screen.z, screen.w);
 
 	return ClipToView(clip, in_p_inv);
 }
@@ -108,13 +108,13 @@ void main()
 	// Compute the 4 corner points on the far clipping plane to use as the
 	// frustum vertices.
 	vec4 screenSpace[4];
-	// Top left point
-	screenSpace[0] = vec4(gl_GlobalInvocationID.xy * BLOCK_SIZE, -1.0f, 1.0f);
-	// Top right point
-	screenSpace[1] = vec4(vec2(gl_GlobalInvocationID.x + 1, gl_GlobalInvocationID.y) * BLOCK_SIZE, -1.0f, 1.0f);
 	// Bottom left point
-	screenSpace[2] = vec4(vec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y + 1) * BLOCK_SIZE, -1.0f, 1.0f);
+	screenSpace[0] = vec4(gl_GlobalInvocationID.xy * BLOCK_SIZE, -1.0f, 1.0f);
 	// Bottom right point
+	screenSpace[1] = vec4(vec2(gl_GlobalInvocationID.x + 1, gl_GlobalInvocationID.y) * BLOCK_SIZE, -1.0f, 1.0f);
+	// Top left point
+	screenSpace[2] = vec4(vec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y + 1) * BLOCK_SIZE, -1.0f, 1.0f);
+	// Top right point
 	screenSpace[3] = vec4(vec2(gl_GlobalInvocationID.x + 1, gl_GlobalInvocationID.y + 1) * BLOCK_SIZE, -1.0f, 1.0f);
 
 	vec3 viewSpace[4];
@@ -128,13 +128,13 @@ void main()
 	Frustum frustum;
 
 	// Left plane
-	frustum.planes[0] = ComputePlane(eyePos, viewSpace[2], viewSpace[0]);
+	frustum.planes[0] = ComputePlane(eyePos, viewSpace[0], viewSpace[2]);
 	// Right plane
-	frustum.planes[1] = ComputePlane(eyePos, viewSpace[1], viewSpace[3]);
+	frustum.planes[1] = ComputePlane(eyePos, viewSpace[3], viewSpace[1]);
 	// Top plane
-	frustum.planes[2] = ComputePlane(eyePos, viewSpace[0], viewSpace[1]);
+	frustum.planes[2] = ComputePlane(eyePos, viewSpace[1], viewSpace[0]);
 	// Bottom plane
-	frustum.planes[3] = ComputePlane(eyePos, viewSpace[3], viewSpace[2]);
+	frustum.planes[3] = ComputePlane(eyePos, viewSpace[2], viewSpace[3]);
 
 	// Store the computed frustum in global memory (if our thread ID is in bounds of the grid).
 	if (gl_GlobalInvocationID.x < numThreads.x && gl_GlobalInvocationID.y < numThreads.y)

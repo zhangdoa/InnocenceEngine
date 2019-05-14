@@ -318,23 +318,23 @@ void  GLRenderingSystemNS::loadDefaultAssets()
 
 bool GLRenderingSystemNS::generateGPUBuffers()
 {
-	GLRenderingSystemComponent::get().m_cameraUBO = generateUBO(sizeof(CameraGPUData), 0);
+	GLRenderingSystemComponent::get().m_cameraUBO = generateUBO(sizeof(CameraGPUData), 0, "cameraUBO");
 
-	GLRenderingSystemComponent::get().m_meshUBO = generateUBO(sizeof(MeshGPUData), 1);
+	GLRenderingSystemComponent::get().m_meshUBO = generateUBO(sizeof(MeshGPUData), 1, "meshUBO");
 
-	GLRenderingSystemComponent::get().m_materialUBO = generateUBO(sizeof(MaterialGPUData), 2);
+	GLRenderingSystemComponent::get().m_materialUBO = generateUBO(sizeof(MaterialGPUData), 2, "materialUBO");
 
-	GLRenderingSystemComponent::get().m_sunUBO = generateUBO(sizeof(SunGPUData), 3);
+	GLRenderingSystemComponent::get().m_sunUBO = generateUBO(sizeof(SunGPUData), 3, "sunUBO");
 
-	GLRenderingSystemComponent::get().m_pointLightUBO = generateUBO(sizeof(PointLightGPUData) * RenderingFrontendSystemComponent::get().m_maxPointLights, 4);
+	GLRenderingSystemComponent::get().m_pointLightUBO = generateUBO(sizeof(PointLightGPUData) * RenderingFrontendSystemComponent::get().m_maxPointLights, 4, "pointLightUBO");
 
-	GLRenderingSystemComponent::get().m_sphereLightUBO = generateUBO(sizeof(SphereLightGPUData) * RenderingFrontendSystemComponent::get().m_maxSphereLights, 5);
+	GLRenderingSystemComponent::get().m_sphereLightUBO = generateUBO(sizeof(SphereLightGPUData) * RenderingFrontendSystemComponent::get().m_maxSphereLights, 5, "sphereLightUBO");
 
-	GLRenderingSystemComponent::get().m_CSMUBO = generateUBO(sizeof(CSMGPUData) * RenderingFrontendSystemComponent::get().m_maxCSMSplit, 6);
+	GLRenderingSystemComponent::get().m_CSMUBO = generateUBO(sizeof(CSMGPUData) * RenderingFrontendSystemComponent::get().m_maxCSMSplit, 6, "CSMUBO");
 
-	GLRenderingSystemComponent::get().m_skyUBO = generateUBO(sizeof(SkyGPUData), 7);
+	GLRenderingSystemComponent::get().m_skyUBO = generateUBO(sizeof(SkyGPUData), 7, "skyUBO");
 
-	GLRenderingSystemComponent::get().m_dispatchParamsUBO = generateUBO(sizeof(DispatchParamsGPUData), 8);
+	GLRenderingSystemComponent::get().m_dispatchParamsUBO = generateUBO(sizeof(DispatchParamsGPUData), 8, "dispatchParamsUBO");
 
 	return true;
 }

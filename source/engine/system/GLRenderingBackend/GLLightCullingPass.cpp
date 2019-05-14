@@ -59,7 +59,7 @@ bool GLLightCullingPass::createGridFrustumsBuffer()
 
 	auto l_elementCount = m_tileFrustumNumThreads.x * m_tileFrustumNumThreads.y;
 
-	GLRenderingSystemComponent::get().m_gridFrustumsSSBO = generateSSBO(64 * l_elementCount, 0);
+	GLRenderingSystemComponent::get().m_gridFrustumsSSBO = generateSSBO(64 * l_elementCount, 0, "gridFrustumsSSBO");
 
 	return true;
 }
@@ -68,7 +68,7 @@ bool GLLightCullingPass::createLightIndexCountBuffer()
 {
 	auto l_initialIndexCount = 1;
 
-	GLRenderingSystemComponent::get().m_lightListIndexCounterSSBO = generateSSBO(sizeof(unsigned int), 1);
+	GLRenderingSystemComponent::get().m_lightListIndexCounterSSBO = generateSSBO(sizeof(unsigned int), 1, "lightListIndexCounterSSBO");
 
 	return true;
 }
@@ -87,7 +87,7 @@ bool GLLightCullingPass::createLightIndexListBuffer()
 
 	auto l_elementCount = m_lightCullingNumThreadGroups.x * m_lightCullingNumThreadGroups.y * l_averangeOverlapLight;
 
-	GLRenderingSystemComponent::get().m_lightIndexListSSBO = generateSSBO(sizeof(unsigned int) * l_elementCount, 2);
+	GLRenderingSystemComponent::get().m_lightIndexListSSBO = generateSSBO(sizeof(unsigned int) * l_elementCount, 2, "lightIndexListSSBO");
 
 	return true;
 }
@@ -192,11 +192,10 @@ bool GLLightCullingPass::cullLights()
 bool GLLightCullingPass::update()
 {
 	activateRenderPass(m_GLRPC);
-
 	createLightIndexCountBuffer();
-
 	calculateFrustums();
 	cullLights();
+	glDeleteBuffers(1, &GLRenderingSystemComponent::get().m_lightListIndexCounterSSBO);
 
 	return true;
 }

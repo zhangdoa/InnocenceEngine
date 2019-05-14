@@ -5,6 +5,7 @@
 #include "GLEnvironmentConvolutionPass.h"
 #include "GLEnvironmentPreFilterPass.h"
 #include "GLShadowPass.h"
+#include "GLLightCullingPass.h"
 
 #include "../../component/GLRenderingSystemComponent.h"
 #include "../../component/RenderingFrontendSystemComponent.h"
@@ -107,6 +108,8 @@ void GLLightPass::update()
 	activateTexture(
 		GLEnvironmentPreFilterPass::getGLRPC()->m_GLTDCs[0],
 		8);
+	// culled point light
+	glBindImageTexture(0, GLLightCullingPass::getLightGrid()->m_TO, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
 
 	// draw light pass rectangle
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);
