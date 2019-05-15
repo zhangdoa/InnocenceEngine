@@ -455,6 +455,7 @@ bool InnoRenderingFrontendSystemNS::gatherStaticMeshData()
 					RenderingFrontendSystemComponent::get().m_GIPassGPUDatas[l_index] = l_GIPassGPUData;
 					RenderingFrontendSystemComponent::get().m_GIPassMeshGPUDatas[l_index] = l_meshGPUData;
 					RenderingFrontendSystemComponent::get().m_GIPassMaterialGPUDatas[l_index] = l_materialGPUData;
+					l_index++;
 				}
 			}
 		}

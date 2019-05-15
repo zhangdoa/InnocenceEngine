@@ -41,7 +41,7 @@ bool GLEnvironmentCapturePass::initialize()
 	l_renderPassDesc.RTNumber = 4;
 	l_renderPassDesc.RTDesc.samplerType = TextureSamplerType::CUBEMAP;
 	l_renderPassDesc.RTDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	l_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RGB;
+	l_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
 	l_renderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::LINEAR;
 	l_renderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::LINEAR;
 	l_renderPassDesc.RTDesc.wrapMethod = TextureWrapMethod::REPEAT;
