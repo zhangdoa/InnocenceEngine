@@ -182,7 +182,7 @@ bool DX11LightCullingPass::calculateFrustums()
 {
 	RenderingFrontendSystemComponent::get().m_dispatchParamsGPUData.numThreadGroups = m_tileFrustumNumThreadGroups;
 	RenderingFrontendSystemComponent::get().m_dispatchParamsGPUData.numThreads = m_tileFrustumNumThreads;
-	updateConstantBuffer(DX11RenderingSystemComponent::get().m_dispatchParamsConstantBuffer, &RenderingFrontendSystemComponent::get().m_dispatchParamsGPUData);
+	updateConstantBuffer(DX11RenderingSystemComponent::get().m_dispatchParamsConstantBuffer, RenderingFrontendSystemComponent::get().m_dispatchParamsGPUData);
 
 	activateShader(m_tileFrustumDXSPC);
 
@@ -201,7 +201,7 @@ bool DX11LightCullingPass::cullLights()
 {
 	RenderingFrontendSystemComponent::get().m_dispatchParamsGPUData.numThreadGroups = m_lightCullingNumThreadGroups;
 	RenderingFrontendSystemComponent::get().m_dispatchParamsGPUData.numThreads = m_lightCullingNumThreads;
-	updateConstantBuffer(DX11RenderingSystemComponent::get().m_dispatchParamsConstantBuffer, &RenderingFrontendSystemComponent::get().m_dispatchParamsGPUData);
+	updateConstantBuffer(DX11RenderingSystemComponent::get().m_dispatchParamsConstantBuffer, RenderingFrontendSystemComponent::get().m_dispatchParamsGPUData);
 
 	activateShader(m_lightCullingDXSPC);
 
