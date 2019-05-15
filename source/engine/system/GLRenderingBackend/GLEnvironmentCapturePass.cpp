@@ -105,44 +105,37 @@ bool GLEnvironmentCapturePass::drawOpaquePass(vec4 capturePos, mat4 p, const std
 		attachCubemapColorRT(m_opaquePassGLRPC->m_GLTDCs[2], m_opaquePassGLRPC, 2, i, 0);
 		attachCubemapColorRT(m_opaquePassGLRPC->m_GLTDCs[3], m_opaquePassGLRPC, 3, i, 0);
 
-		auto l_copy = RenderingFrontendSystemComponent::get().m_GIPassGPUDataQueue.getRawData();
-
-		while (l_copy.size() > 0)
+		for (unsigned int i = 0; i < RenderingFrontendSystemComponent::get().m_GIPassDrawcallCount; i++)
 		{
-			GeometryPassGPUData l_geometryPassGPUData = l_copy.front();
+			auto l_opaquePassGPUData = RenderingFrontendSystemComponent::get().m_GIPassGPUDatas[i];
+			auto l_meshGPUData = RenderingFrontendSystemComponent::get().m_GIPassMeshGPUDatas[i];
+			auto l_materialGPUData = RenderingFrontendSystemComponent::get().m_GIPassMaterialGPUDatas[i];
 
-			// any normal?
-			if (l_geometryPassGPUData.materialGPUData.useNormalTexture)
+			if (l_materialGPUData.useNormalTexture)
 			{
-				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_geometryPassGPUData.normalTDC), 0);
+				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.normalTDC), 0);
 			}
-			// any albedo?
-			if (l_geometryPassGPUData.materialGPUData.useAlbedoTexture)
+			if (l_materialGPUData.useAlbedoTexture)
 			{
-				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_geometryPassGPUData.albedoTDC), 1);
+				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.albedoTDC), 1);
 			}
-			// any metallic?
-			if (l_geometryPassGPUData.materialGPUData.useMetallicTexture)
+			if (l_materialGPUData.useMetallicTexture)
 			{
-				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_geometryPassGPUData.metallicTDC), 2);
+				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.metallicTDC), 2);
 			}
-			// any roughness?
-			if (l_geometryPassGPUData.materialGPUData.useRoughnessTexture)
+			if (l_materialGPUData.useRoughnessTexture)
 			{
-				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_geometryPassGPUData.roughnessTDC), 3);
+				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.roughnessTDC), 3);
 			}
-			// any ao?
-			if (l_geometryPassGPUData.materialGPUData.useAOTexture)
+			if (l_materialGPUData.useAOTexture)
 			{
-				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_geometryPassGPUData.AOTDC), 4);
+				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.AOTDC), 4);
 			}
 
-			updateUBO(GLRenderingSystemComponent::get().m_meshUBO, l_geometryPassGPUData.meshGPUData);
-			updateUBO(GLRenderingSystemComponent::get().m_materialUBO, l_geometryPassGPUData.materialGPUData);
+			updateUBO(GLRenderingSystemComponent::get().m_meshUBO, l_meshGPUData);
+			updateUBO(GLRenderingSystemComponent::get().m_materialUBO, l_materialGPUData);
 
-			drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_geometryPassGPUData.MDC));
-
-			l_copy.pop();
+			drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_opaquePassGPUData.MDC));
 		}
 	}
 
@@ -289,8 +282,6 @@ bool GLEnvironmentCapturePass::update()
 	}
 
 	render(l_sceneAABB.m_center);
-
-	RenderingFrontendSystemComponent::get().m_GIPassGPUDataQueue.clear();
 
 	return true;
 }

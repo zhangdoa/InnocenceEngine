@@ -74,19 +74,16 @@ void GLShadowPass::initialize()
 
 void GLShadowPass::drawAllMeshDataComponents()
 {
-	auto l_queueCopy = RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.getRawData();
-
-	while (l_queueCopy.size() > 0)
+	for (unsigned int i = 0; i < RenderingFrontendSystemComponent::get().m_opaquePassDrawcallCount; i++)
 	{
-		auto l_geometryPassGPUData = l_queueCopy.front();
+		auto l_opaquePassGPUData = RenderingFrontendSystemComponent::get().m_opaquePassGPUDatas[i];
+		auto l_meshGPUData = RenderingFrontendSystemComponent::get().m_opaquePassMeshGPUDatas[i];
 
 		//uni_m
 		updateUniform(
-			2, l_geometryPassGPUData.meshGPUData.m);
+			2, l_meshGPUData.m);
 
-		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_geometryPassGPUData.MDC));
-
-		l_queueCopy.pop();
+		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_opaquePassGPUData.MDC));
 	}
 }
 

@@ -814,29 +814,8 @@ bool VKRenderingSystemNS::update()
 	updateUBO(VKRenderingSystemComponent::get().m_sunUBOMemory, RenderingFrontendSystemComponent::get().m_sunGPUData);
 	updateUBO(VKRenderingSystemComponent::get().m_pointLightUBOMemory, RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector);
 	updateUBO(VKRenderingSystemComponent::get().m_sphereLightUBOMemory, RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector);
-
-	// @TODO: prepare in rendering frontend
-	auto l_queueCopy = RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.getRawData();
-
-	if (l_queueCopy.size() > 0)
-	{
-		std::vector<MeshGPUData> l_meshGPUData;
-		l_meshGPUData.reserve(l_queueCopy.size());
-
-		std::vector<MaterialGPUData> l_materialGPUData;
-		l_materialGPUData.reserve(l_queueCopy.size());
-
-		while (l_queueCopy.size() > 0)
-		{
-			auto l_geometryPassGPUData = l_queueCopy.front();
-			l_meshGPUData.emplace_back(l_geometryPassGPUData.meshGPUData);
-			l_materialGPUData.emplace_back(l_geometryPassGPUData.materialGPUData);
-			l_queueCopy.pop();
-		}
-
-		updateUBO(VKRenderingSystemComponent::get().m_meshUBOMemory, l_meshGPUData);
-		updateUBO(VKRenderingSystemComponent::get().m_materialUBOMemory, l_materialGPUData);
-	}
+	updateUBO(VKRenderingSystemComponent::get().m_meshUBOMemory, RenderingFrontendSystemComponent::get().m_opaquePassMeshGPUDatas);
+	updateUBO(VKRenderingSystemComponent::get().m_materialUBOMemory, RenderingFrontendSystemComponent::get().m_opaquePassMaterialGPUDatas);
 
 	VKOpaquePass::update();
 	VKLightPass::update();

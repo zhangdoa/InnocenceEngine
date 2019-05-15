@@ -97,10 +97,20 @@ bool InnoRenderingFrontendSystemNS::setup(IRenderingBackendSystem* renderingBack
 		RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector.clear();
 		RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector.clear();
 
-		RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.clear();
-		RenderingFrontendSystemComponent::get().m_transparentPassGPUDataQueue.clear();
+		RenderingFrontendSystemComponent::get().m_opaquePassGPUDatas.clear();
+		RenderingFrontendSystemComponent::get().m_opaquePassMeshGPUDatas.clear();
+		RenderingFrontendSystemComponent::get().m_opaquePassMaterialGPUDatas.clear();
+
+		RenderingFrontendSystemComponent::get().m_transparentPassGPUDatas.clear();
+		RenderingFrontendSystemComponent::get().m_transparentPassMeshGPUDatas.clear();
+		RenderingFrontendSystemComponent::get().m_transparentPassMaterialGPUDatas.clear();
+
 		RenderingFrontendSystemComponent::get().m_billboardPassGPUDataQueue.clear();
 		RenderingFrontendSystemComponent::get().m_debuggerPassGPUDataQueue.clear();
+
+		RenderingFrontendSystemComponent::get().m_GIPassGPUDatas.clear();
+		RenderingFrontendSystemComponent::get().m_GIPassMeshGPUDatas.clear();
+		RenderingFrontendSystemComponent::get().m_GIPassMaterialGPUDatas.clear();
 
 		m_isCSMDataPackValid = false;
 		m_isSunDataPackValid = false;
@@ -109,21 +119,20 @@ bool InnoRenderingFrontendSystemNS::setup(IRenderingBackendSystem* renderingBack
 	};
 
 	f_sceneLoadingFinishCallback = [&]() {
-		// point light
-		RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector.reserve(RenderingFrontendSystemComponent::get().m_maxPointLights);
+		RenderingFrontendSystemComponent::get().m_opaquePassGPUDatas.resize(RenderingFrontendSystemComponent::get().m_maxMeshes);
+		RenderingFrontendSystemComponent::get().m_opaquePassMeshGPUDatas.resize(RenderingFrontendSystemComponent::get().m_maxMeshes);
+		RenderingFrontendSystemComponent::get().m_opaquePassMaterialGPUDatas.resize(RenderingFrontendSystemComponent::get().m_maxMaterials);
 
-		for (size_t i = 0; i < RenderingFrontendSystemComponent::get().m_maxPointLights; i++)
-		{
-			RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector.emplace_back();
-		}
+		RenderingFrontendSystemComponent::get().m_transparentPassGPUDatas.resize(RenderingFrontendSystemComponent::get().m_maxMeshes);
+		RenderingFrontendSystemComponent::get().m_transparentPassMeshGPUDatas.resize(RenderingFrontendSystemComponent::get().m_maxMeshes);
+		RenderingFrontendSystemComponent::get().m_transparentPassMaterialGPUDatas.resize(RenderingFrontendSystemComponent::get().m_maxMaterials);
 
-		// sphere light
-		RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector.reserve(RenderingFrontendSystemComponent::get().m_maxSphereLights);
+		RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector.resize(RenderingFrontendSystemComponent::get().m_maxPointLights);
+		RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector.resize(RenderingFrontendSystemComponent::get().m_maxSphereLights);
 
-		for (size_t i = 0; i < RenderingFrontendSystemComponent::get().m_maxSphereLights; i++)
-		{
-			RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector.emplace_back();
-		}
+		RenderingFrontendSystemComponent::get().m_GIPassGPUDatas.resize(RenderingFrontendSystemComponent::get().m_maxMeshes);
+		RenderingFrontendSystemComponent::get().m_GIPassMeshGPUDatas.resize(RenderingFrontendSystemComponent::get().m_maxMeshes);
+		RenderingFrontendSystemComponent::get().m_GIPassMaterialGPUDatas.resize(RenderingFrontendSystemComponent::get().m_maxMaterials);
 	};
 
 	f_bakeGI = []() {
@@ -267,69 +276,91 @@ bool InnoRenderingFrontendSystemNS::updateMeshData()
 {
 	m_isMeshDataPackValid = false;
 
-	RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.clear();
-	RenderingFrontendSystemComponent::get().m_transparentPassGPUDataQueue.clear();
+	unsigned int l_opaquePassIndex = 0;
+	unsigned int l_transparentPassIndex = 0;
 
-	std::vector<GeometryPassGPUData> l_sortedTransparentPassGPUDataVector;
+	std::vector<TransparentPassGPUData> l_sortedTransparentPassGPUDatas;
 
-	for (auto& i : m_cullingDataPack)
+	for (size_t i = 0; i < m_cullingDataPack.size(); i++)
 	{
-		if (i.mesh != nullptr)
+		auto l_cullingData = m_cullingDataPack[i];
+		if (l_cullingData.mesh != nullptr)
 		{
-			if (i.mesh->m_objectStatus == ObjectStatus::ALIVE)
+			if (l_cullingData.mesh->m_objectStatus == ObjectStatus::ALIVE)
 			{
-				if (i.material != nullptr)
+				if (l_cullingData.material != nullptr)
 				{
-					GeometryPassGPUData l_geometryPassGPUData;
+					MeshGPUData l_meshGPUData;
+					l_meshGPUData.m = l_cullingData.m;
+					l_meshGPUData.m_prev = l_cullingData.m_prev;
+					l_meshGPUData.normalMat = l_cullingData.normalMat;
+					l_meshGPUData.UUID = (float)l_cullingData.UUID;
 
-					l_geometryPassGPUData.MDC = i.mesh;
-
-					l_geometryPassGPUData.meshGPUData.m = i.m;
-					l_geometryPassGPUData.meshGPUData.m_prev = i.m_prev;
-					l_geometryPassGPUData.meshGPUData.normalMat = i.normalMat;
-					l_geometryPassGPUData.meshGPUData.UUID = (float)i.UUID;
-
-					l_geometryPassGPUData.normalTDC = i.material->m_texturePack.m_normalTDC.second;
-					l_geometryPassGPUData.albedoTDC = i.material->m_texturePack.m_albedoTDC.second;
-					l_geometryPassGPUData.metallicTDC = i.material->m_texturePack.m_metallicTDC.second;
-					l_geometryPassGPUData.roughnessTDC = i.material->m_texturePack.m_roughnessTDC.second;
-					l_geometryPassGPUData.AOTDC = i.material->m_texturePack.m_aoTDC.second;
-
-					l_geometryPassGPUData.materialGPUData.useNormalTexture = !(l_geometryPassGPUData.normalTDC == nullptr);
-					l_geometryPassGPUData.materialGPUData.useAlbedoTexture = !(l_geometryPassGPUData.albedoTDC == nullptr);
-					l_geometryPassGPUData.materialGPUData.useMetallicTexture = !(l_geometryPassGPUData.metallicTDC == nullptr);
-					l_geometryPassGPUData.materialGPUData.useRoughnessTexture = !(l_geometryPassGPUData.roughnessTDC == nullptr);
-					l_geometryPassGPUData.materialGPUData.useAOTexture = !(l_geometryPassGPUData.AOTDC == nullptr);
-
-					l_geometryPassGPUData.materialGPUData.customMaterial = i.material->m_meshCustomMaterial;
-
-					if (i.visiblilityType == VisiblilityType::INNO_OPAQUE)
+					if (l_cullingData.visiblilityType == VisiblilityType::INNO_OPAQUE)
 					{
-						RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.push(l_geometryPassGPUData);
+						OpaquePassGPUData l_opaquePassGPUData;
+
+						l_opaquePassGPUData.MDC = l_cullingData.mesh;
+						l_opaquePassGPUData.normalTDC = l_cullingData.material->m_texturePack.m_normalTDC.second;
+						l_opaquePassGPUData.albedoTDC = l_cullingData.material->m_texturePack.m_albedoTDC.second;
+						l_opaquePassGPUData.metallicTDC = l_cullingData.material->m_texturePack.m_metallicTDC.second;
+						l_opaquePassGPUData.roughnessTDC = l_cullingData.material->m_texturePack.m_roughnessTDC.second;
+						l_opaquePassGPUData.AOTDC = l_cullingData.material->m_texturePack.m_aoTDC.second;
+
+						MaterialGPUData l_materialGPUData;
+
+						l_materialGPUData.useNormalTexture = !(l_opaquePassGPUData.normalTDC == nullptr);
+						l_materialGPUData.useAlbedoTexture = !(l_opaquePassGPUData.albedoTDC == nullptr);
+						l_materialGPUData.useMetallicTexture = !(l_opaquePassGPUData.metallicTDC == nullptr);
+						l_materialGPUData.useRoughnessTexture = !(l_opaquePassGPUData.roughnessTDC == nullptr);
+						l_materialGPUData.useAOTexture = !(l_opaquePassGPUData.AOTDC == nullptr);
+						l_materialGPUData.customMaterial = l_cullingData.material->m_meshCustomMaterial;
+
+						RenderingFrontendSystemComponent::get().m_opaquePassGPUDatas[l_opaquePassIndex] = l_opaquePassGPUData;
+						RenderingFrontendSystemComponent::get().m_opaquePassMeshGPUDatas[l_opaquePassIndex] = l_meshGPUData;
+						RenderingFrontendSystemComponent::get().m_opaquePassMaterialGPUDatas[l_opaquePassIndex] = l_materialGPUData;
+						l_opaquePassIndex++;
 					}
-
-					else if (i.visiblilityType == VisiblilityType::INNO_TRANSPARENT)
+					else if (l_cullingData.visiblilityType == VisiblilityType::INNO_TRANSPARENT)
 					{
-						l_sortedTransparentPassGPUDataVector.emplace_back(l_geometryPassGPUData);
+						TransparentPassGPUData l_transparentPassGPUData;
+
+						l_transparentPassGPUData.MDC = l_cullingData.mesh;
+						l_transparentPassGPUData.meshGPUDataIndex = l_transparentPassIndex;
+						l_transparentPassGPUData.materialGPUDataIndex = l_transparentPassIndex;
+
+						MaterialGPUData l_materialGPUData;
+
+						l_materialGPUData.useNormalTexture = false;
+						l_materialGPUData.useAlbedoTexture = false;
+						l_materialGPUData.useMetallicTexture = false;
+						l_materialGPUData.useRoughnessTexture = false;
+						l_materialGPUData.useAOTexture = false;
+						l_materialGPUData.customMaterial = l_cullingData.material->m_meshCustomMaterial;
+
+						l_sortedTransparentPassGPUDatas.emplace_back(l_transparentPassGPUData);
+						RenderingFrontendSystemComponent::get().m_transparentPassMeshGPUDatas[l_transparentPassIndex] = l_meshGPUData;
+						RenderingFrontendSystemComponent::get().m_transparentPassMaterialGPUDatas[l_transparentPassIndex] = l_materialGPUData;
+						l_transparentPassIndex++;
 					}
 				}
 			}
 		}
 	}
 
+	RenderingFrontendSystemComponent::get().m_opaquePassDrawcallCount = l_opaquePassIndex;
+	RenderingFrontendSystemComponent::get().m_transparentPassDrawcallCount = l_transparentPassIndex;
+
 	// @TODO: use GPU to do OIT
-	std::sort(l_sortedTransparentPassGPUDataVector.begin(), l_sortedTransparentPassGPUDataVector.end(), [](GeometryPassGPUData a, GeometryPassGPUData b) {
+	std::sort(l_sortedTransparentPassGPUDatas.begin(), l_sortedTransparentPassGPUDatas.end(), [&](TransparentPassGPUData a, TransparentPassGPUData b) {
 		auto l_t = RenderingFrontendSystemComponent::get().m_cameraGPUData.t;
 		auto l_r = RenderingFrontendSystemComponent::get().m_cameraGPUData.r;
-		auto m_a_InViewSpace = l_t * l_r * a.meshGPUData.m;
-		auto m_b_InViewSpace = l_t * l_r * b.meshGPUData.m;
+		auto m_a_InViewSpace = l_t * l_r * RenderingFrontendSystemComponent::get().m_transparentPassMeshGPUDatas[a.meshGPUDataIndex].m;
+		auto m_b_InViewSpace = l_t * l_r * RenderingFrontendSystemComponent::get().m_transparentPassMeshGPUDatas[b.meshGPUDataIndex].m;
 		return m_a_InViewSpace.m23 < m_b_InViewSpace.m23;
 	});
 
-	for (auto i : l_sortedTransparentPassGPUDataVector)
-	{
-		RenderingFrontendSystemComponent::get().m_transparentPassGPUDataQueue.push(i);
-	}
+	RenderingFrontendSystemComponent::get().m_transparentPassGPUDatas = l_sortedTransparentPassGPUDatas;
 
 	m_isMeshDataPackValid = true;
 
@@ -380,11 +411,11 @@ bool InnoRenderingFrontendSystemNS::updateDebuggerPassData()
 
 bool InnoRenderingFrontendSystemNS::gatherStaticMeshData()
 {
-	RenderingFrontendSystemComponent::get().m_GIPassGPUDataQueue.clear();
+	unsigned int l_index = 0;
 
 	for (auto visibleComponent : g_pCoreSystem->getGameSystem()->get<VisibleComponent>())
 	{
-		if (visibleComponent->m_visiblilityType != VisiblilityType::INNO_INVISIBLE
+		if (visibleComponent->m_visiblilityType == VisiblilityType::INNO_OPAQUE
 			&& visibleComponent->m_objectStatus == ObjectStatus::ALIVE
 			&& visibleComponent->m_meshUsageType == MeshUsageType::STATIC
 			)
@@ -395,34 +426,41 @@ bool InnoRenderingFrontendSystemNS::gatherStaticMeshData()
 			{
 				for (auto& l_modelPair : visibleComponent->m_modelMap)
 				{
-					GeometryPassGPUData l_geometryPassGPUData;
+					OpaquePassGPUData l_GIPassGPUData;
 
-					l_geometryPassGPUData.MDC = l_modelPair.first;
+					l_GIPassGPUData.MDC = l_modelPair.first;
+					l_GIPassGPUData.normalTDC = l_modelPair.second->m_texturePack.m_normalTDC.second;
+					l_GIPassGPUData.albedoTDC = l_modelPair.second->m_texturePack.m_albedoTDC.second;
+					l_GIPassGPUData.metallicTDC = l_modelPair.second->m_texturePack.m_metallicTDC.second;
+					l_GIPassGPUData.roughnessTDC = l_modelPair.second->m_texturePack.m_roughnessTDC.second;
+					l_GIPassGPUData.AOTDC = l_modelPair.second->m_texturePack.m_aoTDC.second;
 
-					l_geometryPassGPUData.meshGPUData.m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
-					l_geometryPassGPUData.meshGPUData.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
-					l_geometryPassGPUData.meshGPUData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-					l_geometryPassGPUData.meshGPUData.UUID = (float)visibleComponent->m_UUID;
+					MeshGPUData l_meshGPUData;
 
-					l_geometryPassGPUData.normalTDC = l_modelPair.second->m_texturePack.m_normalTDC.second;
-					l_geometryPassGPUData.albedoTDC = l_modelPair.second->m_texturePack.m_albedoTDC.second;
-					l_geometryPassGPUData.metallicTDC = l_modelPair.second->m_texturePack.m_metallicTDC.second;
-					l_geometryPassGPUData.roughnessTDC = l_modelPair.second->m_texturePack.m_roughnessTDC.second;
-					l_geometryPassGPUData.AOTDC = l_modelPair.second->m_texturePack.m_aoTDC.second;
+					l_meshGPUData.m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
+					l_meshGPUData.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
+					l_meshGPUData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
+					l_meshGPUData.UUID = (float)visibleComponent->m_UUID;
 
-					l_geometryPassGPUData.materialGPUData.useNormalTexture = !(l_geometryPassGPUData.normalTDC == nullptr);
-					l_geometryPassGPUData.materialGPUData.useAlbedoTexture = !(l_geometryPassGPUData.albedoTDC == nullptr);
-					l_geometryPassGPUData.materialGPUData.useMetallicTexture = !(l_geometryPassGPUData.metallicTDC == nullptr);
-					l_geometryPassGPUData.materialGPUData.useRoughnessTexture = !(l_geometryPassGPUData.roughnessTDC == nullptr);
-					l_geometryPassGPUData.materialGPUData.useAOTexture = !(l_geometryPassGPUData.AOTDC == nullptr);
+					MaterialGPUData l_materialGPUData;
 
-					l_geometryPassGPUData.materialGPUData.customMaterial = l_modelPair.second->m_meshCustomMaterial;
+					l_materialGPUData.useNormalTexture = !(l_GIPassGPUData.normalTDC == nullptr);
+					l_materialGPUData.useAlbedoTexture = !(l_GIPassGPUData.albedoTDC == nullptr);
+					l_materialGPUData.useMetallicTexture = !(l_GIPassGPUData.metallicTDC == nullptr);
+					l_materialGPUData.useRoughnessTexture = !(l_GIPassGPUData.roughnessTDC == nullptr);
+					l_materialGPUData.useAOTexture = !(l_GIPassGPUData.AOTDC == nullptr);
 
-					RenderingFrontendSystemComponent::get().m_GIPassGPUDataQueue.push(l_geometryPassGPUData);
+					l_materialGPUData.customMaterial = l_modelPair.second->m_meshCustomMaterial;
+
+					RenderingFrontendSystemComponent::get().m_GIPassGPUDatas[l_index] = l_GIPassGPUData;
+					RenderingFrontendSystemComponent::get().m_GIPassMeshGPUDatas[l_index] = l_meshGPUData;
+					RenderingFrontendSystemComponent::get().m_GIPassMaterialGPUDatas[l_index] = l_materialGPUData;
 				}
 			}
 		}
 	}
+
+	RenderingFrontendSystemComponent::get().m_GIPassDrawcallCount = l_index;
 
 	return true;
 }

@@ -131,17 +131,14 @@ bool DX12OpaquePass::update()
 
 	unsigned int l_offset = 0;
 
-	while (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.size() > 0)
+	for (unsigned int i = 0; i < RenderingFrontendSystemComponent::get().m_opaquePassDrawcallCount; i++)
 	{
-		GeometryPassGPUData l_geometryPassGPUData = {};
+		auto l_opaquePassGPUData = RenderingFrontendSystemComponent::get().m_opaquePassGPUDatas[i];
 
-		if (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.tryPop(l_geometryPassGPUData))
-		{
-			recordBindCBV(m_DXRPC, 0, 1, DX12RenderingSystemComponent::get().m_meshConstantBuffer, l_offset);
-			recordBindCBV(m_DXRPC, 0, 2, DX12RenderingSystemComponent::get().m_materialConstantBuffer, l_offset);
-			recordDrawCall(m_DXRPC, 0, reinterpret_cast<DX12MeshDataComponent*>(l_geometryPassGPUData.MDC));
-			l_offset++;
-		}
+		recordBindCBV(m_DXRPC, 0, 1, DX12RenderingSystemComponent::get().m_meshConstantBuffer, l_offset);
+		recordBindCBV(m_DXRPC, 0, 2, DX12RenderingSystemComponent::get().m_materialConstantBuffer, l_offset);
+		recordDrawCall(m_DXRPC, 0, reinterpret_cast<DX12MeshDataComponent*>(l_opaquePassGPUData.MDC));
+		l_offset++;
 	}
 
 	recordCommandEnd(m_DXRPC, 0);

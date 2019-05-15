@@ -61,6 +61,7 @@ bool GLOpaquePass::update()
 	glEnable(GL_STENCIL_TEST);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 	glStencilMask(0xFF);
+	glStencilFunc(GL_ALWAYS, 0x01, 0xFF);
 
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
@@ -71,45 +72,37 @@ bool GLOpaquePass::update()
 
 	activateShaderProgram(m_GLSPC);
 
-	while (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.size() > 0)
+	for (unsigned int i = 0; i < RenderingFrontendSystemComponent::get().m_opaquePassDrawcallCount; i++)
 	{
-		GeometryPassGPUData l_geometryPassGPUData = {};
+		auto l_opaquePassGPUData = RenderingFrontendSystemComponent::get().m_opaquePassGPUDatas[i];
+		auto l_meshGPUData = RenderingFrontendSystemComponent::get().m_opaquePassMeshGPUDatas[i];
+		auto l_materialGPUData = RenderingFrontendSystemComponent::get().m_opaquePassMaterialGPUDatas[i];
 
-		if (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.tryPop(l_geometryPassGPUData))
+		if (l_materialGPUData.useNormalTexture)
 		{
-			glStencilFunc(GL_ALWAYS, 0x01, 0xFF);
-
-			// any normal?
-			if (l_geometryPassGPUData.materialGPUData.useNormalTexture)
-			{
-				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_geometryPassGPUData.normalTDC), 0);
-			}
-			// any albedo?
-			if (l_geometryPassGPUData.materialGPUData.useAlbedoTexture)
-			{
-				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_geometryPassGPUData.albedoTDC), 1);
-			}
-			// any metallic?
-			if (l_geometryPassGPUData.materialGPUData.useMetallicTexture)
-			{
-				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_geometryPassGPUData.metallicTDC), 2);
-			}
-			// any roughness?
-			if (l_geometryPassGPUData.materialGPUData.useRoughnessTexture)
-			{
-				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_geometryPassGPUData.roughnessTDC), 3);
-			}
-			// any ao?
-			if (l_geometryPassGPUData.materialGPUData.useAOTexture)
-			{
-				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_geometryPassGPUData.AOTDC), 4);
-			}
-
-			updateUBO(GLRenderingSystemComponent::get().m_meshUBO, l_geometryPassGPUData.meshGPUData);
-			updateUBO(GLRenderingSystemComponent::get().m_materialUBO, l_geometryPassGPUData.materialGPUData);
-
-			drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_geometryPassGPUData.MDC));
+			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.normalTDC), 0);
 		}
+		if (l_materialGPUData.useAlbedoTexture)
+		{
+			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.albedoTDC), 1);
+		}
+		if (l_materialGPUData.useMetallicTexture)
+		{
+			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.metallicTDC), 2);
+		}
+		if (l_materialGPUData.useRoughnessTexture)
+		{
+			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.roughnessTDC), 3);
+		}
+		if (l_materialGPUData.useAOTexture)
+		{
+			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.AOTDC), 4);
+		}
+
+		updateUBO(GLRenderingSystemComponent::get().m_meshUBO, l_meshGPUData);
+		updateUBO(GLRenderingSystemComponent::get().m_materialUBO, l_materialGPUData);
+
+		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_opaquePassGPUData.MDC));
 	}
 
 	glDisable(GL_CULL_FACE);

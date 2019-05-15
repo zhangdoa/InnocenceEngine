@@ -105,46 +105,37 @@ bool DX11OpaquePass::update()
 	unsigned int l_offset = 0;
 
 	// draw
-	while (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.size() > 0)
+	for (unsigned int i = 0; i < RenderingFrontendSystemComponent::get().m_opaquePassDrawcallCount; i++)
 	{
-		GeometryPassGPUData l_geometryPassGPUData = {};
+		auto l_opaquePassGPUData = RenderingFrontendSystemComponent::get().m_opaquePassGPUDatas[i];
 
-		if (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.tryPop(l_geometryPassGPUData))
+		if (l_opaquePassGPUData.normalTDC)
 		{
-			// bind to textures
-			// any normal?
-			if (l_geometryPassGPUData.materialGPUData.useNormalTexture)
-			{
-				bindTextureForRead(ShaderType::FRAGMENT, 0, reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.normalTDC));
-			}
-			// any albedo?
-			if (l_geometryPassGPUData.materialGPUData.useAlbedoTexture)
-			{
-				bindTextureForRead(ShaderType::FRAGMENT, 1, reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.albedoTDC));
-			}
-			// any metallic?
-			if (l_geometryPassGPUData.materialGPUData.useMetallicTexture)
-			{
-				bindTextureForRead(ShaderType::FRAGMENT, 2, reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.metallicTDC));
-			}
-			// any roughness?
-			if (l_geometryPassGPUData.materialGPUData.useRoughnessTexture)
-			{
-				bindTextureForRead(ShaderType::FRAGMENT, 3, reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.roughnessTDC));
-			}
-			// any ao?
-			if (l_geometryPassGPUData.materialGPUData.useAOTexture)
-			{
-				bindTextureForRead(ShaderType::FRAGMENT, 4, reinterpret_cast<DX11TextureDataComponent*>(l_geometryPassGPUData.AOTDC));
-			}
-
-			bindConstantBuffer(ShaderType::VERTEX, 1, DX11RenderingSystemComponent::get().m_meshConstantBuffer, l_offset);
-			bindConstantBuffer(ShaderType::FRAGMENT, 0, DX11RenderingSystemComponent::get().m_materialConstantBuffer, l_offset);
-
-			drawMesh(reinterpret_cast<DX11MeshDataComponent*>(l_geometryPassGPUData.MDC));
-
-			l_offset++;
+			bindTextureForRead(ShaderType::FRAGMENT, 0, reinterpret_cast<DX11TextureDataComponent*>(l_opaquePassGPUData.normalTDC));
 		}
+		if (l_opaquePassGPUData.albedoTDC)
+		{
+			bindTextureForRead(ShaderType::FRAGMENT, 1, reinterpret_cast<DX11TextureDataComponent*>(l_opaquePassGPUData.albedoTDC));
+		}
+		if (l_opaquePassGPUData.metallicTDC)
+		{
+			bindTextureForRead(ShaderType::FRAGMENT, 2, reinterpret_cast<DX11TextureDataComponent*>(l_opaquePassGPUData.metallicTDC));
+		}
+		if (l_opaquePassGPUData.roughnessTDC)
+		{
+			bindTextureForRead(ShaderType::FRAGMENT, 3, reinterpret_cast<DX11TextureDataComponent*>(l_opaquePassGPUData.roughnessTDC));
+		}
+		if (l_opaquePassGPUData.AOTDC)
+		{
+			bindTextureForRead(ShaderType::FRAGMENT, 4, reinterpret_cast<DX11TextureDataComponent*>(l_opaquePassGPUData.AOTDC));
+		}
+
+		bindConstantBuffer(ShaderType::VERTEX, 1, DX11RenderingSystemComponent::get().m_meshConstantBuffer, l_offset);
+		bindConstantBuffer(ShaderType::FRAGMENT, 0, DX11RenderingSystemComponent::get().m_materialConstantBuffer, l_offset);
+
+		drawMesh(reinterpret_cast<DX11MeshDataComponent*>(l_opaquePassGPUData.MDC));
+
+		l_offset++;
 	}
 
 	return true;

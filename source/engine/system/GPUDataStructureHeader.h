@@ -83,7 +83,7 @@ struct alignas(16) DispatchParamsGPUData
 	TVec4<unsigned int> numThreads;
 };
 
-struct GeometryPassGPUData
+struct OpaquePassGPUData
 {
 	MeshDataComponent* MDC;
 	TextureDataComponent* normalTDC;
@@ -91,8 +91,13 @@ struct GeometryPassGPUData
 	TextureDataComponent* metallicTDC;
 	TextureDataComponent* roughnessTDC;
 	TextureDataComponent* AOTDC;
-	MeshGPUData meshGPUData;
-	MaterialGPUData materialGPUData;
+};
+
+struct TransparentPassGPUData
+{
+	MeshDataComponent* MDC;
+	unsigned int meshGPUDataIndex;
+	unsigned int materialGPUDataIndex;
 };
 
 struct BillboardPassGPUData

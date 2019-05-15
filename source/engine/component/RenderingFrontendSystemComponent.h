@@ -33,18 +33,27 @@ public:
 	const unsigned int m_maxMaterials = 32768;
 	const unsigned int m_maxTextures = 32768;
 
-	ThreadSafeQueue<GeometryPassGPUData> m_opaquePassGPUDataQueue;
+	unsigned int m_opaquePassDrawcallCount = 0;
+	std::vector<OpaquePassGPUData> m_opaquePassGPUDatas;
+	std::vector<MeshGPUData> m_opaquePassMeshGPUDatas;
+	std::vector<MaterialGPUData> m_opaquePassMaterialGPUDatas;
 
-	ThreadSafeQueue<GeometryPassGPUData> m_transparentPassGPUDataQueue;
+	unsigned int m_transparentPassDrawcallCount = 0;
+	std::vector<TransparentPassGPUData> m_transparentPassGPUDatas;
+	std::vector<MeshGPUData> m_transparentPassMeshGPUDatas;
+	std::vector<MaterialGPUData> m_transparentPassMaterialGPUDatas;
 
 	ThreadSafeQueue<BillboardPassGPUData> m_billboardPassGPUDataQueue;
 
 	ThreadSafeQueue<DebuggerPassGPUData> m_debuggerPassGPUDataQueue;
 
-	ThreadSafeQueue<GeometryPassGPUData> m_GIPassGPUDataQueue;
-
 	SkyGPUData m_skyGPUData;
 	DispatchParamsGPUData m_dispatchParamsGPUData;
+
+	unsigned int m_GIPassDrawcallCount = 0;
+	std::vector<OpaquePassGPUData> m_GIPassGPUDatas;
+	std::vector<MeshGPUData> m_GIPassMeshGPUDatas;
+	std::vector<MaterialGPUData> m_GIPassMaterialGPUDatas;
 
 private:
 	RenderingFrontendSystemComponent() {};

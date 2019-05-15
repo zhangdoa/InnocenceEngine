@@ -545,28 +545,8 @@ bool DX12RenderingSystemNS::update()
 	updateConstantBuffer(DX12RenderingSystemComponent::get().m_pointLightConstantBuffer, RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector);
 	updateConstantBuffer(DX12RenderingSystemComponent::get().m_sphereLightConstantBuffer, RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector);
 	updateConstantBuffer(DX12RenderingSystemComponent::get().m_skyConstantBuffer, RenderingFrontendSystemComponent::get().m_skyGPUData);
-
-	// @TODO: prepare in rendering frontend
-	auto l_queueCopy = RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.getRawData();
-
-	if (l_queueCopy.size() > 0)
-	{
-		std::vector<MeshGPUData> l_meshGPUData;
-		l_meshGPUData.reserve(l_queueCopy.size());
-
-		std::vector<MaterialGPUData> l_materialGPUData;
-		l_materialGPUData.reserve(l_queueCopy.size());
-
-		while (l_queueCopy.size() > 0)
-		{
-			auto l_geometryPassGPUData = l_queueCopy.front();
-			l_meshGPUData.emplace_back(l_geometryPassGPUData.meshGPUData);
-			l_materialGPUData.emplace_back(l_geometryPassGPUData.materialGPUData);
-			l_queueCopy.pop();
-		}
-		updateConstantBuffer(DX12RenderingSystemComponent::get().m_meshConstantBuffer, l_meshGPUData);
-		updateConstantBuffer(DX12RenderingSystemComponent::get().m_materialConstantBuffer, l_materialGPUData);
-	}
+	updateConstantBuffer(DX12RenderingSystemComponent::get().m_meshConstantBuffer, RenderingFrontendSystemComponent::get().m_opaquePassMeshGPUDatas);
+	updateConstantBuffer(DX12RenderingSystemComponent::get().m_materialConstantBuffer, RenderingFrontendSystemComponent::get().m_opaquePassMaterialGPUDatas);
 
 	DX12OpaquePass::update();
 	DX12LightPass::update();

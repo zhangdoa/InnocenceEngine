@@ -254,28 +254,25 @@ bool VKOpaquePass::update()
 	recordCommand(m_VKRPC, 0, [&]() {
 		unsigned int offsetCount = 0;
 
-		while (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.size() > 0)
+		for (unsigned int i = 0; i < RenderingFrontendSystemComponent::get().m_opaquePassDrawcallCount; i++)
 		{
-			GeometryPassGPUData l_geometryPassGPUData = {};
-
 			auto l_meshUBOOffset = l_sizeofMeshGPUData * offsetCount;
 			auto l_materialUBOOffset = l_sizeofMaterialGPUData * offsetCount;
 			unsigned int l_dynamicOffsets[] = { l_meshUBOOffset, l_materialUBOOffset };
 
-			if (RenderingFrontendSystemComponent::get().m_opaquePassGPUDataQueue.tryPop(l_geometryPassGPUData))
-			{
-				vkCmdBindDescriptorSets(m_VKRPC->m_commandBuffers[0],
-					VK_PIPELINE_BIND_POINT_GRAPHICS,
-					m_VKRPC->m_pipelineLayout,
-					0,
-					1,
-					&m_VKRPC->descriptorSet, 2, l_dynamicOffsets);
+			auto l_opaquePassGPUData = RenderingFrontendSystemComponent::get().m_opaquePassGPUDatas[i];
 
-				recordDrawCall(m_VKRPC, 0, reinterpret_cast<VKMeshDataComponent*>(l_geometryPassGPUData.MDC));
+			vkCmdBindDescriptorSets(m_VKRPC->m_commandBuffers[0],
+				VK_PIPELINE_BIND_POINT_GRAPHICS,
+				m_VKRPC->m_pipelineLayout,
+				0,
+				1,
+				&m_VKRPC->descriptorSet, 2, l_dynamicOffsets);
 
-				offsetCount++;
-			}
-		};
+			recordDrawCall(m_VKRPC, 0, reinterpret_cast<VKMeshDataComponent*>(l_opaquePassGPUData.MDC));
+
+			offsetCount++;
+		}
 	});
 
 	return true;

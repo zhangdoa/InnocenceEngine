@@ -74,30 +74,30 @@ bool GLTransparentPass::update()
 		2,
 		RenderingFrontendSystemComponent::get().m_sunGPUData.luminance);
 
-	while (RenderingFrontendSystemComponent::get().m_transparentPassGPUDataQueue.size() > 0)
+	for (unsigned int i = 0; i < RenderingFrontendSystemComponent::get().m_transparentPassDrawcallCount; i++)
 	{
-		GeometryPassGPUData l_geometryPassGPUData = {};
+		auto l_transparentPassGPUData = RenderingFrontendSystemComponent::get().m_transparentPassGPUDatas[i];
+		auto l_meshGPUData = RenderingFrontendSystemComponent::get().m_transparentPassMeshGPUDatas[l_transparentPassGPUData.meshGPUDataIndex];
+		auto l_materialGPUData = RenderingFrontendSystemComponent::get().m_transparentPassMaterialGPUDatas[l_transparentPassGPUData.materialGPUDataIndex];
 
-		if (RenderingFrontendSystemComponent::get().m_transparentPassGPUDataQueue.tryPop(l_geometryPassGPUData))
-		{
-			updateUBO(GLRenderingSystemComponent::get().m_meshUBO, l_geometryPassGPUData.meshGPUData);
+		vec4 l_albedo = vec4(
+			l_materialGPUData.customMaterial.albedo_r,
+			l_materialGPUData.customMaterial.albedo_g,
+			l_materialGPUData.customMaterial.albedo_b,
+			l_materialGPUData.customMaterial.alpha
+		);
+		vec4 l_TR = vec4(
+			l_materialGPUData.customMaterial.thickness,
+			l_materialGPUData.customMaterial.roughness,
+			0.0f, 0.0f
+		);
+		updateUniform(3, l_albedo);
+		updateUniform(4, l_TR);
 
-			vec4 l_albedo = vec4(
-				l_geometryPassGPUData.materialGPUData.customMaterial.albedo_r,
-				l_geometryPassGPUData.materialGPUData.customMaterial.albedo_g,
-				l_geometryPassGPUData.materialGPUData.customMaterial.albedo_b,
-				l_geometryPassGPUData.materialGPUData.customMaterial.alpha
-			);
-			vec4 l_TR = vec4(
-				l_geometryPassGPUData.materialGPUData.customMaterial.thickness,
-				l_geometryPassGPUData.materialGPUData.customMaterial.roughness,
-				0.0f, 0.0f
-			);
-			updateUniform(3, l_albedo);
-			updateUniform(4, l_TR);
+		updateUBO(GLRenderingSystemComponent::get().m_meshUBO, l_meshGPUData);
+		updateUBO(GLRenderingSystemComponent::get().m_materialUBO, l_materialGPUData);
 
-			drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_geometryPassGPUData.MDC));
-		}
+		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_transparentPassGPUData.MDC));
 	}
 
 	glDisable(GL_BLEND);
