@@ -15,10 +15,10 @@ using namespace GLRenderingSystemNS;
 
 INNO_PRIVATE_SCOPE GLEnvironmentCapturePass
 {
-	bool render(vec4 pos);
+	bool render(vec4 pos, GLTextureDataComponent* RT);
 	bool drawOpaquePass(vec4 capturePos, mat4 p, const std::vector<mat4>& v);
-	bool drawSkyPass(vec4 capturePos, mat4 p, const std::vector<mat4>& v);
-	bool drawLightPass(vec4 capturePos, mat4 p, const std::vector<mat4>& v);
+	bool drawSkyPass(mat4 p, const std::vector<mat4>& v, GLTextureDataComponent* RT);
+	bool drawLightPass(mat4 p, const std::vector<mat4>& v, GLTextureDataComponent* RT);
 
 	EntityID m_entityID;
 
@@ -29,7 +29,9 @@ INNO_PRIVATE_SCOPE GLEnvironmentCapturePass
 
 	ShaderFilePaths m_shaderFilePaths = { "GL//environmentCapturePass.vert/" , "", "", "", "GL//environmentCapturePass.frag/" };
 
-	const unsigned int m_subDivideDimension = 16;
+	const unsigned int m_subDivideDimension = 2;
+	const unsigned int m_totalCubemaps = m_subDivideDimension * m_subDivideDimension * m_subDivideDimension;
+	std::vector<GLTextureDataComponent*> m_capturedCubemaps;
 }
 
 bool GLEnvironmentCapturePass::initialize()
@@ -67,15 +69,30 @@ bool GLEnvironmentCapturePass::initialize()
 	m_GLSPC = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
 
+	m_capturedCubemaps.reserve(m_totalCubemaps);
+
+	for (size_t i = 0; i < m_totalCubemaps; i++)
+	{
+		auto l_capturedPassCubemap = addGLTextureDataComponent();
+		l_capturedPassCubemap->m_textureDataDesc = l_renderPassDesc.RTDesc;
+		l_capturedPassCubemap->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+		initializeGLTextureDataComponent(l_capturedPassCubemap);
+
+		m_capturedCubemaps.emplace_back(l_capturedPassCubemap);
+	}
+
 	return true;
 }
 
 bool GLEnvironmentCapturePass::drawOpaquePass(vec4 capturePos, mat4 p, const std::vector<mat4>& v)
 {
-	CameraGPUData l_cameraGPUData = RenderingFrontendSystemComponent::get().m_cameraGPUData;
+	CameraGPUData l_cameraGPUData;
 	l_cameraGPUData.p_original = p;
+	l_cameraGPUData.p_jittered = p;
 	l_cameraGPUData.globalPos = capturePos;
 	auto l_t = InnoMath::getInvertTranslationMatrix(capturePos);
+	l_cameraGPUData.t = l_t;
+	l_cameraGPUData.t_prev = l_t;
 
 	// draw opaque meshes
 	glEnable(GL_DEPTH_TEST);
@@ -96,7 +113,8 @@ bool GLEnvironmentCapturePass::drawOpaquePass(vec4 capturePos, mat4 p, const std
 
 	for (unsigned int i = 0; i < 6; ++i)
 	{
-		l_cameraGPUData.r = v[i] * l_t;
+		l_cameraGPUData.r = v[i];
+		l_cameraGPUData.r_prev = v[i];
 
 		updateUBO(GLRenderingSystemComponent::get().m_cameraUBO, l_cameraGPUData);
 
@@ -105,37 +123,39 @@ bool GLEnvironmentCapturePass::drawOpaquePass(vec4 capturePos, mat4 p, const std
 		attachCubemapColorRT(m_opaquePassGLRPC->m_GLTDCs[2], m_opaquePassGLRPC, 2, i, 0);
 		attachCubemapColorRT(m_opaquePassGLRPC->m_GLTDCs[3], m_opaquePassGLRPC, 3, i, 0);
 
+		unsigned int l_offset = 0;
+
 		for (unsigned int i = 0; i < RenderingFrontendSystemComponent::get().m_GIPassDrawcallCount; i++)
 		{
 			auto l_opaquePassGPUData = RenderingFrontendSystemComponent::get().m_GIPassGPUDatas[i];
-			auto l_meshGPUData = RenderingFrontendSystemComponent::get().m_GIPassMeshGPUDatas[i];
-			auto l_materialGPUData = RenderingFrontendSystemComponent::get().m_GIPassMaterialGPUDatas[i];
 
-			if (l_materialGPUData.useNormalTexture)
+			if (l_opaquePassGPUData.normalTDC)
 			{
 				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.normalTDC), 0);
 			}
-			if (l_materialGPUData.useAlbedoTexture)
+			if (l_opaquePassGPUData.albedoTDC)
 			{
 				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.albedoTDC), 1);
 			}
-			if (l_materialGPUData.useMetallicTexture)
+			if (l_opaquePassGPUData.metallicTDC)
 			{
 				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.metallicTDC), 2);
 			}
-			if (l_materialGPUData.useRoughnessTexture)
+			if (l_opaquePassGPUData.roughnessTDC)
 			{
 				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.roughnessTDC), 3);
 			}
-			if (l_materialGPUData.useAOTexture)
+			if (l_opaquePassGPUData.AOTDC)
 			{
 				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.AOTDC), 4);
 			}
 
-			updateUBO(GLRenderingSystemComponent::get().m_meshUBO, l_meshGPUData);
-			updateUBO(GLRenderingSystemComponent::get().m_materialUBO, l_materialGPUData);
+			bindUBO(GLRenderingSystemComponent::get().m_meshUBO, 1, l_offset * sizeof(MeshGPUData), sizeof(MeshGPUData));
+			bindUBO(GLRenderingSystemComponent::get().m_materialUBO, 2, l_offset * sizeof(MaterialGPUData), sizeof(MaterialGPUData));
 
 			drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_opaquePassGPUData.MDC));
+
+			l_offset++;
 		}
 	}
 
@@ -147,13 +167,18 @@ bool GLEnvironmentCapturePass::drawOpaquePass(vec4 capturePos, mat4 p, const std
 	return true;
 }
 
-bool GLEnvironmentCapturePass::drawSkyPass(vec4 capturePos, mat4 p, const std::vector<mat4>& v)
+bool GLEnvironmentCapturePass::drawSkyPass(mat4 p, const std::vector<mat4>& v, GLTextureDataComponent* RT)
 {
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
 
-	CameraGPUData l_cameraGPUData = RenderingFrontendSystemComponent::get().m_cameraGPUData;
+	vec4 capturePos = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	CameraGPUData l_cameraGPUData;
 	l_cameraGPUData.p_original = p;
+	l_cameraGPUData.p_jittered = p;
 	l_cameraGPUData.globalPos = capturePos;
+	auto l_t = InnoMath::getInvertTranslationMatrix(capturePos);
+	l_cameraGPUData.t = l_t;
+	l_cameraGPUData.t_prev = l_t;
 
 	SkyGPUData l_skyGPUData;
 	l_skyGPUData.p_inv = p.inverse();
@@ -169,27 +194,32 @@ bool GLEnvironmentCapturePass::drawSkyPass(vec4 capturePos, mat4 p, const std::v
 		updateUBO(GLRenderingSystemComponent::get().m_skyUBO, l_skyGPUData);
 		updateUBO(GLRenderingSystemComponent::get().m_cameraUBO, l_cameraGPUData);
 
-		attachCubemapColorRT(m_lightPassGLRPC->m_GLTDCs[0], m_lightPassGLRPC, 0, i, 0);
+		attachCubemapColorRT(RT, m_lightPassGLRPC, 0, i, 0);
 		drawMesh(l_MDC);
 	}
 
 	return true;
 }
 
-bool GLEnvironmentCapturePass::drawLightPass(vec4 capturePos, mat4 p, const std::vector<mat4>& v)
+bool GLEnvironmentCapturePass::drawLightPass(mat4 p, const std::vector<mat4>& v, GLTextureDataComponent* RT)
 {
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
 
-	CameraGPUData l_cameraGPUData = RenderingFrontendSystemComponent::get().m_cameraGPUData;
+	vec4 capturePos = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	CameraGPUData l_cameraGPUData;
 	l_cameraGPUData.p_original = p;
+	l_cameraGPUData.p_jittered = p;
 	l_cameraGPUData.globalPos = capturePos;
+	auto l_t = InnoMath::getInvertTranslationMatrix(capturePos);
+	l_cameraGPUData.t = l_t;
+	l_cameraGPUData.t_prev = l_t;
 
-	glEnable(GL_STENCIL_TEST);
-	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-	glStencilFunc(GL_EQUAL, 0x01, 0xFF);
-	glStencilMask(0x00);
+	//glEnable(GL_STENCIL_TEST);
+	//glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	//glStencilFunc(GL_EQUAL, 0x01, 0xFF);
+	//glStencilMask(0x00);
 
-	copyStencilBuffer(m_opaquePassGLRPC, m_lightPassGLRPC);
+	//copyStencilBuffer(m_opaquePassGLRPC, m_lightPassGLRPC);
 
 	activateShaderProgram(m_GLSPC);
 
@@ -203,17 +233,17 @@ bool GLEnvironmentCapturePass::drawLightPass(vec4 capturePos, mat4 p, const std:
 
 		updateUBO(GLRenderingSystemComponent::get().m_cameraUBO, l_cameraGPUData);
 
-		attachCubemapColorRT(m_lightPassGLRPC->m_GLTDCs[0], m_lightPassGLRPC, 0, i, 0);
+		attachCubemapColorRT(RT, m_lightPassGLRPC, 0, i, 0);
 
 		drawMesh(l_MDC);
 	}
 
-	glDisable(GL_STENCIL_TEST);
+	//glDisable(GL_STENCIL_TEST);
 
 	return true;
 }
 
-bool GLEnvironmentCapturePass::render(vec4 pos)
+bool GLEnvironmentCapturePass::render(vec4 pos, GLTextureDataComponent* RT)
 {
 	auto l_capturePos = vec4(0.0f, 2.0f, 0.0f, 1.0f);
 	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, 1000.0f);
@@ -241,16 +271,19 @@ bool GLEnvironmentCapturePass::render(vec4 pos)
 	// @TODO: optimize
 	if (l_renderingConfig.drawSky)
 	{
-		drawSkyPass(l_capturePos, l_p, l_v);
+		drawSkyPass(l_p, l_v, RT);
 	}
 
-	drawLightPass(l_capturePos, l_p, l_v);
+	//drawLightPass(l_p, l_v, RT);
 
 	return true;
 }
 
 bool GLEnvironmentCapturePass::update()
 {
+	updateUBO(GLRenderingSystemComponent::get().m_meshUBO, RenderingFrontendSystemComponent::get().m_GIPassMeshGPUDatas);
+	updateUBO(GLRenderingSystemComponent::get().m_materialUBO, RenderingFrontendSystemComponent::get().m_GIPassMaterialGPUDatas);
+
 	auto l_sceneAABB = g_pCoreSystem->getPhysicsSystem()->getSceneAABB();
 
 	auto axisSize = l_sceneAABB.m_extend;
@@ -259,6 +292,8 @@ bool GLEnvironmentCapturePass::update()
 	auto l_currentPos = l_startPos;
 
 	RenderingFrontendSystemComponent::get().m_debuggerPassGPUDataQueue.clear();
+
+	unsigned int l_index = 0;
 
 	for (size_t i = 0; i < m_subDivideDimension; i++)
 	{
@@ -274,14 +309,15 @@ bool GLEnvironmentCapturePass::update()
 
 				RenderingFrontendSystemComponent::get().m_debuggerPassGPUDataQueue.push(l_debuggerPassGPUData);
 
+				render(l_currentPos, m_capturedCubemaps[l_index]);
+				l_index++;
+
 				l_currentPos.z += l_voxelSize.z;
 			}
 			l_currentPos.y += l_voxelSize.y;
 		}
 		l_currentPos.x += l_voxelSize.x;
 	}
-
-	render(l_sceneAABB.m_center);
 
 	return true;
 }

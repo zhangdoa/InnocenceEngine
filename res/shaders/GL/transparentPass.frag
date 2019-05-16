@@ -10,12 +10,36 @@ layout(location = 2) in vec3 thefrag_Normal;
 struct dirLight {
 	vec4 direction;
 	vec4 luminance;
+	mat4 r;
 };
 
-layout(location = 0) uniform vec4 uni_viewPos;
-layout(location = 1) uniform dirLight uni_dirLight;
-layout(location = 3) uniform vec4 uni_albedo;
-layout(location = 4) uniform vec4 uni_TR;
+layout(std140, row_major, binding = 0) uniform cameraUBO
+{
+	mat4 uni_p_camera_original;
+	mat4 uni_p_camera_jittered;
+	mat4 uni_r_camera;
+	mat4 uni_t_camera;
+	mat4 uni_r_camera_prev;
+	mat4 uni_t_camera_prev;
+	vec4 uni_globalPos;
+	float WHRatio;
+};
+
+layout(std140, binding = 2) uniform materialUBO
+{
+	vec4 uni_albedo;
+	vec4 uni_MRAT;
+	bool uni_useNormalTexture;
+	bool uni_useAlbedoTexture;
+	bool uni_useMetallicTexture;
+	bool uni_useRoughnessTexture;
+	bool uni_useAOTexture;
+};
+
+layout(std140, row_major, binding = 3) uniform sunUBO
+{
+	dirLight uni_dirLight;
+};
 
 const float eps = 0.00001;
 const float PI = 3.14159265359;
@@ -77,7 +101,7 @@ void main()
 	WorldSpaceNormal = normalize(TBN * vec3(0.0f, 0.0f, 1.0f));
 
 	N = WorldSpaceNormal;
-	vec3 V = normalize(uni_viewPos.xyz - thefrag_WorldSpacePos.xyz);
+	vec3 V = normalize(uni_globalPos.xyz - thefrag_WorldSpacePos.xyz);
 	vec3 L = normalize(-uni_dirLight.direction.xyz);
 	vec3 H = normalize(V + L);
 	float NdotV = max(dot(N, V), 0.0);
@@ -87,7 +111,7 @@ void main()
 	vec3 F0 = uni_albedo.rgb;
 
 	// Specular BRDF
-	float roughness = uni_TR.y;
+	float roughness = uni_MRAT.y;
 	float f90 = 1.0;
 	vec3 F = fr_F_Schlick(F0, f90, NdotV);
 	float G = Unreal_GeometrySmith(NdotV, NdotL, roughness);
@@ -95,7 +119,7 @@ void main()
 	vec3 Frss = F * D * G / PI;
 
 	// "Real-Time Rendering", 4th edition, pg. 624, "14.5.1 Coverage and Transmittance"
-	float thickness = uni_TR.x;
+	float thickness = uni_MRAT.w;
 	float d = thickness / max(NdotV, eps);
 
 	// transmittance luminance defined as "F0/albedo"

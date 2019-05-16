@@ -72,37 +72,39 @@ bool GLOpaquePass::update()
 
 	activateShaderProgram(m_GLSPC);
 
+	unsigned int l_offset = 0;
+
 	for (unsigned int i = 0; i < RenderingFrontendSystemComponent::get().m_opaquePassDrawcallCount; i++)
 	{
 		auto l_opaquePassGPUData = RenderingFrontendSystemComponent::get().m_opaquePassGPUDatas[i];
-		auto l_meshGPUData = RenderingFrontendSystemComponent::get().m_opaquePassMeshGPUDatas[i];
-		auto l_materialGPUData = RenderingFrontendSystemComponent::get().m_opaquePassMaterialGPUDatas[i];
 
-		if (l_materialGPUData.useNormalTexture)
+		if (l_opaquePassGPUData.normalTDC)
 		{
 			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.normalTDC), 0);
 		}
-		if (l_materialGPUData.useAlbedoTexture)
+		if (l_opaquePassGPUData.albedoTDC)
 		{
 			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.albedoTDC), 1);
 		}
-		if (l_materialGPUData.useMetallicTexture)
+		if (l_opaquePassGPUData.metallicTDC)
 		{
 			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.metallicTDC), 2);
 		}
-		if (l_materialGPUData.useRoughnessTexture)
+		if (l_opaquePassGPUData.roughnessTDC)
 		{
 			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.roughnessTDC), 3);
 		}
-		if (l_materialGPUData.useAOTexture)
+		if (l_opaquePassGPUData.AOTDC)
 		{
 			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.AOTDC), 4);
 		}
 
-		updateUBO(GLRenderingSystemComponent::get().m_meshUBO, l_meshGPUData);
-		updateUBO(GLRenderingSystemComponent::get().m_materialUBO, l_materialGPUData);
+		bindUBO(GLRenderingSystemComponent::get().m_meshUBO, 1, l_offset * sizeof(MeshGPUData), sizeof(MeshGPUData));
+		bindUBO(GLRenderingSystemComponent::get().m_materialUBO, 2, l_offset * sizeof(MaterialGPUData), sizeof(MaterialGPUData));
 
 		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_opaquePassGPUData.MDC));
+
+		l_offset++;
 	}
 
 	glDisable(GL_CULL_FACE);

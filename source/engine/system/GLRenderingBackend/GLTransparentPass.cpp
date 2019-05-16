@@ -63,41 +63,18 @@ bool GLTransparentPass::update()
 
 	activateShaderProgram(m_GLSPC);
 
-	updateUniform(
-		0,
-		RenderingFrontendSystemComponent::get().m_cameraGPUData.globalPos);
-
-	updateUniform(
-		1,
-		RenderingFrontendSystemComponent::get().m_sunGPUData.dir);
-	updateUniform(
-		2,
-		RenderingFrontendSystemComponent::get().m_sunGPUData.luminance);
+	unsigned int l_offset = 0;
 
 	for (unsigned int i = 0; i < RenderingFrontendSystemComponent::get().m_transparentPassDrawcallCount; i++)
 	{
 		auto l_transparentPassGPUData = RenderingFrontendSystemComponent::get().m_transparentPassGPUDatas[i];
-		auto l_meshGPUData = RenderingFrontendSystemComponent::get().m_transparentPassMeshGPUDatas[l_transparentPassGPUData.meshGPUDataIndex];
-		auto l_materialGPUData = RenderingFrontendSystemComponent::get().m_transparentPassMaterialGPUDatas[l_transparentPassGPUData.materialGPUDataIndex];
 
-		vec4 l_albedo = vec4(
-			l_materialGPUData.customMaterial.albedo_r,
-			l_materialGPUData.customMaterial.albedo_g,
-			l_materialGPUData.customMaterial.albedo_b,
-			l_materialGPUData.customMaterial.alpha
-		);
-		vec4 l_TR = vec4(
-			l_materialGPUData.customMaterial.thickness,
-			l_materialGPUData.customMaterial.roughness,
-			0.0f, 0.0f
-		);
-		updateUniform(3, l_albedo);
-		updateUniform(4, l_TR);
-
-		updateUBO(GLRenderingSystemComponent::get().m_meshUBO, l_meshGPUData);
-		updateUBO(GLRenderingSystemComponent::get().m_materialUBO, l_materialGPUData);
+		bindUBO(GLRenderingSystemComponent::get().m_meshUBO, 1, l_offset * sizeof(MeshGPUData), sizeof(MeshGPUData));
+		bindUBO(GLRenderingSystemComponent::get().m_materialUBO, 2, l_offset * sizeof(MaterialGPUData), sizeof(MaterialGPUData));
 
 		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_transparentPassGPUData.MDC));
+
+		l_offset++;
 	}
 
 	glDisable(GL_BLEND);

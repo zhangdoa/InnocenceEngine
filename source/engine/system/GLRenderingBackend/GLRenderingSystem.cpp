@@ -320,9 +320,9 @@ bool GLRenderingSystemNS::generateGPUBuffers()
 {
 	GLRenderingSystemComponent::get().m_cameraUBO = generateUBO(sizeof(CameraGPUData), 0, "cameraUBO");
 
-	GLRenderingSystemComponent::get().m_meshUBO = generateUBO(sizeof(MeshGPUData), 1, "meshUBO");
+	GLRenderingSystemComponent::get().m_meshUBO = generateUBO(sizeof(MeshGPUData) * RenderingFrontendSystemComponent::get().m_maxMeshes, 1, "meshUBO");
 
-	GLRenderingSystemComponent::get().m_materialUBO = generateUBO(sizeof(MaterialGPUData), 2, "materialUBO");
+	GLRenderingSystemComponent::get().m_materialUBO = generateUBO(sizeof(MaterialGPUData) * RenderingFrontendSystemComponent::get().m_maxMaterials, 2, "materialUBO");
 
 	GLRenderingSystemComponent::get().m_sunUBO = generateUBO(sizeof(SunGPUData), 3, "sunUBO");
 
@@ -378,6 +378,8 @@ bool GLRenderingSystemNS::render()
 	glFrontFace(GL_CCW);
 
 	updateUBO(GLRenderingSystemComponent::get().m_cameraUBO, RenderingFrontendSystemComponent::get().m_cameraGPUData);
+	updateUBO(GLRenderingSystemComponent::get().m_meshUBO, RenderingFrontendSystemComponent::get().m_opaquePassMeshGPUDatas);
+	updateUBO(GLRenderingSystemComponent::get().m_materialUBO, RenderingFrontendSystemComponent::get().m_opaquePassMaterialGPUDatas);
 	updateUBO(GLRenderingSystemComponent::get().m_sunUBO, RenderingFrontendSystemComponent::get().m_sunGPUData);
 	updateUBO(GLRenderingSystemComponent::get().m_pointLightUBO, RenderingFrontendSystemComponent::get().m_pointLightGPUDataVector);
 	updateUBO(GLRenderingSystemComponent::get().m_sphereLightUBO, RenderingFrontendSystemComponent::get().m_sphereLightGPUDataVector);
@@ -389,7 +391,7 @@ bool GLRenderingSystemNS::render()
 		GLEnvironmentCapturePass::update();
 		GLEnvironmentConvolutionPass::update();
 		GLEnvironmentPreFilterPass::update();
-		GLVXGIPass::update();
+		//GLVXGIPass::update();
 		m_isBaked = true;
 	}
 
@@ -409,6 +411,10 @@ bool GLRenderingSystemNS::render()
 
 	GLSkyPass::update();
 	GLPreTAAPass::update();
+
+	updateUBO(GLRenderingSystemComponent::get().m_meshUBO, RenderingFrontendSystemComponent::get().m_transparentPassMeshGPUDatas);
+	updateUBO(GLRenderingSystemComponent::get().m_materialUBO, RenderingFrontendSystemComponent::get().m_transparentPassMaterialGPUDatas);
+
 	GLTransparentPass::update();
 
 	auto l_canvasGLRPC = GLPreTAAPass::getGLRPC();

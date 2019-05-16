@@ -884,18 +884,6 @@ GLuint GLRenderingSystemNS::getUniformLocation(GLuint shaderProgram, const std::
 	return uniformLocation;
 }
 
-GLuint GLRenderingSystemNS::getUniformBlockIndex(GLuint shaderProgram, const std::string & uniformBlockName)
-{
-	glUseProgram(shaderProgram);
-	auto uniformBlockIndex = glGetUniformBlockIndex(shaderProgram, uniformBlockName.c_str());
-	if (uniformBlockIndex == 0xFFFFFFFF)
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: Uniform Block lost: " + uniformBlockName);
-		return -1;
-	}
-	return uniformBlockIndex;
-}
-
 GLuint GLRenderingSystemNS::generateUBO(GLuint UBOSize, GLuint uniformBlockBindingPoint, const std::string& UBOName)
 {
 	GLuint l_UBO;
@@ -909,24 +897,16 @@ GLuint GLRenderingSystemNS::generateUBO(GLuint UBOSize, GLuint uniformBlockBindi
 	return l_UBO;
 }
 
-void GLRenderingSystemNS::bindUniformBlock(GLuint UBO, GLuint UBOSize, GLuint program, const std::string & uniformBlockName, GLuint uniformBlockBindingPoint)
-{
-	auto uniformBlockIndex = getUniformBlockIndex(program, uniformBlockName.c_str());
-	glUniformBlockBinding(program, uniformBlockIndex, uniformBlockBindingPoint);
-}
-
-void GLRenderingSystemNS::updateTextureUniformLocations(GLuint program, const std::vector<std::string>& UniformNames)
-{
-	for (size_t i = 0; i < UniformNames.size(); i++)
-	{
-		updateUniform(getUniformLocation(program, UniformNames[i]), (int)i);
-	}
-}
-
 void GLRenderingSystemNS::updateUBOImpl(const GLint & UBO, size_t size, const void * UBOValue)
 {
 	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, size, UBOValue);
+}
+
+bool GLRenderingSystemNS::bindUBO(const GLint& UBO, GLuint uniformBlockBindingPoint, unsigned int offset, unsigned int size)
+{
+	glBindBufferRange(GL_UNIFORM_BUFFER, uniformBlockBindingPoint, UBO, offset, size);
+	return true;
 }
 
 void GLRenderingSystemNS::updateUniform(const GLint uniformLocation, bool uniformValue)

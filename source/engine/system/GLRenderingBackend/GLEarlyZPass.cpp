@@ -62,14 +62,17 @@ bool GLEarlyZPass::update()
 
 	activateShaderProgram(m_GLSPC);
 
+	unsigned int l_offset = 0;
+
 	for (unsigned int i = 0; i < RenderingFrontendSystemComponent::get().m_opaquePassDrawcallCount; i++)
 	{
 		auto l_opaquePassGPUData = RenderingFrontendSystemComponent::get().m_opaquePassGPUDatas[i];
-		auto l_meshGPUData = RenderingFrontendSystemComponent::get().m_opaquePassMeshGPUDatas[i];
 
-		updateUBO(GLRenderingSystemComponent::get().m_meshUBO, l_meshGPUData);
+		bindUBO(GLRenderingSystemComponent::get().m_meshUBO, 1, l_offset * sizeof(MeshGPUData), sizeof(MeshGPUData));
 
 		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_opaquePassGPUData.MDC));
+
+		l_offset++;
 	}
 
 	glDisable(GL_CULL_FACE);

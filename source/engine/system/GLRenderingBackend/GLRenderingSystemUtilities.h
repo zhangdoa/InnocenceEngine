@@ -49,10 +49,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	bool deleteShaderProgram(GLShaderProgramComponent* rhs);
 
 	GLuint getUniformLocation(GLuint shaderProgram, const std::string& uniformName);
-	GLuint getUniformBlockIndex(GLuint shaderProgram, const std::string& uniformBlockName);
 	GLuint generateUBO(GLuint UBOSize, GLuint uniformBlockBindingPoint, const std::string& UBOName);
-	void bindUniformBlock(GLuint UBO, GLuint UBOSize, GLuint program, const std::string & uniformBlockName, GLuint uniformBlockBindingPoint);
-	void updateTextureUniformLocations(GLuint program, const std::vector<std::string>& UniformNames);
 
 	void updateUBOImpl(const GLint& UBO, size_t size, const void* UBOValue);
 
@@ -67,6 +64,8 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	{
 		updateUBOImpl(UBO, sizeof(T) * UBOValue.size(), &UBOValue[0]);
 	}
+
+	bool bindUBO(const GLint& UBO, GLuint uniformBlockBindingPoint, unsigned int offset, unsigned int size);
 
 	void updateUniform(const GLint uniformLocation, bool uniformValue);
 	void updateUniform(const GLint uniformLocation, int uniformValue);
