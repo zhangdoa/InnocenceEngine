@@ -50,6 +50,12 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 		TextureDataComponent* loadTextureFromDisk(const std::string & fileName);
 	}
 
+	namespace MaterialLoader
+	{
+		void loadMaterialFromDisk(const std::string & fileName);
+		void processMaterialJsonData(const json & j);
+	}
+
 	std::string loadTextFile(const std::string & fileName);
 	std::vector<char> loadBinaryFile(const std::string & fileName);
 
@@ -1514,4 +1520,30 @@ TextureDataComponent* InnoFileSystemNS::ModelLoader::loadTextureFromDisk(const s
 
 		return nullptr;
 	}
+}
+
+void InnoFileSystemNS::MaterialLoader::loadMaterialFromDisk(const std::string & fileName)
+{
+	json j;
+	if (loadJsonDataFromDisk(fileName, j))
+	{
+		processMaterialJsonData(j);
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: MaterialLoader: can't load " + fileName + "!");
+	}
+}
+
+void InnoFileSystemNS::MaterialLoader::processMaterialJsonData(const json & j)
+{
+	MeshCustomMaterial l_materialData;
+	l_materialData.albedo_r = j["Albedo"]["R"];
+	l_materialData.albedo_g = j["Albedo"]["G"];
+	l_materialData.albedo_b = j["Albedo"]["B"];
+	l_materialData.alpha = j["Albedo"]["A"];
+	l_materialData.metallic = j["Metallic"];
+	l_materialData.roughness = j["Roughness"];
+	l_materialData.ao = j["AO"];
+	l_materialData.thickness = j["Thickness"];
 }
