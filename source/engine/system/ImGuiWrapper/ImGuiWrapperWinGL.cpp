@@ -13,8 +13,6 @@
 #include "../GLRenderingBackend/GLLightCullingPass.h"
 #include "../GLRenderingBackend/GLLightPass.h"
 
-#include "../GLRenderingBackend/GLTransparentPass.h"
-
 #include "../GLRenderingBackend/GLTerrainPass.h"
 
 #include "../GLRenderingBackend/GLSkyPass.h"
@@ -152,8 +150,8 @@ void ImGuiWrapperWinGL::showRenderResult(RenderPassType renderPassType)
 
 				ImGui::SameLine();
 
-				ImGui::BeginChild("Screen Space Motion Vector(RGB) + Transparency(A)", l_RTSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-				ImGui::Text("Screen Space Motion Vector(RGB) + Transparency(A)");
+				ImGui::BeginChild("Screen Space Motion Vector(RG) + UUID(B) + Transparency(A)", l_RTSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+				ImGui::Text("Screen Space Motion Vector(RG) + UUID(B) + Transparency(A)");
 				ImGui::Image(ImTextureID((GLuint64)GLOpaquePass::getGLRPC()->m_GLTDCs[3]->m_TO), l_RTSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 				ImGui::EndChild();
 			}
@@ -196,11 +194,6 @@ void ImGuiWrapperWinGL::showRenderResult(RenderPassType renderPassType)
 	case RenderPassType::Transparent:
 		break;
 	case RenderPassType::Terrain:
-		ImGui::Begin("Terrain Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
-		{
-			ImGui::Image(ImTextureID((GLuint64)GLTerrainPass::getGLRPC()->m_GLTDCs[0]->m_TO), l_RTSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
-		}
-		ImGui::End();
 		ImGui::Begin("Height Map", 0, ImGuiWindowFlags_AlwaysAutoResize);
 		{
 			ImGui::BeginChild("Height Map", l_shadowRTSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);

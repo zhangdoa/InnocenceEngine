@@ -17,11 +17,9 @@ INNO_PRIVATE_SCOPE GLTerrainPass
 
 	EntityID m_entityID;
 
-	GLRenderPassComponent* m_GLRPC;
-
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//terrainPass.vert/", "GL//terrainPass.tesc/", "GL//terrainPass.tese/", "GL//terrainPass.geom/", "GL//terrainPass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//terrainPass.vert/", "GL//terrainPass.tesc/", "GL//terrainPass.tese/", "", "GL//terrainPass.frag/" };
 
 	GLRenderPassComponent* m_h2nGLRPC;
 
@@ -160,15 +158,9 @@ bool GLTerrainPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "TerrarinPassGLRPC/");
-	m_GLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
-	m_GLRPC->m_renderPassDesc.useDepthAttachment = true;
-	m_GLRPC->m_renderPassDesc.useStencilAttachment = true;
-	initializeGLRenderPassComponent(m_GLRPC);
-
 	initializeShaders();
 
-	auto l_textureSize = 256;
+	auto l_textureSize = 512;
 
 	m_terrainNoise = generatePerlinNoise(l_textureSize, 6.0, 8);
 
@@ -252,18 +244,37 @@ bool GLTerrainPass::update()
 
 	if (l_renderingConfig.drawTerrain)
 	{
-		glEnable(GL_DEPTH_TEST);
-
-		activateRenderPass(m_GLRPC);
-
-		copyDepthBuffer(GLOpaquePass::getGLRPC(), m_GLRPC);
-
-		activateShaderProgram(m_GLSPC);
+		auto l_GLRPC = GLOpaquePass::getGLRPC();
 
 		auto l_MDC = getGLMeshDataComponent(MeshShapeType::TERRAIN);
 
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LEQUAL);
+		glDepthMask(GL_TRUE);
+
+		glEnable(GL_DEPTH_CLAMP);
+
+		glEnable(GL_STENCIL_TEST);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+		glStencilMask(0xFF);
+		glStencilFunc(GL_ALWAYS, 0x01, 0xFF);
+
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_BACK);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, l_GLRPC->m_FBO);
+		glBindRenderbuffer(GL_RENDERBUFFER, l_GLRPC->m_RBO);
+		glRenderbufferStorage(GL_RENDERBUFFER, l_GLRPC->m_renderBufferInternalFormat, l_GLRPC->m_renderPassDesc.RTDesc.width, l_GLRPC->m_renderPassDesc.RTDesc.height);
+		glViewport(0, 0, l_GLRPC->m_renderPassDesc.RTDesc.width, l_GLRPC->m_renderPassDesc.RTDesc.height);
+
+		activateShaderProgram(m_GLSPC);
+
 		activateTexture(m_terrainNoiseGLTDC, 0);
 		activateTexture(m_h2nGLRPC->m_GLTDCs[0], 1);
+		activateTexture(getGLTextureDataComponent(TextureUsageType::ALBEDO), 2);
+		activateTexture(getGLTextureDataComponent(TextureUsageType::METALLIC), 3);
+		activateTexture(getGLTextureDataComponent(TextureUsageType::ROUGHNESS), 4);
+		activateTexture(getGLTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION), 5);
 
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glBindVertexArray(l_MDC->m_VAO);
@@ -271,19 +282,17 @@ bool GLTerrainPass::update()
 		glDrawArrays(GL_PATCHES, 0, (GLsizei)l_MDC->m_vertices.size());
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_STENCIL_TEST);
+		glDisable(GL_DEPTH_CLAMP);
 		glDisable(GL_DEPTH_TEST);
 	}
-	else
-	{
-		cleanRenderBuffers(m_GLRPC);
-	}
+
 	return true;
 }
 
 bool GLTerrainPass::resize(unsigned int newSizeX, unsigned int newSizeY)
 {
-	resizeGLRenderPassComponent(m_GLRPC, newSizeX, newSizeY);
-
 	return true;
 }
 
@@ -294,11 +303,6 @@ bool GLTerrainPass::reloadShader()
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
 
 	return true;
-}
-
-GLRenderPassComponent * GLTerrainPass::getGLRPC()
-{
-	return m_GLRPC;
 }
 
 GLTextureDataComponent* GLTerrainPass::getHeightMap(unsigned int index)

@@ -13,9 +13,9 @@
 
 #include "GLEarlyZPass.h"
 #include "GLOpaquePass.h"
+#include "GLTerrainPass.h"
 #include "GLSSAONoisePass.h"
 #include "GLSSAOBlurPass.h"
-#include "GLTerrainPass.h"
 
 #include "GLLightCullingPass.h"
 #include "GLLightPass.h"
@@ -204,9 +204,9 @@ bool GLRenderingSystemNS::initialize()
 
 	GLEarlyZPass::initialize();
 	GLOpaquePass::initialize();
+	GLTerrainPass::initialize();
 	GLSSAONoisePass::initialize();
 	GLSSAOBlurPass::initialize();
-	GLTerrainPass::initialize();
 
 	GLLightCullingPass::initialize();
 	GLLightPass::initialize();
@@ -399,15 +399,12 @@ bool GLRenderingSystemNS::render()
 
 	GLEarlyZPass::update();
 	GLOpaquePass::update();
+	GLTerrainPass::update();
 	GLSSAONoisePass::update();
 	GLSSAOBlurPass::update();
 
-	GLTerrainPass::update();
-
 	GLLightCullingPass::update();
 	GLLightPass::update();
-
-	auto l_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
 
 	GLSkyPass::update();
 	GLPreTAAPass::update();
@@ -418,6 +415,8 @@ bool GLRenderingSystemNS::render()
 	GLTransparentPass::update();
 
 	auto l_canvasGLRPC = GLPreTAAPass::getGLRPC();
+
+	auto l_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
 
 	if (l_renderingConfig.useBloom)
 	{
@@ -643,10 +642,9 @@ bool GLRenderingSystemNS::resize()
 
 	GLEarlyZPass::resize(l_screenResolution.x, l_screenResolution.y);
 	GLOpaquePass::resize(l_screenResolution.x, l_screenResolution.y);
+	GLTerrainPass::resize(l_screenResolution.x, l_screenResolution.y);
 	GLSSAONoisePass::resize(l_screenResolution.x, l_screenResolution.y);
 	GLSSAOBlurPass::resize(l_screenResolution.x, l_screenResolution.y);
-
-	GLTerrainPass::resize(l_screenResolution.x, l_screenResolution.y);
 
 	GLLightCullingPass::resize(l_screenResolution.x, l_screenResolution.y);
 	GLLightPass::resize(l_screenResolution.x, l_screenResolution.y);
