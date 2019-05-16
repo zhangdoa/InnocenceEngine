@@ -92,11 +92,13 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 		updateSSBOImpl(SSBO, sizeof(T) * SSBOValue.size(), &SSBOValue[0]);
 	}
 
-	void attach2DDepthRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC);
-	void attachCubemapDepthRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int textureIndex, unsigned int mipLevel);
-	void attach2DColorRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex);
-	void attach3DColorRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex, unsigned int layer);
-	void attachCubemapColorRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex, unsigned int textureIndex, unsigned int mipLevel);
+	void bind2DDepthTextureForWrite(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC);
+	void bindCubemapDepthTextureForWrite(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int textureIndex, unsigned int mipLevel);
+	void bind2DColorTextureForWrite(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex);
+	void bind3DColorTextureForWrite(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex, unsigned int layer);
+	void bindCubemapTextureForWrite(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex, unsigned int textureIndex, unsigned int mipLevel);
+	void unbind2DColorTextureForWrite(GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex);
+	void unbindCubemapTextureForWrite(GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex, unsigned int textureIndex, unsigned int mipLevel);
 	void activateShaderProgram(GLShaderProgramComponent* GLShaderProgramComponent);
 
 	void drawMesh(GLMeshDataComponent* GLMDC);

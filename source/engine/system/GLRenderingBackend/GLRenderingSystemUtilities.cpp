@@ -163,11 +163,11 @@ void GLRenderingSystemNS::attachRenderTargets(GLRenderPassComponent* GLRPC, Text
 	{
 		if (RTDesc.pixelDataFormat == TexturePixelDataFormat::DEPTH_COMPONENT)
 		{
-			attach2DDepthRT(GLRPC->m_GLTDCs[colorAttachmentIndex], GLRPC);
+			bind2DDepthTextureForWrite(GLRPC->m_GLTDCs[colorAttachmentIndex], GLRPC);
 		}
 		else
 		{
-			attach2DColorRT(GLRPC->m_GLTDCs[colorAttachmentIndex], GLRPC, colorAttachmentIndex);
+			bind2DColorTextureForWrite(GLRPC->m_GLTDCs[colorAttachmentIndex], GLRPC, colorAttachmentIndex);
 		}
 	}
 	else if (RTDesc.samplerType == TextureSamplerType::SAMPLER_3D)
@@ -178,7 +178,7 @@ void GLRenderingSystemNS::attachRenderTargets(GLRenderPassComponent* GLRPC, Text
 		}
 		else
 		{
-			attach3DColorRT(GLRPC->m_GLTDCs[colorAttachmentIndex], GLRPC, colorAttachmentIndex, 0);
+			bind3DColorTextureForWrite(GLRPC->m_GLTDCs[colorAttachmentIndex], GLRPC, colorAttachmentIndex, 0);
 		}
 	}
 
@@ -973,34 +973,46 @@ void GLRenderingSystemNS::updateSSBOImpl(const GLint & SSBO, size_t size, const 
 	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, size, SSBOValue);
 }
 
-void GLRenderingSystemNS::attach2DDepthRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC)
+void GLRenderingSystemNS::bind2DDepthTextureForWrite(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GLTDC->m_TO, 0);
 }
 
-void GLRenderingSystemNS::attachCubemapDepthRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int textureIndex, unsigned int mipLevel)
+void GLRenderingSystemNS::bindCubemapDepthTextureForWrite(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int textureIndex, unsigned int mipLevel)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TO, mipLevel);
 }
 
-void GLRenderingSystemNS::attach2DColorRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex)
+void GLRenderingSystemNS::bind2DColorTextureForWrite(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_2D, GLTDC->m_TO, 0);
 }
 
-void GLRenderingSystemNS::attach3DColorRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex, unsigned int layer)
+void GLRenderingSystemNS::bind3DColorTextureForWrite(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex, unsigned int layer)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
 	glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_3D, GLTDC->m_TO, 0, layer);
 }
 
-void GLRenderingSystemNS::attachCubemapColorRT(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex, unsigned int textureIndex, unsigned int mipLevel)
+void GLRenderingSystemNS::bindCubemapTextureForWrite(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex, unsigned int textureIndex, unsigned int mipLevel)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TO, mipLevel);
+}
+
+void GLRenderingSystemNS::unbind2DColorTextureForWrite(GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_2D, 0, 0);
+}
+
+void GLRenderingSystemNS::unbindCubemapTextureForWrite(GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex, unsigned int textureIndex, unsigned int mipLevel)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, 0, mipLevel);
 }
 
 void GLRenderingSystemNS::activateShaderProgram(GLShaderProgramComponent * GLShaderProgramComponent)

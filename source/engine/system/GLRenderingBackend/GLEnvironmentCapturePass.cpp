@@ -16,9 +16,9 @@ using namespace GLRenderingSystemNS;
 INNO_PRIVATE_SCOPE GLEnvironmentCapturePass
 {
 	bool render(vec4 pos, GLTextureDataComponent* RT);
-	bool drawOpaquePass(vec4 capturePos, mat4 p, const std::vector<mat4>& v);
-	bool drawSkyPass(mat4 p, const std::vector<mat4>& v, GLTextureDataComponent* RT);
-	bool drawLightPass(mat4 p, const std::vector<mat4>& v, GLTextureDataComponent* RT);
+	bool drawOpaquePass(vec4 capturePos, mat4 p, const std::vector<mat4>& v, unsigned int faceIndex);
+	bool drawSkyPass(mat4 p, const std::vector<mat4>& v, GLTextureDataComponent* RT, unsigned int faceIndex);
+	bool drawLightPass(mat4 p, const std::vector<mat4>& v, GLTextureDataComponent* RT, unsigned int faceIndex);
 
 	EntityID m_entityID;
 
@@ -29,7 +29,7 @@ INNO_PRIVATE_SCOPE GLEnvironmentCapturePass
 
 	ShaderFilePaths m_shaderFilePaths = { "GL//environmentCapturePass.vert/" , "", "", "", "GL//environmentCapturePass.frag/" };
 
-	const unsigned int m_subDivideDimension = 2;
+	const unsigned int m_subDivideDimension = 1;
 	const unsigned int m_totalCubemaps = m_subDivideDimension * m_subDivideDimension * m_subDivideDimension;
 	std::vector<GLTextureDataComponent*> m_capturedCubemaps;
 }
@@ -84,7 +84,7 @@ bool GLEnvironmentCapturePass::initialize()
 	return true;
 }
 
-bool GLEnvironmentCapturePass::drawOpaquePass(vec4 capturePos, mat4 p, const std::vector<mat4>& v)
+bool GLEnvironmentCapturePass::drawOpaquePass(vec4 capturePos, mat4 p, const std::vector<mat4>& v, unsigned int faceIndex)
 {
 	CameraGPUData l_cameraGPUData;
 	l_cameraGPUData.p_original = p;
@@ -111,53 +111,57 @@ bool GLEnvironmentCapturePass::drawOpaquePass(vec4 capturePos, mat4 p, const std
 
 	activateShaderProgram(GLOpaquePass::getGLSPC());
 
-	for (unsigned int i = 0; i < 6; ++i)
+	l_cameraGPUData.r = v[faceIndex];
+	l_cameraGPUData.r_prev = v[faceIndex];
+
+	updateUBO(GLRenderingSystemComponent::get().m_cameraUBO, l_cameraGPUData);
+
+	cleanRenderBuffers(m_opaquePassGLRPC);
+
+	bindCubemapTextureForWrite(m_opaquePassGLRPC->m_GLTDCs[0], m_opaquePassGLRPC, 0, faceIndex, 0);
+	bindCubemapTextureForWrite(m_opaquePassGLRPC->m_GLTDCs[1], m_opaquePassGLRPC, 1, faceIndex, 0);
+	bindCubemapTextureForWrite(m_opaquePassGLRPC->m_GLTDCs[2], m_opaquePassGLRPC, 2, faceIndex, 0);
+	bindCubemapTextureForWrite(m_opaquePassGLRPC->m_GLTDCs[3], m_opaquePassGLRPC, 3, faceIndex, 0);
+
+	unsigned int l_offset = 0;
+
+	for (unsigned int faceIndex = 0; faceIndex < RenderingFrontendSystemComponent::get().m_GIPassDrawcallCount; faceIndex++)
 	{
-		l_cameraGPUData.r = v[i];
-		l_cameraGPUData.r_prev = v[i];
+		auto l_opaquePassGPUData = RenderingFrontendSystemComponent::get().m_GIPassGPUDatas[faceIndex];
 
-		updateUBO(GLRenderingSystemComponent::get().m_cameraUBO, l_cameraGPUData);
-
-		attachCubemapColorRT(m_opaquePassGLRPC->m_GLTDCs[0], m_opaquePassGLRPC, 0, i, 0);
-		attachCubemapColorRT(m_opaquePassGLRPC->m_GLTDCs[1], m_opaquePassGLRPC, 1, i, 0);
-		attachCubemapColorRT(m_opaquePassGLRPC->m_GLTDCs[2], m_opaquePassGLRPC, 2, i, 0);
-		attachCubemapColorRT(m_opaquePassGLRPC->m_GLTDCs[3], m_opaquePassGLRPC, 3, i, 0);
-
-		unsigned int l_offset = 0;
-
-		for (unsigned int i = 0; i < RenderingFrontendSystemComponent::get().m_GIPassDrawcallCount; i++)
+		if (l_opaquePassGPUData.normalTDC)
 		{
-			auto l_opaquePassGPUData = RenderingFrontendSystemComponent::get().m_GIPassGPUDatas[i];
-
-			if (l_opaquePassGPUData.normalTDC)
-			{
-				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.normalTDC), 0);
-			}
-			if (l_opaquePassGPUData.albedoTDC)
-			{
-				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.albedoTDC), 1);
-			}
-			if (l_opaquePassGPUData.metallicTDC)
-			{
-				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.metallicTDC), 2);
-			}
-			if (l_opaquePassGPUData.roughnessTDC)
-			{
-				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.roughnessTDC), 3);
-			}
-			if (l_opaquePassGPUData.AOTDC)
-			{
-				activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.AOTDC), 4);
-			}
-
-			bindUBO(GLRenderingSystemComponent::get().m_meshUBO, 1, l_offset * sizeof(MeshGPUData), sizeof(MeshGPUData));
-			bindUBO(GLRenderingSystemComponent::get().m_materialUBO, 2, l_offset * sizeof(MaterialGPUData), sizeof(MaterialGPUData));
-
-			drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_opaquePassGPUData.MDC));
-
-			l_offset++;
+			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.normalTDC), 0);
 		}
+		if (l_opaquePassGPUData.albedoTDC)
+		{
+			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.albedoTDC), 1);
+		}
+		if (l_opaquePassGPUData.metallicTDC)
+		{
+			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.metallicTDC), 2);
+		}
+		if (l_opaquePassGPUData.roughnessTDC)
+		{
+			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.roughnessTDC), 3);
+		}
+		if (l_opaquePassGPUData.AOTDC)
+		{
+			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.AOTDC), 4);
+		}
+
+		bindUBO(GLRenderingSystemComponent::get().m_meshUBO, 1, l_offset * sizeof(MeshGPUData), sizeof(MeshGPUData));
+		bindUBO(GLRenderingSystemComponent::get().m_materialUBO, 2, l_offset * sizeof(MaterialGPUData), sizeof(MaterialGPUData));
+
+		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_opaquePassGPUData.MDC));
+
+		l_offset++;
 	}
+
+	unbindCubemapTextureForWrite(m_opaquePassGLRPC, 0, faceIndex, 0);
+	unbindCubemapTextureForWrite(m_opaquePassGLRPC, 1, faceIndex, 0);
+	unbindCubemapTextureForWrite(m_opaquePassGLRPC, 2, faceIndex, 0);
+	unbindCubemapTextureForWrite(m_opaquePassGLRPC, 3, faceIndex, 0);
 
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_STENCIL_TEST);
@@ -167,16 +171,16 @@ bool GLEnvironmentCapturePass::drawOpaquePass(vec4 capturePos, mat4 p, const std
 	return true;
 }
 
-bool GLEnvironmentCapturePass::drawSkyPass(mat4 p, const std::vector<mat4>& v, GLTextureDataComponent* RT)
+bool GLEnvironmentCapturePass::drawSkyPass(mat4 p, const std::vector<mat4>& v, GLTextureDataComponent* RT, unsigned int faceIndex)
 {
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
 
-	vec4 capturePos = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	vec4 l_capturePos = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	CameraGPUData l_cameraGPUData;
 	l_cameraGPUData.p_original = p;
 	l_cameraGPUData.p_jittered = p;
-	l_cameraGPUData.globalPos = capturePos;
-	auto l_t = InnoMath::getInvertTranslationMatrix(capturePos);
+	l_cameraGPUData.globalPos = l_capturePos;
+	auto l_t = InnoMath::getInvertTranslationMatrix(l_capturePos);
 	l_cameraGPUData.t = l_t;
 	l_cameraGPUData.t_prev = l_t;
 
@@ -186,22 +190,23 @@ bool GLEnvironmentCapturePass::drawSkyPass(mat4 p, const std::vector<mat4>& v, G
 
 	activateShaderProgram(GLSkyPass::getGLSPC());
 
-	for (unsigned int i = 0; i < 6; ++i)
-	{
-		l_cameraGPUData.r = v[i];
-		l_skyGPUData.r_inv = v[i].inverse();
+	l_cameraGPUData.r = v[faceIndex];
+	l_cameraGPUData.r_prev = v[faceIndex];
+	l_skyGPUData.r_inv = v[faceIndex].inverse();
 
-		updateUBO(GLRenderingSystemComponent::get().m_skyUBO, l_skyGPUData);
-		updateUBO(GLRenderingSystemComponent::get().m_cameraUBO, l_cameraGPUData);
+	updateUBO(GLRenderingSystemComponent::get().m_skyUBO, l_skyGPUData);
+	updateUBO(GLRenderingSystemComponent::get().m_cameraUBO, l_cameraGPUData);
 
-		attachCubemapColorRT(RT, m_lightPassGLRPC, 0, i, 0);
-		drawMesh(l_MDC);
-	}
+	bindCubemapTextureForWrite(RT, m_lightPassGLRPC, 0, faceIndex, 0);
+
+	drawMesh(l_MDC);
+
+	unbindCubemapTextureForWrite(m_lightPassGLRPC, 0, faceIndex, 0);
 
 	return true;
 }
 
-bool GLEnvironmentCapturePass::drawLightPass(mat4 p, const std::vector<mat4>& v, GLTextureDataComponent* RT)
+bool GLEnvironmentCapturePass::drawLightPass(mat4 p, const std::vector<mat4>& v, GLTextureDataComponent* RT, unsigned int faceIndex)
 {
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
 
@@ -214,12 +219,12 @@ bool GLEnvironmentCapturePass::drawLightPass(mat4 p, const std::vector<mat4>& v,
 	l_cameraGPUData.t = l_t;
 	l_cameraGPUData.t_prev = l_t;
 
-	//glEnable(GL_STENCIL_TEST);
-	//glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-	//glStencilFunc(GL_EQUAL, 0x01, 0xFF);
-	//glStencilMask(0x00);
+	glEnable(GL_STENCIL_TEST);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	glStencilFunc(GL_EQUAL, 0x01, 0xFF);
+	glStencilMask(0x00);
 
-	//copyStencilBuffer(m_opaquePassGLRPC, m_lightPassGLRPC);
+	copyStencilBuffer(m_opaquePassGLRPC, m_lightPassGLRPC);
 
 	activateShaderProgram(m_GLSPC);
 
@@ -227,18 +232,17 @@ bool GLEnvironmentCapturePass::drawLightPass(mat4 p, const std::vector<mat4>& v,
 	activateTexture(m_opaquePassGLRPC->m_GLTDCs[1], 1);
 	activateTexture(m_opaquePassGLRPC->m_GLTDCs[2], 2);
 
-	for (unsigned int i = 0; i < 6; ++i)
-	{
-		l_cameraGPUData.r = v[i];
+	l_cameraGPUData.r = v[faceIndex];
 
-		updateUBO(GLRenderingSystemComponent::get().m_cameraUBO, l_cameraGPUData);
+	updateUBO(GLRenderingSystemComponent::get().m_cameraUBO, l_cameraGPUData);
 
-		attachCubemapColorRT(RT, m_lightPassGLRPC, 0, i, 0);
+	bindCubemapTextureForWrite(RT, m_lightPassGLRPC, 0, faceIndex, 0);
 
-		drawMesh(l_MDC);
-	}
+	drawMesh(l_MDC);
 
-	//glDisable(GL_STENCIL_TEST);
+	unbindCubemapTextureForWrite(m_lightPassGLRPC, 0, faceIndex, 0);
+
+	glDisable(GL_STENCIL_TEST);
 
 	return true;
 }
@@ -262,19 +266,22 @@ bool GLEnvironmentCapturePass::render(vec4 pos, GLTextureDataComponent* RT)
 
 	auto l_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
 
-	activateRenderPass(m_opaquePassGLRPC);
-
-	drawOpaquePass(l_capturePos, l_p, l_v);
-
-	activateRenderPass(m_lightPassGLRPC);
-
-	// @TODO: optimize
-	if (l_renderingConfig.drawSky)
+	for (unsigned int i = 0; i < 6; i++)
 	{
-		drawSkyPass(l_p, l_v, RT);
-	}
+		activateRenderPass(m_opaquePassGLRPC);
 
-	//drawLightPass(l_p, l_v, RT);
+		drawOpaquePass(l_capturePos, l_p, l_v, i);
+
+		activateRenderPass(m_lightPassGLRPC);
+
+		// @TODO: optimize
+		if (l_renderingConfig.drawSky)
+		{
+			drawSkyPass(l_p, l_v, RT, i);
+		}
+
+		drawLightPass(l_p, l_v, RT, i);
+	}
 
 	return true;
 }
@@ -330,4 +337,9 @@ bool GLEnvironmentCapturePass::reloadShader()
 GLRenderPassComponent * GLEnvironmentCapturePass::getGLRPC()
 {
 	return m_lightPassGLRPC;
+}
+
+const std::vector<GLTextureDataComponent*>& GLEnvironmentCapturePass::getCapturedCubemaps()
+{
+	return m_capturedCubemaps;
 }

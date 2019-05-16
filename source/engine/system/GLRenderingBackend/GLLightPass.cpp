@@ -102,11 +102,11 @@ void GLLightPass::update()
 		6);
 	// Irradiance env cubemap
 	activateTexture(
-		GLEnvironmentConvolutionPass::getGLRPC()->m_GLTDCs[0],
+		GLEnvironmentConvolutionPass::getConvolutedCubemaps()[0],
 		7);
 	// pre-filtered specular env cubemap
 	activateTexture(
-		GLEnvironmentPreFilterPass::getGLRPC()->m_GLTDCs[0],
+		GLEnvironmentPreFilterPass::getPreFiltedCubemaps()[0],
 		8);
 	// culled point light
 	glBindImageTexture(0, GLLightCullingPass::getLightGrid()->m_TO, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);

@@ -22,6 +22,10 @@ INNO_PRIVATE_SCOPE GLEnvironmentPreFilterPass
 	GLShaderProgramComponent* m_GLSPC;
 
 	ShaderFilePaths m_shaderFilePaths = { "GL//environmentPreFilterPass.vert/" , "", "", "", "GL//environmentPreFilterPass.frag/" };
+
+	const unsigned int m_subDivideDimension = 1;
+	const unsigned int m_totalCubemaps = m_subDivideDimension * m_subDivideDimension * m_subDivideDimension;
+	std::vector<GLTextureDataComponent*> m_preFiltedCubemaps;
 }
 
 bool GLEnvironmentPreFilterPass::initialize()
@@ -32,7 +36,7 @@ bool GLEnvironmentPreFilterPass::initialize()
 
 	l_renderPassDesc.RTDesc.samplerType = TextureSamplerType::CUBEMAP;
 	l_renderPassDesc.RTDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	l_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RGB;
+	l_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
 	l_renderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
 	l_renderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::LINEAR;
 	l_renderPassDesc.RTDesc.wrapMethod = TextureWrapMethod::REPEAT;
@@ -48,6 +52,18 @@ bool GLEnvironmentPreFilterPass::initialize()
 
 	m_GLSPC = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
+
+	m_preFiltedCubemaps.reserve(m_totalCubemaps);
+
+	for (size_t i = 0; i < m_totalCubemaps; i++)
+	{
+		auto l_preFiltedCubemap = addGLTextureDataComponent();
+		l_preFiltedCubemap->m_textureDataDesc = l_renderPassDesc.RTDesc;
+		l_preFiltedCubemap->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+		initializeGLTextureDataComponent(l_preFiltedCubemap);
+
+		m_preFiltedCubemaps.emplace_back(l_preFiltedCubemap);
+	}
 
 	return true;
 }
@@ -79,30 +95,34 @@ bool GLEnvironmentPreFilterPass::update()
 	// uni_p
 	updateUniform(0, l_p);
 
-	auto l_GLTDC = m_GLRPC->m_GLTDCs[0];
+	auto l_capturedCubemaps = GLEnvironmentCapturePass::getCapturedCubemaps();
 
-	activateTexture(GLEnvironmentCapturePass::getGLRPC()->m_GLTDCs[0], 0);
-
-	unsigned int l_maxMipLevels = 5;
-	for (unsigned int mip = 0; mip < l_maxMipLevels; ++mip)
+	for (size_t i = 0; i < l_capturedCubemaps.size(); i++)
 	{
-		// resize framebuffer according to mip-level size.
-		unsigned int mipWidth = (int)(128 * std::pow(0.5, mip));
-		unsigned int mipHeight = (int)(128 * std::pow(0.5, mip));
+		activateTexture(l_capturedCubemaps[i], 0);
 
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, mipWidth, mipHeight);
-		glViewport(0, 0, mipWidth, mipHeight);
-
-		float roughness = (float)mip / (float)(l_maxMipLevels - 1);
-
-		// uni_roughness
-		updateUniform(3, roughness);
-		for (unsigned int i = 0; i < 6; ++i)
+		unsigned int l_maxMipLevels = 5;
+		for (unsigned int mip = 0; mip < l_maxMipLevels; ++mip)
 		{
-			// uni_v
-			updateUniform(1, l_v[i]);
-			attachCubemapColorRT(l_GLTDC, m_GLRPC, 0, i, mip);
-			drawMesh(l_MDC);
+			// resize framebuffer according to mip-level size.
+			unsigned int mipWidth = (int)(128 * std::pow(0.5, mip));
+			unsigned int mipHeight = (int)(128 * std::pow(0.5, mip));
+
+			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, mipWidth, mipHeight);
+			glViewport(0, 0, mipWidth, mipHeight);
+
+			float roughness = (float)mip / (float)(l_maxMipLevels - 1);
+
+			// uni_roughness
+			updateUniform(3, roughness);
+			for (unsigned int j = 0; j < 6; ++j)
+			{
+				// uni_v
+				updateUniform(1, l_v[j]);
+				bindCubemapTextureForWrite(m_preFiltedCubemaps[i], m_GLRPC, 0, j, mip);
+				drawMesh(l_MDC);
+				unbindCubemapTextureForWrite(m_GLRPC, 0, j, mip);
+			}
 		}
 	}
 
@@ -121,4 +141,9 @@ bool GLEnvironmentPreFilterPass::reloadShader()
 GLRenderPassComponent * GLEnvironmentPreFilterPass::getGLRPC()
 {
 	return m_GLRPC;
+}
+
+const std::vector<GLTextureDataComponent*>& GLEnvironmentPreFilterPass::getPreFiltedCubemaps()
+{
+	return m_preFiltedCubemaps;
 }

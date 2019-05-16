@@ -10,4 +10,5 @@ INNO_PRIVATE_SCOPE GLEnvironmentCapturePass
 	bool reloadShader();
 
 	GLRenderPassComponent* getGLRPC();
+	const std::vector<GLTextureDataComponent*>& getCapturedCubemaps();
 }

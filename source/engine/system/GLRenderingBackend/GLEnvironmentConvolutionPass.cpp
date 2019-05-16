@@ -20,6 +20,10 @@ INNO_PRIVATE_SCOPE GLEnvironmentConvolutionPass
 	GLShaderProgramComponent* m_GLSPC;
 
 	ShaderFilePaths m_shaderFilePaths = { "GL//environmentConvolutionPass.vert/" , "", "", "", "GL//environmentConvolutionPass.frag/" };
+
+	const unsigned int m_subDivideDimension = 1;
+	const unsigned int m_totalCubemaps = m_subDivideDimension * m_subDivideDimension * m_subDivideDimension;
+	std::vector<GLTextureDataComponent*> m_convolutedCubemaps;
 }
 
 bool GLEnvironmentConvolutionPass::initialize()
@@ -30,7 +34,7 @@ bool GLEnvironmentConvolutionPass::initialize()
 
 	l_renderPassDesc.RTDesc.samplerType = TextureSamplerType::CUBEMAP;
 	l_renderPassDesc.RTDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	l_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RGB;
+	l_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
 	l_renderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::LINEAR;
 	l_renderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::LINEAR;
 	l_renderPassDesc.RTDesc.wrapMethod = TextureWrapMethod::REPEAT;
@@ -46,6 +50,18 @@ bool GLEnvironmentConvolutionPass::initialize()
 
 	m_GLSPC = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
+
+	m_convolutedCubemaps.reserve(m_totalCubemaps);
+
+	for (size_t i = 0; i < m_totalCubemaps; i++)
+	{
+		auto l_convolutedCubemap = addGLTextureDataComponent();
+		l_convolutedCubemap->m_textureDataDesc = l_renderPassDesc.RTDesc;
+		l_convolutedCubemap->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+		initializeGLTextureDataComponent(l_convolutedCubemap);
+
+		m_convolutedCubemaps.emplace_back(l_convolutedCubemap);
+	}
 
 	return true;
 }
@@ -76,16 +92,22 @@ bool GLEnvironmentConvolutionPass::update()
 	// uni_p
 	updateUniform(0, l_p);
 
-	auto l_GLTDC = m_GLRPC->m_GLTDCs[0];
-	activateTexture(GLEnvironmentCapturePass::getGLRPC()->m_GLTDCs[0], 0);
+	auto l_capturedCubemaps = GLEnvironmentCapturePass::getCapturedCubemaps();
 
-	for (unsigned int i = 0; i < 6; ++i)
+	for (size_t i = 0; i < l_capturedCubemaps.size(); i++)
 	{
-		// uni_v
-		updateUniform(1, l_v[i]);
-		attachCubemapColorRT(l_GLTDC, m_GLRPC, 0, i, 0);
+		activateTexture(l_capturedCubemaps[i], 0);
 
-		drawMesh(l_MDC);
+		for (unsigned int j = 0; j < 6; ++j)
+		{
+			// uni_v
+			updateUniform(1, l_v[j]);
+			bindCubemapTextureForWrite(m_convolutedCubemaps[i], m_GLRPC, 0, j, 0);
+
+			drawMesh(l_MDC);
+
+			unbindCubemapTextureForWrite(m_GLRPC, 0, j, 0);
+		}
 	}
 
 	return true;
@@ -103,4 +125,9 @@ bool GLEnvironmentConvolutionPass::reloadShader()
 GLRenderPassComponent * GLEnvironmentConvolutionPass::getGLRPC()
 {
 	return m_GLRPC;
+}
+
+const std::vector<GLTextureDataComponent*>& GLEnvironmentConvolutionPass::getConvolutedCubemaps()
+{
+	return m_convolutedCubemaps;
 }
