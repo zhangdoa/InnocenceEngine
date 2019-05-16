@@ -1,9 +1,7 @@
 #include "GLPreTAAPass.h"
 
 #include "GLLightPass.h"
-#include "GLTransparentPass.h"
 #include "GLSkyPass.h"
-#include "GLTerrainPass.h"
 
 #include "GLRenderingSystemUtilities.h"
 #include "../../component/GLRenderingSystemComponent.h"
@@ -63,9 +61,6 @@ bool GLPreTAAPass::update()
 	activateTexture(
 		GLSkyPass::getGLRPC()->m_GLTDCs[0],
 		1);
-	activateTexture(
-		GLTerrainPass::getGLRPC()->m_GLTDCs[0],
-		2);
 
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
