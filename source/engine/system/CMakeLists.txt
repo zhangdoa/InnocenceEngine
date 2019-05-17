@@ -1,5 +1,6 @@
 add_subdirectory("ImGuiWrapper")
 add_subdirectory("Core")
+add_subdirectory("FileSystem")
 
 if (INNO_PLATFORM_WIN)
 add_subdirectory("DX11RenderingBackend")
@@ -38,6 +39,7 @@ GENERATE_EXPORT_HEADER (InnoSystem
 )
 
 target_link_libraries(InnoSystem InnoCore)
+target_link_libraries(InnoSystem InnoFileSystem)
 
 if (INNO_PLATFORM_WIN)
 target_link_libraries(InnoSystem InnoDX11RenderingBackend)

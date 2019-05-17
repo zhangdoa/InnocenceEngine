@@ -1,0 +1,364 @@
+#include "AssimpWrapper.h"
+
+#include "assimp/Importer.hpp"
+#include "assimp/Exporter.hpp"
+#include "assimp/scene.h"
+#include "assimp/postprocess.h"
+
+#include "../ICoreSystem.h"
+extern ICoreSystem* g_pCoreSystem;
+
+#include "FileSystemHelper.h"
+#include "JSONParser.h"
+
+INNO_PRIVATE_SCOPE InnoFileSystemNS
+{
+	INNO_PRIVATE_SCOPE AssimpWrapper
+	{
+		json processAssimpScene(const aiScene* aiScene);
+		json processAssimpNode(const aiNode * node, const aiScene * scene);
+		json processAssimpMesh(const aiScene * scene, unsigned int meshIndex);
+		std::pair<std::string, size_t> processMeshData(const aiMesh * aiMesh);
+		json processAssimpMaterial(const aiMaterial * aiMaterial);
+		json processTextureData(const std::string & fileName, TextureSamplerType samplerType, TextureUsageType usageType);
+	};
+}
+
+bool InnoFileSystemNS::AssimpWrapper::convertModel(const std::string & fileName, const std::string & exportPath)
+{
+	auto l_exportFileName = getFileName(fileName);
+	auto l_exportFileRelativePath = exportPath + l_exportFileName + ".InnoModel";
+
+	if (isFileExist(l_exportFileRelativePath))
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: AssimpWrapper: " + fileName + " has already been converted!");
+		return true;
+	}
+
+	// read file via ASSIMP
+	Assimp::Importer l_assImporter;
+	const aiScene* l_assScene;
+
+	if (isFileExist(fileName))
+	{
+		l_assScene = l_assImporter.ReadFile(getWorkingDirectory() + fileName, aiProcess_Triangulate | aiProcess_FlipUVs);
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: AssimpWrapper: " + fileName + " doesn't exist!");
+		return false;
+	}
+	if (l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: AssimpWrapper: " + std::string{ l_assImporter.GetErrorString() });
+		return false;
+	}
+
+	auto l_result = processAssimpScene(l_assScene);
+	JSONParser::saveJsonDataToDisk(l_exportFileRelativePath, l_result);
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: AssimpWrapper: " + fileName + " has been converted.");
+
+	return true;
+}
+
+json InnoFileSystemNS::AssimpWrapper::processAssimpScene(const aiScene* aiScene)
+{
+	auto l_timeData = g_pCoreSystem->getTimeSystem()->getCurrentTime();
+	auto l_timeDataStr =
+		"["
+		+ std::to_string(l_timeData.year)
+		+ "-" + std::to_string(l_timeData.month)
+		+ "-" + std::to_string(l_timeData.day)
+		+ "-" + std::to_string(l_timeData.hour)
+		+ "-" + std::to_string(l_timeData.minute)
+		+ "-" + std::to_string(l_timeData.second)
+		+ "-" + std::to_string(l_timeData.millisecond)
+		+ "]";
+
+	json l_sceneData;
+
+	l_sceneData["Timestamp"] = l_timeDataStr;
+
+	//check if root node has mesh attached, btw there SHOULD NOT BE ANY MESH ATTACHED TO ROOT NODE!!!
+	if (aiScene->mRootNode->mNumMeshes > 0)
+	{
+		l_sceneData["Nodes"].emplace_back(processAssimpNode(aiScene->mRootNode, aiScene));
+	}
+	for (unsigned int i = 0; i < aiScene->mRootNode->mNumChildren; i++)
+	{
+		if (aiScene->mRootNode->mChildren[i]->mNumMeshes > 0)
+		{
+			l_sceneData["Nodes"].emplace_back(processAssimpNode(aiScene->mRootNode->mChildren[i], aiScene));
+		}
+	}
+	return l_sceneData;
+}
+
+json InnoFileSystemNS::AssimpWrapper::processAssimpNode(const aiNode * node, const aiScene * scene)
+{
+	json l_nodeData;
+
+	l_nodeData["NodeName"] = *node->mName.C_Str();
+
+	// process each mesh located at the current node
+	for (unsigned int i = 0; i < node->mNumMeshes; i++)
+	{
+		l_nodeData["Meshes"].emplace_back(processAssimpMesh(scene, node->mMeshes[i]));
+	}
+
+	return l_nodeData;
+}
+
+json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, unsigned int meshIndex)
+{
+	json l_meshData;
+
+	auto l_aiMesh = scene->mMeshes[meshIndex];
+
+	l_meshData["MeshName"] = *l_aiMesh->mName.C_Str();
+	l_meshData["VerticesNumber"] = l_aiMesh->mNumVertices;
+	auto l_meshFileName = processMeshData(l_aiMesh);
+	l_meshData["MeshFile"] = l_meshFileName.first.c_str();
+	l_meshData["IndicesNumber"] = l_meshFileName.second;
+
+	// process material
+	if (l_aiMesh->mMaterialIndex > 0)
+	{
+		l_meshData["Material"] = processAssimpMaterial(scene->mMaterials[l_aiMesh->mMaterialIndex]);
+	}
+
+	return l_meshData;
+}
+
+std::pair<std::string, size_t> InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh)
+{
+	auto l_verticesNumber = aiMesh->mNumVertices;
+
+	std::vector<Vertex> l_vertices;
+
+	l_vertices.reserve(l_verticesNumber);
+
+	for (unsigned int i = 0; i < l_verticesNumber; i++)
+	{
+		Vertex l_Vertex;
+
+		// positions
+		if (&aiMesh->mVertices[i] != nullptr)
+		{
+			l_Vertex.m_pos.x = aiMesh->mVertices[i].x;
+			l_Vertex.m_pos.y = aiMesh->mVertices[i].y;
+			l_Vertex.m_pos.z = aiMesh->mVertices[i].z;
+		}
+		else
+		{
+			l_Vertex.m_pos.x = 0.0f;
+			l_Vertex.m_pos.y = 0.0f;
+			l_Vertex.m_pos.z = 0.0f;
+		}
+
+		// texture coordinates
+		if (aiMesh->mTextureCoords[0])
+		{
+			// a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't
+			// use models where a vertex can have multiple texture coordinates so we always take the first set (0).
+			l_Vertex.m_texCoord.x = aiMesh->mTextureCoords[0][i].x;
+			l_Vertex.m_texCoord.y = aiMesh->mTextureCoords[0][i].y;
+		}
+		else
+		{
+			l_Vertex.m_texCoord.x = 0.0f;
+			l_Vertex.m_texCoord.y = 0.0f;
+		}
+
+		// normals
+		if (aiMesh->mNormals)
+		{
+			l_Vertex.m_normal.x = aiMesh->mNormals[i].x;
+			l_Vertex.m_normal.y = aiMesh->mNormals[i].y;
+			l_Vertex.m_normal.z = aiMesh->mNormals[i].z;
+		}
+		else
+		{
+			l_Vertex.m_normal.x = 0.0f;
+			l_Vertex.m_normal.y = 0.0f;
+			l_Vertex.m_normal.z = 0.0f;
+		}
+		l_vertices.emplace_back(l_Vertex);
+	}
+
+	std::vector<Index> l_indices;
+	size_t l_indiceSize = 0;
+
+	// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
+	for (unsigned int i = 0; i < aiMesh->mNumFaces; i++)
+	{
+		aiFace l_face = aiMesh->mFaces[i];
+		l_indiceSize += l_face.mNumIndices;
+	}
+
+	l_indices.reserve(l_indiceSize);
+
+	for (unsigned int i = 0; i < aiMesh->mNumFaces; i++)
+	{
+		aiFace l_face = aiMesh->mFaces[i];
+		// retrieve all indices of the face and store them in the indices vector
+		for (unsigned int j = 0; j < l_face.mNumIndices; j++)
+		{
+			l_indices.emplace_back(l_face.mIndices[j]);
+		}
+	}
+
+	std::string l_exportFileName;
+
+	if (aiMesh->mName.length)
+	{
+		l_exportFileName = aiMesh->mName.C_Str();
+	}
+	else
+	{
+		l_exportFileName = std::string(InnoMath::createEntityID().c_str());
+	}
+
+	auto l_exportFileRelativePath = "//res//convertedAssets//" + l_exportFileName + ".InnoRaw";
+
+	std::ofstream l_file(getWorkingDirectory() + l_exportFileRelativePath, std::ios::binary);
+
+	serializeVector(l_file, l_vertices);
+	serializeVector(l_file, l_indices);
+
+	l_file.close();
+
+	return std::pair<std::string, size_t>(l_exportFileRelativePath, l_indiceSize);
+}
+
+/*
+aiTextureType::aiTextureType_NORMALS TextureUsageType::NORMAL map_Kn normal map texture
+aiTextureType::aiTextureType_DIFFUSE TextureUsageType::ALBEDO map_Kd albedo texture
+aiTextureType::aiTextureType_SPECULAR TextureUsageType::METALLIC map_Ks metallic texture
+aiTextureType::aiTextureType_AMBIENT TextureUsageType::ROUGHNESS map_Ka roughness texture
+aiTextureType::aiTextureType_EMISSIVE TextureUsageType::AMBIENT_OCCLUSION map_emissive AO texture
+aiTextureType::AI_MATKEY_COLOR_DIFFUSE Kd Albedo RGB
+aiTextureType::AI_MATKEY_COLOR_TRANSPARENT Ks Alpha A
+aiTextureType::AI_MATKEY_COLOR_SPECULAR Ka Metallic
+aiTextureType::AI_MATKEY_COLOR_AMBIENT Ke Roughness
+aiTextureType::AI_MATKEY_COLOR_EMISSIVE AO
+aiTextureType::AI_MATKEY_COLOR_REFLECTIVE Thickness
+*/
+
+json InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * aiMaterial)
+{
+	json l_materialData;
+
+	for (unsigned int i = 0; i < aiTextureType_UNKNOWN; i++)
+	{
+		if (aiMaterial->GetTextureCount(aiTextureType(i)) > 0)
+		{
+			aiString l_AssString;
+			aiMaterial->GetTexture(aiTextureType(i), 0, &l_AssString);
+			std::string l_localPath = std::string(l_AssString.C_Str());
+
+			if (aiTextureType(i) == aiTextureType::aiTextureType_NONE)
+			{
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: AssimpWrapper: " + l_localPath + " is unknown texture type!");
+			}
+			else if (aiTextureType(i) == aiTextureType::aiTextureType_NORMALS)
+			{
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL));
+			}
+			else if (aiTextureType(i) == aiTextureType::aiTextureType_DIFFUSE)
+			{
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::SAMPLER_2D, TextureUsageType::ALBEDO));
+			}
+			else if (aiTextureType(i) == aiTextureType::aiTextureType_SPECULAR)
+			{
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::SAMPLER_2D, TextureUsageType::METALLIC));
+			}
+			else if (aiTextureType(i) == aiTextureType::aiTextureType_AMBIENT)
+			{
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::SAMPLER_2D, TextureUsageType::ROUGHNESS));
+			}
+			else if (aiTextureType(i) == aiTextureType::aiTextureType_EMISSIVE)
+			{
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::SAMPLER_2D, TextureUsageType::AMBIENT_OCCLUSION));
+			}
+			else
+			{
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: AssimpWrapper: " + l_localPath + " is unsupported texture type!");
+			}
+		}
+	}
+
+	auto l_result = aiColor3D();
+
+	if (aiMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, l_result) == aiReturn::aiReturn_SUCCESS)
+	{
+		l_materialData["Albedo"] =
+		{
+			{"R", l_result.r},
+			{"G", l_result.g},
+			{"B", l_result.b},
+		};
+	}
+	else
+	{
+		l_materialData["Albedo"] =
+		{
+			{"R", 1.0f},
+			{"G", 1.0f},
+			{"B", 1.0f},
+		};
+	}
+	if (aiMaterial->Get(AI_MATKEY_COLOR_TRANSPARENT, l_result) == aiReturn::aiReturn_SUCCESS)
+	{
+		l_materialData["Albedo"]["A"] = l_result.r;
+	}
+	else
+	{
+		l_materialData["Albedo"]["A"] = 1.0f;
+	}
+	if (aiMaterial->Get(AI_MATKEY_COLOR_SPECULAR, l_result) == aiReturn::aiReturn_SUCCESS)
+	{
+		l_materialData["Metallic"] = l_result.r;
+	}
+	else
+	{
+		l_materialData["Metallic"] = 0.5f;
+	}
+	if (aiMaterial->Get(AI_MATKEY_COLOR_AMBIENT, l_result) == aiReturn::aiReturn_SUCCESS)
+	{
+		l_materialData["Roughness"] = l_result.r;
+	}
+	else
+	{
+		l_materialData["Roughness"] = 0.5f;
+	}
+	if (aiMaterial->Get(AI_MATKEY_COLOR_EMISSIVE, l_result) == aiReturn::aiReturn_SUCCESS)
+	{
+		l_materialData["AO"] = l_result.r;
+	}
+	else
+	{
+		l_materialData["AO"] = 1.0f;
+	}
+	if (aiMaterial->Get(AI_MATKEY_COLOR_REFLECTIVE, l_result) == aiReturn::aiReturn_SUCCESS)
+	{
+		l_materialData["Thickness"] = l_result.r;
+	}
+	else
+	{
+		l_materialData["Thickness"] = 1.0f;
+	}
+	return l_materialData;
+}
+
+json InnoFileSystemNS::AssimpWrapper::processTextureData(const std::string & fileName, TextureSamplerType samplerType, TextureUsageType usageType)
+{
+	json j;
+
+	j["SamplerType"] = samplerType;
+	j["UsageType"] = usageType;
+	j["File"] = fileName;
+
+	return j;
+}
