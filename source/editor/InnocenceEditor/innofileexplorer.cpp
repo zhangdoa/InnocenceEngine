@@ -66,14 +66,18 @@ QString InnoFileExplorer::GetSelectionPath()
     {
         this->SetRootPath(QString::fromStdString(l_fileInfo.canonicalFilePath().toStdString()));
     }
-    else if(l_fileInfo.suffix().toStdString() == "obj")
+    else if(l_fileInfo.suffix().toStdString() == "obj"
+            || l_fileInfo.suffix().toStdString() == "fbx"
+            ||l_fileInfo.suffix().toStdString() == "OBJ"
+            || l_fileInfo.suffix().toStdString() == "FBX"
+            )
     {
         QDir l_RootDir(m_rootDir);
         auto l_relativePath = l_RootDir.relativeFilePath(l_fileInfo.filePath());
         switch( QMessageBox::question(
                     this,
                     tr(""),
-                    tr("Convert .obj file?"),
+                    tr("Convert model file?"),
 
                     QMessageBox::Yes |
                     QMessageBox::No |
@@ -81,14 +85,14 @@ QString InnoFileExplorer::GetSelectionPath()
 
                     QMessageBox::Cancel ) )
         {
-          case QMessageBox::Yes:
+        case QMessageBox::Yes:
             g_pCoreSystem->getFileSystem()->convertModel("res/" + l_relativePath.toStdString(), "res/convertedAssets/");
             break;
-          case QMessageBox::No:
+        case QMessageBox::No:
             break;
-          case QMessageBox::Cancel:
+        case QMessageBox::Cancel:
             break;
-          default:
+        default:
             break;
         }
     }
@@ -108,14 +112,14 @@ QString InnoFileExplorer::GetSelectionPath()
 
                     QMessageBox::Cancel ) )
         {
-          case QMessageBox::Yes:
+        case QMessageBox::Yes:
             g_pCoreSystem->getFileSystem()->loadScene("res/" + l_relativePath.toStdString());
             break;
-          case QMessageBox::No:
+        case QMessageBox::No:
             break;
-          case QMessageBox::Cancel:
+        case QMessageBox::Cancel:
             break;
-          default:
+        default:
             break;
         }
     }
