@@ -18,7 +18,8 @@
 
 ### Windows
 
-Tested under Windows 10 version 1809
+#### Build Engine
+Tested under Windows 10 version 1903
 
 Prerequisites: MSVC 19.00 + CMake 3.10 or higher + Vulkan pre-compiled library (Optional)
 
@@ -31,6 +32,16 @@ powershell -ExecutionPolicy RemoteSigned -File "buildPhysXWin-VS15.ps1"
 @echo | buildWin-VS15.bat
 @echo | postBuildWin.bat
 ```
+
+#### Build Editor
+Tested under Windows 10 version 1903
+
+Prerequisites: Qt Creator 5.13 or higher
+
+- Open `source\editor\InnocenceEditor\InnocenceEditor.pro` with Qt Creator
+- Change "Projects - Build Settings - General - Build directory" to `..\..\..\bin` for Debug, Profile and Release build configurations
+- Change "Projects - Run Settings - Run - Working directory" to `..\..\..\bin`
+- Build the project
 
 ### Linux
 
@@ -66,11 +77,15 @@ echo | postBuildMac.sh
 
 ### Windows
 
+#### Launch game build
 Run following script
 
 ``` cmd
 @echo | startEngineWin.bat
 ```
+
+#### Launch editor build
+Launch through Qt Creator
 
 ### Linux
 
@@ -138,7 +153,7 @@ Task-based concurrency model
 
 [Object memory pool model](https://en.wikipedia.org/wiki/Object_pool_pattern)
 
-[Deferred rendering pipeline](https://en.wikipedia.org/wiki/Deferred_shading)
+[Tiled deferred rendering pipeline](https://en.wikipedia.org/wiki/Deferred_shading)
 
 [Physically based shading](https://en.wikipedia.org/wiki/Physically_based_rendering)
 
