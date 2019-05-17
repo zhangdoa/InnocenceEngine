@@ -205,22 +205,34 @@ std::pair<std::string, size_t> InnoFileSystemNS::AssimpWrapper::processMeshData(
 	std::vector<Index> l_indices;
 	size_t l_indiceSize = 0;
 
-	// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
-	for (unsigned int i = 0; i < aiMesh->mNumFaces; i++)
+	if (aiMesh->mNumFaces)
 	{
-		aiFace l_face = aiMesh->mFaces[i];
-		l_indiceSize += l_face.mNumIndices;
-	}
-
-	l_indices.reserve(l_indiceSize);
-
-	for (unsigned int i = 0; i < aiMesh->mNumFaces; i++)
-	{
-		aiFace l_face = aiMesh->mFaces[i];
-		// retrieve all indices of the face and store them in the indices vector
-		for (unsigned int j = 0; j < l_face.mNumIndices; j++)
+		// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
+		for (unsigned int i = 0; i < aiMesh->mNumFaces; i++)
 		{
-			l_indices.emplace_back(l_face.mIndices[j]);
+			aiFace l_face = aiMesh->mFaces[i];
+			l_indiceSize += l_face.mNumIndices;
+		}
+
+		l_indices.reserve(l_indiceSize);
+
+		for (unsigned int i = 0; i < aiMesh->mNumFaces; i++)
+		{
+			aiFace l_face = aiMesh->mFaces[i];
+			// retrieve all indices of the face and store them in the indices vector
+			for (unsigned int j = 0; j < l_face.mNumIndices; j++)
+			{
+				l_indices.emplace_back(l_face.mIndices[j]);
+			}
+		}
+	}
+	else
+	{
+		l_indices.reserve(l_verticesNumber);
+
+		for (unsigned int i = 0; i < l_verticesNumber; i++)
+		{
+			l_indices.emplace_back(i);
 		}
 	}
 
