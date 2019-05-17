@@ -19,6 +19,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 		json processAssimpNode(const aiNode * node, const aiScene * scene);
 		json processAssimpMesh(const aiScene * scene, unsigned int meshIndex);
 		std::pair<std::string, size_t> processMeshData(const aiMesh * aiMesh);
+		json processAssimpBone(const aiBone * aiBone, unsigned int boneID);
 		json processAssimpMaterial(const aiMaterial * aiMaterial);
 		json processTextureData(const std::string & fileName, TextureSamplerType samplerType, TextureUsageType usageType);
 	};
@@ -41,6 +42,8 @@ bool InnoFileSystemNS::AssimpWrapper::convertModel(const std::string & fileName,
 
 	if (isFileExist(fileName))
 	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: AssimpWrapper: converting " + fileName + "...");
+
 		l_assScene = l_assImporter.ReadFile(getWorkingDirectory() + fileName, aiProcess_Triangulate | aiProcess_FlipUVs);
 	}
 	else
@@ -80,18 +83,8 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpScene(const aiScene* aiScene)
 
 	l_sceneData["Timestamp"] = l_timeDataStr;
 
-	//check if root node has mesh attached, btw there SHOULD NOT BE ANY MESH ATTACHED TO ROOT NODE!!!
-	if (aiScene->mRootNode->mNumMeshes > 0)
-	{
-		l_sceneData["Nodes"].emplace_back(processAssimpNode(aiScene->mRootNode, aiScene));
-	}
-	for (unsigned int i = 0; i < aiScene->mRootNode->mNumChildren; i++)
-	{
-		if (aiScene->mRootNode->mChildren[i]->mNumMeshes > 0)
-		{
-			l_sceneData["Nodes"].emplace_back(processAssimpNode(aiScene->mRootNode->mChildren[i], aiScene));
-		}
-	}
+	l_sceneData["Nodes"].emplace_back(processAssimpNode(aiScene->mRootNode, aiScene));
+
 	return l_sceneData;
 }
 
@@ -102,9 +95,21 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpNode(const aiNode * node, con
 	l_nodeData["NodeName"] = *node->mName.C_Str();
 
 	// process each mesh located at the current node
-	for (unsigned int i = 0; i < node->mNumMeshes; i++)
+	if (node->mNumMeshes)
 	{
-		l_nodeData["Meshes"].emplace_back(processAssimpMesh(scene, node->mMeshes[i]));
+		for (unsigned int i = 0; i < node->mNumMeshes; i++)
+		{
+			l_nodeData["Meshes"].emplace_back(processAssimpMesh(scene, node->mMeshes[i]));
+		}
+	}
+
+	// process children node
+	if (node->mNumChildren)
+	{
+		for (unsigned int i = 0; i < node->mNumChildren; i++)
+		{
+			l_nodeData["Nodes"].emplace_back(processAssimpNode(node->mChildren[i], scene));
+		}
 	}
 
 	return l_nodeData;
@@ -116,11 +121,21 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, u
 
 	auto l_aiMesh = scene->mMeshes[meshIndex];
 
+	// process vertices and indices
 	l_meshData["MeshName"] = *l_aiMesh->mName.C_Str();
 	l_meshData["VerticesNumber"] = l_aiMesh->mNumVertices;
 	auto l_meshFileName = processMeshData(l_aiMesh);
 	l_meshData["MeshFile"] = l_meshFileName.first.c_str();
 	l_meshData["IndicesNumber"] = l_meshFileName.second;
+
+	// process bones
+	if (l_aiMesh->mNumBones)
+	{
+		for (unsigned int i = 0; i < l_aiMesh->mNumBones; i++)
+		{
+			l_meshData["Bones"].emplace_back(processAssimpBone(l_aiMesh->mBones[i], i));
+		}
+	}
 
 	// process material
 	if (l_aiMesh->mMaterialIndex > 0)
@@ -209,6 +224,42 @@ std::pair<std::string, size_t> InnoFileSystemNS::AssimpWrapper::processMeshData(
 		}
 	}
 
+	// bones weight
+	if (aiMesh->mNumBones)
+	{
+		for (size_t i = 0; i < aiMesh->mNumBones; i++)
+		{
+			auto l_bone = aiMesh->mBones[i];
+			if (l_bone->mNumWeights)
+			{
+				for (unsigned int i = 0; i < l_bone->mNumWeights; i++)
+				{
+					aiVertexWeight l_vertexWeight = l_bone->mWeights[i];
+
+					// Only the first 3 most weighted bone will be stored
+					if (l_vertexWeight.mWeight > l_vertices[l_vertexWeight.mVertexId].m_pad1.y)
+					{
+						// 1st weighted bone id and weight
+						l_vertices[l_vertexWeight.mVertexId].m_pad1.x = (float)i;
+						l_vertices[l_vertexWeight.mVertexId].m_pad1.y = l_vertexWeight.mWeight;
+					}
+					else if (l_vertexWeight.mWeight > l_vertices[l_vertexWeight.mVertexId].m_pad2.y)
+					{
+						// 2nd weighted bone id and weight
+						l_vertices[l_vertexWeight.mVertexId].m_pad2.x = (float)i;
+						l_vertices[l_vertexWeight.mVertexId].m_pad2.y = l_vertexWeight.mWeight;
+					}
+					else if (l_vertexWeight.mWeight > l_vertices[l_vertexWeight.mVertexId].m_pad2.w)
+					{
+						// 3rd weighted bone id and weight
+						l_vertices[l_vertexWeight.mVertexId].m_pad2.z = (float)i;
+						l_vertices[l_vertexWeight.mVertexId].m_pad2.w = l_vertexWeight.mWeight;
+					}
+				}
+			}
+		}
+	}
+
 	std::string l_exportFileName;
 
 	if (aiMesh->mName.length)
@@ -230,6 +281,25 @@ std::pair<std::string, size_t> InnoFileSystemNS::AssimpWrapper::processMeshData(
 	l_file.close();
 
 	return std::pair<std::string, size_t>(l_exportFileRelativePath, l_indiceSize);
+}
+
+json InnoFileSystemNS::AssimpWrapper::processAssimpBone(const aiBone * aiBone, unsigned int boneID)
+{
+	json l_boneData;
+	l_boneData["BoneID"] = boneID;
+
+	aiQuaternion l_aiRot;
+	aiVector3D l_aiPos;
+
+	aiBone->mOffsetMatrix.DecomposeNoScaling(l_aiRot, l_aiPos);
+
+	auto l_rot = vec4(l_aiRot.x, l_aiRot.y, l_aiRot.z, l_aiRot.w);
+	auto l_pos = vec4(l_aiPos.x, l_aiPos.y, l_aiPos.z, 1.0f);
+
+	JSONParser::to_json(l_boneData["OffsetRotation"], l_rot);
+	JSONParser::to_json(l_boneData["OffsetPosition"], l_pos);
+
+	return l_boneData;
 }
 
 /*

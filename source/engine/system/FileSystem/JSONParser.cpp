@@ -8,7 +8,6 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE InnoFileSystemNS::JSONParser
 {
-	ModelMap processSceneJsonData(const json & j);
 	ModelMap processNodeJsonData(const json & j);
 	ModelPair processMeshJsonData(const json& j);
 	MaterialDataComponent* processMaterialJsonData(const json& j);
@@ -112,16 +111,16 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const vec4& p)
 	j = json
 	{
 		{
-				"R", p.x
+				"X", p.x
 		},
 		{
-				"G", p.y
+				"Y", p.y
 		},
 		{
-				"B", p.z
+				"Z", p.z
 		},
 		{
-				"A", p.w
+				"W", p.w
 		}
 	};
 }
@@ -270,10 +269,10 @@ void InnoFileSystemNS::JSONParser::from_json(const json & j, VisibleComponent & 
 
 void InnoFileSystemNS::JSONParser::from_json(const json & j, vec4 & p)
 {
-	p.x = j["R"];
-	p.y = j["G"];
-	p.z = j["B"];
-	p.w = j["A"];
+	p.x = j["X"];
+	p.y = j["Y"];
+	p.z = j["Z"];
+	p.w = j["W"];
 }
 
 void InnoFileSystemNS::JSONParser::from_json(const json & j, DirectionalLightComponent & p)
@@ -316,32 +315,32 @@ ModelMap InnoFileSystemNS::JSONParser::loadModelFromDisk(const std::string & fil
 
 	loadJsonDataFromDisk(fileName, j);
 
-	return  std::move(processSceneJsonData(j));
-}
-
-ModelMap InnoFileSystemNS::JSONParser::processSceneJsonData(const json & j)
-{
-	ModelMap l_SceneResult;
-
-	for (auto i : j["Nodes"])
-	{
-		auto l_nodeResult = std::move(processNodeJsonData(i));
-		for (auto i : l_nodeResult)
-		{
-			l_SceneResult.emplace(i);
-		}
-	}
-
-	return l_SceneResult;
+	return  std::move(processNodeJsonData(j));
 }
 
 ModelMap InnoFileSystemNS::JSONParser::processNodeJsonData(const json & j)
 {
 	ModelMap l_nodeResult;
 
-	for (auto i : j["Meshes"])
+	if (j.find("Meshes") != j.end())
 	{
-		l_nodeResult.emplace(processMeshJsonData(i));
+		for (auto i : j["Meshes"])
+		{
+			l_nodeResult.emplace(processMeshJsonData(i));
+		}
+	}
+
+	// children nodes
+	if (j.find("Nodes") != j.end())
+	{
+		for (auto i : j["Nodes"])
+		{
+			auto l_childrenNodeResult = std::move(processNodeJsonData(i));
+			for (auto i : l_childrenNodeResult)
+			{
+				l_nodeResult.emplace(i);
+			}
+		}
 	}
 
 	return l_nodeResult;
@@ -387,7 +386,15 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j)
 		g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(l_MeshDC);
 
 		l_result.first = l_MeshDC;
-		l_result.second = processMaterialJsonData(j["Material"]);
+
+		if (j.find("Material") != j.end())
+		{
+			l_result.second = processMaterialJsonData(j["Material"]);
+		}
+		else
+		{
+			l_result.second = g_pCoreSystem->getAssetSystem()->addMaterialDataComponent();
+		}
 
 		m_loadedModelPair.emplace(l_meshFileName, l_result);
 

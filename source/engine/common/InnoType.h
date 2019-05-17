@@ -67,7 +67,7 @@ enum class VisiblilityType { INNO_INVISIBLE, INNO_BILLBOARD, INNO_OPAQUE, INNO_T
 // mesh custom types
 using Index = unsigned int;
 
-enum class MeshUsageType { STATIC, DYNAMIC };
+enum class MeshUsageType { STATIC, DYNAMIC, SKELETAL };
 enum class MeshShapeType { LINE, QUAD, CUBE, SPHERE, TERRAIN, CUSTOM };
 enum class MeshPrimitiveTopology { POINT, LINE, TRIANGLE, TRIANGLE_STRIP };
 

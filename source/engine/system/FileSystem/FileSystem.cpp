@@ -27,7 +27,8 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	std::vector<InnoFuture<void>> m_asyncTask;
 	std::vector<std::function<void()>*> m_sceneLoadingStartCallbacks;
 	std::vector<std::function<void()>*> m_sceneLoadingFinishCallbacks;
-	std::function<void()> f_loadTest;
+	std::function<void()> f_convertModelTest;
+	std::function<void()> f_loadModelTest;
 
 	std::atomic<bool> m_isLoadingScene = false;
 	std::atomic<bool> m_prepareForLoadingScene = false;
@@ -40,20 +41,10 @@ bool InnoFileSystemNS::convertModel(const std::string & fileName, const std::str
 {
 	auto l_extension = getFileExtension(fileName);
 
-	if (l_extension == ".obj")
+	if (l_extension == ".obj" || l_extension == ".OBJ" || l_extension == ".fbx" || l_extension == ".FBX")
 	{
 		auto tempTask = g_pCoreSystem->getTaskSystem()->submit([=]()
 		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: converting " + fileName + "...");
-			AssimpWrapper::convertModel(fileName, exportPath);
-		});
-		return true;
-	}
-	else if (l_extension == ".fbx")
-	{
-		auto tempTask = g_pCoreSystem->getTaskSystem()->submit([=]()
-		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: converting " + fileName + "...");
 			AssimpWrapper::convertModel(fileName, exportPath);
 		});
 		return true;
@@ -123,6 +114,12 @@ bool InnoFileSystemNS::loadAssets()
 
 bool InnoFileSystem::setup()
 {
+	InnoFileSystemNS::f_convertModelTest = [&]() { convertModel("res/models/Robot/Robot.FBX", "res/test/"); };
+	g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_Y, ButtonStatus::PRESSED }, &InnoFileSystemNS::f_convertModelTest);
+
+	InnoFileSystemNS::f_loadModelTest = [&]() { loadModel("res/test/Robot.InnoModel"); };
+	g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_U, ButtonStatus::PRESSED }, &InnoFileSystemNS::f_loadModelTest);
+
 	InnoFileSystemNS::setup();
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: current working directory is " + getWorkingDirectory());
 	InnoFileSystemNS::m_objectStatus = ObjectStatus::ALIVE;
