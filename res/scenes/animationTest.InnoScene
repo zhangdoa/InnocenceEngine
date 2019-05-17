@@ -1,0 +1,160 @@
+{
+  "SceneEntities": [
+    {
+      "EntityID": "5dac474386b11bb1dfb646d5900c7acd",
+      "EntityName": "RootTransform"
+    },
+    {
+      "ChildrenComponents": [
+        {
+          "ComponentType": 0,
+          "LocalTransformVector": {
+            "Position": {
+              "X": 0.0,
+              "Y": 0.1,
+              "Z": 0.0
+            },
+            "Rotation": {
+              "W": 1.0,
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 200.0,
+              "Y": 0.1,
+              "Z": 200.0
+            }
+          },
+          "ParentTransformComponentEntityName": "RootTransform"
+        },
+        {
+          "ComponentType": 1,
+          "MeshPrimitiveTopology": 2,
+          "MeshShapeType": 2,
+          "MeshUsageType": 0,
+          "ModelFileName": "",
+          "TextureWrapMethod": 1,
+          "VisiblilityType": 2,
+          "SimulatePhysics": true
+        }
+      ],
+      "EntityID": "d4229e4616eb07cc6e5e044ffe0fd77b",
+      "EntityName": "landscape"
+    },
+    {
+      "ChildrenComponents": [
+        {
+          "ComponentType": 0,
+          "LocalTransformVector": {
+            "Position": {
+              "X": 0.0,
+              "Y": 3.0,
+              "Z": 2.0
+            },
+            "Rotation": {
+              "W": 0.9238795042037964,
+              "X": -0.3826834559440613,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "ParentTransformComponentEntityName": "RootTransform"
+        },
+        {
+          "ComponentType": 5,
+          "FOVX": 90.0,
+          "widthScale": 16.0,
+          "heightScale": 9.0,
+          "zNear": 0.1,
+          "zFar": 2000.0
+        }
+      ],
+      "EntityID": "1e6af8f1c63c5165990ba1aca26a72ab",
+      "EntityName": "playerCharacterCamera"
+    },
+    {
+      "ChildrenComponents": [
+        {
+          "ComponentType": 0,
+          "LocalTransformVector": {
+            "Position": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Rotation": {
+              "W": 1.0,
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 0.10000000149011612,
+              "Y": 0.10000000149011612,
+              "Z": 0.10000000149011612
+            }
+          },
+          "ParentTransformComponentEntityName": "RootTransform"
+        },
+        {
+          "ComponentType": 1,
+          "MeshPrimitiveTopology": 2,
+          "MeshShapeType": 5,
+          "MeshUsageType": 2,
+          "ModelFileName": "res//convertedAssets//Robot-1.InnoModel",
+          "TextureWrapMethod": 1,
+          "VisiblilityType": 2,
+          "SimulatePhysics": false
+        }
+      ],
+      "EntityID": "5372b91cf296630c0784256e52f89db1",
+      "EntityName": "Robot"
+    },
+    {
+      "ChildrenComponents": [
+        {
+          "ComponentType": 0,
+          "LocalTransformVector": {
+            "Position": {
+              "X": 0.0,
+              "Y": 4.0,
+              "Z": 0.0
+            },
+            "Rotation": {
+              "W": 0.7071315050125122,
+              "X": -0.7070821523666382,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "ParentTransformComponentEntityName": "RootTransform"
+        },
+        {
+          "Color": {
+            "W": 1.0,
+            "Z": 1.0,
+            "Y": 1.0,
+            "X": 1.0
+          },
+          "ComponentType": 2,
+          "LuminousFlux": 1.0,
+          "drawAABB": false
+        }
+      ],
+      "EntityID": "3a467d719bce3caa3337c860e378b19e",
+      "EntityName": "sun"
+    }
+  ],
+  "SceneName": "..//res//scenes//animationTest.InnoScene"
+}
