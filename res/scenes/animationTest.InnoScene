@@ -107,7 +107,7 @@
           "MeshPrimitiveTopology": 2,
           "MeshShapeType": 5,
           "MeshUsageType": 2,
-          "ModelFileName": "res//convertedAssets//Robot-1.InnoModel",
+          "ModelFileName": "res//convertedAssets//Robot.InnoModel",
           "TextureWrapMethod": 1,
           "VisiblilityType": 2,
           "SimulatePhysics": false
