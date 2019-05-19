@@ -29,6 +29,8 @@ bool GLBloomExtractPass::initialize()
 	m_entityID = InnoMath::createEntityID();
 
 	auto l_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
+	l_renderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::LINEAR;
+	l_renderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::LINEAR;
 
 	m_baseGLRPC = addGLRenderPassComponent(m_entityID, "BloomExtractBasePassGLRPC/");
 	m_baseGLRPC->m_renderPassDesc = l_renderPassDesc;

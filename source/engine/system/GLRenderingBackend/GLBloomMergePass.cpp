@@ -51,27 +51,26 @@ void GLBloomMergePass::initializeShaders()
 
 bool GLBloomMergePass::update()
 {
+	auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);
+
 	activateRenderPass(m_GLRPC);
 
 	activateShaderProgram(m_GLSPC);
 
-	activateTexture(
-		GLBloomExtractPass::getGLRPC(0)->m_GLTDCs[0],
-		0);
-	activateTexture(
-		GLBloomExtractPass::getGLRPC(1)->m_GLTDCs[0],
-		1);
-	activateTexture(
-		GLBloomExtractPass::getGLRPC(2)->m_GLTDCs[0],
-		2);
-	activateTexture(
-		GLBloomExtractPass::getGLRPC(3)->m_GLTDCs[0],
-		3);
-	activateTexture(
-		GLPreTAAPass::getGLRPC()->m_GLTDCs[0],
-		4);
-	auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);
+	glEnable(GL_BLEND);
+
+	glBlendFuncSeparate(GL_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE, GL_ZERO);
+
+	for (unsigned int i = 0; i < 4; i++)
+	{
+		activateTexture(GLBloomExtractPass::getGLRPC(i)->m_GLTDCs[0], 0);
+		drawMesh(l_MDC);
+	}
+
+	activateTexture(GLPreTAAPass::getGLRPC()->m_GLTDCs[0], 0);
 	drawMesh(l_MDC);
+
+	glDisable(GL_BLEND);
 
 	return true;
 }
