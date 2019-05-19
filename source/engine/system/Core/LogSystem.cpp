@@ -180,12 +180,13 @@ ObjectStatus InnoLogSystem::getStatus()
 
 bool InnoLogSystem::setup()
 {
-	InnoLogSystemNS::m_logFile.open("res//" + InnoLogSystemNS::getLogTimeHeader() + ".log", std::ios::out | std::ios::trunc);
 	return true;
 }
 
 bool InnoLogSystem::initialize()
 {
+	InnoLogSystemNS::m_logFile.open(g_pCoreSystem->getFileSystem()->getWorkingDirectory() + "res//logs//" + InnoLogSystemNS::getLogTimeHeader() + ".log", std::ios::out | std::ios::trunc);
+
 	InnoLogSystemNS::m_objectStatus = ObjectStatus::ALIVE;
 	printLog(LogType::INNO_DEV_SUCCESS, "LogSystem has been initialized.");
 	return true;

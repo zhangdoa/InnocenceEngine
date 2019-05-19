@@ -36,9 +36,9 @@ xcuserdata/
 !default.perspectivev3
 
 # Intermediate assets
-*.innoModel
 *.spv
 /res/convertedAssets
+/res/logs/*
 
 # For Qt
 /source/editor/*
@@ -51,3 +51,6 @@ source/editor/InnocenceEditor/DarkStyle\.cpp
 source/editor/InnocenceEditor/DarkStyle\.h
 source/editor/InnocenceEditor/darkstyle\.qrc
 source/editor/InnocenceEditor/InnocenceEditor\.pro\.user
+
+#Packaged files
+/package/*
