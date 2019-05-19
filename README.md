@@ -24,13 +24,16 @@ Tested under Windows 10 version 1903
 Prerequisites: MSVC 19.00 + CMake 3.10 or higher + Vulkan pre-compiled library (Optional)
 
 Run following scripts in a sequence
+*Will build Debug and Release configurations in parallel*
 
 ``` cmd
 @echo | setupWin.bat
-@echo | buildAssimpWin-VS15.bat
-powershell -ExecutionPolicy RemoteSigned -File "buildPhysXWin-VS15.ps1"
-@echo | buildWin-VS15.bat
-@echo | postBuildWin.bat
+```
+```powershell
+buildAssimpWin-VS15.ps1
+buildPhysXWin-VS15.ps1
+buildEngineWin-VS15.ps1
+postBuildWin.ps1
 ```
 
 #### Build Editor
@@ -80,8 +83,8 @@ echo | postBuildMac.sh
 #### Launch game build
 Run following script
 
-``` cmd
-@echo | startEngineWin.bat
+``` powershell
+startEngineWin.ps1
 ```
 
 #### Launch editor build
