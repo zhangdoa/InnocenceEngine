@@ -20,9 +20,10 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 		json processAssimpNode(const aiNode * node, const aiScene * scene, const std::string& exportName);
 		json processAssimpMesh(const aiScene * scene, const std::string& exportName, unsigned int meshIndex);
 		size_t processMeshData(const aiMesh * aiMesh, const std::string& exportFileRelativePath);
-		json processAssimpBone(const aiBone * aiBone, unsigned int boneID);
+		void processAssimpBone(const aiMesh * aiMesh, const std::string& exportFileRelativePath);
 		void processAssimpMaterial(const aiMaterial * aiMaterial, const std::string& exportFileRelativePath);
 		json processTextureData(const std::string & fileName, TextureSamplerType samplerType, TextureUsageType usageType);
+		void processAssimpAnimation(const aiAnimation * aiAnimation, const std::string& exportFileRelativePath);
 	};
 }
 
@@ -96,11 +97,17 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpScene(const aiScene* aiScene,
 
 	l_sceneData["Timestamp"] = l_timeDataStr;
 
-	l_sceneData["Nodes"].emplace_back(processAssimpNode(aiScene->mRootNode, aiScene, exportName));
-
 	if (aiScene->mNumAnimations)
 	{
+		for (unsigned int i = 0; i < aiScene->mNumAnimations; i++)
+		{
+			auto l_animationFileName = "//res//convertedAssets//" + exportName + "_" + std::to_string(i) + ".InnoAnimation";
+			processAssimpAnimation(aiScene->mAnimations[i], l_animationFileName);
+			l_sceneData["AnimationFiles"].emplace_back(l_animationFileName);
+		}
 	}
+
+	l_sceneData["Nodes"].emplace_back(processAssimpNode(aiScene->mRootNode, aiScene, exportName));
 
 	return l_sceneData;
 }
@@ -141,21 +148,20 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, c
 	// process vertices and indices
 	l_meshData["MeshName"] = *l_aiMesh->mName.C_Str();
 	l_meshData["VerticesNumber"] = l_aiMesh->mNumVertices;
-	auto l_meshFileName = "//res//convertedAssets//" + exportName + "_" + std::to_string(meshIndex) + ".InnoRaw";
+	auto l_meshFileName = "//res//convertedAssets//" + exportName + "_" + std::to_string(meshIndex) + ".InnoMesh";
 	l_meshData["IndicesNumber"] = processMeshData(l_aiMesh, l_meshFileName);
 	l_meshData["MeshFile"] = l_meshFileName;
 
 	// process bones
 	if (l_aiMesh->mNumBones)
 	{
-		for (unsigned int i = 0; i < l_aiMesh->mNumBones; i++)
-		{
-			l_meshData["Bones"].emplace_back(processAssimpBone(l_aiMesh->mBones[i], i));
-		}
+		auto l_skeletonFileName = "//res//convertedAssets//" + exportName + "_" + std::to_string(meshIndex) + ".InnoSkeleton";
+		processAssimpBone(l_aiMesh, l_skeletonFileName);
+		l_meshData["SkeletonFile"] = l_skeletonFileName;
 	}
 
 	// process material
-	if (l_aiMesh->mMaterialIndex > 0)
+	if (l_aiMesh->mMaterialIndex)
 	{
 		auto l_materialFileName = "//res//convertedAssets//" + exportName + "_" + std::to_string(meshIndex) + ".InnoMaterial";
 		processAssimpMaterial(scene->mMaterials[l_aiMesh->mMaterialIndex], l_materialFileName);
@@ -314,23 +320,31 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 	return l_indiceSize;
 }
 
-json InnoFileSystemNS::AssimpWrapper::processAssimpBone(const aiBone * aiBone, unsigned int boneID)
+void InnoFileSystemNS::AssimpWrapper::processAssimpBone(const aiMesh * aiMesh, const std::string& exportFileRelativePath)
 {
-	json l_boneData;
-	l_boneData["BoneID"] = boneID;
+	json j;
+	for (unsigned int i = 0; i < aiMesh->mNumBones; i++)
+	{
+		json j_child;
 
-	aiQuaternion l_aiRot;
-	aiVector3D l_aiPos;
+		auto l_bone = aiMesh->mBones[i];
 
-	aiBone->mOffsetMatrix.DecomposeNoScaling(l_aiRot, l_aiPos);
+		j_child["BoneID"] = std::hash<std::string>()(l_bone->mName.C_Str());
 
-	auto l_rot = vec4(l_aiRot.x, l_aiRot.y, l_aiRot.z, l_aiRot.w);
-	auto l_pos = vec4(l_aiPos.x, l_aiPos.y, l_aiPos.z, 1.0f);
+		aiQuaternion l_aiRot;
+		aiVector3D l_aiPos;
 
-	JSONParser::to_json(l_boneData["OffsetRotation"], l_rot);
-	JSONParser::to_json(l_boneData["OffsetPosition"], l_pos);
+		l_bone->mOffsetMatrix.DecomposeNoScaling(l_aiRot, l_aiPos);
+		auto l_rot = vec4(l_aiRot.x, l_aiRot.y, l_aiRot.z, l_aiRot.w);
+		auto l_pos = vec4(l_aiPos.x, l_aiPos.y, l_aiPos.z, 1.0f);
 
-	return l_boneData;
+		JSONParser::to_json(j_child["OffsetRotation"], l_rot);
+		JSONParser::to_json(j_child["OffsetPosition"], l_pos);
+
+		j["Bones"].emplace_back(j_child);
+	}
+
+	JSONParser::saveJsonDataToDisk(exportFileRelativePath, j);
 }
 
 /*
@@ -463,4 +477,50 @@ json InnoFileSystemNS::AssimpWrapper::processTextureData(const std::string & fil
 	j["File"] = fileName;
 
 	return j;
+}
+
+void InnoFileSystemNS::AssimpWrapper::processAssimpAnimation(const aiAnimation * aiAnimation, const std::string& exportFileRelativePath)
+{
+	std::ofstream l_file(getWorkingDirectory() + exportFileRelativePath, std::ios::binary);
+
+	auto l_duration = aiAnimation->mDuration;
+
+	serialize(l_file, &l_duration, sizeof(decltype(l_duration)));
+
+	auto l_numChannels = aiAnimation->mNumChannels;
+
+	if (l_numChannels)
+	{
+		serialize(l_file, &l_numChannels, sizeof(decltype(l_numChannels)));
+
+		for (unsigned int i = 0; i < l_numChannels; i++)
+		{
+			auto l_channel = aiAnimation->mChannels[i];
+
+			auto l_channelID = std::hash<std::string>()(l_channel->mNodeName.C_Str());
+			serialize(l_file, &l_channelID, sizeof(decltype(l_channelID)));
+
+			if (l_channel->mNumPositionKeys != l_channel->mNumRotationKeys)
+			{
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: AssimpWrapper: Position key number is different than rotation key number in node: " + std::string(l_channel->mNodeName.C_Str()) + "!");
+				l_file.close();
+				return;
+			}
+
+			for (unsigned int j = 0; j < l_channel->mNumPositionKeys; j++)
+			{
+				auto l_posKey = l_channel->mPositionKeys[i];
+				auto l_posKeyTime = l_posKey.mTime;
+				auto l_posKeyValue = l_posKey.mValue;
+				vec4 l_pos = vec4(l_posKeyValue.x, l_posKeyValue.y, l_posKeyValue.z, 1.0f);
+
+				auto l_rotKey = l_channel->mRotationKeys[i];
+				auto l_rotKeyTime = l_rotKey.mTime;
+				auto l_rotKeyValue = l_rotKey.mValue;
+				vec4 l_rot = vec4(l_rotKeyValue.x, l_rotKeyValue.y, l_rotKeyValue.z, l_rotKeyValue.w);
+			}
+		}
+	}
+
+	l_file.close();
 }
