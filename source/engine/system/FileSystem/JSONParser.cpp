@@ -10,7 +10,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS::JSONParser
 {
 	ModelMap processNodeJsonData(const json & j);
 	ModelPair processMeshJsonData(const json& j);
-	MaterialDataComponent* processMaterialJsonData(const json& j);
+	MaterialDataComponent* processMaterialJsonData(const std::string& materialFileName);
 
 	bool assignComponentRuntimeData();
 
@@ -387,9 +387,9 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j)
 
 		l_result.first = l_MeshDC;
 
-		if (j.find("Material") != j.end())
+		if (j.find("MaterialFile") != j.end())
 		{
-			l_result.second = processMaterialJsonData(j["Material"]);
+			l_result.second = processMaterialJsonData(j["MaterialFile"]);
 		}
 		else
 		{
@@ -404,8 +404,12 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j)
 	return l_result;
 }
 
-MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(const json & j)
+MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(const std::string& materialFileName)
 {
+	json j;
+
+	loadJsonDataFromDisk(materialFileName, j);
+
 	auto l_MDC = g_pCoreSystem->getAssetSystem()->addMaterialDataComponent();
 
 	if (j.find("Textures") != j.end())

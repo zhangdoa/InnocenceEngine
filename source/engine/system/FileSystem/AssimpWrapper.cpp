@@ -21,7 +21,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 		json processAssimpMesh(const aiScene * scene, const std::string& exportName, unsigned int meshIndex);
 		size_t processMeshData(const aiMesh * aiMesh, const std::string& exportFileRelativePath);
 		json processAssimpBone(const aiBone * aiBone, unsigned int boneID);
-		json processAssimpMaterial(const aiMaterial * aiMaterial);
+		void processAssimpMaterial(const aiMaterial * aiMaterial, const std::string& exportFileRelativePath);
 		json processTextureData(const std::string & fileName, TextureSamplerType samplerType, TextureUsageType usageType);
 	};
 }
@@ -98,6 +98,10 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpScene(const aiScene* aiScene,
 
 	l_sceneData["Nodes"].emplace_back(processAssimpNode(aiScene->mRootNode, aiScene, exportName));
 
+	if (aiScene->mNumAnimations)
+	{
+	}
+
 	return l_sceneData;
 }
 
@@ -138,8 +142,8 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, c
 	l_meshData["MeshName"] = *l_aiMesh->mName.C_Str();
 	l_meshData["VerticesNumber"] = l_aiMesh->mNumVertices;
 	auto l_meshFileName = "//res//convertedAssets//" + exportName + "_" + std::to_string(meshIndex) + ".InnoRaw";
-	l_meshData["MeshFile"] = l_meshFileName;
 	l_meshData["IndicesNumber"] = processMeshData(l_aiMesh, l_meshFileName);
+	l_meshData["MeshFile"] = l_meshFileName;
 
 	// process bones
 	if (l_aiMesh->mNumBones)
@@ -153,7 +157,9 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, c
 	// process material
 	if (l_aiMesh->mMaterialIndex > 0)
 	{
-		l_meshData["Material"] = processAssimpMaterial(scene->mMaterials[l_aiMesh->mMaterialIndex]);
+		auto l_materialFileName = "//res//convertedAssets//" + exportName + "_" + std::to_string(meshIndex) + ".InnoMaterial";
+		processAssimpMaterial(scene->mMaterials[l_aiMesh->mMaterialIndex], l_materialFileName);
+		l_meshData["MaterialFile"] = l_materialFileName;
 	}
 
 	return l_meshData;
@@ -341,7 +347,7 @@ aiTextureType::AI_MATKEY_COLOR_EMISSIVE AO
 aiTextureType::AI_MATKEY_COLOR_REFLECTIVE Thickness
 */
 
-json InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * aiMaterial)
+void InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * aiMaterial, const std::string& exportFileRelativePath)
 {
 	json l_materialData;
 
@@ -444,7 +450,8 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * a
 	{
 		l_materialData["Thickness"] = 1.0f;
 	}
-	return l_materialData;
+
+	JSONParser::saveJsonDataToDisk(exportFileRelativePath, l_materialData);
 }
 
 json InnoFileSystemNS::AssimpWrapper::processTextureData(const std::string & fileName, TextureSamplerType samplerType, TextureUsageType usageType)
