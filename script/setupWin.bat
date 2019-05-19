@@ -1,6 +1,6 @@
 git submodule update
 
-cd source/external/gitsubmodules
+cd ../source/external/gitsubmodules
 xcopy /e/s/y assimp\include\assimp\* ..\include\assimp\
 
 xcopy /y Vulkan-Headers\include\vulkan\* ..\include\vulkan\
@@ -39,7 +39,9 @@ powershell -Command "Invoke-WebRequest https://raw.githubusercontent.com/Microso
 
 cd ../
 
-mkdir dll\win
-mkdir lib\win
+mkdir dll\win\Debug
+mkdir lib\win\Debug
+mkdir dll\win\Release
+mkdir lib\win\Release
 
 pause

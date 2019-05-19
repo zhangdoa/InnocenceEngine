@@ -72,16 +72,10 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 INCLUDEPATH += $$PWD/../../../source/external/include
 
-win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../build/lib_archive/release/ -lInnoSystem
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../build/lib_archive/debug/ -lInnoSystem
+win32:CONFIG(release, debug|release):LIBS += -L$$PWD/../../../build/Release/lib_archive/release/ -lInnoSystem
+else:win32:CONFIG(debug, debug|release):LIBS += -L$$PWD/../../../build/Debug/lib_archive/debug/ -lInnoSystem
 else:unix: LIBS += -L$$PWD/../../../build/lib_archive/ -lInnoSystem
 
-INCLUDEPATH += $$PWD/../../../build/lib_archive/Debug
-DEPENDPATH += $$PWD/../../../build/lib_archive/Debug
-
-win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../build/lib_archive/release/ -lInnoGame
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../build/lib_archive/debug/ -lInnoGame
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../build/Release/lib_archive/release/ -lInnoGame
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../build/Debug/lib_archive/debug/ -lInnoGame
 else:unix: LIBS += -L$$PWD/../../../build/lib_archive/ -lInnoGame
-
-INCLUDEPATH += $$PWD/../../../build/lib_archive/Debug
-DEPENDPATH += $$PWD/../../../build/lib_archive/Debug
