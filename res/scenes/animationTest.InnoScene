@@ -85,19 +85,19 @@
           "LocalTransformVector": {
             "Position": {
               "X": 0.0,
-              "Y": 0.0,
+              "Y": 0.2,
               "Z": 0.0
             },
             "Rotation": {
-              "W": 1.0,
-              "X": 0.0,
+              "W": 0.7071315050125122,
+              "X": -0.7070821523666382,
               "Y": 0.0,
               "Z": 0.0
             },
             "Scale": {
-              "X": 0.10000000149011612,
-              "Y": 0.10000000149011612,
-              "Z": 0.10000000149011612
+              "X": 10,
+              "Y": 10,
+              "Z": 10
             }
           },
           "ParentTransformComponentEntityName": "RootTransform"
@@ -107,14 +107,14 @@
           "MeshPrimitiveTopology": 2,
           "MeshShapeType": 5,
           "MeshUsageType": 2,
-          "ModelFileName": "res//convertedAssets//Robot.InnoModel",
-          "TextureWrapMethod": 1,
+          "ModelFileName": "res//convertedAssets//Wolf.InnoModel",
+          "TextureWrapMethod": 0,
           "VisiblilityType": 2,
           "SimulatePhysics": false
         }
       ],
       "EntityID": "5372b91cf296630c0784256e52f89db1",
-      "EntityName": "Robot"
+      "EntityName": "Wolf"
     },
     {
       "ChildrenComponents": [
