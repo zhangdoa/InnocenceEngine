@@ -18,7 +18,7 @@ cmake -DASSIMP_BUILD_ASSIMP_TOOLS=OFF -DASSIMP_BUILD_TESTS=OFF -G "Visual Studio
 
 Write-Output "Build solution..." | Green
 
-msbuild Assimp.sln /property:Configuration=$buildType
+msbuild Assimp.sln /property:Configuration=$buildType /m
 
 Write-Output "Copy files..." | Green
 

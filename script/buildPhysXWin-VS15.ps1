@@ -1,5 +1,6 @@
-Set-Location ../source/external/gitsubmodules/PhysX/physx
+Set-Variable -Name scriptDir -Value (Resolve-Path .\).Path
 
+Set-Location ../source/external/gitsubmodules/PhysX/physx
 Write-Output "Generate projects with default settings..."
 Start-Process generate_projects.bat vc15win64 -Wait
 
@@ -9,6 +10,8 @@ $con | % { $_.Replace("`"NV_USE_STATIC_WINCRT`" value=`"True`"", "`"NV_USE_STATI
 
 Write-Output "Generate projects with current settings..."
 Start-Process generate_projects.bat vc15win64 -Wait
+
+Set-Location $scriptDir
 
 Write-Output "Build solution..."
 

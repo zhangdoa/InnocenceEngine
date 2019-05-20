@@ -14,6 +14,6 @@ Write-Host $genCall
 Invoke-Expression $genCall
 Invoke-Expression $genCall
 
-msbuild InnocenceEngine.sln /property:Configuration=$buildType
+msbuild InnocenceEngine.sln /property:Configuration=$buildType /m
 
 pause
