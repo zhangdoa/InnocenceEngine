@@ -1,15 +1,11 @@
 #pragma once
-#include "../common/InnoType.h"
-#include "../common/InnoMath.h"
+#include "../common/InnoComponent.h"
 
-class TextureDataComponent
+class TextureDataComponent : public InnoComponent
 {
 public:
 	TextureDataComponent() {};
 	~TextureDataComponent() {};
-
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-	EntityID m_parentEntity;
 
 	TextureDataDesc m_textureDataDesc = TextureDataDesc();
 	std::vector<void*> m_textureData;

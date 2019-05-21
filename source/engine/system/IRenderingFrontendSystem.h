@@ -35,17 +35,10 @@ public:
 	INNO_SYSTEM_EXPORT virtual MeshDataComponent* addMeshDataComponent() = 0;
 	INNO_SYSTEM_EXPORT virtual MaterialDataComponent* addMaterialDataComponent() = 0;
 	INNO_SYSTEM_EXPORT virtual TextureDataComponent* addTextureDataComponent() = 0;
-	INNO_SYSTEM_EXPORT virtual MeshDataComponent* getMeshDataComponent(EntityID meshID) = 0;
-	INNO_SYSTEM_EXPORT virtual TextureDataComponent* getTextureDataComponent(EntityID textureID) = 0;
 	INNO_SYSTEM_EXPORT virtual MeshDataComponent* getMeshDataComponent(MeshShapeType meshShapeType) = 0;
 	INNO_SYSTEM_EXPORT virtual TextureDataComponent* getTextureDataComponent(TextureUsageType textureUsageType) = 0;
 	INNO_SYSTEM_EXPORT virtual TextureDataComponent* getTextureDataComponent(FileExplorerIconType iconType) = 0;
 	INNO_SYSTEM_EXPORT virtual TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) = 0;
-	INNO_SYSTEM_EXPORT virtual bool removeMeshDataComponent(EntityID entityID) = 0;
-	INNO_SYSTEM_EXPORT virtual bool removeTextureDataComponent(EntityID entityID) = 0;
-
-	//INNO_SYSTEM_EXPORT virtual bool registerUninitializedMeshDataComponent(MeshDataComponent* rhs) = 0;
-	//INNO_SYSTEM_EXPORT virtual bool registerUninitializedTextureDataComponent(TextureDataComponent* rhs) = 0;
 
 	INNO_SYSTEM_EXPORT virtual TVec2<unsigned int> getScreenResolution() = 0;
 	INNO_SYSTEM_EXPORT virtual bool setScreenResolution(TVec2<unsigned int> screenResolution) = 0;

@@ -26,9 +26,6 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	MaterialDataComponent* addMaterialDataComponent();
 	GLTextureDataComponent* addGLTextureDataComponent();
 
-	GLMeshDataComponent* getGLMeshDataComponent(EntityID meshID);
-	GLTextureDataComponent* getGLTextureDataComponent(EntityID textureID);
-
 	GLMeshDataComponent* getGLMeshDataComponent(MeshShapeType MeshShapeType);
 	GLTextureDataComponent* getGLTextureDataComponent(TextureUsageType TextureUsageType);
 	GLTextureDataComponent* getGLTextureDataComponent(FileExplorerIconType iconType);

@@ -90,7 +90,7 @@ void InnoViewport::Resize(float width, float height)
 {
     if(m_CoreSystem)
     {
-        if(m_CoreSystem->getStatus() == ObjectStatus::ALIVE)
+        if(m_CoreSystem->getStatus() == ObjectStatus::Activated)
         {
             TVec2<unsigned int> l_newResolution = TVec2<unsigned int>(width, height);
             m_CoreSystem->getVisionSystem()->getRenderingFrontend()->setScreenResolution(l_newResolution);

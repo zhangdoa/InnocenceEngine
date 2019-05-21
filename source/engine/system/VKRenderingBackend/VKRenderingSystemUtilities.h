@@ -45,9 +45,6 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	MaterialDataComponent* addVKMaterialDataComponent();
 	VKTextureDataComponent* addVKTextureDataComponent();
 
-	VKMeshDataComponent* getVKMeshDataComponent(EntityID meshID);
-	VKTextureDataComponent* getVKTextureDataComponent(EntityID textureID);
-
 	VKMeshDataComponent* getVKMeshDataComponent(MeshShapeType MeshShapeType);
 	VKTextureDataComponent* getVKTextureDataComponent(TextureUsageType TextureUsageType);
 	VKTextureDataComponent* getVKTextureDataComponent(FileExplorerIconType iconType);

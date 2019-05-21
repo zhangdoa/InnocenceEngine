@@ -2,10 +2,10 @@
 #include "IGameSystem.h"
 
 #define spawnComponentImplDecl( className ) \
-className* spawn##className(const EntityID& parentEntity, ObjectSource objectSource) override;
+className* spawn##className(const InnoEntity* parentEntity, ObjectSource objectSource) override;
 
 #define registerComponentImplDecl( className ) \
-void registerComponent(className* rhs, const EntityID& parentEntity) override;
+void registerComponent(className* rhs, const InnoEntity* parentEntity) override;
 
 #define destroyComponentImplDecl( className ) \
 bool destroy(className* rhs) override;
@@ -14,7 +14,7 @@ bool destroy(className* rhs) override;
 void unregisterComponent(className* rhs) override;
 
 #define getComponentImplDecl( className ) \
-className* get##className(const EntityID& parentEntity) override;
+className* get##className(const InnoEntity* parentEntity) override;
 
 #define getComponentContainerImplDecl( className ) \
 std::vector<className*>& get##className##s() override;
@@ -87,16 +87,16 @@ public:
 
 	std::string getGameName() override;
 	TransformComponent* getRootTransformComponent() override;
-	EntityNameMap& getEntityNameMap() override;
-	EntityChildrenComponentsMetadataMap& getEntityChildrenComponentsMetadataMap() override;
+	const std::vector<InnoEntity*>& getEntities() override;
+	const EntityChildrenComponentsMetadataMap& getEntityChildrenComponentsMetadataMap() override;
 
 	void registerButtonStatusCallback(InputComponent* inputComponent, ButtonData boundButton, std::function<void()>* function) override;
 	void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(float)>* function) override;
 
 	void saveComponentsCapture() override;
 
-	EntityID createEntity(const EntityName& entityName) override;
+	InnoEntity* createEntity(const EntityName& entityName, ObjectSource objectSource, ObjectUsage objectUsage) override;
+	bool removeEntity(const InnoEntity* entity) override;
 	bool removeEntity(const EntityName& entityName) override;
-	EntityName getEntityName(const EntityID& entityID) override;
-	EntityID getEntityID(const EntityName& entityName) override;
+	InnoEntity* getEntity(const EntityName& entityName) override;
 };

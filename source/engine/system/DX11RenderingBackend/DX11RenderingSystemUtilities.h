@@ -30,9 +30,6 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 	bool initializeDX11MeshDataComponent(DX11MeshDataComponent* rhs);
 	bool initializeDX11TextureDataComponent(DX11TextureDataComponent* rhs);
 
-	DX11MeshDataComponent* getDX11MeshDataComponent(EntityID meshID);
-	DX11TextureDataComponent* getDX11TextureDataComponent(EntityID textureID);
-
 	DX11MeshDataComponent* getDX11MeshDataComponent(MeshShapeType MeshShapeType);
 	DX11TextureDataComponent* getDX11TextureDataComponent(TextureUsageType TextureUsageType);
 	DX11TextureDataComponent* getDX11TextureDataComponent(FileExplorerIconType iconType);

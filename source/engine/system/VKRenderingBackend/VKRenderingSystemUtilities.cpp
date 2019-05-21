@@ -35,8 +35,8 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	VkVertexInputBindingDescription m_vertexBindingDescription;
 	std::array<VkVertexInputAttributeDescription, 5> m_vertexAttributeDescriptions;
 
-	std::unordered_map<EntityID, VKMeshDataComponent*> m_initializedVKMDC;
-	std::unordered_map<EntityID, VKTextureDataComponent*> m_initializedVKTDC;
+	std::unordered_map<InnoEntity*, VKMeshDataComponent*> m_initializedVKMDC;
+	std::unordered_map<InnoEntity*, VKTextureDataComponent*> m_initializedVKTDC;
 
 	void* m_VKRenderPassComponentPool;
 	void* m_VKShaderProgramComponentPool;

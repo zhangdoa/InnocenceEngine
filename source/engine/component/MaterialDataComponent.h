@@ -1,6 +1,5 @@
 #pragma once
-#include "../common/InnoType.h"
-#include "../common/InnoMath.h"
+#include "../common/InnoComponent.h"
 #include "TextureDataComponent.h"
 
 struct TexturePack
@@ -12,16 +11,12 @@ struct TexturePack
 	std::pair<TextureUsageType, TextureDataComponent*> m_aoTDC = { TextureUsageType::AMBIENT_OCCLUSION, nullptr };
 };
 
-class MaterialDataComponent
+class MaterialDataComponent : public InnoComponent
 {
 public:
 	MaterialDataComponent() {};
 	~MaterialDataComponent() {};
 
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-	EntityID m_parentEntity;
-
 	MeshCustomMaterial m_meshCustomMaterial;
 	TexturePack m_texturePack;
 };
-

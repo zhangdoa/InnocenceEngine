@@ -9,20 +9,18 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 {
 	bool setup();
 
-	EntityName getEntityName(const EntityID& entityID);
-	EntityID getEntityID(const EntityName& entityName);
-
 	void sortTransformComponentsVector();
 
 	void updateTransformComponent();
 
-	EntityID createEntity(const EntityName& entityName);
+	InnoEntity* createEntity(const EntityName& entityName, ObjectSource objectSource, ObjectUsage objectUsage);
+	bool removeEntity(const InnoEntity* entity);
 	bool removeEntity(const EntityName& entityName);
+	InnoEntity* getEntity(const EntityName& entityName);
 
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
-	// root TransformComponent
-	TransformComponent* m_rootTransformComponent;
+	void* m_EntityPool;
 
 	void* m_TransformComponentPool;
 	void* m_VisibleComponentPool;
@@ -34,6 +32,7 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 	void* m_EnvironmentCaptureComponentPool;
 
 	// the AOS here
+	std::vector<InnoEntity*> m_Entities;
 	ThreadSafeVector<TransformComponent*> m_TransformComponents;
 	ThreadSafeVector<VisibleComponent*> m_VisibleComponents;
 	ThreadSafeVector<DirectionalLightComponent*> m_DirectionalLightComponents;
@@ -43,64 +42,31 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 	ThreadSafeVector<InputComponent*> m_InputComponents;
 	ThreadSafeVector<EnvironmentCaptureComponent*> m_EnvironmentCaptureComponents;
 
-	ThreadSafeUnorderedMap<EntityID, TransformComponent*> m_TransformComponentsMap;
-	ThreadSafeUnorderedMap<EntityID, VisibleComponent*> m_VisibleComponentsMap;
-	ThreadSafeUnorderedMap<EntityID, DirectionalLightComponent*> m_DirectionalLightComponentsMap;
-	ThreadSafeUnorderedMap<EntityID, PointLightComponent*> m_PointLightComponentsMap;
-	ThreadSafeUnorderedMap<EntityID, SphereLightComponent*> m_SphereLightComponentsMap;
-	ThreadSafeUnorderedMap<EntityID, CameraComponent*> m_CameraComponentsMap;
-	ThreadSafeUnorderedMap<EntityID, InputComponent*> m_InputComponentsMap;
-	ThreadSafeUnorderedMap<EntityID, EnvironmentCaptureComponent*> m_EnvironmentCaptureComponentsMap;
+	ThreadSafeUnorderedMap<InnoEntity*, TransformComponent*> m_TransformComponentsMap;
+	ThreadSafeUnorderedMap<InnoEntity*, VisibleComponent*> m_VisibleComponentsMap;
+	ThreadSafeUnorderedMap<InnoEntity*, DirectionalLightComponent*> m_DirectionalLightComponentsMap;
+	ThreadSafeUnorderedMap<InnoEntity*, PointLightComponent*> m_PointLightComponentsMap;
+	ThreadSafeUnorderedMap<InnoEntity*, SphereLightComponent*> m_SphereLightComponentsMap;
+	ThreadSafeUnorderedMap<InnoEntity*, CameraComponent*> m_CameraComponentsMap;
+	ThreadSafeUnorderedMap<InnoEntity*, InputComponent*> m_InputComponentsMap;
+	ThreadSafeUnorderedMap<InnoEntity*, EnvironmentCaptureComponent*> m_EnvironmentCaptureComponentsMap;
 
 	EntityChildrenComponentsMetadataMap m_entityChildrenComponentsMetadataMap;
-	EntityNameMap m_entityNameMap;
+	std::set<EntityName> m_entityNameSet;
 
 	unsigned int m_currentUUID = 0;
 
 	std::function<void()> f_sceneLoadingStartCallback;
-}
 
-EntityName InnoGameSystemNS::getEntityName(const EntityID& entityID)
-{
-	auto l_result = std::find_if(
-		m_entityNameMap.begin(),
-		m_entityNameMap.end(),
-		[&](auto& val)-> bool {
-		return val.first == entityID;
-	}
-	);
-
-	if (l_result == m_entityNameMap.end())
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't find entity name by ID " + std::string(entityID.c_str()) + "!");
-		return "AbnormalEntityName";
-	}
-
-	return l_result->second;
-}
-
-EntityID InnoGameSystemNS::getEntityID(const EntityName& entityName)
-{
-	auto l_result = std::find_if(
-		m_entityNameMap.begin(),
-		m_entityNameMap.end(),
-		[&](auto& val)-> bool {
-		return val.second == entityName;
-	}
-	);
-
-	if (l_result == m_entityNameMap.end())
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't find entity ID by name " + std::string(entityName.c_str()) + "!");
-		return "AbnormalEntityID";
-	}
-
-	return l_result->first;
+	// root TransformComponent
+	TransformComponent* m_rootTransformComponent;
 }
 
 bool InnoGameSystemNS::setup()
 {
 	// allocate memory pool
+	m_EntityPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(InnoEntity), 65536);
+
 	m_TransformComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(TransformComponent), 32768);
 	m_VisibleComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VisibleComponent), 16384);
 	m_DirectionalLightComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DirectionalLightComponent), 16);
@@ -114,7 +80,7 @@ bool InnoGameSystemNS::setup()
 	m_rootTransformComponent = new TransformComponent();
 	m_rootTransformComponent->m_parentTransformComponent = nullptr;
 
-	m_rootTransformComponent->m_parentEntity = createEntity("RootTransform/");
+	m_rootTransformComponent->m_parentEntity = createEntity("RootTransform/", ObjectSource::Runtime, ObjectUsage::Engine);
 
 	m_rootTransformComponent->m_localTransformMatrix = InnoMath::TransformVectorToTransformMatrix(m_rootTransformComponent->m_localTransformVector);
 	m_rootTransformComponent->m_globalTransformVector = m_rootTransformComponent->m_localTransformVector;
@@ -131,6 +97,13 @@ bool InnoGameSystem::setup()
 	}
 
 	InnoGameSystemNS::f_sceneLoadingStartCallback = [&]() {
+		for (auto i : InnoGameSystemNS::m_Entities)
+		{
+			if (i->m_objectUsage == ObjectUsage::Gameplay)
+			{
+				removeEntity(i);
+			}
+		}
 		for (auto i : InnoGameSystemNS::m_TransformComponents)
 		{
 			destroy(i);
@@ -233,53 +206,102 @@ void InnoGameSystem::saveComponentsCapture()
 	});
 }
 
-EntityID InnoGameSystemNS::createEntity(const EntityName& entityName)
+InnoEntity* InnoGameSystemNS::createEntity(const EntityName& entityName, ObjectSource objectSource, ObjectUsage objectUsage)
 {
 	auto l_result = std::find_if(
-		m_entityNameMap.begin(),
-		m_entityNameMap.end(),
-		[&](auto& val) -> bool {
-		return val.second == entityName;
+		m_entityNameSet.begin(),
+		m_entityNameSet.end(),
+		[&](auto val) -> bool {
+		return val == entityName;
 	});
 
-	if (l_result != m_entityNameMap.end())
+	if (l_result != m_entityNameSet.end())
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: duplicated entity name " + std::string(entityName.c_str()) + "!");
 		return 0;
 	}
 
-	auto l_entityID = InnoMath::createEntityID();
-	m_entityNameMap.emplace(l_entityID, entityName);
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(InnoGameSystemNS::m_EntityPool, sizeof(InnoEntity));
+	auto l_ptr = new(l_rawPtr)InnoEntity();
+	if (l_ptr)
+	{
+		auto l_entityID = InnoMath::createEntityID();
+		m_entityNameSet.emplace(entityName);
+
+		l_ptr->m_objectStatus = ObjectStatus::Created;
+		m_Entities.emplace_back(l_ptr);
+
+		l_ptr->m_entityID = l_entityID;
+		l_ptr->m_entityName = entityName;
+		l_ptr->m_objectSource = objectSource;
+		l_ptr->m_objectUsage = objectUsage;
+		l_ptr->m_objectStatus = ObjectStatus::Activated;
+	}
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GameSystem: entity " + std::string(entityName.c_str()) + " has been created.");
 
-	return l_entityID;
+	return l_ptr;
 }
 
-EntityID InnoGameSystem::createEntity(const EntityName& entityName)
+InnoEntity* InnoGameSystem::createEntity(const EntityName& entityName, ObjectSource objectSource, ObjectUsage objectUsage)
 {
-	return InnoGameSystemNS::createEntity(entityName);
+	return InnoGameSystemNS::createEntity(entityName, objectSource, objectUsage);
+}
+
+bool InnoGameSystemNS::removeEntity(const InnoEntity* entity)
+{
+	auto l_result = true;
+	l_result &= InnoGameSystemNS::removeEntity(entity->m_entityName);
+	l_result &= g_pCoreSystem->getMemorySystem()->destroyObject(InnoGameSystemNS::m_EntityPool, sizeof(InnoEntity), (void*)entity);
+
+	return l_result;
 }
 
 bool InnoGameSystemNS::removeEntity(const EntityName& entityName)
 {
 	auto l_result = std::find_if(
-		m_entityNameMap.begin(),
-		m_entityNameMap.end(),
-		[&](auto& val) -> bool {
-		return val.second == entityName;
+		m_entityNameSet.begin(),
+		m_entityNameSet.end(),
+		[&](auto val) -> bool {
+		return val == entityName;
 	});
 
-	if (l_result != m_entityNameMap.end())
+	if (l_result != m_entityNameSet.end())
 	{
-		InnoGameSystemNS::m_entityNameMap.erase(l_result->first);
+		InnoGameSystemNS::m_entityNameSet.erase(l_result);
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GameSystem: entity " + std::string(entityName.c_str()) + " has been removed.");
+		return true;
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GameSystem: can't find entity " + std::string(entityName.c_str()) + " to remove.");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't find entity " + std::string(entityName.c_str()) + " to remove.");
+		return false;
 	}
-	return true;
+}
+
+InnoEntity* InnoGameSystemNS::getEntity(const EntityName& entityName)
+{
+	auto l_result = std::find_if(
+		m_Entities.begin(),
+		m_Entities.end(),
+		[&](auto val) -> bool {
+		return val->m_entityName == entityName;
+	});
+
+	if (l_result != m_Entities.end())
+	{
+		return *l_result;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GameSystem: can't find entity " + std::string(entityName.c_str()) + "!");
+		return nullptr;
+	}
+}
+
+bool InnoGameSystem::removeEntity(const InnoEntity * entity)
+{
+	return InnoGameSystemNS::removeEntity(entity);
 }
 
 bool InnoGameSystem::removeEntity(const EntityName& entityName)
@@ -287,14 +309,9 @@ bool InnoGameSystem::removeEntity(const EntityName& entityName)
 	return InnoGameSystemNS::removeEntity(entityName);
 }
 
-EntityName InnoGameSystem::getEntityName(const EntityID & entityID)
+InnoEntity * InnoGameSystem::getEntity(const EntityName & entityName)
 {
-	return InnoGameSystemNS::getEntityName(entityID);
-}
-
-EntityID InnoGameSystem::getEntityID(const EntityName & entityName)
-{
-	return InnoGameSystemNS::getEntityID(entityName);
+	return InnoGameSystemNS::getEntity(entityName);
 }
 
 bool InnoGameSystem::initialize()
@@ -342,13 +359,14 @@ bool InnoGameSystem::terminate()
 }
 
 #define spawnComponentImplDefi( className ) \
-className* InnoGameSystem::spawn##className(const EntityID& parentEntity, ObjectSource objectSource) \
+className* InnoGameSystem::spawn##className(const InnoEntity* parentEntity, ObjectSource objectSource) \
 { \
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(InnoGameSystemNS::m_##className##Pool, sizeof(className)); \
 	auto l_ptr = new(l_rawPtr)className(); \
 	if (l_ptr) \
 	{ \
-		l_ptr->m_parentEntity = parentEntity; \
+		auto l_parentEntity = const_cast<InnoEntity*>(parentEntity); \
+		l_ptr->m_parentEntity = l_parentEntity; \
 		l_ptr->m_objectStatus = ObjectStatus::Created; \
 		l_ptr->m_objectSource = objectSource; \
 		auto l_componentIndex = InnoGameSystemNS::m_##className##s.size(); \
@@ -356,7 +374,7 @@ className* InnoGameSystem::spawn##className(const EntityID& parentEntity, Object
 		l_ptr->m_componentName = l_componentName; \
 		l_ptr->m_UUID = InnoGameSystemNS::m_currentUUID++; \
 		InnoGameSystemNS::m_##className##s.emplace_back(l_ptr); \
-		InnoGameSystemNS::m_##className##sMap.emplace(parentEntity, l_ptr); \
+		InnoGameSystemNS::m_##className##sMap.emplace(l_parentEntity, l_ptr); \
 		l_ptr->m_objectStatus = ObjectStatus::Activated; \
 \
 		registerComponent(l_ptr, parentEntity); \
@@ -380,6 +398,7 @@ spawnComponentImplDefi(EnvironmentCaptureComponent)
 #define destroyComponentImplDefi( className ) \
 bool InnoGameSystem::destroy(className* rhs) \
 { \
+	rhs->m_objectStatus = ObjectStatus::Terminated; \
 	unregisterComponent(rhs); \
 	return g_pCoreSystem->getMemorySystem()->destroyObject(InnoGameSystemNS::m_##className##Pool, sizeof(className), (void*)rhs); \
 }
@@ -394,14 +413,15 @@ destroyComponentImplDefi(InputComponent)
 destroyComponentImplDefi(EnvironmentCaptureComponent)
 
 #define registerComponentImplDefi( className ) \
-void InnoGameSystem::registerComponent(className* rhs, const EntityID& parentEntity) \
+void InnoGameSystem::registerComponent(className* rhs, const InnoEntity* parentEntity) \
 { \
 	if(rhs->m_objectSource == ObjectSource::Asset) \
 	{ \
+		auto l_parentEntity = const_cast<InnoEntity*>(parentEntity); \
 		auto l_componentType = InnoUtility::getComponentType<className>(); \
 		auto l_componentMetaDataPair = ComponentMetadataPair(l_componentType, rhs->m_componentName); \
 		\
-		auto l_result = InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.find(parentEntity); \
+		auto l_result = InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.find(l_parentEntity); \
 		if (l_result != InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.end()) \
 		{ \
 			auto l_componentMetadataMap = &l_result->second; \
@@ -411,7 +431,7 @@ void InnoGameSystem::registerComponent(className* rhs, const EntityID& parentEnt
 		{ \
 			auto l_componentMetadataMap = ComponentMetadataMap(); \
 			l_componentMetadataMap.emplace(rhs, l_componentMetaDataPair); \
-			InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.emplace(parentEntity, std::move(l_componentMetadataMap)); \
+			InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.emplace(l_parentEntity, std::move(l_componentMetadataMap)); \
 		} \
 	} \
 }
@@ -428,17 +448,19 @@ registerComponentImplDefi(EnvironmentCaptureComponent)
 #define  unregisterComponentImplDefi( className ) \
 void InnoGameSystem::unregisterComponent(className* rhs) \
 { \
-	rhs->m_objectStatus = ObjectStatus::Terminated; \
-	auto l_result = InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.find(rhs->m_parentEntity); \
-	if (l_result != InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.end()) \
+	if(rhs->m_objectSource == ObjectSource::Asset) \
 	{ \
-		auto l_componentMetadataMap = &l_result->second; \
-		l_componentMetadataMap->erase(rhs); \
-	} \
-	else \
-	{ \
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't unregister " + std::string(#className) + " by EntityID: " + std::string(rhs->m_parentEntity.c_str()) + " !"); \
-	} \
+		auto l_result = InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.find(rhs->m_parentEntity); \
+		if (l_result != InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.end()) \
+		{ \
+			auto l_componentMetadataMap = &l_result->second; \
+			l_componentMetadataMap->erase(rhs); \
+		} \
+		else \
+		{ \
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't unregister " + std::string(#className) + " by Entity: " + std::string(rhs->m_parentEntity->m_entityName.c_str()) + " !"); \
+		} \
+	}\
 }
 
 unregisterComponentImplDefi(TransformComponent)
@@ -451,16 +473,17 @@ unregisterComponentImplDefi(InputComponent)
 unregisterComponentImplDefi(EnvironmentCaptureComponent)
 
 #define getComponentImplDefi( className ) \
-className* InnoGameSystem::get##className(const EntityID& parentEntity) \
+className* InnoGameSystem::get##className(const InnoEntity* parentEntity) \
 { \
-	auto l_result = InnoGameSystemNS::m_##className##sMap.find(parentEntity); \
+	auto l_parentEntity = const_cast<InnoEntity*>(parentEntity); \
+	auto l_result = InnoGameSystemNS::m_##className##sMap.find(l_parentEntity); \
 	if (l_result != InnoGameSystemNS::m_##className##sMap.end()) \
 	{ \
 		return l_result->second; \
 	} \
 	else \
 	{ \
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't find " + std::string(#className) + " by EntityID: " + std::string(parentEntity.c_str()) + "!"); \
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't find " + std::string(#className) + " by Entity: " + std::string(l_parentEntity->m_entityName.c_str()) + "!"); \
 		return nullptr; \
 	} \
 }
@@ -513,12 +536,12 @@ TransformComponent* InnoGameSystem::getRootTransformComponent()
 	return InnoGameSystemNS::m_rootTransformComponent;
 }
 
-EntityNameMap& InnoGameSystem::getEntityNameMap()
+const std::vector<InnoEntity*>& InnoGameSystem::getEntities()
 {
-	return InnoGameSystemNS::m_entityNameMap;
+	return InnoGameSystemNS::m_Entities;
 }
 
-EntityChildrenComponentsMetadataMap& InnoGameSystem::getEntityChildrenComponentsMetadataMap()
+const EntityChildrenComponentsMetadataMap& InnoGameSystem::getEntityChildrenComponentsMetadataMap()
 {
 	return InnoGameSystemNS::m_entityChildrenComponentsMetadataMap;
 }

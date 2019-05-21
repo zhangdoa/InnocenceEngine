@@ -10,7 +10,7 @@ namespace PlayerComponentCollection
 	bool initialize();
 
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-	EntityID m_cameraParentEntity;
+	InnoEntity* m_cameraParentEntity;
 
 	TransformComponent* m_cameraTransformComponent;
 	CameraComponent* m_cameraComponent;
@@ -55,7 +55,7 @@ namespace PlayerComponentCollection
 bool PlayerComponentCollection::setup()
 {
 	f_sceneLoadingFinishCallback = [&]() {
-		m_cameraParentEntity = g_pCoreSystem->getGameSystem()->getEntityID("playerCharacterCamera/");
+		m_cameraParentEntity = g_pCoreSystem->getGameSystem()->getEntity("playerCharacterCamera/");
 		m_cameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(m_cameraParentEntity);
 		m_cameraComponent = g_pCoreSystem->getGameSystem()->get<CameraComponent>(m_cameraParentEntity);
 
@@ -153,19 +153,19 @@ namespace GameInstanceNS
 {
 	float seed = 0.0f;
 
-	std::vector<EntityID> m_referenceSphereEntitys;
+	std::vector<InnoEntity*> m_referenceSphereEntites;
 	std::vector<TransformComponent*> m_referenceSphereTransformComponents;
 	std::vector<VisibleComponent*> m_referenceSphereVisibleComponents;
 
-	std::vector<EntityID> m_opaqueSphereEntitys;
+	std::vector<InnoEntity*> m_opaqueSphereEntites;
 	std::vector<TransformComponent*> m_opaqueSphereTransformComponents;
 	std::vector<VisibleComponent*> m_opaqueSphereVisibleComponents;
 
-	std::vector<EntityID> m_transparentSphereEntitys;
+	std::vector<InnoEntity*> m_transparentSphereEntites;
 	std::vector<TransformComponent*> m_transparentSphereTransformComponents;
 	std::vector<VisibleComponent*> m_transparentSphereVisibleComponents;
 
-	std::vector<EntityID> m_pointLightEntitys;
+	std::vector<InnoEntity*> m_pointLightEntites;
 	std::vector<TransformComponent*> m_pointLightTransformComponents;
 	std::vector<PointLightComponent*> m_pointLightComponents;
 
@@ -197,27 +197,26 @@ bool GameInstanceNS::setupReferenceSpheres()
 
 	m_referenceSphereTransformComponents.clear();
 	m_referenceSphereVisibleComponents.clear();
-	m_referenceSphereEntitys.clear();
+	m_referenceSphereEntites.clear();
 
 	m_referenceSphereTransformComponents.reserve(l_containerSize);
 	m_referenceSphereVisibleComponents.reserve(l_containerSize);
-	m_referenceSphereEntitys.reserve(l_containerSize);
+	m_referenceSphereEntites.reserve(l_containerSize);
 
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
 		m_referenceSphereTransformComponents.emplace_back();
 		m_referenceSphereVisibleComponents.emplace_back();
 		auto l_entityName = EntityName(("MaterialReferenceSphere_" + std::to_string(i) + "/").c_str());
-		g_pCoreSystem->getGameSystem()->removeEntity(l_entityName);
-		m_referenceSphereEntitys.emplace_back(g_pCoreSystem->getGameSystem()->createEntity(l_entityName));
+		m_referenceSphereEntites.emplace_back(g_pCoreSystem->getGameSystem()->createEntity(l_entityName, ObjectSource::Runtime, ObjectUsage::Gameplay));
 	}
 
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
-		m_referenceSphereTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_referenceSphereEntitys[i], ObjectSource::Runtime);
+		m_referenceSphereTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_referenceSphereEntites[i], ObjectSource::Runtime);
 		m_referenceSphereTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 		m_referenceSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_referenceSphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_referenceSphereEntitys[i], ObjectSource::Runtime);
+		m_referenceSphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_referenceSphereEntites[i], ObjectSource::Runtime);
 		m_referenceSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
 		m_referenceSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::SPHERE;
 		m_referenceSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::DYNAMIC;
@@ -249,27 +248,26 @@ bool GameInstanceNS::setupOpaqueSpheres()
 
 	m_opaqueSphereTransformComponents.clear();
 	m_opaqueSphereVisibleComponents.clear();
-	m_opaqueSphereEntitys.clear();
+	m_opaqueSphereEntites.clear();
 
 	m_opaqueSphereTransformComponents.reserve(l_containerSize);
 	m_opaqueSphereVisibleComponents.reserve(l_containerSize);
-	m_opaqueSphereEntitys.reserve(l_containerSize);
+	m_opaqueSphereEntites.reserve(l_containerSize);
 
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
 		m_opaqueSphereTransformComponents.emplace_back();
 		m_opaqueSphereVisibleComponents.emplace_back();
 		auto l_entityName = EntityName(("PhysicsTestOpaqueObject_" + std::to_string(i) + "/").c_str());
-		g_pCoreSystem->getGameSystem()->removeEntity(l_entityName);
-		m_opaqueSphereEntitys.emplace_back(g_pCoreSystem->getGameSystem()->createEntity(l_entityName));
+		m_opaqueSphereEntites.emplace_back(g_pCoreSystem->getGameSystem()->createEntity(l_entityName, ObjectSource::Runtime, ObjectUsage::Gameplay));
 	}
 
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
-		m_opaqueSphereTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_opaqueSphereEntitys[i], ObjectSource::Runtime);
+		m_opaqueSphereTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_opaqueSphereEntites[i], ObjectSource::Runtime);
 		m_opaqueSphereTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 		m_opaqueSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_opaqueSphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_opaqueSphereEntitys[i], ObjectSource::Runtime);
+		m_opaqueSphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_opaqueSphereEntites[i], ObjectSource::Runtime);
 		m_opaqueSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
 		m_opaqueSphereVisibleComponents[i]->m_meshShapeType = (i & 0x00000001) ? MeshShapeType::SPHERE : MeshShapeType::CUBE;
 		m_opaqueSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::DYNAMIC;
@@ -311,27 +309,26 @@ bool GameInstanceNS::setupTransparentSpheres()
 
 	m_transparentSphereTransformComponents.clear();
 	m_transparentSphereVisibleComponents.clear();
-	m_transparentSphereEntitys.clear();
+	m_transparentSphereEntites.clear();
 
 	m_transparentSphereTransformComponents.reserve(l_containerSize);
 	m_transparentSphereVisibleComponents.reserve(l_containerSize);
-	m_transparentSphereEntitys.reserve(l_containerSize);
+	m_transparentSphereEntites.reserve(l_containerSize);
 
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
 		m_transparentSphereTransformComponents.emplace_back();
 		m_transparentSphereVisibleComponents.emplace_back();
 		auto l_entityName = EntityName(("PhysicsTestTransparentSphere_" + std::to_string(i) + "/").c_str());
-		g_pCoreSystem->getGameSystem()->removeEntity(l_entityName);
-		m_transparentSphereEntitys.emplace_back(g_pCoreSystem->getGameSystem()->createEntity(l_entityName));
+		m_transparentSphereEntites.emplace_back(g_pCoreSystem->getGameSystem()->createEntity(l_entityName, ObjectSource::Runtime, ObjectUsage::Gameplay));
 	}
 
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
-		m_transparentSphereTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_transparentSphereEntitys[i], ObjectSource::Runtime);
+		m_transparentSphereTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_transparentSphereEntites[i], ObjectSource::Runtime);
 		m_transparentSphereTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 		m_transparentSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_transparentSphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_transparentSphereEntitys[i], ObjectSource::Runtime);
+		m_transparentSphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_transparentSphereEntites[i], ObjectSource::Runtime);
 		m_transparentSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_TRANSPARENT;
 		m_transparentSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::SPHERE;
 		m_transparentSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::DYNAMIC;
@@ -365,11 +362,11 @@ bool GameInstanceNS::setupPointLights()
 
 	m_pointLightTransformComponents.clear();
 	m_pointLightComponents.clear();
-	m_pointLightEntitys.clear();
+	m_pointLightEntites.clear();
 
 	m_pointLightTransformComponents.reserve(l_containerSize);
 	m_pointLightComponents.reserve(l_containerSize);
-	m_pointLightEntitys.reserve(l_containerSize);
+	m_pointLightEntites.reserve(l_containerSize);
 
 	std::default_random_engine l_generator;
 	std::uniform_real_distribution<float> l_randomPosDelta(0.0f, 1.0f);
@@ -379,16 +376,15 @@ bool GameInstanceNS::setupPointLights()
 		m_pointLightTransformComponents.emplace_back();
 		m_pointLightComponents.emplace_back();
 		auto l_entityName = EntityName(("TestPointLight_" + std::to_string(i) + "/").c_str());
-		g_pCoreSystem->getGameSystem()->removeEntity(l_entityName);
-		m_pointLightEntitys.emplace_back(g_pCoreSystem->getGameSystem()->createEntity(l_entityName));
+		m_pointLightEntites.emplace_back(g_pCoreSystem->getGameSystem()->createEntity(l_entityName, ObjectSource::Runtime, ObjectUsage::Gameplay));
 	}
 
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
-		m_pointLightTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_pointLightEntitys[i], ObjectSource::Runtime);
+		m_pointLightTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_pointLightEntites[i], ObjectSource::Runtime);
 		m_pointLightTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 		m_pointLightTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_pointLightComponents[i] = g_pCoreSystem->getGameSystem()->spawn<PointLightComponent>(m_pointLightEntitys[i], ObjectSource::Runtime);
+		m_pointLightComponents[i] = g_pCoreSystem->getGameSystem()->spawn<PointLightComponent>(m_pointLightEntites[i], ObjectSource::Runtime);
 		m_pointLightComponents[i]->m_luminousFlux = 100.0f;
 		m_pointLightComponents[i]->m_color = vec4(l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), 1.0f);
 	}

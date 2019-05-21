@@ -17,14 +17,10 @@ public:
 	MeshDataComponent* addMeshDataComponent() override;
 	MaterialDataComponent* addMaterialDataComponent() override;
 	TextureDataComponent* addTextureDataComponent() override;
-	MeshDataComponent* getMeshDataComponent(EntityID meshID) override;
-	TextureDataComponent* getTextureDataComponent(EntityID textureID) override;
 	MeshDataComponent* getMeshDataComponent(MeshShapeType meshShapeType) override;
 	TextureDataComponent* getTextureDataComponent(TextureUsageType textureUsageType) override;
 	TextureDataComponent* getTextureDataComponent(FileExplorerIconType iconType) override;
 	TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) override;
-	bool removeMeshDataComponent(EntityID entityID) override;
-	bool removeTextureDataComponent(EntityID entityID) override;
 
 	void registerUninitializedMeshDataComponent(MeshDataComponent* rhs) override;
 	void registerUninitializedTextureDataComponent(TextureDataComponent* rhs) override;

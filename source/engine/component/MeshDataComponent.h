@@ -1,16 +1,13 @@
 #pragma once
-#include "../common/InnoType.h"
+#include "../common/InnoComponent.h"
 #include "../common/InnoMath.h"
 #include "PhysicsDataComponent.h"
 
-class MeshDataComponent
+class MeshDataComponent : public InnoComponent
 {
 public:
 	MeshDataComponent() {};
 	~MeshDataComponent() {};
-
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-	EntityID m_parentEntity;
 
 	MeshPrimitiveTopology m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	MeshShapeType m_meshShapeType = MeshShapeType::LINE;

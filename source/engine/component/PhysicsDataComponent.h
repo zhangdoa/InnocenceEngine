@@ -1,15 +1,12 @@
 #pragma once
-#include "../common/InnoType.h"
+#include "../common/InnoComponent.h"
 #include "../common/InnoMath.h"
 
-class PhysicsDataComponent
+class PhysicsDataComponent : public InnoComponent
 {
 public:
 	PhysicsDataComponent() {};
 	~PhysicsDataComponent() {};
-
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-	EntityID m_parentEntity;
 
 	AABB m_AABB;
 	Sphere m_sphere;

@@ -27,8 +27,8 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 
 	bool submitGPUData(DX11TextureDataComponent* rhs);
 
-	std::unordered_map<EntityID, DX11MeshDataComponent*> m_initializedDXMDC;
-	std::unordered_map<EntityID, DX11TextureDataComponent*> m_initializedDXTDC;
+	std::unordered_map<InnoEntity*, DX11MeshDataComponent*> m_initializedDXMDC;
+	std::unordered_map<InnoEntity*, DX11TextureDataComponent*> m_initializedDXTDC;
 
 	void* m_DX11RenderPassComponentPool;
 	void* m_DX11ShaderProgramComponentPool;

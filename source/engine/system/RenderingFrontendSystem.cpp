@@ -558,16 +558,6 @@ INNO_SYSTEM_EXPORT TextureDataComponent * InnoRenderingFrontendSystem::addTextur
 	return InnoRenderingFrontendSystemNS::m_renderingBackendSystem->addTextureDataComponent();
 }
 
-INNO_SYSTEM_EXPORT MeshDataComponent * InnoRenderingFrontendSystem::getMeshDataComponent(EntityID meshID)
-{
-	return InnoRenderingFrontendSystemNS::m_renderingBackendSystem->getMeshDataComponent(meshID);
-}
-
-INNO_SYSTEM_EXPORT TextureDataComponent * InnoRenderingFrontendSystem::getTextureDataComponent(EntityID textureID)
-{
-	return InnoRenderingFrontendSystemNS::m_renderingBackendSystem->getTextureDataComponent(textureID);
-}
-
 INNO_SYSTEM_EXPORT MeshDataComponent * InnoRenderingFrontendSystem::getMeshDataComponent(MeshShapeType meshShapeType)
 {
 	return InnoRenderingFrontendSystemNS::m_renderingBackendSystem->getMeshDataComponent(meshShapeType);
@@ -586,16 +576,6 @@ INNO_SYSTEM_EXPORT TextureDataComponent * InnoRenderingFrontendSystem::getTextur
 INNO_SYSTEM_EXPORT TextureDataComponent * InnoRenderingFrontendSystem::getTextureDataComponent(WorldEditorIconType iconType)
 {
 	return InnoRenderingFrontendSystemNS::m_renderingBackendSystem->getTextureDataComponent(iconType);
-}
-
-INNO_SYSTEM_EXPORT bool InnoRenderingFrontendSystem::removeMeshDataComponent(EntityID entityID)
-{
-	return InnoRenderingFrontendSystemNS::m_renderingBackendSystem->removeMeshDataComponent(entityID);
-}
-
-INNO_SYSTEM_EXPORT bool InnoRenderingFrontendSystem::removeTextureDataComponent(EntityID entityID)
-{
-	return InnoRenderingFrontendSystemNS::m_renderingBackendSystem->removeTextureDataComponent(entityID);
 }
 
 INNO_SYSTEM_EXPORT TVec2<unsigned int> InnoRenderingFrontendSystem::getScreenResolution()

@@ -39,8 +39,8 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 
 	void generateTO(GLuint& TO, GLTextureDataDesc desc, GLsizei width, GLsizei height, GLsizei depth, const std::vector<void*>& textureData);
 
-	std::unordered_map<EntityID, GLMeshDataComponent*> m_initializedGLMDC;
-	std::unordered_map<EntityID, GLTextureDataComponent*> m_initializedGLTDC;
+	std::unordered_map<InnoEntity*, GLMeshDataComponent*> m_initializedGLMDC;
+	std::unordered_map<InnoEntity*, GLTextureDataComponent*> m_initializedGLTDC;
 
 	void* m_GLRenderPassComponentPool;
 	void* m_GLShaderProgramComponentPool;

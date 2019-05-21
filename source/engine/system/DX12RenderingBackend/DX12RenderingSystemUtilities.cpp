@@ -27,11 +27,11 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 
 	bool summitGPUData(DX12TextureDataComponent* rhs);
 
-	std::unordered_map<EntityID, DX12MeshDataComponent*> m_initializedDXMDC;
-	std::unordered_map<EntityID, DX12TextureDataComponent*> m_initializedDXTDC;
+	std::unordered_map<InnoEntity*, DX12MeshDataComponent*> m_initializedDXMDC;
+	std::unordered_map<InnoEntity*, DX12TextureDataComponent*> m_initializedDXTDC;
 
-	std::unordered_map<EntityID, DX12MeshDataComponent*> m_meshMap;
-	std::unordered_map<EntityID, DX12TextureDataComponent*> m_textureMap;
+	std::unordered_map<InnoEntity*, DX12MeshDataComponent*> m_meshMap;
+	std::unordered_map<InnoEntity*, DX12TextureDataComponent*> m_textureMap;
 
 	void* m_DX12RenderPassComponentPool;
 	void* m_DX12ShaderProgramComponentPool;

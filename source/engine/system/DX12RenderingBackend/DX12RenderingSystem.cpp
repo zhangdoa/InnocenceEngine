@@ -61,9 +61,9 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 
 	static DX12RenderingSystemComponent* g_DXRenderingSystemComponent;
 
-	ThreadSafeUnorderedMap<EntityID, DX12MeshDataComponent*> m_meshMap;
-	ThreadSafeUnorderedMap<EntityID, MaterialDataComponent*> m_materialMap;
-	ThreadSafeUnorderedMap<EntityID, DX12TextureDataComponent*> m_textureMap;
+	ThreadSafeUnorderedMap<InnoEntity*, DX12MeshDataComponent*> m_meshMap;
+	ThreadSafeUnorderedMap<InnoEntity*, MaterialDataComponent*> m_materialMap;
+	ThreadSafeUnorderedMap<InnoEntity*, DX12TextureDataComponent*> m_textureMap;
 
 	void* m_MeshDataComponentPool;
 	void* m_MaterialDataComponentPool;
@@ -767,10 +767,10 @@ DX12MeshDataComponent* DX12RenderingSystemNS::addDX12MeshDataComponent()
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(DX12MeshDataComponent));
 	auto l_MDC = new(l_rawPtr)DX12MeshDataComponent();
-	auto l_parentEntity = InnoMath::createEntityID();
+	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity("", ObjectSource::Runtime, ObjectUsage::Engine);
 	l_MDC->m_parentEntity = l_parentEntity;
 	auto l_meshMap = &m_meshMap;
-	l_meshMap->emplace(std::pair<EntityID, DX12MeshDataComponent*>(l_parentEntity, l_MDC));
+	l_meshMap->emplace(std::pair<InnoEntity*, DX12MeshDataComponent*>(l_parentEntity, l_MDC));
 	return l_MDC;
 }
 
@@ -778,10 +778,10 @@ MaterialDataComponent* DX12RenderingSystemNS::addMaterialDataComponent()
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MaterialDataComponent));
 	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
-	auto l_parentEntity = InnoMath::createEntityID();
+	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity("", ObjectSource::Runtime, ObjectUsage::Engine);
 	l_MDC->m_parentEntity = l_parentEntity;
 	auto l_materialMap = &m_materialMap;
-	l_materialMap->emplace(std::pair<EntityID, MaterialDataComponent*>(l_parentEntity, l_MDC));
+	l_materialMap->emplace(std::pair<InnoEntity*, MaterialDataComponent*>(l_parentEntity, l_MDC));
 	return l_MDC;
 }
 
@@ -789,39 +789,11 @@ DX12TextureDataComponent* DX12RenderingSystemNS::addDX12TextureDataComponent()
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(DX12TextureDataComponent));
 	auto l_TDC = new(l_rawPtr)DX12TextureDataComponent();
-	auto l_parentEntity = InnoMath::createEntityID();
+	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity("", ObjectSource::Runtime, ObjectUsage::Engine);
 	l_TDC->m_parentEntity = l_parentEntity;
 	auto l_textureMap = &m_textureMap;
-	l_textureMap->emplace(std::pair<EntityID, DX12TextureDataComponent*>(l_parentEntity, l_TDC));
+	l_textureMap->emplace(std::pair<InnoEntity*, DX12TextureDataComponent*>(l_parentEntity, l_TDC));
 	return l_TDC;
-}
-
-DX12MeshDataComponent* DX12RenderingSystemNS::getDX12MeshDataComponent(EntityID entityID)
-{
-	auto l_result = DX12RenderingSystemNS::m_meshMap.find(entityID);
-	if (l_result != DX12RenderingSystemNS::m_meshMap.end())
-	{
-		return l_result->second;
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find MeshDataComponent by EntityID: " + std::string(entityID.c_str()) + " !");
-		return nullptr;
-	}
-}
-
-DX12TextureDataComponent * DX12RenderingSystemNS::getDX12TextureDataComponent(EntityID entityID)
-{
-	auto l_result = DX12RenderingSystemNS::m_textureMap.find(entityID);
-	if (l_result != DX12RenderingSystemNS::m_textureMap.end())
-	{
-		return l_result->second;
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find TextureDataComponent by EntityID: " + std::string(entityID.c_str()) + " !");
-		return nullptr;
-	}
 }
 
 DX12MeshDataComponent* DX12RenderingSystemNS::getDX12MeshDataComponent(MeshShapeType meshShapeType)
@@ -951,16 +923,6 @@ TextureDataComponent * DX12RenderingSystem::addTextureDataComponent()
 	return DX12RenderingSystemNS::addDX12TextureDataComponent();
 }
 
-MeshDataComponent * DX12RenderingSystem::getMeshDataComponent(EntityID meshID)
-{
-	return DX12RenderingSystemNS::getDX12MeshDataComponent(meshID);
-}
-
-TextureDataComponent * DX12RenderingSystem::getTextureDataComponent(EntityID textureID)
-{
-	return DX12RenderingSystemNS::getDX12TextureDataComponent(textureID);
-}
-
 MeshDataComponent * DX12RenderingSystem::getMeshDataComponent(MeshShapeType MeshShapeType)
 {
 	return DX12RenderingSystemNS::getDX12MeshDataComponent(MeshShapeType);
@@ -979,45 +941,6 @@ TextureDataComponent * DX12RenderingSystem::getTextureDataComponent(FileExplorer
 TextureDataComponent * DX12RenderingSystem::getTextureDataComponent(WorldEditorIconType iconType)
 {
 	return DX12RenderingSystemNS::getDX12TextureDataComponent(iconType);
-}
-
-bool DX12RenderingSystem::removeMeshDataComponent(EntityID entityID)
-{
-	auto l_meshMap = &DX12RenderingSystemNS::m_meshMap;
-	auto l_mesh = l_meshMap->find(entityID);
-	if (l_mesh != l_meshMap->end())
-	{
-		g_pCoreSystem->getMemorySystem()->destroyObject(DX12RenderingSystemNS::m_MeshDataComponentPool, sizeof(DX12MeshDataComponent), l_mesh->second);
-		l_meshMap->erase(entityID);
-		return true;
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove MeshDataComponent by EntityID: " + std::string(entityID.c_str()) + " !");
-		return false;
-	}
-}
-
-bool DX12RenderingSystem::removeTextureDataComponent(EntityID entityID)
-{
-	auto l_textureMap = &DX12RenderingSystemNS::m_textureMap;
-	auto l_texture = l_textureMap->find(entityID);
-	if (l_texture != l_textureMap->end())
-	{
-		for (auto& i : l_texture->second->m_textureData)
-		{
-			// @TODO
-		}
-
-		g_pCoreSystem->getMemorySystem()->destroyObject(DX12RenderingSystemNS::m_TextureDataComponentPool, sizeof(DX12TextureDataComponent), l_texture->second);
-		l_textureMap->erase(entityID);
-		return true;
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove TextureDataComponent by EntityID: " + std::string(entityID.c_str()) + " !");
-		return false;
-	}
 }
 
 void DX12RenderingSystem::registerUninitializedMeshDataComponent(MeshDataComponent * rhs)

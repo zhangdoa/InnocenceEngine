@@ -103,9 +103,9 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	bool m_visualizeVXGI = false;
 	std::function<void()> f_toggleVisualizeVXGI;
 
-	ThreadSafeUnorderedMap<EntityID, GLMeshDataComponent*> m_meshMap;
-	ThreadSafeUnorderedMap<EntityID, MaterialDataComponent*> m_materialMap;
-	ThreadSafeUnorderedMap<EntityID, GLTextureDataComponent*> m_textureMap;
+	ThreadSafeUnorderedMap<InnoEntity*, GLMeshDataComponent*> m_meshMap;
+	ThreadSafeUnorderedMap<InnoEntity*, MaterialDataComponent*> m_materialMap;
+	ThreadSafeUnorderedMap<InnoEntity*, GLTextureDataComponent*> m_textureMap;
 
 	void* m_MeshDataComponentPool;
 	void* m_MaterialDataComponentPool;
@@ -361,7 +361,7 @@ bool GLRenderingSystemNS::update()
 			auto l_result = initializeGLMeshDataComponent(l_MDC);
 			if (!l_result)
 			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: can't create GLMeshDataComponent for " + std::string(l_MDC->m_parentEntity.c_str()) + "!");
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: can't create GLMeshDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
 			}
 		}
 	}
@@ -375,7 +375,7 @@ bool GLRenderingSystemNS::update()
 			auto l_result = initializeGLTextureDataComponent(l_TDC);
 			if (!l_result)
 			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: can't create GLTextureDataComponent for " + std::string(l_TDC->m_parentEntity.c_str()) + "!");
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: can't create GLTextureDataComponent for " + std::string(l_TDC->m_parentEntity->m_entityName.c_str()) + "!");
 			}
 		}
 	}
@@ -509,10 +509,10 @@ GLMeshDataComponent* GLRenderingSystemNS::addGLMeshDataComponent()
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(GLMeshDataComponent));
 	auto l_MDC = new(l_rawPtr)GLMeshDataComponent();
-	auto l_parentEntity = InnoMath::createEntityID();
+	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity("", ObjectSource::Runtime, ObjectUsage::Engine);
 	l_MDC->m_parentEntity = l_parentEntity;
 	auto l_meshMap = &m_meshMap;
-	l_meshMap->emplace(std::pair<EntityID, GLMeshDataComponent*>(l_parentEntity, l_MDC));
+	l_meshMap->emplace(std::pair<InnoEntity*, GLMeshDataComponent*>(l_parentEntity, l_MDC));
 	return l_MDC;
 }
 
@@ -520,10 +520,10 @@ MaterialDataComponent* GLRenderingSystemNS::addMaterialDataComponent()
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MaterialDataComponent));
 	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
-	auto l_parentEntity = InnoMath::createEntityID();
+	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity("", ObjectSource::Runtime, ObjectUsage::Engine);
 	l_MDC->m_parentEntity = l_parentEntity;
 	auto l_materialMap = &m_materialMap;
-	l_materialMap->emplace(std::pair<EntityID, MaterialDataComponent*>(l_parentEntity, l_MDC));
+	l_materialMap->emplace(std::pair<InnoEntity*, MaterialDataComponent*>(l_parentEntity, l_MDC));
 	return l_MDC;
 }
 
@@ -531,39 +531,11 @@ GLTextureDataComponent* GLRenderingSystemNS::addGLTextureDataComponent()
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(GLTextureDataComponent));
 	auto l_TDC = new(l_rawPtr)GLTextureDataComponent();
-	auto l_parentEntity = InnoMath::createEntityID();
+	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity("", ObjectSource::Runtime, ObjectUsage::Engine);
 	l_TDC->m_parentEntity = l_parentEntity;
 	auto l_textureMap = &m_textureMap;
-	l_textureMap->emplace(std::pair<EntityID, GLTextureDataComponent*>(l_parentEntity, l_TDC));
+	l_textureMap->emplace(std::pair<InnoEntity*, GLTextureDataComponent*>(l_parentEntity, l_TDC));
 	return l_TDC;
-}
-
-GLMeshDataComponent* GLRenderingSystemNS::getGLMeshDataComponent(EntityID entityID)
-{
-	auto result = GLRenderingSystemNS::m_meshMap.find(entityID);
-	if (result != GLRenderingSystemNS::m_meshMap.end())
-	{
-		return result->second;
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find MeshDataComponent by EntityID: " + std::string(entityID.c_str()) + " !");
-		return nullptr;
-	}
-}
-
-GLTextureDataComponent * GLRenderingSystemNS::getGLTextureDataComponent(EntityID entityID)
-{
-	auto result = GLRenderingSystemNS::m_textureMap.find(entityID);
-	if (result != GLRenderingSystemNS::m_textureMap.end())
-	{
-		return result->second;
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find TextureDataComponent by EntityID: " + std::string(entityID.c_str()) + " !");
-		return nullptr;
-	}
 }
 
 GLMeshDataComponent* GLRenderingSystemNS::getGLMeshDataComponent(MeshShapeType meshShapeType)
@@ -721,16 +693,6 @@ TextureDataComponent * GLRenderingSystem::addTextureDataComponent()
 	return GLRenderingSystemNS::addGLTextureDataComponent();
 }
 
-MeshDataComponent * GLRenderingSystem::getMeshDataComponent(EntityID meshID)
-{
-	return GLRenderingSystemNS::getGLMeshDataComponent(meshID);
-}
-
-TextureDataComponent * GLRenderingSystem::getTextureDataComponent(EntityID textureID)
-{
-	return GLRenderingSystemNS::getGLTextureDataComponent(textureID);
-}
-
 MeshDataComponent * GLRenderingSystem::getMeshDataComponent(MeshShapeType MeshShapeType)
 {
 	return GLRenderingSystemNS::getGLMeshDataComponent(MeshShapeType);
@@ -749,45 +711,6 @@ TextureDataComponent * GLRenderingSystem::getTextureDataComponent(FileExplorerIc
 TextureDataComponent * GLRenderingSystem::getTextureDataComponent(WorldEditorIconType iconType)
 {
 	return GLRenderingSystemNS::getGLTextureDataComponent(iconType);
-}
-
-bool GLRenderingSystem::removeMeshDataComponent(EntityID entityID)
-{
-	auto l_meshMap = &GLRenderingSystemNS::m_meshMap;
-	auto l_mesh = l_meshMap->find(entityID);
-	if (l_mesh != l_meshMap->end())
-	{
-		g_pCoreSystem->getMemorySystem()->destroyObject(GLRenderingSystemNS::m_MeshDataComponentPool, sizeof(GLMeshDataComponent), l_mesh->second);
-		l_meshMap->erase(entityID);
-		return true;
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove MeshDataComponent by EntityID: " + std::string(entityID.c_str()) + " !");
-		return false;
-	}
-}
-
-bool GLRenderingSystem::removeTextureDataComponent(EntityID entityID)
-{
-	auto l_textureMap = &GLRenderingSystemNS::m_textureMap;
-	auto l_texture = l_textureMap->find(entityID);
-	if (l_texture != l_textureMap->end())
-	{
-		for (auto& i : l_texture->second->m_textureData)
-		{
-			// @TODO
-		}
-
-		g_pCoreSystem->getMemorySystem()->destroyObject(GLRenderingSystemNS::m_TextureDataComponentPool, sizeof(GLTextureDataComponent), l_texture->second);
-		l_textureMap->erase(entityID);
-		return true;
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove TextureDataComponent by EntityID: " + std::string(entityID.c_str()) + " !");
-		return false;
-	}
 }
 
 void GLRenderingSystem::registerUninitializedMeshDataComponent(MeshDataComponent * rhs)

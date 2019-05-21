@@ -35,9 +35,9 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 
 	static DX11RenderingSystemComponent* g_DXRenderingSystemComponent;
 
-	ThreadSafeUnorderedMap<EntityID, DX11MeshDataComponent*> m_meshMap;
-	ThreadSafeUnorderedMap<EntityID, MaterialDataComponent*> m_materialMap;
-	ThreadSafeUnorderedMap<EntityID, DX11TextureDataComponent*> m_textureMap;
+	ThreadSafeUnorderedMap<InnoEntity*, DX11MeshDataComponent*> m_meshMap;
+	ThreadSafeUnorderedMap<InnoEntity*, MaterialDataComponent*> m_materialMap;
+	ThreadSafeUnorderedMap<InnoEntity*, DX11TextureDataComponent*> m_textureMap;
 
 	void* m_MeshDataComponentPool;
 	void* m_MaterialDataComponentPool;
@@ -497,7 +497,7 @@ bool DX11RenderingSystemNS::update()
 			auto l_result = initializeDX11MeshDataComponent(l_MDC);
 			if (!l_result)
 			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create DX11MeshDataComponent for " + std::string(l_MDC->m_parentEntity.c_str()) + "!");
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create DX11MeshDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
 			}
 		}
 	}
@@ -511,7 +511,7 @@ bool DX11RenderingSystemNS::update()
 			auto l_result = initializeDX11TextureDataComponent(l_TDC);
 			if (!l_result)
 			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create DX11TextureDataComponent for " + std::string(l_TDC->m_parentEntity.c_str()) + "!");
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create DX11TextureDataComponent for " + std::string(l_TDC->m_parentEntity->m_entityName.c_str()) + "!");
 			}
 		}
 	}
@@ -585,10 +585,10 @@ DX11MeshDataComponent* DX11RenderingSystemNS::addDX11MeshDataComponent()
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(DX11MeshDataComponent));
 	auto l_MDC = new(l_rawPtr)DX11MeshDataComponent();
-	auto l_parentEntity = InnoMath::createEntityID();
+	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity("", ObjectSource::Runtime, ObjectUsage::Engine);
 	l_MDC->m_parentEntity = l_parentEntity;
 	auto l_meshMap = &m_meshMap;
-	l_meshMap->emplace(std::pair<EntityID, DX11MeshDataComponent*>(l_parentEntity, l_MDC));
+	l_meshMap->emplace(std::pair<InnoEntity*, DX11MeshDataComponent*>(l_parentEntity, l_MDC));
 	return l_MDC;
 }
 
@@ -596,10 +596,10 @@ MaterialDataComponent* DX11RenderingSystemNS::addMaterialDataComponent()
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MaterialDataComponent));
 	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
-	auto l_parentEntity = InnoMath::createEntityID();
+	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity("", ObjectSource::Runtime, ObjectUsage::Engine);
 	l_MDC->m_parentEntity = l_parentEntity;
 	auto l_materialMap = &m_materialMap;
-	l_materialMap->emplace(std::pair<EntityID, MaterialDataComponent*>(l_parentEntity, l_MDC));
+	l_materialMap->emplace(std::pair<InnoEntity*, MaterialDataComponent*>(l_parentEntity, l_MDC));
 	return l_MDC;
 }
 
@@ -607,39 +607,11 @@ DX11TextureDataComponent* DX11RenderingSystemNS::addDX11TextureDataComponent()
 {
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(DX11TextureDataComponent));
 	auto l_TDC = new(l_rawPtr)DX11TextureDataComponent();
-	auto l_parentEntity = InnoMath::createEntityID();
+	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity("", ObjectSource::Runtime, ObjectUsage::Engine);
 	l_TDC->m_parentEntity = l_parentEntity;
 	auto l_textureMap = &m_textureMap;
-	l_textureMap->emplace(std::pair<EntityID, DX11TextureDataComponent*>(l_parentEntity, l_TDC));
+	l_textureMap->emplace(std::pair<InnoEntity*, DX11TextureDataComponent*>(l_parentEntity, l_TDC));
 	return l_TDC;
-}
-
-DX11MeshDataComponent* DX11RenderingSystemNS::getDX11MeshDataComponent(EntityID entityID)
-{
-	auto result = DX11RenderingSystemNS::m_meshMap.find(entityID);
-	if (result != DX11RenderingSystemNS::m_meshMap.end())
-	{
-		return result->second;
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find MeshDataComponent by EntityID: " + std::string(entityID.c_str()) + " !");
-		return nullptr;
-	}
-}
-
-DX11TextureDataComponent * DX11RenderingSystemNS::getDX11TextureDataComponent(EntityID entityID)
-{
-	auto result = DX11RenderingSystemNS::m_textureMap.find(entityID);
-	if (result != DX11RenderingSystemNS::m_textureMap.end())
-	{
-		return result->second;
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find TextureDataComponent by EntityID: " + std::string(entityID.c_str()) + " !");
-		return nullptr;
-	}
 }
 
 DX11MeshDataComponent* DX11RenderingSystemNS::getDX11MeshDataComponent(MeshShapeType meshShapeType)
@@ -786,16 +758,6 @@ TextureDataComponent * DX11RenderingSystem::addTextureDataComponent()
 	return DX11RenderingSystemNS::addDX11TextureDataComponent();
 }
 
-MeshDataComponent * DX11RenderingSystem::getMeshDataComponent(EntityID meshID)
-{
-	return DX11RenderingSystemNS::getDX11MeshDataComponent(meshID);
-}
-
-TextureDataComponent * DX11RenderingSystem::getTextureDataComponent(EntityID textureID)
-{
-	return DX11RenderingSystemNS::getDX11TextureDataComponent(textureID);
-}
-
 MeshDataComponent * DX11RenderingSystem::getMeshDataComponent(MeshShapeType MeshShapeType)
 {
 	return DX11RenderingSystemNS::getDX11MeshDataComponent(MeshShapeType);
@@ -814,45 +776,6 @@ TextureDataComponent * DX11RenderingSystem::getTextureDataComponent(FileExplorer
 TextureDataComponent * DX11RenderingSystem::getTextureDataComponent(WorldEditorIconType iconType)
 {
 	return DX11RenderingSystemNS::getDX11TextureDataComponent(iconType);
-}
-
-bool DX11RenderingSystem::removeMeshDataComponent(EntityID entityID)
-{
-	auto l_meshMap = &DX11RenderingSystemNS::m_meshMap;
-	auto l_mesh = l_meshMap->find(entityID);
-	if (l_mesh != l_meshMap->end())
-	{
-		g_pCoreSystem->getMemorySystem()->destroyObject(DX11RenderingSystemNS::m_MeshDataComponentPool, sizeof(DX11MeshDataComponent), l_mesh->second);
-		l_meshMap->erase(entityID);
-		return true;
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove MeshDataComponent by EntityID: " + std::string(entityID.c_str()) + " !");
-		return false;
-	}
-}
-
-bool DX11RenderingSystem::removeTextureDataComponent(EntityID entityID)
-{
-	auto l_textureMap = &DX11RenderingSystemNS::m_textureMap;
-	auto l_texture = l_textureMap->find(entityID);
-	if (l_texture != l_textureMap->end())
-	{
-		for (auto& i : l_texture->second->m_textureData)
-		{
-			// @TODO
-		}
-
-		g_pCoreSystem->getMemorySystem()->destroyObject(DX11RenderingSystemNS::m_TextureDataComponentPool, sizeof(DX11TextureDataComponent), l_texture->second);
-		l_textureMap->erase(entityID);
-		return true;
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove TextureDataComponent by EntityID: " + std::string(entityID.c_str()) + " !");
-		return false;
-	}
 }
 
 void DX11RenderingSystem::registerUninitializedMeshDataComponent(MeshDataComponent * rhs)

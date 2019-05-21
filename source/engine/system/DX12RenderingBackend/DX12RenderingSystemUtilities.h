@@ -26,9 +26,6 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 	MaterialDataComponent* addMaterialDataComponent();
 	DX12TextureDataComponent* addDX12TextureDataComponent();
 
-	DX12MeshDataComponent* getDX12MeshDataComponent(EntityID meshID);
-	DX12TextureDataComponent* getDX12TextureDataComponent(EntityID textureID);
-
 	DX12MeshDataComponent* getDX12MeshDataComponent(MeshShapeType MeshShapeType);
 	DX12TextureDataComponent* getDX12TextureDataComponent(TextureUsageType TextureUsageType);
 	DX12TextureDataComponent* getDX12TextureDataComponent(FileExplorerIconType iconType);

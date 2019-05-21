@@ -439,28 +439,31 @@ void ImGuiWrapperNS::showWorldExplorer()
 	static void* selectedComponent = nullptr;
 	static ComponentType selectedComponentType;
 
-	auto l_entityNameMap = g_pCoreSystem->getGameSystem()->getEntityNameMap();
+	auto l_entities = g_pCoreSystem->getGameSystem()->getEntities();
 	auto l_entityChildrenComponentsMetadataMap = g_pCoreSystem->getGameSystem()->getEntityChildrenComponentsMetadataMap();
 
-	for (auto i : l_entityNameMap)
+	for (auto i : l_entities)
 	{
-		if (ImGui::TreeNode(i.second.c_str()))
+		if (i->m_objectSource == ObjectSource::Asset)
 		{
-			auto result = l_entityChildrenComponentsMetadataMap.find(i.first);
-			if (result != l_entityChildrenComponentsMetadataMap.end())
+			if (ImGui::TreeNode(i->m_entityName.c_str()))
 			{
-				auto& l_componentNameMap = result->second;
-
-				for (auto& j : l_componentNameMap)
+				auto result = l_entityChildrenComponentsMetadataMap.find(i);
+				if (result != l_entityChildrenComponentsMetadataMap.end())
 				{
-					if (ImGui::Selectable(j.second.second.c_str(), selectedComponent == j.first))
+					auto& l_componentNameMap = result->second;
+
+					for (auto& j : l_componentNameMap)
 					{
-						selectedComponent = j.first;
-						selectedComponentType = j.second.first;
+						if (ImGui::Selectable(j.second.second.c_str(), selectedComponent == j.first))
+						{
+							selectedComponent = j.first;
+							selectedComponentType = j.second.first;
+						}
 					}
 				}
+				ImGui::TreePop();
 			}
-			ImGui::TreePop();
 		}
 	}
 	ImGui::End();
@@ -554,7 +557,7 @@ void ImGuiWrapperNS::showVisiableComponentPropertyEditor(void * rhs)
 		{
 			for (auto& i : l_rhs->m_modelMap)
 			{
-				if (ImGui::Selectable(i.first->m_parentEntity.c_str(), selectedComponent == i.second))
+				if (ImGui::Selectable(i.first->m_parentEntity->m_entityName.c_str(), selectedComponent == i.second))
 				{
 					selectedComponent = i.second;
 				}

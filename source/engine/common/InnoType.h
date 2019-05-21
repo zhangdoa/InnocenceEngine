@@ -28,8 +28,8 @@ enum class ObjectSource
 
 enum class ObjectUsage
 {
-	Product,
-	Development,
+	Gameplay,
+	Engine,
 };
 
 using EntityID = FixedSizeString<32>;
@@ -40,9 +40,7 @@ enum class ComponentType { TransformComponent, VisibleComponent, DirectionalLigh
 
 using ComponentMetadataPair = std::pair<ComponentType, ComponentName>;
 using ComponentMetadataMap = std::unordered_map<void*, ComponentMetadataPair>;
-using EntityChildrenComponentsMetadataMap = std::unordered_map<EntityID, ComponentMetadataMap>;
-using EntityNamePair = std::pair<EntityID, EntityName>;
-using EntityNameMap = std::unordered_map<EntityID, EntityName>;
+using EntityChildrenComponentsMetadataMap = std::unordered_map<void*, ComponentMetadataMap>;
 
 struct TimeData
 {

@@ -46,11 +46,11 @@ bool InnoFileSystemNS::JSONParser::saveJsonDataToDisk(const std::string & fileNa
 	return true;
 }
 
-void InnoFileSystemNS::JSONParser::to_json(json& j, const EntityNamePair& p)
+void InnoFileSystemNS::JSONParser::to_json(json& j, const InnoEntity& p)
 {
 	j = json{
-		{"EntityID", p.first.c_str()},
-		{"EntityName", p.second.c_str()},
+		{"EntityID", p.m_entityID.c_str()},
+		{"EntityName", p.m_entityName.c_str()},
 	};
 }
 
@@ -131,7 +131,7 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const TransformComponent& p)
 
 	to_json(localTransformVector, p.m_localTransformVector);
 
-	auto parentTransformComponentEntityName = g_pCoreSystem->getGameSystem()->getEntityName(p.m_parentTransformComponent->m_parentEntity);
+	auto parentTransformComponentEntityName = p.m_parentTransformComponent->m_parentEntity->m_entityName;
 
 	j = json
 	{
@@ -457,10 +457,10 @@ bool InnoFileSystemNS::JSONParser::saveScene(const std::string& fileName)
 	topLevel["SceneName"] = fileName;
 
 	// save entities name and ID
-	for (auto& i : g_pCoreSystem->getGameSystem()->getEntityNameMap())
+	for (auto i : g_pCoreSystem->getGameSystem()->getEntities())
 	{
 		json j;
-		to_json(j, i);
+		to_json(j, *i);
 		topLevel["SceneEntities"].emplace_back(j);
 	}
 
@@ -517,29 +517,28 @@ bool InnoFileSystemNS::JSONParser::loadScene(const std::string & fileName)
 		{
 			std::string l_entityName = i["EntityName"];
 			l_entityName += "/";
-			g_pCoreSystem->getGameSystem()->removeEntity(EntityName(l_entityName.c_str()));
 
-			auto l_EntityID = g_pCoreSystem->getGameSystem()->createEntity(EntityName(l_entityName.c_str()));
+			auto l_entity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(l_entityName.c_str()), ObjectSource::Asset, ObjectUsage::Gameplay);
 
 			for (auto k : i["ChildrenComponents"])
 			{
 				switch (ComponentType(k["ComponentType"]))
 				{
-				case ComponentType::TransformComponent: loadComponentData<TransformComponent>(k, l_EntityID);
+				case ComponentType::TransformComponent: loadComponentData<TransformComponent>(k, l_entity);
 					break;
-				case ComponentType::VisibleComponent: loadComponentData<VisibleComponent>(k, l_EntityID);
+				case ComponentType::VisibleComponent: loadComponentData<VisibleComponent>(k, l_entity);
 					break;
-				case ComponentType::DirectionalLightComponent: loadComponentData<DirectionalLightComponent>(k, l_EntityID);
+				case ComponentType::DirectionalLightComponent: loadComponentData<DirectionalLightComponent>(k, l_entity);
 					break;
-				case ComponentType::PointLightComponent: loadComponentData<PointLightComponent>(k, l_EntityID);
+				case ComponentType::PointLightComponent: loadComponentData<PointLightComponent>(k, l_entity);
 					break;
-				case ComponentType::SphereLightComponent: loadComponentData<SphereLightComponent>(k, l_EntityID);
+				case ComponentType::SphereLightComponent: loadComponentData<SphereLightComponent>(k, l_entity);
 					break;
-				case ComponentType::CameraComponent: loadComponentData<CameraComponent>(k, l_EntityID);
+				case ComponentType::CameraComponent: loadComponentData<CameraComponent>(k, l_entity);
 					break;
 				case ComponentType::InputComponent:
 					break;
-				case ComponentType::EnvironmentCaptureComponent: loadComponentData<EnvironmentCaptureComponent>(k, l_EntityID);
+				case ComponentType::EnvironmentCaptureComponent: loadComponentData<EnvironmentCaptureComponent>(k, l_entity);
 					break;
 				case ComponentType::PhysicsDataComponent:
 					break;
@@ -570,9 +569,9 @@ bool InnoFileSystemNS::JSONParser::assignComponentRuntimeData()
 		std::pair<TransformComponent*, EntityName> l_orphan;
 		if (m_orphanTransformComponents.tryPop(l_orphan))
 		{
-			auto l_entityID = g_pCoreSystem->getGameSystem()->getEntityID(l_orphan.second);
+			auto l_entity = g_pCoreSystem->getGameSystem()->getEntity(l_orphan.second);
 
-			auto l_parentTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_entityID);
+			auto l_parentTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_entity);
 
 			if (l_parentTransformComponent)
 			{

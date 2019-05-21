@@ -83,16 +83,6 @@ INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::addTextureDataCompone
 	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->addTextureDataComponent();
 }
 
-INNO_SYSTEM_EXPORT MeshDataComponent * InnoAssetSystem::getMeshDataComponent(EntityID meshID)
-{
-	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getMeshDataComponent(meshID);
-}
-
-INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::getTextureDataComponent(EntityID textureID)
-{
-	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getTextureDataComponent(textureID);
-}
-
 INNO_SYSTEM_EXPORT MeshDataComponent * InnoAssetSystem::getMeshDataComponent(MeshShapeType meshShapeType)
 {
 	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getMeshDataComponent(meshShapeType);
@@ -111,16 +101,6 @@ INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::getTextureDataCompone
 INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::getTextureDataComponent(WorldEditorIconType iconType)
 {
 	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getTextureDataComponent(iconType);
-}
-
-INNO_SYSTEM_EXPORT bool InnoAssetSystem::removeMeshDataComponent(EntityID entityID)
-{
-	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->removeMeshDataComponent(entityID);
-}
-
-INNO_SYSTEM_EXPORT bool InnoAssetSystem::removeTextureDataComponent(EntityID entityID)
-{
-	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->removeTextureDataComponent(entityID);
 }
 
 INNO_SYSTEM_EXPORT DirectoryMetadata* InnoAssetSystem::getRootDirectoryMetadata()

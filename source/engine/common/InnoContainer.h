@@ -105,6 +105,15 @@ namespace std {
 			return h;
 		}
 	};
+
+	template <size_t S>
+	struct less<FixedSizeString<S>>
+	{
+		bool operator()(const FixedSizeString<S>& s1, const FixedSizeString<S>& s2) const
+		{
+			return strcmp(s1.c_str(), s2.c_str()) < 0;
+		}
+	};
 }
 
 template <typename T>
