@@ -179,53 +179,63 @@ bool GLRenderingSystemNS::setup()
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	glEnable(GL_PROGRAM_POINT_SIZE);
 
-	m_objectStatus = ObjectStatus::Activated;
+	m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingSystem setup finished.");
 	return true;
 }
 
 bool GLRenderingSystemNS::initialize()
 {
-	m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(GLMeshDataComponent), RenderingFrontendSystemComponent::get().m_maxMeshes);
-	m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), RenderingFrontendSystemComponent::get().m_maxMaterials);
-	m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(GLTextureDataComponent), RenderingFrontendSystemComponent::get().m_maxTextures);
+	if (GLRenderingSystemNS::m_objectStatus == ObjectStatus::Created)
+	{
+		m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(GLMeshDataComponent), RenderingFrontendSystemComponent::get().m_maxMeshes);
+		m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), RenderingFrontendSystemComponent::get().m_maxMaterials);
+		m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(GLTextureDataComponent), RenderingFrontendSystemComponent::get().m_maxTextures);
 
-	loadDefaultAssets();
+		loadDefaultAssets();
 
-	generateGPUBuffers();
+		generateGPUBuffers();
 
-	GLBRDFLUTPass::initialize();
-	GLEnvironmentCapturePass::initialize();
-	GLEnvironmentConvolutionPass::initialize();
-	GLEnvironmentPreFilterPass::initialize();
-	GLVXGIPass::initialize();
+		GLBRDFLUTPass::initialize();
+		GLEnvironmentCapturePass::initialize();
+		GLEnvironmentConvolutionPass::initialize();
+		GLEnvironmentPreFilterPass::initialize();
+		GLVXGIPass::initialize();
 
-	GLShadowPass::initialize();
+		GLShadowPass::initialize();
 
-	GLEarlyZPass::initialize();
-	GLOpaquePass::initialize();
-	GLTerrainPass::initialize();
-	GLSSAONoisePass::initialize();
-	GLSSAOBlurPass::initialize();
+		GLEarlyZPass::initialize();
+		GLOpaquePass::initialize();
+		GLTerrainPass::initialize();
+		GLSSAONoisePass::initialize();
+		GLSSAOBlurPass::initialize();
 
-	GLLightCullingPass::initialize();
-	GLLightPass::initialize();
+		GLLightCullingPass::initialize();
+		GLLightPass::initialize();
 
-	GLSkyPass::initialize();
-	GLPreTAAPass::initialize();
-	GLTransparentPass::initialize();
+		GLSkyPass::initialize();
+		GLPreTAAPass::initialize();
+		GLTransparentPass::initialize();
 
-	GLTAAPass::initialize();
-	GLPostTAAPass::initialize();
-	GLMotionBlurPass::initialize();
-	GLBloomExtractPass::initialize();
-	GLBloomBlurPass::initialize();
-	GLBloomMergePass::initialize();
-	GLBillboardPass::initialize();
-	GLDebuggerPass::initialize();
-	GLFinalBlendPass::initialize();
+		GLTAAPass::initialize();
+		GLPostTAAPass::initialize();
+		GLMotionBlurPass::initialize();
+		GLBloomExtractPass::initialize();
+		GLBloomBlurPass::initialize();
+		GLBloomMergePass::initialize();
+		GLBillboardPass::initialize();
+		GLDebuggerPass::initialize();
+		GLFinalBlendPass::initialize();
 
-	return true;
+		GLRenderingSystemNS::m_objectStatus = ObjectStatus::Activated;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingSystem has been initialized.");
+		return true;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingSystem: Object is not created!");
+		return false;
+	}
 }
 
 void  GLRenderingSystemNS::loadDefaultAssets()
