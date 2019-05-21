@@ -113,24 +113,43 @@ bool InnoFileSystemNS::loadAssets()
 bool InnoFileSystem::setup()
 {
 	InnoFileSystemNS::setup();
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: current working directory is " + getWorkingDirectory());
-	InnoFileSystemNS::m_objectStatus = ObjectStatus::Activated;
+
+	InnoFileSystemNS::m_objectStatus = ObjectStatus::Created;
 	return true;
 }
 
 bool InnoFileSystem::initialize()
 {
-	return true;
+	if (InnoFileSystemNS::m_objectStatus == ObjectStatus::Created)
+	{
+		InnoFileSystemNS::m_objectStatus = ObjectStatus::Activated;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem has been initialized.");
+		return true;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: Object is not created!");
+		return false;
+	}
 }
 
 bool InnoFileSystem::update()
 {
-	if (InnoFileSystemNS::m_prepareForLoadingScene)
+	if (InnoFileSystemNS::m_objectStatus == ObjectStatus::Activated)
 	{
-		InnoFileSystemNS::m_prepareForLoadingScene = false;
-		InnoFileSystemNS::m_isLoadingScene = true;
-		g_pCoreSystem->getTaskSystem()->waitAllTasksToFinish();
-		InnoFileSystemNS::loadScene(InnoFileSystemNS::m_nextLoadingScene);
+		if (InnoFileSystemNS::m_prepareForLoadingScene)
+		{
+			InnoFileSystemNS::m_prepareForLoadingScene = false;
+			InnoFileSystemNS::m_isLoadingScene = true;
+			g_pCoreSystem->getTaskSystem()->waitAllTasksToFinish();
+			InnoFileSystemNS::loadScene(InnoFileSystemNS::m_nextLoadingScene);
+		}
+		return true;
+	}
+	else
+	{
+		InnoFileSystemNS::m_objectStatus = ObjectStatus::Suspended;
+		return false;
 	}
 
 	return true;

@@ -26,6 +26,8 @@ bool InnoFileSystemNS::setup()
 #endif
 	m_workingDir = m_workingDir + "//";
 
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: current working directory is " + m_workingDir);
+
 	return true;
 }
 
