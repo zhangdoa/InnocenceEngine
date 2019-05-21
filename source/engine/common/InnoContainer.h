@@ -265,23 +265,21 @@ public:
 
 	void reserve(const std::size_t _Newcapacity)
 	{
-		std::lock_guard<std::shared_mutex> lock{ m_mutex };
+		std::unique_lock<std::shared_mutex> lock{ m_mutex };
 		m_vector.reserve(_Newcapacity);
 	}
 
 	void push_back(T&& value)
 	{
-		std::lock_guard<std::shared_mutex> lock{ m_mutex };
+		std::unique_lock<std::shared_mutex> lock{ m_mutex };
 		m_vector.push_back(value);
-		m_condition.notify_one();
 	}
 
 	template <class... Args>
 	void emplace_back(Args&&... values)
 	{
-		std::lock_guard<std::shared_mutex> lock{ m_mutex };
+		std::unique_lock<std::shared_mutex> lock{ m_mutex };
 		m_vector.emplace_back(values ...);
-		m_condition.notify_one();
 	}
 
 	auto empty(void) const
@@ -292,9 +290,8 @@ public:
 
 	void clear(void)
 	{
-		std::lock_guard<std::shared_mutex> lock{ m_mutex };
+		std::unique_lock<std::shared_mutex> lock{ m_mutex };
 		m_vector.clear();
-		m_condition.notify_all();
 	}
 
 	auto begin(void)
@@ -309,6 +306,30 @@ public:
 		return m_vector.end();
 	}
 
+	void eraseByIndex(size_t index)
+	{
+		std::unique_lock<std::shared_mutex> lock{ m_mutex };
+		m_vector.erase(index);
+	}
+
+	void eraseByValue(const T& value)
+	{
+		std::unique_lock<std::shared_mutex> lock{ m_mutex };
+		m_vector.erase(std::remove(std::begin(m_vector), std::end(m_vector), value), std::end(m_vector));
+	}
+
+	auto size(void)
+	{
+		std::shared_lock<std::shared_mutex> lock{ m_mutex };
+		return m_vector.size();
+	}
+
+	void shrink_to_fit()
+	{
+		std::unique_lock<std::shared_mutex> lock{ m_mutex };
+		m_vector.shrink_to_fit();
+	}
+
 	bool isValid(void) const
 	{
 		std::shared_lock<std::shared_mutex> lock{ m_mutex };
@@ -317,15 +338,8 @@ public:
 
 	void invalidate(void)
 	{
-		std::lock_guard<std::shared_mutex> lock{ m_mutex };
+		std::unique_lock<std::shared_mutex> lock{ m_mutex };
 		m_valid = false;
-		m_condition.notify_all();
-	}
-
-	auto size(void)
-	{
-		std::shared_lock<std::shared_mutex> lock{ m_mutex };
-		return m_vector.size();
 	}
 
 	std::vector<T>& getRawData(void)
@@ -336,7 +350,7 @@ public:
 
 	void setRawData(std::vector<T>&& values)
 	{
-		std::lock_guard<std::shared_mutex> lock{ m_mutex };
+		std::unique_lock<std::shared_mutex> lock{ m_mutex };
 		m_vector = values;
 	}
 
@@ -344,7 +358,6 @@ private:
 	std::atomic_bool m_valid{ true };
 	mutable std::shared_mutex m_mutex;
 	std::vector<T> m_vector;
-	std::condition_variable_any m_condition;
 };
 
 template <typename Key, typename T>
@@ -358,14 +371,14 @@ public:
 
 	void emplace(Key key, T value)
 	{
-		std::lock_guard<std::shared_mutex> lock{ m_mutex };
+		std::unique_lock<std::shared_mutex> lock{ m_mutex };
 		m_unordered_map.emplace(key, value);
 		m_condition.notify_one();
 	}
 
 	void emplace(std::pair<Key, T> value)
 	{
-		std::lock_guard<std::shared_mutex> lock{ m_mutex };
+		std::unique_lock<std::shared_mutex> lock{ m_mutex };
 		m_unordered_map.emplace(value);
 		m_condition.notify_one();
 	}
@@ -396,19 +409,19 @@ public:
 
 	auto erase(const Key& key)
 	{
-		std::lock_guard<std::shared_mutex> lock{ m_mutex };
+		std::unique_lock<std::shared_mutex> lock{ m_mutex };
 		return m_unordered_map.erase(key);
 	}
 
 	auto clear(void)
 	{
-		std::lock_guard<std::shared_mutex> lock{ m_mutex };
+		std::unique_lock<std::shared_mutex> lock{ m_mutex };
 		return m_unordered_map.clear();
 	}
 
 	void invalidate(void)
 	{
-		std::lock_guard<std::shared_mutex> lock{ m_mutex };
+		std::unique_lock<std::shared_mutex> lock{ m_mutex };
 		m_valid = false;
 		m_condition.notify_all();
 	}
