@@ -103,10 +103,6 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	bool m_visualizeVXGI = false;
 	std::function<void()> f_toggleVisualizeVXGI;
 
-	ThreadSafeUnorderedMap<InnoEntity*, GLMeshDataComponent*> m_meshMap;
-	ThreadSafeUnorderedMap<InnoEntity*, MaterialDataComponent*> m_materialMap;
-	ThreadSafeUnorderedMap<InnoEntity*, GLTextureDataComponent*> m_textureMap;
-
 	void* m_MeshDataComponentPool;
 	void* m_MaterialDataComponentPool;
 	void* m_TextureDataComponentPool;
@@ -511,8 +507,6 @@ GLMeshDataComponent* GLRenderingSystemNS::addGLMeshDataComponent()
 	auto l_MDC = new(l_rawPtr)GLMeshDataComponent();
 	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity("", ObjectSource::Runtime, ObjectUsage::Engine);
 	l_MDC->m_parentEntity = l_parentEntity;
-	auto l_meshMap = &m_meshMap;
-	l_meshMap->emplace(std::pair<InnoEntity*, GLMeshDataComponent*>(l_parentEntity, l_MDC));
 	return l_MDC;
 }
 
@@ -522,8 +516,6 @@ MaterialDataComponent* GLRenderingSystemNS::addMaterialDataComponent()
 	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
 	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity("", ObjectSource::Runtime, ObjectUsage::Engine);
 	l_MDC->m_parentEntity = l_parentEntity;
-	auto l_materialMap = &m_materialMap;
-	l_materialMap->emplace(std::pair<InnoEntity*, MaterialDataComponent*>(l_parentEntity, l_MDC));
 	return l_MDC;
 }
 
@@ -533,8 +525,6 @@ GLTextureDataComponent* GLRenderingSystemNS::addGLTextureDataComponent()
 	auto l_TDC = new(l_rawPtr)GLTextureDataComponent();
 	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity("", ObjectSource::Runtime, ObjectUsage::Engine);
 	l_TDC->m_parentEntity = l_parentEntity;
-	auto l_textureMap = &m_textureMap;
-	l_textureMap->emplace(std::pair<InnoEntity*, GLTextureDataComponent*>(l_parentEntity, l_TDC));
 	return l_TDC;
 }
 

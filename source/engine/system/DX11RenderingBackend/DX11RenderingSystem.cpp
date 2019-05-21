@@ -35,10 +35,6 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 
 	static DX11RenderingSystemComponent* g_DXRenderingSystemComponent;
 
-	ThreadSafeUnorderedMap<InnoEntity*, DX11MeshDataComponent*> m_meshMap;
-	ThreadSafeUnorderedMap<InnoEntity*, MaterialDataComponent*> m_materialMap;
-	ThreadSafeUnorderedMap<InnoEntity*, DX11TextureDataComponent*> m_textureMap;
-
 	void* m_MeshDataComponentPool;
 	void* m_MaterialDataComponentPool;
 	void* m_TextureDataComponentPool;
@@ -587,8 +583,6 @@ DX11MeshDataComponent* DX11RenderingSystemNS::addDX11MeshDataComponent()
 	auto l_MDC = new(l_rawPtr)DX11MeshDataComponent();
 	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity("", ObjectSource::Runtime, ObjectUsage::Engine);
 	l_MDC->m_parentEntity = l_parentEntity;
-	auto l_meshMap = &m_meshMap;
-	l_meshMap->emplace(std::pair<InnoEntity*, DX11MeshDataComponent*>(l_parentEntity, l_MDC));
 	return l_MDC;
 }
 
@@ -598,8 +592,6 @@ MaterialDataComponent* DX11RenderingSystemNS::addMaterialDataComponent()
 	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
 	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity("", ObjectSource::Runtime, ObjectUsage::Engine);
 	l_MDC->m_parentEntity = l_parentEntity;
-	auto l_materialMap = &m_materialMap;
-	l_materialMap->emplace(std::pair<InnoEntity*, MaterialDataComponent*>(l_parentEntity, l_MDC));
 	return l_MDC;
 }
 
@@ -609,8 +601,6 @@ DX11TextureDataComponent* DX11RenderingSystemNS::addDX11TextureDataComponent()
 	auto l_TDC = new(l_rawPtr)DX11TextureDataComponent();
 	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity("", ObjectSource::Runtime, ObjectUsage::Engine);
 	l_TDC->m_parentEntity = l_parentEntity;
-	auto l_textureMap = &m_textureMap;
-	l_textureMap->emplace(std::pair<InnoEntity*, DX11TextureDataComponent*>(l_parentEntity, l_TDC));
 	return l_TDC;
 }
 

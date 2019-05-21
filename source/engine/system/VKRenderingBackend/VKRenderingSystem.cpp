@@ -73,10 +73,6 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
-	ThreadSafeUnorderedMap<InnoEntity*, VKMeshDataComponent*> m_meshMap;
-	ThreadSafeUnorderedMap<InnoEntity*, MaterialDataComponent*> m_materialMap;
-	ThreadSafeUnorderedMap<InnoEntity*, VKTextureDataComponent*> m_textureMap;
-
 	void* m_MeshDataComponentPool;
 	void* m_MaterialDataComponentPool;
 	void* m_TextureDataComponentPool;
@@ -962,8 +958,6 @@ VKMeshDataComponent* VKRenderingSystemNS::addVKMeshDataComponent()
 	auto l_MDC = new(l_rawPtr)VKMeshDataComponent();
 	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity("", ObjectSource::Runtime, ObjectUsage::Engine);
 	l_MDC->m_parentEntity = l_parentEntity;
-	auto l_meshMap = &m_meshMap;
-	l_meshMap->emplace(std::pair<InnoEntity*, VKMeshDataComponent*>(l_parentEntity, l_MDC));
 	return l_MDC;
 }
 
@@ -973,8 +967,6 @@ MaterialDataComponent* VKRenderingSystemNS::addVKMaterialDataComponent()
 	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
 	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity("", ObjectSource::Runtime, ObjectUsage::Engine);
 	l_MDC->m_parentEntity = l_parentEntity;
-	auto l_materialMap = &m_materialMap;
-	l_materialMap->emplace(std::pair<InnoEntity*, MaterialDataComponent*>(l_parentEntity, l_MDC));
 	return l_MDC;
 }
 
@@ -984,8 +976,6 @@ VKTextureDataComponent* VKRenderingSystemNS::addVKTextureDataComponent()
 	auto l_TDC = new(l_rawPtr)VKTextureDataComponent();
 	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity("", ObjectSource::Runtime, ObjectUsage::Engine);
 	l_TDC->m_parentEntity = l_parentEntity;
-	auto l_textureMap = &m_textureMap;
-	l_textureMap->emplace(std::pair<InnoEntity*, VKTextureDataComponent*>(l_parentEntity, l_TDC));
 	return l_TDC;
 }
 
