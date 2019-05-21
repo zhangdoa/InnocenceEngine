@@ -81,8 +81,7 @@ bool InnoPhysicsSystemNS::setup()
 
 	g_pCoreSystem->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 
-	m_objectStatus = ObjectStatus::Activated;
-
+	m_objectStatus = ObjectStatus::Created;
 	return true;
 }
 
@@ -671,8 +670,17 @@ AABB InnoPhysicsSystemNS::transformAABBtoWorldSpace(const AABB& rhs, mat4 global
 
 INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::initialize()
 {
-	InnoPhysicsSystemNS::m_objectStatus = ObjectStatus::Activated;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "PhysicsSystem has been initialized.");
+	if (InnoPhysicsSystemNS::m_objectStatus == ObjectStatus::Created)
+	{
+		InnoPhysicsSystemNS::m_objectStatus = ObjectStatus::Activated;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "PhysicsSystem has been initialized.");
+		return true;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "PhysicsSystem: Object is not created!");
+		return false;
+	}
 	return true;
 }
 

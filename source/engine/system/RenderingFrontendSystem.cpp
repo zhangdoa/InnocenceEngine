@@ -144,17 +144,25 @@ bool InnoRenderingFrontendSystemNS::setup(IRenderingBackendSystem* renderingBack
 	g_pCoreSystem->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 	g_pCoreSystem->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
+	InnoRenderingFrontendSystemNS::m_objectStatus = ObjectStatus::Created;
 	return true;
 }
 
 bool InnoRenderingFrontendSystemNS::initialize()
 {
-	initializeHaltonSampler();
-	m_objectStatus = ObjectStatus::Activated;
+	if (InnoRenderingFrontendSystemNS::m_objectStatus == ObjectStatus::Created)
+	{
+		initializeHaltonSampler();
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "RenderingFrontendSystem has been initialized.");
-
-	return true;
+		InnoRenderingFrontendSystemNS::m_objectStatus = ObjectStatus::Activated;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "RenderingFrontendSystem has been initialized.");
+		return true;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingFrontendSystem: Object is not created!");
+		return false;
+	}
 }
 
 bool InnoRenderingFrontendSystemNS::updateCameraData()
@@ -468,31 +476,39 @@ bool InnoRenderingFrontendSystemNS::gatherStaticMeshData()
 
 bool InnoRenderingFrontendSystemNS::update()
 {
-	updateCameraData();
-
-	updateSunData();
-
-	updateLightData();
-
-	// copy culling data pack for local scope
-	auto l_cullingDataPack = g_pCoreSystem->getPhysicsSystem()->getCullingDataPack();
-	if (l_cullingDataPack.has_value() && l_cullingDataPack.value().size() > 0)
+	if (InnoRenderingFrontendSystemNS::m_objectStatus == ObjectStatus::Activated)
 	{
-		m_cullingDataPack.setRawData(std::move(l_cullingDataPack.value()));
+		updateCameraData();
+
+		updateSunData();
+
+		updateLightData();
+
+		// copy culling data pack for local scope
+		auto l_cullingDataPack = g_pCoreSystem->getPhysicsSystem()->getCullingDataPack();
+		if (l_cullingDataPack.has_value() && l_cullingDataPack.value().size() > 0)
+		{
+			m_cullingDataPack.setRawData(std::move(l_cullingDataPack.value()));
+		}
+
+		updateMeshData();
+
+		updateBillboardPassData();
+
+		updateDebuggerPassData();
+
+		RenderingFrontendSystemComponent::get().m_skyGPUData.p_inv = RenderingFrontendSystemComponent::get().m_cameraGPUData.p_original.inverse();
+		RenderingFrontendSystemComponent::get().m_skyGPUData.r_inv = RenderingFrontendSystemComponent::get().m_cameraGPUData.r.inverse();
+		RenderingFrontendSystemComponent::get().m_skyGPUData.viewportSize.x = (float)m_screenResolution.x;
+		RenderingFrontendSystemComponent::get().m_skyGPUData.viewportSize.y = (float)m_screenResolution.y;
+
+		return true;
 	}
-
-	updateMeshData();
-
-	updateBillboardPassData();
-
-	updateDebuggerPassData();
-
-	RenderingFrontendSystemComponent::get().m_skyGPUData.p_inv = RenderingFrontendSystemComponent::get().m_cameraGPUData.p_original.inverse();
-	RenderingFrontendSystemComponent::get().m_skyGPUData.r_inv = RenderingFrontendSystemComponent::get().m_cameraGPUData.r.inverse();
-	RenderingFrontendSystemComponent::get().m_skyGPUData.viewportSize.x = (float)m_screenResolution.x;
-	RenderingFrontendSystemComponent::get().m_skyGPUData.viewportSize.y = (float)m_screenResolution.y;
-
-	return true;
+	else
+	{
+		InnoRenderingFrontendSystemNS::m_objectStatus = ObjectStatus::Suspended;
+		return false;
+	}
 }
 
 bool InnoRenderingFrontendSystemNS::terminate()

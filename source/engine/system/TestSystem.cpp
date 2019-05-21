@@ -16,19 +16,36 @@ INNO_PRIVATE_SCOPE InnoTestSystemNS
 
 bool InnoTestSystemNS::setup()
 {
+	InnoTestSystemNS::m_objectStatus = ObjectStatus::Created;
 	return true;
 }
 
 bool InnoTestSystemNS::initialize()
 {
-	m_objectStatus = ObjectStatus::Activated;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TestSystem has been initialized.");
-	return true;
+	if (InnoTestSystemNS::m_objectStatus == ObjectStatus::Created)
+	{
+		InnoTestSystemNS::m_objectStatus = ObjectStatus::Activated;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TestSystem has been initialized.");
+		return true;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "TestSystem: Object is not created!");
+		return false;
+	}
 }
 
 bool InnoTestSystemNS::update()
 {
-	return true;
+	if (InnoTestSystemNS::m_objectStatus == ObjectStatus::Activated)
+	{
+		return true;
+	}
+	else
+	{
+		InnoTestSystemNS::m_objectStatus = ObjectStatus::Suspended;
+		return false;
+	}
 }
 
 bool InnoTestSystemNS::terminate()

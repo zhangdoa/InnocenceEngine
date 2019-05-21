@@ -19,24 +19,40 @@ INNO_PRIVATE_SCOPE InnoAssetSystemNS
 
 INNO_SYSTEM_EXPORT bool InnoAssetSystem::setup()
 {
-	InnoAssetSystemNS::m_objectStatus = ObjectStatus::Activated;
+	InnoAssetSystemNS::m_objectStatus = ObjectStatus::Created;
 	return true;
 }
 
 INNO_SYSTEM_EXPORT bool InnoAssetSystem::initialize()
 {
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "AssetSystem has been initialized.");
-	return true;
+	if (InnoAssetSystemNS::m_objectStatus == ObjectStatus::Created)
+	{
+		InnoAssetSystemNS::m_objectStatus = ObjectStatus::Activated;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "AssetSystem has been initialized.");
+		return true;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: Object is not created!");
+		return false;
+	}
 }
 
 INNO_SYSTEM_EXPORT bool InnoAssetSystem::update()
 {
-	return true;
+	if (InnoAssetSystemNS::m_objectStatus == ObjectStatus::Activated)
+	{
+		return true;
+	}
+	else
+	{
+		InnoAssetSystemNS::m_objectStatus = ObjectStatus::Suspended;
+		return false;
+	}
 }
 
 INNO_SYSTEM_EXPORT bool InnoAssetSystem::terminate()
 {
-	InnoAssetSystemNS::m_objectStatus = ObjectStatus::Created;
 	InnoAssetSystemNS::m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "AssetSystem has been terminated.");
 	return true;

@@ -120,8 +120,6 @@ bool InnoGameSystemNS::setup()
 	m_rootTransformComponent->m_globalTransformVector = m_rootTransformComponent->m_localTransformVector;
 	m_rootTransformComponent->m_globalTransformMatrix = m_rootTransformComponent->m_localTransformMatrix;
 
-	m_objectStatus = ObjectStatus::Created;
-
 	return true;
 }
 
@@ -192,8 +190,7 @@ bool InnoGameSystem::setup()
 
 	g_pCoreSystem->getFileSystem()->addSceneLoadingStartCallback(&InnoGameSystemNS::f_sceneLoadingStartCallback);
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GameInstance setup finished.");
-
+	InnoGameSystemNS::m_objectStatus = ObjectStatus::Created;
 	return true;
 }
 
@@ -302,21 +299,37 @@ EntityID InnoGameSystem::getEntityID(const EntityName & entityName)
 
 bool InnoGameSystem::initialize()
 {
-	InnoGameSystemNS::sortTransformComponentsVector();
-	InnoGameSystemNS::updateTransformComponent();
+	if (InnoGameSystemNS::m_objectStatus == ObjectStatus::Created)
+	{
+		InnoGameSystemNS::sortTransformComponentsVector();
+		InnoGameSystemNS::updateTransformComponent();
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GameSystem has been initialized.");
-	return true;
+		InnoGameSystemNS::m_objectStatus = ObjectStatus::Activated;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GameSystem has been initialized.");
+		return true;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: Object is not created!");
+		return false;
+	}
 }
 
 bool InnoGameSystem::update()
 {
-	auto updateTask = g_pCoreSystem->getTaskSystem()->submit([&]()
+	if (InnoGameSystemNS::m_objectStatus == ObjectStatus::Activated)
 	{
-		InnoGameSystemNS::updateTransformComponent();
-	});
-
-	return true;
+		auto updateTask = g_pCoreSystem->getTaskSystem()->submit([&]()
+		{
+			InnoGameSystemNS::updateTransformComponent();
+		});
+		return true;
+	}
+	else
+	{
+		InnoGameSystemNS::m_objectStatus = ObjectStatus::Suspended;
+		return false;
+	}
 }
 
 bool InnoGameSystem::terminate()

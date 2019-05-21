@@ -221,21 +221,22 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* appHook, void* extraHook, 
 
 	if (!InnoVisionSystemNS::setupWindow(appHook, extraHook))
 	{
-		InnoVisionSystemNS::m_objectStatus = ObjectStatus::Created;
+		InnoVisionSystemNS::m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	};
 
 	if (!InnoVisionSystemNS::setupRendering())
 	{
-		InnoVisionSystemNS::m_objectStatus = ObjectStatus::Created;
+		InnoVisionSystemNS::m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 	if (!InnoVisionSystemNS::setupGui())
 	{
-		InnoVisionSystemNS::m_objectStatus = ObjectStatus::Created;
+		InnoVisionSystemNS::m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
+	InnoVisionSystemNS::m_objectStatus = ObjectStatus::Created;
 	return true;
 }
 
@@ -275,34 +276,42 @@ bool InnoVisionSystemNS::setupGui()
 
 INNO_SYSTEM_EXPORT bool InnoVisionSystem::initialize()
 {
-	InnoVisionSystemNS::m_windowSystem->initialize();
+	if (InnoVisionSystemNS::m_objectStatus == ObjectStatus::Created)
+	{
+		InnoVisionSystemNS::m_windowSystem->initialize();
 
-	InnoVisionSystemNS::m_renderingBackendSystem->initialize();
-	InnoVisionSystemNS::m_renderingFrontendSystem->initialize();
+		InnoVisionSystemNS::m_renderingBackendSystem->initialize();
+		InnoVisionSystemNS::m_renderingFrontendSystem->initialize();
 
-	ImGuiWrapper::get().initialize();
+		ImGuiWrapper::get().initialize();
 
-	InnoVisionSystemNS::m_objectStatus = ObjectStatus::Activated;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VisionSystem has been initialized.");
-	return true;
+		InnoVisionSystemNS::m_objectStatus = ObjectStatus::Activated;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VisionSystem has been initialized.");
+		return true;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VisionSystem: Object is not created!");
+		return false;
+	}
 }
 
 INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 {
-	if (g_pCoreSystem->getFileSystem()->isLoadingScene())
-	{
-		return true;
-	}
-
-	if (!InnoVisionSystemNS::m_allowRender)
-	{
-		InnoVisionSystemNS::m_renderingFrontendSystem->update();
-
-		InnoVisionSystemNS::m_allowRender = true;
-	}
-
 	if (InnoVisionSystemNS::m_windowSystem->getStatus() == ObjectStatus::Activated)
 	{
+		if (g_pCoreSystem->getFileSystem()->isLoadingScene())
+		{
+			return true;
+		}
+
+		if (!InnoVisionSystemNS::m_allowRender)
+		{
+			InnoVisionSystemNS::m_renderingFrontendSystem->update();
+
+			InnoVisionSystemNS::m_allowRender = true;
+		}
+
 		InnoVisionSystemNS::m_windowSystem->update();
 
 		if (!InnoVisionSystemNS::m_isRendering && InnoVisionSystemNS::m_allowRender)
@@ -329,7 +338,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 	else
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "VisionSystem is stand-by.");
-		InnoVisionSystemNS::m_objectStatus = ObjectStatus::Created;
+		InnoVisionSystemNS::m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 }

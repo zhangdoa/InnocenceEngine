@@ -43,62 +43,81 @@ INNO_PRIVATE_SCOPE InnoInputSystemNS
 
 bool InnoInputSystemNS::setup()
 {
+	InnoInputSystemNS::m_objectStatus = ObjectStatus::Created;
 	return true;
 }
 
 bool InnoInputSystemNS::initialize()
 {
-	for (int i = 0; i < m_inputConfig.totalKeyCodes; i++)
+	if (InnoInputSystemNS::m_objectStatus == ObjectStatus::Created)
 	{
-		m_buttonStatus.emplace(i, ButtonStatus::RELEASED);
+		for (int i = 0; i < m_inputConfig.totalKeyCodes; i++)
+		{
+			m_buttonStatus.emplace(i, ButtonStatus::RELEASED);
+		}
+
+		m_objectStatus = ObjectStatus::Activated;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "InputSystem has been initialized.");
+
+		return true;
 	}
-
-	m_objectStatus = ObjectStatus::Activated;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "InputSystem has been initialized.");
-
-	return true;
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "InputSystem: Object is not created!");
+		return false;
+	}
 }
 
 bool InnoInputSystemNS::update()
 {
-	m_buttonStatus = g_pCoreSystem->getVisionSystem()->getWindowSystem()->getButtonStatus();
-
-	for (auto& i : m_buttonStatus)
+	if (InnoInputSystemNS::m_objectStatus == ObjectStatus::Activated)
 	{
-		auto l_keybinding = m_buttonStatusCallback.find(ButtonData{ i.first, i.second });
-		if (l_keybinding != m_buttonStatusCallback.end())
+		m_buttonStatus = g_pCoreSystem->getVisionSystem()->getWindowSystem()->getButtonStatus();
+
+		for (auto& i : m_buttonStatus)
 		{
-			for (auto& j : l_keybinding->second)
+			auto l_keybinding = m_buttonStatusCallback.find(ButtonData{ i.first, i.second });
+			if (l_keybinding != m_buttonStatusCallback.end())
 			{
-				if (j)
+				for (auto& j : l_keybinding->second)
 				{
-					(*j)();
+					if (j)
+					{
+						(*j)();
+					}
 				}
 			}
 		}
-	}
 
-	if (m_mouseMovementCallback.size() != 0)
+		if (m_mouseMovementCallback.size() != 0)
+		{
+			if (m_mouseXOffset != 0)
+			{
+				for (auto& j : m_mouseMovementCallback.find(0)->second)
+				{
+					(*j)(m_mouseXOffset);
+				};
+			}
+			if (m_mouseYOffset != 0)
+			{
+				for (auto& j : m_mouseMovementCallback.find(1)->second)
+				{
+					(*j)(m_mouseYOffset);
+				};
+			}
+			if (m_mouseXOffset != 0 || m_mouseYOffset != 0)
+			{
+				m_mouseXOffset = 0;
+				m_mouseYOffset = 0;
+			}
+		}
+
+		return true;
+	}
+	else
 	{
-		if (m_mouseXOffset != 0)
-		{
-			for (auto& j : m_mouseMovementCallback.find(0)->second)
-			{
-				(*j)(m_mouseXOffset);
-			};
-		}
-		if (m_mouseYOffset != 0)
-		{
-			for (auto& j : m_mouseMovementCallback.find(1)->second)
-			{
-				(*j)(m_mouseYOffset);
-			};
-		}
-		if (m_mouseXOffset != 0 || m_mouseYOffset != 0)
-		{
-			m_mouseXOffset = 0;
-			m_mouseYOffset = 0;
-		}
+		InnoInputSystemNS::m_objectStatus = ObjectStatus::Suspended;
+		return false;
 	}
 
 	return true;
