@@ -112,7 +112,7 @@ bool VKRenderingSystemNS::createVkInstance()
 {
 	// check support for validation layer
 	if (VKRenderingSystemComponent::get().m_enableValidationLayers && !checkValidationLayerSupport()) {
-		m_objectStatus = ObjectStatus::Created;
+		m_objectStatus = ObjectStatus::Suspended;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Validation layers requested, but not available!");
 		return false;
 	}
@@ -149,7 +149,7 @@ bool VKRenderingSystemNS::createVkInstance()
 	// create Vulkan instance
 	if (vkCreateInstance(&l_createInfo, nullptr, &VKRenderingSystemComponent::get().m_instance) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::Created;
+		m_objectStatus = ObjectStatus::Suspended;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkInstance!");
 		return false;
 	}
@@ -170,7 +170,7 @@ bool VKRenderingSystemNS::createDebugCallback()
 
 		if (createDebugUtilsMessengerEXT(VKRenderingSystemComponent::get().m_instance, &l_createInfo, nullptr, &VKRenderingSystemComponent::get().m_messengerCallback) != VK_SUCCESS)
 		{
-			m_objectStatus = ObjectStatus::Created;
+			m_objectStatus = ObjectStatus::Suspended;
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create DebugUtilsMessenger!");
 			return false;
 		}
@@ -191,7 +191,7 @@ bool VKRenderingSystemNS::createPysicalDevice()
 	vkEnumeratePhysicalDevices(VKRenderingSystemComponent::get().m_instance, &l_deviceCount, nullptr);
 
 	if (l_deviceCount == 0) {
-		m_objectStatus = ObjectStatus::Created;
+		m_objectStatus = ObjectStatus::Suspended;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to find GPUs with Vulkan support!");
 		return false;
 	}
@@ -211,7 +211,7 @@ bool VKRenderingSystemNS::createPysicalDevice()
 
 	if (VKRenderingSystemComponent::get().m_physicalDevice == VK_NULL_HANDLE)
 	{
-		m_objectStatus = ObjectStatus::Created;
+		m_objectStatus = ObjectStatus::Suspended;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to find a suitable GPU!");
 		return false;
 	}
@@ -264,7 +264,7 @@ bool VKRenderingSystemNS::createLogicalDevice()
 
 	if (vkCreateDevice(VKRenderingSystemComponent::get().m_physicalDevice, &l_createInfo, nullptr, &VKRenderingSystemComponent::get().m_device) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::Created;
+		m_objectStatus = ObjectStatus::Suspended;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkDevice!");
 		return false;
 	}
@@ -295,7 +295,7 @@ bool VKRenderingSystemNS::createTextureSamplers()
 
 	if (vkCreateSampler(VKRenderingSystemComponent::get().m_device, &samplerInfo, nullptr, &VKRenderingSystemComponent::get().m_deferredRTSampler) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::Created;
+		m_objectStatus = ObjectStatus::Suspended;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkSampler for deferred pass render target sampling!");
 		return false;
 	}
@@ -315,7 +315,7 @@ bool VKRenderingSystemNS::createCommandPool()
 
 	if (vkCreateCommandPool(VKRenderingSystemComponent::get().m_device, &poolInfo, nullptr, &VKRenderingSystemComponent::get().m_commandPool) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::Created;
+		m_objectStatus = ObjectStatus::Suspended;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create CommandPool!");
 		return false;
 	}
@@ -372,7 +372,7 @@ bool VKRenderingSystemNS::createSwapChain()
 
 	if (vkCreateSwapchainKHR(VKRenderingSystemComponent::get().m_device, &l_createInfo, nullptr, &VKRenderingSystemComponent::get().m_swapChain) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::Created;
+		m_objectStatus = ObjectStatus::Suspended;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkSwapChainKHR!");
 		return false;
 	}
@@ -652,38 +652,47 @@ bool VKRenderingSystemNS::setup()
 	result = result && createVkInstance();
 	result = result && createDebugCallback();
 
-	m_objectStatus = ObjectStatus::Activated;
+	m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem setup finished.");
 	return result;
 }
 
 bool VKRenderingSystemNS::initialize()
 {
-	m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKMeshDataComponent), RenderingFrontendSystemComponent::get().m_maxMeshes);
-	m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), RenderingFrontendSystemComponent::get().m_maxMaterials);
-	m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKTextureDataComponent), RenderingFrontendSystemComponent::get().m_maxTextures);
+	if (VKRenderingSystemNS::m_objectStatus == ObjectStatus::Created)
+	{
+		m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKMeshDataComponent), RenderingFrontendSystemComponent::get().m_maxMeshes);
+		m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), RenderingFrontendSystemComponent::get().m_maxMaterials);
+		m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKTextureDataComponent), RenderingFrontendSystemComponent::get().m_maxTextures);
 
-	bool result = true;
+		bool l_result = true;
 
-	result = result && createPysicalDevice();
-	result = result && createLogicalDevice();
+		l_result = l_result && createPysicalDevice();
+		l_result = l_result && createLogicalDevice();
 
-	result = result && createTextureSamplers();
-	result = result && createCommandPool();
+		l_result = l_result && createTextureSamplers();
+		l_result = l_result && createCommandPool();
 
-	loadDefaultAssets();
+		loadDefaultAssets();
 
-	generateGPUBuffers();
+		generateGPUBuffers();
 
-	VKOpaquePass::initialize();
-	VKLightPass::initialize();
+		VKOpaquePass::initialize();
+		VKLightPass::initialize();
 
-	result = result && createSwapChain();
-	result = result && createSwapChainCommandBuffers();
-	result = result && createSyncPrimitives();
+		l_result = l_result && createSwapChain();
+		l_result = l_result && createSwapChainCommandBuffers();
+		l_result = l_result && createSyncPrimitives();
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem has been initialized.");
-	return result;
+		VKRenderingSystemNS::m_objectStatus = ObjectStatus::Activated;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem has been initialized.");
+		return l_result;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Object is not created!");
+		return false;
+	}
 }
 
 void VKRenderingSystemNS::loadDefaultAssets()
