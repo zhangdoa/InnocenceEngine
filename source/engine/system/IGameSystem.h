@@ -5,10 +5,10 @@
 #include "../common/ComponentHeaders.h"
 
 #define spawnComponentInterfaceDecl( className ) \
-virtual className* spawn##className(const EntityID& parentEntity) = 0;
+virtual className* spawn##className(const EntityID& parentEntity, ObjectSource objectSource) = 0;
 
-#define spawnComponentInterfaceCall( className, parentEntity ) \
-spawn##className(parentEntity)
+#define spawnComponentInterfaceCall( className, parentEntity, objectSource ) \
+spawn##className(parentEntity, objectSource)
 
 #define registerComponentInterfaceDecl( className ) \
 virtual void registerComponent(className* rhs, const EntityID& parentEntity) = 0;
@@ -102,7 +102,7 @@ protected:
 	getComponentContainerInterfaceDecl(EnvironmentCaptureComponent);
 
 public:
-	template <typename T> T * spawn(const EntityID& parentEntity)
+	template <typename T> T * spawn(const EntityID& parentEntity, ObjectSource objectSource)
 	{
 		return nullptr;
 	};
@@ -139,44 +139,44 @@ public:
 	virtual EntityID getEntityID(const EntityName& entityName) = 0;
 };
 
-template <> inline TransformComponent * IGameSystem::spawn(const EntityID& parentEntity)
+template <> inline TransformComponent * IGameSystem::spawn(const EntityID& parentEntity, ObjectSource objectSource)
 {
-	return spawnComponentInterfaceCall(TransformComponent, parentEntity);
+	return spawnComponentInterfaceCall(TransformComponent, parentEntity, objectSource);
 };
 
-template <> inline VisibleComponent * IGameSystem::spawn(const EntityID& parentEntity)
+template <> inline VisibleComponent * IGameSystem::spawn(const EntityID& parentEntity, ObjectSource objectSource)
 {
-	return spawnComponentInterfaceCall(VisibleComponent, parentEntity);
+	return spawnComponentInterfaceCall(VisibleComponent, parentEntity, objectSource);
 };
 
-template <> inline DirectionalLightComponent * IGameSystem::spawn(const EntityID& parentEntity)
+template <> inline DirectionalLightComponent * IGameSystem::spawn(const EntityID& parentEntity, ObjectSource objectSource)
 {
-	return spawnComponentInterfaceCall(DirectionalLightComponent, parentEntity);
+	return spawnComponentInterfaceCall(DirectionalLightComponent, parentEntity, objectSource);
 };
 
-template <> inline PointLightComponent * IGameSystem::spawn(const EntityID& parentEntity)
+template <> inline PointLightComponent * IGameSystem::spawn(const EntityID& parentEntity, ObjectSource objectSource)
 {
-	return spawnComponentInterfaceCall(PointLightComponent, parentEntity);
+	return spawnComponentInterfaceCall(PointLightComponent, parentEntity, objectSource);
 };
 
-template <> inline SphereLightComponent * IGameSystem::spawn(const EntityID& parentEntity)
+template <> inline SphereLightComponent * IGameSystem::spawn(const EntityID& parentEntity, ObjectSource objectSource)
 {
-	return spawnComponentInterfaceCall(SphereLightComponent, parentEntity);
+	return spawnComponentInterfaceCall(SphereLightComponent, parentEntity, objectSource);
 };
 
-template <> inline CameraComponent * IGameSystem::spawn(const EntityID& parentEntity)
+template <> inline CameraComponent * IGameSystem::spawn(const EntityID& parentEntity, ObjectSource objectSource)
 {
-	return spawnComponentInterfaceCall(CameraComponent, parentEntity);
+	return spawnComponentInterfaceCall(CameraComponent, parentEntity, objectSource);
 };
 
-template <> inline InputComponent * IGameSystem::spawn(const EntityID& parentEntity)
+template <> inline InputComponent * IGameSystem::spawn(const EntityID& parentEntity, ObjectSource objectSource)
 {
-	return spawnComponentInterfaceCall(InputComponent, parentEntity);
+	return spawnComponentInterfaceCall(InputComponent, parentEntity, objectSource);
 };
 
-template <> inline EnvironmentCaptureComponent * IGameSystem::spawn(const EntityID& parentEntity)
+template <> inline EnvironmentCaptureComponent * IGameSystem::spawn(const EntityID& parentEntity, ObjectSource objectSource)
 {
-	return spawnComponentInterfaceCall(EnvironmentCaptureComponent, parentEntity);
+	return spawnComponentInterfaceCall(EnvironmentCaptureComponent, parentEntity, objectSource);
 };
 
 template <> inline bool IGameSystem::destroy(TransformComponent* rhs)

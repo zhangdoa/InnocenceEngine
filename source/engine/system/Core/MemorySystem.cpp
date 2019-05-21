@@ -180,7 +180,7 @@ bool InnoMemorySystem::update()
 	}
 	else
 	{
-		InnoMemorySystemNS::m_objectStatus == ObjectStatus::Suspended;
+		InnoMemorySystemNS::m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 }

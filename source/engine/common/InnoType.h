@@ -22,14 +22,14 @@ enum class ObjectStatus
 
 enum class ObjectSource
 {
-	RUNTIME,
-	ASSET,
+	Runtime,
+	Asset,
 };
 
 enum class ObjectUsage
 {
-	PRODUCT,
-	DEVELOPMENT,
+	Product,
+	Development,
 };
 
 using EntityID = FixedSizeString<32>;

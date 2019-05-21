@@ -1,15 +1,9 @@
 #pragma once
-#include "../common/InnoType.h"
+#include "../common/InnoComponent.h"
 #include "../common/InnoMath.h"
 
-struct TransformComponent
+struct TransformComponent : public InnoComponent
 {
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-	EntityID m_parentEntity;
-	unsigned int m_UUID = 0;
-
-	unsigned int m_transformHierarchyLevel = 0;
-
 	TransformVector m_localTransformVector;
 	TransformMatrix m_localTransformMatrix;
 
@@ -18,5 +12,6 @@ struct TransformComponent
 
 	TransformMatrix m_globalTransformMatrix_prev;
 
+	unsigned int m_transformHierarchyLevel = 0;
 	TransformComponent* m_parentTransformComponent = 0;
 };

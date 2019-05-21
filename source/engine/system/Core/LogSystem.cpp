@@ -218,7 +218,7 @@ bool InnoLogSystem::update()
 	}
 	else
 	{
-		InnoLogSystemNS::m_objectStatus == ObjectStatus::Suspended;
+		InnoLogSystemNS::m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 }

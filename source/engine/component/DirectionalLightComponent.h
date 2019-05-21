@@ -1,17 +1,13 @@
 #pragma once
-#include "../common/InnoType.h"
+#include "../common/InnoComponent.h"
 #include "../common/InnoMath.h"
 #include "../common/InnoContainer.h"
 
-class DirectionalLightComponent
+class DirectionalLightComponent : public InnoComponent
 {
 public:
 	DirectionalLightComponent() {};
 	~DirectionalLightComponent() {};
-
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-	EntityID m_parentEntity;
-	unsigned int m_UUID = 0;
 
 	// Unit: Lumen (lm)
 	float m_luminousFlux = 1.0f;

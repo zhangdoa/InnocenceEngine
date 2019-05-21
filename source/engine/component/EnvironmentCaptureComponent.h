@@ -1,16 +1,12 @@
 #pragma once
-#include "../common/InnoType.h"
+#include "../common/InnoComponent.h"
 #include "TextureDataComponent.h"
 
-class EnvironmentCaptureComponent
+class EnvironmentCaptureComponent : public InnoComponent
 {
 public:
 	EnvironmentCaptureComponent() {};
 	~EnvironmentCaptureComponent() {};
-
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-	EntityID m_parentEntity;
-	unsigned int m_UUID = 0;
 
 	std::string m_cubemapTextureFileName;
 	TextureDataComponent* m_TDC = nullptr;

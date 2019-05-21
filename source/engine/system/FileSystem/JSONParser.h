@@ -38,8 +38,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 		template<typename T>
 		inline bool loadComponentData(const json& j, const EntityID& entityID)
 		{
-			auto l_result = g_pCoreSystem->getGameSystem()->spawn<T>(entityID);
-
+			auto l_result = g_pCoreSystem->getGameSystem()->spawn<T>(entityID, ObjectSource::Asset);
 			from_json(j, *l_result);
 
 			return true;

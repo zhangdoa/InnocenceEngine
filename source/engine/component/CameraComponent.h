@@ -1,15 +1,11 @@
 #pragma once
-#include "../common/InnoType.h"
+#include "../common/InnoComponent.h"
 
-class CameraComponent
+class CameraComponent : public InnoComponent
 {
 public:
 	CameraComponent() {};
 	~CameraComponent() {};
-
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-	EntityID m_parentEntity;
-	unsigned int m_UUID = 0;
 
 	float m_FOVX = 0.0f;
 	float m_widthScale = 0.0f;

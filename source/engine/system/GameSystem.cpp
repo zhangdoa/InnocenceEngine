@@ -342,12 +342,23 @@ bool InnoGameSystem::terminate()
 }
 
 #define spawnComponentImplDefi( className ) \
-className* InnoGameSystem::spawn##className(const EntityID& parentEntity) \
+className* InnoGameSystem::spawn##className(const EntityID& parentEntity, ObjectSource objectSource) \
 { \
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(InnoGameSystemNS::m_##className##Pool, sizeof(className)); \
 	auto l_ptr = new(l_rawPtr)className(); \
 	if (l_ptr) \
 	{ \
+		l_ptr->m_parentEntity = parentEntity; \
+		l_ptr->m_objectStatus = ObjectStatus::Created; \
+		l_ptr->m_objectSource = objectSource; \
+		auto l_componentIndex = InnoGameSystemNS::m_##className##s.size(); \
+		auto l_componentName = ComponentName((std::string(#className) + "_" + std::to_string(l_componentIndex) + "/").c_str()); \
+		l_ptr->m_componentName = l_componentName; \
+		l_ptr->m_UUID = InnoGameSystemNS::m_currentUUID++; \
+		InnoGameSystemNS::m_##className##s.emplace_back(l_ptr); \
+		InnoGameSystemNS::m_##className##sMap.emplace(parentEntity, l_ptr); \
+		l_ptr->m_objectStatus = ObjectStatus::Activated; \
+\
 		registerComponent(l_ptr, parentEntity); \
 		return l_ptr; \
 	} \
@@ -385,27 +396,23 @@ destroyComponentImplDefi(EnvironmentCaptureComponent)
 #define registerComponentImplDefi( className ) \
 void InnoGameSystem::registerComponent(className* rhs, const EntityID& parentEntity) \
 { \
-	rhs->m_parentEntity = parentEntity; \
-	rhs->m_UUID = InnoGameSystemNS::m_currentUUID++; \
-	InnoGameSystemNS::m_##className##s.emplace_back(rhs); \
-	InnoGameSystemNS::m_##className##sMap.emplace(parentEntity, rhs); \
-\
-	auto indexOfTheComponent = InnoGameSystemNS::m_##className##s.size(); \
-	auto l_componentName = ComponentName((std::string(#className) + "_" + std::to_string(indexOfTheComponent)).c_str()); \
-	auto l_componentType = InnoUtility::getComponentType<className>(); \
-	auto l_componentMetaDataPair = ComponentMetadataPair(l_componentType, l_componentName); \
-\
-	auto l_result = InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.find(parentEntity); \
-	if (l_result != InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.end()) \
+	if(rhs->m_objectSource == ObjectSource::Asset) \
 	{ \
-		auto l_componentMetadataMap = &l_result->second; \
-		l_componentMetadataMap->emplace(rhs, l_componentMetaDataPair); \
-	} \
-	else \
-	{ \
-		auto l_componentMetadataMap = ComponentMetadataMap(); \
-		l_componentMetadataMap.emplace(rhs, l_componentMetaDataPair); \
-		InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.emplace(parentEntity, std::move(l_componentMetadataMap)); \
+		auto l_componentType = InnoUtility::getComponentType<className>(); \
+		auto l_componentMetaDataPair = ComponentMetadataPair(l_componentType, rhs->m_componentName); \
+		\
+		auto l_result = InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.find(parentEntity); \
+		if (l_result != InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.end()) \
+		{ \
+			auto l_componentMetadataMap = &l_result->second; \
+			l_componentMetadataMap->emplace(rhs, l_componentMetaDataPair); \
+		} \
+		else \
+		{ \
+			auto l_componentMetadataMap = ComponentMetadataMap(); \
+			l_componentMetadataMap.emplace(rhs, l_componentMetaDataPair); \
+			InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.emplace(parentEntity, std::move(l_componentMetadataMap)); \
+		} \
 	} \
 }
 
@@ -421,6 +428,7 @@ registerComponentImplDefi(EnvironmentCaptureComponent)
 #define  unregisterComponentImplDefi( className ) \
 void InnoGameSystem::unregisterComponent(className* rhs) \
 { \
+	rhs->m_objectStatus = ObjectStatus::Terminated; \
 	auto l_result = InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.find(rhs->m_parentEntity); \
 	if (l_result != InnoGameSystemNS::m_entityChildrenComponentsMetadataMap.end()) \
 	{ \

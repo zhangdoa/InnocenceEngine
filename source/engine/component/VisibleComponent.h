@@ -1,6 +1,5 @@
 #pragma once
-#include "../common/InnoType.h"
-#include "../common/InnoMath.h"
+#include "../common/InnoComponent.h"
 #include "MeshDataComponent.h"
 #include "MaterialDataComponent.h"
 #include "PhysicsDataComponent.h"
@@ -8,15 +7,11 @@
 using ModelPair = std::pair<MeshDataComponent*, MaterialDataComponent*>;
 using ModelMap = std::unordered_map<MeshDataComponent*, MaterialDataComponent*>;
 
-class VisibleComponent
+class VisibleComponent : public InnoComponent
 {
 public:
 	VisibleComponent() {};
 	~VisibleComponent() {};
-
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-	EntityID m_parentEntity;
-	unsigned int m_UUID = 0;
 
 	VisiblilityType m_visiblilityType = VisiblilityType::INNO_INVISIBLE;
 	MeshUsageType m_meshUsageType = MeshUsageType::STATIC;

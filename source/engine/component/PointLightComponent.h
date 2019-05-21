@@ -1,16 +1,12 @@
 #pragma once
-#include "../common/InnoType.h"
+#include "../common/InnoComponent.h"
 #include "../common/InnoMath.h"
 
-class PointLightComponent
+class PointLightComponent : public InnoComponent
 {
 public:
 	PointLightComponent() {};
 	~PointLightComponent() {};
-
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-	EntityID m_parentEntity;
-	unsigned int m_UUID = 0;
 
 	// Unit: Meter (m)
 	float m_attenuationRadius = 1.0f;
