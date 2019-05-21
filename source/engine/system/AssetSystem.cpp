@@ -10,7 +10,7 @@ INNO_PRIVATE_SCOPE InnoAssetSystemNS
 
 	void assignUnitMesh(MeshShapeType MeshUsageType, VisibleComponent* visibleComponent);
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
 	std::vector<InnoFuture<void>> m_asyncTask;
 
@@ -19,7 +19,7 @@ INNO_PRIVATE_SCOPE InnoAssetSystemNS
 
 INNO_SYSTEM_EXPORT bool InnoAssetSystem::setup()
 {
-	InnoAssetSystemNS::m_objectStatus = ObjectStatus::ALIVE;
+	InnoAssetSystemNS::m_objectStatus = ObjectStatus::Activated;
 	return true;
 }
 
@@ -36,8 +36,8 @@ INNO_SYSTEM_EXPORT bool InnoAssetSystem::update()
 
 INNO_SYSTEM_EXPORT bool InnoAssetSystem::terminate()
 {
-	InnoAssetSystemNS::m_objectStatus = ObjectStatus::STANDBY;
-	InnoAssetSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	InnoAssetSystemNS::m_objectStatus = ObjectStatus::Created;
+	InnoAssetSystemNS::m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "AssetSystem has been terminated.");
 	return true;
 }
@@ -325,7 +325,7 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 					{
 						l_visibleComponent->m_modelMap = g_pCoreSystem->getAssetSystem()->loadModel(l_visibleComponent->m_modelFileName);
 						g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(l_visibleComponent);
-						l_visibleComponent->m_objectStatus = ObjectStatus::ALIVE;
+						l_visibleComponent->m_objectStatus = ObjectStatus::Activated;
 					});
 				}
 			}
@@ -335,7 +335,7 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 				{
 					assignUnitMesh(l_visibleComponent->m_meshShapeType, l_visibleComponent);
 					g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(l_visibleComponent);
-					l_visibleComponent->m_objectStatus = ObjectStatus::ALIVE;
+					l_visibleComponent->m_objectStatus = ObjectStatus::Activated;
 				});
 			}
 		}

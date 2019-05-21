@@ -7,12 +7,12 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE ImGuiWrapperWinVKNS
 {
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 }
 
 bool ImGuiWrapperWinVK::setup()
 {
-	ImGuiWrapperWinVKNS::m_objectStatus = ObjectStatus::ALIVE;
+	ImGuiWrapperWinVKNS::m_objectStatus = ObjectStatus::Activated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperWinVK setup finished.");
 
 	return true;
@@ -37,7 +37,7 @@ bool ImGuiWrapperWinVK::render()
 
 bool ImGuiWrapperWinVK::terminate()
 {
-	ImGuiWrapperWinVKNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	ImGuiWrapperWinVKNS::m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperWinVK has been terminated.");
 
 	return true;

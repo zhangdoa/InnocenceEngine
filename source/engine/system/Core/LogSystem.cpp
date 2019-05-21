@@ -5,7 +5,7 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE InnoLogSystemNS
 {
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
 	std::string getLogTimeHeader()
 	{
@@ -180,27 +180,53 @@ ObjectStatus InnoLogSystem::getStatus()
 
 bool InnoLogSystem::setup()
 {
+	InnoLogSystemNS::m_objectStatus = ObjectStatus::Created;
 	return true;
 }
 
 bool InnoLogSystem::initialize()
 {
-	InnoLogSystemNS::m_logFile.open(g_pCoreSystem->getFileSystem()->getWorkingDirectory() + "res//logs//" + InnoLogSystemNS::getLogTimeHeader() + ".log", std::ios::out | std::ios::trunc);
+	if (InnoLogSystemNS::m_objectStatus == ObjectStatus::Created)
+	{
+		InnoLogSystemNS::m_logFile.open(g_pCoreSystem->getFileSystem()->getWorkingDirectory() + "res//logs//" + InnoLogSystemNS::getLogTimeHeader() + ".log", std::ios::out | std::ios::trunc);
 
-	InnoLogSystemNS::m_objectStatus = ObjectStatus::ALIVE;
-	printLog(LogType::INNO_DEV_SUCCESS, "LogSystem has been initialized.");
-	return true;
+		if (InnoLogSystemNS::m_logFile.is_open())
+		{
+			InnoLogSystemNS::m_objectStatus = ObjectStatus::Activated;
+			printLog(LogType::INNO_DEV_SUCCESS, "LogSystem has been initialized.");
+			return true;
+		}
+		else
+		{
+			InnoLogSystemNS::m_objectStatus = ObjectStatus::Suspended;
+			printLog(LogType::INNO_ERROR, "LogSystem: Can't open log file!");
+			return false;
+		}
+	}
+	else
+	{
+		printLog(LogType::INNO_ERROR, "LogSystem: Object is not created!");
+		return false;
+	}
 }
 
 bool InnoLogSystem::update()
 {
-	return true;
+	if (InnoLogSystemNS::m_objectStatus == ObjectStatus::Activated)
+	{
+		return true;
+	}
+	else
+	{
+		InnoLogSystemNS::m_objectStatus == ObjectStatus::Suspended;
+		return false;
+	}
 }
 
 bool InnoLogSystem::terminate()
 {
 	InnoLogSystemNS::m_logFile.close();
-	InnoLogSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	InnoLogSystemNS::m_objectStatus = ObjectStatus::Terminated;
 	printLog(LogType::INNO_DEV_SUCCESS, "LogSystem has been terminated.");
 	return true;
 }

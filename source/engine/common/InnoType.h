@@ -14,9 +14,22 @@
 
 enum class ObjectStatus
 {
-	STANDBY,
-	ALIVE,
-	SHUTDOWN,
+	Created,
+	Activated,
+	Suspended,
+	Terminated,
+};
+
+enum class ObjectSource
+{
+	RUNTIME,
+	ASSET,
+};
+
+enum class ObjectUsage
+{
+	PRODUCT,
+	DEVELOPMENT,
 };
 
 using EntityID = FixedSizeString<32>;
@@ -79,7 +92,6 @@ enum class TexturePixelDataFormat { R, RG, RGB, RGBA, BGRA, DEPTH_COMPONENT, DEP
 enum class TexturePixelDataType { UBYTE, SBYTE, USHORT, SSHORT, UINT8, SINT8, UINT16, SINT16, UINT32, SINT32, FLOAT16, FLOAT32, DOUBLE };
 enum class TextureWrapMethod { CLAMP_TO_EDGE, REPEAT, CLAMP_TO_BORDER };
 enum class TextureFilterMethod { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR };
-enum class TextureAssignType { ADD, OVERWRITE };
 
 struct TextureDataDesc
 {
@@ -121,24 +133,6 @@ struct ShaderFilePaths
 	ShaderFilePath m_FSPath;
 	ShaderFilePath m_CSPath;
 };
-
-using TextureFileName = FixedSizeString<128>;
-
-#ifdef INNO_PLATFORM_MAC
-struct EnumClassHash
-{
-	template <typename T>
-	std::size_t operator()(T t) const
-	{
-		return static_cast<std::size_t>(t);
-	}
-};
-using textureFileNamePair = std::pair<TextureUsageType, TextureFileName>;
-using textureFileNameMap = std::unordered_map<TextureUsageType, TextureFileName, EnumClassHash>;
-#else
-using TextureFileNamePair = std::pair<TextureUsageType, TextureFileName>;
-using TextureFileNameMap = std::unordered_map<TextureUsageType, TextureFileName>;
-#endif
 
 struct MeshCustomMaterial
 {

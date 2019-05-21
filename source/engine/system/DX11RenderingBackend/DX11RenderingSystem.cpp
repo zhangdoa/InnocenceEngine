@@ -30,7 +30,7 @@ INNO_PRIVATE_SCOPE DX11RenderingSystemNS
 	bool createSwapChain();
 	bool createSwapChainDXRPC();
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	EntityID m_entityID;
 
 	static DX11RenderingSystemComponent* g_DXRenderingSystemComponent;
@@ -80,7 +80,7 @@ bool DX11RenderingSystemNS::createPhysicalDevices()
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create DXGI factory!");
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		return false;
 	}
 
@@ -89,7 +89,7 @@ bool DX11RenderingSystemNS::createPhysicalDevices()
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create video card adapter!");
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		return false;
 	}
 
@@ -98,7 +98,7 @@ bool DX11RenderingSystemNS::createPhysicalDevices()
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create monitor adapter!");
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		return false;
 	}
 
@@ -107,7 +107,7 @@ bool DX11RenderingSystemNS::createPhysicalDevices()
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't get DXGI_FORMAT_R8G8B8A8_UNORM fitted monitor!");
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		return false;
 	}
 
@@ -119,7 +119,7 @@ bool DX11RenderingSystemNS::createPhysicalDevices()
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't fill the display mode list structures!");
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		return false;
 	}
 
@@ -144,7 +144,7 @@ bool DX11RenderingSystemNS::createPhysicalDevices()
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't get the video card adapter description!");
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		return false;
 	}
 
@@ -155,7 +155,7 @@ bool DX11RenderingSystemNS::createPhysicalDevices()
 	if (wcstombs_s(&stringLength, g_DXRenderingSystemComponent->m_videoCardDescription, 128, g_DXRenderingSystemComponent->m_adapterDesc.Description, 128) != 0)
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't convert the name of the video card to a character array!");
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		return false;
 	}
 
@@ -251,7 +251,7 @@ bool DX11RenderingSystemNS::createSwapChain()
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create the swap chain/D3D device/D3D device context!");
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		return false;
 	}
 
@@ -297,7 +297,7 @@ bool DX11RenderingSystemNS::createSwapChainDXRPC()
 	if (FAILED(l_hResult))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't get back buffer pointer!");
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		return false;
 	}
 
@@ -305,7 +305,7 @@ bool DX11RenderingSystemNS::createSwapChainDXRPC()
 
 	l_result &= setupPipeline(l_DXRPC);
 
-	l_DXRPC->m_objectStatus = ObjectStatus::ALIVE;
+	l_DXRPC->m_objectStatus = ObjectStatus::Activated;
 
 	DX11RenderingSystemComponent::get().m_swapChainDXRPC = l_DXRPC;
 
@@ -337,7 +337,7 @@ bool DX11RenderingSystemNS::setup()
 	l_result = l_result && createPhysicalDevices();
 	l_result = l_result && createSwapChain();
 
-	m_objectStatus = ObjectStatus::ALIVE;
+	m_objectStatus = ObjectStatus::Activated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingSystem setup finished.");
 
 	return l_result;
@@ -407,7 +407,7 @@ void DX11RenderingSystemNS::loadDefaultAssets()
 	g_pCoreSystem->getAssetSystem()->addUnitLine(*m_unitLineMDC);
 	m_unitLineMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	m_unitLineMDC->m_meshShapeType = MeshShapeType::LINE;
-	m_unitLineMDC->m_objectStatus = ObjectStatus::STANDBY;
+	m_unitLineMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMDC);
 
 	m_unitQuadMDC = addDX11MeshDataComponent();
@@ -419,27 +419,27 @@ void DX11RenderingSystemNS::loadDefaultAssets()
 	}
 	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
-	m_unitQuadMDC->m_objectStatus = ObjectStatus::STANDBY;
+	m_unitQuadMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMDC);
 
 	m_unitCubeMDC = addDX11MeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addUnitCube(*m_unitCubeMDC);
 	m_unitCubeMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitCubeMDC->m_meshShapeType = MeshShapeType::CUBE;
-	m_unitCubeMDC->m_objectStatus = ObjectStatus::STANDBY;
+	m_unitCubeMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMDC);
 
 	m_unitSphereMDC = addDX11MeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addUnitSphere(*m_unitSphereMDC);
 	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
-	m_unitSphereMDC->m_objectStatus = ObjectStatus::STANDBY;
+	m_unitSphereMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMDC);
 
 	m_terrainMDC = addDX11MeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addTerrain(*m_terrainMDC);
 	m_terrainMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	m_terrainMDC->m_objectStatus = ObjectStatus::STANDBY;
+	m_terrainMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMDC);
 
 	initializeDX11MeshDataComponent(m_unitLineMDC);
@@ -569,7 +569,7 @@ bool DX11RenderingSystemNS::terminate()
 		g_DXRenderingSystemComponent->m_swapChain = 0;
 	}
 
-	m_objectStatus = ObjectStatus::SHUTDOWN;
+	m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingSystem has been terminated.");
 	return true;
 }

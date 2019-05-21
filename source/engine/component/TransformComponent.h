@@ -4,7 +4,7 @@
 
 struct TransformComponent
 {
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	EntityID m_parentEntity;
 	unsigned int m_UUID = 0;
 

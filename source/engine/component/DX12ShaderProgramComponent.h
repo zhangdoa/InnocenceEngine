@@ -8,7 +8,7 @@ public:
 	DX12ShaderProgramComponent() {};
 	~DX12ShaderProgramComponent() {};
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	EntityID m_parentEntity;
 
 	ID3DBlob* m_vertexShader = 0;

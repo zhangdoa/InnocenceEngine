@@ -56,7 +56,7 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 	bool createSwapChainDXRPC();
 	bool createSwapChainSyncPrimitives();
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	EntityID m_entityID;
 
 	static DX12RenderingSystemComponent* g_DXRenderingSystemComponent;
@@ -102,7 +102,7 @@ bool DX12RenderingSystemNS::createDebugCallback()
 	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't get DirectX 12 debug interface!");
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		return false;
 	}
 
@@ -110,7 +110,7 @@ bool DX12RenderingSystemNS::createDebugCallback()
 	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't query DirectX 12 debug interface!");
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		return false;
 	}
 
@@ -131,7 +131,7 @@ bool DX12RenderingSystemNS::createPhysicalDevices()
 	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create DXGI factory!");
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		return false;
 	}
 
@@ -143,7 +143,7 @@ bool DX12RenderingSystemNS::createPhysicalDevices()
 	if (l_adapter1 == nullptr)
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create a suitable video card adapter!");
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		return false;
 	}
 
@@ -160,7 +160,7 @@ bool DX12RenderingSystemNS::createPhysicalDevices()
 	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create a DirectX 12.1 device. The default video card does not support DirectX 12.1!");
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		return false;
 	}
 
@@ -187,7 +187,7 @@ bool DX12RenderingSystemNS::createPhysicalDevices()
 	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create global CommandQueue!");
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		return false;
 	}
 
@@ -211,7 +211,7 @@ bool DX12RenderingSystemNS::createGlobalCommandAllocator()
 	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create global CommandAllocator!");
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		return false;
 	}
 
@@ -232,7 +232,7 @@ bool DX12RenderingSystemNS::createGlobalCSUHeap()
 	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create DescriptorHeap for CBV/SRV/UAV!");
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		return false;
 	}
 
@@ -259,7 +259,7 @@ bool DX12RenderingSystemNS::createGlobalSamplerHeap()
 	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create DescriptorHeap for Sampler!");
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		return false;
 	}
 
@@ -326,7 +326,7 @@ bool DX12RenderingSystemNS::createSwapChain()
 	if (FAILED(l_result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't create swap chain!");
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		return false;
 	}
 
@@ -382,7 +382,7 @@ bool DX12RenderingSystemNS::createSwapChainDXRPC()
 		if (FAILED(l_result))
 		{
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingSystem: Can't get pointer of swap chain render target " + std::to_string(i) + "!");
-			m_objectStatus = ObjectStatus::STANDBY;
+			m_objectStatus = ObjectStatus::Created;
 			return false;
 		}
 		l_DXRPC->m_DXTDCs[i]->m_DX12TextureDataDesc = l_DXRPC->m_DXTDCs[i]->m_texture->GetDesc();
@@ -502,7 +502,7 @@ bool DX12RenderingSystemNS::setup()
 	l_result = l_result && createDebugCallback();
 	l_result = l_result && createPhysicalDevices();
 
-	m_objectStatus = ObjectStatus::ALIVE;
+	m_objectStatus = ObjectStatus::Activated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem setup finished.");
 
 	return l_result;
@@ -649,7 +649,7 @@ bool DX12RenderingSystemNS::terminate()
 		g_DXRenderingSystemComponent->m_device = 0;
 	}
 
-	m_objectStatus = ObjectStatus::SHUTDOWN;
+	m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingSystem has been terminated.");
 	return true;
 }
@@ -690,34 +690,34 @@ void DX12RenderingSystemNS::loadDefaultAssets()
 	g_pCoreSystem->getAssetSystem()->addUnitLine(*m_unitLineMDC);
 	m_unitLineMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	m_unitLineMDC->m_meshShapeType = MeshShapeType::LINE;
-	m_unitLineMDC->m_objectStatus = ObjectStatus::STANDBY;
+	m_unitLineMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMDC);
 
 	m_unitQuadMDC = addDX12MeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addUnitQuad(*m_unitQuadMDC);
 	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
-	m_unitQuadMDC->m_objectStatus = ObjectStatus::STANDBY;
+	m_unitQuadMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMDC);
 
 	m_unitCubeMDC = addDX12MeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addUnitCube(*m_unitCubeMDC);
 	m_unitCubeMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitCubeMDC->m_meshShapeType = MeshShapeType::CUBE;
-	m_unitCubeMDC->m_objectStatus = ObjectStatus::STANDBY;
+	m_unitCubeMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMDC);
 
 	m_unitSphereMDC = addDX12MeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addUnitSphere(*m_unitSphereMDC);
 	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
-	m_unitSphereMDC->m_objectStatus = ObjectStatus::STANDBY;
+	m_unitSphereMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMDC);
 
 	m_terrainMDC = addDX12MeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addTerrain(*m_terrainMDC);
 	m_terrainMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	m_terrainMDC->m_objectStatus = ObjectStatus::STANDBY;
+	m_terrainMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMDC);
 
 	initializeDX12MeshDataComponent(m_unitLineMDC);

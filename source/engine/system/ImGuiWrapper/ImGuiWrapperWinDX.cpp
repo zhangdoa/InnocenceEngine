@@ -14,12 +14,12 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE ImGuiWrapperWinDXNS
 {
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 }
 
 bool ImGuiWrapperWinDX11::setup()
 {
-	ImGuiWrapperWinDXNS::m_objectStatus = ObjectStatus::ALIVE;
+	ImGuiWrapperWinDXNS::m_objectStatus = ObjectStatus::Activated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperWinDX setup finished.");
 
 	return true;
@@ -54,7 +54,7 @@ bool ImGuiWrapperWinDX11::terminate()
 {
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
-	ImGuiWrapperWinDXNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	ImGuiWrapperWinDXNS::m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperWinDX has been terminated.");
 
 	return true;

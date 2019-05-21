@@ -18,7 +18,7 @@ public:
 	MaterialDataComponent() {};
 	~MaterialDataComponent() {};
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	EntityID m_parentEntity;
 
 	MeshCustomMaterial m_meshCustomMaterial;

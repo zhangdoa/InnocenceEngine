@@ -16,7 +16,7 @@ INNO_PRIVATE_SCOPE WinGLWindowSystemNS
 	bool update();
 	bool terminate();
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	InitConfig m_initConfig;
 }
 
@@ -61,14 +61,14 @@ bool WinGLWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 
 	if (fakePFDID == 0)
 	{
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "WinWindowSystem: ChoosePixelFormat() failed.");
 		return false;
 	}
 
 	if (SetPixelFormat(fakeDC, fakePFDID, &fakePFD) == false)
 	{
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "WinWindowSystem: SetPixelFormat() failed.");
 		return false;
 	}
@@ -78,14 +78,14 @@ bool WinGLWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 	// Rendering Context
 	if (fakeRC == 0)
 	{
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "WinWindowSystem: wglCreateContext() failed.");
 		return false;
 	}
 
 	if (wglMakeCurrent(fakeDC, fakeRC) == false)
 	{
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "WinWindowSystem: wglMakeCurrent() failed.");
 		return false;
 	}
@@ -95,7 +95,7 @@ bool WinGLWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 	wglChoosePixelFormatARB = reinterpret_cast<PFNWGLCHOOSEPIXELFORMATARBPROC>(wglGetProcAddress("wglChoosePixelFormatARB"));
 	if (wglChoosePixelFormatARB == nullptr)
 	{
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "WinWindowSystem: wglGetProcAddress(wglChoosePixelFormatARB) failed.");
 		return false;
 	}
@@ -104,7 +104,7 @@ bool WinGLWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 	wglCreateContextAttribsARB = reinterpret_cast<PFNWGLCREATECONTEXTATTRIBSARBPROC>(wglGetProcAddress("wglCreateContextAttribsARB"));
 	if (wglCreateContextAttribsARB == nullptr)
 	{
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "WinWindowSystem: wglGetProcAddress(wglCreateContextAttribsARB) failed.");
 		return false;
 	}
@@ -154,7 +154,7 @@ bool WinGLWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 
 	if (status == false || numFormats == 0)
 	{
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "WinWindowSystem: wglChoosePixelFormatARB() failed.");
 		return false;
 	}
@@ -177,7 +177,7 @@ bool WinGLWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 
 	if (RC == NULL)
 	{
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "WinWindowSystem: wglCreateContextAttribsARB() failed.");
 		return false;
 	}
@@ -190,7 +190,7 @@ bool WinGLWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 
 	if (!wglMakeCurrent(WinWindowSystemComponent::get().m_HDC, RC))
 	{
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "WinWindowSystem: wglMakeCurrent() failed.");
 		return false;
 	}
@@ -200,7 +200,7 @@ bool WinGLWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 	wglGetExtensionsStringARB = reinterpret_cast<PFNWGLGETEXTENSIONSSTRINGARBPROC>(wglGetProcAddress("wglGetExtensionsStringARB"));
 	if (wglGetExtensionsStringARB == nullptr)
 	{
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "WinWindowSystem: wglGetProcAddress(wglGetExtensionsStringARB) failed.");
 		return false;
 	}
@@ -209,7 +209,7 @@ bool WinGLWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 	// ---------------------------------------
 	if (!gladLoadGL())
 	{
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "WinWindowSystem: Failed to initialize GLAD.");
 		return false;
 	}
@@ -221,7 +221,7 @@ bool WinGLWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 		SetFocus(WinWindowSystemComponent::get().m_hwnd);
 	}
 
-	m_objectStatus = ObjectStatus::ALIVE;
+	m_objectStatus = ObjectStatus::Activated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinGLWindowSystem setup finished.");
 
 	return true;
@@ -240,7 +240,7 @@ bool WinGLWindowSystemNS::update()
 
 bool WinGLWindowSystemNS::terminate()
 {
-	m_objectStatus = ObjectStatus::SHUTDOWN;
+	m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinGLWindowSystemNS has been terminated.");
 
 	return true;

@@ -84,7 +84,7 @@ INNO_PRIVATE_SCOPE InnoTaskSystemNS
 	bool update();
 	bool terminate();
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
 	std::atomic_bool m_isAllTasksFinished = true;
 
@@ -122,30 +122,47 @@ bool InnoTaskSystemNS::setup()
 	}
 	catch (...)
 	{
+		InnoTaskSystemNS::m_objectStatus = ObjectStatus::Suspended;
 		destroy();
 		throw;
 	}
 
-	m_objectStatus = ObjectStatus::ALIVE;
+	InnoTaskSystemNS::m_objectStatus = ObjectStatus::Created;
 	return true;
 }
 
 bool InnoTaskSystemNS::initialize()
 {
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TaskSystem has been initialized.");
-	return true;
+	if (InnoTaskSystemNS::m_objectStatus == ObjectStatus::Created)
+	{
+		InnoTaskSystemNS::m_objectStatus = ObjectStatus::Activated;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TaskSystem has been initialized.");
+		return true;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "TaskSystem: Object is not created!");
+		return false;
+	}
 }
 
 bool InnoTaskSystemNS::update()
 {
-	return true;
+	if (InnoTaskSystemNS::m_objectStatus == ObjectStatus::Activated)
+	{
+		return true;
+	}
+	else
+	{
+		InnoTaskSystemNS::m_objectStatus = ObjectStatus::Suspended;
+		return false;
+	}
 }
 
 bool InnoTaskSystemNS::terminate()
 {
-	m_objectStatus = ObjectStatus::STANDBY;
 	destroy();
-	m_objectStatus = ObjectStatus::SHUTDOWN;
+	m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TaskSystem has been terminated.");
 	return true;
 }

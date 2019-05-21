@@ -306,7 +306,7 @@ void GLVXGIPass::updateVoxelizationPass()
 
 	for (auto& l_visibleComponent : g_pCoreSystem->getGameSystem()->get<VisibleComponent>())
 	{
-		if (l_visibleComponent->m_visiblilityType == VisiblilityType::INNO_OPAQUE && l_visibleComponent->m_objectStatus == ObjectStatus::ALIVE)
+		if (l_visibleComponent->m_visiblilityType == VisiblilityType::INNO_OPAQUE && l_visibleComponent->m_objectStatus == ObjectStatus::Activated)
 		{
 			updateUniform(
 				m_voxelizationPass_uni_m,

@@ -13,7 +13,7 @@ INNO_PRIVATE_SCOPE WinVKWindowSystemNS
 	bool update();
 	bool terminate();
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	InitConfig m_initConfig;
 }
 
@@ -57,7 +57,7 @@ bool WinVKWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 
 	WinWindowSystemComponent::get().m_HDC = GetDC(WinWindowSystemComponent::get().m_hwnd);
 
-	m_objectStatus = ObjectStatus::ALIVE;
+	m_objectStatus = ObjectStatus::Activated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinVKWindowSystem setup finished.");
 
 	return true;
@@ -73,7 +73,7 @@ bool WinVKWindowSystemNS::initialize()
 
 	if (vkCreateWin32SurfaceKHR(VKRenderingSystemComponent::get().m_instance, &createInfo, NULL, &VKRenderingSystemComponent::get().m_windowSurface) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "WinVKWindowSystem: Failed to create window surface!");
 		return false;
 	}
@@ -97,7 +97,7 @@ bool WinVKWindowSystemNS::update()
 
 bool WinVKWindowSystemNS::terminate()
 {
-	m_objectStatus = ObjectStatus::SHUTDOWN;
+	m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinVKWindowSystemNS has been terminated.");
 
 	return true;

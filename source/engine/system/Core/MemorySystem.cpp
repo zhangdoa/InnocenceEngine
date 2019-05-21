@@ -87,7 +87,6 @@ public:
 		{
 			m_memo.erase(ptr);
 			return true;
-
 		}
 		else
 		{
@@ -103,7 +102,7 @@ private:
 
 INNO_PRIVATE_SCOPE InnoMemorySystemNS
 {
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
 	std::vector<ObjectPoolInstance*> m_objectPoolInstances;
 
@@ -149,6 +148,7 @@ bool InnoMemorySystemNS::fulfillChuckMarkerPool(ObjectPoolInstance* objectPoolIn
 
 bool InnoMemorySystemNS::setup()
 {
+	InnoMemorySystemNS::m_objectStatus = ObjectStatus::Created;
 	return true;
 }
 
@@ -159,19 +159,35 @@ bool InnoMemorySystem::setup()
 
 bool InnoMemorySystem::initialize()
 {
-	InnoMemorySystemNS::m_objectStatus = ObjectStatus::ALIVE;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MemorySystem has been initialized.");
-	return true;
+	if (InnoMemorySystemNS::m_objectStatus == ObjectStatus::Created)
+	{
+		InnoMemorySystemNS::m_objectStatus = ObjectStatus::Activated;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MemorySystem has been initialized.");
+		return true;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "MemorySystem: Object is not created!");
+		return false;
+	}
 }
 
 bool InnoMemorySystem::update()
 {
-	return true;
+	if (InnoMemorySystemNS::m_objectStatus == ObjectStatus::Activated)
+	{
+		return true;
+	}
+	else
+	{
+		InnoMemorySystemNS::m_objectStatus == ObjectStatus::Suspended;
+		return false;
+	}
 }
 
 bool InnoMemorySystem::terminate()
 {
-	InnoMemorySystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	InnoMemorySystemNS::m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MemorySystem has been terminated.");
 	return true;
 }

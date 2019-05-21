@@ -44,6 +44,7 @@ g_pCoreSystem->getTestSystem()->measure(std::string(#className), l_task); \
 #define subSystemUpdate( className ) \
 if (!g_pCoreSystem->get##className()->update()) \
 { \
+m_objectStatus = ObjectStatus::Suspended; \
 return false; \
 }
 #endif
@@ -80,7 +81,7 @@ INNO_PRIVATE_SCOPE InnoCoreSystemNS
 	std::unique_ptr<IInputSystem> m_InputSystem;
 	std::unique_ptr<IVisionSystem> m_VisionSystem;
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 }
 
 bool InnoCoreSystemNS::createSubSystemInstance()
@@ -127,7 +128,7 @@ bool InnoCoreSystemNS::setup(void* appHook, void* extraHook, char* pScmdline)
 	subSystemSetup(PhysicsSystem);
 	subSystemSetup(InputSystem);
 
-	m_objectStatus = ObjectStatus::STANDBY;
+	m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "Engine setup finished.");
 	return true;
 }
@@ -148,7 +149,7 @@ bool InnoCoreSystemNS::initialize()
 	subSystemInit(InputSystem);
 	subSystemInit(VisionSystem);
 
-	m_objectStatus = ObjectStatus::ALIVE;
+	m_objectStatus = ObjectStatus::Activated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "Engine has been initialized.");
 	return true;
 }
@@ -188,7 +189,7 @@ bool InnoCoreSystemNS::update()
 		g_pCoreSystem->getTestSystem()->measure("VisionSystem", l_task);
 	}
 #else
-	if (g_pCoreSystem->getVisionSystem()->getStatus() == ObjectStatus::ALIVE)
+	if (g_pCoreSystem->getVisionSystem()->getStatus() == ObjectStatus::Activated)
 	{
 		if (!g_pCoreSystem->getVisionSystem()->update())
 		{
@@ -198,7 +199,7 @@ bool InnoCoreSystemNS::update()
 	}
 	else
 	{
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Suspended;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "Engine is stand-by.");
 		return false;
 	}
@@ -223,7 +224,7 @@ bool InnoCoreSystemNS::terminate()
 	subSystemTerm(LogSystem);
 	subSystemTerm(TimeSystem);
 
-	m_objectStatus = ObjectStatus::SHUTDOWN;
+	m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "Engine has been terminated.");
 
 	return true;

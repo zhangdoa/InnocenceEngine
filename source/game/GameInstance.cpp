@@ -9,7 +9,7 @@ namespace PlayerComponentCollection
 	bool setup();
 	bool initialize();
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	EntityID m_cameraParentEntity;
 
 	TransformComponent* m_cameraTransformComponent;
@@ -186,7 +186,7 @@ namespace GameInstanceNS
 	std::function<void()> f_sceneLoadingFinishCallback;
 	std::function<void()> f_testFunc;
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 }
 
 bool GameInstanceNS::setupReferenceSpheres()
@@ -442,7 +442,7 @@ bool GameInstanceNS::setup()
 		setupTransparentSpheres();
 		setupPointLights();
 
-		m_objectStatus = ObjectStatus::ALIVE;
+		m_objectStatus = ObjectStatus::Activated;
 	};
 
 	g_pCoreSystem->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
@@ -502,7 +502,7 @@ INNO_GAME_EXPORT bool GameInstance::update()
 
 INNO_GAME_EXPORT bool GameInstance::terminate()
 {
-	GameInstanceNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	GameInstanceNS::m_objectStatus = ObjectStatus::Terminated;
 	return true;
 }
 
@@ -518,7 +518,7 @@ INNO_GAME_EXPORT std::string GameInstance::getGameName()
 
 bool GameInstanceNS::update()
 {
-	if (m_objectStatus == ObjectStatus::ALIVE)
+	if (m_objectStatus == ObjectStatus::Activated)
 	{
 		seed += 0.02f;
 

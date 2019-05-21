@@ -22,7 +22,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 
 	bool loadAssets();
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
 	std::vector<InnoFuture<void>> m_asyncTask;
 	std::vector<std::function<void()>*> m_sceneLoadingStartCallbacks;
@@ -114,7 +114,7 @@ bool InnoFileSystem::setup()
 {
 	InnoFileSystemNS::setup();
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: current working directory is " + getWorkingDirectory());
-	InnoFileSystemNS::m_objectStatus = ObjectStatus::ALIVE;
+	InnoFileSystemNS::m_objectStatus = ObjectStatus::Activated;
 	return true;
 }
 
@@ -138,7 +138,7 @@ bool InnoFileSystem::update()
 
 bool InnoFileSystem::terminate()
 {
-	InnoFileSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	InnoFileSystemNS::m_objectStatus = ObjectStatus::Terminated;
 
 	return true;
 }
@@ -296,7 +296,7 @@ bool InnoFileSystem::addCPPClassFiles(const CPPClassDesc & desc)
 
 	l_headerFile << std::endl;
 	l_headerFile << "private:" << std::endl;
-	l_headerFile << "  ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;" << std::endl;
+	l_headerFile << "  ObjectStatus m_objectStatus = ObjectStatus::Terminated;" << std::endl;
 	l_headerFile << "};" << std::endl;
 
 	l_headerFile.close();

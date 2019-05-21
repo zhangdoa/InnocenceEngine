@@ -38,12 +38,12 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE ImGuiWrapperWinGLNS
 {
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 }
 
 bool ImGuiWrapperWinGL::setup()
 {
-	ImGuiWrapperWinGLNS::m_objectStatus = ObjectStatus::ALIVE;
+	ImGuiWrapperWinGLNS::m_objectStatus = ObjectStatus::Activated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperWinGL setup finished.");
 
 	return true;
@@ -79,7 +79,7 @@ bool ImGuiWrapperWinGL::terminate()
 {
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplWin32_Shutdown();
-	ImGuiWrapperWinGLNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	ImGuiWrapperWinGLNS::m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperWinGL has been terminated.");
 
 	return true;

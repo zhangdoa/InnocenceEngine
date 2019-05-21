@@ -13,7 +13,7 @@ INNO_PRIVATE_SCOPE WinDXWindowSystemNS
 	bool update();
 	bool terminate();
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	InitConfig m_initConfig;
 }
 
@@ -65,7 +65,7 @@ bool WinDXWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 		SetFocus(WinWindowSystemComponent::get().m_hwnd);
 	}
 
-	m_objectStatus = ObjectStatus::ALIVE;
+	m_objectStatus = ObjectStatus::Activated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinDXWindowSystem setup finished.");
 
 	return true;
@@ -84,7 +84,7 @@ bool WinDXWindowSystemNS::update()
 
 bool WinDXWindowSystemNS::terminate()
 {
-	m_objectStatus = ObjectStatus::SHUTDOWN;
+	m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinGLWindowSystemNS has been terminated.");
 
 	return true;

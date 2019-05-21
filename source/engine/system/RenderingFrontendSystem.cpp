@@ -7,7 +7,7 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE InnoRenderingFrontendSystemNS
 {
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
 	IRenderingBackendSystem* m_renderingBackendSystem;
 
@@ -150,7 +150,7 @@ bool InnoRenderingFrontendSystemNS::setup(IRenderingBackendSystem* renderingBack
 bool InnoRenderingFrontendSystemNS::initialize()
 {
 	initializeHaltonSampler();
-	m_objectStatus = ObjectStatus::ALIVE;
+	m_objectStatus = ObjectStatus::Activated;
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "RenderingFrontendSystem has been initialized.");
 
@@ -286,7 +286,7 @@ bool InnoRenderingFrontendSystemNS::updateMeshData()
 		auto l_cullingData = m_cullingDataPack[i];
 		if (l_cullingData.mesh != nullptr)
 		{
-			if (l_cullingData.mesh->m_objectStatus == ObjectStatus::ALIVE)
+			if (l_cullingData.mesh->m_objectStatus == ObjectStatus::Activated)
 			{
 				if (l_cullingData.material != nullptr)
 				{
@@ -416,7 +416,7 @@ bool InnoRenderingFrontendSystemNS::gatherStaticMeshData()
 	for (auto visibleComponent : g_pCoreSystem->getGameSystem()->get<VisibleComponent>())
 	{
 		if (visibleComponent->m_visiblilityType == VisiblilityType::INNO_OPAQUE
-			&& visibleComponent->m_objectStatus == ObjectStatus::ALIVE
+			&& visibleComponent->m_objectStatus == ObjectStatus::Activated
 			&& visibleComponent->m_meshUsageType == MeshUsageType::STATIC
 			)
 		{
@@ -497,7 +497,7 @@ bool InnoRenderingFrontendSystemNS::update()
 
 bool InnoRenderingFrontendSystemNS::terminate()
 {
-	m_objectStatus = ObjectStatus::SHUTDOWN;
+	m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "RenderingFrontendSystem has been terminated.");
 	return true;
 }

@@ -50,13 +50,13 @@ bool GLDebuggerPass::initialize()
 
 		m_pickedID = (unsigned int)l_pixelValue.z;
 
-		auto l_visibleCompoents = g_pCoreSystem->getGameSystem()->get<VisibleComponent>();
+		auto l_visibleComponents = g_pCoreSystem->getGameSystem()->get<VisibleComponent>();
 		auto l_findResult =
-			std::find_if(l_visibleCompoents.begin(), l_visibleCompoents.end(), [&](auto& val) -> bool {
+			std::find_if(l_visibleComponents.begin(), l_visibleComponents.end(), [&](auto& val) -> bool {
 			return val->m_UUID == m_pickedID;
 		}
 		);
-		if (l_findResult != l_visibleCompoents.end())
+		if (l_findResult != l_visibleComponents.end())
 		{
 			m_pickedVisibleComponent = *l_findResult;
 		}
@@ -238,6 +238,17 @@ bool GLDebuggerPass::drawDebugObjects()
 			updateUniform(3, l_debuggerPassGPUData.m);
 			drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_debuggerPassGPUData.MDC));
 			l_copy.pop();
+		}
+	}
+
+	if (m_pickedVisibleComponent)
+	{
+		auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(m_pickedVisibleComponent->m_parentEntity);
+
+		for (auto i : m_pickedVisibleComponent->m_modelMap)
+		{
+			updateUniform(3, l_transformComponent->m_globalTransformMatrix.m_transformationMat);
+			drawMesh(reinterpret_cast<GLMeshDataComponent*>(i.first));
 		}
 	}
 

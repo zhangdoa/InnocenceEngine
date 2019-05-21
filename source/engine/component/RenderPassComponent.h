@@ -8,7 +8,7 @@ public:
 	RenderPassComponent() {};
 	~RenderPassComponent() {};
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	EntityID m_parentEntity;
 	FixedSizeString<128> m_name;
 	RenderPassDesc m_renderPassDesc = {};

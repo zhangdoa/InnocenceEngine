@@ -249,7 +249,7 @@ GLShaderProgramComponent * GLRenderingSystemNS::addGLShaderProgramComponent(cons
 
 bool GLRenderingSystemNS::initializeGLMeshDataComponent(GLMeshDataComponent* rhs)
 {
-	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
+	if (rhs->m_objectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
@@ -257,7 +257,7 @@ bool GLRenderingSystemNS::initializeGLMeshDataComponent(GLMeshDataComponent* rhs
 	{
 		summitGPUData(rhs);
 
-		rhs->m_objectStatus = ObjectStatus::ALIVE;
+		rhs->m_objectStatus = ObjectStatus::Activated;
 
 		return true;
 	}
@@ -265,7 +265,7 @@ bool GLRenderingSystemNS::initializeGLMeshDataComponent(GLMeshDataComponent* rhs
 
 bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponent * rhs)
 {
-	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
+	if (rhs->m_objectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
@@ -282,7 +282,7 @@ bool GLRenderingSystemNS::initializeGLTextureDataComponent(GLTextureDataComponen
 			{
 				summitGPUData(rhs);
 
-				rhs->m_objectStatus = ObjectStatus::ALIVE;
+				rhs->m_objectStatus = ObjectStatus::Activated;
 
 				if (rhs->m_textureDataDesc.usageType != TextureUsageType::COLOR_ATTACHMENT)
 				{
@@ -432,7 +432,7 @@ bool GLRenderingSystemNS::initializeGLShaderProgramComponent(GLShaderProgramComp
 		addShader(rhs->m_program, rhs->m_CSID, GL_COMPUTE_SHADER, ShaderFilePaths.m_CSPath);
 	}
 
-	rhs->m_objectStatus = ObjectStatus::ALIVE;
+	rhs->m_objectStatus = ObjectStatus::Activated;
 	return rhs;
 }
 
@@ -531,7 +531,7 @@ bool GLRenderingSystemNS::summitGPUData(GLMeshDataComponent * rhs)
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingSystem: Index Buffer Object " + std::to_string(rhs->m_IBO) + " is initialized.");
 
-	rhs->m_objectStatus = ObjectStatus::ALIVE;
+	rhs->m_objectStatus = ObjectStatus::Activated;
 
 	m_initializedGLMDC.emplace(rhs->m_parentEntity, rhs);
 
@@ -544,7 +544,7 @@ bool GLRenderingSystemNS::summitGPUData(GLTextureDataComponent * rhs)
 
 	generateTO(rhs->m_TO, rhs->m_GLTextureDataDesc, rhs->m_textureDataDesc.width, rhs->m_textureDataDesc.height, rhs->m_textureDataDesc.depth, rhs->m_textureData);
 
-	rhs->m_objectStatus = ObjectStatus::ALIVE;
+	rhs->m_objectStatus = ObjectStatus::Activated;
 
 	m_initializedGLTDC.emplace(rhs->m_parentEntity, rhs);
 

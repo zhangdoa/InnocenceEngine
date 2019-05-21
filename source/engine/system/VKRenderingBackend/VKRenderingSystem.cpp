@@ -71,7 +71,7 @@ INNO_PRIVATE_SCOPE VKRenderingSystemNS
 	bool createSwapChainCommandBuffers();
 	bool createSyncPrimitives();
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
 	ThreadSafeUnorderedMap<EntityID, VKMeshDataComponent*> m_meshMap;
 	ThreadSafeUnorderedMap<EntityID, MaterialDataComponent*> m_materialMap;
@@ -112,7 +112,7 @@ bool VKRenderingSystemNS::createVkInstance()
 {
 	// check support for validation layer
 	if (VKRenderingSystemComponent::get().m_enableValidationLayers && !checkValidationLayerSupport()) {
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Validation layers requested, but not available!");
 		return false;
 	}
@@ -149,7 +149,7 @@ bool VKRenderingSystemNS::createVkInstance()
 	// create Vulkan instance
 	if (vkCreateInstance(&l_createInfo, nullptr, &VKRenderingSystemComponent::get().m_instance) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkInstance!");
 		return false;
 	}
@@ -170,7 +170,7 @@ bool VKRenderingSystemNS::createDebugCallback()
 
 		if (createDebugUtilsMessengerEXT(VKRenderingSystemComponent::get().m_instance, &l_createInfo, nullptr, &VKRenderingSystemComponent::get().m_messengerCallback) != VK_SUCCESS)
 		{
-			m_objectStatus = ObjectStatus::STANDBY;
+			m_objectStatus = ObjectStatus::Created;
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create DebugUtilsMessenger!");
 			return false;
 		}
@@ -191,7 +191,7 @@ bool VKRenderingSystemNS::createPysicalDevice()
 	vkEnumeratePhysicalDevices(VKRenderingSystemComponent::get().m_instance, &l_deviceCount, nullptr);
 
 	if (l_deviceCount == 0) {
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to find GPUs with Vulkan support!");
 		return false;
 	}
@@ -211,7 +211,7 @@ bool VKRenderingSystemNS::createPysicalDevice()
 
 	if (VKRenderingSystemComponent::get().m_physicalDevice == VK_NULL_HANDLE)
 	{
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to find a suitable GPU!");
 		return false;
 	}
@@ -264,7 +264,7 @@ bool VKRenderingSystemNS::createLogicalDevice()
 
 	if (vkCreateDevice(VKRenderingSystemComponent::get().m_physicalDevice, &l_createInfo, nullptr, &VKRenderingSystemComponent::get().m_device) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkDevice!");
 		return false;
 	}
@@ -295,7 +295,7 @@ bool VKRenderingSystemNS::createTextureSamplers()
 
 	if (vkCreateSampler(VKRenderingSystemComponent::get().m_device, &samplerInfo, nullptr, &VKRenderingSystemComponent::get().m_deferredRTSampler) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkSampler for deferred pass render target sampling!");
 		return false;
 	}
@@ -315,7 +315,7 @@ bool VKRenderingSystemNS::createCommandPool()
 
 	if (vkCreateCommandPool(VKRenderingSystemComponent::get().m_device, &poolInfo, nullptr, &VKRenderingSystemComponent::get().m_commandPool) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create CommandPool!");
 		return false;
 	}
@@ -372,7 +372,7 @@ bool VKRenderingSystemNS::createSwapChain()
 
 	if (vkCreateSwapchainKHR(VKRenderingSystemComponent::get().m_device, &l_createInfo, nullptr, &VKRenderingSystemComponent::get().m_swapChain) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::STANDBY;
+		m_objectStatus = ObjectStatus::Created;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingSystem: Failed to create VkSwapChainKHR!");
 		return false;
 	}
@@ -652,7 +652,7 @@ bool VKRenderingSystemNS::setup()
 	result = result && createVkInstance();
 	result = result && createDebugCallback();
 
-	m_objectStatus = ObjectStatus::ALIVE;
+	m_objectStatus = ObjectStatus::Activated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem setup finished.");
 	return result;
 }
@@ -722,7 +722,7 @@ void VKRenderingSystemNS::loadDefaultAssets()
 	g_pCoreSystem->getAssetSystem()->addUnitLine(*m_unitLineMDC);
 	m_unitLineMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	m_unitLineMDC->m_meshShapeType = MeshShapeType::LINE;
-	m_unitLineMDC->m_objectStatus = ObjectStatus::STANDBY;
+	m_unitLineMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMDC);
 
 	m_unitQuadMDC = addVKMeshDataComponent();
@@ -734,27 +734,27 @@ void VKRenderingSystemNS::loadDefaultAssets()
 	}
 	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
-	m_unitQuadMDC->m_objectStatus = ObjectStatus::STANDBY;
+	m_unitQuadMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMDC);
 
 	m_unitCubeMDC = addVKMeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addUnitCube(*m_unitCubeMDC);
 	m_unitCubeMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitCubeMDC->m_meshShapeType = MeshShapeType::CUBE;
-	m_unitCubeMDC->m_objectStatus = ObjectStatus::STANDBY;
+	m_unitCubeMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMDC);
 
 	m_unitSphereMDC = addVKMeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addUnitSphere(*m_unitSphereMDC);
 	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
-	m_unitSphereMDC->m_objectStatus = ObjectStatus::STANDBY;
+	m_unitSphereMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMDC);
 
 	m_terrainMDC = addVKMeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addTerrain(*m_terrainMDC);
 	m_terrainMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	m_terrainMDC->m_objectStatus = ObjectStatus::STANDBY;
+	m_terrainMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMDC);
 
 	initializeVKMeshDataComponent(m_unitLineMDC);
@@ -941,7 +941,7 @@ bool VKRenderingSystemNS::terminate()
 
 	vkDestroyInstance(VKRenderingSystemComponent::get().m_instance, nullptr);
 
-	VKRenderingSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	VKRenderingSystemNS::m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingSystem has been terminated.");
 
 	return true;

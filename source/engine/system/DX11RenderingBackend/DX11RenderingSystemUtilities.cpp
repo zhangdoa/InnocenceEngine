@@ -464,7 +464,7 @@ bool DX11RenderingSystemNS::initializeDX11RenderPassComponent(DX11RenderPassComp
 
 	l_result &= setupPipeline(DXRPC);
 
-	DXRPC->m_objectStatus = ObjectStatus::ALIVE;
+	DXRPC->m_objectStatus = ObjectStatus::Activated;
 
 	return l_result;
 }
@@ -626,7 +626,7 @@ bool DX11RenderingSystemNS::setupPipeline(DX11RenderPassComponent* DXRPC)
 
 bool DX11RenderingSystemNS::initializeDX11MeshDataComponent(DX11MeshDataComponent* rhs)
 {
-	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
+	if (rhs->m_objectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
@@ -634,7 +634,7 @@ bool DX11RenderingSystemNS::initializeDX11MeshDataComponent(DX11MeshDataComponen
 	{
 		submitGPUData(rhs);
 
-		rhs->m_objectStatus = ObjectStatus::ALIVE;
+		rhs->m_objectStatus = ObjectStatus::Activated;
 
 		return true;
 	}
@@ -642,7 +642,7 @@ bool DX11RenderingSystemNS::initializeDX11MeshDataComponent(DX11MeshDataComponen
 
 bool DX11RenderingSystemNS::initializeDX11TextureDataComponent(DX11TextureDataComponent * rhs)
 {
-	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
+	if (rhs->m_objectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
@@ -659,7 +659,7 @@ bool DX11RenderingSystemNS::initializeDX11TextureDataComponent(DX11TextureDataCo
 			{
 				submitGPUData(rhs);
 
-				rhs->m_objectStatus = ObjectStatus::ALIVE;
+				rhs->m_objectStatus = ObjectStatus::Activated;
 
 				if (rhs->m_textureDataDesc.usageType != TextureUsageType::COLOR_ATTACHMENT)
 				{
@@ -734,7 +734,7 @@ bool DX11RenderingSystemNS::submitGPUData(DX11MeshDataComponent * rhs)
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX11RenderingSystem: index Buffer: " + InnoUtility::pointerToString(rhs->m_indexBuffer) + " is initialized.");
 
-	rhs->m_objectStatus = ObjectStatus::ALIVE;
+	rhs->m_objectStatus = ObjectStatus::Activated;
 
 	m_initializedDXMDC.emplace(rhs->m_parentEntity, rhs);
 
@@ -1044,7 +1044,7 @@ bool DX11RenderingSystemNS::submitGPUData(DX11TextureDataComponent * rhs)
 		}
 	}
 
-	rhs->m_objectStatus = ObjectStatus::ALIVE;
+	rhs->m_objectStatus = ObjectStatus::Activated;
 
 	m_initializedDXTDC.emplace(rhs->m_parentEntity, rhs);
 

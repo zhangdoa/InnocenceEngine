@@ -4,7 +4,7 @@
 
 namespace InnoApplication
 {
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
 	std::unique_ptr<InnoCoreSystem> m_pCoreSystem;
 	std::unique_ptr<GameInstance> m_pGameInstance;
@@ -34,6 +34,7 @@ bool InnoApplication::setup(void* appHook, void* extraHook, char* pScmdline)
 		return false;
 	}
 
+	m_objectStatus = ObjectStatus::Created;
 	return true;
 }
 
@@ -49,7 +50,7 @@ bool InnoApplication::initialize()
 		return false;
 	}
 
-	m_objectStatus = ObjectStatus::ALIVE;
+	m_objectStatus = ObjectStatus::Activated;
 	return true;
 }
 
@@ -57,10 +58,12 @@ bool InnoApplication::update()
 {
 	if (!m_pGameInstance->update())
 	{
+		m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 	if (!m_pCoreSystem->update())
 	{
+		m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 	return true;
@@ -76,7 +79,7 @@ bool InnoApplication::terminate()
 	{
 		return false;
 	}
-	m_objectStatus = ObjectStatus::SHUTDOWN;
+	m_objectStatus = ObjectStatus::Terminated;
 	return true;
 }
 

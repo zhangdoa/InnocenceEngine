@@ -8,7 +8,7 @@ public:
 	DX11ShaderProgramComponent() {};
 	~DX11ShaderProgramComponent() {};
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	EntityID m_parentEntity;
 
 	ID3D11VertexShader* m_vertexShader = 0;

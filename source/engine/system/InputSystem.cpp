@@ -25,7 +25,7 @@ INNO_PRIVATE_SCOPE InnoInputSystemNS
 	void mousePositionCallback(float mouseXPos, float mouseYPos);
 	void scrollCallback(float xoffset, float yoffset);
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
 	const InputConfig m_inputConfig = { 256, 5 };
 
@@ -53,7 +53,7 @@ bool InnoInputSystemNS::initialize()
 		m_buttonStatus.emplace(i, ButtonStatus::RELEASED);
 	}
 
-	m_objectStatus = ObjectStatus::ALIVE;
+	m_objectStatus = ObjectStatus::Activated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "InputSystem has been initialized.");
 
 	return true;
@@ -106,7 +106,7 @@ bool InnoInputSystemNS::update()
 
 bool InnoInputSystemNS::terminate()
 {
-	m_objectStatus = ObjectStatus::SHUTDOWN;
+	m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "InputSystem has been terminated.");
 
 	return true;

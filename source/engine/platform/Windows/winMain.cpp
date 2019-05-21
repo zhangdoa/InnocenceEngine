@@ -20,7 +20,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	{
 		return 0;
 	}
-	while (InnoApplication::getStatus() == ObjectStatus::ALIVE)
+	while (InnoApplication::getStatus() == ObjectStatus::Activated)
 	{
 		if (!InnoApplication::update())
 		{

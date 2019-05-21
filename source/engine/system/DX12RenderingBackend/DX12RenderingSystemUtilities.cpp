@@ -324,7 +324,7 @@ bool DX12RenderingSystemNS::initializeDX12RenderPassComponent(DX12RenderPassComp
 	l_result &= createCommandLists(DXRPC);
 	l_result &= createSyncPrimitives(DXRPC);
 
-	DXRPC->m_objectStatus = ObjectStatus::ALIVE;
+	DXRPC->m_objectStatus = ObjectStatus::Activated;
 
 	return l_result;
 }
@@ -705,7 +705,7 @@ bool DX12RenderingSystemNS::createSyncPrimitives(DX12RenderPassComponent* DXRPC)
 
 bool DX12RenderingSystemNS::initializeDX12MeshDataComponent(DX12MeshDataComponent* rhs)
 {
-	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
+	if (rhs->m_objectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
@@ -713,7 +713,7 @@ bool DX12RenderingSystemNS::initializeDX12MeshDataComponent(DX12MeshDataComponen
 	{
 		summitGPUData(rhs);
 
-		rhs->m_objectStatus = ObjectStatus::ALIVE;
+		rhs->m_objectStatus = ObjectStatus::Activated;
 
 		return true;
 	}
@@ -721,7 +721,7 @@ bool DX12RenderingSystemNS::initializeDX12MeshDataComponent(DX12MeshDataComponen
 
 bool DX12RenderingSystemNS::initializeDX12TextureDataComponent(DX12TextureDataComponent * rhs)
 {
-	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
+	if (rhs->m_objectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
@@ -738,7 +738,7 @@ bool DX12RenderingSystemNS::initializeDX12TextureDataComponent(DX12TextureDataCo
 			{
 				summitGPUData(rhs);
 
-				rhs->m_objectStatus = ObjectStatus::ALIVE;
+				rhs->m_objectStatus = ObjectStatus::Activated;
 
 				if (rhs->m_textureDataDesc.usageType != TextureUsageType::COLOR_ATTACHMENT)
 				{
@@ -831,7 +831,7 @@ bool DX12RenderingSystemNS::summitGPUData(DX12MeshDataComponent * rhs)
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingSystem: IBO " + InnoUtility::pointerToString(rhs->m_indexBuffer) + " is initialized.");
 
-	rhs->m_objectStatus = ObjectStatus::ALIVE;
+	rhs->m_objectStatus = ObjectStatus::Activated;
 
 	m_initializedDXMDC.emplace(rhs->m_parentEntity, rhs);
 
@@ -1193,7 +1193,7 @@ bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingSystem: SRV " + InnoUtility::pointerToString(rhs->m_SRV) + " is initialized.");
 
-	rhs->m_objectStatus = ObjectStatus::ALIVE;
+	rhs->m_objectStatus = ObjectStatus::Activated;
 
 	m_initializedDXTDC.emplace(rhs->m_parentEntity, rhs);
 

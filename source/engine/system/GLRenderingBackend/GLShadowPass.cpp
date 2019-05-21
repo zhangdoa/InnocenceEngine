@@ -31,8 +31,8 @@ void GLShadowPass::initialize()
 	l_renderPassDesc.RTDesc.samplerType = TextureSamplerType::SAMPLER_2D;
 	l_renderPassDesc.RTDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
 	l_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
-	l_renderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::NEAREST;
-	l_renderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::NEAREST;
+	l_renderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::LINEAR;
+	l_renderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::LINEAR;
 	l_renderPassDesc.RTDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_BORDER;
 	l_renderPassDesc.RTDesc.width = 4096;
 	l_renderPassDesc.RTDesc.height = 4096;
@@ -51,8 +51,8 @@ void GLShadowPass::initialize()
 	l_renderPassDesc.RTDesc.samplerType = TextureSamplerType::CUBEMAP;
 	l_renderPassDesc.RTDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
 	l_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
-	l_renderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::NEAREST;
-	l_renderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::NEAREST;
+	l_renderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::LINEAR;
+	l_renderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::LINEAR;
 	l_renderPassDesc.RTDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_BORDER;
 	l_renderPassDesc.RTDesc.width = 4096;
 	l_renderPassDesc.RTDesc.height = 4096;

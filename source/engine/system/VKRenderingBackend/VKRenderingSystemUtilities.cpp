@@ -789,7 +789,7 @@ bool VKRenderingSystemNS::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkD
 
 bool VKRenderingSystemNS::initializeVKMeshDataComponent(VKMeshDataComponent* rhs)
 {
-	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
+	if (rhs->m_objectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
@@ -797,7 +797,7 @@ bool VKRenderingSystemNS::initializeVKMeshDataComponent(VKMeshDataComponent* rhs
 	{
 		submitGPUData(rhs);
 
-		rhs->m_objectStatus = ObjectStatus::ALIVE;
+		rhs->m_objectStatus = ObjectStatus::Activated;
 
 		return true;
 	}
@@ -808,7 +808,7 @@ bool VKRenderingSystemNS::submitGPUData(VKMeshDataComponent * rhs)
 	createVBO(rhs->m_vertices, rhs->m_VBO);
 	createIBO(rhs->m_indices, rhs->m_IBO);
 
-	rhs->m_objectStatus = ObjectStatus::ALIVE;
+	rhs->m_objectStatus = ObjectStatus::Activated;
 
 	m_initializedVKMDC.emplace(rhs->m_parentEntity, rhs);
 
@@ -867,7 +867,7 @@ bool  VKRenderingSystemNS::createIBO(const std::vector<Index>& indices, VkBuffer
 
 bool VKRenderingSystemNS::initializeVKTextureDataComponent(VKTextureDataComponent * rhs)
 {
-	if (rhs->m_objectStatus == ObjectStatus::ALIVE)
+	if (rhs->m_objectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
@@ -884,7 +884,7 @@ bool VKRenderingSystemNS::initializeVKTextureDataComponent(VKTextureDataComponen
 			{
 				submitGPUData(rhs);
 
-				rhs->m_objectStatus = ObjectStatus::ALIVE;
+				rhs->m_objectStatus = ObjectStatus::Activated;
 
 				if (rhs->m_textureDataDesc.usageType != TextureUsageType::COLOR_ATTACHMENT)
 				{
@@ -1001,7 +1001,7 @@ bool VKRenderingSystemNS::submitGPUData(VKTextureDataComponent * rhs)
 
 	createImageView(rhs);
 
-	rhs->m_objectStatus = ObjectStatus::ALIVE;
+	rhs->m_objectStatus = ObjectStatus::Activated;
 
 	m_initializedVKTDC.emplace(rhs->m_parentEntity, rhs);
 

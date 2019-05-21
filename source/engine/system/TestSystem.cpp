@@ -11,7 +11,7 @@ INNO_PRIVATE_SCOPE InnoTestSystemNS
 	bool update();
 	bool terminate();
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 }
 
 bool InnoTestSystemNS::setup()
@@ -21,7 +21,7 @@ bool InnoTestSystemNS::setup()
 
 bool InnoTestSystemNS::initialize()
 {
-	m_objectStatus = ObjectStatus::ALIVE;
+	m_objectStatus = ObjectStatus::Activated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TestSystem has been initialized.");
 	return true;
 }
@@ -33,7 +33,7 @@ bool InnoTestSystemNS::update()
 
 bool InnoTestSystemNS::terminate()
 {
-	m_objectStatus = ObjectStatus::SHUTDOWN;
+	m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TestSystem has been terminated.");
 
 	return true;

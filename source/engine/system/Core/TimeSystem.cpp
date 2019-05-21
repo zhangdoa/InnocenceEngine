@@ -5,7 +5,7 @@ INNO_PRIVATE_SCOPE InnoTimeSystemNS
 	const long long getCurrentTimeInMillSec();
 	const std::tuple<int, unsigned, unsigned> getCivilFromDays(int z);
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
 	const double m_frameTime = (1.0 / 120.0) * 1000.0 * 1000.0;
 	long long m_gameStartTime;
@@ -43,36 +43,47 @@ const long long InnoTimeSystemNS::getCurrentTimeInMillSec()
 bool InnoTimeSystem::setup()
 {
 	InnoTimeSystemNS::m_gameStartTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	InnoTimeSystemNS::m_objectStatus = ObjectStatus::Created;
 	return true;
 }
 
 bool InnoTimeSystem::initialize()
 {
-	InnoTimeSystemNS::m_objectStatus = ObjectStatus::ALIVE;
-	return true;
+	if (InnoTimeSystemNS::m_objectStatus == ObjectStatus::Created)
+	{
+		InnoTimeSystemNS::m_objectStatus = ObjectStatus::Activated;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 bool InnoTimeSystem::update()
 {
-	InnoTimeSystemNS::m_updateStartTime = std::chrono::high_resolution_clock::now();
-	InnoTimeSystemNS::m_deltaTime = (std::chrono::high_resolution_clock::now() - InnoTimeSystemNS::m_updateStartTime).count();
-
-	InnoTimeSystemNS::m_unprocessedTime += InnoTimeSystemNS::m_deltaTime;
-	if (InnoTimeSystemNS::m_unprocessedTime >= InnoTimeSystemNS::m_frameTime)
+	if (InnoTimeSystemNS::m_objectStatus == ObjectStatus::Activated)
 	{
-		InnoTimeSystemNS::m_unprocessedTime -= InnoTimeSystemNS::m_frameTime;
-		InnoTimeSystemNS::m_objectStatus = ObjectStatus::ALIVE;
+		InnoTimeSystemNS::m_updateStartTime = std::chrono::high_resolution_clock::now();
+		InnoTimeSystemNS::m_deltaTime = (std::chrono::high_resolution_clock::now() - InnoTimeSystemNS::m_updateStartTime).count();
+
+		InnoTimeSystemNS::m_unprocessedTime += InnoTimeSystemNS::m_deltaTime;
+		if (InnoTimeSystemNS::m_unprocessedTime >= InnoTimeSystemNS::m_frameTime)
+		{
+			InnoTimeSystemNS::m_unprocessedTime -= InnoTimeSystemNS::m_frameTime;
+		}
+		return true;
 	}
 	else
 	{
-		InnoTimeSystemNS::m_objectStatus = ObjectStatus::STANDBY;
+		InnoTimeSystemNS::m_objectStatus = ObjectStatus::Suspended;
+		return false;
 	}
-	return true;
 }
 
 bool InnoTimeSystem::terminate()
 {
-	InnoTimeSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	InnoTimeSystemNS::m_objectStatus = ObjectStatus::Terminated;
 	return true;
 }
 

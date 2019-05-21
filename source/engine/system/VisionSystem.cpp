@@ -44,7 +44,7 @@ INNO_PRIVATE_SCOPE InnoVisionSystemNS
 	std::atomic<bool> m_isRendering = false;
 	std::atomic<bool> m_allowRender = false;
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	InitConfig m_initConfig;
 
 	InitConfig parseInitConfig(const std::string& arg);
@@ -221,23 +221,23 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::setup(void* appHook, void* extraHook, 
 
 	if (!InnoVisionSystemNS::setupWindow(appHook, extraHook))
 	{
-		InnoVisionSystemNS::m_objectStatus = ObjectStatus::STANDBY;
+		InnoVisionSystemNS::m_objectStatus = ObjectStatus::Created;
 		return false;
 	};
 
 	if (!InnoVisionSystemNS::setupRendering())
 	{
-		InnoVisionSystemNS::m_objectStatus = ObjectStatus::STANDBY;
+		InnoVisionSystemNS::m_objectStatus = ObjectStatus::Created;
 		return false;
 	}
 	if (!InnoVisionSystemNS::setupGui())
 	{
-		InnoVisionSystemNS::m_objectStatus = ObjectStatus::STANDBY;
+		InnoVisionSystemNS::m_objectStatus = ObjectStatus::Created;
 		return false;
 	}
 
 	return true;
-	}
+}
 
 bool InnoVisionSystemNS::setupWindow(void* hInstance, void* hwnd)
 {
@@ -282,7 +282,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::initialize()
 
 	ImGuiWrapper::get().initialize();
 
-	InnoVisionSystemNS::m_objectStatus = ObjectStatus::ALIVE;
+	InnoVisionSystemNS::m_objectStatus = ObjectStatus::Activated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VisionSystem has been initialized.");
 	return true;
 }
@@ -301,7 +301,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 		InnoVisionSystemNS::m_allowRender = true;
 	}
 
-	if (InnoVisionSystemNS::m_windowSystem->getStatus() == ObjectStatus::ALIVE)
+	if (InnoVisionSystemNS::m_windowSystem->getStatus() == ObjectStatus::Activated)
 	{
 		InnoVisionSystemNS::m_windowSystem->update();
 
@@ -329,7 +329,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::update()
 	else
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "VisionSystem is stand-by.");
-		InnoVisionSystemNS::m_objectStatus = ObjectStatus::STANDBY;
+		InnoVisionSystemNS::m_objectStatus = ObjectStatus::Created;
 		return false;
 	}
 }
@@ -359,7 +359,7 @@ INNO_SYSTEM_EXPORT bool InnoVisionSystem::terminate()
 		return false;
 	}
 
-	InnoVisionSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	InnoVisionSystemNS::m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VisionSystem has been terminated.");
 	return true;
 }

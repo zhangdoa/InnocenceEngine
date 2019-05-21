@@ -15,7 +15,7 @@ public:
 		return instance;
 	}
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	EntityID m_parentEntity;
 
 	RenderPassDesc m_deferredRenderPassDesc = RenderPassDesc();

@@ -46,7 +46,7 @@ namespace InnoPhysicsSystemNS
 	void updateVisibleSceneBoundary(const AABB& rhs);
 	void updateTotalSceneBoundary(const AABB& rhs);
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
 	vec4 m_visibleSceneBoundMax;
 	vec4 m_visibleSceneBoundMin;
@@ -81,7 +81,7 @@ bool InnoPhysicsSystemNS::setup()
 
 	g_pCoreSystem->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 
-	m_objectStatus = ObjectStatus::ALIVE;
+	m_objectStatus = ObjectStatus::Activated;
 
 	return true;
 }
@@ -671,7 +671,7 @@ AABB InnoPhysicsSystemNS::transformAABBtoWorldSpace(const AABB& rhs, mat4 global
 
 INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::initialize()
 {
-	InnoPhysicsSystemNS::m_objectStatus = ObjectStatus::ALIVE;
+	InnoPhysicsSystemNS::m_objectStatus = ObjectStatus::Activated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "PhysicsSystem has been initialized.");
 	return true;
 }
@@ -762,7 +762,7 @@ void InnoPhysicsSystemNS::updateCulling()
 
 		for (auto visibleComponent : g_pCoreSystem->getGameSystem()->get<VisibleComponent>())
 		{
-			if (visibleComponent->m_visiblilityType != VisiblilityType::INNO_INVISIBLE && visibleComponent->m_objectStatus == ObjectStatus::ALIVE)
+			if (visibleComponent->m_visiblilityType != VisiblilityType::INNO_INVISIBLE && visibleComponent->m_objectStatus == ObjectStatus::Activated)
 			{
 				auto l_transformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(visibleComponent->m_parentEntity);
 				auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
@@ -910,7 +910,7 @@ INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::update()
 
 INNO_SYSTEM_EXPORT bool InnoPhysicsSystem::terminate()
 {
-	InnoPhysicsSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	InnoPhysicsSystemNS::m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "PhysicsSystem has been terminated.");
 	return true;
 }

@@ -35,7 +35,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 INNO_PRIVATE_SCOPE WinWindowSystemNS
 {
 	IWinWindowSystem* m_backendWindowSystem;
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	InitConfig m_initConfig;
 }
 
@@ -86,7 +86,7 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 
 	WinWindowSystemNS::m_backendWindowSystem->setup(WinWindowSystemComponent::get().m_hInstance, WinWindowSystemComponent::get().m_hwnd, WindowProc);
 
-	WinWindowSystemNS::m_objectStatus = ObjectStatus::ALIVE;
+	WinWindowSystemNS::m_objectStatus = ObjectStatus::Activated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinWindowSystem setup finished.");
 
 	return true;
@@ -145,7 +145,7 @@ bool WinWindowSystem::terminate()
 
 	PostQuitMessage(0);
 
-	WinWindowSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	WinWindowSystemNS::m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinWindowSystem has been terminated.");
 	return true;
 }
@@ -183,7 +183,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_DESTROY:
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "WinWindowSystem: WM_DESTROY signal received.");
-		WinWindowSystemNS::m_objectStatus = ObjectStatus::STANDBY;
+		WinWindowSystemNS::m_objectStatus = ObjectStatus::Created;
 		return 0;
 	}
 	case WM_PAINT:
@@ -195,7 +195,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	}
 	case WM_SIZE:
 	{
-		if (lParam && g_pCoreSystem->getStatus() == ObjectStatus::ALIVE)
+		if (lParam && g_pCoreSystem->getStatus() == ObjectStatus::Activated)
 		{
 			auto l_width = lParam & 0xffff;
 			auto l_height = (lParam & 0xffff0000) >> 16;

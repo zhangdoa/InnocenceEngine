@@ -8,7 +8,7 @@ public:
 	VKShaderProgramComponent() {};
 	~VKShaderProgramComponent() {};
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	EntityID m_parentEntity;
 
 	VkShaderModule m_vertexShaderModule;

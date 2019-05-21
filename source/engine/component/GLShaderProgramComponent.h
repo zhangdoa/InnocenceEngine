@@ -8,7 +8,7 @@ public:
 	GLShaderProgramComponent() {};
 	~GLShaderProgramComponent() {};
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	EntityID m_parentEntity;
 
 	GLuint m_program = 0;

@@ -21,7 +21,7 @@ public:
 		return instance;
 	}
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	EntityID m_parentEntity;
 
 	bool m_vsync_enabled = true;

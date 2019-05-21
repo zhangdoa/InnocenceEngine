@@ -19,7 +19,7 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 	EntityID createEntity(const EntityName& entityName);
 	bool removeEntity(const EntityName& entityName);
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
 	// root TransformComponent
 	TransformComponent* m_rootTransformComponent;
@@ -120,7 +120,7 @@ bool InnoGameSystemNS::setup()
 	m_rootTransformComponent->m_globalTransformVector = m_rootTransformComponent->m_localTransformVector;
 	m_rootTransformComponent->m_globalTransformMatrix = m_rootTransformComponent->m_localTransformMatrix;
 
-	m_objectStatus = ObjectStatus::ALIVE;
+	m_objectStatus = ObjectStatus::Created;
 
 	return true;
 }
@@ -323,7 +323,7 @@ bool InnoGameSystem::terminate()
 {
 	delete InnoGameSystemNS::m_rootTransformComponent;
 
-	InnoGameSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	InnoGameSystemNS::m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GameSystem has been terminated.");
 	return true;
 }
