@@ -59,7 +59,7 @@ bool PlayerComponentCollection::setup()
 		m_cameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(m_cameraParentEntity);
 		m_cameraComponent = g_pCoreSystem->getGameSystem()->get<CameraComponent>(m_cameraParentEntity);
 
-		m_inputComponent = g_pCoreSystem->getGameSystem()->spawn<InputComponent>(m_cameraParentEntity, ObjectSource::Runtime);
+		m_inputComponent = g_pCoreSystem->getGameSystem()->spawn<InputComponent>(m_cameraParentEntity, ObjectSource::Runtime, ObjectUsage::Gameplay);
 
 		m_targetCameraPos = m_cameraTransformComponent->m_localTransformVector.m_pos;
 		m_targetCameraRot = m_cameraTransformComponent->m_localTransformVector.m_rot;
@@ -213,10 +213,10 @@ bool GameInstanceNS::setupReferenceSpheres()
 
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
-		m_referenceSphereTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_referenceSphereEntites[i], ObjectSource::Runtime);
+		m_referenceSphereTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_referenceSphereTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 		m_referenceSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_referenceSphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_referenceSphereEntites[i], ObjectSource::Runtime);
+		m_referenceSphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_referenceSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
 		m_referenceSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::SPHERE;
 		m_referenceSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::DYNAMIC;
@@ -264,10 +264,10 @@ bool GameInstanceNS::setupOpaqueSpheres()
 
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
-		m_opaqueSphereTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_opaqueSphereEntites[i], ObjectSource::Runtime);
+		m_opaqueSphereTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_opaqueSphereTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 		m_opaqueSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_opaqueSphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_opaqueSphereEntites[i], ObjectSource::Runtime);
+		m_opaqueSphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_opaqueSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
 		m_opaqueSphereVisibleComponents[i]->m_meshShapeType = (i & 0x00000001) ? MeshShapeType::SPHERE : MeshShapeType::CUBE;
 		m_opaqueSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::DYNAMIC;
@@ -325,10 +325,10 @@ bool GameInstanceNS::setupTransparentSpheres()
 
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
-		m_transparentSphereTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_transparentSphereEntites[i], ObjectSource::Runtime);
+		m_transparentSphereTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_transparentSphereTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 		m_transparentSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_transparentSphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_transparentSphereEntites[i], ObjectSource::Runtime);
+		m_transparentSphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_transparentSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_TRANSPARENT;
 		m_transparentSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::SPHERE;
 		m_transparentSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::DYNAMIC;
@@ -381,10 +381,10 @@ bool GameInstanceNS::setupPointLights()
 
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
-		m_pointLightTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_pointLightEntites[i], ObjectSource::Runtime);
+		m_pointLightTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_pointLightEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_pointLightTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
 		m_pointLightTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_pointLightComponents[i] = g_pCoreSystem->getGameSystem()->spawn<PointLightComponent>(m_pointLightEntites[i], ObjectSource::Runtime);
+		m_pointLightComponents[i] = g_pCoreSystem->getGameSystem()->spawn<PointLightComponent>(m_pointLightEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_pointLightComponents[i]->m_luminousFlux = 100.0f;
 		m_pointLightComponents[i]->m_color = vec4(l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), 1.0f);
 	}

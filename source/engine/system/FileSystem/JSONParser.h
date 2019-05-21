@@ -38,7 +38,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 		template<typename T>
 		inline bool loadComponentData(const json& j, const InnoEntity* entity)
 		{
-			auto l_result = g_pCoreSystem->getGameSystem()->spawn<T>(entity, ObjectSource::Asset);
+			auto l_result = g_pCoreSystem->getGameSystem()->spawn<T>(entity, ObjectSource::Asset, ObjectUsage::Gameplay);
 			from_json(j, *l_result);
 
 			return true;
@@ -50,21 +50,21 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 			json j;
 			to_json(j, *rhs);
 
-			auto result = std::find_if(
+			auto l_result = std::find_if(
 				topLevel["SceneEntities"].begin(),
 				topLevel["SceneEntities"].end(),
 				[&](auto val) -> bool {
-				return val["EntityID"] == rhs->m_parentEntity->m_entityName.c_str();
+				return val["EntityID"] == rhs->m_parentEntity->m_entityID.c_str();
 			});
 
-			if (result != topLevel["SceneEntities"].end())
+			if (l_result != topLevel["SceneEntities"].end())
 			{
-				result.value()["ChildrenComponents"].emplace_back(j);
+				l_result.value()["ChildrenComponents"].emplace_back(j);
 				return true;
 			}
 			else
 			{
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: saveComponentData<T>: Entity ID " + std::string(rhs->m_parentEntity->m_entityName.c_str()) + " is invalid.");
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: saveComponentData<T>: Entity ID " + std::string(rhs->m_parentEntity->m_entityID.c_str()) + " is invalid.");
 				return false;
 			}
 		}

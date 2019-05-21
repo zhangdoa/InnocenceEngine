@@ -2,7 +2,7 @@
 #include "IGameSystem.h"
 
 #define spawnComponentImplDecl( className ) \
-className* spawn##className(const InnoEntity* parentEntity, ObjectSource objectSource) override;
+className* spawn##className(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage) override;
 
 #define registerComponentImplDecl( className ) \
 void registerComponent(className* rhs, const InnoEntity* parentEntity) override;

@@ -5,10 +5,10 @@
 #include "../common/ComponentHeaders.h"
 
 #define spawnComponentInterfaceDecl( className ) \
-virtual className* spawn##className(const InnoEntity* parentEntity, ObjectSource objectSource) = 0;
+virtual className* spawn##className(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage) = 0;
 
-#define spawnComponentInterfaceCall( className, parentEntity, objectSource ) \
-spawn##className(parentEntity, objectSource)
+#define spawnComponentInterfaceCall( className, parentEntity, objectSource, objectUsage ) \
+spawn##className(parentEntity, objectSource, objectUsage)
 
 #define registerComponentInterfaceDecl( className ) \
 virtual void registerComponent(className* rhs, const InnoEntity* parentEntity) = 0;
@@ -102,7 +102,7 @@ protected:
 	getComponentContainerInterfaceDecl(EnvironmentCaptureComponent);
 
 public:
-	template <typename T> T * spawn(const InnoEntity* parentEntity, ObjectSource objectSource)
+	template <typename T> T * spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
 	{
 		return nullptr;
 	};
@@ -139,44 +139,44 @@ public:
 	virtual InnoEntity* getEntity(const EntityName& entityName) = 0;
 };
 
-template <> inline TransformComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource)
+template <> inline TransformComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
 {
-	return spawnComponentInterfaceCall(TransformComponent, parentEntity, objectSource);
+	return spawnComponentInterfaceCall(TransformComponent, parentEntity, objectSource, objectUsage);
 };
 
-template <> inline VisibleComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource)
+template <> inline VisibleComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
 {
-	return spawnComponentInterfaceCall(VisibleComponent, parentEntity, objectSource);
+	return spawnComponentInterfaceCall(VisibleComponent, parentEntity, objectSource, objectUsage);
 };
 
-template <> inline DirectionalLightComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource)
+template <> inline DirectionalLightComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
 {
-	return spawnComponentInterfaceCall(DirectionalLightComponent, parentEntity, objectSource);
+	return spawnComponentInterfaceCall(DirectionalLightComponent, parentEntity, objectSource, objectUsage);
 };
 
-template <> inline PointLightComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource)
+template <> inline PointLightComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
 {
-	return spawnComponentInterfaceCall(PointLightComponent, parentEntity, objectSource);
+	return spawnComponentInterfaceCall(PointLightComponent, parentEntity, objectSource, objectUsage);
 };
 
-template <> inline SphereLightComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource)
+template <> inline SphereLightComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
 {
-	return spawnComponentInterfaceCall(SphereLightComponent, parentEntity, objectSource);
+	return spawnComponentInterfaceCall(SphereLightComponent, parentEntity, objectSource, objectUsage);
 };
 
-template <> inline CameraComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource)
+template <> inline CameraComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
 {
-	return spawnComponentInterfaceCall(CameraComponent, parentEntity, objectSource);
+	return spawnComponentInterfaceCall(CameraComponent, parentEntity, objectSource, objectUsage);
 };
 
-template <> inline InputComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource)
+template <> inline InputComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
 {
-	return spawnComponentInterfaceCall(InputComponent, parentEntity, objectSource);
+	return spawnComponentInterfaceCall(InputComponent, parentEntity, objectSource, objectUsage);
 };
 
-template <> inline EnvironmentCaptureComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource)
+template <> inline EnvironmentCaptureComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
 {
-	return spawnComponentInterfaceCall(EnvironmentCaptureComponent, parentEntity, objectSource);
+	return spawnComponentInterfaceCall(EnvironmentCaptureComponent, parentEntity, objectSource, objectUsage);
 };
 
 template <> inline bool IGameSystem::destroy(TransformComponent* rhs)

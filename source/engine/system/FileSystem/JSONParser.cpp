@@ -459,39 +459,63 @@ bool InnoFileSystemNS::JSONParser::saveScene(const std::string& fileName)
 	// save entities name and ID
 	for (auto i : g_pCoreSystem->getGameSystem()->getEntities())
 	{
-		json j;
-		to_json(j, *i);
-		topLevel["SceneEntities"].emplace_back(j);
+		if (i->m_objectSource == ObjectSource::Asset)
+		{
+			json j;
+			to_json(j, *i);
+			topLevel["SceneEntities"].emplace_back(j);
+		}
 	}
 
 	// save childern components
 	for (auto i : g_pCoreSystem->getGameSystem()->get<TransformComponent>())
 	{
-		saveComponentData(topLevel, i);
+		if (i->m_objectSource == ObjectSource::Asset)
+		{
+			saveComponentData(topLevel, i);
+		}
 	}
 	for (auto i : g_pCoreSystem->getGameSystem()->get<VisibleComponent>())
 	{
-		saveComponentData(topLevel, i);
+		if (i->m_objectSource == ObjectSource::Asset)
+		{
+			saveComponentData(topLevel, i);
+		}
 	}
 	for (auto i : g_pCoreSystem->getGameSystem()->get<DirectionalLightComponent>())
 	{
-		saveComponentData(topLevel, i);
+		if (i->m_objectSource == ObjectSource::Asset)
+		{
+			saveComponentData(topLevel, i);
+		}
 	}
 	for (auto i : g_pCoreSystem->getGameSystem()->get<PointLightComponent>())
 	{
-		saveComponentData(topLevel, i);
+		if (i->m_objectSource == ObjectSource::Asset)
+		{
+			saveComponentData(topLevel, i);
+		}
 	}
 	for (auto i : g_pCoreSystem->getGameSystem()->get<SphereLightComponent>())
 	{
-		saveComponentData(topLevel, i);
+		if (i->m_objectSource == ObjectSource::Asset)
+		{
+			saveComponentData(topLevel, i);
+		}
 	}
 	for (auto i : g_pCoreSystem->getGameSystem()->get<CameraComponent>())
 	{
-		saveComponentData(topLevel, i);
+		if (i->m_objectSource == ObjectSource::Asset)
+		{
+			saveComponentData(topLevel, i);
+		}
 	}
 	for (auto i : g_pCoreSystem->getGameSystem()->get<EnvironmentCaptureComponent>())
 	{
-		saveComponentData(topLevel, i);
+		if (i->m_objectSource == ObjectSource::Asset)
+		{
+			saveComponentData(topLevel, i);
+		}
 	}
 
 	saveJsonDataToDisk(fileName, topLevel);
@@ -513,44 +537,41 @@ bool InnoFileSystemNS::JSONParser::loadScene(const std::string & fileName)
 
 	for (auto i : j["SceneEntities"])
 	{
-		if (i["EntityName"] != "RootTransform")
+		std::string l_entityName = i["EntityName"];
+		l_entityName += "/";
+
+		auto l_entity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(l_entityName.c_str()), ObjectSource::Asset, ObjectUsage::Gameplay);
+
+		for (auto k : i["ChildrenComponents"])
 		{
-			std::string l_entityName = i["EntityName"];
-			l_entityName += "/";
-
-			auto l_entity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(l_entityName.c_str()), ObjectSource::Asset, ObjectUsage::Gameplay);
-
-			for (auto k : i["ChildrenComponents"])
+			switch (ComponentType(k["ComponentType"]))
 			{
-				switch (ComponentType(k["ComponentType"]))
-				{
-				case ComponentType::TransformComponent: loadComponentData<TransformComponent>(k, l_entity);
-					break;
-				case ComponentType::VisibleComponent: loadComponentData<VisibleComponent>(k, l_entity);
-					break;
-				case ComponentType::DirectionalLightComponent: loadComponentData<DirectionalLightComponent>(k, l_entity);
-					break;
-				case ComponentType::PointLightComponent: loadComponentData<PointLightComponent>(k, l_entity);
-					break;
-				case ComponentType::SphereLightComponent: loadComponentData<SphereLightComponent>(k, l_entity);
-					break;
-				case ComponentType::CameraComponent: loadComponentData<CameraComponent>(k, l_entity);
-					break;
-				case ComponentType::InputComponent:
-					break;
-				case ComponentType::EnvironmentCaptureComponent: loadComponentData<EnvironmentCaptureComponent>(k, l_entity);
-					break;
-				case ComponentType::PhysicsDataComponent:
-					break;
-				case ComponentType::MeshDataComponent:
-					break;
-				case ComponentType::MaterialDataComponent:
-					break;
-				case ComponentType::TextureDataComponent:
-					break;
-				default:
-					break;
-				}
+			case ComponentType::TransformComponent: loadComponentData<TransformComponent>(k, l_entity);
+				break;
+			case ComponentType::VisibleComponent: loadComponentData<VisibleComponent>(k, l_entity);
+				break;
+			case ComponentType::DirectionalLightComponent: loadComponentData<DirectionalLightComponent>(k, l_entity);
+				break;
+			case ComponentType::PointLightComponent: loadComponentData<PointLightComponent>(k, l_entity);
+				break;
+			case ComponentType::SphereLightComponent: loadComponentData<SphereLightComponent>(k, l_entity);
+				break;
+			case ComponentType::CameraComponent: loadComponentData<CameraComponent>(k, l_entity);
+				break;
+			case ComponentType::InputComponent:
+				break;
+			case ComponentType::EnvironmentCaptureComponent: loadComponentData<EnvironmentCaptureComponent>(k, l_entity);
+				break;
+			case ComponentType::PhysicsDataComponent:
+				break;
+			case ComponentType::MeshDataComponent:
+				break;
+			case ComponentType::MaterialDataComponent:
+				break;
+			case ComponentType::TextureDataComponent:
+				break;
+			default:
+				break;
 			}
 		}
 	}

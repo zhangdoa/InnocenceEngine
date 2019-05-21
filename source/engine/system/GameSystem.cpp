@@ -5,6 +5,17 @@
 
 extern ICoreSystem* g_pCoreSystem;
 
+#define cleanContainers( className ) \
+for (auto i : InnoGameSystemNS::m_##className##s) \
+{ \
+	if (i->m_objectUsage == ObjectUsage::Gameplay) \
+	{ \
+		destroy(i); \
+	} \
+} \
+InnoGameSystemNS::m_##className##s.clear(); \
+InnoGameSystemNS::m_##className##sMap.clear(); \
+
 INNO_PRIVATE_SCOPE InnoGameSystemNS
 {
 	bool setup();
@@ -31,8 +42,7 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 	void* m_InputComponentPool;
 	void* m_EnvironmentCaptureComponentPool;
 
-	// the AOS here
-	std::vector<InnoEntity*> m_Entities;
+	ThreadSafeVector<InnoEntity*> m_Entities;
 	ThreadSafeVector<TransformComponent*> m_TransformComponents;
 	ThreadSafeVector<VisibleComponent*> m_VisibleComponents;
 	ThreadSafeVector<DirectionalLightComponent*> m_DirectionalLightComponents;
@@ -76,16 +86,6 @@ bool InnoGameSystemNS::setup()
 	m_InputComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(InputComponent), 256);
 	m_EnvironmentCaptureComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(EnvironmentCaptureComponent), 8192);
 
-	// setup root TransformComponent
-	m_rootTransformComponent = new TransformComponent();
-	m_rootTransformComponent->m_parentTransformComponent = nullptr;
-
-	m_rootTransformComponent->m_parentEntity = createEntity("RootTransform/", ObjectSource::Runtime, ObjectUsage::Engine);
-
-	m_rootTransformComponent->m_localTransformMatrix = InnoMath::TransformVectorToTransformMatrix(m_rootTransformComponent->m_localTransformVector);
-	m_rootTransformComponent->m_globalTransformVector = m_rootTransformComponent->m_localTransformVector;
-	m_rootTransformComponent->m_globalTransformMatrix = m_rootTransformComponent->m_localTransformMatrix;
-
 	return true;
 }
 
@@ -104,66 +104,33 @@ bool InnoGameSystem::setup()
 				removeEntity(i);
 			}
 		}
-		for (auto i : InnoGameSystemNS::m_TransformComponents)
-		{
-			destroy(i);
-		}
-		InnoGameSystemNS::m_TransformComponents.clear();
-		InnoGameSystemNS::m_TransformComponentsMap.clear();
 
-		for (auto i : InnoGameSystemNS::m_VisibleComponents)
-		{
-			destroy(i);
-		}
-		InnoGameSystemNS::m_VisibleComponents.clear();
-		InnoGameSystemNS::m_VisibleComponentsMap.clear();
-
-		for (auto i : InnoGameSystemNS::m_DirectionalLightComponents)
-		{
-			destroy(i);
-		}
-		InnoGameSystemNS::m_DirectionalLightComponents.clear();
-		InnoGameSystemNS::m_DirectionalLightComponentsMap.clear();
-
-		for (auto i : InnoGameSystemNS::m_PointLightComponents)
-		{
-			destroy(i);
-		}
-		InnoGameSystemNS::m_PointLightComponents.clear();
-		InnoGameSystemNS::m_PointLightComponentsMap.clear();
-
-		for (auto i : InnoGameSystemNS::m_SphereLightComponents)
-		{
-			destroy(i);
-		}
-		InnoGameSystemNS::m_SphereLightComponents.clear();
-		InnoGameSystemNS::m_SphereLightComponentsMap.clear();
-
-		for (auto i : InnoGameSystemNS::m_CameraComponents)
-		{
-			destroy(i);
-		}
-		InnoGameSystemNS::m_CameraComponents.clear();
-		InnoGameSystemNS::m_CameraComponentsMap.clear();
-
-		for (auto i : InnoGameSystemNS::m_InputComponents)
-		{
-			destroy(i);
-		}
-		InnoGameSystemNS::m_InputComponents.clear();
-		InnoGameSystemNS::m_InputComponentsMap.clear();
-
-		for (auto i : InnoGameSystemNS::m_EnvironmentCaptureComponents)
-		{
-			destroy(i);
-		}
-		InnoGameSystemNS::m_EnvironmentCaptureComponents.clear();
-		InnoGameSystemNS::m_EnvironmentCaptureComponentsMap.clear();
+		cleanContainers(TransformComponent);
+		cleanContainers(TransformComponent);
+		cleanContainers(VisibleComponent);
+		cleanContainers(DirectionalLightComponent);
+		cleanContainers(PointLightComponent);
+		cleanContainers(SphereLightComponent);
+		cleanContainers(CameraComponent);
+		cleanContainers(InputComponent);
+		cleanContainers(EnvironmentCaptureComponent);
 	};
 
 	g_pCoreSystem->getFileSystem()->addSceneLoadingStartCallback(&InnoGameSystemNS::f_sceneLoadingStartCallback);
 
+	// setup root TransformComponent
+	auto l_entity = createEntity("RootTransform/", ObjectSource::Runtime, ObjectUsage::Engine);
+
+	InnoGameSystemNS::m_rootTransformComponent = spawn<TransformComponent>(l_entity, ObjectSource::Runtime, ObjectUsage::Engine);
+	InnoGameSystemNS::m_rootTransformComponent->m_parentTransformComponent = nullptr;
+
+	InnoGameSystemNS::m_rootTransformComponent->m_localTransformMatrix = InnoMath::TransformVectorToTransformMatrix(InnoGameSystemNS::m_rootTransformComponent->m_localTransformVector);
+	InnoGameSystemNS::m_rootTransformComponent->m_globalTransformVector = InnoGameSystemNS::m_rootTransformComponent->m_localTransformVector;
+	InnoGameSystemNS::m_rootTransformComponent->m_globalTransformMatrix = InnoGameSystemNS::m_rootTransformComponent->m_localTransformMatrix;
+
+	// setup default CameraComponent
 	InnoGameSystemNS::m_objectStatus = ObjectStatus::Created;
+
 	return true;
 }
 
@@ -359,7 +326,7 @@ bool InnoGameSystem::terminate()
 }
 
 #define spawnComponentImplDefi( className ) \
-className* InnoGameSystem::spawn##className(const InnoEntity* parentEntity, ObjectSource objectSource) \
+className* InnoGameSystem::spawn##className(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage) \
 { \
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(InnoGameSystemNS::m_##className##Pool, sizeof(className)); \
 	auto l_ptr = new(l_rawPtr)className(); \
@@ -369,6 +336,7 @@ className* InnoGameSystem::spawn##className(const InnoEntity* parentEntity, Obje
 		l_ptr->m_parentEntity = l_parentEntity; \
 		l_ptr->m_objectStatus = ObjectStatus::Created; \
 		l_ptr->m_objectSource = objectSource; \
+		l_ptr->m_objectUsage = objectUsage; \
 		auto l_componentIndex = InnoGameSystemNS::m_##className##s.size(); \
 		auto l_componentName = ComponentName((std::string(#className) + "_" + std::to_string(l_componentIndex) + "/").c_str()); \
 		l_ptr->m_componentName = l_componentName; \
@@ -538,7 +506,7 @@ TransformComponent* InnoGameSystem::getRootTransformComponent()
 
 const std::vector<InnoEntity*>& InnoGameSystem::getEntities()
 {
-	return InnoGameSystemNS::m_Entities;
+	return InnoGameSystemNS::m_Entities.getRawData();
 }
 
 const EntityChildrenComponentsMetadataMap& InnoGameSystem::getEntityChildrenComponentsMetadataMap()

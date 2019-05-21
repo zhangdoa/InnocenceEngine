@@ -1,10 +1,6 @@
 {
   "SceneEntities": [
     {
-      "EntityID": "5dac474386b11bb1dfb646d5900c7acd",
-      "EntityName": "RootTransform"
-    },
-    {
       "ChildrenComponents": [
         {
           "ComponentType": 0,
