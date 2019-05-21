@@ -80,7 +80,7 @@ bool DX11RenderingSystemNS::createPhysicalDevices()
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create DXGI factory!");
-		m_objectStatus = ObjectStatus::Created;
+		m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -89,7 +89,7 @@ bool DX11RenderingSystemNS::createPhysicalDevices()
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create video card adapter!");
-		m_objectStatus = ObjectStatus::Created;
+		m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -98,7 +98,7 @@ bool DX11RenderingSystemNS::createPhysicalDevices()
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create monitor adapter!");
-		m_objectStatus = ObjectStatus::Created;
+		m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -107,7 +107,7 @@ bool DX11RenderingSystemNS::createPhysicalDevices()
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't get DXGI_FORMAT_R8G8B8A8_UNORM fitted monitor!");
-		m_objectStatus = ObjectStatus::Created;
+		m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -119,7 +119,7 @@ bool DX11RenderingSystemNS::createPhysicalDevices()
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't fill the display mode list structures!");
-		m_objectStatus = ObjectStatus::Created;
+		m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -144,7 +144,7 @@ bool DX11RenderingSystemNS::createPhysicalDevices()
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't get the video card adapter description!");
-		m_objectStatus = ObjectStatus::Created;
+		m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -155,7 +155,7 @@ bool DX11RenderingSystemNS::createPhysicalDevices()
 	if (wcstombs_s(&stringLength, g_DXRenderingSystemComponent->m_videoCardDescription, 128, g_DXRenderingSystemComponent->m_adapterDesc.Description, 128) != 0)
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't convert the name of the video card to a character array!");
-		m_objectStatus = ObjectStatus::Created;
+		m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -251,7 +251,7 @@ bool DX11RenderingSystemNS::createSwapChain()
 	if (FAILED(result))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't create the swap chain/D3D device/D3D device context!");
-		m_objectStatus = ObjectStatus::Created;
+		m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -297,7 +297,7 @@ bool DX11RenderingSystemNS::createSwapChainDXRPC()
 	if (FAILED(l_hResult))
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: can't get back buffer pointer!");
-		m_objectStatus = ObjectStatus::Created;
+		m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -337,7 +337,7 @@ bool DX11RenderingSystemNS::setup()
 	l_result = l_result && createPhysicalDevices();
 	l_result = l_result && createSwapChain();
 
-	m_objectStatus = ObjectStatus::Activated;
+	m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingSystem setup finished.");
 
 	return l_result;
@@ -345,30 +345,37 @@ bool DX11RenderingSystemNS::setup()
 
 bool DX11RenderingSystemNS::initialize()
 {
-	m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX11MeshDataComponent), RenderingFrontendSystemComponent::get().m_maxMeshes);
-	m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), RenderingFrontendSystemComponent::get().m_maxMaterials);
-	m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX11TextureDataComponent), RenderingFrontendSystemComponent::get().m_maxTextures);
+	if (DX11RenderingSystemNS::m_objectStatus == ObjectStatus::Created)
+	{
+		m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX11MeshDataComponent), RenderingFrontendSystemComponent::get().m_maxMeshes);
+		m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), RenderingFrontendSystemComponent::get().m_maxMaterials);
+		m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX11TextureDataComponent), RenderingFrontendSystemComponent::get().m_maxTextures);
 
-	loadDefaultAssets();
+		loadDefaultAssets();
 
-	generateGPUBuffers();
+		bool l_result = true;
 
-	bool l_result = true;
+		l_result = l_result && generateGPUBuffers();
+		l_result = l_result && createSwapChainDXRPC();
 
-	l_result = l_result && createSwapChainDXRPC();
+		DX11OpaquePass::initialize();
+		DX11LightCullingPass::initialize();
+		DX11LightPass::initialize();
+		DX11SkyPass::initialize();
+		DX11PreTAAPass::initialize();
+		DX11TAAPass::initialize();
+		DX11MotionBlurPass::initialize();
+		DX11FinalBlendPass::initialize();
 
-	DX11OpaquePass::initialize();
-	DX11LightCullingPass::initialize();
-	DX11LightPass::initialize();
-	DX11SkyPass::initialize();
-	DX11PreTAAPass::initialize();
-	DX11TAAPass::initialize();
-	DX11MotionBlurPass::initialize();
-	DX11FinalBlendPass::initialize();
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingSystem has been initialized.");
-
-	return l_result;
+		DX11RenderingSystemNS::m_objectStatus = ObjectStatus::Activated;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingSystem has been initialized.");
+		return l_result;
+	}
+	else
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingSystem: Object is not created!");
+		return false;
+	}
 }
 
 void DX11RenderingSystemNS::loadDefaultAssets()
