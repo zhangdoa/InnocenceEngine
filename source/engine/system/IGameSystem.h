@@ -135,7 +135,6 @@ public:
 
 	virtual InnoEntity* createEntity(const EntityName& entityName, ObjectSource objectSource, ObjectUsage objectUsage) = 0;
 	virtual bool removeEntity(const InnoEntity* entity) = 0;
-	virtual bool removeEntity(const EntityName& entityName) = 0;
 	virtual InnoEntity* getEntity(const EntityName& entityName) = 0;
 };
 

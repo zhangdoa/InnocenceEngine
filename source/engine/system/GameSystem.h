@@ -97,6 +97,5 @@ public:
 
 	InnoEntity* createEntity(const EntityName& entityName, ObjectSource objectSource, ObjectUsage objectUsage) override;
 	bool removeEntity(const InnoEntity* entity) override;
-	bool removeEntity(const EntityName& entityName) override;
 	InnoEntity* getEntity(const EntityName& entityName) override;
 };

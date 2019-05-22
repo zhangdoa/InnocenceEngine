@@ -13,8 +13,14 @@ for (auto i : InnoGameSystemNS::m_##className##s) \
 		destroy(i); \
 	} \
 } \
-InnoGameSystemNS::m_##className##s.clear(); \
-InnoGameSystemNS::m_##className##sMap.clear(); \
+ \
+InnoGameSystemNS::m_##className##s.erase( \
+	std::remove_if(InnoGameSystemNS::m_##className##s.begin(), InnoGameSystemNS::m_##className##s.end(), \
+		[&](auto val) { \
+	return val->m_objectUsage == ObjectUsage::Gameplay; \
+}), InnoGameSystemNS::m_##className##s.end()); \
+ \
+InnoGameSystemNS::m_##className##sMap.erase_if([&](auto val) { return val.second->m_objectUsage == ObjectUsage::Gameplay; });
 
 INNO_PRIVATE_SCOPE InnoGameSystemNS
 {
@@ -26,7 +32,6 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 
 	InnoEntity* createEntity(const EntityName& entityName, ObjectSource objectSource, ObjectUsage objectUsage);
 	bool removeEntity(const InnoEntity* entity);
-	bool removeEntity(const EntityName& entityName);
 	InnoEntity* getEntity(const EntityName& entityName);
 
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
@@ -105,7 +110,12 @@ bool InnoGameSystem::setup()
 			}
 		}
 
-		cleanContainers(TransformComponent);
+		InnoGameSystemNS::m_Entities.erase(
+			std::remove_if(InnoGameSystemNS::m_Entities.begin(), InnoGameSystemNS::m_Entities.end(),
+				[&](auto val) {
+			return val->m_objectUsage == ObjectUsage::Gameplay;
+		}), InnoGameSystemNS::m_Entities.end());
+
 		cleanContainers(TransformComponent);
 		cleanContainers(VisibleComponent);
 		cleanContainers(DirectionalLightComponent);
@@ -185,7 +195,7 @@ InnoEntity* InnoGameSystemNS::createEntity(const EntityName& entityName, ObjectS
 	if (l_result != m_entityNameSet.end())
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: duplicated entity name " + std::string(entityName.c_str()) + "!");
-		return 0;
+		return nullptr;
 	}
 
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(InnoGameSystemNS::m_EntityPool, sizeof(InnoEntity));
@@ -217,31 +227,22 @@ InnoEntity* InnoGameSystem::createEntity(const EntityName& entityName, ObjectSou
 
 bool InnoGameSystemNS::removeEntity(const InnoEntity* entity)
 {
-	auto l_result = true;
-	l_result &= InnoGameSystemNS::removeEntity(entity->m_entityName);
-	l_result &= g_pCoreSystem->getMemorySystem()->destroyObject(InnoGameSystemNS::m_EntityPool, sizeof(InnoEntity), (void*)entity);
-
-	return l_result;
-}
-
-bool InnoGameSystemNS::removeEntity(const EntityName& entityName)
-{
 	auto l_result = std::find_if(
 		m_entityNameSet.begin(),
 		m_entityNameSet.end(),
 		[&](auto val) -> bool {
-		return val == entityName;
+		return val == entity->m_entityName;
 	});
 
 	if (l_result != m_entityNameSet.end())
 	{
 		InnoGameSystemNS::m_entityNameSet.erase(l_result);
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GameSystem: entity " + std::string(entityName.c_str()) + " has been removed.");
+		g_pCoreSystem->getMemorySystem()->destroyObject(InnoGameSystemNS::m_EntityPool, sizeof(InnoEntity), (void*)entity);
 		return true;
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't find entity " + std::string(entityName.c_str()) + " to remove.");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GameSystem: can't find entity " + std::string(entity->m_entityName.c_str()) + " to remove.");
 		return false;
 	}
 }
@@ -269,11 +270,6 @@ InnoEntity* InnoGameSystemNS::getEntity(const EntityName& entityName)
 bool InnoGameSystem::removeEntity(const InnoEntity * entity)
 {
 	return InnoGameSystemNS::removeEntity(entity);
-}
-
-bool InnoGameSystem::removeEntity(const EntityName& entityName)
-{
-	return InnoGameSystemNS::removeEntity(entityName);
 }
 
 InnoEntity * InnoGameSystem::getEntity(const EntityName & entityName)
