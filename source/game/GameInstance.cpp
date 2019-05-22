@@ -180,6 +180,7 @@ namespace GameInstanceNS
 
 	bool update();
 	bool updateMaterial(const ModelMap& modelMap, vec4 albedo, vec4 MRAT);
+	void updateSpheres();
 
 	void runTest(unsigned int testTime, std::function<bool()> testCase);
 
@@ -523,44 +524,7 @@ bool GameInstanceNS::update()
 			PlayerComponentCollection::update();
 		});
 
-		for (unsigned int i = 0; i < m_opaqueSphereVisibleComponents.size(); i += 4)
-		{
-			auto l_albedoFactor1 = (sin(seed / 2.0f + i) + 1.0f) / 2.0f;
-			auto l_albedoFactor2 = (sin(seed / 3.0f + i) + 1.0f) / 2.0f;
-			auto l_albedoFactor3 = (sin(seed / 5.0f + i) + 1.0f) / 2.0f;
-
-			auto l_albedo1 = vec4(l_albedoFactor1, l_albedoFactor2, l_albedoFactor3, 1.0f);
-			auto l_albedo2 = vec4(l_albedoFactor3, l_albedoFactor2, l_albedoFactor1, 1.0f);
-			auto l_albedo3 = vec4(l_albedoFactor2, l_albedoFactor3, l_albedoFactor1, 1.0f);
-			auto l_albedo4 = vec4(l_albedoFactor2, l_albedoFactor1, l_albedoFactor3, 1.0f);
-
-			auto l_MRATFactor1 = ((sin(seed / 4.0f + i) + 1.0f) / 2.001f);
-			auto l_MRATFactor2 = ((sin(seed / 5.0f + i) + 1.0f) / 2.001f);
-			auto l_MRATFactor3 = ((sin(seed / 6.0f + i) + 1.0f) / 2.001f);
-
-			updateMaterial(m_opaqueSphereVisibleComponents[i]->m_modelMap, l_albedo1, vec4(l_MRATFactor1, l_MRATFactor2, l_MRATFactor3, 0.0f));
-			updateMaterial(m_opaqueSphereVisibleComponents[i + 1]->m_modelMap, l_albedo2, vec4(l_MRATFactor2, l_MRATFactor1, l_MRATFactor3, 0.0f));
-			updateMaterial(m_opaqueSphereVisibleComponents[i + 2]->m_modelMap, l_albedo3, vec4(l_MRATFactor3, l_MRATFactor2, l_MRATFactor1, 0.0f));
-			updateMaterial(m_opaqueSphereVisibleComponents[i + 3]->m_modelMap, l_albedo4, vec4(l_MRATFactor3, l_MRATFactor1, l_MRATFactor2, 0.0f));
-		}
-
-		for (unsigned int i = 0; i < m_transparentSphereVisibleComponents.size(); i++)
-		{
-			auto l_albedo = InnoMath::HSVtoRGB(vec4((sin(seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
-			l_albedo.w = sin(seed / 6.0f + i) * 0.5f + 0.5f;
-			auto l_MRAT = vec4(0.0f, sin(seed / 4.0f + i) * 0.5f + 0.5f, 1.0f, sin(seed / 5.0f + i) * 0.5f + 0.5f);
-			updateMaterial(m_transparentSphereVisibleComponents[i]->m_modelMap, l_albedo, l_MRAT);
-		}
-
-		unsigned int l_matrixDim = 8;
-		for (unsigned int i = 0; i < l_matrixDim; i++)
-		{
-			for (unsigned int j = 0; j < l_matrixDim; j++)
-			{
-				auto l_MRAT = vec4((float)(i + 1) / (float)l_matrixDim, (float)(j + 1) / (float)l_matrixDim, 1.0f, 1.0f);
-				updateMaterial(m_referenceSphereVisibleComponents[i * l_matrixDim + j]->m_modelMap, vec4(1.0f, 1.0f, 1.0f, 1.0f), l_MRAT);
-			}
-		}
+		updateSpheres();
 	}
 
 	return true;
@@ -604,5 +568,47 @@ void PlayerComponentCollection::update()
 	{
 		m_cameraTransformComponent->m_localTransformVector.m_pos = m_targetCameraPos;
 		m_cameraTransformComponent->m_localTransformVector.m_rot = m_targetCameraRot;
+	}
+}
+
+void GameInstanceNS::updateSpheres()
+{
+	for (unsigned int i = 0; i < m_opaqueSphereVisibleComponents.size(); i += 4)
+	{
+		auto l_albedoFactor1 = (sin(seed / 2.0f + i) + 1.0f) / 2.0f;
+		auto l_albedoFactor2 = (sin(seed / 3.0f + i) + 1.0f) / 2.0f;
+		auto l_albedoFactor3 = (sin(seed / 5.0f + i) + 1.0f) / 2.0f;
+
+		auto l_albedo1 = vec4(l_albedoFactor1, l_albedoFactor2, l_albedoFactor3, 1.0f);
+		auto l_albedo2 = vec4(l_albedoFactor3, l_albedoFactor2, l_albedoFactor1, 1.0f);
+		auto l_albedo3 = vec4(l_albedoFactor2, l_albedoFactor3, l_albedoFactor1, 1.0f);
+		auto l_albedo4 = vec4(l_albedoFactor2, l_albedoFactor1, l_albedoFactor3, 1.0f);
+
+		auto l_MRATFactor1 = ((sin(seed / 4.0f + i) + 1.0f) / 2.001f);
+		auto l_MRATFactor2 = ((sin(seed / 5.0f + i) + 1.0f) / 2.001f);
+		auto l_MRATFactor3 = ((sin(seed / 6.0f + i) + 1.0f) / 2.001f);
+
+		updateMaterial(m_opaqueSphereVisibleComponents[i]->m_modelMap, l_albedo1, vec4(l_MRATFactor1, l_MRATFactor2, l_MRATFactor3, 0.0f));
+		updateMaterial(m_opaqueSphereVisibleComponents[i + 1]->m_modelMap, l_albedo2, vec4(l_MRATFactor2, l_MRATFactor1, l_MRATFactor3, 0.0f));
+		updateMaterial(m_opaqueSphereVisibleComponents[i + 2]->m_modelMap, l_albedo3, vec4(l_MRATFactor3, l_MRATFactor2, l_MRATFactor1, 0.0f));
+		updateMaterial(m_opaqueSphereVisibleComponents[i + 3]->m_modelMap, l_albedo4, vec4(l_MRATFactor3, l_MRATFactor1, l_MRATFactor2, 0.0f));
+	}
+
+	for (unsigned int i = 0; i < m_transparentSphereVisibleComponents.size(); i++)
+	{
+		auto l_albedo = InnoMath::HSVtoRGB(vec4((sin(seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
+		l_albedo.w = sin(seed / 6.0f + i) * 0.5f + 0.5f;
+		auto l_MRAT = vec4(0.0f, sin(seed / 4.0f + i) * 0.5f + 0.5f, 1.0f, sin(seed / 5.0f + i) * 0.5f + 0.5f);
+		updateMaterial(m_transparentSphereVisibleComponents[i]->m_modelMap, l_albedo, l_MRAT);
+	}
+
+	unsigned int l_matrixDim = 8;
+	for (unsigned int i = 0; i < l_matrixDim; i++)
+	{
+		for (unsigned int j = 0; j < l_matrixDim; j++)
+		{
+			auto l_MRAT = vec4((float)(i + 1) / (float)l_matrixDim, (float)(j + 1) / (float)l_matrixDim, 1.0f, 1.0f);
+			updateMaterial(m_referenceSphereVisibleComponents[i * l_matrixDim + j]->m_modelMap, vec4(1.0f, 1.0f, 1.0f, 1.0f), l_MRAT);
+		}
 	}
 }
