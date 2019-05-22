@@ -20,6 +20,8 @@ INNO_PRIVATE_SCOPE GLEnvironmentCapturePass
 	bool drawSkyPass(mat4 p, const std::vector<mat4>& v, GLTextureDataComponent* RT, unsigned int faceIndex);
 	bool drawLightPass(mat4 p, const std::vector<mat4>& v, GLTextureDataComponent* RT, unsigned int faceIndex);
 
+	bool sampleSG();
+
 	EntityID m_entityID;
 
 	GLRenderPassComponent* m_opaquePassGLRPC;
@@ -29,6 +31,9 @@ INNO_PRIVATE_SCOPE GLEnvironmentCapturePass
 
 	ShaderFilePaths m_shaderFilePaths = { "GL//environmentCapturePass.vert/" , "", "", "", "GL//environmentCapturePass.frag/" };
 
+	const unsigned int m_captureResolution = 1024;
+	const unsigned int m_sampleCountPerFace = 128;
+	GLTextureDataComponent* m_testSampleCubemap;
 	const unsigned int m_subDivideDimension = 1;
 	const unsigned int m_totalCubemaps = m_subDivideDimension * m_subDivideDimension * m_subDivideDimension;
 	std::vector<GLTextureDataComponent*> m_capturedCubemaps;
@@ -47,8 +52,8 @@ bool GLEnvironmentCapturePass::initialize()
 	l_renderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::LINEAR;
 	l_renderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::LINEAR;
 	l_renderPassDesc.RTDesc.wrapMethod = TextureWrapMethod::REPEAT;
-	l_renderPassDesc.RTDesc.width = 2048;
-	l_renderPassDesc.RTDesc.height = 2048;
+	l_renderPassDesc.RTDesc.width = m_captureResolution;
+	l_renderPassDesc.RTDesc.height = m_captureResolution;
 	l_renderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::FLOAT16;
 	l_renderPassDesc.useDepthAttachment = true;
 	l_renderPassDesc.useStencilAttachment = true;
@@ -80,6 +85,11 @@ bool GLEnvironmentCapturePass::initialize()
 
 		m_capturedCubemaps.emplace_back(l_capturedPassCubemap);
 	}
+
+	m_testSampleCubemap = addGLTextureDataComponent();
+	m_testSampleCubemap->m_textureDataDesc = l_renderPassDesc.RTDesc;
+	m_testSampleCubemap->m_textureDataDesc.width = m_sampleCountPerFace;
+	m_testSampleCubemap->m_textureDataDesc.height = m_sampleCountPerFace;
 
 	return true;
 }
@@ -186,7 +196,7 @@ bool GLEnvironmentCapturePass::drawSkyPass(mat4 p, const std::vector<mat4>& v, G
 
 	SkyGPUData l_skyGPUData;
 	l_skyGPUData.p_inv = p.inverse();
-	l_skyGPUData.viewportSize = vec2(2048.0f, 2048.0f);
+	l_skyGPUData.viewportSize = vec2((float)m_captureResolution, (float)m_captureResolution);
 
 	activateShaderProgram(GLSkyPass::getGLSPC());
 
@@ -286,6 +296,59 @@ bool GLEnvironmentCapturePass::render(vec4 pos, GLTextureDataComponent* RT)
 	return true;
 }
 
+bool GLEnvironmentCapturePass::sampleSG()
+{
+	std::uniform_int_distribution<unsigned int> randomUint(0, m_captureResolution);
+	std::default_random_engine generator;
+
+	std::vector<TVec2<unsigned int>> l_sampleDirs;
+	l_sampleDirs.reserve(m_sampleCountPerFace * 6);
+
+	for (unsigned int i = 0; i < m_sampleCountPerFace * 6; ++i)
+	{
+		auto l_sampleDir = TVec2<unsigned int>(randomUint(generator), randomUint(generator));
+		l_sampleDirs.emplace_back(l_sampleDir);
+	}
+
+	std::vector<vec4> l_samples;
+	l_samples.reserve(m_sampleCountPerFace * 6);
+
+	auto l_pixelDataFormat = m_capturedCubemaps[0]->m_GLTextureDataDesc.pixelDataFormat;
+	auto l_pixelDataType = m_capturedCubemaps[0]->m_GLTextureDataDesc.pixelDataType;
+
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_lightPassGLRPC->m_FBO);
+	glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+	for (unsigned int i = 0; i < 6; i++)
+	{
+		bindCubemapTextureForWrite(m_capturedCubemaps[0], m_lightPassGLRPC, 0, i, 0);
+
+		for (unsigned int j = 0; j < m_sampleCountPerFace; j++)
+		{
+			auto l_sampleDir = l_sampleDirs[(i + 1) * j];
+			vec4 l_result;
+
+			glReadPixels(l_sampleDir.x, l_sampleDir.y, 1, 1, l_pixelDataFormat, l_pixelDataType, &l_result);
+			l_samples.emplace_back(l_result);
+		}
+
+		unbindCubemapTextureForWrite(m_lightPassGLRPC, 0, i, 0);
+	}
+
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+
+	auto l_startPtr = &l_samples[0];
+	m_testSampleCubemap->m_textureData.reserve(6);
+	for (unsigned int i = 0; i < 6; i++)
+	{
+		m_testSampleCubemap->m_textureData.emplace_back(l_startPtr + i * m_sampleCountPerFace);
+	}
+	initializeGLTextureDataComponent(m_testSampleCubemap);
+
+	return true;
+}
+
 bool GLEnvironmentCapturePass::update()
 {
 	updateUBO(GLRenderingSystemComponent::get().m_meshUBO, RenderingFrontendSystemComponent::get().m_GIPassMeshGPUDatas);
@@ -325,6 +388,8 @@ bool GLEnvironmentCapturePass::update()
 		}
 		l_currentPos.x += l_voxelSize.x;
 	}
+
+	sampleSG();
 
 	return true;
 }
