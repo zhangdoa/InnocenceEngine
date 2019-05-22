@@ -330,6 +330,12 @@ public:
 		m_vector.erase(std::remove(std::begin(m_vector), std::end(m_vector), value), std::end(m_vector));
 	}
 
+	typename std::vector<T>::iterator erase(typename std::vector<T>::const_iterator _First, typename std::vector<T>::const_iterator _Last)
+	{
+		std::unique_lock<std::shared_mutex> lock{ m_mutex };
+		return m_vector.erase(_First, _Last);
+	}
+
 	auto size(void)
 	{
 		std::shared_lock<std::shared_mutex> lock{ m_mutex };
@@ -435,6 +441,23 @@ public:
 	{
 		std::unique_lock<std::shared_mutex> lock{ m_mutex };
 		return m_unordered_map.erase(key);
+	}
+
+	template <typename PredicateT>
+	void erase_if(const PredicateT& predicate)
+	{
+		std::unique_lock<std::shared_mutex> lock{ m_mutex };
+		for (auto it = m_unordered_map.begin(); it != m_unordered_map.end(); )
+		{
+			if (predicate(*it))
+			{
+				it = m_unordered_map.erase(it);
+			}
+			else
+			{
+				++it;
+			}
+		}
 	}
 
 	auto clear(void)
