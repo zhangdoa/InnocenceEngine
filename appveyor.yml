@@ -8,11 +8,15 @@ clone_script:
         git submodule update --init --recursive
 build_script:
 - cmd: >-
+    cd script
+
     @echo | setupWin.bat
 
-    @echo | buildAssimpWin-VS15.bat
+    powershell -ExecutionPolicy RemoteSigned -File buildAssimpWin-VS15.ps1
 
-    @echo | buildWin-VS15.bat
+    powershell -ExecutionPolicy RemoteSigned -File buildPhysXWin-VS15.ps1
+
+    powershell -ExecutionPolicy RemoteSigned -File buildEngineWin-VS15.ps1
 skip_commits:
   files:
   - '**/*.md'
