@@ -300,7 +300,19 @@ public:
 		return m_vector.begin();
 	}
 
+	auto begin(void) const
+	{
+		std::shared_lock<std::shared_mutex> lock{ m_mutex };
+		return m_vector.begin();
+	}
+
 	auto end(void)
+	{
+		std::shared_lock<std::shared_mutex> lock{ m_mutex };
+		return m_vector.end();
+	}
+
+	auto end(void) const
 	{
 		std::shared_lock<std::shared_mutex> lock{ m_mutex };
 		return m_vector.end();
@@ -389,7 +401,19 @@ public:
 		return m_unordered_map.begin();
 	}
 
+	auto begin(void) const
+	{
+		std::shared_lock<std::shared_mutex> lock{ m_mutex };
+		return m_unordered_map.begin();
+	}
+
 	auto end(void)
+	{
+		std::shared_lock<std::shared_mutex> lock{ m_mutex };
+		return m_unordered_map.end();
+	}
+
+	auto end(void) const
 	{
 		std::shared_lock<std::shared_mutex> lock{ m_mutex };
 		return m_unordered_map.end();
