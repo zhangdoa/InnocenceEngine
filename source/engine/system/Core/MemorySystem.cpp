@@ -295,8 +295,8 @@ bool InnoMemorySystem::destroyObject(void * memoryPool, size_t objectSize, void 
 		l_objectPoolInstance->m_CurrentFreeChunk->m_next = l_freeChunkMarker;
 	}
 
-	//finally wipe away all the old data
-	std::memset(object, 0, objectSize);
+	//leave garbage alone
+	//std::memset(object, 0, objectSize);
 
 	return true;
 }
