@@ -761,28 +761,34 @@ bool DX12RenderingSystemNS::generateGPUBuffers()
 
 DX12MeshDataComponent* DX12RenderingSystemNS::addDX12MeshDataComponent()
 {
+	static std::atomic<unsigned int> meshCount = 0;
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(DX12MeshDataComponent));
 	auto l_MDC = new(l_rawPtr)DX12MeshDataComponent();
-	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity("", ObjectSource::Runtime, ObjectUsage::Engine);
+	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(("Mesh_" + std::to_string(meshCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
 	l_MDC->m_parentEntity = l_parentEntity;
+	meshCount++;
 	return l_MDC;
 }
 
 MaterialDataComponent* DX12RenderingSystemNS::addMaterialDataComponent()
 {
+	static std::atomic<unsigned int> materialCount = 0;
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MaterialDataComponent));
 	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
-	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity("", ObjectSource::Runtime, ObjectUsage::Engine);
+	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(("Material_" + std::to_string(materialCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
 	l_MDC->m_parentEntity = l_parentEntity;
+	materialCount++;
 	return l_MDC;
 }
 
 DX12TextureDataComponent* DX12RenderingSystemNS::addDX12TextureDataComponent()
 {
+	static std::atomic<unsigned int> textureCount = 0;
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(DX12TextureDataComponent));
 	auto l_TDC = new(l_rawPtr)DX12TextureDataComponent();
-	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity("", ObjectSource::Runtime, ObjectUsage::Engine);
+	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(("Texture_" + std::to_string(textureCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
 	l_TDC->m_parentEntity = l_parentEntity;
+	textureCount++;
 	return l_TDC;
 }
 
