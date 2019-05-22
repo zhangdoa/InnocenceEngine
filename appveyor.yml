@@ -11,9 +11,6 @@ build_script:
     cd script
 
     @echo | setupWin.bat
-    powershell -ExecutionPolicy RemoteSigned -File buildAssimpWin-VS15.ps1
-    powershell -ExecutionPolicy RemoteSigned -File buildPhysXWin-VS15.ps1
-	powershell -ExecutionPolicy RemoteSigned -File buildEngineWin-VS15.ps1
 
     powershell -ExecutionPolicy RemoteSigned -File buildAssimpWin-VS15.ps1
 
