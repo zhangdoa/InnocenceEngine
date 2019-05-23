@@ -57,7 +57,7 @@ bool GLEnvironmentConvolutionPass::initialize()
 	{
 		auto l_convolutedCubemap = addGLTextureDataComponent();
 		l_convolutedCubemap->m_textureDataDesc = l_renderPassDesc.RTDesc;
-		l_convolutedCubemap->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+		l_convolutedCubemap->m_textureData = nullptr;
 		initializeGLTextureDataComponent(l_convolutedCubemap);
 
 		m_convolutedCubemaps.emplace_back(l_convolutedCubemap);

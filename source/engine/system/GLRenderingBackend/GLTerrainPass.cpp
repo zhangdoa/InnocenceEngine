@@ -195,7 +195,7 @@ bool GLTerrainPass::initialize()
 		l_pixelBuffer.emplace_back(val.w);
 	});
 
-	m_terrainNoiseGLTDC->m_textureData.emplace_back(&l_pixelBuffer[0]);
+	m_terrainNoiseGLTDC->m_textureData = &l_pixelBuffer[0];
 
 	initializeGLTextureDataComponent(m_terrainNoiseGLTDC);
 

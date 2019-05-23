@@ -501,14 +501,7 @@ bool DX11RenderingSystemNS::createRenderTargets(DX11RenderPassComponent* DXRPC)
 
 		l_TDC->m_textureDataDesc = DXRPC->m_renderPassDesc.RTDesc;
 
-		if (l_TDC->m_textureDataDesc.samplerType == TextureSamplerType::CUBEMAP)
-		{
-			l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
-		}
-		else
-		{
-			l_TDC->m_textureData = { nullptr };
-		}
+		l_TDC->m_textureData = nullptr;
 
 		initializeDX11TextureDataComponent(l_TDC);
 	}
@@ -634,8 +627,6 @@ bool DX11RenderingSystemNS::initializeDX11MeshDataComponent(DX11MeshDataComponen
 	{
 		submitGPUData(rhs);
 
-		rhs->m_objectStatus = ObjectStatus::Activated;
-
 		return true;
 	}
 }
@@ -653,18 +644,19 @@ bool DX11RenderingSystemNS::initializeDX11TextureDataComponent(DX11TextureDataCo
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "DX11RenderingSystem: try to generate DX11TextureDataComponent for TextureUsageType::INVISIBLE type!");
 			return false;
 		}
+		else if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
+			|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
+			|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT
+			|| rhs->m_textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
+		{
+			submitGPUData(rhs);
+			return true;
+		}
 		else
 		{
-			if (rhs->m_textureData.size() > 0)
+			if (rhs->m_textureData)
 			{
 				submitGPUData(rhs);
-
-				rhs->m_objectStatus = ObjectStatus::Activated;
-
-				if (rhs->m_textureDataDesc.usageType != TextureUsageType::COLOR_ATTACHMENT)
-				{
-					// @TODO: release raw data in heap memory
-				}
 
 				return true;
 			}
@@ -984,7 +976,7 @@ bool DX11RenderingSystemNS::submitGPUData(DX11TextureDataComponent * rhs)
 	{
 		unsigned int rowPitch;
 		rowPitch = (rhs->m_textureDataDesc.width * ((unsigned int)rhs->m_textureDataDesc.pixelDataFormat + 1)) * sizeof(unsigned char);
-		DX11RenderingSystemComponent::get().m_deviceContext->UpdateSubresource(rhs->m_texture, 0, NULL, rhs->m_textureData[0], rowPitch, 0);
+		DX11RenderingSystemComponent::get().m_deviceContext->UpdateSubresource(rhs->m_texture, 0, NULL, rhs->m_textureData, rowPitch, 0);
 	}
 
 	// Get SRV desc

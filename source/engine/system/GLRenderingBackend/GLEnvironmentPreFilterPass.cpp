@@ -59,7 +59,7 @@ bool GLEnvironmentPreFilterPass::initialize()
 	{
 		auto l_preFiltedCubemap = addGLTextureDataComponent();
 		l_preFiltedCubemap->m_textureDataDesc = l_renderPassDesc.RTDesc;
-		l_preFiltedCubemap->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+		l_preFiltedCubemap->m_textureData = nullptr;
 		initializeGLTextureDataComponent(l_preFiltedCubemap);
 
 		m_preFiltedCubemaps.emplace_back(l_preFiltedCubemap);

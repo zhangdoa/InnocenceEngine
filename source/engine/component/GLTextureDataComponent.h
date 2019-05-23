@@ -12,6 +12,7 @@ struct GLTextureDataDesc
 	GLenum internalFormat;
 	GLenum pixelDataFormat;
 	GLenum pixelDataType;
+	GLsizei pixelDataSize;
 	GLsizei width;
 	GLsizei height;
 	GLsizei depth;

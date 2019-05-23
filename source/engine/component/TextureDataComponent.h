@@ -8,5 +8,5 @@ public:
 	~TextureDataComponent() {};
 
 	TextureDataDesc m_textureDataDesc = TextureDataDesc();
-	std::vector<void*> m_textureData;
+	void* m_textureData;
 };

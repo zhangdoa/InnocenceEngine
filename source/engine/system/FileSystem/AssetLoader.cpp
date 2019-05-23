@@ -99,6 +99,8 @@ TextureDataComponent* InnoFileSystemNS::AssetLoader::loadTextureFromDisk(const s
 	{
 		auto l_TDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
 
+		l_TDC->m_componentName = fileName.c_str();
+
 		l_TDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat(nrChannels - 1);
 		l_TDC->m_textureDataDesc.wrapMethod = TextureWrapMethod::REPEAT;
 		l_TDC->m_textureDataDesc.minFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
@@ -106,7 +108,7 @@ TextureDataComponent* InnoFileSystemNS::AssetLoader::loadTextureFromDisk(const s
 		l_TDC->m_textureDataDesc.pixelDataType = l_isHDR ? TexturePixelDataType::FLOAT16 : TexturePixelDataType::UBYTE;
 		l_TDC->m_textureDataDesc.width = width;
 		l_TDC->m_textureDataDesc.height = height;
-		l_TDC->m_textureData.emplace_back(l_rawData);
+		l_TDC->m_textureData = l_rawData;
 
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: AssetLoader: STB_Image: " + l_fullPath + " has been loaded.");
 

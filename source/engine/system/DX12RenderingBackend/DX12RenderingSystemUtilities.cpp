@@ -18,14 +18,14 @@ INNO_PRIVATE_SCOPE DX12RenderingSystemNS
 	bool initializePixelShader(DX12ShaderProgramComponent* rhs, const std::wstring& PSShaderPath);
 	bool createSampler(DX12ShaderProgramComponent* rhs);
 
-	bool summitGPUData(DX12MeshDataComponent* rhs);
+	bool submitGPUData(DX12MeshDataComponent* rhs);
 
 	D3D12_RESOURCE_DESC getDX12TextureDataDesc(TextureDataDesc textureDataDesc);
 	DXGI_FORMAT getTextureFormat(TextureDataDesc textureDataDesc);
 	unsigned int getTextureMipLevels(TextureDataDesc textureDataDesc);
 	D3D12_RESOURCE_FLAGS getTextureBindFlags(TextureDataDesc textureDataDesc);
 
-	bool summitGPUData(DX12TextureDataComponent* rhs);
+	bool submitGPUData(DX12TextureDataComponent* rhs);
 
 	std::unordered_map<InnoEntity*, DX12MeshDataComponent*> m_initializedDXMDC;
 	std::unordered_map<InnoEntity*, DX12TextureDataComponent*> m_initializedDXTDC;
@@ -361,14 +361,7 @@ bool DX12RenderingSystemNS::createRenderTargets(DX12RenderPassComponent* DXRPC)
 
 		l_TDC->m_textureDataDesc = DXRPC->m_renderPassDesc.RTDesc;
 
-		if (l_TDC->m_textureDataDesc.samplerType == TextureSamplerType::CUBEMAP)
-		{
-			l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
-		}
-		else
-		{
-			l_TDC->m_textureData = { nullptr };
-		}
+		l_TDC->m_textureData = nullptr;
 
 		initializeDX12TextureDataComponent(l_TDC);
 	}
@@ -711,9 +704,7 @@ bool DX12RenderingSystemNS::initializeDX12MeshDataComponent(DX12MeshDataComponen
 	}
 	else
 	{
-		summitGPUData(rhs);
-
-		rhs->m_objectStatus = ObjectStatus::Activated;
+		submitGPUData(rhs);
 
 		return true;
 	}
@@ -732,11 +723,19 @@ bool DX12RenderingSystemNS::initializeDX12TextureDataComponent(DX12TextureDataCo
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "DX12RenderingSystem: try to generate DX12TextureDataComponent for TextureUsageType::INVISIBLE type!");
 			return false;
 		}
+		else if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
+			|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
+			|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT
+			|| rhs->m_textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
+		{
+			submitGPUData(rhs);
+			return true;
+		}
 		else
 		{
-			if (rhs->m_textureData.size() > 0)
+			if (rhs->m_textureData)
 			{
-				summitGPUData(rhs);
+				submitGPUData(rhs);
 
 				rhs->m_objectStatus = ObjectStatus::Activated;
 
@@ -756,7 +755,7 @@ bool DX12RenderingSystemNS::initializeDX12TextureDataComponent(DX12TextureDataCo
 	}
 }
 
-bool DX12RenderingSystemNS::summitGPUData(DX12MeshDataComponent * rhs)
+bool DX12RenderingSystemNS::submitGPUData(DX12MeshDataComponent * rhs)
 {
 	auto l_verticesDataSize = unsigned int(sizeof(Vertex) * rhs->m_vertices.size());
 
@@ -1044,7 +1043,7 @@ D3D12_RESOURCE_DESC DX12RenderingSystemNS::getDX12TextureDataDesc(TextureDataDes
 	return DX12TextureDataDesc;
 }
 
-bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
+bool DX12RenderingSystemNS::submitGPUData(DX12TextureDataComponent * rhs)
 {
 	rhs->m_DX12TextureDataDesc = getDX12TextureDataDesc(rhs->m_textureDataDesc);
 
@@ -1149,7 +1148,7 @@ bool DX12RenderingSystemNS::summitGPUData(DX12TextureDataComponent * rhs)
 		// Copy data to the intermediate upload heap and then schedule a copy
 		// from the upload heap to the Texture2D.
 		D3D12_SUBRESOURCE_DATA textureData = {};
-		textureData.pData = rhs->m_textureData[0];
+		textureData.pData = rhs->m_textureData;
 		textureData.RowPitch = rhs->m_textureDataDesc.width * ((unsigned int)rhs->m_textureDataDesc.pixelDataFormat + 1);
 		textureData.SlicePitch = textureData.RowPitch * rhs->m_textureDataDesc.height;
 

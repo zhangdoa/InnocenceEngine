@@ -356,14 +356,7 @@ bool VKRenderingSystemNS::createRenderTargets(VKRenderPassComponent* VKRPC)
 
 		l_TDC->m_textureDataDesc = VKRPC->m_renderPassDesc.RTDesc;
 
-		if (l_TDC->m_textureDataDesc.samplerType == TextureSamplerType::CUBEMAP)
-		{
-			l_TDC->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
-		}
-		else
-		{
-			l_TDC->m_textureData = { nullptr };
-		}
+		l_TDC->m_textureData = nullptr;
 
 		initializeVKTextureDataComponent(l_TDC);
 	}
@@ -797,8 +790,6 @@ bool VKRenderingSystemNS::initializeVKMeshDataComponent(VKMeshDataComponent* rhs
 	{
 		submitGPUData(rhs);
 
-		rhs->m_objectStatus = ObjectStatus::Activated;
-
 		return true;
 	}
 }
@@ -878,9 +869,17 @@ bool VKRenderingSystemNS::initializeVKTextureDataComponent(VKTextureDataComponen
 			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "VKRenderingSystem: try to generate VKTextureDataComponent for TextureUsageType::INVISIBLE type!");
 			return false;
 		}
+		else if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
+			|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
+			|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT
+			|| rhs->m_textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
+		{
+			submitGPUData(rhs);
+			return true;
+		}
 		else
 		{
-			if (rhs->m_textureData.size() > 0)
+			if (rhs->m_textureData)
 			{
 				submitGPUData(rhs);
 
@@ -910,12 +909,12 @@ bool VKRenderingSystemNS::submitGPUData(VKTextureDataComponent * rhs)
 	VkDeviceMemory stagingBufferMemory;
 	createBuffer(rhs->m_VkTextureDataDesc.imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
-	auto l_srcData = rhs->m_textureData[0];
+	auto l_srcData = rhs->m_textureData;
 	if (l_srcData != nullptr)
 	{
 		void* l_dstData;
 		vkMapMemory(VKRenderingSystemComponent::get().m_device, stagingBufferMemory, 0, rhs->m_VkTextureDataDesc.imageSize, 0, &l_dstData);
-		memcpy(l_dstData, rhs->m_textureData[0], static_cast<size_t>(rhs->m_VkTextureDataDesc.imageSize));
+		memcpy(l_dstData, rhs->m_textureData, static_cast<size_t>(rhs->m_VkTextureDataDesc.imageSize));
 		vkUnmapMemory(VKRenderingSystemComponent::get().m_device, stagingBufferMemory);
 	}
 

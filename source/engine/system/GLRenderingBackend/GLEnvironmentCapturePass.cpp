@@ -80,7 +80,7 @@ bool GLEnvironmentCapturePass::initialize()
 	{
 		auto l_capturedPassCubemap = addGLTextureDataComponent();
 		l_capturedPassCubemap->m_textureDataDesc = l_renderPassDesc.RTDesc;
-		l_capturedPassCubemap->m_textureData = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+		l_capturedPassCubemap->m_textureData = nullptr;
 		initializeGLTextureDataComponent(l_capturedPassCubemap);
 
 		m_capturedCubemaps.emplace_back(l_capturedPassCubemap);
@@ -339,11 +339,7 @@ bool GLEnvironmentCapturePass::sampleSG()
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 
 	auto l_startPtr = &l_samples[0];
-	m_testSampleCubemap->m_textureData.reserve(6);
-	for (unsigned int i = 0; i < 6; i++)
-	{
-		m_testSampleCubemap->m_textureData.emplace_back(l_startPtr + i * m_sampleCountPerFace);
-	}
+	m_testSampleCubemap->m_textureData = l_startPtr;
 	initializeGLTextureDataComponent(m_testSampleCubemap);
 
 	return true;

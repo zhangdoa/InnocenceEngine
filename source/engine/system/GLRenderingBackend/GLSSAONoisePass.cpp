@@ -115,7 +115,7 @@ void GLSSAONoisePass::generateSSAONoiseTexture()
 		l_pixelBuffer.emplace_back(val.w);
 	});
 
-	m_SSAONoiseGLTDC->m_textureData.emplace_back(&l_pixelBuffer[0]);
+	m_SSAONoiseGLTDC->m_textureData = &l_pixelBuffer[0];
 
 	initializeGLTextureDataComponent(m_SSAONoiseGLTDC);
 }
