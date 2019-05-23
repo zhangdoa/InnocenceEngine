@@ -14,26 +14,19 @@ void main()
 	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
 	vec2 MotionVector = texture(uni_motionVectorTexture, screenTexCoords).xy;
 
-	if (MotionVector == vec2(0.0, 0.0))
-	{
-		uni_motionBlurPassRT0 = texture(uni_TAAPassRT0, screenTexCoords);
+	vec4 result = texture(uni_TAAPassRT0, screenTexCoords);
+
+	float half_samples = float(MAX_SAMPLES / 2);
+
+	// sample half samples along motion vector and another half in opposite direction
+	for (int i = 1; i <= half_samples; i++) {
+		vec2 offset = MotionVector * (float(i) / float(MAX_SAMPLES));
+		result += texture(uni_TAAPassRT0, screenTexCoords - offset);
+		result += texture(uni_TAAPassRT0, screenTexCoords + offset);
 	}
-	else
-	{
-		vec4 result = texture(uni_TAAPassRT0, screenTexCoords);
 
-		float half_samples = float(MAX_SAMPLES / 2);
+	result /= float(MAX_SAMPLES + 1);
 
-		// sample half samples along motion vector and another half in opposite direction
-		for (int i = 1; i <= half_samples; i++) {
-			vec2 offset = MotionVector * (float(i) / float(MAX_SAMPLES));
-			result += texture(uni_TAAPassRT0, screenTexCoords - offset);
-			result += texture(uni_TAAPassRT0, screenTexCoords + offset);
-		}
-
-		result /= float(MAX_SAMPLES);
-
-		//use alpha channel as mask
-		uni_motionBlurPassRT0 = vec4(result.rgb, 1.0);
-	}
+	//use alpha channel as mask
+	uni_motionBlurPassRT0 = vec4(result.rgb, 1.0);
 }
