@@ -12,6 +12,9 @@ struct GLTextureDataDesc
 	GLenum internalFormat;
 	GLenum pixelDataFormat;
 	GLenum pixelDataType;
+	GLsizei width;
+	GLsizei height;
+	GLsizei depth;
 	float borderColor[4];
 };
 
