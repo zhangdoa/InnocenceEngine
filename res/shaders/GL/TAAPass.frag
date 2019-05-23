@@ -17,7 +17,6 @@ void main()
 	vec2 texelSize = 1.0 / renderTargetSize;
 	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
 	vec2 MotionVector = texture(uni_motionVectorTexture, screenTexCoords).xy;
-	MotionVector.y = -MotionVector.y;
 
 	vec4 preTAAPassRT0Result = texture(uni_preTAAPassRT0, screenTexCoords);
 
