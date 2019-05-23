@@ -36,7 +36,7 @@ INNO_PRIVATE_SCOPE GLRenderingSystemNS
 	GLenum getTextureInternalFormat(TextureDataDesc textureDataDesc);
 	GLenum getTexturePixelDataFormat(TextureDataDesc textureDataDesc);
 	GLenum getTexturePixelDataType(TexturePixelDataType rhs);
-	GLsizei getTexturePixelDataSize(TexturePixelDataType rhs);
+	GLsizei getTexturePixelDataSize(TextureDataDesc textureDataDesc);
 
 	void generateTO(GLuint& TO, GLTextureDataDesc desc, const void* textureData);
 
@@ -463,7 +463,8 @@ void GLRenderingSystemNS::generateTO(GLuint& TO, GLTextureDataDesc desc, const v
 			for (unsigned int i = 0; i < 6; i++)
 			{
 				char* l_textureData = reinterpret_cast<char*>(const_cast<void*>(textureData));
-				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, desc.internalFormat, desc.width, desc.height, 0, desc.pixelDataFormat, desc.pixelDataType, l_textureData + i * desc.width * desc.pixelDataSize);
+				auto l_offset = i * desc.width * desc.height * desc.pixelDataSize;
+				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, desc.internalFormat, desc.width, desc.height, 0, desc.pixelDataFormat, desc.pixelDataType, l_textureData + l_offset);
 			}
 		}
 		else
@@ -823,28 +824,41 @@ GLenum GLRenderingSystemNS::getTexturePixelDataType(TexturePixelDataType rhs)
 	return l_result;
 }
 
-GLsizei GLRenderingSystemNS::getTexturePixelDataSize(TexturePixelDataType rhs)
+GLsizei GLRenderingSystemNS::getTexturePixelDataSize(TextureDataDesc textureDataDesc)
 {
-	GLsizei l_result;
+	GLsizei l_singlePixelSize;
 
-	switch (rhs)
+	switch (textureDataDesc.pixelDataType)
 	{
-	case TexturePixelDataType::UBYTE:l_result = 1; break;
-	case TexturePixelDataType::SBYTE:l_result = 1; break;
-	case TexturePixelDataType::USHORT:l_result = 2; break;
-	case TexturePixelDataType::SSHORT:l_result = 2; break;
-	case TexturePixelDataType::UINT8:l_result = 1; break;
-	case TexturePixelDataType::SINT8:l_result = 1; break;
-	case TexturePixelDataType::UINT16:l_result = 2; break;
-	case TexturePixelDataType::SINT16:l_result = 2; break;
-	case TexturePixelDataType::UINT32:l_result = 4; break;
-	case TexturePixelDataType::SINT32:l_result = 4; break;
-	case TexturePixelDataType::FLOAT16:l_result = 2; break;
-	case TexturePixelDataType::FLOAT32:l_result = 4; break;
-	case TexturePixelDataType::DOUBLE:l_result = 8; break;
+	case TexturePixelDataType::UBYTE:l_singlePixelSize = 1; break;
+	case TexturePixelDataType::SBYTE:l_singlePixelSize = 1; break;
+	case TexturePixelDataType::USHORT:l_singlePixelSize = 2; break;
+	case TexturePixelDataType::SSHORT:l_singlePixelSize = 2; break;
+	case TexturePixelDataType::UINT8:l_singlePixelSize = 1; break;
+	case TexturePixelDataType::SINT8:l_singlePixelSize = 1; break;
+	case TexturePixelDataType::UINT16:l_singlePixelSize = 2; break;
+	case TexturePixelDataType::SINT16:l_singlePixelSize = 2; break;
+	case TexturePixelDataType::UINT32:l_singlePixelSize = 4; break;
+	case TexturePixelDataType::SINT32:l_singlePixelSize = 4; break;
+	case TexturePixelDataType::FLOAT16:l_singlePixelSize = 2; break;
+	case TexturePixelDataType::FLOAT32:l_singlePixelSize = 4; break;
+	case TexturePixelDataType::DOUBLE:l_singlePixelSize = 8; break;
 	}
 
-	return l_result;
+	GLsizei l_channelSize;
+	switch (textureDataDesc.pixelDataFormat)
+	{
+	case TexturePixelDataFormat::R:l_channelSize = 1; break;
+	case TexturePixelDataFormat::RG:l_channelSize = 2; break;
+	case TexturePixelDataFormat::RGB:l_channelSize = 3; break;
+	case TexturePixelDataFormat::RGBA:l_channelSize = 4; break;
+	case TexturePixelDataFormat::DEPTH_COMPONENT:l_channelSize = 1; break;
+	case TexturePixelDataFormat::DEPTH_STENCIL_COMPONENT:l_channelSize = 1; break;
+	default:
+		break;
+	}
+
+	return l_singlePixelSize * l_channelSize;
 }
 
 GLTextureDataDesc GLRenderingSystemNS::getGLTextureDataDesc(TextureDataDesc textureDataDesc)
@@ -858,7 +872,7 @@ GLTextureDataDesc GLRenderingSystemNS::getGLTextureDataDesc(TextureDataDesc text
 	l_result.internalFormat = getTextureInternalFormat(textureDataDesc);
 	l_result.pixelDataFormat = getTexturePixelDataFormat(textureDataDesc);
 	l_result.pixelDataType = getTexturePixelDataType(textureDataDesc.pixelDataType);
-	l_result.pixelDataSize = getTexturePixelDataSize(textureDataDesc.pixelDataType);
+	l_result.pixelDataSize = getTexturePixelDataSize(textureDataDesc);
 	l_result.width = textureDataDesc.width;
 	l_result.height = textureDataDesc.height;
 	l_result.depth = textureDataDesc.depth;
