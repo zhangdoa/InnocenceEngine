@@ -6,6 +6,10 @@ layout(location = 0) in vec2 TexCoords;
 
 layout(location = 0, binding = 0) uniform sampler2D uni_lastTAAPassRT0;
 
+float luma(vec3 color) {
+	return dot(color, vec3(0.299, 0.587, 0.114));
+}
+
 void main()
 {
 	// sharpen the TAA result [Siggraph 2016 "Temporal Antialiasing in Uncharted 4"]
@@ -60,6 +64,9 @@ void main()
 	finalColor = currentColor.rgb + average + currentColor.rgb * validNeighborNum;
 
 	//uni_TAASharpenPassRT0 = vec4(finalColor, 1.0);
+
+	// Undo tone mapping
+	currentColor.xyz = currentColor.xyz / (1.0f - luma(currentColor.xyz));
 
 	uni_TAASharpenPassRT0 = currentColor;
 }

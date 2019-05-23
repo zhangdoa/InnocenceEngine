@@ -424,6 +424,14 @@ bool GLRenderingSystemNS::render()
 
 	auto l_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
 
+	if (l_renderingConfig.useTAA)
+	{
+		GLTAAPass::update(l_canvasGLRPC);
+		GLPostTAAPass::update();
+
+		l_canvasGLRPC = GLPostTAAPass::getGLRPC();
+	}
+
 	if (l_renderingConfig.useBloom)
 	{
 		GLBloomExtractPass::update(l_canvasGLRPC);
@@ -451,14 +459,6 @@ bool GLRenderingSystemNS::render()
 		cleanRenderBuffers(GLBloomBlurPass::getGLRPC(1));
 
 		cleanRenderBuffers(GLBloomMergePass::getGLRPC());
-	}
-
-	if (l_renderingConfig.useTAA)
-	{
-		GLTAAPass::update(l_canvasGLRPC);
-		GLPostTAAPass::update();
-
-		l_canvasGLRPC = GLPostTAAPass::getGLRPC();
 	}
 
 	if (l_renderingConfig.useMotionBlur)
