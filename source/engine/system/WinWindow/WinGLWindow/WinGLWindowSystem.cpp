@@ -196,15 +196,6 @@ bool WinGLWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 	}
 
 	// init opengl loader here (extra safe version)
-	PFNWGLGETEXTENSIONSSTRINGARBPROC wglGetExtensionsStringARB = nullptr;
-	wglGetExtensionsStringARB = reinterpret_cast<PFNWGLGETEXTENSIONSSTRINGARBPROC>(wglGetProcAddress("wglGetExtensionsStringARB"));
-	if (wglGetExtensionsStringARB == nullptr)
-	{
-		m_objectStatus = ObjectStatus::Created;
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "WinWindowSystem: wglGetProcAddress(wglGetExtensionsStringARB) failed.");
-		return false;
-	}
-
 	// glad: load all OpenGL function pointers
 	// ---------------------------------------
 	if (!gladLoadGL())
@@ -213,6 +204,16 @@ bool WinGLWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "WinWindowSystem: Failed to initialize GLAD.");
 		return false;
 	}
+
+	PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = nullptr;
+	wglSwapIntervalEXT = reinterpret_cast<PFNWGLSWAPINTERVALEXTPROC>(wglGetProcAddress("wglSwapIntervalEXT"));
+	if (wglSwapIntervalEXT == nullptr)
+	{
+		m_objectStatus = ObjectStatus::Created;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "WinWindowSystem: wglGetProcAddress(wglSwapIntervalEXT) failed.");
+		return false;
+	}
+	wglSwapIntervalEXT(0);
 
 	if (m_initConfig.engineMode == EngineMode::GAME)
 	{
