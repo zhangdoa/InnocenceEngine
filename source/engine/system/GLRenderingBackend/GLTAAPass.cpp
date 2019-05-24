@@ -19,10 +19,6 @@ INNO_PRIVATE_SCOPE GLTAAPass
 
 	bool m_isTAAPingPass = true;
 
-	GLRenderPassComponent* m_History0PassGLRPC;
-	GLRenderPassComponent* m_History1PassGLRPC;
-	GLRenderPassComponent* m_History2PassGLRPC;
-
 	GLRenderPassComponent* m_PingPassGLRPC;
 	GLRenderPassComponent* m_PongPassGLRPC;
 	GLShaderProgramComponent* m_GLSPC;
@@ -32,19 +28,6 @@ INNO_PRIVATE_SCOPE GLTAAPass
 bool GLTAAPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
-
-	// history buffer pass
-	m_History0PassGLRPC = addGLRenderPassComponent(m_entityID, "TAAPassHistory0GLRPC/");
-	m_History0PassGLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
-	initializeGLRenderPassComponent(m_History0PassGLRPC);
-
-	m_History1PassGLRPC = addGLRenderPassComponent(m_entityID, "TAAPassHistory1GLRPC/");
-	m_History1PassGLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
-	initializeGLRenderPassComponent(m_History1PassGLRPC);
-
-	m_History2PassGLRPC = addGLRenderPassComponent(m_entityID, "TAAPassHistory2GLRPC/");
-	m_History2PassGLRPC->m_renderPassDesc = GLRenderingSystemComponent::get().m_deferredRenderPassDesc;
-	initializeGLRenderPassComponent(m_History2PassGLRPC);
 
 	// Ping pass
 	m_PingPassGLRPC = addGLRenderPassComponent(m_entityID, "TAAPingPassGLRPC/");
@@ -93,20 +76,13 @@ bool GLTAAPass::update(GLRenderPassComponent* prePassGLRPC)
 		m_isTAAPingPass = true;
 	}
 
-	copyColorBuffer(m_History1PassGLRPC, 0, m_History0PassGLRPC, 0);
-	copyColorBuffer(m_History2PassGLRPC, 0, m_History1PassGLRPC, 0);
-	copyColorBuffer(l_currentFrameGLRPC, 0, m_History2PassGLRPC, 0);
-
 	activateShaderProgram(m_GLSPC);
 
 	activateRenderPass(l_currentFrameGLRPC);
 
 	activateTexture(prePassGLRPC->m_GLTDCs[0], 0);
-	activateTexture(m_History0PassGLRPC->m_GLTDCs[0], 1);
-	activateTexture(m_History1PassGLRPC->m_GLTDCs[0], 2);
-	activateTexture(m_History2PassGLRPC->m_GLTDCs[0], 3);
-	activateTexture(l_lastFrameGLTDC, 4);
-	activateTexture(GLOpaquePass::getGLRPC()->m_GLTDCs[3], 5);
+	activateTexture(l_lastFrameGLTDC, 1);
+	activateTexture(GLOpaquePass::getGLRPC()->m_GLTDCs[3], 2);
 
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
@@ -116,9 +92,6 @@ bool GLTAAPass::update(GLRenderPassComponent* prePassGLRPC)
 
 bool GLTAAPass::resize(unsigned int newSizeX, unsigned int newSizeY)
 {
-	resizeGLRenderPassComponent(m_History0PassGLRPC, newSizeX, newSizeY);
-	resizeGLRenderPassComponent(m_History1PassGLRPC, newSizeX, newSizeY);
-	resizeGLRenderPassComponent(m_History2PassGLRPC, newSizeX, newSizeY);
 	resizeGLRenderPassComponent(m_PingPassGLRPC, newSizeX, newSizeY);
 	resizeGLRenderPassComponent(m_PongPassGLRPC, newSizeX, newSizeY);
 

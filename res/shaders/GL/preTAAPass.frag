@@ -7,10 +7,6 @@ layout(location = 0) in vec2 TexCoords;
 layout(location = 0, binding = 0) uniform sampler2D uni_lightPassRT0;
 layout(location = 1, binding = 1) uniform sampler2D uni_skyPassRT0;
 
-float luma(vec3 color) {
-	return dot(color, vec3(0.299, 0.587, 0.114));
-}
-
 void main()
 {
 	vec4 lightPassResult = texture(uni_lightPassRT0, TexCoords);
@@ -26,9 +22,6 @@ void main()
 	{
 		finalColor += lightPassResult.rgb;
 	}
-
-	// Tone mapping
-	finalColor = finalColor / (1.0f + luma(finalColor));
 
 	uni_preTAAPassRT0 = vec4(finalColor, 1.0);
 }
