@@ -13,14 +13,15 @@ struct Timestamp
 	unsigned short Microsecond;
 };
 
-namespace InnoTimer
+class InnoTimer
 {
-	bool Setup();
-	bool Initialize();
-	bool Tick();
-	bool Terminate();
+public:
+	static bool Setup();
+	static bool Initialize();
+	static bool Tick();
+	static bool Terminate();
 
-	const unsigned long long GetCurrentTimeFromEpoch(TimeUnit time_unit);
-	const Timestamp GetCurrentTime(unsigned int time_zone_adjustment);
-	const double GetDeltaTime(TimeUnit time_unit);
+	static const unsigned long long GetCurrentTimeFromEpoch(TimeUnit time_unit);
+	static const Timestamp GetCurrentTime(unsigned int time_zone_adjustment);
+	static const double GetDeltaTime(TimeUnit time_unit);
 };
