@@ -35,16 +35,16 @@ void InnoLogSystem::printLog(LogType LogType, const std::string & logMessage)
 	switch (LogType)
 	{
 	case LogType::INNO_DEV_VERBOSE:
-		InnoLogger::Log(LogLevel::Verbose, logMessage);
+		InnoLogger::Log(LogLevel::Verbose, logMessage.c_str());
 		break;
 	case LogType::INNO_WARNING:
-		InnoLogger::Log(LogLevel::Warning, logMessage);
+		InnoLogger::Log(LogLevel::Warning, logMessage.c_str());
 		break;
 	case LogType::INNO_ERROR:
-		InnoLogger::Log(LogLevel::Error, logMessage);
+		InnoLogger::Log(LogLevel::Error, logMessage.c_str());
 		break;
 	case LogType::INNO_DEV_SUCCESS:
-		InnoLogger::Log(LogLevel::Success, logMessage);
+		InnoLogger::Log(LogLevel::Success, logMessage.c_str());
 		break;
 	default:
 		break;

@@ -4,19 +4,26 @@
 
 namespace InnoLoggerNS
 {
-	std::string GetTimestamp()
+	inline std::ostream& GetTimestamp(std::ostream &s)
 	{
 		auto l_timeData = InnoTimer::GetCurrentTime(8);
-		return
-			"["
-			+ std::to_string(l_timeData.Year)
-			+ "-" + std::to_string(l_timeData.Month)
-			+ "-" + std::to_string(l_timeData.Day)
-			+ "-" + std::to_string(l_timeData.Hour)
-			+ "-" + std::to_string(l_timeData.Minute)
-			+ "-" + std::to_string(l_timeData.Second)
-			+ "-" + std::to_string(l_timeData.Millisecond)
-			+ "]";
+		s
+			<< "["
+			<< l_timeData.Year
+			<< "-"
+			<< l_timeData.Month
+			<< "-"
+			<< l_timeData.Day
+			<< "-"
+			<< l_timeData.Hour
+			<< "-"
+			<< l_timeData.Minute
+			<< "-"
+			<< l_timeData.Second
+			<< "-"
+			<< l_timeData.Millisecond
+			<< "]";
+		return s;
 	}
 
 #if defined INNO_PLATFORM_WIN
@@ -62,27 +69,53 @@ namespace InnoLoggerNS
 	std::mutex m_Mutex;
 }
 
-void InnoLogger::Log(LogLevel logLevel, double logMessage)
+void InnoLogger::LogStartOfLine(LogLevel logLevel)
 {
-	std::cout << InnoLoggerNS::GetTimestamp() << logMessage << std::endl;
+	InnoLoggerNS::m_Mutex.lock();
+#if defined INNO_PLATFORM_WIN
+	switch (logLevel)
+	{
+	case LogLevel::Verbose:
+		std::cout << InnoLoggerNS::blueColor; break;
+	case LogLevel::Warning:
+		std::cout << InnoLoggerNS::yellowColor; break;
+	case LogLevel::Error:
+		std::cout << InnoLoggerNS::redColor; break;
+	case LogLevel::Success:
+		std::cout << InnoLoggerNS::greenColor; break;
+	default: std::cout << InnoLoggerNS::whiteColor; break;
+	}
+#endif
+	std::cout << InnoLoggerNS::GetTimestamp;
+	InnoLoggerNS::m_LogFile << InnoLoggerNS::GetTimestamp;
 }
 
-void InnoLogger::Log(LogLevel logLevel, const vec2 & logMessage)
+void InnoLogger::LogEndOfLine()
+{
+	std::cout << std::endl;
+	InnoLoggerNS::m_LogFile << std::endl;
+	InnoLoggerNS::m_Mutex.unlock();
+}
+
+void InnoLogger::LogImpl(double logMessage)
+{
+	std::cout << logMessage;
+	InnoLoggerNS::m_LogFile << logMessage;
+}
+
+void InnoLogger::LogImpl(const vec2 & logMessage)
 {
 	std::cout
-		<< InnoLoggerNS::GetTimestamp()
 		<< "vec2(x: "
 		<< logMessage.x
 		<< ", y: "
 		<< logMessage.y
-		<< ")"
-		<< std::endl;
+		<< ")";
 }
 
-void InnoLogger::Log(LogLevel logLevel, const vec4 & logMessage)
+void InnoLogger::LogImpl(const vec4 & logMessage)
 {
 	std::cout
-		<< InnoLoggerNS::GetTimestamp()
 		<< "vec4(x: "
 		<< logMessage.x
 		<< ", y: "
@@ -91,14 +124,12 @@ void InnoLogger::Log(LogLevel logLevel, const vec4 & logMessage)
 		<< logMessage.z
 		<< ", w: "
 		<< logMessage.w
-		<< ")"
-		<< std::endl;
+		<< ")";
 }
 
-void InnoLogger::Log(LogLevel logLevel, const mat4 & logMessage)
+void InnoLogger::LogImpl(const mat4 & logMessage)
 {
 	std::cout
-		<< InnoLoggerNS::GetTimestamp()
 		<< std::endl
 		<< "|"
 		<< logMessage.m00
@@ -142,31 +173,16 @@ void InnoLogger::Log(LogLevel logLevel, const mat4 & logMessage)
 		<< std::endl;
 }
 
-void InnoLogger::Log(LogLevel LogLevel, const std::string & logMessage)
+void InnoLogger::LogImpl(const char* logMessage)
 {
-	std::lock_guard<std::mutex> lock{ InnoLoggerNS::m_Mutex };
-#if defined INNO_PLATFORM_WIN
-	switch (LogLevel)
-	{
-	case LogLevel::Verbose:
-		std::cout << InnoLoggerNS::blueColor << InnoLoggerNS::GetTimestamp() << logMessage << std::endl; break;
-	case LogLevel::Warning:
-		std::cout << InnoLoggerNS::yellowColor << InnoLoggerNS::GetTimestamp() << logMessage << std::endl; break;
-	case LogLevel::Error:
-		std::cout << InnoLoggerNS::redColor << InnoLoggerNS::GetTimestamp() << logMessage << std::endl; break;
-	case LogLevel::Success:
-		std::cout << InnoLoggerNS::greenColor << InnoLoggerNS::GetTimestamp() << logMessage << std::endl; break;
-	default: std::cout << InnoLoggerNS::whiteColor << InnoLoggerNS::GetTimestamp() << logMessage << std::endl; break;
-	}
-#else
-	std::cout << InnoLoggerNS::GetTimestamp() << logMessage << std::endl;
-#endif
-	InnoLoggerNS::m_LogFile << InnoLoggerNS::GetTimestamp() << logMessage << std::endl;
+	std::cout << logMessage;
 }
 
 bool InnoLogger::Setup()
 {
-	InnoLoggerNS::m_LogFile.open(InnoLoggerNS::GetTimestamp() + ".InnoLog", std::ios::out | std::ios::trunc);
+	std::stringstream ss;
+	ss << InnoLoggerNS::GetTimestamp << ".InnoLog";
+	InnoLoggerNS::m_LogFile.open(ss.str(), std::ios::out | std::ios::trunc);
 
 	if (InnoLoggerNS::m_LogFile.is_open())
 	{
