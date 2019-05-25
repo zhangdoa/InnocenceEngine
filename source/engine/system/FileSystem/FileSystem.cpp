@@ -24,7 +24,6 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
-	std::vector<InnoFuture<void>> m_asyncTask;
 	std::vector<std::function<void()>*> m_sceneLoadingStartCallbacks;
 	std::vector<std::function<void()>*> m_sceneLoadingFinishCallbacks;
 

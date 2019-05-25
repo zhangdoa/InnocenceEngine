@@ -13,11 +13,10 @@ public:
 
 	ObjectStatus getStatus()  override;
 
-	void* addTask(std::unique_ptr<IThreadTask>&& task) override;
-
-	void shrinkFutureContainer(std::vector<InnoFuture<void>>& rhs) override;
-
 	void waitAllTasksToFinish() override;
 
 	std::string getThreadId() override;
+
+protected:
+	IInnoTask* addTaskImpl(std::unique_ptr<IInnoTask>&& task) override;
 };

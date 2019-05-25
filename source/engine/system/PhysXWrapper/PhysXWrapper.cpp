@@ -43,8 +43,6 @@ INNO_PRIVATE_SCOPE PhysXWrapperNS
 	std::function<void()> f_sceneLoadingStartCallback;
 	std::function<void()> f_pauseSimulate;
 
-	std::vector<InnoFuture<void>> m_asyncTask;
-
 	std::mutex m_mutex;
 }
 

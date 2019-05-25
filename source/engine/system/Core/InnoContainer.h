@@ -7,10 +7,7 @@ public:
 	InnoArray() = default;
 	InnoArray(size_t elementCount)
 	{
-		m_ElementSize = sizeof(T);
-		m_ElementCount = elementCount;
-		m_HeapAddress = reinterpret_cast<T*>(InnoMemory::Allocate(m_ElementCount * m_ElementSize));
-		m_CurrentFreeHeapAddress = m_HeapAddress;
+		Reserve(elementCount);
 	}
 
 	InnoArray(const InnoArray<T> & rhs)
@@ -51,19 +48,27 @@ public:
 		return *(m_HeapAddress + pos * m_ElementSize);
 	}
 
-	auto Begin(void)
+	auto Begin()
 	{
 		return m_HeapAddress;
 	}
 
-	auto End(void)
+	auto End()
 	{
 		return m_HeapAddress + m_ElementCount * m_ElementSize;
 	}
 
-	auto Size(void)
+	auto Size()
 	{
 		return m_ElementCount;
+	}
+
+	auto Reserve(size_t elementCount)
+	{
+		m_ElementSize = sizeof(T);
+		m_ElementCount = elementCount;
+		m_HeapAddress = reinterpret_cast<T*>(InnoMemory::Allocate(m_ElementCount * m_ElementSize));
+		m_CurrentFreeHeapAddress = m_HeapAddress;
 	}
 
 private:

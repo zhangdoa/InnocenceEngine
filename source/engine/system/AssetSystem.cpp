@@ -12,8 +12,6 @@ INNO_PRIVATE_SCOPE InnoAssetSystemNS
 
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
-	std::vector<InnoFuture<void>> m_asyncTask;
-
 	DirectoryMetadata m_rootDirectoryMetadata;
 }
 
@@ -335,7 +333,6 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 				});
 			}
 		}
-		g_pCoreSystem->getTaskSystem()->shrinkFutureContainer(InnoAssetSystemNS::m_asyncTask);
 	}
 }
 

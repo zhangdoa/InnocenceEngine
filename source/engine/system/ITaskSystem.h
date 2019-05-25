@@ -1,7 +1,7 @@
 #pragma once
 #include "../common/InnoType.h"
 #include "../common/InnoClassTemplate.h"
-#include "../common/InnoConcurrency.h"
+#include "Core/InnoTaskScheduler.h"
 
 INNO_INTERFACE ITaskSystem
 {
@@ -15,23 +15,22 @@ public:
 
 	virtual ObjectStatus getStatus() = 0;
 
-	virtual void* addTask(std::unique_ptr<IThreadTask>&& task) = 0;
-
-	virtual void shrinkFutureContainer(std::vector<InnoFuture<void>>& rhs) = 0;
-
 	virtual void waitAllTasksToFinish() = 0;
 
 	virtual std::string getThreadId() = 0;
 
 	template <typename Func, typename... Args>
-	auto submit(Func&& func, Args&&... args)
+	IInnoTask* submit(Func&& func, Args&&... args)
 	{
-		auto boundTask = std::bind(std::forward<Func>(func), std::forward<Args>(args)...);
-		using ResultType = std::invoke_result_t<decltype(boundTask)>;
+		auto BoundTask = std::bind(std::forward<Func>(func), std::forward<Args>(args)...);
+		using ResultType = std::invoke_result_t<decltype(BoundTask)>;
 		using PackagedTask = std::packaged_task<ResultType()>;
 		using TaskType = InnoTask<PackagedTask>;
 
-		PackagedTask task{ std::move(boundTask) };
-		return addTask(std::make_unique<TaskType>(std::move(task)));;
+		PackagedTask Task{ std::move(BoundTask) };
+		return addTaskImpl(std::make_unique<TaskType>(std::move(Task)));
 	}
+
+protected:
+	virtual IInnoTask* addTaskImpl(std::unique_ptr<IInnoTask>&& task) = 0;
 };
