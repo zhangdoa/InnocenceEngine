@@ -125,7 +125,7 @@ bool PhysXWrapperNS::update()
 		{
 			m_allowUpdate = false;
 
-			auto updatePhysXTask = g_pCoreSystem->getTaskSystem()->submit([&]()
+			auto PhysXUpdateTask = g_pCoreSystem->getTaskSystem()->submit("PhysXUpdateTask", [&]()
 			{
 				gScene->simulate(1.0f / 120.0f);
 				gScene->fetchResults(true);

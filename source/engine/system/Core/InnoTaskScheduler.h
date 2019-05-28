@@ -14,14 +14,15 @@ public:
 	IInnoTask& operator=(IInnoTask&& other) = default;
 
 	virtual void Execute() = 0;
+	virtual const char* GetName() = 0;
 };
 
 template <typename Functor>
 class InnoTask : public IInnoTask
 {
 public:
-	InnoTask(Functor&& functor)
-		:m_Functor{ std::move(functor) }
+	InnoTask(Functor&& functor, const char* name)
+		:m_Functor{ std::move(functor) }, m_Name{ name }
 	{
 	}
 
@@ -36,8 +37,21 @@ public:
 		m_Functor();
 	}
 
+	const char* GetName() override
+	{
+		return m_Name;
+	}
+
 private:
 	Functor m_Functor;
+	const char* m_Name;
+};
+
+struct InnoTaskReport
+{
+	float Duration;
+	unsigned int ThreadID;
+	const char* TaskName;
 };
 
 class InnoTaskScheduler
@@ -51,4 +65,6 @@ public:
 	static void WaitSync();
 
 	static IInnoTask* AddTaskImpl(std::unique_ptr<IInnoTask>&& task);
+
+	static InnoTaskReport GetReport();
 };

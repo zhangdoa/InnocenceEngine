@@ -20,7 +20,7 @@ public:
 	virtual std::string getThreadId() = 0;
 
 	template <typename Func, typename... Args>
-	IInnoTask* submit(Func&& func, Args&&... args)
+	IInnoTask* submit(const char* name, Func&& func, Args&&... args)
 	{
 		auto BoundTask = std::bind(std::forward<Func>(func), std::forward<Args>(args)...);
 		using ResultType = std::invoke_result_t<decltype(BoundTask)>;
@@ -28,7 +28,7 @@ public:
 		using TaskType = InnoTask<PackagedTask>;
 
 		PackagedTask Task{ std::move(BoundTask) };
-		return addTaskImpl(std::make_unique<TaskType>(std::move(Task)));
+		return addTaskImpl(std::make_unique<TaskType>(std::move(Task), name));
 	}
 
 protected:

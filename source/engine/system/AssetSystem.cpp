@@ -315,7 +315,7 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 			{
 				if (!l_visibleComponent->m_modelFileName.empty())
 				{
-					g_pCoreSystem->getTaskSystem()->submit([=]()
+					g_pCoreSystem->getTaskSystem()->submit("LoadAssetTask", [=]()
 					{
 						l_visibleComponent->m_modelMap = g_pCoreSystem->getAssetSystem()->loadModel(l_visibleComponent->m_modelFileName);
 						g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(l_visibleComponent);
@@ -325,7 +325,7 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 			}
 			else
 			{
-				g_pCoreSystem->getTaskSystem()->submit([=]()
+				g_pCoreSystem->getTaskSystem()->submit("LoadAssetTask", [=]()
 				{
 					assignUnitMesh(l_visibleComponent->m_meshShapeType, l_visibleComponent);
 					g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(l_visibleComponent);

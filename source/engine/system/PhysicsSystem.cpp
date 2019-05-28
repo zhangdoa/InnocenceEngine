@@ -891,19 +891,19 @@ bool InnoPhysicsSystemNS::update()
 	PhysXWrapper::get().update();
 #endif
 
-	g_pCoreSystem->getTaskSystem()->submit([&]()
+	g_pCoreSystem->getTaskSystem()->submit("CameraComponentsUpdateTask", [&]()
 	{
 		updateCameraComponents();
 	});
-	//g_pCoreSystem->getTaskSystem()->submit([&]()
+	//g_pCoreSystem->getTaskSystem()->submit("LightComponentsUpdateTask", [&]()
 	//{
 	updateLightComponents();
 	//});
-	g_pCoreSystem->getTaskSystem()->submit([&]()
+	g_pCoreSystem->getTaskSystem()->submit("VisibleComponentsUpdateTask", [&]()
 	{
 		updateVisibleComponents();
 	});
-	g_pCoreSystem->getTaskSystem()->submit([&]()
+	g_pCoreSystem->getTaskSystem()->submit("CullingTask", [&]()
 	{
 		updateCulling();
 	});

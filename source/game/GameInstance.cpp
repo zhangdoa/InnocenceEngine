@@ -519,7 +519,7 @@ bool GameInstanceNS::update()
 	{
 		seed += 0.02f;
 
-		auto updateGameTask = g_pCoreSystem->getTaskSystem()->submit([&]()
+		auto updateGameTask = g_pCoreSystem->getTaskSystem()->submit("PlayerComponentCollectionUpdateTask", [&]()
 		{
 			PlayerComponentCollection::update();
 		});

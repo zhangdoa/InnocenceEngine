@@ -9,9 +9,9 @@ enum class ThreadStatus { Idle, Busy };
 class InnoThread
 {
 public:
-	InnoThread()
+	explicit InnoThread(unsigned int ThreadIndex)
 	{
-		m_ThreadHandle = new std::thread(&InnoThread::Worker, this);
+		m_ThreadHandle = new std::thread(&InnoThread::Worker, this, ThreadIndex);
 	};
 
 	~InnoThread(void)
@@ -42,18 +42,19 @@ public:
 	}
 
 private:
-	std::string GetThreadId()
+	std::string GetThreadID()
 	{
 		std::stringstream ss;
-		ss << m_ID;
+		ss << m_ID.second;
 		return ss.str();
 	}
 
-	void Worker(void)
+	void Worker(unsigned int ThreadIndex)
 	{
-		m_ID = std::this_thread::get_id();
+		auto l_ID = std::this_thread::get_id();
+		m_ID = std::make_pair(ThreadIndex, l_ID);
 		m_ThreadStatus = ThreadStatus::Idle;
-		InnoLogger::Log(LogLevel::Success, "InnoTaskScheduler: Thread ", GetThreadId().c_str(), " has been occupied.");
+		InnoLogger::Log(LogLevel::Success, "InnoTaskScheduler: Thread ", GetThreadID().c_str(), " has been occupied.");
 
 		while (!m_Done)
 		{
@@ -67,18 +68,19 @@ private:
 				pTask->Execute();
 #if defined _DEBUG
 				auto l_FinishTime = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
-				auto l_ExecuteDuration = l_FinishTime - l_StartTime;
+				auto l_Duration = l_FinishTime - l_StartTime;
+				InnoTaskReport l_TaskReport = { (float)l_Duration, m_ID.first, pTask->GetName() };
 #endif
 				m_ThreadStatus = ThreadStatus::Idle;
 			}
 		}
 
 		m_ThreadStatus = ThreadStatus::Idle;
-		InnoLogger::Log(LogLevel::Success, "InnoTaskScheduler: Thread ", GetThreadId().c_str(), " has been released.");
+		InnoLogger::Log(LogLevel::Success, "InnoTaskScheduler: Thread ", GetThreadID().c_str(), " has been released.");
 	}
 
 	std::thread* m_ThreadHandle;
-	std::thread::id m_ID;
+	std::pair<unsigned int, std::thread::id> m_ID;
 	std::atomic<ThreadStatus> m_ThreadStatus;
 	std::atomic_bool m_Done = false;
 	ThreadSafeQueue<std::unique_ptr<IInnoTask>> m_WorkQueue;
@@ -101,7 +103,7 @@ bool InnoTaskScheduler::Setup()
 	{
 		for (std::uint32_t i = 0u; i < InnoTaskSchedulerNS::m_NumThreads; ++i)
 		{
-			InnoTaskSchedulerNS::m_Threads[i] = std::make_unique<InnoThread>();
+			InnoTaskSchedulerNS::m_Threads[i] = std::make_unique<InnoThread>(i);
 		}
 	}
 	catch (...)

@@ -299,7 +299,7 @@ bool InnoGameSystem::update()
 {
 	if (InnoGameSystemNS::m_objectStatus == ObjectStatus::Activated)
 	{
-		auto updateTask = g_pCoreSystem->getTaskSystem()->submit([&]()
+		auto updateTask = g_pCoreSystem->getTaskSystem()->submit("TransformComponentsUpdateTask", [&]()
 		{
 			InnoGameSystemNS::updateTransformComponent();
 		});
