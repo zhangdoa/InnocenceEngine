@@ -282,7 +282,7 @@ bool DX12RenderingSystemNS::createSwapChain()
 	// Set the swap chain to use double buffering.
 	g_DXRenderingSystemComponent->m_swapChainDesc.BufferCount = 2;
 
-	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getRenderingFrontendSystem()->getScreenResolution();
 
 	// Set the width and height of the back buffer.
 	g_DXRenderingSystemComponent->m_swapChainDesc.Width = (UINT)l_screenResolution.x;
@@ -478,7 +478,7 @@ bool DX12RenderingSystemNS::setup()
 
 	g_DXRenderingSystemComponent = &DX12RenderingSystemComponent::get();
 
-	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getRenderingFrontendSystem()->getScreenResolution();
 
 	// general render pass desc
 	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTNumber = 1;

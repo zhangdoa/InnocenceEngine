@@ -121,7 +121,7 @@ bool DX11RenderingSystemNS::createPhysicalDevices()
 
 	// Now go through all the display modes and find the one that matches the screen width and height.
 	// When a match is found store the numerator and denominator of the refresh rate for that monitor.
-	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getRenderingFrontendSystem()->getScreenResolution();
 
 	for (unsigned int i = 0; i < numModes; i++)
 	{
@@ -184,7 +184,7 @@ bool DX11RenderingSystemNS::createSwapChain()
 	// Set to a single back buffer.
 	g_DXRenderingSystemComponent->m_swapChainDesc.BufferCount = 1;
 
-	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getRenderingFrontendSystem()->getScreenResolution();
 
 	// Set the width and height of the back buffer.
 	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Width = l_screenResolution.x;
@@ -314,7 +314,7 @@ bool DX11RenderingSystemNS::setup()
 
 	g_DXRenderingSystemComponent = &DX11RenderingSystemComponent::get();
 
-	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getRenderingFrontendSystem()->getScreenResolution();
 
 	// general render pass desc
 	g_DXRenderingSystemComponent->m_deferredRenderPassDesc.RTNumber = 1;
@@ -689,7 +689,7 @@ DX11TextureDataComponent * DX11RenderingSystemNS::getDX11TextureDataComponent(Wo
 
 bool DX11RenderingSystemNS::resize()
 {
-	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getRenderingFrontendSystem()->getScreenResolution();
 
 	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Width = l_screenResolution.x;
 	g_DXRenderingSystemComponent->m_swapChainDesc.BufferDesc.Height = l_screenResolution.y;

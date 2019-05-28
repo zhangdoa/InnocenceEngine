@@ -67,7 +67,7 @@ bool ImGuiWrapperWinGL::newFrame()
 
 bool ImGuiWrapperWinGL::render()
 {
-	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getRenderingFrontendSystem()->getScreenResolution();
 	glViewport(0, 0, (GLsizei)l_screenResolution.x, (GLsizei)l_screenResolution.y);
 
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -92,7 +92,7 @@ ObjectStatus ImGuiWrapperWinGL::getStatus()
 
 void ImGuiWrapperWinGL::showRenderResult(RenderPassType renderPassType)
 {
-	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getRenderingFrontendSystem()->getScreenResolution();
 	auto l_RTSize = ImVec2((float)l_screenResolution.x / 4.0f, (float)l_screenResolution.y / 4.0f);
 	auto l_developmentRTSize = ImVec2((float)l_screenResolution.x / 2.0f, (float)l_screenResolution.y / 2.0f);
 	auto l_shadowRTSize = ImVec2(512.0, 512.0);

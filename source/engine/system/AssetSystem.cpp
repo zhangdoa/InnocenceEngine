@@ -68,37 +68,37 @@ INNO_SYSTEM_EXPORT void InnoAssetSystem::loadAssetsForComponents()
 
 INNO_SYSTEM_EXPORT MeshDataComponent * InnoAssetSystem::addMeshDataComponent()
 {
-	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->addMeshDataComponent();
+	return g_pCoreSystem->getRenderingFrontendSystem()->addMeshDataComponent();
 }
 
 INNO_SYSTEM_EXPORT MaterialDataComponent * InnoAssetSystem::addMaterialDataComponent()
 {
-	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->addMaterialDataComponent();
+	return g_pCoreSystem->getRenderingFrontendSystem()->addMaterialDataComponent();
 }
 
 INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::addTextureDataComponent()
 {
-	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->addTextureDataComponent();
+	return g_pCoreSystem->getRenderingFrontendSystem()->addTextureDataComponent();
 }
 
 INNO_SYSTEM_EXPORT MeshDataComponent * InnoAssetSystem::getMeshDataComponent(MeshShapeType meshShapeType)
 {
-	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getMeshDataComponent(meshShapeType);
+	return g_pCoreSystem->getRenderingFrontendSystem()->getMeshDataComponent(meshShapeType);
 }
 
 INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::getTextureDataComponent(TextureUsageType textureUsageType)
 {
-	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getTextureDataComponent(textureUsageType);
+	return g_pCoreSystem->getRenderingFrontendSystem()->getTextureDataComponent(textureUsageType);
 }
 
 INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::getTextureDataComponent(FileExplorerIconType iconType)
 {
-	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getTextureDataComponent(iconType);
+	return g_pCoreSystem->getRenderingFrontendSystem()->getTextureDataComponent(iconType);
 }
 
 INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::getTextureDataComponent(WorldEditorIconType iconType)
 {
-	return g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getTextureDataComponent(iconType);
+	return g_pCoreSystem->getRenderingFrontendSystem()->getTextureDataComponent(iconType);
 }
 
 INNO_SYSTEM_EXPORT DirectoryMetadata* InnoAssetSystem::getRootDirectoryMetadata()
@@ -340,8 +340,8 @@ void InnoAssetSystemNS::assignUnitMesh(MeshShapeType meshUsageType, VisibleCompo
 {
 	if (meshUsageType != MeshShapeType::CUSTOM)
 	{
-		MeshDataComponent* l_UnitMeshTemplate = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getMeshDataComponent(meshUsageType);
-		visibleComponent->m_modelMap.emplace(l_UnitMeshTemplate, g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->addMaterialDataComponent());
+		MeshDataComponent* l_UnitMeshTemplate = g_pCoreSystem->getRenderingFrontendSystem()->getMeshDataComponent(meshUsageType);
+		visibleComponent->m_modelMap.emplace(l_UnitMeshTemplate, g_pCoreSystem->getRenderingFrontendSystem()->addMaterialDataComponent());
 	}
 	else
 	{

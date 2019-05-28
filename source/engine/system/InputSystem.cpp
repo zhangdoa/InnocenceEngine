@@ -72,7 +72,7 @@ bool InnoInputSystemNS::update()
 {
 	if (InnoInputSystemNS::m_objectStatus == ObjectStatus::Activated)
 	{
-		m_buttonStatus = g_pCoreSystem->getVisionSystem()->getWindowSystem()->getButtonStatus();
+		m_buttonStatus = g_pCoreSystem->getWindowSystem()->getButtonStatus();
 
 		for (auto& i : m_buttonStatus)
 		{
@@ -203,7 +203,7 @@ bool InnoInputSystemNS::addMouseMovementCallback(MouseMovementCallbackMap & mous
 
 vec4 InnoInputSystemNS::getMousePositionInWorldSpace()
 {
-	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getRenderingFrontendSystem()->getScreenResolution();
 
 	auto l_x = 2.0f * m_mouseLastX / l_screenResolution.x - 1.0f;
 	auto l_y = 1.0f - 2.0f * m_mouseLastY / l_screenResolution.y;
@@ -252,8 +252,8 @@ vec2 InnoInputSystemNS::getMousePositionInScreenSpace()
 void InnoInputSystemNS::framebufferSizeCallback(int width, int height)
 {
 	TVec2<unsigned int> l_newScreenResolution = TVec2<unsigned int>(width, height);
-	g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->setScreenResolution(l_newScreenResolution);
-	g_pCoreSystem->getVisionSystem()->getRenderingBackend()->resize();
+	g_pCoreSystem->getRenderingFrontendSystem()->setScreenResolution(l_newScreenResolution);
+	g_pCoreSystem->getRenderingBackendSystem()->resize();
 }
 
 void InnoInputSystemNS::mousePositionCallback(float mouseXPos, float mouseYPos)

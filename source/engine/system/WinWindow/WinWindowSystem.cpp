@@ -58,7 +58,7 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 	ApplicationHandle = &windowCallbackWrapper::get();
 
 	// create window surface for different rendering backend
-	WinWindowSystemNS::m_initConfig = g_pCoreSystem->getVisionSystem()->getInitConfig();
+	WinWindowSystemNS::m_initConfig = g_pCoreSystem->getInitConfig();
 
 	switch (WinWindowSystemNS::m_initConfig.renderingBackend)
 	{
@@ -201,8 +201,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			auto l_height = (lParam & 0xffff0000) >> 16;
 
 			TVec2<unsigned int> l_newResolution = TVec2<unsigned int>((unsigned int)l_width, (unsigned int)l_height);
-			g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->setScreenResolution(l_newResolution);
-			g_pCoreSystem->getVisionSystem()->getRenderingBackend()->resize();
+			g_pCoreSystem->getRenderingFrontendSystem()->setScreenResolution(l_newResolution);
+			g_pCoreSystem->getRenderingBackendSystem()->resize();
 		}
 	}
 	default:

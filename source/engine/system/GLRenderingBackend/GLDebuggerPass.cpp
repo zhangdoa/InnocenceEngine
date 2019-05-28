@@ -44,7 +44,7 @@ bool GLDebuggerPass::initialize()
 {
 	f_mouseSelect = [&]() {
 		auto l_mousePos = g_pCoreSystem->getInputSystem()->getMousePositionInScreenSpace();
-		l_mousePos.y = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution().y - l_mousePos.y;
+		l_mousePos.y = g_pCoreSystem->getRenderingFrontendSystem()->getScreenResolution().y - l_mousePos.y;
 
 		auto l_pixelValue = readPixel(GLOpaquePass::getGLRPC(), 3, (GLint)l_mousePos.x, (GLint)l_mousePos.y);
 

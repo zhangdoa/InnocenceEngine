@@ -269,7 +269,7 @@ bool VKLightPass::initialize()
 	m_VKRPC->inputAssemblyStateCInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
 	m_VKRPC->inputAssemblyStateCInfo.primitiveRestartEnable = VK_FALSE;
 
-	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getRenderingFrontendSystem()->getScreenResolution();
 
 	VkExtent2D l_extent = {};
 	l_extent.width = l_screenResolution.x;

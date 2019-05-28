@@ -9,7 +9,27 @@
 #include "AssetSystem.h"
 #include "PhysicsSystem.h"
 #include "InputSystem.h"
-#include "VisionSystem.h"
+#include "RenderingFrontendSystem.h"
+#if defined INNO_PLATFORM_WIN
+#include "WinWindow/WinWindowSystem.h"
+#include "DX11RenderingBackend/DX11RenderingSystem.h"
+#include "DX12RenderingBackend/DX12RenderingSystem.h"
+#endif
+#if !defined INNO_PLATFORM_MAC && defined INNO_RENDERER_OPENGL
+#include "GLRenderingBackend/GLRenderingSystem.h"
+#endif
+#if defined INNO_PLATFORM_MAC
+#include "MacWindow/MacWindowSystem.h"
+#include "MTRenderingBackend/MTRenderingSystem.h"
+#endif
+#if defined INNO_PLATFORM_LINUX
+#include "LinuxWindow/LinuxWindowSystem.h"
+#endif
+#if defined INNO_RENDERER_VULKAN
+#include "VKRenderingBackend/VKRenderingSystem.h"
+#endif
+
+#include "ImGuiWrapper/ImGuiWrapper.h"
 
 ICoreSystem* g_pCoreSystem;
 
@@ -33,21 +53,12 @@ if (!g_pCoreSystem->get##className()->initialize()) \
 	return false; \
 } \
 
-//#define INNO_TEST_BUILD
-#if defined INNO_TEST_BUILD
-#define subSystemUpdate( className ) \
-{ \
-std::function<void()> l_task = [](){ g_pCoreSystem->get##className()->update(); }; \
-g_pCoreSystem->getTestSystem()->measure(std::string(#className), l_task); \
-}
-#else
 #define subSystemUpdate( className ) \
 if (!g_pCoreSystem->get##className()->update()) \
 { \
 m_objectStatus = ObjectStatus::Suspended; \
 return false; \
 }
-#endif
 
 #define subSystemTerm( className ) \
 if (!g_pCoreSystem->get##className()->terminate()) \
@@ -63,11 +74,14 @@ INNO_SYSTEM_EXPORT I##className * InnoCoreSystem::get##className() \
 
 INNO_PRIVATE_SCOPE InnoCoreSystemNS
 {
-	bool createSubSystemInstance();
+	InitConfig parseInitConfig(const std::string& arg);
+	bool createSubSystemInstance(char* pScmdline);
 	bool setup(void* appHook, void* extraHook, char* pScmdline);
 	bool initialize();
 	bool update();
 	bool terminate();
+
+	InitConfig m_initConfig;
 
 	std::unique_ptr<ITimeSystem> m_TimeSystem;
 	std::unique_ptr<ILogSystem> m_LogSystem;
@@ -79,12 +93,117 @@ INNO_PRIVATE_SCOPE InnoCoreSystemNS
 	std::unique_ptr<IAssetSystem> m_AssetSystem;
 	std::unique_ptr<IPhysicsSystem> m_PhysicsSystem;
 	std::unique_ptr<IInputSystem> m_InputSystem;
-	std::unique_ptr<IVisionSystem> m_VisionSystem;
+	std::unique_ptr<IWindowSystem> m_WindowSystem;
+	std::unique_ptr<IRenderingFrontendSystem> m_RenderingFrontendSystem;
+	std::unique_ptr<IRenderingBackendSystem> m_RenderingBackendSystem;
 
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+
+	bool m_showImGui = false;
+	std::function<void()> f_toggleshowImGui;
+
+	std::atomic<bool> m_isRendering = false;
+	std::atomic<bool> m_allowRender = false;
 }
 
-bool InnoCoreSystemNS::createSubSystemInstance()
+InitConfig InnoCoreSystemNS::parseInitConfig(const std::string& arg)
+{
+	InitConfig l_result;
+
+	if (arg == "")
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "CoreSystem: No arguments found, use default settings.");
+		return l_result;
+	}
+
+	auto l_engineModeArgPos = arg.find("mode");
+
+	if (l_engineModeArgPos == std::string::npos)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "CoreSystem: No engine mode argument found, use default game mode.");
+	}
+	else
+	{
+		std::string l_engineModeArguments = arg.substr(l_engineModeArgPos + 5);
+		l_engineModeArguments = l_engineModeArguments.substr(0, 1);
+
+		if (l_engineModeArguments == "0")
+		{
+			l_result.engineMode = EngineMode::GAME;
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "CoreSystem: Launch in game mode.");
+		}
+		else if (l_engineModeArguments == "1")
+		{
+			l_result.engineMode = EngineMode::EDITOR;
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "CoreSystem: Launch in editor mode.");
+		}
+		else
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "CoreSystem: Unsupported engine mode.");
+		}
+	}
+
+	auto l_renderingBackendArgPos = arg.find("renderer");
+
+	if (l_renderingBackendArgPos == std::string::npos)
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "CoreSystem: No rendering backend argument found, use default OpenGL rendering backend.");
+	}
+	else
+	{
+		std::string l_rendererArguments = arg.substr(l_renderingBackendArgPos + 9);
+		l_rendererArguments = l_rendererArguments.substr(0, 1);
+
+		if (l_rendererArguments == "0")
+		{
+#if !defined INNO_PLATFORM_MAC && defined INNO_RENDERER_OPENGL
+			l_result.renderingBackend = RenderingBackend::GL;
+#else
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "CoreSystem: OpenGL is not supported on current platform, no rendering backend will be launched.");
+#endif
+		}
+		else if (l_rendererArguments == "1")
+		{
+#if defined INNO_PLATFORM_WIN
+			l_result.renderingBackend = RenderingBackend::DX11;
+#else
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "CoreSystem: DirectX 11 is not supported on current platform, use default OpenGL rendering backend.");
+#endif
+		}
+		else if (l_rendererArguments == "2")
+		{
+#if defined INNO_PLATFORM_WIN
+			l_result.renderingBackend = RenderingBackend::DX12;
+#else
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "CoreSystem: DirectX 12 is not supported on current platform, use default OpenGL rendering backend.");
+#endif
+		}
+		else if (l_rendererArguments == "3")
+		{
+#if defined INNO_RENDERER_VULKAN
+			l_result.renderingBackend = RenderingBackend::VK;
+#else
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "CoreSystem: Vulkan is not supported on current platform, use default OpenGL rendering backend.");
+#endif
+		}
+		else if (l_rendererArguments == "4")
+		{
+#if defined INNO_PLATFORM_MAC
+			l_result.renderingBackend = RenderingBackend::MT;
+#else
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "CoreSystem: Metal is not supported on current platform, use default OpenGL rendering backend.");
+#endif
+		}
+		else
+		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "CoreSystem: Unsupported rendering backend, use default OpenGL rendering backend.");
+		}
+	}
+
+	return l_result;
+}
+
+bool InnoCoreSystemNS::createSubSystemInstance(char* pScmdline)
 {
 	createSubSystemInstanceDefi(TimeSystem);
 	createSubSystemInstanceDefi(LogSystem);
@@ -97,14 +216,108 @@ bool InnoCoreSystemNS::createSubSystemInstance()
 	createSubSystemInstanceDefi(AssetSystem);
 	createSubSystemInstanceDefi(PhysicsSystem);
 	createSubSystemInstanceDefi(InputSystem);
-	createSubSystemInstanceDefi(VisionSystem);
+
+	std::string l_windowArguments = pScmdline;
+	m_initConfig = parseInitConfig(l_windowArguments);
+
+#if defined INNO_PLATFORM_WIN
+	m_WindowSystem = std::make_unique<WinWindowSystem>();
+	if (!m_WindowSystem.get())
+	{
+		return false;
+	}
+#endif
+#if defined INNO_PLATFORM_MAC
+	m_WindowSystem = std::make_unique<MacWindowSystem>();
+	if (!m_WindowSystem.get())
+	{
+		return false;
+	}
+#endif
+#if defined INNO_PLATFORM_LINUX
+	m_WindowSystem = std::make_unique<LinuxWindowSystem>();
+	if (!m_WindowSystem.get())
+	{
+		return false;
+	}
+#endif
+
+	m_RenderingFrontendSystem = std::make_unique<InnoRenderingFrontendSystem>();
+	if (!m_RenderingFrontendSystem.get())
+	{
+		return false;
+	}
+
+	switch (m_initConfig.renderingBackend)
+	{
+	case RenderingBackend::GL:
+#if !defined INNO_PLATFORM_MAC && defined INNO_RENDERER_OPENGL
+		m_RenderingBackendSystem = std::make_unique<GLRenderingSystem>();
+		if (!m_RenderingBackendSystem.get())
+		{
+			return false;
+		}
+#endif
+		break;
+	case RenderingBackend::DX11:
+#if defined INNO_PLATFORM_WIN
+		m_RenderingBackendSystem = std::make_unique<DX11RenderingSystem>();
+		if (!m_RenderingBackendSystem.get())
+		{
+			return false;
+		}
+#endif
+		break;
+	case RenderingBackend::DX12:
+#if defined INNO_PLATFORM_WIN
+		m_RenderingBackendSystem = std::make_unique<DX12RenderingSystem>();
+		if (!m_RenderingBackendSystem.get())
+		{
+			return false;
+		}
+#endif
+		break;
+	case RenderingBackend::VK:
+#if defined INNO_RENDERER_VULKAN
+		m_RenderingBackendSystem = std::make_unique<VKRenderingSystem>();
+		if (!m_RenderingBackendSystem.get())
+		{
+			return false;
+		}
+#endif
+		break;
+	case RenderingBackend::MT:
+#if defined INNO_PLATFORM_MAC
+		m_RenderingBackendSystem = std::make_unique<MTRenderingSystem>();
+		if (!m_RenderingBackendSystem.get())
+		{
+			return false;
+		}
+#endif
+		break;
+	default:
+		break;
+	}
+
+	// Objective-C++ bridge class instances passed as the 1st and 2nd parameters of setup()
+#if defined INNO_PLATFORM_MAC
+	auto l_windowSystem = reinterpret_cast<MacWindowSystem*>(m_WindowSystem.get());
+	auto l_windowSystemBridge = reinterpret_cast<MacWindowSystemBridge*>(appHook);
+
+	l_windowSystem->setBridge(l_windowSystemBridge);
+
+	auto l_renderingBackendSystem = reinterpret_cast<MTRenderingSystem*>(m_RenderingBackendSystem.get());
+	auto l_renderingBackendSystemBridge = reinterpret_cast<MTRenderingSystemBridge*>(extraHook);
+
+	l_renderingBackendSystem->setBridge(l_renderingBackendSystemBridge);
+#endif
 
 	return true;
 }
 
 bool InnoCoreSystemNS::setup(void* appHook, void* extraHook, char* pScmdline)
 {
-	if (!InnoCoreSystemNS::createSubSystemInstance())
+	if (!InnoCoreSystemNS::createSubSystemInstance(pScmdline))
 	{
 		return false;
 	}
@@ -116,11 +329,33 @@ bool InnoCoreSystemNS::setup(void* appHook, void* extraHook, char* pScmdline)
 
 	subSystemSetup(TestSystem);
 
-	if (!g_pCoreSystem->getVisionSystem()->setup(appHook, extraHook, pScmdline))
+	f_toggleshowImGui = [&]() {
+		m_showImGui = !m_showImGui;
+	};
+	g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_I, ButtonStatus::PRESSED }, &f_toggleshowImGui);
+
+	if (!m_WindowSystem->setup(appHook, extraHook))
 	{
 		return false;
 	}
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VisionSystem setup finished.");
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WindowSystem setup finished.");
+
+	if (!m_RenderingBackendSystem->setup())
+	{
+		return false;
+	}
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "RenderingBackendSystem setup finished.");
+
+	if (!m_RenderingFrontendSystem->setup(m_RenderingBackendSystem.get()))
+	{
+		return false;
+	}
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "RenderingFrontendSystem setup finished.");
+
+	if (!ImGuiWrapper::get().setup())
+	{
+		return false;
+	}
 
 	subSystemSetup(AssetSystem);
 	subSystemSetup(FileSystem);
@@ -147,7 +382,11 @@ bool InnoCoreSystemNS::initialize()
 	subSystemInit(AssetSystem);
 	subSystemInit(PhysicsSystem);
 	subSystemInit(InputSystem);
-	subSystemInit(VisionSystem);
+
+	m_WindowSystem->initialize();
+	m_RenderingBackendSystem->initialize();
+	m_RenderingFrontendSystem->initialize();
+	ImGuiWrapper::get().initialize();
 
 	m_objectStatus = ObjectStatus::Activated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "Engine has been initialized.");
@@ -169,33 +408,45 @@ bool InnoCoreSystemNS::update()
 	subSystemUpdate(PhysicsSystem);
 	subSystemUpdate(InputSystem);
 
-#if defined INNO_TEST_BUILD
+	if (m_WindowSystem->getStatus() == ObjectStatus::Activated)
 	{
-		std::function<void()> l_task = [&]() {
-			if (g_pCoreSystem->getVisionSystem()->getStatus() == ObjectStatus::ALIVE)
-			{
-				if (!g_pCoreSystem->getVisionSystem()->update())
-				{
-					m_objectStatus = ObjectStatus::STANDBY;
-				}
-				g_pCoreSystem->getGameSystem()->saveComponentsCapture();
-			}
-			else
-			{
-				m_objectStatus = ObjectStatus::STANDBY;
-				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "Engine is stand-by.");
-			}
-		};
-		g_pCoreSystem->getTestSystem()->measure("VisionSystem", l_task);
-	}
-#else
-	if (g_pCoreSystem->getVisionSystem()->getStatus() == ObjectStatus::Activated)
-	{
-		if (!g_pCoreSystem->getVisionSystem()->update())
+		if (g_pCoreSystem->getFileSystem()->isLoadingScene())
 		{
-			return false;
+			return true;
 		}
+
+		m_WindowSystem->update();
+
+		if (!m_allowRender)
+		{
+			m_RenderingFrontendSystem->update();
+
+			m_allowRender = true;
+		}
+
+		if (!m_isRendering && m_allowRender)
+		{
+			m_allowRender = false;
+
+			m_isRendering = true;
+
+			m_RenderingBackendSystem->update();
+
+			m_RenderingBackendSystem->render();
+
+			if (m_showImGui)
+			{
+				ImGuiWrapper::get().update();
+			}
+
+			m_WindowSystem->swapBuffer();
+
+			m_isRendering = false;
+		}
+
 		g_pCoreSystem->getGameSystem()->saveComponentsCapture();
+
+		return true;
 	}
 	else
 	{
@@ -203,14 +454,34 @@ bool InnoCoreSystemNS::update()
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "Engine is stand-by.");
 		return false;
 	}
-#endif
-
 	return true;
 }
 
 bool InnoCoreSystemNS::terminate()
 {
-	subSystemTerm(VisionSystem);
+	if (!ImGuiWrapper::get().terminate())
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GuiSystem can't be terminated!");
+		return false;
+	}
+
+	if (!m_RenderingBackendSystem->terminate())
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem can't be terminated!");
+		return false;
+	}
+	if (!m_RenderingFrontendSystem->terminate())
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingFrontendSystem can't be terminated!");
+		return false;
+	}
+
+	if (!m_WindowSystem->terminate())
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "WindowSystem can't be terminated!");
+		return false;
+	}
+
 	subSystemTerm(InputSystem);
 	subSystemTerm(PhysicsSystem);
 	subSystemTerm(AssetSystem);
@@ -269,4 +540,23 @@ subSystemGetDefi(GameSystem);
 subSystemGetDefi(AssetSystem);
 subSystemGetDefi(PhysicsSystem);
 subSystemGetDefi(InputSystem);
-subSystemGetDefi(VisionSystem);
+
+INNO_SYSTEM_EXPORT IWindowSystem * InnoCoreSystem::getWindowSystem()
+{
+	return InnoCoreSystemNS::m_WindowSystem.get();
+}
+
+INNO_SYSTEM_EXPORT IRenderingFrontendSystem * InnoCoreSystem::getRenderingFrontendSystem()
+{
+	return InnoCoreSystemNS::m_RenderingFrontendSystem.get();
+}
+
+INNO_SYSTEM_EXPORT IRenderingBackendSystem * InnoCoreSystem::getRenderingBackendSystem()
+{
+	return InnoCoreSystemNS::m_RenderingBackendSystem.get();
+}
+
+INNO_SYSTEM_EXPORT InitConfig InnoCoreSystem::getInitConfig()
+{
+	return InnoCoreSystemNS::m_initConfig;
+}

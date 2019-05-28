@@ -45,7 +45,7 @@ INNO_PRIVATE_SCOPE ImGuiWrapperNS
 
 bool ImGuiWrapper::setup()
 {
-	auto l_initConfig = g_pCoreSystem->getVisionSystem()->getInitConfig();
+	auto l_initConfig = g_pCoreSystem->getInitConfig();
 
 #if defined INNO_PLATFORM_WIN
 	switch (l_initConfig.renderingBackend)
@@ -172,7 +172,7 @@ bool ImGuiWrapper::initialize()
 		l_workingDir += "res//fonts//FreeSans.otf";
 		io.Fonts->AddFontFromFileTTF(l_workingDir.c_str(), 16.0f);
 
-		ImGuiWrapperNS::m_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
+		ImGuiWrapperNS::m_renderingConfig = g_pCoreSystem->getRenderingFrontendSystem()->getRenderingConfig();
 	}
 
 	return true;
@@ -227,7 +227,7 @@ void ImGuiWrapperNS::showApplicationProfiler()
 
 	if (ImGui::Button("Reload Shader"))
 	{
-		g_pCoreSystem->getVisionSystem()->getRenderingBackend()->reloadShader(RenderPassType(l_reloadShaderItem));
+		g_pCoreSystem->getRenderingBackendSystem()->reloadShader(RenderPassType(l_reloadShaderItem));
 	}
 
 	static int l_showRenderPassResultItem = 0;
@@ -243,7 +243,7 @@ void ImGuiWrapperNS::showApplicationProfiler()
 
 	if (ImGui::Button("Bake GI"))
 	{
-		g_pCoreSystem->getVisionSystem()->getRenderingBackend()->bakeGI();
+		g_pCoreSystem->getRenderingBackendSystem()->bakeGI();
 	}
 
 	static char scene_filePath[128] = "..//res//scenes//Intro.InnoScene";
@@ -260,7 +260,7 @@ void ImGuiWrapperNS::showApplicationProfiler()
 
 	ImGui::End();
 
-	g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->setRenderingConfig(m_renderingConfig);
+	g_pCoreSystem->getRenderingFrontendSystem()->setRenderingConfig(m_renderingConfig);
 }
 
 void ImGuiWrapperNS::zoom(bool zoom, ImTextureID textureID, ImVec2 renderTargetSize)

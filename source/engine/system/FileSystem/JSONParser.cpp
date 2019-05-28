@@ -398,7 +398,7 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j)
 
 		m_loadedModelPair.emplace(l_meshFileName, l_result);
 
-		g_pCoreSystem->getVisionSystem()->getRenderingBackend()->registerUninitializedMeshDataComponent(l_MeshDC);
+		g_pCoreSystem->getRenderingBackendSystem()->registerUninitializedMeshDataComponent(l_MeshDC);
 	}
 
 	return l_result;

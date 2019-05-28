@@ -147,7 +147,7 @@ bool GLRenderingSystemNS::setup()
 
 	g_pCoreSystem->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
-	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getRenderingFrontendSystem()->getScreenResolution();
 
 	// general render pass desc
 	GLRenderingSystemComponent::get().m_deferredRenderPassDesc.RTNumber = 1;
@@ -161,7 +161,7 @@ bool GLRenderingSystemNS::setup()
 	GLRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.height = l_screenResolution.y;
 	GLRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::FLOAT16;
 
-	if (g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig().MSAAdepth)
+	if (g_pCoreSystem->getRenderingFrontendSystem()->getRenderingConfig().MSAAdepth)
 	{
 		// antialiasing
 		// MSAA
@@ -422,7 +422,7 @@ bool GLRenderingSystemNS::render()
 
 	auto l_canvasGLRPC = GLPreTAAPass::getGLRPC();
 
-	auto l_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
+	auto l_renderingConfig = g_pCoreSystem->getRenderingFrontendSystem()->getRenderingConfig();
 
 	if (l_renderingConfig.useTAA)
 	{
@@ -613,7 +613,7 @@ GLTextureDataComponent * GLRenderingSystemNS::getGLTextureDataComponent(WorldEdi
 
 bool GLRenderingSystemNS::resize()
 {
-	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getRenderingFrontendSystem()->getScreenResolution();
 
 	GLRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.width = l_screenResolution.x;
 	GLRenderingSystemComponent::get().m_deferredRenderPassDesc.RTDesc.height = l_screenResolution.y;

@@ -46,7 +46,7 @@ INNO_PRIVATE_SCOPE GLLightCullingPass
 
 bool GLLightCullingPass::createGridFrustumsBuffer()
 {
-	auto l_viewportSize = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	auto l_viewportSize = g_pCoreSystem->getRenderingFrontendSystem()->getScreenResolution();
 
 	auto l_numThreadsX = std::ceil(l_viewportSize.x / m_tileSize);
 	auto l_numThreadsY = std::ceil(l_viewportSize.y / m_tileSize);
@@ -77,7 +77,7 @@ bool GLLightCullingPass::createLightIndexListBuffer()
 {
 	auto l_averangeOverlapLight = 64;
 
-	auto l_viewportSize = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	auto l_viewportSize = g_pCoreSystem->getRenderingFrontendSystem()->getScreenResolution();
 
 	auto l_numThreadGroupsX = std::ceil(l_viewportSize.x / m_tileSize);
 	auto l_numThreadGroupsY = std::ceil(l_viewportSize.y / m_tileSize);

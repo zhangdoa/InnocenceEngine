@@ -186,7 +186,7 @@ bool VKOpaquePass::initialize()
 	depthStencilCInfo.back = {}; // Optional
 	m_VKRPC->pipelineCInfo.pDepthStencilState = &depthStencilCInfo;
 
-	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getRenderingFrontendSystem()->getScreenResolution();
 
 	VkExtent2D l_extent = {};
 	l_extent.width = l_screenResolution.x;

@@ -81,7 +81,7 @@ bool GLEnvironmentConvolutionPass::update()
 		l_rPX, l_rNX, l_rPY, l_rNY, l_rPZ, l_rNZ
 	};
 
-	auto l_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
+	auto l_renderingConfig = g_pCoreSystem->getRenderingFrontendSystem()->getRenderingConfig();
 
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
 

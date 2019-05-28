@@ -23,5 +23,9 @@ public:
 	INNO_SYSTEM_EXPORT IAssetSystem* getAssetSystem() override;
 	INNO_SYSTEM_EXPORT IPhysicsSystem* getPhysicsSystem() override;
 	INNO_SYSTEM_EXPORT IInputSystem* getInputSystem() override;
-	INNO_SYSTEM_EXPORT IVisionSystem* getVisionSystem() override;
+	INNO_SYSTEM_EXPORT IWindowSystem* getWindowSystem() override;
+	INNO_SYSTEM_EXPORT IRenderingFrontendSystem* getRenderingFrontendSystem() override;
+	INNO_SYSTEM_EXPORT IRenderingBackendSystem* getRenderingBackendSystem() override;
+
+	INNO_SYSTEM_EXPORT InitConfig getInitConfig() override;
 };

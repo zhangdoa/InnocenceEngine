@@ -45,7 +45,7 @@ void GLSkyPass::initializeShaders()
 
 bool GLSkyPass::update()
 {
-	auto l_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
+	auto l_renderingConfig = g_pCoreSystem->getRenderingFrontendSystem()->getRenderingConfig();
 
 	if (l_renderingConfig.drawSky)
 	{

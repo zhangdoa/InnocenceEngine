@@ -114,7 +114,7 @@ TextureDataComponent* InnoFileSystemNS::AssetLoader::loadTextureFromDisk(const s
 
 		m_loadedTexture.emplace(fileName, l_TDC);
 
-		g_pCoreSystem->getVisionSystem()->getRenderingBackend()->registerUninitializedTextureDataComponent(l_TDC);
+		g_pCoreSystem->getRenderingBackendSystem()->registerUninitializedTextureDataComponent(l_TDC);
 
 		return l_TDC;
 	}

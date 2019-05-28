@@ -272,7 +272,7 @@ bool GLEnvironmentCapturePass::render(vec4 pos, GLTextureDataComponent* RT)
 		l_rPX, l_rNX, l_rPY, l_rNY, l_rPZ, l_rNZ
 	};
 
-	auto l_renderingConfig = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getRenderingConfig();
+	auto l_renderingConfig = g_pCoreSystem->getRenderingFrontendSystem()->getRenderingConfig();
 
 	for (unsigned int i = 0; i < 6; i++)
 	{

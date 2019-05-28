@@ -214,7 +214,7 @@ VkExtent2D VKRenderingSystemNS::chooseSwapExtent(const VkSurfaceCapabilitiesKHR&
 	}
 	else
 	{
-		auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+		auto l_screenResolution = g_pCoreSystem->getRenderingFrontendSystem()->getScreenResolution();
 
 		VkExtent2D l_actualExtent;
 		l_actualExtent.width = l_screenResolution.x;

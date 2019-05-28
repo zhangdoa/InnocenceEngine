@@ -12,7 +12,17 @@
 #include "IAssetSystem.h"
 #include "IPhysicsSystem.h"
 #include "IInputSystem.h"
-#include "IVisionSystem.h"
+#include "IWindowSystem.h"
+#include "IRenderingFrontendSystem.h"
+#include "IRenderingBackendSystem.h"
+
+enum EngineMode { GAME, EDITOR };
+enum RenderingBackend { GL, DX11, DX12, VK, MT };
+struct InitConfig
+{
+	EngineMode engineMode = EngineMode::GAME;
+	RenderingBackend renderingBackend = RenderingBackend::GL;
+};
 
 INNO_INTERFACE ICoreSystem
 {
@@ -36,5 +46,9 @@ public:
 	INNO_SYSTEM_EXPORT virtual IAssetSystem* getAssetSystem() = 0;
 	INNO_SYSTEM_EXPORT virtual IPhysicsSystem* getPhysicsSystem() = 0;
 	INNO_SYSTEM_EXPORT virtual IInputSystem* getInputSystem() = 0;
-	INNO_SYSTEM_EXPORT virtual IVisionSystem* getVisionSystem() = 0;
+	INNO_SYSTEM_EXPORT virtual IWindowSystem* getWindowSystem() = 0;
+	INNO_SYSTEM_EXPORT virtual IRenderingFrontendSystem* getRenderingFrontendSystem() = 0;
+	INNO_SYSTEM_EXPORT virtual IRenderingBackendSystem* getRenderingBackendSystem() = 0;
+
+	INNO_SYSTEM_EXPORT virtual InitConfig getInitConfig() = 0;
 };

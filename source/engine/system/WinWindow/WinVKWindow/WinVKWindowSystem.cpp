@@ -19,7 +19,7 @@ INNO_PRIVATE_SCOPE WinVKWindowSystemNS
 
 bool WinVKWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 {
-	m_initConfig = g_pCoreSystem->getVisionSystem()->getInitConfig();
+	m_initConfig = g_pCoreSystem->getInitConfig();
 
 	// Setup the windows class with default settings.
 	WNDCLASS wc = {};
@@ -40,7 +40,7 @@ bool WinVKWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 	RegisterClass(&wc);
 
 	// Determine the resolution of the clients desktop screen.
-	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getRenderingFrontendSystem()->getScreenResolution();
 	auto l_screenWidth = (int)l_screenResolution.x;
 	auto l_screenHeight = (int)l_screenResolution.y;
 

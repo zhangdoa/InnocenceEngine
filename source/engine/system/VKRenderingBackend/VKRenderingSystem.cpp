@@ -630,7 +630,7 @@ bool VKRenderingSystemNS::setup()
 
 	initializeComponentPool();
 
-	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getRenderingFrontendSystem()->getScreenResolution();
 
 	// general render pass desc
 	VKRenderingSystemComponent::get().m_deferredRenderPassDesc.RTNumber = 1;

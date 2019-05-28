@@ -22,7 +22,7 @@ INNO_PRIVATE_SCOPE WinGLWindowSystemNS
 
 bool WinGLWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 {
-	m_initConfig = g_pCoreSystem->getVisionSystem()->getInitConfig();
+	m_initConfig = g_pCoreSystem->getInitConfig();
 
 	WNDCLASSEX wcex;
 	ZeroMemory(&wcex, sizeof(wcex));
@@ -110,7 +110,7 @@ bool WinGLWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 	}
 
 	// Determine the resolution of the clients desktop screen.
-	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getRenderingFrontendSystem()->getScreenResolution();
 	auto l_screenWidth = (int)l_screenResolution.x;
 	auto l_screenHeight = (int)l_screenResolution.y;
 
