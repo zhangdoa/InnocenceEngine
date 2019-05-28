@@ -104,6 +104,8 @@ INNO_PRIVATE_SCOPE InnoCoreSystemNS
 
 	std::atomic<bool> m_isRendering = false;
 	std::atomic<bool> m_allowRender = false;
+
+	float m_tickTime = 0;
 }
 
 InitConfig InnoCoreSystemNS::parseInitConfig(const std::string& arg)
@@ -395,6 +397,7 @@ bool InnoCoreSystemNS::initialize()
 
 bool InnoCoreSystemNS::update()
 {
+	auto l_tickStartTime = m_TimeSystem->getCurrentTimeFromEpoch();
 	subSystemUpdate(TimeSystem);
 	subSystemUpdate(LogSystem);
 	subSystemUpdate(MemorySystem);
@@ -446,6 +449,10 @@ bool InnoCoreSystemNS::update()
 
 		g_pCoreSystem->getGameSystem()->saveComponentsCapture();
 
+		auto l_tickEndTime = m_TimeSystem->getCurrentTimeFromEpoch();
+
+		m_tickTime = float(l_tickEndTime - l_tickStartTime) / 1000.0f;
+
 		return true;
 	}
 	else
@@ -454,7 +461,6 @@ bool InnoCoreSystemNS::update()
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "Engine is stand-by.");
 		return false;
 	}
-	return true;
 }
 
 bool InnoCoreSystemNS::terminate()
@@ -559,4 +565,9 @@ INNO_SYSTEM_EXPORT IRenderingBackendSystem * InnoCoreSystem::getRenderingBackend
 INNO_SYSTEM_EXPORT InitConfig InnoCoreSystem::getInitConfig()
 {
 	return InnoCoreSystemNS::m_initConfig;
+}
+
+INNO_SYSTEM_EXPORT float InnoCoreSystem::getTickTime()
+{
+	return  InnoCoreSystemNS::m_tickTime;
 }

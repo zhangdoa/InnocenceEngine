@@ -44,41 +44,40 @@ bool InnoTimer::Terminate()
 
 const unsigned long long InnoTimer::GetCurrentTimeFromEpoch(TimeUnit time_unit)
 {
-	auto l_CurrentTime = HRClock::now().time_since_epoch().count();
-
-	unsigned long long l_Duration;
+	auto l_CurrentTime = HRClock::now().time_since_epoch();
+	unsigned long long l_result;
 
 	switch (time_unit)
 	{
 	case TimeUnit::Microsecond:
-		l_Duration = std::chrono::microseconds(1).count();
+		l_result = std::chrono::duration_cast<std::chrono::microseconds>(l_CurrentTime).count();
 		break;
 	case TimeUnit::Millisecond:
-		l_Duration = std::chrono::milliseconds(1).count();
+		l_result = std::chrono::duration_cast<std::chrono::milliseconds>(l_CurrentTime).count();
 		break;
 	case TimeUnit::Second:
-		l_Duration = std::chrono::seconds(1).count();
+		l_result = std::chrono::duration_cast<std::chrono::seconds>(l_CurrentTime).count();
 		break;
 	case TimeUnit::Minute:
-		l_Duration = std::chrono::minutes(1).count();
+		l_result = std::chrono::duration_cast<std::chrono::minutes>(l_CurrentTime).count();
 		break;
 	case TimeUnit::Hour:
-		l_Duration = std::chrono::hours(1).count();
+		l_result = std::chrono::duration_cast<std::chrono::hours>(l_CurrentTime).count();
 		break;
 	case TimeUnit::Day:
-		l_Duration = Days(1).count();
+		l_result = std::chrono::duration_cast<Days>(l_CurrentTime).count();
 		break;
 	case TimeUnit::Month:
-		l_Duration = Months(1).count();
+		l_result = std::chrono::duration_cast<Months>(l_CurrentTime).count();
 		break;
 	case TimeUnit::Year:
-		l_Duration = Years(1).count();
+		l_result = std::chrono::duration_cast<Years>(l_CurrentTime).count();
 		break;
 	default:
 		break;
 	}
 
-	return l_CurrentTime / l_Duration;
+	return l_result;
 }
 
 const Timestamp InnoTimer::GetCurrentTime(unsigned int time_zone_adjustment)
@@ -126,41 +125,4 @@ const Timestamp InnoTimer::GetCurrentTime(unsigned int time_zone_adjustment)
 	l_Timestamp.Microsecond = static_cast<unsigned short>(tp / std::chrono::microseconds(1));
 
 	return l_Timestamp;
-}
-
-const double InnoTimer::GetDeltaTime(TimeUnit time_unit)
-{
-	int l_Duration;
-
-	switch (time_unit)
-	{
-	case TimeUnit::Microsecond:
-		l_Duration = static_cast<int>(std::chrono::microseconds(1).count());
-		break;
-	case TimeUnit::Millisecond:
-		l_Duration = static_cast<int>(std::chrono::milliseconds(1).count());
-		break;
-	case TimeUnit::Second:
-		l_Duration = static_cast<int>(std::chrono::seconds(1).count());
-		break;
-	case TimeUnit::Minute:
-		l_Duration = std::chrono::minutes(1).count();
-		break;
-	case TimeUnit::Hour:
-		l_Duration = std::chrono::hours(1).count();
-		break;
-	case TimeUnit::Day:
-		l_Duration = Days(1).count();
-		break;
-	case TimeUnit::Month:
-		l_Duration = Months(1).count();
-		break;
-	case TimeUnit::Year:
-		l_Duration = Years(1).count();
-		break;
-	default:
-		break;
-	}
-
-	return InnoTimerNS::m_DeltaTime / static_cast<double>(l_Duration);
 }

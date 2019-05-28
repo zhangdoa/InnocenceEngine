@@ -28,4 +28,5 @@ public:
 	INNO_SYSTEM_EXPORT IRenderingBackendSystem* getRenderingBackendSystem() override;
 
 	INNO_SYSTEM_EXPORT InitConfig getInitConfig() override;
+	INNO_SYSTEM_EXPORT float getTickTime() override;
 };

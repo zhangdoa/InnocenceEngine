@@ -23,5 +23,4 @@ public:
 
 	static const unsigned long long GetCurrentTimeFromEpoch(TimeUnit time_unit);
 	static const Timestamp GetCurrentTime(unsigned int time_zone_adjustment);
-	static const double GetDeltaTime(TimeUnit time_unit);
 };

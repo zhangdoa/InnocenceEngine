@@ -63,16 +63,10 @@ const TimeData InnoTimeSystem::getCurrentTime(unsigned int timezone_adjustment)
 
 const long long InnoTimeSystem::getCurrentTimeFromEpoch()
 {
-	return std::chrono::high_resolution_clock::now().time_since_epoch().count();
+	return InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
 }
 
 ObjectStatus InnoTimeSystem::getStatus()
 {
 	return InnoTimeSystemNS::m_objectStatus;
-}
-
-const long long InnoTimeSystem::getDeltaTime()
-{
-	auto l_result = InnoTimer::GetDeltaTime(TimeUnit::Millisecond);
-	return (long long)l_result;
 }

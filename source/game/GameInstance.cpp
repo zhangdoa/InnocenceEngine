@@ -44,7 +44,7 @@ namespace PlayerComponentCollection
 	vec4 m_targetCameraRotX;
 	vec4 m_targetCameraRotY;
 
-	void update();
+	void update(float seed);
 
 	void rotateAroundPositiveYAxis(float offset);
 	void rotateAroundRightAxis(float offset);
@@ -517,11 +517,15 @@ bool GameInstanceNS::update()
 {
 	if (m_objectStatus == ObjectStatus::Activated)
 	{
-		seed += 0.02f;
+		auto l_tickTime = g_pCoreSystem->getTickTime();
+		seed += (l_tickTime / 1000.0f);
 
 		auto updateGameTask = g_pCoreSystem->getTaskSystem()->submit("PlayerComponentCollectionUpdateTask", [&]()
 		{
-			PlayerComponentCollection::update();
+			auto l_seed = (1.0f - l_tickTime / 100.0f);
+			l_seed = l_seed > 0.0f ? l_seed : 0.01f;
+			l_seed = l_seed > 0.85f ? 0.85f : l_seed;
+			PlayerComponentCollection::update(l_seed);
 		});
 
 		updateSpheres();
@@ -544,7 +548,7 @@ void GameInstanceNS::runTest(unsigned int testTime, std::function<bool()> testCa
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "Finished test for " + std::to_string(testTime) + " times.");
 }
 
-void PlayerComponentCollection::update()
+void PlayerComponentCollection::update(float seed)
 {
 	auto l_currentCameraPos = m_cameraTransformComponent->m_localTransformVector.m_pos;
 	auto l_currentCameraRot = m_cameraTransformComponent->m_localTransformVector.m_rot;
@@ -553,14 +557,14 @@ void PlayerComponentCollection::update()
 	{
 		if (!InnoMath::isCloseEnough(l_currentCameraPos, m_targetCameraPos))
 		{
-			m_cameraTransformComponent->m_localTransformVector.m_pos = InnoMath::lerp(l_currentCameraPos, m_targetCameraPos, 0.85f);
+			m_cameraTransformComponent->m_localTransformVector.m_pos = InnoMath::lerp(l_currentCameraPos, m_targetCameraPos, seed);
 		}
 
 		if (m_canSlerp)
 		{
 			if (!InnoMath::isCloseEnough(l_currentCameraRot, m_targetCameraRot))
 			{
-				m_cameraTransformComponent->m_localTransformVector.m_rot = InnoMath::slerp(l_currentCameraRot, m_targetCameraRot, 0.8f);
+				m_cameraTransformComponent->m_localTransformVector.m_rot = InnoMath::slerp(l_currentCameraRot, m_targetCameraRot, seed);
 			}
 		}
 	}

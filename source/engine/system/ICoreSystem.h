@@ -51,4 +51,6 @@ public:
 	INNO_SYSTEM_EXPORT virtual IRenderingBackendSystem* getRenderingBackendSystem() = 0;
 
 	INNO_SYSTEM_EXPORT virtual InitConfig getInitConfig() = 0;
+
+	INNO_SYSTEM_EXPORT virtual float getTickTime() = 0;
 };

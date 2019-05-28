@@ -127,7 +127,7 @@ bool PhysXWrapperNS::update()
 
 			auto PhysXUpdateTask = g_pCoreSystem->getTaskSystem()->submit("PhysXUpdateTask", [&]()
 			{
-				gScene->simulate(1.0f / 120.0f);
+				gScene->simulate(g_pCoreSystem->getTickTime() / 1000.0f);
 				gScene->fetchResults(true);
 
 				for (auto i : PxRigidActors)
