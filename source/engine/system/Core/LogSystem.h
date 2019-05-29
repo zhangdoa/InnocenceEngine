@@ -1,5 +1,5 @@
 #pragma once
-#include "../ILogSystem.h"
+#include "ILogSystem.h"
 
 class InnoLogSystem : INNO_IMPLEMENT ILogSystem
 {

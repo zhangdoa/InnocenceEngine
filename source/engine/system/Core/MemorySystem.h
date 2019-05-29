@@ -1,5 +1,5 @@
 #pragma once
-#include "../IMemorySystem.h"
+#include "IMemorySystem.h"
 
 class InnoMemorySystem : INNO_IMPLEMENT IMemorySystem
 {

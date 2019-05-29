@@ -1,7 +1,7 @@
 #pragma once
-#include "../common/InnoType.h"
-#include "../common/InnoClassTemplate.h"
-#include "Core/InnoTaskScheduler.h"
+#include "../../common/InnoType.h"
+#include "../../common/InnoClassTemplate.h"
+#include "InnoTaskScheduler.h"
 
 INNO_INTERFACE ITaskSystem
 {

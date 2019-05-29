@@ -1,6 +1,6 @@
 #pragma once
-#include "../common/InnoType.h"
-#include "../common/InnoClassTemplate.h"
+#include "../../common/InnoType.h"
+#include "../../common/InnoClassTemplate.h"
 
 INNO_INTERFACE IMemorySystem
 {

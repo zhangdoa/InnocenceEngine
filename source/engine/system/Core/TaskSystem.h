@@ -1,5 +1,5 @@
 #pragma once
-#include "../ITaskSystem.h"
+#include "ITaskSystem.h"
 
 class InnoTaskSystem : INNO_IMPLEMENT ITaskSystem
 {

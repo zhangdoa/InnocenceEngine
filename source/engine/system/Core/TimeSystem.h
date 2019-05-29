@@ -1,5 +1,5 @@
 #pragma once
-#include "../ITimeSystem.h"
+#include "ITimeSystem.h"
 
 class InnoTimeSystem : INNO_IMPLEMENT ITimeSystem
 {
