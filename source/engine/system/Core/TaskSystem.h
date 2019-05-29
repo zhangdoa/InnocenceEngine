@@ -18,5 +18,5 @@ public:
 	std::string getThreadId() override;
 
 protected:
-	IInnoTask* addTaskImpl(std::unique_ptr<IInnoTask>&& task) override;
+	IInnoTask* addTaskImpl(std::unique_ptr<IInnoTask>&& task, int threadID) override;
 };

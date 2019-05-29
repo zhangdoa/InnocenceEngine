@@ -64,7 +64,7 @@ public:
 
 	static void WaitSync();
 
-	static IInnoTask* AddTaskImpl(std::unique_ptr<IInnoTask>&& task);
+	static IInnoTask* AddTaskImpl(std::unique_ptr<IInnoTask>&& task, int threadID);
 
 	static InnoTaskReport GetReport();
 };

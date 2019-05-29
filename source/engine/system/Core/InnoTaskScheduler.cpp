@@ -146,13 +146,21 @@ void InnoTaskScheduler::WaitSync()
 	InnoLogger::Log(LogLevel::Verbose, "InnoTaskScheduler: Reached synchronization point");
 }
 
-IInnoTask * InnoTaskScheduler::AddTaskImpl(std::unique_ptr<IInnoTask>&& task)
+IInnoTask * InnoTaskScheduler::AddTaskImpl(std::unique_ptr<IInnoTask>&& task, int threadID)
 {
-	std::random_device RD;
-	std::mt19937 Gen(RD());
-	std::uniform_int_distribution<> Dis(0, InnoTaskSchedulerNS::m_NumThreads - 1);
+	int l_ThreadIndex;
+	if (threadID != -1)
+	{
+		l_ThreadIndex = threadID;
+	}
+	else
+	{
+		std::random_device RD;
+		std::mt19937 Gen(RD());
+		std::uniform_int_distribution<> Dis(0, InnoTaskSchedulerNS::m_NumThreads - 1);
+		l_ThreadIndex = Dis(Gen);
+	}
 
-	auto l_ThreadIndex = Dis(Gen);
 	InnoTaskSchedulerNS::m_Threads[l_ThreadIndex]->AddTask(std::move(task));
 	return task.get();
 }

@@ -62,7 +62,7 @@ std::string InnoTaskSystem::getThreadId()
 	return std::string();
 }
 
-IInnoTask * InnoTaskSystem::addTaskImpl(std::unique_ptr<IInnoTask>&& task)
+IInnoTask * InnoTaskSystem::addTaskImpl(std::unique_ptr<IInnoTask>&& task, int threadID)
 {
-	return InnoTaskScheduler::AddTaskImpl(std::move(task));
+	return InnoTaskScheduler::AddTaskImpl(std::move(task), threadID);
 }
