@@ -20,7 +20,6 @@ public:
 
 	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
 
-	INNO_SYSTEM_EXPORT virtual ModelMap loadModel(const std::string& fileName) = 0;
 	INNO_SYSTEM_EXPORT virtual TextureDataComponent* loadTexture(const std::string& fileName, TextureSamplerType samplerType, TextureUsageType usageType) = 0;
 
 	INNO_SYSTEM_EXPORT virtual void loadAssetsForComponents() = 0;
@@ -30,14 +29,6 @@ public:
 	INNO_SYSTEM_EXPORT virtual void addUnitQuad(MeshDataComponent& meshDataComponent) = 0;
 	INNO_SYSTEM_EXPORT virtual void addUnitLine(MeshDataComponent& meshDataComponent) = 0;
 	INNO_SYSTEM_EXPORT virtual void addTerrain(MeshDataComponent& meshDataComponent) = 0;
-
-	INNO_SYSTEM_EXPORT virtual MeshDataComponent* addMeshDataComponent() = 0;
-	INNO_SYSTEM_EXPORT virtual MaterialDataComponent* addMaterialDataComponent() = 0;
-	INNO_SYSTEM_EXPORT virtual TextureDataComponent* addTextureDataComponent() = 0;
-	INNO_SYSTEM_EXPORT virtual MeshDataComponent* getMeshDataComponent(MeshShapeType meshShapeType) = 0;
-	INNO_SYSTEM_EXPORT virtual TextureDataComponent* getTextureDataComponent(TextureUsageType textureUsageType) = 0;
-	INNO_SYSTEM_EXPORT virtual TextureDataComponent* getTextureDataComponent(FileExplorerIconType iconType) = 0;
-	INNO_SYSTEM_EXPORT virtual TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) = 0;
 
 	INNO_SYSTEM_EXPORT virtual DirectoryMetadata* getRootDirectoryMetadata() = 0;
 };

@@ -13,7 +13,6 @@ public:
 
 	INNO_SYSTEM_EXPORT ObjectStatus getStatus() override;
 
-	INNO_SYSTEM_EXPORT ModelMap loadModel(const std::string& fileName) override;
 	INNO_SYSTEM_EXPORT TextureDataComponent* loadTexture(const std::string& fileName, TextureSamplerType samplerType, TextureUsageType usageType) override;
 
 	INNO_SYSTEM_EXPORT void loadAssetsForComponents() override;
@@ -23,14 +22,6 @@ public:
 	INNO_SYSTEM_EXPORT void addUnitQuad(MeshDataComponent& meshDataComponent) override;
 	INNO_SYSTEM_EXPORT void addUnitLine(MeshDataComponent& meshDataComponent) override;
 	INNO_SYSTEM_EXPORT void addTerrain(MeshDataComponent& meshDataComponent) override;
-
-	INNO_SYSTEM_EXPORT MeshDataComponent* addMeshDataComponent() override;
-	INNO_SYSTEM_EXPORT MaterialDataComponent* addMaterialDataComponent() override;
-	INNO_SYSTEM_EXPORT TextureDataComponent* addTextureDataComponent() override;
-	INNO_SYSTEM_EXPORT MeshDataComponent* getMeshDataComponent(MeshShapeType meshShapeType) override;
-	INNO_SYSTEM_EXPORT TextureDataComponent* getTextureDataComponent(TextureUsageType textureUsageType) override;
-	INNO_SYSTEM_EXPORT TextureDataComponent* getTextureDataComponent(FileExplorerIconType iconType) override;
-	INNO_SYSTEM_EXPORT TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) override;
 
 	INNO_SYSTEM_EXPORT DirectoryMetadata* getRootDirectoryMetadata() override;
 };

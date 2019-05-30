@@ -66,41 +66,6 @@ INNO_SYSTEM_EXPORT void InnoAssetSystem::loadAssetsForComponents()
 	InnoAssetSystemNS::loadAssetsForComponents();
 }
 
-INNO_SYSTEM_EXPORT MeshDataComponent * InnoAssetSystem::addMeshDataComponent()
-{
-	return g_pCoreSystem->getRenderingFrontendSystem()->addMeshDataComponent();
-}
-
-INNO_SYSTEM_EXPORT MaterialDataComponent * InnoAssetSystem::addMaterialDataComponent()
-{
-	return g_pCoreSystem->getRenderingFrontendSystem()->addMaterialDataComponent();
-}
-
-INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::addTextureDataComponent()
-{
-	return g_pCoreSystem->getRenderingFrontendSystem()->addTextureDataComponent();
-}
-
-INNO_SYSTEM_EXPORT MeshDataComponent * InnoAssetSystem::getMeshDataComponent(MeshShapeType meshShapeType)
-{
-	return g_pCoreSystem->getRenderingFrontendSystem()->getMeshDataComponent(meshShapeType);
-}
-
-INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::getTextureDataComponent(TextureUsageType textureUsageType)
-{
-	return g_pCoreSystem->getRenderingFrontendSystem()->getTextureDataComponent(textureUsageType);
-}
-
-INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::getTextureDataComponent(FileExplorerIconType iconType)
-{
-	return g_pCoreSystem->getRenderingFrontendSystem()->getTextureDataComponent(iconType);
-}
-
-INNO_SYSTEM_EXPORT TextureDataComponent * InnoAssetSystem::getTextureDataComponent(WorldEditorIconType iconType)
-{
-	return g_pCoreSystem->getRenderingFrontendSystem()->getTextureDataComponent(iconType);
-}
-
 INNO_SYSTEM_EXPORT DirectoryMetadata* InnoAssetSystem::getRootDirectoryMetadata()
 {
 	return &InnoAssetSystemNS::m_rootDirectoryMetadata;
@@ -317,7 +282,7 @@ void InnoAssetSystemNS::loadAssetsForComponents()
 				{
 					g_pCoreSystem->getTaskSystem()->submit("LoadAssetTask", [=]()
 					{
-						l_visibleComponent->m_modelMap = g_pCoreSystem->getAssetSystem()->loadModel(l_visibleComponent->m_modelFileName);
+						l_visibleComponent->m_modelMap = g_pCoreSystem->getFileSystem()->loadModel(l_visibleComponent->m_modelFileName);
 						g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(l_visibleComponent);
 						l_visibleComponent->m_objectStatus = ObjectStatus::Activated;
 					});
@@ -347,12 +312,6 @@ void InnoAssetSystemNS::assignUnitMesh(MeshShapeType meshUsageType, VisibleCompo
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: don't assign unit mesh to a custom mesh shape component!");
 	}
-}
-
-ModelMap InnoAssetSystem::loadModel(const std::string & fileName)
-{
-	auto l_result = g_pCoreSystem->getFileSystem()->loadModel(fileName);
-	return l_result;
 }
 
 TextureDataComponent* InnoAssetSystem::loadTexture(const std::string& fileName, TextureSamplerType samplerType, TextureUsageType usageType)

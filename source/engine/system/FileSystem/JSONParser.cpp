@@ -350,6 +350,7 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j)
 {
 	ModelPair l_result;
 
+	// Load mesh data
 	auto l_meshFileName = j["MeshFile"].get<std::string>();
 
 	auto l_loadedModelPair = m_loadedModelPair.find(l_meshFileName);
@@ -368,7 +369,7 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j)
 			return ModelPair();
 		}
 
-		auto l_MeshDC = g_pCoreSystem->getAssetSystem()->addMeshDataComponent();
+		auto l_MeshDC = g_pCoreSystem->getRenderingFrontendSystem()->addMeshDataComponent();
 
 		size_t l_verticesNumber = j["VerticesNumber"];
 		size_t l_indicesNumber = j["IndicesNumber"];
@@ -387,13 +388,14 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j)
 
 		l_result.first = l_MeshDC;
 
+		// Load material data
 		if (j.find("MaterialFile") != j.end())
 		{
 			l_result.second = processMaterialJsonData(j["MaterialFile"]);
 		}
 		else
 		{
-			l_result.second = g_pCoreSystem->getAssetSystem()->addMaterialDataComponent();
+			l_result.second = g_pCoreSystem->getRenderingFrontendSystem()->addMaterialDataComponent();
 		}
 
 		m_loadedModelPair.emplace(l_meshFileName, l_result);
@@ -410,7 +412,7 @@ MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(co
 
 	loadJsonDataFromDisk(materialFileName, j);
 
-	auto l_MDC = g_pCoreSystem->getAssetSystem()->addMaterialDataComponent();
+	auto l_MDC = g_pCoreSystem->getRenderingFrontendSystem()->addMaterialDataComponent();
 
 	if (j.find("Textures") != j.end())
 	{
@@ -424,7 +426,7 @@ MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(co
 			}
 			else
 			{
-				l_TDC = g_pCoreSystem->getAssetSystem()->getTextureDataComponent(TextureUsageType(i["UsageType"]));
+				l_TDC = g_pCoreSystem->getRenderingFrontendSystem()->getTextureDataComponent(TextureUsageType(i["UsageType"]));
 			}
 			switch (l_TDC->m_textureDataDesc.usageType)
 			{
@@ -467,7 +469,7 @@ bool InnoFileSystemNS::JSONParser::saveScene(const std::string& fileName)
 		}
 	}
 
-	// save childern components
+	// save children components
 	for (auto i : g_pCoreSystem->getGameSystem()->get<TransformComponent>())
 	{
 		if (i->m_objectSource == ObjectSource::Asset)

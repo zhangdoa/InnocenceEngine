@@ -32,7 +32,7 @@ ModelMap InnoFileSystemNS::AssetLoader::loadModel(const std::string & fileName)
 			// Just copy new materials
 			for (auto& i : l_loadedModelMap->second)
 			{
-				auto l_material = g_pCoreSystem->getAssetSystem()->addMaterialDataComponent();
+				auto l_material = g_pCoreSystem->getRenderingFrontendSystem()->addMaterialDataComponent();
 				*l_material = *i.second;
 				l_result.emplace(i.first, l_material);
 			}
@@ -97,7 +97,7 @@ TextureDataComponent* InnoFileSystemNS::AssetLoader::loadTextureFromDisk(const s
 	}
 	if (l_rawData)
 	{
-		auto l_TDC = g_pCoreSystem->getAssetSystem()->addTextureDataComponent();
+		auto l_TDC = g_pCoreSystem->getRenderingFrontendSystem()->addTextureDataComponent();
 
 		l_TDC->m_componentName = fileName.c_str();
 
