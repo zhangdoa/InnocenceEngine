@@ -8,6 +8,8 @@
 #include "../component/MeshDataComponent.h"
 #include "../component/TextureDataComponent.h"
 #include "../component/MaterialDataComponent.h"
+#include "../component/SkeletonDataComponent.h"
+#include "../component/AnimationDataComponent.h"
 
 struct RenderingConfig
 {
@@ -39,6 +41,8 @@ public:
 	INNO_SYSTEM_EXPORT virtual TextureDataComponent* getTextureDataComponent(TextureUsageType textureUsageType) = 0;
 	INNO_SYSTEM_EXPORT virtual TextureDataComponent* getTextureDataComponent(FileExplorerIconType iconType) = 0;
 	INNO_SYSTEM_EXPORT virtual TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) = 0;
+	INNO_SYSTEM_EXPORT virtual SkeletonDataComponent* addSkeletonDataComponent() = 0;
+	INNO_SYSTEM_EXPORT virtual AnimationDataComponent* addAnimationDataComponent() = 0;
 
 	INNO_SYSTEM_EXPORT virtual TVec2<unsigned int> getScreenResolution() = 0;
 	INNO_SYSTEM_EXPORT virtual bool setScreenResolution(TVec2<unsigned int> screenResolution) = 0;

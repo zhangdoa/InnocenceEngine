@@ -10,6 +10,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS::JSONParser
 {
 	ModelMap processNodeJsonData(const json & j);
 	ModelPair processMeshJsonData(const json& j);
+	SkeletonDataComponent* processSkeletonJsonData(const std::string& skeletonFileName);
 	MaterialDataComponent* processMaterialJsonData(const std::string& materialFileName);
 
 	bool assignComponentRuntimeData();
@@ -388,6 +389,12 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j)
 
 		l_result.first = l_MeshDC;
 
+		// Load skeleton data
+		if (j.find("SkeletonFile") != j.end())
+		{
+			l_result.first->m_SDC = processSkeletonJsonData(j["SkeletonFile"]);
+		}
+
 		// Load material data
 		if (j.find("MaterialFile") != j.end())
 		{
@@ -404,6 +411,34 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j)
 	}
 
 	return l_result;
+}
+
+SkeletonDataComponent * InnoFileSystemNS::JSONParser::processSkeletonJsonData(const std::string& skeletonFileName)
+{
+	json j;
+
+	loadJsonDataFromDisk(skeletonFileName, j);
+
+	auto l_SDC = g_pCoreSystem->getRenderingFrontendSystem()->addSkeletonDataComponent();
+	auto l_size = j["Bones"].size();
+	l_SDC->m_Bones.reserve(l_size);
+
+	for (auto i : j["Bones"])
+	{
+		Bone l_bone;
+		l_bone.m_ID = i["BoneID"];
+		l_bone.m_Pos.x = i["OffsetPosition"]["X"];
+		l_bone.m_Pos.y = i["OffsetPosition"]["Y"];
+		l_bone.m_Pos.z = i["OffsetPosition"]["Z"];
+		l_bone.m_Pos.w = i["OffsetPosition"]["W"];
+		l_bone.m_Rot.x = i["OffsetRotation"]["X"];
+		l_bone.m_Rot.y = i["OffsetRotation"]["Y"];
+		l_bone.m_Rot.z = i["OffsetRotation"]["Z"];
+		l_bone.m_Rot.w = i["OffsetRotation"]["W"];
+
+		l_SDC->m_Bones.emplace_back(l_bone);
+	}
+	return l_SDC;
 }
 
 MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(const std::string& materialFileName)

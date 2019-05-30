@@ -20,6 +20,8 @@ public:
 	INNO_SYSTEM_EXPORT TextureDataComponent* getTextureDataComponent(TextureUsageType textureUsageType) override;
 	INNO_SYSTEM_EXPORT TextureDataComponent* getTextureDataComponent(FileExplorerIconType iconType) override;
 	INNO_SYSTEM_EXPORT TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) override;
+	INNO_SYSTEM_EXPORT SkeletonDataComponent* addSkeletonDataComponent() override;
+	INNO_SYSTEM_EXPORT AnimationDataComponent* addAnimationDataComponent() override;
 
 	INNO_SYSTEM_EXPORT TVec2<unsigned int> getScreenResolution() override;
 	INNO_SYSTEM_EXPORT bool setScreenResolution(TVec2<unsigned int> screenResolution) override;

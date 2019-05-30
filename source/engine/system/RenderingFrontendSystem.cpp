@@ -38,6 +38,9 @@ INNO_PRIVATE_SCOPE InnoRenderingFrontendSystemNS
 
 	RenderingConfig m_renderingConfig = RenderingConfig();
 
+	void* m_SkeletonDataComponentPool;
+	void* m_AnimationDataComponentPool;
+
 	bool setup(IRenderingBackendSystem* renderingBackendSystem);
 	bool initialize();
 	bool update();
@@ -143,6 +146,9 @@ bool InnoRenderingFrontendSystemNS::setup(IRenderingBackendSystem* renderingBack
 
 	g_pCoreSystem->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 	g_pCoreSystem->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
+
+	m_SkeletonDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(SkeletonDataComponent), 2048);
+	m_AnimationDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(AnimationDataComponent), 16384);
 
 	InnoRenderingFrontendSystemNS::m_objectStatus = ObjectStatus::Created;
 	return true;
@@ -598,4 +604,26 @@ INNO_SYSTEM_EXPORT bool InnoRenderingFrontendSystem::setRenderingConfig(Renderin
 {
 	InnoRenderingFrontendSystemNS::m_renderingConfig = renderingConfig;
 	return true;
+}
+
+INNO_SYSTEM_EXPORT SkeletonDataComponent * InnoRenderingFrontendSystem::addSkeletonDataComponent()
+{
+	static std::atomic<unsigned int> skeletonCount = 0;
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(InnoRenderingFrontendSystemNS::m_SkeletonDataComponentPool, sizeof(SkeletonDataComponent));
+	auto l_SDC = new(l_rawPtr)SkeletonDataComponent();
+	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(("Skeleton_" + std::to_string(skeletonCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
+	l_SDC->m_parentEntity = l_parentEntity;
+	skeletonCount++;
+	return l_SDC;
+}
+
+INNO_SYSTEM_EXPORT AnimationDataComponent * InnoRenderingFrontendSystem::addAnimationDataComponent()
+{
+	static std::atomic<unsigned int> animationCount = 0;
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(InnoRenderingFrontendSystemNS::m_AnimationDataComponentPool, sizeof(AnimationDataComponent));
+	auto l_ADC = new(l_rawPtr)AnimationDataComponent();
+	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(("Animation_" + std::to_string(animationCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
+	l_ADC->m_parentEntity = l_parentEntity;
+	animationCount++;
+	return l_ADC;
 }
