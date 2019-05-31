@@ -28,28 +28,22 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float2 screenTexCoords = input.position.xy * texelSize;
 	float2 MotionVector = in_opaquePassRT3.Sample(SampleTypePoint, screenTexCoords).xy;
 
-	if (MotionVector.x == 0.0 && MotionVector.y == 0.0)
+	float4 result = in_TAAPassRT0.Sample(SampleTypePoint, screenTexCoords);
+
+	float half_samples = float(MAX_SAMPLES / 2);
+
+	// sample half samples along motion vector and another half in opposite direction
+	for (int i = 1; i <= half_samples; i++)
 	{
-		output.motionBlurPassRT0 = in_TAAPassRT0.Sample(SampleTypePoint, screenTexCoords);
+		float2 offset = MotionVector * (float(i) / float(MAX_SAMPLES));
+		result += in_TAAPassRT0.Sample(SampleTypePoint, screenTexCoords - offset);
+		result += in_TAAPassRT0.Sample(SampleTypePoint, screenTexCoords + offset);
 	}
-	else
-	{
-		float4 result = in_TAAPassRT0.Sample(SampleTypePoint, screenTexCoords);
 
-		float half_samples = float(MAX_SAMPLES / 2);
+	result /= float(MAX_SAMPLES + 1);
 
-		// sample half samples along motion vector and another half in opposite direction
-		for (int i = 1; i <= half_samples; i++) {
-			float2 offset = MotionVector * (float(i) / float(MAX_SAMPLES));
-			result += in_TAAPassRT0.Sample(SampleTypePoint, screenTexCoords - offset);
-			result += in_TAAPassRT0.Sample(SampleTypePoint, screenTexCoords + offset);
-		}
-
-		result /= float(MAX_SAMPLES);
-
-		//use alpha channel as mask
-		output.motionBlurPassRT0 = float4(result.rgb, 1.0);
-	}
+	//use alpha channel as mask
+	output.motionBlurPassRT0 = float4(result.rgb, 1.0);
 
 	return output;
 }
