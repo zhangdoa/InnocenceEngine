@@ -1,8 +1,7 @@
-#include "DX11MotionBlurPass.h"
+#include "DX11PostTAAPass.h"
 #include "DX11RenderingSystemUtilities.h"
 
-#include "DX11OpaquePass.h"
-#include "DX11PostTAAPass.h"
+#include "DX11TAAPass.h"
 
 #include "../../component/DX11RenderingSystemComponent.h"
 
@@ -12,7 +11,7 @@ extern ICoreSystem* g_pCoreSystem;
 
 using namespace DX11RenderingSystemNS;
 
-INNO_PRIVATE_SCOPE DX11MotionBlurPass
+INNO_PRIVATE_SCOPE DX11PostTAAPass
 {
 	bool initializeShaders();
 
@@ -20,16 +19,16 @@ INNO_PRIVATE_SCOPE DX11MotionBlurPass
 
 	DX11ShaderProgramComponent* m_DXSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "DX11//motionBlurPassVertex.hlsl/", "", "", "", "DX11//motionBlurPassPixel.hlsl/" };
+	ShaderFilePaths m_shaderFilePaths = { "DX11//postTAAPassVertex.hlsl/", "", "", "", "DX11//postTAAPassPixel.hlsl/" };
 
 	EntityID m_entityID;
 }
 
-bool DX11MotionBlurPass::initialize()
+bool DX11PostTAAPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	m_DXRPC = addDX11RenderPassComponent(m_entityID, "MotionBlurPassDXRPC\\");
+	m_DXRPC = addDX11RenderPassComponent(m_entityID, "PostTAAPassDXRPC\\");
 
 	m_DXRPC->m_renderPassDesc = DX11RenderingSystemComponent::get().m_deferredRenderPassDesc;
 	m_DXRPC->m_renderPassDesc.RTNumber = 1;
@@ -54,7 +53,7 @@ bool DX11MotionBlurPass::initialize()
 	return true;
 }
 
-bool DX11MotionBlurPass::initializeShaders()
+bool DX11PostTAAPass::initializeShaders()
 {
 	m_DXSPC = addDX11ShaderProgramComponent(m_entityID);
 
@@ -77,37 +76,35 @@ bool DX11MotionBlurPass::initializeShaders()
 	return true;
 }
 
-bool DX11MotionBlurPass::update()
+bool DX11PostTAAPass::update()
 {
 	activateShader(m_DXSPC);
 
 	activateRenderPass(m_DXRPC);
 
 	// bind to previous pass render target textures
-	bindTextureForRead(ShaderType::FRAGMENT, 0, DX11OpaquePass::getDX11RPC()->m_DXTDCs[3]);
-	bindTextureForRead(ShaderType::FRAGMENT, 1, DX11PostTAAPass::getDX11RPC()->m_DXTDCs[0]);
+	bindTextureForRead(ShaderType::FRAGMENT, 0, DX11TAAPass::getResult());
 
 	// draw
 	auto l_MDC = getDX11MeshDataComponent(MeshShapeType::QUAD);
 	drawMesh(l_MDC);
 
 	unbindTextureForRead(ShaderType::FRAGMENT, 0);
-	unbindTextureForRead(ShaderType::FRAGMENT, 1);
 
 	return true;
 }
 
-bool DX11MotionBlurPass::resize()
+bool DX11PostTAAPass::resize()
 {
 	return true;
 }
 
-bool DX11MotionBlurPass::reloadShaders()
+bool DX11PostTAAPass::reloadShaders()
 {
 	return true;
 }
 
-DX11RenderPassComponent * DX11MotionBlurPass::getDX11RPC()
+DX11RenderPassComponent * DX11PostTAAPass::getDX11RPC()
 {
 	return m_DXRPC;
 }

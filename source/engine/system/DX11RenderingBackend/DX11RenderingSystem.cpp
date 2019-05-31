@@ -8,6 +8,7 @@
 #include "DX11SkyPass.h"
 #include "DX11PreTAAPass.h"
 #include "DX11TAAPass.h"
+#include "DX11PostTAAPass.h"
 #include "DX11MotionBlurPass.h"
 #include "DX11FinalBlendPass.h"
 
@@ -360,6 +361,7 @@ bool DX11RenderingSystemNS::initialize()
 		DX11SkyPass::initialize();
 		DX11PreTAAPass::initialize();
 		DX11TAAPass::initialize();
+		DX11PostTAAPass::initialize();
 		DX11MotionBlurPass::initialize();
 		DX11FinalBlendPass::initialize();
 
@@ -539,6 +541,8 @@ bool DX11RenderingSystemNS::render()
 
 	DX11TAAPass::update();
 
+	DX11PostTAAPass::update();
+
 	DX11MotionBlurPass::update();
 
 	DX11FinalBlendPass::update();
@@ -703,6 +707,7 @@ bool DX11RenderingSystemNS::resize()
 	DX11SkyPass::resize();
 	DX11PreTAAPass::resize();
 	DX11TAAPass::resize();
+	DX11PostTAAPass::resize();
 	DX11MotionBlurPass::resize();
 	DX11FinalBlendPass::resize();
 
@@ -809,6 +814,7 @@ bool DX11RenderingSystem::reloadShader(RenderPassType renderPassType)
 		DX11SkyPass::reloadShaders();
 		DX11PreTAAPass::reloadShaders();
 		DX11TAAPass::reloadShaders();
+		DX11PostTAAPass::reloadShaders();
 		DX11MotionBlurPass::reloadShaders();
 		DX11FinalBlendPass::reloadShaders();
 		break;
