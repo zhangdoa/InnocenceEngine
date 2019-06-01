@@ -1,7 +1,7 @@
 // shadertype=<glsl>
 #version 450
 layout(location = 0) out vec4 uni_RT0;
-in vec4 voxelColor;
+layout(location = 0) in vec4 voxelColor;
 
 void main()
 {

@@ -4,16 +4,16 @@
 layout(points) in;
 layout(triangle_strip, max_vertices = 24) out;
 
-uniform float uni_voxelSize;
-uniform vec4 uni_worldMinPoint;
+layout(location = 2) uniform float uni_voxelSize;
+layout(location = 3) uniform vec4 uni_worldMinPoint;
 
-uniform mat4 uni_p;
-uniform mat4 uni_r;
-uniform mat4 uni_t;
-uniform mat4 uni_m;
+layout(location = 4) uniform mat4 uni_p;
+layout(location = 5) uniform mat4 uni_r;
+layout(location = 6) uniform mat4 uni_t;
+layout(location = 7) uniform mat4 uni_m;
 
-in vec4 out_textureValue[];
-out vec4 voxelColor;
+layout(location = 0) in vec4 out_textureValue[];
+layout(location = 0) out vec4 voxelColor;
 
 void main()
 {

@@ -3,13 +3,13 @@
 layout(triangles) in;
 layout(triangle_strip, max_vertices = 3) out;
 
-in VS_OUT
+layout(location = 0) in VS_OUT
 {
 	vec2 texCoord;
 	vec3 normal;
 } gs_in[3];
 
-out GS_OUT
+layout(location = 0) out GS_OUT
 {
 	vec3 wsPosition;
 	vec3 position;
@@ -18,12 +18,11 @@ out GS_OUT
 	flat vec4 triangleAABB;
 } gs_out;
 
-uniform mat4 uni_VP[3];
-uniform mat4 uni_VP_inv[3];
-uniform uint uni_volumeDimension;
-
-uniform float uni_voxelScale;
-uniform vec4 uni_worldMinPoint;
+layout(location = 1) uniform mat4 uni_VP[3];
+layout(location = 4) uniform mat4 uni_VP_inv[3];
+layout(location = 7) uniform uint uni_volumeDimension;
+layout(location = 8) uniform float uni_voxelScale;
+layout(location = 9) uniform vec4 uni_worldMinPoint;
 
 int CalculateAxis()
 {

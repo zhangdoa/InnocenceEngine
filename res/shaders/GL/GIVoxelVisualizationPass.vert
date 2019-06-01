@@ -2,11 +2,11 @@
 #version 450
 #extension GL_ARB_shader_image_load_store : require
 
-out vec4 out_textureValue;
+layout(location = 0) out vec4 out_textureValue;
 
-layout(binding = 3, rgba8) uniform readonly image3D uni_voxelTexture;
+layout(location = 0, binding = 3, rgba8) uniform readonly image3D uni_voxelTexture;
 
-uniform uint uni_volumeDimension;
+layout(location = 1) uniform uint uni_volumeDimension;
 
 void main()
 {

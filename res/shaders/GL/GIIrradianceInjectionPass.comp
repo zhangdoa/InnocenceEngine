@@ -15,14 +15,17 @@ const float PI = 3.14159265f;
 const float EPSILON = 1e-30;
 const float SQRT_3 = 1.73205080f;
 
-uniform dirLight uni_dirLight;
+layout(std140, row_major, binding = 3) uniform sunUBO
+{
+	dirLight uni_dirLight;
+};
 
-uniform uint uni_volumeDimension;
-uniform float uni_voxelSize;
-uniform float uni_voxelScale;
-uniform vec4 uni_worldMinPoint;
+layout(location = 0) uniform uint uni_volumeDimension;
+layout(location = 1) uniform float uni_voxelSize;
+layout(location = 2) uniform float uni_voxelScale;
+layout(location = 3) uniform vec4 uni_worldMinPoint;
 
-uniform uint uni_normalWeightedLambert = 1;
+const uint uni_normalWeightedLambert = 1;
 
 vec3 VoxelToWorld(ivec3 pos)
 {

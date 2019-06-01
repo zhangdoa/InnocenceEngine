@@ -5,9 +5,9 @@ layout(location = 0) in vec3 in_Position;
 layout(location = 1) in vec2 in_TexCoord;
 layout(location = 2) in vec3 in_Normal;
 
-uniform mat4 uni_m;
+layout(location = 0) uniform mat4 uni_m;
 
-out VS_OUT{
+layout(location = 0) out VS_OUT{
 	vec2 texCoord;
 	vec3 normal;
 } vs_out;

@@ -25,12 +25,6 @@ INNO_PRIVATE_SCOPE GLVXGIPass
 
 	GLRenderPassComponent* m_voxelizationPassGLRPC;
 	GLShaderProgramComponent* m_voxelizationPassSPC;
-	GLuint m_voxelizationPass_uni_m;
-	std::vector<GLuint> m_voxelizationPass_uni_VP;
-	std::vector<GLuint> m_voxelizationPass_uni_VP_inv;
-	GLuint m_voxelizationPass_uni_volumeDimension;
-	GLuint m_voxelizationPass_uni_voxelScale;
-	GLuint m_voxelizationPass_uni_worldMinPoint;
 
 	std::vector<mat4> m_VP;
 	std::vector<mat4> m_VP_inv;
@@ -40,22 +34,9 @@ INNO_PRIVATE_SCOPE GLVXGIPass
 
 	GLRenderPassComponent* m_irradianceInjectionPassGLRPC;
 	GLShaderProgramComponent* m_irradianceInjectionPassSPC;
-	GLuint m_irradianceInjectionPass_uni_dirLight_direction;
-	GLuint m_irradianceInjectionPass_uni_dirLight_luminance;
-	GLuint m_irradianceInjectionPass_uni_volumeDimension;
-	GLuint m_irradianceInjectionPass_uni_voxelSize;
-	GLuint m_irradianceInjectionPass_uni_voxelScale;
-	GLuint m_irradianceInjectionPass_uni_worldMinPoint;
 
 	GLRenderPassComponent* m_voxelVisualizationGLRPC;
 	GLShaderProgramComponent* m_voxelVisualizationPassSPC;
-	GLuint m_voxelVisualizationPass_uni_p;
-	GLuint m_voxelVisualizationPass_uni_r;
-	GLuint m_voxelVisualizationPass_uni_t;
-	GLuint m_voxelVisualizationPass_uni_m;
-	GLuint m_voxelVisualizationPass_uni_volumeDimension;
-	GLuint m_voxelVisualizationPass_uni_voxelSize;
-	GLuint m_voxelVisualizationPass_uni_worldMinPoint;
 
 	GLuint m_VAO;
 }
@@ -104,33 +85,6 @@ void GLVXGIPass::initializeVoxelizationPass()
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_voxelizationPassShaderFilePaths);
 
-	m_voxelizationPass_uni_m = getUniformLocation(
-		rhs->m_program,
-		"uni_m");
-
-	m_voxelizationPass_uni_VP.reserve(3);
-	m_voxelizationPass_uni_VP_inv.reserve(3);
-
-	for (size_t i = 0; i < 3; i++)
-	{
-		m_voxelizationPass_uni_VP.emplace_back(
-			getUniformLocation(rhs->m_program, "uni_VP[" + std::to_string(i) + "]")
-		);
-		m_voxelizationPass_uni_VP_inv.emplace_back(
-			getUniformLocation(rhs->m_program, "uni_VP_inv[" + std::to_string(i) + "]")
-		);
-	}
-
-	m_voxelizationPass_uni_volumeDimension = getUniformLocation(
-		rhs->m_program,
-		"uni_volumeDimension");
-	m_voxelizationPass_uni_voxelScale = getUniformLocation(
-		rhs->m_program,
-		"uni_voxelScale");
-	m_voxelizationPass_uni_worldMinPoint = getUniformLocation(
-		rhs->m_program,
-		"uni_worldMinPoint");
-
 	m_voxelizationPassSPC = rhs;
 
 	m_VP.reserve(3);
@@ -172,25 +126,6 @@ void GLVXGIPass::initializeIrradianceInjectionPass()
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_irradianceInjectionPassShaderFilePaths);
 
-	m_irradianceInjectionPass_uni_dirLight_direction = getUniformLocation(
-		rhs->m_program,
-		"uni_dirLight.direction");
-	m_irradianceInjectionPass_uni_dirLight_luminance = getUniformLocation(
-		rhs->m_program,
-		"uni_dirLight.luminance");
-	m_irradianceInjectionPass_uni_volumeDimension = getUniformLocation(
-		rhs->m_program,
-		"uni_volumeDimension");
-	m_irradianceInjectionPass_uni_voxelSize = getUniformLocation(
-		rhs->m_program,
-		"uni_voxelSize");
-	m_irradianceInjectionPass_uni_voxelScale = getUniformLocation(
-		rhs->m_program,
-		"uni_voxelScale");
-	m_irradianceInjectionPass_uni_worldMinPoint = getUniformLocation(
-		rhs->m_program,
-		"uni_worldMinPoint");
-
 	m_irradianceInjectionPassSPC = rhs;
 }
 
@@ -210,29 +145,6 @@ void GLVXGIPass::initializeVoxelVisualizationPass()
 
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_voxelVisualizationPassShaderFilePaths);
-
-	m_voxelVisualizationPass_uni_p = getUniformLocation(
-		rhs->m_program,
-		"uni_p");
-	m_voxelVisualizationPass_uni_r = getUniformLocation(
-		rhs->m_program,
-		"uni_r");
-	m_voxelVisualizationPass_uni_t = getUniformLocation(
-		rhs->m_program,
-		"uni_t");
-	m_voxelVisualizationPass_uni_m = getUniformLocation(
-		rhs->m_program,
-		"uni_m");
-
-	m_voxelVisualizationPass_uni_volumeDimension = getUniformLocation(
-		rhs->m_program,
-		"uni_volumeDimension");
-	m_voxelVisualizationPass_uni_voxelSize = getUniformLocation(
-		rhs->m_program,
-		"uni_voxelSize");
-	m_voxelVisualizationPass_uni_worldMinPoint = getUniformLocation(
-		rhs->m_program,
-		"uni_worldMinPoint");
 
 	m_voxelVisualizationPassSPC = rhs;
 
@@ -294,14 +206,14 @@ void GLVXGIPass::updateVoxelizationPass()
 
 	activateShaderProgram(m_voxelizationPassSPC);
 
-	updateUniform(m_voxelizationPass_uni_volumeDimension, m_volumeDimension);
-	updateUniform(m_voxelizationPass_uni_voxelScale, 1.0f / m_volumeGridSize);
-	updateUniform(m_voxelizationPass_uni_worldMinPoint, l_sceneAABB.m_boundMin);
+	updateUniform(7, m_volumeDimension);
+	updateUniform(8, 1.0f / m_volumeGridSize);
+	updateUniform(9, l_sceneAABB.m_boundMin);
 
 	for (size_t i = 0; i < m_VP.size(); i++)
 	{
-		updateUniform(m_voxelizationPass_uni_VP[i], m_VP[i]);
-		updateUniform(m_voxelizationPass_uni_VP_inv[i], m_VP_inv[i]);
+		updateUniform(GLint(1 + i), m_VP[i]);
+		updateUniform(GLint(4 + i), m_VP_inv[i]);
 	}
 
 	for (auto& l_visibleComponent : g_pCoreSystem->getGameSystem()->get<VisibleComponent>())
@@ -309,7 +221,7 @@ void GLVXGIPass::updateVoxelizationPass()
 		if (l_visibleComponent->m_visiblilityType == VisiblilityType::INNO_OPAQUE && l_visibleComponent->m_objectStatus == ObjectStatus::Activated)
 		{
 			updateUniform(
-				m_voxelizationPass_uni_m,
+				0,
 				g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
 
 			// draw each graphic data of visibleComponent
@@ -351,17 +263,10 @@ void GLVXGIPass::updateIrradianceInjectionPass()
 
 	activateShaderProgram(m_irradianceInjectionPassSPC);
 
-	updateUniform(
-		m_irradianceInjectionPass_uni_dirLight_direction,
-		RenderingFrontendSystemComponent::get().m_sunGPUData.dir);
-	updateUniform(
-		m_irradianceInjectionPass_uni_dirLight_luminance,
-		RenderingFrontendSystemComponent::get().m_sunGPUData.luminance);
-
-	updateUniform(m_irradianceInjectionPass_uni_volumeDimension, m_volumeDimension);
-	updateUniform(m_irradianceInjectionPass_uni_voxelSize, l_voxelSize);
-	updateUniform(m_irradianceInjectionPass_uni_voxelScale, 1.0f / m_volumeGridSize);
-	updateUniform(m_irradianceInjectionPass_uni_worldMinPoint, l_sceneAABB.m_boundMin);
+	updateUniform(0, m_volumeDimension);
+	updateUniform(1, l_voxelSize);
+	updateUniform(2, 1.0f / m_volumeGridSize);
+	updateUniform(3, l_sceneAABB.m_boundMin);
 
 	auto l_workGroups = static_cast<unsigned>(std::ceil(m_volumeDimension / 8.0f));
 	glDispatchCompute(l_workGroups, l_workGroups, l_workGroups);
@@ -394,14 +299,14 @@ void GLVXGIPass::updateVoxelVisualizationPass()
 
 	activateShaderProgram(m_voxelVisualizationPassSPC);
 
-	updateUniform(m_voxelVisualizationPass_uni_p, RenderingFrontendSystemComponent::get().m_cameraGPUData.p_original);
-	updateUniform(m_voxelVisualizationPass_uni_r, RenderingFrontendSystemComponent::get().m_cameraGPUData.r);
-	updateUniform(m_voxelVisualizationPass_uni_t, RenderingFrontendSystemComponent::get().m_cameraGPUData.t);
-	updateUniform(m_voxelVisualizationPass_uni_m, l_m);
+	updateUniform(4, RenderingFrontendSystemComponent::get().m_cameraGPUData.p_original);
+	updateUniform(5, RenderingFrontendSystemComponent::get().m_cameraGPUData.r);
+	updateUniform(6, RenderingFrontendSystemComponent::get().m_cameraGPUData.t);
+	updateUniform(7, l_m);
 
-	updateUniform(m_voxelVisualizationPass_uni_volumeDimension, m_volumeDimension);
-	updateUniform(m_voxelVisualizationPass_uni_voxelSize, l_voxelSize);
-	updateUniform(m_voxelVisualizationPass_uni_worldMinPoint, l_sceneAABB.m_boundMin);
+	updateUniform(1, m_volumeDimension);
+	updateUniform(2, l_voxelSize);
+	updateUniform(3, l_sceneAABB.m_boundMin);
 
 	glBindImageTexture(3, m_irradianceInjectionPassGLRPC->m_GLTDCs[0]->m_TO, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
 

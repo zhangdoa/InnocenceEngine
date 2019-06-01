@@ -397,7 +397,7 @@ bool GLRenderingSystemNS::render()
 		GLEnvironmentCapturePass::update();
 		GLEnvironmentConvolutionPass::update();
 		GLEnvironmentPreFilterPass::update();
-		//GLVXGIPass::update();
+		GLVXGIPass::update();
 		m_isBaked = true;
 	}
 
@@ -483,11 +483,11 @@ bool GLRenderingSystemNS::render()
 		cleanRenderBuffers(GLDebuggerPass::getGLRPC(0));
 	}
 
-	//if (m_visualizeVXGI)
-	//{
-	//	GLVXGIPass::draw();
-	//	l_canvasGLRPC = GLVXGIPass::getGLRPC();
-	//}
+	if (m_visualizeVXGI)
+	{
+		GLVXGIPass::draw();
+		l_canvasGLRPC = GLVXGIPass::getGLRPC();
+	}
 
 	GLFinalBlendPass::update(l_canvasGLRPC);
 
