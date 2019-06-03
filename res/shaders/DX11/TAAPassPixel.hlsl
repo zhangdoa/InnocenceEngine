@@ -1,5 +1,6 @@
 // shadertype=hlsl
 
+#define Use_YCoCg 0
 Texture2D in_preTAAPassRT0 : register(t0);
 Texture2D in_history : register(t1);
 Texture2D in_opaquePassRT3 : register(t2);
@@ -36,16 +37,16 @@ float3 YCoCg_RGB(float3 c)
 	// R = Y + Co - Cg
 	// G = Y + Cg
 	// B = Y - Co - Cg
-	return clamp(float3(
+	return float3(
 		c.x + c.y - c.z,
 		c.x + c.z,
 		c.x - c.y - c.z
-		), float3(0.0, 0.0, 0.0), float3(1.0, 1.0, 1.0));
+		);
 }
 
 float luma(float3 color)
 {
-	return dot(color, float3(0.299, 0.587, 0.114));
+	return dot(color, float3(0.2126, 0.7152, 0.0722));
 }
 
 PixelOutputType main(PixelInputType input) : SV_TARGET
@@ -61,10 +62,12 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float3 currentColor = in_preTAAPassRT0.Sample(SampleTypePoint, screenTexCoords).rgb;
 
 	// Tone mapping
-	currentColor = currentColor / (1.0f + luma(currentColor));
+	float lumaCurrentColor = luma(currentColor);
+	currentColor = currentColor / (1.0f + lumaCurrentColor);
 
 	float2 historyTexCoords = screenTexCoords - MotionVector;
 	float3 historyColor = in_history.Sample(SampleTypePoint, historyTexCoords).rgb;
+	float lumaHistoryColor = luma(historyColor);
 
 	float3 maxNeighbor = float3(0.0, 0.0, 0.0);
 	float3 minNeighbor = float3(1.0, 1.0, 1.0);
@@ -83,31 +86,36 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 
 	float3 neighborAverage = neighborSum / 9.0;
 
-	// Mix in YCoCg space
+#if Use_YCoCg
+	// Clamp history color's chroma in YCoCg space
 	currentColor = RGB_YCoCg(currentColor);
 	historyColor = RGB_YCoCg(historyColor);
 	maxNeighbor = RGB_YCoCg(maxNeighbor);
 	minNeighbor = RGB_YCoCg(minNeighbor);
-	neighborAverage = RGB_YCoCg(neighborAverage);
 
-	float chroma_extent_element = 0.25 * 0.5 * (maxNeighbor.r - minNeighbor.r);
+	float chroma_extent_element = 0.25 * 0.5 * (maxNeighbor.x - minNeighbor.x);
 	float2 chroma_extent = float2(chroma_extent_element, chroma_extent_element);
-	float2 chroma_center = currentColor.gb;
+	float2 chroma_center = currentColor.yz;
 	minNeighbor.yz = chroma_center - chroma_extent;
 	maxNeighbor.yz = chroma_center + chroma_extent;
 	neighborAverage.yz = chroma_center;
+#endif
 
 	historyColor = clamp(historyColor, minNeighbor, maxNeighbor);
 
-	float subpixelCorrection = frac(max(abs(MotionVector.x)*renderTargetSize.x, abs(MotionVector.y)*renderTargetSize.y));
-	float contrast = distance(neighborAverage, currentColor);
-	float weight = clamp(lerp(1.0, contrast, subpixelCorrection) * 0.05, 0.0, 1.0);
+	// Mix by dynamic weight
+	float unbiased_diff = abs(lumaCurrentColor - lumaHistoryColor) / max(lumaCurrentColor, max(lumaHistoryColor, 0.2));
+	float unbiased_weight = 1.0 - unbiased_diff;
+	float unbiased_weight_sqr = unbiased_weight * unbiased_weight;
+	float weight = lerp(0.01, 0.05, unbiased_weight_sqr);
 	float3 finalColor = lerp(historyColor, currentColor, weight);
 
+#if Use_YCoCg
 	// Return to RGB space
 	finalColor = YCoCg_RGB(finalColor);
+#endif
 
-	output.TAAPassRT0 = float4(finalColor, 1.0);
+	output.TAAPassRT0 = float4(finalColor, lumaCurrentColor);
 
 	return output;
 }

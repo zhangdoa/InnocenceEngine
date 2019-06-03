@@ -15,19 +15,15 @@ struct PixelOutputType
 	float4 postTAAPassRT0 : SV_Target0;
 };
 
-float luma(float3 color)
-{
-	return dot(color, float3(0.299, 0.587, 0.114));
-}
-
 PixelOutputType main(PixelInputType input) : SV_TARGET
 {
 	PixelOutputType output;
 
 	float3 finalColor = in_TAAPassRT0.Sample(SampleTypePoint, input.texcoord).rgb;
+	float lumaCurrentColor = in_TAAPassRT0.Sample(SampleTypePoint, input.texcoord).a;
 
 	// Undo tone mapping
-	finalColor = finalColor / (1.0f - luma(finalColor));
+	finalColor = finalColor * (1.0f + lumaCurrentColor);
 
 	output.postTAAPassRT0 = float4(finalColor, 1.0);
 
