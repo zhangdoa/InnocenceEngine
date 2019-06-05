@@ -35,7 +35,8 @@ xcuserdata/
 *.perspectivev3
 !default.perspectivev3
 
-# Intermediate assets
+# Intermediate code and assets
+/Source/Engine/Common/Config.h
 *.spv
 /Res/ConvertedAssets
 /Res/Logs/*
@@ -44,8 +45,10 @@ xcuserdata/
 /Source/Editor/*
 !/Source/Editor/InnocenceEditor/*
 
-/Source/Engine/Common/Config.h
-/Source/Engine/ThirdParty/ImGui
+#For ImGui
+/Source/Engine/ThirdParty/ImGui/*
+!/Source/Engine/ThirdParty/ImGui/CMakeLists.txt
+
 /Source/Editor/InnocenceEditor/darkstyle/
 /Source/Editor/InnocenceEditor/DarkStyle\.cpp
 /Source/Editor/InnocenceEditor/DarkStyle\.h
