@@ -1,25 +1,25 @@
 # Build binaries
-/bin
-/build
+/Bin
+/Build
 
 # Dynamic linking export headers
-/source/engine/exports
-/source/game/exports
+/Source/Engine/Export
+/Source/Game/Export
 
 # Third-party headers and libraries
-/source/external/include/assimp
-/source/external/include/GLFW
-/source/external/include/vulkan
-/source/external/include/stb
-/source/external/include/json
-/source/external/include/GL
-/source/external/include/DX12
-/source/external/lib
-/source/external/dll
+/Source/External/Include/assimp
+/Source/External/Include/GLFW
+/Source/External/Include/vulkan
+/Source/External/Include/stb
+/Source/External/Include/json
+/Source/External/Include/GL
+/Source/External/Include/DX12
+/Source/External/Lib
+/Source/External/DLL
 
 # For macOS
 \.DS_Store
-/source/engine/platform/macOS/build
+/Source/Engine/Platform/MacOS/build
 
 # For Xcode
 xcuserdata/
@@ -37,20 +37,20 @@ xcuserdata/
 
 # Intermediate assets
 *.spv
-/res/convertedAssets
-/res/logs/*
+/Res/ConvertedAssets
+/Res/Logs/*
 
 # For Qt
-/source/editor/*
-!/source/editor/InnocenceEditor/*
+/Source/Editor/*
+!/Source/Editor/InnocenceEditor/*
 
-/source/engine/common/config.h
-/source/engine/third-party/ImGui
-source/editor/InnocenceEditor/darkstyle/
-source/editor/InnocenceEditor/DarkStyle\.cpp
-source/editor/InnocenceEditor/DarkStyle\.h
-source/editor/InnocenceEditor/darkstyle\.qrc
-source/editor/InnocenceEditor/InnocenceEditor\.pro\.user
+/Source/Engine/Common/Config.h
+/Source/Engine/ThirdParty/ImGui
+/Source/Editor/InnocenceEditor/darkstyle/
+/Source/Editor/InnocenceEditor/DarkStyle\.cpp
+/Source/Editor/InnocenceEditor/DarkStyle\.h
+/Source/Editor/InnocenceEditor/darkstyle\.qrc
+/Source/Editor/InnocenceEditor/InnocenceEditor\.pro\.user
 
 #Packaged files
-/package/*
+/Package/*
