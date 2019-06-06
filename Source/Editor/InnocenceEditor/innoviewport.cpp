@@ -1,7 +1,7 @@
 #include "innoviewport.h"
 #include <qt_windows.h>
-#include "../../engine/system/CoreSystem.h"
-#include "../../game/GameInstance.h"
+#include "../../Engine/System/CoreSystem.h"
+#include "../../Game/GameInstance.h"
 
 ICoreSystem* g_pCoreSystem;
 
@@ -42,7 +42,7 @@ void InnoViewport::initialize()
     const char* l_args = "-renderer 0 -mode 1";
 
     m_CoreSystem->setup(hInstance, &l_hwnd, (char*)l_args);
-    m_GameInstance->setup();
+    m_GameInstance->setup(m_CoreSystem);
 
     m_CoreSystem->initialize();
     m_GameInstance->initialize();
@@ -93,8 +93,8 @@ void InnoViewport::Resize(float width, float height)
         if(m_CoreSystem->getStatus() == ObjectStatus::Activated)
         {
             TVec2<unsigned int> l_newResolution = TVec2<unsigned int>(width, height);
-            m_CoreSystem->getVisionSystem()->getRenderingFrontend()->setScreenResolution(l_newResolution);
-            m_CoreSystem->getVisionSystem()->getRenderingBackend()->resize();
+            m_CoreSystem->getRenderingFrontend()->setScreenResolution(l_newResolution);
+            m_CoreSystem->getRenderingBackend()->resize();
         }
     }
 }
@@ -104,22 +104,22 @@ bool ViewportEventFilter::eventFilter(QObject *obj, QEvent *event)
     if(event->type() == QEvent::KeyPress)
     {
         auto l_key = reinterpret_cast<QKeyEvent*>(event);
-        g_pCoreSystem->getVisionSystem()->getWindowSystem()->sendEvent(WM_KEYDOWN, l_key->key(), 0);
+        g_pCoreSystem->getWindowSystem()->sendEvent(WM_KEYDOWN, l_key->key(), 0);
     }
     if(event->type() == QEvent::KeyRelease)
     {
         auto l_key = reinterpret_cast<QKeyEvent*>(event);
-        g_pCoreSystem->getVisionSystem()->getWindowSystem()->sendEvent(WM_KEYUP, l_key->key(), 0);
+        g_pCoreSystem->getWindowSystem()->sendEvent(WM_KEYUP, l_key->key(), 0);
     }
     if(event->type() == QEvent::MouseButtonPress)
     {
         auto l_key = reinterpret_cast<QMouseEvent*>(event);
         switch (l_key->button()) {
         case Qt::MouseButton::LeftButton:
-            g_pCoreSystem->getVisionSystem()->getWindowSystem()->sendEvent(WM_LBUTTONDOWN, WM_LBUTTONDOWN, 0);
+            g_pCoreSystem->getWindowSystem()->sendEvent(WM_LBUTTONDOWN, WM_LBUTTONDOWN, 0);
             break;
         case Qt::MouseButton::RightButton:
-            g_pCoreSystem->getVisionSystem()->getWindowSystem()->sendEvent(WM_RBUTTONDOWN, WM_RBUTTONDOWN, 0);
+            g_pCoreSystem->getWindowSystem()->sendEvent(WM_RBUTTONDOWN, WM_RBUTTONDOWN, 0);
             break;
         default:
             break;
@@ -130,10 +130,10 @@ bool ViewportEventFilter::eventFilter(QObject *obj, QEvent *event)
         auto l_mouseButton = reinterpret_cast<QMouseEvent*>(event);
         switch (l_mouseButton->button()) {
         case Qt::MouseButton::LeftButton:
-            g_pCoreSystem->getVisionSystem()->getWindowSystem()->sendEvent(WM_LBUTTONUP, WM_LBUTTONUP, 0);
+            g_pCoreSystem->getWindowSystem()->sendEvent(WM_LBUTTONUP, WM_LBUTTONUP, 0);
             break;
         case Qt::MouseButton::RightButton:
-            g_pCoreSystem->getVisionSystem()->getWindowSystem()->sendEvent(WM_RBUTTONUP, WM_RBUTTONUP, 0);
+            g_pCoreSystem->getWindowSystem()->sendEvent(WM_RBUTTONUP, WM_RBUTTONUP, 0);
             break;
         default:
             break;
@@ -145,7 +145,7 @@ bool ViewportEventFilter::eventFilter(QObject *obj, QEvent *event)
         auto l_x = l_mouseMovement->localPos().x();
         auto l_y = l_mouseMovement->localPos().y();
         auto l_lparm = MAKELONG(l_x, l_y);
-        g_pCoreSystem->getVisionSystem()->getWindowSystem()->sendEvent(WM_MOUSEMOVE, WM_MOUSEMOVE, l_lparm);
+        g_pCoreSystem->getWindowSystem()->sendEvent(WM_MOUSEMOVE, WM_MOUSEMOVE, l_lparm);
     }
     return false;
 }

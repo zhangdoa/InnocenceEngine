@@ -70,12 +70,12 @@ qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
-INCLUDEPATH += $$PWD/../../../source/external/include
+INCLUDEPATH += $$PWD/../../../Source/External/Include
 
-win32:CONFIG(release, debug|release):LIBS += -L$$PWD/../../../build/Release/lib_archive/release/ -lInnoSystem
-else:win32:CONFIG(debug, debug|release):LIBS += -L$$PWD/../../../build/Debug/lib_archive/debug/ -lInnoSystem
-else:unix: LIBS += -L$$PWD/../../../build/lib_archive/ -lInnoSystem
+win32:CONFIG(release, debug|release):LIBS += -L$$PWD/../../../Build/Release/LibArchive/Release/ -lInnoSystem
+else:win32:CONFIG(debug, debug|release):LIBS += -L$$PWD/../../../Build/Debug/LibArchive/Debug/ -lInnoSystem
+else:unix: LIBS += -L$$PWD/../../../Build/LibArchive/ -lInnoSystem
 
-win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../build/Release/lib_archive/release/ -lInnoGame
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../build/Debug/lib_archive/debug/ -lInnoGame
-else:unix: LIBS += -L$$PWD/../../../build/lib_archive/ -lInnoGame
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../Build/Release/LibArchive/Release/ -lInnoGame
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../Build/Debug/LibArchive/Debug/ -lInnoGame
+else:unix: LIBS += -L$$PWD/../../../Build/LibArchive/ -lInnoGame
