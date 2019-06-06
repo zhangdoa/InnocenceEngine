@@ -10,14 +10,14 @@ build_script:
 - cmd: >-
     cd script
 
-    @echo | setupWin.bat
+    @echo | SetupWin.bat
 
-    powershell -ExecutionPolicy RemoteSigned -File buildAssimpWin-VS15.ps1
+    powershell -ExecutionPolicy RemoteSigned -File BuildAssimpWin-VS15.ps1
 
-    powershell -ExecutionPolicy RemoteSigned -File buildPhysXWin-VS15.ps1
+    powershell -ExecutionPolicy RemoteSigned -File BuildPhysXWin-VS15.ps1
 
-    powershell -ExecutionPolicy RemoteSigned -File buildEngineWin-VS15.ps1
+    powershell -ExecutionPolicy RemoteSigned -File BuildEngineWin-VS15.ps1
 skip_commits:
   files:
   - '**/*.md'
-  - 'res/**/*.*'
+  - 'Res/**/*.*'

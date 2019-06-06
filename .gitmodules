@@ -1,28 +1,28 @@
-[submodule "source/external/gitsubmodules/assimp"]
-	path = source/external/gitsubmodules/assimp
+[submodule "Source/External/GitSubmodules/assimp"]
+	path = Source/External/GitSubmodules/assimp
 	url = https://github.com/assimp/assimp
 	ignore = dirty
-[submodule "source/external/gitsubmodules/Vulkan-Headers"]
-	path = source/external/gitsubmodules/Vulkan-Headers
+[submodule "Source/External/GitSubmodules/Vulkan-Headers"]
+	path = Source/External/GitSubmodules/Vulkan-Headers
 	url = https://github.com/KhronosGroup/Vulkan-Headers
 	ignore = dirty
-[submodule "source/external/gitsubmodules/PhysX"]
-	path = source/external/gitsubmodules/PhysX
+[submodule "Source/External/GitSubmodules/PhysX"]
+	path = Source/External/GitSubmodules/PhysX
 	url = https://github.com/NVIDIAGameWorks/PhysX
 	ignore = dirty
-[submodule "source/external/gitsubmodules/stb"]
-	path = source/external/gitsubmodules/stb
+[submodule "Source/External/GitSubmodules/stb"]
+	path = Source/External/GitSubmodules/stb
 	url = https://github.com/nothings/stb
 	ignore = dirty
-[submodule "source/external/gitsubmodules/imgui"]
-	path = source/external/gitsubmodules/imgui
+[submodule "Source/External/GitSubmodules/imgui"]
+	path = Source/External/GitSubmodules/imgui
 	url = https://github.com/ocornut/imgui
 	ignore = dirty
-[submodule "source/external/gitsubmodules/json"]
-	path = source/external/gitsubmodules/json
+[submodule "Source/External/GitSubmodules/json"]
+	path = Source/External/GitSubmodules/json
 	url = https://github.com/nlohmann/json
 	ignore = dirty
-[submodule "source/external/gitsubmodules/Qt-Frameless-Window-DarkStyle"]
-	path = source/external/gitsubmodules/Qt-Frameless-Window-DarkStyle
+[submodule "Source/External/GitSubmodules/Qt-Frameless-Window-DarkStyle"]
+	path = Source/External/GitSubmodules/Qt-Frameless-Window-DarkStyle
 	url = https://github.com/Jorgen-VikingGod/Qt-Frameless-Window-DarkStyle
 	ignore = dirty
