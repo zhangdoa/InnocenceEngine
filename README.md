@@ -15,6 +15,7 @@
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine?ref=badge_large)
 
 ## How to build
+All scripts are in /Script folder
 
 ### Windows
 
@@ -27,13 +28,13 @@ Run following scripts in a sequence
 *Will build Debug and Release configurations in parallel*
 
 ``` cmd
-@echo | setupWin.bat
+@echo | SetupWin.bat
 ```
 ```powershell
-buildAssimpWin-VS15.ps1
-buildPhysXWin-VS15.ps1
-buildEngineWin-VS15.ps1
-postBuildWin.ps1
+BuildAssimpWin-VS15.ps1
+BuildPhysXWin-VS15.ps1
+BuildEngineWin-VS15.ps1
+PostBuildWin.ps1
 ```
 
 #### Build Editor
@@ -41,9 +42,9 @@ Tested under Windows 10 version 1903
 
 Prerequisites: Qt Creator 5.13 or higher
 
-- Open `source\editor\InnocenceEditor\InnocenceEditor.pro` with Qt Creator
-- Change "Projects - Build Settings - General - Build directory" to `..\..\..\bin` for Debug, Profile and Release build configurations
-- Change "Projects - Run Settings - Run - Working directory" to `..\..\..\bin`
+- Open `Source\Editor\InnocenceEditor\InnocenceEditor.pro` with Qt Creator
+- Change "Projects - Build Settings - General - Build directory" to `..\..\..\Bin` for Debug, Profile and Release build configurations
+- Change "Projects - Run Settings - Run - Working directory" to `..\..\..\Bin`
 - Build the project
 
 ### Linux
@@ -55,10 +56,10 @@ Prerequisites: GCC 8.0 or Clang 7.0 or higher + CMake 3.10 or higher + OpenGL li
 Run following scripts in a sequence:
 
 ``` shell
-echo | setupLinux.sh
-echo | buildAssimpLinux.sh
-echo | buildLinux.sh # or buildLinux-Clang.sh or buildLinux-CodeBlocks.sh
-echo | postBuildLinux.sh
+echo | SetupLinux.sh
+echo | BuildAssimpLinux.sh
+echo | BuildLinux.sh # or BuildLinux-Clang.sh or BuildLinux-CodeBlocks.sh
+echo | PostBuildLinux.sh
 ```
 
 ### macOS
@@ -70,10 +71,10 @@ Prerequisites: CMake 3.10 or higher + Clang 7.0 or higher
 Run following scripts in a sequence:
 
 ``` shell
-echo | setupMac.sh
-echo | buildAssimpMac-Xcode.sh
-echo | buildMac.sh
-echo | postBuildMac.sh
+echo | SetupMac.sh
+echo | BuildAssimpMac-Xcode.sh
+echo | BuildMac.sh
+echo | PostBuildMac.sh
 ```
 
 ## How to use
@@ -84,7 +85,7 @@ echo | postBuildMac.sh
 Run following script
 
 ``` powershell
-startEngineWin.ps1
+StartEngineWin.ps1
 ```
 
 #### Launch editor build
@@ -95,7 +96,7 @@ Launch through Qt Creator
 Run following script
 
 ``` shell
-echo | startEngineLinux.sh
+echo | StartEngineLinux.sh
 ```
 
 ### macOS
@@ -103,14 +104,14 @@ echo | startEngineLinux.sh
 Run following script
 
 ``` shell
-echo | startEngineMac.sh
+echo | StartEngineMac.sh
 ```
 
 ## How to debug
 
 ### Windows
 
-1. Open build/InnocenceEngine.sln
+1. Open Build/InnocenceEngine.sln
 2. Set debug launch arguments and default launch project to InnoMain
 3. Start debug with "Launch" button (default F5)
 
@@ -119,12 +120,12 @@ echo | startEngineMac.sh
 1. Use Atom to load the repo folder
 2. Install gcc-compiler package
 3. Select build/makefile and hit "Compile and Debug" button default F6)
-4. (Optional) Change launch arguments in source/engine/platform/Linux/CMakeLists.txt
+4. (Optional) Change launch arguments in Source/Engine/Platform/LinuxMain/CMakeLists.txt
 
 ### macOS
 
 1. Use Atom to load the repo folder
-2. Open source/engine/platform/macOS/InnoMain.InnoMain.xcodeproj
+2. Open Source/Engine/Platform/MacOS/InnoMain.InnoMain.xcodeproj
 3. Select "Product" - "Run" (⌘ + R)
 
 ## Available launch arguments
