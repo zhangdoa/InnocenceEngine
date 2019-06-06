@@ -31,7 +31,7 @@
 
 #include "ImGuiWrapper/ImGuiWrapper.h"
 
-ICoreSystem* g_pCoreSystem;
+INNO_SYSTEM_EXPORT ICoreSystem* g_pCoreSystem;
 
 #define createSubSystemInstanceDefi( className ) \
 m_##className = std::make_unique<Inno##className>(); \
