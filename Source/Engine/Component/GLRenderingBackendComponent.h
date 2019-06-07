@@ -1,8 +1,8 @@
 #pragma once
-#include "../common/InnoType.h"
-#include "../component/GLMeshDataComponent.h"
-#include "../component/GLTextureDataComponent.h"
-#include "../component/GLRenderPassComponent.h"
+#include "../Common/InnoType.h"
+#include "../Component/GLMeshDataComponent.h"
+#include "../Component/GLTextureDataComponent.h"
+#include "../Component/GLRenderPassComponent.h"
 
 class GLRenderingBackendComponent
 {

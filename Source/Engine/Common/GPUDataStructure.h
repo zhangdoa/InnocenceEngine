@@ -1,7 +1,7 @@
-#include "../common/InnoType.h"
-#include "../component/MeshDataComponent.h"
-#include "../component/MaterialDataComponent.h"
-#include "../component/TextureDataComponent.h"
+#include "../Common/InnoType.h"
+#include "../Component/MeshDataComponent.h"
+#include "../Component/MaterialDataComponent.h"
+#include "../Component/TextureDataComponent.h"
 
 struct alignas(16) CameraGPUData
 {

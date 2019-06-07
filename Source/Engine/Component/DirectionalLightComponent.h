@@ -1,7 +1,7 @@
 #pragma once
-#include "../common/InnoComponent.h"
-#include "../common/InnoMath.h"
-#include "../common/InnoContainer.h"
+#include "../Common/InnoComponent.h"
+#include "../Common/InnoMath.h"
+#include "../Common/InnoContainer.h"
 
 class DirectionalLightComponent : public InnoComponent
 {

@@ -1,6 +1,6 @@
 #pragma once
-#include "../common/stl14.h"
-#include "../common/stl17.h"
+#include "../Common/STL14.h"
+#include "../Common/STL17.h"
 
 template<size_t S>
 class FixedSizeString

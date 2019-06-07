@@ -1,6 +1,6 @@
 #include "WinDXWindowSystem.h"
-#include "../../../component/WinWindowSystemComponent.h"
-#include "../../../component/DX11RenderingBackendComponent.h"
+#include "../../../Component/WinWindowSystemComponent.h"
+#include "../../../Component/DX11RenderingBackendComponent.h"
 
 #include "../../ICoreSystem.h"
 

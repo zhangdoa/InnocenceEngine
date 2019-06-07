@@ -8,137 +8,171 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE InnoFileSystemNS::JSONParser
 {
-	ModelMap processNodeJsonData(const json & j);
-	ModelPair processMeshJsonData(const json& j);
-	SkeletonDataComponent* processSkeletonJsonData(const std::string& skeletonFileName);
-	MaterialDataComponent* processMaterialJsonData(const std::string& materialFileName);
-
-	bool assignComponentRuntimeData();
-
-	std::unordered_map<std::string, ModelPair> m_loadedModelPair;
-	ThreadSafeQueue<std::pair<TransformComponent*, EntityName>> m_orphanTransformComponents;
-}
-
-bool InnoFileSystemNS::JSONParser::loadJsonDataFromDisk(const std::string & fileName, json & data)
-{
-	std::ifstream i(getWorkingDirectory() + fileName);
-
-	if (!i.is_open())
+	template<typename T>
+	inline bool loadComponentData(const json& j, const InnoEntity* entity)
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: can't open JSON file : " + fileName + "!");
-		return false;
+		auto l_result = g_pCoreSystem->getGameSystem()->spawn<T>(entity, ObjectSource::Asset, ObjectUsage::Gameplay);
+		from_json(j, *l_result);
+
+		return true;
 	}
 
-	i >> data;
-	i.close();
-
-	return true;
-}
-
-bool InnoFileSystemNS::JSONParser::saveJsonDataToDisk(const std::string & fileName, const json & data)
-{
-	std::ofstream o;
-	o.open(getWorkingDirectory() + fileName, std::ios::out | std::ios::trunc);
-	o << std::setw(4) << data << std::endl;
-	o.close();
-
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: JSON file : " + fileName + " has been saved.");
-
-	return true;
-}
-
-void InnoFileSystemNS::JSONParser::to_json(json& j, const InnoEntity& p)
-{
-	j = json{
-		{"EntityID", p.m_entityID.c_str()},
-		{"EntityName", p.m_entityName.c_str()},
-	};
-}
-
-void InnoFileSystemNS::JSONParser::to_json(json& j, const TransformVector& p)
-{
-	j = json
+	template<typename T>
+	inline bool saveComponentData(json& topLevel, T* rhs)
 	{
-		{
-			"Position",
+		json j;
+		to_json(j, *rhs);
+
+		auto l_result = std::find_if(
+			topLevel["SceneEntities"].begin(),
+			topLevel["SceneEntities"].end(),
+			[&](auto val) -> bool {
+				return val["EntityID"] == rhs->m_parentEntity->m_entityID.c_str();
+			});
+
+			if (l_result != topLevel["SceneEntities"].end())
 			{
-				{
-					"X", p.m_pos.x
-				},
-				{
-					"Y", p.m_pos.y
-				},
-				{
-					"Z", p.m_pos.z
-				}
+				l_result.value()["ChildrenComponents"].emplace_back(j);
+				return true;
 			}
-		},
-		{
-			"Rotation",
+			else
 			{
-				{
-					"X", p.m_rot.x
-				},
-				{
-					"Y", p.m_rot.y
-				},
-				{
-					"Z", p.m_rot.z
-				},
-				{
-					"W", p.m_rot.w
-				}
-			}
-		},
-		{
-			"Scale",
-			{
-				{
-					"X", p.m_scale.x
-				},
-				{
-					"Y", p.m_scale.y
-				},
-				{
-					"Z", p.m_scale.z
-				},
+				g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: saveComponentData<T>: Entity ID " + std::string(rhs->m_parentEntity->m_entityID.c_str()) + " is invalid.");
+				return false;
 			}
 		}
-	};
-}
 
-void InnoFileSystemNS::JSONParser::to_json(json& j, const vec4& p)
-{
-	j = json
+		ModelMap processNodeJsonData(const json & j);
+		ModelPair processMeshJsonData(const json& j);
+		SkeletonDataComponent* processSkeletonJsonData(const std::string& skeletonFileName);
+		MaterialDataComponent* processMaterialJsonData(const std::string& materialFileName);
+
+		bool assignComponentRuntimeData();
+
+		std::unordered_map<std::string, ModelPair> m_loadedModelPair;
+		ThreadSafeQueue<std::pair<TransformComponent*, EntityName>> m_orphanTransformComponents;
+	}
+
+	bool InnoFileSystemNS::JSONParser::loadJsonDataFromDisk(const std::string & fileName, json & data)
 	{
+		std::ifstream i(getWorkingDirectory() + fileName);
+
+		if (!i.is_open())
 		{
+			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: can't open JSON file : " + fileName + "!");
+			return false;
+		}
+
+		i >> data;
+		i.close();
+
+		return true;
+	}
+
+	bool InnoFileSystemNS::JSONParser::saveJsonDataToDisk(const std::string & fileName, const json & data)
+	{
+		std::ofstream o;
+		o.open(getWorkingDirectory() + fileName, std::ios::out | std::ios::trunc);
+		o << std::setw(4) << data << std::endl;
+		o.close();
+
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: JSON file : " + fileName + " has been saved.");
+
+		return true;
+	}
+
+	void InnoFileSystemNS::JSONParser::to_json(json& j, const InnoEntity& p)
+	{
+		j = json{
+			{"EntityID", p.m_entityID.c_str()},
+			{"EntityName", p.m_entityName.c_str()},
+		};
+	}
+
+	void InnoFileSystemNS::JSONParser::to_json(json& j, const TransformVector& p)
+	{
+		j = json
+		{
+			{
+				"Position",
+				{
+					{
+						"X", p.m_pos.x
+					},
+					{
+						"Y", p.m_pos.y
+					},
+					{
+						"Z", p.m_pos.z
+					}
+				}
+			},
+			{
+				"Rotation",
+				{
+					{
+						"X", p.m_rot.x
+					},
+					{
+						"Y", p.m_rot.y
+					},
+					{
+						"Z", p.m_rot.z
+					},
+					{
+						"W", p.m_rot.w
+					}
+				}
+			},
+			{
+				"Scale",
+				{
+					{
+						"X", p.m_scale.x
+					},
+					{
+						"Y", p.m_scale.y
+					},
+					{
+						"Z", p.m_scale.z
+					},
+				}
+			}
+		};
+	}
+
+	void InnoFileSystemNS::JSONParser::to_json(json& j, const vec4& p)
+	{
+		j = json
+		{
+			{
 				"X", p.x
-		},
-		{
+			},
+			{
 				"Y", p.y
-		},
-		{
+			},
+			{
 				"Z", p.z
-		},
-		{
+			},
+			{
 				"W", p.w
-		}
-	};
-}
+			}
+		};
+	}
 
-void InnoFileSystemNS::JSONParser::to_json(json& j, const TransformComponent& p)
-{
-	json localTransformVector;
-
-	to_json(localTransformVector, p.m_localTransformVector);
-
-	auto parentTransformComponentEntityName = p.m_parentTransformComponent->m_parentEntity->m_entityName;
-
-	j = json
+	void InnoFileSystemNS::JSONParser::to_json(json& j, const TransformComponent& p)
 	{
-		{"ComponentType", InnoUtility::getComponentType<TransformComponent>()},
-		{"ParentTransformComponentEntityName", parentTransformComponentEntityName.c_str()},
-		{"LocalTransformVector",
+		json localTransformVector;
+
+		to_json(localTransformVector, p.m_localTransformVector);
+
+		auto parentTransformComponentEntityName = p.m_parentTransformComponent->m_parentEntity->m_entityName;
+
+		j = json
+		{
+			{"ComponentType", InnoUtility::getComponentType<TransformComponent>()},
+			{"ParentTransformComponentEntityName", parentTransformComponentEntityName.c_str()},
+			{"LocalTransformVector",
 			localTransformVector
 		},
 	};
@@ -465,12 +499,12 @@ MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(co
 			}
 			switch (l_TDC->m_textureDataDesc.usageType)
 			{
-			case TextureUsageType::NORMAL: l_MDC->m_texturePack.m_normalTDC.second = l_TDC; break;
-			case TextureUsageType::ALBEDO: l_MDC->m_texturePack.m_albedoTDC.second = l_TDC; break;
-			case TextureUsageType::METALLIC: l_MDC->m_texturePack.m_metallicTDC.second = l_TDC; break;
-			case TextureUsageType::ROUGHNESS: l_MDC->m_texturePack.m_roughnessTDC.second = l_TDC; break;
-			case TextureUsageType::AMBIENT_OCCLUSION: l_MDC->m_texturePack.m_aoTDC.second = l_TDC; break;
-			default:
+				case TextureUsageType::NORMAL: l_MDC->m_texturePack.m_normalTDC.second = l_TDC; break;
+				case TextureUsageType::ALBEDO: l_MDC->m_texturePack.m_albedoTDC.second = l_TDC; break;
+				case TextureUsageType::METALLIC: l_MDC->m_texturePack.m_metallicTDC.second = l_TDC; break;
+				case TextureUsageType::ROUGHNESS: l_MDC->m_texturePack.m_roughnessTDC.second = l_TDC; break;
+				case TextureUsageType::AMBIENT_OCCLUSION: l_MDC->m_texturePack.m_aoTDC.second = l_TDC; break;
+				default:
 				break;
 			}
 		}
@@ -583,31 +617,31 @@ bool InnoFileSystemNS::JSONParser::loadScene(const std::string & fileName)
 		{
 			switch (ComponentType(k["ComponentType"]))
 			{
-			case ComponentType::TransformComponent: loadComponentData<TransformComponent>(k, l_entity);
+				case ComponentType::TransformComponent: loadComponentData<TransformComponent>(k, l_entity);
 				break;
-			case ComponentType::VisibleComponent: loadComponentData<VisibleComponent>(k, l_entity);
+				case ComponentType::VisibleComponent: loadComponentData<VisibleComponent>(k, l_entity);
 				break;
-			case ComponentType::DirectionalLightComponent: loadComponentData<DirectionalLightComponent>(k, l_entity);
+				case ComponentType::DirectionalLightComponent: loadComponentData<DirectionalLightComponent>(k, l_entity);
 				break;
-			case ComponentType::PointLightComponent: loadComponentData<PointLightComponent>(k, l_entity);
+				case ComponentType::PointLightComponent: loadComponentData<PointLightComponent>(k, l_entity);
 				break;
-			case ComponentType::SphereLightComponent: loadComponentData<SphereLightComponent>(k, l_entity);
+				case ComponentType::SphereLightComponent: loadComponentData<SphereLightComponent>(k, l_entity);
 				break;
-			case ComponentType::CameraComponent: loadComponentData<CameraComponent>(k, l_entity);
+				case ComponentType::CameraComponent: loadComponentData<CameraComponent>(k, l_entity);
 				break;
-			case ComponentType::InputComponent:
+				case ComponentType::InputComponent:
 				break;
-			case ComponentType::EnvironmentCaptureComponent: loadComponentData<EnvironmentCaptureComponent>(k, l_entity);
+				case ComponentType::EnvironmentCaptureComponent: loadComponentData<EnvironmentCaptureComponent>(k, l_entity);
 				break;
-			case ComponentType::PhysicsDataComponent:
+				case ComponentType::PhysicsDataComponent:
 				break;
-			case ComponentType::MeshDataComponent:
+				case ComponentType::MeshDataComponent:
 				break;
-			case ComponentType::MaterialDataComponent:
+				case ComponentType::MaterialDataComponent:
 				break;
-			case ComponentType::TextureDataComponent:
+				case ComponentType::TextureDataComponent:
 				break;
-			default:
+				default:
 				break;
 			}
 		}

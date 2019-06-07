@@ -1,5 +1,5 @@
 #pragma once
-#include "../common/InnoComponent.h"
+#include "../Common/InnoComponent.h"
 #include "TextureDataComponent.h"
 
 struct TexturePack

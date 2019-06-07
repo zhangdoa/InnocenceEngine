@@ -1,5 +1,5 @@
 #include "ImGuiWrapperWinDX.h"
-#include "../../component/WinWindowSystemComponent.h"
+#include "../../Component/WinWindowSystemComponent.h"
 
 #include "../RenderingBackend/DX11RenderingBackend/DX11OpaquePass.h"
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "../common/InnoType.h"
+#include "../Common/InnoType.h"
 #include "../component/DX11RenderPassComponent.h"
 #include "../component/DX11MeshDataComponent.h"
 #include "../component/DX11TextureDataComponent.h"

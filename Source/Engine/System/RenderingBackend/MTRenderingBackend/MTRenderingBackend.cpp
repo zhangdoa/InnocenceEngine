@@ -1,7 +1,7 @@
 #include "MTRenderingSystem.h"
-#include "../../component/MTMeshDataComponent.h"
-#include "../../component/MaterialDataComponent.h"
-#include "../../component/MTTextureDataComponent.h"
+#include "../../Component/MTMeshDataComponent.h"
+#include "../../Component/MaterialDataComponent.h"
+#include "../../Component/MTTextureDataComponent.h"
 
 #include "../ICoreSystem.h"
 

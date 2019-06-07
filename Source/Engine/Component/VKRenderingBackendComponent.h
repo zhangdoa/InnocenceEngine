@@ -1,14 +1,14 @@
 #pragma once
-#include "../common/InnoType.h"
+#include "../Common/InnoType.h"
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #include "vulkan/vulkan.h"
 
-#include "../component/VKRenderPassComponent.h"
-#include "../component/VKShaderProgramComponent.h"
-#include "../component/VKMeshDataComponent.h"
-#include "../component/TextureDataComponent.h"
-#include "../component/VKTextureDataComponent.h"
+#include "../Component/VKRenderPassComponent.h"
+#include "../Component/VKShaderProgramComponent.h"
+#include "../Component/VKMeshDataComponent.h"
+#include "../Component/TextureDataComponent.h"
+#include "../Component/VKTextureDataComponent.h"
 
 class VKRenderingBackendComponent
 {

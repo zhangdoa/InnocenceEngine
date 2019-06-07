@@ -1,16 +1,16 @@
 #pragma once
-#include "../component/TransformComponent.h"
-#include "../component/VisibleComponent.h"
-#include "../component/DirectionalLightComponent.h"
-#include "../component/PointLightComponent.h"
-#include "../component/SphereLightComponent.h"
-#include "../component/CameraComponent.h"
-#include "../component/InputComponent.h"
-#include "../component/EnvironmentCaptureComponent.h"
-#include "../component/PhysicsDataComponent.h"
-#include "../component/MeshDataComponent.h"
-#include "../component/MaterialDataComponent.h"
-#include "../component/TextureDataComponent.h"
+#include "../Component/TransformComponent.h"
+#include "../Component/VisibleComponent.h"
+#include "../Component/DirectionalLightComponent.h"
+#include "../Component/PointLightComponent.h"
+#include "../Component/SphereLightComponent.h"
+#include "../Component/CameraComponent.h"
+#include "../Component/InputComponent.h"
+#include "../Component/EnvironmentCaptureComponent.h"
+#include "../Component/PhysicsDataComponent.h"
+#include "../Component/MeshDataComponent.h"
+#include "../Component/MaterialDataComponent.h"
+#include "../Component/TextureDataComponent.h"
 
 #define getClassNameTemplate( className ) \
 inline std::string InnoUtility::getClassName<className>() \

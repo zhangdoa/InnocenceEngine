@@ -1,6 +1,6 @@
 #include "InnoApplication.h"
-#include "../system/CoreSystem.h"
-#include "../../game/GameInstance.h"
+#include "../System/CoreSystem.h"
+#include "../../Game/GameInstance.h"
 
 namespace InnoApplication
 {

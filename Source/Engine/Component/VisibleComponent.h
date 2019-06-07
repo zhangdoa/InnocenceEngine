@@ -1,5 +1,5 @@
 #pragma once
-#include "../common/InnoComponent.h"
+#include "../Common/InnoComponent.h"
 #include "MeshDataComponent.h"
 #include "MaterialDataComponent.h"
 #include "PhysicsDataComponent.h"

@@ -1,5 +1,5 @@
 #include "WinGLWindowSystem.h"
-#include "../../../component/WinWindowSystemComponent.h"
+#include "../../../Component/WinWindowSystemComponent.h"
 
 #include "glad/glad.h"
 #include "GL/glext.h"

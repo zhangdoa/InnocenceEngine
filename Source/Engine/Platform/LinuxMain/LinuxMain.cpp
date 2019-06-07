@@ -1,4 +1,4 @@
-#include "../../common/InnoApplication.h"
+#include "../../Common/InnoApplication.h"
 
 int main(int argc, char *argv[])
 {
@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
 	{
 		return 0;
 	}
-	while (InnoApplication::getStatus() == ObjectStatus::ALIVE)
+	while (InnoApplication::getStatus() == ObjectStatus::Activated)
 	{
 		if (!InnoApplication::update())
 		{

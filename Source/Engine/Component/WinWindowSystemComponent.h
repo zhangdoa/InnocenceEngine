@@ -1,5 +1,5 @@
 #pragma once
-#include "../common/InnoType.h"
+#include "../Common/InnoType.h"
 #include <SDKDDKVer.h>
 #include <windows.h>
 #include <windowsx.h>

@@ -1,5 +1,5 @@
 #include "ImGuiWrapperWinVK.h"
-#include "../../component/WinWindowSystemComponent.h"
+#include "../../Component/WinWindowSystemComponent.h"
 
 #include "../ICoreSystem.h"
 

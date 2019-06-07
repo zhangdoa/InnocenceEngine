@@ -1,6 +1,6 @@
 #pragma once
-#include "../common/InnoComponent.h"
-#include "../common/InnoMath.h"
+#include "../Common/InnoComponent.h"
+#include "../Common/InnoMath.h"
 
 class PointLightComponent : public InnoComponent
 {

@@ -1,5 +1,5 @@
 #include "WinWindowSystem.h"
-#include "../../component/WinWindowSystemComponent.h"
+#include "../../Component/WinWindowSystemComponent.h"
 
 #include "WinDXWindow/WinDXWindowSystem.h"
 #include "WinGLWindow/WinGLWindowSystem.h"

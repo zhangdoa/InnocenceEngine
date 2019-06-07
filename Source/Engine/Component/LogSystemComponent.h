@@ -1,7 +1,7 @@
 #pragma once
-#include "../common/InnoType.h"
+#include "../Common/InnoType.h"
 #include <iostream>
-#include "../common/InnoConcurrency.h"
+#include "../Common/InnoConcurrency.h"
 class LogSystemComponent
 {
 public:

@@ -1,7 +1,7 @@
 #pragma once
-#include "../common/stl14.h"
-#include "../common/config.h"
-#include "../common/InnoType.h"
+#include "../Common/STL14.h"
+#include "../Common/Config.h"
+#include "../Common/InnoType.h"
 
 //typedef __m128 TVec4;
 

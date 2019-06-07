@@ -6,12 +6,12 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE ImGuiWrapperLinuxGLNS
 {
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 }
 
 bool ImGuiWrapperLinuxGL::setup()
 {
-	ImGuiWrapperLinuxGLNS::m_objectStatus = ObjectStatus::ALIVE;
+	ImGuiWrapperLinuxGLNS::m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperLinuxGL setup finished.");
 
 	return true;
@@ -36,7 +36,7 @@ bool ImGuiWrapperLinuxGL::render()
 
 bool ImGuiWrapperLinuxGL::terminate()
 {
-	ImGuiWrapperLinuxGLNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	ImGuiWrapperLinuxGLNS::m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperLinuxGL has been terminated.");
 
 	return true;
@@ -47,7 +47,7 @@ ObjectStatus ImGuiWrapperLinuxGL::getStatus()
 	return ImGuiWrapperLinuxGLNS::m_objectStatus;
 }
 
-void ImGuiWrapperLinuxGL::showRenderResult()
+void ImGuiWrapperLinuxGL::showRenderResult(RenderPassType renderPassType)
 {
 }
 

@@ -1,6 +1,6 @@
 #include "WinVKWindowSystem.h"
-#include "../../../component/WinWindowSystemComponent.h"
-#include "../../../component/VKRenderingBackendComponent.h"
+#include "../../../Component/WinWindowSystemComponent.h"
+#include "../../../Component/VKRenderingBackendComponent.h"
 
 #include "../../ICoreSystem.h"
 

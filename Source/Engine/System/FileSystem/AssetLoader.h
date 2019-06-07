@@ -1,6 +1,6 @@
 #pragma once
 #include "../../Common/InnoType.h"
-#include "../../component/VisibleComponent.h"
+#include "../../Component/VisibleComponent.h"
 
 INNO_PRIVATE_SCOPE InnoFileSystemNS
 {

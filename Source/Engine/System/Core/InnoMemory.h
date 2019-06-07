@@ -7,6 +7,8 @@
 #endif
 #endif
 
+#include <cstdio>
+
 class IObjectPool
 {
 public:
@@ -25,8 +27,8 @@ public:
 	static bool Update();
 	static bool Terminate();
 
-	static void* Allocate(const size_t size);
+	static void* Allocate(const std::size_t size);
 	static void Deallocate(void* const ptr);
 
-	static IObjectPool* CreateObjectPool(size_t objectSize, unsigned int poolCapability);
+	static IObjectPool* CreateObjectPool(std::size_t objectSize, unsigned int poolCapability);
 };

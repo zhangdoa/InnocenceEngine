@@ -1,5 +1,4 @@
 #include "PhysXWrapper.h"
-#include "PhysXWrapper.h"
 
 #if defined INNO_PLATFORM_WIN
 #include "PxPhysicsAPI.h"

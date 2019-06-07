@@ -1,5 +1,5 @@
 #pragma once
-#include "config.h"
+#include "Config.h"
 #include "InnoContainer.h"
 
 #define INNO_INTERFACE class

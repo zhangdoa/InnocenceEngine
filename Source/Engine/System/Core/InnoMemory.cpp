@@ -27,7 +27,7 @@ class MemoryPool
 {
 public:
 	MemoryPool() = delete;
-	explicit MemoryPool(size_t objectSize, unsigned int capability) noexcept
+	explicit MemoryPool(std::size_t objectSize, unsigned int capability) noexcept
 	{
 		m_ObjectSize = objectSize;
 		m_Capability = capability;
@@ -46,7 +46,7 @@ public:
 	}
 
 private:
-	size_t m_ObjectSize = 0;
+	std::size_t m_ObjectSize = 0;
 	unsigned long long m_Capability = 0;
 	unsigned long long m_PoolSize = 0;
 	unsigned char* m_HeapAddress = nullptr;
@@ -57,7 +57,7 @@ class ObjectPool : public IObjectPool
 public:
 	ObjectPool() = delete;
 
-	explicit ObjectPool(size_t objectSize, unsigned int poolCapability)
+	explicit ObjectPool(std::size_t objectSize, unsigned int poolCapability)
 	{
 		m_Pool = std::make_unique<MemoryPool>(objectSize, poolCapability);
 		m_ChunkPool = std::make_unique<MemoryPool>(sizeof(Chunk), poolCapability);
@@ -159,7 +159,7 @@ private:
 	std::unique_ptr<MemoryPool> m_Pool;
 	std::unique_ptr<MemoryPool> m_ChunkPool;
 	Chunk* m_CurrentFreeChunk;
-	size_t m_ObjectSize;
+	std::size_t m_ObjectSize;
 };
 
 class MemoryMemo
@@ -171,7 +171,7 @@ public:
 		return l_Instance;
 	}
 
-	bool Record(void* ptr, size_t size)
+	bool Record(void* ptr, std::size_t size)
 	{
 		auto l_Result = m_Memo.find(ptr);
 		if (l_Result != m_Memo.end())
@@ -204,7 +204,7 @@ public:
 	}
 
 private:
-	std::unordered_map<void*, size_t> m_Memo;
+	std::unordered_map<void*, std::size_t> m_Memo;
 };
 
 bool InnoMemory::Setup()
@@ -227,7 +227,7 @@ bool InnoMemory::Terminate()
 	return true;
 }
 
-void * InnoMemory::Allocate(const size_t size)
+void * InnoMemory::Allocate(const std::size_t size)
 {
 	auto m_Ptr = ::new char[size];
 	MemoryMemo::Get().Record(m_Ptr, size);
@@ -240,7 +240,7 @@ void InnoMemory::Deallocate(void * const ptr)
 	MemoryMemo::Get().Erase(ptr);
 }
 
-IObjectPool * InnoMemory::CreateObjectPool(size_t objectSize, unsigned int poolCapability)
+IObjectPool * InnoMemory::CreateObjectPool(std::size_t objectSize, unsigned int poolCapability)
 {
 	auto l_IObjectPoolAddress = reinterpret_cast<IObjectPool*>(InnoMemory::Allocate(sizeof(ObjectPool)));
 	auto l_IObjectPool = new(l_IObjectPoolAddress) ObjectPool(objectSize, poolCapability);

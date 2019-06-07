@@ -1,7 +1,7 @@
 #include "FileSystem.h"
 
-#include "../../component/MeshDataComponent.h"
-#include "../../component/TextureDataComponent.h"
+#include "../../Component/MeshDataComponent.h"
+#include "../../Component/TextureDataComponent.h"
 
 #include "../ICoreSystem.h"
 

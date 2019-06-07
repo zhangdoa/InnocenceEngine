@@ -16,7 +16,7 @@ INNO_PRIVATE_SCOPE LinuxWindowSystemNS
 	bool update();
 	bool terminate();
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	ButtonStatusMap m_buttonStatus;
 	Display* m_display;
 	Window m_window;
@@ -33,14 +33,14 @@ INNO_PRIVATE_SCOPE LinuxWindowSystemNS
 
 bool LinuxWindowSystemNS::setup()
 {
-	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getRenderingFrontend()->getScreenResolution();
 
 	m_display = XOpenDisplay(0);
 
 	if(m_display == nullptr)
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "LinuxWindowSystem: Can't connect to X server!");
-		LinuxWindowSystemNS::m_objectStatus = ObjectStatus::STANDBY;
+		LinuxWindowSystemNS::m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -55,7 +55,7 @@ bool LinuxWindowSystemNS::setup()
 	if (!fbc)
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "LinuxWindowSystem: glXChooseFBConfig() failed!");
-		LinuxWindowSystemNS::m_objectStatus = ObjectStatus::STANDBY;
+		LinuxWindowSystemNS::m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -73,7 +73,7 @@ bool LinuxWindowSystemNS::setup()
 	if (!glXCreateContextAttribsARB)
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "LinuxWindowSystem: glXCreateContextAttribsARB() not found!");
-		LinuxWindowSystemNS::m_objectStatus = ObjectStatus::STANDBY;
+		LinuxWindowSystemNS::m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -88,7 +88,7 @@ bool LinuxWindowSystemNS::setup()
 	if (!ctx)
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "LinuxWindowSystem: Failed to create OpenGL context!");
-		LinuxWindowSystemNS::m_objectStatus = ObjectStatus::STANDBY;
+		LinuxWindowSystemNS::m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -102,7 +102,7 @@ bool LinuxWindowSystemNS::setup()
 	XStoreName(m_display, m_window, l_windowName.c_str());
 	XSelectInput(m_display, m_window, ExposureMask | StructureNotifyMask);
 
-	LinuxWindowSystemNS::m_objectStatus = ObjectStatus::ALIVE;
+	LinuxWindowSystemNS::m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "LinuxWindowSystem setup finished.");
 
 	return true;
@@ -121,7 +121,7 @@ bool LinuxWindowSystemNS::update()
 
 bool LinuxWindowSystemNS::terminate()
 {
-	LinuxWindowSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	LinuxWindowSystemNS::m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "LinuxWindowSystem has been terminated.");
 	return true;
 }

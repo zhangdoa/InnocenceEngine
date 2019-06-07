@@ -1,5 +1,5 @@
 #include "ImGuiWrapperWinGL.h"
-#include "../../component/WinWindowSystemComponent.h"
+#include "../../Component/WinWindowSystemComponent.h"
 
 #include "../RenderingBackend/GLRenderingBackend/GLShadowPass.h"
 
