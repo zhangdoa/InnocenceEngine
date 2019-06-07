@@ -1,13 +1,13 @@
-#include "MTRenderingSystem.h"
-#include "../../Component/MTMeshDataComponent.h"
-#include "../../Component/MaterialDataComponent.h"
-#include "../../Component/MTTextureDataComponent.h"
+#include "MTRenderingBackend.h"
+#include "../../../Component/MTMeshDataComponent.h"
+#include "../../../Component/MaterialDataComponent.h"
+#include "../../../Component/MTTextureDataComponent.h"
 
-#include "../ICoreSystem.h"
+#include "../../ICoreSystem.h"
 
 extern ICoreSystem* g_pCoreSystem;
 
-INNO_PRIVATE_SCOPE MTRenderingSystemNS
+INNO_PRIVATE_SCOPE MTRenderingBackendNS
 {
 	bool setup();
 	bool initialize();
@@ -22,18 +22,15 @@ INNO_PRIVATE_SCOPE MTRenderingSystemNS
 	MaterialDataComponent* addMaterialDataComponent();
 	MTTextureDataComponent* addMTTextureDataComponent();
 
-	MTMeshDataComponent* getMTMeshDataComponent(EntityID meshID);
-	MTTextureDataComponent* getMTTextureDataComponent(EntityID textureID);
-
 	MTMeshDataComponent* getMTMeshDataComponent(MeshShapeType MeshShapeType);
 	MTTextureDataComponent* getMTTextureDataComponent(TextureUsageType TextureUsageType);
 	MTTextureDataComponent* getMTTextureDataComponent(FileExplorerIconType iconType);
 	MTTextureDataComponent* getMTTextureDataComponent(WorldEditorIconType iconType);
 
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	EntityID m_entityID;
 
-	MTRenderingSystemBridge* m_bridge;
+	MTRenderingBackendBridge* m_bridge;
 
 	ThreadSafeUnorderedMap<EntityID, MTMeshDataComponent*> m_meshMap;
 	ThreadSafeUnorderedMap<EntityID, MaterialDataComponent*> m_materialMap;
@@ -68,54 +65,55 @@ INNO_PRIVATE_SCOPE MTRenderingSystemNS
 	MTTextureDataComponent* m_basicAOTDC;
 }
 
-bool MTRenderingSystemNS::setup()
+bool MTRenderingBackendNS::setup()
 {
 	m_entityID = InnoMath::createEntityID();
 
-	bool result = MTRenderingSystemNS::m_bridge->setup();
+	bool result = MTRenderingBackendNS::m_bridge->setup();
 
-	m_objectStatus = ObjectStatus::ALIVE;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingSystem setup finished.");
-	return true;
+	m_objectStatus = ObjectStatus::Created;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingBackend setup finished.");
+	return result;
 }
 
-bool MTRenderingSystemNS::initialize()
+bool MTRenderingBackendNS::initialize()
 {
 	m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MTMeshDataComponent), 16384);
 	m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), 32768);
 	m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MTTextureDataComponent), 32768);
 
-	bool result = MTRenderingSystemNS::m_bridge->initialize();
+	bool result = MTRenderingBackendNS::m_bridge->initialize();
 
 	loadDefaultAssets();
 
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingSystem has been initialized.");
+	m_objectStatus = ObjectStatus::Activated;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingBackend has been initialized.");
 	return true;
 }
 
-bool MTRenderingSystemNS::update()
+bool MTRenderingBackendNS::update()
 {
-	bool result = MTRenderingSystemNS::m_bridge->update();
+	bool result = MTRenderingBackendNS::m_bridge->update();
 
 	return true;
 }
 
-bool MTRenderingSystemNS::render()
+bool MTRenderingBackendNS::render()
 {
 	return true;
 }
 
-bool MTRenderingSystemNS::terminate()
+bool MTRenderingBackendNS::terminate()
 {
 	bool result = m_bridge->terminate();
 
-	MTRenderingSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingSystem has been terminated.");
+	m_objectStatus = ObjectStatus::Terminated;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingBackend has been terminated.");
 
 	return true;
 }
 
-void MTRenderingSystemNS::loadDefaultAssets()
+void MTRenderingBackendNS::loadDefaultAssets()
 {
 	auto l_basicNormalTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_normal.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 	auto l_basicAlbedoTDC = g_pCoreSystem->getAssetSystem()->loadTexture("res//textures//basic_albedo.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ALBEDO);
@@ -151,34 +149,34 @@ void MTRenderingSystemNS::loadDefaultAssets()
 	g_pCoreSystem->getAssetSystem()->addUnitLine(*m_unitLineMDC);
 	m_unitLineMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	m_unitLineMDC->m_meshShapeType = MeshShapeType::LINE;
-	m_unitLineMDC->m_objectStatus = ObjectStatus::STANDBY;
+	m_unitLineMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMDC);
 
 	m_unitQuadMDC = addMTMeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addUnitQuad(*m_unitQuadMDC);
 	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
-	m_unitQuadMDC->m_objectStatus = ObjectStatus::STANDBY;
+	m_unitQuadMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMDC);
 
 	m_unitCubeMDC = addMTMeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addUnitCube(*m_unitCubeMDC);
 	m_unitCubeMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitCubeMDC->m_meshShapeType = MeshShapeType::CUBE;
-	m_unitCubeMDC->m_objectStatus = ObjectStatus::STANDBY;
+	m_unitCubeMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMDC);
 
 	m_unitSphereMDC = addMTMeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addUnitSphere(*m_unitSphereMDC);
 	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
-	m_unitSphereMDC->m_objectStatus = ObjectStatus::STANDBY;
+	m_unitSphereMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMDC);
 
 	m_terrainMDC = addMTMeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addTerrain(*m_terrainMDC);
 	m_terrainMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	m_terrainMDC->m_objectStatus = ObjectStatus::STANDBY;
+	m_terrainMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMDC);
 
 	m_bridge->initializeMTMeshDataComponent(m_unitLineMDC);
@@ -203,105 +201,77 @@ void MTRenderingSystemNS::loadDefaultAssets()
 	m_bridge->initializeMTTextureDataComponent(m_iconTemplate_SphereLight);
 }
 
-MTMeshDataComponent* MTRenderingSystemNS::addMTMeshDataComponent()
+MTMeshDataComponent* MTRenderingBackendNS::addMTMeshDataComponent()
 {
+	static std::atomic<unsigned int> meshCount = 0;
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(MTMeshDataComponent));
 	auto l_MDC = new(l_rawPtr)MTMeshDataComponent();
-	auto l_parentEntity = InnoMath::createEntityID();
+	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(("Mesh_" + std::to_string(meshCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
 	l_MDC->m_parentEntity = l_parentEntity;
-	auto l_meshMap = &m_meshMap;
-	l_meshMap->emplace(std::pair<EntityID, MTMeshDataComponent*>(l_parentEntity, l_MDC));
+	meshCount++;
 	return l_MDC;
 }
 
-MaterialDataComponent* MTRenderingSystemNS::addMaterialDataComponent()
+MaterialDataComponent* MTRenderingBackendNS::addMaterialDataComponent()
 {
+	static std::atomic<unsigned int> materialCount = 0;
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MaterialDataComponent));
 	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
-	auto l_parentEntity = InnoMath::createEntityID();
+	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(("Material_" + std::to_string(materialCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
 	l_MDC->m_parentEntity = l_parentEntity;
-	auto l_materialMap = &m_materialMap;
-	l_materialMap->emplace(std::pair<EntityID, MaterialDataComponent*>(l_parentEntity, l_MDC));
+	materialCount++;
 	return l_MDC;
 }
 
-MTTextureDataComponent* MTRenderingSystemNS::addMTTextureDataComponent()
+MTTextureDataComponent* MTRenderingBackendNS::addMTTextureDataComponent()
 {
+	static std::atomic<unsigned int> textureCount = 0;
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(MTTextureDataComponent));
 	auto l_TDC = new(l_rawPtr)MTTextureDataComponent();
-	auto l_parentEntity = InnoMath::createEntityID();
+	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(("Texture_" + std::to_string(textureCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
 	l_TDC->m_parentEntity = l_parentEntity;
-	auto l_textureMap = &m_textureMap;
-	l_textureMap->emplace(std::pair<EntityID, MTTextureDataComponent*>(l_parentEntity, l_TDC));
+	textureCount++;
 	return l_TDC;
 }
 
-MTMeshDataComponent* MTRenderingSystemNS::getMTMeshDataComponent(EntityID EntityID)
-{
-	auto l_result = MTRenderingSystemNS::m_meshMap.find(EntityID);
-	if (l_result != MTRenderingSystemNS::m_meshMap.end())
-	{
-		return l_result->second;
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find MeshDataComponent by EntityID: " + std::string(EntityID.c_str()) + " !");
-		return nullptr;
-	}
-}
-
-MTTextureDataComponent * MTRenderingSystemNS::getMTTextureDataComponent(EntityID EntityID)
-{
-	auto l_result = MTRenderingSystemNS::m_textureMap.find(EntityID);
-	if (l_result != MTRenderingSystemNS::m_textureMap.end())
-	{
-		return l_result->second;
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't find TextureDataComponent by EntityID: " + std::string(EntityID.c_str()) + " !");
-		return nullptr;
-	}
-}
-
-MTMeshDataComponent* MTRenderingSystemNS::getMTMeshDataComponent(MeshShapeType meshShapeType)
+MTMeshDataComponent* MTRenderingBackendNS::getMTMeshDataComponent(MeshShapeType meshShapeType)
 {
 	switch (meshShapeType)
 	{
 	case MeshShapeType::LINE:
-		return MTRenderingSystemNS::m_unitLineMDC; break;
+		return MTRenderingBackendNS::m_unitLineMDC; break;
 	case MeshShapeType::QUAD:
-		return MTRenderingSystemNS::m_unitQuadMDC; break;
+		return MTRenderingBackendNS::m_unitQuadMDC; break;
 	case MeshShapeType::CUBE:
-		return MTRenderingSystemNS::m_unitCubeMDC; break;
+		return MTRenderingBackendNS::m_unitCubeMDC; break;
 	case MeshShapeType::SPHERE:
-		return MTRenderingSystemNS::m_unitSphereMDC; break;
+		return MTRenderingBackendNS::m_unitSphereMDC; break;
 	case MeshShapeType::TERRAIN:
-		return MTRenderingSystemNS::m_terrainMDC; break;
+		return MTRenderingBackendNS::m_terrainMDC; break;
 	case MeshShapeType::CUSTOM:
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: wrong MeshShapeType passed to MTRenderingSystem::getMeshDataComponent() !");
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: wrong MeshShapeType passed to MTRenderingBackend::getMeshDataComponent() !");
 		return nullptr; break;
 	default:
 		return nullptr; break;
 	}
 }
 
-MTTextureDataComponent * MTRenderingSystemNS::getMTTextureDataComponent(TextureUsageType textureUsageType)
+MTTextureDataComponent * MTRenderingBackendNS::getMTTextureDataComponent(TextureUsageType textureUsageType)
 {
 	switch (textureUsageType)
 	{
 	case TextureUsageType::INVISIBLE:
 		return nullptr; break;
 	case TextureUsageType::NORMAL:
-		return MTRenderingSystemNS::m_basicNormalTDC; break;
+		return MTRenderingBackendNS::m_basicNormalTDC; break;
 	case TextureUsageType::ALBEDO:
-		return MTRenderingSystemNS::m_basicAlbedoTDC; break;
+		return MTRenderingBackendNS::m_basicAlbedoTDC; break;
 	case TextureUsageType::METALLIC:
-		return MTRenderingSystemNS::m_basicMetallicTDC; break;
+		return MTRenderingBackendNS::m_basicMetallicTDC; break;
 	case TextureUsageType::ROUGHNESS:
-		return MTRenderingSystemNS::m_basicRoughnessTDC; break;
+		return MTRenderingBackendNS::m_basicRoughnessTDC; break;
 	case TextureUsageType::AMBIENT_OCCLUSION:
-		return MTRenderingSystemNS::m_basicAOTDC; break;
+		return MTRenderingBackendNS::m_basicAOTDC; break;
 	case TextureUsageType::COLOR_ATTACHMENT:
 		return nullptr; break;
 	default:
@@ -309,173 +279,124 @@ MTTextureDataComponent * MTRenderingSystemNS::getMTTextureDataComponent(TextureU
 	}
 }
 
-MTTextureDataComponent * MTRenderingSystemNS::getMTTextureDataComponent(FileExplorerIconType iconType)
+MTTextureDataComponent * MTRenderingBackendNS::getMTTextureDataComponent(FileExplorerIconType iconType)
 {
 	switch (iconType)
 	{
 	case FileExplorerIconType::OBJ:
-		return MTRenderingSystemNS::m_iconTemplate_OBJ; break;
+		return MTRenderingBackendNS::m_iconTemplate_OBJ; break;
 	case FileExplorerIconType::PNG:
-		return MTRenderingSystemNS::m_iconTemplate_PNG; break;
+		return MTRenderingBackendNS::m_iconTemplate_PNG; break;
 	case FileExplorerIconType::SHADER:
-		return MTRenderingSystemNS::m_iconTemplate_SHADER; break;
+		return MTRenderingBackendNS::m_iconTemplate_SHADER; break;
 	case FileExplorerIconType::UNKNOWN:
-		return MTRenderingSystemNS::m_iconTemplate_UNKNOWN; break;
+		return MTRenderingBackendNS::m_iconTemplate_UNKNOWN; break;
 	default:
 		return nullptr; break;
 	}
 }
 
-MTTextureDataComponent * MTRenderingSystemNS::getMTTextureDataComponent(WorldEditorIconType iconType)
+MTTextureDataComponent * MTRenderingBackendNS::getMTTextureDataComponent(WorldEditorIconType iconType)
 {
 	switch (iconType)
 	{
 	case WorldEditorIconType::DIRECTIONAL_LIGHT:
-		return MTRenderingSystemNS::m_iconTemplate_DirectionalLight; break;
+		return MTRenderingBackendNS::m_iconTemplate_DirectionalLight; break;
 	case WorldEditorIconType::POINT_LIGHT:
-		return MTRenderingSystemNS::m_iconTemplate_PointLight; break;
+		return MTRenderingBackendNS::m_iconTemplate_PointLight; break;
 	case WorldEditorIconType::SPHERE_LIGHT:
-		return MTRenderingSystemNS::m_iconTemplate_SphereLight; break;
+		return MTRenderingBackendNS::m_iconTemplate_SphereLight; break;
 	default:
 		return nullptr; break;
 	}
 }
 
-bool MTRenderingSystemNS::resize()
+bool MTRenderingBackendNS::resize()
 {
 	return true;
 }
 
-bool MTRenderingSystem::setup()
+bool MTRenderingBackend::setup()
 {
-	return MTRenderingSystemNS::setup();
+	return MTRenderingBackendNS::setup();
 }
 
-bool MTRenderingSystem::initialize()
+bool MTRenderingBackend::initialize()
 {
-	return MTRenderingSystemNS::initialize();
+	return MTRenderingBackendNS::initialize();
 }
 
-bool MTRenderingSystem::update()
+bool MTRenderingBackend::update()
 {
-	return MTRenderingSystemNS::update();
+	return MTRenderingBackendNS::update();
 }
 
-bool MTRenderingSystem::render()
+bool MTRenderingBackend::render()
 {
-	return MTRenderingSystemNS::render();
+	return MTRenderingBackendNS::render();
 }
 
-bool MTRenderingSystem::terminate()
+bool MTRenderingBackend::terminate()
 {
-	return MTRenderingSystemNS::terminate();
+	return MTRenderingBackendNS::terminate();
 }
 
-ObjectStatus MTRenderingSystem::getStatus()
+ObjectStatus MTRenderingBackend::getStatus()
 {
-	return MTRenderingSystemNS::m_objectStatus;
+	return MTRenderingBackendNS::m_objectStatus;
 }
 
-MeshDataComponent * MTRenderingSystem::addMeshDataComponent()
+MeshDataComponent * MTRenderingBackend::addMeshDataComponent()
 {
-	return MTRenderingSystemNS::addMTMeshDataComponent();
+	return MTRenderingBackendNS::addMTMeshDataComponent();
 }
 
-MaterialDataComponent * MTRenderingSystem::addMaterialDataComponent()
+MaterialDataComponent * MTRenderingBackend::addMaterialDataComponent()
 {
-	return MTRenderingSystemNS::addMaterialDataComponent();
+	return MTRenderingBackendNS::addMaterialDataComponent();
 }
 
-TextureDataComponent * MTRenderingSystem::addTextureDataComponent()
+TextureDataComponent * MTRenderingBackend::addTextureDataComponent()
 {
-	return MTRenderingSystemNS::addMTTextureDataComponent();
+	return MTRenderingBackendNS::addMTTextureDataComponent();
 }
 
-MeshDataComponent * MTRenderingSystem::getMeshDataComponent(EntityID meshID)
+MeshDataComponent * MTRenderingBackend::getMeshDataComponent(MeshShapeType MeshShapeType)
 {
-	return MTRenderingSystemNS::getMTMeshDataComponent(meshID);
+	return MTRenderingBackendNS::getMTMeshDataComponent(MeshShapeType);
 }
 
-TextureDataComponent * MTRenderingSystem::getTextureDataComponent(EntityID textureID)
+TextureDataComponent * MTRenderingBackend::getTextureDataComponent(TextureUsageType TextureUsageType)
 {
-	return MTRenderingSystemNS::getMTTextureDataComponent(textureID);
+	return MTRenderingBackendNS::getMTTextureDataComponent(TextureUsageType);
 }
 
-MeshDataComponent * MTRenderingSystem::getMeshDataComponent(MeshShapeType MeshShapeType)
+TextureDataComponent * MTRenderingBackend::getTextureDataComponent(FileExplorerIconType iconType)
 {
-	return MTRenderingSystemNS::getMTMeshDataComponent(MeshShapeType);
+	return MTRenderingBackendNS::getMTTextureDataComponent(iconType);
 }
 
-TextureDataComponent * MTRenderingSystem::getTextureDataComponent(TextureUsageType TextureUsageType)
+TextureDataComponent * MTRenderingBackend::getTextureDataComponent(WorldEditorIconType iconType)
 {
-	return MTRenderingSystemNS::getMTTextureDataComponent(TextureUsageType);
+	return MTRenderingBackendNS::getMTTextureDataComponent(iconType);
 }
 
-TextureDataComponent * MTRenderingSystem::getTextureDataComponent(FileExplorerIconType iconType)
+void MTRenderingBackend::registerUninitializedMeshDataComponent(MeshDataComponent * rhs)
 {
-	return MTRenderingSystemNS::getMTTextureDataComponent(iconType);
+	MTRenderingBackendNS::m_uninitializedMDC.push(reinterpret_cast<MTMeshDataComponent*>(rhs));
 }
 
-TextureDataComponent * MTRenderingSystem::getTextureDataComponent(WorldEditorIconType iconType)
+void MTRenderingBackend::registerUninitializedTextureDataComponent(TextureDataComponent * rhs)
 {
-	return MTRenderingSystemNS::getMTTextureDataComponent(iconType);
+	MTRenderingBackendNS::m_uninitializedTDC.push(reinterpret_cast<MTTextureDataComponent*>(rhs));
 }
 
-bool MTRenderingSystem::removeMeshDataComponent(EntityID EntityID)
+bool MTRenderingBackend::resize()
 {
-	auto l_meshMap = &MTRenderingSystemNS::m_meshMap;
-	auto l_mesh = l_meshMap->find(EntityID);
-	if (l_mesh != l_meshMap->end())
-	{
-		g_pCoreSystem->getMemorySystem()->destroyObject(MTRenderingSystemNS::m_MeshDataComponentPool, sizeof(MTMeshDataComponent), l_mesh->second);
-		l_meshMap->erase(EntityID);
-		return true;
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove MeshDataComponent by EntityID: " + std::string(EntityID.c_str()) + " !");
-		return false;
-	}
+	return MTRenderingBackendNS::resize();
 }
 
-bool MTRenderingSystem::removeTextureDataComponent(EntityID EntityID)
-{
-	auto l_textureMap = &MTRenderingSystemNS::m_textureMap;
-	auto l_texture = l_textureMap->find(EntityID);
-	if (l_texture != l_textureMap->end())
-	{
-		for (auto& i : l_texture->second->m_textureData)
-		{
-			// @TODO
-		}
-
-		g_pCoreSystem->getMemorySystem()->destroyObject(MTRenderingSystemNS::m_TextureDataComponentPool, sizeof(MTTextureDataComponent), l_texture->second);
-		l_textureMap->erase(EntityID);
-		return true;
-	}
-	else
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: can't remove TextureDataComponent by EntityID: " + std::string(EntityID.c_str()) + " !");
-		return false;
-	}
-}
-
-void MTRenderingSystem::registerUninitializedMeshDataComponent(MeshDataComponent * rhs)
-{
-	MTRenderingSystemNS::m_uninitializedMDC.push(reinterpret_cast<MTMeshDataComponent*>(rhs));
-}
-
-void MTRenderingSystem::registerUninitializedTextureDataComponent(TextureDataComponent * rhs)
-{
-	MTRenderingSystemNS::m_uninitializedTDC.push(reinterpret_cast<MTTextureDataComponent*>(rhs));
-}
-
-bool MTRenderingSystem::resize()
-{
-	return MTRenderingSystemNS::resize();
-}
-
-bool MTRenderingSystem::reloadShader(RenderPassType renderPassType)
+bool MTRenderingBackend::reloadShader(RenderPassType renderPassType)
 {
 	switch (renderPassType)
 	{
@@ -497,13 +418,13 @@ bool MTRenderingSystem::reloadShader(RenderPassType renderPassType)
 	return true;
 }
 
-bool MTRenderingSystem::bakeGI()
+bool MTRenderingBackend::bakeGI()
 {
 	return true;
 }
 
-void MTRenderingSystem::setBridge(MTRenderingSystemBridge* bridge)
+void MTRenderingBackend::setBridge(MTRenderingBackendBridge* bridge)
 {
-	MTRenderingSystemNS::m_bridge = bridge;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingSystem: Bridge connected at " + InnoUtility::pointerToString(bridge));
+	MTRenderingBackendNS::m_bridge = bridge;
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingBackend: Bridge connected at " + InnoUtility::pointerToString(bridge));
 }

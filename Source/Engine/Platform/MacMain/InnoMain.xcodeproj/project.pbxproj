@@ -12,7 +12,7 @@
 		9A10177722625757003E3B2A /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9A10177622625757003E3B2A /* Metal.framework */; };
 		9A10177C22627458003E3B2A /* MetalDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 9A10177B22627458003E3B2A /* MetalDelegate.mm */; };
 		9A10178022627562003E3B2A /* MacWindowDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 9A10177F22627562003E3B2A /* MacWindowDelegate.m */; };
-		9A4D45D32262E9B200AE8FB4 /* MTRenderingSystemBridgeImpl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 9A4D45D22262E9B200AE8FB4 /* MTRenderingSystemBridgeImpl.mm */; };
+		9A4D45D32262E9B200AE8FB4 /* MTRenderingBackendBridgeImpl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 9A4D45D22262E9B200AE8FB4 /* MTRenderingBackendBridgeImpl.mm */; };
 		9A4D45D62262F35200AE8FB4 /* MacWindowSystemBridgeImpl.mm in Sources */ = {isa = PBXBuildFile; fileRef = 9A4D45D52262F35200AE8FB4 /* MacWindowSystemBridgeImpl.mm */; };
 		9A6EE4242261D4D80062CA0E /* libInnoApplication.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9A6EE4232261D4D80062CA0E /* libInnoApplication.a */; };
 		9A6EE4262261D4EB0062CA0E /* libInnoSystem.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 9A6EE4252261D4EB0062CA0E /* libInnoSystem.dylib */; };
@@ -32,8 +32,8 @@
 		9A10177B22627458003E3B2A /* MetalDelegate.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = MetalDelegate.mm; sourceTree = "<group>"; };
 		9A10177E22627518003E3B2A /* MacWindowDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MacWindowDelegate.h; sourceTree = "<group>"; };
 		9A10177F22627562003E3B2A /* MacWindowDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MacWindowDelegate.m; sourceTree = "<group>"; };
-		9A4D45D12262E87700AE8FB4 /* MTRenderingSystemBridgeImpl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MTRenderingSystemBridgeImpl.h; sourceTree = "<group>"; };
-		9A4D45D22262E9B200AE8FB4 /* MTRenderingSystemBridgeImpl.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = MTRenderingSystemBridgeImpl.mm; sourceTree = "<group>"; };
+		9A4D45D12262E87700AE8FB4 /* MTRenderingBackendBridgeImpl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MTRenderingBackendBridgeImpl.h; sourceTree = "<group>"; };
+		9A4D45D22262E9B200AE8FB4 /* MTRenderingBackendBridgeImpl.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = MTRenderingBackendBridgeImpl.mm; sourceTree = "<group>"; };
 		9A4D45D42262F2E800AE8FB4 /* MacWindowSystemBridgeImpl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MacWindowSystemBridgeImpl.h; sourceTree = "<group>"; };
 		9A4D45D52262F35200AE8FB4 /* MacWindowSystemBridgeImpl.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = MacWindowSystemBridgeImpl.mm; sourceTree = "<group>"; };
 		9A6EE4232261D4D80062CA0E /* libInnoApplication.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libInnoApplication.a; path = ../../../../build/lib_archive/libInnoApplication.a; sourceTree = "<group>"; };
@@ -96,8 +96,8 @@
 				9ACA09672261C3C80036FCEC /* Info.plist */,
 				9ACA096A2261C3C80036FCEC /* InnoMain.entitlements */,
 				9A1017712262568E003E3B2A /* AppDelegate.h */,
-				9A4D45D12262E87700AE8FB4 /* MTRenderingSystemBridgeImpl.h */,
-				9A4D45D22262E9B200AE8FB4 /* MTRenderingSystemBridgeImpl.mm */,
+				9A4D45D12262E87700AE8FB4 /* MTRenderingBackendBridgeImpl.h */,
+				9A4D45D22262E9B200AE8FB4 /* MTRenderingBackendBridgeImpl.mm */,
 				9A4D45D42262F2E800AE8FB4 /* MacWindowSystemBridgeImpl.h */,
 				9A4D45D52262F35200AE8FB4 /* MacWindowSystemBridgeImpl.mm */,
 			);
@@ -186,7 +186,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9A4D45D32262E9B200AE8FB4 /* MTRenderingSystemBridgeImpl.mm in Sources */,
+				9A4D45D32262E9B200AE8FB4 /* MTRenderingBackendBridgeImpl.mm in Sources */,
 				9A4D45D62262F35200AE8FB4 /* MacWindowSystemBridgeImpl.mm in Sources */,
 				9A10177C22627458003E3B2A /* MetalDelegate.mm in Sources */,
 				9A101773226256CE003E3B2A /* AppDelegate.mm in Sources */,
@@ -324,6 +324,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CODE_SIGN_ENTITLEMENTS = InnoMain/InnoMain.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -333,12 +334,12 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					../../../../build/lib,
-					../../../../build/lib_archive,
+					../../../../Build/Lib,
+					../../../../Build/LibArchive,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = InnocenceEngine.InnoMain;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SYMROOT = ../../../../build/InnoMain;
+				SYMROOT = ../../../../Build/InnoMain;
 			};
 			name = Debug;
 		};
@@ -346,6 +347,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CODE_SIGN_ENTITLEMENTS = InnoMain/InnoMain.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -355,12 +357,12 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					../../../../build/lib,
-					../../../../build/lib_archive,
+					../../../../Build/Lib,
+					../../../../Build/LibArchive,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = InnocenceEngine.InnoMain;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SYMROOT = ../../../../build/InnoMain;
+				SYMROOT = ../../../../Build/InnoMain;
 			};
 			name = Release;
 		};

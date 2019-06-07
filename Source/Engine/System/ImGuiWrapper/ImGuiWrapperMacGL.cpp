@@ -6,12 +6,12 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE ImGuiWrapperMacGLNS
 {
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 }
 
 bool ImGuiWrapperMacGL::setup()
 {
-	ImGuiWrapperMacGLNS::m_objectStatus = ObjectStatus::ALIVE;
+	ImGuiWrapperMacGLNS::m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperMacGL setup finished.");
 
 	return true;
@@ -36,7 +36,7 @@ bool ImGuiWrapperMacGL::render()
 
 bool ImGuiWrapperMacGL::terminate()
 {
-	ImGuiWrapperMacGLNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	ImGuiWrapperMacGLNS::m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperMacGL has been terminated.");
 
 	return true;

@@ -13,7 +13,7 @@
 
 # For macOS
 \.DS_Store
-/Source/Engine/Platform/MacOS/build
+/Source/Engine/Platform/MacMain/build
 
 # For Xcode
 xcuserdata/
@@ -36,18 +36,17 @@ xcuserdata/
 /Res/Logs/*
 
 # For Qt
-/Source/Editor/*
-!/Source/Editor/InnocenceEditor/*
+/Source/Editor/InnocenceEditor/darkstyle/
+/Source/Editor/InnocenceEditor/DarkStyle.cpp
+/Source/Editor/InnocenceEditor/DarkStyle.h
+/Source/Editor/InnocenceEditor/darkstyle.qrc
+/Source/Editor/InnocenceEditor/InnocenceEditor.pro.user
 
 #For ImGui
 /Source/Engine/ThirdParty/ImGui/*
 !/Source/Engine/ThirdParty/ImGui/CMakeLists.txt
 
-/Source/Editor/InnocenceEditor/darkstyle/
-/Source/Editor/InnocenceEditor/DarkStyle\.cpp
-/Source/Editor/InnocenceEditor/DarkStyle\.h
-/Source/Editor/InnocenceEditor/darkstyle\.qrc
-/Source/Editor/InnocenceEditor/InnocenceEditor\.pro\.user
+
 
 #Packaged files
 /Package/*

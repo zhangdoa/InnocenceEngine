@@ -27,14 +27,10 @@ mkdir -p ../Include/json/
 cp json/single_include/nlohmann/json.hpp ../Include/json/
 
 mkdir -p ../../editor/InnocenceEditor/darkstyle/
-cp Qt-Frameless-Window-DarkStyle/darkstyle/* ../../editor/InnocenceEditor/darkstyle/
-cp Qt-Frameless-Window-DarkStyle/darkstyle.qrc ../../editor/InnocenceEditor/
-cp Qt-Frameless-Window-DarkStyle/Darkstyle.h ../../editor/InnocenceEditor/
-cp Qt-Frameless-Window-DarkStyle/Darkstyle.cpp ../../editor/InnocenceEditor/
-
-mkdir -p ../Include/GL
-curl -o ../Include/GL/wglext.h "https://www.khronos.org/registry/OpenGL/api/GL/wglext.h"
-curl -o ../Include/GL/glext.h "https://www.khronos.org/registry/OpenGL/api/GL/glext.h"
+cp Qt-Frameless-Window-DarkStyle/darkstyle/* ../../Editor/InnocenceEditor/darkstyle/
+cp Qt-Frameless-Window-DarkStyle/darkstyle.qrc ../../Editor/InnocenceEditor/
+cp Qt-Frameless-Window-DarkStyle/DarkStyle.h ../../Editor/InnocenceEditor/
+cp Qt-Frameless-Window-DarkStyle/DarkStyle.cpp ../../Editor/InnocenceEditor/
 
 cd ../
 

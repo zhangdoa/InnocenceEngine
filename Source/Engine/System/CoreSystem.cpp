@@ -75,7 +75,7 @@ I##className * InnoCoreSystem::get##className() \
 INNO_PRIVATE_SCOPE InnoCoreSystemNS
 {
 	InitConfig parseInitConfig(const std::string& arg);
-	bool createSubSystemInstance(char* pScmdline);
+	bool createSubSystemInstance(void* appHook, void* extraHook, char* pScmdline);
 	bool setup(void* appHook, void* extraHook, char* pScmdline);
 	bool initialize();
 	bool update();
@@ -205,7 +205,7 @@ InitConfig InnoCoreSystemNS::parseInitConfig(const std::string& arg)
 	return l_result;
 }
 
-bool InnoCoreSystemNS::createSubSystemInstance(char* pScmdline)
+bool InnoCoreSystemNS::createSubSystemInstance(void* appHook, void* extraHook, char* pScmdline)
 {
 	createSubSystemInstanceDefi(TimeSystem);
 	createSubSystemInstanceDefi(LogSystem);
@@ -319,7 +319,7 @@ bool InnoCoreSystemNS::createSubSystemInstance(char* pScmdline)
 
 bool InnoCoreSystemNS::setup(void* appHook, void* extraHook, char* pScmdline)
 {
-	if (!InnoCoreSystemNS::createSubSystemInstance(pScmdline))
+	if (!InnoCoreSystemNS::createSubSystemInstance(appHook, extraHook, pScmdline))
 	{
 		return false;
 	}

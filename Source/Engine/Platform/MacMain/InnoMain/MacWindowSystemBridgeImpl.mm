@@ -16,7 +16,6 @@ bool MacWindowSystemBridgeImpl::setup(unsigned int sizeX, unsigned int sizeY) {
                                    styleMask:NSWindowStyleMaskTitled|NSWindowStyleMaskClosable
                                      backing:NSBackingStoreBuffered
                                        defer:NO];
-    
     return true;
 }
 

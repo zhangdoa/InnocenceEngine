@@ -1,23 +1,23 @@
 //
-//  MTRenderingSystemBridgeImpl.h
+//  MTRenderingBackendBridgeImpl.h
 //  InnoMain
 //
 //  Created by zhangdoa on 14/04/2019.
 //  Copyright © 2019 InnocenceEngine. All rights reserved.
 //
 
-#ifndef MTRenderingSystemBridgeImpl_h
-#define MTRenderingSystemBridgeImpl_h
+#ifndef MTRenderingBackendBridgeImpl_h
+#define MTRenderingBackendBridgeImpl_h
 
-#import "../../../system/MTRenderingBackend/MTRenderingSystemBridge.h"
+#import "../../../System/RenderingBackend/MTRenderingBackend/MTRenderingBackendBridge.h"
 #import "MacWindowDelegate.h"
 #import "MetalDelegate.h"
 
-class MTRenderingSystemBridgeImpl : public MTRenderingSystemBridge
+class MTRenderingBackendBridgeImpl : public MTRenderingBackendBridge
 {
 public:
-    explicit MTRenderingSystemBridgeImpl(MacWindowDelegate* macWindowDelegate, MetalDelegate* metalDelegate);
-    ~MTRenderingSystemBridgeImpl();
+    explicit MTRenderingBackendBridgeImpl(MacWindowDelegate* macWindowDelegate, MetalDelegate* metalDelegate);
+    ~MTRenderingBackendBridgeImpl();
     
     bool setup() override;
     bool initialize() override;
@@ -34,9 +34,9 @@ public:
     bool initializeMTTextureDataComponent(MTTextureDataComponent* rhs) override;
     
 private:
-    ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+    ObjectStatus m_objectStatus = ObjectStatus::Terminated;
     MacWindowDelegate* m_macWindowDelegate = nullptr;
     MetalDelegate* m_metalDelegate = nullptr;
 };
 
-#endif /* MTRenderingSystemBridgeImpl_h */
+#endif /* MTRenderingBackendBridgeImpl_h */

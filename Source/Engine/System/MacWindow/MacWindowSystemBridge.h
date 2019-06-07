@@ -1,7 +1,7 @@
 #ifndef MacWindowSystemBridge_h
 #define MacWindowSystemBridge_h
 
-#include "../../common/InnoType.h"
+#include "../../Common/InnoType.h"
 
 class MacWindowSystemBridge
 {

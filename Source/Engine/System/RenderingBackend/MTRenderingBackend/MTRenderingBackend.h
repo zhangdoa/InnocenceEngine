@@ -1,11 +1,11 @@
 #pragma once
-#include "../IRenderingBackendSystem.h"
-#include "MTRenderingSystemBridge.h"
+#include "../IRenderingBackend.h"
+#include "MTRenderingBackendBridge.h"
 
-class MTRenderingSystem : INNO_IMPLEMENT IRenderingBackendSystem
+class MTRenderingBackend : INNO_IMPLEMENT IRenderingBackend
 {
 public:
-	INNO_CLASS_CONCRETE_NON_COPYABLE(MTRenderingSystem);
+	INNO_CLASS_CONCRETE_NON_COPYABLE(MTRenderingBackend);
 
 	bool setup() override;
 	bool initialize() override;
@@ -18,14 +18,10 @@ public:
 	MeshDataComponent* addMeshDataComponent() override;
 	MaterialDataComponent* addMaterialDataComponent() override;
 	TextureDataComponent* addTextureDataComponent() override;
-	MeshDataComponent* getMeshDataComponent(EntityID meshID) override;
-	TextureDataComponent* getTextureDataComponent(EntityID textureID) override;
 	MeshDataComponent* getMeshDataComponent(MeshShapeType meshShapeType) override;
 	TextureDataComponent* getTextureDataComponent(TextureUsageType textureUsageType) override;
 	TextureDataComponent* getTextureDataComponent(FileExplorerIconType iconType) override;
 	TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) override;
-	bool removeMeshDataComponent(EntityID entityID) override;
-	bool removeTextureDataComponent(EntityID entityID) override;
 
 	void registerUninitializedMeshDataComponent(MeshDataComponent* rhs) override;
 	void registerUninitializedTextureDataComponent(TextureDataComponent* rhs) override;
@@ -34,5 +30,5 @@ public:
 	bool reloadShader(RenderPassType renderPassType) override;
 	bool bakeGI() override;
 
-	void setBridge(MTRenderingSystemBridge* bridge);
+	void setBridge(MTRenderingBackendBridge* bridge);
 };

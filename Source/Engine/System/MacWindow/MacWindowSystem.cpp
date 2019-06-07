@@ -6,7 +6,7 @@ extern ICoreSystem* g_pCoreSystem;
 
 INNO_PRIVATE_SCOPE MacWindowSystemNS
 {
-	ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	ButtonStatusMap m_buttonStatus;
 
   MacWindowSystemBridge* m_bridge;
@@ -14,10 +14,10 @@ INNO_PRIVATE_SCOPE MacWindowSystemNS
 
 bool MacWindowSystem::setup(void* hInstance, void* hwnd)
 {
-	auto l_screenResolution = g_pCoreSystem->getVisionSystem()->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_pCoreSystem->getRenderingFrontend()->getScreenResolution();
   bool result = MacWindowSystemNS::m_bridge->setup(l_screenResolution.x, l_screenResolution.y);
 
-	MacWindowSystemNS::m_objectStatus = ObjectStatus::ALIVE;
+	MacWindowSystemNS::m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MacWindowSystem setup finished.");
 
 	return true;
@@ -26,6 +26,8 @@ bool MacWindowSystem::setup(void* hInstance, void* hwnd)
 bool MacWindowSystem::initialize()
 {
 	bool result = MacWindowSystemNS::m_bridge->initialize();
+	
+	MacWindowSystemNS::m_objectStatus = ObjectStatus::Activated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MacWindowSystem has been initialized.");
 	return true;
 }
@@ -39,7 +41,7 @@ bool MacWindowSystem::update()
 bool MacWindowSystem::terminate()
 {
 	bool result = MacWindowSystemNS::m_bridge->terminate();
-	MacWindowSystemNS::m_objectStatus = ObjectStatus::SHUTDOWN;
+	MacWindowSystemNS::m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MacWindowSystem has been terminated.");
 	return true;
 }

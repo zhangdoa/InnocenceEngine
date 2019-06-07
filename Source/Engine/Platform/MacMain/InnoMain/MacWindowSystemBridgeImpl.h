@@ -9,7 +9,7 @@
 #ifndef MacWindowSystemBridgeImpl_h
 #define MacWindowSystemBridgeImpl_h
 
-#import "../../../system/MacWindow/MacWindowSystemBridge.h"
+#import "../../../System/MacWindow/MacWindowSystemBridge.h"
 #import "MacWindowDelegate.h"
 #import "MetalDelegate.h"
 
@@ -26,7 +26,7 @@ public:
     
     ObjectStatus getStatus() override;
 private:
-    ObjectStatus m_objectStatus = ObjectStatus::SHUTDOWN;
+    ObjectStatus m_objectStatus = ObjectStatus::Terminated;
     MacWindowDelegate* m_macWindowDelegate = nullptr;
     MetalDelegate* m_metalDelegate = nullptr;
 };

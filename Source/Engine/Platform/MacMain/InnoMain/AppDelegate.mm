@@ -9,13 +9,13 @@
 #import "AppDelegate.h"
 #import "MacWindowDelegate.h"
 
-#import "../../../common/InnoApplication.h"
+#import "../../../Common/InnoApplication.h"
 #import "MacWindowSystemBridgeImpl.h"
-#import "MTRenderingSystemBridgeImpl.h"
+#import "MTRenderingBackendBridgeImpl.h"
 
 @implementation AppDelegate
 MacWindowSystemBridgeImpl* m_macWindowSystemBridge;
-MTRenderingSystemBridgeImpl* m_metalRenderingSystemBridge;
+MTRenderingBackendBridgeImpl* m_metalRenderingBackendBridge;
 MacWindowDelegate* m_macWindowDelegate;
 MetalDelegate* m_metalDelegate;
 
@@ -41,11 +41,11 @@ MetalDelegate* m_metalDelegate;
     m_metalDelegate = [MetalDelegate alloc];
     
     m_macWindowSystemBridge = new MacWindowSystemBridgeImpl(m_macWindowDelegate, m_metalDelegate);
-    m_metalRenderingSystemBridge = new MTRenderingSystemBridgeImpl(m_macWindowDelegate, m_metalDelegate);
+    m_metalRenderingBackendBridge = new MTRenderingBackendBridgeImpl(m_macWindowDelegate, m_metalDelegate);
         
     //Start the engine c++ code
     const char* l_args = "-renderer 4 -mode 0";
-    if (!InnoApplication::setup(m_macWindowSystemBridge, m_metalRenderingSystemBridge, (char*)l_args))
+    if (!InnoApplication::setup(m_macWindowSystemBridge, m_metalRenderingBackendBridge, (char*)l_args))
     {
         return 0;
     }
@@ -67,7 +67,7 @@ MetalDelegate* m_metalDelegate;
 - (void)applicationWillTerminate:(NSNotification *)aNotification{
     InnoApplication::terminate();
     
-    delete m_metalRenderingSystemBridge;
+    delete m_metalRenderingBackendBridge;
     delete m_macWindowSystemBridge;
     
     [m_macWindowDelegate applicationWillTerminate:aNotification];

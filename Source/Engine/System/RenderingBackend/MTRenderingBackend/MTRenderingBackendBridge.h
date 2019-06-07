@@ -1,15 +1,15 @@
 #ifndef MTRenderingSystemBridge_h
 #define MTRenderingSystemBridge_h
 
-#include "../../common/InnoType.h"
-#include "../../Component/MTMeshDataComponent.h"
-#include "../../Component/MTTextureDataComponent.h"
+#include "../../../Common/InnoType.h"
+#include "../../../Component/MTMeshDataComponent.h"
+#include "../../../Component/MTTextureDataComponent.h"
 
-class MTRenderingSystemBridge
+class MTRenderingBackendBridge
 {
 public:
-  MTRenderingSystemBridge() {};
-  virtual ~MTRenderingSystemBridge() {};
+  MTRenderingBackendBridge() {};
+  virtual ~MTRenderingBackendBridge() {};
 
   virtual bool setup() = 0;
 	virtual bool initialize() = 0;
