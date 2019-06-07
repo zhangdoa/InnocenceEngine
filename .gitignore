@@ -7,13 +7,7 @@
 /Source/Game/Export
 
 # Third-party headers and libraries
-/Source/External/Include/assimp
-/Source/External/Include/GLFW
-/Source/External/Include/vulkan
-/Source/External/Include/stb
-/Source/External/Include/json
-/Source/External/Include/GL
-/Source/External/Include/DX12
+/Source/External/Include
 /Source/External/Lib
 /Source/External/DLL
 

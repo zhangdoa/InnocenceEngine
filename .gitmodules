@@ -2,6 +2,10 @@
 	path = Source/External/GitSubmodules/assimp
 	url = https://github.com/assimp/assimp
 	ignore = dirty
+[submodule "Source/External/GitSubmodules/GLAD"]
+	path = Source/External/GitSubmodules/GLAD
+	url = https://github.com/Dav1dde/glad
+	ignore = dirty
 [submodule "Source/External/GitSubmodules/Vulkan-Headers"]
 	path = Source/External/GitSubmodules/Vulkan-Headers
 	url = https://github.com/KhronosGroup/Vulkan-Headers
