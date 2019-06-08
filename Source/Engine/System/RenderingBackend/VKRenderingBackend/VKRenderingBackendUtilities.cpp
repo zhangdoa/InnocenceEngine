@@ -41,7 +41,7 @@ INNO_PRIVATE_SCOPE VKRenderingBackendNS
 	void* m_VKRenderPassComponentPool;
 	void* m_VKShaderProgramComponentPool;
 
-	const std::string m_shaderRelativePath = std::string{ "res//shaders//" };
+	const std::string m_shaderRelativePath = std::string{ "Res//Shaders//" };
 }
 
 bool VKRenderingBackendNS::initializeComponentPool()

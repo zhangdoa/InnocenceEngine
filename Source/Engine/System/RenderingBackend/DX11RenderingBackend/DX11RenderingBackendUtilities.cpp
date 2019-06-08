@@ -33,7 +33,7 @@ INNO_PRIVATE_SCOPE DX11RenderingBackendNS
 	void* m_DX11RenderPassComponentPool;
 	void* m_DX11ShaderProgramComponentPool;
 
-	const std::wstring m_shaderRelativePath = L"res//shaders//";
+	const std::wstring m_shaderRelativePath = L"Res//Shaders//";
 }
 
 bool DX11RenderingBackendNS::initializeComponentPool()
