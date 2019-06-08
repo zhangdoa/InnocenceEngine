@@ -449,7 +449,7 @@ bool GameInstanceNS::setup()
 
 bool GameInstanceNS::initialize()
 {
-	f_testFunc = []() {	g_pCoreSystem->getFileSystem()->loadScene("res//scenes//animationTest.InnoScene");
+	f_testFunc = []() {	g_pCoreSystem->getFileSystem()->loadScene("Res//Scenes//animationTest.InnoScene");
 	};
 	g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_R, ButtonStatus::PRESSED }, &f_testFunc);
 	return true;
@@ -485,7 +485,7 @@ bool GameInstance::setup(ICoreSystem* coreSystem)
 bool GameInstance::initialize()
 {
 	bool l_result = true;
-	g_pCoreSystem->getFileSystem()->loadScene("res//scenes//default.InnoScene");
+	g_pCoreSystem->getFileSystem()->loadScene("Res//Scenes//default.InnoScene");
 
 	l_result = l_result && PlayerComponentCollection::initialize();
 	l_result = l_result && GameInstanceNS::initialize();

@@ -391,7 +391,7 @@ void ImGuiWrapperNS::showAssetConvertPopWindow(bool &l_popMenuOpened, std::strin
 
 	if (ImGui::BeginPopupModal("Convert Asset", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		static char exportAsset_filePath[128] = "..//res//convertedAssets//";
+		static char exportAsset_filePath[128] = "..//Res//ConvertedAssets//";
 		ImGui::InputText("Export asset file path", exportAsset_filePath, IM_ARRAYSIZE(exportAsset_filePath));
 
 		ImGui::Separator();

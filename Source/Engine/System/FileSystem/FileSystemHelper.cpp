@@ -19,7 +19,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 
 bool InnoFileSystemNS::setup()
 {
-#if defined INNO_PLATFORM_WIN
+#if defined INNO_PLATFORM_WIN || defined INNO_PLATFORM_LINUX
 	m_workingDir = fs::current_path().parent_path().generic_string();
 #else
 	m_workingDir = fs::current_path().generic_string();

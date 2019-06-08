@@ -101,7 +101,7 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpScene(const aiScene* aiScene,
 	{
 		for (unsigned int i = 0; i < aiScene->mNumAnimations; i++)
 		{
-			auto l_animationFileName = "//res//convertedAssets//" + exportName + "_" + std::to_string(i) + ".InnoAnimation";
+			auto l_animationFileName = "//Res//ConvertedAssets//" + exportName + "_" + std::to_string(i) + ".InnoAnimation";
 			processAssimpAnimation(aiScene->mAnimations[i], l_animationFileName);
 			l_sceneData["AnimationFiles"].emplace_back(l_animationFileName);
 		}
@@ -148,14 +148,14 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, c
 	// process vertices and indices
 	l_meshData["MeshName"] = *l_aiMesh->mName.C_Str();
 	l_meshData["VerticesNumber"] = l_aiMesh->mNumVertices;
-	auto l_meshFileName = "//res//convertedAssets//" + exportName + "_" + std::to_string(meshIndex) + ".InnoMesh";
+	auto l_meshFileName = "//Res//ConvertedAssets//" + exportName + "_" + std::to_string(meshIndex) + ".InnoMesh";
 	l_meshData["IndicesNumber"] = processMeshData(l_aiMesh, l_meshFileName);
 	l_meshData["MeshFile"] = l_meshFileName;
 
 	// process bones
 	if (l_aiMesh->mNumBones)
 	{
-		auto l_skeletonFileName = "//res//convertedAssets//" + exportName + "_" + std::to_string(meshIndex) + ".InnoSkeleton";
+		auto l_skeletonFileName = "//Res//ConvertedAssets//" + exportName + "_" + std::to_string(meshIndex) + ".InnoSkeleton";
 		processAssimpBone(l_aiMesh, l_skeletonFileName);
 		l_meshData["SkeletonFile"] = l_skeletonFileName;
 	}
@@ -163,7 +163,7 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, c
 	// process material
 	if (l_aiMesh->mMaterialIndex)
 	{
-		auto l_materialFileName = "//res//convertedAssets//" + exportName + "_" + std::to_string(meshIndex) + ".InnoMaterial";
+		auto l_materialFileName = "//Res//ConvertedAssets//" + exportName + "_" + std::to_string(meshIndex) + ".InnoMaterial";
 		processAssimpMaterial(scene->mMaterials[l_aiMesh->mMaterialIndex], l_materialFileName);
 		l_meshData["MaterialFile"] = l_materialFileName;
 	}

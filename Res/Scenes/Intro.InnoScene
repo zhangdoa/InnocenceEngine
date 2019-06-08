@@ -104,7 +104,7 @@
           "MeshPrimitiveTopology": 2,
           "MeshShapeType": 5,
           "MeshUsageType": 0,
-          "ModelFileName": "res//convertedAssets//sponza.InnoModel",
+          "ModelFileName": "Res//ConvertedAssets//sponza.InnoModel",
           "TextureWrapMethod": 1,
           "VisiblilityType": 2,
           "drawAABB": false,
@@ -327,7 +327,7 @@
           "MeshPrimitiveTopology": 2,
           "MeshShapeType": 5,
           "MeshUsageType": 1,
-          "ModelFileName": "res//convertedAssets//Orb.InnoModel",
+          "ModelFileName": "Res//ConvertedAssets//Orb.InnoModel",
           "TextureWrapMethod": 1,
           "VisiblilityType": 2,
           "SimulatePhysics": true
