@@ -418,8 +418,6 @@ bool GLRenderingBackendNS::render()
 	updateUBO(GLRenderingBackendComponent::get().m_meshUBO, RenderingFrontendComponent::get().m_transparentPassMeshGPUDatas);
 	updateUBO(GLRenderingBackendComponent::get().m_materialUBO, RenderingFrontendComponent::get().m_transparentPassMaterialGPUDatas);
 
-	GLTransparentPass::update();
-
 	auto l_canvasGLRPC = GLPreTAAPass::getGLRPC();
 
 	auto l_renderingConfig = g_pCoreSystem->getRenderingFrontend()->getRenderingConfig();
@@ -431,6 +429,8 @@ bool GLRenderingBackendNS::render()
 
 		l_canvasGLRPC = GLPostTAAPass::getGLRPC();
 	}
+
+	GLTransparentPass::update(l_canvasGLRPC);
 
 	if (l_renderingConfig.useBloom)
 	{

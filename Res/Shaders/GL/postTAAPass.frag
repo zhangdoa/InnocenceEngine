@@ -16,7 +16,9 @@ void main()
 	vec2 renderTargetSize = vec2(textureSize(uni_lastTAAPassRT0, 0));
 	vec2 texelSize = 1.0 / renderTargetSize;
 	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
-	vec3 currentColor = texture(uni_lastTAAPassRT0, screenTexCoords).rgb;
+	vec4 TAAResult = texture(uni_lastTAAPassRT0, screenTexCoords);
+	vec3 currentColor = TAAResult.rgb;
+	float luma = TAAResult.a;
 
 	vec3 average = vec3(0.0);
 	vec3 neighborColorSum = vec3(0.0);
@@ -44,7 +46,7 @@ void main()
 	finalColor = currentColor;
 
 	// Undo tone mapping
-	finalColor = finalColor / (1.0f - luma(finalColor));
+	finalColor = finalColor * (1.0f + luma);
 
 	uni_postTAAPassRT0 = vec4(finalColor, 1.0);
 }

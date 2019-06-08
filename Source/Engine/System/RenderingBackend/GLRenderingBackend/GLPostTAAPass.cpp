@@ -28,6 +28,8 @@ bool GLPostTAAPass::initialize()
 
 	m_GLRPC = addGLRenderPassComponent(m_entityID, "PostTAAPassGLRPC/");
 	m_GLRPC->m_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
+	m_GLRPC->m_renderPassDesc.useDepthAttachment = true;
+	m_GLRPC->m_renderPassDesc.useStencilAttachment = true;
 	initializeGLRenderPassComponent(m_GLRPC);
 
 	initializeShaders();

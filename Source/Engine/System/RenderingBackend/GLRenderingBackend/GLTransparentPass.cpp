@@ -1,6 +1,5 @@
 #include "GLTransparentPass.h"
 #include "GLOpaquePass.h"
-#include "GLPreTAAPass.h"
 
 #include "GLRenderingBackendUtilities.h"
 #include "../../../Component/GLRenderingBackendComponent.h"
@@ -42,9 +41,9 @@ void GLTransparentPass::initializeShaders()
 	m_GLSPC = rhs;
 }
 
-bool GLTransparentPass::update()
+bool GLTransparentPass::update(GLRenderPassComponent* prePassGLRPC)
 {
-	auto l_GLRPC = GLPreTAAPass::getGLRPC();
+	auto l_GLRPC = prePassGLRPC;
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glDepthMask(GL_FALSE);
@@ -59,7 +58,7 @@ bool GLTransparentPass::update()
 	glRenderbufferStorage(GL_RENDERBUFFER, l_GLRPC->m_renderBufferInternalFormat, l_GLRPC->m_renderPassDesc.RTDesc.width, l_GLRPC->m_renderPassDesc.RTDesc.height);
 	glViewport(0, 0, l_GLRPC->m_renderPassDesc.RTDesc.width, l_GLRPC->m_renderPassDesc.RTDesc.height);
 
-	copyDepthBuffer(GLOpaquePass::getGLRPC(), GLPreTAAPass::getGLRPC());
+	copyDepthBuffer(GLOpaquePass::getGLRPC(), l_GLRPC);
 
 	activateShaderProgram(m_GLSPC);
 
