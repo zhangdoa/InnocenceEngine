@@ -11,7 +11,7 @@ public:
 	GameInstance(GameInstance&& other) = default;
 	GameInstance& operator=(GameInstance&& other) = default;
 
-	bool setup(ICoreSystem* coreSystem) override;
+	bool setup() override;
 	bool initialize() override;
 	bool update() override;
 	bool terminate() override;

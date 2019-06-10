@@ -6,9 +6,9 @@ INNO_CONCRETE InnoCoreSystem : INNO_IMPLEMENT ICoreSystem
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoCoreSystem);
 
-	bool setup(void* appHook, void* extraHook, char* pScmdline) override;
+	bool setup(void* appHook, void* extraHook, char* pScmdline, IGameInstance* gameInstance) override;
 	bool initialize() override;
-	bool update() override;
+	bool run() override;
 	bool terminate() override;
 
 	ObjectStatus getStatus() override;

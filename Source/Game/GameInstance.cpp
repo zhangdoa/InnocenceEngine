@@ -2,7 +2,7 @@
 
 #include "../../Engine/System/ICoreSystem.h"
 
-ICoreSystem* g_pCoreSystem;
+INNO_SYSTEM_EXPORT extern ICoreSystem* g_pCoreSystem;
 
 namespace PlayerComponentCollection
 {
@@ -472,9 +472,8 @@ bool GameInstanceNS::updateMaterial(const ModelMap& modelMap, vec4 albedo, vec4 
 	return true;
 };
 
-bool GameInstance::setup(ICoreSystem* coreSystem)
+bool GameInstance::setup()
 {
-	g_pCoreSystem = coreSystem;
 	bool l_result = true;
 	l_result = l_result && PlayerComponentCollection::setup();
 	l_result = l_result && GameInstanceNS::setup();

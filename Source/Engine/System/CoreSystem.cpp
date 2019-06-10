@@ -76,7 +76,7 @@ INNO_PRIVATE_SCOPE InnoCoreSystemNS
 {
 	InitConfig parseInitConfig(const std::string& arg);
 	bool createSubSystemInstance(void* appHook, void* extraHook, char* pScmdline);
-	bool setup(void* appHook, void* extraHook, char* pScmdline);
+	bool setup(void* appHook, void* extraHook, char* pScmdline, IGameInstance* gameInstance);
 	bool initialize();
 	bool update();
 	bool terminate();
@@ -96,6 +96,7 @@ INNO_PRIVATE_SCOPE InnoCoreSystemNS
 	std::unique_ptr<IWindowSystem> m_WindowSystem;
 	std::unique_ptr<IRenderingFrontend> m_RenderingFrontend;
 	std::unique_ptr<IRenderingBackend> m_RenderingBackend;
+	IGameInstance* m_GameInstance;
 
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
@@ -317,8 +318,10 @@ bool InnoCoreSystemNS::createSubSystemInstance(void* appHook, void* extraHook, c
 	return true;
 }
 
-bool InnoCoreSystemNS::setup(void* appHook, void* extraHook, char* pScmdline)
+bool InnoCoreSystemNS::setup(void* appHook, void* extraHook, char* pScmdline, IGameInstance* gameInstance)
 {
+	m_GameInstance = gameInstance;
+
 	if (!InnoCoreSystemNS::createSubSystemInstance(appHook, extraHook, pScmdline))
 	{
 		return false;
@@ -365,6 +368,11 @@ bool InnoCoreSystemNS::setup(void* appHook, void* extraHook, char* pScmdline)
 	subSystemSetup(PhysicsSystem);
 	subSystemSetup(InputSystem);
 
+	if (!m_GameInstance->setup())
+	{
+		return false;
+	}
+
 	m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "Engine setup finished.");
 	return true;
@@ -390,6 +398,11 @@ bool InnoCoreSystemNS::initialize()
 	m_RenderingFrontend->initialize();
 	ImGuiWrapper::get().initialize();
 
+	if (!m_GameInstance->initialize())
+	{
+		return false;
+	}
+
 	m_objectStatus = ObjectStatus::Activated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "Engine has been initialized.");
 	return true;
@@ -397,74 +410,84 @@ bool InnoCoreSystemNS::initialize()
 
 bool InnoCoreSystemNS::update()
 {
-	auto l_tickStartTime = m_TimeSystem->getCurrentTimeFromEpoch();
-	subSystemUpdate(TimeSystem);
-	subSystemUpdate(LogSystem);
-	subSystemUpdate(MemorySystem);
-	subSystemUpdate(TaskSystem);
-
-	subSystemUpdate(TestSystem);
-
-	subSystemUpdate(FileSystem);
-	subSystemUpdate(GameSystem);
-	subSystemUpdate(AssetSystem);
-	subSystemUpdate(PhysicsSystem);
-	subSystemUpdate(InputSystem);
-
-	if (m_WindowSystem->getStatus() == ObjectStatus::Activated)
+	while (1)
 	{
-		if (g_pCoreSystem->getFileSystem()->isLoadingScene())
+		if (!m_GameInstance->update())
 		{
+			return false;
+		}
+
+		auto l_tickStartTime = m_TimeSystem->getCurrentTimeFromEpoch();
+		subSystemUpdate(TimeSystem);
+		subSystemUpdate(LogSystem);
+		subSystemUpdate(MemorySystem);
+		subSystemUpdate(TaskSystem);
+
+		subSystemUpdate(TestSystem);
+
+		subSystemUpdate(FileSystem);
+		subSystemUpdate(GameSystem);
+		subSystemUpdate(AssetSystem);
+		subSystemUpdate(PhysicsSystem);
+		subSystemUpdate(InputSystem);
+
+		if (m_WindowSystem->getStatus() == ObjectStatus::Activated)
+		{
+			if (!m_FileSystem->isLoadingScene())
+			{
+				m_WindowSystem->update();
+
+				if (!m_allowRender)
+				{
+					m_RenderingFrontend->update();
+
+					m_allowRender = true;
+				}
+
+				if (!m_isRendering && m_allowRender)
+				{
+					m_allowRender = false;
+
+					m_isRendering = true;
+
+					m_RenderingBackend->update();
+
+					m_RenderingBackend->render();
+
+					if (m_showImGui)
+					{
+						ImGuiWrapper::get().update();
+					}
+
+					m_WindowSystem->swapBuffer();
+
+					m_isRendering = false;
+				}
+
+				m_GameSystem->saveComponentsCapture();
+
+				auto l_tickEndTime = m_TimeSystem->getCurrentTimeFromEpoch();
+
+				m_tickTime = float(l_tickEndTime - l_tickStartTime) / 1000.0f;
+			}
+		}
+		else
+		{
+			m_objectStatus = ObjectStatus::Suspended;
+			m_LogSystem->printLog(LogType::INNO_WARNING, "Engine is stand-by.");
 			return true;
 		}
-
-		m_WindowSystem->update();
-
-		if (!m_allowRender)
-		{
-			m_RenderingFrontend->update();
-
-			m_allowRender = true;
-		}
-
-		if (!m_isRendering && m_allowRender)
-		{
-			m_allowRender = false;
-
-			m_isRendering = true;
-
-			m_RenderingBackend->update();
-
-			m_RenderingBackend->render();
-
-			if (m_showImGui)
-			{
-				ImGuiWrapper::get().update();
-			}
-
-			m_WindowSystem->swapBuffer();
-
-			m_isRendering = false;
-		}
-
-		g_pCoreSystem->getGameSystem()->saveComponentsCapture();
-
-		auto l_tickEndTime = m_TimeSystem->getCurrentTimeFromEpoch();
-
-		m_tickTime = float(l_tickEndTime - l_tickStartTime) / 1000.0f;
-
-		return true;
-	}
-	else
-	{
-		m_objectStatus = ObjectStatus::Suspended;
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "Engine is stand-by.");
-		return false;
 	}
 }
 
 bool InnoCoreSystemNS::terminate()
 {
+	if (!m_GameInstance->terminate())
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "Game can't be terminated!");
+		return false;
+	}
+
 	if (!ImGuiWrapper::get().terminate())
 	{
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "GuiSystem can't be terminated!");
@@ -507,11 +530,11 @@ bool InnoCoreSystemNS::terminate()
 	return true;
 }
 
-bool InnoCoreSystem::setup(void* appHook, void* extraHook, char* pScmdline)
+bool InnoCoreSystem::setup(void* appHook, void* extraHook, char* pScmdline, IGameInstance* gameInstance)
 {
 	g_pCoreSystem = this;
 
-	return InnoCoreSystemNS::setup(appHook, extraHook, pScmdline);
+	return InnoCoreSystemNS::setup(appHook, extraHook, pScmdline, gameInstance);
 }
 
 bool InnoCoreSystem::initialize()
@@ -519,7 +542,7 @@ bool InnoCoreSystem::initialize()
 	return InnoCoreSystemNS::initialize();
 }
 
-bool InnoCoreSystem::update()
+bool InnoCoreSystem::run()
 {
 	return InnoCoreSystemNS::update();
 }

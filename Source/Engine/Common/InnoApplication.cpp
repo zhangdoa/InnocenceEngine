@@ -22,15 +22,11 @@ bool InnoApplication::Setup(void* appHook, void* extraHook, char* pScmdline)
 		return false;
 	}
 
-	if (!m_pCoreSystem.get()->setup(appHook, extraHook, pScmdline))
+	if (!m_pCoreSystem.get()->setup(appHook, extraHook, pScmdline, m_pGameInstance.get()))
 	{
 		return false;
 	}
 
-	if (!m_pGameInstance->setup(m_pCoreSystem.get()))
-	{
-		return false;
-	}
 	return true;
 }
 
@@ -41,36 +37,20 @@ bool InnoApplication::Initialize()
 		return false;
 	}
 
-	if (!m_pGameInstance->initialize())
-	{
-		return false;
-	}
 	return true;
 }
 
 bool InnoApplication::Run()
 {
-	while (1)
+	if (!m_pCoreSystem->run())
 	{
-		if (!m_pGameInstance->update())
-		{
-			return false;
-		}
-		if (!m_pCoreSystem->update())
-		{
-			return false;
-		}
+		return false;
 	}
-
 	return true;
 }
 
 bool InnoApplication::Terminate()
 {
-	if (!m_pGameInstance->terminate())
-	{
-		return false;
-	}
 	if (!m_pCoreSystem->terminate())
 	{
 		return false;

@@ -15,6 +15,7 @@
 #include "Core/IWindowSystem.h"
 #include "RenderingFrontend/IRenderingFrontend.h"
 #include "RenderingBackend/IRenderingBackend.h"
+#include "../../Game/IGameInstance.h"
 
 enum EngineMode { GAME, EDITOR };
 enum RenderingBackend { GL, DX11, DX12, VK, MT };
@@ -29,9 +30,9 @@ INNO_INTERFACE ICoreSystem
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(ICoreSystem);
 
-	INNO_SYSTEM_EXPORT virtual bool setup(void* appHook, void* extraHook, char* pScmdline) = 0;
+	INNO_SYSTEM_EXPORT virtual bool setup(void* appHook, void* extraHook, char* pScmdline, IGameInstance* gameInstance) = 0;
 	INNO_SYSTEM_EXPORT virtual bool initialize() = 0;
-	INNO_SYSTEM_EXPORT virtual bool update() = 0;
+	INNO_SYSTEM_EXPORT virtual bool run() = 0;
 	INNO_SYSTEM_EXPORT virtual bool terminate() = 0;
 
 	INNO_SYSTEM_EXPORT virtual ObjectStatus getStatus() = 0;
