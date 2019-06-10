@@ -3,7 +3,7 @@
 
 namespace InnoApplication
 {
-	bool setup(
+	bool Setup(
 		// Windows: For hInstance
 		// macOS: For window bridge
 		void* appHook,
@@ -12,9 +12,7 @@ namespace InnoApplication
 		void* extraHook,
 		char* pScmdline
 	);
-	bool initialize();
-	bool update();
-	bool terminate();
-
-	ObjectStatus getStatus();
+	bool Initialize();
+	bool Run();
+	bool Terminate();
 };

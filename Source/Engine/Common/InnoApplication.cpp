@@ -4,13 +4,11 @@
 
 namespace InnoApplication
 {
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-
 	std::unique_ptr<InnoCoreSystem> m_pCoreSystem;
 	std::unique_ptr<GameInstance> m_pGameInstance;
 }
 
-bool InnoApplication::setup(void* appHook, void* extraHook, char* pScmdline)
+bool InnoApplication::Setup(void* appHook, void* extraHook, char* pScmdline)
 {
 	m_pCoreSystem = std::make_unique<InnoCoreSystem>();
 	if (!m_pCoreSystem.get())
@@ -33,12 +31,10 @@ bool InnoApplication::setup(void* appHook, void* extraHook, char* pScmdline)
 	{
 		return false;
 	}
-
-	m_objectStatus = ObjectStatus::Created;
 	return true;
 }
 
-bool InnoApplication::initialize()
+bool InnoApplication::Initialize()
 {
 	if (!m_pCoreSystem->initialize())
 	{
@@ -49,27 +45,27 @@ bool InnoApplication::initialize()
 	{
 		return false;
 	}
-
-	m_objectStatus = ObjectStatus::Activated;
 	return true;
 }
 
-bool InnoApplication::update()
+bool InnoApplication::Run()
 {
-	if (!m_pGameInstance->update())
+	while (1)
 	{
-		m_objectStatus = ObjectStatus::Suspended;
-		return false;
+		if (!m_pGameInstance->update())
+		{
+			return false;
+		}
+		if (!m_pCoreSystem->update())
+		{
+			return false;
+		}
 	}
-	if (!m_pCoreSystem->update())
-	{
-		m_objectStatus = ObjectStatus::Suspended;
-		return false;
-	}
+
 	return true;
 }
 
-bool InnoApplication::terminate()
+bool InnoApplication::Terminate()
 {
 	if (!m_pGameInstance->terminate())
 	{
@@ -79,11 +75,5 @@ bool InnoApplication::terminate()
 	{
 		return false;
 	}
-	m_objectStatus = ObjectStatus::Terminated;
 	return true;
-}
-
-ObjectStatus InnoApplication::getStatus()
-{
-	return m_objectStatus;
 }
