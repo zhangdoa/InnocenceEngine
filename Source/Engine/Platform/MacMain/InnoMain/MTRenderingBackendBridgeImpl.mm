@@ -30,6 +30,11 @@ bool MTRenderingBackendBridgeImpl::update() {
     return true;
 }
 
+bool MTRenderingBackendBridgeImpl::render() {
+    [m_metalDelegate render];
+    return true;
+}
+
 bool MTRenderingBackendBridgeImpl::terminate() {
     return true;
 }
@@ -66,7 +71,7 @@ bool MTRenderingBackendBridgeImpl::initializeMTMeshDataComponent(MTMeshDataCompo
     }
     else
     {
-        [m_metalDelegate submitGPUData:rhs->m_vertices.data() :(unsigned int)rhs->m_vertices.size()];
+        [m_metalDelegate submitGPUData:rhs->m_vertices.data() :(unsigned int)(rhs->m_vertices.size())];
         
         rhs->m_objectStatus = ObjectStatus::Activated;
         
@@ -77,5 +82,3 @@ bool MTRenderingBackendBridgeImpl::initializeMTMeshDataComponent(MTMeshDataCompo
 bool MTRenderingBackendBridgeImpl::initializeMTTextureDataComponent(MTTextureDataComponent *rhs) {
         return true;
 }
-
-

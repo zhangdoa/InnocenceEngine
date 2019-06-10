@@ -12,7 +12,7 @@
 #import <Cocoa/Cocoa.h>
 #import <MetalKit/MetalKit.h>
 
-@interface MacWindowDelegate : NSWindow <NSApplicationDelegate>{
+@interface MacWindowDelegate : NSWindow <NSWindowDelegate>{
 }
     -(id)initWithContentRect:(NSRect)contentRect styleMask:(NSWindowStyleMask)aStyle backing:(NSBackingStoreType)bufferingType defer:(BOOL)flag;
     -(NSRect)getFrame;

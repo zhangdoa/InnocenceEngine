@@ -10,8 +10,8 @@
 #import <Foundation/Foundation.h>
 
 @implementation MacWindowDelegate
+BOOL m_isAlive;
 NSRect m_frame;
-BOOL m_isAlive = YES;
 
 -(id)initWithContentRect:(NSRect)contentRect styleMask:(NSWindowStyleMask)aStyle backing:(NSBackingStoreType)bufferingType defer:(BOOL)flag{
     m_frame = contentRect;
@@ -28,7 +28,9 @@ BOOL m_isAlive = YES;
         [self setAcceptsMouseMovedEvents:YES];
         [self makeKeyWindow];
         [self setOpaque:YES];
+        m_isAlive = YES;
     }
+    
     return self;
 }
 
@@ -36,15 +38,15 @@ BOOL m_isAlive = YES;
     [self setContentView:view];
 }
 
-- (void)applicationWillTerminate:(NSNotification *)aNotification{
-    m_isAlive = NO;
-}
 - (BOOL)isAlive {
     return m_isAlive;
 }
 
-- (NSRect)getFrame { 
-    return m_frame;
+- (void)windowWillClose:(NSNotification *)aNotification{
+    m_isAlive = NO;
 }
 
+- (NSRect)getFrame { 
+    return m_frame;
+}    
 @end

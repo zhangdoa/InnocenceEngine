@@ -21,6 +21,7 @@
 - (void)createPipeline;
 - (void)createBuffer;
 - (void)submitGPUData:(void*)vertices :(unsigned int)verticesSize;
+- (void)render;
 @end
 
 #endif /* MetalDelegate_h */

@@ -99,7 +99,9 @@ bool MTRenderingBackendNS::update()
 }
 
 bool MTRenderingBackendNS::render()
-{
+{	
+	bool result = MTRenderingBackendNS::m_bridge->render();
+
 	return true;
 }
 

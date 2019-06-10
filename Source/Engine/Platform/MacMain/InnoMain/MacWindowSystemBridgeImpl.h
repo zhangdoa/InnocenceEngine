@@ -29,6 +29,7 @@ private:
     ObjectStatus m_objectStatus = ObjectStatus::Terminated;
     MacWindowDelegate* m_macWindowDelegate = nullptr;
     MetalDelegate* m_metalDelegate = nullptr;
+    NSApplication *app;
 };
 
 #endif /* MacWindowSystemBridgeImpl_h */

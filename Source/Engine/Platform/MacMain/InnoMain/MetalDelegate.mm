@@ -122,17 +122,21 @@ static matrix_float4x4 rotationMatrix2D(float radians)
         (void)view;
         (void)size;
     }
+
+- (void)drawInMTKView:(nonnull MTKView *)view {
+}
+
     
-- (void)drawInMTKView:(MTKView*)view
-    {
+- (void)render
+{
         double rotationAngle = fmod(CACurrentMediaTime(), 2.0 * M_PI);
         Uniforms uniformSrc = (Uniforms) {
             .rotationMatrix = rotationMatrix2D(rotationAngle)};
         void* uniformTgt = [_uniformBuffer contents];
         memcpy(uniformTgt, &uniformSrc, sizeof(Uniforms));
         
-        MTLRenderPassDescriptor* passDescriptor = [view currentRenderPassDescriptor];
-        id<CAMetalDrawable> drawable = [view currentDrawable];
+        MTLRenderPassDescriptor* passDescriptor = [_view currentRenderPassDescriptor];
+        id<CAMetalDrawable> drawable = [_view currentDrawable];
         id<MTLCommandBuffer> commandBuffer = [_commandQueue commandBuffer];
         id<MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:passDescriptor];
         
@@ -143,12 +147,11 @@ static matrix_float4x4 rotationMatrix2D(float radians)
         [commandEncoder endEncoding];
         [commandBuffer presentDrawable:drawable];
         [commandBuffer commit];
-    }
+}
     
 - (MTKView *)getView { 
     return _view;
 }
-
 
 - (void)submitGPUData:(void *)vertices :(unsigned int)verticesSize {
     id<MTLBuffer> l_vertexBuffer = [_device newBufferWithBytes:vertices
