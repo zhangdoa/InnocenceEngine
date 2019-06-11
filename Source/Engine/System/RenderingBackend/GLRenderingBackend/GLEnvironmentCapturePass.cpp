@@ -31,10 +31,10 @@ INNO_PRIVATE_SCOPE GLEnvironmentCapturePass
 
 	ShaderFilePaths m_shaderFilePaths = { "GL//environmentCapturePass.vert/" , "", "", "", "GL//environmentCapturePass.frag/" };
 
-	const unsigned int m_captureResolution = 1024;
+	const unsigned int m_captureResolution = 256;
 	const unsigned int m_sampleCountPerFace = 128;
 	GLTextureDataComponent* m_testSampleCubemap;
-	const unsigned int m_subDivideDimension = 1;
+	const unsigned int m_subDivideDimension = 2;
 	const unsigned int m_totalCubemaps = m_subDivideDimension * m_subDivideDimension * m_subDivideDimension;
 	std::vector<GLTextureDataComponent*> m_capturedCubemaps;
 }
@@ -257,7 +257,7 @@ bool GLEnvironmentCapturePass::drawLightPass(mat4 p, const std::vector<mat4>& v,
 
 bool GLEnvironmentCapturePass::render(vec4 pos, GLTextureDataComponent* RT)
 {
-	auto l_capturePos = vec4(0.0f, 2.0f, 0.0f, 1.0f);
+	auto l_capturePos = pos;
 	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, 1000.0f);
 
 	auto l_rPX = InnoMath::toRotationMatrix(InnoMath::getQuatRotator(vec4(0.0f, 1.0f, 0.0f, 0.0f), -90.0f)).inverse();
