@@ -33,6 +33,7 @@ InnoViewport::InnoViewport(QWidget *parent)
 
 InnoViewport::~InnoViewport()
 {
+    g_pCoreSystem->getWindowSystem()->sendEvent(WM_DESTROY, WM_DESTROY, 0);
 }
 
 void InnoViewport::initialize()
@@ -81,10 +82,6 @@ void InnoViewport::Resize(float width, float height)
 bool ViewportEventFilter::eventFilter(QObject *obj, QEvent *event)
 {
     auto l_eventType = event->type();
-    if(l_eventType == QEvent::WindowDeactivate)
-    {
-        g_pCoreSystem->getWindowSystem()->sendEvent(WM_DESTROY, WM_DESTROY, 0);
-    }
     if(l_eventType == QEvent::KeyPress)
     {
         auto l_key = reinterpret_cast<QKeyEvent*>(event);
