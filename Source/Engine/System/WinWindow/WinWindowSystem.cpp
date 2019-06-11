@@ -162,7 +162,7 @@ ButtonStatusMap WinWindowSystem::getButtonStatus()
 
 bool WinWindowSystem::sendEvent(unsigned int umsg, unsigned int WParam, int LParam)
 {
-	windowCallbackWrapper::get().MessageHandler(0, umsg, WParam, LParam);
+	WindowProc(WinWindowSystemComponent::get().m_hwnd, umsg, WParam, LParam);
 	return true;
 }
 
@@ -173,6 +173,7 @@ void WinWindowSystem::swapBuffer()
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	// For to eliminate fake OpenGL window handle event
 	if (hwnd != WinWindowSystemComponent::get().m_hwnd)
 	{
 		return ApplicationHandle->MessageHandler(hwnd, uMsg, wParam, lParam);
@@ -180,12 +181,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	switch (uMsg)
 	{
-	case WM_DESTROY:
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "WinWindowSystem: WM_DESTROY signal received.");
-		WinWindowSystemNS::m_objectStatus = ObjectStatus::Created;
-		return 0;
-	}
 	case WM_PAINT:
 	{
 		PAINTSTRUCT ps;
@@ -204,6 +199,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			g_pCoreSystem->getRenderingFrontend()->setScreenResolution(l_newResolution);
 			g_pCoreSystem->getRenderingBackend()->resize();
 		}
+	}
+	case WM_DESTROY:
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "WinWindowSystem: WM_DESTROY signal received.");
+		WinWindowSystemNS::m_objectStatus = ObjectStatus::Created;
+		return 0;
 	}
 	default:
 	{

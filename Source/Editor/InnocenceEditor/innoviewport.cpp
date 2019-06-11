@@ -20,19 +20,19 @@ InnoViewport::InnoViewport(QWidget *parent)
 
     void* hInstance = (void*)::GetModuleHandle(NULL);
     WId l_hwnd = QWidget::winId();
+    const char* l_args = "-renderer 1 -mode 1";
+    InnoApplication::Setup(hInstance, &l_hwnd, (char*)l_args);
+    InnoApplication::Initialize();
 
     auto l_engine = [&](){
-        const char* l_args = "-renderer 0 -mode 0";
-        InnoApplication::Setup(hInstance, &l_hwnd, (char*)l_args);
-        InnoApplication::Initialize();
         InnoApplication::Run();
+        InnoApplication::Terminate();
     };
     QFuture<void> future = QtConcurrent::run(l_engine);
 }
 
 InnoViewport::~InnoViewport()
 {
-    InnoApplication::Terminate();
 }
 
 void InnoViewport::initialize()
@@ -80,17 +80,22 @@ void InnoViewport::Resize(float width, float height)
 
 bool ViewportEventFilter::eventFilter(QObject *obj, QEvent *event)
 {
-    if(event->type() == QEvent::KeyPress)
+    auto l_eventType = event->type();
+    if(l_eventType == QEvent::WindowDeactivate)
+    {
+        g_pCoreSystem->getWindowSystem()->sendEvent(WM_DESTROY, WM_DESTROY, 0);
+    }
+    if(l_eventType == QEvent::KeyPress)
     {
         auto l_key = reinterpret_cast<QKeyEvent*>(event);
         g_pCoreSystem->getWindowSystem()->sendEvent(WM_KEYDOWN, l_key->key(), 0);
     }
-    if(event->type() == QEvent::KeyRelease)
+    if(l_eventType == QEvent::KeyRelease)
     {
         auto l_key = reinterpret_cast<QKeyEvent*>(event);
         g_pCoreSystem->getWindowSystem()->sendEvent(WM_KEYUP, l_key->key(), 0);
     }
-    if(event->type() == QEvent::MouseButtonPress)
+    if(l_eventType == QEvent::MouseButtonPress)
     {
         auto l_key = reinterpret_cast<QMouseEvent*>(event);
         switch (l_key->button()) {
@@ -104,7 +109,7 @@ bool ViewportEventFilter::eventFilter(QObject *obj, QEvent *event)
             break;
         }
     }
-    if(event->type() == QEvent::MouseButtonRelease)
+    if(l_eventType == QEvent::MouseButtonRelease)
     {
         auto l_mouseButton = reinterpret_cast<QMouseEvent*>(event);
         switch (l_mouseButton->button()) {
@@ -118,7 +123,7 @@ bool ViewportEventFilter::eventFilter(QObject *obj, QEvent *event)
             break;
         }
     }
-    if(event->type() == QEvent::MouseMove)
+    if(l_eventType == QEvent::MouseMove)
     {
         auto l_mouseMovement = reinterpret_cast<QMouseEvent*>(event);
         auto l_x = l_mouseMovement->localPos().x();
