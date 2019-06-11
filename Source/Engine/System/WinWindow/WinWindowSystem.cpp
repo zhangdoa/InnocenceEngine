@@ -181,6 +181,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	switch (uMsg)
 	{
+	case WM_DESTROY:
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "WinWindowSystem: WM_DESTROY signal received.");
+		WinWindowSystemNS::m_objectStatus = ObjectStatus::Suspended;
+	}
 	case WM_PAINT:
 	{
 		PAINTSTRUCT ps;
@@ -199,12 +204,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			g_pCoreSystem->getRenderingFrontend()->setScreenResolution(l_newResolution);
 			g_pCoreSystem->getRenderingBackend()->resize();
 		}
-	}
-	case WM_DESTROY:
-	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "WinWindowSystem: WM_DESTROY signal received.");
-		WinWindowSystemNS::m_objectStatus = ObjectStatus::Created;
-		return 0;
 	}
 	default:
 	{
