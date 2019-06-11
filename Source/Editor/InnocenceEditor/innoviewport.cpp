@@ -1,9 +1,11 @@
 #include "innoviewport.h"
 #include <qt_windows.h>
-#include "../../Engine/System/CoreSystem.h"
-#include "../../Game/GameInstance.h"
+#include <QFuture>
+#include <QtConcurrent/QtConcurrentRun>
+#include "../../Engine/Common/InnoApplication.h"
+#include "../../Engine/System/ICoreSystem.h"
 
-ICoreSystem* g_pCoreSystem;
+INNO_SYSTEM_EXPORT extern ICoreSystem* g_pCoreSystem;
 
 InnoViewport::InnoViewport(QWidget *parent)
     : QWidget{parent}
@@ -14,45 +16,28 @@ InnoViewport::InnoViewport(QWidget *parent)
     setAttribute(Qt::WA_NoSystemBackground);
     setAttribute( Qt::WA_TranslucentBackground);
 
-    m_CoreSystem = new InnoCoreSystem();
-    g_pCoreSystem = m_CoreSystem;
-    m_GameInstance = new GameInstance();
     m_viewportEventFilter = new ViewportEventFilter();
+
+    void* hInstance = (void*)::GetModuleHandle(NULL);
+    WId l_hwnd = QWidget::winId();
+
+    auto l_engine = [&](){
+        const char* l_args = "-renderer 0 -mode 0";
+        InnoApplication::Setup(hInstance, &l_hwnd, (char*)l_args);
+        InnoApplication::Initialize();
+        InnoApplication::Run();
+    };
+    QFuture<void> future = QtConcurrent::run(l_engine);
 }
 
 InnoViewport::~InnoViewport()
 {
-    m_timerUpdate->stop();
-    m_GameInstance->terminate();
-    m_CoreSystem->terminate();
-    delete m_GameInstance;
-    delete m_CoreSystem;
+    InnoApplication::Terminate();
 }
 
 void InnoViewport::initialize()
 {
     installEventFilter(m_viewportEventFilter);
-
-    m_timerUpdate = new QTimer(this);
-    connect(m_timerUpdate, SIGNAL(timeout()), this, SLOT(Update()));
-
-    WId l_hwnd = QWidget::winId();
-
-    void* hInstance = (void*)::GetModuleHandle(NULL);
-    const char* l_args = "-renderer 0 -mode 1";
-
-    m_CoreSystem->setup(hInstance, &l_hwnd, (char*)l_args);
-    m_GameInstance->setup(m_CoreSystem);
-
-    m_CoreSystem->initialize();
-    m_GameInstance->initialize();
-
-    m_timerUpdate->start(16);
-}
-
-void InnoViewport::paintEvent(QPaintEvent *paintEvent)
-{
-    Update();
 }
 
 void InnoViewport::showEvent(QShowEvent *showEvent)
@@ -80,21 +65,15 @@ void InnoViewport::resizeEvent(QResizeEvent *resizeEvent)
     Resize(width, height);
 }
 
-void InnoViewport::Update()
-{
-    m_GameInstance->update();
-    m_CoreSystem->update();
-}
-
 void InnoViewport::Resize(float width, float height)
 {
-    if(m_CoreSystem)
+    if(g_pCoreSystem)
     {
-        if(m_CoreSystem->getStatus() == ObjectStatus::Activated)
+        if(g_pCoreSystem->getStatus() == ObjectStatus::Activated)
         {
             TVec2<unsigned int> l_newResolution = TVec2<unsigned int>(width, height);
-            m_CoreSystem->getRenderingFrontend()->setScreenResolution(l_newResolution);
-            m_CoreSystem->getRenderingBackend()->resize();
+            g_pCoreSystem->getRenderingFrontend()->setScreenResolution(l_newResolution);
+            g_pCoreSystem->getRenderingBackend()->resize();
         }
     }
 }

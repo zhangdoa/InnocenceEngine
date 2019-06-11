@@ -1,8 +1,8 @@
-#include "DirectionalLightcomponentpropertyeditor.h"
+#include "directionalLightcomponentpropertyeditor.h"
 
-#include "../../engine/system/ICoreSystem.h"
+#include "../../Engine/System/ICoreSystem.h"
 
-extern ICoreSystem* g_pCoreSystem;
+INNO_SYSTEM_EXPORT extern ICoreSystem* g_pCoreSystem;
 
 DirectionalLightComponentPropertyEditor::DirectionalLightComponentPropertyEditor()
 {

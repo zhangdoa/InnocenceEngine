@@ -2,7 +2,9 @@
 #include <QLineEdit>
 #include <QListView>
 
-extern ICoreSystem* g_pCoreSystem;
+#include "../../Engine/System/ICoreSystem.h"
+
+INNO_SYSTEM_EXPORT extern ICoreSystem* g_pCoreSystem;
 
 InnoRenderConfigurator::InnoRenderConfigurator(QWidget* parent) : QComboBox(parent)
 {

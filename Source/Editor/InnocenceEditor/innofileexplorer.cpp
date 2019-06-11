@@ -1,8 +1,9 @@
 #include "innofileexplorer.h"
-#include "../../engine/system/ICoreSystem.h"
 #include <QMessageBox>
 
-extern ICoreSystem* g_pCoreSystem;
+#include "../../Engine/System/ICoreSystem.h"
+
+INNO_SYSTEM_EXPORT extern ICoreSystem* g_pCoreSystem;
 
 InnoFileExplorer::InnoFileExplorer(QWidget* parent) : QListView(parent)
 {

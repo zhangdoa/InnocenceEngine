@@ -1,8 +1,8 @@
 #include "innoworldexplorer.h"
 
-#include "../../engine/system/ICoreSystem.h"
+#include "../../Engine/System/ICoreSystem.h"
 
-extern ICoreSystem* g_pCoreSystem;
+INNO_SYSTEM_EXPORT extern ICoreSystem* g_pCoreSystem;
 
 InnoWorldExplorer::InnoWorldExplorer(QWidget* parent) : QTreeWidget(parent)
 {

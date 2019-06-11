@@ -1,8 +1,9 @@
 #include "innodirectoryexplorer.h"
-#include "../../engine/system/ICoreSystem.h"
 #include <QMessageBox>
 
-extern ICoreSystem* g_pCoreSystem;
+#include "../../Engine/System/ICoreSystem.h"
+
+INNO_SYSTEM_EXPORT extern ICoreSystem* g_pCoreSystem;
 
 InnoDirectoryExplorer::InnoDirectoryExplorer(QWidget *parent) : QTreeView(parent)
 {
