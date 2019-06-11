@@ -222,7 +222,7 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 		{
 			l_Vertex.m_normal.x = 0.0f;
 			l_Vertex.m_normal.y = 0.0f;
-			l_Vertex.m_normal.z = 0.0f;
+			l_Vertex.m_normal.z = 1.0f;
 		}
 		l_vertices.emplace_back(l_Vertex);
 	}
@@ -354,10 +354,10 @@ aiTextureType::aiTextureType_SPECULAR TextureUsageType::METALLIC map_Ks metallic
 aiTextureType::aiTextureType_AMBIENT TextureUsageType::ROUGHNESS map_Ka roughness texture
 aiTextureType::aiTextureType_EMISSIVE TextureUsageType::AMBIENT_OCCLUSION map_emissive AO texture
 aiTextureType::AI_MATKEY_COLOR_DIFFUSE Kd Albedo RGB
-aiTextureType::AI_MATKEY_COLOR_TRANSPARENT Ks Alpha A
-aiTextureType::AI_MATKEY_COLOR_SPECULAR Ka Metallic
-aiTextureType::AI_MATKEY_COLOR_AMBIENT Ke Roughness
-aiTextureType::AI_MATKEY_COLOR_EMISSIVE AO
+aiTextureType::AI_MATKEY_COLOR_TRANSPARENT Tf Alpha A
+aiTextureType::AI_MATKEY_COLOR_SPECULAR Ks Metallic
+aiTextureType::AI_MATKEY_COLOR_AMBIENT Ka Roughness
+aiTextureType::AI_MATKEY_COLOR_EMISSIVE Ke AO
 aiTextureType::AI_MATKEY_COLOR_REFLECTIVE Thickness
 */
 
