@@ -14,6 +14,7 @@ struct CullingDataPack
 	MeshDataComponent* mesh;
 	MaterialDataComponent* material;
 	VisiblilityType visiblilityType;
+	MeshUsageType meshUsageType;
 	unsigned int UUID;
 };
 

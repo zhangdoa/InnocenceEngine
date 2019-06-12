@@ -64,7 +64,8 @@ struct alignas(16) MaterialGPUData
 	int useMetallicTexture = true;
 	int useRoughnessTexture = true;
 	int useAOTexture = true;
-	float padding1[3];
+	int materialType = 0;
+	float padding1[2];
 	mat4 padding2;
 	mat4 padding3;
 	mat4 padding4;

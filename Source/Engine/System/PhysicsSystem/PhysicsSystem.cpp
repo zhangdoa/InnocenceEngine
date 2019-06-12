@@ -798,6 +798,7 @@ void InnoPhysicsSystemNS::updateCulling()
 							l_cullingDataPack.mesh = l_modelPair.first;
 							l_cullingDataPack.material = l_modelPair.second;
 							l_cullingDataPack.visiblilityType = visibleComponent->m_visiblilityType;
+							l_cullingDataPack.meshUsageType = visibleComponent->m_meshUsageType;
 							l_cullingDataPack.UUID = visibleComponent->m_UUID;
 
 							l_cullingDataPacks.emplace_back(l_cullingDataPack);

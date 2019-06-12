@@ -328,6 +328,7 @@ bool InnoRenderingFrontendNS::updateMeshData()
 						l_materialGPUData.useMetallicTexture = !(l_opaquePassGPUData.metallicTDC == nullptr);
 						l_materialGPUData.useRoughnessTexture = !(l_opaquePassGPUData.roughnessTDC == nullptr);
 						l_materialGPUData.useAOTexture = !(l_opaquePassGPUData.AOTDC == nullptr);
+						l_materialGPUData.materialType = int(l_cullingData.meshUsageType);
 						l_materialGPUData.customMaterial = l_cullingData.material->m_meshCustomMaterial;
 
 						RenderingFrontendComponent::get().m_opaquePassGPUDatas[l_opaquePassIndex] = l_opaquePassGPUData;
@@ -350,6 +351,7 @@ bool InnoRenderingFrontendNS::updateMeshData()
 						l_materialGPUData.useMetallicTexture = false;
 						l_materialGPUData.useRoughnessTexture = false;
 						l_materialGPUData.useAOTexture = false;
+						l_materialGPUData.materialType = int(l_cullingData.meshUsageType);
 						l_materialGPUData.customMaterial = l_cullingData.material->m_meshCustomMaterial;
 
 						l_sortedTransparentPassGPUDatas.emplace_back(l_transparentPassGPUData);
