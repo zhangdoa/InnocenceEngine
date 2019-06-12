@@ -59,5 +59,6 @@ message("No OpenGL library found! Won't compile OpenGL rendering backend.")
 option (INNO_RENDERER_OPENGL "OpenGL renderer" OFF)
 endif()
 
+add_subdirectory("Test")
 add_subdirectory("Engine")
 add_subdirectory("Game")
