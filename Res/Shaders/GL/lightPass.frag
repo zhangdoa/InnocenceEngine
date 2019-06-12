@@ -43,12 +43,13 @@ const float MAX_REFLECTION_LOD = 4.0;
 layout(location = 0, binding = 0) uniform sampler2D uni_opaquePassRT0;
 layout(location = 1, binding = 1) uniform sampler2D uni_opaquePassRT1;
 layout(location = 2, binding = 2) uniform sampler2D uni_opaquePassRT2;
-layout(location = 3, binding = 3) uniform sampler2D uni_SSAOBlurPassRT0;
-layout(location = 4, binding = 4) uniform sampler2D uni_directionalLightShadowMap;
-layout(location = 5, binding = 5) uniform sampler2D uni_brdfLUT;
-layout(location = 6, binding = 6) uniform sampler2D uni_brdfMSLUT;
-layout(location = 7, binding = 7) uniform samplerCube uni_irradianceMap;
-layout(location = 8, binding = 8) uniform samplerCube uni_preFiltedMap;
+layout(location = 3, binding = 3) uniform sampler2D uni_opaquePassRT3;
+layout(location = 4, binding = 4) uniform sampler2D uni_SSAOBlurPassRT0;
+layout(location = 5, binding = 5) uniform sampler2D uni_directionalLightShadowMap;
+layout(location = 6, binding = 6) uniform sampler2D uni_brdfLUT;
+layout(location = 7, binding = 7) uniform sampler2D uni_brdfMSLUT;
+layout(location = 8, binding = 8) uniform samplerCube uni_irradianceMap;
+layout(location = 9, binding = 9) uniform samplerCube uni_preFiltedMap;
 layout(binding = 0, rgba16f) uniform image2D uni_lightGrid;
 
 layout(std140, row_major, binding = 0) uniform cameraUBO
@@ -372,6 +373,7 @@ void main()
 	vec4 RT0 = texture(uni_opaquePassRT0, TexCoords);
 	vec4 RT1 = texture(uni_opaquePassRT1, TexCoords);
 	vec4 RT2 = texture(uni_opaquePassRT2, TexCoords);
+	vec4 RT3 = texture(uni_opaquePassRT3, TexCoords);
 
 	vec3 FragPos = RT0.rgb;
 	vec3 Normal = RT1.rgb;
@@ -489,8 +491,12 @@ void main()
 	}
 
 	// environment capture light
-	vec3 R = reflect(-V, N);
-	Lo += imageBasedLight(N, NdotV, R, Albedo, Metallic, safe_roughness, F0);
+	// Dynamic object
+	if (int(RT3.a) == 1)
+	{
+		vec3 R = reflect(-V, N);
+		Lo += imageBasedLight(N, NdotV, R, Albedo, Metallic, safe_roughness, F0);
+	}
 
 	// ambient occlusion
 	Lo *= AO;

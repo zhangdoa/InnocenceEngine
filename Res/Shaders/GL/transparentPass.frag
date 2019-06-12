@@ -34,6 +34,7 @@ layout(std140, binding = 2) uniform materialUBO
 	bool uni_useMetallicTexture;
 	bool uni_useRoughnessTexture;
 	bool uni_useAOTexture;
+	int uni_materialType;
 };
 
 layout(std140, row_major, binding = 3) uniform sunUBO

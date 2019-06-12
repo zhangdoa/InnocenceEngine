@@ -84,30 +84,34 @@ void GLLightPass::update()
 	activateTexture(
 		GLOpaquePass::getGLRPC()->m_GLTDCs[2],
 		2);
+	// motion vector + UUID + mesh usage type
+	activateTexture(
+		GLOpaquePass::getGLRPC()->m_GLTDCs[3],
+		3);
 	// SSAO
 	activateTexture(
 		GLSSAOBlurPass::getGLRPC()->m_GLTDCs[0],
-		3);
+		4);
 	// shadow map
 	activateTexture(
 		GLShadowPass::getGLRPC(0)->m_GLTDCs[0],
-		4);
+		5);
 	// BRDF look-up table 1
 	activateTexture(
 		GLBRDFLUTPass::getBRDFSplitSumLUT(),
-		5);
+		6);
 	// BRDF look-up table 2
 	activateTexture(
 		GLBRDFLUTPass::getBRDFMSAverageLUT(),
-		6);
+		7);
 	// Irradiance env cubemap
 	activateTexture(
 		GLEnvironmentConvolutionPass::getConvolutedCubemaps()[0],
-		7);
+		8);
 	// pre-filtered specular env cubemap
 	activateTexture(
 		GLEnvironmentPreFilterPass::getPreFiltedCubemaps()[0],
-		8);
+		9);
 	// culled point light
 	glBindImageTexture(0, GLLightCullingPass::getLightGrid()->m_TO, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
 
