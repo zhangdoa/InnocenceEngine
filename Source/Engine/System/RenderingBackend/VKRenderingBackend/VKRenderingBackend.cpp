@@ -955,33 +955,33 @@ bool VKRenderingBackendNS::terminate()
 VKMeshDataComponent* VKRenderingBackendNS::addVKMeshDataComponent()
 {
 	static std::atomic<unsigned int> meshCount = 0;
+	meshCount++;
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(VKMeshDataComponent));
 	auto l_MDC = new(l_rawPtr)VKMeshDataComponent();
 	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(("Mesh_" + std::to_string(meshCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
 	l_MDC->m_parentEntity = l_parentEntity;
-	meshCount++;
 	return l_MDC;
 }
 
 MaterialDataComponent* VKRenderingBackendNS::addVKMaterialDataComponent()
 {
 	static std::atomic<unsigned int> materialCount = 0;
+	materialCount++;
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MaterialDataComponent));
 	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
 	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(("Material_" + std::to_string(materialCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
 	l_MDC->m_parentEntity = l_parentEntity;
-	materialCount++;
 	return l_MDC;
 }
 
 VKTextureDataComponent* VKRenderingBackendNS::addVKTextureDataComponent()
 {
 	static std::atomic<unsigned int> textureCount = 0;
+	textureCount++;
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(VKTextureDataComponent));
 	auto l_TDC = new(l_rawPtr)VKTextureDataComponent();
 	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(("Texture_" + std::to_string(textureCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
 	l_TDC->m_parentEntity = l_parentEntity;
-	textureCount++;
 	return l_TDC;
 }
 

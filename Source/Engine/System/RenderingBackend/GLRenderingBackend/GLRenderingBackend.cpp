@@ -504,33 +504,33 @@ bool GLRenderingBackendNS::terminate()
 GLMeshDataComponent* GLRenderingBackendNS::addGLMeshDataComponent()
 {
 	static std::atomic<unsigned int> meshCount = 0;
+	meshCount++;
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(GLMeshDataComponent));
 	auto l_MDC = new(l_rawPtr)GLMeshDataComponent();
 	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(("Mesh_" + std::to_string(meshCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
 	l_MDC->m_parentEntity = l_parentEntity;
-	meshCount++;
 	return l_MDC;
 }
 
 MaterialDataComponent* GLRenderingBackendNS::addMaterialDataComponent()
 {
 	static std::atomic<unsigned int> materialCount = 0;
+	materialCount++;
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MaterialDataComponent));
 	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
 	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(("Material_" + std::to_string(materialCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
 	l_MDC->m_parentEntity = l_parentEntity;
-	materialCount++;
 	return l_MDC;
 }
 
 GLTextureDataComponent* GLRenderingBackendNS::addGLTextureDataComponent()
 {
 	static std::atomic<unsigned int> textureCount = 0;
+	textureCount++;
 	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(GLTextureDataComponent));
 	auto l_TDC = new(l_rawPtr)GLTextureDataComponent();
 	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(("Texture_" + std::to_string(textureCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
 	l_TDC->m_parentEntity = l_parentEntity;
-	textureCount++;
 	return l_TDC;
 }
 
