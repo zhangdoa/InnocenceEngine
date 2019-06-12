@@ -1,6 +1,7 @@
 #pragma once
-#include "../Common/STL14.h"
-#include "../Common/STL17.h"
+#include "STL14.h"
+#include "STL17.h"
+#include "InnoIToA.h"
 
 template<size_t S>
 class FixedSizeString
@@ -25,6 +26,14 @@ public:
 		auto l_sizeOfContent = strlen(content);
 		std::memcpy(m_content, content, l_sizeOfContent);
 		m_content[l_sizeOfContent - 1] = '\0';
+	};
+
+	FixedSizeString(int32_t content)
+	{
+	};
+
+	FixedSizeString(int64_t content)
+	{
 	};
 
 	~FixedSizeString() = default;
@@ -88,6 +97,28 @@ public:
 private:
 	char m_content[S];
 };
+
+template<>
+FixedSizeString<11>::FixedSizeString(int32_t content)
+{
+	i32toa_countlut(content, m_content);
+};
+
+template<>
+FixedSizeString<20>::FixedSizeString(int64_t content)
+{
+	i64toa_countlut(content, m_content);
+};
+
+inline FixedSizeString<11> ToString(int32_t content)
+{
+	return FixedSizeString<11>(content);
+}
+
+inline FixedSizeString<20> ToString(int64_t content)
+{
+	return FixedSizeString<20>(content);
+}
 
 namespace std {
 	template <size_t S>
