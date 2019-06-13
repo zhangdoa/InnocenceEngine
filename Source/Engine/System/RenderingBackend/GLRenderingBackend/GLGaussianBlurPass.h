@@ -2,7 +2,7 @@
 #include "../../../Common/InnoType.h"
 #include "../../../Component/GLRenderPassComponent.h"
 
-INNO_PRIVATE_SCOPE GLBloomBlurPass
+INNO_PRIVATE_SCOPE GLGaussianBlurPass
 {
 	bool initialize();
 	bool update(GLRenderPassComponent* prePassGLRPC);

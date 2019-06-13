@@ -1,4 +1,4 @@
-#include "GLBloomBlurPass.h"
+#include "GLGaussianBlurPass.h"
 
 #include "GLRenderingBackendUtilities.h"
 #include "../../../Component/GLRenderingBackendComponent.h"
@@ -9,7 +9,7 @@ using namespace GLRenderingBackendNS;
 
 extern ICoreSystem* g_pCoreSystem;
 
-INNO_PRIVATE_SCOPE GLBloomBlurPass
+INNO_PRIVATE_SCOPE GLGaussianBlurPass
 {
 	void initializeShaders();
 
@@ -18,20 +18,20 @@ INNO_PRIVATE_SCOPE GLBloomBlurPass
 	GLRenderPassComponent* m_PingPassGLRPC;
 	GLRenderPassComponent* m_PongPassGLRPC;
 	GLShaderProgramComponent* m_GLSPC;
-	ShaderFilePaths m_shaderFilePaths = { "GL//bloomBlurPass.vert/", "", "", "", "GL//bloomBlurPass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "GL//gaussianBlurPass.vert/", "", "", "", "GL//gaussianBlurPass.frag/" };
 }
 
-bool GLBloomBlurPass::initialize()
+bool GLGaussianBlurPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
 	//Ping pass
-	m_PingPassGLRPC = addGLRenderPassComponent(m_entityID, "BloomBlurPingPassGLRPC/");
+	m_PingPassGLRPC = addGLRenderPassComponent(m_entityID, "GaussianBlurPingPassGLRPC/");
 	m_PingPassGLRPC->m_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	initializeGLRenderPassComponent(m_PingPassGLRPC);
 
 	//Pong pass
-	m_PongPassGLRPC = addGLRenderPassComponent(m_entityID, "BloomBlurPongPassGLRPC/");
+	m_PongPassGLRPC = addGLRenderPassComponent(m_entityID, "GaussianBlurPongPassGLRPC/");
 	m_PongPassGLRPC->m_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	initializeGLRenderPassComponent(m_PongPassGLRPC);
 
@@ -40,7 +40,7 @@ bool GLBloomBlurPass::initialize()
 	return true;
 }
 
-void GLBloomBlurPass::initializeShaders()
+void GLGaussianBlurPass::initializeShaders()
 {
 	// shader programs and shaders
 	auto rhs = addGLShaderProgramComponent(m_entityID);
@@ -50,10 +50,10 @@ void GLBloomBlurPass::initializeShaders()
 	m_GLSPC = rhs;
 }
 
-bool GLBloomBlurPass::update(GLRenderPassComponent* prePassGLRPC)
+bool GLGaussianBlurPass::update(GLRenderPassComponent* prePassGLRPC)
 {
-	GLTextureDataComponent* l_currentFrameBloomBlurGLTDC = m_PingPassGLRPC->m_GLTDCs[0];
-	GLTextureDataComponent* l_lastFrameBloomBlurGLTDC = m_PongPassGLRPC->m_GLTDCs[0];
+	GLTextureDataComponent* l_currentFrameGaussianBlurGLTDC = m_PingPassGLRPC->m_GLTDCs[0];
+	GLTextureDataComponent* l_lastFrameGaussianBlurGLTDC = m_PongPassGLRPC->m_GLTDCs[0];
 
 	activateShaderProgram(m_GLSPC);
 
@@ -66,8 +66,8 @@ bool GLBloomBlurPass::update(GLRenderPassComponent* prePassGLRPC)
 	{
 		if (l_isPing)
 		{
-			l_currentFrameBloomBlurGLTDC = m_PingPassGLRPC->m_GLTDCs[0];
-			l_lastFrameBloomBlurGLTDC = m_PongPassGLRPC->m_GLTDCs[0];
+			l_currentFrameGaussianBlurGLTDC = m_PingPassGLRPC->m_GLTDCs[0];
+			l_lastFrameGaussianBlurGLTDC = m_PongPassGLRPC->m_GLTDCs[0];
 
 			activateRenderPass(m_PingPassGLRPC);
 
@@ -85,7 +85,7 @@ bool GLBloomBlurPass::update(GLRenderPassComponent* prePassGLRPC)
 			else
 			{
 				activateTexture(
-					l_lastFrameBloomBlurGLTDC,
+					l_lastFrameGaussianBlurGLTDC,
 					0);
 			}
 
@@ -95,8 +95,8 @@ bool GLBloomBlurPass::update(GLRenderPassComponent* prePassGLRPC)
 		}
 		else
 		{
-			l_currentFrameBloomBlurGLTDC = m_PongPassGLRPC->m_GLTDCs[0];
-			l_lastFrameBloomBlurGLTDC = m_PingPassGLRPC->m_GLTDCs[0];
+			l_currentFrameGaussianBlurGLTDC = m_PongPassGLRPC->m_GLTDCs[0];
+			l_lastFrameGaussianBlurGLTDC = m_PingPassGLRPC->m_GLTDCs[0];
 
 			activateRenderPass(m_PongPassGLRPC);
 
@@ -105,7 +105,7 @@ bool GLBloomBlurPass::update(GLRenderPassComponent* prePassGLRPC)
 				false);
 
 			activateTexture(
-				l_lastFrameBloomBlurGLTDC,
+				l_lastFrameGaussianBlurGLTDC,
 				0);
 
 			drawMesh(l_MDC);
@@ -120,7 +120,7 @@ bool GLBloomBlurPass::update(GLRenderPassComponent* prePassGLRPC)
 	return true;
 }
 
-bool GLBloomBlurPass::resize(unsigned int newSizeX, unsigned int newSizeY)
+bool GLGaussianBlurPass::resize(unsigned int newSizeX, unsigned int newSizeY)
 {
 	resizeGLRenderPassComponent(m_PingPassGLRPC, newSizeX, newSizeY);
 	resizeGLRenderPassComponent(m_PongPassGLRPC, newSizeX, newSizeY);
@@ -128,7 +128,7 @@ bool GLBloomBlurPass::resize(unsigned int newSizeX, unsigned int newSizeY)
 	return true;
 }
 
-bool GLBloomBlurPass::reloadShader()
+bool GLGaussianBlurPass::reloadShader()
 {
 	deleteShaderProgram(m_GLSPC);
 
@@ -137,7 +137,7 @@ bool GLBloomBlurPass::reloadShader()
 	return true;
 }
 
-GLRenderPassComponent * GLBloomBlurPass::getGLRPC(unsigned int index)
+GLRenderPassComponent * GLGaussianBlurPass::getGLRPC(unsigned int index)
 {
 	if (index == 0)
 	{

@@ -28,7 +28,7 @@
 #include "GLPostTAAPass.h"
 #include "GLMotionBlurPass.h"
 #include "GLBloomExtractPass.h"
-#include "GLBloomBlurPass.h"
+#include "GLGaussianBlurPass.h"
 #include "GLBloomMergePass.h"
 #include "GLBillboardPass.h"
 #include "GLDebuggerPass.h"
@@ -217,7 +217,7 @@ bool GLRenderingBackendNS::initialize()
 		GLPostTAAPass::initialize();
 		GLMotionBlurPass::initialize();
 		GLBloomExtractPass::initialize();
-		GLBloomBlurPass::initialize();
+		GLGaussianBlurPass::initialize();
 		GLBloomMergePass::initialize();
 		GLBillboardPass::initialize();
 		GLDebuggerPass::initialize();
@@ -436,13 +436,13 @@ bool GLRenderingBackendNS::render()
 	{
 		GLBloomExtractPass::update(l_canvasGLRPC);
 
-		GLBloomBlurPass::update(GLBloomExtractPass::getGLRPC(0));
+		GLGaussianBlurPass::update(GLBloomExtractPass::getGLRPC(0));
 
-		GLBloomBlurPass::update(GLBloomExtractPass::getGLRPC(1));
+		GLGaussianBlurPass::update(GLBloomExtractPass::getGLRPC(1));
 
-		GLBloomBlurPass::update(GLBloomExtractPass::getGLRPC(2));
+		GLGaussianBlurPass::update(GLBloomExtractPass::getGLRPC(2));
 
-		GLBloomBlurPass::update(GLBloomExtractPass::getGLRPC(3));
+		GLGaussianBlurPass::update(GLBloomExtractPass::getGLRPC(3));
 
 		GLBloomMergePass::update();
 
@@ -455,8 +455,8 @@ bool GLRenderingBackendNS::render()
 		cleanRenderBuffers(GLBloomExtractPass::getGLRPC(2));
 		cleanRenderBuffers(GLBloomExtractPass::getGLRPC(3));
 
-		cleanRenderBuffers(GLBloomBlurPass::getGLRPC(0));
-		cleanRenderBuffers(GLBloomBlurPass::getGLRPC(1));
+		cleanRenderBuffers(GLGaussianBlurPass::getGLRPC(0));
+		cleanRenderBuffers(GLGaussianBlurPass::getGLRPC(1));
 
 		cleanRenderBuffers(GLBloomMergePass::getGLRPC());
 	}
@@ -635,7 +635,7 @@ bool GLRenderingBackendNS::resize()
 	GLPostTAAPass::resize(l_screenResolution.x, l_screenResolution.y);
 	GLMotionBlurPass::resize(l_screenResolution.x, l_screenResolution.y);
 	GLBloomExtractPass::resize(l_screenResolution.x, l_screenResolution.y);
-	GLBloomBlurPass::resize(l_screenResolution.x, l_screenResolution.y);
+	GLGaussianBlurPass::resize(l_screenResolution.x, l_screenResolution.y);
 	GLBloomMergePass::resize(l_screenResolution.x, l_screenResolution.y);
 	GLBillboardPass::resize(l_screenResolution.x, l_screenResolution.y);
 	GLDebuggerPass::resize(l_screenResolution.x, l_screenResolution.y);
@@ -753,7 +753,7 @@ bool GLRenderingBackend::reloadShader(RenderPassType renderPassType)
 		GLPostTAAPass::reloadShader();
 		GLMotionBlurPass::reloadShader();
 		GLBloomExtractPass::reloadShader();
-		GLBloomBlurPass::reloadShader();
+		GLGaussianBlurPass::reloadShader();
 		GLBloomMergePass::reloadShader();
 		GLBillboardPass::reloadShader();
 		GLDebuggerPass::reloadShader();

@@ -21,7 +21,7 @@
 #include "../RenderingBackend/GLRenderingBackend/GLPostTAAPass.h"
 #include "../RenderingBackend/GLRenderingBackend/GLMotionBlurPass.h"
 #include "../RenderingBackend/GLRenderingBackend/GLBloomExtractPass.h"
-#include "../RenderingBackend/GLRenderingBackend/GLBloomBlurPass.h"
+#include "../RenderingBackend/GLRenderingBackend/GLGaussianBlurPass.h"
 #include "../RenderingBackend/GLRenderingBackend/GLBloomMergePass.h"
 #include "../RenderingBackend/GLRenderingBackend/GLBillboardPass.h"
 #include "../RenderingBackend/GLRenderingBackend/GLDebuggerPass.h"
@@ -249,7 +249,7 @@ void ImGuiWrapperWinGL::showRenderResult(RenderPassType renderPassType)
 
 				ImGui::BeginChild("Bloom Blur Pass", l_RTSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 				ImGui::Text("Bloom Blur Pass");
-				ImGui::Image(ImTextureID((GLuint64)GLBloomBlurPass::getGLRPC(1)->m_GLTDCs[0]->m_TO), l_RTSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+				ImGui::Image(ImTextureID((GLuint64)GLGaussianBlurPass::getGLRPC(1)->m_GLTDCs[0]->m_TO), l_RTSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 				ImGui::EndChild();
 			}
 			{
