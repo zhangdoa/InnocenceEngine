@@ -304,6 +304,28 @@ float PCF(float NdotL, vec3 projCoords, sampler2D shadowMap, vec2 texelSize, vec
 	return shadow;
 }
 // ----------------------------------------------------------------------------
+float VSM(float NdotL, vec3 projCoords, sampler2D shadowMap, vec2 texelSize, vec2 offset)
+{
+	// transform to [0,1] range
+	projCoords = projCoords * 0.5 + 0.5;
+
+	// get depth of current fragment from light's perspective
+	float currentDepth = projCoords.z;
+
+	// VSM
+	float shadow = 0.0;
+	vec4 shadowMapValue = texture(shadowMap, offset + projCoords.xy / 2.0);
+	float Ex = shadowMapValue.r;
+	float E_x2 = shadowMapValue.g;
+	float variance = E_x2 - (Ex * Ex);
+	float mD = Ex - currentDepth;
+	float p = variance / (variance + mD * mD);
+
+	shadow = max(p, float(currentDepth >= Ex));
+
+	return shadow;
+}
+// ----------------------------------------------------------------------------
 float ShadowCalculation(float NdotL, vec3 fragPos)
 {
 	vec3 projCoords = vec3(0.0);

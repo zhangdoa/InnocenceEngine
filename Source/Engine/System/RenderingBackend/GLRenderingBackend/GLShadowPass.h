@@ -7,6 +7,7 @@ INNO_PRIVATE_SCOPE GLShadowPass
 	void initialize();
 
 	void update();
+	bool reloadShader();
 
 	GLRenderPassComponent* getGLRPC(unsigned int index);
 }

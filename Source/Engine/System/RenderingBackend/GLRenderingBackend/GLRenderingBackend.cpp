@@ -402,6 +402,7 @@ bool GLRenderingBackendNS::render()
 	}
 
 	GLShadowPass::update();
+	//GLGaussianBlurPass::update(GLShadowPass::getGLRPC(0), 0, 2);
 
 	GLEarlyZPass::update();
 	GLOpaquePass::update();
@@ -729,6 +730,7 @@ bool GLRenderingBackend::reloadShader(RenderPassType renderPassType)
 	switch (renderPassType)
 	{
 	case RenderPassType::Shadow:
+		GLShadowPass::reloadShader();
 		break;
 	case RenderPassType::Opaque:
 		GLEarlyZPass::reloadShader();

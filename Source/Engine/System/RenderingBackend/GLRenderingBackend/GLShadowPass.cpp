@@ -29,8 +29,8 @@ void GLShadowPass::initialize()
 
 	auto l_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	l_renderPassDesc.RTDesc.samplerType = TextureSamplerType::SAMPLER_2D;
-	l_renderPassDesc.RTDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
-	l_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
+	l_renderPassDesc.RTDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
+	l_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RG;
 	l_renderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::LINEAR;
 	l_renderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::LINEAR;
 	l_renderPassDesc.RTDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_BORDER;
@@ -45,7 +45,7 @@ void GLShadowPass::initialize()
 	m_DirLight_GLRPC = addGLRenderPassComponent(m_entityID, "DirectionalLightShadowPassGLRPC/");
 	m_DirLight_GLRPC->m_renderPassDesc = l_renderPassDesc;
 	m_DirLight_GLRPC->m_renderPassDesc.useDepthAttachment = true;
-	m_DirLight_GLRPC->m_drawColorBuffers = false;
+	m_DirLight_GLRPC->m_drawColorBuffers = true;
 	initializeGLRenderPassComponent(m_DirLight_GLRPC);
 
 	l_renderPassDesc.RTDesc.samplerType = TextureSamplerType::CUBEMAP;
@@ -157,6 +157,15 @@ void GLShadowPass::update()
 
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
+}
+
+bool GLShadowPass::reloadShader()
+{
+	deleteShaderProgram(m_GLSPC);
+
+	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
+
+	return true;
 }
 
 GLRenderPassComponent * GLShadowPass::getGLRPC(unsigned int index)
