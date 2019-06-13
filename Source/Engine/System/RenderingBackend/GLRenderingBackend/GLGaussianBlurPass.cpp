@@ -50,7 +50,7 @@ void GLGaussianBlurPass::initializeShaders()
 	m_GLSPC = rhs;
 }
 
-bool GLGaussianBlurPass::update(GLRenderPassComponent* prePassGLRPC, unsigned int RTIndex)
+bool GLGaussianBlurPass::update(GLRenderPassComponent* prePassGLRPC, unsigned int RTIndex, unsigned int kernel)
 {
 	GLTextureDataComponent* l_currentFrameGaussianBlurGLTDC = m_PingPassGLRPC->m_GLTDCs[0];
 	GLTextureDataComponent* l_lastFrameGaussianBlurGLTDC = m_PongPassGLRPC->m_GLTDCs[0];
@@ -62,6 +62,8 @@ bool GLGaussianBlurPass::update(GLRenderPassComponent* prePassGLRPC, unsigned in
 
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);
 
+	updateUniform(1, kernel);
+
 	for (size_t i = 0; i < 5; i++)
 	{
 		if (l_isPing)
@@ -71,22 +73,16 @@ bool GLGaussianBlurPass::update(GLRenderPassComponent* prePassGLRPC, unsigned in
 
 			activateRenderPass(m_PingPassGLRPC);
 
-			updateUniform(
-				0,
-				true);
+			updateUniform(0, true);
 
 			if (l_isFirstIteration)
 			{
-				activateTexture(
-					prePassGLRPC->m_GLTDCs[RTIndex],
-					0);
+				activateTexture(prePassGLRPC->m_GLTDCs[RTIndex], 0);
 				l_isFirstIteration = false;
 			}
 			else
 			{
-				activateTexture(
-					l_lastFrameGaussianBlurGLTDC,
-					0);
+				activateTexture(l_lastFrameGaussianBlurGLTDC, 0);
 			}
 
 			drawMesh(l_MDC);
@@ -100,13 +96,9 @@ bool GLGaussianBlurPass::update(GLRenderPassComponent* prePassGLRPC, unsigned in
 
 			activateRenderPass(m_PongPassGLRPC);
 
-			updateUniform(
-				0,
-				false);
+			updateUniform(0, false);
 
-			activateTexture(
-				l_lastFrameGaussianBlurGLTDC,
-				0);
+			activateTexture(l_lastFrameGaussianBlurGLTDC, 0);
 
 			drawMesh(l_MDC);
 
