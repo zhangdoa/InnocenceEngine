@@ -50,7 +50,7 @@ void GLGaussianBlurPass::initializeShaders()
 	m_GLSPC = rhs;
 }
 
-bool GLGaussianBlurPass::update(GLRenderPassComponent* prePassGLRPC)
+bool GLGaussianBlurPass::update(GLRenderPassComponent* prePassGLRPC, unsigned int RTIndex)
 {
 	GLTextureDataComponent* l_currentFrameGaussianBlurGLTDC = m_PingPassGLRPC->m_GLTDCs[0];
 	GLTextureDataComponent* l_lastFrameGaussianBlurGLTDC = m_PongPassGLRPC->m_GLTDCs[0];
@@ -78,7 +78,7 @@ bool GLGaussianBlurPass::update(GLRenderPassComponent* prePassGLRPC)
 			if (l_isFirstIteration)
 			{
 				activateTexture(
-					prePassGLRPC->m_GLTDCs[0],
+					prePassGLRPC->m_GLTDCs[RTIndex],
 					0);
 				l_isFirstIteration = false;
 			}
@@ -115,7 +115,7 @@ bool GLGaussianBlurPass::update(GLRenderPassComponent* prePassGLRPC)
 	}
 
 	// store result on another channel
-	copyColorBuffer(m_PongPassGLRPC, 0, prePassGLRPC, 0);
+	copyColorBuffer(m_PongPassGLRPC, 0, prePassGLRPC, RTIndex);
 
 	return true;
 }

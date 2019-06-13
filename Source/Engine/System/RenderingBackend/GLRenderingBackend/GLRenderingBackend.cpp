@@ -436,13 +436,13 @@ bool GLRenderingBackendNS::render()
 	{
 		GLBloomExtractPass::update(l_canvasGLRPC);
 
-		GLGaussianBlurPass::update(GLBloomExtractPass::getGLRPC(0));
+		GLGaussianBlurPass::update(GLBloomExtractPass::getGLRPC(0), 0);
 
-		GLGaussianBlurPass::update(GLBloomExtractPass::getGLRPC(1));
+		GLGaussianBlurPass::update(GLBloomExtractPass::getGLRPC(1), 0);
 
-		GLGaussianBlurPass::update(GLBloomExtractPass::getGLRPC(2));
+		GLGaussianBlurPass::update(GLBloomExtractPass::getGLRPC(2), 0);
 
-		GLGaussianBlurPass::update(GLBloomExtractPass::getGLRPC(3));
+		GLGaussianBlurPass::update(GLBloomExtractPass::getGLRPC(3), 0);
 
 		GLBloomMergePass::update();
 

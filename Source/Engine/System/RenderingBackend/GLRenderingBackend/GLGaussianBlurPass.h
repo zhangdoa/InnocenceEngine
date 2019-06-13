@@ -5,7 +5,7 @@
 INNO_PRIVATE_SCOPE GLGaussianBlurPass
 {
 	bool initialize();
-	bool update(GLRenderPassComponent* prePassGLRPC);
+	bool update(GLRenderPassComponent* prePassGLRPC, unsigned int RTIndex);
 	bool resize(unsigned int newSizeX,  unsigned int newSizeY);
 	bool reloadShader();
 
