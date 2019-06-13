@@ -371,16 +371,35 @@ std::vector<AABB> InnoPhysicsSystemNS::splitVerticesToAABBs(const std::vector<Ve
 			l_frustumsCornerPos.emplace_back(l_splitedPlaneCornerPos);
 		}
 	}
-
+	//https://docs.microsoft.com/windows/desktop/DxTechArts/common-techniques-to-improve-shadow-depth-maps
 	//3. assemble splited frustum corners
 	std::vector<Vertex> l_frustumsCornerVertices(32);
 
-	for (size_t i = 0; i < 4; i++)
+	static bool l_fitToScene = true;
+	if (l_fitToScene)
 	{
-		for (size_t j = 0; j < 8; j++)
+		for (size_t i = 0; i < 4; i++)
 		{
-			l_frustumsCornerVertices.emplace_back();
-			l_frustumsCornerVertices[i * 8 + j].m_pos = l_frustumsCornerPos[i * 4 + j];
+			l_frustumsCornerVertices[i * 8].m_pos = l_frustumsCornerPos[0];
+			l_frustumsCornerVertices[i * 8 + 1].m_pos = l_frustumsCornerPos[1];
+			l_frustumsCornerVertices[i * 8 + 2].m_pos = l_frustumsCornerPos[2];
+			l_frustumsCornerVertices[i * 8 + 3].m_pos = l_frustumsCornerPos[3];
+
+			for (size_t j = 4; j < 8; j++)
+			{
+				l_frustumsCornerVertices[i * 8 + j].m_pos = l_frustumsCornerPos[i * 4 + j];
+			}
+		}
+	}
+	// fit to cascade
+	else
+	{
+		for (size_t i = 0; i < 4; i++)
+		{
+			for (size_t j = 0; j < 8; j++)
+			{
+				l_frustumsCornerVertices[i * 8 + j].m_pos = l_frustumsCornerPos[i * 4 + j];
+			}
 		}
 	}
 
