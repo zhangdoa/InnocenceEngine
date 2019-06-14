@@ -3,7 +3,7 @@
 
 INNO_PRIVATE_SCOPE InnoFileSystemNS
 {
-	bool setup();
+	bool setupWorkingDirectory();
 
 	std::string loadTextFile(const std::string & fileName);
 	std::vector<char> loadBinaryFile(const std::string & fileName);

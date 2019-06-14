@@ -7,7 +7,7 @@
 
 extern ICoreSystem* g_pCoreSystem;
 
-#include "FileSystemHelper.h"
+#include "IOServices.h"
 #include "AssimpWrapper.h"
 #include "AssetLoader.h"
 #include "JSONParser.h"
@@ -111,7 +111,7 @@ bool InnoFileSystemNS::loadAssets()
 
 bool InnoFileSystem::setup()
 {
-	InnoFileSystemNS::setup();
+	InnoFileSystemNS::setupWorkingDirectory();
 
 	InnoFileSystemNS::m_objectStatus = ObjectStatus::Created;
 	return true;

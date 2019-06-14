@@ -9,7 +9,7 @@
 #include "../ICoreSystem.h"
 extern ICoreSystem* g_pCoreSystem;
 
-#include "FileSystemHelper.h"
+#include "IOServices.h"
 #include "JSONParser.h"
 
 INNO_PRIVATE_SCOPE InnoFileSystemNS

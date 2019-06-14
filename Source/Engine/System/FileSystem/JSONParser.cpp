@@ -3,7 +3,7 @@
 #include "../ICoreSystem.h"
 extern ICoreSystem* g_pCoreSystem;
 
-#include "FileSystemHelper.h"
+#include "IOServices.h"
 #include "AssetLoader.h"
 
 INNO_PRIVATE_SCOPE InnoFileSystemNS::JSONParser
@@ -51,130 +51,130 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS::JSONParser
 
 		std::unordered_map<std::string, ModelPair> m_loadedModelPair;
 		ThreadSafeQueue<std::pair<TransformComponent*, EntityName>> m_orphanTransformComponents;
+}
+
+bool InnoFileSystemNS::JSONParser::loadJsonDataFromDisk(const std::string & fileName, json & data)
+{
+	std::ifstream i(getWorkingDirectory() + fileName);
+
+	if (!i.is_open())
+	{
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: can't open JSON file : " + fileName + "!");
+		return false;
 	}
 
-	bool InnoFileSystemNS::JSONParser::loadJsonDataFromDisk(const std::string & fileName, json & data)
-	{
-		std::ifstream i(getWorkingDirectory() + fileName);
+	i >> data;
+	i.close();
 
-		if (!i.is_open())
+	return true;
+}
+
+bool InnoFileSystemNS::JSONParser::saveJsonDataToDisk(const std::string & fileName, const json & data)
+{
+	std::ofstream o;
+	o.open(getWorkingDirectory() + fileName, std::ios::out | std::ios::trunc);
+	o << std::setw(4) << data << std::endl;
+	o.close();
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: JSON file : " + fileName + " has been saved.");
+
+	return true;
+}
+
+void InnoFileSystemNS::JSONParser::to_json(json& j, const InnoEntity& p)
+{
+	j = json{
+		{"EntityID", p.m_entityID.c_str()},
+		{"EntityName", p.m_entityName.c_str()},
+	};
+}
+
+void InnoFileSystemNS::JSONParser::to_json(json& j, const TransformVector& p)
+{
+	j = json
+	{
 		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: can't open JSON file : " + fileName + "!");
-			return false;
-		}
-
-		i >> data;
-		i.close();
-
-		return true;
-	}
-
-	bool InnoFileSystemNS::JSONParser::saveJsonDataToDisk(const std::string & fileName, const json & data)
-	{
-		std::ofstream o;
-		o.open(getWorkingDirectory() + fileName, std::ios::out | std::ios::trunc);
-		o << std::setw(4) << data << std::endl;
-		o.close();
-
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: JSON file : " + fileName + " has been saved.");
-
-		return true;
-	}
-
-	void InnoFileSystemNS::JSONParser::to_json(json& j, const InnoEntity& p)
-	{
-		j = json{
-			{"EntityID", p.m_entityID.c_str()},
-			{"EntityName", p.m_entityName.c_str()},
-		};
-	}
-
-	void InnoFileSystemNS::JSONParser::to_json(json& j, const TransformVector& p)
-	{
-		j = json
-		{
+			"Position",
 			{
-				"Position",
 				{
-					{
-						"X", p.m_pos.x
-					},
-					{
-						"Y", p.m_pos.y
-					},
-					{
-						"Z", p.m_pos.z
-					}
-				}
-			},
-			{
-				"Rotation",
+					"X", p.m_pos.x
+				},
 				{
-					{
-						"X", p.m_rot.x
-					},
-					{
-						"Y", p.m_rot.y
-					},
-					{
-						"Z", p.m_rot.z
-					},
-					{
-						"W", p.m_rot.w
-					}
-				}
-			},
-			{
-				"Scale",
+					"Y", p.m_pos.y
+				},
 				{
-					{
-						"X", p.m_scale.x
-					},
-					{
-						"Y", p.m_scale.y
-					},
-					{
-						"Z", p.m_scale.z
-					},
+					"Z", p.m_pos.z
 				}
 			}
-		};
-	}
-
-	void InnoFileSystemNS::JSONParser::to_json(json& j, const vec4& p)
-	{
-		j = json
-		{
-			{
-				"X", p.x
-			},
-			{
-				"Y", p.y
-			},
-			{
-				"Z", p.z
-			},
-			{
-				"W", p.w
-			}
-		};
-	}
-
-	void InnoFileSystemNS::JSONParser::to_json(json& j, const TransformComponent& p)
-	{
-		json localTransformVector;
-
-		to_json(localTransformVector, p.m_localTransformVector);
-
-		auto parentTransformComponentEntityName = p.m_parentTransformComponent->m_parentEntity->m_entityName;
-
-		j = json
-		{
-			{"ComponentType", InnoUtility::getComponentType<TransformComponent>()},
-			{"ParentTransformComponentEntityName", parentTransformComponentEntityName.c_str()},
-			{"LocalTransformVector",
-			localTransformVector
 		},
+		{
+			"Rotation",
+			{
+				{
+					"X", p.m_rot.x
+				},
+				{
+					"Y", p.m_rot.y
+				},
+				{
+					"Z", p.m_rot.z
+				},
+				{
+					"W", p.m_rot.w
+				}
+			}
+		},
+		{
+			"Scale",
+			{
+				{
+					"X", p.m_scale.x
+				},
+				{
+					"Y", p.m_scale.y
+				},
+				{
+					"Z", p.m_scale.z
+				},
+			}
+		}
+	};
+}
+
+void InnoFileSystemNS::JSONParser::to_json(json& j, const vec4& p)
+{
+	j = json
+	{
+		{
+			"X", p.x
+		},
+		{
+			"Y", p.y
+		},
+		{
+			"Z", p.z
+		},
+		{
+			"W", p.w
+		}
+	};
+}
+
+void InnoFileSystemNS::JSONParser::to_json(json& j, const TransformComponent& p)
+{
+	json localTransformVector;
+
+	to_json(localTransformVector, p.m_localTransformVector);
+
+	auto parentTransformComponentEntityName = p.m_parentTransformComponent->m_parentEntity->m_entityName;
+
+	j = json
+	{
+		{"ComponentType", InnoUtility::getComponentType<TransformComponent>()},
+		{"ParentTransformComponentEntityName", parentTransformComponentEntityName.c_str()},
+		{"LocalTransformVector",
+		localTransformVector
+	},
 	};
 }
 
@@ -499,12 +499,12 @@ MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(co
 			}
 			switch (l_TDC->m_textureDataDesc.usageType)
 			{
-				case TextureUsageType::NORMAL: l_MDC->m_texturePack.m_normalTDC.second = l_TDC; break;
-				case TextureUsageType::ALBEDO: l_MDC->m_texturePack.m_albedoTDC.second = l_TDC; break;
-				case TextureUsageType::METALLIC: l_MDC->m_texturePack.m_metallicTDC.second = l_TDC; break;
-				case TextureUsageType::ROUGHNESS: l_MDC->m_texturePack.m_roughnessTDC.second = l_TDC; break;
-				case TextureUsageType::AMBIENT_OCCLUSION: l_MDC->m_texturePack.m_aoTDC.second = l_TDC; break;
-				default:
+			case TextureUsageType::NORMAL: l_MDC->m_texturePack.m_normalTDC.second = l_TDC; break;
+			case TextureUsageType::ALBEDO: l_MDC->m_texturePack.m_albedoTDC.second = l_TDC; break;
+			case TextureUsageType::METALLIC: l_MDC->m_texturePack.m_metallicTDC.second = l_TDC; break;
+			case TextureUsageType::ROUGHNESS: l_MDC->m_texturePack.m_roughnessTDC.second = l_TDC; break;
+			case TextureUsageType::AMBIENT_OCCLUSION: l_MDC->m_texturePack.m_aoTDC.second = l_TDC; break;
+			default:
 				break;
 			}
 		}
@@ -617,31 +617,31 @@ bool InnoFileSystemNS::JSONParser::loadScene(const std::string & fileName)
 		{
 			switch (ComponentType(k["ComponentType"]))
 			{
-				case ComponentType::TransformComponent: loadComponentData<TransformComponent>(k, l_entity);
+			case ComponentType::TransformComponent: loadComponentData<TransformComponent>(k, l_entity);
 				break;
-				case ComponentType::VisibleComponent: loadComponentData<VisibleComponent>(k, l_entity);
+			case ComponentType::VisibleComponent: loadComponentData<VisibleComponent>(k, l_entity);
 				break;
-				case ComponentType::DirectionalLightComponent: loadComponentData<DirectionalLightComponent>(k, l_entity);
+			case ComponentType::DirectionalLightComponent: loadComponentData<DirectionalLightComponent>(k, l_entity);
 				break;
-				case ComponentType::PointLightComponent: loadComponentData<PointLightComponent>(k, l_entity);
+			case ComponentType::PointLightComponent: loadComponentData<PointLightComponent>(k, l_entity);
 				break;
-				case ComponentType::SphereLightComponent: loadComponentData<SphereLightComponent>(k, l_entity);
+			case ComponentType::SphereLightComponent: loadComponentData<SphereLightComponent>(k, l_entity);
 				break;
-				case ComponentType::CameraComponent: loadComponentData<CameraComponent>(k, l_entity);
+			case ComponentType::CameraComponent: loadComponentData<CameraComponent>(k, l_entity);
 				break;
-				case ComponentType::InputComponent:
+			case ComponentType::InputComponent:
 				break;
-				case ComponentType::EnvironmentCaptureComponent: loadComponentData<EnvironmentCaptureComponent>(k, l_entity);
+			case ComponentType::EnvironmentCaptureComponent: loadComponentData<EnvironmentCaptureComponent>(k, l_entity);
 				break;
-				case ComponentType::PhysicsDataComponent:
+			case ComponentType::PhysicsDataComponent:
 				break;
-				case ComponentType::MeshDataComponent:
+			case ComponentType::MeshDataComponent:
 				break;
-				case ComponentType::MaterialDataComponent:
+			case ComponentType::MaterialDataComponent:
 				break;
-				case ComponentType::TextureDataComponent:
+			case ComponentType::TextureDataComponent:
 				break;
-				default:
+			default:
 				break;
 			}
 		}

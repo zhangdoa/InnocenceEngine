@@ -1,4 +1,4 @@
-#include "FileSystemHelper.h"
+#include "IOServices.h"
 
 #include "../../Common/STL17.h"
 #ifdef __GNUC__
@@ -17,7 +17,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	std::string m_workingDir;
 }
 
-bool InnoFileSystemNS::setup()
+bool InnoFileSystemNS::setupWorkingDirectory()
 {
 #if defined INNO_PLATFORM_WIN || defined INNO_PLATFORM_LINUX
 	m_workingDir = fs::current_path().parent_path().generic_string();
