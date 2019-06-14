@@ -1,9 +1,6 @@
 #include "MemorySystem.h"
 #include "InnoMemory.h"
-
-#include "../ICoreSystem.h"
-
-extern ICoreSystem* g_pCoreSystem;
+#include "InnoLogger.h"
 
 INNO_PRIVATE_SCOPE InnoMemorySystemNS
 {
@@ -21,12 +18,12 @@ bool InnoMemorySystem::initialize()
 	if (InnoMemorySystemNS::m_objectStatus == ObjectStatus::Created)
 	{
 		InnoMemorySystemNS::m_objectStatus = ObjectStatus::Activated;
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MemorySystem has been initialized.");
+		InnoLogger::Log(LogLevel::Success, "MemorySystem has been initialized.");
 		return true;
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "MemorySystem: Object is not created!");
+		InnoLogger::Log(LogLevel::Error, "MemorySystem: Object is not created!");
 		return false;
 	}
 }
@@ -47,7 +44,7 @@ bool InnoMemorySystem::update()
 bool InnoMemorySystem::terminate()
 {
 	InnoMemorySystemNS::m_objectStatus = ObjectStatus::Terminated;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MemorySystem has been terminated.");
+	InnoLogger::Log(LogLevel::Success, "MemorySystem has been terminated.");
 	return true;
 }
 ObjectStatus InnoMemorySystem::getStatus()

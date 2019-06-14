@@ -1,9 +1,5 @@
 #include "TaskSystem.h"
 
-#include "../ICoreSystem.h"
-
-extern ICoreSystem* g_pCoreSystem;
-
 INNO_PRIVATE_SCOPE InnoTaskSystemNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;

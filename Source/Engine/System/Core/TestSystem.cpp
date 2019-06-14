@@ -1,8 +1,6 @@
 #include "TestSystem.h"
-
-#include "../ICoreSystem.h"
-
-extern ICoreSystem* g_pCoreSystem;
+#include "InnoLogger.h"
+#include "InnoTimer.h"
 
 INNO_PRIVATE_SCOPE InnoTestSystemNS
 {
@@ -25,12 +23,12 @@ bool InnoTestSystemNS::initialize()
 	if (InnoTestSystemNS::m_objectStatus == ObjectStatus::Created)
 	{
 		InnoTestSystemNS::m_objectStatus = ObjectStatus::Activated;
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TestSystem has been initialized.");
+		InnoLogger::Log(LogLevel::Success, "TestSystem has been initialized.");
 		return true;
 	}
 	else
 	{
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "TestSystem: Object is not created!");
+		InnoLogger::Log(LogLevel::Error, "TestSystem: Object is not created!");
 		return false;
 	}
 }
@@ -51,7 +49,7 @@ bool InnoTestSystemNS::update()
 bool InnoTestSystemNS::terminate()
 {
 	m_objectStatus = ObjectStatus::Terminated;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TestSystem has been terminated.");
+	InnoLogger::Log(LogLevel::Success, "TestSystem has been terminated.");
 
 	return true;
 }
@@ -83,11 +81,11 @@ ObjectStatus InnoTestSystem::getStatus()
 
 bool InnoTestSystem::measure(const std::string& functorName, const std::function<void()>& functor)
 {
-	auto l_startTime = g_pCoreSystem->getTimeSystem()->getCurrentTimeFromEpoch();
+	auto l_startTime = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
 
 	(functor)();
 
-	auto l_endTime = g_pCoreSystem->getTimeSystem()->getCurrentTimeFromEpoch();
+	auto l_endTime = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
 
 	auto l_duration = (float)(l_endTime - l_startTime);
 

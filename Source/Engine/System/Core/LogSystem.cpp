@@ -1,10 +1,6 @@
 #include "LogSystem.h"
 #include "InnoLogger.h"
 
-#include "../ICoreSystem.h"
-
-extern ICoreSystem* g_pCoreSystem;
-
 INNO_PRIVATE_SCOPE InnoLogSystemNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
