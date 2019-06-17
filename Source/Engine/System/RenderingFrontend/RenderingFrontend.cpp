@@ -5,6 +5,8 @@
 
 extern ICoreSystem* g_pCoreSystem;
 
+#include "../RayTracer/RayTracer.h"
+
 INNO_PRIVATE_SCOPE InnoRenderingFrontendNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
@@ -159,6 +161,9 @@ bool InnoRenderingFrontendNS::initialize()
 	if (InnoRenderingFrontendNS::m_objectStatus == ObjectStatus::Created)
 	{
 		initializeHaltonSampler();
+		auto l_rayTracer = InnoRayTracer();
+		l_rayTracer.Setup();
+		l_rayTracer.Initialize();
 
 		InnoRenderingFrontendNS::m_objectStatus = ObjectStatus::Activated;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "RenderingFrontend has been initialized.");
