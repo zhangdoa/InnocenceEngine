@@ -10,7 +10,7 @@ public:
 
 	virtual bool Setup() = 0;
 	virtual bool Initialize() = 0;
-	virtual bool Update() = 0;
+	virtual bool Execute() = 0;
 	virtual bool Terminate() = 0;
 
 	virtual ObjectStatus GetStatus() = 0;

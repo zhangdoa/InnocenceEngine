@@ -8,7 +8,7 @@ public:
 
 	bool Setup() override;
 	bool Initialize() override;
-	bool Update() override;
+	bool Execute() override;
 	bool Terminate() override;
 
 	ObjectStatus GetStatus() override;

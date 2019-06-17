@@ -12,6 +12,7 @@ INNO_PRIVATE_SCOPE InnoRenderingFrontendNS
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
 	IRenderingBackend* m_renderingBackend;
+	IRayTracer* m_rayTracer;
 
 	TVec2<unsigned int> m_screenResolution = TVec2<unsigned int>(1280, 720);
 	std::string m_windowName;
@@ -87,6 +88,7 @@ void InnoRenderingFrontendNS::initializeHaltonSampler()
 bool InnoRenderingFrontendNS::setup(IRenderingBackend* renderingBackend)
 {
 	m_renderingBackend = renderingBackend;
+	m_rayTracer = new InnoRayTracer();
 
 	m_renderingConfig.useMotionBlur = true;
 	m_renderingConfig.useTAA = true;
@@ -152,6 +154,8 @@ bool InnoRenderingFrontendNS::setup(IRenderingBackend* renderingBackend)
 	m_SkeletonDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(SkeletonDataComponent), 2048);
 	m_AnimationDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(AnimationDataComponent), 16384);
 
+	m_rayTracer->Setup();
+
 	InnoRenderingFrontendNS::m_objectStatus = ObjectStatus::Created;
 	return true;
 }
@@ -161,9 +165,7 @@ bool InnoRenderingFrontendNS::initialize()
 	if (InnoRenderingFrontendNS::m_objectStatus == ObjectStatus::Created)
 	{
 		initializeHaltonSampler();
-		auto l_rayTracer = InnoRayTracer();
-		l_rayTracer.Setup();
-		l_rayTracer.Initialize();
+		m_rayTracer->Initialize();
 
 		InnoRenderingFrontendNS::m_objectStatus = ObjectStatus::Activated;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "RenderingFrontend has been initialized.");
@@ -526,6 +528,8 @@ bool InnoRenderingFrontendNS::update()
 
 bool InnoRenderingFrontendNS::terminate()
 {
+	m_rayTracer->Terminate();
+
 	m_objectStatus = ObjectStatus::Terminated;
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "RenderingFrontend has been terminated.");
 	return true;
