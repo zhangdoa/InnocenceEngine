@@ -220,6 +220,8 @@ bool InnoRenderingFrontendNS::updateCameraData()
 	RenderingFrontendComponent::get().m_cameraGPUData.globalPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
 
 	RenderingFrontendComponent::get().m_cameraGPUData.WHRatio = l_mainCamera->m_WHRatio;
+	RenderingFrontendComponent::get().m_cameraGPUData.zNear = l_mainCamera->m_zNear;
+	RenderingFrontendComponent::get().m_cameraGPUData.zFar = l_mainCamera->m_zFar;
 
 	m_isCameraDataPackValid = true;
 
