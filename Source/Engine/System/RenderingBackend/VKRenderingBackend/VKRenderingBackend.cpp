@@ -65,6 +65,7 @@ INNO_PRIVATE_SCOPE VKRenderingBackendNS
 	bool createLogicalDevice();
 
 	bool createTextureSamplers();
+	bool createMaterialDescriptorPool();
 	bool createCommandPool();
 
 	bool createSwapChain();
@@ -297,6 +298,25 @@ bool VKRenderingBackendNS::createTextureSamplers()
 	}
 
 	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: VkSampler for deferred pass render target sampling has been created.");
+	return true;
+}
+
+bool VKRenderingBackendNS::createMaterialDescriptorPool()
+{
+	VkDescriptorPoolSize l_descriptorPoolSize = {};
+	l_descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+	l_descriptorPoolSize.descriptorCount = 5;
+
+	VkDescriptorPoolSize l_descriptorPoolSizes[] = { l_descriptorPoolSize };
+
+	if (!createDescriptorPool(l_descriptorPoolSizes, 1, RenderingFrontendComponent::get().m_maxMaterials, VKRenderingBackendComponent::get().m_materialDescriptorPool))
+	{
+		m_objectStatus = ObjectStatus::Suspended;
+		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to create VkDescriptorPool for material!");
+		return false;
+	}
+
+	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: VkDescriptorPool for material has been created.");
 	return true;
 }
 
@@ -658,7 +678,7 @@ bool VKRenderingBackendNS::initialize()
 	if (VKRenderingBackendNS::m_objectStatus == ObjectStatus::Created)
 	{
 		m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKMeshDataComponent), RenderingFrontendComponent::get().m_maxMeshes);
-		m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), RenderingFrontendComponent::get().m_maxMaterials);
+		m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKMaterialDataComponent), RenderingFrontendComponent::get().m_maxMaterials);
 		m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKTextureDataComponent), RenderingFrontendComponent::get().m_maxTextures);
 
 		bool l_result = true;
@@ -667,6 +687,7 @@ bool VKRenderingBackendNS::initialize()
 		l_result = l_result && createLogicalDevice();
 
 		l_result = l_result && createTextureSamplers();
+		l_result = l_result && createMaterialDescriptorPool();
 		l_result = l_result && createCommandPool();
 
 		loadDefaultAssets();
@@ -963,12 +984,12 @@ VKMeshDataComponent* VKRenderingBackendNS::addVKMeshDataComponent()
 	return l_MDC;
 }
 
-MaterialDataComponent* VKRenderingBackendNS::addVKMaterialDataComponent()
+VKMaterialDataComponent* VKRenderingBackendNS::addVKMaterialDataComponent()
 {
 	static std::atomic<unsigned int> materialCount = 0;
 	materialCount++;
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MaterialDataComponent));
-	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(VKMaterialDataComponent));
+	auto l_MDC = new(l_rawPtr)VKMaterialDataComponent();
 	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(("Material_" + std::to_string(materialCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
 	l_MDC->m_parentEntity = l_parentEntity;
 	return l_MDC;

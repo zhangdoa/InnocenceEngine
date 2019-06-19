@@ -3,7 +3,7 @@
 #include "../../../Common/STL17.h"
 
 #include "../../../Component/MeshDataComponent.h"
-#include "../../../Component/MaterialDataComponent.h"
+#include "../../../Component/VKMaterialDataComponent.h"
 #include "../../../Component/TextureDataComponent.h"
 #include "../../../Component/VKMeshDataComponent.h"
 #include "../../../Component/VKTextureDataComponent.h"
@@ -42,7 +42,7 @@ INNO_PRIVATE_SCOPE VKRenderingBackendNS
 	bool generateGPUBuffers();
 
 	VKMeshDataComponent* addVKMeshDataComponent();
-	MaterialDataComponent* addVKMaterialDataComponent();
+	VKMaterialDataComponent* addVKMaterialDataComponent();
 	VKTextureDataComponent* addVKTextureDataComponent();
 
 	VKMeshDataComponent* getVKMeshDataComponent(MeshShapeType MeshShapeType);

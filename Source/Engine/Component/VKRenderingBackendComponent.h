@@ -57,6 +57,8 @@ public:
 
 	VkDebugUtilsMessengerEXT m_messengerCallback;
 
+	VkDescriptorPool m_materialDescriptorPool;
+
 	VkDeviceMemory m_vertexBufferMemory;
 	VkDeviceMemory m_indexBufferMemory;
 	VkDeviceMemory m_textureImageMemory;
