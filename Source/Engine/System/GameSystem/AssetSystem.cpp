@@ -305,8 +305,10 @@ void InnoAssetSystemNS::assignUnitMesh(MeshShapeType meshUsageType, VisibleCompo
 {
 	if (meshUsageType != MeshShapeType::CUSTOM)
 	{
-		MeshDataComponent* l_UnitMeshTemplate = g_pCoreSystem->getRenderingFrontend()->getMeshDataComponent(meshUsageType);
-		visibleComponent->m_modelMap.emplace(l_UnitMeshTemplate, g_pCoreSystem->getRenderingFrontend()->addMaterialDataComponent());
+		auto l_mesh = g_pCoreSystem->getRenderingFrontend()->getMeshDataComponent(meshUsageType);
+		auto l_material = g_pCoreSystem->getRenderingFrontend()->addMaterialDataComponent();
+		l_material->m_objectStatus = ObjectStatus::Created;
+		visibleComponent->m_modelMap.emplace(l_mesh, l_material);
 	}
 	else
 	{
