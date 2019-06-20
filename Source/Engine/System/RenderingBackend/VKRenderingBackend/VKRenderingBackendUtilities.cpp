@@ -883,8 +883,6 @@ bool VKRenderingBackendNS::initializeVKTextureDataComponent(VKTextureDataCompone
 			{
 				submitGPUData(rhs);
 
-				rhs->m_objectStatus = ObjectStatus::Activated;
-
 				if (rhs->m_textureDataDesc.usageType != TextureUsageType::COLOR_ATTACHMENT)
 				{
 					// @TODO: release raw data in heap memory
