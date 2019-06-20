@@ -737,8 +737,6 @@ bool DX12RenderingBackendNS::initializeDX12TextureDataComponent(DX12TextureDataC
 			{
 				submitGPUData(rhs);
 
-				rhs->m_objectStatus = ObjectStatus::Activated;
-
 				if (rhs->m_textureDataDesc.usageType != TextureUsageType::COLOR_ATTACHMENT)
 				{
 					// @TODO: release raw data in heap memory

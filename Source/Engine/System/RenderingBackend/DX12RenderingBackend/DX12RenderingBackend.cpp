@@ -694,34 +694,34 @@ void DX12RenderingBackendNS::loadDefaultAssets()
 	g_pCoreSystem->getAssetSystem()->addUnitLine(*m_unitLineMDC);
 	m_unitLineMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	m_unitLineMDC->m_meshShapeType = MeshShapeType::LINE;
-	m_unitLineMDC->m_objectStatus = ObjectStatus::Suspended;
+	m_unitLineMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMDC);
 
 	m_unitQuadMDC = addDX12MeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addUnitQuad(*m_unitQuadMDC);
 	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
-	m_unitQuadMDC->m_objectStatus = ObjectStatus::Suspended;
+	m_unitQuadMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMDC);
 
 	m_unitCubeMDC = addDX12MeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addUnitCube(*m_unitCubeMDC);
 	m_unitCubeMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitCubeMDC->m_meshShapeType = MeshShapeType::CUBE;
-	m_unitCubeMDC->m_objectStatus = ObjectStatus::Suspended;
+	m_unitCubeMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMDC);
 
 	m_unitSphereMDC = addDX12MeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addUnitSphere(*m_unitSphereMDC);
 	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
-	m_unitSphereMDC->m_objectStatus = ObjectStatus::Suspended;
+	m_unitSphereMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMDC);
 
 	m_terrainMDC = addDX12MeshDataComponent();
 	g_pCoreSystem->getAssetSystem()->addTerrain(*m_terrainMDC);
 	m_terrainMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	m_terrainMDC->m_objectStatus = ObjectStatus::Suspended;
+	m_terrainMDC->m_objectStatus = ObjectStatus::Created;
 	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMDC);
 
 	initializeDX12MeshDataComponent(m_unitLineMDC);
