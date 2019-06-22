@@ -20,6 +20,7 @@ public:
 	void addMouseMovementCallback(int mouseCode, std::vector<std::function<void(float)>*>& mouseMovementCallback) override;
 	void addMouseMovementCallback(MouseMovementCallbackMap& mouseMovementCallback) override;
 
+	void buttonStatusCallback(ButtonData boundButton) override;
 	void framebufferSizeCallback(int width, int height) override;
 	void mousePositionCallback(float mouseXPos, float mouseYPos) override;
 	void scrollCallback(float xoffset, float yoffset) override;

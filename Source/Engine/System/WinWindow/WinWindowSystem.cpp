@@ -225,6 +225,8 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	{
 	case WM_KEYDOWN:
 	{
+		//g_pCoreSystem->getInputSystem()->buttonStatusCallback(ButtonData{ (int)wparam, ButtonStatus::PRESSED });
+
 		auto l_result = m_buttonStatus.find((int)wparam);
 		if (l_result != m_buttonStatus.end())
 		{
@@ -234,16 +236,19 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	}
 	case WM_KEYUP:
 	{
+		//g_pCoreSystem->getInputSystem()->buttonStatusCallback(ButtonData{ (int)wparam, ButtonStatus::RELEASED });
+
 		auto l_result = m_buttonStatus.find((int)wparam);
 		if (l_result != m_buttonStatus.end())
 		{
 			l_result->second = ButtonStatus::RELEASED;
 		}
-
 		return 0;
 	}
 	case WM_LBUTTONDOWN:
 	{
+		//g_pCoreSystem->getInputSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::PRESSED });
+
 		auto l_result = m_buttonStatus.find(INNO_MOUSE_BUTTON_LEFT);
 		if (l_result != m_buttonStatus.end())
 		{
@@ -253,6 +258,8 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	}
 	case WM_LBUTTONUP:
 	{
+		//g_pCoreSystem->getInputSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::RELEASED });
+
 		auto l_result = m_buttonStatus.find(INNO_MOUSE_BUTTON_LEFT);
 		if (l_result != m_buttonStatus.end())
 		{
@@ -262,6 +269,8 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	}
 	case WM_RBUTTONDOWN:
 	{
+		//g_pCoreSystem->getInputSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::PRESSED });
+
 		auto l_result = m_buttonStatus.find(INNO_MOUSE_BUTTON_RIGHT);
 		if (l_result != m_buttonStatus.end())
 		{
@@ -271,6 +280,8 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	}
 	case WM_RBUTTONUP:
 	{
+		//g_pCoreSystem->getInputSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::RELEASED });
+
 		auto l_result = m_buttonStatus.find(INNO_MOUSE_BUTTON_RIGHT);
 		if (l_result != m_buttonStatus.end())
 		{

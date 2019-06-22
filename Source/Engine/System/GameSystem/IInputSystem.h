@@ -29,6 +29,7 @@ public:
 	virtual void addMouseMovementCallback(int mouseCode, std::vector<std::function<void(float)>*>& mouseMovementCallback) = 0;
 	virtual void addMouseMovementCallback(MouseMovementCallbackMap& mouseMovementCallback) = 0;
 
+	virtual void buttonStatusCallback(ButtonData boundButton) = 0;
 	virtual void framebufferSizeCallback(int width, int height) = 0;
 	virtual void mousePositionCallback(float mouseXPos, float mouseYPos) = 0;
 	virtual void scrollCallback(float xoffset, float yoffset) = 0;

@@ -21,6 +21,7 @@ INNO_PRIVATE_SCOPE InnoInputSystemNS
 	vec4 getMousePositionInWorldSpace();
 	vec2 getMousePositionInScreenSpace();
 
+	void buttonStatusCallback(ButtonData boundButton);
 	void framebufferSizeCallback(int width, int height);
 	void mousePositionCallback(float mouseXPos, float mouseYPos);
 	void scrollCallback(float xoffset, float yoffset);
@@ -249,6 +250,21 @@ vec2 InnoInputSystemNS::getMousePositionInScreenSpace()
 	return vec2(m_mouseLastX, m_mouseLastY);
 }
 
+void InnoInputSystemNS::buttonStatusCallback(ButtonData boundButton)
+{
+	auto l_keybinding = m_buttonStatusCallback.find(boundButton);
+	if (l_keybinding != m_buttonStatusCallback.end())
+	{
+		for (auto& j : l_keybinding->second)
+		{
+			if (j)
+			{
+				(*j)();
+			}
+		}
+	}
+}
+
 void InnoInputSystemNS::framebufferSizeCallback(int width, int height)
 {
 	TVec2<unsigned int> l_newScreenResolution = TVec2<unsigned int>(width, height);
@@ -322,6 +338,11 @@ void InnoInputSystem::addMouseMovementCallback(int mouseCode, std::vector<std::f
 void InnoInputSystem::addMouseMovementCallback(MouseMovementCallbackMap& mouseMovementCallback)
 {
 	InnoInputSystemNS::addMouseMovementCallback(mouseMovementCallback);
+}
+
+void InnoInputSystem::buttonStatusCallback(ButtonData boundButton)
+{
+	InnoInputSystemNS::buttonStatusCallback(boundButton);
 }
 
 void InnoInputSystem::framebufferSizeCallback(int width, int height)
