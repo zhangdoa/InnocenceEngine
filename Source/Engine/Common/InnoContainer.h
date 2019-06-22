@@ -99,13 +99,13 @@ private:
 };
 
 template<>
-FixedSizeString<11>::FixedSizeString(int32_t content)
+inline FixedSizeString<11>::FixedSizeString(int32_t content)
 {
 	i32toa_countlut(content, m_content);
 };
 
 template<>
-FixedSizeString<20>::FixedSizeString(int64_t content)
+inline FixedSizeString<20>::FixedSizeString(int64_t content)
 {
 	i64toa_countlut(content, m_content);
 };

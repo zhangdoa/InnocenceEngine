@@ -277,7 +277,7 @@ bool ExecuteRayTracing()
 
 	HitableList* l_hitableList = new HitableList();
 	l_hitableList->m_List = l_hitableListVector.data();
-	l_hitableList->m_Size = unsigned int(l_hitableListVector.size());
+	l_hitableList->m_Size = (unsigned int)l_hitableListVector.size();
 
 	int currentWorkload = 0;
 	for (int j = ny - 1; j >= 0; j--) {
