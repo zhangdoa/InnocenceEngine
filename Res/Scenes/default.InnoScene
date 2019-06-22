@@ -156,38 +156,6 @@
           "ComponentType": 0,
           "LocalTransformVector": {
             "Position": {
-              "X": 0.0,
-              "Y": 20.0,
-              "Z": 0.0
-            },
-            "Rotation": {
-              "W": 1.0,
-              "X": 0.0,
-              "Y": 0.0,
-              "Z": 0.0
-            },
-            "Scale": {
-              "X": 1.0,
-              "Y": 1.0,
-              "Z": 1.0
-            }
-          },
-          "ParentTransformComponentEntityName": "RootTransform"
-        },
-        {
-          "ComponentType": 7,
-          "CubemapName": "ibl//Playa_Sunrise.hdr"
-        }
-      ],
-      "EntityID": "ae22b24727ed9798b97913e5ed8cd2aa",
-      "EntityName": "environmentCaptureEntity"
-    },
-    {
-      "ChildrenComponents": [
-        {
-          "ComponentType": 0,
-          "LocalTransformVector": {
-            "Position": {
               "X": 2.0,
               "Y": 1.0,
               "Z": -5.0

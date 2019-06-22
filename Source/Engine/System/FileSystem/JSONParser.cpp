@@ -247,15 +247,6 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const CameraComponent& p)
 	};
 }
 
-void InnoFileSystemNS::JSONParser::to_json(json& j, const EnvironmentCaptureComponent& p)
-{
-	j = json
-	{
-		{"ComponentType", InnoUtility::getComponentType<EnvironmentCaptureComponent>()},
-		{"CubemapName", p.m_cubemapTextureFileName},
-	};
-}
-
 void InnoFileSystemNS::JSONParser::from_json(const json & j, TransformComponent & p)
 {
 	from_json(j["LocalTransformVector"], p.m_localTransformVector);
@@ -337,11 +328,6 @@ void InnoFileSystemNS::JSONParser::from_json(const json& j, CameraComponent& p)
 	p.m_heightScale = j["heightScale"];
 	p.m_zNear = j["zNear"];
 	p.m_zFar = j["zFar"];
-}
-
-void InnoFileSystemNS::JSONParser::from_json(const json & j, EnvironmentCaptureComponent & p)
-{
-	p.m_cubemapTextureFileName = j["CubemapName"];
 }
 
 ModelMap InnoFileSystemNS::JSONParser::loadModelFromDisk(const std::string & fileName)
@@ -583,13 +569,6 @@ bool InnoFileSystemNS::JSONParser::saveScene(const std::string& fileName)
 			saveComponentData(topLevel, i);
 		}
 	}
-	for (auto i : g_pCoreSystem->getGameSystem()->get<EnvironmentCaptureComponent>())
-	{
-		if (i->m_objectSource == ObjectSource::Asset)
-		{
-			saveComponentData(topLevel, i);
-		}
-	}
 
 	saveJsonDataToDisk(fileName, topLevel);
 
@@ -630,10 +609,6 @@ bool InnoFileSystemNS::JSONParser::loadScene(const std::string & fileName)
 			case ComponentType::SphereLightComponent: loadComponentData<SphereLightComponent>(k, l_entity);
 				break;
 			case ComponentType::CameraComponent: loadComponentData<CameraComponent>(k, l_entity);
-				break;
-			case ComponentType::InputComponent:
-				break;
-			case ComponentType::EnvironmentCaptureComponent: loadComponentData<EnvironmentCaptureComponent>(k, l_entity);
 				break;
 			case ComponentType::PhysicsDataComponent:
 				break;

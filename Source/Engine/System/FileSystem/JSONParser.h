@@ -23,7 +23,6 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 		void to_json(json& j, const PointLightComponent& p);
 		void to_json(json& j, const SphereLightComponent& p);
 		void to_json(json& j, const CameraComponent& p);
-		void to_json(json& j, const EnvironmentCaptureComponent& p);
 
 		void from_json(const json& j, TransformComponent& p);
 		void from_json(const json& j, TransformVector& p);
@@ -33,7 +32,6 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 		void from_json(const json& j, PointLightComponent& p);
 		void from_json(const json& j, SphereLightComponent& p);
 		void from_json(const json& j, CameraComponent& p);
-		void from_json(const json& j, EnvironmentCaptureComponent& p);
 
 		ModelMap loadModelFromDisk(const std::string & fileName);
 

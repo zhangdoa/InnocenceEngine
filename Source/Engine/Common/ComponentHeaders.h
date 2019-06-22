@@ -5,8 +5,6 @@
 #include "../Component/PointLightComponent.h"
 #include "../Component/SphereLightComponent.h"
 #include "../Component/CameraComponent.h"
-#include "../Component/InputComponent.h"
-#include "../Component/EnvironmentCaptureComponent.h"
 #include "../Component/PhysicsDataComponent.h"
 #include "../Component/MeshDataComponent.h"
 #include "../Component/MaterialDataComponent.h"
@@ -58,10 +56,6 @@ getClassNameTemplate(SphereLightComponent);
 template<>
 getClassNameTemplate(CameraComponent);
 template<>
-getClassNameTemplate(InputComponent);
-template<>
-getClassNameTemplate(EnvironmentCaptureComponent);
-template<>
 getClassNameTemplate(PhysicsDataComponent);
 template<>
 getClassNameTemplate(MeshDataComponent);
@@ -82,10 +76,6 @@ template<>
 getComponentTypeDefi(SphereLightComponent);
 template<>
 getComponentTypeDefi(CameraComponent);
-template<>
-getComponentTypeDefi(InputComponent);
-template<>
-getComponentTypeDefi(EnvironmentCaptureComponent);
 template<>
 getComponentTypeDefi(PhysicsDataComponent);
 template<>

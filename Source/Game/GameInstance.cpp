@@ -14,7 +14,6 @@ namespace PlayerComponentCollection
 
 	TransformComponent* m_cameraTransformComponent;
 	CameraComponent* m_cameraComponent;
-	InputComponent* m_inputComponent;
 
 	std::function<void()> f_moveForward;
 	std::function<void()> f_moveBackward;
@@ -59,8 +58,6 @@ bool PlayerComponentCollection::setup()
 		m_cameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(m_cameraParentEntity);
 		m_cameraComponent = g_pCoreSystem->getGameSystem()->get<CameraComponent>(m_cameraParentEntity);
 
-		m_inputComponent = g_pCoreSystem->getGameSystem()->spawn<InputComponent>(m_cameraParentEntity, ObjectSource::Runtime, ObjectUsage::Gameplay);
-
 		m_targetCameraPos = m_cameraTransformComponent->m_localTransformVector.m_pos;
 		m_targetCameraRot = m_cameraTransformComponent->m_localTransformVector.m_rot;
 		m_targetCameraRotX = vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -80,18 +77,18 @@ bool PlayerComponentCollection::setup()
 		f_rotateAroundPositiveYAxis = std::bind(&rotateAroundPositiveYAxis, std::placeholders::_1);
 		f_rotateAroundRightAxis = std::bind(&rotateAroundRightAxis, std::placeholders::_1);
 
-		g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_S, ButtonStatus::PRESSED }, &f_moveForward);
-		g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_W, ButtonStatus::PRESSED }, &f_moveBackward);
-		g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_A, ButtonStatus::PRESSED }, &f_moveLeft);
-		g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_D, ButtonStatus::PRESSED }, &f_moveRight);
+		g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_S, ButtonStatus::PRESSED }, &f_moveForward);
+		g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_W, ButtonStatus::PRESSED }, &f_moveBackward);
+		g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_A, ButtonStatus::PRESSED }, &f_moveLeft);
+		g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_D, ButtonStatus::PRESSED }, &f_moveRight);
 
-		g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_SPACE, ButtonStatus::PRESSED }, &f_speedUp);
-		g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_KEY_SPACE, ButtonStatus::RELEASED }, &f_speedDown);
+		g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_SPACE, ButtonStatus::PRESSED }, &f_speedUp);
+		g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_SPACE, ButtonStatus::RELEASED }, &f_speedDown);
 
-		g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::PRESSED }, &f_allowMove);
-		g_pCoreSystem->getGameSystem()->registerButtonStatusCallback(m_inputComponent, ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::RELEASED }, &f_forbidMove);
-		g_pCoreSystem->getGameSystem()->registerMouseMovementCallback(m_inputComponent, 0, &f_rotateAroundPositiveYAxis);
-		g_pCoreSystem->getGameSystem()->registerMouseMovementCallback(m_inputComponent, 1, &f_rotateAroundRightAxis);
+		g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::PRESSED }, &f_allowMove);
+		g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::RELEASED }, &f_forbidMove);
+		g_pCoreSystem->getInputSystem()->addMouseMovementCallback(0, &f_rotateAroundPositiveYAxis);
+		g_pCoreSystem->getInputSystem()->addMouseMovementCallback(1, &f_rotateAroundRightAxis);
 
 		m_initialMoveSpeed = 0.5f;
 		m_moveSpeed = m_initialMoveSpeed;

@@ -53,8 +53,6 @@ protected:
 	spawnComponentInterfaceDecl(PointLightComponent);
 	spawnComponentInterfaceDecl(SphereLightComponent);
 	spawnComponentInterfaceDecl(CameraComponent);
-	spawnComponentInterfaceDecl(InputComponent);
-	spawnComponentInterfaceDecl(EnvironmentCaptureComponent);
 
 	registerComponentInterfaceDecl(TransformComponent);
 	registerComponentInterfaceDecl(VisibleComponent);
@@ -62,8 +60,6 @@ protected:
 	registerComponentInterfaceDecl(PointLightComponent);
 	registerComponentInterfaceDecl(SphereLightComponent);
 	registerComponentInterfaceDecl(CameraComponent);
-	registerComponentInterfaceDecl(InputComponent);
-	registerComponentInterfaceDecl(EnvironmentCaptureComponent);
 
 	destroyComponentInterfaceDecl(TransformComponent);
 	destroyComponentInterfaceDecl(VisibleComponent);
@@ -71,8 +67,6 @@ protected:
 	destroyComponentInterfaceDecl(PointLightComponent);
 	destroyComponentInterfaceDecl(SphereLightComponent);
 	destroyComponentInterfaceDecl(CameraComponent);
-	destroyComponentInterfaceDecl(InputComponent);
-	destroyComponentInterfaceDecl(EnvironmentCaptureComponent);
 
 	unregisterComponentInterfaceDecl(TransformComponent);
 	unregisterComponentInterfaceDecl(VisibleComponent);
@@ -80,8 +74,6 @@ protected:
 	unregisterComponentInterfaceDecl(PointLightComponent);
 	unregisterComponentInterfaceDecl(SphereLightComponent);
 	unregisterComponentInterfaceDecl(CameraComponent);
-	unregisterComponentInterfaceDecl(InputComponent);
-	unregisterComponentInterfaceDecl(EnvironmentCaptureComponent);
 
 	getComponentInterfaceDecl(TransformComponent);
 	getComponentInterfaceDecl(VisibleComponent);
@@ -89,8 +81,6 @@ protected:
 	getComponentInterfaceDecl(PointLightComponent);
 	getComponentInterfaceDecl(SphereLightComponent);
 	getComponentInterfaceDecl(CameraComponent);
-	getComponentInterfaceDecl(InputComponent);
-	getComponentInterfaceDecl(EnvironmentCaptureComponent);
 
 	getComponentContainerInterfaceDecl(TransformComponent);
 	getComponentContainerInterfaceDecl(VisibleComponent);
@@ -98,8 +88,6 @@ protected:
 	getComponentContainerInterfaceDecl(PointLightComponent);
 	getComponentContainerInterfaceDecl(SphereLightComponent);
 	getComponentContainerInterfaceDecl(CameraComponent);
-	getComponentContainerInterfaceDecl(InputComponent);
-	getComponentContainerInterfaceDecl(EnvironmentCaptureComponent);
 
 public:
 	template <typename T> T * spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
@@ -127,9 +115,6 @@ public:
 
 	virtual std::string getGameName() = 0;
 	virtual TransformComponent* getRootTransformComponent() = 0;
-
-	virtual void registerButtonStatusCallback(InputComponent* inputComponent, ButtonData boundButton, std::function<void()>* function) = 0;
-	virtual void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(float)>* function) = 0;
 
 	virtual void saveComponentsCapture() = 0;
 
@@ -168,16 +153,6 @@ template <> inline CameraComponent * IGameSystem::spawn(const InnoEntity* parent
 	return spawnComponentInterfaceCall(CameraComponent, parentEntity, objectSource, objectUsage);
 };
 
-template <> inline InputComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
-{
-	return spawnComponentInterfaceCall(InputComponent, parentEntity, objectSource, objectUsage);
-};
-
-template <> inline EnvironmentCaptureComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
-{
-	return spawnComponentInterfaceCall(EnvironmentCaptureComponent, parentEntity, objectSource, objectUsage);
-};
-
 template <> inline bool IGameSystem::destroy(TransformComponent* rhs)
 {
 	return destroyComponentInterfaceCall(rhs);
@@ -204,16 +179,6 @@ template <> inline bool IGameSystem::destroy(SphereLightComponent* rhs)
 };
 
 template <> inline bool IGameSystem::destroy(CameraComponent* rhs)
-{
-	return destroyComponentInterfaceCall(rhs);
-};
-
-template <> inline bool IGameSystem::destroy(InputComponent* rhs)
-{
-	return destroyComponentInterfaceCall(rhs);
-};
-
-template <> inline bool IGameSystem::destroy(EnvironmentCaptureComponent* rhs)
 {
 	return destroyComponentInterfaceCall(rhs);
 };
@@ -248,16 +213,6 @@ template <> inline CameraComponent * IGameSystem::get(const InnoEntity* parentEn
 	return getComponentInterfaceCall(CameraComponent, parentEntity);
 };
 
-template <> inline InputComponent * IGameSystem::get(const InnoEntity* parentEntity)
-{
-	return getComponentInterfaceCall(InputComponent, parentEntity);
-};
-
-template <> inline EnvironmentCaptureComponent * IGameSystem::get(const InnoEntity* parentEntity)
-{
-	return getComponentInterfaceCall(EnvironmentCaptureComponent, parentEntity);
-};
-
 template <> inline std::vector<TransformComponent*>& IGameSystem::get()
 {
 	return getComponentContainerInterfaceCall(TransformComponent);
@@ -286,14 +241,4 @@ template <> inline std::vector<SphereLightComponent*>& IGameSystem::get()
 template <> inline std::vector<CameraComponent*>& IGameSystem::get()
 {
 	return getComponentContainerInterfaceCall(CameraComponent);
-};
-
-template <> inline std::vector<InputComponent*>& IGameSystem::get()
-{
-	return getComponentContainerInterfaceCall(InputComponent);
-};
-
-template <> inline std::vector<EnvironmentCaptureComponent*>& IGameSystem::get()
-{
-	return getComponentContainerInterfaceCall(EnvironmentCaptureComponent);
 };

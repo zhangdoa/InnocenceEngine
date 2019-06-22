@@ -5,7 +5,6 @@
 #include "../../Component/MeshDataComponent.h"
 #include "../../Component/MaterialDataComponent.h"
 #include "../../Component/TextureDataComponent.h"
-#include "../../Component/EnvironmentCaptureComponent.h"
 #include "../../Component/VisibleComponent.h"
 
 INNO_INTERFACE IAssetSystem

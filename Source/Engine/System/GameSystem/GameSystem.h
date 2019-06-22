@@ -37,8 +37,6 @@ public:
 	spawnComponentImplDecl(PointLightComponent);
 	spawnComponentImplDecl(SphereLightComponent);
 	spawnComponentImplDecl(CameraComponent);
-	spawnComponentImplDecl(InputComponent);
-	spawnComponentImplDecl(EnvironmentCaptureComponent);
 
 	registerComponentImplDecl(TransformComponent);
 	registerComponentImplDecl(VisibleComponent);
@@ -46,8 +44,6 @@ public:
 	registerComponentImplDecl(PointLightComponent);
 	registerComponentImplDecl(SphereLightComponent);
 	registerComponentImplDecl(CameraComponent);
-	registerComponentImplDecl(InputComponent);
-	registerComponentImplDecl(EnvironmentCaptureComponent);
 
 	destroyComponentImplDecl(TransformComponent);
 	destroyComponentImplDecl(VisibleComponent);
@@ -55,8 +51,6 @@ public:
 	destroyComponentImplDecl(PointLightComponent);
 	destroyComponentImplDecl(SphereLightComponent);
 	destroyComponentImplDecl(CameraComponent);
-	destroyComponentImplDecl(InputComponent);
-	destroyComponentImplDecl(EnvironmentCaptureComponent);
 
 	unregisterComponentImplDecl(TransformComponent);
 	unregisterComponentImplDecl(VisibleComponent);
@@ -64,8 +58,6 @@ public:
 	unregisterComponentImplDecl(PointLightComponent);
 	unregisterComponentImplDecl(SphereLightComponent);
 	unregisterComponentImplDecl(CameraComponent);
-	unregisterComponentImplDecl(InputComponent);
-	unregisterComponentImplDecl(EnvironmentCaptureComponent);
 
 	getComponentImplDecl(TransformComponent);
 	getComponentImplDecl(VisibleComponent);
@@ -73,8 +65,6 @@ public:
 	getComponentImplDecl(PointLightComponent);
 	getComponentImplDecl(SphereLightComponent);
 	getComponentImplDecl(CameraComponent);
-	getComponentImplDecl(InputComponent);
-	getComponentImplDecl(EnvironmentCaptureComponent);
 
 	getComponentContainerImplDecl(TransformComponent);
 	getComponentContainerImplDecl(VisibleComponent);
@@ -82,16 +72,11 @@ public:
 	getComponentContainerImplDecl(PointLightComponent);
 	getComponentContainerImplDecl(SphereLightComponent);
 	getComponentContainerImplDecl(CameraComponent);
-	getComponentContainerImplDecl(InputComponent);
-	getComponentContainerImplDecl(EnvironmentCaptureComponent);
 
 	std::string getGameName() override;
 	TransformComponent* getRootTransformComponent() override;
 	const std::vector<InnoEntity*>& getEntities() override;
 	const EntityChildrenComponentsMetadataMap& getEntityChildrenComponentsMetadataMap() override;
-
-	void registerButtonStatusCallback(InputComponent* inputComponent, ButtonData boundButton, std::function<void()>* function) override;
-	void registerMouseMovementCallback(InputComponent* inputComponent, int mouseCode, std::function<void(float)>* function) override;
 
 	void saveComponentsCapture() override;
 

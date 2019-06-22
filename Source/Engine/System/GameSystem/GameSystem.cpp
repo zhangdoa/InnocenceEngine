@@ -44,7 +44,6 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 	void* m_PointLightComponentPool;
 	void* m_SphereLightComponentPool;
 	void* m_CameraComponentPool;
-	void* m_InputComponentPool;
 	void* m_EnvironmentCaptureComponentPool;
 
 	ThreadSafeVector<InnoEntity*> m_Entities;
@@ -54,8 +53,6 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 	ThreadSafeVector<PointLightComponent*> m_PointLightComponents;
 	ThreadSafeVector<SphereLightComponent*> m_SphereLightComponents;
 	ThreadSafeVector<CameraComponent*> m_CameraComponents;
-	ThreadSafeVector<InputComponent*> m_InputComponents;
-	ThreadSafeVector<EnvironmentCaptureComponent*> m_EnvironmentCaptureComponents;
 
 	ThreadSafeUnorderedMap<InnoEntity*, TransformComponent*> m_TransformComponentsMap;
 	ThreadSafeUnorderedMap<InnoEntity*, VisibleComponent*> m_VisibleComponentsMap;
@@ -63,8 +60,6 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 	ThreadSafeUnorderedMap<InnoEntity*, PointLightComponent*> m_PointLightComponentsMap;
 	ThreadSafeUnorderedMap<InnoEntity*, SphereLightComponent*> m_SphereLightComponentsMap;
 	ThreadSafeUnorderedMap<InnoEntity*, CameraComponent*> m_CameraComponentsMap;
-	ThreadSafeUnorderedMap<InnoEntity*, InputComponent*> m_InputComponentsMap;
-	ThreadSafeUnorderedMap<InnoEntity*, EnvironmentCaptureComponent*> m_EnvironmentCaptureComponentsMap;
 
 	EntityChildrenComponentsMetadataMap m_entityChildrenComponentsMetadataMap;
 	std::set<EntityName> m_entityNameSet;
@@ -88,8 +83,6 @@ bool InnoGameSystemNS::setup()
 	m_PointLightComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(PointLightComponent), 1024);
 	m_SphereLightComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(SphereLightComponent), 128);
 	m_CameraComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(CameraComponent), 64);
-	m_InputComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(InputComponent), 256);
-	m_EnvironmentCaptureComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(EnvironmentCaptureComponent), 8192);
 
 	return true;
 }
@@ -122,8 +115,6 @@ bool InnoGameSystem::setup()
 		cleanContainers(PointLightComponent);
 		cleanContainers(SphereLightComponent);
 		cleanContainers(CameraComponent);
-		cleanContainers(InputComponent);
-		cleanContainers(EnvironmentCaptureComponent);
 	};
 
 	g_pCoreSystem->getFileSystem()->addSceneLoadingStartCallback(&InnoGameSystemNS::f_sceneLoadingStartCallback);
@@ -356,8 +347,6 @@ spawnComponentImplDefi(DirectionalLightComponent)
 spawnComponentImplDefi(PointLightComponent)
 spawnComponentImplDefi(SphereLightComponent)
 spawnComponentImplDefi(CameraComponent)
-spawnComponentImplDefi(InputComponent)
-spawnComponentImplDefi(EnvironmentCaptureComponent)
 
 #define destroyComponentImplDefi( className ) \
 bool InnoGameSystem::destroy(className* rhs) \
@@ -373,8 +362,6 @@ destroyComponentImplDefi(DirectionalLightComponent)
 destroyComponentImplDefi(PointLightComponent)
 destroyComponentImplDefi(SphereLightComponent)
 destroyComponentImplDefi(CameraComponent)
-destroyComponentImplDefi(InputComponent)
-destroyComponentImplDefi(EnvironmentCaptureComponent)
 
 #define registerComponentImplDefi( className ) \
 void InnoGameSystem::registerComponent(className* rhs, const InnoEntity* parentEntity) \
@@ -406,8 +393,6 @@ registerComponentImplDefi(DirectionalLightComponent)
 registerComponentImplDefi(PointLightComponent)
 registerComponentImplDefi(SphereLightComponent)
 registerComponentImplDefi(CameraComponent)
-registerComponentImplDefi(InputComponent)
-registerComponentImplDefi(EnvironmentCaptureComponent)
 
 #define  unregisterComponentImplDefi( className ) \
 void InnoGameSystem::unregisterComponent(className* rhs) \
@@ -433,8 +418,6 @@ unregisterComponentImplDefi(DirectionalLightComponent)
 unregisterComponentImplDefi(PointLightComponent)
 unregisterComponentImplDefi(SphereLightComponent)
 unregisterComponentImplDefi(CameraComponent)
-unregisterComponentImplDefi(InputComponent)
-unregisterComponentImplDefi(EnvironmentCaptureComponent)
 
 #define getComponentImplDefi( className ) \
 className* InnoGameSystem::get##className(const InnoEntity* parentEntity) \
@@ -458,8 +441,6 @@ getComponentImplDefi(DirectionalLightComponent)
 getComponentImplDefi(PointLightComponent)
 getComponentImplDefi(SphereLightComponent)
 getComponentImplDefi(CameraComponent)
-getComponentImplDefi(InputComponent)
-getComponentImplDefi(EnvironmentCaptureComponent)
 
 #define getComponentContainerImplDefi( className ) \
 std::vector<className*>& InnoGameSystem::get##className##s() \
@@ -473,26 +454,10 @@ getComponentContainerImplDefi(DirectionalLightComponent)
 getComponentContainerImplDefi(PointLightComponent)
 getComponentContainerImplDefi(SphereLightComponent)
 getComponentContainerImplDefi(CameraComponent)
-getComponentContainerImplDefi(InputComponent)
-getComponentContainerImplDefi(EnvironmentCaptureComponent)
 
 std::string InnoGameSystem::getGameName()
 {
 	return std::string("GameInstance");
-}
-
-void InnoGameSystem::registerButtonStatusCallback(InputComponent * inputComponent, ButtonData boundButton, std::function<void()>* function)
-{
-	auto l_kbuttonStatusCallbackVector = inputComponent->m_buttonStatusCallbackImpl.find(boundButton);
-	if (l_kbuttonStatusCallbackVector != inputComponent->m_buttonStatusCallbackImpl.end())
-	{
-		l_kbuttonStatusCallbackVector->second.emplace_back(function);
-	}
-	else
-	{
-		inputComponent->m_buttonStatusCallbackImpl.emplace(boundButton, std::vector<std::function<void()>*>{function});
-	}
-	g_pCoreSystem->getInputSystem()->addButtonStatusCallback(boundButton, function);
 }
 
 TransformComponent* InnoGameSystem::getRootTransformComponent()
@@ -508,20 +473,6 @@ const std::vector<InnoEntity*>& InnoGameSystem::getEntities()
 const EntityChildrenComponentsMetadataMap& InnoGameSystem::getEntityChildrenComponentsMetadataMap()
 {
 	return InnoGameSystemNS::m_entityChildrenComponentsMetadataMap;
-}
-
-void InnoGameSystem::registerMouseMovementCallback(InputComponent * inputComponent, int mouseCode, std::function<void(float)>* function)
-{
-	auto l_mouseMovementCallbackVector = inputComponent->m_mouseMovementCallbackImpl.find(mouseCode);
-	if (l_mouseMovementCallbackVector != inputComponent->m_mouseMovementCallbackImpl.end())
-	{
-		l_mouseMovementCallbackVector->second.emplace_back(function);
-	}
-	else
-	{
-		inputComponent->m_mouseMovementCallbackImpl.emplace(mouseCode, std::vector<std::function<void(float)>*>{function});
-	}
-	g_pCoreSystem->getInputSystem()->addMouseMovementCallback(mouseCode, function);
 }
 
 ObjectStatus InnoGameSystem::getStatus()

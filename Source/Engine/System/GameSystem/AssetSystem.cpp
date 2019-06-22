@@ -261,17 +261,6 @@ void InnoAssetSystem::addTerrain(MeshDataComponent& meshDataComponent)
 
 void InnoAssetSystemNS::loadAssetsForComponents()
 {
-	for (auto l_environmentCaptureComponent : g_pCoreSystem->getGameSystem()->get<EnvironmentCaptureComponent>())
-	{
-		if (!l_environmentCaptureComponent->m_cubemapTextureFileName.empty())
-		{
-			//InnoAssetSystemNS::m_asyncTask.emplace_back(g_pCoreSystem->getTaskSystem()->submit([&]()
-			//{
-			//	l_environmentCaptureComponent->m_TDC = InnoAssetSystemNS::loadTexture(l_environmentCaptureComponent->m_cubemapTextureFileName, TextureUsageType::EQUIRETANGULAR);
-			//}));
-		}
-	}
-
 	for (auto l_visibleComponent : g_pCoreSystem->getGameSystem()->get<VisibleComponent>())
 	{
 		if (l_visibleComponent->m_visiblilityType != VisiblilityType::INNO_INVISIBLE)
