@@ -1,4 +1,5 @@
 #include "GLLightPass.h"
+#include "GLEarlyZPass.h"
 #include "GLOpaquePass.h"
 #include "GLSSAOBlurPass.h"
 #include "GLBRDFLUTPass.h"
@@ -112,6 +113,10 @@ void GLLightPass::update()
 	activateTexture(
 		GLEnvironmentPreFilterPass::getPreFiltedCubemaps()[0],
 		9);
+	activateTexture(
+		GLEarlyZPass::getGLRPC()->m_GLTDCs[0],
+		10);
+
 	// culled point light
 	glBindImageTexture(0, GLLightCullingPass::getLightGrid()->m_TO, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
 

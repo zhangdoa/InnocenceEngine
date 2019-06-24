@@ -14,6 +14,8 @@ layout(std140, row_major, binding = 0) uniform cameraUBO
 	mat4 uni_t_camera_prev;
 	vec4 uni_globalPos;
 	float WHRatio;
+	float zNear;
+	float zFar;
 };
 
 layout(location = 0, binding = 0) uniform sampler2D uni_Position;

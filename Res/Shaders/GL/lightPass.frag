@@ -50,6 +50,8 @@ layout(location = 6, binding = 6) uniform sampler2D uni_brdfLUT;
 layout(location = 7, binding = 7) uniform sampler2D uni_brdfMSLUT;
 layout(location = 8, binding = 8) uniform samplerCube uni_irradianceMap;
 layout(location = 9, binding = 9) uniform samplerCube uni_preFiltedMap;
+layout(location = 10, binding = 10) uniform sampler2D uni_depth;
+
 layout(binding = 0, rgba16f) uniform image2D uni_lightGrid;
 
 layout(std140, row_major, binding = 0) uniform cameraUBO
@@ -62,6 +64,8 @@ layout(std140, row_major, binding = 0) uniform cameraUBO
 	mat4 uni_t_camera_prev;
 	vec4 uni_globalPos;
 	float WHRatio;
+	float zNear;
+	float zFar;
 };
 
 layout(std140, row_major, binding = 3) uniform sunUBO
@@ -82,6 +86,13 @@ layout(std140, row_major, binding = 5) uniform sphereLightUBO
 layout(std140, row_major, binding = 6) uniform CSMUBO
 {
 	CSM uni_CSMs[NR_CSM_SPLITS];
+};
+
+layout(std140, row_major, binding = 7) uniform skyUBO
+{
+	mat4 uni_p_inv;
+	mat4 uni_v_inv;
+	vec2 uni_viewportSize;
 };
 
 layout(std430, binding = 2) buffer lightIndexListSSBO
@@ -390,12 +401,27 @@ float ShadowCalculation(float NdotL, vec3 fragPos)
 	return shadow;
 }
 // ----------------------------------------------------------------------------
+float linearDepth(float depthSample)
+{
+	float zLinear = zNear * zFar / (zFar + zNear - depthSample * (zFar - zNear));
+	return zLinear;
+}
+// ----------------------------------------------------------------------------
 void main()
 {
 	vec4 RT0 = texture(uni_opaquePassRT0, TexCoords);
 	vec4 RT1 = texture(uni_opaquePassRT1, TexCoords);
 	vec4 RT2 = texture(uni_opaquePassRT2, TexCoords);
 	vec4 RT3 = texture(uni_opaquePassRT3, TexCoords);
+
+	//vec2 textureSize = textureSize(uni_depth, 0);
+	//vec2 screenTexCoord = gl_FragCoord.xy / textureSize;
+	//float depth = texture(uni_depth, screenTexCoord).r;
+	//vec4 posCS = vec4(screenTexCoord.x * 2.0f - 1.0f, screenTexCoord.y * 2.0f - 1.0f, depth * 2.0f - 1.0f, 1.0f);
+	//vec4 posVS = uni_p_inv * posCS;
+	//posVS /= posVS.w;
+	//vec4 posWS = uni_v_inv * posVS;
+	//vec3 FragPos = posWS.rgb;
 
 	vec3 FragPos = RT0.rgb;
 	vec3 Normal = RT1.rgb;
@@ -570,4 +596,5 @@ void main()
 
 	uni_lightPassRT0.rgb = Lo;
 	uni_lightPassRT0.a = 1.0;
+	//uni_lightPassRT0 = posWS;
 }
