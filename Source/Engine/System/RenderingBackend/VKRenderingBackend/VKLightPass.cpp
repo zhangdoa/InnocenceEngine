@@ -1,7 +1,7 @@
 #include "VKLightPass.h"
 #include "VKRenderingBackendUtilities.h"
 #include "../../../Component/VKRenderingBackendComponent.h"
-#include "../../../Component/RenderingFrontendComponent.h"
+
 #include "VKOpaquePass.h"
 
 using namespace VKRenderingBackendNS;
@@ -195,10 +195,12 @@ bool VKLightPass::initialize()
 	sunUBOWriteDescriptorSet.pBufferInfo = &sunUBODescriptorBufferInfo;
 	m_VKRPC->writeDescriptorSets.emplace_back(sunUBOWriteDescriptorSet);
 
+	auto l_renderingCapability = g_pCoreSystem->getRenderingFrontend()->getRenderingCapability();
+
 	VkDescriptorBufferInfo pointLightUBODescriptorBufferInfo = {};
 	pointLightUBODescriptorBufferInfo.buffer = VKRenderingBackendComponent::get().m_pointLightUBO;
 	pointLightUBODescriptorBufferInfo.offset = 0;
-	pointLightUBODescriptorBufferInfo.range = sizeof(PointLightGPUData) * RenderingFrontendComponent::get().m_maxPointLights;
+	pointLightUBODescriptorBufferInfo.range = sizeof(PointLightGPUData) * l_renderingCapability.maxPointLights;
 
 	VkWriteDescriptorSet pointLightUBOWriteDescriptorSet = {};
 	pointLightUBOWriteDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -212,7 +214,7 @@ bool VKLightPass::initialize()
 	VkDescriptorBufferInfo sphereLightUBODescriptorBufferInfo = {};
 	sphereLightUBODescriptorBufferInfo.buffer = VKRenderingBackendComponent::get().m_sphereLightUBO;
 	sphereLightUBODescriptorBufferInfo.offset = 0;
-	sphereLightUBODescriptorBufferInfo.range = sizeof(SphereLightGPUData) * RenderingFrontendComponent::get().m_maxSphereLights;
+	sphereLightUBODescriptorBufferInfo.range = sizeof(SphereLightGPUData) * l_renderingCapability.maxSphereLights;
 
 	VkWriteDescriptorSet sphereLightUBOWriteDescriptorSet = {};
 	sphereLightUBOWriteDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

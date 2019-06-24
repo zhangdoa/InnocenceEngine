@@ -4,7 +4,6 @@
 
 #include "GLRenderingBackendUtilities.h"
 #include "../../../Component/GLRenderingBackendComponent.h"
-#include "../../../Component/RenderingFrontendComponent.h"
 
 using namespace GLRenderingBackendNS;
 
@@ -107,8 +106,8 @@ bool GLDebuggerPass::drawCoordinateAxis()
 {
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
 
-	auto l_p = RenderingFrontendComponent::get().m_cameraGPUData.p_original;
-	auto l_r = RenderingFrontendComponent::get().m_cameraGPUData.r;
+	auto l_p = g_pCoreSystem->getRenderingFrontend()->getCameraGPUData().p_original;
+	auto l_r = g_pCoreSystem->getRenderingFrontend()->getCameraGPUData().r;
 
 	auto l_pos = vec4(-70.0f, -60.0f, -1.0f, 1.0f);
 	l_pos = InnoMath::clipToViewSpace(l_pos, l_p);
@@ -156,7 +155,7 @@ bool GLDebuggerPass::drawMainCamera()
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::SPHERE);
 
 	auto l_r = InnoMath::generateIdentityMatrix<float>();
-	auto l_pos = RenderingFrontendComponent::get().m_cameraGPUData.globalPos;
+	auto l_pos = g_pCoreSystem->getRenderingFrontend()->getCameraGPUData().globalPos;
 	auto l_t = InnoMath::toTranslationMatrix(l_pos);
 	auto l_s = InnoMath::toScaleMatrix(vec4(12.8f, 12.8f, 12.8f, 1.0f));
 	auto l_m = l_r * l_t * l_s;
@@ -178,7 +177,7 @@ bool GLDebuggerPass::drawDebugObjects()
 
 	if (l_drawPointLightRange)
 	{
-		for (auto i : RenderingFrontendComponent::get().m_pointLightGPUDataVector)
+		for (auto i : g_pCoreSystem->getRenderingFrontend()->getPointLightGPUData())
 		{
 			if (i.luminance.w > 0.0f)
 			{
@@ -195,7 +194,7 @@ bool GLDebuggerPass::drawDebugObjects()
 
 	if (l_drawSphereLightShape)
 	{
-		for (auto i : RenderingFrontendComponent::get().m_sphereLightGPUDataVector)
+		for (auto i : g_pCoreSystem->getRenderingFrontend()->getSphereLightGPUData())
 		{
 			if (i.luminance.w > 0.0f)
 			{
@@ -231,13 +230,11 @@ bool GLDebuggerPass::drawDebugObjects()
 
 	if (l_drawDebugMesh)
 	{
-		auto l_copy = RenderingFrontendComponent::get().m_debuggerPassGPUDataQueue.getRawData();
-		while (l_copy.size() > 0)
+		for (unsigned int i = 0; i < g_pCoreSystem->getRenderingFrontend()->getDebuggerPassDrawCallCount(); i++)
 		{
-			DebuggerPassGPUData l_debuggerPassGPUData = l_copy.front();
+			auto l_debuggerPassGPUData = g_pCoreSystem->getRenderingFrontend()->getDebuggerPassGPUData()[i];
 			updateUniform(3, l_debuggerPassGPUData.m);
 			drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_debuggerPassGPUData.MDC));
-			l_copy.pop();
 		}
 	}
 
@@ -257,7 +254,7 @@ bool GLDebuggerPass::drawDebugObjects()
 
 bool GLDebuggerPass::drawRightView()
 {
-	auto l_p = RenderingFrontendComponent::get().m_cameraGPUData.p_original;
+	auto l_p = g_pCoreSystem->getRenderingFrontend()->getCameraGPUData().p_original;
 	auto l_cam_r = InnoMath::toRotationMatrix(InnoMath::getQuatRotator(vec4(0.0f, 1.0f, 0.0f, 0.0f), 90.0f)).inverse();
 	auto l_pos = vec4(1024.0f, 0.0f, 0.0f, 1.0f);
 	auto l_cam_t = InnoMath::toTranslationMatrix(l_pos).inverse();
@@ -279,7 +276,7 @@ bool GLDebuggerPass::drawRightView()
 
 bool GLDebuggerPass::drawTopView()
 {
-	auto l_p = RenderingFrontendComponent::get().m_cameraGPUData.p_original;
+	auto l_p = g_pCoreSystem->getRenderingFrontend()->getCameraGPUData().p_original;
 	auto l_qX = InnoMath::getQuatRotator(vec4(1.0f, 0.0f, 0.0f, 0.0f), -90.0f);
 	auto l_qY = InnoMath::getQuatRotator(vec4(0.0f, 1.0f, 0.0f, 0.0f), 0.0f);
 	auto l_cam_r = InnoMath::toRotationMatrix(l_qX.quatMul(l_qY)).inverse();
@@ -303,7 +300,7 @@ bool GLDebuggerPass::drawTopView()
 
 bool GLDebuggerPass::drawFrontView()
 {
-	auto l_p = RenderingFrontendComponent::get().m_cameraGPUData.p_original;
+	auto l_p = g_pCoreSystem->getRenderingFrontend()->getCameraGPUData().p_original;
 	auto l_cam_r = InnoMath::toRotationMatrix(InnoMath::getQuatRotator(vec4(1.0f, 0.0f, 0.0f, 0.0f), 0.0f)).inverse();
 	auto l_pos = vec4(0.0f, 0.0f, 1024.0f, 1.0f);
 	auto l_cam_t = InnoMath::toTranslationMatrix(l_pos).inverse();
@@ -339,9 +336,9 @@ bool GLDebuggerPass::update()
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-	updateUniform(0, RenderingFrontendComponent::get().m_cameraGPUData.p_original);
-	updateUniform(1, RenderingFrontendComponent::get().m_cameraGPUData.r);
-	updateUniform(2, RenderingFrontendComponent::get().m_cameraGPUData.t);
+	updateUniform(0, g_pCoreSystem->getRenderingFrontend()->getCameraGPUData().p_original);
+	updateUniform(1, g_pCoreSystem->getRenderingFrontend()->getCameraGPUData().r);
+	updateUniform(2, g_pCoreSystem->getRenderingFrontend()->getCameraGPUData().t);
 
 	// albedo
 	updateUniform(4, vec4(0.5f, 0.2f, 0.1f, 1.0f));

@@ -1,7 +1,6 @@
 #include "GLEnvironmentPreFilterPass.h"
 #include "GLRenderingBackendUtilities.h"
 #include "../../../Component/GLRenderingBackendComponent.h"
-#include "../../../Component/RenderingFrontendComponent.h"
 
 #include "GLEnvironmentCapturePass.h"
 

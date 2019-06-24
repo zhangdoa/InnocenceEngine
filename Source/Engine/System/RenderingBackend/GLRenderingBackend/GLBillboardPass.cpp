@@ -4,7 +4,6 @@
 
 #include "GLRenderingBackendUtilities.h"
 #include "../../../Component/GLRenderingBackendComponent.h"
-#include "../../../Component/RenderingFrontendComponent.h"
 
 using namespace GLRenderingBackendNS;
 
@@ -62,49 +61,46 @@ bool GLBillboardPass::update()
 
 	updateUniform(
 		0,
-		RenderingFrontendComponent::get().m_cameraGPUData.p_original);
+		g_pCoreSystem->getRenderingFrontend()->getCameraGPUData().p_original);
 	updateUniform(
 		1,
-		RenderingFrontendComponent::get().m_cameraGPUData.r);
+		g_pCoreSystem->getRenderingFrontend()->getCameraGPUData().r);
 	updateUniform(
 		2,
-		RenderingFrontendComponent::get().m_cameraGPUData.t);
+		g_pCoreSystem->getRenderingFrontend()->getCameraGPUData().t);
 
-	while (RenderingFrontendComponent::get().m_billboardPassGPUDataQueue.size() > 0)
+	for (unsigned int i = 0; i < g_pCoreSystem->getRenderingFrontend()->getBillboardPassDrawCallCount(); i++)
 	{
-		BillboardPassGPUData l_billboardPassGPUData;
+		auto l_billboardPassGPUData = g_pCoreSystem->getRenderingFrontend()->getBillboardPassGPUData()[i];
 
-		if (RenderingFrontendComponent::get().m_billboardPassGPUDataQueue.tryPop(l_billboardPassGPUData))
+		auto l_GlobalPos = l_billboardPassGPUData.globalPos;
+
+		updateUniform(
+			3,
+			l_GlobalPos);
+
+		auto l_distanceToCamera = l_billboardPassGPUData.distanceToCamera;
+
+		vec2 l_shearingRatio;
+		if (l_distanceToCamera > 1.0f)
 		{
-			auto l_GlobalPos = l_billboardPassGPUData.globalPos;
-
-			updateUniform(
-				3,
-				l_GlobalPos);
-
-			auto l_distanceToCamera = l_billboardPassGPUData.distanceToCamera;
-
-			vec2 l_shearingRatio;
-			if (l_distanceToCamera > 1.0f)
-			{
-				l_shearingRatio = vec2(1.0f / (l_distanceToCamera * RenderingFrontendComponent::get().m_cameraGPUData.WHRatio), (1.0f / l_distanceToCamera));
-			}
-			else
-			{
-				l_shearingRatio = vec2(1.0f / RenderingFrontendComponent::get().m_cameraGPUData.WHRatio, 1.0f);
-			}
-
-			updateUniform(
-				4,
-				l_shearingRatio);
-
-			auto l_iconTexture = getGLTextureDataComponent(l_billboardPassGPUData.iconType);
-
-			activateTexture(l_iconTexture, 0);
-
-			auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);
-			drawMesh(l_MDC);
+			l_shearingRatio = vec2(1.0f / (l_distanceToCamera * g_pCoreSystem->getRenderingFrontend()->getCameraGPUData().WHRatio), (1.0f / l_distanceToCamera));
 		}
+		else
+		{
+			l_shearingRatio = vec2(1.0f / g_pCoreSystem->getRenderingFrontend()->getCameraGPUData().WHRatio, 1.0f);
+		}
+
+		updateUniform(
+			4,
+			l_shearingRatio);
+
+		auto l_iconTexture = getGLTextureDataComponent(l_billboardPassGPUData.iconType);
+
+		activateTexture(l_iconTexture, 0);
+
+		auto l_MDC = getGLMeshDataComponent(MeshShapeType::QUAD);
+		drawMesh(l_MDC);
 	}
 
 	glDisable(GL_DEPTH_TEST);

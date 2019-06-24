@@ -5,7 +5,6 @@
 #include "DX11LightCullingPass.h"
 
 #include "../../../Component/DX11RenderingBackendComponent.h"
-#include "../../../Component/RenderingFrontendComponent.h"
 
 #include "../../ICoreSystem.h"
 

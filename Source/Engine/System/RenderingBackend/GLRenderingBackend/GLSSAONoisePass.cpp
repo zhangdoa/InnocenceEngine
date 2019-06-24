@@ -3,7 +3,6 @@
 
 #include "GLRenderingBackendUtilities.h"
 #include "../../../Component/GLRenderingBackendComponent.h"
-#include "../../../Component/RenderingFrontendComponent.h"
 
 using namespace GLRenderingBackendNS;
 

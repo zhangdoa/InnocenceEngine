@@ -1,7 +1,6 @@
 #include "GLRenderingBackendUtilities.h"
 #include "GLShadowPass.h"
 #include "../../../Component/GLRenderingBackendComponent.h"
-#include "../../../Component/RenderingFrontendComponent.h"
 
 #include "../../ICoreSystem.h"
 
@@ -74,10 +73,11 @@ void GLShadowPass::initialize()
 
 void GLShadowPass::drawAllMeshDataComponents()
 {
-	for (unsigned int i = 0; i < RenderingFrontendComponent::get().m_opaquePassDrawcallCount; i++)
+	auto l_totalDrawCallCount = g_pCoreSystem->getRenderingFrontend()->getOpaquePassDrawCallCount();
+	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
 	{
-		auto l_opaquePassGPUData = RenderingFrontendComponent::get().m_opaquePassGPUDatas[i];
-		auto l_meshGPUData = RenderingFrontendComponent::get().m_opaquePassMeshGPUDatas[i];
+		auto l_opaquePassGPUData = g_pCoreSystem->getRenderingFrontend()->getOpaquePassGPUData()[i];
+		auto l_meshGPUData = g_pCoreSystem->getRenderingFrontend()->getOpaquePassMeshGPUData()[i];
 
 		//uni_m
 		updateUniform(
@@ -113,11 +113,11 @@ void GLShadowPass::update()
 			// uni_p
 			updateUniform(
 				0,
-				RenderingFrontendComponent::get().m_CSMGPUDataVector[splitCount].p);
+				g_pCoreSystem->getRenderingFrontend()->getCSMGPUData()[splitCount].p);
 			//uni_v
 			updateUniform(
 				1,
-				RenderingFrontendComponent::get().m_CSMGPUDataVector[splitCount].v);
+				g_pCoreSystem->getRenderingFrontend()->getCSMGPUData()[splitCount].v);
 
 			splitCount++;
 

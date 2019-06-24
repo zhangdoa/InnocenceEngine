@@ -2,7 +2,6 @@
 
 #include "VKRenderingBackendUtilities.h"
 #include "../../../Component/VKRenderingBackendComponent.h"
-#include "../../../Component/RenderingFrontendComponent.h"
 
 #include "VKOpaquePass.h"
 #include "VKLightPass.h"
@@ -309,7 +308,9 @@ bool VKRenderingBackendNS::createMaterialDescriptorPool()
 
 	VkDescriptorPoolSize l_descriptorPoolSizes[] = { l_descriptorPoolSize };
 
-	if (!createDescriptorPool(l_descriptorPoolSizes, 1, RenderingFrontendComponent::get().m_maxMaterials, VKRenderingBackendComponent::get().m_materialDescriptorPool))
+	auto l_renderingCapability = g_pCoreSystem->getRenderingFrontend()->getRenderingCapability();
+
+	if (!createDescriptorPool(l_descriptorPoolSizes, 1, l_renderingCapability.maxMaterials, VKRenderingBackendComponent::get().m_materialDescriptorPool))
 	{
 		m_objectStatus = ObjectStatus::Suspended;
 		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to create VkDescriptorPool for material!");
@@ -629,17 +630,14 @@ bool VKRenderingBackendNS::createSyncPrimitives()
 
 bool VKRenderingBackendNS::generateGPUBuffers()
 {
+	auto l_renderingCapability = g_pCoreSystem->getRenderingFrontend()->getRenderingCapability();
+
 	generateUBO(VKRenderingBackendComponent::get().m_cameraUBO, sizeof(CameraGPUData), VKRenderingBackendComponent::get().m_cameraUBOMemory);
-
-	generateUBO(VKRenderingBackendComponent::get().m_meshUBO, sizeof(MeshGPUData) * RenderingFrontendComponent::get().m_maxMeshes, VKRenderingBackendComponent::get().m_meshUBOMemory);
-
-	generateUBO(VKRenderingBackendComponent::get().m_materialUBO, sizeof(MaterialGPUData) * RenderingFrontendComponent::get().m_maxMaterials, VKRenderingBackendComponent::get().m_materialUBOMemory);
-
+	generateUBO(VKRenderingBackendComponent::get().m_meshUBO, sizeof(MeshGPUData) * l_renderingCapability.maxMeshes, VKRenderingBackendComponent::get().m_meshUBOMemory);
+	generateUBO(VKRenderingBackendComponent::get().m_materialUBO, sizeof(MaterialGPUData) * l_renderingCapability.maxMaterials, VKRenderingBackendComponent::get().m_materialUBOMemory);
 	generateUBO(VKRenderingBackendComponent::get().m_sunUBO, sizeof(SunGPUData), VKRenderingBackendComponent::get().m_sunUBOMemory);
-
-	generateUBO(VKRenderingBackendComponent::get().m_pointLightUBO, sizeof(PointLightGPUData) * RenderingFrontendComponent::get().m_maxPointLights, VKRenderingBackendComponent::get().m_pointLightUBOMemory);
-
-	generateUBO(VKRenderingBackendComponent::get().m_sphereLightUBO, sizeof(SphereLightGPUData) * RenderingFrontendComponent::get().m_maxSphereLights, VKRenderingBackendComponent::get().m_sphereLightUBOMemory);
+	generateUBO(VKRenderingBackendComponent::get().m_pointLightUBO, sizeof(PointLightGPUData) * l_renderingCapability.maxPointLights, VKRenderingBackendComponent::get().m_pointLightUBOMemory);
+	generateUBO(VKRenderingBackendComponent::get().m_sphereLightUBO, sizeof(SphereLightGPUData) * l_renderingCapability.maxSphereLights, VKRenderingBackendComponent::get().m_sphereLightUBOMemory);
 
 	return true;
 }
@@ -677,9 +675,11 @@ bool VKRenderingBackendNS::initialize()
 {
 	if (VKRenderingBackendNS::m_objectStatus == ObjectStatus::Created)
 	{
-		m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKMeshDataComponent), RenderingFrontendComponent::get().m_maxMeshes);
-		m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKMaterialDataComponent), RenderingFrontendComponent::get().m_maxMaterials);
-		m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKTextureDataComponent), RenderingFrontendComponent::get().m_maxTextures);
+		auto l_renderingCapability = g_pCoreSystem->getRenderingFrontend()->getRenderingCapability();
+
+		m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKMeshDataComponent), l_renderingCapability.maxMeshes);
+		m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKMaterialDataComponent), l_renderingCapability.maxMaterials);
+		m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(VKTextureDataComponent), l_renderingCapability.maxTextures);
 
 		bool l_result = true;
 
@@ -836,12 +836,12 @@ bool VKRenderingBackendNS::update()
 		}
 	}
 
-	updateUBO(VKRenderingBackendComponent::get().m_cameraUBOMemory, RenderingFrontendComponent::get().m_cameraGPUData);
-	updateUBO(VKRenderingBackendComponent::get().m_sunUBOMemory, RenderingFrontendComponent::get().m_sunGPUData);
-	updateUBO(VKRenderingBackendComponent::get().m_pointLightUBOMemory, RenderingFrontendComponent::get().m_pointLightGPUDataVector);
-	updateUBO(VKRenderingBackendComponent::get().m_sphereLightUBOMemory, RenderingFrontendComponent::get().m_sphereLightGPUDataVector);
-	updateUBO(VKRenderingBackendComponent::get().m_meshUBOMemory, RenderingFrontendComponent::get().m_opaquePassMeshGPUDatas);
-	updateUBO(VKRenderingBackendComponent::get().m_materialUBOMemory, RenderingFrontendComponent::get().m_opaquePassMaterialGPUDatas);
+	updateUBO(VKRenderingBackendComponent::get().m_cameraUBOMemory, g_pCoreSystem->getRenderingFrontend()->getCameraGPUData());
+	updateUBO(VKRenderingBackendComponent::get().m_sunUBOMemory, g_pCoreSystem->getRenderingFrontend()->getSunGPUData());
+	updateUBO(VKRenderingBackendComponent::get().m_pointLightUBOMemory, g_pCoreSystem->getRenderingFrontend()->getPointLightGPUData());
+	updateUBO(VKRenderingBackendComponent::get().m_sphereLightUBOMemory, g_pCoreSystem->getRenderingFrontend()->getSphereLightGPUData());
+	updateUBO(VKRenderingBackendComponent::get().m_meshUBOMemory, g_pCoreSystem->getRenderingFrontend()->getOpaquePassMeshGPUData());
+	updateUBO(VKRenderingBackendComponent::get().m_materialUBOMemory, g_pCoreSystem->getRenderingFrontend()->getOpaquePassMaterialGPUData());
 
 	VKOpaquePass::update();
 	VKLightPass::update();

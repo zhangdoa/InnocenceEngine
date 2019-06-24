@@ -4,7 +4,6 @@
 #include "DX11OpaquePass.h"
 
 #include "../../../Component/DX11RenderingBackendComponent.h"
-#include "../../../Component/RenderingFrontendComponent.h"
 
 #include "../../ICoreSystem.h"
 
@@ -180,9 +179,10 @@ bool DX11LightCullingPass::initializeShaders()
 
 bool DX11LightCullingPass::calculateFrustums()
 {
-	RenderingFrontendComponent::get().m_dispatchParamsGPUData.numThreadGroups = m_tileFrustumNumThreadGroups;
-	RenderingFrontendComponent::get().m_dispatchParamsGPUData.numThreads = m_tileFrustumNumThreads;
-	updateConstantBuffer(DX11RenderingBackendComponent::get().m_dispatchParamsConstantBuffer, RenderingFrontendComponent::get().m_dispatchParamsGPUData);
+	DispatchParamsGPUData l_dispatchParamsGPUData;
+	l_dispatchParamsGPUData.numThreadGroups = m_tileFrustumNumThreadGroups;
+	l_dispatchParamsGPUData.numThreads = m_tileFrustumNumThreads;
+	updateConstantBuffer(DX11RenderingBackendComponent::get().m_dispatchParamsConstantBuffer, l_dispatchParamsGPUData);
 
 	activateShader(m_tileFrustumDXSPC);
 
@@ -199,9 +199,10 @@ bool DX11LightCullingPass::calculateFrustums()
 
 bool DX11LightCullingPass::cullLights()
 {
-	RenderingFrontendComponent::get().m_dispatchParamsGPUData.numThreadGroups = m_lightCullingNumThreadGroups;
-	RenderingFrontendComponent::get().m_dispatchParamsGPUData.numThreads = m_lightCullingNumThreads;
-	updateConstantBuffer(DX11RenderingBackendComponent::get().m_dispatchParamsConstantBuffer, RenderingFrontendComponent::get().m_dispatchParamsGPUData);
+	DispatchParamsGPUData l_dispatchParamsGPUData;
+	l_dispatchParamsGPUData.numThreadGroups = m_lightCullingNumThreadGroups;
+	l_dispatchParamsGPUData.numThreads = m_lightCullingNumThreads;
+	updateConstantBuffer(DX11RenderingBackendComponent::get().m_dispatchParamsConstantBuffer, l_dispatchParamsGPUData);
 
 	activateShader(m_lightCullingDXSPC);
 

@@ -3,7 +3,6 @@
 
 #include "GLRenderingBackendUtilities.h"
 #include "../../../Component/GLRenderingBackendComponent.h"
-#include "../../../Component/RenderingFrontendComponent.h"
 
 #include "../../ICoreSystem.h"
 
@@ -64,9 +63,9 @@ bool GLTransparentPass::update(GLRenderPassComponent* prePassGLRPC)
 
 	unsigned int l_offset = 0;
 
-	for (unsigned int i = 0; i < RenderingFrontendComponent::get().m_transparentPassDrawcallCount; i++)
+	for (unsigned int i = 0; i < g_pCoreSystem->getRenderingFrontend()->getTransparentPassDrawCallCount(); i++)
 	{
-		auto l_transparentPassGPUData = RenderingFrontendComponent::get().m_transparentPassGPUDatas[i];
+		auto l_transparentPassGPUData = g_pCoreSystem->getRenderingFrontend()->getTransparentPassGPUData()[i];
 
 		bindUBO(GLRenderingBackendComponent::get().m_meshUBO, 1, l_offset * sizeof(MeshGPUData), sizeof(MeshGPUData));
 		bindUBO(GLRenderingBackendComponent::get().m_materialUBO, 2, l_offset * sizeof(MaterialGPUData), sizeof(MaterialGPUData));

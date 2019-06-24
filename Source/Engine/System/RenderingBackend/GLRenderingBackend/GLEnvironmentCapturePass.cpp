@@ -5,7 +5,6 @@
 #include "GLOpaquePass.h"
 
 #include "../../../Component/GLRenderingBackendComponent.h"
-#include "../../../Component/RenderingFrontendComponent.h"
 
 #include "../../ICoreSystem.h"
 
@@ -133,9 +132,9 @@ bool GLEnvironmentCapturePass::drawOpaquePass(vec4 capturePos, mat4 p, const std
 
 	unsigned int l_offset = 0;
 
-	for (unsigned int faceIndex = 0; faceIndex < RenderingFrontendComponent::get().m_GIPassDrawcallCount; faceIndex++)
+	for (unsigned int i = 0; i < g_pCoreSystem->getRenderingFrontend()->getGIPassDrawCallCount(); i++)
 	{
-		auto l_opaquePassGPUData = RenderingFrontendComponent::get().m_GIPassGPUDatas[faceIndex];
+		auto l_opaquePassGPUData = g_pCoreSystem->getRenderingFrontend()->getGIPassGPUData()[i];
 
 		if (l_opaquePassGPUData.normalTDC)
 		{
@@ -341,8 +340,8 @@ bool GLEnvironmentCapturePass::sampleSG()
 
 bool GLEnvironmentCapturePass::update()
 {
-	updateUBO(GLRenderingBackendComponent::get().m_meshUBO, RenderingFrontendComponent::get().m_GIPassMeshGPUDatas);
-	updateUBO(GLRenderingBackendComponent::get().m_materialUBO, RenderingFrontendComponent::get().m_GIPassMaterialGPUDatas);
+	updateUBO(GLRenderingBackendComponent::get().m_meshUBO, g_pCoreSystem->getRenderingFrontend()->getGIPassMeshGPUData());
+	updateUBO(GLRenderingBackendComponent::get().m_materialUBO, g_pCoreSystem->getRenderingFrontend()->getGIPassMaterialGPUData());
 
 	auto l_sceneAABB = g_pCoreSystem->getPhysicsSystem()->getSceneAABB();
 
@@ -350,8 +349,6 @@ bool GLEnvironmentCapturePass::update()
 	auto l_voxelSize = axisSize / m_subDivideDimension;
 	auto l_startPos = l_sceneAABB.m_boundMin;
 	auto l_currentPos = l_startPos;
-
-	RenderingFrontendComponent::get().m_debuggerPassGPUDataQueue.clear();
 
 	unsigned int l_index = 0;
 
@@ -366,8 +363,6 @@ bool GLEnvironmentCapturePass::update()
 				DebuggerPassGPUData l_debuggerPassGPUData = {};
 				l_debuggerPassGPUData.m = InnoMath::toTranslationMatrix(l_currentPos);
 				l_debuggerPassGPUData.MDC = getGLMeshDataComponent(MeshShapeType::SPHERE);
-
-				RenderingFrontendComponent::get().m_debuggerPassGPUDataQueue.push(l_debuggerPassGPUData);
 
 				render(l_currentPos, m_capturedCubemaps[l_index]);
 				l_index++;

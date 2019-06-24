@@ -1,5 +1,4 @@
 #include "RenderingFrontend.h"
-#include "../../Component/RenderingFrontendComponent.h"
 
 #include "../ICoreSystem.h"
 
@@ -18,14 +17,41 @@ INNO_PRIVATE_SCOPE InnoRenderingFrontendNS
 	std::string m_windowName;
 	bool m_fullScreen = false;
 
+	RenderingCapability m_renderingCapability;
+
+	CameraGPUData m_cameraGPUData;
+	SunGPUData m_sunGPUData;
+	std::vector<CSMGPUData> m_CSMGPUData;
+	std::vector<PointLightGPUData> m_pointLightGPUData;
+	std::vector<SphereLightGPUData> m_sphereLightGPUData;
+	SkyGPUData m_skyGPUData;
+
+	unsigned int m_opaquePassDrawCallCount = 0;
+	std::vector<OpaquePassGPUData> m_opaquePassGPUData;
+	std::vector<MeshGPUData> m_opaquePassMeshGPUData;
+	std::vector<MaterialGPUData> m_opaquePassMaterialGPUData;
+
+	unsigned int m_transparentPassDrawCallCount = 0;
+	std::vector<TransparentPassGPUData> m_transparentPassGPUData;
+	std::vector<MeshGPUData> m_transparentPassMeshGPUData;
+	std::vector<MaterialGPUData> m_transparentPassMaterialGPUData;
+
+	unsigned int m_billboardPassDrawCallCount = 0;
+	std::vector<BillboardPassGPUData> m_billboardPassGPUData;
+
+	unsigned int m_debuggerPassDrawCallCount = 0;
+	std::vector<DebuggerPassGPUData> m_debuggerPassGPUData;
+
+	unsigned int m_GIPassDrawCallCount = 0;
+	std::vector<OpaquePassGPUData> m_GIPassGPUData;
+	std::vector<MeshGPUData> m_GIPassMeshGPUData;
+	std::vector<MaterialGPUData> m_GIPassMaterialGPUData;
+
 	ThreadSafeVector<CullingDataPack> m_cullingDataPack;
 
 	std::atomic<bool> m_isCSMDataPackValid = false;
-
 	std::atomic<bool> m_isSunDataPackValid = false;
-
 	std::atomic<bool> m_isCameraDataPackValid = false;
-
 	std::atomic<bool> m_isMeshDataPackValid = false;
 
 	std::vector<Plane> m_debugPlanes;
@@ -97,27 +123,34 @@ bool InnoRenderingFrontendNS::setup(IRenderingBackend* renderingBackend)
 	//m_renderingConfig.drawTerrain = true;
 	//m_renderingConfig.drawDebugObject = true;
 
+	m_renderingCapability.maxCSMSplits = 4;
+	m_renderingCapability.maxPointLights = 1024;
+	m_renderingCapability.maxSphereLights = 128;
+	m_renderingCapability.maxMeshes = 16384;
+	m_renderingCapability.maxMaterials = 32768;
+	m_renderingCapability.maxTextures = 32768;
+
 	f_sceneLoadingStartCallback = [&]() {
 		m_cullingDataPack.clear();
 
-		RenderingFrontendComponent::get().m_CSMGPUDataVector.clear();
-		RenderingFrontendComponent::get().m_pointLightGPUDataVector.clear();
-		RenderingFrontendComponent::get().m_sphereLightGPUDataVector.clear();
+		m_CSMGPUData.clear();
+		m_pointLightGPUData.clear();
+		m_sphereLightGPUData.clear();
 
-		RenderingFrontendComponent::get().m_opaquePassGPUDatas.clear();
-		RenderingFrontendComponent::get().m_opaquePassMeshGPUDatas.clear();
-		RenderingFrontendComponent::get().m_opaquePassMaterialGPUDatas.clear();
+		m_opaquePassGPUData.clear();
+		m_opaquePassMeshGPUData.clear();
+		m_opaquePassMaterialGPUData.clear();
 
-		RenderingFrontendComponent::get().m_transparentPassGPUDatas.clear();
-		RenderingFrontendComponent::get().m_transparentPassMeshGPUDatas.clear();
-		RenderingFrontendComponent::get().m_transparentPassMaterialGPUDatas.clear();
+		m_transparentPassGPUData.clear();
+		m_transparentPassMeshGPUData.clear();
+		m_transparentPassMaterialGPUData.clear();
 
-		RenderingFrontendComponent::get().m_billboardPassGPUDataQueue.clear();
-		RenderingFrontendComponent::get().m_debuggerPassGPUDataQueue.clear();
+		m_billboardPassGPUData.clear();
+		m_debuggerPassGPUData.clear();
 
-		RenderingFrontendComponent::get().m_GIPassGPUDatas.clear();
-		RenderingFrontendComponent::get().m_GIPassMeshGPUDatas.clear();
-		RenderingFrontendComponent::get().m_GIPassMaterialGPUDatas.clear();
+		m_GIPassGPUData.clear();
+		m_GIPassMeshGPUData.clear();
+		m_GIPassMaterialGPUData.clear();
 
 		m_isCSMDataPackValid = false;
 		m_isSunDataPackValid = false;
@@ -126,20 +159,20 @@ bool InnoRenderingFrontendNS::setup(IRenderingBackend* renderingBackend)
 	};
 
 	f_sceneLoadingFinishCallback = [&]() {
-		RenderingFrontendComponent::get().m_opaquePassGPUDatas.resize(RenderingFrontendComponent::get().m_maxMeshes);
-		RenderingFrontendComponent::get().m_opaquePassMeshGPUDatas.resize(RenderingFrontendComponent::get().m_maxMeshes);
-		RenderingFrontendComponent::get().m_opaquePassMaterialGPUDatas.resize(RenderingFrontendComponent::get().m_maxMaterials);
+		m_opaquePassGPUData.resize(m_renderingCapability.maxMeshes);
+		m_opaquePassMeshGPUData.resize(m_renderingCapability.maxMeshes);
+		m_opaquePassMaterialGPUData.resize(m_renderingCapability.maxMaterials);
 
-		RenderingFrontendComponent::get().m_transparentPassGPUDatas.resize(RenderingFrontendComponent::get().m_maxMeshes);
-		RenderingFrontendComponent::get().m_transparentPassMeshGPUDatas.resize(RenderingFrontendComponent::get().m_maxMeshes);
-		RenderingFrontendComponent::get().m_transparentPassMaterialGPUDatas.resize(RenderingFrontendComponent::get().m_maxMaterials);
+		m_transparentPassGPUData.resize(m_renderingCapability.maxMeshes);
+		m_transparentPassMeshGPUData.resize(m_renderingCapability.maxMeshes);
+		m_transparentPassMaterialGPUData.resize(m_renderingCapability.maxMaterials);
 
-		RenderingFrontendComponent::get().m_pointLightGPUDataVector.resize(RenderingFrontendComponent::get().m_maxPointLights);
-		RenderingFrontendComponent::get().m_sphereLightGPUDataVector.resize(RenderingFrontendComponent::get().m_maxSphereLights);
+		m_pointLightGPUData.resize(m_renderingCapability.maxPointLights);
+		m_sphereLightGPUData.resize(m_renderingCapability.maxSphereLights);
 
-		RenderingFrontendComponent::get().m_GIPassGPUDatas.resize(RenderingFrontendComponent::get().m_maxMeshes);
-		RenderingFrontendComponent::get().m_GIPassMeshGPUDatas.resize(RenderingFrontendComponent::get().m_maxMeshes);
-		RenderingFrontendComponent::get().m_GIPassMaterialGPUDatas.resize(RenderingFrontendComponent::get().m_maxMaterials);
+		m_GIPassGPUData.resize(m_renderingCapability.maxMeshes);
+		m_GIPassMeshGPUData.resize(m_renderingCapability.maxMeshes);
+		m_GIPassMaterialGPUData.resize(m_renderingCapability.maxMaterials);
 	};
 
 	f_bakeGI = []() {
@@ -188,8 +221,8 @@ bool InnoRenderingFrontendNS::updateCameraData()
 
 	auto l_p = l_mainCamera->m_projectionMatrix;
 
-	RenderingFrontendComponent::get().m_cameraGPUData.p_original = l_p;
-	RenderingFrontendComponent::get().m_cameraGPUData.p_jittered = l_p;
+	m_cameraGPUData.p_original = l_p;
+	m_cameraGPUData.p_jittered = l_p;
 
 	if (m_renderingConfig.useTAA)
 	{
@@ -199,29 +232,29 @@ bool InnoRenderingFrontendNS::updateCameraData()
 		{
 			l_currentHaltonStep = 0;
 		}
-		RenderingFrontendComponent::get().m_cameraGPUData.p_jittered.m02 = m_haltonSampler[l_currentHaltonStep].x / m_screenResolution.x;
-		RenderingFrontendComponent::get().m_cameraGPUData.p_jittered.m12 = m_haltonSampler[l_currentHaltonStep].y / m_screenResolution.y;
+		m_cameraGPUData.p_jittered.m02 = m_haltonSampler[l_currentHaltonStep].x / m_screenResolution.x;
+		m_cameraGPUData.p_jittered.m12 = m_haltonSampler[l_currentHaltonStep].y / m_screenResolution.y;
 		l_currentHaltonStep += 1;
 	}
 
-	RenderingFrontendComponent::get().m_cameraGPUData.r =
+	m_cameraGPUData.r =
 		InnoMath::getInvertRotationMatrix(
 			l_mainCameraTransformComponent->m_globalTransformVector.m_rot
 		);
 
-	RenderingFrontendComponent::get().m_cameraGPUData.t =
+	m_cameraGPUData.t =
 		InnoMath::getInvertTranslationMatrix(
 			l_mainCameraTransformComponent->m_globalTransformVector.m_pos
 		);
 
-	RenderingFrontendComponent::get().m_cameraGPUData.r_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_rotationMat.inverse();
-	RenderingFrontendComponent::get().m_cameraGPUData.t_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_translationMat.inverse();
+	m_cameraGPUData.r_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_rotationMat.inverse();
+	m_cameraGPUData.t_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_translationMat.inverse();
 
-	RenderingFrontendComponent::get().m_cameraGPUData.globalPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
+	m_cameraGPUData.globalPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
 
-	RenderingFrontendComponent::get().m_cameraGPUData.WHRatio = l_mainCamera->m_WHRatio;
-	RenderingFrontendComponent::get().m_cameraGPUData.zNear = l_mainCamera->m_zNear;
-	RenderingFrontendComponent::get().m_cameraGPUData.zFar = l_mainCamera->m_zFar;
+	m_cameraGPUData.WHRatio = l_mainCamera->m_WHRatio;
+	m_cameraGPUData.zNear = l_mainCamera->m_zNear;
+	m_cameraGPUData.zFar = l_mainCamera->m_zFar;
 
 	m_isCameraDataPackValid = true;
 
@@ -237,17 +270,17 @@ bool InnoRenderingFrontendNS::updateSunData()
 	auto l_directionalLight = l_directionalLightComponents[0];
 	auto l_directionalLightTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_directionalLight->m_parentEntity);
 
-	RenderingFrontendComponent::get().m_sunGPUData.dir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
-	RenderingFrontendComponent::get().m_sunGPUData.luminance = l_directionalLight->m_color * l_directionalLight->m_luminousFlux;
-	RenderingFrontendComponent::get().m_sunGPUData.r = InnoMath::getInvertRotationMatrix(l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+	m_sunGPUData.dir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+	m_sunGPUData.luminance = l_directionalLight->m_color * l_directionalLight->m_luminousFlux;
+	m_sunGPUData.r = InnoMath::getInvertRotationMatrix(l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
 
 	auto l_CSMSize = l_directionalLight->m_projectionMatrices.size();
 
-	RenderingFrontendComponent::get().m_CSMGPUDataVector.clear();
+	m_CSMGPUData.clear();
 
 	for (size_t j = 0; j < l_directionalLight->m_projectionMatrices.size(); j++)
 	{
-		RenderingFrontendComponent::get().m_CSMGPUDataVector.emplace_back();
+		m_CSMGPUData.emplace_back();
 
 		auto l_shadowSplitCorner = vec4(
 			l_directionalLight->m_AABBsInWorldSpace[j].m_boundMin.x,
@@ -256,12 +289,12 @@ bool InnoRenderingFrontendNS::updateSunData()
 			l_directionalLight->m_AABBsInWorldSpace[j].m_boundMax.z
 		);
 
-		RenderingFrontendComponent::get().m_CSMGPUDataVector[j].p = l_directionalLight->m_projectionMatrices[j];
-		RenderingFrontendComponent::get().m_CSMGPUDataVector[j].splitCorners = l_shadowSplitCorner;
+		m_CSMGPUData[j].p = l_directionalLight->m_projectionMatrices[j];
+		m_CSMGPUData[j].splitCorners = l_shadowSplitCorner;
 
 		auto l_lightRotMat = l_directionalLightTransformComponent->m_globalTransformMatrix.m_rotationMat.inverse();
 
-		RenderingFrontendComponent::get().m_CSMGPUDataVector[j].v = l_lightRotMat;
+		m_CSMGPUData[j].v = l_lightRotMat;
 	}
 
 	m_isCSMDataPackValid = true;
@@ -279,7 +312,7 @@ bool InnoRenderingFrontendNS::updateLightData()
 		l_PointLightGPUData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_pointLightComponents[i]->m_parentEntity)->m_globalTransformVector.m_pos;
 		l_PointLightGPUData.luminance = l_pointLightComponents[i]->m_color * l_pointLightComponents[i]->m_luminousFlux;
 		l_PointLightGPUData.luminance.w = l_pointLightComponents[i]->m_attenuationRadius;
-		RenderingFrontendComponent::get().m_pointLightGPUDataVector[i] = l_PointLightGPUData;
+		m_pointLightGPUData[i] = l_PointLightGPUData;
 	}
 
 	auto& l_sphereLightComponents = g_pCoreSystem->getGameSystem()->get<SphereLightComponent>();
@@ -289,7 +322,7 @@ bool InnoRenderingFrontendNS::updateLightData()
 		l_SphereLightGPUData.pos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(l_sphereLightComponents[i]->m_parentEntity)->m_globalTransformVector.m_pos;
 		l_SphereLightGPUData.luminance = l_sphereLightComponents[i]->m_color * l_sphereLightComponents[i]->m_luminousFlux;
 		l_SphereLightGPUData.luminance.w = l_sphereLightComponents[i]->m_sphereRadius;
-		RenderingFrontendComponent::get().m_sphereLightGPUDataVector[i] = l_SphereLightGPUData;
+		m_sphereLightGPUData[i] = l_SphereLightGPUData;
 	}
 
 	return true;
@@ -302,7 +335,7 @@ bool InnoRenderingFrontendNS::updateMeshData()
 	unsigned int l_opaquePassIndex = 0;
 	unsigned int l_transparentPassIndex = 0;
 
-	std::vector<TransparentPassGPUData> l_sortedTransparentPassGPUDatas;
+	std::vector<TransparentPassGPUData> l_sortedTransparentPassGPUData;
 
 	for (size_t i = 0; i < m_cullingDataPack.size(); i++)
 	{
@@ -340,9 +373,9 @@ bool InnoRenderingFrontendNS::updateMeshData()
 						l_materialGPUData.materialType = int(l_cullingData.meshUsageType);
 						l_materialGPUData.customMaterial = l_cullingData.material->m_meshCustomMaterial;
 
-						RenderingFrontendComponent::get().m_opaquePassGPUDatas[l_opaquePassIndex] = l_opaquePassGPUData;
-						RenderingFrontendComponent::get().m_opaquePassMeshGPUDatas[l_opaquePassIndex] = l_meshGPUData;
-						RenderingFrontendComponent::get().m_opaquePassMaterialGPUDatas[l_opaquePassIndex] = l_materialGPUData;
+						m_opaquePassGPUData[l_opaquePassIndex] = l_opaquePassGPUData;
+						m_opaquePassMeshGPUData[l_opaquePassIndex] = l_meshGPUData;
+						m_opaquePassMaterialGPUData[l_opaquePassIndex] = l_materialGPUData;
 						l_opaquePassIndex++;
 					}
 					else if (l_cullingData.visiblilityType == VisiblilityType::INNO_TRANSPARENT)
@@ -363,9 +396,9 @@ bool InnoRenderingFrontendNS::updateMeshData()
 						l_materialGPUData.materialType = int(l_cullingData.meshUsageType);
 						l_materialGPUData.customMaterial = l_cullingData.material->m_meshCustomMaterial;
 
-						l_sortedTransparentPassGPUDatas.emplace_back(l_transparentPassGPUData);
-						RenderingFrontendComponent::get().m_transparentPassMeshGPUDatas[l_transparentPassIndex] = l_meshGPUData;
-						RenderingFrontendComponent::get().m_transparentPassMaterialGPUDatas[l_transparentPassIndex] = l_materialGPUData;
+						l_sortedTransparentPassGPUData.emplace_back(l_transparentPassGPUData);
+						m_transparentPassMeshGPUData[l_transparentPassIndex] = l_meshGPUData;
+						m_transparentPassMaterialGPUData[l_transparentPassIndex] = l_materialGPUData;
 						l_transparentPassIndex++;
 					}
 				}
@@ -373,19 +406,19 @@ bool InnoRenderingFrontendNS::updateMeshData()
 		}
 	}
 
-	RenderingFrontendComponent::get().m_opaquePassDrawcallCount = l_opaquePassIndex;
-	RenderingFrontendComponent::get().m_transparentPassDrawcallCount = l_transparentPassIndex;
+	m_opaquePassDrawCallCount = l_opaquePassIndex;
+	m_transparentPassDrawCallCount = l_transparentPassIndex;
 
 	// @TODO: use GPU to do OIT
-	std::sort(l_sortedTransparentPassGPUDatas.begin(), l_sortedTransparentPassGPUDatas.end(), [&](TransparentPassGPUData a, TransparentPassGPUData b) {
-		auto l_t = RenderingFrontendComponent::get().m_cameraGPUData.t;
-		auto l_r = RenderingFrontendComponent::get().m_cameraGPUData.r;
-		auto m_a_InViewSpace = l_t * l_r * RenderingFrontendComponent::get().m_transparentPassMeshGPUDatas[a.meshGPUDataIndex].m;
-		auto m_b_InViewSpace = l_t * l_r * RenderingFrontendComponent::get().m_transparentPassMeshGPUDatas[b.meshGPUDataIndex].m;
+	std::sort(l_sortedTransparentPassGPUData.begin(), l_sortedTransparentPassGPUData.end(), [&](TransparentPassGPUData a, TransparentPassGPUData b) {
+		auto l_t = m_cameraGPUData.t;
+		auto l_r = m_cameraGPUData.r;
+		auto m_a_InViewSpace = l_t * l_r * m_transparentPassMeshGPUData[a.meshGPUDataIndex].m;
+		auto m_b_InViewSpace = l_t * l_r * m_transparentPassMeshGPUData[b.meshGPUDataIndex].m;
 		return m_a_InViewSpace.m23 < m_b_InViewSpace.m23;
 	});
 
-	RenderingFrontendComponent::get().m_transparentPassGPUDatas = l_sortedTransparentPassGPUDatas;
+	m_transparentPassGPUData = l_sortedTransparentPassGPUData;
 
 	m_isMeshDataPackValid = true;
 
@@ -394,43 +427,54 @@ bool InnoRenderingFrontendNS::updateMeshData()
 
 bool InnoRenderingFrontendNS::updateBillboardPassData()
 {
-	RenderingFrontendComponent::get().m_billboardPassGPUDataQueue.clear();
+	unsigned int l_index = 0;
+
+	m_billboardPassGPUData.clear();
 
 	for (auto i : g_pCoreSystem->getGameSystem()->get<DirectionalLightComponent>())
 	{
 		BillboardPassGPUData l_billboardPAssGPUData;
 		l_billboardPAssGPUData.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_billboardPAssGPUData.distanceToCamera = (RenderingFrontendComponent::get().m_cameraGPUData.globalPos - l_billboardPAssGPUData.globalPos).length();
+		l_billboardPAssGPUData.distanceToCamera = (m_cameraGPUData.globalPos - l_billboardPAssGPUData.globalPos).length();
 		l_billboardPAssGPUData.iconType = WorldEditorIconType::DIRECTIONAL_LIGHT;
 
-		RenderingFrontendComponent::get().m_billboardPassGPUDataQueue.push(l_billboardPAssGPUData);
+		m_billboardPassGPUData.emplace_back(l_billboardPAssGPUData);
+		l_index++;
 	}
 
 	for (auto i : g_pCoreSystem->getGameSystem()->get<PointLightComponent>())
 	{
 		BillboardPassGPUData l_billboardPAssGPUData;
 		l_billboardPAssGPUData.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_billboardPAssGPUData.distanceToCamera = (RenderingFrontendComponent::get().m_cameraGPUData.globalPos - l_billboardPAssGPUData.globalPos).length();
+		l_billboardPAssGPUData.distanceToCamera = (m_cameraGPUData.globalPos - l_billboardPAssGPUData.globalPos).length();
 		l_billboardPAssGPUData.iconType = WorldEditorIconType::POINT_LIGHT;
 
-		RenderingFrontendComponent::get().m_billboardPassGPUDataQueue.push(l_billboardPAssGPUData);
+		m_billboardPassGPUData.emplace_back(l_billboardPAssGPUData);
+		l_index++;
 	}
 
 	for (auto i : g_pCoreSystem->getGameSystem()->get<SphereLightComponent>())
 	{
 		BillboardPassGPUData l_billboardPAssGPUData;
 		l_billboardPAssGPUData.globalPos = g_pCoreSystem->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_billboardPAssGPUData.distanceToCamera = (RenderingFrontendComponent::get().m_cameraGPUData.globalPos - l_billboardPAssGPUData.globalPos).length();
+		l_billboardPAssGPUData.distanceToCamera = (m_cameraGPUData.globalPos - l_billboardPAssGPUData.globalPos).length();
 		l_billboardPAssGPUData.iconType = WorldEditorIconType::SPHERE_LIGHT;
 
-		RenderingFrontendComponent::get().m_billboardPassGPUDataQueue.push(l_billboardPAssGPUData);
+		m_billboardPassGPUData.emplace_back(l_billboardPAssGPUData);
+		l_index++;
 	}
+
+	m_billboardPassDrawCallCount = l_index;
 
 	return true;
 }
 
 bool InnoRenderingFrontendNS::updateDebuggerPassData()
 {
+	unsigned int l_index = 0;
+	// @TODO: Implementation
+	m_debuggerPassDrawCallCount = l_index;
+
 	return true;
 }
 
@@ -477,16 +521,16 @@ bool InnoRenderingFrontendNS::gatherStaticMeshData()
 
 					l_materialGPUData.customMaterial = l_modelPair.second->m_meshCustomMaterial;
 
-					RenderingFrontendComponent::get().m_GIPassGPUDatas[l_index] = l_GIPassGPUData;
-					RenderingFrontendComponent::get().m_GIPassMeshGPUDatas[l_index] = l_meshGPUData;
-					RenderingFrontendComponent::get().m_GIPassMaterialGPUDatas[l_index] = l_materialGPUData;
+					m_GIPassGPUData[l_index] = l_GIPassGPUData;
+					m_GIPassMeshGPUData[l_index] = l_meshGPUData;
+					m_GIPassMaterialGPUData[l_index] = l_materialGPUData;
 					l_index++;
 				}
 			}
 		}
 	}
 
-	RenderingFrontendComponent::get().m_GIPassDrawcallCount = l_index;
+	m_GIPassDrawCallCount = l_index;
 
 	return true;
 }
@@ -514,10 +558,10 @@ bool InnoRenderingFrontendNS::update()
 
 		updateDebuggerPassData();
 
-		RenderingFrontendComponent::get().m_skyGPUData.p_inv = RenderingFrontendComponent::get().m_cameraGPUData.p_original.inverse();
-		RenderingFrontendComponent::get().m_skyGPUData.r_inv = RenderingFrontendComponent::get().m_cameraGPUData.r.inverse();
-		RenderingFrontendComponent::get().m_skyGPUData.viewportSize.x = (float)m_screenResolution.x;
-		RenderingFrontendComponent::get().m_skyGPUData.viewportSize.y = (float)m_screenResolution.y;
+		m_skyGPUData.p_inv = m_cameraGPUData.p_original.inverse();
+		m_skyGPUData.r_inv = m_cameraGPUData.r.inverse();
+		m_skyGPUData.viewportSize.x = (float)m_screenResolution.x;
+		m_skyGPUData.viewportSize.y = (float)m_screenResolution.y;
 
 		return true;
 	}
@@ -597,6 +641,28 @@ TextureDataComponent * InnoRenderingFrontend::getTextureDataComponent(WorldEdito
 	return InnoRenderingFrontendNS::m_renderingBackend->getTextureDataComponent(iconType);
 }
 
+SkeletonDataComponent * InnoRenderingFrontend::addSkeletonDataComponent()
+{
+	static std::atomic<unsigned int> skeletonCount = 0;
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(InnoRenderingFrontendNS::m_SkeletonDataComponentPool, sizeof(SkeletonDataComponent));
+	auto l_SDC = new(l_rawPtr)SkeletonDataComponent();
+	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(("Skeleton_" + std::to_string(skeletonCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
+	l_SDC->m_parentEntity = l_parentEntity;
+	skeletonCount++;
+	return l_SDC;
+}
+
+AnimationDataComponent * InnoRenderingFrontend::addAnimationDataComponent()
+{
+	static std::atomic<unsigned int> animationCount = 0;
+	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(InnoRenderingFrontendNS::m_AnimationDataComponentPool, sizeof(AnimationDataComponent));
+	auto l_ADC = new(l_rawPtr)AnimationDataComponent();
+	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(("Animation_" + std::to_string(animationCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
+	l_ADC->m_parentEntity = l_parentEntity;
+	animationCount++;
+	return l_ADC;
+}
+
 TVec2<unsigned int> InnoRenderingFrontend::getScreenResolution()
 {
 	return InnoRenderingFrontendNS::m_screenResolution;
@@ -619,24 +685,117 @@ bool InnoRenderingFrontend::setRenderingConfig(RenderingConfig renderingConfig)
 	return true;
 }
 
-SkeletonDataComponent * InnoRenderingFrontend::addSkeletonDataComponent()
+RenderingCapability InnoRenderingFrontend::getRenderingCapability()
 {
-	static std::atomic<unsigned int> skeletonCount = 0;
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(InnoRenderingFrontendNS::m_SkeletonDataComponentPool, sizeof(SkeletonDataComponent));
-	auto l_SDC = new(l_rawPtr)SkeletonDataComponent();
-	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(("Skeleton_" + std::to_string(skeletonCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
-	l_SDC->m_parentEntity = l_parentEntity;
-	skeletonCount++;
-	return l_SDC;
+	return InnoRenderingFrontendNS::m_renderingCapability;
 }
 
-AnimationDataComponent * InnoRenderingFrontend::addAnimationDataComponent()
+CameraGPUData InnoRenderingFrontend::getCameraGPUData()
 {
-	static std::atomic<unsigned int> animationCount = 0;
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(InnoRenderingFrontendNS::m_AnimationDataComponentPool, sizeof(AnimationDataComponent));
-	auto l_ADC = new(l_rawPtr)AnimationDataComponent();
-	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(("Animation_" + std::to_string(animationCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
-	l_ADC->m_parentEntity = l_parentEntity;
-	animationCount++;
-	return l_ADC;
+	return InnoRenderingFrontendNS::m_cameraGPUData;
+}
+
+SunGPUData InnoRenderingFrontend::getSunGPUData()
+{
+	return InnoRenderingFrontendNS::m_sunGPUData;
+}
+
+const std::vector<CSMGPUData>& InnoRenderingFrontend::getCSMGPUData()
+{
+	return InnoRenderingFrontendNS::m_CSMGPUData;
+}
+
+const std::vector<PointLightGPUData>& InnoRenderingFrontend::getPointLightGPUData()
+{
+	return InnoRenderingFrontendNS::m_pointLightGPUData;
+}
+
+const std::vector<SphereLightGPUData>& InnoRenderingFrontend::getSphereLightGPUData()
+{
+	return InnoRenderingFrontendNS::m_sphereLightGPUData;
+}
+
+SkyGPUData InnoRenderingFrontend::getSkyGPUData()
+{
+	return InnoRenderingFrontendNS::m_skyGPUData;
+}
+
+unsigned int InnoRenderingFrontend::getOpaquePassDrawCallCount()
+{
+	return InnoRenderingFrontendNS::m_opaquePassDrawCallCount;
+}
+
+const std::vector<OpaquePassGPUData>& InnoRenderingFrontend::getOpaquePassGPUData()
+{
+	return InnoRenderingFrontendNS::m_opaquePassGPUData;
+}
+
+const std::vector<MeshGPUData>& InnoRenderingFrontend::getOpaquePassMeshGPUData()
+{
+	return InnoRenderingFrontendNS::m_opaquePassMeshGPUData;
+}
+
+const std::vector<MaterialGPUData>& InnoRenderingFrontend::getOpaquePassMaterialGPUData()
+{
+	return InnoRenderingFrontendNS::m_opaquePassMaterialGPUData;
+}
+
+unsigned int InnoRenderingFrontend::getTransparentPassDrawCallCount()
+{
+	return InnoRenderingFrontendNS::m_transparentPassDrawCallCount;
+}
+
+const std::vector<TransparentPassGPUData>& InnoRenderingFrontend::getTransparentPassGPUData()
+{
+	return InnoRenderingFrontendNS::m_transparentPassGPUData;
+}
+
+const std::vector<MeshGPUData>& InnoRenderingFrontend::getTransparentPassMeshGPUData()
+{
+	return InnoRenderingFrontendNS::m_transparentPassMeshGPUData;
+}
+
+const std::vector<MaterialGPUData>& InnoRenderingFrontend::getTransparentPassMaterialGPUData()
+{
+	return InnoRenderingFrontendNS::m_transparentPassMaterialGPUData;
+}
+
+unsigned int InnoRenderingFrontend::getBillboardPassDrawCallCount()
+{
+	return InnoRenderingFrontendNS::m_billboardPassDrawCallCount;
+}
+
+const std::vector<BillboardPassGPUData>& InnoRenderingFrontend::getBillboardPassGPUData()
+{
+	return InnoRenderingFrontendNS::m_billboardPassGPUData;
+}
+
+unsigned int InnoRenderingFrontend::getDebuggerPassDrawCallCount()
+{
+	return InnoRenderingFrontendNS::m_debuggerPassDrawCallCount;
+}
+
+const std::vector<DebuggerPassGPUData>& InnoRenderingFrontend::getDebuggerPassGPUData()
+{
+	return InnoRenderingFrontendNS::m_debuggerPassGPUData;
+}
+
+unsigned int InnoRenderingFrontend::getGIPassDrawCallCount()
+{
+	return InnoRenderingFrontendNS::m_GIPassDrawCallCount;
+}
+
+const std::vector<OpaquePassGPUData>& InnoRenderingFrontend::getGIPassGPUData()
+{
+	return InnoRenderingFrontendNS::m_GIPassGPUData;
+}
+
+const std::vector<MeshGPUData>& InnoRenderingFrontend::getGIPassMeshGPUData()
+{
+	return InnoRenderingFrontendNS::m_GIPassMeshGPUData;
+}
+
+const std::vector<MaterialGPUData>& InnoRenderingFrontend::getGIPassMaterialGPUData()
+{
+	return InnoRenderingFrontendNS::m_GIPassMaterialGPUData;
 }

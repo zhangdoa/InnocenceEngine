@@ -1,7 +1,6 @@
 #include "VKOpaquePass.h"
 #include "VKRenderingBackendUtilities.h"
 #include "../../../Component/VKRenderingBackendComponent.h"
-#include "../../../Component/RenderingFrontendComponent.h"
 
 using namespace VKRenderingBackendNS;
 
@@ -254,13 +253,15 @@ bool VKOpaquePass::update()
 	recordCommand(m_VKRPC, 0, [&]() {
 		unsigned int offsetCount = 0;
 
-		for (unsigned int i = 0; i < RenderingFrontendComponent::get().m_opaquePassDrawcallCount; i++)
+		auto l_totalDrawCallCount = g_pCoreSystem->getRenderingFrontend()->getOpaquePassDrawCallCount();
+
+		for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
 		{
 			auto l_meshUBOOffset = l_sizeofMeshGPUData * offsetCount;
 			auto l_materialUBOOffset = l_sizeofMaterialGPUData * offsetCount;
 			unsigned int l_dynamicOffsets[] = { l_meshUBOOffset, l_materialUBOOffset };
 
-			auto l_opaquePassGPUData = RenderingFrontendComponent::get().m_opaquePassGPUDatas[i];
+			auto l_opaquePassGPUData = g_pCoreSystem->getRenderingFrontend()->getOpaquePassGPUData()[i];
 
 			vkCmdBindDescriptorSets(m_VKRPC->m_commandBuffers[0],
 				VK_PIPELINE_BIND_POINT_GRAPHICS,

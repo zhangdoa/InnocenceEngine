@@ -2,7 +2,6 @@
 #include "DX12RenderingBackendUtilities.h"
 
 #include "../../../Component/DX12RenderingBackendComponent.h"
-#include "../../../Component/RenderingFrontendComponent.h"
 
 #include "../../ICoreSystem.h"
 
@@ -131,9 +130,10 @@ bool DX12OpaquePass::update()
 
 	unsigned int l_offset = 0;
 
-	for (unsigned int i = 0; i < RenderingFrontendComponent::get().m_opaquePassDrawcallCount; i++)
+	auto l_totalDrawCallCount = g_pCoreSystem->getRenderingFrontend()->getOpaquePassDrawCallCount();
+	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
 	{
-		auto l_opaquePassGPUData = RenderingFrontendComponent::get().m_opaquePassGPUDatas[i];
+		auto l_opaquePassGPUData = g_pCoreSystem->getRenderingFrontend()->getOpaquePassGPUData()[i];
 
 		recordBindCBV(m_DXRPC, 0, 1, DX12RenderingBackendComponent::get().m_meshConstantBuffer, l_offset);
 		recordBindCBV(m_DXRPC, 0, 2, DX12RenderingBackendComponent::get().m_materialConstantBuffer, l_offset);

@@ -9,7 +9,6 @@
 #include "GLLightCullingPass.h"
 
 #include "../../../Component/GLRenderingBackendComponent.h"
-#include "../../../Component/RenderingFrontendComponent.h"
 
 #include "GLRenderingBackendUtilities.h"
 

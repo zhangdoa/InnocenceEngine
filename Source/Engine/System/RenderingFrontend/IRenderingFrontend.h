@@ -11,6 +11,8 @@
 #include "../../Component/SkeletonDataComponent.h"
 #include "../../Component/AnimationDataComponent.h"
 
+#include "../../Common/GPUDataStructure.h"
+
 struct RenderingConfig
 {
 	int MSAAdepth = 4;
@@ -20,6 +22,16 @@ struct RenderingConfig
 	bool drawTerrain = false;
 	bool drawSky = false;
 	bool drawDebugObject = false;
+};
+
+struct RenderingCapability
+{
+	unsigned int maxCSMSplits;
+	unsigned int maxPointLights;
+	unsigned int maxSphereLights;
+	unsigned int maxMeshes;
+	unsigned int maxMaterials;
+	unsigned int maxTextures;
 };
 
 INNO_INTERFACE IRenderingFrontend
@@ -49,4 +61,34 @@ public:
 
 	virtual RenderingConfig getRenderingConfig() = 0;
 	virtual bool setRenderingConfig(RenderingConfig renderingConfig) = 0;
+
+	virtual RenderingCapability getRenderingCapability() = 0;
+
+	virtual CameraGPUData getCameraGPUData() = 0;
+	virtual SunGPUData getSunGPUData() = 0;
+	virtual const std::vector<CSMGPUData>& getCSMGPUData() = 0;
+	virtual const std::vector<PointLightGPUData>& getPointLightGPUData() = 0;
+	virtual const std::vector<SphereLightGPUData>& getSphereLightGPUData() = 0;
+	virtual SkyGPUData getSkyGPUData() = 0;
+
+	virtual unsigned int getOpaquePassDrawCallCount() = 0;
+	virtual const std::vector<OpaquePassGPUData>& getOpaquePassGPUData() = 0;
+	virtual const std::vector<MeshGPUData>& getOpaquePassMeshGPUData() = 0;
+	virtual const std::vector<MaterialGPUData>& getOpaquePassMaterialGPUData() = 0;
+
+	virtual unsigned int getTransparentPassDrawCallCount() = 0;
+	virtual const std::vector<TransparentPassGPUData>& getTransparentPassGPUData() = 0;
+	virtual const std::vector<MeshGPUData>& getTransparentPassMeshGPUData() = 0;
+	virtual const std::vector<MaterialGPUData>& getTransparentPassMaterialGPUData() = 0;
+
+	virtual unsigned int getBillboardPassDrawCallCount() = 0;
+	virtual const std::vector<BillboardPassGPUData>& getBillboardPassGPUData() = 0;
+
+	virtual unsigned int getDebuggerPassDrawCallCount() = 0;
+	virtual const std::vector<DebuggerPassGPUData>& getDebuggerPassGPUData() = 0;
+
+	virtual unsigned int getGIPassDrawCallCount() = 0;
+	virtual const std::vector<OpaquePassGPUData>& getGIPassGPUData() = 0;
+	virtual const std::vector<MeshGPUData>& getGIPassMeshGPUData() = 0;
+	virtual const std::vector<MaterialGPUData>& getGIPassMaterialGPUData() = 0;
 };

@@ -3,7 +3,6 @@
 #include "GLRenderingBackendUtilities.h"
 
 #include "../../../Component/GLRenderingBackendComponent.h"
-#include "../../../Component/RenderingFrontendComponent.h"
 
 #include "../../ICoreSystem.h"
 
@@ -299,9 +298,9 @@ void GLVXGIPass::updateVoxelVisualizationPass()
 
 	activateShaderProgram(m_voxelVisualizationPassSPC);
 
-	updateUniform(4, RenderingFrontendComponent::get().m_cameraGPUData.p_original);
-	updateUniform(5, RenderingFrontendComponent::get().m_cameraGPUData.r);
-	updateUniform(6, RenderingFrontendComponent::get().m_cameraGPUData.t);
+	updateUniform(4, g_pCoreSystem->getRenderingFrontend()->getCameraGPUData().p_original);
+	updateUniform(5, g_pCoreSystem->getRenderingFrontend()->getCameraGPUData().r);
+	updateUniform(6, g_pCoreSystem->getRenderingFrontend()->getCameraGPUData().t);
 	updateUniform(7, l_m);
 
 	updateUniform(1, m_volumeDimension);

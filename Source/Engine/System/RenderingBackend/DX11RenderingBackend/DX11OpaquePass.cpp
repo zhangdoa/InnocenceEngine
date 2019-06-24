@@ -2,7 +2,6 @@
 #include "DX11RenderingBackendUtilities.h"
 
 #include "../../../Component/DX11RenderingBackendComponent.h"
-#include "../../../Component/RenderingFrontendComponent.h"
 
 #include "../../ICoreSystem.h"
 
@@ -105,9 +104,10 @@ bool DX11OpaquePass::update()
 	unsigned int l_offset = 0;
 
 	// draw
-	for (unsigned int i = 0; i < RenderingFrontendComponent::get().m_opaquePassDrawcallCount; i++)
+	auto l_totalDrawCallCount = g_pCoreSystem->getRenderingFrontend()->getOpaquePassDrawCallCount();
+	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
 	{
-		auto l_opaquePassGPUData = RenderingFrontendComponent::get().m_opaquePassGPUDatas[i];
+		auto l_opaquePassGPUData = g_pCoreSystem->getRenderingFrontend()->getOpaquePassGPUData()[i];
 
 		if (l_opaquePassGPUData.normalTDC)
 		{

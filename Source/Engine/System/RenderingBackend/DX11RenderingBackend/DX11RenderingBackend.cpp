@@ -14,7 +14,6 @@
 
 #include "../../../Component/DX11RenderingBackendComponent.h"
 #include "../../../Component/WinWindowSystemComponent.h"
-#include "../../../Component/RenderingFrontendComponent.h"
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -344,9 +343,11 @@ bool DX11RenderingBackendNS::initialize()
 {
 	if (DX11RenderingBackendNS::m_objectStatus == ObjectStatus::Created)
 	{
-		m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX11MeshDataComponent), RenderingFrontendComponent::get().m_maxMeshes);
-		m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), RenderingFrontendComponent::get().m_maxMaterials);
-		m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX11TextureDataComponent), RenderingFrontendComponent::get().m_maxTextures);
+		auto l_renderingCapability = g_pCoreSystem->getRenderingFrontend()->getRenderingCapability();
+
+		m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX11MeshDataComponent), l_renderingCapability.maxMeshes);
+		m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), l_renderingCapability.maxMaterials);
+		m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(DX11TextureDataComponent), l_renderingCapability.maxTextures);
 
 		loadDefaultAssets();
 
@@ -471,12 +472,14 @@ void DX11RenderingBackendNS::loadDefaultAssets()
 
 bool DX11RenderingBackendNS::generateGPUBuffers()
 {
+	auto l_renderingCapability = g_pCoreSystem->getRenderingFrontend()->getRenderingCapability();
+
 	g_DXRenderingBackendComponent->m_cameraConstantBuffer = createConstantBuffer(sizeof(CameraGPUData), 1, "cameraConstantBuffer");
-	g_DXRenderingBackendComponent->m_meshConstantBuffer = createConstantBuffer(sizeof(MeshGPUData), RenderingFrontendComponent::get().m_maxMeshes, "meshConstantBuffer");
-	g_DXRenderingBackendComponent->m_materialConstantBuffer = createConstantBuffer(sizeof(MaterialGPUData), RenderingFrontendComponent::get().m_maxMaterials, "materialConstantBuffer");
+	g_DXRenderingBackendComponent->m_meshConstantBuffer = createConstantBuffer(sizeof(MeshGPUData), l_renderingCapability.maxMeshes, "meshConstantBuffer");
+	g_DXRenderingBackendComponent->m_materialConstantBuffer = createConstantBuffer(sizeof(MaterialGPUData), l_renderingCapability.maxMaterials, "materialConstantBuffer");
 	g_DXRenderingBackendComponent->m_sunConstantBuffer = createConstantBuffer(sizeof(SunGPUData), 1, "sunConstantBuffer");
-	g_DXRenderingBackendComponent->m_pointLightConstantBuffer = createConstantBuffer(sizeof(PointLightGPUData), RenderingFrontendComponent::get().m_maxPointLights, "pointLightConstantBuffer");
-	g_DXRenderingBackendComponent->m_sphereLightConstantBuffer = createConstantBuffer(sizeof(SphereLightGPUData), RenderingFrontendComponent::get().m_maxSphereLights, "sphereLightConstantBuffer");
+	g_DXRenderingBackendComponent->m_pointLightConstantBuffer = createConstantBuffer(sizeof(PointLightGPUData), l_renderingCapability.maxPointLights, "pointLightConstantBuffer");
+	g_DXRenderingBackendComponent->m_sphereLightConstantBuffer = createConstantBuffer(sizeof(SphereLightGPUData), l_renderingCapability.maxSphereLights, "sphereLightConstantBuffer");
 	g_DXRenderingBackendComponent->m_skyConstantBuffer = createConstantBuffer(sizeof(SkyGPUData), 1, "skyConstantBuffer");
 	g_DXRenderingBackendComponent->m_dispatchParamsConstantBuffer = createConstantBuffer(sizeof(DispatchParamsGPUData), 1, "dispatchParamsConstantBuffer");
 
@@ -519,13 +522,13 @@ bool DX11RenderingBackendNS::update()
 
 bool DX11RenderingBackendNS::render()
 {
-	updateConstantBuffer(DX11RenderingBackendComponent::get().m_cameraConstantBuffer, RenderingFrontendComponent::get().m_cameraGPUData);
-	updateConstantBuffer(DX11RenderingBackendComponent::get().m_sunConstantBuffer, RenderingFrontendComponent::get().m_sunGPUData);
-	updateConstantBuffer(DX11RenderingBackendComponent::get().m_pointLightConstantBuffer, RenderingFrontendComponent::get().m_pointLightGPUDataVector);
-	updateConstantBuffer(DX11RenderingBackendComponent::get().m_sphereLightConstantBuffer, RenderingFrontendComponent::get().m_sphereLightGPUDataVector);
-	updateConstantBuffer(DX11RenderingBackendComponent::get().m_skyConstantBuffer, RenderingFrontendComponent::get().m_skyGPUData);
-	updateConstantBuffer(DX11RenderingBackendComponent::get().m_meshConstantBuffer, RenderingFrontendComponent::get().m_opaquePassMeshGPUDatas);
-	updateConstantBuffer(DX11RenderingBackendComponent::get().m_materialConstantBuffer, RenderingFrontendComponent::get().m_opaquePassMaterialGPUDatas);
+	updateConstantBuffer(DX11RenderingBackendComponent::get().m_cameraConstantBuffer, g_pCoreSystem->getRenderingFrontend()->getCameraGPUData());
+	updateConstantBuffer(DX11RenderingBackendComponent::get().m_sunConstantBuffer, g_pCoreSystem->getRenderingFrontend()->getSunGPUData());
+	updateConstantBuffer(DX11RenderingBackendComponent::get().m_pointLightConstantBuffer, g_pCoreSystem->getRenderingFrontend()->getPointLightGPUData());
+	updateConstantBuffer(DX11RenderingBackendComponent::get().m_sphereLightConstantBuffer, g_pCoreSystem->getRenderingFrontend()->getSphereLightGPUData());
+	updateConstantBuffer(DX11RenderingBackendComponent::get().m_skyConstantBuffer, g_pCoreSystem->getRenderingFrontend()->getSkyGPUData());
+	updateConstantBuffer(DX11RenderingBackendComponent::get().m_meshConstantBuffer, g_pCoreSystem->getRenderingFrontend()->getOpaquePassMeshGPUData());
+	updateConstantBuffer(DX11RenderingBackendComponent::get().m_materialConstantBuffer, g_pCoreSystem->getRenderingFrontend()->getOpaquePassMaterialGPUData());
 
 	DX11RenderingBackendComponent::get().m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 

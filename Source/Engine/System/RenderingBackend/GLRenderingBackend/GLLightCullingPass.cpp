@@ -4,7 +4,6 @@
 #include "GLEarlyZPass.h"
 
 #include "../../../Component/GLRenderingBackendComponent.h"
-#include "../../../Component/RenderingFrontendComponent.h"
 
 #include "../../ICoreSystem.h"
 
@@ -154,9 +153,10 @@ bool GLLightCullingPass::initializeShaders()
 
 bool GLLightCullingPass::calculateFrustums()
 {
-	RenderingFrontendComponent::get().m_dispatchParamsGPUData.numThreadGroups = m_tileFrustumNumThreadGroups;
-	RenderingFrontendComponent::get().m_dispatchParamsGPUData.numThreads = m_tileFrustumNumThreads;
-	updateUBO(GLRenderingBackendComponent::get().m_dispatchParamsUBO, RenderingFrontendComponent::get().m_dispatchParamsGPUData);
+	DispatchParamsGPUData l_dispatchParamsGPUData;
+	l_dispatchParamsGPUData.numThreadGroups = m_tileFrustumNumThreadGroups;
+	l_dispatchParamsGPUData.numThreads = m_tileFrustumNumThreads;
+	updateUBO(GLRenderingBackendComponent::get().m_dispatchParamsUBO, l_dispatchParamsGPUData);
 
 	activateShaderProgram(m_tileFrustumGLSPC);
 
@@ -169,9 +169,10 @@ bool GLLightCullingPass::calculateFrustums()
 
 bool GLLightCullingPass::cullLights()
 {
-	RenderingFrontendComponent::get().m_dispatchParamsGPUData.numThreadGroups = m_lightCullingNumThreadGroups;
-	RenderingFrontendComponent::get().m_dispatchParamsGPUData.numThreads = m_lightCullingNumThreads;
-	updateUBO(GLRenderingBackendComponent::get().m_dispatchParamsUBO, RenderingFrontendComponent::get().m_dispatchParamsGPUData);
+	DispatchParamsGPUData l_dispatchParamsGPUData;
+	l_dispatchParamsGPUData.numThreadGroups = m_lightCullingNumThreadGroups;
+	l_dispatchParamsGPUData.numThreads = m_lightCullingNumThreads;
+	updateUBO(GLRenderingBackendComponent::get().m_dispatchParamsUBO, l_dispatchParamsGPUData);
 
 	updateSSBO(GLRenderingBackendComponent::get().m_lightListIndexCounterSSBO, 0);
 

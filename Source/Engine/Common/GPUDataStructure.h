@@ -1,3 +1,4 @@
+#pragma once
 #include "../Common/InnoType.h"
 #include "../Component/MeshDataComponent.h"
 #include "../Component/MaterialDataComponent.h"

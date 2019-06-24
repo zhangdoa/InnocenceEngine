@@ -4,7 +4,6 @@
 #include "DX12OpaquePass.h"
 
 #include "../../../Component/DX12RenderingBackendComponent.h"
-#include "../../../Component/RenderingFrontendComponent.h"
 
 #include "../../ICoreSystem.h"
 
