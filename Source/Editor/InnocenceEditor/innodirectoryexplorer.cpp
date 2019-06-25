@@ -1,9 +1,9 @@
 #include "innodirectoryexplorer.h"
 #include <QMessageBox>
 
-#include "../../Engine/System/ICoreSystem.h"
+#include "../../Engine/ModuleManager/IModuleManager.h"
 
-INNO_SYSTEM_EXPORT extern ICoreSystem* g_pCoreSystem;
+INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 
 InnoDirectoryExplorer::InnoDirectoryExplorer(QWidget *parent) : QTreeView(parent)
 {
@@ -20,7 +20,7 @@ void InnoDirectoryExplorer::initialize(InnoFileExplorer* fileExplorer)
     m_fileExplorer = fileExplorer;
     connect(m_fileExplorer, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(UpdateFromFileExplorer(QModelIndex)));
 
-    auto l_workingDir = g_pCoreSystem->getFileSystem()->getWorkingDirectory();
+    auto l_workingDir = g_pModuleManager->getFileSystem()->getWorkingDirectory();
     l_workingDir += "//res//";
 
     SetRootDirectory(l_workingDir);

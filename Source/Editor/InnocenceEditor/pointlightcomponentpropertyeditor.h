@@ -7,7 +7,7 @@
 #include <QDoubleValidator>
 #include "IComponentPropertyEditor.h"
 #include "combolabeltext.h"
-#include "../../engine/component/PointLightComponent.h"
+#include "../../Engine/Component/PointLightComponent.h"
 
 class PointLightComponentPropertyEditor : public IComponentPropertyEditor
 {

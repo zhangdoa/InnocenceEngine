@@ -1,8 +1,8 @@
 #include "pointLightcomponentpropertyeditor.h"
 
-#include "../../Engine/System/ICoreSystem.h"
+#include "../../Engine/ModuleManager/IModuleManager.h"
 
-INNO_SYSTEM_EXPORT extern ICoreSystem* g_pCoreSystem;
+INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 
 PointLightComponentPropertyEditor::PointLightComponentPropertyEditor()
 {

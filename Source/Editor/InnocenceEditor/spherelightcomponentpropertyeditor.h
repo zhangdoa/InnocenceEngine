@@ -7,7 +7,7 @@
 #include <QDoubleValidator>
 #include "IComponentPropertyEditor.h"
 #include "combolabeltext.h"
-#include "../../engine/component/SphereLightComponent.h"
+#include "../../Engine/Component/SphereLightComponent.h"
 
 class SphereLightComponentPropertyEditor : public IComponentPropertyEditor
 {

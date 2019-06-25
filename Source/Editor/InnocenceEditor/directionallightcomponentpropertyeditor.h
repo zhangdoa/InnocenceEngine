@@ -5,9 +5,9 @@
 #include <QWidget>
 #include <QGridLayout>
 #include <QDoubleValidator>
-#include "IComponentPropertyEditor.h"
+#include "icomponentpropertyeditor.h"
 #include "combolabeltext.h"
-#include "../../engine/component/DirectionalLightComponent.h"
+#include "../../Engine/Component/DirectionalLightComponent.h"
 
 class DirectionalLightComponentPropertyEditor : public IComponentPropertyEditor
 {

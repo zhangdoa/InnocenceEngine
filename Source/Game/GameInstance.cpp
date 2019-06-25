@@ -1,8 +1,8 @@
 #include "GameInstance.h"
 
-#include "../../Engine/System/ICoreSystem.h"
+#include "../../Engine/ModuleManager/IModuleManager.h"
 
-INNO_SYSTEM_EXPORT extern ICoreSystem* g_pCoreSystem;
+INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 
 namespace PlayerComponentCollection
 {
@@ -54,9 +54,9 @@ namespace PlayerComponentCollection
 bool PlayerComponentCollection::setup()
 {
 	f_sceneLoadingFinishCallback = [&]() {
-		m_cameraParentEntity = g_pCoreSystem->getGameSystem()->getEntity("playerCharacterCamera/");
-		m_cameraTransformComponent = g_pCoreSystem->getGameSystem()->get<TransformComponent>(m_cameraParentEntity);
-		m_cameraComponent = g_pCoreSystem->getGameSystem()->get<CameraComponent>(m_cameraParentEntity);
+		m_cameraParentEntity = g_pModuleManager->getGameSystem()->getEntity("playerCharacterCamera/");
+		m_cameraTransformComponent = g_pModuleManager->getGameSystem()->get<TransformComponent>(m_cameraParentEntity);
+		m_cameraComponent = g_pModuleManager->getGameSystem()->get<CameraComponent>(m_cameraParentEntity);
 
 		m_targetCameraPos = m_cameraTransformComponent->m_localTransformVector.m_pos;
 		m_targetCameraRot = m_cameraTransformComponent->m_localTransformVector.m_rot;
@@ -77,24 +77,24 @@ bool PlayerComponentCollection::setup()
 		f_rotateAroundPositiveYAxis = std::bind(&rotateAroundPositiveYAxis, std::placeholders::_1);
 		f_rotateAroundRightAxis = std::bind(&rotateAroundRightAxis, std::placeholders::_1);
 
-		g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_S, ButtonStatus::PRESSED }, &f_moveForward);
-		g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_W, ButtonStatus::PRESSED }, &f_moveBackward);
-		g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_A, ButtonStatus::PRESSED }, &f_moveLeft);
-		g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_D, ButtonStatus::PRESSED }, &f_moveRight);
+		g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_S, ButtonStatus::PRESSED }, &f_moveForward);
+		g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_W, ButtonStatus::PRESSED }, &f_moveBackward);
+		g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_A, ButtonStatus::PRESSED }, &f_moveLeft);
+		g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_D, ButtonStatus::PRESSED }, &f_moveRight);
 
-		g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_SPACE, ButtonStatus::PRESSED }, &f_speedUp);
-		g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_SPACE, ButtonStatus::RELEASED }, &f_speedDown);
+		g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_SPACE, ButtonStatus::PRESSED }, &f_speedUp);
+		g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_SPACE, ButtonStatus::RELEASED }, &f_speedDown);
 
-		g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::PRESSED }, &f_allowMove);
-		g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::RELEASED }, &f_forbidMove);
-		g_pCoreSystem->getInputSystem()->addMouseMovementCallback(0, &f_rotateAroundPositiveYAxis);
-		g_pCoreSystem->getInputSystem()->addMouseMovementCallback(1, &f_rotateAroundRightAxis);
+		g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::PRESSED }, &f_allowMove);
+		g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::RELEASED }, &f_forbidMove);
+		g_pModuleManager->getInputSystem()->addMouseMovementCallback(0, &f_rotateAroundPositiveYAxis);
+		g_pModuleManager->getInputSystem()->addMouseMovementCallback(1, &f_rotateAroundRightAxis);
 
 		m_initialMoveSpeed = 0.5f;
 		m_moveSpeed = m_initialMoveSpeed;
 		m_rotateSpeed = 10.0f;
 	};
-	g_pCoreSystem->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
+	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
 	return true;
 }
@@ -206,15 +206,15 @@ bool GameInstanceNS::setupReferenceSpheres()
 		m_referenceSphereTransformComponents.emplace_back();
 		m_referenceSphereVisibleComponents.emplace_back();
 		auto l_entityName = EntityName(("MaterialReferenceSphere_" + std::to_string(i) + "/").c_str());
-		m_referenceSphereEntites.emplace_back(g_pCoreSystem->getGameSystem()->createEntity(l_entityName, ObjectSource::Runtime, ObjectUsage::Gameplay));
+		m_referenceSphereEntites.emplace_back(g_pModuleManager->getGameSystem()->createEntity(l_entityName, ObjectSource::Runtime, ObjectUsage::Gameplay));
 	}
 
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
-		m_referenceSphereTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
-		m_referenceSphereTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
+		m_referenceSphereTransformComponents[i] = g_pModuleManager->getGameSystem()->spawn<TransformComponent>(m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_referenceSphereTransformComponents[i]->m_parentTransformComponent = g_pModuleManager->getGameSystem()->getRootTransformComponent();
 		m_referenceSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_referenceSphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_referenceSphereVisibleComponents[i] = g_pModuleManager->getGameSystem()->spawn<VisibleComponent>(m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_referenceSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
 		m_referenceSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::SPHERE;
 		m_referenceSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::DYNAMIC;
@@ -257,15 +257,15 @@ bool GameInstanceNS::setupOpaqueSpheres()
 		m_opaqueSphereTransformComponents.emplace_back();
 		m_opaqueSphereVisibleComponents.emplace_back();
 		auto l_entityName = EntityName(("PhysicsTestOpaqueObject_" + std::to_string(i) + "/").c_str());
-		m_opaqueSphereEntites.emplace_back(g_pCoreSystem->getGameSystem()->createEntity(l_entityName, ObjectSource::Runtime, ObjectUsage::Gameplay));
+		m_opaqueSphereEntites.emplace_back(g_pModuleManager->getGameSystem()->createEntity(l_entityName, ObjectSource::Runtime, ObjectUsage::Gameplay));
 	}
 
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
-		m_opaqueSphereTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
-		m_opaqueSphereTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
+		m_opaqueSphereTransformComponents[i] = g_pModuleManager->getGameSystem()->spawn<TransformComponent>(m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_opaqueSphereTransformComponents[i]->m_parentTransformComponent = g_pModuleManager->getGameSystem()->getRootTransformComponent();
 		m_opaqueSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_opaqueSphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_opaqueSphereVisibleComponents[i] = g_pModuleManager->getGameSystem()->spawn<VisibleComponent>(m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_opaqueSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
 		m_opaqueSphereVisibleComponents[i]->m_meshShapeType = (i & 0x00000001) ? MeshShapeType::SPHERE : MeshShapeType::CUBE;
 		m_opaqueSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::DYNAMIC;
@@ -318,15 +318,15 @@ bool GameInstanceNS::setupTransparentSpheres()
 		m_transparentSphereTransformComponents.emplace_back();
 		m_transparentSphereVisibleComponents.emplace_back();
 		auto l_entityName = EntityName(("PhysicsTestTransparentSphere_" + std::to_string(i) + "/").c_str());
-		m_transparentSphereEntites.emplace_back(g_pCoreSystem->getGameSystem()->createEntity(l_entityName, ObjectSource::Runtime, ObjectUsage::Gameplay));
+		m_transparentSphereEntites.emplace_back(g_pModuleManager->getGameSystem()->createEntity(l_entityName, ObjectSource::Runtime, ObjectUsage::Gameplay));
 	}
 
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
-		m_transparentSphereTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
-		m_transparentSphereTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
+		m_transparentSphereTransformComponents[i] = g_pModuleManager->getGameSystem()->spawn<TransformComponent>(m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_transparentSphereTransformComponents[i]->m_parentTransformComponent = g_pModuleManager->getGameSystem()->getRootTransformComponent();
 		m_transparentSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_transparentSphereVisibleComponents[i] = g_pCoreSystem->getGameSystem()->spawn<VisibleComponent>(m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_transparentSphereVisibleComponents[i] = g_pModuleManager->getGameSystem()->spawn<VisibleComponent>(m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_transparentSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_TRANSPARENT;
 		m_transparentSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::SPHERE;
 		m_transparentSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::DYNAMIC;
@@ -374,15 +374,15 @@ bool GameInstanceNS::setupPointLights()
 		m_pointLightTransformComponents.emplace_back();
 		m_pointLightComponents.emplace_back();
 		auto l_entityName = EntityName(("TestPointLight_" + std::to_string(i) + "/").c_str());
-		m_pointLightEntites.emplace_back(g_pCoreSystem->getGameSystem()->createEntity(l_entityName, ObjectSource::Runtime, ObjectUsage::Gameplay));
+		m_pointLightEntites.emplace_back(g_pModuleManager->getGameSystem()->createEntity(l_entityName, ObjectSource::Runtime, ObjectUsage::Gameplay));
 	}
 
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
-		m_pointLightTransformComponents[i] = g_pCoreSystem->getGameSystem()->spawn<TransformComponent>(m_pointLightEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
-		m_pointLightTransformComponents[i]->m_parentTransformComponent = g_pCoreSystem->getGameSystem()->getRootTransformComponent();
+		m_pointLightTransformComponents[i] = g_pModuleManager->getGameSystem()->spawn<TransformComponent>(m_pointLightEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_pointLightTransformComponents[i]->m_parentTransformComponent = g_pModuleManager->getGameSystem()->getRootTransformComponent();
 		m_pointLightTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_pointLightComponents[i] = g_pCoreSystem->getGameSystem()->spawn<PointLightComponent>(m_pointLightEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_pointLightComponents[i] = g_pModuleManager->getGameSystem()->spawn<PointLightComponent>(m_pointLightEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_pointLightComponents[i]->m_luminousFlux = 100.0f;
 		m_pointLightComponents[i]->m_color = vec4(l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), 1.0f);
 	}
@@ -439,16 +439,16 @@ bool GameInstanceNS::setup()
 		m_objectStatus = ObjectStatus::Activated;
 	};
 
-	g_pCoreSystem->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
+	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
 	return true;
 }
 
 bool GameInstanceNS::initialize()
 {
-	f_testFunc = []() {	g_pCoreSystem->getFileSystem()->loadScene("Res//Scenes//animationTest.InnoScene");
+	f_testFunc = []() {	g_pModuleManager->getFileSystem()->loadScene("Res//Scenes//animationTest.InnoScene");
 	};
-	g_pCoreSystem->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_R, ButtonStatus::PRESSED }, &f_testFunc);
+	g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_R, ButtonStatus::PRESSED }, &f_testFunc);
 	return true;
 }
 
@@ -481,7 +481,7 @@ bool GameInstance::setup()
 bool GameInstance::initialize()
 {
 	bool l_result = true;
-	g_pCoreSystem->getFileSystem()->loadScene("Res//Scenes//default.InnoScene");
+	g_pModuleManager->getFileSystem()->loadScene("Res//Scenes//default.InnoScene");
 
 	l_result = l_result && PlayerComponentCollection::initialize();
 	l_result = l_result && GameInstanceNS::initialize();
@@ -514,10 +514,10 @@ bool GameInstanceNS::update()
 {
 	if (m_objectStatus == ObjectStatus::Activated)
 	{
-		auto l_tickTime = g_pCoreSystem->getTickTime();
+		auto l_tickTime = g_pModuleManager->getTickTime();
 		seed += (l_tickTime / 1000.0f);
 
-		auto updateGameTask = g_pCoreSystem->getTaskSystem()->submit("PlayerComponentCollectionUpdateTask", [&]()
+		auto updateGameTask = g_pModuleManager->getTaskSystem()->submit("PlayerComponentCollectionUpdateTask", [&]()
 		{
 			auto l_seed = (1.0f - l_tickTime / 100.0f);
 			l_seed = l_seed > 0.0f ? l_seed : 0.01f;
@@ -533,16 +533,16 @@ bool GameInstanceNS::update()
 
 void GameInstanceNS::runTest(unsigned int testTime, std::function<bool()> testCase)
 {
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "Start test...");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "Start test...");
 	for (unsigned int i = 0; i < testTime; i++)
 	{
 		auto l_result = testCase();
 		if (!l_result)
 		{
-			g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_WARNING, "Test failure.");
+			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "Test failure.");
 		}
 	}
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "Finished test for " + std::to_string(testTime) + " times.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "Finished test for " + std::to_string(testTime) + " times.");
 }
 
 void PlayerComponentCollection::update(float seed)

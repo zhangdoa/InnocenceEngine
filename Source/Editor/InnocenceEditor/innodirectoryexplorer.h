@@ -3,7 +3,7 @@
 
 #include <QTreeView>
 #include <QFileSystemModel>
-#include "InnoFileExplorer.h"
+#include "innofileexplorer.h"
 
 class InnoDirectoryExplorer : public QTreeView
 {

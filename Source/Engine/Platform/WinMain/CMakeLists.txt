@@ -5,5 +5,3 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 endif()
 
 target_link_libraries(InnoMain InnoApplication)
-target_link_libraries(InnoMain InnoSystem)
-target_link_libraries(InnoMain InnoGame)

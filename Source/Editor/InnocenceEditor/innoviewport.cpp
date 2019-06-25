@@ -2,10 +2,10 @@
 #include <qt_windows.h>
 #include <QFuture>
 #include <QtConcurrent/QtConcurrentRun>
-#include "../../Engine/Common/InnoApplication.h"
-#include "../../Engine/System/ICoreSystem.h"
+#include "../../Engine/Application/InnoApplication.h"
+#include "../../Engine/ModuleManager/IModuleManager.h"
 
-INNO_SYSTEM_EXPORT extern ICoreSystem* g_pCoreSystem;
+INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 
 InnoViewport::InnoViewport(QWidget *parent)
     : QWidget{parent}
@@ -33,7 +33,7 @@ InnoViewport::InnoViewport(QWidget *parent)
 
 InnoViewport::~InnoViewport()
 {
-    g_pCoreSystem->getWindowSystem()->sendEvent(WM_DESTROY, WM_DESTROY, 0);
+    g_pModuleManager->getWindowSystem()->sendEvent(WM_DESTROY, WM_DESTROY, 0);
 }
 
 void InnoViewport::initialize()
@@ -68,13 +68,13 @@ void InnoViewport::resizeEvent(QResizeEvent *resizeEvent)
 
 void InnoViewport::Resize(float width, float height)
 {
-    if(g_pCoreSystem)
+    if(g_pModuleManager)
     {
-        if(g_pCoreSystem->getStatus() == ObjectStatus::Activated)
+        if(g_pModuleManager->getStatus() == ObjectStatus::Activated)
         {
             TVec2<unsigned int> l_newResolution = TVec2<unsigned int>(width, height);
-            g_pCoreSystem->getRenderingFrontend()->setScreenResolution(l_newResolution);
-            g_pCoreSystem->getRenderingBackend()->resize();
+            g_pModuleManager->getRenderingFrontend()->setScreenResolution(l_newResolution);
+            g_pModuleManager->getRenderingBackend()->resize();
         }
     }
 }
@@ -85,22 +85,22 @@ bool ViewportEventFilter::eventFilter(QObject *obj, QEvent *event)
     if(l_eventType == QEvent::KeyPress)
     {
         auto l_key = reinterpret_cast<QKeyEvent*>(event);
-        g_pCoreSystem->getWindowSystem()->sendEvent(WM_KEYDOWN, l_key->key(), 0);
+        g_pModuleManager->getWindowSystem()->sendEvent(WM_KEYDOWN, l_key->key(), 0);
     }
     if(l_eventType == QEvent::KeyRelease)
     {
         auto l_key = reinterpret_cast<QKeyEvent*>(event);
-        g_pCoreSystem->getWindowSystem()->sendEvent(WM_KEYUP, l_key->key(), 0);
+        g_pModuleManager->getWindowSystem()->sendEvent(WM_KEYUP, l_key->key(), 0);
     }
     if(l_eventType == QEvent::MouseButtonPress)
     {
         auto l_key = reinterpret_cast<QMouseEvent*>(event);
         switch (l_key->button()) {
         case Qt::MouseButton::LeftButton:
-            g_pCoreSystem->getWindowSystem()->sendEvent(WM_LBUTTONDOWN, WM_LBUTTONDOWN, 0);
+            g_pModuleManager->getWindowSystem()->sendEvent(WM_LBUTTONDOWN, WM_LBUTTONDOWN, 0);
             break;
         case Qt::MouseButton::RightButton:
-            g_pCoreSystem->getWindowSystem()->sendEvent(WM_RBUTTONDOWN, WM_RBUTTONDOWN, 0);
+            g_pModuleManager->getWindowSystem()->sendEvent(WM_RBUTTONDOWN, WM_RBUTTONDOWN, 0);
             break;
         default:
             break;
@@ -111,10 +111,10 @@ bool ViewportEventFilter::eventFilter(QObject *obj, QEvent *event)
         auto l_mouseButton = reinterpret_cast<QMouseEvent*>(event);
         switch (l_mouseButton->button()) {
         case Qt::MouseButton::LeftButton:
-            g_pCoreSystem->getWindowSystem()->sendEvent(WM_LBUTTONUP, WM_LBUTTONUP, 0);
+            g_pModuleManager->getWindowSystem()->sendEvent(WM_LBUTTONUP, WM_LBUTTONUP, 0);
             break;
         case Qt::MouseButton::RightButton:
-            g_pCoreSystem->getWindowSystem()->sendEvent(WM_RBUTTONUP, WM_RBUTTONUP, 0);
+            g_pModuleManager->getWindowSystem()->sendEvent(WM_RBUTTONUP, WM_RBUTTONUP, 0);
             break;
         default:
             break;
@@ -126,7 +126,7 @@ bool ViewportEventFilter::eventFilter(QObject *obj, QEvent *event)
         auto l_x = l_mouseMovement->localPos().x();
         auto l_y = l_mouseMovement->localPos().y();
         auto l_lparm = MAKELONG(l_x, l_y);
-        g_pCoreSystem->getWindowSystem()->sendEvent(WM_MOUSEMOVE, WM_MOUSEMOVE, l_lparm);
+        g_pModuleManager->getWindowSystem()->sendEvent(WM_MOUSEMOVE, WM_MOUSEMOVE, l_lparm);
     }
     return false;
 }

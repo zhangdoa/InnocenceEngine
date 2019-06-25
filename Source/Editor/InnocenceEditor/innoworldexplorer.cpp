@@ -1,8 +1,8 @@
 #include "innoworldexplorer.h"
 
-#include "../../Engine/System/ICoreSystem.h"
+#include "../../Engine/ModuleManager/IModuleManager.h"
 
-INNO_SYSTEM_EXPORT extern ICoreSystem* g_pCoreSystem;
+INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 
 InnoWorldExplorer::InnoWorldExplorer(QWidget* parent) : QTreeWidget(parent)
 {
@@ -14,8 +14,8 @@ void InnoWorldExplorer::buildTree()
     m_rootItem->setText(0, "Entities");
     this->addTopLevelItem(m_rootItem);
 
-    auto l_entitySet = g_pCoreSystem->getGameSystem()->getEntities();
-    auto l_entityChildrenComponentsMetadataMap = g_pCoreSystem->getGameSystem()->getEntityChildrenComponentsMetadataMap();
+    auto l_entitySet = g_pModuleManager->getGameSystem()->getEntities();
+    auto l_entityChildrenComponentsMetadataMap = g_pModuleManager->getGameSystem()->getEntityChildrenComponentsMetadataMap();
 
     for (auto i : l_entitySet)
     {
@@ -59,7 +59,7 @@ void InnoWorldExplorer::initialize(InnoPropertyEditor* propertyEditor)
         buildTree();
     };
 
-    g_pCoreSystem->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
+    g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 }
 
 void InnoWorldExplorer::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)

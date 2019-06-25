@@ -1,6 +1,6 @@
 #pragma once
 #include "../Common/InnoType.h"
-#include "../System/RenderingBackend/GLRenderingBackend/GLHeaders.h"
+#include "../RenderingBackend/GLRenderingBackend/GLHeaders.h"
 #include "TextureDataComponent.h"
 
 struct GLTextureDataDesc

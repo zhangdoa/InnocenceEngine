@@ -7,7 +7,7 @@
 #include <QDoubleValidator>
 #include "IComponentPropertyEditor.h"
 #include "combolabeltext.h"
-#include "../../engine/component/TransformComponent.h"
+#include "../../Engine/Component/TransformComponent.h"
 
 class TransformComponentPropertyEditor : public IComponentPropertyEditor
 {

@@ -1,7 +1,7 @@
 #include <windows.h>
 #include <windowsx.h>
 
-#include "../../Common/InnoApplication.h"
+#include "../../Application/InnoApplication.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int nCmdshow)
 {

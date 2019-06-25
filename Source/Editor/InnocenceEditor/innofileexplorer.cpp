@@ -1,9 +1,9 @@
 #include "innofileexplorer.h"
 #include <QMessageBox>
 
-#include "../../Engine/System/ICoreSystem.h"
+#include "../../Engine/ModuleManager/IModuleManager.h"
 
-INNO_SYSTEM_EXPORT extern ICoreSystem* g_pCoreSystem;
+INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 
 InnoFileExplorer::InnoFileExplorer(QWidget* parent) : QListView(parent)
 {
@@ -22,7 +22,7 @@ void InnoFileExplorer::initialize()
 
     connect(this, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(DoubleClick(QModelIndex)));
 
-    auto l_workingDir = g_pCoreSystem->getFileSystem()->getWorkingDirectory();
+    auto l_workingDir = g_pModuleManager->getFileSystem()->getWorkingDirectory();
     l_workingDir += "res//";
     m_rootDir = l_workingDir.c_str();
 
@@ -87,7 +87,7 @@ QString InnoFileExplorer::GetSelectionPath()
                     QMessageBox::Cancel ) )
         {
         case QMessageBox::Yes:
-            g_pCoreSystem->getFileSystem()->convertModel("res/" + l_relativePath.toStdString(), "res/convertedAssets/");
+            g_pModuleManager->getFileSystem()->convertModel("res/" + l_relativePath.toStdString(), "res/convertedAssets/");
             break;
         case QMessageBox::No:
             break;
@@ -114,7 +114,7 @@ QString InnoFileExplorer::GetSelectionPath()
                     QMessageBox::Cancel ) )
         {
         case QMessageBox::Yes:
-            g_pCoreSystem->getFileSystem()->loadScene("res/" + l_relativePath.toStdString());
+            g_pModuleManager->getFileSystem()->loadScene("res/" + l_relativePath.toStdString());
             break;
         case QMessageBox::No:
             break;

@@ -1,6 +1,6 @@
-#include "../../Engine/Common/InnoContainer.h"
-#include "../../Engine/Common/InnoMath.h"
-#include "../../Engine/System/Core/InnoTimer.h"
+#include "../Engine/Common/InnoContainer.h"
+#include "../Engine/Common/InnoMath.h"
+#include "../Engine/Core/InnoTimer.h"
 
 int main(int argc, char *argv[])
 {

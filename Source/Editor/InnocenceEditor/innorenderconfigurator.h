@@ -3,7 +3,6 @@
 
 #include <QComboBox>
 #include <QStandardItemModel>
-#include "../../engine/system/ICoreSystem.h"
 
 class InnoRenderConfigurator : public QComboBox
 {
