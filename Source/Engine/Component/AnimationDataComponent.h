@@ -4,9 +4,16 @@
 
 struct Key
 {
-	double m_Time;
 	vec4 m_Pos;
 	vec4 m_Rot;
+	double m_Time;
+};
+
+struct Channel
+{
+	unsigned int m_ChannelID;
+	unsigned int m_NumKeys;
+	Key* m_Keys;
 };
 
 class AnimationDataComponent : public InnoComponent
@@ -15,5 +22,6 @@ public:
 	AnimationDataComponent() {};
 	~AnimationDataComponent() {};
 
-	std::vector<Key> m_Keys;
+	unsigned int m_NumChannels;
+	Channel* m_Channels;
 };

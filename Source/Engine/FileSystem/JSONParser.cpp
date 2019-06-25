@@ -405,7 +405,7 @@ std::vector<AnimationDataComponent*> InnoFileSystemNS::JSONParser::processAnimat
 		{
 			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: std::ifstream: can't open file " + l_animationFileName + "!");
 		}
-		//auto l_ADC = g_pModuleManager->getRenderingFrontend()->addAnimationDataComponent();
+		auto l_ADC = g_pModuleManager->getRenderingFrontend()->addAnimationDataComponent();
 
 		auto pbuf = l_animationFile.rdbuf();
 		pbuf->pubseekpos(0, l_animationFile.in);
@@ -415,28 +415,23 @@ std::vector<AnimationDataComponent*> InnoFileSystemNS::JSONParser::processAnimat
 
 		unsigned int l_numChannels;
 		pbuf->sgetn((char*)&l_numChannels, sizeof(l_numChannels));
+		l_ADC->m_NumChannels = l_numChannels;
 
 		for (unsigned int i = 0; i < l_numChannels; i++)
 		{
+			Channel l_channel;
 			unsigned int l_channelIndex;
 			pbuf->sgetn((char*)&l_channelIndex, sizeof(l_channelIndex));
+			l_channel.m_ChannelID = l_channelIndex;
 
 			unsigned int l_numKeys;
 			pbuf->sgetn((char*)&l_numKeys, sizeof(l_numKeys));
+			l_channel.m_NumKeys = l_numKeys;
 
 			for (unsigned int j = 0; j < l_numKeys; j++)
 			{
-				double l_posKeyTime;
-				pbuf->sgetn((char*)&l_posKeyTime, sizeof(l_posKeyTime));
-
-				vec4 l_pos;
-				pbuf->sgetn((char*)&l_pos, sizeof(l_pos));
-
-				double l_rotKeyTime;
-				pbuf->sgetn((char*)&l_rotKeyTime, sizeof(l_rotKeyTime));
-
-				vec4 l_rot;
-				pbuf->sgetn((char*)&l_rot, sizeof(l_rot));
+				Key l_key;
+				pbuf->sgetn((char*)&l_key, sizeof(l_key));
 			}
 		}
 	}

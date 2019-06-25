@@ -508,18 +508,17 @@ Duration:double
 NumChannels:unsigned int
 ChannelIndex:unsigned int
 NumKeys:unsigned int
-KeyTime:double
-KeyValue:vec4
+Key:Key(vec4+vec4+double)
 
 Binary data structure:
 |Duration
 |NumChannels
 |ChannelIndex1
 	|NumKeys
-		|PosKeyTime1|PosKeyValue1|RotKeyTime1|RotKeyValue1
-		|PosKeyTime2|PosKeyValue2|RotKeyTime2|RotKeyValue2
+		|Key1
+		|Key2
 		|...
-		|PosKeyTimeN|PosKeyValueN|RotKeyTimeN|RotKeyValueN
+		|KeyN
 |ChannelIndex2
 |...
 |ChannelIndexN
@@ -557,16 +556,17 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpAnimation(const aiAnimation *
 				auto l_posKey = l_channel->mPositionKeys[i];
 				auto l_posKeyTime = l_posKey.mTime;
 				auto l_posKeyValue = l_posKey.mValue;
-				vec4 l_pos = vec4(l_posKeyValue.x, l_posKeyValue.y, l_posKeyValue.z, 1.0f);
-				serialize(l_file, &l_posKeyTime, sizeof(decltype(l_posKeyTime)));
-				serialize(l_file, &l_pos, sizeof(decltype(l_pos)));
-				//
+				auto l_pos = vec4(l_posKeyValue.x, l_posKeyValue.y, l_posKeyValue.z, 1.0f);
 				auto l_rotKey = l_channel->mRotationKeys[i];
-				auto l_rotKeyTime = l_rotKey.mTime;
 				auto l_rotKeyValue = l_rotKey.mValue;
-				vec4 l_rot = vec4(l_rotKeyValue.x, l_rotKeyValue.y, l_rotKeyValue.z, l_rotKeyValue.w);
-				serialize(l_file, &l_rotKeyTime, sizeof(decltype(l_rotKeyTime)));
-				serialize(l_file, &l_rot, sizeof(decltype(l_rot)));
+				auto l_rot = vec4(l_rotKeyValue.x, l_rotKeyValue.y, l_rotKeyValue.z, l_rotKeyValue.w);
+
+				Key l_key;
+				l_key.m_Pos = l_pos;
+				l_key.m_Rot = l_rot;
+				l_key.m_Time = l_posKeyTime;
+
+				serialize(l_file, &l_key, sizeof(decltype(l_key)));
 			}
 		}
 	}
