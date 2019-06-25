@@ -234,6 +234,10 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 			l_Vertex.m_normal.y = 0.0f;
 			l_Vertex.m_normal.z = 1.0f;
 		}
+
+		l_Vertex.m_pad1 = InnoMath::minVec2<float>;
+		l_Vertex.m_pad2 = InnoMath::minVec4<float>;
+
 		l_vertices.emplace_back(l_Vertex);
 	}
 
@@ -248,28 +252,38 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 			auto l_bone = aiMesh->mBones[i];
 			if (l_bone->mNumWeights)
 			{
-				for (unsigned int i = 0; i < l_bone->mNumWeights; i++)
+				for (unsigned int j = 0; j < l_bone->mNumWeights; j++)
 				{
-					aiVertexWeight l_vertexWeight = l_bone->mWeights[i];
-
-					// Only the first 3 most weighted bone will be stored
-					if (l_vertexWeight.mWeight > l_vertices[l_vertexWeight.mVertexId].m_pad1.y)
+					aiVertexWeight l_vertexWeight = l_bone->mWeights[j];
+					auto l_Id = l_vertexWeight.mVertexId;
+					auto l_weight = l_vertexWeight.mWeight;
+					// Only the first 3 most weighted bones will be stored
+					if (l_weight > l_vertices[l_Id].m_pad1.y)
 					{
-						// 1st weighted bone id and weight
-						l_vertices[l_vertexWeight.mVertexId].m_pad1.x = (float)i;
-						l_vertices[l_vertexWeight.mVertexId].m_pad1.y = l_vertexWeight.mWeight;
+						// Old 2nd to 3rd
+						l_vertices[l_Id].m_pad2.z = l_vertices[l_Id].m_pad2.x;
+						l_vertices[l_Id].m_pad2.w = l_vertices[l_Id].m_pad2.y;
+						// Old 1st to 2nd
+						l_vertices[l_Id].m_pad2.x = l_vertices[l_Id].m_pad1.x;
+						l_vertices[l_Id].m_pad2.y = l_vertices[l_Id].m_pad1.y;
+						// New as 1st
+						l_vertices[l_Id].m_pad1.x = (float)i;
+						l_vertices[l_Id].m_pad1.y = l_weight;
 					}
-					else if (l_vertexWeight.mWeight > l_vertices[l_vertexWeight.mVertexId].m_pad2.y)
+					else if (l_weight > l_vertices[l_Id].m_pad2.y)
 					{
-						// 2nd weighted bone id and weight
-						l_vertices[l_vertexWeight.mVertexId].m_pad2.x = (float)i;
-						l_vertices[l_vertexWeight.mVertexId].m_pad2.y = l_vertexWeight.mWeight;
+						// Old 2nd to 3rd
+						l_vertices[l_Id].m_pad2.z = l_vertices[l_Id].m_pad2.x;
+						l_vertices[l_Id].m_pad2.w = l_vertices[l_Id].m_pad2.y;
+						// New as 2nd
+						l_vertices[l_Id].m_pad2.x = (float)i;
+						l_vertices[l_Id].m_pad2.y = l_weight;
 					}
-					else if (l_vertexWeight.mWeight > l_vertices[l_vertexWeight.mVertexId].m_pad2.w)
+					else if (l_weight > l_vertices[l_Id].m_pad2.w)
 					{
-						// 3rd weighted bone id and weight
-						l_vertices[l_vertexWeight.mVertexId].m_pad2.z = (float)i;
-						l_vertices[l_vertexWeight.mVertexId].m_pad2.w = l_vertexWeight.mWeight;
+						// New as 3rd
+						l_vertices[l_Id].m_pad2.z = (float)i;
+						l_vertices[l_Id].m_pad2.w = l_weight;
 					}
 				}
 			}
@@ -339,7 +353,7 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpBone(const aiMesh * aiMesh, c
 
 		auto l_bone = aiMesh->mBones[i];
 
-		j_child["BoneID"] = std::hash<std::string>()(l_bone->mName.C_Str());
+		j_child["BoneID"] = i;
 
 		aiQuaternion l_aiRot;
 		aiVector3D l_aiPos;
