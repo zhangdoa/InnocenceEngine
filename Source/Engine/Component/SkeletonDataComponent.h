@@ -15,5 +15,6 @@ public:
 	SkeletonDataComponent() {};
 	~SkeletonDataComponent() {};
 
+	mat4 m_RootOffsetMatrix;
 	std::vector<Bone> m_Bones;
 };

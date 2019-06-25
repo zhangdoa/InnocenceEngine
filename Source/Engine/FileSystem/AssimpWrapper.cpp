@@ -105,6 +105,16 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpScene(const aiScene* aiScene,
 			processAssimpAnimation(aiScene->mAnimations[i], l_animationFileName);
 			l_sceneData["AnimationFiles"].emplace_back(l_animationFileName);
 		}
+
+		auto l_rootTransformationMat = aiScene->mRootNode->mTransformation;
+		aiQuaternion l_aiRot;
+		aiVector3D l_aiPos;
+		l_rootTransformationMat.DecomposeNoScaling(l_aiRot, l_aiPos);
+		auto l_rot = vec4(l_aiRot.x, l_aiRot.y, l_aiRot.z, l_aiRot.w);
+		auto l_pos = vec4(l_aiPos.x, l_aiPos.y, l_aiPos.z, 1.0f);
+
+		JSONParser::to_json(l_sceneData["RootOffsetRotation"], l_rot);
+		JSONParser::to_json(l_sceneData["RootOffsetPosition"], l_pos);
 	}
 
 	l_sceneData["Nodes"].emplace_back(processAssimpNode(aiScene->mRootNode, aiScene, exportName));
@@ -333,7 +343,6 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpBone(const aiMesh * aiMesh, c
 
 		aiQuaternion l_aiRot;
 		aiVector3D l_aiPos;
-
 		l_bone->mOffsetMatrix.DecomposeNoScaling(l_aiRot, l_aiPos);
 		auto l_rot = vec4(l_aiRot.x, l_aiRot.y, l_aiRot.z, l_aiRot.w);
 		auto l_pos = vec4(l_aiPos.x, l_aiPos.y, l_aiPos.z, 1.0f);

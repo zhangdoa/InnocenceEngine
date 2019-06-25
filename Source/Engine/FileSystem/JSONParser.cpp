@@ -42,6 +42,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS::JSONParser
 			}
 		}
 
+		ModelMap processSceneJsonData(const json & j);
 		ModelMap processNodeJsonData(const json & j);
 		ModelPair processMeshJsonData(const json& j);
 		SkeletonDataComponent* processSkeletonJsonData(const std::string& skeletonFileName);
@@ -336,7 +337,52 @@ ModelMap InnoFileSystemNS::JSONParser::loadModelFromDisk(const std::string & fil
 
 	loadJsonDataFromDisk(fileName, j);
 
-	return  std::move(processNodeJsonData(j));
+	return std::move(processSceneJsonData(j));
+}
+
+ModelMap InnoFileSystemNS::JSONParser::processSceneJsonData(const json & j)
+{
+	// @TODO: Optimize
+	auto l_result = processNodeJsonData(j);
+
+	auto l_m = InnoMath::generateIdentityMatrix<float>();
+
+	if (j.find("RootOffsetRotation") != j.end())
+	{
+		vec4 l_rot;
+		l_rot.x = j["RootOffsetRotation"]["X"];
+		l_rot.y = j["RootOffsetRotation"]["Y"];
+		l_rot.z = j["RootOffsetRotation"]["Z"];
+		l_rot.w = j["RootOffsetRotation"]["W"];
+
+		auto l_r = InnoMath::toRotationMatrix(l_rot);
+
+		l_m = l_m * l_r;
+	}
+
+	if (j.find("RootOffsetPosition") != j.end())
+	{
+		vec4 l_pos;
+		l_pos.x = j["RootOffsetPosition"]["X"];
+		l_pos.y = j["RootOffsetPosition"]["Y"];
+		l_pos.z = j["RootOffsetPosition"]["Z"];
+		l_pos.w = j["RootOffsetPosition"]["W"];
+
+		auto l_t = InnoMath::toTranslationMatrix(l_pos);
+
+		l_m = l_m * l_t;
+	}
+
+	for (auto j : l_result)
+	{
+		auto l_SDC = j.first->m_SDC;
+		if (l_SDC)
+		{
+			l_SDC->m_RootOffsetMatrix = l_m;
+		}
+	}
+
+	return std::move(l_result);
 }
 
 ModelMap InnoFileSystemNS::JSONParser::processNodeJsonData(const json & j)
