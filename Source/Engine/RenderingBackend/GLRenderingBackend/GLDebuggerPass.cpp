@@ -173,7 +173,7 @@ bool GLDebuggerPass::drawDebugObjects()
 {
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::SPHERE);
 
-	static bool l_drawPointLightRange = true;
+	static bool l_drawPointLightRange = false;
 
 	if (l_drawPointLightRange)
 	{
@@ -207,7 +207,7 @@ bool GLDebuggerPass::drawDebugObjects()
 		}
 	}
 
-	static bool l_drawCSMAABBRange = true;
+	static bool l_drawCSMAABBRange = false;
 	l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
 
 	if (l_drawCSMAABBRange)
@@ -223,6 +223,38 @@ bool GLDebuggerPass::drawDebugObjects()
 			auto l_m = l_t * l_s;
 			updateUniform(3, l_m);
 			drawMesh(l_MDC);
+		}
+	}
+
+	static bool l_drawSkeleton = true;
+	if (l_drawSkeleton)
+	{
+		for (auto i : g_pModuleManager->getGameSystem()->get<VisibleComponent>())
+		{
+			if (i->m_meshUsageType == MeshUsageType::SKELETAL)
+			{
+				auto l_transformComponent = g_pModuleManager->getGameSystem()->get<TransformComponent>(i->m_parentEntity);
+				auto l_m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
+				for (auto j : i->m_modelMap)
+				{
+					auto l_SDC = j.first->m_SDC;
+					auto l_rootOffsetMat = l_SDC->m_RootOffsetMatrix;
+
+					for (auto k : l_SDC->m_Bones)
+					{
+						auto l_t = InnoMath::toTranslationMatrix(k.m_Pos);
+						auto l_r = InnoMath::toRotationMatrix(k.m_Rot);
+						auto l_bm = l_t * l_r;
+						// Inverse-Joint-Matrix
+						l_bm = l_bm.inverse();
+						auto l_s = InnoMath::toScaleMatrix(vec4(0.01f, 0.01f, 0.01f, 1.0f));
+						l_bm = l_bm * l_s;
+						l_bm = l_m * l_bm;
+						updateUniform(3, l_bm);
+						drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_MDC));
+					}
+				}
+			}
 		}
 	}
 
@@ -328,11 +360,11 @@ bool GLDebuggerPass::update()
 
 	drawCoordinateAxis();
 
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
+	//glEnable(GL_DEPTH_TEST);
+	//glDepthFunc(GL_LESS);
 
 	// copy depth buffer from G-Pass
-	copyDepthBuffer(GLOpaquePass::getGLRPC(), m_GLRPC);
+	//copyDepthBuffer(GLOpaquePass::getGLRPC(), m_GLRPC);
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
