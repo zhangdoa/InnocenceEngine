@@ -51,6 +51,8 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS::JSONParser
 		bool assignComponentRuntimeData();
 
 		std::unordered_map<std::string, ModelPair> m_loadedModelPair;
+		std::unordered_map<std::string, SkeletonDataComponent*> m_loadedSDC;
+
 		ThreadSafeQueue<std::pair<TransformComponent*, EntityName>> m_orphanTransformComponents;
 }
 
@@ -482,30 +484,42 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j)
 
 SkeletonDataComponent * InnoFileSystemNS::JSONParser::processSkeletonJsonData(const std::string& skeletonFileName)
 {
-	json j;
-
-	loadJsonDataFromDisk(skeletonFileName, j);
-
-	auto l_SDC = g_pModuleManager->getRenderingFrontend()->addSkeletonDataComponent();
-	auto l_size = j["Bones"].size();
-	l_SDC->m_Bones.reserve(l_size);
-
-	for (auto i : j["Bones"])
+	auto l_loadedSDC = m_loadedSDC.find(skeletonFileName);
+	if (l_loadedSDC != m_loadedSDC.end())
 	{
-		Bone l_bone;
-		l_bone.m_ID = i["BoneID"];
-		l_bone.m_Pos.x = i["OffsetPosition"]["X"];
-		l_bone.m_Pos.y = i["OffsetPosition"]["Y"];
-		l_bone.m_Pos.z = i["OffsetPosition"]["Z"];
-		l_bone.m_Pos.w = i["OffsetPosition"]["W"];
-		l_bone.m_Rot.x = i["OffsetRotation"]["X"];
-		l_bone.m_Rot.y = i["OffsetRotation"]["Y"];
-		l_bone.m_Rot.z = i["OffsetRotation"]["Z"];
-		l_bone.m_Rot.w = i["OffsetRotation"]["W"];
-
-		l_SDC->m_Bones.emplace_back(l_bone);
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: JSONParser: " + skeletonFileName + " has been already loaded.");
+		return l_loadedSDC->second;
 	}
-	return l_SDC;
+	else
+	{
+		json j;
+
+		loadJsonDataFromDisk(skeletonFileName, j);
+
+		auto l_SDC = g_pModuleManager->getRenderingFrontend()->addSkeletonDataComponent();
+		auto l_size = j["Bones"].size();
+		l_SDC->m_Bones.reserve(l_size);
+
+		for (auto i : j["Bones"])
+		{
+			Bone l_bone;
+			l_bone.m_ID = i["BoneID"];
+			l_bone.m_Pos.x = i["OffsetPosition"]["X"];
+			l_bone.m_Pos.y = i["OffsetPosition"]["Y"];
+			l_bone.m_Pos.z = i["OffsetPosition"]["Z"];
+			l_bone.m_Pos.w = i["OffsetPosition"]["W"];
+			l_bone.m_Rot.x = i["OffsetRotation"]["X"];
+			l_bone.m_Rot.y = i["OffsetRotation"]["Y"];
+			l_bone.m_Rot.z = i["OffsetRotation"]["Z"];
+			l_bone.m_Rot.w = i["OffsetRotation"]["W"];
+
+			l_SDC->m_Bones.emplace_back(l_bone);
+		}
+
+		m_loadedSDC.emplace(skeletonFileName, l_SDC);
+
+		return l_SDC;
+	}
 }
 
 MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(const std::string& materialFileName)
