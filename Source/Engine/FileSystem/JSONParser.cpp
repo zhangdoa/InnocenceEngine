@@ -43,6 +43,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS::JSONParser
 		}
 
 		ModelMap processSceneJsonData(const json & j);
+		std::vector<AnimationDataComponent*> processAnimationJsonData(const json & j);
 		ModelMap processNodeJsonData(const json & j);
 		ModelPair processMeshJsonData(const json& j);
 		SkeletonDataComponent* processSkeletonJsonData(const std::string& skeletonFileName);
@@ -345,6 +346,11 @@ ModelMap InnoFileSystemNS::JSONParser::loadModelFromDisk(const std::string & fil
 ModelMap InnoFileSystemNS::JSONParser::processSceneJsonData(const json & j)
 {
 	// @TODO: Optimize
+	if (j.find("AnimationFiles") != j.end())
+	{
+		processAnimationJsonData(j["AnimationFiles"]);
+	}
+
 	auto l_result = processNodeJsonData(j);
 
 	auto l_m = InnoMath::generateIdentityMatrix<float>();
@@ -385,6 +391,57 @@ ModelMap InnoFileSystemNS::JSONParser::processSceneJsonData(const json & j)
 	}
 
 	return std::move(l_result);
+}
+
+std::vector<AnimationDataComponent*> InnoFileSystemNS::JSONParser::processAnimationJsonData(const json & j)
+{
+	for (auto i : j)
+	{
+		auto l_animationFileName = i.get<std::string>();
+
+		std::ifstream l_animationFile(getWorkingDirectory() + l_animationFileName, std::ios::binary);
+
+		if (!l_animationFile.is_open())
+		{
+			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: std::ifstream: can't open file " + l_animationFileName + "!");
+		}
+		//auto l_ADC = g_pModuleManager->getRenderingFrontend()->addAnimationDataComponent();
+
+		auto pbuf = l_animationFile.rdbuf();
+		pbuf->pubseekpos(0, l_animationFile.in);
+
+		double l_duration;
+		pbuf->sgetn((char*)&l_duration, sizeof(l_duration));
+
+		unsigned int l_numChannels;
+		pbuf->sgetn((char*)&l_numChannels, sizeof(l_numChannels));
+
+		for (unsigned int i = 0; i < l_numChannels; i++)
+		{
+			unsigned int l_channelIndex;
+			pbuf->sgetn((char*)&l_channelIndex, sizeof(l_channelIndex));
+
+			unsigned int l_numKeys;
+			pbuf->sgetn((char*)&l_numKeys, sizeof(l_numKeys));
+
+			for (unsigned int j = 0; j < l_numKeys; j++)
+			{
+				double l_posKeyTime;
+				pbuf->sgetn((char*)&l_posKeyTime, sizeof(l_posKeyTime));
+
+				vec4 l_pos;
+				pbuf->sgetn((char*)&l_pos, sizeof(l_pos));
+
+				double l_rotKeyTime;
+				pbuf->sgetn((char*)&l_rotKeyTime, sizeof(l_rotKeyTime));
+
+				vec4 l_rot;
+				pbuf->sgetn((char*)&l_rot, sizeof(l_rot));
+			}
+		}
+	}
+
+	return std::vector<AnimationDataComponent*>();
 }
 
 ModelMap InnoFileSystemNS::JSONParser::processNodeJsonData(const json & j)

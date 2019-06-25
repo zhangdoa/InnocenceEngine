@@ -502,26 +502,47 @@ json InnoFileSystemNS::AssimpWrapper::processTextureData(const std::string & fil
 	return j;
 }
 
+/*
+Binary data type:
+Duration:double
+NumChannels:unsigned int
+ChannelIndex:unsigned int
+NumKeys:unsigned int
+KeyTime:double
+KeyValue:vec4
+
+Binary data structure:
+|Duration
+|NumChannels
+|ChannelIndex1
+	|NumKeys
+		|PosKeyTime1|PosKeyValue1|RotKeyTime1|RotKeyValue1
+		|PosKeyTime2|PosKeyValue2|RotKeyTime2|RotKeyValue2
+		|...
+		|PosKeyTimeN|PosKeyValueN|RotKeyTimeN|RotKeyValueN
+|ChannelIndex2
+|...
+|ChannelIndexN
+*/
+
 void InnoFileSystemNS::AssimpWrapper::processAssimpAnimation(const aiAnimation * aiAnimation, const std::string& exportFileRelativePath)
 {
 	std::ofstream l_file(getWorkingDirectory() + exportFileRelativePath, std::ios::binary);
-
+	//
 	auto l_duration = aiAnimation->mDuration;
-
 	serialize(l_file, &l_duration, sizeof(decltype(l_duration)));
-
+	//
 	auto l_numChannels = aiAnimation->mNumChannels;
-
 	if (l_numChannels)
 	{
 		serialize(l_file, &l_numChannels, sizeof(decltype(l_numChannels)));
-
+		//
 		for (unsigned int i = 0; i < l_numChannels; i++)
 		{
+			//
 			auto l_channel = aiAnimation->mChannels[i];
-
-			auto l_channelID = std::hash<std::string>()(l_channel->mNodeName.C_Str());
-			serialize(l_file, &l_channelID, sizeof(decltype(l_channelID)));
+			auto l_channelIndex = i;
+			serialize(l_file, &l_channelIndex, sizeof(decltype(l_channelIndex)));
 
 			if (l_channel->mNumPositionKeys != l_channel->mNumRotationKeys)
 			{
@@ -529,18 +550,23 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpAnimation(const aiAnimation *
 				l_file.close();
 				return;
 			}
-
+			//
+			serialize(l_file, &l_channel->mNumPositionKeys, sizeof(decltype(l_channel->mNumPositionKeys)));
 			for (unsigned int j = 0; j < l_channel->mNumPositionKeys; j++)
 			{
 				auto l_posKey = l_channel->mPositionKeys[i];
 				auto l_posKeyTime = l_posKey.mTime;
 				auto l_posKeyValue = l_posKey.mValue;
 				vec4 l_pos = vec4(l_posKeyValue.x, l_posKeyValue.y, l_posKeyValue.z, 1.0f);
-
+				serialize(l_file, &l_posKeyTime, sizeof(decltype(l_posKeyTime)));
+				serialize(l_file, &l_pos, sizeof(decltype(l_pos)));
+				//
 				auto l_rotKey = l_channel->mRotationKeys[i];
 				auto l_rotKeyTime = l_rotKey.mTime;
 				auto l_rotKeyValue = l_rotKey.mValue;
 				vec4 l_rot = vec4(l_rotKeyValue.x, l_rotKeyValue.y, l_rotKeyValue.z, l_rotKeyValue.w);
+				serialize(l_file, &l_rotKeyTime, sizeof(decltype(l_rotKeyTime)));
+				serialize(l_file, &l_rot, sizeof(decltype(l_rot)));
 			}
 		}
 	}
