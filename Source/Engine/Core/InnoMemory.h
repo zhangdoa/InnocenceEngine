@@ -22,11 +22,6 @@ public:
 class InnoMemory
 {
 public:
-	static bool Setup();
-	static bool Initialize();
-	static bool Update();
-	static bool Terminate();
-
 	static void* Allocate(const std::size_t size);
 	static void Deallocate(void* const ptr);
 

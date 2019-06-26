@@ -207,26 +207,6 @@ private:
 	std::unordered_map<void*, std::size_t> m_Memo;
 };
 
-bool InnoMemory::Setup()
-{
-	return true;
-}
-
-bool InnoMemory::Initialize()
-{
-	return true;
-}
-
-bool InnoMemory::Update()
-{
-	return true;
-}
-
-bool InnoMemory::Terminate()
-{
-	return true;
-}
-
 void * InnoMemory::Allocate(const std::size_t size)
 {
 	auto m_Ptr = ::new char[size];
