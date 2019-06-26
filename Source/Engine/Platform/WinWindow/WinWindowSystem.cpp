@@ -1,11 +1,11 @@
 #include "WinWindowSystem.h"
-#include "../Component/WinWindowSystemComponent.h"
+#include "../../Component/WinWindowSystemComponent.h"
 
 #include "WinDXWindow/WinDXWindowSystem.h"
 #include "WinGLWindow/WinGLWindowSystem.h"
 #include "WinVKWindow/WinVKWindowSystem.h"
 
-#include "../ModuleManager/IModuleManager.h"
+#include "../../ModuleManager/IModuleManager.h"
 
 extern IModuleManager* g_pModuleManager;
 

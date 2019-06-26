@@ -1,6 +1,6 @@
 #pragma once
-#include "../Common/InnoType.h"
-#include "../Common/InnoClassTemplate.h"
+#include "../../Common/InnoType.h"
+#include "../../Common/InnoClassTemplate.h"
 
 INNO_INTERFACE IWinWindowSystem
 {

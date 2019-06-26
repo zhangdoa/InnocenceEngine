@@ -1,8 +1,8 @@
 #include "WinDXWindowSystem.h"
-#include "../../Component/WinWindowSystemComponent.h"
-#include "../../Component/DX11RenderingBackendComponent.h"
+#include "../../../Component/WinWindowSystemComponent.h"
+#include "../../../Component/DX11RenderingBackendComponent.h"
 
-#include "../../ModuleManager/IModuleManager.h"
+#include "../../../ModuleManager/IModuleManager.h"
 
 extern IModuleManager* g_pModuleManager;
 

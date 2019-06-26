@@ -1,11 +1,11 @@
 #include "WinGLWindowSystem.h"
-#include "../../Component/WinWindowSystemComponent.h"
+#include "../../../Component/WinWindowSystemComponent.h"
 
 #include "glad/glad.h"
 #include "GL/glext.h"
 #include "GL/wglext.h"
 
-#include "../../ModuleManager/IModuleManager.h"
+#include "../../../ModuleManager/IModuleManager.h"
 
 extern IModuleManager* g_pModuleManager;
 

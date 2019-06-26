@@ -1,8 +1,8 @@
 #include "WinVKWindowSystem.h"
-#include "../../Component/WinWindowSystemComponent.h"
-#include "../../Component/VKRenderingBackendComponent.h"
+#include "../../../Component/WinWindowSystemComponent.h"
+#include "../../../Component/VKRenderingBackendComponent.h"
 
-#include "../../ModuleManager/IModuleManager.h"
+#include "../../../ModuleManager/IModuleManager.h"
 
 extern IModuleManager* g_pModuleManager;
 

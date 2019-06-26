@@ -1,6 +1,5 @@
 #pragma once
-#include "../Core/IWindowSystem.h"
-
+#include "../../Core/IWindowSystem.h"
 
 class WinWindowSystem : INNO_IMPLEMENT IWindowSystem
 {

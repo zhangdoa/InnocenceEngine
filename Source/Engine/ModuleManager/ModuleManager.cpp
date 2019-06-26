@@ -11,7 +11,7 @@
 #include "../GameSystem/InputSystem.h"
 #include "../RenderingFrontend/RenderingFrontend.h"
 #if defined INNO_PLATFORM_WIN
-#include "../WinWindow/WinWindowSystem.h"
+#include "../Platform/WinWindow/WinWindowSystem.h"
 #include "../RenderingBackend/DX11RenderingBackend/DX11RenderingBackend.h"
 #include "../RenderingBackend/DX12RenderingBackend/DX12RenderingBackend.h"
 #endif
@@ -19,11 +19,11 @@
 #include "../RenderingBackend/GLRenderingBackend/GLRenderingBackend.h"
 #endif
 #if defined INNO_PLATFORM_MAC
-#include "../MacWindow/MacWindowSystem.h"
+#include "../Platform/MacWindow/MacWindowSystem.h"
 #include "../RenderingBackend/MTRenderingBackend/MTRenderingBackend.h"
 #endif
 #if defined INNO_PLATFORM_LINUX
-#include "../LinuxWindow/LinuxWindowSystem.h"
+#include "../Platform/LinuxWindow/LinuxWindowSystem.h"
 #endif
 #if defined INNO_RENDERER_VULKAN
 #include "../RenderingBackend/VKRenderingBackend/VKRenderingBackend.h"
