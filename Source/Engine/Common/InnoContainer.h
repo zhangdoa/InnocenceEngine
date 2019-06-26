@@ -2,6 +2,7 @@
 #include "STL14.h"
 #include "STL17.h"
 #include "InnoIToA.h"
+#include "InnoAllocator.h"
 
 template<size_t S>
 class FixedSizeString
@@ -519,4 +520,124 @@ private:
 	mutable std::shared_mutex m_mutex;
 	std::unordered_map<Key, T> m_unordered_map;
 	std::condition_variable_any m_condition;
+};
+
+template<class T>
+class InnoArray
+{
+public:
+	InnoArray() = default;
+	InnoArray(size_t elementCount)
+	{
+		reserve(elementCount);
+	}
+
+	~InnoArray()
+	{
+		if (m_HeapAddress)
+		{
+			InnoMemory::Deallocate(m_HeapAddress);
+		}
+	}
+
+	InnoArray(const InnoArray<T> & rhs)
+	{
+		m_ElementSize = rhs.m_ElementSize;
+		m_ElementCount = rhs.m_ElementCount;
+		m_HeapAddress = reinterpret_cast<T*>(InnoMemory::Allocate(m_ElementCount * m_ElementSize));
+		std::memcpy(m_HeapAddress, rhs.m_HeapAddress, m_ElementCount * m_ElementSize);
+		m_CurrentFreeIndex = rhs.m_CurrentFreeIndex;
+	}
+
+	InnoArray<T>& operator=(const InnoArray<T> & rhs)
+	{
+		m_ElementSize = rhs.m_ElementSize;
+		m_ElementCount = rhs.m_ElementCount;
+		m_HeapAddress = reinterpret_cast<T*>(InnoMemory::Allocate(m_ElementCount * m_ElementSize));
+		std::memcpy(m_HeapAddress, rhs.m_HeapAddress, m_ElementCount * m_ElementSize);
+		m_CurrentFreeIndex = rhs.m_CurrentFreeIndex;
+		return *this;
+	}
+
+	InnoArray(InnoArray<T> && rhs)
+	{
+		m_ElementSize = rhs.m_ElementSize;
+		m_ElementCount = rhs.m_ElementCount;
+		m_HeapAddress = rhs.m_HeapAddress;
+		rhs.m_HeapAddress = nullptr;
+		m_CurrentFreeIndex = rhs.m_CurrentFreeIndex;
+	}
+
+	InnoArray<T>& operator=(InnoArray<T> && rhs)
+	{
+		m_ElementSize = rhs.m_ElementSize;
+		m_ElementCount = rhs.m_ElementCount;
+		m_HeapAddress = rhs.m_HeapAddress;
+		rhs.m_HeapAddress = nullptr;
+		m_CurrentFreeIndex = rhs.m_CurrentFreeIndex;
+		return *this;
+	}
+
+	InnoArray(const T* begin, const T* end)
+	{
+		m_ElementSize = sizeof(T);
+		m_ElementCount = (end - begin) / m_ElementSize;
+		m_HeapAddress = reinterpret_cast<T*>(InnoMemory::Allocate(m_ElementCount * m_ElementSize));
+		std::memcpy(m_HeapAddress, begin, m_ElementCount * m_ElementSize);
+	}
+
+	T& operator[](size_t pos)
+	{
+		return *(m_HeapAddress + pos);
+	}
+
+	const T& operator[](size_t pos) const
+	{
+		return *(m_HeapAddress + pos);
+	}
+
+	auto begin()
+	{
+		return m_HeapAddress;
+	}
+
+	auto end()
+	{
+		return m_HeapAddress + m_ElementCount;
+	}
+
+	const auto begin() const
+	{
+		return m_HeapAddress;
+	}
+
+	const auto end() const
+	{
+		return m_HeapAddress + m_ElementCount;
+	}
+
+	const auto size() const
+	{
+		return m_ElementCount;
+	}
+
+	auto reserve(size_t elementCount)
+	{
+		m_ElementSize = sizeof(T);
+		m_ElementCount = elementCount;
+		m_HeapAddress = reinterpret_cast<T*>(InnoMemory::Allocate(m_ElementCount * m_ElementSize));
+		m_CurrentFreeIndex = 0;
+	}
+
+	auto emplace_back(const T& value)
+	{
+		this->operator[](m_CurrentFreeIndex) = value;
+		m_CurrentFreeIndex++;
+	}
+
+private:
+	T* m_HeapAddress;
+	size_t m_ElementSize;
+	size_t m_ElementCount;
+	size_t m_CurrentFreeIndex;
 };
