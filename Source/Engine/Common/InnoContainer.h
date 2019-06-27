@@ -537,6 +537,10 @@ public:
 		if (m_HeapAddress)
 		{
 			InnoMemory::Deallocate(m_HeapAddress);
+			m_CurrentFreeIndex = 0;
+			m_HeapAddress = nullptr;
+			m_ElementCount = 0;
+			m_ElementSize = 0;
 		}
 	}
 
@@ -581,18 +585,21 @@ public:
 	InnoArray(const T* begin, const T* end)
 	{
 		m_ElementSize = sizeof(T);
-		m_ElementCount = (end - begin) / m_ElementSize;
+		m_ElementCount = (end - begin);
 		m_HeapAddress = reinterpret_cast<T*>(InnoMemory::Allocate(m_ElementCount * m_ElementSize));
 		std::memcpy(m_HeapAddress, begin, m_ElementCount * m_ElementSize);
+		m_CurrentFreeIndex = m_ElementCount;
 	}
 
 	T& operator[](size_t pos)
 	{
+		assert(pos < m_ElementCount && "Trying to access out-of-boundary address.");
 		return *(m_HeapAddress + pos);
 	}
 
 	const T& operator[](size_t pos) const
 	{
+		assert(pos < m_ElementCount && "Trying to access out-of-boundary address.");
 		return *(m_HeapAddress + pos);
 	}
 
@@ -631,6 +638,7 @@ public:
 
 	auto emplace_back(const T& value)
 	{
+		assert(m_CurrentFreeIndex <= m_ElementCount && "Heap overflow occurred due to unsafe emplace back operation.");
 		this->operator[](m_CurrentFreeIndex) = value;
 		m_CurrentFreeIndex++;
 	}
