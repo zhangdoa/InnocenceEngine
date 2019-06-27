@@ -19,6 +19,7 @@ public:
 	ITaskSystem* getTaskSystem() override;
 	ITestSystem* getTestSystem() override;
 	IFileSystem* getFileSystem() override;
+	IEntityManager* getEntityManager() override;
 	IGameSystem* getGameSystem() override;
 	IAssetSystem* getAssetSystem() override;
 	IPhysicsSystem* getPhysicsSystem() override;

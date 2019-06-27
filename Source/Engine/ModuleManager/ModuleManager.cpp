@@ -5,6 +5,7 @@
 #include "../Core/TaskSystem.h"
 #include "../Core/TestSystem.h"
 #include "../FileSystem/FileSystem.h"
+#include "../EntityManager/EntityManager.h"
 #include "../GameSystem/GameSystem.h"
 #include "../GameSystem/AssetSystem.h"
 #include "../PhysicsSystem/PhysicsSystem.h"
@@ -89,6 +90,7 @@ INNO_PRIVATE_SCOPE InnoModuleManagerNS
 	std::unique_ptr<ITaskSystem> m_TaskSystem;
 	std::unique_ptr<ITestSystem> m_TestSystem;
 	std::unique_ptr<IFileSystem> m_FileSystem;
+	std::unique_ptr<IEntityManager> m_EntityManager;
 	std::unique_ptr<IGameSystem> m_GameSystem;
 	std::unique_ptr<IAssetSystem> m_AssetSystem;
 	std::unique_ptr<IPhysicsSystem> m_PhysicsSystem;
@@ -215,6 +217,7 @@ bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook
 
 	createSubSystemInstanceDefi(TestSystem);
 	createSubSystemInstanceDefi(FileSystem);
+	createSubSystemInstanceDefi(EntityManager);
 	createSubSystemInstanceDefi(GameSystem);
 	createSubSystemInstanceDefi(AssetSystem);
 	createSubSystemInstanceDefi(PhysicsSystem);
@@ -364,6 +367,13 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 
 	subSystemSetup(AssetSystem);
 	subSystemSetup(FileSystem);
+
+	if (!m_EntityManager->Setup())
+	{
+		return false;
+	}
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "EntityManager setup finished.");
+
 	subSystemSetup(GameSystem);
 	subSystemSetup(PhysicsSystem);
 	subSystemSetup(InputSystem);
@@ -388,6 +398,12 @@ bool InnoModuleManagerNS::initialize()
 	subSystemInit(TestSystem);
 
 	subSystemInit(FileSystem);
+
+	if (!m_EntityManager->Initialize())
+	{
+		return false;
+	}
+
 	subSystemInit(GameSystem);
 	subSystemInit(AssetSystem);
 	subSystemInit(PhysicsSystem);
@@ -426,6 +442,12 @@ bool InnoModuleManagerNS::update()
 		subSystemUpdate(TestSystem);
 
 		subSystemUpdate(FileSystem);
+
+		if (!m_EntityManager->Simulate())
+		{
+			return false;
+		}
+
 		subSystemUpdate(GameSystem);
 		subSystemUpdate(AssetSystem);
 		subSystemUpdate(PhysicsSystem);
@@ -515,6 +537,13 @@ bool InnoModuleManagerNS::terminate()
 	subSystemTerm(PhysicsSystem);
 	subSystemTerm(AssetSystem);
 	subSystemTerm(GameSystem);
+
+	if (!m_EntityManager->Terminate())
+	{
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "EntityManager can't be terminated!");
+		return false;
+	}
+
 	subSystemTerm(FileSystem);
 
 	subSystemTerm(TestSystem);
@@ -593,4 +622,9 @@ InitConfig InnoModuleManager::getInitConfig()
 float InnoModuleManager::getTickTime()
 {
 	return  InnoModuleManagerNS::m_tickTime;
+}
+
+IEntityManager * InnoModuleManager::getEntityManager()
+{
+	return InnoModuleManagerNS::m_EntityManager.get();
 }

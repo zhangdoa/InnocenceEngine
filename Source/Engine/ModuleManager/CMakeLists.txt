@@ -12,6 +12,8 @@ GENERATE_EXPORT_HEADER (InnoEngine
 
 target_link_libraries(InnoEngine InnoCore)
 target_link_libraries(InnoEngine InnoFileSystem)
+target_link_libraries(InnoEngine InnoEntityManager)
+target_link_libraries(InnoEngine InnoComponentManager)
 target_link_libraries(InnoEngine InnoGameSystem)
 target_link_libraries(InnoEngine InnoPhysicsSystem)
 target_link_libraries(InnoEngine InnoRenderingFrontend)
