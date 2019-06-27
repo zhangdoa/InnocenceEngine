@@ -3,18 +3,6 @@
 #include <memory>
 #include <unordered_map>
 
-namespace InnoMemoryNS
-{
-	template<typename T>
-	inline std::string PointerToString(T* ptr)
-	{
-		std::stringstream ss;
-		ss << ptr;
-		auto l_result = ss.str();
-		return l_result;
-	}
-}
-
 //Double-linked-list
 struct Chunk
 {
@@ -88,8 +76,7 @@ public:
 			l_ObjectUC += objectSize;
 		}
 
-		auto l_PtrStr = InnoMemoryNS::PointerToString(this);
-		InnoLogger::Log(LogLevel::Verbose, "InnoMemory: Object pool has been allocated at ", l_PtrStr.c_str(), ".");
+		InnoLogger::Log(LogLevel::Verbose, "InnoMemory: Object pool has been allocated at ", this, ".");
 	}
 
 	~ObjectPool() = default;
@@ -176,8 +163,7 @@ public:
 		auto l_Result = m_Memo.find(ptr);
 		if (l_Result != m_Memo.end())
 		{
-			auto l_PtrStr = InnoMemoryNS::PointerToString(ptr);
-			InnoLogger::Log(LogLevel::Error, "InnoMemory: MemoryMemo: Allocate collision happened at ", l_PtrStr.c_str(), " !");
+			InnoLogger::Log(LogLevel::Error, "InnoMemory: MemoryMemo: Allocate collision happened at ", ptr, " !");
 			return false;
 		}
 		else
@@ -197,14 +183,13 @@ public:
 		}
 		else
 		{
-			auto l_PtrStr = InnoMemoryNS::PointerToString(ptr);
-			InnoLogger::Log(LogLevel::Error, "InnoMemory: MemoryMemo: Deallocate collision happened at ", l_PtrStr.c_str(), " !");
+			InnoLogger::Log(LogLevel::Error, "InnoMemory: MemoryMemo: Deallocate collision happened at ", ptr, " !");
 			return false;
 		}
 	}
 
 private:
-	std::unordered_map<void*, std::size_t> m_Memo;
+	ThreadSafeUnorderedMap<void*, std::size_t> m_Memo;
 };
 
 void * InnoMemory::Allocate(const std::size_t size)
