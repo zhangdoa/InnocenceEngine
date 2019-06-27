@@ -1,4 +1,5 @@
 #include "PhysicsSystem.h"
+#include "../Common/InnoMathHelper.h"
 
 #if defined INNO_PLATFORM_WIN
 #include "PhysXWrapper.h"
@@ -27,10 +28,6 @@ namespace InnoPhysicsSystemNS
 	void generateAABB(DirectionalLightComponent* directionalLightComponent);
 	std::vector<AABB> splitVerticesToAABBs(const std::vector<Vertex>& frustumsVertices, const std::vector<float>& splitFactors);
 
-	AABB generateAABB(const std::vector<Vertex>& vertices);
-	AABB generateAABB(vec4 boundMax, vec4 boundMin);
-	Sphere generateBoundSphere(const AABB& rhs);
-
 	std::vector<Vertex> generateAABBVertices(vec4 boundMax, vec4 boundMin);
 	std::vector<Vertex> generateAABBVertices(const AABB& rhs);
 
@@ -41,7 +38,6 @@ namespace InnoPhysicsSystemNS
 	void updateLightComponents();
 	void updateVisibleComponents();
 	void updateCulling();
-	AABB transformAABBtoWorldSpace(const AABB& rhs, mat4 globalTm);
 	void updateVisibleSceneBoundary(const AABB& rhs);
 	void updateTotalSceneBoundary(const AABB& rhs);
 
@@ -144,7 +140,9 @@ std::vector<Vertex> InnoPhysicsSystemNS::generateFrustumVerticesVS(CameraCompone
 	auto l_cameraTransformComponent = g_pModuleManager->getGameSystem()->get<TransformComponent>(cameraComponent->m_parentEntity);
 	auto l_pCamera = cameraComponent->m_projectionMatrix;
 
-	auto rhs = InnoMath::generateNDC<float>();
+	std::vector<Vertex> rhs(8);
+
+	InnoMath::generateNDC<float>(&rhs[0]);
 
 	for (auto& i : rhs)
 	{
@@ -155,7 +153,14 @@ std::vector<Vertex> InnoPhysicsSystemNS::generateFrustumVerticesVS(CameraCompone
 	// @TODO: reverse only along Z axis, not simple mirrored version
 	std::reverse(rhs.begin(), rhs.end());
 
-	return rhs;
+	std::vector<Vertex> l_vertices(8);
+
+	for (unsigned int i = 0; i < 8; i++)
+	{
+		l_vertices[i] = rhs[i];
+	}
+
+	return l_vertices;
 }
 
 std::vector<Vertex> InnoPhysicsSystemNS::generateFrustumVerticesWS(CameraComponent * cameraComponent)
@@ -182,7 +187,7 @@ std::vector<Vertex> InnoPhysicsSystemNS::generateFrustumVerticesWS(CameraCompone
 void InnoPhysicsSystemNS::generateFrustum(CameraComponent * cameraComponent)
 {
 	auto l_vertices = generateFrustumVerticesWS(cameraComponent);
-	cameraComponent->m_frustum = InnoMath::makeFrustum(l_vertices);
+	cameraComponent->m_frustum = InnoMath::makeFrustum(&l_vertices[0]);
 }
 
 void InnoPhysicsSystemNS::generatePointLightComponentAttenuationRadius(PointLightComponent* pointLightComponent)
@@ -236,7 +241,7 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	// transform scene AABB vertices to view space
 	auto l_sceneAABBVerticesWS = generateAABBVertices(l_boundMax, l_boundMin);
 	auto l_sceneAABBVerticesVS = worldToViewSpace(l_sceneAABBVerticesWS, l_tCamera, l_rCamera);
-	auto l_sceneAABBVS = generateAABB(l_sceneAABBVerticesVS);
+	auto l_sceneAABBVS = InnoMath::generateAABB(&l_sceneAABBVerticesVS[0], l_sceneAABBVerticesVS.size());
 
 	// compare draw distance and z component of the farest scene AABB vertex in view space
 	auto l_distance_original = std::abs(l_frustumVerticesVS[4].m_pos.z - l_frustumVerticesVS[0].m_pos.z);
@@ -334,7 +339,7 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 		l_boundMax.w = 1.0f;
 		auto l_boundMin = l_AABBsLS[i].m_center - sphereRadius;
 		l_boundMin.w = 1.0f;
-		l_AABBsLS[i] = generateAABB(l_boundMax, l_boundMin);
+		l_AABBsLS[i] = InnoMath::generateAABB(l_boundMax, l_boundMin);
 	}
 
 	//7. generate projection matrices
@@ -367,12 +372,12 @@ std::vector<AABB> InnoPhysicsSystemNS::splitVerticesToAABBs(const std::vector<Ve
 		for (size_t j = 0; j < 4; j++)
 		{
 			auto l_direction = (frustumsVertices[j + 4].m_pos - frustumsVertices[j].m_pos);
-			auto l_splitedPlaneCornerPos = frustumsVertices[j].m_pos + l_direction * splitFactors[i];
-			l_frustumsCornerPos.emplace_back(l_splitedPlaneCornerPos);
+			auto l_splitPlaneCornerPos = frustumsVertices[j].m_pos + l_direction * splitFactors[i];
+			l_frustumsCornerPos.emplace_back(l_splitPlaneCornerPos);
 		}
 	}
 	//https://docs.microsoft.com/windows/desktop/DxTechArts/common-techniques-to-improve-shadow-depth-maps
-	//3. assemble splited frustum corners
+	//3. assemble split frustum corners
 	std::vector<Vertex> l_frustumsCornerVertices(32);
 
 	static bool l_fitToScene = true;
@@ -403,126 +408,55 @@ std::vector<AABB> InnoPhysicsSystemNS::splitVerticesToAABBs(const std::vector<Ve
 		}
 	}
 
-	//4. assemble splitted frustums
-	std::vector<std::vector<Vertex>> l_splitedFrustums;
-	l_splitedFrustums.reserve(4);
+	//4. assemble split frustums
+	std::vector<std::vector<Vertex>> l_splitFrustums;
+	l_splitFrustums.reserve(4);
 
 	for (size_t i = 0; i < 4; i++)
 	{
-		l_splitedFrustums.emplace_back(std::vector<Vertex>(l_frustumsCornerVertices.begin() + i * 8, l_frustumsCornerVertices.begin() + 8 + i * 8));
+		auto l_splitFrustum = std::vector<Vertex>(l_frustumsCornerVertices.begin() + i * 8, l_frustumsCornerVertices.begin() + 8 + i * 8);
+		l_splitFrustums.emplace_back(l_splitFrustum);
 	}
 
-	//5. generate AABBs for the splited frustums
+	//5. generate AABBs for the split frustums
 	std::vector<AABB> l_AABBs;
 	l_AABBs.reserve(4);
 
 	for (size_t i = 0; i < 4; i++)
 	{
-		l_AABBs.emplace_back(generateAABB(l_splitedFrustums[i]));
+		l_AABBs.emplace_back(InnoMath::generateAABB(&l_splitFrustums[i][0], l_splitFrustums[i].size()));
 	}
 
 	return l_AABBs;
 }
 
-AABB InnoPhysicsSystemNS::generateAABB(const std::vector<Vertex>& vertices)
-{
-	float maxX = vertices[0].m_pos.x;
-	float maxY = vertices[0].m_pos.y;
-	float maxZ = vertices[0].m_pos.z;
-	float minX = vertices[0].m_pos.x;
-	float minY = vertices[0].m_pos.y;
-	float minZ = vertices[0].m_pos.z;
-
-	for (auto& l_vertexData : vertices)
-	{
-		if (l_vertexData.m_pos.x >= maxX)
-		{
-			maxX = l_vertexData.m_pos.x;
-		}
-		if (l_vertexData.m_pos.y >= maxY)
-		{
-			maxY = l_vertexData.m_pos.y;
-		}
-		if (l_vertexData.m_pos.z >= maxZ)
-		{
-			maxZ = l_vertexData.m_pos.z;
-		}
-		if (l_vertexData.m_pos.x <= minX)
-		{
-			minX = l_vertexData.m_pos.x;
-		}
-		if (l_vertexData.m_pos.y <= minY)
-		{
-			minY = l_vertexData.m_pos.y;
-		}
-		if (l_vertexData.m_pos.z <= minZ)
-		{
-			minZ = l_vertexData.m_pos.z;
-		}
-	}
-
-	return generateAABB(vec4(maxX, maxY, maxZ, 1.0f), vec4(minX, minY, minZ, 1.0f));
-}
-
-AABB InnoPhysicsSystemNS::generateAABB(vec4 boundMax, vec4 boundMin)
-{
-	AABB l_AABB;
-
-	l_AABB.m_boundMin = boundMin;
-	l_AABB.m_boundMax = boundMax;
-
-	l_AABB.m_center = (boundMax + boundMin) * 0.5f;
-	l_AABB.m_extend = boundMax - boundMin;
-	l_AABB.m_extend.w = 1.0f;
-
-	return l_AABB;
-}
-
-Sphere InnoPhysicsSystemNS::generateBoundSphere(const AABB& rhs)
-{
-	Sphere l_result;
-	l_result.m_center = rhs.m_center;
-	l_result.m_radius = (rhs.m_boundMax - rhs.m_center).length();
-	return l_result;
-}
-
 std::vector<Vertex> InnoPhysicsSystemNS::generateAABBVertices(vec4 boundMax, vec4 boundMin)
 {
-	Vertex l_VertexData_1;
-	l_VertexData_1.m_pos = (vec4(boundMax.x, boundMax.y, boundMax.z, 1.0f));
-	l_VertexData_1.m_texCoord = vec2(1.0f, 1.0f);
-
-	Vertex l_VertexData_2;
-	l_VertexData_2.m_pos = (vec4(boundMax.x, boundMin.y, boundMax.z, 1.0f));
-	l_VertexData_2.m_texCoord = vec2(1.0f, 0.0f);
-
-	Vertex l_VertexData_3;
-	l_VertexData_3.m_pos = (vec4(boundMin.x, boundMin.y, boundMax.z, 1.0f));
-	l_VertexData_3.m_texCoord = vec2(0.0f, 0.0f);
-
-	Vertex l_VertexData_4;
-	l_VertexData_4.m_pos = (vec4(boundMin.x, boundMax.y, boundMax.z, 1.0f));
-	l_VertexData_4.m_texCoord = vec2(0.0f, 1.0f);
-
-	Vertex l_VertexData_5;
-	l_VertexData_5.m_pos = (vec4(boundMax.x, boundMax.y, boundMin.z, 1.0f));
-	l_VertexData_5.m_texCoord = vec2(1.0f, 1.0f);
-
-	Vertex l_VertexData_6;
-	l_VertexData_6.m_pos = (vec4(boundMax.x, boundMin.y, boundMin.z, 1.0f));
-	l_VertexData_6.m_texCoord = vec2(1.0f, 0.0f);
-
-	Vertex l_VertexData_7;
-	l_VertexData_7.m_pos = (vec4(boundMin.x, boundMin.y, boundMin.z, 1.0f));
-	l_VertexData_7.m_texCoord = vec2(0.0f, 0.0f);
-
-	Vertex l_VertexData_8;
-	l_VertexData_8.m_pos = (vec4(boundMin.x, boundMax.y, boundMin.z, 1.0f));
-	l_VertexData_8.m_texCoord = vec2(0.0f, 1.0f);
-
 	std::vector<Vertex> l_vertices(8);
 
-	l_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
+	l_vertices[0].m_pos = (vec4(boundMax.x, boundMax.y, boundMax.z, 1.0f));
+	l_vertices[0].m_texCoord = vec2(1.0f, 1.0f);
+
+	l_vertices[1].m_pos = (vec4(boundMax.x, boundMin.y, boundMax.z, 1.0f));
+	l_vertices[1].m_texCoord = vec2(1.0f, 0.0f);
+
+	l_vertices[2].m_pos = (vec4(boundMin.x, boundMin.y, boundMax.z, 1.0f));
+	l_vertices[2].m_texCoord = vec2(0.0f, 0.0f);
+
+	l_vertices[3].m_pos = (vec4(boundMin.x, boundMax.y, boundMax.z, 1.0f));
+	l_vertices[3].m_texCoord = vec2(0.0f, 1.0f);
+
+	l_vertices[4].m_pos = (vec4(boundMax.x, boundMax.y, boundMin.z, 1.0f));
+	l_vertices[4].m_texCoord = vec2(1.0f, 1.0f);
+
+	l_vertices[5].m_pos = (vec4(boundMax.x, boundMin.y, boundMin.z, 1.0f));
+	l_vertices[5].m_texCoord = vec2(1.0f, 0.0f);
+
+	l_vertices[6].m_pos = (vec4(boundMin.x, boundMin.y, boundMin.z, 1.0f));
+	l_vertices[6].m_texCoord = vec2(0.0f, 0.0f);
+
+	l_vertices[7].m_pos = (vec4(boundMin.x, boundMax.y, boundMin.z, 1.0f));
+	l_vertices[7].m_texCoord = vec2(0.0f, 1.0f);
 
 	for (auto& l_vertexData : l_vertices)
 	{
@@ -553,8 +487,8 @@ bool InnoPhysicsSystemNS::generatePhysicsDataComponent(MeshDataComponent* MDC)
 	auto l_boundMin = InnoMath::maxVec4<float>;
 	l_boundMin.w = 1.0f;
 
-	auto l_AABB = generateAABB(MDC->m_vertices);
-	auto l_sphere = generateBoundSphere(l_AABB);
+	auto l_AABB = InnoMath::generateAABB(&MDC->m_vertices[0], MDC->m_vertices.size());
+	auto l_sphere = InnoMath::generateBoundSphere(l_AABB);
 
 	if (InnoMath::isAGreaterThanBVec3(l_AABB.m_boundMax, l_boundMax))
 	{
@@ -605,8 +539,8 @@ bool InnoPhysicsSystemNS::generatePhysicsDataComponent(VisibleComponent* VC)
 		}
 	}
 
-	l_PDC->m_AABB = generateAABB(l_boundMax, l_boundMin);
-	l_PDC->m_sphere = generateBoundSphere(l_PDC->m_AABB);
+	l_PDC->m_AABB = InnoMath::generateAABB(l_boundMax, l_boundMin);
+	l_PDC->m_sphere = InnoMath::generateBoundSphere(l_PDC->m_AABB);
 
 #if defined INNO_PLATFORM_WIN
 	if (VC->m_simulatePhysics)
@@ -633,29 +567,6 @@ bool InnoPhysicsSystemNS::generatePhysicsDataComponent(VisibleComponent* VC)
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysicsSystem: PhysicsDataComponent has been generated for VisibleComponent:" + std::string(VC->m_parentEntity->m_entityName.c_str()) + ".");
 
 	return true;
-}
-
-AABB InnoPhysicsSystemNS::transformAABBtoWorldSpace(const AABB& rhs, mat4 globalTm)
-{
-	AABB l_AABB;
-
-	//Column-Major memory layout
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-	l_AABB.m_boundMax = InnoMath::mul(rhs.m_boundMax, globalTm);
-	l_AABB.m_boundMin = InnoMath::mul(rhs.m_boundMin, globalTm);
-	l_AABB.m_center = InnoMath::mul(rhs.m_center, globalTm);
-#endif
-	//Row-Major memory layout
-#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-	l_AABB.m_boundMax = InnoMath::mul(globalTm, rhs.m_boundMax);
-	l_AABB.m_boundMin = InnoMath::mul(globalTm, rhs.m_boundMin);
-	l_AABB.m_center = InnoMath::mul(globalTm, rhs.m_center);
-#endif
-
-	l_AABB.m_extend = l_AABB.m_boundMax - l_AABB.m_boundMin;
-	l_AABB.m_extend.w = 1.0f;
-
-	return l_AABB;
 }
 
 bool InnoPhysicsSystem::initialize()
@@ -770,7 +681,7 @@ void InnoPhysicsSystemNS::updateCulling()
 					for (auto& l_modelPair : visibleComponent->m_modelMap)
 					{
 						auto l_PDC = l_modelPair.first->m_PDC;
-						auto l_OBBws = transformAABBtoWorldSpace(l_PDC->m_AABB, l_globalTm);
+						auto l_OBBws = InnoMath::transformAABBSpace(l_PDC->m_AABB, l_globalTm);
 
 						auto l_boundingSphere = Sphere();
 						l_boundingSphere.m_center = l_OBBws.m_center;
@@ -801,8 +712,8 @@ void InnoPhysicsSystemNS::updateCulling()
 		}
 	}
 
-	m_visibleSceneAABB = generateAABB(InnoPhysicsSystemNS::m_visibleSceneBoundMax, InnoPhysicsSystemNS::m_visibleSceneBoundMin);
-	m_totalSceneAABB = generateAABB(InnoPhysicsSystemNS::m_totalSceneBoundMax, InnoPhysicsSystemNS::m_totalSceneBoundMin);
+	m_visibleSceneAABB = InnoMath::generateAABB(InnoPhysicsSystemNS::m_visibleSceneBoundMax, InnoPhysicsSystemNS::m_visibleSceneBoundMin);
+	m_totalSceneAABB = InnoMath::generateAABB(InnoPhysicsSystemNS::m_totalSceneBoundMax, InnoPhysicsSystemNS::m_totalSceneBoundMin);
 
 	m_cullingDataPack.setRawData(std::move(l_cullingDataPacks));
 

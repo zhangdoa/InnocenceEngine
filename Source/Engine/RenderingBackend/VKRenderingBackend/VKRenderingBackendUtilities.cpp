@@ -19,8 +19,8 @@ INNO_PRIVATE_SCOPE VKRenderingBackendNS
 
 	bool submitGPUData(VKMeshDataComponent * rhs);
 
-	bool createVBO(const std::vector<Vertex>& vertices, VkBuffer& VBO);
-	bool createIBO(const std::vector<Index>& indices, VkBuffer& IBO);
+	bool createVBO(const InnoArray<Vertex>& vertices, VkBuffer& VBO);
+	bool createIBO(const InnoArray<Index>& indices, VkBuffer& IBO);
 
 	bool submitGPUData(VKTextureDataComponent * rhs);
 	void transitionImageLayout(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout);
@@ -806,7 +806,7 @@ bool VKRenderingBackendNS::submitGPUData(VKMeshDataComponent * rhs)
 	return true;
 }
 
-bool VKRenderingBackendNS::createVBO(const std::vector<Vertex>& vertices, VkBuffer& VBO)
+bool VKRenderingBackendNS::createVBO(const InnoArray<Vertex>& vertices, VkBuffer& VBO)
 {
 	VkDeviceSize bufferSize = sizeof(Vertex) * vertices.size();
 
@@ -816,7 +816,7 @@ bool VKRenderingBackendNS::createVBO(const std::vector<Vertex>& vertices, VkBuff
 
 	void* data;
 	vkMapMemory(VKRenderingBackendComponent::get().m_device, stagingBufferMemory, 0, bufferSize, 0, &data);
-	std::memcpy(data, vertices.data(), (size_t)bufferSize);
+	std::memcpy(data, &vertices[0], (size_t)bufferSize);
 	vkUnmapMemory(VKRenderingBackendComponent::get().m_device, stagingBufferMemory);
 
 	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VBO, VKRenderingBackendComponent::get().m_vertexBufferMemory);
@@ -831,7 +831,7 @@ bool VKRenderingBackendNS::createVBO(const std::vector<Vertex>& vertices, VkBuff
 	return true;
 }
 
-bool  VKRenderingBackendNS::createIBO(const std::vector<Index>& indices, VkBuffer& IBO)
+bool  VKRenderingBackendNS::createIBO(const InnoArray<Index>& indices, VkBuffer& IBO)
 {
 	VkDeviceSize bufferSize = sizeof(Index) * indices.size();
 
@@ -841,7 +841,7 @@ bool  VKRenderingBackendNS::createIBO(const std::vector<Index>& indices, VkBuffe
 
 	void* data;
 	vkMapMemory(VKRenderingBackendComponent::get().m_device, stagingBufferMemory, 0, bufferSize, 0, &data);
-	std::memcpy(data, indices.data(), (size_t)bufferSize);
+	std::memcpy(data, &indices[0], (size_t)bufferSize);
 	vkUnmapMemory(VKRenderingBackendComponent::get().m_device, stagingBufferMemory);
 
 	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, IBO, VKRenderingBackendComponent::get().m_indexBufferMemory);

@@ -1,5 +1,6 @@
 #pragma once
 #include "../Common/InnoType.h"
+#include "../Common/InnoContainer.h"
 
 INNO_PRIVATE_SCOPE InnoFileSystemNS
 {
@@ -20,7 +21,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	}
 
 	template<typename T>
-	inline bool serializeVector(std::ostream& os, const std::vector<T>& vector)
+	inline bool serializeVector(std::ostream& os, const InnoArray<T>& vector)
 	{
 		serialize(os, (void*)&vector[0], vector.size() * sizeof(T));
 		return true;
@@ -38,31 +39,24 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	}
 
 	template<typename T>
-	inline bool deserializeVector(std::istream& is, std::streamoff startPos, std::size_t size, std::vector<T>& vector)
+	inline bool deserializeVector(std::istream& is, std::streamoff startPos, std::size_t size, InnoArray<T>& vector)
 	{
 		// get pointer to associated buffer object
 		auto pbuf = is.rdbuf();
 		pbuf->pubseekpos(startPos, is.in);
-
-		auto rhs = std::vector<T>(size / sizeof(T));
-
-		pbuf->sgetn((char*)&rhs[0], size);
-		vector = std::move(rhs);
+		pbuf->sgetn((char*)&vector[0], size);
 		return true;
 	}
 
 	template<typename T>
-	inline bool deserializeVector(std::istream& is, std::vector<T>& vector)
+	inline bool deserializeVector(std::istream& is, InnoArray<T>& vector)
 	{
 		// get pointer to associated buffer object
 		auto pbuf = is.rdbuf();
 		// get file size using buffer's members
 		std::size_t l_size = pbuf->pubseekoff(0, is.end, is.in);
 		pbuf->pubseekpos(0, is.in);
-		auto rhs = std::vector<T>(l_size / sizeof(T));
-
-		pbuf->sgetn((char*)&rhs[0], l_size);
-		vector = std::move(rhs);
+		pbuf->sgetn((char*)&vector[0], l_size);
 		return true;
 	}
 }

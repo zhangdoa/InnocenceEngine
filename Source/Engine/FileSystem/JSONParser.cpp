@@ -495,8 +495,10 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j)
 		size_t l_verticesNumber = j["VerticesNumber"];
 		size_t l_indicesNumber = j["IndicesNumber"];
 
-		deserializeVector(l_meshFile, 0, l_verticesNumber * sizeof(Vertex), l_MeshDC->m_vertices);
+		l_MeshDC->m_vertices.reserve(l_verticesNumber);
+		l_MeshDC->m_indices.reserve(l_indicesNumber);
 
+		deserializeVector(l_meshFile, 0, l_verticesNumber * sizeof(Vertex), l_MeshDC->m_vertices);
 		deserializeVector(l_meshFile, l_verticesNumber * sizeof(Vertex), l_indicesNumber * sizeof(Index), l_MeshDC->m_indices);
 
 		l_meshFile.close();

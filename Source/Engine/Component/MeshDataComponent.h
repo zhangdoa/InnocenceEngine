@@ -15,6 +15,8 @@ public:
 	size_t m_indicesSize = 0;
 	PhysicsDataComponent* m_PDC;
 	SkeletonDataComponent* m_SDC;
-	std::vector<Vertex> m_vertices;
-	std::vector<Index> m_indices;
+	//std::vector<Vertex> m_vertices;
+	//std::vector<Index> m_indices;
+	InnoArray<Vertex> m_vertices;
+	InnoArray<Index> m_indices;
 };

@@ -185,7 +185,7 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 {
 	auto l_verticesNumber = aiMesh->mNumVertices;
 
-	std::vector<Vertex> l_vertices;
+	InnoArray<Vertex> l_vertices;
 
 	l_vertices.reserve(l_verticesNumber);
 
@@ -238,10 +238,10 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 		l_Vertex.m_pad1 = InnoMath::minVec2<float>;
 		l_Vertex.m_pad2 = InnoMath::minVec4<float>;
 
-		l_vertices.emplace_back(l_Vertex);
+		l_vertices[i] = l_Vertex;
 	}
 
-	std::vector<Index> l_indices;
+	InnoArray<Index> l_indices;
 	size_t l_indiceSize = 0;
 
 	// bones weight
@@ -293,7 +293,7 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 
 		for (unsigned int i = 0; i < l_verticesNumber; i++)
 		{
-			l_indices.emplace_back(i);
+			l_indices[i] = i;
 		}
 
 		l_indiceSize = l_verticesNumber;
@@ -311,13 +311,15 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 
 			l_indices.reserve(l_indiceSize);
 
+			unsigned int l_index = 0;
 			for (unsigned int i = 0; i < aiMesh->mNumFaces; i++)
 			{
 				aiFace l_face = aiMesh->mFaces[i];
 				// retrieve all indices of the face and store them in the indices vector
 				for (unsigned int j = 0; j < l_face.mNumIndices; j++)
 				{
-					l_indices.emplace_back(l_face.mIndices[j]);
+					l_indices[l_index] = l_face.mIndices[j];
+					l_index++;
 				}
 			}
 		}
@@ -327,7 +329,7 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 
 			for (unsigned int i = 0; i < l_verticesNumber; i++)
 			{
-				l_indices.emplace_back(i);
+				l_indices[i] = i;
 			}
 
 			l_indiceSize = l_verticesNumber;
