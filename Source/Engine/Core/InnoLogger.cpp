@@ -97,6 +97,72 @@ void InnoLogger::LogEndOfLine()
 	InnoLoggerNS::m_Mutex.unlock();
 }
 
+void InnoLogger::LogImpl(const void * logMessage)
+{
+	std::cout << logMessage;
+	InnoLoggerNS::m_LogFile << logMessage;
+}
+
+void InnoLogger::LogImpl(bool logMessage)
+{
+	std::cout << logMessage;
+	InnoLoggerNS::m_LogFile << logMessage;
+}
+
+void InnoLogger::LogImpl(uint8_t logMessage)
+{
+	std::cout << logMessage;
+	InnoLoggerNS::m_LogFile << logMessage;
+}
+
+void InnoLogger::LogImpl(uint16_t logMessage)
+{
+	std::cout << logMessage;
+	InnoLoggerNS::m_LogFile << logMessage;
+}
+
+void InnoLogger::LogImpl(uint32_t logMessage)
+{
+	std::cout << logMessage;
+	InnoLoggerNS::m_LogFile << logMessage;
+}
+
+void InnoLogger::LogImpl(uint64_t logMessage)
+{
+	std::cout << logMessage;
+	InnoLoggerNS::m_LogFile << logMessage;
+}
+
+void InnoLogger::LogImpl(int8_t logMessage)
+{
+	std::cout << logMessage;
+	InnoLoggerNS::m_LogFile << logMessage;
+}
+
+void InnoLogger::LogImpl(int16_t logMessage)
+{
+	std::cout << logMessage;
+	InnoLoggerNS::m_LogFile << logMessage;
+}
+
+void InnoLogger::LogImpl(int32_t logMessage)
+{
+	std::cout << logMessage;
+	InnoLoggerNS::m_LogFile << logMessage;
+}
+
+void InnoLogger::LogImpl(int64_t logMessage)
+{
+	std::cout << logMessage;
+	InnoLoggerNS::m_LogFile << logMessage;
+}
+
+void InnoLogger::LogImpl(float logMessage)
+{
+	std::cout << logMessage;
+	InnoLoggerNS::m_LogFile << logMessage;
+}
+
 void InnoLogger::LogImpl(double logMessage)
 {
 	std::cout << logMessage;
@@ -176,6 +242,7 @@ void InnoLogger::LogImpl(const mat4 & logMessage)
 void InnoLogger::LogImpl(const char* logMessage)
 {
 	std::cout << logMessage;
+	InnoLoggerNS::m_LogFile << logMessage;
 }
 
 bool InnoLogger::Setup()

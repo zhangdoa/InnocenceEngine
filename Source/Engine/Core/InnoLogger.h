@@ -37,6 +37,17 @@ private:
 
 	static void LogEndOfLine();
 
+	static void LogImpl(const void* logMessage);
+	static void LogImpl(bool logMessage);
+	static void LogImpl(uint8_t logMessage);
+	static void LogImpl(uint16_t logMessage);
+	static void LogImpl(uint32_t logMessage);
+	static void LogImpl(uint64_t logMessage);
+	static void LogImpl(int8_t logMessage);
+	static void LogImpl(int16_t logMessage);
+	static void LogImpl(int32_t logMessage);
+	static void LogImpl(int64_t logMessage);
+	static void LogImpl(float logMessage);
 	static void LogImpl(double logMessage);
 	static void LogImpl(const vec2& logMessage);
 	static void LogImpl(const vec4& logMessage);
