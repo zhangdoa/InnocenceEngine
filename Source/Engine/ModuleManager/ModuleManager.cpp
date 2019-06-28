@@ -6,6 +6,7 @@
 #include "../Core/TestSystem.h"
 #include "../FileSystem/FileSystem.h"
 #include "../EntityManager/EntityManager.h"
+#include "../ComponentManager/TransformComponentManager.h"
 #include "../GameSystem/GameSystem.h"
 #include "../GameSystem/AssetSystem.h"
 #include "../PhysicsSystem/PhysicsSystem.h"
@@ -70,7 +71,7 @@ if (!g_pModuleManager->get##className()->terminate()) \
 #define subSystemGetDefi( className ) \
 I##className * InnoModuleManager::get##className() \
 { \
-	return InnoModuleManagerNS::m_##className.get(); \
+	return m_##className.get(); \
 } \
 
 INNO_PRIVATE_SCOPE InnoModuleManagerNS
@@ -89,8 +90,12 @@ INNO_PRIVATE_SCOPE InnoModuleManagerNS
 	std::unique_ptr<IMemorySystem> m_MemorySystem;
 	std::unique_ptr<ITaskSystem> m_TaskSystem;
 	std::unique_ptr<ITestSystem> m_TestSystem;
+
 	std::unique_ptr<IFileSystem> m_FileSystem;
+
 	std::unique_ptr<IEntityManager> m_EntityManager;
+	std::unique_ptr<ITransformComponentManager> m_TransformComponentManager;
+
 	std::unique_ptr<IGameSystem> m_GameSystem;
 	std::unique_ptr<IAssetSystem> m_AssetSystem;
 	std::unique_ptr<IPhysicsSystem> m_PhysicsSystem;
@@ -110,6 +115,8 @@ INNO_PRIVATE_SCOPE InnoModuleManagerNS
 
 	float m_tickTime = 0;
 }
+
+using namespace InnoModuleManagerNS;
 
 InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 {
@@ -217,7 +224,10 @@ bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook
 
 	createSubSystemInstanceDefi(TestSystem);
 	createSubSystemInstanceDefi(FileSystem);
+
 	createSubSystemInstanceDefi(EntityManager);
+	createSubSystemInstanceDefi(TransformComponentManager);
+
 	createSubSystemInstanceDefi(GameSystem);
 	createSubSystemInstanceDefi(AssetSystem);
 	createSubSystemInstanceDefi(PhysicsSystem);
@@ -325,7 +335,7 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 {
 	m_GameInstance = gameInstance;
 
-	if (!InnoModuleManagerNS::createSubSystemInstance(appHook, extraHook, pScmdline))
+	if (!createSubSystemInstance(appHook, extraHook, pScmdline))
 	{
 		return false;
 	}
@@ -374,6 +384,12 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	}
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "EntityManager setup finished.");
 
+	if (!m_TransformComponentManager->Setup())
+	{
+		return false;
+	}
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TransformComponentManager setup finished.");
+
 	subSystemSetup(GameSystem);
 	subSystemSetup(PhysicsSystem);
 	subSystemSetup(InputSystem);
@@ -396,10 +412,14 @@ bool InnoModuleManagerNS::initialize()
 	subSystemInit(TaskSystem);
 
 	subSystemInit(TestSystem);
-
 	subSystemInit(FileSystem);
 
 	if (!m_EntityManager->Initialize())
+	{
+		return false;
+	}
+
+	if (!m_TransformComponentManager->Initialize())
 	{
 		return false;
 	}
@@ -440,10 +460,13 @@ bool InnoModuleManagerNS::update()
 		subSystemUpdate(TaskSystem);
 
 		subSystemUpdate(TestSystem);
-
 		subSystemUpdate(FileSystem);
 
 		if (!m_EntityManager->Simulate())
+		{
+			return false;
+		}
+		if (!m_TransformComponentManager->Simulate())
 		{
 			return false;
 		}
@@ -486,7 +509,7 @@ bool InnoModuleManagerNS::update()
 					m_isRendering = false;
 				}
 
-				m_GameSystem->saveComponentsCapture();
+				m_TransformComponentManager->SaveCurrentFrameTransform();
 
 				auto l_tickEndTime = m_TimeSystem->getCurrentTimeFromEpoch();
 
@@ -538,6 +561,12 @@ bool InnoModuleManagerNS::terminate()
 	subSystemTerm(AssetSystem);
 	subSystemTerm(GameSystem);
 
+	if (!m_TransformComponentManager->Terminate())
+	{
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "TransformComponentManager can't be terminated!");
+		return false;
+	}
+
 	if (!m_EntityManager->Terminate())
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "EntityManager can't be terminated!");
@@ -545,7 +574,6 @@ bool InnoModuleManagerNS::terminate()
 	}
 
 	subSystemTerm(FileSystem);
-
 	subSystemTerm(TestSystem);
 
 	subSystemTerm(TaskSystem);
@@ -583,7 +611,7 @@ bool InnoModuleManager::terminate()
 
 ObjectStatus InnoModuleManager::getStatus()
 {
-	return InnoModuleManagerNS::m_objectStatus;
+	return m_objectStatus;
 }
 
 subSystemGetDefi(TimeSystem);
@@ -601,30 +629,62 @@ subSystemGetDefi(InputSystem);
 
 IWindowSystem * InnoModuleManager::getWindowSystem()
 {
-	return InnoModuleManagerNS::m_WindowSystem.get();
+	return m_WindowSystem.get();
 }
 
 IRenderingFrontend * InnoModuleManager::getRenderingFrontend()
 {
-	return InnoModuleManagerNS::m_RenderingFrontend.get();
+	return m_RenderingFrontend.get();
 }
 
 IRenderingBackend * InnoModuleManager::getRenderingBackend()
 {
-	return InnoModuleManagerNS::m_RenderingBackend.get();
-}
-
-InitConfig InnoModuleManager::getInitConfig()
-{
-	return InnoModuleManagerNS::m_initConfig;
-}
-
-float InnoModuleManager::getTickTime()
-{
-	return  InnoModuleManagerNS::m_tickTime;
+	return m_RenderingBackend.get();
 }
 
 IEntityManager * InnoModuleManager::getEntityManager()
 {
-	return InnoModuleManagerNS::m_EntityManager.get();
+	return m_EntityManager.get();
+}
+
+IComponentManager * InnoModuleManager::getComponentManager(ComponentType componentType)
+{
+	IComponentManager* l_result = nullptr;
+	switch (componentType)
+	{
+	case ComponentType::TransformComponent:
+		l_result = m_TransformComponentManager.get();
+		break;
+	case ComponentType::VisibleComponent:
+		break;
+	case ComponentType::DirectionalLightComponent:
+		break;
+	case ComponentType::PointLightComponent:
+		break;
+	case ComponentType::SphereLightComponent:
+		break;
+	case ComponentType::CameraComponent:
+		break;
+	case ComponentType::PhysicsDataComponent:
+		break;
+	case ComponentType::MeshDataComponent:
+		break;
+	case ComponentType::MaterialDataComponent:
+		break;
+	case ComponentType::TextureDataComponent:
+		break;
+	default:
+		break;
+	}
+	return l_result;
+}
+
+InitConfig InnoModuleManager::getInitConfig()
+{
+	return m_initConfig;
+}
+
+float InnoModuleManager::getTickTime()
+{
+	return  m_tickTime;
 }

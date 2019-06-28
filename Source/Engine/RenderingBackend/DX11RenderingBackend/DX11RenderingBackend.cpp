@@ -590,7 +590,7 @@ DX11MeshDataComponent* DX11RenderingBackendNS::addDX11MeshDataComponent()
 	meshCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(DX11MeshDataComponent));
 	auto l_MDC = new(l_rawPtr)DX11MeshDataComponent();
-	auto l_parentEntity = g_pModuleManager->getGameSystem()->createEntity(EntityName(("Mesh_" + std::to_string(meshCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Mesh_" + std::to_string(meshCount) + "/").c_str());
 	l_MDC->m_parentEntity = l_parentEntity;
 	return l_MDC;
 }
@@ -601,7 +601,7 @@ MaterialDataComponent* DX11RenderingBackendNS::addMaterialDataComponent()
 	materialCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MaterialDataComponent));
 	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
-	auto l_parentEntity = g_pModuleManager->getGameSystem()->createEntity(EntityName(("Material_" + std::to_string(materialCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Material_" + std::to_string(materialCount) + "/").c_str());
 	l_MDC->m_parentEntity = l_parentEntity;
 	return l_MDC;
 }
@@ -612,7 +612,7 @@ DX11TextureDataComponent* DX11RenderingBackendNS::addDX11TextureDataComponent()
 	textureCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(DX11TextureDataComponent));
 	auto l_TDC = new(l_rawPtr)DX11TextureDataComponent();
-	auto l_parentEntity = g_pModuleManager->getGameSystem()->createEntity(EntityName(("Texture_" + std::to_string(textureCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Texture_" + std::to_string(textureCount) + "/").c_str());
 	l_TDC->m_parentEntity = l_parentEntity;
 	return l_TDC;
 }

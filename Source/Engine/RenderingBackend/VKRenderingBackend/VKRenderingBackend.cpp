@@ -979,7 +979,7 @@ VKMeshDataComponent* VKRenderingBackendNS::addVKMeshDataComponent()
 	meshCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(VKMeshDataComponent));
 	auto l_MDC = new(l_rawPtr)VKMeshDataComponent();
-	auto l_parentEntity = g_pModuleManager->getGameSystem()->createEntity(EntityName(("Mesh_" + std::to_string(meshCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Mesh_" + std::to_string(meshCount) + "/").c_str());
 	l_MDC->m_parentEntity = l_parentEntity;
 	return l_MDC;
 }
@@ -990,7 +990,7 @@ VKMaterialDataComponent* VKRenderingBackendNS::addVKMaterialDataComponent()
 	materialCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(VKMaterialDataComponent));
 	auto l_MDC = new(l_rawPtr)VKMaterialDataComponent();
-	auto l_parentEntity = g_pModuleManager->getGameSystem()->createEntity(EntityName(("Material_" + std::to_string(materialCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Material_" + std::to_string(materialCount) + "/").c_str());
 	l_MDC->m_parentEntity = l_parentEntity;
 	return l_MDC;
 }
@@ -1001,7 +1001,7 @@ VKTextureDataComponent* VKRenderingBackendNS::addVKTextureDataComponent()
 	textureCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(VKTextureDataComponent));
 	auto l_TDC = new(l_rawPtr)VKTextureDataComponent();
-	auto l_parentEntity = g_pModuleManager->getGameSystem()->createEntity(EntityName(("Texture_" + std::to_string(textureCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Texture_" + std::to_string(textureCount) + "/").c_str());
 	l_TDC->m_parentEntity = l_parentEntity;
 	return l_TDC;
 }

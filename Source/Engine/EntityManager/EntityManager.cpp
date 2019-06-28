@@ -73,13 +73,12 @@ InnoEntity * InnoEntityManager::Spawn(ObjectSource objectSource, ObjectUsage obj
 		l_Entity->m_objectStatus = ObjectStatus::Activated;
 	}
 
-	InnoLogger::Log(LogLevel::Verbose, "EntityManager: Entity ", entityName, " has been created.");
+	InnoLogger::Log(LogLevel::Verbose, "EntityManager: Entity ", l_Entity->m_entityName.c_str(), " has been created.");
 	return l_Entity;
 }
 
 bool InnoEntityManager::Destory(InnoEntity * entity)
 {
-	m_Entities.eraseByValue(entity);
 	InnoLogger::Log(LogLevel::Verbose, "EntityManager: Entity ", entity->m_entityName.c_str(), " has been removed.");
 	m_EntityPool->Destroy(entity);
 	return true;

@@ -2,8 +2,9 @@
 #include "../Common/InnoComponent.h"
 #include "../Common/InnoMath.h"
 
-struct TransformComponent : public InnoComponent
+class TransformComponent : public InnoComponent
 {
+public:
 	TransformVector m_localTransformVector;
 	TransformMatrix m_localTransformMatrix;
 

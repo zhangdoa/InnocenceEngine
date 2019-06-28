@@ -1,4 +1,6 @@
 #include "GLDebuggerPass.h"
+#include "../../Common/CommonMacro.inl"
+#include "../../ComponentManager/ITransformComponentManager.h"
 
 #include "GLOpaquePass.h"
 
@@ -233,7 +235,7 @@ bool GLDebuggerPass::drawDebugObjects()
 		{
 			if (i->m_meshUsageType == MeshUsageType::SKELETAL)
 			{
-				auto l_transformComponent = g_pModuleManager->getGameSystem()->get<TransformComponent>(i->m_parentEntity);
+				auto l_transformComponent = GetComponent(TransformComponent, i->m_parentEntity);
 				auto l_m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 				for (auto j : i->m_modelMap)
 				{
@@ -272,7 +274,7 @@ bool GLDebuggerPass::drawDebugObjects()
 
 	if (m_pickedVisibleComponent)
 	{
-		auto l_transformComponent = g_pModuleManager->getGameSystem()->get<TransformComponent>(m_pickedVisibleComponent->m_parentEntity);
+		auto l_transformComponent = GetComponent(TransformComponent, m_pickedVisibleComponent->m_parentEntity);
 
 		for (auto i : m_pickedVisibleComponent->m_modelMap)
 		{

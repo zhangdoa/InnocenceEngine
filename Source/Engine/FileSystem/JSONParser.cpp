@@ -1,4 +1,6 @@
 #include "JSONParser.h"
+#include "../Common/CommonMacro.inl"
+#include "../ComponentManager/ITransformComponentManager.h"
 
 #include "../ModuleManager/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
@@ -12,6 +14,15 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS::JSONParser
 	inline bool loadComponentData(const json& j, const InnoEntity* entity)
 	{
 		auto l_result = g_pModuleManager->getGameSystem()->spawn<T>(entity, ObjectSource::Asset, ObjectUsage::Gameplay);
+		from_json(j, *l_result);
+
+		return true;
+	}
+
+	template<>
+	inline bool loadComponentData<TransformComponent>(const json& j, const InnoEntity* entity)
+	{
+		auto l_result = SpawnComponent(TransformComponent, entity, ObjectSource::Asset, ObjectUsage::Gameplay);
 		from_json(j, *l_result);
 
 		return true;
@@ -257,7 +268,8 @@ void InnoFileSystemNS::JSONParser::from_json(const json & j, TransformComponent 
 	auto l_parentTransformComponentEntityName = j["ParentTransformComponentEntityName"];
 	if (l_parentTransformComponentEntityName == "RootTransform")
 	{
-		p.m_parentTransformComponent = g_pModuleManager->getGameSystem()->getRootTransformComponent();
+		auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
+		p.m_parentTransformComponent = l_rootTranformComponent;
 	}
 	else
 	{
@@ -628,7 +640,7 @@ bool InnoFileSystemNS::JSONParser::saveScene(const std::string& fileName)
 	topLevel["SceneName"] = fileName;
 
 	// save entities name and ID
-	for (auto i : g_pModuleManager->getGameSystem()->getEntities())
+	for (auto i : g_pModuleManager->getEntityManager()->GetEntities())
 	{
 		if (i->m_objectSource == ObjectSource::Asset)
 		{
@@ -639,7 +651,7 @@ bool InnoFileSystemNS::JSONParser::saveScene(const std::string& fileName)
 	}
 
 	// save children components
-	for (auto i : g_pModuleManager->getGameSystem()->get<TransformComponent>())
+	for (auto i : GetComponentManager(TransformComponent)->GetAllComponents())
 	{
 		if (i->m_objectSource == ObjectSource::Asset)
 		{
@@ -703,8 +715,7 @@ bool InnoFileSystemNS::JSONParser::loadScene(const std::string & fileName)
 	{
 		std::string l_entityName = i["EntityName"];
 		l_entityName += "/";
-
-		auto l_entity = g_pModuleManager->getGameSystem()->createEntity(EntityName(l_entityName.c_str()), ObjectSource::Asset, ObjectUsage::Gameplay);
+		auto l_entity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Asset, ObjectUsage::Gameplay, l_entityName.c_str());
 
 		for (auto k : i["ChildrenComponents"])
 		{
@@ -750,13 +761,11 @@ bool InnoFileSystemNS::JSONParser::assignComponentRuntimeData()
 		std::pair<TransformComponent*, EntityName> l_orphan;
 		if (m_orphanTransformComponents.tryPop(l_orphan))
 		{
-			auto l_entity = g_pModuleManager->getGameSystem()->getEntity(l_orphan.second);
+			auto l_entity = g_pModuleManager->getEntityManager()->Find(l_orphan.second.c_str());
 
-			auto l_parentTransformComponent = g_pModuleManager->getGameSystem()->get<TransformComponent>(l_entity);
-
-			if (l_parentTransformComponent)
+			if (l_entity.has_value())
 			{
-				l_orphan.first->m_parentTransformComponent = l_parentTransformComponent;
+				l_orphan.first->m_parentTransformComponent = GetComponent(TransformComponent, l_entity.value());
 			}
 			else
 			{

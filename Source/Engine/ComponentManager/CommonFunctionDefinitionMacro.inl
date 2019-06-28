@@ -15,8 +15,9 @@ m_Components.erase( \
  \
 m_ComponentsMap.erase_if([&](auto val) { return val.second->m_objectUsage == ObjectUsage::Gameplay; });
 
-#define SpawnComponent( className ) \
-	auto l_Component = reinterpret_cast<className*>(m_ComponentPool->Spawn()); \
+#define SpawnComponentImpl( className ) \
+	auto l_rawPtr= m_ComponentPool->Spawn(); \
+	auto l_Component = new(l_rawPtr)className(); \
 	if (l_Component) \
 	{ \
 		auto l_parentEntity = const_cast<InnoEntity*>(parentEntity); \
@@ -40,6 +41,19 @@ m_ComponentsMap.erase_if([&](auto val) { return val.second->m_objectUsage == Obj
 		return nullptr; \
 	}
 
-#define DestroyComponent( className ) \
+#define DestroyComponentImpl( className ) \
 	component->m_objectStatus = ObjectStatus::Terminated; \
 	m_ComponentPool->Destroy(component);
+
+#define GetComponentImpl( className, parentEntity ) \
+	auto l_parentEntity = const_cast<InnoEntity*>(parentEntity); \
+	auto l_result = m_ComponentsMap.find(l_parentEntity); \
+	if (l_result != m_ComponentsMap.end()) \
+	{ \
+		return l_result->second; \
+	} \
+	else \
+	{ \
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, std::string(#className) + "Manager :Can't find " + std::string(#className) + " by Entity: " + std::string(l_parentEntity->m_entityName.c_str()) + "!"); \
+		return nullptr; \
+	} \

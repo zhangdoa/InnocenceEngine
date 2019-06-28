@@ -1,5 +1,7 @@
 #include "RayTracer.h"
 #include "../Core/InnoLogger.h"
+#include "../Common/CommonMacro.inl"
+#include "../ComponentManager/ITransformComponentManager.h"
 
 #include "../ModuleManager/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
@@ -238,7 +240,7 @@ bool ExecuteRayTracing()
 	l_ExportFile << "P3\n" << nx << " " << ny << "\n255\n";
 
 	auto l_camera = g_pModuleManager->getGameSystem()->get<CameraComponent>()[0];
-	auto l_cameraTransformComponent = g_pModuleManager->getGameSystem()->get<TransformComponent>(l_camera->m_parentEntity);
+	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_camera->m_parentEntity);
 	auto l_lookfrom = l_cameraTransformComponent->m_globalTransformVector.m_pos;
 	auto l_lookat = l_lookfrom + InnoMath::getDirection(direction::BACKWARD, l_cameraTransformComponent->m_globalTransformVector.m_rot);
 	auto l_up = InnoMath::getDirection(direction::UP, l_cameraTransformComponent->m_globalTransformVector.m_rot);
@@ -251,7 +253,7 @@ bool ExecuteRayTracing()
 
 	for (auto l_visibleComponent : g_pModuleManager->getGameSystem()->get<VisibleComponent>())
 	{
-		auto l_transformComponent = g_pModuleManager->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity);
+		auto l_transformComponent = GetComponent(TransformComponent, l_visibleComponent->m_parentEntity);
 		if (l_visibleComponent->m_meshShapeType == MeshShapeType::CUBE)
 		{
 			auto l_hitable = new HitableCube();

@@ -1,4 +1,6 @@
 #include "InputSystem.h"
+#include "../Common/CommonMacro.inl"
+#include "../ComponentManager/ITransformComponentManager.h"
 
 #include "../ModuleManager/IModuleManager.h"
 
@@ -215,7 +217,7 @@ vec4 InnoInputSystemNS::getMousePositionInWorldSpace()
 	auto l_cameraComponents = g_pModuleManager->getGameSystem()->get<CameraComponent>();
 	auto l_mainCamera = l_cameraComponents[0];
 	auto pCamera = l_mainCamera->m_projectionMatrix;
-	auto l_cameraTransformComponent = g_pModuleManager->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
+	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_parentEntity);
 	auto rCamera =
 		InnoMath::getInvertRotationMatrix(
 			l_cameraTransformComponent->m_globalTransformVector.m_rot

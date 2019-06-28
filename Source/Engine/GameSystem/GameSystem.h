@@ -31,42 +31,36 @@ public:
 
 	ObjectStatus getStatus() override;
 
-	spawnComponentImplDecl(TransformComponent);
 	spawnComponentImplDecl(VisibleComponent);
 	spawnComponentImplDecl(DirectionalLightComponent);
 	spawnComponentImplDecl(PointLightComponent);
 	spawnComponentImplDecl(SphereLightComponent);
 	spawnComponentImplDecl(CameraComponent);
 
-	registerComponentImplDecl(TransformComponent);
 	registerComponentImplDecl(VisibleComponent);
 	registerComponentImplDecl(DirectionalLightComponent);
 	registerComponentImplDecl(PointLightComponent);
 	registerComponentImplDecl(SphereLightComponent);
 	registerComponentImplDecl(CameraComponent);
 
-	destroyComponentImplDecl(TransformComponent);
 	destroyComponentImplDecl(VisibleComponent);
 	destroyComponentImplDecl(DirectionalLightComponent);
 	destroyComponentImplDecl(PointLightComponent);
 	destroyComponentImplDecl(SphereLightComponent);
 	destroyComponentImplDecl(CameraComponent);
 
-	unregisterComponentImplDecl(TransformComponent);
 	unregisterComponentImplDecl(VisibleComponent);
 	unregisterComponentImplDecl(DirectionalLightComponent);
 	unregisterComponentImplDecl(PointLightComponent);
 	unregisterComponentImplDecl(SphereLightComponent);
 	unregisterComponentImplDecl(CameraComponent);
 
-	getComponentImplDecl(TransformComponent);
 	getComponentImplDecl(VisibleComponent);
 	getComponentImplDecl(DirectionalLightComponent);
 	getComponentImplDecl(PointLightComponent);
 	getComponentImplDecl(SphereLightComponent);
 	getComponentImplDecl(CameraComponent);
 
-	getComponentContainerImplDecl(TransformComponent);
 	getComponentContainerImplDecl(VisibleComponent);
 	getComponentContainerImplDecl(DirectionalLightComponent);
 	getComponentContainerImplDecl(PointLightComponent);
@@ -74,13 +68,5 @@ public:
 	getComponentContainerImplDecl(CameraComponent);
 
 	std::string getGameName() override;
-	TransformComponent* getRootTransformComponent() override;
-	const std::vector<InnoEntity*>& getEntities() override;
 	const EntityChildrenComponentsMetadataMap& getEntityChildrenComponentsMetadataMap() override;
-
-	void saveComponentsCapture() override;
-
-	InnoEntity* createEntity(const EntityName& entityName, ObjectSource objectSource, ObjectUsage objectUsage) override;
-	bool removeEntity(const InnoEntity* entity) override;
-	InnoEntity* getEntity(const EntityName& entityName) override;
 };

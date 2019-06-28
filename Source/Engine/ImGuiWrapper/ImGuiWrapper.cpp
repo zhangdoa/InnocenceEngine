@@ -439,7 +439,7 @@ void ImGuiWrapperNS::showWorldExplorer()
 	static void* selectedComponent = nullptr;
 	static ComponentType selectedComponentType;
 
-	auto l_entities = g_pModuleManager->getGameSystem()->getEntities();
+	auto l_entities = g_pModuleManager->getEntityManager()->GetEntities();
 	auto l_entityChildrenComponentsMetadataMap = g_pModuleManager->getGameSystem()->getEntityChildrenComponentsMetadataMap();
 
 	for (auto i : l_entities)

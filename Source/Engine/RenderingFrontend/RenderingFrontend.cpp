@@ -1,4 +1,6 @@
 #include "RenderingFrontend.h"
+#include "../Common/CommonMacro.inl"
+#include "../ComponentManager/ITransformComponentManager.h"
 
 #include "../ModuleManager/IModuleManager.h"
 
@@ -259,7 +261,7 @@ bool InnoRenderingFrontendNS::updateCameraData()
 
 	auto l_cameraComponents = g_pModuleManager->getGameSystem()->get<CameraComponent>();
 	auto l_mainCamera = l_cameraComponents[0];
-	auto l_mainCameraTransformComponent = g_pModuleManager->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
+	auto l_mainCameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_parentEntity);
 
 	auto l_p = l_mainCamera->m_projectionMatrix;
 
@@ -310,7 +312,7 @@ bool InnoRenderingFrontendNS::updateSunData()
 
 	auto l_directionalLightComponents = g_pModuleManager->getGameSystem()->get<DirectionalLightComponent>();
 	auto l_directionalLight = l_directionalLightComponents[0];
-	auto l_directionalLightTransformComponent = g_pModuleManager->getGameSystem()->get<TransformComponent>(l_directionalLight->m_parentEntity);
+	auto l_directionalLightTransformComponent = GetComponent(TransformComponent, l_directionalLight->m_parentEntity);
 
 	m_sunGPUData.dir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
 	m_sunGPUData.luminance = l_directionalLight->m_color * l_directionalLight->m_luminousFlux;
@@ -351,7 +353,7 @@ bool InnoRenderingFrontendNS::updateLightData()
 	for (size_t i = 0; i < l_pointLightComponents.size(); i++)
 	{
 		PointLightGPUData l_PointLightGPUData;
-		l_PointLightGPUData.pos = g_pModuleManager->getGameSystem()->get<TransformComponent>(l_pointLightComponents[i]->m_parentEntity)->m_globalTransformVector.m_pos;
+		l_PointLightGPUData.pos = GetComponent(TransformComponent, l_pointLightComponents[i]->m_parentEntity)->m_globalTransformVector.m_pos;
 		l_PointLightGPUData.luminance = l_pointLightComponents[i]->m_color * l_pointLightComponents[i]->m_luminousFlux;
 		l_PointLightGPUData.luminance.w = l_pointLightComponents[i]->m_attenuationRadius;
 		m_pointLightGPUData[i] = l_PointLightGPUData;
@@ -361,7 +363,7 @@ bool InnoRenderingFrontendNS::updateLightData()
 	for (size_t i = 0; i < l_sphereLightComponents.size(); i++)
 	{
 		SphereLightGPUData l_SphereLightGPUData;
-		l_SphereLightGPUData.pos = g_pModuleManager->getGameSystem()->get<TransformComponent>(l_sphereLightComponents[i]->m_parentEntity)->m_globalTransformVector.m_pos;
+		l_SphereLightGPUData.pos = GetComponent(TransformComponent, l_sphereLightComponents[i]->m_parentEntity)->m_globalTransformVector.m_pos;
 		l_SphereLightGPUData.luminance = l_sphereLightComponents[i]->m_color * l_sphereLightComponents[i]->m_luminousFlux;
 		l_SphereLightGPUData.luminance.w = l_sphereLightComponents[i]->m_sphereRadius;
 		m_sphereLightGPUData[i] = l_SphereLightGPUData;
@@ -476,7 +478,7 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 	for (auto i : g_pModuleManager->getGameSystem()->get<DirectionalLightComponent>())
 	{
 		BillboardPassGPUData l_billboardPAssGPUData;
-		l_billboardPAssGPUData.globalPos = g_pModuleManager->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
+		l_billboardPAssGPUData.globalPos = GetComponent(TransformComponent, i->m_parentEntity)->m_globalTransformVector.m_pos;
 		l_billboardPAssGPUData.distanceToCamera = (m_cameraGPUData.globalPos - l_billboardPAssGPUData.globalPos).length();
 		l_billboardPAssGPUData.iconType = WorldEditorIconType::DIRECTIONAL_LIGHT;
 
@@ -487,7 +489,7 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 	for (auto i : g_pModuleManager->getGameSystem()->get<PointLightComponent>())
 	{
 		BillboardPassGPUData l_billboardPAssGPUData;
-		l_billboardPAssGPUData.globalPos = g_pModuleManager->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
+		l_billboardPAssGPUData.globalPos = GetComponent(TransformComponent, i->m_parentEntity)->m_globalTransformVector.m_pos;
 		l_billboardPAssGPUData.distanceToCamera = (m_cameraGPUData.globalPos - l_billboardPAssGPUData.globalPos).length();
 		l_billboardPAssGPUData.iconType = WorldEditorIconType::POINT_LIGHT;
 
@@ -498,7 +500,7 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 	for (auto i : g_pModuleManager->getGameSystem()->get<SphereLightComponent>())
 	{
 		BillboardPassGPUData l_billboardPAssGPUData;
-		l_billboardPAssGPUData.globalPos = g_pModuleManager->getGameSystem()->get<TransformComponent>(i->m_parentEntity)->m_globalTransformVector.m_pos;
+		l_billboardPAssGPUData.globalPos = GetComponent(TransformComponent, i->m_parentEntity)->m_globalTransformVector.m_pos;
 		l_billboardPAssGPUData.distanceToCamera = (m_cameraGPUData.globalPos - l_billboardPAssGPUData.globalPos).length();
 		l_billboardPAssGPUData.iconType = WorldEditorIconType::SPHERE_LIGHT;
 
@@ -531,7 +533,7 @@ bool InnoRenderingFrontendNS::gatherStaticMeshData()
 			&& visibleComponent->m_meshUsageType == MeshUsageType::STATIC
 			)
 		{
-			auto l_transformComponent = g_pModuleManager->getGameSystem()->get<TransformComponent>(visibleComponent->m_parentEntity);
+			auto l_transformComponent = GetComponent(TransformComponent, visibleComponent->m_parentEntity);
 			auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 			if (visibleComponent->m_PDC)
 			{
@@ -688,7 +690,7 @@ SkeletonDataComponent * InnoRenderingFrontend::addSkeletonDataComponent()
 	static std::atomic<unsigned int> skeletonCount = 0;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(InnoRenderingFrontendNS::m_SkeletonDataComponentPool, sizeof(SkeletonDataComponent));
 	auto l_SDC = new(l_rawPtr)SkeletonDataComponent();
-	auto l_parentEntity = g_pModuleManager->getGameSystem()->createEntity(EntityName(("Skeleton_" + std::to_string(skeletonCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Skeleton_" + std::to_string(skeletonCount) + "/").c_str());
 	l_SDC->m_parentEntity = l_parentEntity;
 	skeletonCount++;
 	return l_SDC;
@@ -699,7 +701,7 @@ AnimationDataComponent * InnoRenderingFrontend::addAnimationDataComponent()
 	static std::atomic<unsigned int> animationCount = 0;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(InnoRenderingFrontendNS::m_AnimationDataComponentPool, sizeof(AnimationDataComponent));
 	auto l_ADC = new(l_rawPtr)AnimationDataComponent();
-	auto l_parentEntity = g_pModuleManager->getGameSystem()->createEntity(EntityName(("Animation_" + std::to_string(animationCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Animation_" + std::to_string(animationCount) + "/").c_str());
 	l_ADC->m_parentEntity = l_parentEntity;
 	animationCount++;
 	return l_ADC;

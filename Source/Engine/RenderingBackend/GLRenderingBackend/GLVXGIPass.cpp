@@ -1,4 +1,6 @@
 #include "GLVXGIPass.h"
+#include "../../Common/CommonMacro.inl"
+#include "../../ComponentManager/ITransformComponentManager.h"
 
 #include "GLRenderingBackendUtilities.h"
 
@@ -221,7 +223,7 @@ void GLVXGIPass::updateVoxelizationPass()
 		{
 			updateUniform(
 				0,
-				g_pModuleManager->getGameSystem()->get<TransformComponent>(l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
+				GetComponent(TransformComponent, l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
 
 			// draw each graphic data of visibleComponent
 			for (auto& l_modelPair : l_visibleComponent->m_modelMap)

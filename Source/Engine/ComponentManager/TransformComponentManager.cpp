@@ -1,7 +1,9 @@
 #include "TransformComponentManager.h"
 #include "../Component/TransformComponent.h"
 #include "../Core/InnoMemory.h"
-#include "CommonMacro.inl"
+#include "../Core/InnoLogger.h"
+#include "../Common/CommonMacro.inl"
+#include "CommonFunctionDefinitionMacro.inl"
 
 #include "../ModuleManager/IModuleManager.h"
 
@@ -9,14 +11,16 @@ extern IModuleManager* g_pModuleManager;
 
 namespace TransformComponentManagerNS
 {
-	const size_t m_MaxComponent = 32768;
+	const size_t m_MaxComponentCount = 32768;
 	size_t m_CurrentComponentIndex = 0;
 	IObjectPool* m_ComponentPool;
 	ThreadSafeVector<TransformComponent*> m_Components;
 	ThreadSafeUnorderedMap<InnoEntity*, TransformComponent*> m_ComponentsMap;
+	InnoEntity* m_RootTransformEntity;
 	TransformComponent* m_RootTransformComponent;
 
 	std::function<void()> f_SceneLoadingStartCallback;
+	std::function<void()> f_SceneLoadingFinishCallback;
 
 	void SortTransformComponentsVector()
 	{
@@ -51,40 +55,83 @@ namespace TransformComponentManagerNS
 
 using namespace TransformComponentManagerNS;
 
-bool TransformComponentManager::Setup()
+bool InnoTransformComponentManager::Setup()
 {
-	m_ComponentPool = InnoMemory::CreateObjectPool(sizeof(TransformComponent), m_MaxComponent);
+	m_ComponentPool = InnoMemory::CreateObjectPool(sizeof(TransformComponent), m_MaxComponentCount);
+	m_Components.reserve(m_MaxComponentCount);
 
 	f_SceneLoadingStartCallback = [&]() {
 		CleanComponentContainers(TransformComponent);
 	};
 
+	f_SceneLoadingFinishCallback = [&]() {
+		SortTransformComponentsVector();
+		SimulateTransformComponents();
+	};
+
 	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_SceneLoadingStartCallback);
+	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_SceneLoadingFinishCallback);
+
+	m_RootTransformEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, "RootTransform/");
+
+	m_RootTransformComponent = SpawnComponent(TransformComponent, m_RootTransformEntity, ObjectSource::Runtime, ObjectUsage::Engine);
+
+	m_RootTransformComponent->m_localTransformMatrix = InnoMath::TransformVectorToTransformMatrix(m_RootTransformComponent->m_localTransformVector);
+	m_RootTransformComponent->m_globalTransformVector = m_RootTransformComponent->m_localTransformVector;
+	m_RootTransformComponent->m_globalTransformMatrix = m_RootTransformComponent->m_localTransformMatrix;
 
 	return true;
 }
 
-bool TransformComponentManager::Initialize()
+bool InnoTransformComponentManager::Initialize()
 {
 	return true;
 }
 
-bool TransformComponentManager::Simulate()
+bool InnoTransformComponentManager::Simulate()
+{
+	auto l_SimulateTask = g_pModuleManager->getTaskSystem()->submit("TransformComponentsSimulateTask", [&]()
+	{
+		SimulateTransformComponents();
+	});
+
+	return true;
+}
+
+bool InnoTransformComponentManager::Terminate()
 {
 	return true;
 }
 
-bool TransformComponentManager::Terminate()
+InnoComponent * InnoTransformComponentManager::Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
 {
-	return true;
+	SpawnComponentImpl(TransformComponent);
 }
 
-InnoComponent * TransformComponentManager::Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
+void InnoTransformComponentManager::Destory(InnoComponent * component)
 {
-	SpawnComponent(TransformComponent);
+	DestroyComponentImpl(TransformComponent);
 }
 
-void TransformComponentManager::Destory(InnoComponent * component)
+InnoComponent* InnoTransformComponentManager::Find(const InnoEntity * parentEntity)
 {
-	DestroyComponent(TransformComponent);
+	GetComponentImpl(TransformComponent, parentEntity);
+}
+
+void InnoTransformComponentManager::SaveCurrentFrameTransform()
+{
+	std::for_each(m_Components.begin(), m_Components.end(), [&](TransformComponent* val)
+	{
+		val->m_globalTransformMatrix_prev = val->m_globalTransformMatrix;
+	});
+}
+
+const TransformComponent * InnoTransformComponentManager::GetRootTransformComponent() const
+{
+	return m_RootTransformComponent;
+}
+
+const std::vector<TransformComponent*>& InnoTransformComponentManager::GetAllComponents()
+{
+	return m_Components.getRawData();
 }

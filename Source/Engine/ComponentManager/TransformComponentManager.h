@@ -1,10 +1,10 @@
 #pragma once
 #include "ITransformComponentManager.h"
 
-INNO_CONCRETE TransformComponentManager : INNO_IMPLEMENT ITransformComponentManager
+INNO_CONCRETE InnoTransformComponentManager : INNO_IMPLEMENT ITransformComponentManager
 {
 public:
-	INNO_CLASS_CONCRETE_NON_COPYABLE(TransformComponentManager);
+	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoTransformComponentManager);
 
 	bool Setup() override;
 	bool Initialize() override;
@@ -12,4 +12,9 @@ public:
 	bool Terminate() override;
 	InnoComponent* Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage) override;
 	void Destory(InnoComponent* component) override;
+	InnoComponent* Find(const InnoEntity* parentEntity) override;
+
+	const std::vector<TransformComponent*>& GetAllComponents() override;
+	void SaveCurrentFrameTransform() override;
+	const TransformComponent* GetRootTransformComponent() const override;
 };

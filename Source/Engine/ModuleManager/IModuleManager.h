@@ -9,6 +9,7 @@
 #include "../Core/ITestSystem.h"
 #include "../FileSystem/IFileSystem.h"
 #include "../EntityManager/IEntityManager.h"
+#include "../ComponentManager/IComponentManager.h"
 #include "../GameSystem/IGameSystem.h"
 #include "../GameSystem/IAssetSystem.h"
 #include "../PhysicsSystem/IPhysicsSystem.h"
@@ -45,6 +46,7 @@ public:
 	INNO_ENGINE_API virtual ITestSystem* getTestSystem() = 0;
 	INNO_ENGINE_API virtual IFileSystem* getFileSystem() = 0;
 	INNO_ENGINE_API virtual IEntityManager* getEntityManager() = 0;
+	INNO_ENGINE_API virtual IComponentManager* getComponentManager(ComponentType componentType) = 0;
 	INNO_ENGINE_API virtual IGameSystem* getGameSystem() = 0;
 	INNO_ENGINE_API virtual IAssetSystem* getAssetSystem() = 0;
 	INNO_ENGINE_API virtual IPhysicsSystem* getPhysicsSystem() = 0;

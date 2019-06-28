@@ -1,4 +1,6 @@
 #include "GameInstance.h"
+#include "../../Engine/Common/CommonMacro.inl"
+#include "../../Engine/ComponentManager/ITransformComponentManager.h"
 
 #include "../../Engine/ModuleManager/IModuleManager.h"
 
@@ -54,8 +56,16 @@ namespace PlayerComponentCollection
 bool PlayerComponentCollection::setup()
 {
 	f_sceneLoadingFinishCallback = [&]() {
-		m_cameraParentEntity = g_pModuleManager->getGameSystem()->getEntity("playerCharacterCamera/");
-		m_cameraTransformComponent = g_pModuleManager->getGameSystem()->get<TransformComponent>(m_cameraParentEntity);
+		auto l_cameraEntity = g_pModuleManager->getEntityManager()->Find("playerCharacterCamera");
+		if (l_cameraEntity.has_value())
+		{
+			m_cameraParentEntity = l_cameraEntity.value();
+		}
+		else
+		{
+			m_cameraParentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Gameplay, "playerCharacterCamera/");
+		}
+		m_cameraTransformComponent = GetComponent(TransformComponent, m_cameraParentEntity);
 		m_cameraComponent = g_pModuleManager->getGameSystem()->get<CameraComponent>(m_cameraParentEntity);
 
 		m_targetCameraPos = m_cameraTransformComponent->m_localTransformVector.m_pos;
@@ -205,14 +215,16 @@ bool GameInstanceNS::setupReferenceSpheres()
 	{
 		m_referenceSphereTransformComponents.emplace_back();
 		m_referenceSphereVisibleComponents.emplace_back();
-		auto l_entityName = EntityName(("MaterialReferenceSphere_" + std::to_string(i) + "/").c_str());
-		m_referenceSphereEntites.emplace_back(g_pModuleManager->getGameSystem()->createEntity(l_entityName, ObjectSource::Runtime, ObjectUsage::Gameplay));
+		auto l_entityName = std::string("MaterialReferenceSphere_" + std::to_string(i) + "/");
+		m_referenceSphereEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Gameplay, l_entityName.c_str()));
 	}
+
+	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
 
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
-		m_referenceSphereTransformComponents[i] = g_pModuleManager->getGameSystem()->spawn<TransformComponent>(m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
-		m_referenceSphereTransformComponents[i]->m_parentTransformComponent = g_pModuleManager->getGameSystem()->getRootTransformComponent();
+		m_referenceSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_referenceSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_referenceSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_referenceSphereVisibleComponents[i] = g_pModuleManager->getGameSystem()->spawn<VisibleComponent>(m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_referenceSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
@@ -256,14 +268,16 @@ bool GameInstanceNS::setupOpaqueSpheres()
 	{
 		m_opaqueSphereTransformComponents.emplace_back();
 		m_opaqueSphereVisibleComponents.emplace_back();
-		auto l_entityName = EntityName(("PhysicsTestOpaqueObject_" + std::to_string(i) + "/").c_str());
-		m_opaqueSphereEntites.emplace_back(g_pModuleManager->getGameSystem()->createEntity(l_entityName, ObjectSource::Runtime, ObjectUsage::Gameplay));
+		auto l_entityName = std::string("PhysicsTestOpaqueObject_" + std::to_string(i) + "/");
+		m_opaqueSphereEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Gameplay, l_entityName.c_str()));
 	}
+
+	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
 
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
-		m_opaqueSphereTransformComponents[i] = g_pModuleManager->getGameSystem()->spawn<TransformComponent>(m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
-		m_opaqueSphereTransformComponents[i]->m_parentTransformComponent = g_pModuleManager->getGameSystem()->getRootTransformComponent();
+		m_opaqueSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_opaqueSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_opaqueSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_opaqueSphereVisibleComponents[i] = g_pModuleManager->getGameSystem()->spawn<VisibleComponent>(m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_opaqueSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
@@ -317,14 +331,16 @@ bool GameInstanceNS::setupTransparentSpheres()
 	{
 		m_transparentSphereTransformComponents.emplace_back();
 		m_transparentSphereVisibleComponents.emplace_back();
-		auto l_entityName = EntityName(("PhysicsTestTransparentSphere_" + std::to_string(i) + "/").c_str());
-		m_transparentSphereEntites.emplace_back(g_pModuleManager->getGameSystem()->createEntity(l_entityName, ObjectSource::Runtime, ObjectUsage::Gameplay));
+		auto l_entityName = std::string("PhysicsTestTransparentSphere_" + std::to_string(i) + "/");
+		m_transparentSphereEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Gameplay, l_entityName.c_str()));
 	}
+
+	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
 
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
-		m_transparentSphereTransformComponents[i] = g_pModuleManager->getGameSystem()->spawn<TransformComponent>(m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
-		m_transparentSphereTransformComponents[i]->m_parentTransformComponent = g_pModuleManager->getGameSystem()->getRootTransformComponent();
+		m_transparentSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_transparentSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_transparentSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_transparentSphereVisibleComponents[i] = g_pModuleManager->getGameSystem()->spawn<VisibleComponent>(m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_transparentSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_TRANSPARENT;
@@ -373,14 +389,17 @@ bool GameInstanceNS::setupPointLights()
 	{
 		m_pointLightTransformComponents.emplace_back();
 		m_pointLightComponents.emplace_back();
-		auto l_entityName = EntityName(("TestPointLight_" + std::to_string(i) + "/").c_str());
-		m_pointLightEntites.emplace_back(g_pModuleManager->getGameSystem()->createEntity(l_entityName, ObjectSource::Runtime, ObjectUsage::Gameplay));
+		auto l_entityName = std::string("TestPointLight_" + std::to_string(i) + "/");
+		m_pointLightEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Gameplay, l_entityName.c_str()));
 	}
+
+	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
 
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
-		m_pointLightTransformComponents[i] = g_pModuleManager->getGameSystem()->spawn<TransformComponent>(m_pointLightEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
-		m_pointLightTransformComponents[i]->m_parentTransformComponent = g_pModuleManager->getGameSystem()->getRootTransformComponent();
+		m_pointLightTransformComponents[i] = SpawnComponent(TransformComponent, m_pointLightEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		g_pModuleManager->getComponentManager(ComponentType::TransformComponent);
+		m_pointLightTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_pointLightTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_pointLightComponents[i] = g_pModuleManager->getGameSystem()->spawn<PointLightComponent>(m_pointLightEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_pointLightComponents[i]->m_luminousFlux = 100.0f;

@@ -1,4 +1,6 @@
 #include "PhysicsSystem.h"
+#include "../Common/CommonMacro.inl"
+#include "../ComponentManager/ITransformComponentManager.h"
 
 #if defined INNO_PLATFORM_WIN
 #include "PhysXWrapper.h"
@@ -98,7 +100,7 @@ void InnoPhysicsSystemNS::generateProjectionMatrix(CameraComponent * cameraCompo
 
 void InnoPhysicsSystemNS::generateRayOfEye(CameraComponent * cameraComponent)
 {
-	auto l_transformComponent = g_pModuleManager->getGameSystem()->get<TransformComponent>(cameraComponent->m_parentEntity);
+	auto l_transformComponent = GetComponent(TransformComponent, cameraComponent->m_parentEntity);
 	cameraComponent->m_rayOfEye.m_origin = l_transformComponent->m_globalTransformVector.m_pos;
 	cameraComponent->m_rayOfEye.m_direction = InnoMath::getDirection(direction::BACKWARD, l_transformComponent->m_localTransformVector.m_rot);
 }
@@ -141,7 +143,7 @@ std::vector<Vertex> InnoPhysicsSystemNS::viewToWorldSpace(const std::vector<Vert
 
 std::vector<Vertex> InnoPhysicsSystemNS::generateFrustumVerticesVS(CameraComponent * cameraComponent)
 {
-	auto l_cameraTransformComponent = g_pModuleManager->getGameSystem()->get<TransformComponent>(cameraComponent->m_parentEntity);
+	auto l_cameraTransformComponent = GetComponent(TransformComponent, cameraComponent->m_parentEntity);
 	auto l_pCamera = cameraComponent->m_projectionMatrix;
 
 	auto rhs = InnoMath::generateNDC<float>();
@@ -160,7 +162,7 @@ std::vector<Vertex> InnoPhysicsSystemNS::generateFrustumVerticesVS(CameraCompone
 
 std::vector<Vertex> InnoPhysicsSystemNS::generateFrustumVerticesWS(CameraComponent * cameraComponent)
 {
-	auto l_cameraTransformComponent = g_pModuleManager->getGameSystem()->get<TransformComponent>(cameraComponent->m_parentEntity);
+	auto l_cameraTransformComponent = GetComponent(TransformComponent, cameraComponent->m_parentEntity);
 	auto l_rCamera = InnoMath::toRotationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_rot);
 	auto l_tCamera = InnoMath::toTranslationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_pos);
 
@@ -209,7 +211,7 @@ void InnoPhysicsSystemNS::generatePointLightComponentAttenuationRadius(PointLigh
 
 void InnoPhysicsSystemNS::generateSphereLightComponentScale(SphereLightComponent* sphereLightComponent)
 {
-	g_pModuleManager->getGameSystem()->get<TransformComponent>(sphereLightComponent->m_parentEntity)->m_localTransformVector.m_scale =
+	GetComponent(TransformComponent, sphereLightComponent->m_parentEntity)->m_localTransformVector.m_scale =
 		vec4(sphereLightComponent->m_sphereRadius, sphereLightComponent->m_sphereRadius, sphereLightComponent->m_sphereRadius, 1.0f);
 }
 
@@ -221,7 +223,7 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	//1. get frustum vertices in view space
 	auto l_cameraComponents = g_pModuleManager->getGameSystem()->get<CameraComponent>();
 	auto l_cameraComponent = l_cameraComponents[0];
-	auto l_cameraTransformComponent = g_pModuleManager->getGameSystem()->get<TransformComponent>(l_cameraComponent->m_parentEntity);
+	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_cameraComponent->m_parentEntity);
 	auto l_rCamera = InnoMath::toRotationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_rot);
 	auto l_tCamera = InnoMath::toTranslationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_pos);
 	auto l_frustumVerticesVS = generateFrustumVerticesVS(l_cameraComponent);
@@ -308,7 +310,7 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	directionalLightComponent->m_AABBsInWorldSpace.setRawData(std::move(l_frustumsAABBsWS));
 
 	//4. transform frustum vertices to light space
-	auto l_lightRotMat = g_pModuleManager->getGameSystem()->get<TransformComponent>(directionalLightComponent->m_parentEntity)->m_globalTransformMatrix.m_rotationMat.inverse();
+	auto l_lightRotMat = GetComponent(TransformComponent, directionalLightComponent->m_parentEntity)->m_globalTransformMatrix.m_rotationMat.inverse();
 	auto l_frustumVerticesLS = l_frustumVerticesWS;
 
 	for (size_t i = 0; i < l_frustumVerticesLS.size(); i++)
@@ -611,7 +613,7 @@ bool InnoPhysicsSystemNS::generatePhysicsDataComponent(VisibleComponent* VC)
 #if defined INNO_PLATFORM_WIN
 	if (VC->m_simulatePhysics)
 	{
-		auto l_transformComponent = g_pModuleManager->getGameSystem()->get<TransformComponent>(VC->m_parentEntity);
+		auto l_transformComponent = GetComponent(TransformComponent, VC->m_parentEntity);
 		switch (VC->m_meshShapeType)
 		{
 		case MeshShapeType::CUBE:
@@ -753,7 +755,7 @@ void InnoPhysicsSystemNS::updateCulling()
 	{
 		auto l_cameraComponents = g_pModuleManager->getGameSystem()->get<CameraComponent>();
 		auto l_mainCamera = l_cameraComponents[0];
-		auto l_mainCameraTransformComponent = g_pModuleManager->getGameSystem()->get<TransformComponent>(l_mainCamera->m_parentEntity);
+		auto l_mainCameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_parentEntity);
 
 		auto l_cameraFrustum = l_mainCamera->m_frustum;
 		auto l_eyeRay = l_mainCamera->m_rayOfEye;
@@ -762,7 +764,7 @@ void InnoPhysicsSystemNS::updateCulling()
 		{
 			if (visibleComponent->m_visiblilityType != VisiblilityType::INNO_INVISIBLE && visibleComponent->m_objectStatus == ObjectStatus::Activated)
 			{
-				auto l_transformComponent = g_pModuleManager->getGameSystem()->get<TransformComponent>(visibleComponent->m_parentEntity);
+				auto l_transformComponent = GetComponent(TransformComponent, visibleComponent->m_parentEntity);
 				auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
 				if (visibleComponent->m_PDC)

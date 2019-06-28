@@ -14,4 +14,5 @@ public:
 	virtual bool Terminate() = 0;
 	virtual InnoComponent* Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage) = 0;
 	virtual void Destory(InnoComponent* component) = 0;
+	virtual InnoComponent* Find(const InnoEntity* parentEntity) = 0;
 };

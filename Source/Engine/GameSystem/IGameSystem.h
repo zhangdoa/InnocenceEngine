@@ -47,42 +47,36 @@ public:
 	virtual ObjectStatus getStatus() = 0;
 
 protected:
-	spawnComponentInterfaceDecl(TransformComponent);
 	spawnComponentInterfaceDecl(VisibleComponent);
 	spawnComponentInterfaceDecl(DirectionalLightComponent);
 	spawnComponentInterfaceDecl(PointLightComponent);
 	spawnComponentInterfaceDecl(SphereLightComponent);
 	spawnComponentInterfaceDecl(CameraComponent);
 
-	registerComponentInterfaceDecl(TransformComponent);
 	registerComponentInterfaceDecl(VisibleComponent);
 	registerComponentInterfaceDecl(DirectionalLightComponent);
 	registerComponentInterfaceDecl(PointLightComponent);
 	registerComponentInterfaceDecl(SphereLightComponent);
 	registerComponentInterfaceDecl(CameraComponent);
 
-	destroyComponentInterfaceDecl(TransformComponent);
 	destroyComponentInterfaceDecl(VisibleComponent);
 	destroyComponentInterfaceDecl(DirectionalLightComponent);
 	destroyComponentInterfaceDecl(PointLightComponent);
 	destroyComponentInterfaceDecl(SphereLightComponent);
 	destroyComponentInterfaceDecl(CameraComponent);
 
-	unregisterComponentInterfaceDecl(TransformComponent);
 	unregisterComponentInterfaceDecl(VisibleComponent);
 	unregisterComponentInterfaceDecl(DirectionalLightComponent);
 	unregisterComponentInterfaceDecl(PointLightComponent);
 	unregisterComponentInterfaceDecl(SphereLightComponent);
 	unregisterComponentInterfaceDecl(CameraComponent);
 
-	getComponentInterfaceDecl(TransformComponent);
 	getComponentInterfaceDecl(VisibleComponent);
 	getComponentInterfaceDecl(DirectionalLightComponent);
 	getComponentInterfaceDecl(PointLightComponent);
 	getComponentInterfaceDecl(SphereLightComponent);
 	getComponentInterfaceDecl(CameraComponent);
 
-	getComponentContainerInterfaceDecl(TransformComponent);
 	getComponentContainerInterfaceDecl(VisibleComponent);
 	getComponentContainerInterfaceDecl(DirectionalLightComponent);
 	getComponentContainerInterfaceDecl(PointLightComponent);
@@ -92,40 +86,30 @@ protected:
 public:
 	template <typename T> T * spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
 	{
+		static_assert(0, "InnoCompileError: Fall back to generalized implementation.");
 		return nullptr;
 	};
 
 	template <typename T> bool destroy(T* rhs)
 	{
+		static_assert(0, "InnoCompileError: Fall back to generalized implementation.");
 		return false;
 	};
 
 	template <typename T> T* get(const InnoEntity* parentEntity)
 	{
+		static_assert(0, "InnoCompileError: Fall back to generalized implementation.");
 		return nullptr;
 	};
 
 	template <typename T> std::vector<T*>& get()
 	{
+		static_assert(0, "InnoCompileError: Fall back to generalized implementation.");
 		return nullptr;
 	};
 
-	virtual const std::vector<InnoEntity*>& getEntities() = 0;
 	virtual const EntityChildrenComponentsMetadataMap& getEntityChildrenComponentsMetadataMap() = 0;
-
 	virtual std::string getGameName() = 0;
-	virtual TransformComponent* getRootTransformComponent() = 0;
-
-	virtual void saveComponentsCapture() = 0;
-
-	virtual InnoEntity* createEntity(const EntityName& entityName, ObjectSource objectSource, ObjectUsage objectUsage) = 0;
-	virtual bool removeEntity(const InnoEntity* entity) = 0;
-	virtual InnoEntity* getEntity(const EntityName& entityName) = 0;
-};
-
-template <> inline TransformComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
-{
-	return spawnComponentInterfaceCall(TransformComponent, parentEntity, objectSource, objectUsage);
 };
 
 template <> inline VisibleComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
@@ -153,11 +137,6 @@ template <> inline CameraComponent * IGameSystem::spawn(const InnoEntity* parent
 	return spawnComponentInterfaceCall(CameraComponent, parentEntity, objectSource, objectUsage);
 };
 
-template <> inline bool IGameSystem::destroy(TransformComponent* rhs)
-{
-	return destroyComponentInterfaceCall(rhs);
-};
-
 template <> inline bool IGameSystem::destroy(VisibleComponent* rhs)
 {
 	return destroyComponentInterfaceCall(rhs);
@@ -183,11 +162,6 @@ template <> inline bool IGameSystem::destroy(CameraComponent* rhs)
 	return destroyComponentInterfaceCall(rhs);
 };
 
-template <> inline TransformComponent * IGameSystem::get(const InnoEntity* parentEntity)
-{
-	return getComponentInterfaceCall(TransformComponent, parentEntity);
-};
-
 template <> inline VisibleComponent * IGameSystem::get(const InnoEntity* parentEntity)
 {
 	return getComponentInterfaceCall(VisibleComponent, parentEntity);
@@ -211,11 +185,6 @@ template <> inline SphereLightComponent * IGameSystem::get(const InnoEntity* par
 template <> inline CameraComponent * IGameSystem::get(const InnoEntity* parentEntity)
 {
 	return getComponentInterfaceCall(CameraComponent, parentEntity);
-};
-
-template <> inline std::vector<TransformComponent*>& IGameSystem::get()
-{
-	return getComponentContainerInterfaceCall(TransformComponent);
 };
 
 template <> inline std::vector<VisibleComponent*>& IGameSystem::get()
