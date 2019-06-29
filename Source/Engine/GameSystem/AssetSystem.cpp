@@ -1,6 +1,7 @@
 #include "AssetSystem.h"
 #include "../Common/ComponentHeaders.h"
 #include "../ModuleManager/IModuleManager.h"
+#include "../Common/InnoMathHelper.h"
 
 extern IModuleManager* g_pModuleManager;
 
@@ -73,8 +74,8 @@ DirectoryMetadata* InnoAssetSystem::getRootDirectoryMetadata()
 
 void InnoAssetSystem::addUnitCube(MeshDataComponent& meshDataComponent)
 {
-	auto l_NDC = InnoMath::generateNDC<float>();
-	meshDataComponent.m_vertices = l_NDC;
+	meshDataComponent.m_vertices.reserve(8);
+	InnoMath::generateNDC(&meshDataComponent.m_vertices[0]);
 
 	std::vector<Index> l_indices =
 	{
@@ -86,7 +87,13 @@ void InnoAssetSystem::addUnitCube(MeshDataComponent& meshDataComponent)
 		1, 2, 5, 5, 2, 6
 	};
 
-	meshDataComponent.m_indices = l_indices;
+	meshDataComponent.m_indices.reserve(36);
+
+	for (unsigned int i = 0; i < 36; i++)
+	{
+		meshDataComponent.m_indices[i] = l_indices[i];
+	}
+
 	meshDataComponent.m_indicesSize = meshDataComponent.m_indices.size();
 }
 
@@ -103,6 +110,8 @@ void InnoAssetSystem::addUnitSphere(MeshDataComponent& meshDataComponent)
 	float sectorStep = 2 * PI<float> / sectorCount;
 	float stackStep = PI<float> / stackCount;
 	float sectorAngle, stackAngle;
+
+	meshDataComponent.m_vertices.reserve((stackCount + 1) * (sectorCount + 1));
 
 	for (int i = 0; i <= stackCount; ++i)
 	{
@@ -137,6 +146,9 @@ void InnoAssetSystem::addUnitSphere(MeshDataComponent& meshDataComponent)
 		}
 	}
 
+	// @TODO: Eliminate wasted space
+	meshDataComponent.m_indices.reserve(stackCount * sectorCount * 6);
+
 	int k1, k2;
 	for (int i = 0; i < stackCount; ++i)
 	{
@@ -169,39 +181,45 @@ void InnoAssetSystem::addUnitSphere(MeshDataComponent& meshDataComponent)
 
 void InnoAssetSystem::addUnitQuad(MeshDataComponent& meshDataComponent)
 {
-	Vertex l_VertexData_1;
-	l_VertexData_1.m_pos = vec4(1.0f, 1.0f, 0.0f, 1.0f);
-	l_VertexData_1.m_texCoord = vec2(1.0f, 1.0f);
+	meshDataComponent.m_vertices.reserve(4);
 
-	Vertex l_VertexData_2;
-	l_VertexData_2.m_pos = vec4(1.0f, -1.0f, 0.0f, 1.0f);
-	l_VertexData_2.m_texCoord = vec2(1.0f, 0.0f);
+	meshDataComponent.m_vertices[0].m_pos = vec4(1.0f, 1.0f, 0.0f, 1.0f);
+	meshDataComponent.m_vertices[0].m_texCoord = vec2(1.0f, 1.0f);
 
-	Vertex l_VertexData_3;
-	l_VertexData_3.m_pos = vec4(-1.0f, -1.0f, 0.0f, 1.0f);
-	l_VertexData_3.m_texCoord = vec2(0.0f, 0.0f);
+	meshDataComponent.m_vertices[1].m_pos = vec4(1.0f, -1.0f, 0.0f, 1.0f);
+	meshDataComponent.m_vertices[1].m_texCoord = vec2(1.0f, 0.0f);
 
-	Vertex l_VertexData_4;
-	l_VertexData_4.m_pos = vec4(-1.0f, 1.0f, 0.0f, 1.0f);
-	l_VertexData_4.m_texCoord = vec2(0.0f, 1.0f);
+	meshDataComponent.m_vertices[2].m_pos = vec4(-1.0f, -1.0f, 0.0f, 1.0f);
+	meshDataComponent.m_vertices[2].m_texCoord = vec2(0.0f, 0.0f);
 
-	meshDataComponent.m_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4 };
-	meshDataComponent.m_indices = { 0, 1, 3, 1, 2, 3 };
+	meshDataComponent.m_vertices[3].m_pos = vec4(-1.0f, 1.0f, 0.0f, 1.0f);
+	meshDataComponent.m_vertices[3].m_texCoord = vec2(0.0f, 1.0f);
+
+	meshDataComponent.m_indices.reserve(6);
+	meshDataComponent.m_indices[0] = 0;
+	meshDataComponent.m_indices[1] = 1;
+	meshDataComponent.m_indices[2] = 3;
+	meshDataComponent.m_indices[3] = 1;
+	meshDataComponent.m_indices[4] = 2;
+	meshDataComponent.m_indices[5] = 3;
+
 	meshDataComponent.m_indicesSize = meshDataComponent.m_indices.size();
 }
 
 void InnoAssetSystem::addUnitLine(MeshDataComponent& meshDataComponent)
 {
-	Vertex l_VertexData_1;
-	l_VertexData_1.m_pos = vec4(1.0f, 1.0f, 0.0f, 1.0f);
-	l_VertexData_1.m_texCoord = vec2(1.0f, 1.0f);
+	meshDataComponent.m_vertices.reserve(2);
 
-	Vertex l_VertexData_2;
-	l_VertexData_2.m_pos = vec4(-1.0f, -1.0f, 0.0f, 1.0f);
-	l_VertexData_2.m_texCoord = vec2(0.0f, 0.0f);
+	meshDataComponent.m_vertices[0].m_pos = vec4(1.0f, 1.0f, 0.0f, 1.0f);
+	meshDataComponent.m_vertices[0].m_texCoord = vec2(1.0f, 1.0f);
 
-	meshDataComponent.m_vertices = { l_VertexData_1, l_VertexData_2 };
-	meshDataComponent.m_indices = { 0, 1 };
+	meshDataComponent.m_vertices[1].m_pos = vec4(-1.0f, -1.0f, 0.0f, 1.0f);
+	meshDataComponent.m_vertices[1].m_texCoord = vec2(0.0f, 0.0f);
+
+	meshDataComponent.m_indices.reserve(2);
+	meshDataComponent.m_indices[0] = 0;
+	meshDataComponent.m_indices[1] = 1;
+
 	meshDataComponent.m_indicesSize = meshDataComponent.m_indices.size();
 }
 

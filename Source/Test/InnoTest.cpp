@@ -1,8 +1,10 @@
 #include "../Engine/Common/InnoContainer.h"
 #include "../Engine/Common/InnoMath.h"
 #include "../Engine/Core/InnoTimer.h"
+#include "../Engine/Core/InnoLogger.h"
+#include "../Engine/Core/InnoMemory.h"
 
-int main(int argc, char *argv[])
+void TestIToA()
 {
 	int64_t int64 = std::numeric_limits<int64_t>::max();
 	int32_t int32 = std::numeric_limits<int32_t>::max();
@@ -25,8 +27,73 @@ int main(int argc, char *argv[])
 
 	auto l_Timestamp2 = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
 
-	auto l_SpeedRatio = float(l_Timestamp1 - l_StartTime) / float(l_Timestamp2 - l_Timestamp1);
+	auto l_SpeedRatio = double(l_Timestamp1 - l_StartTime) / double(l_Timestamp2 - l_Timestamp1);
 
+	InnoLogger::Log(LogLevel::Success, "Custom VS STL IToA speed ratio is ", l_SpeedRatio);
+}
+
+void TestInnoArray()
+{
+	auto l_StartTime = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
+
+	InnoArray<float> l_Array;
+	l_Array.reserve(1024);
+	for (size_t i = 0; i < 1024; i++)
+	{
+		l_Array[i] = (float)i;
+	}
+	auto l_ArrayCopy = l_Array;
+
+	InnoArray<float> l_Array2;
+	l_Array2.reserve(1024);
+	for (size_t i = 0; i < 1024; i++)
+	{
+		l_Array2.emplace_back((float)i);
+	}
+
+	auto l_Timestamp1 = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
+
+	std::vector<float> l_STLArray;
+	l_STLArray.resize(1024);
+	for (size_t i = 0; i < 1024; i++)
+	{
+		l_STLArray[i] = (float)i;
+	}
+	auto l_STLArrayCopy = l_STLArray;
+	std::vector<float> l_STLArray2;
+	l_STLArray2.resize(1024);
+	for (size_t i = 0; i < 1024; i++)
+	{
+		l_STLArray2.emplace_back((float)i);
+	}
+
+	auto l_Timestamp2 = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
+
+	auto l_SpeedRatio = double(l_Timestamp1 - l_StartTime) / double(l_Timestamp2 - l_Timestamp1);
+
+	InnoLogger::Log(LogLevel::Success, "Custom VS STL array container speed ratio is ", l_SpeedRatio);
+}
+
+void TestInnoMemory()
+{
+	std::default_random_engine l_generator;
+	std::uniform_int_distribution<unsigned int> l_randomDelta(1, 128);
+
+	for (size_t i = 0; i < 32; i++)
+	{
+		auto l_allocateSize = l_randomDelta(l_generator) * l_randomDelta(l_generator);
+		auto l_ptr = InnoMemory::Allocate(l_allocateSize);
+		InnoLogger::Log(LogLevel::Success, "Memory allocated at ", l_ptr, " for ", l_allocateSize, "Byte(s)");
+		InnoMemory::Deallocate(l_ptr);
+		InnoLogger::Log(LogLevel::Success, "Memory deallocated at ", l_ptr);
+	}
+}
+
+int main(int argc, char *argv[])
+{
+	TestIToA();
+	TestInnoArray();
+	TestInnoMemory();
 	while (1);
 	return 0;
 }

@@ -132,7 +132,7 @@ public:
 };
 
 template <class T>
-// In Homogeneous Coordinates, the w component is a scalar of x, y and z, to represent 3D point vector in 4D, set w to 1.0; to represent 3D direction vector in 4D, set w to 0.0.
+// In Homogeneous Coordinates, the w component is a scalar of x, y and z. In case to represent 3D point vector in 4D, set w to 1.0; to represent 3D direction vector in 4D, set w to 0.0.
 // In Quaternion, the w component is sin(theta / 2).
 class TVec4
 {
@@ -2099,74 +2099,12 @@ namespace InnoMath
 	}
 
 	template<class T>
-	auto generateNDC() -> std::vector<TVertex<T>>
-	{
-		TVertex<T> l_VertexData_1;
-		l_VertexData_1.m_pos = TVec4<T>(one<T>, one<T>, one<T>, one<T>);
-		l_VertexData_1.m_texCoord = TVec2<T>(one<T>, one<T>);
-
-		TVertex<T> l_VertexData_2;
-		l_VertexData_2.m_pos = TVec4<T>(one<T>, -one<T>, one<T>, one<T>);
-		l_VertexData_2.m_texCoord = TVec2<T>(one<T>, zero<T>);
-
-		TVertex<T> l_VertexData_3;
-		l_VertexData_3.m_pos = TVec4<T>(-one<T>, -one<T>, one<T>, one<T>);
-		l_VertexData_3.m_texCoord = TVec2<T>(zero<T>, zero<T>);
-
-		TVertex<T> l_VertexData_4;
-		l_VertexData_4.m_pos = TVec4<T>(-one<T>, one<T>, one<T>, one<T>);
-		l_VertexData_4.m_texCoord = TVec2<T>(zero<T>, one<T>);
-
-		TVertex<T> l_VertexData_5;
-		l_VertexData_5.m_pos = TVec4<T>(one<T>, one<T>, -one<T>, one<T>);
-		l_VertexData_5.m_texCoord = TVec2<T>(one<T>, one<T>);
-
-		TVertex<T> l_VertexData_6;
-		l_VertexData_6.m_pos = TVec4<T>(one<T>, -one<T>, -one<T>, one<T>);
-		l_VertexData_6.m_texCoord = TVec2<T>(one<T>, zero<T>);
-
-		TVertex<T> l_VertexData_7;
-		l_VertexData_7.m_pos = TVec4<T>(-one<T>, -one<T>, -one<T>, one<T>);
-		l_VertexData_7.m_texCoord = TVec2<T>(zero<T>, zero<T>);
-
-		TVertex<T> l_VertexData_8;
-		l_VertexData_8.m_pos = TVec4<T>(-one<T>, one<T>, -one<T>, one<T>);
-		l_VertexData_8.m_texCoord = TVec2<T>(zero<T>, one<T>);
-
-		std::vector<TVertex<T>> l_vertices = { l_VertexData_1, l_VertexData_2, l_VertexData_3, l_VertexData_4, l_VertexData_5, l_VertexData_6, l_VertexData_7, l_VertexData_8 };
-
-		for (auto& l_vertexData : l_vertices)
-		{
-			l_vertexData.m_normal = TVec4<T>(l_vertexData.m_pos.x, l_vertexData.m_pos.y, l_vertexData.m_pos.z, zero<T>).normalize();
-		}
-
-		return l_vertices;
-	}
-
-	template<class T>
 	auto makePlane(const TVec4<T>& a, const TVec4<T>& b, const TVec4<T>& c) -> TPlane<T>
 	{
 		TPlane<T> l_result;
 
 		l_result.m_normal = ((b - a).cross(c - a)).normalize();
 		l_result.m_distance = l_result.m_normal * a;
-
-		return l_result;
-	};
-
-	template<class T>
-	auto makeFrustum(const std::vector<TVertex<T>>& vertices) -> TFrustum<T>
-	{
-		assert(vertices.size() == 8);
-
-		TFrustum<T> l_result;
-
-		l_result.m_px = makePlane(vertices[2].m_pos, vertices[6].m_pos, vertices[7].m_pos);
-		l_result.m_nx = makePlane(vertices[0].m_pos, vertices[4].m_pos, vertices[1].m_pos);
-		l_result.m_py = makePlane(vertices[0].m_pos, vertices[3].m_pos, vertices[7].m_pos);
-		l_result.m_ny = makePlane(vertices[1].m_pos, vertices[5].m_pos, vertices[6].m_pos);
-		l_result.m_pz = makePlane(vertices[0].m_pos, vertices[1].m_pos, vertices[2].m_pos);
-		l_result.m_nz = makePlane(vertices[4].m_pos, vertices[7].m_pos, vertices[6].m_pos);
 
 		return l_result;
 	};
