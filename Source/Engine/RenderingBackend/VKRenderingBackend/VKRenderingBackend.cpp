@@ -116,7 +116,7 @@ bool VKRenderingBackendNS::createVkInstance()
 	// set Vulkan app info
 	VkApplicationInfo l_appInfo = {};
 	l_appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	l_appInfo.pApplicationName = g_pModuleManager->getGameSystem()->getGameName().c_str();
+	l_appInfo.pApplicationName = g_pModuleManager->getApplicationName().c_str();
 	l_appInfo.applicationVersion = VK_MAKE_VERSION(0, 0, 7);
 	l_appInfo.pEngineName = "Innocence Engine";
 	l_appInfo.engineVersion = VK_MAKE_VERSION(0, 0, 7);

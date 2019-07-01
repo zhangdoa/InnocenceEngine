@@ -530,7 +530,7 @@ ObjectStatus GameInstance::getStatus()
 
 std::string GameInstance::getGameName()
 {
-	return std::string("GameInstance");
+	return std::string("GameInstance/");
 }
 
 bool GameInstanceNS::update()

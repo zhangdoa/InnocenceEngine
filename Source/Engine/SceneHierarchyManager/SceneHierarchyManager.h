@@ -9,8 +9,5 @@ public:
 	bool Setup() override;
 	bool Initialize() override;
 	bool Terminate() override;
-	bool Register(const InnoEntity* entity) override;
-	bool Unregister(const InnoEntity* entity) override;
-	bool Register(const InnoComponent* component) override;
-	bool Unregister(const InnoComponent* component) override;
+	const SceneHierarchyMap& GetSceneHierarchyMap() override;
 };

@@ -19,22 +19,7 @@ bool InnoSceneHierarchyManager::Terminate()
 	return true;
 }
 
-bool InnoSceneHierarchyManager::Register(const InnoEntity * entity)
+const SceneHierarchyMap & InnoSceneHierarchyManager::GetSceneHierarchyMap()
 {
-	return true;
-}
-
-bool InnoSceneHierarchyManager::Unregister(const InnoEntity * entity)
-{
-	return true;
-}
-
-bool Register(const InnoComponent * component)
-{
-	return true;
-}
-
-bool Unregister(const InnoComponent * component)
-{
-	return true;
+	return SceneHierarchyMap();
 }

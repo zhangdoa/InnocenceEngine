@@ -121,7 +121,7 @@ bool WinGLWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 
 	if (m_initConfig.engineMode == EngineMode::GAME)
 	{
-		auto l_windowName = g_pModuleManager->getGameSystem()->getGameName();
+		auto l_windowName = g_pModuleManager->getApplicationName();
 
 		// create a new window and context
 		WinWindowSystemComponent::get().m_hwnd = CreateWindow(

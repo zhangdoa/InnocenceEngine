@@ -21,7 +21,7 @@ public:
 	IFileSystem* getFileSystem() override;
 	IEntityManager* getEntityManager() override;
 	IComponentManager* getComponentManager(ComponentType componentType) override;
-	IGameSystem* getGameSystem() override;
+	ISceneHierarchyManager* getSceneHierarchyManager() override;
 	IAssetSystem* getAssetSystem() override;
 	IPhysicsSystem* getPhysicsSystem() override;
 	IInputSystem* getInputSystem() override;
@@ -31,4 +31,5 @@ public:
 
 	InitConfig getInitConfig() override;
 	float getTickTime() override;
+	const FixedSizeString<128>& getApplicationName() override;
 };

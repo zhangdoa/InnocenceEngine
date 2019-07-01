@@ -38,10 +38,6 @@ using EntityName = FixedSizeString<128>;
 
 enum class ComponentType { TransformComponent, VisibleComponent, DirectionalLightComponent, PointLightComponent, SpotLightComponent, SphereLightComponent, CameraComponent, PhysicsDataComponent, MeshDataComponent, MaterialDataComponent, TextureDataComponent };
 
-using ComponentMetadataPair = std::pair<ComponentType, ComponentName>;
-using ComponentMetadataMap = std::unordered_map<void*, ComponentMetadataPair>;
-using EntityChildrenComponentsMetadataMap = std::unordered_map<void*, ComponentMetadataMap>;
-
 struct TimeData
 {
 	int year;

@@ -13,7 +13,7 @@
 #include "../ComponentManager/SpotLightComponentManager.h"
 #include "../ComponentManager/SphereLightComponentManager.h"
 #include "../ComponentManager/CameraComponentManager.h"
-#include "../GameSystem/GameSystem.h"
+#include "../SceneHierarchyManager/SceneHierarchyManager.h"
 #include "../GameSystem/AssetSystem.h"
 #include "../PhysicsSystem/PhysicsSystem.h"
 #include "../GameSystem/InputSystem.h"
@@ -80,6 +80,32 @@ I##className * InnoModuleManager::get##className() \
 	return m_##className.get(); \
 } \
 
+#define ComponentManagerSetup( className ) \
+if (!g_pModuleManager->getComponentManager(ComponentType::className)->Setup()) \
+{ \
+	return false; \
+} \
+g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, std::string(#className) + " setup finished."); \
+
+#define ComponentManagerInit( className ) \
+if (!g_pModuleManager->getComponentManager(ComponentType::className)->Initialize()) \
+{ \
+	return false; \
+} \
+
+#define ComponentManagerUpdate( className ) \
+if (!g_pModuleManager->getComponentManager(ComponentType::className)->Simulate()) \
+{ \
+m_objectStatus = ObjectStatus::Suspended; \
+return false; \
+}
+
+#define ComponentManagerTerm( className ) \
+if (!g_pModuleManager->getComponentManager(ComponentType::className)->Terminate()) \
+{ \
+	return false; \
+} \
+
 INNO_PRIVATE_SCOPE InnoModuleManagerNS
 {
 	InitConfig parseInitConfig(const std::string& arg);
@@ -108,7 +134,7 @@ INNO_PRIVATE_SCOPE InnoModuleManagerNS
 	std::unique_ptr<ISphereLightComponentManager> m_SphereLightComponentManager;
 	std::unique_ptr<ICameraComponentManager> m_CameraComponentManager;
 
-	std::unique_ptr<IGameSystem> m_GameSystem;
+	std::unique_ptr<ISceneHierarchyManager> m_SceneHierarchyManager;
 	std::unique_ptr<IAssetSystem> m_AssetSystem;
 	std::unique_ptr<IPhysicsSystem> m_PhysicsSystem;
 	std::unique_ptr<IInputSystem> m_InputSystem;
@@ -116,6 +142,7 @@ INNO_PRIVATE_SCOPE InnoModuleManagerNS
 	std::unique_ptr<IRenderingFrontend> m_RenderingFrontend;
 	std::unique_ptr<IRenderingBackend> m_RenderingBackend;
 	IGameInstance* m_GameInstance;
+	FixedSizeString<128> m_applicationName;
 
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
@@ -246,7 +273,7 @@ bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook
 	createSubSystemInstanceDefi(SphereLightComponentManager);
 	createSubSystemInstanceDefi(CameraComponentManager);
 
-	createSubSystemInstanceDefi(GameSystem);
+	createSubSystemInstanceDefi(SceneHierarchyManager);
 	createSubSystemInstanceDefi(AssetSystem);
 	createSubSystemInstanceDefi(PhysicsSystem);
 	createSubSystemInstanceDefi(InputSystem);
@@ -326,12 +353,12 @@ bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook
 		if (!m_RenderingBackend.get())
 		{
 			return false;
-	}
+		}
 #endif
 		break;
 	default:
 		break;
-}
+	}
 
 	// Objective-C++ bridge class instances passed as the 1st and 2nd parameters of setup()
 #if defined INNO_PLATFORM_MAC
@@ -352,6 +379,7 @@ bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook
 bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline, IGameInstance* gameInstance)
 {
 	m_GameInstance = gameInstance;
+	m_applicationName = m_GameInstance->getGameName().c_str();
 
 	if (!createSubSystemInstance(appHook, extraHook, pScmdline))
 	{
@@ -402,44 +430,20 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	}
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "EntityManager setup finished.");
 
-	if (!m_TransformComponentManager->Setup())
-	{
-		return false;
-	}
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TransformComponentManager setup finished.");
+	ComponentManagerSetup(TransformComponent);
+	ComponentManagerSetup(VisibleComponent);
+	ComponentManagerSetup(DirectionalLightComponent);
+	ComponentManagerSetup(PointLightComponent);
+	ComponentManagerSetup(SpotLightComponent);
+	ComponentManagerSetup(SphereLightComponent);
+	ComponentManagerSetup(CameraComponent);
 
-	if (!m_VisibleComponentManager->Setup())
+	if (!m_SceneHierarchyManager->Setup())
 	{
 		return false;
 	}
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VisibleComponentManager setup finished.");
-	if (!m_DirectionalLightComponentManager->Setup())
-	{
-		return false;
-	}
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DirectionalLightComponentManager setup finished.");
-	if (!m_PointLightComponentManager->Setup())
-	{
-		return false;
-	}
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "PointLightComponentManager setup finished.");
-	if (!m_SpotLightComponentManager->Setup())
-	{
-		return false;
-	}
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "SpotLightComponentManager setup finished.");
-	if (!m_SphereLightComponentManager->Setup())
-	{
-		return false;
-	}
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "SphereLightComponentManager setup finished.");
-	if (!m_CameraComponentManager->Setup())
-	{
-		return false;
-	}
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "CameraComponentManager setup finished.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "SceneHierarchyManager setup finished.");
 
-	subSystemSetup(GameSystem);
 	subSystemSetup(PhysicsSystem);
 	subSystemSetup(InputSystem);
 
@@ -467,36 +471,20 @@ bool InnoModuleManagerNS::initialize()
 	{
 		return false;
 	}
-	if (!m_TransformComponentManager->Initialize())
-	{
-		return false;
-	}
-	if (!m_VisibleComponentManager->Initialize())
-	{
-		return false;
-	}
-	if (!m_DirectionalLightComponentManager->Initialize())
-	{
-		return false;
-	}
-	if (!m_PointLightComponentManager->Initialize())
-	{
-		return false;
-	}
-	if (!m_SpotLightComponentManager->Initialize())
-	{
-		return false;
-	}
-	if (!m_SphereLightComponentManager->Initialize())
-	{
-		return false;
-	}
-	if (!m_CameraComponentManager->Initialize())
+
+	ComponentManagerInit(TransformComponent);
+	ComponentManagerInit(VisibleComponent);
+	ComponentManagerInit(DirectionalLightComponent);
+	ComponentManagerInit(PointLightComponent);
+	ComponentManagerInit(SpotLightComponent);
+	ComponentManagerInit(SphereLightComponent);
+	ComponentManagerInit(CameraComponent);
+
+	if (!m_SceneHierarchyManager->Initialize())
 	{
 		return false;
 	}
 
-	subSystemInit(GameSystem);
 	subSystemInit(AssetSystem);
 	subSystemInit(PhysicsSystem);
 	subSystemInit(InputSystem);
@@ -538,36 +526,14 @@ bool InnoModuleManagerNS::update()
 		{
 			return false;
 		}
-		if (!m_TransformComponentManager->Simulate())
-		{
-			return false;
-		}
-		if (!m_VisibleComponentManager->Simulate())
-		{
-			return false;
-		}
-		if (!m_DirectionalLightComponentManager->Simulate())
-		{
-			return false;
-		}
-		if (!m_PointLightComponentManager->Simulate())
-		{
-			return false;
-		}
-		if (!m_SpotLightComponentManager->Simulate())
-		{
-			return false;
-		}
-		if (!m_SphereLightComponentManager->Simulate())
-		{
-			return false;
-		}
-		if (!m_CameraComponentManager->Simulate())
-		{
-			return false;
-		}
+		ComponentManagerUpdate(TransformComponent);
+		ComponentManagerUpdate(VisibleComponent);
+		ComponentManagerUpdate(DirectionalLightComponent);
+		ComponentManagerUpdate(PointLightComponent);
+		ComponentManagerUpdate(SpotLightComponent);
+		ComponentManagerUpdate(SphereLightComponent);
+		ComponentManagerUpdate(CameraComponent);
 
-		subSystemUpdate(GameSystem);
 		subSystemUpdate(AssetSystem);
 		subSystemUpdate(PhysicsSystem);
 		subSystemUpdate(InputSystem);
@@ -655,43 +621,20 @@ bool InnoModuleManagerNS::terminate()
 	subSystemTerm(InputSystem);
 	subSystemTerm(PhysicsSystem);
 	subSystemTerm(AssetSystem);
-	subSystemTerm(GameSystem);
 
-	if (!m_CameraComponentManager->Terminate())
+	if (!m_SceneHierarchyManager->Terminate())
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "CameraComponentManager can't be terminated!");
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "SceneHierarchyManager can't be terminated!");
 		return false;
 	}
-	if (!m_SphereLightComponentManager->Terminate())
-	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "SphereLightComponentManager can't be terminated!");
-		return false;
-	}
-	if (!m_SpotLightComponentManager->Terminate())
-	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "SpotLightComponentManager can't be terminated!");
-		return false;
-	}
-	if (!m_PointLightComponentManager->Terminate())
-	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "PointLightComponentManager can't be terminated!");
-		return false;
-	}
-	if (!m_DirectionalLightComponentManager->Terminate())
-	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DirectionalLightComponentManager can't be terminated!");
-		return false;
-	}
-	if (!m_VisibleComponentManager->Terminate())
-	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VisibleComponentManager can't be terminated!");
-		return false;
-	}
-	if (!m_TransformComponentManager->Terminate())
-	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "TransformComponentManager can't be terminated!");
-		return false;
-	}
+
+	ComponentManagerTerm(TransformComponent);
+	ComponentManagerTerm(VisibleComponent);
+	ComponentManagerTerm(DirectionalLightComponent);
+	ComponentManagerTerm(PointLightComponent);
+	ComponentManagerTerm(SpotLightComponent);
+	ComponentManagerTerm(SphereLightComponent);
+	ComponentManagerTerm(CameraComponent);
 
 	if (!m_EntityManager->Terminate())
 	{
@@ -746,9 +689,10 @@ subSystemGetDefi(MemorySystem);
 subSystemGetDefi(TaskSystem);
 
 subSystemGetDefi(TestSystem);
-
 subSystemGetDefi(FileSystem);
-subSystemGetDefi(GameSystem);
+
+subSystemGetDefi(EntityManager);
+subSystemGetDefi(SceneHierarchyManager);
 subSystemGetDefi(AssetSystem);
 subSystemGetDefi(PhysicsSystem);
 subSystemGetDefi(InputSystem);
@@ -766,11 +710,6 @@ IRenderingFrontend * InnoModuleManager::getRenderingFrontend()
 IRenderingBackend * InnoModuleManager::getRenderingBackend()
 {
 	return m_RenderingBackend.get();
-}
-
-IEntityManager * InnoModuleManager::getEntityManager()
-{
-	return m_EntityManager.get();
 }
 
 IComponentManager * InnoModuleManager::getComponentManager(ComponentType componentType)
@@ -821,4 +760,9 @@ InitConfig InnoModuleManager::getInitConfig()
 float InnoModuleManager::getTickTime()
 {
 	return  m_tickTime;
+}
+
+const FixedSizeString<128>& InnoModuleManager::getApplicationName()
+{
+	return m_applicationName;
 }

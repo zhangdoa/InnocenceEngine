@@ -24,7 +24,7 @@ bool WinDXWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 	// Setup the windows class with default settings.
 	WNDCLASS wc = {};
 
-	auto l_windowName = g_pModuleManager->getGameSystem()->getGameName();
+	auto l_windowName = g_pModuleManager->getApplicationName();
 
 	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 	wc.lpfnWndProc = (WNDPROC)WindowProc;

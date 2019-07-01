@@ -3,6 +3,9 @@
 #include "../Common/InnoClassTemplate.h"
 #include "../Common/InnoEntity.h"
 #include "../Common/InnoComponent.h"
+
+using SceneHierarchyMap = std::unordered_multimap<InnoEntity*, InnoComponent*>;
+
 INNO_INTERFACE ISceneHierarchyManager
 {
 public:
@@ -11,8 +14,5 @@ public:
 	virtual bool Setup() = 0;
 	virtual bool Initialize() = 0;
 	virtual bool Terminate() = 0;
-	virtual bool Register(const InnoEntity* entity) = 0;
-	virtual bool Unregister(const InnoEntity* entity) = 0;
-	virtual bool Register(const InnoComponent* component) = 0;
-	virtual bool Unregister(const InnoComponent* component) = 0;
+	virtual const SceneHierarchyMap& GetSceneHierarchyMap() = 0;
 };

@@ -10,7 +10,7 @@
 #include "../FileSystem/IFileSystem.h"
 #include "../EntityManager/IEntityManager.h"
 #include "../ComponentManager/IComponentManager.h"
-#include "../GameSystem/IGameSystem.h"
+#include "../SceneHierarchyManager/ISceneHierarchyManager.h"
 #include "../GameSystem/IAssetSystem.h"
 #include "../PhysicsSystem/IPhysicsSystem.h"
 #include "../GameSystem/IInputSystem.h"
@@ -47,7 +47,7 @@ public:
 	INNO_ENGINE_API virtual IFileSystem* getFileSystem() = 0;
 	INNO_ENGINE_API virtual IEntityManager* getEntityManager() = 0;
 	INNO_ENGINE_API virtual IComponentManager* getComponentManager(ComponentType componentType) = 0;
-	INNO_ENGINE_API virtual IGameSystem* getGameSystem() = 0;
+	INNO_ENGINE_API virtual ISceneHierarchyManager* getSceneHierarchyManager() = 0;
 	INNO_ENGINE_API virtual IAssetSystem* getAssetSystem() = 0;
 	INNO_ENGINE_API virtual IPhysicsSystem* getPhysicsSystem() = 0;
 	INNO_ENGINE_API virtual IInputSystem* getInputSystem() = 0;
@@ -58,4 +58,6 @@ public:
 	INNO_ENGINE_API virtual InitConfig getInitConfig() = 0;
 
 	INNO_ENGINE_API virtual float getTickTime() = 0;
+
+	INNO_ENGINE_API virtual const FixedSizeString<128>& getApplicationName() = 0;
 };
