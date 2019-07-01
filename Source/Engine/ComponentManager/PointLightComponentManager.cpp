@@ -19,6 +19,30 @@ namespace PointLightComponentManagerNS
 
 	std::function<void()> f_SceneLoadingStartCallback;
 	std::function<void()> f_SceneLoadingFinishCallback;
+
+	void UpdateAttenuationRadius(PointLightComponent* rhs);
+}
+
+void PointLightComponentManagerNS::UpdateAttenuationRadius(PointLightComponent* rhs)
+{
+	auto l_RGBColor = rhs->m_color.normalize();
+	// "Real-Time Rendering", 4th Edition, p.278
+	// https://en.wikipedia.org/wiki/Relative_luminance
+	// weight with respect to CIE photometric curve
+	auto l_relativeLuminanceRatio = (0.2126f * l_RGBColor.x + 0.7152f * l_RGBColor.y + 0.0722f * l_RGBColor.z);
+
+	// Luminance (nt) is illuminance (lx) per solid angle, while luminous intensity (cd) is luminous flux (lm) per solid angle, thus for one area unit (m^2), the ratio of nt/lx is same as cd/lm
+	// For omni isotropic light, after the intergration per solid angle, the luminous flux (lm) is 4 pi times the luminous intensity (cd)
+	auto l_weightedLuminousFlux = rhs->m_luminousFlux * l_relativeLuminanceRatio;
+
+	// 1. get luminous efficacy (lm/w), assume 683 lm/w (100% luminous efficiency) always
+	// 2. luminous flux (lm) to radiant flux (w), omitted because linearity assumption in step 1
+	// 3. apply inverse square attenuation law with a low threshold of eye sensitivity at 0.03 lx, in ideal situation, lx could convert back to lm with respect to a sphere surface area 4 * PI * r^2
+#if defined INNO_PLATFORM_WIN
+	rhs->m_attenuationRadius = std::sqrtf(l_weightedLuminousFlux / (4.0f * PI<float> * 0.03f));
+#else
+	pointLightComponent->m_attenuationRadius = sqrtf(l_weightedLuminousFlux / (4.0f * PI<float> * 0.03f));
+#endif
 }
 
 using namespace PointLightComponentManagerNS;
@@ -48,6 +72,10 @@ bool InnoPointLightComponentManager::Initialize()
 
 bool InnoPointLightComponentManager::Simulate()
 {
+	for (auto i : m_Components)
+	{
+		UpdateAttenuationRadius(i);
+	}
 	return true;
 }
 

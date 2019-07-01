@@ -4,6 +4,9 @@
 #include "../Core/InnoLogger.h"
 #include "../Common/CommonMacro.inl"
 #include "CommonFunctionDefinitionMacro.inl"
+#include "../Common/InnoMathHelper.h"
+
+#include "ITransformComponentManager.h"
 
 #include "../ModuleManager/IModuleManager.h"
 
@@ -19,6 +22,36 @@ namespace CameraComponentManagerNS
 
 	std::function<void()> f_SceneLoadingStartCallback;
 	std::function<void()> f_SceneLoadingFinishCallback;
+
+	void generateProjectionMatrix(CameraComponent * cameraComponent);
+	void generateFrustum(CameraComponent * cameraComponent);
+	void generateRayOfEye(CameraComponent * cameraComponent);
+}
+
+void CameraComponentManagerNS::generateProjectionMatrix(CameraComponent * cameraComponent)
+{
+	auto l_resolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+	cameraComponent->m_WHRatio = (float)l_resolution.x / (float)l_resolution.y;
+	cameraComponent->m_projectionMatrix = InnoMath::generatePerspectiveMatrix((cameraComponent->m_FOVX / 180.0f) * PI<float>, cameraComponent->m_WHRatio, cameraComponent->m_zNear, cameraComponent->m_zFar);
+}
+
+void CameraComponentManagerNS::generateFrustum(CameraComponent * cameraComponent)
+{
+	auto l_cameraTransformComponent = GetComponent(TransformComponent, cameraComponent->m_parentEntity);
+
+	auto l_pCamera = cameraComponent->m_projectionMatrix;
+	auto l_rCamera = InnoMath::toRotationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_rot);
+	auto l_tCamera = InnoMath::toTranslationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_pos);
+
+	auto l_vertices = InnoMath::generateFrustumVerticesWS(l_pCamera, l_rCamera, l_tCamera);
+	cameraComponent->m_frustum = InnoMath::makeFrustum(&l_vertices[0]);
+}
+
+void CameraComponentManagerNS::generateRayOfEye(CameraComponent * cameraComponent)
+{
+	auto l_transformComponent = GetComponent(TransformComponent, cameraComponent->m_parentEntity);
+	cameraComponent->m_rayOfEye.m_origin = l_transformComponent->m_globalTransformVector.m_pos;
+	cameraComponent->m_rayOfEye.m_direction = InnoMath::getDirection(direction::BACKWARD, l_transformComponent->m_localTransformVector.m_rot);
 }
 
 using namespace CameraComponentManagerNS;
@@ -48,6 +81,13 @@ bool InnoCameraComponentManager::Initialize()
 
 bool InnoCameraComponentManager::Simulate()
 {
+	for (auto i : m_Components)
+	{
+		i->m_WHRatio = i->m_widthScale / i->m_heightScale;
+		generateProjectionMatrix(i);
+		generateRayOfEye(i);
+		generateFrustum(i);
+	}
 	return true;
 }
 
