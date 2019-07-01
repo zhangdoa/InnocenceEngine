@@ -4,6 +4,7 @@
 #include "../../Engine/ComponentManager/IVisibleComponentManager.h"
 #include "../../Engine/ComponentManager/IPointLightComponentManager.h"
 #include "../../Engine/ComponentManager/ISphereLightComponentManager.h"
+#include "../../Engine/ComponentManager/ICameraComponentManager.h"
 
 #include "../../Engine/ModuleManager/IModuleManager.h"
 
@@ -69,7 +70,7 @@ bool PlayerComponentCollection::setup()
 			m_cameraParentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Gameplay, "playerCharacterCamera/");
 		}
 		m_cameraTransformComponent = GetComponent(TransformComponent, m_cameraParentEntity);
-		m_cameraComponent = g_pModuleManager->getGameSystem()->get<CameraComponent>(m_cameraParentEntity);
+		m_cameraComponent = GetComponent(CameraComponent, m_cameraParentEntity);
 
 		m_targetCameraPos = m_cameraTransformComponent->m_localTransformVector.m_pos;
 		m_targetCameraRot = m_cameraTransformComponent->m_localTransformVector.m_rot;

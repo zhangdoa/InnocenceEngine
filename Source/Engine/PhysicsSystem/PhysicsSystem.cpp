@@ -5,6 +5,7 @@
 #include "../ComponentManager/IDirectionalLightComponentManager.h"
 #include "../ComponentManager/IPointLightComponentManager.h"
 #include "../ComponentManager/ISphereLightComponentManager.h"
+#include "../ComponentManager/ICameraComponentManager.h"
 
 #include "../Common/InnoMathHelper.h"
 
@@ -228,7 +229,7 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 	directionalLightComponent->m_projectionMatrices.clear();
 
 	//1. get frustum vertices in view space
-	auto l_cameraComponents = g_pModuleManager->getGameSystem()->get<CameraComponent>();
+	auto l_cameraComponents = GetComponentManager(CameraComponent)->GetAllComponents();
 	auto l_cameraComponent = l_cameraComponents[0];
 	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_cameraComponent->m_parentEntity);
 	auto l_rCamera = InnoMath::toRotationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_rot);
@@ -591,7 +592,7 @@ bool InnoPhysicsSystem::initialize()
 
 void InnoPhysicsSystemNS::updateCameraComponents()
 {
-	for (auto& i : g_pModuleManager->getGameSystem()->get<CameraComponent>())
+	for (auto& i : GetComponentManager(CameraComponent)->GetAllComponents())
 	{
 		i->m_WHRatio = i->m_widthScale / i->m_heightScale;
 		generateProjectionMatrix(i);
@@ -660,9 +661,10 @@ void InnoPhysicsSystemNS::updateCulling()
 
 	std::vector<CullingDataPack> l_cullingDataPacks;
 
-	if (g_pModuleManager->getGameSystem()->get<CameraComponent>().size() > 0)
+	auto l_cameraComponents = GetComponentManager(CameraComponent)->GetAllComponents();
+
+	if (l_cameraComponents.size() > 0)
 	{
-		auto l_cameraComponents = g_pModuleManager->getGameSystem()->get<CameraComponent>();
 		auto l_mainCamera = l_cameraComponents[0];
 		auto l_mainCameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_parentEntity);
 

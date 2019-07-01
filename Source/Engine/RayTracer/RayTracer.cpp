@@ -3,6 +3,7 @@
 #include "../Common/CommonMacro.inl"
 #include "../ComponentManager/ITransformComponentManager.h"
 #include "../ComponentManager/IVisibleComponentManager.h"
+#include "../ComponentManager/ICameraComponentManager.h"
 
 #include "../ModuleManager/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
@@ -240,7 +241,7 @@ bool ExecuteRayTracing()
 
 	l_ExportFile << "P3\n" << nx << " " << ny << "\n255\n";
 
-	auto l_camera = g_pModuleManager->getGameSystem()->get<CameraComponent>()[0];
+	auto l_camera = GetComponentManager(CameraComponent)->GetAllComponents()[0];
 	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_camera->m_parentEntity);
 	auto l_lookfrom = l_cameraTransformComponent->m_globalTransformVector.m_pos;
 	auto l_lookat = l_lookfrom + InnoMath::getDirection(direction::BACKWARD, l_cameraTransformComponent->m_globalTransformVector.m_rot);

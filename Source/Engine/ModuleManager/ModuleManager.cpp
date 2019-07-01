@@ -12,6 +12,7 @@
 #include "../ComponentManager/PointLightComponentManager.h"
 #include "../ComponentManager/SpotLightComponentManager.h"
 #include "../ComponentManager/SphereLightComponentManager.h"
+#include "../ComponentManager/CameraComponentManager.h"
 #include "../GameSystem/GameSystem.h"
 #include "../GameSystem/AssetSystem.h"
 #include "../PhysicsSystem/PhysicsSystem.h"
@@ -105,6 +106,7 @@ INNO_PRIVATE_SCOPE InnoModuleManagerNS
 	std::unique_ptr<IPointLightComponentManager> m_PointLightComponentManager;
 	std::unique_ptr<ISpotLightComponentManager> m_SpotLightComponentManager;
 	std::unique_ptr<ISphereLightComponentManager> m_SphereLightComponentManager;
+	std::unique_ptr<ICameraComponentManager> m_CameraComponentManager;
 
 	std::unique_ptr<IGameSystem> m_GameSystem;
 	std::unique_ptr<IAssetSystem> m_AssetSystem;
@@ -242,6 +244,7 @@ bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook
 	createSubSystemInstanceDefi(PointLightComponentManager);
 	createSubSystemInstanceDefi(SpotLightComponentManager);
 	createSubSystemInstanceDefi(SphereLightComponentManager);
+	createSubSystemInstanceDefi(CameraComponentManager);
 
 	createSubSystemInstanceDefi(GameSystem);
 	createSubSystemInstanceDefi(AssetSystem);
@@ -323,12 +326,12 @@ bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook
 		if (!m_RenderingBackend.get())
 		{
 			return false;
-		}
+	}
 #endif
 		break;
 	default:
 		break;
-	}
+}
 
 	// Objective-C++ bridge class instances passed as the 1st and 2nd parameters of setup()
 #if defined INNO_PLATFORM_MAC
@@ -344,7 +347,7 @@ bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook
 #endif
 
 	return true;
-	}
+}
 
 bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline, IGameInstance* gameInstance)
 {
@@ -430,6 +433,11 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 		return false;
 	}
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "SphereLightComponentManager setup finished.");
+	if (!m_CameraComponentManager->Setup())
+	{
+		return false;
+	}
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "CameraComponentManager setup finished.");
 
 	subSystemSetup(GameSystem);
 	subSystemSetup(PhysicsSystem);
@@ -480,6 +488,10 @@ bool InnoModuleManagerNS::initialize()
 		return false;
 	}
 	if (!m_SphereLightComponentManager->Initialize())
+	{
+		return false;
+	}
+	if (!m_CameraComponentManager->Initialize())
 	{
 		return false;
 	}
@@ -547,6 +559,10 @@ bool InnoModuleManagerNS::update()
 			return false;
 		}
 		if (!m_SphereLightComponentManager->Simulate())
+		{
+			return false;
+		}
+		if (!m_CameraComponentManager->Simulate())
 		{
 			return false;
 		}
@@ -641,6 +657,11 @@ bool InnoModuleManagerNS::terminate()
 	subSystemTerm(AssetSystem);
 	subSystemTerm(GameSystem);
 
+	if (!m_CameraComponentManager->Terminate())
+	{
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "CameraComponentManager can't be terminated!");
+		return false;
+	}
 	if (!m_SphereLightComponentManager->Terminate())
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "SphereLightComponentManager can't be terminated!");
@@ -776,6 +797,7 @@ IComponentManager * InnoModuleManager::getComponentManager(ComponentType compone
 		l_result = m_SphereLightComponentManager.get();
 		break;
 	case ComponentType::CameraComponent:
+		l_result = m_CameraComponentManager.get();
 		break;
 	case ComponentType::PhysicsDataComponent:
 		break;

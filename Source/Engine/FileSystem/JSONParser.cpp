@@ -6,6 +6,7 @@
 #include "../ComponentManager/IPointLightComponentManager.h"
 #include "../ComponentManager/ISpotLightComponentManager.h"
 #include "../ComponentManager/ISphereLightComponentManager.h"
+#include "../ComponentManager/ICameraComponentManager.h"
 
 #include "../ModuleManager/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
@@ -18,14 +19,6 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS::JSONParser
 	#define LoadComponentData(className, j, entity) \
 	{ auto l_result = SpawnComponent(className, entity, ObjectSource::Asset, ObjectUsage::Gameplay); \
 	from_json(j, *l_result); }
-
-	bool loadComponentData(const json& j, const InnoEntity* entity)
-	{
-		auto l_result = g_pModuleManager->getGameSystem()->spawn<CameraComponent>(entity, ObjectSource::Asset, ObjectUsage::Gameplay);
-		from_json(j, *l_result);
-
-		return true;
-	}
 
 	template<typename T>
 	inline bool saveComponentData(json& topLevel, T* rhs)
@@ -708,7 +701,7 @@ bool InnoFileSystemNS::JSONParser::saveScene(const std::string& fileName)
 			saveComponentData(topLevel, i);
 		}
 	}
-	for (auto i : g_pModuleManager->getGameSystem()->get<CameraComponent>())
+	for (auto i : GetComponentManager(CameraComponent)->GetAllComponents())
 	{
 		if (i->m_objectSource == ObjectSource::Asset)
 		{
@@ -755,7 +748,7 @@ bool InnoFileSystemNS::JSONParser::loadScene(const std::string & fileName)
 				break;
 			case ComponentType::SphereLightComponent: LoadComponentData(SphereLightComponent, k, l_entity);
 				break;
-			case ComponentType::CameraComponent: loadComponentData(k, l_entity);
+			case ComponentType::CameraComponent: LoadComponentData(CameraComponent, k, l_entity);
 				break;
 			case ComponentType::PhysicsDataComponent:
 				break;

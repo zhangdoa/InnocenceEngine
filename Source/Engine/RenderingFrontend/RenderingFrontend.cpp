@@ -5,6 +5,7 @@
 #include "../ComponentManager/IDirectionalLightComponentManager.h"
 #include "../ComponentManager/IPointLightComponentManager.h"
 #include "../ComponentManager/ISphereLightComponentManager.h"
+#include "../ComponentManager/ICameraComponentManager.h"
 
 #include "../ModuleManager/IModuleManager.h"
 
@@ -263,7 +264,7 @@ bool InnoRenderingFrontendNS::updateCameraData()
 {
 	m_isCameraDataPackValid = false;
 
-	auto l_cameraComponents = g_pModuleManager->getGameSystem()->get<CameraComponent>();
+	auto l_cameraComponents = GetComponentManager(CameraComponent)->GetAllComponents();
 	auto l_mainCamera = l_cameraComponents[0];
 	auto l_mainCameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_parentEntity);
 

@@ -1,5 +1,6 @@
 #pragma once
 #include "../Common/InnoComponent.h"
+#include "../Common/InnoMath.h"
 
 class CameraComponent : public InnoComponent
 {
