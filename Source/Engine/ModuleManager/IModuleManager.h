@@ -11,9 +11,9 @@
 #include "../EntityManager/IEntityManager.h"
 #include "../ComponentManager/IComponentManager.h"
 #include "../SceneHierarchyManager/ISceneHierarchyManager.h"
-#include "../GameSystem/IAssetSystem.h"
+#include "../AssetSystem/IAssetSystem.h"
 #include "../PhysicsSystem/IPhysicsSystem.h"
-#include "../GameSystem/IInputSystem.h"
+#include "../Core/IEventSystem.h"
 #include "../Core/IWindowSystem.h"
 #include "../RenderingFrontend/IRenderingFrontend.h"
 #include "../RenderingBackend/IRenderingBackend.h"
@@ -50,7 +50,7 @@ public:
 	INNO_ENGINE_API virtual ISceneHierarchyManager* getSceneHierarchyManager() = 0;
 	INNO_ENGINE_API virtual IAssetSystem* getAssetSystem() = 0;
 	INNO_ENGINE_API virtual IPhysicsSystem* getPhysicsSystem() = 0;
-	INNO_ENGINE_API virtual IInputSystem* getInputSystem() = 0;
+	INNO_ENGINE_API virtual IEventSystem* getEventSystem() = 0;
 	INNO_ENGINE_API virtual IWindowSystem* getWindowSystem() = 0;
 	INNO_ENGINE_API virtual IRenderingFrontend* getRenderingFrontend() = 0;
 	INNO_ENGINE_API virtual IRenderingBackend* getRenderingBackend() = 0;

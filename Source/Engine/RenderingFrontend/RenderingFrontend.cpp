@@ -228,7 +228,7 @@ bool InnoRenderingFrontendNS::setup(IRenderingBackend* renderingBackend)
 		gatherStaticMeshData();
 		m_renderingBackend->bakeGI();
 	};
-	g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_B, ButtonStatus::PRESSED }, &f_bakeGI);
+	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_B, ButtonStatus::PRESSED }, &f_bakeGI);
 
 	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);

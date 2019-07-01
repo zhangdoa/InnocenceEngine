@@ -46,7 +46,7 @@ INNO_PRIVATE_SCOPE GLDebuggerPass
 bool GLDebuggerPass::initialize()
 {
 	f_mouseSelect = [&]() {
-		auto l_mousePos = g_pModuleManager->getInputSystem()->getMousePositionInScreenSpace();
+		auto l_mousePos = g_pModuleManager->getEventSystem()->getMousePositionInScreenSpace();
 		l_mousePos.y = g_pModuleManager->getRenderingFrontend()->getScreenResolution().y - l_mousePos.y;
 
 		auto l_pixelValue = readPixel(GLOpaquePass::getGLRPC(), 3, (GLint)l_mousePos.x, (GLint)l_mousePos.y);
@@ -65,7 +65,7 @@ bool GLDebuggerPass::initialize()
 		}
 	};
 
-	g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::PRESSED }, &f_mouseSelect);
+	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::PRESSED }, &f_mouseSelect);
 
 	m_entityID = InnoMath::createEntityID();
 

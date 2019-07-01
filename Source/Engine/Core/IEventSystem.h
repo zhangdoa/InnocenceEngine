@@ -10,10 +10,10 @@ struct InputConfig
 	int totalMouseCodes;
 };
 
-INNO_INTERFACE IInputSystem
+INNO_INTERFACE IEventSystem
 {
 public:
-	INNO_CLASS_INTERFACE_NON_COPYABLE(IInputSystem);
+	INNO_CLASS_INTERFACE_NON_COPYABLE(IEventSystem);
 
 	virtual bool setup() = 0;
 	virtual bool initialize() = 0;
@@ -23,11 +23,7 @@ public:
 	virtual InputConfig getInputConfig() = 0;
 
 	virtual void addButtonStatusCallback(ButtonData boundButton, std::function<void()>* buttonStatusCallbackFunctor) = 0;
-	virtual void addButtonStatusCallback(ButtonData boundButton, std::vector<std::function<void()>*>& buttonStatusCallbackFunctor) = 0;
-	virtual void addButtonStatusCallback(ButtonStatusCallbackMap & buttonStatusCallbackFunctor) = 0;
 	virtual void addMouseMovementCallback(int mouseCode, std::function<void(float)>* mouseMovementCallback) = 0;
-	virtual void addMouseMovementCallback(int mouseCode, std::vector<std::function<void(float)>*>& mouseMovementCallback) = 0;
-	virtual void addMouseMovementCallback(MouseMovementCallbackMap& mouseMovementCallback) = 0;
 
 	virtual void buttonStatusCallback(ButtonData boundButton) = 0;
 	virtual void framebufferSizeCallback(int width, int height) = 0;

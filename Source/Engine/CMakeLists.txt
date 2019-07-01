@@ -1,7 +1,7 @@
 add_subdirectory("ThirdParty")
 add_subdirectory("Core")
 add_subdirectory("FileSystem")
-add_subdirectory("GameSystem")
+add_subdirectory("AssetSystem")
 add_subdirectory("PhysicsSystem")
 add_subdirectory("RenderingFrontend")
 add_subdirectory("RenderingBackend")

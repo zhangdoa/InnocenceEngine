@@ -39,7 +39,7 @@ bool GLFinalBlendPass::initialize()
 	f_toggleVisualizeLightCulling = [&]() {
 		m_visualizeLightCulling = !m_visualizeLightCulling;
 	};
-	g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_T, ButtonStatus::PRESSED }, &f_toggleVisualizeLightCulling);
+	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_T, ButtonStatus::PRESSED }, &f_toggleVisualizeLightCulling);
 
 	return true;
 }

@@ -41,7 +41,7 @@ INNO_PRIVATE_SCOPE WinWindowSystemNS
 
 bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 {
-	for (int i = 0; i < g_pModuleManager->getInputSystem()->getInputConfig().totalKeyCodes; i++)
+	for (int i = 0; i < g_pModuleManager->getEventSystem()->getInputConfig().totalKeyCodes; i++)
 	{
 		windowCallbackWrapper::get().m_buttonStatus.emplace(i, ButtonStatus::RELEASED);
 	}
@@ -225,7 +225,7 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	{
 	case WM_KEYDOWN:
 	{
-		//g_pModuleManager->getInputSystem()->buttonStatusCallback(ButtonData{ (int)wparam, ButtonStatus::PRESSED });
+		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ (int)wparam, ButtonStatus::PRESSED });
 
 		auto l_result = m_buttonStatus.find((int)wparam);
 		if (l_result != m_buttonStatus.end())
@@ -236,7 +236,7 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	}
 	case WM_KEYUP:
 	{
-		//g_pModuleManager->getInputSystem()->buttonStatusCallback(ButtonData{ (int)wparam, ButtonStatus::RELEASED });
+		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ (int)wparam, ButtonStatus::RELEASED });
 
 		auto l_result = m_buttonStatus.find((int)wparam);
 		if (l_result != m_buttonStatus.end())
@@ -247,7 +247,7 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	}
 	case WM_LBUTTONDOWN:
 	{
-		//g_pModuleManager->getInputSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::PRESSED });
+		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::PRESSED });
 
 		auto l_result = m_buttonStatus.find(INNO_MOUSE_BUTTON_LEFT);
 		if (l_result != m_buttonStatus.end())
@@ -258,7 +258,7 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	}
 	case WM_LBUTTONUP:
 	{
-		//g_pModuleManager->getInputSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::RELEASED });
+		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::RELEASED });
 
 		auto l_result = m_buttonStatus.find(INNO_MOUSE_BUTTON_LEFT);
 		if (l_result != m_buttonStatus.end())
@@ -269,7 +269,7 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	}
 	case WM_RBUTTONDOWN:
 	{
-		//g_pModuleManager->getInputSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::PRESSED });
+		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::PRESSED });
 
 		auto l_result = m_buttonStatus.find(INNO_MOUSE_BUTTON_RIGHT);
 		if (l_result != m_buttonStatus.end())
@@ -280,7 +280,7 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	}
 	case WM_RBUTTONUP:
 	{
-		//g_pModuleManager->getInputSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::RELEASED });
+		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::RELEASED });
 
 		auto l_result = m_buttonStatus.find(INNO_MOUSE_BUTTON_RIGHT);
 		if (l_result != m_buttonStatus.end())
@@ -294,7 +294,7 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	{
 		auto l_mouseCurrentX = GET_X_LPARAM(lparam);
 		auto l_mouseCurrentY = GET_Y_LPARAM(lparam);
-		g_pModuleManager->getInputSystem()->mousePositionCallback((float)l_mouseCurrentX, (float)l_mouseCurrentY);
+		g_pModuleManager->getEventSystem()->mousePositionCallback((float)l_mouseCurrentX, (float)l_mouseCurrentY);
 		return 0;
 	}
 	// Any other messages send to the default message handler as our application won't make use of them.

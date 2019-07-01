@@ -1,10 +1,10 @@
 #pragma once
-#include "IInputSystem.h"
+#include "IEventSystem.h"
 
-INNO_CONCRETE InnoInputSystem : INNO_IMPLEMENT IInputSystem
+INNO_CONCRETE InnoEventSystem : INNO_IMPLEMENT IEventSystem
 {
 public:
-	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoInputSystem);
+	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoEventSystem);
 
 	bool setup() override;
 	bool initialize() override;
@@ -14,11 +14,7 @@ public:
 	InputConfig getInputConfig() override;
 
 	void addButtonStatusCallback(ButtonData boundButton, std::function<void()>* buttonStatusCallbackFunctor) override;
-	void addButtonStatusCallback(ButtonData boundButton, std::vector<std::function<void()>*>& buttonStatusCallbackFunctor) override;
-	void addButtonStatusCallback(ButtonStatusCallbackMap & buttonStatusCallbackFunctor) override;
 	void addMouseMovementCallback(int mouseCode, std::function<void(float)>* mouseMovementCallback) override;
-	void addMouseMovementCallback(int mouseCode, std::vector<std::function<void(float)>*>& mouseMovementCallback) override;
-	void addMouseMovementCallback(MouseMovementCallbackMap& mouseMovementCallback) override;
 
 	void buttonStatusCallback(ButtonData boundButton) override;
 	void framebufferSizeCallback(int width, int height) override;

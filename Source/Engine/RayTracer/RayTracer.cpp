@@ -316,7 +316,7 @@ bool ExecuteRayTracing()
 bool InnoRayTracer::Setup()
 {
 	InnoRayTracerNS::f_test = [&]() { g_pModuleManager->getTaskSystem()->submit("RayTracingTask", [&]() {Execute(); });  };
-	g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_H, ButtonStatus::PRESSED }, &InnoRayTracerNS::f_test);
+	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_H, ButtonStatus::PRESSED }, &InnoRayTracerNS::f_test);
 
 	InnoRayTracerNS::m_ObjectStatus = ObjectStatus::Created;
 	return true;

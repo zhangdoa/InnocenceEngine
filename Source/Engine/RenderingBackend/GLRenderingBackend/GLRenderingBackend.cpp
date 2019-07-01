@@ -142,7 +142,7 @@ bool GLRenderingBackendNS::setup()
 	f_toggleVisualizeVXGI = [&]() {
 		m_visualizeVXGI = !m_visualizeVXGI;
 	};
-	g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_G, ButtonStatus::PRESSED }, &f_toggleVisualizeVXGI);
+	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_G, ButtonStatus::PRESSED }, &f_toggleVisualizeVXGI);
 
 	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 

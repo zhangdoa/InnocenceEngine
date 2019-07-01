@@ -14,9 +14,9 @@
 #include "../ComponentManager/SphereLightComponentManager.h"
 #include "../ComponentManager/CameraComponentManager.h"
 #include "../SceneHierarchyManager/SceneHierarchyManager.h"
-#include "../GameSystem/AssetSystem.h"
+#include "../AssetSystem/AssetSystem.h"
 #include "../PhysicsSystem/PhysicsSystem.h"
-#include "../GameSystem/InputSystem.h"
+#include "../Core/EventSystem.h"
 #include "../RenderingFrontend/RenderingFrontend.h"
 #if defined INNO_PLATFORM_WIN
 #include "../Platform/WinWindow/WinWindowSystem.h"
@@ -137,7 +137,7 @@ INNO_PRIVATE_SCOPE InnoModuleManagerNS
 	std::unique_ptr<ISceneHierarchyManager> m_SceneHierarchyManager;
 	std::unique_ptr<IAssetSystem> m_AssetSystem;
 	std::unique_ptr<IPhysicsSystem> m_PhysicsSystem;
-	std::unique_ptr<IInputSystem> m_InputSystem;
+	std::unique_ptr<IEventSystem> m_EventSystem;
 	std::unique_ptr<IWindowSystem> m_WindowSystem;
 	std::unique_ptr<IRenderingFrontend> m_RenderingFrontend;
 	std::unique_ptr<IRenderingBackend> m_RenderingBackend;
@@ -276,7 +276,7 @@ bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook
 	createSubSystemInstanceDefi(SceneHierarchyManager);
 	createSubSystemInstanceDefi(AssetSystem);
 	createSubSystemInstanceDefi(PhysicsSystem);
-	createSubSystemInstanceDefi(InputSystem);
+	createSubSystemInstanceDefi(EventSystem);
 
 	std::string l_windowArguments = pScmdline;
 	m_initConfig = parseInitConfig(l_windowArguments);
@@ -396,7 +396,7 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	f_toggleshowImGui = [&]() {
 		m_showImGui = !m_showImGui;
 	};
-	g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_I, ButtonStatus::PRESSED }, &f_toggleshowImGui);
+	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_I, ButtonStatus::PRESSED }, &f_toggleshowImGui);
 
 	if (!m_WindowSystem->setup(appHook, extraHook))
 	{
@@ -445,7 +445,7 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "SceneHierarchyManager setup finished.");
 
 	subSystemSetup(PhysicsSystem);
-	subSystemSetup(InputSystem);
+	subSystemSetup(EventSystem);
 
 	if (!m_GameInstance->setup())
 	{
@@ -487,7 +487,7 @@ bool InnoModuleManagerNS::initialize()
 
 	subSystemInit(AssetSystem);
 	subSystemInit(PhysicsSystem);
-	subSystemInit(InputSystem);
+	subSystemInit(EventSystem);
 
 	m_WindowSystem->initialize();
 	m_RenderingBackend->initialize();
@@ -536,7 +536,7 @@ bool InnoModuleManagerNS::update()
 
 		subSystemUpdate(AssetSystem);
 		subSystemUpdate(PhysicsSystem);
-		subSystemUpdate(InputSystem);
+		subSystemUpdate(EventSystem);
 
 		if (m_WindowSystem->getStatus() == ObjectStatus::Activated)
 		{
@@ -618,7 +618,7 @@ bool InnoModuleManagerNS::terminate()
 		return false;
 	}
 
-	subSystemTerm(InputSystem);
+	subSystemTerm(EventSystem);
 	subSystemTerm(PhysicsSystem);
 	subSystemTerm(AssetSystem);
 
@@ -695,7 +695,7 @@ subSystemGetDefi(EntityManager);
 subSystemGetDefi(SceneHierarchyManager);
 subSystemGetDefi(AssetSystem);
 subSystemGetDefi(PhysicsSystem);
-subSystemGetDefi(InputSystem);
+subSystemGetDefi(EventSystem);
 
 IWindowSystem * InnoModuleManager::getWindowSystem()
 {

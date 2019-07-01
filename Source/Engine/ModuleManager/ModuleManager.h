@@ -24,7 +24,7 @@ public:
 	ISceneHierarchyManager* getSceneHierarchyManager() override;
 	IAssetSystem* getAssetSystem() override;
 	IPhysicsSystem* getPhysicsSystem() override;
-	IInputSystem* getInputSystem() override;
+	IEventSystem* getEventSystem() override;
 	IWindowSystem* getWindowSystem() override;
 	IRenderingFrontend* getRenderingFrontend() override;
 	IRenderingBackend* getRenderingBackend() override;

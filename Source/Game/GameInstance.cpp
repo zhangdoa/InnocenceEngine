@@ -91,18 +91,18 @@ bool PlayerComponentCollection::setup()
 		f_rotateAroundPositiveYAxis = std::bind(&rotateAroundPositiveYAxis, std::placeholders::_1);
 		f_rotateAroundRightAxis = std::bind(&rotateAroundRightAxis, std::placeholders::_1);
 
-		g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_S, ButtonStatus::PRESSED }, &f_moveForward);
-		g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_W, ButtonStatus::PRESSED }, &f_moveBackward);
-		g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_A, ButtonStatus::PRESSED }, &f_moveLeft);
-		g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_D, ButtonStatus::PRESSED }, &f_moveRight);
+		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_S, ButtonStatus::PRESSED }, &f_moveForward);
+		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_W, ButtonStatus::PRESSED }, &f_moveBackward);
+		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_A, ButtonStatus::PRESSED }, &f_moveLeft);
+		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_D, ButtonStatus::PRESSED }, &f_moveRight);
 
-		g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_SPACE, ButtonStatus::PRESSED }, &f_speedUp);
-		g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_SPACE, ButtonStatus::RELEASED }, &f_speedDown);
+		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_SPACE, ButtonStatus::PRESSED }, &f_speedUp);
+		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_SPACE, ButtonStatus::RELEASED }, &f_speedDown);
 
-		g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::PRESSED }, &f_allowMove);
-		g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::RELEASED }, &f_forbidMove);
-		g_pModuleManager->getInputSystem()->addMouseMovementCallback(0, &f_rotateAroundPositiveYAxis);
-		g_pModuleManager->getInputSystem()->addMouseMovementCallback(1, &f_rotateAroundRightAxis);
+		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::PRESSED }, &f_allowMove);
+		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::RELEASED }, &f_forbidMove);
+		g_pModuleManager->getEventSystem()->addMouseMovementCallback(0, &f_rotateAroundPositiveYAxis);
+		g_pModuleManager->getEventSystem()->addMouseMovementCallback(1, &f_rotateAroundRightAxis);
 
 		m_initialMoveSpeed = 0.5f;
 		m_moveSpeed = m_initialMoveSpeed;
@@ -471,7 +471,7 @@ bool GameInstanceNS::initialize()
 {
 	f_testFunc = []() {	g_pModuleManager->getFileSystem()->loadScene("Res//Scenes//animationTest.InnoScene");
 	};
-	g_pModuleManager->getInputSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_R, ButtonStatus::PRESSED }, &f_testFunc);
+	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_R, ButtonStatus::PRESSED }, &f_testFunc);
 	return true;
 }
 

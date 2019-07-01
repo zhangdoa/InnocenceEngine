@@ -162,9 +162,6 @@ struct ButtonHasher
 	}
 };
 
-using ButtonStatusCallbackMap = std::unordered_map<ButtonData, std::vector<std::function<void()>*>, ButtonHasher>;
-using MouseMovementCallbackMap = std::unordered_map<int, std::vector<std::function<void(float)>*>>;
-
 enum class LogType { INNO_DEV_VERBOSE, INNO_WARNING, INNO_ERROR, INNO_DEV_SUCCESS };
 
 #define INNO_KEY_SPACE              32
