@@ -40,7 +40,6 @@ namespace InnoPhysicsSystemNS
 
 	void updateCameraComponents();
 	void updateLightComponents();
-	void updateVisibleComponents();
 	void updateCulling();
 	void updateVisibleSceneBoundary(const AABB& rhs);
 	void updateTotalSceneBoundary(const AABB& rhs);
@@ -59,8 +58,6 @@ namespace InnoPhysicsSystemNS
 
 	std::atomic<bool> m_isCullingDataPackValid = false;
 	ThreadSafeVector<CullingDataPack> m_cullingDataPack;
-
-	VisibleComponent* m_selectedVisibleComponent;
 
 	std::function<void()> f_sceneLoadingStartCallback;
 }
@@ -330,7 +327,7 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 		l_frustumVerticesLS[i].m_pos = InnoMath::mul(l_lightRotMat, l_frustumVerticesLS[i].m_pos);
 #endif
-}
+	}
 
 	//5.calculate AABBs in light space
 	auto l_AABBsLS = splitVerticesToAABBs(l_frustumVerticesLS, l_CSMSplitFactors);
@@ -616,10 +613,6 @@ void InnoPhysicsSystemNS::updateLightComponents()
 	}
 }
 
-void InnoPhysicsSystemNS::updateVisibleComponents()
-{
-}
-
 template<class T>
 bool intersectCheck(const TFrustum<T> & lhs, const TAABB<T> & rhs)
 {
@@ -806,10 +799,6 @@ bool InnoPhysicsSystemNS::update()
 	//{
 	updateLightComponents();
 	//});
-	g_pModuleManager->getTaskSystem()->submit("VisibleComponentsUpdateTask", [&]()
-	{
-		updateVisibleComponents();
-	});
 	g_pModuleManager->getTaskSystem()->submit("CullingTask", [&]()
 	{
 		updateCulling();
