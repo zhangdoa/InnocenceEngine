@@ -2,6 +2,10 @@
 #include "../Common/CommonMacro.inl"
 #include "../ComponentManager/ITransformComponentManager.h"
 #include "../ComponentManager/IVisibleComponentManager.h"
+#include "../ComponentManager/IDirectionalLightComponentManager.h"
+#include "../ComponentManager/IPointLightComponentManager.h"
+#include "../ComponentManager/ISpotLightComponentManager.h"
+#include "../ComponentManager/ISphereLightComponentManager.h"
 
 #include "../ModuleManager/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
@@ -11,28 +15,13 @@ extern IModuleManager* g_pModuleManager;
 
 INNO_PRIVATE_SCOPE InnoFileSystemNS::JSONParser
 {
-	template<typename T>
-	inline bool loadComponentData(const json& j, const InnoEntity* entity)
+	#define LoadComponentData(className, j, entity) \
+	{ auto l_result = SpawnComponent(className, entity, ObjectSource::Asset, ObjectUsage::Gameplay); \
+	from_json(j, *l_result); }
+
+	bool loadComponentData(const json& j, const InnoEntity* entity)
 	{
-		auto l_result = g_pModuleManager->getGameSystem()->spawn<T>(entity, ObjectSource::Asset, ObjectUsage::Gameplay);
-		from_json(j, *l_result);
-
-		return true;
-	}
-
-	template<>
-	inline bool loadComponentData<TransformComponent>(const json& j, const InnoEntity* entity)
-	{
-		auto l_result = SpawnComponent(TransformComponent, entity, ObjectSource::Asset, ObjectUsage::Gameplay);
-		from_json(j, *l_result);
-
-		return true;
-	}
-
-	template<>
-	inline bool loadComponentData<VisibleComponent>(const json& j, const InnoEntity* entity)
-	{
-		auto l_result = SpawnComponent(VisibleComponent, entity, ObjectSource::Asset, ObjectUsage::Gameplay);
+		auto l_result = g_pModuleManager->getGameSystem()->spawn<CameraComponent>(entity, ObjectSource::Asset, ObjectUsage::Gameplay);
 		from_json(j, *l_result);
 
 		return true;
@@ -245,6 +234,20 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const PointLightComponent& p
 	};
 }
 
+void InnoFileSystemNS::JSONParser::to_json(json& j, const SpotLightComponent& p)
+{
+	json color;
+	to_json(color, p.m_color);
+
+	j = json
+	{
+		{"ComponentType", InnoUtility::getComponentType<SpotLightComponent>()},
+		{"LuminousFlux", p.m_luminousFlux},
+		{"Color", color},
+		{"CutoffAngle", p.m_cutoffAngle},
+	};
+}
+
 void InnoFileSystemNS::JSONParser::to_json(json& j, const SphereLightComponent& p)
 {
 	json color;
@@ -253,9 +256,9 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const SphereLightComponent& 
 	j = json
 	{
 		{"ComponentType", InnoUtility::getComponentType<SphereLightComponent>()},
-		{"SphereRadius", p.m_sphereRadius},
 		{"LuminousFlux", p.m_luminousFlux},
 		{"Color", color},
+		{"SphereRadius", p.m_sphereRadius},
 	};
 }
 
@@ -330,8 +333,8 @@ void InnoFileSystemNS::JSONParser::from_json(const json & j, vec4 & p)
 void InnoFileSystemNS::JSONParser::from_json(const json & j, DirectionalLightComponent & p)
 {
 	p.m_luminousFlux = j["LuminousFlux"];
-	p.m_drawAABB = j["drawAABB"];
 	from_json(j["Color"], p.m_color);
+	p.m_drawAABB = j["drawAABB"];
 }
 
 void InnoFileSystemNS::JSONParser::from_json(const json & j, PointLightComponent & p)
@@ -340,11 +343,18 @@ void InnoFileSystemNS::JSONParser::from_json(const json & j, PointLightComponent
 	from_json(j["Color"], p.m_color);
 }
 
+void InnoFileSystemNS::JSONParser::from_json(const json & j, SpotLightComponent & p)
+{
+	p.m_luminousFlux = j["LuminousFlux"];
+	from_json(j["Color"], p.m_color);
+	p.m_cutoffAngle = j["CutoffAngle"];
+}
+
 void InnoFileSystemNS::JSONParser::from_json(const json & j, SphereLightComponent & p)
 {
 	p.m_luminousFlux = j["LuminousFlux"];
-	p.m_sphereRadius = j["SphereRadius"];
 	from_json(j["Color"], p.m_color);
+	p.m_sphereRadius = j["SphereRadius"];
 }
 
 void InnoFileSystemNS::JSONParser::from_json(const json& j, CameraComponent& p)
@@ -677,21 +687,21 @@ bool InnoFileSystemNS::JSONParser::saveScene(const std::string& fileName)
 			saveComponentData(topLevel, i);
 		}
 	}
-	for (auto i : g_pModuleManager->getGameSystem()->get<DirectionalLightComponent>())
+	for (auto i : GetComponentManager(DirectionalLightComponent)->GetAllComponents())
 	{
 		if (i->m_objectSource == ObjectSource::Asset)
 		{
 			saveComponentData(topLevel, i);
 		}
 	}
-	for (auto i : g_pModuleManager->getGameSystem()->get<PointLightComponent>())
+	for (auto i : GetComponentManager(PointLightComponent)->GetAllComponents())
 	{
 		if (i->m_objectSource == ObjectSource::Asset)
 		{
 			saveComponentData(topLevel, i);
 		}
 	}
-	for (auto i : g_pModuleManager->getGameSystem()->get<SphereLightComponent>())
+	for (auto i : GetComponentManager(SphereLightComponent)->GetAllComponents())
 	{
 		if (i->m_objectSource == ObjectSource::Asset)
 		{
@@ -733,17 +743,19 @@ bool InnoFileSystemNS::JSONParser::loadScene(const std::string & fileName)
 		{
 			switch (ComponentType(k["ComponentType"]))
 			{
-			case ComponentType::TransformComponent: loadComponentData<TransformComponent>(k, l_entity);
+			case ComponentType::TransformComponent: LoadComponentData(TransformComponent, k, l_entity);
 				break;
-			case ComponentType::VisibleComponent: loadComponentData<VisibleComponent>(k, l_entity);
+			case ComponentType::VisibleComponent: LoadComponentData(VisibleComponent, k, l_entity);
 				break;
-			case ComponentType::DirectionalLightComponent: loadComponentData<DirectionalLightComponent>(k, l_entity);
+			case ComponentType::DirectionalLightComponent: LoadComponentData(DirectionalLightComponent, k, l_entity);
 				break;
-			case ComponentType::PointLightComponent: loadComponentData<PointLightComponent>(k, l_entity);
+			case ComponentType::PointLightComponent: LoadComponentData(PointLightComponent, k, l_entity);
 				break;
-			case ComponentType::SphereLightComponent: loadComponentData<SphereLightComponent>(k, l_entity);
+			case ComponentType::SpotLightComponent: LoadComponentData(SpotLightComponent, k, l_entity);
 				break;
-			case ComponentType::CameraComponent: loadComponentData<CameraComponent>(k, l_entity);
+			case ComponentType::SphereLightComponent: LoadComponentData(SphereLightComponent, k, l_entity);
+				break;
+			case ComponentType::CameraComponent: loadComponentData(k, l_entity);
 				break;
 			case ComponentType::PhysicsDataComponent:
 				break;

@@ -63,7 +63,7 @@
           "ParentTransformComponentEntityName": "RootTransform"
         },
         {
-          "ComponentType": 5,
+          "ComponentType": 6,
           "FOVX": 90.0,
           "widthScale": 16.0,
           "heightScale": 9.0,

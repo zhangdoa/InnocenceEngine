@@ -36,7 +36,7 @@ using EntityID = FixedSizeString<32>;
 using ComponentName = FixedSizeString<128>;
 using EntityName = FixedSizeString<128>;
 
-enum class ComponentType { TransformComponent, VisibleComponent, DirectionalLightComponent, PointLightComponent, SphereLightComponent, CameraComponent, PhysicsDataComponent, MeshDataComponent, MaterialDataComponent, TextureDataComponent };
+enum class ComponentType { TransformComponent, VisibleComponent, DirectionalLightComponent, PointLightComponent, SpotLightComponent, SphereLightComponent, CameraComponent, PhysicsDataComponent, MeshDataComponent, MaterialDataComponent, TextureDataComponent };
 
 using ComponentMetadataPair = std::pair<ComponentType, ComponentName>;
 using ComponentMetadataMap = std::unordered_map<void*, ComponentMetadataPair>;

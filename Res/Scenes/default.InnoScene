@@ -63,7 +63,7 @@
           "ParentTransformComponentEntityName": "RootTransform"
         },
         {
-          "ComponentType": 5,
+          "ComponentType": 6,
           "FOVX": 90.0,
           "widthScale": 16.0,
           "heightScale": 9.0,
@@ -334,7 +334,7 @@
             "Y": 1.0,
             "X": 1.0
           },
-          "ComponentType": 4,
+          "ComponentType": 5,
           "LuminousFlux": 40.0,
           "SphereRadius": 4.0
         }

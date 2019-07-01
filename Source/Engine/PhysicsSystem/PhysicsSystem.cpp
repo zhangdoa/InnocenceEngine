@@ -2,6 +2,9 @@
 #include "../Common/CommonMacro.inl"
 #include "../ComponentManager/ITransformComponentManager.h"
 #include "../ComponentManager/IVisibleComponentManager.h"
+#include "../ComponentManager/IDirectionalLightComponentManager.h"
+#include "../ComponentManager/IPointLightComponentManager.h"
+#include "../ComponentManager/ISphereLightComponentManager.h"
 
 #include "../Common/InnoMathHelper.h"
 
@@ -599,15 +602,15 @@ void InnoPhysicsSystemNS::updateCameraComponents()
 
 void InnoPhysicsSystemNS::updateLightComponents()
 {
-	for (auto& i : g_pModuleManager->getGameSystem()->get<DirectionalLightComponent>())
+	for (auto& i : GetComponentManager(DirectionalLightComponent)->GetAllComponents())
 	{
 		generateAABB(i);
 	}
-	for (auto& i : g_pModuleManager->getGameSystem()->get<PointLightComponent>())
+	for (auto& i : GetComponentManager(PointLightComponent)->GetAllComponents())
 	{
 		generatePointLightComponentAttenuationRadius(i);
 	}
-	for (auto& i : g_pModuleManager->getGameSystem()->get<SphereLightComponent>())
+	for (auto& i : GetComponentManager(SphereLightComponent)->GetAllComponents())
 	{
 		generateSphereLightComponentScale(i);
 	}

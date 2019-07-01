@@ -2,6 +2,8 @@
 #include "../../Engine/Common/CommonMacro.inl"
 #include "../../Engine/ComponentManager/ITransformComponentManager.h"
 #include "../../Engine/ComponentManager/IVisibleComponentManager.h"
+#include "../../Engine/ComponentManager/IPointLightComponentManager.h"
+#include "../../Engine/ComponentManager/ISphereLightComponentManager.h"
 
 #include "../../Engine/ModuleManager/IModuleManager.h"
 
@@ -402,7 +404,7 @@ bool GameInstanceNS::setupPointLights()
 		g_pModuleManager->getComponentManager(ComponentType::TransformComponent);
 		m_pointLightTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_pointLightTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_pointLightComponents[i] = g_pModuleManager->getGameSystem()->spawn<PointLightComponent>(m_pointLightEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_pointLightComponents[i] = SpawnComponent(PointLightComponent, m_pointLightEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_pointLightComponents[i]->m_luminousFlux = 100.0f;
 		m_pointLightComponents[i]->m_color = vec4(l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), 1.0f);
 	}

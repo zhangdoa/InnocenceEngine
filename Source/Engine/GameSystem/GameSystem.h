@@ -31,34 +31,16 @@ public:
 
 	ObjectStatus getStatus() override;
 
-	spawnComponentImplDecl(DirectionalLightComponent);
-	spawnComponentImplDecl(PointLightComponent);
-	spawnComponentImplDecl(SphereLightComponent);
 	spawnComponentImplDecl(CameraComponent);
 
-	registerComponentImplDecl(DirectionalLightComponent);
-	registerComponentImplDecl(PointLightComponent);
-	registerComponentImplDecl(SphereLightComponent);
 	registerComponentImplDecl(CameraComponent);
 
-	destroyComponentImplDecl(DirectionalLightComponent);
-	destroyComponentImplDecl(PointLightComponent);
-	destroyComponentImplDecl(SphereLightComponent);
 	destroyComponentImplDecl(CameraComponent);
 
-	unregisterComponentImplDecl(DirectionalLightComponent);
-	unregisterComponentImplDecl(PointLightComponent);
-	unregisterComponentImplDecl(SphereLightComponent);
 	unregisterComponentImplDecl(CameraComponent);
 
-	getComponentImplDecl(DirectionalLightComponent);
-	getComponentImplDecl(PointLightComponent);
-	getComponentImplDecl(SphereLightComponent);
 	getComponentImplDecl(CameraComponent);
 
-	getComponentContainerImplDecl(DirectionalLightComponent);
-	getComponentContainerImplDecl(PointLightComponent);
-	getComponentContainerImplDecl(SphereLightComponent);
 	getComponentContainerImplDecl(CameraComponent);
 
 	std::string getGameName() override;

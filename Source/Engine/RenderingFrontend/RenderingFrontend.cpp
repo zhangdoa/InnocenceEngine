@@ -2,6 +2,9 @@
 #include "../Common/CommonMacro.inl"
 #include "../ComponentManager/ITransformComponentManager.h"
 #include "../ComponentManager/IVisibleComponentManager.h"
+#include "../ComponentManager/IDirectionalLightComponentManager.h"
+#include "../ComponentManager/IPointLightComponentManager.h"
+#include "../ComponentManager/ISphereLightComponentManager.h"
 
 #include "../ModuleManager/IModuleManager.h"
 
@@ -311,7 +314,7 @@ bool InnoRenderingFrontendNS::updateSunData()
 	m_isSunDataPackValid = false;
 	m_isCSMDataPackValid = false;
 
-	auto l_directionalLightComponents = g_pModuleManager->getGameSystem()->get<DirectionalLightComponent>();
+	auto l_directionalLightComponents = GetComponentManager(DirectionalLightComponent)->GetAllComponents();
 	auto l_directionalLight = l_directionalLightComponents[0];
 	auto l_directionalLightTransformComponent = GetComponent(TransformComponent, l_directionalLight->m_parentEntity);
 
@@ -350,7 +353,7 @@ bool InnoRenderingFrontendNS::updateSunData()
 
 bool InnoRenderingFrontendNS::updateLightData()
 {
-	auto& l_pointLightComponents = g_pModuleManager->getGameSystem()->get<PointLightComponent>();
+	auto& l_pointLightComponents = GetComponentManager(PointLightComponent)->GetAllComponents();
 	for (size_t i = 0; i < l_pointLightComponents.size(); i++)
 	{
 		PointLightGPUData l_PointLightGPUData;
@@ -360,7 +363,7 @@ bool InnoRenderingFrontendNS::updateLightData()
 		m_pointLightGPUData[i] = l_PointLightGPUData;
 	}
 
-	auto& l_sphereLightComponents = g_pModuleManager->getGameSystem()->get<SphereLightComponent>();
+	auto& l_sphereLightComponents = GetComponentManager(SphereLightComponent)->GetAllComponents();
 	for (size_t i = 0; i < l_sphereLightComponents.size(); i++)
 	{
 		SphereLightGPUData l_SphereLightGPUData;
@@ -476,7 +479,7 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 
 	m_billboardPassGPUData.clear();
 
-	for (auto i : g_pModuleManager->getGameSystem()->get<DirectionalLightComponent>())
+	for (auto i : GetComponentManager(DirectionalLightComponent)->GetAllComponents())
 	{
 		BillboardPassGPUData l_billboardPAssGPUData;
 		l_billboardPAssGPUData.globalPos = GetComponent(TransformComponent, i->m_parentEntity)->m_globalTransformVector.m_pos;
@@ -487,7 +490,7 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 		l_index++;
 	}
 
-	for (auto i : g_pModuleManager->getGameSystem()->get<PointLightComponent>())
+	for (auto i : GetComponentManager(PointLightComponent)->GetAllComponents())
 	{
 		BillboardPassGPUData l_billboardPAssGPUData;
 		l_billboardPAssGPUData.globalPos = GetComponent(TransformComponent, i->m_parentEntity)->m_globalTransformVector.m_pos;
@@ -498,7 +501,7 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 		l_index++;
 	}
 
-	for (auto i : g_pModuleManager->getGameSystem()->get<SphereLightComponent>())
+	for (auto i : GetComponentManager(SphereLightComponent)->GetAllComponents())
 	{
 		BillboardPassGPUData l_billboardPAssGPUData;
 		l_billboardPAssGPUData.globalPos = GetComponent(TransformComponent, i->m_parentEntity)->m_globalTransformVector.m_pos;

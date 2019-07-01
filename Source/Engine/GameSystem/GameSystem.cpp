@@ -27,20 +27,10 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 	bool setup();
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
-	void* m_DirectionalLightComponentPool;
-	void* m_PointLightComponentPool;
-	void* m_SphereLightComponentPool;
 	void* m_CameraComponentPool;
-	void* m_EnvironmentCaptureComponentPool;
 
-	ThreadSafeVector<DirectionalLightComponent*> m_DirectionalLightComponents;
-	ThreadSafeVector<PointLightComponent*> m_PointLightComponents;
-	ThreadSafeVector<SphereLightComponent*> m_SphereLightComponents;
 	ThreadSafeVector<CameraComponent*> m_CameraComponents;
 
-	ThreadSafeUnorderedMap<InnoEntity*, DirectionalLightComponent*> m_DirectionalLightComponentsMap;
-	ThreadSafeUnorderedMap<InnoEntity*, PointLightComponent*> m_PointLightComponentsMap;
-	ThreadSafeUnorderedMap<InnoEntity*, SphereLightComponent*> m_SphereLightComponentsMap;
 	ThreadSafeUnorderedMap<InnoEntity*, CameraComponent*> m_CameraComponentsMap;
 
 	EntityChildrenComponentsMetadataMap m_entityChildrenComponentsMetadataMap;
@@ -54,9 +44,6 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 bool InnoGameSystemNS::setup()
 {
 	// allocate memory pool
-	m_DirectionalLightComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(DirectionalLightComponent), 16);
-	m_PointLightComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(PointLightComponent), 1024);
-	m_SphereLightComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(SphereLightComponent), 128);
 	m_CameraComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(CameraComponent), 64);
 
 	return true;
@@ -70,9 +57,6 @@ bool InnoGameSystem::setup()
 	}
 
 	InnoGameSystemNS::f_sceneLoadingStartCallback = [&]() {
-		cleanContainers(DirectionalLightComponent);
-		cleanContainers(PointLightComponent);
-		cleanContainers(SphereLightComponent);
 		cleanContainers(CameraComponent);
 	};
 
@@ -147,9 +131,6 @@ className* InnoGameSystem::spawn##className(const InnoEntity* parentEntity, Obje
 	} \
 }
 
-spawnComponentImplDefi(DirectionalLightComponent)
-spawnComponentImplDefi(PointLightComponent)
-spawnComponentImplDefi(SphereLightComponent)
 spawnComponentImplDefi(CameraComponent)
 
 #define destroyComponentImplDefi( className ) \
@@ -160,9 +141,6 @@ bool InnoGameSystem::destroy(className* rhs) \
 	return g_pModuleManager->getMemorySystem()->destroyObject(InnoGameSystemNS::m_##className##Pool, sizeof(className), (void*)rhs); \
 }
 
-destroyComponentImplDefi(DirectionalLightComponent)
-destroyComponentImplDefi(PointLightComponent)
-destroyComponentImplDefi(SphereLightComponent)
 destroyComponentImplDefi(CameraComponent)
 
 #define registerComponentImplDefi( className ) \
@@ -189,9 +167,6 @@ void InnoGameSystem::registerComponent(className* rhs, const InnoEntity* parentE
 	} \
 }
 
-registerComponentImplDefi(DirectionalLightComponent)
-registerComponentImplDefi(PointLightComponent)
-registerComponentImplDefi(SphereLightComponent)
 registerComponentImplDefi(CameraComponent)
 
 #define  unregisterComponentImplDefi( className ) \
@@ -212,9 +187,6 @@ void InnoGameSystem::unregisterComponent(className* rhs) \
 	}\
 }
 
-unregisterComponentImplDefi(DirectionalLightComponent)
-unregisterComponentImplDefi(PointLightComponent)
-unregisterComponentImplDefi(SphereLightComponent)
 unregisterComponentImplDefi(CameraComponent)
 
 #define getComponentImplDefi( className ) \
@@ -233,9 +205,6 @@ className* InnoGameSystem::get##className(const InnoEntity* parentEntity) \
 	} \
 }
 
-getComponentImplDefi(DirectionalLightComponent)
-getComponentImplDefi(PointLightComponent)
-getComponentImplDefi(SphereLightComponent)
 getComponentImplDefi(CameraComponent)
 
 #define getComponentContainerImplDefi( className ) \
@@ -244,9 +213,6 @@ std::vector<className*>& InnoGameSystem::get##className##s() \
 	return InnoGameSystemNS::m_##className##s.getRawData(); \
 }
 
-getComponentContainerImplDefi(DirectionalLightComponent)
-getComponentContainerImplDefi(PointLightComponent)
-getComponentContainerImplDefi(SphereLightComponent)
 getComponentContainerImplDefi(CameraComponent)
 
 std::string InnoGameSystem::getGameName()

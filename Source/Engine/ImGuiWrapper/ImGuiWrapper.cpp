@@ -478,6 +478,7 @@ void ImGuiWrapperNS::showWorldExplorer()
 			case ComponentType::VisibleComponent: showVisiableComponentPropertyEditor(selectedComponent); break;
 			case ComponentType::DirectionalLightComponent: showDirectionalLightComponentPropertyEditor(selectedComponent); break;
 			case ComponentType::PointLightComponent: showPointLightComponentPropertyEditor(selectedComponent); break;
+			case ComponentType::SpotLightComponent: break;
 			case ComponentType::SphereLightComponent: showSphereLightComponentPropertyEditor(selectedComponent); break;
 			default:
 				break;

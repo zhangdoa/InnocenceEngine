@@ -3,6 +3,7 @@
 #include "../Component/VisibleComponent.h"
 #include "../Component/DirectionalLightComponent.h"
 #include "../Component/PointLightComponent.h"
+#include "../Component/SpotLightComponent.h"
 #include "../Component/SphereLightComponent.h"
 #include "../Component/CameraComponent.h"
 #include "../Component/PhysicsDataComponent.h"
@@ -52,6 +53,8 @@ getClassNameTemplate(DirectionalLightComponent);
 template<>
 getClassNameTemplate(PointLightComponent);
 template<>
+getClassNameTemplate(SpotLightComponent);
+template<>
 getClassNameTemplate(SphereLightComponent);
 template<>
 getClassNameTemplate(CameraComponent);
@@ -72,6 +75,8 @@ template<>
 getComponentTypeDefi(DirectionalLightComponent);
 template<>
 getComponentTypeDefi(PointLightComponent);
+template<>
+getComponentTypeDefi(SpotLightComponent);
 template<>
 getComponentTypeDefi(SphereLightComponent);
 template<>

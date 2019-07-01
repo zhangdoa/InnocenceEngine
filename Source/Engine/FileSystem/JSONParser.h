@@ -21,6 +21,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 		void to_json(json& j, const vec4& p);
 		void to_json(json& j, const DirectionalLightComponent& p);
 		void to_json(json& j, const PointLightComponent& p);
+		void to_json(json& j, const SpotLightComponent& p);
 		void to_json(json& j, const SphereLightComponent& p);
 		void to_json(json& j, const CameraComponent& p);
 
@@ -30,6 +31,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 		void from_json(const json& j, vec4& p);
 		void from_json(const json& j, DirectionalLightComponent& p);
 		void from_json(const json& j, PointLightComponent& p);
+		void from_json(const json& j, SpotLightComponent& p);
 		void from_json(const json& j, SphereLightComponent& p);
 		void from_json(const json& j, CameraComponent& p);
 

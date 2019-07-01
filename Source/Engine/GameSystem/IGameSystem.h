@@ -47,34 +47,16 @@ public:
 	virtual ObjectStatus getStatus() = 0;
 
 protected:
-	spawnComponentInterfaceDecl(DirectionalLightComponent);
-	spawnComponentInterfaceDecl(PointLightComponent);
-	spawnComponentInterfaceDecl(SphereLightComponent);
 	spawnComponentInterfaceDecl(CameraComponent);
 
-	registerComponentInterfaceDecl(DirectionalLightComponent);
-	registerComponentInterfaceDecl(PointLightComponent);
-	registerComponentInterfaceDecl(SphereLightComponent);
 	registerComponentInterfaceDecl(CameraComponent);
 
-	destroyComponentInterfaceDecl(DirectionalLightComponent);
-	destroyComponentInterfaceDecl(PointLightComponent);
-	destroyComponentInterfaceDecl(SphereLightComponent);
 	destroyComponentInterfaceDecl(CameraComponent);
 
-	unregisterComponentInterfaceDecl(DirectionalLightComponent);
-	unregisterComponentInterfaceDecl(PointLightComponent);
-	unregisterComponentInterfaceDecl(SphereLightComponent);
 	unregisterComponentInterfaceDecl(CameraComponent);
 
-	getComponentInterfaceDecl(DirectionalLightComponent);
-	getComponentInterfaceDecl(PointLightComponent);
-	getComponentInterfaceDecl(SphereLightComponent);
 	getComponentInterfaceDecl(CameraComponent);
 
-	getComponentContainerInterfaceDecl(DirectionalLightComponent);
-	getComponentContainerInterfaceDecl(PointLightComponent);
-	getComponentContainerInterfaceDecl(SphereLightComponent);
 	getComponentContainerInterfaceDecl(CameraComponent);
 
 public:
@@ -106,39 +88,9 @@ public:
 	virtual std::string getGameName() = 0;
 };
 
-template <> inline DirectionalLightComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
-{
-	return spawnComponentInterfaceCall(DirectionalLightComponent, parentEntity, objectSource, objectUsage);
-};
-
-template <> inline PointLightComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
-{
-	return spawnComponentInterfaceCall(PointLightComponent, parentEntity, objectSource, objectUsage);
-};
-
-template <> inline SphereLightComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
-{
-	return spawnComponentInterfaceCall(SphereLightComponent, parentEntity, objectSource, objectUsage);
-};
-
 template <> inline CameraComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
 {
 	return spawnComponentInterfaceCall(CameraComponent, parentEntity, objectSource, objectUsage);
-};
-
-template <> inline bool IGameSystem::destroy(DirectionalLightComponent* rhs)
-{
-	return destroyComponentInterfaceCall(rhs);
-};
-
-template <> inline bool IGameSystem::destroy(PointLightComponent* rhs)
-{
-	return destroyComponentInterfaceCall(rhs);
-};
-
-template <> inline bool IGameSystem::destroy(SphereLightComponent* rhs)
-{
-	return destroyComponentInterfaceCall(rhs);
 };
 
 template <> inline bool IGameSystem::destroy(CameraComponent* rhs)
@@ -146,39 +98,9 @@ template <> inline bool IGameSystem::destroy(CameraComponent* rhs)
 	return destroyComponentInterfaceCall(rhs);
 };
 
-template <> inline DirectionalLightComponent * IGameSystem::get(const InnoEntity* parentEntity)
-{
-	return getComponentInterfaceCall(DirectionalLightComponent, parentEntity);
-};
-
-template <> inline PointLightComponent * IGameSystem::get(const InnoEntity* parentEntity)
-{
-	return getComponentInterfaceCall(PointLightComponent, parentEntity);
-};
-
-template <> inline SphereLightComponent * IGameSystem::get(const InnoEntity* parentEntity)
-{
-	return getComponentInterfaceCall(SphereLightComponent, parentEntity);
-};
-
 template <> inline CameraComponent * IGameSystem::get(const InnoEntity* parentEntity)
 {
 	return getComponentInterfaceCall(CameraComponent, parentEntity);
-};
-
-template <> inline std::vector<DirectionalLightComponent*>& IGameSystem::get()
-{
-	return getComponentContainerInterfaceCall(DirectionalLightComponent);
-};
-
-template <> inline std::vector<PointLightComponent*>& IGameSystem::get()
-{
-	return getComponentContainerInterfaceCall(PointLightComponent);
-};
-
-template <> inline std::vector<SphereLightComponent*>& IGameSystem::get()
-{
-	return getComponentContainerInterfaceCall(SphereLightComponent);
 };
 
 template <> inline std::vector<CameraComponent*>& IGameSystem::get()

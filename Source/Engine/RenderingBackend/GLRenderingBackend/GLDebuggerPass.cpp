@@ -2,6 +2,7 @@
 #include "../../Common/CommonMacro.inl"
 #include "../../ComponentManager/ITransformComponentManager.h"
 #include "../../ComponentManager/IVisibleComponentManager.h"
+#include "../../ComponentManager/IDirectionalLightComponentManager.h"
 
 #include "GLOpaquePass.h"
 
@@ -215,7 +216,7 @@ bool GLDebuggerPass::drawDebugObjects()
 
 	if (l_drawCSMAABBRange)
 	{
-		auto l_directionalLightComponents = g_pModuleManager->getGameSystem()->get<DirectionalLightComponent>();
+		auto l_directionalLightComponents = GetComponentManager(DirectionalLightComponent)->GetAllComponents();
 		auto l_directionalLight = l_directionalLightComponents[0];
 
 		for (auto i : l_directionalLight->m_AABBsInWorldSpace)
