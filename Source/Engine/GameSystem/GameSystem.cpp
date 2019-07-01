@@ -27,20 +27,17 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 	bool setup();
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
-	void* m_VisibleComponentPool;
 	void* m_DirectionalLightComponentPool;
 	void* m_PointLightComponentPool;
 	void* m_SphereLightComponentPool;
 	void* m_CameraComponentPool;
 	void* m_EnvironmentCaptureComponentPool;
 
-	ThreadSafeVector<VisibleComponent*> m_VisibleComponents;
 	ThreadSafeVector<DirectionalLightComponent*> m_DirectionalLightComponents;
 	ThreadSafeVector<PointLightComponent*> m_PointLightComponents;
 	ThreadSafeVector<SphereLightComponent*> m_SphereLightComponents;
 	ThreadSafeVector<CameraComponent*> m_CameraComponents;
 
-	ThreadSafeUnorderedMap<InnoEntity*, VisibleComponent*> m_VisibleComponentsMap;
 	ThreadSafeUnorderedMap<InnoEntity*, DirectionalLightComponent*> m_DirectionalLightComponentsMap;
 	ThreadSafeUnorderedMap<InnoEntity*, PointLightComponent*> m_PointLightComponentsMap;
 	ThreadSafeUnorderedMap<InnoEntity*, SphereLightComponent*> m_SphereLightComponentsMap;
@@ -57,7 +54,6 @@ INNO_PRIVATE_SCOPE InnoGameSystemNS
 bool InnoGameSystemNS::setup()
 {
 	// allocate memory pool
-	m_VisibleComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(VisibleComponent), 16384);
 	m_DirectionalLightComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(DirectionalLightComponent), 16);
 	m_PointLightComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(PointLightComponent), 1024);
 	m_SphereLightComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(SphereLightComponent), 128);
@@ -74,7 +70,6 @@ bool InnoGameSystem::setup()
 	}
 
 	InnoGameSystemNS::f_sceneLoadingStartCallback = [&]() {
-		cleanContainers(VisibleComponent);
 		cleanContainers(DirectionalLightComponent);
 		cleanContainers(PointLightComponent);
 		cleanContainers(SphereLightComponent);
@@ -152,7 +147,6 @@ className* InnoGameSystem::spawn##className(const InnoEntity* parentEntity, Obje
 	} \
 }
 
-spawnComponentImplDefi(VisibleComponent)
 spawnComponentImplDefi(DirectionalLightComponent)
 spawnComponentImplDefi(PointLightComponent)
 spawnComponentImplDefi(SphereLightComponent)
@@ -166,7 +160,6 @@ bool InnoGameSystem::destroy(className* rhs) \
 	return g_pModuleManager->getMemorySystem()->destroyObject(InnoGameSystemNS::m_##className##Pool, sizeof(className), (void*)rhs); \
 }
 
-destroyComponentImplDefi(VisibleComponent)
 destroyComponentImplDefi(DirectionalLightComponent)
 destroyComponentImplDefi(PointLightComponent)
 destroyComponentImplDefi(SphereLightComponent)
@@ -196,7 +189,6 @@ void InnoGameSystem::registerComponent(className* rhs, const InnoEntity* parentE
 	} \
 }
 
-registerComponentImplDefi(VisibleComponent)
 registerComponentImplDefi(DirectionalLightComponent)
 registerComponentImplDefi(PointLightComponent)
 registerComponentImplDefi(SphereLightComponent)
@@ -220,7 +212,6 @@ void InnoGameSystem::unregisterComponent(className* rhs) \
 	}\
 }
 
-unregisterComponentImplDefi(VisibleComponent)
 unregisterComponentImplDefi(DirectionalLightComponent)
 unregisterComponentImplDefi(PointLightComponent)
 unregisterComponentImplDefi(SphereLightComponent)
@@ -242,7 +233,6 @@ className* InnoGameSystem::get##className(const InnoEntity* parentEntity) \
 	} \
 }
 
-getComponentImplDefi(VisibleComponent)
 getComponentImplDefi(DirectionalLightComponent)
 getComponentImplDefi(PointLightComponent)
 getComponentImplDefi(SphereLightComponent)
@@ -254,7 +244,6 @@ std::vector<className*>& InnoGameSystem::get##className##s() \
 	return InnoGameSystemNS::m_##className##s.getRawData(); \
 }
 
-getComponentContainerImplDefi(VisibleComponent)
 getComponentContainerImplDefi(DirectionalLightComponent)
 getComponentContainerImplDefi(PointLightComponent)
 getComponentContainerImplDefi(SphereLightComponent)

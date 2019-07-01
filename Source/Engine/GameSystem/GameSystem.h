@@ -31,37 +31,31 @@ public:
 
 	ObjectStatus getStatus() override;
 
-	spawnComponentImplDecl(VisibleComponent);
 	spawnComponentImplDecl(DirectionalLightComponent);
 	spawnComponentImplDecl(PointLightComponent);
 	spawnComponentImplDecl(SphereLightComponent);
 	spawnComponentImplDecl(CameraComponent);
 
-	registerComponentImplDecl(VisibleComponent);
 	registerComponentImplDecl(DirectionalLightComponent);
 	registerComponentImplDecl(PointLightComponent);
 	registerComponentImplDecl(SphereLightComponent);
 	registerComponentImplDecl(CameraComponent);
 
-	destroyComponentImplDecl(VisibleComponent);
 	destroyComponentImplDecl(DirectionalLightComponent);
 	destroyComponentImplDecl(PointLightComponent);
 	destroyComponentImplDecl(SphereLightComponent);
 	destroyComponentImplDecl(CameraComponent);
 
-	unregisterComponentImplDecl(VisibleComponent);
 	unregisterComponentImplDecl(DirectionalLightComponent);
 	unregisterComponentImplDecl(PointLightComponent);
 	unregisterComponentImplDecl(SphereLightComponent);
 	unregisterComponentImplDecl(CameraComponent);
 
-	getComponentImplDecl(VisibleComponent);
 	getComponentImplDecl(DirectionalLightComponent);
 	getComponentImplDecl(PointLightComponent);
 	getComponentImplDecl(SphereLightComponent);
 	getComponentImplDecl(CameraComponent);
 
-	getComponentContainerImplDecl(VisibleComponent);
 	getComponentContainerImplDecl(DirectionalLightComponent);
 	getComponentContainerImplDecl(PointLightComponent);
 	getComponentContainerImplDecl(SphereLightComponent);

@@ -1,6 +1,7 @@
 #include "RenderingFrontend.h"
 #include "../Common/CommonMacro.inl"
 #include "../ComponentManager/ITransformComponentManager.h"
+#include "../ComponentManager/IVisibleComponentManager.h"
 
 #include "../ModuleManager/IModuleManager.h"
 
@@ -526,7 +527,8 @@ bool InnoRenderingFrontendNS::gatherStaticMeshData()
 {
 	unsigned int l_index = 0;
 
-	for (auto visibleComponent : g_pModuleManager->getGameSystem()->get<VisibleComponent>())
+	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
+	for (auto visibleComponent : l_visibleComponents)
 	{
 		if (visibleComponent->m_visiblilityType == VisiblilityType::INNO_OPAQUE
 			&& visibleComponent->m_objectStatus == ObjectStatus::Activated

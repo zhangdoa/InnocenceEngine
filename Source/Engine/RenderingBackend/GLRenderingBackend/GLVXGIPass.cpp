@@ -1,6 +1,7 @@
 #include "GLVXGIPass.h"
 #include "../../Common/CommonMacro.inl"
 #include "../../ComponentManager/ITransformComponentManager.h"
+#include "../../ComponentManager/IVisibleComponentManager.h"
 
 #include "GLRenderingBackendUtilities.h"
 
@@ -217,7 +218,9 @@ void GLVXGIPass::updateVoxelizationPass()
 		updateUniform(GLint(4 + i), m_VP_inv[i]);
 	}
 
-	for (auto& l_visibleComponent : g_pModuleManager->getGameSystem()->get<VisibleComponent>())
+	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
+
+	for (auto& l_visibleComponent : l_visibleComponents)
 	{
 		if (l_visibleComponent->m_visiblilityType == VisiblilityType::INNO_OPAQUE && l_visibleComponent->m_objectStatus == ObjectStatus::Activated)
 		{

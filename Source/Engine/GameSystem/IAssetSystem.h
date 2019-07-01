@@ -21,8 +21,6 @@ public:
 
 	virtual TextureDataComponent* loadTexture(const std::string& fileName, TextureSamplerType samplerType, TextureUsageType usageType) = 0;
 
-	virtual void loadAssetsForComponents() = 0;
-
 	virtual void addUnitCube(MeshDataComponent& meshDataComponent) = 0;
 	virtual void addUnitSphere(MeshDataComponent& meshDataComponent) = 0;
 	virtual void addUnitQuad(MeshDataComponent& meshDataComponent) = 0;

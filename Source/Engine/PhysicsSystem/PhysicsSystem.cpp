@@ -1,6 +1,8 @@
 #include "PhysicsSystem.h"
 #include "../Common/CommonMacro.inl"
 #include "../ComponentManager/ITransformComponentManager.h"
+#include "../ComponentManager/IVisibleComponentManager.h"
+
 #include "../Common/InnoMathHelper.h"
 
 #if defined INNO_PLATFORM_WIN
@@ -328,7 +330,7 @@ void InnoPhysicsSystemNS::generateAABB(DirectionalLightComponent* directionalLig
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 		l_frustumVerticesLS[i].m_pos = InnoMath::mul(l_lightRotMat, l_frustumVerticesLS[i].m_pos);
 #endif
-	}
+}
 
 	//5.calculate AABBs in light space
 	auto l_AABBsLS = splitVerticesToAABBs(l_frustumVerticesLS, l_CSMSplitFactors);
@@ -671,7 +673,8 @@ void InnoPhysicsSystemNS::updateCulling()
 		auto l_cameraFrustum = l_mainCamera->m_frustum;
 		auto l_eyeRay = l_mainCamera->m_rayOfEye;
 
-		for (auto visibleComponent : g_pModuleManager->getGameSystem()->get<VisibleComponent>())
+		auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
+		for (auto visibleComponent : l_visibleComponents)
 		{
 			if (visibleComponent->m_visiblilityType != VisiblilityType::INNO_INVISIBLE && visibleComponent->m_objectStatus == ObjectStatus::Activated)
 			{

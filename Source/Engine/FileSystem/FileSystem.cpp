@@ -1,7 +1,8 @@
 #include "FileSystem.h"
-
+#include "../Common/CommonMacro.inl"
 #include "../Component/MeshDataComponent.h"
 #include "../Component/TextureDataComponent.h"
+#include "../ComponentManager/IVisibleComponentManager.h"
 
 #include "../ModuleManager/IModuleManager.h"
 
@@ -19,8 +20,6 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 	bool saveScene(const std::string& fileName);
 	bool prepareForLoadingScene(const std::string& fileName);
 	bool loadScene(const std::string& fileName);
-
-	bool loadAssets();
 
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
@@ -97,14 +96,7 @@ bool InnoFileSystemNS::loadScene(const std::string& fileName)
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem: scene " + fileName + " has been loaded.");
 
-	loadAssets();
-
-	return true;
-}
-
-bool InnoFileSystemNS::loadAssets()
-{
-	g_pModuleManager->getAssetSystem()->loadAssetsForComponents();
+	GetComponentManager(VisibleComponent)->LoadAssetsForComponents();
 
 	return true;
 }

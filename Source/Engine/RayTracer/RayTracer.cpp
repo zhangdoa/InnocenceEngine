@@ -2,6 +2,7 @@
 #include "../Core/InnoLogger.h"
 #include "../Common/CommonMacro.inl"
 #include "../ComponentManager/ITransformComponentManager.h"
+#include "../ComponentManager/IVisibleComponentManager.h"
 
 #include "../ModuleManager/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
@@ -248,10 +249,12 @@ bool ExecuteRayTracing()
 
 	RayTracingCamera l_rayTracingCamera(l_lookfrom, l_lookat, l_up, l_vfov, l_camera->m_WHRatio, 0.1f, 10.0f);
 
-	std::vector<Hitable*> l_hitableListVector;
-	l_hitableListVector.reserve(g_pModuleManager->getGameSystem()->get<VisibleComponent>().size());
+	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
 
-	for (auto l_visibleComponent : g_pModuleManager->getGameSystem()->get<VisibleComponent>())
+	std::vector<Hitable*> l_hitableListVector;
+	l_hitableListVector.reserve(l_visibleComponents.size());
+
+	for (auto l_visibleComponent : l_visibleComponents)
 	{
 		auto l_transformComponent = GetComponent(TransformComponent, l_visibleComponent->m_parentEntity);
 		if (l_visibleComponent->m_meshShapeType == MeshShapeType::CUBE)

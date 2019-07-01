@@ -15,8 +15,6 @@ public:
 
 	TextureDataComponent* loadTexture(const std::string& fileName, TextureSamplerType samplerType, TextureUsageType usageType) override;
 
-	void loadAssetsForComponents() override;
-
 	void addUnitCube(MeshDataComponent& meshDataComponent) override;
 	void addUnitSphere(MeshDataComponent& meshDataComponent) override;
 	void addUnitQuad(MeshDataComponent& meshDataComponent) override;

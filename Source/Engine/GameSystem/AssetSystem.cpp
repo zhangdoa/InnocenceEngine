@@ -7,10 +7,6 @@ extern IModuleManager* g_pModuleManager;
 
 INNO_PRIVATE_SCOPE InnoAssetSystemNS
 {
-	void loadAssetsForComponents();
-
-	void assignUnitMesh(MeshShapeType MeshUsageType, VisibleComponent* visibleComponent);
-
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
 	DirectoryMetadata m_rootDirectoryMetadata;
@@ -60,11 +56,6 @@ bool InnoAssetSystem::terminate()
 ObjectStatus InnoAssetSystem::getStatus()
 {
 	return InnoAssetSystemNS::m_objectStatus;
-}
-
-void InnoAssetSystem::loadAssetsForComponents()
-{
-	InnoAssetSystemNS::loadAssetsForComponents();
 }
 
 DirectoryMetadata* InnoAssetSystem::getRootDirectoryMetadata()
@@ -275,52 +266,6 @@ void InnoAssetSystem::addTerrain(MeshDataComponent& meshDataComponent)
 		}
 	}
 	meshDataComponent.m_indicesSize = meshDataComponent.m_indices.size();
-}
-
-void InnoAssetSystemNS::loadAssetsForComponents()
-{
-	for (auto l_visibleComponent : g_pModuleManager->getGameSystem()->get<VisibleComponent>())
-	{
-		if (l_visibleComponent->m_visiblilityType != VisiblilityType::INNO_INVISIBLE)
-		{
-			if (l_visibleComponent->m_meshShapeType == MeshShapeType::CUSTOM)
-			{
-				if (!l_visibleComponent->m_modelFileName.empty())
-				{
-					g_pModuleManager->getTaskSystem()->submit("LoadAssetTask", [=]()
-					{
-						l_visibleComponent->m_modelMap = g_pModuleManager->getFileSystem()->loadModel(l_visibleComponent->m_modelFileName);
-						g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(l_visibleComponent);
-						l_visibleComponent->m_objectStatus = ObjectStatus::Activated;
-					});
-				}
-			}
-			else
-			{
-				g_pModuleManager->getTaskSystem()->submit("LoadAssetTask", [=]()
-				{
-					assignUnitMesh(l_visibleComponent->m_meshShapeType, l_visibleComponent);
-					g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(l_visibleComponent);
-					l_visibleComponent->m_objectStatus = ObjectStatus::Activated;
-				});
-			}
-		}
-	}
-}
-
-void InnoAssetSystemNS::assignUnitMesh(MeshShapeType meshUsageType, VisibleComponent* visibleComponent)
-{
-	if (meshUsageType != MeshShapeType::CUSTOM)
-	{
-		auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(meshUsageType);
-		auto l_material = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
-		l_material->m_objectStatus = ObjectStatus::Created;
-		visibleComponent->m_modelMap.emplace(l_mesh, l_material);
-	}
-	else
-	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: don't assign unit mesh to a custom mesh shape component!");
-	}
 }
 
 TextureDataComponent* InnoAssetSystem::loadTexture(const std::string& fileName, TextureSamplerType samplerType, TextureUsageType usageType)

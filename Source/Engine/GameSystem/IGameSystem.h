@@ -47,37 +47,31 @@ public:
 	virtual ObjectStatus getStatus() = 0;
 
 protected:
-	spawnComponentInterfaceDecl(VisibleComponent);
 	spawnComponentInterfaceDecl(DirectionalLightComponent);
 	spawnComponentInterfaceDecl(PointLightComponent);
 	spawnComponentInterfaceDecl(SphereLightComponent);
 	spawnComponentInterfaceDecl(CameraComponent);
 
-	registerComponentInterfaceDecl(VisibleComponent);
 	registerComponentInterfaceDecl(DirectionalLightComponent);
 	registerComponentInterfaceDecl(PointLightComponent);
 	registerComponentInterfaceDecl(SphereLightComponent);
 	registerComponentInterfaceDecl(CameraComponent);
 
-	destroyComponentInterfaceDecl(VisibleComponent);
 	destroyComponentInterfaceDecl(DirectionalLightComponent);
 	destroyComponentInterfaceDecl(PointLightComponent);
 	destroyComponentInterfaceDecl(SphereLightComponent);
 	destroyComponentInterfaceDecl(CameraComponent);
 
-	unregisterComponentInterfaceDecl(VisibleComponent);
 	unregisterComponentInterfaceDecl(DirectionalLightComponent);
 	unregisterComponentInterfaceDecl(PointLightComponent);
 	unregisterComponentInterfaceDecl(SphereLightComponent);
 	unregisterComponentInterfaceDecl(CameraComponent);
 
-	getComponentInterfaceDecl(VisibleComponent);
 	getComponentInterfaceDecl(DirectionalLightComponent);
 	getComponentInterfaceDecl(PointLightComponent);
 	getComponentInterfaceDecl(SphereLightComponent);
 	getComponentInterfaceDecl(CameraComponent);
 
-	getComponentContainerInterfaceDecl(VisibleComponent);
 	getComponentContainerInterfaceDecl(DirectionalLightComponent);
 	getComponentContainerInterfaceDecl(PointLightComponent);
 	getComponentContainerInterfaceDecl(SphereLightComponent);
@@ -112,11 +106,6 @@ public:
 	virtual std::string getGameName() = 0;
 };
 
-template <> inline VisibleComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
-{
-	return spawnComponentInterfaceCall(VisibleComponent, parentEntity, objectSource, objectUsage);
-};
-
 template <> inline DirectionalLightComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
 {
 	return spawnComponentInterfaceCall(DirectionalLightComponent, parentEntity, objectSource, objectUsage);
@@ -135,11 +124,6 @@ template <> inline SphereLightComponent * IGameSystem::spawn(const InnoEntity* p
 template <> inline CameraComponent * IGameSystem::spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
 {
 	return spawnComponentInterfaceCall(CameraComponent, parentEntity, objectSource, objectUsage);
-};
-
-template <> inline bool IGameSystem::destroy(VisibleComponent* rhs)
-{
-	return destroyComponentInterfaceCall(rhs);
 };
 
 template <> inline bool IGameSystem::destroy(DirectionalLightComponent* rhs)
@@ -162,11 +146,6 @@ template <> inline bool IGameSystem::destroy(CameraComponent* rhs)
 	return destroyComponentInterfaceCall(rhs);
 };
 
-template <> inline VisibleComponent * IGameSystem::get(const InnoEntity* parentEntity)
-{
-	return getComponentInterfaceCall(VisibleComponent, parentEntity);
-};
-
 template <> inline DirectionalLightComponent * IGameSystem::get(const InnoEntity* parentEntity)
 {
 	return getComponentInterfaceCall(DirectionalLightComponent, parentEntity);
@@ -185,11 +164,6 @@ template <> inline SphereLightComponent * IGameSystem::get(const InnoEntity* par
 template <> inline CameraComponent * IGameSystem::get(const InnoEntity* parentEntity)
 {
 	return getComponentInterfaceCall(CameraComponent, parentEntity);
-};
-
-template <> inline std::vector<VisibleComponent*>& IGameSystem::get()
-{
-	return getComponentContainerInterfaceCall(VisibleComponent);
 };
 
 template <> inline std::vector<DirectionalLightComponent*>& IGameSystem::get()

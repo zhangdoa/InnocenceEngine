@@ -1,6 +1,7 @@
 #include "GLDebuggerPass.h"
 #include "../../Common/CommonMacro.inl"
 #include "../../ComponentManager/ITransformComponentManager.h"
+#include "../../ComponentManager/IVisibleComponentManager.h"
 
 #include "GLOpaquePass.h"
 
@@ -51,7 +52,7 @@ bool GLDebuggerPass::initialize()
 
 		m_pickedID = (unsigned int)l_pixelValue.z;
 
-		auto l_visibleComponents = g_pModuleManager->getGameSystem()->get<VisibleComponent>();
+		auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
 		auto l_findResult =
 			std::find_if(l_visibleComponents.begin(), l_visibleComponents.end(), [&](auto& val) -> bool {
 			return val->m_UUID == m_pickedID;
@@ -231,7 +232,9 @@ bool GLDebuggerPass::drawDebugObjects()
 	static bool l_drawSkeleton = true;
 	if (l_drawSkeleton)
 	{
-		for (auto i : g_pModuleManager->getGameSystem()->get<VisibleComponent>())
+		auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
+
+		for (auto i : l_visibleComponents)
 		{
 			if (i->m_meshUsageType == MeshUsageType::SKELETAL)
 			{

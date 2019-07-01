@@ -7,6 +7,7 @@
 #include "../FileSystem/FileSystem.h"
 #include "../EntityManager/EntityManager.h"
 #include "../ComponentManager/TransformComponentManager.h"
+#include "../ComponentManager/VisibleComponentManager.h"
 #include "../GameSystem/GameSystem.h"
 #include "../GameSystem/AssetSystem.h"
 #include "../PhysicsSystem/PhysicsSystem.h"
@@ -95,6 +96,7 @@ INNO_PRIVATE_SCOPE InnoModuleManagerNS
 
 	std::unique_ptr<IEntityManager> m_EntityManager;
 	std::unique_ptr<ITransformComponentManager> m_TransformComponentManager;
+	std::unique_ptr<IVisibleComponentManager> m_VisibleComponentManager;
 
 	std::unique_ptr<IGameSystem> m_GameSystem;
 	std::unique_ptr<IAssetSystem> m_AssetSystem;
@@ -227,6 +229,7 @@ bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook
 
 	createSubSystemInstanceDefi(EntityManager);
 	createSubSystemInstanceDefi(TransformComponentManager);
+	createSubSystemInstanceDefi(VisibleComponentManager);
 
 	createSubSystemInstanceDefi(GameSystem);
 	createSubSystemInstanceDefi(AssetSystem);
@@ -390,6 +393,12 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	}
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "TransformComponentManager setup finished.");
 
+	if (!m_VisibleComponentManager->Setup())
+	{
+		return false;
+	}
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VisibleComponentManager setup finished.");
+
 	subSystemSetup(GameSystem);
 	subSystemSetup(PhysicsSystem);
 	subSystemSetup(InputSystem);
@@ -420,6 +429,11 @@ bool InnoModuleManagerNS::initialize()
 	}
 
 	if (!m_TransformComponentManager->Initialize())
+	{
+		return false;
+	}
+
+	if (!m_VisibleComponentManager->Initialize())
 	{
 		return false;
 	}
@@ -467,6 +481,10 @@ bool InnoModuleManagerNS::update()
 			return false;
 		}
 		if (!m_TransformComponentManager->Simulate())
+		{
+			return false;
+		}
+		if (!m_VisibleComponentManager->Simulate())
 		{
 			return false;
 		}
@@ -561,6 +579,11 @@ bool InnoModuleManagerNS::terminate()
 	subSystemTerm(AssetSystem);
 	subSystemTerm(GameSystem);
 
+	if (!m_VisibleComponentManager->Terminate())
+	{
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VisibleComponentManager can't be terminated!");
+		return false;
+	}
 	if (!m_TransformComponentManager->Terminate())
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "TransformComponentManager can't be terminated!");
@@ -656,6 +679,7 @@ IComponentManager * InnoModuleManager::getComponentManager(ComponentType compone
 		l_result = m_TransformComponentManager.get();
 		break;
 	case ComponentType::VisibleComponent:
+		l_result = m_VisibleComponentManager.get();
 		break;
 	case ComponentType::DirectionalLightComponent:
 		break;

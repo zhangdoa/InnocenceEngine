@@ -1,6 +1,7 @@
 #include "JSONParser.h"
 #include "../Common/CommonMacro.inl"
 #include "../ComponentManager/ITransformComponentManager.h"
+#include "../ComponentManager/IVisibleComponentManager.h"
 
 #include "../ModuleManager/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
@@ -23,6 +24,15 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS::JSONParser
 	inline bool loadComponentData<TransformComponent>(const json& j, const InnoEntity* entity)
 	{
 		auto l_result = SpawnComponent(TransformComponent, entity, ObjectSource::Asset, ObjectUsage::Gameplay);
+		from_json(j, *l_result);
+
+		return true;
+	}
+
+	template<>
+	inline bool loadComponentData<VisibleComponent>(const json& j, const InnoEntity* entity)
+	{
+		auto l_result = SpawnComponent(VisibleComponent, entity, ObjectSource::Asset, ObjectUsage::Gameplay);
 		from_json(j, *l_result);
 
 		return true;
@@ -660,7 +670,7 @@ bool InnoFileSystemNS::JSONParser::saveScene(const std::string& fileName)
 			saveComponentData(topLevel, i);
 		}
 	}
-	for (auto i : g_pModuleManager->getGameSystem()->get<VisibleComponent>())
+	for (auto i : GetComponentManager(VisibleComponent)->GetAllComponents())
 	{
 		if (i->m_objectSource == ObjectSource::Asset)
 		{

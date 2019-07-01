@@ -1,6 +1,7 @@
 #include "GameInstance.h"
 #include "../../Engine/Common/CommonMacro.inl"
 #include "../../Engine/ComponentManager/ITransformComponentManager.h"
+#include "../../Engine/ComponentManager/IVisibleComponentManager.h"
 
 #include "../../Engine/ModuleManager/IModuleManager.h"
 
@@ -226,7 +227,7 @@ bool GameInstanceNS::setupReferenceSpheres()
 		m_referenceSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_referenceSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_referenceSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_referenceSphereVisibleComponents[i] = g_pModuleManager->getGameSystem()->spawn<VisibleComponent>(m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_referenceSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_referenceSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
 		m_referenceSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::SPHERE;
 		m_referenceSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::DYNAMIC;
@@ -279,7 +280,7 @@ bool GameInstanceNS::setupOpaqueSpheres()
 		m_opaqueSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_opaqueSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_opaqueSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_opaqueSphereVisibleComponents[i] = g_pModuleManager->getGameSystem()->spawn<VisibleComponent>(m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_opaqueSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_opaqueSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
 		m_opaqueSphereVisibleComponents[i]->m_meshShapeType = (i & 0x00000001) ? MeshShapeType::SPHERE : MeshShapeType::CUBE;
 		m_opaqueSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::DYNAMIC;
@@ -342,7 +343,7 @@ bool GameInstanceNS::setupTransparentSpheres()
 		m_transparentSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_transparentSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_transparentSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_transparentSphereVisibleComponents[i] = g_pModuleManager->getGameSystem()->spawn<VisibleComponent>(m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_transparentSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_transparentSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_TRANSPARENT;
 		m_transparentSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::SPHERE;
 		m_transparentSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::DYNAMIC;
