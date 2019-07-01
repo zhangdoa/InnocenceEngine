@@ -22,6 +22,7 @@ m_ComponentsMap.erase_if([&](auto val) { return val.second->m_objectUsage == Obj
 	{ \
 		auto l_parentEntity = const_cast<InnoEntity*>(parentEntity); \
 		l_Component->m_parentEntity = l_parentEntity; \
+		l_Component->m_ComponentType = ComponentType::className; \
 		l_Component->m_objectStatus = ObjectStatus::Created; \
 		l_Component->m_objectSource = objectSource; \
 		l_Component->m_objectUsage = objectUsage; \
