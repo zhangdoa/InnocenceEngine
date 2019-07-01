@@ -188,7 +188,7 @@ bool ImGuiWrapper::update()
 		{
 			ImGuiWrapperNS::showApplicationProfiler();
 			//ImGuiWrapperNS::showFileExplorer();
-			//ImGuiWrapperNS::showWorldExplorer();
+			ImGuiWrapperNS::showWorldExplorer();
 		}
 		ImGui::Render();
 		ImGuiWrapperNS::m_wrapperImpl->render();
@@ -434,37 +434,32 @@ void ImGuiWrapperNS::showSceneLoadingPopWindow(bool &l_popMenuOpened, std::strin
 
 void ImGuiWrapperNS::showWorldExplorer()
 {
-	ImGui::Begin("World Explorer", 0);
-
 	static void* selectedComponent = nullptr;
 	static ComponentType selectedComponentType;
 
-	//auto l_entityChildrenComponentsMetadataMap = g_pModuleManager->getGameSystem()->getEntityChildrenComponentsMetadataMap();
+	ImGui::Begin("World Explorer", 0);
+	{
+		auto l_sceneHierarchyMap = g_pModuleManager->getSceneHierarchyManager()->GetSceneHierarchyMap();
 
-	//for (auto i : l_entities)
-	//{
-	//	if (i->m_objectSource == ObjectSource::Asset)
-	//	{
-	//		if (ImGui::TreeNode(i->m_entityName.c_str()))
-	//		{
-	//			auto result = l_entityChildrenComponentsMetadataMap.find(i);
-	//			if (result != l_entityChildrenComponentsMetadataMap.end())
-	//			{
-	//				auto& l_componentNameMap = result->second;
-
-	//				for (auto& j : l_componentNameMap)
-	//				{
-	//					if (ImGui::Selectable(j.second.second.c_str(), selectedComponent == j.first))
-	//					{
-	//						selectedComponent = j.first;
-	//						selectedComponentType = j.second.first;
-	//					}
-	//				}
-	//			}
-	//			ImGui::TreePop();
-	//		}
-	//	}
-	//}
+		for (auto& i : l_sceneHierarchyMap)
+		{
+			if (i.first->m_objectSource == ObjectSource::Asset)
+			{
+				if (ImGui::TreeNode(i.first->m_entityName.c_str()))
+				{
+					for (auto& j : i.second)
+					{
+						if (ImGui::Selectable(j->m_componentName.c_str(), selectedComponent == j))
+						{
+							selectedComponent = j;
+							selectedComponentType = j->m_ComponentType;
+						}
+					}
+					ImGui::TreePop();
+				}
+			}
+		}
+	}
 	ImGui::End();
 
 	ImGui::Begin("Property Editor", 0);

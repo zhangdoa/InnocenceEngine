@@ -4,7 +4,7 @@
 #include "../Common/InnoEntity.h"
 #include "../Common/InnoComponent.h"
 
-using SceneHierarchyMap = std::unordered_multimap<InnoEntity*, InnoComponent*>;
+using SceneHierarchyMap = std::unordered_map<InnoEntity*, std::set<InnoComponent*>>;
 
 INNO_INTERFACE ISceneHierarchyManager
 {

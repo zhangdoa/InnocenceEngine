@@ -14,33 +14,27 @@ void InnoWorldExplorer::buildTree()
     m_rootItem->setText(0, "Entities");
     this->addTopLevelItem(m_rootItem);
 
-    auto l_entitySet = g_pModuleManager->getGameSystem()->getEntities();
-    auto l_entityChildrenComponentsMetadataMap = g_pModuleManager->getGameSystem()->getEntityChildrenComponentsMetadataMap();
+    auto l_sceneHierarchyMap = g_pModuleManager->getSceneHierarchyManager()->GetSceneHierarchyMap();
 
-    for (auto i : l_entitySet)
+    for (auto& i : l_sceneHierarchyMap)
     {
-        if(i->m_objectSource == ObjectSource::Asset)
+        if (i.first->m_objectSource == ObjectSource::Asset)
         {
             QTreeWidgetItem* l_entityItem = new QTreeWidgetItem();
-            l_entityItem->setText(0, i->m_entityName.c_str());
+            l_entityItem->setText(0, i.first->m_entityName.c_str());
+            // Data slot 0 is ComponentType (-1 as the entity), slot 1 is the component ptr
             l_entityItem->setData(0, Qt::UserRole, QVariant(-1));
 
             addChild(m_rootItem, l_entityItem);
 
-            auto result = l_entityChildrenComponentsMetadataMap.find(i);
-            if (result != l_entityChildrenComponentsMetadataMap.end())
+            for (auto& j : i.second)
             {
-                auto& l_componentMetadataMap = result->second;
+                QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
+                l_componentItem->setText(0, j->m_componentName.c_str());
 
-                for (auto& j : l_componentMetadataMap)
-                {
-                    auto& l_componentMetapair = j.second;
-                    QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
-                    l_componentItem->setText(0, l_componentMetapair.second.c_str());
-                    l_componentItem->setData(0, Qt::UserRole, QVariant((int)l_componentMetapair.first));
-                    l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue(j.first));
-                    addChild(l_entityItem, l_componentItem);
-                }
+                l_componentItem->setData(0, Qt::UserRole, QVariant((int)j->m_ComponentType));
+                l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)j));
+                addChild(l_entityItem, l_componentItem);
             }
         }
     }
