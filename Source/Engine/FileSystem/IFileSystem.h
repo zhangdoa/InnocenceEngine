@@ -32,7 +32,7 @@ public:
 	virtual std::vector<char> loadBinaryFile(const std::string& fileName) = 0;
 
 	virtual bool loadScene(const std::string& fileName) = 0;
-	virtual bool saveScene(const std::string& fileName) = 0;
+	virtual bool saveScene(const std::string& fileName = "") = 0;
 	virtual bool isLoadingScene() = 0;
 
 	virtual bool addSceneLoadingStartCallback(std::function<void()>* functor) = 0;

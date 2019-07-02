@@ -57,7 +57,14 @@ bool InnoFileSystemNS::convertModel(const std::string & fileName, const std::str
 
 bool InnoFileSystemNS::saveScene(const std::string& fileName)
 {
-	return JSONParser::saveScene(fileName);
+	if (fileName.empty())
+	{
+		return JSONParser::saveScene(m_currentScene);
+	}
+	else
+	{
+		return JSONParser::saveScene(fileName);
+	}
 }
 
 bool InnoFileSystemNS::prepareForLoadingScene(const std::string& fileName)
