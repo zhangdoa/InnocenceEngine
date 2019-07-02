@@ -16,5 +16,6 @@ public:
 	bool generatePhysicsDataComponent(MeshDataComponent* MDC) override;
 	bool generatePhysicsDataComponent(VisibleComponent* VC) override;
 	std::optional<std::vector<CullingDataPack>> getCullingDataPack() override;
-	AABB getSceneAABB() override;
+	AABB getVisibleSceneAABB() override;
+	AABB getTotalSceneAABB() override;
 };

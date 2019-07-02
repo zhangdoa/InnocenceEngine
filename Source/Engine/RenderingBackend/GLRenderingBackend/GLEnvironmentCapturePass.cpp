@@ -74,7 +74,6 @@ bool GLEnvironmentCapturePass::initialize()
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
 
 	m_capturedCubemaps.reserve(m_totalCubemaps);
-
 	for (size_t i = 0; i < m_totalCubemaps; i++)
 	{
 		auto l_capturedPassCubemap = addGLTextureDataComponent();
@@ -307,9 +306,6 @@ bool GLEnvironmentCapturePass::sampleSG()
 		l_sampleCoords.emplace_back(l_sampleCoord);
 	}
 
-	std::vector<vec4> l_samples;
-	l_samples.resize(m_sampleCountPerFace * m_sampleCountPerFace * 6);
-
 	auto l_pixelDataFormat = m_capturedCubemaps[0]->m_GLTextureDataDesc.pixelDataFormat;
 	auto l_pixelDataType = m_capturedCubemaps[0]->m_GLTextureDataDesc.pixelDataType;
 
@@ -343,11 +339,13 @@ bool GLEnvironmentCapturePass::update()
 	updateUBO(GLRenderingBackendComponent::get().m_meshUBO, g_pModuleManager->getRenderingFrontend()->getGIPassMeshGPUData());
 	updateUBO(GLRenderingBackendComponent::get().m_materialUBO, g_pModuleManager->getRenderingFrontend()->getGIPassMaterialGPUData());
 
-	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getSceneAABB();
+	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getTotalSceneAABB();
 
-	auto axisSize = l_sceneAABB.m_extend;
-	auto l_voxelSize = axisSize / m_subDivideDimension;
-	auto l_startPos = l_sceneAABB.m_boundMin;
+	auto l_sceneCenter = l_sceneAABB.m_center;
+	auto l_extendedAxisSize = l_sceneAABB.m_extend + vec4(1.0f, 1.0f, 1.0f, 0.0f);
+	l_extendedAxisSize.w = 0.0f;
+	auto l_voxelSize = l_extendedAxisSize / (float)m_subDivideDimension;
+	auto l_startPos = l_sceneAABB.m_center - (l_extendedAxisSize / 2.0f);
 	auto l_currentPos = l_startPos;
 
 	unsigned int l_index = 0;
@@ -360,13 +358,8 @@ bool GLEnvironmentCapturePass::update()
 			l_currentPos.z = l_startPos.z;
 			for (size_t k = 0; k < m_subDivideDimension; k++)
 			{
-				DebuggerPassGPUData l_debuggerPassGPUData = {};
-				l_debuggerPassGPUData.m = InnoMath::toTranslationMatrix(l_currentPos);
-				l_debuggerPassGPUData.MDC = getGLMeshDataComponent(MeshShapeType::SPHERE);
-
 				render(l_currentPos, m_capturedCubemaps[l_index]);
 				l_index++;
-
 				l_currentPos.z += l_voxelSize.z;
 			}
 			l_currentPos.y += l_voxelSize.y;

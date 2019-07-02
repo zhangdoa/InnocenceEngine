@@ -398,9 +398,14 @@ std::optional<std::vector<CullingDataPack>> InnoPhysicsSystem::getCullingDataPac
 	return std::nullopt;
 }
 
-AABB InnoPhysicsSystem::getSceneAABB()
+AABB InnoPhysicsSystem::getVisibleSceneAABB()
 {
 	return InnoPhysicsSystemNS::m_visibleSceneAABB;
+}
+
+AABB InnoPhysicsSystem::getTotalSceneAABB()
+{
+	return InnoPhysicsSystemNS::m_totalSceneAABB;
 }
 
 bool InnoPhysicsSystem::generatePhysicsDataComponent(VisibleComponent * VC)

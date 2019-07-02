@@ -166,7 +166,7 @@ void GLVXGIPass::draw()
 
 void GLVXGIPass::updateVoxelizationPass()
 {
-	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getSceneAABB();
+	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getTotalSceneAABB();
 
 	auto axisSize = l_sceneAABB.m_extend;
 	auto center = l_sceneAABB.m_center;
@@ -253,7 +253,7 @@ void GLVXGIPass::updateIrradianceInjectionPass()
 {
 	glDepthMask(false);
 	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getSceneAABB();
+	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getTotalSceneAABB();
 
 	auto axisSize = l_sceneAABB.m_extend;
 	m_volumeGridSize = std::max(axisSize.x, std::max(axisSize.y, axisSize.z));
@@ -287,7 +287,7 @@ void GLVXGIPass::updateVoxelVisualizationPass()
 	glDepthMask(true);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
-	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getSceneAABB();
+	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getTotalSceneAABB();
 
 	auto axisSize = l_sceneAABB.m_extend;
 	m_volumeGridSize = std::max(axisSize.x, std::max(axisSize.y, axisSize.z));

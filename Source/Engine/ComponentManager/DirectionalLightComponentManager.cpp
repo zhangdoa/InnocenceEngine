@@ -117,7 +117,7 @@ void DirectionalLightComponentManagerNS::UpdateCSMData(DirectionalLightComponent
 	auto l_frustumVerticesVS = InnoMath::generateFrustumVerticesVS(l_cameraComponent->m_projectionMatrix);
 
 	// extend scene AABB to include the bound sphere, for to eliminate rotation conflict
-	auto l_totalSceneAABB = g_pModuleManager->getPhysicsSystem()->getSceneAABB();
+	auto l_totalSceneAABB = g_pModuleManager->getPhysicsSystem()->getVisibleSceneAABB();
 	auto l_sphereRadius = (l_totalSceneAABB.m_boundMax - l_totalSceneAABB.m_center).length();
 	auto l_boundMax = l_totalSceneAABB.m_center + l_sphereRadius;
 	l_boundMax.w = 1.0f;

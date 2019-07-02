@@ -33,5 +33,6 @@ public:
 	virtual bool generatePhysicsDataComponent(MeshDataComponent* MDC) = 0;
 	virtual bool generatePhysicsDataComponent(VisibleComponent* VC) = 0;
 	virtual std::optional<std::vector<CullingDataPack>> getCullingDataPack() = 0;
-	virtual AABB getSceneAABB() = 0;
+	virtual AABB getVisibleSceneAABB() = 0;
+	virtual AABB getTotalSceneAABB() = 0;
 };
