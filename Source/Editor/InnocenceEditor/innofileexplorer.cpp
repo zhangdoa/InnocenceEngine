@@ -23,7 +23,7 @@ void InnoFileExplorer::initialize()
     connect(this, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(DoubleClick(QModelIndex)));
 
     auto l_workingDir = g_pModuleManager->getFileSystem()->getWorkingDirectory();
-    l_workingDir += "res//";
+    l_workingDir += "Res//";
     m_rootDir = l_workingDir.c_str();
 
     SetRootDirectory(m_rootDir.toStdString());
@@ -87,7 +87,7 @@ QString InnoFileExplorer::GetSelectionPath()
                     QMessageBox::Cancel ) )
         {
         case QMessageBox::Yes:
-            g_pModuleManager->getFileSystem()->convertModel("res/" + l_relativePath.toStdString(), "res/convertedAssets/");
+            g_pModuleManager->getFileSystem()->convertModel("Res/" + l_relativePath.toStdString(), "Res/convertedAssets/");
             break;
         case QMessageBox::No:
             break;
@@ -114,7 +114,7 @@ QString InnoFileExplorer::GetSelectionPath()
                     QMessageBox::Cancel ) )
         {
         case QMessageBox::Yes:
-            g_pModuleManager->getFileSystem()->loadScene("res/" + l_relativePath.toStdString());
+            g_pModuleManager->getFileSystem()->loadScene("Res/" + l_relativePath.toStdString());
             break;
         case QMessageBox::No:
             break;
@@ -124,4 +124,9 @@ QString InnoFileExplorer::GetSelectionPath()
             break;
         }
     }
+}
+
+void InnoFileExplorer::SaveScene()
+{
+    g_pModuleManager->getFileSystem()->saveScene();
 }

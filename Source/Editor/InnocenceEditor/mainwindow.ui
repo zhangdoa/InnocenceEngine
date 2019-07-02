@@ -3103,6 +3103,9 @@ QSplitter::handle:vertical
    <class>InnoFileExplorer</class>
    <extends>QListView</extends>
    <header>innofileexplorer.h</header>
+   <slots>
+    <slot>SaveScene()</slot>
+   </slots>
   </customwidget>
   <customwidget>
    <class>InnoRenderConfigurator</class>
@@ -3125,12 +3128,28 @@ QSplitter::handle:vertical
    <slot>UpdateFileExplorer(QModelIndex)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>274</x>
-     <y>660</y>
+     <x>205</x>
+     <y>742</y>
     </hint>
     <hint type="destinationlabel">
-     <x>274</x>
-     <y>660</y>
+     <x>205</x>
+     <y>742</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionSave_Scene</sender>
+   <signal>triggered()</signal>
+   <receiver>listViewInnoFileExplorer</receiver>
+   <slot>SaveScene()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>647</x>
+     <y>646</y>
     </hint>
    </hints>
   </connection>

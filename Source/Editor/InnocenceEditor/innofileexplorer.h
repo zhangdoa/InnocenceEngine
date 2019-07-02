@@ -27,6 +27,7 @@ signals:
 
 public slots:
     void DoubleClick(QModelIndex index);
+    void SaveScene();
 };
 
 #endif // INNOFILEEXPLORER_H
