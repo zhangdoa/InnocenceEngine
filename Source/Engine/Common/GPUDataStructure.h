@@ -31,7 +31,8 @@ struct alignas(16) CSMGPUData
 {
 	mat4 p;
 	mat4 v;
-	vec4 splitCorners;
+	vec4 AABBMax;
+	vec4 AABBMin;
 };
 
 // w component of luminance is attenuationRadius

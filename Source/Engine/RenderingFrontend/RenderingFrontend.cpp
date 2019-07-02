@@ -334,15 +334,9 @@ bool InnoRenderingFrontendNS::updateSunData()
 	{
 		m_CSMGPUData.emplace_back();
 
-		auto l_shadowSplitCorner = vec4(
-			l_directionalLight->m_AABBsInWorldSpace[j].m_boundMin.x,
-			l_directionalLight->m_AABBsInWorldSpace[j].m_boundMin.z,
-			l_directionalLight->m_AABBsInWorldSpace[j].m_boundMax.x,
-			l_directionalLight->m_AABBsInWorldSpace[j].m_boundMax.z
-		);
-
 		m_CSMGPUData[j].p = l_directionalLight->m_projectionMatrices[j];
-		m_CSMGPUData[j].splitCorners = l_shadowSplitCorner;
+		m_CSMGPUData[j].AABBMax = l_directionalLight->m_AABBsInWorldSpace[j].m_boundMax;
+		m_CSMGPUData[j].AABBMin = l_directionalLight->m_AABBsInWorldSpace[j].m_boundMin;
 
 		auto l_lightRotMat = l_directionalLightTransformComponent->m_globalTransformMatrix.m_rotationMat.inverse();
 

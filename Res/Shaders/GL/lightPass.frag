@@ -30,7 +30,8 @@ struct sphereLight {
 struct CSM {
 	mat4 p;
 	mat4 v;
-	vec4 splitCorners;
+	vec4 AABBMax;
+	vec4 AABBMin;
 };
 
 const float eps = 0.00001;
@@ -352,10 +353,12 @@ float ShadowCalculation(float NdotL, vec3 fragPos)
 	int splitIndex = NR_CSM_SPLITS;
 	for (int i = 0; i < NR_CSM_SPLITS; i++)
 	{
-		if (fragPos.x >= uni_CSMs[i].splitCorners.x &&
-			fragPos.z >= uni_CSMs[i].splitCorners.y &&
-			fragPos.x <= uni_CSMs[i].splitCorners.z &&
-			fragPos.z <= uni_CSMs[i].splitCorners.w)
+		if (fragPos.x >= uni_CSMs[i].AABBMin.x &&
+			fragPos.y >= uni_CSMs[i].AABBMin.y &&
+			fragPos.z >= uni_CSMs[i].AABBMin.z &&
+			fragPos.x <= uni_CSMs[i].AABBMax.x &&
+			fragPos.y <= uni_CSMs[i].AABBMax.y &&
+			fragPos.z <= uni_CSMs[i].AABBMax.z)
 		{
 			splitIndex = i;
 			break;
@@ -563,10 +566,12 @@ void main()
 		int splitIndex = NR_CSM_SPLITS;
 		for (int i = 0; i < NR_CSM_SPLITS; i++)
 		{
-			if (FragPos.x >= uni_CSMs[i].splitCorners.x &&
-				FragPos.z >= uni_CSMs[i].splitCorners.y &&
-				FragPos.x <= uni_CSMs[i].splitCorners.z &&
-				FragPos.z <= uni_CSMs[i].splitCorners.w)
+			if (FragPos.x >= uni_CSMs[i].AABBMin.x &&
+				FragPos.y >= uni_CSMs[i].AABBMin.y &&
+				FragPos.z >= uni_CSMs[i].AABBMin.z &&
+				FragPos.x <= uni_CSMs[i].AABBMax.x &&
+				FragPos.y <= uni_CSMs[i].AABBMax.y &&
+				FragPos.z <= uni_CSMs[i].AABBMax.z)
 			{
 				splitIndex = i;
 				break;
