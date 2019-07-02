@@ -9,37 +9,12 @@
 #import "MetalDelegate.h"
 #import <Foundation/Foundation.h>
 #import <simd/simd.h>
+#include "../../../Common/GPUDataStructure.h"
+#include "../../../Component/MTMeshDataComponent.h"
 
-typedef struct {
-    matrix_float4x4 rotationMatrix;
-} Uniforms;
+#include "../../../ModuleManager/IModuleManager.h"
 
-typedef struct {
-    vector_float4 position;
-    vector_float4 color;
-} VertexIn;
-
-static const VertexIn vertexData[] =
-{
-    { { 0.5, -0.5, 0.0, 1.0}, {1.0, 0.0, 0.0, 1.0} },
-    { {-0.5, -0.5, 0.0, 1.0}, {0.0, 1.0, 0.0, 1.0} },
-    { {-0.5,  0.5, 0.0, 1.0}, {0.0, 0.0, 1.0, 1.0} },
-    { { 0.5,  0.5, 0.0, 1.0}, {1.0, 1.0, 0.0, 1.0} },
-    { { 0.5, -0.5, 0.0, 1.0}, {1.0, 0.0, 0.0, 1.0} },
-    { {-0.5,  0.5, 0.0, 1.0}, {0.0, 0.0, 1.0, 1.0} }
-};
-
-static matrix_float4x4 rotationMatrix2D(float radians)
-{
-    float cos = cosf(radians);
-    float sin = sinf(radians);
-    return (matrix_float4x4) {
-        .columns[0] = {  cos, sin, 0, 0 },
-        .columns[1] = { -sin, cos, 0, 0 },
-        .columns[2] = {    0,   0, 1, 0 },
-        .columns[3] = {    0,   0, 0, 1 }
-    };
-}
+extern IModuleManager* g_pModuleManager;
 
 @implementation MetalDelegate
     
@@ -47,10 +22,30 @@ static matrix_float4x4 rotationMatrix2D(float radians)
     MTKView* _view;
     id<MTLLibrary> _library;
     id<MTLRenderPipelineState> _pipelineState;
-    id<MTLBuffer> _vertexBuffer;
-    id<MTLBuffer> _uniformBuffer;
+    id<MTLBuffer> _cameraUBO;
+    id<MTLBuffer> _meshUBO;
     id<MTLCommandQueue> _commandQueue;
-    
+
+    static id<MTLBuffer> createUBO(long size)
+    {
+        return [_device newBufferWithLength:size
+                                    options:MTLResourceCPUCacheModeWriteCombined];
+    }
+
+    static void updateUBO(id<MTLBuffer> ubo, void* data, long size)
+    {
+        void* uniformTgt = [ubo contents];
+        memcpy(uniformTgt, data, size);
+    }
+
+    static void encodeDrawCall(id<MTLRenderCommandEncoder> commandEncoder, MTMeshDataComponent* rhs)
+    {
+        id<MTLBuffer> l_vertexBuffer = (__bridge_transfer id<MTLBuffer>)(rhs->m_VBO);
+        id<MTLBuffer> l_indexBuffer = (__bridge_transfer id<MTLBuffer>)(rhs->m_IBO);
+        [commandEncoder setVertexBuffer:l_vertexBuffer offset:0 atIndex:0];
+        [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount:rhs->m_indicesSize indexType:MTLIndexTypeUInt32 indexBuffer:l_indexBuffer indexBufferOffset:0 instanceCount:1];
+    }
+
     - (void)createDevice
     {
         _device = MTLCreateSystemDefaultDevice();
@@ -100,15 +95,10 @@ static matrix_float4x4 rotationMatrix2D(float radians)
         /*
          * Metal setup: Vertices
          */
-        _vertexBuffer = [_device newBufferWithBytes:vertexData
-                                             length:sizeof(vertexData)
-                                            options:MTLResourceCPUCacheModeDefaultCache];
-        
         /*
          * Metal setup: Uniforms
          */
-        _uniformBuffer = [_device newBufferWithLength:sizeof(Uniforms)
-                                              options:MTLResourceCPUCacheModeWriteCombined];
+        _cameraUBO = createUBO(sizeof(CameraGPUData));
         
         /*
          * Metal setup: Command queue
@@ -129,35 +119,49 @@ static matrix_float4x4 rotationMatrix2D(float radians)
     
 - (void)render
 {
-        double rotationAngle = fmod(CACurrentMediaTime(), 2.0 * M_PI);
-        Uniforms uniformSrc = (Uniforms) {
-            .rotationMatrix = rotationMatrix2D(rotationAngle)};
-        void* uniformTgt = [_uniformBuffer contents];
-        memcpy(uniformTgt, &uniformSrc, sizeof(Uniforms));
-        
+        auto l_cameraGPUData = g_pModuleManager->getRenderingFrontend()->getCameraGPUData();
+        updateUBO(_cameraUBO, &l_cameraGPUData, sizeof(l_cameraGPUData));
+    
         MTLRenderPassDescriptor* passDescriptor = [_view currentRenderPassDescriptor];
         id<CAMetalDrawable> drawable = [_view currentDrawable];
         id<MTLCommandBuffer> commandBuffer = [_commandQueue commandBuffer];
         id<MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:passDescriptor];
-        
+    
         [commandEncoder setRenderPipelineState:_pipelineState];
-        [commandEncoder setVertexBuffer:_vertexBuffer offset:0 atIndex:0];
-        [commandEncoder setVertexBuffer:_uniformBuffer offset:0 atIndex:1];
-        [commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0 vertexCount:6];
+        [commandEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
+        [commandEncoder setCullMode:MTLCullModeFront];
+    
+        auto l_MDC = reinterpret_cast<MTMeshDataComponent*>(g_pModuleManager->getRenderingBackend()->getMeshDataComponent(MeshShapeType::QUAD));
+        encodeDrawCall(commandEncoder, l_MDC);
         [commandEncoder endEncoding];
         [commandBuffer presentDrawable:drawable];
         [commandBuffer commit];
 }
     
-- (MTKView *)getView { 
+- (MTKView *)getView {
     return _view;
 }
 
-- (void)submitGPUData:(void *)vertices :(unsigned int)verticesSize {
+- (void)submitGPUData:(void *)MDC{
+    auto l_MDC = reinterpret_cast<MTMeshDataComponent*>(MDC);
+    
+    void* vertices = &l_MDC->m_vertices[0];
+    auto verticesSize =l_MDC->m_vertices.size() * sizeof(Vertex);
     id<MTLBuffer> l_vertexBuffer = [_device newBufferWithBytes:vertices
                          length:verticesSize
                         options:MTLResourceCPUCacheModeDefaultCache];
     NSLog(@"VBO has been generated: %@", l_vertexBuffer);
+    
+    void* indices = &l_MDC->m_indices[0];
+    auto indicesSize =l_MDC->m_indices.size() * sizeof(Index);
+    id<MTLBuffer> l_indexBuffer = [_device newBufferWithBytes:indices
+                                                        length:indicesSize
+                                                       options:MTLResourceCPUCacheModeDefaultCache];
+    NSLog(@"IBO has been generated: %@", l_indexBuffer);
+    
+    l_MDC->m_VBO = (__bridge_retained void*)l_vertexBuffer;
+    l_MDC->m_IBO = (__bridge_retained void*)l_indexBuffer;
+    l_MDC->m_objectStatus = ObjectStatus::Activated;
 }
 
 @end

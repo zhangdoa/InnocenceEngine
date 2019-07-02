@@ -1,7 +1,7 @@
 #pragma once
-#include "../../Engine/Common/InnoType.h"
-#include "../../Engine/Common/InnoClassTemplate.h"
-#include "../../Engine/Common/ComponentHeaders.h"
+#include "../Engine/Common/InnoType.h"
+#include "../Engine/Common/InnoClassTemplate.h"
+#include "../Engine/Common/ComponentHeaders.h"
 
 INNO_INTERFACE IGameInstance
 {

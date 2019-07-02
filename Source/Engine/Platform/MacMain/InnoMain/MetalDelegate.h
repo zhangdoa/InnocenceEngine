@@ -20,7 +20,7 @@
 - (void)createLibrary;
 - (void)createPipeline;
 - (void)createBuffer;
-- (void)submitGPUData:(void*)vertices :(unsigned int)verticesSize;
+- (void)submitGPUData:(void*)MDC;
 - (void)render;
 @end
 
