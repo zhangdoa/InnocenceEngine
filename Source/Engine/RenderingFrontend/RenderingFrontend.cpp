@@ -189,10 +189,12 @@ bool InnoRenderingFrontendNS::setup(IRenderingBackend* renderingBackend)
 		m_opaquePassGPUData.clear();
 		m_opaquePassMeshGPUData.clear();
 		m_opaquePassMaterialGPUData.clear();
+		m_opaquePassDrawCallCount = 0;
 
 		m_transparentPassGPUData.clear();
 		m_transparentPassMeshGPUData.clear();
 		m_transparentPassMaterialGPUData.clear();
+		m_transparentPassDrawCallCount = 0;
 
 		m_billboardPassGPUData.clear();
 		m_debuggerPassGPUData.clear();
@@ -200,6 +202,7 @@ bool InnoRenderingFrontendNS::setup(IRenderingBackend* renderingBackend)
 		m_GIPassGPUData.clear();
 		m_GIPassMeshGPUData.clear();
 		m_GIPassMaterialGPUData.clear();
+		m_GIPassDrawCallCount = 0;
 
 		m_isCSMDataPackValid = false;
 		m_isSunDataPackValid = false;
