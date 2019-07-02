@@ -1,8 +1,8 @@
 #include "MacWindowSystem.h"
 
-#include "../ICoreSystem.h"
+#include "../../ModuleManager/IModuleManager.h"
 
-extern ICoreSystem* g_pCoreSystem;
+extern IModuleManager* g_pModuleManager;
 
 INNO_PRIVATE_SCOPE MacWindowSystemNS
 {
@@ -14,11 +14,11 @@ INNO_PRIVATE_SCOPE MacWindowSystemNS
 
 bool MacWindowSystem::setup(void* hInstance, void* hwnd)
 {
-	auto l_screenResolution = g_pCoreSystem->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
   bool result = MacWindowSystemNS::m_bridge->setup(l_screenResolution.x, l_screenResolution.y);
 
 	MacWindowSystemNS::m_objectStatus = ObjectStatus::Created;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MacWindowSystem setup finished.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MacWindowSystem setup finished.");
 
 	return true;
 }
@@ -26,9 +26,9 @@ bool MacWindowSystem::setup(void* hInstance, void* hwnd)
 bool MacWindowSystem::initialize()
 {
 	bool result = MacWindowSystemNS::m_bridge->initialize();
-	
+
 	MacWindowSystemNS::m_objectStatus = ObjectStatus::Activated;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MacWindowSystem has been initialized.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MacWindowSystem has been initialized.");
 	return true;
 }
 
@@ -42,7 +42,7 @@ bool MacWindowSystem::terminate()
 {
 	bool result = MacWindowSystemNS::m_bridge->terminate();
 	MacWindowSystemNS::m_objectStatus = ObjectStatus::Terminated;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MacWindowSystem has been terminated.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MacWindowSystem has been terminated.");
 	return true;
 }
 
@@ -68,5 +68,5 @@ void MacWindowSystem::swapBuffer()
 void MacWindowSystem::setBridge(MacWindowSystemBridge* bridge)
 {
 	MacWindowSystemNS::m_bridge = bridge;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MacWindowSystem: Bridge connected at " + InnoUtility::pointerToString(bridge));
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MacWindowSystem: Bridge connected at " + InnoUtility::pointerToString(bridge));
 }

@@ -1,5 +1,5 @@
 #pragma once
-#include "../Core/IWindowSystem.h"
+#include "../../Core/IWindowSystem.h"
 #include "MacWindowSystemBridge.h"
 
 class MacWindowSystem : INNO_IMPLEMENT IWindowSystem

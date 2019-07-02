@@ -1,9 +1,9 @@
 #ifndef MTRenderingSystemBridge_h
 #define MTRenderingSystemBridge_h
 
-#include "../../../Common/InnoType.h"
-#include "../../../Component/MTMeshDataComponent.h"
-#include "../../../Component/MTTextureDataComponent.h"
+#include "../../Common/InnoType.h"
+#include "../../Component/MTMeshDataComponent.h"
+#include "../../Component/MTTextureDataComponent.h"
 
 class MTRenderingBackendBridge
 {

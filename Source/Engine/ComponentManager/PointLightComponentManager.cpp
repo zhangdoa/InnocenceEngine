@@ -41,7 +41,7 @@ void PointLightComponentManagerNS::UpdateAttenuationRadius(PointLightComponent* 
 #if defined INNO_PLATFORM_WIN
 	rhs->m_attenuationRadius = std::sqrtf(l_weightedLuminousFlux / (4.0f * PI<float> * 0.03f));
 #else
-	pointLightComponent->m_attenuationRadius = sqrtf(l_weightedLuminousFlux / (4.0f * PI<float> * 0.03f));
+	rhs->m_attenuationRadius = sqrtf(l_weightedLuminousFlux / (4.0f * PI<float> * 0.03f));
 #endif
 }
 

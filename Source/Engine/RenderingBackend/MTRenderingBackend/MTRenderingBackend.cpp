@@ -1,11 +1,11 @@
 #include "MTRenderingBackend.h"
-#include "../../../Component/MTMeshDataComponent.h"
-#include "../../../Component/MaterialDataComponent.h"
-#include "../../../Component/MTTextureDataComponent.h"
+#include "../../Component/MTMeshDataComponent.h"
+#include "../../Component/MaterialDataComponent.h"
+#include "../../Component/MTTextureDataComponent.h"
 
-#include "../../ICoreSystem.h"
+#include "../../ModuleManager/IModuleManager.h"
 
-extern ICoreSystem* g_pCoreSystem;
+extern IModuleManager* g_pModuleManager;
 
 INNO_PRIVATE_SCOPE MTRenderingBackendNS
 {
@@ -72,22 +72,22 @@ bool MTRenderingBackendNS::setup()
 	bool result = MTRenderingBackendNS::m_bridge->setup();
 
 	m_objectStatus = ObjectStatus::Created;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingBackend setup finished.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingBackend setup finished.");
 	return result;
 }
 
 bool MTRenderingBackendNS::initialize()
 {
-	m_MeshDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MTMeshDataComponent), 16384);
-	m_MaterialDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), 32768);
-	m_TextureDataComponentPool = g_pCoreSystem->getMemorySystem()->allocateMemoryPool(sizeof(MTTextureDataComponent), 32768);
+	m_MeshDataComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(MTMeshDataComponent), 16384);
+	m_MaterialDataComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), 32768);
+	m_TextureDataComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(MTTextureDataComponent), 32768);
 
 	bool result = MTRenderingBackendNS::m_bridge->initialize();
 
 	loadDefaultAssets();
 
 	m_objectStatus = ObjectStatus::Activated;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingBackend has been initialized.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingBackend has been initialized.");
 	return true;
 }
 
@@ -99,7 +99,7 @@ bool MTRenderingBackendNS::update()
 }
 
 bool MTRenderingBackendNS::render()
-{	
+{
 	bool result = MTRenderingBackendNS::m_bridge->render();
 
 	return true;
@@ -110,27 +110,27 @@ bool MTRenderingBackendNS::terminate()
 	bool result = m_bridge->terminate();
 
 	m_objectStatus = ObjectStatus::Terminated;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingBackend has been terminated.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingBackend has been terminated.");
 
 	return true;
 }
 
 void MTRenderingBackendNS::loadDefaultAssets()
 {
-	auto l_basicNormalTDC = g_pCoreSystem->getAssetSystem()->loadTexture("Res//Textures//basic_normal.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
-	auto l_basicAlbedoTDC = g_pCoreSystem->getAssetSystem()->loadTexture("Res//Textures//basic_albedo.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ALBEDO);
-	auto l_basicMetallicTDC = g_pCoreSystem->getAssetSystem()->loadTexture("Res//Textures//basic_metallic.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::METALLIC);
-	auto l_basicRoughnessTDC = g_pCoreSystem->getAssetSystem()->loadTexture("Res//Textures//basic_roughness.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ROUGHNESS);
-	auto l_basicAOTDC = g_pCoreSystem->getAssetSystem()->loadTexture("Res//Textures//basic_ao.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::AMBIENT_OCCLUSION);
+	auto l_basicNormalTDC = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_normal.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_basicAlbedoTDC = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_albedo.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ALBEDO);
+	auto l_basicMetallicTDC = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_metallic.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::METALLIC);
+	auto l_basicRoughnessTDC = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_roughness.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ROUGHNESS);
+	auto l_basicAOTDC = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_ao.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::AMBIENT_OCCLUSION);
 
-	auto l_iconTemplate_OBJ = g_pCoreSystem->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_OBJ.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
-	auto l_iconTemplate_PNG = g_pCoreSystem->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_PNG.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
-	auto l_iconTemplate_SHADER = g_pCoreSystem->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_SHADER.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
-	auto l_iconTemplate_UNKNOWN = g_pCoreSystem->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_UNKNOWN.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_OBJ = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_OBJ.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_PNG = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_PNG.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_SHADER = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_SHADER.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_UNKNOWN = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_UNKNOWN.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 
-	auto l_iconTemplate_DirectionalLight = g_pCoreSystem->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_DirectionalLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
-	auto l_iconTemplate_PointLight = g_pCoreSystem->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_PointLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
-	auto l_iconTemplate_SphereLight = g_pCoreSystem->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_SphereLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_DirectionalLight = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_DirectionalLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_PointLight = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_PointLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_iconTemplate_SphereLight = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_SphereLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 
 	m_basicNormalTDC = reinterpret_cast<MTTextureDataComponent*>(l_basicNormalTDC);
 	m_basicAlbedoTDC = reinterpret_cast<MTTextureDataComponent*>(l_basicAlbedoTDC);
@@ -148,38 +148,38 @@ void MTRenderingBackendNS::loadDefaultAssets()
 	m_iconTemplate_SphereLight = reinterpret_cast<MTTextureDataComponent*>(l_iconTemplate_SphereLight);
 
 	m_unitLineMDC = addMTMeshDataComponent();
-	g_pCoreSystem->getAssetSystem()->addUnitLine(*m_unitLineMDC);
+	g_pModuleManager->getAssetSystem()->addUnitLine(*m_unitLineMDC);
 	m_unitLineMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	m_unitLineMDC->m_meshShapeType = MeshShapeType::LINE;
 	m_unitLineMDC->m_objectStatus = ObjectStatus::Created;
-	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMDC);
+	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMDC);
 
 	m_unitQuadMDC = addMTMeshDataComponent();
-	g_pCoreSystem->getAssetSystem()->addUnitQuad(*m_unitQuadMDC);
+	g_pModuleManager->getAssetSystem()->addUnitQuad(*m_unitQuadMDC);
 	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
 	m_unitQuadMDC->m_objectStatus = ObjectStatus::Created;
-	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMDC);
+	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMDC);
 
 	m_unitCubeMDC = addMTMeshDataComponent();
-	g_pCoreSystem->getAssetSystem()->addUnitCube(*m_unitCubeMDC);
+	g_pModuleManager->getAssetSystem()->addUnitCube(*m_unitCubeMDC);
 	m_unitCubeMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitCubeMDC->m_meshShapeType = MeshShapeType::CUBE;
 	m_unitCubeMDC->m_objectStatus = ObjectStatus::Created;
-	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMDC);
+	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMDC);
 
 	m_unitSphereMDC = addMTMeshDataComponent();
-	g_pCoreSystem->getAssetSystem()->addUnitSphere(*m_unitSphereMDC);
+	g_pModuleManager->getAssetSystem()->addUnitSphere(*m_unitSphereMDC);
 	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
 	m_unitSphereMDC->m_objectStatus = ObjectStatus::Created;
-	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMDC);
+	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMDC);
 
 	m_terrainMDC = addMTMeshDataComponent();
-	g_pCoreSystem->getAssetSystem()->addTerrain(*m_terrainMDC);
+	g_pModuleManager->getAssetSystem()->addTerrain(*m_terrainMDC);
 	m_terrainMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_terrainMDC->m_objectStatus = ObjectStatus::Created;
-	g_pCoreSystem->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMDC);
+	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMDC);
 
 	m_bridge->initializeMTMeshDataComponent(m_unitLineMDC);
 	m_bridge->initializeMTMeshDataComponent(m_unitQuadMDC);
@@ -206,9 +206,9 @@ void MTRenderingBackendNS::loadDefaultAssets()
 MTMeshDataComponent* MTRenderingBackendNS::addMTMeshDataComponent()
 {
 	static std::atomic<unsigned int> meshCount = 0;
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(MTMeshDataComponent));
+	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(MTMeshDataComponent));
 	auto l_MDC = new(l_rawPtr)MTMeshDataComponent();
-	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(("Mesh_" + std::to_string(meshCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Mesh_" + std::to_string(meshCount) + "/").c_str());
 	l_MDC->m_parentEntity = l_parentEntity;
 	meshCount++;
 	return l_MDC;
@@ -217,9 +217,9 @@ MTMeshDataComponent* MTRenderingBackendNS::addMTMeshDataComponent()
 MaterialDataComponent* MTRenderingBackendNS::addMaterialDataComponent()
 {
 	static std::atomic<unsigned int> materialCount = 0;
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MaterialDataComponent));
+	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MaterialDataComponent));
 	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
-	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(("Material_" + std::to_string(materialCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Material_" + std::to_string(materialCount) + "/").c_str());
 	l_MDC->m_parentEntity = l_parentEntity;
 	materialCount++;
 	return l_MDC;
@@ -228,9 +228,9 @@ MaterialDataComponent* MTRenderingBackendNS::addMaterialDataComponent()
 MTTextureDataComponent* MTRenderingBackendNS::addMTTextureDataComponent()
 {
 	static std::atomic<unsigned int> textureCount = 0;
-	auto l_rawPtr = g_pCoreSystem->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(MTTextureDataComponent));
+	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(MTTextureDataComponent));
 	auto l_TDC = new(l_rawPtr)MTTextureDataComponent();
-	auto l_parentEntity = g_pCoreSystem->getGameSystem()->createEntity(EntityName(("Texture_" + std::to_string(textureCount) + "/").c_str()), ObjectSource::Runtime, ObjectUsage::Engine);
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Texture_" + std::to_string(textureCount) + "/").c_str());
 	l_TDC->m_parentEntity = l_parentEntity;
 	textureCount++;
 	return l_TDC;
@@ -251,7 +251,7 @@ MTMeshDataComponent* MTRenderingBackendNS::getMTMeshDataComponent(MeshShapeType 
 	case MeshShapeType::TERRAIN:
 		return MTRenderingBackendNS::m_terrainMDC; break;
 	case MeshShapeType::CUSTOM:
-		g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: wrong MeshShapeType passed to MTRenderingBackend::getMeshDataComponent() !");
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackendSystem: wrong MeshShapeType passed to MTRenderingBackend::getMeshDataComponent() !");
 		return nullptr; break;
 	default:
 		return nullptr; break;
@@ -428,5 +428,5 @@ bool MTRenderingBackend::bakeGI()
 void MTRenderingBackend::setBridge(MTRenderingBackendBridge* bridge)
 {
 	MTRenderingBackendNS::m_bridge = bridge;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingBackend: Bridge connected at " + InnoUtility::pointerToString(bridge));
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingBackend: Bridge connected at " + InnoUtility::pointerToString(bridge));
 }

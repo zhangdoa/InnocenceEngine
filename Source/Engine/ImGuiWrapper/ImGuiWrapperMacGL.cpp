@@ -1,8 +1,8 @@
 #include "ImGuiWrapperMacGL.h"
 
-#include "../ICoreSystem.h"
+#include "../ModuleManager/IModuleManager.h"
 
-extern ICoreSystem* g_pCoreSystem;
+extern IModuleManager* g_pModuleManager;
 
 INNO_PRIVATE_SCOPE ImGuiWrapperMacGLNS
 {
@@ -12,14 +12,14 @@ INNO_PRIVATE_SCOPE ImGuiWrapperMacGLNS
 bool ImGuiWrapperMacGL::setup()
 {
 	ImGuiWrapperMacGLNS::m_objectStatus = ObjectStatus::Created;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperMacGL setup finished.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperMacGL setup finished.");
 
 	return true;
 }
 
 bool ImGuiWrapperMacGL::initialize()
 {
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperMacGL has been initialized.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperMacGL has been initialized.");
 
 	return true;
 }
@@ -37,7 +37,7 @@ bool ImGuiWrapperMacGL::render()
 bool ImGuiWrapperMacGL::terminate()
 {
 	ImGuiWrapperMacGLNS::m_objectStatus = ObjectStatus::Terminated;
-	g_pCoreSystem->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperMacGL has been terminated.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperMacGL has been terminated.");
 
 	return true;
 }

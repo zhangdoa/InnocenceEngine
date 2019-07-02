@@ -9,7 +9,7 @@
 #ifndef MacWindowSystemBridgeImpl_h
 #define MacWindowSystemBridgeImpl_h
 
-#import "../../../System/MacWindow/MacWindowSystemBridge.h"
+#import "../../MacWindow/MacWindowSystemBridge.h"
 #import "MacWindowDelegate.h"
 #import "MetalDelegate.h"
 
@@ -18,12 +18,12 @@ class MacWindowSystemBridgeImpl : public MacWindowSystemBridge
 public:
     explicit MacWindowSystemBridgeImpl(MacWindowDelegate* macWindowDelegate, MetalDelegate* metalDelegate);
     ~MacWindowSystemBridgeImpl();
-    
+
     bool setup(unsigned int sizeX, unsigned int sizeY) override;
     bool initialize() override;
     bool update() override;
     bool terminate() override;
-    
+
     ObjectStatus getStatus() override;
 private:
     ObjectStatus m_objectStatus = ObjectStatus::Terminated;

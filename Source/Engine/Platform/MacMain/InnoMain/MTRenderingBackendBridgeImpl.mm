@@ -71,7 +71,7 @@ bool MTRenderingBackendBridgeImpl::initializeMTMeshDataComponent(MTMeshDataCompo
     }
     else
     {
-        [m_metalDelegate submitGPUData:rhs->m_vertices.data() :(unsigned int)(rhs->m_vertices.size())];
+        [m_metalDelegate submitGPUData:&rhs->m_vertices[0]:(unsigned int)(rhs->m_vertices.size())];
         
         rhs->m_objectStatus = ObjectStatus::Activated;
         

@@ -8,4 +8,4 @@ cmake -DINNO_PLATFORM_MAC=ON -DBUILD_GAME=ON -G "Unix Makefiles" -DCMAKE_CXX_COM
 cmake -DINNO_PLATFORM_MAC=ON -DBUILD_GAME=ON -G "Unix Makefiles" -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang ../Source
 make
 cd ../Source/Engine/Platform/MacMain
-xcodebuild build SYMROOT=../../../../Build/InnoMain -verbose -configuration Debug
+xcodebuild build SYMROOT=../../../../Build/InnoMain -configuration Debug
