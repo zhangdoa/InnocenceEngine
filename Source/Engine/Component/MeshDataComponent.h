@@ -13,10 +13,8 @@ public:
 	MeshPrimitiveTopology m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	MeshShapeType m_meshShapeType = MeshShapeType::LINE;
 	size_t m_indicesSize = 0;
-	PhysicsDataComponent* m_PDC;
-	SkeletonDataComponent* m_SDC;
-	//std::vector<Vertex> m_vertices;
-	//std::vector<Index> m_indices;
+	PhysicsDataComponent* m_PDC = 0;
+	SkeletonDataComponent* m_SDC = 0;
 	InnoArray<Vertex> m_vertices;
 	InnoArray<Index> m_indices;
 };
