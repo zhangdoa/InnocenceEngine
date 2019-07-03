@@ -14,10 +14,17 @@ public:
 	template<typename... Args>
 	static void Log(LogLevel logLevel, Args&&... values)
 	{
+		if (logLevel < GetDefaultLogLevel())
+		{
+			return;
+		}
 		LogStartOfLine(logLevel);
 		LogContent(values ...);
 		LogEndOfLine();
 	}
+
+	static void SetDefaultLogLevel(LogLevel logLevel);
+	static LogLevel GetDefaultLogLevel();
 
 private:
 	static void LogStartOfLine(LogLevel logLevel);

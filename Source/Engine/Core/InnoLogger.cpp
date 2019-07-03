@@ -67,11 +67,23 @@ namespace InnoLoggerNS
 
 	std::ofstream m_LogFile;
 	std::mutex m_Mutex;
+	LogLevel m_LogLevel;
+}
+
+void InnoLogger::SetDefaultLogLevel(LogLevel logLevel)
+{
+	InnoLoggerNS::m_LogLevel = logLevel;
+}
+
+LogLevel InnoLogger::GetDefaultLogLevel()
+{
+	return InnoLoggerNS::m_LogLevel;
 }
 
 void InnoLogger::LogStartOfLine(LogLevel logLevel)
 {
 	InnoLoggerNS::m_Mutex.lock();
+
 #if defined INNO_PLATFORM_WIN
 	switch (logLevel)
 	{
@@ -247,6 +259,7 @@ void InnoLogger::LogImpl(const char* logMessage)
 
 bool InnoLogger::Setup()
 {
+	InnoLoggerNS::m_LogLevel = LogLevel::Success;
 	std::stringstream ss;
 	ss << InnoLoggerNS::GetTimestamp << ".InnoLog";
 	InnoLoggerNS::m_LogFile.open(ss.str(), std::ios::out | std::ios::trunc);
