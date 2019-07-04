@@ -77,17 +77,57 @@ void TestInnoArray(size_t testCaseCount)
 
 void TestInnoMemory(size_t testCaseCount)
 {
+	static std::vector<unsigned int> l_objectSizes = { 64, 128, 256, 512, 1024, 2048, 4096, 8192 };
 	std::default_random_engine l_generator;
-	std::uniform_int_distribution<unsigned int> l_randomDelta(1, 16384);
+	std::uniform_int_distribution<unsigned int> l_randomDelta(0, 7);
+	auto l_objectSize = l_objectSizes[l_randomDelta(l_generator)];
+
+	std::vector<void*> l_objectInCustomPool(testCaseCount);
+	std::vector<void*> l_objectRaw(testCaseCount);
+
+	auto l_objectPool = InnoMemory::CreateObjectPool(l_objectSize, (unsigned int)testCaseCount);
+
+	auto l_StartTime1 = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
 
 	for (size_t i = 0; i < testCaseCount; i++)
 	{
-		auto l_allocateSize = l_randomDelta(l_generator) * l_randomDelta(l_generator);
-		auto l_ptr = InnoMemory::Allocate(l_allocateSize);
-		InnoLogger::Log(LogLevel::Success, "Memory allocated at ", l_ptr, " for ", l_allocateSize, "Byte(s)");
-		InnoMemory::Deallocate(l_ptr);
-		InnoLogger::Log(LogLevel::Success, "Memory deallocated at ", l_ptr);
+		auto l_ptr = l_objectPool->Spawn();
+		l_objectInCustomPool[i] = l_ptr;
 	}
+
+	auto l_Timestamp1 = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
+
+	for (size_t i = 0; i < testCaseCount; i++)
+	{
+		auto l_ptr = malloc(l_objectSize);
+		l_objectRaw[i] = l_ptr;
+	}
+
+	auto l_Timestamp2 = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
+
+	auto l_SpeedRatio1 = double(l_Timestamp1 - l_StartTime1) / double(l_Timestamp2 - l_Timestamp1);
+
+	InnoLogger::Log(LogLevel::Success, "Custom object pool allocation VS malloc() speed ratio is ", l_SpeedRatio1);
+
+	auto l_StartTime2 = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
+
+	for (size_t i = 0; i < testCaseCount; i++)
+	{
+		l_objectPool->Destroy(l_objectInCustomPool[i]);
+	}
+
+	auto l_Timestamp3 = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
+
+	for (size_t i = 0; i < testCaseCount; i++)
+	{
+		free(l_objectRaw[i]);
+	}
+
+	auto l_Timestamp4 = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
+
+	auto l_SpeedRatio2 = double(l_Timestamp3 - l_StartTime2) / double(l_Timestamp4 - l_Timestamp3);
+
+	InnoLogger::Log(LogLevel::Success, "Custom object pool deallocation VS free() speed ratio is ", l_SpeedRatio1);
 }
 
 class IJob
@@ -486,9 +526,9 @@ void TestJob(size_t testCaseCount)
 
 int main(int argc, char *argv[])
 {
-	TestIToA(1024);
+	TestIToA(8192);
 	TestInnoArray(8192);
-	TestInnoMemory(128);
+	TestInnoMemory(65536);
 	TestJob(512);
 
 	while (1);
