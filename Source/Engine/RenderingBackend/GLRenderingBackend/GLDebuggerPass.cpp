@@ -216,10 +216,9 @@ bool GLDebuggerPass::drawDebugObjects()
 
 	if (l_drawCSMAABBRange)
 	{
-		auto l_directionalLightComponents = GetComponentManager(DirectionalLightComponent)->GetAllComponents();
-		auto l_directionalLight = l_directionalLightComponents[0];
+		auto l_SplitAABB = GetComponentManager(DirectionalLightComponent)->GetSplitAABB();
 
-		for (auto i : l_directionalLight->m_AABBsInWorldSpace)
+		for (auto i : l_SplitAABB)
 		{
 			auto l_t = InnoMath::toTranslationMatrix(i.m_center);
 			auto l_extend = i.m_extend;

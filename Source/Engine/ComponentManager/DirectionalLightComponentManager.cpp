@@ -24,6 +24,9 @@ namespace DirectionalLightComponentManagerNS
 	std::function<void()> f_SceneLoadingStartCallback;
 	std::function<void()> f_SceneLoadingFinishCallback;
 
+	std::vector<AABB> m_SplitAABB;
+	std::vector<mat4> m_projectionMatrices;
+
 	std::vector<AABB> splitVerticesToAABBs(const std::vector<Vertex>& frustumsVertices, const std::vector<float>& splitFactors);
 	void UpdateCSMData(DirectionalLightComponent* rhs);
 }
@@ -105,8 +108,8 @@ std::vector<AABB> DirectionalLightComponentManagerNS::splitVerticesToAABBs(const
 
 void DirectionalLightComponentManagerNS::UpdateCSMData(DirectionalLightComponent* rhs)
 {
-	rhs->m_AABBsInWorldSpace.clear();
-	rhs->m_projectionMatrices.clear();
+	m_SplitAABB.clear();
+	m_projectionMatrices.clear();
 
 	//1. get frustum vertices in view space
 	auto l_cameraComponents = GetComponentManager(CameraComponent)->GetAllComponents();
@@ -200,7 +203,7 @@ void DirectionalLightComponentManagerNS::UpdateCSMData(DirectionalLightComponent
 	auto l_frustumsAABBsWS = splitVerticesToAABBs(l_frustumVerticesWS, l_CSMSplitFactors);
 
 	//3. save the AABB for bound area detection
-	rhs->m_AABBsInWorldSpace.setRawData(std::move(l_frustumsAABBsWS));
+	m_SplitAABB = std::move(l_frustumsAABBsWS);
 
 	//4. transform frustum vertices to light space
 	auto l_lightRotMat = GetComponent(TransformComponent, rhs->m_parentEntity)->m_globalTransformMatrix.m_rotationMat.inverse();
@@ -233,7 +236,7 @@ void DirectionalLightComponentManagerNS::UpdateCSMData(DirectionalLightComponent
 	}
 
 	//7. generate projection matrices
-	rhs->m_projectionMatrices.reserve(4);
+	m_projectionMatrices.reserve(4);
 
 	for (size_t i = 0; i < 4; i++)
 	{
@@ -241,7 +244,7 @@ void DirectionalLightComponentManagerNS::UpdateCSMData(DirectionalLightComponent
 		vec4 l_minExtents = l_AABBsLS[i].m_boundMin;
 
 		mat4 p = InnoMath::generateOrthographicMatrix(l_minExtents.x, l_maxExtents.x, l_minExtents.y, l_maxExtents.y, l_minExtents.z, l_maxExtents.z);
-		rhs->m_projectionMatrices.emplace_back(p);
+		m_projectionMatrices.emplace_back(p);
 	}
 }
 
@@ -302,4 +305,14 @@ InnoComponent* InnoDirectionalLightComponentManager::Find(const InnoEntity * par
 const std::vector<DirectionalLightComponent*>& InnoDirectionalLightComponentManager::GetAllComponents()
 {
 	return m_Components.getRawData();
+}
+
+const std::vector<AABB>& InnoDirectionalLightComponentManager::GetSplitAABB()
+{
+	return m_SplitAABB;
+}
+
+const std::vector<mat4>& InnoDirectionalLightComponentManager::GetProjectionMatrices()
+{
+	return m_projectionMatrices;
 }

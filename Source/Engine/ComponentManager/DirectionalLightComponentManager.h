@@ -15,4 +15,6 @@ public:
 	InnoComponent* Find(const InnoEntity* parentEntity) override;
 
 	const std::vector<DirectionalLightComponent*>& GetAllComponents() override;
+	const std::vector<AABB>& GetSplitAABB() override;
+	const std::vector<mat4>& GetProjectionMatrices() override;
 };

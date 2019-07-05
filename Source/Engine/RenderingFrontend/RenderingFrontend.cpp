@@ -19,7 +19,6 @@ class DoubleBuffer
 public:
 	DoubleBuffer() = default;
 	~DoubleBuffer() = default;
-
 	T GetValue()
 	{
 		std::lock_guard<std::shared_mutex> lock{ Mutex };
@@ -68,12 +67,12 @@ INNO_PRIVATE_SCOPE InnoRenderingFrontendNS
 
 	RenderingCapability m_renderingCapability;
 
-	CameraGPUData m_cameraGPUData;
-	SunGPUData m_sunGPUData;
+	DoubleBuffer<CameraGPUData> m_cameraGPUData;
+	DoubleBuffer<SunGPUData> m_sunGPUData;
 	std::vector<CSMGPUData> m_CSMGPUData;
 	std::vector<PointLightGPUData> m_pointLightGPUData;
 	std::vector<SphereLightGPUData> m_sphereLightGPUData;
-	SkyGPUData m_skyGPUData;
+	DoubleBuffer<SkyGPUData> m_skyGPUData;
 
 	unsigned int m_opaquePassDrawCallCount = 0;
 	std::vector<OpaquePassGPUData> m_opaquePassGPUData;
@@ -97,11 +96,6 @@ INNO_PRIVATE_SCOPE InnoRenderingFrontendNS
 	std::vector<MaterialGPUData> m_GIPassMaterialGPUData;
 
 	ThreadSafeVector<CullingDataPack> m_cullingDataPack;
-
-	std::atomic<bool> m_isCSMDataPackValid = false;
-	std::atomic<bool> m_isSunDataPackValid = false;
-	std::atomic<bool> m_isCameraDataPackValid = false;
-	std::atomic<bool> m_isMeshDataPackValid = false;
 
 	std::vector<Plane> m_debugPlanes;
 	std::vector<Sphere> m_debugSpheres;
@@ -129,6 +123,7 @@ INNO_PRIVATE_SCOPE InnoRenderingFrontendNS
 
 	bool updateCameraData();
 	bool updateSunData();
+	bool updateSkyData();
 	bool updateLightData();
 	bool updateMeshData();
 	bool updateBillboardPassData();
@@ -203,11 +198,6 @@ bool InnoRenderingFrontendNS::setup(IRenderingBackend* renderingBackend)
 		m_GIPassMeshGPUData.clear();
 		m_GIPassMaterialGPUData.clear();
 		m_GIPassDrawCallCount = 0;
-
-		m_isCSMDataPackValid = false;
-		m_isSunDataPackValid = false;
-		m_isCameraDataPackValid = false;
-		m_isMeshDataPackValid = false;
 	};
 
 	f_sceneLoadingFinishCallback = [&]() {
@@ -265,16 +255,16 @@ bool InnoRenderingFrontendNS::initialize()
 
 bool InnoRenderingFrontendNS::updateCameraData()
 {
-	m_isCameraDataPackValid = false;
-
 	auto l_cameraComponents = GetComponentManager(CameraComponent)->GetAllComponents();
 	auto l_mainCamera = l_cameraComponents[0];
 	auto l_mainCameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_parentEntity);
 
 	auto l_p = l_mainCamera->m_projectionMatrix;
 
-	m_cameraGPUData.p_original = l_p;
-	m_cameraGPUData.p_jittered = l_p;
+	CameraGPUData l_CameraGPUData;
+
+	l_CameraGPUData.p_original = l_p;
+	l_CameraGPUData.p_jittered = l_p;
 
 	if (m_renderingConfig.useTAA)
 	{
@@ -284,67 +274,78 @@ bool InnoRenderingFrontendNS::updateCameraData()
 		{
 			l_currentHaltonStep = 0;
 		}
-		m_cameraGPUData.p_jittered.m02 = m_haltonSampler[l_currentHaltonStep].x / m_screenResolution.x;
-		m_cameraGPUData.p_jittered.m12 = m_haltonSampler[l_currentHaltonStep].y / m_screenResolution.y;
+		l_CameraGPUData.p_jittered.m02 = m_haltonSampler[l_currentHaltonStep].x / m_screenResolution.x;
+		l_CameraGPUData.p_jittered.m12 = m_haltonSampler[l_currentHaltonStep].y / m_screenResolution.y;
 		l_currentHaltonStep += 1;
 	}
 
-	m_cameraGPUData.r =
+	l_CameraGPUData.r =
 		InnoMath::getInvertRotationMatrix(
 			l_mainCameraTransformComponent->m_globalTransformVector.m_rot
 		);
 
-	m_cameraGPUData.t =
+	l_CameraGPUData.t =
 		InnoMath::getInvertTranslationMatrix(
 			l_mainCameraTransformComponent->m_globalTransformVector.m_pos
 		);
 
-	m_cameraGPUData.r_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_rotationMat.inverse();
-	m_cameraGPUData.t_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_translationMat.inverse();
+	l_CameraGPUData.r_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_rotationMat.inverse();
+	l_CameraGPUData.t_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_translationMat.inverse();
 
-	m_cameraGPUData.globalPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
+	l_CameraGPUData.globalPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
 
-	m_cameraGPUData.WHRatio = l_mainCamera->m_WHRatio;
-	m_cameraGPUData.zNear = l_mainCamera->m_zNear;
-	m_cameraGPUData.zFar = l_mainCamera->m_zFar;
+	l_CameraGPUData.WHRatio = l_mainCamera->m_WHRatio;
+	l_CameraGPUData.zNear = l_mainCamera->m_zNear;
+	l_CameraGPUData.zFar = l_mainCamera->m_zFar;
 
-	m_isCameraDataPackValid = true;
+	m_cameraGPUData.SetValue(l_CameraGPUData);
 
 	return true;
 }
 
 bool InnoRenderingFrontendNS::updateSunData()
 {
-	m_isSunDataPackValid = false;
-	m_isCSMDataPackValid = false;
-
 	auto l_directionalLightComponents = GetComponentManager(DirectionalLightComponent)->GetAllComponents();
 	auto l_directionalLight = l_directionalLightComponents[0];
 	auto l_directionalLightTransformComponent = GetComponent(TransformComponent, l_directionalLight->m_parentEntity);
+	auto l_lightRotMat = l_directionalLightTransformComponent->m_globalTransformMatrix.m_rotationMat.inverse();
 
-	m_sunGPUData.dir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
-	m_sunGPUData.luminance = l_directionalLight->m_color * l_directionalLight->m_luminousFlux;
-	m_sunGPUData.r = InnoMath::getInvertRotationMatrix(l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+	SunGPUData l_SunGPUData;
 
-	auto l_CSMSize = l_directionalLight->m_projectionMatrices.size();
+	l_SunGPUData.dir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+	l_SunGPUData.luminance = l_directionalLight->m_color * l_directionalLight->m_luminousFlux;
+	l_SunGPUData.r = InnoMath::getInvertRotationMatrix(l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+
+	m_sunGPUData.SetValue(l_SunGPUData);
+
+	auto l_SplitAABB = GetComponentManager(DirectionalLightComponent)->GetSplitAABB();
+	auto l_ProjectionMatrices = GetComponentManager(DirectionalLightComponent)->GetProjectionMatrices();
+	auto l_CSMSplitCount = l_ProjectionMatrices.size();
 
 	m_CSMGPUData.clear();
-
-	for (size_t j = 0; j < l_directionalLight->m_projectionMatrices.size(); j++)
+	for (size_t j = 0; j < l_CSMSplitCount; j++)
 	{
 		m_CSMGPUData.emplace_back();
 
-		m_CSMGPUData[j].p = l_directionalLight->m_projectionMatrices[j];
-		m_CSMGPUData[j].AABBMax = l_directionalLight->m_AABBsInWorldSpace[j].m_boundMax;
-		m_CSMGPUData[j].AABBMin = l_directionalLight->m_AABBsInWorldSpace[j].m_boundMin;
-
-		auto l_lightRotMat = l_directionalLightTransformComponent->m_globalTransformMatrix.m_rotationMat.inverse();
-
+		m_CSMGPUData[j].p = l_ProjectionMatrices[j];
+		m_CSMGPUData[j].AABBMax = l_SplitAABB[j].m_boundMax;
+		m_CSMGPUData[j].AABBMin = l_SplitAABB[j].m_boundMin;
 		m_CSMGPUData[j].v = l_lightRotMat;
 	}
 
-	m_isCSMDataPackValid = true;
-	m_isSunDataPackValid = true;
+	return true;
+}
+
+bool InnoRenderingFrontendNS::updateSkyData()
+{
+	SkyGPUData l_SkyGPUData;
+
+	l_SkyGPUData.p_inv = m_cameraGPUData.GetValue().p_original.inverse();
+	l_SkyGPUData.r_inv = m_cameraGPUData.GetValue().r.inverse();
+	l_SkyGPUData.viewportSize.x = (float)m_screenResolution.x;
+	l_SkyGPUData.viewportSize.y = (float)m_screenResolution.y;
+
+	m_skyGPUData.SetValue(l_SkyGPUData);
 
 	return true;
 }
@@ -376,8 +377,6 @@ bool InnoRenderingFrontendNS::updateLightData()
 
 bool InnoRenderingFrontendNS::updateMeshData()
 {
-	m_isMeshDataPackValid = false;
-
 	unsigned int l_opaquePassIndex = 0;
 	unsigned int l_transparentPassIndex = 0;
 
@@ -456,17 +455,16 @@ bool InnoRenderingFrontendNS::updateMeshData()
 	m_transparentPassDrawCallCount = l_transparentPassIndex;
 
 	// @TODO: use GPU to do OIT
+	auto l_t = m_cameraGPUData.GetValue().t;
+	auto l_r = m_cameraGPUData.GetValue().r;
+
 	std::sort(l_sortedTransparentPassGPUData.begin(), l_sortedTransparentPassGPUData.end(), [&](TransparentPassGPUData a, TransparentPassGPUData b) {
-		auto l_t = m_cameraGPUData.t;
-		auto l_r = m_cameraGPUData.r;
 		auto m_a_InViewSpace = l_t * l_r * m_transparentPassMeshGPUData[a.meshGPUDataIndex].m;
 		auto m_b_InViewSpace = l_t * l_r * m_transparentPassMeshGPUData[b.meshGPUDataIndex].m;
 		return m_a_InViewSpace.m23 < m_b_InViewSpace.m23;
 	});
 
 	m_transparentPassGPUData = l_sortedTransparentPassGPUData;
-
-	m_isMeshDataPackValid = true;
 
 	return true;
 }
@@ -481,7 +479,7 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 	{
 		BillboardPassGPUData l_billboardPAssGPUData;
 		l_billboardPAssGPUData.globalPos = GetComponent(TransformComponent, i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_billboardPAssGPUData.distanceToCamera = (m_cameraGPUData.globalPos - l_billboardPAssGPUData.globalPos).length();
+		l_billboardPAssGPUData.distanceToCamera = (m_cameraGPUData.GetValue().globalPos - l_billboardPAssGPUData.globalPos).length();
 		l_billboardPAssGPUData.iconType = WorldEditorIconType::DIRECTIONAL_LIGHT;
 
 		m_billboardPassGPUData.emplace_back(l_billboardPAssGPUData);
@@ -492,7 +490,7 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 	{
 		BillboardPassGPUData l_billboardPAssGPUData;
 		l_billboardPAssGPUData.globalPos = GetComponent(TransformComponent, i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_billboardPAssGPUData.distanceToCamera = (m_cameraGPUData.globalPos - l_billboardPAssGPUData.globalPos).length();
+		l_billboardPAssGPUData.distanceToCamera = (m_cameraGPUData.GetValue().globalPos - l_billboardPAssGPUData.globalPos).length();
 		l_billboardPAssGPUData.iconType = WorldEditorIconType::POINT_LIGHT;
 
 		m_billboardPassGPUData.emplace_back(l_billboardPAssGPUData);
@@ -503,7 +501,7 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 	{
 		BillboardPassGPUData l_billboardPAssGPUData;
 		l_billboardPAssGPUData.globalPos = GetComponent(TransformComponent, i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_billboardPAssGPUData.distanceToCamera = (m_cameraGPUData.globalPos - l_billboardPAssGPUData.globalPos).length();
+		l_billboardPAssGPUData.distanceToCamera = (m_cameraGPUData.GetValue().globalPos - l_billboardPAssGPUData.globalPos).length();
 		l_billboardPAssGPUData.iconType = WorldEditorIconType::SPHERE_LIGHT;
 
 		m_billboardPassGPUData.emplace_back(l_billboardPAssGPUData);
@@ -592,6 +590,8 @@ bool InnoRenderingFrontendNS::update()
 
 		updateLightData();
 
+		updateSkyData();
+
 		// copy culling data pack for local scope
 		auto l_cullingDataPack = g_pModuleManager->getPhysicsSystem()->getCullingDataPack();
 		if (l_cullingDataPack.has_value() && l_cullingDataPack.value().size() > 0)
@@ -604,11 +604,6 @@ bool InnoRenderingFrontendNS::update()
 		updateBillboardPassData();
 
 		updateDebuggerPassData();
-
-		m_skyGPUData.p_inv = m_cameraGPUData.p_original.inverse();
-		m_skyGPUData.r_inv = m_cameraGPUData.r.inverse();
-		m_skyGPUData.viewportSize.x = (float)m_screenResolution.x;
-		m_skyGPUData.viewportSize.y = (float)m_screenResolution.y;
 
 		return true;
 	}
@@ -739,12 +734,12 @@ RenderingCapability InnoRenderingFrontend::getRenderingCapability()
 
 CameraGPUData InnoRenderingFrontend::getCameraGPUData()
 {
-	return InnoRenderingFrontendNS::m_cameraGPUData;
+	return InnoRenderingFrontendNS::m_cameraGPUData.GetValue();
 }
 
 SunGPUData InnoRenderingFrontend::getSunGPUData()
 {
-	return InnoRenderingFrontendNS::m_sunGPUData;
+	return InnoRenderingFrontendNS::m_sunGPUData.GetValue();
 }
 
 const std::vector<CSMGPUData>& InnoRenderingFrontend::getCSMGPUData()
@@ -764,7 +759,7 @@ const std::vector<SphereLightGPUData>& InnoRenderingFrontend::getSphereLightGPUD
 
 SkyGPUData InnoRenderingFrontend::getSkyGPUData()
 {
-	return InnoRenderingFrontendNS::m_skyGPUData;
+	return InnoRenderingFrontendNS::m_skyGPUData.GetValue();
 }
 
 unsigned int InnoRenderingFrontend::getOpaquePassDrawCallCount()

@@ -68,8 +68,7 @@
             "X": 0.19633494317531586
           },
           "ComponentType": 2,
-          "LuminousFlux": 1.0,
-          "drawAABB": false
+          "LuminousFlux": 1.0
         }
       ],
       "EntityID": "55467c3b1220a81f359b63e29ce45340",

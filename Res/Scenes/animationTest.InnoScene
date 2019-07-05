@@ -144,8 +144,7 @@
             "X": 1.0
           },
           "ComponentType": 2,
-          "LuminousFlux": 1.0,
-          "drawAABB": false
+          "LuminousFlux": 1.0
         }
       ],
       "EntityID": "3a467d719bce3caa3337c860e378b19e",

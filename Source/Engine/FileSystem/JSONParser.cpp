@@ -210,7 +210,6 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const DirectionalLightCompon
 		{"ComponentType", InnoUtility::getComponentType<DirectionalLightComponent>()},
 		{"LuminousFlux", p.m_luminousFlux},
 		{"Color", color},
-		{"drawAABB", p.m_drawAABB},
 	};
 }
 
@@ -327,7 +326,6 @@ void InnoFileSystemNS::JSONParser::from_json(const json & j, DirectionalLightCom
 {
 	p.m_luminousFlux = j["LuminousFlux"];
 	from_json(j["Color"], p.m_color);
-	p.m_drawAABB = j["drawAABB"];
 }
 
 void InnoFileSystemNS::JSONParser::from_json(const json & j, PointLightComponent & p)
