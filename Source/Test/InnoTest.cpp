@@ -244,6 +244,7 @@ public:
 	~InnoThread(void)
 	{
 		m_Done = true;
+		m_JobQueue.invalidate();
 		if (m_ThreadHandle->joinable())
 		{
 			m_ThreadHandle->join();
@@ -317,10 +318,6 @@ private:
 					ExecuteJob(l_job);
 				}
 			}
-			if (m_JobQueue.size() > 0)
-			{
-			}
-
 			m_ThreadStatus = ThreadStatus::Idle;
 		}
 
@@ -376,7 +373,7 @@ bool InnoJobScheduler::Update()
 
 bool InnoJobScheduler::Terminate()
 {
-	for (size_t i = 0; i < InnoJobSchedulerNS::m_Threads.size(); i++)
+	for (size_t i = 0; i < InnoJobSchedulerNS::m_NumThreads; i++)
 	{
 		InnoJobSchedulerNS::m_Threads[i].reset();
 	}
@@ -522,6 +519,8 @@ void TestJob(size_t testCaseCount)
 	auto l_SpeedRatio = double(l_JobTotalAsyncExecutionTime) / double(JobTotalSyncExecutionTime);
 
 	InnoLogger::Log(LogLevel::Success, "Async VS sync job execution speed ratio is ", l_SpeedRatio);
+
+	InnoJobScheduler::Terminate();
 }
 
 int main(int argc, char *argv[])
@@ -530,7 +529,5 @@ int main(int argc, char *argv[])
 	TestInnoArray(8192);
 	TestInnoMemory(65536);
 	TestJob(512);
-
-	while (1);
 	return 0;
 }
