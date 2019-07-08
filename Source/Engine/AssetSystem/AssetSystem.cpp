@@ -137,8 +137,7 @@ void InnoAssetSystem::addUnitSphere(MeshDataComponent& meshDataComponent)
 		}
 	}
 
-	// @TODO: Eliminate wasted space
-	meshDataComponent.m_indices.reserve(stackCount * sectorCount * 6);
+	meshDataComponent.m_indices.reserve(stackCount * (sectorCount - 1) * 6);
 
 	int k1, k2;
 	for (int i = 0; i < stackCount; ++i)
