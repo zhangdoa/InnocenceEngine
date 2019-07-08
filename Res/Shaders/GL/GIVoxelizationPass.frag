@@ -2,10 +2,22 @@
 #version 450
 #extension GL_ARB_shader_image_load_store : require
 
+layout(std140, binding = 2) uniform materialUBO
+{
+	vec4 uni_albedo;
+	vec4 uni_MRAT;
+	bool uni_useNormalTexture;
+	bool uni_useAlbedoTexture;
+	bool uni_useMetallicTexture;
+	bool uni_useRoughnessTexture;
+	bool uni_useAOTexture;
+	int uni_materialType;
+};
+
 layout(location = 0) in GS_OUT
 {
-	vec3 wsPosition;
-	vec3 position;
+	vec3 outputCoord;
+	vec3 positionLS;
 	vec3 normal;
 	vec2 texCoord;
 	flat vec4 triangleAABB;
@@ -15,7 +27,6 @@ layout(location = 0) out vec4 fragColor;
 layout(pixel_center_integer) in vec4 gl_FragCoord;
 
 layout(binding = 0, r32ui) uniform volatile coherent uimage3D uni_voxelAlbedo;
-layout(binding = 1, r32ui) uniform volatile coherent uimage3D uni_voxelNormal;
 
 vec4 convRGBA8ToVec4(uint val)
 {
@@ -35,37 +46,36 @@ uint convVec4ToRGBA8(vec4 val)
 
 void main()
 {
-	// Conservative Rasterization
-	if (gs_in.position.x < gs_in.triangleAABB.x || gs_in.position.y < gs_in.triangleAABB.y ||
-		gs_in.position.x > gs_in.triangleAABB.z || gs_in.position.y > gs_in.triangleAABB.w)
-	{
-		discard;
-	}
+	//if (gs_in.positionLS.x < gs_in.triangleAABB.x || gs_in.positionLS.y < gs_in.triangleAABB.y ||
+	//	gs_in.positionLS.x > gs_in.triangleAABB.z || gs_in.positionLS.y > gs_in.triangleAABB.w)
+	//{
+	//	discard;
+	//}
 
-	// writing coords position
-	ivec3 position = ivec3(gs_in.wsPosition);
+	// writing coords positionLS
+	ivec3 outputCoord = ivec3(gs_in.outputCoord);
+	imageStore(uni_voxelAlbedo, outputCoord, ivec4(0, 1, 2, 3));
+	//// fragment albedo
+	//vec4 albedo = uni_albedo;
 
-	// fragment albedo
-	vec4 albedo = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	//// average albedo per fragments surrounding the voxel volume
+	//albedo.rgb *= 255.0;
+	//uint newVal = convVec4ToRGBA8(albedo);
+	//uint prevStoredVal = 0;
+	//uint curStoredVal;
+	//uint numIterations = 0;
 
-	// average albedo per fragments surrounding the voxel volume
-	albedo.rgb *= 255.0;
-	uint newVal = convVec4ToRGBA8(albedo);
-	uint prevStoredVal = 0;
-	uint curStoredVal;
-	uint numIterations = 0;
+	//while ((curStoredVal = imageAtomicCompSwap(uni_voxelAlbedo, positionLS, prevStoredVal, newVal))
+	//	!= prevStoredVal
+	//	&& numIterations < 255)
+	//{
+	//	prevStoredVal = curStoredVal;
+	//	vec4 rval = convRGBA8ToVec4(curStoredVal);
+	//	rval.rgb = (rval.rgb * rval.a); // Denormalize
+	//	vec4 curValF = rval + albedo;    // Add
+	//	curValF.rgb /= curValF.a;       // Renormalize
+	//	newVal = convVec4ToRGBA8(curValF);
 
-	while ((curStoredVal = imageAtomicCompSwap(uni_voxelAlbedo, position, prevStoredVal, newVal))
-		!= prevStoredVal
-		&& numIterations < 255)
-	{
-		prevStoredVal = curStoredVal;
-		vec4 rval = convRGBA8ToVec4(curStoredVal);
-		rval.rgb = (rval.rgb * rval.a); // Denormalize
-		vec4 curValF = rval + albedo;    // Add
-		curValF.rgb /= curValF.a;       // Renormalize
-		newVal = convVec4ToRGBA8(curValF);
-
-		++numIterations;
-	}
-}
+	//	++numIterations;
+	//}
+};

@@ -15,32 +15,27 @@ using namespace GLRenderingBackendNS;
 
 INNO_PRIVATE_SCOPE GLVXGIPass
 {
-	void initializeVoxelizationPass();
-	void initializeIrradianceInjectionPass();
-	void initializeVoxelVisualizationPass();
+void initializeVoxelizationPass();
+//void initializeVoxelVisualizationPass();
 
-	void updateVoxelizationPass();
-	void updateIrradianceInjectionPass();
-	void updateVoxelVisualizationPass();
+void updateVoxelizationPass();
+//void updateVoxelVisualizationPass();
 
-	EntityID m_entityID;
+EntityID m_entityID;
 
-	GLRenderPassComponent* m_voxelizationPassGLRPC;
-	GLShaderProgramComponent* m_voxelizationPassSPC;
+GLTextureDataComponent* m_voxelizationPassGLTDC;
+GLShaderProgramComponent* m_voxelizationPassGLSPC;
 
-	std::vector<mat4> m_VP;
-	std::vector<mat4> m_VP_inv;
-	unsigned int m_volumeDimension = 128;
-	unsigned int m_voxelCount = m_volumeDimension * m_volumeDimension * m_volumeDimension;
-	float m_volumeGridSize;
+std::vector<mat4> m_VP;
+std::vector<mat4> m_VP_inv;
+unsigned int m_volumeDimension = 128;
+unsigned int m_voxelCount = m_volumeDimension * m_volumeDimension * m_volumeDimension;
+float m_volumeEdgeSize;
 
-	GLRenderPassComponent* m_irradianceInjectionPassGLRPC;
-	GLShaderProgramComponent* m_irradianceInjectionPassSPC;
+//GLRenderPassComponent* m_voxelVisualizationGLRPC;
+//GLShaderProgramComponent* m_voxelVisualizationPassGLSPC;
 
-	GLRenderPassComponent* m_voxelVisualizationGLRPC;
-	GLShaderProgramComponent* m_voxelVisualizationPassSPC;
-
-	GLuint m_VAO;
+//GLuint m_VAO;
 }
 
 void GLVXGIPass::initialize()
@@ -49,32 +44,25 @@ void GLVXGIPass::initialize()
 
 	initializeVoxelizationPass();
 
-	initializeIrradianceInjectionPass();
-
-	initializeVoxelVisualizationPass();
+	//initializeVoxelVisualizationPass();
 }
 
 void GLVXGIPass::initializeVoxelizationPass()
 {
-	auto l_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
+	m_voxelizationPassGLTDC = addGLTextureDataComponent();
+	m_voxelizationPassGLTDC->m_textureDataDesc.samplerType = TextureSamplerType::SAMPLER_3D;
+	m_voxelizationPassGLTDC->m_textureDataDesc.usageType = TextureUsageType::RAW_IMAGE;
+	m_voxelizationPassGLTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::R;
+	m_voxelizationPassGLTDC->m_textureDataDesc.minFilterMethod = TextureFilterMethod::NEAREST;
+	m_voxelizationPassGLTDC->m_textureDataDesc.magFilterMethod = TextureFilterMethod::NEAREST;
+	m_voxelizationPassGLTDC->m_textureDataDesc.wrapMethod = TextureWrapMethod::REPEAT;
+	m_voxelizationPassGLTDC->m_textureDataDesc.width = m_volumeDimension;
+	m_voxelizationPassGLTDC->m_textureDataDesc.height = m_volumeDimension;
+	m_voxelizationPassGLTDC->m_textureDataDesc.depth = m_volumeDimension;
+	m_voxelizationPassGLTDC->m_textureDataDesc.pixelDataType = TexturePixelDataType::UINT32;
+	m_voxelizationPassGLTDC->m_textureData = nullptr;
 
-	l_renderPassDesc.RTNumber = 2;
-	l_renderPassDesc.RTDesc.samplerType = TextureSamplerType::SAMPLER_3D;
-	l_renderPassDesc.RTDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	l_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
-	l_renderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::NEAREST;
-	l_renderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::NEAREST;
-	l_renderPassDesc.RTDesc.wrapMethod = TextureWrapMethod::REPEAT;
-	l_renderPassDesc.RTDesc.width = m_volumeDimension;
-	l_renderPassDesc.RTDesc.height = m_volumeDimension;
-	l_renderPassDesc.RTDesc.depth = m_volumeDimension;
-	l_renderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::UBYTE;
-
-	m_voxelizationPassGLRPC = addGLRenderPassComponent(m_entityID, "VoxelizationPassGLRPC/");
-	m_voxelizationPassGLRPC->m_renderPassDesc = l_renderPassDesc;
-	m_voxelizationPassGLRPC->m_renderPassDesc.useDepthAttachment = true;
-	m_voxelizationPassGLRPC->m_drawColorBuffers = false;
-	initializeGLRenderPassComponent(m_voxelizationPassGLRPC);
+	initializeGLTextureDataComponent(m_voxelizationPassGLTDC);
 
 	// shader programs and shaders
 	ShaderFilePaths m_voxelizationPassShaderFilePaths = {};
@@ -87,7 +75,7 @@ void GLVXGIPass::initializeVoxelizationPass()
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_voxelizationPassShaderFilePaths);
 
-	m_voxelizationPassSPC = rhs;
+	m_voxelizationPassGLSPC = rhs;
 
 	m_VP.reserve(3);
 	m_VP_inv.reserve(3);
@@ -99,228 +87,137 @@ void GLVXGIPass::initializeVoxelizationPass()
 	}
 }
 
-void GLVXGIPass::initializeIrradianceInjectionPass()
-{
-	auto l_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
-
-	l_renderPassDesc.RTDesc.samplerType = TextureSamplerType::SAMPLER_3D;
-	l_renderPassDesc.RTDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	l_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
-	l_renderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::NEAREST;
-	l_renderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::NEAREST;
-	l_renderPassDesc.RTDesc.wrapMethod = TextureWrapMethod::REPEAT;
-	l_renderPassDesc.RTDesc.width = m_volumeDimension;
-	l_renderPassDesc.RTDesc.height = m_volumeDimension;
-	l_renderPassDesc.RTDesc.depth = m_volumeDimension;
-	l_renderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::UBYTE;
-	l_renderPassDesc.useDepthAttachment = true;
-
-	m_irradianceInjectionPassGLRPC = addGLRenderPassComponent(m_entityID, "IrradianceInjectionPassGLRPC/");
-	m_irradianceInjectionPassGLRPC->m_renderPassDesc = l_renderPassDesc;
-	m_irradianceInjectionPassGLRPC->m_drawColorBuffers = false;
-	initializeGLRenderPassComponent(m_irradianceInjectionPassGLRPC);
-
-	ShaderFilePaths m_irradianceInjectionPassShaderFilePaths = {};
-
-	////
-	m_irradianceInjectionPassShaderFilePaths.m_CSPath = "GL//GIIrradianceInjectionPass.comp/";
-
-	auto rhs = addGLShaderProgramComponent(m_entityID);
-	initializeGLShaderProgramComponent(rhs, m_irradianceInjectionPassShaderFilePaths);
-
-	m_irradianceInjectionPassSPC = rhs;
-}
-
-void GLVXGIPass::initializeVoxelVisualizationPass()
-{
-	// generate and bind framebuffer
-	m_voxelVisualizationGLRPC = addGLRenderPassComponent(m_entityID, "VoxelVisualizationPassGLRPC/");
-	m_voxelVisualizationGLRPC->m_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
-	initializeGLRenderPassComponent(m_voxelVisualizationGLRPC);
-
-	ShaderFilePaths m_voxelVisualizationPassShaderFilePaths = {};
-
-	////
-	m_voxelVisualizationPassShaderFilePaths.m_VSPath = "GL//GIVoxelVisualizationPass.vert/";
-	m_voxelVisualizationPassShaderFilePaths.m_GSPath = "GL//GIVoxelVisualizationPass.geom/";
-	m_voxelVisualizationPassShaderFilePaths.m_FSPath = "GL//GIVoxelVisualizationPass.frag/";
-
-	auto rhs = addGLShaderProgramComponent(m_entityID);
-	initializeGLShaderProgramComponent(rhs, m_voxelVisualizationPassShaderFilePaths);
-
-	m_voxelVisualizationPassSPC = rhs;
-
-	glGenVertexArrays(1, &m_VAO);
-}
+//void GLVXGIPass::initializeVoxelVisualizationPass()
+//{
+//	// generate and bind framebuffer
+//	m_voxelVisualizationGLRPC = addGLRenderPassComponent(m_entityID, "VoxelVisualizationPassGLRPC/");
+//	m_voxelVisualizationGLRPC->m_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
+//	initializeGLRenderPassComponent(m_voxelVisualizationGLRPC);
+//
+//	ShaderFilePaths m_voxelVisualizationPassShaderFilePaths = {};
+//
+//	////
+//	m_voxelVisualizationPassShaderFilePaths.m_VSPath = "GL//GIVoxelVisualizationPass.vert/";
+//	m_voxelVisualizationPassShaderFilePaths.m_GSPath = "GL//GIVoxelVisualizationPass.geom/";
+//	m_voxelVisualizationPassShaderFilePaths.m_FSPath = "GL//GIVoxelVisualizationPass.frag/";
+//
+//	auto rhs = addGLShaderProgramComponent(m_entityID);
+//	initializeGLShaderProgramComponent(rhs, m_voxelVisualizationPassShaderFilePaths);
+//
+//	m_voxelVisualizationPassGLSPC = rhs;
+//
+//	glGenVertexArrays(1, &m_VAO);
+//}
 
 void GLVXGIPass::update()
 {
 	updateVoxelizationPass();
-	updateIrradianceInjectionPass();
 }
 
 void GLVXGIPass::draw()
 {
-	updateVoxelVisualizationPass();
+	//updateVoxelVisualizationPass();
 }
 
 void GLVXGIPass::updateVoxelizationPass()
 {
 	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getTotalSceneAABB();
 
-	auto axisSize = l_sceneAABB.m_extend;
-	auto center = l_sceneAABB.m_center;
-	m_volumeGridSize = std::max(axisSize.x, std::max(axisSize.y, axisSize.z));
-	auto l_voxelSize = m_volumeGridSize / m_volumeDimension;
-	auto l_halfSize = m_volumeGridSize / 2.0f;
+	auto l_axisSize = l_sceneAABB.m_extend;
+	auto l_center = l_sceneAABB.m_center;
+	m_volumeEdgeSize = std::max(l_axisSize.x, std::max(l_axisSize.y, l_axisSize.z));
+	auto l_halfSize = m_volumeEdgeSize / 2.0f;
 
 	// projection matrices
-	auto l_p = InnoMath::generateOrthographicMatrix(-l_halfSize, l_halfSize, -l_halfSize, l_halfSize, 0.0f, m_volumeGridSize);
+	auto l_p = InnoMath::generateOrthographicMatrix(-l_halfSize, l_halfSize, -l_halfSize, l_halfSize, 0.0f, m_volumeEdgeSize);
 
 	// view matrices
-	m_VP[0] = InnoMath::lookAt(center + vec4(l_halfSize, 0.0f, 0.0f, 0.0f),
-		center, vec4(0.0f, 1.0f, 0.0f, 0.0f));
-	m_VP[1] = InnoMath::lookAt(center + vec4(0.0f, l_halfSize, 0.0f, 0.0f),
-		center, vec4(0.0f, 0.0f, -1.0f, 0.0f));
-	m_VP[2] = InnoMath::lookAt(center + vec4(0.0f, 0.0f, l_halfSize, 0.0f),
-		center, vec4(0.0f, 1.0f, 0.0f, 0.0f));
+	m_VP[0] = InnoMath::lookAt(l_center + vec4(l_halfSize, 0.0f, 0.0f, 0.0f),
+		l_center, vec4(0.0f, 1.0f, 0.0f, 0.0f));
+	m_VP[1] = InnoMath::lookAt(l_center + vec4(0.0f, l_halfSize, 0.0f, 0.0f),
+		l_center, vec4(0.0f, 0.0f, 1.0f, 0.0f));
+	m_VP[2] = InnoMath::lookAt(l_center + vec4(0.0f, 0.0f, l_halfSize, 0.0f),
+		l_center, vec4(0.0f, 1.0f, 0.0f, 0.0f));
 
 	for (size_t i = 0; i < 3; i++)
 	{
-		m_VP[i] = m_VP[i] * l_p;
+		m_VP[i] = l_p * m_VP[i];
 		m_VP_inv[i] = m_VP[i].inverse();
 	}
 
-	activateRenderPass(m_voxelizationPassGLRPC);
-
-	// disable status
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
-
-	glDepthMask(false);
-	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 	// voxelization pass
-	glBindImageTexture(0, m_voxelizationPassGLRPC->m_GLTDCs[0]->m_TO, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RG32UI);
-	glBindImageTexture(1, m_voxelizationPassGLRPC->m_GLTDCs[1]->m_TO, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RG32UI);
+	glBindImageTexture(0, m_voxelizationPassGLTDC->m_TO, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
 
-	activateShaderProgram(m_voxelizationPassSPC);
+	activateShaderProgram(m_voxelizationPassGLSPC);
 
-	updateUniform(7, m_volumeDimension);
-	updateUniform(8, 1.0f / m_volumeGridSize);
-	updateUniform(9, l_sceneAABB.m_boundMin);
+	updateUniform(6, m_volumeDimension);
+	updateUniform(7, 1.0f / m_volumeEdgeSize);
+	updateUniform(8, l_sceneAABB.m_boundMin);
 
 	for (size_t i = 0; i < m_VP.size(); i++)
 	{
-		updateUniform(GLint(1 + i), m_VP[i]);
-		updateUniform(GLint(4 + i), m_VP_inv[i]);
+		updateUniform(GLint(i), m_VP[i]);
+		updateUniform(GLint(3 + i), m_VP_inv[i]);
 	}
 
-	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
+	updateUBO(GLRenderingBackendComponent::get().m_meshUBO, g_pModuleManager->getRenderingFrontend()->getGIPassMeshGPUData());
+	updateUBO(GLRenderingBackendComponent::get().m_materialUBO, g_pModuleManager->getRenderingFrontend()->getGIPassMaterialGPUData());
 
-	for (auto& l_visibleComponent : l_visibleComponents)
+	unsigned int l_offset = 0;
+
+	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getGIPassDrawCallCount();
+	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
 	{
-		if (l_visibleComponent->m_visiblilityType == VisiblilityType::INNO_OPAQUE && l_visibleComponent->m_objectStatus == ObjectStatus::Activated)
-		{
-			updateUniform(
-				0,
-				GetComponent(TransformComponent, l_visibleComponent->m_parentEntity)->m_globalTransformMatrix.m_transformationMat);
+		auto l_GIPassGPUData = g_pModuleManager->getRenderingFrontend()->getGIPassGPUData()[i];
 
-			// draw each graphic data of visibleComponent
-			for (auto& l_modelPair : l_visibleComponent->m_modelMap)
-			{
-				// draw meshes
-				auto l_MDC = l_modelPair.first;
+		bindUBO(GLRenderingBackendComponent::get().m_meshUBO, 1, l_offset * sizeof(MeshGPUData), sizeof(MeshGPUData));
+		bindUBO(GLRenderingBackendComponent::get().m_materialUBO, 2, l_offset * sizeof(MaterialGPUData), sizeof(MaterialGPUData));
 
-				if (l_MDC)
-				{
-					// draw meshes
-					drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_MDC));
-				}
-			}
-		}
+		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_GIPassGPUData.MDC));
+
+		l_offset++;
 	}
 
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
-	// reset status
-	glDepthMask(true);
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 }
 
-void GLVXGIPass::updateIrradianceInjectionPass()
-{
-	glDepthMask(false);
-	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getTotalSceneAABB();
-
-	auto axisSize = l_sceneAABB.m_extend;
-	m_volumeGridSize = std::max(axisSize.x, std::max(axisSize.y, axisSize.z));
-	auto l_voxelSize = m_volumeGridSize / m_volumeDimension;
-
-	activateRenderPass(m_irradianceInjectionPassGLRPC);
-
-	activateTexture(m_voxelizationPassGLRPC->m_GLTDCs[0], 0);
-	activateTexture(m_voxelizationPassGLRPC->m_GLTDCs[1], 1);
-	glBindImageTexture(2, m_irradianceInjectionPassGLRPC->m_GLTDCs[0]->m_TO, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
-
-	activateShaderProgram(m_irradianceInjectionPassSPC);
-
-	updateUniform(0, m_volumeDimension);
-	updateUniform(1, l_voxelSize);
-	updateUniform(2, 1.0f / m_volumeGridSize);
-	updateUniform(3, l_sceneAABB.m_boundMin);
-
-	auto l_workGroups = static_cast<unsigned>(std::ceil(m_volumeDimension / 8.0f));
-	glDispatchCompute(l_workGroups, l_workGroups, l_workGroups);
-
-	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
-
-	// reset status
-	glDepthMask(true);
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-}
-
-void GLVXGIPass::updateVoxelVisualizationPass()
-{
-	glDepthMask(true);
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
-	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getTotalSceneAABB();
-
-	auto axisSize = l_sceneAABB.m_extend;
-	m_volumeGridSize = std::max(axisSize.x, std::max(axisSize.y, axisSize.z));
-	auto l_voxelSize = m_volumeGridSize / m_volumeDimension;
-
-	// voxel visualization pass
-	auto l_ms = InnoMath::toScaleMatrix(vec4(l_voxelSize, l_voxelSize, l_voxelSize, 1.0f));
-	auto l_mt = InnoMath::toTranslationMatrix(l_sceneAABB.m_boundMin);
-
-	auto l_m = l_mt * l_ms;
-
-	activateRenderPass(m_voxelVisualizationGLRPC);
-
-	activateShaderProgram(m_voxelVisualizationPassSPC);
-
-	updateUniform(4, g_pModuleManager->getRenderingFrontend()->getCameraGPUData().p_original);
-	updateUniform(5, g_pModuleManager->getRenderingFrontend()->getCameraGPUData().r);
-	updateUniform(6, g_pModuleManager->getRenderingFrontend()->getCameraGPUData().t);
-	updateUniform(7, l_m);
-
-	updateUniform(1, m_volumeDimension);
-	updateUniform(2, l_voxelSize);
-	updateUniform(3, l_sceneAABB.m_boundMin);
-
-	glBindImageTexture(3, m_irradianceInjectionPassGLRPC->m_GLTDCs[0]->m_TO, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
-
-	glBindVertexArray(m_VAO);
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	glDrawArrays(GL_POINTS, 0, m_voxelCount);
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-}
+//void GLVXGIPass::updateVoxelVisualizationPass()
+//{
+//
+//	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getTotalSceneAABB();
+//
+//	auto axisSize = l_sceneAABB.m_extend;
+//	m_volumeGridSize = std::max(axisSize.x, std::max(axisSize.y, axisSize.z));
+//	auto l_voxelSize = m_volumeGridSize / m_volumeDimension;
+//
+//	// voxel visualization pass
+//	auto l_ms = InnoMath::toScaleMatrix(vec4(l_voxelSize, l_voxelSize, l_voxelSize, 1.0f));
+//	auto l_mt = InnoMath::toTranslationMatrix(l_sceneAABB.m_boundMin);
+//
+//	auto l_m = l_mt * l_ms;
+//
+//	activateRenderPass(m_voxelVisualizationGLRPC);
+//
+//	activateShaderProgram(m_voxelVisualizationPassGLSPC);
+//
+//	updateUniform(4, g_pModuleManager->getRenderingFrontend()->getCameraGPUData().p_original);
+//	updateUniform(5, g_pModuleManager->getRenderingFrontend()->getCameraGPUData().r);
+//	updateUniform(6, g_pModuleManager->getRenderingFrontend()->getCameraGPUData().t);
+//	updateUniform(7, l_m);
+//
+//	updateUniform(1, m_volumeDimension);
+//	updateUniform(2, l_voxelSize);
+//	updateUniform(3, l_sceneAABB.m_boundMin);
+//
+//	glBindImageTexture(3, m_voxelizationPassGLRPC->m_GLTDCs[0]->m_TO, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
+//
+//	glBindVertexArray(m_VAO);
+//	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+//	glDrawArrays(GL_POINTS, 0, m_voxelCount);
+//	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+//}
 
 GLRenderPassComponent * GLVXGIPass::getGLRPC()
 {
-	return m_voxelVisualizationGLRPC;
+	return nullptr;
 }

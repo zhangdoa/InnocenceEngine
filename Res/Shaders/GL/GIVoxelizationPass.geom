@@ -11,18 +11,18 @@ layout(location = 0) in VS_OUT
 
 layout(location = 0) out GS_OUT
 {
-	vec3 wsPosition;
-	vec3 position;
+	vec3 outputCoord;
+	vec3 positionLS;
 	vec3 normal;
 	vec2 texCoord;
 	flat vec4 triangleAABB;
 } gs_out;
 
-layout(location = 1) uniform mat4 uni_VP[3];
-layout(location = 4) uniform mat4 uni_VP_inv[3];
-layout(location = 7) uniform uint uni_volumeDimension;
-layout(location = 8) uniform float uni_voxelScale;
-layout(location = 9) uniform vec4 uni_worldMinPoint;
+layout(location = 0) uniform mat4 uni_VP[3];
+layout(location = 3) uniform mat4 uni_VP_inv[3];
+layout(location = 6) uniform uint uni_volumeDimension;
+layout(location = 7) uniform float uni_voxelScale;
+layout(location = 8) uniform vec4 uni_worldMinPoint;
 
 int CalculateAxis()
 {
@@ -82,6 +82,11 @@ void main()
 		VP * gl_in[2].gl_Position
 		);
 
+	for (int i = 0; i < pos.length(); i++)
+	{
+		pos[i] /= pos[i].w;
+	}
+
 	// xyz is normal, w is distance
 	vec4 trianglePlane;
 	trianglePlane.xyz = cross(pos[1].xyz - pos[0].xyz, pos[2].xyz - pos[0].xyz);
@@ -139,15 +144,15 @@ void main()
 	for (int i = 0; i < 3; ++i)
 	{
 		vec4 voxelPos = VP_inv * pos[i];
-		voxelPos.xyz /= voxelPos.w;
+		voxelPos /= voxelPos.w;
 		voxelPos.xyz -= uni_worldMinPoint.xyz;
 		voxelPos *= uni_voxelScale;
 
 		gl_Position = pos[i];
-		gs_out.position = pos[i].xyz;
+		gs_out.positionLS = pos[i].xyz;
 		gs_out.normal = gs_in[i].normal;
 		gs_out.texCoord = texCoord[i];
-		gs_out.wsPosition = voxelPos.xyz * uni_volumeDimension;
+		gs_out.outputCoord = voxelPos.xyz * uni_volumeDimension;
 
 		EmitVertex();
 	}
