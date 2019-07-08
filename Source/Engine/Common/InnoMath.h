@@ -1486,7 +1486,7 @@ namespace InnoMath
 		TMat4<T> l_m;
 		TVec4<T> l_X;
 		TVec4<T> l_Y = upDir;
-		TVec4<T> l_Z = TVec4<T>(eyePos.x - centerPos.x, eyePos.y - centerPos.y, eyePos.y - centerPos.y, T()).normalize();
+		TVec4<T> l_Z = TVec4<T>(eyePos.x - centerPos.x, eyePos.y - centerPos.y, eyePos.z - centerPos.z, T()).normalize();
 
 		l_X = l_Y.cross(l_Z);
 		l_X = l_X.normalize();
@@ -1520,7 +1520,7 @@ namespace InnoMath
 		TMat4<T> l_m;
 		TVec4<T> l_X;
 		TVec4<T> l_Y = upDir;
-		TVec4<T> l_Z = TVec4<T>(eyePos.x - centerPos.x, eyePos.y - centerPos.y, eyePos.y - centerPos.y, T()).normalize();
+		TVec4<T> l_Z = TVec4<T>(eyePos.x - centerPos.x, eyePos.y - centerPos.y, eyePos.z - centerPos.z, T()).normalize();
 
 		l_X = l_Y.cross(l_Z);
 		l_X = l_X.normalize();
