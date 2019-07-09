@@ -127,7 +127,7 @@ void GLRenderingBackendNS::generateFBO(GLRenderPassComponent* GLRPC)
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
 	glObjectLabel(GL_FRAMEBUFFER, GLRPC->m_FBO, (GLsizei)GLRPC->m_name.size(), GLRPC->m_name.c_str());
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingBackend: " + std::string(GLRPC->m_name.c_str()) + " FBO has been generated.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: " + std::string(GLRPC->m_name.c_str()) + " FBO has been generated.");
 }
 
 void GLRenderingBackendNS::generateRBO(GLRenderPassComponent* GLRPC)
@@ -147,7 +147,7 @@ void GLRenderingBackendNS::generateRBO(GLRenderPassComponent* GLRPC)
 	}
 	else
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingBackend: " + std::string(GLRPC->m_name.c_str()) + " RBO has been generated.");
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: " + std::string(GLRPC->m_name.c_str()) + " RBO has been generated.");
 	}
 }
 
@@ -176,7 +176,7 @@ void GLRenderingBackendNS::attachRenderTargets(GLRenderPassComponent* GLRPC, Tex
 		}
 	}
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingBackend: " + std::string(GLRPC->m_name.c_str()) + " render target has been attached.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: " + std::string(GLRPC->m_name.c_str()) + " render target has been attached.");
 }
 
 void GLRenderingBackendNS::setDrawBuffers(unsigned int RTNum)
@@ -367,7 +367,7 @@ void GLRenderingBackendNS::addShader(GLuint& shaderProgram, GLuint& shaderID, GL
 		return;
 	}
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingBackend: " + std::string(shaderFilePath.c_str()) + " has been compiled.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: " + std::string(shaderFilePath.c_str()) + " has been compiled.");
 
 	// Link shader to program
 	glAttachShader(shaderProgram, shaderID);
@@ -393,7 +393,7 @@ void GLRenderingBackendNS::addShader(GLuint& shaderProgram, GLuint& shaderID, GL
 		return;
 	}
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingBackend: " + std::string(shaderFilePath.c_str()) + " has been linked.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: " + std::string(shaderFilePath.c_str()) + " has been linked.");
 }
 
 bool GLRenderingBackendNS::initializeGLShaderProgramComponent(GLShaderProgramComponent* rhs, const ShaderFilePaths& ShaderFilePaths)
@@ -904,7 +904,7 @@ bool GLRenderingBackendNS::deleteShaderProgram(GLShaderProgramComponent* rhs)
 
 	glDeleteProgram(rhs->m_program);
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingBackend: shader deleted.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: shader deleted.");
 
 	return true;
 }
