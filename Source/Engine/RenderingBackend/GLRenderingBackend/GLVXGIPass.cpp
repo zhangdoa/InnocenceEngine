@@ -15,36 +15,74 @@ using namespace GLRenderingBackendNS;
 
 INNO_PRIVATE_SCOPE GLVXGIPass
 {
+void initializeVoxelTestPass();
 void initializeVoxelizationPass();
 //void initializeVoxelVisualizationPass();
 
+void updateVoxelTestPass();
 void updateVoxelizationPass();
 //void updateVoxelVisualizationPass();
 
 EntityID m_entityID;
-
-GLTextureDataComponent* m_voxelizationPassGLTDC;
-GLShaderProgramComponent* m_voxelizationPassGLSPC;
-
 std::vector<mat4> m_VP;
 std::vector<mat4> m_VP_inv;
 unsigned int m_volumeDimension = 128;
 unsigned int m_voxelCount = m_volumeDimension * m_volumeDimension * m_volumeDimension;
 float m_volumeEdgeSize;
 
+GLTextureDataComponent* m_voxelTestPassGLTDC;
+GLShaderProgramComponent* m_voxelTestPassGLSPC;
+
+GLTextureDataComponent* m_voxelizationPassGLTDC;
+GLShaderProgramComponent* m_voxelizationPassGLSPC;
+
 //GLRenderPassComponent* m_voxelVisualizationGLRPC;
 //GLShaderProgramComponent* m_voxelVisualizationPassGLSPC;
 
-//GLuint m_VAO;
+GLuint m_VAO;
 }
 
 void GLVXGIPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
+	initializeVoxelTestPass();
+
 	initializeVoxelizationPass();
 
 	//initializeVoxelVisualizationPass();
+
+	glGenVertexArrays(1, &m_VAO);
+}
+
+void GLVXGIPass::initializeVoxelTestPass()
+{
+	m_voxelTestPassGLTDC = addGLTextureDataComponent();
+	m_voxelTestPassGLTDC->m_textureDataDesc.samplerType = TextureSamplerType::SAMPLER_3D;
+	m_voxelTestPassGLTDC->m_textureDataDesc.usageType = TextureUsageType::RAW_IMAGE;
+	m_voxelTestPassGLTDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
+	m_voxelTestPassGLTDC->m_textureDataDesc.minFilterMethod = TextureFilterMethod::NEAREST;
+	m_voxelTestPassGLTDC->m_textureDataDesc.magFilterMethod = TextureFilterMethod::NEAREST;
+	m_voxelTestPassGLTDC->m_textureDataDesc.wrapMethod = TextureWrapMethod::REPEAT;
+	m_voxelTestPassGLTDC->m_textureDataDesc.width = m_volumeDimension;
+	m_voxelTestPassGLTDC->m_textureDataDesc.height = m_volumeDimension;
+	m_voxelTestPassGLTDC->m_textureDataDesc.depth = m_volumeDimension;
+	m_voxelTestPassGLTDC->m_textureDataDesc.pixelDataType = TexturePixelDataType::UBYTE;
+	m_voxelTestPassGLTDC->m_textureData = nullptr;
+
+	initializeGLTextureDataComponent(m_voxelTestPassGLTDC);
+
+	// shader programs and shaders
+	ShaderFilePaths m_voxelTestPassShaderFilePaths = {};
+
+	////
+	m_voxelTestPassShaderFilePaths.m_VSPath = "GL//GIVoxelTestPass.vert/";
+	m_voxelTestPassShaderFilePaths.m_FSPath = "GL//GIVoxelTestPass.frag/";
+
+	auto rhs = addGLShaderProgramComponent(m_entityID);
+	initializeGLShaderProgramComponent(rhs, m_voxelTestPassShaderFilePaths);
+
+	m_voxelTestPassGLSPC = rhs;
 }
 
 void GLVXGIPass::initializeVoxelizationPass()
@@ -105,18 +143,31 @@ void GLVXGIPass::initializeVoxelizationPass()
 //	initializeGLShaderProgramComponent(rhs, m_voxelVisualizationPassShaderFilePaths);
 //
 //	m_voxelVisualizationPassGLSPC = rhs;
-//
-//	glGenVertexArrays(1, &m_VAO);
 //}
 
 void GLVXGIPass::update()
 {
+	updateVoxelTestPass();
 	updateVoxelizationPass();
 }
 
 void GLVXGIPass::draw()
 {
 	//updateVoxelVisualizationPass();
+}
+
+void GLVXGIPass::updateVoxelTestPass()
+{
+	glBindImageTexture(0, m_voxelTestPassGLTDC->m_TO, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+
+	activateShaderProgram(m_voxelTestPassGLSPC);
+
+	updateUniform(0, m_volumeDimension);
+
+	glBindVertexArray(m_VAO);
+	glDrawArrays(GL_POINTS, 0, m_voxelCount);
+
+	glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
 }
 
 void GLVXGIPass::updateVoxelizationPass()
@@ -177,6 +228,8 @@ void GLVXGIPass::updateVoxelizationPass()
 
 		l_offset++;
 	}
+
+	glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
 
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 }
