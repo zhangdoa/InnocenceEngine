@@ -10,16 +10,16 @@ using namespace GLRenderingBackendNS;
 
 INNO_PRIVATE_SCOPE GLShadowPass
 {
-	void drawAllMeshDataComponents();
-
 	EntityID m_entityID;
 
 	GLRenderPassComponent* m_DirLight_GLRPC;
 	GLRenderPassComponent* m_PointLight_GLRPC;
 
-	GLShaderProgramComponent* m_GLSPC;
+	GLShaderProgramComponent* m_DirLight_GLSPC;
+	GLShaderProgramComponent* m_PointLight_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//shadowPass.vert/" , "", "", "", "GL//shadowPass.frag/" };
+	ShaderFilePaths m_DirLightShaderFilePaths = { "GL//dirLightShadowPass.vert/" , "", "", "", "GL//dirLightShadowPass.frag/" };
+	ShaderFilePaths m_PointLightShaderFilePaths = { "GL/pointLightShadowPass.vert/" , "", "", "GL/pointLightShadowPass.geom/", "GL//pointLightShadowPass.frag/" };
 }
 
 void GLShadowPass::initialize()
@@ -48,14 +48,14 @@ void GLShadowPass::initialize()
 	initializeGLRenderPassComponent(m_DirLight_GLRPC);
 
 	l_renderPassDesc.RTDesc.samplerType = TextureSamplerType::CUBEMAP;
-	l_renderPassDesc.RTDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
-	l_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
+	l_renderPassDesc.RTDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
+	l_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RG;
 	l_renderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::LINEAR;
 	l_renderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::LINEAR;
 	l_renderPassDesc.RTDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_BORDER;
-	l_renderPassDesc.RTDesc.width = 4096;
-	l_renderPassDesc.RTDesc.height = 4096;
-	l_renderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::FLOAT16;
+	l_renderPassDesc.RTDesc.width = 1024;
+	l_renderPassDesc.RTDesc.height = 1024;
+	l_renderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::FLOAT32;
 	l_renderPassDesc.RTDesc.borderColor[0] = 1.0f;
 	l_renderPassDesc.RTDesc.borderColor[1] = 1.0f;
 	l_renderPassDesc.RTDesc.borderColor[2] = 1.0f;
@@ -64,27 +64,14 @@ void GLShadowPass::initialize()
 	m_PointLight_GLRPC = addGLRenderPassComponent(m_entityID, "PointLightShadowPassGLRPC/");
 	m_PointLight_GLRPC->m_renderPassDesc = l_renderPassDesc;
 	m_PointLight_GLRPC->m_renderPassDesc.useDepthAttachment = true;
-	m_PointLight_GLRPC->m_drawColorBuffers = false;
+	m_PointLight_GLRPC->m_drawColorBuffers = true;
 	initializeGLRenderPassComponent(m_PointLight_GLRPC);
 
-	m_GLSPC = addGLShaderProgramComponent(m_entityID);
-	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
-}
+	m_DirLight_GLSPC = addGLShaderProgramComponent(m_entityID);
+	initializeGLShaderProgramComponent(m_DirLight_GLSPC, m_DirLightShaderFilePaths);
 
-void GLShadowPass::drawAllMeshDataComponents()
-{
-	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
-	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
-	{
-		auto l_opaquePassGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassGPUData()[i];
-		auto l_meshGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassMeshGPUData()[i];
-
-		//uni_m
-		updateUniform(
-			2, l_meshGPUData.m);
-
-		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_opaquePassGPUData.MDC));
-	}
+	m_PointLight_GLSPC = addGLShaderProgramComponent(m_entityID);
+	initializeGLShaderProgramComponent(m_PointLight_GLSPC, m_PointLightShaderFilePaths);
 }
 
 void GLShadowPass::update()
@@ -96,7 +83,7 @@ void GLShadowPass::update()
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
 
-	activateShaderProgram(m_GLSPC);
+	activateShaderProgram(m_DirLight_GLSPC);
 
 	activateRenderPass(m_DirLight_GLRPC);
 
@@ -121,39 +108,62 @@ void GLShadowPass::update()
 
 			splitCount++;
 
-			drawAllMeshDataComponents();
+			auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
+			for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
+			{
+				auto l_opaquePassGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassGPUData()[i];
+				auto l_meshGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassMeshGPUData()[i];
+
+				//uni_m
+				updateUniform(2, l_meshGPUData.m);
+
+				drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_opaquePassGPUData.MDC));
+			}
 		}
 	}
 
-	//mat4 l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, 10.0f);
-	//auto l_capturePos = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	//std::vector<mat4> l_v =
-	//{
-	//	InnoMath::lookAt(l_capturePos, l_capturePos + vec4(1.0f,  0.0f,  0.0f, 0.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
-	//	InnoMath::lookAt(l_capturePos, l_capturePos + vec4(-1.0f,  0.0f,  0.0f, 0.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
-	//	InnoMath::lookAt(l_capturePos, l_capturePos + vec4(0.0f,  1.0f,  0.0f, 0.0f), vec4(0.0f,  0.0f,  1.0f, 0.0f)),
-	//	InnoMath::lookAt(l_capturePos, l_capturePos + vec4(0.0f, -1.0f,  0.0f, 0.0f), vec4(0.0f,  0.0f, -1.0f, 0.0f)),
-	//	InnoMath::lookAt(l_capturePos, l_capturePos + vec4(0.0f,  0.0f,  1.0f, 0.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f)),
-	//	InnoMath::lookAt(l_capturePos, l_capturePos + vec4(0.0f,  0.0f, -1.0f, 0.0f), vec4(0.0f, -1.0f,  0.0f, 0.0f))
-	//};
+	//////
+	auto l_capturePos = g_pModuleManager->getRenderingFrontend()->getPointLightGPUData()[0].pos;
+	auto l_t = InnoMath::getInvertTranslationMatrix(l_capturePos);
 
-	//l_GLFBC = m_PointLight_GLRPC->m_GLFBC;
+	activateShaderProgram(m_PointLight_GLSPC);
 
-	//bindFBC(l_GLFBC);
+	activateRenderPass(m_PointLight_GLRPC);
+	//glBindFramebuffer(GL_FRAMEBUFFER, m_PointLight_GLRPC->m_FBO);
+	//glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_PointLight_GLRPC->m_GLTDCs[0]->m_TO, 0);
 
-	//updateUniform(
-	//	m_shadowPass_uni_p,
-	//	l_p);
+	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, 1000.0f);
 
-	//for (unsigned int i = 0; i < 6; ++i)
-	//{
-	//	updateUniform(m_shadowPass_uni_v, l_v[i]);
-	//	attachCubemapDepthRT(m_PointLight_GLRPC->m_GLTDCs[0], l_GLFBC, i, 0);
+	auto l_rPX = InnoMath::toRotationMatrix(InnoMath::getQuatRotator(vec4(0.0f, 1.0f, 0.0f, 0.0f), -90.0f)).inverse();
+	auto l_rNX = InnoMath::toRotationMatrix(InnoMath::getQuatRotator(vec4(0.0f, 1.0f, 0.0f, 0.0f), 90.0f)).inverse();
+	auto l_rPY = InnoMath::toRotationMatrix(InnoMath::getQuatRotator(vec4(1.0f, 0.0f, 0.0f, 0.0f), -90.0f)).inverse();
+	auto l_rNY = InnoMath::toRotationMatrix(InnoMath::getQuatRotator(vec4(1.0f, 0.0f, 0.0f, 0.0f), 90.0f)).inverse();
+	auto l_rPZ = InnoMath::toRotationMatrix(InnoMath::getQuatRotator(vec4(0.0f, 1.0f, 0.0f, 0.0f), 0.0f)).inverse();
+	auto l_rNZ = InnoMath::toRotationMatrix(InnoMath::getQuatRotator(vec4(0.0f, 1.0f, 0.0f, 0.0f), 180.0f)).inverse();
 
-	//	glClear(GL_DEPTH_BUFFER_BIT);
+	std::vector<mat4> l_pvt =
+	{
+		l_rPX, l_rNX, l_rPY, l_rNY, l_rPZ, l_rNZ
+	};
 
-	//	drawAllMeshDataComponents();
-	//}
+	for (size_t i = 0; i < l_pvt.size(); i++)
+	{
+		l_pvt[i] = l_p * l_pvt[i] * l_t;
+	}
+
+	updateUniform(1, l_pvt);
+
+	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
+	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
+	{
+		auto l_opaquePassGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassGPUData()[i];
+		auto l_meshGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassMeshGPUData()[i];
+
+		//uni_m
+		updateUniform(0, l_meshGPUData.m);
+
+		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_opaquePassGPUData.MDC));
+	}
 
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
@@ -161,9 +171,11 @@ void GLShadowPass::update()
 
 bool GLShadowPass::reloadShader()
 {
-	deleteShaderProgram(m_GLSPC);
+	deleteShaderProgram(m_DirLight_GLSPC);
+	deleteShaderProgram(m_PointLight_GLSPC);
 
-	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
+	initializeGLShaderProgramComponent(m_DirLight_GLSPC, m_DirLightShaderFilePaths);
+	initializeGLShaderProgramComponent(m_PointLight_GLSPC, m_PointLightShaderFilePaths);
 
 	return true;
 }
