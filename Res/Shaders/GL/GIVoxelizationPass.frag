@@ -23,10 +23,8 @@ layout(location = 0) in GS_OUT
 	flat vec4 triangleAABB;
 } gs_in;
 
-layout(location = 0) out vec4 fragColor;
-layout(pixel_center_integer) in vec4 gl_FragCoord;
-
-layout(binding = 0, r32ui) uniform volatile coherent uimage3D uni_voxelAlbedo;
+layout(binding = 0, rgba8) uniform volatile coherent image3D uni_voxelAlbedo;
+layout(binding = 0) uniform sampler2D uni_albedoTexture;
 
 vec4 convRGBA8ToVec4(uint val)
 {
@@ -46,17 +44,27 @@ uint convVec4ToRGBA8(vec4 val)
 
 void main()
 {
-	//if (gs_in.positionLS.x < gs_in.triangleAABB.x || gs_in.positionLS.y < gs_in.triangleAABB.y ||
-	//	gs_in.positionLS.x > gs_in.triangleAABB.z || gs_in.positionLS.y > gs_in.triangleAABB.w)
-	//{
-	//	discard;
-	//}
+	if (gs_in.positionLS.x < gs_in.triangleAABB.x || gs_in.positionLS.y < gs_in.triangleAABB.y ||
+		gs_in.positionLS.x > gs_in.triangleAABB.z || gs_in.positionLS.y > gs_in.triangleAABB.w)
+	{
+		discard;
+	}
+
+	// fragment albedo
+	vec3 albedo;
+	if (uni_useAlbedoTexture)
+	{
+		vec4 albedoTexture = texture(uni_albedoTexture, gs_in.texCoord);
+		albedo = albedoTexture.rgb;
+	}
+	else
+	{
+		albedo = uni_albedo.rgb;
+	}
 
 	// writing coords positionLS
 	ivec3 outputCoord = ivec3(gs_in.outputCoord);
-	imageStore(uni_voxelAlbedo, outputCoord, ivec4(0, 1, 2, 3));
-	//// fragment albedo
-	//vec4 albedo = uni_albedo;
+	imageStore(uni_voxelAlbedo, outputCoord, vec4(albedo, 1.0f));
 
 	//// average albedo per fragments surrounding the voxel volume
 	//albedo.rgb *= 255.0;
@@ -78,4 +86,4 @@ void main()
 
 	//	++numIterations;
 	//}
-};
+}

@@ -145,6 +145,7 @@ void main()
 	{
 		vec4 voxelPos = VP_inv * pos[i];
 		voxelPos /= voxelPos.w;
+		// To voxelized world space
 		voxelPos.xyz -= uni_worldMinPoint.xyz;
 		voxelPos *= uni_voxelScale;
 

@@ -2,7 +2,7 @@
 #version 450
 
 layout(points) in;
-layout(triangle_strip, max_vertices = 24) out;
+layout(triangle_strip, max_vertices = 36) out;
 
 layout(location = 2) uniform float uni_voxelSize;
 layout(location = 3) uniform vec4 uni_worldMinPoint;
@@ -20,23 +20,23 @@ void main()
 	const vec4 cubeVertices[8] = vec4[8]
 	(
 		vec4(0.5f, 0.5f, 0.5f, 0.0f),
-		vec4(0.5f, 0.5f, -0.5f, 0.0f),
 		vec4(0.5f, -0.5f, 0.5f, 0.0f),
-		vec4(0.5f, -0.5f, -0.5f, 0.0f),
-		vec4(-0.5f, 0.5f, 0.5f, 0.0f),
-		vec4(-0.5f, 0.5f, -0.5f, 0.0f),
 		vec4(-0.5f, -0.5f, 0.5f, 0.0f),
-		vec4(-0.5f, -0.5f, -0.5f, 0.0f)
+		vec4(-0.5f, 0.5f, 0.5f, 0.0f),
+		vec4(0.5f, 0.5f, -0.5f, 0.0f),
+		vec4(0.5f, -0.5f, -0.5f, 0.0f),
+		vec4(-0.5f, -0.5f, -0.5f, 0.0f),
+		vec4(-0.5f, 0.5f, -0.5f, 0.0f)
 		);
 
-	const int cubeIndices[24] = int[24]
+	const int cubeIndices[36] = int[36]
 	(
-		0, 2, 1, 3, // right
-		6, 4, 7, 5, // left
-		5, 4, 1, 0, // up
-		6, 7, 2, 3, // down
-		4, 6, 0, 2, // front
-		1, 3, 5, 7  // back
+		0, 3, 1, 1, 3, 2,
+		4, 0, 5, 5, 0, 1,
+		7, 4, 6, 6, 4, 5,
+		3, 7, 2, 2, 7, 6,
+		7, 0, 4, 0, 7, 3,
+		1, 2, 5, 5, 2, 6
 		);
 
 	vec4 projectedVertices[8];
@@ -47,11 +47,11 @@ void main()
 		projectedVertices[i] = uni_p * uni_r * uni_t * uni_m * vertex;
 	}
 
-	for (int face = 0; face < 6; ++face)
+	for (int triangle = 0; triangle < 12; ++triangle)
 	{
-		for (int vertex = 0; vertex < 4; ++vertex)
+		for (int vertex = 0; vertex < 3; ++vertex)
 		{
-			gl_Position = projectedVertices[cubeIndices[face * 4 + vertex]];
+			gl_Position = projectedVertices[cubeIndices[triangle * 3 + vertex]];
 
 			voxelColor = out_textureValue[0];
 			EmitVertex();

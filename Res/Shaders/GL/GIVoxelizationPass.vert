@@ -20,10 +20,10 @@ layout(location = 0) out VS_OUT {
 
 void main()
 {
-	vec4 thefrag_WorldSpacePos = uni_m * vec4(in_Position, 1.0);
+	vec4 posWS = uni_m * vec4(in_Position, 1.0);
 
 	vs_out.normal = mat3(transpose(inverse(uni_m))) * in_Normal;
 	vs_out.texCoord = in_TexCoord;
 
-	gl_Position = thefrag_WorldSpacePos;
+	gl_Position = posWS;
 }

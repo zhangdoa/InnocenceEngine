@@ -10,4 +10,4 @@ void main()
 {
 	ivec3 outputCoord = ivec3(TexCoord);
 	imageStore(uni_voxelAlbedo, outputCoord, vec4(TexCoord / uni_volumeDimension, 1));
-};
+}
