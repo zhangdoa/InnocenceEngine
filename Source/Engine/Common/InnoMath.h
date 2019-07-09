@@ -1485,10 +1485,10 @@ namespace InnoMath
 		// @TODO: replace with SIMD impl
 		TMat4<T> l_m;
 		TVec4<T> l_X;
-		TVec4<T> l_Y = upDir;
-		TVec4<T> l_Z = TVec4<T>(eyePos.x - centerPos.x, eyePos.y - centerPos.y, eyePos.z - centerPos.z, T()).normalize();
+		TVec4<T> l_Y;
+		TVec4<T> l_Z = (eyePos - centerPos).normalize();
 
-		l_X = l_Y.cross(l_Z);
+		l_X = upDir.cross(l_Z);
 		l_X = l_X.normalize();
 		l_Y = l_Z.cross(l_X);
 		l_Y = l_Y.normalize();
@@ -1505,9 +1505,9 @@ namespace InnoMath
 		l_m.m21 = l_Y.z;
 		l_m.m22 = l_Z.z;
 		l_m.m23 = T();
-		l_m.m30 = -(l_X * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
-		l_m.m31 = -(l_Y * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
-		l_m.m32 = -(l_Z * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
+		l_m.m30 = -(eyePos.x);
+		l_m.m31 = -(eyePos.y);
+		l_m.m32 = -(eyePos.z);
 		l_m.m33 = one<T>;
 
 		return l_m;
@@ -1519,10 +1519,10 @@ namespace InnoMath
 		// @TODO: replace with SIMD impl
 		TMat4<T> l_m;
 		TVec4<T> l_X;
-		TVec4<T> l_Y = upDir;
-		TVec4<T> l_Z = TVec4<T>(eyePos.x - centerPos.x, eyePos.y - centerPos.y, eyePos.z - centerPos.z, T()).normalize();
+		TVec4<T> l_Y;
+		TVec4<T> l_Z = (eyePos - centerPos).normalize();
 
-		l_X = l_Y.cross(l_Z);
+		l_X = upDir.cross(l_Z);
 		l_X = l_X.normalize();
 		l_Y = l_Z.cross(l_X);
 		l_Y = l_Y.normalize();
@@ -1530,15 +1530,15 @@ namespace InnoMath
 		l_m.m00 = l_X.x;
 		l_m.m01 = l_X.y;
 		l_m.m02 = l_X.z;
-		l_m.m03 = -(l_X * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
+		l_m.m03 = -(eyePos.x);
 		l_m.m10 = l_Y.x;
 		l_m.m11 = l_Y.y;
 		l_m.m12 = l_Y.z;
-		l_m.m13 = -(l_Y * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
+		l_m.m13 = -(eyePos.y);
 		l_m.m20 = l_Z.x;
 		l_m.m21 = l_Z.y;
 		l_m.m22 = l_Z.z;
-		l_m.m23 = -(l_Z * TVec4<T>(eyePos.x, eyePos.y, eyePos.z, T()));
+		l_m.m23 = -(eyePos.z);
 		l_m.m30 = T();
 		l_m.m31 = T();
 		l_m.m32 = T();
