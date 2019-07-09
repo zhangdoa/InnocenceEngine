@@ -72,6 +72,7 @@ INNO_PRIVATE_SCOPE GLRenderingBackendNS
 	void updateUniform(const GLint uniformLocation, vec4 uniformValue);
 	void updateUniform(const GLint uniformLocation, const mat4& mat);
 	void updateUniform(const GLint uniformLocation, const std::vector<vec4>& uniformValue);
+	void updateUniform(const GLint uniformLocation, const std::vector<mat4>& uniformValue);
 
 	GLuint generateSSBO(GLuint SSBOSize, GLuint bufferBlockBindingPoint, const std::string& SSBOName);
 

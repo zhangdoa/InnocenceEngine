@@ -991,6 +991,16 @@ void GLRenderingBackendNS::updateUniform(const GLint uniformLocation, const std:
 	glUniform4fv(uniformLocation, (GLsizei)uniformValue.size(), (float*)&uniformValue[0]);
 }
 
+void GLRenderingBackendNS::updateUniform(const GLint uniformLocation, const std::vector<mat4>& uniformValue)
+{
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+	glUniformMatrix4fv(uniformLocation, (GLsizei)uniformValue.size(), GL_FALSE, (float*)&uniformValue[0]);
+#endif
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+	glUniformMatrix4fv(uniformLocation, (GLsizei)uniformValue.size(), GL_TRUE, (float*)&uniformValue[0]);
+#endif
+}
+
 GLuint GLRenderingBackendNS::generateSSBO(GLuint SSBOSize, GLuint bufferBlockBindingPoint, const std::string& SSBOName)
 {
 	GLuint l_SSBO;
