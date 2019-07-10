@@ -168,6 +168,7 @@ bool GLRenderingBackendNS::setup()
 	}
 
 	glEnable(GL_DEBUG_OUTPUT);
+	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 	glDebugMessageCallback(MessageCallback, 0);
 
 	// enable seamless cubemap sampling for lower mip levels in the pre-filter map.
