@@ -63,7 +63,7 @@ void GLShadowPass::initialize()
 
 	m_PointLight_GLRPC = addGLRenderPassComponent(m_entityID, "PointLightShadowPassGLRPC/");
 	m_PointLight_GLRPC->m_renderPassDesc = l_renderPassDesc;
-	m_PointLight_GLRPC->m_renderPassDesc.useDepthAttachment = true;
+	m_PointLight_GLRPC->m_renderPassDesc.useDepthAttachment = false;
 	m_PointLight_GLRPC->m_drawColorBuffers = true;
 	initializeGLRenderPassComponent(m_PointLight_GLRPC);
 
@@ -128,9 +128,11 @@ void GLShadowPass::update()
 
 	activateShaderProgram(m_PointLight_GLSPC);
 
+	glBindFramebuffer(GL_FRAMEBUFFER, m_PointLight_GLRPC->m_FBO);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_PointLight_GLRPC->m_GLTDCs[0]->m_TO, 0);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0);
+
 	activateRenderPass(m_PointLight_GLRPC);
-	//glBindFramebuffer(GL_FRAMEBUFFER, m_PointLight_GLRPC->m_FBO);
-	//glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_PointLight_GLRPC->m_GLTDCs[0]->m_TO, 0);
 
 	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, 1000.0f);
 
