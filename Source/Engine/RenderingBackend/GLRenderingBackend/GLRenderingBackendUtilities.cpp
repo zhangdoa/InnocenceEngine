@@ -566,7 +566,7 @@ GLenum GLRenderingBackendNS::getTextureSamplerType(TextureSamplerType rhs)
 		return GL_TEXTURE_2D;
 	case TextureSamplerType::SAMPLER_3D:
 		return GL_TEXTURE_3D;
-	case TextureSamplerType::CUBEMAP:
+	case TextureSamplerType::SAMPLER_CUBEMAP:
 		return GL_TEXTURE_CUBE_MAP;
 	default:
 		return 0;

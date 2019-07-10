@@ -47,7 +47,7 @@ void GLShadowPass::initialize()
 	m_DirLight_GLRPC->m_drawColorBuffers = true;
 	initializeGLRenderPassComponent(m_DirLight_GLRPC);
 
-	l_renderPassDesc.RTDesc.samplerType = TextureSamplerType::CUBEMAP;
+	l_renderPassDesc.RTDesc.samplerType = TextureSamplerType::SAMPLER_CUBEMAP;
 	l_renderPassDesc.RTDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
 	l_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RG;
 	l_renderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::LINEAR;
