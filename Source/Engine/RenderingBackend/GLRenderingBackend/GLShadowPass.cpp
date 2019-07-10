@@ -14,6 +14,7 @@ INNO_PRIVATE_SCOPE GLShadowPass
 
 	GLRenderPassComponent* m_DirLight_GLRPC;
 	GLRenderPassComponent* m_PointLight_GLRPC;
+	GLTextureDataComponent* m_PointLightDepth_GLTDC;
 
 	GLShaderProgramComponent* m_DirLight_GLSPC;
 	GLShaderProgramComponent* m_PointLight_GLSPC;
@@ -63,9 +64,16 @@ void GLShadowPass::initialize()
 
 	m_PointLight_GLRPC = addGLRenderPassComponent(m_entityID, "PointLightShadowPassGLRPC/");
 	m_PointLight_GLRPC->m_renderPassDesc = l_renderPassDesc;
-	m_PointLight_GLRPC->m_renderPassDesc.useDepthAttachment = false;
+	m_PointLight_GLRPC->m_renderPassDesc.useDepthAttachment = true;
 	m_PointLight_GLRPC->m_drawColorBuffers = true;
 	initializeGLRenderPassComponent(m_PointLight_GLRPC);
+
+	l_renderPassDesc.RTDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
+	l_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
+	m_PointLightDepth_GLTDC = addGLTextureDataComponent();
+	m_PointLightDepth_GLTDC->m_textureDataDesc = l_renderPassDesc.RTDesc;
+	m_PointLightDepth_GLTDC->m_textureData = nullptr;
+	initializeGLTextureDataComponent(m_PointLightDepth_GLTDC);
 
 	m_DirLight_GLSPC = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(m_DirLight_GLSPC, m_DirLightShaderFilePaths);
@@ -123,18 +131,21 @@ void GLShadowPass::update()
 	}
 
 	//////
-	auto l_capturePos = g_pModuleManager->getRenderingFrontend()->getPointLightGPUData()[0].pos;
+	auto l_pointLightData = g_pModuleManager->getRenderingFrontend()->getPointLightGPUData()[0];
+	auto l_capturePos = l_pointLightData.pos;
+	auto l_attenuationRange = l_pointLightData.luminance.w;
 	auto l_t = InnoMath::getInvertTranslationMatrix(l_capturePos);
 
 	activateShaderProgram(m_PointLight_GLSPC);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_PointLight_GLRPC->m_FBO);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_PointLightDepth_GLTDC->m_TO, 0);
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_PointLight_GLRPC->m_GLTDCs[0]->m_TO, 0);
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
 
 	activateRenderPass(m_PointLight_GLRPC);
 
-	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, 1000.0f);
+	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, l_attenuationRange);
 
 	auto l_rPX = InnoMath::toRotationMatrix(InnoMath::getQuatRotator(vec4(0.0f, 1.0f, 0.0f, 0.0f), -90.0f)).inverse();
 	auto l_rNX = InnoMath::toRotationMatrix(InnoMath::getQuatRotator(vec4(0.0f, 1.0f, 0.0f, 0.0f), 90.0f)).inverse();
@@ -143,17 +154,18 @@ void GLShadowPass::update()
 	auto l_rPZ = InnoMath::toRotationMatrix(InnoMath::getQuatRotator(vec4(0.0f, 1.0f, 0.0f, 0.0f), 0.0f)).inverse();
 	auto l_rNZ = InnoMath::toRotationMatrix(InnoMath::getQuatRotator(vec4(0.0f, 1.0f, 0.0f, 0.0f), 180.0f)).inverse();
 
-	std::vector<mat4> l_pvt =
+	std::vector<mat4> l_r =
 	{
 		l_rPX, l_rNX, l_rPY, l_rNY, l_rPZ, l_rNZ
 	};
 
-	for (size_t i = 0; i < l_pvt.size(); i++)
+	std::vector<mat4> l_prt(6);
+	for (size_t i = 0; i < l_r.size(); i++)
 	{
-		l_pvt[i] = l_p * l_pvt[i] * l_t;
+		l_prt[i] = l_p * l_r[i] * l_t;
 	}
 
-	updateUniform(1, l_pvt);
+	updateUniform(1, l_prt);
 
 	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
 	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
