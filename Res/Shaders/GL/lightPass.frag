@@ -102,8 +102,8 @@ layout(std430, binding = 2) buffer lightIndexListSSBO
 	uint lightIndexList[];
 };
 
-bool uni_drawCSMSplitedArea = false;
-bool uni_drawPointLightShadow = false;
+//#define uni_drawCSMSplitedArea
+//#define uni_drawPointLightShadow
 
 uvec2 RGBA16F2RG32UI(vec4 rhs)
 {
@@ -415,14 +415,12 @@ float DirectionalLightShadow(vec3 fragPos)
 float PointLightShadow(vec3 fragPos)
 {
 	vec3 fragToLight = fragPos - uni_pointLights[0].position.xyz;
-	vec4 shadowMapValue = texture(uni_pointLightShadowMap, fragToLight);
+	vec3 texCoord = normalize(fragToLight);
+	vec4 shadowMapValue = texture(uni_pointLightShadowMap, texCoord);
 	float currentDepth = length(fragToLight);
 
 	float shadow = VSMKernel(shadowMapValue, currentDepth);
 	return shadow;
-
-	//float shadow = currentDepth > closestDepth ? 1.0 : 0.0;
-	//return shadow;
 }
 // ----------------------------------------------------------------------------
 float linearDepth(float depthSample)
@@ -459,27 +457,96 @@ void main()
 	AO *= pow(SSAO, 2.0f);
 
 	vec3 Lo = vec3(0.0);
+	vec3 N = normalize(Normal);
+	vec3 L;
+	float NdotL;
 
+#ifdef uni_drawCSMSplitedArea
+	L = normalize(-uni_dirLight.direction.xyz);
+	NdotL = max(dot(N, L), 0.0);
+
+	Lo = vec3(NdotL);
+	Lo *= 1 - DirectionalLightShadow(FragPos);
+
+	int splitIndex = NR_CSM_SPLITS;
+	for (int i = 0; i < NR_CSM_SPLITS; i++)
+	{
+		if (FragPos.x >= uni_CSMs[i].AABBMin.x &&
+			FragPos.y >= uni_CSMs[i].AABBMin.y &&
+			FragPos.z >= uni_CSMs[i].AABBMin.z &&
+			FragPos.x <= uni_CSMs[i].AABBMax.x &&
+			FragPos.y <= uni_CSMs[i].AABBMax.y &&
+			FragPos.z <= uni_CSMs[i].AABBMax.z)
+		{
+			splitIndex = i;
+			break;
+		}
+	}
+
+	if (splitIndex == 0)
+	{
+		Lo.g = 0;
+		Lo.b = 0;
+	}
+	else if (splitIndex == 1)
+	{
+		Lo.b = 0;
+	}
+	else if (splitIndex == 2)
+	{
+		Lo.r = 0;
+		Lo.b = 0;
+	}
+	else if (splitIndex == 3)
+	{
+		Lo.r = 0;
+		Lo.g = 0;
+	}
+#endif
+
+#ifdef uni_drawPointLightShadow
+	pointLight light = uni_pointLights[0];
+
+	float lightRadius = light.luminance.w;
+	if (lightRadius > 0)
+	{
+		vec3 unormalizedL = light.position.xyz - FragPos;
+
+		if (length(unormalizedL) < lightRadius)
+		{
+			L = normalize(unormalizedL);
+			NdotL = max(dot(N, L), 0.0);
+
+			float attenuation = 1.0;
+			float invSqrAttRadius = 1.0 / max(lightRadius * lightRadius, eps);
+			attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
+
+			vec3 lightLuminance = light.luminance.xyz * vec3(NdotL) * attenuation;
+
+			Lo = lightLuminance;
+		}
+	}
+	Lo *= PointLightShadow(FragPos);
+#endif
+#if !defined (uni_drawCSMSplitedArea) && !defined (uni_drawPointLightShadow)
 	vec3 F0 = vec3(0.04);
 	F0 = mix(F0, Albedo, Metallic);
 
-	vec3 N = normalize(Normal);
 	vec3 V = normalize(uni_globalPos.xyz - FragPos);
 
 	float NdotV = max(dot(N, V), 0.0);
 
 	// direction light, sun light
-	vec3 L = normalize(-uni_dirLight.direction.xyz);
+	L = normalize(-uni_dirLight.direction.xyz);
 	vec3 H = normalize(V + L);
 
 	float LdotH = max(dot(L, H), 0.0);
 	float NdotH = max(dot(N, H), 0.0);
-	float NdotL = max(dot(N, L), 0.0);
+	NdotL = max(dot(N, L), 0.0);
 
 	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, uni_dirLight.luminance.xyz);
 
 	Lo *= 1 - DirectionalLightShadow(FragPos);
-	Lo *= PointLightShadow(FragPos);
 
 	// point punctual light
 	// Get the index of the current pixel in the light grid.
@@ -522,6 +589,8 @@ void main()
 			}
 		}
 	}
+
+	Lo *= PointLightShadow(FragPos);
 
 	// sphere area light
 	for (int i = 0; i < NR_SPHERE_LIGHTS; ++i)
@@ -573,58 +642,7 @@ void main()
 
 	// ambient occlusion
 	Lo *= AO;
-
-	if (uni_drawCSMSplitedArea)
-	{
-		vec3 N = normalize(Normal);
-
-		vec3 L = normalize(-uni_dirLight.direction.xyz);
-		float NdotL = max(dot(N, L), 0.0);
-
-		Lo = vec3(NdotL);
-
-		Lo *= 1 - DirectionalLightShadow(FragPos);
-
-		int splitIndex = NR_CSM_SPLITS;
-		for (int i = 0; i < NR_CSM_SPLITS; i++)
-		{
-			if (FragPos.x >= uni_CSMs[i].AABBMin.x &&
-				FragPos.y >= uni_CSMs[i].AABBMin.y &&
-				FragPos.z >= uni_CSMs[i].AABBMin.z &&
-				FragPos.x <= uni_CSMs[i].AABBMax.x &&
-				FragPos.y <= uni_CSMs[i].AABBMax.y &&
-				FragPos.z <= uni_CSMs[i].AABBMax.z)
-			{
-				splitIndex = i;
-				break;
-			}
-		}
-
-		if (splitIndex == 0)
-		{
-			Lo.g = 0;
-			Lo.b = 0;
-		}
-		else if (splitIndex == 1)
-		{
-			Lo.b = 0;
-		}
-		else if (splitIndex == 2)
-		{
-			Lo.r = 0;
-			Lo.b = 0;
-		}
-		else if (splitIndex == 3)
-		{
-			Lo.r = 0;
-			Lo.g = 0;
-		}
-	}
-
-	if (uni_drawPointLightShadow)
-	{
-		Lo = vec3(PointLightShadow(FragPos));
-	}
+#endif
 	uni_lightPassRT0.rgb = Lo;
 	uni_lightPassRT0.a = 1.0;
 	//uni_lightPassRT0 = posWS;
