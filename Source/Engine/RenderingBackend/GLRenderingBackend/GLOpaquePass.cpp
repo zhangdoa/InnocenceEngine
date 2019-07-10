@@ -53,7 +53,7 @@ bool GLOpaquePass::update()
 {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
-	glDepthMask(GL_FALSE);
+	glDepthMask(GL_TRUE);
 
 	glEnable(GL_DEPTH_CLAMP);
 
@@ -67,7 +67,8 @@ bool GLOpaquePass::update()
 
 	activateRenderPass(m_GLRPC);
 
-	copyDepthBuffer(GLEarlyZPass::getGLRPC(), m_GLRPC);
+	// @TODO: Eliminate transparency conflict
+	//copyDepthBuffer(GLEarlyZPass::getGLRPC(), m_GLRPC);
 
 	activateShaderProgram(m_GLSPC);
 
