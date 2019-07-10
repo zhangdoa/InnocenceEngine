@@ -415,9 +415,16 @@ float DirectionalLightShadow(vec3 fragPos)
 float PointLightShadow(vec3 fragPos)
 {
 	vec3 fragToLight = fragPos - uni_pointLights[0].position.xyz;
+	float currentDepth = length(fragToLight);
+	float lightRadius = uni_pointLights[0].luminance.w;
+
+	if (currentDepth > lightRadius)
+	{
+		return 0;
+	}
+
 	vec3 texCoord = normalize(fragToLight);
 	vec4 shadowMapValue = texture(uni_pointLightShadowMap, texCoord);
-	float currentDepth = length(fragToLight);
 
 	float shadow = VSMKernel(shadowMapValue, currentDepth);
 	return shadow;
@@ -496,7 +503,7 @@ void main()
 	{
 		Lo.r = 0;
 		Lo.b = 0;
-	}
+}
 	else if (splitIndex == 3)
 	{
 		Lo.r = 0;
@@ -526,7 +533,7 @@ void main()
 			Lo = lightLuminance;
 		}
 	}
-	Lo *= PointLightShadow(FragPos);
+	Lo *= 1 - PointLightShadow(FragPos);
 #endif
 #if !defined (uni_drawCSMSplitedArea) && !defined (uni_drawPointLightShadow)
 	vec3 F0 = vec3(0.04);
@@ -590,7 +597,7 @@ void main()
 		}
 	}
 
-	Lo *= PointLightShadow(FragPos);
+	Lo *= 1 - PointLightShadow(FragPos);
 
 	// sphere area light
 	for (int i = 0; i < NR_SPHERE_LIGHTS; ++i)
