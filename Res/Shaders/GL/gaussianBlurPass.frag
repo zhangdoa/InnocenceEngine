@@ -4,7 +4,7 @@ layout(location = 0) out vec4 uni_outputTexture;
 layout(location = 0) in vec2 thefrag_TexCoord;
 
 layout(location = 0) uniform bool uni_horizontal;
-layout(location = 1) uniform unsigned int uni_kernel = 0;
+layout(location = 1) uniform uint uni_kernel = 0;
 layout(location = 2, binding = 0) uniform sampler2D uni_inputTexture;
 
 // http://rastergrid.com/blog/2010/09/efficient-gaussian-blur-with-linear-sampling/
