@@ -1356,7 +1356,7 @@ VkImageType VKRenderingBackendNS::getImageType(TextureSamplerType rhs)
 	case TextureSamplerType::SAMPLER_3D:
 		l_result = VkImageType::VK_IMAGE_TYPE_3D;
 		break;
-	case TextureSamplerType::CUBEMAP:
+	case TextureSamplerType::SAMPLER_CUBEMAP:
 		break;
 	default:
 		break;
