@@ -47,11 +47,12 @@ layout(location = 2, binding = 2) uniform sampler2D uni_opaquePassRT2;
 layout(location = 3, binding = 3) uniform sampler2D uni_opaquePassRT3;
 layout(location = 4, binding = 4) uniform sampler2D uni_SSAOBlurPassRT0;
 layout(location = 5, binding = 5) uniform sampler2D uni_directionalLightShadowMap;
-layout(location = 6, binding = 6) uniform sampler2D uni_brdfLUT;
-layout(location = 7, binding = 7) uniform sampler2D uni_brdfMSLUT;
-layout(location = 8, binding = 8) uniform samplerCube uni_irradianceMap;
-layout(location = 9, binding = 9) uniform samplerCube uni_preFiltedMap;
-layout(location = 10, binding = 10) uniform sampler2D uni_depth;
+layout(location = 6, binding = 6) uniform samplerCube uni_pointLightShadowMap;
+layout(location = 7, binding = 7) uniform sampler2D uni_brdfLUT;
+layout(location = 8, binding = 8) uniform sampler2D uni_brdfMSLUT;
+layout(location = 9, binding = 9) uniform samplerCube uni_irradianceMap;
+layout(location = 10, binding = 10) uniform samplerCube uni_preFiltedMap;
+layout(location = 11, binding = 11) uniform sampler2D uni_depth;
 
 layout(binding = 0, rgba16f) uniform image2D uni_lightGrid;
 
@@ -102,6 +103,7 @@ layout(std430, binding = 2) buffer lightIndexListSSBO
 };
 
 bool uni_drawCSMSplitedArea = false;
+bool uni_drawPointLightShadow = false;
 
 uvec2 RGBA16F2RG32UI(vec4 rhs)
 {
@@ -292,7 +294,7 @@ vec3 imageBasedLight(vec3 N, float NdotV, vec3 R, vec3 albedo, float metallic, f
 }
 // shadow mapping
 // ----------------------------------------------------------------------------
-float PCF(float NdotL, vec3 projCoords, sampler2D shadowMap, vec2 texelSize, vec2 offset)
+float PCF(vec3 projCoords, sampler2D shadowMap, vec2 texelSize, vec2 offset)
 {
 	// transform to [0,1] range
 	projCoords = projCoords * 0.5 + 0.5;
@@ -316,17 +318,9 @@ float PCF(float NdotL, vec3 projCoords, sampler2D shadowMap, vec2 texelSize, vec
 	return shadow;
 }
 // ----------------------------------------------------------------------------
-float VSM(float NdotL, vec3 projCoords, sampler2D shadowMap, vec2 texelSize, vec2 offset)
+float VSMKernel(vec4 shadowMapValue, float currentDepth)
 {
-	// transform to [0,1] range
-	projCoords = projCoords * 0.5 + 0.5;
-
-	// get depth of current fragment from light's perspective
-	float currentDepth = projCoords.z;
-
-	// VSM
 	float shadow = 0.0;
-	vec4 shadowMapValue = texture(shadowMap, offset + projCoords.xy / 2.0);
 	float Ex = shadowMapValue.r;
 	float E_x2 = shadowMapValue.g;
 	float variance = E_x2 - (Ex * Ex);
@@ -338,7 +332,21 @@ float VSM(float NdotL, vec3 projCoords, sampler2D shadowMap, vec2 texelSize, vec
 	return shadow;
 }
 // ----------------------------------------------------------------------------
-float ShadowCalculation(float NdotL, vec3 fragPos)
+float DirectionalLightVSM(float NdotL, vec3 projCoords, sampler2D shadowMap, vec2 texelSize, vec2 offset)
+{
+	// transform to [0,1] range
+	projCoords = projCoords * 0.5 + 0.5;
+
+	// get depth of current fragment from light's perspective
+	float currentDepth = projCoords.z;
+
+	// VSM
+	vec4 shadowMapValue = texture(shadowMap, offset + projCoords.xy / 2.0);
+	float shadow = VSMKernel(shadowMapValue, currentDepth);
+	return shadow;
+}
+// ----------------------------------------------------------------------------
+float DirectionalLightShadow(vec3 fragPos)
 {
 	vec3 projCoords = vec3(0.0);
 	float shadow = 0.0;
@@ -399,9 +407,22 @@ float ShadowCalculation(float NdotL, vec3 fragPos)
 		}
 	}
 
-	shadow = PCF(NdotL, projCoords, uni_directionalLightShadowMap, texelSize, offset);
+	shadow = PCF(projCoords, uni_directionalLightShadowMap, texelSize, offset);
 
 	return shadow;
+}
+// ----------------------------------------------------------------------------
+float PointLightShadow(vec3 fragPos)
+{
+	vec3 fragToLight = fragPos - uni_pointLights[0].position.xyz;
+	vec4 shadowMapValue = texture(uni_pointLightShadowMap, fragToLight);
+	float currentDepth = length(fragToLight);
+
+	float shadow = VSMKernel(shadowMapValue, currentDepth);
+	return shadow;
+
+	//float shadow = currentDepth > closestDepth ? 1.0 : 0.0;
+	//return shadow;
 }
 // ----------------------------------------------------------------------------
 float linearDepth(float depthSample)
@@ -457,7 +478,8 @@ void main()
 
 	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, uni_dirLight.luminance.xyz);
 
-	Lo *= 1 - ShadowCalculation(NdotL, FragPos);
+	Lo *= 1 - DirectionalLightShadow(FragPos);
+	Lo *= PointLightShadow(FragPos);
 
 	// point punctual light
 	// Get the index of the current pixel in the light grid.
@@ -561,7 +583,7 @@ void main()
 
 		Lo = vec3(NdotL);
 
-		Lo *= 1 - ShadowCalculation(NdotL, FragPos);
+		Lo *= 1 - DirectionalLightShadow(FragPos);
 
 		int splitIndex = NR_CSM_SPLITS;
 		for (int i = 0; i < NR_CSM_SPLITS; i++)
@@ -599,6 +621,10 @@ void main()
 		}
 	}
 
+	if (uni_drawPointLightShadow)
+	{
+		Lo = vec3(PointLightShadow(FragPos));
+	}
 	uni_lightPassRT0.rgb = Lo;
 	uni_lightPassRT0.a = 1.0;
 	//uni_lightPassRT0 = posWS;
