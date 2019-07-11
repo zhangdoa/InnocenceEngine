@@ -9,7 +9,7 @@
 #include "../../Component/DX12ShaderProgramComponent.h"
 #include "../../Component/DX12RenderPassComponent.h"
 
-INNO_PRIVATE_SCOPE DX12RenderingBackendNS
+namespace DX12RenderingBackendNS
 {
 	bool setup();
 	bool initialize();
@@ -47,8 +47,12 @@ INNO_PRIVATE_SCOPE DX12RenderingBackendNS
 	bool createCommandLists(DX12RenderPassComponent* DXRPC);
 	bool createSyncPrimitives(DX12RenderPassComponent* DXRPC);
 
+	bool destroyDX12RenderPassComponent(DX12RenderPassComponent* DXRPC);
+
 	bool initializeDX12MeshDataComponent(DX12MeshDataComponent* rhs);
 	bool initializeDX12TextureDataComponent(DX12TextureDataComponent* rhs);
+
+	bool destroyAllGraphicPrimitiveComponents();
 
 	DX12ConstantBuffer createConstantBuffer(size_t elementSize, size_t elementCount, const std::wstring& name);
 	DX12CBV createCBV(const DX12ConstantBuffer& arg, size_t offset);
@@ -61,7 +65,7 @@ INNO_PRIVATE_SCOPE DX12RenderingBackendNS
 	}
 
 	template <class T>
-		void updateConstantBuffer(const DX12ConstantBuffer& ConstantBuffer, const std::vector<T>& ConstantBufferValue)
+	void updateConstantBuffer(const DX12ConstantBuffer& ConstantBuffer, const std::vector<T>& ConstantBufferValue)
 	{
 		updateConstantBufferImpl(ConstantBuffer, sizeof(T) * ConstantBufferValue.size(), &ConstantBufferValue[0]);
 	}

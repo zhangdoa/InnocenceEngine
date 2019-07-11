@@ -7,7 +7,7 @@
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE DX12RenderingBackendNS
+namespace DX12RenderingBackendNS
 {
 	ID3D12GraphicsCommandList* beginSingleTimeCommands();
 	void endSingleTimeCommands(ID3D12GraphicsCommandList* commandList);
@@ -696,6 +696,42 @@ bool DX12RenderingBackendNS::createSyncPrimitives(DX12RenderPassComponent* DXRPC
 	return true;
 }
 
+bool DX12RenderingBackendNS::destroyDX12RenderPassComponent(DX12RenderPassComponent* DXRPC)
+{
+	DXRPC->m_fence->Release();
+
+	for (auto i : DXRPC->m_commandLists)
+	{
+		i->Release();
+	}
+
+	for (auto i : DXRPC->m_commandAllocators)
+	{
+		i->Release();
+	}
+
+	DXRPC->m_commandQueue->Release();
+
+	DXRPC->m_PSO->Release();
+
+	DXRPC->m_rootSignature->Release();
+
+	if (DXRPC->m_renderPassDesc.useDepthAttachment)
+	{
+		DXRPC->m_depthStencilDXTDC->m_texture->Release();
+		DXRPC->m_DSVHeap->Release();
+	}
+
+	for (auto i : DXRPC->m_DXTDCs)
+	{
+		i->m_texture->Release();
+	}
+
+	DXRPC->m_RTVHeap->Release();
+
+	return true;
+}
+
 bool DX12RenderingBackendNS::initializeDX12MeshDataComponent(DX12MeshDataComponent* rhs)
 {
 	if (rhs->m_objectStatus == ObjectStatus::Activated)
@@ -751,6 +787,21 @@ bool DX12RenderingBackendNS::initializeDX12TextureDataComponent(DX12TextureDataC
 			}
 		}
 	}
+}
+
+bool DX12RenderingBackendNS::destroyAllGraphicPrimitiveComponents()
+{
+	for (auto i : m_initializedDXMDC)
+	{
+		i.second->m_indexBuffer->Release();
+		i.second->m_vertexBuffer->Release();
+	}
+	for (auto i : m_initializedDXTDC)
+	{
+		i.second->m_texture->Release();
+	}
+
+	return true;
 }
 
 bool DX12RenderingBackendNS::submitGPUData(DX12MeshDataComponent * rhs)
@@ -1188,7 +1239,7 @@ bool DX12RenderingBackendNS::submitGPUData(DX12TextureDataComponent * rhs)
 
 	endSingleTimeCommands(l_commandList);
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingBackend: SRV " + InnoUtility::pointerToString(rhs->m_SRV) + " is initialized.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingBackend: texture handle" + InnoUtility::pointerToString(rhs) + " is initialized.");
 
 	rhs->m_objectStatus = ObjectStatus::Activated;
 

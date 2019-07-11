@@ -34,10 +34,19 @@ bool DX12OpaquePass::initialize()
 	m_DXRPC->m_renderPassDesc.useStencilAttachment = true;
 
 	// Setup root signature.
-	CD3DX12_ROOT_PARAMETER1 l_rootParams[3];
+	CD3DX12_ROOT_PARAMETER1 l_rootParams[5];
 	l_rootParams[0].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_VERTEX);
 	l_rootParams[1].InitAsConstantBufferView(1, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_VERTEX);
 	l_rootParams[2].InitAsConstantBufferView(2, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
+
+	CD3DX12_DESCRIPTOR_RANGE1 l_textureDescRange;
+	l_textureDescRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5, 0);
+
+	CD3DX12_DESCRIPTOR_RANGE1 l_samplerDescRange;
+	l_samplerDescRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);
+
+	l_rootParams[3].InitAsDescriptorTable(1, &l_textureDescRange, D3D12_SHADER_VISIBILITY_PIXEL);
+	l_rootParams[4].InitAsDescriptorTable(1, &l_samplerDescRange, D3D12_SHADER_VISIBILITY_PIXEL);
 
 	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC l_rootSigDesc(sizeof(l_rootParams) / sizeof(l_rootParams[0]), l_rootParams);
 	m_DXRPC->m_rootSignatureDesc = l_rootSigDesc;
@@ -137,6 +146,28 @@ bool DX12OpaquePass::update()
 
 		recordBindCBV(m_DXRPC, 0, 1, DX12RenderingBackendComponent::get().m_meshConstantBuffer, l_offset);
 		recordBindCBV(m_DXRPC, 0, 2, DX12RenderingBackendComponent::get().m_materialConstantBuffer, l_offset);
+
+		if (l_opaquePassGPUData.normalTDC)
+		{
+			recordBindTextureForRead(m_DXRPC, 0, reinterpret_cast<DX12TextureDataComponent*>(l_opaquePassGPUData.normalTDC));
+		}
+		if (l_opaquePassGPUData.albedoTDC)
+		{
+			recordBindTextureForRead(m_DXRPC, 0, reinterpret_cast<DX12TextureDataComponent*>(l_opaquePassGPUData.albedoTDC));
+		}
+		if (l_opaquePassGPUData.metallicTDC)
+		{
+			recordBindTextureForRead(m_DXRPC, 0, reinterpret_cast<DX12TextureDataComponent*>(l_opaquePassGPUData.metallicTDC));
+		}
+		if (l_opaquePassGPUData.roughnessTDC)
+		{
+			recordBindTextureForRead(m_DXRPC, 0, reinterpret_cast<DX12TextureDataComponent*>(l_opaquePassGPUData.roughnessTDC));
+		}
+		if (l_opaquePassGPUData.AOTDC)
+		{
+			recordBindTextureForRead(m_DXRPC, 0, reinterpret_cast<DX12TextureDataComponent*>(l_opaquePassGPUData.AOTDC));
+		}
+
 		recordDrawCall(m_DXRPC, 0, reinterpret_cast<DX12MeshDataComponent*>(l_opaquePassGPUData.MDC));
 		l_offset++;
 	}
@@ -152,6 +183,12 @@ bool DX12OpaquePass::render()
 	executeCommandList(m_DXRPC, 0);
 	waitFrame(m_DXRPC, 0);
 
+	return true;
+}
+
+bool DX12OpaquePass::terminate()
+{
+	destroyDX12RenderPassComponent(m_DXRPC);
 	return true;
 }
 

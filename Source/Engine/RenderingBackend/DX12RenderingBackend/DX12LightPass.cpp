@@ -173,6 +173,12 @@ bool DX12LightPass::render()
 	return true;
 }
 
+bool DX12LightPass::terminate()
+{
+	destroyDX12RenderPassComponent(m_DXRPC);
+	return true;
+}
+
 bool DX12LightPass::resize()
 {
 	return true;

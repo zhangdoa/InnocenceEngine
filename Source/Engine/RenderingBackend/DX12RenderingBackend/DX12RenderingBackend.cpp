@@ -16,7 +16,7 @@
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE DX12RenderingBackendNS
+namespace DX12RenderingBackendNS
 {
 	IDXGIAdapter1* getHardwareAdapter(IDXGIFactory2* pFactory)
 	{
@@ -545,6 +545,35 @@ bool DX12RenderingBackendNS::initialize()
 
 bool DX12RenderingBackendNS::update()
 {
+	//while (DX12RenderingBackendNS::m_uninitializedMDC.size() > 0)
+	//{
+	//	DX12MeshDataComponent* l_MDC;
+	//	DX12RenderingBackendNS::m_uninitializedMDC.tryPop(l_MDC);
+
+	//	if (l_MDC)
+	//	{
+	//		auto l_result = initializeDX12MeshDataComponent(l_MDC);
+	//		if (!l_result)
+	//		{
+	//			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't create DX12MeshDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
+	//		}
+	//	}
+	//}
+	//while (DX12RenderingBackendNS::m_uninitializedTDC.size() > 0)
+	//{
+	//	DX12TextureDataComponent* l_TDC;
+	//	DX12RenderingBackendNS::m_uninitializedTDC.tryPop(l_TDC);
+
+	//	if (l_TDC)
+	//	{
+	//		auto l_result = initializeDX12TextureDataComponent(l_TDC);
+	//		if (!l_result)
+	//		{
+	//			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't create DX12TextureDataComponent for " + std::string(l_TDC->m_parentEntity->m_entityName.c_str()) + "!");
+	//		}
+	//	}
+	//}
+
 	updateConstantBuffer(DX12RenderingBackendComponent::get().m_cameraConstantBuffer, g_pModuleManager->getRenderingFrontend()->getCameraGPUData());
 	updateConstantBuffer(DX12RenderingBackendComponent::get().m_sunConstantBuffer, g_pModuleManager->getRenderingFrontend()->getSunGPUData());
 	updateConstantBuffer(DX12RenderingBackendComponent::get().m_pointLightConstantBuffer, g_pModuleManager->getRenderingFrontend()->getPointLightGPUData());
@@ -622,13 +651,36 @@ bool DX12RenderingBackendNS::render()
 
 bool DX12RenderingBackendNS::terminate()
 {
+	DX12LightPass::terminate();
+	DX12OpaquePass::terminate();
+	destroyAllGraphicPrimitiveComponents();
+
 	// Before shutting down set to windowed mode or when you release the swap chain it will throw an exception.
 	if (g_DXRenderingBackendComponent->m_swapChain)
 	{
 		g_DXRenderingBackendComponent->m_swapChain->SetFullscreenState(false, NULL);
 	}
 
-	// Release the command allocator.
+	if (g_DXRenderingBackendComponent->m_CSUHeap)
+	{
+		g_DXRenderingBackendComponent->m_CSUHeap->Release();
+		g_DXRenderingBackendComponent->m_CSUHeap = 0;
+	}
+
+	if (g_DXRenderingBackendComponent->m_samplerHeap)
+	{
+		g_DXRenderingBackendComponent->m_samplerHeap->Release();
+		g_DXRenderingBackendComponent->m_samplerHeap = 0;
+	}
+
+	g_DXRenderingBackendComponent->m_cameraConstantBuffer.m_constantBuffer->Release();
+	g_DXRenderingBackendComponent->m_meshConstantBuffer.m_constantBuffer->Release();
+	g_DXRenderingBackendComponent->m_materialConstantBuffer.m_constantBuffer->Release();
+	g_DXRenderingBackendComponent->m_sunConstantBuffer.m_constantBuffer->Release();
+	g_DXRenderingBackendComponent->m_pointLightConstantBuffer.m_constantBuffer->Release();
+	g_DXRenderingBackendComponent->m_sphereLightConstantBuffer.m_constantBuffer->Release();
+	g_DXRenderingBackendComponent->m_skyConstantBuffer.m_constantBuffer->Release();
+
 	if (g_DXRenderingBackendComponent->m_globalCommandAllocator)
 	{
 		g_DXRenderingBackendComponent->m_globalCommandAllocator->Release();
@@ -641,12 +693,21 @@ bool DX12RenderingBackendNS::terminate()
 		g_DXRenderingBackendComponent->m_swapChain = 0;
 	}
 
-	// Release the command queue.
 	if (g_DXRenderingBackendComponent->m_globalCommandQueue)
 	{
 		g_DXRenderingBackendComponent->m_globalCommandQueue->Release();
 		g_DXRenderingBackendComponent->m_globalCommandQueue = 0;
 	}
+
+	destroyDX12RenderPassComponent(DX12RenderingBackendComponent::get().m_swapChainDXRPC);
+
+	g_DXRenderingBackendComponent->m_debugInterface->Release();
+
+#if defined(_DEBUG)
+	ID3D12DebugDevice1* l_debugDevice;
+	auto l_result = g_DXRenderingBackendComponent->m_device->QueryInterface(IID_PPV_ARGS(&l_debugDevice));
+	l_debugDevice->ReportLiveDeviceObjects(D3D12_RLDO_DETAIL);
+#endif
 
 	if (g_DXRenderingBackendComponent->m_device)
 	{

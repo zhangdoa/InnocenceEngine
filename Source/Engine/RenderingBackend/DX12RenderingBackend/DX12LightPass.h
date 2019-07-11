@@ -7,6 +7,7 @@ INNO_PRIVATE_SCOPE DX12LightPass
 	bool initialize();
 	bool update();
 	bool render();
+	bool terminate();
 	bool resize();
 	bool reloadShaders();
 
