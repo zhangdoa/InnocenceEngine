@@ -32,11 +32,14 @@ INNO_PRIVATE_SCOPE VKRenderingBackendNS
 	VkFormat getTextureFormat(TextureDataDesc textureDataDesc);
 	VkImageAspectFlagBits getImageAspectFlags(TextureDataDesc textureDataDesc);
 
+	bool submitGPUData(VKMaterialDataComponent * rhs);
+
 	VkVertexInputBindingDescription m_vertexBindingDescription;
 	std::array<VkVertexInputAttributeDescription, 5> m_vertexAttributeDescriptions;
 
-	std::unordered_map<InnoEntity*, VKMeshDataComponent*> m_initializedVKMDC;
-	std::unordered_map<InnoEntity*, VKTextureDataComponent*> m_initializedVKTDC;
+	std::unordered_map<InnoEntity*, VKMeshDataComponent*> m_initializedVKMeshes;
+	std::unordered_map<InnoEntity*, VKTextureDataComponent*> m_initializedVKTextures;
+	std::unordered_map<InnoEntity*, VKMaterialDataComponent*> m_initializedVKMaterials;
 
 	void* m_VKRenderPassComponentPool;
 	void* m_VKShaderProgramComponentPool;
@@ -297,7 +300,7 @@ bool VKRenderingBackendNS::initializeVKRenderPassComponent(VKRenderPassComponent
 		l_result &= createSingleFramebuffer(VKRPC);
 	}
 
-	l_result &= createDescriptorSetLayout(VKRPC);
+	l_result &= createDescriptorSetLayout(VKRPC->descriptorSetLayoutBindings.data(), static_cast<uint32_t>(VKRPC->descriptorSetLayoutBindings.size()), VKRPC->descriptorSetLayout);
 
 	l_result &= createPipelineLayout(VKRPC);
 
@@ -371,7 +374,7 @@ bool VKRenderingBackendNS::createRenderTargets(VKRenderPassComponent* VKRPC)
 		initializeVKTextureDataComponent(VKRPC->m_depthVKTDC);
 	}
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: Render targets have been created.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingBackend: Render targets have been created.");
 
 	return true;
 }
@@ -409,7 +412,7 @@ bool VKRenderingBackendNS::createRenderPass(VKRenderPassComponent* VKRPC)
 		return false;
 	}
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: VkRenderPass has been created.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingBackend: VkRenderPass has been created.");
 	return true;
 }
 
@@ -443,7 +446,7 @@ bool VKRenderingBackendNS::createSingleFramebuffer(VKRenderPassComponent* VKRPC)
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to create VkFramebuffer!");
 	}
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: Single VkFramebuffer has been created.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingBackend: Single VkFramebuffer has been created.");
 	return true;
 }
 
@@ -469,7 +472,7 @@ bool VKRenderingBackendNS::createMultipleFramebuffers(VKRenderPassComponent* VKR
 		}
 	}
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: Multiple VkFramebuffers have been created.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingBackend: Multiple VkFramebuffers have been created.");
 	return true;
 }
 
@@ -487,7 +490,24 @@ bool VKRenderingBackendNS::createDescriptorPool(VkDescriptorPoolSize* poolSize, 
 		return false;
 	}
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: VkDescriptorPool has been created.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingBackend: VkDescriptorPool has been created.");
+	return true;
+}
+
+bool VKRenderingBackendNS::createDescriptorSetLayout(VkDescriptorSetLayoutBinding* setLayoutBindings, uint32_t setLayoutBindingsCount, VkDescriptorSetLayout& setLayout)
+{
+	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutInfo.bindingCount = setLayoutBindingsCount;
+	layoutInfo.pBindings = setLayoutBindings;
+
+	if (vkCreateDescriptorSetLayout(VKRenderingBackendComponent::get().m_device, &layoutInfo, nullptr, &setLayout) != VK_SUCCESS)
+	{
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to create VkDescriptorSetLayout!");
+		return false;
+	}
+
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingBackend: VkDescriptorSetLayout has been created.");
 	return true;
 }
 
@@ -505,37 +525,20 @@ bool VKRenderingBackendNS::createDescriptorSets(VkDescriptorPool pool, VkDescrip
 		return false;
 	}
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: VkDescriptorSet has been allocated.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingBackend: VkDescriptorSet has been allocated.");
 	return true;
 }
 
-bool VKRenderingBackendNS::createDescriptorSetLayout(VKRenderPassComponent* VKRPC)
-{
-	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
-	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutInfo.bindingCount = static_cast<uint32_t>(VKRPC->descriptorSetLayoutBindings.size());
-	layoutInfo.pBindings = VKRPC->descriptorSetLayoutBindings.data();
-
-	if (vkCreateDescriptorSetLayout(VKRenderingBackendComponent::get().m_device, &layoutInfo, nullptr, &VKRPC->descriptorSetLayout) != VK_SUCCESS)
-	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to create VkDescriptorSetLayout!");
-		return false;
-	}
-
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: VkDescriptorSetLayout has been created.");
-	return true;
-}
-
-bool VKRenderingBackendNS::updateDescriptorSet(VKRenderPassComponent* VKRPC)
+bool VKRenderingBackendNS::updateDescriptorSet(VkWriteDescriptorSet* writeDescriptorSets, uint32_t writeDescriptorSetsCount)
 {
 	vkUpdateDescriptorSets(
 		VKRenderingBackendComponent::get().m_device,
-		static_cast<uint32_t>(VKRPC->writeDescriptorSets.size()),
-		VKRPC->writeDescriptorSets.data(),
+		writeDescriptorSetsCount,
+		writeDescriptorSets,
 		0,
 		nullptr);
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: Write VkDescriptorSet has been updated.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingBackend: Write VkDescriptorSet has been updated.");
 	return true;
 }
 
@@ -559,7 +562,7 @@ bool VKRenderingBackendNS::createPipelineLayout(VKRenderPassComponent* VKRPC)
 		return false;
 	}
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: VkPipelineLayout has been created.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingBackend: VkPipelineLayout has been created.");
 	return true;
 }
 
@@ -600,7 +603,7 @@ bool VKRenderingBackendNS::createGraphicsPipelines(VKRenderPassComponent* VKRPC,
 		return false;
 	}
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: VkPipeline has been created.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingBackend: VkPipeline has been created.");
 	return true;
 }
 
@@ -620,7 +623,7 @@ bool VKRenderingBackendNS::createCommandBuffers(VKRenderPassComponent* VKRPC)
 		return false;
 	}
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: VkCommandBuffer has been created.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingBackend: VkCommandBuffer has been created.");
 	return true;
 }
 
@@ -650,7 +653,7 @@ bool VKRenderingBackendNS::createSyncPrimitives(VKRenderPassComponent* VKRPC)
 		}
 	}
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: Synchronization primitives has been created.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingBackend: Synchronization primitives has been created.");
 
 	return true;
 }
@@ -801,7 +804,7 @@ bool VKRenderingBackendNS::submitGPUData(VKMeshDataComponent * rhs)
 
 	rhs->m_objectStatus = ObjectStatus::Activated;
 
-	m_initializedVKMDC.emplace(rhs->m_parentEntity, rhs);
+	m_initializedVKMeshes.emplace(rhs->m_parentEntity, rhs);
 
 	return true;
 }
@@ -1000,7 +1003,7 @@ bool VKRenderingBackendNS::submitGPUData(VKTextureDataComponent * rhs)
 
 	rhs->m_objectStatus = ObjectStatus::Activated;
 
-	m_initializedVKTDC.emplace(rhs->m_parentEntity, rhs);
+	m_initializedVKTextures.emplace(rhs->m_parentEntity, rhs);
 
 	return true;
 }
@@ -1121,14 +1124,55 @@ bool VKRenderingBackendNS::createImageView(VKTextureDataComponent* VKTDC)
 	return true;
 }
 
+bool VKRenderingBackendNS::initializeVKMaterialDataComponent(VKMaterialDataComponent* rhs)
+{
+	if (rhs->m_objectStatus == ObjectStatus::Activated)
+	{
+		return true;
+	}
+	else
+	{
+		submitGPUData(rhs);
+
+		return true;
+	}
+}
+
+bool VKRenderingBackendNS::submitGPUData(VKMaterialDataComponent * rhs)
+{
+	VkDescriptorImageInfo imageInfo;
+	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.imageView = reinterpret_cast<VKTextureDataComponent*>(rhs->m_texturePack.m_albedoTDC.second)->m_imageView;
+
+	VkWriteDescriptorSet basePassRTWriteDescriptorSet = {};
+	basePassRTWriteDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	basePassRTWriteDescriptorSet.dstBinding = 1;
+	basePassRTWriteDescriptorSet.dstArrayElement = 0;
+	basePassRTWriteDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+	basePassRTWriteDescriptorSet.descriptorCount = 1;
+	basePassRTWriteDescriptorSet.pImageInfo = &imageInfo;
+
+	createDescriptorSets(
+		VKRenderingBackendComponent::get().m_materialDescriptorPool,
+		VKRenderingBackendComponent::get().m_materialDescriptorLayout,
+		rhs->m_descriptorSet,
+		1);
+
+	rhs->m_objectStatus = ObjectStatus::Activated;
+
+	m_initializedVKMaterials.emplace(rhs->m_parentEntity, rhs);
+
+	return true;
+}
+
 bool VKRenderingBackendNS::destroyAllGraphicPrimitiveComponents()
 {
-	for (auto i : m_initializedVKMDC)
+	for (auto i : m_initializedVKMeshes)
 	{
 		vkDestroyBuffer(VKRenderingBackendComponent::get().m_device, i.second->m_IBO, nullptr);
 		vkDestroyBuffer(VKRenderingBackendComponent::get().m_device, i.second->m_VBO, nullptr);
 	}
-	for (auto i : m_initializedVKTDC)
+	for (auto i : m_initializedVKTextures)
 	{
 		vkDestroyImage(VKRenderingBackendComponent::get().m_device, i.second->m_image, nullptr);
 		vkDestroyImageView(VKRenderingBackendComponent::get().m_device, i.second->m_imageView, nullptr);
@@ -1299,7 +1343,7 @@ bool VKRenderingBackendNS::createShaderModule(VkShaderModule& vkShaderModule, co
 		return false;
 	}
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: innoShader: " + std::string(shaderFilePath.c_str()) + " has been loaded.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingBackend: innoShader: " + std::string(shaderFilePath.c_str()) + " has been loaded.");
 	return true;
 }
 
@@ -1324,7 +1368,7 @@ bool VKRenderingBackendNS::generateUBO(VkBuffer& UBO, VkDeviceSize UBOSize, VkDe
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to create UBO!");
 		return false;
 	}
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: UBO has been created.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "VKRenderingBackend: UBO has been created.");
 	return true;
 }
 

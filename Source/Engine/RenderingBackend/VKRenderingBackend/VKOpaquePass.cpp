@@ -238,7 +238,7 @@ bool VKOpaquePass::initialize()
 	m_VKRPC->writeDescriptorSets[1].dstSet = m_VKRPC->descriptorSet;
 	m_VKRPC->writeDescriptorSets[2].dstSet = m_VKRPC->descriptorSet;
 
-	updateDescriptorSet(m_VKRPC);
+	updateDescriptorSet(m_VKRPC->writeDescriptorSets.data(), static_cast<uint32_t>(m_VKRPC->writeDescriptorSets.size()));
 
 	return true;
 }

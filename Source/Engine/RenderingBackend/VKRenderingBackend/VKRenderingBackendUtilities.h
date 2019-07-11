@@ -42,8 +42,8 @@ INNO_PRIVATE_SCOPE VKRenderingBackendNS
 	bool generateGPUBuffers();
 
 	VKMeshDataComponent* addVKMeshDataComponent();
-	VKMaterialDataComponent* addVKMaterialDataComponent();
 	VKTextureDataComponent* addVKTextureDataComponent();
+	VKMaterialDataComponent* addVKMaterialDataComponent();
 
 	VKMeshDataComponent* getVKMeshDataComponent(MeshShapeType MeshShapeType);
 	VKTextureDataComponent* getVKTextureDataComponent(TextureUsageType TextureUsageType);
@@ -60,8 +60,9 @@ INNO_PRIVATE_SCOPE VKRenderingBackendNS
 	bool isDeviceSuitable(VkPhysicalDevice device);
 
 	bool createDescriptorPool(VkDescriptorPoolSize* poolSize, unsigned int poolSizeCount, unsigned int maxSets, VkDescriptorPool& poolHandle);
+	bool createDescriptorSetLayout(VkDescriptorSetLayoutBinding* setLayoutBindings, uint32_t setLayoutBindingsCount, VkDescriptorSetLayout& setLayout);
 	bool createDescriptorSets(VkDescriptorPool pool, VkDescriptorSetLayout& setLayout, VkDescriptorSet& setHandle, unsigned int count);
-	bool updateDescriptorSet(VKRenderPassComponent* VKRPC);
+	bool updateDescriptorSet(VkWriteDescriptorSet* writeDescriptorSets, uint32_t writeDescriptorSetsCount);
 
 	VKRenderPassComponent* addVKRenderPassComponent();
 	bool initializeVKRenderPassComponent(VKRenderPassComponent* VKRPC, VKShaderProgramComponent* VKSPC);
@@ -71,7 +72,6 @@ INNO_PRIVATE_SCOPE VKRenderingBackendNS
 	bool createSingleFramebuffer(VKRenderPassComponent* VKRPC);
 	bool createMultipleFramebuffers(VKRenderPassComponent* VKRPC);
 	bool createRenderPass(VKRenderPassComponent* VKRPC);
-	bool createDescriptorSetLayout(VKRenderPassComponent* VKRPC);
 
 	bool createPipelineLayout(VKRenderPassComponent* VKRPC);
 	bool createGraphicsPipelines(VKRenderPassComponent* VKRPC, VKShaderProgramComponent* VKSPC);
@@ -83,6 +83,7 @@ INNO_PRIVATE_SCOPE VKRenderingBackendNS
 	bool initializeVKMeshDataComponent(VKMeshDataComponent* rhs);
 	bool initializeVKTextureDataComponent(VKTextureDataComponent* rhs);
 	bool createImageView(VKTextureDataComponent* VKTDC);
+	bool initializeVKMaterialDataComponent(VKMaterialDataComponent* rhs);
 
 	bool destroyAllGraphicPrimitiveComponents();
 

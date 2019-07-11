@@ -328,7 +328,7 @@ bool VKLightPass::initialize()
 	m_VKRPC->writeDescriptorSets[5].dstSet = m_VKRPC->descriptorSet;
 	m_VKRPC->writeDescriptorSets[6].dstSet = m_VKRPC->descriptorSet;
 
-	updateDescriptorSet(m_VKRPC);
+	updateDescriptorSet(m_VKRPC->writeDescriptorSets.data(), static_cast<uint32_t>(m_VKRPC->writeDescriptorSets.size()));
 
 	return true;
 }

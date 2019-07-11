@@ -77,8 +77,8 @@ INNO_PRIVATE_SCOPE VKRenderingBackendNS
 	void* m_MaterialDataComponentPool;
 	void* m_TextureDataComponentPool;
 
-	ThreadSafeQueue<VKMeshDataComponent*> m_uninitializedMDC;
-	ThreadSafeQueue<VKTextureDataComponent*> m_uninitializedTDC;
+	ThreadSafeQueue<VKMeshDataComponent*> m_uninitializedMesh;
+	ThreadSafeQueue<VKTextureDataComponent*> m_uninitializedTexture;
 
 	VKTextureDataComponent* m_iconTemplate_OBJ;
 	VKTextureDataComponent* m_iconTemplate_PNG;
@@ -89,17 +89,19 @@ INNO_PRIVATE_SCOPE VKRenderingBackendNS
 	VKTextureDataComponent* m_iconTemplate_PointLight;
 	VKTextureDataComponent* m_iconTemplate_SphereLight;
 
-	VKMeshDataComponent* m_unitLineMDC;
-	VKMeshDataComponent* m_unitQuadMDC;
-	VKMeshDataComponent* m_unitCubeMDC;
-	VKMeshDataComponent* m_unitSphereMDC;
-	VKMeshDataComponent* m_terrainMDC;
+	VKMeshDataComponent* m_unitLineMesh;
+	VKMeshDataComponent* m_unitQuadMesh;
+	VKMeshDataComponent* m_unitCubeMesh;
+	VKMeshDataComponent* m_unitSphereMesh;
+	VKMeshDataComponent* m_terrainMesh;
 
-	VKTextureDataComponent* m_basicNormalTDC;
-	VKTextureDataComponent* m_basicAlbedoTDC;
-	VKTextureDataComponent* m_basicMetallicTDC;
-	VKTextureDataComponent* m_basicRoughnessTDC;
-	VKTextureDataComponent* m_basicAOTDC;
+	VKTextureDataComponent* m_basicNormalTexture;
+	VKTextureDataComponent* m_basicAlbedoTexture;
+	VKTextureDataComponent* m_basicMetallicTexture;
+	VKTextureDataComponent* m_basicRoughnessTexture;
+	VKTextureDataComponent* m_basicAOTexture;
+
+	VKMaterialDataComponent* m_basicMaterial;
 
 	std::vector<VkImage> m_swapChainImages;
 }
@@ -318,6 +320,32 @@ bool VKRenderingBackendNS::createMaterialDescriptorPool()
 	}
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: VkDescriptorPool for material has been created.");
+
+	VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
+	samplerLayoutBinding.binding = 0;
+	samplerLayoutBinding.descriptorCount = 1;
+	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+	samplerLayoutBinding.pImmutableSamplers = &VKRenderingBackendComponent::get().m_deferredRTSampler;
+	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	VkDescriptorSetLayoutBinding textureLayoutBinding = {};
+	textureLayoutBinding.binding = 1;
+	textureLayoutBinding.descriptorCount = 5;
+	textureLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+	textureLayoutBinding.pImmutableSamplers = nullptr;
+	textureLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	VkDescriptorSetLayoutBinding l_VkDescriptorSetLayoutBindings[] = { samplerLayoutBinding, textureLayoutBinding };
+
+	if (!createDescriptorSetLayout(l_VkDescriptorSetLayoutBindings, 2, VKRenderingBackendComponent::get().m_materialDescriptorLayout))
+	{
+		m_objectStatus = ObjectStatus::Suspended;
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to create VkDescriptorSetLayout for material!");
+		return false;
+	}
+
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: VkDescriptorSetLayout for material has been created.");
+
 	return true;
 }
 
@@ -560,7 +588,7 @@ bool VKRenderingBackendNS::createSwapChain()
 		l_result &= createSingleFramebuffer(l_VKRPC);
 	}
 
-	l_result &= createDescriptorSetLayout(l_VKRPC);
+	l_result &= createDescriptorSetLayout(l_VKRPC->descriptorSetLayoutBindings.data(), static_cast<uint32_t>(l_VKRPC->descriptorSetLayoutBindings.size()), l_VKRPC->descriptorSetLayout);
 
 	l_result &= createPipelineLayout(l_VKRPC);
 
@@ -570,7 +598,7 @@ bool VKRenderingBackendNS::createSwapChain()
 
 	l_VKRPC->writeDescriptorSets[0].dstSet = l_VKRPC->descriptorSet;
 
-	l_result &= updateDescriptorSet(l_VKRPC);
+	l_result &= updateDescriptorSet(l_VKRPC->writeDescriptorSets.data(), static_cast<uint32_t>(l_VKRPC->writeDescriptorSets.size()));
 
 	VKRenderingBackendComponent::get().m_swapChainVKSPC = l_VKSPC;
 
@@ -593,8 +621,8 @@ bool VKRenderingBackendNS::createSwapChainCommandBuffers()
 				0,
 				1,
 				&VKRenderingBackendComponent::get().m_swapChainVKRPC->descriptorSet, 0, nullptr);
-			auto l_MDC = getVKMeshDataComponent(MeshShapeType::QUAD);
-			recordDrawCall(VKRenderingBackendComponent::get().m_swapChainVKRPC, (unsigned int)i, l_MDC);
+			auto l_Mesh = getVKMeshDataComponent(MeshShapeType::QUAD);
+			recordDrawCall(VKRenderingBackendComponent::get().m_swapChainVKRPC, (unsigned int)i, l_Mesh);
 		});
 	}
 
@@ -714,11 +742,11 @@ bool VKRenderingBackendNS::initialize()
 
 void VKRenderingBackendNS::loadDefaultAssets()
 {
-	auto l_basicNormalTDC = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_normal.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
-	auto l_basicAlbedoTDC = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_albedo.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ALBEDO);
-	auto l_basicMetallicTDC = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_metallic.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::METALLIC);
-	auto l_basicRoughnessTDC = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_roughness.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ROUGHNESS);
-	auto l_basicAOTDC = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_ao.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::AMBIENT_OCCLUSION);
+	auto l_basicNormalTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_normal.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_basicAlbedoTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_albedo.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ALBEDO);
+	auto l_basicMetallicTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_metallic.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::METALLIC);
+	auto l_basicRoughnessTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_roughness.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ROUGHNESS);
+	auto l_basicAOTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_ao.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::AMBIENT_OCCLUSION);
 
 	auto l_iconTemplate_OBJ = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_OBJ.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 	auto l_iconTemplate_PNG = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_PNG.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
@@ -729,11 +757,11 @@ void VKRenderingBackendNS::loadDefaultAssets()
 	auto l_iconTemplate_PointLight = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_PointLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 	auto l_iconTemplate_SphereLight = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_SphereLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 
-	m_basicNormalTDC = reinterpret_cast<VKTextureDataComponent*>(l_basicNormalTDC);
-	m_basicAlbedoTDC = reinterpret_cast<VKTextureDataComponent*>(l_basicAlbedoTDC);
-	m_basicMetallicTDC = reinterpret_cast<VKTextureDataComponent*>(l_basicMetallicTDC);
-	m_basicRoughnessTDC = reinterpret_cast<VKTextureDataComponent*>(l_basicRoughnessTDC);
-	m_basicAOTDC = reinterpret_cast<VKTextureDataComponent*>(l_basicAOTDC);
+	m_basicNormalTexture = reinterpret_cast<VKTextureDataComponent*>(l_basicNormalTexture);
+	m_basicAlbedoTexture = reinterpret_cast<VKTextureDataComponent*>(l_basicAlbedoTexture);
+	m_basicMetallicTexture = reinterpret_cast<VKTextureDataComponent*>(l_basicMetallicTexture);
+	m_basicRoughnessTexture = reinterpret_cast<VKTextureDataComponent*>(l_basicRoughnessTexture);
+	m_basicAOTexture = reinterpret_cast<VKTextureDataComponent*>(l_basicAOTexture);
 
 	m_iconTemplate_OBJ = reinterpret_cast<VKTextureDataComponent*>(l_iconTemplate_OBJ);
 	m_iconTemplate_PNG = reinterpret_cast<VKTextureDataComponent*>(l_iconTemplate_PNG);
@@ -744,56 +772,63 @@ void VKRenderingBackendNS::loadDefaultAssets()
 	m_iconTemplate_PointLight = reinterpret_cast<VKTextureDataComponent*>(l_iconTemplate_PointLight);
 	m_iconTemplate_SphereLight = reinterpret_cast<VKTextureDataComponent*>(l_iconTemplate_SphereLight);
 
-	m_unitLineMDC = addVKMeshDataComponent();
-	g_pModuleManager->getAssetSystem()->addUnitLine(*m_unitLineMDC);
-	m_unitLineMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
-	m_unitLineMDC->m_meshShapeType = MeshShapeType::LINE;
-	m_unitLineMDC->m_objectStatus = ObjectStatus::Created;
-	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMDC);
+	m_unitLineMesh = addVKMeshDataComponent();
+	g_pModuleManager->getAssetSystem()->addUnitLine(*m_unitLineMesh);
+	m_unitLineMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	m_unitLineMesh->m_meshShapeType = MeshShapeType::LINE;
+	m_unitLineMesh->m_objectStatus = ObjectStatus::Created;
+	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMesh);
 
-	m_unitQuadMDC = addVKMeshDataComponent();
-	g_pModuleManager->getAssetSystem()->addUnitQuad(*m_unitQuadMDC);
+	m_unitQuadMesh = addVKMeshDataComponent();
+	g_pModuleManager->getAssetSystem()->addUnitQuad(*m_unitQuadMesh);
 	// adjust texture coordinate
-	for (auto& i : m_unitQuadMDC->m_vertices)
+	for (auto& i : m_unitQuadMesh->m_vertices)
 	{
 		i.m_texCoord.y = 1.0f - i.m_texCoord.y;
 	}
-	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	m_unitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
-	m_unitQuadMDC->m_objectStatus = ObjectStatus::Created;
-	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMDC);
+	m_unitQuadMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_unitQuadMesh->m_meshShapeType = MeshShapeType::QUAD;
+	m_unitQuadMesh->m_objectStatus = ObjectStatus::Created;
+	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMesh);
 
-	m_unitCubeMDC = addVKMeshDataComponent();
-	g_pModuleManager->getAssetSystem()->addUnitCube(*m_unitCubeMDC);
-	m_unitCubeMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	m_unitCubeMDC->m_meshShapeType = MeshShapeType::CUBE;
-	m_unitCubeMDC->m_objectStatus = ObjectStatus::Created;
-	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMDC);
+	m_unitCubeMesh = addVKMeshDataComponent();
+	g_pModuleManager->getAssetSystem()->addUnitCube(*m_unitCubeMesh);
+	m_unitCubeMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_unitCubeMesh->m_meshShapeType = MeshShapeType::CUBE;
+	m_unitCubeMesh->m_objectStatus = ObjectStatus::Created;
+	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMesh);
 
-	m_unitSphereMDC = addVKMeshDataComponent();
-	g_pModuleManager->getAssetSystem()->addUnitSphere(*m_unitSphereMDC);
-	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	m_unitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
-	m_unitSphereMDC->m_objectStatus = ObjectStatus::Created;
-	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMDC);
+	m_unitSphereMesh = addVKMeshDataComponent();
+	g_pModuleManager->getAssetSystem()->addUnitSphere(*m_unitSphereMesh);
+	m_unitSphereMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_unitSphereMesh->m_meshShapeType = MeshShapeType::SPHERE;
+	m_unitSphereMesh->m_objectStatus = ObjectStatus::Created;
+	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMesh);
 
-	m_terrainMDC = addVKMeshDataComponent();
-	g_pModuleManager->getAssetSystem()->addTerrain(*m_terrainMDC);
-	m_terrainMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	m_terrainMDC->m_objectStatus = ObjectStatus::Created;
-	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMDC);
+	m_terrainMesh = addVKMeshDataComponent();
+	g_pModuleManager->getAssetSystem()->addTerrain(*m_terrainMesh);
+	m_terrainMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_terrainMesh->m_objectStatus = ObjectStatus::Created;
+	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMesh);
 
-	initializeVKMeshDataComponent(m_unitLineMDC);
-	initializeVKMeshDataComponent(m_unitQuadMDC);
-	initializeVKMeshDataComponent(m_unitCubeMDC);
-	initializeVKMeshDataComponent(m_unitSphereMDC);
-	initializeVKMeshDataComponent(m_terrainMDC);
+	m_basicMaterial = addVKMaterialDataComponent();
+	m_basicMaterial->m_texturePack.m_normalTDC.second = m_basicNormalTexture;
+	m_basicMaterial->m_texturePack.m_albedoTDC.second = m_basicAlbedoTexture;
+	m_basicMaterial->m_texturePack.m_metallicTDC.second = m_basicMetallicTexture;
+	m_basicMaterial->m_texturePack.m_roughnessTDC.second = m_basicRoughnessTexture;
+	m_basicMaterial->m_texturePack.m_aoTDC.second = m_basicAOTexture;
 
-	initializeVKTextureDataComponent(m_basicNormalTDC);
-	initializeVKTextureDataComponent(m_basicAlbedoTDC);
-	initializeVKTextureDataComponent(m_basicMetallicTDC);
-	initializeVKTextureDataComponent(m_basicRoughnessTDC);
-	initializeVKTextureDataComponent(m_basicAOTDC);
+	initializeVKMeshDataComponent(m_unitLineMesh);
+	initializeVKMeshDataComponent(m_unitQuadMesh);
+	initializeVKMeshDataComponent(m_unitCubeMesh);
+	initializeVKMeshDataComponent(m_unitSphereMesh);
+	initializeVKMeshDataComponent(m_terrainMesh);
+
+	initializeVKTextureDataComponent(m_basicNormalTexture);
+	initializeVKTextureDataComponent(m_basicAlbedoTexture);
+	initializeVKTextureDataComponent(m_basicMetallicTexture);
+	initializeVKTextureDataComponent(m_basicRoughnessTexture);
+	initializeVKTextureDataComponent(m_basicAOTexture);
 
 	initializeVKTextureDataComponent(m_iconTemplate_OBJ);
 	initializeVKTextureDataComponent(m_iconTemplate_PNG);
@@ -803,35 +838,37 @@ void VKRenderingBackendNS::loadDefaultAssets()
 	initializeVKTextureDataComponent(m_iconTemplate_DirectionalLight);
 	initializeVKTextureDataComponent(m_iconTemplate_PointLight);
 	initializeVKTextureDataComponent(m_iconTemplate_SphereLight);
+
+	initializeVKMaterialDataComponent(m_basicMaterial);
 }
 
 bool VKRenderingBackendNS::update()
 {
-	if (VKRenderingBackendNS::m_uninitializedMDC.size() > 0)
+	while (VKRenderingBackendNS::m_uninitializedMesh.size() > 0)
 	{
-		VKMeshDataComponent* l_MDC;
-		VKRenderingBackendNS::m_uninitializedMDC.tryPop(l_MDC);
+		VKMeshDataComponent* l_Mesh;
+		VKRenderingBackendNS::m_uninitializedMesh.tryPop(l_Mesh);
 
-		if (l_MDC)
+		if (l_Mesh)
 		{
-			auto l_result = initializeVKMeshDataComponent(l_MDC);
+			auto l_result = initializeVKMeshDataComponent(l_Mesh);
 			if (!l_result)
 			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: can't create VKMeshDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
+				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: can't create VKMeshDataComponent for " + std::string(l_Mesh->m_parentEntity->m_entityName.c_str()) + "!");
 			}
 		}
 	}
-	if (VKRenderingBackendNS::m_uninitializedTDC.size() > 0)
+	while (VKRenderingBackendNS::m_uninitializedTexture.size() > 0)
 	{
-		VKTextureDataComponent* l_TDC;
-		VKRenderingBackendNS::m_uninitializedTDC.tryPop(l_TDC);
+		VKTextureDataComponent* l_Texture;
+		VKRenderingBackendNS::m_uninitializedTexture.tryPop(l_Texture);
 
-		if (l_TDC)
+		if (l_Texture)
 		{
-			auto l_result = initializeVKTextureDataComponent(l_TDC);
+			auto l_result = initializeVKTextureDataComponent(l_Texture);
 			if (!l_result)
 			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: can't create VKTextureDataComponent for " + std::string(l_TDC->m_parentEntity->m_entityName.c_str()) + "!");
+				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: can't create VKTextureDataComponent for " + std::string(l_Texture->m_parentEntity->m_entityName.c_str()) + "!");
 			}
 		}
 	}
@@ -947,9 +984,9 @@ bool VKRenderingBackendNS::terminate()
 
 	vkDestroyRenderPass(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_swapChainVKRPC->m_renderPass, nullptr);
 
-	for (auto VKTDC : VKRenderingBackendComponent::get().m_swapChainVKRPC->m_VKTDCs)
+	for (auto VKTexture : VKRenderingBackendComponent::get().m_swapChainVKRPC->m_VKTDCs)
 	{
-		vkDestroyImageView(VKRenderingBackendComponent::get().m_device, VKTDC->m_imageView, nullptr);
+		vkDestroyImageView(VKRenderingBackendComponent::get().m_device, VKTexture->m_imageView, nullptr);
 	}
 
 	vkDestroySwapchainKHR(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_swapChain, nullptr);
@@ -978,10 +1015,10 @@ VKMeshDataComponent* VKRenderingBackendNS::addVKMeshDataComponent()
 	static std::atomic<unsigned int> meshCount = 0;
 	meshCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(VKMeshDataComponent));
-	auto l_MDC = new(l_rawPtr)VKMeshDataComponent();
+	auto l_Mesh = new(l_rawPtr)VKMeshDataComponent();
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Mesh_" + std::to_string(meshCount) + "/").c_str());
-	l_MDC->m_parentEntity = l_parentEntity;
-	return l_MDC;
+	l_Mesh->m_parentEntity = l_parentEntity;
+	return l_Mesh;
 }
 
 VKMaterialDataComponent* VKRenderingBackendNS::addVKMaterialDataComponent()
@@ -989,10 +1026,10 @@ VKMaterialDataComponent* VKRenderingBackendNS::addVKMaterialDataComponent()
 	static std::atomic<unsigned int> materialCount = 0;
 	materialCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(VKMaterialDataComponent));
-	auto l_MDC = new(l_rawPtr)VKMaterialDataComponent();
+	auto l_Material = new(l_rawPtr)VKMaterialDataComponent();
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Material_" + std::to_string(materialCount) + "/").c_str());
-	l_MDC->m_parentEntity = l_parentEntity;
-	return l_MDC;
+	l_Material->m_parentEntity = l_parentEntity;
+	return l_Material;
 }
 
 VKTextureDataComponent* VKRenderingBackendNS::addVKTextureDataComponent()
@@ -1000,10 +1037,10 @@ VKTextureDataComponent* VKRenderingBackendNS::addVKTextureDataComponent()
 	static std::atomic<unsigned int> textureCount = 0;
 	textureCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(VKTextureDataComponent));
-	auto l_TDC = new(l_rawPtr)VKTextureDataComponent();
+	auto l_Texture = new(l_rawPtr)VKTextureDataComponent();
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Texture_" + std::to_string(textureCount) + "/").c_str());
-	l_TDC->m_parentEntity = l_parentEntity;
-	return l_TDC;
+	l_Texture->m_parentEntity = l_parentEntity;
+	return l_Texture;
 }
 
 VKMeshDataComponent* VKRenderingBackendNS::getVKMeshDataComponent(MeshShapeType meshShapeType)
@@ -1011,15 +1048,15 @@ VKMeshDataComponent* VKRenderingBackendNS::getVKMeshDataComponent(MeshShapeType 
 	switch (meshShapeType)
 	{
 	case MeshShapeType::LINE:
-		return VKRenderingBackendNS::m_unitLineMDC; break;
+		return VKRenderingBackendNS::m_unitLineMesh; break;
 	case MeshShapeType::QUAD:
-		return VKRenderingBackendNS::m_unitQuadMDC; break;
+		return VKRenderingBackendNS::m_unitQuadMesh; break;
 	case MeshShapeType::CUBE:
-		return VKRenderingBackendNS::m_unitCubeMDC; break;
+		return VKRenderingBackendNS::m_unitCubeMesh; break;
 	case MeshShapeType::SPHERE:
-		return VKRenderingBackendNS::m_unitSphereMDC; break;
+		return VKRenderingBackendNS::m_unitSphereMesh; break;
 	case MeshShapeType::TERRAIN:
-		return VKRenderingBackendNS::m_terrainMDC; break;
+		return VKRenderingBackendNS::m_terrainMesh; break;
 	case MeshShapeType::CUSTOM:
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackend: wrong MeshShapeType passed to VKRenderingBackend::getMeshDataComponent() !");
 		return nullptr; break;
@@ -1035,15 +1072,15 @@ VKTextureDataComponent * VKRenderingBackendNS::getVKTextureDataComponent(Texture
 	case TextureUsageType::INVISIBLE:
 		return nullptr; break;
 	case TextureUsageType::NORMAL:
-		return VKRenderingBackendNS::m_basicNormalTDC; break;
+		return VKRenderingBackendNS::m_basicNormalTexture; break;
 	case TextureUsageType::ALBEDO:
-		return VKRenderingBackendNS::m_basicAlbedoTDC; break;
+		return VKRenderingBackendNS::m_basicAlbedoTexture; break;
 	case TextureUsageType::METALLIC:
-		return VKRenderingBackendNS::m_basicMetallicTDC; break;
+		return VKRenderingBackendNS::m_basicMetallicTexture; break;
 	case TextureUsageType::ROUGHNESS:
-		return VKRenderingBackendNS::m_basicRoughnessTDC; break;
+		return VKRenderingBackendNS::m_basicRoughnessTexture; break;
 	case TextureUsageType::AMBIENT_OCCLUSION:
-		return VKRenderingBackendNS::m_basicAOTDC; break;
+		return VKRenderingBackendNS::m_basicAOTexture; break;
 	case TextureUsageType::COLOR_ATTACHMENT:
 		return nullptr; break;
 	default:
@@ -1155,12 +1192,12 @@ TextureDataComponent * VKRenderingBackend::getTextureDataComponent(WorldEditorIc
 
 void VKRenderingBackend::registerUninitializedMeshDataComponent(MeshDataComponent * rhs)
 {
-	VKRenderingBackendNS::m_uninitializedMDC.push(reinterpret_cast<VKMeshDataComponent*>(rhs));
+	VKRenderingBackendNS::m_uninitializedMesh.push(reinterpret_cast<VKMeshDataComponent*>(rhs));
 }
 
 void VKRenderingBackend::registerUninitializedTextureDataComponent(TextureDataComponent * rhs)
 {
-	VKRenderingBackendNS::m_uninitializedTDC.push(reinterpret_cast<VKTextureDataComponent*>(rhs));
+	VKRenderingBackendNS::m_uninitializedTexture.push(reinterpret_cast<VKTextureDataComponent*>(rhs));
 }
 
 bool VKRenderingBackend::resize()
