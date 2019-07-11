@@ -300,7 +300,7 @@ bool VKRenderingBackendNS::initializeVKRenderPassComponent(VKRenderPassComponent
 		l_result &= createSingleFramebuffer(VKRPC);
 	}
 
-	l_result &= createDescriptorSetLayout(VKRPC->descriptorSetLayoutBindings.data(), static_cast<uint32_t>(VKRPC->descriptorSetLayoutBindings.size()), VKRPC->descriptorSetLayout);
+	l_result &= createDescriptorSetLayout(VKRPC->descriptorSetLayoutBindings.data(), static_cast<uint32_t>(VKRPC->descriptorSetLayoutBindings.size()), VKRPC->descriptorSetLayouts[0]);
 
 	l_result &= createPipelineLayout(VKRPC);
 
@@ -547,13 +547,13 @@ bool VKRenderingBackendNS::createPipelineLayout(VKRenderPassComponent* VKRPC)
 	VKRPC->inputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 
 	VKRPC->pipelineLayoutCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	VKRPC->pipelineLayoutCInfo.setLayoutCount = 1;
-	VKRPC->pipelineLayoutCInfo.pSetLayouts = &VKRPC->descriptorSetLayout;
+	VKRPC->pipelineLayoutCInfo.setLayoutCount = static_cast<uint32_t>(VKRPC->descriptorSetLayouts.size());
+	VKRPC->pipelineLayoutCInfo.pSetLayouts = VKRPC->descriptorSetLayouts.data();
 
 	if (VKRPC->pushConstantRanges.size() > 0)
 	{
-		VKRPC->pipelineLayoutCInfo.pushConstantRangeCount = (uint32_t)VKRPC->pushConstantRanges.size();
-		VKRPC->pipelineLayoutCInfo.pPushConstantRanges = &VKRPC->pushConstantRanges[0];
+		VKRPC->pipelineLayoutCInfo.pushConstantRangeCount = static_cast<uint32_t>(VKRPC->pushConstantRanges.size());
+		VKRPC->pipelineLayoutCInfo.pPushConstantRanges = VKRPC->pushConstantRanges.data();
 	}
 
 	if (vkCreatePipelineLayout(VKRenderingBackendComponent::get().m_device, &VKRPC->pipelineLayoutCInfo, nullptr, &VKRPC->m_pipelineLayout) != VK_SUCCESS)
@@ -674,7 +674,7 @@ bool VKRenderingBackendNS::destroyVKRenderPassComponent(VKRenderPassComponent* V
 
 	vkDestroyPipeline(VKRenderingBackendComponent::get().m_device, VKRPC->m_pipeline, nullptr);
 	vkDestroyPipelineLayout(VKRenderingBackendComponent::get().m_device, VKRPC->m_pipelineLayout, nullptr);
-	vkDestroyDescriptorSetLayout(VKRenderingBackendComponent::get().m_device, VKRPC->descriptorSetLayout, nullptr);
+	vkDestroyDescriptorSetLayout(VKRenderingBackendComponent::get().m_device, VKRPC->descriptorSetLayouts[0], nullptr);
 
 	for (auto framebuffer : VKRPC->m_framebuffers)
 	{
@@ -1140,23 +1140,27 @@ bool VKRenderingBackendNS::initializeVKMaterialDataComponent(VKMaterialDataCompo
 
 bool VKRenderingBackendNS::submitGPUData(VKMaterialDataComponent * rhs)
 {
-	VkDescriptorImageInfo imageInfo;
-	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageInfo.imageView = reinterpret_cast<VKTextureDataComponent*>(rhs->m_texturePack.m_albedoTDC.second)->m_imageView;
-
-	VkWriteDescriptorSet basePassRTWriteDescriptorSet = {};
-	basePassRTWriteDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	basePassRTWriteDescriptorSet.dstBinding = 1;
-	basePassRTWriteDescriptorSet.dstArrayElement = 0;
-	basePassRTWriteDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-	basePassRTWriteDescriptorSet.descriptorCount = 1;
-	basePassRTWriteDescriptorSet.pImageInfo = &imageInfo;
-
 	createDescriptorSets(
 		VKRenderingBackendComponent::get().m_materialDescriptorPool,
 		VKRenderingBackendComponent::get().m_materialDescriptorLayout,
 		rhs->m_descriptorSet,
 		1);
+
+	VkDescriptorImageInfo imageInfo;
+	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.imageView = reinterpret_cast<VKTextureDataComponent*>(rhs->m_texturePack.m_albedoTDC.second)->m_imageView;
+	imageInfo.sampler = VKRenderingBackendComponent::get().m_deferredRTSampler;
+
+	VkWriteDescriptorSet writeDescriptorSet = {};
+	writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDescriptorSet.dstBinding = 0;
+	writeDescriptorSet.dstArrayElement = 0;
+	writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	writeDescriptorSet.descriptorCount = 1;
+	writeDescriptorSet.pImageInfo = &imageInfo;
+	writeDescriptorSet.dstSet = rhs->m_descriptorSet;
+
+	updateDescriptorSet(&writeDescriptorSet, 1);
 
 	rhs->m_objectStatus = ObjectStatus::Activated;
 

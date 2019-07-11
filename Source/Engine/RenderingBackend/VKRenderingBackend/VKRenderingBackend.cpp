@@ -306,7 +306,7 @@ bool VKRenderingBackendNS::createMaterialDescriptorPool()
 {
 	VkDescriptorPoolSize l_descriptorPoolSize = {};
 	l_descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-	l_descriptorPoolSize.descriptorCount = 5;
+	l_descriptorPoolSize.descriptorCount = 1;
 
 	VkDescriptorPoolSize l_descriptorPoolSizes[] = { l_descriptorPoolSize };
 
@@ -321,23 +321,14 @@ bool VKRenderingBackendNS::createMaterialDescriptorPool()
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: VkDescriptorPool for material has been created.");
 
-	VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
-	samplerLayoutBinding.binding = 0;
-	samplerLayoutBinding.descriptorCount = 1;
-	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-	samplerLayoutBinding.pImmutableSamplers = &VKRenderingBackendComponent::get().m_deferredRTSampler;
-	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
 	VkDescriptorSetLayoutBinding textureLayoutBinding = {};
-	textureLayoutBinding.binding = 1;
-	textureLayoutBinding.descriptorCount = 5;
-	textureLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+	textureLayoutBinding.binding = 0;
+	textureLayoutBinding.descriptorCount = 1;
+	textureLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	textureLayoutBinding.pImmutableSamplers = nullptr;
 	textureLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-	VkDescriptorSetLayoutBinding l_VkDescriptorSetLayoutBindings[] = { samplerLayoutBinding, textureLayoutBinding };
-
-	if (!createDescriptorSetLayout(l_VkDescriptorSetLayoutBindings, 2, VKRenderingBackendComponent::get().m_materialDescriptorLayout))
+	if (!createDescriptorSetLayout(&textureLayoutBinding, 1, VKRenderingBackendComponent::get().m_materialDescriptorLayout))
 	{
 		m_objectStatus = ObjectStatus::Suspended;
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to create VkDescriptorSetLayout for material!");
@@ -588,15 +579,17 @@ bool VKRenderingBackendNS::createSwapChain()
 		l_result &= createSingleFramebuffer(l_VKRPC);
 	}
 
-	l_result &= createDescriptorSetLayout(l_VKRPC->descriptorSetLayoutBindings.data(), static_cast<uint32_t>(l_VKRPC->descriptorSetLayoutBindings.size()), l_VKRPC->descriptorSetLayout);
+	l_VKRPC->descriptorSetLayouts.resize(1);
+	l_result &= createDescriptorSetLayout(l_VKRPC->descriptorSetLayoutBindings.data(), static_cast<uint32_t>(l_VKRPC->descriptorSetLayoutBindings.size()), l_VKRPC->descriptorSetLayouts[0]);
 
 	l_result &= createPipelineLayout(l_VKRPC);
 
 	l_result &= createGraphicsPipelines(l_VKRPC, l_VKSPC);
 
-	l_result &= createDescriptorSets(l_VKRPC->m_descriptorPool, l_VKRPC->descriptorSetLayout, l_VKRPC->descriptorSet, 1);
+	l_VKRPC->descriptorSets.resize(1);
+	l_result &= createDescriptorSets(l_VKRPC->m_descriptorPool, l_VKRPC->descriptorSetLayouts[0], l_VKRPC->descriptorSets[0], 1);
 
-	l_VKRPC->writeDescriptorSets[0].dstSet = l_VKRPC->descriptorSet;
+	l_VKRPC->writeDescriptorSets[0].dstSet = l_VKRPC->descriptorSets[0];
 
 	l_result &= updateDescriptorSet(l_VKRPC->writeDescriptorSets.data(), static_cast<uint32_t>(l_VKRPC->writeDescriptorSets.size()));
 
@@ -620,7 +613,7 @@ bool VKRenderingBackendNS::createSwapChainCommandBuffers()
 				VKRenderingBackendComponent::get().m_swapChainVKRPC->m_pipelineLayout,
 				0,
 				1,
-				&VKRenderingBackendComponent::get().m_swapChainVKRPC->descriptorSet, 0, nullptr);
+				&VKRenderingBackendComponent::get().m_swapChainVKRPC->descriptorSets[0], 0, nullptr);
 			auto l_Mesh = getVKMeshDataComponent(MeshShapeType::QUAD);
 			recordDrawCall(VKRenderingBackendComponent::get().m_swapChainVKRPC, (unsigned int)i, l_Mesh);
 		});
@@ -975,7 +968,7 @@ bool VKRenderingBackendNS::terminate()
 
 	vkDestroyPipeline(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_swapChainVKRPC->m_pipeline, nullptr);
 	vkDestroyPipelineLayout(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_swapChainVKRPC->m_pipelineLayout, nullptr);
-	vkDestroyDescriptorSetLayout(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_swapChainVKRPC->descriptorSetLayout, nullptr);
+	vkDestroyDescriptorSetLayout(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_swapChainVKRPC->descriptorSetLayouts[0], nullptr);
 
 	for (auto framebuffer : VKRenderingBackendComponent::get().m_swapChainVKRPC->m_framebuffers)
 	{
@@ -1118,6 +1111,11 @@ VKTextureDataComponent * VKRenderingBackendNS::getVKTextureDataComponent(WorldEd
 	default:
 		return nullptr; break;
 	}
+}
+
+MaterialDataComponent * VKRenderingBackendNS::getMaterialDataComponent()
+{
+	return VKRenderingBackendNS::m_basicMaterial;
 }
 
 bool VKRenderingBackendNS::resize()

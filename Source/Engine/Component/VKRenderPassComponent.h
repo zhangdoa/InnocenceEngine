@@ -23,8 +23,8 @@ public:
 
 	VkDescriptorPool m_descriptorPool;
 	std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings;
-	VkDescriptorSetLayout descriptorSetLayout;
-	VkDescriptorSet descriptorSet;
+	std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+	std::vector<VkDescriptorSet> descriptorSets;
 	std::vector<VkWriteDescriptorSet> writeDescriptorSets;
 	std::vector<VkPushConstantRange> pushConstantRanges;
 

@@ -316,17 +316,19 @@ bool VKLightPass::initialize()
 	m_VKRPC->colorBlendStateCInfo.blendConstants[2] = 0.0f;
 	m_VKRPC->colorBlendStateCInfo.blendConstants[3] = 0.0f;
 
+	m_VKRPC->descriptorSetLayouts.resize(1);
 	initializeVKRenderPassComponent(m_VKRPC, m_VKSPC);
 
-	createDescriptorSets(m_VKRPC->m_descriptorPool, m_VKRPC->descriptorSetLayout, m_VKRPC->descriptorSet, 1);
+	m_VKRPC->descriptorSets.resize(1);
+	createDescriptorSets(m_VKRPC->m_descriptorPool, m_VKRPC->descriptorSetLayouts[0], m_VKRPC->descriptorSets[0], 1);
 
-	m_VKRPC->writeDescriptorSets[0].dstSet = m_VKRPC->descriptorSet;
-	m_VKRPC->writeDescriptorSets[1].dstSet = m_VKRPC->descriptorSet;
-	m_VKRPC->writeDescriptorSets[2].dstSet = m_VKRPC->descriptorSet;
-	m_VKRPC->writeDescriptorSets[3].dstSet = m_VKRPC->descriptorSet;
-	m_VKRPC->writeDescriptorSets[4].dstSet = m_VKRPC->descriptorSet;
-	m_VKRPC->writeDescriptorSets[5].dstSet = m_VKRPC->descriptorSet;
-	m_VKRPC->writeDescriptorSets[6].dstSet = m_VKRPC->descriptorSet;
+	m_VKRPC->writeDescriptorSets[0].dstSet = m_VKRPC->descriptorSets[0];
+	m_VKRPC->writeDescriptorSets[1].dstSet = m_VKRPC->descriptorSets[0];
+	m_VKRPC->writeDescriptorSets[2].dstSet = m_VKRPC->descriptorSets[0];
+	m_VKRPC->writeDescriptorSets[3].dstSet = m_VKRPC->descriptorSets[0];
+	m_VKRPC->writeDescriptorSets[4].dstSet = m_VKRPC->descriptorSets[0];
+	m_VKRPC->writeDescriptorSets[5].dstSet = m_VKRPC->descriptorSets[0];
+	m_VKRPC->writeDescriptorSets[6].dstSet = m_VKRPC->descriptorSets[0];
 
 	updateDescriptorSet(m_VKRPC->writeDescriptorSets.data(), static_cast<uint32_t>(m_VKRPC->writeDescriptorSets.size()));
 
@@ -343,7 +345,7 @@ bool VKLightPass::update()
 			m_VKRPC->m_pipelineLayout,
 			0,
 			1,
-			&m_VKRPC->descriptorSet, 0, nullptr);
+			&m_VKRPC->descriptorSets[0], 0, nullptr);
 		auto l_MDC = getVKMeshDataComponent(MeshShapeType::QUAD);
 		recordDrawCall(m_VKRPC, 0, l_MDC);
 	});

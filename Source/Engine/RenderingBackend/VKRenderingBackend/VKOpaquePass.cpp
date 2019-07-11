@@ -230,13 +230,17 @@ bool VKOpaquePass::initialize()
 	m_VKRPC->colorBlendStateCInfo.blendConstants[2] = 0.0f;
 	m_VKRPC->colorBlendStateCInfo.blendConstants[3] = 0.0f;
 
+	m_VKRPC->descriptorSetLayouts.resize(2);
+	m_VKRPC->descriptorSetLayouts[1] = VKRenderingBackendComponent::get().m_materialDescriptorLayout;
+
 	initializeVKRenderPassComponent(m_VKRPC, m_VKSPC);
 
-	createDescriptorSets(m_VKRPC->m_descriptorPool, m_VKRPC->descriptorSetLayout, m_VKRPC->descriptorSet, 1);
+	m_VKRPC->descriptorSets.resize(1);
+	createDescriptorSets(m_VKRPC->m_descriptorPool, m_VKRPC->descriptorSetLayouts[0], m_VKRPC->descriptorSets[0], 1);
 
-	m_VKRPC->writeDescriptorSets[0].dstSet = m_VKRPC->descriptorSet;
-	m_VKRPC->writeDescriptorSets[1].dstSet = m_VKRPC->descriptorSet;
-	m_VKRPC->writeDescriptorSets[2].dstSet = m_VKRPC->descriptorSet;
+	m_VKRPC->writeDescriptorSets[0].dstSet = m_VKRPC->descriptorSets[0];
+	m_VKRPC->writeDescriptorSets[1].dstSet = m_VKRPC->descriptorSets[0];
+	m_VKRPC->writeDescriptorSets[2].dstSet = m_VKRPC->descriptorSets[0];
 
 	updateDescriptorSet(m_VKRPC->writeDescriptorSets.data(), static_cast<uint32_t>(m_VKRPC->writeDescriptorSets.size()));
 
@@ -246,6 +250,8 @@ bool VKOpaquePass::initialize()
 bool VKOpaquePass::update()
 {
 	waitForFence(m_VKRPC);
+
+	auto l_basicMaterial = reinterpret_cast<VKMaterialDataComponent*>(getMaterialDataComponent());
 
 	unsigned int l_sizeofMeshGPUData = sizeof(MeshGPUData);
 	unsigned int l_sizeofMaterialGPUData = sizeof(MaterialGPUData);
@@ -268,7 +274,14 @@ bool VKOpaquePass::update()
 				m_VKRPC->m_pipelineLayout,
 				0,
 				1,
-				&m_VKRPC->descriptorSet, 2, l_dynamicOffsets);
+				&m_VKRPC->descriptorSets[0], 2, l_dynamicOffsets);
+
+			vkCmdBindDescriptorSets(m_VKRPC->m_commandBuffers[0],
+				VK_PIPELINE_BIND_POINT_GRAPHICS,
+				m_VKRPC->m_pipelineLayout,
+				1,
+				1,
+				&l_basicMaterial->m_descriptorSet, 0, nullptr);
 
 			recordDrawCall(m_VKRPC, 0, reinterpret_cast<VKMeshDataComponent*>(l_opaquePassGPUData.MDC));
 
