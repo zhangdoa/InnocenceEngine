@@ -20,11 +20,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	{
 		return 0;
 	}
-	if (!InnoApplication::Run())
-	{
-		InnoApplication::Terminate();
-		return 0;
-	}
-
+	InnoApplication::Run();
+	InnoApplication::Terminate();
 	return 0;
 }

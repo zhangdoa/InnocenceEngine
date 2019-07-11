@@ -32,28 +32,15 @@ bool InnoApplication::Setup(void* appHook, void* extraHook, char* pScmdline)
 
 bool InnoApplication::Initialize()
 {
-	if (!m_pModuleManager->initialize())
-	{
-		return false;
-	}
-
-	return true;
+	return m_pModuleManager->initialize();
 }
 
 bool InnoApplication::Run()
 {
-	if (!m_pModuleManager->run())
-	{
-		return false;
-	}
-	return true;
+	return m_pModuleManager->run();
 }
 
 bool InnoApplication::Terminate()
 {
-	if (!m_pModuleManager->terminate())
-	{
-		return false;
-	}
-	return true;
+	return m_pModuleManager->terminate();
 }
