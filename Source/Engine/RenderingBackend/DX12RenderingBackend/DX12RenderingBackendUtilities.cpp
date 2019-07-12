@@ -408,6 +408,10 @@ bool DX12RenderingBackendNS::createRenderTargets(DX12RenderPassComponent* DXRPC)
 		l_TDC->m_textureData = nullptr;
 
 		initializeDX12TextureDataComponent(l_TDC);
+
+		std::string l_name = DXRPC->m_name.c_str();
+		l_name = l_name + "_RT_" + std::to_string(i);
+		l_TDC->m_texture->SetName(std::wstring(l_name.begin(), l_name.end()).c_str());
 	}
 
 	if (DXRPC->m_renderPassDesc.useDepthAttachment)
@@ -427,6 +431,10 @@ bool DX12RenderingBackendNS::createRenderTargets(DX12RenderPassComponent* DXRPC)
 		DXRPC->m_depthStencilDXTDC->m_textureData = { nullptr };
 
 		initializeDX12TextureDataComponent(DXRPC->m_depthStencilDXTDC);
+
+		std::string l_name = DXRPC->m_name.c_str();
+		l_name = l_name + "_DS";
+		DXRPC->m_depthStencilDXTDC->m_texture->SetName(std::wstring(l_name.begin(), l_name.end()).c_str());
 	}
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingBackend: " + std::string(DXRPC->m_name.c_str()) + " render targets have been created.");
@@ -450,6 +458,10 @@ bool DX12RenderingBackendNS::createRTVDescriptorHeap(DX12RenderPassComponent* DX
 		}
 		DXRPC->m_RTVCPUDescHandles[0] = DXRPC->m_RTVHeap->GetCPUDescriptorHandleForHeapStart();
 	}
+
+	std::string l_name = DXRPC->m_name.c_str();
+	l_name = l_name + "_RTVDescHeap";
+	DXRPC->m_RTVHeap->SetName(std::wstring(l_name.begin(), l_name.end()).c_str());
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingBackend: " + std::string(DXRPC->m_name.c_str()) + " RTV DescriptorHeap has been created.");
 
@@ -494,6 +506,10 @@ bool DX12RenderingBackendNS::createDSVDescriptorHeap(DX12RenderPassComponent* DX
 	}
 
 	DXRPC->m_DSVCPUDescHandle = DXRPC->m_DSVHeap->GetCPUDescriptorHandleForHeapStart();
+
+	std::string l_name = DXRPC->m_name.c_str();
+	l_name = l_name + "_DSVDescHeap";
+	DXRPC->m_DSVHeap->SetName(std::wstring(l_name.begin(), l_name.end()).c_str());
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingBackend: " + std::string(DXRPC->m_name.c_str()) + " DSV DescriptorHeap has been created.");
 
@@ -630,6 +646,10 @@ bool DX12RenderingBackendNS::createPSO(DX12RenderPassComponent* DXRPC, DX12Shade
 		return false;
 	}
 
+	std::string l_name = DXRPC->m_name.c_str();
+	l_name = l_name + "_PSO";
+	DXRPC->m_PSO->SetName(std::wstring(l_name.begin(), l_name.end()).c_str());
+
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingBackend: " + std::string(DXRPC->m_name.c_str()) + " PSO has been created.");
 
 	return true;
@@ -650,6 +670,10 @@ bool DX12RenderingBackendNS::createCommandQueue(DX12RenderPassComponent* DXRPC)
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: " + std::string(DXRPC->m_name.c_str()) + " can't create CommandQueue!");
 		return false;
 	}
+
+	std::string l_name = DXRPC->m_name.c_str();
+	l_name = l_name + "_CommandQueue";
+	DXRPC->m_commandQueue->SetName(std::wstring(l_name.begin(), l_name.end()).c_str());
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingBackend: " + std::string(DXRPC->m_name.c_str()) + " CommandQueue has been created.");
 
@@ -679,6 +703,10 @@ bool DX12RenderingBackendNS::createCommandAllocators(DX12RenderPassComponent* DX
 			return false;
 		}
 
+		std::string l_name = DXRPC->m_name.c_str();
+		l_name = l_name + "_CommandAllocator_" + std::to_string(i);
+		DXRPC->m_commandAllocators[i]->SetName(std::wstring(l_name.begin(), l_name.end()).c_str());
+
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingBackend: " + std::string(DXRPC->m_name.c_str()) + " CommandAllocator has been created.");
 	}
 
@@ -698,7 +726,12 @@ bool DX12RenderingBackendNS::createCommandLists(DX12RenderPassComponent* DXRPC)
 			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: " + std::string(DXRPC->m_name.c_str()) + " can't create CommandList!");
 			return false;
 		}
+
 		DXRPC->m_commandLists[i]->Close();
+
+		std::string l_name = DXRPC->m_name.c_str();
+		l_name = l_name + "_CommandList_" + std::to_string(i);
+		DXRPC->m_commandLists[i]->SetName(std::wstring(l_name.begin(), l_name.end()).c_str());
 	}
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingBackend: " + std::string(DXRPC->m_name.c_str()) + " CommandList has been created.");
