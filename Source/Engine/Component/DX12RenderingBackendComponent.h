@@ -29,17 +29,17 @@ public:
 
 	IDXGIFactory4* m_factory;
 
-	DXGI_ADAPTER_DESC m_adapterDesc;
+	DXGI_ADAPTER_DESC m_adapterDesc = {};
 	IDXGIAdapter4* m_adapter;
 	IDXGIOutput* m_adapterOutput;
 
 	ID3D12Device2* m_device;
 
 	ID3D12CommandAllocator* m_globalCommandAllocator;
-	D3D12_COMMAND_QUEUE_DESC m_globalCommandQueueDesc;
+	D3D12_COMMAND_QUEUE_DESC m_globalCommandQueueDesc = {};
 	ID3D12CommandQueue* m_globalCommandQueue;
 
-	DXGI_SWAP_CHAIN_DESC1 m_swapChainDesc;
+	DXGI_SWAP_CHAIN_DESC1 m_swapChainDesc = {};
 	IDXGISwapChain4* m_swapChain;
 
 	DX12ShaderProgramComponent* m_swapChainDXSPC;

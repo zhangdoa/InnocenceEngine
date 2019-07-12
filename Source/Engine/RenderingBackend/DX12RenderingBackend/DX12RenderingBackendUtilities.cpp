@@ -183,10 +183,10 @@ bool DX12RenderingBackendNS::initializePixelShader(DX12ShaderProgramComponent* r
 
 bool DX12RenderingBackendNS::createSampler(DX12ShaderProgramComponent* rhs)
 {
-	rhs->m_CPUHandle = DX12RenderingBackendComponent::get().m_currentSamplerCPUHandle;
-	rhs->m_GPUHandle = DX12RenderingBackendComponent::get().m_currentSamplerGPUHandle;
+	rhs->m_samplerCPUHandle = DX12RenderingBackendComponent::get().m_currentSamplerCPUHandle;
+	rhs->m_samplerGPUHandle = DX12RenderingBackendComponent::get().m_currentSamplerGPUHandle;
 
-	DX12RenderingBackendComponent::get().m_device->CreateSampler(&rhs->m_samplerDesc, rhs->m_CPUHandle);
+	DX12RenderingBackendComponent::get().m_device->CreateSampler(&rhs->m_samplerDesc, rhs->m_samplerCPUHandle);
 
 	auto l_samplerDescSize = DX12RenderingBackendComponent::get().m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 
@@ -912,9 +912,9 @@ bool DX12RenderingBackendNS::submitGPUData(DX12MeshDataComponent * rhs)
 		&CD3DX12_RESOURCE_BARRIER::Transition(rhs->m_vertexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 
 	// Initialize the vertex buffer view.
-	rhs->m_vertexBufferView.BufferLocation = rhs->m_vertexBuffer->GetGPUVirtualAddress();
-	rhs->m_vertexBufferView.StrideInBytes = sizeof(Vertex);
-	rhs->m_vertexBufferView.SizeInBytes = l_verticesDataSize;
+	rhs->m_VBV.BufferLocation = rhs->m_vertexBuffer->GetGPUVirtualAddress();
+	rhs->m_VBV.StrideInBytes = sizeof(Vertex);
+	rhs->m_VBV.SizeInBytes = l_verticesDataSize;
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingBackend: VBO " + InnoUtility::pointerToString(rhs->m_vertexBuffer) + " is initialized.");
 
@@ -947,9 +947,9 @@ bool DX12RenderingBackendNS::submitGPUData(DX12MeshDataComponent * rhs)
 	endSingleTimeCommands(l_commandList);
 
 	// Initialize the index buffer view.
-	rhs->m_indexBufferView.Format = DXGI_FORMAT_R32_UINT;
-	rhs->m_indexBufferView.BufferLocation = rhs->m_indexBuffer->GetGPUVirtualAddress();
-	rhs->m_indexBufferView.SizeInBytes = l_indicesDataSize;
+	rhs->m_IBV.Format = DXGI_FORMAT_R32_UINT;
+	rhs->m_IBV.BufferLocation = rhs->m_indexBuffer->GetGPUVirtualAddress();
+	rhs->m_IBV.SizeInBytes = l_indicesDataSize;
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingBackend: IBO " + InnoUtility::pointerToString(rhs->m_indexBuffer) + " is initialized.");
 
@@ -1170,15 +1170,6 @@ bool DX12RenderingBackendNS::submitGPUData(DX12TextureDataComponent * rhs)
 {
 	rhs->m_DX12TextureDataDesc = getDX12TextureDataDesc(rhs->m_textureDataDesc);
 
-	unsigned int SRVMipLevels = -1;
-	if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
-		|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
-		|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT
-		|| rhs->m_textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
-	{
-		SRVMipLevels = 1;
-	}
-
 	// Create the empty texture.
 	if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
 		|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
@@ -1259,6 +1250,15 @@ bool DX12RenderingBackendNS::submitGPUData(DX12TextureDataComponent * rhs)
 	}
 
 	// Describe and create a SRV for the texture.
+	unsigned int SRVMipLevels = -1;
+	if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
+		|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
+		|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT
+		|| rhs->m_textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
+	{
+		SRVMipLevels = 1;
+	}
+
 	rhs->m_SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	rhs->m_SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	rhs->m_SRVDesc.Texture2D.MostDetailedMip = 0;
@@ -1277,19 +1277,19 @@ bool DX12RenderingBackendNS::submitGPUData(DX12TextureDataComponent * rhs)
 		rhs->m_SRVDesc.Format = rhs->m_DX12TextureDataDesc.Format;
 	}
 
-	rhs->m_CPUHandle = DX12RenderingBackendComponent::get().m_currentCSUCPUHandle;
-	rhs->m_GPUHandle = DX12RenderingBackendComponent::get().m_currentCSUGPUHandle;
+	rhs->m_SRVCPUHandle = DX12RenderingBackendComponent::get().m_currentCSUCPUHandle;
+	rhs->m_SRVGPUHandle = DX12RenderingBackendComponent::get().m_currentCSUGPUHandle;
 
 	auto l_CSUDescSize = DX12RenderingBackendComponent::get().m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	DX12RenderingBackendComponent::get().m_currentCSUCPUHandle.ptr += l_CSUDescSize;
 	DX12RenderingBackendComponent::get().m_currentCSUGPUHandle.ptr += l_CSUDescSize;
 
-	DX12RenderingBackendComponent::get().m_device->CreateShaderResourceView(rhs->m_texture, &rhs->m_SRVDesc, rhs->m_CPUHandle);
+	DX12RenderingBackendComponent::get().m_device->CreateShaderResourceView(rhs->m_texture, &rhs->m_SRVDesc, rhs->m_SRVCPUHandle);
 
 	endSingleTimeCommands(l_commandList);
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingBackend: texture SRV handle" + std::to_string(rhs->m_CPUHandle.ptr) + " is created.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingBackend: texture SRV handle" + std::to_string(rhs->m_SRVCPUHandle.ptr) + " is created.");
 
 	rhs->m_objectStatus = ObjectStatus::Activated;
 
@@ -1346,7 +1346,7 @@ bool DX12RenderingBackendNS::recordBindCBV(DX12RenderPassComponent* DXRPC, unsig
 	return true;
 }
 
-bool DX12RenderingBackendNS::recordBindTextureForWrite(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, DX12TextureDataComponent* DXTDC)
+bool DX12RenderingBackendNS::recordBindRTForWrite(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, DX12TextureDataComponent* DXTDC)
 {
 	DXRPC->m_commandLists[frameIndex]->ResourceBarrier(1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(DXTDC->m_texture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));
@@ -1354,7 +1354,7 @@ bool DX12RenderingBackendNS::recordBindTextureForWrite(DX12RenderPassComponent* 
 	return true;
 }
 
-bool DX12RenderingBackendNS::recordBindTextureForRead(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, DX12TextureDataComponent* DXTDC)
+bool DX12RenderingBackendNS::recordBindRTForRead(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, DX12TextureDataComponent* DXTDC)
 {
 	DXRPC->m_commandLists[frameIndex]->ResourceBarrier(1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(DXTDC->m_texture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
@@ -1362,23 +1362,16 @@ bool DX12RenderingBackendNS::recordBindTextureForRead(DX12RenderPassComponent* D
 	return true;
 }
 
-bool DX12RenderingBackendNS::recordBindSRV(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int startSlot, const DX12TextureDataComponent* DXTDC)
-{
-	DXRPC->m_commandLists[frameIndex]->SetGraphicsRootShaderResourceView(startSlot, DXTDC->m_SRV->GetGPUVirtualAddress());
-
-	return true;
-}
-
 bool DX12RenderingBackendNS::recordBindSRVDescTable(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int startSlot, const DX12TextureDataComponent* DXTDC)
 {
-	DXRPC->m_commandLists[frameIndex]->SetGraphicsRootDescriptorTable(startSlot, DXTDC->m_GPUHandle);
+	DXRPC->m_commandLists[frameIndex]->SetGraphicsRootDescriptorTable(startSlot, DXTDC->m_SRVGPUHandle);
 
 	return true;
 }
 
 bool DX12RenderingBackendNS::recordBindSamplerDescTable(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int startSlot, DX12ShaderProgramComponent* DXSPC)
 {
-	DXRPC->m_commandLists[frameIndex]->SetGraphicsRootDescriptorTable(startSlot, DXSPC->m_GPUHandle);
+	DXRPC->m_commandLists[frameIndex]->SetGraphicsRootDescriptorTable(startSlot, DXSPC->m_samplerGPUHandle);
 
 	return true;
 }
@@ -1386,8 +1379,8 @@ bool DX12RenderingBackendNS::recordBindSamplerDescTable(DX12RenderPassComponent*
 bool DX12RenderingBackendNS::recordDrawCall(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, DX12MeshDataComponent * DXMDC)
 {
 	DXRPC->m_commandLists[frameIndex]->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	DXRPC->m_commandLists[frameIndex]->IASetVertexBuffers(0, 1, &DXMDC->m_vertexBufferView);
-	DXRPC->m_commandLists[frameIndex]->IASetIndexBuffer(&DXMDC->m_indexBufferView);
+	DXRPC->m_commandLists[frameIndex]->IASetVertexBuffers(0, 1, &DXMDC->m_VBV);
+	DXRPC->m_commandLists[frameIndex]->IASetIndexBuffer(&DXMDC->m_IBV);
 	DXRPC->m_commandLists[frameIndex]->DrawIndexedInstanced((unsigned int)DXMDC->m_indicesSize, 1, 0, 0, 0);
 
 	return true;

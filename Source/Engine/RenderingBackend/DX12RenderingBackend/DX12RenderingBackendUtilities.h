@@ -74,9 +74,8 @@ namespace DX12RenderingBackendNS
 	bool recordActivateRenderPass(DX12RenderPassComponent* DXRPC, unsigned int frameIndex);
 	bool recordBindDescHeaps(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int heapsCount, ID3D12DescriptorHeap** heaps);
 	bool recordBindCBV(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int startSlot, const DX12ConstantBuffer& ConstantBuffer, size_t offset);
-	bool recordBindTextureForWrite(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, DX12TextureDataComponent* DXTDC);
-	bool recordBindTextureForRead(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, DX12TextureDataComponent* DXTDC);
-	bool recordBindSRV(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int startSlot, const DX12TextureDataComponent* DXTDC);
+	bool recordBindRTForWrite(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, DX12TextureDataComponent* DXTDC);
+	bool recordBindRTForRead(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, DX12TextureDataComponent* DXTDC);
 	bool recordBindSRVDescTable(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int startSlot, const DX12TextureDataComponent* DXTDC);
 	bool recordBindSamplerDescTable(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int startSlot, DX12ShaderProgramComponent* DXSPC);
 	bool recordDrawCall(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, DX12MeshDataComponent* DXMDC);

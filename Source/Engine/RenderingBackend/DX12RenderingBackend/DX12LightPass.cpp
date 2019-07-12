@@ -137,9 +137,9 @@ bool DX12LightPass::update()
 
 	recordActivateRenderPass(m_DXRPC, 0);
 
-	recordBindTextureForRead(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_DXTDCs[0]);
-	recordBindTextureForRead(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_DXTDCs[1]);
-	recordBindTextureForRead(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_DXTDCs[2]);
+	recordBindRTForRead(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_DXTDCs[0]);
+	recordBindRTForRead(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_DXTDCs[1]);
+	recordBindRTForRead(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_DXTDCs[2]);
 
 	ID3D12DescriptorHeap* l_heaps[] = { DX12RenderingBackendComponent::get().m_CSUHeap, DX12RenderingBackendComponent::get().m_samplerHeap };
 
@@ -156,9 +156,9 @@ bool DX12LightPass::update()
 
 	recordDrawCall(m_DXRPC, 0, l_MDC);
 
-	recordBindTextureForWrite(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_DXTDCs[0]);
-	recordBindTextureForWrite(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_DXTDCs[1]);
-	recordBindTextureForWrite(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_DXTDCs[2]);
+	recordBindRTForWrite(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_DXTDCs[0]);
+	recordBindRTForWrite(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_DXTDCs[1]);
+	recordBindRTForWrite(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_DXTDCs[2]);
 
 	recordCommandEnd(m_DXRPC, 0);
 
@@ -168,7 +168,6 @@ bool DX12LightPass::update()
 bool DX12LightPass::render()
 {
 	executeCommandList(m_DXRPC, 0);
-	waitFrame(m_DXRPC, 0);
 
 	return true;
 }

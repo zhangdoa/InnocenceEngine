@@ -11,6 +11,6 @@ public:
 
 	ID3D12Resource* m_vertexBuffer = 0;
 	ID3D12Resource* m_indexBuffer = 0;
-	D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
-	D3D12_INDEX_BUFFER_VIEW m_indexBufferView;
+	D3D12_VERTEX_BUFFER_VIEW m_VBV;
+	D3D12_INDEX_BUFFER_VIEW m_IBV;
 };

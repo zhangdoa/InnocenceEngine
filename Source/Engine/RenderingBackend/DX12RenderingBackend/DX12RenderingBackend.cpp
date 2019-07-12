@@ -47,11 +47,11 @@ namespace DX12RenderingBackendNS
 
 	bool createDebugCallback();
 	bool createPhysicalDevices();
+	bool createGlobalCommandQueue();
 	bool createGlobalCommandAllocator();
 
 	bool createGlobalCSUHeap();
 	bool createGlobalSamplerHeap();
-	bool createSwapChain();
 	bool createSwapChainDXRPC();
 	bool createSwapChainSyncPrimitives();
 
@@ -168,9 +168,11 @@ bool DX12RenderingBackendNS::createPhysicalDevices()
 	//l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
 	//l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, TRUE);
 
-	// Initialize the description of the command queue.
-	ZeroMemory(&g_DXRenderingBackendComponent->m_globalCommandQueueDesc, sizeof(g_DXRenderingBackendComponent->m_globalCommandQueueDesc));
+	return true;
+}
 
+bool DX12RenderingBackendNS::createGlobalCommandQueue()
+{
 	// Set up the description of the command queue.
 	g_DXRenderingBackendComponent->m_globalCommandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 	g_DXRenderingBackendComponent->m_globalCommandQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
@@ -178,7 +180,7 @@ bool DX12RenderingBackendNS::createPhysicalDevices()
 	g_DXRenderingBackendComponent->m_globalCommandQueueDesc.NodeMask = 0;
 
 	// Create the command queue.
-	l_result = g_DXRenderingBackendComponent->m_device->CreateCommandQueue(&g_DXRenderingBackendComponent->m_globalCommandQueueDesc, IID_PPV_ARGS(&g_DXRenderingBackendComponent->m_globalCommandQueue));
+	auto l_result = g_DXRenderingBackendComponent->m_device->CreateCommandQueue(&g_DXRenderingBackendComponent->m_globalCommandQueueDesc, IID_PPV_ARGS(&g_DXRenderingBackendComponent->m_globalCommandQueue));
 	if (FAILED(l_result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: Can't create global CommandQueue!");
@@ -190,19 +192,12 @@ bool DX12RenderingBackendNS::createPhysicalDevices()
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingBackend: Global CommandQueue has been created.");
 
-	// Release the adapter.
-	g_DXRenderingBackendComponent->m_adapter->Release();
-	g_DXRenderingBackendComponent->m_adapter = 0;
-
 	return true;
 }
 
 bool DX12RenderingBackendNS::createGlobalCommandAllocator()
 {
-	HRESULT l_result;
-
-	// Create a command allocator.
-	l_result = g_DXRenderingBackendComponent->m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_DXRenderingBackendComponent->m_globalCommandAllocator));
+	auto l_result = g_DXRenderingBackendComponent->m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_DXRenderingBackendComponent->m_globalCommandAllocator));
 	if (FAILED(l_result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: Can't create global CommandAllocator!");
@@ -271,69 +266,6 @@ bool DX12RenderingBackendNS::createGlobalSamplerHeap()
 	return true;
 }
 
-bool DX12RenderingBackendNS::createSwapChain()
-{
-	HRESULT l_result;
-
-	// Initialize the swap chain description.
-	ZeroMemory(&g_DXRenderingBackendComponent->m_swapChainDesc, sizeof(g_DXRenderingBackendComponent->m_swapChainDesc));
-
-	// Set the swap chain to use double buffering.
-	g_DXRenderingBackendComponent->m_swapChainDesc.BufferCount = 2;
-
-	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
-
-	// Set the width and height of the back buffer.
-	g_DXRenderingBackendComponent->m_swapChainDesc.Width = (UINT)l_screenResolution.x;
-	g_DXRenderingBackendComponent->m_swapChainDesc.Height = (UINT)l_screenResolution.y;
-
-	// Set regular 32-bit surface for the back buffer.
-	g_DXRenderingBackendComponent->m_swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-
-	// Set the usage of the back buffer.
-	g_DXRenderingBackendComponent->m_swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-
-	// Turn multisampling off.
-	g_DXRenderingBackendComponent->m_swapChainDesc.SampleDesc.Count = 1;
-	g_DXRenderingBackendComponent->m_swapChainDesc.SampleDesc.Quality = 0;
-
-	// Set to full screen or windowed mode.
-	// @TODO: finish this feature
-
-	// Discard the back buffer contents after presenting.
-	g_DXRenderingBackendComponent->m_swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-
-	// Don't set the advanced flags.
-	g_DXRenderingBackendComponent->m_swapChainDesc.Flags = 0;
-
-	// Finally create the swap chain using the swap chain description.
-	IDXGISwapChain1* l_swapChain1;
-	l_result = g_DXRenderingBackendComponent->m_factory->CreateSwapChainForHwnd(
-		g_DXRenderingBackendComponent->m_globalCommandQueue,
-		WinWindowSystemComponent::get().m_hwnd,
-		&g_DXRenderingBackendComponent->m_swapChainDesc,
-		nullptr,
-		nullptr,
-		&l_swapChain1);
-
-	g_DXRenderingBackendComponent->m_swapChain = reinterpret_cast<IDXGISwapChain4*>(l_swapChain1);
-
-	if (FAILED(l_result))
-	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: Can't create swap chain!");
-		m_objectStatus = ObjectStatus::Suspended;
-		return false;
-	}
-
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingBackend: Swap chain has been created.");
-
-	// Release the factory.
-	g_DXRenderingBackendComponent->m_factory->Release();
-	g_DXRenderingBackendComponent->m_factory = 0;
-
-	return true;
-}
-
 bool DX12RenderingBackendNS::createSwapChainDXRPC()
 {
 	auto l_imageCount = 2;
@@ -369,6 +301,61 @@ bool DX12RenderingBackendNS::createSwapChainDXRPC()
 	// initialize manually
 	bool l_result = true;
 	l_result &= reserveRenderTargets(l_DXRPC);
+
+	// use local command queue for swap chain
+	l_result = createCommandQueue(l_DXRPC);
+	l_result = createCommandAllocators(l_DXRPC);
+	l_result = createCommandLists(l_DXRPC);
+
+	// create swap chain
+	// Set the swap chain to use double buffering.
+	g_DXRenderingBackendComponent->m_swapChainDesc.BufferCount = 2;
+
+	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+
+	// Set the width and height of the back buffer.
+	g_DXRenderingBackendComponent->m_swapChainDesc.Width = (UINT)l_screenResolution.x;
+	g_DXRenderingBackendComponent->m_swapChainDesc.Height = (UINT)l_screenResolution.y;
+
+	// Set regular 32-bit surface for the back buffer.
+	g_DXRenderingBackendComponent->m_swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+	// Set the usage of the back buffer.
+	g_DXRenderingBackendComponent->m_swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+
+	// Turn multisampling off.
+	g_DXRenderingBackendComponent->m_swapChainDesc.SampleDesc.Count = 1;
+	g_DXRenderingBackendComponent->m_swapChainDesc.SampleDesc.Quality = 0;
+
+	// Set to full screen or windowed mode.
+	// @TODO: finish this feature
+
+	// Discard the back buffer contents after presenting.
+	g_DXRenderingBackendComponent->m_swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+
+	// Don't set the advanced flags.
+	g_DXRenderingBackendComponent->m_swapChainDesc.Flags = 0;
+
+	// Finally create the swap chain using the swap chain description.
+	IDXGISwapChain1* l_swapChain1;
+	auto l_hResult = g_DXRenderingBackendComponent->m_factory->CreateSwapChainForHwnd(
+		l_DXRPC->m_commandQueue,
+		WinWindowSystemComponent::get().m_hwnd,
+		&g_DXRenderingBackendComponent->m_swapChainDesc,
+		nullptr,
+		nullptr,
+		&l_swapChain1);
+
+	g_DXRenderingBackendComponent->m_swapChain = reinterpret_cast<IDXGISwapChain4*>(l_swapChain1);
+
+	if (FAILED(l_hResult))
+	{
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: Can't create swap chain!");
+		m_objectStatus = ObjectStatus::Suspended;
+		return false;
+	}
+
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingBackend: Swap chain has been created.");
 
 	// use device created swap chain textures
 	for (size_t i = 0; i < l_imageCount; i++)
@@ -456,9 +443,6 @@ bool DX12RenderingBackendNS::createSwapChainDXRPC()
 
 	l_result = createRootSignature(l_DXRPC);
 	l_result = createPSO(l_DXRPC, l_DXSPC);
-	l_result = createCommandQueue(l_DXRPC);
-	l_result = createCommandAllocators(l_DXRPC);
-	l_result = createCommandLists(l_DXRPC);
 
 	DX12RenderingBackendComponent::get().m_swapChainDXRPC = l_DXRPC;
 	DX12RenderingBackendComponent::get().m_swapChainDXSPC = l_DXSPC;
@@ -468,7 +452,7 @@ bool DX12RenderingBackendNS::createSwapChainDXRPC()
 
 bool DX12RenderingBackendNS::createSwapChainSyncPrimitives()
 {
-	return 	createSyncPrimitives(DX12RenderingBackendComponent::get().m_swapChainDXRPC);
+	return createSyncPrimitives(DX12RenderingBackendComponent::get().m_swapChainDXRPC);
 }
 
 bool DX12RenderingBackendNS::setup()
@@ -492,10 +476,10 @@ bool DX12RenderingBackendNS::setup()
 	g_DXRenderingBackendComponent->m_deferredRenderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::FLOAT16;
 
 	bool l_result = true;
-	l_result = l_result && initializeComponentPool();
+	l_result &= initializeComponentPool();
 
-	l_result = l_result && createDebugCallback();
-	l_result = l_result && createPhysicalDevices();
+	l_result &= createDebugCallback();
+	l_result &= createPhysicalDevices();
 
 	m_objectStatus = ObjectStatus::Created;
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingBackend setup finished.");
@@ -515,19 +499,18 @@ bool DX12RenderingBackendNS::initialize()
 
 		bool l_result = true;
 
-		l_result = l_result && createGlobalCommandAllocator();
+		l_result &= createGlobalCommandQueue();
+		l_result &= createGlobalCommandAllocator();
 
-		l_result = l_result && createGlobalCSUHeap();
-		l_result = l_result && createGlobalSamplerHeap();
+		l_result &= createGlobalCSUHeap();
+		l_result &= createGlobalSamplerHeap();
 
 		loadDefaultAssets();
 
 		generateGPUBuffers();
 
-		l_result = l_result && createSwapChain();
-		l_result = l_result && createSwapChainDXRPC();
-
-		l_result = l_result && createSwapChainSyncPrimitives();
+		l_result &= createSwapChainDXRPC();
+		l_result &= createSwapChainSyncPrimitives();
 
 		DX12OpaquePass::initialize();
 		DX12LightPass::initialize();
@@ -545,20 +528,20 @@ bool DX12RenderingBackendNS::initialize()
 
 bool DX12RenderingBackendNS::update()
 {
-	//while (DX12RenderingBackendNS::m_uninitializedMDC.size() > 0)
-	//{
-	//	DX12MeshDataComponent* l_MDC;
-	//	DX12RenderingBackendNS::m_uninitializedMDC.tryPop(l_MDC);
+	while (DX12RenderingBackendNS::m_uninitializedMDC.size() > 0)
+	{
+		DX12MeshDataComponent* l_MDC;
+		DX12RenderingBackendNS::m_uninitializedMDC.tryPop(l_MDC);
 
-	//	if (l_MDC)
-	//	{
-	//		auto l_result = initializeDX12MeshDataComponent(l_MDC);
-	//		if (!l_result)
-	//		{
-	//			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't create DX12MeshDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
-	//		}
-	//	}
-	//}
+		if (l_MDC)
+		{
+			auto l_result = initializeDX12MeshDataComponent(l_MDC);
+			if (!l_result)
+			{
+				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't create DX12MeshDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
+			}
+		}
+	}
 	while (DX12RenderingBackendNS::m_uninitializedTDC.size() > 0)
 	{
 		DX12TextureDataComponent* l_TDC;
@@ -587,7 +570,7 @@ bool DX12RenderingBackendNS::update()
 
 	auto l_MDC = getDX12MeshDataComponent(MeshShapeType::QUAD);
 	auto l_swapChainDXRPC = DX12RenderingBackendComponent::get().m_swapChainDXRPC;
-	auto l_frameIndex = l_swapChainDXRPC->m_frameIndex;
+	auto l_frameIndex = l_swapChainDXRPC->m_currentFrameIndex;
 
 	recordCommandBegin(l_swapChainDXRPC, l_frameIndex);
 
@@ -599,14 +582,14 @@ bool DX12RenderingBackendNS::update()
 	ID3D12DescriptorHeap* l_heaps[] = { DX12RenderingBackendComponent::get().m_CSUHeap, DX12RenderingBackendComponent::get().m_samplerHeap };
 	recordBindDescHeaps(l_swapChainDXRPC, l_frameIndex, 2, l_heaps);
 
-	recordBindTextureForRead(l_swapChainDXRPC, l_frameIndex, DX12LightPass::getDX12RPC()->m_DXTDCs[0]);
+	recordBindRTForRead(l_swapChainDXRPC, l_frameIndex, DX12LightPass::getDX12RPC()->m_DXTDCs[0]);
 
 	recordBindSRVDescTable(l_swapChainDXRPC, l_frameIndex, 0, DX12LightPass::getDX12RPC()->m_DXTDCs[0]);
 	recordBindSamplerDescTable(l_swapChainDXRPC, l_frameIndex, 1, DX12RenderingBackendComponent::get().m_swapChainDXSPC);
 
 	recordDrawCall(l_swapChainDXRPC, l_frameIndex, l_MDC);
 
-	recordBindTextureForWrite(l_swapChainDXRPC, l_frameIndex, DX12LightPass::getDX12RPC()->m_DXTDCs[0]);
+	recordBindRTForWrite(l_swapChainDXRPC, l_frameIndex, DX12LightPass::getDX12RPC()->m_DXTDCs[0]);
 
 	l_swapChainDXRPC->m_commandLists[l_frameIndex]->ResourceBarrier(1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(l_swapChainDXRPC->m_DXTDCs[l_frameIndex]->m_texture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
@@ -619,32 +602,39 @@ bool DX12RenderingBackendNS::update()
 bool DX12RenderingBackendNS::render()
 {
 	DX12OpaquePass::render();
+	waitFrame(DX12OpaquePass::getDX12RPC(), 0);
+
 	DX12LightPass::render();
+	waitFrame(DX12LightPass::getDX12RPC(), 0);
 
 	auto l_swapChainDXRPC = DX12RenderingBackendComponent::get().m_swapChainDXRPC;
 
+	auto l_currentFrameIndex = l_swapChainDXRPC->m_currentFrameIndex;
+
 	// Execute the command list.
-	ID3D12CommandList* ppCommandLists[] = { l_swapChainDXRPC->m_commandLists[l_swapChainDXRPC->m_frameIndex] };
-	g_DXRenderingBackendComponent->m_globalCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+	ID3D12CommandList* ppCommandLists[] = { l_swapChainDXRPC->m_commandLists[l_currentFrameIndex] };
+	l_swapChainDXRPC->m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
 	// Present the frame.
 	DX12RenderingBackendComponent::get().m_swapChain->Present(1, 0);
 
 	// Schedule a Signal command in the queue.
-	const UINT64 currentFenceValue = l_swapChainDXRPC->m_fenceStatus[l_swapChainDXRPC->m_frameIndex];
-	g_DXRenderingBackendComponent->m_globalCommandQueue->Signal(l_swapChainDXRPC->m_fence, currentFenceValue);
+	const UINT64 l_currentFenceValue = l_swapChainDXRPC->m_fenceStatus[l_currentFrameIndex];
+	l_swapChainDXRPC->m_commandQueue->Signal(l_swapChainDXRPC->m_fence, l_currentFenceValue);
 
-	// Update the frame index.
-	l_swapChainDXRPC->m_frameIndex = DX12RenderingBackendComponent::get().m_swapChain->GetCurrentBackBufferIndex();
+	auto l_nextFrameIndex = DX12RenderingBackendComponent::get().m_swapChain->GetCurrentBackBufferIndex();
 
 	// If the next frame is not ready to be rendered yet, wait until it is ready.
-	if (l_swapChainDXRPC->m_fence->GetCompletedValue() < currentFenceValue)
+	if (l_swapChainDXRPC->m_fence->GetCompletedValue() < l_currentFenceValue)
 	{
-		waitFrame(l_swapChainDXRPC, l_swapChainDXRPC->m_frameIndex);
+		waitFrame(l_swapChainDXRPC, l_nextFrameIndex);
 	}
 
 	// Set the fence value for the next frame.
-	l_swapChainDXRPC->m_fenceStatus[l_swapChainDXRPC->m_frameIndex] = currentFenceValue + 1;
+	l_swapChainDXRPC->m_fenceStatus[l_nextFrameIndex] = l_currentFenceValue + 1;
+
+	// Update the frame index.
+	l_swapChainDXRPC->m_currentFrameIndex = l_nextFrameIndex;
 
 	return true;
 }
@@ -713,6 +703,18 @@ bool DX12RenderingBackendNS::terminate()
 	{
 		g_DXRenderingBackendComponent->m_device->Release();
 		g_DXRenderingBackendComponent->m_device = 0;
+	}
+
+	if (g_DXRenderingBackendComponent->m_adapter)
+	{
+		g_DXRenderingBackendComponent->m_adapter->Release();
+		g_DXRenderingBackendComponent->m_adapter = 0;
+	}
+
+	if (g_DXRenderingBackendComponent->m_factory)
+	{
+		g_DXRenderingBackendComponent->m_factory->Release();
+		g_DXRenderingBackendComponent->m_factory = 0;
 	}
 
 	m_objectStatus = ObjectStatus::Terminated;

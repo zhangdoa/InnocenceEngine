@@ -43,7 +43,7 @@ public:
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC m_PSODesc = {};
 	ID3D12PipelineState* m_PSO;
 
-	unsigned int m_frameIndex = 0;
+	unsigned int m_currentFrameIndex = 0;
 
 	ID3D12Fence* m_fence;
 	HANDLE m_fenceEvent;

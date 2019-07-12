@@ -131,11 +131,12 @@ bool DX12OpaquePass::update()
 
 	recordActivateRenderPass(m_DXRPC, 0);
 
-	ID3D12DescriptorHeap* l_heaps[] = { DX12RenderingBackendComponent::get().m_CSUHeap };
+	ID3D12DescriptorHeap* l_heaps[] = { DX12RenderingBackendComponent::get().m_CSUHeap, DX12RenderingBackendComponent::get().m_samplerHeap };
 
-	recordBindDescHeaps(m_DXRPC, 0, 1, l_heaps);
+	recordBindDescHeaps(m_DXRPC, 0, 2, l_heaps);
 
 	recordBindCBV(m_DXRPC, 0, 0, DX12RenderingBackendComponent::get().m_cameraConstantBuffer, 0);
+	recordBindSamplerDescTable(m_DXRPC, 0, 4, m_DXSPC);
 
 	unsigned int l_offset = 0;
 
@@ -144,31 +145,14 @@ bool DX12OpaquePass::update()
 	{
 		auto l_opaquePassGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassGPUData()[i];
 
-		recordBindCBV(m_DXRPC, 0, 1, DX12RenderingBackendComponent::get().m_meshConstantBuffer, l_offset);
-		recordBindCBV(m_DXRPC, 0, 2, DX12RenderingBackendComponent::get().m_materialConstantBuffer, l_offset);
+		if (l_opaquePassGPUData.MDC->m_objectStatus == ObjectStatus::Activated)
+		{
+			recordBindCBV(m_DXRPC, 0, 1, DX12RenderingBackendComponent::get().m_meshConstantBuffer, l_offset);
+			recordBindCBV(m_DXRPC, 0, 2, DX12RenderingBackendComponent::get().m_materialConstantBuffer, l_offset);
 
-		if (l_opaquePassGPUData.normalTDC)
-		{
-			recordBindTextureForRead(m_DXRPC, 0, reinterpret_cast<DX12TextureDataComponent*>(l_opaquePassGPUData.normalTDC));
-		}
-		if (l_opaquePassGPUData.albedoTDC)
-		{
-			recordBindTextureForRead(m_DXRPC, 0, reinterpret_cast<DX12TextureDataComponent*>(l_opaquePassGPUData.albedoTDC));
-		}
-		if (l_opaquePassGPUData.metallicTDC)
-		{
-			recordBindTextureForRead(m_DXRPC, 0, reinterpret_cast<DX12TextureDataComponent*>(l_opaquePassGPUData.metallicTDC));
-		}
-		if (l_opaquePassGPUData.roughnessTDC)
-		{
-			recordBindTextureForRead(m_DXRPC, 0, reinterpret_cast<DX12TextureDataComponent*>(l_opaquePassGPUData.roughnessTDC));
-		}
-		if (l_opaquePassGPUData.AOTDC)
-		{
-			recordBindTextureForRead(m_DXRPC, 0, reinterpret_cast<DX12TextureDataComponent*>(l_opaquePassGPUData.AOTDC));
+			recordDrawCall(m_DXRPC, 0, reinterpret_cast<DX12MeshDataComponent*>(l_opaquePassGPUData.MDC));
 		}
 
-		recordDrawCall(m_DXRPC, 0, reinterpret_cast<DX12MeshDataComponent*>(l_opaquePassGPUData.MDC));
 		l_offset++;
 	}
 
@@ -179,9 +163,7 @@ bool DX12OpaquePass::update()
 
 bool DX12OpaquePass::render()
 {
-	// Execute the command list.
 	executeCommandList(m_DXRPC, 0);
-	waitFrame(m_DXRPC, 0);
 
 	return true;
 }
