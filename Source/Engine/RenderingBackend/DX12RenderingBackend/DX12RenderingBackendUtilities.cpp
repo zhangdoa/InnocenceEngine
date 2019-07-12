@@ -11,6 +11,8 @@ namespace DX12RenderingBackendNS
 {
 	ID3D12GraphicsCommandList* beginSingleTimeCommands();
 	void endSingleTimeCommands(ID3D12GraphicsCommandList* commandList);
+	ID3D12Resource* createUploadHeapBuffer(UINT64 size);
+	ID3D12Resource* createDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, D3D12_CLEAR_VALUE* clearValue = nullptr);
 
 	void OutputShaderErrorMessage(ID3DBlob * errorMessage, HWND hwnd, const std::string & shaderFilename);
 	ID3DBlob* loadShaderBuffer(ShaderType shaderType, const std::wstring & shaderFilePath);
@@ -263,6 +265,48 @@ void DX12RenderingBackendNS::endSingleTimeCommands(ID3D12GraphicsCommandList* co
 	CloseHandle(l_fenceEvent);
 
 	commandList->Release();
+}
+
+ID3D12Resource* DX12RenderingBackendNS::createUploadHeapBuffer(UINT64 size)
+{
+	ID3D12Resource* l_uploadHeapBuffer;
+
+	auto l_result = DX12RenderingBackendComponent::get().m_device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(size),
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&l_uploadHeapBuffer));
+
+	if (FAILED(l_result))
+	{
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't create upload heap buffer!");
+		return nullptr;
+	}
+
+	return l_uploadHeapBuffer;
+}
+
+ID3D12Resource* DX12RenderingBackendNS::createDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, D3D12_CLEAR_VALUE* clearValue)
+{
+	ID3D12Resource* l_defaultHeapBuffer;
+
+	auto l_result = DX12RenderingBackendComponent::get().m_device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		D3D12_HEAP_FLAG_NONE,
+		resourceDesc,
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		clearValue,
+		IID_PPV_ARGS(&l_defaultHeapBuffer));
+
+	if (FAILED(l_result))
+	{
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't create default heap buffer!");
+		return false;
+	}
+
+	return l_defaultHeapBuffer;
 }
 
 void DX12RenderingBackendNS::OutputShaderErrorMessage(ID3DBlob * errorMessage, HWND hwnd, const std::string & shaderFilename)
@@ -806,35 +850,33 @@ bool DX12RenderingBackendNS::destroyAllGraphicPrimitiveComponents()
 
 bool DX12RenderingBackendNS::submitGPUData(DX12MeshDataComponent * rhs)
 {
+	// vertices
 	auto l_verticesDataSize = unsigned int(sizeof(Vertex) * rhs->m_vertices.size());
 
-	auto l_result = DX12RenderingBackendComponent::get().m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(l_verticesDataSize),
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&rhs->m_vertexBuffer));
+	auto l_verticesResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_verticesDataSize);
+	rhs->m_vertexBuffer = createDefaultHeapBuffer(&l_verticesResourceDesc);
 
-	if (FAILED(l_result))
+	if (rhs->m_vertexBuffer == nullptr)
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't create vertex buffer!");
 		return false;
 	}
 
-	// Copy the triangle data to the vertex buffer.
-	UINT8* pVertexDataBegin;
-	CD3DX12_RANGE vertexReadRange(0, 0);        // We do not intend to read from this resource on the CPU.
-	l_result = rhs->m_vertexBuffer->Map(0, &vertexReadRange, reinterpret_cast<void**>(&pVertexDataBegin));
+	auto l_uploadHeapBuffer = createUploadHeapBuffer(l_verticesDataSize);
 
-	if (FAILED(l_result))
-	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't map vertex buffer device memory!");
-		return false;
-	}
+	auto l_commandList = beginSingleTimeCommands();
 
-	std::memcpy(pVertexDataBegin, &rhs->m_vertices[0], l_verticesDataSize);
-	rhs->m_vertexBuffer->Unmap(0, nullptr);
+	// main memory ----> upload heap
+	D3D12_SUBRESOURCE_DATA l_verticesSubResourceData = {};
+	l_verticesSubResourceData.pData = &rhs->m_vertices[0];
+	l_verticesSubResourceData.RowPitch = l_verticesDataSize;
+	l_verticesSubResourceData.SlicePitch = 1;
+	UpdateSubresources(l_commandList, rhs->m_vertexBuffer, l_uploadHeapBuffer, 0, 0, 1, &l_verticesSubResourceData);
+
+	//  upload heap ----> default heap
+	l_commandList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(rhs->m_vertexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 
 	// Initialize the vertex buffer view.
 	rhs->m_vertexBufferView.BufferLocation = rhs->m_vertexBuffer->GetGPUVirtualAddress();
@@ -843,34 +885,33 @@ bool DX12RenderingBackendNS::submitGPUData(DX12MeshDataComponent * rhs)
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingBackend: VBO " + InnoUtility::pointerToString(rhs->m_vertexBuffer) + " is initialized.");
 
+	// indices
 	auto l_indicesDataSize = unsigned int(sizeof(Index) * rhs->m_indices.size());
-	DX12RenderingBackendComponent::get().m_device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(l_indicesDataSize),
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&rhs->m_indexBuffer));
 
-	if (FAILED(l_result))
+	auto l_indicesResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_indicesDataSize);
+	rhs->m_indexBuffer = createDefaultHeapBuffer(&l_indicesResourceDesc);
+
+	if (rhs->m_indexBuffer == nullptr)
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't create index buffer!");
 		return false;
 	}
 
-	// Copy the indice data to the index buffer.
-	UINT8* pIndexDataBegin;
-	CD3DX12_RANGE indexReadRange(0, 0);        // We do not intend to read from this resource on the CPU.
-	l_result = rhs->m_indexBuffer->Map(0, &indexReadRange, reinterpret_cast<void**>(&pIndexDataBegin));
+	l_uploadHeapBuffer = createUploadHeapBuffer(l_indicesDataSize);
 
-	if (FAILED(l_result))
-	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't map index buffer device memory!");
-		return false;
-	}
+	// main memory ----> upload heap
+	D3D12_SUBRESOURCE_DATA l_indicesSubResourceData = {};
+	l_indicesSubResourceData.pData = &rhs->m_indices[0];
+	l_indicesSubResourceData.RowPitch = l_indicesDataSize;
+	l_indicesSubResourceData.SlicePitch = 1;
+	UpdateSubresources(l_commandList, rhs->m_indexBuffer, l_uploadHeapBuffer, 0, 0, 1, &l_indicesSubResourceData);
 
-	std::memcpy(pIndexDataBegin, &rhs->m_indices[0], l_indicesDataSize);
-	rhs->m_indexBuffer->Unmap(0, nullptr);
+	//  upload heap ----> default heap
+	l_commandList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(rhs->m_indexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER));
+
+	endSingleTimeCommands(l_commandList);
 
 	// Initialize the index buffer view.
 	rhs->m_indexBufferView.Format = DXGI_FORMAT_R32_UINT;
@@ -1105,8 +1146,6 @@ bool DX12RenderingBackendNS::submitGPUData(DX12TextureDataComponent * rhs)
 		SRVMipLevels = 1;
 	}
 
-	HRESULT l_result;
-
 	// Create the empty texture.
 	if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
 		|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
@@ -1128,26 +1167,14 @@ bool DX12RenderingBackendNS::submitGPUData(DX12TextureDataComponent * rhs)
 			l_clearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 			l_clearValue.DepthStencil = D3D12_DEPTH_STENCIL_VALUE{ 1.0f, 0x00 };
 		}
-		l_result = DX12RenderingBackendComponent::get().m_device->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-			D3D12_HEAP_FLAG_NONE,
-			&rhs->m_DX12TextureDataDesc,
-			D3D12_RESOURCE_STATE_COPY_DEST,
-			&l_clearValue,
-			IID_PPV_ARGS(&rhs->m_texture));
+		rhs->m_texture = createDefaultHeapBuffer(&rhs->m_DX12TextureDataDesc, &l_clearValue);
 	}
 	else
 	{
-		l_result = DX12RenderingBackendComponent::get().m_device->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-			D3D12_HEAP_FLAG_NONE,
-			&rhs->m_DX12TextureDataDesc,
-			D3D12_RESOURCE_STATE_COPY_DEST,
-			NULL,
-			IID_PPV_ARGS(&rhs->m_texture));
+		rhs->m_texture = createDefaultHeapBuffer(&rhs->m_DX12TextureDataDesc);
 	}
 
-	if (FAILED(l_result))
+	if (rhs->m_texture == nullptr)
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't create texture!");
 		return false;
@@ -1155,6 +1182,24 @@ bool DX12RenderingBackendNS::submitGPUData(DX12TextureDataComponent * rhs)
 
 	auto l_commandList = beginSingleTimeCommands();
 
+	// main memory ----> upload heap
+	if (!(rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
+		|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
+		|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT
+		|| rhs->m_textureDataDesc.usageType == TextureUsageType::RAW_IMAGE))
+	{
+		const UINT64 l_uploadHeapBufferSize = GetRequiredIntermediateSize(rhs->m_texture, 0, 1);
+
+		auto l_uploadHeapBuffer = createUploadHeapBuffer(l_uploadHeapBufferSize);
+
+		D3D12_SUBRESOURCE_DATA l_textureSubResourceData = {};
+		l_textureSubResourceData.pData = rhs->m_textureData;
+		l_textureSubResourceData.RowPitch = rhs->m_textureDataDesc.width * ((unsigned int)rhs->m_textureDataDesc.pixelDataFormat + 1);
+		l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * rhs->m_textureDataDesc.height;
+		UpdateSubresources(l_commandList, rhs->m_texture, l_uploadHeapBuffer, 0, 0, 1, &l_textureSubResourceData);
+	}
+
+	//  upload heap ----> default heap
 	if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT)
 	{
 		l_commandList->ResourceBarrier(
@@ -1175,34 +1220,6 @@ bool DX12RenderingBackendNS::submitGPUData(DX12TextureDataComponent * rhs)
 	}
 	else
 	{
-		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(rhs->m_texture, 0, 1);
-
-		ID3D12Resource* textureUploadHeap;
-
-		// Create the GPU upload buffer.
-		l_result = DX12RenderingBackendComponent::get().m_device->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize),
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&textureUploadHeap));
-
-		if (FAILED(l_result))
-		{
-			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't create upload buffer!");
-			return false;
-		}
-
-		// Copy data to the intermediate upload heap and then schedule a copy
-		// from the upload heap to the Texture2D.
-		D3D12_SUBRESOURCE_DATA textureData = {};
-		textureData.pData = rhs->m_textureData;
-		textureData.RowPitch = rhs->m_textureDataDesc.width * ((unsigned int)rhs->m_textureDataDesc.pixelDataFormat + 1);
-		textureData.SlicePitch = textureData.RowPitch * rhs->m_textureDataDesc.height;
-
-		UpdateSubresources(l_commandList, rhs->m_texture, textureUploadHeap, 0, 0, 1, &textureData);
-
 		l_commandList->ResourceBarrier(
 			1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(rhs->m_texture, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
@@ -1239,7 +1256,7 @@ bool DX12RenderingBackendNS::submitGPUData(DX12TextureDataComponent * rhs)
 
 	endSingleTimeCommands(l_commandList);
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingBackend: texture handle" + InnoUtility::pointerToString(rhs) + " is initialized.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingBackend: texture SRV handle" + std::to_string(rhs->m_CPUHandle.ptr) + " is created.");
 
 	rhs->m_objectStatus = ObjectStatus::Activated;
 

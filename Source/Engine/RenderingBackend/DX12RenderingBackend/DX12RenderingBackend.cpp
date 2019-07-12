@@ -559,20 +559,20 @@ bool DX12RenderingBackendNS::update()
 	//		}
 	//	}
 	//}
-	//while (DX12RenderingBackendNS::m_uninitializedTDC.size() > 0)
-	//{
-	//	DX12TextureDataComponent* l_TDC;
-	//	DX12RenderingBackendNS::m_uninitializedTDC.tryPop(l_TDC);
+	while (DX12RenderingBackendNS::m_uninitializedTDC.size() > 0)
+	{
+		DX12TextureDataComponent* l_TDC;
+		DX12RenderingBackendNS::m_uninitializedTDC.tryPop(l_TDC);
 
-	//	if (l_TDC)
-	//	{
-	//		auto l_result = initializeDX12TextureDataComponent(l_TDC);
-	//		if (!l_result)
-	//		{
-	//			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't create DX12TextureDataComponent for " + std::string(l_TDC->m_parentEntity->m_entityName.c_str()) + "!");
-	//		}
-	//	}
-	//}
+		if (l_TDC)
+		{
+			auto l_result = initializeDX12TextureDataComponent(l_TDC);
+			if (!l_result)
+			{
+				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't create DX12TextureDataComponent for " + std::string(l_TDC->m_parentEntity->m_entityName.c_str()) + "!");
+			}
+		}
+	}
 
 	updateConstantBuffer(DX12RenderingBackendComponent::get().m_cameraConstantBuffer, g_pModuleManager->getRenderingFrontend()->getCameraGPUData());
 	updateConstantBuffer(DX12RenderingBackendComponent::get().m_sunConstantBuffer, g_pModuleManager->getRenderingFrontend()->getSunGPUData());
