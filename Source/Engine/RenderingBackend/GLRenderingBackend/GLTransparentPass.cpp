@@ -70,7 +70,7 @@ bool GLTransparentPass::update(GLRenderPassComponent* prePassGLRPC)
 		bindUBO(GLRenderingBackendComponent::get().m_meshUBO, 1, l_offset * sizeof(MeshGPUData), sizeof(MeshGPUData));
 		bindUBO(GLRenderingBackendComponent::get().m_materialUBO, 2, l_offset * sizeof(MaterialGPUData), sizeof(MaterialGPUData));
 
-		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_transparentPassGPUData.MDC));
+		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_transparentPassGPUData.mesh));
 
 		l_offset++;
 	}

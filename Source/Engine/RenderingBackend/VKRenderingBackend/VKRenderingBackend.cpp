@@ -805,11 +805,11 @@ void VKRenderingBackendNS::loadDefaultAssets()
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMesh);
 
 	m_basicMaterial = addVKMaterialDataComponent();
-	m_basicMaterial->m_texturePack.m_normalTDC.second = m_basicNormalTexture;
-	m_basicMaterial->m_texturePack.m_albedoTDC.second = m_basicAlbedoTexture;
-	m_basicMaterial->m_texturePack.m_metallicTDC.second = m_basicMetallicTexture;
-	m_basicMaterial->m_texturePack.m_roughnessTDC.second = m_basicRoughnessTexture;
-	m_basicMaterial->m_texturePack.m_aoTDC.second = m_basicAOTexture;
+	m_basicMaterial->m_normalTexture = m_basicNormalTexture;
+	m_basicMaterial->m_albedoTexture = m_basicAlbedoTexture;
+	m_basicMaterial->m_metallicTexture = m_basicMetallicTexture;
+	m_basicMaterial->m_roughnessTexture = m_basicRoughnessTexture;
+	m_basicMaterial->m_aoTexture = m_basicAOTexture;
 
 	initializeVKMeshDataComponent(m_unitLineMesh);
 	initializeVKMeshDataComponent(m_unitQuadMesh);

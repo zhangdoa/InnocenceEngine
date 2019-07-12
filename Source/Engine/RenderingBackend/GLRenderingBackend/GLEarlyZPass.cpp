@@ -74,7 +74,7 @@ bool GLEarlyZPass::update()
 
 		bindUBO(GLRenderingBackendComponent::get().m_meshUBO, 1, l_offset * sizeof(MeshGPUData), sizeof(MeshGPUData));
 
-		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_opaquePassGPUData.MDC));
+		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_opaquePassGPUData.mesh));
 
 		l_offset++;
 	}

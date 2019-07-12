@@ -109,31 +109,31 @@ bool DX11OpaquePass::update()
 	{
 		auto l_opaquePassGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassGPUData()[i];
 
-		if (l_opaquePassGPUData.normalTDC)
+		if (l_opaquePassGPUData.material->m_normalTexture)
 		{
-			bindTextureForRead(ShaderType::FRAGMENT, 0, reinterpret_cast<DX11TextureDataComponent*>(l_opaquePassGPUData.normalTDC));
+			bindTextureForRead(ShaderType::FRAGMENT, 0, reinterpret_cast<DX11TextureDataComponent*>(l_opaquePassGPUData.material->m_normalTexture));
 		}
-		if (l_opaquePassGPUData.albedoTDC)
+		if (l_opaquePassGPUData.material->m_albedoTexture)
 		{
-			bindTextureForRead(ShaderType::FRAGMENT, 1, reinterpret_cast<DX11TextureDataComponent*>(l_opaquePassGPUData.albedoTDC));
+			bindTextureForRead(ShaderType::FRAGMENT, 1, reinterpret_cast<DX11TextureDataComponent*>(l_opaquePassGPUData.material->m_albedoTexture));
 		}
-		if (l_opaquePassGPUData.metallicTDC)
+		if (l_opaquePassGPUData.material->m_metallicTexture)
 		{
-			bindTextureForRead(ShaderType::FRAGMENT, 2, reinterpret_cast<DX11TextureDataComponent*>(l_opaquePassGPUData.metallicTDC));
+			bindTextureForRead(ShaderType::FRAGMENT, 2, reinterpret_cast<DX11TextureDataComponent*>(l_opaquePassGPUData.material->m_metallicTexture));
 		}
-		if (l_opaquePassGPUData.roughnessTDC)
+		if (l_opaquePassGPUData.material->m_roughnessTexture)
 		{
-			bindTextureForRead(ShaderType::FRAGMENT, 3, reinterpret_cast<DX11TextureDataComponent*>(l_opaquePassGPUData.roughnessTDC));
+			bindTextureForRead(ShaderType::FRAGMENT, 3, reinterpret_cast<DX11TextureDataComponent*>(l_opaquePassGPUData.material->m_roughnessTexture));
 		}
-		if (l_opaquePassGPUData.AOTDC)
+		if (l_opaquePassGPUData.material->m_aoTexture)
 		{
-			bindTextureForRead(ShaderType::FRAGMENT, 4, reinterpret_cast<DX11TextureDataComponent*>(l_opaquePassGPUData.AOTDC));
+			bindTextureForRead(ShaderType::FRAGMENT, 4, reinterpret_cast<DX11TextureDataComponent*>(l_opaquePassGPUData.material->m_aoTexture));
 		}
 
 		bindConstantBuffer(ShaderType::VERTEX, 1, DX11RenderingBackendComponent::get().m_meshConstantBuffer, l_offset);
 		bindConstantBuffer(ShaderType::FRAGMENT, 0, DX11RenderingBackendComponent::get().m_materialConstantBuffer, l_offset);
 
-		drawMesh(reinterpret_cast<DX11MeshDataComponent*>(l_opaquePassGPUData.MDC));
+		drawMesh(reinterpret_cast<DX11MeshDataComponent*>(l_opaquePassGPUData.mesh));
 
 		l_offset++;
 	}

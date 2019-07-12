@@ -133,33 +133,33 @@ bool GLEnvironmentCapturePass::drawOpaquePass(vec4 capturePos, mat4 p, const std
 
 	for (unsigned int i = 0; i < g_pModuleManager->getRenderingFrontend()->getGIPassDrawCallCount(); i++)
 	{
-		auto l_opaquePassGPUData = g_pModuleManager->getRenderingFrontend()->getGIPassGPUData()[i];
+		auto l_GIPassGPUData = g_pModuleManager->getRenderingFrontend()->getGIPassGPUData()[i];
 
-		if (l_opaquePassGPUData.normalTDC)
+		if (l_GIPassGPUData.material->m_normalTexture)
 		{
-			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.normalTDC), 0);
+			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_GIPassGPUData.material->m_normalTexture), 0);
 		}
-		if (l_opaquePassGPUData.albedoTDC)
+		if (l_GIPassGPUData.material->m_albedoTexture)
 		{
-			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.albedoTDC), 1);
+			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_GIPassGPUData.material->m_albedoTexture), 1);
 		}
-		if (l_opaquePassGPUData.metallicTDC)
+		if (l_GIPassGPUData.material->m_metallicTexture)
 		{
-			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.metallicTDC), 2);
+			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_GIPassGPUData.material->m_metallicTexture), 2);
 		}
-		if (l_opaquePassGPUData.roughnessTDC)
+		if (l_GIPassGPUData.material->m_roughnessTexture)
 		{
-			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.roughnessTDC), 3);
+			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_GIPassGPUData.material->m_roughnessTexture), 3);
 		}
-		if (l_opaquePassGPUData.AOTDC)
+		if (l_GIPassGPUData.material->m_aoTexture)
 		{
-			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.AOTDC), 4);
+			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_GIPassGPUData.material->m_aoTexture), 4);
 		}
 
 		bindUBO(GLRenderingBackendComponent::get().m_meshUBO, 1, l_offset * sizeof(MeshGPUData), sizeof(MeshGPUData));
 		bindUBO(GLRenderingBackendComponent::get().m_materialUBO, 2, l_offset * sizeof(MaterialGPUData), sizeof(MaterialGPUData));
 
-		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_opaquePassGPUData.MDC));
+		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_GIPassGPUData.mesh));
 
 		l_offset++;
 	}

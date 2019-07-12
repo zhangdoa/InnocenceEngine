@@ -145,12 +145,12 @@ bool DX12OpaquePass::update()
 	{
 		auto l_opaquePassGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassGPUData()[i];
 
-		if (l_opaquePassGPUData.MDC->m_objectStatus == ObjectStatus::Activated)
+		if (l_opaquePassGPUData.mesh->m_objectStatus == ObjectStatus::Activated)
 		{
 			recordBindCBV(m_DXRPC, 0, 1, DX12RenderingBackendComponent::get().m_meshConstantBuffer, l_offset);
 			recordBindCBV(m_DXRPC, 0, 2, DX12RenderingBackendComponent::get().m_materialConstantBuffer, l_offset);
 
-			recordDrawCall(m_DXRPC, 0, reinterpret_cast<DX12MeshDataComponent*>(l_opaquePassGPUData.MDC));
+			recordDrawCall(m_DXRPC, 0, reinterpret_cast<DX12MeshDataComponent*>(l_opaquePassGPUData.mesh));
 		}
 
 		l_offset++;

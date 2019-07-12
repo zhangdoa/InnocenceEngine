@@ -271,7 +271,7 @@ bool GLDebuggerPass::drawDebugObjects()
 		{
 			auto l_debuggerPassGPUData = g_pModuleManager->getRenderingFrontend()->getDebuggerPassGPUData()[i];
 			updateUniform(3, l_debuggerPassGPUData.m);
-			drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_debuggerPassGPUData.MDC));
+			drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_debuggerPassGPUData.mesh));
 		}
 	}
 

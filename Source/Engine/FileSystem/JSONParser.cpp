@@ -623,11 +623,11 @@ MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(co
 			}
 			switch (l_TDC->m_textureDataDesc.usageType)
 			{
-			case TextureUsageType::NORMAL: l_MDC->m_texturePack.m_normalTDC.second = l_TDC; break;
-			case TextureUsageType::ALBEDO: l_MDC->m_texturePack.m_albedoTDC.second = l_TDC; break;
-			case TextureUsageType::METALLIC: l_MDC->m_texturePack.m_metallicTDC.second = l_TDC; break;
-			case TextureUsageType::ROUGHNESS: l_MDC->m_texturePack.m_roughnessTDC.second = l_TDC; break;
-			case TextureUsageType::AMBIENT_OCCLUSION: l_MDC->m_texturePack.m_aoTDC.second = l_TDC; break;
+			case TextureUsageType::NORMAL: l_MDC->m_normalTexture = l_TDC; break;
+			case TextureUsageType::ALBEDO: l_MDC->m_albedoTexture = l_TDC; break;
+			case TextureUsageType::METALLIC: l_MDC->m_metallicTexture = l_TDC; break;
+			case TextureUsageType::ROUGHNESS: l_MDC->m_roughnessTexture = l_TDC; break;
+			case TextureUsageType::AMBIENT_OCCLUSION: l_MDC->m_aoTexture = l_TDC; break;
 			default:
 				break;
 			}

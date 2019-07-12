@@ -223,15 +223,15 @@ void GLVXGIPass::updateVoxelizationPass()
 	{
 		auto l_GIPassGPUData = g_pModuleManager->getRenderingFrontend()->getGIPassGPUData()[i];
 
-		if (l_GIPassGPUData.albedoTDC)
+		if (l_GIPassGPUData.material->m_albedoTexture)
 		{
-			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_GIPassGPUData.albedoTDC), 0);
+			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_GIPassGPUData.material->m_albedoTexture), 0);
 		}
 
 		bindUBO(GLRenderingBackendComponent::get().m_meshUBO, 1, l_offset * sizeof(MeshGPUData), sizeof(MeshGPUData));
 		bindUBO(GLRenderingBackendComponent::get().m_materialUBO, 2, l_offset * sizeof(MaterialGPUData), sizeof(MaterialGPUData));
 
-		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_GIPassGPUData.MDC));
+		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_GIPassGPUData.mesh));
 
 		l_offset++;
 	}

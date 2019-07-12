@@ -283,7 +283,7 @@ bool VKOpaquePass::update()
 				1,
 				&l_basicMaterial->m_descriptorSet, 0, nullptr);
 
-			recordDrawCall(m_VKRPC, 0, reinterpret_cast<VKMeshDataComponent*>(l_opaquePassGPUData.MDC));
+			recordDrawCall(m_VKRPC, 0, reinterpret_cast<VKMeshDataComponent*>(l_opaquePassGPUData.mesh));
 
 			offsetCount++;
 		}

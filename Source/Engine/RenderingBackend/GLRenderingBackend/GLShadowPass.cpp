@@ -125,7 +125,7 @@ void GLShadowPass::update()
 				//uni_m
 				updateUniform(2, l_meshGPUData.m);
 
-				drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_opaquePassGPUData.MDC));
+				drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_opaquePassGPUData.mesh));
 			}
 		}
 	}
@@ -178,7 +178,7 @@ void GLShadowPass::update()
 		//uni_m
 		updateUniform(0, l_meshGPUData.m);
 
-		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_opaquePassGPUData.MDC));
+		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_opaquePassGPUData.mesh));
 	}
 
 	glDisable(GL_CULL_FACE);

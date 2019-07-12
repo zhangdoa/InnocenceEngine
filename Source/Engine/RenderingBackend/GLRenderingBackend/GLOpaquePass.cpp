@@ -79,31 +79,31 @@ bool GLOpaquePass::update()
 	{
 		auto l_opaquePassGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassGPUData()[i];
 
-		if (l_opaquePassGPUData.normalTDC)
+		if (l_opaquePassGPUData.material->m_normalTexture)
 		{
-			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.normalTDC), 0);
+			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.material->m_normalTexture), 0);
 		}
-		if (l_opaquePassGPUData.albedoTDC)
+		if (l_opaquePassGPUData.material->m_albedoTexture)
 		{
-			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.albedoTDC), 1);
+			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.material->m_albedoTexture), 1);
 		}
-		if (l_opaquePassGPUData.metallicTDC)
+		if (l_opaquePassGPUData.material->m_metallicTexture)
 		{
-			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.metallicTDC), 2);
+			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.material->m_metallicTexture), 2);
 		}
-		if (l_opaquePassGPUData.roughnessTDC)
+		if (l_opaquePassGPUData.material->m_roughnessTexture)
 		{
-			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.roughnessTDC), 3);
+			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.material->m_roughnessTexture), 3);
 		}
-		if (l_opaquePassGPUData.AOTDC)
+		if (l_opaquePassGPUData.material->m_aoTexture)
 		{
-			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.AOTDC), 4);
+			activateTexture(reinterpret_cast<GLTextureDataComponent*>(l_opaquePassGPUData.material->m_aoTexture), 4);
 		}
 
 		bindUBO(GLRenderingBackendComponent::get().m_meshUBO, 1, l_offset * sizeof(MeshGPUData), sizeof(MeshGPUData));
 		bindUBO(GLRenderingBackendComponent::get().m_materialUBO, 2, l_offset * sizeof(MaterialGPUData), sizeof(MaterialGPUData));
 
-		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_opaquePassGPUData.MDC));
+		drawMesh(reinterpret_cast<GLMeshDataComponent*>(l_opaquePassGPUData.mesh));
 
 		l_offset++;
 	}

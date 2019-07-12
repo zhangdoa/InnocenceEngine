@@ -90,17 +90,13 @@ struct alignas(16) DispatchParamsGPUData
 
 struct OpaquePassGPUData
 {
-	MeshDataComponent* MDC;
-	TextureDataComponent* normalTDC;
-	TextureDataComponent* albedoTDC;
-	TextureDataComponent* metallicTDC;
-	TextureDataComponent* roughnessTDC;
-	TextureDataComponent* AOTDC;
+	MeshDataComponent* mesh;
+	MaterialDataComponent* material;
 };
 
 struct TransparentPassGPUData
 {
-	MeshDataComponent* MDC;
+	MeshDataComponent* mesh;
 	unsigned int meshGPUDataIndex;
 	unsigned int materialGPUDataIndex;
 };
@@ -115,5 +111,5 @@ struct BillboardPassGPUData
 struct DebuggerPassGPUData
 {
 	mat4 m;
-	MeshDataComponent* MDC;
+	MeshDataComponent* mesh;
 };

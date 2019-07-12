@@ -401,20 +401,16 @@ bool InnoRenderingFrontendNS::updateMeshData()
 					{
 						OpaquePassGPUData l_opaquePassGPUData;
 
-						l_opaquePassGPUData.MDC = l_cullingData.mesh;
-						l_opaquePassGPUData.normalTDC = l_cullingData.material->m_texturePack.m_normalTDC.second;
-						l_opaquePassGPUData.albedoTDC = l_cullingData.material->m_texturePack.m_albedoTDC.second;
-						l_opaquePassGPUData.metallicTDC = l_cullingData.material->m_texturePack.m_metallicTDC.second;
-						l_opaquePassGPUData.roughnessTDC = l_cullingData.material->m_texturePack.m_roughnessTDC.second;
-						l_opaquePassGPUData.AOTDC = l_cullingData.material->m_texturePack.m_aoTDC.second;
+						l_opaquePassGPUData.mesh = l_cullingData.mesh;
+						l_opaquePassGPUData.material = l_cullingData.material;
 
 						MaterialGPUData l_materialGPUData;
 
-						l_materialGPUData.useNormalTexture = !(l_opaquePassGPUData.normalTDC == nullptr);
-						l_materialGPUData.useAlbedoTexture = !(l_opaquePassGPUData.albedoTDC == nullptr);
-						l_materialGPUData.useMetallicTexture = !(l_opaquePassGPUData.metallicTDC == nullptr);
-						l_materialGPUData.useRoughnessTexture = !(l_opaquePassGPUData.roughnessTDC == nullptr);
-						l_materialGPUData.useAOTexture = !(l_opaquePassGPUData.AOTDC == nullptr);
+						l_materialGPUData.useNormalTexture = !(l_opaquePassGPUData.material->m_normalTexture == nullptr);
+						l_materialGPUData.useAlbedoTexture = !(l_opaquePassGPUData.material->m_albedoTexture == nullptr);
+						l_materialGPUData.useMetallicTexture = !(l_opaquePassGPUData.material->m_metallicTexture == nullptr);
+						l_materialGPUData.useRoughnessTexture = !(l_opaquePassGPUData.material->m_roughnessTexture == nullptr);
+						l_materialGPUData.useAOTexture = !(l_opaquePassGPUData.material->m_aoTexture == nullptr);
 						l_materialGPUData.materialType = int(l_cullingData.meshUsageType);
 						l_materialGPUData.customMaterial = l_cullingData.material->m_meshCustomMaterial;
 
@@ -427,7 +423,7 @@ bool InnoRenderingFrontendNS::updateMeshData()
 					{
 						TransparentPassGPUData l_transparentPassGPUData;
 
-						l_transparentPassGPUData.MDC = l_cullingData.mesh;
+						l_transparentPassGPUData.mesh = l_cullingData.mesh;
 						l_transparentPassGPUData.meshGPUDataIndex = l_transparentPassIndex;
 						l_transparentPassGPUData.materialGPUDataIndex = l_transparentPassIndex;
 
@@ -542,12 +538,8 @@ bool InnoRenderingFrontendNS::gatherStaticMeshData()
 				{
 					OpaquePassGPUData l_GIPassGPUData;
 
-					l_GIPassGPUData.MDC = l_modelPair.first;
-					l_GIPassGPUData.normalTDC = l_modelPair.second->m_texturePack.m_normalTDC.second;
-					l_GIPassGPUData.albedoTDC = l_modelPair.second->m_texturePack.m_albedoTDC.second;
-					l_GIPassGPUData.metallicTDC = l_modelPair.second->m_texturePack.m_metallicTDC.second;
-					l_GIPassGPUData.roughnessTDC = l_modelPair.second->m_texturePack.m_roughnessTDC.second;
-					l_GIPassGPUData.AOTDC = l_modelPair.second->m_texturePack.m_aoTDC.second;
+					l_GIPassGPUData.mesh = l_modelPair.first;
+					l_GIPassGPUData.material = l_modelPair.second;
 
 					MeshGPUData l_meshGPUData;
 
@@ -558,11 +550,11 @@ bool InnoRenderingFrontendNS::gatherStaticMeshData()
 
 					MaterialGPUData l_materialGPUData;
 
-					l_materialGPUData.useNormalTexture = !(l_GIPassGPUData.normalTDC == nullptr);
-					l_materialGPUData.useAlbedoTexture = !(l_GIPassGPUData.albedoTDC == nullptr);
-					l_materialGPUData.useMetallicTexture = !(l_GIPassGPUData.metallicTDC == nullptr);
-					l_materialGPUData.useRoughnessTexture = !(l_GIPassGPUData.roughnessTDC == nullptr);
-					l_materialGPUData.useAOTexture = !(l_GIPassGPUData.AOTDC == nullptr);
+					l_materialGPUData.useNormalTexture = !(l_GIPassGPUData.material->m_normalTexture == nullptr);
+					l_materialGPUData.useAlbedoTexture = !(l_GIPassGPUData.material->m_albedoTexture == nullptr);
+					l_materialGPUData.useMetallicTexture = !(l_GIPassGPUData.material->m_metallicTexture == nullptr);
+					l_materialGPUData.useRoughnessTexture = !(l_GIPassGPUData.material->m_roughnessTexture == nullptr);
+					l_materialGPUData.useAOTexture = !(l_GIPassGPUData.material->m_aoTexture == nullptr);
 
 					l_materialGPUData.customMaterial = l_modelPair.second->m_meshCustomMaterial;
 
