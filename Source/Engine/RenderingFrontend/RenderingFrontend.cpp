@@ -586,9 +586,12 @@ bool InnoRenderingFrontendNS::update()
 
 		// copy culling data pack for local scope
 		auto l_cullingDataPack = g_pModuleManager->getPhysicsSystem()->getCullingDataPack();
-		if (l_cullingDataPack.has_value() && l_cullingDataPack.value().size() > 0)
+		if (l_cullingDataPack.has_value())
 		{
-			m_cullingDataPack.setRawData(std::move(l_cullingDataPack.value()));
+			if((*l_cullingDataPack).size() > 0)
+			{
+				m_cullingDataPack.setRawData(std::move(*l_cullingDataPack));
+			}
 		}
 
 		updateMeshData();

@@ -63,7 +63,7 @@ bool PlayerComponentCollection::setup()
 		auto l_cameraEntity = g_pModuleManager->getEntityManager()->Find("playerCharacterCamera");
 		if (l_cameraEntity.has_value())
 		{
-			m_cameraParentEntity = l_cameraEntity.value();
+			m_cameraParentEntity = *l_cameraEntity;
 		}
 		else
 		{

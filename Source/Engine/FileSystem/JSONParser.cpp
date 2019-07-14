@@ -780,7 +780,7 @@ bool InnoFileSystemNS::JSONParser::assignComponentRuntimeData()
 
 			if (l_entity.has_value())
 			{
-				l_orphan.first->m_parentTransformComponent = GetComponent(TransformComponent, l_entity.value());
+				l_orphan.first->m_parentTransformComponent = GetComponent(TransformComponent, *l_entity);
 			}
 			else
 			{
