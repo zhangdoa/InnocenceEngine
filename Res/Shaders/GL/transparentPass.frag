@@ -1,5 +1,7 @@
 // shadertype=glsl
-#version 450
+#include "common.glsl"
+#include "BRDF.glsl"
+
 layout(location = 0, index = 0) out vec4 uni_transparentPassRT0;
 layout(location = 0, index = 1) out vec4 uni_transparentPassRT1;
 
@@ -7,82 +9,6 @@ layout(location = 0) in vec4 thefrag_WorldSpacePos;
 layout(location = 1) in vec2 thefrag_TexCoord;
 layout(location = 2) in vec3 thefrag_Normal;
 
-struct dirLight {
-	vec4 direction;
-	vec4 luminance;
-	mat4 r;
-};
-
-layout(std140, row_major, binding = 0) uniform cameraUBO
-{
-	mat4 uni_p_camera_original;
-	mat4 uni_p_camera_jittered;
-	mat4 uni_r_camera;
-	mat4 uni_t_camera;
-	mat4 uni_r_camera_prev;
-	mat4 uni_t_camera_prev;
-	vec4 uni_globalPos;
-	float WHRatio;
-	float zNear;
-	float zFar;
-};
-
-layout(std140, binding = 2) uniform materialUBO
-{
-	vec4 uni_albedo;
-	vec4 uni_MRAT;
-	bool uni_useNormalTexture;
-	bool uni_useAlbedoTexture;
-	bool uni_useMetallicTexture;
-	bool uni_useRoughnessTexture;
-	bool uni_useAOTexture;
-	int uni_materialType;
-};
-
-layout(std140, row_major, binding = 3) uniform sunUBO
-{
-	dirLight uni_dirLight;
-};
-
-const float eps = 0.00001;
-const float PI = 3.14159265359;
-
-// Specular Fresnel Component
-// ----------------------------------------------------------------------------
-vec3 fr_F_Schlick(vec3 f0, float f90, float u)
-{
-	return f0 + (f90 - f0) * pow(1.0 - u, 5.0);
-}
-// Specular Visibility Component
-// ----------------------------------------------------------------------------
-float Unreal_GeometrySchlickGGX(float NdotV, float roughness)
-{
-	float r = (roughness + 1.0);
-	float k = (r*r) / 8.0;
-
-	float nom = NdotV;
-	float denom = NdotV * (1.0 - k) + k;
-
-	return nom / denom;
-}
-// ----------------------------------------------------------------------------
-float Unreal_GeometrySmith(float NdotV, float NdotL, float roughness)
-{
-	float ggx2 = Unreal_GeometrySchlickGGX(NdotV, roughness);
-	float ggx1 = Unreal_GeometrySchlickGGX(NdotL, roughness);
-
-	return ggx1 * ggx2;
-}
-// Specular Distribution Component
-// ----------------------------------------------------------------------------
-float fr_D_GGX(float NdotH, float roughness)
-{
-	// remapping to Quadratic curve
-	float a = roughness * roughness;
-	float a2 = a * a;
-	float f = (NdotH * a2 - NdotH) * NdotH + 1;
-	return a2 / (pow(f, 2.0));
-}
 void main()
 {
 	// get edge vectors of the pixel triangle

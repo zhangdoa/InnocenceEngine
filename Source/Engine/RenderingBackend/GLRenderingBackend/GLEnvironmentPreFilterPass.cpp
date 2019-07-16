@@ -20,7 +20,7 @@ INNO_PRIVATE_SCOPE GLEnvironmentPreFilterPass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//environmentPreFilterPass.vert/" , "", "", "", "GL//environmentPreFilterPass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "environmentPreFilterPass.vert/" , "", "", "", "environmentPreFilterPass.frag/" };
 
 	const unsigned int m_subDivideDimension = 2;
 	const unsigned int m_totalCubemaps = m_subDivideDimension * m_subDivideDimension * m_subDivideDimension;

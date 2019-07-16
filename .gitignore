@@ -46,7 +46,8 @@ xcuserdata/
 /Source/Engine/ThirdParty/ImGui/*
 !/Source/Engine/ThirdParty/ImGui/CMakeLists.txt
 
-
-
 #Packaged files
 /Package/*
+
+#Intermediate files
+/Res/Intermediate/*

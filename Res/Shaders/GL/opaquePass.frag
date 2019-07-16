@@ -1,5 +1,5 @@
 // shadertype=glsl
-#version 450
+#include "common.glsl"
 layout(location = 0) out vec4 uni_geometryPassRT0;
 layout(location = 1) out vec4 uni_geometryPassRT1;
 layout(location = 2) out vec4 uni_geometryPassRT2;
@@ -17,18 +17,6 @@ layout(location = 1, binding = 1) uniform sampler2D uni_albedoTexture;
 layout(location = 2, binding = 2) uniform sampler2D uni_metallicTexture;
 layout(location = 3, binding = 3) uniform sampler2D uni_roughnessTexture;
 layout(location = 4, binding = 4) uniform sampler2D uni_aoTexture;
-
-layout(std140, binding = 2) uniform materialUBO
-{
-	vec4 uni_albedo;
-	vec4 uni_MRAT;
-	bool uni_useNormalTexture;
-	bool uni_useAlbedoTexture;
-	bool uni_useMetallicTexture;
-	bool uni_useRoughnessTexture;
-	bool uni_useAOTexture;
-	int uni_materialType;
-};
 
 void main()
 {

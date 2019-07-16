@@ -1,9 +1,9 @@
 // shadertype=glsl
-#version 450
+#include "common.glsl"
 layout(triangles) in;
 layout(line_strip, max_vertices = 6) out;
 
-layout(location = 0) in VS_OUT{
+layout(location = 0) in VS_OUT {
 	vec3 normal;
 } gs_in[];
 layout(location = 0) out vec4 finalColor;

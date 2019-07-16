@@ -19,7 +19,7 @@ INNO_PRIVATE_SCOPE GLBillboardPass
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
-	ShaderFilePaths m_shaderFilePaths = { "GL//billboardPass.vert/", "", "", "", "GL//billboardPass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "billboardPass.vert/", "", "", "", "billboardPass.frag/" };
 }
 
 bool GLBillboardPass::initialize()

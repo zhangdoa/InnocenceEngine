@@ -1,24 +1,10 @@
 // shadertype=glsl
-#version 450
+#include "common.glsl"
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
 layout(binding = 0) uniform sampler3D voxelAlbedo;
 layout(binding = 1) uniform sampler3D voxelNormal;
 layout(binding = 2, rgba8) writeonly uniform image3D voxelRadiance;
-
-struct dirLight {
-	vec4 direction;
-	vec4 luminance;
-};
-
-const float PI = 3.14159265f;
-const float EPSILON = 1e-30;
-const float SQRT_3 = 1.73205080f;
-
-layout(std140, row_major, binding = 3) uniform sunUBO
-{
-	dirLight uni_dirLight;
-};
 
 layout(location = 0) uniform uint uni_volumeDimension;
 layout(location = 1) uniform float uni_voxelSize;

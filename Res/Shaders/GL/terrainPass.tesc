@@ -1,5 +1,5 @@
 // shadertype=glsl
-#version 450
+#include "common.glsl"
 
 layout(vertices = 16) out;
 

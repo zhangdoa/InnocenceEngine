@@ -1,12 +1,10 @@
 // shadertype=glsl
-#version 450
+#include "common.glsl"
 layout(location = 0) out vec4 FragColor;
 layout(location = 0) in vec3 TexCoords;
 
 layout(location = 2, binding = 0) uniform samplerCube uni_capturedCubeMap;
 layout(location = 3) uniform float uni_roughness;
-
-const float PI = 3.14159265359;
 
 // ----------------------------------------------------------------------------
 float DistributionGGX(vec3 N, vec3 H, float roughness)
@@ -67,7 +65,7 @@ void main()
 {
 	vec3 N = normalize(TexCoords);
 
-	// make the simplifying assumption that V equals R equals the normal 
+	// make the simplifying assumption that V equals R equals the normal
 	vec3 R = N;
 	vec3 V = R;
 

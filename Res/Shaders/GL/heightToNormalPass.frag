@@ -1,5 +1,5 @@
 // shadertype=glsl
-#version 450
+#include "common.glsl"
 layout(location = 0) out vec4 uni_normal;
 layout(location = 0) in vec2 texCoords;
 layout(location = 0, binding = 0) uniform sampler2D uni_heightTexture;

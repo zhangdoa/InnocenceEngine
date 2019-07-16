@@ -19,7 +19,7 @@ INNO_PRIVATE_SCOPE GLOpaquePass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//opaquePass.vert/" , "", "", "", "GL//opaquePass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "opaquePass.vert/" , "", "", "", "opaquePass.frag/" };
 }
 
 bool GLOpaquePass::initialize()

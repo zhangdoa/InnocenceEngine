@@ -19,8 +19,8 @@ INNO_PRIVATE_SCOPE GLShadowPass
 	GLShaderProgramComponent* m_DirLight_GLSPC;
 	GLShaderProgramComponent* m_PointLight_GLSPC;
 
-	ShaderFilePaths m_DirLightShaderFilePaths = { "GL//dirLightShadowPass.vert/" , "", "", "", "GL//dirLightShadowPass.frag/" };
-	ShaderFilePaths m_PointLightShaderFilePaths = { "GL/pointLightShadowPass.vert/" , "", "", "GL/pointLightShadowPass.geom/", "GL//pointLightShadowPass.frag/" };
+	ShaderFilePaths m_DirLightShaderFilePaths = { "dirLightShadowPass.vert/" , "", "", "", "dirLightShadowPass.frag/" };
+	ShaderFilePaths m_PointLightShaderFilePaths = { "pointLightShadowPass.vert/" , "", "", "pointLightShadowPass.geom/", "pointLightShadowPass.frag/" };
 }
 
 void GLShadowPass::initialize()

@@ -23,6 +23,7 @@ INNO_PRIVATE_SCOPE GLRenderingBackendNS
 
 	void setDrawBuffers(unsigned int RTNum);
 
+	std::string loadShaderFile(const std::string & path);
 	void addShader(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const ShaderFilePath& shaderFilePath);
 
 	bool submitGPUData(GLMeshDataComponent* rhs);
@@ -46,7 +47,7 @@ INNO_PRIVATE_SCOPE GLRenderingBackendNS
 	void* m_GLRenderPassComponentPool;
 	void* m_GLShaderProgramComponentPool;
 
-	const std::string m_shaderRelativePath = "Res//Shaders//";
+	const std::string m_shaderRelativePath = "Res//Shaders//GL//";
 }
 
 bool GLRenderingBackendNS::initializeComponentPool()
@@ -293,6 +294,77 @@ bool GLRenderingBackendNS::initializeGLTextureDataComponent(GLTextureDataCompone
 	}
 }
 
+std::string GLRenderingBackendNS::loadShaderFile(const std::string & path)
+{
+	auto f_findIncludeFilePath = [](const std::string & content) {
+		auto l_includePos = content.find("#include ");
+		return l_includePos;
+	};
+
+	auto f_findGLSLExtensionPos = [](const std::string & content) {
+		size_t l_glslExtensionPos = std::string::npos;
+
+		l_glslExtensionPos = content.find(".glsl");
+		if (l_glslExtensionPos != std::string::npos)
+		{
+			return l_glslExtensionPos;
+		}
+
+		l_glslExtensionPos = content.find(".vert");
+		if (l_glslExtensionPos != std::string::npos)
+		{
+			return l_glslExtensionPos;
+		}
+
+		l_glslExtensionPos = content.find(".tesc");
+		if (l_glslExtensionPos != std::string::npos)
+		{
+			return l_glslExtensionPos;
+		}
+
+		l_glslExtensionPos = content.find(".tese");
+		if (l_glslExtensionPos != std::string::npos)
+		{
+			return l_glslExtensionPos;
+		}
+
+		l_glslExtensionPos = content.find(".geom");
+		if (l_glslExtensionPos != std::string::npos)
+		{
+			return l_glslExtensionPos;
+		}
+
+		l_glslExtensionPos = content.find(".frag");
+		if (l_glslExtensionPos != std::string::npos)
+		{
+			return l_glslExtensionPos;
+		}
+
+		l_glslExtensionPos = content.find(".comp");
+		if (l_glslExtensionPos != std::string::npos)
+		{
+			return l_glslExtensionPos;
+		}
+
+		return l_glslExtensionPos;
+	};
+
+	auto l_content = g_pModuleManager->getFileSystem()->loadTextFile(m_shaderRelativePath + path);
+
+	auto l_includePos = f_findIncludeFilePath(l_content);
+
+	while (l_includePos != std::string::npos)
+	{
+		auto l_GLSLExtensionPos = f_findGLSLExtensionPos(l_content);
+		auto l_includedFileName = l_content.substr(l_includePos + 10, l_GLSLExtensionPos - 5 - l_includePos);
+		l_content.replace(l_includePos, l_GLSLExtensionPos - l_includePos + 6, loadShaderFile(l_includedFileName));
+
+		l_includePos = f_findIncludeFilePath(l_content);
+	}
+
+	return l_content;
+}
+
 void GLRenderingBackendNS::addShader(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const ShaderFilePath& shaderFilePath)
 {
 	// Create shader object
@@ -325,13 +397,20 @@ void GLRenderingBackendNS::addShader(GLuint& shaderProgram, GLuint& shaderID, GL
 	}
 	else
 	{
-		auto l_shaderCodeContent = g_pModuleManager->getFileSystem()->loadTextFile(m_shaderRelativePath + std::string(shaderFilePath.c_str()));
+		auto l_shaderCodeContent = loadShaderFile(std::string(shaderFilePath.c_str()));
 
 		if (l_shaderCodeContent.empty())
 		{
 			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingBackend: " + std::string(shaderFilePath.c_str()) + " content is empty!");
 			return;
 		}
+
+#ifdef _DEBUG
+		std::ofstream m_debugExportFile;
+		m_debugExportFile.open(g_pModuleManager->getFileSystem()->getWorkingDirectory() + "Res//Intermediate//Shaders//GL//" + std::string(shaderFilePath.c_str()) + ".gen");
+		m_debugExportFile << l_shaderCodeContent;
+		m_debugExportFile.close();
+#endif // _DEBUG
 
 		const char* l_sourcePointer = l_shaderCodeContent.c_str();
 

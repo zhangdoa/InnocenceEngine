@@ -1,6 +1,5 @@
 // shadertype=glsl
-#version 450
-#extension GL_ARB_shader_image_load_store : require
+#include "common.glsl"
 
 layout(location = 0) out vec4 out_textureValue;
 

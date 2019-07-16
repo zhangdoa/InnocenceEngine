@@ -28,8 +28,8 @@ INNO_PRIVATE_SCOPE GLLightCullingPass
 	GLShaderProgramComponent* m_tileFrustumGLSPC;
 	GLShaderProgramComponent* m_lightCullingGLSPC;
 
-	ShaderFilePaths m_tileFrustumShaderFilePaths = { "", "", "", "", "", "GL//tileFrustum.comp/" };
-	ShaderFilePaths m_lightCullingShaderFilePaths = { "", "", "", "", "", "GL//lightCulling.comp/" };
+	ShaderFilePaths m_tileFrustumShaderFilePaths = { "", "", "", "", "", "tileFrustum.comp/" };
+	ShaderFilePaths m_lightCullingShaderFilePaths = { "", "", "", "", "", "lightCulling.comp/" };
 
 	GLTextureDataComponent* m_lightGridGLTDC;
 	GLTextureDataComponent* m_debugGLTDC;

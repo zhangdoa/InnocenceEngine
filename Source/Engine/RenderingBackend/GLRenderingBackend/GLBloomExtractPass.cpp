@@ -21,7 +21,7 @@ INNO_PRIVATE_SCOPE GLBloomExtractPass
 	GLRenderPassComponent* m_downsampleGLRPC_Eighth;
 
 	GLShaderProgramComponent* m_GLSPC;
-	ShaderFilePaths m_shaderFilePaths = { "GL//bloomExtractPass.vert/", "", "", "", "GL//bloomExtractPass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "bloomExtractPass.vert/", "", "", "", "bloomExtractPass.frag/" };
 }
 
 bool GLBloomExtractPass::initialize()

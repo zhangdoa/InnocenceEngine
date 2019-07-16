@@ -76,8 +76,8 @@ void GLVXGIPass::initializeVoxelTestPass()
 	ShaderFilePaths m_voxelTestPassShaderFilePaths = {};
 
 	////
-	m_voxelTestPassShaderFilePaths.m_VSPath = "GL//GIVoxelTestPass.vert/";
-	m_voxelTestPassShaderFilePaths.m_FSPath = "GL//GIVoxelTestPass.frag/";
+	m_voxelTestPassShaderFilePaths.m_VSPath = "GIVoxelTestPass.vert/";
+	m_voxelTestPassShaderFilePaths.m_FSPath = "GIVoxelTestPass.frag/";
 
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_voxelTestPassShaderFilePaths);
@@ -106,9 +106,9 @@ void GLVXGIPass::initializeVoxelizationPass()
 	ShaderFilePaths m_voxelizationPassShaderFilePaths = {};
 
 	////
-	m_voxelizationPassShaderFilePaths.m_VSPath = "GL//GIVoxelizationPass.vert/";
-	m_voxelizationPassShaderFilePaths.m_GSPath = "GL//GIVoxelizationPass.geom/";
-	m_voxelizationPassShaderFilePaths.m_FSPath = "GL//GIVoxelizationPass.frag/";
+	m_voxelizationPassShaderFilePaths.m_VSPath = "GIVoxelizationPass.vert/";
+	m_voxelizationPassShaderFilePaths.m_GSPath = "GIVoxelizationPass.geom/";
+	m_voxelizationPassShaderFilePaths.m_FSPath = "GIVoxelizationPass.frag/";
 
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_voxelizationPassShaderFilePaths);
@@ -135,9 +135,9 @@ void GLVXGIPass::initializeVoxelVisualizationPass()
 	ShaderFilePaths m_voxelVisualizationPassShaderFilePaths = {};
 
 	////
-	m_voxelVisualizationPassShaderFilePaths.m_VSPath = "GL//GIVoxelVisualizationPass.vert/";
-	m_voxelVisualizationPassShaderFilePaths.m_GSPath = "GL//GIVoxelVisualizationPass.geom/";
-	m_voxelVisualizationPassShaderFilePaths.m_FSPath = "GL//GIVoxelVisualizationPass.frag/";
+	m_voxelVisualizationPassShaderFilePaths.m_VSPath = "GIVoxelVisualizationPass.vert/";
+	m_voxelVisualizationPassShaderFilePaths.m_GSPath = "GIVoxelVisualizationPass.geom/";
+	m_voxelVisualizationPassShaderFilePaths.m_FSPath = "GIVoxelVisualizationPass.frag/";
 
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(rhs, m_voxelVisualizationPassShaderFilePaths);

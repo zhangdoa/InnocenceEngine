@@ -1,5 +1,5 @@
 // shadertype=glsl
-#version 450
+#include "common.glsl"
 
 layout(location = 0) in TES_OUT
 {

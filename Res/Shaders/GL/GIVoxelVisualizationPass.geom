@@ -1,5 +1,5 @@
 // shadertype=glsl
-#version 450
+#include "common.glsl"
 
 layout(points) in;
 layout(triangle_strip, max_vertices = 36) out;
@@ -10,7 +10,7 @@ layout(location = 3) uniform vec4 uni_worldMinPoint;
 layout(location = 4) uniform mat4 uni_p;
 layout(location = 5) uniform mat4 uni_r;
 layout(location = 6) uniform mat4 uni_t;
-layout(location = 7) uniform mat4 uni_m;
+layout(location = 7) uniform mat4 uni_m_local;
 
 layout(location = 0) in vec4 out_textureValue[];
 layout(location = 0) out vec4 voxelColor;
@@ -44,7 +44,7 @@ void main()
 	for (int i = 0; i < 8; ++i)
 	{
 		vec4 vertex = gl_in[0].gl_Position + cubeVertices[i];
-		projectedVertices[i] = uni_p * uni_r * uni_t * uni_m * vertex;
+		projectedVertices[i] = uni_p * uni_r * uni_t * uni_m_local * vertex;
 	}
 
 	for (int triangle = 0; triangle < 12; ++triangle)

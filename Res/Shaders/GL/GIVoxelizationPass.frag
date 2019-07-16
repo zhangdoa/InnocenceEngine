@@ -1,18 +1,5 @@
-// shadertype=<glsl>
-#version 450
-#extension GL_ARB_shader_image_load_store : require
-
-layout(std140, binding = 2) uniform materialUBO
-{
-	vec4 uni_albedo;
-	vec4 uni_MRAT;
-	bool uni_useNormalTexture;
-	bool uni_useAlbedoTexture;
-	bool uni_useMetallicTexture;
-	bool uni_useRoughnessTexture;
-	bool uni_useAOTexture;
-	int uni_materialType;
-};
+// shadertype=glsl
+#include "common.glsl"
 
 layout(location = 0) in GS_OUT
 {

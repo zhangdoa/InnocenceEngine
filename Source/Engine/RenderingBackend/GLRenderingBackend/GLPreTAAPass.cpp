@@ -20,7 +20,7 @@ INNO_PRIVATE_SCOPE GLPreTAAPass
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
-	ShaderFilePaths m_shaderFilePaths = { "GL//preTAAPass.vert/", "", "", "", "GL//preTAAPass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "preTAAPass.vert/", "", "", "", "preTAAPass.frag/" };
 }
 
 bool GLPreTAAPass::initialize()

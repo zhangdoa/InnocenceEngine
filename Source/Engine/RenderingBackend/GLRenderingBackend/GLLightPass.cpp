@@ -28,7 +28,7 @@ INNO_PRIVATE_SCOPE GLLightPass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//lightPass.vert/" , "", "", "", "GL//lightPass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "lightPass.vert/" , "", "", "", "lightPass.frag/" };
 }
 
 void GLLightPass::initialize()

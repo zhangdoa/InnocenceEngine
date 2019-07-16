@@ -1,42 +1,8 @@
-// shadertype=<glsl>
-#version 450
+// shadertype=glsl
+#include "common.glsl"
 layout(location = 0) out vec4 uni_skyPassRT0;
 
 layout(location = 0) in vec3 TexCoords;
-
-const float PI = 3.14159265359;
-
-struct dirLight {
-	vec4 direction;
-	vec4 luminance;
-	mat4 r;
-};
-
-layout(std140, row_major, binding = 0) uniform cameraUBO
-{
-	mat4 uni_p_camera_original;
-	mat4 uni_p_camera_jittered;
-	mat4 uni_r_camera;
-	mat4 uni_t_camera;
-	mat4 uni_r_camera_prev;
-	mat4 uni_t_camera_prev;
-	vec4 uni_globalPos;
-	float WHRatio;
-	float zNear;
-	float zFar;
-};
-
-layout(std140, row_major, binding = 3) uniform sunUBO
-{
-	dirLight uni_dirLight;
-};
-
-layout(std140, row_major, binding = 7) uniform skyUBO
-{
-	mat4 uni_p_inv;
-	mat4 uni_v_inv;
-	vec2 uni_viewportSize;
-};
 
 vec3 get_world_normal() {
 	vec2 frag_coord = gl_FragCoord.xy / uni_viewportSize;

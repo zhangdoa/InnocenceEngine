@@ -1,5 +1,5 @@
 // shadertype=glsl
-#version 450
+#include "common.glsl"
 layout(triangles) in;
 layout(triangle_strip, max_vertices = 3) out;
 

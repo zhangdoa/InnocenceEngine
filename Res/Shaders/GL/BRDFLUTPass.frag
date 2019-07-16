@@ -1,9 +1,8 @@
 // shadertype=glsl
-#version 450
+#include "common.glsl"
 layout(location = 0) out vec4 uni_brdfLUT;
 layout(location = 0) in vec2 TexCoords;
 
-const float PI = 3.14159265359;
 // ----------------------------------------------------------------------------
 // http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
 // efficient VanDerCorpus calculation.
@@ -100,7 +99,6 @@ vec4 IntegrateBRDF(float NdotV, float roughness)
 		float NdotL = max(L.z, 0.00001);
 		float NdotH = max(H.z, 0.00001);
 		float VdotH = max(dot(V, H), 0.00001);
-
 
 		if (NdotL > 0.0)
 		{

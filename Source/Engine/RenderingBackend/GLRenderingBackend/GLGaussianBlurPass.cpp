@@ -18,7 +18,7 @@ INNO_PRIVATE_SCOPE GLGaussianBlurPass
 	GLRenderPassComponent* m_PingPassGLRPC;
 	GLRenderPassComponent* m_PongPassGLRPC;
 	GLShaderProgramComponent* m_GLSPC;
-	ShaderFilePaths m_shaderFilePaths = { "GL//gaussianBlurPass.vert/", "", "", "", "GL//gaussianBlurPass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "gaussianBlurPass.vert/", "", "", "", "gaussianBlurPass.frag/" };
 }
 
 bool GLGaussianBlurPass::initialize()

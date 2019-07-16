@@ -18,13 +18,13 @@ INNO_PRIVATE_SCOPE GLTerrainPass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//terrainPass.vert/", "GL//terrainPass.tesc/", "GL//terrainPass.tese/", "", "GL//terrainPass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "terrainPass.vert/", "terrainPass.tesc/", "terrainPass.tese/", "", "terrainPass.frag/" };
 
 	GLRenderPassComponent* m_h2nGLRPC;
 
 	GLShaderProgramComponent* m_h2nGLSPC;
 
-	ShaderFilePaths m_h2nShaderFilePaths = { "GL//heightToNormalPass.vert/", "", "", "", "GL//heightToNormalPass.frag/" };
+	ShaderFilePaths m_h2nShaderFilePaths = { "heightToNormalPass.vert/", "", "", "", "heightToNormalPass.frag/" };
 
 	bool generateNormal();
 

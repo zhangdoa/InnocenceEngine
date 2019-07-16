@@ -18,7 +18,7 @@ INNO_PRIVATE_SCOPE GLEnvironmentConvolutionPass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//environmentConvolutionPass.vert/" , "", "", "", "GL//environmentConvolutionPass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "environmentConvolutionPass.vert/" , "", "", "", "environmentConvolutionPass.frag/" };
 
 	const unsigned int m_subDivideDimension = 2;
 	const unsigned int m_totalCubemaps = m_subDivideDimension * m_subDivideDimension * m_subDivideDimension;

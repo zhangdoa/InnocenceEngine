@@ -28,7 +28,7 @@ INNO_PRIVATE_SCOPE GLEnvironmentCapturePass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "GL//environmentCapturePass.vert/" , "", "", "", "GL//environmentCapturePass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "environmentCapturePass.vert/" , "", "", "", "environmentCapturePass.frag/" };
 
 	const unsigned int m_captureResolution = 256;
 	const unsigned int m_sampleCountPerFace = 128;
