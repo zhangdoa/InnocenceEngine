@@ -31,7 +31,7 @@ public:
 
 	DXGI_ADAPTER_DESC m_adapterDesc = {};
 	IDXGIAdapter4* m_adapter;
-	IDXGIOutput* m_adapterOutput;
+	IDXGIOutput1* m_adapterOutput;
 
 	ID3D12Device2* m_device;
 

@@ -207,15 +207,20 @@ bool WinGLWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 		return false;
 	}
 
-	PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = nullptr;
-	wglSwapIntervalEXT = reinterpret_cast<PFNWGLSWAPINTERVALEXTPROC>(wglGetProcAddress("wglSwapIntervalEXT"));
-	if (wglSwapIntervalEXT == nullptr)
+	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
+
+	if (!l_renderingConfig.VSync)
 	{
-		m_objectStatus = ObjectStatus::Created;
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "WinWindowSystem: wglGetProcAddress(wglSwapIntervalEXT) failed.");
-		return false;
+		PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = nullptr;
+		wglSwapIntervalEXT = reinterpret_cast<PFNWGLSWAPINTERVALEXTPROC>(wglGetProcAddress("wglSwapIntervalEXT"));
+		if (wglSwapIntervalEXT == nullptr)
+		{
+			m_objectStatus = ObjectStatus::Created;
+			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "WinWindowSystem: wglGetProcAddress(wglSwapIntervalEXT) failed.");
+			return false;
+		}
+		wglSwapIntervalEXT(0);
 	}
-	wglSwapIntervalEXT(0);
 
 	if (m_initConfig.engineMode == EngineMode::GAME)
 	{

@@ -194,7 +194,9 @@ bool DX11RenderingBackendNS::createSwapChain()
 	g_DXRenderingBackendComponent->m_swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
 	// Set the refresh rate of the back buffer.
-	if (WinWindowSystemComponent::get().m_vsync_enabled)
+	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
+
+	if (l_renderingConfig.VSync)
 	{
 		g_DXRenderingBackendComponent->m_swapChainDesc.BufferDesc.RefreshRate.Numerator = g_DXRenderingBackendComponent->m_refreshRate.x;
 		g_DXRenderingBackendComponent->m_swapChainDesc.BufferDesc.RefreshRate.Denominator = g_DXRenderingBackendComponent->m_refreshRate.y;

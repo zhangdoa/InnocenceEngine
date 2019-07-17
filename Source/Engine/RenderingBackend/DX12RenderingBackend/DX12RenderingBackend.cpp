@@ -123,6 +123,9 @@ bool DX12RenderingBackendNS::createPhysicalDevices()
 {
 	HRESULT l_result;
 
+	unsigned int numModes;
+	unsigned long long stringLength;
+
 	// Create a DirectX graphics interface factory.
 	l_result = CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&g_DXRenderingBackendComponent->m_factory));
 	if (FAILED(l_result))
@@ -148,6 +151,79 @@ bool DX12RenderingBackendNS::createPhysicalDevices()
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingBackend: Video card adapter has been created.");
 
+	// Enumerate the primary adapter output (monitor).
+	IDXGIOutput* l_adapterOutput;
+
+	l_result = g_DXRenderingBackendComponent->m_adapter->EnumOutputs(0, &l_adapterOutput);
+	if (FAILED(l_result))
+	{
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't create monitor adapter!");
+		m_objectStatus = ObjectStatus::Suspended;
+		return false;
+	}
+
+	l_result = l_adapterOutput->QueryInterface(IID_PPV_ARGS(&g_DXRenderingBackendComponent->m_adapterOutput));
+
+	// Get the number of modes that fit the DXGI_FORMAT_R8G8B8A8_UNORM display format for the adapter output (monitor).
+	l_result = g_DXRenderingBackendComponent->m_adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, NULL);
+	if (FAILED(l_result))
+	{
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't get DXGI_FORMAT_R8G8B8A8_UNORM fitted monitor!");
+		m_objectStatus = ObjectStatus::Suspended;
+		return false;
+	}
+
+	// Create a list to hold all the possible display modes for this monitor/video card combination.
+	std::vector<DXGI_MODE_DESC1> displayModeList(numModes);
+
+	// Now fill the display mode list structures.
+	l_result = g_DXRenderingBackendComponent->m_adapterOutput->GetDisplayModeList1(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, &displayModeList[0]);
+	if (FAILED(l_result))
+	{
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't fill the display mode list structures!");
+		m_objectStatus = ObjectStatus::Suspended;
+		return false;
+	}
+
+	// Now go through all the display modes and find the one that matches the screen width and height.
+	// When a match is found store the numerator and denominator of the refresh rate for that monitor.
+	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+
+	for (unsigned int i = 0; i < numModes; i++)
+	{
+		if (displayModeList[i].Width == l_screenResolution.x
+			&&
+			displayModeList[i].Height == l_screenResolution.y
+			)
+		{
+			g_DXRenderingBackendComponent->m_refreshRate.x = displayModeList[i].RefreshRate.Numerator;
+			g_DXRenderingBackendComponent->m_refreshRate.y = displayModeList[i].RefreshRate.Denominator;
+		}
+	}
+
+	// Get the adapter (video card) description.
+	l_result = g_DXRenderingBackendComponent->m_adapter->GetDesc(&g_DXRenderingBackendComponent->m_adapterDesc);
+	if (FAILED(l_result))
+	{
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't get the video card adapter description!");
+		m_objectStatus = ObjectStatus::Suspended;
+		return false;
+	}
+
+	// Store the dedicated video card memory in megabytes.
+	g_DXRenderingBackendComponent->m_videoCardMemory = (int)(g_DXRenderingBackendComponent->m_adapterDesc.DedicatedVideoMemory / 1024 / 1024);
+
+	// Convert the name of the video card to a character array and store it.
+	if (wcstombs_s(&stringLength, g_DXRenderingBackendComponent->m_videoCardDescription, 128, g_DXRenderingBackendComponent->m_adapterDesc.Description, 128) != 0)
+	{
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't convert the name of the video card to a character array!");
+		m_objectStatus = ObjectStatus::Suspended;
+		return false;
+	}
+
+	// Release the display mode list.
+	// displayModeList.clear();
+
 	// Set the feature level to DirectX 12.1 to enable using all the DirectX 12 features.
 	// Note: Not all cards support full DirectX 12, this feature level may need to be reduced on some cards to 12.0.
 	auto featureLevel = D3D_FEATURE_LEVEL_12_1;
@@ -164,10 +240,11 @@ bool DX12RenderingBackendNS::createPhysicalDevices()
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingBackend: D3D device has been created.");
 
 	// Set debug report severity
-	auto l_pInfoQueue = reinterpret_cast<ID3D12InfoQueue*>(g_DXRenderingBackendComponent->m_device);
+	ID3D12InfoQueue* l_pInfoQueue;
+	l_result = g_DXRenderingBackendComponent->m_device->QueryInterface(IID_PPV_ARGS(&l_pInfoQueue));
 
 	l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
-	//l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
+	l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
 	//l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, TRUE);
 
 	return true;
@@ -348,7 +425,7 @@ bool DX12RenderingBackendNS::createSwapChainDXRPC()
 		nullptr,
 		&l_swapChain1);
 
-	g_DXRenderingBackendComponent->m_swapChain = reinterpret_cast<IDXGISwapChain4*>(l_swapChain1);
+	l_hResult = l_swapChain1->QueryInterface(IID_PPV_ARGS(&g_DXRenderingBackendComponent->m_swapChain));
 
 	if (FAILED(l_hResult))
 	{

@@ -15,6 +15,7 @@
 
 struct RenderingConfig
 {
+	bool VSync = false;
 	int MSAAdepth = 4;
 	bool useMotionBlur = false;
 	bool useTAA = false;

@@ -119,8 +119,10 @@ void WinDXWindowSystem::swapBuffer()
 {
 	if (WinDXWindowSystemNS::m_initConfig.renderingBackend == RenderingBackend::DX11)
 	{
+		auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
+
 		// Present the back buffer to the screen since rendering is complete.
-		if (WinWindowSystemComponent::get().m_vsync_enabled)
+		if (l_renderingConfig.VSync)
 		{
 			// Lock to screen refresh rate.
 			DX11RenderingBackendComponent::get().m_swapChain->Present(1, 0);
