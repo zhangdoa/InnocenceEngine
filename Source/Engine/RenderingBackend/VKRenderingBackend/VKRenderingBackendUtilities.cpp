@@ -1140,27 +1140,79 @@ bool VKRenderingBackendNS::initializeVKMaterialDataComponent(VKMaterialDataCompo
 
 bool VKRenderingBackendNS::submitGPUData(VKMaterialDataComponent * rhs)
 {
+	auto f_createWriteDescriptorSet = [&](TextureDataComponent* texture, VkDescriptorImageInfo& imageInfo, uint32_t dstBinding) {
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageInfo.imageView = reinterpret_cast<VKTextureDataComponent*>(texture)->m_imageView;
+		imageInfo.sampler = VKRenderingBackendComponent::get().m_deferredRTSampler;
+
+		VkWriteDescriptorSet writeDescriptorSet = {};
+		writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSet.dstBinding = dstBinding;
+		writeDescriptorSet.dstArrayElement = 0;
+		writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		writeDescriptorSet.descriptorCount = 1;
+		writeDescriptorSet.pImageInfo = &imageInfo;
+		writeDescriptorSet.dstSet = rhs->m_descriptorSet;
+
+		return writeDescriptorSet;
+	};
+
 	createDescriptorSets(
 		VKRenderingBackendComponent::get().m_materialDescriptorPool,
 		VKRenderingBackendComponent::get().m_materialDescriptorLayout,
 		rhs->m_descriptorSet,
 		1);
 
-	VkDescriptorImageInfo imageInfo;
-	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageInfo.imageView = reinterpret_cast<VKTextureDataComponent*>(rhs->m_albedoTexture)->m_imageView;
-	imageInfo.sampler = VKRenderingBackendComponent::get().m_deferredRTSampler;
+	rhs->m_descriptorImageInfos.resize(5);
+	rhs->m_writeDescriptorSets.resize(5);
 
-	VkWriteDescriptorSet writeDescriptorSet = {};
-	writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeDescriptorSet.dstBinding = 0;
-	writeDescriptorSet.dstArrayElement = 0;
-	writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	writeDescriptorSet.descriptorCount = 1;
-	writeDescriptorSet.pImageInfo = &imageInfo;
-	writeDescriptorSet.dstSet = rhs->m_descriptorSet;
+	if (rhs->m_normalTexture)
+	{
+		initializeVKTextureDataComponent(reinterpret_cast<VKTextureDataComponent*>(rhs->m_normalTexture));
+		rhs->m_writeDescriptorSets[0] = f_createWriteDescriptorSet(rhs->m_normalTexture, rhs->m_descriptorImageInfos[0], 0);
+	}
+	else
+	{
+		rhs->m_writeDescriptorSets[0] = f_createWriteDescriptorSet(getVKTextureDataComponent(TextureUsageType::NORMAL), rhs->m_descriptorImageInfos[0], 0);
+	}
+	if (rhs->m_albedoTexture)
+	{
+		initializeVKTextureDataComponent(reinterpret_cast<VKTextureDataComponent*>(rhs->m_albedoTexture));
+		rhs->m_writeDescriptorSets[1] = f_createWriteDescriptorSet(rhs->m_albedoTexture, rhs->m_descriptorImageInfos[1], 1);
+	}
+	else
+	{
+		rhs->m_writeDescriptorSets[1] = f_createWriteDescriptorSet(getVKTextureDataComponent(TextureUsageType::ALBEDO), rhs->m_descriptorImageInfos[1], 1);
+	}
+	if (rhs->m_metallicTexture)
+	{
+		initializeVKTextureDataComponent(reinterpret_cast<VKTextureDataComponent*>(rhs->m_metallicTexture));
+		rhs->m_writeDescriptorSets[2] = f_createWriteDescriptorSet(rhs->m_metallicTexture, rhs->m_descriptorImageInfos[2], 2);
+	}
+	else
+	{
+		rhs->m_writeDescriptorSets[2] = f_createWriteDescriptorSet(getVKTextureDataComponent(TextureUsageType::METALLIC), rhs->m_descriptorImageInfos[2], 2);
+	}
+	if (rhs->m_roughnessTexture)
+	{
+		initializeVKTextureDataComponent(reinterpret_cast<VKTextureDataComponent*>(rhs->m_roughnessTexture));
+		rhs->m_writeDescriptorSets[3] = f_createWriteDescriptorSet(rhs->m_roughnessTexture, rhs->m_descriptorImageInfos[3], 3);
+	}
+	else
+	{
+		rhs->m_writeDescriptorSets[3] = f_createWriteDescriptorSet(getVKTextureDataComponent(TextureUsageType::ROUGHNESS), rhs->m_descriptorImageInfos[3], 3);
+	}
+	if (rhs->m_aoTexture)
+	{
+		initializeVKTextureDataComponent(reinterpret_cast<VKTextureDataComponent*>(rhs->m_aoTexture));
+		rhs->m_writeDescriptorSets[4] = f_createWriteDescriptorSet(rhs->m_aoTexture, rhs->m_descriptorImageInfos[4], 4);
+	}
+	else
+	{
+		rhs->m_writeDescriptorSets[4] = f_createWriteDescriptorSet(getVKTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION), rhs->m_descriptorImageInfos[4], 4);
+	}
 
-	updateDescriptorSet(&writeDescriptorSet, 1);
+	updateDescriptorSet(&rhs->m_writeDescriptorSets[0], (unsigned int)rhs->m_writeDescriptorSets.size());
 
 	rhs->m_objectStatus = ObjectStatus::Activated;
 

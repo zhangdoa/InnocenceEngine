@@ -77,8 +77,8 @@ INNO_PRIVATE_SCOPE VKRenderingBackendNS
 	void* m_MaterialDataComponentPool;
 	void* m_TextureDataComponentPool;
 
-	ThreadSafeQueue<VKMeshDataComponent*> m_uninitializedMesh;
-	ThreadSafeQueue<VKTextureDataComponent*> m_uninitializedTexture;
+	ThreadSafeQueue<VKMeshDataComponent*> m_uninitializedMeshes;
+	ThreadSafeQueue<VKMaterialDataComponent*> m_uninitializedMaterials;
 
 	VKTextureDataComponent* m_iconTemplate_OBJ;
 	VKTextureDataComponent* m_iconTemplate_PNG;
@@ -304,13 +304,13 @@ bool VKRenderingBackendNS::createTextureSamplers()
 
 bool VKRenderingBackendNS::createMaterialDescriptorPool()
 {
+	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
+
 	VkDescriptorPoolSize l_descriptorPoolSize = {};
-	l_descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-	l_descriptorPoolSize.descriptorCount = 1;
+	l_descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	l_descriptorPoolSize.descriptorCount = l_renderingCapability.maxMaterials * 5;
 
 	VkDescriptorPoolSize l_descriptorPoolSizes[] = { l_descriptorPoolSize };
-
-	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
 	if (!createDescriptorPool(l_descriptorPoolSizes, 1, l_renderingCapability.maxMaterials, VKRenderingBackendComponent::get().m_materialDescriptorPool))
 	{
@@ -321,14 +321,19 @@ bool VKRenderingBackendNS::createMaterialDescriptorPool()
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: VkDescriptorPool for material has been created.");
 
-	VkDescriptorSetLayoutBinding textureLayoutBinding = {};
-	textureLayoutBinding.binding = 0;
-	textureLayoutBinding.descriptorCount = 1;
-	textureLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	textureLayoutBinding.pImmutableSamplers = nullptr;
-	textureLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	std::vector<VkDescriptorSetLayoutBinding> l_textureLayoutBindings(5);
+	for (size_t i = 0; i < l_textureLayoutBindings.size(); i++)
+	{
+		VkDescriptorSetLayoutBinding l_textureLayoutBinding = {};
+		l_textureLayoutBinding.binding = (uint32_t)i;
+		l_textureLayoutBinding.descriptorCount = 1;
+		l_textureLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		l_textureLayoutBinding.pImmutableSamplers = nullptr;
+		l_textureLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		l_textureLayoutBindings[i] = l_textureLayoutBinding;
+	}
 
-	if (!createDescriptorSetLayout(&textureLayoutBinding, 1, VKRenderingBackendComponent::get().m_materialDescriptorLayout))
+	if (!createDescriptorSetLayout(&l_textureLayoutBindings[0], (uint32_t)l_textureLayoutBindings.size(), VKRenderingBackendComponent::get().m_materialDescriptorLayout))
 	{
 		m_objectStatus = ObjectStatus::Suspended;
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to create VkDescriptorSetLayout for material!");
@@ -837,31 +842,31 @@ void VKRenderingBackendNS::loadDefaultAssets()
 
 bool VKRenderingBackendNS::update()
 {
-	while (VKRenderingBackendNS::m_uninitializedMesh.size() > 0)
+	while (VKRenderingBackendNS::m_uninitializedMeshes.size() > 0)
 	{
-		VKMeshDataComponent* l_Mesh;
-		VKRenderingBackendNS::m_uninitializedMesh.tryPop(l_Mesh);
+		VKMeshDataComponent* l_MDC;
+		VKRenderingBackendNS::m_uninitializedMeshes.tryPop(l_MDC);
 
-		if (l_Mesh)
+		if (l_MDC)
 		{
-			auto l_result = initializeVKMeshDataComponent(l_Mesh);
+			auto l_result = initializeVKMeshDataComponent(l_MDC);
 			if (!l_result)
 			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: can't create VKMeshDataComponent for " + std::string(l_Mesh->m_parentEntity->m_entityName.c_str()) + "!");
+				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: can't initialize VKMeshDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
 			}
 		}
 	}
-	while (VKRenderingBackendNS::m_uninitializedTexture.size() > 0)
+	while (VKRenderingBackendNS::m_uninitializedMaterials.size() > 0)
 	{
-		VKTextureDataComponent* l_Texture;
-		VKRenderingBackendNS::m_uninitializedTexture.tryPop(l_Texture);
+		VKMaterialDataComponent* l_MDC;
+		VKRenderingBackendNS::m_uninitializedMaterials.tryPop(l_MDC);
 
-		if (l_Texture)
+		if (l_MDC)
 		{
-			auto l_result = initializeVKTextureDataComponent(l_Texture);
+			auto l_result = initializeVKMaterialDataComponent(l_MDC);
 			if (!l_result)
 			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: can't create VKTextureDataComponent for " + std::string(l_Texture->m_parentEntity->m_entityName.c_str()) + "!");
+				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: can't initialize VKTextureDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
 			}
 		}
 	}
@@ -1190,12 +1195,12 @@ TextureDataComponent * VKRenderingBackend::getTextureDataComponent(WorldEditorIc
 
 void VKRenderingBackend::registerUninitializedMeshDataComponent(MeshDataComponent * rhs)
 {
-	VKRenderingBackendNS::m_uninitializedMesh.push(reinterpret_cast<VKMeshDataComponent*>(rhs));
+	VKRenderingBackendNS::m_uninitializedMeshes.push(reinterpret_cast<VKMeshDataComponent*>(rhs));
 }
 
-void VKRenderingBackend::registerUninitializedTextureDataComponent(TextureDataComponent * rhs)
+void VKRenderingBackend::registerUninitializedMaterialDataComponent(MaterialDataComponent * rhs)
 {
-	VKRenderingBackendNS::m_uninitializedTexture.push(reinterpret_cast<VKTextureDataComponent*>(rhs));
+	VKRenderingBackendNS::m_uninitializedMaterials.push(reinterpret_cast<VKMaterialDataComponent*>(rhs));
 }
 
 bool VKRenderingBackend::resize()

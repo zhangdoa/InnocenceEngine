@@ -1,11 +1,9 @@
 #pragma once
 #include "../../Common/InnoType.h"
 
-#include "../../Component/MeshDataComponent.h"
-#include "../../Component/MaterialDataComponent.h"
-#include "../../Component/TextureDataComponent.h"
 #include "../../Component/GLMeshDataComponent.h"
 #include "../../Component/GLTextureDataComponent.h"
+#include "../../Component/GLMaterialDataComponent.h"
 #include "../../Component/GLRenderPassComponent.h"
 #include "../../Component/GLShaderProgramComponent.h"
 
@@ -23,8 +21,8 @@ INNO_PRIVATE_SCOPE GLRenderingBackendNS
 	bool generateGPUBuffers();
 
 	GLMeshDataComponent* addGLMeshDataComponent();
-	MaterialDataComponent* addMaterialDataComponent();
 	GLTextureDataComponent* addGLTextureDataComponent();
+	GLMaterialDataComponent* addGLMaterialDataComponent();
 
 	GLMeshDataComponent* getGLMeshDataComponent(MeshShapeType MeshShapeType);
 	GLTextureDataComponent* getGLTextureDataComponent(TextureUsageType TextureUsageType);
@@ -38,6 +36,7 @@ INNO_PRIVATE_SCOPE GLRenderingBackendNS
 
 	bool initializeGLMeshDataComponent(GLMeshDataComponent* rhs);
 	bool initializeGLTextureDataComponent(GLTextureDataComponent* rhs);
+	bool initializeGLMaterialDataComponent(GLMaterialDataComponent* rhs);
 
 	GLShaderProgramComponent* addGLShaderProgramComponent(const EntityID& rhs);
 

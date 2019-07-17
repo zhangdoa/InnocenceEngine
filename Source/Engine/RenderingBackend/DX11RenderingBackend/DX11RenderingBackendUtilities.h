@@ -1,11 +1,9 @@
 #pragma once
 #include "../../Common/InnoType.h"
 
-#include "../../Component/MeshDataComponent.h"
-#include "../../Component/MaterialDataComponent.h"
-#include "../../Component/TextureDataComponent.h"
 #include "../../Component/DX11MeshDataComponent.h"
 #include "../../Component/DX11TextureDataComponent.h"
+#include "../../Component/DX11MaterialDataComponent.h"
 #include "../../Component/DX11RenderPassComponent.h"
 #include "../../Component/DX11ShaderProgramComponent.h"
 #include "../../Component/DX11RenderingBackendComponent.h"
@@ -24,11 +22,12 @@ INNO_PRIVATE_SCOPE DX11RenderingBackendNS
 	bool generateGPUBuffers();
 
 	DX11MeshDataComponent* addDX11MeshDataComponent();
-	MaterialDataComponent* addMaterialDataComponent();
 	DX11TextureDataComponent* addDX11TextureDataComponent();
+	DX11MaterialDataComponent* addDX11MaterialDataComponent();
 
 	bool initializeDX11MeshDataComponent(DX11MeshDataComponent* rhs);
 	bool initializeDX11TextureDataComponent(DX11TextureDataComponent* rhs);
+	bool initializeDX11MaterialDataComponent(DX11MaterialDataComponent* rhs);
 
 	DX11MeshDataComponent* getDX11MeshDataComponent(MeshShapeType MeshShapeType);
 	DX11TextureDataComponent* getDX11TextureDataComponent(TextureUsageType TextureUsageType);

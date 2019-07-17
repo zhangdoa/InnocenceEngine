@@ -10,6 +10,7 @@ INNO_PRIVATE_SCOPE DX11RenderingBackendNS
 {
 	void OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd, const std::string & shaderFilename);
 	ID3D10Blob* loadShaderBuffer(ShaderType shaderType, const std::wstring & shaderFilePath);
+
 	bool initializeVertexShader(DX11ShaderProgramComponent* rhs, const std::wstring& VSShaderPath);
 	bool createVertexShader(ID3D10Blob* shaderBuffer, ID3D11VertexShader** vertexShader);
 	bool createInputLayout(ID3D10Blob* shaderBuffer, ID3D11InputLayout** inputLayout);
@@ -27,8 +28,11 @@ INNO_PRIVATE_SCOPE DX11RenderingBackendNS
 
 	bool submitGPUData(DX11TextureDataComponent* rhs);
 
-	std::unordered_map<InnoEntity*, DX11MeshDataComponent*> m_initializedDXMDC;
-	std::unordered_map<InnoEntity*, DX11TextureDataComponent*> m_initializedDXTDC;
+	bool submitGPUData(DX11MaterialDataComponent * rhs);
+
+	std::unordered_map<InnoEntity*, DX11MeshDataComponent*> m_initializedDX11Meshes;
+	std::unordered_map<InnoEntity*, DX11TextureDataComponent*> m_initializedDX11Textures;
+	std::unordered_map<InnoEntity*, DX11MaterialDataComponent*> m_initializedDX11Materials;
 
 	void* m_DX11RenderPassComponentPool;
 	void* m_DX11ShaderProgramComponentPool;
@@ -631,44 +635,6 @@ bool DX11RenderingBackendNS::initializeDX11MeshDataComponent(DX11MeshDataCompone
 	}
 }
 
-bool DX11RenderingBackendNS::initializeDX11TextureDataComponent(DX11TextureDataComponent * rhs)
-{
-	if (rhs->m_objectStatus == ObjectStatus::Activated)
-	{
-		return true;
-	}
-	else
-	{
-		if (rhs->m_textureDataDesc.usageType == TextureUsageType::INVISIBLE)
-		{
-			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "DX11RenderingBackend: try to generate DX11TextureDataComponent for TextureUsageType::INVISIBLE type!");
-			return false;
-		}
-		else if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
-			|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
-			|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT
-			|| rhs->m_textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
-		{
-			submitGPUData(rhs);
-			return true;
-		}
-		else
-		{
-			if (rhs->m_textureData)
-			{
-				submitGPUData(rhs);
-
-				return true;
-			}
-			else
-			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "DX11RenderingBackend: try to generate DX11TextureDataComponent without raw data!");
-				return false;
-			}
-		}
-	}
-}
-
 bool DX11RenderingBackendNS::submitGPUData(DX11MeshDataComponent * rhs)
 {
 	// Set up the description of the static vertex buffer.
@@ -728,9 +694,47 @@ bool DX11RenderingBackendNS::submitGPUData(DX11MeshDataComponent * rhs)
 
 	rhs->m_objectStatus = ObjectStatus::Activated;
 
-	m_initializedDXMDC.emplace(rhs->m_parentEntity, rhs);
+	m_initializedDX11Meshes.emplace(rhs->m_parentEntity, rhs);
 
 	return true;
+}
+
+bool DX11RenderingBackendNS::initializeDX11TextureDataComponent(DX11TextureDataComponent * rhs)
+{
+	if (rhs->m_objectStatus == ObjectStatus::Activated)
+	{
+		return true;
+	}
+	else
+	{
+		if (rhs->m_textureDataDesc.usageType == TextureUsageType::INVISIBLE)
+		{
+			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "DX11RenderingBackend: try to generate DX11TextureDataComponent for TextureUsageType::INVISIBLE type!");
+			return false;
+		}
+		else if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
+			|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
+			|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT
+			|| rhs->m_textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
+		{
+			submitGPUData(rhs);
+			return true;
+		}
+		else
+		{
+			if (rhs->m_textureData)
+			{
+				submitGPUData(rhs);
+
+				return true;
+			}
+			else
+			{
+				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "DX11RenderingBackend: try to generate DX11TextureDataComponent without raw data!");
+				return false;
+			}
+		}
+	}
 }
 
 DXGI_FORMAT DX11RenderingBackendNS::getTextureFormat(TextureDataDesc textureDataDesc)
@@ -1038,9 +1042,53 @@ bool DX11RenderingBackendNS::submitGPUData(DX11TextureDataComponent * rhs)
 
 	rhs->m_objectStatus = ObjectStatus::Activated;
 
-	m_initializedDXTDC.emplace(rhs->m_parentEntity, rhs);
+	m_initializedDX11Textures.emplace(rhs->m_parentEntity, rhs);
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX11RenderingBackend: SRV: " + InnoUtility::pointerToString(rhs->m_SRV) + " is initialized.");
+
+	return true;
+}
+
+bool DX11RenderingBackendNS::initializeDX11MaterialDataComponent(DX11MaterialDataComponent* rhs)
+{
+	if (rhs->m_objectStatus == ObjectStatus::Activated)
+	{
+		return true;
+	}
+	else
+	{
+		submitGPUData(rhs);
+
+		return true;
+	}
+}
+
+bool DX11RenderingBackendNS::submitGPUData(DX11MaterialDataComponent * rhs)
+{
+	if (rhs->m_normalTexture)
+	{
+		initializeDX11TextureDataComponent(reinterpret_cast<DX11TextureDataComponent*>(rhs->m_normalTexture));
+	}
+	if (rhs->m_albedoTexture)
+	{
+		initializeDX11TextureDataComponent(reinterpret_cast<DX11TextureDataComponent*>(rhs->m_albedoTexture));
+	}
+	if (rhs->m_metallicTexture)
+	{
+		initializeDX11TextureDataComponent(reinterpret_cast<DX11TextureDataComponent*>(rhs->m_metallicTexture));
+	}
+	if (rhs->m_roughnessTexture)
+	{
+		initializeDX11TextureDataComponent(reinterpret_cast<DX11TextureDataComponent*>(rhs->m_roughnessTexture));
+	}
+	if (rhs->m_aoTexture)
+	{
+		initializeDX11TextureDataComponent(reinterpret_cast<DX11TextureDataComponent*>(rhs->m_aoTexture));
+	}
+
+	rhs->m_objectStatus = ObjectStatus::Activated;
+
+	m_initializedDX11Materials.emplace(rhs->m_parentEntity, rhs);
 
 	return true;
 }

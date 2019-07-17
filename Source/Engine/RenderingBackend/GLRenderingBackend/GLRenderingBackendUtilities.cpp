@@ -27,10 +27,8 @@ INNO_PRIVATE_SCOPE GLRenderingBackendNS
 	void addShader(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const ShaderFilePath& shaderFilePath);
 
 	bool submitGPUData(GLMeshDataComponent* rhs);
-	bool submitGPUData(GLTextureDataComponent* rhs);
 
 	GLTextureDataDesc getGLTextureDataDesc(TextureDataDesc textureDataDesc);
-
 	GLenum getTextureSamplerType(TextureSamplerType rhs);
 	GLenum getTextureWrapMethod(TextureWrapMethod rhs);
 	GLenum getTextureFilterParam(TextureFilterMethod rhs);
@@ -41,8 +39,13 @@ INNO_PRIVATE_SCOPE GLRenderingBackendNS
 
 	void generateTO(GLuint& TO, GLTextureDataDesc desc, const void* textureData);
 
-	std::unordered_map<InnoEntity*, GLMeshDataComponent*> m_initializedGLMDC;
-	std::unordered_map<InnoEntity*, GLTextureDataComponent*> m_initializedGLTDC;
+	bool submitGPUData(GLTextureDataComponent* rhs);
+
+	bool submitGPUData(GLMaterialDataComponent* rhs);
+
+	std::unordered_map<InnoEntity*, GLMeshDataComponent*> m_initializedGLMeshes;
+	std::unordered_map<InnoEntity*, GLTextureDataComponent*> m_initializedGLTextures;
+	std::unordered_map<InnoEntity*, GLMaterialDataComponent*> m_initializedGLMaterials;
 
 	void* m_GLRenderPassComponentPool;
 	void* m_GLShaderProgramComponentPool;
@@ -615,7 +618,7 @@ bool GLRenderingBackendNS::submitGPUData(GLMeshDataComponent * rhs)
 
 	rhs->m_objectStatus = ObjectStatus::Activated;
 
-	m_initializedGLMDC.emplace(rhs->m_parentEntity, rhs);
+	m_initializedGLMeshes.emplace(rhs->m_parentEntity, rhs);
 
 	return true;
 }
@@ -628,7 +631,7 @@ bool GLRenderingBackendNS::submitGPUData(GLTextureDataComponent * rhs)
 
 	rhs->m_objectStatus = ObjectStatus::Activated;
 
-	m_initializedGLTDC.emplace(rhs->m_parentEntity, rhs);
+	m_initializedGLTextures.emplace(rhs->m_parentEntity, rhs);
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: GLTDC " + InnoUtility::pointerToString(rhs) + " is initialized.");
 
@@ -961,6 +964,50 @@ GLTextureDataDesc GLRenderingBackendNS::getGLTextureDataDesc(TextureDataDesc tex
 	l_result.borderColor[3] = textureDataDesc.borderColor[3];
 
 	return l_result;
+}
+
+bool GLRenderingBackendNS::initializeGLMaterialDataComponent(GLMaterialDataComponent* rhs)
+{
+	if (rhs->m_objectStatus == ObjectStatus::Activated)
+	{
+		return true;
+	}
+	else
+	{
+		submitGPUData(rhs);
+
+		return true;
+	}
+}
+
+bool GLRenderingBackendNS::submitGPUData(GLMaterialDataComponent * rhs)
+{
+	if (rhs->m_normalTexture)
+	{
+		initializeGLTextureDataComponent(reinterpret_cast<GLTextureDataComponent*>(rhs->m_normalTexture));
+	}
+	if (rhs->m_albedoTexture)
+	{
+		initializeGLTextureDataComponent(reinterpret_cast<GLTextureDataComponent*>(rhs->m_albedoTexture));
+	}
+	if (rhs->m_metallicTexture)
+	{
+		initializeGLTextureDataComponent(reinterpret_cast<GLTextureDataComponent*>(rhs->m_metallicTexture));
+	}
+	if (rhs->m_roughnessTexture)
+	{
+		initializeGLTextureDataComponent(reinterpret_cast<GLTextureDataComponent*>(rhs->m_roughnessTexture));
+	}
+	if (rhs->m_aoTexture)
+	{
+		initializeGLTextureDataComponent(reinterpret_cast<GLTextureDataComponent*>(rhs->m_aoTexture));
+	}
+
+	rhs->m_objectStatus = ObjectStatus::Activated;
+
+	m_initializedGLMaterials.emplace(rhs->m_parentEntity, rhs);
+
+	return true;
 }
 
 bool GLRenderingBackendNS::deleteShaderProgram(GLShaderProgramComponent* rhs)

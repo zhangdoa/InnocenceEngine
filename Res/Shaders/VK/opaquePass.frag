@@ -24,14 +24,88 @@ layout(std140, set = 0, binding = 2) uniform materialUBO
 	bool uni_useAOTexture;
 };
 
-layout(set = 1, binding = 0) uniform sampler2D uni_albedoTexture;
+layout(set = 1, binding = 0) uniform sampler2D uni_normalTexture;
+layout(set = 1, binding = 1) uniform sampler2D uni_albedoTexture;
+layout(set = 1, binding = 2) uniform sampler2D uni_metallicTexture;
+layout(set = 1, binding = 3) uniform sampler2D uni_roughnessTexture;
+layout(set = 1, binding = 4) uniform sampler2D uni_aoTexture;
 
 void main() {
-	vec3 WorldSpaceNormal = normalize(thefrag_Normal);
-	opaquePassRT0 = vec4(thefrag_WorldSpacePos.xyz, uni_MRAT.x);
-	opaquePassRT1 = vec4(WorldSpaceNormal, uni_MRAT.y);
-	vec4 albedo = texture(uni_albedoTexture, thefrag_TexCoord);
-	opaquePassRT2 = vec4(albedo.xyz, uni_MRAT.z);
+	vec3 WorldSpaceNormal;
+	vec3 albedo;
+	float transparency = 1.0;
+	vec3 MRA;
+
+	if (uni_useNormalTexture)
+	{
+		// get edge vectors of the pixel triangle
+		vec3 dp1 = dFdx(thefrag_WorldSpacePos.xyz);
+		vec3 dp2 = dFdy(thefrag_WorldSpacePos.xyz);
+		vec2 duv1 = dFdx(thefrag_TexCoord);
+		vec2 duv2 = dFdy(thefrag_TexCoord);
+
+		// solve the linear system
+		vec3 N = normalize(thefrag_Normal);
+		vec3 dp2perp = cross(dp2, N);
+		vec3 dp1perp = cross(N, dp1);
+		vec3 T = normalize(dp2perp * duv1.x + dp1perp * duv2.x);
+		vec3 B = normalize(dp2perp * duv1.y + dp1perp * duv2.y);
+
+		mat3 TBN = mat3(T, B, N);
+
+		vec3 TangentSpaceNormal = texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0;
+		WorldSpaceNormal = normalize(TBN * TangentSpaceNormal);
+	}
+	else
+	{
+		WorldSpaceNormal = normalize(thefrag_Normal);
+	}
+
+	if (uni_useAlbedoTexture)
+	{
+		vec4 albedoTexture = texture(uni_albedoTexture, thefrag_TexCoord);
+		transparency = albedoTexture.a;
+		if (transparency < 0.1)
+		{
+			discard;
+		}
+		albedo = albedoTexture.rgb;
+	}
+	else
+	{
+		albedo = uni_albedo.rgb;
+	}
+
+	if (uni_useMetallicTexture)
+	{
+		MRA.r = texture(uni_metallicTexture, thefrag_TexCoord).r;
+	}
+	else
+	{
+		MRA.r = uni_MRAT.r;
+	}
+
+	if (uni_useRoughnessTexture)
+	{
+		MRA.g = texture(uni_roughnessTexture, thefrag_TexCoord).r;
+	}
+	else
+	{
+		MRA.g = uni_MRAT.g;
+	}
+
+	if (uni_useAOTexture)
+	{
+		MRA.b = texture(uni_aoTexture, thefrag_TexCoord).r;
+	}
+	else
+	{
+		MRA.b = uni_MRAT.b;
+	}
+
+	opaquePassRT0 = vec4(thefrag_WorldSpacePos.xyz, MRA.r);
+	opaquePassRT1 = vec4(WorldSpaceNormal, MRA.g);
+	opaquePassRT2 = vec4(albedo, MRA.b);
 	vec4 motionVec = (thefrag_ClipSpacePos_current / thefrag_ClipSpacePos_current.w - thefrag_ClipSpacePos_previous / thefrag_ClipSpacePos_previous.w);
-	opaquePassRT3 = vec4(motionVec.xy * 0.5, thefrag_UUID, uni_albedo.w);
+	opaquePassRT3 = vec4(motionVec.xy * 0.5, thefrag_UUID, 0);
 }

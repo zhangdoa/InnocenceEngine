@@ -64,8 +64,8 @@ namespace DX12RenderingBackendNS
 	void* m_MaterialDataComponentPool;
 	void* m_TextureDataComponentPool;
 
-	ThreadSafeQueue<DX12MeshDataComponent*> m_uninitializedMDC;
-	ThreadSafeQueue<DX12TextureDataComponent*> m_uninitializedTDC;
+	ThreadSafeQueue<DX12MeshDataComponent*> m_uninitializedMeshes;
+	ThreadSafeQueue<DX12MaterialDataComponent*> m_uninitializedMaterials;
 
 	DX12TextureDataComponent* m_iconTemplate_OBJ;
 	DX12TextureDataComponent* m_iconTemplate_PNG;
@@ -530,31 +530,31 @@ bool DX12RenderingBackendNS::initialize()
 
 bool DX12RenderingBackendNS::update()
 {
-	while (DX12RenderingBackendNS::m_uninitializedMDC.size() > 0)
+	while (DX12RenderingBackendNS::m_uninitializedMeshes.size() > 0)
 	{
 		DX12MeshDataComponent* l_MDC;
-		DX12RenderingBackendNS::m_uninitializedMDC.tryPop(l_MDC);
+		DX12RenderingBackendNS::m_uninitializedMeshes.tryPop(l_MDC);
 
 		if (l_MDC)
 		{
 			auto l_result = initializeDX12MeshDataComponent(l_MDC);
 			if (!l_result)
 			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't create DX12MeshDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
+				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't initialize DX12MeshDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
 			}
 		}
 	}
-	while (DX12RenderingBackendNS::m_uninitializedTDC.size() > 0)
+	while (DX12RenderingBackendNS::m_uninitializedMaterials.size() > 0)
 	{
-		DX12TextureDataComponent* l_TDC;
-		DX12RenderingBackendNS::m_uninitializedTDC.tryPop(l_TDC);
+		DX12MaterialDataComponent* l_MDC;
+		DX12RenderingBackendNS::m_uninitializedMaterials.tryPop(l_MDC);
 
-		if (l_TDC)
+		if (l_MDC)
 		{
-			auto l_result = initializeDX12TextureDataComponent(l_TDC);
+			auto l_result = initializeDX12MaterialDataComponent(l_MDC);
 			if (!l_result)
 			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't create DX12TextureDataComponent for " + std::string(l_TDC->m_parentEntity->m_entityName.c_str()) + "!");
+				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't initialize DX12TextureDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
 			}
 		}
 	}
@@ -1023,12 +1023,12 @@ TextureDataComponent * DX12RenderingBackend::getTextureDataComponent(WorldEditor
 
 void DX12RenderingBackend::registerUninitializedMeshDataComponent(MeshDataComponent * rhs)
 {
-	DX12RenderingBackendNS::m_uninitializedMDC.push(reinterpret_cast<DX12MeshDataComponent*>(rhs));
+	DX12RenderingBackendNS::m_uninitializedMeshes.push(reinterpret_cast<DX12MeshDataComponent*>(rhs));
 }
 
-void DX12RenderingBackend::registerUninitializedTextureDataComponent(TextureDataComponent * rhs)
+void DX12RenderingBackend::registerUninitializedMaterialDataComponent(MaterialDataComponent * rhs)
 {
-	DX12RenderingBackendNS::m_uninitializedTDC.push(reinterpret_cast<DX12TextureDataComponent*>(rhs));
+	DX12RenderingBackendNS::m_uninitializedMaterials.push(reinterpret_cast<DX12MaterialDataComponent*>(rhs));
 }
 
 bool DX12RenderingBackend::resize()

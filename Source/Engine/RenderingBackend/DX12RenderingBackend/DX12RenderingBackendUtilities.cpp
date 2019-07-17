@@ -1325,18 +1325,53 @@ bool DX12RenderingBackendNS::submitGPUData(DX12TextureDataComponent * rhs)
 
 bool DX12RenderingBackendNS::submitGPUData(DX12MaterialDataComponent * rhs)
 {
-	initializeDX12TextureDataComponent(reinterpret_cast<DX12TextureDataComponent*>(rhs->m_normalTexture));
-	initializeDX12TextureDataComponent(reinterpret_cast<DX12TextureDataComponent*>(rhs->m_albedoTexture));
-	initializeDX12TextureDataComponent(reinterpret_cast<DX12TextureDataComponent*>(rhs->m_metallicTexture));
-	initializeDX12TextureDataComponent(reinterpret_cast<DX12TextureDataComponent*>(rhs->m_roughnessTexture));
-	initializeDX12TextureDataComponent(reinterpret_cast<DX12TextureDataComponent*>(rhs->m_aoTexture));
-
 	rhs->m_SRVs.resize(5);
-	rhs->m_SRVs[0] = createSRV(*reinterpret_cast<DX12TextureDataComponent*>(rhs->m_normalTexture));
-	rhs->m_SRVs[1] = createSRV(*reinterpret_cast<DX12TextureDataComponent*>(rhs->m_albedoTexture));
-	rhs->m_SRVs[2] = createSRV(*reinterpret_cast<DX12TextureDataComponent*>(rhs->m_metallicTexture));
-	rhs->m_SRVs[3] = createSRV(*reinterpret_cast<DX12TextureDataComponent*>(rhs->m_roughnessTexture));
-	rhs->m_SRVs[4] = createSRV(*reinterpret_cast<DX12TextureDataComponent*>(rhs->m_aoTexture));
+
+	if (rhs->m_normalTexture)
+	{
+		initializeDX12TextureDataComponent(reinterpret_cast<DX12TextureDataComponent*>(rhs->m_normalTexture));
+		rhs->m_SRVs[0] = createSRV(*reinterpret_cast<DX12TextureDataComponent*>(rhs->m_normalTexture));
+	}
+	else
+	{
+		rhs->m_SRVs[0] = createSRV(*getDX12TextureDataComponent(TextureUsageType::NORMAL));
+	}
+	if (rhs->m_albedoTexture)
+	{
+		initializeDX12TextureDataComponent(reinterpret_cast<DX12TextureDataComponent*>(rhs->m_albedoTexture));
+		rhs->m_SRVs[1] = createSRV(*reinterpret_cast<DX12TextureDataComponent*>(rhs->m_albedoTexture));
+	}
+	else
+	{
+		rhs->m_SRVs[1] = createSRV(*getDX12TextureDataComponent(TextureUsageType::ALBEDO));
+	}
+	if (rhs->m_metallicTexture)
+	{
+		initializeDX12TextureDataComponent(reinterpret_cast<DX12TextureDataComponent*>(rhs->m_metallicTexture));
+		rhs->m_SRVs[2] = createSRV(*reinterpret_cast<DX12TextureDataComponent*>(rhs->m_metallicTexture));
+	}
+	else
+	{
+		rhs->m_SRVs[2] = createSRV(*getDX12TextureDataComponent(TextureUsageType::METALLIC));
+	}
+	if (rhs->m_roughnessTexture)
+	{
+		initializeDX12TextureDataComponent(reinterpret_cast<DX12TextureDataComponent*>(rhs->m_roughnessTexture));
+		rhs->m_SRVs[3] = createSRV(*reinterpret_cast<DX12TextureDataComponent*>(rhs->m_roughnessTexture));
+	}
+	else
+	{
+		rhs->m_SRVs[3] = createSRV(*getDX12TextureDataComponent(TextureUsageType::ROUGHNESS));
+	}
+	if (rhs->m_aoTexture)
+	{
+		initializeDX12TextureDataComponent(reinterpret_cast<DX12TextureDataComponent*>(rhs->m_aoTexture));
+		rhs->m_SRVs[4] = createSRV(*reinterpret_cast<DX12TextureDataComponent*>(rhs->m_aoTexture));
+	}
+	else
+	{
+		rhs->m_SRVs[4] = createSRV(*getDX12TextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION));
+	}
 
 	rhs->m_objectStatus = ObjectStatus::Activated;
 

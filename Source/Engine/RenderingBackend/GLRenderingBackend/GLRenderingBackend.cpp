@@ -106,8 +106,8 @@ INNO_PRIVATE_SCOPE GLRenderingBackendNS
 	void* m_MaterialDataComponentPool;
 	void* m_TextureDataComponentPool;
 
-	ThreadSafeQueue<GLMeshDataComponent*> m_uninitializedMDC;
-	ThreadSafeQueue<GLTextureDataComponent*> m_uninitializedTDC;
+	ThreadSafeQueue<GLMeshDataComponent*> m_uninitializedMeshes;
+	ThreadSafeQueue<GLMaterialDataComponent*> m_uninitializedMaterials;
 
 	GLTextureDataComponent* m_iconTemplate_OBJ;
 	GLTextureDataComponent* m_iconTemplate_PNG;
@@ -187,7 +187,7 @@ bool GLRenderingBackendNS::initialize()
 		auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
 		m_MeshDataComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(GLMeshDataComponent), l_renderingCapability.maxMeshes);
-		m_MaterialDataComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), l_renderingCapability.maxMaterials);
+		m_MaterialDataComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(GLMaterialDataComponent), l_renderingCapability.maxMaterials);
 		m_TextureDataComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(GLTextureDataComponent), l_renderingCapability.maxTextures);
 
 		loadDefaultAssets();
@@ -343,41 +343,34 @@ bool GLRenderingBackendNS::generateGPUBuffers()
 
 bool GLRenderingBackendNS::update()
 {
-	if (GLRenderingBackendNS::m_uninitializedMDC.size() > 0)
+	while (GLRenderingBackendNS::m_uninitializedMeshes.size() > 0)
 	{
 		GLMeshDataComponent* l_MDC;
-		GLRenderingBackendNS::m_uninitializedMDC.tryPop(l_MDC);
+		GLRenderingBackendNS::m_uninitializedMeshes.tryPop(l_MDC);
 
 		if (l_MDC)
 		{
 			auto l_result = initializeGLMeshDataComponent(l_MDC);
 			if (!l_result)
 			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingBackend: can't create GLMeshDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
+				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingBackend: can't initialize GLMeshDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
 			}
 		}
 	}
-	if (GLRenderingBackendNS::m_uninitializedTDC.size() > 0)
+	while (GLRenderingBackendNS::m_uninitializedMaterials.size() > 0)
 	{
-		GLTextureDataComponent* l_TDC;
-		GLRenderingBackendNS::m_uninitializedTDC.tryPop(l_TDC);
+		GLMaterialDataComponent* l_MDC;
+		GLRenderingBackendNS::m_uninitializedMaterials.tryPop(l_MDC);
 
-		if (l_TDC)
+		if (l_MDC)
 		{
-			auto l_result = initializeGLTextureDataComponent(l_TDC);
+			auto l_result = initializeGLMaterialDataComponent(l_MDC);
 			if (!l_result)
 			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingBackend: can't create GLTextureDataComponent for " + std::string(l_TDC->m_parentEntity->m_entityName.c_str()) + "!");
+				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingBackend: can't initialize GLTextureDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
 			}
 		}
 	}
-
-	return true;
-}
-
-bool GLRenderingBackendNS::render()
-{
-	glFrontFace(GL_CCW);
 
 	updateUBO(GLRenderingBackendComponent::get().m_cameraUBO, g_pModuleManager->getRenderingFrontend()->getCameraGPUData());
 	updateUBO(GLRenderingBackendComponent::get().m_meshUBO, g_pModuleManager->getRenderingFrontend()->getOpaquePassMeshGPUData());
@@ -387,6 +380,13 @@ bool GLRenderingBackendNS::render()
 	updateUBO(GLRenderingBackendComponent::get().m_sphereLightUBO, g_pModuleManager->getRenderingFrontend()->getSphereLightGPUData());
 	updateUBO(GLRenderingBackendComponent::get().m_CSMUBO, g_pModuleManager->getRenderingFrontend()->getCSMGPUData());
 	updateUBO(GLRenderingBackendComponent::get().m_skyUBO, g_pModuleManager->getRenderingFrontend()->getSkyGPUData());
+
+	return true;
+}
+
+bool GLRenderingBackendNS::render()
+{
+	glFrontFace(GL_CCW);
 
 	if (!m_isBaked)
 	{
@@ -509,12 +509,12 @@ GLMeshDataComponent* GLRenderingBackendNS::addGLMeshDataComponent()
 	return l_MDC;
 }
 
-MaterialDataComponent* GLRenderingBackendNS::addMaterialDataComponent()
+GLMaterialDataComponent* GLRenderingBackendNS::addGLMaterialDataComponent()
 {
 	static std::atomic<unsigned int> materialCount = 0;
 	materialCount++;
-	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MaterialDataComponent));
-	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
+	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(GLMaterialDataComponent));
+	auto l_MDC = new(l_rawPtr)GLMaterialDataComponent();
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Material_" + std::to_string(materialCount) + "/").c_str());
 	l_MDC->m_parentEntity = l_parentEntity;
 	return l_MDC;
@@ -678,7 +678,7 @@ MeshDataComponent * GLRenderingBackend::addMeshDataComponent()
 
 MaterialDataComponent * GLRenderingBackend::addMaterialDataComponent()
 {
-	return GLRenderingBackendNS::addMaterialDataComponent();
+	return GLRenderingBackendNS::addGLMaterialDataComponent();
 }
 
 TextureDataComponent * GLRenderingBackend::addTextureDataComponent()
@@ -708,12 +708,12 @@ TextureDataComponent * GLRenderingBackend::getTextureDataComponent(WorldEditorIc
 
 void GLRenderingBackend::registerUninitializedMeshDataComponent(MeshDataComponent * rhs)
 {
-	GLRenderingBackendNS::m_uninitializedMDC.push(reinterpret_cast<GLMeshDataComponent*>(rhs));
+	GLRenderingBackendNS::m_uninitializedMeshes.push(reinterpret_cast<GLMeshDataComponent*>(rhs));
 }
 
-void GLRenderingBackend::registerUninitializedTextureDataComponent(TextureDataComponent * rhs)
+void GLRenderingBackend::registerUninitializedMaterialDataComponent(MaterialDataComponent * rhs)
 {
-	GLRenderingBackendNS::m_uninitializedTDC.push(reinterpret_cast<GLTextureDataComponent*>(rhs));
+	GLRenderingBackendNS::m_uninitializedMaterials.push(reinterpret_cast<GLMaterialDataComponent*>(rhs));
 }
 
 bool GLRenderingBackend::resize()

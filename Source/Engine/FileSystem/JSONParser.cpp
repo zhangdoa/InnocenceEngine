@@ -644,6 +644,8 @@ MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(co
 	l_MDC->m_meshCustomMaterial.thickness = j["Thickness"];
 	l_MDC->m_objectStatus = ObjectStatus::Created;
 
+	g_pModuleManager->getRenderingBackend()->registerUninitializedMaterialDataComponent(l_MDC);
+
 	return l_MDC;
 }
 

@@ -39,8 +39,8 @@ INNO_PRIVATE_SCOPE DX11RenderingBackendNS
 	void* m_MaterialDataComponentPool;
 	void* m_TextureDataComponentPool;
 
-	ThreadSafeQueue<DX11MeshDataComponent*> m_uninitializedMDC;
-	ThreadSafeQueue<DX11TextureDataComponent*> m_uninitializedTDC;
+	ThreadSafeQueue<DX11MeshDataComponent*> m_uninitializedMeshes;
+	ThreadSafeQueue<DX11MaterialDataComponent*> m_uninitializedMaterials;
 
 	DX11TextureDataComponent* m_iconTemplate_OBJ;
 	DX11TextureDataComponent* m_iconTemplate_PNG;
@@ -346,7 +346,7 @@ bool DX11RenderingBackendNS::initialize()
 		auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
 		m_MeshDataComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(DX11MeshDataComponent), l_renderingCapability.maxMeshes);
-		m_MaterialDataComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), l_renderingCapability.maxMaterials);
+		m_MaterialDataComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(DX11MaterialDataComponent), l_renderingCapability.maxMaterials);
 		m_TextureDataComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(DX11TextureDataComponent), l_renderingCapability.maxTextures);
 
 		loadDefaultAssets();
@@ -488,40 +488,35 @@ bool DX11RenderingBackendNS::generateGPUBuffers()
 
 bool DX11RenderingBackendNS::update()
 {
-	if (DX11RenderingBackendNS::m_uninitializedMDC.size() > 0)
+	while (DX11RenderingBackendNS::m_uninitializedMeshes.size() > 0)
 	{
 		DX11MeshDataComponent* l_MDC;
-		DX11RenderingBackendNS::m_uninitializedMDC.tryPop(l_MDC);
+		DX11RenderingBackendNS::m_uninitializedMeshes.tryPop(l_MDC);
 
 		if (l_MDC)
 		{
 			auto l_result = initializeDX11MeshDataComponent(l_MDC);
 			if (!l_result)
 			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingBackend: can't create DX11MeshDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
+				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingBackend: can't initialize DX11MeshDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
 			}
 		}
 	}
-	if (DX11RenderingBackendNS::m_uninitializedTDC.size() > 0)
+	while (DX11RenderingBackendNS::m_uninitializedMaterials.size() > 0)
 	{
-		DX11TextureDataComponent* l_TDC;
-		DX11RenderingBackendNS::m_uninitializedTDC.tryPop(l_TDC);
+		DX11MaterialDataComponent* l_MDC;
+		DX11RenderingBackendNS::m_uninitializedMaterials.tryPop(l_MDC);
 
-		if (l_TDC)
+		if (l_MDC)
 		{
-			auto l_result = initializeDX11TextureDataComponent(l_TDC);
+			auto l_result = initializeDX11MaterialDataComponent(l_MDC);
 			if (!l_result)
 			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingBackend: can't create DX11TextureDataComponent for " + std::string(l_TDC->m_parentEntity->m_entityName.c_str()) + "!");
+				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingBackend: can't initialize DX11TextureDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
 			}
 		}
 	}
 
-	return true;
-}
-
-bool DX11RenderingBackendNS::render()
-{
 	updateConstantBuffer(DX11RenderingBackendComponent::get().m_cameraConstantBuffer, g_pModuleManager->getRenderingFrontend()->getCameraGPUData());
 	updateConstantBuffer(DX11RenderingBackendComponent::get().m_sunConstantBuffer, g_pModuleManager->getRenderingFrontend()->getSunGPUData());
 	updateConstantBuffer(DX11RenderingBackendComponent::get().m_pointLightConstantBuffer, g_pModuleManager->getRenderingFrontend()->getPointLightGPUData());
@@ -530,6 +525,11 @@ bool DX11RenderingBackendNS::render()
 	updateConstantBuffer(DX11RenderingBackendComponent::get().m_meshConstantBuffer, g_pModuleManager->getRenderingFrontend()->getOpaquePassMeshGPUData());
 	updateConstantBuffer(DX11RenderingBackendComponent::get().m_materialConstantBuffer, g_pModuleManager->getRenderingFrontend()->getOpaquePassMaterialGPUData());
 
+	return true;
+}
+
+bool DX11RenderingBackendNS::render()
+{
 	DX11RenderingBackendComponent::get().m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	DX11OpaquePass::update();
@@ -595,12 +595,12 @@ DX11MeshDataComponent* DX11RenderingBackendNS::addDX11MeshDataComponent()
 	return l_MDC;
 }
 
-MaterialDataComponent* DX11RenderingBackendNS::addMaterialDataComponent()
+DX11MaterialDataComponent* DX11RenderingBackendNS::addDX11MaterialDataComponent()
 {
 	static std::atomic<unsigned int> materialCount = 0;
 	materialCount++;
-	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MaterialDataComponent));
-	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
+	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(DX11MaterialDataComponent));
+	auto l_MDC = new(l_rawPtr)DX11MaterialDataComponent();
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Material_" + std::to_string(materialCount) + "/").c_str());
 	l_MDC->m_parentEntity = l_parentEntity;
 	return l_MDC;
@@ -754,7 +754,7 @@ MeshDataComponent * DX11RenderingBackend::addMeshDataComponent()
 
 MaterialDataComponent * DX11RenderingBackend::addMaterialDataComponent()
 {
-	return DX11RenderingBackendNS::addMaterialDataComponent();
+	return DX11RenderingBackendNS::addDX11MaterialDataComponent();
 }
 
 TextureDataComponent * DX11RenderingBackend::addTextureDataComponent()
@@ -784,12 +784,12 @@ TextureDataComponent * DX11RenderingBackend::getTextureDataComponent(WorldEditor
 
 void DX11RenderingBackend::registerUninitializedMeshDataComponent(MeshDataComponent * rhs)
 {
-	DX11RenderingBackendNS::m_uninitializedMDC.push(reinterpret_cast<DX11MeshDataComponent*>(rhs));
+	DX11RenderingBackendNS::m_uninitializedMeshes.push(reinterpret_cast<DX11MeshDataComponent*>(rhs));
 }
 
-void DX11RenderingBackend::registerUninitializedTextureDataComponent(TextureDataComponent * rhs)
+void DX11RenderingBackend::registerUninitializedMaterialDataComponent(MaterialDataComponent * rhs)
 {
-	DX11RenderingBackendNS::m_uninitializedTDC.push(reinterpret_cast<DX11TextureDataComponent*>(rhs));
+	DX11RenderingBackendNS::m_uninitializedMaterials.push(reinterpret_cast<DX11MaterialDataComponent*>(rhs));
 }
 
 bool DX11RenderingBackend::resize()
