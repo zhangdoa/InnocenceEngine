@@ -375,21 +375,23 @@ bool DX12RenderingBackendNS::initializeDX12RenderPassComponent(DX12RenderPassCom
 
 bool DX12RenderingBackendNS::reserveRenderTargets(DX12RenderPassComponent* DXRPC)
 {
-	DXRPC->m_RTVCPUDescHandles.reserve(DXRPC->m_renderPassDesc.RTNumber);
+	DXRPC->m_RTVDescriptorCPUHandles.reserve(DXRPC->m_renderPassDesc.RTNumber);
 	for (size_t i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
 	{
-		DXRPC->m_RTVCPUDescHandles.emplace_back();
+		DXRPC->m_RTVDescriptorCPUHandles.emplace_back();
 	}
 
-	DXRPC->m_DXTDCs.reserve(DXRPC->m_renderPassDesc.RTNumber);
+	DXRPC->m_renderTargets.reserve(DXRPC->m_renderPassDesc.RTNumber);
+	DXRPC->m_SRVs.reserve(DXRPC->m_renderPassDesc.RTNumber);
 	for (size_t i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
 	{
-		DXRPC->m_DXTDCs.emplace_back();
+		DXRPC->m_renderTargets.emplace_back();
+		DXRPC->m_SRVs.emplace_back();
 	}
 
 	for (size_t i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
 	{
-		DXRPC->m_DXTDCs[i] = addDX12TextureDataComponent();
+		DXRPC->m_renderTargets[i] = addDX12TextureDataComponent();
 	}
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingBackend: " + std::string(DXRPC->m_name.c_str()) + " render targets have been allocated.");
@@ -401,7 +403,7 @@ bool DX12RenderingBackendNS::createRenderTargets(DX12RenderPassComponent* DXRPC)
 {
 	for (size_t i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
 	{
-		auto l_TDC = DXRPC->m_DXTDCs[i];
+		auto l_TDC = DXRPC->m_renderTargets[i];
 
 		l_TDC->m_textureDataDesc = DXRPC->m_renderPassDesc.RTDesc;
 
@@ -412,29 +414,31 @@ bool DX12RenderingBackendNS::createRenderTargets(DX12RenderPassComponent* DXRPC)
 		std::string l_name = DXRPC->m_name.c_str();
 		l_name = l_name + "_RT_" + std::to_string(i);
 		l_TDC->m_texture->SetName(std::wstring(l_name.begin(), l_name.end()).c_str());
+
+		DXRPC->m_SRVs[i] = createSRV(*DXRPC->m_renderTargets[i]);
 	}
 
 	if (DXRPC->m_renderPassDesc.useDepthAttachment)
 	{
-		DXRPC->m_depthStencilDXTDC = addDX12TextureDataComponent();
-		DXRPC->m_depthStencilDXTDC->m_textureDataDesc = DXRPC->m_renderPassDesc.RTDesc;
+		DXRPC->m_depthStencilTarget = addDX12TextureDataComponent();
+		DXRPC->m_depthStencilTarget->m_textureDataDesc = DXRPC->m_renderPassDesc.RTDesc;
 
 		if (DXRPC->m_renderPassDesc.useStencilAttachment)
 		{
-			DXRPC->m_depthStencilDXTDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_STENCIL_ATTACHMENT;
+			DXRPC->m_depthStencilTarget->m_textureDataDesc.usageType = TextureUsageType::DEPTH_STENCIL_ATTACHMENT;
 		}
 		else
 		{
-			DXRPC->m_depthStencilDXTDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
+			DXRPC->m_depthStencilTarget->m_textureDataDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
 		}
 
-		DXRPC->m_depthStencilDXTDC->m_textureData = { nullptr };
+		DXRPC->m_depthStencilTarget->m_textureData = { nullptr };
 
-		initializeDX12TextureDataComponent(DXRPC->m_depthStencilDXTDC);
+		initializeDX12TextureDataComponent(DXRPC->m_depthStencilTarget);
 
 		std::string l_name = DXRPC->m_name.c_str();
 		l_name = l_name + "_DS";
-		DXRPC->m_depthStencilDXTDC->m_texture->SetName(std::wstring(l_name.begin(), l_name.end()).c_str());
+		DXRPC->m_depthStencilTarget->m_texture->SetName(std::wstring(l_name.begin(), l_name.end()).c_str());
 	}
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingBackend: " + std::string(DXRPC->m_name.c_str()) + " render targets have been created.");
@@ -444,24 +448,24 @@ bool DX12RenderingBackendNS::createRenderTargets(DX12RenderPassComponent* DXRPC)
 
 bool DX12RenderingBackendNS::createRTVDescriptorHeap(DX12RenderPassComponent* DXRPC)
 {
-	DXRPC->m_RTVHeapDesc.NumDescriptors = DXRPC->m_renderPassDesc.RTNumber;
-	DXRPC->m_RTVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	DXRPC->m_RTVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	DXRPC->m_RTVDescriptorHeapDesc.NumDescriptors = DXRPC->m_renderPassDesc.RTNumber;
+	DXRPC->m_RTVDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	DXRPC->m_RTVDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
-	if (DXRPC->m_RTVHeapDesc.NumDescriptors)
+	if (DXRPC->m_RTVDescriptorHeapDesc.NumDescriptors)
 	{
-		auto l_result = DX12RenderingBackendComponent::get().m_device->CreateDescriptorHeap(&DXRPC->m_RTVHeapDesc, IID_PPV_ARGS(&DXRPC->m_RTVHeap));
+		auto l_result = DX12RenderingBackendComponent::get().m_device->CreateDescriptorHeap(&DXRPC->m_RTVDescriptorHeapDesc, IID_PPV_ARGS(&DXRPC->m_RTVDescriptorHeap));
 		if (FAILED(l_result))
 		{
 			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: " + std::string(DXRPC->m_name.c_str()) + " can't create DescriptorHeap for RTV!");
 			return false;
 		}
-		DXRPC->m_RTVCPUDescHandles[0] = DXRPC->m_RTVHeap->GetCPUDescriptorHandleForHeapStart();
+		DXRPC->m_RTVDescriptorCPUHandles[0] = DXRPC->m_RTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	}
 
 	std::string l_name = DXRPC->m_name.c_str();
 	l_name = l_name + "_RTVDescHeap";
-	DXRPC->m_RTVHeap->SetName(std::wstring(l_name.begin(), l_name.end()).c_str());
+	DXRPC->m_RTVDescriptorHeap->SetName(std::wstring(l_name.begin(), l_name.end()).c_str());
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingBackend: " + std::string(DXRPC->m_name.c_str()) + " RTV DescriptorHeap has been created.");
 
@@ -472,18 +476,18 @@ bool DX12RenderingBackendNS::createRTV(DX12RenderPassComponent* DXRPC)
 {
 	auto l_RTVDescSize = DX12RenderingBackendComponent::get().m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
-	DXRPC->m_RTVDesc.Format = DXRPC->m_DXTDCs[0]->m_DX12TextureDataDesc.Format;
+	DXRPC->m_RTVDesc.Format = DXRPC->m_renderTargets[0]->m_DX12TextureDataDesc.Format;
 	DXRPC->m_RTVDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 	DXRPC->m_RTVDesc.Texture2D.MipSlice = 0;
 
 	for (size_t i = 1; i < DXRPC->m_renderPassDesc.RTNumber; i++)
 	{
-		DXRPC->m_RTVCPUDescHandles[i].ptr = DXRPC->m_RTVCPUDescHandles[i - 1].ptr + l_RTVDescSize;
+		DXRPC->m_RTVDescriptorCPUHandles[i].ptr = DXRPC->m_RTVDescriptorCPUHandles[i - 1].ptr + l_RTVDescSize;
 	}
 
 	for (size_t i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
 	{
-		DX12RenderingBackendComponent::get().m_device->CreateRenderTargetView(DXRPC->m_DXTDCs[i]->m_texture, &DXRPC->m_RTVDesc, DXRPC->m_RTVCPUDescHandles[i]);
+		DX12RenderingBackendComponent::get().m_device->CreateRenderTargetView(DXRPC->m_renderTargets[i]->m_texture, &DXRPC->m_RTVDesc, DXRPC->m_RTVDescriptorCPUHandles[i]);
 	}
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingBackend: " + std::string(DXRPC->m_name.c_str()) + " RTV has been created.");
@@ -493,11 +497,11 @@ bool DX12RenderingBackendNS::createRTV(DX12RenderPassComponent* DXRPC)
 
 bool DX12RenderingBackendNS::createDSVDescriptorHeap(DX12RenderPassComponent* DXRPC)
 {
-	DXRPC->m_DSVHeapDesc.NumDescriptors = 1;
-	DXRPC->m_DSVHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-	DXRPC->m_DSVHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	DXRPC->m_DSVDescriptorHeapDesc.NumDescriptors = 1;
+	DXRPC->m_DSVDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	DXRPC->m_DSVDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
-	auto l_result = DX12RenderingBackendComponent::get().m_device->CreateDescriptorHeap(&DXRPC->m_DSVHeapDesc, IID_PPV_ARGS(&DXRPC->m_DSVHeap));
+	auto l_result = DX12RenderingBackendComponent::get().m_device->CreateDescriptorHeap(&DXRPC->m_DSVDescriptorHeapDesc, IID_PPV_ARGS(&DXRPC->m_DSVDescriptorHeap));
 
 	if (FAILED(l_result))
 	{
@@ -505,11 +509,11 @@ bool DX12RenderingBackendNS::createDSVDescriptorHeap(DX12RenderPassComponent* DX
 		return false;
 	}
 
-	DXRPC->m_DSVCPUDescHandle = DXRPC->m_DSVHeap->GetCPUDescriptorHandleForHeapStart();
+	DXRPC->m_DSVDescriptorCPUHandle = DXRPC->m_DSVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 
 	std::string l_name = DXRPC->m_name.c_str();
 	l_name = l_name + "_DSVDescHeap";
-	DXRPC->m_DSVHeap->SetName(std::wstring(l_name.begin(), l_name.end()).c_str());
+	DXRPC->m_DSVDescriptorHeap->SetName(std::wstring(l_name.begin(), l_name.end()).c_str());
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingBackend: " + std::string(DXRPC->m_name.c_str()) + " DSV DescriptorHeap has been created.");
 
@@ -532,7 +536,7 @@ bool DX12RenderingBackendNS::createDSV(DX12RenderPassComponent* DXRPC)
 	DXRPC->m_DSVDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 	DXRPC->m_DSVDesc.Texture2D.MipSlice = 0;
 
-	DX12RenderingBackendComponent::get().m_device->CreateDepthStencilView(DXRPC->m_depthStencilDXTDC->m_texture, &DXRPC->m_DSVDesc, DXRPC->m_DSVCPUDescHandle);
+	DX12RenderingBackendComponent::get().m_device->CreateDepthStencilView(DXRPC->m_depthStencilTarget->m_texture, &DXRPC->m_DSVDesc, DXRPC->m_DSVDescriptorCPUHandle);
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingBackend: " + std::string(DXRPC->m_name.c_str()) + " DSV has been created.");
 
@@ -630,7 +634,7 @@ bool DX12RenderingBackendNS::createPSO(DX12RenderPassComponent* DXRPC, DX12Shade
 	DXRPC->m_PSODesc.NumRenderTargets = DXRPC->m_renderPassDesc.RTNumber;
 	for (size_t i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
 	{
-		DXRPC->m_PSODesc.RTVFormats[i] = DXRPC->m_DXTDCs[i]->m_DX12TextureDataDesc.Format;
+		DXRPC->m_PSODesc.RTVFormats[i] = DXRPC->m_renderTargets[i]->m_DX12TextureDataDesc.Format;
 	}
 
 	DXRPC->m_PSODesc.DSVFormat = DXRPC->m_DSVDesc.Format;
@@ -795,16 +799,16 @@ bool DX12RenderingBackendNS::destroyDX12RenderPassComponent(DX12RenderPassCompon
 
 	if (DXRPC->m_renderPassDesc.useDepthAttachment)
 	{
-		DXRPC->m_depthStencilDXTDC->m_texture->Release();
-		DXRPC->m_DSVHeap->Release();
+		DXRPC->m_depthStencilTarget->m_texture->Release();
+		DXRPC->m_DSVDescriptorHeap->Release();
 	}
 
-	for (auto i : DXRPC->m_DXTDCs)
+	for (auto i : DXRPC->m_renderTargets)
 	{
 		i->m_texture->Release();
 	}
 
-	DXRPC->m_RTVHeap->Release();
+	DXRPC->m_RTVDescriptorHeap->Release();
 
 	return true;
 }
@@ -864,6 +868,50 @@ bool DX12RenderingBackendNS::initializeDX12TextureDataComponent(DX12TextureDataC
 			}
 		}
 	}
+}
+
+DX12SRV DX12RenderingBackendNS::createSRV(const DX12TextureDataComponent & rhs)
+{
+	DX12SRV l_result;
+
+	unsigned int l_mipLevels = -1;
+	if (rhs.m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
+		|| rhs.m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
+		|| rhs.m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT
+		|| rhs.m_textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
+	{
+		l_mipLevels = 1;
+	}
+
+	l_result.SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	l_result.SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	l_result.SRVDesc.Texture2D.MostDetailedMip = 0;
+	l_result.SRVDesc.Texture2D.MipLevels = l_mipLevels;
+
+	if (rhs.m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
+	{
+		l_result.SRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	}
+	else if (rhs.m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
+	{
+		l_result.SRVDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+	}
+	else
+	{
+		l_result.SRVDesc.Format = rhs.m_DX12TextureDataDesc.Format;
+	}
+
+	l_result.CPUHandle = DX12RenderingBackendComponent::get().m_currentCSUCPUHandle;
+	l_result.GPUHandle = DX12RenderingBackendComponent::get().m_currentCSUGPUHandle;
+
+	auto l_CSUDescSize = DX12RenderingBackendComponent::get().m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	DX12RenderingBackendComponent::get().m_currentCSUCPUHandle.ptr += l_CSUDescSize;
+	DX12RenderingBackendComponent::get().m_currentCSUGPUHandle.ptr += l_CSUDescSize;
+
+	DX12RenderingBackendComponent::get().m_device->CreateShaderResourceView(rhs.m_texture, &l_result.SRVDesc, l_result.CPUHandle);
+
+	return l_result;
 }
 
 bool DX12RenderingBackendNS::destroyAllGraphicPrimitiveComponents()
@@ -1249,47 +1297,9 @@ bool DX12RenderingBackendNS::submitGPUData(DX12TextureDataComponent * rhs)
 			&CD3DX12_RESOURCE_BARRIER::Transition(rhs->m_texture, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 	}
 
-	// Describe and create a SRV for the texture.
-	unsigned int SRVMipLevels = -1;
-	if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
-		|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
-		|| rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT
-		|| rhs->m_textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
-	{
-		SRVMipLevels = 1;
-	}
-
-	rhs->m_SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	rhs->m_SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	rhs->m_SRVDesc.Texture2D.MostDetailedMip = 0;
-	rhs->m_SRVDesc.Texture2D.MipLevels = SRVMipLevels;
-
-	if (rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
-	{
-		rhs->m_SRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
-	}
-	else if (rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
-	{
-		rhs->m_SRVDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
-	}
-	else
-	{
-		rhs->m_SRVDesc.Format = rhs->m_DX12TextureDataDesc.Format;
-	}
-
-	rhs->m_SRVCPUHandle = DX12RenderingBackendComponent::get().m_currentCSUCPUHandle;
-	rhs->m_SRVGPUHandle = DX12RenderingBackendComponent::get().m_currentCSUGPUHandle;
-
-	auto l_CSUDescSize = DX12RenderingBackendComponent::get().m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-	DX12RenderingBackendComponent::get().m_currentCSUCPUHandle.ptr += l_CSUDescSize;
-	DX12RenderingBackendComponent::get().m_currentCSUGPUHandle.ptr += l_CSUDescSize;
-
-	DX12RenderingBackendComponent::get().m_device->CreateShaderResourceView(rhs->m_texture, &rhs->m_SRVDesc, rhs->m_SRVCPUHandle);
-
 	endSingleTimeCommands(l_commandList);
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingBackend: texture SRV handle" + std::to_string(rhs->m_SRVCPUHandle.ptr) + " is created.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingBackend: texture " + InnoUtility::pointerToString(rhs) + " is initialized.");
 
 	rhs->m_objectStatus = ObjectStatus::Activated;
 
@@ -1318,19 +1328,19 @@ bool DX12RenderingBackendNS::recordActivateRenderPass(DX12RenderPassComponent* D
 
 	if (DXRPC->m_renderPassDesc.useMultipleFramebuffers)
 	{
-		DXRPC->m_commandLists[frameIndex]->OMSetRenderTargets(1, &DXRPC->m_RTVCPUDescHandles[frameIndex], FALSE, &DXRPC->m_DSVCPUDescHandle);
-		DXRPC->m_commandLists[frameIndex]->ClearRenderTargetView(DXRPC->m_RTVCPUDescHandles[frameIndex], l_clearColor, 0, nullptr);
+		DXRPC->m_commandLists[frameIndex]->OMSetRenderTargets(1, &DXRPC->m_RTVDescriptorCPUHandles[frameIndex], FALSE, &DXRPC->m_DSVDescriptorCPUHandle);
+		DXRPC->m_commandLists[frameIndex]->ClearRenderTargetView(DXRPC->m_RTVDescriptorCPUHandles[frameIndex], l_clearColor, 0, nullptr);
 	}
 	else
 	{
-		DXRPC->m_commandLists[frameIndex]->OMSetRenderTargets(DXRPC->m_renderPassDesc.RTNumber, &DXRPC->m_RTVCPUDescHandles[0], FALSE, &DXRPC->m_DSVCPUDescHandle);
+		DXRPC->m_commandLists[frameIndex]->OMSetRenderTargets(DXRPC->m_renderPassDesc.RTNumber, &DXRPC->m_RTVDescriptorCPUHandles[0], FALSE, &DXRPC->m_DSVDescriptorCPUHandle);
 		for (size_t i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
 		{
-			DXRPC->m_commandLists[frameIndex]->ClearRenderTargetView(DXRPC->m_RTVCPUDescHandles[i], l_clearColor, 0, nullptr);
+			DXRPC->m_commandLists[frameIndex]->ClearRenderTargetView(DXRPC->m_RTVDescriptorCPUHandles[i], l_clearColor, 0, nullptr);
 		}
 	}
 
-	DXRPC->m_commandLists[frameIndex]->ClearDepthStencilView(DXRPC->m_DSVCPUDescHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0x00, 0, nullptr);
+	DXRPC->m_commandLists[frameIndex]->ClearDepthStencilView(DXRPC->m_DSVDescriptorCPUHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0x00, 0, nullptr);
 	return true;
 }
 
@@ -1362,9 +1372,9 @@ bool DX12RenderingBackendNS::recordBindRTForRead(DX12RenderPassComponent* DXRPC,
 	return true;
 }
 
-bool DX12RenderingBackendNS::recordBindSRVDescTable(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int startSlot, const DX12TextureDataComponent* DXTDC)
+bool DX12RenderingBackendNS::recordBindSRVDescTable(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int startSlot, const DX12SRV& SRV)
 {
-	DXRPC->m_commandLists[frameIndex]->SetGraphicsRootDescriptorTable(startSlot, DXTDC->m_SRVGPUHandle);
+	DXRPC->m_commandLists[frameIndex]->SetGraphicsRootDescriptorTable(startSlot, SRV.GPUHandle);
 
 	return true;
 }

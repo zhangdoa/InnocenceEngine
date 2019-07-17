@@ -137,9 +137,9 @@ bool DX12LightPass::update()
 
 	recordActivateRenderPass(m_DXRPC, 0);
 
-	recordBindRTForRead(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_DXTDCs[0]);
-	recordBindRTForRead(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_DXTDCs[1]);
-	recordBindRTForRead(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_DXTDCs[2]);
+	recordBindRTForRead(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_renderTargets[0]);
+	recordBindRTForRead(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_renderTargets[1]);
+	recordBindRTForRead(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_renderTargets[2]);
 
 	ID3D12DescriptorHeap* l_heaps[] = { DX12RenderingBackendComponent::get().m_CSUHeap, DX12RenderingBackendComponent::get().m_samplerHeap };
 
@@ -151,14 +151,14 @@ bool DX12LightPass::update()
 	recordBindCBV(m_DXRPC, 0, 3, DX12RenderingBackendComponent::get().m_sphereLightConstantBuffer, 0);
 	recordBindCBV(m_DXRPC, 0, 4, DX12RenderingBackendComponent::get().m_skyConstantBuffer, 0);
 
-	recordBindSRVDescTable(m_DXRPC, 0, 5, DX12OpaquePass::getDX12RPC()->m_DXTDCs[0]);
+	recordBindSRVDescTable(m_DXRPC, 0, 5, DX12OpaquePass::getDX12RPC()->m_SRVs[0]);
 	recordBindSamplerDescTable(m_DXRPC, 0, 6, m_DXSPC);
 
 	recordDrawCall(m_DXRPC, 0, l_MDC);
 
-	recordBindRTForWrite(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_DXTDCs[0]);
-	recordBindRTForWrite(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_DXTDCs[1]);
-	recordBindRTForWrite(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_DXTDCs[2]);
+	recordBindRTForWrite(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_renderTargets[0]);
+	recordBindRTForWrite(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_renderTargets[1]);
+	recordBindRTForWrite(m_DXRPC, 0, DX12OpaquePass::getDX12RPC()->m_renderTargets[2]);
 
 	recordCommandEnd(m_DXRPC, 0);
 

@@ -11,23 +11,19 @@ public:
 	DX12RenderPassComponent() {};
 	~DX12RenderPassComponent() {};
 
-	std::vector<ID3D12CommandAllocator*> m_commandAllocators;
-	D3D12_COMMAND_QUEUE_DESC m_commandQueueDesc = {};
-	ID3D12CommandQueue* m_commandQueue;
-	std::vector<ID3D12GraphicsCommandList*> m_commandLists;
-
-	ID3D12DescriptorHeap* m_RTVHeap;
-	D3D12_DESCRIPTOR_HEAP_DESC m_RTVHeapDesc = {};
+	ID3D12DescriptorHeap* m_RTVDescriptorHeap;
+	D3D12_DESCRIPTOR_HEAP_DESC m_RTVDescriptorHeapDesc = {};
+	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_RTVDescriptorCPUHandles;
 	D3D12_RENDER_TARGET_VIEW_DESC m_RTVDesc = {};
-	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_RTVCPUDescHandles;
-	std::vector<DX12TextureDataComponent*> m_DXTDCs;
+	std::vector<DX12TextureDataComponent*> m_renderTargets;
+	std::vector<DX12SRV> m_SRVs;
 
-	ID3D12DescriptorHeap* m_DSVHeap;
-	D3D12_DESCRIPTOR_HEAP_DESC m_DSVHeapDesc = {};
+	ID3D12DescriptorHeap* m_DSVDescriptorHeap;
+	D3D12_DESCRIPTOR_HEAP_DESC m_DSVDescriptorHeapDesc = {};
+	D3D12_CPU_DESCRIPTOR_HANDLE m_DSVDescriptorCPUHandle;
 	D3D12_DEPTH_STENCIL_VIEW_DESC m_DSVDesc = {};
-	D3D12_CPU_DESCRIPTOR_HANDLE m_DSVCPUDescHandle;
 	D3D12_DEPTH_STENCIL_DESC m_depthStencilDesc = {};
-	DX12TextureDataComponent* m_depthStencilDXTDC;
+	DX12TextureDataComponent* m_depthStencilTarget;
 
 	D3D12_VERSIONED_ROOT_SIGNATURE_DESC m_rootSignatureDesc = {};
 	ID3D12RootSignature* m_rootSignature;
@@ -42,6 +38,11 @@ public:
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC m_PSODesc = {};
 	ID3D12PipelineState* m_PSO;
+
+	std::vector<ID3D12CommandAllocator*> m_commandAllocators;
+	D3D12_COMMAND_QUEUE_DESC m_commandQueueDesc = {};
+	ID3D12CommandQueue* m_commandQueue;
+	std::vector<ID3D12GraphicsCommandList*> m_commandLists;
 
 	unsigned int m_currentFrameIndex = 0;
 

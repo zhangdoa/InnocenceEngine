@@ -51,6 +51,7 @@ namespace DX12RenderingBackendNS
 
 	bool initializeDX12MeshDataComponent(DX12MeshDataComponent* rhs);
 	bool initializeDX12TextureDataComponent(DX12TextureDataComponent* rhs);
+	DX12SRV createSRV(const DX12TextureDataComponent& rhs);
 
 	bool destroyAllGraphicPrimitiveComponents();
 
@@ -76,7 +77,7 @@ namespace DX12RenderingBackendNS
 	bool recordBindCBV(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int startSlot, const DX12ConstantBuffer& ConstantBuffer, size_t offset);
 	bool recordBindRTForWrite(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, DX12TextureDataComponent* DXTDC);
 	bool recordBindRTForRead(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, DX12TextureDataComponent* DXTDC);
-	bool recordBindSRVDescTable(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int startSlot, const DX12TextureDataComponent* DXTDC);
+	bool recordBindSRVDescTable(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int startSlot, const DX12SRV& SRV);
 	bool recordBindSamplerDescTable(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int startSlot, DX12ShaderProgramComponent* DXSPC);
 	bool recordDrawCall(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, DX12MeshDataComponent* DXMDC);
 	bool recordCommandEnd(DX12RenderPassComponent* DXRPC, unsigned int frameIndex);

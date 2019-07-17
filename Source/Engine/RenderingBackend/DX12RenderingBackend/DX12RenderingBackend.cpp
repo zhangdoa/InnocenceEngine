@@ -360,22 +360,22 @@ bool DX12RenderingBackendNS::createSwapChainDXRPC()
 	// use device created swap chain textures
 	for (size_t i = 0; i < l_imageCount; i++)
 	{
-		auto l_result = g_DXRenderingBackendComponent->m_swapChain->GetBuffer((unsigned int)i, IID_PPV_ARGS(&l_DXRPC->m_DXTDCs[i]->m_texture));
+		auto l_result = g_DXRenderingBackendComponent->m_swapChain->GetBuffer((unsigned int)i, IID_PPV_ARGS(&l_DXRPC->m_renderTargets[i]->m_texture));
 		if (FAILED(l_result))
 		{
 			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: Can't get pointer of swap chain render target " + std::to_string(i) + "!");
 			m_objectStatus = ObjectStatus::Suspended;
 			return false;
 		}
-		l_DXRPC->m_DXTDCs[i]->m_DX12TextureDataDesc = l_DXRPC->m_DXTDCs[i]->m_texture->GetDesc();
+		l_DXRPC->m_renderTargets[i]->m_DX12TextureDataDesc = l_DXRPC->m_renderTargets[i]->m_texture->GetDesc();
 	}
 
-	l_DXRPC->m_depthStencilDXTDC = addDX12TextureDataComponent();
-	l_DXRPC->m_depthStencilDXTDC->m_textureDataDesc = DX12RenderingBackendComponent::get().m_deferredRenderPassDesc.RTDesc;
-	l_DXRPC->m_depthStencilDXTDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_STENCIL_ATTACHMENT;
-	l_DXRPC->m_depthStencilDXTDC->m_textureData = { nullptr };
+	l_DXRPC->m_depthStencilTarget = addDX12TextureDataComponent();
+	l_DXRPC->m_depthStencilTarget->m_textureDataDesc = DX12RenderingBackendComponent::get().m_deferredRenderPassDesc.RTDesc;
+	l_DXRPC->m_depthStencilTarget->m_textureDataDesc.usageType = TextureUsageType::DEPTH_STENCIL_ATTACHMENT;
+	l_DXRPC->m_depthStencilTarget->m_textureData = { nullptr };
 
-	initializeDX12TextureDataComponent(l_DXRPC->m_depthStencilDXTDC);
+	initializeDX12TextureDataComponent(l_DXRPC->m_depthStencilTarget);
 
 	l_result &= createRTVDescriptorHeap(l_DXRPC);
 	l_result &= createRTV(l_DXRPC);
@@ -575,24 +575,24 @@ bool DX12RenderingBackendNS::update()
 	recordCommandBegin(l_swapChainDXRPC, l_frameIndex);
 
 	l_swapChainDXRPC->m_commandLists[l_frameIndex]->ResourceBarrier(1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(l_swapChainDXRPC->m_DXTDCs[l_frameIndex]->m_texture, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+		&CD3DX12_RESOURCE_BARRIER::Transition(l_swapChainDXRPC->m_renderTargets[l_frameIndex]->m_texture, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
 	recordActivateRenderPass(l_swapChainDXRPC, l_frameIndex);
 
 	ID3D12DescriptorHeap* l_heaps[] = { DX12RenderingBackendComponent::get().m_CSUHeap, DX12RenderingBackendComponent::get().m_samplerHeap };
 	recordBindDescHeaps(l_swapChainDXRPC, l_frameIndex, 2, l_heaps);
 
-	recordBindRTForRead(l_swapChainDXRPC, l_frameIndex, DX12LightPass::getDX12RPC()->m_DXTDCs[0]);
+	recordBindRTForRead(l_swapChainDXRPC, l_frameIndex, DX12LightPass::getDX12RPC()->m_renderTargets[0]);
 
-	recordBindSRVDescTable(l_swapChainDXRPC, l_frameIndex, 0, DX12LightPass::getDX12RPC()->m_DXTDCs[0]);
+	recordBindSRVDescTable(l_swapChainDXRPC, l_frameIndex, 0, DX12LightPass::getDX12RPC()->m_SRVs[0]);
 	recordBindSamplerDescTable(l_swapChainDXRPC, l_frameIndex, 1, DX12RenderingBackendComponent::get().m_swapChainDXSPC);
 
 	recordDrawCall(l_swapChainDXRPC, l_frameIndex, l_MDC);
 
-	recordBindRTForWrite(l_swapChainDXRPC, l_frameIndex, DX12LightPass::getDX12RPC()->m_DXTDCs[0]);
+	recordBindRTForWrite(l_swapChainDXRPC, l_frameIndex, DX12LightPass::getDX12RPC()->m_renderTargets[0]);
 
 	l_swapChainDXRPC->m_commandLists[l_frameIndex]->ResourceBarrier(1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(l_swapChainDXRPC->m_DXTDCs[l_frameIndex]->m_texture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+		&CD3DX12_RESOURCE_BARRIER::Transition(l_swapChainDXRPC->m_renderTargets[l_frameIndex]->m_texture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 
 	recordCommandEnd(l_swapChainDXRPC, l_frameIndex);
 
