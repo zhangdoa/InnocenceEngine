@@ -82,11 +82,13 @@ namespace DX12RenderingBackendNS
 	DX12MeshDataComponent* m_unitSphereMDC;
 	DX12MeshDataComponent* m_terrainMDC;
 
-	DX12TextureDataComponent* m_basicNormalTDC;
-	DX12TextureDataComponent* m_basicAlbedoTDC;
-	DX12TextureDataComponent* m_basicMetallicTDC;
-	DX12TextureDataComponent* m_basicRoughnessTDC;
-	DX12TextureDataComponent* m_basicAOTDC;
+	DX12TextureDataComponent* m_basicNormalTexture;
+	DX12TextureDataComponent* m_basicAlbedoTexture;
+	DX12TextureDataComponent* m_basicMetallicTexture;
+	DX12TextureDataComponent* m_basicRoughnessTexture;
+	DX12TextureDataComponent* m_basicAOTexture;
+
+	DX12MaterialDataComponent* m_basicMaterial;
 }
 
 bool DX12RenderingBackendNS::createDebugCallback()
@@ -494,7 +496,7 @@ bool DX12RenderingBackendNS::initialize()
 		auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
 		m_MeshDataComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(DX12MeshDataComponent), l_renderingCapability.maxMeshes);
-		m_MaterialDataComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), l_renderingCapability.maxMaterials);
+		m_MaterialDataComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(DX12MaterialDataComponent), l_renderingCapability.maxMaterials);
 		m_TextureDataComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(DX12TextureDataComponent), l_renderingCapability.maxTextures);
 
 		bool l_result = true;
@@ -739,11 +741,11 @@ void DX12RenderingBackendNS::loadDefaultAssets()
 	auto l_iconTemplate_PointLight = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_PointLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 	auto l_iconTemplate_SphereLight = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_SphereLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 
-	m_basicNormalTDC = reinterpret_cast<DX12TextureDataComponent*>(l_basicNormalTDC);
-	m_basicAlbedoTDC = reinterpret_cast<DX12TextureDataComponent*>(l_basicAlbedoTDC);
-	m_basicMetallicTDC = reinterpret_cast<DX12TextureDataComponent*>(l_basicMetallicTDC);
-	m_basicRoughnessTDC = reinterpret_cast<DX12TextureDataComponent*>(l_basicRoughnessTDC);
-	m_basicAOTDC = reinterpret_cast<DX12TextureDataComponent*>(l_basicAOTDC);
+	m_basicNormalTexture = reinterpret_cast<DX12TextureDataComponent*>(l_basicNormalTDC);
+	m_basicAlbedoTexture = reinterpret_cast<DX12TextureDataComponent*>(l_basicAlbedoTDC);
+	m_basicMetallicTexture = reinterpret_cast<DX12TextureDataComponent*>(l_basicMetallicTDC);
+	m_basicRoughnessTexture = reinterpret_cast<DX12TextureDataComponent*>(l_basicRoughnessTDC);
+	m_basicAOTexture = reinterpret_cast<DX12TextureDataComponent*>(l_basicAOTDC);
 
 	m_iconTemplate_OBJ = reinterpret_cast<DX12TextureDataComponent*>(l_iconTemplate_OBJ);
 	m_iconTemplate_PNG = reinterpret_cast<DX12TextureDataComponent*>(l_iconTemplate_PNG);
@@ -788,17 +790,24 @@ void DX12RenderingBackendNS::loadDefaultAssets()
 	m_terrainMDC->m_objectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMDC);
 
+	m_basicMaterial = addDX12MaterialDataComponent();
+	m_basicMaterial->m_normalTexture = m_basicNormalTexture;
+	m_basicMaterial->m_albedoTexture = m_basicAlbedoTexture;
+	m_basicMaterial->m_metallicTexture = m_basicMetallicTexture;
+	m_basicMaterial->m_roughnessTexture = m_basicRoughnessTexture;
+	m_basicMaterial->m_aoTexture = m_basicAOTexture;
+
 	initializeDX12MeshDataComponent(m_unitLineMDC);
 	initializeDX12MeshDataComponent(m_unitQuadMDC);
 	initializeDX12MeshDataComponent(m_unitCubeMDC);
 	initializeDX12MeshDataComponent(m_unitSphereMDC);
 	initializeDX12MeshDataComponent(m_terrainMDC);
 
-	initializeDX12TextureDataComponent(m_basicNormalTDC);
-	initializeDX12TextureDataComponent(m_basicAlbedoTDC);
-	initializeDX12TextureDataComponent(m_basicMetallicTDC);
-	initializeDX12TextureDataComponent(m_basicRoughnessTDC);
-	initializeDX12TextureDataComponent(m_basicAOTDC);
+	initializeDX12TextureDataComponent(m_basicNormalTexture);
+	initializeDX12TextureDataComponent(m_basicAlbedoTexture);
+	initializeDX12TextureDataComponent(m_basicMetallicTexture);
+	initializeDX12TextureDataComponent(m_basicRoughnessTexture);
+	initializeDX12TextureDataComponent(m_basicAOTexture);
 
 	initializeDX12TextureDataComponent(m_iconTemplate_OBJ);
 	initializeDX12TextureDataComponent(m_iconTemplate_PNG);
@@ -808,6 +817,8 @@ void DX12RenderingBackendNS::loadDefaultAssets()
 	initializeDX12TextureDataComponent(m_iconTemplate_DirectionalLight);
 	initializeDX12TextureDataComponent(m_iconTemplate_PointLight);
 	initializeDX12TextureDataComponent(m_iconTemplate_SphereLight);
+
+	initializeDX12MaterialDataComponent(m_basicMaterial);
 }
 
 bool DX12RenderingBackendNS::generateGPUBuffers()
@@ -836,12 +847,12 @@ DX12MeshDataComponent* DX12RenderingBackendNS::addDX12MeshDataComponent()
 	return l_MDC;
 }
 
-MaterialDataComponent* DX12RenderingBackendNS::addMaterialDataComponent()
+DX12MaterialDataComponent* DX12RenderingBackendNS::addDX12MaterialDataComponent()
 {
 	static std::atomic<unsigned int> materialCount = 0;
 	materialCount++;
-	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MaterialDataComponent));
-	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
+	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(DX12MaterialDataComponent));
+	auto l_MDC = new(l_rawPtr)DX12MaterialDataComponent();
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Material_" + std::to_string(materialCount) + "/").c_str());
 	l_MDC->m_parentEntity = l_parentEntity;
 	return l_MDC;
@@ -887,15 +898,15 @@ DX12TextureDataComponent * DX12RenderingBackendNS::getDX12TextureDataComponent(T
 	case TextureUsageType::INVISIBLE:
 		return nullptr; break;
 	case TextureUsageType::NORMAL:
-		return DX12RenderingBackendNS::m_basicNormalTDC; break;
+		return DX12RenderingBackendNS::m_basicNormalTexture; break;
 	case TextureUsageType::ALBEDO:
-		return DX12RenderingBackendNS::m_basicAlbedoTDC; break;
+		return DX12RenderingBackendNS::m_basicAlbedoTexture; break;
 	case TextureUsageType::METALLIC:
-		return DX12RenderingBackendNS::m_basicMetallicTDC; break;
+		return DX12RenderingBackendNS::m_basicMetallicTexture; break;
 	case TextureUsageType::ROUGHNESS:
-		return DX12RenderingBackendNS::m_basicRoughnessTDC; break;
+		return DX12RenderingBackendNS::m_basicRoughnessTexture; break;
 	case TextureUsageType::AMBIENT_OCCLUSION:
-		return DX12RenderingBackendNS::m_basicAOTDC; break;
+		return DX12RenderingBackendNS::m_basicAOTexture; break;
 	case TextureUsageType::COLOR_ATTACHMENT:
 		return nullptr; break;
 	default:
@@ -933,6 +944,11 @@ DX12TextureDataComponent * DX12RenderingBackendNS::getDX12TextureDataComponent(W
 	default:
 		return nullptr; break;
 	}
+}
+
+DX12MaterialDataComponent * DX12RenderingBackendNS::getDefaultMaterialDataComponent()
+{
+	return DX12RenderingBackendNS::m_basicMaterial;
 }
 
 bool DX12RenderingBackendNS::resize()
@@ -977,7 +993,7 @@ MeshDataComponent * DX12RenderingBackend::addMeshDataComponent()
 
 MaterialDataComponent * DX12RenderingBackend::addMaterialDataComponent()
 {
-	return DX12RenderingBackendNS::addMaterialDataComponent();
+	return DX12RenderingBackendNS::addDX12MaterialDataComponent();
 }
 
 TextureDataComponent * DX12RenderingBackend::addTextureDataComponent()

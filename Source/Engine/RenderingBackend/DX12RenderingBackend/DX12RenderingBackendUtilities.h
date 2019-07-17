@@ -1,11 +1,9 @@
 #pragma once
 #include "../../Common/InnoType.h"
 
-#include "../../Component/MeshDataComponent.h"
-#include "../../Component/MaterialDataComponent.h"
-#include "../../Component/TextureDataComponent.h"
 #include "../../Component/DX12MeshDataComponent.h"
 #include "../../Component/DX12TextureDataComponent.h"
+#include "../../Component/DX12MaterialDataComponent.h"
 #include "../../Component/DX12ShaderProgramComponent.h"
 #include "../../Component/DX12RenderPassComponent.h"
 
@@ -23,13 +21,14 @@ namespace DX12RenderingBackendNS
 	bool generateGPUBuffers();
 
 	DX12MeshDataComponent* addDX12MeshDataComponent();
-	MaterialDataComponent* addMaterialDataComponent();
+	DX12MaterialDataComponent* addDX12MaterialDataComponent();
 	DX12TextureDataComponent* addDX12TextureDataComponent();
 
 	DX12MeshDataComponent* getDX12MeshDataComponent(MeshShapeType MeshShapeType);
 	DX12TextureDataComponent* getDX12TextureDataComponent(TextureUsageType TextureUsageType);
 	DX12TextureDataComponent* getDX12TextureDataComponent(FileExplorerIconType iconType);
 	DX12TextureDataComponent* getDX12TextureDataComponent(WorldEditorIconType iconType);
+	DX12MaterialDataComponent* getDefaultMaterialDataComponent();
 
 	DX12RenderPassComponent* addDX12RenderPassComponent(const EntityID& parentEntity, const char* name);
 	bool initializeDX12RenderPassComponent(DX12RenderPassComponent* DXRPC, DX12ShaderProgramComponent* DXSPC);
@@ -52,6 +51,7 @@ namespace DX12RenderingBackendNS
 	bool initializeDX12MeshDataComponent(DX12MeshDataComponent* rhs);
 	bool initializeDX12TextureDataComponent(DX12TextureDataComponent* rhs);
 	DX12SRV createSRV(const DX12TextureDataComponent& rhs);
+	bool initializeDX12MaterialDataComponent(DX12MaterialDataComponent* rhs);
 
 	bool destroyAllGraphicPrimitiveComponents();
 

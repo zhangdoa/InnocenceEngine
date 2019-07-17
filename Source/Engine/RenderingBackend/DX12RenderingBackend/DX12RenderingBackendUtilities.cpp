@@ -16,6 +16,7 @@ namespace DX12RenderingBackendNS
 
 	void OutputShaderErrorMessage(ID3DBlob * errorMessage, HWND hwnd, const std::string & shaderFilename);
 	ID3DBlob* loadShaderBuffer(ShaderType shaderType, const std::wstring & shaderFilePath);
+
 	bool initializeVertexShader(DX12ShaderProgramComponent* rhs, const std::wstring& VSShaderPath);
 	bool initializePixelShader(DX12ShaderProgramComponent* rhs, const std::wstring& PSShaderPath);
 	bool createSampler(DX12ShaderProgramComponent* rhs);
@@ -29,16 +30,16 @@ namespace DX12RenderingBackendNS
 
 	bool submitGPUData(DX12TextureDataComponent* rhs);
 
-	std::unordered_map<InnoEntity*, DX12MeshDataComponent*> m_initializedDXMDC;
-	std::unordered_map<InnoEntity*, DX12TextureDataComponent*> m_initializedDXTDC;
+	bool submitGPUData(DX12MaterialDataComponent * rhs);
 
-	std::unordered_map<InnoEntity*, DX12MeshDataComponent*> m_meshMap;
-	std::unordered_map<InnoEntity*, DX12TextureDataComponent*> m_textureMap;
+	std::unordered_map<InnoEntity*, DX12MeshDataComponent*> m_initializedDX12Meshes;
+	std::unordered_map<InnoEntity*, DX12TextureDataComponent*> m_initializedDX12Textures;
+	std::unordered_map<InnoEntity*, DX12MaterialDataComponent*> m_initializedDX12Materials;
 
 	void* m_DX12RenderPassComponentPool;
 	void* m_DX12ShaderProgramComponentPool;
 
-	const std::wstring m_shaderRelativePath = L"//res//shaders//";
+	const std::wstring m_shaderRelativePath = L"//Res//Shaders//";
 }
 
 bool DX12RenderingBackendNS::initializeComponentPool()
@@ -914,14 +915,28 @@ DX12SRV DX12RenderingBackendNS::createSRV(const DX12TextureDataComponent & rhs)
 	return l_result;
 }
 
+bool DX12RenderingBackendNS::initializeDX12MaterialDataComponent(DX12MaterialDataComponent * rhs)
+{
+	if (rhs->m_objectStatus == ObjectStatus::Activated)
+	{
+		return true;
+	}
+	else
+	{
+		submitGPUData(rhs);
+
+		return true;
+	}
+}
+
 bool DX12RenderingBackendNS::destroyAllGraphicPrimitiveComponents()
 {
-	for (auto i : m_initializedDXMDC)
+	for (auto i : m_initializedDX12Meshes)
 	{
 		i.second->m_indexBuffer->Release();
 		i.second->m_vertexBuffer->Release();
 	}
-	for (auto i : m_initializedDXTDC)
+	for (auto i : m_initializedDX12Textures)
 	{
 		i.second->m_texture->Release();
 	}
@@ -1003,7 +1018,7 @@ bool DX12RenderingBackendNS::submitGPUData(DX12MeshDataComponent * rhs)
 
 	rhs->m_objectStatus = ObjectStatus::Activated;
 
-	m_initializedDXMDC.emplace(rhs->m_parentEntity, rhs);
+	m_initializedDX12Meshes.emplace(rhs->m_parentEntity, rhs);
 
 	return true;
 }
@@ -1303,7 +1318,29 @@ bool DX12RenderingBackendNS::submitGPUData(DX12TextureDataComponent * rhs)
 
 	rhs->m_objectStatus = ObjectStatus::Activated;
 
-	m_initializedDXTDC.emplace(rhs->m_parentEntity, rhs);
+	m_initializedDX12Textures.emplace(rhs->m_parentEntity, rhs);
+
+	return true;
+}
+
+bool DX12RenderingBackendNS::submitGPUData(DX12MaterialDataComponent * rhs)
+{
+	initializeDX12TextureDataComponent(reinterpret_cast<DX12TextureDataComponent*>(rhs->m_normalTexture));
+	initializeDX12TextureDataComponent(reinterpret_cast<DX12TextureDataComponent*>(rhs->m_albedoTexture));
+	initializeDX12TextureDataComponent(reinterpret_cast<DX12TextureDataComponent*>(rhs->m_metallicTexture));
+	initializeDX12TextureDataComponent(reinterpret_cast<DX12TextureDataComponent*>(rhs->m_roughnessTexture));
+	initializeDX12TextureDataComponent(reinterpret_cast<DX12TextureDataComponent*>(rhs->m_aoTexture));
+
+	rhs->m_SRVs.resize(5);
+	rhs->m_SRVs[0] = createSRV(*reinterpret_cast<DX12TextureDataComponent*>(rhs->m_normalTexture));
+	rhs->m_SRVs[1] = createSRV(*reinterpret_cast<DX12TextureDataComponent*>(rhs->m_albedoTexture));
+	rhs->m_SRVs[2] = createSRV(*reinterpret_cast<DX12TextureDataComponent*>(rhs->m_metallicTexture));
+	rhs->m_SRVs[3] = createSRV(*reinterpret_cast<DX12TextureDataComponent*>(rhs->m_roughnessTexture));
+	rhs->m_SRVs[4] = createSRV(*reinterpret_cast<DX12TextureDataComponent*>(rhs->m_aoTexture));
+
+	rhs->m_objectStatus = ObjectStatus::Activated;
+
+	m_initializedDX12Materials.emplace(rhs->m_parentEntity, rhs);
 
 	return true;
 }

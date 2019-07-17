@@ -127,6 +127,8 @@ bool DX12OpaquePass::initializeShaders()
 
 bool DX12OpaquePass::update()
 {
+	auto l_defaultMaterial = getDefaultMaterialDataComponent();
+
 	recordCommandBegin(m_DXRPC, 0);
 
 	recordActivateRenderPass(m_DXRPC, 0);
@@ -149,6 +151,7 @@ bool DX12OpaquePass::update()
 		{
 			recordBindCBV(m_DXRPC, 0, 1, DX12RenderingBackendComponent::get().m_meshConstantBuffer, l_offset);
 			recordBindCBV(m_DXRPC, 0, 2, DX12RenderingBackendComponent::get().m_materialConstantBuffer, l_offset);
+			recordBindSRVDescTable(m_DXRPC, 0, 3, l_defaultMaterial->m_SRVs[0]);
 
 			recordDrawCall(m_DXRPC, 0, reinterpret_cast<DX12MeshDataComponent*>(l_opaquePassGPUData.mesh));
 		}
