@@ -49,7 +49,7 @@ INNO_PRIVATE_SCOPE VKRenderingBackendNS
 	VKTextureDataComponent* getVKTextureDataComponent(TextureUsageType TextureUsageType);
 	VKTextureDataComponent* getVKTextureDataComponent(FileExplorerIconType iconType);
 	VKTextureDataComponent* getVKTextureDataComponent(WorldEditorIconType iconType);
-	MaterialDataComponent* getMaterialDataComponent();
+	VKMaterialDataComponent* getDefaultMaterialDataComponent();
 
 	bool checkValidationLayerSupport();
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device);

@@ -251,7 +251,7 @@ bool VKOpaquePass::update()
 {
 	waitForFence(m_VKRPC);
 
-	auto l_basicMaterial = reinterpret_cast<VKMaterialDataComponent*>(getMaterialDataComponent());
+	auto l_defaultMaterial = getDefaultMaterialDataComponent();
 
 	unsigned int l_sizeofMeshGPUData = sizeof(MeshGPUData);
 	unsigned int l_sizeofMaterialGPUData = sizeof(MaterialGPUData);
@@ -281,7 +281,7 @@ bool VKOpaquePass::update()
 				m_VKRPC->m_pipelineLayout,
 				1,
 				1,
-				&l_basicMaterial->m_descriptorSet, 0, nullptr);
+				&l_defaultMaterial->m_descriptorSet, 0, nullptr);
 
 			recordDrawCall(m_VKRPC, 0, reinterpret_cast<VKMeshDataComponent*>(l_opaquePassGPUData.mesh));
 

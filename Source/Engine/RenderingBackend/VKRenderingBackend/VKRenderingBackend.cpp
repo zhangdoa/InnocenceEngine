@@ -1113,7 +1113,7 @@ VKTextureDataComponent * VKRenderingBackendNS::getVKTextureDataComponent(WorldEd
 	}
 }
 
-MaterialDataComponent * VKRenderingBackendNS::getMaterialDataComponent()
+VKMaterialDataComponent * VKRenderingBackendNS::getDefaultMaterialDataComponent()
 {
 	return VKRenderingBackendNS::m_basicMaterial;
 }
