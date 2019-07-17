@@ -263,27 +263,42 @@ bool VKOpaquePass::update()
 
 		for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
 		{
-			auto l_meshUBOOffset = l_sizeofMeshGPUData * offsetCount;
-			auto l_materialUBOOffset = l_sizeofMaterialGPUData * offsetCount;
-			unsigned int l_dynamicOffsets[] = { l_meshUBOOffset, l_materialUBOOffset };
-
 			auto l_opaquePassGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassGPUData()[i];
 
-			vkCmdBindDescriptorSets(m_VKRPC->m_commandBuffers[0],
-				VK_PIPELINE_BIND_POINT_GRAPHICS,
-				m_VKRPC->m_pipelineLayout,
-				0,
-				1,
-				&m_VKRPC->descriptorSets[0], 2, l_dynamicOffsets);
+			if (l_opaquePassGPUData.mesh->m_objectStatus == ObjectStatus::Activated)
+			{
+				auto l_meshUBOOffset = l_sizeofMeshGPUData * offsetCount;
+				auto l_materialUBOOffset = l_sizeofMaterialGPUData * offsetCount;
+				unsigned int l_dynamicOffsets[] = { l_meshUBOOffset, l_materialUBOOffset };
 
-			vkCmdBindDescriptorSets(m_VKRPC->m_commandBuffers[0],
-				VK_PIPELINE_BIND_POINT_GRAPHICS,
-				m_VKRPC->m_pipelineLayout,
-				1,
-				1,
-				&l_defaultMaterial->m_descriptorSet, 0, nullptr);
+				vkCmdBindDescriptorSets(m_VKRPC->m_commandBuffers[0],
+					VK_PIPELINE_BIND_POINT_GRAPHICS,
+					m_VKRPC->m_pipelineLayout,
+					0,
+					1,
+					&m_VKRPC->descriptorSets[0], 2, l_dynamicOffsets);
 
-			recordDrawCall(m_VKRPC, 0, reinterpret_cast<VKMeshDataComponent*>(l_opaquePassGPUData.mesh));
+				if (l_opaquePassGPUData.material->m_objectStatus == ObjectStatus::Activated)
+				{
+					vkCmdBindDescriptorSets(m_VKRPC->m_commandBuffers[0],
+						VK_PIPELINE_BIND_POINT_GRAPHICS,
+						m_VKRPC->m_pipelineLayout,
+						1,
+						1,
+						&reinterpret_cast<VKMaterialDataComponent*>(l_opaquePassGPUData.material)->m_descriptorSet, 0, nullptr);
+				}
+				else
+				{
+					vkCmdBindDescriptorSets(m_VKRPC->m_commandBuffers[0],
+						VK_PIPELINE_BIND_POINT_GRAPHICS,
+						m_VKRPC->m_pipelineLayout,
+						1,
+						1,
+						&l_defaultMaterial->m_descriptorSet, 0, nullptr);
+				}
+
+				recordDrawCall(m_VKRPC, 0, reinterpret_cast<VKMeshDataComponent*>(l_opaquePassGPUData.mesh));
+			}
 
 			offsetCount++;
 		}
