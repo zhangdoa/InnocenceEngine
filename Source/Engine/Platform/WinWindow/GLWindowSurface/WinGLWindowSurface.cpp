@@ -165,17 +165,21 @@ bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 	DescribePixelFormat(WinWindowSystemComponent::get().m_HDC, pixelFormatID, sizeof(PFD), &PFD);
 	SetPixelFormat(WinWindowSystemComponent::get().m_HDC, pixelFormatID, &PFD);
 
-	const int major_min = 4, minor_min = 5;
-	const int contextAttribs[] =
+	const int major_min = 4, minor_min = 6;
+	std::vector<int> contextAttribs =
 	{
 		WGL_CONTEXT_MAJOR_VERSION_ARB, major_min,
 		WGL_CONTEXT_MINOR_VERSION_ARB, minor_min,
 		WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
-		WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_DEBUG_BIT_ARB,
-		0
+		WGL_CONTEXT_FLAGS_ARB
 	};
 
-	m_HGLRC = wglCreateContextAttribsARB(WinWindowSystemComponent::get().m_HDC, 0, contextAttribs);
+#ifdef _DEBUG
+	contextAttribs.emplace_back(WGL_CONTEXT_DEBUG_BIT_ARB);
+#endif // _DEBUG
+	contextAttribs.emplace_back(0);
+
+	m_HGLRC = wglCreateContextAttribsARB(WinWindowSystemComponent::get().m_HDC, 0, &contextAttribs[0]);
 
 	if (m_HGLRC == NULL)
 	{

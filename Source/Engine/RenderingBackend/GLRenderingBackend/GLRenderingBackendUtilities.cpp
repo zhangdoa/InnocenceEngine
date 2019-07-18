@@ -393,7 +393,7 @@ void GLRenderingBackendNS::addShader(GLuint& shaderProgram, GLuint& shaderID, GL
 		}
 
 		// Apply the SPIR-V to the shader object.
-		glShaderBinary(1, &shaderID, GL_SPIR_V_BINARY, l_shaderCodeContent.data(), (GLsizei)l_shaderCodeContent.size());
+		glShaderBinary(1, &shaderID, GL_SHADER_BINARY_FORMAT_SPIR_V, l_shaderCodeContent.data(), (GLsizei)l_shaderCodeContent.size());
 
 		// Specialize the shader.
 		glSpecializeShader(shaderID, "main", 0, 0, 0);
@@ -410,7 +410,7 @@ void GLRenderingBackendNS::addShader(GLuint& shaderProgram, GLuint& shaderID, GL
 
 #ifdef _DEBUG
 		std::ofstream m_debugExportFile;
-		m_debugExportFile.open(g_pModuleManager->getFileSystem()->getWorkingDirectory() + "Res//Intermediate//Shaders//GL//" + std::string(shaderFilePath.c_str()) + ".gen");
+		m_debugExportFile.open(g_pModuleManager->getFileSystem()->getWorkingDirectory() + "Res//Intermediate//Shaders//GL//" + std::string(shaderFilePath.c_str()));
 		m_debugExportFile << l_shaderCodeContent;
 		m_debugExportFile.close();
 #endif // _DEBUG

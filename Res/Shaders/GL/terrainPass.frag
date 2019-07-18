@@ -15,12 +15,6 @@ layout(location = 1) out vec4 uni_terrainPassRT1;
 layout(location = 2) out vec4 uni_terrainPassRT2;
 layout(location = 3) out vec4 uni_terrainPassRT3;
 
-struct dirLight {
-	vec4 direction;
-	vec4 luminance;
-	mat4 r;
-};
-
 layout(location = 2, binding = 2) uniform sampler2D uni_albedoTexture;
 layout(location = 3, binding = 3) uniform sampler2D uni_metallicTexture;
 layout(location = 4, binding = 4) uniform sampler2D uni_roughnessTexture;
