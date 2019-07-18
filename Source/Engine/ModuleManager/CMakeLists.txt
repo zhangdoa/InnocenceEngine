@@ -23,7 +23,7 @@ target_link_libraries(InnoEngine InnoRayTracer)
 if (INNO_PLATFORM_WIN)
 target_link_libraries(InnoEngine InnoDX11RenderingBackend)
 target_link_libraries(InnoEngine InnoDX12RenderingBackend)
-target_link_libraries(InnoEngine WinWindow)
+target_link_libraries(InnoEngine InnoWinWindowSystem)
 endif (INNO_PLATFORM_WIN)
 
 if (VULKAN)

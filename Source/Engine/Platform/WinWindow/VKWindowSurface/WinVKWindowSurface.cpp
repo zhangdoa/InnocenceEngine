@@ -1,12 +1,12 @@
-#include "WinDXWindowSystem.h"
+#include "WinVKWindowSurface.h"
 #include "../../../Component/WinWindowSystemComponent.h"
-#include "../../../Component/DX11RenderingBackendComponent.h"
+#include "../../../Component/VKRenderingBackendComponent.h"
 
 #include "../../../ModuleManager/IModuleManager.h"
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE WinDXWindowSystemNS
+INNO_PRIVATE_SCOPE WinVKWindowSurfaceNS
 {
 	bool setup(void* hInstance, void* hwnd, void* WindowProc);
 	bool initialize();
@@ -17,7 +17,7 @@ INNO_PRIVATE_SCOPE WinDXWindowSystemNS
 	InitConfig m_initConfig;
 }
 
-bool WinDXWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
+bool WinVKWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 {
 	m_initConfig = g_pModuleManager->getInitConfig();
 
@@ -57,6 +57,27 @@ bool WinDXWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 
 	WinWindowSystemComponent::get().m_HDC = GetDC(WinWindowSystemComponent::get().m_hwnd);
 
+	m_objectStatus = ObjectStatus::Activated;
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinVKWindowSurface setup finished.");
+
+	return true;
+}
+
+bool WinVKWindowSurfaceNS::initialize()
+{
+	VkWin32SurfaceCreateInfoKHR createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+	createInfo.pNext = NULL;
+	createInfo.hinstance = WinWindowSystemComponent::get().m_hInstance;
+	createInfo.hwnd = WinWindowSystemComponent::get().m_hwnd;
+
+	if (vkCreateWin32SurfaceKHR(VKRenderingBackendComponent::get().m_instance, &createInfo, NULL, &VKRenderingBackendComponent::get().m_windowSurface) != VK_SUCCESS)
+	{
+		m_objectStatus = ObjectStatus::Created;
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "WinVKWindowSurface: Failed to create window surface!");
+		return false;
+	}
+
 	if (m_initConfig.engineMode == EngineMode::GAME)
 	{
 		// Bring the window up on the screen and set it as main focus.
@@ -65,75 +86,49 @@ bool WinDXWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 		SetFocus(WinWindowSystemComponent::get().m_hwnd);
 	}
 
-	m_objectStatus = ObjectStatus::Activated;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinDXWindowSystem setup finished.");
-
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinVKWindowSurface has been initialized.");
 	return true;
 }
 
-bool WinDXWindowSystemNS::initialize()
-{
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinDXWindowSystem has been initialized.");
-	return true;
-}
-
-bool WinDXWindowSystemNS::update()
+bool WinVKWindowSurfaceNS::update()
 {
 	return true;
 }
 
-bool WinDXWindowSystemNS::terminate()
+bool WinVKWindowSurfaceNS::terminate()
 {
 	m_objectStatus = ObjectStatus::Terminated;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinGLWindowSystemNS has been terminated.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinVKWindowSurfaceNS has been terminated.");
 
 	return true;
 }
 
-bool WinDXWindowSystem::setup(void* hInstance, void* hwnd, void* WindowProc)
+bool WinVKWindowSurface::setup(void* hInstance, void* hwnd, void* WindowProc)
 {
-	return WinDXWindowSystemNS::setup(hInstance, hwnd, WindowProc);
+	return WinVKWindowSurfaceNS::setup(hInstance, hwnd, WindowProc);
 }
 
-bool WinDXWindowSystem::initialize()
+bool WinVKWindowSurface::initialize()
 {
-	return WinDXWindowSystemNS::initialize();
+	return WinVKWindowSurfaceNS::initialize();
 }
 
-bool WinDXWindowSystem::update()
+bool WinVKWindowSurface::update()
 {
-	return WinDXWindowSystemNS::update();
+	return WinVKWindowSurfaceNS::update();
 }
 
-bool WinDXWindowSystem::terminate()
+bool WinVKWindowSurface::terminate()
 {
-	return WinDXWindowSystemNS::terminate();
+	return WinVKWindowSurfaceNS::terminate();
 }
 
-ObjectStatus WinDXWindowSystem::getStatus()
+ObjectStatus WinVKWindowSurface::getStatus()
 {
-	return WinDXWindowSystemNS::m_objectStatus;
+	return WinVKWindowSurfaceNS::m_objectStatus;
 }
 
-void WinDXWindowSystem::swapBuffer()
+bool WinVKWindowSurface::swapBuffer()
 {
-	if (WinDXWindowSystemNS::m_initConfig.renderingBackend == RenderingBackend::DX11)
-	{
-		auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
-
-		// Present the back buffer to the screen since rendering is complete.
-		if (l_renderingConfig.VSync)
-		{
-			// Lock to screen refresh rate.
-			DX11RenderingBackendComponent::get().m_swapChain->Present(1, 0);
-		}
-		else
-		{
-			// Present as fast as possible.
-			DX11RenderingBackendComponent::get().m_swapChain->Present(0, 0);
-		}
-	}
-	else if (WinDXWindowSystemNS::m_initConfig.renderingBackend == RenderingBackend::DX12)
-	{
-	}
+	return true;
 }

@@ -15,6 +15,7 @@ public:
 	bool setup();
 	bool initialize();
 	bool update();
+	bool render();
 	bool terminate();
 
 private:

@@ -683,6 +683,11 @@ bool VKRenderingBackendNS::destroyVKRenderPassComponent(VKRenderPassComponent* V
 
 	vkDestroyRenderPass(VKRenderingBackendComponent::get().m_device, VKRPC->m_renderPass, nullptr);
 
+	for (auto texture : VKRPC->m_VKTDCs)
+	{
+		vkDestroyImageView(VKRenderingBackendComponent::get().m_device, texture->m_imageView, nullptr);
+	}
+
 	return true;
 }
 
@@ -1217,22 +1222,6 @@ bool VKRenderingBackendNS::submitGPUData(VKMaterialDataComponent * rhs)
 	rhs->m_objectStatus = ObjectStatus::Activated;
 
 	m_initializedVKMaterials.emplace(rhs->m_parentEntity, rhs);
-
-	return true;
-}
-
-bool VKRenderingBackendNS::destroyAllGraphicPrimitiveComponents()
-{
-	for (auto i : m_initializedVKMeshes)
-	{
-		vkDestroyBuffer(VKRenderingBackendComponent::get().m_device, i.second->m_IBO, nullptr);
-		vkDestroyBuffer(VKRenderingBackendComponent::get().m_device, i.second->m_VBO, nullptr);
-	}
-	for (auto i : m_initializedVKTextures)
-	{
-		vkDestroyImage(VKRenderingBackendComponent::get().m_device, i.second->m_image, nullptr);
-		vkDestroyImageView(VKRenderingBackendComponent::get().m_device, i.second->m_imageView, nullptr);
-	}
 
 	return true;
 }

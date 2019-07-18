@@ -86,8 +86,6 @@ INNO_PRIVATE_SCOPE VKRenderingBackendNS
 	bool createImageView(VKTextureDataComponent* VKTDC);
 	bool initializeVKMaterialDataComponent(VKMaterialDataComponent* rhs);
 
-	bool destroyAllGraphicPrimitiveComponents();
-
 	bool recordCommand(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex, const std::function<void()>& commands);
 
 	bool recordDrawCall(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex, VKMeshDataComponent * VKMDC);

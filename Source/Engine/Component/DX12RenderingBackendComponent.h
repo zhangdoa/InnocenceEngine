@@ -41,9 +41,7 @@ public:
 
 	DXGI_SWAP_CHAIN_DESC1 m_swapChainDesc = {};
 	IDXGISwapChain4* m_swapChain;
-
-	DX12ShaderProgramComponent* m_swapChainDXSPC;
-	DX12RenderPassComponent* m_swapChainDXRPC;
+	std::vector<ID3D12Resource*> m_swapChainImages;
 
 	RenderPassDesc m_deferredRenderPassDesc = RenderPassDesc();
 

@@ -190,6 +190,14 @@ bool ImGuiWrapper::update()
 			//ImGuiWrapperNS::showFileExplorer();
 			ImGuiWrapperNS::showWorldExplorer();
 		}
+	}
+	return true;
+}
+
+bool ImGuiWrapper::render()
+{
+	if (ImGuiWrapperNS::m_isParity)
+	{
 		ImGui::Render();
 		ImGuiWrapperNS::m_wrapperImpl->render();
 	}

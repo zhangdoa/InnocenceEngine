@@ -10,6 +10,7 @@ public:
 	bool initialize() override;
 	bool update() override;
 	bool render() override;
+	bool present() override;
 	bool terminate() override;
 
 	ObjectStatus getStatus() override;

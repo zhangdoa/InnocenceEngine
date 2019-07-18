@@ -661,6 +661,12 @@ bool GLRenderingBackend::render()
 	return GLRenderingBackendNS::render();
 }
 
+bool GLRenderingBackend::present()
+{
+	g_pModuleManager->getWindowSystem()->getWindowSurface()->swapBuffer();
+	return true;
+}
+
 bool GLRenderingBackend::terminate()
 {
 	return GLRenderingBackendNS::terminate();

@@ -28,7 +28,6 @@ INNO_PRIVATE_SCOPE DX11RenderingBackendNS
 {
 	bool createPhysicalDevices();
 	bool createSwapChain();
-	bool createSwapChainDXRPC();
 
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	EntityID m_entityID;
@@ -175,7 +174,7 @@ bool DX11RenderingBackendNS::createPhysicalDevices()
 
 bool DX11RenderingBackendNS::createSwapChain()
 {
-	HRESULT result;
+	HRESULT l_result;
 	D3D_FEATURE_LEVEL featureLevel;
 
 	// Initialize the swap chain description.
@@ -244,9 +243,9 @@ bool DX11RenderingBackendNS::createSwapChain()
 	ID3D11DeviceContext* l_deviceContext;
 	IDXGISwapChain* l_swapChain;
 
-	result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, creationFlags, &featureLevel, 1,
+	l_result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, creationFlags, &featureLevel, 1,
 		D3D11_SDK_VERSION, &g_DXRenderingBackendComponent->m_swapChainDesc, &l_swapChain, &l_device, NULL, &l_deviceContext);
-	if (FAILED(result))
+	if (FAILED(l_result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingBackend: can't create the swap chain/D3D device/D3D device context!");
 		m_objectStatus = ObjectStatus::Suspended;
@@ -257,55 +256,15 @@ bool DX11RenderingBackendNS::createSwapChain()
 	g_DXRenderingBackendComponent->m_deviceContext = reinterpret_cast<ID3D11DeviceContext4*>(l_deviceContext);
 	g_DXRenderingBackendComponent->m_swapChain = reinterpret_cast<IDXGISwapChain4*>(l_swapChain);
 
-	return true;
-}
-
-bool DX11RenderingBackendNS::createSwapChainDXRPC()
-{
-	auto l_imageCount = 1;
-
-	auto l_DXRPC = addDX11RenderPassComponent(m_entityID, "SwapChainDXRPC\\");
-
-	l_DXRPC->m_renderPassDesc = DX11RenderingBackendComponent::get().m_deferredRenderPassDesc;
-	l_DXRPC->m_renderPassDesc.RTNumber = l_imageCount;
-	l_DXRPC->m_renderPassDesc.useMultipleFramebuffers = false;
-	l_DXRPC->m_renderPassDesc.useDepthAttachment = false;
-	l_DXRPC->m_renderPassDesc.useStencilAttachment = false;
-
-	// Setup the raster description.
-	l_DXRPC->m_rasterizerDesc.AntialiasedLineEnable = true;
-	l_DXRPC->m_rasterizerDesc.CullMode = D3D11_CULL_NONE;
-	l_DXRPC->m_rasterizerDesc.DepthBias = 0;
-	l_DXRPC->m_rasterizerDesc.DepthBiasClamp = 0.0f;
-	l_DXRPC->m_rasterizerDesc.DepthClipEnable = true;
-	l_DXRPC->m_rasterizerDesc.FillMode = D3D11_FILL_SOLID;
-	l_DXRPC->m_rasterizerDesc.FrontCounterClockwise = false;
-	l_DXRPC->m_rasterizerDesc.MultisampleEnable = true;
-	l_DXRPC->m_rasterizerDesc.ScissorEnable = false;
-	l_DXRPC->m_rasterizerDesc.SlopeScaledDepthBias = 0.0f;
-
-	// initialize manually
-	bool l_result = true;
-	l_result &= reserveRenderTargets(l_DXRPC);
-
-	HRESULT l_hResult;
-
+	g_DXRenderingBackendComponent->m_swapChainTextures.resize(1);
 	// Get the pointer to the back buffer.
-	l_hResult = g_DXRenderingBackendComponent->m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&l_DXRPC->m_DXTDCs[0]->m_texture);
-	if (FAILED(l_hResult))
+	l_result = g_DXRenderingBackendComponent->m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&g_DXRenderingBackendComponent->m_swapChainTextures[0]);
+	if (FAILED(l_result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingBackend: can't get back buffer pointer!");
 		m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
-
-	l_result &= createRTV(l_DXRPC);
-
-	l_result &= setupPipeline(l_DXRPC);
-
-	l_DXRPC->m_objectStatus = ObjectStatus::Activated;
-
-	DX11RenderingBackendComponent::get().m_swapChainDXRPC = l_DXRPC;
 
 	return true;
 }
@@ -356,7 +315,6 @@ bool DX11RenderingBackendNS::initialize()
 		bool l_result = true;
 
 		l_result = l_result && generateGPUBuffers();
-		l_result = l_result && createSwapChainDXRPC();
 
 		DX11OpaquePass::initialize();
 		DX11LightCullingPass::initialize();
@@ -737,6 +695,25 @@ bool DX11RenderingBackend::update()
 bool DX11RenderingBackend::render()
 {
 	return DX11RenderingBackendNS::render();
+}
+
+bool DX11RenderingBackend::present()
+{
+	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
+
+	// Present the back buffer to the screen since rendering is complete.
+	if (l_renderingConfig.VSync)
+	{
+		// Lock to screen refresh rate.
+		DX11RenderingBackendComponent::get().m_swapChain->Present(1, 0);
+	}
+	else
+	{
+		// Present as fast as possible.
+		DX11RenderingBackendComponent::get().m_swapChain->Present(0, 0);
+	}
+
+	return true;
 }
 
 bool DX11RenderingBackend::terminate()

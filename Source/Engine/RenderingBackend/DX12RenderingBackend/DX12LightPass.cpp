@@ -168,6 +168,7 @@ bool DX12LightPass::update()
 bool DX12LightPass::render()
 {
 	executeCommandList(m_DXRPC, 0);
+	waitFrame(DX12LightPass::getDX12RPC(), 0);
 
 	return true;
 }

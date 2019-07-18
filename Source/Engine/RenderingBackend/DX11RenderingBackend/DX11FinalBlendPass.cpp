@@ -16,6 +16,7 @@ INNO_PRIVATE_SCOPE DX11FinalBlendPass
 {
 	EntityID m_entityID;
 
+	DX11RenderPassComponent* m_DXRPC;
 	DX11ShaderProgramComponent* m_DXSPC;
 
 	ShaderFilePaths m_shaderFilePaths = { "DX11//finalBlendPassVertex.hlsl/" , "", "", "", "DX11//finalBlendPassPixel.hlsl/" };
@@ -26,7 +27,6 @@ INNO_PRIVATE_SCOPE DX11FinalBlendPass
 
 bool DX11FinalBlendPass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
 	m_DXSPC = addDX11ShaderProgramComponent(m_entityID);
 
 	// Create a texture sampler state description.
@@ -52,6 +52,41 @@ bool DX11FinalBlendPass::initialize()
 
 	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_T, ButtonStatus::PRESSED }, &f_toggleVisualizeLightCulling);
 
+	auto l_imageCount = 1;
+
+	m_DXRPC = addDX11RenderPassComponent(m_entityID, "FinalBlendPassDXRPC\\");
+
+	m_DXRPC->m_renderPassDesc = DX11RenderingBackendComponent::get().m_deferredRenderPassDesc;
+	m_DXRPC->m_renderPassDesc.RTNumber = l_imageCount;
+	m_DXRPC->m_renderPassDesc.useMultipleFramebuffers = false;
+	m_DXRPC->m_renderPassDesc.useDepthAttachment = false;
+	m_DXRPC->m_renderPassDesc.useStencilAttachment = false;
+
+	// Setup the raster description.
+	m_DXRPC->m_rasterizerDesc.AntialiasedLineEnable = true;
+	m_DXRPC->m_rasterizerDesc.CullMode = D3D11_CULL_NONE;
+	m_DXRPC->m_rasterizerDesc.DepthBias = 0;
+	m_DXRPC->m_rasterizerDesc.DepthBiasClamp = 0.0f;
+	m_DXRPC->m_rasterizerDesc.DepthClipEnable = true;
+	m_DXRPC->m_rasterizerDesc.FillMode = D3D11_FILL_SOLID;
+	m_DXRPC->m_rasterizerDesc.FrontCounterClockwise = false;
+	m_DXRPC->m_rasterizerDesc.MultisampleEnable = true;
+	m_DXRPC->m_rasterizerDesc.ScissorEnable = false;
+	m_DXRPC->m_rasterizerDesc.SlopeScaledDepthBias = 0.0f;
+
+	// initialize manually
+	bool l_result = true;
+	l_result &= reserveRenderTargets(m_DXRPC);
+
+	for (size_t i = 0; i < DX11RenderingBackendComponent::get().m_swapChainTextures.size(); i++)
+	{
+		m_DXRPC->m_DXTDCs[i]->m_texture = DX11RenderingBackendComponent::get().m_swapChainTextures[i];
+		DX11RenderingBackendComponent::get().m_swapChainTextures[i]->GetDesc(&m_DXRPC->m_DXTDCs[i]->m_DX11TextureDataDesc);
+	}
+
+	l_result &= createRTV(m_DXRPC);
+	l_result &= setupPipeline(m_DXRPC);
+
 	return true;
 }
 
@@ -59,7 +94,7 @@ bool DX11FinalBlendPass::update()
 {
 	activateShader(m_DXSPC);
 
-	activateRenderPass(DX11RenderingBackendComponent::get().m_swapChainDXRPC);
+	activateRenderPass(m_DXRPC);
 
 	// bind to previous pass render target textures
 	auto l_canvasDXTDC = DX11MotionBlurPass::getDX11RPC()->m_DXTDCs[0];
@@ -87,4 +122,9 @@ bool DX11FinalBlendPass::resize()
 bool DX11FinalBlendPass::reloadShaders()
 {
 	return true;
+}
+
+DX11RenderPassComponent * DX11FinalBlendPass::getDX11RPC()
+{
+	return m_DXRPC;
 }

@@ -1,4 +1,4 @@
-#include "WinGLWindowSystem.h"
+#include "WinGLWindowSurface.h"
 #include "../../../Component/WinWindowSystemComponent.h"
 
 #include "glad/glad.h"
@@ -9,7 +9,7 @@
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE WinGLWindowSystemNS
+INNO_PRIVATE_SCOPE WinGLWindowSurfaceNS
 {
 	bool setup(void* hInstance, void* hwnd, void* WindowProc);
 	bool initialize();
@@ -22,7 +22,7 @@ INNO_PRIVATE_SCOPE WinGLWindowSystemNS
 	InitConfig m_initConfig;
 }
 
-bool WinGLWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
+bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 {
 	m_initConfig = g_pModuleManager->getInitConfig();
 
@@ -230,56 +230,58 @@ bool WinGLWindowSystemNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 	}
 
 	m_objectStatus = ObjectStatus::Activated;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinGLWindowSystem setup finished.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinGLWindowSurface setup finished.");
 
 	return true;
 }
 
-bool WinGLWindowSystemNS::initialize()
+bool WinGLWindowSurfaceNS::initialize()
 {
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinGLWindowSystem has been initialized.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinGLWindowSurface has been initialized.");
 	return true;
 }
 
-bool WinGLWindowSystemNS::update()
+bool WinGLWindowSurfaceNS::update()
 {
 	return true;
 }
 
-bool WinGLWindowSystemNS::terminate()
+bool WinGLWindowSurfaceNS::terminate()
 {
 	m_objectStatus = ObjectStatus::Terminated;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinGLWindowSystemNS has been terminated.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinGLWindowSurfaceNS has been terminated.");
 
 	return true;
 }
 
-bool WinGLWindowSystem::setup(void* hInstance, void* hwnd, void* WindowProc)
+bool WinGLWindowSurface::setup(void* hInstance, void* hwnd, void* WindowProc)
 {
-	return WinGLWindowSystemNS::setup(hInstance, hwnd, WindowProc);
+	return WinGLWindowSurfaceNS::setup(hInstance, hwnd, WindowProc);
 }
 
-bool WinGLWindowSystem::initialize()
+bool WinGLWindowSurface::initialize()
 {
-	return WinGLWindowSystemNS::initialize();
+	return WinGLWindowSurfaceNS::initialize();
 }
 
-bool WinGLWindowSystem::update()
+bool WinGLWindowSurface::update()
 {
-	return WinGLWindowSystemNS::update();
+	return WinGLWindowSurfaceNS::update();
 }
 
-bool WinGLWindowSystem::terminate()
+bool WinGLWindowSurface::terminate()
 {
-	return WinGLWindowSystemNS::terminate();
+	return WinGLWindowSurfaceNS::terminate();
 }
 
-ObjectStatus WinGLWindowSystem::getStatus()
+ObjectStatus WinGLWindowSurface::getStatus()
 {
-	return WinGLWindowSystemNS::m_objectStatus;
+	return WinGLWindowSurfaceNS::m_objectStatus;
 }
 
-void WinGLWindowSystem::swapBuffer()
+bool WinGLWindowSurface::swapBuffer()
 {
 	SwapBuffers(WinWindowSystemComponent::get().m_HDC);
+
+	return true;
 }

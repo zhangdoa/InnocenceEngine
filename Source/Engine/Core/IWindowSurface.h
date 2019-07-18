@@ -1,11 +1,11 @@
 #pragma once
-#include "../../Common/InnoType.h"
-#include "../../Common/InnoClassTemplate.h"
+#include "../Common/InnoType.h"
+#include "../Common/InnoClassTemplate.h"
 
-INNO_INTERFACE IWinWindowSystem
+INNO_INTERFACE IWindowSurface
 {
 public:
-	INNO_CLASS_INTERFACE_NON_COPYABLE(IWinWindowSystem);
+	INNO_CLASS_INTERFACE_NON_COPYABLE(IWindowSurface);
 
 	virtual bool setup(void* hInstance, void* hwnd, void* WindowProc) = 0;
 	virtual bool initialize() = 0;
@@ -14,5 +14,5 @@ public:
 
 	virtual ObjectStatus getStatus() = 0;
 
-	virtual void swapBuffer() = 0;
+	virtual bool swapBuffer() = 0;
 };

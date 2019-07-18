@@ -5,6 +5,7 @@
 
 #include "VKOpaquePass.h"
 #include "VKLightPass.h"
+#include "VKFinalBlendPass.h"
 
 #include "../../ModuleManager/IModuleManager.h"
 
@@ -68,8 +69,6 @@ INNO_PRIVATE_SCOPE VKRenderingBackendNS
 	bool createCommandPool();
 
 	bool createSwapChain();
-	bool createSwapChainCommandBuffers();
-	bool createSyncPrimitives();
 
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
@@ -102,8 +101,6 @@ INNO_PRIVATE_SCOPE VKRenderingBackendNS
 	VKTextureDataComponent* m_basicAOTexture;
 
 	VKMaterialDataComponent* m_basicMaterial;
-
-	std::vector<VkImage> m_swapChainImages;
 }
 
 bool VKRenderingBackendNS::createVkInstance()
@@ -370,9 +367,9 @@ bool VKRenderingBackendNS::createSwapChain()
 	// choose device supported formats, modes and maximum back buffers
 	SwapChainSupportDetails l_swapChainSupport = querySwapChainSupport(VKRenderingBackendComponent::get().m_physicalDevice);
 
-	VkSurfaceFormatKHR l_surfaceFormat = chooseSwapSurfaceFormat(l_swapChainSupport.m_formats);
+	VKRenderingBackendComponent::get().m_windowSurfaceFormat = chooseSwapSurfaceFormat(l_swapChainSupport.m_formats);
 	VkPresentModeKHR l_presentMode = chooseSwapPresentMode(l_swapChainSupport.m_presentModes);
-	VkExtent2D l_extent = chooseSwapExtent(l_swapChainSupport.m_capabilities);
+	VKRenderingBackendComponent::get().m_windowSurfaceExtent = chooseSwapExtent(l_swapChainSupport.m_capabilities);
 
 	uint32_t l_imageCount = l_swapChainSupport.m_capabilities.minImageCount + 1;
 	if (l_swapChainSupport.m_capabilities.maxImageCount > 0 && l_imageCount > l_swapChainSupport.m_capabilities.maxImageCount)
@@ -384,9 +381,9 @@ bool VKRenderingBackendNS::createSwapChain()
 	l_createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	l_createInfo.surface = VKRenderingBackendComponent::get().m_windowSurface;
 	l_createInfo.minImageCount = l_imageCount;
-	l_createInfo.imageFormat = l_surfaceFormat.format;
-	l_createInfo.imageColorSpace = l_surfaceFormat.colorSpace;
-	l_createInfo.imageExtent = l_extent;
+	l_createInfo.imageFormat = VKRenderingBackendComponent::get().m_windowSurfaceFormat.format;
+	l_createInfo.imageColorSpace = VKRenderingBackendComponent::get().m_windowSurfaceFormat.colorSpace;
+	l_createInfo.imageExtent = VKRenderingBackendComponent::get().m_windowSurfaceExtent;
 	l_createInfo.imageArrayLayers = 1;
 	l_createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
@@ -418,240 +415,36 @@ bool VKRenderingBackendNS::createSwapChain()
 		return false;
 	}
 
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: VkSwapChainKHR has been created.");
+
 	// get swap chain VkImages
 	// get count
-	vkGetSwapchainImagesKHR(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_swapChain, &l_imageCount, nullptr);
+	if (vkGetSwapchainImagesKHR(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_swapChain, &l_imageCount, nullptr) != VK_SUCCESS)
+	{
+		m_objectStatus = ObjectStatus::Suspended;
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to query swap chain image count!");
+		return false;
+	}
 
-	m_swapChainImages.reserve(l_imageCount);
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: Swap chain has " + std::to_string(l_imageCount) + " image(s).");
+
+	VKRenderingBackendComponent::get().m_swapChainImages.reserve(l_imageCount);
 	for (size_t i = 0; i < l_imageCount; i++)
 	{
-		m_swapChainImages.emplace_back();
+		VKRenderingBackendComponent::get().m_swapChainImages.emplace_back();
 	}
+
 	// get real VkImages
-	vkGetSwapchainImagesKHR(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_swapChain, &l_imageCount, m_swapChainImages.data());
-
-	// add shader component
-	auto l_VKSPC = addVKShaderProgramComponent(m_entityID);
-
-	ShaderFilePaths l_shaderFilePaths = {};
-	l_shaderFilePaths.m_VSPath = "VK//finalBlendPass.vert.spv/";
-	l_shaderFilePaths.m_FSPath = "VK//finalBlendPass.frag.spv/";
-
-	initializeVKShaderProgramComponent(l_VKSPC, l_shaderFilePaths);
-
-	// add render pass component
-	auto l_VKRPC = addVKRenderPassComponent();
-
-	l_VKRPC->m_renderPassDesc = VKRenderingBackendComponent::get().m_deferredRenderPassDesc;
-	l_VKRPC->m_renderPassDesc.RTNumber = l_imageCount;
-	l_VKRPC->m_renderPassDesc.useMultipleFramebuffers = (l_imageCount > 1);
-
-	VkTextureDataDesc l_VkTextureDataDesc;
-	l_VkTextureDataDesc.imageType = VK_IMAGE_TYPE_2D;
-	l_VkTextureDataDesc.samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-	l_VkTextureDataDesc.magFilterParam = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-	l_VkTextureDataDesc.minFilterParam = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-	l_VkTextureDataDesc.format = l_surfaceFormat.format;
-	l_VkTextureDataDesc.aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-
-	// initialize manually
-	bool l_result = true;
-
-	l_result &= reserveRenderTargets(l_VKRPC);
-
-	// use device created swap chain VkImages
-	for (size_t i = 0; i < l_imageCount; i++)
+	if (vkGetSwapchainImagesKHR(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_swapChain, &l_imageCount, VKRenderingBackendComponent::get().m_swapChainImages.data()) != VK_SUCCESS)
 	{
-		l_VKRPC->m_VKTDCs[i]->m_VkTextureDataDesc = l_VkTextureDataDesc;
-		l_VKRPC->m_VKTDCs[i]->m_image = m_swapChainImages[i];
-		createImageView(l_VKRPC->m_VKTDCs[i]);
+		m_objectStatus = ObjectStatus::Suspended;
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to acquire swap chain images!");
+		return false;
 	}
 
-	// create descriptor pool
-	VkDescriptorPoolSize l_RTSamplerDescriptorPoolSize = {};
-	l_RTSamplerDescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_SAMPLER;
-	l_RTSamplerDescriptorPoolSize.descriptorCount = 1;
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: Swap chain images has been acquired.");
 
-	VkDescriptorPoolSize l_RTTextureDescriptorPoolSize = {};
-	l_RTTextureDescriptorPoolSize.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-	l_RTTextureDescriptorPoolSize.descriptorCount = 1;
-
-	VkDescriptorPoolSize l_descriptorPoolSize[] = { l_RTSamplerDescriptorPoolSize , l_RTTextureDescriptorPoolSize };
-
-	l_result &= createDescriptorPool(l_descriptorPoolSize, 2, 1, l_VKRPC->m_descriptorPool);
-
-	// sub-pass
-	VkAttachmentReference l_attachmentRef = {};
-	l_attachmentRef.attachment = 0;
-	l_attachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	l_VKRPC->colorAttachmentRefs.emplace_back(l_attachmentRef);
-
-	// render pass
-	VkAttachmentDescription attachmentDesc = {};
-	attachmentDesc.format = l_surfaceFormat.format;
-	attachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
-	attachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	attachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	attachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	attachmentDesc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-	l_VKRPC->attachmentDescs.emplace_back(attachmentDesc);
-
-	l_VKRPC->renderPassCInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	l_VKRPC->renderPassCInfo.subpassCount = 1;
-
-	// set descriptor set layout binding info
-	VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
-	samplerLayoutBinding.binding = 0;
-	samplerLayoutBinding.descriptorCount = 1;
-	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-	samplerLayoutBinding.pImmutableSamplers = &VKRenderingBackendComponent::get().m_deferredRTSampler;
-	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-	l_VKRPC->descriptorSetLayoutBindings.emplace_back(samplerLayoutBinding);
-
-	VkDescriptorSetLayoutBinding textureLayoutBinding = {};
-	textureLayoutBinding.binding = 1;
-	textureLayoutBinding.descriptorCount = 1;
-	textureLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-	textureLayoutBinding.pImmutableSamplers = nullptr;
-	textureLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-	l_VKRPC->descriptorSetLayoutBindings.emplace_back(textureLayoutBinding);
-
-	// set descriptor image info
-	VkDescriptorImageInfo imageInfo;
-	imageInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	imageInfo.imageView = VKLightPass::getVKRPC()->m_VKTDCs[0]->m_imageView;
-
-	VkWriteDescriptorSet basePassRTWriteDescriptorSet = {};
-	basePassRTWriteDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	basePassRTWriteDescriptorSet.dstBinding = 1;
-	basePassRTWriteDescriptorSet.dstArrayElement = 0;
-	basePassRTWriteDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-	basePassRTWriteDescriptorSet.descriptorCount = 1;
-	basePassRTWriteDescriptorSet.pImageInfo = &imageInfo;
-	l_VKRPC->writeDescriptorSets.emplace_back(basePassRTWriteDescriptorSet);
-
-	// set pipeline fix stages info
-	l_VKRPC->inputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	l_VKRPC->inputAssemblyStateCInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-	l_VKRPC->inputAssemblyStateCInfo.primitiveRestartEnable = VK_FALSE;
-
-	l_VKRPC->viewport.x = 0.0f;
-	l_VKRPC->viewport.y = 0.0f;
-	l_VKRPC->viewport.width = (float)l_extent.width;
-	l_VKRPC->viewport.height = (float)l_extent.height;
-	l_VKRPC->viewport.minDepth = 0.0f;
-	l_VKRPC->viewport.maxDepth = 1.0f;
-
-	l_VKRPC->scissor.offset = { 0, 0 };
-	l_VKRPC->scissor.extent = l_extent;
-
-	l_VKRPC->viewportStateCInfo.viewportCount = 1;
-	l_VKRPC->viewportStateCInfo.scissorCount = 1;
-
-	l_VKRPC->rasterizationStateCInfo.depthClampEnable = VK_FALSE;
-	l_VKRPC->rasterizationStateCInfo.rasterizerDiscardEnable = VK_FALSE;
-	l_VKRPC->rasterizationStateCInfo.polygonMode = VK_POLYGON_MODE_FILL;
-	l_VKRPC->rasterizationStateCInfo.lineWidth = 1.0f;
-	l_VKRPC->rasterizationStateCInfo.cullMode = VK_CULL_MODE_NONE;
-	l_VKRPC->rasterizationStateCInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
-	l_VKRPC->rasterizationStateCInfo.depthBiasEnable = VK_FALSE;
-
-	l_VKRPC->multisampleStateCInfo.sampleShadingEnable = VK_FALSE;
-	l_VKRPC->multisampleStateCInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-
-	VkPipelineColorBlendAttachmentState l_colorBlendAttachmentState = {};
-	l_colorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	l_colorBlendAttachmentState.blendEnable = VK_FALSE;
-	l_VKRPC->colorBlendAttachmentStates.emplace_back(l_colorBlendAttachmentState);
-
-	l_VKRPC->colorBlendStateCInfo.logicOpEnable = VK_FALSE;
-	l_VKRPC->colorBlendStateCInfo.logicOp = VK_LOGIC_OP_COPY;
-	l_VKRPC->colorBlendStateCInfo.blendConstants[0] = 0.0f;
-	l_VKRPC->colorBlendStateCInfo.blendConstants[1] = 0.0f;
-	l_VKRPC->colorBlendStateCInfo.blendConstants[2] = 0.0f;
-	l_VKRPC->colorBlendStateCInfo.blendConstants[3] = 0.0f;
-
-	l_result &= createRenderPass(l_VKRPC);
-
-	if (l_VKRPC->m_renderPassDesc.useMultipleFramebuffers)
-	{
-		l_result &= createMultipleFramebuffers(l_VKRPC);
-	}
-	else
-	{
-		l_result &= createSingleFramebuffer(l_VKRPC);
-	}
-
-	l_VKRPC->descriptorSetLayouts.resize(1);
-	l_result &= createDescriptorSetLayout(l_VKRPC->descriptorSetLayoutBindings.data(), static_cast<uint32_t>(l_VKRPC->descriptorSetLayoutBindings.size()), l_VKRPC->descriptorSetLayouts[0]);
-
-	l_result &= createPipelineLayout(l_VKRPC);
-
-	l_result &= createGraphicsPipelines(l_VKRPC, l_VKSPC);
-
-	l_VKRPC->descriptorSets.resize(1);
-	l_result &= createDescriptorSets(l_VKRPC->m_descriptorPool, l_VKRPC->descriptorSetLayouts[0], l_VKRPC->descriptorSets[0], 1);
-
-	l_VKRPC->writeDescriptorSets[0].dstSet = l_VKRPC->descriptorSets[0];
-
-	l_result &= updateDescriptorSet(l_VKRPC->writeDescriptorSets.data(), static_cast<uint32_t>(l_VKRPC->writeDescriptorSets.size()));
-
-	VKRenderingBackendComponent::get().m_swapChainVKSPC = l_VKSPC;
-
-	VKRenderingBackendComponent::get().m_swapChainVKRPC = l_VKRPC;
-
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend: VkSwapChainKHR has been created.");
 	return true;
-}
-
-bool VKRenderingBackendNS::createSwapChainCommandBuffers()
-{
-	auto l_result = createCommandBuffers(VKRenderingBackendComponent::get().m_swapChainVKRPC);
-
-	for (size_t i = 0; i < VKRenderingBackendComponent::get().m_swapChainVKRPC->m_commandBuffers.size(); i++)
-	{
-		recordCommand(VKRenderingBackendComponent::get().m_swapChainVKRPC, (unsigned int)i, [&]() {
-			vkCmdBindDescriptorSets(VKRenderingBackendComponent::get().m_swapChainVKRPC->m_commandBuffers[i],
-				VK_PIPELINE_BIND_POINT_GRAPHICS,
-				VKRenderingBackendComponent::get().m_swapChainVKRPC->m_pipelineLayout,
-				0,
-				1,
-				&VKRenderingBackendComponent::get().m_swapChainVKRPC->descriptorSets[0], 0, nullptr);
-			auto l_Mesh = getVKMeshDataComponent(MeshShapeType::QUAD);
-			recordDrawCall(VKRenderingBackendComponent::get().m_swapChainVKRPC, (unsigned int)i, l_Mesh);
-		});
-	}
-
-	return l_result;
-}
-
-bool VKRenderingBackendNS::createSyncPrimitives()
-{
-	VKRenderingBackendComponent::get().m_swapChainVKRPC->m_maxFramesInFlight = 2;
-	VKRenderingBackendComponent::get().m_imageAvailableSemaphores.resize(VKRenderingBackendComponent::get().m_swapChainVKRPC->m_maxFramesInFlight);
-
-	VkSemaphoreCreateInfo semaphoreInfo = {};
-	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-	for (size_t i = 0; i < VKRenderingBackendComponent::get().m_swapChainVKRPC->m_maxFramesInFlight; i++)
-	{
-		if (vkCreateSemaphore(
-			VKRenderingBackendComponent::get().m_device,
-			&semaphoreInfo,
-			nullptr,
-			&VKRenderingBackendComponent::get().m_imageAvailableSemaphores[i])
-			!= VK_SUCCESS)
-		{
-			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to create swap chain image available semaphores!");
-			return false;
-		}
-	}
-
-	auto l_result = createSyncPrimitives(VKRenderingBackendComponent::get().m_swapChainVKRPC);
-
-	return l_result;
 }
 
 bool VKRenderingBackendNS::generateGPUBuffers()
@@ -709,12 +502,12 @@ bool VKRenderingBackendNS::initialize()
 
 		bool l_result = true;
 
-		l_result = l_result && createPysicalDevice();
-		l_result = l_result && createLogicalDevice();
+		l_result &= createPysicalDevice();
+		l_result &= createLogicalDevice();
 
-		l_result = l_result && createTextureSamplers();
-		l_result = l_result && createMaterialDescriptorPool();
-		l_result = l_result && createCommandPool();
+		l_result &= createTextureSamplers();
+		l_result &= createMaterialDescriptorPool();
+		l_result &= createCommandPool();
 
 		loadDefaultAssets();
 
@@ -723,9 +516,9 @@ bool VKRenderingBackendNS::initialize()
 		VKOpaquePass::initialize();
 		VKLightPass::initialize();
 
-		l_result = l_result && createSwapChain();
-		l_result = l_result && createSwapChainCommandBuffers();
-		l_result = l_result && createSyncPrimitives();
+		l_result &= createSwapChain();
+
+		VKFinalBlendPass::initialize();
 
 		VKRenderingBackendNS::m_objectStatus = ObjectStatus::Activated;
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend has been initialized.");
@@ -880,6 +673,7 @@ bool VKRenderingBackendNS::update()
 
 	VKOpaquePass::update();
 	VKLightPass::update();
+	VKFinalBlendPass::update();
 
 	return true;
 }
@@ -888,50 +682,7 @@ bool VKRenderingBackendNS::render()
 {
 	VKOpaquePass::render();
 	VKLightPass::render();
-
-	waitForFence(VKRenderingBackendComponent::get().m_swapChainVKRPC);
-
-	// acquire an image from swap chain
-	thread_local uint32_t imageIndex;
-	vkAcquireNextImageKHR(
-		VKRenderingBackendComponent::get().m_device,
-		VKRenderingBackendComponent::get().m_swapChain,
-		std::numeric_limits<uint64_t>::max(),
-		VKRenderingBackendComponent::get().m_imageAvailableSemaphores[VKRenderingBackendComponent::get().m_swapChainVKRPC->m_currentFrame],
-		VK_NULL_HANDLE,
-		&imageIndex);
-
-	// set swap chain image available wait semaphore
-	VkSemaphore l_availableSemaphores[] = {
-		VKLightPass::getVKRPC()->m_renderFinishedSemaphores[0],
-		VKRenderingBackendComponent::get().m_imageAvailableSemaphores[VKRenderingBackendComponent::get().m_swapChainVKRPC->m_currentFrame]
-	};
-
-	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	VKRenderingBackendComponent::get().m_swapChainVKRPC->submitInfo.waitSemaphoreCount = 2;
-	VKRenderingBackendComponent::get().m_swapChainVKRPC->submitInfo.pWaitSemaphores = l_availableSemaphores;
-	VKRenderingBackendComponent::get().m_swapChainVKRPC->submitInfo.pWaitDstStageMask = waitStages;
-
-	submitCommand(VKRenderingBackendComponent::get().m_swapChainVKRPC, imageIndex);
-
-	// present the swap chain image to the front screen
-	VkPresentInfoKHR presentInfo = {};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-	// wait semaphore
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = &VKRenderingBackendComponent::get().m_swapChainVKRPC->m_renderFinishedSemaphores[VKRenderingBackendComponent::get().m_swapChainVKRPC->m_currentFrame];
-
-	// swap chain
-	VkSwapchainKHR swapChains[] = { VKRenderingBackendComponent::get().m_swapChain };
-	presentInfo.swapchainCount = 1;
-	presentInfo.pSwapchains = swapChains;
-
-	presentInfo.pImageIndices = &imageIndex;
-
-	vkQueuePresentKHR(VKRenderingBackendComponent::get().m_presentQueue, &presentInfo);
-
-	VKRenderingBackendComponent::get().m_swapChainVKRPC->m_currentFrame = (VKRenderingBackendComponent::get().m_swapChainVKRPC->m_currentFrame + 1) % VKRenderingBackendComponent::get().m_swapChainVKRPC->m_maxFramesInFlight;
+	VKFinalBlendPass::render();
 
 	return true;
 }
@@ -940,23 +691,9 @@ bool VKRenderingBackendNS::terminate()
 {
 	vkDeviceWaitIdle(VKRenderingBackendComponent::get().m_device);
 
+	VKFinalBlendPass::terminate();
+	VKLightPass::terminate();
 	VKOpaquePass::terminate();
-
-	destroyVKShaderProgramComponent(VKRenderingBackendComponent::get().m_swapChainVKSPC);
-
-	for (size_t i = 0; i < VKRenderingBackendComponent::get().m_swapChainVKRPC->m_maxFramesInFlight; i++)
-	{
-		vkDestroySemaphore(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_imageAvailableSemaphores[i], nullptr);
-		vkDestroySemaphore(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_swapChainVKRPC->m_renderFinishedSemaphores[i], nullptr);
-		vkDestroyFence(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_swapChainVKRPC->m_inFlightFences[i], nullptr);
-	}
-
-	vkDestroyDescriptorPool(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_swapChainVKRPC->m_descriptorPool, nullptr);
-
-	vkFreeCommandBuffers(VKRenderingBackendComponent::get().m_device,
-		VKRenderingBackendComponent::get().m_commandPool,
-		static_cast<uint32_t>(VKRenderingBackendComponent::get().m_swapChainVKRPC->m_commandBuffers.size()),
-		VKRenderingBackendComponent::get().m_swapChainVKRPC->m_commandBuffers.data());
 
 	vkDestroyBuffer(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_cameraUBO, nullptr);
 	vkFreeMemory(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_cameraUBOMemory, nullptr);
@@ -964,28 +701,10 @@ bool VKRenderingBackendNS::terminate()
 	vkFreeMemory(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_meshUBOMemory, nullptr);
 
 	vkDestroySampler(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_deferredRTSampler, nullptr);
-	vkFreeMemory(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_textureImageMemory, nullptr);
-
-	destroyAllGraphicPrimitiveComponents();
 
 	vkFreeMemory(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_indexBufferMemory, nullptr);
 	vkFreeMemory(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_vertexBufferMemory, nullptr);
-
-	vkDestroyPipeline(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_swapChainVKRPC->m_pipeline, nullptr);
-	vkDestroyPipelineLayout(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_swapChainVKRPC->m_pipelineLayout, nullptr);
-	vkDestroyDescriptorSetLayout(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_swapChainVKRPC->descriptorSetLayouts[0], nullptr);
-
-	for (auto framebuffer : VKRenderingBackendComponent::get().m_swapChainVKRPC->m_framebuffers)
-	{
-		vkDestroyFramebuffer(VKRenderingBackendComponent::get().m_device, framebuffer, nullptr);
-	}
-
-	vkDestroyRenderPass(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_swapChainVKRPC->m_renderPass, nullptr);
-
-	for (auto VKTexture : VKRenderingBackendComponent::get().m_swapChainVKRPC->m_VKTDCs)
-	{
-		vkDestroyImageView(VKRenderingBackendComponent::get().m_device, VKTexture->m_imageView, nullptr);
-	}
+	vkFreeMemory(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_textureImageMemory, nullptr);
 
 	vkDestroySwapchainKHR(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_swapChain, nullptr);
 
@@ -1146,6 +865,11 @@ bool VKRenderingBackend::update()
 bool VKRenderingBackend::render()
 {
 	return VKRenderingBackendNS::render();
+}
+
+bool VKRenderingBackend::present()
+{
+	return true;
 }
 
 bool VKRenderingBackend::terminate()

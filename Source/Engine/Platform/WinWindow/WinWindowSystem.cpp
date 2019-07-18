@@ -1,9 +1,9 @@
 #include "WinWindowSystem.h"
 #include "../../Component/WinWindowSystemComponent.h"
 
-#include "WinDXWindow/WinDXWindowSystem.h"
-#include "WinGLWindow/WinGLWindowSystem.h"
-#include "WinVKWindow/WinVKWindowSystem.h"
+#include "DXWindowSurface/WinDXWindowSurface.h"
+#include "GLWindowSurface/WinGLWindowSurface.h"
+#include "VKWindowSurface/WinVKWindowSurface.h"
 
 #include "../../ModuleManager/IModuleManager.h"
 
@@ -34,7 +34,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 INNO_PRIVATE_SCOPE WinWindowSystemNS
 {
-	IWinWindowSystem* m_backendWindowSystem;
+	IWindowSurface* m_windowSurface;
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	InitConfig m_initConfig;
 }
@@ -63,28 +63,28 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 	switch (WinWindowSystemNS::m_initConfig.renderingBackend)
 	{
 	case RenderingBackend::GL:
-		WinWindowSystemNS::m_backendWindowSystem = new WinGLWindowSystem();
+		WinWindowSystemNS::m_windowSurface = new WinGLWindowSurface();
 		break;
 	case RenderingBackend::DX11:
 #if defined INNO_PLATFORM_WIN
-		WinWindowSystemNS::m_backendWindowSystem = new WinDXWindowSystem();
+		WinWindowSystemNS::m_windowSurface = new WinDXWindowSurface();
 #endif
 		break;
 	case RenderingBackend::DX12:
 #if defined INNO_PLATFORM_WIN
-		WinWindowSystemNS::m_backendWindowSystem = new WinDXWindowSystem();
+		WinWindowSystemNS::m_windowSurface = new WinDXWindowSurface();
 #endif
 		break;
 	case RenderingBackend::VK:
 #if defined INNO_RENDERER_VULKAN
-		WinWindowSystemNS::m_backendWindowSystem = new WinVKWindowSystem();
+		WinWindowSystemNS::m_windowSurface = new WinVKWindowSurface();
 #endif
 		break;
 	default:
 		break;
 	}
 
-	WinWindowSystemNS::m_backendWindowSystem->setup(WinWindowSystemComponent::get().m_hInstance, WinWindowSystemComponent::get().m_hwnd, WindowProc);
+	WinWindowSystemNS::m_windowSurface->setup(WinWindowSystemComponent::get().m_hInstance, WinWindowSystemComponent::get().m_hwnd, WindowProc);
 
 	WinWindowSystemNS::m_objectStatus = ObjectStatus::Activated;
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinWindowSystem setup finished.");
@@ -94,7 +94,7 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 
 bool WinWindowSystem::initialize()
 {
-	WinWindowSystemNS::m_backendWindowSystem->initialize();
+	WinWindowSystemNS::m_windowSurface->initialize();
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinWindowSystem has been initialized.");
 	return true;
 }
@@ -122,7 +122,7 @@ bool WinWindowSystem::update()
 
 bool WinWindowSystem::terminate()
 {
-	WinWindowSystemNS::m_backendWindowSystem->terminate();
+	WinWindowSystemNS::m_windowSurface->terminate();
 
 	if (WinWindowSystemNS::m_initConfig.engineMode == EngineMode::GAME)
 	{
@@ -155,6 +155,11 @@ ObjectStatus WinWindowSystem::getStatus()
 	return WinWindowSystemNS::m_objectStatus;
 }
 
+IWindowSurface * WinWindowSystem::getWindowSurface()
+{
+	return WinWindowSystemNS::m_windowSurface;
+}
+
 ButtonStatusMap WinWindowSystem::getButtonStatus()
 {
 	return windowCallbackWrapper::get().m_buttonStatus;
@@ -164,11 +169,6 @@ bool WinWindowSystem::sendEvent(unsigned int umsg, unsigned int WParam, int LPar
 {
 	WindowProc(WinWindowSystemComponent::get().m_hwnd, umsg, WParam, LParam);
 	return true;
-}
-
-void WinWindowSystem::swapBuffer()
-{
-	WinWindowSystemNS::m_backendWindowSystem->swapBuffer();
 }
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)

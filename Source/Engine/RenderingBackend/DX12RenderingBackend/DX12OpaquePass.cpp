@@ -175,6 +175,7 @@ bool DX12OpaquePass::update()
 bool DX12OpaquePass::render()
 {
 	executeCommandList(m_DXRPC, 0);
+	waitFrame(DX12OpaquePass::getDX12RPC(), 0);
 
 	return true;
 }

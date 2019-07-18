@@ -559,14 +559,19 @@ bool InnoModuleManagerNS::update()
 
 					m_RenderingBackend->update();
 
-					m_RenderingBackend->render();
-
 					if (m_showImGui)
 					{
 						ImGuiWrapper::get().update();
 					}
 
-					m_WindowSystem->swapBuffer();
+					m_RenderingBackend->render();
+
+					if (m_showImGui)
+					{
+						ImGuiWrapper::get().render();
+					}
+
+					m_RenderingBackend->present();
 
 					m_isRendering = false;
 				}

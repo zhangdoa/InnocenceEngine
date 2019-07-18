@@ -1,10 +1,10 @@
 #pragma once
-#include "../IWinWindowSystem.h"
+#include "../../../Core/IWindowSurface.h"
 
-class WinDXWindowSystem : INNO_IMPLEMENT IWinWindowSystem
+class WinVKWindowSurface : INNO_IMPLEMENT IWindowSurface
 {
 public:
-	INNO_CLASS_CONCRETE_NON_COPYABLE(WinDXWindowSystem);
+	INNO_CLASS_CONCRETE_NON_COPYABLE(WinVKWindowSurface);
 
 	bool setup(void* hInstance, void* hwnd, void* WindowProc) override;
 	bool initialize() override;
@@ -13,5 +13,5 @@ public:
 
 	ObjectStatus getStatus() override;
 
-	void swapBuffer() override;
+	bool swapBuffer() override;
 };

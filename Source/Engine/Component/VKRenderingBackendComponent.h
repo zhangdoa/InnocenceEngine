@@ -24,10 +24,11 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	EntityID m_parentEntity;
 
-	bool m_vsync_enabled = true;
-
 	VkInstance m_instance;
 	VkSurfaceKHR m_windowSurface;
+	VkSurfaceFormatKHR m_windowSurfaceFormat;
+	VkExtent2D m_windowSurfaceExtent;
+	std::vector<VkImage> m_swapChainImages;
 	VkQueue m_presentQueue;
 	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
 	VkDevice m_device;
@@ -35,9 +36,6 @@ public:
 	VkCommandPool m_commandPool;
 
 	VkSwapchainKHR m_swapChain = 0;
-	VKShaderProgramComponent* m_swapChainVKSPC;
-	VKRenderPassComponent* m_swapChainVKRPC;
-	std::vector<VkSemaphore> m_imageAvailableSemaphores;
 
 	const std::vector<const char*> m_deviceExtensions =
 	{

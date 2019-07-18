@@ -1,6 +1,7 @@
 #pragma once
 #include "../Common/InnoType.h"
 #include "../Common/InnoClassTemplate.h"
+#include "IWindowSurface.h"
 
 INNO_INTERFACE IWindowSystem
 {
@@ -13,10 +14,10 @@ public:
 	virtual bool terminate() = 0;
 
 	virtual ObjectStatus getStatus() = 0;
+
+	virtual IWindowSurface* getWindowSurface() = 0;
 	virtual ButtonStatusMap getButtonStatus() = 0;
 
 	// Editor only
 	virtual bool sendEvent(unsigned int umsg, unsigned int WParam, int LParam) = 0;
-
-	virtual void swapBuffer() = 0;
 };

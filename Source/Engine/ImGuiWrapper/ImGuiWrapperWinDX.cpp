@@ -2,6 +2,8 @@
 #include "../Component/WinWindowSystemComponent.h"
 
 #include "../RenderingBackend/DX11RenderingBackend/DX11OpaquePass.h"
+#include "../RenderingBackend/DX11RenderingBackend/DX11LightPass.h"
+#include "../RenderingBackend/DX11RenderingBackend/DX11FinalBlendPass.h"
 
 #include "../RenderingBackend/DX11RenderingBackend/DX11RenderingBackendUtilities.h"
 
@@ -43,7 +45,10 @@ bool ImGuiWrapperWinDX11::newFrame()
 
 bool ImGuiWrapperWinDX11::render()
 {
-	DX11RenderingBackendNS::activateRenderPass(DX11RenderingBackendComponent::get().m_swapChainDXRPC);
+	auto l_DXRPC = DX11FinalBlendPass::getDX11RPC();
+	DX11RenderingBackendComponent::get().m_deviceContext->OMSetRenderTargets((unsigned int)l_DXRPC->m_RTVs.size(), &l_DXRPC->m_RTVs[0], l_DXRPC->m_DSV);
+	DX11RenderingBackendComponent::get().m_deviceContext->RSSetViewports(1, &l_DXRPC->m_viewport);
+	DX11RenderingBackendComponent::get().m_deviceContext->RSSetState(l_DXRPC->m_rasterizerState);
 
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 

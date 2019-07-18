@@ -34,8 +34,7 @@ public:
 
 	DXGI_SWAP_CHAIN_DESC m_swapChainDesc;
 	IDXGISwapChain4* m_swapChain;
-
-	DX11RenderPassComponent* m_swapChainDXRPC;
+	std::vector<ID3D11Texture2D*> m_swapChainTextures;
 
 	RenderPassDesc m_deferredRenderPassDesc = RenderPassDesc();
 

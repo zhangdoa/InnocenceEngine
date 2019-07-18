@@ -11,4 +11,6 @@ INNO_PRIVATE_SCOPE DX11FinalBlendPass
 	bool resize();
 
 	bool reloadShaders();
+
+	DX11RenderPassComponent* getDX11RPC();
 }
