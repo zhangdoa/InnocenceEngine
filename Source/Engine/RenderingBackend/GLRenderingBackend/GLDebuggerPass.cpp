@@ -498,7 +498,19 @@ bool GLDebuggerPass::drawDebugSphereForSH(GLRenderPassComponent* canvas)
 	// copy depth buffer from G-Pass
 	copyDepthBuffer(GLOpaquePass::getGLRPC(), canvas);
 
-	auto l_SH9s = GLEnvironmentCapturePass::fetchResult();
+	static bool l_drawSkyVisibilitySH9 = false;
+
+	decltype(GLEnvironmentCapturePass::getSkyVisibilitySH9()) l_SH9s;
+
+	if (l_drawSkyVisibilitySH9)
+	{
+		l_SH9s = GLEnvironmentCapturePass::getSkyVisibilitySH9();
+	}
+	else
+	{
+		l_SH9s = GLEnvironmentCapturePass::getRadianceSH9();
+	}
+
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::SPHERE);
 
 	activateShaderProgram(m_SHVisualizationGLSPC);

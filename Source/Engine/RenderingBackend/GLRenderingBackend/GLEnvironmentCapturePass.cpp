@@ -15,26 +15,31 @@ using namespace GLRenderingBackendNS;
 
 INNO_PRIVATE_SCOPE GLEnvironmentCapturePass
 {
-	bool captureRadiance(vec4 pos, GLTextureDataComponent* RT);
+	bool captureRadiance(vec4 pos);
 	bool drawOpaquePass(vec4 capturePos, mat4 p, const std::vector<mat4>& v, unsigned int faceIndex);
-	bool drawSkyPass(mat4 p, const std::vector<mat4>& v, GLTextureDataComponent* RT, unsigned int faceIndex);
-	bool drawLightPass(mat4 p, const std::vector<mat4>& v, GLTextureDataComponent* RT, unsigned int faceIndex);
+	bool drawSkyPass(mat4 p, const std::vector<mat4>& v, unsigned int faceIndex);
+	bool drawLightPass(mat4 p, const std::vector<mat4>& v, unsigned int faceIndex);
+	bool drawSkyVisibilityPass(mat4 p, const std::vector<mat4>& v, unsigned int faceIndex);
 
 	EntityID m_entityID;
 
 	GLRenderPassComponent* m_opaquePassGLRPC;
-	GLRenderPassComponent* m_lightPassGLRPC;
+	GLRenderPassComponent* m_capturePassGLRPC;
+	GLRenderPassComponent* m_skyVisibilityPassGLRPC;
 
-	GLShaderProgramComponent* m_GLSPC;
+	GLShaderProgramComponent* m_capturePassGLSPC;
+	ShaderFilePaths m_capturePassShaderFilePaths = { "environmentCapturePass.vert/" , "", "", "", "environmentCapturePass.frag/" };
 
-	ShaderFilePaths m_shaderFilePaths = { "environmentCapturePass.vert/" , "", "", "", "environmentCapturePass.frag/" };
+	GLShaderProgramComponent* m_skyVisibilityGLSPC;
+	ShaderFilePaths m_skyVisibilityShaderFilePaths = { "skyVisibilityPass.vert/" , "", "", "", "skyVisibilityPass.frag/" };
 
 	const unsigned int m_captureResolution = 128;
 	const unsigned int m_sampleCountPerFace = m_captureResolution * m_captureResolution;
 	const unsigned int m_subDivideDimension = 4;
 	const unsigned int m_totalCaptureProbes = m_subDivideDimension * m_subDivideDimension * m_subDivideDimension;
 
-	std::vector<std::pair<vec4, SH9>> m_SH9s;
+	std::vector<std::pair<vec4, SH9>> m_radianceSH9s;
+	std::vector<std::pair<vec4, SH9>> m_skyVisibilitySH9s;
 }
 
 bool GLEnvironmentCapturePass::initialize()
@@ -62,15 +67,27 @@ bool GLEnvironmentCapturePass::initialize()
 
 	initializeGLRenderPassComponent(m_opaquePassGLRPC);
 
-	m_lightPassGLRPC = addGLRenderPassComponent(m_entityID, "EnvironmentCaptureLightPassGLRPC/");
+	m_capturePassGLRPC = addGLRenderPassComponent(m_entityID, "EnvironmentCaptureLightPassGLRPC/");
 	l_renderPassDesc.RTNumber = 1;
-	m_lightPassGLRPC->m_renderPassDesc = l_renderPassDesc;
-	m_lightPassGLRPC->m_drawColorBuffers = true;
+	m_capturePassGLRPC->m_renderPassDesc = l_renderPassDesc;
+	m_capturePassGLRPC->m_drawColorBuffers = true;
 
-	initializeGLRenderPassComponent(m_lightPassGLRPC);
+	initializeGLRenderPassComponent(m_capturePassGLRPC);
 
-	m_GLSPC = addGLShaderProgramComponent(m_entityID);
-	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
+	m_skyVisibilityPassGLRPC = addGLRenderPassComponent(m_entityID, "EnvironmentCaptureSkyVisibilityPassGLRPC/");
+	l_renderPassDesc.RTNumber = 1;
+	l_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
+	l_renderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::FLOAT32;
+	m_skyVisibilityPassGLRPC->m_renderPassDesc = l_renderPassDesc;
+	m_skyVisibilityPassGLRPC->m_drawColorBuffers = true;
+
+	initializeGLRenderPassComponent(m_skyVisibilityPassGLRPC);
+
+	m_capturePassGLSPC = addGLShaderProgramComponent(m_entityID);
+	initializeGLShaderProgramComponent(m_capturePassGLSPC, m_capturePassShaderFilePaths);
+
+	m_skyVisibilityGLSPC = addGLShaderProgramComponent(m_entityID);
+	initializeGLShaderProgramComponent(m_skyVisibilityGLSPC, m_skyVisibilityShaderFilePaths);
 
 	return true;
 }
@@ -162,7 +179,7 @@ bool GLEnvironmentCapturePass::drawOpaquePass(vec4 capturePos, mat4 p, const std
 	return true;
 }
 
-bool GLEnvironmentCapturePass::drawSkyPass(mat4 p, const std::vector<mat4>& v, GLTextureDataComponent* RT, unsigned int faceIndex)
+bool GLEnvironmentCapturePass::drawSkyPass(mat4 p, const std::vector<mat4>& v, unsigned int faceIndex)
 {
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
 
@@ -188,16 +205,16 @@ bool GLEnvironmentCapturePass::drawSkyPass(mat4 p, const std::vector<mat4>& v, G
 	updateUBO(GLRenderingBackendComponent::get().m_skyUBO, l_skyGPUData);
 	updateUBO(GLRenderingBackendComponent::get().m_cameraUBO, l_cameraGPUData);
 
-	bindCubemapTextureForWrite(RT, m_lightPassGLRPC, 0, faceIndex, 0);
+	bindCubemapTextureForWrite(m_capturePassGLRPC->m_GLTDCs[0], m_capturePassGLRPC, 0, faceIndex, 0);
 
 	drawMesh(l_MDC);
 
-	unbindCubemapTextureForWrite(m_lightPassGLRPC, 0, faceIndex, 0);
+	unbindCubemapTextureForWrite(m_capturePassGLRPC, 0, faceIndex, 0);
 
 	return true;
 }
 
-bool GLEnvironmentCapturePass::drawLightPass(mat4 p, const std::vector<mat4>& v, GLTextureDataComponent* RT, unsigned int faceIndex)
+bool GLEnvironmentCapturePass::drawLightPass(mat4 p, const std::vector<mat4>& v, unsigned int faceIndex)
 {
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
 
@@ -215,9 +232,9 @@ bool GLEnvironmentCapturePass::drawLightPass(mat4 p, const std::vector<mat4>& v,
 	glStencilFunc(GL_EQUAL, 0x01, 0xFF);
 	glStencilMask(0x00);
 
-	copyStencilBuffer(m_opaquePassGLRPC, m_lightPassGLRPC);
+	copyStencilBuffer(m_opaquePassGLRPC, m_capturePassGLRPC);
 
-	activateShaderProgram(m_GLSPC);
+	activateShaderProgram(m_capturePassGLSPC);
 
 	activateTexture(m_opaquePassGLRPC->m_GLTDCs[0], 0);
 	activateTexture(m_opaquePassGLRPC->m_GLTDCs[1], 1);
@@ -227,18 +244,55 @@ bool GLEnvironmentCapturePass::drawLightPass(mat4 p, const std::vector<mat4>& v,
 
 	updateUBO(GLRenderingBackendComponent::get().m_cameraUBO, l_cameraGPUData);
 
-	bindCubemapTextureForWrite(RT, m_lightPassGLRPC, 0, faceIndex, 0);
+	bindCubemapTextureForWrite(m_capturePassGLRPC->m_GLTDCs[0], m_capturePassGLRPC, 0, faceIndex, 0);
 
 	drawMesh(l_MDC);
 
-	unbindCubemapTextureForWrite(m_lightPassGLRPC, 0, faceIndex, 0);
+	unbindCubemapTextureForWrite(m_capturePassGLRPC, 0, faceIndex, 0);
 
 	glDisable(GL_STENCIL_TEST);
 
 	return true;
 }
 
-bool GLEnvironmentCapturePass::captureRadiance(vec4 pos, GLTextureDataComponent* RT)
+bool GLEnvironmentCapturePass::drawSkyVisibilityPass(mat4 p, const std::vector<mat4>& v, unsigned int faceIndex)
+{
+	auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
+
+	vec4 capturePos = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	CameraGPUData l_cameraGPUData;
+	l_cameraGPUData.p_original = p;
+	l_cameraGPUData.p_jittered = p;
+	l_cameraGPUData.globalPos = capturePos;
+	auto l_t = InnoMath::getInvertTranslationMatrix(capturePos);
+	l_cameraGPUData.t = l_t;
+	l_cameraGPUData.t_prev = l_t;
+
+	glEnable(GL_STENCIL_TEST);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	glStencilFunc(GL_EQUAL, 0x01, 0xFF);
+	glStencilMask(0x00);
+
+	copyStencilBuffer(m_opaquePassGLRPC, m_skyVisibilityPassGLRPC);
+
+	activateShaderProgram(m_skyVisibilityGLSPC);
+
+	l_cameraGPUData.r = v[faceIndex];
+
+	updateUBO(GLRenderingBackendComponent::get().m_cameraUBO, l_cameraGPUData);
+
+	bindCubemapTextureForWrite(m_skyVisibilityPassGLRPC->m_GLTDCs[0], m_skyVisibilityPassGLRPC, 0, faceIndex, 0);
+
+	drawMesh(l_MDC);
+
+	unbindCubemapTextureForWrite(m_skyVisibilityPassGLRPC, 0, faceIndex, 0);
+
+	glDisable(GL_STENCIL_TEST);
+
+	return true;
+}
+
+bool GLEnvironmentCapturePass::captureRadiance(vec4 pos)
 {
 	auto l_capturePos = pos;
 	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, 1000.0f);
@@ -264,16 +318,21 @@ bool GLEnvironmentCapturePass::captureRadiance(vec4 pos, GLTextureDataComponent*
 
 		drawOpaquePass(l_capturePos, l_p, l_v, i);
 
-		bindRenderPass(m_lightPassGLRPC);
-		cleanRenderBuffers(m_lightPassGLRPC);
+		bindRenderPass(m_capturePassGLRPC);
+		cleanRenderBuffers(m_capturePassGLRPC);
 
 		// @TODO: optimize
 		if (l_renderingConfig.drawSky)
 		{
-			drawSkyPass(l_p, l_v, RT, i);
+			drawSkyPass(l_p, l_v, i);
 		}
 
-		drawLightPass(l_p, l_v, RT, i);
+		drawLightPass(l_p, l_v, i);
+
+		bindRenderPass(m_skyVisibilityPassGLRPC);
+		cleanRenderBuffers(m_skyVisibilityPassGLRPC);
+
+		drawSkyVisibilityPass(l_p, l_v, i);
 	}
 
 	return true;
@@ -281,7 +340,8 @@ bool GLEnvironmentCapturePass::captureRadiance(vec4 pos, GLTextureDataComponent*
 
 bool GLEnvironmentCapturePass::update()
 {
-	m_SH9s.clear();
+	m_radianceSH9s.clear();
+	m_skyVisibilitySH9s.clear();
 
 	updateUBO(GLRenderingBackendComponent::get().m_meshUBO, g_pModuleManager->getRenderingFrontend()->getGIPassMeshGPUData());
 	updateUBO(GLRenderingBackendComponent::get().m_materialUBO, g_pModuleManager->getRenderingFrontend()->getGIPassMaterialGPUData());
@@ -296,8 +356,6 @@ bool GLEnvironmentCapturePass::update()
 	auto l_startPos = l_sceneAABB.m_center - (l_extendedAxisSize / 2.0f);
 	auto l_currentPos = l_startPos;
 
-	unsigned int l_index = 0;
-
 	for (size_t i = 0; i < m_subDivideDimension; i++)
 	{
 		l_currentPos.y = l_startPos.y;
@@ -306,11 +364,14 @@ bool GLEnvironmentCapturePass::update()
 			l_currentPos.z = l_startPos.z;
 			for (size_t k = 0; k < m_subDivideDimension; k++)
 			{
-				captureRadiance(l_currentPos, m_lightPassGLRPC->m_GLTDCs[0]);
-				auto l_SH9 = GLSHPass::getSH9(m_lightPassGLRPC->m_GLTDCs[0]);
-				m_SH9s.emplace_back(l_currentPos, l_SH9);
+				captureRadiance(l_currentPos);
 
-				l_index++;
+				auto l_SH9 = GLSHPass::getSH9(m_capturePassGLRPC->m_GLTDCs[0]);
+				m_radianceSH9s.emplace_back(l_currentPos, l_SH9);
+
+				l_SH9 = GLSHPass::getSH9(m_skyVisibilityPassGLRPC->m_GLTDCs[0]);
+				m_skyVisibilitySH9s.emplace_back(l_currentPos, l_SH9);
+
 				l_currentPos.z += l_probeDistance.z;
 			}
 			l_currentPos.y += l_probeDistance.y;
@@ -328,10 +389,15 @@ bool GLEnvironmentCapturePass::reloadShader()
 
 GLRenderPassComponent * GLEnvironmentCapturePass::getGLRPC()
 {
-	return m_lightPassGLRPC;
+	return m_capturePassGLRPC;
 }
 
-std::vector<std::pair<vec4, SH9>> GLEnvironmentCapturePass::fetchResult()
+std::vector<std::pair<vec4, SH9>> GLEnvironmentCapturePass::getRadianceSH9()
 {
-	return m_SH9s;
+	return m_radianceSH9s;
+}
+
+std::vector<std::pair<vec4, SH9>> GLEnvironmentCapturePass::getSkyVisibilitySH9()
+{
+	return m_skyVisibilitySH9s;
 }
