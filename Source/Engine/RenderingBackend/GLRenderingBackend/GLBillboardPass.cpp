@@ -52,7 +52,8 @@ bool GLBillboardPass::update()
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
-	activateRenderPass(m_GLRPC);
+	bindRenderPass(m_GLRPC);
+	cleanRenderBuffers(m_GLRPC);
 
 	// copy depth buffer from G-Pass
 	copyDepthBuffer(GLOpaquePass::getGLRPC(), m_GLRPC);

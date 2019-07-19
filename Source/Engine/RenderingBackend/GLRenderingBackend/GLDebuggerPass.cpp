@@ -32,7 +32,7 @@ INNO_PRIVATE_SCOPE GLDebuggerPass
 	bool drawFrontView();
 
 	bool drawTestSceneForSH();
-	bool drawDebugSphereForSH();
+	bool drawDebugSphereForSH(GLRenderPassComponent* canvas);
 
 	EntityID m_entityID;
 
@@ -402,7 +402,8 @@ bool GLDebuggerPass::drawRightView()
 	// albedo
 	updateUniform(4, vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
-	activateRenderPass(m_rightViewGLRPC);
+	bindRenderPass(m_rightViewGLRPC);
+	cleanRenderBuffers(m_rightViewGLRPC);
 
 	drawWireframeForDebugObjects();
 
@@ -427,7 +428,8 @@ bool GLDebuggerPass::drawTopView()
 	// albedo
 	updateUniform(4, vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
-	activateRenderPass(m_topViewGLRPC);
+	bindRenderPass(m_topViewGLRPC);
+	cleanRenderBuffers(m_topViewGLRPC);
 
 	drawWireframeForDebugObjects();
 
@@ -450,7 +452,8 @@ bool GLDebuggerPass::drawFrontView()
 	// albedo
 	updateUniform(4, vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
-	activateRenderPass(m_frontViewGLRPC);
+	bindRenderPass(m_frontViewGLRPC);
+	cleanRenderBuffers(m_frontViewGLRPC);
 
 	drawWireframeForDebugObjects();
 
@@ -469,7 +472,8 @@ bool GLDebuggerPass::drawTestSceneForSH()
 
 	updateUBO(m_SH9UBO, m_testSH9);
 
-	activateRenderPass(m_SHVisualizationGLRPC);
+	bindRenderPass(m_SHVisualizationGLRPC);
+	cleanRenderBuffers(m_SHVisualizationGLRPC);
 
 	activateShaderProgram(m_cubemapVisualizationGLSPC);
 
@@ -486,13 +490,13 @@ bool GLDebuggerPass::drawTestSceneForSH()
 	return true;
 }
 
-bool GLDebuggerPass::drawDebugSphereForSH()
+bool GLDebuggerPass::drawDebugSphereForSH(GLRenderPassComponent* canvas)
 {
 	glDepthMask(GL_FALSE);
 	glDepthFunc(GL_LESS);
 
 	// copy depth buffer from G-Pass
-	copyDepthBuffer(GLOpaquePass::getGLRPC(), m_mainCanvasGLRPC);
+	copyDepthBuffer(GLOpaquePass::getGLRPC(), canvas);
 
 	auto l_SH9s = GLEnvironmentCapturePass::fetchResult();
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::SPHERE);
@@ -511,9 +515,9 @@ bool GLDebuggerPass::drawDebugSphereForSH()
 	return true;
 }
 
-bool GLDebuggerPass::update()
+bool GLDebuggerPass::update(GLRenderPassComponent* canvas)
 {
-	activateRenderPass(m_mainCanvasGLRPC);
+	bindRenderPass(canvas);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_CLAMP);
@@ -526,11 +530,14 @@ bool GLDebuggerPass::update()
 	}
 	else
 	{
-		drawDebugSphereForSH();
+		drawDebugSphereForSH(canvas);
 	}
 
 	glDisable(GL_DEPTH_CLAMP);
 	glDisable(GL_DEPTH_TEST);
+
+	bindRenderPass(m_mainCanvasGLRPC);
+	cleanRenderBuffers(m_mainCanvasGLRPC);
 
 	activateShaderProgram(m_wireframeOverlayGLRPC);
 

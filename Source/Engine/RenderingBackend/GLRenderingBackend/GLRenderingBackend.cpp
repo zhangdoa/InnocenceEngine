@@ -401,27 +401,38 @@ bool GLRenderingBackendNS::render()
 		m_isBaked = true;
 	}
 
+	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
+
 	GLShadowPass::update();
 	//GLGaussianBlurPass::update(GLShadowPass::getGLRPC(0), 0, 2);
 
 	GLEarlyZPass::update();
 	GLOpaquePass::update();
-	GLTerrainPass::update();
+	if (l_renderingConfig.drawTerrain)
+	{
+		GLTerrainPass::update();
+	}
 	GLSSAONoisePass::update();
 	GLSSAOBlurPass::update();
 
 	GLLightCullingPass::update();
 	GLLightPass::update();
 
-	GLSkyPass::update();
+	if (l_renderingConfig.drawSky)
+	{
+		GLSkyPass::update();
+	}
+	else
+	{
+		cleanRenderBuffers(GLSkyPass::getGLRPC());
+	}
+
 	GLPreTAAPass::update();
 
 	updateUBO(GLRenderingBackendComponent::get().m_meshUBO, g_pModuleManager->getRenderingFrontend()->getTransparentPassMeshGPUData());
 	updateUBO(GLRenderingBackendComponent::get().m_materialUBO, g_pModuleManager->getRenderingFrontend()->getTransparentPassMaterialGPUData());
 
 	auto l_canvasGLRPC = GLPreTAAPass::getGLRPC();
-
-	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
 
 	if (l_renderingConfig.useTAA)
 	{
@@ -477,11 +488,15 @@ bool GLRenderingBackendNS::render()
 
 	if (l_renderingConfig.drawDebugObject)
 	{
-		GLDebuggerPass::update();
+		GLDebuggerPass::update(l_canvasGLRPC);
 	}
 	else
 	{
 		cleanRenderBuffers(GLDebuggerPass::getGLRPC(0));
+		cleanRenderBuffers(GLDebuggerPass::getGLRPC(1));
+		cleanRenderBuffers(GLDebuggerPass::getGLRPC(2));
+		cleanRenderBuffers(GLDebuggerPass::getGLRPC(3));
+		cleanRenderBuffers(GLDebuggerPass::getGLRPC(4));
 	}
 
 	if (m_visualizeVXGI)

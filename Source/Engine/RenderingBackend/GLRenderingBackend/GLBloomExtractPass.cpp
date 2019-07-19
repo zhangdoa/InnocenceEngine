@@ -74,7 +74,8 @@ void GLBloomExtractPass::initializeShaders()
 
 bool GLBloomExtractPass::update(GLRenderPassComponent* prePassGLRPC)
 {
-	activateRenderPass(m_baseGLRPC);
+	bindRenderPass(m_baseGLRPC);
+	cleanRenderBuffers(m_baseGLRPC);
 
 	activateShaderProgram(m_GLSPC);
 

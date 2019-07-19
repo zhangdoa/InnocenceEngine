@@ -259,11 +259,13 @@ bool GLEnvironmentCapturePass::captureRadiance(vec4 pos, GLTextureDataComponent*
 
 	for (unsigned int i = 0; i < 6; i++)
 	{
-		activateRenderPass(m_opaquePassGLRPC);
+		bindRenderPass(m_opaquePassGLRPC);
+		cleanRenderBuffers(m_opaquePassGLRPC);
 
 		drawOpaquePass(l_capturePos, l_p, l_v, i);
 
-		activateRenderPass(m_lightPassGLRPC);
+		bindRenderPass(m_lightPassGLRPC);
+		cleanRenderBuffers(m_lightPassGLRPC);
 
 		// @TODO: optimize
 		if (l_renderingConfig.drawSky)

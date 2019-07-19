@@ -1216,13 +1216,12 @@ void GLRenderingBackendNS::activateTexture(GLTextureDataComponent * GLTDC, int a
 	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TO);
 }
 
-void GLRenderingBackendNS::activateRenderPass(GLRenderPassComponent* val)
+void GLRenderingBackendNS::bindRenderPass(GLRenderPassComponent* val)
 {
-	cleanRenderBuffers(val);
-
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, val->m_FBO);
 	if (val->m_renderPassDesc.useDepthAttachment)
 	{
+		glBindRenderbuffer(GL_RENDERBUFFER, val->m_RBO);
 		glRenderbufferStorage(GL_RENDERBUFFER, val->m_renderBufferInternalFormat, val->m_renderPassDesc.RTDesc.width, val->m_renderPassDesc.RTDesc.height);
 	}
 	glViewport(0, 0, val->m_renderPassDesc.RTDesc.width, val->m_renderPassDesc.RTDesc.height);

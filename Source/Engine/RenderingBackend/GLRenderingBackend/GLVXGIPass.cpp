@@ -264,7 +264,8 @@ void GLVXGIPass::updateVoxelVisualizationPass()
 
 	auto l_m = l_mt * l_ms;
 
-	activateRenderPass(m_voxelVisualizationGLRPC);
+	bindRenderPass(m_voxelVisualizationGLRPC);
+	cleanRenderBuffers(m_voxelVisualizationGLRPC);
 
 	activateShaderProgram(m_voxelVisualizationPassGLSPC);
 

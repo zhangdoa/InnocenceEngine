@@ -42,7 +42,6 @@ void GLTransparentPass::initializeShaders()
 
 bool GLTransparentPass::update(GLRenderPassComponent* prePassGLRPC)
 {
-	auto l_GLRPC = prePassGLRPC;
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glDepthMask(GL_FALSE);
@@ -52,12 +51,8 @@ bool GLTransparentPass::update(GLRenderPassComponent* prePassGLRPC)
 	glEnable(GL_BLEND);
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_SRC1_COLOR, GL_ONE, GL_ZERO);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, l_GLRPC->m_FBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, l_GLRPC->m_RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, l_GLRPC->m_renderBufferInternalFormat, l_GLRPC->m_renderPassDesc.RTDesc.width, l_GLRPC->m_renderPassDesc.RTDesc.height);
-	glViewport(0, 0, l_GLRPC->m_renderPassDesc.RTDesc.width, l_GLRPC->m_renderPassDesc.RTDesc.height);
-
-	copyDepthBuffer(GLOpaquePass::getGLRPC(), l_GLRPC);
+	bindRenderPass(prePassGLRPC);
+	copyDepthBuffer(GLOpaquePass::getGLRPC(), prePassGLRPC);
 
 	activateShaderProgram(m_GLSPC);
 

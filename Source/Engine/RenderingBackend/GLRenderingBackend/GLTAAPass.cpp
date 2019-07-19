@@ -78,7 +78,8 @@ bool GLTAAPass::update(GLRenderPassComponent* prePassGLRPC)
 
 	activateShaderProgram(m_GLSPC);
 
-	activateRenderPass(l_currentFrameGLRPC);
+	bindRenderPass(l_currentFrameGLRPC);
+	cleanRenderBuffers(l_currentFrameGLRPC);
 
 	activateTexture(prePassGLRPC->m_GLTDCs[0], 0);
 	activateTexture(l_lastFrameGLTDC, 1);

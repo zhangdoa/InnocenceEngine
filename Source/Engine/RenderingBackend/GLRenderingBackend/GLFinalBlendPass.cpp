@@ -56,7 +56,8 @@ void GLFinalBlendPass::initializeShaders()
 
 bool GLFinalBlendPass::update(GLRenderPassComponent* prePassGLRPC)
 {
-	activateRenderPass(m_GLRPC);
+	bindRenderPass(m_GLRPC);
+	cleanRenderBuffers(m_GLRPC);
 
 	activateShaderProgram(m_GLSPC);
 

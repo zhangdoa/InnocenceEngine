@@ -192,7 +192,9 @@ bool GLLightCullingPass::cullLights()
 
 bool GLLightCullingPass::update()
 {
-	activateRenderPass(m_GLRPC);
+	bindRenderPass(m_GLRPC);
+	cleanRenderBuffers(m_GLRPC);
+
 	createLightIndexCountBuffer();
 	calculateFrustums();
 	cullLights();

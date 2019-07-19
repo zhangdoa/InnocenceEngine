@@ -53,14 +53,16 @@ bool GLBRDFLUTPass::update()
 	glDisable(GL_CULL_FACE);
 
 	// draw split-Sum LUT
-	activateRenderPass(m_BRDFSplitSumLUTPassGLRPC);
+	bindRenderPass(m_BRDFSplitSumLUTPassGLRPC);
+	cleanRenderBuffers(m_BRDFSplitSumLUTPassGLRPC);
 
 	activateShaderProgram(m_BRDFSplitSumLUTPassSPC);
 
 	drawMesh(l_MDC);
 
 	// draw averange RsF1 LUT
-	activateRenderPass(m_BRDFMSAverageLUTPassGLRPC);
+	bindRenderPass(m_BRDFMSAverageLUTPassGLRPC);
+	cleanRenderBuffers(m_BRDFMSAverageLUTPassGLRPC);
 
 	activateShaderProgram(m_BRDFMSAverageLUTPassSPC);
 

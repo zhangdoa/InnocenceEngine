@@ -61,7 +61,8 @@ bool GLEarlyZPass::update()
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
-	activateRenderPass(m_GLRPC);
+	bindRenderPass(m_GLRPC);
+	cleanRenderBuffers(m_GLRPC);
 
 	activateShaderProgram(m_GLSPC);
 

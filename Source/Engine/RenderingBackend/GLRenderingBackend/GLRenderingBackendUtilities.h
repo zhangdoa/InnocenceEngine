@@ -101,7 +101,7 @@ INNO_PRIVATE_SCOPE GLRenderingBackendNS
 	void drawMesh(GLMeshDataComponent* GLMDC);
 	void activateTexture(GLTextureDataComponent* GLTDC, int activateIndex);
 
-	void activateRenderPass(GLRenderPassComponent * GLRPC);
+	void bindRenderPass(GLRenderPassComponent * GLRPC);
 	void cleanRenderBuffers(GLRenderPassComponent * GLRPC);
 	void copyDepthBuffer(GLRenderPassComponent* src, GLRenderPassComponent* dest);
 	void copyStencilBuffer(GLRenderPassComponent* src, GLRenderPassComponent* dest);

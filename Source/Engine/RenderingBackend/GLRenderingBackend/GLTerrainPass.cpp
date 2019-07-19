@@ -224,7 +224,8 @@ void GLTerrainPass::initializeShaders()
 
 bool GLTerrainPass::generateNormal()
 {
-	activateRenderPass(m_h2nGLRPC);
+	bindRenderPass(m_h2nGLRPC);
+	cleanRenderBuffers(m_h2nGLRPC);
 
 	activateShaderProgram(m_h2nGLSPC);
 
@@ -239,53 +240,43 @@ bool GLTerrainPass::generateNormal()
 
 bool GLTerrainPass::update()
 {
-	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
+	auto l_MDC = getGLMeshDataComponent(MeshShapeType::TERRAIN);
 
-	if (l_renderingConfig.drawTerrain)
-	{
-		auto l_GLRPC = GLOpaquePass::getGLRPC();
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+	glDepthMask(GL_TRUE);
 
-		auto l_MDC = getGLMeshDataComponent(MeshShapeType::TERRAIN);
+	glEnable(GL_DEPTH_CLAMP);
 
-		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_LEQUAL);
-		glDepthMask(GL_TRUE);
+	glEnable(GL_STENCIL_TEST);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+	glStencilMask(0xFF);
+	glStencilFunc(GL_ALWAYS, 0x01, 0xFF);
 
-		glEnable(GL_DEPTH_CLAMP);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 
-		glEnable(GL_STENCIL_TEST);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-		glStencilMask(0xFF);
-		glStencilFunc(GL_ALWAYS, 0x01, 0xFF);
+	bindRenderPass(GLOpaquePass::getGLRPC());
 
-		glEnable(GL_CULL_FACE);
-		glCullFace(GL_BACK);
+	activateShaderProgram(m_GLSPC);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, l_GLRPC->m_FBO);
-		glBindRenderbuffer(GL_RENDERBUFFER, l_GLRPC->m_RBO);
-		glRenderbufferStorage(GL_RENDERBUFFER, l_GLRPC->m_renderBufferInternalFormat, l_GLRPC->m_renderPassDesc.RTDesc.width, l_GLRPC->m_renderPassDesc.RTDesc.height);
-		glViewport(0, 0, l_GLRPC->m_renderPassDesc.RTDesc.width, l_GLRPC->m_renderPassDesc.RTDesc.height);
+	activateTexture(m_terrainNoiseGLTDC, 0);
+	activateTexture(m_h2nGLRPC->m_GLTDCs[0], 1);
+	activateTexture(getGLTextureDataComponent(TextureUsageType::ALBEDO), 2);
+	activateTexture(getGLTextureDataComponent(TextureUsageType::METALLIC), 3);
+	activateTexture(getGLTextureDataComponent(TextureUsageType::ROUGHNESS), 4);
+	activateTexture(getGLTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION), 5);
 
-		activateShaderProgram(m_GLSPC);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glBindVertexArray(l_MDC->m_VAO);
+	glPatchParameteri(GL_PATCH_VERTICES, 4);
+	glDrawArrays(GL_PATCHES, 0, (GLsizei)l_MDC->m_vertices.size());
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-		activateTexture(m_terrainNoiseGLTDC, 0);
-		activateTexture(m_h2nGLRPC->m_GLTDCs[0], 1);
-		activateTexture(getGLTextureDataComponent(TextureUsageType::ALBEDO), 2);
-		activateTexture(getGLTextureDataComponent(TextureUsageType::METALLIC), 3);
-		activateTexture(getGLTextureDataComponent(TextureUsageType::ROUGHNESS), 4);
-		activateTexture(getGLTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION), 5);
-
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		glBindVertexArray(l_MDC->m_VAO);
-		glPatchParameteri(GL_PATCH_VERTICES, 4);
-		glDrawArrays(GL_PATCHES, 0, (GLsizei)l_MDC->m_vertices.size());
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-		glDisable(GL_CULL_FACE);
-		glDisable(GL_STENCIL_TEST);
-		glDisable(GL_DEPTH_CLAMP);
-		glDisable(GL_DEPTH_TEST);
-	}
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_STENCIL_TEST);
+	glDisable(GL_DEPTH_CLAMP);
+	glDisable(GL_DEPTH_TEST);
 
 	return true;
 }

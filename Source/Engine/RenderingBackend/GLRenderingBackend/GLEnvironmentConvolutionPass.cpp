@@ -64,11 +64,10 @@ bool GLEnvironmentConvolutionPass::update(GLTextureDataComponent* GLTDC)
 		l_rPX, l_rNX, l_rPY, l_rNY, l_rPZ, l_rNZ
 	};
 
-	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
-
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
 
-	activateRenderPass(m_GLRPC);
+	bindRenderPass(m_GLRPC);
+	cleanRenderBuffers(m_GLRPC);
 
 	activateShaderProgram(m_GLSPC);
 

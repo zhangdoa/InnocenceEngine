@@ -71,7 +71,8 @@ bool GLGaussianBlurPass::update(GLRenderPassComponent* prePassGLRPC, unsigned in
 			l_currentFrameGaussianBlurGLTDC = m_PingPassGLRPC->m_GLTDCs[0];
 			l_lastFrameGaussianBlurGLTDC = m_PongPassGLRPC->m_GLTDCs[0];
 
-			activateRenderPass(m_PingPassGLRPC);
+			bindRenderPass(m_PingPassGLRPC);
+			cleanRenderBuffers(m_PingPassGLRPC);
 
 			updateUniform(0, true);
 
@@ -94,7 +95,8 @@ bool GLGaussianBlurPass::update(GLRenderPassComponent* prePassGLRPC, unsigned in
 			l_currentFrameGaussianBlurGLTDC = m_PongPassGLRPC->m_GLTDCs[0];
 			l_lastFrameGaussianBlurGLTDC = m_PingPassGLRPC->m_GLTDCs[0];
 
-			activateRenderPass(m_PongPassGLRPC);
+			bindRenderPass(m_PongPassGLRPC);
+			cleanRenderBuffers(m_PongPassGLRPC);
 
 			updateUniform(0, false);
 

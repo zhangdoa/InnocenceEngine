@@ -5,7 +5,7 @@
 INNO_PRIVATE_SCOPE GLDebuggerPass
 {
 	bool initialize();
-	bool update();
+	bool update(GLRenderPassComponent* canvas);
 	bool resize(unsigned int newSizeX,  unsigned int newSizeY);
 	bool reloadShader();
 

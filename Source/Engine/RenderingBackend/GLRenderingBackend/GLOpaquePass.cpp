@@ -65,7 +65,8 @@ bool GLOpaquePass::update()
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
-	activateRenderPass(m_GLRPC);
+	bindRenderPass(m_GLRPC);
+	cleanRenderBuffers(m_GLRPC);
 
 	// @TODO: Eliminate transparency conflict
 	//copyDepthBuffer(GLEarlyZPass::getGLRPC(), m_GLRPC);

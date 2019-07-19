@@ -63,7 +63,8 @@ void GLLightPass::update()
 	glStencilMask(0x00);
 
 	// bind to framebuffer
-	activateRenderPass(m_GLRPC);
+	bindRenderPass(m_GLRPC);
+	cleanRenderBuffers(m_GLRPC);
 
 	// 1. opaque objects
 	// copy stencil buffer of opaque objects from G-Pass

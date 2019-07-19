@@ -93,7 +93,8 @@ void GLShadowPass::update()
 
 	activateShaderProgram(m_DirLight_GLSPC);
 
-	activateRenderPass(m_DirLight_GLRPC);
+	bindRenderPass(m_DirLight_GLRPC);
+	cleanRenderBuffers(m_DirLight_GLRPC);
 
 	auto sizeX = m_DirLight_GLRPC->m_renderPassDesc.RTDesc.width;
 	auto sizeY = m_DirLight_GLRPC->m_renderPassDesc.RTDesc.height;
@@ -143,7 +144,8 @@ void GLShadowPass::update()
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_PointLight_GLRPC->m_GLTDCs[0]->m_TO, 0);
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
 
-	activateRenderPass(m_PointLight_GLRPC);
+	bindRenderPass(m_PointLight_GLRPC);
+	cleanRenderBuffers(m_PointLight_GLRPC);
 
 	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, l_attenuationRange);
 

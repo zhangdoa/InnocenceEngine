@@ -44,32 +44,24 @@ void GLSkyPass::initializeShaders()
 
 bool GLSkyPass::update()
 {
-	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+	glDepthMask(GL_TRUE);
 
-	if (l_renderingConfig.drawSky)
-	{
-		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_LEQUAL);
-		glDepthMask(GL_TRUE);
+	glEnable(GL_CULL_FACE);
+	glFrontFace(GL_CCW);
+	glCullFace(GL_BACK);
 
-		glEnable(GL_CULL_FACE);
-		glFrontFace(GL_CCW);
-		glCullFace(GL_BACK);
+	bindRenderPass(m_GLRPC);
+	cleanRenderBuffers(m_GLRPC);
 
-		activateRenderPass(m_GLRPC);
+	activateShaderProgram(m_GLSPC);
 
-		activateShaderProgram(m_GLSPC);
+	auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
+	drawMesh(l_MDC);
 
-		auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
-		drawMesh(l_MDC);
-
-		glDisable(GL_CULL_FACE);
-		glDisable(GL_DEPTH_TEST);
-	}
-	else
-	{
-		cleanRenderBuffers(m_GLRPC);
-	}
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
 
 	return true;
 }
