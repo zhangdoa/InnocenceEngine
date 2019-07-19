@@ -60,12 +60,18 @@ INNO_PRIVATE_SCOPE GLSHPass
 
 	EntityID m_entityID;
 
-	GLRenderPassComponent* m_GLRPC;
+	GLRenderPassComponent* m_readbackCanvasGLRPC;
+	GLRenderPassComponent* m_visualizationGLRPC;
 
-	GLShaderProgramComponent* m_GLSPC;
+	GLShaderProgramComponent* m_cubemapVisualizationGLSPC;
+	GLShaderProgramComponent* m_SHVisualizationGLSPC;
+	ShaderFilePaths m_cubemapVisualizationPassShaderFilePaths = { "cubemapVisualizationPass.vert/", "", "", "", "cubemapVisualizationPass.frag/" };
+	ShaderFilePaths m_SHVisualizationPassShaderFilePaths = { "SHVisualizationPass.vert/", "", "", "", "SHVisualizationPass.frag/" };
+
 	GLTextureDataComponent* m_testSampleCubemap;
+	SH9 m_testSH9;
 
-	ShaderFilePaths m_shaderFilePaths = { "SHPass.vert/", "", "", "", "SHPass.frag/" };
+	GLuint m_SH9UBO;
 
 	const unsigned int m_captureResolution = 256;
 	const unsigned int m_sampleCountPerFace = m_captureResolution * m_captureResolution;
@@ -75,15 +81,25 @@ bool GLSHPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
 
+	m_SH9UBO = generateUBO(sizeof(SH9), 9, "SH9UBO");
+
 	auto l_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	l_renderPassDesc.RTNumber = 0;
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "SphericalHarmonicPassGLRPC/");
-	m_GLRPC->m_renderPassDesc = l_renderPassDesc;
-	m_GLRPC->m_drawColorBuffers = false;
+	m_readbackCanvasGLRPC = addGLRenderPassComponent(m_entityID, "SHPassCanvasGLRPC/");
+	m_readbackCanvasGLRPC->m_renderPassDesc = l_renderPassDesc;
+	m_readbackCanvasGLRPC->m_drawColorBuffers = false;
 
-	initializeGLRenderPassComponent(m_GLRPC);
+	initializeGLRenderPassComponent(m_readbackCanvasGLRPC);
 
-	//initializeShaders();
+	m_visualizationGLRPC = addGLRenderPassComponent(m_entityID, "SHPassVisualizationGLRPC/");
+	l_renderPassDesc.RTNumber = 1;
+	l_renderPassDesc.useDepthAttachment = true;
+	m_visualizationGLRPC->m_renderPassDesc = l_renderPassDesc;
+	m_visualizationGLRPC->m_drawColorBuffers = true;
+
+	initializeGLRenderPassComponent(m_visualizationGLRPC);
+
+	initializeShaders();
 
 	m_testSampleCubemap = addGLTextureDataComponent();
 	m_testSampleCubemap->m_textureDataDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc.RTDesc;
@@ -110,7 +126,7 @@ bool GLSHPass::initialize()
 	{
 		for (size_t j = 0; j < m_sampleCountPerFace; j++)
 		{
-			auto l_color = l_faceColors[i] * (float)j / (float)m_sampleCountPerFace;
+			auto l_color = l_faceColors[i] * 2.0f * (float)j / (float)m_sampleCountPerFace;
 			l_color.w = 1.0f;
 			l_textureSamples[i * m_sampleCountPerFace + j] = l_color;
 		}
@@ -123,18 +139,53 @@ bool GLSHPass::initialize()
 
 void GLSHPass::initializeShaders()
 {
-	// shader programs and shaders
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 
-	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
+	initializeGLShaderProgramComponent(rhs, m_cubemapVisualizationPassShaderFilePaths);
 
-	m_GLSPC = rhs;
+	m_cubemapVisualizationGLSPC = rhs;
+
+	rhs = addGLShaderProgramComponent(m_entityID);
+
+	initializeGLShaderProgramComponent(rhs, m_SHVisualizationPassShaderFilePaths);
+
+	m_SHVisualizationGLSPC = rhs;
 }
 
 bool GLSHPass::update()
 {
-	auto l_textureSamples = readbackCubemapSamples(m_GLRPC, m_testSampleCubemap);
-	auto l_SH9 = samplesToSH(l_textureSamples);
+	auto l_textureSamples = readbackCubemapSamples(m_readbackCanvasGLRPC, m_testSampleCubemap);
+	m_testSH9 = samplesToSH(l_textureSamples);
+	return true;
+}
+
+bool GLSHPass::draw()
+{
+	updateUBO(m_SH9UBO, m_testSH9);
+
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+	glDepthMask(GL_TRUE);
+
+	glEnable(GL_DEPTH_CLAMP);
+
+	activateRenderPass(m_visualizationGLRPC);
+
+	activateShaderProgram(m_cubemapVisualizationGLSPC);
+
+	activateTexture(m_testSampleCubemap, 0);
+
+	auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
+	drawMesh(l_MDC);
+
+	activateShaderProgram(m_SHVisualizationGLSPC);
+
+	l_MDC = getGLMeshDataComponent(MeshShapeType::SPHERE);
+	drawMesh(l_MDC);
+
+	glDisable(GL_DEPTH_CLAMP);
+	glDisable(GL_DEPTH_TEST);
+
 	return true;
 }
 
@@ -145,16 +196,20 @@ bool GLSHPass::resize(unsigned int newSizeX, unsigned int newSizeY)
 
 bool GLSHPass::reloadShader()
 {
-	deleteShaderProgram(m_GLSPC);
+	deleteShaderProgram(m_cubemapVisualizationGLSPC);
 
-	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
+	initializeGLShaderProgramComponent(m_cubemapVisualizationGLSPC, m_cubemapVisualizationPassShaderFilePaths);
+
+	deleteShaderProgram(m_SHVisualizationGLSPC);
+
+	initializeGLShaderProgramComponent(m_SHVisualizationGLSPC, m_SHVisualizationPassShaderFilePaths);
 
 	return true;
 }
 
 GLRenderPassComponent * GLSHPass::getGLRPC()
 {
-	return nullptr;
+	return m_visualizationGLRPC;
 }
 
 std::vector<vec4> GLSHPass::readbackCubemapSamples(GLRenderPassComponent* GLRPC, GLTextureDataComponent* GLTDC)

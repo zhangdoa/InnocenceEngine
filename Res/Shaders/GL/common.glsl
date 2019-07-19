@@ -48,6 +48,19 @@ struct CSM {
 	vec4 AABBMin;
 };
 
+struct SH9
+{
+	vec4 L00;
+	vec4 L11;
+	vec4 L10;
+	vec4 L1_1;
+	vec4 L21;
+	vec4 L2_1;
+	vec4 L2_2;
+	vec4 L20;
+	vec4 L22;
+};
+
 const float eps = 0.00001;
 const float PI = 3.14159265359;
 const float SQRT_3 = 1.73205080f;

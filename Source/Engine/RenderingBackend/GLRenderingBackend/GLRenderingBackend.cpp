@@ -102,7 +102,10 @@ INNO_PRIVATE_SCOPE GLRenderingBackendNS
 
 	bool m_isBaked = false;
 	bool m_visualizeVXGI = false;
+	bool m_visualizeSH = false;
+
 	std::function<void()> f_toggleVisualizeVXGI;
+	std::function<void()> f_toggleVisualizeSH;
 
 	void* m_MeshDataComponentPool;
 	void* m_MaterialDataComponentPool;
@@ -145,6 +148,11 @@ bool GLRenderingBackendNS::setup()
 		m_visualizeVXGI = !m_visualizeVXGI;
 	};
 	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_G, ButtonStatus::PRESSED }, &f_toggleVisualizeVXGI);
+
+	f_toggleVisualizeSH = [&]() {
+		m_visualizeSH = !m_visualizeSH;
+	};
+	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_H, ButtonStatus::PRESSED }, &f_toggleVisualizeSH);
 
 	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
@@ -396,8 +404,8 @@ bool GLRenderingBackendNS::render()
 		GLEnvironmentCapturePass::update();
 		GLEnvironmentConvolutionPass::update();
 		GLEnvironmentPreFilterPass::update();
-		GLSHPass::update();
 		GLVXGIPass::update();
+		GLSHPass::update();
 		m_isBaked = true;
 	}
 
@@ -488,6 +496,12 @@ bool GLRenderingBackendNS::render()
 	{
 		GLVXGIPass::draw();
 		l_canvasGLRPC = GLVXGIPass::getGLRPC();
+	}
+
+	if (m_visualizeSH)
+	{
+		GLSHPass::draw();
+		l_canvasGLRPC = GLSHPass::getGLRPC();
 	}
 
 	GLFinalBlendPass::update(l_canvasGLRPC);
