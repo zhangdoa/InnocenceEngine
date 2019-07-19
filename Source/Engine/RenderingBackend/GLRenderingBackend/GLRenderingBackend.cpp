@@ -7,6 +7,8 @@
 #include "GLEnvironmentConvolutionPass.h"
 #include "GLEnvironmentPreFilterPass.h"
 
+#include "GLSHPass.h"
+
 #include "GLVXGIPass.h"
 
 #include "GLShadowPass.h"
@@ -198,6 +200,7 @@ bool GLRenderingBackendNS::initialize()
 		GLEnvironmentCapturePass::initialize();
 		GLEnvironmentConvolutionPass::initialize();
 		GLEnvironmentPreFilterPass::initialize();
+		GLSHPass::initialize();
 		GLVXGIPass::initialize();
 
 		GLShadowPass::initialize();
@@ -393,6 +396,7 @@ bool GLRenderingBackendNS::render()
 		GLEnvironmentCapturePass::update();
 		GLEnvironmentConvolutionPass::update();
 		GLEnvironmentPreFilterPass::update();
+		GLSHPass::update();
 		GLVXGIPass::update();
 		m_isBaked = true;
 	}

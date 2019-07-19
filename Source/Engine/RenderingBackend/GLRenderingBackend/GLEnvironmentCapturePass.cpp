@@ -19,8 +19,6 @@ INNO_PRIVATE_SCOPE GLEnvironmentCapturePass
 	bool drawSkyPass(mat4 p, const std::vector<mat4>& v, GLTextureDataComponent* RT, unsigned int faceIndex);
 	bool drawLightPass(mat4 p, const std::vector<mat4>& v, GLTextureDataComponent* RT, unsigned int faceIndex);
 
-	bool sampleSG();
-
 	EntityID m_entityID;
 
 	GLRenderPassComponent* m_opaquePassGLRPC;
@@ -31,8 +29,7 @@ INNO_PRIVATE_SCOPE GLEnvironmentCapturePass
 	ShaderFilePaths m_shaderFilePaths = { "environmentCapturePass.vert/" , "", "", "", "environmentCapturePass.frag/" };
 
 	const unsigned int m_captureResolution = 256;
-	const unsigned int m_sampleCountPerFace = 128;
-	GLTextureDataComponent* m_testSampleCubemap;
+	const unsigned int m_sampleCountPerFace = m_captureResolution * m_captureResolution;
 	const unsigned int m_subDivideDimension = 2;
 	const unsigned int m_totalCubemaps = m_subDivideDimension * m_subDivideDimension * m_subDivideDimension;
 	std::vector<GLTextureDataComponent*> m_capturedCubemaps;
@@ -83,9 +80,6 @@ bool GLEnvironmentCapturePass::initialize()
 
 		m_capturedCubemaps.emplace_back(l_capturedPassCubemap);
 	}
-
-	m_testSampleCubemap = addGLTextureDataComponent();
-	m_testSampleCubemap->m_textureDataDesc = l_renderPassDesc.RTDesc;
 
 	return true;
 }
@@ -292,48 +286,6 @@ bool GLEnvironmentCapturePass::render(vec4 pos, GLTextureDataComponent* RT)
 	return true;
 }
 
-bool GLEnvironmentCapturePass::sampleSG()
-{
-	std::uniform_int_distribution<unsigned int> randomUint(0, m_captureResolution);
-	std::default_random_engine generator;
-
-	std::vector<TVec2<unsigned int>> l_sampleCoords;
-	l_sampleCoords.reserve(m_sampleCountPerFace * 6);
-
-	for (unsigned int i = 0; i < m_sampleCountPerFace * 6; ++i)
-	{
-		auto l_sampleCoord = TVec2<unsigned int>(randomUint(generator), randomUint(generator));
-		l_sampleCoords.emplace_back(l_sampleCoord);
-	}
-
-	auto l_pixelDataFormat = m_capturedCubemaps[0]->m_GLTextureDataDesc.pixelDataFormat;
-	auto l_pixelDataType = m_capturedCubemaps[0]->m_GLTextureDataDesc.pixelDataType;
-
-	///////////////
-	std::vector<vec4> l_debugSamples;
-	l_debugSamples.resize(m_captureResolution * m_captureResolution * 6);
-
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_lightPassGLRPC->m_FBO);
-	glReadBuffer(GL_COLOR_ATTACHMENT0);
-
-	for (unsigned int i = 0; i < 6; i++)
-	{
-		bindCubemapTextureForWrite(m_capturedCubemaps[0], m_lightPassGLRPC, 0, i, 0);
-
-		glReadPixels(0, 0, m_captureResolution, m_captureResolution, l_pixelDataFormat, l_pixelDataType, &l_debugSamples[i * m_captureResolution * m_captureResolution]);
-
-		unbindCubemapTextureForWrite(m_lightPassGLRPC, 0, i, 0);
-	}
-
-	glReadBuffer(GL_NONE);
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-
-	m_testSampleCubemap->m_textureData = &l_debugSamples[0];
-	initializeGLTextureDataComponent(m_testSampleCubemap);
-
-	return true;
-}
-
 bool GLEnvironmentCapturePass::update()
 {
 	updateUBO(GLRenderingBackendComponent::get().m_meshUBO, g_pModuleManager->getRenderingFrontend()->getGIPassMeshGPUData());
@@ -366,8 +318,6 @@ bool GLEnvironmentCapturePass::update()
 		}
 		l_currentPos.x += l_voxelSize.x;
 	}
-
-	sampleSG();
 
 	return true;
 }
