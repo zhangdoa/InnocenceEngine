@@ -871,6 +871,54 @@ public:
 	TMat4<T> m_transformationMat; // 16 * sizeof(T)
 };
 
+template<class T>
+class TSH9
+{
+public:
+	TSH9() noexcept {}
+	~TSH9() {};
+
+	auto operator+= (const TSH9<T>& rhs) -> TSH9<T>
+	{
+		L00 = L00 + rhs.L00;
+		L11 = L11 + rhs.L11;
+		L10 = L10 + rhs.L10;
+		L1_1 = L1_1 + rhs.L1_1;
+		L21 = L21 + rhs.L21;
+		L2_1 = L2_1 + rhs.L2_1;
+		L2_2 = L2_2 + rhs.L2_2;
+		L20 = L20 + rhs.L20;
+		L22 = L22 + rhs.L22;
+
+		return *this;
+	}
+
+	auto operator/= (T rhs) -> TSH9<T>
+	{
+		L00 = L00 / rhs;
+		L11 = L11 / rhs;
+		L10 = L10 / rhs;
+		L1_1 = L1_1 / rhs;
+		L21 = L21 / rhs;
+		L2_1 = L2_1 / rhs;
+		L2_2 = L2_2 / rhs;
+		L20 = L20 / rhs;
+		L22 = L22 / rhs;
+
+		return *this;
+	}
+
+	TVec4<T> L00;
+	TVec4<T> L11;
+	TVec4<T> L10;
+	TVec4<T> L1_1;
+	TVec4<T> L21;
+	TVec4<T> L2_1;
+	TVec4<T> L2_2;
+	TVec4<T> L20;
+	TVec4<T> L22;
+};
+
 enum direction { FORWARD, BACKWARD, UP, DOWN, RIGHT, LEFT };
 
 using vec2 = TVec2<float>;
@@ -884,6 +932,7 @@ using Plane = TPlane<float>;
 using Frustum = TFrustum<float>;
 using TransformVector = TTransformVector<float>;
 using TransformMatrix = TTransformMatrix<float>;
+using SH9 = TSH9<float>;
 
 namespace InnoMath
 {

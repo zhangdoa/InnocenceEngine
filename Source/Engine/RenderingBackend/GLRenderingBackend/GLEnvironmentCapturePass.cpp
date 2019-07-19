@@ -3,6 +3,7 @@
 
 #include "GLSkyPass.h"
 #include "GLOpaquePass.h"
+#include "GLSHPass.h"
 
 #include "../../Component/GLRenderingBackendComponent.h"
 
@@ -14,7 +15,7 @@ using namespace GLRenderingBackendNS;
 
 INNO_PRIVATE_SCOPE GLEnvironmentCapturePass
 {
-	bool render(vec4 pos, GLTextureDataComponent* RT);
+	bool captureRadiance(vec4 pos, GLTextureDataComponent* RT);
 	bool drawOpaquePass(vec4 capturePos, mat4 p, const std::vector<mat4>& v, unsigned int faceIndex);
 	bool drawSkyPass(mat4 p, const std::vector<mat4>& v, GLTextureDataComponent* RT, unsigned int faceIndex);
 	bool drawLightPass(mat4 p, const std::vector<mat4>& v, GLTextureDataComponent* RT, unsigned int faceIndex);
@@ -28,11 +29,12 @@ INNO_PRIVATE_SCOPE GLEnvironmentCapturePass
 
 	ShaderFilePaths m_shaderFilePaths = { "environmentCapturePass.vert/" , "", "", "", "environmentCapturePass.frag/" };
 
-	const unsigned int m_captureResolution = 256;
+	const unsigned int m_captureResolution = 128;
 	const unsigned int m_sampleCountPerFace = m_captureResolution * m_captureResolution;
-	const unsigned int m_subDivideDimension = 2;
-	const unsigned int m_totalCubemaps = m_subDivideDimension * m_subDivideDimension * m_subDivideDimension;
-	std::vector<GLTextureDataComponent*> m_capturedCubemaps;
+	const unsigned int m_subDivideDimension = 4;
+	const unsigned int m_totalCaptureProbes = m_subDivideDimension * m_subDivideDimension * m_subDivideDimension;
+
+	std::vector<std::pair<vec4, SH9>> m_SH9s;
 }
 
 bool GLEnvironmentCapturePass::initialize()
@@ -69,17 +71,6 @@ bool GLEnvironmentCapturePass::initialize()
 
 	m_GLSPC = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
-
-	m_capturedCubemaps.reserve(m_totalCubemaps);
-	for (size_t i = 0; i < m_totalCubemaps; i++)
-	{
-		auto l_capturedPassCubemap = addGLTextureDataComponent();
-		l_capturedPassCubemap->m_textureDataDesc = l_renderPassDesc.RTDesc;
-		l_capturedPassCubemap->m_textureData = nullptr;
-		initializeGLTextureDataComponent(l_capturedPassCubemap);
-
-		m_capturedCubemaps.emplace_back(l_capturedPassCubemap);
-	}
 
 	return true;
 }
@@ -247,7 +238,7 @@ bool GLEnvironmentCapturePass::drawLightPass(mat4 p, const std::vector<mat4>& v,
 	return true;
 }
 
-bool GLEnvironmentCapturePass::render(vec4 pos, GLTextureDataComponent* RT)
+bool GLEnvironmentCapturePass::captureRadiance(vec4 pos, GLTextureDataComponent* RT)
 {
 	auto l_capturePos = pos;
 	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, 1000.0f);
@@ -288,15 +279,18 @@ bool GLEnvironmentCapturePass::render(vec4 pos, GLTextureDataComponent* RT)
 
 bool GLEnvironmentCapturePass::update()
 {
+	m_SH9s.clear();
+
 	updateUBO(GLRenderingBackendComponent::get().m_meshUBO, g_pModuleManager->getRenderingFrontend()->getGIPassMeshGPUData());
 	updateUBO(GLRenderingBackendComponent::get().m_materialUBO, g_pModuleManager->getRenderingFrontend()->getGIPassMaterialGPUData());
 
 	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getTotalSceneAABB();
 
 	auto l_sceneCenter = l_sceneAABB.m_center;
-	auto l_extendedAxisSize = l_sceneAABB.m_extend + vec4(1.0f, 1.0f, 1.0f, 0.0f);
+	auto l_extendedAxisSize = l_sceneAABB.m_extend;
+	l_extendedAxisSize = l_extendedAxisSize - vec4(2.0f, 2.0f, 2.0f, 0.0f);
 	l_extendedAxisSize.w = 0.0f;
-	auto l_voxelSize = l_extendedAxisSize / (float)m_subDivideDimension;
+	auto l_probeDistance = l_extendedAxisSize / (float)m_subDivideDimension;
 	auto l_startPos = l_sceneAABB.m_center - (l_extendedAxisSize / 2.0f);
 	auto l_currentPos = l_startPos;
 
@@ -310,13 +304,16 @@ bool GLEnvironmentCapturePass::update()
 			l_currentPos.z = l_startPos.z;
 			for (size_t k = 0; k < m_subDivideDimension; k++)
 			{
-				render(l_currentPos, m_capturedCubemaps[l_index]);
+				captureRadiance(l_currentPos, m_lightPassGLRPC->m_GLTDCs[0]);
+				auto l_SH9 = GLSHPass::getSH9(m_lightPassGLRPC->m_GLTDCs[0]);
+				m_SH9s.emplace_back(l_currentPos, l_SH9);
+
 				l_index++;
-				l_currentPos.z += l_voxelSize.z;
+				l_currentPos.z += l_probeDistance.z;
 			}
-			l_currentPos.y += l_voxelSize.y;
+			l_currentPos.y += l_probeDistance.y;
 		}
-		l_currentPos.x += l_voxelSize.x;
+		l_currentPos.x += l_probeDistance.x;
 	}
 
 	return true;
@@ -332,7 +329,7 @@ GLRenderPassComponent * GLEnvironmentCapturePass::getGLRPC()
 	return m_lightPassGLRPC;
 }
 
-const std::vector<GLTextureDataComponent*>& GLEnvironmentCapturePass::getCapturedCubemaps()
+std::vector<std::pair<vec4, SH9>> GLEnvironmentCapturePass::fetchResult()
 {
-	return m_capturedCubemaps;
+	return m_SH9s;
 }

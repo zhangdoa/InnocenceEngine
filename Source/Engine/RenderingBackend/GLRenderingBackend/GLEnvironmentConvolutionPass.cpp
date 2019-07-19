@@ -19,10 +19,6 @@ INNO_PRIVATE_SCOPE GLEnvironmentConvolutionPass
 	GLShaderProgramComponent* m_GLSPC;
 
 	ShaderFilePaths m_shaderFilePaths = { "environmentConvolutionPass.vert/" , "", "", "", "environmentConvolutionPass.frag/" };
-
-	const unsigned int m_subDivideDimension = 2;
-	const unsigned int m_totalCubemaps = m_subDivideDimension * m_subDivideDimension * m_subDivideDimension;
-	std::vector<GLTextureDataComponent*> m_convolutedCubemaps;
 }
 
 bool GLEnvironmentConvolutionPass::initialize()
@@ -50,22 +46,10 @@ bool GLEnvironmentConvolutionPass::initialize()
 	m_GLSPC = addGLShaderProgramComponent(m_entityID);
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
 
-	m_convolutedCubemaps.reserve(m_totalCubemaps);
-
-	for (size_t i = 0; i < m_totalCubemaps; i++)
-	{
-		auto l_convolutedCubemap = addGLTextureDataComponent();
-		l_convolutedCubemap->m_textureDataDesc = l_renderPassDesc.RTDesc;
-		l_convolutedCubemap->m_textureData = nullptr;
-		initializeGLTextureDataComponent(l_convolutedCubemap);
-
-		m_convolutedCubemaps.emplace_back(l_convolutedCubemap);
-	}
-
 	return true;
 }
 
-bool GLEnvironmentConvolutionPass::update()
+bool GLEnvironmentConvolutionPass::update(GLTextureDataComponent* GLTDC)
 {
 	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, 10.0f);
 
@@ -91,22 +75,17 @@ bool GLEnvironmentConvolutionPass::update()
 	// uni_p
 	updateUniform(0, l_p);
 
-	auto l_capturedCubemaps = GLEnvironmentCapturePass::getCapturedCubemaps();
+	activateTexture(GLTDC, 0);
 
-	for (size_t i = 0; i < l_capturedCubemaps.size(); i++)
+	for (unsigned int i = 0; i < 6; ++i)
 	{
-		activateTexture(l_capturedCubemaps[i], 0);
+		// uni_v
+		updateUniform(1, l_v[i]);
+		bindCubemapTextureForWrite(m_GLRPC->m_GLTDCs[0], m_GLRPC, 0, i, 0);
 
-		for (unsigned int j = 0; j < 6; ++j)
-		{
-			// uni_v
-			updateUniform(1, l_v[j]);
-			bindCubemapTextureForWrite(m_convolutedCubemaps[i], m_GLRPC, 0, j, 0);
+		drawMesh(l_MDC);
 
-			drawMesh(l_MDC);
-
-			unbindCubemapTextureForWrite(m_GLRPC, 0, j, 0);
-		}
+		unbindCubemapTextureForWrite(m_GLRPC, 0, i, 0);
 	}
 
 	return true;
@@ -124,9 +103,4 @@ bool GLEnvironmentConvolutionPass::reloadShader()
 GLRenderPassComponent * GLEnvironmentConvolutionPass::getGLRPC()
 {
 	return m_GLRPC;
-}
-
-const std::vector<GLTextureDataComponent*>& GLEnvironmentConvolutionPass::getConvolutedCubemaps()
-{
-	return m_convolutedCubemaps;
 }

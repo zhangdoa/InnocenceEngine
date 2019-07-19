@@ -110,11 +110,11 @@ void GLLightPass::update()
 		8);
 	// Irradiance env cubemap
 	activateTexture(
-		GLEnvironmentConvolutionPass::getConvolutedCubemaps()[0],
+		GLEnvironmentConvolutionPass::getGLRPC()->m_GLTDCs[0],
 		9);
 	// pre-filtered specular env cubemap
 	activateTexture(
-		GLEnvironmentPreFilterPass::getPreFiltedCubemaps()[0],
+		GLEnvironmentPreFilterPass::getGLRPC()->m_GLTDCs[0],
 		10);
 	activateTexture(
 		GLEarlyZPass::getGLRPC()->m_GLTDCs[0],

@@ -9,79 +9,19 @@ using namespace GLRenderingBackendNS;
 
 extern IModuleManager* g_pModuleManager;
 
-struct SH9
-{
-	vec4 L00;
-	vec4 L11;
-	vec4 L10;
-	vec4 L1_1;
-	vec4 L21;
-	vec4 L2_1;
-	vec4 L2_2;
-	vec4 L20;
-	vec4 L22;
-
-	SH9 operator+= (const SH9& rhs)
-	{
-		L00 = L00 + rhs.L00;
-		L11 = L11 + rhs.L11;
-		L10 = L10 + rhs.L10;
-		L1_1 = L1_1 + rhs.L1_1;
-		L21 = L21 + rhs.L21;
-		L2_1 = L2_1 + rhs.L2_1;
-		L2_2 = L2_2 + rhs.L2_2;
-		L20 = L20 + rhs.L20;
-		L22 = L22 + rhs.L22;
-
-		return *this;
-	}
-
-	SH9 operator/= (float rhs)
-	{
-		L00 = L00 / rhs;
-		L11 = L11 / rhs;
-		L10 = L10 / rhs;
-		L1_1 = L1_1 / rhs;
-		L21 = L21 / rhs;
-		L2_1 = L2_1 / rhs;
-		L2_2 = L2_2 / rhs;
-		L20 = L20 / rhs;
-		L22 = L22 / rhs;
-
-		return *this;
-	}
-};
-
 INNO_PRIVATE_SCOPE GLSHPass
 {
-	void initializeShaders();
 	SH9 samplesToSH(const std::vector<vec4>& samples);
 	std::vector<vec4> readbackCubemapSamples(GLRenderPassComponent* GLRPC, GLTextureDataComponent* GLTDC);
 
 	EntityID m_entityID;
 
 	GLRenderPassComponent* m_readbackCanvasGLRPC;
-	GLRenderPassComponent* m_visualizationGLRPC;
-
-	GLShaderProgramComponent* m_cubemapVisualizationGLSPC;
-	GLShaderProgramComponent* m_SHVisualizationGLSPC;
-	ShaderFilePaths m_cubemapVisualizationPassShaderFilePaths = { "cubemapVisualizationPass.vert/", "", "", "", "cubemapVisualizationPass.frag/" };
-	ShaderFilePaths m_SHVisualizationPassShaderFilePaths = { "SHVisualizationPass.vert/", "", "", "", "SHVisualizationPass.frag/" };
-
-	GLTextureDataComponent* m_testSampleCubemap;
-	SH9 m_testSH9;
-
-	GLuint m_SH9UBO;
-
-	const unsigned int m_captureResolution = 256;
-	const unsigned int m_sampleCountPerFace = m_captureResolution * m_captureResolution;
 }
 
 bool GLSHPass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
-
-	m_SH9UBO = generateUBO(sizeof(SH9), 9, "SH9UBO");
 
 	auto l_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	l_renderPassDesc.RTNumber = 0;
@@ -91,125 +31,14 @@ bool GLSHPass::initialize()
 
 	initializeGLRenderPassComponent(m_readbackCanvasGLRPC);
 
-	m_visualizationGLRPC = addGLRenderPassComponent(m_entityID, "SHPassVisualizationGLRPC/");
-	l_renderPassDesc.RTNumber = 1;
-	l_renderPassDesc.useDepthAttachment = true;
-	m_visualizationGLRPC->m_renderPassDesc = l_renderPassDesc;
-	m_visualizationGLRPC->m_drawColorBuffers = true;
-
-	initializeGLRenderPassComponent(m_visualizationGLRPC);
-
-	initializeShaders();
-
-	m_testSampleCubemap = addGLTextureDataComponent();
-	m_testSampleCubemap->m_textureDataDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc.RTDesc;
-	m_testSampleCubemap->m_textureDataDesc.samplerType = TextureSamplerType::SAMPLER_CUBEMAP;
-	m_testSampleCubemap->m_textureDataDesc.usageType = TextureUsageType::NORMAL;
-	m_testSampleCubemap->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_testSampleCubemap->m_textureDataDesc.minFilterMethod = TextureFilterMethod::LINEAR;
-	m_testSampleCubemap->m_textureDataDesc.magFilterMethod = TextureFilterMethod::LINEAR;
-	m_testSampleCubemap->m_textureDataDesc.wrapMethod = TextureWrapMethod::REPEAT;
-	m_testSampleCubemap->m_textureDataDesc.width = m_captureResolution;
-	m_testSampleCubemap->m_textureDataDesc.height = m_captureResolution;
-	m_testSampleCubemap->m_textureDataDesc.pixelDataType = TexturePixelDataType::FLOAT32;
-
-	std::vector<vec4> l_textureSamples(m_captureResolution * m_captureResolution * 6);
-	std::vector<vec4> l_faceColors = {
-	vec4(1.0f, 0.0f, 0.0f, 1.0f),
-	vec4(1.0f, 1.0f, 0.0f, 1.0f),
-	vec4(0.0f, 1.0f, 0.0f, 1.0f),
-	vec4(0.0f, 1.0f, 1.0f, 1.0f),
-	vec4(0.0f, 0.0f, 1.0f, 1.0f),
-	vec4(1.0f, 0.0f, 1.0f, 1.0f),
-	};
-	for (size_t i = 0; i < 6; i++)
-	{
-		for (size_t j = 0; j < m_sampleCountPerFace; j++)
-		{
-			auto l_color = l_faceColors[i] * 2.0f * (float)j / (float)m_sampleCountPerFace;
-			l_color.w = 1.0f;
-			l_textureSamples[i * m_sampleCountPerFace + j] = l_color;
-		}
-	}
-	m_testSampleCubemap->m_textureData = &l_textureSamples[0];
-	initializeGLTextureDataComponent(m_testSampleCubemap);
-
 	return true;
 }
 
-void GLSHPass::initializeShaders()
+SH9 GLSHPass::getSH9(GLTextureDataComponent * GLTDC)
 {
-	auto rhs = addGLShaderProgramComponent(m_entityID);
-
-	initializeGLShaderProgramComponent(rhs, m_cubemapVisualizationPassShaderFilePaths);
-
-	m_cubemapVisualizationGLSPC = rhs;
-
-	rhs = addGLShaderProgramComponent(m_entityID);
-
-	initializeGLShaderProgramComponent(rhs, m_SHVisualizationPassShaderFilePaths);
-
-	m_SHVisualizationGLSPC = rhs;
-}
-
-bool GLSHPass::update()
-{
-	auto l_textureSamples = readbackCubemapSamples(m_readbackCanvasGLRPC, m_testSampleCubemap);
-	m_testSH9 = samplesToSH(l_textureSamples);
-	return true;
-}
-
-bool GLSHPass::draw()
-{
-	updateUBO(m_SH9UBO, m_testSH9);
-
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
-	glDepthMask(GL_TRUE);
-
-	glEnable(GL_DEPTH_CLAMP);
-
-	activateRenderPass(m_visualizationGLRPC);
-
-	activateShaderProgram(m_cubemapVisualizationGLSPC);
-
-	activateTexture(m_testSampleCubemap, 0);
-
-	auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
-	drawMesh(l_MDC);
-
-	activateShaderProgram(m_SHVisualizationGLSPC);
-
-	l_MDC = getGLMeshDataComponent(MeshShapeType::SPHERE);
-	drawMesh(l_MDC);
-
-	glDisable(GL_DEPTH_CLAMP);
-	glDisable(GL_DEPTH_TEST);
-
-	return true;
-}
-
-bool GLSHPass::resize(unsigned int newSizeX, unsigned int newSizeY)
-{
-	return true;
-}
-
-bool GLSHPass::reloadShader()
-{
-	deleteShaderProgram(m_cubemapVisualizationGLSPC);
-
-	initializeGLShaderProgramComponent(m_cubemapVisualizationGLSPC, m_cubemapVisualizationPassShaderFilePaths);
-
-	deleteShaderProgram(m_SHVisualizationGLSPC);
-
-	initializeGLShaderProgramComponent(m_SHVisualizationGLSPC, m_SHVisualizationPassShaderFilePaths);
-
-	return true;
-}
-
-GLRenderPassComponent * GLSHPass::getGLRPC()
-{
-	return m_visualizationGLRPC;
+	auto l_textureSamples = readbackCubemapSamples(m_readbackCanvasGLRPC, GLTDC);
+	auto l_result = samplesToSH(l_textureSamples);
+	return l_result;
 }
 
 std::vector<vec4> GLSHPass::readbackCubemapSamples(GLRenderPassComponent* GLRPC, GLTextureDataComponent* GLTDC)

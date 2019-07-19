@@ -5,6 +5,8 @@
 #include "../../ComponentManager/IDirectionalLightComponentManager.h"
 
 #include "GLOpaquePass.h"
+#include "GLSHPass.h"
+#include "GLEnvironmentCapturePass.h"
 
 #include "GLRenderingBackendUtilities.h"
 #include "../../Component/GLRenderingBackendComponent.h"
@@ -18,14 +20,19 @@ extern IModuleManager* g_pModuleManager;
 INNO_PRIVATE_SCOPE GLDebuggerPass
 {
 	void initializeShaders();
+	bool initializeSHTest();
 
 	bool drawCoordinateAxis();
-	bool drawMainCamera();
-	bool drawDebugObjects();
+	bool drawWireframeForMainCameraFrustum();
+	bool drawWireframeForDebugObjects();
 
+	bool drawMainView();
 	bool drawRightView();
 	bool drawTopView();
 	bool drawFrontView();
+
+	bool drawTestSceneForSH();
+	bool drawDebugSphereForSH();
 
 	EntityID m_entityID;
 
@@ -33,14 +40,71 @@ INNO_PRIVATE_SCOPE GLDebuggerPass
 	unsigned int m_pickedID;
 	VisibleComponent* m_pickedVisibleComponent;
 
-	GLRenderPassComponent* m_GLRPC;
+	GLTextureDataComponent* m_testSampleCubemap;
+	SH9 m_testSH9;
+	GLuint m_SH9UBO;
+
+	GLRenderPassComponent* m_mainCanvasGLRPC;
 	GLRenderPassComponent* m_rightViewGLRPC;
 	GLRenderPassComponent* m_topViewGLRPC;
 	GLRenderPassComponent* m_frontViewGLRPC;
 
-	GLShaderProgramComponent* m_GLSPC;
+	GLRenderPassComponent* m_SHVisualizationGLRPC;
+
+	GLShaderProgramComponent* m_cubemapVisualizationGLSPC;
+	ShaderFilePaths m_cubemapVisualizationPassShaderFilePaths = { "cubemapVisualizationPass.vert/", "", "", "", "cubemapVisualizationPass.frag/" };
+
+	GLShaderProgramComponent* m_SHVisualizationGLSPC;
+	ShaderFilePaths m_SHVisualizationPassShaderFilePaths = { "SHVisualizationPass.vert/", "", "", "", "SHVisualizationPass.frag/" };
+
+	GLShaderProgramComponent* m_wireframeOverlayGLRPC;
 	ShaderFilePaths m_shaderFilePaths = { "wireframeOverlayPass.vert/", "", "", "", "wireframeOverlayPass.frag/" };
 	//ShaderFilePaths m_shaderFilePaths = { "debuggerPass.vert/", "", "", "debuggerPass.geom/", "debuggerPass.frag/" };
+}
+
+bool GLDebuggerPass::initializeSHTest()
+{
+	m_SH9UBO = generateUBO(sizeof(SH9), 9, "SH9UBO");
+
+	const unsigned int m_captureResolution = 128;
+	const unsigned int m_sampleCountPerFace = m_captureResolution * m_captureResolution;
+
+	m_testSampleCubemap = addGLTextureDataComponent();
+	m_testSampleCubemap->m_textureDataDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc.RTDesc;
+	m_testSampleCubemap->m_textureDataDesc.samplerType = TextureSamplerType::SAMPLER_CUBEMAP;
+	m_testSampleCubemap->m_textureDataDesc.usageType = TextureUsageType::NORMAL;
+	m_testSampleCubemap->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
+	m_testSampleCubemap->m_textureDataDesc.minFilterMethod = TextureFilterMethod::LINEAR;
+	m_testSampleCubemap->m_textureDataDesc.magFilterMethod = TextureFilterMethod::LINEAR;
+	m_testSampleCubemap->m_textureDataDesc.wrapMethod = TextureWrapMethod::REPEAT;
+	m_testSampleCubemap->m_textureDataDesc.width = m_captureResolution;
+	m_testSampleCubemap->m_textureDataDesc.height = m_captureResolution;
+	m_testSampleCubemap->m_textureDataDesc.pixelDataType = TexturePixelDataType::FLOAT32;
+
+	std::vector<vec4> l_textureSamples(m_captureResolution * m_captureResolution * 6);
+	std::vector<vec4> l_faceColors = {
+	vec4(1.0f, 0.0f, 0.0f, 1.0f),
+	vec4(1.0f, 1.0f, 0.0f, 1.0f),
+	vec4(0.0f, 1.0f, 0.0f, 1.0f),
+	vec4(0.0f, 1.0f, 1.0f, 1.0f),
+	vec4(0.0f, 0.0f, 1.0f, 1.0f),
+	vec4(1.0f, 0.0f, 1.0f, 1.0f),
+	};
+	for (size_t i = 0; i < 6; i++)
+	{
+		for (size_t j = 0; j < m_sampleCountPerFace; j++)
+		{
+			auto l_color = l_faceColors[i] * 2.0f * (float)j / (float)m_sampleCountPerFace;
+			l_color.w = 1.0f;
+			l_textureSamples[i * m_sampleCountPerFace + j] = l_color;
+		}
+	}
+	m_testSampleCubemap->m_textureData = &l_textureSamples[0];
+	initializeGLTextureDataComponent(m_testSampleCubemap);
+
+	m_testSH9 = GLSHPass::getSH9(m_testSampleCubemap);
+
+	return true;
 }
 
 bool GLDebuggerPass::initialize()
@@ -70,11 +134,20 @@ bool GLDebuggerPass::initialize()
 	m_entityID = InnoMath::createEntityID();
 
 	auto l_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "DebugPassGLRPC/");
-	m_GLRPC->m_renderPassDesc = l_renderPassDesc;
-	m_GLRPC->m_renderPassDesc.useDepthAttachment = true;
-	m_GLRPC->m_renderPassDesc.useStencilAttachment = true;
-	initializeGLRenderPassComponent(m_GLRPC);
+
+	m_SHVisualizationGLRPC = addGLRenderPassComponent(m_entityID, "SHVisualizationPassGLRPC/");
+	m_SHVisualizationGLRPC->m_renderPassDesc = l_renderPassDesc;
+	m_SHVisualizationGLRPC->m_renderPassDesc.RTNumber = 1;
+	m_SHVisualizationGLRPC->m_renderPassDesc.useDepthAttachment = true;
+	m_SHVisualizationGLRPC->m_drawColorBuffers = true;
+
+	initializeGLRenderPassComponent(m_SHVisualizationGLRPC);
+
+	m_mainCanvasGLRPC = addGLRenderPassComponent(m_entityID, "DebugPassGLRPC/");
+	m_mainCanvasGLRPC->m_renderPassDesc = l_renderPassDesc;
+	m_mainCanvasGLRPC->m_renderPassDesc.useDepthAttachment = true;
+	m_mainCanvasGLRPC->m_renderPassDesc.useStencilAttachment = true;
+	initializeGLRenderPassComponent(m_mainCanvasGLRPC);
 
 	l_renderPassDesc.RTDesc.width /= 2;
 	l_renderPassDesc.RTDesc.height /= 2;
@@ -92,18 +165,30 @@ bool GLDebuggerPass::initialize()
 	initializeGLRenderPassComponent(m_frontViewGLRPC);
 
 	initializeShaders();
+	initializeSHTest();
 
 	return true;
 }
 
 void GLDebuggerPass::initializeShaders()
 {
-	// shader programs and shaders
 	auto rhs = addGLShaderProgramComponent(m_entityID);
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 
-	m_GLSPC = rhs;
+	m_wireframeOverlayGLRPC = rhs;
+
+	rhs = addGLShaderProgramComponent(m_entityID);
+
+	initializeGLShaderProgramComponent(rhs, m_cubemapVisualizationPassShaderFilePaths);
+
+	m_cubemapVisualizationGLSPC = rhs;
+
+	rhs = addGLShaderProgramComponent(m_entityID);
+
+	initializeGLShaderProgramComponent(rhs, m_SHVisualizationPassShaderFilePaths);
+
+	m_SHVisualizationGLSPC = rhs;
 }
 
 bool GLDebuggerPass::drawCoordinateAxis()
@@ -154,7 +239,7 @@ bool GLDebuggerPass::drawCoordinateAxis()
 	return true;
 }
 
-bool GLDebuggerPass::drawMainCamera()
+bool GLDebuggerPass::drawWireframeForMainCameraFrustum()
 {
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::SPHERE);
 
@@ -173,7 +258,7 @@ bool GLDebuggerPass::drawMainCamera()
 	return true;
 }
 
-bool GLDebuggerPass::drawDebugObjects()
+bool GLDebuggerPass::drawWireframeForDebugObjects()
 {
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::SPHERE);
 
@@ -289,6 +374,20 @@ bool GLDebuggerPass::drawDebugObjects()
 	return true;
 }
 
+bool GLDebuggerPass::drawMainView()
+{
+	updateUniform(0, g_pModuleManager->getRenderingFrontend()->getCameraGPUData().p_original);
+	updateUniform(1, g_pModuleManager->getRenderingFrontend()->getCameraGPUData().r);
+	updateUniform(2, g_pModuleManager->getRenderingFrontend()->getCameraGPUData().t);
+
+	// albedo
+	updateUniform(4, vec4(0.5f, 0.2f, 0.1f, 1.0f));
+
+	drawWireframeForDebugObjects();
+
+	return true;
+}
+
 bool GLDebuggerPass::drawRightView()
 {
 	auto l_p = g_pModuleManager->getRenderingFrontend()->getCameraGPUData().p_original;
@@ -299,14 +398,15 @@ bool GLDebuggerPass::drawRightView()
 	updateUniform(0, l_p);
 	updateUniform(1, l_cam_r);
 	updateUniform(2, l_cam_t);
+
 	// albedo
 	updateUniform(4, vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
 	activateRenderPass(m_rightViewGLRPC);
 
-	drawDebugObjects();
+	drawWireframeForDebugObjects();
 
-	drawMainCamera();
+	drawWireframeForMainCameraFrustum();
 
 	return true;
 }
@@ -323,14 +423,15 @@ bool GLDebuggerPass::drawTopView()
 	updateUniform(0, l_p);
 	updateUniform(1, l_cam_r);
 	updateUniform(2, l_cam_t);
+
 	// albedo
 	updateUniform(4, vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
 	activateRenderPass(m_topViewGLRPC);
 
-	drawDebugObjects();
+	drawWireframeForDebugObjects();
 
-	drawMainCamera();
+	drawWireframeForMainCameraFrustum();
 
 	return true;
 }
@@ -345,45 +446,99 @@ bool GLDebuggerPass::drawFrontView()
 	updateUniform(0, l_p);
 	updateUniform(1, l_cam_r);
 	updateUniform(2, l_cam_t);
+
 	// albedo
 	updateUniform(4, vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
 	activateRenderPass(m_frontViewGLRPC);
 
-	drawDebugObjects();
+	drawWireframeForDebugObjects();
 
-	drawMainCamera();
+	drawWireframeForMainCameraFrustum();
+
+	return true;
+}
+
+bool GLDebuggerPass::drawTestSceneForSH()
+{
+	glDepthMask(GL_TRUE);
+	glDepthFunc(GL_LEQUAL);
+
+	auto l_m = InnoMath::generateIdentityMatrix<float>();
+	updateUniform(0, l_m);
+
+	updateUBO(m_SH9UBO, m_testSH9);
+
+	activateRenderPass(m_SHVisualizationGLRPC);
+
+	activateShaderProgram(m_cubemapVisualizationGLSPC);
+
+	activateTexture(m_testSampleCubemap, 0);
+
+	auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
+	drawMesh(l_MDC);
+
+	activateShaderProgram(m_SHVisualizationGLSPC);
+
+	l_MDC = getGLMeshDataComponent(MeshShapeType::SPHERE);
+	drawMesh(l_MDC);
+
+	return true;
+}
+
+bool GLDebuggerPass::drawDebugSphereForSH()
+{
+	glDepthMask(GL_FALSE);
+	glDepthFunc(GL_LESS);
+
+	// copy depth buffer from G-Pass
+	copyDepthBuffer(GLOpaquePass::getGLRPC(), m_mainCanvasGLRPC);
+
+	auto l_SH9s = GLEnvironmentCapturePass::fetchResult();
+	auto l_MDC = getGLMeshDataComponent(MeshShapeType::SPHERE);
+
+	activateShaderProgram(m_SHVisualizationGLSPC);
+
+	for (auto& i : l_SH9s)
+	{
+		auto l_m = InnoMath::toTranslationMatrix(i.first);
+		updateUniform(0, l_m);
+		updateUBO(m_SH9UBO, i.second);
+
+		drawMesh(l_MDC);
+	}
 
 	return true;
 }
 
 bool GLDebuggerPass::update()
 {
-	activateShaderProgram(m_GLSPC);
+	activateRenderPass(m_mainCanvasGLRPC);
 
-	activateRenderPass(m_GLRPC);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_CLAMP);
+
+	static bool l_drawSHTestScene = false;
+
+	if (l_drawSHTestScene)
+	{
+		drawTestSceneForSH();
+	}
+	else
+	{
+		drawDebugSphereForSH();
+	}
+
+	glDisable(GL_DEPTH_CLAMP);
+	glDisable(GL_DEPTH_TEST);
+
+	activateShaderProgram(m_wireframeOverlayGLRPC);
 
 	drawCoordinateAxis();
 
-	//glEnable(GL_DEPTH_TEST);
-	//glDepthFunc(GL_LESS);
-
-	// copy depth buffer from G-Pass
-	//copyDepthBuffer(GLOpaquePass::getGLRPC(), m_GLRPC);
-
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-	updateUniform(0, g_pModuleManager->getRenderingFrontend()->getCameraGPUData().p_original);
-	updateUniform(1, g_pModuleManager->getRenderingFrontend()->getCameraGPUData().r);
-	updateUniform(2, g_pModuleManager->getRenderingFrontend()->getCameraGPUData().t);
-
-	// albedo
-	updateUniform(4, vec4(0.5f, 0.2f, 0.1f, 1.0f));
-
-	drawDebugObjects();
-
-	glDisable(GL_DEPTH_TEST);
-
+	drawMainView();
 	drawRightView();
 	drawTopView();
 	drawFrontView();
@@ -395,16 +550,24 @@ bool GLDebuggerPass::update()
 
 bool GLDebuggerPass::resize(unsigned int newSizeX, unsigned int newSizeY)
 {
-	resizeGLRenderPassComponent(m_GLRPC, newSizeX, newSizeY);
+	resizeGLRenderPassComponent(m_mainCanvasGLRPC, newSizeX, newSizeY);
 
 	return true;
 }
 
 bool GLDebuggerPass::reloadShader()
 {
-	deleteShaderProgram(m_GLSPC);
+	deleteShaderProgram(m_wireframeOverlayGLRPC);
 
-	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
+	initializeGLShaderProgramComponent(m_wireframeOverlayGLRPC, m_shaderFilePaths);
+
+	deleteShaderProgram(m_cubemapVisualizationGLSPC);
+
+	initializeGLShaderProgramComponent(m_cubemapVisualizationGLSPC, m_cubemapVisualizationPassShaderFilePaths);
+
+	deleteShaderProgram(m_SHVisualizationGLSPC);
+
+	initializeGLShaderProgramComponent(m_SHVisualizationGLSPC, m_SHVisualizationPassShaderFilePaths);
 
 	return true;
 }
@@ -413,7 +576,7 @@ GLRenderPassComponent * GLDebuggerPass::getGLRPC(unsigned int index)
 {
 	if (index == 0)
 	{
-		return m_GLRPC;
+		return m_mainCanvasGLRPC;
 	}
 	else if (index == 1)
 	{
@@ -423,8 +586,12 @@ GLRenderPassComponent * GLDebuggerPass::getGLRPC(unsigned int index)
 	{
 		return m_topViewGLRPC;
 	}
-	else
+	else if (index == 3)
 	{
 		return m_frontViewGLRPC;
+	}
+	else
+	{
+		return m_SHVisualizationGLRPC;
 	}
 }
