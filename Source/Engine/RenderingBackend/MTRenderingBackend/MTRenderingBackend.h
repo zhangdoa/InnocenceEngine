@@ -11,6 +11,7 @@ public:
 	bool initialize() override;
 	bool update() override;
 	bool render() override;
+	bool present() override;
 	bool terminate() override;
 
 	ObjectStatus getStatus() override;
@@ -24,7 +25,7 @@ public:
 	TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) override;
 
 	void registerUninitializedMeshDataComponent(MeshDataComponent* rhs) override;
-	void registerUninitializedTextureDataComponent(TextureDataComponent* rhs) override;
+	void registerUninitializedMaterialDataComponent(MaterialDataComponent* rhs) override;
 
 	bool resize() override;
 	bool reloadShader(RenderPassType renderPassType) override;

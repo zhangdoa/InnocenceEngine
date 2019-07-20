@@ -1,6 +1,6 @@
 #include "MTRenderingBackend.h"
 #include "../../Component/MTMeshDataComponent.h"
-#include "../../Component/MaterialDataComponent.h"
+#include "../../Component/MTMaterialDataComponent.h"
 #include "../../Component/MTTextureDataComponent.h"
 
 #include "../../ModuleManager/IModuleManager.h"
@@ -15,11 +15,12 @@ INNO_PRIVATE_SCOPE MTRenderingBackendNS
 	void loadDefaultAssets();
 	bool update();
 	bool render();
+	bool present();
 	bool resize();
 	bool terminate();
 
 	MTMeshDataComponent* addMTMeshDataComponent();
-	MaterialDataComponent* addMaterialDataComponent();
+	MaterialDataComponent* addMTMaterialDataComponent();
 	MTTextureDataComponent* addMTTextureDataComponent();
 
 	MTMeshDataComponent* getMTMeshDataComponent(MeshShapeType MeshShapeType);
@@ -32,16 +33,12 @@ INNO_PRIVATE_SCOPE MTRenderingBackendNS
 
 	MTRenderingBackendBridge* m_bridge;
 
-	ThreadSafeUnorderedMap<EntityID, MTMeshDataComponent*> m_meshMap;
-	ThreadSafeUnorderedMap<EntityID, MaterialDataComponent*> m_materialMap;
-	ThreadSafeUnorderedMap<EntityID, MTTextureDataComponent*> m_textureMap;
-
 	void* m_MeshDataComponentPool;
 	void* m_MaterialDataComponentPool;
 	void* m_TextureDataComponentPool;
 
-	ThreadSafeQueue<MTMeshDataComponent*> m_uninitializedMDC;
-	ThreadSafeQueue<MTTextureDataComponent*> m_uninitializedTDC;
+	ThreadSafeQueue<MTMeshDataComponent*> m_uninitializedMeshes;
+	ThreadSafeQueue<MTMaterialDataComponent*> m_uninitializedMaterials;
 
 	MTTextureDataComponent* m_iconTemplate_OBJ;
 	MTTextureDataComponent* m_iconTemplate_PNG;
@@ -79,7 +76,7 @@ bool MTRenderingBackendNS::setup()
 bool MTRenderingBackendNS::initialize()
 {
 	m_MeshDataComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(MTMeshDataComponent), 16384);
-	m_MaterialDataComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(MaterialDataComponent), 32768);
+	m_MaterialDataComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(MTMaterialDataComponent), 32768);
 	m_TextureDataComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(MTTextureDataComponent), 32768);
 
 	bool result = MTRenderingBackendNS::m_bridge->initialize();
@@ -88,21 +85,28 @@ bool MTRenderingBackendNS::initialize()
 
 	m_objectStatus = ObjectStatus::Activated;
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingBackend has been initialized.");
-	return true;
+	return result;
 }
 
 bool MTRenderingBackendNS::update()
 {
 	bool result = MTRenderingBackendNS::m_bridge->update();
 
-	return true;
+	return result;
 }
 
 bool MTRenderingBackendNS::render()
 {
 	bool result = MTRenderingBackendNS::m_bridge->render();
 
-	return true;
+	return result;
+}
+
+bool MTRenderingBackendNS::present()
+{
+	bool result = MTRenderingBackendNS::m_bridge->present();
+
+	return result;
 }
 
 bool MTRenderingBackendNS::terminate()
@@ -112,7 +116,7 @@ bool MTRenderingBackendNS::terminate()
 	m_objectStatus = ObjectStatus::Terminated;
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingBackend has been terminated.");
 
-	return true;
+	return result;
 }
 
 void MTRenderingBackendNS::loadDefaultAssets()
@@ -214,11 +218,11 @@ MTMeshDataComponent* MTRenderingBackendNS::addMTMeshDataComponent()
 	return l_MDC;
 }
 
-MaterialDataComponent* MTRenderingBackendNS::addMaterialDataComponent()
+MaterialDataComponent* MTRenderingBackendNS::addMTMaterialDataComponent()
 {
 	static std::atomic<unsigned int> materialCount = 0;
-	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MaterialDataComponent));
-	auto l_MDC = new(l_rawPtr)MaterialDataComponent();
+	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MTMaterialDataComponent));
+	auto l_MDC = new(l_rawPtr)MTMaterialDataComponent();
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Material_" + std::to_string(materialCount) + "/").c_str());
 	l_MDC->m_parentEntity = l_parentEntity;
 	materialCount++;
@@ -338,6 +342,11 @@ bool MTRenderingBackend::render()
 	return MTRenderingBackendNS::render();
 }
 
+bool MTRenderingBackend::present()
+{
+	return MTRenderingBackendNS::present();
+}
+
 bool MTRenderingBackend::terminate()
 {
 	return MTRenderingBackendNS::terminate();
@@ -355,7 +364,7 @@ MeshDataComponent * MTRenderingBackend::addMeshDataComponent()
 
 MaterialDataComponent * MTRenderingBackend::addMaterialDataComponent()
 {
-	return MTRenderingBackendNS::addMaterialDataComponent();
+	return MTRenderingBackendNS::addMTMaterialDataComponent();
 }
 
 TextureDataComponent * MTRenderingBackend::addTextureDataComponent()
@@ -385,12 +394,12 @@ TextureDataComponent * MTRenderingBackend::getTextureDataComponent(WorldEditorIc
 
 void MTRenderingBackend::registerUninitializedMeshDataComponent(MeshDataComponent * rhs)
 {
-	MTRenderingBackendNS::m_uninitializedMDC.push(reinterpret_cast<MTMeshDataComponent*>(rhs));
+	MTRenderingBackendNS::m_uninitializedMeshes.push(reinterpret_cast<MTMeshDataComponent*>(rhs));
 }
 
-void MTRenderingBackend::registerUninitializedTextureDataComponent(TextureDataComponent * rhs)
+void MTRenderingBackend::registerUninitializedMaterialDataComponent(MaterialDataComponent* rhs)
 {
-	MTRenderingBackendNS::m_uninitializedTDC.push(reinterpret_cast<MTTextureDataComponent*>(rhs));
+	MTRenderingBackendNS::m_uninitializedMaterials.push(reinterpret_cast<MTMaterialDataComponent*>(rhs));
 }
 
 bool MTRenderingBackend::resize()

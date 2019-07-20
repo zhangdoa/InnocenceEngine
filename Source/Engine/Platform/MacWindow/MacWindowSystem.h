@@ -13,11 +13,11 @@ public:
 	bool terminate() override;
 
 	ObjectStatus getStatus() override;
+
+	IWindowSurface* getWindowSurface() override;
 	ButtonStatusMap getButtonStatus() override;
 
 	bool sendEvent(unsigned int umsg, unsigned int WParam, int LParam) override;
-
-	void swapBuffer() override;
 
 	void setBridge(MacWindowSystemBridge* bridge);
 };

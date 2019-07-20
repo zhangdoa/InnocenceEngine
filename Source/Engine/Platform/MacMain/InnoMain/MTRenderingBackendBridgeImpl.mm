@@ -11,17 +11,17 @@
 
 bool MTRenderingBackendBridgeImpl::setup() {
     [m_metalDelegate createDevice];
-    
+
     [m_metalDelegate createView:[m_macWindowDelegate getFrame]];
-    
+
     return true;
 }
 
 bool MTRenderingBackendBridgeImpl::initialize() {
     [m_metalDelegate createLibrary];
-    
+
     [m_metalDelegate createPipeline];
-    
+
     [m_metalDelegate createBuffer];
     return true;
 }
@@ -32,6 +32,10 @@ bool MTRenderingBackendBridgeImpl::update() {
 
 bool MTRenderingBackendBridgeImpl::render() {
     [m_metalDelegate render];
+    return true;
+}
+
+bool MTRenderingBackendBridgeImpl::present() {
     return true;
 }
 
@@ -71,7 +75,7 @@ bool MTRenderingBackendBridgeImpl::initializeMTMeshDataComponent(MTMeshDataCompo
     }
     else
     {
-        [m_metalDelegate submitGPUData:rhs];        
+        [m_metalDelegate submitGPUData:rhs];
         return true;
     }
 }

@@ -51,6 +51,12 @@ ObjectStatus MacWindowSystem::getStatus()
 	return MacWindowSystemNS::m_objectStatus;
 }
 
+IWindowSurface * MacWindowSystem::getWindowSurface()
+{
+	// @TODO: return a windows surface wrapper instance
+	return nullptr;
+}
+
 ButtonStatusMap MacWindowSystem::getButtonStatus()
 {
 	return MacWindowSystemNS::m_buttonStatus;
@@ -59,10 +65,6 @@ ButtonStatusMap MacWindowSystem::getButtonStatus()
 bool MacWindowSystem::sendEvent(unsigned int umsg, unsigned int WParam, int LParam)
 {
 	return true;
-}
-
-void MacWindowSystem::swapBuffer()
-{
 }
 
 void MacWindowSystem::setBridge(MacWindowSystemBridge* bridge)
