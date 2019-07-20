@@ -67,6 +67,11 @@ layout(std140, binding = 8) uniform dispatchParamsUBO
 	uint dispatchParamsUBO_padding2;
 };
 
+layout(std140, row_major, binding = 9) uniform SH9UBO
+{
+	SH9 uni_SH9[64];
+};
+
 layout(std430, binding = 0) buffer gridFrustumsSSBO
 {
 	Frustum gridFrustums[];

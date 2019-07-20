@@ -38,13 +38,16 @@ INNO_PRIVATE_SCOPE GLEnvironmentCapturePass
 	const unsigned int m_subDivideDimension = 4;
 	const unsigned int m_totalCaptureProbes = m_subDivideDimension * m_subDivideDimension * m_subDivideDimension;
 
-	std::vector<std::pair<vec4, SH9>> m_radianceSH9s;
-	std::vector<std::pair<vec4, SH9>> m_skyVisibilitySH9s;
+	std::pair<std::vector<vec4>, std::vector<SH9>> m_radianceSH9s;
+	std::pair<std::vector<vec4>, std::vector<SH9>> m_skyVisibilitySH9s;
 }
 
 bool GLEnvironmentCapturePass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
+
+	m_radianceSH9s = std::make_pair(std::vector<vec4>(m_totalCaptureProbes), std::vector<SH9>(m_totalCaptureProbes));
+	m_skyVisibilitySH9s = std::make_pair(std::vector<vec4>(m_totalCaptureProbes), std::vector<SH9>(m_totalCaptureProbes));
 
 	auto l_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 
@@ -340,8 +343,10 @@ bool GLEnvironmentCapturePass::captureRadiance(vec4 pos)
 
 bool GLEnvironmentCapturePass::update()
 {
-	m_radianceSH9s.clear();
-	m_skyVisibilitySH9s.clear();
+	m_radianceSH9s.first.clear();
+	m_radianceSH9s.second.clear();
+	m_skyVisibilitySH9s.first.clear();
+	m_skyVisibilitySH9s.second.clear();
 
 	updateUBO(GLRenderingBackendComponent::get().m_meshUBO, g_pModuleManager->getRenderingFrontend()->getGIPassMeshGPUData());
 	updateUBO(GLRenderingBackendComponent::get().m_materialUBO, g_pModuleManager->getRenderingFrontend()->getGIPassMaterialGPUData());
@@ -367,10 +372,12 @@ bool GLEnvironmentCapturePass::update()
 				captureRadiance(l_currentPos);
 
 				auto l_SH9 = GLSHPass::getSH9(m_capturePassGLRPC->m_GLTDCs[0]);
-				m_radianceSH9s.emplace_back(l_currentPos, l_SH9);
+				m_radianceSH9s.first.emplace_back(l_currentPos);
+				m_radianceSH9s.second.emplace_back(l_SH9);
 
 				l_SH9 = GLSHPass::getSH9(m_skyVisibilityPassGLRPC->m_GLTDCs[0]);
-				m_skyVisibilitySH9s.emplace_back(l_currentPos, l_SH9);
+				m_skyVisibilitySH9s.first.emplace_back(l_currentPos);
+				m_skyVisibilitySH9s.second.emplace_back(l_SH9);
 
 				l_currentPos.z += l_probeDistance.z;
 			}
@@ -392,12 +399,12 @@ GLRenderPassComponent * GLEnvironmentCapturePass::getGLRPC()
 	return m_capturePassGLRPC;
 }
 
-std::vector<std::pair<vec4, SH9>> GLEnvironmentCapturePass::getRadianceSH9()
+std::pair<std::vector<vec4>, std::vector<SH9>> GLEnvironmentCapturePass::getRadianceSH9()
 {
 	return m_radianceSH9s;
 }
 
-std::vector<std::pair<vec4, SH9>> GLEnvironmentCapturePass::getSkyVisibilitySH9()
+std::pair<std::vector<vec4>, std::vector<SH9>> GLEnvironmentCapturePass::getSkyVisibilitySH9()
 {
 	return m_skyVisibilitySH9s;
 }

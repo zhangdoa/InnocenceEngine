@@ -9,8 +9,8 @@ INNO_PRIVATE_SCOPE GLEnvironmentCapturePass
 	bool update();
 	bool resize(unsigned int newSizeX,  unsigned int newSizeY);
 	bool reloadShader();
-	std::vector<std::pair<vec4, SH9>> getRadianceSH9();
-	std::vector<std::pair<vec4, SH9>> getSkyVisibilitySH9();
+	std::pair<std::vector<vec4>, std::vector<SH9>> getRadianceSH9();
+	std::pair<std::vector<vec4>, std::vector<SH9>> getSkyVisibilitySH9();
 
 	GLRenderPassComponent* getGLRPC();
 }

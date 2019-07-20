@@ -64,7 +64,7 @@ INNO_PRIVATE_SCOPE GLDebuggerPass
 
 bool GLDebuggerPass::initializeSHTest()
 {
-	m_SH9UBO = generateUBO(sizeof(SH9), 9, "SH9UBO");
+	m_SH9UBO = generateUBO(sizeof(SH9) * 64, 9, "SH9UBO");
 
 	const unsigned int m_captureResolution = 128;
 	const unsigned int m_sampleCountPerFace = m_captureResolution * m_captureResolution;
@@ -515,11 +515,13 @@ bool GLDebuggerPass::drawDebugSphereForSH(GLRenderPassComponent* canvas)
 
 	activateShaderProgram(m_SHVisualizationGLSPC);
 
-	for (auto& i : l_SH9s)
+	updateUBO(m_SH9UBO, l_SH9s.second);
+
+	for (size_t i = 0; i < l_SH9s.first.size(); i++)
 	{
-		auto l_m = InnoMath::toTranslationMatrix(i.first);
+		auto l_m = InnoMath::toTranslationMatrix(l_SH9s.first[i]);
 		updateUniform(0, l_m);
-		updateUBO(m_SH9UBO, i.second);
+		updateUniform(1, (unsigned int)i);
 
 		drawMesh(l_MDC);
 	}
