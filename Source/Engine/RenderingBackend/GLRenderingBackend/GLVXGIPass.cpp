@@ -130,6 +130,7 @@ void GLVXGIPass::initializeVoxelVisualizationPass()
 	// generate and bind framebuffer
 	m_voxelVisualizationGLRPC = addGLRenderPassComponent(m_entityID, "VoxelVisualizationPassGLRPC/");
 	m_voxelVisualizationGLRPC->m_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
+	m_voxelVisualizationGLRPC->m_renderPassDesc.useDepthAttachment = true;
 	initializeGLRenderPassComponent(m_voxelVisualizationGLRPC);
 
 	ShaderFilePaths m_voxelVisualizationPassShaderFilePaths = {};
@@ -254,8 +255,8 @@ void GLVXGIPass::updateVoxelVisualizationPass()
 
 	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getTotalSceneAABB();
 
-	auto axisSize = l_sceneAABB.m_extend;
-	m_volumeEdgeSize = std::max(axisSize.x, std::max(axisSize.y, axisSize.z));
+	auto l_axisSize = l_sceneAABB.m_extend;
+	m_volumeEdgeSize = std::max(l_axisSize.x, std::max(l_axisSize.y, l_axisSize.z));
 	auto l_voxelSize = m_volumeEdgeSize / m_volumeDimension;
 
 	// voxel visualization pass

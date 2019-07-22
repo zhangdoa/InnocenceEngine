@@ -38,20 +38,20 @@ void main()
 	}
 
 	// fragment albedo
-	vec3 albedo;
+	vec4 albedo = vec4(1.0f);
 	if (uni_useAlbedoTexture)
 	{
 		vec4 albedoTexture = texture(uni_albedoTexture, gs_in.texCoord);
-		albedo = albedoTexture.rgb;
+		albedo.rgb = albedoTexture.rgb;
 	}
 	else
 	{
-		albedo = uni_albedo.rgb;
+		albedo.rgb = uni_albedo.rgb;
 	}
 
 	// writing coords positionLS
 	ivec3 outputCoord = ivec3(gs_in.outputCoord);
-	imageStore(uni_voxelAlbedo, outputCoord, vec4(albedo, 1.0f));
+	imageStore(uni_voxelAlbedo, outputCoord, albedo);
 
 	//// average albedo per fragments surrounding the voxel volume
 	//albedo.rgb *= 255.0;
@@ -60,7 +60,7 @@ void main()
 	//uint curStoredVal;
 	//uint numIterations = 0;
 
-	//while ((curStoredVal = imageAtomicCompSwap(uni_voxelAlbedo, positionLS, prevStoredVal, newVal))
+	//while ((curStoredVal = imageAtomicCompSwap(uni_voxelAlbedo, gs_in.positionLS, prevStoredVal, newVal))
 	//	!= prevStoredVal
 	//	&& numIterations < 255)
 	//{

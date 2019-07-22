@@ -5,5 +5,9 @@ layout(location = 0) in vec4 voxelColor;
 
 void main()
 {
+	if (voxelColor.a < 0.1)
+	{
+		discard;
+	}
 	uni_RT0 = vec4(voxelColor);
 }
