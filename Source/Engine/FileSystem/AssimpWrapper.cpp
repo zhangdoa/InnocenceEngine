@@ -9,7 +9,7 @@
 #include "../ModuleManager/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
 
-#include "IOServices.h"
+#include "IOService.h"
 #include "JSONParser.h"
 
 INNO_PRIVATE_SCOPE InnoFileSystemNS
@@ -29,11 +29,11 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 
 bool InnoFileSystemNS::AssimpWrapper::convertModel(const std::string & fileName, const std::string & exportPath)
 {
-	auto l_exportFileName = getFileName(fileName);
+	auto l_exportFileName = IOService::getFileName(fileName);
 	auto l_exportFileRelativePath = exportPath + l_exportFileName + ".InnoModel";
 
 	// Check if the file was converted already
-	if (isFileExist(l_exportFileRelativePath))
+	if (IOService::isFileExist(l_exportFileRelativePath))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: AssimpWrapper: " + fileName + " has already been converted!");
 		return true;
@@ -44,14 +44,14 @@ bool InnoFileSystemNS::AssimpWrapper::convertModel(const std::string & fileName,
 	const aiScene* l_assScene;
 
 	// Check if the file was exist
-	if (isFileExist(fileName))
+	if (IOService::isFileExist(fileName))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: AssimpWrapper: converting " + fileName + "...");
 #if defined _DEBUG
-		std::string l_logFilePath = getWorkingDirectory() + "res/log/AssimpLog" + fileName + ".txt";
+		std::string l_logFilePath = IOService::getWorkingDirectory() + "res/log/AssimpLog" + fileName + ".txt";
 		Assimp::DefaultLogger::create(l_logFilePath.c_str(), Assimp::Logger::VERBOSE);
 #endif
-		l_assScene = l_assImporter.ReadFile(getWorkingDirectory() + fileName, aiProcess_Triangulate | aiProcess_FlipUVs);
+		l_assScene = l_assImporter.ReadFile(IOService::getWorkingDirectory() + fileName, aiProcess_Triangulate | aiProcess_FlipUVs);
 	}
 	else
 	{
@@ -336,10 +336,10 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 		}
 	}
 
-	std::ofstream l_file(getWorkingDirectory() + exportFileRelativePath, std::ios::binary);
+	std::ofstream l_file(IOService::getWorkingDirectory() + exportFileRelativePath, std::ios::binary);
 
-	serializeVector(l_file, l_vertices);
-	serializeVector(l_file, l_indices);
+	IOService::serializeVector(l_file, l_vertices);
+	IOService::serializeVector(l_file, l_indices);
 
 	l_file.close();
 
@@ -528,22 +528,22 @@ Binary data structure:
 
 void InnoFileSystemNS::AssimpWrapper::processAssimpAnimation(const aiAnimation * aiAnimation, const std::string& exportFileRelativePath)
 {
-	std::ofstream l_file(getWorkingDirectory() + exportFileRelativePath, std::ios::binary);
+	std::ofstream l_file(IOService::getWorkingDirectory() + exportFileRelativePath, std::ios::binary);
 	//
 	auto l_duration = aiAnimation->mDuration;
-	serialize(l_file, &l_duration, sizeof(decltype(l_duration)));
+	IOService::serialize(l_file, &l_duration, sizeof(decltype(l_duration)));
 	//
 	auto l_numChannels = aiAnimation->mNumChannels;
 	if (l_numChannels)
 	{
-		serialize(l_file, &l_numChannels, sizeof(decltype(l_numChannels)));
+		IOService::serialize(l_file, &l_numChannels, sizeof(decltype(l_numChannels)));
 		//
 		for (unsigned int i = 0; i < l_numChannels; i++)
 		{
 			//
 			auto l_channel = aiAnimation->mChannels[i];
 			auto l_channelIndex = i;
-			serialize(l_file, &l_channelIndex, sizeof(decltype(l_channelIndex)));
+			IOService::serialize(l_file, &l_channelIndex, sizeof(decltype(l_channelIndex)));
 
 			if (l_channel->mNumPositionKeys != l_channel->mNumRotationKeys)
 			{
@@ -552,7 +552,7 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpAnimation(const aiAnimation *
 				return;
 			}
 			//
-			serialize(l_file, &l_channel->mNumPositionKeys, sizeof(decltype(l_channel->mNumPositionKeys)));
+			IOService::serialize(l_file, &l_channel->mNumPositionKeys, sizeof(decltype(l_channel->mNumPositionKeys)));
 			for (unsigned int j = 0; j < l_channel->mNumPositionKeys; j++)
 			{
 				auto l_posKey = l_channel->mPositionKeys[i];
@@ -568,7 +568,7 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpAnimation(const aiAnimation *
 				l_key.m_Rot = l_rot;
 				l_key.m_Time = l_posKeyTime;
 
-				serialize(l_file, &l_key, sizeof(decltype(l_key)));
+				IOService::serialize(l_file, &l_key, sizeof(decltype(l_key)));
 			}
 		}
 	}

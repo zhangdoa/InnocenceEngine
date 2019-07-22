@@ -8,7 +8,7 @@
 
 extern IModuleManager* g_pModuleManager;
 
-#include "IOServices.h"
+#include "IOService.h"
 #include "AssimpWrapper.h"
 #include "AssetLoader.h"
 #include "JSONParser.h"
@@ -35,7 +35,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS
 
 bool InnoFileSystemNS::convertModel(const std::string & fileName, const std::string & exportPath)
 {
-	auto l_extension = getFileExtension(fileName);
+	auto l_extension = IOService::getFileExtension(fileName);
 
 	if (l_extension == ".obj" || l_extension == ".OBJ" || l_extension == ".fbx" || l_extension == ".FBX")
 	{
@@ -110,7 +110,7 @@ bool InnoFileSystemNS::loadScene(const std::string& fileName)
 
 bool InnoFileSystem::setup()
 {
-	InnoFileSystemNS::setupWorkingDirectory();
+	IOService::setupWorkingDirectory();
 
 	InnoFileSystemNS::m_objectStatus = ObjectStatus::Created;
 	return true;
@@ -167,17 +167,17 @@ ObjectStatus InnoFileSystem::getStatus()
 
 std::string InnoFileSystem::getWorkingDirectory()
 {
-	return InnoFileSystemNS::getWorkingDirectory();
+	return IOService::getWorkingDirectory();
 }
 
-std::string InnoFileSystem::loadTextFile(const std::string & fileName)
+std::vector<char> InnoFileSystem::loadFile(const std::string& filePath, IOMode openMode)
 {
-	return InnoFileSystemNS::loadTextFile(fileName);
+	return IOService::loadFile(filePath, openMode);
 }
 
-std::vector<char> InnoFileSystem::loadBinaryFile(const std::string & fileName)
+bool InnoFileSystem::saveFile(const std::string& filePath, const std::vector<char>& content, IOMode saveMode)
 {
-	return InnoFileSystemNS::loadBinaryFile(fileName);
+	return IOService::saveFile(filePath, content, saveMode);
 }
 
 bool InnoFileSystem::loadScene(const std::string & fileName)
@@ -226,7 +226,7 @@ bool InnoFileSystem::addCPPClassFiles(const CPPClassDesc & desc)
 {
 	// Build header file
 	auto l_headerFileName = desc.filePath + desc.className + ".h";
-	std::ofstream l_headerFile(InnoFileSystemNS::getWorkingDirectory() + l_headerFileName, std::ios::out | std::ios::trunc);
+	std::ofstream l_headerFile(IOService::getWorkingDirectory() + l_headerFileName, std::ios::out | std::ios::trunc);
 
 	if (!l_headerFile.is_open())
 	{

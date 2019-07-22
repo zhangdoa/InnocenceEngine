@@ -5,7 +5,7 @@
 #include "../ModuleManager/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
 
-#include "IOServices.h"
+#include "IOService.h"
 #include "JSONParser.h"
 
 INNO_PRIVATE_SCOPE InnoFileSystemNS::AssetLoader
@@ -19,7 +19,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS::AssetLoader
 
 ModelMap InnoFileSystemNS::AssetLoader::loadModel(const std::string & fileName)
 {
-	auto l_extension = getFileExtension(fileName);
+	auto l_extension = IOService::getFileExtension(fileName);
 	if (l_extension == ".InnoModel")
 	{
 		ModelMap l_result;
@@ -84,7 +84,7 @@ TextureDataComponent* InnoFileSystemNS::AssetLoader::loadTextureFromDisk(const s
 	stbi_set_flip_vertically_on_load(true);
 
 	void* l_rawData;
-	auto l_fullPath = getWorkingDirectory() + fileName;
+	auto l_fullPath = IOService::getWorkingDirectory() + fileName;
 	auto l_isHDR = stbi_is_hdr(l_fullPath.c_str());
 
 	if (l_isHDR)

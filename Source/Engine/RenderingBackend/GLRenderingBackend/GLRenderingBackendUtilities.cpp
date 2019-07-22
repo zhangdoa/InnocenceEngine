@@ -352,8 +352,9 @@ std::string GLRenderingBackendNS::loadShaderFile(const std::string & path)
 		return l_glslExtensionPos;
 	};
 
-	auto l_content = g_pModuleManager->getFileSystem()->loadTextFile(m_shaderRelativePath + path);
+	auto l_rawContent = g_pModuleManager->getFileSystem()->loadFile((m_shaderRelativePath + path), IOMode::Text);
 
+	std::string l_content = &l_rawContent[0];
 	auto l_includePos = f_findIncludeFilePath(l_content);
 
 	while (l_includePos != std::string::npos)
@@ -384,7 +385,7 @@ void GLRenderingBackendNS::addShader(GLuint& shaderProgram, GLuint& shaderID, GL
 	// load shader
 	if (shaderFilePath.find(".spv"))
 	{
-		auto l_shaderCodeContent = g_pModuleManager->getFileSystem()->loadBinaryFile(m_shaderRelativePath + std::string(shaderFilePath.c_str()));
+		auto l_shaderCodeContent = g_pModuleManager->getFileSystem()->loadFile(m_shaderRelativePath + std::string(shaderFilePath.c_str()), IOMode::Binary);
 
 		if (l_shaderCodeContent.empty())
 		{

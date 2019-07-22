@@ -69,6 +69,8 @@ struct DirectoryMetadata
 	std::vector<AssetMetadata> childrenAssets;
 };
 
+enum class IOMode { Text, Binary };
+
 enum class VisiblilityType { INNO_INVISIBLE, INNO_BILLBOARD, INNO_OPAQUE, INNO_TRANSPARENT, INNO_EMISSIVE, INNO_DEBUG };
 
 // mesh custom types

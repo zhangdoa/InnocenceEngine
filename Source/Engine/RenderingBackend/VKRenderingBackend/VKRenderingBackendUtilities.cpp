@@ -1375,7 +1375,7 @@ bool VKRenderingBackendNS::initializeVKShaderProgramComponent(VKShaderProgramCom
 
 bool VKRenderingBackendNS::createShaderModule(VkShaderModule& vkShaderModule, const ShaderFilePath& shaderFilePath)
 {
-	auto l_binData = g_pModuleManager->getFileSystem()->loadBinaryFile(m_shaderRelativePath + std::string(shaderFilePath.c_str()));
+	auto l_binData = g_pModuleManager->getFileSystem()->loadFile(m_shaderRelativePath + std::string(shaderFilePath.c_str()), IOMode::Binary);
 
 	VkShaderModuleCreateInfo l_createInfo = {};
 	l_createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;

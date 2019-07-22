@@ -11,7 +11,7 @@
 #include "../ModuleManager/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
 
-#include "IOServices.h"
+#include "IOService.h"
 #include "AssetLoader.h"
 
 INNO_PRIVATE_SCOPE InnoFileSystemNS::JSONParser
@@ -62,7 +62,7 @@ INNO_PRIVATE_SCOPE InnoFileSystemNS::JSONParser
 
 bool InnoFileSystemNS::JSONParser::loadJsonDataFromDisk(const std::string & fileName, json & data)
 {
-	std::ifstream i(getWorkingDirectory() + fileName);
+	std::ifstream i(IOService::getWorkingDirectory() + fileName);
 
 	if (!i.is_open())
 	{
@@ -79,7 +79,7 @@ bool InnoFileSystemNS::JSONParser::loadJsonDataFromDisk(const std::string & file
 bool InnoFileSystemNS::JSONParser::saveJsonDataToDisk(const std::string & fileName, const json & data)
 {
 	std::ofstream o;
-	o.open(getWorkingDirectory() + fileName, std::ios::out | std::ios::trunc);
+	o.open(IOService::getWorkingDirectory() + fileName, std::ios::out | std::ios::trunc);
 	o << std::setw(4) << data << std::endl;
 	o.close();
 
@@ -422,7 +422,7 @@ std::vector<AnimationDataComponent*> InnoFileSystemNS::JSONParser::processAnimat
 	{
 		auto l_animationFileName = i.get<std::string>();
 
-		std::ifstream l_animationFile(getWorkingDirectory() + l_animationFileName, std::ios::binary);
+		std::ifstream l_animationFile(IOService::getWorkingDirectory() + l_animationFileName, std::ios::binary);
 
 		if (!l_animationFile.is_open())
 		{
@@ -505,7 +505,7 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j)
 	}
 	else
 	{
-		std::ifstream l_meshFile(getWorkingDirectory() + l_meshFileName, std::ios::binary);
+		std::ifstream l_meshFile(IOService::getWorkingDirectory() + l_meshFileName, std::ios::binary);
 
 		if (!l_meshFile.is_open())
 		{
@@ -521,8 +521,8 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j)
 		l_MeshDC->m_vertices.reserve(l_verticesNumber);
 		l_MeshDC->m_indices.reserve(l_indicesNumber);
 
-		deserializeVector(l_meshFile, 0, l_verticesNumber * sizeof(Vertex), l_MeshDC->m_vertices);
-		deserializeVector(l_meshFile, l_verticesNumber * sizeof(Vertex), l_indicesNumber * sizeof(Index), l_MeshDC->m_indices);
+		IOService::deserializeVector(l_meshFile, 0, l_verticesNumber * sizeof(Vertex), l_MeshDC->m_vertices);
+		IOService::deserializeVector(l_meshFile, l_verticesNumber * sizeof(Vertex), l_indicesNumber * sizeof(Index), l_MeshDC->m_indices);
 
 		l_meshFile.close();
 

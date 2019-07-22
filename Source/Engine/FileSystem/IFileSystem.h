@@ -28,8 +28,8 @@ public:
 
 	virtual std::string getWorkingDirectory() = 0;
 
-	virtual std::string loadTextFile(const std::string& fileName) = 0;
-	virtual std::vector<char> loadBinaryFile(const std::string& fileName) = 0;
+	virtual std::vector<char> loadFile(const std::string& filePath, IOMode openMode) = 0;
+	virtual bool saveFile(const std::string& filePath, const std::vector<char>& content, IOMode saveMode) = 0;
 
 	virtual bool loadScene(const std::string& fileName) = 0;
 	virtual bool saveScene(const std::string& fileName = "") = 0;
