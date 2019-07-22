@@ -1275,3 +1275,31 @@ vec4 GLRenderingBackendNS::readPixel(GLRenderPassComponent* GLRPC, unsigned int 
 
 	return l_result;
 }
+
+std::vector<vec4> GLRenderingBackendNS::readCubemapSamples(GLRenderPassComponent* GLRPC, GLTextureDataComponent* GLTDC)
+{
+	auto l_resolution = GLTDC->m_GLTextureDataDesc.width;
+	auto l_pixelDataFormat = GLTDC->m_GLTextureDataDesc.pixelDataFormat;
+	auto l_pixelDataType = GLTDC->m_GLTextureDataDesc.pixelDataType;
+
+	std::vector<vec4> l_textureSamples;
+	auto l_sampleCountPerFace = l_resolution * l_resolution;
+	l_textureSamples.resize(l_sampleCountPerFace * 6);
+
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, GLRPC->m_FBO);
+	glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+	for (unsigned int i = 0; i < 6; i++)
+	{
+		bindCubemapTextureForWrite(GLTDC, GLRPC, 0, i, 0);
+
+		glReadPixels(0, 0, l_resolution, l_resolution, l_pixelDataFormat, l_pixelDataType, &l_textureSamples[i * l_sampleCountPerFace]);
+
+		unbindCubemapTextureForWrite(GLRPC, 0, i, 0);
+	}
+
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+
+	return l_textureSamples;
+}

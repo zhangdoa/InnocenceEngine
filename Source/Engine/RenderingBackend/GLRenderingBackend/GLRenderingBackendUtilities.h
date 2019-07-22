@@ -108,4 +108,5 @@ INNO_PRIVATE_SCOPE GLRenderingBackendNS
 	void copyColorBuffer(GLRenderPassComponent* src, unsigned int srcIndex, GLRenderPassComponent* dest, unsigned int destIndex);
 
 	vec4 readPixel(GLRenderPassComponent* GLRPC, unsigned int colorAttachmentIndex, GLint x, GLint y);
+	std::vector<vec4> readCubemapSamples(GLRenderPassComponent* GLRPC, GLTextureDataComponent* GLTDC);
 }
