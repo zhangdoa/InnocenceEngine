@@ -6,6 +6,8 @@ layout(quads, equal_spacing, cw) in;
 layout(location = 0, binding = 0) uniform sampler2D uni_heightTexture;
 layout(location = 1, binding = 1) uniform sampler2D uni_normalTexture;
 
+layout(location = 0) in int distanceRatio_out[];
+
 layout(location = 0) out TES_OUT
 {
 	vec3 positionWS;
@@ -13,6 +15,7 @@ layout(location = 0) out TES_OUT
 	vec4 positionCS_prev;
 	vec2 texCoord;
 	vec3 normal;
+	vec3 distanceRatio;
 }tes_out;
 
 void main()
@@ -29,11 +32,13 @@ void main()
 	vec2 heightTextureSize = vec2(textureSize(uni_heightTexture, 0));
 	int textureScale = int(heightTextureSize.x);
 
-	vec2 texCoord = vec2(position.xz * 4 / textureScale);
+	vec2 texCoord = vec2(position.xz / textureScale);
 	float height = texture(uni_heightTexture, texCoord).r;
 	height = height * 2.0f - 1.0f;
-
+	height *= 100;
 	tes_out.normal = texture(uni_normalTexture, texCoord).xyz;
+	tes_out.distanceRatio = vec3(distanceRatio_out[0] + distanceRatio_out[1] + distanceRatio_out[2] + distanceRatio_out[3]);
+	tes_out.distanceRatio /= 4;
 
 	// tangent to world space
 	tes_out.normal.xyz = tes_out.normal.xzy;

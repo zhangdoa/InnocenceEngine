@@ -215,7 +215,7 @@ void InnoAssetSystem::addUnitLine(MeshDataComponent& meshDataComponent)
 
 void InnoAssetSystem::addTerrain(MeshDataComponent& meshDataComponent)
 {
-	auto l_gridSize = 256;
+	auto l_gridSize = 1024;
 	auto l_gridSize2 = l_gridSize * l_gridSize;
 	auto l_gridSizehalf = l_gridSize / 2;
 	meshDataComponent.m_vertices.reserve(l_gridSize2 * 4);
@@ -225,10 +225,10 @@ void InnoAssetSystem::addTerrain(MeshDataComponent& meshDataComponent)
 	{
 		for (auto i = 0; i < l_gridSize; i++)
 		{
-			auto l_px0 = (float)(i - l_gridSizehalf);
-			auto l_px1 = l_px0 + 1.0f;
-			auto l_pz0 = (float)(j - l_gridSizehalf);
-			auto l_pz1 = l_pz0 + 1.0f;
+			auto l_px0 = (float)(i - l_gridSizehalf) * 100.0f;
+			auto l_px1 = l_px0 + 100.0f;
+			auto l_pz0 = (float)(j - l_gridSizehalf) * 100.0f;
+			auto l_pz1 = l_pz0 + 100.0f;
 
 			auto l_tx0 = l_px0 / (float)l_gridSize;
 			auto l_tx1 = l_px1 / (float)l_gridSize;

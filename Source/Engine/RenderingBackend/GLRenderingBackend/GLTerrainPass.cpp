@@ -37,7 +37,7 @@ bool GLTerrainPass::initialize()
 
 	initializeShaders();
 
-	auto l_terrainTDC = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_albedo.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	auto l_terrainTDC = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_terrain.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 
 	m_terrainGLTDC = reinterpret_cast<GLTextureDataComponent*>(l_terrainTDC);
 
