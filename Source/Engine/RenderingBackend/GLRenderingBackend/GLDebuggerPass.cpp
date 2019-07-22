@@ -500,26 +500,26 @@ bool GLDebuggerPass::drawDebugSphereForSH(GLRenderPassComponent* canvas)
 
 	static bool l_drawSkyVisibilitySH9 = false;
 
-	decltype(GLEnvironmentCapturePass::getSkyVisibilitySH9()) l_SH9s;
+	decltype(&GLEnvironmentCapturePass::getSkyVisibilitySH9()) l_SH9s;
 
 	if (l_drawSkyVisibilitySH9)
 	{
-		l_SH9s = GLEnvironmentCapturePass::getSkyVisibilitySH9();
+		l_SH9s = &GLEnvironmentCapturePass::getSkyVisibilitySH9();
 	}
 	else
 	{
-		l_SH9s = GLEnvironmentCapturePass::getRadianceSH9();
+		l_SH9s = &GLEnvironmentCapturePass::getRadianceSH9();
 	}
 
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::SPHERE);
 
 	activateShaderProgram(m_SHVisualizationGLSPC);
 
-	updateUBO(m_SH9UBO, l_SH9s.second);
+	updateUBO(m_SH9UBO, l_SH9s->second);
 
-	for (size_t i = 0; i < l_SH9s.first.size(); i++)
+	for (size_t i = 0; i < l_SH9s->first.size(); i++)
 	{
-		auto l_m = InnoMath::toTranslationMatrix(l_SH9s.first[i]);
+		auto l_m = InnoMath::toTranslationMatrix(l_SH9s->first[i]);
 		updateUniform(0, l_m);
 		updateUniform(1, (unsigned int)i);
 
