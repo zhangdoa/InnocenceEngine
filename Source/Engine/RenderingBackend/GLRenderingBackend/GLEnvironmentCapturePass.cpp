@@ -278,6 +278,8 @@ bool GLEnvironmentCapturePass::generateBrick()
 	auto l_maxBrickCountY = (unsigned int)std::ceil(l_extendedAxisSize.y / l_brickSize);
 	auto l_maxBrickCountZ = (unsigned int)std::ceil(l_extendedAxisSize.z / l_brickSize);
 
+	auto l_totalBricks = l_maxBrickCountX * l_maxBrickCountY * l_maxBrickCountZ;
+
 	unsigned int l_brickIndex = 0;
 	for (size_t i = 0; i < l_maxBrickCountX; i++)
 	{
@@ -310,6 +312,7 @@ bool GLEnvironmentCapturePass::generateBrick()
 			l_currentPos.y += l_brickSize;
 		}
 		l_currentPos.x += l_brickSize;
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: Generating brick: " + std::to_string((float)l_brickIndex * 100.0f / (float)l_totalBricks) + "%");
 	}
 
 	return true;
@@ -543,6 +546,7 @@ bool GLEnvironmentCapturePass::update()
 			l_currentPos.y += l_probeDistance.y;
 		}
 		l_currentPos.x += l_probeDistance.x;
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: Probe capture: " + std::to_string((float)l_probeIndex * 100.0f / (float)m_totalCaptureProbes) + "%");
 	}
 
 	generateBrick();

@@ -33,6 +33,7 @@ INNO_PRIVATE_SCOPE GLDebuggerPass
 
 	bool drawTestSceneForSH();
 	bool drawDebugSphereForSH(GLRenderPassComponent* canvas);
+	bool drawBricks();
 
 	EntityID m_entityID;
 
@@ -529,6 +530,40 @@ bool GLDebuggerPass::drawDebugSphereForSH(GLRenderPassComponent* canvas)
 	return true;
 }
 
+bool GLDebuggerPass::drawBricks()
+{
+	auto l_bricks = GLEnvironmentCapturePass::getBricks();
+
+	auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
+
+	activateShaderProgram(m_wireframeOverlayGLRPC);
+
+	updateUniform(0, g_pModuleManager->getRenderingFrontend()->getCameraGPUData().p_original);
+	updateUniform(1, g_pModuleManager->getRenderingFrontend()->getCameraGPUData().r);
+	updateUniform(2, g_pModuleManager->getRenderingFrontend()->getCameraGPUData().t);
+
+	// albedo
+	updateUniform(4, vec4(0.1f, 0.3f, 0.6f, 1.0f));
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+	for (size_t i = 0; i < l_bricks.size(); i++)
+	{
+		auto l_t = InnoMath::toTranslationMatrix(l_bricks[i].boundBox.m_center);
+		auto l_scale = l_bricks[i].boundBox.m_extend / 2.0f;
+		l_scale.w = 1.0f;
+		auto l_s = InnoMath::toScaleMatrix(l_scale);
+		auto l_m = l_t * l_s;
+		updateUniform(3, l_m);
+
+		drawMesh(l_MDC);
+	}
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+	return true;
+}
+
 bool GLDebuggerPass::update(GLRenderPassComponent* canvas)
 {
 	bindRenderPass(canvas);
@@ -545,6 +580,13 @@ bool GLDebuggerPass::update(GLRenderPassComponent* canvas)
 	else
 	{
 		drawDebugSphereForSH(canvas);
+	}
+
+	static bool l_drawBricks = true;
+
+	if (l_drawBricks)
+	{
+		drawBricks();
 	}
 
 	glDisable(GL_DEPTH_CLAMP);
