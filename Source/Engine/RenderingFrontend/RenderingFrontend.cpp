@@ -588,7 +588,7 @@ bool InnoRenderingFrontendNS::update()
 		auto l_cullingDataPack = g_pModuleManager->getPhysicsSystem()->getCullingDataPack();
 		if (l_cullingDataPack.has_value())
 		{
-			if((*l_cullingDataPack).size() > 0)
+			if ((*l_cullingDataPack).size() > 0)
 			{
 				m_cullingDataPack.setRawData(std::move(*l_cullingDataPack));
 			}
@@ -641,6 +641,11 @@ bool InnoRenderingFrontend::terminate()
 ObjectStatus InnoRenderingFrontend::getStatus()
 {
 	return InnoRenderingFrontendNS::m_objectStatus;
+}
+
+bool InnoRenderingFrontend::runRayTrace()
+{
+	return InnoRenderingFrontendNS::m_rayTracer->Execute();
 }
 
 MeshDataComponent * InnoRenderingFrontend::addMeshDataComponent()

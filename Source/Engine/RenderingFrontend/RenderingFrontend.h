@@ -13,6 +13,8 @@ public:
 
 	ObjectStatus getStatus() override;
 
+	bool runRayTrace() override;
+
 	MeshDataComponent* addMeshDataComponent() override;
 	MaterialDataComponent* addMaterialDataComponent() override;
 	TextureDataComponent* addTextureDataComponent() override;

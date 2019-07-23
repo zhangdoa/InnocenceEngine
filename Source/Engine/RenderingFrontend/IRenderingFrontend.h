@@ -47,6 +47,8 @@ public:
 
 	virtual ObjectStatus getStatus() = 0;
 
+	virtual bool runRayTrace() = 0;
+
 	virtual MeshDataComponent* addMeshDataComponent() = 0;
 	virtual MaterialDataComponent* addMaterialDataComponent() = 0;
 	virtual TextureDataComponent* addTextureDataComponent() = 0;

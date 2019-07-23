@@ -254,6 +254,11 @@ void ImGuiWrapperNS::showApplicationProfiler()
 		g_pModuleManager->getRenderingBackend()->bakeGI();
 	}
 
+	if (ImGui::Button("Run ray trace"))
+	{
+		g_pModuleManager->getRenderingFrontend()->runRayTrace();
+	}
+
 	static char scene_filePath[128] = "..//res//scenes//Intro.InnoScene";
 	ImGui::InputText("Scene file path", scene_filePath, IM_ARRAYSIZE(scene_filePath));
 

@@ -10,7 +10,6 @@ extern IModuleManager* g_pModuleManager;
 
 namespace InnoRayTracerNS
 {
-	std::function<void()> f_test;
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	std::atomic<bool> m_isWorking;
 }
@@ -315,9 +314,6 @@ bool ExecuteRayTracing()
 
 bool InnoRayTracer::Setup()
 {
-	InnoRayTracerNS::f_test = [&]() { g_pModuleManager->getTaskSystem()->submit("RayTracingTask", [&]() {Execute(); });  };
-	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_H, ButtonStatus::PRESSED }, &InnoRayTracerNS::f_test);
-
 	InnoRayTracerNS::m_ObjectStatus = ObjectStatus::Created;
 	return true;
 }
@@ -334,9 +330,7 @@ bool InnoRayTracer::Execute()
 	{
 		InnoRayTracerNS::m_isWorking = true;
 
-		ExecuteRayTracing();
-
-		InnoRayTracerNS::m_isWorking = false;
+		auto l_rayTracingTask = g_pModuleManager->getTaskSystem()->submit("RayTracingTask", [&]() { ExecuteRayTracing(); InnoRayTracerNS::m_isWorking = false; });
 	}
 
 	return true;
