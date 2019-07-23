@@ -18,6 +18,7 @@ public:
 	std::vector<char> loadFile(const std::string& filePath, IOMode openMode) override;
 	bool saveFile(const std::string& filePath, const std::vector<char>& content, IOMode saveMode) override;
 
+	std::string getCurrentSceneName() override;
 	bool loadScene(const std::string& fileName) override;
 	bool saveScene(const std::string& fileName) override;
 	bool isLoadingScene() override;

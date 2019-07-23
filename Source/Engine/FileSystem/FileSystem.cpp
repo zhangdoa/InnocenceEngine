@@ -180,6 +180,13 @@ bool InnoFileSystem::saveFile(const std::string& filePath, const std::vector<cha
 	return IOService::saveFile(filePath, content, saveMode);
 }
 
+std::string InnoFileSystem::getCurrentSceneName()
+{
+	auto l_currentSceneName = InnoFileSystemNS::m_currentScene.substr(0, InnoFileSystemNS::m_currentScene.find("."));
+	l_currentSceneName = l_currentSceneName.substr(l_currentSceneName.rfind("//") + 2);
+	return InnoFileSystemNS::m_currentScene;
+}
+
 bool InnoFileSystem::loadScene(const std::string & fileName)
 {
 	return InnoFileSystemNS::prepareForLoadingScene(fileName);
