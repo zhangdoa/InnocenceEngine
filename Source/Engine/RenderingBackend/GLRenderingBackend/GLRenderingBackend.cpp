@@ -100,7 +100,7 @@ INNO_PRIVATE_SCOPE GLRenderingBackendNS
 
 	std::function<void()> f_sceneLoadingFinishCallback;
 
-	bool m_isBaked = false;
+	bool m_isBaked = true;
 	bool m_visualizeVXGI = false;
 
 	std::function<void()> f_toggleVisualizeVXGI;
@@ -139,7 +139,6 @@ bool GLRenderingBackendNS::setup()
 	initializeComponentPool();
 
 	f_sceneLoadingFinishCallback = [&]() {
-		m_isBaked = false;
 	};
 
 	f_toggleVisualizeVXGI = [&]() {

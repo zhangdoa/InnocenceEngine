@@ -18,13 +18,7 @@ struct Surfel
 };
 
 // 1x1x1 m^3 of surfels
-struct SurfelGrid
-{
-	vec4 pos;
-	vec4 normal;
-	vec4 albedo;
-	vec4 MRAT;
-};
+using SurfelGrid = Surfel;
 
 // 4x4x4 m^3 of surfels
 struct Brick
@@ -32,6 +26,11 @@ struct Brick
 	AABB boundBox;
 	unsigned int surfelRangeBegin;
 	unsigned int surfelRangeEnd;
+
+	bool operator==(const Brick &other) const
+	{
+		return (boundBox.m_center == other.boundBox.m_center);
+	}
 };
 
 struct BrickFactor
@@ -45,8 +44,7 @@ struct Probe
 	vec4 pos;
 	SH9 skyVisibility;
 	SH9 radiance;
-	unsigned int brickFactorRangeBegin;
-	unsigned int brickFactorRangeEnd;
+	std::vector<Brick> bricks;
 };
 
 namespace GLEnvironmentCapturePass
@@ -55,9 +53,9 @@ namespace GLEnvironmentCapturePass
 	bool update();
 	bool resize(unsigned int newSizeX, unsigned int newSizeY);
 	bool reloadShader();
-	const std::pair<std::vector<vec4>, std::vector<SH9>>& getRadianceSH9();
-	const std::pair<std::vector<vec4>, std::vector<SH9>>& getSkyVisibilitySH9();
-	const std::vector<Brick>& getBricks();
 
 	GLRenderPassComponent* getGLRPC();
+
+	const std::vector<Probe>& getProbes();
+	const std::vector<Brick>& getBricks();
 }

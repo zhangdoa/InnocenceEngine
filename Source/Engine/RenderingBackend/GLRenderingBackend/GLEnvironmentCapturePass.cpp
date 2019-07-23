@@ -17,17 +17,23 @@ using namespace GLRenderingBackendNS;
 
 INNO_PRIVATE_SCOPE GLEnvironmentCapturePass
 {
-	bool capture(vec4 probePos, unsigned int probeIndex);
-	bool gatherGeometryData(vec4 probePos, mat4 p, const std::vector<mat4>& v);
-	bool drawOpaquePass(vec4 probePos, mat4 p, const std::vector<mat4>& v, unsigned int faceIndex);
+	bool generateProbes();
+	bool capture();
+	bool gatherGeometryData(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v);
+	bool drawOpaquePass(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex);
+	bool isBrickEmpty(const std::vector<Surfel>& surfels, const Brick& brick);
 	bool generateSurfel(unsigned int probeIndex);
-	bool generateBrick();
-	void findSurfelRangeForBrick(Brick& brick);
-	bool injectIrradiance(vec4 probePos, mat4 p, const std::vector<mat4>& v);
-	bool drawSkyPass(mat4 p, const std::vector<mat4>& v, unsigned int faceIndex);
-	bool drawLightPass(mat4 p, const std::vector<mat4>& v, unsigned int faceIndex);
-	bool getSkyShadowMask(vec4 probePos, mat4 p, const std::vector<mat4>& v);
-	bool drawSkyVisibilityPass(mat4 p, const std::vector<mat4>& v, unsigned int faceIndex);
+	bool generateBricks(const std::vector<Surfel>& surfels, unsigned int probeIndex);
+	bool eliminateDuplication();
+	bool findSurfelRangeForBrick(Brick& brick);
+	bool assignSurfelRangeToBricks();
+	bool injectIrradiance(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v);
+	bool drawSkyPass(const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex);
+	bool drawLightPass(const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex);
+	bool getSkyShadowMask(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v);
+	bool drawSkyVisibilityPass(const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex);
+	bool serializeSurfels();
+	bool serializeBricks();
 
 	EntityID m_entityID;
 
@@ -50,16 +56,11 @@ INNO_PRIVATE_SCOPE GLEnvironmentCapturePass
 	std::vector<BrickFactor> m_brickFactors;
 	std::vector<Brick> m_bricks;
 	std::vector<Surfel> m_surfels;
-	std::pair<std::vector<vec4>, std::vector<SH9>> m_radianceSH9s;
-	std::pair<std::vector<vec4>, std::vector<SH9>> m_skyVisibilitySH9s;
 }
 
 bool GLEnvironmentCapturePass::initialize()
 {
 	m_entityID = InnoMath::createEntityID();
-
-	m_radianceSH9s = std::make_pair(std::vector<vec4>(m_totalCaptureProbes), std::vector<SH9>(m_totalCaptureProbes));
-	m_skyVisibilitySH9s = std::make_pair(std::vector<vec4>(m_totalCaptureProbes), std::vector<SH9>(m_totalCaptureProbes));
 
 	auto l_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 
@@ -107,7 +108,7 @@ bool GLEnvironmentCapturePass::initialize()
 	return true;
 }
 
-bool GLEnvironmentCapturePass::drawOpaquePass(vec4 probePos, mat4 p, const std::vector<mat4>& v, unsigned int faceIndex)
+bool GLEnvironmentCapturePass::drawOpaquePass(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex)
 {
 	bindRenderPass(m_opaquePassGLRPC);
 	cleanRenderBuffers(m_opaquePassGLRPC);
@@ -115,8 +116,8 @@ bool GLEnvironmentCapturePass::drawOpaquePass(vec4 probePos, mat4 p, const std::
 	CameraGPUData l_cameraGPUData;
 	l_cameraGPUData.p_original = p;
 	l_cameraGPUData.p_jittered = p;
-	l_cameraGPUData.globalPos = probePos;
-	auto l_t = InnoMath::getInvertTranslationMatrix(probePos);
+	l_cameraGPUData.globalPos = m_probes[probeIndex].pos;
+	auto l_t = InnoMath::getInvertTranslationMatrix(m_probes[probeIndex].pos);
 	l_cameraGPUData.t = l_t;
 	l_cameraGPUData.t_prev = l_t;
 
@@ -197,6 +198,88 @@ bool GLEnvironmentCapturePass::drawOpaquePass(vec4 probePos, mat4 p, const std::
 	return true;
 }
 
+bool GLEnvironmentCapturePass::isBrickEmpty(const std::vector<Surfel>& surfels, const Brick& brick)
+{
+	auto l_nearestSurfel = std::find_if(surfels.begin(), surfels.end(), [&](Surfel val) {
+		return InnoMath::isAGreaterThanBVec3(val.pos, brick.boundBox.m_boundMin);
+	});
+
+	if (l_nearestSurfel != surfels.end())
+	{
+		auto l_farestSurfel = std::find_if(surfels.begin(), surfels.end(), [&](Surfel val) {
+			return InnoMath::isALessThanBVec3(val.pos, brick.boundBox.m_boundMax);
+		});
+
+		if (l_farestSurfel != surfels.end())
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool GLEnvironmentCapturePass::generateBricks(const std::vector<Surfel>& surfels, unsigned int probeIndex)
+{
+	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getTotalSceneAABB();
+
+	auto l_sceneCenter = l_sceneAABB.m_center;
+	auto l_extendedAxisSize = l_sceneAABB.m_extend;
+	l_extendedAxisSize.w = 0.0f;
+	auto l_startPos = l_sceneAABB.m_center - (l_extendedAxisSize / 2.0f);
+	auto l_currentPos = l_startPos;
+
+	auto l_brickSize = 32.0f;
+	auto l_maxBrickCountX = (unsigned int)std::ceil(l_extendedAxisSize.x / l_brickSize);
+	auto l_maxBrickCountY = (unsigned int)std::ceil(l_extendedAxisSize.y / l_brickSize);
+	auto l_maxBrickCountZ = (unsigned int)std::ceil(l_extendedAxisSize.z / l_brickSize);
+
+	auto l_totalBricks = l_maxBrickCountX * l_maxBrickCountY * l_maxBrickCountZ;
+
+	std::vector<Brick> l_bricks;
+	l_bricks.reserve(l_totalBricks);
+
+	unsigned int l_brickIndex = 0;
+	for (size_t i = 0; i < l_maxBrickCountX; i++)
+	{
+		l_currentPos.y = l_startPos.y;
+		for (size_t j = 0; j < l_maxBrickCountY; j++)
+		{
+			l_currentPos.z = l_startPos.z;
+			for (size_t k = 0; k < l_maxBrickCountZ; k++)
+			{
+				AABB l_brickAABB;
+				l_brickAABB.m_boundMin = l_currentPos;
+				l_brickAABB.m_extend = vec4(l_brickSize, l_brickSize, l_brickSize, 0.0f);
+				l_brickAABB.m_boundMax = l_currentPos + l_brickAABB.m_extend;
+				l_brickAABB.m_center = l_currentPos + (l_brickAABB.m_extend / 2.0f);
+
+				Brick l_brick;
+				l_brick.boundBox = l_brickAABB;
+
+				if (!isBrickEmpty(surfels, l_brick))
+				{
+					l_bricks.emplace_back(l_brick);
+				}
+
+				l_currentPos.z += l_brickSize;
+				l_brickIndex++;
+			}
+			l_currentPos.y += l_brickSize;
+		}
+		l_currentPos.x += l_brickSize;
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: Generating brick: " + std::to_string((float)l_brickIndex * 100.0f / (float)l_totalBricks) + "%");
+	}
+
+	l_bricks.shrink_to_fit();
+
+	m_bricks.insert(m_bricks.end(), l_bricks.begin(), l_bricks.end());
+
+	m_probes[probeIndex].bricks = l_bricks;
+
+	return true;
+}
+
 bool GLEnvironmentCapturePass::generateSurfel(unsigned int probeIndex)
 {
 	auto l_posWSMetallic = readCubemapSamples(m_opaquePassGLRPC, m_opaquePassGLRPC->m_GLTDCs[0]);
@@ -220,115 +303,24 @@ bool GLEnvironmentCapturePass::generateSurfel(unsigned int probeIndex)
 		l_surfels[i].MRAT.w = 1.0f;
 	}
 
-	std::vector<Surfel> l_surfelSet(l_surfels.begin(), l_surfels.end());
-	m_surfels.assign(l_surfelSet.begin(), l_surfelSet.end());
+	generateBricks(l_surfels, probeIndex);
 
-	//auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
-
-	//std::ofstream l_file;
-	//l_file.open(l_filePath + "//Res//Scenes//GITest_" + std::to_string(probeIndex) + ".InnoSurfel", std::ios::binary);
-	//IOService::serializeVector(l_file, l_surfels);
+	m_surfels.insert(m_surfels.end(), l_surfels.begin(), l_surfels.end());
 
 	return true;
 }
 
-void GLEnvironmentCapturePass::findSurfelRangeForBrick(Brick& brick)
-{
-	auto l_firstSurfel = std::find_if(m_surfels.begin(), m_surfels.end(), [&](Surfel val) {
-		return InnoMath::isAGreaterThanBVec3(val.pos, brick.boundBox.m_boundMin);
-	});
-
-	auto l_firstSurfelIndex = std::distance(m_surfels.begin(), l_firstSurfel);
-	brick.surfelRangeBegin = (unsigned int)l_firstSurfelIndex;
-
-	auto l_lastSurfel = std::find_if(m_surfels.begin(), m_surfels.end(), [&](Surfel val) {
-		return InnoMath::isAGreaterThanBVec3(val.pos, brick.boundBox.m_boundMax);
-	});
-
-	auto l_lastSurfelIndex = std::distance(m_surfels.begin(), l_lastSurfel);
-	brick.surfelRangeEnd = (unsigned int)l_lastSurfelIndex;
-}
-
-bool GLEnvironmentCapturePass::generateBrick()
-{
-	m_surfels.erase(std::unique(m_surfels.begin(), m_surfels.end()), m_surfels.end());
-	m_surfels.shrink_to_fit();
-
-	std::sort(m_surfels.begin(), m_surfels.end(), [&](Surfel A, Surfel B)
-	{
-		if (A.pos.x != B.pos.x) {
-			return A.pos.x < B.pos.x;
-		}
-		if (A.pos.y != B.pos.y) {
-			return A.pos.y < B.pos.y;
-		}
-		return A.pos.z < B.pos.z;
-	});
-
-	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getTotalSceneAABB();
-
-	auto l_sceneCenter = l_sceneAABB.m_center;
-	auto l_extendedAxisSize = l_sceneAABB.m_extend;
-	l_extendedAxisSize.w = 0.0f;
-	auto l_startPos = l_sceneAABB.m_center - (l_extendedAxisSize / 2.0f);
-	auto l_currentPos = l_startPos;
-
-	auto l_brickSize = 32.0f;
-	auto l_maxBrickCountX = (unsigned int)std::ceil(l_extendedAxisSize.x / l_brickSize);
-	auto l_maxBrickCountY = (unsigned int)std::ceil(l_extendedAxisSize.y / l_brickSize);
-	auto l_maxBrickCountZ = (unsigned int)std::ceil(l_extendedAxisSize.z / l_brickSize);
-
-	auto l_totalBricks = l_maxBrickCountX * l_maxBrickCountY * l_maxBrickCountZ;
-
-	unsigned int l_brickIndex = 0;
-	for (size_t i = 0; i < l_maxBrickCountX; i++)
-	{
-		l_currentPos.y = l_startPos.y;
-		for (size_t j = 0; j < l_maxBrickCountY; j++)
-		{
-			l_currentPos.z = l_startPos.z;
-			for (size_t k = 0; k < l_maxBrickCountZ; k++)
-			{
-				AABB l_brickAABB;
-
-				l_brickAABB.m_boundMin = l_currentPos;
-				l_brickAABB.m_extend = vec4(l_brickSize, l_brickSize, l_brickSize, 0.0f);
-				l_brickAABB.m_boundMax = l_currentPos + l_brickAABB.m_extend;
-				l_brickAABB.m_center = l_currentPos + (l_brickAABB.m_extend / 2.0f);
-
-				Brick l_brick;
-				l_brick.boundBox = l_brickAABB;
-				findSurfelRangeForBrick(l_brick);
-
-				// Eliminate empty brick
-				if (l_brick.surfelRangeEnd - l_brick.surfelRangeBegin != 0)
-				{
-					m_bricks.emplace_back(l_brick);
-				}
-
-				l_currentPos.z += l_brickSize;
-				l_brickIndex++;
-			}
-			l_currentPos.y += l_brickSize;
-		}
-		l_currentPos.x += l_brickSize;
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: Generating brick: " + std::to_string((float)l_brickIndex * 100.0f / (float)l_totalBricks) + "%");
-	}
-
-	return true;
-}
-
-bool GLEnvironmentCapturePass::gatherGeometryData(vec4 probePos, mat4 p, const std::vector<mat4>& v)
+bool GLEnvironmentCapturePass::gatherGeometryData(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v)
 {
 	for (unsigned int i = 0; i < 6; i++)
 	{
-		drawOpaquePass(probePos, p, v, i);
+		drawOpaquePass(probeIndex, p, v, i);
 	}
 
 	return true;
 }
 
-bool GLEnvironmentCapturePass::drawSkyPass(mat4 p, const std::vector<mat4>& v, unsigned int faceIndex)
+bool GLEnvironmentCapturePass::drawSkyPass(const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex)
 {
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
 
@@ -363,16 +355,16 @@ bool GLEnvironmentCapturePass::drawSkyPass(mat4 p, const std::vector<mat4>& v, u
 	return true;
 }
 
-bool GLEnvironmentCapturePass::drawLightPass(mat4 p, const std::vector<mat4>& v, unsigned int faceIndex)
+bool GLEnvironmentCapturePass::drawLightPass(const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex)
 {
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
 
-	vec4 probePos = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	auto capturePos = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	CameraGPUData l_cameraGPUData;
 	l_cameraGPUData.p_original = p;
 	l_cameraGPUData.p_jittered = p;
-	l_cameraGPUData.globalPos = probePos;
-	auto l_t = InnoMath::getInvertTranslationMatrix(probePos);
+	l_cameraGPUData.globalPos = capturePos;
+	auto l_t = InnoMath::getInvertTranslationMatrix(capturePos);
 	l_cameraGPUData.t = l_t;
 	l_cameraGPUData.t_prev = l_t;
 
@@ -404,7 +396,7 @@ bool GLEnvironmentCapturePass::drawLightPass(mat4 p, const std::vector<mat4>& v,
 	return true;
 }
 
-bool GLEnvironmentCapturePass::injectIrradiance(vec4 probePos, mat4 p, const std::vector<mat4>& v)
+bool GLEnvironmentCapturePass::injectIrradiance(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v)
 {
 	bindRenderPass(m_capturePassGLRPC);
 	cleanRenderBuffers(m_capturePassGLRPC);
@@ -424,19 +416,19 @@ bool GLEnvironmentCapturePass::injectIrradiance(vec4 probePos, mat4 p, const std
 	return true;
 }
 
-bool GLEnvironmentCapturePass::drawSkyVisibilityPass(mat4 p, const std::vector<mat4>& v, unsigned int faceIndex)
+bool GLEnvironmentCapturePass::drawSkyVisibilityPass(const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex)
 {
 	bindRenderPass(m_skyVisibilityPassGLRPC);
 	cleanRenderBuffers(m_skyVisibilityPassGLRPC);
 
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
 
-	vec4 probePos = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	auto l_capturePos = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	CameraGPUData l_cameraGPUData;
 	l_cameraGPUData.p_original = p;
 	l_cameraGPUData.p_jittered = p;
-	l_cameraGPUData.globalPos = probePos;
-	auto l_t = InnoMath::getInvertTranslationMatrix(probePos);
+	l_cameraGPUData.globalPos = l_capturePos;
+	auto l_t = InnoMath::getInvertTranslationMatrix(l_capturePos);
 	l_cameraGPUData.t = l_t;
 	l_cameraGPUData.t_prev = l_t;
 
@@ -464,7 +456,7 @@ bool GLEnvironmentCapturePass::drawSkyVisibilityPass(mat4 p, const std::vector<m
 	return true;
 }
 
-bool GLEnvironmentCapturePass::getSkyShadowMask(vec4 probePos, mat4 p, const std::vector<mat4>& v)
+bool GLEnvironmentCapturePass::getSkyShadowMask(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v)
 {
 	for (unsigned int i = 0; i < 6; i++)
 	{
@@ -474,7 +466,69 @@ bool GLEnvironmentCapturePass::getSkyShadowMask(vec4 probePos, mat4 p, const std
 	return true;
 }
 
-bool GLEnvironmentCapturePass::capture(vec4 probePos, unsigned int probeIndex)
+bool GLEnvironmentCapturePass::eliminateDuplication()
+{
+	m_surfels.erase(std::unique(m_surfels.begin(), m_surfels.end()), m_surfels.end());
+	m_surfels.shrink_to_fit();
+
+	std::sort(m_surfels.begin(), m_surfels.end(), [&](Surfel A, Surfel B)
+	{
+		if (A.pos.x != B.pos.x) {
+			return A.pos.x < B.pos.x;
+		}
+		if (A.pos.y != B.pos.y) {
+			return A.pos.y < B.pos.y;
+		}
+		return A.pos.z < B.pos.z;
+	});
+
+	m_bricks.erase(std::unique(m_bricks.begin(), m_bricks.end()), m_bricks.end());
+	m_bricks.shrink_to_fit();
+
+	std::sort(m_bricks.begin(), m_bricks.end(), [&](Brick A, Brick B)
+	{
+		if (A.boundBox.m_center.x != B.boundBox.m_center.x) {
+			return A.boundBox.m_center.x < B.boundBox.m_center.x;
+		}
+		if (A.boundBox.m_center.y != B.boundBox.m_center.y) {
+			return A.boundBox.m_center.y < B.boundBox.m_center.y;
+		}
+		return A.boundBox.m_center.z < B.boundBox.m_center.z;
+	});
+
+	return true;
+}
+
+bool GLEnvironmentCapturePass::findSurfelRangeForBrick(Brick& brick)
+{
+	auto l_firstSurfel = std::find_if(m_surfels.begin(), m_surfels.end(), [&](Surfel val) {
+		return InnoMath::isAGreaterThanBVec3(val.pos, brick.boundBox.m_boundMin);
+	});
+
+	auto l_firstSurfelIndex = std::distance(m_surfels.begin(), l_firstSurfel);
+	brick.surfelRangeBegin = (unsigned int)l_firstSurfelIndex;
+
+	auto l_lastSurfel = std::find_if(m_surfels.begin(), m_surfels.end(), [&](Surfel val) {
+		return InnoMath::isAGreaterThanBVec3(val.pos, brick.boundBox.m_boundMax);
+	});
+
+	auto l_lastSurfelIndex = std::distance(m_surfels.begin(), l_lastSurfel);
+	brick.surfelRangeEnd = (unsigned int)l_lastSurfelIndex;
+
+	return true;
+}
+
+bool GLEnvironmentCapturePass::assignSurfelRangeToBricks()
+{
+	for (size_t i = 0; i < m_bricks.size(); i++)
+	{
+		findSurfelRangeForBrick(m_bricks[i]);
+	}
+
+	return true;
+}
+
+bool GLEnvironmentCapturePass::capture()
 {
 	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, 1000.0f);
 
@@ -490,26 +544,25 @@ bool GLEnvironmentCapturePass::capture(vec4 probePos, unsigned int probeIndex)
 		l_rPX, l_rNX, l_rPY, l_rNY, l_rPZ, l_rNZ
 	};
 
-	gatherGeometryData(probePos, l_p, l_v);
-	injectIrradiance(probePos, l_p, l_v);
-	getSkyShadowMask(probePos, l_p, l_v);
+	for (unsigned int i = 0; i < m_totalCaptureProbes; i++)
+	{
+		gatherGeometryData(i, l_p, l_v);
+		generateSurfel(i);
+		injectIrradiance(i, l_p, l_v);
+		getSkyShadowMask(i, l_p, l_v);
+
+		auto l_SH9 = GLSHPass::getSH9(m_capturePassGLRPC->m_GLTDCs[0]);
+		m_probes[i].radiance = l_SH9;
+
+		l_SH9 = GLSHPass::getSH9(m_skyVisibilityPassGLRPC->m_GLTDCs[0]);
+		m_probes[i].skyVisibility = l_SH9;
+	}
 
 	return true;
 }
 
-bool GLEnvironmentCapturePass::update()
+bool GLEnvironmentCapturePass::generateProbes()
 {
-	m_radianceSH9s.first.clear();
-	m_radianceSH9s.second.clear();
-	m_skyVisibilitySH9s.first.clear();
-	m_skyVisibilitySH9s.second.clear();
-	m_surfels.clear();
-	m_bricks.clear();
-	m_brickFactors.clear();
-
-	updateUBO(GLRenderingBackendComponent::get().m_meshUBO, g_pModuleManager->getRenderingFrontend()->getGIPassMeshGPUData());
-	updateUBO(GLRenderingBackendComponent::get().m_materialUBO, g_pModuleManager->getRenderingFrontend()->getGIPassMaterialGPUData());
-
 	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getTotalSceneAABB();
 
 	auto l_sceneCenter = l_sceneAABB.m_center;
@@ -529,16 +582,9 @@ bool GLEnvironmentCapturePass::update()
 			l_currentPos.z = l_startPos.z;
 			for (size_t k = 0; k < m_subDivideDimension; k++)
 			{
-				capture(l_currentPos, l_probeIndex);
-				generateSurfel(l_probeIndex);
-
-				auto l_SH9 = GLSHPass::getSH9(m_capturePassGLRPC->m_GLTDCs[0]);
-				m_radianceSH9s.first.emplace_back(l_currentPos);
-				m_radianceSH9s.second.emplace_back(l_SH9);
-
-				l_SH9 = GLSHPass::getSH9(m_skyVisibilityPassGLRPC->m_GLTDCs[0]);
-				m_skyVisibilitySH9s.first.emplace_back(l_currentPos);
-				m_skyVisibilitySH9s.second.emplace_back(l_SH9);
+				Probe l_probe;
+				l_probe.pos = l_currentPos;
+				m_probes.emplace_back(l_probe);
 
 				l_currentPos.z += l_probeDistance.z;
 				l_probeIndex++;
@@ -546,10 +592,54 @@ bool GLEnvironmentCapturePass::update()
 			l_currentPos.y += l_probeDistance.y;
 		}
 		l_currentPos.x += l_probeDistance.x;
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: Probe capture: " + std::to_string((float)l_probeIndex * 100.0f / (float)m_totalCaptureProbes) + "%");
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: Generating probes: " + std::to_string((float)l_probeIndex * 100.0f / (float)m_totalCaptureProbes) + "%");
 	}
 
-	generateBrick();
+	return true;
+}
+
+bool GLEnvironmentCapturePass::serializeSurfels()
+{
+	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
+
+	std::ofstream l_file;
+	l_file.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoSurfel", std::ios::binary);
+	IOService::serializeVector(l_file, m_surfels);
+
+	return true;
+}
+
+bool GLEnvironmentCapturePass::serializeBricks()
+{
+	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
+
+	std::ofstream l_file;
+	l_file.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoBrick", std::ios::binary);
+	IOService::serializeVector(l_file, m_bricks);
+
+	return true;
+}
+
+bool GLEnvironmentCapturePass::update()
+{
+	updateUBO(GLRenderingBackendComponent::get().m_meshUBO, g_pModuleManager->getRenderingFrontend()->getGIPassMeshGPUData());
+	updateUBO(GLRenderingBackendComponent::get().m_materialUBO, g_pModuleManager->getRenderingFrontend()->getGIPassMaterialGPUData());
+
+	m_probes.clear();
+	m_surfels.clear();
+	m_bricks.clear();
+	m_brickFactors.clear();
+
+	generateProbes();
+	capture();
+
+	eliminateDuplication();
+	assignSurfelRangeToBricks();
+
+	serializeSurfels();
+	serializeBricks();
 
 	return true;
 }
@@ -564,14 +654,9 @@ GLRenderPassComponent * GLEnvironmentCapturePass::getGLRPC()
 	return m_capturePassGLRPC;
 }
 
-const std::pair<std::vector<vec4>, std::vector<SH9>>& GLEnvironmentCapturePass::getRadianceSH9()
+const std::vector<Probe>& GLEnvironmentCapturePass::getProbes()
 {
-	return m_radianceSH9s;
-}
-
-const std::pair<std::vector<vec4>, std::vector<SH9>>& GLEnvironmentCapturePass::getSkyVisibilitySH9()
-{
-	return m_skyVisibilitySH9s;
+	return m_probes;
 }
 
 const std::vector<Brick>& GLEnvironmentCapturePass::getBricks()

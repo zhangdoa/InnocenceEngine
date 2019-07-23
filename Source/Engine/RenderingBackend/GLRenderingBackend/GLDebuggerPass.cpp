@@ -32,7 +32,7 @@ INNO_PRIVATE_SCOPE GLDebuggerPass
 	bool drawFrontView();
 
 	bool drawTestSceneForSH();
-	bool drawDebugSphereForSH(GLRenderPassComponent* canvas);
+	bool drawProbes(GLRenderPassComponent* canvas);
 	bool drawBricks();
 
 	EntityID m_entityID;
@@ -491,7 +491,7 @@ bool GLDebuggerPass::drawTestSceneForSH()
 	return true;
 }
 
-bool GLDebuggerPass::drawDebugSphereForSH(GLRenderPassComponent* canvas)
+bool GLDebuggerPass::drawProbes(GLRenderPassComponent* canvas)
 {
 	glDepthMask(GL_FALSE);
 	glDepthFunc(GL_LESS);
@@ -501,26 +501,33 @@ bool GLDebuggerPass::drawDebugSphereForSH(GLRenderPassComponent* canvas)
 
 	static bool l_drawSkyVisibilitySH9 = false;
 
-	decltype(&GLEnvironmentCapturePass::getSkyVisibilitySH9()) l_SH9s;
+	std::vector<Probe> l_probes;
+	std::vector<SH9> l_SH9s(l_probes.size());
 
 	if (l_drawSkyVisibilitySH9)
 	{
-		l_SH9s = &GLEnvironmentCapturePass::getSkyVisibilitySH9();
+		for (size_t i = 0; i < l_probes.size(); i++)
+		{
+			l_SH9s[i] = l_probes[i].skyVisibility;
+		}
 	}
 	else
 	{
-		l_SH9s = &GLEnvironmentCapturePass::getRadianceSH9();
+		for (size_t i = 0; i < l_probes.size(); i++)
+		{
+			l_SH9s[i] = l_probes[i].radiance;
+		}
 	}
 
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::SPHERE);
 
 	activateShaderProgram(m_SHVisualizationGLSPC);
 
-	updateUBO(m_SH9UBO, l_SH9s->second);
+	updateUBO(m_SH9UBO, l_SH9s);
 
-	for (size_t i = 0; i < l_SH9s->first.size(); i++)
+	for (size_t i = 0; i < l_probes.size(); i++)
 	{
-		auto l_m = InnoMath::toTranslationMatrix(l_SH9s->first[i]);
+		auto l_m = InnoMath::toTranslationMatrix(l_probes[i].pos);
 		updateUniform(0, l_m);
 		updateUniform(1, (unsigned int)i);
 
@@ -579,7 +586,7 @@ bool GLDebuggerPass::update(GLRenderPassComponent* canvas)
 	}
 	else
 	{
-		drawDebugSphereForSH(canvas);
+		drawProbes(canvas);
 	}
 
 	static bool l_drawBricks = true;
