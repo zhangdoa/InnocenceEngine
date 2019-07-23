@@ -184,7 +184,7 @@ std::string InnoFileSystem::getCurrentSceneName()
 {
 	auto l_currentSceneName = InnoFileSystemNS::m_currentScene.substr(0, InnoFileSystemNS::m_currentScene.find("."));
 	l_currentSceneName = l_currentSceneName.substr(l_currentSceneName.rfind("//") + 2);
-	return InnoFileSystemNS::m_currentScene;
+	return l_currentSceneName;
 }
 
 bool InnoFileSystem::loadScene(const std::string & fileName)
