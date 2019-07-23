@@ -1,7 +1,7 @@
 #pragma once
 #include "ISceneHierarchyManager.h"
 
-INNO_CONCRETE InnoSceneHierarchyManager : INNO_IMPLEMENT ISceneHierarchyManager
+class InnoSceneHierarchyManager : public ISceneHierarchyManager
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoSceneHierarchyManager);

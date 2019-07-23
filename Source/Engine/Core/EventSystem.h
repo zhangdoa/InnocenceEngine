@@ -1,7 +1,7 @@
 #pragma once
 #include "IEventSystem.h"
 
-INNO_CONCRETE InnoEventSystem : INNO_IMPLEMENT IEventSystem
+class InnoEventSystem : public IEventSystem
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoEventSystem);

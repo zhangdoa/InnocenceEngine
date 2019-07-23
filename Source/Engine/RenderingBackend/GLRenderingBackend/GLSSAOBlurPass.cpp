@@ -10,7 +10,7 @@ using namespace GLRenderingBackendNS;
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE GLSSAOBlurPass
+namespace GLSSAOBlurPass
 {
 	void initializeShaders();
 

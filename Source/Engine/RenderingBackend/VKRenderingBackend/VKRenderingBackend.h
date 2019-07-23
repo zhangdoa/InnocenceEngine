@@ -1,7 +1,7 @@
 #pragma once
 #include "../IRenderingBackend.h"
 
-class VKRenderingBackend : INNO_IMPLEMENT IRenderingBackend
+class VKRenderingBackend : public IRenderingBackend
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(VKRenderingBackend);

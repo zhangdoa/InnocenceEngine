@@ -3,7 +3,7 @@
 #include "../Common/InnoClassTemplate.h"
 #include "InnoTaskScheduler.h"
 
-INNO_INTERFACE ITaskSystem
+class ITaskSystem
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(ITaskSystem);

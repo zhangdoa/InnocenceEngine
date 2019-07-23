@@ -1,7 +1,7 @@
 #pragma once
 #include "IMemorySystem.h"
 
-class InnoMemorySystem : INNO_IMPLEMENT IMemorySystem
+class InnoMemorySystem : public IMemorySystem
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoMemorySystem);

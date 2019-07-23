@@ -2,7 +2,7 @@
 #include "../IRenderingBackend.h"
 #include "MTRenderingBackendBridge.h"
 
-class MTRenderingBackend : INNO_IMPLEMENT IRenderingBackend
+class MTRenderingBackend : public IRenderingBackend
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(MTRenderingBackend);

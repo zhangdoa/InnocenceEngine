@@ -3,7 +3,7 @@
 #include "../Common/InnoClassTemplate.h"
 #include "../Common/InnoComponent.h"
 
-INNO_INTERFACE IComponentManager
+class IComponentManager
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IComponentManager);

@@ -54,7 +54,7 @@ private:
 	T B;
 };
 
-INNO_PRIVATE_SCOPE InnoRenderingFrontendNS
+namespace InnoRenderingFrontendNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 

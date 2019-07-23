@@ -8,7 +8,7 @@ extern IModuleManager* g_pModuleManager;
 
 using namespace GLRenderingBackendNS;
 
-INNO_PRIVATE_SCOPE GLEarlyZPass
+namespace GLEarlyZPass
 {
 	void initializeShaders();
 

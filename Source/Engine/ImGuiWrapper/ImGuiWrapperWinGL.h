@@ -1,7 +1,7 @@
 #pragma once
 #include "IImGuiWrapperImpl.h"
 
-class ImGuiWrapperWinGL : INNO_IMPLEMENT IImGuiWrapperImpl
+class ImGuiWrapperWinGL : public IImGuiWrapperImpl
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(ImGuiWrapperWinGL);

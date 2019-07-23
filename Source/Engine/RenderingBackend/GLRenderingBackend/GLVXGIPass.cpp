@@ -13,7 +13,7 @@ extern IModuleManager* g_pModuleManager;
 
 using namespace GLRenderingBackendNS;
 
-INNO_PRIVATE_SCOPE GLVXGIPass
+namespace GLVXGIPass
 {
 	void initializeVoxelTestPass();
 	void initializeVoxelizationPass();

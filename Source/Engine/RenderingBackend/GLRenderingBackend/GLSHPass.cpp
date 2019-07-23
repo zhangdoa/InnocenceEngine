@@ -9,7 +9,7 @@ using namespace GLRenderingBackendNS;
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE GLSHPass
+namespace GLSHPass
 {
 	SH9 samplesToSH(const std::vector<vec4>& samples);
 	std::vector<vec4> readbackCubemapSamples(GLRenderPassComponent* GLRPC, GLTextureDataComponent* GLTDC);

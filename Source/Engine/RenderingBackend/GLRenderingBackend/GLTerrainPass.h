@@ -3,7 +3,7 @@
 #include "../../Component/GLRenderPassComponent.h"
 #include "../../Component/GLShaderProgramComponent.h"
 
-INNO_PRIVATE_SCOPE GLTerrainPass
+namespace GLTerrainPass
 {
 	bool initialize();
 	bool update();

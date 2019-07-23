@@ -12,7 +12,7 @@ namespace fs = std::filesystem;
 #include "../ModuleManager/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE IOService
+namespace IOService
 {
 	std::string m_workingDir;
 }

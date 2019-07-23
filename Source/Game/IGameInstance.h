@@ -3,7 +3,7 @@
 #include "../Engine/Common/InnoClassTemplate.h"
 #include "../Engine/Common/ComponentHeaders.h"
 
-INNO_INTERFACE IGameInstance
+class IGameInstance
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IGameInstance);

@@ -1,7 +1,7 @@
 #pragma once
 #include "../../Core/IWindowSystem.h"
 
-class WinWindowSystem : INNO_IMPLEMENT IWindowSystem
+class WinWindowSystem : public IWindowSystem
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(WinWindowSystem);

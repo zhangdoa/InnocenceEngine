@@ -2,7 +2,7 @@
 #include "IComponentManager.h"
 #include "../Component/DirectionalLightComponent.h"
 
-INNO_INTERFACE IDirectionalLightComponentManager : INNO_IMPLEMENT IComponentManager
+class IDirectionalLightComponentManager : public IComponentManager
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IDirectionalLightComponentManager);

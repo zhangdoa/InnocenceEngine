@@ -1,7 +1,7 @@
 #pragma once
 #include "../IRenderingBackend.h"
 
-class DX12RenderingBackend : INNO_IMPLEMENT IRenderingBackend
+class DX12RenderingBackend : public IRenderingBackend
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(DX12RenderingBackend);

@@ -11,7 +11,7 @@ extern IModuleManager* g_pModuleManager;
 
 using namespace GLRenderingBackendNS;
 
-INNO_PRIVATE_SCOPE GLLightCullingPass
+namespace GLLightCullingPass
 {
 	bool initializeShaders();
 	bool createGridFrustumsBuffer();

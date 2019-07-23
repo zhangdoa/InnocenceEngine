@@ -6,7 +6,7 @@
 
 using SceneHierarchyMap = std::unordered_map<InnoEntity*, std::set<InnoComponent*>>;
 
-INNO_INTERFACE ISceneHierarchyManager
+class ISceneHierarchyManager
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(ISceneHierarchyManager);

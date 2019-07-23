@@ -2,7 +2,7 @@
 #include "../../Common/InnoType.h"
 #include "../../Component/GLRenderPassComponent.h"
 
-INNO_PRIVATE_SCOPE GLSSAOBlurPass
+namespace GLSSAOBlurPass
 {
 	bool initialize();
 	bool update();

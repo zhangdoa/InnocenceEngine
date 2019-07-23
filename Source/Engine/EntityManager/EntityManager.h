@@ -1,7 +1,7 @@
 #pragma once
 #include "IEntityManager.h"
 
-INNO_CONCRETE InnoEntityManager : INNO_IMPLEMENT IEntityManager
+class InnoEntityManager : public IEntityManager
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoEntityManager);

@@ -1,7 +1,7 @@
 #include "LogSystem.h"
 #include "InnoLogger.h"
 
-INNO_PRIVATE_SCOPE InnoLogSystemNS
+namespace InnoLogSystemNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 }

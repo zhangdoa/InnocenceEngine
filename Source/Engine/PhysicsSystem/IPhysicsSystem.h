@@ -18,7 +18,7 @@ struct CullingDataPack
 	unsigned int UUID;
 };
 
-INNO_INTERFACE IPhysicsSystem
+class IPhysicsSystem
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IPhysicsSystem);

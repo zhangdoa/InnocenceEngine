@@ -2,7 +2,7 @@
 #include "../../Common/InnoType.h"
 #include "../../Component/DX12RenderPassComponent.h"
 
-INNO_PRIVATE_SCOPE DX12LightPass
+namespace DX12LightPass
 {
 	bool initialize();
 	bool update();

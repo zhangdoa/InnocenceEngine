@@ -2,7 +2,7 @@
 #include "../../Common/InnoType.h"
 #include "../../Component/VKRenderPassComponent.h"
 
-INNO_PRIVATE_SCOPE VKOpaquePass
+namespace VKOpaquePass
 {
 	bool initialize();
 	bool update();

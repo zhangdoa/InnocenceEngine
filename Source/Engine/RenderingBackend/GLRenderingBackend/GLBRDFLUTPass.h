@@ -2,7 +2,7 @@
 #include "../../Common/InnoType.h"
 #include "../../Component/GLTextureDataComponent.h"
 
-INNO_PRIVATE_SCOPE GLBRDFLUTPass
+namespace GLBRDFLUTPass
 {
 	bool initialize();
 	bool update();

@@ -9,7 +9,7 @@
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE WinGLWindowSurfaceNS
+namespace WinGLWindowSurfaceNS
 {
 	bool setup(void* hInstance, void* hwnd, void* WindowProc);
 	bool initialize();

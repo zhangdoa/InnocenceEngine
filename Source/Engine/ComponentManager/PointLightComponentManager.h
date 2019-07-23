@@ -1,7 +1,7 @@
 #pragma once
 #include "IPointLightComponentManager.h"
 
-INNO_CONCRETE InnoPointLightComponentManager : INNO_IMPLEMENT IPointLightComponentManager
+class InnoPointLightComponentManager : public IPointLightComponentManager
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoPointLightComponentManager);

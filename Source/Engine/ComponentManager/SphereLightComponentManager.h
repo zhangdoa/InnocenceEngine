@@ -1,7 +1,7 @@
 #pragma once
 #include "ISphereLightComponentManager.h"
 
-INNO_CONCRETE InnoSphereLightComponentManager : INNO_IMPLEMENT ISphereLightComponentManager
+class InnoSphereLightComponentManager : public ISphereLightComponentManager
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoSphereLightComponentManager);

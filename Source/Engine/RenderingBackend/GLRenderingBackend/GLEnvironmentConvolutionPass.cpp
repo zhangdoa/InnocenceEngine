@@ -10,7 +10,7 @@ extern IModuleManager* g_pModuleManager;
 
 using namespace GLRenderingBackendNS;
 
-INNO_PRIVATE_SCOPE GLEnvironmentConvolutionPass
+namespace GLEnvironmentConvolutionPass
 {
 	EntityID m_entityID;
 

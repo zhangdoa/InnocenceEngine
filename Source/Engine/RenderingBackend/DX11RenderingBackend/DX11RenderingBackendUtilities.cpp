@@ -6,7 +6,7 @@
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE DX11RenderingBackendNS
+namespace DX11RenderingBackendNS
 {
 	void OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd, const std::string & shaderFilename);
 	ID3D10Blob* loadShaderBuffer(ShaderType shaderType, const std::wstring & shaderFilePath);

@@ -18,7 +18,7 @@
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE ImGuiWrapperNS
+namespace ImGuiWrapperNS
 {
 	void showApplicationProfiler();
 	void zoom(bool zoom, ImTextureID textureID, ImVec2 renderTargetSize);

@@ -15,7 +15,7 @@ using namespace GLRenderingBackendNS;
 
 #include "../../FileSystem/IOService.h"
 
-INNO_PRIVATE_SCOPE GLEnvironmentCapturePass
+namespace GLEnvironmentCapturePass
 {
 	bool generateProbes();
 	bool capture();

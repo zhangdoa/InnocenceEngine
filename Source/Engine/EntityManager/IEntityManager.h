@@ -4,7 +4,7 @@
 #include "../Common/InnoEntity.h"
 #include "../Common/STL17.h"
 
-INNO_INTERFACE IEntityManager
+class IEntityManager
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IEntityManager);

@@ -8,7 +8,7 @@ extern IModuleManager* g_pModuleManager;
 
 using namespace GLRenderingBackendNS;
 
-INNO_PRIVATE_SCOPE GLShadowPass
+namespace GLShadowPass
 {
 	EntityID m_entityID;
 

@@ -24,7 +24,7 @@
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE DX11RenderingBackendNS
+namespace DX11RenderingBackendNS
 {
 	bool createPhysicalDevices();
 	bool createSwapChain();

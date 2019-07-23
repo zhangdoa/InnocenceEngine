@@ -1,7 +1,7 @@
 #pragma once
 #include "IAssetSystem.h"
 
-class InnoAssetSystem : INNO_IMPLEMENT IAssetSystem
+class InnoAssetSystem : public IAssetSystem
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoAssetSystem);

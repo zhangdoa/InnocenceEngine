@@ -3,7 +3,7 @@
 #include "../../Component/DX11RenderPassComponent.h"
 #include "../../Component/DX11TextureDataComponent.h"
 
-INNO_PRIVATE_SCOPE DX11TAAPass
+namespace DX11TAAPass
 {
 	bool initialize();
 

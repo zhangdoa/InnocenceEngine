@@ -36,7 +36,7 @@
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE ImGuiWrapperWinGLNS
+namespace ImGuiWrapperWinGLNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 }

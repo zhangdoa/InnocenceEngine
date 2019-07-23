@@ -1,7 +1,7 @@
 #pragma once
 #include "IRayTracer.h"
 
-INNO_CONCRETE InnoRayTracer : INNO_IMPLEMENT IRayTracer
+class InnoRayTracer : public IRayTracer
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoRayTracer);

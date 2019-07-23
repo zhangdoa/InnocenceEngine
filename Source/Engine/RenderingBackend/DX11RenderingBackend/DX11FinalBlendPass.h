@@ -2,7 +2,7 @@
 #include "../../Common/InnoType.h"
 #include "../../Component/DX11RenderPassComponent.h"
 
-INNO_PRIVATE_SCOPE DX11FinalBlendPass
+namespace DX11FinalBlendPass
 {
 	bool initialize();
 

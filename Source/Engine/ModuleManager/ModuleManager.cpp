@@ -106,7 +106,7 @@ if (!g_pModuleManager->getComponentManager(ComponentType::className)->Terminate(
 	return false; \
 } \
 
-INNO_PRIVATE_SCOPE InnoModuleManagerNS
+namespace InnoModuleManagerNS
 {
 	InitConfig parseInitConfig(const std::string& arg);
 	bool createSubSystemInstance(void* appHook, void* extraHook, char* pScmdline);

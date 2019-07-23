@@ -5,7 +5,7 @@
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE ImGuiWrapperWinVKNS
+namespace ImGuiWrapperWinVKNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 }

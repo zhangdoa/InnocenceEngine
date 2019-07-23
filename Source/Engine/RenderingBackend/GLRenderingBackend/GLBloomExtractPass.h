@@ -2,7 +2,7 @@
 #include "../../Common/InnoType.h"
 #include "../../Component/GLRenderPassComponent.h"
 
-INNO_PRIVATE_SCOPE GLBloomExtractPass
+namespace GLBloomExtractPass
 {
 	bool initialize();
 	bool update(GLRenderPassComponent* prePassGLRPC);

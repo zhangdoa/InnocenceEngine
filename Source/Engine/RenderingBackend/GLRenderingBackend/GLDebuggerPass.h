@@ -2,7 +2,7 @@
 #include "../../Common/InnoType.h"
 #include "../../Component/GLRenderPassComponent.h"
 
-INNO_PRIVATE_SCOPE GLDebuggerPass
+namespace GLDebuggerPass
 {
 	bool initialize();
 	bool update(GLRenderPassComponent* canvas);

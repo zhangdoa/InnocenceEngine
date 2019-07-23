@@ -1,7 +1,7 @@
 #pragma once
 #include "IGameInstance.h"
 
-class GameInstance : INNO_IMPLEMENT IGameInstance
+class GameInstance : public IGameInstance
 {
 public:
 	GameInstance(void) = default;

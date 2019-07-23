@@ -2,7 +2,7 @@
 #include "../../Common/InnoType.h"
 #include "../../Component/VKRenderPassComponent.h"
 
-INNO_PRIVATE_SCOPE VKFinalBlendPass
+namespace VKFinalBlendPass
 {
 	bool initialize();
 	bool update();

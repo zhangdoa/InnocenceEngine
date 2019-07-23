@@ -3,7 +3,7 @@
 #include "../Common/InnoMath.h"
 #include "../Common/InnoClassTemplate.h"
 
-INNO_INTERFACE ILogSystem
+class ILogSystem
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(ILogSystem);

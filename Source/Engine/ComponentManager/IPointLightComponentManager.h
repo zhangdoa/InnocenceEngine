@@ -2,7 +2,7 @@
 #include "IComponentManager.h"
 #include "../Component/PointLightComponent.h"
 
-INNO_INTERFACE IPointLightComponentManager : INNO_IMPLEMENT IComponentManager
+class IPointLightComponentManager : public IComponentManager
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IPointLightComponentManager);

@@ -3,7 +3,7 @@
 #include "../Common/InnoClassTemplate.h"
 #include "IWindowSurface.h"
 
-INNO_INTERFACE IWindowSystem
+class IWindowSystem
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IWindowSystem);

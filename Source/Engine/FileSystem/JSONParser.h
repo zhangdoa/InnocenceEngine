@@ -6,9 +6,9 @@ using json = nlohmann::json;
 
 #include "../Common/ComponentHeaders.h"
 
-INNO_PRIVATE_SCOPE InnoFileSystemNS
+namespace InnoFileSystemNS
 {
-	INNO_PRIVATE_SCOPE JSONParser
+	namespace JSONParser
 	{
 		bool loadJsonDataFromDisk(const std::string & fileName, json & data);
 		bool saveJsonDataToDisk(const std::string & fileName, const json & data);

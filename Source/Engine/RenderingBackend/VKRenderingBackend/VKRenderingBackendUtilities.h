@@ -28,7 +28,7 @@ struct SwapChainSupportDetails
 	std::vector<VkPresentModeKHR> m_presentModes;
 };
 
-INNO_PRIVATE_SCOPE VKRenderingBackendNS
+namespace VKRenderingBackendNS
 {
 	bool setup();
 	bool initialize();

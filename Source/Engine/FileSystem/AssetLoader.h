@@ -2,9 +2,9 @@
 #include "../Common/InnoType.h"
 #include "../Component/VisibleComponent.h"
 
-INNO_PRIVATE_SCOPE InnoFileSystemNS
+namespace InnoFileSystemNS
 {
-	INNO_PRIVATE_SCOPE AssetLoader
+	namespace AssetLoader
 	{
 		ModelMap loadModel(const std::string & fileName);
 		TextureDataComponent* loadTexture(const std::string& fileName);

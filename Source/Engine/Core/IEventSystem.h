@@ -10,7 +10,7 @@ struct InputConfig
 	int totalMouseCodes;
 };
 
-INNO_INTERFACE IEventSystem
+class IEventSystem
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IEventSystem);

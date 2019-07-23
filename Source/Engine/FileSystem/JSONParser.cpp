@@ -14,7 +14,7 @@ extern IModuleManager* g_pModuleManager;
 #include "IOService.h"
 #include "AssetLoader.h"
 
-INNO_PRIVATE_SCOPE InnoFileSystemNS::JSONParser
+namespace InnoFileSystemNS::JSONParser
 {
 	#define LoadComponentData(className, j, entity) \
 	{ auto l_result = SpawnComponent(className, entity, ObjectSource::Asset, ObjectUsage::Gameplay); \

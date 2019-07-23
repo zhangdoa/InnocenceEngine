@@ -2,7 +2,7 @@
 #include "InnoLogger.h"
 #include "InnoTimer.h"
 
-INNO_PRIVATE_SCOPE InnoTestSystemNS
+namespace InnoTestSystemNS
 {
 	bool setup();
 	bool initialize();

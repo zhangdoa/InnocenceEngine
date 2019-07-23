@@ -3,7 +3,7 @@
 
 #include "../Common/InnoClassTemplate.h"
 
-INNO_INTERFACE IRayTracer
+class IRayTracer
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IRayTracer);

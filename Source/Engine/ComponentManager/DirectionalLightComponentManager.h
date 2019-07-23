@@ -1,7 +1,7 @@
 #pragma once
 #include "IDirectionalLightComponentManager.h"
 
-INNO_CONCRETE InnoDirectionalLightComponentManager : INNO_IMPLEMENT IDirectionalLightComponentManager
+class InnoDirectionalLightComponentManager : public IDirectionalLightComponentManager
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoDirectionalLightComponentManager);

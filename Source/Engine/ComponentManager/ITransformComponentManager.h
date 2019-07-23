@@ -2,7 +2,7 @@
 #include "IComponentManager.h"
 #include "../Component/TransformComponent.h"
 
-INNO_INTERFACE ITransformComponentManager : INNO_IMPLEMENT IComponentManager
+class ITransformComponentManager : public IComponentManager
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(ITransformComponentManager);

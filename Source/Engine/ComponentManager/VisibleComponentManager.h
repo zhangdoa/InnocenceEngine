@@ -1,7 +1,7 @@
 #pragma once
 #include "IVisibleComponentManager.h"
 
-INNO_CONCRETE InnoVisibleComponentManager : INNO_IMPLEMENT IVisibleComponentManager
+class InnoVisibleComponentManager : public IVisibleComponentManager
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoVisibleComponentManager);

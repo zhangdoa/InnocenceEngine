@@ -3,7 +3,7 @@
 #include "../Common/InnoClassTemplate.h"
 #include "../ThirdParty/ImGui/imgui.h"
 
-INNO_INTERFACE IImGuiWrapperImpl
+class IImGuiWrapperImpl
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IImGuiWrapperImpl);

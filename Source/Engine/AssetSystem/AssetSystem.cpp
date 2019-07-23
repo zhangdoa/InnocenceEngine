@@ -5,7 +5,7 @@
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE InnoAssetSystemNS
+namespace InnoAssetSystemNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 

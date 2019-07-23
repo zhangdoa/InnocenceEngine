@@ -1,7 +1,7 @@
 #pragma once
 #include "IFileSystem.h"
 
-INNO_CONCRETE InnoFileSystem : INNO_IMPLEMENT IFileSystem
+class InnoFileSystem : public IFileSystem
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoFileSystem);

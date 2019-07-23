@@ -6,7 +6,7 @@
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE WinVKWindowSurfaceNS
+namespace WinVKWindowSurfaceNS
 {
 	bool setup(void* hInstance, void* hwnd, void* WindowProc);
 	bool initialize();

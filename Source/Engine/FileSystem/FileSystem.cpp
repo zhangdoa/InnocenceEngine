@@ -13,7 +13,7 @@ extern IModuleManager* g_pModuleManager;
 #include "AssetLoader.h"
 #include "JSONParser.h"
 
-INNO_PRIVATE_SCOPE InnoFileSystemNS
+namespace InnoFileSystemNS
 {
 	bool convertModel(const std::string & fileName, const std::string & exportPath);
 
@@ -250,11 +250,11 @@ bool InnoFileSystem::addCPPClassFiles(const CPPClassDesc & desc)
 	// Abstraction type
 	if (desc.isInterface)
 	{
-		l_headerFile << "INNO_INTERFACE ";
+		l_headerFile << "class ";
 	}
 	else
 	{
-		l_headerFile << "INNO_CONCRETE ";
+		l_headerFile << "class ";
 	}
 
 	l_headerFile << desc.className;
@@ -262,7 +262,7 @@ bool InnoFileSystem::addCPPClassFiles(const CPPClassDesc & desc)
 	// Inheriance type
 	if (!desc.parentClass.empty())
 	{
-		l_headerFile << " : INNO_IMPLEMENT " << desc.parentClass;
+		l_headerFile << " : public " << desc.parentClass;
 	}
 
 	l_headerFile << std::endl;

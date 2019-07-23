@@ -1,7 +1,7 @@
 #pragma once
 #include "../../../Core/IWindowSurface.h"
 
-class WinDXWindowSurface : INNO_IMPLEMENT IWindowSurface
+class WinDXWindowSurface : public IWindowSurface
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(WinDXWindowSurface);

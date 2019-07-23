@@ -12,7 +12,7 @@ using namespace physx;
 
 #define PVD_HOST "127.0.0.1"
 
-INNO_PRIVATE_SCOPE PhysXWrapperNS
+namespace PhysXWrapperNS
 {
 	bool setup();
 	bool initialize();

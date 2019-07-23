@@ -12,7 +12,7 @@ extern IModuleManager* g_pModuleManager;
 
 using namespace DX11RenderingBackendNS;
 
-INNO_PRIVATE_SCOPE DX11TAAPass
+namespace DX11TAAPass
 {
 	bool initializeShaders();
 

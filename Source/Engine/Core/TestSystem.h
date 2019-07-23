@@ -1,7 +1,7 @@
 #pragma once
 #include "ITestSystem.h"
 
-INNO_CONCRETE InnoTestSystem : INNO_IMPLEMENT ITestSystem
+class InnoTestSystem : public ITestSystem
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoTestSystem);

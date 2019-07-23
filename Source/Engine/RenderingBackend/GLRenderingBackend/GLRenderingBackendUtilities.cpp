@@ -4,7 +4,7 @@
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE GLRenderingBackendNS
+namespace GLRenderingBackendNS
 {
 	void getGLError()
 	{

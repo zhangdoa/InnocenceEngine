@@ -10,7 +10,7 @@ extern IModuleManager* g_pModuleManager;
 
 using namespace GLRenderingBackendNS;
 
-INNO_PRIVATE_SCOPE GLEnvironmentPreFilterPass
+namespace GLEnvironmentPreFilterPass
 {
 	void initializeShaders();
 

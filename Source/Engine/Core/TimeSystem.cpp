@@ -1,7 +1,7 @@
 #include "TimeSystem.h"
 #include "InnoTimer.h"
 
-INNO_PRIVATE_SCOPE InnoTimeSystemNS
+namespace InnoTimeSystemNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 };

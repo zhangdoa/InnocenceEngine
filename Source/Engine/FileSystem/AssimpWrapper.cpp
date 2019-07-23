@@ -12,9 +12,9 @@ extern IModuleManager* g_pModuleManager;
 #include "IOService.h"
 #include "JSONParser.h"
 
-INNO_PRIVATE_SCOPE InnoFileSystemNS
+namespace InnoFileSystemNS
 {
-	INNO_PRIVATE_SCOPE AssimpWrapper
+	namespace AssimpWrapper
 	{
 		json processAssimpScene(const aiScene* aiScene, const std::string& exportName);
 		json processAssimpNode(const aiNode * node, const aiScene * scene, const std::string& exportName);

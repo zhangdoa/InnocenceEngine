@@ -10,7 +10,7 @@ extern IModuleManager* g_pModuleManager;
 using ButtonCallbackMap = std::unordered_map<ButtonData, std::set<std::function<void()>*>, ButtonHasher>;
 using MouseMovementCallbackMap = std::unordered_map<int, std::set<std::function<void(float)>*>>;
 
-INNO_PRIVATE_SCOPE InnoEventSystemNS
+namespace InnoEventSystemNS
 {
 	bool setup();
 	bool initialize();

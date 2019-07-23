@@ -7,7 +7,7 @@
 #include "../Component/TextureDataComponent.h"
 #include "../Component/VisibleComponent.h"
 
-INNO_INTERFACE IAssetSystem
+class IAssetSystem
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IAssetSystem);

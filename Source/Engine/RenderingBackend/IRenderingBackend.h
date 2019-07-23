@@ -6,7 +6,7 @@
 #include "../Component/TextureDataComponent.h"
 #include "../Component/MaterialDataComponent.h"
 
-INNO_INTERFACE IRenderingBackend
+class IRenderingBackend
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IRenderingBackend);

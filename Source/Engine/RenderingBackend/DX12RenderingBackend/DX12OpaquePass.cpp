@@ -9,7 +9,7 @@ extern IModuleManager* g_pModuleManager;
 
 using namespace DX12RenderingBackendNS;
 
-INNO_PRIVATE_SCOPE DX12OpaquePass
+namespace DX12OpaquePass
 {
 	bool initializeShaders();
 

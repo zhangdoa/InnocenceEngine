@@ -14,7 +14,7 @@ struct CPPClassDesc
 	std::string filePath;
 };
 
-INNO_INTERFACE IFileSystem
+class IFileSystem
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IFileSystem);

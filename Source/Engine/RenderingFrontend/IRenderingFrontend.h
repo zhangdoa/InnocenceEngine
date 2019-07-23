@@ -35,7 +35,7 @@ struct RenderingCapability
 	unsigned int maxTextures;
 };
 
-INNO_INTERFACE IRenderingFrontend
+class IRenderingFrontend
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IRenderingFrontend);

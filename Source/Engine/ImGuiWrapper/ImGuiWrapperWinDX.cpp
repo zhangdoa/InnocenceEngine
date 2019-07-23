@@ -14,7 +14,7 @@
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE ImGuiWrapperWinDXNS
+namespace ImGuiWrapperWinDXNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 }

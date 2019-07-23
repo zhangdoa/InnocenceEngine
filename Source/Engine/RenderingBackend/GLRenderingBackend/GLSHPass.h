@@ -3,7 +3,7 @@
 #include "../../Common/InnoMath.h"
 #include "../../Component/GLRenderPassComponent.h"
 
-INNO_PRIVATE_SCOPE GLSHPass
+namespace GLSHPass
 {
 	bool initialize();
 	bool reloadShader();

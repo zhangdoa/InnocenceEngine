@@ -2,7 +2,7 @@
 #include "../Common/InnoType.h"
 #include "../Common/InnoClassTemplate.h"
 
-INNO_INTERFACE ITimeSystem
+class ITimeSystem
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(ITimeSystem);

@@ -1,7 +1,7 @@
 #pragma once
 #include "ICameraComponentManager.h"
 
-INNO_CONCRETE InnoCameraComponentManager : INNO_IMPLEMENT ICameraComponentManager
+class InnoCameraComponentManager : public ICameraComponentManager
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoCameraComponentManager);

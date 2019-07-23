@@ -1,7 +1,7 @@
 #pragma once
 #include "ITaskSystem.h"
 
-class InnoTaskSystem : INNO_IMPLEMENT ITaskSystem
+class InnoTaskSystem : public ITaskSystem
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoTaskSystem);

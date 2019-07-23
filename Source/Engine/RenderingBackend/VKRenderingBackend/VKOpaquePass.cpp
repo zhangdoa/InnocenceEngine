@@ -8,7 +8,7 @@ using namespace VKRenderingBackendNS;
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE VKOpaquePass
+namespace VKOpaquePass
 {
 	EntityID m_entityID;
 

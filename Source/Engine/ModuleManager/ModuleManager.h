@@ -1,7 +1,7 @@
 #pragma once
 #include "IModuleManager.h"
 
-INNO_CONCRETE InnoModuleManager : INNO_IMPLEMENT IModuleManager
+class InnoModuleManager : public IModuleManager
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoModuleManager);

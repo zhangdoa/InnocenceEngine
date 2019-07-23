@@ -11,7 +11,7 @@ using namespace GLRenderingBackendNS;
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE GLBillboardPass
+namespace GLBillboardPass
 {
 	void initializeShaders();
 

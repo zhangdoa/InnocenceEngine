@@ -11,7 +11,7 @@ using namespace GLRenderingBackendNS;
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE GLPostTAAPass
+namespace GLPostTAAPass
 {
 	void initializeShaders();
 

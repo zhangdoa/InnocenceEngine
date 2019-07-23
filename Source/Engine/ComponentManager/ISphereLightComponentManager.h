@@ -2,7 +2,7 @@
 #include "IComponentManager.h"
 #include "../Component/SphereLightComponent.h"
 
-INNO_INTERFACE ISphereLightComponentManager : INNO_IMPLEMENT IComponentManager
+class ISphereLightComponentManager : public IComponentManager
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(ISphereLightComponentManager);

@@ -4,7 +4,7 @@
 
 using namespace GLRenderingBackendNS;
 
-INNO_PRIVATE_SCOPE GLBRDFLUTPass
+namespace GLBRDFLUTPass
 {
 	EntityID m_entityID;
 

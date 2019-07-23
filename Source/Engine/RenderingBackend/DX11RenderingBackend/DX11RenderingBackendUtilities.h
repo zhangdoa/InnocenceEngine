@@ -8,7 +8,7 @@
 #include "../../Component/DX11ShaderProgramComponent.h"
 #include "../../Component/DX11RenderingBackendComponent.h"
 
-INNO_PRIVATE_SCOPE DX11RenderingBackendNS
+namespace DX11RenderingBackendNS
 {
 	bool setup();
 	bool initialize();

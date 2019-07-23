@@ -1,7 +1,7 @@
 #pragma once
 #include "ITransformComponentManager.h"
 
-INNO_CONCRETE InnoTransformComponentManager : INNO_IMPLEMENT ITransformComponentManager
+class InnoTransformComponentManager : public ITransformComponentManager
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoTransformComponentManager);

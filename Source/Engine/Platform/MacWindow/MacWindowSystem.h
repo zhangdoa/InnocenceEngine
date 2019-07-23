@@ -2,7 +2,7 @@
 #include "../../Core/IWindowSystem.h"
 #include "MacWindowSystemBridge.h"
 
-class MacWindowSystem : INNO_IMPLEMENT IWindowSystem
+class MacWindowSystem : public IWindowSystem
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(MacWindowSystem);

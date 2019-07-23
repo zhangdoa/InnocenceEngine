@@ -8,7 +8,7 @@ extern IModuleManager* g_pModuleManager;
 #include "IOService.h"
 #include "JSONParser.h"
 
-INNO_PRIVATE_SCOPE InnoFileSystemNS::AssetLoader
+namespace InnoFileSystemNS::AssetLoader
 {
 	std::unordered_map<std::string, ModelMap> m_loadedModelMap;
 	std::unordered_map<std::string, TextureDataComponent*> m_loadedTexture;

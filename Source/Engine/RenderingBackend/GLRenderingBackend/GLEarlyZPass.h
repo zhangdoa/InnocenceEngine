@@ -2,7 +2,7 @@
 #include "../../Common/InnoType.h"
 #include "../../Component/GLRenderPassComponent.h"
 
-INNO_PRIVATE_SCOPE GLEarlyZPass
+namespace GLEarlyZPass
 {
 	bool initialize();
 	bool update();

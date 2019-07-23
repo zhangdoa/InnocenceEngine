@@ -1,7 +1,7 @@
 #pragma once
 #include "ILogSystem.h"
 
-class InnoLogSystem : INNO_IMPLEMENT ILogSystem
+class InnoLogSystem : public ILogSystem
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoLogSystem);

@@ -32,7 +32,7 @@ static windowCallbackWrapper* ApplicationHandle = 0;
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-INNO_PRIVATE_SCOPE WinWindowSystemNS
+namespace WinWindowSystemNS
 {
 	IWindowSurface* m_windowSurface;
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;

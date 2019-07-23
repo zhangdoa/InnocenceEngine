@@ -11,7 +11,7 @@
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE VKRenderingBackendNS
+namespace VKRenderingBackendNS
 {
 	EntityID m_entityID;
 

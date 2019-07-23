@@ -8,7 +8,7 @@ using namespace GLRenderingBackendNS;
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE GLSkyPass
+namespace GLSkyPass
 {
 	void initializeShaders();
 

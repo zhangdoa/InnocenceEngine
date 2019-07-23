@@ -2,7 +2,7 @@
 #include "../../Common/InnoType.h"
 #include "../../Component/GLRenderPassComponent.h"
 
-INNO_PRIVATE_SCOPE GLEnvironmentConvolutionPass
+namespace GLEnvironmentConvolutionPass
 {
 	bool initialize();
 	bool update(GLTextureDataComponent* GLTDC);

@@ -10,7 +10,7 @@ using namespace VKRenderingBackendNS;
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE VKLightPass
+namespace VKLightPass
 {
 	EntityID m_entityID;
 

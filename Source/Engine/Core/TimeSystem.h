@@ -1,7 +1,7 @@
 #pragma once
 #include "ITimeSystem.h"
 
-class InnoTimeSystem : INNO_IMPLEMENT ITimeSystem
+class InnoTimeSystem : public ITimeSystem
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoTimeSystem);

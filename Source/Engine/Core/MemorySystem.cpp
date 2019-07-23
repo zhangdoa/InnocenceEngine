@@ -2,7 +2,7 @@
 #include "InnoMemory.h"
 #include "InnoLogger.h"
 
-INNO_PRIVATE_SCOPE InnoMemorySystemNS
+namespace InnoMemorySystemNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 }

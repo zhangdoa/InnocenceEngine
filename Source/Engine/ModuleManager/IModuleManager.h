@@ -27,7 +27,7 @@ struct InitConfig
 	RenderingBackend renderingBackend = RenderingBackend::GL;
 };
 
-INNO_INTERFACE IModuleManager
+class IModuleManager
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IModuleManager);

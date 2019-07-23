@@ -2,7 +2,7 @@
 #include "IComponentManager.h"
 #include "../Component/CameraComponent.h"
 
-INNO_INTERFACE ICameraComponentManager : INNO_IMPLEMENT IComponentManager
+class ICameraComponentManager : public IComponentManager
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(ICameraComponentManager);

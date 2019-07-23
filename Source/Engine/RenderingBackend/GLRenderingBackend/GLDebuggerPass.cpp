@@ -17,7 +17,7 @@ using namespace GLRenderingBackendNS;
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE GLDebuggerPass
+namespace GLDebuggerPass
 {
 	void initializeShaders();
 	bool initializeSHTest();

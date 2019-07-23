@@ -2,7 +2,7 @@
 #include "../Common/InnoType.h"
 #include "../Common/InnoClassTemplate.h"
 
-INNO_INTERFACE IMemorySystem
+class IMemorySystem
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IMemorySystem);

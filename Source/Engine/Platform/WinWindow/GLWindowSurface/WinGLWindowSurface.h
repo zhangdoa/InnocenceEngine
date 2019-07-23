@@ -1,7 +1,7 @@
 #pragma once
 #include "../../../Core/IWindowSurface.h"
 
-class WinGLWindowSurface : INNO_IMPLEMENT IWindowSurface
+class WinGLWindowSurface : public IWindowSurface
 {
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(WinGLWindowSurface);

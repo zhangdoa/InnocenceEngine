@@ -1,6 +1,6 @@
 #include "TaskSystem.h"
 
-INNO_PRIVATE_SCOPE InnoTaskSystemNS
+namespace InnoTaskSystemNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 }

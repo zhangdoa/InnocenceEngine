@@ -11,7 +11,7 @@ extern IModuleManager* g_pModuleManager;
 
 using namespace DX12RenderingBackendNS;
 
-INNO_PRIVATE_SCOPE DX12FinalBlendPass
+namespace DX12FinalBlendPass
 {
 	bool initializeShaders();
 

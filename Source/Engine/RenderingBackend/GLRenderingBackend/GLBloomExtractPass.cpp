@@ -9,7 +9,7 @@ using namespace GLRenderingBackendNS;
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE GLBloomExtractPass
+namespace GLBloomExtractPass
 {
 	void initializeShaders();
 
