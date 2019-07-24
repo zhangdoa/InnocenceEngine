@@ -17,6 +17,7 @@ using namespace GLRenderingBackendNS;
 
 namespace GLEnvironmentCapturePass
 {
+	bool loadGIData();
 	bool generateProbes();
 	bool capture();
 	bool drawCubemaps(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v);
@@ -616,25 +617,55 @@ bool GLEnvironmentCapturePass::serializeBricks()
 	return true;
 }
 
+bool GLEnvironmentCapturePass::loadGIData()
+{
+	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
+
+	std::ifstream l_probeFile;
+	l_probeFile.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoProbe", std::ios::binary);
+
+	if (l_probeFile.is_open())
+	{
+		IOService::deserializeVector(l_probeFile, m_probes);
+
+		std::ifstream l_surfelFile;
+		l_surfelFile.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoSurfel", std::ios::binary);
+		IOService::deserializeVector(l_surfelFile, m_surfels);
+
+		std::ifstream l_brickFile;
+		l_brickFile.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoBrick", std::ios::binary);
+		IOService::deserializeVector(l_brickFile, m_bricks);
+
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
 bool GLEnvironmentCapturePass::update()
 {
-	updateUBO(GLRenderingBackendComponent::get().m_meshUBO, g_pModuleManager->getRenderingFrontend()->getGIPassMeshGPUData());
-	updateUBO(GLRenderingBackendComponent::get().m_materialUBO, g_pModuleManager->getRenderingFrontend()->getGIPassMaterialGPUData());
+	if (!loadGIData())
+	{
+		updateUBO(GLRenderingBackendComponent::get().m_meshUBO, g_pModuleManager->getRenderingFrontend()->getGIPassMeshGPUData());
+		updateUBO(GLRenderingBackendComponent::get().m_materialUBO, g_pModuleManager->getRenderingFrontend()->getGIPassMaterialGPUData());
 
-	m_probes.clear();
-	m_surfels.clear();
-	m_bricks.clear();
-	m_brickFactors.clear();
+		m_probes.clear();
+		m_surfels.clear();
+		m_bricks.clear();
+		m_brickFactors.clear();
 
-	generateProbes();
-	capture();
+		generateProbes();
+		capture();
 
-	eliminateDuplication();
-	assignSurfelRangeToBricks();
+		eliminateDuplication();
+		assignSurfelRangeToBricks();
 
-	serializeProbes();
-	serializeSurfels();
-	serializeBricks();
+		serializeProbes();
+		serializeSurfels();
+		serializeBricks();
+	}
 
 	return true;
 }
