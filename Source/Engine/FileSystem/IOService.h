@@ -72,6 +72,7 @@ namespace IOService
 		auto pbuf = is.rdbuf();
 		// get file size using buffer's members
 		std::size_t l_size = pbuf->pubseekoff(0, is.end, is.in);
+		vector.reserve(l_size / sizeof(T));
 		pbuf->pubseekpos(0, is.in);
 		pbuf->sgetn((char*)&vector[0], l_size);
 		return true;
@@ -84,6 +85,7 @@ namespace IOService
 		auto pbuf = is.rdbuf();
 		// get file size using buffer's members
 		std::size_t l_size = pbuf->pubseekoff(0, is.end, is.in);
+		vector.resize(l_size / sizeof(T));
 		pbuf->pubseekpos(0, is.in);
 		pbuf->sgetn((char*)&vector[0], l_size);
 		return true;
