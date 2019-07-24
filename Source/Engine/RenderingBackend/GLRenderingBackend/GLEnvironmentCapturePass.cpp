@@ -515,7 +515,9 @@ bool GLEnvironmentCapturePass::assignSurfelRangeToBricks()
 
 bool GLEnvironmentCapturePass::capture()
 {
-	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, 1000.0f);
+	auto l_cameraGPUData = g_pModuleManager->getRenderingFrontend()->getCameraGPUData();
+
+	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, l_cameraGPUData.zNear, l_cameraGPUData.zFar);
 
 	auto l_rPX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
 	auto l_rNX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(-1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
@@ -550,10 +552,12 @@ bool GLEnvironmentCapturePass::generateProbes()
 
 	auto l_sceneCenter = l_sceneAABB.m_center;
 	auto l_extendedAxisSize = l_sceneAABB.m_extend;
-	l_extendedAxisSize = l_extendedAxisSize - vec4(32.0f, 0.0f, 32.0f, 0.0f);
+	l_extendedAxisSize = l_extendedAxisSize - vec4(32.0, 2.0f, 32.0f, 0.0f);
 	l_extendedAxisSize.w = 0.0f;
-	auto l_probeDistance = l_extendedAxisSize / (float)(m_subDivideDimension - 1);
+	auto l_probeDistance = l_extendedAxisSize / (float)(m_subDivideDimension + 1);
 	auto l_startPos = l_sceneAABB.m_center - (l_extendedAxisSize / 2.0f);
+	l_startPos.x += l_probeDistance.x;
+	l_startPos.z += l_probeDistance.z;
 	auto l_currentPos = l_startPos;
 
 	unsigned int l_probeIndex = 0;
