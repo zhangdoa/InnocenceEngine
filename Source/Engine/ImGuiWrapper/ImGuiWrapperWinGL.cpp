@@ -269,33 +269,42 @@ void ImGuiWrapperWinGL::showRenderResult(RenderPassType renderPassType)
 		ImGui::End();
 		break;
 	case RenderPassType::Development:
-		ImGui::Begin("Development Pass", 0, ImGuiWindowFlags_AlwaysAutoResize);
+		ImGui::Begin("Wireframe", 0, ImGuiWindowFlags_AlwaysAutoResize);
 		{
-			ImGui::BeginChild("Debugger Pass", l_developmentRTSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-			ImGui::Text("Debugger Pass");
+			ImGui::BeginChild("Main View", l_developmentRTSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Text("Main View");
 			ImGui::Image(ImTextureID((GLuint64)GLDebuggerPass::getGLRPC(0)->m_GLTDCs[0]->m_TO), l_developmentRTSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			ImGui::EndChild();
 
 			ImGui::SameLine();
 
-			ImGui::BeginChild("Debugger Pass Right View", l_developmentRTSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-			ImGui::Text("Debugger Pass Right View");
+			ImGui::BeginChild("Right View", l_developmentRTSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Text("Right View");
 			ImGui::Image(ImTextureID((GLuint64)GLDebuggerPass::getGLRPC(1)->m_GLTDCs[0]->m_TO), l_developmentRTSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			ImGui::EndChild();
 
-			ImGui::BeginChild("Debugger Pass Top View", l_developmentRTSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-			ImGui::Text("Debugger Pass Top View");
+			ImGui::BeginChild("Top View", l_developmentRTSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Text("Top View");
 			ImGui::Image(ImTextureID((GLuint64)GLDebuggerPass::getGLRPC(2)->m_GLTDCs[0]->m_TO), l_developmentRTSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			ImGui::EndChild();
 
 			ImGui::SameLine();
 
-			ImGui::BeginChild("Debugger Pass Front View", l_developmentRTSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-			ImGui::Text("Debugger Pass Front View");
+			ImGui::BeginChild("Front View", l_developmentRTSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Text("Front View");
 			ImGui::Image(ImTextureID((GLuint64)GLDebuggerPass::getGLRPC(3)->m_GLTDCs[0]->m_TO), l_developmentRTSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			ImGui::EndChild();
 		}
 		ImGui::End();
+		ImGui::Begin("Cubemap Visualization", 0, ImGuiWindowFlags_AlwaysAutoResize);
+		{
+			ImGui::BeginChild("Cubemap Visualization", l_developmentRTSize, true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::Text("Cubemap Visualization");
+			ImGui::Image(ImTextureID((GLuint64)GLDebuggerPass::getGLRPC(4)->m_GLTDCs[0]->m_TO), l_developmentRTSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::EndChild();
+		}
+		ImGui::End();
+
 		break;
 	default:
 		break;

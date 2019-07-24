@@ -501,7 +501,7 @@ bool GLDebuggerPass::drawProbes(GLRenderPassComponent* canvas)
 
 	static bool l_drawSkyVisibilitySH9 = false;
 
-	std::vector<Probe> l_probes;
+	auto l_probes = GLEnvironmentCapturePass::getProbes();
 	std::vector<SH9> l_SH9s(l_probes.size());
 
 	if (l_drawSkyVisibilitySH9)
