@@ -31,6 +31,7 @@ namespace GLEnvironmentCapturePass
 	bool eliminateDuplication();
 	bool findSurfelRangeForBrick(Brick& brick);
 	bool assignSurfelRangeToBricks();
+	bool serializeProbes();
 	bool serializeSurfels();
 	bool serializeBricks();
 
@@ -548,9 +549,9 @@ bool GLEnvironmentCapturePass::generateProbes()
 
 	auto l_sceneCenter = l_sceneAABB.m_center;
 	auto l_extendedAxisSize = l_sceneAABB.m_extend;
-	l_extendedAxisSize = l_extendedAxisSize - vec4(2.0f, 2.0f, 2.0f, 0.0f);
+	l_extendedAxisSize = l_extendedAxisSize - vec4(32.0f, 0.0f, 32.0f, 0.0f);
 	l_extendedAxisSize.w = 0.0f;
-	auto l_probeDistance = l_extendedAxisSize / (float)m_subDivideDimension;
+	auto l_probeDistance = l_extendedAxisSize / (float)(m_subDivideDimension - 1);
 	auto l_startPos = l_sceneAABB.m_center - (l_extendedAxisSize / 2.0f);
 	auto l_currentPos = l_startPos;
 
@@ -575,6 +576,18 @@ bool GLEnvironmentCapturePass::generateProbes()
 		l_currentPos.x += l_probeDistance.x;
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: Generating probes: " + std::to_string((float)l_probeIndex * 100.0f / (float)m_totalCaptureProbes) + "%");
 	}
+
+	return true;
+}
+
+bool GLEnvironmentCapturePass::serializeProbes()
+{
+	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
+
+	std::ofstream l_file;
+	l_file.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoProbe", std::ios::binary);
+	IOService::serializeVector(l_file, m_probes);
 
 	return true;
 }
@@ -619,6 +632,7 @@ bool GLEnvironmentCapturePass::update()
 	eliminateDuplication();
 	assignSurfelRangeToBricks();
 
+	serializeProbes();
 	serializeSurfels();
 	serializeBricks();
 
