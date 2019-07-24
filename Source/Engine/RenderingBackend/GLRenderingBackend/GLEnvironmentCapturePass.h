@@ -44,7 +44,8 @@ struct Probe
 	vec4 pos;
 	SH9 skyVisibility;
 	SH9 radiance;
-	std::vector<Brick> bricks;
+	unsigned int brickFactorRangeBegin;
+	unsigned int brickFactorRangeEnd;
 };
 
 namespace GLEnvironmentCapturePass
