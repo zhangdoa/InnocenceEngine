@@ -19,19 +19,18 @@ namespace GLEnvironmentCapturePass
 {
 	bool generateProbes();
 	bool capture();
-	bool gatherGeometryData(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v);
+	bool drawCubemaps(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v);
 	bool drawOpaquePass(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex);
+	bool drawSkyVisibilityPass(const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex);
+	bool drawSkyPass(const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex);
+	bool drawLightPass(const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex);
+
 	bool isBrickEmpty(const std::vector<Surfel>& surfels, const Brick& brick);
 	bool generateSurfel(unsigned int probeIndex);
 	bool generateBricks(const std::vector<Surfel>& surfels, unsigned int probeIndex);
 	bool eliminateDuplication();
 	bool findSurfelRangeForBrick(Brick& brick);
 	bool assignSurfelRangeToBricks();
-	bool injectIrradiance(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v);
-	bool drawSkyPass(const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex);
-	bool drawLightPass(const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex);
-	bool getSkyShadowMask(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v);
-	bool drawSkyVisibilityPass(const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex);
 	bool serializeSurfels();
 	bool serializeBricks();
 
@@ -310,11 +309,28 @@ bool GLEnvironmentCapturePass::generateSurfel(unsigned int probeIndex)
 	return true;
 }
 
-bool GLEnvironmentCapturePass::gatherGeometryData(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v)
+bool GLEnvironmentCapturePass::drawCubemaps(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v)
 {
+	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
+
 	for (unsigned int i = 0; i < 6; i++)
 	{
 		drawOpaquePass(probeIndex, p, v, i);
+
+		bindRenderPass(m_skyVisibilityPassGLRPC);
+		cleanRenderBuffers(m_skyVisibilityPassGLRPC);
+
+		drawSkyVisibilityPass(p, v, i);
+
+		bindRenderPass(m_capturePassGLRPC);
+		cleanRenderBuffers(m_capturePassGLRPC);
+
+		if (l_renderingConfig.drawSky)
+		{
+			drawSkyPass(p, v, i);
+		}
+
+		drawLightPass(p, v, i);
 	}
 
 	return true;
@@ -396,31 +412,8 @@ bool GLEnvironmentCapturePass::drawLightPass(const mat4& p, const std::vector<ma
 	return true;
 }
 
-bool GLEnvironmentCapturePass::injectIrradiance(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v)
-{
-	bindRenderPass(m_capturePassGLRPC);
-	cleanRenderBuffers(m_capturePassGLRPC);
-
-	for (unsigned int i = 0; i < 6; i++)
-	{
-		auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
-
-		if (l_renderingConfig.drawSky)
-		{
-			drawSkyPass(p, v, i);
-		}
-
-		drawLightPass(p, v, i);
-	}
-
-	return true;
-}
-
 bool GLEnvironmentCapturePass::drawSkyVisibilityPass(const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex)
 {
-	bindRenderPass(m_skyVisibilityPassGLRPC);
-	cleanRenderBuffers(m_skyVisibilityPassGLRPC);
-
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
 
 	auto l_capturePos = vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -452,16 +445,6 @@ bool GLEnvironmentCapturePass::drawSkyVisibilityPass(const mat4& p, const std::v
 	unbindCubemapTextureForWrite(m_skyVisibilityPassGLRPC, 0, faceIndex, 0);
 
 	glDisable(GL_STENCIL_TEST);
-
-	return true;
-}
-
-bool GLEnvironmentCapturePass::getSkyShadowMask(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v)
-{
-	for (unsigned int i = 0; i < 6; i++)
-	{
-		drawSkyVisibilityPass(p, v, i);
-	}
 
 	return true;
 }
@@ -546,10 +529,8 @@ bool GLEnvironmentCapturePass::capture()
 
 	for (unsigned int i = 0; i < m_totalCaptureProbes; i++)
 	{
-		gatherGeometryData(i, l_p, l_v);
+		drawCubemaps(i, l_p, l_v);
 		generateSurfel(i);
-		injectIrradiance(i, l_p, l_v);
-		getSkyShadowMask(i, l_p, l_v);
 
 		auto l_SH9 = GLSHPass::getSH9(m_capturePassGLRPC->m_GLTDCs[0]);
 		m_probes[i].radiance = l_SH9;
