@@ -18,7 +18,7 @@ namespace GLMotionBlurPass
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
-	ShaderFilePaths m_shaderFilePaths = { "motionBlurPass.vert/", "", "", "", "motionBlurPass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "2DImageProcess.vert/", "", "", "", "motionBlurPass.frag/" };
 }
 
 bool GLMotionBlurPass::initialize()

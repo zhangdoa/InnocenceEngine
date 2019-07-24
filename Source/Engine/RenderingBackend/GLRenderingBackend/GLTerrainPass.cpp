@@ -24,7 +24,7 @@ namespace GLTerrainPass
 
 	GLShaderProgramComponent* m_h2nGLSPC;
 
-	ShaderFilePaths m_h2nShaderFilePaths = { "heightToNormalPass.vert/", "", "", "", "heightToNormalPass.frag/" };
+	ShaderFilePaths m_h2nShaderFilePaths = { "2DImageProcess.vert/", "", "", "", "heightToNormalPass.frag/" };
 
 	bool generateNormal();
 

@@ -19,7 +19,7 @@ namespace GLPostTAAPass
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
-	ShaderFilePaths m_shaderFilePaths = { "postTAAPass.vert/", "", "", "", "postTAAPass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "2DImageProcess.vert/", "", "", "", "postTAAPass.frag/" };
 }
 
 bool GLPostTAAPass::initialize()

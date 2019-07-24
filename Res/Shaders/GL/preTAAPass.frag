@@ -9,8 +9,11 @@ layout(location = 1, binding = 1) uniform sampler2D uni_skyPassRT0;
 
 void main()
 {
-	vec4 lightPassResult = texture(uni_lightPassRT0, TexCoords);
-	vec4 skyPassResult = texture(uni_skyPassRT0, TexCoords);
+	vec2 texelSize = 1.0 / uni_viewportSize;
+	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
+
+	vec4 lightPassResult = texture(uni_lightPassRT0, screenTexCoords);
+	vec4 skyPassResult = texture(uni_skyPassRT0, screenTexCoords);
 
 	vec3 finalColor = vec3(0.0);
 

@@ -31,10 +31,13 @@ vec3 accurateLinearToSRGB(in vec3 linearCol)
 
 void main()
 {
+	vec2 texelSize = 1.0 / uni_viewportSize;
+	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
+
 	vec3 finalColor;
-	vec4 basePassResult = texture(uni_basePassRT0, TexCoords);
-	vec4 billboardPassResult = texture(uni_billboardPassRT0, TexCoords);
-	vec4 debuggerPassResult = texture(uni_debuggerPassRT0, TexCoords);
+	vec4 basePassResult = texture(uni_basePassRT0, screenTexCoords);
+	vec4 billboardPassResult = texture(uni_billboardPassRT0, screenTexCoords);
+	vec4 debuggerPassResult = texture(uni_debuggerPassRT0, screenTexCoords);
 
 	finalColor = basePassResult.rgb;
 

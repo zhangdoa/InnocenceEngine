@@ -21,7 +21,7 @@ namespace GLBloomExtractPass
 	GLRenderPassComponent* m_downsampleGLRPC_Eighth;
 
 	GLShaderProgramComponent* m_GLSPC;
-	ShaderFilePaths m_shaderFilePaths = { "bloomExtractPass.vert/", "", "", "", "bloomExtractPass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "2DImageProcess.vert/", "", "", "", "bloomExtractPass.frag/" };
 }
 
 bool GLBloomExtractPass::initialize()

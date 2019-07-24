@@ -209,10 +209,14 @@ float linearDepth(float depthSample)
 // ----------------------------------------------------------------------------
 void main()
 {
-	vec4 RT0 = texture(uni_opaquePassRT0, TexCoords);
-	vec4 RT1 = texture(uni_opaquePassRT1, TexCoords);
-	vec4 RT2 = texture(uni_opaquePassRT2, TexCoords);
-	vec4 RT3 = texture(uni_opaquePassRT3, TexCoords);
+	vec2 renderTargetSize = vec2(textureSize(uni_opaquePassRT0, 0));
+	vec2 texelSize = 1.0 / renderTargetSize;
+	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
+
+	vec4 RT0 = texture(uni_opaquePassRT0, screenTexCoords);
+	vec4 RT1 = texture(uni_opaquePassRT1, screenTexCoords);
+	vec4 RT2 = texture(uni_opaquePassRT2, screenTexCoords);
+	vec4 RT3 = texture(uni_opaquePassRT3, screenTexCoords);
 
 	//vec2 textureSize = textureSize(uni_depth, 0);
 	//vec2 screenTexCoord = gl_FragCoord.xy / textureSize;
@@ -231,7 +235,7 @@ void main()
 	float Roughness = RT1.a;
 	float safe_roughness = (Roughness + eps) / (1.0 + eps);
 	float AO = RT2.a;
-	float SSAO = texture(uni_SSAOBlurPassRT0, TexCoords).x;
+	float SSAO = texture(uni_SSAOBlurPassRT0, screenTexCoords).x;
 	AO *= pow(SSAO, 2.0f);
 
 	vec3 Lo = vec3(0.0);
@@ -302,8 +306,8 @@ void main()
 			vec3 lightLuminance = light.luminance.xyz * vec3(NdotL) * attenuation;
 
 			Lo = lightLuminance;
-		}
 	}
+}
 	Lo *= 1 - PointLightShadow(FragPos);
 #endif
 #if !defined (uni_drawCSMSplitedArea) && !defined (uni_drawPointLightShadow)

@@ -10,8 +10,9 @@ const int MAX_SAMPLES = 16;
 
 void main()
 {
-	vec2 texelSize = 1.0 / vec2(textureSize(uni_TAAPassRT0, 0));
+	vec2 texelSize = 1.0 / uni_viewportSize;
 	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
+
 	vec2 MotionVector = texture(uni_motionVectorTexture, screenTexCoords).xy;
 
 	vec4 result = texture(uni_TAAPassRT0, screenTexCoords);

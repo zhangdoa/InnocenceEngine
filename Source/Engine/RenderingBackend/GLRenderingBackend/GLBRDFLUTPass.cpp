@@ -10,11 +10,11 @@ namespace GLBRDFLUTPass
 
 	GLRenderPassComponent* m_BRDFSplitSumLUTPassGLRPC;
 	GLShaderProgramComponent* m_BRDFSplitSumLUTPassSPC;
-	ShaderFilePaths m_BRDFSplitSumShaderFilePaths = { "BRDFLUTPass.vert/" , "", "", "", "BRDFLUTPass.frag/" };
+	ShaderFilePaths m_BRDFSplitSumShaderFilePaths = { "2DImageProcess.vert/" , "", "", "", "BRDFLUTPass.frag/" };
 
 	GLRenderPassComponent* m_BRDFMSAverageLUTPassGLRPC;
 	GLShaderProgramComponent* m_BRDFMSAverageLUTPassSPC;
-	ShaderFilePaths m_BRDFMSAverageShaderFilePaths = { "BRDFLUTMSPass.vert/" , "", "", "", "BRDFLUTMSPass.frag/" };
+	ShaderFilePaths m_BRDFMSAverageShaderFilePaths = { "2DImageProcess.vert/" , "", "", "", "BRDFLUTMSPass.frag/" };
 }
 
 bool GLBRDFLUTPass::initialize()

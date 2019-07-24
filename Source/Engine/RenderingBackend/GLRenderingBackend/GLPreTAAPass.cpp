@@ -20,7 +20,7 @@ namespace GLPreTAAPass
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
-	ShaderFilePaths m_shaderFilePaths = { "preTAAPass.vert/", "", "", "", "preTAAPass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "2DImageProcess.vert/", "", "", "", "preTAAPass.frag/" };
 }
 
 bool GLPreTAAPass::initialize()

@@ -22,7 +22,7 @@ namespace GLSSAONoisePass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "SSAONoisePass.vert/", "", "", "", "SSAONoisePass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "2DImageProcess.vert/", "", "", "", "SSAONoisePass.frag/" };
 
 	unsigned int m_kernelSize = 64;
 	std::vector<vec4> m_SSAOKernel;

@@ -20,7 +20,7 @@ namespace GLFinalBlendPass
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
-	ShaderFilePaths m_shaderFilePaths = { "finalBlendPass.vert/", "", "", "", "finalBlendPass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "2DImageProcess.vert/", "", "", "", "finalBlendPass.frag/" };
 
 	bool m_visualizeLightCulling = false;
 	std::function<void()> f_toggleVisualizeLightCulling;

@@ -19,7 +19,7 @@ namespace GLBloomMergePass
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
-	ShaderFilePaths m_shaderFilePaths = { "bloomMergePass.vert/", "", "", "", "bloomMergePass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "2DImageProcess.vert/", "", "", "", "bloomMergePass.frag/" };
 }
 
 bool GLBloomMergePass::initialize()

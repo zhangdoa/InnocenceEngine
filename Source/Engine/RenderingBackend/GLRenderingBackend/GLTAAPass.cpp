@@ -22,7 +22,7 @@ namespace GLTAAPass
 	GLRenderPassComponent* m_PingPassGLRPC;
 	GLRenderPassComponent* m_PongPassGLRPC;
 	GLShaderProgramComponent* m_GLSPC;
-	ShaderFilePaths m_shaderFilePaths = { "TAAPass.vert/", "", "", "", "TAAPass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "2DImageProcess.vert/", "", "", "", "TAAPass.frag/" };
 }
 
 bool GLTAAPass::initialize()

@@ -20,7 +20,7 @@ namespace GLSSAOBlurPass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "SSAOBlurPass.vert/", "", "", "", "SSAOBlurPass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "2DImageProcess.vert/", "", "", "", "SSAOBlurPass.frag/" };
 }
 
 bool GLSSAOBlurPass::initialize()

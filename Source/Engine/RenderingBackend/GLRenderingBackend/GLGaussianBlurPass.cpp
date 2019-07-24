@@ -18,7 +18,7 @@ namespace GLGaussianBlurPass
 	GLRenderPassComponent* m_PingPassGLRPC;
 	GLRenderPassComponent* m_PongPassGLRPC;
 	GLShaderProgramComponent* m_GLSPC;
-	ShaderFilePaths m_shaderFilePaths = { "gaussianBlurPass.vert/", "", "", "", "gaussianBlurPass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "2DImageProcess.vert/", "", "", "", "gaussianBlurPass.frag/" };
 }
 
 bool GLGaussianBlurPass::initialize()

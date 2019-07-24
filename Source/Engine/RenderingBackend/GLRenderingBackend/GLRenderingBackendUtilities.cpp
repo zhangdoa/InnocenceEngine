@@ -570,22 +570,6 @@ void GLRenderingBackendNS::generateTO(GLuint& TO, GLTextureDataDesc desc, const 
 
 bool GLRenderingBackendNS::submitGPUData(GLMeshDataComponent * rhs)
 {
-	std::vector<float> l_verticesBuffer;
-	auto l_containerSize = rhs->m_vertices.size() * 8;
-	l_verticesBuffer.reserve(l_containerSize);
-
-	std::for_each(rhs->m_vertices.begin(), rhs->m_vertices.end(), [&](Vertex val)
-	{
-		l_verticesBuffer.emplace_back((float)val.m_pos.x);
-		l_verticesBuffer.emplace_back((float)val.m_pos.y);
-		l_verticesBuffer.emplace_back((float)val.m_pos.z);
-		l_verticesBuffer.emplace_back((float)val.m_texCoord.x);
-		l_verticesBuffer.emplace_back((float)val.m_texCoord.y);
-		l_verticesBuffer.emplace_back((float)val.m_normal.x);
-		l_verticesBuffer.emplace_back((float)val.m_normal.y);
-		l_verticesBuffer.emplace_back((float)val.m_normal.z);
-	});
-
 	glGenVertexArrays(1, &rhs->m_VAO);
 	glBindVertexArray(rhs->m_VAO);
 
@@ -595,27 +579,35 @@ bool GLRenderingBackendNS::submitGPUData(GLMeshDataComponent * rhs)
 	glGenBuffers(1, &rhs->m_IBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, rhs->m_IBO);
 
-	// position attribute, 1st attribution with 3 * sizeof(float) bits of data
+	// position vec4
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
 
-	// texture attribute, 2nd attribution with 2 * sizeof(float) bits of data
+	// texture coordinate vec2
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)16);
 
-	// normal coord attribute, 3rd attribution with 3 * sizeof(float) bits of data
+	// pad1 vec2
 	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)24);
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: Vertex Array Object " + std::to_string(rhs->m_VAO) + " is initialized.");
+	// normal vec4
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)32);
 
-	glBufferData(GL_ARRAY_BUFFER, l_verticesBuffer.size() * sizeof(float), &l_verticesBuffer[0], GL_STATIC_DRAW);
+	// pad2 vec4
+	glEnableVertexAttribArray(4);
+	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)48);
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: Vertex Buffer Object " + std::to_string(rhs->m_VBO) + " is initialized.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: VAO " + std::to_string(rhs->m_VAO) + " is initialized.");
 
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, rhs->m_indices.size() * sizeof(unsigned int), &rhs->m_indices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, rhs->m_vertices.size() * sizeof(Vertex), &rhs->m_vertices[0], GL_STATIC_DRAW);
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: Index Buffer Object " + std::to_string(rhs->m_IBO) + " is initialized.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: VBO " + std::to_string(rhs->m_VBO) + " is initialized.");
+
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, rhs->m_indices.size() * sizeof(Index), &rhs->m_indices[0], GL_STATIC_DRAW);
+
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: IBO " + std::to_string(rhs->m_IBO) + " is initialized.");
 
 	rhs->m_objectStatus = ObjectStatus::Activated;
 

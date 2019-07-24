@@ -28,7 +28,7 @@ namespace GLLightPass
 
 	GLShaderProgramComponent* m_GLSPC;
 
-	ShaderFilePaths m_shaderFilePaths = { "lightPass.vert/" , "", "", "", "lightPass.frag/" };
+	ShaderFilePaths m_shaderFilePaths = { "2DImageProcess.vert/" , "", "", "", "lightPass.frag/" };
 }
 
 void GLLightPass::initialize()
