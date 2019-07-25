@@ -113,7 +113,36 @@ namespace InnoRenderingFrontendNS
 	void* m_SkeletonDataComponentPool;
 	void* m_AnimationDataComponentPool;
 
+	std::unordered_map<InnoEntity*, MeshDataComponent*> m_initializedMeshes;
+	std::unordered_map<InnoEntity*, TextureDataComponent*> m_initializedTextures;
+	std::unordered_map<InnoEntity*, MaterialDataComponent*> m_initializedMaterials;
+
+	ThreadSafeQueue<MeshDataComponent*> m_uninitializedMeshes;
+	ThreadSafeQueue<MaterialDataComponent*> m_uninitializedMaterials;
+
+	TextureDataComponent* m_iconTemplate_OBJ;
+	TextureDataComponent* m_iconTemplate_PNG;
+	TextureDataComponent* m_iconTemplate_SHADER;
+	TextureDataComponent* m_iconTemplate_UNKNOWN;
+
+	TextureDataComponent* m_iconTemplate_DirectionalLight;
+	TextureDataComponent* m_iconTemplate_PointLight;
+	TextureDataComponent* m_iconTemplate_SphereLight;
+
+	MeshDataComponent* m_unitLineMDC;
+	MeshDataComponent* m_unitQuadMDC;
+	MeshDataComponent* m_unitCubeMDC;
+	MeshDataComponent* m_unitSphereMDC;
+	MeshDataComponent* m_terrainMDC;
+
+	TextureDataComponent* m_basicNormalTDC;
+	TextureDataComponent* m_basicAlbedoTDC;
+	TextureDataComponent* m_basicMetallicTDC;
+	TextureDataComponent* m_basicRoughnessTDC;
+	TextureDataComponent* m_basicAOTDC;
+
 	bool setup(IRenderingServer* renderingServer);
+	bool loadDefaultAssets();
 	bool initialize();
 	bool update();
 	bool terminate();
@@ -235,10 +264,87 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 	return true;
 }
 
+bool InnoRenderingFrontendNS::loadDefaultAssets()
+{
+	m_basicNormalTDC = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_normal.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	m_basicAlbedoTDC = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_albedo.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ALBEDO);
+	m_basicMetallicTDC = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_metallic.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::METALLIC);
+	m_basicRoughnessTDC = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_roughness.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ROUGHNESS);
+	m_basicAOTDC = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_ao.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::AMBIENT_OCCLUSION);
+
+	m_iconTemplate_OBJ = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_OBJ.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	m_iconTemplate_PNG = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_PNG.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	m_iconTemplate_SHADER = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_SHADER.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	m_iconTemplate_UNKNOWN = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_UNKNOWN.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+
+	m_iconTemplate_DirectionalLight = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_DirectionalLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	m_iconTemplate_PointLight = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_PointLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	m_iconTemplate_SphereLight = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_SphereLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+
+	m_unitLineMDC = m_renderingServer->AddMeshDataComponent();
+	g_pModuleManager->getAssetSystem()->addUnitLine(*m_unitLineMDC);
+	m_unitLineMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	m_unitLineMDC->m_meshShapeType = MeshShapeType::LINE;
+	m_unitLineMDC->m_objectStatus = ObjectStatus::Created;
+	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMDC);
+
+	m_unitQuadMDC = m_renderingServer->AddMeshDataComponent();
+	g_pModuleManager->getAssetSystem()->addUnitQuad(*m_unitQuadMDC);
+	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_unitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
+	m_unitQuadMDC->m_objectStatus = ObjectStatus::Created;
+	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMDC);
+
+	m_unitCubeMDC = m_renderingServer->AddMeshDataComponent();
+	g_pModuleManager->getAssetSystem()->addUnitCube(*m_unitCubeMDC);
+	m_unitCubeMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_unitCubeMDC->m_meshShapeType = MeshShapeType::CUBE;
+	m_unitCubeMDC->m_objectStatus = ObjectStatus::Created;
+	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMDC);
+
+	m_unitSphereMDC = m_renderingServer->AddMeshDataComponent();
+	g_pModuleManager->getAssetSystem()->addUnitSphere(*m_unitSphereMDC);
+	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_unitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
+	m_unitSphereMDC->m_objectStatus = ObjectStatus::Created;
+	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMDC);
+
+	m_terrainMDC = m_renderingServer->AddMeshDataComponent();
+	g_pModuleManager->getAssetSystem()->addTerrain(*m_terrainMDC);
+	m_terrainMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_terrainMDC->m_objectStatus = ObjectStatus::Created;
+	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMDC);
+
+	m_renderingServer->InitializeMeshDataComponent(m_unitLineMDC);
+	m_renderingServer->InitializeMeshDataComponent(m_unitQuadMDC);
+	m_renderingServer->InitializeMeshDataComponent(m_unitCubeMDC);
+	m_renderingServer->InitializeMeshDataComponent(m_unitSphereMDC);
+	m_renderingServer->InitializeMeshDataComponent(m_terrainMDC);
+
+	m_renderingServer->InitializeTextureDataComponent(m_basicNormalTDC);
+	m_renderingServer->InitializeTextureDataComponent(m_basicAlbedoTDC);
+	m_renderingServer->InitializeTextureDataComponent(m_basicMetallicTDC);
+	m_renderingServer->InitializeTextureDataComponent(m_basicRoughnessTDC);
+	m_renderingServer->InitializeTextureDataComponent(m_basicAOTDC);
+
+	m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_OBJ);
+	m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_PNG);
+	m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_SHADER);
+	m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_UNKNOWN);
+
+	m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_DirectionalLight);
+	m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_PointLight);
+	m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_SphereLight);
+
+	return true;
+}
+
 bool InnoRenderingFrontendNS::initialize()
 {
 	if (InnoRenderingFrontendNS::m_objectStatus == ObjectStatus::Created)
 	{
+		loadDefaultAssets();
+
 		initializeHaltonSampler();
 		m_rayTracer->Initialize();
 
