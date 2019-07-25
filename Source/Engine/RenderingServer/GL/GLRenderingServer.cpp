@@ -9,6 +9,9 @@
 
 extern IModuleManager* g_pModuleManager;
 
+#include "../../Core/InnoLogger.h"
+#include "../../Core/InnoMemory.h"
+
 namespace GLRenderingServerNS
 {
 	void MessageCallback(GLenum source,
@@ -21,69 +24,68 @@ namespace GLRenderingServerNS
 	{
 		if (severity == GL_DEBUG_SEVERITY_HIGH)
 		{
-			LogType l_logType;
-			std::string l_typeStr;
+			LogLevel l_logLevel;
+			const char* l_typeStr;
 			if (type == GL_DEBUG_TYPE_ERROR)
 			{
-				l_logType = LogType::INNO_ERROR;
-				l_typeStr = "GL_DEBUG_TYPE_ERROR: ID: ";
+				l_logLevel = LogLevel::Error;
+				l_typeStr = "GL_DEBUG_TYPE_ERROR: ";
 			}
 			else if (type == GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR)
 			{
-				l_logType = LogType::INNO_ERROR;
-				l_typeStr = "GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: ID: ";
+				l_logLevel = LogLevel::Error;
+				l_typeStr = "GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: ";
 			}
 			else if (type == GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR)
 			{
-				l_logType = LogType::INNO_ERROR;
-				l_typeStr = "GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: ID: ";
+				l_logLevel = LogLevel::Error;
+				l_typeStr = "GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: ";
 			}
 			else if (type == GL_DEBUG_TYPE_PERFORMANCE)
 			{
-				l_logType = LogType::INNO_ERROR;
-				l_typeStr = "GL_DEBUG_TYPE_PERFORMANCE: ID: ";
+				l_logLevel = LogLevel::Error;
+				l_typeStr = "GL_DEBUG_TYPE_PERFORMANCE: ";
 			}
 			else if (type == GL_DEBUG_TYPE_PORTABILITY)
 			{
-				l_logType = LogType::INNO_ERROR;
-				l_typeStr = "GL_DEBUG_TYPE_PORTABILITY: ID: ";
+				l_logLevel = LogLevel::Error;
+				l_typeStr = "GL_DEBUG_TYPE_PORTABILITY: ";
 			}
 			else if (type == GL_DEBUG_TYPE_OTHER)
 			{
-				l_logType = LogType::INNO_ERROR;
-				l_typeStr = "GL_DEBUG_TYPE_OTHER: ID: ";
+				l_logLevel = LogLevel::Error;
+				l_typeStr = "GL_DEBUG_TYPE_OTHER: ";
 			}
 			else
 			{
-				l_logType = LogType::INNO_DEV_VERBOSE;
+				l_logLevel = LogLevel::Verbose;
 			}
 
-			std::string l_message = message;
-			g_pModuleManager->getLogSystem()->printLog(l_logType, "GLRenderServer: " + l_typeStr + std::to_string(id) + ": " + l_message);
+			InnoLogger::Log(l_logLevel, "GLRenderServer: ", l_typeStr, "ID: ", id, ": ", message);
 		}
 	}
 
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
-	std::function<void()> f_sceneLoadingFinishCallback;
-
-	bool m_isBaked = true;
-	bool m_visualizeVXGI = false;
-
-	std::function<void()> f_toggleVisualizeVXGI;
-
-	void* m_MeshDataComponentPool;
-	void* m_MaterialDataComponentPool;
-	void* m_TextureDataComponentPool;
-
-	ThreadSafeQueue<GLMeshDataComponent*> m_uninitializedMeshes;
-	ThreadSafeQueue<GLMaterialDataComponent*> m_uninitializedMaterials;
+	IObjectPool* m_MeshDataComponentPool;
+	IObjectPool* m_MaterialDataComponentPool;
+	IObjectPool* m_TextureDataComponentPool;
+	IObjectPool* m_RenderPassComponentPool;
+	IObjectPool* m_ShaderProgramComponentPool;
 }
 
 using namespace GLRenderingServerNS;
 
 bool GLRenderingServer::Setup()
 {
+	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
+
+	m_MeshDataComponentPool = InnoMemory::CreateObjectPool(sizeof(GLMeshDataComponent), l_renderingCapability.maxMeshes);
+	m_TextureDataComponentPool = InnoMemory::CreateObjectPool(sizeof(GLTextureDataComponent), l_renderingCapability.maxTextures);
+	m_MaterialDataComponentPool = InnoMemory::CreateObjectPool(sizeof(GLMaterialDataComponent), l_renderingCapability.maxMaterials);
+	m_RenderPassComponentPool = InnoMemory::CreateObjectPool(sizeof(GLRenderPassDataComponent), 128);
+	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool(sizeof(GLShaderProgramComponent), 256);
+
 	if (g_pModuleManager->getRenderingFrontend()->getRenderingConfig().MSAAdepth)
 	{
 		glEnable(GL_MULTISAMPLE);
@@ -97,24 +99,30 @@ bool GLRenderingServer::Setup()
 	glEnable(GL_PROGRAM_POINT_SIZE);
 
 	m_objectStatus = ObjectStatus::Created;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingBackend setup finished.");
+	InnoLogger::Log(LogLevel::Success, "GLRenderingServer setup finished.");
 
 	return true;
 }
 
 bool GLRenderingServer::Initialize()
 {
+	if (m_objectStatus == ObjectStatus::Created)
+	{
+	}
 	return true;
 }
 
 bool GLRenderingServer::Terminate()
 {
+	m_objectStatus = ObjectStatus::Terminated;
+	InnoLogger::Log(LogLevel::Success, "GLRenderingServer has been terminated.");
+
 	return true;
 }
 
 ObjectStatus GLRenderingServer::GetStatus()
 {
-	return ObjectStatus();
+	return m_objectStatus;
 }
 
 MeshDataComponent * GLRenderingServer::AddMeshDataComponent(const char * name)
