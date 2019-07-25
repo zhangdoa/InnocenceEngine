@@ -58,7 +58,7 @@ namespace InnoRenderingFrontendNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
-	IRenderingBackend* m_renderingBackend;
+	IRenderingServer* m_renderingServer;
 	IRayTracer* m_rayTracer;
 
 	TVec2<unsigned int> m_screenResolution = TVec2<unsigned int>(1280, 720);
@@ -113,7 +113,7 @@ namespace InnoRenderingFrontendNS
 	void* m_SkeletonDataComponentPool;
 	void* m_AnimationDataComponentPool;
 
-	bool setup(IRenderingBackend* renderingBackend);
+	bool setup(IRenderingServer* renderingServer);
 	bool initialize();
 	bool update();
 	bool terminate();
@@ -155,9 +155,9 @@ void InnoRenderingFrontendNS::initializeHaltonSampler()
 	}
 }
 
-bool InnoRenderingFrontendNS::setup(IRenderingBackend* renderingBackend)
+bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 {
-	m_renderingBackend = renderingBackend;
+	m_renderingServer = renderingServer;
 	m_rayTracer = new InnoRayTracer();
 
 	m_renderingConfig.useMotionBlur = true;
@@ -219,7 +219,7 @@ bool InnoRenderingFrontendNS::setup(IRenderingBackend* renderingBackend)
 
 	f_bakeGI = []() {
 		gatherStaticMeshData();
-		m_renderingBackend->bakeGI();
+		m_renderingServer->BakeGIData();
 	};
 	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_B, ButtonStatus::PRESSED }, &f_bakeGI);
 
@@ -618,9 +618,9 @@ bool InnoRenderingFrontendNS::terminate()
 	return true;
 }
 
-bool InnoRenderingFrontend::setup(IRenderingBackend* renderingBackend)
+bool InnoRenderingFrontend::setup(IRenderingServer* renderingServer)
 {
-	return InnoRenderingFrontendNS::setup(renderingBackend);
+	return InnoRenderingFrontendNS::setup(renderingServer);
 }
 
 bool InnoRenderingFrontend::initialize()
@@ -650,37 +650,38 @@ bool InnoRenderingFrontend::runRayTrace()
 
 MeshDataComponent * InnoRenderingFrontend::addMeshDataComponent()
 {
-	return InnoRenderingFrontendNS::m_renderingBackend->addMeshDataComponent();
+	return InnoRenderingFrontendNS::m_renderingServer->AddMeshDataComponent();
 }
 
 MaterialDataComponent * InnoRenderingFrontend::addMaterialDataComponent()
 {
-	return InnoRenderingFrontendNS::m_renderingBackend->addMaterialDataComponent();
+	return InnoRenderingFrontendNS::m_renderingServer->AddMaterialDataComponent();
 }
 
 TextureDataComponent * InnoRenderingFrontend::addTextureDataComponent()
 {
-	return InnoRenderingFrontendNS::m_renderingBackend->addTextureDataComponent();
+	return InnoRenderingFrontendNS::m_renderingServer->AddTextureDataComponent();
 }
 
 MeshDataComponent * InnoRenderingFrontend::getMeshDataComponent(MeshShapeType meshShapeType)
 {
-	return InnoRenderingFrontendNS::m_renderingBackend->getMeshDataComponent(meshShapeType);
+	return InnoRenderingFrontendNS::m_renderingServer->GetMeshDataComponent(meshShapeType);
 }
 
 TextureDataComponent * InnoRenderingFrontend::getTextureDataComponent(TextureUsageType textureUsageType)
 {
-	return InnoRenderingFrontendNS::m_renderingBackend->getTextureDataComponent(textureUsageType);
+	return InnoRenderingFrontendNS::m_renderingServer->GetTextureDataComponent(textureUsageType);
 }
 
 TextureDataComponent * InnoRenderingFrontend::getTextureDataComponent(FileExplorerIconType iconType)
 {
-	return InnoRenderingFrontendNS::m_renderingBackend->getTextureDataComponent(iconType);
+	//return InnoRenderingFrontendNS::m_renderingServer->GetTextureDataComponent(iconType);
+	return nullptr;
 }
 
 TextureDataComponent * InnoRenderingFrontend::getTextureDataComponent(WorldEditorIconType iconType)
 {
-	return InnoRenderingFrontendNS::m_renderingBackend->getTextureDataComponent(iconType);
+	return InnoRenderingFrontendNS::m_renderingServer->GetTextureDataComponent(iconType);
 }
 
 SkeletonDataComponent * InnoRenderingFrontend::addSkeletonDataComponent()

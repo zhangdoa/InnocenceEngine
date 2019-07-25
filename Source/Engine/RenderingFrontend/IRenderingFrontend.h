@@ -3,7 +3,7 @@
 
 #include "../Common/InnoClassTemplate.h"
 
-#include "../RenderingBackend/IRenderingBackend.h"
+#include "../RenderingServer/IRenderingServer.h"
 
 #include "../Component/MeshDataComponent.h"
 #include "../Component/TextureDataComponent.h"
@@ -40,7 +40,7 @@ class IRenderingFrontend
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IRenderingFrontend);
 
-	virtual bool setup(IRenderingBackend* renderingBackend) = 0;
+	virtual bool setup(IRenderingServer* renderingServer) = 0;
 	virtual bool initialize() = 0;
 	virtual bool update() = 0;
 	virtual bool terminate() = 0;

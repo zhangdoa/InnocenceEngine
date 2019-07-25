@@ -2,17 +2,17 @@
 
 bool VKRenderingServer::Setup()
 {
-	return false;
+	return true;
 }
 
 bool VKRenderingServer::Initialize()
 {
-	return false;
+	return true;
 }
 
 bool VKRenderingServer::Terminate()
 {
-	return false;
+	return true;
 }
 
 ObjectStatus VKRenderingServer::GetStatus()
@@ -35,7 +35,7 @@ MaterialDataComponent * VKRenderingServer::AddMaterialDataComponent(const char *
 	return nullptr;
 }
 
-RenderPassComponent * VKRenderingServer::AddRenderPassComponent(const char * name)
+RenderPassDataComponent * VKRenderingServer::AddRenderPassDataComponent(const char * name)
 {
 	return nullptr;
 }
@@ -52,57 +52,57 @@ GPUBufferDataComponent * VKRenderingServer::AddGPUBufferDataComponent(const char
 
 bool VKRenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 {
-	return false;
+	return true;
 }
 
 bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rhs)
 {
-	return false;
+	return true;
 }
 
 bool VKRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * rhs)
 {
-	return false;
+	return true;
 }
 
-bool VKRenderingServer::InitializeRenderPassComponent(RenderPassComponent * rhs)
+bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponent * rhs)
 {
-	return false;
+	return true;
 }
 
 bool VKRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent * rhs)
 {
-	return false;
+	return true;
 }
 
 bool VKRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent * rhs)
 {
-	return false;
+	return true;
 }
 
 bool VKRenderingServer::DeleteMeshDataComponent(MeshDataComponent * rhs)
 {
-	return false;
+	return true;
 }
 
 bool VKRenderingServer::DeleteTextureDataComponent(TextureDataComponent * rhs)
 {
-	return false;
+	return true;
 }
 
 bool VKRenderingServer::DeleteMaterialDataComponent(MaterialDataComponent * rhs)
 {
-	return false;
+	return true;
 }
 
-bool VKRenderingServer::DeleteRenderPassComponent(RenderPassComponent * rhs)
+bool VKRenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent * rhs)
 {
-	return false;
+	return true;
 }
 
 bool VKRenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent * rhs)
 {
-	return false;
+	return true;
 }
 
 void VKRenderingServer::RegisterMeshDataComponent(MeshDataComponent * rhs)
@@ -130,100 +130,105 @@ TextureDataComponent * VKRenderingServer::GetTextureDataComponent(WorldEditorIco
 
 bool VKRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue)
 {
-	return false;
+	return true;
 }
 
-bool VKRenderingServer::BindRenderPassComponent(RenderPassComponent * rhs)
+bool VKRenderingServer::CommandListBegin(RenderPassDataComponent * rhs, size_t frameIndex)
 {
-	return false;
+	return true;
 }
 
-bool VKRenderingServer::CleanRenderTargets(RenderPassComponent * rhs)
+bool VKRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * rhs)
 {
-	return false;
+	return true;
+}
+
+bool VKRenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
+{
+	return true;
 }
 
 bool VKRenderingServer::BindGPUBuffer(ShaderType shaderType, GPUBufferAccessibility accessibility, GPUBufferDataComponent * GPUBufferDataComponent, size_t startOffset, size_t range)
 {
-	return false;
+	return true;
 }
 
 bool VKRenderingServer::BindShaderProgramComponent(ShaderProgramComponent * rhs)
 {
-	return false;
+	return true;
 }
 
 bool VKRenderingServer::BindMaterialDataComponent(MaterialDataComponent * rhs)
 {
-	return false;
+	return true;
 }
 
 bool VKRenderingServer::DispatchDrawCall(MeshDataComponent * rhs)
 {
-	return false;
+	return true;
 }
 
-bool VKRenderingServer::UnbindMaterialDataComponent(RenderPassComponent * rhs)
+bool VKRenderingServer::UnbindMaterialDataComponent(RenderPassDataComponent * rhs)
 {
-	return false;
+	return true;
 }
 
-bool VKRenderingServer::CommandListEnd(RenderPassComponent * rhs, size_t frameIndex)
+bool VKRenderingServer::CommandListEnd(RenderPassDataComponent * rhs, size_t frameIndex)
 {
-	return false;
+	return true;
 }
 
-bool VKRenderingServer::ExecuteCommandList(RenderPassComponent * rhs, size_t frameIndex)
+bool VKRenderingServer::ExecuteCommandList(RenderPassDataComponent * rhs, size_t frameIndex)
 {
-	return false;
+	return true;
 }
 
-bool VKRenderingServer::WaitForFrame(RenderPassComponent * rhs, size_t frameIndex)
+bool VKRenderingServer::WaitForFrame(RenderPassDataComponent * rhs, size_t frameIndex)
 {
-	return false;
+	return true;
 }
 
 bool VKRenderingServer::Present()
 {
-	return false;
+	return true;
 }
 
-bool VKRenderingServer::CopyDepthBuffer(RenderPassComponent * src, RenderPassComponent * dest)
+bool VKRenderingServer::CopyDepthBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
 {
-	return false;
+	return true;
 }
 
-bool VKRenderingServer::CopyStencilBuffer(RenderPassComponent * src, RenderPassComponent * dest)
+bool VKRenderingServer::CopyStencilBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
 {
-	return false;
+	return true;
 }
 
-bool VKRenderingServer::CopyColorBuffer(RenderPassComponent * src, size_t srcIndex, RenderPassComponent * dest, size_t destIndex)
+bool VKRenderingServer::CopyColorBuffer(RenderPassDataComponent * src, size_t srcIndex, RenderPassDataComponent * dest, size_t destIndex)
 {
-	return false;
+	return true;
 }
 
-vec4 VKRenderingServer::ReadRenderTargetSample(RenderPassComponent * rhs, size_t renderTargetIndex, size_t x, size_t y)
+vec4 VKRenderingServer::ReadRenderTargetSample(RenderPassDataComponent * rhs, size_t renderTargetIndex, size_t x, size_t y)
 {
 	return vec4();
 }
 
-std::vector<vec4> VKRenderingServer::ReadTextureBackToCPU(RenderPassComponent * canvas, TextureDataComponent * TDC)
+std::vector<vec4> VKRenderingServer::ReadTextureBackToCPU(RenderPassDataComponent * canvas, TextureDataComponent * TDC)
 {
 	return std::vector<vec4>();
 }
 
 bool VKRenderingServer::Resize()
 {
-	return false;
+	return true;
 }
 
 bool VKRenderingServer::ReloadShader(RenderPassType renderPassType)
 {
-	return false;
+	return true;
 }
 
 bool VKRenderingServer::BakeGIData()
 {
-	return false;
+	return true;
 }

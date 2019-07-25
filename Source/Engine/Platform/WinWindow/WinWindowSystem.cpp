@@ -60,22 +60,22 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 	// create window surface for different rendering backend
 	WinWindowSystemNS::m_initConfig = g_pModuleManager->getInitConfig();
 
-	switch (WinWindowSystemNS::m_initConfig.renderingBackend)
+	switch (WinWindowSystemNS::m_initConfig.renderingServer)
 	{
-	case RenderingBackend::GL:
+	case RenderingServer::GL:
 		WinWindowSystemNS::m_windowSurface = new WinGLWindowSurface();
 		break;
-	case RenderingBackend::DX11:
+	case RenderingServer::DX11:
 #if defined INNO_PLATFORM_WIN
 		WinWindowSystemNS::m_windowSurface = new WinDXWindowSurface();
 #endif
 		break;
-	case RenderingBackend::DX12:
+	case RenderingServer::DX12:
 #if defined INNO_PLATFORM_WIN
 		WinWindowSystemNS::m_windowSurface = new WinDXWindowSurface();
 #endif
 		break;
-	case RenderingBackend::VK:
+	case RenderingServer::VK:
 #if defined INNO_RENDERER_VULKAN
 		WinWindowSystemNS::m_windowSurface = new WinVKWindowSurface();
 #endif
@@ -202,7 +202,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 			TVec2<unsigned int> l_newResolution = TVec2<unsigned int>((unsigned int)l_width, (unsigned int)l_height);
 			g_pModuleManager->getRenderingFrontend()->setScreenResolution(l_newResolution);
-			g_pModuleManager->getRenderingBackend()->resize();
+			g_pModuleManager->getRenderingServer()->Resize();
 		}
 	}
 	default:
@@ -212,13 +212,13 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	}
 }
 
-extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+//extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
 {
 	if (WinWindowSystemNS::m_initConfig.engineMode == EngineMode::GAME)
 	{
-		ImGui_ImplWin32_WndProcHandler(hwnd, umsg, wparam, lparam);
+		//ImGui_ImplWin32_WndProcHandler(hwnd, umsg, wparam, lparam);
 	}
 
 	switch (umsg)

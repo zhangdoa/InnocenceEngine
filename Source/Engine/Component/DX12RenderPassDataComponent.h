@@ -1,15 +1,15 @@
 #pragma once
 #include "../Common/InnoType.h"
 #include "../RenderingBackend/DX12RenderingBackend/DX12Headers.h"
-#include "RenderPassComponent.h"
+#include "RenderPassDataComponent.h"
 #include "DX12TextureDataComponent.h"
 
 enum class FenceStatus { IDLE, WORKING };
-class DX12RenderPassComponent : public RenderPassComponent
+class DX12RenderPassDataComponent : public RenderPassDataComponent
 {
 public:
-	DX12RenderPassComponent() {};
-	~DX12RenderPassComponent() {};
+	DX12RenderPassDataComponent() {};
+	~DX12RenderPassDataComponent() {};
 
 	ID3D12DescriptorHeap* m_RTVDescriptorHeap;
 	D3D12_DESCRIPTOR_HEAP_DESC m_RTVDescriptorHeapDesc = {};

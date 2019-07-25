@@ -1,3 +1,7 @@
 file(GLOB HEADERS "*.h")
 file(GLOB SOURCES "*.cpp")
 add_library(InnoGLRenderingServer ${HEADERS} ${SOURCES})
+set_property(TARGET InnoGLRenderingServer PROPERTY POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(InnoGLRenderingServer ${OPENGL_LIBRARIES})
+find_library(GLAD glad)
+target_link_libraries(InnoGLRenderingServer "${GLAD}")

@@ -231,7 +231,7 @@ void InnoEventSystemNS::framebufferSizeCallback(int width, int height)
 {
 	TVec2<unsigned int> l_newScreenResolution = TVec2<unsigned int>(width, height);
 	g_pModuleManager->getRenderingFrontend()->setScreenResolution(l_newScreenResolution);
-	g_pModuleManager->getRenderingBackend()->resize();
+	g_pModuleManager->getRenderingServer()->Resize();
 }
 
 void InnoEventSystemNS::mousePositionCallback(float mouseXPos, float mouseYPos)

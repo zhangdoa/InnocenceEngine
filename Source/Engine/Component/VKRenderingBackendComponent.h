@@ -4,7 +4,7 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #include "vulkan/vulkan.h"
 
-#include "../Component/VKRenderPassComponent.h"
+#include "../Component/VKRenderPassDataComponent.h"
 #include "../Component/VKShaderProgramComponent.h"
 #include "../Component/VKMeshDataComponent.h"
 #include "../Component/TextureDataComponent.h"

@@ -1,14 +1,14 @@
 #pragma once
 #include "../Common/InnoType.h"
 #include "vulkan/vulkan.h"
-#include "RenderPassComponent.h"
+#include "RenderPassDataComponent.h"
 #include "VKTextureDataComponent.h"
 
-class VKRenderPassComponent : public RenderPassComponent
+class VKRenderPassDataComponent : public RenderPassDataComponent
 {
 public:
-	VKRenderPassComponent() {};
-	~VKRenderPassComponent() {};
+	VKRenderPassDataComponent() {};
+	~VKRenderPassDataComponent() {};
 
 	std::vector<VkAttachmentReference> colorAttachmentRefs = {};
 	VkAttachmentReference depthAttachmentRef = {};

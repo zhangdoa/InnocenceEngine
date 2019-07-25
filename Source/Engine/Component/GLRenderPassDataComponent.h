@@ -1,21 +1,18 @@
 #pragma once
 #include "../Common/InnoType.h"
 #include "../RenderingBackend/GLRenderingBackend/GLHeaders.h"
-#include "RenderPassComponent.h"
+#include "RenderPassDataComponent.h"
 #include "GLTextureDataComponent.h"
 
-class GLRenderPassComponent : public RenderPassComponent
+class GLRenderPassDataComponent : public RenderPassDataComponent
 {
 public:
-	GLRenderPassComponent() {};
-	~GLRenderPassComponent() {};
+	GLRenderPassDataComponent() {};
+	~GLRenderPassDataComponent() {};
 
 	GLuint m_FBO = 0;
 	GLuint m_RBO = 0;
 
 	GLenum m_renderBufferAttachmentType = 0;
 	GLenum m_renderBufferInternalFormat = 0;
-	bool m_drawColorBuffers = true;
-
-	std::vector<GLTextureDataComponent*> m_GLTDCs;
 };

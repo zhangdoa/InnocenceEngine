@@ -3,11 +3,11 @@
 #include "TextureDataComponent.h"
 #include "MTTextureDataComponent.h"
 
-class MTRenderPassComponent
+class MTRenderPassDataComponent
 {
 public:
-	MTRenderPassComponent() {};
-	~MTRenderPassComponent() {};
+	MTRenderPassDataComponent() {};
+	~MTRenderPassDataComponent() {};
 
 	std::vector<MTTextureDataComponent*> m_MTTDCs;
 };

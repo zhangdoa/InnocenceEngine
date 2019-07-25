@@ -42,98 +42,6 @@
 
 extern IModuleManager* g_pModuleManager;
 
-namespace GLRenderingBackendNS
-{
-	void MessageCallback(GLenum source,
-		GLenum type,
-		GLuint id,
-		GLenum severity,
-		GLsizei length,
-		const GLchar* message,
-		const void* userParam)
-	{
-		if (severity == GL_DEBUG_SEVERITY_HIGH)
-		{
-			LogType l_logType;
-			std::string l_typeStr;
-			if (type == GL_DEBUG_TYPE_ERROR)
-			{
-				l_logType = LogType::INNO_ERROR;
-				l_typeStr = "GL_DEBUG_TYPE_ERROR: ID: ";
-			}
-			else if (type == GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR)
-			{
-				l_logType = LogType::INNO_ERROR;
-				l_typeStr = "GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: ID: ";
-			}
-			else if (type == GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR)
-			{
-				l_logType = LogType::INNO_ERROR;
-				l_typeStr = "GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: ID: ";
-			}
-			else if (type == GL_DEBUG_TYPE_PERFORMANCE)
-			{
-				l_logType = LogType::INNO_ERROR;
-				l_typeStr = "GL_DEBUG_TYPE_PERFORMANCE: ID: ";
-			}
-			else if (type == GL_DEBUG_TYPE_PORTABILITY)
-			{
-				l_logType = LogType::INNO_ERROR;
-				l_typeStr = "GL_DEBUG_TYPE_PORTABILITY: ID: ";
-			}
-			else if (type == GL_DEBUG_TYPE_OTHER)
-			{
-				l_logType = LogType::INNO_ERROR;
-				l_typeStr = "GL_DEBUG_TYPE_OTHER: ID: ";
-			}
-			else
-			{
-				l_logType = LogType::INNO_DEV_VERBOSE;
-			}
-
-			std::string l_message = message;
-			g_pModuleManager->getLogSystem()->printLog(l_logType, "GLRenderingBackend: " + l_typeStr + std::to_string(id) + ": " + l_message);
-		}
-	}
-
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-
-	std::function<void()> f_sceneLoadingFinishCallback;
-
-	bool m_isBaked = true;
-	bool m_visualizeVXGI = false;
-
-	std::function<void()> f_toggleVisualizeVXGI;
-
-	void* m_MeshDataComponentPool;
-	void* m_MaterialDataComponentPool;
-	void* m_TextureDataComponentPool;
-
-	ThreadSafeQueue<GLMeshDataComponent*> m_uninitializedMeshes;
-	ThreadSafeQueue<GLMaterialDataComponent*> m_uninitializedMaterials;
-
-	GLTextureDataComponent* m_iconTemplate_OBJ;
-	GLTextureDataComponent* m_iconTemplate_PNG;
-	GLTextureDataComponent* m_iconTemplate_SHADER;
-	GLTextureDataComponent* m_iconTemplate_UNKNOWN;
-
-	GLTextureDataComponent* m_iconTemplate_DirectionalLight;
-	GLTextureDataComponent* m_iconTemplate_PointLight;
-	GLTextureDataComponent* m_iconTemplate_SphereLight;
-
-	GLMeshDataComponent* m_unitLineMDC;
-	GLMeshDataComponent* m_unitQuadMDC;
-	GLMeshDataComponent* m_unitCubeMDC;
-	GLMeshDataComponent* m_unitSphereMDC;
-	GLMeshDataComponent* m_terrainMDC;
-
-	GLTextureDataComponent* m_basicNormalTDC;
-	GLTextureDataComponent* m_basicAlbedoTDC;
-	GLTextureDataComponent* m_basicMetallicTDC;
-	GLTextureDataComponent* m_basicRoughnessTDC;
-	GLTextureDataComponent* m_basicAOTDC;
-}
-
 bool GLRenderingBackendNS::setup()
 {
 	initializeComponentPool();
@@ -162,23 +70,6 @@ bool GLRenderingBackendNS::setup()
 	GLRenderingBackendComponent::get().m_deferredRenderPassDesc.RTDesc.height = l_screenResolution.y;
 	GLRenderingBackendComponent::get().m_deferredRenderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::FLOAT16;
 
-	if (g_pModuleManager->getRenderingFrontend()->getRenderingConfig().MSAAdepth)
-	{
-		// antialiasing
-		// MSAA
-		glEnable(GL_MULTISAMPLE);
-	}
-
-	glEnable(GL_DEBUG_OUTPUT);
-	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-	glDebugMessageCallback(MessageCallback, 0);
-
-	// enable seamless cubemap sampling for lower mip levels in the pre-filter map.
-	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-	glEnable(GL_PROGRAM_POINT_SIZE);
-
-	m_objectStatus = ObjectStatus::Created;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingBackend setup finished.");
 	return true;
 }
 

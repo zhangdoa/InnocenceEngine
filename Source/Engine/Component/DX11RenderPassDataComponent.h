@@ -1,14 +1,14 @@
 #pragma once
 #include "../Common/InnoType.h"
 #include "../RenderingBackend/DX11RenderingBackend/DX11Headers.h"
-#include "RenderPassComponent.h"
+#include "RenderPassDataComponent.h"
 #include "DX11TextureDataComponent.h"
 
-class DX11RenderPassComponent : public RenderPassComponent
+class DX11RenderPassDataComponent : public RenderPassDataComponent
 {
 public:
-	DX11RenderPassComponent() {};
-	~DX11RenderPassComponent() {};
+	DX11RenderPassDataComponent() {};
+	~DX11RenderPassDataComponent() {};
 
 	std::vector<DX11TextureDataComponent*> m_DXTDCs;
 	D3D11_RENDER_TARGET_VIEW_DESC m_RTVDesc = {};

@@ -21,21 +21,21 @@ target_link_libraries(InnoEngine InnoRenderingFrontend)
 target_link_libraries(InnoEngine InnoRayTracer)
 
 if (INNO_PLATFORM_WIN)
-target_link_libraries(InnoEngine InnoDX11RenderingBackend)
-target_link_libraries(InnoEngine InnoDX12RenderingBackend)
+target_link_libraries(InnoEngine InnoDX11RenderingServer)
+target_link_libraries(InnoEngine InnoDX12RenderingServer)
 target_link_libraries(InnoEngine InnoWinWindowSystem)
 endif (INNO_PLATFORM_WIN)
 
 if (VULKAN)
-target_link_libraries(InnoEngine InnoVKRenderingBackend)
+target_link_libraries(InnoEngine InnoVKRenderingServer)
 endif (VULKAN)
 
 if (OPENGL_FOUND AND NOT INNO_PLATFORM_MAC)
-target_link_libraries(InnoEngine InnoGLRenderingBackend)
+target_link_libraries(InnoEngine InnoGLRenderingServer)
 endif (OPENGL_FOUND AND NOT INNO_PLATFORM_MAC)
 
 if (INNO_PLATFORM_MAC)
-target_link_libraries(InnoEngine InnoMTRenderingBackend)
+target_link_libraries(InnoEngine InnoMTRenderingServer)
 target_link_libraries(InnoEngine MacWindow)
 endif (INNO_PLATFORM_MAC)
 
@@ -48,7 +48,7 @@ target_link_libraries(InnoEngine "${ASSIMP}")
 
 target_link_libraries(InnoEngine STB_Image)
 
-target_link_libraries(InnoEngine ImGuiWrapper)
+#target_link_libraries(InnoEngine ImGuiWrapper)
 
 if (INNO_PLATFORM_LINUX)
 target_link_libraries(InnoEngine -lX11 -lXrandr -lXinerama -lXi -lXxf86vm -lXcursor -ldl -lm -lpthread -lstdc++fs)

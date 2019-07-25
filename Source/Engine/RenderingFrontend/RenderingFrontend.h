@@ -6,7 +6,7 @@ class InnoRenderingFrontend : public IRenderingFrontend
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoRenderingFrontend);
 
-	bool setup(IRenderingBackend* renderingBackend) override;
+	bool setup(IRenderingServer* renderingServer) override;
 	bool initialize() override;
 	bool update() override;
 	bool terminate() override;

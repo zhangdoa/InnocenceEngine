@@ -16,7 +16,7 @@ extern IModuleManager* g_pModuleManager;
 
 namespace InnoFileSystemNS::JSONParser
 {
-	#define LoadComponentData(className, j, entity) \
+#define LoadComponentData(className, j, entity) \
 	{ auto l_result = SpawnComponent(className, entity, ObjectSource::Asset, ObjectUsage::Gameplay); \
 	from_json(j, *l_result); }
 
@@ -30,34 +30,34 @@ namespace InnoFileSystemNS::JSONParser
 			topLevel["SceneEntities"].begin(),
 			topLevel["SceneEntities"].end(),
 			[&](auto val) -> bool {
-				return val["EntityID"] == rhs->m_parentEntity->m_entityID.c_str();
-			});
+			return val["EntityID"] == rhs->m_parentEntity->m_entityID.c_str();
+		});
 
-			if (l_result != topLevel["SceneEntities"].end())
-			{
-				l_result.value()["ChildrenComponents"].emplace_back(j);
-				return true;
-			}
-			else
-			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: saveComponentData<T>: Entity ID " + std::string(rhs->m_parentEntity->m_entityID.c_str()) + " is invalid.");
-				return false;
-			}
+		if (l_result != topLevel["SceneEntities"].end())
+		{
+			l_result.value()["ChildrenComponents"].emplace_back(j);
+			return true;
 		}
+		else
+		{
+			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: saveComponentData<T>: Entity ID " + std::string(rhs->m_parentEntity->m_entityID.c_str()) + " is invalid.");
+			return false;
+		}
+	}
 
-		ModelMap processSceneJsonData(const json & j);
-		std::vector<AnimationDataComponent*> processAnimationJsonData(const json & j);
-		ModelMap processNodeJsonData(const json & j);
-		ModelPair processMeshJsonData(const json& j);
-		SkeletonDataComponent* processSkeletonJsonData(const std::string& skeletonFileName);
-		MaterialDataComponent* processMaterialJsonData(const std::string& materialFileName);
+	ModelMap processSceneJsonData(const json & j);
+	std::vector<AnimationDataComponent*> processAnimationJsonData(const json & j);
+	ModelMap processNodeJsonData(const json & j);
+	ModelPair processMeshJsonData(const json& j);
+	SkeletonDataComponent* processSkeletonJsonData(const std::string& skeletonFileName);
+	MaterialDataComponent* processMaterialJsonData(const std::string& materialFileName);
 
-		bool assignComponentRuntimeData();
+	bool assignComponentRuntimeData();
 
-		std::unordered_map<std::string, ModelPair> m_loadedModelPair;
-		std::unordered_map<std::string, SkeletonDataComponent*> m_loadedSDC;
+	std::unordered_map<std::string, ModelPair> m_loadedModelPair;
+	std::unordered_map<std::string, SkeletonDataComponent*> m_loadedSDC;
 
-		ThreadSafeQueue<std::pair<TransformComponent*, EntityName>> m_orphanTransformComponents;
+	ThreadSafeQueue<std::pair<TransformComponent*, EntityName>> m_orphanTransformComponents;
 }
 
 bool InnoFileSystemNS::JSONParser::loadJsonDataFromDisk(const std::string & fileName, json & data)
@@ -553,7 +553,7 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j)
 
 		m_loadedModelPair.emplace(l_meshFileName, l_result);
 
-		g_pModuleManager->getRenderingBackend()->registerUninitializedMeshDataComponent(l_MeshDC);
+		g_pModuleManager->getRenderingServer()->RegisterMeshDataComponent(l_MeshDC);
 	}
 
 	return l_result;
@@ -644,7 +644,7 @@ MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(co
 	l_MDC->m_meshCustomMaterial.thickness = j["Thickness"];
 	l_MDC->m_objectStatus = ObjectStatus::Created;
 
-	g_pModuleManager->getRenderingBackend()->registerUninitializedMaterialDataComponent(l_MDC);
+	g_pModuleManager->getRenderingServer()->RegisterMaterialDataComponent(l_MDC);
 
 	return l_MDC;
 }

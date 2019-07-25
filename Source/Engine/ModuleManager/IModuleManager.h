@@ -16,19 +16,19 @@
 #include "../Core/IEventSystem.h"
 #include "../Core/IWindowSystem.h"
 #include "../RenderingFrontend/IRenderingFrontend.h"
-#include "../RenderingBackend/IRenderingBackend.h"
+#include "../RenderingServer/IRenderingServer.h"
 
 #include "../Core/IRenderingClient.h"
 #include "../Core/ILogicClient.h"
 
 enum EngineMode { GAME, EDITOR };
 
-enum RenderingBackend { GL, DX11, DX12, VK, MT };
+enum RenderingServer { GL, DX11, DX12, VK, MT };
 
 struct InitConfig
 {
 	EngineMode engineMode = EngineMode::GAME;
-	RenderingBackend renderingBackend = RenderingBackend::GL;
+	RenderingServer renderingServer = RenderingServer::GL;
 };
 
 class IModuleManager
@@ -57,7 +57,7 @@ public:
 	INNO_ENGINE_API virtual IEventSystem* getEventSystem() = 0;
 	INNO_ENGINE_API virtual IWindowSystem* getWindowSystem() = 0;
 	INNO_ENGINE_API virtual IRenderingFrontend* getRenderingFrontend() = 0;
-	INNO_ENGINE_API virtual IRenderingBackend* getRenderingBackend() = 0;
+	INNO_ENGINE_API virtual IRenderingServer* getRenderingServer() = 0;
 
 	INNO_ENGINE_API virtual InitConfig getInitConfig() = 0;
 

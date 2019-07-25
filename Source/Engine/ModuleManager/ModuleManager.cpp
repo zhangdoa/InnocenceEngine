@@ -20,21 +20,21 @@
 #include "../RenderingFrontend/RenderingFrontend.h"
 #if defined INNO_PLATFORM_WIN
 #include "../Platform/WinWindow/WinWindowSystem.h"
-#include "../RenderingBackend/DX11RenderingBackend/DX11RenderingBackend.h"
-#include "../RenderingBackend/DX12RenderingBackend/DX12RenderingBackend.h"
+#include "../RenderingServer/DX11/DX11RenderingServer.h"
+#include "../RenderingServer/DX12/DX12RenderingServer.h"
 #endif
 #if !defined INNO_PLATFORM_MAC && defined INNO_RENDERER_OPENGL
-#include "../RenderingBackend/GLRenderingBackend/GLRenderingBackend.h"
+#include "../RenderingServer/GL/GLRenderingServer.h"
 #endif
 #if defined INNO_PLATFORM_MAC
 #include "../Platform/MacWindow/MacWindowSystem.h"
-#include "../RenderingBackend/MTRenderingBackend/MTRenderingBackend.h"
+#include "../RenderingServer/MT/MTRenderingServer.h"
 #endif
 #if defined INNO_PLATFORM_LINUX
 #include "../Platform/LinuxWindow/LinuxWindowSystem.h"
 #endif
 #if defined INNO_RENDERER_VULKAN
-#include "../RenderingBackend/VKRenderingBackend/VKRenderingBackend.h"
+#include "../RenderingServer/VK/VKRenderingServer.h"
 #endif
 
 #include "../ImGuiWrapper/ImGuiWrapper.h"
@@ -140,7 +140,7 @@ namespace InnoModuleManagerNS
 	std::unique_ptr<IEventSystem> m_EventSystem;
 	std::unique_ptr<IWindowSystem> m_WindowSystem;
 	std::unique_ptr<IRenderingFrontend> m_RenderingFrontend;
-	std::unique_ptr<IRenderingBackend> m_RenderingBackend;
+	std::unique_ptr<IRenderingServer> m_RenderingServer;
 
 	IRenderingClient* m_RenderingClient;
 	ILogicClient* m_LogicClient;
@@ -197,21 +197,21 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 		}
 	}
 
-	auto l_renderingBackendArgPos = arg.find("renderer");
+	auto l_renderingServerArgPos = arg.find("renderer");
 
-	if (l_renderingBackendArgPos == std::string::npos)
+	if (l_renderingServerArgPos == std::string::npos)
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "ModuleManager: No rendering backend argument found, use default OpenGL rendering backend.");
 	}
 	else
 	{
-		std::string l_rendererArguments = arg.substr(l_renderingBackendArgPos + 9);
+		std::string l_rendererArguments = arg.substr(l_renderingServerArgPos + 9);
 		l_rendererArguments = l_rendererArguments.substr(0, 1);
 
 		if (l_rendererArguments == "0")
 		{
 #if !defined INNO_PLATFORM_MAC && defined INNO_RENDERER_OPENGL
-			l_result.renderingBackend = RenderingBackend::GL;
+			l_result.renderingServer = RenderingServer::GL;
 #else
 			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "ModuleManager: OpenGL is not supported on current platform, no rendering backend will be launched.");
 #endif
@@ -219,7 +219,7 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 		else if (l_rendererArguments == "1")
 		{
 #if defined INNO_PLATFORM_WIN
-			l_result.renderingBackend = RenderingBackend::DX11;
+			l_result.renderingServer = RenderingServer::DX11;
 #else
 			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "ModuleManager: DirectX 11 is not supported on current platform, use default OpenGL rendering backend.");
 #endif
@@ -227,7 +227,7 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 		else if (l_rendererArguments == "2")
 		{
 #if defined INNO_PLATFORM_WIN
-			l_result.renderingBackend = RenderingBackend::DX12;
+			l_result.renderingServer = RenderingServer::DX12;
 #else
 			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "ModuleManager: DirectX 12 is not supported on current platform, use default OpenGL rendering backend.");
 #endif
@@ -235,7 +235,7 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 		else if (l_rendererArguments == "3")
 		{
 #if defined INNO_RENDERER_VULKAN
-			l_result.renderingBackend = RenderingBackend::VK;
+			l_result.renderingServer = RenderingServer::VK;
 #else
 			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "ModuleManager: Vulkan is not supported on current platform, use default OpenGL rendering backend.");
 #endif
@@ -243,7 +243,7 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 		else if (l_rendererArguments == "4")
 		{
 #if defined INNO_PLATFORM_MAC
-			l_result.renderingBackend = RenderingBackend::MT;
+			l_result.renderingServer = RenderingServer::MT;
 #else
 			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "ModuleManager: Metal is not supported on current platform, use default OpenGL rendering backend.");
 #endif
@@ -312,48 +312,53 @@ bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook
 		return false;
 	}
 
-	switch (m_initConfig.renderingBackend)
+	switch (m_initConfig.renderingServer)
 	{
-	case RenderingBackend::GL:
+	case RenderingServer::GL:
 #if !defined INNO_PLATFORM_MAC && defined INNO_RENDERER_OPENGL
-		m_RenderingBackend = std::make_unique<GLRenderingBackend>();
-		if (!m_RenderingBackend.get())
+		m_RenderingServer = std::make_unique<GLRenderingServer>();
+		if (!m_RenderingServer.get())
 		{
 			return false;
 		}
 #endif
 		break;
-	case RenderingBackend::DX11:
+	case RenderingServer::DX11:
 #if defined INNO_PLATFORM_WIN
-		m_RenderingBackend = std::make_unique<DX11RenderingBackend>();
-		if (!m_RenderingBackend.get())
+		m_RenderingServer = std::make_unique<DX11RenderingServer>();
+		if (!m_RenderingServer.get())
 		{
 			return false;
 		}
 #endif
 		break;
-	case RenderingBackend::DX12:
+	case RenderingServer::DX12:
 #if defined INNO_PLATFORM_WIN
-		m_RenderingBackend = std::make_unique<DX12RenderingBackend>();
-		if (!m_RenderingBackend.get())
+		m_RenderingServer = std::make_unique<DX12RenderingServer>();
+		if (!m_RenderingServer.get())
 		{
 			return false;
 		}
 #endif
 		break;
-	case RenderingBackend::VK:
+	case RenderingServer::VK:
 #if defined INNO_RENDERER_VULKAN
-		m_RenderingBackend = std::make_unique<VKRenderingBackend>();
-		if (!m_RenderingBackend.get())
+		m_RenderingServer = std::make_unique<VKRenderingServer>();
+		if (!m_RenderingServer.get())
+		{
+			return false;
+		}
+		m_RenderingServer = std::make_unique<VKRenderingServer>();
+		if (!m_RenderingServer.get())
 		{
 			return false;
 		}
 #endif
 		break;
-	case RenderingBackend::MT:
+	case RenderingServer::MT:
 #if defined INNO_PLATFORM_MAC
-		m_RenderingBackend = std::make_unique<MTRenderingBackend>();
-		if (!m_RenderingBackend.get())
+		m_RenderingServer = std::make_unique<MTRenderingServer>();
+		if (!m_RenderingServer.get())
 		{
 			return false;
 		}
@@ -370,10 +375,10 @@ bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook
 
 	l_windowSystem->setBridge(l_windowSystemBridge);
 
-	auto l_renderingBackendSystem = reinterpret_cast<MTRenderingBackend*>(m_RenderingBackend.get());
-	auto l_renderingBackendSystemBridge = reinterpret_cast<MTRenderingBackendBridge*>(extraHook);
+	auto l_renderingServerSystem = reinterpret_cast<MTRenderingServer*>(m_RenderingServer.get());
+	auto l_renderingServerSystemBridge = reinterpret_cast<MTRenderingServerBridge*>(extraHook);
 
-	l_renderingBackendSystem->setBridge(l_renderingBackendSystemBridge);
+	l_renderingServerSystem->setBridge(l_renderingServerSystemBridge);
 #endif
 
 	return true;
@@ -409,22 +414,22 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	}
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WindowSystem setup finished.");
 
-	if (!m_RenderingBackend->setup())
+	if (!m_RenderingServer->Setup())
 	{
 		return false;
 	}
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "RenderingBackend setup finished.");
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "RenderingServer setup finished.");
 
-	if (!m_RenderingFrontend->setup(m_RenderingBackend.get()))
+	if (!m_RenderingFrontend->setup(m_RenderingServer.get()))
 	{
 		return false;
 	}
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "RenderingFrontend setup finished.");
 
-	if (!ImGuiWrapper::get().setup())
-	{
-		return false;
-	}
+	//if (!ImGuiWrapper::get().setup())
+	//{
+	//	return false;
+	//}
 
 	subSystemSetup(AssetSystem);
 	subSystemSetup(FileSystem);
@@ -500,9 +505,10 @@ bool InnoModuleManagerNS::initialize()
 	subSystemInit(EventSystem);
 
 	m_WindowSystem->initialize();
-	m_RenderingBackend->initialize();
+	m_RenderingServer->Initialize();
 	m_RenderingFrontend->initialize();
-	ImGuiWrapper::get().initialize();
+
+	//ImGuiWrapper::get().initialize();
 
 	if (!m_RenderingClient->Initialize())
 	{
@@ -574,21 +580,17 @@ bool InnoModuleManagerNS::update()
 
 					m_RenderingClient->Render();
 
-					m_RenderingBackend->update();
+					//if (m_showImGui)
+					//{
+					//	ImGuiWrapper::get().update();
+					//}
 
-					if (m_showImGui)
-					{
-						ImGuiWrapper::get().update();
-					}
+					//if (m_showImGui)
+					//{
+					//	ImGuiWrapper::get().render();
+					//}
 
-					m_RenderingBackend->render();
-
-					if (m_showImGui)
-					{
-						ImGuiWrapper::get().render();
-					}
-
-					m_RenderingBackend->present();
+					m_RenderingServer->Present();
 
 					m_isRendering = false;
 				}
@@ -623,15 +625,15 @@ bool InnoModuleManagerNS::terminate()
 		return false;
 	}
 
-	if (!ImGuiWrapper::get().terminate())
-	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "GuiSystem can't be terminated!");
-		return false;
-	}
+	//if (!ImGuiWrapper::get().terminate())
+	//{
+	//	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "GuiSystem can't be terminated!");
+	//	return false;
+	//}
 
-	if (!m_RenderingBackend->terminate())
+	if (!m_RenderingServer->Terminate())
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingBackend can't be terminated!");
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingServer can't be terminated!");
 		return false;
 	}
 	if (!m_RenderingFrontend->terminate())
@@ -735,9 +737,9 @@ IRenderingFrontend * InnoModuleManager::getRenderingFrontend()
 	return m_RenderingFrontend.get();
 }
 
-IRenderingBackend * InnoModuleManager::getRenderingBackend()
+IRenderingServer * InnoModuleManager::getRenderingServer()
 {
-	return m_RenderingBackend.get();
+	return m_RenderingServer.get();
 }
 
 IComponentManager * InnoModuleManager::getComponentManager(ComponentType componentType)

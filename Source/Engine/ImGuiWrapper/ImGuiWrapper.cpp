@@ -48,21 +48,21 @@ bool ImGuiWrapper::setup()
 	auto l_initConfig = g_pModuleManager->getInitConfig();
 
 #if defined INNO_PLATFORM_WIN
-	switch (l_initConfig.renderingBackend)
+	switch (l_initConfig.renderingServer)
 	{
-	case RenderingBackend::GL:
+	case RenderingServer::GL:
 		ImGuiWrapperNS::m_wrapperImpl = new ImGuiWrapperWinGL();
 		break;
-	case RenderingBackend::DX11:
+	case RenderingServer::DX11:
 		ImGuiWrapperNS::m_wrapperImpl = new ImGuiWrapperWinDX11();
 		break;
-	case RenderingBackend::DX12:
+	case RenderingServer::DX12:
 		ImGuiWrapperNS::m_isParity = false;
 		break;
-	case RenderingBackend::VK:
+	case RenderingServer::VK:
 		ImGuiWrapperNS::m_isParity = false;
 		//ImGuiWrapperNS::m_wrapperImpl = new ImGuiWrapperWinVK();
-	case RenderingBackend::MT:
+	case RenderingServer::MT:
 		ImGuiWrapperNS::m_isParity = false;
 		break;
 	default:
@@ -71,22 +71,22 @@ bool ImGuiWrapper::setup()
 #endif
 
 #if defined INNO_PLATFORM_MAC
-	switch (l_initConfig.renderingBackend)
+	switch (l_initConfig.renderingServer)
 	{
-	case RenderingBackend::GL:
+	case RenderingServer::GL:
 		ImGuiWrapperNS::m_isParity = false;
 		//ImGuiWrapperNS::m_wrapperImpl = new ImGuiWrapperWinGL();
 		break;
-	case RenderingBackend::DX11:
+	case RenderingServer::DX11:
 		ImGuiWrapperNS::m_isParity = false;
 		break;
-	case RenderingBackend::DX12:
+	case RenderingServer::DX12:
 		ImGuiWrapperNS::m_isParity = false;
 		break;
-	case RenderingBackend::VK:
+	case RenderingServer::VK:
 		ImGuiWrapperNS::m_isParity = false;
 		break;
-	case RenderingBackend::MT:
+	case RenderingServer::MT:
 		ImGuiWrapperNS::m_isParity = false;
 	default:
 		break;
@@ -235,7 +235,7 @@ void ImGuiWrapperNS::showApplicationProfiler()
 
 	if (ImGui::Button("Reload Shader"))
 	{
-		g_pModuleManager->getRenderingBackend()->reloadShader(RenderPassType(l_reloadShaderItem));
+		g_pModuleManager->getRenderingServer()->ReloadShader(RenderPassType(l_reloadShaderItem));
 	}
 
 	static int l_showRenderPassResultItem = 0;
@@ -251,7 +251,7 @@ void ImGuiWrapperNS::showApplicationProfiler()
 
 	if (ImGui::Button("Bake GI"))
 	{
-		g_pModuleManager->getRenderingBackend()->bakeGI();
+		g_pModuleManager->getRenderingServer()->BakeGIData();
 	}
 
 	if (ImGui::Button("Run ray trace"))
