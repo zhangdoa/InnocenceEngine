@@ -51,3 +51,10 @@ xcuserdata/
 
 #Intermediate files
 /Res/Intermediate/*
+*.InnoBrick
+
+*.InnoBrickFactor
+
+*.InnoProbe
+
+*.InnoSurfel
