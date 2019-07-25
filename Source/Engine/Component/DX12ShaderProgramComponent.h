@@ -1,15 +1,12 @@
 #pragma once
-#include "../Common/InnoType.h"
+#include "ShaderProgramComponent.h"
 #include "../RenderingBackend/DX12RenderingBackend/DX12Headers.h"
 
-class DX12ShaderProgramComponent
+class DX12ShaderProgramComponent : public ShaderProgramComponent
 {
 public:
 	DX12ShaderProgramComponent() {};
 	~DX12ShaderProgramComponent() {};
-
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-	EntityID m_parentEntity;
 
 	ID3DBlob* m_vertexShader = 0;
 	ID3DBlob* m_pixelShader = 0;

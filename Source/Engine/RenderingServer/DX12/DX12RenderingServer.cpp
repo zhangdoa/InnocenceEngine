@@ -105,27 +105,17 @@ bool DX12RenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent * 
 	return true;
 }
 
+bool DX12RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * rhs)
+{
+	return false;
+}
+
 void DX12RenderingServer::RegisterMeshDataComponent(MeshDataComponent * rhs)
 {
 }
 
 void DX12RenderingServer::RegisterMaterialDataComponent(MaterialDataComponent * rhs)
 {
-}
-
-MeshDataComponent * DX12RenderingServer::GetMeshDataComponent(MeshShapeType meshShapeType)
-{
-	return nullptr;
-}
-
-TextureDataComponent * DX12RenderingServer::GetTextureDataComponent(TextureUsageType textureUsageType)
-{
-	return nullptr;
-}
-
-TextureDataComponent * DX12RenderingServer::GetTextureDataComponent(WorldEditorIconType iconType)
-{
-	return nullptr;
 }
 
 bool DX12RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue)

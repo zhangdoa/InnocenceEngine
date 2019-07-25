@@ -771,23 +771,79 @@ TextureDataComponent * InnoRenderingFrontend::addTextureDataComponent()
 
 MeshDataComponent * InnoRenderingFrontend::getMeshDataComponent(MeshShapeType meshShapeType)
 {
-	return InnoRenderingFrontendNS::m_renderingServer->GetMeshDataComponent(meshShapeType);
+	switch (meshShapeType)
+	{
+	case MeshShapeType::LINE:
+		return InnoRenderingFrontendNS::m_unitLineMDC; break;
+	case MeshShapeType::QUAD:
+		return InnoRenderingFrontendNS::m_unitQuadMDC; break;
+	case MeshShapeType::CUBE:
+		return InnoRenderingFrontendNS::m_unitCubeMDC; break;
+	case MeshShapeType::SPHERE:
+		return InnoRenderingFrontendNS::m_unitSphereMDC; break;
+	case MeshShapeType::TERRAIN:
+		return InnoRenderingFrontendNS::m_terrainMDC; break;
+	case MeshShapeType::CUSTOM:
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingFrontend: wrong MeshShapeType!");
+		return nullptr; break;
+	default:
+		return nullptr; break;
+	}
 }
 
 TextureDataComponent * InnoRenderingFrontend::getTextureDataComponent(TextureUsageType textureUsageType)
 {
-	return InnoRenderingFrontendNS::m_renderingServer->GetTextureDataComponent(textureUsageType);
+	switch (textureUsageType)
+	{
+	case TextureUsageType::INVISIBLE:
+		return nullptr; break;
+	case TextureUsageType::NORMAL:
+		return InnoRenderingFrontendNS::m_basicNormalTDC; break;
+	case TextureUsageType::ALBEDO:
+		return InnoRenderingFrontendNS::m_basicAlbedoTDC; break;
+	case TextureUsageType::METALLIC:
+		return InnoRenderingFrontendNS::m_basicMetallicTDC; break;
+	case TextureUsageType::ROUGHNESS:
+		return InnoRenderingFrontendNS::m_basicRoughnessTDC; break;
+	case TextureUsageType::AMBIENT_OCCLUSION:
+		return InnoRenderingFrontendNS::m_basicAOTDC; break;
+	case TextureUsageType::COLOR_ATTACHMENT:
+		return nullptr; break;
+	default:
+		return nullptr; break;
+	}
 }
 
 TextureDataComponent * InnoRenderingFrontend::getTextureDataComponent(FileExplorerIconType iconType)
 {
-	//return InnoRenderingFrontendNS::m_renderingServer->GetTextureDataComponent(iconType);
-	return nullptr;
+	switch (iconType)
+	{
+	case FileExplorerIconType::OBJ:
+		return InnoRenderingFrontendNS::m_iconTemplate_OBJ; break;
+	case FileExplorerIconType::PNG:
+		return InnoRenderingFrontendNS::m_iconTemplate_PNG; break;
+	case FileExplorerIconType::SHADER:
+		return InnoRenderingFrontendNS::m_iconTemplate_SHADER; break;
+	case FileExplorerIconType::UNKNOWN:
+		return InnoRenderingFrontendNS::m_iconTemplate_UNKNOWN; break;
+	default:
+		return nullptr; break;
+	}
 }
 
 TextureDataComponent * InnoRenderingFrontend::getTextureDataComponent(WorldEditorIconType iconType)
 {
-	return InnoRenderingFrontendNS::m_renderingServer->GetTextureDataComponent(iconType);
+	switch (iconType)
+	{
+	case WorldEditorIconType::DIRECTIONAL_LIGHT:
+		return InnoRenderingFrontendNS::m_iconTemplate_DirectionalLight; break;
+	case WorldEditorIconType::POINT_LIGHT:
+		return InnoRenderingFrontendNS::m_iconTemplate_PointLight; break;
+	case WorldEditorIconType::SPHERE_LIGHT:
+		return InnoRenderingFrontendNS::m_iconTemplate_SphereLight; break;
+	default:
+		return nullptr; break;
+	}
 }
 
 SkeletonDataComponent * InnoRenderingFrontend::addSkeletonDataComponent()

@@ -4,6 +4,7 @@
 #include "../../Component/GLMaterialDataComponent.h"
 #include "../../Component/GLRenderPassDataComponent.h"
 #include "../../Component/GLShaderProgramComponent.h"
+#include "../../Component/GLGPUBufferDataComponent.h"
 
 #include "../../ModuleManager/IModuleManager.h"
 
@@ -210,27 +211,17 @@ bool GLRenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent * rh
 	return true;
 }
 
+bool GLRenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * rhs)
+{
+	return false;
+}
+
 void GLRenderingServer::RegisterMeshDataComponent(MeshDataComponent * rhs)
 {
 }
 
 void GLRenderingServer::RegisterMaterialDataComponent(MaterialDataComponent * rhs)
 {
-}
-
-MeshDataComponent * GLRenderingServer::GetMeshDataComponent(MeshShapeType meshShapeType)
-{
-	return nullptr;
-}
-
-TextureDataComponent * GLRenderingServer::GetTextureDataComponent(TextureUsageType textureUsageType)
-{
-	return nullptr;
-}
-
-TextureDataComponent * GLRenderingServer::GetTextureDataComponent(WorldEditorIconType iconType)
-{
-	return nullptr;
 }
 
 bool GLRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue)

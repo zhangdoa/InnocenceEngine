@@ -7,15 +7,7 @@
 #include "../Component/MaterialDataComponent.h"
 #include "../Component/RenderPassDataComponent.h"
 #include "../Component/ShaderProgramComponent.h"
-
-enum class GPUBufferAccessibility { ReadOnly = 1, WriteOnly = 2, ReadWrite = ReadOnly | WriteOnly };
-
-struct GPUBufferDataComponent
-{
-	GPUBufferAccessibility m_GPUBufferAccessibility = GPUBufferAccessibility::ReadOnly;
-	size_t m_Size = 0;
-	size_t m_BindingPoint = 0;
-};
+#include "../Component/GPUBufferDataComponent.h"
 
 class IRenderingServer
 {
@@ -47,13 +39,10 @@ public:
 	virtual	bool DeleteMaterialDataComponent(MaterialDataComponent* rhs) = 0;
 	virtual	bool DeleteRenderPassDataComponent(RenderPassDataComponent* rhs) = 0;
 	virtual	bool DeleteShaderProgramComponent(ShaderProgramComponent* rhs) = 0;
+	virtual	bool DeleteGPUBufferDataComponent(GPUBufferDataComponent* rhs) = 0;
 
 	virtual void RegisterMeshDataComponent(MeshDataComponent* rhs) = 0;
 	virtual void RegisterMaterialDataComponent(MaterialDataComponent* rhs) = 0;
-
-	virtual MeshDataComponent* GetMeshDataComponent(MeshShapeType meshShapeType) = 0;
-	virtual TextureDataComponent* GetTextureDataComponent(TextureUsageType textureUsageType) = 0;
-	virtual TextureDataComponent* GetTextureDataComponent(WorldEditorIconType iconType) = 0;
 
 	virtual bool UploadGPUBufferDataComponentImpl(GPUBufferDataComponent* rhs, const void* GPUBufferValue) = 0;
 

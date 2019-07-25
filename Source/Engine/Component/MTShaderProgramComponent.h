@@ -1,7 +1,7 @@
 #pragma once
-#include "../Common/InnoType.h"
+#include "ShaderProgramComponent.h"
 
-class MTShaderProgramComponent
+class MTShaderProgramComponent : public ShaderProgramComponent
 {
 public:
 	MTShaderProgramComponent() {};

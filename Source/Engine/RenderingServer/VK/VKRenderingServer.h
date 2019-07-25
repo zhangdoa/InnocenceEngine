@@ -45,13 +45,10 @@ class VKRenderingServer : public IRenderingServer
 	virtual bool DeleteMaterialDataComponent(MaterialDataComponent * rhs) override;
 	virtual bool DeleteRenderPassDataComponent(RenderPassDataComponent * rhs) override;
 	virtual bool DeleteShaderProgramComponent(ShaderProgramComponent * rhs) override;
+	virtual bool DeleteGPUBufferDataComponent(GPUBufferDataComponent * rhs) override;
 
 	virtual void RegisterMeshDataComponent(MeshDataComponent * rhs) override;
 	virtual void RegisterMaterialDataComponent(MaterialDataComponent * rhs) override;
-
-	virtual MeshDataComponent * GetMeshDataComponent(MeshShapeType meshShapeType) override;
-	virtual TextureDataComponent * GetTextureDataComponent(TextureUsageType textureUsageType) override;
-	virtual TextureDataComponent * GetTextureDataComponent(WorldEditorIconType iconType) override;
 
 	virtual bool UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue) override;
 

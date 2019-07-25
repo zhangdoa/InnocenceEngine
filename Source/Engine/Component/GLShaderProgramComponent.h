@@ -1,15 +1,12 @@
 #pragma once
-#include "../Common/InnoType.h"
+#include "ShaderProgramComponent.h"
 #include "../RenderingBackend/GLRenderingBackend/GLHeaders.h"
 
-class GLShaderProgramComponent
+class GLShaderProgramComponent : public ShaderProgramComponent
 {
 public:
 	GLShaderProgramComponent() {};
 	~GLShaderProgramComponent() {};
-
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-	EntityID m_parentEntity;
 
 	GLuint m_program = 0;
 	GLuint m_VSID = 0;

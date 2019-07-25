@@ -105,27 +105,17 @@ bool VKRenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent * rh
 	return true;
 }
 
+bool VKRenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * rhs)
+{
+	return false;
+}
+
 void VKRenderingServer::RegisterMeshDataComponent(MeshDataComponent * rhs)
 {
 }
 
 void VKRenderingServer::RegisterMaterialDataComponent(MaterialDataComponent * rhs)
 {
-}
-
-MeshDataComponent * VKRenderingServer::GetMeshDataComponent(MeshShapeType meshShapeType)
-{
-	return nullptr;
-}
-
-TextureDataComponent * VKRenderingServer::GetTextureDataComponent(TextureUsageType textureUsageType)
-{
-	return nullptr;
-}
-
-TextureDataComponent * VKRenderingServer::GetTextureDataComponent(WorldEditorIconType iconType)
-{
-	return nullptr;
 }
 
 bool VKRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue)

@@ -1,15 +1,12 @@
 #pragma once
-#include "../Common/InnoType.h"
+#include "ShaderProgramComponent.h"
 #include "vulkan/vulkan.h"
 
-class VKShaderProgramComponent
+class VKShaderProgramComponent : public ShaderProgramComponent
 {
 public:
 	VKShaderProgramComponent() {};
 	~VKShaderProgramComponent() {};
-
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-	EntityID m_parentEntity;
 
 	VkShaderModule m_vertexShaderModule;
 	VkShaderModule m_fragmentShaderModule;
