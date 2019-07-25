@@ -71,7 +71,7 @@ namespace GLRenderingServerNS
 	IObjectPool* m_MeshDataComponentPool;
 	IObjectPool* m_MaterialDataComponentPool;
 	IObjectPool* m_TextureDataComponentPool;
-	IObjectPool* m_RenderPassComponentPool;
+	IObjectPool* m_RenderPassDataComponentPool;
 	IObjectPool* m_ShaderProgramComponentPool;
 }
 
@@ -84,7 +84,7 @@ bool GLRenderingServer::Setup()
 	m_MeshDataComponentPool = InnoMemory::CreateObjectPool(sizeof(GLMeshDataComponent), l_renderingCapability.maxMeshes);
 	m_TextureDataComponentPool = InnoMemory::CreateObjectPool(sizeof(GLTextureDataComponent), l_renderingCapability.maxTextures);
 	m_MaterialDataComponentPool = InnoMemory::CreateObjectPool(sizeof(GLMaterialDataComponent), l_renderingCapability.maxMaterials);
-	m_RenderPassComponentPool = InnoMemory::CreateObjectPool(sizeof(GLRenderPassDataComponent), 128);
+	m_RenderPassDataComponentPool = InnoMemory::CreateObjectPool(sizeof(GLRenderPassDataComponent), 128);
 	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool(sizeof(GLShaderProgramComponent), 256);
 
 	if (g_pModuleManager->getRenderingFrontend()->getRenderingConfig().MSAAdepth)
@@ -128,32 +128,68 @@ ObjectStatus GLRenderingServer::GetStatus()
 
 MeshDataComponent * GLRenderingServer::AddMeshDataComponent(const char * name)
 {
-	return nullptr;
+	static std::atomic<unsigned int> l_count = 0;
+	l_count++;
+	auto l_rawPtr = m_MeshDataComponentPool->Spawn();
+	auto l_result = new(l_rawPtr)GLMeshDataComponent();
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Mesh_" + std::to_string(l_count) + "/").c_str());
+	l_result->m_parentEntity = l_parentEntity;
+	return l_result;
 }
 
 TextureDataComponent * GLRenderingServer::AddTextureDataComponent(const char * name)
 {
-	return nullptr;
+	static std::atomic<unsigned int> l_count = 0;
+	l_count++;
+	auto l_rawPtr = m_TextureDataComponentPool->Spawn();
+	auto l_result = new(l_rawPtr)GLTextureDataComponent();
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Texture_" + std::to_string(l_count) + "/").c_str());
+	l_result->m_parentEntity = l_parentEntity;
+	return l_result;
 }
 
 MaterialDataComponent * GLRenderingServer::AddMaterialDataComponent(const char * name)
 {
-	return nullptr;
+	static std::atomic<unsigned int> l_count = 0;
+	l_count++;
+	auto l_rawPtr = m_MaterialDataComponentPool->Spawn();
+	auto l_result = new(l_rawPtr)GLMaterialDataComponent();
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Material_" + std::to_string(l_count) + "/").c_str());
+	l_result->m_parentEntity = l_parentEntity;
+	return l_result;
 }
 
 RenderPassDataComponent * GLRenderingServer::AddRenderPassDataComponent(const char * name)
 {
-	return nullptr;
+	static std::atomic<unsigned int> l_count = 0;
+	l_count++;
+	auto l_rawPtr = m_RenderPassDataComponentPool->Spawn();
+	auto l_result = new(l_rawPtr)GLRenderPassDataComponent();
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("RenderPass_" + std::to_string(l_count) + "/").c_str());
+	l_result->m_parentEntity = l_parentEntity;
+	return l_result;
 }
 
 ShaderProgramComponent * GLRenderingServer::AddShaderProgramComponent(const char * name)
 {
-	return nullptr;
+	static std::atomic<unsigned int> l_count = 0;
+	l_count++;
+	auto l_rawPtr = m_ShaderProgramComponentPool->Spawn();
+	auto l_result = new(l_rawPtr)GLShaderProgramComponent();
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("ShaderProgram_" + std::to_string(l_count) + "/").c_str());
+	l_result->m_parentEntity = l_parentEntity;
+	return l_result;
 }
 
 GPUBufferDataComponent * GLRenderingServer::AddGPUBufferDataComponent(const char * name)
 {
-	return nullptr;
+	static std::atomic<unsigned int> l_count = 0;
+	l_count++;
+	auto l_rawPtr = m_ShaderProgramComponentPool->Spawn();
+	auto l_result = new(l_rawPtr)GLGPUBufferDataComponent();
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("GPUBufferData_" + std::to_string(l_count) + "/").c_str());
+	l_result->m_parentEntity = l_parentEntity;
+	return l_result;
 }
 
 bool GLRenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
