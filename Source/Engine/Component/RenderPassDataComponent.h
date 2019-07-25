@@ -134,6 +134,10 @@ struct GraphicsPipelineDesc
 	ViewportDesc m_ViewportDesc = {};
 };
 
+class IPipelineStateObject
+{
+};
+
 class ICommandList
 {
 };
@@ -164,6 +168,7 @@ public:
 	TextureDataComponent* m_DepthStencilRenderTarget;
 
 	GraphicsPipelineDesc m_GraphicsPipelineDesc = {};
+	IPipelineStateObject* m_PipelineStateObject;
 
 	ICommandQueue* m_CommandQueue;
 	std::vector<ICommandList*> m_CommandLists;

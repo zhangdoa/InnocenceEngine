@@ -13,4 +13,5 @@ public:
 	GPUBufferAccessibility m_GPUBufferAccessibility = GPUBufferAccessibility::ReadOnly;
 	size_t m_Size = 0;
 	size_t m_BindingPoint = 0;
+	void* m_InitialData = 0;
 };
