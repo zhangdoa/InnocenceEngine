@@ -8,7 +8,7 @@ public:
 	GLShaderProgramComponent() {};
 	~GLShaderProgramComponent() {};
 
-	GLuint m_program = 0;
+	GLuint m_ProgramID = 0;
 	GLuint m_VSID = 0;
 	GLuint m_TCSID = 0;
 	GLuint m_TESID = 0;

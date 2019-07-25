@@ -1,6 +1,13 @@
 #pragma once
 #include "../IRenderingServer.h"
 
+class GLPipelineStateObject : public IPipelineStateObject
+{
+public:
+	std::function<void()> m_Activate;
+	std::function<void()> m_Deactivate;
+};
+
 class GLCommandList : public ICommandList
 {
 };

@@ -1,8 +1,6 @@
 #pragma once
-#include "../Common/InnoType.h"
-#include "../RenderingBackend/GLRenderingBackend/GLHeaders.h"
 #include "RenderPassDataComponent.h"
-#include "GLTextureDataComponent.h"
+#include "../RenderingBackend/GLRenderingBackend/GLHeaders.h"
 
 class GLRenderPassDataComponent : public RenderPassDataComponent
 {

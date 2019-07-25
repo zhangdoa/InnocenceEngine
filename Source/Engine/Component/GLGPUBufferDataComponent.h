@@ -9,4 +9,5 @@ public:
 	~GLGPUBufferDataComponent() {};
 
 	GLuint m_Handle = 0;
+	GLenum m_BufferType = 0;
 };
