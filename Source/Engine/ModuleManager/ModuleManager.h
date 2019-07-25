@@ -6,7 +6,7 @@ class InnoModuleManager : public IModuleManager
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoModuleManager);
 
-	bool setup(void* appHook, void* extraHook, char* pScmdline, IGameInstance* gameInstance) override;
+	bool setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient) override;
 	bool initialize() override;
 	bool run() override;
 	bool terminate() override;

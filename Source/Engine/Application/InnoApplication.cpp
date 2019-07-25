@@ -1,11 +1,13 @@
 #include "InnoApplication.h"
 #include "../ModuleManager/ModuleManager.h"
-#include "../../Client/GameInstance.h"
+#include "../../Client/RenderingClient/DefaultRenderingClient.h"
+#include "../../Client/LogicClient/DefaultGameClient.h"
 
 namespace InnoApplication
 {
 	std::unique_ptr<InnoModuleManager> m_pModuleManager;
-	std::unique_ptr<GameInstance> m_pGameInstance;
+	std::unique_ptr<DefaultRenderingClient> m_pRenderingClient;
+	std::unique_ptr<DefaultGameClient> m_pLogicClient;
 }
 
 bool InnoApplication::Setup(void* appHook, void* extraHook, char* pScmdline)
@@ -16,13 +18,19 @@ bool InnoApplication::Setup(void* appHook, void* extraHook, char* pScmdline)
 		return false;
 	}
 
-	m_pGameInstance = std::make_unique<GameInstance>();
-	if (!m_pGameInstance.get())
+	m_pRenderingClient = std::make_unique<DefaultRenderingClient>();
+	if (!m_pRenderingClient.get())
 	{
 		return false;
 	}
 
-	if (!m_pModuleManager.get()->setup(appHook, extraHook, pScmdline, m_pGameInstance.get()))
+	m_pLogicClient = std::make_unique<DefaultGameClient>();
+	if (!m_pLogicClient.get())
+	{
+		return false;
+	}
+
+	if (!m_pModuleManager.get()->setup(appHook, extraHook, pScmdline, m_pRenderingClient.get(), m_pLogicClient.get()))
 	{
 		return false;
 	}

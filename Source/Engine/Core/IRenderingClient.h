@@ -11,4 +11,4 @@ public:
 	virtual bool Initialize() = 0;
 	virtual bool Render() = 0;
 	virtual bool Terminate() = 0;
-}
+};

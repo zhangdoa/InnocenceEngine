@@ -17,10 +17,14 @@
 #include "../Core/IWindowSystem.h"
 #include "../RenderingFrontend/IRenderingFrontend.h"
 #include "../RenderingBackend/IRenderingBackend.h"
-#include "../../Client/IGameInstance.h"
+
+#include "../Core/IRenderingClient.h"
+#include "../Core/ILogicClient.h"
 
 enum EngineMode { GAME, EDITOR };
+
 enum RenderingBackend { GL, DX11, DX12, VK, MT };
+
 struct InitConfig
 {
 	EngineMode engineMode = EngineMode::GAME;
@@ -32,7 +36,7 @@ class IModuleManager
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IModuleManager);
 
-	INNO_ENGINE_API virtual bool setup(void* appHook, void* extraHook, char* pScmdline, IGameInstance* gameInstance) = 0;
+	INNO_ENGINE_API virtual bool setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient) = 0;
 	INNO_ENGINE_API virtual bool initialize() = 0;
 	INNO_ENGINE_API virtual bool run() = 0;
 	INNO_ENGINE_API virtual bool terminate() = 0;

@@ -110,7 +110,7 @@ namespace InnoModuleManagerNS
 {
 	InitConfig parseInitConfig(const std::string& arg);
 	bool createSubSystemInstance(void* appHook, void* extraHook, char* pScmdline);
-	bool setup(void* appHook, void* extraHook, char* pScmdline, IGameInstance* gameInstance);
+	bool setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient);
 	bool initialize();
 	bool update();
 	bool terminate();
@@ -141,7 +141,10 @@ namespace InnoModuleManagerNS
 	std::unique_ptr<IWindowSystem> m_WindowSystem;
 	std::unique_ptr<IRenderingFrontend> m_RenderingFrontend;
 	std::unique_ptr<IRenderingBackend> m_RenderingBackend;
-	IGameInstance* m_GameInstance;
+
+	IRenderingClient* m_RenderingClient;
+	ILogicClient* m_LogicClient;
+
 	FixedSizeString<128> m_applicationName;
 
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
@@ -376,10 +379,12 @@ bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook
 	return true;
 }
 
-bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline, IGameInstance* gameInstance)
+bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient)
 {
-	m_GameInstance = gameInstance;
-	m_applicationName = m_GameInstance->getGameName().c_str();
+	m_RenderingClient = renderingClient;
+	m_LogicClient = logicClient;
+
+	m_applicationName = m_LogicClient->getApplicationName().c_str();
 
 	if (!createSubSystemInstance(appHook, extraHook, pScmdline))
 	{
@@ -447,7 +452,12 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	subSystemSetup(PhysicsSystem);
 	subSystemSetup(EventSystem);
 
-	if (!m_GameInstance->setup())
+	if (!m_RenderingClient->Setup())
+	{
+		return false;
+	}
+
+	if (!m_LogicClient->setup())
 	{
 		return false;
 	}
@@ -494,7 +504,12 @@ bool InnoModuleManagerNS::initialize()
 	m_RenderingFrontend->initialize();
 	ImGuiWrapper::get().initialize();
 
-	if (!m_GameInstance->initialize())
+	if (!m_RenderingClient->Initialize())
+	{
+		return false;
+	}
+
+	if (!m_LogicClient->initialize())
 	{
 		return false;
 	}
@@ -508,7 +523,7 @@ bool InnoModuleManagerNS::update()
 {
 	while (1)
 	{
-		if (!m_GameInstance->update())
+		if (!m_LogicClient->update())
 		{
 			return false;
 		}
@@ -557,6 +572,8 @@ bool InnoModuleManagerNS::update()
 
 					m_isRendering = true;
 
+					m_RenderingClient->Render();
+
 					m_RenderingBackend->update();
 
 					if (m_showImGui)
@@ -594,9 +611,15 @@ bool InnoModuleManagerNS::update()
 
 bool InnoModuleManagerNS::terminate()
 {
-	if (!m_GameInstance->terminate())
+	if (!m_RenderingClient->Terminate())
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "Game can't be terminated!");
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "Rendering client can't be terminated!");
+		return false;
+	}
+
+	if (!m_LogicClient->terminate())
+	{
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "Logic client can't be terminated!");
 		return false;
 	}
 
@@ -661,11 +684,11 @@ bool InnoModuleManagerNS::terminate()
 	return true;
 }
 
-bool InnoModuleManager::setup(void* appHook, void* extraHook, char* pScmdline, IGameInstance* gameInstance)
+bool InnoModuleManager::setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient)
 {
 	g_pModuleManager = this;
 
-	return InnoModuleManagerNS::setup(appHook, extraHook, pScmdline, gameInstance);
+	return InnoModuleManagerNS::setup(appHook, extraHook, pScmdline, renderingClient, logicClient);
 }
 
 bool InnoModuleManager::initialize()

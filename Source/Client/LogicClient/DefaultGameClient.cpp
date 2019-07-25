@@ -1,4 +1,4 @@
-#include "GameInstance.h"
+#include "DefaultGameClient.h"
 #include "../../Engine/Common/CommonMacro.inl"
 #include "../../Engine/ComponentManager/ITransformComponentManager.h"
 #include "../../Engine/ComponentManager/IVisibleComponentManager.h"
@@ -160,7 +160,7 @@ void PlayerComponentCollection::rotateAroundRightAxis(float offset)
 	}
 }
 
-namespace GameInstanceNS
+namespace GameClientNS
 {
 	float seed = 0.0f;
 
@@ -201,7 +201,7 @@ namespace GameInstanceNS
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 }
 
-bool GameInstanceNS::setupReferenceSpheres()
+bool GameClientNS::setupReferenceSpheres()
 {
 	unsigned int l_matrixDim = 8;
 	float l_breadthInterval = 4.0f;
@@ -254,7 +254,7 @@ bool GameInstanceNS::setupReferenceSpheres()
 	return true;
 }
 
-bool GameInstanceNS::setupOpaqueSpheres()
+bool GameClientNS::setupOpaqueSpheres()
 {
 	unsigned int l_matrixDim = 8;
 	float l_breadthInterval = 4.0f;
@@ -317,7 +317,7 @@ bool GameInstanceNS::setupOpaqueSpheres()
 	return true;
 }
 
-bool GameInstanceNS::setupTransparentSpheres()
+bool GameClientNS::setupTransparentSpheres()
 {
 	unsigned int l_matrixDim = 8;
 	float l_breadthInterval = 4.0f;
@@ -371,7 +371,7 @@ bool GameInstanceNS::setupTransparentSpheres()
 	return true;
 }
 
-bool GameInstanceNS::setupPointLights()
+bool GameClientNS::setupPointLights()
 {
 	unsigned int l_matrixDim = 16;
 	float l_breadthInterval = 4.0f;
@@ -426,7 +426,7 @@ bool GameInstanceNS::setupPointLights()
 	return true;
 }
 
-bool GameInstanceNS::setup()
+bool GameClientNS::setup()
 {
 	auto l_testQuatToMat = []() -> bool {
 		std::default_random_engine generator;
@@ -467,7 +467,7 @@ bool GameInstanceNS::setup()
 	return true;
 }
 
-bool GameInstanceNS::initialize()
+bool GameClientNS::initialize()
 {
 	f_testFunc = []() {	g_pModuleManager->getFileSystem()->loadScene("Res//Scenes//Intro.InnoScene");
 	};
@@ -475,7 +475,7 @@ bool GameInstanceNS::initialize()
 	return true;
 }
 
-bool GameInstanceNS::updateMaterial(const ModelMap& modelMap, vec4 albedo, vec4 MRAT)
+bool GameClientNS::updateMaterial(const ModelMap& modelMap, vec4 albedo, vec4 MRAT)
 {
 	for (auto& j : modelMap)
 	{
@@ -492,48 +492,48 @@ bool GameInstanceNS::updateMaterial(const ModelMap& modelMap, vec4 albedo, vec4 
 	return true;
 };
 
-bool GameInstance::setup()
+bool DefaultGameClient::setup()
 {
 	bool l_result = true;
 	l_result = l_result && PlayerComponentCollection::setup();
-	l_result = l_result && GameInstanceNS::setup();
+	l_result = l_result && GameClientNS::setup();
 
 	return l_result;
 }
 
-bool GameInstance::initialize()
+bool DefaultGameClient::initialize()
 {
 	bool l_result = true;
 	g_pModuleManager->getFileSystem()->loadScene("Res//Scenes//default.InnoScene");
 
 	l_result = l_result && PlayerComponentCollection::initialize();
-	l_result = l_result && GameInstanceNS::initialize();
+	l_result = l_result && GameClientNS::initialize();
 
 	return l_result;
 }
 
-bool GameInstance::update()
+bool DefaultGameClient::update()
 {
-	return 	GameInstanceNS::update();
+	return 	GameClientNS::update();
 }
 
-bool GameInstance::terminate()
+bool DefaultGameClient::terminate()
 {
-	GameInstanceNS::m_objectStatus = ObjectStatus::Terminated;
+	GameClientNS::m_objectStatus = ObjectStatus::Terminated;
 	return true;
 }
 
-ObjectStatus GameInstance::getStatus()
+ObjectStatus DefaultGameClient::getStatus()
 {
-	return GameInstanceNS::m_objectStatus;
+	return GameClientNS::m_objectStatus;
 }
 
-std::string GameInstance::getGameName()
+std::string DefaultGameClient::getApplicationName()
 {
-	return std::string("GameInstance/");
+	return std::string("InnoGameClient/");
 }
 
-bool GameInstanceNS::update()
+bool GameClientNS::update()
 {
 	if (m_objectStatus == ObjectStatus::Activated)
 	{
@@ -554,7 +554,7 @@ bool GameInstanceNS::update()
 	return true;
 }
 
-void GameInstanceNS::runTest(unsigned int testTime, std::function<bool()> testCase)
+void GameClientNS::runTest(unsigned int testTime, std::function<bool()> testCase)
 {
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "Start test...");
 	for (unsigned int i = 0; i < testTime; i++)
@@ -595,7 +595,7 @@ void PlayerComponentCollection::update(float seed)
 	}
 }
 
-void GameInstanceNS::updateSpheres()
+void GameClientNS::updateSpheres()
 {
 	for (unsigned int i = 0; i < m_opaqueSphereVisibleComponents.size(); i += 4)
 	{

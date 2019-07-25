@@ -1,3 +1,4 @@
 add_library(InnoApplication InnoApplication.h InnoApplication.cpp)
 target_link_libraries(InnoApplication InnoEngine)
-target_link_libraries(InnoApplication InnoClient)
+target_link_libraries(InnoApplication InnoDefaultRenderingClient)
+target_link_libraries(InnoApplication InnoDefaultLogicClient)
