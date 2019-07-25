@@ -7,6 +7,7 @@ add_subdirectory("RenderingFrontend")
 add_subdirectory("RenderingBackend")
 add_subdirectory("ImGuiWrapper")
 add_subdirectory("RayTracer")
+add_subdirectory("RenderingServer")
 
 add_subdirectory("EntityManager")
 add_subdirectory("ComponentManager")

@@ -74,13 +74,13 @@ enum class RasterizerFaceWinding
 {
 	CCW = 1,
 	CW = 2
-}
+};
 
 enum class RasterizerCullMode
 {
 	Back = 1,
 	Front = 2
-}
+};
 
 struct DepthStencilDesc
 {
@@ -169,7 +169,7 @@ public:
 
 	GraphicsPipelineDesc m_GraphicsPipelineDesc = {};
 
-	ICommandQueue m_CommandQueue;
+	ICommandQueue* m_CommandQueue;
 	std::vector<ICommandList*> m_CommandLists;
 
 	size_t m_CurrentFrame = 0;
@@ -204,9 +204,6 @@ public:
 
 	virtual bool Setup() = 0;
 	virtual bool Initialize() = 0;
-	virtual bool Update() = 0;
-	virtual bool Render() = 0;
-	virtual bool Present() = 0;
 	virtual bool Terminate() = 0;
 
 	virtual ObjectStatus GetStatus() = 0;
@@ -262,7 +259,8 @@ public:
 	virtual bool UnbindMaterialDataComponent(RenderPassComponent* rhs) = 0;
 	virtual bool CommandListEnd(RenderPassComponent* rhs, size_t frameIndex) = 0;
 	virtual bool ExecuteCommandList(RenderPassComponent* rhs, size_t frameIndex) = 0;
-	virtual bool waitForFrame(RenderPassComponent* rhs, size_t frameIndex) = 0;
+	virtual bool WaitForFrame(RenderPassComponent* rhs, size_t frameIndex) = 0;
+	virtual bool Present() = 0;
 
 	virtual bool CopyDepthBuffer(RenderPassComponent* src, RenderPassComponent* dest) = 0;
 	virtual bool CopyStencilBuffer(RenderPassComponent* src, RenderPassComponent* dest) = 0;
