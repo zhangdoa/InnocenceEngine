@@ -469,7 +469,7 @@ bool GameInstanceNS::setup()
 
 bool GameInstanceNS::initialize()
 {
-	f_testFunc = []() {	g_pModuleManager->getFileSystem()->loadScene("Res//Scenes//animationTest.InnoScene");
+	f_testFunc = []() {	g_pModuleManager->getFileSystem()->loadScene("Res//Scenes//Intro.InnoScene");
 	};
 	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_R, ButtonStatus::PRESSED }, &f_testFunc);
 	return true;

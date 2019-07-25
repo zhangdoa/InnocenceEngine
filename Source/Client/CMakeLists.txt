@@ -1,6 +1,6 @@
 file(GLOB HEADERS "*.h")
 file(GLOB SOURCES "*.cpp")
-add_library(InnoGame SHARED ${HEADERS} ${SOURCES})
+add_library(InnoClient SHARED ${HEADERS} ${SOURCES})
 
 link_directories(${CMAKE_SOURCE_DIR}/Engine/System/)
-target_link_libraries(InnoGame InnoEngine)
+target_link_libraries(InnoClient InnoEngine)

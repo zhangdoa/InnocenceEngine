@@ -17,7 +17,7 @@
 #include "../Core/IWindowSystem.h"
 #include "../RenderingFrontend/IRenderingFrontend.h"
 #include "../RenderingBackend/IRenderingBackend.h"
-#include "../../Game/IGameInstance.h"
+#include "../../Client/IGameInstance.h"
 
 enum EngineMode { GAME, EDITOR };
 enum RenderingBackend { GL, DX11, DX12, VK, MT };

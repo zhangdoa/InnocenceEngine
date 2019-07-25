@@ -1,3 +1,3 @@
 add_library(InnoApplication InnoApplication.h InnoApplication.cpp)
 target_link_libraries(InnoApplication InnoEngine)
-target_link_libraries(InnoApplication InnoGame)
+target_link_libraries(InnoApplication InnoClient)

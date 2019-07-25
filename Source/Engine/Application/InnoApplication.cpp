@@ -1,6 +1,6 @@
 #include "InnoApplication.h"
 #include "../ModuleManager/ModuleManager.h"
-#include "../../Game/GameInstance.h"
+#include "../../Client/GameInstance.h"
 
 namespace InnoApplication
 {
