@@ -81,18 +81,18 @@ enum class RasterizerCullMode
 struct DepthStencilDesc
 {
 	bool m_UseDepthBuffer = false;
-	bool m_UseStencilBuffer = false;
-
 	bool m_AllowDepthWrite = false;
 	ComparisionFunction m_DepthComparisionFunction = ComparisionFunction::Never;
+	bool m_AllowDepthClamp = true;
 
-	uint8_t m_StencilReadMask = 0xFF;
+	bool m_UseStencilBuffer = false;
+	bool m_AllowStencilWrite = false;
+	uint8_t m_StencilReference = 0x00;
 	uint8_t m_StencilWriteMask = 0xFF;
 	StencilOperation m_FrontFaceStencilFailOperation = StencilOperation::Keep;
 	StencilOperation m_FrontFaceStencilPassDepthFailOperation = StencilOperation::Keep;
 	StencilOperation m_FrontFaceStencilPassOperation = StencilOperation::Keep;
 	ComparisionFunction m_FrontFaceStencilComparisionFunction = ComparisionFunction::Never;
-
 	StencilOperation m_BackFaceStencilFailOperation = StencilOperation::Keep;
 	StencilOperation m_BackFaceStencilPassDepthFailOperation = StencilOperation::Keep;
 	StencilOperation m_BackFaceStencilPassOperation = StencilOperation::Keep;
@@ -112,7 +112,6 @@ struct RasterizerDesc
 	RasterizerFillMode m_RasterizerFillMode = RasterizerFillMode::Solid;
 	RasterizerFaceWinding m_RasterizerFaceWinding = RasterizerFaceWinding::CCW;
 	RasterizerCullMode m_RasterizerCullMode = RasterizerCullMode::Back;
-	bool m_AllowDepthClamp = true;
 	bool m_AllowMultisample = false;
 };
 
