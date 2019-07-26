@@ -1,22 +1,6 @@
 #pragma once
 #include "../IRenderingServer.h"
 
-class DX11CommandList : public ICommandList
-{
-};
-
-class DX11CommandQueue : public ICommandQueue
-{
-};
-
-class DX11Semaphore : public ISemaphore
-{
-};
-
-class DX11Fence : public IFence
-{
-};
-
 class DX11RenderingServer : public IRenderingServer
 {
 	// Inherited via IRenderingServer
