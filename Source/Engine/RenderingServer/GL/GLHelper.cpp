@@ -593,7 +593,7 @@ bool GLHelper::GenerateRasterizerState(RasterizerDesc rasterizerDesc, GLPipeline
 
 bool GLHelper::GenerateViewportState(ViewportDesc viewportDesc, GLPipelineStateObject * PSO)
 {
-	PSO->m_Activate.emplace_back([=]() { glViewport((GLint)viewportDesc.m_TopLeftX, (GLint)(viewportDesc.m_Width - viewportDesc.m_TopLeftY), (GLsizei)viewportDesc.m_Width, (GLsizei)viewportDesc.m_Height); });
+	PSO->m_Activate.emplace_back([=]() { glViewport((GLint)viewportDesc.m_OriginX, (GLint)(viewportDesc.m_OriginY), (GLsizei)viewportDesc.m_Width, (GLsizei)viewportDesc.m_Height); });
 	PSO->m_Activate.emplace_back([=]() { glDepthRange(viewportDesc.m_MinDepth, viewportDesc.m_MaxDepth); });
 	return true;
 }

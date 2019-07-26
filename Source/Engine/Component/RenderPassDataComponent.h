@@ -111,7 +111,7 @@ struct BlendDesc
 
 struct RasterizerDesc
 {
-	PrimitiveTopology m_PrimitiveTopology = PrimitiveTopology::TriangleStrip;
+	PrimitiveTopology m_PrimitiveTopology = PrimitiveTopology::TriangleList;
 	RasterizerFillMode m_RasterizerFillMode = RasterizerFillMode::Solid;
 	RasterizerFaceWinding m_RasterizerFaceWinding = RasterizerFaceWinding::CCW;
 	bool m_UseCulling = false;
@@ -121,8 +121,8 @@ struct RasterizerDesc
 
 struct ViewportDesc
 {
-	float m_TopLeftX = 0.0f;
-	float m_TopLeftY = 0.0f;
+	float m_OriginX = 0.0f;
+	float m_OriginY = 0.0f;
 	float m_Width = 0.0f;
 	float m_Height = 0.0f;
 	float m_MinDepth = 0.0f;
