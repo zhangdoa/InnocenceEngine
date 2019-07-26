@@ -486,24 +486,26 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 	}
 
 	// RT
-	rhs->m_RenderTargets.reserve(rhs->m_RenderPassDesc.m_RenderTargetCount);
+	l_rhs->m_RenderTargets.reserve(l_rhs->m_RenderPassDesc.m_RenderTargetCount);
 
-	for (unsigned int i = 0; i < rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+	for (unsigned int i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
-		rhs->m_RenderTargets.emplace_back();
+		l_rhs->m_RenderTargets.emplace_back();
 	}
 
-	for (unsigned int i = 0; i < rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+	for (unsigned int i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
 		auto l_TDC = AddTextureDataComponent((std::string(l_rhs->m_componentName.c_str()) + "_" + std::to_string(i) + "/").c_str());
 
-		l_TDC->m_textureDataDesc = rhs->m_RenderPassDesc.m_RenderTargetDesc;
+		l_TDC->m_textureDataDesc = l_rhs->m_RenderPassDesc.m_RenderTargetDesc;
 
 		l_TDC->m_textureData = nullptr;
 
 		InitializeTextureDataComponent(l_TDC);
 
-		rhs->m_RenderTargets[i] = l_TDC;
+		AttachTextureToFramebuffer(reinterpret_cast<GLTextureDataComponent*>(l_TDC), l_rhs, i);
+
+		l_rhs->m_RenderTargets[i] = l_TDC;
 	}
 
 	std::vector<unsigned int> l_colorAttachments;
@@ -517,12 +519,12 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 	auto l_PSORawPtr = m_PSOPool->Spawn();
 	auto l_PSO = new(l_PSORawPtr)GLPipelineStateObject();
 
-	GenerateDepthStencilState(rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
-	GenerateBlendState(rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
-	GenerateRasterizerState(rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
-	GenerateViewportState(rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
+	GenerateDepthStencilState(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
+	GenerateBlendState(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
+	GenerateRasterizerState(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
+	GenerateViewportState(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
 
-	rhs->m_PipelineStateObject = l_PSO;
+	l_rhs->m_PipelineStateObject = l_PSO;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);

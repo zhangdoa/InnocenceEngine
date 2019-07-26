@@ -789,3 +789,71 @@ bool GLHelper::ActivateTexture(GLTextureDataComponent * GLTDC, int activateIndex
 
 	return true;
 }
+
+bool GLHelper::AttachTextureToFramebuffer(GLTextureDataComponent * GLTDC, GLRenderPassDataComponent * GLRPC, unsigned int attachmentIndex, unsigned int textureIndex, unsigned int mipLevel, unsigned int layer)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
+
+	if (GLTDC->m_textureDataDesc.samplerType == TextureSamplerType::SAMPLER_1D)
+	{
+		if (GLTDC->m_textureDataDesc.pixelDataFormat == TexturePixelDataFormat::DEPTH_COMPONENT)
+		{
+			glFramebufferTexture1D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_1D, GLTDC->m_TO, mipLevel);
+		}
+		else if (GLTDC->m_textureDataDesc.pixelDataFormat == TexturePixelDataFormat::DEPTH_STENCIL_COMPONENT)
+		{
+			glFramebufferTexture1D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_1D, GLTDC->m_TO, mipLevel);
+		}
+		else
+		{
+			glFramebufferTexture1D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + attachmentIndex, GL_TEXTURE_1D, GLTDC->m_TO, mipLevel);
+		}
+	}
+	else if (GLTDC->m_textureDataDesc.samplerType == TextureSamplerType::SAMPLER_2D)
+	{
+		if (GLTDC->m_textureDataDesc.pixelDataFormat == TexturePixelDataFormat::DEPTH_COMPONENT)
+		{
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GLTDC->m_TO, mipLevel);
+		}
+		else if (GLTDC->m_textureDataDesc.pixelDataFormat == TexturePixelDataFormat::DEPTH_STENCIL_COMPONENT)
+		{
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, GLTDC->m_TO, mipLevel);
+		}
+		else
+		{
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + attachmentIndex, GL_TEXTURE_2D, GLTDC->m_TO, mipLevel);
+		}
+	}
+	else if (GLTDC->m_textureDataDesc.samplerType == TextureSamplerType::SAMPLER_3D)
+	{
+		if (GLTDC->m_textureDataDesc.pixelDataFormat == TexturePixelDataFormat::DEPTH_COMPONENT)
+		{
+			glFramebufferTexture3D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_3D, GLTDC->m_TO, mipLevel, layer);
+		}
+		else if (GLTDC->m_textureDataDesc.pixelDataFormat == TexturePixelDataFormat::DEPTH_STENCIL_COMPONENT)
+		{
+			glFramebufferTexture3D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_3D, GLTDC->m_TO, mipLevel, layer);
+		}
+		else
+		{
+			glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + attachmentIndex, GL_TEXTURE_3D, GLTDC->m_TO, mipLevel, layer);
+		}
+	}
+	else
+	{
+		if (GLTDC->m_textureDataDesc.pixelDataFormat == TexturePixelDataFormat::DEPTH_COMPONENT)
+		{
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TO, mipLevel);
+		}
+		else if (GLTDC->m_textureDataDesc.pixelDataFormat == TexturePixelDataFormat::DEPTH_STENCIL_COMPONENT)
+		{
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TO, mipLevel);
+		}
+		else
+		{
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + attachmentIndex, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TO, mipLevel);
+		}
+	}
+
+	return true;
+}
