@@ -168,9 +168,6 @@ class IFence
 class RenderPassDataComponent : public InnoComponent
 {
 public:
-	RenderPassDataComponent() {};
-	~RenderPassDataComponent() {};
-
 	RenderPassDesc m_RenderPassDesc = {};
 
 	std::vector<TextureDataComponent*> m_RenderTargets;

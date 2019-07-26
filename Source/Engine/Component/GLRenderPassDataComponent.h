@@ -29,9 +29,6 @@ class GLFence : public IFence
 class GLRenderPassDataComponent : public RenderPassDataComponent
 {
 public:
-	GLRenderPassDataComponent() {};
-	~GLRenderPassDataComponent() {};
-
 	GLuint m_FBO = 0;
 	GLuint m_RBO = 0;
 

@@ -8,9 +8,6 @@ enum class FenceStatus { IDLE, WORKING };
 class DX12RenderPassDataComponent : public RenderPassDataComponent
 {
 public:
-	DX12RenderPassDataComponent() {};
-	~DX12RenderPassDataComponent() {};
-
 	ID3D12DescriptorHeap* m_RTVDescriptorHeap;
 	D3D12_DESCRIPTOR_HEAP_DESC m_RTVDescriptorHeapDesc = {};
 	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_RTVDescriptorCPUHandles;

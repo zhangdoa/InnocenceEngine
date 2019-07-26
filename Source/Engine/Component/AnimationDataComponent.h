@@ -19,9 +19,6 @@ struct Channel
 class AnimationDataComponent : public InnoComponent
 {
 public:
-	AnimationDataComponent() {};
-	~AnimationDataComponent() {};
-
 	unsigned int m_NumChannels;
 	Channel* m_Channels;
 };

@@ -7,9 +7,6 @@
 class DX11RenderPassDataComponent : public RenderPassDataComponent
 {
 public:
-	DX11RenderPassDataComponent() {};
-	~DX11RenderPassDataComponent() {};
-
 	std::vector<DX11TextureDataComponent*> m_DXTDCs;
 	D3D11_RENDER_TARGET_VIEW_DESC m_RTVDesc = {};
 	std::vector<ID3D11RenderTargetView*> m_RTVs;

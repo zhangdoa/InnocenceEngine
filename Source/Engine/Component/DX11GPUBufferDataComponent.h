@@ -5,6 +5,4 @@
 class DX11GPUBufferDataComponent : public GPUBufferDataComponent
 {
 public:
-	DX11GPUBufferDataComponent() {};
-	~DX11GPUBufferDataComponent() {};
 };

@@ -10,9 +10,6 @@ using ModelMap = std::unordered_map<MeshDataComponent*, MaterialDataComponent*>;
 class VisibleComponent : public InnoComponent
 {
 public:
-	VisibleComponent() {};
-	~VisibleComponent() {};
-
 	VisiblilityType m_visiblilityType = VisiblilityType::INNO_INVISIBLE;
 	MeshUsageType m_meshUsageType = MeshUsageType::STATIC;
 	MeshShapeType m_meshShapeType = MeshShapeType::QUAD;

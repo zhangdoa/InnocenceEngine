@@ -4,6 +4,4 @@
 class MTGPUBufferDataComponent : public GPUBufferDataComponent
 {
 public:
-	MTGPUBufferDataComponent() {};
-	~MTGPUBufferDataComponent() {};
 };

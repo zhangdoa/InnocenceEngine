@@ -5,6 +5,4 @@
 class DX11MaterialDataComponent : public MaterialDataComponent
 {
 public:
-	DX11MaterialDataComponent() {};
-	~DX11MaterialDataComponent() {};
 };

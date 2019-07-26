@@ -6,9 +6,6 @@
 class VKMeshDataComponent : public MeshDataComponent
 {
 public:
-	VKMeshDataComponent() {};
-	~VKMeshDataComponent() {};
-
 	VkBuffer m_VBO;
 	VkBuffer m_IBO;
 };

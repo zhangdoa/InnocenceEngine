@@ -18,9 +18,6 @@ struct VkTextureDataDesc
 class VKTextureDataComponent : public TextureDataComponent
 {
 public:
-	VKTextureDataComponent() {};
-	~VKTextureDataComponent() {};
-
 	VkImage m_image;
 	VkImageView m_imageView;
 

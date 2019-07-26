@@ -5,6 +5,4 @@
 class GLMaterialDataComponent : public MaterialDataComponent
 {
 public:
-	GLMaterialDataComponent() {};
-	~GLMaterialDataComponent() {};
 };

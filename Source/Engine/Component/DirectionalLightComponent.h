@@ -5,6 +5,4 @@
 class DirectionalLightComponent : public LightComponent
 {
 public:
-	DirectionalLightComponent() {};
-	~DirectionalLightComponent() {};
 };

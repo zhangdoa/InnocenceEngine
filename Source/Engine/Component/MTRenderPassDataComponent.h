@@ -6,8 +6,5 @@
 class MTRenderPassDataComponent
 {
 public:
-	MTRenderPassDataComponent() {};
-	~MTRenderPassDataComponent() {};
-
 	std::vector<MTTextureDataComponent*> m_MTTDCs;
 };

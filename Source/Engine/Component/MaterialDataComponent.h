@@ -5,9 +5,6 @@
 class MaterialDataComponent : public InnoComponent
 {
 public:
-	MaterialDataComponent() {};
-	~MaterialDataComponent() {};
-
 	MeshCustomMaterial m_meshCustomMaterial = {};
 	TextureDataComponent* m_normalTexture = 0;
 	TextureDataComponent* m_albedoTexture = 0;

@@ -5,6 +5,4 @@
 class MTTextureDataComponent : public TextureDataComponent
 {
 public:
-	MTTextureDataComponent() {};
-	~MTTextureDataComponent() {};
 };

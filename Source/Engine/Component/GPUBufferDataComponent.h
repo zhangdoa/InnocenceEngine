@@ -7,9 +7,6 @@ enum class GPUBufferAccessibility { ReadOnly = 1, WriteOnly = 2, ReadWrite = Rea
 class GPUBufferDataComponent : public InnoComponent
 {
 public:
-	GPUBufferDataComponent() {};
-	~GPUBufferDataComponent() {};
-
 	GPUBufferAccessibility m_GPUBufferAccessibility = GPUBufferAccessibility::ReadOnly;
 	size_t m_Size = 0;
 	size_t m_BindingPoint = 0;

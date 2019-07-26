@@ -5,9 +5,6 @@
 class CameraComponent : public InnoComponent
 {
 public:
-	CameraComponent() {};
-	~CameraComponent() {};
-
 	mat4 m_projectionMatrix;
 	Frustum m_frustum;
 	Ray m_rayOfEye;

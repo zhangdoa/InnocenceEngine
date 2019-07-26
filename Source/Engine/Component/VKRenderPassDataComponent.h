@@ -7,9 +7,6 @@
 class VKRenderPassDataComponent : public RenderPassDataComponent
 {
 public:
-	VKRenderPassDataComponent() {};
-	~VKRenderPassDataComponent() {};
-
 	std::vector<VkAttachmentReference> colorAttachmentRefs = {};
 	VkAttachmentReference depthAttachmentRef = {};
 	VkSubpassDescription subpassDesc = {};

@@ -5,6 +5,4 @@
 class VKGPUBufferDataComponent : public GPUBufferDataComponent
 {
 public:
-	VKGPUBufferDataComponent() {};
-	~VKGPUBufferDataComponent() {};
 };

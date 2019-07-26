@@ -22,9 +22,6 @@ struct GLTextureDataDesc
 class GLTextureDataComponent : public TextureDataComponent
 {
 public:
-	GLTextureDataComponent() {};
-	~GLTextureDataComponent() {};
-
 	GLuint m_TO = 0;
 	GLTextureDataDesc m_GLTextureDataDesc = GLTextureDataDesc();
 };

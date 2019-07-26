@@ -5,9 +5,6 @@
 class PhysicsDataComponent : public InnoComponent
 {
 public:
-	PhysicsDataComponent() {};
-	~PhysicsDataComponent() {};
-
-	AABB m_AABB;
-	Sphere m_sphere;
+	AABB m_AABB = {};
+	Sphere m_sphere = {};
 };
