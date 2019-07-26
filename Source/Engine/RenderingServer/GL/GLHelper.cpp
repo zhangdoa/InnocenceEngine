@@ -570,7 +570,7 @@ bool GLHelper::GenerateRasterizerState(RasterizerDesc rasterizerDesc, GLPipeline
 	if (rasterizerDesc.m_UseCulling)
 	{
 		PSO->m_Activate.emplace_back([]() { glEnable(GL_CULL_FACE); });
-		PSO->m_Deactivate.emplace_back([]() { glDisable(GL_CULL_FACE); });
+		PSO->m_Deactivate.emplace_front([]() { glDisable(GL_CULL_FACE); });
 
 		if (rasterizerDesc.m_RasterizerCullMode == RasterizerCullMode::Back)
 		{
@@ -585,7 +585,7 @@ bool GLHelper::GenerateRasterizerState(RasterizerDesc rasterizerDesc, GLPipeline
 	if (rasterizerDesc.m_AllowMultisample)
 	{
 		PSO->m_Activate.emplace_back([]() { glEnable(GL_MULTISAMPLE); });
-		PSO->m_Deactivate.emplace_back([]() { glDisable(GL_MULTISAMPLE); });
+		PSO->m_Deactivate.emplace_front([]() { glDisable(GL_MULTISAMPLE); });
 	}
 
 	return true;

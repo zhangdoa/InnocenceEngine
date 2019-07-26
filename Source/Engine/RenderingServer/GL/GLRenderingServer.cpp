@@ -276,6 +276,9 @@ bool GLRenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, l_rhs->m_IBO);
 
 #ifdef _DEBUG
+	auto l_VAOName = std::string(l_rhs->m_componentName.c_str());
+	l_VAOName += "_VAO";
+	glObjectLabel(GL_VERTEX_ARRAY, l_rhs->m_VAO, (GLsizei)l_VAOName.size(), l_VAOName.c_str());
 	auto l_VBOName = std::string(l_rhs->m_componentName.c_str());
 	l_VBOName += "_VBO";
 	glObjectLabel(GL_BUFFER, l_rhs->m_VBO, (GLsizei)l_VBOName.size(), l_VBOName.c_str());

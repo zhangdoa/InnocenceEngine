@@ -1,4 +1,5 @@
 #include "DefaultRenderingClient.h"
+#include "OpaquePass.h"
 
 bool DefaultRenderingClient::Setup()
 {
@@ -7,11 +8,14 @@ bool DefaultRenderingClient::Setup()
 
 bool DefaultRenderingClient::Initialize()
 {
+	OpaquePass::Initialize();
 	return true;
 }
 
 bool DefaultRenderingClient::Render()
 {
+	OpaquePass::PrepareCommandList();
+
 	return true;
 }
 
