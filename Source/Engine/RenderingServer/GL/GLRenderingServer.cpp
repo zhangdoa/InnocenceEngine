@@ -137,8 +137,18 @@ MeshDataComponent * GLRenderingServer::AddMeshDataComponent(const char * name)
 	l_count++;
 	auto l_rawPtr = m_MeshDataComponentPool->Spawn();
 	auto l_result = new(l_rawPtr)GLMeshDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Mesh_" + std::to_string(l_count) + "/").c_str());
+	std::string l_name;
+	if (strcmp(name, ""))
+	{
+		l_name = name;
+	}
+	else
+	{
+		l_name = ("Mesh_" + std::to_string(l_count) + "/");
+	}
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
 	l_result->m_parentEntity = l_parentEntity;
+	l_result->m_componentName = l_name.c_str();
 	return l_result;
 }
 
@@ -148,8 +158,18 @@ TextureDataComponent * GLRenderingServer::AddTextureDataComponent(const char * n
 	l_count++;
 	auto l_rawPtr = m_TextureDataComponentPool->Spawn();
 	auto l_result = new(l_rawPtr)GLTextureDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Texture_" + std::to_string(l_count) + "/").c_str());
+	std::string l_name;
+	if (strcmp(name, ""))
+	{
+		l_name = name;
+	}
+	else
+	{
+		l_name = ("Texture_" + std::to_string(l_count) + "/");
+	}
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
 	l_result->m_parentEntity = l_parentEntity;
+	l_result->m_componentName = l_name.c_str();
 	return l_result;
 }
 
@@ -159,8 +179,18 @@ MaterialDataComponent * GLRenderingServer::AddMaterialDataComponent(const char *
 	l_count++;
 	auto l_rawPtr = m_MaterialDataComponentPool->Spawn();
 	auto l_result = new(l_rawPtr)GLMaterialDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Material_" + std::to_string(l_count) + "/").c_str());
+	std::string l_name;
+	if (strcmp(name, ""))
+	{
+		l_name = name;
+	}
+	else
+	{
+		l_name = ("Material_" + std::to_string(l_count) + "/");
+	}
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
 	l_result->m_parentEntity = l_parentEntity;
+	l_result->m_componentName = l_name.c_str();
 	return l_result;
 }
 
@@ -170,8 +200,18 @@ RenderPassDataComponent * GLRenderingServer::AddRenderPassDataComponent(const ch
 	l_count++;
 	auto l_rawPtr = m_RenderPassDataComponentPool->Spawn();
 	auto l_result = new(l_rawPtr)GLRenderPassDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("RenderPass_" + std::to_string(l_count) + "/").c_str());
+	std::string l_name;
+	if (strcmp(name, ""))
+	{
+		l_name = name;
+	}
+	else
+	{
+		l_name = ("RenderPass_" + std::to_string(l_count) + "/");
+	}
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
 	l_result->m_parentEntity = l_parentEntity;
+	l_result->m_componentName = l_name.c_str();
 	return l_result;
 }
 
@@ -181,8 +221,18 @@ ShaderProgramComponent * GLRenderingServer::AddShaderProgramComponent(const char
 	l_count++;
 	auto l_rawPtr = m_ShaderProgramComponentPool->Spawn();
 	auto l_result = new(l_rawPtr)GLShaderProgramComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("ShaderProgram_" + std::to_string(l_count) + "/").c_str());
+	std::string l_name;
+	if (strcmp(name, ""))
+	{
+		l_name = name;
+	}
+	else
+	{
+		l_name = ("ShaderProgram_" + std::to_string(l_count) + "/");
+	}
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
 	l_result->m_parentEntity = l_parentEntity;
+	l_result->m_componentName = l_name.c_str();
 	return l_result;
 }
 
@@ -192,8 +242,18 @@ GPUBufferDataComponent * GLRenderingServer::AddGPUBufferDataComponent(const char
 	l_count++;
 	auto l_rawPtr = m_ShaderProgramComponentPool->Spawn();
 	auto l_result = new(l_rawPtr)GLGPUBufferDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("GPUBufferData_" + std::to_string(l_count) + "/").c_str());
+	std::string l_name;
+	if (strcmp(name, ""))
+	{
+		l_name = name;
+	}
+	else
+	{
+		l_name = ("GPUBufferData_" + std::to_string(l_count) + "/");
+	}
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
 	l_result->m_parentEntity = l_parentEntity;
+	l_result->m_componentName = l_name.c_str();
 	return l_result;
 }
 
@@ -214,6 +274,15 @@ bool GLRenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 
 	glGenBuffers(1, &l_rhs->m_IBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, l_rhs->m_IBO);
+
+#ifdef _DEBUG
+	auto l_VBOName = std::string(l_rhs->m_componentName.c_str());
+	l_VBOName += "_VBO";
+	glObjectLabel(GL_BUFFER, l_rhs->m_VBO, (GLsizei)l_VBOName.size(), l_VBOName.c_str());
+	auto l_IBOName = std::string(l_rhs->m_componentName.c_str());
+	l_IBOName += "_IBO";
+	glObjectLabel(GL_BUFFER, l_rhs->m_IBO, (GLsizei)l_IBOName.size(), l_IBOName.c_str());
+#endif
 
 	// position vec4
 	glEnableVertexAttribArray(0);
@@ -266,6 +335,12 @@ bool GLRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 	glGenTextures(1, &l_rhs->m_TO);
 
 	glBindTexture(l_rhs->m_GLTextureDataDesc.textureSamplerType, l_rhs->m_TO);
+
+#ifdef _DEBUG
+	auto l_TOName = std::string(l_rhs->m_componentName.c_str());
+	l_TOName += "_TO";
+	glObjectLabel(GL_TEXTURE, l_rhs->m_TO, (GLsizei)l_TOName.size(), l_TOName.c_str());
+#endif
 
 	glTexParameteri(l_rhs->m_GLTextureDataDesc.textureSamplerType, GL_TEXTURE_WRAP_R, l_rhs->m_GLTextureDataDesc.textureWrapMethod);
 	glTexParameteri(l_rhs->m_GLTextureDataDesc.textureSamplerType, GL_TEXTURE_WRAP_S, l_rhs->m_GLTextureDataDesc.textureWrapMethod);
@@ -365,7 +440,12 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 	// FBO
 	glGenFramebuffers(1, &l_rhs->m_FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, l_rhs->m_FBO);
-	glObjectLabel(GL_FRAMEBUFFER, l_rhs->m_FBO, (GLsizei)l_rhs->m_componentName.size(), l_rhs->m_componentName.c_str());
+
+#ifdef _DEBUG
+	auto l_FBOName = std::string(l_rhs->m_componentName.c_str());
+	l_FBOName += "_FBO";
+	glObjectLabel(GL_FRAMEBUFFER, l_rhs->m_FBO, (GLsizei)l_FBOName.size(), l_FBOName.c_str());
+#endif
 
 	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: ", l_rhs->m_componentName.c_str(), " FBO has been generated.");
 
@@ -383,7 +463,12 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 
 		glGenRenderbuffers(1, &l_rhs->m_RBO);
 		glBindRenderbuffer(GL_RENDERBUFFER, l_rhs->m_RBO);
-		glObjectLabel(GL_RENDERBUFFER, l_rhs->m_RBO, (GLsizei)l_rhs->m_componentName.size(), l_rhs->m_componentName.c_str());
+
+#ifdef _DEBUG
+		auto l_RBOName = std::string(l_rhs->m_componentName.c_str());
+		l_RBOName += "_RBO";
+		glObjectLabel(GL_RENDERBUFFER, l_rhs->m_RBO, (GLsizei)l_RBOName.size(), l_RBOName.c_str());
+#endif
 
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, l_rhs->m_renderBufferAttachmentType, GL_RENDERBUFFER, l_rhs->m_RBO);
 		glRenderbufferStorage(GL_RENDERBUFFER, l_rhs->m_renderBufferInternalFormat, l_rhs->m_RenderPassDesc.m_RenderTargetDesc.width, l_rhs->m_RenderPassDesc.m_RenderTargetDesc.height);
@@ -397,7 +482,6 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 		else
 		{
 			InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: ", l_rhs->m_componentName.c_str(), " RBO has been generated.");
-			return true;
 		}
 	}
 
@@ -411,7 +495,7 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 
 	for (unsigned int i = 0; i < rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
-		auto l_TDC = AddTextureDataComponent((std::string(l_rhs->m_componentName.c_str()) + "_" + std::to_string(i)).c_str());
+		auto l_TDC = AddTextureDataComponent((std::string(l_rhs->m_componentName.c_str()) + "_" + std::to_string(i) + "/").c_str());
 
 		l_TDC->m_textureDataDesc = rhs->m_RenderPassDesc.m_RenderTargetDesc;
 
@@ -499,7 +583,20 @@ bool GLRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent 
 	glBindBuffer(l_rhs->m_BufferType, l_rhs->m_Handle);
 	glBufferData(l_rhs->m_BufferType, l_rhs->m_Size, l_rhs->m_InitialData, GL_DYNAMIC_DRAW);
 	glBindBufferRange(l_rhs->m_BufferType, (GLuint)l_rhs->m_BindingPoint, l_rhs->m_Handle, 0, l_rhs->m_Size);
-	glObjectLabel(GL_BUFFER, l_rhs->m_Handle, (GLsizei)l_rhs->m_componentName.size(), l_rhs->m_componentName.c_str());
+
+#ifdef _DEBUG
+	auto l_GPUBufferName = std::string(l_rhs->m_componentName.c_str());
+	if (l_rhs->m_GPUBufferAccessibility == GPUBufferAccessibility::ReadOnly)
+	{
+		l_GPUBufferName += "_UBO";
+	}
+	else
+	{
+		l_GPUBufferName += "_SSBO";
+	}
+	glObjectLabel(GL_BUFFER, l_rhs->m_Handle, (GLsizei)l_GPUBufferName.size(), l_GPUBufferName.c_str());
+#endif
+
 	glBindBuffer(l_rhs->m_BufferType, 0);
 
 	return true;
