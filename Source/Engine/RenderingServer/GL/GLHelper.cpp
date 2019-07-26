@@ -451,6 +451,153 @@ bool GLHelper::generateDepthStencilState(DepthStencilDesc DSDesc, GLPipelineStat
 	return true;
 }
 
+GLenum getBlendFactorEnum(BlendFactor blendFactor)
+{
+	GLenum l_result;
+
+	switch (blendFactor)
+	{
+	case BlendFactor::Zero: l_result = GL_ZERO;
+		break;
+	case BlendFactor::One: l_result = GL_ONE;
+		break;
+	case BlendFactor::SrcColor: l_result = GL_SRC_COLOR;
+		break;
+	case BlendFactor::OneMinusSrcColor: l_result = GL_ONE_MINUS_SRC_COLOR;
+		break;
+	case BlendFactor::SrcAlpha: l_result = GL_SRC_ALPHA;
+		break;
+	case BlendFactor::OneMinusSrcAlpha: l_result = GL_ONE_MINUS_SRC_ALPHA;
+		break;
+	case BlendFactor::DestColor: l_result = GL_DST_COLOR;
+		break;
+	case BlendFactor::OneMinusDestColor: l_result = GL_ONE_MINUS_DST_COLOR;
+		break;
+	case BlendFactor::DestAlpha: l_result = GL_DST_ALPHA;
+		break;
+	case BlendFactor::OneMinusDestAlpha: l_result = GL_ONE_MINUS_DST_ALPHA;
+		break;
+	case BlendFactor::Src1Color: l_result = GL_SRC1_COLOR;
+		break;
+	case BlendFactor::OneMinusSrc1Color: l_result = GL_ONE_MINUS_SRC1_COLOR;
+		break;
+	case BlendFactor::Src1Alpha: l_result = GL_SRC1_ALPHA;
+		break;
+	case BlendFactor::OneMinusSrc1Alpha: l_result = GL_ONE_MINUS_SRC1_ALPHA;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+bool GLHelper::generateBlendState(BlendDesc blendDesc, GLPipelineStateObject * PSO)
+{
+	if (blendDesc.m_UseBlend)
+	{
+		PSO->m_Activate.emplace_back([]() { glEnable(GL_BLEND); });
+		PSO->m_Deactivate.emplace_front([]() { glDisable(GL_BLEND); });
+
+		auto l_srcRGBFactor = getBlendFactorEnum(blendDesc.m_SourceRGBFactor);
+		auto l_srcAFactor = getBlendFactorEnum(blendDesc.m_SourceAlphaFactor);
+		auto l_destRGBFactor = getBlendFactorEnum(blendDesc.m_DestinationRGBFactor);
+		auto l_destAFactor = getBlendFactorEnum(blendDesc.m_DestinationAlphaFactor);
+
+		PSO->m_Activate.emplace_back([=]() { glBlendFuncSeparate(l_srcRGBFactor, l_srcAFactor, l_destRGBFactor, l_destAFactor); });
+	}
+	return true;
+}
+
+GLenum getPrimitiveTopologyEnum(PrimitiveTopology primitiveTopology)
+{
+	GLenum l_result;
+
+	switch (primitiveTopology)
+	{
+	case PrimitiveTopology::Point: l_result = GL_POINTS;
+		break;
+	case PrimitiveTopology::Line: l_result = GL_LINE;
+		break;
+	case PrimitiveTopology::TriangleList: l_result = GL_TRIANGLES;
+		break;
+	case PrimitiveTopology::TriangleStrip: l_result = GL_TRIANGLE_STRIP;
+		break;
+	case PrimitiveTopology::Patch: l_result = GL_PATCHES;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+GLenum getRasterizerFillModeEnum(RasterizerFillMode rasterizerFillMode)
+{
+	GLenum l_result;
+
+	switch (rasterizerFillMode)
+	{
+	case RasterizerFillMode::Point: l_result = GL_POINT;
+		break;
+	case RasterizerFillMode::Wireframe: l_result = GL_LINE;
+		break;
+	case RasterizerFillMode::Solid: l_result = GL_FILL;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+bool GLHelper::generateRasterizerState(RasterizerDesc rasterizerDesc, GLPipelineStateObject * PSO)
+{
+	PSO->m_GLPrimitiveTopology = getPrimitiveTopologyEnum(rasterizerDesc.m_PrimitiveTopology);
+
+	auto l_rasterizerFillMode = getRasterizerFillModeEnum(rasterizerDesc.m_RasterizerFillMode);
+	PSO->m_Activate.emplace_back([=]() { glPolygonMode(GL_FRONT_AND_BACK, l_rasterizerFillMode); });
+
+	if (rasterizerDesc.m_RasterizerFaceWinding == RasterizerFaceWinding::CCW)
+	{
+		PSO->m_Activate.emplace_back([]() { glFrontFace(GL_CCW); });
+	}
+	else
+	{
+		PSO->m_Activate.emplace_back([]() { glFrontFace(GL_CW); });
+	}
+
+	if (rasterizerDesc.m_UseCulling)
+	{
+		PSO->m_Activate.emplace_back([]() { glEnable(GL_CULL_FACE); });
+		PSO->m_Deactivate.emplace_back([]() { glDisable(GL_CULL_FACE); });
+
+		if (rasterizerDesc.m_RasterizerCullMode == RasterizerCullMode::Back)
+		{
+			PSO->m_Activate.emplace_back([]() { glCullFace(GL_BACK); });
+		}
+		else
+		{
+			PSO->m_Activate.emplace_back([]() { glCullFace(GL_FRONT); });
+		}
+	}
+
+	if (rasterizerDesc.m_AllowMultisample)
+	{
+		PSO->m_Activate.emplace_back([]() { glEnable(GL_MULTISAMPLE); });
+		PSO->m_Deactivate.emplace_back([]() { glDisable(GL_MULTISAMPLE); });
+	}
+
+	return true;
+}
+
+bool GLHelper::generateViewportState(ViewportDesc viewportDesc, GLPipelineStateObject * PSO)
+{
+	PSO->m_Activate.emplace_back([=]() { glViewport((GLint)viewportDesc.m_TopLeftX, (GLint)(viewportDesc.m_Width - viewportDesc.m_TopLeftY), (GLsizei)viewportDesc.m_Width, (GLsizei)viewportDesc.m_Height); });
+	PSO->m_Activate.emplace_back([=]() { glDepthRange(viewportDesc.m_MinDepth, viewportDesc.m_MaxDepth); });
+	return true;
+}
+
 std::string GLHelper::LoadShaderFile(const std::string & path)
 {
 	auto f_findIncludeFilePath = [](const std::string & content) {

@@ -7,6 +7,7 @@ class GLPipelineStateObject : public IPipelineStateObject
 public:
 	std::deque<std::function<void()>> m_Activate;
 	std::deque<std::function<void()>> m_Deactivate;
+	GLenum m_GLPrimitiveTopology = 0;
 };
 
 class GLCommandList : public ICommandList

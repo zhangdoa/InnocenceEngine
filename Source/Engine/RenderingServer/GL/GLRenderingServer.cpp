@@ -97,11 +97,6 @@ bool GLRenderingServer::Setup()
 	m_PSOPool = InnoMemory::CreateObjectPool(sizeof(GLPipelineStateObject), 128);
 	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool(sizeof(GLShaderProgramComponent), 256);
 
-	if (g_pModuleManager->getRenderingFrontend()->getRenderingConfig().MSAAdepth)
-	{
-		glEnable(GL_MULTISAMPLE);
-	}
-
 	glEnable(GL_DEBUG_OUTPUT);
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 	glDebugMessageCallback(MessageCallback, 0);
@@ -439,6 +434,9 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 	auto l_PSO = new(l_PSORawPtr)GLPipelineStateObject();
 
 	generateDepthStencilState(rhs->m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
+	generateBlendState(rhs->m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
+	generateRasterizerState(rhs->m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
+	generateViewportState(rhs->m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
 
 	rhs->m_PipelineStateObject = l_PSO;
 
