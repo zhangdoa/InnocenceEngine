@@ -328,11 +328,127 @@ GLsizei GLHelper::getTexturePixelDataSize(TextureDataDesc textureDataDesc)
 	case TexturePixelDataFormat::RGBA:l_channelSize = 4; break;
 	case TexturePixelDataFormat::DEPTH_COMPONENT:l_channelSize = 1; break;
 	case TexturePixelDataFormat::DEPTH_STENCIL_COMPONENT:l_channelSize = 1; break;
+	}
+
+	return l_singlePixelSize * l_channelSize;
+}
+
+GLenum getComparisionEnum(ComparisionFunction comparisionFunction)
+{
+	GLenum l_result;
+
+	switch (comparisionFunction)
+	{
+	case ComparisionFunction::Never: l_result = GL_NEVER;
+		break;
+	case ComparisionFunction::Less: l_result = GL_LESS;
+		break;
+	case ComparisionFunction::Equal: l_result = GL_EQUAL;
+		break;
+	case ComparisionFunction::LessEqual: l_result = GL_LEQUAL;
+		break;
+	case ComparisionFunction::Greater: l_result = GL_GREATER;
+		break;
+	case ComparisionFunction::NotEqual: l_result = GL_NOTEQUAL;
+		break;
+	case ComparisionFunction::GreaterEqual: l_result = GL_GEQUAL;
+		break;
+	case ComparisionFunction::Always: l_result = GL_ALWAYS;
+		break;
 	default:
 		break;
 	}
 
-	return l_singlePixelSize * l_channelSize;
+	return l_result;
+}
+
+GLenum getStencilOperationEnum(StencilOperation stencilOperation)
+{
+	GLenum l_result;
+
+	switch (stencilOperation)
+	{
+	case StencilOperation::Keep: l_result = GL_KEEP;
+		break;
+	case StencilOperation::Zero: l_result = GL_ZERO;
+		break;
+	case StencilOperation::Replace: l_result = GL_REPLACE;
+		break;
+	case StencilOperation::IncreaseSat: l_result = GL_INCR_WRAP;
+		break;
+	case StencilOperation::DecreaseSat: l_result = GL_DECR_WRAP;
+		break;
+	case StencilOperation::Invert: l_result = GL_INVERT;
+		break;
+	case StencilOperation::Increase: l_result = GL_INCR;
+		break;
+	case StencilOperation::Decrease: l_result = GL_DECR;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+bool GLHelper::generateDepthStencilState(DepthStencilDesc DSDesc, GLPipelineStateObject * PSO)
+{
+	if (DSDesc.m_UseDepthBuffer)
+	{
+		PSO->m_Activate.emplace_back([]() { glEnable(GL_DEPTH_TEST); });
+		PSO->m_Deactivate.emplace_front([]() { glDisable(GL_DEPTH_TEST); });
+
+		if (DSDesc.m_AllowDepthWrite)
+		{
+			PSO->m_Activate.emplace_back([]() { glDepthMask(GL_TRUE); });
+		}
+		else
+		{
+			PSO->m_Activate.emplace_back([]() { glDepthMask(GL_FALSE); });
+		}
+
+		auto l_comparisionEnum = getComparisionEnum(DSDesc.m_DepthComparisionFunction);
+		PSO->m_Activate.emplace_back([=]() { glDepthFunc(l_comparisionEnum); });
+
+		if (DSDesc.m_AllowDepthClamp)
+		{
+			PSO->m_Activate.emplace_back([]() { glEnable(GL_DEPTH_CLAMP); });
+		}
+	}
+
+	if (DSDesc.m_UseStencilBuffer)
+	{
+		PSO->m_Activate.emplace_back([]() { glEnable(GL_STENCIL_TEST); });
+		PSO->m_Deactivate.emplace_front([]() { glDisable(GL_STENCIL_TEST); });
+
+		if (DSDesc.m_AllowStencilWrite)
+		{
+			PSO->m_Activate.emplace_back([]() { glStencilMask(0xFF); });
+		}
+		else
+		{
+			PSO->m_Activate.emplace_back([]() { glStencilMask(0x00); });
+		}
+
+		auto l_FFStencilComparisionFunction = getComparisionEnum(DSDesc.m_FrontFaceStencilComparisionFunction);
+		auto l_BFStencilComparisionFunction = getComparisionEnum(DSDesc.m_BackFaceStencilComparisionFunction);
+
+		PSO->m_Activate.emplace_back([=]() { glStencilFuncSeparate(GL_FRONT, l_FFStencilComparisionFunction, DSDesc.m_StencilReference, DSDesc.m_StencilWriteMask); });
+		PSO->m_Activate.emplace_back([=]() { glStencilFuncSeparate(GL_BACK, l_BFStencilComparisionFunction, DSDesc.m_StencilReference, DSDesc.m_StencilWriteMask); });
+
+		auto l_FFStencilFailOp = getStencilOperationEnum(DSDesc.m_FrontFaceStencilFailOperation);
+		auto l_FFStencilPassDepthFailOp = getStencilOperationEnum(DSDesc.m_FrontFaceStencilPassDepthFailOperation);
+		auto l_FFStencilPassOp = getStencilOperationEnum(DSDesc.m_FrontFaceStencilPassOperation);
+
+		auto l_BFStencilFailOp = getStencilOperationEnum(DSDesc.m_BackFaceStencilFailOperation);
+		auto l_BFStencilPassDepthFailOp = getStencilOperationEnum(DSDesc.m_BackFaceStencilPassDepthFailOperation);
+		auto l_BFStencilPassOp = getStencilOperationEnum(DSDesc.m_BackFaceStencilPassOperation);
+
+		PSO->m_Activate.emplace_back([=]() { glStencilOpSeparate(GL_FRONT, l_FFStencilFailOp, l_FFStencilPassDepthFailOp, l_FFStencilPassOp); });
+		PSO->m_Activate.emplace_back([=]() { glStencilOpSeparate(GL_BACK, l_BFStencilFailOp, l_BFStencilPassDepthFailOp, l_BFStencilPassOp); });
+	}
+
+	return true;
 }
 
 std::string GLHelper::LoadShaderFile(const std::string & path)
@@ -415,7 +531,7 @@ bool GLHelper::AddShaderHandle(GLuint & shaderProgram, GLuint & shaderID, GLuint
 
 	if (shaderID == 0)
 	{
-		InnoLogger::Log(LogLevel::Error, "GLRenderingServer: Shader creation failed! Memory location is invaild when adding shader!");
+		InnoLogger::Log(LogLevel::Error, "GLRenderingServer: Shader creation failed! Memory location is invalid when adding shader!");
 		glDeleteShader(shaderID);
 		return false;
 	}

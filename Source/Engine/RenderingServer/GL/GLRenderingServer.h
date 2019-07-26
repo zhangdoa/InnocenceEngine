@@ -1,29 +1,6 @@
 #pragma once
 #include "../IRenderingServer.h"
 
-class GLPipelineStateObject : public IPipelineStateObject
-{
-public:
-	std::function<void()> m_Activate;
-	std::function<void()> m_Deactivate;
-};
-
-class GLCommandList : public ICommandList
-{
-};
-
-class GLCommandQueue : public ICommandQueue
-{
-};
-
-class GLSemaphore : public ISemaphore
-{
-};
-
-class GLFence : public IFence
-{
-};
-
 class GLRenderingServer : public IRenderingServer
 {
 	// Inherited via IRenderingServer

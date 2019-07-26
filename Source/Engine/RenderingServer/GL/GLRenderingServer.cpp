@@ -76,6 +76,7 @@ namespace GLRenderingServerNS
 	IObjectPool* m_MaterialDataComponentPool;
 	IObjectPool* m_TextureDataComponentPool;
 	IObjectPool* m_RenderPassDataComponentPool;
+	IObjectPool* m_PSOPool;
 	IObjectPool* m_ShaderProgramComponentPool;
 
 	std::unordered_set<MeshDataComponent*> m_initializedMeshes;
@@ -93,6 +94,7 @@ bool GLRenderingServer::Setup()
 	m_TextureDataComponentPool = InnoMemory::CreateObjectPool(sizeof(GLTextureDataComponent), l_renderingCapability.maxTextures);
 	m_MaterialDataComponentPool = InnoMemory::CreateObjectPool(sizeof(GLMaterialDataComponent), l_renderingCapability.maxMaterials);
 	m_RenderPassDataComponentPool = InnoMemory::CreateObjectPool(sizeof(GLRenderPassDataComponent), 128);
+	m_PSOPool = InnoMemory::CreateObjectPool(sizeof(GLPipelineStateObject), 128);
 	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool(sizeof(GLShaderProgramComponent), 256);
 
 	if (g_pModuleManager->getRenderingFrontend()->getRenderingConfig().MSAAdepth)
@@ -365,12 +367,14 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 {
 	auto l_rhs = reinterpret_cast<GLRenderPassDataComponent*>(rhs);
 
+	// FBO
 	glGenFramebuffers(1, &l_rhs->m_FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, l_rhs->m_FBO);
 	glObjectLabel(GL_FRAMEBUFFER, l_rhs->m_FBO, (GLsizei)l_rhs->m_componentName.size(), l_rhs->m_componentName.c_str());
 
 	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: ", l_rhs->m_componentName.c_str(), " FBO has been generated.");
 
+	// RBO
 	if (l_rhs->m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
 	{
 		l_rhs->m_renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
@@ -402,6 +406,7 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 		}
 	}
 
+	// RT
 	rhs->m_RenderTargets.reserve(rhs->m_RenderTargetCount);
 
 	for (unsigned int i = 0; i < rhs->m_RenderTargetCount; i++)
@@ -422,14 +427,20 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 		rhs->m_RenderTargets[i] = l_TDC;
 	}
 
-	// @TODO: PSO
-
 	std::vector<unsigned int> l_colorAttachments;
 	for (unsigned int i = 0; i < l_rhs->m_RenderTargetCount; ++i)
 	{
 		l_colorAttachments.emplace_back(GL_COLOR_ATTACHMENT0 + i);
 	}
 	glDrawBuffers((GLsizei)l_colorAttachments.size(), &l_colorAttachments[0]);
+
+	// @TODO: PSO
+	auto l_PSORawPtr = m_PSOPool->Spawn();
+	auto l_PSO = new(l_PSORawPtr)GLPipelineStateObject();
+
+	generateDepthStencilState(rhs->m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
+
+	rhs->m_PipelineStateObject = l_PSO;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);

@@ -1,5 +1,6 @@
 #pragma once
 #include "../../Component/GLTextureDataComponent.h"
+#include "../../Component/GLRenderPassDataComponent.h"
 
 namespace GLHelper
 {
@@ -12,6 +13,7 @@ namespace GLHelper
 	GLenum getTexturePixelDataType(TexturePixelDataType rhs);
 	GLsizei getTexturePixelDataSize(TextureDataDesc textureDataDesc);
 
+	bool generateDepthStencilState(DepthStencilDesc DSDesc, GLPipelineStateObject* PSO);
 	std::string LoadShaderFile(const std::string& path);
 	bool AddShaderHandle(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const ShaderFilePath& shaderFilePath);
 }
