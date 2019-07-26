@@ -77,6 +77,10 @@ namespace GLRenderingServerNS
 	IObjectPool* m_TextureDataComponentPool;
 	IObjectPool* m_RenderPassDataComponentPool;
 	IObjectPool* m_ShaderProgramComponentPool;
+
+	std::unordered_set<MeshDataComponent*> m_initializedMeshes;
+	std::unordered_set<TextureDataComponent*> m_initializedTextures;
+	std::unordered_set<MaterialDataComponent*> m_initializedMaterials;
 }
 
 using namespace GLRenderingServerNS;
@@ -198,6 +202,11 @@ GPUBufferDataComponent * GLRenderingServer::AddGPUBufferDataComponent(const char
 
 bool GLRenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 {
+	if (m_initializedMeshes.find(rhs) != m_initializedMeshes.end())
+	{
+		return true;
+	}
+
 	auto l_rhs = reinterpret_cast<GLMeshDataComponent*>(rhs);
 
 	glGenVertexArrays(1, &l_rhs->m_VAO);
@@ -241,11 +250,18 @@ bool GLRenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 
 	l_rhs->m_objectStatus = ObjectStatus::Activated;
 
+	m_initializedMeshes.emplace(l_rhs);
+
 	return true;
 }
 
 bool GLRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rhs)
 {
+	if (m_initializedTextures.find(rhs) != m_initializedTextures.end())
+	{
+		return true;
+	}
+
 	auto l_rhs = reinterpret_cast<GLTextureDataComponent*>(rhs);
 
 	l_rhs->m_GLTextureDataDesc = getGLTextureDataDesc(l_rhs->m_textureDataDesc);
@@ -301,15 +317,22 @@ bool GLRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 		glGenerateMipmap(l_rhs->m_GLTextureDataDesc.textureSamplerType);
 	}
 
+	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: TO ", l_rhs->m_TO, " is initialized.");
+
 	l_rhs->m_objectStatus = ObjectStatus::Activated;
 
-	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: TO ", l_rhs->m_TO, " is initialized.");
+	m_initializedTextures.emplace(l_rhs);
 
 	return true;
 }
 
 bool GLRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * rhs)
 {
+	if (m_initializedMaterials.find(rhs) != m_initializedMaterials.end())
+	{
+		return true;
+	}
+
 	if (rhs->m_normalTexture)
 	{
 		InitializeTextureDataComponent(rhs->m_normalTexture);
@@ -332,6 +355,8 @@ bool GLRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * 
 	}
 
 	rhs->m_objectStatus = ObjectStatus::Activated;
+
+	m_initializedMaterials.emplace(rhs);
 
 	return true;
 }
