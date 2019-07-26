@@ -333,7 +333,7 @@ GLsizei GLHelper::GetTexturePixelDataSize(TextureDataDesc textureDataDesc)
 	return l_singlePixelSize * l_channelSize;
 }
 
-GLenum getComparisionEnum(ComparisionFunction comparisionFunction)
+GLenum getComparisionFunctionEnum(ComparisionFunction comparisionFunction)
 {
 	GLenum l_result;
 
@@ -407,7 +407,7 @@ bool GLHelper::GenerateDepthStencilState(DepthStencilDesc DSDesc, GLPipelineStat
 			PSO->m_Activate.emplace_back([]() { glDepthMask(GL_FALSE); });
 		}
 
-		auto l_comparisionEnum = getComparisionEnum(DSDesc.m_DepthComparisionFunction);
+		auto l_comparisionEnum = getComparisionFunctionEnum(DSDesc.m_DepthComparisionFunction);
 		PSO->m_Activate.emplace_back([=]() { glDepthFunc(l_comparisionEnum); });
 
 		if (DSDesc.m_AllowDepthClamp)
@@ -430,8 +430,8 @@ bool GLHelper::GenerateDepthStencilState(DepthStencilDesc DSDesc, GLPipelineStat
 			PSO->m_Activate.emplace_back([]() { glStencilMask(0x00); });
 		}
 
-		auto l_FFStencilComparisionFunction = getComparisionEnum(DSDesc.m_FrontFaceStencilComparisionFunction);
-		auto l_BFStencilComparisionFunction = getComparisionEnum(DSDesc.m_BackFaceStencilComparisionFunction);
+		auto l_FFStencilComparisionFunction = getComparisionFunctionEnum(DSDesc.m_FrontFaceStencilComparisionFunction);
+		auto l_BFStencilComparisionFunction = getComparisionFunctionEnum(DSDesc.m_BackFaceStencilComparisionFunction);
 
 		PSO->m_Activate.emplace_back([=]() { glStencilFuncSeparate(GL_FRONT, l_FFStencilComparisionFunction, DSDesc.m_StencilReference, DSDesc.m_StencilWriteMask); });
 		PSO->m_Activate.emplace_back([=]() { glStencilFuncSeparate(GL_BACK, l_BFStencilComparisionFunction, DSDesc.m_StencilReference, DSDesc.m_StencilWriteMask); });

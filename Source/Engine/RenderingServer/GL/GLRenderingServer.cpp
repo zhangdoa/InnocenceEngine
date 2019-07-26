@@ -518,7 +518,7 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 	}
 	glDrawBuffers((GLsizei)l_colorAttachments.size(), &l_colorAttachments[0]);
 
-	// @TODO: PSO
+	// PSO
 	auto l_PSORawPtr = m_PSOPool->Spawn();
 	auto l_PSO = new(l_PSORawPtr)GLPipelineStateObject();
 
@@ -528,6 +528,8 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 	GenerateViewportState(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
 
 	l_rhs->m_PipelineStateObject = l_PSO;
+
+	l_rhs->m_objectStatus = ObjectStatus::Activated;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
