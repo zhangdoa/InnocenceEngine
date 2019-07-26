@@ -348,12 +348,12 @@ D3D11_UNORDERED_ACCESS_VIEW_DESC DX11Helper::GetUAVDesc(TextureDataDesc textureD
 	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_2D)
 	{
 		l_result.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
-		l_result.Texture1D.MipSlice = 0;
+		l_result.Texture2D.MipSlice = 0;
 	}
 	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_3D)
 	{
 		l_result.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
-		l_result.Texture1D.MipSlice = 0;
+		l_result.Texture3D.MipSlice = 0;
 	}
 	else
 	{
@@ -361,4 +361,306 @@ D3D11_UNORDERED_ACCESS_VIEW_DESC DX11Helper::GetUAVDesc(TextureDataDesc textureD
 	}
 
 	return l_result;
+}
+
+D3D11_RENDER_TARGET_VIEW_DESC DX11Helper::GetRTVDesc(TextureDataDesc textureDataDesc)
+{
+	D3D11_RENDER_TARGET_VIEW_DESC l_result = {};
+
+	if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_1D)
+	{
+		l_result.Format = GetTextureFormat(textureDataDesc);
+		l_result.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE1D;
+		l_result.Texture1D.MipSlice = 0;
+	}
+	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_2D)
+	{
+		l_result.Format = GetTextureFormat(textureDataDesc);
+		l_result.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+		l_result.Texture2D.MipSlice = 0;
+	}
+	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_3D)
+	{
+		l_result.Format = GetTextureFormat(textureDataDesc);
+		l_result.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE3D;
+		l_result.Texture3D.MipSlice = 0;
+	}
+	else
+	{
+		// @TODO: Cubemap support
+	}
+
+	return l_result;
+}
+
+D3D11_DEPTH_STENCIL_VIEW_DESC DX11Helper::GetDSVDesc(TextureDataDesc textureDataDesc, DepthStencilDesc DSDesc)
+{
+	D3D11_DEPTH_STENCIL_VIEW_DESC l_result = {};
+
+	if (DSDesc.m_UseStencilBuffer)
+	{
+		l_result.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	}
+	else
+	{
+		l_result.Format = DXGI_FORMAT_D32_FLOAT;
+	}
+
+	if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_1D)
+	{
+		l_result.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE1D;
+		l_result.Texture1D.MipSlice = 0;
+	}
+	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_2D)
+	{
+		l_result.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+		l_result.Texture2D.MipSlice = 0;
+	}
+	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_3D)
+	{
+		// Not supported
+	}
+	else
+	{
+		// @TODO: Cubemap support
+	}
+
+	return l_result;
+}
+
+D3D11_COMPARISON_FUNC getComparisionFunction(ComparisionFunction comparisionFunction)
+{
+	D3D11_COMPARISON_FUNC l_result;
+
+	switch (comparisionFunction)
+	{
+	case ComparisionFunction::Never: l_result = D3D11_COMPARISON_NEVER;
+		break;
+	case ComparisionFunction::Less: l_result = D3D11_COMPARISON_LESS;
+		break;
+	case ComparisionFunction::Equal: l_result = D3D11_COMPARISON_EQUAL;
+		break;
+	case ComparisionFunction::LessEqual: l_result = D3D11_COMPARISON_LESS_EQUAL;
+		break;
+	case ComparisionFunction::Greater: l_result = D3D11_COMPARISON_GREATER;
+		break;
+	case ComparisionFunction::NotEqual: l_result = D3D11_COMPARISON_NOT_EQUAL;
+		break;
+	case ComparisionFunction::GreaterEqual: l_result = D3D11_COMPARISON_GREATER_EQUAL;
+		break;
+	case ComparisionFunction::Always: l_result = D3D11_COMPARISON_ALWAYS;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+D3D11_STENCIL_OP getStencilOperation(StencilOperation stencilOperation)
+{
+	D3D11_STENCIL_OP l_result;
+
+	switch (stencilOperation)
+	{
+	case StencilOperation::Keep: l_result = D3D11_STENCIL_OP_KEEP;
+		break;
+	case StencilOperation::Zero: l_result = D3D11_STENCIL_OP_ZERO;
+		break;
+	case StencilOperation::Replace: l_result = D3D11_STENCIL_OP_REPLACE;
+		break;
+	case StencilOperation::IncreaseSat: l_result = D3D11_STENCIL_OP_INCR_SAT;
+		break;
+	case StencilOperation::DecreaseSat: l_result = D3D11_STENCIL_OP_DECR_SAT;
+		break;
+	case StencilOperation::Invert: l_result = D3D11_STENCIL_OP_INVERT;
+		break;
+	case StencilOperation::Increase: l_result = D3D11_STENCIL_OP_INCR;
+		break;
+	case StencilOperation::Decrease: l_result = D3D11_STENCIL_OP_DECR;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+bool DX11Helper::GenerateDepthStencilStateDesc(DepthStencilDesc DSDesc, DX11PipelineStateObject * PSO)
+{
+	PSO->m_DepthStencilDesc.DepthEnable = DSDesc.m_UseDepthBuffer;
+
+	PSO->m_DepthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK(DSDesc.m_AllowDepthWrite);
+	PSO->m_DepthStencilDesc.DepthFunc = getComparisionFunction(DSDesc.m_DepthComparisionFunction);
+
+	PSO->m_DepthStencilDesc.StencilEnable = DSDesc.m_UseStencilBuffer;
+
+	PSO->m_DepthStencilDesc.StencilReadMask = 0xFF;
+	if (DSDesc.m_AllowStencilWrite)
+	{
+		PSO->m_DepthStencilDesc.StencilWriteMask = DSDesc.m_StencilWriteMask;
+	}
+	else
+	{
+		PSO->m_DepthStencilDesc.StencilWriteMask = 0x00;
+	}
+
+	PSO->m_DepthStencilDesc.FrontFace.StencilFailOp = getStencilOperation(DSDesc.m_FrontFaceStencilFailOperation);
+	PSO->m_DepthStencilDesc.FrontFace.StencilDepthFailOp = getStencilOperation(DSDesc.m_FrontFaceStencilPassDepthFailOperation);
+	PSO->m_DepthStencilDesc.FrontFace.StencilPassOp = getStencilOperation(DSDesc.m_FrontFaceStencilPassOperation);
+	PSO->m_DepthStencilDesc.FrontFace.StencilFunc = getComparisionFunction(DSDesc.m_FrontFaceStencilComparisionFunction);
+
+	PSO->m_DepthStencilDesc.BackFace.StencilFailOp = getStencilOperation(DSDesc.m_BackFaceStencilFailOperation);
+	PSO->m_DepthStencilDesc.BackFace.StencilDepthFailOp = getStencilOperation(DSDesc.m_BackFaceStencilPassDepthFailOperation);
+	PSO->m_DepthStencilDesc.BackFace.StencilPassOp = getStencilOperation(DSDesc.m_BackFaceStencilPassOperation);
+	PSO->m_DepthStencilDesc.BackFace.StencilFunc = getComparisionFunction(DSDesc.m_BackFaceStencilComparisionFunction);
+
+	return true;
+}
+
+D3D11_BLEND getBlendFactor(BlendFactor blendFactor)
+{
+	D3D11_BLEND l_result;
+
+	switch (blendFactor)
+	{
+	case BlendFactor::Zero: l_result = D3D11_BLEND_ZERO;
+		break;
+	case BlendFactor::One: l_result = D3D11_BLEND_ONE;
+		break;
+	case BlendFactor::SrcColor: l_result = D3D11_BLEND_SRC_COLOR;
+		break;
+	case BlendFactor::OneMinusSrcColor: l_result = D3D11_BLEND_INV_SRC_COLOR;
+		break;
+	case BlendFactor::SrcAlpha: l_result = D3D11_BLEND_SRC_ALPHA;
+		break;
+	case BlendFactor::OneMinusSrcAlpha: l_result = D3D11_BLEND_INV_SRC_ALPHA;
+		break;
+	case BlendFactor::DestColor: l_result = D3D11_BLEND_DEST_COLOR;
+		break;
+	case BlendFactor::OneMinusDestColor: l_result = D3D11_BLEND_INV_DEST_COLOR;
+		break;
+	case BlendFactor::DestAlpha: l_result = D3D11_BLEND_DEST_ALPHA;
+		break;
+	case BlendFactor::OneMinusDestAlpha: l_result = D3D11_BLEND_INV_DEST_ALPHA;
+		break;
+	case BlendFactor::Src1Color: l_result = D3D11_BLEND_SRC1_COLOR;
+		break;
+	case BlendFactor::OneMinusSrc1Color: l_result = D3D11_BLEND_INV_SRC1_COLOR;
+		break;
+	case BlendFactor::Src1Alpha: l_result = D3D11_BLEND_SRC1_ALPHA;
+		break;
+	case BlendFactor::OneMinusSrc1Alpha: l_result = D3D11_BLEND_INV_SRC1_ALPHA;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+D3D11_BLEND_OP getBlendOperation(BlendOperation blendOperation)
+{
+	D3D11_BLEND_OP l_result;
+
+	switch (blendOperation)
+	{
+	case BlendOperation::Add: l_result = D3D11_BLEND_OP_ADD;
+		break;
+	case BlendOperation::Substruct: l_result = D3D11_BLEND_OP_SUBTRACT;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+bool DX11Helper::GenerateBlendStateDesc(BlendDesc blendDesc, DX11PipelineStateObject * PSO)
+{
+	// @TODO: Separate alpha and RGB blend operation
+	for (size_t i = 0; i < 8; i++)
+	{
+		PSO->m_BlendDesc.RenderTarget[i].BlendEnable = blendDesc.m_UseBlend;
+		PSO->m_BlendDesc.RenderTarget[i].SrcBlend = getBlendFactor(blendDesc.m_SourceRGBFactor);
+		PSO->m_BlendDesc.RenderTarget[i].DestBlend = getBlendFactor(blendDesc.m_DestinationRGBFactor);
+		PSO->m_BlendDesc.RenderTarget[i].BlendOp = getBlendOperation(blendDesc.m_BlendOperation);
+		PSO->m_BlendDesc.RenderTarget[i].SrcBlendAlpha = getBlendFactor(blendDesc.m_SourceAlphaFactor);
+		PSO->m_BlendDesc.RenderTarget[i].DestBlendAlpha = getBlendFactor(blendDesc.m_DestinationAlphaFactor);
+		PSO->m_BlendDesc.RenderTarget[i].BlendOpAlpha = getBlendOperation(blendDesc.m_BlendOperation);
+		PSO->m_BlendDesc.RenderTarget[i].RenderTargetWriteMask = 0xFF;
+	}
+
+	return true;
+}
+
+D3D_PRIMITIVE_TOPOLOGY getPrimitiveTopology(PrimitiveTopology primitiveTopology)
+{
+	D3D_PRIMITIVE_TOPOLOGY l_result;
+
+	switch (primitiveTopology)
+	{
+	case PrimitiveTopology::Point: l_result = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
+		break;
+	case PrimitiveTopology::Line: l_result = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+		break;
+	case PrimitiveTopology::TriangleList: l_result = D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		break;
+	case PrimitiveTopology::TriangleStrip: l_result = D3D10_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+		break;
+	case PrimitiveTopology::Patch: l_result = D3D11_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST; // @TODO: Don't treat Patch as a primitive topology type due to the API differences
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+D3D11_FILL_MODE getRasterizerFillMode(RasterizerFillMode rasterizerFillMode)
+{
+	D3D11_FILL_MODE l_result;
+
+	switch (rasterizerFillMode)
+	{
+	case RasterizerFillMode::Point: // Not supported
+		break;
+	case RasterizerFillMode::Wireframe: l_result = D3D11_FILL_WIREFRAME;
+		break;
+	case RasterizerFillMode::Solid: l_result = D3D11_FILL_SOLID;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+bool DX11Helper::GenerateRasterizerStateDesc(RasterizerDesc rasterizerDesc, DX11PipelineStateObject * PSO)
+{
+	PSO->m_PrimitiveTopology = getPrimitiveTopology(rasterizerDesc.m_PrimitiveTopology);
+	PSO->m_RasterizerDesc.AntialiasedLineEnable = true;
+	PSO->m_RasterizerDesc.CullMode = rasterizerDesc.m_RasterizerCullMode == RasterizerCullMode::Front ? D3D11_CULL_FRONT : D3D11_CULL_BACK;
+	PSO->m_RasterizerDesc.DepthBias = 0;
+	PSO->m_RasterizerDesc.DepthBiasClamp = 0; // @TODO: Depth Clamp
+	PSO->m_RasterizerDesc.DepthClipEnable = false;
+	PSO->m_RasterizerDesc.FillMode = getRasterizerFillMode(rasterizerDesc.m_RasterizerFillMode);
+	PSO->m_RasterizerDesc.FrontCounterClockwise = (rasterizerDesc.m_RasterizerFaceWinding == RasterizerFaceWinding::CCW);
+	PSO->m_RasterizerDesc.MultisampleEnable = rasterizerDesc.m_AllowMultisample;
+	PSO->m_RasterizerDesc.ScissorEnable = false;
+	PSO->m_RasterizerDesc.SlopeScaledDepthBias = 0.0f;
+
+	return true;
+}
+
+bool DX11Helper::GenerateViewportStateDesc(ViewportDesc viewportDesc, DX11PipelineStateObject * PSO)
+{
+	PSO->m_Viewport.Width = viewportDesc.m_Width;
+	PSO->m_Viewport.Height = viewportDesc.m_Height;
+	PSO->m_Viewport.MinDepth = viewportDesc.m_MinDepth;
+	PSO->m_Viewport.MaxDepth = viewportDesc.m_MaxDepth;
+	PSO->m_Viewport.TopLeftX = viewportDesc.m_OriginX;
+	PSO->m_Viewport.TopLeftY = viewportDesc.m_OriginY;
+
+	return true;
 }

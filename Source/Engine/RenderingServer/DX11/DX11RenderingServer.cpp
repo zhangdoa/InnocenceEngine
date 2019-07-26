@@ -630,6 +630,129 @@ bool DX11RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 
 bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX11RenderPassDataComponent*>(rhs);
+
+	// RT
+	l_rhs->m_RenderTargets.reserve(l_rhs->m_RenderPassDesc.m_RenderTargetCount);
+	for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		l_rhs->m_RenderTargets.emplace_back();
+	}
+
+	for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		l_rhs->m_RenderTargets[i] = AddTextureDataComponent((std::string(l_rhs->m_componentName.c_str()) + "_" + std::to_string(i) + "/").c_str());
+	}
+
+	for (unsigned int i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		auto l_TDC = l_rhs->m_RenderTargets[i];
+
+		l_TDC->m_textureDataDesc = l_rhs->m_RenderPassDesc.m_RenderTargetDesc;
+
+		l_TDC->m_textureData = nullptr;
+
+		InitializeTextureDataComponent(l_TDC);
+	}
+
+	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	{
+		l_rhs->m_DepthStencilRenderTarget = AddTextureDataComponent((std::string(l_rhs->m_componentName.c_str()) + "_DS/").c_str());
+		l_rhs->m_DepthStencilRenderTarget->m_textureDataDesc = l_rhs->m_RenderPassDesc.m_RenderTargetDesc;
+
+		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
+		{
+			l_rhs->m_DepthStencilRenderTarget->m_textureDataDesc.usageType = TextureUsageType::DEPTH_STENCIL_ATTACHMENT;
+		}
+		else
+		{
+			l_rhs->m_DepthStencilRenderTarget->m_textureDataDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
+		}
+
+		l_rhs->m_DepthStencilRenderTarget->m_textureData = nullptr;
+
+		InitializeTextureDataComponent(l_rhs->m_DepthStencilRenderTarget);
+	}
+
+	// RTV
+	l_rhs->m_RTVs.reserve(l_rhs->m_RenderPassDesc.m_RenderTargetCount);
+	for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		l_rhs->m_RTVs.emplace_back();
+	}
+
+	l_rhs->m_RTVDesc = GetRTVDesc(l_rhs->m_RenderPassDesc.m_RenderTargetDesc);
+
+	for (unsigned int i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		auto l_DXTDC = reinterpret_cast<DX11TextureDataComponent*>(l_rhs->m_RenderTargets[i]);
+
+		auto l_HResult = m_device->CreateRenderTargetView(l_DXTDC->m_ResourceHandle, &l_rhs->m_RTVDesc, &l_rhs->m_RTVs[i]);
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create RTV for ", l_rhs->m_componentName.c_str(), "!");
+			return false;
+		}
+	}
+
+	// DSV
+	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	{
+		l_rhs->m_DSVDesc = GetDSVDesc(l_rhs->m_RenderPassDesc.m_RenderTargetDesc, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc);
+
+		auto l_DXTDC = reinterpret_cast<DX11TextureDataComponent*>(l_rhs->m_DepthStencilRenderTarget);
+
+		auto l_HResult = m_device->CreateDepthStencilView(l_DXTDC->m_ResourceHandle, &l_rhs->m_DSVDesc, &l_rhs->m_DSV);
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create the DSV for ", l_rhs->m_componentName.c_str(), "!");
+			return false;
+		}
+	}
+
+	// PSO
+	auto l_PSORawPtr = m_PSOPool->Spawn();
+	auto l_PSO = new(l_PSORawPtr)DX11PipelineStateObject();
+
+	GenerateDepthStencilStateDesc(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
+	GenerateBlendStateDesc(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
+	GenerateRasterizerStateDesc(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
+	GenerateViewportStateDesc(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
+
+	// Depth stencil state object
+	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	{
+		auto l_HResult = m_device->CreateDepthStencilState(&l_PSO->m_DepthStencilDesc, &l_PSO->m_DepthStencilState);
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create the depth stencil state object for ", l_rhs->m_componentName.c_str(), "!");
+			return false;
+		}
+	}
+
+	// Blend state object
+	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc.m_UseBlend)
+	{
+		auto l_HResult = m_device->CreateBlendState(&l_PSO->m_BlendDesc, &l_PSO->m_BlendState);
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create the blend state object for ", l_rhs->m_componentName.c_str(), "!");
+			return false;
+		}
+	}
+
+	// Rasterizer state object
+	auto l_HResult = m_device->CreateRasterizerState(&l_PSO->m_RasterizerDesc, &l_PSO->m_RasterizerState);
+	if (FAILED(l_HResult))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create the rasterizer state object for ", l_rhs->m_componentName.c_str(), "!");
+		return false;
+	}
+
+	l_rhs->m_PipelineStateObject = l_PSO;
+
+	l_rhs->m_objectStatus = ObjectStatus::Activated;
+
 	return true;
 }
 
