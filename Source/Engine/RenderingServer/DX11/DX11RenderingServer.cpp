@@ -130,7 +130,7 @@ bool DX11RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 	return true;
 }
 
-bool DX11RenderingServer::BindGPUBuffer(ShaderType shaderType, GPUBufferAccessibility accessibility, GPUBufferDataComponent * GPUBufferDataComponent, size_t startOffset, size_t range)
+bool DX11RenderingServer::BindGPUBufferDataComponent(ShaderType shaderType, GPUBufferAccessibility accessibility, GPUBufferDataComponent * GPUBufferDataComponent, size_t startOffset, size_t range)
 {
 	return true;
 }
@@ -150,7 +150,7 @@ bool DX11RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, 
 	return true;
 }
 
-bool DX11RenderingServer::UnbindMaterialDataComponent(RenderPassDataComponent * rhs)
+bool DX11RenderingServer::UnbindMaterialDataComponent(MaterialDataComponent * rhs)
 {
 	return true;
 }

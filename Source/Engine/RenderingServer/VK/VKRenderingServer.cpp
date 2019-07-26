@@ -130,7 +130,7 @@ bool VKRenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 	return true;
 }
 
-bool VKRenderingServer::BindGPUBuffer(ShaderType shaderType, GPUBufferAccessibility accessibility, GPUBufferDataComponent * GPUBufferDataComponent, size_t startOffset, size_t range)
+bool VKRenderingServer::BindGPUBufferDataComponent(ShaderType shaderType, GPUBufferAccessibility accessibility, GPUBufferDataComponent * GPUBufferDataComponent, size_t startOffset, size_t range)
 {
 	return true;
 }
@@ -150,7 +150,7 @@ bool VKRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, Me
 	return true;
 }
 
-bool VKRenderingServer::UnbindMaterialDataComponent(RenderPassDataComponent * rhs)
+bool VKRenderingServer::UnbindMaterialDataComponent(MaterialDataComponent * rhs)
 {
 	return true;
 }

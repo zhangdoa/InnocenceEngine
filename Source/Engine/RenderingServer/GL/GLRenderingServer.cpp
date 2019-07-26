@@ -583,7 +583,7 @@ bool GLRenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 	return true;
 }
 
-bool GLRenderingServer::BindGPUBuffer(ShaderType shaderType, GPUBufferAccessibility accessibility, GPUBufferDataComponent * GPUBufferDataComponent, size_t startOffset, size_t range)
+bool GLRenderingServer::BindGPUBufferDataComponent(ShaderType shaderType, GPUBufferAccessibility accessibility, GPUBufferDataComponent * GPUBufferDataComponent, size_t startOffset, size_t range)
 {
 	auto l_rhs = reinterpret_cast<GLGPUBufferDataComponent*>(GPUBufferDataComponent);
 
@@ -638,7 +638,7 @@ bool GLRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, Me
 	return true;
 }
 
-bool GLRenderingServer::UnbindMaterialDataComponent(RenderPassDataComponent * rhs)
+bool GLRenderingServer::UnbindMaterialDataComponent(MaterialDataComponent * rhs)
 {
 	return true;
 }
