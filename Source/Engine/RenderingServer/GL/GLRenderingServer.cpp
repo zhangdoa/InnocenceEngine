@@ -261,7 +261,7 @@ bool GLRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 
 	auto l_rhs = reinterpret_cast<GLTextureDataComponent*>(rhs);
 
-	l_rhs->m_GLTextureDataDesc = getGLTextureDataDesc(l_rhs->m_textureDataDesc);
+	l_rhs->m_GLTextureDataDesc = GetGLTextureDataDesc(l_rhs->m_textureDataDesc);
 
 	glGenTextures(1, &l_rhs->m_TO);
 
@@ -433,10 +433,10 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 	auto l_PSORawPtr = m_PSOPool->Spawn();
 	auto l_PSO = new(l_PSORawPtr)GLPipelineStateObject();
 
-	generateDepthStencilState(rhs->m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
-	generateBlendState(rhs->m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
-	generateRasterizerState(rhs->m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
-	generateViewportState(rhs->m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
+	GenerateDepthStencilState(rhs->m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
+	GenerateBlendState(rhs->m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
+	GenerateRasterizerState(rhs->m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
+	GenerateViewportState(rhs->m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
 
 	rhs->m_PipelineStateObject = l_PSO;
 
@@ -537,41 +537,104 @@ bool GLRenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * rh
 
 bool GLRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue)
 {
+	auto l_rhs = reinterpret_cast<GLGPUBufferDataComponent*>(rhs);
+
+	glBindBuffer(l_rhs->m_BufferType, l_rhs->m_Handle);
+	glBufferSubData(l_rhs->m_BufferType, 0, l_rhs->m_Size, GPUBufferValue);
+
 	return true;
 }
 
 bool GLRenderingServer::CommandListBegin(RenderPassDataComponent * rhs, size_t frameIndex)
 {
+	auto l_rhs = reinterpret_cast<GLRenderPassDataComponent*>(rhs);
+	auto l_GLPSO = reinterpret_cast<GLPipelineStateObject*>(l_rhs->m_PipelineStateObject);
+
+	for (size_t i = 0; i < l_GLPSO->m_Activate.size(); i++)
+	{
+		l_GLPSO->m_Activate[i]();
+	}
+
 	return true;
 }
 
 bool GLRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<GLRenderPassDataComponent*>(rhs);
+	auto l_GLPSO = reinterpret_cast<GLPipelineStateObject*>(l_rhs->m_PipelineStateObject);
+
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, l_rhs->m_FBO);
+	if (l_rhs->m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	{
+		glBindRenderbuffer(GL_RENDERBUFFER, l_rhs->m_RBO);
+		glRenderbufferStorage(GL_RENDERBUFFER, l_rhs->m_renderBufferInternalFormat, (GLsizei)l_rhs->m_GraphicsPipelineDesc.m_ViewportDesc.m_Width, (GLsizei)l_rhs->m_GraphicsPipelineDesc.m_ViewportDesc.m_Height);
+	}
+
 	return true;
 }
 
 bool GLRenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 {
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	glClear(GL_STENCIL_BUFFER_BIT);
+
 	return true;
 }
 
 bool GLRenderingServer::BindGPUBuffer(ShaderType shaderType, GPUBufferAccessibility accessibility, GPUBufferDataComponent * GPUBufferDataComponent, size_t startOffset, size_t range)
 {
+	auto l_rhs = reinterpret_cast<GLGPUBufferDataComponent*>(GPUBufferDataComponent);
+
+	glBindBufferRange(l_rhs->m_BufferType, (GLuint)l_rhs->m_BindingPoint, l_rhs->m_Handle, startOffset, range);
+
 	return true;
 }
 
 bool GLRenderingServer::BindShaderProgramComponent(ShaderProgramComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<GLShaderProgramComponent*>(rhs);
+
+	glUseProgram(l_rhs->m_ProgramID);
+
 	return true;
 }
 
 bool GLRenderingServer::BindMaterialDataComponent(MaterialDataComponent * rhs)
 {
+	if (rhs->m_normalTexture)
+	{
+		ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(rhs->m_normalTexture), 0);
+	}
+	if (rhs->m_albedoTexture)
+	{
+		ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(rhs->m_albedoTexture), 1);
+	}
+	if (rhs->m_metallicTexture)
+	{
+		ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(rhs->m_metallicTexture), 2);
+	}
+	if (rhs->m_roughnessTexture)
+	{
+		ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(rhs->m_roughnessTexture), 3);
+	}
+	if (rhs->m_aoTexture)
+	{
+		ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(rhs->m_aoTexture), 4);
+	}
+
 	return true;
 }
 
 bool GLRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent * mesh)
 {
+	auto l_GLPSO = reinterpret_cast<GLPipelineStateObject*>(renderPass->m_PipelineStateObject);
+	auto l_mesh = reinterpret_cast<GLMeshDataComponent*>(mesh);
+
+	glBindVertexArray(l_mesh->m_VAO);
+	glDrawElements(l_GLPSO->m_GLPrimitiveTopology, (GLsizei)l_mesh->m_indicesSize, GL_UNSIGNED_INT, 0);
+
 	return true;
 }
 
@@ -582,6 +645,14 @@ bool GLRenderingServer::UnbindMaterialDataComponent(RenderPassDataComponent * rh
 
 bool GLRenderingServer::CommandListEnd(RenderPassDataComponent * rhs, size_t frameIndex)
 {
+	auto l_rhs = reinterpret_cast<GLRenderPassDataComponent*>(rhs);
+	auto l_GLPSO = reinterpret_cast<GLPipelineStateObject*>(l_rhs->m_PipelineStateObject);
+
+	for (size_t i = 0; i < l_GLPSO->m_Deactivate.size(); i++)
+	{
+		l_GLPSO->m_Deactivate[i]();
+	}
+
 	return true;
 }
 

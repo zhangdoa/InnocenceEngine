@@ -7,18 +7,18 @@ extern IModuleManager* g_pModuleManager;
 
 auto m_shaderRelativePath = "Res//Shaders//GL//";
 
-GLTextureDataDesc GLHelper::getGLTextureDataDesc(TextureDataDesc textureDataDesc)
+GLTextureDataDesc GLHelper::GetGLTextureDataDesc(TextureDataDesc textureDataDesc)
 {
 	GLTextureDataDesc l_result;
 
-	l_result.textureSamplerType = getTextureSamplerType(textureDataDesc.samplerType);
-	l_result.textureWrapMethod = getTextureWrapMethod(textureDataDesc.wrapMethod);
-	l_result.minFilterParam = getTextureFilterParam(textureDataDesc.minFilterMethod);
-	l_result.magFilterParam = getTextureFilterParam(textureDataDesc.magFilterMethod);
-	l_result.internalFormat = getTextureInternalFormat(textureDataDesc);
-	l_result.pixelDataFormat = getTexturePixelDataFormat(textureDataDesc);
-	l_result.pixelDataType = getTexturePixelDataType(textureDataDesc.pixelDataType);
-	l_result.pixelDataSize = getTexturePixelDataSize(textureDataDesc);
+	l_result.textureSamplerType = GetTextureSamplerType(textureDataDesc.samplerType);
+	l_result.textureWrapMethod = GetTextureWrapMethod(textureDataDesc.wrapMethod);
+	l_result.minFilterParam = GetTextureFilterParam(textureDataDesc.minFilterMethod);
+	l_result.magFilterParam = GetTextureFilterParam(textureDataDesc.magFilterMethod);
+	l_result.internalFormat = GetTextureInternalFormat(textureDataDesc);
+	l_result.pixelDataFormat = GetTexturePixelDataFormat(textureDataDesc);
+	l_result.pixelDataType = GetTexturePixelDataType(textureDataDesc.pixelDataType);
+	l_result.pixelDataSize = GetTexturePixelDataSize(textureDataDesc);
 	l_result.width = textureDataDesc.width;
 	l_result.height = textureDataDesc.height;
 	l_result.depth = textureDataDesc.depth;
@@ -30,7 +30,7 @@ GLTextureDataDesc GLHelper::getGLTextureDataDesc(TextureDataDesc textureDataDesc
 	return l_result;
 }
 
-GLenum GLHelper::getTextureSamplerType(TextureSamplerType rhs)
+GLenum GLHelper::GetTextureSamplerType(TextureSamplerType rhs)
 {
 	switch (rhs)
 	{
@@ -47,7 +47,7 @@ GLenum GLHelper::getTextureSamplerType(TextureSamplerType rhs)
 	}
 }
 
-GLenum GLHelper::getTextureWrapMethod(TextureWrapMethod rhs)
+GLenum GLHelper::GetTextureWrapMethod(TextureWrapMethod rhs)
 {
 	GLenum l_result;
 
@@ -61,7 +61,7 @@ GLenum GLHelper::getTextureWrapMethod(TextureWrapMethod rhs)
 	return l_result;
 }
 
-GLenum GLHelper::getTextureFilterParam(TextureFilterMethod rhs)
+GLenum GLHelper::GetTextureFilterParam(TextureFilterMethod rhs)
 {
 	GLenum l_result;
 
@@ -75,7 +75,7 @@ GLenum GLHelper::getTextureFilterParam(TextureFilterMethod rhs)
 	return l_result;
 }
 
-GLenum GLHelper::getTextureInternalFormat(TextureDataDesc textureDataDesc)
+GLenum GLHelper::GetTextureInternalFormat(TextureDataDesc textureDataDesc)
 {
 	GLenum l_internalFormat;
 
@@ -237,7 +237,7 @@ GLenum GLHelper::getTextureInternalFormat(TextureDataDesc textureDataDesc)
 	return l_internalFormat;
 }
 
-GLenum GLHelper::getTexturePixelDataFormat(TextureDataDesc textureDataDesc)
+GLenum GLHelper::GetTexturePixelDataFormat(TextureDataDesc textureDataDesc)
 {
 	GLenum l_result;
 
@@ -274,7 +274,7 @@ GLenum GLHelper::getTexturePixelDataFormat(TextureDataDesc textureDataDesc)
 	return l_result;
 }
 
-GLenum GLHelper::getTexturePixelDataType(TexturePixelDataType rhs)
+GLenum GLHelper::GetTexturePixelDataType(TexturePixelDataType rhs)
 {
 	GLenum l_result;
 
@@ -298,7 +298,7 @@ GLenum GLHelper::getTexturePixelDataType(TexturePixelDataType rhs)
 	return l_result;
 }
 
-GLsizei GLHelper::getTexturePixelDataSize(TextureDataDesc textureDataDesc)
+GLsizei GLHelper::GetTexturePixelDataSize(TextureDataDesc textureDataDesc)
 {
 	GLsizei l_singlePixelSize;
 
@@ -391,7 +391,7 @@ GLenum getStencilOperationEnum(StencilOperation stencilOperation)
 	return l_result;
 }
 
-bool GLHelper::generateDepthStencilState(DepthStencilDesc DSDesc, GLPipelineStateObject * PSO)
+bool GLHelper::GenerateDepthStencilState(DepthStencilDesc DSDesc, GLPipelineStateObject * PSO)
 {
 	if (DSDesc.m_UseDepthBuffer)
 	{
@@ -492,7 +492,7 @@ GLenum getBlendFactorEnum(BlendFactor blendFactor)
 	return l_result;
 }
 
-bool GLHelper::generateBlendState(BlendDesc blendDesc, GLPipelineStateObject * PSO)
+bool GLHelper::GenerateBlendState(BlendDesc blendDesc, GLPipelineStateObject * PSO)
 {
 	if (blendDesc.m_UseBlend)
 	{
@@ -551,7 +551,7 @@ GLenum getRasterizerFillModeEnum(RasterizerFillMode rasterizerFillMode)
 	return l_result;
 }
 
-bool GLHelper::generateRasterizerState(RasterizerDesc rasterizerDesc, GLPipelineStateObject * PSO)
+bool GLHelper::GenerateRasterizerState(RasterizerDesc rasterizerDesc, GLPipelineStateObject * PSO)
 {
 	PSO->m_GLPrimitiveTopology = getPrimitiveTopologyEnum(rasterizerDesc.m_PrimitiveTopology);
 
@@ -591,7 +591,7 @@ bool GLHelper::generateRasterizerState(RasterizerDesc rasterizerDesc, GLPipeline
 	return true;
 }
 
-bool GLHelper::generateViewportState(ViewportDesc viewportDesc, GLPipelineStateObject * PSO)
+bool GLHelper::GenerateViewportState(ViewportDesc viewportDesc, GLPipelineStateObject * PSO)
 {
 	PSO->m_Activate.emplace_back([=]() { glViewport((GLint)viewportDesc.m_TopLeftX, (GLint)(viewportDesc.m_Width - viewportDesc.m_TopLeftY), (GLsizei)viewportDesc.m_Width, (GLsizei)viewportDesc.m_Height); });
 	PSO->m_Activate.emplace_back([=]() { glDepthRange(viewportDesc.m_MinDepth, viewportDesc.m_MaxDepth); });
@@ -778,6 +778,14 @@ bool GLHelper::AddShaderHandle(GLuint & shaderProgram, GLuint & shaderID, GLuint
 	}
 
 	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: ", shaderFilePath.c_str(), " has been linked.");
+
+	return true;
+}
+
+bool GLHelper::ActivateTexture(GLTextureDataComponent * GLTDC, int activateIndex)
+{
+	glActiveTexture(GL_TEXTURE0 + activateIndex);
+	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TO);
 
 	return true;
 }
