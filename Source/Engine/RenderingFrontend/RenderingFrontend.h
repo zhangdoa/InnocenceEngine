@@ -34,7 +34,10 @@ public:
 
 	RenderingConfig getRenderingConfig() override;
 	bool setRenderingConfig(RenderingConfig renderingConfig) override;
+
 	RenderingCapability getRenderingCapability() override;
+
+	RenderPassDesc getDefaultRenderPassDesc() override;
 
 	CameraGPUData getCameraGPUData() override;
 	SunGPUData getSunGPUData() override;

@@ -137,6 +137,14 @@ struct GraphicsPipelineDesc
 	ViewportDesc m_ViewportDesc = {};
 };
 
+struct RenderPassDesc
+{
+	bool m_UseMultiFrames = false;
+	size_t m_RenderTargetCount = 0;
+	TextureDataDesc m_RenderTargetDesc = {};
+	GraphicsPipelineDesc m_GraphicsPipelineDesc = {};
+};
+
 class IPipelineStateObject
 {
 };
@@ -163,14 +171,11 @@ public:
 	RenderPassDataComponent() {};
 	~RenderPassDataComponent() {};
 
-	bool m_UseMultiFrames = false;
+	RenderPassDesc m_RenderPassDesc = {};
 
-	size_t m_RenderTargetCount = 0;
-	TextureDataDesc m_RenderTargetDesc = {};
 	std::vector<TextureDataComponent*> m_RenderTargets;
 	TextureDataComponent* m_DepthStencilRenderTarget;
 
-	GraphicsPipelineDesc m_GraphicsPipelineDesc = {};
 	IPipelineStateObject* m_PipelineStateObject;
 
 	ICommandQueue* m_CommandQueue;

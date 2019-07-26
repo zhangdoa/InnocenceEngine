@@ -370,12 +370,12 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: ", l_rhs->m_componentName.c_str(), " FBO has been generated.");
 
 	// RBO
-	if (l_rhs->m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
 	{
 		l_rhs->m_renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
 		l_rhs->m_renderBufferInternalFormat = GL_DEPTH_COMPONENT32F;
 
-		if (l_rhs->m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
+		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
 		{
 			l_rhs->m_renderBufferAttachmentType = GL_DEPTH_STENCIL_ATTACHMENT;
 			l_rhs->m_renderBufferInternalFormat = GL_DEPTH24_STENCIL8;
@@ -386,7 +386,7 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 		glObjectLabel(GL_RENDERBUFFER, l_rhs->m_RBO, (GLsizei)l_rhs->m_componentName.size(), l_rhs->m_componentName.c_str());
 
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, l_rhs->m_renderBufferAttachmentType, GL_RENDERBUFFER, l_rhs->m_RBO);
-		glRenderbufferStorage(GL_RENDERBUFFER, l_rhs->m_renderBufferInternalFormat, l_rhs->m_RenderTargetDesc.width, l_rhs->m_RenderTargetDesc.height);
+		glRenderbufferStorage(GL_RENDERBUFFER, l_rhs->m_renderBufferInternalFormat, l_rhs->m_RenderPassDesc.m_RenderTargetDesc.width, l_rhs->m_RenderPassDesc.m_RenderTargetDesc.height);
 
 		auto l_result = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if (l_result != GL_FRAMEBUFFER_COMPLETE)
@@ -402,18 +402,18 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 	}
 
 	// RT
-	rhs->m_RenderTargets.reserve(rhs->m_RenderTargetCount);
+	rhs->m_RenderTargets.reserve(rhs->m_RenderPassDesc.m_RenderTargetCount);
 
-	for (unsigned int i = 0; i < rhs->m_RenderTargetCount; i++)
+	for (unsigned int i = 0; i < rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
 		rhs->m_RenderTargets.emplace_back();
 	}
 
-	for (unsigned int i = 0; i < rhs->m_RenderTargetCount; i++)
+	for (unsigned int i = 0; i < rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
 		auto l_TDC = AddTextureDataComponent((std::string(l_rhs->m_componentName.c_str()) + "_" + std::to_string(i)).c_str());
 
-		l_TDC->m_textureDataDesc = rhs->m_RenderTargetDesc;
+		l_TDC->m_textureDataDesc = rhs->m_RenderPassDesc.m_RenderTargetDesc;
 
 		l_TDC->m_textureData = nullptr;
 
@@ -423,7 +423,7 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 	}
 
 	std::vector<unsigned int> l_colorAttachments;
-	for (unsigned int i = 0; i < l_rhs->m_RenderTargetCount; ++i)
+	for (unsigned int i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; ++i)
 	{
 		l_colorAttachments.emplace_back(GL_COLOR_ATTACHMENT0 + i);
 	}
@@ -433,10 +433,10 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 	auto l_PSORawPtr = m_PSOPool->Spawn();
 	auto l_PSO = new(l_PSORawPtr)GLPipelineStateObject();
 
-	GenerateDepthStencilState(rhs->m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
-	GenerateBlendState(rhs->m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
-	GenerateRasterizerState(rhs->m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
-	GenerateViewportState(rhs->m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
+	GenerateDepthStencilState(rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
+	GenerateBlendState(rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
+	GenerateRasterizerState(rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
+	GenerateViewportState(rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
 
 	rhs->m_PipelineStateObject = l_PSO;
 
@@ -564,10 +564,10 @@ bool GLRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * rh
 	auto l_GLPSO = reinterpret_cast<GLPipelineStateObject*>(l_rhs->m_PipelineStateObject);
 
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, l_rhs->m_FBO);
-	if (l_rhs->m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
 	{
 		glBindRenderbuffer(GL_RENDERBUFFER, l_rhs->m_RBO);
-		glRenderbufferStorage(GL_RENDERBUFFER, l_rhs->m_renderBufferInternalFormat, (GLsizei)l_rhs->m_GraphicsPipelineDesc.m_ViewportDesc.m_Width, (GLsizei)l_rhs->m_GraphicsPipelineDesc.m_ViewportDesc.m_Height);
+		glRenderbufferStorage(GL_RENDERBUFFER, l_rhs->m_renderBufferInternalFormat, (GLsizei)l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width, (GLsizei)l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height);
 	}
 
 	return true;
@@ -668,6 +668,8 @@ bool GLRenderingServer::WaitForFrame(RenderPassDataComponent * rhs, size_t frame
 
 bool GLRenderingServer::Present()
 {
+	g_pModuleManager->getWindowSystem()->getWindowSurface()->swapBuffer();
+
 	return true;
 }
 

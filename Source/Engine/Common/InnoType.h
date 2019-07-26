@@ -102,15 +102,6 @@ struct TextureDataDesc
 
 enum class RenderPassType { Shadow, GI, Opaque, Light, Transparent, Terrain, PostProcessing, Development };
 
-struct RenderPassDesc
-{
-	unsigned int RTNumber = 0;
-	bool useMultipleFramebuffers = false;
-	bool useDepthAttachment = false;
-	bool useStencilAttachment = false;
-	TextureDataDesc RTDesc = TextureDataDesc();
-};
-
 // shader custom types
 enum class ShaderType { VERTEX, TCS, TES, GEOMETRY, FRAGMENT, COMPUTE };
 

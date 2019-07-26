@@ -67,6 +67,8 @@ namespace InnoRenderingFrontendNS
 
 	RenderingCapability m_renderingCapability;
 
+	RenderPassDesc m_DefaultRenderPassDesc;
+
 	DoubleBuffer<CameraGPUData> m_cameraGPUData;
 	DoubleBuffer<SunGPUData> m_sunGPUData;
 	std::vector<CSMGPUData> m_CSMGPUData;
@@ -198,6 +200,18 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 	m_renderingCapability.maxMeshes = 16384;
 	m_renderingCapability.maxMaterials = 32768;
 	m_renderingCapability.maxTextures = 32768;
+
+	m_DefaultRenderPassDesc.m_UseMultiFrames = false;
+	m_DefaultRenderPassDesc.m_RenderTargetCount = 1;
+	m_DefaultRenderPassDesc.m_RenderTargetDesc.samplerType = TextureSamplerType::SAMPLER_2D;
+	m_DefaultRenderPassDesc.m_RenderTargetDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
+	m_DefaultRenderPassDesc.m_RenderTargetDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
+	m_DefaultRenderPassDesc.m_RenderTargetDesc.minFilterMethod = TextureFilterMethod::NEAREST;
+	m_DefaultRenderPassDesc.m_RenderTargetDesc.magFilterMethod = TextureFilterMethod::NEAREST;
+	m_DefaultRenderPassDesc.m_RenderTargetDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
+	m_DefaultRenderPassDesc.m_RenderTargetDesc.width = m_screenResolution.x;
+	m_DefaultRenderPassDesc.m_RenderTargetDesc.height = m_screenResolution.y;
+	m_DefaultRenderPassDesc.m_RenderTargetDesc.pixelDataType = TexturePixelDataType::FLOAT16;
 
 	f_sceneLoadingStartCallback = [&]() {
 		m_cullingDataPack.clear();
@@ -933,6 +947,11 @@ bool InnoRenderingFrontend::setRenderingConfig(RenderingConfig renderingConfig)
 RenderingCapability InnoRenderingFrontend::getRenderingCapability()
 {
 	return InnoRenderingFrontendNS::m_renderingCapability;
+}
+
+RenderPassDesc InnoRenderingFrontend::getDefaultRenderPassDesc()
+{
+	return InnoRenderingFrontendNS::m_DefaultRenderPassDesc;
 }
 
 CameraGPUData InnoRenderingFrontend::getCameraGPUData()

@@ -71,6 +71,8 @@ public:
 
 	virtual RenderingCapability getRenderingCapability() = 0;
 
+	virtual RenderPassDesc getDefaultRenderPassDesc() = 0;
+
 	virtual CameraGPUData getCameraGPUData() = 0;
 	virtual SunGPUData getSunGPUData() = 0;
 	virtual const std::vector<CSMGPUData>& getCSMGPUData() = 0;
