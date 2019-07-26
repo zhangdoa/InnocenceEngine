@@ -5,9 +5,6 @@
 class GLShaderProgramComponent : public ShaderProgramComponent
 {
 public:
-	GLShaderProgramComponent() {};
-	~GLShaderProgramComponent() {};
-
 	GLuint m_ProgramID = 0;
 	GLuint m_VSID = 0;
 	GLuint m_TCSID = 0;

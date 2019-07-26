@@ -5,8 +5,5 @@
 class ShaderProgramComponent : public InnoComponent
 {
 public:
-	ShaderProgramComponent() {};
-	~ShaderProgramComponent() {};
-
-	ShaderFilePaths m_ShaderFilePaths;
+	ShaderFilePaths m_ShaderFilePaths = {};
 };

@@ -4,6 +4,4 @@
 class MTShaderProgramComponent : public ShaderProgramComponent
 {
 public:
-	MTShaderProgramComponent() {};
-	~MTShaderProgramComponent() {};
 };

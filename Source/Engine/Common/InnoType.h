@@ -118,12 +118,12 @@ using ShaderFilePath = FixedSizeString<128>;
 
 struct ShaderFilePaths
 {
-	ShaderFilePath m_VSPath;
-	ShaderFilePath m_TCSPath;
-	ShaderFilePath m_TESPath;
-	ShaderFilePath m_GSPath;
-	ShaderFilePath m_FSPath;
-	ShaderFilePath m_CSPath;
+	ShaderFilePath m_VSPath = "";
+	ShaderFilePath m_TCSPath = "";
+	ShaderFilePath m_TESPath = "";
+	ShaderFilePath m_GSPath = "";
+	ShaderFilePath m_FSPath = "";
+	ShaderFilePath m_CSPath = "";
 };
 
 struct MeshCustomMaterial
