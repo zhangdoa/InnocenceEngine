@@ -50,7 +50,7 @@ enum class BlendOperation
 	Substruct = 2
 };
 
-enum class PrimitiveTopologyType
+enum class PrimitiveTopology
 {
 	Point = 1,
 	Line = 2,
@@ -102,15 +102,19 @@ struct DepthStencilDesc
 struct BlendDesc
 {
 	bool m_UseBlend = false;
-	BlendFactor m_BlendFactor = BlendFactor::Zero;
+	BlendFactor m_SourceRGBFactor = BlendFactor::SrcColor;
+	BlendFactor m_SourceAlphaFactor = BlendFactor::SrcAlpha;
+	BlendFactor m_DestinationRGBFactor = BlendFactor::DestColor;
+	BlendFactor m_DestinationAlphaFactor = BlendFactor::DestAlpha;
 	BlendOperation m_BlendOperation = BlendOperation::Add;
 };
 
 struct RasterizerDesc
 {
-	PrimitiveTopologyType m_PrimitiveTopologyType = PrimitiveTopologyType::TriangleStrip;
+	PrimitiveTopology m_PrimitiveTopology = PrimitiveTopology::TriangleStrip;
 	RasterizerFillMode m_RasterizerFillMode = RasterizerFillMode::Solid;
 	RasterizerFaceWinding m_RasterizerFaceWinding = RasterizerFaceWinding::CCW;
+	bool m_UseCulling = false;
 	RasterizerCullMode m_RasterizerCullMode = RasterizerCullMode::Back;
 	bool m_AllowMultisample = false;
 };
