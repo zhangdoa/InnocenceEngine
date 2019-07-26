@@ -145,7 +145,7 @@ bool DX11RenderingServer::BindMaterialDataComponent(MaterialDataComponent * rhs)
 	return true;
 }
 
-bool DX11RenderingServer::DispatchDrawCall(MeshDataComponent * rhs)
+bool DX11RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh)
 {
 	return true;
 }

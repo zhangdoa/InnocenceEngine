@@ -570,7 +570,7 @@ bool GLRenderingServer::BindMaterialDataComponent(MaterialDataComponent * rhs)
 	return true;
 }
 
-bool GLRenderingServer::DispatchDrawCall(MeshDataComponent * rhs)
+bool GLRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent * mesh)
 {
 	return true;
 }

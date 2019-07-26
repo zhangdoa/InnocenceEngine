@@ -61,7 +61,7 @@ public:
 	virtual bool BindGPUBuffer(ShaderType shaderType, GPUBufferAccessibility accessibility, GPUBufferDataComponent* GPUBufferDataComponent, size_t startOffset, size_t range) = 0;
 	virtual bool BindShaderProgramComponent(ShaderProgramComponent* rhs) = 0;
 	virtual bool BindMaterialDataComponent(MaterialDataComponent* rhs) = 0;
-	virtual bool DispatchDrawCall(MeshDataComponent* rhs) = 0;
+	virtual bool DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh) = 0;
 	virtual bool UnbindMaterialDataComponent(RenderPassDataComponent* rhs) = 0;
 	virtual bool CommandListEnd(RenderPassDataComponent* rhs, size_t frameIndex) = 0;
 	virtual bool ExecuteCommandList(RenderPassDataComponent* rhs, size_t frameIndex) = 0;

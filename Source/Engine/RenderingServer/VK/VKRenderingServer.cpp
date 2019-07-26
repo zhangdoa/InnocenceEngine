@@ -145,7 +145,7 @@ bool VKRenderingServer::BindMaterialDataComponent(MaterialDataComponent * rhs)
 	return true;
 }
 
-bool VKRenderingServer::DispatchDrawCall(MeshDataComponent * rhs)
+bool VKRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh)
 {
 	return true;
 }

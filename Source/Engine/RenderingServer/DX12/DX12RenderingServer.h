@@ -55,7 +55,7 @@ class DX12RenderingServer : public IRenderingServer
 	virtual bool BindGPUBuffer(ShaderType shaderType, GPUBufferAccessibility accessibility, GPUBufferDataComponent * GPUBufferDataComponent, size_t startOffset, size_t range) override;
 	virtual bool BindShaderProgramComponent(ShaderProgramComponent * rhs) override;
 	virtual bool BindMaterialDataComponent(MaterialDataComponent * rhs) override;
-	virtual bool DispatchDrawCall(MeshDataComponent * rhs) override;
+	virtual bool DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh) override;
 	virtual bool UnbindMaterialDataComponent(RenderPassDataComponent * rhs) override;
 	virtual bool CommandListEnd(RenderPassDataComponent * rhs, size_t frameIndex) override;
 	virtual bool ExecuteCommandList(RenderPassDataComponent * rhs, size_t frameIndex) override;
