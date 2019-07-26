@@ -414,17 +414,17 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	}
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WindowSystem setup finished.");
 
-	if (!m_RenderingServer->Setup())
-	{
-		return false;
-	}
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "RenderingServer setup finished.");
-
 	if (!m_RenderingFrontend->setup(m_RenderingServer.get()))
 	{
 		return false;
 	}
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "RenderingFrontend setup finished.");
+
+	if (!m_RenderingServer->Setup())
+	{
+		return false;
+	}
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "RenderingServer setup finished.");
 
 	//if (!ImGuiWrapper::get().setup())
 	//{
@@ -505,8 +505,8 @@ bool InnoModuleManagerNS::initialize()
 	subSystemInit(EventSystem);
 
 	m_WindowSystem->initialize();
-	m_RenderingServer->Initialize();
 	m_RenderingFrontend->initialize();
+	m_RenderingServer->Initialize();
 
 	//ImGuiWrapper::get().initialize();
 
@@ -636,6 +636,7 @@ bool InnoModuleManagerNS::terminate()
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingServer can't be terminated!");
 		return false;
 	}
+
 	if (!m_RenderingFrontend->terminate())
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingFrontend can't be terminated!");
