@@ -294,35 +294,35 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 	m_iconTemplate_PointLight = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_PointLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 	m_iconTemplate_SphereLight = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_SphereLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 
-	m_unitLineMDC = m_renderingServer->AddMeshDataComponent();
+	m_unitLineMDC = m_renderingServer->AddMeshDataComponent("UnitLineMesh/");
 	g_pModuleManager->getAssetSystem()->addUnitLine(*m_unitLineMDC);
 	m_unitLineMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	m_unitLineMDC->m_meshShapeType = MeshShapeType::LINE;
 	m_unitLineMDC->m_objectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMDC);
 
-	m_unitQuadMDC = m_renderingServer->AddMeshDataComponent();
+	m_unitQuadMDC = m_renderingServer->AddMeshDataComponent("UnitQuadMesh/");
 	g_pModuleManager->getAssetSystem()->addUnitQuad(*m_unitQuadMDC);
 	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
 	m_unitQuadMDC->m_objectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMDC);
 
-	m_unitCubeMDC = m_renderingServer->AddMeshDataComponent();
+	m_unitCubeMDC = m_renderingServer->AddMeshDataComponent("UnitCubeMesh/");
 	g_pModuleManager->getAssetSystem()->addUnitCube(*m_unitCubeMDC);
 	m_unitCubeMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitCubeMDC->m_meshShapeType = MeshShapeType::CUBE;
 	m_unitCubeMDC->m_objectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMDC);
 
-	m_unitSphereMDC = m_renderingServer->AddMeshDataComponent();
+	m_unitSphereMDC = m_renderingServer->AddMeshDataComponent("UnitSphereMesh/");
 	g_pModuleManager->getAssetSystem()->addUnitSphere(*m_unitSphereMDC);
 	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
 	m_unitSphereMDC->m_objectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMDC);
 
-	m_terrainMDC = m_renderingServer->AddMeshDataComponent();
+	m_terrainMDC = m_renderingServer->AddMeshDataComponent("TerrainMesh/");
 	g_pModuleManager->getAssetSystem()->addTerrain(*m_terrainMDC);
 	m_terrainMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_terrainMDC->m_objectStatus = ObjectStatus::Created;

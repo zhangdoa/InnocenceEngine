@@ -99,7 +99,7 @@ TextureDataComponent* InnoFileSystemNS::AssetLoader::loadTextureFromDisk(const s
 	{
 		auto l_TDC = g_pModuleManager->getRenderingFrontend()->addTextureDataComponent();
 
-		l_TDC->m_componentName = fileName.c_str();
+		l_TDC->m_componentName = (fileName + "/").c_str();
 
 		l_TDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat(nrChannels - 1);
 		l_TDC->m_textureDataDesc.wrapMethod = TextureWrapMethod::REPEAT;
