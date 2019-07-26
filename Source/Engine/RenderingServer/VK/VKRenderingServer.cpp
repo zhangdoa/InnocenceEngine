@@ -110,14 +110,6 @@ bool VKRenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * rh
 	return false;
 }
 
-void VKRenderingServer::RegisterMeshDataComponent(MeshDataComponent * rhs)
-{
-}
-
-void VKRenderingServer::RegisterMaterialDataComponent(MaterialDataComponent * rhs)
-{
-}
-
 bool VKRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue)
 {
 	return true;

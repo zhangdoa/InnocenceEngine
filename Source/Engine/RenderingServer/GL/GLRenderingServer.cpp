@@ -501,14 +501,6 @@ bool GLRenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * rh
 	return false;
 }
 
-void GLRenderingServer::RegisterMeshDataComponent(MeshDataComponent * rhs)
-{
-}
-
-void GLRenderingServer::RegisterMaterialDataComponent(MaterialDataComponent * rhs)
-{
-}
-
 bool GLRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue)
 {
 	return true;

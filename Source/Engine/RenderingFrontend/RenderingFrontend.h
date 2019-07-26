@@ -16,14 +16,18 @@ public:
 	bool runRayTrace() override;
 
 	MeshDataComponent* addMeshDataComponent() override;
-	MaterialDataComponent* addMaterialDataComponent() override;
 	TextureDataComponent* addTextureDataComponent() override;
+	MaterialDataComponent* addMaterialDataComponent() override;
+	SkeletonDataComponent* addSkeletonDataComponent() override;
+	AnimationDataComponent* addAnimationDataComponent() override;
+
+	bool registerMeshDataComponent(MeshDataComponent * rhs) override;
+	bool registerMaterialDataComponent(MaterialDataComponent * rhs) override;
+
 	MeshDataComponent* getMeshDataComponent(MeshShapeType meshShapeType) override;
 	TextureDataComponent* getTextureDataComponent(TextureUsageType textureUsageType) override;
 	TextureDataComponent* getTextureDataComponent(FileExplorerIconType iconType) override;
 	TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) override;
-	SkeletonDataComponent* addSkeletonDataComponent() override;
-	AnimationDataComponent* addAnimationDataComponent() override;
 
 	TVec2<unsigned int> getScreenResolution() override;
 	bool setScreenResolution(TVec2<unsigned int> screenResolution) override;

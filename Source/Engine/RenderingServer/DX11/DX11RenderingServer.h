@@ -47,9 +47,6 @@ class DX11RenderingServer : public IRenderingServer
 	virtual bool DeleteShaderProgramComponent(ShaderProgramComponent * rhs) override;
 	virtual bool DeleteGPUBufferDataComponent(GPUBufferDataComponent * rhs) override;
 
-	virtual void RegisterMeshDataComponent(MeshDataComponent * rhs) override;
-	virtual void RegisterMaterialDataComponent(MaterialDataComponent * rhs) override;
-
 	virtual bool UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue) override;
 
 	virtual bool CommandListBegin(RenderPassDataComponent * rhs, size_t frameIndex) override;

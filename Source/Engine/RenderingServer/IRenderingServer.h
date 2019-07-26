@@ -41,9 +41,6 @@ public:
 	virtual	bool DeleteShaderProgramComponent(ShaderProgramComponent* rhs) = 0;
 	virtual	bool DeleteGPUBufferDataComponent(GPUBufferDataComponent* rhs) = 0;
 
-	virtual void RegisterMeshDataComponent(MeshDataComponent* rhs) = 0;
-	virtual void RegisterMaterialDataComponent(MaterialDataComponent* rhs) = 0;
-
 	virtual bool UploadGPUBufferDataComponentImpl(GPUBufferDataComponent* rhs, const void* GPUBufferValue) = 0;
 
 	template<typename T>

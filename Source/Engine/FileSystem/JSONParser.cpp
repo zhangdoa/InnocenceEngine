@@ -553,7 +553,7 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j)
 
 		m_loadedModelPair.emplace(l_meshFileName, l_result);
 
-		g_pModuleManager->getRenderingServer()->RegisterMeshDataComponent(l_MeshDC);
+		g_pModuleManager->getRenderingFrontend()->registerMeshDataComponent(l_MeshDC);
 	}
 
 	return l_result;
@@ -644,7 +644,7 @@ MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(co
 	l_MDC->m_meshCustomMaterial.thickness = j["Thickness"];
 	l_MDC->m_objectStatus = ObjectStatus::Created;
 
-	g_pModuleManager->getRenderingServer()->RegisterMaterialDataComponent(l_MDC);
+	g_pModuleManager->getRenderingFrontend()->registerMaterialDataComponent(l_MDC);
 
 	return l_MDC;
 }

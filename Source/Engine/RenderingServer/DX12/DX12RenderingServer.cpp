@@ -110,14 +110,6 @@ bool DX12RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * 
 	return false;
 }
 
-void DX12RenderingServer::RegisterMeshDataComponent(MeshDataComponent * rhs)
-{
-}
-
-void DX12RenderingServer::RegisterMaterialDataComponent(MaterialDataComponent * rhs)
-{
-}
-
 bool DX12RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue)
 {
 	return true;

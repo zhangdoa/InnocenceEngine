@@ -113,10 +113,6 @@ namespace InnoRenderingFrontendNS
 	void* m_SkeletonDataComponentPool;
 	void* m_AnimationDataComponentPool;
 
-	std::unordered_map<InnoEntity*, MeshDataComponent*> m_initializedMeshes;
-	std::unordered_map<InnoEntity*, TextureDataComponent*> m_initializedTextures;
-	std::unordered_map<InnoEntity*, MaterialDataComponent*> m_initializedMaterials;
-
 	ThreadSafeQueue<MeshDataComponent*> m_uninitializedMeshes;
 	ThreadSafeQueue<MaterialDataComponent*> m_uninitializedMaterials;
 
@@ -706,6 +702,36 @@ bool InnoRenderingFrontendNS::update()
 
 		updateDebuggerPassData();
 
+		while (m_uninitializedMeshes.size() > 0)
+		{
+			MeshDataComponent* l_MDC;
+			m_uninitializedMeshes.tryPop(l_MDC);
+
+			if (l_MDC)
+			{
+				auto l_result = m_renderingServer->InitializeMeshDataComponent(l_MDC);
+				if (!l_result)
+				{
+					g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "InnoRenderingFrontend: can't initialize MeshDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
+				}
+			}
+		}
+
+		while (m_uninitializedMaterials.size() > 0)
+		{
+			MaterialDataComponent* l_MDC;
+			m_uninitializedMaterials.tryPop(l_MDC);
+
+			if (l_MDC)
+			{
+				auto l_result = m_renderingServer->InitializeMaterialDataComponent(l_MDC);
+				if (!l_result)
+				{
+					g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "InnoRenderingFrontend: can't initialize MaterialDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
+				}
+			}
+		}
+
 		return true;
 	}
 	else
@@ -759,14 +785,36 @@ MeshDataComponent * InnoRenderingFrontend::addMeshDataComponent()
 	return InnoRenderingFrontendNS::m_renderingServer->AddMeshDataComponent();
 }
 
+TextureDataComponent * InnoRenderingFrontend::addTextureDataComponent()
+{
+	return InnoRenderingFrontendNS::m_renderingServer->AddTextureDataComponent();
+}
+
 MaterialDataComponent * InnoRenderingFrontend::addMaterialDataComponent()
 {
 	return InnoRenderingFrontendNS::m_renderingServer->AddMaterialDataComponent();
 }
 
-TextureDataComponent * InnoRenderingFrontend::addTextureDataComponent()
+SkeletonDataComponent * InnoRenderingFrontend::addSkeletonDataComponent()
 {
-	return InnoRenderingFrontendNS::m_renderingServer->AddTextureDataComponent();
+	static std::atomic<unsigned int> skeletonCount = 0;
+	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(InnoRenderingFrontendNS::m_SkeletonDataComponentPool, sizeof(SkeletonDataComponent));
+	auto l_SDC = new(l_rawPtr)SkeletonDataComponent();
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Skeleton_" + std::to_string(skeletonCount) + "/").c_str());
+	l_SDC->m_parentEntity = l_parentEntity;
+	skeletonCount++;
+	return l_SDC;
+}
+
+AnimationDataComponent * InnoRenderingFrontend::addAnimationDataComponent()
+{
+	static std::atomic<unsigned int> animationCount = 0;
+	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(InnoRenderingFrontendNS::m_AnimationDataComponentPool, sizeof(AnimationDataComponent));
+	auto l_ADC = new(l_rawPtr)AnimationDataComponent();
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Animation_" + std::to_string(animationCount) + "/").c_str());
+	l_ADC->m_parentEntity = l_parentEntity;
+	animationCount++;
+	return l_ADC;
 }
 
 MeshDataComponent * InnoRenderingFrontend::getMeshDataComponent(MeshShapeType meshShapeType)
@@ -846,26 +894,18 @@ TextureDataComponent * InnoRenderingFrontend::getTextureDataComponent(WorldEdito
 	}
 }
 
-SkeletonDataComponent * InnoRenderingFrontend::addSkeletonDataComponent()
+bool InnoRenderingFrontend::registerMeshDataComponent(MeshDataComponent * rhs)
 {
-	static std::atomic<unsigned int> skeletonCount = 0;
-	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(InnoRenderingFrontendNS::m_SkeletonDataComponentPool, sizeof(SkeletonDataComponent));
-	auto l_SDC = new(l_rawPtr)SkeletonDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Skeleton_" + std::to_string(skeletonCount) + "/").c_str());
-	l_SDC->m_parentEntity = l_parentEntity;
-	skeletonCount++;
-	return l_SDC;
+	InnoRenderingFrontendNS::m_uninitializedMeshes.push(rhs);
+
+	return true;
 }
 
-AnimationDataComponent * InnoRenderingFrontend::addAnimationDataComponent()
+bool InnoRenderingFrontend::registerMaterialDataComponent(MaterialDataComponent * rhs)
 {
-	static std::atomic<unsigned int> animationCount = 0;
-	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(InnoRenderingFrontendNS::m_AnimationDataComponentPool, sizeof(AnimationDataComponent));
-	auto l_ADC = new(l_rawPtr)AnimationDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Animation_" + std::to_string(animationCount) + "/").c_str());
-	l_ADC->m_parentEntity = l_parentEntity;
-	animationCount++;
-	return l_ADC;
+	InnoRenderingFrontendNS::m_uninitializedMaterials.push(rhs);
+
+	return true;
 }
 
 TVec2<unsigned int> InnoRenderingFrontend::getScreenResolution()
