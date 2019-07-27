@@ -947,6 +947,89 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 
 bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX11GPUBufferDataComponent*>(rhs);
+
+	l_rhs->m_TotalSize = l_rhs->m_ElementCount * l_rhs->m_ElementSize;
+
+	auto l_isStructuredBuffer = (l_rhs->m_GPUBufferAccessibility == GPUBufferAccessibility::ReadWrite);
+
+	l_rhs->m_BufferDesc.ByteWidth = (unsigned int)(rhs->m_TotalSize);
+	l_rhs->m_BufferDesc.Usage = l_isStructuredBuffer ? D3D11_USAGE_DEFAULT : D3D11_USAGE_DYNAMIC;
+	l_rhs->m_BufferDesc.BindFlags = l_isStructuredBuffer ? (D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS) : D3D11_BIND_CONSTANT_BUFFER;
+	l_rhs->m_BufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	l_rhs->m_BufferDesc.MiscFlags = l_isStructuredBuffer ? D3D11_RESOURCE_MISC_BUFFER_STRUCTURED : 0;
+	l_rhs->m_BufferDesc.StructureByteStride = l_isStructuredBuffer ? (unsigned int)l_rhs->m_ElementSize : 0;
+
+	HRESULT l_HResult;
+
+	if (l_rhs->m_InitialData)
+	{
+		D3D11_SUBRESOURCE_DATA l_subresourceData;
+		l_subresourceData.pSysMem = l_rhs->m_InitialData;
+		l_subresourceData.SysMemPitch = 0;
+		l_subresourceData.SysMemSlicePitch = 0;
+
+		l_HResult = m_device->CreateBuffer(&l_rhs->m_BufferDesc, &l_subresourceData, &l_rhs->m_BufferPtr);
+	}
+	else
+	{
+		l_HResult = m_device->CreateBuffer(&l_rhs->m_BufferDesc, NULL, &l_rhs->m_BufferPtr);
+	}
+
+	if (FAILED(l_HResult))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create Buffer object!");
+		return false;
+	}
+#ifdef  _DEBUG
+	if (l_isStructuredBuffer)
+	{
+		SetObjectName(l_rhs, l_rhs->m_BufferPtr, "SBuffer");
+	}
+	else
+	{
+		SetObjectName(l_rhs, l_rhs->m_BufferPtr, "CBuffer");
+	}
+#endif //  _DEBUG
+
+	if (l_isStructuredBuffer)
+	{
+		D3D11_SHADER_RESOURCE_VIEW_DESC l_SRVDesc;
+		l_SRVDesc.Format = DXGI_FORMAT_UNKNOWN;
+		l_SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+		l_SRVDesc.Buffer.FirstElement = 0;
+		l_SRVDesc.Buffer.NumElements = (unsigned int)l_rhs->m_ElementCount;
+
+		l_HResult = m_device->CreateShaderResourceView(l_rhs->m_BufferPtr, &l_SRVDesc, &l_rhs->m_SRV);
+
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create SRV for Buffer object!");
+			return false;
+		}
+#ifdef  _DEBUG
+		SetObjectName(l_rhs, l_rhs->m_BufferPtr, "SRV");
+#endif //  _DEBUG
+
+		D3D11_UNORDERED_ACCESS_VIEW_DESC l_UAVDesc;
+		l_UAVDesc.Format = DXGI_FORMAT_UNKNOWN;
+		l_UAVDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+		l_UAVDesc.Buffer.FirstElement = 0;
+		l_UAVDesc.Buffer.NumElements = (unsigned int)l_rhs->m_ElementCount;
+		l_UAVDesc.Buffer.Flags = 0;
+
+		l_HResult = m_device->CreateUnorderedAccessView(l_rhs->m_BufferPtr, &l_UAVDesc, &l_rhs->m_UAV);
+
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create UAV for Buffer object!");
+			return false;
+		}
+#ifdef  _DEBUG
+		SetObjectName(l_rhs, l_rhs->m_BufferPtr, "UAV");
+#endif //  _DEBUG
+	}
+
 	return true;
 }
 

@@ -1,6 +1,5 @@
 #include "WinDXWindowSurface.h"
 #include "../../../Component/WinWindowSystemComponent.h"
-#include "../../../Component/DX11RenderingBackendComponent.h"
 
 #include "../../../ModuleManager/IModuleManager.h"
 
