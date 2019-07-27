@@ -50,19 +50,22 @@ bool OpaquePass::Initialize()
 	auto l_RenderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
 	m_CameraGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("CameraGPUBuffer/");
-	m_CameraGBDC->m_Size = sizeof(CameraGPUData);
+	m_CameraGBDC->m_ElementCount = 1;
+	m_CameraGBDC->m_ElementSize = sizeof(CameraGPUData);
 	m_CameraGBDC->m_BindingPoint = 0;
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_CameraGBDC);
 
 	m_MeshGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("MeshGPUBuffer/");
-	m_MeshGBDC->m_Size = l_RenderingCapability.maxMeshes * sizeof(MeshGPUData);
+	m_MeshGBDC->m_ElementCount = l_RenderingCapability.maxMeshes;
+	m_MeshGBDC->m_ElementSize = sizeof(MeshGPUData);
 	m_MeshGBDC->m_BindingPoint = 1;
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_MeshGBDC);
 
 	m_MaterialGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("MaterialGPUBuffer/");
-	m_MaterialGBDC->m_Size = l_RenderingCapability.maxMaterials * sizeof(MaterialGPUData);
+	m_MaterialGBDC->m_ElementCount = l_RenderingCapability.maxMaterials;
+	m_MaterialGBDC->m_ElementSize = sizeof(MaterialGPUData);
 	m_MaterialGBDC->m_BindingPoint = 2;
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_MaterialGBDC);
