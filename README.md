@@ -11,6 +11,50 @@
 > "A poet once said, 'The whole universe is in a glass of wine.'"
 > -- Richard Feynman, 1963
 
+## Features
+
+- Strict Entity–Component–System architecture
+
+No OOP overhead / Console-like programming experience / Allow unlimited feature module extension
+
+- Custom container, string and math classes
+
+No STL overhead / No 3rd-party math library dependency
+
+- Job-graph based parallel task model
+
+Fully utilize modern hardware / lock-free in client logic code
+
+- Object pool memory model
+
+O(n) allocation/deallocation
+
+- Client-Server rendering architecture
+
+Allow fully user-designed rendering pipeline without any concern about specific platform and graphics APIs
+
+- Tiled-deferred rendering pipeline
+
+Default rendering pipeline
+
+- Physically-based material
+
+Default material mode, Disney diffuse + Multi-scattering GGX specular
+
+- Physically-based light
+
+Luminosity lighting interface
+
+- Real-time GI
+
+Pre-baked geometry data for the complex scene or bake-free SVOGI for the limited scene
+
+- Unified asset management
+
+Using popular JSON format for all text data
+
+And so on...
+
 ## License
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine?ref=badge_large)
 
@@ -20,12 +64,14 @@ All scripts are in /Script folder
 ### Windows
 
 #### Build Engine
-Tested under Windows 10 version 1903
+Tested OS version: Windows 10 version 1903
 
-Prerequisites: MSVC 19.00 + CMake 3.10 or higher + Vulkan pre-compiled library (Optional)
+##### Prerequisites
+- MSVC 19.00 or higher
+- CMake 3.10 or higher 
+- Vulkan pre-compiled library (Optional)
 
-Run following scripts in a sequence
-*Will build Debug and Release configurations in parallel*
+Run following scripts will build Debug and Release configurations in parallel
 
 ``` cmd
 @echo | SetupWin.bat
@@ -38,22 +84,27 @@ PostBuildWin.ps1
 ```
 
 #### Build Editor
-Tested under Windows 10 version 1903
+Tested OS version: Windows 10 1903
 
-Prerequisites: Qt Creator 5.13 or higher
+##### Prerequisites
+- Qt Creator 5.13 or higher
 
-- Open `Source\Editor\InnocenceEditor\InnocenceEditor.pro` with Qt Creator
-- Change "Projects - Build Settings - General - Build directory" to `..\..\..\Bin` for Debug, Profile and Release build configurations
-- Change "Projects - Run Settings - Run - Working directory" to `..\..\..\Bin`
-- Build the project
+1. Open `Source\Editor\InnocenceEditor\InnocenceEditor.pro` with Qt Creator
+2. Change "Projects - Build Settings - General - Build directory" to `..\..\..\Bin` for Debug, Profile and Release build configurations
+3. Change "Projects - Run Settings - Run - Working directory" to `..\..\..\Bin`
+4. Build the project
 
 ### Linux
+Tested OS version: Ubuntu 18.04 LTS
 
-Tested under Ubuntu 18.04 LTS
+#### Build Engine
 
-Prerequisites: GCC 8.0 or Clang 7.0 or higher + CMake 3.10 or higher + OpenGL library(lGL)
+##### Prerequisites
+- GCC 8.0 or Clang 7.0 or higher 
+- CMake 3.10 or higher 
+- OpenGL library(lGL)
 
-Run following scripts in a sequence:
+Run following scripts
 
 ``` shell
 echo | SetupLinux.sh
@@ -63,12 +114,15 @@ echo | PostBuildLinux.sh
 ```
 
 ### macOS
+Tested OS version: macOS 10.13.6
 
-Tested under version 10.13.6
+#### Build Engine
 
-Prerequisites: CMake 3.10 or higher + Clang 7.0 or higher
+##### Prerequisites
+- CMake 3.10 or higher 
+- Apple Clang 10.0 or LLVM Clang 8.0 or higher
 
-Run following scripts in a sequence:
+Run following scripts
 
 ``` shell
 echo | SetupMac.sh
@@ -81,18 +135,17 @@ echo | PostBuildMac.sh
 
 ### Windows
 
-#### Launch game build
+#### Launch game
 Run following script
 
 ``` powershell
 StartEngineWin.ps1
 ```
 
-#### Launch editor build
+#### Launch editor
 Launch through Qt Creator
 
 ### Linux
-
 Run following script
 
 ``` shell
@@ -100,7 +153,6 @@ echo | StartEngineLinux.sh
 ```
 
 ### macOS
-
 Run following script
 
 ``` shell
@@ -117,14 +169,14 @@ echo | StartEngineMac.sh
 
 ### Linux
 
-1. Use Atom to load the repo folder
+1. Use Atom to load the working copy folder
 2. Install gcc-compiler package
-3. Select build/makefile and hit "Compile and Debug" button default F6)
+3. Select build/makefile and hit "Compile and Debug" button (default F6)
 4. (Optional) Change launch arguments in Source/Engine/Platform/LinuxMain/CMakeLists.txt
 
 ### macOS
 
-1. Use Atom to load the repo folder
+1. Use Atom to load the working copy folder
 2. Open Source/Engine/Platform/MacOS/InnoMain.InnoMain.xcodeproj
 3. Select "Product" - "Run" (⌘ + R)
 
@@ -133,13 +185,13 @@ echo | StartEngineMac.sh
 ```
 -renderer [value]
 ```
-| Value |Notes |
-| --- | --- |
-| 0 | OpenGL rendering backend |
-| 1 | DirectX 11 rendering backend |
-| 2 | DirectX 12 rendering backend (WIP) |
-| 3 | Vulkan rendering backend (WIP) |
-| 4 | Metal rendering backend (WIP) |
+| Value | --- | Notes |
+| --- | --- | --- |
+| 0 | OpenGL | Not available on macOS, current support version 4.6 |
+| 1 | DirectX 11 |  Only available on Windows, current support version 11.4 |
+| 2 | DirectX 12 | Only available on Windows, current support version 12.1 |
+| 3 | Vulkan | Not available on macOS, current support version 1.1.92.1 |
+| 4 | Metal | Only available on macOS, current support version 2 |
 
 ```
 -mode [value]
@@ -148,20 +200,6 @@ echo | StartEngineMac.sh
 | --- | --- |
 | 0 | game mode |
 | 1 | reserved for editor |
-
-## Features
-
-[Entity–component–system architecture](https://en.wikipedia.org/wiki/Entity%E2%80%93component%E2%80%93system)
-
-Task-based concurrency model
-
-[Object memory pool model](https://en.wikipedia.org/wiki/Object_pool_pattern)
-
-[Tiled deferred rendering pipeline](https://en.wikipedia.org/wiki/Deferred_shading)
-
-[Physically based shading](https://en.wikipedia.org/wiki/Physically_based_rendering)
-
-[Scene graph](https://en.wikipedia.org/wiki/Scene_graph)
 
 ## References & Dependencies
 
