@@ -25,6 +25,21 @@ extern IModuleManager* g_pModuleManager;
 
 namespace DX11RenderingServerNS
 {
+	template <typename U, typename T>
+	bool SetObjectName(U* owner, T* rhs, const char* objectType)
+	{
+		auto l_Name = std::string(owner->m_componentName.c_str());
+		l_Name += "_";
+		l_Name += objectType;
+		auto l_HResult = rhs->SetPrivateData(WKPDID_D3DDebugObjectName, (unsigned int)l_Name.size(), l_Name.c_str());
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Can't name ", objectType, " with ", l_Name.c_str());
+			return false;
+		}
+		return true;
+	}
+
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
 	IObjectPool* m_MeshDataComponentPool;
@@ -448,13 +463,16 @@ bool DX11RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	l_vertexSubresourceData.SysMemSlicePitch = 0;
 
 	// Now create the vertex buffer.
-	HRESULT result;
-	result = m_device->CreateBuffer(&l_vertexBufferDesc, &l_vertexSubresourceData, &l_rhs->m_vertexBuffer);
-	if (FAILED(result))
+	HRESULT l_HResult;
+	l_HResult = m_device->CreateBuffer(&l_vertexBufferDesc, &l_vertexSubresourceData, &l_rhs->m_vertexBuffer);
+	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create Vertex Buffer!");
 		return false;
 	}
+#ifdef  _DEBUG
+	SetObjectName(l_rhs, l_rhs->m_vertexBuffer, "VB");
+#endif //  _DEBUG
 
 	InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: Vertex Buffer: ", l_rhs->m_vertexBuffer, " is initialized.");
 
@@ -476,12 +494,15 @@ bool DX11RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	l_indexSubresourceData.SysMemSlicePitch = 0;
 
 	// Create the index buffer.
-	result = m_device->CreateBuffer(&l_indexBufferDesc, &l_indexSubresourceData, &l_rhs->m_indexBuffer);
-	if (FAILED(result))
+	l_HResult = m_device->CreateBuffer(&l_indexBufferDesc, &l_indexSubresourceData, &l_rhs->m_indexBuffer);
+	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create Index Buffer!");
 		return false;
 	}
+#ifdef  _DEBUG
+	SetObjectName(l_rhs, l_rhs->m_indexBuffer, "IB");
+#endif //  _DEBUG
 
 	InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: Index Buffer: ", l_rhs->m_indexBuffer, " is initialized.");
 
@@ -528,7 +549,7 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create texture!");
+		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create Texture!");
 		return false;
 	}
 
@@ -550,6 +571,9 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 			m_deviceContext->UpdateSubresource(l_rhs->m_ResourceHandle, 0, NULL, l_rhs->m_textureData, l_rowPitch, 0);
 		}
 	}
+#ifdef  _DEBUG
+	SetObjectName(l_rhs, l_rhs->m_ResourceHandle, "Texture");
+#endif //  _DEBUG
 
 	InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: Texture: ", l_rhs->m_ResourceHandle, " is initialized.");
 
@@ -562,6 +586,9 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create SRV for texture!");
 		return false;
 	}
+#ifdef  _DEBUG
+	SetObjectName(l_rhs, l_rhs->m_SRV, "SRV");
+#endif //  _DEBUG
 
 	InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: SRV: ", l_rhs->m_SRV, " is initialized.");
 
@@ -582,9 +609,12 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create UAV for texture!");
 			return false;
 		}
-	}
+#ifdef  _DEBUG
+		SetObjectName(l_rhs, l_rhs->m_UAV, "UAV");
+#endif //  _DEBUG
 
-	InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: UAV: ", l_rhs->m_SRV, " is initialized.");
+		InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: UAV: ", l_rhs->m_SRV, " is initialized.");
+	}
 
 	l_rhs->m_objectStatus = ObjectStatus::Activated;
 
@@ -693,6 +723,10 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create RTV for ", l_rhs->m_componentName.c_str(), "!");
 			return false;
 		}
+#ifdef  _DEBUG
+		auto l_RTVName = "RTV_" + std::to_string(i);
+		SetObjectName(l_rhs, l_rhs->m_RTVs[i], l_RTVName.c_str());
+#endif //  _DEBUG
 	}
 
 	// DSV
@@ -708,6 +742,9 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create the DSV for ", l_rhs->m_componentName.c_str(), "!");
 			return false;
 		}
+#ifdef  _DEBUG
+		SetObjectName(l_rhs, l_rhs->m_DSV, "DSV");
+#endif //  _DEBUG
 	}
 
 	// PSO
@@ -728,6 +765,9 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create the depth stencil state object for ", l_rhs->m_componentName.c_str(), "!");
 			return false;
 		}
+#ifdef  _DEBUG
+		SetObjectName(l_rhs, l_PSO->m_DepthStencilState, "DSSO");
+#endif //  _DEBUG
 	}
 
 	// Blend state object
@@ -739,6 +779,9 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create the blend state object for ", l_rhs->m_componentName.c_str(), "!");
 			return false;
 		}
+#ifdef  _DEBUG
+		SetObjectName(l_rhs, l_PSO->m_BlendState, "BSO");
+#endif //  _DEBUG
 	}
 
 	// Rasterizer state object
@@ -748,6 +791,9 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create the rasterizer state object for ", l_rhs->m_componentName.c_str(), "!");
 		return false;
 	}
+#ifdef  _DEBUG
+	SetObjectName(l_rhs, l_PSO->m_RasterizerState, "RSO");
+#endif //  _DEBUG
 
 	l_rhs->m_PipelineStateObject = l_PSO;
 
