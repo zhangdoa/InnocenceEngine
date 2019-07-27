@@ -664,3 +664,59 @@ bool DX11Helper::GenerateViewportStateDesc(ViewportDesc viewportDesc, DX11Pipeli
 
 	return true;
 }
+
+bool DX11Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderType shaderType, const ShaderFilePath & shaderFilePath)
+{
+	const char* l_shaderTypeName;
+
+	switch (shaderType)
+	{
+	case ShaderType::VERTEX: l_shaderTypeName = "vs_5_0";
+		break;
+	case ShaderType::TCS: l_shaderTypeName = "hs_5_0";
+		break;
+	case ShaderType::TES: l_shaderTypeName = "ds_5_0";
+		break;
+	case ShaderType::GEOMETRY: l_shaderTypeName = "gs_5_0";
+		break;
+	case ShaderType::FRAGMENT: l_shaderTypeName = "ps_5_0";
+		break;
+	case ShaderType::COMPUTE: l_shaderTypeName = "cs_5_0";
+		break;
+	default:
+		break;
+	}
+
+	ID3D10Blob* l_errorMessage = 0;
+	auto l_workingDir = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	auto l_workingDirW = std::wstring(l_workingDir.begin(), l_workingDir.end());
+	auto l_shadeFilePathW = std::wstring(shaderFilePath.begin(), shaderFilePath.end());
+	auto l_HResult = D3DCompileFromFile((l_workingDirW + m_shaderRelativePath + l_shadeFilePathW).c_str(), NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", l_shaderTypeName, D3D10_SHADER_ENABLE_STRICTNESS, 0,
+		rhs, &l_errorMessage);
+
+	if (FAILED(l_HResult))
+	{
+		if (l_errorMessage)
+		{
+			auto l_errorMessagePtr = (char*)(l_errorMessage->GetBufferPointer());
+			auto bufferSize = l_errorMessage->GetBufferSize();
+			std::vector<char> l_errorMessageVector(bufferSize);
+			std::memcpy(l_errorMessageVector.data(), l_errorMessagePtr, bufferSize);
+
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: ", shaderFilePath.c_str(), " compile error: ", &l_errorMessageVector[0], "\n -- --------------------------------------------------- -- ");
+		}
+		else
+		{
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't find ", shaderFilePath.c_str(), "!");
+		}
+		return false;
+	}
+
+	if (l_errorMessage)
+	{
+		l_errorMessage->Release();
+	}
+
+	InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: ", shaderFilePath.c_str(), " has been compiled.");
+	return true;
+}

@@ -1,6 +1,7 @@
 #pragma once
 #include "../../Component/DX11TextureDataComponent.h"
 #include "../../Component/DX11RenderPassDataComponent.h"
+#include "../../Component/DX11ShaderProgramComponent.h"
 
 namespace DX11Helper
 {
@@ -20,4 +21,6 @@ namespace DX11Helper
 	bool GenerateBlendStateDesc(BlendDesc blendDesc, DX11PipelineStateObject* PSO);
 	bool GenerateRasterizerStateDesc(RasterizerDesc rasterizerDesc, DX11PipelineStateObject* PSO);
 	bool GenerateViewportStateDesc(ViewportDesc viewportDesc, DX11PipelineStateObject* PSO);
+
+	bool LoadShaderFile(ID3D10Blob** rhs, ShaderType shaderType, const ShaderFilePath& shaderFilePath);
 }

@@ -8,6 +8,9 @@ public:
 	std::deque<std::function<void()>> m_Activate;
 	std::deque<std::function<void()>> m_Deactivate;
 
+	ID3D11InputLayout* m_InputLayout = 0;
+	D3D11_SAMPLER_DESC m_SamplerDesc = {};
+	ID3D11SamplerState* m_SamplerState = 0;
 	D3D11_DEPTH_STENCIL_DESC m_DepthStencilDesc = {};
 	ID3D11DepthStencilState* m_DepthStencilState = 0;
 	D3D11_BLEND_DESC m_BlendDesc = {};

@@ -70,6 +70,8 @@ namespace DX11RenderingServerNS
 	DXGI_SWAP_CHAIN_DESC m_swapChainDesc;
 	IDXGISwapChain4* m_swapChain;
 	std::vector<ID3D11Texture2D*> m_swapChainTextures;
+
+	ID3D10Blob* m_InputLayoutDummyShaderBuffer = 0;
 }
 
 using namespace DX11RenderingServerNS;
@@ -272,7 +274,10 @@ bool DX11RenderingServer::Initialize()
 {
 	if (m_objectStatus == ObjectStatus::Created)
 	{
+		// @TODO: Find a better solution
+		LoadShaderFile(&m_InputLayoutDummyShaderBuffer, ShaderType::VERTEX, "dummyInputLayout.hlsl/");
 	}
+
 	return true;
 }
 
@@ -756,6 +761,70 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 	GenerateRasterizerStateDesc(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
 	GenerateViewportStateDesc(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
 
+	// Input layout object
+	D3D11_INPUT_ELEMENT_DESC l_inputLayouts[5];
+
+	l_inputLayouts[0].SemanticName = "POSITION";
+	l_inputLayouts[0].SemanticIndex = 0;
+	l_inputLayouts[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	l_inputLayouts[0].InputSlot = 0;
+	l_inputLayouts[0].AlignedByteOffset = 0;
+	l_inputLayouts[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_inputLayouts[0].InstanceDataStepRate = 0;
+
+	l_inputLayouts[1].SemanticName = "TEXCOORD";
+	l_inputLayouts[1].SemanticIndex = 0;
+	l_inputLayouts[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+	l_inputLayouts[1].InputSlot = 0;
+	l_inputLayouts[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	l_inputLayouts[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_inputLayouts[1].InstanceDataStepRate = 0;
+
+	l_inputLayouts[2].SemanticName = "PADA";
+	l_inputLayouts[2].SemanticIndex = 0;
+	l_inputLayouts[2].Format = DXGI_FORMAT_R32G32_FLOAT;
+	l_inputLayouts[2].InputSlot = 0;
+	l_inputLayouts[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	l_inputLayouts[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_inputLayouts[2].InstanceDataStepRate = 0;
+
+	l_inputLayouts[3].SemanticName = "NORMAL";
+	l_inputLayouts[3].SemanticIndex = 0;
+	l_inputLayouts[3].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	l_inputLayouts[3].InputSlot = 0;
+	l_inputLayouts[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	l_inputLayouts[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_inputLayouts[3].InstanceDataStepRate = 0;
+
+	l_inputLayouts[4].SemanticName = "PADB";
+	l_inputLayouts[4].SemanticIndex = 0;
+	l_inputLayouts[4].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	l_inputLayouts[4].InputSlot = 0;
+	l_inputLayouts[4].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	l_inputLayouts[4].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_inputLayouts[4].InstanceDataStepRate = 0;
+
+	auto l_HResult = m_device->CreateInputLayout(l_inputLayouts, 5, m_InputLayoutDummyShaderBuffer->GetBufferPointer(), m_InputLayoutDummyShaderBuffer->GetBufferSize(), &l_PSO->m_InputLayout);
+	if (FAILED(l_HResult))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create input layout object!");
+		return false;
+	}
+#ifdef  _DEBUG
+	SetObjectName(l_rhs, l_PSO->m_InputLayout, "ILO");
+#endif //  _DEBUG
+
+	// Sampler state object
+	l_HResult = m_device->CreateSamplerState(&l_PSO->m_SamplerDesc, &l_PSO->m_SamplerState);
+	if (FAILED(l_HResult))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create sampler state object for ", l_rhs->m_componentName.c_str(), "!");
+		return false;
+	}
+#ifdef  _DEBUG
+	SetObjectName(l_rhs, l_PSO->m_DepthStencilState, "SSO");
+#endif //  _DEBUG
+
 	// Depth stencil state object
 	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
 	{
@@ -785,7 +854,7 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 	}
 
 	// Rasterizer state object
-	auto l_HResult = m_device->CreateRasterizerState(&l_PSO->m_RasterizerDesc, &l_PSO->m_RasterizerState);
+	l_HResult = m_device->CreateRasterizerState(&l_PSO->m_RasterizerDesc, &l_PSO->m_RasterizerState);
 	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create the rasterizer state object for ", l_rhs->m_componentName.c_str(), "!");
@@ -804,6 +873,75 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 
 bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX11ShaderProgramComponent*>(rhs);
+
+	if (l_rhs->m_ShaderFilePaths.m_VSPath != "")
+	{
+		ID3D10Blob* l_shaderFileBuffer = 0;
+		LoadShaderFile(&l_shaderFileBuffer, ShaderType::VERTEX, l_rhs->m_ShaderFilePaths.m_VSPath);
+		auto l_HResult = m_device->CreateVertexShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_VSHandle);
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create vertex shader!");
+			return false;
+		};
+	}
+	if (l_rhs->m_ShaderFilePaths.m_TCSPath != "")
+	{
+		ID3D10Blob* l_shaderFileBuffer = 0;
+		LoadShaderFile(&l_shaderFileBuffer, ShaderType::TCS, l_rhs->m_ShaderFilePaths.m_TCSPath);
+		auto l_HResult = m_device->CreateHullShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_TCSHandle);
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create TCS shader!");
+			return false;
+		};
+	}
+	if (l_rhs->m_ShaderFilePaths.m_TESPath != "")
+	{
+		ID3D10Blob* l_shaderFileBuffer = 0;
+		LoadShaderFile(&l_shaderFileBuffer, ShaderType::TES, l_rhs->m_ShaderFilePaths.m_TESPath);
+		auto l_HResult = m_device->CreateDomainShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_TESHandle);
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create TES shader!");
+			return false;
+		};
+	}
+	if (l_rhs->m_ShaderFilePaths.m_GSPath != "")
+	{
+		ID3D10Blob* l_shaderFileBuffer = 0;
+		LoadShaderFile(&l_shaderFileBuffer, ShaderType::GEOMETRY, l_rhs->m_ShaderFilePaths.m_GSPath);
+		auto l_HResult = m_device->CreateGeometryShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_GSHandle);
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create geometry shader!");
+			return false;
+		};
+	}
+	if (l_rhs->m_ShaderFilePaths.m_FSPath != "")
+	{
+		ID3D10Blob* l_shaderFileBuffer = 0;
+		LoadShaderFile(&l_shaderFileBuffer, ShaderType::FRAGMENT, l_rhs->m_ShaderFilePaths.m_FSPath);
+		auto l_HResult = m_device->CreatePixelShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_FSHandle);
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create fragment shader!");
+			return false;
+		};
+	}
+	if (l_rhs->m_ShaderFilePaths.m_CSPath != "")
+	{
+		ID3D10Blob* l_shaderFileBuffer = 0;
+		LoadShaderFile(&l_shaderFileBuffer, ShaderType::COMPUTE, l_rhs->m_ShaderFilePaths.m_CSPath);
+		auto l_HResult = m_device->CreateComputeShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_CSHandle);
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create compute shader!");
+			return false;
+		};
+	}
+
 	return true;
 }
 
