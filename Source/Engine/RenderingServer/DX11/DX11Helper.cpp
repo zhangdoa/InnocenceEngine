@@ -665,6 +665,64 @@ bool DX11Helper::GenerateViewportStateDesc(ViewportDesc viewportDesc, DX11Pipeli
 	return true;
 }
 
+D3D11_FILTER GetFilterMode(TextureFilterMethod textureFilterMethod)
+{
+	D3D11_FILTER l_result;
+
+	// @TODO: Completeness of the filter
+	switch (textureFilterMethod)
+	{
+	case TextureFilterMethod::NEAREST: l_result = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		break;
+	case TextureFilterMethod::LINEAR: l_result = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		break;
+	case TextureFilterMethod::LINEAR_MIPMAP_LINEAR: l_result = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+D3D11_TEXTURE_ADDRESS_MODE GetWrapMode(TextureWrapMethod textureWrapMethod)
+{
+	D3D11_TEXTURE_ADDRESS_MODE l_result;
+
+	switch (textureWrapMethod)
+	{
+	case TextureWrapMethod::CLAMP_TO_EDGE: l_result = D3D11_TEXTURE_ADDRESS_CLAMP;
+		break;
+	case TextureWrapMethod::REPEAT: l_result = D3D11_TEXTURE_ADDRESS_WRAP;
+		break;
+	case TextureWrapMethod::CLAMP_TO_BORDER: l_result = D3D11_TEXTURE_ADDRESS_BORDER;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+bool DX11Helper::GenerateSamplerStateDesc(SamplerDesc samplerDesc, DX11PipelineStateObject * PSO)
+{
+	PSO->m_SamplerDesc.Filter = GetFilterMode(samplerDesc.m_FilterMethod);
+	PSO->m_SamplerDesc.AddressU = GetWrapMode(samplerDesc.m_WrapMethodU);
+	PSO->m_SamplerDesc.AddressV = GetWrapMode(samplerDesc.m_WrapMethodV);
+	PSO->m_SamplerDesc.AddressW = GetWrapMode(samplerDesc.m_WrapMethodW);
+	PSO->m_SamplerDesc.MipLODBias = 0.0f;
+	PSO->m_SamplerDesc.MaxAnisotropy = samplerDesc.m_MaxAnisotropy;
+	PSO->m_SamplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	PSO->m_SamplerDesc.BorderColor[0] = samplerDesc.m_BoardColor[0];
+	PSO->m_SamplerDesc.BorderColor[1] = samplerDesc.m_BoardColor[1];
+	PSO->m_SamplerDesc.BorderColor[2] = samplerDesc.m_BoardColor[2];
+	PSO->m_SamplerDesc.BorderColor[3] = samplerDesc.m_BoardColor[3];
+	PSO->m_SamplerDesc.MinLOD = samplerDesc.m_MinLOD;
+	PSO->m_SamplerDesc.MaxLOD = samplerDesc.m_MaxLOD;
+
+	return true;
+}
+
 bool DX11Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderType shaderType, const ShaderFilePath & shaderFilePath)
 {
 	const char* l_shaderTypeName;

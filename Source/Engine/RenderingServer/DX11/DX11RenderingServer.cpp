@@ -454,7 +454,7 @@ bool DX11RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	D3D11_BUFFER_DESC l_vertexBufferDesc;
 	ZeroMemory(&l_vertexBufferDesc, sizeof(l_vertexBufferDesc));
 	l_vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	l_vertexBufferDesc.ByteWidth = sizeof(Vertex) * (UINT)l_rhs->m_vertices.size();
+	l_vertexBufferDesc.ByteWidth = sizeof(Vertex) * (unsigned int)l_rhs->m_vertices.size();
 	l_vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	l_vertexBufferDesc.CPUAccessFlags = 0;
 	l_vertexBufferDesc.MiscFlags = 0;
@@ -485,7 +485,7 @@ bool DX11RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	D3D11_BUFFER_DESC l_indexBufferDesc;
 	ZeroMemory(&l_indexBufferDesc, sizeof(l_indexBufferDesc));
 	l_indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	l_indexBufferDesc.ByteWidth = (UINT)(l_rhs->m_indices.size() * sizeof(unsigned int));
+	l_indexBufferDesc.ByteWidth = (unsigned int)(l_rhs->m_indices.size() * sizeof(unsigned int));
 	l_indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	l_indexBufferDesc.CPUAccessFlags = 0;
 	l_indexBufferDesc.MiscFlags = 0;
@@ -564,11 +564,11 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 		&& l_rhs->m_textureDataDesc.usageType != TextureUsageType::DEPTH_STENCIL_ATTACHMENT
 		&& l_rhs->m_textureDataDesc.usageType != TextureUsageType::RAW_IMAGE)
 	{
-		UINT l_rowPitch = (l_rhs->m_textureDataDesc.width * ((unsigned int)l_rhs->m_textureDataDesc.pixelDataFormat + 1)) * sizeof(unsigned char);
+		unsigned int l_rowPitch = (l_rhs->m_textureDataDesc.width * ((unsigned int)l_rhs->m_textureDataDesc.pixelDataFormat + 1)) * sizeof(unsigned char);
 
 		if (l_rhs->m_textureDataDesc.samplerType == TextureSamplerType::SAMPLER_3D)
 		{
-			UINT l_depthPitch = l_rowPitch * l_rhs->m_textureDataDesc.height;
+			unsigned int l_depthPitch = l_rowPitch * l_rhs->m_textureDataDesc.height;
 			m_deviceContext->UpdateSubresource(l_rhs->m_ResourceHandle, 0, NULL, l_rhs->m_textureData, l_rowPitch, l_depthPitch);
 		}
 		else
@@ -725,7 +725,7 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 		auto l_HResult = m_device->CreateRenderTargetView(l_DXTDC->m_ResourceHandle, &l_rhs->m_RTVDesc, &l_rhs->m_RTVs[i]);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create RTV for ", l_rhs->m_componentName.c_str(), "!");
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create RTV for ", l_rhs->m_componentName.c_str(), "!");
 			return false;
 		}
 #ifdef  _DEBUG
@@ -744,7 +744,7 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 		auto l_HResult = m_device->CreateDepthStencilView(l_DXTDC->m_ResourceHandle, &l_rhs->m_DSVDesc, &l_rhs->m_DSV);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create the DSV for ", l_rhs->m_componentName.c_str(), "!");
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the DSV for ", l_rhs->m_componentName.c_str(), "!");
 			return false;
 		}
 #ifdef  _DEBUG
@@ -760,6 +760,7 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 	GenerateBlendStateDesc(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
 	GenerateRasterizerStateDesc(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
 	GenerateViewportStateDesc(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
+	GenerateSamplerStateDesc(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_SamplerDesc, l_PSO);
 
 	// Input layout object
 	D3D11_INPUT_ELEMENT_DESC l_inputLayouts[5];
@@ -807,7 +808,7 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 	auto l_HResult = m_device->CreateInputLayout(l_inputLayouts, 5, m_InputLayoutDummyShaderBuffer->GetBufferPointer(), m_InputLayoutDummyShaderBuffer->GetBufferSize(), &l_PSO->m_InputLayout);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create input layout object!");
+		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create input layout object!");
 		return false;
 	}
 #ifdef  _DEBUG
@@ -818,11 +819,11 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 	l_HResult = m_device->CreateSamplerState(&l_PSO->m_SamplerDesc, &l_PSO->m_SamplerState);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create sampler state object for ", l_rhs->m_componentName.c_str(), "!");
+		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create sampler state object for ", l_rhs->m_componentName.c_str(), "!");
 		return false;
 	}
 #ifdef  _DEBUG
-	SetObjectName(l_rhs, l_PSO->m_DepthStencilState, "SSO");
+	SetObjectName(l_rhs, l_PSO->m_SamplerState, "SSO");
 #endif //  _DEBUG
 
 	// Depth stencil state object
@@ -831,7 +832,7 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 		auto l_HResult = m_device->CreateDepthStencilState(&l_PSO->m_DepthStencilDesc, &l_PSO->m_DepthStencilState);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create the depth stencil state object for ", l_rhs->m_componentName.c_str(), "!");
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the depth stencil state object for ", l_rhs->m_componentName.c_str(), "!");
 			return false;
 		}
 #ifdef  _DEBUG
@@ -845,7 +846,7 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 		auto l_HResult = m_device->CreateBlendState(&l_PSO->m_BlendDesc, &l_PSO->m_BlendState);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create the blend state object for ", l_rhs->m_componentName.c_str(), "!");
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the blend state object for ", l_rhs->m_componentName.c_str(), "!");
 			return false;
 		}
 #ifdef  _DEBUG
@@ -857,7 +858,7 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 	l_HResult = m_device->CreateRasterizerState(&l_PSO->m_RasterizerDesc, &l_PSO->m_RasterizerState);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create the rasterizer state object for ", l_rhs->m_componentName.c_str(), "!");
+		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the rasterizer state object for ", l_rhs->m_componentName.c_str(), "!");
 		return false;
 	}
 #ifdef  _DEBUG
@@ -882,7 +883,7 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 		auto l_HResult = m_device->CreateVertexShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_VSHandle);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create vertex shader!");
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create vertex shader!");
 			return false;
 		};
 	}
@@ -893,7 +894,7 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 		auto l_HResult = m_device->CreateHullShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_TCSHandle);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create TCS shader!");
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create TCS shader!");
 			return false;
 		};
 	}
@@ -904,7 +905,7 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 		auto l_HResult = m_device->CreateDomainShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_TESHandle);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create TES shader!");
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create TES shader!");
 			return false;
 		};
 	}
@@ -915,7 +916,7 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 		auto l_HResult = m_device->CreateGeometryShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_GSHandle);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create geometry shader!");
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create geometry shader!");
 			return false;
 		};
 	}
@@ -926,7 +927,7 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 		auto l_HResult = m_device->CreatePixelShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_FSHandle);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create fragment shader!");
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create fragment shader!");
 			return false;
 		};
 	}
@@ -937,7 +938,7 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 		auto l_HResult = m_device->CreateComputeShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_CSHandle);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create compute shader!");
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create compute shader!");
 			return false;
 		};
 	}
@@ -978,7 +979,7 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create Buffer object!");
+		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create Buffer object!");
 		return false;
 	}
 #ifdef  _DEBUG
@@ -1004,7 +1005,7 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create SRV for Buffer object!");
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create SRV for Buffer object!");
 			return false;
 		}
 #ifdef  _DEBUG
@@ -1022,7 +1023,7 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: can't create UAV for Buffer object!");
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create UAV for Buffer object!");
 			return false;
 		}
 #ifdef  _DEBUG
@@ -1065,6 +1066,22 @@ bool DX11RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * 
 
 bool DX11RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue)
 {
+	auto l_rhs = reinterpret_cast<DX11GPUBufferDataComponent*>(rhs);
+
+	D3D11_MAPPED_SUBRESOURCE l_MappedResource;
+
+	auto l_HResult = m_deviceContext->Map(l_rhs->m_BufferPtr, 0, D3D11_MAP_WRITE_DISCARD, 0, &l_MappedResource);
+	if (FAILED(l_HResult))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't lock the shader buffer!");
+		return false;
+	}
+
+	auto l_dataPtr = l_MappedResource.pData;
+	std::memcpy(l_dataPtr, GPUBufferValue, l_rhs->m_TotalSize);
+
+	m_deviceContext->Unmap(l_rhs->m_BufferPtr, 0);
+
 	return true;
 }
 
@@ -1075,36 +1092,224 @@ bool DX11RenderingServer::CommandListBegin(RenderPassDataComponent * rhs, size_t
 
 bool DX11RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX11RenderPassDataComponent*>(rhs);
+	auto l_PSO = reinterpret_cast<DX11PipelineStateObject*>(l_rhs->m_PipelineStateObject);
+
+	m_deviceContext->IASetInputLayout(l_PSO->m_InputLayout);
+	m_deviceContext->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
+
+	m_deviceContext->PSSetSamplers(0, 1, &l_PSO->m_SamplerState);
+
+	m_deviceContext->RSSetViewports(1, &l_PSO->m_Viewport);
+	m_deviceContext->RSSetState(l_PSO->m_RasterizerState);
+
+	m_deviceContext->OMSetRenderTargets((unsigned int)l_rhs->m_RTVs.size(), &l_rhs->m_RTVs[0], l_rhs->m_DSV);
+	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	{
+		m_deviceContext->OMSetDepthStencilState(l_PSO->m_DepthStencilState, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilReference);
+	}
+	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc.m_UseBlend)
+	{
+		m_deviceContext->OMSetBlendState(l_PSO->m_BlendState, NULL, 0xFFFFFFFF);
+	}
+
 	return true;
 }
 
 bool DX11RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX11RenderPassDataComponent*>(rhs);
+	float l_cleanColors[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+	for (auto i : l_rhs->m_RTVs)
+	{
+		m_deviceContext->ClearRenderTargetView(i, l_cleanColors);
+	}
+	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	{
+		m_deviceContext->ClearDepthStencilView(l_rhs->m_DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0x00);
+	}
+
+	return true;
+}
+
+bool BindSRV(ShaderType shaderType, unsigned int bindingPoint, ID3D11ShaderResourceView * SRV)
+{
+	switch (shaderType)
+	{
+	case ShaderType::VERTEX:
+		m_deviceContext->VSSetShaderResources(bindingPoint, 1, &SRV);
+		break;
+	case ShaderType::TCS:
+		m_deviceContext->HSSetShaderResources(bindingPoint, 1, &SRV);
+		break;
+	case ShaderType::TES:
+		m_deviceContext->DSSetShaderResources(bindingPoint, 1, &SRV);
+		break;
+	case ShaderType::GEOMETRY:
+		m_deviceContext->GSSetShaderResources(bindingPoint, 1, &SRV);
+		break;
+	case ShaderType::FRAGMENT:
+		m_deviceContext->PSSetShaderResources(bindingPoint, 1, &SRV);
+		break;
+	case ShaderType::COMPUTE:
+		m_deviceContext->CSSetShaderResources(bindingPoint, 1, &SRV);
+		break;
+	default:
+		break;
+	}
 	return true;
 }
 
 bool DX11RenderingServer::BindGPUBufferDataComponent(ShaderType shaderType, GPUBufferAccessibility accessibility, GPUBufferDataComponent * rhs, size_t startOffset, size_t range)
 {
+	auto l_rhs = reinterpret_cast<DX11GPUBufferDataComponent*>(rhs);
+
+	if (accessibility == GPUBufferAccessibility::ReadOnly)
+	{
+		if (l_rhs->m_GPUBufferAccessibility == GPUBufferAccessibility::ReadOnly)
+		{
+			// Read CBuffer
+			auto l_constantCount = (unsigned int)l_rhs->m_ElementSize / 16;
+			auto l_firstConstant = (unsigned int)startOffset * l_constantCount;
+
+			switch (shaderType)
+			{
+			case ShaderType::VERTEX:
+				m_deviceContext->VSSetConstantBuffers1((unsigned int)l_rhs->m_BindingPoint, 1, &l_rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
+				break;
+			case ShaderType::TCS:
+				m_deviceContext->HSSetConstantBuffers1((unsigned int)l_rhs->m_BindingPoint, 1, &l_rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
+				break;
+			case ShaderType::TES:
+				m_deviceContext->DSSetConstantBuffers1((unsigned int)l_rhs->m_BindingPoint, 1, &l_rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
+				break;
+			case ShaderType::GEOMETRY:
+				m_deviceContext->GSSetConstantBuffers1((unsigned int)l_rhs->m_BindingPoint, 1, &l_rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
+				break;
+			case ShaderType::FRAGMENT:
+				m_deviceContext->PSSetConstantBuffers1((unsigned int)l_rhs->m_BindingPoint, 1, &l_rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
+				break;
+			case ShaderType::COMPUTE:
+				m_deviceContext->CSSetConstantBuffers1((unsigned int)l_rhs->m_BindingPoint, 1, &l_rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
+				break;
+			default:
+				break;
+			}
+		}
+		else
+		{
+			// Read SBuffer
+			BindSRV(shaderType, (unsigned int)l_rhs->m_BindingPoint, l_rhs->m_SRV);
+		}
+	}
+	else
+	{
+		if (l_rhs->m_GPUBufferAccessibility == GPUBufferAccessibility::ReadOnly)
+		{
+			InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Not allow GPU write to Constant Buffer!");
+			return false;
+		}
+		else
+		{
+			// Write SBuffer
+			if (shaderType == ShaderType::COMPUTE)
+			{
+				m_deviceContext->CSSetUnorderedAccessViews((unsigned int)l_rhs->m_BindingPoint, 1, &l_rhs->m_UAV, nullptr);
+			}
+			else
+			{
+				InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Only allow Compute shader write to Structured Buffer!");
+				return false;
+			}
+		}
+	}
+
 	return true;
 }
 
 bool DX11RenderingServer::BindShaderProgramComponent(ShaderProgramComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX11ShaderProgramComponent*>(rhs);
+
+	if (l_rhs->m_VSHandle)
+	{
+		m_deviceContext->VSSetShader(l_rhs->m_VSHandle, NULL, 0);
+	}
+	if (l_rhs->m_TCSHandle)
+	{
+		m_deviceContext->HSSetShader(l_rhs->m_TCSHandle, NULL, 0);
+	}
+	if (l_rhs->m_TESHandle)
+	{
+		m_deviceContext->DSSetShader(l_rhs->m_TESHandle, NULL, 0);
+	}
+	if (l_rhs->m_GSHandle)
+	{
+		m_deviceContext->GSSetShader(l_rhs->m_GSHandle, NULL, 0);
+	}
+	if (l_rhs->m_FSHandle)
+	{
+		m_deviceContext->PSSetShader(l_rhs->m_FSHandle, NULL, 0);
+	}
+	if (l_rhs->m_CSHandle)
+	{
+		m_deviceContext->CSSetShader(l_rhs->m_CSHandle, NULL, 0);
+	}
+
 	return true;
 }
 
 bool DX11RenderingServer::BindMaterialDataComponent(ShaderType shaderType, MaterialDataComponent * rhs)
 {
+	if (rhs->m_normalTexture)
+	{
+		BindSRV(shaderType, 0, reinterpret_cast<DX11TextureDataComponent*>(rhs->m_normalTexture)->m_SRV);
+	}
+	if (rhs->m_albedoTexture)
+	{
+		BindSRV(shaderType, 1, reinterpret_cast<DX11TextureDataComponent*>(rhs->m_albedoTexture)->m_SRV);
+	}
+	if (rhs->m_metallicTexture)
+	{
+		BindSRV(shaderType, 2, reinterpret_cast<DX11TextureDataComponent*>(rhs->m_metallicTexture)->m_SRV);
+	}
+	if (rhs->m_roughnessTexture)
+	{
+		BindSRV(shaderType, 3, reinterpret_cast<DX11TextureDataComponent*>(rhs->m_roughnessTexture)->m_SRV);
+	}
+	if (rhs->m_aoTexture)
+	{
+		BindSRV(shaderType, 4, reinterpret_cast<DX11TextureDataComponent*>(rhs->m_aoTexture)->m_SRV);
+	}
+
 	return true;
 }
 
 bool DX11RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh)
 {
+	auto l_rhs = reinterpret_cast<DX11MeshDataComponent*>(mesh);
+
+	const unsigned int l_stride = sizeof(Vertex);
+	const unsigned int l_offset = 0;
+
+	m_deviceContext->IASetVertexBuffers(0, 1, &l_rhs->m_vertexBuffer, &l_stride, &l_offset);
+
+	m_deviceContext->IASetIndexBuffer(l_rhs->m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	m_deviceContext->DrawIndexed((unsigned int)l_rhs->m_indicesSize, 0, 0);
+
 	return true;
 }
 
 bool DX11RenderingServer::UnbindMaterialDataComponent(ShaderType shaderType, MaterialDataComponent * rhs)
 {
+	BindSRV(shaderType, 0, 0);
+	BindSRV(shaderType, 1, 0);
+	BindSRV(shaderType, 2, 0);
+	BindSRV(shaderType, 3, 0);
+	BindSRV(shaderType, 4, 0);
+
 	return true;
 }
 
