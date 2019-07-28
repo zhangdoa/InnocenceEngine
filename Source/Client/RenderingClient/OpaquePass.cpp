@@ -97,14 +97,14 @@ bool OpaquePass::PrepareCommandList()
 	{
 		auto l_opaquePassGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassGPUData()[i];
 
-		g_pModuleManager->getRenderingServer()->BindMaterialDataComponent(l_opaquePassGPUData.material);
+		g_pModuleManager->getRenderingServer()->BindMaterialDataComponent(ShaderType::FRAGMENT, l_opaquePassGPUData.material);
 
 		g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(ShaderType::VERTEX, GPUBufferAccessibility::ReadOnly, m_MeshGBDC, l_offset * sizeof(MeshGPUData), sizeof(MeshGPUData));
 		g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(ShaderType::FRAGMENT, GPUBufferAccessibility::ReadOnly, m_MaterialGBDC, l_offset * sizeof(MaterialGPUData), sizeof(MaterialGPUData));
 
 		g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPC, l_opaquePassGPUData.mesh);
 
-		g_pModuleManager->getRenderingServer()->UnbindMaterialDataComponent(l_opaquePassGPUData.material);
+		g_pModuleManager->getRenderingServer()->UnbindMaterialDataComponent(ShaderType::FRAGMENT, l_opaquePassGPUData.material);
 
 		l_offset++;
 	}

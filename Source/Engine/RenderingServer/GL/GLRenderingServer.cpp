@@ -689,9 +689,9 @@ bool GLRenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 	return true;
 }
 
-bool GLRenderingServer::BindGPUBufferDataComponent(ShaderType shaderType, GPUBufferAccessibility accessibility, GPUBufferDataComponent * GPUBufferDataComponent, size_t startOffset, size_t range)
+bool GLRenderingServer::BindGPUBufferDataComponent(ShaderType shaderType, GPUBufferAccessibility accessibility, GPUBufferDataComponent * rhs, size_t startOffset, size_t range)
 {
-	auto l_rhs = reinterpret_cast<GLGPUBufferDataComponent*>(GPUBufferDataComponent);
+	auto l_rhs = reinterpret_cast<GLGPUBufferDataComponent*>(rhs);
 
 	glBindBufferRange(l_rhs->m_BufferType, (GLuint)l_rhs->m_BindingPoint, l_rhs->m_Handle, startOffset, range);
 
@@ -707,7 +707,7 @@ bool GLRenderingServer::BindShaderProgramComponent(ShaderProgramComponent * rhs)
 	return true;
 }
 
-bool GLRenderingServer::BindMaterialDataComponent(MaterialDataComponent * rhs)
+bool GLRenderingServer::BindMaterialDataComponent(ShaderType shaderType, MaterialDataComponent * rhs)
 {
 	if (rhs->m_normalTexture)
 	{
@@ -744,7 +744,7 @@ bool GLRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, Me
 	return true;
 }
 
-bool GLRenderingServer::UnbindMaterialDataComponent(MaterialDataComponent * rhs)
+bool GLRenderingServer::UnbindMaterialDataComponent(ShaderType shaderType, MaterialDataComponent * rhs)
 {
 	return true;
 }

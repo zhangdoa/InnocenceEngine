@@ -52,11 +52,11 @@ class VKRenderingServer : public IRenderingServer
 	virtual bool CommandListBegin(RenderPassDataComponent * rhs, size_t frameIndex) override;
 	virtual bool BindRenderPassDataComponent(RenderPassDataComponent * rhs) override;
 	virtual bool CleanRenderTargets(RenderPassDataComponent * rhs) override;
-	virtual bool BindGPUBufferDataComponent(ShaderType shaderType, GPUBufferAccessibility accessibility, GPUBufferDataComponent * GPUBufferDataComponent, size_t startOffset, size_t range) override;
+	virtual bool BindGPUBufferDataComponent(ShaderType shaderType, GPUBufferAccessibility accessibility, GPUBufferDataComponent * rhs, size_t startOffset, size_t range) override;
 	virtual bool BindShaderProgramComponent(ShaderProgramComponent * rhs) override;
-	virtual bool BindMaterialDataComponent(MaterialDataComponent * rhs) override;
+	virtual bool BindMaterialDataComponent(ShaderType shaderType, MaterialDataComponent * rhs) override;
 	virtual bool DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh) override;
-	virtual bool UnbindMaterialDataComponent(MaterialDataComponent * rhs) override;
+	virtual bool UnbindMaterialDataComponent(ShaderType shaderType, MaterialDataComponent * rhs) override;
 	virtual bool CommandListEnd(RenderPassDataComponent * rhs, size_t frameIndex) override;
 	virtual bool ExecuteCommandList(RenderPassDataComponent * rhs, size_t frameIndex) override;
 	virtual bool WaitForFrame(RenderPassDataComponent * rhs, size_t frameIndex) override;

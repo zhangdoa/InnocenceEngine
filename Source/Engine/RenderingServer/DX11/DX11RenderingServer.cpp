@@ -1083,7 +1083,7 @@ bool DX11RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 	return true;
 }
 
-bool DX11RenderingServer::BindGPUBufferDataComponent(ShaderType shaderType, GPUBufferAccessibility accessibility, GPUBufferDataComponent * GPUBufferDataComponent, size_t startOffset, size_t range)
+bool DX11RenderingServer::BindGPUBufferDataComponent(ShaderType shaderType, GPUBufferAccessibility accessibility, GPUBufferDataComponent * rhs, size_t startOffset, size_t range)
 {
 	return true;
 }
@@ -1093,7 +1093,7 @@ bool DX11RenderingServer::BindShaderProgramComponent(ShaderProgramComponent * rh
 	return true;
 }
 
-bool DX11RenderingServer::BindMaterialDataComponent(MaterialDataComponent * rhs)
+bool DX11RenderingServer::BindMaterialDataComponent(ShaderType shaderType, MaterialDataComponent * rhs)
 {
 	return true;
 }
@@ -1103,7 +1103,7 @@ bool DX11RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, 
 	return true;
 }
 
-bool DX11RenderingServer::UnbindMaterialDataComponent(MaterialDataComponent * rhs)
+bool DX11RenderingServer::UnbindMaterialDataComponent(ShaderType shaderType, MaterialDataComponent * rhs)
 {
 	return true;
 }
