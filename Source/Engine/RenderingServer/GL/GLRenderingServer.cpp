@@ -693,7 +693,7 @@ bool GLRenderingServer::BindGPUBufferDataComponent(ShaderType shaderType, GPUBuf
 {
 	auto l_rhs = reinterpret_cast<GLGPUBufferDataComponent*>(rhs);
 
-	glBindBufferRange(l_rhs->m_BufferType, (GLuint)l_rhs->m_BindingPoint, l_rhs->m_Handle, startOffset, range);
+	glBindBufferRange(l_rhs->m_BufferType, (GLuint)l_rhs->m_BindingPoint, l_rhs->m_Handle, startOffset * l_rhs->m_ElementSize, range);
 
 	return true;
 }
