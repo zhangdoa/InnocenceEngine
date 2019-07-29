@@ -640,7 +640,14 @@ bool DX11Helper::GenerateRasterizerStateDesc(RasterizerDesc rasterizerDesc, DX11
 {
 	PSO->m_PrimitiveTopology = getPrimitiveTopology(rasterizerDesc.m_PrimitiveTopology);
 	PSO->m_RasterizerDesc.AntialiasedLineEnable = true;
-	PSO->m_RasterizerDesc.CullMode = rasterizerDesc.m_RasterizerCullMode == RasterizerCullMode::Front ? D3D11_CULL_FRONT : D3D11_CULL_BACK;
+	if (rasterizerDesc.m_UseCulling)
+	{
+		PSO->m_RasterizerDesc.CullMode = rasterizerDesc.m_RasterizerCullMode == RasterizerCullMode::Front ? D3D11_CULL_FRONT : D3D11_CULL_BACK;
+	}
+	else
+	{
+		PSO->m_RasterizerDesc.CullMode = D3D11_CULL_NONE;
+	}
 	PSO->m_RasterizerDesc.DepthBias = 0;
 	PSO->m_RasterizerDesc.DepthBiasClamp = 0; // @TODO: Depth Clamp
 	PSO->m_RasterizerDesc.DepthClipEnable = false;

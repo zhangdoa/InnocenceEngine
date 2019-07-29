@@ -1273,7 +1273,7 @@ bool DX11RenderingServer::BindGPUBufferDataComponent(ShaderType shaderType, GPUB
 	{
 		if (l_rhs->m_GPUBufferAccessibility == GPUBufferAccessibility::ReadOnly)
 		{
-			if (rhs->m_ElementCount == 1)
+			if (range == rhs->m_TotalSize)
 			{
 				BindConstantBuffer(l_rhs, shaderType);
 			}
