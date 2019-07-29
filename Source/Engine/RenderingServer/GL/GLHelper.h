@@ -10,7 +10,7 @@ namespace GLHelper
 	GLenum GetTextureFilterParam(TextureFilterMethod rhs);
 	GLenum GetTextureInternalFormat(TextureDataDesc textureDataDesc);
 	GLenum GetTexturePixelDataFormat(TextureDataDesc textureDataDesc);
-	GLenum GetTexturePixelDataType(TexturePixelDataType rhs);
+	GLenum GetTexturePixelDataType(TextureDataDesc textureDataDesc);
 	GLsizei GetTexturePixelDataSize(TextureDataDesc textureDataDesc);
 
 	bool GenerateDepthStencilState(DepthStencilDesc DSDesc, GLPipelineStateObject* PSO);

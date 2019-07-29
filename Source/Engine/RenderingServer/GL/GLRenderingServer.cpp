@@ -488,7 +488,7 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 		}
 	}
 
-	// RT
+	// Color RT
 	l_rhs->m_RenderTargets.reserve(l_rhs->m_RenderPassDesc.m_RenderTargetCount);
 
 	for (unsigned int i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
@@ -509,6 +509,31 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 		AttachTextureToFramebuffer(reinterpret_cast<GLTextureDataComponent*>(l_TDC), l_rhs, i);
 
 		l_rhs->m_RenderTargets[i] = l_TDC;
+	}
+
+	// DS RT
+	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	{
+		auto l_TDC = AddTextureDataComponent((std::string(l_rhs->m_componentName.c_str()) + "_DS/").c_str());
+
+		l_TDC->m_textureDataDesc = l_rhs->m_RenderPassDesc.m_RenderTargetDesc;
+
+		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
+		{
+			l_TDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_STENCIL_ATTACHMENT;
+			l_TDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::DEPTH_STENCIL_COMPONENT;
+		}
+		else
+		{
+			l_TDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
+			l_TDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
+		}
+
+		l_TDC->m_textureData = nullptr;
+
+		InitializeTextureDataComponent(l_TDC);
+
+		AttachTextureToFramebuffer(reinterpret_cast<GLTextureDataComponent*>(l_TDC), l_rhs, 0);
 	}
 
 	std::vector<unsigned int> l_colorAttachments;
