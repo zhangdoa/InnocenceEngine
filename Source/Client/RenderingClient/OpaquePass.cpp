@@ -37,6 +37,16 @@ bool OpaquePass::Initialize()
 
 	m_RPC->m_RenderPassDesc = l_RenderPassDesc;
 
+	m_RPC->m_ResourceBinderLayoutDescs.resize(8);
+	m_RPC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::ROBuffer;
+	m_RPC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::ROBufferArray;
+	m_RPC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::ROBufferArray;
+	m_RPC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Image;
+	m_RPC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Image;
+	m_RPC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Image;
+	m_RPC->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Image;
+	m_RPC->m_ResourceBinderLayoutDescs[7].m_ResourceBinderType = ResourceBinderType::Image;
+
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPC);
 
 	m_SPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("OpaquePass/");
@@ -60,7 +70,7 @@ bool OpaquePass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPC);
 	g_pModuleManager->getRenderingServer()->BindShaderProgramComponent(m_SPC);
 
-	g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(ShaderType::VERTEX, GPUBufferAccessibility::ReadOnly, l_CameraGBDC, 0, l_CameraGBDC->m_ElementSize);
+	g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(ShaderType::VERTEX, GPUBufferAccessibility::ReadOnly, l_CameraGBDC, 0, l_CameraGBDC->m_TotalSize);
 
 	unsigned int l_offset = 0;
 
