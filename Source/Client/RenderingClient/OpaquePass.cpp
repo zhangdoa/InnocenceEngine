@@ -1,17 +1,16 @@
 #include "OpaquePass.h"
+#include "DefaultGPUBuffers.h"
 
 #include "../../Engine/ModuleManager/IModuleManager.h"
 
 INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 
+using namespace DefaultGPUBuffers;
+
 namespace OpaquePass
 {
 	RenderPassDataComponent* m_RPC;
 	ShaderProgramComponent* m_SPC;
-
-	GPUBufferDataComponent* m_CameraGBDC;
-	GPUBufferDataComponent* m_MeshGBDC;
-	GPUBufferDataComponent* m_MaterialGBDC;
 }
 
 bool OpaquePass::Initialize()
@@ -47,48 +46,21 @@ bool OpaquePass::Initialize()
 
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
 
-	auto l_RenderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
-
-	m_CameraGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("CameraGPUBuffer/");
-	m_CameraGBDC->m_ElementCount = 1;
-	m_CameraGBDC->m_ElementSize = sizeof(CameraGPUData);
-	m_CameraGBDC->m_BindingPoint = 0;
-
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_CameraGBDC);
-
-	m_MeshGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("MeshGPUBuffer/");
-	m_MeshGBDC->m_ElementCount = l_RenderingCapability.maxMeshes;
-	m_MeshGBDC->m_ElementSize = sizeof(MeshGPUData);
-	m_MeshGBDC->m_BindingPoint = 1;
-
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_MeshGBDC);
-
-	m_MaterialGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("MaterialGPUBuffer/");
-	m_MaterialGBDC->m_ElementCount = l_RenderingCapability.maxMaterials;
-	m_MaterialGBDC->m_ElementSize = sizeof(MaterialGPUData);
-	m_MaterialGBDC->m_BindingPoint = 2;
-
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_MaterialGBDC);
-
 	return true;
 }
 
 bool OpaquePass::PrepareCommandList()
 {
-	auto l_cameraGPUData = g_pModuleManager->getRenderingFrontend()->getCameraGPUData();
-	auto l_meshGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassMeshGPUData();
-	auto l_materialGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassMaterialGPUData();
-
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_CameraGBDC, &l_cameraGPUData);
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_MeshGBDC, l_meshGPUData);
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_MaterialGBDC, l_materialGPUData);
+	auto l_CameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Camera);
+	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
+	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
 
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPC);
 	g_pModuleManager->getRenderingServer()->BindShaderProgramComponent(m_SPC);
 
-	g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(ShaderType::VERTEX, GPUBufferAccessibility::ReadOnly, m_CameraGBDC, 0, sizeof(CameraGPUData));
+	g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(ShaderType::VERTEX, GPUBufferAccessibility::ReadOnly, l_CameraGBDC, 0, l_CameraGBDC->m_ElementSize);
 
 	unsigned int l_offset = 0;
 
@@ -99,8 +71,8 @@ bool OpaquePass::PrepareCommandList()
 
 		g_pModuleManager->getRenderingServer()->BindMaterialDataComponent(ShaderType::FRAGMENT, l_opaquePassGPUData.material);
 
-		g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(ShaderType::VERTEX, GPUBufferAccessibility::ReadOnly, m_MeshGBDC, l_offset, sizeof(MeshGPUData));
-		g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(ShaderType::FRAGMENT, GPUBufferAccessibility::ReadOnly, m_MaterialGBDC, l_offset, sizeof(MaterialGPUData));
+		g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(ShaderType::VERTEX, GPUBufferAccessibility::ReadOnly, l_MeshGBDC, l_offset, l_MeshGBDC->m_ElementSize);
+		g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(ShaderType::FRAGMENT, GPUBufferAccessibility::ReadOnly, l_MaterialGBDC, l_offset, l_MaterialGBDC->m_ElementSize);
 
 		g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPC, l_opaquePassGPUData.mesh);
 
