@@ -2,6 +2,7 @@
 #include "DefaultGPUBuffers.h"
 #include "OpaquePass.h"
 #include "LightPass.h"
+#include "FinalBlendPass.h"
 
 bool DefaultRenderingClient::Setup()
 {
@@ -13,6 +14,7 @@ bool DefaultRenderingClient::Initialize()
 	DefaultGPUBuffers::Initialize();
 	OpaquePass::Initialize();
 	LightPass::Initialize();
+	FinalBlendPass::Initialize();
 
 	return true;
 }
@@ -22,6 +24,7 @@ bool DefaultRenderingClient::Render()
 	DefaultGPUBuffers::Upload();
 	OpaquePass::PrepareCommandList();
 	LightPass::PrepareCommandList();
+	FinalBlendPass::PrepareCommandList();
 
 	return true;
 }
