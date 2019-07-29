@@ -180,6 +180,11 @@ bool DX12RenderingServer::WaitForFrame(RenderPassDataComponent * rhs, size_t fra
 	return true;
 }
 
+RenderPassDataComponent * DX12RenderingServer::GetSwapChainRPC()
+{
+	return nullptr;
+}
+
 bool DX12RenderingServer::Present()
 {
 	return true;

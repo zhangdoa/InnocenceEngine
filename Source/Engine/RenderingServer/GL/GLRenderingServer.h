@@ -46,6 +46,7 @@ class GLRenderingServer : public IRenderingServer
 	virtual bool CommandListEnd(RenderPassDataComponent * rhs, size_t frameIndex) override;
 	virtual bool ExecuteCommandList(RenderPassDataComponent * rhs, size_t frameIndex) override;
 	virtual bool WaitForFrame(RenderPassDataComponent * rhs, size_t frameIndex) override;
+	virtual RenderPassDataComponent * GetSwapChainRPC() override;
 	virtual bool Present() override;
 
 	virtual bool CopyDepthBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest) override;

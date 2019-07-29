@@ -73,6 +73,8 @@ namespace DX11RenderingServerNS
 	std::vector<ID3D11Texture2D*> m_swapChainTextures;
 
 	ID3D10Blob* m_InputLayoutDummyShaderBuffer = 0;
+
+	DX11RenderPassDataComponent* m_SwapChainRPDC;
 }
 
 using namespace DX11RenderingServerNS;
@@ -278,6 +280,16 @@ bool DX11RenderingServer::Initialize()
 	{
 		// @TODO: Find a better solution
 		LoadShaderFile(&m_InputLayoutDummyShaderBuffer, ShaderType::VERTEX, "dummyInputLayout.hlsl/");
+
+		m_SwapChainRPDC = reinterpret_cast<DX11RenderPassDataComponent*>(AddRenderPassDataComponent("SwapChain/"));
+
+		auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+
+		l_RenderPassDesc.m_RenderTargetCount = 1;
+
+		m_SwapChainRPDC->m_RenderPassDesc = l_RenderPassDesc;
+
+		InitializeRenderPassDataComponent(m_SwapChainRPDC);
 	}
 
 	return true;
@@ -448,6 +460,12 @@ bool DX11RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	if (m_initializedMeshes.find(rhs) != m_initializedMeshes.end())
 	{
 		return true;
+	}
+
+	// Flip y texture coordinate
+	for (auto& i : rhs->m_vertices)
+	{
+		i.m_texCoord.y = 1.0f - i.m_texCoord.y;
 	}
 
 	auto l_rhs = reinterpret_cast<DX11MeshDataComponent*>(rhs);
@@ -1441,6 +1459,11 @@ bool DX11RenderingServer::ExecuteCommandList(RenderPassDataComponent * rhs, size
 bool DX11RenderingServer::WaitForFrame(RenderPassDataComponent * rhs, size_t frameIndex)
 {
 	return true;
+}
+
+RenderPassDataComponent * DX11RenderingServer::GetSwapChainRPC()
+{
+	return m_SwapChainRPDC;
 }
 
 bool DX11RenderingServer::Present()

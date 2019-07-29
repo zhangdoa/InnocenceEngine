@@ -83,6 +83,8 @@ namespace GLRenderingServerNS
 	std::unordered_set<MeshDataComponent*> m_initializedMeshes;
 	std::unordered_set<TextureDataComponent*> m_initializedTextures;
 	std::unordered_set<MaterialDataComponent*> m_initializedMaterials;
+
+	GLRenderPassDataComponent* m_SwapChainRPDC;
 }
 
 using namespace GLRenderingServerNS;
@@ -116,6 +118,15 @@ bool GLRenderingServer::Initialize()
 {
 	if (m_objectStatus == ObjectStatus::Created)
 	{
+		m_SwapChainRPDC = reinterpret_cast<GLRenderPassDataComponent*>(AddRenderPassDataComponent("SwapChain/"));
+
+		auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+
+		l_RenderPassDesc.m_RenderTargetCount = 1;
+
+		m_SwapChainRPDC->m_RenderPassDesc = l_RenderPassDesc;
+
+		InitializeRenderPassDataComponent(m_SwapChainRPDC);
 	}
 	return true;
 }
@@ -845,6 +856,11 @@ bool GLRenderingServer::ExecuteCommandList(RenderPassDataComponent * rhs, size_t
 bool GLRenderingServer::WaitForFrame(RenderPassDataComponent * rhs, size_t frameIndex)
 {
 	return true;
+}
+
+RenderPassDataComponent * GLRenderingServer::GetSwapChainRPC()
+{
+	return m_SwapChainRPDC;
 }
 
 bool GLRenderingServer::Present()
