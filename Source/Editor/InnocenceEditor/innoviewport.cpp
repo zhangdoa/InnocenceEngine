@@ -74,7 +74,7 @@ void InnoViewport::Resize(float width, float height)
         {
             TVec2<unsigned int> l_newResolution = TVec2<unsigned int>(width, height);
             g_pModuleManager->getRenderingFrontend()->setScreenResolution(l_newResolution);
-            g_pModuleManager->getRenderingBackend()->resize();
+            g_pModuleManager->getRenderingServer()->Resize();
         }
     }
 }

@@ -80,6 +80,10 @@ win32:CONFIG(release, debug|release):LIBS += -L$$PWD/../../../Build/Release/LibA
 else:win32:CONFIG(debug, debug|release):LIBS += -L$$PWD/../../../Build/Debug/LibArchive/Debug/ -lInnoEngine
 else:unix: LIBS += -L$$PWD/../../../Build/LibArchive/ -lInnoEngine
 
-win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../Build/Release/LibArchive/Release/ -lInnoClient
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../Build/Debug/LibArchive/Debug/ -lInnoClient
-else:unix: LIBS += -L$$PWD/../../../Build/LibArchive/ -lInnoClient
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../Build/Release/LibArchive/Release/ -lInnoDefaultRenderingClient
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../Build/Debug/LibArchive/Debug/ -lInnoDefaultRenderingClient
+else:unix: LIBS += -L$$PWD/../../../Build/LibArchive/ -lInnoDefaultRenderingClient
+
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../Build/Release/LibArchive/Release/ -lInnoDefaultLogicClient
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../Build/Debug/LibArchive/Debug/ -lInnoDefaultLogicClient
+else:unix: LIBS += -L$$PWD/../../../Build/LibArchive/ -lInnoDefaultLogicClient
