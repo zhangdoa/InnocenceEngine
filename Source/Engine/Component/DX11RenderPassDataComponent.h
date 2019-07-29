@@ -2,6 +2,12 @@
 #include "RenderPassDataComponent.h"
 #include "../RenderingBackend/DX11RenderingBackend/DX11Headers.h"
 
+class DX11ResourceBinder : public IResourceBinder
+{
+public:
+	std::vector<void*> m_Resources;
+};
+
 class DX11PipelineStateObject : public IPipelineStateObject
 {
 public:

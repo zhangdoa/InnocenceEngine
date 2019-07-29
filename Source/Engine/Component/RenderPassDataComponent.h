@@ -158,25 +158,33 @@ struct RenderPassDesc
 	GraphicsPipelineDesc m_GraphicsPipelineDesc = {};
 };
 
-class IPipelineStateObject
-{
+class IPipelineStateObject {};
+
+enum class ResourceBinderType {
+	Sampler,
+	Image,
+	ROBuffer,
+	ROBufferArray,
+	RWBuffer,
+	RWBufferArray
 };
 
-class ICommandList
+class IResourceBinder
 {
+public:
+	ResourceBinderType m_ResourceBinderType = ResourceBinderType::Sampler;
 };
 
-class ICommandQueue
+struct ResourceBinderLayoutDesc
 {
+	ResourceBinderType m_ResourceBinderType = ResourceBinderType::Sampler;
+	size_t m_BindingSlot = 0;
 };
 
-class ISemaphore
-{
-};
-
-class IFence
-{
-};
+class ICommandList {};
+class ICommandQueue {};
+class ISemaphore {};
+class IFence {};
 
 class RenderPassDataComponent : public InnoComponent
 {
@@ -184,16 +192,18 @@ public:
 	RenderPassDesc m_RenderPassDesc = {};
 
 	std::vector<TextureDataComponent*> m_RenderTargets;
-	TextureDataComponent* m_DepthStencilRenderTarget;
+	TextureDataComponent* m_DepthStencilRenderTarget = 0;
+	IResourceBinder* m_RenderTargetsResourceBinder;
+	std::vector<ResourceBinderLayoutDesc> m_ResourceBinderLayoutDescs;
 
-	IPipelineStateObject* m_PipelineStateObject;
+	IPipelineStateObject* m_PipelineStateObject = 0;
 
-	ICommandQueue* m_CommandQueue;
+	ICommandQueue* m_CommandQueue = 0;
 	std::vector<ICommandList*> m_CommandLists;
 
 	size_t m_CurrentFrame = 0;
 
-	std::vector<ISemaphore*> m_waitSemaphores;
-	std::vector<ISemaphore*> m_singalSemaphores;
+	std::vector<ISemaphore*> m_WaitSemaphores;
+	std::vector<ISemaphore*> m_SingalSemaphores;
 	std::vector<IFence*> m_Fences;
 };

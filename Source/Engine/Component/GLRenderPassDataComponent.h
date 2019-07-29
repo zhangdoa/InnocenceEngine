@@ -10,6 +10,12 @@ public:
 	GLenum m_GLPrimitiveTopology = 0;
 };
 
+class GLResourceBinder : public IResourceBinder
+{
+public:
+	std::vector<void*> m_Resources;
+};
+
 class GLCommandList : public ICommandList
 {
 };

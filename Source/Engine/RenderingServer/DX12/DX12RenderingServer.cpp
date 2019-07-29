@@ -130,6 +130,11 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 	return true;
 }
 
+bool DX12RenderingServer::ActivateResourceBinder(ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
+{
+	return true;
+}
+
 bool DX12RenderingServer::BindGPUBufferDataComponent(ShaderType shaderType, GPUBufferAccessibility accessibility, GPUBufferDataComponent * rhs, size_t startOffset, size_t range)
 {
 	return true;
@@ -146,6 +151,11 @@ bool DX12RenderingServer::BindMaterialDataComponent(ShaderType shaderType, Mater
 }
 
 bool DX12RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh)
+{
+	return true;
+}
+
+bool DX12RenderingServer::DeactivateResourceBinder(ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
 {
 	return true;
 }

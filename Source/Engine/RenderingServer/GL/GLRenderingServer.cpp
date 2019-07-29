@@ -76,6 +76,7 @@ namespace GLRenderingServerNS
 	IObjectPool* m_MaterialDataComponentPool;
 	IObjectPool* m_TextureDataComponentPool;
 	IObjectPool* m_RenderPassDataComponentPool;
+	IObjectPool* m_ResourcesBinderPool;
 	IObjectPool* m_PSOPool;
 	IObjectPool* m_ShaderProgramComponentPool;
 
@@ -94,6 +95,7 @@ bool GLRenderingServer::Setup()
 	m_TextureDataComponentPool = InnoMemory::CreateObjectPool(sizeof(GLTextureDataComponent), l_renderingCapability.maxTextures);
 	m_MaterialDataComponentPool = InnoMemory::CreateObjectPool(sizeof(GLMaterialDataComponent), l_renderingCapability.maxMaterials);
 	m_RenderPassDataComponentPool = InnoMemory::CreateObjectPool(sizeof(GLRenderPassDataComponent), 128);
+	m_ResourcesBinderPool = InnoMemory::CreateObjectPool(sizeof(GLResourceBinder), 16384);
 	m_PSOPool = InnoMemory::CreateObjectPool(sizeof(GLPipelineStateObject), 128);
 	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool(sizeof(GLShaderProgramComponent), 256);
 
@@ -511,6 +513,18 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 		l_rhs->m_RenderTargets[i] = l_TDC;
 	}
 
+	// ResourceBinder for RT
+	m_ResourcesBinderPool->Spawn();
+	auto l_BinderRawPtr = m_ResourcesBinderPool->Spawn();
+	auto l_Binder = new(l_BinderRawPtr)GLResourceBinder();
+	l_Binder->m_ResourceBinderType = ResourceBinderType::Image;
+	l_Binder->m_Resources.reserve(l_rhs->m_RenderPassDesc.m_RenderTargetCount);
+	for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		l_Binder->m_Resources.emplace_back(l_rhs->m_RenderTargets[i]);
+	}
+	l_rhs->m_RenderTargetsResourceBinder = l_Binder;
+
 	// DS RT
 	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
 	{
@@ -716,6 +730,35 @@ bool GLRenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 	return true;
 }
 
+bool GLRenderingServer::ActivateResourceBinder(ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
+{
+	auto l_binder = reinterpret_cast<GLResourceBinder*>(binder);
+
+	switch (l_binder->m_ResourceBinderType)
+	{
+	case ResourceBinderType::Sampler:
+		break;
+	case ResourceBinderType::Image:
+		for (size_t i = 0; i < l_binder->m_Resources.size(); i++)
+		{
+			ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_binder->m_Resources[i]), (int)i);
+		}
+		break;
+	case ResourceBinderType::ROBuffer:
+		break;
+	case ResourceBinderType::ROBufferArray:
+		break;
+	case ResourceBinderType::RWBuffer:
+		break;
+	case ResourceBinderType::RWBufferArray:
+		break;
+	default:
+		break;
+	}
+
+	return true;
+}
+
 bool GLRenderingServer::BindGPUBufferDataComponent(ShaderType shaderType, GPUBufferAccessibility accessibility, GPUBufferDataComponent * rhs, size_t startOffset, size_t range)
 {
 	auto l_rhs = reinterpret_cast<GLGPUBufferDataComponent*>(rhs);
@@ -768,6 +811,11 @@ bool GLRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, Me
 	glBindVertexArray(l_mesh->m_VAO);
 	glDrawElements(l_GLPSO->m_GLPrimitiveTopology, (GLsizei)l_mesh->m_indicesSize, GL_UNSIGNED_INT, 0);
 
+	return true;
+}
+
+bool GLRenderingServer::DeactivateResourceBinder(ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
+{
 	return true;
 }
 

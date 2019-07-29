@@ -46,6 +46,7 @@ namespace DX11RenderingServerNS
 	IObjectPool* m_MaterialDataComponentPool;
 	IObjectPool* m_TextureDataComponentPool;
 	IObjectPool* m_RenderPassDataComponentPool;
+	IObjectPool* m_ResourcesBinderPool;
 	IObjectPool* m_PSOPool;
 	IObjectPool* m_ShaderProgramComponentPool;
 
@@ -84,6 +85,7 @@ bool DX11RenderingServer::Setup()
 	m_TextureDataComponentPool = InnoMemory::CreateObjectPool(sizeof(DX11TextureDataComponent), l_renderingCapability.maxTextures);
 	m_MaterialDataComponentPool = InnoMemory::CreateObjectPool(sizeof(DX11MaterialDataComponent), l_renderingCapability.maxMaterials);
 	m_RenderPassDataComponentPool = InnoMemory::CreateObjectPool(sizeof(DX11RenderPassDataComponent), 128);
+	m_ResourcesBinderPool = InnoMemory::CreateObjectPool(sizeof(DX11ResourceBinder), 16384);
 	m_PSOPool = InnoMemory::CreateObjectPool(sizeof(DX11PipelineStateObject), 128);
 	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool(sizeof(DX11ShaderProgramComponent), 256);
 
@@ -734,6 +736,18 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 #endif //  _DEBUG
 	}
 
+	// ResourceBinder for RT
+	m_ResourcesBinderPool->Spawn();
+	auto l_BinderRawPtr = m_ResourcesBinderPool->Spawn();
+	auto l_Binder = new(l_BinderRawPtr)DX11ResourceBinder();
+	l_Binder->m_ResourceBinderType = ResourceBinderType::Image;
+	l_Binder->m_Resources.reserve(l_rhs->m_RenderPassDesc.m_RenderTargetCount);
+	for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		l_Binder->m_Resources.emplace_back(l_rhs->m_RenderTargets[i]);
+	}
+	l_rhs->m_RenderTargetsResourceBinder = l_Binder;
+
 	// DSV
 	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
 	{
@@ -1161,6 +1175,96 @@ bool BindSRV(ShaderType shaderType, unsigned int bindingPoint, ID3D11ShaderResou
 	return true;
 }
 
+bool DX11RenderingServer::ActivateResourceBinder(ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
+{
+	auto l_binder = reinterpret_cast<DX11ResourceBinder*>(binder);
+
+	switch (l_binder->m_ResourceBinderType)
+	{
+	case ResourceBinderType::Sampler:
+		break;
+	case ResourceBinderType::Image:
+		for (size_t i = 0; i < l_binder->m_Resources.size(); i++)
+		{
+			BindSRV(shaderType, (unsigned int)i, reinterpret_cast<DX11TextureDataComponent*>(l_binder->m_Resources[i])->m_SRV);
+		}
+		break;
+	case ResourceBinderType::ROBuffer:
+		break;
+	case ResourceBinderType::ROBufferArray:
+		break;
+	case ResourceBinderType::RWBuffer:
+		break;
+	case ResourceBinderType::RWBufferArray:
+		break;
+	default:
+		break;
+	}
+
+	return true;
+}
+
+bool BindConstantBuffer(DX11GPUBufferDataComponent* rhs, ShaderType shaderType)
+{
+	switch (shaderType)
+	{
+	case ShaderType::VERTEX:
+		m_deviceContext->VSSetConstantBuffers((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr);
+		break;
+	case ShaderType::TCS:
+		m_deviceContext->HSSetConstantBuffers((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr);
+		break;
+	case ShaderType::TES:
+		m_deviceContext->DSSetConstantBuffers((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr);
+		break;
+	case ShaderType::GEOMETRY:
+		m_deviceContext->GSSetConstantBuffers((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr);
+		break;
+	case ShaderType::FRAGMENT:
+		m_deviceContext->PSSetConstantBuffers((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr);
+		break;
+	case ShaderType::COMPUTE:
+		m_deviceContext->CSSetConstantBuffers((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr);
+		break;
+	default:
+		break;
+	}
+
+	return true;
+}
+
+bool BindPartialConstantBuffer(DX11GPUBufferDataComponent* rhs, ShaderType shaderType, size_t startOffset)
+{
+	auto l_constantCount = (unsigned int)rhs->m_ElementSize / 16;
+	auto l_firstConstant = (unsigned int)startOffset * l_constantCount;
+
+	switch (shaderType)
+	{
+	case ShaderType::VERTEX:
+		m_deviceContext->VSSetConstantBuffers1((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
+		break;
+	case ShaderType::TCS:
+		m_deviceContext->HSSetConstantBuffers1((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
+		break;
+	case ShaderType::TES:
+		m_deviceContext->DSSetConstantBuffers1((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
+		break;
+	case ShaderType::GEOMETRY:
+		m_deviceContext->GSSetConstantBuffers1((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
+		break;
+	case ShaderType::FRAGMENT:
+		m_deviceContext->PSSetConstantBuffers1((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
+		break;
+	case ShaderType::COMPUTE:
+		m_deviceContext->CSSetConstantBuffers1((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
+		break;
+	default:
+		break;
+	}
+
+	return true;
+}
+
 bool DX11RenderingServer::BindGPUBufferDataComponent(ShaderType shaderType, GPUBufferAccessibility accessibility, GPUBufferDataComponent * rhs, size_t startOffset, size_t range)
 {
 	auto l_rhs = reinterpret_cast<DX11GPUBufferDataComponent*>(rhs);
@@ -1169,32 +1273,14 @@ bool DX11RenderingServer::BindGPUBufferDataComponent(ShaderType shaderType, GPUB
 	{
 		if (l_rhs->m_GPUBufferAccessibility == GPUBufferAccessibility::ReadOnly)
 		{
-			// Read CBuffer
-			auto l_constantCount = (unsigned int)l_rhs->m_ElementSize / 16;
-			auto l_firstConstant = (unsigned int)startOffset * l_constantCount;
-
-			switch (shaderType)
+			if (rhs->m_ElementCount == 1)
 			{
-			case ShaderType::VERTEX:
-				m_deviceContext->VSSetConstantBuffers1((unsigned int)l_rhs->m_BindingPoint, 1, &l_rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
-				break;
-			case ShaderType::TCS:
-				m_deviceContext->HSSetConstantBuffers1((unsigned int)l_rhs->m_BindingPoint, 1, &l_rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
-				break;
-			case ShaderType::TES:
-				m_deviceContext->DSSetConstantBuffers1((unsigned int)l_rhs->m_BindingPoint, 1, &l_rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
-				break;
-			case ShaderType::GEOMETRY:
-				m_deviceContext->GSSetConstantBuffers1((unsigned int)l_rhs->m_BindingPoint, 1, &l_rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
-				break;
-			case ShaderType::FRAGMENT:
-				m_deviceContext->PSSetConstantBuffers1((unsigned int)l_rhs->m_BindingPoint, 1, &l_rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
-				break;
-			case ShaderType::COMPUTE:
-				m_deviceContext->CSSetConstantBuffers1((unsigned int)l_rhs->m_BindingPoint, 1, &l_rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
-				break;
-			default:
-				break;
+				BindConstantBuffer(l_rhs, shaderType);
+			}
+			else
+			{
+				// Read CBuffer
+				BindPartialConstantBuffer(l_rhs, shaderType, startOffset);
 			}
 		}
 		else
@@ -1255,6 +1341,35 @@ bool DX11RenderingServer::BindShaderProgramComponent(ShaderProgramComponent * rh
 	if (l_rhs->m_CSHandle)
 	{
 		m_deviceContext->CSSetShader(l_rhs->m_CSHandle, NULL, 0);
+	}
+
+	return true;
+}
+
+bool DX11RenderingServer::DeactivateResourceBinder(ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
+{
+	auto l_binder = reinterpret_cast<DX11ResourceBinder*>(binder);
+
+	switch (l_binder->m_ResourceBinderType)
+	{
+	case ResourceBinderType::Sampler:
+		break;
+	case ResourceBinderType::Image:
+		for (size_t i = 0; i < l_binder->m_Resources.size(); i++)
+		{
+			BindSRV(shaderType, (unsigned int)i, 0);
+		}
+		break;
+	case ResourceBinderType::ROBuffer:
+		break;
+	case ResourceBinderType::ROBufferArray:
+		break;
+	case ResourceBinderType::RWBuffer:
+		break;
+	case ResourceBinderType::RWBufferArray:
+		break;
+	default:
+		break;
 	}
 
 	return true;
@@ -1346,11 +1461,19 @@ bool DX11RenderingServer::Present()
 
 bool DX11RenderingServer::CopyDepthBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
 {
+	auto l_src = reinterpret_cast<DX11RenderPassDataComponent*>(src);
+	auto l_dest = reinterpret_cast<DX11RenderPassDataComponent*>(dest);
+	m_deviceContext->OMSetRenderTargets((unsigned int)l_dest->m_RTVs.size(), &l_dest->m_RTVs[0], l_src->m_DSV);
+
 	return true;
 }
 
 bool DX11RenderingServer::CopyStencilBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
 {
+	auto l_src = reinterpret_cast<DX11RenderPassDataComponent*>(src);
+	auto l_dest = reinterpret_cast<DX11RenderPassDataComponent*>(dest);
+	m_deviceContext->OMSetRenderTargets((unsigned int)l_dest->m_RTVs.size(), &l_dest->m_RTVs[0], l_src->m_DSV);
+
 	return true;
 }
 
