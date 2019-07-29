@@ -9,39 +9,6 @@ struct ComputeInputType
 	uint  groupIndex        : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
-cbuffer dispatchParamsCBuffer : register(b0)
-{
-	uint3 numThreadGroups;
-	uint dispatchParamsCBuffer_padding1;
-	uint3 numThreads;
-	uint  dispatchParamsCBuffer_padding2;
-}
-
-cbuffer cameraCBuffer : register(b1)
-{
-	matrix cam_p_original;
-	matrix cam_p_jittered;
-	matrix cam_r;
-	matrix cam_t;
-	matrix cam_r_prev;
-	matrix cam_t_prev;
-	float4 cam_globalPos;
-	float cam_WHRatio;
-};
-
-cbuffer skyCBuffer : register(b2)
-{
-	matrix p_inv;
-	matrix v_inv;
-	float2 viewportSize;
-	float2 padding1;
-};
-
-cbuffer pointLightCBuffer : register(b3)
-{
-	pointLight pointLights[NR_POINT_LIGHTS];
-};
-
 Texture2D DepthTextureVS : register(t0);
 
 StructuredBuffer<Frustum> in_Frustums : register(t1);

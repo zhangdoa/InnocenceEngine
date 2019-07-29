@@ -1,33 +1,5 @@
 // shadertype=hlsl
-
 #include "common.hlsl"
-
-cbuffer cameraCBuffer : register(b0)
-{
-	matrix cam_p_original;
-	matrix cam_p_jittered;
-	matrix cam_r;
-	matrix cam_t;
-	matrix cam_r_prev;
-	matrix cam_t_prev;
-	float4 cam_globalPos;
-	float cam_WHRatio;
-};
-
-cbuffer sunCBuffer : register(b1)
-{
-	float4 dirLight_dir;
-	float4 dirLight_luminance;
-	matrix dirLight_r;
-};
-
-cbuffer skyCBuffer : register(b2)
-{
-	matrix p_inv;
-	matrix v_inv;
-	float2 viewportSize;
-	float2 padding1;
-};
 
 struct PixelInputType
 {

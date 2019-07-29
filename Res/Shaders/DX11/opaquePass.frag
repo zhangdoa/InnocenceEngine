@@ -1,4 +1,5 @@
 // shadertype=hlsl
+#include "common.hlsl"
 
 Texture2D t2d_normal : register(t0);
 Texture2D t2d_albedo : register(t1);
@@ -7,20 +8,6 @@ Texture2D t2d_roughness : register(t3);
 Texture2D t2d_ao : register(t4);
 
 SamplerState SampleTypeWrap : register(s0);
-
-cbuffer materialCBuffer : register(b0)
-{
-	float4 albedo;
-	float4 MRAT;
-	bool useNormalTexture;
-	bool useAlbedoTexture;
-	bool useMetallicTexture;
-	bool useRoughnessTexture;
-	bool useAOTexture;
-	bool padding1;
-	bool padding2;
-	bool padding3;
-};
 
 struct PixelInputType
 {

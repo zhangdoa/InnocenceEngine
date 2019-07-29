@@ -10,22 +10,6 @@ struct ComputeInputType
 	uint  groupIndex        : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
-cbuffer dispatchParamsCBuffer : register(b0)
-{
-	uint3 numThreadGroups;
-	uint dispatchParamsCBuffer_padding1;
-	uint3 numThreads;
-	uint  dispatchParamsCBuffer_padding2;
-}
-
-cbuffer skyCBuffer : register(b1)
-{
-	matrix p_inv;
-	matrix v_inv;
-	float2 viewportSize;
-	float2 padding1;
-};
-
 RWStructuredBuffer<Frustum> out_Frustums : register(u0);
 
 [numthreads(BLOCK_SIZE, BLOCK_SIZE, 1)]
@@ -34,7 +18,7 @@ void main(ComputeInputType input)
 	// View space eye position is always at the origin.
 	const float3 eyePos = float3(0, 0, 0);
 
-	// Compute the 4 corner points on the far clipping plane to use as the 
+	// Compute the 4 corner points on the far clipping plane to use as the
 	// frustum vertices.
 	float4 screenSpace[4];
 	// Top left point
