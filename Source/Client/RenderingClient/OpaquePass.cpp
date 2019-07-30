@@ -15,6 +15,13 @@ namespace OpaquePass
 
 bool OpaquePass::Initialize()
 {
+	m_SPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("OpaquePass/");
+
+	m_SPC->m_ShaderFilePaths.m_VSPath = "opaquePass.vert/";
+	m_SPC->m_ShaderFilePaths.m_FSPath = "opaquePass.frag/";
+
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+
 	m_RPC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("OpaquePass/");
 
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
@@ -48,21 +55,17 @@ bool OpaquePass::Initialize()
 	m_RPC->m_ResourceBinderLayoutDescs[2].m_BindingSlot = 2;
 
 	m_RPC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Image;
-	m_RPC->m_ResourceBinderLayoutDescs[3].m_BindingSlot = 3;
+	m_RPC->m_ResourceBinderLayoutDescs[3].m_BindingSlot = 0;
 	m_RPC->m_ResourceBinderLayoutDescs[3].m_ResourceCount = 5;
 	m_RPC->m_ResourceBinderLayoutDescs[3].m_IsRanged = true;
 
 	m_RPC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Sampler;
-	m_RPC->m_ResourceBinderLayoutDescs[4].m_BindingSlot = 4;
+	m_RPC->m_ResourceBinderLayoutDescs[4].m_BindingSlot = 0;
+	m_RPC->m_ResourceBinderLayoutDescs[4].m_IsRanged = true;
+
+	m_RPC->m_ShaderProgram = m_SPC;
 
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPC);
-
-	m_SPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("OpaquePass/");
-
-	m_SPC->m_ShaderFilePaths.m_VSPath = "opaquePass.vert/";
-	m_SPC->m_ShaderFilePaths.m_FSPath = "opaquePass.frag/";
-
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
 
 	return true;
 }

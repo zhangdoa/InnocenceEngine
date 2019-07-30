@@ -17,6 +17,13 @@ namespace LightPass
 
 bool LightPass::Initialize()
 {
+	m_SPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("LightPass/");
+
+	m_SPC->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
+	m_SPC->m_ShaderFilePaths.m_FSPath = "lightPass.frag/";
+
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+
 	m_RPC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("LightPass/");
 
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
@@ -37,24 +44,31 @@ bool LightPass::Initialize()
 
 	m_RPC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPC->m_ResourceBinderLayoutDescs.resize(8);
+	m_RPC->m_ResourceBinderLayoutDescs.resize(6);
 	m_RPC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::ROBuffer;
-	m_RPC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::ROBufferArray;
+	m_RPC->m_ResourceBinderLayoutDescs[0].m_BindingSlot = 0;
+
+	m_RPC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::ROBuffer;
+	m_RPC->m_ResourceBinderLayoutDescs[1].m_BindingSlot = 3;
+
 	m_RPC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::ROBufferArray;
-	m_RPC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::ROBuffer;
+	m_RPC->m_ResourceBinderLayoutDescs[2].m_BindingSlot = 4;
+
+	m_RPC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::ROBufferArray;
+	m_RPC->m_ResourceBinderLayoutDescs[3].m_BindingSlot = 5;
+
 	m_RPC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Image;
-	m_RPC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Image;
-	m_RPC->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Image;
-	m_RPC->m_ResourceBinderLayoutDescs[7].m_ResourceBinderType = ResourceBinderType::Image;
+	m_RPC->m_ResourceBinderLayoutDescs[4].m_BindingSlot = 0;
+	m_RPC->m_ResourceBinderLayoutDescs[4].m_ResourceCount = 4;
+	m_RPC->m_ResourceBinderLayoutDescs[4].m_IsRanged = true;
+
+	m_RPC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Sampler;
+	m_RPC->m_ResourceBinderLayoutDescs[5].m_BindingSlot = 0;
+	m_RPC->m_ResourceBinderLayoutDescs[5].m_IsRanged = true;
+
+	m_RPC->m_ShaderProgram = m_SPC;
 
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPC);
-
-	m_SPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("LightPass/");
-
-	m_SPC->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
-	m_SPC->m_ShaderFilePaths.m_FSPath = "lightPass.frag/";
-
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
 
 	return true;
 }
