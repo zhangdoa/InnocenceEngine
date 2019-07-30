@@ -15,11 +15,11 @@
 
 - Strict Entity–Component–System architecture
 
-No OOP overhead / Console-like programming experience / Allow unlimited feature module extension
+No OOP overhead/Console-like programming experience/Allow unlimited feature module extension
 
 - Custom container, string and math classes
 
-No STL overhead / No 3rd-party math library dependency
+No STL overhead/No 3rd-party math library dependency
 
 - Job-graph based parallel task model
 
@@ -29,29 +29,49 @@ Fully utilize modern hardware / lock-free in client logic code
 
 O(n) allocation/deallocation
 
+- Logic Client as the plugin
+
+The only rule is using the engine's interface to write your logic code, and write whatever you want
+
+- The major graphics API support
+
+From OpenGL 4.6 to DirectX 11, from DirectX 12 to Vulkan, and Metal, all supported by one unified interface
+
 - Client-Server rendering architecture
 
-Allow fully user-designed rendering pipeline without any concern about specific platform and graphics APIs
+Allow fully user-designed rendering pipeline from the first triangle to the last swap chain
 
-- Tiled-deferred rendering pipeline
+- Physically-based lighting
 
-Default rendering pipeline
+Photometry lighting interface
 
-- Physically-based material
-
-Default material mode, Disney diffuse + Multi-scattering GGX specular
-
-- Physically-based light
-
-Luminosity lighting interface
+- Default rendering client support features like
+  - Tiled-deferred rendering pipeline
+  - Retro Blinn-Phong/Classic Cook-Torrance BRDF (Disney diffuse + Multi-scattering GGX specular) for opaque material
+  - OIT rendering (w.r.t. transparency and thickness)
+  - SSAO
+  - CSM with VSM/PCF filters
+  - Procedural sky
+  - Large scale terrain rendering with cascaded tessellation
+  - Motion Blur 
+  - TAA
+  - ACES tone mapping
 
 - Real-time GI
 
-Pre-baked geometry data for the complex scene or bake-free SVOGI for the limited scene
+Baked PRT for the complex large scale scene or bake-free SVOGI for the limited small scale scene, fully dynamic and lightmap-free
 
 - Unified asset management
 
 Using popular JSON format for all text data
+
+- Physics simulation
+
+NVIDIA's PhysX integrated
+
+- GUI Editor
+
+Qt-based, easy to extend and no coupling with the engine
 
 And so on...
 
