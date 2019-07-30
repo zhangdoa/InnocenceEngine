@@ -44,22 +44,22 @@ namespace DX11RenderingServerNS
 	int m_videoCardMemory;
 	char m_videoCardDescription[128];
 
-	IDXGIFactory* m_factory;
+	IDXGIFactory* m_factory = 0;
 
-	DXGI_ADAPTER_DESC m_adapterDesc;
-	IDXGIAdapter* m_adapter;
-	IDXGIOutput* m_adapterOutput;
+	DXGI_ADAPTER_DESC m_adapterDesc = {};
+	IDXGIAdapter* m_adapter = 0;
+	IDXGIOutput* m_adapterOutput = 0;
 
-	ID3D11Device5* m_device;
-	ID3D11DeviceContext4* m_deviceContext;
+	ID3D11Device5* m_device = 0;
+	ID3D11DeviceContext4* m_deviceContext = 0;
 
-	DXGI_SWAP_CHAIN_DESC m_swapChainDesc;
-	IDXGISwapChain4* m_swapChain;
+	DXGI_SWAP_CHAIN_DESC m_swapChainDesc = {};
+	IDXGISwapChain4* m_swapChain = 0;
 	std::vector<ID3D11Texture2D*> m_swapChainTextures;
 
 	ID3D10Blob* m_InputLayoutDummyShaderBuffer = 0;
 
-	DX11RenderPassDataComponent* m_SwapChainRPDC;
+	DX11RenderPassDataComponent* m_SwapChainRPDC = 0;
 }
 
 using namespace DX11RenderingServerNS;
