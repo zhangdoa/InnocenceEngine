@@ -4,45 +4,9 @@
 Texture2D in_opaquePassRT0 : register(t0);
 Texture2D in_opaquePassRT1 : register(t1);
 Texture2D in_opaquePassRT2 : register(t2);
+Texture2D in_opaquePassRT3 : register(t3);
 
 SamplerState SampleTypePoint : register(s0);
-
-cbuffer cameraCBuffer : register(b0)
-{
-	matrix cam_p_original;
-	matrix cam_p_jittered;
-	matrix cam_r;
-	matrix cam_t;
-	matrix cam_r_prev;
-	matrix cam_t_prev;
-	float4 cam_globalPos;
-	float cam_WHRatio;
-};
-
-cbuffer sunCBuffer : register(b1)
-{
-	float4 dirLight_dir;
-	float4 dirLight_luminance;
-	matrix dirLight_r;
-};
-
-cbuffer pointLightCBuffer : register(b2)
-{
-	pointLight pointLights[NR_POINT_LIGHTS];
-};
-
-cbuffer sphereLightCBuffer : register(b3)
-{
-	sphereLight sphereLights[NR_SPHERE_LIGHTS];
-};
-
-cbuffer skyCBuffer : register(b4)
-{
-	matrix p_inv;
-	matrix v_inv;
-	float2 viewportSize;
-	float2 padding1;
-};
 
 struct PixelInputType
 {

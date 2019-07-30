@@ -5,6 +5,7 @@ static const float PI = 3.14159265359;
 
 static const int NR_POINT_LIGHTS = 1024;
 static const int NR_SPHERE_LIGHTS = 128;
+static const int NR_CSM_SPLITS = 4;
 
 #define BLOCK_SIZE 16
 
@@ -20,6 +21,13 @@ struct sphereLight {
 	float4 position;
 	float4 luminance;
 	//float sphereRadius;
+};
+
+struct CSM {
+	matrix p;
+	matrix v;
+	float4 AABBMax;
+	float4 AABBMin;
 };
 
 struct Plane
@@ -97,3 +105,5 @@ float4 ScreenToView(float4 screen, float2 in_viewportSize, matrix in_p_inv)
 
 	return ClipToView(clip, in_p_inv);
 }
+
+#include "GPUBuffers.hlsl"

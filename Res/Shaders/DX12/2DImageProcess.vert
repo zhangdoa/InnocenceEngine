@@ -1,4 +1,5 @@
 // shadertype=hlsl
+#include "common.hlsl"
 
 struct VertexInputType
 {
@@ -21,7 +22,6 @@ PixelInputType main(VertexInputType input)
 
 	output.position = input.position;
 	output.texcoord = input.texcoord;
-	output.texcoord.y = 1.0 - input.texcoord.y;
 
 	return output;
 }
