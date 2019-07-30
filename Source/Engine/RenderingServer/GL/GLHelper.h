@@ -20,6 +20,12 @@ namespace GLHelper
 	bool CreateResourcesBinder(GLRenderPassDataComponent * GLRPDC);
 	bool CreateStateObjects(GLRenderPassDataComponent * GLRPDC);
 
+	GLenum GetComparisionFunctionEnum(ComparisionFunction comparisionFunction);
+	GLenum GetStencilOperationEnum(StencilOperation stencilOperation);
+	GLenum GetBlendFactorEnum(BlendFactor blendFactor);
+	GLenum GetPrimitiveTopologyEnum(PrimitiveTopology primitiveTopology);
+	GLenum GetRasterizerFillModeEnum(RasterizerFillMode rasterizerFillMode);
+
 	bool GenerateDepthStencilState(DepthStencilDesc DSDesc, GLPipelineStateObject* PSO);
 	bool GenerateBlendState(BlendDesc blendDesc, GLPipelineStateObject* PSO);
 	bool GenerateRasterizerState(RasterizerDesc rasterizerDesc, GLPipelineStateObject* PSO);

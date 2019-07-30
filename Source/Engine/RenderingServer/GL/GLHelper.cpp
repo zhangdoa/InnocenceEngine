@@ -5,7 +5,10 @@
 
 extern IModuleManager* g_pModuleManager;
 
-auto m_shaderRelativePath = "Res//Shaders//GL//";
+namespace GLHelper
+{
+	const char* m_shaderRelativePath = "Res//Shaders//GL//";
+}
 
 GLTextureDataDesc GLHelper::GetGLTextureDataDesc(TextureDataDesc textureDataDesc)
 {
@@ -497,7 +500,7 @@ bool GLHelper::CreateStateObjects(GLRenderPassDataComponent * GLRPDC)
 	return true;
 }
 
-GLenum getComparisionFunctionEnum(ComparisionFunction comparisionFunction)
+GLenum GLHelper::GetComparisionFunctionEnum(ComparisionFunction comparisionFunction)
 {
 	GLenum l_result;
 
@@ -526,7 +529,7 @@ GLenum getComparisionFunctionEnum(ComparisionFunction comparisionFunction)
 	return l_result;
 }
 
-GLenum getStencilOperationEnum(StencilOperation stencilOperation)
+GLenum GLHelper::GetStencilOperationEnum(StencilOperation stencilOperation)
 {
 	GLenum l_result;
 
@@ -555,67 +558,7 @@ GLenum getStencilOperationEnum(StencilOperation stencilOperation)
 	return l_result;
 }
 
-bool GLHelper::GenerateDepthStencilState(DepthStencilDesc DSDesc, GLPipelineStateObject * PSO)
-{
-	if (DSDesc.m_UseDepthBuffer)
-	{
-		PSO->m_Activate.emplace_back([]() { glEnable(GL_DEPTH_TEST); });
-		PSO->m_Deactivate.emplace_front([]() { glDisable(GL_DEPTH_TEST); });
-
-		if (DSDesc.m_AllowDepthWrite)
-		{
-			PSO->m_Activate.emplace_back([]() { glDepthMask(GL_TRUE); });
-		}
-		else
-		{
-			PSO->m_Activate.emplace_back([]() { glDepthMask(GL_FALSE); });
-		}
-
-		auto l_comparisionEnum = getComparisionFunctionEnum(DSDesc.m_DepthComparisionFunction);
-		PSO->m_Activate.emplace_back([=]() { glDepthFunc(l_comparisionEnum); });
-
-		if (DSDesc.m_AllowDepthClamp)
-		{
-			PSO->m_Activate.emplace_back([]() { glEnable(GL_DEPTH_CLAMP); });
-		}
-	}
-
-	if (DSDesc.m_UseStencilBuffer)
-	{
-		PSO->m_Activate.emplace_back([]() { glEnable(GL_STENCIL_TEST); });
-		PSO->m_Deactivate.emplace_front([]() { glDisable(GL_STENCIL_TEST); });
-
-		if (DSDesc.m_AllowStencilWrite)
-		{
-			PSO->m_Activate.emplace_back([]() { glStencilMask(0xFF); });
-		}
-		else
-		{
-			PSO->m_Activate.emplace_back([]() { glStencilMask(0x00); });
-		}
-
-		auto l_FFStencilComparisionFunction = getComparisionFunctionEnum(DSDesc.m_FrontFaceStencilComparisionFunction);
-		auto l_BFStencilComparisionFunction = getComparisionFunctionEnum(DSDesc.m_BackFaceStencilComparisionFunction);
-
-		PSO->m_Activate.emplace_back([=]() { glStencilFuncSeparate(GL_FRONT, l_FFStencilComparisionFunction, DSDesc.m_StencilReference, DSDesc.m_StencilWriteMask); });
-		PSO->m_Activate.emplace_back([=]() { glStencilFuncSeparate(GL_BACK, l_BFStencilComparisionFunction, DSDesc.m_StencilReference, DSDesc.m_StencilWriteMask); });
-
-		auto l_FFStencilFailOp = getStencilOperationEnum(DSDesc.m_FrontFaceStencilFailOperation);
-		auto l_FFStencilPassDepthFailOp = getStencilOperationEnum(DSDesc.m_FrontFaceStencilPassDepthFailOperation);
-		auto l_FFStencilPassOp = getStencilOperationEnum(DSDesc.m_FrontFaceStencilPassOperation);
-
-		auto l_BFStencilFailOp = getStencilOperationEnum(DSDesc.m_BackFaceStencilFailOperation);
-		auto l_BFStencilPassDepthFailOp = getStencilOperationEnum(DSDesc.m_BackFaceStencilPassDepthFailOperation);
-		auto l_BFStencilPassOp = getStencilOperationEnum(DSDesc.m_BackFaceStencilPassOperation);
-
-		PSO->m_Activate.emplace_back([=]() { glStencilOpSeparate(GL_FRONT, l_FFStencilFailOp, l_FFStencilPassDepthFailOp, l_FFStencilPassOp); });
-		PSO->m_Activate.emplace_back([=]() { glStencilOpSeparate(GL_BACK, l_BFStencilFailOp, l_BFStencilPassDepthFailOp, l_BFStencilPassOp); });
-	}
-
-	return true;
-}
-
-GLenum getBlendFactorEnum(BlendFactor blendFactor)
+GLenum GLHelper::GetBlendFactorEnum(BlendFactor blendFactor)
 {
 	GLenum l_result;
 
@@ -656,24 +599,7 @@ GLenum getBlendFactorEnum(BlendFactor blendFactor)
 	return l_result;
 }
 
-bool GLHelper::GenerateBlendState(BlendDesc blendDesc, GLPipelineStateObject * PSO)
-{
-	if (blendDesc.m_UseBlend)
-	{
-		PSO->m_Activate.emplace_back([]() { glEnable(GL_BLEND); });
-		PSO->m_Deactivate.emplace_front([]() { glDisable(GL_BLEND); });
-
-		auto l_srcRGBFactor = getBlendFactorEnum(blendDesc.m_SourceRGBFactor);
-		auto l_srcAFactor = getBlendFactorEnum(blendDesc.m_SourceAlphaFactor);
-		auto l_destRGBFactor = getBlendFactorEnum(blendDesc.m_DestinationRGBFactor);
-		auto l_destAFactor = getBlendFactorEnum(blendDesc.m_DestinationAlphaFactor);
-
-		PSO->m_Activate.emplace_back([=]() { glBlendFuncSeparate(l_srcRGBFactor, l_srcAFactor, l_destRGBFactor, l_destAFactor); });
-	}
-	return true;
-}
-
-GLenum getPrimitiveTopologyEnum(PrimitiveTopology primitiveTopology)
+GLenum GLHelper::GetPrimitiveTopologyEnum(PrimitiveTopology primitiveTopology)
 {
 	GLenum l_result;
 
@@ -696,7 +622,7 @@ GLenum getPrimitiveTopologyEnum(PrimitiveTopology primitiveTopology)
 	return l_result;
 }
 
-GLenum getRasterizerFillModeEnum(RasterizerFillMode rasterizerFillMode)
+GLenum GLHelper::GetRasterizerFillModeEnum(RasterizerFillMode rasterizerFillMode)
 {
 	GLenum l_result;
 
@@ -715,11 +641,88 @@ GLenum getRasterizerFillModeEnum(RasterizerFillMode rasterizerFillMode)
 	return l_result;
 }
 
+bool GLHelper::GenerateDepthStencilState(DepthStencilDesc DSDesc, GLPipelineStateObject * PSO)
+{
+	if (DSDesc.m_UseDepthBuffer)
+	{
+		PSO->m_Activate.emplace_back([]() { glEnable(GL_DEPTH_TEST); });
+		PSO->m_Deactivate.emplace_front([]() { glDisable(GL_DEPTH_TEST); });
+
+		if (DSDesc.m_AllowDepthWrite)
+		{
+			PSO->m_Activate.emplace_back([]() { glDepthMask(GL_TRUE); });
+		}
+		else
+		{
+			PSO->m_Activate.emplace_back([]() { glDepthMask(GL_FALSE); });
+		}
+
+		auto l_comparisionEnum = GetComparisionFunctionEnum(DSDesc.m_DepthComparisionFunction);
+		PSO->m_Activate.emplace_back([=]() { glDepthFunc(l_comparisionEnum); });
+
+		if (DSDesc.m_AllowDepthClamp)
+		{
+			PSO->m_Activate.emplace_back([]() { glEnable(GL_DEPTH_CLAMP); });
+		}
+	}
+
+	if (DSDesc.m_UseStencilBuffer)
+	{
+		PSO->m_Activate.emplace_back([]() { glEnable(GL_STENCIL_TEST); });
+		PSO->m_Deactivate.emplace_front([]() { glDisable(GL_STENCIL_TEST); });
+
+		if (DSDesc.m_AllowStencilWrite)
+		{
+			PSO->m_Activate.emplace_back([]() { glStencilMask(0xFF); });
+		}
+		else
+		{
+			PSO->m_Activate.emplace_back([]() { glStencilMask(0x00); });
+		}
+
+		auto l_FFStencilComparisionFunction = GetComparisionFunctionEnum(DSDesc.m_FrontFaceStencilComparisionFunction);
+		auto l_BFStencilComparisionFunction = GetComparisionFunctionEnum(DSDesc.m_BackFaceStencilComparisionFunction);
+
+		PSO->m_Activate.emplace_back([=]() { glStencilFuncSeparate(GL_FRONT, l_FFStencilComparisionFunction, DSDesc.m_StencilReference, DSDesc.m_StencilWriteMask); });
+		PSO->m_Activate.emplace_back([=]() { glStencilFuncSeparate(GL_BACK, l_BFStencilComparisionFunction, DSDesc.m_StencilReference, DSDesc.m_StencilWriteMask); });
+
+		auto l_FFStencilFailOp = GetStencilOperationEnum(DSDesc.m_FrontFaceStencilFailOperation);
+		auto l_FFStencilPassDepthFailOp = GetStencilOperationEnum(DSDesc.m_FrontFaceStencilPassDepthFailOperation);
+		auto l_FFStencilPassOp = GetStencilOperationEnum(DSDesc.m_FrontFaceStencilPassOperation);
+
+		auto l_BFStencilFailOp = GetStencilOperationEnum(DSDesc.m_BackFaceStencilFailOperation);
+		auto l_BFStencilPassDepthFailOp = GetStencilOperationEnum(DSDesc.m_BackFaceStencilPassDepthFailOperation);
+		auto l_BFStencilPassOp = GetStencilOperationEnum(DSDesc.m_BackFaceStencilPassOperation);
+
+		PSO->m_Activate.emplace_back([=]() { glStencilOpSeparate(GL_FRONT, l_FFStencilFailOp, l_FFStencilPassDepthFailOp, l_FFStencilPassOp); });
+		PSO->m_Activate.emplace_back([=]() { glStencilOpSeparate(GL_BACK, l_BFStencilFailOp, l_BFStencilPassDepthFailOp, l_BFStencilPassOp); });
+	}
+
+	return true;
+}
+
+bool GLHelper::GenerateBlendState(BlendDesc blendDesc, GLPipelineStateObject * PSO)
+{
+	if (blendDesc.m_UseBlend)
+	{
+		PSO->m_Activate.emplace_back([]() { glEnable(GL_BLEND); });
+		PSO->m_Deactivate.emplace_front([]() { glDisable(GL_BLEND); });
+
+		auto l_srcRGBFactor = GetBlendFactorEnum(blendDesc.m_SourceRGBFactor);
+		auto l_srcAFactor = GetBlendFactorEnum(blendDesc.m_SourceAlphaFactor);
+		auto l_destRGBFactor = GetBlendFactorEnum(blendDesc.m_DestinationRGBFactor);
+		auto l_destAFactor = GetBlendFactorEnum(blendDesc.m_DestinationAlphaFactor);
+
+		PSO->m_Activate.emplace_back([=]() { glBlendFuncSeparate(l_srcRGBFactor, l_srcAFactor, l_destRGBFactor, l_destAFactor); });
+	}
+	return true;
+}
+
 bool GLHelper::GenerateRasterizerState(RasterizerDesc rasterizerDesc, GLPipelineStateObject * PSO)
 {
-	PSO->m_GLPrimitiveTopology = getPrimitiveTopologyEnum(rasterizerDesc.m_PrimitiveTopology);
+	PSO->m_GLPrimitiveTopology = GetPrimitiveTopologyEnum(rasterizerDesc.m_PrimitiveTopology);
 
-	auto l_rasterizerFillMode = getRasterizerFillModeEnum(rasterizerDesc.m_RasterizerFillMode);
+	auto l_rasterizerFillMode = GetRasterizerFillModeEnum(rasterizerDesc.m_RasterizerFillMode);
 	PSO->m_Activate.emplace_back([=]() { glPolygonMode(GL_FRONT_AND_BACK, l_rasterizerFillMode); });
 
 	if (rasterizerDesc.m_RasterizerFaceWinding == RasterizerFaceWinding::CCW)

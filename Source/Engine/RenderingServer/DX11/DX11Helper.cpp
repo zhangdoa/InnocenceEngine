@@ -5,7 +5,10 @@
 
 extern IModuleManager* g_pModuleManager;
 
-auto m_shaderRelativePath = L"Res//Shaders//DX11//";
+namespace DX11Helper
+{
+	const wchar_t* m_shaderRelativePath = L"Res//Shaders//DX11//";
+}
 
 D3D11_TEXTURE_DESC DX11Helper::GetDX11TextureDataDesc(TextureDataDesc textureDataDesc)
 {
@@ -189,6 +192,45 @@ DXGI_FORMAT DX11Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 	return l_internalFormat;
 }
 
+D3D11_FILTER DX11Helper::GetFilterMode(TextureFilterMethod textureFilterMethod)
+{
+	D3D11_FILTER l_result;
+
+	// @TODO: Completeness of the filter
+	switch (textureFilterMethod)
+	{
+	case TextureFilterMethod::NEAREST: l_result = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		break;
+	case TextureFilterMethod::LINEAR: l_result = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		break;
+	case TextureFilterMethod::LINEAR_MIPMAP_LINEAR: l_result = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+D3D11_TEXTURE_ADDRESS_MODE DX11Helper::GetWrapMode(TextureWrapMethod textureWrapMethod)
+{
+	D3D11_TEXTURE_ADDRESS_MODE l_result;
+
+	switch (textureWrapMethod)
+	{
+	case TextureWrapMethod::CLAMP_TO_EDGE: l_result = D3D11_TEXTURE_ADDRESS_CLAMP;
+		break;
+	case TextureWrapMethod::REPEAT: l_result = D3D11_TEXTURE_ADDRESS_WRAP;
+		break;
+	case TextureWrapMethod::CLAMP_TO_BORDER: l_result = D3D11_TEXTURE_ADDRESS_BORDER;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
 unsigned int DX11Helper::GetTextureMipLevels(TextureDataDesc textureDataDesc)
 {
 	unsigned int textureMipLevels = 1;
@@ -278,21 +320,6 @@ D3D11_TEXTURE3D_DESC DX11Helper::Get3DTextureDataDesc(D3D11_TEXTURE_DESC texture
 	return l_result;
 }
 
-UINT GetMipLevels(TextureDataDesc textureDataDesc)
-{
-	if (textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
-		|| textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
-		|| textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT
-		|| textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
-	{
-		return 1;
-	}
-	else
-	{
-		return -1;
-	}
-}
-
 D3D11_SHADER_RESOURCE_VIEW_DESC DX11Helper::GetSRVDesc(TextureDataDesc textureDataDesc, D3D11_TEXTURE_DESC D3D11TextureDesc)
 {
 	D3D11_SHADER_RESOURCE_VIEW_DESC l_result = {};
@@ -314,19 +341,19 @@ D3D11_SHADER_RESOURCE_VIEW_DESC DX11Helper::GetSRVDesc(TextureDataDesc textureDa
 	{
 		l_result.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE1D;
 		l_result.Texture1D.MostDetailedMip = 0;
-		l_result.Texture1D.MipLevels = GetMipLevels(textureDataDesc);
+		l_result.Texture1D.MipLevels = GetSRVMipLevels(textureDataDesc);
 	}
 	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_2D)
 	{
 		l_result.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 		l_result.Texture2D.MostDetailedMip = 0;
-		l_result.Texture2D.MipLevels = GetMipLevels(textureDataDesc);
+		l_result.Texture2D.MipLevels = GetSRVMipLevels(textureDataDesc);
 	}
 	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_3D)
 	{
 		l_result.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
 		l_result.Texture3D.MostDetailedMip = 0;
-		l_result.Texture3D.MipLevels = GetMipLevels(textureDataDesc);
+		l_result.Texture3D.MipLevels = GetSRVMipLevels(textureDataDesc);
 	}
 	else
 	{
@@ -334,6 +361,21 @@ D3D11_SHADER_RESOURCE_VIEW_DESC DX11Helper::GetSRVDesc(TextureDataDesc textureDa
 	}
 
 	return l_result;
+}
+
+unsigned int DX11Helper::GetSRVMipLevels(TextureDataDesc textureDataDesc)
+{
+	if (textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
+		|| textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
+		|| textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT
+		|| textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
+	{
+		return 1;
+	}
+	else
+	{
+		return -1;
+	}
 }
 
 D3D11_UNORDERED_ACCESS_VIEW_DESC DX11Helper::GetUAVDesc(TextureDataDesc textureDataDesc, D3D11_TEXTURE_DESC D3D11TextureDesc)
@@ -653,7 +695,7 @@ bool DX11Helper::CreateStateObjects(DX11RenderPassDataComponent * DX11RPDC, ID3D
 	return true;
 }
 
-D3D11_COMPARISON_FUNC getComparisionFunction(ComparisionFunction comparisionFunction)
+D3D11_COMPARISON_FUNC DX11Helper::GetComparisionFunction(ComparisionFunction comparisionFunction)
 {
 	D3D11_COMPARISON_FUNC l_result;
 
@@ -682,7 +724,7 @@ D3D11_COMPARISON_FUNC getComparisionFunction(ComparisionFunction comparisionFunc
 	return l_result;
 }
 
-D3D11_STENCIL_OP getStencilOperation(StencilOperation stencilOperation)
+D3D11_STENCIL_OP DX11Helper::GetStencilOperation(StencilOperation stencilOperation)
 {
 	D3D11_STENCIL_OP l_result;
 
@@ -711,39 +753,7 @@ D3D11_STENCIL_OP getStencilOperation(StencilOperation stencilOperation)
 	return l_result;
 }
 
-bool DX11Helper::GenerateDepthStencilStateDesc(DepthStencilDesc DSDesc, DX11PipelineStateObject * PSO)
-{
-	PSO->m_DepthStencilDesc.DepthEnable = DSDesc.m_UseDepthBuffer;
-
-	PSO->m_DepthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK(DSDesc.m_AllowDepthWrite);
-	PSO->m_DepthStencilDesc.DepthFunc = getComparisionFunction(DSDesc.m_DepthComparisionFunction);
-
-	PSO->m_DepthStencilDesc.StencilEnable = DSDesc.m_UseStencilBuffer;
-
-	PSO->m_DepthStencilDesc.StencilReadMask = 0xFF;
-	if (DSDesc.m_AllowStencilWrite)
-	{
-		PSO->m_DepthStencilDesc.StencilWriteMask = DSDesc.m_StencilWriteMask;
-	}
-	else
-	{
-		PSO->m_DepthStencilDesc.StencilWriteMask = 0x00;
-	}
-
-	PSO->m_DepthStencilDesc.FrontFace.StencilFailOp = getStencilOperation(DSDesc.m_FrontFaceStencilFailOperation);
-	PSO->m_DepthStencilDesc.FrontFace.StencilDepthFailOp = getStencilOperation(DSDesc.m_FrontFaceStencilPassDepthFailOperation);
-	PSO->m_DepthStencilDesc.FrontFace.StencilPassOp = getStencilOperation(DSDesc.m_FrontFaceStencilPassOperation);
-	PSO->m_DepthStencilDesc.FrontFace.StencilFunc = getComparisionFunction(DSDesc.m_FrontFaceStencilComparisionFunction);
-
-	PSO->m_DepthStencilDesc.BackFace.StencilFailOp = getStencilOperation(DSDesc.m_BackFaceStencilFailOperation);
-	PSO->m_DepthStencilDesc.BackFace.StencilDepthFailOp = getStencilOperation(DSDesc.m_BackFaceStencilPassDepthFailOperation);
-	PSO->m_DepthStencilDesc.BackFace.StencilPassOp = getStencilOperation(DSDesc.m_BackFaceStencilPassOperation);
-	PSO->m_DepthStencilDesc.BackFace.StencilFunc = getComparisionFunction(DSDesc.m_BackFaceStencilComparisionFunction);
-
-	return true;
-}
-
-D3D11_BLEND getBlendFactor(BlendFactor blendFactor)
+D3D11_BLEND DX11Helper::GetBlendFactor(BlendFactor blendFactor)
 {
 	D3D11_BLEND l_result;
 
@@ -784,7 +794,7 @@ D3D11_BLEND getBlendFactor(BlendFactor blendFactor)
 	return l_result;
 }
 
-D3D11_BLEND_OP getBlendOperation(BlendOperation blendOperation)
+D3D11_BLEND_OP DX11Helper::GetBlendOperation(BlendOperation blendOperation)
 {
 	D3D11_BLEND_OP l_result;
 
@@ -801,27 +811,9 @@ D3D11_BLEND_OP getBlendOperation(BlendOperation blendOperation)
 	return l_result;
 }
 
-bool DX11Helper::GenerateBlendStateDesc(BlendDesc blendDesc, DX11PipelineStateObject * PSO)
+D3D_PRIMITIVE_TOPOLOGY DX11Helper::GetPrimitiveTopology(PrimitiveTopology primitiveTopology)
 {
-	// @TODO: Separate alpha and RGB blend operation
-	for (size_t i = 0; i < 8; i++)
-	{
-		PSO->m_BlendDesc.RenderTarget[i].BlendEnable = blendDesc.m_UseBlend;
-		PSO->m_BlendDesc.RenderTarget[i].SrcBlend = getBlendFactor(blendDesc.m_SourceRGBFactor);
-		PSO->m_BlendDesc.RenderTarget[i].DestBlend = getBlendFactor(blendDesc.m_DestinationRGBFactor);
-		PSO->m_BlendDesc.RenderTarget[i].BlendOp = getBlendOperation(blendDesc.m_BlendOperation);
-		PSO->m_BlendDesc.RenderTarget[i].SrcBlendAlpha = getBlendFactor(blendDesc.m_SourceAlphaFactor);
-		PSO->m_BlendDesc.RenderTarget[i].DestBlendAlpha = getBlendFactor(blendDesc.m_DestinationAlphaFactor);
-		PSO->m_BlendDesc.RenderTarget[i].BlendOpAlpha = getBlendOperation(blendDesc.m_BlendOperation);
-		PSO->m_BlendDesc.RenderTarget[i].RenderTargetWriteMask = 0xFF;
-	}
-
-	return true;
-}
-
-D3D_PRIMITIVE_TOPOLOGY getPrimitiveTopology(PrimitiveTopology primitiveTopology)
-{
-	D3D_PRIMITIVE_TOPOLOGY l_result;
+	D3D11_PRIMITIVE_TOPOLOGY l_result;
 
 	switch (primitiveTopology)
 	{
@@ -842,7 +834,7 @@ D3D_PRIMITIVE_TOPOLOGY getPrimitiveTopology(PrimitiveTopology primitiveTopology)
 	return l_result;
 }
 
-D3D11_FILL_MODE getRasterizerFillMode(RasterizerFillMode rasterizerFillMode)
+D3D11_FILL_MODE DX11Helper::GetRasterizerFillMode(RasterizerFillMode rasterizerFillMode)
 {
 	D3D11_FILL_MODE l_result;
 
@@ -861,9 +853,59 @@ D3D11_FILL_MODE getRasterizerFillMode(RasterizerFillMode rasterizerFillMode)
 	return l_result;
 }
 
+bool DX11Helper::GenerateDepthStencilStateDesc(DepthStencilDesc DSDesc, DX11PipelineStateObject * PSO)
+{
+	PSO->m_DepthStencilDesc.DepthEnable = DSDesc.m_UseDepthBuffer;
+
+	PSO->m_DepthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK(DSDesc.m_AllowDepthWrite);
+	PSO->m_DepthStencilDesc.DepthFunc = GetComparisionFunction(DSDesc.m_DepthComparisionFunction);
+
+	PSO->m_DepthStencilDesc.StencilEnable = DSDesc.m_UseStencilBuffer;
+
+	PSO->m_DepthStencilDesc.StencilReadMask = 0xFF;
+	if (DSDesc.m_AllowStencilWrite)
+	{
+		PSO->m_DepthStencilDesc.StencilWriteMask = DSDesc.m_StencilWriteMask;
+	}
+	else
+	{
+		PSO->m_DepthStencilDesc.StencilWriteMask = 0x00;
+	}
+
+	PSO->m_DepthStencilDesc.FrontFace.StencilFailOp = GetStencilOperation(DSDesc.m_FrontFaceStencilFailOperation);
+	PSO->m_DepthStencilDesc.FrontFace.StencilDepthFailOp = GetStencilOperation(DSDesc.m_FrontFaceStencilPassDepthFailOperation);
+	PSO->m_DepthStencilDesc.FrontFace.StencilPassOp = GetStencilOperation(DSDesc.m_FrontFaceStencilPassOperation);
+	PSO->m_DepthStencilDesc.FrontFace.StencilFunc = GetComparisionFunction(DSDesc.m_FrontFaceStencilComparisionFunction);
+
+	PSO->m_DepthStencilDesc.BackFace.StencilFailOp = GetStencilOperation(DSDesc.m_BackFaceStencilFailOperation);
+	PSO->m_DepthStencilDesc.BackFace.StencilDepthFailOp = GetStencilOperation(DSDesc.m_BackFaceStencilPassDepthFailOperation);
+	PSO->m_DepthStencilDesc.BackFace.StencilPassOp = GetStencilOperation(DSDesc.m_BackFaceStencilPassOperation);
+	PSO->m_DepthStencilDesc.BackFace.StencilFunc = GetComparisionFunction(DSDesc.m_BackFaceStencilComparisionFunction);
+
+	return true;
+}
+
+bool DX11Helper::GenerateBlendStateDesc(BlendDesc blendDesc, DX11PipelineStateObject * PSO)
+{
+	// @TODO: Separate alpha and RGB blend operation
+	for (size_t i = 0; i < 8; i++)
+	{
+		PSO->m_BlendDesc.RenderTarget[i].BlendEnable = blendDesc.m_UseBlend;
+		PSO->m_BlendDesc.RenderTarget[i].SrcBlend = GetBlendFactor(blendDesc.m_SourceRGBFactor);
+		PSO->m_BlendDesc.RenderTarget[i].DestBlend = GetBlendFactor(blendDesc.m_DestinationRGBFactor);
+		PSO->m_BlendDesc.RenderTarget[i].BlendOp = GetBlendOperation(blendDesc.m_BlendOperation);
+		PSO->m_BlendDesc.RenderTarget[i].SrcBlendAlpha = GetBlendFactor(blendDesc.m_SourceAlphaFactor);
+		PSO->m_BlendDesc.RenderTarget[i].DestBlendAlpha = GetBlendFactor(blendDesc.m_DestinationAlphaFactor);
+		PSO->m_BlendDesc.RenderTarget[i].BlendOpAlpha = GetBlendOperation(blendDesc.m_BlendOperation);
+		PSO->m_BlendDesc.RenderTarget[i].RenderTargetWriteMask = 0xFF;
+	}
+
+	return true;
+}
+
 bool DX11Helper::GenerateRasterizerStateDesc(RasterizerDesc rasterizerDesc, DX11PipelineStateObject * PSO)
 {
-	PSO->m_PrimitiveTopology = getPrimitiveTopology(rasterizerDesc.m_PrimitiveTopology);
+	PSO->m_PrimitiveTopology = GetPrimitiveTopology(rasterizerDesc.m_PrimitiveTopology);
 	PSO->m_RasterizerDesc.AntialiasedLineEnable = true;
 	if (rasterizerDesc.m_UseCulling)
 	{
@@ -876,7 +918,7 @@ bool DX11Helper::GenerateRasterizerStateDesc(RasterizerDesc rasterizerDesc, DX11
 	PSO->m_RasterizerDesc.DepthBias = 0;
 	PSO->m_RasterizerDesc.DepthBiasClamp = 0; // @TODO: Depth Clamp
 	PSO->m_RasterizerDesc.DepthClipEnable = false;
-	PSO->m_RasterizerDesc.FillMode = getRasterizerFillMode(rasterizerDesc.m_RasterizerFillMode);
+	PSO->m_RasterizerDesc.FillMode = GetRasterizerFillMode(rasterizerDesc.m_RasterizerFillMode);
 	PSO->m_RasterizerDesc.FrontCounterClockwise = (rasterizerDesc.m_RasterizerFaceWinding == RasterizerFaceWinding::CCW);
 	PSO->m_RasterizerDesc.MultisampleEnable = rasterizerDesc.m_AllowMultisample;
 	PSO->m_RasterizerDesc.ScissorEnable = false;
@@ -895,45 +937,6 @@ bool DX11Helper::GenerateViewportStateDesc(ViewportDesc viewportDesc, DX11Pipeli
 	PSO->m_Viewport.TopLeftY = viewportDesc.m_OriginY;
 
 	return true;
-}
-
-D3D11_FILTER GetFilterMode(TextureFilterMethod textureFilterMethod)
-{
-	D3D11_FILTER l_result;
-
-	// @TODO: Completeness of the filter
-	switch (textureFilterMethod)
-	{
-	case TextureFilterMethod::NEAREST: l_result = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		break;
-	case TextureFilterMethod::LINEAR: l_result = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		break;
-	case TextureFilterMethod::LINEAR_MIPMAP_LINEAR: l_result = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		break;
-	default:
-		break;
-	}
-
-	return l_result;
-}
-
-D3D11_TEXTURE_ADDRESS_MODE GetWrapMode(TextureWrapMethod textureWrapMethod)
-{
-	D3D11_TEXTURE_ADDRESS_MODE l_result;
-
-	switch (textureWrapMethod)
-	{
-	case TextureWrapMethod::CLAMP_TO_EDGE: l_result = D3D11_TEXTURE_ADDRESS_CLAMP;
-		break;
-	case TextureWrapMethod::REPEAT: l_result = D3D11_TEXTURE_ADDRESS_WRAP;
-		break;
-	case TextureWrapMethod::CLAMP_TO_BORDER: l_result = D3D11_TEXTURE_ADDRESS_BORDER;
-		break;
-	default:
-		break;
-	}
-
-	return l_result;
 }
 
 bool DX11Helper::GenerateSamplerStateDesc(SamplerDesc samplerDesc, DX11PipelineStateObject * PSO)

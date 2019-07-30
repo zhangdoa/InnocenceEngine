@@ -16,7 +16,7 @@ public:
 	ID3D11DepthStencilState* m_DepthStencilState = 0;
 	D3D11_BLEND_DESC m_BlendDesc = {};
 	ID3D11BlendState* m_BlendState = 0;
-	D3D_PRIMITIVE_TOPOLOGY m_PrimitiveTopology;
+	D3D11_PRIMITIVE_TOPOLOGY m_PrimitiveTopology;
 	D3D11_RASTERIZER_DESC m_RasterizerDesc = {};
 	ID3D11RasterizerState* m_RasterizerState = 0;
 	D3D11_VIEWPORT m_Viewport = {};
