@@ -829,9 +829,9 @@ D3D_PRIMITIVE_TOPOLOGY getPrimitiveTopology(PrimitiveTopology primitiveTopology)
 		break;
 	case PrimitiveTopology::Line: l_result = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
 		break;
-	case PrimitiveTopology::TriangleList: l_result = D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	case PrimitiveTopology::TriangleList: l_result = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 		break;
-	case PrimitiveTopology::TriangleStrip: l_result = D3D10_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+	case PrimitiveTopology::TriangleStrip: l_result = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
 		break;
 	case PrimitiveTopology::Patch: l_result = D3D11_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST; // @TODO: Don't treat Patch as a primitive topology type due to the API differences
 		break;
