@@ -1,21 +1,6 @@
 #pragma once
 #include "../IRenderingServer.h"
-
-class DX12CommandList : public ICommandList
-{
-};
-
-class DX12CommandQueue : public ICommandQueue
-{
-};
-
-class DX12Semaphore : public ISemaphore
-{
-};
-
-class DX12Fence : public IFence
-{
-};
+#include "../../RenderingBackend/DX12RenderingBackend/DX12Headers.h"
 
 class DX12RenderingServer : public IRenderingServer
 {
@@ -77,4 +62,6 @@ public:
 
 	virtual bool ReloadShader(RenderPassType renderPassType) override;
 	virtual bool BakeGIData() override;
+
+	DX12SRV CreateSRV(TextureDataComponent * rhs);
 };

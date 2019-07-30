@@ -6,6 +6,6 @@
 class DX12TextureDataComponent : public TextureDataComponent
 {
 public:
-	ID3D12Resource* m_texture = 0;
+	ID3D12Resource* m_ResourceHandle = 0;
 	D3D12_RESOURCE_DESC m_DX12TextureDataDesc = {};
 };

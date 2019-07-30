@@ -1,0 +1,1304 @@
+#include "DX12Helper.h"
+#include "../../Core/InnoLogger.h"
+#include "DX12RenderingServer.h"
+
+#include "../../ModuleManager/IModuleManager.h"
+
+extern IModuleManager* g_pModuleManager;
+
+namespace DX12Helper
+{
+	UINT GetMipLevels(TextureDataDesc textureDataDesc);
+
+	const wchar_t* m_shaderRelativePath = L"Res//Shaders//DX12//";
+}
+
+ID3D12GraphicsCommandList* DX12Helper::BeginSingleTimeCommands(ID3D12Device* device, ID3D12CommandAllocator* globalCommandAllocator)
+{
+	ID3D12GraphicsCommandList* l_commandList;
+
+	// Create a basic command list.
+	auto l_result = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, globalCommandAllocator, NULL, IID_PPV_ARGS(&l_commandList));
+	if (FAILED(l_result))
+	{
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingServer: Can't create command list!");
+		return nullptr;
+	}
+
+	return l_commandList;
+}
+
+bool DX12Helper::EndSingleTimeCommands(ID3D12GraphicsCommandList* commandList, ID3D12Device* device, ID3D12CommandQueue* globalCommandQueue)
+{
+	auto l_result = commandList->Close();
+	if (FAILED(l_result))
+	{
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingServer: Can't close the command list for single command!");
+	}
+
+	ID3D12Fence1* l_uploadFinishFence;
+	l_result = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&l_uploadFinishFence));
+	if (FAILED(l_result))
+	{
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingServer: Can't create fence for single command!");
+	}
+
+	auto l_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+	if (l_fenceEvent == nullptr)
+	{
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingServer: Can't create fence event for single command!");
+	}
+
+	ID3D12CommandList* ppCommandLists[] = { commandList };
+	globalCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+	globalCommandQueue->Signal(l_uploadFinishFence, 1);
+	l_uploadFinishFence->SetEventOnCompletion(1, l_fenceEvent);
+	WaitForSingleObject(l_fenceEvent, INFINITE);
+	CloseHandle(l_fenceEvent);
+
+	commandList->Release();
+
+	return true;
+}
+
+ID3D12Resource* DX12Helper::CreateUploadHeapBuffer(UINT64 size, ID3D12Device* device)
+{
+	ID3D12Resource* l_uploadHeapBuffer;
+
+	auto l_result = device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(size),
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&l_uploadHeapBuffer));
+
+	if (FAILED(l_result))
+	{
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingServer: can't create upload heap buffer!");
+		return nullptr;
+	}
+
+	return l_uploadHeapBuffer;
+}
+
+ID3D12Resource* DX12Helper::CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, ID3D12Device* device, D3D12_CLEAR_VALUE* clearValue)
+{
+	ID3D12Resource* l_defaultHeapBuffer;
+
+	auto l_result = device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		D3D12_HEAP_FLAG_NONE,
+		resourceDesc,
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		clearValue,
+		IID_PPV_ARGS(&l_defaultHeapBuffer));
+
+	if (FAILED(l_result))
+	{
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingServer: can't create default heap buffer!");
+		return false;
+	}
+
+	return l_defaultHeapBuffer;
+}
+
+D3D12_RESOURCE_DESC DX12Helper::GetDX12TextureDataDesc(TextureDataDesc textureDataDesc)
+{
+	D3D12_RESOURCE_DESC l_result = {};
+
+	l_result.Height = textureDataDesc.height;
+	l_result.Width = textureDataDesc.width;
+	l_result.MipLevels = GetTextureMipLevels(textureDataDesc);
+	l_result.DepthOrArraySize = 1;
+	l_result.Format = GetTextureFormat(textureDataDesc);
+	l_result.SampleDesc.Count = 1;
+	l_result.SampleDesc.Quality = 0;
+	l_result.Dimension = GetTextureDimension(textureDataDesc);
+	l_result.Flags = GetTextureBindFlags(textureDataDesc);
+
+	return l_result;
+}
+
+DXGI_FORMAT DX12Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
+{
+	DXGI_FORMAT l_internalFormat = DXGI_FORMAT_UNKNOWN;
+
+	if (textureDataDesc.usageType == TextureUsageType::ALBEDO)
+	{
+		l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+	}
+	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
+	{
+		l_internalFormat = DXGI_FORMAT_R32_TYPELESS;
+	}
+	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
+	{
+		l_internalFormat = DXGI_FORMAT_R24G8_TYPELESS;
+	}
+	else
+	{
+		if (textureDataDesc.pixelDataType == TexturePixelDataType::UBYTE)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R8_UNORM; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_UNORM; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SBYTE)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R8_SNORM; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_SNORM; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R8G8B8A8_SNORM; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R8G8B8A8_SNORM; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::USHORT)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_UNORM; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_UNORM; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UNORM; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UNORM; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SSHORT)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_SNORM; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_SNORM; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R16G16B16A16_SNORM; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R16G16B16A16_SNORM; break;
+			default: break;
+			}
+		}
+		if (textureDataDesc.pixelDataType == TexturePixelDataType::UINT8)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R8_UINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_UINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R8G8B8A8_UINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SINT8)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R8_SINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_SINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R8G8B8A8_SINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R8G8B8A8_SINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::UINT16)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_UINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_UINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R16G16B16A16_UINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SINT16)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_SINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_SINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R16G16B16A16_SINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R16G16B16A16_SINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::UINT32)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R32_UINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R32G32_UINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R32G32B32A32_UINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R32G32B32A32_UINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SINT32)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R32_SINT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R32G32_SINT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R32G32B32A32_SINT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R32G32B32A32_SINT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::FLOAT16)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_FLOAT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_FLOAT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R16G16B16A16_FLOAT; break;
+			default: break;
+			}
+		}
+		else if (textureDataDesc.pixelDataType == TexturePixelDataType::FLOAT32)
+		{
+			switch (textureDataDesc.pixelDataFormat)
+			{
+			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R32_FLOAT; break;
+			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R32G32_FLOAT; break;
+			case TexturePixelDataFormat::RGB: l_internalFormat = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
+			case TexturePixelDataFormat::RGBA: l_internalFormat = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
+			default: break;
+			}
+		}
+	}
+
+	return l_internalFormat;
+}
+
+D3D12_RESOURCE_DIMENSION DX12Helper::GetTextureDimension(TextureDataDesc textureDataDesc)
+{
+	D3D12_RESOURCE_DIMENSION l_result;
+
+	if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_1D)
+	{
+		l_result = D3D12_RESOURCE_DIMENSION_TEXTURE1D;
+	}
+	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_2D)
+	{
+		l_result = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	}
+	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_3D)
+	{
+		l_result = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
+	}
+	else
+	{
+		// @TODO: Cubemap support
+	}
+
+	return l_result;
+}
+
+D3D12_FILTER DX12Helper::GetFilterMode(TextureFilterMethod textureFilterMethod)
+{
+	D3D12_FILTER l_result;
+
+	// @TODO: Completeness of the filter
+	switch (textureFilterMethod)
+	{
+	case TextureFilterMethod::NEAREST: l_result = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+		break;
+	case TextureFilterMethod::LINEAR: l_result = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+		break;
+	case TextureFilterMethod::LINEAR_MIPMAP_LINEAR: l_result = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+D3D12_TEXTURE_ADDRESS_MODE DX12Helper::GetWrapMode(TextureWrapMethod textureWrapMethod)
+{
+	D3D12_TEXTURE_ADDRESS_MODE l_result;
+
+	switch (textureWrapMethod)
+	{
+	case TextureWrapMethod::CLAMP_TO_EDGE: l_result = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		break;
+	case TextureWrapMethod::REPEAT: l_result = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		break;
+	case TextureWrapMethod::CLAMP_TO_BORDER: l_result = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+unsigned int DX12Helper::GetTextureMipLevels(TextureDataDesc textureDataDesc)
+{
+	unsigned int textureMipLevels = 1;
+	if (textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
+	{
+		textureMipLevels = 0;
+	}
+
+	return textureMipLevels;
+}
+
+D3D12_RESOURCE_FLAGS DX12Helper::GetTextureBindFlags(TextureDataDesc textureDataDesc)
+{
+	D3D12_RESOURCE_FLAGS textureBindFlags = {};
+
+	if (textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT)
+	{
+		textureBindFlags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+	}
+	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
+	{
+		textureBindFlags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+	}
+	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
+	{
+		textureBindFlags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+	}
+	else if (textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
+	{
+		textureBindFlags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+	}
+
+	return textureBindFlags;
+}
+
+UINT DX12Helper::GetMipLevels(TextureDataDesc textureDataDesc)
+{
+	if (textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
+		|| textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
+		|| textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT
+		|| textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
+	{
+		return 1;
+	}
+	else
+	{
+		return -1;
+	}
+}
+
+D3D12_SHADER_RESOURCE_VIEW_DESC DX12Helper::GetSRVDesc(TextureDataDesc textureDataDesc, D3D12_RESOURCE_DESC D3D12TextureDesc)
+{
+	D3D12_SHADER_RESOURCE_VIEW_DESC l_result = {};
+
+	if (textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
+	{
+		l_result.Format = DXGI_FORMAT_R32_FLOAT;
+	}
+	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
+	{
+		l_result.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+	}
+	else
+	{
+		l_result.Format = D3D12TextureDesc.Format;
+	}
+
+	if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_1D)
+	{
+		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
+		l_result.Texture1D.MostDetailedMip = 0;
+		l_result.Texture1D.MipLevels = GetMipLevels(textureDataDesc);
+	}
+	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_2D)
+	{
+		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		l_result.Texture2D.MostDetailedMip = 0;
+		l_result.Texture2D.MipLevels = GetMipLevels(textureDataDesc);
+	}
+	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_3D)
+	{
+		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+		l_result.Texture3D.MostDetailedMip = 0;
+		l_result.Texture3D.MipLevels = GetMipLevels(textureDataDesc);
+	}
+	else
+	{
+		// @TODO: Cubemap support
+	}
+
+	return l_result;
+}
+
+D3D12_UNORDERED_ACCESS_VIEW_DESC DX12Helper::GetUAVDesc(TextureDataDesc textureDataDesc, D3D12_RESOURCE_DESC D3D12TextureDesc)
+{
+	D3D12_UNORDERED_ACCESS_VIEW_DESC l_result = {};
+
+	if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_1D)
+	{
+		l_result.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE1D;
+		l_result.Texture1D.MipSlice = 0;
+	}
+	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_2D)
+	{
+		l_result.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+		l_result.Texture2D.MipSlice = 0;
+	}
+	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_3D)
+	{
+		l_result.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
+		l_result.Texture3D.MipSlice = 0;
+	}
+	else
+	{
+		// @TODO: Cubemap support
+	}
+
+	return l_result;
+}
+
+D3D12_RENDER_TARGET_VIEW_DESC DX12Helper::GetRTVDesc(TextureDataDesc textureDataDesc)
+{
+	D3D12_RENDER_TARGET_VIEW_DESC l_result = {};
+
+	if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_1D)
+	{
+		l_result.Format = GetTextureFormat(textureDataDesc);
+		l_result.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1D;
+		l_result.Texture1D.MipSlice = 0;
+	}
+	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_2D)
+	{
+		l_result.Format = GetTextureFormat(textureDataDesc);
+		l_result.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+		l_result.Texture2D.MipSlice = 0;
+	}
+	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_3D)
+	{
+		l_result.Format = GetTextureFormat(textureDataDesc);
+		l_result.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE3D;
+		l_result.Texture3D.MipSlice = 0;
+	}
+	else
+	{
+		// @TODO: Cubemap support
+	}
+
+	return l_result;
+}
+
+D3D12_DEPTH_STENCIL_VIEW_DESC DX12Helper::GetDSVDesc(TextureDataDesc textureDataDesc, DepthStencilDesc DSDesc)
+{
+	D3D12_DEPTH_STENCIL_VIEW_DESC l_result = {};
+
+	if (DSDesc.m_UseStencilBuffer)
+	{
+		l_result.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	}
+	else
+	{
+		l_result.Format = DXGI_FORMAT_D32_FLOAT;
+	}
+
+	if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_1D)
+	{
+		l_result.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE1D;
+		l_result.Texture1D.MipSlice = 0;
+	}
+	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_2D)
+	{
+		l_result.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+		l_result.Texture2D.MipSlice = 0;
+	}
+	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_3D)
+	{
+		// Not supported
+	}
+	else
+	{
+		// @TODO: Cubemap support
+	}
+
+	return l_result;
+}
+
+bool DX12Helper::ReserveRenderTargets(DX12RenderPassDataComponent* DX12RPDC, IRenderingServer* renderingServer)
+{
+	DX12RPDC->m_RenderTargets.reserve(DX12RPDC->m_RenderPassDesc.m_RenderTargetCount);
+	for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		DX12RPDC->m_RenderTargets.emplace_back();
+		DX12RPDC->m_RenderTargets[i] = renderingServer->AddTextureDataComponent((std::string(DX12RPDC->m_componentName.c_str()) + "_" + std::to_string(i) + "/").c_str());
+	}
+
+	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " render targets have been allocated.");
+
+	return true;
+}
+
+bool DX12Helper::CreateRenderTargets(DX12RenderPassDataComponent* DX12RPDC, IRenderingServer* renderingServer)
+{
+	auto l_DX12RenderingServer = reinterpret_cast<DX12RenderingServer*>(renderingServer);
+
+	DX12RPDC->m_SRVs.reserve(DX12RPDC->m_RenderPassDesc.m_RenderTargetCount);
+
+	for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		auto l_TDC = DX12RPDC->m_RenderTargets[i];
+
+		l_TDC->m_textureDataDesc = DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc;
+
+		l_TDC->m_textureData = nullptr;
+
+		renderingServer->InitializeTextureDataComponent(l_TDC);
+
+		DX12RPDC->m_SRVs.emplace_back();
+		DX12RPDC->m_SRVs[i] = l_DX12RenderingServer->CreateSRV(DX12RPDC->m_RenderTargets[i]);
+	}
+
+	if (DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	{
+		DX12RPDC->m_DepthStencilRenderTarget = renderingServer->AddTextureDataComponent((std::string(DX12RPDC->m_componentName.c_str()) + "_DS/").c_str());
+		DX12RPDC->m_DepthStencilRenderTarget->m_textureDataDesc = DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc;
+
+		if (DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
+		{
+			DX12RPDC->m_DepthStencilRenderTarget->m_textureDataDesc.usageType = TextureUsageType::DEPTH_STENCIL_ATTACHMENT;
+		}
+		else
+		{
+			DX12RPDC->m_DepthStencilRenderTarget->m_textureDataDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
+		}
+
+		DX12RPDC->m_DepthStencilRenderTarget->m_textureData = { nullptr };
+
+		renderingServer->InitializeTextureDataComponent(DX12RPDC->m_DepthStencilRenderTarget);
+	}
+
+	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " render targets have been created.");
+
+	return true;
+}
+
+bool DX12Helper::CreateViews(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device)
+{
+	DX12RPDC->m_RTVDescriptorCPUHandles.reserve(DX12RPDC->m_RenderPassDesc.m_RenderTargetCount);
+	for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		DX12RPDC->m_RTVDescriptorCPUHandles.emplace_back();
+	}
+
+	// RTV Descriptor Heap
+	DX12RPDC->m_RTVDescriptorHeapDesc.NumDescriptors = (unsigned int)DX12RPDC->m_RenderPassDesc.m_RenderTargetCount;
+	DX12RPDC->m_RTVDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	DX12RPDC->m_RTVDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	if (DX12RPDC->m_RTVDescriptorHeapDesc.NumDescriptors)
+	{
+		auto l_HResult = device->CreateDescriptorHeap(&DX12RPDC->m_RTVDescriptorHeapDesc, IID_PPV_ARGS(&DX12RPDC->m_RTVDescriptorHeap));
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " can't create DescriptorHeap for RTV!");
+			return false;
+		}
+		DX12RPDC->m_RTVDescriptorCPUHandles[0] = DX12RPDC->m_RTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	}
+
+	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " RTV DescriptorHeap has been created.");
+
+	// RTV
+	DX12RPDC->m_RTVDescriptorCPUHandles.reserve(DX12RPDC->m_RenderPassDesc.m_RenderTargetCount);
+	for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		DX12RPDC->m_RTVDescriptorCPUHandles.emplace_back();
+	}
+	auto l_RTVDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+	DX12RPDC->m_RTVDesc = GetRTVDesc(DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc);
+
+	for (size_t i = 1; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		DX12RPDC->m_RTVDescriptorCPUHandles[i].ptr = DX12RPDC->m_RTVDescriptorCPUHandles[i - 1].ptr + l_RTVDescSize;
+	}
+
+	for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		auto l_ResourceHandle = reinterpret_cast<DX12TextureDataComponent*>(DX12RPDC->m_RenderTargets[i])->m_ResourceHandle;
+		device->CreateRenderTargetView(l_ResourceHandle, &DX12RPDC->m_RTVDesc, DX12RPDC->m_RTVDescriptorCPUHandles[i]);
+	}
+
+	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " RTV has been created.");
+
+	// DSV Descriptor Heap
+	DX12RPDC->m_DSVDescriptorHeapDesc.NumDescriptors = 1;
+	DX12RPDC->m_DSVDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	DX12RPDC->m_DSVDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	auto l_HResult = device->CreateDescriptorHeap(&DX12RPDC->m_DSVDescriptorHeapDesc, IID_PPV_ARGS(&DX12RPDC->m_DSVDescriptorHeap));
+
+	if (FAILED(l_HResult))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " can't create DescriptorHeap for DSV!");
+		return false;
+	}
+
+	DX12RPDC->m_DSVDescriptorCPUHandle = DX12RPDC->m_DSVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+
+	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " DSV DescriptorHeap has been created.");
+
+	// DSV
+	auto l_DSVDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+
+	DX12RPDC->m_DSVDesc = GetDSVDesc(DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc, DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc);
+
+	auto l_ResourceHandle = reinterpret_cast<DX12TextureDataComponent*>(DX12RPDC->m_DepthStencilRenderTarget)->m_ResourceHandle;
+	device->CreateDepthStencilView(l_ResourceHandle, &DX12RPDC->m_DSVDesc, DX12RPDC->m_DSVDescriptorCPUHandle);
+
+	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " DSV has been created.");
+
+	return true;
+}
+
+bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device)
+{
+	ID3DBlob* l_signature = 0;
+	ID3DBlob* l_error = 0;
+
+	DX12RPDC->m_RootSignatureDesc = GetRootSignatureDesc(DX12RPDC->m_ResourceBinderLayoutDescs);
+
+	auto l_result = D3D12SerializeVersionedRootSignature(&DX12RPDC->m_RootSignatureDesc, &l_signature, &l_error);
+
+	if (FAILED(l_result))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " can't serialize RootSignature!");
+		return false;
+	}
+
+	l_result = device->CreateRootSignature(0, l_signature->GetBufferPointer(), l_signature->GetBufferSize(), IID_PPV_ARGS(&DX12RPDC->m_RootSignature));
+	l_signature->Release();
+
+	if (l_error)
+	{
+		l_error->Release();
+	}
+
+	if (FAILED(l_result))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " can't create RootSignature!");
+		return false;
+	}
+
+	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " RootSignature has been created.");
+
+	return true;
+}
+
+bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, DX12ShaderProgramComponent* DXSPC)
+{
+	//	D3D12_INPUT_ELEMENT_DESC l_polygonLayout[5];
+	//	unsigned int l_numElements;
+	//
+	//	// Create the vertex input layout description.
+	//	l_polygonLayout[0].SemanticName = "POSITION";
+	//	l_polygonLayout[0].SemanticIndex = 0;
+	//	l_polygonLayout[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	//	l_polygonLayout[0].InputSlot = 0;
+	//	l_polygonLayout[0].AlignedByteOffset = 0;
+	//	l_polygonLayout[0].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+	//	l_polygonLayout[0].InstanceDataStepRate = 0;
+	//
+	//	l_polygonLayout[1].SemanticName = "TEXCOORD";
+	//	l_polygonLayout[1].SemanticIndex = 0;
+	//	l_polygonLayout[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+	//	l_polygonLayout[1].InputSlot = 0;
+	//	l_polygonLayout[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	//	l_polygonLayout[1].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+	//	l_polygonLayout[1].InstanceDataStepRate = 0;
+	//
+	//	l_polygonLayout[2].SemanticName = "PADA";
+	//	l_polygonLayout[2].SemanticIndex = 0;
+	//	l_polygonLayout[2].Format = DXGI_FORMAT_R32G32_FLOAT;
+	//	l_polygonLayout[2].InputSlot = 0;
+	//	l_polygonLayout[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	//	l_polygonLayout[2].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+	//	l_polygonLayout[2].InstanceDataStepRate = 0;
+	//
+	//	l_polygonLayout[3].SemanticName = "NORMAL";
+	//	l_polygonLayout[3].SemanticIndex = 0;
+	//	l_polygonLayout[3].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	//	l_polygonLayout[3].InputSlot = 0;
+	//	l_polygonLayout[3].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	//	l_polygonLayout[3].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+	//	l_polygonLayout[3].InstanceDataStepRate = 0;
+	//
+	//	l_polygonLayout[4].SemanticName = "PADB";
+	//	l_polygonLayout[4].SemanticIndex = 0;
+	//	l_polygonLayout[4].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	//	l_polygonLayout[4].InputSlot = 0;
+	//	l_polygonLayout[4].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	//	l_polygonLayout[4].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+	//	l_polygonLayout[4].InstanceDataStepRate = 0;
+	//
+	//	// Get a count of the elements in the layout.
+	//	l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
+	//
+	//	D3D12_SHADER_BYTECODE l_vsBytecode;
+	//	l_vsBytecode.pShaderBytecode = DXSPC->m_vertexShader->GetBufferPointer();
+	//	l_vsBytecode.BytecodeLength = DXSPC->m_vertexShader->GetBufferSize();
+	//
+	//	D3D12_SHADER_BYTECODE l_psBytecode;
+	//	l_psBytecode.pShaderBytecode = DXSPC->m_pixelShader->GetBufferPointer();
+	//	l_psBytecode.BytecodeLength = DXSPC->m_pixelShader->GetBufferSize();
+	//
+	//	DX12RPDC->m_PSODesc.pRootSignature = DX12RPDC->m_rootSignature;
+	//	DX12RPDC->m_PSODesc.InputLayout = { l_polygonLayout, l_numElements };
+	//	DX12RPDC->m_PSODesc.VS = l_vsBytecode;
+	//	DX12RPDC->m_PSODesc.PS = l_psBytecode;
+	//
+	//	DX12RPDC->m_PSODesc.NumRenderTargets = DX12RPDC->m_RenderPassDesc.m_RenderTargetCount;
+	//	for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	//	{
+	//		DX12RPDC->m_PSODesc.RTVFormats[i] = DX12RPDC->m_RenderTargets[i]->m_DX12TextureDataDesc.Format;
+	//	}
+	//
+	//	DX12RPDC->m_PSODesc.DSVFormat = DX12RPDC->m_DSVDesc.Format;
+	//	DX12RPDC->m_PSODesc.DepthStencilState = DX12RPDC->m_depthStencilDesc;
+	//	DX12RPDC->m_PSODesc.RasterizerState = DX12RPDC->m_rasterizerDesc;
+	//	DX12RPDC->m_PSODesc.BlendState = DX12RPDC->m_blendDesc;
+	//
+	//	auto l_result = m_device->CreateGraphicsPipelineState(&DX12RPDC->m_PSODesc, IID_PPV_ARGS(&DX12RPDC->m_PSO));
+	//
+	//	if (FAILED(l_result))
+	//	{
+	//		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ",DX12RPDC->m_componentName.c_str()," can't create PSO!");
+	//		return false;
+	//	}
+	//
+	//	std::string l_name = DX12RPDC->m_componentName.c_str();
+	//	l_name = l_name + "_PSO";
+	//	DX12RPDC->m_PSO->SetName(std::wstring(l_name.begin(), l_name.end()).c_str());
+	//
+	//	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ",DX12RPDC->m_componentName.c_str()," PSO has been created.");
+	//
+	return true;
+}
+
+bool DX12Helper::CreateCommandQueue(DX12RenderPassDataComponent* DX12RPDC)
+{
+	//// Set up the description of the command queue.
+	//DX12RPDC->m_commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+	//DX12RPDC->m_commandQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
+	//DX12RPDC->m_commandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+	//DX12RPDC->m_commandQueueDesc.NodeMask = 0;
+
+	//// Create the command queue.
+	//auto l_result = m_device->CreateCommandQueue(&DX12RPDC->m_commandQueueDesc, IID_PPV_ARGS(&DX12RPDC->m_commandQueue));
+	//if (FAILED(l_result))
+	//{
+	//	InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " can't create CommandQueue!");
+	//	return false;
+	//}
+
+	//std::string l_name = DX12RPDC->m_componentName.c_str();
+	//l_name = l_name + "_CommandQueue";
+	//DX12RPDC->m_commandQueue->SetName(std::wstring(l_name.begin(), l_name.end()).c_str());
+
+	//InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " CommandQueue has been created.");
+
+	return true;
+}
+
+bool DX12Helper::CreateCommandAllocators(DX12RenderPassDataComponent* DX12RPDC)
+{
+	//if (DX12RPDC->m_RenderPassDesc.useMultipleFramebuffers)
+	//{
+	//	DX12RPDC->m_commandAllocators.resize(DX12RPDC->m_RenderPassDesc.m_RenderTargetCount);
+	//}
+	//else
+	//{
+	//	DX12RPDC->m_commandAllocators.resize(1);
+	//}
+
+	//HRESULT l_result;
+
+	//for (size_t i = 0; i < DX12RPDC->m_commandAllocators.size(); i++)
+	//{
+	//	// Create a command allocator.
+	//	l_result = m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&DX12RPDC->m_commandAllocators[i]));
+	//	if (FAILED(l_result))
+	//	{
+	//		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " can't create CommandAllocator!");
+	//		return false;
+	//	}
+
+	//	std::string l_name = DX12RPDC->m_componentName.c_str();
+	//	l_name = l_name + "_CommandAllocator_" + std::to_string(i);
+	//	DX12RPDC->m_commandAllocators[i]->SetName(std::wstring(l_name.begin(), l_name.end()).c_str());
+
+	//	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " CommandAllocator has been created.");
+	//}
+
+	return true;
+}
+
+bool DX12Helper::CreateCommandLists(DX12RenderPassDataComponent* DX12RPDC)
+{
+	//	DX12RPDC->m_commandLists.resize(DX12RPDC->m_commandAllocators.size());
+	//
+	//	for (size_t i = 0; i < DX12RPDC->m_commandAllocators.size(); i++)
+	//	{
+	//		auto l_result = m_device->CreateCommandList
+	//		(0, D3D12_COMMAND_LIST_TYPE_DIRECT, DX12RPDC->m_commandAllocators[i], NULL, IID_PPV_ARGS(&DX12RPDC->m_commandLists[i]));
+	//		if (FAILED(l_result))
+	//		{
+	//			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " can't create CommandList!");
+	//			return false;
+	//		}
+	//
+	//		DX12RPDC->m_commandLists[i]->Close();
+	//
+	//		std::string l_name = DX12RPDC->m_componentName.c_str();
+	//		l_name = l_name + "_CommandList_" + std::to_string(i);
+	//		DX12RPDC->m_commandLists[i]->SetName(std::wstring(l_name.begin(), l_name.end()).c_str());
+	//	}
+	//
+	//	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " CommandList has been created.");
+	//
+	return true;
+}
+
+bool DX12Helper::CreateSyncPrimitives(DX12RenderPassDataComponent* DX12RPDC)
+{
+	//	HRESULT l_result;
+	//
+	//	DX12RPDC->m_fenceStatus.reserve(DX12RPDC->m_commandLists.size());
+	//
+	//	for (size_t i = 0; i < DX12RPDC->m_commandLists.size(); i++)
+	//	{
+	//		DX12RPDC->m_fenceStatus.emplace_back();
+	//	}
+	//
+	//	// Create a fence for GPU synchronization.
+	//	l_result = m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&DX12RPDC->m_fence));
+	//	if (FAILED(l_result))
+	//	{
+	//		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " can't create Fence!");
+	//		return false;
+	//	}
+	//
+	//	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Fence has been created.");
+	//
+	//	// Create an event object for the fence.
+	//	DX12RPDC->m_fenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
+	//	if (DX12RPDC->m_fenceEvent == NULL)
+	//	{
+	//		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " can't create fence event!");
+	//		return false;
+	//	}
+	//
+	//	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Fence event has been created.");
+
+	return true;
+}
+
+D3D12_VERSIONED_ROOT_SIGNATURE_DESC DX12Helper::GetRootSignatureDesc(const std::vector<ResourceBinderLayoutDesc>& resourceBinderLayoutDescs)
+{
+	std::vector<CD3DX12_ROOT_PARAMETER1> l_rootParameters(resourceBinderLayoutDescs.size());
+	size_t l_rootDescriptorTableCount = 0;
+
+	for (size_t i = 0; i < l_rootParameters.size(); i++)
+	{
+		auto l_resourceBinderLayoutDesc = resourceBinderLayoutDescs[i];
+
+		if (l_resourceBinderLayoutDesc.m_ResourceCount > 1)
+		{
+			l_rootDescriptorTableCount++;
+		}
+	}
+
+	std::vector<CD3DX12_DESCRIPTOR_RANGE1> l_rootDescriptorTables(l_rootDescriptorTableCount);
+
+	size_t l_currentRootDescriptorTableIndex = 0;
+
+	for (size_t i = 0; i < l_rootParameters.size(); i++)
+	{
+		auto l_resourceBinderLayoutDesc = resourceBinderLayoutDescs[i];
+
+		if (l_resourceBinderLayoutDesc.m_IsRanged)
+		{
+			switch (l_resourceBinderLayoutDesc.m_ResourceBinderType)
+			{
+			case ResourceBinderType::Sampler: l_rootDescriptorTables[l_currentRootDescriptorTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_BindingSlot);
+				break;
+			case ResourceBinderType::Image:l_rootDescriptorTables[l_currentRootDescriptorTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_BindingSlot);
+				break;
+			case ResourceBinderType::ROBuffer: l_rootDescriptorTables[l_currentRootDescriptorTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_BindingSlot);
+				break;
+			case ResourceBinderType::ROBufferArray: l_rootDescriptorTables[l_currentRootDescriptorTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_BindingSlot);
+				break;
+			case ResourceBinderType::RWBuffer: l_rootDescriptorTables[l_currentRootDescriptorTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_BindingSlot);
+				break;
+			case ResourceBinderType::RWBufferArray: l_rootDescriptorTables[l_currentRootDescriptorTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_BindingSlot);
+				break;
+			default:
+				break;
+			}
+
+			l_rootParameters[i].InitAsDescriptorTable(1, &l_rootDescriptorTables[l_currentRootDescriptorTableIndex], D3D12_SHADER_VISIBILITY_ALL);
+
+			l_currentRootDescriptorTableIndex++;
+		}
+		else
+		{
+			switch (l_resourceBinderLayoutDesc.m_ResourceBinderType)
+			{
+			case ResourceBinderType::Sampler:
+				break;
+			case ResourceBinderType::Image: l_rootParameters[i].InitAsShaderResourceView((unsigned int)l_resourceBinderLayoutDesc.m_BindingSlot, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_ALL);
+				break;
+			case ResourceBinderType::ROBuffer: l_rootParameters[i].InitAsConstantBufferView((unsigned int)l_resourceBinderLayoutDesc.m_BindingSlot, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_ALL);
+				break;
+			case ResourceBinderType::ROBufferArray: l_rootParameters[i].InitAsConstantBufferView((unsigned int)l_resourceBinderLayoutDesc.m_BindingSlot, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_ALL);
+				break;
+			case ResourceBinderType::RWBuffer: l_rootParameters[i].InitAsUnorderedAccessView((unsigned int)l_resourceBinderLayoutDesc.m_BindingSlot, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_ALL);
+				break;
+			case ResourceBinderType::RWBufferArray: l_rootParameters[i].InitAsUnorderedAccessView((unsigned int)l_resourceBinderLayoutDesc.m_BindingSlot, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_ALL);
+				break;
+			default:
+				break;
+			}
+		}
+	}
+
+	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC l_rootSigDesc((unsigned int)l_rootParameters.size(), l_rootParameters.data());
+	l_rootSigDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
+	return l_rootSigDesc;
+}
+
+D3D12_COMPARISON_FUNC DX12Helper::GetComparisionFunction(ComparisionFunction comparisionFunction)
+{
+	D3D12_COMPARISON_FUNC l_result;
+
+	switch (comparisionFunction)
+	{
+	case ComparisionFunction::Never: l_result = D3D12_COMPARISON_FUNC_NEVER;
+		break;
+	case ComparisionFunction::Less: l_result = D3D12_COMPARISON_FUNC_LESS;
+		break;
+	case ComparisionFunction::Equal: l_result = D3D12_COMPARISON_FUNC_EQUAL;
+		break;
+	case ComparisionFunction::LessEqual: l_result = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+		break;
+	case ComparisionFunction::Greater: l_result = D3D12_COMPARISON_FUNC_GREATER;
+		break;
+	case ComparisionFunction::NotEqual: l_result = D3D12_COMPARISON_FUNC_NOT_EQUAL;
+		break;
+	case ComparisionFunction::GreaterEqual: l_result = D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+		break;
+	case ComparisionFunction::Always: l_result = D3D12_COMPARISON_FUNC_ALWAYS;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+D3D12_STENCIL_OP DX12Helper::GetStencilOperation(StencilOperation stencilOperation)
+{
+	D3D12_STENCIL_OP l_result;
+
+	switch (stencilOperation)
+	{
+	case StencilOperation::Keep: l_result = D3D12_STENCIL_OP_KEEP;
+		break;
+	case StencilOperation::Zero: l_result = D3D12_STENCIL_OP_ZERO;
+		break;
+	case StencilOperation::Replace: l_result = D3D12_STENCIL_OP_REPLACE;
+		break;
+	case StencilOperation::IncreaseSat: l_result = D3D12_STENCIL_OP_INCR_SAT;
+		break;
+	case StencilOperation::DecreaseSat: l_result = D3D12_STENCIL_OP_DECR_SAT;
+		break;
+	case StencilOperation::Invert: l_result = D3D12_STENCIL_OP_INVERT;
+		break;
+	case StencilOperation::Increase: l_result = D3D12_STENCIL_OP_INCR;
+		break;
+	case StencilOperation::Decrease: l_result = D3D12_STENCIL_OP_DECR;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+D3D12_BLEND DX12Helper::GetBlendFactor(BlendFactor blendFactor)
+{
+	D3D12_BLEND l_result;
+
+	switch (blendFactor)
+	{
+	case BlendFactor::Zero: l_result = D3D12_BLEND_ZERO;
+		break;
+	case BlendFactor::One: l_result = D3D12_BLEND_ONE;
+		break;
+	case BlendFactor::SrcColor: l_result = D3D12_BLEND_SRC_COLOR;
+		break;
+	case BlendFactor::OneMinusSrcColor: l_result = D3D12_BLEND_INV_SRC_COLOR;
+		break;
+	case BlendFactor::SrcAlpha: l_result = D3D12_BLEND_SRC_ALPHA;
+		break;
+	case BlendFactor::OneMinusSrcAlpha: l_result = D3D12_BLEND_INV_SRC_ALPHA;
+		break;
+	case BlendFactor::DestColor: l_result = D3D12_BLEND_DEST_COLOR;
+		break;
+	case BlendFactor::OneMinusDestColor: l_result = D3D12_BLEND_INV_DEST_COLOR;
+		break;
+	case BlendFactor::DestAlpha: l_result = D3D12_BLEND_DEST_ALPHA;
+		break;
+	case BlendFactor::OneMinusDestAlpha: l_result = D3D12_BLEND_INV_DEST_ALPHA;
+		break;
+	case BlendFactor::Src1Color: l_result = D3D12_BLEND_SRC1_COLOR;
+		break;
+	case BlendFactor::OneMinusSrc1Color: l_result = D3D12_BLEND_INV_SRC1_COLOR;
+		break;
+	case BlendFactor::Src1Alpha: l_result = D3D12_BLEND_SRC1_ALPHA;
+		break;
+	case BlendFactor::OneMinusSrc1Alpha: l_result = D3D12_BLEND_INV_SRC1_ALPHA;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+D3D12_BLEND_OP DX12Helper::GetBlendOperation(BlendOperation blendOperation)
+{
+	D3D12_BLEND_OP l_result;
+
+	switch (blendOperation)
+	{
+	case BlendOperation::Add: l_result = D3D12_BLEND_OP_ADD;
+		break;
+	case BlendOperation::Substruct: l_result = D3D12_BLEND_OP_SUBTRACT;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+D3D12_PRIMITIVE_TOPOLOGY_TYPE DX12Helper::GetPrimitiveTopology(PrimitiveTopology primitiveTopology)
+{
+	D3D12_PRIMITIVE_TOPOLOGY_TYPE l_result;
+
+	switch (primitiveTopology)
+	{
+	case PrimitiveTopology::Point: l_result = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+		break;
+	case PrimitiveTopology::Line: l_result = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+		break;
+	case PrimitiveTopology::TriangleList: l_result = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		break;
+	case PrimitiveTopology::TriangleStrip: l_result = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		break;
+	case PrimitiveTopology::Patch: l_result = D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH; // @TODO: Don't treat Patch as a primitive topology type due to the API differences
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+D3D12_FILL_MODE DX12Helper::GetRasterizerFillMode(RasterizerFillMode rasterizerFillMode)
+{
+	D3D12_FILL_MODE l_result;
+
+	switch (rasterizerFillMode)
+	{
+	case RasterizerFillMode::Point: // Not supported
+		break;
+	case RasterizerFillMode::Wireframe: l_result = D3D12_FILL_MODE_WIREFRAME;
+		break;
+	case RasterizerFillMode::Solid: l_result = D3D12_FILL_MODE_SOLID;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+bool DX12Helper::GenerateDepthStencilStateDesc(DepthStencilDesc DSDesc, DX12PipelineStateObject * PSO)
+{
+	PSO->m_DepthStencilDesc.DepthEnable = DSDesc.m_UseDepthBuffer;
+
+	PSO->m_DepthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK(DSDesc.m_AllowDepthWrite);
+	PSO->m_DepthStencilDesc.DepthFunc = GetComparisionFunction(DSDesc.m_DepthComparisionFunction);
+
+	PSO->m_DepthStencilDesc.StencilEnable = DSDesc.m_UseStencilBuffer;
+
+	PSO->m_DepthStencilDesc.StencilReadMask = 0xFF;
+	if (DSDesc.m_AllowStencilWrite)
+	{
+		PSO->m_DepthStencilDesc.StencilWriteMask = DSDesc.m_StencilWriteMask;
+	}
+	else
+	{
+		PSO->m_DepthStencilDesc.StencilWriteMask = 0x00;
+	}
+
+	PSO->m_DepthStencilDesc.FrontFace.StencilFailOp = GetStencilOperation(DSDesc.m_FrontFaceStencilFailOperation);
+	PSO->m_DepthStencilDesc.FrontFace.StencilDepthFailOp = GetStencilOperation(DSDesc.m_FrontFaceStencilPassDepthFailOperation);
+	PSO->m_DepthStencilDesc.FrontFace.StencilPassOp = GetStencilOperation(DSDesc.m_FrontFaceStencilPassOperation);
+	PSO->m_DepthStencilDesc.FrontFace.StencilFunc = GetComparisionFunction(DSDesc.m_FrontFaceStencilComparisionFunction);
+
+	PSO->m_DepthStencilDesc.BackFace.StencilFailOp = GetStencilOperation(DSDesc.m_BackFaceStencilFailOperation);
+	PSO->m_DepthStencilDesc.BackFace.StencilDepthFailOp = GetStencilOperation(DSDesc.m_BackFaceStencilPassDepthFailOperation);
+	PSO->m_DepthStencilDesc.BackFace.StencilPassOp = GetStencilOperation(DSDesc.m_BackFaceStencilPassOperation);
+	PSO->m_DepthStencilDesc.BackFace.StencilFunc = GetComparisionFunction(DSDesc.m_BackFaceStencilComparisionFunction);
+
+	return true;
+}
+
+bool DX12Helper::GenerateBlendStateDesc(BlendDesc blendDesc, DX12PipelineStateObject * PSO)
+{
+	// @TODO: Separate alpha and RGB blend operation
+	for (size_t i = 0; i < 8; i++)
+	{
+		PSO->m_BlendDesc.RenderTarget[i].BlendEnable = blendDesc.m_UseBlend;
+		PSO->m_BlendDesc.RenderTarget[i].SrcBlend = GetBlendFactor(blendDesc.m_SourceRGBFactor);
+		PSO->m_BlendDesc.RenderTarget[i].DestBlend = GetBlendFactor(blendDesc.m_DestinationRGBFactor);
+		PSO->m_BlendDesc.RenderTarget[i].BlendOp = GetBlendOperation(blendDesc.m_BlendOperation);
+		PSO->m_BlendDesc.RenderTarget[i].SrcBlendAlpha = GetBlendFactor(blendDesc.m_SourceAlphaFactor);
+		PSO->m_BlendDesc.RenderTarget[i].DestBlendAlpha = GetBlendFactor(blendDesc.m_DestinationAlphaFactor);
+		PSO->m_BlendDesc.RenderTarget[i].BlendOpAlpha = GetBlendOperation(blendDesc.m_BlendOperation);
+		PSO->m_BlendDesc.RenderTarget[i].RenderTargetWriteMask = 0xFF;
+	}
+
+	return true;
+}
+
+bool DX12Helper::GenerateRasterizerStateDesc(RasterizerDesc rasterizerDesc, DX12PipelineStateObject * PSO)
+{
+	PSO->m_RasterizerDesc.FillMode = GetRasterizerFillMode(rasterizerDesc.m_RasterizerFillMode);
+	if (rasterizerDesc.m_UseCulling)
+	{
+		PSO->m_RasterizerDesc.CullMode = rasterizerDesc.m_RasterizerCullMode == RasterizerCullMode::Front ? D3D12_CULL_MODE_FRONT : D3D12_CULL_MODE_BACK;
+	}
+	else
+	{
+		PSO->m_RasterizerDesc.CullMode = D3D12_CULL_MODE_NONE;
+	}
+	PSO->m_RasterizerDesc.FrontCounterClockwise = (rasterizerDesc.m_RasterizerFaceWinding == RasterizerFaceWinding::CCW);
+	PSO->m_RasterizerDesc.DepthBias = 0;
+	PSO->m_RasterizerDesc.DepthBiasClamp = 0; // @TODO: Depth Clamp
+	PSO->m_RasterizerDesc.SlopeScaledDepthBias = 0.0f;
+	PSO->m_RasterizerDesc.DepthClipEnable = false;
+	PSO->m_RasterizerDesc.MultisampleEnable = rasterizerDesc.m_AllowMultisample;
+	PSO->m_RasterizerDesc.AntialiasedLineEnable = true;
+
+	PSO->m_PrimitiveTopology = GetPrimitiveTopology(rasterizerDesc.m_PrimitiveTopology);
+
+	return true;
+}
+
+bool DX12Helper::GenerateViewportStateDesc(ViewportDesc viewportDesc, DX12PipelineStateObject * PSO)
+{
+	PSO->m_Viewport.Width = viewportDesc.m_Width;
+	PSO->m_Viewport.Height = viewportDesc.m_Height;
+	PSO->m_Viewport.MinDepth = viewportDesc.m_MinDepth;
+	PSO->m_Viewport.MaxDepth = viewportDesc.m_MaxDepth;
+	PSO->m_Viewport.TopLeftX = viewportDesc.m_OriginX;
+	PSO->m_Viewport.TopLeftY = viewportDesc.m_OriginY;
+
+	return true;
+}
+
+bool DX12Helper::GenerateSamplerStateDesc(SamplerDesc samplerDesc, DX12PipelineStateObject * PSO)
+{
+	PSO->m_SamplerDesc.Filter = GetFilterMode(samplerDesc.m_FilterMethod);
+	PSO->m_SamplerDesc.AddressU = GetWrapMode(samplerDesc.m_WrapMethodU);
+	PSO->m_SamplerDesc.AddressV = GetWrapMode(samplerDesc.m_WrapMethodV);
+	PSO->m_SamplerDesc.AddressW = GetWrapMode(samplerDesc.m_WrapMethodW);
+	PSO->m_SamplerDesc.MipLODBias = 0.0f;
+	PSO->m_SamplerDesc.MaxAnisotropy = samplerDesc.m_MaxAnisotropy;
+	PSO->m_SamplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	PSO->m_SamplerDesc.BorderColor[0] = samplerDesc.m_BoardColor[0];
+	PSO->m_SamplerDesc.BorderColor[1] = samplerDesc.m_BoardColor[1];
+	PSO->m_SamplerDesc.BorderColor[2] = samplerDesc.m_BoardColor[2];
+	PSO->m_SamplerDesc.BorderColor[3] = samplerDesc.m_BoardColor[3];
+	PSO->m_SamplerDesc.MinLOD = samplerDesc.m_MinLOD;
+	PSO->m_SamplerDesc.MaxLOD = samplerDesc.m_MaxLOD;
+
+	return true;
+}
+
+bool DX12Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderType shaderType, const ShaderFilePath & shaderFilePath)
+{
+	const char* l_shaderTypeName;
+
+	switch (shaderType)
+	{
+	case ShaderType::VERTEX: l_shaderTypeName = "vs_5_1";
+		break;
+	case ShaderType::TCS: l_shaderTypeName = "hs_5_1";
+		break;
+	case ShaderType::TES: l_shaderTypeName = "ds_5_1";
+		break;
+	case ShaderType::GEOMETRY: l_shaderTypeName = "gs_5_1";
+		break;
+	case ShaderType::FRAGMENT: l_shaderTypeName = "ps_5_1";
+		break;
+	case ShaderType::COMPUTE: l_shaderTypeName = "cs_5_1";
+		break;
+	default:
+		break;
+	}
+
+#if defined(_DEBUG)
+	// Enable better shader debugging with the graphics debugging tools.
+	UINT l_compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#else
+	UINT l_compileFlags = 0;
+#endif
+
+	ID3D10Blob* l_errorMessage = 0;
+	auto l_workingDir = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	auto l_workingDirW = std::wstring(l_workingDir.begin(), l_workingDir.end());
+	auto l_shadeFilePathW = std::wstring(shaderFilePath.begin(), shaderFilePath.end());
+	auto l_HResult = D3DCompileFromFile((l_workingDirW + m_shaderRelativePath + l_shadeFilePathW).c_str(), NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", l_shaderTypeName, l_compileFlags, 0,
+		rhs, &l_errorMessage);
+
+	if (FAILED(l_HResult))
+	{
+		if (l_errorMessage)
+		{
+			auto l_errorMessagePtr = (char*)(l_errorMessage->GetBufferPointer());
+			auto bufferSize = l_errorMessage->GetBufferSize();
+			std::vector<char> l_errorMessageVector(bufferSize);
+			std::memcpy(l_errorMessageVector.data(), l_errorMessagePtr, bufferSize);
+
+			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", shaderFilePath.c_str(), " compile error: ", &l_errorMessageVector[0], "\n -- --------------------------------------------------- -- ");
+		}
+		else
+		{
+			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't find ", shaderFilePath.c_str(), "!");
+		}
+		return false;
+	}
+
+	if (l_errorMessage)
+	{
+		l_errorMessage->Release();
+	}
+
+	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", shaderFilePath.c_str(), " has been compiled.");
+	return true;
+}
