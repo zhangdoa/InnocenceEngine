@@ -1,6 +1,7 @@
 #pragma once
 #include "../Common/InnoType.h"
 #include "../Component/TextureDataComponent.h"
+#include "../Component/ShaderProgramComponent.h"
 
 enum class ComparisionFunction
 {
@@ -179,6 +180,8 @@ struct ResourceBinderLayoutDesc
 {
 	ResourceBinderType m_ResourceBinderType = ResourceBinderType::Sampler;
 	size_t m_BindingSlot = 0;
+	size_t m_ResourceCount = 1;
+	bool m_IsRanged = false;
 };
 
 class ICommandList {};
@@ -189,6 +192,8 @@ class IFence {};
 class RenderPassDataComponent : public InnoComponent
 {
 public:
+	ShaderProgramComponent* m_ShaderProgram = 0;
+
 	RenderPassDesc m_RenderPassDesc = {};
 
 	std::vector<TextureDataComponent*> m_RenderTargets;

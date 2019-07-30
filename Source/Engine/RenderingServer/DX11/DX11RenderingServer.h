@@ -3,6 +3,7 @@
 
 class DX11RenderingServer : public IRenderingServer
 {
+public:
 	// Inherited via IRenderingServer
 	virtual bool Setup() override;
 	virtual bool Initialize() override;

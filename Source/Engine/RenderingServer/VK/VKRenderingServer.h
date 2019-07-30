@@ -19,6 +19,7 @@ class VKFence : public IFence
 
 class VKRenderingServer : public IRenderingServer
 {
+public:
 	// Inherited via IRenderingServer
 	virtual bool Setup() override;
 	virtual bool Initialize() override;

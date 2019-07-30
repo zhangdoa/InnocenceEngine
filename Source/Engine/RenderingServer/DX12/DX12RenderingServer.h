@@ -19,6 +19,7 @@ class DX12Fence : public IFence
 
 class DX12RenderingServer : public IRenderingServer
 {
+public:
 	// Inherited via IRenderingServer
 	virtual bool Setup() override;
 	virtual bool Initialize() override;

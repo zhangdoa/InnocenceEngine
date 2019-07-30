@@ -3,6 +3,7 @@
 
 class GLRenderingServer : public IRenderingServer
 {
+public:
 	// Inherited via IRenderingServer
 	virtual bool Setup() override;
 	virtual bool Initialize() override;
