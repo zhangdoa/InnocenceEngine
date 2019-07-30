@@ -1,6 +1,7 @@
 #pragma once
 #include "../../Component/GLTextureDataComponent.h"
 #include "../../Component/GLRenderPassDataComponent.h"
+#include "../IRenderingServer.h"
 
 namespace GLHelper
 {
@@ -13,6 +14,10 @@ namespace GLHelper
 	GLenum GetTexturePixelDataType(TextureDataDesc textureDataDesc);
 	GLsizei GetTexturePixelDataSize(TextureDataDesc textureDataDesc);
 
+	bool CreateFramebuffer(GLRenderPassDataComponent * GLRPDC);
+	bool ReserveRenderTargets(GLRenderPassDataComponent * GLRPDC, IRenderingServer * renderingServer);
+	bool CreateRenderTargets(GLRenderPassDataComponent * GLRPDC, IRenderingServer* renderingServer);
+
 	bool GenerateDepthStencilState(DepthStencilDesc DSDesc, GLPipelineStateObject* PSO);
 	bool GenerateBlendState(BlendDesc blendDesc, GLPipelineStateObject* PSO);
 	bool GenerateRasterizerState(RasterizerDesc rasterizerDesc, GLPipelineStateObject* PSO);
@@ -22,5 +27,5 @@ namespace GLHelper
 	bool AddShaderHandle(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const ShaderFilePath& shaderFilePath);
 	bool ActivateTexture(GLTextureDataComponent * GLTDC, int activateIndex);
 
-	bool AttachTextureToFramebuffer(GLTextureDataComponent * GLTDC, GLRenderPassDataComponent * GLRPC, unsigned int attachmentIndex, unsigned int textureIndex = 0, unsigned int mipLevel = 0, unsigned int layer = 0);
+	bool AttachTextureToFramebuffer(GLTextureDataComponent * GLTDC, GLRenderPassDataComponent * GLRPDC, unsigned int attachmentIndex, unsigned int textureIndex = 0, unsigned int mipLevel = 0, unsigned int layer = 0);
 }

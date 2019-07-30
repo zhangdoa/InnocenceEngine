@@ -2,9 +2,25 @@
 #include "../../Component/DX11TextureDataComponent.h"
 #include "../../Component/DX11RenderPassDataComponent.h"
 #include "../../Component/DX11ShaderProgramComponent.h"
+#include "../IRenderingServer.h"
 
 namespace DX11Helper
 {
+	template <typename U, typename T>
+	bool SetObjectName(U* owner, T* rhs, const char* objectType)
+	{
+		auto l_Name = std::string(owner->m_componentName.c_str());
+		l_Name += "_";
+		l_Name += objectType;
+		auto l_HResult = rhs->SetPrivateData(WKPDID_D3DDebugObjectName, (unsigned int)l_Name.size(), l_Name.c_str());
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Can't name ", objectType, " with ", l_Name.c_str());
+			return false;
+		}
+		return true;
+	}
+
 	D3D11_TEXTURE_DESC GetDX11TextureDataDesc(TextureDataDesc textureDataDesc);
 	DXGI_FORMAT GetTextureFormat(TextureDataDesc textureDataDesc);
 	unsigned int GetTextureMipLevels(TextureDataDesc textureDataDesc);
@@ -16,6 +32,11 @@ namespace DX11Helper
 	D3D11_UNORDERED_ACCESS_VIEW_DESC GetUAVDesc(TextureDataDesc textureDataDesc, D3D11_TEXTURE_DESC D3D11TextureDesc);
 	D3D11_RENDER_TARGET_VIEW_DESC GetRTVDesc(TextureDataDesc textureDataDesc);
 	D3D11_DEPTH_STENCIL_VIEW_DESC GetDSVDesc(TextureDataDesc textureDataDesc, DepthStencilDesc DSDesc);
+
+	bool ReserveRenderTargets(DX11RenderPassDataComponent * DX11RPDC, IRenderingServer * renderingServer);
+	bool CreateRenderTargets(DX11RenderPassDataComponent * DX11RPDC, IRenderingServer* renderingServer);
+	bool CreateViews(DX11RenderPassDataComponent * DX11RPDC, ID3D11Device* device);
+	bool CreateStateObjects(DX11RenderPassDataComponent * DX11RPDC, ID3D10Blob* dummyILShaderBuffer, ID3D11Device* device);
 
 	bool GenerateDepthStencilStateDesc(DepthStencilDesc DSDesc, DX11PipelineStateObject* PSO);
 	bool GenerateBlendStateDesc(BlendDesc blendDesc, DX11PipelineStateObject* PSO);

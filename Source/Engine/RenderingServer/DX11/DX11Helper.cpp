@@ -428,6 +428,211 @@ D3D11_DEPTH_STENCIL_VIEW_DESC DX11Helper::GetDSVDesc(TextureDataDesc textureData
 	return l_result;
 }
 
+bool DX11Helper::ReserveRenderTargets(DX11RenderPassDataComponent * DX11RPDC, IRenderingServer * renderingServer)
+{
+	DX11RPDC->m_RenderTargets.reserve(DX11RPDC->m_RenderPassDesc.m_RenderTargetCount);
+	for (size_t i = 0; i < DX11RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		DX11RPDC->m_RenderTargets.emplace_back();
+		DX11RPDC->m_RenderTargets[i] = renderingServer->AddTextureDataComponent((std::string(DX11RPDC->m_componentName.c_str()) + "_" + std::to_string(i) + "/").c_str());
+	}
+
+	return true;
+}
+
+bool DX11Helper::CreateRenderTargets(DX11RenderPassDataComponent * DX11RPDC, IRenderingServer * renderingServer)
+{
+	for (size_t i = 0; i < DX11RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		auto l_TDC = DX11RPDC->m_RenderTargets[i];
+
+		l_TDC->m_textureDataDesc = DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc;
+
+		l_TDC->m_textureData = nullptr;
+
+		renderingServer->InitializeTextureDataComponent(l_TDC);
+	}
+
+	if (DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	{
+		DX11RPDC->m_DepthStencilRenderTarget = renderingServer->AddTextureDataComponent((std::string(DX11RPDC->m_componentName.c_str()) + "_DS/").c_str());
+		DX11RPDC->m_DepthStencilRenderTarget->m_textureDataDesc = DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc;
+
+		if (DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
+		{
+			DX11RPDC->m_DepthStencilRenderTarget->m_textureDataDesc.usageType = TextureUsageType::DEPTH_STENCIL_ATTACHMENT;
+		}
+		else
+		{
+			DX11RPDC->m_DepthStencilRenderTarget->m_textureDataDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
+		}
+
+		DX11RPDC->m_DepthStencilRenderTarget->m_textureData = nullptr;
+
+		renderingServer->InitializeTextureDataComponent(DX11RPDC->m_DepthStencilRenderTarget);
+	}
+
+	return true;
+}
+
+bool DX11Helper::CreateViews(DX11RenderPassDataComponent * DX11RPDC, ID3D11Device * device)
+{
+	// RTV
+	DX11RPDC->m_RTVs.reserve(DX11RPDC->m_RenderPassDesc.m_RenderTargetCount);
+	for (size_t i = 0; i < DX11RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		DX11RPDC->m_RTVs.emplace_back();
+	}
+
+	DX11RPDC->m_RTVDesc = GetRTVDesc(DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc);
+
+	for (unsigned int i = 0; i < DX11RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		auto l_DXTDC = reinterpret_cast<DX11TextureDataComponent*>(DX11RPDC->m_RenderTargets[i]);
+
+		auto l_HResult = device->CreateRenderTargetView(l_DXTDC->m_ResourceHandle, &DX11RPDC->m_RTVDesc, &DX11RPDC->m_RTVs[i]);
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create RTV for ", DX11RPDC->m_componentName.c_str(), "!");
+			return false;
+		}
+#ifdef  _DEBUG
+		auto l_RTVName = "RTV_" + std::to_string(i);
+		SetObjectName(DX11RPDC, DX11RPDC->m_RTVs[i], l_RTVName.c_str());
+#endif //  _DEBUG
+	}
+
+	// DSV
+	if (DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	{
+		DX11RPDC->m_DSVDesc = GetDSVDesc(DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc, DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc);
+
+		auto l_DXTDC = reinterpret_cast<DX11TextureDataComponent*>(DX11RPDC->m_DepthStencilRenderTarget);
+
+		auto l_HResult = device->CreateDepthStencilView(l_DXTDC->m_ResourceHandle, &DX11RPDC->m_DSVDesc, &DX11RPDC->m_DSV);
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the DSV for ", DX11RPDC->m_componentName.c_str(), "!");
+			return false;
+		}
+#ifdef  _DEBUG
+		SetObjectName(DX11RPDC, DX11RPDC->m_DSV, "DSV");
+#endif //  _DEBUG
+	}
+
+	return true;
+}
+
+bool DX11Helper::CreateStateObjects(DX11RenderPassDataComponent * DX11RPDC, ID3D10Blob* dummyILShaderBuffer, ID3D11Device * device)
+{
+	auto l_PSO = reinterpret_cast<DX11PipelineStateObject*>(DX11RPDC->m_PipelineStateObject);
+
+	// Input layout object
+	D3D11_INPUT_ELEMENT_DESC l_inputLayouts[5];
+
+	l_inputLayouts[0].SemanticName = "POSITION";
+	l_inputLayouts[0].SemanticIndex = 0;
+	l_inputLayouts[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	l_inputLayouts[0].InputSlot = 0;
+	l_inputLayouts[0].AlignedByteOffset = 0;
+	l_inputLayouts[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_inputLayouts[0].InstanceDataStepRate = 0;
+
+	l_inputLayouts[1].SemanticName = "TEXCOORD";
+	l_inputLayouts[1].SemanticIndex = 0;
+	l_inputLayouts[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+	l_inputLayouts[1].InputSlot = 0;
+	l_inputLayouts[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	l_inputLayouts[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_inputLayouts[1].InstanceDataStepRate = 0;
+
+	l_inputLayouts[2].SemanticName = "PADA";
+	l_inputLayouts[2].SemanticIndex = 0;
+	l_inputLayouts[2].Format = DXGI_FORMAT_R32G32_FLOAT;
+	l_inputLayouts[2].InputSlot = 0;
+	l_inputLayouts[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	l_inputLayouts[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_inputLayouts[2].InstanceDataStepRate = 0;
+
+	l_inputLayouts[3].SemanticName = "NORMAL";
+	l_inputLayouts[3].SemanticIndex = 0;
+	l_inputLayouts[3].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	l_inputLayouts[3].InputSlot = 0;
+	l_inputLayouts[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	l_inputLayouts[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_inputLayouts[3].InstanceDataStepRate = 0;
+
+	l_inputLayouts[4].SemanticName = "PADB";
+	l_inputLayouts[4].SemanticIndex = 0;
+	l_inputLayouts[4].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	l_inputLayouts[4].InputSlot = 0;
+	l_inputLayouts[4].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	l_inputLayouts[4].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	l_inputLayouts[4].InstanceDataStepRate = 0;
+
+	auto l_HResult = device->CreateInputLayout(l_inputLayouts, 5, dummyILShaderBuffer->GetBufferPointer(), dummyILShaderBuffer->GetBufferSize(), &l_PSO->m_InputLayout);
+	if (FAILED(l_HResult))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create input layout object!");
+		return false;
+	}
+#ifdef  _DEBUG
+	SetObjectName(DX11RPDC, l_PSO->m_InputLayout, "ILO");
+#endif //  _DEBUG
+
+	// Sampler state object
+	l_HResult = device->CreateSamplerState(&l_PSO->m_SamplerDesc, &l_PSO->m_SamplerState);
+	if (FAILED(l_HResult))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create sampler state object for ", DX11RPDC->m_componentName.c_str(), "!");
+		return false;
+	}
+#ifdef  _DEBUG
+	SetObjectName(DX11RPDC, l_PSO->m_SamplerState, "SSO");
+#endif //  _DEBUG
+
+	// Depth stencil state object
+	if (DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	{
+		auto l_HResult = device->CreateDepthStencilState(&l_PSO->m_DepthStencilDesc, &l_PSO->m_DepthStencilState);
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the depth stencil state object for ", DX11RPDC->m_componentName.c_str(), "!");
+			return false;
+		}
+#ifdef  _DEBUG
+		SetObjectName(DX11RPDC, l_PSO->m_DepthStencilState, "DSSO");
+#endif //  _DEBUG
+	}
+
+	// Blend state object
+	if (DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc.m_UseBlend)
+	{
+		auto l_HResult = device->CreateBlendState(&l_PSO->m_BlendDesc, &l_PSO->m_BlendState);
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the blend state object for ", DX11RPDC->m_componentName.c_str(), "!");
+			return false;
+		}
+#ifdef  _DEBUG
+		SetObjectName(DX11RPDC, l_PSO->m_BlendState, "BSO");
+#endif //  _DEBUG
+	}
+
+	// Rasterizer state object
+	l_HResult = device->CreateRasterizerState(&l_PSO->m_RasterizerDesc, &l_PSO->m_RasterizerState);
+	if (FAILED(l_HResult))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the rasterizer state object for ", DX11RPDC->m_componentName.c_str(), "!");
+		return false;
+	}
+#ifdef  _DEBUG
+	SetObjectName(DX11RPDC, l_PSO->m_RasterizerState, "RSO");
+#endif //  _DEBUG
+
+	return true;
+}
+
 D3D11_COMPARISON_FUNC getComparisionFunction(ComparisionFunction comparisionFunction)
 {
 	D3D11_COMPARISON_FUNC l_result;

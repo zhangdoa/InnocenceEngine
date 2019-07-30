@@ -25,20 +25,7 @@ extern IModuleManager* g_pModuleManager;
 
 namespace DX11RenderingServerNS
 {
-	template <typename U, typename T>
-	bool SetObjectName(U* owner, T* rhs, const char* objectType)
-	{
-		auto l_Name = std::string(owner->m_componentName.c_str());
-		l_Name += "_";
-		l_Name += objectType;
-		auto l_HResult = rhs->SetPrivateData(WKPDID_D3DDebugObjectName, (unsigned int)l_Name.size(), l_Name.c_str());
-		if (FAILED(l_HResult))
-		{
-			InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Can't name ", objectType, " with ", l_Name.c_str());
-			return false;
-		}
-		return true;
-	}
+	bool CreateSwapChainRPDC();
 
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
@@ -687,106 +674,28 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 {
 	auto l_rhs = reinterpret_cast<DX11RenderPassDataComponent*>(rhs);
 
-	// RT
-	l_rhs->m_RenderTargets.reserve(l_rhs->m_RenderPassDesc.m_RenderTargetCount);
-	for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
-	{
-		l_rhs->m_RenderTargets.emplace_back();
-	}
+	ReserveRenderTargets(l_rhs, this);
 
-	for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
-	{
-		l_rhs->m_RenderTargets[i] = AddTextureDataComponent((std::string(l_rhs->m_componentName.c_str()) + "_" + std::to_string(i) + "/").c_str());
-	}
+	CreateRenderTargets(l_rhs, this);
 
-	for (unsigned int i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
-	{
-		auto l_TDC = l_rhs->m_RenderTargets[i];
-
-		l_TDC->m_textureDataDesc = l_rhs->m_RenderPassDesc.m_RenderTargetDesc;
-
-		l_TDC->m_textureData = nullptr;
-
-		InitializeTextureDataComponent(l_TDC);
-	}
-
-	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
-	{
-		l_rhs->m_DepthStencilRenderTarget = AddTextureDataComponent((std::string(l_rhs->m_componentName.c_str()) + "_DS/").c_str());
-		l_rhs->m_DepthStencilRenderTarget->m_textureDataDesc = l_rhs->m_RenderPassDesc.m_RenderTargetDesc;
-
-		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
-		{
-			l_rhs->m_DepthStencilRenderTarget->m_textureDataDesc.usageType = TextureUsageType::DEPTH_STENCIL_ATTACHMENT;
-		}
-		else
-		{
-			l_rhs->m_DepthStencilRenderTarget->m_textureDataDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
-		}
-
-		l_rhs->m_DepthStencilRenderTarget->m_textureData = nullptr;
-
-		InitializeTextureDataComponent(l_rhs->m_DepthStencilRenderTarget);
-	}
-
-	// RTV
-	l_rhs->m_RTVs.reserve(l_rhs->m_RenderPassDesc.m_RenderTargetCount);
-	for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
-	{
-		l_rhs->m_RTVs.emplace_back();
-	}
-
-	l_rhs->m_RTVDesc = GetRTVDesc(l_rhs->m_RenderPassDesc.m_RenderTargetDesc);
-
-	for (unsigned int i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
-	{
-		auto l_DXTDC = reinterpret_cast<DX11TextureDataComponent*>(l_rhs->m_RenderTargets[i]);
-
-		auto l_HResult = m_device->CreateRenderTargetView(l_DXTDC->m_ResourceHandle, &l_rhs->m_RTVDesc, &l_rhs->m_RTVs[i]);
-		if (FAILED(l_HResult))
-		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create RTV for ", l_rhs->m_componentName.c_str(), "!");
-			return false;
-		}
-#ifdef  _DEBUG
-		auto l_RTVName = "RTV_" + std::to_string(i);
-		SetObjectName(l_rhs, l_rhs->m_RTVs[i], l_RTVName.c_str());
-#endif //  _DEBUG
-	}
+	CreateViews(l_rhs, m_device);
 
 	// ResourceBinder for RT
-	m_ResourcesBinderPool->Spawn();
 	auto l_BinderRawPtr = m_ResourcesBinderPool->Spawn();
 	auto l_Binder = new(l_BinderRawPtr)DX11ResourceBinder();
+	l_rhs->m_RenderTargetsResourceBinder = l_Binder;
+
 	l_Binder->m_ResourceBinderType = ResourceBinderType::Image;
 	l_Binder->m_Resources.reserve(l_rhs->m_RenderPassDesc.m_RenderTargetCount);
 	for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
 		l_Binder->m_Resources.emplace_back(l_rhs->m_RenderTargets[i]);
 	}
-	l_rhs->m_RenderTargetsResourceBinder = l_Binder;
-
-	// DSV
-	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
-	{
-		l_rhs->m_DSVDesc = GetDSVDesc(l_rhs->m_RenderPassDesc.m_RenderTargetDesc, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc);
-
-		auto l_DXTDC = reinterpret_cast<DX11TextureDataComponent*>(l_rhs->m_DepthStencilRenderTarget);
-
-		auto l_HResult = m_device->CreateDepthStencilView(l_DXTDC->m_ResourceHandle, &l_rhs->m_DSVDesc, &l_rhs->m_DSV);
-		if (FAILED(l_HResult))
-		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the DSV for ", l_rhs->m_componentName.c_str(), "!");
-			return false;
-		}
-#ifdef  _DEBUG
-		SetObjectName(l_rhs, l_rhs->m_DSV, "DSV");
-#endif //  _DEBUG
-	}
 
 	// PSO
 	auto l_PSORawPtr = m_PSOPool->Spawn();
 	auto l_PSO = new(l_PSORawPtr)DX11PipelineStateObject();
+	l_rhs->m_PipelineStateObject = l_PSO;
 
 	GenerateDepthStencilStateDesc(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
 	GenerateBlendStateDesc(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
@@ -794,110 +703,7 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 	GenerateViewportStateDesc(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
 	GenerateSamplerStateDesc(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_SamplerDesc, l_PSO);
 
-	// Input layout object
-	D3D11_INPUT_ELEMENT_DESC l_inputLayouts[5];
-
-	l_inputLayouts[0].SemanticName = "POSITION";
-	l_inputLayouts[0].SemanticIndex = 0;
-	l_inputLayouts[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	l_inputLayouts[0].InputSlot = 0;
-	l_inputLayouts[0].AlignedByteOffset = 0;
-	l_inputLayouts[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	l_inputLayouts[0].InstanceDataStepRate = 0;
-
-	l_inputLayouts[1].SemanticName = "TEXCOORD";
-	l_inputLayouts[1].SemanticIndex = 0;
-	l_inputLayouts[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-	l_inputLayouts[1].InputSlot = 0;
-	l_inputLayouts[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	l_inputLayouts[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	l_inputLayouts[1].InstanceDataStepRate = 0;
-
-	l_inputLayouts[2].SemanticName = "PADA";
-	l_inputLayouts[2].SemanticIndex = 0;
-	l_inputLayouts[2].Format = DXGI_FORMAT_R32G32_FLOAT;
-	l_inputLayouts[2].InputSlot = 0;
-	l_inputLayouts[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	l_inputLayouts[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	l_inputLayouts[2].InstanceDataStepRate = 0;
-
-	l_inputLayouts[3].SemanticName = "NORMAL";
-	l_inputLayouts[3].SemanticIndex = 0;
-	l_inputLayouts[3].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	l_inputLayouts[3].InputSlot = 0;
-	l_inputLayouts[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	l_inputLayouts[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	l_inputLayouts[3].InstanceDataStepRate = 0;
-
-	l_inputLayouts[4].SemanticName = "PADB";
-	l_inputLayouts[4].SemanticIndex = 0;
-	l_inputLayouts[4].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	l_inputLayouts[4].InputSlot = 0;
-	l_inputLayouts[4].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	l_inputLayouts[4].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	l_inputLayouts[4].InstanceDataStepRate = 0;
-
-	auto l_HResult = m_device->CreateInputLayout(l_inputLayouts, 5, m_InputLayoutDummyShaderBuffer->GetBufferPointer(), m_InputLayoutDummyShaderBuffer->GetBufferSize(), &l_PSO->m_InputLayout);
-	if (FAILED(l_HResult))
-	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create input layout object!");
-		return false;
-	}
-#ifdef  _DEBUG
-	SetObjectName(l_rhs, l_PSO->m_InputLayout, "ILO");
-#endif //  _DEBUG
-
-	// Sampler state object
-	l_HResult = m_device->CreateSamplerState(&l_PSO->m_SamplerDesc, &l_PSO->m_SamplerState);
-	if (FAILED(l_HResult))
-	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create sampler state object for ", l_rhs->m_componentName.c_str(), "!");
-		return false;
-	}
-#ifdef  _DEBUG
-	SetObjectName(l_rhs, l_PSO->m_SamplerState, "SSO");
-#endif //  _DEBUG
-
-	// Depth stencil state object
-	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
-	{
-		auto l_HResult = m_device->CreateDepthStencilState(&l_PSO->m_DepthStencilDesc, &l_PSO->m_DepthStencilState);
-		if (FAILED(l_HResult))
-		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the depth stencil state object for ", l_rhs->m_componentName.c_str(), "!");
-			return false;
-		}
-#ifdef  _DEBUG
-		SetObjectName(l_rhs, l_PSO->m_DepthStencilState, "DSSO");
-#endif //  _DEBUG
-	}
-
-	// Blend state object
-	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc.m_UseBlend)
-	{
-		auto l_HResult = m_device->CreateBlendState(&l_PSO->m_BlendDesc, &l_PSO->m_BlendState);
-		if (FAILED(l_HResult))
-		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the blend state object for ", l_rhs->m_componentName.c_str(), "!");
-			return false;
-		}
-#ifdef  _DEBUG
-		SetObjectName(l_rhs, l_PSO->m_BlendState, "BSO");
-#endif //  _DEBUG
-	}
-
-	// Rasterizer state object
-	l_HResult = m_device->CreateRasterizerState(&l_PSO->m_RasterizerDesc, &l_PSO->m_RasterizerState);
-	if (FAILED(l_HResult))
-	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the rasterizer state object for ", l_rhs->m_componentName.c_str(), "!");
-		return false;
-	}
-#ifdef  _DEBUG
-	SetObjectName(l_rhs, l_PSO->m_RasterizerState, "RSO");
-#endif //  _DEBUG
-
-	l_rhs->m_PipelineStateObject = l_PSO;
+	CreateStateObjects(l_rhs, m_InputLayoutDummyShaderBuffer, m_device);
 
 	l_rhs->m_objectStatus = ObjectStatus::Activated;
 

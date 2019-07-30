@@ -453,133 +453,33 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 {
 	auto l_rhs = reinterpret_cast<GLRenderPassDataComponent*>(rhs);
 
-	// FBO
-	glGenFramebuffers(1, &l_rhs->m_FBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, l_rhs->m_FBO);
+	CreateFramebuffer(l_rhs);
 
-#ifdef _DEBUG
-	auto l_FBOName = std::string(l_rhs->m_componentName.c_str());
-	l_FBOName += "_FBO";
-	glObjectLabel(GL_FRAMEBUFFER, l_rhs->m_FBO, (GLsizei)l_FBOName.size(), l_FBOName.c_str());
-#endif
+	ReserveRenderTargets(l_rhs, this);
 
-	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: ", l_rhs->m_componentName.c_str(), " FBO has been generated.");
-
-	// RBO
-	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
-	{
-		l_rhs->m_renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
-		l_rhs->m_renderBufferInternalFormat = GL_DEPTH_COMPONENT32F;
-
-		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
-		{
-			l_rhs->m_renderBufferAttachmentType = GL_DEPTH_STENCIL_ATTACHMENT;
-			l_rhs->m_renderBufferInternalFormat = GL_DEPTH24_STENCIL8;
-		}
-
-		glGenRenderbuffers(1, &l_rhs->m_RBO);
-		glBindRenderbuffer(GL_RENDERBUFFER, l_rhs->m_RBO);
-
-#ifdef _DEBUG
-		auto l_RBOName = std::string(l_rhs->m_componentName.c_str());
-		l_RBOName += "_RBO";
-		glObjectLabel(GL_RENDERBUFFER, l_rhs->m_RBO, (GLsizei)l_RBOName.size(), l_RBOName.c_str());
-#endif
-
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, l_rhs->m_renderBufferAttachmentType, GL_RENDERBUFFER, l_rhs->m_RBO);
-		glRenderbufferStorage(GL_RENDERBUFFER, l_rhs->m_renderBufferInternalFormat, l_rhs->m_RenderPassDesc.m_RenderTargetDesc.width, l_rhs->m_RenderPassDesc.m_RenderTargetDesc.height);
-
-		auto l_result = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-		if (l_result != GL_FRAMEBUFFER_COMPLETE)
-		{
-			InnoLogger::Log(LogLevel::Error, "GLRenderingServer: ", l_rhs->m_componentName.c_str(), " Framebuffer is not completed: ", l_result);
-			return false;
-		}
-		else
-		{
-			InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: ", l_rhs->m_componentName.c_str(), " RBO has been generated.");
-		}
-	}
-
-	// Color RT
-	l_rhs->m_RenderTargets.reserve(l_rhs->m_RenderPassDesc.m_RenderTargetCount);
-
-	for (unsigned int i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
-	{
-		l_rhs->m_RenderTargets.emplace_back();
-	}
-
-	for (unsigned int i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
-	{
-		auto l_TDC = AddTextureDataComponent((std::string(l_rhs->m_componentName.c_str()) + "_" + std::to_string(i) + "/").c_str());
-
-		l_TDC->m_textureDataDesc = l_rhs->m_RenderPassDesc.m_RenderTargetDesc;
-
-		l_TDC->m_textureData = nullptr;
-
-		InitializeTextureDataComponent(l_TDC);
-
-		AttachTextureToFramebuffer(reinterpret_cast<GLTextureDataComponent*>(l_TDC), l_rhs, i);
-
-		l_rhs->m_RenderTargets[i] = l_TDC;
-	}
+	CreateRenderTargets(l_rhs, this);
 
 	// ResourceBinder for RT
-	m_ResourcesBinderPool->Spawn();
 	auto l_BinderRawPtr = m_ResourcesBinderPool->Spawn();
 	auto l_Binder = new(l_BinderRawPtr)GLResourceBinder();
+	l_rhs->m_RenderTargetsResourceBinder = l_Binder;
+
 	l_Binder->m_ResourceBinderType = ResourceBinderType::Image;
 	l_Binder->m_Resources.reserve(l_rhs->m_RenderPassDesc.m_RenderTargetCount);
 	for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
 		l_Binder->m_Resources.emplace_back(l_rhs->m_RenderTargets[i]);
 	}
-	l_rhs->m_RenderTargetsResourceBinder = l_Binder;
-
-	// DS RT
-	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
-	{
-		auto l_TDC = AddTextureDataComponent((std::string(l_rhs->m_componentName.c_str()) + "_DS/").c_str());
-
-		l_TDC->m_textureDataDesc = l_rhs->m_RenderPassDesc.m_RenderTargetDesc;
-
-		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
-		{
-			l_TDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_STENCIL_ATTACHMENT;
-			l_TDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::DEPTH_STENCIL_COMPONENT;
-		}
-		else
-		{
-			l_TDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
-			l_TDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
-		}
-
-		l_TDC->m_textureData = nullptr;
-
-		InitializeTextureDataComponent(l_TDC);
-
-		AttachTextureToFramebuffer(reinterpret_cast<GLTextureDataComponent*>(l_TDC), l_rhs, 0);
-
-		l_rhs->m_DepthStencilRenderTarget = l_TDC;
-	}
-
-	std::vector<unsigned int> l_colorAttachments;
-	for (unsigned int i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; ++i)
-	{
-		l_colorAttachments.emplace_back(GL_COLOR_ATTACHMENT0 + i);
-	}
-	glDrawBuffers((GLsizei)l_colorAttachments.size(), &l_colorAttachments[0]);
 
 	// PSO
 	auto l_PSORawPtr = m_PSOPool->Spawn();
 	auto l_PSO = new(l_PSORawPtr)GLPipelineStateObject();
+	l_rhs->m_PipelineStateObject = l_PSO;
 
 	GenerateDepthStencilState(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
 	GenerateBlendState(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
 	GenerateRasterizerState(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
 	GenerateViewportState(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
-
-	l_rhs->m_PipelineStateObject = l_PSO;
 
 	l_rhs->m_objectStatus = ObjectStatus::Activated;
 

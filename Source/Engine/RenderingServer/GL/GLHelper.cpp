@@ -352,6 +352,125 @@ GLsizei GLHelper::GetTexturePixelDataSize(TextureDataDesc textureDataDesc)
 	return l_singlePixelSize * l_channelSize;
 }
 
+bool GLHelper::CreateFramebuffer(GLRenderPassDataComponent * GLRPDC)
+{
+	// FBO
+	glGenFramebuffers(1, &GLRPDC->m_FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, GLRPDC->m_FBO);
+
+#ifdef _DEBUG
+	auto l_FBOName = std::string(GLRPDC->m_componentName.c_str());
+	l_FBOName += "_FBO";
+	glObjectLabel(GL_FRAMEBUFFER, GLRPDC->m_FBO, (GLsizei)l_FBOName.size(), l_FBOName.c_str());
+#endif
+
+	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: ", GLRPDC->m_componentName.c_str(), " FBO has been generated.");
+
+	// RBO
+	if (GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	{
+		GLRPDC->m_renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
+		GLRPDC->m_renderBufferInternalFormat = GL_DEPTH_COMPONENT32F;
+
+		if (GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
+		{
+			GLRPDC->m_renderBufferAttachmentType = GL_DEPTH_STENCIL_ATTACHMENT;
+			GLRPDC->m_renderBufferInternalFormat = GL_DEPTH24_STENCIL8;
+		}
+
+		glGenRenderbuffers(1, &GLRPDC->m_RBO);
+		glBindRenderbuffer(GL_RENDERBUFFER, GLRPDC->m_RBO);
+
+#ifdef _DEBUG
+		auto l_RBOName = std::string(GLRPDC->m_componentName.c_str());
+		l_RBOName += "_RBO";
+		glObjectLabel(GL_RENDERBUFFER, GLRPDC->m_RBO, (GLsizei)l_RBOName.size(), l_RBOName.c_str());
+#endif
+
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GLRPDC->m_renderBufferAttachmentType, GL_RENDERBUFFER, GLRPDC->m_RBO);
+		glRenderbufferStorage(GL_RENDERBUFFER, GLRPDC->m_renderBufferInternalFormat, GLRPDC->m_RenderPassDesc.m_RenderTargetDesc.width, GLRPDC->m_RenderPassDesc.m_RenderTargetDesc.height);
+
+		std::vector<unsigned int> l_colorAttachments;
+		for (unsigned int i = 0; i < GLRPDC->m_RenderPassDesc.m_RenderTargetCount; ++i)
+		{
+			l_colorAttachments.emplace_back(GL_COLOR_ATTACHMENT0 + i);
+		}
+		glDrawBuffers((GLsizei)l_colorAttachments.size(), &l_colorAttachments[0]);
+
+		auto l_result = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		if (l_result != GL_FRAMEBUFFER_COMPLETE)
+		{
+			InnoLogger::Log(LogLevel::Error, "GLRenderingServer: ", GLRPDC->m_componentName.c_str(), " Framebuffer is not completed: ", l_result);
+			return false;
+		}
+		else
+		{
+			InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: ", GLRPDC->m_componentName.c_str(), " RBO has been generated.");
+		}
+	}
+
+	return true;
+}
+
+bool GLHelper::ReserveRenderTargets(GLRenderPassDataComponent * GLRPDC, IRenderingServer * renderingServer)
+{
+	GLRPDC->m_RenderTargets.reserve(GLRPDC->m_RenderPassDesc.m_RenderTargetCount);
+
+	for (unsigned int i = 0; i < GLRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		GLRPDC->m_RenderTargets.emplace_back();
+		GLRPDC->m_RenderTargets[i] = renderingServer->AddTextureDataComponent((std::string(GLRPDC->m_componentName.c_str()) + "_" + std::to_string(i) + "/").c_str());
+	}
+
+	return true;
+}
+
+bool GLHelper::CreateRenderTargets(GLRenderPassDataComponent * GLRPDC, IRenderingServer* renderingServer)
+{
+	// Color RT
+	for (unsigned int i = 0; i < GLRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		auto l_TDC = GLRPDC->m_RenderTargets[i];
+
+		l_TDC->m_textureDataDesc = GLRPDC->m_RenderPassDesc.m_RenderTargetDesc;
+
+		l_TDC->m_textureData = nullptr;
+
+		renderingServer->InitializeTextureDataComponent(l_TDC);
+
+		AttachTextureToFramebuffer(reinterpret_cast<GLTextureDataComponent*>(l_TDC), GLRPDC, i);
+	}
+
+	// DS RT
+	if (GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	{
+		auto l_TDC = renderingServer->AddTextureDataComponent((std::string(GLRPDC->m_componentName.c_str()) + "_DS/").c_str());
+
+		l_TDC->m_textureDataDesc = GLRPDC->m_RenderPassDesc.m_RenderTargetDesc;
+
+		if (GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
+		{
+			l_TDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_STENCIL_ATTACHMENT;
+			l_TDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::DEPTH_STENCIL_COMPONENT;
+		}
+		else
+		{
+			l_TDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
+			l_TDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
+		}
+
+		l_TDC->m_textureData = nullptr;
+
+		renderingServer->InitializeTextureDataComponent(l_TDC);
+
+		AttachTextureToFramebuffer(reinterpret_cast<GLTextureDataComponent*>(l_TDC), GLRPDC, 0);
+
+		GLRPDC->m_DepthStencilRenderTarget = l_TDC;
+	}
+
+	return true;
+}
+
 GLenum getComparisionFunctionEnum(ComparisionFunction comparisionFunction)
 {
 	GLenum l_result;
@@ -809,9 +928,9 @@ bool GLHelper::ActivateTexture(GLTextureDataComponent * GLTDC, int activateIndex
 	return true;
 }
 
-bool GLHelper::AttachTextureToFramebuffer(GLTextureDataComponent * GLTDC, GLRenderPassDataComponent * GLRPC, unsigned int attachmentIndex, unsigned int textureIndex, unsigned int mipLevel, unsigned int layer)
+bool GLHelper::AttachTextureToFramebuffer(GLTextureDataComponent * GLTDC, GLRenderPassDataComponent * GLRPDC, unsigned int attachmentIndex, unsigned int textureIndex, unsigned int mipLevel, unsigned int layer)
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, GLRPDC->m_FBO);
 
 	if (GLTDC->m_textureDataDesc.samplerType == TextureSamplerType::SAMPLER_1D)
 	{
