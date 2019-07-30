@@ -41,15 +41,14 @@ namespace DX12Helper
 
 	bool ReserveRenderTargets(DX12RenderPassDataComponent* DX12RPDC, IRenderingServer* renderingServer);
 	bool CreateRenderTargets(DX12RenderPassDataComponent* DX12RPDC, IRenderingServer* renderingServer);
+	bool CreateResourcesBinder(DX12RenderPassDataComponent * DX12RPDC, IRenderingServer* renderingServer);
 	bool CreateViews(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device);
 	bool CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device);
-	bool CreatePSO(DX12RenderPassDataComponent* DX12RPDC, DX12ShaderProgramComponent* DXSPC);
-	bool CreateCommandQueue(DX12RenderPassDataComponent* DX12RPDC);
-	bool CreateCommandAllocators(DX12RenderPassDataComponent* DX12RPDC);
-	bool CreateCommandLists(DX12RenderPassDataComponent* DX12RPDC);
-	bool CreateSyncPrimitives(DX12RenderPassDataComponent* DX12RPDC);
-
-	D3D12_VERSIONED_ROOT_SIGNATURE_DESC GetRootSignatureDesc(const std::vector<ResourceBinderLayoutDesc>& resourceBinderLayoutDescs);
+	bool CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device);
+	bool CreateCommandQueue(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device);
+	bool CreateCommandAllocators(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device);
+	bool CreateCommandLists(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device);
+	bool CreateSyncPrimitives(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device);
 
 	D3D12_COMPARISON_FUNC GetComparisionFunction(ComparisionFunction comparisionFunction);
 	D3D12_STENCIL_OP GetStencilOperation(StencilOperation stencilOperation);

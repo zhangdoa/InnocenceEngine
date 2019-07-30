@@ -209,6 +209,6 @@ public:
 	size_t m_CurrentFrame = 0;
 
 	std::vector<ISemaphore*> m_WaitSemaphores;
-	std::vector<ISemaphore*> m_SingalSemaphores;
+	std::vector<ISemaphore*> m_SignalSemaphores;
 	std::vector<IFence*> m_Fences;
 };

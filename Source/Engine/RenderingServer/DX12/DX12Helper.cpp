@@ -18,8 +18,8 @@ ID3D12GraphicsCommandList* DX12Helper::BeginSingleTimeCommands(ID3D12Device* dev
 	ID3D12GraphicsCommandList* l_commandList;
 
 	// Create a basic command list.
-	auto l_result = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, globalCommandAllocator, NULL, IID_PPV_ARGS(&l_commandList));
-	if (FAILED(l_result))
+	auto l_HResult = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, globalCommandAllocator, NULL, IID_PPV_ARGS(&l_commandList));
+	if (FAILED(l_HResult))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingServer: Can't create command list!");
 		return nullptr;
@@ -30,15 +30,15 @@ ID3D12GraphicsCommandList* DX12Helper::BeginSingleTimeCommands(ID3D12Device* dev
 
 bool DX12Helper::EndSingleTimeCommands(ID3D12GraphicsCommandList* commandList, ID3D12Device* device, ID3D12CommandQueue* globalCommandQueue)
 {
-	auto l_result = commandList->Close();
-	if (FAILED(l_result))
+	auto l_HResult = commandList->Close();
+	if (FAILED(l_HResult))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingServer: Can't close the command list for single command!");
 	}
 
 	ID3D12Fence1* l_uploadFinishFence;
-	l_result = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&l_uploadFinishFence));
-	if (FAILED(l_result))
+	l_HResult = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&l_uploadFinishFence));
+	if (FAILED(l_HResult))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingServer: Can't create fence for single command!");
 	}
@@ -65,7 +65,7 @@ ID3D12Resource* DX12Helper::CreateUploadHeapBuffer(UINT64 size, ID3D12Device* de
 {
 	ID3D12Resource* l_uploadHeapBuffer;
 
-	auto l_result = device->CreateCommittedResource(
+	auto l_HResult = device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
 		&CD3DX12_RESOURCE_DESC::Buffer(size),
@@ -73,9 +73,9 @@ ID3D12Resource* DX12Helper::CreateUploadHeapBuffer(UINT64 size, ID3D12Device* de
 		nullptr,
 		IID_PPV_ARGS(&l_uploadHeapBuffer));
 
-	if (FAILED(l_result))
+	if (FAILED(l_HResult))
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingServer: can't create upload heap buffer!");
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingServer: Can't create upload heap buffer!");
 		return nullptr;
 	}
 
@@ -86,7 +86,7 @@ ID3D12Resource* DX12Helper::CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourc
 {
 	ID3D12Resource* l_defaultHeapBuffer;
 
-	auto l_result = device->CreateCommittedResource(
+	auto l_HResult = device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		resourceDesc,
@@ -94,9 +94,9 @@ ID3D12Resource* DX12Helper::CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourc
 		clearValue,
 		IID_PPV_ARGS(&l_defaultHeapBuffer));
 
-	if (FAILED(l_result))
+	if (FAILED(l_HResult))
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingServer: can't create default heap buffer!");
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingServer: Can't create default heap buffer!");
 		return false;
 	}
 
@@ -541,8 +541,6 @@ bool DX12Helper::CreateRenderTargets(DX12RenderPassDataComponent* DX12RPDC, IRen
 {
 	auto l_DX12RenderingServer = reinterpret_cast<DX12RenderingServer*>(renderingServer);
 
-	DX12RPDC->m_SRVs.reserve(DX12RPDC->m_RenderPassDesc.m_RenderTargetCount);
-
 	for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
 		auto l_TDC = DX12RPDC->m_RenderTargets[i];
@@ -552,9 +550,6 @@ bool DX12Helper::CreateRenderTargets(DX12RenderPassDataComponent* DX12RPDC, IRen
 		l_TDC->m_textureData = nullptr;
 
 		renderingServer->InitializeTextureDataComponent(l_TDC);
-
-		DX12RPDC->m_SRVs.emplace_back();
-		DX12RPDC->m_SRVs[i] = l_DX12RenderingServer->CreateSRV(DX12RPDC->m_RenderTargets[i]);
 	}
 
 	if (DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
@@ -581,8 +576,25 @@ bool DX12Helper::CreateRenderTargets(DX12RenderPassDataComponent* DX12RPDC, IRen
 	return true;
 }
 
+bool DX12Helper::CreateResourcesBinder(DX12RenderPassDataComponent * DX12RPDC, IRenderingServer* renderingServer)
+{
+	auto l_resourcesBinder = reinterpret_cast<DX12ResourceBinder*>(DX12RPDC->m_RenderTargetsResourceBinder);
+	auto l_DX12RenderingServer = reinterpret_cast<DX12RenderingServer*>(renderingServer);
+
+	l_resourcesBinder->m_SRV = l_DX12RenderingServer->CreateSRV(DX12RPDC->m_RenderTargets[0]);
+
+	// Create multiple continuous SRVs
+	for (size_t i = 1; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		l_DX12RenderingServer->CreateSRV(DX12RPDC->m_RenderTargets[i]);
+	}
+
+	return true;
+}
+
 bool DX12Helper::CreateViews(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device)
 {
+	// Reserve for RTV
 	DX12RPDC->m_RTVDescriptorCPUHandles.reserve(DX12RPDC->m_RenderPassDesc.m_RenderTargetCount);
 	for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
@@ -599,7 +611,7 @@ bool DX12Helper::CreateViews(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device
 		auto l_HResult = device->CreateDescriptorHeap(&DX12RPDC->m_RTVDescriptorHeapDesc, IID_PPV_ARGS(&DX12RPDC->m_RTVDescriptorHeap));
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " can't create DescriptorHeap for RTV!");
+			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create DescriptorHeap for RTV!");
 			return false;
 		}
 		DX12RPDC->m_RTVDescriptorCPUHandles[0] = DX12RPDC->m_RTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
@@ -608,11 +620,6 @@ bool DX12Helper::CreateViews(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " RTV DescriptorHeap has been created.");
 
 	// RTV
-	DX12RPDC->m_RTVDescriptorCPUHandles.reserve(DX12RPDC->m_RenderPassDesc.m_RenderTargetCount);
-	for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
-	{
-		DX12RPDC->m_RTVDescriptorCPUHandles.emplace_back();
-	}
 	auto l_RTVDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
 	DX12RPDC->m_RTVDesc = GetRTVDesc(DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc);
@@ -639,7 +646,7 @@ bool DX12Helper::CreateViews(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device
 
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " can't create DescriptorHeap for DSV!");
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create DescriptorHeap for DSV!");
 		return false;
 	}
 
@@ -662,256 +669,15 @@ bool DX12Helper::CreateViews(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device
 
 bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device)
 {
-	ID3DBlob* l_signature = 0;
-	ID3DBlob* l_error = 0;
+	std::vector<CD3DX12_ROOT_PARAMETER1> l_rootParameters(DX12RPDC->m_ResourceBinderLayoutDescs.size());
 
-	DX12RPDC->m_RootSignatureDesc = GetRootSignatureDesc(DX12RPDC->m_ResourceBinderLayoutDescs);
-
-	auto l_result = D3D12SerializeVersionedRootSignature(&DX12RPDC->m_RootSignatureDesc, &l_signature, &l_error);
-
-	if (FAILED(l_result))
-	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " can't serialize RootSignature!");
-		return false;
-	}
-
-	l_result = device->CreateRootSignature(0, l_signature->GetBufferPointer(), l_signature->GetBufferSize(), IID_PPV_ARGS(&DX12RPDC->m_RootSignature));
-	l_signature->Release();
-
-	if (l_error)
-	{
-		l_error->Release();
-	}
-
-	if (FAILED(l_result))
-	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " can't create RootSignature!");
-		return false;
-	}
-
-	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " RootSignature has been created.");
-
-	return true;
-}
-
-bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, DX12ShaderProgramComponent* DXSPC)
-{
-	//	D3D12_INPUT_ELEMENT_DESC l_polygonLayout[5];
-	//	unsigned int l_numElements;
-	//
-	//	// Create the vertex input layout description.
-	//	l_polygonLayout[0].SemanticName = "POSITION";
-	//	l_polygonLayout[0].SemanticIndex = 0;
-	//	l_polygonLayout[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	//	l_polygonLayout[0].InputSlot = 0;
-	//	l_polygonLayout[0].AlignedByteOffset = 0;
-	//	l_polygonLayout[0].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-	//	l_polygonLayout[0].InstanceDataStepRate = 0;
-	//
-	//	l_polygonLayout[1].SemanticName = "TEXCOORD";
-	//	l_polygonLayout[1].SemanticIndex = 0;
-	//	l_polygonLayout[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-	//	l_polygonLayout[1].InputSlot = 0;
-	//	l_polygonLayout[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-	//	l_polygonLayout[1].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-	//	l_polygonLayout[1].InstanceDataStepRate = 0;
-	//
-	//	l_polygonLayout[2].SemanticName = "PADA";
-	//	l_polygonLayout[2].SemanticIndex = 0;
-	//	l_polygonLayout[2].Format = DXGI_FORMAT_R32G32_FLOAT;
-	//	l_polygonLayout[2].InputSlot = 0;
-	//	l_polygonLayout[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-	//	l_polygonLayout[2].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-	//	l_polygonLayout[2].InstanceDataStepRate = 0;
-	//
-	//	l_polygonLayout[3].SemanticName = "NORMAL";
-	//	l_polygonLayout[3].SemanticIndex = 0;
-	//	l_polygonLayout[3].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	//	l_polygonLayout[3].InputSlot = 0;
-	//	l_polygonLayout[3].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-	//	l_polygonLayout[3].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-	//	l_polygonLayout[3].InstanceDataStepRate = 0;
-	//
-	//	l_polygonLayout[4].SemanticName = "PADB";
-	//	l_polygonLayout[4].SemanticIndex = 0;
-	//	l_polygonLayout[4].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	//	l_polygonLayout[4].InputSlot = 0;
-	//	l_polygonLayout[4].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-	//	l_polygonLayout[4].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-	//	l_polygonLayout[4].InstanceDataStepRate = 0;
-	//
-	//	// Get a count of the elements in the layout.
-	//	l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
-	//
-	//	D3D12_SHADER_BYTECODE l_vsBytecode;
-	//	l_vsBytecode.pShaderBytecode = DXSPC->m_vertexShader->GetBufferPointer();
-	//	l_vsBytecode.BytecodeLength = DXSPC->m_vertexShader->GetBufferSize();
-	//
-	//	D3D12_SHADER_BYTECODE l_psBytecode;
-	//	l_psBytecode.pShaderBytecode = DXSPC->m_pixelShader->GetBufferPointer();
-	//	l_psBytecode.BytecodeLength = DXSPC->m_pixelShader->GetBufferSize();
-	//
-	//	DX12RPDC->m_PSODesc.pRootSignature = DX12RPDC->m_rootSignature;
-	//	DX12RPDC->m_PSODesc.InputLayout = { l_polygonLayout, l_numElements };
-	//	DX12RPDC->m_PSODesc.VS = l_vsBytecode;
-	//	DX12RPDC->m_PSODesc.PS = l_psBytecode;
-	//
-	//	DX12RPDC->m_PSODesc.NumRenderTargets = DX12RPDC->m_RenderPassDesc.m_RenderTargetCount;
-	//	for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
-	//	{
-	//		DX12RPDC->m_PSODesc.RTVFormats[i] = DX12RPDC->m_RenderTargets[i]->m_DX12TextureDataDesc.Format;
-	//	}
-	//
-	//	DX12RPDC->m_PSODesc.DSVFormat = DX12RPDC->m_DSVDesc.Format;
-	//	DX12RPDC->m_PSODesc.DepthStencilState = DX12RPDC->m_depthStencilDesc;
-	//	DX12RPDC->m_PSODesc.RasterizerState = DX12RPDC->m_rasterizerDesc;
-	//	DX12RPDC->m_PSODesc.BlendState = DX12RPDC->m_blendDesc;
-	//
-	//	auto l_result = m_device->CreateGraphicsPipelineState(&DX12RPDC->m_PSODesc, IID_PPV_ARGS(&DX12RPDC->m_PSO));
-	//
-	//	if (FAILED(l_result))
-	//	{
-	//		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ",DX12RPDC->m_componentName.c_str()," can't create PSO!");
-	//		return false;
-	//	}
-	//
-	//	std::string l_name = DX12RPDC->m_componentName.c_str();
-	//	l_name = l_name + "_PSO";
-	//	DX12RPDC->m_PSO->SetName(std::wstring(l_name.begin(), l_name.end()).c_str());
-	//
-	//	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ",DX12RPDC->m_componentName.c_str()," PSO has been created.");
-	//
-	return true;
-}
-
-bool DX12Helper::CreateCommandQueue(DX12RenderPassDataComponent* DX12RPDC)
-{
-	//// Set up the description of the command queue.
-	//DX12RPDC->m_commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-	//DX12RPDC->m_commandQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
-	//DX12RPDC->m_commandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-	//DX12RPDC->m_commandQueueDesc.NodeMask = 0;
-
-	//// Create the command queue.
-	//auto l_result = m_device->CreateCommandQueue(&DX12RPDC->m_commandQueueDesc, IID_PPV_ARGS(&DX12RPDC->m_commandQueue));
-	//if (FAILED(l_result))
-	//{
-	//	InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " can't create CommandQueue!");
-	//	return false;
-	//}
-
-	//std::string l_name = DX12RPDC->m_componentName.c_str();
-	//l_name = l_name + "_CommandQueue";
-	//DX12RPDC->m_commandQueue->SetName(std::wstring(l_name.begin(), l_name.end()).c_str());
-
-	//InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " CommandQueue has been created.");
-
-	return true;
-}
-
-bool DX12Helper::CreateCommandAllocators(DX12RenderPassDataComponent* DX12RPDC)
-{
-	//if (DX12RPDC->m_RenderPassDesc.useMultipleFramebuffers)
-	//{
-	//	DX12RPDC->m_commandAllocators.resize(DX12RPDC->m_RenderPassDesc.m_RenderTargetCount);
-	//}
-	//else
-	//{
-	//	DX12RPDC->m_commandAllocators.resize(1);
-	//}
-
-	//HRESULT l_result;
-
-	//for (size_t i = 0; i < DX12RPDC->m_commandAllocators.size(); i++)
-	//{
-	//	// Create a command allocator.
-	//	l_result = m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&DX12RPDC->m_commandAllocators[i]));
-	//	if (FAILED(l_result))
-	//	{
-	//		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " can't create CommandAllocator!");
-	//		return false;
-	//	}
-
-	//	std::string l_name = DX12RPDC->m_componentName.c_str();
-	//	l_name = l_name + "_CommandAllocator_" + std::to_string(i);
-	//	DX12RPDC->m_commandAllocators[i]->SetName(std::wstring(l_name.begin(), l_name.end()).c_str());
-
-	//	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " CommandAllocator has been created.");
-	//}
-
-	return true;
-}
-
-bool DX12Helper::CreateCommandLists(DX12RenderPassDataComponent* DX12RPDC)
-{
-	//	DX12RPDC->m_commandLists.resize(DX12RPDC->m_commandAllocators.size());
-	//
-	//	for (size_t i = 0; i < DX12RPDC->m_commandAllocators.size(); i++)
-	//	{
-	//		auto l_result = m_device->CreateCommandList
-	//		(0, D3D12_COMMAND_LIST_TYPE_DIRECT, DX12RPDC->m_commandAllocators[i], NULL, IID_PPV_ARGS(&DX12RPDC->m_commandLists[i]));
-	//		if (FAILED(l_result))
-	//		{
-	//			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " can't create CommandList!");
-	//			return false;
-	//		}
-	//
-	//		DX12RPDC->m_commandLists[i]->Close();
-	//
-	//		std::string l_name = DX12RPDC->m_componentName.c_str();
-	//		l_name = l_name + "_CommandList_" + std::to_string(i);
-	//		DX12RPDC->m_commandLists[i]->SetName(std::wstring(l_name.begin(), l_name.end()).c_str());
-	//	}
-	//
-	//	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " CommandList has been created.");
-	//
-	return true;
-}
-
-bool DX12Helper::CreateSyncPrimitives(DX12RenderPassDataComponent* DX12RPDC)
-{
-	//	HRESULT l_result;
-	//
-	//	DX12RPDC->m_fenceStatus.reserve(DX12RPDC->m_commandLists.size());
-	//
-	//	for (size_t i = 0; i < DX12RPDC->m_commandLists.size(); i++)
-	//	{
-	//		DX12RPDC->m_fenceStatus.emplace_back();
-	//	}
-	//
-	//	// Create a fence for GPU synchronization.
-	//	l_result = m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&DX12RPDC->m_fence));
-	//	if (FAILED(l_result))
-	//	{
-	//		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " can't create Fence!");
-	//		return false;
-	//	}
-	//
-	//	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Fence has been created.");
-	//
-	//	// Create an event object for the fence.
-	//	DX12RPDC->m_fenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
-	//	if (DX12RPDC->m_fenceEvent == NULL)
-	//	{
-	//		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " can't create fence event!");
-	//		return false;
-	//	}
-	//
-	//	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Fence event has been created.");
-
-	return true;
-}
-
-D3D12_VERSIONED_ROOT_SIGNATURE_DESC DX12Helper::GetRootSignatureDesc(const std::vector<ResourceBinderLayoutDesc>& resourceBinderLayoutDescs)
-{
-	std::vector<CD3DX12_ROOT_PARAMETER1> l_rootParameters(resourceBinderLayoutDescs.size());
 	size_t l_rootDescriptorTableCount = 0;
 
 	for (size_t i = 0; i < l_rootParameters.size(); i++)
 	{
-		auto l_resourceBinderLayoutDesc = resourceBinderLayoutDescs[i];
+		auto l_resourceBinderLayoutDesc = DX12RPDC->m_ResourceBinderLayoutDescs[i];
 
-		if (l_resourceBinderLayoutDesc.m_ResourceCount > 1)
+		if (l_resourceBinderLayoutDesc.m_IsRanged)
 		{
 			l_rootDescriptorTableCount++;
 		}
@@ -923,7 +689,7 @@ D3D12_VERSIONED_ROOT_SIGNATURE_DESC DX12Helper::GetRootSignatureDesc(const std::
 
 	for (size_t i = 0; i < l_rootParameters.size(); i++)
 	{
-		auto l_resourceBinderLayoutDesc = resourceBinderLayoutDescs[i];
+		auto l_resourceBinderLayoutDesc = DX12RPDC->m_ResourceBinderLayoutDescs[i];
 
 		if (l_resourceBinderLayoutDesc.m_IsRanged)
 		{
@@ -953,7 +719,7 @@ D3D12_VERSIONED_ROOT_SIGNATURE_DESC DX12Helper::GetRootSignatureDesc(const std::
 		{
 			switch (l_resourceBinderLayoutDesc.m_ResourceBinderType)
 			{
-			case ResourceBinderType::Sampler:
+			case ResourceBinderType::Sampler: InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Sampler only could be accessed through a Descriptor table!");
 				break;
 			case ResourceBinderType::Image: l_rootParameters[i].InitAsShaderResourceView((unsigned int)l_resourceBinderLayoutDesc.m_BindingSlot, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_ALL);
 				break;
@@ -974,7 +740,268 @@ D3D12_VERSIONED_ROOT_SIGNATURE_DESC DX12Helper::GetRootSignatureDesc(const std::
 	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC l_rootSigDesc((unsigned int)l_rootParameters.size(), l_rootParameters.data());
 	l_rootSigDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
-	return l_rootSigDesc;
+	ID3DBlob* l_signature = 0;
+	ID3DBlob* l_error = 0;
+
+	auto l_HResult = D3D12SerializeVersionedRootSignature(&l_rootSigDesc, &l_signature, &l_error);
+
+	if (FAILED(l_HResult))
+	{
+		if (l_error)
+		{
+			auto l_errorMessagePtr = (char*)(l_error->GetBufferPointer());
+			auto bufferSize = l_error->GetBufferSize();
+			std::vector<char> l_errorMessageVector(bufferSize);
+			std::memcpy(l_errorMessageVector.data(), l_errorMessagePtr, bufferSize);
+			l_error->Release();
+
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: ", DX12RPDC->m_componentName.c_str(), " RootSignature serialization error: ", &l_errorMessageVector[0], "\n -- --------------------------------------------------- -- ");
+		}
+		else
+		{
+			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't serialize RootSignature!");
+		}
+		return false;
+	}
+
+	l_HResult = device->CreateRootSignature(0, l_signature->GetBufferPointer(), l_signature->GetBufferSize(), IID_PPV_ARGS(&DX12RPDC->m_RootSignature));
+	l_signature->Release();
+
+	if (FAILED(l_HResult))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create RootSignature!");
+		return false;
+	}
+
+	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " RootSignature has been created.");
+
+	return true;
+}
+
+bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device)
+{
+	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(DX12RPDC->m_PipelineStateObject);
+
+	GenerateDepthStencilStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
+	GenerateBlendStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
+	GenerateRasterizerStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
+	GenerateViewportStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
+	GenerateSamplerStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_SamplerDesc, l_PSO);
+
+	l_PSO->m_PSODesc.pRootSignature = DX12RPDC->m_RootSignature;
+
+	D3D12_INPUT_ELEMENT_DESC l_polygonLayout[5];
+	unsigned int l_numElements;
+
+	// Create the vertex input layout description.
+	l_polygonLayout[0].SemanticName = "POSITION";
+	l_polygonLayout[0].SemanticIndex = 0;
+	l_polygonLayout[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	l_polygonLayout[0].InputSlot = 0;
+	l_polygonLayout[0].AlignedByteOffset = 0;
+	l_polygonLayout[0].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+	l_polygonLayout[0].InstanceDataStepRate = 0;
+
+	l_polygonLayout[1].SemanticName = "TEXCOORD";
+	l_polygonLayout[1].SemanticIndex = 0;
+	l_polygonLayout[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+	l_polygonLayout[1].InputSlot = 0;
+	l_polygonLayout[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	l_polygonLayout[1].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+	l_polygonLayout[1].InstanceDataStepRate = 0;
+
+	l_polygonLayout[2].SemanticName = "PADA";
+	l_polygonLayout[2].SemanticIndex = 0;
+	l_polygonLayout[2].Format = DXGI_FORMAT_R32G32_FLOAT;
+	l_polygonLayout[2].InputSlot = 0;
+	l_polygonLayout[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	l_polygonLayout[2].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+	l_polygonLayout[2].InstanceDataStepRate = 0;
+
+	l_polygonLayout[3].SemanticName = "NORMAL";
+	l_polygonLayout[3].SemanticIndex = 0;
+	l_polygonLayout[3].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	l_polygonLayout[3].InputSlot = 0;
+	l_polygonLayout[3].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	l_polygonLayout[3].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+	l_polygonLayout[3].InstanceDataStepRate = 0;
+
+	l_polygonLayout[4].SemanticName = "PADB";
+	l_polygonLayout[4].SemanticIndex = 0;
+	l_polygonLayout[4].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	l_polygonLayout[4].InputSlot = 0;
+	l_polygonLayout[4].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	l_polygonLayout[4].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+	l_polygonLayout[4].InstanceDataStepRate = 0;
+
+	// Get a count of the elements in the layout.
+	l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
+	l_PSO->m_PSODesc.InputLayout = { l_polygonLayout, l_numElements };
+
+	auto l_DX12SPC = reinterpret_cast<DX12ShaderProgramComponent*>(DX12RPDC->m_ShaderProgram);
+
+	if (l_DX12SPC->m_VSBuffer)
+	{
+		D3D12_SHADER_BYTECODE l_VSBytecode;
+		l_VSBytecode.pShaderBytecode = l_DX12SPC->m_VSBuffer->GetBufferPointer();
+		l_VSBytecode.BytecodeLength = l_DX12SPC->m_VSBuffer->GetBufferSize();
+		l_PSO->m_PSODesc.VS = l_VSBytecode;
+	}
+	if (l_DX12SPC->m_TCSBuffer)
+	{
+		D3D12_SHADER_BYTECODE l_TCSBytecode;
+		l_TCSBytecode.pShaderBytecode = l_DX12SPC->m_TCSBuffer->GetBufferPointer();
+		l_TCSBytecode.BytecodeLength = l_DX12SPC->m_TCSBuffer->GetBufferSize();
+		l_PSO->m_PSODesc.HS = l_TCSBytecode;
+	}
+	if (l_DX12SPC->m_TESBuffer)
+	{
+		D3D12_SHADER_BYTECODE l_TESBytecode;
+		l_TESBytecode.pShaderBytecode = l_DX12SPC->m_TESBuffer->GetBufferPointer();
+		l_TESBytecode.BytecodeLength = l_DX12SPC->m_TESBuffer->GetBufferSize();
+		l_PSO->m_PSODesc.DS = l_TESBytecode;
+	}
+	if (l_DX12SPC->m_GSBuffer)
+	{
+		D3D12_SHADER_BYTECODE l_GSBytecode;
+		l_GSBytecode.pShaderBytecode = l_DX12SPC->m_GSBuffer->GetBufferPointer();
+		l_GSBytecode.BytecodeLength = l_DX12SPC->m_GSBuffer->GetBufferSize();
+		l_PSO->m_PSODesc.GS = l_GSBytecode;
+	}
+	if (l_DX12SPC->m_FSBuffer)
+	{
+		D3D12_SHADER_BYTECODE l_FSBytecode;
+		l_FSBytecode.pShaderBytecode = l_DX12SPC->m_FSBuffer->GetBufferPointer();
+		l_FSBytecode.BytecodeLength = l_DX12SPC->m_FSBuffer->GetBufferSize();
+		l_PSO->m_PSODesc.PS = l_FSBytecode;
+	}
+
+	l_PSO->m_PSODesc.NumRenderTargets = (unsigned int)DX12RPDC->m_RenderPassDesc.m_RenderTargetCount;
+	for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		l_PSO->m_PSODesc.RTVFormats[i] = DX12RPDC->m_RTVDesc.Format;
+	}
+
+	l_PSO->m_PSODesc.DSVFormat = DX12RPDC->m_DSVDesc.Format;
+	l_PSO->m_PSODesc.DepthStencilState = l_PSO->m_DepthStencilDesc;
+	l_PSO->m_PSODesc.RasterizerState = l_PSO->m_RasterizerDesc;
+	l_PSO->m_PSODesc.BlendState = l_PSO->m_BlendDesc;
+	l_PSO->m_PSODesc.SampleMask = UINT_MAX;
+	l_PSO->m_PSODesc.PrimitiveTopologyType = l_PSO->m_PrimitiveTopology;
+	l_PSO->m_PSODesc.SampleDesc.Count = 1;
+
+	auto l_HResult = device->CreateGraphicsPipelineState(&l_PSO->m_PSODesc, IID_PPV_ARGS(&l_PSO->m_PSO));
+
+	if (FAILED(l_HResult))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create PSO!");
+		return false;
+	}
+
+	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " PSO has been created.");
+
+	return true;
+}
+
+bool DX12Helper::CreateCommandQueue(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device)
+{
+	auto l_CommandQueue = reinterpret_cast<DX12CommandQueue*>(DX12RPDC->m_CommandQueue);
+
+	// Set up the description of the command queue.
+	l_CommandQueue->m_CommandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+	l_CommandQueue->m_CommandQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
+	l_CommandQueue->m_CommandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+	l_CommandQueue->m_CommandQueueDesc.NodeMask = 0;
+
+	// Create the command queue.
+	auto l_HResult = device->CreateCommandQueue(&l_CommandQueue->m_CommandQueueDesc, IID_PPV_ARGS(&l_CommandQueue->m_CommandQueue));
+	if (FAILED(l_HResult))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create CommandQueue!");
+		return false;
+	}
+
+	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " CommandQueue has been created.");
+
+	return true;
+}
+
+bool DX12Helper::CreateCommandAllocators(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device)
+{
+	if (DX12RPDC->m_RenderPassDesc.m_UseMultiFrames)
+	{
+		DX12RPDC->m_CommandAllocators.resize(DX12RPDC->m_RenderPassDesc.m_RenderTargetCount);
+	}
+	else
+	{
+		DX12RPDC->m_CommandAllocators.resize(1);
+	}
+
+	for (size_t i = 0; i < DX12RPDC->m_CommandAllocators.size(); i++)
+	{
+		// Create a command allocator.
+		auto l_HResult = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&DX12RPDC->m_CommandAllocators[i]));
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create CommandAllocator!");
+			return false;
+		}
+
+		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " CommandAllocator has been created.");
+	}
+
+	return true;
+}
+
+bool DX12Helper::CreateCommandLists(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device)
+{
+	for (size_t i = 0; i < DX12RPDC->m_CommandLists.size(); i++)
+	{
+		auto l_CommandList = reinterpret_cast<DX12CommandList*>(DX12RPDC->m_CommandLists[i]);
+
+		auto l_HResult = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, DX12RPDC->m_CommandAllocators[i], NULL, IID_PPV_ARGS(&l_CommandList->m_CommandList));
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create CommandList!");
+			return false;
+		}
+
+		l_CommandList->m_CommandList->Close();
+	}
+
+	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " CommandList has been created.");
+
+	return true;
+}
+
+bool DX12Helper::CreateSyncPrimitives(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device)
+{
+	for (size_t i = 0; i < DX12RPDC->m_Fences.size(); i++)
+	{
+		auto l_Fence = reinterpret_cast<DX12Fence*>(DX12RPDC->m_Fences[i]);
+
+		// Create a fence for GPU synchronization.
+		auto l_HResult = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&l_Fence->m_Fence));
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create Fence!");
+			return false;
+		}
+
+		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Fence has been created.");
+
+		// Create an event object for the fence.
+		l_Fence->m_FenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
+		if (l_Fence->m_FenceEvent == NULL)
+		{
+			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create fence event!");
+			return false;
+		}
+
+		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Fence event has been created.");
+	}
+
+	return true;
 }
 
 D3D12_COMPARISON_FUNC DX12Helper::GetComparisionFunction(ComparisionFunction comparisionFunction)
@@ -1179,7 +1206,7 @@ bool DX12Helper::GenerateBlendStateDesc(BlendDesc blendDesc, DX12PipelineStateOb
 		PSO->m_BlendDesc.RenderTarget[i].SrcBlendAlpha = GetBlendFactor(blendDesc.m_SourceAlphaFactor);
 		PSO->m_BlendDesc.RenderTarget[i].DestBlendAlpha = GetBlendFactor(blendDesc.m_DestinationAlphaFactor);
 		PSO->m_BlendDesc.RenderTarget[i].BlendOpAlpha = GetBlendOperation(blendDesc.m_BlendOperation);
-		PSO->m_BlendDesc.RenderTarget[i].RenderTargetWriteMask = 0xFF;
+		PSO->m_BlendDesc.RenderTarget[i].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 	}
 
 	return true;
@@ -1217,6 +1244,12 @@ bool DX12Helper::GenerateViewportStateDesc(ViewportDesc viewportDesc, DX12Pipeli
 	PSO->m_Viewport.MaxDepth = viewportDesc.m_MaxDepth;
 	PSO->m_Viewport.TopLeftX = viewportDesc.m_OriginX;
 	PSO->m_Viewport.TopLeftY = viewportDesc.m_OriginY;
+
+	// Setup the scissor rect.
+	PSO->m_Scissor.left = 0;
+	PSO->m_Scissor.top = 0;
+	PSO->m_Scissor.right = (unsigned long)PSO->m_Viewport.Width;
+	PSO->m_Scissor.bottom = (unsigned long)PSO->m_Viewport.Height;
 
 	return true;
 }
@@ -1289,7 +1322,7 @@ bool DX12Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderType shaderType, const S
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't find ", shaderFilePath.c_str(), "!");
+			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't find ", shaderFilePath.c_str(), "!");
 		}
 		return false;
 	}
@@ -1301,4 +1334,4 @@ bool DX12Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderType shaderType, const S
 
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", shaderFilePath.c_str(), " has been compiled.");
 	return true;
-}
+	}

@@ -5,9 +5,10 @@
 class DX12ShaderProgramComponent : public ShaderProgramComponent
 {
 public:
-	ID3DBlob* m_vertexShader = 0;
-	ID3DBlob* m_pixelShader = 0;
-	D3D12_SAMPLER_DESC m_samplerDesc = D3D12_SAMPLER_DESC();
-	D3D12_CPU_DESCRIPTOR_HANDLE m_samplerCPUHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE m_samplerGPUHandle;
+	ID3DBlob* m_VSBuffer = 0;
+	ID3DBlob* m_TCSBuffer = 0;
+	ID3DBlob* m_TESBuffer = 0;
+	ID3DBlob* m_GSBuffer = 0;
+	ID3DBlob* m_FSBuffer = 0;
+	ID3DBlob* m_CSBuffer = 0;
 };

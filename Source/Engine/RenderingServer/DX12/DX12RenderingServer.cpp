@@ -43,6 +43,9 @@ namespace DX12RenderingServerNS
 	IObjectPool* m_RenderPassDataComponentPool;
 	IObjectPool* m_ResourcesBinderPool;
 	IObjectPool* m_PSOPool;
+	IObjectPool* m_CommandQueuePool;
+	IObjectPool* m_CommandListPool;
+	IObjectPool* m_FencePool;
 	IObjectPool* m_ShaderProgramComponentPool;
 
 	std::unordered_set<MeshDataComponent*> m_initializedMeshes;
@@ -446,6 +449,27 @@ DX12PipelineStateObject* addPSO()
 	return l_PSO;
 }
 
+DX12CommandQueue* addCommandQueue()
+{
+	auto l_CommandQueueRawPtr = m_CommandQueuePool->Spawn();
+	auto l_CommandQueue = new(l_CommandQueueRawPtr)DX12CommandQueue();
+	return l_CommandQueue;
+}
+
+DX12CommandList* addCommandList()
+{
+	auto l_CommandListRawPtr = m_CommandListPool->Spawn();
+	auto l_CommandList = new(l_CommandListRawPtr)DX12CommandList();
+	return l_CommandList;
+}
+
+DX12Fence* addFence()
+{
+	auto l_FenceRawPtr = m_FencePool->Spawn();
+	auto l_Fence = new(l_FenceRawPtr)DX12Fence();
+	return l_Fence;
+}
+
 bool DX12RenderingServer::Setup()
 {
 	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
@@ -456,6 +480,9 @@ bool DX12RenderingServer::Setup()
 	m_RenderPassDataComponentPool = InnoMemory::CreateObjectPool(sizeof(DX12RenderPassDataComponent), 128);
 	m_ResourcesBinderPool = InnoMemory::CreateObjectPool(sizeof(DX12ResourceBinder), 16384);
 	m_PSOPool = InnoMemory::CreateObjectPool(sizeof(DX12PipelineStateObject), 128);
+	m_CommandQueuePool = InnoMemory::CreateObjectPool(sizeof(DX12CommandQueue), 128);
+	m_CommandListPool = InnoMemory::CreateObjectPool(sizeof(DX12CommandList), 256);
+	m_FencePool = InnoMemory::CreateObjectPool(sizeof(DX12Fence), 256);
 	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool(sizeof(DX12ShaderProgramComponent), 256);
 
 	bool l_result = true;
@@ -903,12 +930,35 @@ bool DX12RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 	l_result &= CreateViews(l_rhs, m_device);
 
 	l_result &= CreateRootSignature(l_rhs, m_device);
-	l_result &= CreatePSO(l_rhs, reinterpret_cast<DX12ShaderProgramComponent*>(l_rhs->m_ShaderProgram));
 
-	l_result &= CreateCommandQueue(l_rhs);
-	l_result &= CreateCommandAllocators(l_rhs);
-	l_result &= CreateCommandLists(l_rhs);
-	l_result &= CreateSyncPrimitives(l_rhs);
+	l_rhs->m_RenderTargetsResourceBinder = addResourcesBinder();
+
+	l_result &= CreateResourcesBinder(l_rhs, this);
+
+	l_rhs->m_PipelineStateObject = addPSO();
+
+	l_result &= CreatePSO(l_rhs, m_device);
+
+	l_rhs->m_CommandQueue = addCommandQueue();
+
+	l_result &= CreateCommandQueue(l_rhs, m_device);
+	l_result &= CreateCommandAllocators(l_rhs, m_device);
+
+	l_rhs->m_CommandLists.resize(l_rhs->m_CommandAllocators.size());
+	for (size_t i = 0; i < l_rhs->m_CommandLists.size(); i++)
+	{
+		l_rhs->m_CommandLists[i] = addCommandList();
+	}
+
+	l_result &= CreateCommandLists(l_rhs, m_device);
+
+	l_rhs->m_Fences.resize(l_rhs->m_CommandLists.size());
+	for (size_t i = 0; i < l_rhs->m_Fences.size(); i++)
+	{
+		l_rhs->m_Fences[i] = addFence();
+	}
+
+	l_result &= CreateSyncPrimitives(l_rhs, m_device);
 
 	l_rhs->m_objectStatus = ObjectStatus::Activated;
 
@@ -917,6 +967,33 @@ bool DX12RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 
 bool DX12RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX12ShaderProgramComponent*>(rhs);
+
+	if (l_rhs->m_ShaderFilePaths.m_VSPath != "")
+	{
+		LoadShaderFile(&l_rhs->m_VSBuffer, ShaderType::VERTEX, l_rhs->m_ShaderFilePaths.m_VSPath);
+	}
+	if (l_rhs->m_ShaderFilePaths.m_TCSPath != "")
+	{
+		LoadShaderFile(&l_rhs->m_TCSBuffer, ShaderType::TCS, l_rhs->m_ShaderFilePaths.m_TCSPath);
+	}
+	if (l_rhs->m_ShaderFilePaths.m_TESPath != "")
+	{
+		LoadShaderFile(&l_rhs->m_TESBuffer, ShaderType::TES, l_rhs->m_ShaderFilePaths.m_TESPath);
+	}
+	if (l_rhs->m_ShaderFilePaths.m_GSPath != "")
+	{
+		LoadShaderFile(&l_rhs->m_GSBuffer, ShaderType::GEOMETRY, l_rhs->m_ShaderFilePaths.m_GSPath);
+	}
+	if (l_rhs->m_ShaderFilePaths.m_FSPath != "")
+	{
+		LoadShaderFile(&l_rhs->m_FSBuffer, ShaderType::FRAGMENT, l_rhs->m_ShaderFilePaths.m_FSPath);
+	}
+	if (l_rhs->m_ShaderFilePaths.m_CSPath != "")
+	{
+		LoadShaderFile(&l_rhs->m_CSBuffer, ShaderType::COMPUTE, l_rhs->m_ShaderFilePaths.m_CSPath);
+	}
+
 	return true;
 }
 
