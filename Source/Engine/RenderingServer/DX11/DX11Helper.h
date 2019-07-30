@@ -35,6 +35,7 @@ namespace DX11Helper
 
 	bool ReserveRenderTargets(DX11RenderPassDataComponent * DX11RPDC, IRenderingServer * renderingServer);
 	bool CreateRenderTargets(DX11RenderPassDataComponent * DX11RPDC, IRenderingServer* renderingServer);
+	bool CreateResourcesBinder(DX11RenderPassDataComponent * DX11RPDC);
 	bool CreateViews(DX11RenderPassDataComponent * DX11RPDC, ID3D11Device* device);
 	bool CreateStateObjects(DX11RenderPassDataComponent * DX11RPDC, ID3D10Blob* dummyILShaderBuffer, ID3D11Device* device);
 

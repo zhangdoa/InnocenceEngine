@@ -89,6 +89,20 @@ namespace GLRenderingServerNS
 
 using namespace GLRenderingServerNS;
 
+GLResourceBinder* addResourcesBinder()
+{
+	auto l_BinderRawPtr = m_ResourcesBinderPool->Spawn();
+	auto l_Binder = new(l_BinderRawPtr)GLResourceBinder();
+	return l_Binder;
+}
+
+GLPipelineStateObject* addPSO()
+{
+	auto l_PSORawPtr = m_PSOPool->Spawn();
+	auto l_PSO = new(l_PSORawPtr)GLPipelineStateObject();
+	return l_PSO;
+}
+
 bool GLRenderingServer::Setup()
 {
 	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
@@ -125,9 +139,24 @@ bool GLRenderingServer::Initialize()
 		l_RenderPassDesc.m_RenderTargetCount = 1;
 
 		m_SwapChainRPDC->m_RenderPassDesc = l_RenderPassDesc;
+		m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc.pixelDataType = TexturePixelDataType::UBYTE;
 
-		InitializeRenderPassDataComponent(m_SwapChainRPDC);
+		m_SwapChainRPDC->m_FBO = 0;
+		m_SwapChainRPDC->m_RBO = 0;
+
+		ReserveRenderTargets(m_SwapChainRPDC, this);
+
+		m_SwapChainRPDC->m_RenderTargetsResourceBinder = addResourcesBinder();
+
+		CreateResourcesBinder(m_SwapChainRPDC);
+
+		m_SwapChainRPDC->m_PipelineStateObject = addPSO();
+
+		CreateStateObjects(m_SwapChainRPDC);
+
+		m_SwapChainRPDC->m_objectStatus = ObjectStatus::Activated;
 	}
+
 	return true;
 }
 
@@ -459,27 +488,13 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 
 	CreateRenderTargets(l_rhs, this);
 
-	// ResourceBinder for RT
-	auto l_BinderRawPtr = m_ResourcesBinderPool->Spawn();
-	auto l_Binder = new(l_BinderRawPtr)GLResourceBinder();
-	l_rhs->m_RenderTargetsResourceBinder = l_Binder;
+	l_rhs->m_RenderTargetsResourceBinder = addResourcesBinder();
 
-	l_Binder->m_ResourceBinderType = ResourceBinderType::Image;
-	l_Binder->m_Resources.reserve(l_rhs->m_RenderPassDesc.m_RenderTargetCount);
-	for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
-	{
-		l_Binder->m_Resources.emplace_back(l_rhs->m_RenderTargets[i]);
-	}
+	CreateResourcesBinder(l_rhs);
 
-	// PSO
-	auto l_PSORawPtr = m_PSOPool->Spawn();
-	auto l_PSO = new(l_PSORawPtr)GLPipelineStateObject();
-	l_rhs->m_PipelineStateObject = l_PSO;
+	l_rhs->m_PipelineStateObject = addPSO();
 
-	GenerateDepthStencilState(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
-	GenerateBlendState(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
-	GenerateRasterizerState(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
-	GenerateViewportState(l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
+	CreateStateObjects(l_rhs);
 
 	l_rhs->m_objectStatus = ObjectStatus::Activated;
 

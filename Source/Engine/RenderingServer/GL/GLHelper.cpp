@@ -471,6 +471,32 @@ bool GLHelper::CreateRenderTargets(GLRenderPassDataComponent * GLRPDC, IRenderin
 	return true;
 }
 
+bool GLHelper::CreateResourcesBinder(GLRenderPassDataComponent * GLRPDC)
+{
+	auto l_Binder = reinterpret_cast<GLResourceBinder*>(GLRPDC->m_RenderTargetsResourceBinder);
+
+	l_Binder->m_ResourceBinderType = ResourceBinderType::Image;
+	l_Binder->m_Resources.reserve(GLRPDC->m_RenderPassDesc.m_RenderTargetCount);
+	for (size_t i = 0; i < GLRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		l_Binder->m_Resources.emplace_back(GLRPDC->m_RenderTargets[i]);
+	}
+
+	return true;
+}
+
+bool GLHelper::CreateStateObjects(GLRenderPassDataComponent * GLRPDC)
+{
+	auto l_PSO = reinterpret_cast<GLPipelineStateObject*>(GLRPDC->m_PipelineStateObject);
+
+	GenerateDepthStencilState(GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
+	GenerateBlendState(GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
+	GenerateRasterizerState(GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
+	GenerateViewportState(GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
+
+	return true;
+}
+
 GLenum getComparisionFunctionEnum(ComparisionFunction comparisionFunction)
 {
 	GLenum l_result;

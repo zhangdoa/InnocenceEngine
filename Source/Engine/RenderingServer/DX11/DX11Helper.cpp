@@ -475,6 +475,20 @@ bool DX11Helper::CreateRenderTargets(DX11RenderPassDataComponent * DX11RPDC, IRe
 	return true;
 }
 
+bool DX11Helper::CreateResourcesBinder(DX11RenderPassDataComponent * DX11RPDC)
+{
+	auto l_Binder = reinterpret_cast<DX11ResourceBinder*>(DX11RPDC->m_RenderTargetsResourceBinder);
+
+	l_Binder->m_ResourceBinderType = ResourceBinderType::Image;
+	l_Binder->m_Resources.reserve(DX11RPDC->m_RenderPassDesc.m_RenderTargetCount);
+	for (size_t i = 0; i < DX11RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		l_Binder->m_Resources.emplace_back(DX11RPDC->m_RenderTargets[i]);
+	}
+
+	return true;
+}
+
 bool DX11Helper::CreateViews(DX11RenderPassDataComponent * DX11RPDC, ID3D11Device * device)
 {
 	// RTV
@@ -526,6 +540,12 @@ bool DX11Helper::CreateViews(DX11RenderPassDataComponent * DX11RPDC, ID3D11Devic
 bool DX11Helper::CreateStateObjects(DX11RenderPassDataComponent * DX11RPDC, ID3D10Blob* dummyILShaderBuffer, ID3D11Device * device)
 {
 	auto l_PSO = reinterpret_cast<DX11PipelineStateObject*>(DX11RPDC->m_PipelineStateObject);
+
+	GenerateDepthStencilStateDesc(DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
+	GenerateBlendStateDesc(DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
+	GenerateRasterizerStateDesc(DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
+	GenerateViewportStateDesc(DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
+	GenerateSamplerStateDesc(DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_SamplerDesc, l_PSO);
 
 	// Input layout object
 	D3D11_INPUT_ELEMENT_DESC l_inputLayouts[5];

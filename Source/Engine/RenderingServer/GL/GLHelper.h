@@ -17,6 +17,8 @@ namespace GLHelper
 	bool CreateFramebuffer(GLRenderPassDataComponent * GLRPDC);
 	bool ReserveRenderTargets(GLRenderPassDataComponent * GLRPDC, IRenderingServer * renderingServer);
 	bool CreateRenderTargets(GLRenderPassDataComponent * GLRPDC, IRenderingServer* renderingServer);
+	bool CreateResourcesBinder(GLRenderPassDataComponent * GLRPDC);
+	bool CreateStateObjects(GLRenderPassDataComponent * GLRPDC);
 
 	bool GenerateDepthStencilState(DepthStencilDesc DSDesc, GLPipelineStateObject* PSO);
 	bool GenerateBlendState(BlendDesc blendDesc, GLPipelineStateObject* PSO);
