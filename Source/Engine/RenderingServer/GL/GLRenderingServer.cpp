@@ -685,11 +685,11 @@ bool GLRenderingServer::ActivateResourceBinder(ShaderType shaderType, IResourceB
 	return true;
 }
 
-bool GLRenderingServer::BindGPUBufferDataComponent(ShaderType shaderType, GPUBufferAccessibility accessibility, GPUBufferDataComponent * rhs, size_t startOffset, size_t range)
+bool GLRenderingServer::BindGPUBufferDataComponent(RenderPassDataComponent * renderPass, GPUBufferDataComponent * GPUBuffer, ShaderType shaderType, GPUBufferAccessibility accessibility, size_t startOffset, size_t range)
 {
-	auto l_rhs = reinterpret_cast<GLGPUBufferDataComponent*>(rhs);
+	auto l_GPUBuffer = reinterpret_cast<GLGPUBufferDataComponent*>(GPUBuffer);
 
-	glBindBufferRange(l_rhs->m_BufferType, (GLuint)l_rhs->m_BindingPoint, l_rhs->m_Handle, startOffset * l_rhs->m_ElementSize, range);
+	glBindBufferRange(l_GPUBuffer->m_BufferType, (GLuint)l_GPUBuffer->m_BindingPoint, l_GPUBuffer->m_Handle, startOffset * l_GPUBuffer->m_ElementSize, range);
 
 	return true;
 }
@@ -750,7 +750,7 @@ bool GLRenderingServer::UnbindMaterialDataComponent(ShaderType shaderType, Mater
 	return true;
 }
 
-bool GLRenderingServer::CommandListEnd(RenderPassDataComponent * rhs, size_t frameIndex)
+bool GLRenderingServer::CommandListEnd(RenderPassDataComponent * rhs)
 {
 	auto l_rhs = reinterpret_cast<GLRenderPassDataComponent*>(rhs);
 	auto l_GLPSO = reinterpret_cast<GLPipelineStateObject*>(l_rhs->m_PipelineStateObject);
@@ -763,12 +763,12 @@ bool GLRenderingServer::CommandListEnd(RenderPassDataComponent * rhs, size_t fra
 	return true;
 }
 
-bool GLRenderingServer::ExecuteCommandList(RenderPassDataComponent * rhs, size_t frameIndex)
+bool GLRenderingServer::ExecuteCommandList(RenderPassDataComponent * rhs)
 {
 	return true;
 }
 
-bool GLRenderingServer::WaitForFrame(RenderPassDataComponent * rhs, size_t frameIndex)
+bool GLRenderingServer::WaitForFrame(RenderPassDataComponent * rhs)
 {
 	return true;
 }

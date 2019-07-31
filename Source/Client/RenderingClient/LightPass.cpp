@@ -81,11 +81,11 @@ bool LightPass::PrepareCommandList()
 	auto l_SphereLightGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::SphereLight);
 	auto l_SkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sky);
 
-	g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(ShaderType::FRAGMENT, GPUBufferAccessibility::ReadOnly, l_CameraGBDC, 0, l_CameraGBDC->m_TotalSize);
-	g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(ShaderType::FRAGMENT, GPUBufferAccessibility::ReadOnly, l_SunGBDC, 0, l_SunGBDC->m_TotalSize);
-	g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(ShaderType::FRAGMENT, GPUBufferAccessibility::ReadOnly, l_PointLightGBDC, 0, l_PointLightGBDC->m_TotalSize);
-	g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(ShaderType::FRAGMENT, GPUBufferAccessibility::ReadOnly, l_SphereLightGBDC, 0, l_SphereLightGBDC->m_TotalSize);
-	g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(ShaderType::FRAGMENT, GPUBufferAccessibility::ReadOnly, l_SkyGBDC, 0, l_SkyGBDC->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(m_RPC, l_CameraGBDC, ShaderType::FRAGMENT, GPUBufferAccessibility::ReadOnly, 0, l_CameraGBDC->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(m_RPC, l_SunGBDC, ShaderType::FRAGMENT, GPUBufferAccessibility::ReadOnly, 0, l_SunGBDC->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(m_RPC, l_PointLightGBDC, ShaderType::FRAGMENT, GPUBufferAccessibility::ReadOnly, 0, l_PointLightGBDC->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(m_RPC, l_SphereLightGBDC, ShaderType::FRAGMENT, GPUBufferAccessibility::ReadOnly, 0, l_SphereLightGBDC->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(m_RPC, l_SkyGBDC, ShaderType::FRAGMENT, GPUBufferAccessibility::ReadOnly, 0, l_SkyGBDC->m_TotalSize);
 
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPC);
@@ -102,7 +102,7 @@ bool LightPass::PrepareCommandList()
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(ShaderType::FRAGMENT, OpaquePass::getRPC()->m_RenderTargetsResourceBinder, 0);
 
-	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPC, 0);
+	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPC);
 
 	return true;
 }

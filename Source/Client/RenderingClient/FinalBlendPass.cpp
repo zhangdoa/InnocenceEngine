@@ -43,7 +43,7 @@ bool FinalBlendPass::PrepareCommandList()
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(ShaderType::FRAGMENT, LightPass::getRPC()->m_RenderTargetsResourceBinder, 0);
 
-	g_pModuleManager->getRenderingServer()->CommandListEnd(l_RPC, 0);
+	g_pModuleManager->getRenderingServer()->CommandListEnd(l_RPC);
 
 	return true;
 }

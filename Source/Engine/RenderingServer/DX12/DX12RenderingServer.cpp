@@ -1057,7 +1057,7 @@ bool DX12RenderingServer::ActivateResourceBinder(ShaderType shaderType, IResourc
 	return true;
 }
 
-bool DX12RenderingServer::BindGPUBufferDataComponent(ShaderType shaderType, GPUBufferAccessibility accessibility, GPUBufferDataComponent * rhs, size_t startOffset, size_t range)
+bool DX12RenderingServer::BindGPUBufferDataComponent(RenderPassDataComponent * renderPass, GPUBufferDataComponent * GPUBuffer, ShaderType shaderType, GPUBufferAccessibility accessibility, size_t startOffset, size_t range)
 {
 	return true;
 }
@@ -1087,17 +1087,17 @@ bool DX12RenderingServer::UnbindMaterialDataComponent(ShaderType shaderType, Mat
 	return true;
 }
 
-bool DX12RenderingServer::CommandListEnd(RenderPassDataComponent * rhs, size_t frameIndex)
+bool DX12RenderingServer::CommandListEnd(RenderPassDataComponent * rhs)
 {
 	return true;
 }
 
-bool DX12RenderingServer::ExecuteCommandList(RenderPassDataComponent * rhs, size_t frameIndex)
+bool DX12RenderingServer::ExecuteCommandList(RenderPassDataComponent * rhs)
 {
 	return true;
 }
 
-bool DX12RenderingServer::WaitForFrame(RenderPassDataComponent * rhs, size_t frameIndex)
+bool DX12RenderingServer::WaitForFrame(RenderPassDataComponent * rhs)
 {
 	return true;
 }

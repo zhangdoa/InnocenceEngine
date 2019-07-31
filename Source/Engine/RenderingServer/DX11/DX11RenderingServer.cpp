@@ -1102,33 +1102,33 @@ bool BindPartialConstantBuffer(DX11GPUBufferDataComponent* rhs, ShaderType shade
 	return true;
 }
 
-bool DX11RenderingServer::BindGPUBufferDataComponent(ShaderType shaderType, GPUBufferAccessibility accessibility, GPUBufferDataComponent * rhs, size_t startOffset, size_t range)
+bool DX11RenderingServer::BindGPUBufferDataComponent(RenderPassDataComponent * renderPass, GPUBufferDataComponent * GPUBuffer, ShaderType shaderType, GPUBufferAccessibility accessibility, size_t startOffset, size_t range)
 {
-	auto l_rhs = reinterpret_cast<DX11GPUBufferDataComponent*>(rhs);
+	auto l_GPUBuffer = reinterpret_cast<DX11GPUBufferDataComponent*>(GPUBuffer);
 
 	if (accessibility == GPUBufferAccessibility::ReadOnly)
 	{
-		if (l_rhs->m_GPUBufferAccessibility == GPUBufferAccessibility::ReadOnly)
+		if (l_GPUBuffer->m_GPUBufferAccessibility == GPUBufferAccessibility::ReadOnly)
 		{
-			if (range == rhs->m_TotalSize)
+			if (range == l_GPUBuffer->m_TotalSize)
 			{
-				BindConstantBuffer(l_rhs, shaderType);
+				BindConstantBuffer(l_GPUBuffer, shaderType);
 			}
 			else
 			{
 				// Read CBuffer
-				BindPartialConstantBuffer(l_rhs, shaderType, startOffset);
+				BindPartialConstantBuffer(l_GPUBuffer, shaderType, startOffset);
 			}
 		}
 		else
 		{
 			// Read SBuffer
-			BindSRV(shaderType, (unsigned int)l_rhs->m_BindingPoint, l_rhs->m_SRV);
+			BindSRV(shaderType, (unsigned int)l_GPUBuffer->m_BindingPoint, l_GPUBuffer->m_SRV);
 		}
 	}
 	else
 	{
-		if (l_rhs->m_GPUBufferAccessibility == GPUBufferAccessibility::ReadOnly)
+		if (l_GPUBuffer->m_GPUBufferAccessibility == GPUBufferAccessibility::ReadOnly)
 		{
 			InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Not allow GPU write to Constant Buffer!");
 			return false;
@@ -1138,7 +1138,7 @@ bool DX11RenderingServer::BindGPUBufferDataComponent(ShaderType shaderType, GPUB
 			// Write SBuffer
 			if (shaderType == ShaderType::COMPUTE)
 			{
-				m_deviceContext->CSSetUnorderedAccessViews((unsigned int)l_rhs->m_BindingPoint, 1, &l_rhs->m_UAV, nullptr);
+				m_deviceContext->CSSetUnorderedAccessViews((unsigned int)l_GPUBuffer->m_BindingPoint, 1, &l_GPUBuffer->m_UAV, nullptr);
 			}
 			else
 			{
@@ -1265,17 +1265,17 @@ bool DX11RenderingServer::UnbindMaterialDataComponent(ShaderType shaderType, Mat
 	return true;
 }
 
-bool DX11RenderingServer::CommandListEnd(RenderPassDataComponent * rhs, size_t frameIndex)
+bool DX11RenderingServer::CommandListEnd(RenderPassDataComponent * rhs)
 {
 	return true;
 }
 
-bool DX11RenderingServer::ExecuteCommandList(RenderPassDataComponent * rhs, size_t frameIndex)
+bool DX11RenderingServer::ExecuteCommandList(RenderPassDataComponent * rhs)
 {
 	return true;
 }
 
-bool DX11RenderingServer::WaitForFrame(RenderPassDataComponent * rhs, size_t frameIndex)
+bool DX11RenderingServer::WaitForFrame(RenderPassDataComponent * rhs)
 {
 	return true;
 }

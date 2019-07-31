@@ -81,7 +81,7 @@ bool OpaquePass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPC);
 	g_pModuleManager->getRenderingServer()->BindShaderProgramComponent(m_SPC);
 
-	g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(ShaderType::VERTEX, GPUBufferAccessibility::ReadOnly, l_CameraGBDC, 0, l_CameraGBDC->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(m_RPC, l_CameraGBDC, ShaderType::VERTEX, GPUBufferAccessibility::ReadOnly, 0, l_CameraGBDC->m_TotalSize);
 
 	unsigned int l_offset = 0;
 
@@ -92,8 +92,8 @@ bool OpaquePass::PrepareCommandList()
 
 		g_pModuleManager->getRenderingServer()->BindMaterialDataComponent(ShaderType::FRAGMENT, l_opaquePassGPUData.material);
 
-		g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(ShaderType::VERTEX, GPUBufferAccessibility::ReadOnly, l_MeshGBDC, l_offset, l_MeshGBDC->m_ElementSize);
-		g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(ShaderType::FRAGMENT, GPUBufferAccessibility::ReadOnly, l_MaterialGBDC, l_offset, l_MaterialGBDC->m_ElementSize);
+		g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(m_RPC, l_MeshGBDC, ShaderType::VERTEX, GPUBufferAccessibility::ReadOnly, l_offset, l_MeshGBDC->m_ElementSize);
+		g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(m_RPC, l_MaterialGBDC, ShaderType::FRAGMENT, GPUBufferAccessibility::ReadOnly, l_offset, l_MaterialGBDC->m_ElementSize);
 
 		g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPC, l_opaquePassGPUData.mesh);
 
@@ -102,7 +102,7 @@ bool OpaquePass::PrepareCommandList()
 		l_offset++;
 	}
 
-	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPC, 0);
+	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPC);
 
 	return true;
 }
