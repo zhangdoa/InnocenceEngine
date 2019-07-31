@@ -3,6 +3,7 @@
 
 namespace FinalBlendPass
 {
+	bool Setup();
 	bool Initialize();
 	bool PrepareCommandList();
 

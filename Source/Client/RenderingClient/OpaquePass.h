@@ -3,9 +3,10 @@
 
 namespace OpaquePass
 {
+	bool Setup();
 	bool Initialize();
 	bool PrepareCommandList();
 
-	RenderPassDataComponent* getRPC();
-	ShaderProgramComponent* getSPC();
+	RenderPassDataComponent* GetRPDC();
+	ShaderProgramComponent* GetSPC();
 };

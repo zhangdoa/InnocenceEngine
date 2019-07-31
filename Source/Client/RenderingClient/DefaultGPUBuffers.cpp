@@ -16,6 +16,11 @@ namespace DefaultGPUBuffers
 	GPUBufferDataComponent* m_SkyGBDC;
 }
 
+bool DefaultGPUBuffers::Setup()
+{
+	return true;
+}
+
 bool DefaultGPUBuffers::Initialize()
 {
 	auto l_RenderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();

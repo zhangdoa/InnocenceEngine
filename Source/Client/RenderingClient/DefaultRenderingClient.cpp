@@ -6,6 +6,11 @@
 
 bool DefaultRenderingClient::Setup()
 {
+	DefaultGPUBuffers::Setup();
+	OpaquePass::Setup();
+	LightPass::Setup();
+	FinalBlendPass::Setup();
+
 	return true;
 }
 
