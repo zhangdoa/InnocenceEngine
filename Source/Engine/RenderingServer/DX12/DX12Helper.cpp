@@ -887,7 +887,7 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* 
 	l_PSO->m_PSODesc.RasterizerState = l_PSO->m_RasterizerDesc;
 	l_PSO->m_PSODesc.BlendState = l_PSO->m_BlendDesc;
 	l_PSO->m_PSODesc.SampleMask = UINT_MAX;
-	l_PSO->m_PSODesc.PrimitiveTopologyType = l_PSO->m_PrimitiveTopology;
+	l_PSO->m_PSODesc.PrimitiveTopologyType = l_PSO->m_PrimitiveTopologyType;
 	l_PSO->m_PSODesc.SampleDesc.Count = 1;
 
 	auto l_HResult = device->CreateGraphicsPipelineState(&l_PSO->m_PSODesc, IID_PPV_ARGS(&l_PSO->m_PSO));
@@ -1120,7 +1120,30 @@ D3D12_BLEND_OP DX12Helper::GetBlendOperation(BlendOperation blendOperation)
 	return l_result;
 }
 
-D3D12_PRIMITIVE_TOPOLOGY_TYPE DX12Helper::GetPrimitiveTopology(PrimitiveTopology primitiveTopology)
+D3D12_PRIMITIVE_TOPOLOGY DX12Helper::GetPrimitiveTopology(PrimitiveTopology primitiveTopology)
+{
+	D3D12_PRIMITIVE_TOPOLOGY l_result;
+
+	switch (primitiveTopology)
+	{
+	case PrimitiveTopology::Point: l_result = D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
+		break;
+	case PrimitiveTopology::Line: l_result = D3D_PRIMITIVE_TOPOLOGY_LINELIST;
+		break;
+	case PrimitiveTopology::TriangleList: l_result = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		break;
+	case PrimitiveTopology::TriangleStrip: l_result = D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+		break;
+	case PrimitiveTopology::Patch: l_result = D3D_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST; // @TODO: Don't treat Patch as a primitive topology type due to the API differences
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+D3D12_PRIMITIVE_TOPOLOGY_TYPE DX12Helper::GetPrimitiveTopologyType(PrimitiveTopology primitiveTopology)
 {
 	D3D12_PRIMITIVE_TOPOLOGY_TYPE l_result;
 
@@ -1232,6 +1255,7 @@ bool DX12Helper::GenerateRasterizerStateDesc(RasterizerDesc rasterizerDesc, DX12
 	PSO->m_RasterizerDesc.AntialiasedLineEnable = true;
 
 	PSO->m_PrimitiveTopology = GetPrimitiveTopology(rasterizerDesc.m_PrimitiveTopology);
+	PSO->m_PrimitiveTopologyType = GetPrimitiveTopologyType(rasterizerDesc.m_PrimitiveTopology);
 
 	return true;
 }
@@ -1334,4 +1358,4 @@ bool DX12Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderType shaderType, const S
 
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", shaderFilePath.c_str(), " has been compiled.");
 	return true;
-	}
+}

@@ -451,23 +451,23 @@ DX12PipelineStateObject* addPSO()
 
 DX12CommandQueue* addCommandQueue()
 {
-	auto l_CommandQueueRawPtr = m_CommandQueuePool->Spawn();
-	auto l_CommandQueue = new(l_CommandQueueRawPtr)DX12CommandQueue();
-	return l_CommandQueue;
+	auto l_commandQueueRawPtr = m_CommandQueuePool->Spawn();
+	auto l_commandQueue = new(l_commandQueueRawPtr)DX12CommandQueue();
+	return l_commandQueue;
 }
 
 DX12CommandList* addCommandList()
 {
-	auto l_CommandListRawPtr = m_CommandListPool->Spawn();
-	auto l_CommandList = new(l_CommandListRawPtr)DX12CommandList();
-	return l_CommandList;
+	auto l_commandListRawPtr = m_CommandListPool->Spawn();
+	auto l_commandList = new(l_commandListRawPtr)DX12CommandList();
+	return l_commandList;
 }
 
 DX12Fence* addFence()
 {
-	auto l_FenceRawPtr = m_FencePool->Spawn();
-	auto l_Fence = new(l_FenceRawPtr)DX12Fence();
-	return l_Fence;
+	auto l_fenceRawPtr = m_FencePool->Spawn();
+	auto l_fence = new(l_fenceRawPtr)DX12Fence();
+	return l_fence;
 }
 
 bool DX12RenderingServer::Setup()
@@ -939,6 +939,8 @@ bool DX12RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 
 	l_result &= CreatePSO(l_rhs, m_device);
 
+	l_result &= CreateSampler(l_rhs);
+
 	l_rhs->m_CommandQueue = addCommandQueue();
 
 	l_result &= CreateCommandQueue(l_rhs, m_device);
@@ -999,6 +1001,32 @@ bool DX12RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 
 bool DX12RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX12GPUBufferDataComponent*>(rhs);
+
+	D3D12_RESOURCE_STATES l_resourceState = l_rhs->m_GPUBufferAccessibility == GPUBufferAccessibility::ReadOnly ? D3D12_RESOURCE_STATE_GENERIC_READ : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+
+	auto l_HResult = m_device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(l_rhs->m_ElementSize * l_rhs->m_ElementCount),
+		l_resourceState,
+		nullptr,
+		IID_PPV_ARGS(&l_rhs->m_ResourceHandle));
+
+	if (FAILED(l_HResult))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create GPU buffer!");
+		return false;
+	}
+
+	CD3DX12_RANGE m_ConstantBufferReadRange(0, 0);
+	l_rhs->m_ResourceHandle->Map(0, &m_ConstantBufferReadRange, &l_rhs->m_MappedMemory);
+
+	if (l_rhs->m_InitialData)
+	{
+		UploadGPUBufferDataComponent(l_rhs, l_rhs->m_InitialData);
+	}
+
 	return true;
 }
 
@@ -1034,21 +1062,75 @@ bool DX12RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * 
 
 bool DX12RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue)
 {
+	auto l_rhs = reinterpret_cast<DX12GPUBufferDataComponent*>(rhs);
+
+	std::memcpy(l_rhs->m_MappedMemory, GPUBufferValue, l_rhs->m_TotalSize);
+
 	return true;
 }
 
 bool DX12RenderingServer::CommandListBegin(RenderPassDataComponent * rhs, size_t frameIndex)
 {
+	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[frameIndex]);
+	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(l_rhs->m_PipelineStateObject);
+
+	l_rhs->m_CurrentFrame = frameIndex;
+	l_rhs->m_CommandAllocators[frameIndex]->Reset();
+	l_commandList->m_CommandList->Reset(l_rhs->m_CommandAllocators[frameIndex], l_PSO->m_PSO);
+
 	return true;
 }
 
 bool DX12RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(l_rhs->m_PipelineStateObject);
+
+	ID3D12DescriptorHeap* l_heaps[] = { m_CSUHeap, m_samplerHeap };
+
+	l_commandList->m_CommandList->SetDescriptorHeaps(2, l_heaps);
+
+	l_commandList->m_CommandList->SetGraphicsRootSignature(l_rhs->m_RootSignature);
+	l_commandList->m_CommandList->RSSetViewports(1, &l_PSO->m_Viewport);
+	l_commandList->m_CommandList->RSSetScissorRects(1, &l_PSO->m_Scissor);
+
+	l_commandList->m_CommandList->SetPipelineState(l_PSO->m_PSO);
+
+	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	{
+		l_commandList->m_CommandList->OMSetRenderTargets(1, &l_rhs->m_RTVDescriptorCPUHandles[l_rhs->m_CurrentFrame], FALSE, &l_rhs->m_DSVDescriptorCPUHandle);
+	}
+	else
+	{
+		l_commandList->m_CommandList->OMSetRenderTargets((unsigned int)l_rhs->m_RenderPassDesc.m_RenderTargetCount, &l_rhs->m_RTVDescriptorCPUHandles[0], FALSE, &l_rhs->m_DSVDescriptorCPUHandle);
+	}
+
 	return true;
 }
 
 bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+
+	const float l_clearColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	{
+		l_commandList->m_CommandList->ClearRenderTargetView(l_rhs->m_RTVDescriptorCPUHandles[l_rhs->m_CurrentFrame], l_clearColor, 0, nullptr);
+	}
+	else
+	{
+		for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+		{
+			l_commandList->m_CommandList->ClearRenderTargetView(l_rhs->m_RTVDescriptorCPUHandles[i], l_clearColor, 0, nullptr);
+		}
+	}
+
+	l_commandList->m_CommandList->ClearDepthStencilView(l_rhs->m_DSVDescriptorCPUHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0x00, 0, nullptr);
+
 	return true;
 }
 
@@ -1059,6 +1141,12 @@ bool DX12RenderingServer::ActivateResourceBinder(ShaderType shaderType, IResourc
 
 bool DX12RenderingServer::BindGPUBufferDataComponent(RenderPassDataComponent * renderPass, GPUBufferDataComponent * GPUBuffer, ShaderType shaderType, GPUBufferAccessibility accessibility, size_t startOffset, size_t range)
 {
+	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
+	auto l_GPUBuffer = reinterpret_cast<DX12GPUBufferDataComponent*>(GPUBuffer);
+
+	l_commandList->m_CommandList->SetGraphicsRootConstantBufferView((unsigned int)l_GPUBuffer->m_BindingPoint, l_GPUBuffer->m_ResourceHandle->GetGPUVirtualAddress() + startOffset * range);
+
 	return true;
 }
 
@@ -1089,16 +1177,48 @@ bool DX12RenderingServer::UnbindMaterialDataComponent(ShaderType shaderType, Mat
 
 bool DX12RenderingServer::CommandListEnd(RenderPassDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+
+	l_commandList->m_CommandList->Close();
+
 	return true;
 }
 
 bool DX12RenderingServer::ExecuteCommandList(RenderPassDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
+	auto l_commandQueue = reinterpret_cast<DX12CommandQueue*>(l_rhs->m_CommandQueue);
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+	auto l_fence = reinterpret_cast<DX12Fence*>(l_rhs->m_Fences[l_rhs->m_CurrentFrame]);
+
+	ID3D12CommandList* l_commandLists[] = { l_commandList->m_CommandList };
+
+	l_commandQueue->m_CommandQueue->ExecuteCommandLists(1, l_commandLists);
+
+	// Schedule a Signal command in the queue.
+	const UINT64 l_finishedFenceValue = l_fence->m_FenceStatus + 1;
+	l_commandQueue->m_CommandQueue->Signal(l_fence->m_Fence, l_finishedFenceValue);
+
 	return true;
 }
 
 bool DX12RenderingServer::WaitForFrame(RenderPassDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
+	auto l_fence = reinterpret_cast<DX12Fence*>(l_rhs->m_Fences[l_rhs->m_CurrentFrame]);
+
+	const UINT64 l_currentFenceValue = l_fence->m_Fence->GetCompletedValue();
+	const UINT64 l_expectedFenceValue = l_fence->m_FenceStatus + 1;
+
+	if (l_currentFenceValue < l_expectedFenceValue)
+	{
+		l_fence->m_Fence->SetEventOnCompletion(l_expectedFenceValue, l_fence->m_FenceEvent);
+		WaitForSingleObjectEx(l_fence->m_FenceEvent, INFINITE, FALSE);
+	}
+
+	l_fence->m_FenceStatus = l_expectedFenceValue;
+
 	return true;
 }
 
@@ -1196,4 +1316,43 @@ DX12SRV DX12RenderingServer::CreateSRV(TextureDataComponent * rhs)
 	m_device->CreateShaderResourceView(l_rhs->m_ResourceHandle, &l_result.SRVDesc, l_result.CPUHandle);
 
 	return l_result;
+}
+
+DX12CBV DX12RenderingServer::CreateCBV(GPUBufferDataComponent* rhs)
+{
+	auto l_rhs = reinterpret_cast<DX12GPUBufferDataComponent*>(rhs);
+
+	DX12CBV l_result;
+
+	l_result.CBVDesc.BufferLocation = l_rhs->m_ResourceHandle->GetGPUVirtualAddress();
+	l_result.CBVDesc.SizeInBytes = (unsigned int)l_rhs->m_ElementSize;
+
+	l_result.CPUHandle = m_currentCSUCPUHandle;
+	l_result.GPUHandle = m_currentCSUGPUHandle;
+
+	auto l_CSUDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	m_currentCSUCPUHandle.ptr += l_CSUDescSize;
+	m_currentCSUGPUHandle.ptr += l_CSUDescSize;
+
+	m_device->CreateConstantBufferView(&l_result.CBVDesc, l_result.CPUHandle);
+
+	return l_result;
+}
+
+bool DX12RenderingServer::CreateSampler(RenderPassDataComponent* rhs)
+{
+	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(rhs->m_PipelineStateObject);
+
+	l_PSO->m_SamplerCPUHandle = m_currentSamplerCPUHandle;
+	l_PSO->m_SamplerGPUHandle = m_currentSamplerGPUHandle;
+
+	m_device->CreateSampler(&l_PSO->m_SamplerDesc, l_PSO->m_SamplerCPUHandle);
+
+	auto l_samplerDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+
+	m_currentSamplerCPUHandle.ptr += l_samplerDescSize;
+	m_currentSamplerGPUHandle.ptr += l_samplerDescSize;
+
+	return true;
 }

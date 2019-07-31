@@ -64,4 +64,6 @@ public:
 	virtual bool BakeGIData() override;
 
 	DX12SRV CreateSRV(TextureDataComponent * rhs);
+	DX12CBV CreateCBV(GPUBufferDataComponent* rhs);
+	bool CreateSampler(RenderPassDataComponent* rhs);
 };

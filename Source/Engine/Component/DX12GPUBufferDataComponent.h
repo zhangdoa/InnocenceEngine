@@ -5,4 +5,7 @@
 class DX12GPUBufferDataComponent : public GPUBufferDataComponent
 {
 public:
+	ID3D12Resource* m_ResourceHandle = 0;
+	void* m_MappedMemory = 0;
+	IResourceBinder* m_ResourceBinder = 0;
 };

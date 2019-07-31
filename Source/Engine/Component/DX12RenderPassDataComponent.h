@@ -6,6 +6,7 @@ class DX12ResourceBinder : public IResourceBinder
 {
 public:
 	DX12SRV m_SRV;
+	DX12CBV m_CBV;
 };
 
 class DX12PipelineStateObject : public IPipelineStateObject
@@ -14,7 +15,8 @@ public:
 	D3D12_INPUT_ELEMENT_DESC m_InputLayoutDesc = {};
 	D3D12_DEPTH_STENCIL_DESC m_DepthStencilDesc = {};
 	D3D12_BLEND_DESC m_BlendDesc = {};
-	D3D12_PRIMITIVE_TOPOLOGY_TYPE m_PrimitiveTopology;
+	D3D12_PRIMITIVE_TOPOLOGY m_PrimitiveTopology;
+	D3D12_PRIMITIVE_TOPOLOGY_TYPE m_PrimitiveTopologyType;
 	D3D12_RASTERIZER_DESC m_RasterizerDesc = {};
 	D3D12_VIEWPORT m_Viewport = {};
 	D3D12_RECT m_Scissor = {};
