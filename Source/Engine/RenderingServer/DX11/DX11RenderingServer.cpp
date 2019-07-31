@@ -1289,25 +1289,37 @@ bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * ren
 
 bool DX11RenderingServer::BindMaterialDataComponent(RenderPassDataComponent * renderPass, ShaderType shaderType, MaterialDataComponent * rhs)
 {
-	if (rhs->m_normalTexture)
+	if (rhs->m_objectStatus == ObjectStatus::Activated)
 	{
-		BindSRV(shaderType, 0, reinterpret_cast<DX11TextureDataComponent*>(rhs->m_normalTexture)->m_SRV);
+		if (rhs->m_normalTexture)
+		{
+			BindSRV(shaderType, 0, reinterpret_cast<DX11TextureDataComponent*>(rhs->m_normalTexture)->m_SRV);
+		}
+		if (rhs->m_albedoTexture)
+		{
+			BindSRV(shaderType, 1, reinterpret_cast<DX11TextureDataComponent*>(rhs->m_albedoTexture)->m_SRV);
+		}
+		if (rhs->m_metallicTexture)
+		{
+			BindSRV(shaderType, 2, reinterpret_cast<DX11TextureDataComponent*>(rhs->m_metallicTexture)->m_SRV);
+		}
+		if (rhs->m_roughnessTexture)
+		{
+			BindSRV(shaderType, 3, reinterpret_cast<DX11TextureDataComponent*>(rhs->m_roughnessTexture)->m_SRV);
+		}
+		if (rhs->m_aoTexture)
+		{
+			BindSRV(shaderType, 4, reinterpret_cast<DX11TextureDataComponent*>(rhs->m_aoTexture)->m_SRV);
+		}
 	}
-	if (rhs->m_albedoTexture)
+	else
 	{
-		BindSRV(shaderType, 1, reinterpret_cast<DX11TextureDataComponent*>(rhs->m_albedoTexture)->m_SRV);
-	}
-	if (rhs->m_metallicTexture)
-	{
-		BindSRV(shaderType, 2, reinterpret_cast<DX11TextureDataComponent*>(rhs->m_metallicTexture)->m_SRV);
-	}
-	if (rhs->m_roughnessTexture)
-	{
-		BindSRV(shaderType, 3, reinterpret_cast<DX11TextureDataComponent*>(rhs->m_roughnessTexture)->m_SRV);
-	}
-	if (rhs->m_aoTexture)
-	{
-		BindSRV(shaderType, 4, reinterpret_cast<DX11TextureDataComponent*>(rhs->m_aoTexture)->m_SRV);
+		auto l_material = reinterpret_cast<DX11MaterialDataComponent*>(g_pModuleManager->getRenderingFrontend()->getDefaultMaterialDataComponent());
+		BindSRV(shaderType, 0, reinterpret_cast<DX11TextureDataComponent*>(l_material->m_normalTexture)->m_SRV);
+		BindSRV(shaderType, 1, reinterpret_cast<DX11TextureDataComponent*>(l_material->m_albedoTexture)->m_SRV);
+		BindSRV(shaderType, 2, reinterpret_cast<DX11TextureDataComponent*>(l_material->m_metallicTexture)->m_SRV);
+		BindSRV(shaderType, 3, reinterpret_cast<DX11TextureDataComponent*>(l_material->m_roughnessTexture)->m_SRV);
+		BindSRV(shaderType, 4, reinterpret_cast<DX11TextureDataComponent*>(l_material->m_aoTexture)->m_SRV);
 	}
 
 	return true;

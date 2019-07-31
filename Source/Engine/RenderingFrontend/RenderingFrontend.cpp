@@ -127,17 +127,19 @@ namespace InnoRenderingFrontendNS
 	TextureDataComponent* m_iconTemplate_PointLight;
 	TextureDataComponent* m_iconTemplate_SphereLight;
 
-	MeshDataComponent* m_unitLineMDC;
-	MeshDataComponent* m_unitQuadMDC;
-	MeshDataComponent* m_unitCubeMDC;
-	MeshDataComponent* m_unitSphereMDC;
-	MeshDataComponent* m_terrainMDC;
+	MeshDataComponent* m_unitLineMesh;
+	MeshDataComponent* m_unitQuadMesh;
+	MeshDataComponent* m_unitCubeMesh;
+	MeshDataComponent* m_unitSphereMesh;
+	MeshDataComponent* m_terrainMesh;
 
-	TextureDataComponent* m_basicNormalTDC;
-	TextureDataComponent* m_basicAlbedoTDC;
-	TextureDataComponent* m_basicMetallicTDC;
-	TextureDataComponent* m_basicRoughnessTDC;
-	TextureDataComponent* m_basicAOTDC;
+	TextureDataComponent* m_basicNormalTexture;
+	TextureDataComponent* m_basicAlbedoTexture;
+	TextureDataComponent* m_basicMetallicTexture;
+	TextureDataComponent* m_basicRoughnessTexture;
+	TextureDataComponent* m_basicAOTexture;
+
+	MaterialDataComponent* m_basicMaterial;
 
 	bool setup(IRenderingServer* renderingServer);
 	bool loadDefaultAssets();
@@ -279,11 +281,18 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 
 bool InnoRenderingFrontendNS::loadDefaultAssets()
 {
-	m_basicNormalTDC = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_normal.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
-	m_basicAlbedoTDC = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_albedo.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ALBEDO);
-	m_basicMetallicTDC = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_metallic.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::METALLIC);
-	m_basicRoughnessTDC = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_roughness.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ROUGHNESS);
-	m_basicAOTDC = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_ao.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::AMBIENT_OCCLUSION);
+	m_basicNormalTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_normal.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	m_basicAlbedoTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_albedo.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ALBEDO);
+	m_basicMetallicTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_metallic.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::METALLIC);
+	m_basicRoughnessTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_roughness.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ROUGHNESS);
+	m_basicAOTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_ao.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::AMBIENT_OCCLUSION);
+
+	m_basicMaterial = m_renderingServer->AddMaterialDataComponent("BasicMaterial/");
+	m_basicMaterial->m_normalTexture = m_basicNormalTexture;
+	m_basicMaterial->m_albedoTexture = m_basicAlbedoTexture;
+	m_basicMaterial->m_metallicTexture = m_basicMetallicTexture;
+	m_basicMaterial->m_roughnessTexture = m_basicRoughnessTexture;
+	m_basicMaterial->m_aoTexture = m_basicAOTexture;
 
 	m_iconTemplate_OBJ = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_OBJ.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 	m_iconTemplate_PNG = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_PNG.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
@@ -294,51 +303,51 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 	m_iconTemplate_PointLight = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_PointLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 	m_iconTemplate_SphereLight = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_SphereLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
 
-	m_unitLineMDC = m_renderingServer->AddMeshDataComponent("UnitLineMesh/");
-	g_pModuleManager->getAssetSystem()->addUnitLine(*m_unitLineMDC);
-	m_unitLineMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
-	m_unitLineMDC->m_meshShapeType = MeshShapeType::LINE;
-	m_unitLineMDC->m_objectStatus = ObjectStatus::Created;
-	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMDC);
+	m_unitLineMesh = m_renderingServer->AddMeshDataComponent("UnitLineMesh/");
+	g_pModuleManager->getAssetSystem()->addUnitLine(*m_unitLineMesh);
+	m_unitLineMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+	m_unitLineMesh->m_meshShapeType = MeshShapeType::LINE;
+	m_unitLineMesh->m_objectStatus = ObjectStatus::Created;
+	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMesh);
 
-	m_unitQuadMDC = m_renderingServer->AddMeshDataComponent("UnitQuadMesh/");
-	g_pModuleManager->getAssetSystem()->addUnitQuad(*m_unitQuadMDC);
-	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	m_unitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
-	m_unitQuadMDC->m_objectStatus = ObjectStatus::Created;
-	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMDC);
+	m_unitQuadMesh = m_renderingServer->AddMeshDataComponent("UnitQuadMesh/");
+	g_pModuleManager->getAssetSystem()->addUnitQuad(*m_unitQuadMesh);
+	m_unitQuadMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_unitQuadMesh->m_meshShapeType = MeshShapeType::QUAD;
+	m_unitQuadMesh->m_objectStatus = ObjectStatus::Created;
+	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMesh);
 
-	m_unitCubeMDC = m_renderingServer->AddMeshDataComponent("UnitCubeMesh/");
-	g_pModuleManager->getAssetSystem()->addUnitCube(*m_unitCubeMDC);
-	m_unitCubeMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	m_unitCubeMDC->m_meshShapeType = MeshShapeType::CUBE;
-	m_unitCubeMDC->m_objectStatus = ObjectStatus::Created;
-	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMDC);
+	m_unitCubeMesh = m_renderingServer->AddMeshDataComponent("UnitCubeMesh/");
+	g_pModuleManager->getAssetSystem()->addUnitCube(*m_unitCubeMesh);
+	m_unitCubeMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_unitCubeMesh->m_meshShapeType = MeshShapeType::CUBE;
+	m_unitCubeMesh->m_objectStatus = ObjectStatus::Created;
+	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMesh);
 
-	m_unitSphereMDC = m_renderingServer->AddMeshDataComponent("UnitSphereMesh/");
-	g_pModuleManager->getAssetSystem()->addUnitSphere(*m_unitSphereMDC);
-	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	m_unitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
-	m_unitSphereMDC->m_objectStatus = ObjectStatus::Created;
-	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMDC);
+	m_unitSphereMesh = m_renderingServer->AddMeshDataComponent("UnitSphereMesh/");
+	g_pModuleManager->getAssetSystem()->addUnitSphere(*m_unitSphereMesh);
+	m_unitSphereMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_unitSphereMesh->m_meshShapeType = MeshShapeType::SPHERE;
+	m_unitSphereMesh->m_objectStatus = ObjectStatus::Created;
+	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMesh);
 
-	m_terrainMDC = m_renderingServer->AddMeshDataComponent("TerrainMesh/");
-	g_pModuleManager->getAssetSystem()->addTerrain(*m_terrainMDC);
-	m_terrainMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	m_terrainMDC->m_objectStatus = ObjectStatus::Created;
-	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMDC);
+	m_terrainMesh = m_renderingServer->AddMeshDataComponent("TerrainMesh/");
+	g_pModuleManager->getAssetSystem()->addTerrain(*m_terrainMesh);
+	m_terrainMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_terrainMesh->m_objectStatus = ObjectStatus::Created;
+	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMesh);
 
-	m_renderingServer->InitializeMeshDataComponent(m_unitLineMDC);
-	m_renderingServer->InitializeMeshDataComponent(m_unitQuadMDC);
-	m_renderingServer->InitializeMeshDataComponent(m_unitCubeMDC);
-	m_renderingServer->InitializeMeshDataComponent(m_unitSphereMDC);
-	m_renderingServer->InitializeMeshDataComponent(m_terrainMDC);
+	m_renderingServer->InitializeMeshDataComponent(m_unitLineMesh);
+	m_renderingServer->InitializeMeshDataComponent(m_unitQuadMesh);
+	m_renderingServer->InitializeMeshDataComponent(m_unitCubeMesh);
+	m_renderingServer->InitializeMeshDataComponent(m_unitSphereMesh);
+	m_renderingServer->InitializeMeshDataComponent(m_terrainMesh);
 
-	m_renderingServer->InitializeTextureDataComponent(m_basicNormalTDC);
-	m_renderingServer->InitializeTextureDataComponent(m_basicAlbedoTDC);
-	m_renderingServer->InitializeTextureDataComponent(m_basicMetallicTDC);
-	m_renderingServer->InitializeTextureDataComponent(m_basicRoughnessTDC);
-	m_renderingServer->InitializeTextureDataComponent(m_basicAOTDC);
+	m_renderingServer->InitializeTextureDataComponent(m_basicNormalTexture);
+	m_renderingServer->InitializeTextureDataComponent(m_basicAlbedoTexture);
+	m_renderingServer->InitializeTextureDataComponent(m_basicMetallicTexture);
+	m_renderingServer->InitializeTextureDataComponent(m_basicRoughnessTexture);
+	m_renderingServer->InitializeTextureDataComponent(m_basicAOTexture);
 
 	m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_OBJ);
 	m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_PNG);
@@ -348,6 +357,8 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 	m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_DirectionalLight);
 	m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_PointLight);
 	m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_SphereLight);
+
+	m_renderingServer->InitializeMaterialDataComponent(m_basicMaterial);
 
 	return true;
 }
@@ -721,30 +732,30 @@ bool InnoRenderingFrontendNS::update()
 
 		while (m_uninitializedMeshes.size() > 0)
 		{
-			MeshDataComponent* l_MDC;
-			m_uninitializedMeshes.tryPop(l_MDC);
+			MeshDataComponent* l_Mesh;
+			m_uninitializedMeshes.tryPop(l_Mesh);
 
-			if (l_MDC)
+			if (l_Mesh)
 			{
-				auto l_result = m_renderingServer->InitializeMeshDataComponent(l_MDC);
+				auto l_result = m_renderingServer->InitializeMeshDataComponent(l_Mesh);
 				if (!l_result)
 				{
-					g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "InnoRenderingFrontend: can't initialize MeshDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
+					g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "InnoRenderingFrontend: can't initialize MeshDataComponent for " + std::string(l_Mesh->m_parentEntity->m_entityName.c_str()) + "!");
 				}
 			}
 		}
 
 		while (m_uninitializedMaterials.size() > 0)
 		{
-			MaterialDataComponent* l_MDC;
-			m_uninitializedMaterials.tryPop(l_MDC);
+			MaterialDataComponent* l_Mesh;
+			m_uninitializedMaterials.tryPop(l_Mesh);
 
-			if (l_MDC)
+			if (l_Mesh)
 			{
-				auto l_result = m_renderingServer->InitializeMaterialDataComponent(l_MDC);
+				auto l_result = m_renderingServer->InitializeMaterialDataComponent(l_Mesh);
 				if (!l_result)
 				{
-					g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "InnoRenderingFrontend: can't initialize MaterialDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
+					g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "InnoRenderingFrontend: can't initialize MaterialDataComponent for " + std::string(l_Mesh->m_parentEntity->m_entityName.c_str()) + "!");
 				}
 			}
 		}
@@ -839,15 +850,15 @@ MeshDataComponent * InnoRenderingFrontend::getMeshDataComponent(MeshShapeType me
 	switch (meshShapeType)
 	{
 	case MeshShapeType::LINE:
-		return InnoRenderingFrontendNS::m_unitLineMDC; break;
+		return InnoRenderingFrontendNS::m_unitLineMesh; break;
 	case MeshShapeType::QUAD:
-		return InnoRenderingFrontendNS::m_unitQuadMDC; break;
+		return InnoRenderingFrontendNS::m_unitQuadMesh; break;
 	case MeshShapeType::CUBE:
-		return InnoRenderingFrontendNS::m_unitCubeMDC; break;
+		return InnoRenderingFrontendNS::m_unitCubeMesh; break;
 	case MeshShapeType::SPHERE:
-		return InnoRenderingFrontendNS::m_unitSphereMDC; break;
+		return InnoRenderingFrontendNS::m_unitSphereMesh; break;
 	case MeshShapeType::TERRAIN:
-		return InnoRenderingFrontendNS::m_terrainMDC; break;
+		return InnoRenderingFrontendNS::m_terrainMesh; break;
 	case MeshShapeType::CUSTOM:
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingFrontend: wrong MeshShapeType!");
 		return nullptr; break;
@@ -863,15 +874,15 @@ TextureDataComponent * InnoRenderingFrontend::getTextureDataComponent(TextureUsa
 	case TextureUsageType::INVISIBLE:
 		return nullptr; break;
 	case TextureUsageType::NORMAL:
-		return InnoRenderingFrontendNS::m_basicNormalTDC; break;
+		return InnoRenderingFrontendNS::m_basicNormalTexture; break;
 	case TextureUsageType::ALBEDO:
-		return InnoRenderingFrontendNS::m_basicAlbedoTDC; break;
+		return InnoRenderingFrontendNS::m_basicAlbedoTexture; break;
 	case TextureUsageType::METALLIC:
-		return InnoRenderingFrontendNS::m_basicMetallicTDC; break;
+		return InnoRenderingFrontendNS::m_basicMetallicTexture; break;
 	case TextureUsageType::ROUGHNESS:
-		return InnoRenderingFrontendNS::m_basicRoughnessTDC; break;
+		return InnoRenderingFrontendNS::m_basicRoughnessTexture; break;
 	case TextureUsageType::AMBIENT_OCCLUSION:
-		return InnoRenderingFrontendNS::m_basicAOTDC; break;
+		return InnoRenderingFrontendNS::m_basicAOTexture; break;
 	case TextureUsageType::COLOR_ATTACHMENT:
 		return nullptr; break;
 	default:
@@ -909,6 +920,11 @@ TextureDataComponent * InnoRenderingFrontend::getTextureDataComponent(WorldEdito
 	default:
 		return nullptr; break;
 	}
+}
+
+MaterialDataComponent * InnoRenderingFrontend::getDefaultMaterialDataComponent()
+{
+	return InnoRenderingFrontendNS::m_basicMaterial;
 }
 
 bool InnoRenderingFrontend::registerMeshDataComponent(MeshDataComponent * rhs)

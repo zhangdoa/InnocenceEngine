@@ -769,25 +769,37 @@ bool GLRenderingServer::BindShaderProgramComponent(ShaderProgramComponent * rhs)
 
 bool GLRenderingServer::BindMaterialDataComponent(RenderPassDataComponent * renderPass, ShaderType shaderType, MaterialDataComponent * rhs)
 {
-	if (rhs->m_normalTexture)
+	if (rhs->m_objectStatus == ObjectStatus::Activated)
 	{
-		ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(rhs->m_normalTexture), 0);
+		if (rhs->m_normalTexture)
+		{
+			ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(rhs->m_normalTexture), 0);
+		}
+		if (rhs->m_albedoTexture)
+		{
+			ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(rhs->m_albedoTexture), 1);
+		}
+		if (rhs->m_metallicTexture)
+		{
+			ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(rhs->m_metallicTexture), 2);
+		}
+		if (rhs->m_roughnessTexture)
+		{
+			ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(rhs->m_roughnessTexture), 3);
+		}
+		if (rhs->m_aoTexture)
+		{
+			ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(rhs->m_aoTexture), 4);
+		}
 	}
-	if (rhs->m_albedoTexture)
+	else
 	{
-		ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(rhs->m_albedoTexture), 1);
-	}
-	if (rhs->m_metallicTexture)
-	{
-		ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(rhs->m_metallicTexture), 2);
-	}
-	if (rhs->m_roughnessTexture)
-	{
-		ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(rhs->m_roughnessTexture), 3);
-	}
-	if (rhs->m_aoTexture)
-	{
-		ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(rhs->m_aoTexture), 4);
+		auto l_material = reinterpret_cast<GLMaterialDataComponent*>(g_pModuleManager->getRenderingFrontend()->getDefaultMaterialDataComponent());
+		ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_material->m_normalTexture), 0);
+		ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_material->m_albedoTexture), 1);
+		ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_material->m_metallicTexture), 2);
+		ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_material->m_roughnessTexture), 3);
+		ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_material->m_aoTexture), 4);
 	}
 
 	return true;

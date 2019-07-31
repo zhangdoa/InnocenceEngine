@@ -1324,9 +1324,21 @@ bool DX12RenderingServer::BindMaterialDataComponent(RenderPassDataComponent * re
 {
 	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
-	auto l_material = reinterpret_cast<DX12MaterialDataComponent*>(rhs);
 
-	l_commandList->m_CommandList->SetGraphicsRootDescriptorTable(0, l_material->m_SRVs[0].GPUHandle);
+	if (rhs->m_objectStatus == ObjectStatus::Activated)
+	{
+		auto l_material = reinterpret_cast<DX12MaterialDataComponent*>(rhs);
+
+		if (l_material->m_SRVs.size() > 0)
+		{
+			l_commandList->m_CommandList->SetGraphicsRootDescriptorTable(0, l_material->m_SRVs[0].GPUHandle);
+		}
+	}
+	else
+	{
+		auto l_material = reinterpret_cast<DX12MaterialDataComponent*>(g_pModuleManager->getRenderingFrontend()->getDefaultMaterialDataComponent());
+		l_commandList->m_CommandList->SetGraphicsRootDescriptorTable(0, l_material->m_SRVs[0].GPUHandle);
+	}
 
 	return true;
 }

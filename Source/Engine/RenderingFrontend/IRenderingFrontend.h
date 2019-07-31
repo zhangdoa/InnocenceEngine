@@ -62,6 +62,7 @@ public:
 	virtual TextureDataComponent* getTextureDataComponent(TextureUsageType textureUsageType) = 0;
 	virtual TextureDataComponent* getTextureDataComponent(FileExplorerIconType iconType) = 0;
 	virtual TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) = 0;
+	virtual MaterialDataComponent* getDefaultMaterialDataComponent() = 0;
 
 	virtual TVec2<unsigned int> getScreenResolution() = 0;
 	virtual bool setScreenResolution(TVec2<unsigned int> screenResolution) = 0;

@@ -28,6 +28,7 @@ public:
 	TextureDataComponent* getTextureDataComponent(TextureUsageType textureUsageType) override;
 	TextureDataComponent* getTextureDataComponent(FileExplorerIconType iconType) override;
 	TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) override;
+	MaterialDataComponent* getDefaultMaterialDataComponent() override;
 
 	TVec2<unsigned int> getScreenResolution() override;
 	bool setScreenResolution(TVec2<unsigned int> screenResolution) override;
