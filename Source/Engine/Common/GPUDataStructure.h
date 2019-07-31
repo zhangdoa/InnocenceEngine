@@ -24,7 +24,7 @@ struct alignas(16) SunGPUData
 	vec4 dir;
 	vec4 luminance;
 	mat4 r;
-	float padding[32];
+	float padding[8];
 };
 
 struct alignas(16) CSMGPUData
@@ -33,6 +33,7 @@ struct alignas(16) CSMGPUData
 	mat4 v;
 	vec4 AABBMax;
 	vec4 AABBMin;
+	float padding[16];
 };
 
 // w component of luminance is attenuationRadius
@@ -80,6 +81,7 @@ struct alignas(16) SkyGPUData
 	mat4 p_inv;
 	mat4 r_inv;
 	vec2 viewportSize;
+	float padding[30];
 };
 
 struct alignas(16) DispatchParamsGPUData
