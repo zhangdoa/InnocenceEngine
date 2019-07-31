@@ -28,25 +28,21 @@ namespace DX12RenderingServerNS
 	bool CreatePhysicalDevices();
 	bool CreateGlobalCommandQueue();
 	bool CreateGlobalCommandAllocator();
-
 	bool CreateGlobalCSUHeap();
 	bool CreateGlobalSamplerHeap();
-	bool CreateSwapChain();
-
-	DX12SRV createSRV(TextureDataComponent* rhs);
 
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
-	IObjectPool* m_MeshDataComponentPool;
-	IObjectPool* m_MaterialDataComponentPool;
-	IObjectPool* m_TextureDataComponentPool;
-	IObjectPool* m_RenderPassDataComponentPool;
-	IObjectPool* m_ResourcesBinderPool;
-	IObjectPool* m_PSOPool;
-	IObjectPool* m_CommandQueuePool;
-	IObjectPool* m_CommandListPool;
-	IObjectPool* m_FencePool;
-	IObjectPool* m_ShaderProgramComponentPool;
+	IObjectPool* m_MeshDataComponentPool = 0;
+	IObjectPool* m_MaterialDataComponentPool = 0;
+	IObjectPool* m_TextureDataComponentPool = 0;
+	IObjectPool* m_RenderPassDataComponentPool = 0;
+	IObjectPool* m_ResourcesBinderPool = 0;
+	IObjectPool* m_PSOPool = 0;
+	IObjectPool* m_CommandQueuePool = 0;
+	IObjectPool* m_CommandListPool = 0;
+	IObjectPool* m_FencePool = 0;
+	IObjectPool* m_ShaderProgramComponentPool = 0;
 
 	std::unordered_set<MeshDataComponent*> m_initializedMeshes;
 	std::unordered_set<TextureDataComponent*> m_initializedTextures;
@@ -54,7 +50,7 @@ namespace DX12RenderingServerNS
 
 	TVec2<unsigned int> m_refreshRate = TVec2<unsigned int>(0, 1);
 
-	int m_videoCardMemory;
+	int m_videoCardMemory = 0;
 	char m_videoCardDescription[128];
 
 	ID3D12Debug1* m_debugInterface = 0;
@@ -73,7 +69,8 @@ namespace DX12RenderingServerNS
 
 	DXGI_SWAP_CHAIN_DESC1 m_swapChainDesc = {};
 	IDXGISwapChain4* m_swapChain = 0;
-	std::vector<ID3D12Resource*> m_swapChainImages;
+	const unsigned int m_swapChainImageCount = 2;
+	std::vector<ID3D12Resource*> m_swapChainImages(m_swapChainImageCount);
 
 	ID3D12DescriptorHeap* m_CSUHeap = 0;
 	D3D12_DESCRIPTOR_HEAP_DESC m_CSUHeapDesc = {};
@@ -89,7 +86,7 @@ namespace DX12RenderingServerNS
 	D3D12_CPU_DESCRIPTOR_HANDLE m_currentSamplerCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_currentSamplerGPUHandle;
 
-	DX12RenderPassDataComponent* m_SwapChainRPDC;
+	DX12RenderPassDataComponent* m_SwapChainRPDC = 0;
 }
 
 bool DX12RenderingServerNS::CreateDebugCallback()
@@ -364,75 +361,6 @@ bool DX12RenderingServerNS::CreateGlobalSamplerHeap()
 	return true;
 }
 
-bool DX12RenderingServerNS::CreateSwapChain()
-{
-	auto l_imageCount = 2;
-	// create swap chain
-	// Set the swap chain to use double buffering.
-	m_swapChainDesc.BufferCount = l_imageCount;
-
-	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
-
-	// Set the width and height of the back buffer.
-	m_swapChainDesc.Width = (UINT)l_screenResolution.x;
-	m_swapChainDesc.Height = (UINT)l_screenResolution.y;
-
-	// Set regular 32-bit surface for the back buffer.
-	m_swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-
-	// Set the usage of the back buffer.
-	m_swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-
-	// Turn multisampling off.
-	m_swapChainDesc.SampleDesc.Count = 1;
-	m_swapChainDesc.SampleDesc.Quality = 0;
-
-	// Set to full screen or windowed mode.
-	// @TODO: finish this feature
-
-	// Discard the back buffer contents after presenting.
-	m_swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-
-	// Don't set the advanced flags.
-	m_swapChainDesc.Flags = 0;
-
-	//// Finally create the swap chain using the swap chain description.
-	//IDXGISwapChain1* l_swapChain1;
-	//auto l_hResult = m_factory->CreateSwapChainForHwnd(
-	//	DX12FinalBlendPass::getDX12RPC()->m_commandQueue,
-	//	WinWindowSystemComponent::get().m_hwnd,
-	//	&m_swapChainDesc,
-	//	nullptr,
-	//	nullptr,
-	//	&l_swapChain1);
-
-	//l_hResult = l_swapChain1->QueryInterface(IID_PPV_ARGS(&m_swapChain));
-
-	//if (FAILED(l_hResult))
-	//{
-	//	InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create swap chain!");
-	//	m_objectStatus = ObjectStatus::Suspended;
-	//	return false;
-	//}
-
-	//InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Swap chain has been created.");
-
-	//m_swapChainImages.resize(l_imageCount);
-
-	//// use device created swap chain textures
-	//for (size_t i = 0; i < l_imageCount; i++)
-	//{
-	//	auto l_result = m_swapChain->GetBuffer((unsigned int)i, IID_PPV_ARGS(&m_swapChainImages[i]));
-	//	if (FAILED(l_result))
-	//	{
-	//		InnoLogger::Log(LogLevel::Error, "DX12FinalBlendPass: Can't get pointer of swap chain render target ", i, "!");
-	//		return false;
-	//	}
-	//}
-
-	return true;
-}
-
 using namespace DX12RenderingServerNS;
 
 DX12ResourceBinder* addResourcesBinder()
@@ -494,6 +422,8 @@ bool DX12RenderingServer::Setup()
 	l_result &= CreateGlobalCSUHeap();
 	l_result &= CreateGlobalSamplerHeap();
 
+	m_SwapChainRPDC = reinterpret_cast<DX12RenderPassDataComponent*>(AddRenderPassDataComponent("SwapChain/"));
+
 	m_objectStatus = ObjectStatus::Created;
 	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer setup finished.");
 
@@ -504,9 +434,121 @@ bool DX12RenderingServer::Initialize()
 {
 	if (m_objectStatus == ObjectStatus::Created)
 	{
-		bool l_result = true;
+		// Create command queue first
+		auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
-		l_result &= CreateSwapChain();
+		l_RenderPassDesc.m_RenderTargetCount = m_swapChainImageCount;
+
+		m_SwapChainRPDC->m_RenderPassDesc = l_RenderPassDesc;
+		m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc.pixelDataType = TexturePixelDataType::UBYTE;
+
+		ReserveRenderTargets(m_SwapChainRPDC, this);
+
+		m_SwapChainRPDC->m_CommandQueue = addCommandQueue();
+
+		CreateCommandQueue(m_SwapChainRPDC, m_device);
+		CreateCommandAllocators(m_SwapChainRPDC, m_device);
+
+		m_SwapChainRPDC->m_CommandLists.resize(m_SwapChainRPDC->m_CommandAllocators.size());
+		for (size_t i = 0; i < m_SwapChainRPDC->m_CommandLists.size(); i++)
+		{
+			m_SwapChainRPDC->m_CommandLists[i] = addCommandList();
+		}
+
+		CreateCommandLists(m_SwapChainRPDC, m_device);
+
+		// Create swap chain
+		// Set the swap chain to use double buffering.
+		m_swapChainDesc.BufferCount = m_swapChainImageCount;
+
+		auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+
+		// Set the width and height of the back buffer.
+		m_swapChainDesc.Width = (UINT)l_screenResolution.x;
+		m_swapChainDesc.Height = (UINT)l_screenResolution.y;
+
+		// Set regular 32-bit surface for the back buffer.
+		m_swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+		// Set the usage of the back buffer.
+		m_swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+
+		// Turn multisampling off.
+		m_swapChainDesc.SampleDesc.Count = 1;
+		m_swapChainDesc.SampleDesc.Quality = 0;
+
+		// Set to full screen or windowed mode.
+		// @TODO: finish this feature
+
+		// Discard the back buffer contents after presenting.
+		m_swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+
+		// Don't set the advanced flags.
+		m_swapChainDesc.Flags = 0;
+
+		// Finally create the swap chain using the swap chain description and swap chain RPDC's command queue.
+		auto l_commandQueue = reinterpret_cast<DX12CommandQueue*>(m_SwapChainRPDC->m_CommandQueue);
+
+		IDXGISwapChain1* l_swapChain1;
+		auto l_hResult = m_factory->CreateSwapChainForHwnd(
+			l_commandQueue->m_CommandQueue,
+			WinWindowSystemComponent::get().m_hwnd,
+			&m_swapChainDesc,
+			nullptr,
+			nullptr,
+			&l_swapChain1);
+
+		l_hResult = l_swapChain1->QueryInterface(IID_PPV_ARGS(&m_swapChain));
+
+		if (FAILED(l_hResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create swap chain!");
+			m_objectStatus = ObjectStatus::Suspended;
+			return false;
+		}
+
+		InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Swap chain has been created.");
+
+		// use device created swap chain textures
+		for (size_t i = 0; i < m_swapChainImageCount; i++)
+		{
+			auto l_HResult = m_swapChain->GetBuffer((unsigned int)i, IID_PPV_ARGS(&m_swapChainImages[i]));
+			if (FAILED(l_HResult))
+			{
+				InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't get pointer of swap chain image ", i, "!");
+				return false;
+			}
+			auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent*>(m_SwapChainRPDC->m_RenderTargets[i]);
+
+			l_DX12TDC->m_ResourceHandle = m_swapChainImages[i];
+			l_DX12TDC->m_DX12TextureDataDesc = l_DX12TDC->m_ResourceHandle->GetDesc();
+			l_DX12TDC->m_objectStatus = ObjectStatus::Activated;
+		}
+
+		// Initialize manually
+		CreateViews(m_SwapChainRPDC, m_device);
+
+		m_SwapChainRPDC->m_RenderTargetsResourceBinder = addResourcesBinder();
+
+		CreateResourcesBinder(m_SwapChainRPDC, this);
+
+		CreateRootSignature(m_SwapChainRPDC, m_device);
+
+		m_SwapChainRPDC->m_PipelineStateObject = addPSO();
+
+		CreatePSO(m_SwapChainRPDC, m_device);
+
+		CreateSampler(m_SwapChainRPDC);
+
+		m_SwapChainRPDC->m_Fences.resize(m_SwapChainRPDC->m_CommandLists.size());
+		for (size_t i = 0; i < m_SwapChainRPDC->m_Fences.size(); i++)
+		{
+			m_SwapChainRPDC->m_Fences[i] = addFence();
+		}
+
+		CreateSyncPrimitives(m_SwapChainRPDC, m_device);
+
+		m_SwapChainRPDC->m_objectStatus = ObjectStatus::Activated;
 	}
 
 	return true;
@@ -1003,12 +1045,14 @@ bool DX12RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 {
 	auto l_rhs = reinterpret_cast<DX12GPUBufferDataComponent*>(rhs);
 
+	l_rhs->m_TotalSize = l_rhs->m_ElementCount * l_rhs->m_ElementSize;
+
 	D3D12_RESOURCE_STATES l_resourceState = l_rhs->m_GPUBufferAccessibility == GPUBufferAccessibility::ReadOnly ? D3D12_RESOURCE_STATE_GENERIC_READ : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 
 	auto l_HResult = m_device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(l_rhs->m_ElementSize * l_rhs->m_ElementCount),
+		&CD3DX12_RESOURCE_DESC::Buffer(l_rhs->m_TotalSize),
 		l_resourceState,
 		nullptr,
 		IID_PPV_ARGS(&l_rhs->m_ResourceHandle));
@@ -1162,6 +1206,16 @@ bool DX12RenderingServer::BindMaterialDataComponent(ShaderType shaderType, Mater
 
 bool DX12RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh)
 {
+	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
+	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(l_renderPass->m_PipelineStateObject);
+	auto l_mesh = reinterpret_cast<DX12MeshDataComponent*>(mesh);
+
+	l_commandList->m_CommandList->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
+	l_commandList->m_CommandList->IASetVertexBuffers(0, 1, &l_mesh->m_VBV);
+	l_commandList->m_CommandList->IASetIndexBuffer(&l_mesh->m_IBV);
+	l_commandList->m_CommandList->DrawIndexedInstanced((unsigned int)l_mesh->m_indicesSize, 1, 0, 0, 0);
+
 	return true;
 }
 
@@ -1224,7 +1278,7 @@ bool DX12RenderingServer::WaitForFrame(RenderPassDataComponent * rhs)
 
 RenderPassDataComponent * DX12RenderingServer::GetSwapChainRPDC()
 {
-	return nullptr;
+	return m_SwapChainRPDC;
 }
 
 bool DX12RenderingServer::Present()

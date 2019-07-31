@@ -637,32 +637,35 @@ bool DX12Helper::CreateViews(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device
 
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " RTV has been created.");
 
-	// DSV Descriptor Heap
-	DX12RPDC->m_DSVDescriptorHeapDesc.NumDescriptors = 1;
-	DX12RPDC->m_DSVDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-	DX12RPDC->m_DSVDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-
-	auto l_HResult = device->CreateDescriptorHeap(&DX12RPDC->m_DSVDescriptorHeapDesc, IID_PPV_ARGS(&DX12RPDC->m_DSVDescriptorHeap));
-
-	if (FAILED(l_HResult))
+	if (DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create DescriptorHeap for DSV!");
-		return false;
+		// DSV Descriptor Heap
+		DX12RPDC->m_DSVDescriptorHeapDesc.NumDescriptors = 1;
+		DX12RPDC->m_DSVDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+		DX12RPDC->m_DSVDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+		auto l_HResult = device->CreateDescriptorHeap(&DX12RPDC->m_DSVDescriptorHeapDesc, IID_PPV_ARGS(&DX12RPDC->m_DSVDescriptorHeap));
+
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create DescriptorHeap for DSV!");
+			return false;
+		}
+
+		DX12RPDC->m_DSVDescriptorCPUHandle = DX12RPDC->m_DSVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+
+		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " DSV DescriptorHeap has been created.");
+
+		// DSV
+		auto l_DSVDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+
+		DX12RPDC->m_DSVDesc = GetDSVDesc(DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc, DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc);
+
+		auto l_ResourceHandle = reinterpret_cast<DX12TextureDataComponent*>(DX12RPDC->m_DepthStencilRenderTarget)->m_ResourceHandle;
+		device->CreateDepthStencilView(l_ResourceHandle, &DX12RPDC->m_DSVDesc, DX12RPDC->m_DSVDescriptorCPUHandle);
+
+		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " DSV has been created.");
 	}
-
-	DX12RPDC->m_DSVDescriptorCPUHandle = DX12RPDC->m_DSVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-
-	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " DSV DescriptorHeap has been created.");
-
-	// DSV
-	auto l_DSVDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-
-	DX12RPDC->m_DSVDesc = GetDSVDesc(DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc, DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc);
-
-	auto l_ResourceHandle = reinterpret_cast<DX12TextureDataComponent*>(DX12RPDC->m_DepthStencilRenderTarget)->m_ResourceHandle;
-	device->CreateDepthStencilView(l_ResourceHandle, &DX12RPDC->m_DSVDesc, DX12RPDC->m_DSVDescriptorCPUHandle);
-
-	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " DSV has been created.");
 
 	return true;
 }

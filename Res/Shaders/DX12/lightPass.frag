@@ -262,78 +262,77 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	SG SG_directionalLight = DirectionalLightToSG(normalize(-dirLight_dir.xyz), dirLight_luminance.xyz);
 	//Lo += SGGetIlluminance(SG_directionalLight, albedo, metallic, roughness, F0, N, V, L);
 
-	// point punctual light
-	// Get the index of the current pixel in the light grid.
+	//// point punctual light
+	//// Get the index of the current pixel in the light grid.
 	//uint2 tileIndex = uint2(floor(input.position.xy / BLOCK_SIZE));
 
-	// Get the start position and offset of the light in the light index list.
+	//// Get the start position and offset of the light in the light index list.
 	//uint startOffset = in_LightGrid[tileIndex].x;
 	//uint lightCount = in_LightGrid[tileIndex].y;
 
-	//for (int i = 0; i < NR_POINT_LIGHTS; ++i)
-	//{
-	//	//uint lightIndex = in_LightIndexList[startOffset + i];
-	//	pointLight light = pointLights[i];
+	for (int i = 0; i < NR_POINT_LIGHTS; ++i)
+	{
+		//uint lightIndex = in_LightIndexList[startOffset + i];
+		pointLight light = pointLights[i];
 
-	//	float3 unormalizedL = light.position.xyz - posWS;
-	//	float lightAttRadius = light.luminance.w;
+		float3 unormalizedL = light.position.xyz - posWS;
+		float lightAttRadius = light.luminance.w;
 
-	//	L = normalize(unormalizedL);
-	//	H = normalize(V + L);
+		L = normalize(unormalizedL);
+		H = normalize(V + L);
 
-	//	LdotH = max(dot(L, H), 0.0);
-	//	NdotH = max(dot(N, H), 0.0);
-	//	NdotL = max(dot(N, L), 0.0);
+		LdotH = max(dot(L, H), 0.0);
+		NdotH = max(dot(N, H), 0.0);
+		NdotL = max(dot(N, L), 0.0);
 
-	//	float attenuation = 1.0;
-	//	float invSqrAttRadius = 1.0 / max(lightAttRadius * lightAttRadius, eps);
-	//	attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
+		float attenuation = 1.0;
+		float invSqrAttRadius = 1.0 / max(lightAttRadius * lightAttRadius, eps);
+		attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
 
-	//	float3 lightLuminance = light.luminance.xyz * attenuation;
-	//	Lo += getIlluminance(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL, lightLuminance);
+		float3 lightLuminance = light.luminance.xyz * attenuation;
+		Lo += getIlluminance(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL, lightLuminance);
 
-	//	//use 1cm sphere light to represent point light
-	//	//SG SG_pointLight = SphereLightToSG(L, 0.01, lightLuminance, distance);
-	//	//Lo += SGGetIlluminance(SG_pointLight, albedo, metallic, roughness, F0, N, V, L);
-	//}
+		//use 1cm sphere light to represent point light
+		//SG SG_pointLight = SphereLightToSG(L, 0.01, lightLuminance, distance);
+		//Lo += SGGetIlluminance(SG_pointLight, albedo, metallic, roughness, F0, N, V, L);
+	}
 
-	//// sphere area light
-	//for (int i = 0; i < NR_SPHERE_LIGHTS; ++i)
-	//{
-	//	float3 unormalizedL = sphereLights[i].position.xyz - posWS;
-	//	float lightSphereRadius = sphereLights[i].luminance.w;
+	// sphere area light
+	for (int i = 0; i < NR_SPHERE_LIGHTS; ++i)
+	{
+		float3 unormalizedL = sphereLights[i].position.xyz - posWS;
+		float lightSphereRadius = sphereLights[i].luminance.w;
 
-	//	L = normalize(unormalizedL);
-	//	H = normalize(V + L);
+		L = normalize(unormalizedL);
+		H = normalize(V + L);
 
-	//	LdotH = max(dot(L, H), 0.0);
-	//	NdotH = max(dot(N, H), 0.0);
-	//	NdotL = max(dot(N, L), 0.0);
+		LdotH = max(dot(L, H), 0.0);
+		NdotH = max(dot(N, H), 0.0);
+		NdotL = max(dot(N, L), 0.0);
 
-	//	float sqrDist = dot(unormalizedL, unormalizedL);
+		float sqrDist = dot(unormalizedL, unormalizedL);
 
-	//	float Beta = acos(NdotL);
-	//	float H2 = sqrt(sqrDist);
-	//	float h = H2 / lightSphereRadius;
-	//	float x = sqrt(max(h * h - 1, eps));
-	//	float y = -x * (1 / tan(Beta));
-	//	//y = clamp(y, -1.0, 1.0);
-	//	float illuminance = 0;
+		float Beta = acos(NdotL);
+		float H2 = sqrt(sqrDist);
+		float h = H2 / lightSphereRadius;
+		float x = sqrt(max(h * h - 1, eps));
+		float y = -x * (1 / tan(Beta));
+		//y = clamp(y, -1.0, 1.0);
+		float illuminance = 0;
 
-	//	if (h * cos(Beta) > 1)
-	//	{
-	//		illuminance = cos(Beta) / (h * h);
-	//	}
-	//	else
-	//	{
-	//		illuminance = (1 / max(PI * h * h, eps))
-	//			* (cos(Beta) * acos(y) - x * sin(Beta) * sqrt(max(1 - y * y, eps)))
-	//			+ (1 / PI) * atan((sin(Beta) * sqrt(max(1 - y * y, eps)) / x));
-	//	}
-	//	illuminance *= PI;
-
-	//	Lo += getIlluminance(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL, illuminance * sphereLights[i].luminance.xyz);
-	//}
+		if (h * cos(Beta) > 1)
+		{
+			illuminance = cos(Beta) / (h * h);
+		}
+		else
+		{
+			illuminance = (1 / max(PI * h * h, eps))
+				* (cos(Beta) * acos(y) - x * sin(Beta) * sqrt(max(1 - y * y, eps)))
+				+ (1 / PI) * atan((sin(Beta) * sqrt(max(1 - y * y, eps)) / x));
+		}
+		illuminance *= PI;
+		Lo += getIlluminance(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL, illuminance * sphereLights[i].luminance.xyz);
+	}
 
 	output.lightPassRT0 = float4(Lo, 1.0);
 	return output;
