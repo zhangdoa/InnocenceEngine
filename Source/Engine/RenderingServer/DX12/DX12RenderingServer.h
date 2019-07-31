@@ -48,7 +48,7 @@ public:
 	virtual bool CommandListEnd(RenderPassDataComponent * rhs) override;
 	virtual bool ExecuteCommandList(RenderPassDataComponent * rhs) override;
 	virtual bool WaitForFrame(RenderPassDataComponent * rhs) override;
-	virtual RenderPassDataComponent * GetSwapChainRPC() override;
+	virtual RenderPassDataComponent * GetSwapChainRPDC() override;
 	virtual bool Present() override;
 
 	virtual bool CopyDepthBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest) override;

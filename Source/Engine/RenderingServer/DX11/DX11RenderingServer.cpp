@@ -1280,7 +1280,7 @@ bool DX11RenderingServer::WaitForFrame(RenderPassDataComponent * rhs)
 	return true;
 }
 
-RenderPassDataComponent * DX11RenderingServer::GetSwapChainRPC()
+RenderPassDataComponent * DX11RenderingServer::GetSwapChainRPDC()
 {
 	return m_SwapChainRPDC;
 }

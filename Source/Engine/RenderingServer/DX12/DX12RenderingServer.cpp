@@ -1222,7 +1222,7 @@ bool DX12RenderingServer::WaitForFrame(RenderPassDataComponent * rhs)
 	return true;
 }
 
-RenderPassDataComponent * DX12RenderingServer::GetSwapChainRPC()
+RenderPassDataComponent * DX12RenderingServer::GetSwapChainRPDC()
 {
 	return nullptr;
 }

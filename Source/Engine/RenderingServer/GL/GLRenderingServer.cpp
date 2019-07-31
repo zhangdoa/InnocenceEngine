@@ -773,7 +773,7 @@ bool GLRenderingServer::WaitForFrame(RenderPassDataComponent * rhs)
 	return true;
 }
 
-RenderPassDataComponent * GLRenderingServer::GetSwapChainRPC()
+RenderPassDataComponent * GLRenderingServer::GetSwapChainRPDC()
 {
 	return m_SwapChainRPDC;
 }

@@ -180,7 +180,7 @@ bool VKRenderingServer::WaitForFrame(RenderPassDataComponent * rhs)
 	return true;
 }
 
-RenderPassDataComponent * VKRenderingServer::GetSwapChainRPC()
+RenderPassDataComponent * VKRenderingServer::GetSwapChainRPDC()
 {
 	return nullptr;
 }

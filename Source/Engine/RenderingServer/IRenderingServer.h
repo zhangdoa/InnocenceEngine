@@ -68,7 +68,7 @@ public:
 	virtual bool CommandListEnd(RenderPassDataComponent * rhs) = 0;
 	virtual bool ExecuteCommandList(RenderPassDataComponent * rhs) = 0;
 	virtual bool WaitForFrame(RenderPassDataComponent * rhs) = 0;
-	virtual RenderPassDataComponent* GetSwapChainRPC() = 0;
+	virtual RenderPassDataComponent* GetSwapChainRPDC() = 0;
 	virtual bool Present() = 0;
 
 	virtual bool CopyDepthBuffer(RenderPassDataComponent* src, RenderPassDataComponent* dest) = 0;
