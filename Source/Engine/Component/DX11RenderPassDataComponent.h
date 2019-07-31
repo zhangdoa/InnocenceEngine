@@ -5,7 +5,8 @@
 class DX11ResourceBinder : public IResourceBinder
 {
 public:
-	std::vector<void*> m_Resources;
+	std::vector<ID3D11ShaderResourceView*> m_SRVs;
+	ID3D11SamplerState* m_Sampler = 0;
 };
 
 class DX11PipelineStateObject : public IPipelineStateObject
@@ -20,8 +21,6 @@ public:
 	D3D11_RASTERIZER_DESC m_RasterizerDesc = {};
 	ID3D11RasterizerState* m_RasterizerState = 0;
 	D3D11_VIEWPORT m_Viewport = {};
-	D3D11_SAMPLER_DESC m_SamplerDesc = {};
-	ID3D11SamplerState* m_SamplerState = 0;
 };
 
 class DX11CommandList : public ICommandList

@@ -12,6 +12,7 @@ using namespace DefaultGPUBuffers;
 namespace FinalBlendPass
 {
 	ShaderProgramComponent* m_SPC;
+	SamplerDataComponent* m_SDC;
 }
 
 bool FinalBlendPass::Setup()
@@ -37,6 +38,10 @@ bool FinalBlendPass::Setup()
 
 	l_RPDC->m_ShaderProgram = m_SPC;
 
+	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("FinalBlendPass/");
+
+	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
+
 	return true;
 }
 
@@ -55,6 +60,7 @@ bool FinalBlendPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(l_RPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(l_RPDC);
 	g_pModuleManager->getRenderingServer()->BindShaderProgramComponent(m_SPC);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(l_RPDC, ShaderType::FRAGMENT, m_SDC->m_ResourceBinder, 1);
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(l_RPDC, ShaderType::FRAGMENT, LightPass::GetRPDC()->m_RenderTargetsResourceBinder, 0);
 

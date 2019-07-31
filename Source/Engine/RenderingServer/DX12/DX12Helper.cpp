@@ -790,7 +790,6 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* 
 	GenerateBlendStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
 	GenerateRasterizerStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
 	GenerateViewportStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
-	GenerateSamplerStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_SamplerDesc, l_PSO);
 
 	l_PSO->m_PSODesc.pRootSignature = DX12RPDC->m_RootSignature;
 
@@ -1278,25 +1277,6 @@ bool DX12Helper::GenerateViewportStateDesc(ViewportDesc viewportDesc, DX12Pipeli
 	PSO->m_Scissor.top = 0;
 	PSO->m_Scissor.right = (unsigned long)PSO->m_Viewport.Width;
 	PSO->m_Scissor.bottom = (unsigned long)PSO->m_Viewport.Height;
-
-	return true;
-}
-
-bool DX12Helper::GenerateSamplerStateDesc(SamplerDesc samplerDesc, DX12PipelineStateObject * PSO)
-{
-	PSO->m_SamplerDesc.Filter = GetFilterMode(samplerDesc.m_FilterMethod);
-	PSO->m_SamplerDesc.AddressU = GetWrapMode(samplerDesc.m_WrapMethodU);
-	PSO->m_SamplerDesc.AddressV = GetWrapMode(samplerDesc.m_WrapMethodV);
-	PSO->m_SamplerDesc.AddressW = GetWrapMode(samplerDesc.m_WrapMethodW);
-	PSO->m_SamplerDesc.MipLODBias = 0.0f;
-	PSO->m_SamplerDesc.MaxAnisotropy = samplerDesc.m_MaxAnisotropy;
-	PSO->m_SamplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-	PSO->m_SamplerDesc.BorderColor[0] = samplerDesc.m_BoardColor[0];
-	PSO->m_SamplerDesc.BorderColor[1] = samplerDesc.m_BoardColor[1];
-	PSO->m_SamplerDesc.BorderColor[2] = samplerDesc.m_BoardColor[2];
-	PSO->m_SamplerDesc.BorderColor[3] = samplerDesc.m_BoardColor[3];
-	PSO->m_SamplerDesc.MinLOD = samplerDesc.m_MinLOD;
-	PSO->m_SamplerDesc.MaxLOD = samplerDesc.m_MaxLOD;
 
 	return true;
 }

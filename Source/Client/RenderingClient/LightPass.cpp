@@ -13,6 +13,7 @@ namespace LightPass
 {
 	RenderPassDataComponent* m_RPDC;
 	ShaderProgramComponent* m_SPC;
+	SamplerDataComponent* m_SDC;
 }
 
 bool LightPass::Setup()
@@ -82,6 +83,10 @@ bool LightPass::Setup()
 
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
 
+	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("LightPass/");
+
+	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
+
 	return true;
 }
 
@@ -102,6 +107,7 @@ bool LightPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
 	g_pModuleManager->getRenderingServer()->BindShaderProgramComponent(m_SPC);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderType::FRAGMENT, m_SDC->m_ResourceBinder, 9);
 
 	g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(m_RPDC, l_CameraGBDC, ShaderType::FRAGMENT, GPUBufferAccessibility::ReadOnly, 0, l_CameraGBDC->m_TotalSize);
 	g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(m_RPDC, l_SunGBDC, ShaderType::FRAGMENT, GPUBufferAccessibility::ReadOnly, 0, l_SunGBDC->m_TotalSize);

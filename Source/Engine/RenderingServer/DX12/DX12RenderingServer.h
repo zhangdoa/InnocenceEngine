@@ -17,6 +17,7 @@ public:
 	virtual MaterialDataComponent * AddMaterialDataComponent(const char * name) override;
 	virtual RenderPassDataComponent * AddRenderPassDataComponent(const char * name) override;
 	virtual ShaderProgramComponent * AddShaderProgramComponent(const char * name) override;
+	virtual SamplerDataComponent * AddSamplerDataComponent(const char * name = "") override;
 	virtual GPUBufferDataComponent * AddGPUBufferDataComponent(const char * name) override;
 
 	virtual bool InitializeMeshDataComponent(MeshDataComponent * rhs) override;
@@ -24,6 +25,7 @@ public:
 	virtual bool InitializeMaterialDataComponent(MaterialDataComponent * rhs) override;
 	virtual bool InitializeRenderPassDataComponent(RenderPassDataComponent * rhs) override;
 	virtual bool InitializeShaderProgramComponent(ShaderProgramComponent * rhs) override;
+	virtual bool InitializeSamplerDataComponent(SamplerDataComponent * rhs) override;
 	virtual bool InitializeGPUBufferDataComponent(GPUBufferDataComponent * rhs) override;
 
 	virtual bool DeleteMeshDataComponent(MeshDataComponent * rhs) override;
@@ -31,6 +33,7 @@ public:
 	virtual bool DeleteMaterialDataComponent(MaterialDataComponent * rhs) override;
 	virtual bool DeleteRenderPassDataComponent(RenderPassDataComponent * rhs) override;
 	virtual bool DeleteShaderProgramComponent(ShaderProgramComponent * rhs) override;
+	virtual bool DeleteSamplerDataComponent(SamplerDataComponent * rhs) override;
 	virtual bool DeleteGPUBufferDataComponent(GPUBufferDataComponent * rhs) override;
 
 	virtual bool UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue) override;
@@ -65,5 +68,4 @@ public:
 
 	DX12SRV CreateSRV(TextureDataComponent * rhs);
 	DX12CBV CreateCBV(GPUBufferDataComponent* rhs);
-	bool CreateSampler(RenderPassDataComponent* rhs);
 };

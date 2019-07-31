@@ -5,8 +5,9 @@
 class DX12ResourceBinder : public IResourceBinder
 {
 public:
-	DX12SRV m_SRV;
-	DX12CBV m_CBV;
+	DX12SRV m_SRV = {};
+	DX12CBV m_CBV = {};
+	DX12Sampler m_Sampler = {};
 };
 
 class DX12PipelineStateObject : public IPipelineStateObject
@@ -20,9 +21,6 @@ public:
 	D3D12_RASTERIZER_DESC m_RasterizerDesc = {};
 	D3D12_VIEWPORT m_Viewport = {};
 	D3D12_RECT m_Scissor = {};
-	D3D12_SAMPLER_DESC m_SamplerDesc = {};
-	D3D12_CPU_DESCRIPTOR_HANDLE m_SamplerCPUHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE m_SamplerGPUHandle;
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC m_PSODesc = {};
 	ID3D12PipelineState* m_PSO = 0;

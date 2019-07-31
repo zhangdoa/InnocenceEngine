@@ -7,6 +7,7 @@
 #include "../Component/MaterialDataComponent.h"
 #include "../Component/RenderPassDataComponent.h"
 #include "../Component/ShaderProgramComponent.h"
+#include "../Component/SamplerDataComponent.h"
 #include "../Component/GPUBufferDataComponent.h"
 
 class IRenderingServer
@@ -25,6 +26,7 @@ public:
 	virtual MaterialDataComponent* AddMaterialDataComponent(const char* name = "") = 0;
 	virtual RenderPassDataComponent* AddRenderPassDataComponent(const char* name = "") = 0;
 	virtual ShaderProgramComponent* AddShaderProgramComponent(const char* name = "") = 0;
+	virtual SamplerDataComponent* AddSamplerDataComponent(const char* name = "") = 0;
 	virtual GPUBufferDataComponent* AddGPUBufferDataComponent(const char* name = "") = 0;
 
 	virtual bool InitializeMeshDataComponent(MeshDataComponent* rhs) = 0;
@@ -32,6 +34,7 @@ public:
 	virtual bool InitializeMaterialDataComponent(MaterialDataComponent* rhs) = 0;
 	virtual bool InitializeRenderPassDataComponent(RenderPassDataComponent* rhs) = 0;
 	virtual	bool InitializeShaderProgramComponent(ShaderProgramComponent* rhs) = 0;
+	virtual bool InitializeSamplerDataComponent(SamplerDataComponent* rhs) = 0;
 	virtual bool InitializeGPUBufferDataComponent(GPUBufferDataComponent* rhs) = 0;
 
 	virtual	bool DeleteMeshDataComponent(MeshDataComponent* rhs) = 0;
@@ -39,6 +42,7 @@ public:
 	virtual	bool DeleteMaterialDataComponent(MaterialDataComponent* rhs) = 0;
 	virtual	bool DeleteRenderPassDataComponent(RenderPassDataComponent* rhs) = 0;
 	virtual	bool DeleteShaderProgramComponent(ShaderProgramComponent* rhs) = 0;
+	virtual	bool DeleteSamplerDataComponent(SamplerDataComponent* rhs) = 0;
 	virtual	bool DeleteGPUBufferDataComponent(GPUBufferDataComponent* rhs) = 0;
 
 	virtual bool UploadGPUBufferDataComponentImpl(GPUBufferDataComponent* rhs, const void* GPUBufferValue) = 0;

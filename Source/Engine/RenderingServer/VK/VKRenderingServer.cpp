@@ -45,6 +45,11 @@ ShaderProgramComponent * VKRenderingServer::AddShaderProgramComponent(const char
 	return nullptr;
 }
 
+SamplerDataComponent * VKRenderingServer::AddSamplerDataComponent(const char * name)
+{
+	return nullptr;
+}
+
 GPUBufferDataComponent * VKRenderingServer::AddGPUBufferDataComponent(const char * name)
 {
 	return nullptr;
@@ -71,6 +76,11 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 }
 
 bool VKRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent * rhs)
+{
+	return true;
+}
+
+bool VKRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent * rhs)
 {
 	return true;
 }
@@ -105,9 +115,14 @@ bool VKRenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent * rh
 	return true;
 }
 
+bool VKRenderingServer::DeleteSamplerDataComponent(SamplerDataComponent * rhs)
+{
+	return true;
+}
+
 bool VKRenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * rhs)
 {
-	return false;
+	return true;
 }
 
 bool VKRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue)

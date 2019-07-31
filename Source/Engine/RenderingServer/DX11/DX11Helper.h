@@ -53,7 +53,6 @@ namespace DX11Helper
 	bool GenerateBlendStateDesc(BlendDesc blendDesc, DX11PipelineStateObject* PSO);
 	bool GenerateRasterizerStateDesc(RasterizerDesc rasterizerDesc, DX11PipelineStateObject* PSO);
 	bool GenerateViewportStateDesc(ViewportDesc viewportDesc, DX11PipelineStateObject* PSO);
-	bool GenerateSamplerStateDesc(SamplerDesc samplerDesc, DX11PipelineStateObject* PSO);
 
 	bool LoadShaderFile(ID3D10Blob** rhs, ShaderType shaderType, const ShaderFilePath& shaderFilePath);
 }

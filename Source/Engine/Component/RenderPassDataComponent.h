@@ -130,25 +130,12 @@ struct ViewportDesc
 	float m_MaxDepth = 1.0f;
 };
 
-struct SamplerDesc
-{
-	TextureFilterMethod m_FilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
-	TextureWrapMethod m_WrapMethodU = TextureWrapMethod::CLAMP_TO_EDGE;
-	TextureWrapMethod m_WrapMethodV = TextureWrapMethod::CLAMP_TO_EDGE;
-	TextureWrapMethod m_WrapMethodW = TextureWrapMethod::CLAMP_TO_EDGE;
-	float m_BoardColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	float m_MinLOD = 0.0f;
-	float m_MaxLOD = 3.402823466e+38f;
-	unsigned int m_MaxAnisotropy = 1;
-};
-
 struct GraphicsPipelineDesc
 {
 	DepthStencilDesc m_DepthStencilDesc = {};
 	BlendDesc m_BlendDesc = {};
 	RasterizerDesc m_RasterizerDesc = {};
 	ViewportDesc m_ViewportDesc = {};
-	SamplerDesc m_SamplerDesc = {};
 };
 
 struct RenderPassDesc

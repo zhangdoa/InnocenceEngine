@@ -522,10 +522,11 @@ bool DX11Helper::CreateResourcesBinder(DX11RenderPassDataComponent * DX11RPDC)
 	auto l_Binder = reinterpret_cast<DX11ResourceBinder*>(DX11RPDC->m_RenderTargetsResourceBinder);
 
 	l_Binder->m_ResourceBinderType = ResourceBinderType::Image;
-	l_Binder->m_Resources.reserve(DX11RPDC->m_RenderPassDesc.m_RenderTargetCount);
+	l_Binder->m_SRVs.reserve(DX11RPDC->m_RenderPassDesc.m_RenderTargetCount);
 	for (size_t i = 0; i < DX11RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
-		l_Binder->m_Resources.emplace_back(DX11RPDC->m_RenderTargets[i]);
+		auto l_DX11TDC = reinterpret_cast<DX11TextureDataComponent*>(DX11RPDC->m_RenderTargets[i]);
+		l_Binder->m_SRVs.emplace_back(l_DX11TDC->m_SRV);
 	}
 
 	return true;
@@ -544,9 +545,9 @@ bool DX11Helper::CreateViews(DX11RenderPassDataComponent * DX11RPDC, ID3D11Devic
 
 	for (unsigned int i = 0; i < DX11RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
-		auto l_DXTDC = reinterpret_cast<DX11TextureDataComponent*>(DX11RPDC->m_RenderTargets[i]);
+		auto l_DX11TDC = reinterpret_cast<DX11TextureDataComponent*>(DX11RPDC->m_RenderTargets[i]);
 
-		auto l_HResult = device->CreateRenderTargetView(l_DXTDC->m_ResourceHandle, &DX11RPDC->m_RTVDesc, &DX11RPDC->m_RTVs[i]);
+		auto l_HResult = device->CreateRenderTargetView(l_DX11TDC->m_ResourceHandle, &DX11RPDC->m_RTVDesc, &DX11RPDC->m_RTVs[i]);
 		if (FAILED(l_HResult))
 		{
 			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create RTV for ", DX11RPDC->m_componentName.c_str(), "!");
@@ -563,9 +564,9 @@ bool DX11Helper::CreateViews(DX11RenderPassDataComponent * DX11RPDC, ID3D11Devic
 	{
 		DX11RPDC->m_DSVDesc = GetDSVDesc(DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc, DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc);
 
-		auto l_DXTDC = reinterpret_cast<DX11TextureDataComponent*>(DX11RPDC->m_DepthStencilRenderTarget);
+		auto l_DX11TDC = reinterpret_cast<DX11TextureDataComponent*>(DX11RPDC->m_DepthStencilRenderTarget);
 
-		auto l_HResult = device->CreateDepthStencilView(l_DXTDC->m_ResourceHandle, &DX11RPDC->m_DSVDesc, &DX11RPDC->m_DSV);
+		auto l_HResult = device->CreateDepthStencilView(l_DX11TDC->m_ResourceHandle, &DX11RPDC->m_DSVDesc, &DX11RPDC->m_DSV);
 		if (FAILED(l_HResult))
 		{
 			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the DSV for ", DX11RPDC->m_componentName.c_str(), "!");
@@ -587,7 +588,6 @@ bool DX11Helper::CreateStateObjects(DX11RenderPassDataComponent * DX11RPDC, ID3D
 	GenerateBlendStateDesc(DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
 	GenerateRasterizerStateDesc(DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
 	GenerateViewportStateDesc(DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
-	GenerateSamplerStateDesc(DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_SamplerDesc, l_PSO);
 
 	// Input layout object
 	D3D11_INPUT_ELEMENT_DESC l_inputLayouts[5];
@@ -640,17 +640,6 @@ bool DX11Helper::CreateStateObjects(DX11RenderPassDataComponent * DX11RPDC, ID3D
 	}
 #ifdef  _DEBUG
 	SetObjectName(DX11RPDC, l_PSO->m_InputLayout, "ILO");
-#endif //  _DEBUG
-
-	// Sampler state object
-	l_HResult = device->CreateSamplerState(&l_PSO->m_SamplerDesc, &l_PSO->m_SamplerState);
-	if (FAILED(l_HResult))
-	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create sampler state object for ", DX11RPDC->m_componentName.c_str(), "!");
-		return false;
-	}
-#ifdef  _DEBUG
-	SetObjectName(DX11RPDC, l_PSO->m_SamplerState, "SSO");
 #endif //  _DEBUG
 
 	// Depth stencil state object
@@ -935,25 +924,6 @@ bool DX11Helper::GenerateViewportStateDesc(ViewportDesc viewportDesc, DX11Pipeli
 	PSO->m_Viewport.MaxDepth = viewportDesc.m_MaxDepth;
 	PSO->m_Viewport.TopLeftX = viewportDesc.m_OriginX;
 	PSO->m_Viewport.TopLeftY = viewportDesc.m_OriginY;
-
-	return true;
-}
-
-bool DX11Helper::GenerateSamplerStateDesc(SamplerDesc samplerDesc, DX11PipelineStateObject * PSO)
-{
-	PSO->m_SamplerDesc.Filter = GetFilterMode(samplerDesc.m_FilterMethod);
-	PSO->m_SamplerDesc.AddressU = GetWrapMode(samplerDesc.m_WrapMethodU);
-	PSO->m_SamplerDesc.AddressV = GetWrapMode(samplerDesc.m_WrapMethodV);
-	PSO->m_SamplerDesc.AddressW = GetWrapMode(samplerDesc.m_WrapMethodW);
-	PSO->m_SamplerDesc.MipLODBias = 0.0f;
-	PSO->m_SamplerDesc.MaxAnisotropy = samplerDesc.m_MaxAnisotropy;
-	PSO->m_SamplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-	PSO->m_SamplerDesc.BorderColor[0] = samplerDesc.m_BoardColor[0];
-	PSO->m_SamplerDesc.BorderColor[1] = samplerDesc.m_BoardColor[1];
-	PSO->m_SamplerDesc.BorderColor[2] = samplerDesc.m_BoardColor[2];
-	PSO->m_SamplerDesc.BorderColor[3] = samplerDesc.m_BoardColor[3];
-	PSO->m_SamplerDesc.MinLOD = samplerDesc.m_MinLOD;
-	PSO->m_SamplerDesc.MaxLOD = samplerDesc.m_MaxLOD;
 
 	return true;
 }

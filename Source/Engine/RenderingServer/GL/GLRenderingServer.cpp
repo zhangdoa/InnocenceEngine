@@ -4,6 +4,7 @@
 #include "../../Component/GLMaterialDataComponent.h"
 #include "../../Component/GLRenderPassDataComponent.h"
 #include "../../Component/GLShaderProgramComponent.h"
+#include "../../Component/GLSamplerDataComponent.h"
 #include "../../Component/GLGPUBufferDataComponent.h"
 
 #include "GLHelper.h"
@@ -79,6 +80,8 @@ namespace GLRenderingServerNS
 	IObjectPool* m_ResourcesBinderPool = 0;
 	IObjectPool* m_PSOPool = 0;
 	IObjectPool* m_ShaderProgramComponentPool = 0;
+	IObjectPool* m_SamplerDataComponentPool = 0;
+	IObjectPool* m_GPUBufferDataComponentPool = 0;
 
 	std::unordered_set<MeshDataComponent*> m_initializedMeshes;
 	std::unordered_set<TextureDataComponent*> m_initializedTextures;
@@ -114,6 +117,8 @@ bool GLRenderingServer::Setup()
 	m_ResourcesBinderPool = InnoMemory::CreateObjectPool(sizeof(GLResourceBinder), 16384);
 	m_PSOPool = InnoMemory::CreateObjectPool(sizeof(GLPipelineStateObject), 128);
 	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool(sizeof(GLShaderProgramComponent), 256);
+	m_SamplerDataComponentPool = InnoMemory::CreateObjectPool(sizeof(GLSamplerDataComponent), 256);
+	m_GPUBufferDataComponentPool = InnoMemory::CreateObjectPool(sizeof(GLGPUBufferDataComponent), 256);
 
 	glEnable(GL_DEBUG_OUTPUT);
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -278,11 +283,32 @@ ShaderProgramComponent * GLRenderingServer::AddShaderProgramComponent(const char
 	return l_result;
 }
 
+SamplerDataComponent * GLRenderingServer::AddSamplerDataComponent(const char * name)
+{
+	static std::atomic<unsigned int> l_count = 0;
+	l_count++;
+	auto l_rawPtr = m_SamplerDataComponentPool->Spawn();
+	auto l_result = new(l_rawPtr)GLSamplerDataComponent();
+	std::string l_name;
+	if (strcmp(name, ""))
+	{
+		l_name = name;
+	}
+	else
+	{
+		l_name = ("SamplerData_" + std::to_string(l_count) + "/");
+	}
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
+	l_result->m_parentEntity = l_parentEntity;
+	l_result->m_componentName = l_name.c_str();
+	return l_result;
+}
+
 GPUBufferDataComponent * GLRenderingServer::AddGPUBufferDataComponent(const char * name)
 {
 	static std::atomic<unsigned int> l_count = 0;
 	l_count++;
-	auto l_rawPtr = m_ShaderProgramComponentPool->Spawn();
+	auto l_rawPtr = m_GPUBufferDataComponentPool->Spawn();
 	auto l_result = new(l_rawPtr)GLGPUBufferDataComponent();
 	std::string l_name;
 	if (strcmp(name, ""))
@@ -540,6 +566,36 @@ bool GLRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent 
 	return true;
 }
 
+bool GLRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent * rhs)
+{
+	auto l_rhs = reinterpret_cast<GLSamplerDataComponent*>(rhs);
+
+	glCreateSamplers(1, &l_rhs->m_SO);
+
+	auto l_textureWrapMethodU = GetTextureWrapMethod(l_rhs->m_SamplerDesc.m_WrapMethodU);
+	auto l_textureWrapMethodV = GetTextureWrapMethod(l_rhs->m_SamplerDesc.m_WrapMethodV);
+	auto l_textureWrapMethodW = GetTextureWrapMethod(l_rhs->m_SamplerDesc.m_WrapMethodW);
+	auto l_minFilterParam = GetTextureFilterParam(l_rhs->m_SamplerDesc.m_MinFilterMethod);
+	auto l_magFilterParam = GetTextureFilterParam(l_rhs->m_SamplerDesc.m_MagFilterMethod);
+
+	glSamplerParameteri(l_rhs->m_SO, GL_TEXTURE_WRAP_R, l_textureWrapMethodU);
+	glSamplerParameteri(l_rhs->m_SO, GL_TEXTURE_WRAP_S, l_textureWrapMethodV);
+	glSamplerParameteri(l_rhs->m_SO, GL_TEXTURE_WRAP_T, l_textureWrapMethodW);
+	glSamplerParameteri(l_rhs->m_SO, GL_TEXTURE_MIN_FILTER, l_minFilterParam);
+	glSamplerParameteri(l_rhs->m_SO, GL_TEXTURE_MAG_FILTER, l_magFilterParam);
+	glSamplerParameterfv(l_rhs->m_SO, GL_TEXTURE_BORDER_COLOR, l_rhs->m_SamplerDesc.m_BorderColor);
+
+	auto l_resourceBinder = addResourcesBinder();
+	l_resourceBinder->m_SO = l_rhs->m_SO;
+	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Sampler;
+
+	l_rhs->m_ResourceBinder = l_resourceBinder;
+
+	l_rhs->m_objectStatus = ObjectStatus::Activated;
+
+	return true;
+}
+
 bool GLRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent * rhs)
 {
 	auto l_rhs = reinterpret_cast<GLGPUBufferDataComponent*>(rhs);
@@ -575,6 +631,8 @@ bool GLRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent 
 
 	glBindBuffer(l_rhs->m_BufferType, 0);
 
+	l_rhs->m_objectStatus = ObjectStatus::Activated;
+
 	return true;
 }
 
@@ -603,9 +661,14 @@ bool GLRenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent * rh
 	return true;
 }
 
+bool GLRenderingServer::DeleteSamplerDataComponent(SamplerDataComponent * rhs)
+{
+	return true;
+}
+
 bool GLRenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * rhs)
 {
-	return false;
+	return true;
 }
 
 bool GLRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue)
@@ -663,11 +726,12 @@ bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderP
 	switch (l_binder->m_ResourceBinderType)
 	{
 	case ResourceBinderType::Sampler:
+		glBindSampler((unsigned int)bindingSlot, l_binder->m_SO);
 		break;
 	case ResourceBinderType::Image:
-		for (size_t i = 0; i < l_binder->m_Resources.size(); i++)
+		for (size_t i = 0; i < l_binder->m_TOs.size(); i++)
 		{
-			ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_binder->m_Resources[i]), (int)i);
+			ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_binder->m_TOs[i]), (int)i);
 		}
 		break;
 	case ResourceBinderType::ROBuffer:

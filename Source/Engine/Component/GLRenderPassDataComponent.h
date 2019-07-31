@@ -13,7 +13,8 @@ public:
 class GLResourceBinder : public IResourceBinder
 {
 public:
-	std::vector<void*> m_Resources;
+	std::vector<void*> m_TOs;
+	GLuint m_SO;
 };
 
 class GLCommandList : public ICommandList

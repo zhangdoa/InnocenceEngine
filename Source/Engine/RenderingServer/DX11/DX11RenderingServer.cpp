@@ -4,7 +4,9 @@
 #include "../../Component/DX11MaterialDataComponent.h"
 #include "../../Component/DX11RenderPassDataComponent.h"
 #include "../../Component/DX11ShaderProgramComponent.h"
+#include "../../Component/DX11SamplerDataComponent.h"
 #include "../../Component/DX11GPUBufferDataComponent.h"
+
 #include "../../Component/WinWindowSystemComponent.h"
 
 #include "DX11Helper.h"
@@ -34,6 +36,8 @@ namespace DX11RenderingServerNS
 	IObjectPool* m_ResourcesBinderPool = 0;
 	IObjectPool* m_PSOPool = 0;
 	IObjectPool* m_ShaderProgramComponentPool = 0;
+	IObjectPool* m_SamplerDataComponentPool = 0;
+	IObjectPool* m_GPUBufferDataComponentPool = 0;
 
 	std::unordered_set<MeshDataComponent*> m_initializedMeshes;
 	std::unordered_set<TextureDataComponent*> m_initializedTextures;
@@ -89,6 +93,8 @@ bool DX11RenderingServer::Setup()
 	m_ResourcesBinderPool = InnoMemory::CreateObjectPool(sizeof(DX11ResourceBinder), 16384);
 	m_PSOPool = InnoMemory::CreateObjectPool(sizeof(DX11PipelineStateObject), 128);
 	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool(sizeof(DX11ShaderProgramComponent), 256);
+	m_SamplerDataComponentPool = InnoMemory::CreateObjectPool(sizeof(DX11SamplerDataComponent), 256);
+	m_GPUBufferDataComponentPool = InnoMemory::CreateObjectPool(sizeof(DX11GPUBufferDataComponent), 256);
 
 	HRESULT l_HResult;
 	unsigned int l_numModes;
@@ -451,11 +457,32 @@ ShaderProgramComponent * DX11RenderingServer::AddShaderProgramComponent(const ch
 	return l_result;
 }
 
+SamplerDataComponent * DX11RenderingServer::AddSamplerDataComponent(const char * name)
+{
+	static std::atomic<unsigned int> l_count = 0;
+	l_count++;
+	auto l_rawPtr = m_SamplerDataComponentPool->Spawn();
+	auto l_result = new(l_rawPtr)DX11SamplerDataComponent();
+	std::string l_name;
+	if (strcmp(name, ""))
+	{
+		l_name = name;
+	}
+	else
+	{
+		l_name = ("SamplerData_" + std::to_string(l_count) + "/");
+	}
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
+	l_result->m_parentEntity = l_parentEntity;
+	l_result->m_componentName = l_name.c_str();
+	return l_result;
+}
+
 GPUBufferDataComponent * DX11RenderingServer::AddGPUBufferDataComponent(const char * name)
 {
 	static std::atomic<unsigned int> l_count = 0;
 	l_count++;
-	auto l_rawPtr = m_ShaderProgramComponentPool->Spawn();
+	auto l_rawPtr = m_GPUBufferDataComponentPool->Spawn();
 	auto l_result = new(l_rawPtr)DX11GPUBufferDataComponent();
 	std::string l_name;
 	if (strcmp(name, ""))
@@ -794,6 +821,47 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 		};
 	}
 
+	l_rhs->m_objectStatus = ObjectStatus::Activated;
+
+	return true;
+}
+
+bool DX11RenderingServer::InitializeSamplerDataComponent(SamplerDataComponent * rhs)
+{
+	auto l_rhs = reinterpret_cast<DX11SamplerDataComponent*>(rhs);
+
+	l_rhs->m_DX11SamplerDesc.Filter = GetFilterMode(l_rhs->m_SamplerDesc.m_MinFilterMethod);
+	l_rhs->m_DX11SamplerDesc.AddressU = GetWrapMode(l_rhs->m_SamplerDesc.m_WrapMethodU);
+	l_rhs->m_DX11SamplerDesc.AddressV = GetWrapMode(l_rhs->m_SamplerDesc.m_WrapMethodV);
+	l_rhs->m_DX11SamplerDesc.AddressW = GetWrapMode(l_rhs->m_SamplerDesc.m_WrapMethodW);
+	l_rhs->m_DX11SamplerDesc.MipLODBias = 0.0f;
+	l_rhs->m_DX11SamplerDesc.MaxAnisotropy = l_rhs->m_SamplerDesc.m_MaxAnisotropy;
+	l_rhs->m_DX11SamplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	l_rhs->m_DX11SamplerDesc.BorderColor[0] = l_rhs->m_SamplerDesc.m_BorderColor[0];
+	l_rhs->m_DX11SamplerDesc.BorderColor[1] = l_rhs->m_SamplerDesc.m_BorderColor[1];
+	l_rhs->m_DX11SamplerDesc.BorderColor[2] = l_rhs->m_SamplerDesc.m_BorderColor[2];
+	l_rhs->m_DX11SamplerDesc.BorderColor[3] = l_rhs->m_SamplerDesc.m_BorderColor[3];
+	l_rhs->m_DX11SamplerDesc.MinLOD = l_rhs->m_SamplerDesc.m_MinLOD;
+	l_rhs->m_DX11SamplerDesc.MaxLOD = l_rhs->m_SamplerDesc.m_MaxLOD;
+
+	auto l_HResult = m_device->CreateSamplerState(&l_rhs->m_DX11SamplerDesc, &l_rhs->m_SamplerState);
+	if (FAILED(l_HResult))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create sampler state object for ", rhs->m_componentName.c_str(), "!");
+		return false;
+	}
+#ifdef  _DEBUG
+	SetObjectName(rhs, l_rhs->m_SamplerState, "SSO");
+#endif //  _DEBUG
+
+	auto l_resourceBinder = addResourcesBinder();
+	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Sampler;
+	l_resourceBinder->m_Sampler = l_rhs->m_SamplerState;
+
+	l_rhs->m_ResourceBinder = l_resourceBinder;
+
+	l_rhs->m_objectStatus = ObjectStatus::Activated;
+
 	return true;
 }
 
@@ -882,6 +950,8 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 #endif //  _DEBUG
 	}
 
+	l_rhs->m_objectStatus = ObjectStatus::Activated;
+
 	return true;
 }
 
@@ -908,6 +978,11 @@ bool DX11RenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent 
 bool DX11RenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent * rhs)
 {
 	return true;
+}
+
+bool DX11RenderingServer::DeleteSamplerDataComponent(SamplerDataComponent * rhs)
+{
+	return false;
 }
 
 bool DX11RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * rhs)
@@ -948,8 +1023,6 @@ bool DX11RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * 
 
 	m_deviceContext->IASetInputLayout(l_PSO->m_InputLayout);
 	m_deviceContext->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
-
-	m_deviceContext->PSSetSamplers(0, 1, &l_PSO->m_SamplerState);
 
 	m_deviceContext->RSSetViewports(1, &l_PSO->m_Viewport);
 	m_deviceContext->RSSetState(l_PSO->m_RasterizerState);
@@ -1019,11 +1092,12 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 	switch (l_binder->m_ResourceBinderType)
 	{
 	case ResourceBinderType::Sampler:
+		m_deviceContext->PSSetSamplers((unsigned int)bindingSlot, 1, &l_binder->m_Sampler);
 		break;
 	case ResourceBinderType::Image:
-		for (size_t i = 0; i < l_binder->m_Resources.size(); i++)
+		for (size_t i = 0; i < l_binder->m_SRVs.size(); i++)
 		{
-			BindSRV(shaderType, (unsigned int)i, reinterpret_cast<DX11TextureDataComponent*>(l_binder->m_Resources[i])->m_SRV);
+			BindSRV(shaderType, (unsigned int)i, l_binder->m_SRVs[i]);
 		}
 		break;
 	case ResourceBinderType::ROBuffer:
@@ -1190,9 +1264,10 @@ bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * ren
 	switch (l_binder->m_ResourceBinderType)
 	{
 	case ResourceBinderType::Sampler:
+		m_deviceContext->PSSetSamplers((unsigned int)bindingSlot, 1, 0);
 		break;
 	case ResourceBinderType::Image:
-		for (size_t i = 0; i < l_binder->m_Resources.size(); i++)
+		for (size_t i = 0; i < l_binder->m_SRVs.size(); i++)
 		{
 			BindSRV(shaderType, (unsigned int)i, 0);
 		}

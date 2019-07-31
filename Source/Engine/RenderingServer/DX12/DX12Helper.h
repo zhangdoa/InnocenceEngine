@@ -62,7 +62,6 @@ namespace DX12Helper
 	bool GenerateBlendStateDesc(BlendDesc blendDesc, DX12PipelineStateObject* PSO);
 	bool GenerateRasterizerStateDesc(RasterizerDesc rasterizerDesc, DX12PipelineStateObject* PSO);
 	bool GenerateViewportStateDesc(ViewportDesc viewportDesc, DX12PipelineStateObject* PSO);
-	bool GenerateSamplerStateDesc(SamplerDesc samplerDesc, DX12PipelineStateObject* PSO);
 
 	bool LoadShaderFile(ID3D10Blob** rhs, ShaderType shaderType, const ShaderFilePath& shaderFilePath);
 }

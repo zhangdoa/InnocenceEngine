@@ -4,7 +4,9 @@
 #include "../../Component/DX12MaterialDataComponent.h"
 #include "../../Component/DX12RenderPassDataComponent.h"
 #include "../../Component/DX12ShaderProgramComponent.h"
+#include "../../Component/DX12SamplerDataComponent.h"
 #include "../../Component/DX12GPUBufferDataComponent.h"
+
 #include "../../Component/WinWindowSystemComponent.h"
 
 #include "DX12Helper.h"
@@ -43,6 +45,8 @@ namespace DX12RenderingServerNS
 	IObjectPool* m_CommandListPool = 0;
 	IObjectPool* m_FencePool = 0;
 	IObjectPool* m_ShaderProgramComponentPool = 0;
+	IObjectPool* m_SamplerDataComponentPool = 0;
+	IObjectPool* m_GPUBufferDataComponentPool = 0;
 
 	std::unordered_set<MeshDataComponent*> m_initializedMeshes;
 	std::unordered_set<TextureDataComponent*> m_initializedTextures;
@@ -412,6 +416,8 @@ bool DX12RenderingServer::Setup()
 	m_CommandListPool = InnoMemory::CreateObjectPool(sizeof(DX12CommandList), 256);
 	m_FencePool = InnoMemory::CreateObjectPool(sizeof(DX12Fence), 256);
 	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool(sizeof(DX12ShaderProgramComponent), 256);
+	m_SamplerDataComponentPool = InnoMemory::CreateObjectPool(sizeof(DX12SamplerDataComponent), 256);
+	m_GPUBufferDataComponentPool = InnoMemory::CreateObjectPool(sizeof(DX12GPUBufferDataComponent), 256);
 
 	bool l_result = true;
 
@@ -440,6 +446,7 @@ bool DX12RenderingServer::Initialize()
 		l_RenderPassDesc.m_RenderTargetCount = m_swapChainImageCount;
 
 		m_SwapChainRPDC->m_RenderPassDesc = l_RenderPassDesc;
+		m_SwapChainRPDC->m_RenderPassDesc.m_UseMultiFrames = true;
 		m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc.pixelDataType = TexturePixelDataType::UBYTE;
 
 		ReserveRenderTargets(m_SwapChainRPDC, this);
@@ -537,8 +544,6 @@ bool DX12RenderingServer::Initialize()
 		m_SwapChainRPDC->m_PipelineStateObject = addPSO();
 
 		CreatePSO(m_SwapChainRPDC, m_device);
-
-		CreateSampler(m_SwapChainRPDC);
 
 		m_SwapChainRPDC->m_Fences.resize(m_SwapChainRPDC->m_CommandLists.size());
 		for (size_t i = 0; i < m_SwapChainRPDC->m_Fences.size(); i++)
@@ -672,11 +677,32 @@ ShaderProgramComponent * DX12RenderingServer::AddShaderProgramComponent(const ch
 	return l_result;
 }
 
+SamplerDataComponent * DX12RenderingServer::AddSamplerDataComponent(const char * name)
+{
+	static std::atomic<unsigned int> l_count = 0;
+	l_count++;
+	auto l_rawPtr = m_SamplerDataComponentPool->Spawn();
+	auto l_result = new(l_rawPtr)DX12SamplerDataComponent();
+	std::string l_name;
+	if (strcmp(name, ""))
+	{
+		l_name = name;
+	}
+	else
+	{
+		l_name = ("SamplerData_" + std::to_string(l_count) + "/");
+	}
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
+	l_result->m_parentEntity = l_parentEntity;
+	l_result->m_componentName = l_name.c_str();
+	return l_result;
+}
+
 GPUBufferDataComponent * DX12RenderingServer::AddGPUBufferDataComponent(const char * name)
 {
 	static std::atomic<unsigned int> l_count = 0;
 	l_count++;
-	auto l_rawPtr = m_ShaderProgramComponentPool->Spawn();
+	auto l_rawPtr = m_GPUBufferDataComponentPool->Spawn();
 	auto l_result = new(l_rawPtr)DX12GPUBufferDataComponent();
 	std::string l_name;
 	if (strcmp(name, ""))
@@ -981,8 +1007,6 @@ bool DX12RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 
 	l_result &= CreatePSO(l_rhs, m_device);
 
-	l_result &= CreateSampler(l_rhs);
-
 	l_rhs->m_CommandQueue = addCommandQueue();
 
 	l_result &= CreateCommandQueue(l_rhs, m_device);
@@ -1038,6 +1062,45 @@ bool DX12RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 		LoadShaderFile(&l_rhs->m_CSBuffer, ShaderType::COMPUTE, l_rhs->m_ShaderFilePaths.m_CSPath);
 	}
 
+	l_rhs->m_objectStatus = ObjectStatus::Activated;
+
+	return true;
+}
+
+bool DX12RenderingServer::InitializeSamplerDataComponent(SamplerDataComponent * rhs)
+{
+	auto l_rhs = reinterpret_cast<DX12SamplerDataComponent*>(rhs);
+	auto l_resourceBinder = addResourcesBinder();
+
+	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Sampler;
+
+	l_resourceBinder->m_Sampler.SamplerDesc.Filter = GetFilterMode(l_rhs->m_SamplerDesc.m_MinFilterMethod);
+	l_resourceBinder->m_Sampler.SamplerDesc.AddressU = GetWrapMode(l_rhs->m_SamplerDesc.m_WrapMethodU);
+	l_resourceBinder->m_Sampler.SamplerDesc.AddressV = GetWrapMode(l_rhs->m_SamplerDesc.m_WrapMethodV);
+	l_resourceBinder->m_Sampler.SamplerDesc.AddressW = GetWrapMode(l_rhs->m_SamplerDesc.m_WrapMethodW);
+	l_resourceBinder->m_Sampler.SamplerDesc.MipLODBias = 0.0f;
+	l_resourceBinder->m_Sampler.SamplerDesc.MaxAnisotropy = l_rhs->m_SamplerDesc.m_MaxAnisotropy;
+	l_resourceBinder->m_Sampler.SamplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	l_resourceBinder->m_Sampler.SamplerDesc.BorderColor[0] = l_rhs->m_SamplerDesc.m_BorderColor[0];
+	l_resourceBinder->m_Sampler.SamplerDesc.BorderColor[1] = l_rhs->m_SamplerDesc.m_BorderColor[1];
+	l_resourceBinder->m_Sampler.SamplerDesc.BorderColor[2] = l_rhs->m_SamplerDesc.m_BorderColor[2];
+	l_resourceBinder->m_Sampler.SamplerDesc.BorderColor[3] = l_rhs->m_SamplerDesc.m_BorderColor[3];
+	l_resourceBinder->m_Sampler.SamplerDesc.MinLOD = l_rhs->m_SamplerDesc.m_MinLOD;
+	l_resourceBinder->m_Sampler.SamplerDesc.MaxLOD = l_rhs->m_SamplerDesc.m_MaxLOD;
+
+	l_resourceBinder->m_Sampler.CPUHandle = m_currentSamplerCPUHandle;
+	l_resourceBinder->m_Sampler.GPUHandle = m_currentSamplerGPUHandle;
+
+	m_device->CreateSampler(&l_resourceBinder->m_Sampler.SamplerDesc, l_resourceBinder->m_Sampler.CPUHandle);
+
+	auto l_samplerDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+
+	m_currentSamplerCPUHandle.ptr += l_samplerDescSize;
+	m_currentSamplerGPUHandle.ptr += l_samplerDescSize;
+
+	l_rhs->m_ResourceBinder = l_resourceBinder;
+	l_rhs->m_objectStatus = ObjectStatus::Activated;
+
 	return true;
 }
 
@@ -1071,6 +1134,8 @@ bool DX12RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 		UploadGPUBufferDataComponent(l_rhs, l_rhs->m_InitialData);
 	}
 
+	l_rhs->m_objectStatus = ObjectStatus::Activated;
+
 	return true;
 }
 
@@ -1097,6 +1162,11 @@ bool DX12RenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent 
 bool DX12RenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent * rhs)
 {
 	return true;
+}
+
+bool DX12RenderingServer::DeleteSamplerDataComponent(SamplerDataComponent * rhs)
+{
+	return false;
 }
 
 bool DX12RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * rhs)
@@ -1214,6 +1284,7 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 	switch (l_binder->m_ResourceBinderType)
 	{
 	case ResourceBinderType::Sampler:
+		l_commandList->m_CommandList->SetGraphicsRootDescriptorTable((unsigned int)bindingSlot, l_binder->m_Sampler.GPUHandle);
 		break;
 	case ResourceBinderType::Image:
 		l_commandList->m_CommandList->SetGraphicsRootDescriptorTable((unsigned int)bindingSlot, l_binder->m_SRV.GPUHandle);
@@ -1491,21 +1562,4 @@ DX12CBV DX12RenderingServer::CreateCBV(GPUBufferDataComponent* rhs)
 	m_device->CreateConstantBufferView(&l_result.CBVDesc, l_result.CPUHandle);
 
 	return l_result;
-}
-
-bool DX12RenderingServer::CreateSampler(RenderPassDataComponent* rhs)
-{
-	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(rhs->m_PipelineStateObject);
-
-	l_PSO->m_SamplerCPUHandle = m_currentSamplerCPUHandle;
-	l_PSO->m_SamplerGPUHandle = m_currentSamplerGPUHandle;
-
-	m_device->CreateSampler(&l_PSO->m_SamplerDesc, l_PSO->m_SamplerCPUHandle);
-
-	auto l_samplerDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
-
-	m_currentSamplerCPUHandle.ptr += l_samplerDescSize;
-	m_currentSamplerGPUHandle.ptr += l_samplerDescSize;
-
-	return true;
 }

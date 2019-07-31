@@ -479,10 +479,10 @@ bool GLHelper::CreateResourcesBinder(GLRenderPassDataComponent * GLRPDC)
 	auto l_Binder = reinterpret_cast<GLResourceBinder*>(GLRPDC->m_RenderTargetsResourceBinder);
 
 	l_Binder->m_ResourceBinderType = ResourceBinderType::Image;
-	l_Binder->m_Resources.reserve(GLRPDC->m_RenderPassDesc.m_RenderTargetCount);
+	l_Binder->m_TOs.reserve(GLRPDC->m_RenderPassDesc.m_RenderTargetCount);
 	for (size_t i = 0; i < GLRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
-		l_Binder->m_Resources.emplace_back(GLRPDC->m_RenderTargets[i]);
+		l_Binder->m_TOs.emplace_back(GLRPDC->m_RenderTargets[i]);
 	}
 
 	return true;
