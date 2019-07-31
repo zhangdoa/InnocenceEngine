@@ -72,19 +72,19 @@ namespace GLRenderingServerNS
 
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
-	IObjectPool* m_MeshDataComponentPool;
-	IObjectPool* m_MaterialDataComponentPool;
-	IObjectPool* m_TextureDataComponentPool;
-	IObjectPool* m_RenderPassDataComponentPool;
-	IObjectPool* m_ResourcesBinderPool;
-	IObjectPool* m_PSOPool;
-	IObjectPool* m_ShaderProgramComponentPool;
+	IObjectPool* m_MeshDataComponentPool = 0;
+	IObjectPool* m_MaterialDataComponentPool = 0;
+	IObjectPool* m_TextureDataComponentPool = 0;
+	IObjectPool* m_RenderPassDataComponentPool = 0;
+	IObjectPool* m_ResourcesBinderPool = 0;
+	IObjectPool* m_PSOPool = 0;
+	IObjectPool* m_ShaderProgramComponentPool = 0;
 
 	std::unordered_set<MeshDataComponent*> m_initializedMeshes;
 	std::unordered_set<TextureDataComponent*> m_initializedTextures;
 	std::unordered_set<MaterialDataComponent*> m_initializedMaterials;
 
-	GLRenderPassDataComponent* m_SwapChainRPDC;
+	GLRenderPassDataComponent* m_SwapChainRPDC = 0;
 }
 
 using namespace GLRenderingServerNS;
@@ -122,6 +122,8 @@ bool GLRenderingServer::Setup()
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	glEnable(GL_PROGRAM_POINT_SIZE);
 
+	m_SwapChainRPDC = reinterpret_cast<GLRenderPassDataComponent*>(AddRenderPassDataComponent("SwapChain/"));
+
 	m_objectStatus = ObjectStatus::Created;
 	InnoLogger::Log(LogLevel::Success, "GLRenderingServer setup finished.");
 
@@ -132,8 +134,6 @@ bool GLRenderingServer::Initialize()
 {
 	if (m_objectStatus == ObjectStatus::Created)
 	{
-		m_SwapChainRPDC = reinterpret_cast<GLRenderPassDataComponent*>(AddRenderPassDataComponent("SwapChain/"));
-
 		auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 		l_RenderPassDesc.m_RenderTargetCount = 1;

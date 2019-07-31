@@ -27,13 +27,13 @@ namespace DX11RenderingServerNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
-	IObjectPool* m_MeshDataComponentPool;
-	IObjectPool* m_MaterialDataComponentPool;
-	IObjectPool* m_TextureDataComponentPool;
-	IObjectPool* m_RenderPassDataComponentPool;
-	IObjectPool* m_ResourcesBinderPool;
-	IObjectPool* m_PSOPool;
-	IObjectPool* m_ShaderProgramComponentPool;
+	IObjectPool* m_MeshDataComponentPool = 0;
+	IObjectPool* m_MaterialDataComponentPool = 0;
+	IObjectPool* m_TextureDataComponentPool = 0;
+	IObjectPool* m_RenderPassDataComponentPool = 0;
+	IObjectPool* m_ResourcesBinderPool = 0;
+	IObjectPool* m_PSOPool = 0;
+	IObjectPool* m_ShaderProgramComponentPool = 0;
 
 	std::unordered_set<MeshDataComponent*> m_initializedMeshes;
 	std::unordered_set<TextureDataComponent*> m_initializedTextures;
@@ -41,7 +41,7 @@ namespace DX11RenderingServerNS
 
 	TVec2<unsigned int> m_refreshRate = TVec2<unsigned int>(0, 1);
 
-	int m_videoCardMemory;
+	int m_videoCardMemory = 0;
 	char m_videoCardDescription[128];
 
 	IDXGIFactory* m_factory = 0;
@@ -267,6 +267,11 @@ bool DX11RenderingServer::Setup()
 		return false;
 	}
 
+	// @TODO: Find a better solution
+	LoadShaderFile(&m_InputLayoutDummyShaderBuffer, ShaderType::VERTEX, "dummyInputLayout.hlsl/");
+
+	m_SwapChainRPDC = reinterpret_cast<DX11RenderPassDataComponent*>(AddRenderPassDataComponent("SwapChain/"));
+
 	m_objectStatus = ObjectStatus::Created;
 	InnoLogger::Log(LogLevel::Success, "DX11RenderingServer setup finished.");
 
@@ -277,11 +282,6 @@ bool DX11RenderingServer::Initialize()
 {
 	if (m_objectStatus == ObjectStatus::Created)
 	{
-		// @TODO: Find a better solution
-		LoadShaderFile(&m_InputLayoutDummyShaderBuffer, ShaderType::VERTEX, "dummyInputLayout.hlsl/");
-
-		m_SwapChainRPDC = reinterpret_cast<DX11RenderPassDataComponent*>(AddRenderPassDataComponent("SwapChain/"));
-
 		auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 		l_RenderPassDesc.m_RenderTargetCount = 1;
