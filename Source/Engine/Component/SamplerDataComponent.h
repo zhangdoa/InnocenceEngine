@@ -1,5 +1,6 @@
 #pragma once
 #include "../Common/InnoType.h"
+#include "../Common/InnoGraphicsPrimitive.h"
 #include "../Common/InnoComponent.h"
 
 struct SamplerDesc

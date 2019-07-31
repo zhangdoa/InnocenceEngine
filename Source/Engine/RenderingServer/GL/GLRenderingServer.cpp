@@ -497,6 +497,19 @@ bool GLRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * 
 		InitializeTextureDataComponent(rhs->m_aoTexture);
 	}
 
+	auto l_resourceBinder = addResourcesBinder();
+
+	l_resourceBinder->m_TOs.resize(5);
+	l_resourceBinder->m_TOs[0] = rhs->m_normalTexture;
+	l_resourceBinder->m_TOs[1] = rhs->m_albedoTexture;
+	l_resourceBinder->m_TOs[2] = rhs->m_metallicTexture;
+	l_resourceBinder->m_TOs[3] = rhs->m_roughnessTexture;
+	l_resourceBinder->m_TOs[4] = rhs->m_aoTexture;
+
+	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
+
+	rhs->m_ResourceBinder = l_resourceBinder;
+
 	rhs->m_objectStatus = ObjectStatus::Activated;
 
 	m_initializedMaterials.emplace(rhs);
@@ -721,29 +734,35 @@ bool GLRenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 
 bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
 {
-	auto l_binder = reinterpret_cast<GLResourceBinder*>(binder);
+	auto l_resourceBinder = reinterpret_cast<GLResourceBinder*>(binder);
 
-	switch (l_binder->m_ResourceBinderType)
+	if (l_resourceBinder)
 	{
-	case ResourceBinderType::Sampler:
-		glBindSampler((unsigned int)bindingSlot, l_binder->m_SO);
-		break;
-	case ResourceBinderType::Image:
-		for (size_t i = 0; i < l_binder->m_TOs.size(); i++)
+		switch (l_resourceBinder->m_ResourceBinderType)
 		{
-			ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_binder->m_TOs[i]), (int)i);
+		case ResourceBinderType::Sampler:
+			glBindSampler((unsigned int)bindingSlot, l_resourceBinder->m_SO);
+			break;
+		case ResourceBinderType::Image:
+			for (size_t i = 0; i < l_resourceBinder->m_TOs.size(); i++)
+			{
+				if (l_resourceBinder->m_TOs[i])
+				{
+					ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_resourceBinder->m_TOs[i]), (int)i);
+				}
+			}
+			break;
+		case ResourceBinderType::ROBuffer:
+			break;
+		case ResourceBinderType::ROBufferArray:
+			break;
+		case ResourceBinderType::RWBuffer:
+			break;
+		case ResourceBinderType::RWBufferArray:
+			break;
+		default:
+			break;
 		}
-		break;
-	case ResourceBinderType::ROBuffer:
-		break;
-	case ResourceBinderType::ROBufferArray:
-		break;
-	case ResourceBinderType::RWBuffer:
-		break;
-	case ResourceBinderType::RWBufferArray:
-		break;
-	default:
-		break;
 	}
 
 	return true;
@@ -767,44 +786,6 @@ bool GLRenderingServer::BindShaderProgramComponent(ShaderProgramComponent * rhs)
 	return true;
 }
 
-bool GLRenderingServer::BindMaterialDataComponent(RenderPassDataComponent * renderPass, ShaderType shaderType, MaterialDataComponent * rhs)
-{
-	if (rhs->m_objectStatus == ObjectStatus::Activated)
-	{
-		if (rhs->m_normalTexture)
-		{
-			ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(rhs->m_normalTexture), 0);
-		}
-		if (rhs->m_albedoTexture)
-		{
-			ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(rhs->m_albedoTexture), 1);
-		}
-		if (rhs->m_metallicTexture)
-		{
-			ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(rhs->m_metallicTexture), 2);
-		}
-		if (rhs->m_roughnessTexture)
-		{
-			ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(rhs->m_roughnessTexture), 3);
-		}
-		if (rhs->m_aoTexture)
-		{
-			ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(rhs->m_aoTexture), 4);
-		}
-	}
-	else
-	{
-		auto l_material = reinterpret_cast<GLMaterialDataComponent*>(g_pModuleManager->getRenderingFrontend()->getDefaultMaterialDataComponent());
-		ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_material->m_normalTexture), 0);
-		ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_material->m_albedoTexture), 1);
-		ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_material->m_metallicTexture), 2);
-		ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_material->m_roughnessTexture), 3);
-		ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_material->m_aoTexture), 4);
-	}
-
-	return true;
-}
-
 bool GLRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent * mesh)
 {
 	auto l_GLPSO = reinterpret_cast<GLPipelineStateObject*>(renderPass->m_PipelineStateObject);
@@ -817,11 +798,6 @@ bool GLRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, Me
 }
 
 bool GLRenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
-{
-	return true;
-}
-
-bool GLRenderingServer::UnbindMaterialDataComponent(RenderPassDataComponent * renderPass, ShaderType shaderType, MaterialDataComponent * rhs)
 {
 	return true;
 }

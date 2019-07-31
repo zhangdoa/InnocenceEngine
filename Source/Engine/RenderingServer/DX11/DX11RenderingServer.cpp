@@ -699,26 +699,58 @@ bool DX11RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 		return true;
 	}
 
+	auto l_resourceBinder = addResourcesBinder();
+
+	l_resourceBinder->m_SRVs.resize(5);
+
 	if (rhs->m_normalTexture)
 	{
 		InitializeTextureDataComponent(rhs->m_normalTexture);
+		l_resourceBinder->m_SRVs[0] = reinterpret_cast<DX11TextureDataComponent*>(rhs->m_normalTexture)->m_SRV;
+	}
+	else
+	{
+		l_resourceBinder->m_SRVs[0] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::NORMAL))->m_SRV;
 	}
 	if (rhs->m_albedoTexture)
 	{
 		InitializeTextureDataComponent(rhs->m_albedoTexture);
+		l_resourceBinder->m_SRVs[1] = reinterpret_cast<DX11TextureDataComponent*>(rhs->m_albedoTexture)->m_SRV;
+	}
+	else
+	{
+		l_resourceBinder->m_SRVs[1] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::ALBEDO))->m_SRV;
 	}
 	if (rhs->m_metallicTexture)
 	{
 		InitializeTextureDataComponent(rhs->m_metallicTexture);
+		l_resourceBinder->m_SRVs[2] = reinterpret_cast<DX11TextureDataComponent*>(rhs->m_metallicTexture)->m_SRV;
+	}
+	else
+	{
+		l_resourceBinder->m_SRVs[2] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::METALLIC))->m_SRV;
 	}
 	if (rhs->m_roughnessTexture)
 	{
 		InitializeTextureDataComponent(rhs->m_roughnessTexture);
+		l_resourceBinder->m_SRVs[3] = reinterpret_cast<DX11TextureDataComponent*>(rhs->m_roughnessTexture)->m_SRV;
+	}
+	else
+	{
+		l_resourceBinder->m_SRVs[3] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::ROUGHNESS))->m_SRV;
 	}
 	if (rhs->m_aoTexture)
 	{
 		InitializeTextureDataComponent(rhs->m_aoTexture);
+		l_resourceBinder->m_SRVs[4] = reinterpret_cast<DX11TextureDataComponent*>(rhs->m_aoTexture)->m_SRV;
 	}
+	else
+	{
+		l_resourceBinder->m_SRVs[4] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION))->m_SRV;
+	}
+	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
+
+	rhs->m_ResourceBinder = l_resourceBinder;
 
 	rhs->m_objectStatus = ObjectStatus::Activated;
 
@@ -1087,29 +1119,32 @@ bool BindSRV(ShaderType shaderType, unsigned int bindingPoint, ID3D11ShaderResou
 
 bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
 {
-	auto l_binder = reinterpret_cast<DX11ResourceBinder*>(binder);
+	auto l_resourceBinder = reinterpret_cast<DX11ResourceBinder*>(binder);
 
-	switch (l_binder->m_ResourceBinderType)
+	if (l_resourceBinder)
 	{
-	case ResourceBinderType::Sampler:
-		m_deviceContext->PSSetSamplers((unsigned int)bindingSlot, 1, &l_binder->m_Sampler);
-		break;
-	case ResourceBinderType::Image:
-		for (size_t i = 0; i < l_binder->m_SRVs.size(); i++)
+		switch (l_resourceBinder->m_ResourceBinderType)
 		{
-			BindSRV(shaderType, (unsigned int)i, l_binder->m_SRVs[i]);
+		case ResourceBinderType::Sampler:
+			m_deviceContext->PSSetSamplers((unsigned int)bindingSlot, 1, &l_resourceBinder->m_Sampler);
+			break;
+		case ResourceBinderType::Image:
+			for (size_t i = 0; i < l_resourceBinder->m_SRVs.size(); i++)
+			{
+				BindSRV(shaderType, (unsigned int)i, l_resourceBinder->m_SRVs[i]);
+			}
+			break;
+		case ResourceBinderType::ROBuffer:
+			break;
+		case ResourceBinderType::ROBufferArray:
+			break;
+		case ResourceBinderType::RWBuffer:
+			break;
+		case ResourceBinderType::RWBufferArray:
+			break;
+		default:
+			break;
 		}
-		break;
-	case ResourceBinderType::ROBuffer:
-		break;
-	case ResourceBinderType::ROBufferArray:
-		break;
-	case ResourceBinderType::RWBuffer:
-		break;
-	case ResourceBinderType::RWBufferArray:
-		break;
-	default:
-		break;
 	}
 
 	return true;
@@ -1259,67 +1294,32 @@ bool DX11RenderingServer::BindShaderProgramComponent(ShaderProgramComponent * rh
 
 bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
 {
-	auto l_binder = reinterpret_cast<DX11ResourceBinder*>(binder);
+	auto l_resourceBinder = reinterpret_cast<DX11ResourceBinder*>(binder);
 
-	switch (l_binder->m_ResourceBinderType)
+	if (l_resourceBinder)
 	{
-	case ResourceBinderType::Sampler:
-		m_deviceContext->PSSetSamplers((unsigned int)bindingSlot, 1, 0);
-		break;
-	case ResourceBinderType::Image:
-		for (size_t i = 0; i < l_binder->m_SRVs.size(); i++)
+		switch (l_resourceBinder->m_ResourceBinderType)
 		{
-			BindSRV(shaderType, (unsigned int)i, 0);
+		case ResourceBinderType::Sampler:
+			m_deviceContext->PSSetSamplers((unsigned int)bindingSlot, 1, 0);
+			break;
+		case ResourceBinderType::Image:
+			for (size_t i = 0; i < l_resourceBinder->m_SRVs.size(); i++)
+			{
+				BindSRV(shaderType, (unsigned int)i, 0);
+			}
+			break;
+		case ResourceBinderType::ROBuffer:
+			break;
+		case ResourceBinderType::ROBufferArray:
+			break;
+		case ResourceBinderType::RWBuffer:
+			break;
+		case ResourceBinderType::RWBufferArray:
+			break;
+		default:
+			break;
 		}
-		break;
-	case ResourceBinderType::ROBuffer:
-		break;
-	case ResourceBinderType::ROBufferArray:
-		break;
-	case ResourceBinderType::RWBuffer:
-		break;
-	case ResourceBinderType::RWBufferArray:
-		break;
-	default:
-		break;
-	}
-
-	return true;
-}
-
-bool DX11RenderingServer::BindMaterialDataComponent(RenderPassDataComponent * renderPass, ShaderType shaderType, MaterialDataComponent * rhs)
-{
-	if (rhs->m_objectStatus == ObjectStatus::Activated)
-	{
-		if (rhs->m_normalTexture)
-		{
-			BindSRV(shaderType, 0, reinterpret_cast<DX11TextureDataComponent*>(rhs->m_normalTexture)->m_SRV);
-		}
-		if (rhs->m_albedoTexture)
-		{
-			BindSRV(shaderType, 1, reinterpret_cast<DX11TextureDataComponent*>(rhs->m_albedoTexture)->m_SRV);
-		}
-		if (rhs->m_metallicTexture)
-		{
-			BindSRV(shaderType, 2, reinterpret_cast<DX11TextureDataComponent*>(rhs->m_metallicTexture)->m_SRV);
-		}
-		if (rhs->m_roughnessTexture)
-		{
-			BindSRV(shaderType, 3, reinterpret_cast<DX11TextureDataComponent*>(rhs->m_roughnessTexture)->m_SRV);
-		}
-		if (rhs->m_aoTexture)
-		{
-			BindSRV(shaderType, 4, reinterpret_cast<DX11TextureDataComponent*>(rhs->m_aoTexture)->m_SRV);
-		}
-	}
-	else
-	{
-		auto l_material = reinterpret_cast<DX11MaterialDataComponent*>(g_pModuleManager->getRenderingFrontend()->getDefaultMaterialDataComponent());
-		BindSRV(shaderType, 0, reinterpret_cast<DX11TextureDataComponent*>(l_material->m_normalTexture)->m_SRV);
-		BindSRV(shaderType, 1, reinterpret_cast<DX11TextureDataComponent*>(l_material->m_albedoTexture)->m_SRV);
-		BindSRV(shaderType, 2, reinterpret_cast<DX11TextureDataComponent*>(l_material->m_metallicTexture)->m_SRV);
-		BindSRV(shaderType, 3, reinterpret_cast<DX11TextureDataComponent*>(l_material->m_roughnessTexture)->m_SRV);
-		BindSRV(shaderType, 4, reinterpret_cast<DX11TextureDataComponent*>(l_material->m_aoTexture)->m_SRV);
 	}
 
 	return true;
@@ -1337,17 +1337,6 @@ bool DX11RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, 
 	m_deviceContext->IASetIndexBuffer(l_rhs->m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 	m_deviceContext->DrawIndexed((unsigned int)l_rhs->m_indicesSize, 0, 0);
-
-	return true;
-}
-
-bool DX11RenderingServer::UnbindMaterialDataComponent(RenderPassDataComponent * renderPass, ShaderType shaderType, MaterialDataComponent * rhs)
-{
-	BindSRV(shaderType, 0, 0);
-	BindSRV(shaderType, 1, 0);
-	BindSRV(shaderType, 2, 0);
-	BindSRV(shaderType, 3, 0);
-	BindSRV(shaderType, 4, 0);
 
 	return true;
 }

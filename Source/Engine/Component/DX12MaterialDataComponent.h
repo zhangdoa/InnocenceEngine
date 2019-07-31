@@ -4,6 +4,4 @@
 
 class DX12MaterialDataComponent : public MaterialDataComponent
 {
-public:
-	std::vector<DX12SRV> m_SRVs;
 };

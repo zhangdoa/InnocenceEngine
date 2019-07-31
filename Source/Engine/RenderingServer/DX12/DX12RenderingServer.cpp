@@ -930,54 +930,62 @@ bool DX12RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 
 	auto l_rhs = reinterpret_cast<DX12MaterialDataComponent*>(rhs);
 
-	l_rhs->m_SRVs.resize(5);
+	DX12SRV l_SRV = {};
 
+	// Only store the first one
 	if (l_rhs->m_normalTexture)
 	{
 		InitializeTextureDataComponent(l_rhs->m_normalTexture);
-		l_rhs->m_SRVs[0] = CreateSRV(l_rhs->m_normalTexture);
+		l_SRV = CreateSRV(l_rhs->m_normalTexture);
 	}
 	else
 	{
-		l_rhs->m_SRVs[0] = CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::NORMAL));
+		l_SRV = CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::NORMAL));
 	}
 	if (l_rhs->m_albedoTexture)
 	{
 		InitializeTextureDataComponent(l_rhs->m_albedoTexture);
-		l_rhs->m_SRVs[1] = CreateSRV(l_rhs->m_albedoTexture);
+		CreateSRV(l_rhs->m_albedoTexture);
 	}
 	else
 	{
-		l_rhs->m_SRVs[1] = CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::ALBEDO));
+		CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::ALBEDO));
 	}
 	if (l_rhs->m_metallicTexture)
 	{
 		InitializeTextureDataComponent(l_rhs->m_metallicTexture);
-		l_rhs->m_SRVs[2] = CreateSRV(l_rhs->m_metallicTexture);
+		CreateSRV(l_rhs->m_metallicTexture);
 	}
 	else
 	{
-		l_rhs->m_SRVs[2] = CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::METALLIC));
+		CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::METALLIC));
 	}
 	if (l_rhs->m_roughnessTexture)
 	{
 		InitializeTextureDataComponent(l_rhs->m_roughnessTexture);
-		l_rhs->m_SRVs[3] = CreateSRV(l_rhs->m_roughnessTexture);
+		CreateSRV(l_rhs->m_roughnessTexture);
 	}
 	else
 	{
-		l_rhs->m_SRVs[3] = CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::ROUGHNESS));
+		CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::ROUGHNESS));
 	}
 	if (l_rhs->m_aoTexture)
 	{
 		InitializeTextureDataComponent(l_rhs->m_aoTexture);
-		l_rhs->m_SRVs[4] = CreateSRV(l_rhs->m_aoTexture);
+		CreateSRV(l_rhs->m_aoTexture);
 	}
 	else
 	{
-		l_rhs->m_SRVs[4] = CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION));
+		CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION));
 	}
 
+	auto l_resourceBinder = addResourcesBinder();
+
+	l_resourceBinder->m_SRV = l_SRV;
+
+	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
+
+	rhs->m_ResourceBinder = l_resourceBinder;
 	l_rhs->m_objectStatus = ObjectStatus::Activated;
 
 	m_initializedMaterials.emplace(l_rhs);
@@ -1320,29 +1328,6 @@ bool DX12RenderingServer::BindShaderProgramComponent(ShaderProgramComponent * rh
 	return true;
 }
 
-bool DX12RenderingServer::BindMaterialDataComponent(RenderPassDataComponent * renderPass, ShaderType shaderType, MaterialDataComponent * rhs)
-{
-	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
-
-	if (rhs->m_objectStatus == ObjectStatus::Activated)
-	{
-		auto l_material = reinterpret_cast<DX12MaterialDataComponent*>(rhs);
-
-		if (l_material->m_SRVs.size() > 0)
-		{
-			l_commandList->m_CommandList->SetGraphicsRootDescriptorTable(0, l_material->m_SRVs[0].GPUHandle);
-		}
-	}
-	else
-	{
-		auto l_material = reinterpret_cast<DX12MaterialDataComponent*>(g_pModuleManager->getRenderingFrontend()->getDefaultMaterialDataComponent());
-		l_commandList->m_CommandList->SetGraphicsRootDescriptorTable(0, l_material->m_SRVs[0].GPUHandle);
-	}
-
-	return true;
-}
-
 bool DX12RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh)
 {
 	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
@@ -1359,11 +1344,6 @@ bool DX12RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, 
 }
 
 bool DX12RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
-{
-	return true;
-}
-
-bool DX12RenderingServer::UnbindMaterialDataComponent(RenderPassDataComponent * renderPass, ShaderType shaderType, MaterialDataComponent * rhs)
 {
 	return true;
 }

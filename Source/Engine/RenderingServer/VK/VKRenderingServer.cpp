@@ -160,22 +160,12 @@ bool VKRenderingServer::BindShaderProgramComponent(ShaderProgramComponent * rhs)
 	return true;
 }
 
-bool VKRenderingServer::BindMaterialDataComponent(RenderPassDataComponent * renderPass, ShaderType shaderType, MaterialDataComponent * rhs)
-{
-	return true;
-}
-
 bool VKRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh)
 {
 	return true;
 }
 
 bool VKRenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
-{
-	return true;
-}
-
-bool VKRenderingServer::UnbindMaterialDataComponent(RenderPassDataComponent * renderPass, ShaderType shaderType, MaterialDataComponent * rhs)
 {
 	return true;
 }
