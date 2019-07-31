@@ -1012,7 +1012,7 @@ bool BindSRV(ShaderType shaderType, unsigned int bindingPoint, ID3D11ShaderResou
 	return true;
 }
 
-bool DX11RenderingServer::ActivateResourceBinder(ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
+bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
 {
 	auto l_binder = reinterpret_cast<DX11ResourceBinder*>(binder);
 
@@ -1183,7 +1183,7 @@ bool DX11RenderingServer::BindShaderProgramComponent(ShaderProgramComponent * rh
 	return true;
 }
 
-bool DX11RenderingServer::DeactivateResourceBinder(ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
+bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
 {
 	auto l_binder = reinterpret_cast<DX11ResourceBinder*>(binder);
 
@@ -1212,7 +1212,7 @@ bool DX11RenderingServer::DeactivateResourceBinder(ShaderType shaderType, IResou
 	return true;
 }
 
-bool DX11RenderingServer::BindMaterialDataComponent(ShaderType shaderType, MaterialDataComponent * rhs)
+bool DX11RenderingServer::BindMaterialDataComponent(RenderPassDataComponent * renderPass, ShaderType shaderType, MaterialDataComponent * rhs)
 {
 	if (rhs->m_normalTexture)
 	{
@@ -1254,7 +1254,7 @@ bool DX11RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, 
 	return true;
 }
 
-bool DX11RenderingServer::UnbindMaterialDataComponent(ShaderType shaderType, MaterialDataComponent * rhs)
+bool DX11RenderingServer::UnbindMaterialDataComponent(RenderPassDataComponent * renderPass, ShaderType shaderType, MaterialDataComponent * rhs)
 {
 	BindSRV(shaderType, 0, 0);
 	BindSRV(shaderType, 1, 0);

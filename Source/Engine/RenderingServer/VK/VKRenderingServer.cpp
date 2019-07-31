@@ -130,7 +130,7 @@ bool VKRenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 	return true;
 }
 
-bool VKRenderingServer::ActivateResourceBinder(ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
+bool VKRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
 {
 	return true;
 }
@@ -145,7 +145,7 @@ bool VKRenderingServer::BindShaderProgramComponent(ShaderProgramComponent * rhs)
 	return true;
 }
 
-bool VKRenderingServer::BindMaterialDataComponent(ShaderType shaderType, MaterialDataComponent * rhs)
+bool VKRenderingServer::BindMaterialDataComponent(RenderPassDataComponent * renderPass, ShaderType shaderType, MaterialDataComponent * rhs)
 {
 	return true;
 }
@@ -155,12 +155,12 @@ bool VKRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, Me
 	return true;
 }
 
-bool VKRenderingServer::DeactivateResourceBinder(ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
+bool VKRenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
 {
 	return true;
 }
 
-bool VKRenderingServer::UnbindMaterialDataComponent(ShaderType shaderType, MaterialDataComponent * rhs)
+bool VKRenderingServer::UnbindMaterialDataComponent(RenderPassDataComponent * renderPass, ShaderType shaderType, MaterialDataComponent * rhs)
 {
 	return true;
 }

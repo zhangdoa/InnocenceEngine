@@ -44,27 +44,39 @@ bool LightPass::Setup()
 
 	m_RPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC->m_ResourceBinderLayoutDescs.resize(6);
+	m_RPDC->m_ResourceBinderLayoutDescs.resize(10);
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::ROBuffer;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_BindingSlot = 0;
 
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::ROBuffer;
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_BindingSlot = 3;
+	m_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::ROBufferArray;
+	m_RPDC->m_ResourceBinderLayoutDescs[1].m_BindingSlot = 1;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::ROBufferArray;
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_BindingSlot = 4;
+	m_RPDC->m_ResourceBinderLayoutDescs[2].m_BindingSlot = 2;
 
-	m_RPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::ROBufferArray;
-	m_RPDC->m_ResourceBinderLayoutDescs[3].m_BindingSlot = 5;
+	m_RPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::ROBuffer;
+	m_RPDC->m_ResourceBinderLayoutDescs[3].m_BindingSlot = 3;
 
-	m_RPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Image;
-	m_RPDC->m_ResourceBinderLayoutDescs[4].m_BindingSlot = 0;
-	m_RPDC->m_ResourceBinderLayoutDescs[4].m_ResourceCount = 4;
-	m_RPDC->m_ResourceBinderLayoutDescs[4].m_IsRanged = true;
+	m_RPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::ROBufferArray;
+	m_RPDC->m_ResourceBinderLayoutDescs[4].m_BindingSlot = 4;
 
-	m_RPDC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Sampler;
-	m_RPDC->m_ResourceBinderLayoutDescs[5].m_BindingSlot = 0;
-	m_RPDC->m_ResourceBinderLayoutDescs[5].m_IsRanged = true;
+	m_RPDC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::ROBufferArray;
+	m_RPDC->m_ResourceBinderLayoutDescs[5].m_BindingSlot = 5;
+
+	m_RPDC->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::ROBufferArray;
+	m_RPDC->m_ResourceBinderLayoutDescs[6].m_BindingSlot = 6;
+
+	m_RPDC->m_ResourceBinderLayoutDescs[7].m_ResourceBinderType = ResourceBinderType::ROBuffer;
+	m_RPDC->m_ResourceBinderLayoutDescs[7].m_BindingSlot = 7;
+
+	m_RPDC->m_ResourceBinderLayoutDescs[8].m_ResourceBinderType = ResourceBinderType::Image;
+	m_RPDC->m_ResourceBinderLayoutDescs[8].m_BindingSlot = 0;
+	m_RPDC->m_ResourceBinderLayoutDescs[8].m_ResourceCount = 4;
+	m_RPDC->m_ResourceBinderLayoutDescs[8].m_IsRanged = true;
+
+	m_RPDC->m_ResourceBinderLayoutDescs[9].m_ResourceBinderType = ResourceBinderType::Sampler;
+	m_RPDC->m_ResourceBinderLayoutDescs[9].m_BindingSlot = 0;
+	m_RPDC->m_ResourceBinderLayoutDescs[9].m_IsRanged = true;
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 
@@ -99,15 +111,19 @@ bool LightPass::PrepareCommandList()
 
 	g_pModuleManager->getRenderingServer()->CopyStencilBuffer(OpaquePass::GetRPDC(), m_RPDC);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(ShaderType::FRAGMENT, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinder, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderType::FRAGMENT, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinder, 8);
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::QUAD);
 
 	g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_mesh);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(ShaderType::FRAGMENT, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinder, 0);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderType::FRAGMENT, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinder, 8);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
+
+	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
+
+	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);
 
 	return true;
 }
