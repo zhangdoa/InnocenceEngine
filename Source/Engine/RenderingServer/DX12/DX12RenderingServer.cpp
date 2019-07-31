@@ -813,7 +813,7 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 		D3D12_CLEAR_VALUE l_clearValue;
 		if (l_rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT)
 		{
-			l_clearValue = D3D12_CLEAR_VALUE{ l_rhs->m_DX12TextureDataDesc.Format, { 0.0f, 0.0f, 0.0f, 1.0f } };
+			l_clearValue = D3D12_CLEAR_VALUE{ l_rhs->m_DX12TextureDataDesc.Format, { 0.0f, 0.0f, 0.0f, 0.0f } };
 		}
 		else if (l_rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
 		{
@@ -862,7 +862,7 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 	{
 		l_commandList->ResourceBarrier(
 			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_ResourceHandle, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_RENDER_TARGET));
+			&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_ResourceHandle, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ));
 	}
 	else if (l_rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
 		|| l_rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
@@ -881,7 +881,7 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 	{
 		l_commandList->ResourceBarrier(
 			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_ResourceHandle, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+			&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_ResourceHandle, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ));
 	}
 
 	EndSingleTimeCommands(l_commandList, m_device, m_globalCommandQueue);
@@ -1132,6 +1132,23 @@ bool DX12RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * 
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(l_rhs->m_PipelineStateObject);
 
+	if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+	{
+		auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent*>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame]);
+		l_commandList->m_CommandList->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(l_DX12TDC->m_ResourceHandle, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
+	}
+	else
+	{
+		for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+		{
+			auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent*>(l_rhs->m_RenderTargets[i]);
+
+			l_commandList->m_CommandList->ResourceBarrier(1,
+				&CD3DX12_RESOURCE_BARRIER::Transition(l_DX12TDC->m_ResourceHandle, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_RENDER_TARGET));
+		}
+	}
+
 	ID3D12DescriptorHeap* l_heaps[] = { m_CSUHeap, m_samplerHeap };
 
 	l_commandList->m_CommandList->SetDescriptorHeaps(2, l_heaps);
@@ -1142,13 +1159,20 @@ bool DX12RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * 
 
 	l_commandList->m_CommandList->SetPipelineState(l_PSO->m_PSO);
 
+	D3D12_CPU_DESCRIPTOR_HANDLE* l_DSVDescriptorCPUHandle = NULL;
+
 	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
 	{
-		l_commandList->m_CommandList->OMSetRenderTargets(1, &l_rhs->m_RTVDescriptorCPUHandles[l_rhs->m_CurrentFrame], FALSE, &l_rhs->m_DSVDescriptorCPUHandle);
+		l_DSVDescriptorCPUHandle = &l_rhs->m_DSVDescriptorCPUHandle;
+	}
+
+	if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+	{
+		l_commandList->m_CommandList->OMSetRenderTargets(1, &l_rhs->m_RTVDescriptorCPUHandles[l_rhs->m_CurrentFrame], FALSE, l_DSVDescriptorCPUHandle);
 	}
 	else
 	{
-		l_commandList->m_CommandList->OMSetRenderTargets((unsigned int)l_rhs->m_RenderPassDesc.m_RenderTargetCount, &l_rhs->m_RTVDescriptorCPUHandles[0], FALSE, &l_rhs->m_DSVDescriptorCPUHandle);
+		l_commandList->m_CommandList->OMSetRenderTargets((unsigned int)l_rhs->m_RenderPassDesc.m_RenderTargetCount, &l_rhs->m_RTVDescriptorCPUHandles[0], FALSE, l_DSVDescriptorCPUHandle);
 	}
 
 	return true;
@@ -1161,7 +1185,7 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 
 	const float l_clearColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
-	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 	{
 		l_commandList->m_CommandList->ClearRenderTargetView(l_rhs->m_RTVDescriptorCPUHandles[l_rhs->m_CurrentFrame], l_clearColor, 0, nullptr);
 	}
@@ -1173,13 +1197,39 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 		}
 	}
 
-	l_commandList->m_CommandList->ClearDepthStencilView(l_rhs->m_DSVDescriptorCPUHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0x00, 0, nullptr);
+	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	{
+		l_commandList->m_CommandList->ClearDepthStencilView(l_rhs->m_DSVDescriptorCPUHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0x00, 0, nullptr);
+	}
 
 	return true;
 }
 
 bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
 {
+	auto l_binder = reinterpret_cast<DX12ResourceBinder*>(binder);
+	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
+
+	switch (l_binder->m_ResourceBinderType)
+	{
+	case ResourceBinderType::Sampler:
+		break;
+	case ResourceBinderType::Image:
+		l_commandList->m_CommandList->SetGraphicsRootDescriptorTable((unsigned int)bindingSlot, l_binder->m_SRV.GPUHandle);
+		break;
+	case ResourceBinderType::ROBuffer:
+		break;
+	case ResourceBinderType::ROBufferArray:
+		break;
+	case ResourceBinderType::RWBuffer:
+		break;
+	case ResourceBinderType::RWBufferArray:
+		break;
+	default:
+		break;
+	}
+
 	return true;
 }
 
@@ -1201,6 +1251,12 @@ bool DX12RenderingServer::BindShaderProgramComponent(ShaderProgramComponent * rh
 
 bool DX12RenderingServer::BindMaterialDataComponent(RenderPassDataComponent * renderPass, ShaderType shaderType, MaterialDataComponent * rhs)
 {
+	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
+	auto l_material = reinterpret_cast<DX12MaterialDataComponent*>(rhs);
+
+	l_commandList->m_CommandList->SetGraphicsRootDescriptorTable(0, l_material->m_SRVs[0].GPUHandle);
+
 	return true;
 }
 
@@ -1233,6 +1289,23 @@ bool DX12RenderingServer::CommandListEnd(RenderPassDataComponent * rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+
+	if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+	{
+		auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent*>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame]);
+		l_commandList->m_CommandList->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(l_DX12TDC->m_ResourceHandle, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
+	}
+	else
+	{
+		for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+		{
+			auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent*>(l_rhs->m_RenderTargets[i]);
+
+			l_commandList->m_CommandList->ResourceBarrier(1,
+				&CD3DX12_RESOURCE_BARRIER::Transition(l_DX12TDC->m_ResourceHandle, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_GENERIC_READ));
+		}
+	}
 
 	l_commandList->m_CommandList->Close();
 
@@ -1283,6 +1356,32 @@ RenderPassDataComponent * DX12RenderingServer::GetSwapChainRPDC()
 
 bool DX12RenderingServer::Present()
 {
+	// Present the frame.
+	m_swapChain->Present(1, 0);
+
+	// Schedule a Signal command in the queue.
+	auto l_currentFence = reinterpret_cast<DX12Fence*>(m_SwapChainRPDC->m_Fences[m_SwapChainRPDC->m_CurrentFrame]);
+	const UINT64 l_currentFenceValue = l_currentFence->m_FenceStatus;
+
+	auto l_commandQueue = reinterpret_cast<DX12CommandQueue*>(m_SwapChainRPDC->m_CommandQueue);
+	l_commandQueue->m_CommandQueue->Signal(l_currentFence->m_Fence, l_currentFenceValue);
+
+	auto l_nextFrameIndex = m_swapChain->GetCurrentBackBufferIndex();
+
+	// If the next frame is not ready to be rendered yet, wait until it is ready.
+	if (l_currentFence->m_Fence->GetCompletedValue() < l_currentFenceValue)
+	{
+		l_currentFence->m_Fence->SetEventOnCompletion(l_currentFenceValue, l_currentFence->m_FenceEvent);
+		WaitForSingleObjectEx(l_currentFence->m_FenceEvent, INFINITE, FALSE);
+	}
+
+	// Set the fence value for the next frame.
+	auto l_nextFence = reinterpret_cast<DX12Fence*>(m_SwapChainRPDC->m_Fences[l_nextFrameIndex]);
+	l_nextFence->m_FenceStatus = l_currentFenceValue + 1;
+
+	// Update the frame index.
+	m_SwapChainRPDC->m_CurrentFrame = l_nextFrameIndex;
+
 	return true;
 }
 

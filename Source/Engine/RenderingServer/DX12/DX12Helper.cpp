@@ -581,6 +581,7 @@ bool DX12Helper::CreateResourcesBinder(DX12RenderPassDataComponent * DX12RPDC, I
 	auto l_resourcesBinder = reinterpret_cast<DX12ResourceBinder*>(DX12RPDC->m_RenderTargetsResourceBinder);
 	auto l_DX12RenderingServer = reinterpret_cast<DX12RenderingServer*>(renderingServer);
 
+	l_resourcesBinder->m_ResourceBinderType = ResourceBinderType::Image;
 	l_resourcesBinder->m_SRV = l_DX12RenderingServer->CreateSRV(DX12RPDC->m_RenderTargets[0]);
 
 	// Create multiple continuous SRVs
