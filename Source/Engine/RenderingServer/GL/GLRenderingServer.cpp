@@ -87,7 +87,10 @@ namespace GLRenderingServerNS
 	std::unordered_set<TextureDataComponent*> m_initializedTextures;
 	std::unordered_set<MaterialDataComponent*> m_initializedMaterials;
 
+	IResourceBinder* m_userPipelineOutput = 0;
 	GLRenderPassDataComponent* m_SwapChainRPDC = 0;
+	GLShaderProgramComponent* m_SwapChainSPC = 0;
+	GLSamplerDataComponent* m_SwapChainSDC = 0;
 }
 
 using namespace GLRenderingServerNS;
@@ -128,6 +131,8 @@ bool GLRenderingServer::Setup()
 	glEnable(GL_PROGRAM_POINT_SIZE);
 
 	m_SwapChainRPDC = reinterpret_cast<GLRenderPassDataComponent*>(AddRenderPassDataComponent("SwapChain/"));
+	m_SwapChainSPC = reinterpret_cast<GLShaderProgramComponent*>(AddShaderProgramComponent("SwapChain/"));
+	m_SwapChainSDC = reinterpret_cast<GLSamplerDataComponent*>(AddSamplerDataComponent("SwapChain/"));
 
 	m_objectStatus = ObjectStatus::Created;
 	InnoLogger::Log(LogLevel::Success, "GLRenderingServer setup finished.");
@@ -139,13 +144,34 @@ bool GLRenderingServer::Initialize()
 {
 	if (m_objectStatus == ObjectStatus::Created)
 	{
+		m_SwapChainSPC->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
+		m_SwapChainSPC->m_ShaderFilePaths.m_PSPath = "swapChain.frag/";
+
+		InitializeShaderProgramComponent(m_SwapChainSPC);
+
+		InitializeSamplerDataComponent(m_SwapChainSDC);
+
 		auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 		l_RenderPassDesc.m_RenderTargetCount = 1;
 
 		m_SwapChainRPDC->m_RenderPassDesc = l_RenderPassDesc;
 		m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UBYTE;
+		m_SwapChainRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs.resize(2);
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 0;
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceCount = 1;
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_IsRanged = true;
+
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Sampler;
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 0;
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 1;
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_IsRanged = true;
+
+		m_SwapChainRPDC->m_ShaderProgram = m_SwapChainSPC;
 		m_SwapChainRPDC->m_FBO = 0;
 		m_SwapChainRPDC->m_RBO = 0;
 
@@ -829,13 +855,37 @@ bool GLRenderingServer::WaitForFrame(RenderPassDataComponent * rhs)
 	return true;
 }
 
-RenderPassDataComponent * GLRenderingServer::GetSwapChainRPDC()
+bool GLRenderingServer::SetUserPipelineOutput(IResourceBinder* resourceBinder)
 {
-	return m_SwapChainRPDC;
+	m_userPipelineOutput = resourceBinder;
+
+	return true;
 }
 
 bool GLRenderingServer::Present()
 {
+	CommandListBegin(m_SwapChainRPDC, m_SwapChainRPDC->m_CurrentFrame);
+
+	BindRenderPassDataComponent(m_SwapChainRPDC);
+
+	CleanRenderTargets(m_SwapChainRPDC);
+
+	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_SwapChainSDC->m_ResourceBinder, 0, 1, Accessibility::ReadOnly, false, 0, 0);
+
+	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, false, 0, 0);
+
+	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Quad);
+
+	DispatchDrawCall(m_SwapChainRPDC, l_mesh);
+
+	DeactivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, false, 0, 0);
+
+	CommandListEnd(m_SwapChainRPDC);
+
+	ExecuteCommandList(m_SwapChainRPDC);
+
+	WaitForFrame(m_SwapChainRPDC);
+
 	g_pModuleManager->getWindowSystem()->getWindowSurface()->swapBuffer();
 
 	return true;

@@ -175,7 +175,7 @@ bool VKRenderingServer::WaitForFrame(RenderPassDataComponent * rhs)
 	return true;
 }
 
-RenderPassDataComponent * VKRenderingServer::GetSwapChainRPDC()
+bool VKRenderingServer::SetUserPipelineOutput(IResourceBinder* resourceBinder)
 {
 	return nullptr;
 }

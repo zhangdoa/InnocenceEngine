@@ -46,7 +46,7 @@ public:
 	bool CommandListEnd(RenderPassDataComponent * rhs) override;
 	bool ExecuteCommandList(RenderPassDataComponent * rhs) override;
 	bool WaitForFrame(RenderPassDataComponent * rhs) override;
-	RenderPassDataComponent * GetSwapChainRPDC() override;
+	bool SetUserPipelineOutput(IResourceBinder* resourceBinder) override;
 	bool Present() override;
 
 	bool CopyDepthBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest) override;

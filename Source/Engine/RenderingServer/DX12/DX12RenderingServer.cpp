@@ -90,7 +90,10 @@ namespace DX12RenderingServerNS
 	D3D12_CPU_DESCRIPTOR_HANDLE m_currentSamplerCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_currentSamplerGPUHandle;
 
+	IResourceBinder* m_userPipelineOutput = 0;
 	DX12RenderPassDataComponent* m_SwapChainRPDC = 0;
+	DX12ShaderProgramComponent* m_SwapChainSPC = 0;
+	DX12SamplerDataComponent* m_SwapChainSDC = 0;
 }
 
 bool DX12RenderingServerNS::CreateDebugCallback()
@@ -429,6 +432,8 @@ bool DX12RenderingServer::Setup()
 	l_result &= CreateGlobalSamplerHeap();
 
 	m_SwapChainRPDC = reinterpret_cast<DX12RenderPassDataComponent*>(AddRenderPassDataComponent("SwapChain/"));
+	m_SwapChainSPC = reinterpret_cast<DX12ShaderProgramComponent*>(AddShaderProgramComponent("SwapChain/"));
+	m_SwapChainSDC = reinterpret_cast<DX12SamplerDataComponent*>(AddSamplerDataComponent("SwapChain/"));
 
 	m_objectStatus = ObjectStatus::Created;
 	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer setup finished.");
@@ -440,6 +445,13 @@ bool DX12RenderingServer::Initialize()
 {
 	if (m_objectStatus == ObjectStatus::Created)
 	{
+		m_SwapChainSPC->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
+		m_SwapChainSPC->m_ShaderFilePaths.m_PSPath = "swapChain.frag/";
+
+		InitializeShaderProgramComponent(m_SwapChainSPC);
+
+		InitializeSamplerDataComponent(m_SwapChainSDC);
+
 		// Create command queue first
 		auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
@@ -448,6 +460,21 @@ bool DX12RenderingServer::Initialize()
 		m_SwapChainRPDC->m_RenderPassDesc = l_RenderPassDesc;
 		m_SwapChainRPDC->m_RenderPassDesc.m_UseMultiFrames = true;
 		m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UBYTE;
+		m_SwapChainRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
+
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs.resize(2);
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 0;
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceCount = 1;
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_IsRanged = true;
+
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Sampler;
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 0;
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 1;
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_IsRanged = true;
+
+		m_SwapChainRPDC->m_ShaderProgram = m_SwapChainSPC;
 
 		ReserveRenderTargets(m_SwapChainRPDC, this);
 
@@ -1443,13 +1470,73 @@ bool DX12RenderingServer::WaitForFrame(RenderPassDataComponent * rhs)
 	return true;
 }
 
-RenderPassDataComponent * DX12RenderingServer::GetSwapChainRPDC()
+bool DX12RenderingServer::SetUserPipelineOutput(IResourceBinder* resourceBinder)
 {
-	return m_SwapChainRPDC;
+	m_userPipelineOutput = resourceBinder;
+
+	return true;
 }
 
 bool DX12RenderingServer::Present()
 {
+	CommandListBegin(m_SwapChainRPDC, m_SwapChainRPDC->m_CurrentFrame);
+
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(m_SwapChainRPDC->m_CommandLists[m_SwapChainRPDC->m_CurrentFrame]);
+
+	if (m_SwapChainRPDC->m_RenderPassDesc.m_UseMultiFrames)
+	{
+		auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent*>(m_SwapChainRPDC->m_RenderTargets[m_SwapChainRPDC->m_CurrentFrame]);
+		l_commandList->m_CommandList->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(l_DX12TDC->m_ResourceHandle, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_GENERIC_READ));
+	}
+	else
+	{
+		for (size_t i = 0; i < m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+		{
+			auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent*>(m_SwapChainRPDC->m_RenderTargets[i]);
+
+			l_commandList->m_CommandList->ResourceBarrier(1,
+				&CD3DX12_RESOURCE_BARRIER::Transition(l_DX12TDC->m_ResourceHandle, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_GENERIC_READ));
+		}
+	}
+
+	BindRenderPassDataComponent(m_SwapChainRPDC);
+
+	CleanRenderTargets(m_SwapChainRPDC);
+
+	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_SwapChainSDC->m_ResourceBinder, 0, 1, Accessibility::ReadOnly, false, 0, 0);
+
+	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, false, 0, 0);
+
+	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Quad);
+
+	DispatchDrawCall(m_SwapChainRPDC, l_mesh);
+
+	DeactivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, false, 0, 0);
+
+	if (m_SwapChainRPDC->m_RenderPassDesc.m_UseMultiFrames)
+	{
+		auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent*>(m_SwapChainRPDC->m_RenderTargets[m_SwapChainRPDC->m_CurrentFrame]);
+		l_commandList->m_CommandList->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(l_DX12TDC->m_ResourceHandle, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+	}
+	else
+	{
+		for (size_t i = 0; i < m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+		{
+			auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent*>(m_SwapChainRPDC->m_RenderTargets[i]);
+
+			l_commandList->m_CommandList->ResourceBarrier(1,
+				&CD3DX12_RESOURCE_BARRIER::Transition(l_DX12TDC->m_ResourceHandle, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+		}
+	}
+
+	l_commandList->m_CommandList->Close();
+
+	ExecuteCommandList(m_SwapChainRPDC);
+
+	WaitForFrame(m_SwapChainRPDC);
+
 	// Present the frame.
 	m_swapChain->Present(1, 0);
 

@@ -25,22 +25,6 @@ bool FinalBlendPass::Setup()
 
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
 
-	auto l_RPDC = g_pModuleManager->getRenderingServer()->GetSwapChainRPDC();
-
-	l_RPDC->m_ResourceBinderLayoutDescs.resize(2);
-	l_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
-	l_RPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
-	l_RPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 0;
-	l_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceCount = 3;
-	l_RPDC->m_ResourceBinderLayoutDescs[0].m_IsRanged = true;
-
-	l_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Sampler;
-	l_RPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 0;
-	l_RPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 1;
-	l_RPDC->m_ResourceBinderLayoutDescs[1].m_IsRanged = true;
-
-	l_RPDC->m_ShaderProgram = m_SPC;
-
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	m_RPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("FinalBlendPass/");
@@ -70,6 +54,8 @@ bool FinalBlendPass::Setup()
 	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("FinalBlendPass/");
 
 	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
+
+	g_pModuleManager->getRenderingServer()->SetUserPipelineOutput(m_RPDC->m_RenderTargetsResourceBinder);
 
 	return true;
 }
