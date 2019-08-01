@@ -1256,7 +1256,7 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 		case ResourceBinderType::Image:
 			for (size_t i = 0; i < l_resourceBinder->m_TextureSRVs.size(); i++)
 			{
-				BindSRV(shaderStage, (unsigned int)i, l_resourceBinder->m_TextureSRVs[i]);
+				BindSRV(shaderStage, (unsigned int)(globalSlot + i), l_resourceBinder->m_TextureSRVs[i]);
 			}
 			break;
 		case ResourceBinderType::Buffer:
