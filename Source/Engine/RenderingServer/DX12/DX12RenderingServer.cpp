@@ -1294,6 +1294,11 @@ bool PreparePipeline(DX12RenderPassDataComponent* renderPass, DX12CommandList* c
 		commandList->m_CommandList->OMSetRenderTargets((unsigned int)renderPass->m_RenderPassDesc.m_RenderTargetCount, &renderPass->m_RTVDescriptorCPUHandles[0], FALSE, l_DSVDescriptorCPUHandle);
 	}
 
+	if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
+	{
+		commandList->m_CommandList->OMSetStencilRef(renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilReference);
+	}
+
 	return true;
 }
 
@@ -1580,11 +1585,23 @@ bool DX12RenderingServer::Present()
 
 bool DX12RenderingServer::CopyDepthBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
 {
+	auto l_src = reinterpret_cast<DX12RenderPassDataComponent*>(src);
+	auto l_dest = reinterpret_cast<DX12RenderPassDataComponent*>(dest);
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_dest->m_CommandLists[l_dest->m_CurrentFrame]);
+
+	l_commandList->m_CommandList->OMSetRenderTargets((unsigned int)l_dest->m_RTVDescriptorCPUHandles.size(), &l_dest->m_RTVDescriptorCPUHandles[0], FALSE, &l_src->m_DSVDescriptorCPUHandle);
+
 	return true;
 }
 
 bool DX12RenderingServer::CopyStencilBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
 {
+	auto l_src = reinterpret_cast<DX12RenderPassDataComponent*>(src);
+	auto l_dest = reinterpret_cast<DX12RenderPassDataComponent*>(dest);
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_dest->m_CommandLists[l_dest->m_CurrentFrame]);
+
+	l_commandList->m_CommandList->OMSetRenderTargets((unsigned int)l_dest->m_RTVDescriptorCPUHandles.size(), &l_dest->m_RTVDescriptorCPUHandles[0], FALSE, &l_src->m_DSVDescriptorCPUHandle);
+
 	return true;
 }
 
