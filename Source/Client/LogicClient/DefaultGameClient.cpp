@@ -91,16 +91,16 @@ bool PlayerComponentCollection::setup()
 		f_rotateAroundPositiveYAxis = std::bind(&rotateAroundPositiveYAxis, std::placeholders::_1);
 		f_rotateAroundRightAxis = std::bind(&rotateAroundRightAxis, std::placeholders::_1);
 
-		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_S, ButtonStatus::PRESSED }, &f_moveForward);
-		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_W, ButtonStatus::PRESSED }, &f_moveBackward);
-		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_A, ButtonStatus::PRESSED }, &f_moveLeft);
-		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_D, ButtonStatus::PRESSED }, &f_moveRight);
+		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_S, ButtonStatus::Pressed }, &f_moveForward);
+		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_W, ButtonStatus::Pressed }, &f_moveBackward);
+		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_A, ButtonStatus::Pressed }, &f_moveLeft);
+		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_D, ButtonStatus::Pressed }, &f_moveRight);
 
-		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_SPACE, ButtonStatus::PRESSED }, &f_speedUp);
-		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_SPACE, ButtonStatus::RELEASED }, &f_speedDown);
+		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_SPACE, ButtonStatus::Pressed }, &f_speedUp);
+		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_SPACE, ButtonStatus::Released }, &f_speedDown);
 
-		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::PRESSED }, &f_allowMove);
-		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::RELEASED }, &f_forbidMove);
+		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::Pressed }, &f_allowMove);
+		g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::Released }, &f_forbidMove);
 		g_pModuleManager->getEventSystem()->addMouseMovementCallback(0, &f_rotateAroundPositiveYAxis);
 		g_pModuleManager->getEventSystem()->addMouseMovementCallback(1, &f_rotateAroundRightAxis);
 
@@ -231,10 +231,10 @@ bool GameClientNS::setupReferenceSpheres()
 		m_referenceSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_referenceSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_referenceSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
-		m_referenceSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
-		m_referenceSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::SPHERE;
-		m_referenceSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::DYNAMIC;
-		m_referenceSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+		m_referenceSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::Opaque;
+		m_referenceSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::Sphere;
+		m_referenceSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::Dynamic;
+		m_referenceSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
 		m_referenceSphereVisibleComponents[i]->m_simulatePhysics = true;
 	}
 
@@ -284,10 +284,10 @@ bool GameClientNS::setupOpaqueSpheres()
 		m_opaqueSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_opaqueSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_opaqueSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
-		m_opaqueSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_OPAQUE;
-		m_opaqueSphereVisibleComponents[i]->m_meshShapeType = (i & 0x00000001) ? MeshShapeType::SPHERE : MeshShapeType::CUBE;
-		m_opaqueSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::DYNAMIC;
-		m_opaqueSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+		m_opaqueSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::Opaque;
+		m_opaqueSphereVisibleComponents[i]->m_meshShapeType = (i & 0x00000001) ? MeshShapeType::Sphere : MeshShapeType::Cube;
+		m_opaqueSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::Dynamic;
+		m_opaqueSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
 		m_opaqueSphereVisibleComponents[i]->m_simulatePhysics = true;
 	}
 
@@ -347,10 +347,10 @@ bool GameClientNS::setupTransparentSpheres()
 		m_transparentSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_transparentSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_transparentSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
-		m_transparentSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::INNO_TRANSPARENT;
-		m_transparentSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::SPHERE;
-		m_transparentSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::DYNAMIC;
-		m_transparentSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
+		m_transparentSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::Transparent;
+		m_transparentSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::Sphere;
+		m_transparentSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::Dynamic;
+		m_transparentSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
 		m_transparentSphereVisibleComponents[i]->m_simulatePhysics = true;
 	}
 
@@ -471,7 +471,7 @@ bool GameClientNS::initialize()
 {
 	f_testFunc = []() {	g_pModuleManager->getFileSystem()->loadScene("Res//Scenes//Intro.InnoScene");
 	};
-	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_R, ButtonStatus::PRESSED }, &f_testFunc);
+	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_R, ButtonStatus::Pressed }, &f_testFunc);
 	return true;
 }
 
@@ -479,14 +479,14 @@ bool GameClientNS::updateMaterial(const ModelMap& modelMap, vec4 albedo, vec4 MR
 {
 	for (auto& j : modelMap)
 	{
-		j.second->m_meshCustomMaterial.albedo_r = albedo.x;
-		j.second->m_meshCustomMaterial.albedo_g = albedo.y;
-		j.second->m_meshCustomMaterial.albedo_b = albedo.z;
-		j.second->m_meshCustomMaterial.metallic = MRAT.x;
-		j.second->m_meshCustomMaterial.roughness = MRAT.y;
-		j.second->m_meshCustomMaterial.ao = MRAT.z;
-		j.second->m_meshCustomMaterial.alpha = albedo.w;
-		j.second->m_meshCustomMaterial.thickness = MRAT.w;
+		j.second->m_meshCustomMaterial.AlbedoR = albedo.x;
+		j.second->m_meshCustomMaterial.AlbedoG = albedo.y;
+		j.second->m_meshCustomMaterial.AlbedoB = albedo.z;
+		j.second->m_meshCustomMaterial.Metallic = MRAT.x;
+		j.second->m_meshCustomMaterial.Roughness = MRAT.y;
+		j.second->m_meshCustomMaterial.AO = MRAT.z;
+		j.second->m_meshCustomMaterial.Alpha = albedo.w;
+		j.second->m_meshCustomMaterial.Thickness = MRAT.w;
 	}
 
 	return true;

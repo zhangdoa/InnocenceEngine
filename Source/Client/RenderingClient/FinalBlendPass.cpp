@@ -20,7 +20,7 @@ bool FinalBlendPass::Setup()
 	m_SPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("FinalBlendPass/");
 
 	m_SPC->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
-	m_SPC->m_ShaderFilePaths.m_FSPath = "finalBlendPass.frag/";
+	m_SPC->m_ShaderFilePaths.m_PSPath = "finalBlendPass.frag/";
 
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
 
@@ -59,15 +59,15 @@ bool FinalBlendPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CommandListBegin(l_RPDC, l_currentFrame);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(l_RPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(l_RPDC);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(l_RPDC, ShaderType::FRAGMENT, m_SDC->m_ResourceBinder, 1, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(l_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 1, 0);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(l_RPDC, ShaderType::FRAGMENT, LightPass::GetRPDC()->m_RenderTargetsResourceBinder, 0, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(l_RPDC, ShaderStage::Pixel, LightPass::GetRPDC()->m_RenderTargetsResourceBinder, 0, 0);
 
-	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::QUAD);
+	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Quad);
 
 	g_pModuleManager->getRenderingServer()->DispatchDrawCall(l_RPDC, l_mesh);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(l_RPDC, ShaderType::FRAGMENT, LightPass::GetRPDC()->m_RenderTargetsResourceBinder, 0, 0);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(l_RPDC, ShaderStage::Pixel, LightPass::GetRPDC()->m_RenderTargetsResourceBinder, 0, 0);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(l_RPDC);
 

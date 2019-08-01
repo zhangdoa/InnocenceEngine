@@ -32,7 +32,7 @@ namespace GLHelper
 	bool GenerateViewportState(ViewportDesc viewportDesc, GLPipelineStateObject* PSO);
 
 	std::string LoadShaderFile(const std::string& path);
-	bool AddShaderHandle(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const ShaderFilePath& shaderFilePath);
+	bool AddShaderHandle(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderStage, const ShaderFilePath& shaderFilePath);
 	bool ActivateTexture(GLTextureDataComponent * GLTDC, int activateIndex);
 
 	bool AttachTextureToFramebuffer(GLTextureDataComponent * GLTDC, GLRenderPassDataComponent * GLRPDC, unsigned int attachmentIndex, unsigned int textureIndex = 0, unsigned int mipLevel = 0, unsigned int layer = 0);

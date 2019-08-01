@@ -106,7 +106,7 @@ bool PhysXWrapperNS::setup()
 
 	f_pauseSimulate = [&]() { m_needSimulate = !m_needSimulate; };
 
-	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_P, ButtonStatus::PRESSED }, &f_pauseSimulate);
+	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_P, ButtonStatus::Pressed }, &f_pauseSimulate);
 
 	return true;
 }

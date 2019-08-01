@@ -527,7 +527,7 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j)
 		l_meshFile.close();
 
 		l_MeshDC->m_indicesSize = l_MeshDC->m_indices.size();
-		l_MeshDC->m_meshShapeType = MeshShapeType::CUSTOM;
+		l_MeshDC->m_meshShapeType = MeshShapeType::Custom;
 		l_MeshDC->m_objectStatus = ObjectStatus::Created;
 
 		g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(l_MeshDC);
@@ -614,34 +614,34 @@ MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(co
 			auto l_TDC = AssetLoader::loadTexture(i["File"]);
 			if (l_TDC)
 			{
-				l_TDC->m_textureDataDesc.samplerType = TextureSamplerType(i["SamplerType"]);
-				l_TDC->m_textureDataDesc.usageType = TextureUsageType(i["UsageType"]);
+				l_TDC->m_textureDataDesc.SamplerType = TextureSamplerType(i["SamplerType"]);
+				l_TDC->m_textureDataDesc.UsageType = TextureUsageType(i["UsageType"]);
 			}
 			else
 			{
 				l_TDC = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType(i["UsageType"]));
 			}
-			switch (l_TDC->m_textureDataDesc.usageType)
+			switch (l_TDC->m_textureDataDesc.UsageType)
 			{
-			case TextureUsageType::NORMAL: l_MDC->m_normalTexture = l_TDC; break;
-			case TextureUsageType::ALBEDO: l_MDC->m_albedoTexture = l_TDC; break;
-			case TextureUsageType::METALLIC: l_MDC->m_metallicTexture = l_TDC; break;
-			case TextureUsageType::ROUGHNESS: l_MDC->m_roughnessTexture = l_TDC; break;
-			case TextureUsageType::AMBIENT_OCCLUSION: l_MDC->m_aoTexture = l_TDC; break;
+			case TextureUsageType::Normal: l_MDC->m_normalTexture = l_TDC; break;
+			case TextureUsageType::Albedo: l_MDC->m_albedoTexture = l_TDC; break;
+			case TextureUsageType::Metallic: l_MDC->m_metallicTexture = l_TDC; break;
+			case TextureUsageType::Roughness: l_MDC->m_roughnessTexture = l_TDC; break;
+			case TextureUsageType::AmbientOcclusion: l_MDC->m_aoTexture = l_TDC; break;
 			default:
 				break;
 			}
 		}
 	}
 
-	l_MDC->m_meshCustomMaterial.albedo_r = j["Albedo"]["R"];
-	l_MDC->m_meshCustomMaterial.albedo_g = j["Albedo"]["G"];
-	l_MDC->m_meshCustomMaterial.albedo_b = j["Albedo"]["B"];
-	l_MDC->m_meshCustomMaterial.alpha = j["Albedo"]["A"];
-	l_MDC->m_meshCustomMaterial.metallic = j["Metallic"];
-	l_MDC->m_meshCustomMaterial.roughness = j["Roughness"];
-	l_MDC->m_meshCustomMaterial.ao = j["AO"];
-	l_MDC->m_meshCustomMaterial.thickness = j["Thickness"];
+	l_MDC->m_meshCustomMaterial.AlbedoR = j["Albedo"]["R"];
+	l_MDC->m_meshCustomMaterial.AlbedoG = j["Albedo"]["G"];
+	l_MDC->m_meshCustomMaterial.AlbedoB = j["Albedo"]["B"];
+	l_MDC->m_meshCustomMaterial.Alpha = j["Albedo"]["A"];
+	l_MDC->m_meshCustomMaterial.Metallic = j["Metallic"];
+	l_MDC->m_meshCustomMaterial.Roughness = j["Roughness"];
+	l_MDC->m_meshCustomMaterial.AO = j["AO"];
+	l_MDC->m_meshCustomMaterial.Thickness = j["Thickness"];
 	l_MDC->m_objectStatus = ObjectStatus::Created;
 
 	g_pModuleManager->getRenderingFrontend()->registerMaterialDataComponent(l_MDC);

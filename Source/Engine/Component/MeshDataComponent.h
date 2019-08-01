@@ -7,8 +7,8 @@
 class MeshDataComponent : public InnoComponent
 {
 public:
-	MeshPrimitiveTopology m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	MeshShapeType m_meshShapeType = MeshShapeType::LINE;
+	MeshPrimitiveTopology m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
+	MeshShapeType m_meshShapeType = MeshShapeType::Line;
 	size_t m_indicesSize = 0;
 	PhysicsDataComponent* m_PDC = 0;
 	SkeletonDataComponent* m_SDC = 0;

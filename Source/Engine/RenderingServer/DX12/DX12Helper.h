@@ -63,5 +63,5 @@ namespace DX12Helper
 	bool GenerateRasterizerStateDesc(RasterizerDesc rasterizerDesc, DX12PipelineStateObject* PSO);
 	bool GenerateViewportStateDesc(ViewportDesc viewportDesc, DX12PipelineStateObject* PSO);
 
-	bool LoadShaderFile(ID3D10Blob** rhs, ShaderType shaderType, const ShaderFilePath& shaderFilePath);
+	bool LoadShaderFile(ID3D10Blob** rhs, ShaderStage shaderStage, const ShaderFilePath& shaderFilePath);
 }

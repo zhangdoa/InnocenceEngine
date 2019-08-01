@@ -19,7 +19,7 @@ bool OpaquePass::Setup()
 	m_SPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("OpaquePass/");
 
 	m_SPC->m_ShaderFilePaths.m_VSPath = "opaquePass.vert/";
-	m_SPC->m_ShaderFilePaths.m_FSPath = "opaquePass.frag/";
+	m_SPC->m_ShaderFilePaths.m_PSPath = "opaquePass.frag/";
 
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
 
@@ -75,8 +75,8 @@ bool OpaquePass::Setup()
 
 	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("OpaquePass/");
 
-	m_SDC->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::REPEAT;
-	m_SDC->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::REPEAT;
+	m_SDC->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
+	m_SDC->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
 	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
 
@@ -97,8 +97,8 @@ bool OpaquePass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderType::FRAGMENT, m_SDC->m_ResourceBinder, 4, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderType::VERTEX, l_CameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly, false, 0, l_CameraGBDC->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 4, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_CameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly, false, 0, l_CameraGBDC->m_TotalSize);
 
 	unsigned int l_offset = 0;
 
@@ -107,13 +107,13 @@ bool OpaquePass::PrepareCommandList()
 	{
 		auto l_opaquePassGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassGPUData()[i];
 
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderType::FRAGMENT, l_opaquePassGPUData.material->m_ResourceBinder, 3, 0);
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderType::VERTEX, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, true, l_offset, l_MeshGBDC->m_ElementSize);
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderType::FRAGMENT, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, true, l_offset, l_MaterialGBDC->m_ElementSize);
+		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_opaquePassGPUData.material->m_ResourceBinder, 3, 0);
+		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, true, l_offset, l_MeshGBDC->m_ElementSize);
+		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, true, l_offset, l_MaterialGBDC->m_ElementSize);
 
 		g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_opaquePassGPUData.mesh);
 
-		g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderType::FRAGMENT, l_opaquePassGPUData.material->m_ResourceBinder, 3, 0);
+		g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_opaquePassGPUData.material->m_ResourceBinder, 3, 0);
 
 		l_offset++;
 	}

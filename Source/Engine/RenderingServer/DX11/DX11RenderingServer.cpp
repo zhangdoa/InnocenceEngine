@@ -274,7 +274,7 @@ bool DX11RenderingServer::Setup()
 	}
 
 	// @TODO: Find a better solution
-	LoadShaderFile(&m_InputLayoutDummyShaderBuffer, ShaderType::VERTEX, "dummyInputLayout.hlsl/");
+	LoadShaderFile(&m_InputLayoutDummyShaderBuffer, ShaderStage::Vertex, "dummyInputLayout.hlsl/");
 
 	m_SwapChainRPDC = reinterpret_cast<DX11RenderPassDataComponent*>(AddRenderPassDataComponent("SwapChain/"));
 
@@ -293,7 +293,7 @@ bool DX11RenderingServer::Initialize()
 		l_RenderPassDesc.m_RenderTargetCount = 1;
 
 		m_SwapChainRPDC->m_RenderPassDesc = l_RenderPassDesc;
-		m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc.pixelDataType = TexturePixelDataType::UBYTE;
+		m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UBYTE;
 
 		ReserveRenderTargets(m_SwapChainRPDC, this);
 
@@ -596,17 +596,17 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 	// Create the empty texture.
 	HRESULT l_HResult;
 
-	if (l_rhs->m_textureDataDesc.samplerType == TextureSamplerType::SAMPLER_1D)
+	if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler1D)
 	{
 		auto l_desc = Get1DTextureDataDesc(l_rhs->m_DX11TextureDataDesc);
 		l_HResult = m_device->CreateTexture1D(&l_desc, NULL, (ID3D11Texture1D**)&l_rhs->m_ResourceHandle);
 	}
-	else if (l_rhs->m_textureDataDesc.samplerType == TextureSamplerType::SAMPLER_2D)
+	else if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler2D)
 	{
 		auto l_desc = Get2DTextureDataDesc(l_rhs->m_DX11TextureDataDesc);
 		l_HResult = m_device->CreateTexture2D(&l_desc, NULL, (ID3D11Texture2D**)&l_rhs->m_ResourceHandle);
 	}
-	else if (l_rhs->m_textureDataDesc.samplerType == TextureSamplerType::SAMPLER_3D)
+	else if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
 	{
 		auto l_desc = Get3DTextureDataDesc(l_rhs->m_DX11TextureDataDesc);
 		l_HResult = m_device->CreateTexture3D(&l_desc, NULL, (ID3D11Texture3D**)&l_rhs->m_ResourceHandle);
@@ -623,16 +623,16 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 	}
 
 	// Submit raw data to GPU memory
-	if (l_rhs->m_textureDataDesc.usageType != TextureUsageType::COLOR_ATTACHMENT
-		&& l_rhs->m_textureDataDesc.usageType != TextureUsageType::DEPTH_ATTACHMENT
-		&& l_rhs->m_textureDataDesc.usageType != TextureUsageType::DEPTH_STENCIL_ATTACHMENT
-		&& l_rhs->m_textureDataDesc.usageType != TextureUsageType::RAW_IMAGE)
+	if (l_rhs->m_textureDataDesc.UsageType != TextureUsageType::ColorAttachment
+		&& l_rhs->m_textureDataDesc.UsageType != TextureUsageType::DepthAttachment
+		&& l_rhs->m_textureDataDesc.UsageType != TextureUsageType::DepthStencilAttachment
+		&& l_rhs->m_textureDataDesc.UsageType != TextureUsageType::RawImage)
 	{
-		unsigned int l_rowPitch = (l_rhs->m_textureDataDesc.width * ((unsigned int)l_rhs->m_textureDataDesc.pixelDataFormat + 1)) * sizeof(unsigned char);
+		unsigned int l_rowPitch = (l_rhs->m_textureDataDesc.Width * ((unsigned int)l_rhs->m_textureDataDesc.PixelDataFormat + 1)) * sizeof(unsigned char);
 
-		if (l_rhs->m_textureDataDesc.samplerType == TextureSamplerType::SAMPLER_3D)
+		if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
 		{
-			unsigned int l_depthPitch = l_rowPitch * l_rhs->m_textureDataDesc.height;
+			unsigned int l_depthPitch = l_rowPitch * l_rhs->m_textureDataDesc.Height;
 			m_deviceContext->UpdateSubresource(l_rhs->m_ResourceHandle, 0, NULL, l_rhs->m_textureData, l_rowPitch, l_depthPitch);
 		}
 		else
@@ -662,13 +662,13 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 	InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: SRV: ", l_rhs->m_SRV, " is initialized.");
 
 	// Generate mipmaps for this texture.
-	if (l_rhs->m_textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
+	if (l_rhs->m_textureDataDesc.MagFilterMethod == TextureFilterMethod::Mip)
 	{
 		m_deviceContext->GenerateMips(l_rhs->m_SRV);
 	}
 
 	// Create UAV
-	if (l_rhs->m_textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
+	if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::RawImage)
 	{
 		l_rhs->m_UAVDesc = GetUAVDesc(l_rhs->m_textureDataDesc, l_rhs->m_DX11TextureDataDesc);
 
@@ -710,7 +710,7 @@ bool DX11RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 	}
 	else
 	{
-		l_resourceBinder->m_TextureSRVs[0] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::NORMAL))->m_SRV;
+		l_resourceBinder->m_TextureSRVs[0] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Normal))->m_SRV;
 	}
 	if (rhs->m_albedoTexture)
 	{
@@ -719,7 +719,7 @@ bool DX11RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 	}
 	else
 	{
-		l_resourceBinder->m_TextureSRVs[1] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::ALBEDO))->m_SRV;
+		l_resourceBinder->m_TextureSRVs[1] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Albedo))->m_SRV;
 	}
 	if (rhs->m_metallicTexture)
 	{
@@ -728,7 +728,7 @@ bool DX11RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 	}
 	else
 	{
-		l_resourceBinder->m_TextureSRVs[2] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::METALLIC))->m_SRV;
+		l_resourceBinder->m_TextureSRVs[2] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Metallic))->m_SRV;
 	}
 	if (rhs->m_roughnessTexture)
 	{
@@ -737,7 +737,7 @@ bool DX11RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 	}
 	else
 	{
-		l_resourceBinder->m_TextureSRVs[3] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::ROUGHNESS))->m_SRV;
+		l_resourceBinder->m_TextureSRVs[3] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Roughness))->m_SRV;
 	}
 	if (rhs->m_aoTexture)
 	{
@@ -746,7 +746,7 @@ bool DX11RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 	}
 	else
 	{
-		l_resourceBinder->m_TextureSRVs[4] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION))->m_SRV;
+		l_resourceBinder->m_TextureSRVs[4] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::AmbientOcclusion))->m_SRV;
 	}
 	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
 
@@ -789,7 +789,7 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 	if (l_rhs->m_ShaderFilePaths.m_VSPath != "")
 	{
 		ID3D10Blob* l_shaderFileBuffer = 0;
-		LoadShaderFile(&l_shaderFileBuffer, ShaderType::VERTEX, l_rhs->m_ShaderFilePaths.m_VSPath);
+		LoadShaderFile(&l_shaderFileBuffer, ShaderStage::Vertex, l_rhs->m_ShaderFilePaths.m_VSPath);
 		auto l_HResult = m_device->CreateVertexShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_VSHandle);
 		if (FAILED(l_HResult))
 		{
@@ -797,10 +797,10 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 			return false;
 		};
 	}
-	if (l_rhs->m_ShaderFilePaths.m_TCSPath != "")
+	if (l_rhs->m_ShaderFilePaths.m_HSPath != "")
 	{
 		ID3D10Blob* l_shaderFileBuffer = 0;
-		LoadShaderFile(&l_shaderFileBuffer, ShaderType::TCS, l_rhs->m_ShaderFilePaths.m_TCSPath);
+		LoadShaderFile(&l_shaderFileBuffer, ShaderStage::Hull, l_rhs->m_ShaderFilePaths.m_HSPath);
 		auto l_HResult = m_device->CreateHullShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_TCSHandle);
 		if (FAILED(l_HResult))
 		{
@@ -808,10 +808,10 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 			return false;
 		};
 	}
-	if (l_rhs->m_ShaderFilePaths.m_TESPath != "")
+	if (l_rhs->m_ShaderFilePaths.m_DSPath != "")
 	{
 		ID3D10Blob* l_shaderFileBuffer = 0;
-		LoadShaderFile(&l_shaderFileBuffer, ShaderType::TES, l_rhs->m_ShaderFilePaths.m_TESPath);
+		LoadShaderFile(&l_shaderFileBuffer, ShaderStage::Domain, l_rhs->m_ShaderFilePaths.m_DSPath);
 		auto l_HResult = m_device->CreateDomainShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_TESHandle);
 		if (FAILED(l_HResult))
 		{
@@ -822,7 +822,7 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 	if (l_rhs->m_ShaderFilePaths.m_GSPath != "")
 	{
 		ID3D10Blob* l_shaderFileBuffer = 0;
-		LoadShaderFile(&l_shaderFileBuffer, ShaderType::GEOMETRY, l_rhs->m_ShaderFilePaths.m_GSPath);
+		LoadShaderFile(&l_shaderFileBuffer, ShaderStage::Geometry, l_rhs->m_ShaderFilePaths.m_GSPath);
 		auto l_HResult = m_device->CreateGeometryShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_GSHandle);
 		if (FAILED(l_HResult))
 		{
@@ -830,10 +830,10 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 			return false;
 		};
 	}
-	if (l_rhs->m_ShaderFilePaths.m_FSPath != "")
+	if (l_rhs->m_ShaderFilePaths.m_PSPath != "")
 	{
 		ID3D10Blob* l_shaderFileBuffer = 0;
-		LoadShaderFile(&l_shaderFileBuffer, ShaderType::FRAGMENT, l_rhs->m_ShaderFilePaths.m_FSPath);
+		LoadShaderFile(&l_shaderFileBuffer, ShaderStage::Pixel, l_rhs->m_ShaderFilePaths.m_PSPath);
 		auto l_HResult = m_device->CreatePixelShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_FSHandle);
 		if (FAILED(l_HResult))
 		{
@@ -844,7 +844,7 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 	if (l_rhs->m_ShaderFilePaths.m_CSPath != "")
 	{
 		ID3D10Blob* l_shaderFileBuffer = 0;
-		LoadShaderFile(&l_shaderFileBuffer, ShaderType::COMPUTE, l_rhs->m_ShaderFilePaths.m_CSPath);
+		LoadShaderFile(&l_shaderFileBuffer, ShaderStage::Compute, l_rhs->m_ShaderFilePaths.m_CSPath);
 		auto l_HResult = m_device->CreateComputeShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_CSHandle);
 		if (FAILED(l_HResult))
 		{
@@ -1126,26 +1126,26 @@ bool DX11RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 	return true;
 }
 
-bool BindSRV(ShaderType shaderType, unsigned int bindingPoint, ID3D11ShaderResourceView * SRV)
+bool BindSRV(ShaderStage shaderStage, unsigned int bindingPoint, ID3D11ShaderResourceView * SRV)
 {
-	switch (shaderType)
+	switch (shaderStage)
 	{
-	case ShaderType::VERTEX:
+	case ShaderStage::Vertex:
 		m_deviceContext->VSSetShaderResources(bindingPoint, 1, &SRV);
 		break;
-	case ShaderType::TCS:
+	case ShaderStage::Hull:
 		m_deviceContext->HSSetShaderResources(bindingPoint, 1, &SRV);
 		break;
-	case ShaderType::TES:
+	case ShaderStage::Domain:
 		m_deviceContext->DSSetShaderResources(bindingPoint, 1, &SRV);
 		break;
-	case ShaderType::GEOMETRY:
+	case ShaderStage::Geometry:
 		m_deviceContext->GSSetShaderResources(bindingPoint, 1, &SRV);
 		break;
-	case ShaderType::FRAGMENT:
+	case ShaderStage::Pixel:
 		m_deviceContext->PSSetShaderResources(bindingPoint, 1, &SRV);
 		break;
-	case ShaderType::COMPUTE:
+	case ShaderStage::Compute:
 		m_deviceContext->CSSetShaderResources(bindingPoint, 1, &SRV);
 		break;
 	default:
@@ -1154,26 +1154,26 @@ bool BindSRV(ShaderType shaderType, unsigned int bindingPoint, ID3D11ShaderResou
 	return true;
 }
 
-bool BindConstantBuffer(unsigned int localSlot, ID3D11Buffer* buffer, ShaderType shaderType)
+bool BindConstantBuffer(unsigned int localSlot, ID3D11Buffer* buffer, ShaderStage shaderStage)
 {
-	switch (shaderType)
+	switch (shaderStage)
 	{
-	case ShaderType::VERTEX:
+	case ShaderStage::Vertex:
 		m_deviceContext->VSSetConstantBuffers(localSlot, 1, &buffer);
 		break;
-	case ShaderType::TCS:
+	case ShaderStage::Hull:
 		m_deviceContext->HSSetConstantBuffers(localSlot, 1, &buffer);
 		break;
-	case ShaderType::TES:
+	case ShaderStage::Domain:
 		m_deviceContext->DSSetConstantBuffers(localSlot, 1, &buffer);
 		break;
-	case ShaderType::GEOMETRY:
+	case ShaderStage::Geometry:
 		m_deviceContext->GSSetConstantBuffers(localSlot, 1, &buffer);
 		break;
-	case ShaderType::FRAGMENT:
+	case ShaderStage::Pixel:
 		m_deviceContext->PSSetConstantBuffers(localSlot, 1, &buffer);
 		break;
-	case ShaderType::COMPUTE:
+	case ShaderStage::Compute:
 		m_deviceContext->CSSetConstantBuffers(localSlot, 1, &buffer);
 		break;
 	default:
@@ -1183,29 +1183,29 @@ bool BindConstantBuffer(unsigned int localSlot, ID3D11Buffer* buffer, ShaderType
 	return true;
 }
 
-bool BindPartialConstantBuffer(unsigned int localSlot, ID3D11Buffer* buffer, ShaderType shaderType, size_t startOffset, size_t elementSize)
+bool BindPartialConstantBuffer(unsigned int localSlot, ID3D11Buffer* buffer, ShaderStage shaderStage, size_t startOffset, size_t elementSize)
 {
 	auto l_constantCount = (unsigned int)elementSize / 16;
 	auto l_firstConstant = (unsigned int)startOffset * l_constantCount;
 
-	switch (shaderType)
+	switch (shaderStage)
 	{
-	case ShaderType::VERTEX:
+	case ShaderStage::Vertex:
 		m_deviceContext->VSSetConstantBuffers1(localSlot, 1, &buffer, &l_firstConstant, &l_constantCount);
 		break;
-	case ShaderType::TCS:
+	case ShaderStage::Hull:
 		m_deviceContext->HSSetConstantBuffers1(localSlot, 1, &buffer, &l_firstConstant, &l_constantCount);
 		break;
-	case ShaderType::TES:
+	case ShaderStage::Domain:
 		m_deviceContext->DSSetConstantBuffers1(localSlot, 1, &buffer, &l_firstConstant, &l_constantCount);
 		break;
-	case ShaderType::GEOMETRY:
+	case ShaderStage::Geometry:
 		m_deviceContext->GSSetConstantBuffers1(localSlot, 1, &buffer, &l_firstConstant, &l_constantCount);
 		break;
-	case ShaderType::FRAGMENT:
+	case ShaderStage::Pixel:
 		m_deviceContext->PSSetConstantBuffers1(localSlot, 1, &buffer, &l_firstConstant, &l_constantCount);
 		break;
-	case ShaderType::COMPUTE:
+	case ShaderStage::Compute:
 		m_deviceContext->CSSetConstantBuffers1(localSlot, 1, &buffer, &l_firstConstant, &l_constantCount);
 		break;
 	default:
@@ -1215,7 +1215,7 @@ bool BindPartialConstantBuffer(unsigned int localSlot, ID3D11Buffer* buffer, Sha
 	return true;
 }
 
-bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range)
+bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range)
 {
 	auto l_resourceBinder = reinterpret_cast<DX11ResourceBinder*>(binder);
 
@@ -1229,7 +1229,7 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 		case ResourceBinderType::Image:
 			for (size_t i = 0; i < l_resourceBinder->m_TextureSRVs.size(); i++)
 			{
-				BindSRV(shaderType, (unsigned int)i, l_resourceBinder->m_TextureSRVs[i]);
+				BindSRV(shaderStage, (unsigned int)i, l_resourceBinder->m_TextureSRVs[i]);
 			}
 			break;
 		case ResourceBinderType::Buffer:
@@ -1241,22 +1241,22 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 				}
 				if (partialBinding)
 				{
-					BindPartialConstantBuffer((unsigned int)localSlot, l_resourceBinder->m_Buffer, shaderType, startOffset, l_resourceBinder->m_ElementSize);
+					BindPartialConstantBuffer((unsigned int)localSlot, l_resourceBinder->m_Buffer, shaderStage, startOffset, l_resourceBinder->m_ElementSize);
 				}
 				else
 				{
-					BindConstantBuffer((unsigned int)localSlot, l_resourceBinder->m_Buffer, shaderType);
+					BindConstantBuffer((unsigned int)localSlot, l_resourceBinder->m_Buffer, shaderStage);
 				}
 			}
 			else
 			{
 				if (accessibility == Accessibility::ReadOnly)
 				{
-					BindSRV(shaderType, (unsigned int)localSlot, l_resourceBinder->m_BufferSRV);
+					BindSRV(shaderStage, (unsigned int)localSlot, l_resourceBinder->m_BufferSRV);
 				}
 				else
 				{
-					if (shaderType == ShaderType::COMPUTE)
+					if (shaderStage == ShaderStage::Compute)
 					{
 						m_deviceContext->CSSetUnorderedAccessViews((unsigned int)localSlot, 1, &l_resourceBinder->m_BufferUAV, nullptr);
 					}
@@ -1276,7 +1276,7 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 	return true;
 }
 
-bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range)
+bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range)
 {
 	auto l_resourceBinder = reinterpret_cast<DX11ResourceBinder*>(binder);
 
@@ -1290,7 +1290,7 @@ bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * ren
 		case ResourceBinderType::Image:
 			for (size_t i = 0; i < l_resourceBinder->m_TextureSRVs.size(); i++)
 			{
-				BindSRV(shaderType, (unsigned int)i, 0);
+				BindSRV(shaderStage, (unsigned int)i, 0);
 			}
 			break;
 		case ResourceBinderType::Buffer:
@@ -1298,11 +1298,11 @@ bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * ren
 			{
 				if (accessibility == Accessibility::ReadOnly)
 				{
-					BindSRV(shaderType, (unsigned int)localSlot, 0);
+					BindSRV(shaderStage, (unsigned int)localSlot, 0);
 				}
 				else
 				{
-					if (shaderType == ShaderType::COMPUTE)
+					if (shaderStage == ShaderStage::Compute)
 					{
 						m_deviceContext->CSSetUnorderedAccessViews((unsigned int)localSlot, 1, 0, nullptr);
 					}

@@ -144,7 +144,7 @@ bool GLRenderingServer::Initialize()
 		l_RenderPassDesc.m_RenderTargetCount = 1;
 
 		m_SwapChainRPDC->m_RenderPassDesc = l_RenderPassDesc;
-		m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc.pixelDataType = TexturePixelDataType::UBYTE;
+		m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UBYTE;
 
 		m_SwapChainRPDC->m_FBO = 0;
 		m_SwapChainRPDC->m_RBO = 0;
@@ -553,21 +553,21 @@ bool GLRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent 
 	{
 		AddShaderHandle(l_rhs->m_ProgramID, l_rhs->m_VSID, GL_VERTEX_SHADER, l_rhs->m_ShaderFilePaths.m_VSPath);
 	}
-	if (l_rhs->m_ShaderFilePaths.m_TCSPath != "")
+	if (l_rhs->m_ShaderFilePaths.m_HSPath != "")
 	{
-		AddShaderHandle(l_rhs->m_ProgramID, l_rhs->m_TCSID, GL_TESS_CONTROL_SHADER, l_rhs->m_ShaderFilePaths.m_TCSPath);
+		AddShaderHandle(l_rhs->m_ProgramID, l_rhs->m_TCSID, GL_TESS_CONTROL_SHADER, l_rhs->m_ShaderFilePaths.m_HSPath);
 	}
-	if (l_rhs->m_ShaderFilePaths.m_TESPath != "")
+	if (l_rhs->m_ShaderFilePaths.m_DSPath != "")
 	{
-		AddShaderHandle(l_rhs->m_ProgramID, l_rhs->m_TESID, GL_TESS_EVALUATION_SHADER, l_rhs->m_ShaderFilePaths.m_TESPath);
+		AddShaderHandle(l_rhs->m_ProgramID, l_rhs->m_TESID, GL_TESS_EVALUATION_SHADER, l_rhs->m_ShaderFilePaths.m_DSPath);
 	}
 	if (l_rhs->m_ShaderFilePaths.m_GSPath != "")
 	{
 		AddShaderHandle(l_rhs->m_ProgramID, l_rhs->m_GSID, GL_GEOMETRY_SHADER, l_rhs->m_ShaderFilePaths.m_GSPath);
 	}
-	if (l_rhs->m_ShaderFilePaths.m_FSPath != "")
+	if (l_rhs->m_ShaderFilePaths.m_PSPath != "")
 	{
-		AddShaderHandle(l_rhs->m_ProgramID, l_rhs->m_FSID, GL_FRAGMENT_SHADER, l_rhs->m_ShaderFilePaths.m_FSPath);
+		AddShaderHandle(l_rhs->m_ProgramID, l_rhs->m_FSID, GL_FRAGMENT_SHADER, l_rhs->m_ShaderFilePaths.m_PSPath);
 	}
 	if (l_rhs->m_ShaderFilePaths.m_CSPath != "")
 	{
@@ -752,7 +752,7 @@ bool BindGPUBuffer(GLenum bufferType, GLuint BO, size_t localSlot, size_t startO
 	return true;
 }
 
-bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range)
+bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range)
 {
 	auto l_resourceBinder = reinterpret_cast<GLResourceBinder*>(binder);
 
@@ -801,7 +801,7 @@ bool GLRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, Me
 	return true;
 }
 
-bool GLRenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range)
+bool GLRenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range)
 {
 	return true;
 }
@@ -849,9 +849,9 @@ bool GLRenderingServer::CopyDepthBuffer(RenderPassDataComponent * src, RenderPas
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, l_src->m_FBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, l_dest->m_FBO);
 	glBlitFramebuffer(0, 0,
-		l_src->m_RenderPassDesc.m_RenderTargetDesc.width, l_src->m_RenderPassDesc.m_RenderTargetDesc.height,
+		l_src->m_RenderPassDesc.m_RenderTargetDesc.Width, l_src->m_RenderPassDesc.m_RenderTargetDesc.Height,
 		0, 0,
-		l_dest->m_RenderPassDesc.m_RenderTargetDesc.width, l_dest->m_RenderPassDesc.m_RenderTargetDesc.height,
+		l_dest->m_RenderPassDesc.m_RenderTargetDesc.Width, l_dest->m_RenderPassDesc.m_RenderTargetDesc.Height,
 		GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 
 	return true;
@@ -865,9 +865,9 @@ bool GLRenderingServer::CopyStencilBuffer(RenderPassDataComponent * src, RenderP
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, l_src->m_FBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, l_dest->m_FBO);
 	glBlitFramebuffer(0, 0,
-		l_src->m_RenderPassDesc.m_RenderTargetDesc.width, l_src->m_RenderPassDesc.m_RenderTargetDesc.height,
+		l_src->m_RenderPassDesc.m_RenderTargetDesc.Width, l_src->m_RenderPassDesc.m_RenderTargetDesc.Height,
 		0, 0,
-		l_dest->m_RenderPassDesc.m_RenderTargetDesc.width, l_dest->m_RenderPassDesc.m_RenderTargetDesc.height,
+		l_dest->m_RenderPassDesc.m_RenderTargetDesc.Width, l_dest->m_RenderPassDesc.m_RenderTargetDesc.Height,
 		GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 
 	return true;
@@ -884,9 +884,9 @@ bool GLRenderingServer::CopyColorBuffer(RenderPassDataComponent * src, size_t sr
 	glDrawBuffer(GL_COLOR_ATTACHMENT0 + (unsigned int)destIndex);
 
 	glBlitFramebuffer(0, 0,
-		l_src->m_RenderPassDesc.m_RenderTargetDesc.width, l_src->m_RenderPassDesc.m_RenderTargetDesc.height,
+		l_src->m_RenderPassDesc.m_RenderTargetDesc.Width, l_src->m_RenderPassDesc.m_RenderTargetDesc.Height,
 		0, 0,
-		l_dest->m_RenderPassDesc.m_RenderTargetDesc.width, l_dest->m_RenderPassDesc.m_RenderTargetDesc.height,
+		l_dest->m_RenderPassDesc.m_RenderTargetDesc.Width, l_dest->m_RenderPassDesc.m_RenderTargetDesc.Height,
 		GL_COLOR_BUFFER_BIT, GL_LINEAR);
 
 	return true;

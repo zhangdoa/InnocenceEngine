@@ -103,21 +103,21 @@ const Timestamp InnoTimer::GetCurrentTime(unsigned int time_zone_adjustment)
 	const unsigned doe = static_cast<unsigned>(z - era * 146097);
 	// [0, 399]
 	const unsigned yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
-	const int year = static_cast<int>(yoe) + era * 400;
+	const int Year = static_cast<int>(yoe) + era * 400;
 	// [0, 365]
 	const unsigned doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
 	// [0, 11]
 	const unsigned mp = (5 * doy + 2) / 153;
 	// [1, 31]
-	const unsigned day = doy - (153 * mp + 2) / 5 + 1;
+	const unsigned Day = doy - (153 * mp + 2) / 5 + 1;
 	// [1, 12]
-	const unsigned month = (mp < 10 ? mp + 3 : mp - 9);
+	const unsigned Month = (mp < 10 ? mp + 3 : mp - 9);
 
 	Timestamp l_Timestamp;
 
-	l_Timestamp.Year = year + (month <= 2);
-	l_Timestamp.Month = month;
-	l_Timestamp.Day = day;
+	l_Timestamp.Year = Year + (Month <= 2);
+	l_Timestamp.Month = Month;
+	l_Timestamp.Day = Day;
 	l_Timestamp.Hour = h.count();
 	l_Timestamp.Minute = m.count();
 	l_Timestamp.Second = static_cast<unsigned short>(s.count());

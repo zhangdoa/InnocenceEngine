@@ -5,11 +5,11 @@
 
 struct SamplerDesc
 {
-	TextureFilterMethod m_MinFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
-	TextureFilterMethod m_MagFilterMethod = TextureFilterMethod::LINEAR;
-	TextureWrapMethod m_WrapMethodU = TextureWrapMethod::CLAMP_TO_EDGE;
-	TextureWrapMethod m_WrapMethodV = TextureWrapMethod::CLAMP_TO_EDGE;
-	TextureWrapMethod m_WrapMethodW = TextureWrapMethod::CLAMP_TO_EDGE;
+	TextureFilterMethod m_MinFilterMethod = TextureFilterMethod::Mip;
+	TextureFilterMethod m_MagFilterMethod = TextureFilterMethod::Linear;
+	TextureWrapMethod m_WrapMethodU = TextureWrapMethod::Edge;
+	TextureWrapMethod m_WrapMethodV = TextureWrapMethod::Edge;
+	TextureWrapMethod m_WrapMethodW = TextureWrapMethod::Edge;
 	float m_BorderColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	float m_MinLOD = 0.0f;
 	float m_MaxLOD = 3.402823466e+38f;

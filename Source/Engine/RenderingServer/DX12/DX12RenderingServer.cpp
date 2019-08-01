@@ -447,7 +447,7 @@ bool DX12RenderingServer::Initialize()
 
 		m_SwapChainRPDC->m_RenderPassDesc = l_RenderPassDesc;
 		m_SwapChainRPDC->m_RenderPassDesc.m_UseMultiFrames = true;
-		m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc.pixelDataType = TexturePixelDataType::UBYTE;
+		m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UBYTE;
 
 		ReserveRenderTargets(m_SwapChainRPDC, this);
 
@@ -831,22 +831,22 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 	l_rhs->m_DX12TextureDataDesc = GetDX12TextureDataDesc(l_rhs->m_textureDataDesc);
 
 	// Create the empty texture.
-	if (l_rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
-		|| l_rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
-		|| l_rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT
-		|| l_rhs->m_textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
+	if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::ColorAttachment
+		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthAttachment
+		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment
+		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::RawImage)
 	{
 		D3D12_CLEAR_VALUE l_clearValue;
-		if (l_rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT)
+		if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::ColorAttachment)
 		{
 			l_clearValue = D3D12_CLEAR_VALUE{ l_rhs->m_DX12TextureDataDesc.Format, { 0.0f, 0.0f, 0.0f, 0.0f } };
 		}
-		else if (l_rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
+		else if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthAttachment)
 		{
 			l_clearValue.Format = DXGI_FORMAT_D32_FLOAT;
 			l_clearValue.DepthStencil = D3D12_DEPTH_STENCIL_VALUE{ 1.0f, 0x00 };
 		}
-		else if (l_rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
+		else if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
 		{
 			l_clearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 			l_clearValue.DepthStencil = D3D12_DEPTH_STENCIL_VALUE{ 1.0f, 0x00 };
@@ -867,10 +867,10 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 	auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
 
 	// main memory ----> upload heap
-	if (!(l_rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
-		|| l_rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
-		|| l_rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT
-		|| l_rhs->m_textureDataDesc.usageType == TextureUsageType::RAW_IMAGE))
+	if (!(l_rhs->m_textureDataDesc.UsageType == TextureUsageType::ColorAttachment
+		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthAttachment
+		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment
+		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::RawImage))
 	{
 		const UINT64 l_uploadHeapBufferSize = GetRequiredIntermediateSize(l_rhs->m_ResourceHandle, 0, 1);
 
@@ -878,26 +878,26 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 
 		D3D12_SUBRESOURCE_DATA l_textureSubResourceData = {};
 		l_textureSubResourceData.pData = l_rhs->m_textureData;
-		l_textureSubResourceData.RowPitch = l_rhs->m_textureDataDesc.width * ((unsigned int)l_rhs->m_textureDataDesc.pixelDataFormat + 1);
-		l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * l_rhs->m_textureDataDesc.height;
+		l_textureSubResourceData.RowPitch = l_rhs->m_textureDataDesc.Width * ((unsigned int)l_rhs->m_textureDataDesc.PixelDataFormat + 1);
+		l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * l_rhs->m_textureDataDesc.Height;
 		UpdateSubresources(l_commandList, l_rhs->m_ResourceHandle, l_uploadHeapBuffer, 0, 0, 1, &l_textureSubResourceData);
 	}
 
 	//  upload heap ----> default heap
-	if (l_rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT)
+	if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::ColorAttachment)
 	{
 		l_commandList->ResourceBarrier(
 			1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_ResourceHandle, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ));
 	}
-	else if (l_rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
-		|| l_rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
+	else if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthAttachment
+		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
 	{
 		l_commandList->ResourceBarrier(
 			1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_ResourceHandle, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_DEPTH_WRITE));
 	}
-	else if (l_rhs->m_textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
+	else if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::RawImage)
 	{
 		l_commandList->ResourceBarrier(
 			1,
@@ -940,7 +940,7 @@ bool DX12RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 	}
 	else
 	{
-		l_SRV = CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::NORMAL));
+		l_SRV = CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Normal));
 	}
 	if (l_rhs->m_albedoTexture)
 	{
@@ -949,7 +949,7 @@ bool DX12RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 	}
 	else
 	{
-		CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::ALBEDO));
+		CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Albedo));
 	}
 	if (l_rhs->m_metallicTexture)
 	{
@@ -958,7 +958,7 @@ bool DX12RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 	}
 	else
 	{
-		CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::METALLIC));
+		CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Metallic));
 	}
 	if (l_rhs->m_roughnessTexture)
 	{
@@ -967,7 +967,7 @@ bool DX12RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 	}
 	else
 	{
-		CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::ROUGHNESS));
+		CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Roughness));
 	}
 	if (l_rhs->m_aoTexture)
 	{
@@ -976,7 +976,7 @@ bool DX12RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 	}
 	else
 	{
-		CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION));
+		CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::AmbientOcclusion));
 	}
 
 	auto l_resourceBinder = addResourcesBinder();
@@ -1047,27 +1047,27 @@ bool DX12RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 
 	if (l_rhs->m_ShaderFilePaths.m_VSPath != "")
 	{
-		LoadShaderFile(&l_rhs->m_VSBuffer, ShaderType::VERTEX, l_rhs->m_ShaderFilePaths.m_VSPath);
+		LoadShaderFile(&l_rhs->m_VSBuffer, ShaderStage::Vertex, l_rhs->m_ShaderFilePaths.m_VSPath);
 	}
-	if (l_rhs->m_ShaderFilePaths.m_TCSPath != "")
+	if (l_rhs->m_ShaderFilePaths.m_HSPath != "")
 	{
-		LoadShaderFile(&l_rhs->m_TCSBuffer, ShaderType::TCS, l_rhs->m_ShaderFilePaths.m_TCSPath);
+		LoadShaderFile(&l_rhs->m_TCSBuffer, ShaderStage::Hull, l_rhs->m_ShaderFilePaths.m_HSPath);
 	}
-	if (l_rhs->m_ShaderFilePaths.m_TESPath != "")
+	if (l_rhs->m_ShaderFilePaths.m_DSPath != "")
 	{
-		LoadShaderFile(&l_rhs->m_TESBuffer, ShaderType::TES, l_rhs->m_ShaderFilePaths.m_TESPath);
+		LoadShaderFile(&l_rhs->m_TESBuffer, ShaderStage::Domain, l_rhs->m_ShaderFilePaths.m_DSPath);
 	}
 	if (l_rhs->m_ShaderFilePaths.m_GSPath != "")
 	{
-		LoadShaderFile(&l_rhs->m_GSBuffer, ShaderType::GEOMETRY, l_rhs->m_ShaderFilePaths.m_GSPath);
+		LoadShaderFile(&l_rhs->m_GSBuffer, ShaderStage::Geometry, l_rhs->m_ShaderFilePaths.m_GSPath);
 	}
-	if (l_rhs->m_ShaderFilePaths.m_FSPath != "")
+	if (l_rhs->m_ShaderFilePaths.m_PSPath != "")
 	{
-		LoadShaderFile(&l_rhs->m_FSBuffer, ShaderType::FRAGMENT, l_rhs->m_ShaderFilePaths.m_FSPath);
+		LoadShaderFile(&l_rhs->m_FSBuffer, ShaderStage::Pixel, l_rhs->m_ShaderFilePaths.m_PSPath);
 	}
 	if (l_rhs->m_ShaderFilePaths.m_CSPath != "")
 	{
-		LoadShaderFile(&l_rhs->m_CSBuffer, ShaderType::COMPUTE, l_rhs->m_ShaderFilePaths.m_CSPath);
+		LoadShaderFile(&l_rhs->m_CSBuffer, ShaderStage::Compute, l_rhs->m_ShaderFilePaths.m_CSPath);
 	}
 
 	l_rhs->m_objectStatus = ObjectStatus::Activated;
@@ -1290,7 +1290,7 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 	return true;
 }
 
-bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range)
+bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range)
 {
 	auto l_resourceBinder = reinterpret_cast<DX12ResourceBinder*>(binder);
 	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
@@ -1320,7 +1320,7 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 		{
 			if (accessibility == Accessibility::ReadOnly)
 			{
-				if (shaderType == ShaderType::COMPUTE)
+				if (shaderStage == ShaderStage::Compute)
 				{
 					l_commandList->m_CommandList->SetComputeRootShaderResourceView((unsigned int)globalSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 				}
@@ -1331,7 +1331,7 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 			}
 			else
 			{
-				if (shaderType == ShaderType::COMPUTE)
+				if (shaderStage == ShaderStage::Compute)
 				{
 					l_commandList->m_CommandList->SetComputeRootUnorderedAccessView((unsigned int)globalSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 				}
@@ -1365,7 +1365,7 @@ bool DX12RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, 
 	return true;
 }
 
-bool DX12RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range)
+bool DX12RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range)
 {
 	return true;
 }
@@ -1517,10 +1517,10 @@ DX12SRV DX12RenderingServer::CreateSRV(TextureDataComponent * rhs)
 	DX12SRV l_result;
 
 	unsigned int l_mipLevels = -1;
-	if (l_rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
-		|| l_rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
-		|| l_rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT
-		|| l_rhs->m_textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
+	if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::ColorAttachment
+		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthAttachment
+		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment
+		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::RawImage)
 	{
 		l_mipLevels = 1;
 	}
@@ -1530,11 +1530,11 @@ DX12SRV DX12RenderingServer::CreateSRV(TextureDataComponent * rhs)
 	l_result.SRVDesc.Texture2D.MostDetailedMip = 0;
 	l_result.SRVDesc.Texture2D.MipLevels = l_mipLevels;
 
-	if (l_rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
+	if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthAttachment)
 	{
 		l_result.SRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
 	}
-	else if (l_rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
+	else if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
 	{
 		l_result.SRVDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 	}

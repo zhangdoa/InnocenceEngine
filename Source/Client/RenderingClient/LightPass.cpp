@@ -21,7 +21,7 @@ bool LightPass::Setup()
 	m_SPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("LightPass/");
 
 	m_SPC->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
-	m_SPC->m_ShaderFilePaths.m_FSPath = "lightPass.frag/";
+	m_SPC->m_ShaderFilePaths.m_PSPath = "lightPass.frag/";
 
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
 
@@ -102,22 +102,22 @@ bool LightPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderType::FRAGMENT, m_SDC->m_ResourceBinder, 9, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderType::FRAGMENT, l_CameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly, false, 0, l_CameraGBDC->m_TotalSize);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderType::FRAGMENT, l_SunGBDC->m_ResourceBinder, 3, 3, Accessibility::ReadOnly, false, 0, l_SunGBDC->m_TotalSize);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderType::FRAGMENT, l_PointLightGBDC->m_ResourceBinder, 4, 4, Accessibility::ReadOnly, false, 0, l_PointLightGBDC->m_TotalSize);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderType::FRAGMENT, l_SphereLightGBDC->m_ResourceBinder, 5, 5, Accessibility::ReadOnly, false, 0, l_SphereLightGBDC->m_TotalSize);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderType::FRAGMENT, l_SkyGBDC->m_ResourceBinder, 7, 7, Accessibility::ReadOnly, false, 0, l_SphereLightGBDC->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 9, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_CameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly, false, 0, l_CameraGBDC->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_SunGBDC->m_ResourceBinder, 3, 3, Accessibility::ReadOnly, false, 0, l_SunGBDC->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_PointLightGBDC->m_ResourceBinder, 4, 4, Accessibility::ReadOnly, false, 0, l_PointLightGBDC->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_SphereLightGBDC->m_ResourceBinder, 5, 5, Accessibility::ReadOnly, false, 0, l_SphereLightGBDC->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_SkyGBDC->m_ResourceBinder, 7, 7, Accessibility::ReadOnly, false, 0, l_SphereLightGBDC->m_TotalSize);
 
 	g_pModuleManager->getRenderingServer()->CopyStencilBuffer(OpaquePass::GetRPDC(), m_RPDC);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderType::FRAGMENT, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinder, 8, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinder, 8, 0);
 
-	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::QUAD);
+	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Quad);
 
 	g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_mesh);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderType::FRAGMENT, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinder, 8, 0);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinder, 8, 0);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
 

@@ -142,13 +142,13 @@ bool InnoPhysicsSystemNS::generatePhysicsDataComponent(VisibleComponent* VC)
 		auto l_transformComponent = GetComponent(TransformComponent, VC->m_parentEntity);
 		switch (VC->m_meshShapeType)
 		{
-		case MeshShapeType::CUBE:
+		case MeshShapeType::Cube:
 			PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector.m_pos, l_transformComponent->m_localTransformVector.m_rot, l_transformComponent->m_localTransformVector.m_scale);
 			break;
-		case MeshShapeType::SPHERE:
+		case MeshShapeType::Sphere:
 			PhysXWrapper::get().createPxSphere(l_transformComponent, l_transformComponent->m_localTransformVector.m_pos, l_transformComponent->m_localTransformVector.m_scale.x);
 			break;
-		case MeshShapeType::CUSTOM:
+		case MeshShapeType::Custom:
 			PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector.m_pos, l_transformComponent->m_localTransformVector.m_rot, l_boundMax - l_boundMin);
 			break;
 		default:
@@ -236,7 +236,7 @@ void InnoPhysicsSystemNS::updateCulling()
 		auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
 		for (auto visibleComponent : l_visibleComponents)
 		{
-			if (visibleComponent->m_visiblilityType != VisiblilityType::INNO_INVISIBLE && visibleComponent->m_objectStatus == ObjectStatus::Activated)
+			if (visibleComponent->m_visiblilityType != VisiblilityType::Invisible && visibleComponent->m_objectStatus == ObjectStatus::Activated)
 			{
 				auto l_transformComponent = GetComponent(TransformComponent, visibleComponent->m_parentEntity);
 				auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;

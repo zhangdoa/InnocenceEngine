@@ -50,13 +50,13 @@ const TimeData InnoTimeSystem::getCurrentTime(unsigned int timezone_adjustment)
 
 	TimeData l_result;
 
-	l_result.year = l_resultRaw.Year;
-	l_result.month = l_resultRaw.Month;
-	l_result.day = l_resultRaw.Day;
-	l_result.hour = l_resultRaw.Hour;
-	l_result.minute = l_resultRaw.Minute;
-	l_result.second = l_resultRaw.Second;
-	l_result.millisecond = l_resultRaw.Millisecond;
+	l_result.Year = l_resultRaw.Year;
+	l_result.Month = l_resultRaw.Month;
+	l_result.Day = l_resultRaw.Day;
+	l_result.Hour = l_resultRaw.Hour;
+	l_result.Minute = l_resultRaw.Minute;
+	l_result.Second = l_resultRaw.Second;
+	l_result.Millisecond = l_resultRaw.Millisecond;
 
 	return  l_result;
 }

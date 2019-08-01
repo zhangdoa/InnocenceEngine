@@ -36,13 +36,13 @@ enum class ComponentType { TransformComponent, VisibleComponent, DirectionalLigh
 
 struct TimeData
 {
-	int year;
-	unsigned month;
-	unsigned day;
-	unsigned hour;
-	unsigned minute;
-	long long second;
-	long long millisecond;
+	int Year;
+	unsigned int Month;
+	unsigned int Day;
+	unsigned int Hour;
+	unsigned int Minute;
+	long long Second;
+	long long Millisecond;
 };
 
 enum class FileExplorerIconType { OBJ, PNG, SHADER, UNKNOWN };
@@ -67,75 +67,84 @@ struct DirectoryMetadata
 
 enum class IOMode { Text, Binary };
 
-enum class VisiblilityType { INNO_INVISIBLE, INNO_BILLBOARD, INNO_OPAQUE, INNO_TRANSPARENT, INNO_EMISSIVE, INNO_DEBUG };
+enum class VisiblilityType { Invisible, BillBoard, Opaque, Transparent, Emissive, Debug };
 
 // mesh custom types
 using Index = unsigned int;
 
-enum class MeshUsageType { STATIC, DYNAMIC, SKELETAL };
-enum class MeshShapeType { LINE, QUAD, CUBE, SPHERE, TERRAIN, CUSTOM };
-enum class MeshPrimitiveTopology { POINT, LINE, TRIANGLE, TRIANGLE_STRIP };
+enum class MeshUsageType { Static, Dynamic, Skeletal };
+enum class MeshShapeType { Line, Quad, Cube, Sphere, Terrain, Custom };
+enum class MeshPrimitiveTopology { Point, Line, Triangle, TriangleStrip };
 
 // texture custom types
-enum class TextureSamplerType { SAMPLER_1D, SAMPLER_2D, SAMPLER_3D, SAMPLER_CUBEMAP };
-enum class TextureUsageType { INVISIBLE, NORMAL, ALBEDO, METALLIC, ROUGHNESS, AMBIENT_OCCLUSION, COLOR_ATTACHMENT, DEPTH_ATTACHMENT, DEPTH_STENCIL_ATTACHMENT, RAW_IMAGE };
+enum class TextureSamplerType { Sampler1D, Sampler2D, Sampler3D, SamplerCubemap };
 
-enum class TexturePixelDataFormat { R, RG, RGB, RGBA, BGRA, DEPTH_COMPONENT, DEPTH_STENCIL_COMPONENT };
+enum class TextureUsageType { Invisible, Normal, Albedo, Metallic, Roughness, AmbientOcclusion, ColorAttachment, DepthAttachment, DepthStencilAttachment, RawImage };
+
+enum class TexturePixelDataFormat { R, RG, RGB, RGBA, BGRA, Depth, DepthStencil };
 enum class TexturePixelDataType { UBYTE, SBYTE, USHORT, SSHORT, UINT8, SINT8, UINT16, SINT16, UINT32, SINT32, FLOAT16, FLOAT32, DOUBLE };
-enum class TextureWrapMethod { CLAMP_TO_EDGE, REPEAT, CLAMP_TO_BORDER };
-enum class TextureFilterMethod { NEAREST, LINEAR, LINEAR_MIPMAP_LINEAR };
+enum class TextureWrapMethod { Edge, Repeat, Border };
+enum class TextureFilterMethod { Nearest, Linear, Mip };
 
 struct TextureDataDesc
 {
-	TextureSamplerType samplerType;
-	TextureUsageType usageType;
-	TexturePixelDataFormat pixelDataFormat;
-	TexturePixelDataType pixelDataType;
-	TextureFilterMethod minFilterMethod;
-	TextureFilterMethod magFilterMethod;
-	TextureWrapMethod wrapMethod;
-	unsigned int width = 0;
-	unsigned int height = 0;
-	unsigned int depth = 0;
-	float borderColor[4];
+	TextureSamplerType SamplerType;
+	TextureUsageType UsageType;
+	TexturePixelDataFormat PixelDataFormat;
+	TexturePixelDataType PixelDataType;
+	TextureFilterMethod MinFilterMethod;
+	TextureFilterMethod MagFilterMethod;
+	TextureWrapMethod WrapMethod;
+	unsigned int Width = 0;
+	unsigned int Height = 0;
+	unsigned int Depth = 0;
+	float BorderColor[4];
 };
 
 enum class RenderPassType { Shadow, GI, Opaque, Light, Transparent, Terrain, PostProcessing, Development };
 
 // shader custom types
-enum class ShaderType { VERTEX, TCS, TES, GEOMETRY, FRAGMENT, COMPUTE };
+enum class ShaderStage
+{
+	Vertex,
+	Hull,
+	Domain,
+	Geometry,
+	Pixel,
+	Compute
+};
 
 using ShaderFilePath = FixedSizeString<128>;
 
 struct ShaderFilePaths
 {
 	ShaderFilePath m_VSPath = "";
-	ShaderFilePath m_TCSPath = "";
-	ShaderFilePath m_TESPath = "";
+	ShaderFilePath m_HSPath = "";
+	ShaderFilePath m_DSPath = "";
 	ShaderFilePath m_GSPath = "";
-	ShaderFilePath m_FSPath = "";
+	ShaderFilePath m_PSPath = "";
 	ShaderFilePath m_CSPath = "";
 };
 
 struct MeshCustomMaterial
 {
-	float albedo_r = 1.0f;
-	float albedo_g = 1.0f;
-	float albedo_b = 1.0f;
-	float alpha = 1.0f;
-	float metallic = 0.0f;
-	float roughness = 1.0f;
-	float ao = 1.0f;
-	float thickness = 1.0f;
+	float AlbedoR = 1.0f;
+	float AlbedoG = 1.0f;
+	float AlbedoB = 1.0f;
+	float Alpha = 1.0f;
+	float Metallic = 0.0f;
+	float Roughness = 1.0f;
+	float AO = 1.0f;
+	float Thickness = 1.0f;
 };
 
-enum class ButtonStatus { RELEASED, PRESSED };
+enum class ButtonStatus { Released, Pressed };
 using ButtonStatusMap = std::unordered_map<int, ButtonStatus>;
 
 struct ButtonData
 {
 	int m_code = 0;
-	ButtonStatus m_status = ButtonStatus::RELEASED;
+	ButtonStatus m_status = ButtonStatus::Released;
 
 	bool operator==(const ButtonData &other) const
 	{

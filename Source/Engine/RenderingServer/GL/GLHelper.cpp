@@ -14,21 +14,21 @@ GLTextureDataDesc GLHelper::GetGLTextureDataDesc(TextureDataDesc textureDataDesc
 {
 	GLTextureDataDesc l_result;
 
-	l_result.textureSamplerType = GetTextureSamplerType(textureDataDesc.samplerType);
-	l_result.textureWrapMethod = GetTextureWrapMethod(textureDataDesc.wrapMethod);
-	l_result.minFilterParam = GetTextureFilterParam(textureDataDesc.minFilterMethod);
-	l_result.magFilterParam = GetTextureFilterParam(textureDataDesc.magFilterMethod);
+	l_result.textureSamplerType = GetTextureSamplerType(textureDataDesc.SamplerType);
+	l_result.textureWrapMethod = GetTextureWrapMethod(textureDataDesc.WrapMethod);
+	l_result.minFilterParam = GetTextureFilterParam(textureDataDesc.MinFilterMethod);
+	l_result.magFilterParam = GetTextureFilterParam(textureDataDesc.MagFilterMethod);
 	l_result.internalFormat = GetTextureInternalFormat(textureDataDesc);
 	l_result.pixelDataFormat = GetTexturePixelDataFormat(textureDataDesc);
 	l_result.pixelDataType = GetTexturePixelDataType(textureDataDesc);
 	l_result.pixelDataSize = GetTexturePixelDataSize(textureDataDesc);
-	l_result.width = textureDataDesc.width;
-	l_result.height = textureDataDesc.height;
-	l_result.depth = textureDataDesc.depth;
-	l_result.borderColor[0] = textureDataDesc.borderColor[0];
-	l_result.borderColor[1] = textureDataDesc.borderColor[1];
-	l_result.borderColor[2] = textureDataDesc.borderColor[2];
-	l_result.borderColor[3] = textureDataDesc.borderColor[3];
+	l_result.width = textureDataDesc.Width;
+	l_result.height = textureDataDesc.Height;
+	l_result.depth = textureDataDesc.Depth;
+	l_result.borderColor[0] = textureDataDesc.BorderColor[0];
+	l_result.borderColor[1] = textureDataDesc.BorderColor[1];
+	l_result.borderColor[2] = textureDataDesc.BorderColor[2];
+	l_result.borderColor[3] = textureDataDesc.BorderColor[3];
 
 	return l_result;
 }
@@ -37,13 +37,13 @@ GLenum GLHelper::GetTextureSamplerType(TextureSamplerType rhs)
 {
 	switch (rhs)
 	{
-	case TextureSamplerType::SAMPLER_1D:
+	case TextureSamplerType::Sampler1D:
 		return GL_TEXTURE_1D;
-	case TextureSamplerType::SAMPLER_2D:
+	case TextureSamplerType::Sampler2D:
 		return GL_TEXTURE_2D;
-	case TextureSamplerType::SAMPLER_3D:
+	case TextureSamplerType::Sampler3D:
 		return GL_TEXTURE_3D;
-	case TextureSamplerType::SAMPLER_CUBEMAP:
+	case TextureSamplerType::SamplerCubemap:
 		return GL_TEXTURE_CUBE_MAP;
 	default:
 		return 0;
@@ -56,9 +56,9 @@ GLenum GLHelper::GetTextureWrapMethod(TextureWrapMethod rhs)
 
 	switch (rhs)
 	{
-	case TextureWrapMethod::CLAMP_TO_EDGE: l_result = GL_CLAMP_TO_EDGE; break;
-	case TextureWrapMethod::REPEAT: l_result = GL_REPEAT; break;
-	case TextureWrapMethod::CLAMP_TO_BORDER: l_result = GL_CLAMP_TO_BORDER; break;
+	case TextureWrapMethod::Edge: l_result = GL_CLAMP_TO_EDGE; break;
+	case TextureWrapMethod::Repeat: l_result = GL_REPEAT; break;
+	case TextureWrapMethod::Border: l_result = GL_CLAMP_TO_BORDER; break;
 	}
 
 	return l_result;
@@ -70,9 +70,9 @@ GLenum GLHelper::GetTextureFilterParam(TextureFilterMethod rhs)
 
 	switch (rhs)
 	{
-	case TextureFilterMethod::NEAREST: l_result = GL_NEAREST; break;
-	case TextureFilterMethod::LINEAR: l_result = GL_LINEAR; break;
-	case TextureFilterMethod::LINEAR_MIPMAP_LINEAR: l_result = GL_LINEAR_MIPMAP_LINEAR; break;
+	case TextureFilterMethod::Nearest: l_result = GL_NEAREST; break;
+	case TextureFilterMethod::Linear: l_result = GL_LINEAR; break;
+	case TextureFilterMethod::Mip: l_result = GL_LINEAR_MIPMAP_LINEAR; break;
 	}
 
 	return l_result;
@@ -82,30 +82,30 @@ GLenum GLHelper::GetTextureInternalFormat(TextureDataDesc textureDataDesc)
 {
 	GLenum l_internalFormat;
 
-	if (textureDataDesc.usageType == TextureUsageType::ALBEDO)
+	if (textureDataDesc.UsageType == TextureUsageType::Albedo)
 	{
-		if (textureDataDesc.pixelDataFormat == TexturePixelDataFormat::RGB)
+		if (textureDataDesc.PixelDataFormat == TexturePixelDataFormat::RGB)
 		{
 			l_internalFormat = GL_SRGB;
 		}
-		else if (textureDataDesc.pixelDataFormat == TexturePixelDataFormat::RGBA)
+		else if (textureDataDesc.PixelDataFormat == TexturePixelDataFormat::RGBA)
 		{
 			l_internalFormat = GL_SRGB_ALPHA;
 		}
 	}
-	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
+	else if (textureDataDesc.UsageType == TextureUsageType::DepthAttachment)
 	{
 		l_internalFormat = GL_DEPTH_COMPONENT32F;
 	}
-	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
+	else if (textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
 	{
 		l_internalFormat = GL_DEPTH24_STENCIL8;
 	}
 	else
 	{
-		if (textureDataDesc.pixelDataType == TexturePixelDataType::UBYTE)
+		if (textureDataDesc.PixelDataType == TexturePixelDataType::UBYTE)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = GL_R8; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = GL_RG8; break;
@@ -114,9 +114,9 @@ GLenum GLHelper::GetTextureInternalFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SBYTE)
+		else if (textureDataDesc.PixelDataType == TexturePixelDataType::SBYTE)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = GL_R8_SNORM; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = GL_RG8_SNORM; break;
@@ -125,9 +125,9 @@ GLenum GLHelper::GetTextureInternalFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::USHORT)
+		else if (textureDataDesc.PixelDataType == TexturePixelDataType::USHORT)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = GL_R16; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = GL_RG16; break;
@@ -136,9 +136,9 @@ GLenum GLHelper::GetTextureInternalFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SSHORT)
+		else if (textureDataDesc.PixelDataType == TexturePixelDataType::SSHORT)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = GL_R16_SNORM; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = GL_RG16_SNORM; break;
@@ -147,9 +147,9 @@ GLenum GLHelper::GetTextureInternalFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::UINT8)
+		else if (textureDataDesc.PixelDataType == TexturePixelDataType::UINT8)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = GL_R8UI; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = GL_RG8UI; break;
@@ -158,9 +158,9 @@ GLenum GLHelper::GetTextureInternalFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SINT8)
+		else if (textureDataDesc.PixelDataType == TexturePixelDataType::SINT8)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = GL_R8I; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = GL_RG8I; break;
@@ -169,9 +169,9 @@ GLenum GLHelper::GetTextureInternalFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::UINT16)
+		else if (textureDataDesc.PixelDataType == TexturePixelDataType::UINT16)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = GL_R16UI; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = GL_RG16UI; break;
@@ -180,9 +180,9 @@ GLenum GLHelper::GetTextureInternalFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SINT16)
+		else if (textureDataDesc.PixelDataType == TexturePixelDataType::SINT16)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = GL_R16I; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = GL_RG16I; break;
@@ -191,9 +191,9 @@ GLenum GLHelper::GetTextureInternalFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::UINT32)
+		else if (textureDataDesc.PixelDataType == TexturePixelDataType::UINT32)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = GL_R32UI; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = GL_RG32UI; break;
@@ -202,9 +202,9 @@ GLenum GLHelper::GetTextureInternalFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SINT32)
+		else if (textureDataDesc.PixelDataType == TexturePixelDataType::SINT32)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = GL_R32I; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = GL_RG32I; break;
@@ -213,9 +213,9 @@ GLenum GLHelper::GetTextureInternalFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::FLOAT16)
+		else if (textureDataDesc.PixelDataType == TexturePixelDataType::FLOAT16)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = GL_R16F; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = GL_RG16F; break;
@@ -224,9 +224,9 @@ GLenum GLHelper::GetTextureInternalFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::FLOAT32)
+		else if (textureDataDesc.PixelDataType == TexturePixelDataType::FLOAT32)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = GL_R32F; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = GL_RG32F; break;
@@ -243,22 +243,22 @@ GLenum GLHelper::GetTextureInternalFormat(TextureDataDesc textureDataDesc)
 GLenum GLHelper::GetTexturePixelDataFormat(TextureDataDesc textureDataDesc)
 {
 	GLenum l_result;
-	if (textureDataDesc.pixelDataFormat == TexturePixelDataFormat::DEPTH_COMPONENT)
+	if (textureDataDesc.PixelDataFormat == TexturePixelDataFormat::Depth)
 	{
 		l_result = GL_DEPTH_COMPONENT;
 	}
-	else if (textureDataDesc.pixelDataFormat == TexturePixelDataFormat::DEPTH_STENCIL_COMPONENT)
+	else if (textureDataDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
 	{
 		l_result = GL_DEPTH_STENCIL;
 	}
 	else
 	{
-		if (textureDataDesc.pixelDataType == TexturePixelDataType::UINT8
-			|| textureDataDesc.pixelDataType == TexturePixelDataType::UINT16
-			|| textureDataDesc.pixelDataType == TexturePixelDataType::UINT32
+		if (textureDataDesc.PixelDataType == TexturePixelDataType::UINT8
+			|| textureDataDesc.PixelDataType == TexturePixelDataType::UINT16
+			|| textureDataDesc.PixelDataType == TexturePixelDataType::UINT32
 			)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R:l_result = GL_RED_INTEGER; break;
 			case TexturePixelDataFormat::RG:l_result = GL_RG_INTEGER; break;
@@ -270,7 +270,7 @@ GLenum GLHelper::GetTexturePixelDataFormat(TextureDataDesc textureDataDesc)
 		}
 		else
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R:l_result = GL_RED; break;
 			case TexturePixelDataFormat::RG:l_result = GL_RG; break;
@@ -289,17 +289,17 @@ GLenum GLHelper::GetTexturePixelDataType(TextureDataDesc textureDataDesc)
 {
 	GLenum l_result;
 
-	if (textureDataDesc.pixelDataFormat == TexturePixelDataFormat::DEPTH_COMPONENT)
+	if (textureDataDesc.PixelDataFormat == TexturePixelDataFormat::Depth)
 	{
 		l_result = GL_FLOAT;
 	}
-	else if (textureDataDesc.pixelDataFormat == TexturePixelDataFormat::DEPTH_STENCIL_COMPONENT)
+	else if (textureDataDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
 	{
 		l_result = GL_UNSIGNED_INT_24_8;
 	}
 	else
 	{
-		switch (textureDataDesc.pixelDataType)
+		switch (textureDataDesc.PixelDataType)
 		{
 		case TexturePixelDataType::UBYTE:l_result = GL_UNSIGNED_BYTE; break;
 		case TexturePixelDataType::SBYTE:l_result = GL_BYTE; break;
@@ -324,7 +324,7 @@ GLsizei GLHelper::GetTexturePixelDataSize(TextureDataDesc textureDataDesc)
 {
 	GLsizei l_singlePixelSize;
 
-	switch (textureDataDesc.pixelDataType)
+	switch (textureDataDesc.PixelDataType)
 	{
 	case TexturePixelDataType::UBYTE:l_singlePixelSize = 1; break;
 	case TexturePixelDataType::SBYTE:l_singlePixelSize = 1; break;
@@ -342,14 +342,14 @@ GLsizei GLHelper::GetTexturePixelDataSize(TextureDataDesc textureDataDesc)
 	}
 
 	GLsizei l_channelSize;
-	switch (textureDataDesc.pixelDataFormat)
+	switch (textureDataDesc.PixelDataFormat)
 	{
 	case TexturePixelDataFormat::R:l_channelSize = 1; break;
 	case TexturePixelDataFormat::RG:l_channelSize = 2; break;
 	case TexturePixelDataFormat::RGB:l_channelSize = 3; break;
 	case TexturePixelDataFormat::RGBA:l_channelSize = 4; break;
-	case TexturePixelDataFormat::DEPTH_COMPONENT:l_channelSize = 1; break;
-	case TexturePixelDataFormat::DEPTH_STENCIL_COMPONENT:l_channelSize = 1; break;
+	case TexturePixelDataFormat::Depth:l_channelSize = 1; break;
+	case TexturePixelDataFormat::DepthStencil:l_channelSize = 1; break;
 	}
 
 	return l_singlePixelSize * l_channelSize;
@@ -391,7 +391,7 @@ bool GLHelper::CreateFramebuffer(GLRenderPassDataComponent * GLRPDC)
 #endif
 
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GLRPDC->m_renderBufferAttachmentType, GL_RENDERBUFFER, GLRPDC->m_RBO);
-		glRenderbufferStorage(GL_RENDERBUFFER, GLRPDC->m_renderBufferInternalFormat, GLRPDC->m_RenderPassDesc.m_RenderTargetDesc.width, GLRPDC->m_RenderPassDesc.m_RenderTargetDesc.height);
+		glRenderbufferStorage(GL_RENDERBUFFER, GLRPDC->m_renderBufferInternalFormat, GLRPDC->m_RenderPassDesc.m_RenderTargetDesc.Width, GLRPDC->m_RenderPassDesc.m_RenderTargetDesc.Height);
 
 		std::vector<unsigned int> l_colorAttachments;
 		for (unsigned int i = 0; i < GLRPDC->m_RenderPassDesc.m_RenderTargetCount; ++i)
@@ -453,13 +453,13 @@ bool GLHelper::CreateRenderTargets(GLRenderPassDataComponent * GLRPDC, IRenderin
 
 		if (GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
 		{
-			l_TDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_STENCIL_ATTACHMENT;
-			l_TDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::DEPTH_STENCIL_COMPONENT;
+			l_TDC->m_textureDataDesc.UsageType = TextureUsageType::DepthStencilAttachment;
+			l_TDC->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
 		}
 		else
 		{
-			l_TDC->m_textureDataDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
-			l_TDC->m_textureDataDesc.pixelDataFormat = TexturePixelDataFormat::DEPTH_COMPONENT;
+			l_TDC->m_textureDataDesc.UsageType = TextureUsageType::DepthAttachment;
+			l_TDC->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
 		}
 
 		l_TDC->m_textureData = nullptr;
@@ -837,10 +837,10 @@ std::string GLHelper::LoadShaderFile(const std::string & path)
 	return l_content;
 }
 
-bool GLHelper::AddShaderHandle(GLuint & shaderProgram, GLuint & shaderID, GLuint shaderType, const ShaderFilePath & shaderFilePath)
+bool GLHelper::AddShaderHandle(GLuint & shaderProgram, GLuint & shaderID, GLuint shaderStage, const ShaderFilePath & shaderFilePath)
 {
 	// Create shader object
-	shaderID = glCreateShader(shaderType);
+	shaderID = glCreateShader(shaderStage);
 	glObjectLabel(GL_SHADER, shaderID, (GLsizei)shaderFilePath.size(), shaderFilePath.c_str());
 
 	if (shaderID == 0)
@@ -961,13 +961,13 @@ bool GLHelper::AttachTextureToFramebuffer(GLTextureDataComponent * GLTDC, GLRend
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPDC->m_FBO);
 
-	if (GLTDC->m_textureDataDesc.samplerType == TextureSamplerType::SAMPLER_1D)
+	if (GLTDC->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler1D)
 	{
-		if (GLTDC->m_textureDataDesc.pixelDataFormat == TexturePixelDataFormat::DEPTH_COMPONENT)
+		if (GLTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::Depth)
 		{
 			glFramebufferTexture1D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_1D, GLTDC->m_TO, mipLevel);
 		}
-		else if (GLTDC->m_textureDataDesc.pixelDataFormat == TexturePixelDataFormat::DEPTH_STENCIL_COMPONENT)
+		else if (GLTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
 		{
 			glFramebufferTexture1D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_1D, GLTDC->m_TO, mipLevel);
 		}
@@ -976,13 +976,13 @@ bool GLHelper::AttachTextureToFramebuffer(GLTextureDataComponent * GLTDC, GLRend
 			glFramebufferTexture1D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + attachmentIndex, GL_TEXTURE_1D, GLTDC->m_TO, mipLevel);
 		}
 	}
-	else if (GLTDC->m_textureDataDesc.samplerType == TextureSamplerType::SAMPLER_2D)
+	else if (GLTDC->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler2D)
 	{
-		if (GLTDC->m_textureDataDesc.pixelDataFormat == TexturePixelDataFormat::DEPTH_COMPONENT)
+		if (GLTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::Depth)
 		{
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GLTDC->m_TO, mipLevel);
 		}
-		else if (GLTDC->m_textureDataDesc.pixelDataFormat == TexturePixelDataFormat::DEPTH_STENCIL_COMPONENT)
+		else if (GLTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
 		{
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, GLTDC->m_TO, mipLevel);
 		}
@@ -991,13 +991,13 @@ bool GLHelper::AttachTextureToFramebuffer(GLTextureDataComponent * GLTDC, GLRend
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + attachmentIndex, GL_TEXTURE_2D, GLTDC->m_TO, mipLevel);
 		}
 	}
-	else if (GLTDC->m_textureDataDesc.samplerType == TextureSamplerType::SAMPLER_3D)
+	else if (GLTDC->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
 	{
-		if (GLTDC->m_textureDataDesc.pixelDataFormat == TexturePixelDataFormat::DEPTH_COMPONENT)
+		if (GLTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::Depth)
 		{
 			glFramebufferTexture3D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_3D, GLTDC->m_TO, mipLevel, layer);
 		}
-		else if (GLTDC->m_textureDataDesc.pixelDataFormat == TexturePixelDataFormat::DEPTH_STENCIL_COMPONENT)
+		else if (GLTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
 		{
 			glFramebufferTexture3D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_3D, GLTDC->m_TO, mipLevel, layer);
 		}
@@ -1008,11 +1008,11 @@ bool GLHelper::AttachTextureToFramebuffer(GLTextureDataComponent * GLTDC, GLRend
 	}
 	else
 	{
-		if (GLTDC->m_textureDataDesc.pixelDataFormat == TexturePixelDataFormat::DEPTH_COMPONENT)
+		if (GLTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::Depth)
 		{
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TO, mipLevel);
 		}
-		else if (GLTDC->m_textureDataDesc.pixelDataFormat == TexturePixelDataFormat::DEPTH_STENCIL_COMPONENT)
+		else if (GLTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
 		{
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TO, mipLevel);
 		}

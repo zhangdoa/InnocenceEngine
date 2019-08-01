@@ -14,9 +14,9 @@ D3D11_TEXTURE_DESC DX11Helper::GetDX11TextureDataDesc(TextureDataDesc textureDat
 {
 	D3D11_TEXTURE_DESC l_result = {};
 
-	l_result.Width = textureDataDesc.width;
-	l_result.Height = textureDataDesc.height;
-	l_result.Depth = textureDataDesc.depth;
+	l_result.Width = textureDataDesc.Width;
+	l_result.Height = textureDataDesc.Height;
+	l_result.Depth = textureDataDesc.Depth;
 	l_result.ArraySize = 1;
 	l_result.MipLevels = GetTextureMipLevels(textureDataDesc);
 	l_result.Format = GetTextureFormat(textureDataDesc);
@@ -25,7 +25,7 @@ D3D11_TEXTURE_DESC DX11Helper::GetDX11TextureDataDesc(TextureDataDesc textureDat
 	l_result.BindFlags = GetTextureBindFlags(textureDataDesc);
 	l_result.CPUAccessFlags = 0;
 
-	if (textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
+	if (textureDataDesc.MagFilterMethod == TextureFilterMethod::Mip)
 	{
 		l_result.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
 	}
@@ -41,23 +41,23 @@ DXGI_FORMAT DX11Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 {
 	DXGI_FORMAT l_internalFormat = DXGI_FORMAT_UNKNOWN;
 
-	if (textureDataDesc.usageType == TextureUsageType::ALBEDO)
+	if (textureDataDesc.UsageType == TextureUsageType::Albedo)
 	{
 		l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	}
-	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
+	else if (textureDataDesc.UsageType == TextureUsageType::DepthAttachment)
 	{
 		l_internalFormat = DXGI_FORMAT_R32_TYPELESS;
 	}
-	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
+	else if (textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
 	{
 		l_internalFormat = DXGI_FORMAT_R24G8_TYPELESS;
 	}
 	else
 	{
-		if (textureDataDesc.pixelDataType == TexturePixelDataType::UBYTE)
+		if (textureDataDesc.PixelDataType == TexturePixelDataType::UBYTE)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R8_UNORM; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_UNORM; break;
@@ -66,9 +66,9 @@ DXGI_FORMAT DX11Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SBYTE)
+		else if (textureDataDesc.PixelDataType == TexturePixelDataType::SBYTE)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R8_SNORM; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_SNORM; break;
@@ -77,9 +77,9 @@ DXGI_FORMAT DX11Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::USHORT)
+		else if (textureDataDesc.PixelDataType == TexturePixelDataType::USHORT)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_UNORM; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_UNORM; break;
@@ -88,9 +88,9 @@ DXGI_FORMAT DX11Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SSHORT)
+		else if (textureDataDesc.PixelDataType == TexturePixelDataType::SSHORT)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_SNORM; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_SNORM; break;
@@ -99,9 +99,9 @@ DXGI_FORMAT DX11Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		if (textureDataDesc.pixelDataType == TexturePixelDataType::UINT8)
+		if (textureDataDesc.PixelDataType == TexturePixelDataType::UINT8)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R8_UINT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_UINT; break;
@@ -110,9 +110,9 @@ DXGI_FORMAT DX11Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SINT8)
+		else if (textureDataDesc.PixelDataType == TexturePixelDataType::SINT8)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R8_SINT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_SINT; break;
@@ -121,9 +121,9 @@ DXGI_FORMAT DX11Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::UINT16)
+		else if (textureDataDesc.PixelDataType == TexturePixelDataType::UINT16)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_UINT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_UINT; break;
@@ -132,9 +132,9 @@ DXGI_FORMAT DX11Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SINT16)
+		else if (textureDataDesc.PixelDataType == TexturePixelDataType::SINT16)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_SINT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_SINT; break;
@@ -143,9 +143,9 @@ DXGI_FORMAT DX11Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::UINT32)
+		else if (textureDataDesc.PixelDataType == TexturePixelDataType::UINT32)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R32_UINT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R32G32_UINT; break;
@@ -154,9 +154,9 @@ DXGI_FORMAT DX11Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::SINT32)
+		else if (textureDataDesc.PixelDataType == TexturePixelDataType::SINT32)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R32_SINT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R32G32_SINT; break;
@@ -165,9 +165,9 @@ DXGI_FORMAT DX11Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::FLOAT16)
+		else if (textureDataDesc.PixelDataType == TexturePixelDataType::FLOAT16)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_FLOAT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_FLOAT; break;
@@ -176,9 +176,9 @@ DXGI_FORMAT DX11Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.pixelDataType == TexturePixelDataType::FLOAT32)
+		else if (textureDataDesc.PixelDataType == TexturePixelDataType::FLOAT32)
 		{
-			switch (textureDataDesc.pixelDataFormat)
+			switch (textureDataDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R32_FLOAT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R32G32_FLOAT; break;
@@ -199,11 +199,11 @@ D3D11_FILTER DX11Helper::GetFilterMode(TextureFilterMethod textureFilterMethod)
 	// @TODO: Completeness of the filter
 	switch (textureFilterMethod)
 	{
-	case TextureFilterMethod::NEAREST: l_result = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	case TextureFilterMethod::Nearest: l_result = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 		break;
-	case TextureFilterMethod::LINEAR: l_result = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	case TextureFilterMethod::Linear: l_result = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 		break;
-	case TextureFilterMethod::LINEAR_MIPMAP_LINEAR: l_result = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	case TextureFilterMethod::Mip: l_result = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 		break;
 	default:
 		break;
@@ -218,11 +218,11 @@ D3D11_TEXTURE_ADDRESS_MODE DX11Helper::GetWrapMode(TextureWrapMethod textureWrap
 
 	switch (textureWrapMethod)
 	{
-	case TextureWrapMethod::CLAMP_TO_EDGE: l_result = D3D11_TEXTURE_ADDRESS_CLAMP;
+	case TextureWrapMethod::Edge: l_result = D3D11_TEXTURE_ADDRESS_CLAMP;
 		break;
-	case TextureWrapMethod::REPEAT: l_result = D3D11_TEXTURE_ADDRESS_WRAP;
+	case TextureWrapMethod::Repeat: l_result = D3D11_TEXTURE_ADDRESS_WRAP;
 		break;
-	case TextureWrapMethod::CLAMP_TO_BORDER: l_result = D3D11_TEXTURE_ADDRESS_BORDER;
+	case TextureWrapMethod::Border: l_result = D3D11_TEXTURE_ADDRESS_BORDER;
 		break;
 	default:
 		break;
@@ -234,7 +234,7 @@ D3D11_TEXTURE_ADDRESS_MODE DX11Helper::GetWrapMode(TextureWrapMethod textureWrap
 unsigned int DX11Helper::GetTextureMipLevels(TextureDataDesc textureDataDesc)
 {
 	unsigned int textureMipLevels = 1;
-	if (textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
+	if (textureDataDesc.MagFilterMethod == TextureFilterMethod::Mip)
 	{
 		textureMipLevels = 0;
 	}
@@ -245,19 +245,19 @@ unsigned int DX11Helper::GetTextureMipLevels(TextureDataDesc textureDataDesc)
 unsigned int DX11Helper::GetTextureBindFlags(TextureDataDesc textureDataDesc)
 {
 	unsigned int textureBindFlags = 0;
-	if (textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT)
+	if (textureDataDesc.UsageType == TextureUsageType::ColorAttachment)
 	{
 		textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
 	}
-	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
+	else if (textureDataDesc.UsageType == TextureUsageType::DepthAttachment)
 	{
 		textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_DEPTH_STENCIL;
 	}
-	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
+	else if (textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
 	{
 		textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_DEPTH_STENCIL;
 	}
-	else if (textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
+	else if (textureDataDesc.UsageType == TextureUsageType::RawImage)
 	{
 		textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
 	}
@@ -324,11 +324,11 @@ D3D11_SHADER_RESOURCE_VIEW_DESC DX11Helper::GetSRVDesc(TextureDataDesc textureDa
 {
 	D3D11_SHADER_RESOURCE_VIEW_DESC l_result = {};
 
-	if (textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
+	if (textureDataDesc.UsageType == TextureUsageType::DepthAttachment)
 	{
 		l_result.Format = DXGI_FORMAT_R32_FLOAT;
 	}
-	else if (textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
+	else if (textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
 	{
 		l_result.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 	}
@@ -337,19 +337,19 @@ D3D11_SHADER_RESOURCE_VIEW_DESC DX11Helper::GetSRVDesc(TextureDataDesc textureDa
 		l_result.Format = D3D11TextureDesc.Format;
 	}
 
-	if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_1D)
+	if (textureDataDesc.SamplerType == TextureSamplerType::Sampler1D)
 	{
 		l_result.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE1D;
 		l_result.Texture1D.MostDetailedMip = 0;
 		l_result.Texture1D.MipLevels = GetSRVMipLevels(textureDataDesc);
 	}
-	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_2D)
+	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler2D)
 	{
 		l_result.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 		l_result.Texture2D.MostDetailedMip = 0;
 		l_result.Texture2D.MipLevels = GetSRVMipLevels(textureDataDesc);
 	}
-	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_3D)
+	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
 	{
 		l_result.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
 		l_result.Texture3D.MostDetailedMip = 0;
@@ -365,10 +365,10 @@ D3D11_SHADER_RESOURCE_VIEW_DESC DX11Helper::GetSRVDesc(TextureDataDesc textureDa
 
 unsigned int DX11Helper::GetSRVMipLevels(TextureDataDesc textureDataDesc)
 {
-	if (textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
-		|| textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
-		|| textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT
-		|| textureDataDesc.usageType == TextureUsageType::RAW_IMAGE)
+	if (textureDataDesc.UsageType == TextureUsageType::ColorAttachment
+		|| textureDataDesc.UsageType == TextureUsageType::DepthAttachment
+		|| textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment
+		|| textureDataDesc.UsageType == TextureUsageType::RawImage)
 	{
 		return 1;
 	}
@@ -382,17 +382,17 @@ D3D11_UNORDERED_ACCESS_VIEW_DESC DX11Helper::GetUAVDesc(TextureDataDesc textureD
 {
 	D3D11_UNORDERED_ACCESS_VIEW_DESC l_result = {};
 
-	if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_1D)
+	if (textureDataDesc.SamplerType == TextureSamplerType::Sampler1D)
 	{
 		l_result.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE1D;
 		l_result.Texture1D.MipSlice = 0;
 	}
-	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_2D)
+	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler2D)
 	{
 		l_result.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
 		l_result.Texture2D.MipSlice = 0;
 	}
-	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_3D)
+	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
 	{
 		l_result.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
 		l_result.Texture3D.MipSlice = 0;
@@ -409,19 +409,19 @@ D3D11_RENDER_TARGET_VIEW_DESC DX11Helper::GetRTVDesc(TextureDataDesc textureData
 {
 	D3D11_RENDER_TARGET_VIEW_DESC l_result = {};
 
-	if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_1D)
+	if (textureDataDesc.SamplerType == TextureSamplerType::Sampler1D)
 	{
 		l_result.Format = GetTextureFormat(textureDataDesc);
 		l_result.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE1D;
 		l_result.Texture1D.MipSlice = 0;
 	}
-	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_2D)
+	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler2D)
 	{
 		l_result.Format = GetTextureFormat(textureDataDesc);
 		l_result.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 		l_result.Texture2D.MipSlice = 0;
 	}
-	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_3D)
+	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
 	{
 		l_result.Format = GetTextureFormat(textureDataDesc);
 		l_result.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE3D;
@@ -448,17 +448,17 @@ D3D11_DEPTH_STENCIL_VIEW_DESC DX11Helper::GetDSVDesc(TextureDataDesc textureData
 		l_result.Format = DXGI_FORMAT_D32_FLOAT;
 	}
 
-	if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_1D)
+	if (textureDataDesc.SamplerType == TextureSamplerType::Sampler1D)
 	{
 		l_result.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE1D;
 		l_result.Texture1D.MipSlice = 0;
 	}
-	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_2D)
+	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler2D)
 	{
 		l_result.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 		l_result.Texture2D.MipSlice = 0;
 	}
-	else if (textureDataDesc.samplerType == TextureSamplerType::SAMPLER_3D)
+	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
 	{
 		// Not supported
 	}
@@ -502,11 +502,11 @@ bool DX11Helper::CreateRenderTargets(DX11RenderPassDataComponent * DX11RPDC, IRe
 
 		if (DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
 		{
-			DX11RPDC->m_DepthStencilRenderTarget->m_textureDataDesc.usageType = TextureUsageType::DEPTH_STENCIL_ATTACHMENT;
+			DX11RPDC->m_DepthStencilRenderTarget->m_textureDataDesc.UsageType = TextureUsageType::DepthStencilAttachment;
 		}
 		else
 		{
-			DX11RPDC->m_DepthStencilRenderTarget->m_textureDataDesc.usageType = TextureUsageType::DEPTH_ATTACHMENT;
+			DX11RPDC->m_DepthStencilRenderTarget->m_textureDataDesc.UsageType = TextureUsageType::DepthAttachment;
 		}
 
 		DX11RPDC->m_DepthStencilRenderTarget->m_textureData = nullptr;
@@ -928,23 +928,23 @@ bool DX11Helper::GenerateViewportStateDesc(ViewportDesc viewportDesc, DX11Pipeli
 	return true;
 }
 
-bool DX11Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderType shaderType, const ShaderFilePath & shaderFilePath)
+bool DX11Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderStage shaderStage, const ShaderFilePath & shaderFilePath)
 {
 	const char* l_shaderTypeName;
 
-	switch (shaderType)
+	switch (shaderStage)
 	{
-	case ShaderType::VERTEX: l_shaderTypeName = "vs_5_0";
+	case ShaderStage::Vertex: l_shaderTypeName = "vs_5_0";
 		break;
-	case ShaderType::TCS: l_shaderTypeName = "hs_5_0";
+	case ShaderStage::Hull: l_shaderTypeName = "hs_5_0";
 		break;
-	case ShaderType::TES: l_shaderTypeName = "ds_5_0";
+	case ShaderStage::Domain: l_shaderTypeName = "ds_5_0";
 		break;
-	case ShaderType::GEOMETRY: l_shaderTypeName = "gs_5_0";
+	case ShaderStage::Geometry: l_shaderTypeName = "gs_5_0";
 		break;
-	case ShaderType::FRAGMENT: l_shaderTypeName = "ps_5_0";
+	case ShaderStage::Pixel: l_shaderTypeName = "ps_5_0";
 		break;
-	case ShaderType::COMPUTE: l_shaderTypeName = "cs_5_0";
+	case ShaderStage::Compute: l_shaderTypeName = "cs_5_0";
 		break;
 	default:
 		break;

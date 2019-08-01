@@ -205,15 +205,15 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 
 	m_DefaultRenderPassDesc.m_UseMultiFrames = false;
 	m_DefaultRenderPassDesc.m_RenderTargetCount = 1;
-	m_DefaultRenderPassDesc.m_RenderTargetDesc.samplerType = TextureSamplerType::SAMPLER_2D;
-	m_DefaultRenderPassDesc.m_RenderTargetDesc.usageType = TextureUsageType::COLOR_ATTACHMENT;
-	m_DefaultRenderPassDesc.m_RenderTargetDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_DefaultRenderPassDesc.m_RenderTargetDesc.minFilterMethod = TextureFilterMethod::NEAREST;
-	m_DefaultRenderPassDesc.m_RenderTargetDesc.magFilterMethod = TextureFilterMethod::NEAREST;
-	m_DefaultRenderPassDesc.m_RenderTargetDesc.wrapMethod = TextureWrapMethod::CLAMP_TO_EDGE;
-	m_DefaultRenderPassDesc.m_RenderTargetDesc.width = m_screenResolution.x;
-	m_DefaultRenderPassDesc.m_RenderTargetDesc.height = m_screenResolution.y;
-	m_DefaultRenderPassDesc.m_RenderTargetDesc.pixelDataType = TexturePixelDataType::FLOAT16;
+	m_DefaultRenderPassDesc.m_RenderTargetDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_DefaultRenderPassDesc.m_RenderTargetDesc.UsageType = TextureUsageType::ColorAttachment;
+	m_DefaultRenderPassDesc.m_RenderTargetDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
+	m_DefaultRenderPassDesc.m_RenderTargetDesc.MinFilterMethod = TextureFilterMethod::Nearest;
+	m_DefaultRenderPassDesc.m_RenderTargetDesc.MagFilterMethod = TextureFilterMethod::Nearest;
+	m_DefaultRenderPassDesc.m_RenderTargetDesc.WrapMethod = TextureWrapMethod::Edge;
+	m_DefaultRenderPassDesc.m_RenderTargetDesc.Width = m_screenResolution.x;
+	m_DefaultRenderPassDesc.m_RenderTargetDesc.Height = m_screenResolution.y;
+	m_DefaultRenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::FLOAT16;
 
 	m_DefaultRenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)m_screenResolution.x;
 	m_DefaultRenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)m_screenResolution.y;
@@ -265,7 +265,7 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 		gatherStaticMeshData();
 		m_renderingServer->BakeGIData();
 	};
-	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_B, ButtonStatus::PRESSED }, &f_bakeGI);
+	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_B, ButtonStatus::Pressed }, &f_bakeGI);
 
 	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
@@ -281,11 +281,11 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 
 bool InnoRenderingFrontendNS::loadDefaultAssets()
 {
-	m_basicNormalTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_normal.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
-	m_basicAlbedoTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_albedo.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ALBEDO);
-	m_basicMetallicTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_metallic.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::METALLIC);
-	m_basicRoughnessTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_roughness.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::ROUGHNESS);
-	m_basicAOTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_ao.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::AMBIENT_OCCLUSION);
+	m_basicNormalTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_normal.png", TextureSamplerType::Sampler2D, TextureUsageType::Normal);
+	m_basicAlbedoTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_albedo.png", TextureSamplerType::Sampler2D, TextureUsageType::Albedo);
+	m_basicMetallicTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_metallic.png", TextureSamplerType::Sampler2D, TextureUsageType::Metallic);
+	m_basicRoughnessTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_roughness.png", TextureSamplerType::Sampler2D, TextureUsageType::Roughness);
+	m_basicAOTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_ao.png", TextureSamplerType::Sampler2D, TextureUsageType::AmbientOcclusion);
 
 	m_basicMaterial = m_renderingServer->AddMaterialDataComponent("BasicMaterial/");
 	m_basicMaterial->m_normalTexture = m_basicNormalTexture;
@@ -294,46 +294,46 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 	m_basicMaterial->m_roughnessTexture = m_basicRoughnessTexture;
 	m_basicMaterial->m_aoTexture = m_basicAOTexture;
 
-	m_iconTemplate_OBJ = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_OBJ.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
-	m_iconTemplate_PNG = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_PNG.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
-	m_iconTemplate_SHADER = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_SHADER.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
-	m_iconTemplate_UNKNOWN = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_UNKNOWN.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	m_iconTemplate_OBJ = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_OBJ.png", TextureSamplerType::Sampler2D, TextureUsageType::Normal);
+	m_iconTemplate_PNG = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_PNG.png", TextureSamplerType::Sampler2D, TextureUsageType::Normal);
+	m_iconTemplate_SHADER = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_SHADER.png", TextureSamplerType::Sampler2D, TextureUsageType::Normal);
+	m_iconTemplate_UNKNOWN = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_UNKNOWN.png", TextureSamplerType::Sampler2D, TextureUsageType::Normal);
 
-	m_iconTemplate_DirectionalLight = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_DirectionalLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
-	m_iconTemplate_PointLight = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_PointLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
-	m_iconTemplate_SphereLight = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_SphereLight.png", TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL);
+	m_iconTemplate_DirectionalLight = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_DirectionalLight.png", TextureSamplerType::Sampler2D, TextureUsageType::Normal);
+	m_iconTemplate_PointLight = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_PointLight.png", TextureSamplerType::Sampler2D, TextureUsageType::Normal);
+	m_iconTemplate_SphereLight = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_SphereLight.png", TextureSamplerType::Sampler2D, TextureUsageType::Normal);
 
 	m_unitLineMesh = m_renderingServer->AddMeshDataComponent("UnitLineMesh/");
 	g_pModuleManager->getAssetSystem()->addUnitLine(*m_unitLineMesh);
-	m_unitLineMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
-	m_unitLineMesh->m_meshShapeType = MeshShapeType::LINE;
+	m_unitLineMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
+	m_unitLineMesh->m_meshShapeType = MeshShapeType::Line;
 	m_unitLineMesh->m_objectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMesh);
 
 	m_unitQuadMesh = m_renderingServer->AddMeshDataComponent("UnitQuadMesh/");
 	g_pModuleManager->getAssetSystem()->addUnitQuad(*m_unitQuadMesh);
-	m_unitQuadMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	m_unitQuadMesh->m_meshShapeType = MeshShapeType::QUAD;
+	m_unitQuadMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
+	m_unitQuadMesh->m_meshShapeType = MeshShapeType::Quad;
 	m_unitQuadMesh->m_objectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMesh);
 
 	m_unitCubeMesh = m_renderingServer->AddMeshDataComponent("UnitCubeMesh/");
 	g_pModuleManager->getAssetSystem()->addUnitCube(*m_unitCubeMesh);
-	m_unitCubeMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	m_unitCubeMesh->m_meshShapeType = MeshShapeType::CUBE;
+	m_unitCubeMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
+	m_unitCubeMesh->m_meshShapeType = MeshShapeType::Cube;
 	m_unitCubeMesh->m_objectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMesh);
 
 	m_unitSphereMesh = m_renderingServer->AddMeshDataComponent("UnitSphereMesh/");
 	g_pModuleManager->getAssetSystem()->addUnitSphere(*m_unitSphereMesh);
-	m_unitSphereMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	m_unitSphereMesh->m_meshShapeType = MeshShapeType::SPHERE;
+	m_unitSphereMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
+	m_unitSphereMesh->m_meshShapeType = MeshShapeType::Sphere;
 	m_unitSphereMesh->m_objectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMesh);
 
 	m_terrainMesh = m_renderingServer->AddMeshDataComponent("TerrainMesh/");
 	g_pModuleManager->getAssetSystem()->addTerrain(*m_terrainMesh);
-	m_terrainMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
+	m_terrainMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_terrainMesh->m_objectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMesh);
 
@@ -527,7 +527,7 @@ bool InnoRenderingFrontendNS::updateMeshData()
 					l_meshGPUData.normalMat = l_cullingData.normalMat;
 					l_meshGPUData.UUID = (float)l_cullingData.UUID;
 
-					if (l_cullingData.visiblilityType == VisiblilityType::INNO_OPAQUE)
+					if (l_cullingData.visiblilityType == VisiblilityType::Opaque)
 					{
 						OpaquePassGPUData l_opaquePassGPUData;
 
@@ -549,7 +549,7 @@ bool InnoRenderingFrontendNS::updateMeshData()
 						m_opaquePassMaterialGPUData[l_opaquePassIndex] = l_materialGPUData;
 						l_opaquePassIndex++;
 					}
-					else if (l_cullingData.visiblilityType == VisiblilityType::INNO_TRANSPARENT)
+					else if (l_cullingData.visiblilityType == VisiblilityType::Transparent)
 					{
 						TransparentPassGPUData l_transparentPassGPUData;
 
@@ -655,9 +655,9 @@ bool InnoRenderingFrontendNS::gatherStaticMeshData()
 	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
 	for (auto visibleComponent : l_visibleComponents)
 	{
-		if (visibleComponent->m_visiblilityType == VisiblilityType::INNO_OPAQUE
+		if (visibleComponent->m_visiblilityType == VisiblilityType::Opaque
 			&& visibleComponent->m_objectStatus == ObjectStatus::Activated
-			&& visibleComponent->m_meshUsageType == MeshUsageType::STATIC
+			&& visibleComponent->m_meshUsageType == MeshUsageType::Static
 			)
 		{
 			auto l_transformComponent = GetComponent(TransformComponent, visibleComponent->m_parentEntity);
@@ -849,17 +849,17 @@ MeshDataComponent * InnoRenderingFrontend::getMeshDataComponent(MeshShapeType me
 {
 	switch (meshShapeType)
 	{
-	case MeshShapeType::LINE:
+	case MeshShapeType::Line:
 		return InnoRenderingFrontendNS::m_unitLineMesh; break;
-	case MeshShapeType::QUAD:
+	case MeshShapeType::Quad:
 		return InnoRenderingFrontendNS::m_unitQuadMesh; break;
-	case MeshShapeType::CUBE:
+	case MeshShapeType::Cube:
 		return InnoRenderingFrontendNS::m_unitCubeMesh; break;
-	case MeshShapeType::SPHERE:
+	case MeshShapeType::Sphere:
 		return InnoRenderingFrontendNS::m_unitSphereMesh; break;
-	case MeshShapeType::TERRAIN:
+	case MeshShapeType::Terrain:
 		return InnoRenderingFrontendNS::m_terrainMesh; break;
-	case MeshShapeType::CUSTOM:
+	case MeshShapeType::Custom:
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingFrontend: wrong MeshShapeType!");
 		return nullptr; break;
 	default:
@@ -871,19 +871,19 @@ TextureDataComponent * InnoRenderingFrontend::getTextureDataComponent(TextureUsa
 {
 	switch (textureUsageType)
 	{
-	case TextureUsageType::INVISIBLE:
+	case TextureUsageType::Invisible:
 		return nullptr; break;
-	case TextureUsageType::NORMAL:
+	case TextureUsageType::Normal:
 		return InnoRenderingFrontendNS::m_basicNormalTexture; break;
-	case TextureUsageType::ALBEDO:
+	case TextureUsageType::Albedo:
 		return InnoRenderingFrontendNS::m_basicAlbedoTexture; break;
-	case TextureUsageType::METALLIC:
+	case TextureUsageType::Metallic:
 		return InnoRenderingFrontendNS::m_basicMetallicTexture; break;
-	case TextureUsageType::ROUGHNESS:
+	case TextureUsageType::Roughness:
 		return InnoRenderingFrontendNS::m_basicRoughnessTexture; break;
-	case TextureUsageType::AMBIENT_OCCLUSION:
+	case TextureUsageType::AmbientOcclusion:
 		return InnoRenderingFrontendNS::m_basicAOTexture; break;
-	case TextureUsageType::COLOR_ATTACHMENT:
+	case TextureUsageType::ColorAttachment:
 		return nullptr; break;
 	default:
 		return nullptr; break;

@@ -10,11 +10,11 @@ using ModelMap = std::unordered_map<MeshDataComponent*, MaterialDataComponent*>;
 class VisibleComponent : public InnoComponent
 {
 public:
-	VisiblilityType m_visiblilityType = VisiblilityType::INNO_INVISIBLE;
-	MeshUsageType m_meshUsageType = MeshUsageType::STATIC;
-	MeshShapeType m_meshShapeType = MeshShapeType::QUAD;
-	MeshPrimitiveTopology m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	TextureWrapMethod m_textureWrapMethod = TextureWrapMethod::REPEAT;
+	VisiblilityType m_visiblilityType = VisiblilityType::Invisible;
+	MeshUsageType m_meshUsageType = MeshUsageType::Static;
+	MeshShapeType m_meshShapeType = MeshShapeType::Line;
+	MeshPrimitiveTopology m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
+	TextureWrapMethod m_textureWrapMethod = TextureWrapMethod::Repeat;
 
 	std::string m_modelFileName;
 

@@ -55,9 +55,9 @@ public:
 	bool CommandListBegin(RenderPassDataComponent * rhs, size_t frameIndex) override;
 	bool BindRenderPassDataComponent(RenderPassDataComponent * rhs) override;
 	bool CleanRenderTargets(RenderPassDataComponent * rhs) override;
-	bool ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range) override;
+	bool ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range) override;
 	bool DispatchDrawCall(RenderPassDataComponent * renderPass, MeshDataComponent* mesh) override;
-	bool DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range) override;
+	bool DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range) override;
 	bool CommandListEnd(RenderPassDataComponent * rhs) override;
 	bool ExecuteCommandList(RenderPassDataComponent * rhs) override;
 	bool WaitForFrame(RenderPassDataComponent * rhs) override;

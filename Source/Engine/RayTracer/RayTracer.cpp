@@ -200,9 +200,9 @@ vec4 CalcRadiance(const Ray& r, Hitable* world, int depth)
 		{
 			for (auto& j : world->m_VisibleComponent->m_modelMap)
 			{
-				color.x = j.second->m_meshCustomMaterial.albedo_r;
-				color.y = j.second->m_meshCustomMaterial.albedo_g;
-				color.z = j.second->m_meshCustomMaterial.albedo_b;
+				color.x = j.second->m_meshCustomMaterial.AlbedoR;
+				color.y = j.second->m_meshCustomMaterial.AlbedoG;
+				color.z = j.second->m_meshCustomMaterial.AlbedoB;
 				color.w = 1.0f;
 				break;
 			}
@@ -257,7 +257,7 @@ bool ExecuteRayTracing()
 	for (auto l_visibleComponent : l_visibleComponents)
 	{
 		auto l_transformComponent = GetComponent(TransformComponent, l_visibleComponent->m_parentEntity);
-		if (l_visibleComponent->m_meshShapeType == MeshShapeType::CUBE)
+		if (l_visibleComponent->m_meshShapeType == MeshShapeType::Cube)
 		{
 			auto l_hitable = new HitableCube();
 			l_hitable->m_VisibleComponent = l_visibleComponent;
@@ -269,7 +269,7 @@ bool ExecuteRayTracing()
 
 			l_hitableListVector.emplace_back(l_hitable);
 		}
-		else if (l_visibleComponent->m_meshShapeType == MeshShapeType::SPHERE)
+		else if (l_visibleComponent->m_meshShapeType == MeshShapeType::Sphere)
 		{
 			auto l_hitable = new HitableSphere();
 			l_hitable->m_VisibleComponent = l_visibleComponent;

@@ -43,7 +43,7 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 {
 	for (int i = 0; i < g_pModuleManager->getEventSystem()->getInputConfig().totalKeyCodes; i++)
 	{
-		windowCallbackWrapper::get().m_buttonStatus.emplace(i, ButtonStatus::RELEASED);
+		windowCallbackWrapper::get().m_buttonStatus.emplace(i, ButtonStatus::Released);
 	}
 
 	WinWindowSystemComponent::get().m_hInstance = static_cast<HINSTANCE>(hInstance);
@@ -225,67 +225,67 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	{
 	case WM_KEYDOWN:
 	{
-		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ (int)wparam, ButtonStatus::PRESSED });
+		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ (int)wparam, ButtonStatus::Pressed });
 
 		auto l_result = m_buttonStatus.find((int)wparam);
 		if (l_result != m_buttonStatus.end())
 		{
-			l_result->second = ButtonStatus::PRESSED;
+			l_result->second = ButtonStatus::Pressed;
 		}
 		return 0;
 	}
 	case WM_KEYUP:
 	{
-		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ (int)wparam, ButtonStatus::RELEASED });
+		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ (int)wparam, ButtonStatus::Released });
 
 		auto l_result = m_buttonStatus.find((int)wparam);
 		if (l_result != m_buttonStatus.end())
 		{
-			l_result->second = ButtonStatus::RELEASED;
+			l_result->second = ButtonStatus::Released;
 		}
 		return 0;
 	}
 	case WM_LBUTTONDOWN:
 	{
-		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::PRESSED });
+		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::Pressed });
 
 		auto l_result = m_buttonStatus.find(INNO_MOUSE_BUTTON_LEFT);
 		if (l_result != m_buttonStatus.end())
 		{
-			l_result->second = ButtonStatus::PRESSED;
+			l_result->second = ButtonStatus::Pressed;
 		}
 		return 0;
 	}
 	case WM_LBUTTONUP:
 	{
-		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::RELEASED });
+		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::Released });
 
 		auto l_result = m_buttonStatus.find(INNO_MOUSE_BUTTON_LEFT);
 		if (l_result != m_buttonStatus.end())
 		{
-			l_result->second = ButtonStatus::RELEASED;
+			l_result->second = ButtonStatus::Released;
 		}
 		return 0;
 	}
 	case WM_RBUTTONDOWN:
 	{
-		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::PRESSED });
+		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::Pressed });
 
 		auto l_result = m_buttonStatus.find(INNO_MOUSE_BUTTON_RIGHT);
 		if (l_result != m_buttonStatus.end())
 		{
-			l_result->second = ButtonStatus::PRESSED;
+			l_result->second = ButtonStatus::Pressed;
 		}
 		return 0;
 	}
 	case WM_RBUTTONUP:
 	{
-		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::RELEASED });
+		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::Released });
 
 		auto l_result = m_buttonStatus.find(INNO_MOUSE_BUTTON_RIGHT);
 		if (l_result != m_buttonStatus.end())
 		{
-			l_result->second = ButtonStatus::RELEASED;
+			l_result->second = ButtonStatus::Released;
 		}
 		return 0;
 	}

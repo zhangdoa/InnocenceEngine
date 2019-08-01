@@ -22,7 +22,7 @@ namespace VisibleComponentManagerNS
 
 	void assignUnitMesh(MeshShapeType meshUsageType, VisibleComponent* visibleComponent)
 	{
-		if (meshUsageType != MeshShapeType::CUSTOM)
+		if (meshUsageType != MeshShapeType::Custom)
 		{
 			auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(meshUsageType);
 			auto l_material = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
@@ -95,9 +95,9 @@ void InnoVisibleComponentManager::LoadAssetsForComponents()
 {
 	for (auto i : m_Components)
 	{
-		if (i->m_visiblilityType != VisiblilityType::INNO_INVISIBLE)
+		if (i->m_visiblilityType != VisiblilityType::Invisible)
 		{
-			if (i->m_meshShapeType == MeshShapeType::CUSTOM)
+			if (i->m_meshShapeType == MeshShapeType::Custom)
 			{
 				if (!i->m_modelFileName.empty())
 				{

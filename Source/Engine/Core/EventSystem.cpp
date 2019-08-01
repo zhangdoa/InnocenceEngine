@@ -56,7 +56,7 @@ bool InnoEventSystemNS::initialize()
 	{
 		for (int i = 0; i < m_inputConfig.totalKeyCodes; i++)
 		{
-			m_buttonStatus.emplace(i, ButtonStatus::RELEASED);
+			m_buttonStatus.emplace(i, ButtonStatus::Released);
 		}
 
 		m_objectStatus = ObjectStatus::Activated;

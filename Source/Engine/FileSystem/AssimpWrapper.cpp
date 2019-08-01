@@ -84,13 +84,13 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpScene(const aiScene* aiScene,
 	auto l_timeData = g_pModuleManager->getTimeSystem()->getCurrentTime();
 	auto l_timeDataStr =
 		"["
-		+ std::to_string(l_timeData.year)
-		+ "-" + std::to_string(l_timeData.month)
-		+ "-" + std::to_string(l_timeData.day)
-		+ "-" + std::to_string(l_timeData.hour)
-		+ "-" + std::to_string(l_timeData.minute)
-		+ "-" + std::to_string(l_timeData.second)
-		+ "-" + std::to_string(l_timeData.millisecond)
+		+ std::to_string(l_timeData.Year)
+		+ "-" + std::to_string(l_timeData.Month)
+		+ "-" + std::to_string(l_timeData.Day)
+		+ "-" + std::to_string(l_timeData.Hour)
+		+ "-" + std::to_string(l_timeData.Minute)
+		+ "-" + std::to_string(l_timeData.Second)
+		+ "-" + std::to_string(l_timeData.Millisecond)
 		+ "]";
 
 	json l_sceneData;
@@ -404,23 +404,23 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * a
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_NORMALS)
 			{
-				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::SAMPLER_2D, TextureUsageType::NORMAL));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::Sampler2D, TextureUsageType::Normal));
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_DIFFUSE)
 			{
-				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::SAMPLER_2D, TextureUsageType::ALBEDO));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::Sampler2D, TextureUsageType::Albedo));
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_SPECULAR)
 			{
-				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::SAMPLER_2D, TextureUsageType::METALLIC));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::Sampler2D, TextureUsageType::Metallic));
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_AMBIENT)
 			{
-				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::SAMPLER_2D, TextureUsageType::ROUGHNESS));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::Sampler2D, TextureUsageType::Roughness));
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_EMISSIVE)
 			{
-				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::SAMPLER_2D, TextureUsageType::AMBIENT_OCCLUSION));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::Sampler2D, TextureUsageType::AmbientOcclusion));
 			}
 			else
 			{

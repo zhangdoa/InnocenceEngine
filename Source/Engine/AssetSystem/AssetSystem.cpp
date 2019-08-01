@@ -270,7 +270,7 @@ void InnoAssetSystem::addTerrain(MeshDataComponent& meshDataComponent)
 TextureDataComponent* InnoAssetSystem::loadTexture(const std::string& fileName, TextureSamplerType samplerType, TextureUsageType usageType)
 {
 	auto l_TDC = g_pModuleManager->getFileSystem()->loadTexture(fileName);
-	l_TDC->m_textureDataDesc.samplerType = samplerType;
-	l_TDC->m_textureDataDesc.usageType = usageType;
+	l_TDC->m_textureDataDesc.SamplerType = samplerType;
+	l_TDC->m_textureDataDesc.UsageType = usageType;
 	return l_TDC;
 }
