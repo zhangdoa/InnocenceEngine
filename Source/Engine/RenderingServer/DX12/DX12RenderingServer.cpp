@@ -1323,11 +1323,6 @@ bool DX12RenderingServer::BindGPUBufferDataComponent(RenderPassDataComponent * r
 	return true;
 }
 
-bool DX12RenderingServer::BindShaderProgramComponent(ShaderProgramComponent * rhs)
-{
-	return true;
-}
-
 bool DX12RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh)
 {
 	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);

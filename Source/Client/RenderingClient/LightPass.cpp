@@ -106,7 +106,6 @@ bool LightPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
-	g_pModuleManager->getRenderingServer()->BindShaderProgramComponent(m_SPC);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderType::FRAGMENT, m_SDC->m_ResourceBinder, 9);
 
 	g_pModuleManager->getRenderingServer()->BindGPUBufferDataComponent(m_RPDC, l_CameraGBDC, ShaderType::FRAGMENT, GPUBufferAccessibility::ReadOnly, 0, l_CameraGBDC->m_TotalSize);

@@ -59,7 +59,6 @@ bool FinalBlendPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CommandListBegin(l_RPDC, l_currentFrame);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(l_RPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(l_RPDC);
-	g_pModuleManager->getRenderingServer()->BindShaderProgramComponent(m_SPC);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(l_RPDC, ShaderType::FRAGMENT, m_SDC->m_ResourceBinder, 1);
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(l_RPDC, ShaderType::FRAGMENT, LightPass::GetRPDC()->m_RenderTargetsResourceBinder, 0);

@@ -1056,6 +1056,33 @@ bool DX11RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * 
 	m_deviceContext->IASetInputLayout(l_PSO->m_InputLayout);
 	m_deviceContext->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
 
+	auto l_shaderProgram = reinterpret_cast<DX11ShaderProgramComponent*>(l_rhs->m_ShaderProgram);
+
+	if (l_shaderProgram->m_VSHandle)
+	{
+		m_deviceContext->VSSetShader(l_shaderProgram->m_VSHandle, NULL, 0);
+	}
+	if (l_shaderProgram->m_TCSHandle)
+	{
+		m_deviceContext->HSSetShader(l_shaderProgram->m_TCSHandle, NULL, 0);
+	}
+	if (l_shaderProgram->m_TESHandle)
+	{
+		m_deviceContext->DSSetShader(l_shaderProgram->m_TESHandle, NULL, 0);
+	}
+	if (l_shaderProgram->m_GSHandle)
+	{
+		m_deviceContext->GSSetShader(l_shaderProgram->m_GSHandle, NULL, 0);
+	}
+	if (l_shaderProgram->m_FSHandle)
+	{
+		m_deviceContext->PSSetShader(l_shaderProgram->m_FSHandle, NULL, 0);
+	}
+	if (l_shaderProgram->m_CSHandle)
+	{
+		m_deviceContext->CSSetShader(l_shaderProgram->m_CSHandle, NULL, 0);
+	}
+
 	m_deviceContext->RSSetViewports(1, &l_PSO->m_Viewport);
 	m_deviceContext->RSSetState(l_PSO->m_RasterizerState);
 
@@ -1255,38 +1282,6 @@ bool DX11RenderingServer::BindGPUBufferDataComponent(RenderPassDataComponent * r
 				return false;
 			}
 		}
-	}
-
-	return true;
-}
-
-bool DX11RenderingServer::BindShaderProgramComponent(ShaderProgramComponent * rhs)
-{
-	auto l_rhs = reinterpret_cast<DX11ShaderProgramComponent*>(rhs);
-
-	if (l_rhs->m_VSHandle)
-	{
-		m_deviceContext->VSSetShader(l_rhs->m_VSHandle, NULL, 0);
-	}
-	if (l_rhs->m_TCSHandle)
-	{
-		m_deviceContext->HSSetShader(l_rhs->m_TCSHandle, NULL, 0);
-	}
-	if (l_rhs->m_TESHandle)
-	{
-		m_deviceContext->DSSetShader(l_rhs->m_TESHandle, NULL, 0);
-	}
-	if (l_rhs->m_GSHandle)
-	{
-		m_deviceContext->GSSetShader(l_rhs->m_GSHandle, NULL, 0);
-	}
-	if (l_rhs->m_FSHandle)
-	{
-		m_deviceContext->PSSetShader(l_rhs->m_FSHandle, NULL, 0);
-	}
-	if (l_rhs->m_CSHandle)
-	{
-		m_deviceContext->CSSetShader(l_rhs->m_CSHandle, NULL, 0);
 	}
 
 	return true;

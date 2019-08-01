@@ -155,11 +155,6 @@ bool VKRenderingServer::BindGPUBufferDataComponent(RenderPassDataComponent * ren
 	return true;
 }
 
-bool VKRenderingServer::BindShaderProgramComponent(ShaderProgramComponent * rhs)
-{
-	return true;
-}
-
 bool VKRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh)
 {
 	return true;

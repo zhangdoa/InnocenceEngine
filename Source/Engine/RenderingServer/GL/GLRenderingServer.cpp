@@ -719,6 +719,10 @@ bool GLRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * rh
 		glRenderbufferStorage(GL_RENDERBUFFER, l_rhs->m_renderBufferInternalFormat, (GLsizei)l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width, (GLsizei)l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height);
 	}
 
+	auto l_shaderProgram = reinterpret_cast<GLShaderProgramComponent*>(l_rhs->m_ShaderProgram);
+
+	glUseProgram(l_shaderProgram->m_ProgramID);
+
 	return true;
 }
 
@@ -773,15 +777,6 @@ bool GLRenderingServer::BindGPUBufferDataComponent(RenderPassDataComponent * ren
 	auto l_GPUBuffer = reinterpret_cast<GLGPUBufferDataComponent*>(GPUBuffer);
 
 	glBindBufferRange(l_GPUBuffer->m_BufferType, (GLuint)l_GPUBuffer->m_BindingPoint, l_GPUBuffer->m_Handle, startOffset * l_GPUBuffer->m_ElementSize, range);
-
-	return true;
-}
-
-bool GLRenderingServer::BindShaderProgramComponent(ShaderProgramComponent * rhs)
-{
-	auto l_rhs = reinterpret_cast<GLShaderProgramComponent*>(rhs);
-
-	glUseProgram(l_rhs->m_ProgramID);
 
 	return true;
 }
