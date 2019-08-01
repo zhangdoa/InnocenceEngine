@@ -1051,11 +1051,11 @@ bool DX12RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 	}
 	if (l_rhs->m_ShaderFilePaths.m_HSPath != "")
 	{
-		LoadShaderFile(&l_rhs->m_TCSBuffer, ShaderStage::Hull, l_rhs->m_ShaderFilePaths.m_HSPath);
+		LoadShaderFile(&l_rhs->m_HSBuffer, ShaderStage::Hull, l_rhs->m_ShaderFilePaths.m_HSPath);
 	}
 	if (l_rhs->m_ShaderFilePaths.m_DSPath != "")
 	{
-		LoadShaderFile(&l_rhs->m_TESBuffer, ShaderStage::Domain, l_rhs->m_ShaderFilePaths.m_DSPath);
+		LoadShaderFile(&l_rhs->m_DSBuffer, ShaderStage::Domain, l_rhs->m_ShaderFilePaths.m_DSPath);
 	}
 	if (l_rhs->m_ShaderFilePaths.m_GSPath != "")
 	{
@@ -1063,7 +1063,7 @@ bool DX12RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 	}
 	if (l_rhs->m_ShaderFilePaths.m_PSPath != "")
 	{
-		LoadShaderFile(&l_rhs->m_FSBuffer, ShaderStage::Pixel, l_rhs->m_ShaderFilePaths.m_PSPath);
+		LoadShaderFile(&l_rhs->m_PSBuffer, ShaderStage::Pixel, l_rhs->m_ShaderFilePaths.m_PSPath);
 	}
 	if (l_rhs->m_ShaderFilePaths.m_CSPath != "")
 	{
@@ -1148,6 +1148,8 @@ bool DX12RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 	{
 		UploadGPUBufferDataComponent(l_rhs, l_rhs->m_InitialData);
 	}
+
+	l_rhs->m_ResourceBinder = l_resourceBinder;
 
 	l_rhs->m_objectStatus = ObjectStatus::Activated;
 
@@ -1299,10 +1301,10 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 	switch (l_resourceBinder->m_ResourceBinderType)
 	{
 	case ResourceBinderType::Sampler:
-		l_commandList->m_CommandList->SetGraphicsRootDescriptorTable((unsigned int)globalSlot, l_resourceBinder->m_Sampler.GPUHandle);
+		l_commandList->m_CommandList->SetGraphicsRootDescriptorTable((unsigned int)localSlot, l_resourceBinder->m_Sampler.GPUHandle);
 		break;
 	case ResourceBinderType::Image:
-		l_commandList->m_CommandList->SetGraphicsRootDescriptorTable((unsigned int)globalSlot, l_resourceBinder->m_TextureSRV.GPUHandle);
+		l_commandList->m_CommandList->SetGraphicsRootDescriptorTable((unsigned int)localSlot, l_resourceBinder->m_TextureSRV.GPUHandle);
 		break;
 	case ResourceBinderType::Buffer:
 		if (l_resourceBinder->m_Accessibility == Accessibility::ReadOnly)
@@ -1313,7 +1315,7 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 			}
 			else
 			{
-				l_commandList->m_CommandList->SetGraphicsRootConstantBufferView((unsigned int)globalSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+				l_commandList->m_CommandList->SetGraphicsRootConstantBufferView((unsigned int)localSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 			}
 		}
 		else
@@ -1322,22 +1324,22 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 			{
 				if (shaderStage == ShaderStage::Compute)
 				{
-					l_commandList->m_CommandList->SetComputeRootShaderResourceView((unsigned int)globalSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+					l_commandList->m_CommandList->SetComputeRootShaderResourceView((unsigned int)localSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 				}
 				else
 				{
-					l_commandList->m_CommandList->SetGraphicsRootShaderResourceView((unsigned int)globalSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+					l_commandList->m_CommandList->SetGraphicsRootShaderResourceView((unsigned int)localSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 				}
 			}
 			else
 			{
 				if (shaderStage == ShaderStage::Compute)
 				{
-					l_commandList->m_CommandList->SetComputeRootUnorderedAccessView((unsigned int)globalSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+					l_commandList->m_CommandList->SetComputeRootUnorderedAccessView((unsigned int)localSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 				}
 				else
 				{
-					l_commandList->m_CommandList->SetGraphicsRootUnorderedAccessView((unsigned int)globalSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+					l_commandList->m_CommandList->SetGraphicsRootUnorderedAccessView((unsigned int)localSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 				}
 			}
 		}

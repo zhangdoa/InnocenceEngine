@@ -11,6 +11,7 @@ using namespace DefaultGPUBuffers;
 
 namespace FinalBlendPass
 {
+	RenderPassDataComponent* m_RPDC;
 	ShaderProgramComponent* m_SPC;
 	SamplerDataComponent* m_SDC;
 }
@@ -29,14 +30,42 @@ bool FinalBlendPass::Setup()
 	l_RPDC->m_ResourceBinderLayoutDescs.resize(2);
 	l_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
 	l_RPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
+	l_RPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 0;
 	l_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceCount = 3;
 	l_RPDC->m_ResourceBinderLayoutDescs[0].m_IsRanged = true;
 
 	l_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Sampler;
-	l_RPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 1;
+	l_RPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 0;
+	l_RPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 1;
 	l_RPDC->m_ResourceBinderLayoutDescs[1].m_IsRanged = true;
 
 	l_RPDC->m_ShaderProgram = m_SPC;
+
+	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+
+	m_RPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("FinalBlendPass/");
+
+	l_RenderPassDesc.m_RenderTargetCount = 1;
+
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
+
+	m_RPDC->m_RenderPassDesc = l_RenderPassDesc;
+
+	m_RPDC->m_ResourceBinderLayoutDescs.resize(2);
+	m_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
+	m_RPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
+	m_RPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 0;
+	m_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceCount = 3;
+	m_RPDC->m_ResourceBinderLayoutDescs[0].m_IsRanged = true;
+
+	m_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Sampler;
+	m_RPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 0;
+	m_RPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 1;
+	m_RPDC->m_ResourceBinderLayoutDescs[1].m_IsRanged = true;
+
+	m_RPDC->m_ShaderProgram = m_SPC;
+
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
 
 	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("FinalBlendPass/");
 
@@ -52,28 +81,24 @@ bool FinalBlendPass::Initialize()
 
 bool FinalBlendPass::PrepareCommandList()
 {
-	auto l_RPDC = g_pModuleManager->getRenderingServer()->GetSwapChainRPDC();
+	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
+	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
+	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 0, 1);
 
-	auto l_currentFrame = l_RPDC->m_CurrentFrame;
-
-	g_pModuleManager->getRenderingServer()->CommandListBegin(l_RPDC, l_currentFrame);
-	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(l_RPDC);
-	g_pModuleManager->getRenderingServer()->CleanRenderTargets(l_RPDC);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(l_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 1, 0);
-
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(l_RPDC, ShaderStage::Pixel, LightPass::GetRPDC()->m_RenderTargetsResourceBinder, 0, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, LightPass::GetRPDC()->m_RenderTargetsResourceBinder, 0, 0);
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Quad);
 
-	g_pModuleManager->getRenderingServer()->DispatchDrawCall(l_RPDC, l_mesh);
+	g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_mesh);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(l_RPDC, ShaderStage::Pixel, LightPass::GetRPDC()->m_RenderTargetsResourceBinder, 0, 0);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, LightPass::GetRPDC()->m_RenderTargetsResourceBinder, 0, 0);
 
-	g_pModuleManager->getRenderingServer()->CommandListEnd(l_RPDC);
+	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
 
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(l_RPDC);
+	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
 
-	g_pModuleManager->getRenderingServer()->WaitForFrame(l_RPDC);
+	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);
 
 	return true;
 }

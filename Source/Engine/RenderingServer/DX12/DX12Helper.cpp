@@ -882,19 +882,19 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* 
 		l_VSBytecode.BytecodeLength = l_DX12SPC->m_VSBuffer->GetBufferSize();
 		l_PSO->m_PSODesc.VS = l_VSBytecode;
 	}
-	if (l_DX12SPC->m_TCSBuffer)
+	if (l_DX12SPC->m_HSBuffer)
 	{
-		D3D12_SHADER_BYTECODE l_TCSBytecode;
-		l_TCSBytecode.pShaderBytecode = l_DX12SPC->m_TCSBuffer->GetBufferPointer();
-		l_TCSBytecode.BytecodeLength = l_DX12SPC->m_TCSBuffer->GetBufferSize();
-		l_PSO->m_PSODesc.HS = l_TCSBytecode;
+		D3D12_SHADER_BYTECODE l_HSBytecode;
+		l_HSBytecode.pShaderBytecode = l_DX12SPC->m_HSBuffer->GetBufferPointer();
+		l_HSBytecode.BytecodeLength = l_DX12SPC->m_HSBuffer->GetBufferSize();
+		l_PSO->m_PSODesc.HS = l_HSBytecode;
 	}
-	if (l_DX12SPC->m_TESBuffer)
+	if (l_DX12SPC->m_DSBuffer)
 	{
-		D3D12_SHADER_BYTECODE l_TESBytecode;
-		l_TESBytecode.pShaderBytecode = l_DX12SPC->m_TESBuffer->GetBufferPointer();
-		l_TESBytecode.BytecodeLength = l_DX12SPC->m_TESBuffer->GetBufferSize();
-		l_PSO->m_PSODesc.DS = l_TESBytecode;
+		D3D12_SHADER_BYTECODE l_DSBytecode;
+		l_DSBytecode.pShaderBytecode = l_DX12SPC->m_DSBuffer->GetBufferPointer();
+		l_DSBytecode.BytecodeLength = l_DX12SPC->m_DSBuffer->GetBufferSize();
+		l_PSO->m_PSODesc.DS = l_DSBytecode;
 	}
 	if (l_DX12SPC->m_GSBuffer)
 	{
@@ -903,12 +903,12 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* 
 		l_GSBytecode.BytecodeLength = l_DX12SPC->m_GSBuffer->GetBufferSize();
 		l_PSO->m_PSODesc.GS = l_GSBytecode;
 	}
-	if (l_DX12SPC->m_FSBuffer)
+	if (l_DX12SPC->m_PSBuffer)
 	{
-		D3D12_SHADER_BYTECODE l_FSBytecode;
-		l_FSBytecode.pShaderBytecode = l_DX12SPC->m_FSBuffer->GetBufferPointer();
-		l_FSBytecode.BytecodeLength = l_DX12SPC->m_FSBuffer->GetBufferSize();
-		l_PSO->m_PSODesc.PS = l_FSBytecode;
+		D3D12_SHADER_BYTECODE l_PSBytecode;
+		l_PSBytecode.pShaderBytecode = l_DX12SPC->m_PSBuffer->GetBufferPointer();
+		l_PSBytecode.BytecodeLength = l_DX12SPC->m_PSBuffer->GetBufferSize();
+		l_PSO->m_PSODesc.PS = l_PSBytecode;
 	}
 
 	l_PSO->m_PSODesc.NumRenderTargets = (unsigned int)DX12RPDC->m_RenderPassDesc.m_RenderTargetCount;

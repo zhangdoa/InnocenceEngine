@@ -1126,27 +1126,27 @@ bool DX11RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 	return true;
 }
 
-bool BindSRV(ShaderStage shaderStage, unsigned int bindingPoint, ID3D11ShaderResourceView * SRV)
+bool BindSRV(ShaderStage shaderStage, unsigned int slot, ID3D11ShaderResourceView * SRV)
 {
 	switch (shaderStage)
 	{
 	case ShaderStage::Vertex:
-		m_deviceContext->VSSetShaderResources(bindingPoint, 1, &SRV);
+		m_deviceContext->VSSetShaderResources(slot, 1, &SRV);
 		break;
 	case ShaderStage::Hull:
-		m_deviceContext->HSSetShaderResources(bindingPoint, 1, &SRV);
+		m_deviceContext->HSSetShaderResources(slot, 1, &SRV);
 		break;
 	case ShaderStage::Domain:
-		m_deviceContext->DSSetShaderResources(bindingPoint, 1, &SRV);
+		m_deviceContext->DSSetShaderResources(slot, 1, &SRV);
 		break;
 	case ShaderStage::Geometry:
-		m_deviceContext->GSSetShaderResources(bindingPoint, 1, &SRV);
+		m_deviceContext->GSSetShaderResources(slot, 1, &SRV);
 		break;
 	case ShaderStage::Pixel:
-		m_deviceContext->PSSetShaderResources(bindingPoint, 1, &SRV);
+		m_deviceContext->PSSetShaderResources(slot, 1, &SRV);
 		break;
 	case ShaderStage::Compute:
-		m_deviceContext->CSSetShaderResources(bindingPoint, 1, &SRV);
+		m_deviceContext->CSSetShaderResources(slot, 1, &SRV);
 		break;
 	default:
 		break;
@@ -1154,27 +1154,27 @@ bool BindSRV(ShaderStage shaderStage, unsigned int bindingPoint, ID3D11ShaderRes
 	return true;
 }
 
-bool BindConstantBuffer(unsigned int localSlot, ID3D11Buffer* buffer, ShaderStage shaderStage)
+bool BindConstantBuffer(unsigned int slot, ID3D11Buffer* buffer, ShaderStage shaderStage)
 {
 	switch (shaderStage)
 	{
 	case ShaderStage::Vertex:
-		m_deviceContext->VSSetConstantBuffers(localSlot, 1, &buffer);
+		m_deviceContext->VSSetConstantBuffers(slot, 1, &buffer);
 		break;
 	case ShaderStage::Hull:
-		m_deviceContext->HSSetConstantBuffers(localSlot, 1, &buffer);
+		m_deviceContext->HSSetConstantBuffers(slot, 1, &buffer);
 		break;
 	case ShaderStage::Domain:
-		m_deviceContext->DSSetConstantBuffers(localSlot, 1, &buffer);
+		m_deviceContext->DSSetConstantBuffers(slot, 1, &buffer);
 		break;
 	case ShaderStage::Geometry:
-		m_deviceContext->GSSetConstantBuffers(localSlot, 1, &buffer);
+		m_deviceContext->GSSetConstantBuffers(slot, 1, &buffer);
 		break;
 	case ShaderStage::Pixel:
-		m_deviceContext->PSSetConstantBuffers(localSlot, 1, &buffer);
+		m_deviceContext->PSSetConstantBuffers(slot, 1, &buffer);
 		break;
 	case ShaderStage::Compute:
-		m_deviceContext->CSSetConstantBuffers(localSlot, 1, &buffer);
+		m_deviceContext->CSSetConstantBuffers(slot, 1, &buffer);
 		break;
 	default:
 		break;
@@ -1183,7 +1183,7 @@ bool BindConstantBuffer(unsigned int localSlot, ID3D11Buffer* buffer, ShaderStag
 	return true;
 }
 
-bool BindPartialConstantBuffer(unsigned int localSlot, ID3D11Buffer* buffer, ShaderStage shaderStage, size_t startOffset, size_t elementSize)
+bool BindPartialConstantBuffer(unsigned int slot, ID3D11Buffer* buffer, ShaderStage shaderStage, size_t startOffset, size_t elementSize)
 {
 	auto l_constantCount = (unsigned int)elementSize / 16;
 	auto l_firstConstant = (unsigned int)startOffset * l_constantCount;
@@ -1191,22 +1191,22 @@ bool BindPartialConstantBuffer(unsigned int localSlot, ID3D11Buffer* buffer, Sha
 	switch (shaderStage)
 	{
 	case ShaderStage::Vertex:
-		m_deviceContext->VSSetConstantBuffers1(localSlot, 1, &buffer, &l_firstConstant, &l_constantCount);
+		m_deviceContext->VSSetConstantBuffers1(slot, 1, &buffer, &l_firstConstant, &l_constantCount);
 		break;
 	case ShaderStage::Hull:
-		m_deviceContext->HSSetConstantBuffers1(localSlot, 1, &buffer, &l_firstConstant, &l_constantCount);
+		m_deviceContext->HSSetConstantBuffers1(slot, 1, &buffer, &l_firstConstant, &l_constantCount);
 		break;
 	case ShaderStage::Domain:
-		m_deviceContext->DSSetConstantBuffers1(localSlot, 1, &buffer, &l_firstConstant, &l_constantCount);
+		m_deviceContext->DSSetConstantBuffers1(slot, 1, &buffer, &l_firstConstant, &l_constantCount);
 		break;
 	case ShaderStage::Geometry:
-		m_deviceContext->GSSetConstantBuffers1(localSlot, 1, &buffer, &l_firstConstant, &l_constantCount);
+		m_deviceContext->GSSetConstantBuffers1(slot, 1, &buffer, &l_firstConstant, &l_constantCount);
 		break;
 	case ShaderStage::Pixel:
-		m_deviceContext->PSSetConstantBuffers1(localSlot, 1, &buffer, &l_firstConstant, &l_constantCount);
+		m_deviceContext->PSSetConstantBuffers1(slot, 1, &buffer, &l_firstConstant, &l_constantCount);
 		break;
 	case ShaderStage::Compute:
-		m_deviceContext->CSSetConstantBuffers1(localSlot, 1, &buffer, &l_firstConstant, &l_constantCount);
+		m_deviceContext->CSSetConstantBuffers1(slot, 1, &buffer, &l_firstConstant, &l_constantCount);
 		break;
 	default:
 		break;
@@ -1224,7 +1224,7 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 		switch (l_resourceBinder->m_ResourceBinderType)
 		{
 		case ResourceBinderType::Sampler:
-			m_deviceContext->PSSetSamplers((unsigned int)localSlot, 1, &l_resourceBinder->m_Sampler);
+			m_deviceContext->PSSetSamplers((unsigned int)globalSlot, 1, &l_resourceBinder->m_Sampler);
 			break;
 		case ResourceBinderType::Image:
 			for (size_t i = 0; i < l_resourceBinder->m_TextureSRVs.size(); i++)
@@ -1241,24 +1241,24 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 				}
 				if (partialBinding)
 				{
-					BindPartialConstantBuffer((unsigned int)localSlot, l_resourceBinder->m_Buffer, shaderStage, startOffset, l_resourceBinder->m_ElementSize);
+					BindPartialConstantBuffer((unsigned int)globalSlot, l_resourceBinder->m_Buffer, shaderStage, startOffset, l_resourceBinder->m_ElementSize);
 				}
 				else
 				{
-					BindConstantBuffer((unsigned int)localSlot, l_resourceBinder->m_Buffer, shaderStage);
+					BindConstantBuffer((unsigned int)globalSlot, l_resourceBinder->m_Buffer, shaderStage);
 				}
 			}
 			else
 			{
 				if (accessibility == Accessibility::ReadOnly)
 				{
-					BindSRV(shaderStage, (unsigned int)localSlot, l_resourceBinder->m_BufferSRV);
+					BindSRV(shaderStage, (unsigned int)globalSlot, l_resourceBinder->m_BufferSRV);
 				}
 				else
 				{
 					if (shaderStage == ShaderStage::Compute)
 					{
-						m_deviceContext->CSSetUnorderedAccessViews((unsigned int)localSlot, 1, &l_resourceBinder->m_BufferUAV, nullptr);
+						m_deviceContext->CSSetUnorderedAccessViews((unsigned int)globalSlot, 1, &l_resourceBinder->m_BufferUAV, nullptr);
 					}
 					else
 					{

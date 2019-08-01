@@ -761,7 +761,7 @@ bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderP
 		switch (l_resourceBinder->m_ResourceBinderType)
 		{
 		case ResourceBinderType::Sampler:
-			glBindSampler((unsigned int)localSlot, l_resourceBinder->m_SO);
+			glBindSampler((unsigned int)globalSlot, l_resourceBinder->m_SO);
 			break;
 		case ResourceBinderType::Image:
 			for (size_t i = 0; i < l_resourceBinder->m_TOs.size(); i++)
