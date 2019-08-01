@@ -1,7 +1,7 @@
 #include "FinalBlendPass.h"
 #include "DefaultGPUBuffers.h"
 
-#include "LightPass.h"
+#include "PreTAAPass.h"
 
 #include "../../Engine/ModuleManager/IModuleManager.h"
 
@@ -72,13 +72,13 @@ bool FinalBlendPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 0, 1);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, LightPass::GetRPDC()->m_RenderTargetsResourceBinder, 0, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, PreTAAPass::GetRPDC()->m_RenderTargetsResourceBinder, 0, 0);
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Quad);
 
 	g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_mesh);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, LightPass::GetRPDC()->m_RenderTargetsResourceBinder, 0, 0);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, PreTAAPass::GetRPDC()->m_RenderTargetsResourceBinder, 0, 0);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
 

@@ -74,7 +74,7 @@ bool LightPass::Setup()
 
 	m_RPDC->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Sampler;
 	m_RPDC->m_ResourceBinderLayoutDescs[6].m_GlobalSlot = 0;
-	m_RPDC->m_ResourceBinderLayoutDescs[5].m_LocalSlot = 6;
+	m_RPDC->m_ResourceBinderLayoutDescs[6].m_LocalSlot = 6;
 	m_RPDC->m_ResourceBinderLayoutDescs[6].m_IsRanged = true;
 
 	m_RPDC->m_ShaderProgram = m_SPC;
@@ -109,7 +109,7 @@ bool LightPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_SunGBDC->m_ResourceBinder, 3, 1, Accessibility::ReadOnly, false, 0, l_SunGBDC->m_TotalSize);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_PointLightGBDC->m_ResourceBinder, 4, 2, Accessibility::ReadOnly, false, 0, l_PointLightGBDC->m_TotalSize);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_SphereLightGBDC->m_ResourceBinder, 5, 3, Accessibility::ReadOnly, false, 0, l_SphereLightGBDC->m_TotalSize);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_SkyGBDC->m_ResourceBinder, 7, 4, Accessibility::ReadOnly, false, 0, l_SphereLightGBDC->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_SkyGBDC->m_ResourceBinder, 7, 4, Accessibility::ReadOnly, false, 0, l_SkyGBDC->m_TotalSize);
 
 	g_pModuleManager->getRenderingServer()->CopyStencilBuffer(OpaquePass::GetRPDC(), m_RPDC);
 
