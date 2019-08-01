@@ -745,6 +745,9 @@ bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't create vertex buffer!");
 		return false;
 	}
+#ifdef  _DEBUG
+	SetObjectName(l_rhs, l_rhs->m_vertexBuffer, "VB");
+#endif //  _DEBUG
 
 	auto l_uploadHeapBuffer = CreateUploadHeapBuffer(l_verticesDataSize, m_device);
 
@@ -767,10 +770,6 @@ bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	l_rhs->m_VBV.StrideInBytes = sizeof(Vertex);
 	l_rhs->m_VBV.SizeInBytes = l_verticesDataSize;
 
-#ifdef  _DEBUG
-	SetObjectName(l_rhs, l_rhs->m_vertexBuffer, "VB");
-#endif //  _DEBUG
-
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: VBO ", l_rhs->m_vertexBuffer, " is initialized.");
 
 	// indices
@@ -784,6 +783,9 @@ bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't create index buffer!");
 		return false;
 	}
+#ifdef  _DEBUG
+	SetObjectName(l_rhs, l_rhs->m_indexBuffer, "IB");
+#endif //  _DEBUG
 
 	l_uploadHeapBuffer = CreateUploadHeapBuffer(l_indicesDataSize, m_device);
 
@@ -805,10 +807,6 @@ bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	l_rhs->m_IBV.Format = DXGI_FORMAT_R32_UINT;
 	l_rhs->m_IBV.BufferLocation = l_rhs->m_indexBuffer->GetGPUVirtualAddress();
 	l_rhs->m_IBV.SizeInBytes = l_indicesDataSize;
-
-#ifdef  _DEBUG
-	SetObjectName(l_rhs, l_rhs->m_indexBuffer, "IB");
-#endif //  _DEBUG
 
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: IBO ", l_rhs->m_indexBuffer, " is initialized.");
 
@@ -863,6 +861,9 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't create texture!");
 		return false;
 	}
+#ifdef _DEBUG
+	SetObjectName(l_rhs, l_rhs->m_ResourceHandle, "Texture");
+#endif // _DEBUG
 
 	auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
 
@@ -1138,6 +1139,9 @@ bool DX12RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create GPU buffer!");
 		return false;
 	}
+#ifdef _DEBUG
+	SetObjectName(rhs, l_rhs->m_ResourceHandle, "GPUBuffer");
+#endif // _DEBUG
 
 	l_resourceBinder->m_Buffer = l_rhs->m_ResourceHandle;
 
@@ -1298,55 +1302,58 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
 
-	switch (l_resourceBinder->m_ResourceBinderType)
+	if (l_resourceBinder)
 	{
-	case ResourceBinderType::Sampler:
-		l_commandList->m_CommandList->SetGraphicsRootDescriptorTable((unsigned int)localSlot, l_resourceBinder->m_Sampler.GPUHandle);
-		break;
-	case ResourceBinderType::Image:
-		l_commandList->m_CommandList->SetGraphicsRootDescriptorTable((unsigned int)localSlot, l_resourceBinder->m_TextureSRV.GPUHandle);
-		break;
-	case ResourceBinderType::Buffer:
-		if (l_resourceBinder->m_Accessibility == Accessibility::ReadOnly)
+		switch (l_resourceBinder->m_ResourceBinderType)
 		{
-			if (accessibility != Accessibility::ReadOnly)
+		case ResourceBinderType::Sampler:
+			l_commandList->m_CommandList->SetGraphicsRootDescriptorTable((unsigned int)localSlot, l_resourceBinder->m_Sampler.GPUHandle);
+			break;
+		case ResourceBinderType::Image:
+			l_commandList->m_CommandList->SetGraphicsRootDescriptorTable((unsigned int)localSlot, l_resourceBinder->m_TextureSRV.GPUHandle);
+			break;
+		case ResourceBinderType::Buffer:
+			if (l_resourceBinder->m_Accessibility == Accessibility::ReadOnly)
 			{
-				InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Not allow GPU write to Constant Buffer!");
-			}
-			else
-			{
-				l_commandList->m_CommandList->SetGraphicsRootConstantBufferView((unsigned int)localSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
-			}
-		}
-		else
-		{
-			if (accessibility == Accessibility::ReadOnly)
-			{
-				if (shaderStage == ShaderStage::Compute)
+				if (accessibility != Accessibility::ReadOnly)
 				{
-					l_commandList->m_CommandList->SetComputeRootShaderResourceView((unsigned int)localSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+					InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Not allow GPU write to Constant Buffer!");
 				}
 				else
 				{
-					l_commandList->m_CommandList->SetGraphicsRootShaderResourceView((unsigned int)localSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+					l_commandList->m_CommandList->SetGraphicsRootConstantBufferView((unsigned int)localSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 				}
 			}
 			else
 			{
-				if (shaderStage == ShaderStage::Compute)
+				if (accessibility == Accessibility::ReadOnly)
 				{
-					l_commandList->m_CommandList->SetComputeRootUnorderedAccessView((unsigned int)localSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+					if (shaderStage == ShaderStage::Compute)
+					{
+						l_commandList->m_CommandList->SetComputeRootShaderResourceView((unsigned int)localSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+					}
+					else
+					{
+						l_commandList->m_CommandList->SetGraphicsRootShaderResourceView((unsigned int)localSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+					}
 				}
 				else
 				{
-					l_commandList->m_CommandList->SetGraphicsRootUnorderedAccessView((unsigned int)localSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+					if (shaderStage == ShaderStage::Compute)
+					{
+						l_commandList->m_CommandList->SetComputeRootUnorderedAccessView((unsigned int)localSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+					}
+					else
+					{
+						l_commandList->m_CommandList->SetGraphicsRootUnorderedAccessView((unsigned int)localSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+					}
 				}
 			}
-		}
 
-		break;
-	default:
-		break;
+			break;
+		default:
+			break;
+		}
 	}
 
 	return true;

@@ -60,7 +60,7 @@ bool FinalBlendPass::Setup()
 
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Sampler;
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 0;
-	m_RPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 1;
+	m_RPDC->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 1;
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_IsRanged = true;
 
 	m_RPDC->m_ShaderProgram = m_SPC;

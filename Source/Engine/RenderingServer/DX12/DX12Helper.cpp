@@ -61,7 +61,7 @@ bool DX12Helper::EndSingleTimeCommands(ID3D12GraphicsCommandList* commandList, I
 	return true;
 }
 
-ID3D12Resource* DX12Helper::CreateUploadHeapBuffer(UINT64 size, ID3D12Device* device)
+ID3D12Resource* DX12Helper::CreateUploadHeapBuffer(UINT64 size, ID3D12Device* device, const char* name)
 {
 	ID3D12Resource* l_uploadHeapBuffer;
 
@@ -82,7 +82,7 @@ ID3D12Resource* DX12Helper::CreateUploadHeapBuffer(UINT64 size, ID3D12Device* de
 	return l_uploadHeapBuffer;
 }
 
-ID3D12Resource* DX12Helper::CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, ID3D12Device* device, D3D12_CLEAR_VALUE* clearValue)
+ID3D12Resource* DX12Helper::CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, ID3D12Device* device, D3D12_CLEAR_VALUE* clearValue, const char* name)
 {
 	ID3D12Resource* l_defaultHeapBuffer;
 
@@ -615,6 +615,10 @@ bool DX12Helper::CreateViews(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device
 			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create DescriptorHeap for RTV!");
 			return false;
 		}
+#ifdef _DEBUG
+		SetObjectName(DX12RPDC, DX12RPDC->m_RTVDescriptorHeap, "RTVDescriptorHeap");
+#endif // _DEBUG
+
 		DX12RPDC->m_RTVDescriptorCPUHandles[0] = DX12RPDC->m_RTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	}
 
@@ -652,6 +656,9 @@ bool DX12Helper::CreateViews(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device
 			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create DescriptorHeap for DSV!");
 			return false;
 		}
+#ifdef _DEBUG
+		SetObjectName(DX12RPDC, DX12RPDC->m_DSVDescriptorHeap, "DSVDescriptorHeap");
+#endif // _DEBUG
 
 		DX12RPDC->m_DSVDescriptorCPUHandle = DX12RPDC->m_DSVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 
@@ -808,6 +815,9 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create RootSignature!");
 		return false;
 	}
+#ifdef _DEBUG
+	SetObjectName(DX12RPDC, DX12RPDC->m_RootSignature, "RootSignature");
+#endif // _DEBUG
 
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " RootSignature has been created.");
 
@@ -932,6 +942,9 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* 
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create PSO!");
 		return false;
 	}
+#ifdef _DEBUG
+	SetObjectName(DX12RPDC, l_PSO->m_PSO, "PSO");
+#endif // _DEBUG
 
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " PSO has been created.");
 
@@ -955,6 +968,9 @@ bool DX12Helper::CreateCommandQueue(DX12RenderPassDataComponent* DX12RPDC, ID3D1
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create CommandQueue!");
 		return false;
 	}
+#ifdef _DEBUG
+	SetObjectName(DX12RPDC, l_CommandQueue->m_CommandQueue, "CommandQueue");
+#endif // _DEBUG
 
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " CommandQueue has been created.");
 
@@ -981,6 +997,9 @@ bool DX12Helper::CreateCommandAllocators(DX12RenderPassDataComponent* DX12RPDC, 
 			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create CommandAllocator!");
 			return false;
 		}
+#ifdef _DEBUG
+		SetObjectName(DX12RPDC, DX12RPDC->m_CommandAllocators[i], ("CommandAllocator_" + std::to_string(i)).c_str());
+#endif // _DEBUG
 
 		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " CommandAllocator has been created.");
 	}
@@ -1000,6 +1019,9 @@ bool DX12Helper::CreateCommandLists(DX12RenderPassDataComponent* DX12RPDC, ID3D1
 			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create CommandList!");
 			return false;
 		}
+#ifdef _DEBUG
+		SetObjectName(DX12RPDC, l_CommandList->m_CommandList, ("CommandList_" + std::to_string(i)).c_str());
+#endif // _DEBUG
 
 		l_CommandList->m_CommandList->Close();
 	}
@@ -1022,6 +1044,9 @@ bool DX12Helper::CreateSyncPrimitives(DX12RenderPassDataComponent* DX12RPDC, ID3
 			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create Fence!");
 			return false;
 		}
+#ifdef _DEBUG
+		SetObjectName(DX12RPDC, l_Fence->m_Fence, ("Fence_" + std::to_string(i)).c_str());
+#endif // _DEBUG
 
 		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Fence has been created.");
 
