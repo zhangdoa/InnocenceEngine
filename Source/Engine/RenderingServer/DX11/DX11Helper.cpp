@@ -519,14 +519,14 @@ bool DX11Helper::CreateRenderTargets(DX11RenderPassDataComponent * DX11RPDC, IRe
 
 bool DX11Helper::CreateResourcesBinder(DX11RenderPassDataComponent * DX11RPDC)
 {
-	auto l_Binder = reinterpret_cast<DX11ResourceBinder*>(DX11RPDC->m_RenderTargetsResourceBinder);
+	auto l_resourceBinder = reinterpret_cast<DX11ResourceBinder*>(DX11RPDC->m_RenderTargetsResourceBinder);
 
-	l_Binder->m_ResourceBinderType = ResourceBinderType::Image;
-	l_Binder->m_SRVs.reserve(DX11RPDC->m_RenderPassDesc.m_RenderTargetCount);
+	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
+	l_resourceBinder->m_TextureSRVs.reserve(DX11RPDC->m_RenderPassDesc.m_RenderTargetCount);
 	for (size_t i = 0; i < DX11RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
 		auto l_DX11TDC = reinterpret_cast<DX11TextureDataComponent*>(DX11RPDC->m_RenderTargets[i]);
-		l_Binder->m_SRVs.emplace_back(l_DX11TDC->m_SRV);
+		l_resourceBinder->m_TextureSRVs.emplace_back(l_DX11TDC->m_SRV);
 	}
 
 	return true;

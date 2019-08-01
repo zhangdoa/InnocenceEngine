@@ -615,7 +615,12 @@ bool GLRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent 
 
 	l_rhs->m_TotalSize = l_rhs->m_ElementCount * l_rhs->m_ElementSize;
 
-	if (l_rhs->m_GPUBufferAccessibility == GPUBufferAccessibility::ReadOnly)
+	auto l_resourceBinder = addResourcesBinder();
+	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Buffer;
+	l_resourceBinder->m_Accessibility = l_rhs->m_Accessibility;
+	l_resourceBinder->m_ElementSize = l_rhs->m_ElementSize;
+
+	if (l_rhs->m_Accessibility == Accessibility::ReadOnly)
 	{
 		l_rhs->m_BufferType = GL_UNIFORM_BUFFER;
 	}
@@ -631,7 +636,7 @@ bool GLRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent 
 
 #ifdef _DEBUG
 	auto l_GPUBufferName = std::string(l_rhs->m_componentName.c_str());
-	if (l_rhs->m_GPUBufferAccessibility == GPUBufferAccessibility::ReadOnly)
+	if (l_rhs->m_Accessibility == Accessibility::ReadOnly)
 	{
 		l_GPUBufferName += "_UBO";
 	}
@@ -643,6 +648,10 @@ bool GLRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent 
 #endif
 
 	glBindBuffer(l_rhs->m_BufferType, 0);
+
+	l_resourceBinder->m_BO = l_rhs->m_Handle;
+
+	l_rhs->m_ResourceBinder = l_resourceBinder;
 
 	l_rhs->m_objectStatus = ObjectStatus::Activated;
 
@@ -736,7 +745,14 @@ bool GLRenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 	return true;
 }
 
-bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
+bool BindGPUBuffer(GLenum bufferType, GLuint BO, size_t localSlot, size_t startOffset, size_t elementSize, size_t range)
+{
+	glBindBufferRange(bufferType, (GLuint)localSlot, BO, startOffset * elementSize, range);
+
+	return true;
+}
+
+bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range)
 {
 	auto l_resourceBinder = reinterpret_cast<GLResourceBinder*>(binder);
 
@@ -745,7 +761,7 @@ bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderP
 		switch (l_resourceBinder->m_ResourceBinderType)
 		{
 		case ResourceBinderType::Sampler:
-			glBindSampler((unsigned int)bindingSlot, l_resourceBinder->m_SO);
+			glBindSampler((unsigned int)localSlot, l_resourceBinder->m_SO);
 			break;
 		case ResourceBinderType::Image:
 			for (size_t i = 0; i < l_resourceBinder->m_TOs.size(); i++)
@@ -756,27 +772,20 @@ bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderP
 				}
 			}
 			break;
-		case ResourceBinderType::ROBuffer:
-			break;
-		case ResourceBinderType::ROBufferArray:
-			break;
-		case ResourceBinderType::RWBuffer:
-			break;
-		case ResourceBinderType::RWBufferArray:
+		case ResourceBinderType::Buffer:
+			if (l_resourceBinder->m_Accessibility == Accessibility::ReadOnly)
+			{
+				BindGPUBuffer(GL_UNIFORM_BUFFER, l_resourceBinder->m_BO, globalSlot, startOffset, l_resourceBinder->m_ElementSize, range);
+			}
+			else
+			{
+				BindGPUBuffer(GL_SHADER_STORAGE_BUFFER, l_resourceBinder->m_BO, globalSlot, startOffset, l_resourceBinder->m_ElementSize, range);
+			}
 			break;
 		default:
 			break;
 		}
 	}
-
-	return true;
-}
-
-bool GLRenderingServer::BindGPUBufferDataComponent(RenderPassDataComponent * renderPass, GPUBufferDataComponent * GPUBuffer, ShaderType shaderType, GPUBufferAccessibility accessibility, size_t startOffset, size_t range)
-{
-	auto l_GPUBuffer = reinterpret_cast<GLGPUBufferDataComponent*>(GPUBuffer);
-
-	glBindBufferRange(l_GPUBuffer->m_BufferType, (GLuint)l_GPUBuffer->m_BindingPoint, l_GPUBuffer->m_Handle, startOffset * l_GPUBuffer->m_ElementSize, range);
 
 	return true;
 }
@@ -792,7 +801,7 @@ bool GLRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, Me
 	return true;
 }
 
-bool GLRenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
+bool GLRenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range)
 {
 	return true;
 }

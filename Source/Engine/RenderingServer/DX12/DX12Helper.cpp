@@ -582,7 +582,7 @@ bool DX12Helper::CreateResourcesBinder(DX12RenderPassDataComponent * DX12RPDC, I
 	auto l_DX12RenderingServer = reinterpret_cast<DX12RenderingServer*>(renderingServer);
 
 	l_resourcesBinder->m_ResourceBinderType = ResourceBinderType::Image;
-	l_resourcesBinder->m_SRV = l_DX12RenderingServer->CreateSRV(DX12RPDC->m_RenderTargets[0]);
+	l_resourcesBinder->m_TextureSRV = l_DX12RenderingServer->CreateSRV(DX12RPDC->m_RenderTargets[0]);
 
 	// Create multiple continuous SRVs
 	for (size_t i = 1; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
@@ -689,7 +689,7 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D
 
 	std::vector<CD3DX12_DESCRIPTOR_RANGE1> l_rootDescriptorTables(l_rootDescriptorTableCount);
 
-	size_t l_currentRootDescriptorTableIndex = 0;
+	size_t l_currentTableIndex = 0;
 
 	for (size_t i = 0; i < l_rootParameters.size(); i++)
 	{
@@ -699,25 +699,41 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D
 		{
 			switch (l_resourceBinderLayoutDesc.m_ResourceBinderType)
 			{
-			case ResourceBinderType::Sampler: l_rootDescriptorTables[l_currentRootDescriptorTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_BindingSlot);
+			case ResourceBinderType::Sampler: l_rootDescriptorTables[l_currentTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_GlobalSlot);
 				break;
-			case ResourceBinderType::Image:l_rootDescriptorTables[l_currentRootDescriptorTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_BindingSlot);
+			case ResourceBinderType::Image:l_rootDescriptorTables[l_currentTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_GlobalSlot);
 				break;
-			case ResourceBinderType::ROBuffer: l_rootDescriptorTables[l_currentRootDescriptorTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_BindingSlot);
-				break;
-			case ResourceBinderType::ROBufferArray: l_rootDescriptorTables[l_currentRootDescriptorTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_BindingSlot);
-				break;
-			case ResourceBinderType::RWBuffer: l_rootDescriptorTables[l_currentRootDescriptorTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_BindingSlot);
-				break;
-			case ResourceBinderType::RWBufferArray: l_rootDescriptorTables[l_currentRootDescriptorTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_BindingSlot);
+			case ResourceBinderType::Buffer:
+				if (l_resourceBinderLayoutDesc.m_BinderAccessibility == Accessibility::ReadOnly)
+				{
+					if (l_resourceBinderLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
+					{
+						l_rootDescriptorTables[l_currentTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_GlobalSlot);
+					}
+					else
+					{
+						l_rootDescriptorTables[l_currentTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_GlobalSlot);
+					}
+				}
+				else
+				{
+					if (l_resourceBinderLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
+					{
+						InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer!");
+					}
+					else
+					{
+						l_rootDescriptorTables[l_currentTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_GlobalSlot);
+					}
+				}
 				break;
 			default:
 				break;
 			}
 
-			l_rootParameters[i].InitAsDescriptorTable(1, &l_rootDescriptorTables[l_currentRootDescriptorTableIndex], D3D12_SHADER_VISIBILITY_ALL);
+			l_rootParameters[i].InitAsDescriptorTable(1, &l_rootDescriptorTables[l_currentTableIndex], D3D12_SHADER_VISIBILITY_ALL);
 
-			l_currentRootDescriptorTableIndex++;
+			l_currentTableIndex++;
 		}
 		else
 		{
@@ -725,15 +741,31 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D
 			{
 			case ResourceBinderType::Sampler: InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Sampler only could be accessed through a Descriptor table!");
 				break;
-			case ResourceBinderType::Image: l_rootParameters[i].InitAsShaderResourceView((unsigned int)l_resourceBinderLayoutDesc.m_BindingSlot, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_ALL);
+			case ResourceBinderType::Image: l_rootParameters[i].InitAsShaderResourceView((unsigned int)l_resourceBinderLayoutDesc.m_GlobalSlot, 0);
 				break;
-			case ResourceBinderType::ROBuffer: l_rootParameters[i].InitAsConstantBufferView((unsigned int)l_resourceBinderLayoutDesc.m_BindingSlot, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_ALL);
-				break;
-			case ResourceBinderType::ROBufferArray: l_rootParameters[i].InitAsConstantBufferView((unsigned int)l_resourceBinderLayoutDesc.m_BindingSlot, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_ALL);
-				break;
-			case ResourceBinderType::RWBuffer: l_rootParameters[i].InitAsUnorderedAccessView((unsigned int)l_resourceBinderLayoutDesc.m_BindingSlot, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_ALL);
-				break;
-			case ResourceBinderType::RWBufferArray: l_rootParameters[i].InitAsUnorderedAccessView((unsigned int)l_resourceBinderLayoutDesc.m_BindingSlot, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_ALL);
+			case ResourceBinderType::Buffer:
+				if (l_resourceBinderLayoutDesc.m_BinderAccessibility == Accessibility::ReadOnly)
+				{
+					if (l_resourceBinderLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
+					{
+						l_rootParameters[i].InitAsConstantBufferView((unsigned int)l_resourceBinderLayoutDesc.m_GlobalSlot, 0);
+					}
+					else
+					{
+						l_rootParameters[i].InitAsShaderResourceView((unsigned int)l_resourceBinderLayoutDesc.m_GlobalSlot, 0);
+					}
+				}
+				else
+				{
+					if (l_resourceBinderLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
+					{
+						InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer!");
+					}
+					else
+					{
+						l_rootParameters[i].InitAsUnorderedAccessView((unsigned int)l_resourceBinderLayoutDesc.m_GlobalSlot, 0);
+					}
+				}
 				break;
 			default:
 				break;

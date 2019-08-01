@@ -981,7 +981,7 @@ bool DX12RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 
 	auto l_resourceBinder = addResourcesBinder();
 
-	l_resourceBinder->m_SRV = l_SRV;
+	l_resourceBinder->m_TextureSRV = l_SRV;
 
 	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
 
@@ -1118,7 +1118,12 @@ bool DX12RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 
 	l_rhs->m_TotalSize = l_rhs->m_ElementCount * l_rhs->m_ElementSize;
 
-	D3D12_RESOURCE_STATES l_resourceState = l_rhs->m_GPUBufferAccessibility == GPUBufferAccessibility::ReadOnly ? D3D12_RESOURCE_STATE_GENERIC_READ : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+	auto l_resourceBinder = addResourcesBinder();
+	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Buffer;
+	l_resourceBinder->m_Accessibility = l_rhs->m_Accessibility;
+	l_resourceBinder->m_ElementSize = l_rhs->m_ElementSize;
+
+	D3D12_RESOURCE_STATES l_resourceState = l_rhs->m_Accessibility == Accessibility::ReadOnly ? D3D12_RESOURCE_STATE_GENERIC_READ : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 
 	auto l_HResult = m_device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
@@ -1133,6 +1138,8 @@ bool DX12RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create GPU buffer!");
 		return false;
 	}
+
+	l_resourceBinder->m_Buffer = l_rhs->m_ResourceHandle;
 
 	CD3DX12_RANGE m_ConstantBufferReadRange(0, 0);
 	l_rhs->m_ResourceHandle->Map(0, &m_ConstantBufferReadRange, &l_rhs->m_MappedMemory);
@@ -1283,42 +1290,62 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 	return true;
 }
 
-bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
+bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range)
 {
-	auto l_binder = reinterpret_cast<DX12ResourceBinder*>(binder);
+	auto l_resourceBinder = reinterpret_cast<DX12ResourceBinder*>(binder);
 	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
 
-	switch (l_binder->m_ResourceBinderType)
+	switch (l_resourceBinder->m_ResourceBinderType)
 	{
 	case ResourceBinderType::Sampler:
-		l_commandList->m_CommandList->SetGraphicsRootDescriptorTable((unsigned int)bindingSlot, l_binder->m_Sampler.GPUHandle);
+		l_commandList->m_CommandList->SetGraphicsRootDescriptorTable((unsigned int)globalSlot, l_resourceBinder->m_Sampler.GPUHandle);
 		break;
 	case ResourceBinderType::Image:
-		l_commandList->m_CommandList->SetGraphicsRootDescriptorTable((unsigned int)bindingSlot, l_binder->m_SRV.GPUHandle);
+		l_commandList->m_CommandList->SetGraphicsRootDescriptorTable((unsigned int)globalSlot, l_resourceBinder->m_TextureSRV.GPUHandle);
 		break;
-	case ResourceBinderType::ROBuffer:
-		break;
-	case ResourceBinderType::ROBufferArray:
-		break;
-	case ResourceBinderType::RWBuffer:
-		break;
-	case ResourceBinderType::RWBufferArray:
+	case ResourceBinderType::Buffer:
+		if (l_resourceBinder->m_Accessibility == Accessibility::ReadOnly)
+		{
+			if (accessibility != Accessibility::ReadOnly)
+			{
+				InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Not allow GPU write to Constant Buffer!");
+			}
+			else
+			{
+				l_commandList->m_CommandList->SetGraphicsRootConstantBufferView((unsigned int)globalSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+			}
+		}
+		else
+		{
+			if (accessibility == Accessibility::ReadOnly)
+			{
+				if (shaderType == ShaderType::COMPUTE)
+				{
+					l_commandList->m_CommandList->SetComputeRootShaderResourceView((unsigned int)globalSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+				}
+				else
+				{
+					l_commandList->m_CommandList->SetGraphicsRootShaderResourceView((unsigned int)globalSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+				}
+			}
+			else
+			{
+				if (shaderType == ShaderType::COMPUTE)
+				{
+					l_commandList->m_CommandList->SetComputeRootUnorderedAccessView((unsigned int)globalSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+				}
+				else
+				{
+					l_commandList->m_CommandList->SetGraphicsRootUnorderedAccessView((unsigned int)globalSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+				}
+			}
+		}
+
 		break;
 	default:
 		break;
 	}
-
-	return true;
-}
-
-bool DX12RenderingServer::BindGPUBufferDataComponent(RenderPassDataComponent * renderPass, GPUBufferDataComponent * GPUBuffer, ShaderType shaderType, GPUBufferAccessibility accessibility, size_t startOffset, size_t range)
-{
-	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
-	auto l_GPUBuffer = reinterpret_cast<DX12GPUBufferDataComponent*>(GPUBuffer);
-
-	l_commandList->m_CommandList->SetGraphicsRootConstantBufferView((unsigned int)l_GPUBuffer->m_BindingPoint, l_GPUBuffer->m_ResourceHandle->GetGPUVirtualAddress() + startOffset * range);
 
 	return true;
 }
@@ -1338,7 +1365,7 @@ bool DX12RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, 
 	return true;
 }
 
-bool DX12RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
+bool DX12RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range)
 {
 	return true;
 }

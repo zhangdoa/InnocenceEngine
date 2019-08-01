@@ -6,7 +6,7 @@
 class GPUBufferDataComponent : public InnoComponent
 {
 public:
-	GPUBufferAccessibility m_GPUBufferAccessibility = GPUBufferAccessibility::ReadOnly;
+	Accessibility m_Accessibility = Accessibility::ReadOnly;
 	size_t m_ElementCount = 0;
 	size_t m_ElementSize = 0;
 	size_t m_TotalSize = 0;

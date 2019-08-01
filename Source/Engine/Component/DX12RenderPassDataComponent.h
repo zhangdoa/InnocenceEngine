@@ -5,9 +5,9 @@
 class DX12ResourceBinder : public IResourceBinder
 {
 public:
-	DX12SRV m_SRV = {};
-	DX12CBV m_CBV = {};
+	DX12SRV m_TextureSRV = {};
 	DX12Sampler m_Sampler = {};
+	ID3D12Resource* m_Buffer = 0;
 };
 
 class DX12PipelineStateObject : public IPipelineStateObject

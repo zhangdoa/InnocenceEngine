@@ -701,52 +701,52 @@ bool DX11RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 
 	auto l_resourceBinder = addResourcesBinder();
 
-	l_resourceBinder->m_SRVs.resize(5);
+	l_resourceBinder->m_TextureSRVs.resize(5);
 
 	if (rhs->m_normalTexture)
 	{
 		InitializeTextureDataComponent(rhs->m_normalTexture);
-		l_resourceBinder->m_SRVs[0] = reinterpret_cast<DX11TextureDataComponent*>(rhs->m_normalTexture)->m_SRV;
+		l_resourceBinder->m_TextureSRVs[0] = reinterpret_cast<DX11TextureDataComponent*>(rhs->m_normalTexture)->m_SRV;
 	}
 	else
 	{
-		l_resourceBinder->m_SRVs[0] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::NORMAL))->m_SRV;
+		l_resourceBinder->m_TextureSRVs[0] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::NORMAL))->m_SRV;
 	}
 	if (rhs->m_albedoTexture)
 	{
 		InitializeTextureDataComponent(rhs->m_albedoTexture);
-		l_resourceBinder->m_SRVs[1] = reinterpret_cast<DX11TextureDataComponent*>(rhs->m_albedoTexture)->m_SRV;
+		l_resourceBinder->m_TextureSRVs[1] = reinterpret_cast<DX11TextureDataComponent*>(rhs->m_albedoTexture)->m_SRV;
 	}
 	else
 	{
-		l_resourceBinder->m_SRVs[1] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::ALBEDO))->m_SRV;
+		l_resourceBinder->m_TextureSRVs[1] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::ALBEDO))->m_SRV;
 	}
 	if (rhs->m_metallicTexture)
 	{
 		InitializeTextureDataComponent(rhs->m_metallicTexture);
-		l_resourceBinder->m_SRVs[2] = reinterpret_cast<DX11TextureDataComponent*>(rhs->m_metallicTexture)->m_SRV;
+		l_resourceBinder->m_TextureSRVs[2] = reinterpret_cast<DX11TextureDataComponent*>(rhs->m_metallicTexture)->m_SRV;
 	}
 	else
 	{
-		l_resourceBinder->m_SRVs[2] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::METALLIC))->m_SRV;
+		l_resourceBinder->m_TextureSRVs[2] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::METALLIC))->m_SRV;
 	}
 	if (rhs->m_roughnessTexture)
 	{
 		InitializeTextureDataComponent(rhs->m_roughnessTexture);
-		l_resourceBinder->m_SRVs[3] = reinterpret_cast<DX11TextureDataComponent*>(rhs->m_roughnessTexture)->m_SRV;
+		l_resourceBinder->m_TextureSRVs[3] = reinterpret_cast<DX11TextureDataComponent*>(rhs->m_roughnessTexture)->m_SRV;
 	}
 	else
 	{
-		l_resourceBinder->m_SRVs[3] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::ROUGHNESS))->m_SRV;
+		l_resourceBinder->m_TextureSRVs[3] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::ROUGHNESS))->m_SRV;
 	}
 	if (rhs->m_aoTexture)
 	{
 		InitializeTextureDataComponent(rhs->m_aoTexture);
-		l_resourceBinder->m_SRVs[4] = reinterpret_cast<DX11TextureDataComponent*>(rhs->m_aoTexture)->m_SRV;
+		l_resourceBinder->m_TextureSRVs[4] = reinterpret_cast<DX11TextureDataComponent*>(rhs->m_aoTexture)->m_SRV;
 	}
 	else
 	{
-		l_resourceBinder->m_SRVs[4] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION))->m_SRV;
+		l_resourceBinder->m_TextureSRVs[4] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION))->m_SRV;
 	}
 	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
 
@@ -903,7 +903,12 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 
 	l_rhs->m_TotalSize = l_rhs->m_ElementCount * l_rhs->m_ElementSize;
 
-	auto l_isStructuredBuffer = (l_rhs->m_GPUBufferAccessibility == GPUBufferAccessibility::ReadWrite);
+	auto l_resourceBinder = addResourcesBinder();
+	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Buffer;
+	l_resourceBinder->m_Accessibility = l_rhs->m_Accessibility;
+	l_resourceBinder->m_ElementSize = l_rhs->m_ElementSize;
+
+	auto l_isStructuredBuffer = (l_rhs->m_Accessibility == Accessibility::ReadWrite);
 
 	l_rhs->m_BufferDesc.ByteWidth = (unsigned int)(rhs->m_TotalSize);
 	l_rhs->m_BufferDesc.Usage = l_isStructuredBuffer ? D3D11_USAGE_DEFAULT : D3D11_USAGE_DYNAMIC;
@@ -927,6 +932,7 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 	{
 		l_HResult = m_device->CreateBuffer(&l_rhs->m_BufferDesc, NULL, &l_rhs->m_BufferPtr);
 	}
+	l_resourceBinder->m_Buffer = l_rhs->m_BufferPtr;
 
 	if (FAILED(l_HResult))
 	{
@@ -962,6 +968,7 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 #ifdef  _DEBUG
 		SetObjectName(l_rhs, l_rhs->m_BufferPtr, "SRV");
 #endif //  _DEBUG
+		l_resourceBinder->m_BufferSRV = l_rhs->m_SRV;
 
 		D3D11_UNORDERED_ACCESS_VIEW_DESC l_UAVDesc;
 		l_UAVDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -980,7 +987,10 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 #ifdef  _DEBUG
 		SetObjectName(l_rhs, l_rhs->m_BufferPtr, "UAV");
 #endif //  _DEBUG
+		l_resourceBinder->m_BufferUAV = l_rhs->m_UAV;
 	}
+
+	l_rhs->m_ResourceBinder = l_resourceBinder;
 
 	l_rhs->m_objectStatus = ObjectStatus::Activated;
 
@@ -1144,7 +1154,68 @@ bool BindSRV(ShaderType shaderType, unsigned int bindingPoint, ID3D11ShaderResou
 	return true;
 }
 
-bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
+bool BindConstantBuffer(unsigned int localSlot, ID3D11Buffer* buffer, ShaderType shaderType)
+{
+	switch (shaderType)
+	{
+	case ShaderType::VERTEX:
+		m_deviceContext->VSSetConstantBuffers(localSlot, 1, &buffer);
+		break;
+	case ShaderType::TCS:
+		m_deviceContext->HSSetConstantBuffers(localSlot, 1, &buffer);
+		break;
+	case ShaderType::TES:
+		m_deviceContext->DSSetConstantBuffers(localSlot, 1, &buffer);
+		break;
+	case ShaderType::GEOMETRY:
+		m_deviceContext->GSSetConstantBuffers(localSlot, 1, &buffer);
+		break;
+	case ShaderType::FRAGMENT:
+		m_deviceContext->PSSetConstantBuffers(localSlot, 1, &buffer);
+		break;
+	case ShaderType::COMPUTE:
+		m_deviceContext->CSSetConstantBuffers(localSlot, 1, &buffer);
+		break;
+	default:
+		break;
+	}
+
+	return true;
+}
+
+bool BindPartialConstantBuffer(unsigned int localSlot, ID3D11Buffer* buffer, ShaderType shaderType, size_t startOffset, size_t elementSize)
+{
+	auto l_constantCount = (unsigned int)elementSize / 16;
+	auto l_firstConstant = (unsigned int)startOffset * l_constantCount;
+
+	switch (shaderType)
+	{
+	case ShaderType::VERTEX:
+		m_deviceContext->VSSetConstantBuffers1(localSlot, 1, &buffer, &l_firstConstant, &l_constantCount);
+		break;
+	case ShaderType::TCS:
+		m_deviceContext->HSSetConstantBuffers1(localSlot, 1, &buffer, &l_firstConstant, &l_constantCount);
+		break;
+	case ShaderType::TES:
+		m_deviceContext->DSSetConstantBuffers1(localSlot, 1, &buffer, &l_firstConstant, &l_constantCount);
+		break;
+	case ShaderType::GEOMETRY:
+		m_deviceContext->GSSetConstantBuffers1(localSlot, 1, &buffer, &l_firstConstant, &l_constantCount);
+		break;
+	case ShaderType::FRAGMENT:
+		m_deviceContext->PSSetConstantBuffers1(localSlot, 1, &buffer, &l_firstConstant, &l_constantCount);
+		break;
+	case ShaderType::COMPUTE:
+		m_deviceContext->CSSetConstantBuffers1(localSlot, 1, &buffer, &l_firstConstant, &l_constantCount);
+		break;
+	default:
+		break;
+	}
+
+	return true;
+}
+
+bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range)
 {
 	auto l_resourceBinder = reinterpret_cast<DX11ResourceBinder*>(binder);
 
@@ -1153,21 +1224,49 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 		switch (l_resourceBinder->m_ResourceBinderType)
 		{
 		case ResourceBinderType::Sampler:
-			m_deviceContext->PSSetSamplers((unsigned int)bindingSlot, 1, &l_resourceBinder->m_Sampler);
+			m_deviceContext->PSSetSamplers((unsigned int)localSlot, 1, &l_resourceBinder->m_Sampler);
 			break;
 		case ResourceBinderType::Image:
-			for (size_t i = 0; i < l_resourceBinder->m_SRVs.size(); i++)
+			for (size_t i = 0; i < l_resourceBinder->m_TextureSRVs.size(); i++)
 			{
-				BindSRV(shaderType, (unsigned int)i, l_resourceBinder->m_SRVs[i]);
+				BindSRV(shaderType, (unsigned int)i, l_resourceBinder->m_TextureSRVs[i]);
 			}
 			break;
-		case ResourceBinderType::ROBuffer:
-			break;
-		case ResourceBinderType::ROBufferArray:
-			break;
-		case ResourceBinderType::RWBuffer:
-			break;
-		case ResourceBinderType::RWBufferArray:
+		case ResourceBinderType::Buffer:
+			if (l_resourceBinder->m_Accessibility == Accessibility::ReadOnly)
+			{
+				if (accessibility != Accessibility::ReadOnly)
+				{
+					InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Not allow GPU write to Constant Buffer!");
+				}
+				if (partialBinding)
+				{
+					BindPartialConstantBuffer((unsigned int)localSlot, l_resourceBinder->m_Buffer, shaderType, startOffset, l_resourceBinder->m_ElementSize);
+				}
+				else
+				{
+					BindConstantBuffer((unsigned int)localSlot, l_resourceBinder->m_Buffer, shaderType);
+				}
+			}
+			else
+			{
+				if (accessibility == Accessibility::ReadOnly)
+				{
+					BindSRV(shaderType, (unsigned int)localSlot, l_resourceBinder->m_BufferSRV);
+				}
+				else
+				{
+					if (shaderType == ShaderType::COMPUTE)
+					{
+						m_deviceContext->CSSetUnorderedAccessViews((unsigned int)localSlot, 1, &l_resourceBinder->m_BufferUAV, nullptr);
+					}
+					else
+					{
+						InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Only allow Compute shader write to Structured Buffer!");
+						return false;
+					}
+				}
+			}
 			break;
 		default:
 			break;
@@ -1177,117 +1276,7 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 	return true;
 }
 
-bool BindConstantBuffer(DX11GPUBufferDataComponent* rhs, ShaderType shaderType)
-{
-	switch (shaderType)
-	{
-	case ShaderType::VERTEX:
-		m_deviceContext->VSSetConstantBuffers((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr);
-		break;
-	case ShaderType::TCS:
-		m_deviceContext->HSSetConstantBuffers((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr);
-		break;
-	case ShaderType::TES:
-		m_deviceContext->DSSetConstantBuffers((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr);
-		break;
-	case ShaderType::GEOMETRY:
-		m_deviceContext->GSSetConstantBuffers((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr);
-		break;
-	case ShaderType::FRAGMENT:
-		m_deviceContext->PSSetConstantBuffers((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr);
-		break;
-	case ShaderType::COMPUTE:
-		m_deviceContext->CSSetConstantBuffers((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr);
-		break;
-	default:
-		break;
-	}
-
-	return true;
-}
-
-bool BindPartialConstantBuffer(DX11GPUBufferDataComponent* rhs, ShaderType shaderType, size_t startOffset)
-{
-	auto l_constantCount = (unsigned int)rhs->m_ElementSize / 16;
-	auto l_firstConstant = (unsigned int)startOffset * l_constantCount;
-
-	switch (shaderType)
-	{
-	case ShaderType::VERTEX:
-		m_deviceContext->VSSetConstantBuffers1((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
-		break;
-	case ShaderType::TCS:
-		m_deviceContext->HSSetConstantBuffers1((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
-		break;
-	case ShaderType::TES:
-		m_deviceContext->DSSetConstantBuffers1((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
-		break;
-	case ShaderType::GEOMETRY:
-		m_deviceContext->GSSetConstantBuffers1((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
-		break;
-	case ShaderType::FRAGMENT:
-		m_deviceContext->PSSetConstantBuffers1((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
-		break;
-	case ShaderType::COMPUTE:
-		m_deviceContext->CSSetConstantBuffers1((unsigned int)rhs->m_BindingPoint, 1, &rhs->m_BufferPtr, &l_firstConstant, &l_constantCount);
-		break;
-	default:
-		break;
-	}
-
-	return true;
-}
-
-bool DX11RenderingServer::BindGPUBufferDataComponent(RenderPassDataComponent * renderPass, GPUBufferDataComponent * GPUBuffer, ShaderType shaderType, GPUBufferAccessibility accessibility, size_t startOffset, size_t range)
-{
-	auto l_GPUBuffer = reinterpret_cast<DX11GPUBufferDataComponent*>(GPUBuffer);
-
-	if (accessibility == GPUBufferAccessibility::ReadOnly)
-	{
-		if (l_GPUBuffer->m_GPUBufferAccessibility == GPUBufferAccessibility::ReadOnly)
-		{
-			if (range == l_GPUBuffer->m_TotalSize)
-			{
-				BindConstantBuffer(l_GPUBuffer, shaderType);
-			}
-			else
-			{
-				// Read CBuffer
-				BindPartialConstantBuffer(l_GPUBuffer, shaderType, startOffset);
-			}
-		}
-		else
-		{
-			// Read SBuffer
-			BindSRV(shaderType, (unsigned int)l_GPUBuffer->m_BindingPoint, l_GPUBuffer->m_SRV);
-		}
-	}
-	else
-	{
-		if (l_GPUBuffer->m_GPUBufferAccessibility == GPUBufferAccessibility::ReadOnly)
-		{
-			InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Not allow GPU write to Constant Buffer!");
-			return false;
-		}
-		else
-		{
-			// Write SBuffer
-			if (shaderType == ShaderType::COMPUTE)
-			{
-				m_deviceContext->CSSetUnorderedAccessViews((unsigned int)l_GPUBuffer->m_BindingPoint, 1, &l_GPUBuffer->m_UAV, nullptr);
-			}
-			else
-			{
-				InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Only allow Compute shader write to Structured Buffer!");
-				return false;
-			}
-		}
-	}
-
-	return true;
-}
-
-bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t bindingSlot)
+bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderType shaderType, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range)
 {
 	auto l_resourceBinder = reinterpret_cast<DX11ResourceBinder*>(binder);
 
@@ -1296,21 +1285,34 @@ bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * ren
 		switch (l_resourceBinder->m_ResourceBinderType)
 		{
 		case ResourceBinderType::Sampler:
-			m_deviceContext->PSSetSamplers((unsigned int)bindingSlot, 1, 0);
+			m_deviceContext->PSSetSamplers((unsigned int)localSlot, 1, 0);
 			break;
 		case ResourceBinderType::Image:
-			for (size_t i = 0; i < l_resourceBinder->m_SRVs.size(); i++)
+			for (size_t i = 0; i < l_resourceBinder->m_TextureSRVs.size(); i++)
 			{
 				BindSRV(shaderType, (unsigned int)i, 0);
 			}
 			break;
-		case ResourceBinderType::ROBuffer:
-			break;
-		case ResourceBinderType::ROBufferArray:
-			break;
-		case ResourceBinderType::RWBuffer:
-			break;
-		case ResourceBinderType::RWBufferArray:
+		case ResourceBinderType::Buffer:
+			if (l_resourceBinder->m_Accessibility != Accessibility::ReadOnly)
+			{
+				if (accessibility == Accessibility::ReadOnly)
+				{
+					BindSRV(shaderType, (unsigned int)localSlot, 0);
+				}
+				else
+				{
+					if (shaderType == ShaderType::COMPUTE)
+					{
+						m_deviceContext->CSSetUnorderedAccessViews((unsigned int)localSlot, 1, 0, nullptr);
+					}
+					else
+					{
+						InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Only allow Compute shader write to Structured Buffer!");
+						return false;
+					}
+				}
+			}
 			break;
 		default:
 			break;

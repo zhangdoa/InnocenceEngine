@@ -1,5 +1,5 @@
 #pragma once
-enum class GPUBufferAccessibility
+enum class Accessibility
 {
 	ReadOnly = 1,
 	WriteOnly = 2,
@@ -154,22 +154,24 @@ class IPipelineStateObject {};
 enum class ResourceBinderType {
 	Sampler,
 	Image,
-	ROBuffer,
-	ROBufferArray,
-	RWBuffer,
-	RWBufferArray
+	Buffer,
 };
 
 class IResourceBinder
 {
 public:
 	ResourceBinderType m_ResourceBinderType = ResourceBinderType::Sampler;
+	Accessibility m_Accessibility = Accessibility::ReadOnly;
+	size_t m_ElementSize = 0;
 };
 
 struct ResourceBinderLayoutDesc
 {
 	ResourceBinderType m_ResourceBinderType = ResourceBinderType::Sampler;
-	size_t m_BindingSlot = 0;
+	Accessibility m_BinderAccessibility = Accessibility::ReadOnly;
+	Accessibility m_ResourceAccessibility = Accessibility::ReadOnly;
+	size_t m_GlobalSlot = 0;
+	size_t m_LocalSlot = 0;
 	size_t m_ResourceCount = 1;
 	bool m_IsRanged = false;
 };

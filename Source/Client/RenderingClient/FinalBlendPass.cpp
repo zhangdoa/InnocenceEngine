@@ -28,12 +28,12 @@ bool FinalBlendPass::Setup()
 
 	l_RPDC->m_ResourceBinderLayoutDescs.resize(2);
 	l_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
-	l_RPDC->m_ResourceBinderLayoutDescs[0].m_BindingSlot = 0;
+	l_RPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
 	l_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceCount = 3;
 	l_RPDC->m_ResourceBinderLayoutDescs[0].m_IsRanged = true;
 
 	l_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Sampler;
-	l_RPDC->m_ResourceBinderLayoutDescs[1].m_BindingSlot = 0;
+	l_RPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 1;
 	l_RPDC->m_ResourceBinderLayoutDescs[1].m_IsRanged = true;
 
 	l_RPDC->m_ShaderProgram = m_SPC;
@@ -59,15 +59,15 @@ bool FinalBlendPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CommandListBegin(l_RPDC, l_currentFrame);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(l_RPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(l_RPDC);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(l_RPDC, ShaderType::FRAGMENT, m_SDC->m_ResourceBinder, 1);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(l_RPDC, ShaderType::FRAGMENT, m_SDC->m_ResourceBinder, 1, 0);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(l_RPDC, ShaderType::FRAGMENT, LightPass::GetRPDC()->m_RenderTargetsResourceBinder, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(l_RPDC, ShaderType::FRAGMENT, LightPass::GetRPDC()->m_RenderTargetsResourceBinder, 0, 0);
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::QUAD);
 
 	g_pModuleManager->getRenderingServer()->DispatchDrawCall(l_RPDC, l_mesh);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(l_RPDC, ShaderType::FRAGMENT, LightPass::GetRPDC()->m_RenderTargetsResourceBinder, 0);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(l_RPDC, ShaderType::FRAGMENT, LightPass::GetRPDC()->m_RenderTargetsResourceBinder, 0, 0);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(l_RPDC);
 
