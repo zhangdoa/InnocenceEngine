@@ -39,7 +39,7 @@ bool FinalBlendPass::Setup()
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 0;
-	m_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceCount = 3;
+	m_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceCount = 1;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_IsRanged = true;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Sampler;

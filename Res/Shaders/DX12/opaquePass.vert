@@ -35,7 +35,6 @@ PixelInputType main(VertexInputType input)
 	output.frag_ClipSpacePos_prev = mul(frag_CameraSpacePos_prev, cam_p_original);
 
 	output.frag_ClipSpacePos = mul(frag_CameraSpacePos, cam_p_jittered);
-	output.frag_ClipSpacePos.y = -output.frag_ClipSpacePos.y;
 
 	output.frag_WorldSpacePos = frag_WorldSpacePos.xyz;
 	output.frag_TexCoord = input.texcoord;
