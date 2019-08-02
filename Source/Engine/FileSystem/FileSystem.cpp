@@ -8,7 +8,7 @@
 
 extern IModuleManager* g_pModuleManager;
 
-#include "IOService.h"
+#include "../Core/IOService.h"
 #include "AssimpWrapper.h"
 #include "AssetLoader.h"
 #include "JSONParser.h"

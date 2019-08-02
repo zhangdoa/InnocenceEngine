@@ -9,8 +9,7 @@ namespace fs = std::experimental::filesystem;
 namespace fs = std::filesystem;
 #endif
 
-#include "../ModuleManager/IModuleManager.h"
-extern IModuleManager* g_pModuleManager;
+#include "InnoLogger.h"
 
 namespace IOService
 {
@@ -26,7 +25,7 @@ bool IOService::setupWorkingDirectory()
 #endif
 	m_workingDir = m_workingDir + "//";
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "IOService: current working directory is " + m_workingDir);
+	InnoLogger::Log(LogLevel::Verbose, "IOService: current working directory is ", m_workingDir.c_str());
 
 	return true;
 }
@@ -52,7 +51,7 @@ std::vector<char> IOService::loadFile(const std::string & filePath, IOMode openM
 
 	if (!l_file.is_open())
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "IOService: can't open file : " + filePath + "!");
+		InnoLogger::Log(LogLevel::Error, "IOService: can't open file : ", filePath.c_str(), "!");
 		return std::vector<char>();
 	}
 
@@ -89,7 +88,7 @@ bool IOService::saveFile(const std::string & filePath, const std::vector<char>& 
 
 	if (!l_file.is_open())
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "IOService: can't open file : " + filePath + "!");
+		InnoLogger::Log(LogLevel::Error, "IOService: can't open file : ", filePath.c_str(), "!");
 		return false;
 	}
 

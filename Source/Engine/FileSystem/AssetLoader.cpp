@@ -5,7 +5,7 @@
 #include "../ModuleManager/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
 
-#include "IOService.h"
+#include "../Core/IOService.h"
 #include "JSONParser.h"
 
 namespace InnoFileSystemNS::AssetLoader
