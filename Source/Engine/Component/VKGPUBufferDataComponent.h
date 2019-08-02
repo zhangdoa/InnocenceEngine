@@ -5,4 +5,6 @@
 class VKGPUBufferDataComponent : public GPUBufferDataComponent
 {
 public:
+	VkBuffer m_Buffer;
+	VkDeviceMemory m_DeviceMemory;
 };

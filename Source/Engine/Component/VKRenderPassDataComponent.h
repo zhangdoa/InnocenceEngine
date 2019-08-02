@@ -4,47 +4,74 @@
 #include "RenderPassDataComponent.h"
 #include "VKTextureDataComponent.h"
 
+class VKResourceBinder : public IResourceBinder
+{
+public:
+};
+
+class VKPipelineStateObject : public IPipelineStateObject
+{
+public:
+	std::vector<VkAttachmentReference> m_ColorAttachmentRefs = {};
+	VkAttachmentReference m_DepthAttachmentRef = {};
+	VkSubpassDescription m_SubpassDesc = {};
+
+	std::vector<VkAttachmentDescription> m_AttachmentDescs;
+	VkRenderPassCreateInfo m_RenderPassCInfo = {};
+
+	VkRenderPass m_RenderPass;
+	VkPipelineLayout m_PipelineLayout;
+	VkPipeline m_Pipeline;
+	VkVertexInputBindingDescription m_VertexBindingDescription;
+	std::vector<VkVertexInputAttributeDescription> m_VertexAttributeDescriptions;
+	VkPipelineInputAssemblyStateCreateInfo m_InputAssemblyStateCInfo = {};
+	VkPipelineViewportStateCreateInfo m_ViewportStateCInfo = {};
+	VkPipelineRasterizationStateCreateInfo m_RasterizationStateCInfo = {};
+	VkPipelineMultisampleStateCreateInfo m_MultisampleStateCInfo = {};
+	std::vector<VkPipelineColorBlendAttachmentState> m_ColorBlendAttachmentStates = {};
+	VkPipelineColorBlendStateCreateInfo m_ColorBlendStateCInfo = {};
+	VkPipelineLayoutCreateInfo m_PipelineLayoutCInfo = {};
+	VkGraphicsPipelineCreateInfo m_PipelineCInfo = {};
+	VkViewport m_Viewport = {};
+	VkRect2D m_Scissor = {};
+};
+
+class VKCommandList : public ICommandList
+{
+public:
+	VkCommandBuffer m_CommandBuffer;
+};
+
+class VKCommandQueue : public ICommandQueue
+{
+public:
+	VkQueue m_CommandQueue;
+};
+
+class VKSemaphore : public ISemaphore
+{
+public:
+	VkSemaphore m_Semaphore;
+};
+
+class VKFence : public IFence
+{
+public:
+	VkFence m_Fence;
+};
+
 class VKRenderPassDataComponent : public RenderPassDataComponent
 {
 public:
-	std::vector<VkAttachmentReference> colorAttachmentRefs = {};
-	VkAttachmentReference depthAttachmentRef = {};
-	VkSubpassDescription subpassDesc = {};
+	std::vector<VkFramebuffer> m_Framebuffers;
 
-	std::vector<VkAttachmentDescription> attachmentDescs;
-	VkRenderPassCreateInfo renderPassCInfo = {};
+	VkDescriptorPool m_DescriptorPool;
+	std::vector<VkDescriptorSetLayoutBinding> m_DescriptorSetLayoutBindings;
+	std::vector<VkDescriptorSetLayout> m_DescriptorSetLayouts;
+	std::vector<VkDescriptorSet> m_DescriptorSets;
+	std::vector<VkWriteDescriptorSet> m_WriteDescriptorSets;
+	std::vector<VkPushConstantRange> m_PushConstantRanges;
 
-	VkRenderPass m_renderPass;
-	VkPipelineLayout m_pipelineLayout;
-	VkPipeline m_pipeline;
-
-	VkDescriptorPool m_descriptorPool;
-	std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings;
-	std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
-	std::vector<VkDescriptorSet> descriptorSets;
-	std::vector<VkWriteDescriptorSet> writeDescriptorSets;
-	std::vector<VkPushConstantRange> pushConstantRanges;
-
-	VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCInfo = {};
-	VkPipelineViewportStateCreateInfo viewportStateCInfo = {};
-	VkPipelineRasterizationStateCreateInfo rasterizationStateCInfo = {};
-	VkPipelineMultisampleStateCreateInfo multisampleStateCInfo = {};
-	std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachmentStates = {};
-	VkPipelineColorBlendStateCreateInfo colorBlendStateCInfo = {};
-	VkPipelineLayoutCreateInfo pipelineLayoutCInfo = {};
-	VkGraphicsPipelineCreateInfo pipelineCInfo = {};
-	VkViewport viewport = {};
-	VkRect2D scissor = {};
-
-	std::vector<VkFramebuffer> m_framebuffers;
-	std::vector<VkCommandBuffer> m_commandBuffers;
-	std::vector<VKTextureDataComponent*> m_VKTDCs;
-	VKTextureDataComponent* m_depthVKTDC;
-
-	VkSubmitInfo submitInfo;
-	std::vector<VkSemaphore> m_renderFinishedSemaphores;
-	std::vector<VkFence> m_inFlightFences;
-
-	size_t m_maxFramesInFlight = 1;
-	size_t m_currentFrame = 0;
+	VkCommandPool m_CommandPool;
+	VkSubmitInfo m_SubmitInfo;
 };

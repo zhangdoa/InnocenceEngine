@@ -1,22 +1,6 @@
 #pragma once
 #include "../IRenderingServer.h"
 
-class VKCommandList : public ICommandList
-{
-};
-
-class VKCommandQueue : public ICommandQueue
-{
-};
-
-class VKSemaphore : public ISemaphore
-{
-};
-
-class VKFence : public IFence
-{
-};
-
 class VKRenderingServer : public IRenderingServer
 {
 public:
