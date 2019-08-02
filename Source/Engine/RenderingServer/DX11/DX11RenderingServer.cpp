@@ -277,7 +277,7 @@ bool DX11RenderingServer::Setup()
 	}
 
 	// @TODO: Find a better solution
-	LoadShaderFile(&m_InputLayoutDummyShaderBuffer, ShaderStage::Vertex, "dummyInputLayout.hlsl/");
+	LoadShaderFile(&m_InputLayoutDummyShaderBuffer, ShaderStage::Vertex, "common//dummyInputLayout.hlsl/");
 
 	m_SwapChainRPDC = reinterpret_cast<DX11RenderPassDataComponent*>(AddRenderPassDataComponent("SwapChain/"));
 	m_SwapChainSPC = reinterpret_cast<DX11ShaderProgramComponent*>(AddShaderProgramComponent("SwapChain/"));

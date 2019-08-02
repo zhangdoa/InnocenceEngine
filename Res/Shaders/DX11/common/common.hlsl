@@ -106,4 +106,4 @@ float4 ScreenToView(float4 screen, float2 in_viewportSize, matrix in_p_inv)
 	return ClipToView(clip, in_p_inv);
 }
 
-#include "GPUBuffers.hlsl"
+#include "common/GPUBuffers.hlsl"

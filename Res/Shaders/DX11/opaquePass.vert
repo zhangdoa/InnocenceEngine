@@ -1,5 +1,5 @@
 // shadertype=hlsl
-#include "common.hlsl"
+#include "common/common.hlsl"
 
 struct VertexInputType
 {

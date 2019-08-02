@@ -1,12 +1,12 @@
 // shadertype=hlsl
-#include "common.hlsl"
+#include "common/common.hlsl"
 
 struct ComputeInputType
 {
-	uint3 groupID           : SV_GroupID;           // 3D index of the thread group in the dispatch.
-	uint3 groupThreadID     : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
-	uint3 dispatchThreadID  : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
-	uint  groupIndex        : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
+	uint3 groupID : SV_GroupID;           // 3D index of the thread group in the dispatch.
+	uint3 groupThreadID : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
+	uint3 dispatchThreadID : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
+	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
 Texture2D DepthTextureVS : register(t0);
@@ -117,7 +117,7 @@ void main(ComputeInputType input)
 	GroupMemoryBarrierWithGroupSync();
 
 	// Write to global light index list
-	for (i = input.groupIndex; i < l_LightCount; i += BLOCK_SIZE * BLOCK_SIZE)
+	for (int i = input.groupIndex; i < l_LightCount; i += BLOCK_SIZE * BLOCK_SIZE)
 	{
 		g_LightIndexList[l_LightIndexStartOffset + i] = l_LightList[i];
 	}
