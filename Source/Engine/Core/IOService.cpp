@@ -111,6 +111,11 @@ bool IOService::isFileExist(const std::string & filePath)
 	}
 }
 
+std::string IOService::getFilePath(const std::string & filePath)
+{
+	return fs::path(filePath).remove_filename().generic_string();
+}
+
 std::string IOService::getFileExtension(const std::string & filePath)
 {
 	return fs::path(filePath).extension().generic_string();

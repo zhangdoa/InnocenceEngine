@@ -10,6 +10,7 @@ namespace IOService
 	bool saveFile(const std::string & filePath, const std::vector<char>& content, IOMode saveMode);
 
 	bool isFileExist(const std::string & filePath);
+	std::string getFilePath(const std::string & filePath);
 	std::string getFileExtension(const std::string & filePath);
 	std::string getFileName(const std::string & filePath);
 	std::string getWorkingDirectory();
