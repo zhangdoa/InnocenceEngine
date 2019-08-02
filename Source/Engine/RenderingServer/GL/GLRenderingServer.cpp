@@ -489,6 +489,11 @@ bool GLRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 
 	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: TO ", l_rhs->m_TO, " is initialized.");
 
+	auto l_resourceBinder = addResourcesBinder();
+	l_resourceBinder->m_TO = l_rhs;
+	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
+	l_rhs->m_ResourceBinder = l_resourceBinder;
+
 	l_rhs->m_objectStatus = ObjectStatus::Activated;
 
 	m_initializedTextures.emplace(l_rhs);
@@ -503,42 +508,58 @@ bool GLRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * 
 		return true;
 	}
 
-	if (rhs->m_normalTexture)
+	auto l_rhs = reinterpret_cast<GLMaterialDataComponent*>(rhs);
+	l_rhs->m_ResourceBinders.resize(5);
+
+	if (l_rhs->m_normalTexture)
 	{
-		InitializeTextureDataComponent(rhs->m_normalTexture);
+		InitializeTextureDataComponent(l_rhs->m_normalTexture);
+		l_rhs->m_ResourceBinders[0] = l_rhs->m_normalTexture->m_ResourceBinder;
 	}
-	if (rhs->m_albedoTexture)
+	else
 	{
-		InitializeTextureDataComponent(rhs->m_albedoTexture);
+		l_rhs->m_ResourceBinders[0] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Normal)->m_ResourceBinder;
 	}
-	if (rhs->m_metallicTexture)
+	if (l_rhs->m_albedoTexture)
 	{
-		InitializeTextureDataComponent(rhs->m_metallicTexture);
+		InitializeTextureDataComponent(l_rhs->m_albedoTexture);
+		l_rhs->m_ResourceBinders[1] = l_rhs->m_albedoTexture->m_ResourceBinder;
 	}
-	if (rhs->m_roughnessTexture)
+	else
 	{
-		InitializeTextureDataComponent(rhs->m_roughnessTexture);
+		l_rhs->m_ResourceBinders[1] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Albedo)->m_ResourceBinder;
 	}
-	if (rhs->m_aoTexture)
+	if (l_rhs->m_metallicTexture)
 	{
-		InitializeTextureDataComponent(rhs->m_aoTexture);
+		InitializeTextureDataComponent(l_rhs->m_metallicTexture);
+		l_rhs->m_ResourceBinders[2] = l_rhs->m_metallicTexture->m_ResourceBinder;
+	}
+	else
+	{
+		l_rhs->m_ResourceBinders[2] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Metallic)->m_ResourceBinder;
+	}
+	if (l_rhs->m_roughnessTexture)
+	{
+		InitializeTextureDataComponent(l_rhs->m_roughnessTexture);
+		l_rhs->m_ResourceBinders[3] = l_rhs->m_roughnessTexture->m_ResourceBinder;
+	}
+	else
+	{
+		l_rhs->m_ResourceBinders[3] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Roughness)->m_ResourceBinder;
+	}
+	if (l_rhs->m_aoTexture)
+	{
+		InitializeTextureDataComponent(l_rhs->m_aoTexture);
+		l_rhs->m_ResourceBinders[4] = l_rhs->m_aoTexture->m_ResourceBinder;
+	}
+	else
+	{
+		l_rhs->m_ResourceBinders[4] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::AmbientOcclusion)->m_ResourceBinder;
 	}
 
-	rhs->m_ResourceBinders.resize(5);
-	for (size_t i = 0; i < 5; i++)
-	{
-		rhs->m_ResourceBinders[i] = addResourcesBinder();
-		rhs->m_ResourceBinders[i]->m_ResourceBinderType = ResourceBinderType::Image;
-	}
-	reinterpret_cast<GLResourceBinder*>(rhs->m_ResourceBinders[0])->m_TO = rhs->m_normalTexture;
-	reinterpret_cast<GLResourceBinder*>(rhs->m_ResourceBinders[1])->m_TO = rhs->m_albedoTexture;
-	reinterpret_cast<GLResourceBinder*>(rhs->m_ResourceBinders[2])->m_TO = rhs->m_metallicTexture;
-	reinterpret_cast<GLResourceBinder*>(rhs->m_ResourceBinders[3])->m_TO = rhs->m_roughnessTexture;
-	reinterpret_cast<GLResourceBinder*>(rhs->m_ResourceBinders[4])->m_TO = rhs->m_aoTexture;
+	l_rhs->m_objectStatus = ObjectStatus::Activated;
 
-	rhs->m_objectStatus = ObjectStatus::Activated;
-
-	m_initializedMaterials.emplace(rhs);
+	m_initializedMaterials.emplace(l_rhs);
 
 	return true;
 }

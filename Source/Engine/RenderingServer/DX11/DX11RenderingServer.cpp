@@ -714,6 +714,11 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 		InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: UAV: ", l_rhs->m_SRV, " is initialized.");
 	}
 
+	auto l_resourceBinder = addResourcesBinder();
+	l_resourceBinder->m_TextureSRV = l_rhs->m_SRV;
+	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
+	l_rhs->m_ResourceBinder = l_resourceBinder;
+
 	l_rhs->m_objectStatus = ObjectStatus::Activated;
 
 	m_initializedTextures.emplace(l_rhs);
@@ -730,56 +735,51 @@ bool DX11RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 
 	auto l_rhs = reinterpret_cast<DX11MaterialDataComponent*>(rhs);
 	l_rhs->m_ResourceBinders.resize(5);
-	for (size_t i = 0; i < 5; i++)
-	{
-		l_rhs->m_ResourceBinders[i] = addResourcesBinder();
-		l_rhs->m_ResourceBinders[i]->m_ResourceBinderType = ResourceBinderType::Image;
-	}
 
 	if (l_rhs->m_normalTexture)
 	{
 		InitializeTextureDataComponent(l_rhs->m_normalTexture);
-		reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinders[0])->m_TextureSRV = reinterpret_cast<DX11TextureDataComponent*>(l_rhs->m_normalTexture)->m_SRV;
+		l_rhs->m_ResourceBinders[0] = l_rhs->m_normalTexture->m_ResourceBinder;
 	}
 	else
 	{
-		reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinders[0])->m_TextureSRV = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Normal))->m_SRV;
+		l_rhs->m_ResourceBinders[0] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Normal)->m_ResourceBinder;
 	}
 	if (l_rhs->m_albedoTexture)
 	{
 		InitializeTextureDataComponent(l_rhs->m_albedoTexture);
-		reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinders[1])->m_TextureSRV = reinterpret_cast<DX11TextureDataComponent*>(l_rhs->m_albedoTexture)->m_SRV;
+		l_rhs->m_ResourceBinders[1] = l_rhs->m_albedoTexture->m_ResourceBinder;
 	}
 	else
 	{
-		reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinders[1])->m_TextureSRV = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Albedo))->m_SRV;
+		l_rhs->m_ResourceBinders[1] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Albedo)->m_ResourceBinder;
 	}
 	if (l_rhs->m_metallicTexture)
 	{
 		InitializeTextureDataComponent(l_rhs->m_metallicTexture);
-		reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinders[2])->m_TextureSRV = reinterpret_cast<DX11TextureDataComponent*>(l_rhs->m_metallicTexture)->m_SRV;
+		l_rhs->m_ResourceBinders[2] = l_rhs->m_metallicTexture->m_ResourceBinder;
 	}
 	else
 	{
-		reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinders[2])->m_TextureSRV = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Metallic))->m_SRV;
+		l_rhs->m_ResourceBinders[2] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Metallic)->m_ResourceBinder;
 	}
 	if (l_rhs->m_roughnessTexture)
 	{
 		InitializeTextureDataComponent(l_rhs->m_roughnessTexture);
-		reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinders[3])->m_TextureSRV = reinterpret_cast<DX11TextureDataComponent*>(l_rhs->m_roughnessTexture)->m_SRV;
+		l_rhs->m_ResourceBinders[3] = l_rhs->m_roughnessTexture->m_ResourceBinder;
 	}
 	else
 	{
-		reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinders[3])->m_TextureSRV = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Roughness))->m_SRV;
+		l_rhs->m_ResourceBinders[3] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Roughness)->m_ResourceBinder;
 	}
 	if (l_rhs->m_aoTexture)
 	{
 		InitializeTextureDataComponent(l_rhs->m_aoTexture);
-		reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinders[4])->m_TextureSRV = reinterpret_cast<DX11TextureDataComponent*>(l_rhs->m_aoTexture)->m_SRV;
+		l_rhs->m_ResourceBinders[4] = l_rhs->m_aoTexture->m_ResourceBinder;
 	}
 	else
 	{
-		reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinders[4])->m_TextureSRV = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::AmbientOcclusion))->m_SRV;
+		l_rhs->m_ResourceBinders[4] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::AmbientOcclusion)->m_ResourceBinder;
 	}
 
 	l_rhs->m_objectStatus = ObjectStatus::Activated;
