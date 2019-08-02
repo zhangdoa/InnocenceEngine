@@ -1,5 +1,5 @@
 // shadertype=hlsl
-#include "common.hlsl"
+#include "comon/common.hlsl"
 
 struct PixelInputType
 {

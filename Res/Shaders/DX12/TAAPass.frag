@@ -1,4 +1,5 @@
 // shadertype=hlsl
+#include "comon/common.hlsl"
 
 #define Use_YCoCg 0
 Texture2D in_preTAAPassRT0 : register(t0);
@@ -28,7 +29,7 @@ float3 RGB_YCoCg(float3 c)
 		c.x / 4.0 + c.y / 2.0 + c.z / 4.0,
 		c.x / 2.0 - c.z / 2.0,
 		-c.x / 4.0 + c.y / 2.0 - c.z / 4.0
-		);
+	);
 }
 
 // [https://software.intel.com/en-us/node/503873]
@@ -41,7 +42,7 @@ float3 YCoCg_RGB(float3 c)
 		c.x + c.y - c.z,
 		c.x + c.z,
 		c.x - c.y - c.z
-		);
+	);
 }
 
 float luma(float3 color)

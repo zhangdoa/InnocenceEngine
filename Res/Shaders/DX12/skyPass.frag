@@ -1,5 +1,5 @@
 // shadertype=hlsl
-#include "common.hlsl"
+#include "comon/common.hlsl"
 
 struct PixelInputType
 {
@@ -60,7 +60,7 @@ float2 rsi(float3 r0, float3 rd, float sr) {
 	return float2(
 		(-b - sqrt(d)) / (2.0*a),
 		(-b + sqrt(d)) / (2.0*a)
-		);
+	);
 }
 
 //https://github.com/wwwtyro/glsl-atmosphere

@@ -1,5 +1,5 @@
 // shadertype=hlsl
-#include "common.hlsl"
+#include "comon/common.hlsl"
 
 struct PixelInputType
 {
@@ -8,7 +8,7 @@ struct PixelInputType
 };
 
 Texture2D basePassRT0 : register(t0);
-SamplerState SamplerTypePoint: register(s0);
+SamplerState SamplerTypePoint : register(s0);
 
 //Academy Color Encoding System
 //http://www.oscars.org/science-technology/sci-tech-projects/aces
@@ -25,12 +25,12 @@ float4 main(PixelInputType input) : SV_TARGET
 {
 	float3 finalColor = basePassRT0.Sample(SamplerTypePoint, input.texcoord).xyz;
 
-	//HDR to LDR
-	finalColor = acesFilm(finalColor);
+//HDR to LDR
+finalColor = acesFilm(finalColor);
 
-	//gamma correction
-	float gammaRatio = 1.0 / 2.2;
-	finalColor = pow(finalColor, float3(gammaRatio, gammaRatio, gammaRatio));
+//gamma correction
+float gammaRatio = 1.0 / 2.2;
+finalColor = pow(finalColor, float3(gammaRatio, gammaRatio, gammaRatio));
 
-	return float4(finalColor, 1.0f);
+return float4(finalColor, 1.0f);
 }

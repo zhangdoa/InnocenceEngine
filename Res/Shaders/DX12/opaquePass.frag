@@ -1,5 +1,5 @@
 // shadertype=hlsl
-#include "common.hlsl"
+#include "comon/common.hlsl"
 
 Texture2D t2d_normal : register(t0);
 Texture2D t2d_albedo : register(t1);
