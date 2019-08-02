@@ -1,6 +1,6 @@
 // shadertype=glsl
-#include "common.glsl"
-#include "utility.glsl"
+#include "common/common.glsl"
+#include "common/utility.glsl"
 
 layout(local_size_x = BLOCK_SIZE, local_size_y = BLOCK_SIZE, local_size_z = 1) in;
 

@@ -68,4 +68,4 @@ const int NR_POINT_LIGHTS = 1024;
 const int NR_SPHERE_LIGHTS = 128;
 const int NR_CSM_SPLITS = 4;
 
-#include "UBO.glsl"
+#include "common/UBO.glsl"

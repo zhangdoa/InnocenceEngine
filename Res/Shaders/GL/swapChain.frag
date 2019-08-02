@@ -1,5 +1,5 @@
 // shadertype=glsl
-#include "common.glsl"
+#include "common/common.glsl"
 
 layout(location = 0) in vec2 TexCoords;
 layout(location = 0) out vec4 FragColor;

@@ -1,5 +1,5 @@
 // shadertype=glsl
-#include "common.glsl"
+#include "common/common.glsl"
 
 layout(location = 0) uniform uint uni_volumeDimension;
 layout(location = 0) out vec3 TexCoord;

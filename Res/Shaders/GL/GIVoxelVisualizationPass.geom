@@ -1,5 +1,5 @@
 // shadertype=glsl
-#include "common.glsl"
+#include "common/common.glsl"
 
 layout(points) in;
 layout(triangle_strip, max_vertices = 36) out;

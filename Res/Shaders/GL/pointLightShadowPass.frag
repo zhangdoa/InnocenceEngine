@@ -1,5 +1,5 @@
 // shadertype=glsl
-#include "common.glsl"
+#include "common/common.glsl"
 layout(location = 0) out vec2 uni_shadowPassRT0;
 
 layout(location = 0) in vec4 FragPos;

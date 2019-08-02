@@ -1,5 +1,5 @@
 // shadertype=glsl
-#include "common.glsl"
+#include "common/common.glsl"
 layout(location = 0) out vec4 uni_geometryPassRT0;
 layout(location = 1) out vec4 uni_geometryPassRT1;
 layout(location = 2) out vec4 uni_geometryPassRT2;

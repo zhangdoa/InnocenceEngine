@@ -1,6 +1,6 @@
 // shadertype=glsl
-#include "common.glsl"
-#include "BRDF.glsl"
+#include "common/common.glsl"
+#include "common/BRDF.glsl"
 
 layout(location = 0, index = 0) out vec4 uni_transparentPassRT0;
 layout(location = 0, index = 1) out vec4 uni_transparentPassRT1;

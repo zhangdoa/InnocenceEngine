@@ -1,5 +1,5 @@
 // shadertype=glsl
-#include "common.glsl"
+#include "common/common.glsl"
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
 layout(binding = 0) uniform sampler3D voxelAlbedo;
@@ -96,7 +96,7 @@ void main()
 	// voxel color
 	vec4 albedo = texelFetch(voxelAlbedo, writePos, 0);
 
-	if (albedo.a < EPSILON) { return; }
+	if (albedo.a < eps) { return; }
 	albedo.a = 1.0f;
 
 	// voxel normal in 0-1 range

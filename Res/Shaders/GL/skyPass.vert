@@ -1,5 +1,5 @@
 // shadertype=glsl
-#include "common.glsl"
+#include "common/common.glsl"
 layout(location = 0) in vec4 inPosition;
 layout(location = 1) in vec2 inTexCoord;
 layout(location = 2) in vec2 inPad1;

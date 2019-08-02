@@ -1,7 +1,7 @@
 // shadertype=glsl
-#include "common.glsl"
-#include "BRDF.glsl"
-#include "utility.glsl"
+#include "common/common.glsl"
+#include "common/BRDF.glsl"
+#include "common/utility.glsl"
 
 layout(location = 0) in vec2 TexCoords;
 
@@ -22,7 +22,7 @@ layout(location = 11, binding = 11) uniform sampler2D uni_depth;
 
 layout(binding = 0, rgba16f) uniform image2D uni_lightGrid;
 
-#include "shadowResolver.glsl"
+#include "common/shadowResolver.glsl"
 
 // ----------------------------------------------------------------------------
 vec3 getIlluminance(float NdotV, float LdotH, float NdotH, float NdotL, float roughness, vec3 F0, vec3 Albedo, vec3 lightLuminance)

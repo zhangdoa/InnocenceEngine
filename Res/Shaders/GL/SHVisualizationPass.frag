@@ -1,5 +1,5 @@
 // shadertype=glsl
-#include "common.glsl"
+#include "common/common.glsl"
 layout(location = 0) out vec4 uni_SHVisualization;
 layout(location = 0) in vec3 thefrag_Normal;
 
