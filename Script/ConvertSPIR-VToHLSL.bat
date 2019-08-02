@@ -1,4 +1,4 @@
-mkdir ../Res/Shaders/Converted
+mkdir ..\Res\Shaders\Converted
 cd ../Res/Shaders/Converted
 del /S /Q *.*
 

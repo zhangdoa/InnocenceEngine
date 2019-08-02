@@ -1,4 +1,4 @@
-mkdir ../Res/Shaders/SPIRV
+mkdir ..\Res\Shaders\SPIRV
 cd ../Res/Shaders/SPIRV
 del /S /Q *.spv
 
