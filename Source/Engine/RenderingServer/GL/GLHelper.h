@@ -31,7 +31,6 @@ namespace GLHelper
 	bool GenerateRasterizerState(RasterizerDesc rasterizerDesc, GLPipelineStateObject* PSO);
 	bool GenerateViewportState(ViewportDesc viewportDesc, GLPipelineStateObject* PSO);
 
-	std::string LoadShaderFile(const std::string& path);
 	bool AddShaderHandle(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderStage, const ShaderFilePath& shaderFilePath);
 	bool ActivateTexture(GLTextureDataComponent * GLTDC, int activateIndex);
 

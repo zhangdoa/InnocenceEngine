@@ -65,7 +65,7 @@ vec4 CalculateDirectLighting(vec3 position, vec3 normal, vec3 albedo)
 	position = position + normal * voxelWorldSize * 0.5f;
 
 	// calculate lighting for directional lights
-	current = CalculateDirectional(uni_dirLight, normal, position, albedo);
+	current = CalculateDirectional(sunUBO.data, normal, position, albedo);
 	directLighting.rgb += current.rgb;
 	directLighting.a += current.a;
 	count++;

@@ -9,9 +9,9 @@ layout(location = 4) in vec4 inPad2;
 
 void main()
 {
-	vec4 posWS = uni_m * inPosition;
+	vec4 posWS = meshUBO.m * inPosition;
 
-	vec4 posVS = uni_r_camera * uni_t_camera * posWS;
+	vec4 posVS = cameraUBO.r * cameraUBO.t * posWS;
 
-	gl_Position = uni_p_camera_jittered * posVS;
+	gl_Position = cameraUBO.p_jittered * posVS;
 }

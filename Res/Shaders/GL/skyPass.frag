@@ -5,12 +5,12 @@ layout(location = 0) out vec4 uni_skyPassRT0;
 layout(location = 0) in vec3 TexCoords;
 
 vec3 get_world_normal() {
-	vec2 frag_coord = gl_FragCoord.xy / uni_viewportSize;
+	vec2 frag_coord = gl_FragCoord.xy / skyUBO.viewportSize;
 	frag_coord = (frag_coord - 0.5) * 2.0;
 	vec4 device_normal = vec4(frag_coord, 0.0, 1.0);
-	vec4 eye_normal = uni_p_inv * device_normal;
+	vec4 eye_normal = skyUBO.p_inv * device_normal;
 	eye_normal = eye_normal / eye_normal.w;
-	vec3 world_normal = normalize(uni_v_inv * eye_normal).xyz;
+	vec3 world_normal = normalize(skyUBO.v_inv * eye_normal).xyz;
 	return world_normal;
 }
 
@@ -144,10 +144,10 @@ void main()
 	vec3 color = vec3(0.0);
 
 	vec3 eyedir = get_world_normal();
-	vec3 lightdir = -uni_dirLight.direction.xyz;
+	vec3 lightdir = -sunUBO.data.direction.xyz;
 	float planetRadius = 6371e3;
 	float atmosphereHeight = 100e3;
-	vec3 eye_position = uni_globalPos.xyz + vec3(0.0, planetRadius, 0.0);
+	vec3 eye_position = cameraUBO.globalPos.xyz + vec3(0.0, planetRadius, 0.0);
 
 	color = atmosphere(
 		eyedir,           // normalized ray direction

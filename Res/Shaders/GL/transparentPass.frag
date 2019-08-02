@@ -30,17 +30,17 @@ void main()
 	WorldSpaceNormal = normalize(TBN * vec3(0.0f, 0.0f, 1.0f));
 
 	N = WorldSpaceNormal;
-	vec3 V = normalize(uni_globalPos.xyz - thefrag_WorldSpacePos.xyz);
-	vec3 L = normalize(-uni_dirLight.direction.xyz);
+	vec3 V = normalize(cameraUBO.globalPos.xyz - thefrag_WorldSpacePos.xyz);
+	vec3 L = normalize(-sunUBO.data.direction.xyz);
 	vec3 H = normalize(V + L);
 	float NdotV = max(dot(N, V), 0.0);
 	float NdotH = max(dot(N, H), 0.0);
 	float NdotL = max(dot(N, L), 0.0);
 
-	vec3 F0 = uni_albedo.rgb;
+	vec3 F0 = materialUBO.Albedo.rgb;
 
 	// Specular BRDF
-	float roughness = uni_MRAT.y;
+	float roughness = materialUBO.MRAT.y;
 	float f90 = 1.0;
 	vec3 F = fr_F_Schlick(F0, f90, NdotV);
 	float G = Unreal_GeometrySmith(NdotV, NdotL, roughness);
@@ -48,7 +48,7 @@ void main()
 	vec3 Frss = F * D * G / PI;
 
 	// "Real-Time Rendering", 4th edition, pg. 624, "14.5.1 Coverage and Transmittance"
-	float thickness = uni_MRAT.w;
+	float thickness = materialUBO.MRAT.w;
 	float d = thickness / max(NdotV, eps);
 
 	// transmittance luminance defined as "F0/albedo"
@@ -57,9 +57,9 @@ void main()
 	vec3 Tr = exp(-sigma * d);
 
 	// surface radiance
-	vec3 Cs = Frss * uni_dirLight.luminance.xyz * uni_albedo.rgb;
+	vec3 Cs = Frss * sunUBO.data.luminance.xyz * materialUBO.Albedo.rgb;
 
-	uni_transparentPassRT0 = vec4(Cs, uni_albedo.a);
+	uni_transparentPassRT0 = vec4(Cs, materialUBO.Albedo.a);
 	// alpha channel as the mask
-	uni_transparentPassRT1 = vec4((1.0f - uni_albedo.a + Tr * uni_albedo.a), 1.0f);
+	uni_transparentPassRT1 = vec4((1.0f - materialUBO.Albedo.a + Tr * materialUBO.Albedo.a), 1.0f);
 }

@@ -66,12 +66,12 @@ float DirectionalLightShadow(vec3 fragPos)
 	int splitIndex = NR_CSM_SPLITS;
 	for (int i = 0; i < NR_CSM_SPLITS; i++)
 	{
-		if (fragPos.x >= uni_CSMs[i].AABBMin.x &&
-			fragPos.y >= uni_CSMs[i].AABBMin.y &&
-			fragPos.z >= uni_CSMs[i].AABBMin.z &&
-			fragPos.x <= uni_CSMs[i].AABBMax.x &&
-			fragPos.y <= uni_CSMs[i].AABBMax.y &&
-			fragPos.z <= uni_CSMs[i].AABBMax.z)
+		if (fragPos.x >= CSMUBO.data[i].AABBMin.x &&
+			fragPos.y >= CSMUBO.data[i].AABBMin.y &&
+			fragPos.z >= CSMUBO.data[i].AABBMin.z &&
+			fragPos.x <= CSMUBO.data[i].AABBMax.x &&
+			fragPos.y <= CSMUBO.data[i].AABBMax.y &&
+			fragPos.z <= CSMUBO.data[i].AABBMax.z)
 		{
 			splitIndex = i;
 			break;
@@ -86,7 +86,7 @@ float DirectionalLightShadow(vec3 fragPos)
 	}
 	else
 	{
-		vec4 lightSpacePos = uni_CSMs[splitIndex].p * uni_CSMs[splitIndex].v * vec4(fragPos, 1.0f);
+		vec4 lightSpacePos = CSMUBO.data[splitIndex].p * CSMUBO.data[splitIndex].v * vec4(fragPos, 1.0f);
 		lightSpacePos = lightSpacePos / lightSpacePos.w;
 		projCoords = lightSpacePos.xyz;
 
@@ -119,9 +119,9 @@ float DirectionalLightShadow(vec3 fragPos)
 // ----------------------------------------------------------------------------
 float PointLightShadow(vec3 fragPos)
 {
-	vec3 fragToLight = fragPos - uni_pointLights[0].position.xyz;
+	vec3 fragToLight = fragPos - pointLightUBO.data[0].position.xyz;
 	float currentDepth = length(fragToLight);
-	float lightRadius = uni_pointLights[0].luminance.w;
+	float lightRadius = pointLightUBO.data[0].luminance.w;
 
 	if (currentDepth > lightRadius)
 	{
@@ -137,6 +137,6 @@ float PointLightShadow(vec3 fragPos)
 // ----------------------------------------------------------------------------
 float linearDepth(float depthSample)
 {
-	float zLinear = zNear * zFar / (zFar + zNear - depthSample * (zFar - zNear));
+	float zLinear = cameraUBO.zNear * cameraUBO.zFar / (cameraUBO.zFar + cameraUBO.zNear - depthSample * (cameraUBO.zFar - cameraUBO.zNear));
 	return zLinear;
 }

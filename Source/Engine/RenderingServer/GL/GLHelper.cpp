@@ -7,7 +7,7 @@ extern IModuleManager* g_pModuleManager;
 
 namespace GLHelper
 {
-	const char* m_shaderRelativePath = "Res//Shaders//GL//";
+	const char* m_shaderRelativePath = "Res//Shaders//SPIRV//";
 }
 
 GLTextureDataDesc GLHelper::GetGLTextureDataDesc(TextureDataDesc textureDataDesc)
@@ -765,78 +765,6 @@ bool GLHelper::GenerateViewportState(ViewportDesc viewportDesc, GLPipelineStateO
 	return true;
 }
 
-std::string GLHelper::LoadShaderFile(const std::string & path)
-{
-	auto f_findIncludeFilePath = [](const std::string & content) {
-		auto l_includePos = content.find("#include ");
-		return l_includePos;
-	};
-
-	auto f_findGLSLExtensionPos = [](const std::string & content) {
-		size_t l_glslExtensionPos = std::string::npos;
-
-		l_glslExtensionPos = content.find(".glsl");
-		if (l_glslExtensionPos != std::string::npos)
-		{
-			return l_glslExtensionPos;
-		}
-
-		l_glslExtensionPos = content.find(".vert");
-		if (l_glslExtensionPos != std::string::npos)
-		{
-			return l_glslExtensionPos;
-		}
-
-		l_glslExtensionPos = content.find(".tesc");
-		if (l_glslExtensionPos != std::string::npos)
-		{
-			return l_glslExtensionPos;
-		}
-
-		l_glslExtensionPos = content.find(".tese");
-		if (l_glslExtensionPos != std::string::npos)
-		{
-			return l_glslExtensionPos;
-		}
-
-		l_glslExtensionPos = content.find(".geom");
-		if (l_glslExtensionPos != std::string::npos)
-		{
-			return l_glslExtensionPos;
-		}
-
-		l_glslExtensionPos = content.find(".frag");
-		if (l_glslExtensionPos != std::string::npos)
-		{
-			return l_glslExtensionPos;
-		}
-
-		l_glslExtensionPos = content.find(".comp");
-		if (l_glslExtensionPos != std::string::npos)
-		{
-			return l_glslExtensionPos;
-		}
-
-		return l_glslExtensionPos;
-	};
-
-	auto l_rawContent = g_pModuleManager->getFileSystem()->loadFile((m_shaderRelativePath + path), IOMode::Text);
-
-	std::string l_content = &l_rawContent[0];
-	auto l_includePos = f_findIncludeFilePath(l_content);
-
-	while (l_includePos != std::string::npos)
-	{
-		auto l_GLSLExtensionPos = f_findGLSLExtensionPos(l_content);
-		auto l_includedFileName = l_content.substr(l_includePos + 10, l_GLSLExtensionPos - 5 - l_includePos);
-		l_content.replace(l_includePos, l_GLSLExtensionPos - l_includePos + 6, LoadShaderFile(l_includedFileName));
-
-		l_includePos = f_findIncludeFilePath(l_content);
-	}
-
-	return l_content;
-}
-
 bool GLHelper::AddShaderHandle(GLuint & shaderProgram, GLuint & shaderID, GLuint shaderStage, const ShaderFilePath & shaderFilePath)
 {
 	// Create shader object
@@ -851,45 +779,19 @@ bool GLHelper::AddShaderHandle(GLuint & shaderProgram, GLuint & shaderID, GLuint
 	}
 
 	// load shader
-	if (shaderFilePath.find(".spv"))
+	auto l_shaderCodeContent = g_pModuleManager->getFileSystem()->loadFile(m_shaderRelativePath + std::string(shaderFilePath.c_str()) + ".spv", IOMode::Binary);
+
+	if (l_shaderCodeContent.empty())
 	{
-		auto l_shaderCodeContent = g_pModuleManager->getFileSystem()->loadFile(m_shaderRelativePath + std::string(shaderFilePath.c_str()), IOMode::Binary);
-
-		if (l_shaderCodeContent.empty())
-		{
-			InnoLogger::Log(LogLevel::Error, "GLRenderingServer: ", shaderFilePath.c_str(), " content is empty!");
-			return false;
-		}
-
-		// Apply the SPIR-V to the shader object.
-		glShaderBinary(1, &shaderID, GL_SHADER_BINARY_FORMAT_SPIR_V, l_shaderCodeContent.data(), (GLsizei)l_shaderCodeContent.size());
-
-		// Specialize the shader.
-		glSpecializeShader(shaderID, "main", 0, 0, 0);
+		InnoLogger::Log(LogLevel::Error, "GLRenderingServer: ", shaderFilePath.c_str(), " content is empty!");
+		return false;
 	}
-	else
-	{
-		auto l_shaderCodeContent = LoadShaderFile(std::string(shaderFilePath.c_str()));
 
-		if (l_shaderCodeContent.empty())
-		{
-			InnoLogger::Log(LogLevel::Error, "GLRenderingServer: ", shaderFilePath.c_str(), " content is empty!");
-			return false;
-		}
+	// Apply the SPIR-V to the shader object.
+	glShaderBinary(1, &shaderID, GL_SHADER_BINARY_FORMAT_SPIR_V, l_shaderCodeContent.data(), (GLsizei)l_shaderCodeContent.size());
 
-#ifdef _DEBUG
-		std::ofstream m_debugExportFile;
-		m_debugExportFile.open(g_pModuleManager->getFileSystem()->getWorkingDirectory() + "Res//Intermediate//Shaders//GL//" + std::string(shaderFilePath.c_str()));
-		m_debugExportFile << l_shaderCodeContent;
-		m_debugExportFile.close();
-#endif // _DEBUG
-
-		const char* l_sourcePointer = l_shaderCodeContent.c_str();
-
-		glShaderSource(shaderID, 1, &l_sourcePointer, NULL);
-
-		glCompileShader(shaderID);
-	}
+	// Specialize the shader.
+	glSpecializeShader(shaderID, "main", 0, 0, 0);
 
 	// Validate shader
 	GLint l_validationResult = GL_FALSE;

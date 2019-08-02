@@ -48,7 +48,7 @@ vec4 RG32UI2RGBA16F(uvec2 rhs)
 void main()
 {
 	// Calculate min & max depth in threadgroup / tile.
-	vec2 readTextureCoord = vec2(gl_GlobalInvocationID.xy) / uni_viewportSize;
+	vec2 readTextureCoord = vec2(gl_GlobalInvocationID.xy) / skyUBO.viewportSize;
 
 	uint uDepth = texture(depthTexture, readTextureCoord).r;
 
@@ -62,7 +62,7 @@ void main()
 		l_uMaxDepth = 0;
 		l_LightCount = 0;
 		l_LightIndexStartOffset = 0;
-		l_TileFrustum = gridFrustums[gl_WorkGroupID.x + (gl_WorkGroupID.y * numThreadGroups.x)];
+		l_TileFrustum = gridFrustumsSSBO.data[gl_WorkGroupID.x + (gl_WorkGroupID.y * dispatchParamsUBO.numThreadGroups.x)];
 	}
 
 	groupMemoryBarrier();
@@ -77,10 +77,10 @@ void main()
 	float fMaxDepth = uintBitsToFloat(l_uMaxDepth);
 
 	// Convert depth values to view space.
-	float minDepthVS = ClipToView(vec4(0, 0, fMinDepth, 1), uni_p_inv).z;
-	float maxDepthVS = ClipToView(vec4(0, 0, fMaxDepth, 1), uni_p_inv).z;
-	float nearClipVS = ClipToView(vec4(0, 0, -1, 1), uni_p_inv).z;
-	float farClipVS = ClipToView(vec4(0, 0, 1, 1), uni_p_inv).z;
+	float minDepthVS = ClipToView(vec4(0, 0, fMinDepth, 1), skyUBO.p_inv).z;
+	float maxDepthVS = ClipToView(vec4(0, 0, fMaxDepth, 1), skyUBO.p_inv).z;
+	float nearClipVS = ClipToView(vec4(0, 0, -1, 1), skyUBO.p_inv).z;
+	float farClipVS = ClipToView(vec4(0, 0, 1, 1), skyUBO.p_inv).z;
 
 	// Clipping plane for minimum depth value
 	Plane minPlane = { vec3(0, 0, -1), -minDepthVS };
@@ -88,12 +88,12 @@ void main()
 	// Cull point light
 	for (uint i = gl_LocalInvocationIndex; i < NR_POINT_LIGHTS; i += BLOCK_SIZE * BLOCK_SIZE)
 	{
-		pointLight light = uni_pointLights[i];
+		pointLight light = pointLightUBO.data[i];
 		// w component of luminance is the attenuation radius
 		if (light.luminance.w > 0.0f)
 		{
-			vec4 lightPos_VS = uni_t_camera * light.position;
-			lightPos_VS = uni_r_camera * lightPos_VS;
+			vec4 lightPos_VS = cameraUBO.t * light.position;
+			lightPos_VS = cameraUBO.r * lightPos_VS;
 			Sphere sphere = { lightPos_VS.xyz, light.luminance.w };
 			if (SphereInsideFrustum(sphere, l_TileFrustum, nearClipVS, farClipVS))
 			{
@@ -110,8 +110,8 @@ void main()
 	// Only local thread 0 could write to the global light index counter and light grid
 	if (gl_LocalInvocationIndex == 0)
 	{
-		l_LightIndexStartOffset = lightListIndexCounter;
-		atomicAdd(lightListIndexCounter, l_LightCount);
+		l_LightIndexStartOffset = lightListIndexCounterSSBO.data;
+		atomicAdd(lightListIndexCounterSSBO.data, l_LightCount);
 		uvec2 l_lightGridValueOrig = uvec2(l_LightIndexStartOffset, l_LightCount);
 		vec4 l_lightGridValueWrite = RG32UI2RGBA16F(l_lightGridValueOrig);
 		imageStore(uni_lightGrid, ivec2(gl_WorkGroupID.xy), l_lightGridValueWrite);
@@ -122,7 +122,7 @@ void main()
 	// Write to global light index list
 	for (uint i = gl_LocalInvocationIndex; i < l_LightCount; i += BLOCK_SIZE * BLOCK_SIZE)
 	{
-		lightIndexList[l_LightIndexStartOffset + i] = l_LightList[i];
+		lightIndexListSSBO.data[l_LightIndexStartOffset + i] = l_LightList[i];
 	}
 
 	// Write to debug heat map texture

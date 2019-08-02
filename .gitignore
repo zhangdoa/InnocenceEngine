@@ -31,9 +31,18 @@ xcuserdata/
 
 # Intermediate code and assets
 /Source/Engine/Common/Config.h
-*.spv
-/Res/ConvertedAssets
+
 /Res/Logs/*
+/Res/ConvertedAssets/*
+/Res/Shaders/Parsed/*
+/Res/Shaders/Converted/*
+/Res/Intermediate/*
+
+*.spv
+*.InnoBrick
+*.InnoBrickFactor
+*.InnoProbe
+*.InnoSurfel
 
 # For Qt
 /Source/Editor/InnocenceEditor/darkstyle/
@@ -48,13 +57,3 @@ xcuserdata/
 
 #Packaged files
 /Package/*
-
-#Intermediate files
-/Res/Intermediate/*
-*.InnoBrick
-
-*.InnoBrickFactor
-
-*.InnoProbe
-
-*.InnoSurfel

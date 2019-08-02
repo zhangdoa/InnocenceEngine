@@ -1,88 +1,88 @@
-layout(std140, row_major, binding = 0) uniform cameraUBO
+layout(std140, row_major, binding = 0) uniform cameraUBOBlock
 {
-	mat4 uni_p_camera_original;
-	mat4 uni_p_camera_jittered;
-	mat4 uni_r_camera;
-	mat4 uni_t_camera;
-	mat4 uni_r_camera_prev;
-	mat4 uni_t_camera_prev;
-	vec4 uni_globalPos;
+	mat4 p_original;
+	mat4 p_jittered;
+	mat4 r;
+	mat4 t;
+	mat4 r_prev;
+	mat4 t_prev;
+	vec4 globalPos;
 	float WHRatio;
 	float zNear;
 	float zFar;
-};
+} cameraUBO;
 
-layout(std140, row_major, binding = 1) uniform meshUBO
+layout(std140, row_major, binding = 1) uniform meshUBOBlock
 {
-	mat4 uni_m;
-	mat4 uni_m_prev;
-	mat4 uni_normalMat;
-	float uni_UUID;
-};
+	mat4 m;
+	mat4 m_prev;
+	mat4 normalMat;
+	float UUID;
+} meshUBO;
 
-layout(std140, row_major, binding = 2) uniform materialUBO
+layout(std140, row_major, binding = 2) uniform materialUBOBlock
 {
-	vec4 uni_albedo;
-	vec4 uni_MRAT;
-	bool uni_useNormalTexture;
-	bool uni_useAlbedoTexture;
-	bool uni_useMetallicTexture;
-	bool uni_useRoughnessTexture;
-	bool uni_useAOTexture;
-	int uni_materialType;
-};
+	vec4 Albedo;
+	vec4 MRAT;
+	bool useNormalTexture;
+	bool useAlbedoTexture;
+	bool useMetallicTexture;
+	bool useRoughnessTexture;
+	bool useAOTexture;
+	int materialType;
+} materialUBO;
 
-layout(std140, row_major, binding = 3) uniform sunUBO
+layout(std140, row_major, binding = 3) uniform sunUBOBlock
 {
-	dirLight uni_dirLight;
-};
+	dirLight data;
+} sunUBO;
 
-layout(std140, row_major, binding = 4) uniform pointLightUBO
+layout(std140, row_major, binding = 4) uniform pointLightUBOBlock
 {
-	pointLight uni_pointLights[NR_POINT_LIGHTS];
-};
+	pointLight data[NR_POINT_LIGHTS];
+} pointLightUBO;
 
-layout(std140, row_major, binding = 5) uniform sphereLightUBO
+layout(std140, row_major, binding = 5) uniform sphereLightUBOBlock
 {
-	sphereLight uni_sphereLights[NR_SPHERE_LIGHTS];
-};
+	sphereLight data[NR_SPHERE_LIGHTS];
+} sphereLightUBO;
 
-layout(std140, row_major, binding = 6) uniform CSMUBO
+layout(std140, row_major, binding = 6) uniform CSMUBOBlock
 {
-	CSM uni_CSMs[NR_CSM_SPLITS];
-};
+	CSM data[NR_CSM_SPLITS];
+} CSMUBO;
 
-layout(std140, row_major, binding = 7) uniform skyUBO
+layout(std140, row_major, binding = 7) uniform skyUBOBlock
 {
-	mat4 uni_p_inv;
-	mat4 uni_v_inv;
-	vec2 uni_viewportSize;
-};
+	mat4 p_inv;
+	mat4 v_inv;
+	vec2 viewportSize;
+} skyUBO;
 
-layout(std140, binding = 8) uniform dispatchParamsUBO
+layout(std140, binding = 8) uniform dispatchParamsUBOBlock
 {
 	uvec3 numThreadGroups;
-	uint dispatchParamsUBO_padding1;
+	uint padding1;
 	uvec3 numThreads;
-	uint dispatchParamsUBO_padding2;
-};
+	uint padding2;
+} dispatchParamsUBO;
 
-layout(std140, row_major, binding = 9) uniform SH9UBO
+layout(std140, row_major, binding = 9) uniform SH9UBOBlock
 {
-	SH9 uni_SH9[64];
-};
+	SH9 data[64];
+} SH9UBO;
 
-layout(std430, binding = 0) buffer gridFrustumsSSBO
+layout(std430, binding = 0) buffer gridFrustumsSSBOBlock
 {
-	Frustum gridFrustums[];
-};
+	Frustum data[];
+} gridFrustumsSSBO;
 
-layout(std430, binding = 1) buffer lightListIndexCounterSSBO
+layout(std430, binding = 1) buffer lightListIndexCounterSSBOBlock
 {
-	uint lightListIndexCounter;
-};
+	uint data;
+} lightListIndexCounterSSBO;
 
-layout(std430, binding = 2) buffer lightIndexListSSBO
+layout(std430, binding = 2) buffer lightIndexListSSBOBlock
 {
-	uint lightIndexList[];
-};
+	uint data[];
+} lightIndexListSSBO;

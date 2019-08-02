@@ -11,6 +11,6 @@ layout(location = 0) out vec3 TexCoords;
 void main()
 {
 	TexCoords = inPosition.xyz * -1.0;
-	vec4 pos = uni_p_camera_original * uni_r_camera * -1.0 * inPosition;
+	vec4 pos = cameraUBO.p_original * cameraUBO.r * -1.0 * inPosition;
 	gl_Position = pos.xyww;
 }

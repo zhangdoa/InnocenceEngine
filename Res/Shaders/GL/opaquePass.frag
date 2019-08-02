@@ -25,7 +25,7 @@ void main()
 	float transparency = 1.0;
 	vec3 MRA;
 
-	if (uni_useNormalTexture)
+	if (materialUBO.useNormalTexture)
 	{
 		// get edge vectors of the pixel triangle
 		vec3 dp1 = dFdx(thefrag_WorldSpacePos.xyz);
@@ -50,7 +50,7 @@ void main()
 		WorldSpaceNormal = normalize(thefrag_Normal);
 	}
 
-	if (uni_useAlbedoTexture)
+	if (materialUBO.useAlbedoTexture)
 	{
 		vec4 albedoTexture = texture(uni_albedoTexture, thefrag_TexCoord);
 		transparency = albedoTexture.a;
@@ -62,39 +62,39 @@ void main()
 	}
 	else
 	{
-		albedo = uni_albedo.rgb;
+		albedo = materialUBO.Albedo.rgb;
 	}
 
-	if (uni_useMetallicTexture)
+	if (materialUBO.useMetallicTexture)
 	{
 		MRA.r = texture(uni_metallicTexture, thefrag_TexCoord).r;
 	}
 	else
 	{
-		MRA.r = uni_MRAT.r;
+		MRA.r = materialUBO.MRAT.r;
 	}
 
-	if (uni_useRoughnessTexture)
+	if (materialUBO.useRoughnessTexture)
 	{
 		MRA.g = texture(uni_roughnessTexture, thefrag_TexCoord).r;
 	}
 	else
 	{
-		MRA.g = uni_MRAT.g;
+		MRA.g = materialUBO.MRAT.g;
 	}
 
-	if (uni_useAOTexture)
+	if (materialUBO.useAOTexture)
 	{
 		MRA.b = texture(uni_aoTexture, thefrag_TexCoord).r;
 	}
 	else
 	{
-		MRA.b = uni_MRAT.b;
+		MRA.b = materialUBO.MRAT.b;
 	}
 
 	uni_geometryPassRT0 = vec4(thefrag_WorldSpacePos.xyz, MRA.r);
 	uni_geometryPassRT1 = vec4(WorldSpaceNormal, MRA.g);
 	uni_geometryPassRT2 = vec4(albedo, MRA.b);
 	vec4 motionVec = (thefrag_ClipSpacePos_current / thefrag_ClipSpacePos_current.w - thefrag_ClipSpacePos_previous / thefrag_ClipSpacePos_previous.w);
-	uni_geometryPassRT3 = vec4(motionVec.xy * 0.5, thefrag_UUID, float(uni_materialType));
+	uni_geometryPassRT3 = vec4(motionVec.xy * 0.5, thefrag_UUID, float(materialUBO.materialType));
 }

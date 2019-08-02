@@ -12,7 +12,7 @@ void main()
 	vec3 N = texture(uni_opaquePassRT1, TexCoords).rgb;
 	N = normalize(N);
 
-	vec3 L = -uni_dirLight.direction.xyz;
+	vec3 L = -sunUBO.data.direction.xyz;
 	L = normalize(L);
 
 	float NdotL = max(dot(N, L), 0.0);

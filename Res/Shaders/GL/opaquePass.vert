@@ -17,24 +17,24 @@ layout(location = 5) out float thefrag_UUID;
 void main()
 {
 	// output the fragment position in world space
-	thefrag_WorldSpacePos = uni_m * inPosition;
-	vec4 thefrag_WorldSpacePos_prev = uni_m_prev * inPosition;
+	thefrag_WorldSpacePos = meshUBO.m * inPosition;
+	vec4 thefrag_WorldSpacePos_prev = meshUBO.m_prev * inPosition;
 
 	// output the current and previous fragment position in clip space
-	vec4 thefrag_CameraSpacePos_current = uni_r_camera * uni_t_camera * thefrag_WorldSpacePos;
-	vec4 thefrag_CameraSpacePos_previous = uni_r_camera_prev * uni_t_camera_prev * thefrag_WorldSpacePos_prev;
+	vec4 thefrag_CameraSpacePos_current = cameraUBO.r * cameraUBO.t * thefrag_WorldSpacePos;
+	vec4 thefrag_CameraSpacePos_previous = cameraUBO.r_prev * cameraUBO.t_prev * thefrag_WorldSpacePos_prev;
 
-	thefrag_ClipSpacePos_current = uni_p_camera_original * thefrag_CameraSpacePos_current;
-	thefrag_ClipSpacePos_previous = uni_p_camera_original * thefrag_CameraSpacePos_previous;
+	thefrag_ClipSpacePos_current = cameraUBO.p_original * thefrag_CameraSpacePos_current;
+	thefrag_ClipSpacePos_previous = cameraUBO.p_original * thefrag_CameraSpacePos_previous;
 
 	// output the texture coordinate
 	thefrag_TexCoord = inTexCoord;
 
 	// output the normal
-	thefrag_Normal = mat3(transpose(inverse(uni_m))) * inNormal.xyz;
+	thefrag_Normal = mat3(transpose(inverse(meshUBO.m))) * inNormal.xyz;
 
 	// output the UUID
-	thefrag_UUID = uni_UUID;
+	thefrag_UUID = meshUBO.UUID;
 
-	gl_Position = uni_p_camera_jittered * thefrag_CameraSpacePos_current;
+	gl_Position = cameraUBO.p_jittered * thefrag_CameraSpacePos_current;
 }

@@ -47,11 +47,11 @@ void main()
 
 	tes_out.positionWS = localSpacePos.xyz;
 
-	vec4 thefrag_CameraSpacePos_current = uni_r_camera * uni_t_camera * localSpacePos;
-	vec4 thefrag_CameraSpacePos_previous = uni_r_camera_prev * uni_t_camera_prev * localSpacePos;
+	vec4 thefrag_CameraSpacePos_current = cameraUBO.r * cameraUBO.t * localSpacePos;
+	vec4 thefrag_CameraSpacePos_previous = cameraUBO.r_prev * cameraUBO.t_prev * localSpacePos;
 	
-	tes_out.positionCS = uni_p_camera_original * thefrag_CameraSpacePos_current;
-	tes_out.positionCS_prev = uni_p_camera_original * thefrag_CameraSpacePos_previous;
+	tes_out.positionCS = cameraUBO.p_original * thefrag_CameraSpacePos_current;
+	tes_out.positionCS_prev = cameraUBO.p_original * thefrag_CameraSpacePos_previous;
 
-	gl_Position = uni_p_camera_jittered * thefrag_CameraSpacePos_current;
+	gl_Position = cameraUBO.p_jittered * thefrag_CameraSpacePos_current;
 }

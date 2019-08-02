@@ -10,7 +10,7 @@ const int MAX_SAMPLES = 16;
 
 void main()
 {
-	vec2 texelSize = 1.0 / uni_viewportSize;
+	vec2 texelSize = 1.0 / skyUBO.viewportSize;
 	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
 
 	vec2 MotionVector = texture(uni_motionVectorTexture, screenTexCoords).xy;

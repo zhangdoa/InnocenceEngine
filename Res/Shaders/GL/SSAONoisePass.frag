@@ -17,7 +17,7 @@ float bias = 0.05f;
 
 void main()
 {
-	vec2 texelSize = 1.0 / uni_viewportSize;
+	vec2 texelSize = 1.0 / skyUBO.viewportSize;
 	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
 
 	vec2 noiseScale = vec2(textureSize(uni_Position, 0)) / vec2(textureSize(uni_randomRot, 0));
@@ -26,11 +26,11 @@ void main()
 	// alpha channel is used previously, remove its unwanted influence
 	// world space position to view space
 	vec3 fragPos = texture(uni_Position, screenTexCoords).xyz;
-	fragPos = (uni_r_camera * uni_t_camera * vec4(fragPos, 1.0f)).xyz;
+	fragPos = (cameraUBO.r * cameraUBO.t * vec4(fragPos, 1.0f)).xyz;
 
 	// world space normal to view space
 	vec3 normal = texture(uni_Normal, screenTexCoords).xyz;
-	normal = (uni_r_camera * vec4(normal, 0.0f)).xyz;
+	normal = (cameraUBO.r * vec4(normal, 0.0f)).xyz;
 	normal = normalize(normal);
 
 	// create TBN change-of-basis matrix: from tangent-space to view-space
@@ -48,7 +48,7 @@ void main()
 
 		// project sample position (to sample texture) (to get position on screen/texture)
 		vec4 randomFragSampleCoord = vec4(randomHemisphereSamplePos, 1.0f);
-		randomFragSampleCoord = uni_p_camera_jittered * randomFragSampleCoord; // from view to clip-space
+		randomFragSampleCoord = cameraUBO.p_jittered * randomFragSampleCoord; // from view to clip-space
 		randomFragSampleCoord.xyz /= randomFragSampleCoord.w; // perspective divide
 		randomFragSampleCoord.xyz = randomFragSampleCoord.xyz * 0.5f + 0.5f; // transform to range 0.0 - 1.0
 
@@ -57,7 +57,7 @@ void main()
 
 		// alpha channel is used previously, remove its unwanted influence
 		randomFragSamplePos.w = 1.0f;
-		randomFragSamplePos = uni_r_camera * uni_t_camera * randomFragSamplePos;
+		randomFragSamplePos = cameraUBO.r * cameraUBO.t * randomFragSamplePos;
 
 		// range check & accumulate
 		float rangeCheck = smoothstep(0.0, 1.0, radius / max(abs(fragPos.z - randomFragSamplePos.z), 0.0001f));

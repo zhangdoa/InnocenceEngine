@@ -39,14 +39,14 @@ void main()
 
 	// fragment albedo
 	vec4 albedo = vec4(1.0f);
-	if (uni_useAlbedoTexture)
+	if (materialUBO.useAlbedoTexture)
 	{
 		vec4 albedoTexture = texture(uni_albedoTexture, gs_in.texCoord);
 		albedo.rgb = albedoTexture.rgb;
 	}
 	else
 	{
-		albedo.rgb = uni_albedo.rgb;
+		albedo.rgb = materialUBO.Albedo.rgb;
 	}
 
 	// writing coords positionLS

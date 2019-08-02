@@ -8,6 +8,6 @@ layout(location = 4) in vec4 inPad2;
 
 void main()
 {
-	vec4 pos = uni_p_camera_original * uni_r_camera * -1.0 * inPosition;
+	vec4 pos = cameraUBO.p_original * cameraUBO.r * -1.0 * inPosition;
 	gl_Position = pos.xyww;
 }

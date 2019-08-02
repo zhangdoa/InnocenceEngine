@@ -13,9 +13,9 @@ layout(location = 0) out VS_OUT {
 
 void main()
 {
-	vec4 posWS = uni_m * inPosition;
+	vec4 posWS = meshUBO.m * inPosition;
 
-	vs_out.normal = mat3(transpose(inverse(uni_m))) * inNormal.xyz;
+	vs_out.normal = mat3(transpose(inverse(meshUBO.m))) * inNormal.xyz;
 	vs_out.texCoord = inTexCoord;
 
 	gl_Position = posWS;

@@ -60,9 +60,9 @@ void main()
 	//vec2 screenTexCoord = gl_FragCoord.xy / textureSize;
 	//float depth = texture(uni_depth, screenTexCoord).r;
 	//vec4 posCS = vec4(screenTexCoord.x * 2.0f - 1.0f, screenTexCoord.y * 2.0f - 1.0f, depth * 2.0f - 1.0f, 1.0f);
-	//vec4 posVS = uni_p_inv * posCS;
+	//vec4 posVS = skyUBO.p_inv * posCS;
 	//posVS /= posVS.w;
-	//vec4 posWS = uni_v_inv * posVS;
+	//vec4 posWS = skyUBO.v_inv * posVS;
 	//vec3 FragPos = posWS.rgb;
 
 	vec3 FragPos = RT0.rgb;
@@ -82,7 +82,7 @@ void main()
 	float NdotL;
 
 #ifdef uni_drawCSMSplitedArea
-	L = normalize(-uni_dirLight.direction.xyz);
+	L = normalize(-sunUBO.data.direction.xyz);
 	NdotL = max(dot(N, L), 0.0);
 
 	Lo = vec3(NdotL);
@@ -91,12 +91,12 @@ void main()
 	int splitIndex = NR_CSM_SPLITS;
 	for (int i = 0; i < NR_CSM_SPLITS; i++)
 	{
-		if (FragPos.x >= uni_CSMs[i].AABBMin.x &&
-			FragPos.y >= uni_CSMs[i].AABBMin.y &&
-			FragPos.z >= uni_CSMs[i].AABBMin.z &&
-			FragPos.x <= uni_CSMs[i].AABBMax.x &&
-			FragPos.y <= uni_CSMs[i].AABBMax.y &&
-			FragPos.z <= uni_CSMs[i].AABBMax.z)
+		if (FragPos.x >= CSMUBO.data[i].AABBMin.x &&
+			FragPos.y >= CSMUBO.data[i].AABBMin.y &&
+			FragPos.z >= CSMUBO.data[i].AABBMin.z &&
+			FragPos.x <= CSMUBO.data[i].AABBMax.x &&
+			FragPos.y <= CSMUBO.data[i].AABBMax.y &&
+			FragPos.z <= CSMUBO.data[i].AABBMax.z)
 		{
 			splitIndex = i;
 			break;
@@ -125,7 +125,7 @@ void main()
 #endif
 
 #ifdef uni_drawPointLightShadow
-	pointLight light = uni_pointLights[0];
+	pointLight light = pointLightUBO.data[0];
 
 	float lightRadius = light.luminance.w;
 	if (lightRadius > 0)
@@ -152,19 +152,19 @@ void main()
 	vec3 F0 = vec3(0.04);
 	F0 = mix(F0, Albedo, Metallic);
 
-	vec3 V = normalize(uni_globalPos.xyz - FragPos);
+	vec3 V = normalize(cameraUBO.globalPos.xyz - FragPos);
 
 	float NdotV = max(dot(N, V), 0.0);
 
 	// direction light, sun light
-	L = normalize(-uni_dirLight.direction.xyz);
+	L = normalize(-sunUBO.data.direction.xyz);
 	vec3 H = normalize(V + L);
 
 	float LdotH = max(dot(L, H), 0.0);
 	float NdotH = max(dot(N, H), 0.0);
 	NdotL = max(dot(N, L), 0.0);
 
-	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, uni_dirLight.luminance.xyz);
+	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, sunUBO.data.luminance.xyz);
 
 	Lo *= 1 - DirectionalLightShadow(FragPos);
 
@@ -181,9 +181,9 @@ void main()
 	//for (int i = 0; i < lightCount; ++i)
 	for (int i = 0; i < NR_POINT_LIGHTS; ++i)
 	{
-		//uint lightIndex = lightIndexList[startOffset + i];
+		//uint lightIndex = lightIndexListSSBO.data[startOffset + i];
 		uint lightIndex = i;
-		pointLight light = uni_pointLights[lightIndex];
+		pointLight light = pointLightUBO.data[lightIndex];
 
 		float lightRadius = light.luminance.w;
 		if (lightRadius > 0)
@@ -215,10 +215,10 @@ void main()
 	// sphere area light
 	for (int i = 0; i < NR_SPHERE_LIGHTS; ++i)
 	{
-		float lightRadius = uni_sphereLights[i].luminance.w;
+		float lightRadius = sphereLightUBO.data[i].luminance.w;
 		if (lightRadius > 0)
 		{
-			vec3 unormalizedL = uni_sphereLights[i].position.xyz - FragPos;
+			vec3 unormalizedL = sphereLightUBO.data[i].position.xyz - FragPos;
 			L = normalize(unormalizedL);
 			H = normalize(V + L);
 
@@ -248,7 +248,7 @@ void main()
 			}
 			illuminance *= PI;
 
-			Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, illuminance * uni_sphereLights[i].luminance.xyz);
+			Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, illuminance * sphereLightUBO.data[i].luminance.xyz);
 		}
 	}
 
