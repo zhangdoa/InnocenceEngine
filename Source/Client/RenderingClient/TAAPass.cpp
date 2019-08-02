@@ -116,7 +116,7 @@ bool TAAPass::PrepareCommandList()
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(l_WriteRPDC, ShaderStage::Pixel, PreTAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 0, 0);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(l_WriteRPDC, ShaderStage::Pixel, l_ReadRPDC->m_RenderTargetsResourceBinders[0], 1, 1);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(l_WriteRPDC, ShaderStage::Pixel, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[3], 2, 2);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(l_WriteRPDC, ShaderStage::Pixel, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[3], 2, 2);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(l_WriteRPDC);
 

@@ -22,18 +22,6 @@ float3 fresnelSchlick(float3 f0, float f90, float u)
 {
 	return f0 + (f90 - f0) * pow(1.0 - u, 5.0);
 }
-// Diffuse BRDF
-// ----------------------------------------------------------------------------
-float3 DisneyDiffuse(float NdotV, float NdotL, float LdotH, float linearRoughness)
-{
-	float energyBias = lerp(0, 0.5, linearRoughness);
-	float energyFactor = lerp(1.0, 1.0 / 1.51, linearRoughness);
-	float fd90 = energyBias + 2.0 * LdotH * LdotH * linearRoughness;
-	float3 f0 = float3(1.0, 1.0, 1.0);
-	float3 lightScatter = fresnelSchlick(f0, fd90, NdotL);
-	float3 viewScatter = fresnelSchlick(f0, fd90, NdotV);
-	return lightScatter * viewScatter * energyFactor;
-}
 // Specular Geometry Component
 // ----------------------------------------------------------------------------
 float V_SmithGGXCorrelated(float NdotL, float NdotV, float alphaG)
@@ -52,6 +40,29 @@ float D_GGX(float NdotH, float roughness)
 	float a2 = a * a;
 	float f = (NdotH * a2 - NdotH) * NdotH + 1;
 	return a2 / pow(f, 2.0);
+}
+// Diffuse BRDF
+// Disney model [https://blog.selfshadow.com/publications/s2015-shading-course/burley/s2015_pbs_disney_bsdf_notes.pdf]
+// ----------------------------------------------------------------------------
+float3 DisneyDiffuse2012(float NdotV, float NdotL, float LdotH, float linearRoughness)
+{
+	float energyBias = lerp(0, 0.5, linearRoughness);
+	float energyFactor = lerp(1.0, 1.0 / 1.51, linearRoughness);
+	float fd90 = energyBias + 2.0 * LdotH * LdotH * linearRoughness;
+	float3 f0 = float3(1.0, 1.0, 1.0);
+	float3 lightScatter = fresnelSchlick(f0, fd90, NdotL);
+	float3 viewScatter = fresnelSchlick(f0, fd90, NdotV);
+	return lightScatter * viewScatter * energyFactor;
+}
+// ----------------------------------------------------------------------------
+float DisneyDiffuse2015(float NdotV, float NdotL, float LdotH, float linearRoughness)
+{
+	float Fl = pow(1.0 - NdotL, 5.0);
+	float Fv = pow(1.0 - NdotV, 5.0);
+	float Rr = 2.0 * LdotH * LdotH * linearRoughness;
+	float FLambert = (1 - 0.5 * Fl) * (1 - 0.5 * Fv);
+	float FRetroReflection = Rr * (Fl + Fv + Fl * Fv * (Rr - 1.0));
+	return FLambert + FRetroReflection;
 }
 // "Real-Time Rendering", 4th edition, pg. 346, "9.8.2 Multiple-Bounce Surface Reflection"
 // ----------------------------------------------------------------------------
@@ -92,8 +103,7 @@ float3 getBRDF(float NdotV, float LdotH, float NdotH, float NdotL, float roughne
 	float3 Fr = Frss + Frms;
 
 	// Diffuse BRDF
-	float3 Fd = DisneyDiffuse(NdotV, NdotL, LdotH, roughness * roughness) * albedo;
-
+	float3 Fd = DisneyDiffuse2015(NdotV, NdotL, LdotH, roughness * roughness) * albedo / PI;
 	return (Fd + Fr);
 }
 // ----------------------------------------------------------------------------

@@ -13,7 +13,7 @@ float orenNayarDiffuse(float LdotV, float NdotL, float NdotV, float roughness)
 }
 // Frostbite Engine model [https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf]
 // ----------------------------------------------------------------------------
-// punctual light attenuation
+// Punctual light attenuation
 // ----------------------------------------------------------------------------
 float smoothDistanceAtt(float squaredDistance, float invSqrAttRadius)
 {
@@ -35,20 +35,6 @@ vec3 fr_F_Schlick(vec3 f0, float f90, float u)
 {
 	return f0 + (f90 - f0) * pow(1.0 - u, 5.0);
 }
-// Diffuse BRDF
-// ----------------------------------------------------------------------------
-float fd_DisneyDiffuse(float NdotV, float NdotL, float LdotH, float linearRoughness)
-{
-	float NdotV_ = max(NdotV, eps);
-	float NdotL_ = max(NdotL, eps);
-	float energyBias = mix(0.0, 0.5, linearRoughness);
-	float energyFactor = mix(1.0, 1.0 / 1.51, linearRoughness);
-	float fd90 = energyBias + 2.0 * LdotH * LdotH * linearRoughness;
-	vec3 f0 = vec3(1.0, 1.0, 1.0);
-	float lightScatter = fr_F_Schlick(f0, fd90, NdotL_).r;
-	float viewScatter = fr_F_Schlick(f0, fd90, NdotV_).r;
-	return lightScatter * viewScatter * energyFactor / PI;
-}
 // Specular Visibility Component
 // ----------------------------------------------------------------------------
 float fr_V_SmithGGXCorrelated(float NdotL, float NdotV, float alphaG)
@@ -69,6 +55,31 @@ float fr_D_GGX(float NdotH, float roughness)
 	float a2 = a * a;
 	float f = (NdotH * a2 - NdotH) * NdotH + 1;
 	return a2 / (pow(f, 2.0));
+}
+// Diffuse BRDF
+// Disney model [https://blog.selfshadow.com/publications/s2015-shading-course/burley/s2015_pbs_disney_bsdf_notes.pdf]
+// ----------------------------------------------------------------------------
+vec3 fd_DisneyDiffuse2012(float NdotV, float NdotL, float LdotH, float linearRoughness)
+{
+	float NdotV_ = max(NdotV, eps);
+	float NdotL_ = max(NdotL, eps);
+	float energyBias = mix(0.0, 0.5, linearRoughness);
+	float energyFactor = mix(1.0, 1.0 / 1.51, linearRoughness);
+	float fd90 = energyBias + 2.0 * LdotH * LdotH * linearRoughness;
+	vec3 f0 = vec3(1.0, 1.0, 1.0);
+	float lightScatter = fr_F_Schlick(f0, fd90, NdotL_);
+	float viewScatter = fr_F_Schlick(f0, fd90, NdotV_);
+	return lightScatter * viewScatter * energyFactor;
+}
+// ----------------------------------------------------------------------------
+float fd_DisneyDiffuse2015(float NdotV, float NdotL, float LdotH, float linearRoughness)
+{
+	float Fl = pow(1.0 - NdotL, 5.0);
+	float Fv = pow(1.0 - NdotV, 5.0);
+	float Rr = 2.0 * LdotH * LdotH * linearRoughness;
+	float FLambert = (1 - 0.5 * Fl) * (1 - 0.5 * Fv);
+	float FRetroReflection = Rr * (Fl + Fv + Fl * Fv * (Rr - 1.0));
+	return FLambert + FRetroReflection;
 }
 // Unreal Engine model [https://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf]
 // ----------------------------------------------------------------------------
@@ -131,12 +142,13 @@ vec3 getFrMS(sampler2D BRDFLUT, sampler2D BRDFMSLUT, float NdotL, float NdotV, v
 	return frMS;
 }
 // IBL
-// corrected Fresnel
+// Corrected Fresnel
 // ----------------------------------------------------------------------------
 vec3 fr_F_SchlickRoughness(float cosTheta, vec3 F0, float roughness)
 {
 	return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
 }
+// BRDF
 // ----------------------------------------------------------------------------
 vec3 getBRDF(float NdotV, float LdotH, float NdotH, float NdotL, float roughness, vec3 F0, vec3 albedo)
 {
@@ -153,7 +165,7 @@ vec3 getBRDF(float NdotV, float LdotH, float NdotH, float NdotL, float roughness
 	vec3 Fr = Frss + Frms;
 
 	// Diffuse BRDF
-	vec3 Fd = fd_DisneyDiffuse(NdotV, NdotL, LdotH, roughness * roughness) * albedo;
+	vec3 Fd = fd_DisneyDiffuse2015(NdotV, NdotL, LdotH, roughness * roughness) * albedo / PI;
 
 	return (Fd + Fr);
 }
