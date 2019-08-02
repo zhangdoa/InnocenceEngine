@@ -117,7 +117,7 @@ bool DX12RenderingServerNS::CreateDebugCallback()
 	}
 
 	m_debugInterface->EnableDebugLayer();
-	m_debugInterface->SetEnableGPUBasedValidation(true);
+	//m_debugInterface->SetEnableGPUBasedValidation(true);
 
 	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Debug layer and GPU based validation has been enabled.");
 
@@ -424,7 +424,9 @@ bool DX12RenderingServer::Setup()
 
 	bool l_result = true;
 
+#ifdef _DEBUG
 	l_result &= CreateDebugCallback();
+#endif
 	l_result &= CreatePhysicalDevices();
 	l_result &= CreateGlobalCommandQueue();
 	l_result &= CreateGlobalCommandAllocator();
@@ -1486,8 +1488,8 @@ bool DX12RenderingServer::WaitForFrame(RenderPassDataComponent * rhs)
 	{
 		l_fence->m_Fence->SetEventOnCompletion(l_expectedFenceValue, l_fence->m_FenceEvent);
 		WaitForSingleObjectEx(l_fence->m_FenceEvent, INFINITE, FALSE);
-		l_fence->m_FenceStatus = l_expectedFenceValue;
 	}
+	l_fence->m_FenceStatus = l_expectedFenceValue;
 
 	return true;
 }
