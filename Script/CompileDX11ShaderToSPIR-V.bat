@@ -1,4 +1,7 @@
-cd ../Res/Shaders/DX11
+mkdir ../Res/Shaders/SPIRV
+cd ../Res/Shaders/SPIRV
 del /S /Q *.spv
-for %%i in (*) do glslangValidator.exe -G -e main -D -o ../SPIRV/%%~i.spv %%i
+
+cd ../DX11
+for %%i in (*) do glslangValidator.exe -V -t -e main -D -o ../SPIRV/%%~i.spv %%i
 pause

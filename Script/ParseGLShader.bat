@@ -1,3 +1,4 @@
+mkdir ../Res/Shaders/Parsed
 cd ../Res/Shaders/Parsed
 del /S /Q *.*
 
