@@ -1,4 +1,6 @@
-cd ../Res/Intermediate/Shaders/GL
+cd ../Res/Shaders/SPIRV
 del /S /Q *.spv
-for /r %%i in (*) do glslangValidator.exe -G -o %%~i.spv %%i
+
+cd ../Parsed
+for %%i in (*) do glslangValidator.exe -G -t -o ../SPIRV/%%~i.spv %%i
 pause
