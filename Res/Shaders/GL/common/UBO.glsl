@@ -72,6 +72,11 @@ layout(std140, row_major, binding = 9) uniform SH9UBOBlock
 	SH9 data[64];
 } SH9UBO;
 
+layout(std140, row_major, binding = 10) uniform SSAOKernelUBOBlock
+{
+	vec4 data[64];
+} SSAOKernelUBO;
+
 layout(std430, binding = 0) buffer gridFrustumsSSBOBlock
 {
 	Frustum data[];

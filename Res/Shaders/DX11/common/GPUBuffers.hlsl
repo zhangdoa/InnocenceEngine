@@ -69,3 +69,13 @@ cbuffer dispatchParamsCBuffer : register(b8)
 	uint3 numThreads;
 	uint  dispatchParamsCBuffer_padding2;
 }
+
+cbuffer SH9CBuffer : register(b9)
+{
+	SH9 SH9s[64];
+};
+
+cbuffer SSAOKernelCBuffer : register(b10)
+{
+	float4 kernels[64];
+}

@@ -8,12 +8,8 @@ layout(location = 0, binding = 0) uniform sampler2D uni_Position;
 layout(location = 1, binding = 1) uniform sampler2D uni_Normal;
 layout(location = 2, binding = 2) uniform sampler2D uni_randomRot;
 
-const int kernelSize = 64;
-
-layout(location = 3) uniform vec4 uni_kernels[kernelSize];
-
-float radius = 0.5f;
-float bias = 0.05f;
+const float radius = 0.5f;
+const float bias = 0.05f;
 
 void main()
 {
@@ -40,10 +36,10 @@ void main()
 
 	// iterate over the sample kernel and calculate occlusion factor
 	float occlusion = 0.0f;
-	for (int i = 0; i < kernelSize; ++i)
+	for (int i = 0; i < 64; ++i)
 	{
 		// get sample position
-		vec3 randomHemisphereSampleDir = TBN * uni_kernels[i].xyz; // from tangent to view-space
+		vec3 randomHemisphereSampleDir = TBN * SSAOKernelUBO.data[i].xyz; // from tangent to view-space
 		vec3 randomHemisphereSamplePos = fragPos + randomHemisphereSampleDir * radius;
 
 		// project sample position (to sample texture) (to get position on screen/texture)
@@ -64,7 +60,7 @@ void main()
 		occlusion += (randomFragSamplePos.z > randomHemisphereSamplePos.z + bias ? 1.0 : 0.0) * rangeCheck;
 	}
 
-	occlusion = 1.0 - (occlusion / float(kernelSize));
+	occlusion = 1.0 - (occlusion / float(64));
 
 	uni_SSAOPassRT0 = vec4(vec3(occlusion), 1.0);
 }

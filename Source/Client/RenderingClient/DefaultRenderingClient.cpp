@@ -2,6 +2,7 @@
 #include "DefaultGPUBuffers.h"
 #include "BRDFLUTPass.h"
 #include "OpaquePass.h"
+#include "SSAOPass.h"
 #include "LightPass.h"
 #include "SkyPass.h"
 #include "PreTAAPass.h"
@@ -14,6 +15,7 @@ bool DefaultRenderingClient::Setup()
 	DefaultGPUBuffers::Setup();
 	BRDFLUTPass::Setup();
 	OpaquePass::Setup();
+	SSAOPass::Setup();
 	LightPass::Setup();
 	SkyPass::Setup();
 	PreTAAPass::Setup();
@@ -30,6 +32,7 @@ bool DefaultRenderingClient::Initialize()
 	BRDFLUTPass::Initialize();
 	BRDFLUTPass::PrepareCommandList();
 	OpaquePass::Initialize();
+	SSAOPass::Initialize();
 	LightPass::Initialize();
 	SkyPass::Initialize();
 	PreTAAPass::Initialize();
@@ -44,6 +47,7 @@ bool DefaultRenderingClient::Render()
 {
 	DefaultGPUBuffers::Upload();
 	OpaquePass::PrepareCommandList();
+	SSAOPass::PrepareCommandList();
 	LightPass::PrepareCommandList();
 	SkyPass::PrepareCommandList();
 	PreTAAPass::PrepareCommandList();

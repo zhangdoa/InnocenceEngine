@@ -23,6 +23,19 @@ struct sphereLight {
 	//float sphereRadius;
 };
 
+struct SH9
+{
+	float4 L00;
+	float4 L11;
+	float4 L10;
+	float4 L1_1;
+	float4 L21;
+	float4 L2_1;
+	float4 L2_2;
+	float4 L20;
+	float4 L22;
+};
+
 struct CSM {
 	matrix p;
 	matrix v;

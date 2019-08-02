@@ -67,8 +67,8 @@ vec3 fd_DisneyDiffuse2012(float NdotV, float NdotL, float LdotH, float linearRou
 	float energyFactor = mix(1.0, 1.0 / 1.51, linearRoughness);
 	float fd90 = energyBias + 2.0 * LdotH * LdotH * linearRoughness;
 	vec3 f0 = vec3(1.0, 1.0, 1.0);
-	float lightScatter = fr_F_Schlick(f0, fd90, NdotL_);
-	float viewScatter = fr_F_Schlick(f0, fd90, NdotV_);
+	vec3 lightScatter = fr_F_Schlick(f0, fd90, NdotL_);
+	vec3 viewScatter = fr_F_Schlick(f0, fd90, NdotV_);
 	return lightScatter * viewScatter * energyFactor;
 }
 // ----------------------------------------------------------------------------
