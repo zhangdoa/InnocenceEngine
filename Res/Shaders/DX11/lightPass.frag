@@ -1,12 +1,14 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
 
-Texture2D in_geometryPassRT0 : register(t0);
-Texture2D in_geometryPassRT1 : register(t1);
-Texture2D in_geometryPassRT2 : register(t2);
-Texture2D in_geometryPassRT3 : register(t3);
-StructuredBuffer<uint> in_LightIndexList : register(t4);
-Texture2D<uint2> in_LightGrid : register(t5);
+Texture2D in_opaquePassRT0 : register(t0);
+Texture2D in_opaquePassRT1 : register(t1);
+Texture2D in_opaquePassRT2 : register(t2);
+Texture2D in_opaquePassRT3 : register(t3);
+Texture2D in_BRDFLUT : register(t4);
+Texture2D in_BRDFMSLUT : register(t5);
+StructuredBuffer<uint> in_LightIndexList : register(t6);
+Texture2D<uint2> in_LightGrid : register(t7);
 
 SamplerState SampleTypePoint : register(s0);
 
@@ -27,9 +29,9 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 {
 	PixelOutputType output;
 
-	float4 GPassRT0 = in_geometryPassRT0.Sample(SampleTypePoint, input.texcoord);
-	float4 GPassRT1 = in_geometryPassRT1.Sample(SampleTypePoint, input.texcoord);
-	float4 GPassRT2 = in_geometryPassRT2.Sample(SampleTypePoint, input.texcoord);
+	float4 GPassRT0 = in_opaquePassRT0.Sample(SampleTypePoint, input.texcoord);
+	float4 GPassRT1 = in_opaquePassRT1.Sample(SampleTypePoint, input.texcoord);
+	float4 GPassRT2 = in_opaquePassRT2.Sample(SampleTypePoint, input.texcoord);
 
 	float3 posWS = GPassRT0.xyz;
 	float metallic = GPassRT0.w;
@@ -55,7 +57,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float NdotH = max(dot(N, H), 0.0);
 	float NdotL = max(dot(N, L), 0.0);
 
-	Lo += getIlluminance(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL, dirLight_luminance.xyz);
+	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, roughness, F0, albedo, dirLight_luminance.xyz);
 
 	//SG SG_directionalLight = DirectionalLightToSG(normalize(-dirLight_dir.xyz), dirLight_luminance.xyz);
 	//Lo += SGGetIlluminance(SG_directionalLight, albedo, metallic, roughness, F0, N, V, L);
@@ -88,7 +90,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	//	attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
 
 	//	float3 lightLuminance = light.luminance.xyz * attenuation;
-	//	Lo += getIlluminance(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL, lightLuminance);
+	//	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, roughness, F0, albedo, lightLuminance);
 
 	//	//use 1cm sphere light to represent point light
 	//	//SG SG_pointLight = SphereLightToSG(L, 0.01, lightLuminance, distance);
@@ -130,7 +132,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	//	}
 	//	illuminance *= PI;
 
-	//	Lo += getIlluminance(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL, illuminance * sphereLights[i].luminance.xyz);
+	//	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, roughness, F0, albedo, illuminance * sphereLights[i].luminance.xyz);
 	//}
 
 	output.lightPassRT0 = float4(Lo, 1.0);

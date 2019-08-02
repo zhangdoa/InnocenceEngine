@@ -1,6 +1,5 @@
 // shadertype=glsl
 #include "common/common.glsl"
-#include "common/BRDF.glsl"
 #include "common/utility.glsl"
 
 layout(location = 0) in vec2 TexCoords;
@@ -11,39 +10,20 @@ layout(location = 0, binding = 0) uniform sampler2D uni_opaquePassRT0;
 layout(location = 1, binding = 1) uniform sampler2D uni_opaquePassRT1;
 layout(location = 2, binding = 2) uniform sampler2D uni_opaquePassRT2;
 layout(location = 3, binding = 3) uniform sampler2D uni_opaquePassRT3;
-layout(location = 4, binding = 4) uniform sampler2D uni_SSAOBlurPassRT0;
-layout(location = 5, binding = 5) uniform sampler2D uni_directionalLightShadowMap;
+layout(location = 4, binding = 4) uniform sampler2D uni_brdfLUT;
+layout(location = 5, binding = 5) uniform sampler2D uni_brdfMSLUT;
 layout(location = 6, binding = 6) uniform samplerCube uni_pointLightShadowMap;
-layout(location = 7, binding = 7) uniform sampler2D uni_brdfLUT;
-layout(location = 8, binding = 8) uniform sampler2D uni_brdfMSLUT;
+layout(location = 7, binding = 7) uniform sampler2D uni_SSAOBlurPassRT0;
+layout(location = 8, binding = 8) uniform sampler2D uni_directionalLightShadowMap;
 layout(location = 9, binding = 9) uniform samplerCube uni_irradianceMap;
 layout(location = 10, binding = 10) uniform samplerCube uni_preFiltedMap;
 layout(location = 11, binding = 11) uniform sampler2D uni_depth;
 
 layout(binding = 0, rgba16f) uniform image2D uni_lightGrid;
 
+#include "common/BRDF.glsl"
 #include "common/shadowResolver.glsl"
 
-// ----------------------------------------------------------------------------
-vec3 getIlluminance(float NdotV, float LdotH, float NdotH, float NdotL, float roughness, vec3 F0, vec3 Albedo, vec3 lightLuminance)
-{
-	// Specular BRDF
-	float f90 = 1.0;
-	vec3 F = fr_F_Schlick(F0, f90, NdotV);
-	float G = fr_V_SmithGGXCorrelated(NdotV, NdotL, roughness);
-	float D = fr_D_GGX(NdotH, roughness);
-	vec3 Frss = F * D * G / PI;
-
-	// Real-Time Rendering", 4th edition, pg. 341, "9.8 BRDF Models for Surface Reflection, the 4 * NdV * NdL has already been cancelled by G function
-	vec3 Frms = getFrMS(uni_brdfLUT, uni_brdfMSLUT, NdotL, NdotV, F0, roughness);
-
-	vec3 Fr = Frss + Frms;
-
-	// Diffuse BRDF
-	vec3 Fd = fd_DisneyDiffuse(NdotV, NdotL, LdotH, roughness * roughness) * Albedo;
-
-	return (Fd + Fr) * lightLuminance * NdotL;
-}
 // ----------------------------------------------------------------------------
 void main()
 {
@@ -51,10 +31,10 @@ void main()
 	vec2 texelSize = 1.0 / renderTargetSize;
 	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
 
-	vec4 RT0 = texture(uni_opaquePassRT0, screenTexCoords);
-	vec4 RT1 = texture(uni_opaquePassRT1, screenTexCoords);
-	vec4 RT2 = texture(uni_opaquePassRT2, screenTexCoords);
-	vec4 RT3 = texture(uni_opaquePassRT3, screenTexCoords);
+	vec4 GPassRT0 = texture(uni_opaquePassRT0, screenTexCoords);
+	vec4 GPassRT1 = texture(uni_opaquePassRT1, screenTexCoords);
+	vec4 GPassRT2 = texture(uni_opaquePassRT2, screenTexCoords);
+	vec4 GPassRT3 = texture(uni_opaquePassRT3, screenTexCoords);
 
 	//vec2 textureSize = textureSize(uni_depth, 0);
 	//vec2 screenTexCoord = gl_FragCoord.xy / textureSize;
@@ -65,14 +45,14 @@ void main()
 	//vec4 posWS = skyUBO.v_inv * posVS;
 	//vec3 FragPos = posWS.rgb;
 
-	vec3 FragPos = RT0.rgb;
-	vec3 Normal = RT1.rgb;
-	vec3 Albedo = RT2.rgb;
+	vec3 FragPos = GPassRT0.rgb;
+	vec3 Normal = GPassRT1.rgb;
+	vec3 Albedo = GPassRT2.rgb;
 
-	float Metallic = RT0.a;
-	float Roughness = RT1.a;
+	float Metallic = GPassRT0.a;
+	float Roughness = GPassRT1.a;
 	float safe_roughness = (Roughness + eps) / (1.0 + eps);
-	float AO = RT2.a;
+	float AO = GPassRT2.a;
 	float SSAO = texture(uni_SSAOBlurPassRT0, screenTexCoords).x;
 	AO *= pow(SSAO, 2.0f);
 

@@ -24,14 +24,14 @@ float3 fresnelSchlick(float3 f0, float f90, float u)
 }
 // Diffuse BRDF
 // ----------------------------------------------------------------------------
-float DisneyDiffuse(float NdotV, float NdotL, float LdotH, float linearRoughness)
+float3 DisneyDiffuse(float NdotV, float NdotL, float LdotH, float linearRoughness)
 {
 	float energyBias = lerp(0, 0.5, linearRoughness);
 	float energyFactor = lerp(1.0, 1.0 / 1.51, linearRoughness);
 	float fd90 = energyBias + 2.0 * LdotH * LdotH * linearRoughness;
 	float3 f0 = float3(1.0, 1.0, 1.0);
-	float lightScatter = fresnelSchlick(f0, fd90, NdotL).r;
-	float viewScatter = fresnelSchlick(f0, fd90, NdotV).r;
+	float3 lightScatter = fresnelSchlick(f0, fd90, NdotL);
+	float3 viewScatter = fresnelSchlick(f0, fd90, NdotV);
 	return lightScatter * viewScatter * energyFactor;
 }
 // Specular Geometry Component
@@ -53,28 +53,53 @@ float D_GGX(float NdotH, float roughness)
 	float f = (NdotH * a2 - NdotH) * NdotH + 1;
 	return a2 / pow(f, 2.0);
 }
-// BRDF
+// "Real-Time Rendering", 4th edition, pg. 346, "9.8.2 Multiple-Bounce Surface Reflection"
 // ----------------------------------------------------------------------------
-float3 CalcBRDF(float3 albedo, float metallic, float roughness, float3 F0, float NdotV, float LdotH, float NdotH, float NdotL)
+float3 AverangeFresnel(float3 F0)
+{
+	return 20.0 * F0 / 21.0 + 1.0 / 21.0;
+}
+float3 getFrMS(Texture2D BRDFLUT, Texture2D BRDFMSLUT, float NdotL, float NdotV, float3 F0, float roughness)
+{
+	float alpha = roughness * roughness;
+	float3 f_averange = AverangeFresnel(F0);
+	float rsF1_averange = BRDFMSLUT.Sample(SampleTypePoint, float2(0.0, alpha)).r;
+	float rsF1_l = BRDFLUT.Sample(SampleTypePoint, float2(NdotL, alpha)).b;
+	float rsF1_v = BRDFLUT.Sample(SampleTypePoint, float2(NdotV, alpha)).b;
+
+	float3 frMS = float3(0.0, 0.0, 0.0);
+	float beta1 = 1.0 - rsF1_averange;
+	float beta2 = 1.0 - rsF1_l;
+	float beta3 = 1.0 - rsF1_v;
+
+	frMS = f_averange * rsF1_averange / (PI * beta1 * (float3(1.0, 1.0, 1.0) - f_averange * beta1) + eps);
+	frMS = frMS * beta2 * beta3;
+	return frMS;
+}
+// ----------------------------------------------------------------------------
+float3 getBRDF(float NdotV, float LdotH, float NdotH, float NdotL, float roughness, float3 F0, float3 albedo)
 {
 	// Specular BRDF
 	float F90 = 1.0;
 	float3 F = fresnelSchlick(F0, F90, LdotH);
 	float G = V_SmithGGXCorrelated(NdotV, NdotL, roughness);
 	float D = D_GGX(NdotH, roughness);
-	float3 Fr = F * G * D;
+	float3 Frss = F * G * D / PI;
+
+	// Real-Time Rendering", 4th edition, pg. 341, "9.8 BRDF Models for Surface Reflection, the 4 * NdV * NdL has already been cancelled by G function
+	float3 Frms = getFrMS(in_BRDFLUT, in_BRDFMSLUT, NdotL, NdotV, F0, roughness);
+
+	float3 Fr = Frss + Frms;
 
 	// Diffuse BRDF
-	float Fd = DisneyDiffuse(NdotV, NdotL, LdotH, roughness * roughness);
+	float3 Fd = DisneyDiffuse(NdotV, NdotL, LdotH, roughness * roughness) * albedo;
 
-	float3 BRDF = (Fd * albedo + Fr) / PI;
-
-	return BRDF;
+	return (Fd + Fr);
 }
 // ----------------------------------------------------------------------------
-float3 getIlluminance(float3 albedo, float metallic, float roughness, float3 F0, float NdotV, float LdotH, float NdotH, float NdotL, float3 lightLuminance)
+float3 getIlluminance(float NdotV, float LdotH, float NdotH, float NdotL, float roughness, float3 F0, float3 albedo, float3 lightLuminance)
 {
-	float3 BRDF = CalcBRDF(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL);
+	float3 BRDF = getBRDF(NdotV, LdotH, NdotH, NdotL, roughness, F0, albedo);
 
 	return BRDF * lightLuminance * NdotL;
 }

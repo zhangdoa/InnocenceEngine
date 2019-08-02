@@ -1,5 +1,5 @@
 // shadertype=hlsl
-#include "comon/common.hlsl"
+#include "common/common.hlsl"
 
 #define Use_YCoCg 0
 Texture2D in_preTAAPassRT0 : register(t0);

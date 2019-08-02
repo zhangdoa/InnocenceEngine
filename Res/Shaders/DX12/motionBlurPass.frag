@@ -1,5 +1,5 @@
 // shadertype=hlsl
-#include "comon/common.hlsl"
+#include "common/common.hlsl"
 
 Texture2D in_opaquePassRT3 : register(t0);
 Texture2D in_TAAPassRT0 : register(t1);

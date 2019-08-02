@@ -55,7 +55,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float NdotH = max(dot(N, H), 0.0);
 	float NdotL = max(dot(N, L), 0.0);
 
-	Lo += getIlluminance(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL, dirLight_luminance.xyz);
+	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, roughness, F0, albedo, dirLight_luminance.xyz);
 
 	//SG SG_directionalLight = DirectionalLightToSG(normalize(-dirLight_dir.xyz), dirLight_luminance.xyz);
 	//Lo += SGGetIlluminance(SG_directionalLight, albedo, metallic, roughness, F0, N, V, L);
@@ -88,7 +88,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	//	attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
 
 	//	float3 lightLuminance = light.luminance.xyz * attenuation;
-	//	Lo += getIlluminance(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL, lightLuminance);
+	//	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, roughness, F0, albedo, lightLuminance);
 
 	//	//use 1cm sphere light to represent point light
 	//	//SG SG_pointLight = SphereLightToSG(L, 0.01, lightLuminance, distance);
@@ -129,7 +129,8 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	//			+ (1 / PI) * atan((sin(Beta) * sqrt(max(1 - y * y, eps)) / x));
 	//	}
 	//	illuminance *= PI;
-	//	Lo += getIlluminance(albedo, metallic, roughness, F0, NdotV, LdotH, NdotH, NdotL, illuminance * sphereLights[i].luminance.xyz);
+
+	//	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, roughness, F0, albedo, illuminance * sphereLights[i].luminance.xyz);
 	//}
 
 	output.lightPassRT0 = float4(Lo, 1.0);

@@ -137,3 +137,30 @@ vec3 fr_F_SchlickRoughness(float cosTheta, vec3 F0, float roughness)
 {
 	return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
 }
+// ----------------------------------------------------------------------------
+vec3 getBRDF(float NdotV, float LdotH, float NdotH, float NdotL, float roughness, vec3 F0, vec3 albedo)
+{
+	// Specular BRDF
+	float f90 = 1.0;
+	vec3 F = fr_F_Schlick(F0, f90, NdotV);
+	float G = fr_V_SmithGGXCorrelated(NdotV, NdotL, roughness);
+	float D = fr_D_GGX(NdotH, roughness);
+	vec3 Frss = F * D * G / PI;
+
+	// Real-Time Rendering", 4th edition, pg. 341, "9.8 BRDF Models for Surface Reflection, the 4 * NdV * NdL has already been cancelled by G function
+	vec3 Frms = getFrMS(uni_brdfLUT, uni_brdfMSLUT, NdotL, NdotV, F0, roughness);
+
+	vec3 Fr = Frss + Frms;
+
+	// Diffuse BRDF
+	vec3 Fd = fd_DisneyDiffuse(NdotV, NdotL, LdotH, roughness * roughness) * albedo;
+
+	return (Fd + Fr);
+}
+// ----------------------------------------------------------------------------
+vec3 getIlluminance(float NdotV, float LdotH, float NdotH, float NdotL, float roughness, vec3 F0, vec3 albedo, vec3 lightLuminance)
+{
+	vec3 BRDF = getBRDF(NdotV, LdotH, NdotH, NdotL, roughness, F0, albedo);
+
+	return BRDF * lightLuminance * NdotL;
+}

@@ -1,5 +1,6 @@
 #include "DefaultRenderingClient.h"
 #include "DefaultGPUBuffers.h"
+#include "BRDFLUTPass.h"
 #include "OpaquePass.h"
 #include "LightPass.h"
 #include "SkyPass.h"
@@ -11,6 +12,7 @@
 bool DefaultRenderingClient::Setup()
 {
 	DefaultGPUBuffers::Setup();
+	BRDFLUTPass::Setup();
 	OpaquePass::Setup();
 	LightPass::Setup();
 	SkyPass::Setup();
@@ -25,6 +27,8 @@ bool DefaultRenderingClient::Setup()
 bool DefaultRenderingClient::Initialize()
 {
 	DefaultGPUBuffers::Initialize();
+	BRDFLUTPass::Initialize();
+	BRDFLUTPass::PrepareCommandList();
 	OpaquePass::Initialize();
 	LightPass::Initialize();
 	SkyPass::Initialize();
