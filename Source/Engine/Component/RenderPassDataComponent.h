@@ -13,7 +13,7 @@ public:
 
 	std::vector<TextureDataComponent*> m_RenderTargets;
 	TextureDataComponent* m_DepthStencilRenderTarget = 0;
-	IResourceBinder* m_RenderTargetsResourceBinder = 0;
+	std::vector<IResourceBinder*> m_RenderTargetsResourceBinders;
 	std::vector<ResourceBinderLayoutDesc> m_ResourceBinderLayoutDescs;
 
 	IPipelineStateObject* m_PipelineStateObject = 0;

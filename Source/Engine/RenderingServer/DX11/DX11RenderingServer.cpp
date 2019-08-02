@@ -331,7 +331,9 @@ bool DX11RenderingServer::Initialize()
 
 		CreateViews(m_SwapChainRPDC, m_device);
 
-		m_SwapChainRPDC->m_RenderTargetsResourceBinder = addResourcesBinder();
+		m_SwapChainRPDC->m_RenderTargetsResourceBinders.resize(1);
+
+		m_SwapChainRPDC->m_RenderTargetsResourceBinders[0] = addResourcesBinder();
 
 		CreateResourcesBinder(m_SwapChainRPDC);
 
@@ -726,62 +728,63 @@ bool DX11RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 		return true;
 	}
 
-	auto l_resourceBinder = addResourcesBinder();
-
-	l_resourceBinder->m_TextureSRVs.resize(5);
-
-	if (rhs->m_normalTexture)
+	auto l_rhs = reinterpret_cast<DX11MaterialDataComponent*>(rhs);
+	l_rhs->m_ResourceBinders.resize(5);
+	for (size_t i = 0; i < 5; i++)
 	{
-		InitializeTextureDataComponent(rhs->m_normalTexture);
-		l_resourceBinder->m_TextureSRVs[0] = reinterpret_cast<DX11TextureDataComponent*>(rhs->m_normalTexture)->m_SRV;
+		l_rhs->m_ResourceBinders[i] = addResourcesBinder();
+		l_rhs->m_ResourceBinders[i]->m_ResourceBinderType = ResourceBinderType::Image;
+	}
+
+	if (l_rhs->m_normalTexture)
+	{
+		InitializeTextureDataComponent(l_rhs->m_normalTexture);
+		reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinders[0])->m_TextureSRV = reinterpret_cast<DX11TextureDataComponent*>(l_rhs->m_normalTexture)->m_SRV;
 	}
 	else
 	{
-		l_resourceBinder->m_TextureSRVs[0] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Normal))->m_SRV;
+		reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinders[0])->m_TextureSRV = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Normal))->m_SRV;
 	}
-	if (rhs->m_albedoTexture)
+	if (l_rhs->m_albedoTexture)
 	{
-		InitializeTextureDataComponent(rhs->m_albedoTexture);
-		l_resourceBinder->m_TextureSRVs[1] = reinterpret_cast<DX11TextureDataComponent*>(rhs->m_albedoTexture)->m_SRV;
+		InitializeTextureDataComponent(l_rhs->m_albedoTexture);
+		reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinders[1])->m_TextureSRV = reinterpret_cast<DX11TextureDataComponent*>(l_rhs->m_albedoTexture)->m_SRV;
 	}
 	else
 	{
-		l_resourceBinder->m_TextureSRVs[1] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Albedo))->m_SRV;
+		reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinders[1])->m_TextureSRV = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Albedo))->m_SRV;
 	}
-	if (rhs->m_metallicTexture)
+	if (l_rhs->m_metallicTexture)
 	{
-		InitializeTextureDataComponent(rhs->m_metallicTexture);
-		l_resourceBinder->m_TextureSRVs[2] = reinterpret_cast<DX11TextureDataComponent*>(rhs->m_metallicTexture)->m_SRV;
+		InitializeTextureDataComponent(l_rhs->m_metallicTexture);
+		reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinders[2])->m_TextureSRV = reinterpret_cast<DX11TextureDataComponent*>(l_rhs->m_metallicTexture)->m_SRV;
 	}
 	else
 	{
-		l_resourceBinder->m_TextureSRVs[2] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Metallic))->m_SRV;
+		reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinders[2])->m_TextureSRV = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Metallic))->m_SRV;
 	}
-	if (rhs->m_roughnessTexture)
+	if (l_rhs->m_roughnessTexture)
 	{
-		InitializeTextureDataComponent(rhs->m_roughnessTexture);
-		l_resourceBinder->m_TextureSRVs[3] = reinterpret_cast<DX11TextureDataComponent*>(rhs->m_roughnessTexture)->m_SRV;
+		InitializeTextureDataComponent(l_rhs->m_roughnessTexture);
+		reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinders[3])->m_TextureSRV = reinterpret_cast<DX11TextureDataComponent*>(l_rhs->m_roughnessTexture)->m_SRV;
 	}
 	else
 	{
-		l_resourceBinder->m_TextureSRVs[3] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Roughness))->m_SRV;
+		reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinders[3])->m_TextureSRV = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Roughness))->m_SRV;
 	}
-	if (rhs->m_aoTexture)
+	if (l_rhs->m_aoTexture)
 	{
-		InitializeTextureDataComponent(rhs->m_aoTexture);
-		l_resourceBinder->m_TextureSRVs[4] = reinterpret_cast<DX11TextureDataComponent*>(rhs->m_aoTexture)->m_SRV;
+		InitializeTextureDataComponent(l_rhs->m_aoTexture);
+		reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinders[4])->m_TextureSRV = reinterpret_cast<DX11TextureDataComponent*>(l_rhs->m_aoTexture)->m_SRV;
 	}
 	else
 	{
-		l_resourceBinder->m_TextureSRVs[4] = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::AmbientOcclusion))->m_SRV;
+		reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinders[4])->m_TextureSRV = reinterpret_cast<DX11TextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::AmbientOcclusion))->m_SRV;
 	}
-	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
 
-	rhs->m_ResourceBinder = l_resourceBinder;
+	l_rhs->m_objectStatus = ObjectStatus::Activated;
 
-	rhs->m_objectStatus = ObjectStatus::Activated;
-
-	m_initializedMaterials.emplace(rhs);
+	m_initializedMaterials.emplace(l_rhs);
 
 	return true;
 }
@@ -796,7 +799,11 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 
 	CreateViews(l_rhs, m_device);
 
-	l_rhs->m_RenderTargetsResourceBinder = addResourcesBinder();
+	l_rhs->m_RenderTargetsResourceBinders.resize(l_rhs->m_RenderPassDesc.m_RenderTargetCount);
+	for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		l_rhs->m_RenderTargetsResourceBinders[i] = addResourcesBinder();
+	}
 
 	CreateResourcesBinder(l_rhs);
 
@@ -1251,13 +1258,10 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 		switch (l_resourceBinder->m_ResourceBinderType)
 		{
 		case ResourceBinderType::Sampler:
-			m_deviceContext->PSSetSamplers((unsigned int)globalSlot, 1, &l_resourceBinder->m_Sampler);
+			m_deviceContext->PSSetSamplers((unsigned int)localSlot, 1, &l_resourceBinder->m_Sampler);
 			break;
 		case ResourceBinderType::Image:
-			for (size_t i = 0; i < l_resourceBinder->m_TextureSRVs.size(); i++)
-			{
-				BindSRV(shaderStage, (unsigned int)(globalSlot + i), l_resourceBinder->m_TextureSRVs[i]);
-			}
+			BindSRV(shaderStage, (unsigned int)(localSlot), l_resourceBinder->m_TextureSRV);
 			break;
 		case ResourceBinderType::Buffer:
 			if (l_resourceBinder->m_Accessibility == Accessibility::ReadOnly)
@@ -1268,24 +1272,24 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 				}
 				if (partialBinding)
 				{
-					BindPartialConstantBuffer((unsigned int)globalSlot, l_resourceBinder->m_Buffer, shaderStage, startOffset, l_resourceBinder->m_ElementSize);
+					BindPartialConstantBuffer((unsigned int)localSlot, l_resourceBinder->m_Buffer, shaderStage, startOffset, l_resourceBinder->m_ElementSize);
 				}
 				else
 				{
-					BindConstantBuffer((unsigned int)globalSlot, l_resourceBinder->m_Buffer, shaderStage);
+					BindConstantBuffer((unsigned int)localSlot, l_resourceBinder->m_Buffer, shaderStage);
 				}
 			}
 			else
 			{
 				if (accessibility == Accessibility::ReadOnly)
 				{
-					BindSRV(shaderStage, (unsigned int)globalSlot, l_resourceBinder->m_BufferSRV);
+					BindSRV(shaderStage, (unsigned int)localSlot, l_resourceBinder->m_BufferSRV);
 				}
 				else
 				{
 					if (shaderStage == ShaderStage::Compute)
 					{
-						m_deviceContext->CSSetUnorderedAccessViews((unsigned int)globalSlot, 1, &l_resourceBinder->m_BufferUAV, nullptr);
+						m_deviceContext->CSSetUnorderedAccessViews((unsigned int)localSlot, 1, &l_resourceBinder->m_BufferUAV, nullptr);
 					}
 					else
 					{
@@ -1315,10 +1319,7 @@ bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * ren
 			m_deviceContext->PSSetSamplers((unsigned int)localSlot, 1, 0);
 			break;
 		case ResourceBinderType::Image:
-			for (size_t i = 0; i < l_resourceBinder->m_TextureSRVs.size(); i++)
-			{
-				BindSRV(shaderStage, (unsigned int)i, 0);
-			}
+			BindSRV(shaderStage, (unsigned int)(localSlot), 0);
 			break;
 		case ResourceBinderType::Buffer:
 			if (l_resourceBinder->m_Accessibility != Accessibility::ReadOnly)

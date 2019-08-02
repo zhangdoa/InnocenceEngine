@@ -12,5 +12,5 @@ public:
 	TextureDataComponent* m_metallicTexture = 0;
 	TextureDataComponent* m_roughnessTexture = 0;
 	TextureDataComponent* m_aoTexture = 0;
-	IResourceBinder* m_ResourceBinder = 0;
+	std::vector<IResourceBinder*> m_ResourceBinders;
 };

@@ -470,8 +470,8 @@ bool DX12RenderingServer::Initialize()
 		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_IsRanged = true;
 
 		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Sampler;
-		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 0;
-		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 1;
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 1;
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 0;
 		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_IsRanged = true;
 
 		m_SwapChainRPDC->m_ShaderProgram = m_SwapChainSPC;
@@ -562,7 +562,12 @@ bool DX12RenderingServer::Initialize()
 		// Initialize manually
 		CreateViews(m_SwapChainRPDC, m_device);
 
-		m_SwapChainRPDC->m_RenderTargetsResourceBinder = addResourcesBinder();
+		m_SwapChainRPDC->m_RenderTargetsResourceBinders.resize(m_swapChainImageCount);
+
+		for (size_t i = 0; i < m_swapChainImageCount; i++)
+		{
+			m_SwapChainRPDC->m_RenderTargetsResourceBinders[i] = addResourcesBinder();
+		}
 
 		CreateResourcesBinder(m_SwapChainRPDC, this);
 
@@ -957,63 +962,60 @@ bool DX12RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 	}
 
 	auto l_rhs = reinterpret_cast<DX12MaterialDataComponent*>(rhs);
-
-	DX12SRV l_SRV = {};
+	l_rhs->m_ResourceBinders.resize(5);
+	for (size_t i = 0; i < 5; i++)
+	{
+		l_rhs->m_ResourceBinders[i] = addResourcesBinder();
+		l_rhs->m_ResourceBinders[i]->m_ResourceBinderType = ResourceBinderType::Image;
+	}
 
 	// Only store the first one
 	if (l_rhs->m_normalTexture)
 	{
 		InitializeTextureDataComponent(l_rhs->m_normalTexture);
-		l_SRV = CreateSRV(l_rhs->m_normalTexture);
+		reinterpret_cast<DX12ResourceBinder*>(l_rhs->m_ResourceBinders[0])->m_TextureSRV = CreateSRV(l_rhs->m_normalTexture);
 	}
 	else
 	{
-		l_SRV = CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Normal));
+		reinterpret_cast<DX12ResourceBinder*>(l_rhs->m_ResourceBinders[0])->m_TextureSRV = CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Normal));
 	}
 	if (l_rhs->m_albedoTexture)
 	{
 		InitializeTextureDataComponent(l_rhs->m_albedoTexture);
-		CreateSRV(l_rhs->m_albedoTexture);
+		reinterpret_cast<DX12ResourceBinder*>(l_rhs->m_ResourceBinders[1])->m_TextureSRV = CreateSRV(l_rhs->m_albedoTexture);
 	}
 	else
 	{
-		CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Albedo));
+		reinterpret_cast<DX12ResourceBinder*>(l_rhs->m_ResourceBinders[1])->m_TextureSRV = CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Albedo));
 	}
 	if (l_rhs->m_metallicTexture)
 	{
 		InitializeTextureDataComponent(l_rhs->m_metallicTexture);
-		CreateSRV(l_rhs->m_metallicTexture);
+		reinterpret_cast<DX12ResourceBinder*>(l_rhs->m_ResourceBinders[2])->m_TextureSRV = CreateSRV(l_rhs->m_metallicTexture);
 	}
 	else
 	{
-		CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Metallic));
+		reinterpret_cast<DX12ResourceBinder*>(l_rhs->m_ResourceBinders[2])->m_TextureSRV = CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Metallic));
 	}
 	if (l_rhs->m_roughnessTexture)
 	{
 		InitializeTextureDataComponent(l_rhs->m_roughnessTexture);
-		CreateSRV(l_rhs->m_roughnessTexture);
+		reinterpret_cast<DX12ResourceBinder*>(l_rhs->m_ResourceBinders[3])->m_TextureSRV = CreateSRV(l_rhs->m_roughnessTexture);
 	}
 	else
 	{
-		CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Roughness));
+		reinterpret_cast<DX12ResourceBinder*>(l_rhs->m_ResourceBinders[3])->m_TextureSRV = CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Roughness));
 	}
 	if (l_rhs->m_aoTexture)
 	{
 		InitializeTextureDataComponent(l_rhs->m_aoTexture);
-		CreateSRV(l_rhs->m_aoTexture);
+		reinterpret_cast<DX12ResourceBinder*>(l_rhs->m_ResourceBinders[4])->m_TextureSRV = CreateSRV(l_rhs->m_aoTexture);
 	}
 	else
 	{
-		CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::AmbientOcclusion));
+		reinterpret_cast<DX12ResourceBinder*>(l_rhs->m_ResourceBinders[4])->m_TextureSRV = CreateSRV(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::AmbientOcclusion));
 	}
 
-	auto l_resourceBinder = addResourcesBinder();
-
-	l_resourceBinder->m_TextureSRV = l_SRV;
-
-	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
-
-	rhs->m_ResourceBinder = l_resourceBinder;
 	l_rhs->m_objectStatus = ObjectStatus::Activated;
 
 	m_initializedMaterials.emplace(l_rhs);
@@ -1035,7 +1037,11 @@ bool DX12RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 
 	l_result &= CreateRootSignature(l_rhs, m_device);
 
-	l_rhs->m_RenderTargetsResourceBinder = addResourcesBinder();
+	l_rhs->m_RenderTargetsResourceBinders.resize(l_rhs->m_RenderPassDesc.m_RenderTargetCount);
+	for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		l_rhs->m_RenderTargetsResourceBinders[i] = addResourcesBinder();
+	}
 
 	l_result &= CreateResourcesBinder(l_rhs, this);
 
@@ -1352,10 +1358,10 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 		switch (l_resourceBinder->m_ResourceBinderType)
 		{
 		case ResourceBinderType::Sampler:
-			l_commandList->m_CommandList->SetGraphicsRootDescriptorTable((unsigned int)localSlot, l_resourceBinder->m_Sampler.GPUHandle);
+			l_commandList->m_CommandList->SetGraphicsRootDescriptorTable((unsigned int)globalSlot, l_resourceBinder->m_Sampler.GPUHandle);
 			break;
 		case ResourceBinderType::Image:
-			l_commandList->m_CommandList->SetGraphicsRootDescriptorTable((unsigned int)localSlot, l_resourceBinder->m_TextureSRV.GPUHandle);
+			l_commandList->m_CommandList->SetGraphicsRootDescriptorTable((unsigned int)globalSlot, l_resourceBinder->m_TextureSRV.GPUHandle);
 			break;
 		case ResourceBinderType::Buffer:
 			if (l_resourceBinder->m_Accessibility == Accessibility::ReadOnly)
@@ -1366,7 +1372,7 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 				}
 				else
 				{
-					l_commandList->m_CommandList->SetGraphicsRootConstantBufferView((unsigned int)localSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+					l_commandList->m_CommandList->SetGraphicsRootConstantBufferView((unsigned int)globalSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 				}
 			}
 			else
@@ -1375,22 +1381,22 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 				{
 					if (shaderStage == ShaderStage::Compute)
 					{
-						l_commandList->m_CommandList->SetComputeRootShaderResourceView((unsigned int)localSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+						l_commandList->m_CommandList->SetComputeRootShaderResourceView((unsigned int)globalSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 					}
 					else
 					{
-						l_commandList->m_CommandList->SetGraphicsRootShaderResourceView((unsigned int)localSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+						l_commandList->m_CommandList->SetGraphicsRootShaderResourceView((unsigned int)globalSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 					}
 				}
 				else
 				{
 					if (shaderStage == ShaderStage::Compute)
 					{
-						l_commandList->m_CommandList->SetComputeRootUnorderedAccessView((unsigned int)localSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+						l_commandList->m_CommandList->SetComputeRootUnorderedAccessView((unsigned int)globalSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 					}
 					else
 					{
-						l_commandList->m_CommandList->SetGraphicsRootUnorderedAccessView((unsigned int)localSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+						l_commandList->m_CommandList->SetGraphicsRootUnorderedAccessView((unsigned int)globalSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 					}
 				}
 			}
@@ -1522,7 +1528,7 @@ bool DX12RenderingServer::Present()
 
 	CleanRenderTargets(m_SwapChainRPDC);
 
-	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_SwapChainSDC->m_ResourceBinder, 0, 1, Accessibility::ReadOnly, false, 0, 0);
+	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_SwapChainSDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly, false, 0, 0);
 
 	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, false, 0, 0);
 

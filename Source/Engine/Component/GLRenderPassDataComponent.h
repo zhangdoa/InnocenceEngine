@@ -13,7 +13,7 @@ public:
 class GLResourceBinder : public IResourceBinder
 {
 public:
-	std::vector<void*> m_TOs;
+	void* m_TO = 0;
 	GLuint m_SO = 0;
 	GLuint m_BO = 0;
 };

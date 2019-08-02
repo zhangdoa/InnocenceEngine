@@ -42,12 +42,12 @@ bool SkyPass::Setup()
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 0;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 3;
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 1;
+	m_RPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 1;
+	m_RPDC->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 3;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_GlobalSlot = 7;
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_LocalSlot = 2;
+	m_RPDC->m_ResourceBinderLayoutDescs[2].m_GlobalSlot = 2;
+	m_RPDC->m_ResourceBinderLayoutDescs[2].m_LocalSlot = 7;
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 
@@ -72,8 +72,8 @@ bool SkyPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_CameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly, false, 0, l_CameraGBDC->m_TotalSize);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_CameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly, false, 0, l_CameraGBDC->m_TotalSize);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_SunGBDC->m_ResourceBinder, 3, 1, Accessibility::ReadOnly, false, 0, l_SunGBDC->m_TotalSize);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_SkyGBDC->m_ResourceBinder, 7, 2, Accessibility::ReadOnly, false, 0, l_SkyGBDC->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_SunGBDC->m_ResourceBinder, 1, 3, Accessibility::ReadOnly, false, 0, l_SunGBDC->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_SkyGBDC->m_ResourceBinder, 2, 7, Accessibility::ReadOnly, false, 0, l_SkyGBDC->m_TotalSize);
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Cube);
 

@@ -177,7 +177,9 @@ bool GLRenderingServer::Initialize()
 
 		ReserveRenderTargets(m_SwapChainRPDC, this);
 
-		m_SwapChainRPDC->m_RenderTargetsResourceBinder = addResourcesBinder();
+		m_SwapChainRPDC->m_RenderTargetsResourceBinders.resize(1);
+
+		m_SwapChainRPDC->m_RenderTargetsResourceBinders[0] = addResourcesBinder();
 
 		CreateResourcesBinder(m_SwapChainRPDC);
 
@@ -523,18 +525,17 @@ bool GLRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * 
 		InitializeTextureDataComponent(rhs->m_aoTexture);
 	}
 
-	auto l_resourceBinder = addResourcesBinder();
-
-	l_resourceBinder->m_TOs.resize(5);
-	l_resourceBinder->m_TOs[0] = rhs->m_normalTexture;
-	l_resourceBinder->m_TOs[1] = rhs->m_albedoTexture;
-	l_resourceBinder->m_TOs[2] = rhs->m_metallicTexture;
-	l_resourceBinder->m_TOs[3] = rhs->m_roughnessTexture;
-	l_resourceBinder->m_TOs[4] = rhs->m_aoTexture;
-
-	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
-
-	rhs->m_ResourceBinder = l_resourceBinder;
+	rhs->m_ResourceBinders.resize(5);
+	for (size_t i = 0; i < 5; i++)
+	{
+		rhs->m_ResourceBinders[i] = addResourcesBinder();
+		rhs->m_ResourceBinders[i]->m_ResourceBinderType = ResourceBinderType::Image;
+	}
+	reinterpret_cast<GLResourceBinder*>(rhs->m_ResourceBinders[0])->m_TO = rhs->m_normalTexture;
+	reinterpret_cast<GLResourceBinder*>(rhs->m_ResourceBinders[1])->m_TO = rhs->m_albedoTexture;
+	reinterpret_cast<GLResourceBinder*>(rhs->m_ResourceBinders[2])->m_TO = rhs->m_metallicTexture;
+	reinterpret_cast<GLResourceBinder*>(rhs->m_ResourceBinders[3])->m_TO = rhs->m_roughnessTexture;
+	reinterpret_cast<GLResourceBinder*>(rhs->m_ResourceBinders[4])->m_TO = rhs->m_aoTexture;
 
 	rhs->m_objectStatus = ObjectStatus::Activated;
 
@@ -553,7 +554,11 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 
 	CreateRenderTargets(l_rhs, this);
 
-	l_rhs->m_RenderTargetsResourceBinder = addResourcesBinder();
+	l_rhs->m_RenderTargetsResourceBinders.resize(l_rhs->m_RenderPassDesc.m_RenderTargetCount);
+	for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		l_rhs->m_RenderTargetsResourceBinders[i] = addResourcesBinder();
+	}
 
 	CreateResourcesBinder(l_rhs);
 
@@ -787,25 +792,19 @@ bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderP
 		switch (l_resourceBinder->m_ResourceBinderType)
 		{
 		case ResourceBinderType::Sampler:
-			glBindSampler((unsigned int)globalSlot, l_resourceBinder->m_SO);
+			glBindSampler((unsigned int)localSlot, l_resourceBinder->m_SO);
 			break;
 		case ResourceBinderType::Image:
-			for (size_t i = 0; i < l_resourceBinder->m_TOs.size(); i++)
-			{
-				if (l_resourceBinder->m_TOs[i])
-				{
-					ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_resourceBinder->m_TOs[i]), (int)i);
-				}
-			}
+			ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_resourceBinder->m_TO), localSlot);
 			break;
 		case ResourceBinderType::Buffer:
 			if (l_resourceBinder->m_Accessibility == Accessibility::ReadOnly)
 			{
-				BindGPUBuffer(GL_UNIFORM_BUFFER, l_resourceBinder->m_BO, globalSlot, startOffset, l_resourceBinder->m_ElementSize, range);
+				BindGPUBuffer(GL_UNIFORM_BUFFER, l_resourceBinder->m_BO, localSlot, startOffset, l_resourceBinder->m_ElementSize, range);
 			}
 			else
 			{
-				BindGPUBuffer(GL_SHADER_STORAGE_BUFFER, l_resourceBinder->m_BO, globalSlot, startOffset, l_resourceBinder->m_ElementSize, range);
+				BindGPUBuffer(GL_SHADER_STORAGE_BUFFER, l_resourceBinder->m_BO, localSlot, startOffset, l_resourceBinder->m_ElementSize, range);
 			}
 			break;
 		default:
