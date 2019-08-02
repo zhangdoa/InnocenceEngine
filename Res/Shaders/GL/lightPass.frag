@@ -53,8 +53,8 @@ void main()
 	float Roughness = GPassRT1.a;
 	float safe_roughness = (Roughness + eps) / (1.0 + eps);
 	float AO = GPassRT2.a;
-	float SSAO = texture(uni_SSAOBlurPassRT0, screenTexCoords).x;
-	AO *= pow(SSAO, 2.0f);
+	//float SSAO = texture(uni_SSAOBlurPassRT0, screenTexCoords).x;
+	//AO *= pow(SSAO, 2.0f);
 
 	vec3 Lo = vec3(0.0);
 	vec3 N = normalize(Normal);
@@ -232,8 +232,8 @@ void main()
 		}
 	}
 
-	//// ambient occlusion
-	//Lo *= AO;
+	// ambient occlusion
+	Lo *= AO;
 #endif
 	uni_lightPassRT0.rgb = Lo;
 	uni_lightPassRT0.a = 1.0;

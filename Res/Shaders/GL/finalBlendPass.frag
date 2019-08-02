@@ -48,10 +48,10 @@ void main()
 	finalColor = accurateLinearToSRGB(finalColor);
 
 	// billboard overlay
-	finalColor += billboardPassResult.rgb;
+	//finalColor += billboardPassResult.rgb;
 
 	// debugger overlay
-	finalColor += debuggerPassResult.rgb;
+	//finalColor += debuggerPassResult.rgb;
 
 	FragColor = vec4(finalColor, 1.0);
 }

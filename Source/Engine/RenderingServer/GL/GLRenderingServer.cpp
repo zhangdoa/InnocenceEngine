@@ -163,12 +163,11 @@ bool GLRenderingServer::Initialize()
 		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
 		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
 		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 0;
-		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceCount = 1;
 		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_IsRanged = true;
 
 		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Sampler;
-		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 0;
-		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 1;
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 1;
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 0;
 		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_IsRanged = true;
 
 		m_SwapChainRPDC->m_ShaderProgram = m_SwapChainSPC;
@@ -792,10 +791,10 @@ bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderP
 		switch (l_resourceBinder->m_ResourceBinderType)
 		{
 		case ResourceBinderType::Sampler:
-			glBindSampler((unsigned int)localSlot, l_resourceBinder->m_SO);
+			//glBindSampler((unsigned int)localSlot, l_resourceBinder->m_SO);
 			break;
 		case ResourceBinderType::Image:
-			ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_resourceBinder->m_TO), localSlot);
+			ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_resourceBinder->m_TO), (unsigned int)localSlot);
 			break;
 		case ResourceBinderType::Buffer:
 			if (l_resourceBinder->m_Accessibility == Accessibility::ReadOnly)
