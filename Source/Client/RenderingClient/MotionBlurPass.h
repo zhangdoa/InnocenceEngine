@@ -1,11 +1,12 @@
 #pragma once
 #include "../../Engine/RenderingServer/IRenderingServer.h"
 
-namespace FinalBlendPass
+namespace MotionBlurPass
 {
 	bool Setup();
 	bool Initialize();
 	bool PrepareCommandList(RenderPassDataComponent* inputRPDC);
 
-	ShaderProgramComponent* getSPC();
+	RenderPassDataComponent* GetRPDC();
+	ShaderProgramComponent* GetSPC();
 };

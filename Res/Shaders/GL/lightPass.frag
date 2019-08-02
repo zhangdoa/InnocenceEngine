@@ -166,17 +166,17 @@ void main()
 
 	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, sunUBO.data.luminance.xyz);
 
-	Lo *= 1 - DirectionalLightShadow(FragPos);
+	//Lo *= 1 - DirectionalLightShadow(FragPos);
 
-	// point punctual light
-	// Get the index of the current pixel in the light grid.
-	ivec2 tileIndex = ivec2(floor(gl_FragCoord.xy / BLOCK_SIZE));
+	//// point punctual light
+	//// Get the index of the current pixel in the light grid.
+	//ivec2 tileIndex = ivec2(floor(gl_FragCoord.xy / BLOCK_SIZE));
 
-	// Get the start position and offset of the light in the light index list.
-	vec4 lightGridRGBA16F = imageLoad(uni_lightGrid, tileIndex);
-	uvec2 lightGrid = RGBA16F2RG32UI(lightGridRGBA16F);
-	uint startOffset = lightGrid.x;
-	uint lightCount = lightGrid.y;
+	//// Get the start position and offset of the light in the light index list.
+	//vec4 lightGridRGBA16F = imageLoad(uni_lightGrid, tileIndex);
+	//uvec2 lightGrid = RGBA16F2RG32UI(lightGridRGBA16F);
+	//uint startOffset = lightGrid.x;
+	//uint lightCount = lightGrid.y;
 
 	//for (int i = 0; i < lightCount; ++i)
 	for (int i = 0; i < NR_POINT_LIGHTS; ++i)
@@ -210,7 +210,7 @@ void main()
 		}
 	}
 
-	Lo *= 1 - PointLightShadow(FragPos);
+	//Lo *= 1 - PointLightShadow(FragPos);
 
 	// sphere area light
 	for (int i = 0; i < NR_SPHERE_LIGHTS; ++i)
@@ -252,10 +252,9 @@ void main()
 		}
 	}
 
-	// ambient occlusion
-	Lo *= AO;
+	//// ambient occlusion
+	//Lo *= AO;
 #endif
 	uni_lightPassRT0.rgb = Lo;
 	uni_lightPassRT0.a = 1.0;
-	//uni_lightPassRT0 = posWS;
 }
