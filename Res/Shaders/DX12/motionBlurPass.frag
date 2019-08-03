@@ -37,8 +37,10 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	for (int i = 1; i <= half_samples; i++)
 	{
 		float2 offset = MotionVector * (float(i) / float(MAX_SAMPLES));
-		result += in_TAAPassRT0.Sample(SampleTypePoint, screenTexCoords - offset);
-		result += in_TAAPassRT0.Sample(SampleTypePoint, screenTexCoords + offset);
+		float2 negativeCoords = saturate(screenTexCoords - offset);
+		float2 positiveCoords = saturate(screenTexCoords + offset);
+		result += in_TAAPassRT0.Sample(SampleTypePoint, negativeCoords);
+		result += in_TAAPassRT0.Sample(SampleTypePoint, positiveCoords);
 	}
 
 	result /= float(MAX_SAMPLES + 1);

@@ -67,6 +67,8 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	currentColor = currentColor / (1.0f + lumaCurrentColor);
 
 	float2 historyTexCoords = screenTexCoords - MotionVector;
+	historyTexCoords = saturate(historyTexCoords);
+
 	float3 historyColor = in_history.Sample(SampleTypePoint, historyTexCoords).rgb;
 	float lumaHistoryColor = luma(historyColor);
 
@@ -78,6 +80,9 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	for (int x = -1; x <= 1; x++) {
 		for (int y = -1; y <= 1; y++) {
 			float2 neighborTexCoords = screenTexCoords + float2(float(x) / renderTargetSize.x, float(y) / renderTargetSize.y);
+
+			neighborTexCoords = saturate(neighborTexCoords);
+
 			float3 neighborColor = in_preTAAPassRT0.Sample(SampleTypePoint, neighborTexCoords).rgb;
 			maxNeighbor = max(maxNeighbor, neighborColor);
 			minNeighbor = min(minNeighbor, neighborColor);

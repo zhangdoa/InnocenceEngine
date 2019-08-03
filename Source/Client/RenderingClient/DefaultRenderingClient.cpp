@@ -7,6 +7,7 @@
 #include "SkyPass.h"
 #include "PreTAAPass.h"
 #include "TAAPass.h"
+#include "PostTAAPass.h"
 #include "MotionBlurPass.h"
 #include "FinalBlendPass.h"
 
@@ -20,6 +21,7 @@ bool DefaultRenderingClient::Setup()
 	SkyPass::Setup();
 	PreTAAPass::Setup();
 	TAAPass::Setup();
+	PostTAAPass::Setup();
 	MotionBlurPass::Setup();
 	FinalBlendPass::Setup();
 
@@ -37,6 +39,7 @@ bool DefaultRenderingClient::Initialize()
 	SkyPass::Initialize();
 	PreTAAPass::Initialize();
 	TAAPass::Initialize();
+	PostTAAPass::Initialize();
 	MotionBlurPass::Initialize();
 	FinalBlendPass::Initialize();
 
@@ -52,7 +55,8 @@ bool DefaultRenderingClient::Render()
 	SkyPass::PrepareCommandList();
 	PreTAAPass::PrepareCommandList();
 	TAAPass::PrepareCommandList();
-	MotionBlurPass::PrepareCommandList(TAAPass::GetRPDC());
+	PostTAAPass::PrepareCommandList();
+	MotionBlurPass::PrepareCommandList(PostTAAPass::GetRPDC());
 	FinalBlendPass::PrepareCommandList(MotionBlurPass::GetRPDC());
 
 	return true;
