@@ -12,8 +12,8 @@ layout(location = 2, binding = 2) uniform sampler2D uni_opaquePassRT2;
 layout(location = 3, binding = 3) uniform sampler2D uni_opaquePassRT3;
 layout(location = 4, binding = 4) uniform sampler2D uni_brdfLUT;
 layout(location = 5, binding = 5) uniform sampler2D uni_brdfMSLUT;
-layout(location = 6, binding = 6) uniform samplerCube uni_pointLightShadowMap;
-layout(location = 7, binding = 7) uniform sampler2D uni_SSAOBlurPassRT0;
+layout(location = 6, binding = 6) uniform sampler2D uni_SSAOBlurPassRT0;
+layout(location = 7, binding = 7) uniform samplerCube uni_pointLightShadowMap;
 layout(location = 8, binding = 8) uniform sampler2D uni_directionalLightShadowMap;
 layout(location = 9, binding = 9) uniform samplerCube uni_irradianceMap;
 layout(location = 10, binding = 10) uniform samplerCube uni_preFiltedMap;
@@ -53,8 +53,8 @@ void main()
 	float Roughness = GPassRT1.a;
 	float safe_roughness = (Roughness + eps) / (1.0 + eps);
 	float AO = GPassRT2.a;
-	//float SSAO = texture(uni_SSAOBlurPassRT0, screenTexCoords).x;
-	//AO *= pow(SSAO, 2.0f);
+	float SSAO = texture(uni_SSAOBlurPassRT0, screenTexCoords).x;
+	AO *= pow(SSAO, 2.0f);
 
 	vec3 Lo = vec3(0.0);
 	vec3 N = normalize(Normal);

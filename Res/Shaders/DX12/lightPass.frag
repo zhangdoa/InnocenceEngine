@@ -7,6 +7,7 @@ Texture2D in_opaquePassRT2 : register(t2);
 Texture2D in_opaquePassRT3 : register(t3);
 Texture2D in_BRDFLUT : register(t4);
 Texture2D in_BRDFMSLUT : register(t5);
+Texture2D in_SSAO : register(t6);
 
 SamplerState SampleTypePoint : register(s0);
 
@@ -30,6 +31,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float4 GPassRT0 = in_opaquePassRT0.Sample(SampleTypePoint, input.texcoord);
 	float4 GPassRT1 = in_opaquePassRT1.Sample(SampleTypePoint, input.texcoord);
 	float4 GPassRT2 = in_opaquePassRT2.Sample(SampleTypePoint, input.texcoord);
+	float SSAO = in_SSAO.Sample(SampleTypePoint, input.texcoord).x;
 
 	float3 posWS = GPassRT0.xyz;
 	float metallic = GPassRT0.w;
@@ -37,6 +39,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float roughness = GPassRT1.w;
 	float3 albedo = GPassRT2.xyz;
 	float ao = GPassRT2.w;
+	ao *= pow(SSAO, 2.0f);
 
 	float3 F0 = float3(0.04, 0.04, 0.04);
 	F0 = lerp(F0, albedo, metallic);
@@ -132,6 +135,9 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 
 	//	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, roughness, F0, albedo, illuminance * sphereLights[i].luminance.xyz);
 	//}
+
+	// ambient occlusion
+	Lo *= ao;
 
 	output.lightPassRT0 = float4(Lo, 1.0);
 	return output;

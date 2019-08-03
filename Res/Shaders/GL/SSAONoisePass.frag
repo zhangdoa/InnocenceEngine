@@ -48,6 +48,8 @@ void main()
 		randomFragSampleCoord.xyz /= randomFragSampleCoord.w; // perspective divide
 		randomFragSampleCoord.xyz = randomFragSampleCoord.xyz * 0.5f + 0.5f; // transform to range 0.0 - 1.0
 
+		randomFragSampleCoord = clamp(randomFragSampleCoord, 0.0f, 1.0f);
+			 
 		// get sample depth
 		vec4 randomFragSamplePos = texture(uni_Position, randomFragSampleCoord.xy);
 
