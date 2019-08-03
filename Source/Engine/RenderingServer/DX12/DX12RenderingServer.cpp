@@ -908,18 +908,7 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment
 		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::RawImage))
 	{
-		if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
-		{
-			UINT64 l_uploadHeapBufferSize = GetRequiredIntermediateSize(l_rhs->m_ResourceHandle, 0, l_rhs->m_textureDataDesc.Depth);
-			D3D12_SUBRESOURCE_DATA l_textureSubResourceData = {};
-			l_textureSubResourceData.pData = l_rhs->m_textureData;
-			l_textureSubResourceData.RowPitch = l_rhs->m_textureDataDesc.Width * l_rhs->m_PixelDataSize;
-			l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * l_rhs->m_textureDataDesc.Height;
-
-			auto l_uploadHeapBuffer = CreateUploadHeapBuffer(l_uploadHeapBufferSize, m_device);
-			UpdateSubresources(l_commandList, l_rhs->m_ResourceHandle, l_uploadHeapBuffer, 0, 0, 1, &l_textureSubResourceData);
-		}
-		else if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::SamplerCubemap)
+		if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::SamplerCubemap)
 		{
 			UINT64 l_uploadHeapBufferSize = GetRequiredIntermediateSize(l_rhs->m_ResourceHandle, 0, 6);
 
