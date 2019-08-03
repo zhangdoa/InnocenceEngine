@@ -85,7 +85,7 @@ bool GIBakePass::Setup()
 	m_testSample3DTexture->m_textureDataDesc.WrapMethod = TextureWrapMethod::Repeat;
 	m_testSample3DTexture->m_textureDataDesc.Width = m_captureResolution;
 	m_testSample3DTexture->m_textureDataDesc.Height = m_captureResolution;
-	m_testSample3DTexture->m_textureDataDesc.Depth = m_captureResolution;
+	m_testSample3DTexture->m_textureDataDesc.DepthOrArraySize = m_captureResolution;
 	m_testSample3DTexture->m_textureDataDesc.PixelDataType = TexturePixelDataType::FLOAT32;
 	m_testSample3DTexture->m_textureData = &l_3DTextureSamples[0];
 

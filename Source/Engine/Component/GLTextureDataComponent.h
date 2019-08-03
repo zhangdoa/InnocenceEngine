@@ -5,18 +5,18 @@
 
 struct GLTextureDataDesc
 {
-	GLenum textureSamplerType;
-	GLenum textureWrapMethod;
-	GLenum minFilterParam;
-	GLenum magFilterParam;
-	GLenum internalFormat;
-	GLenum pixelDataFormat;
-	GLenum pixelDataType;
-	GLsizei pixelDataSize;
-	GLsizei width;
-	GLsizei height;
-	GLsizei depth;
-	float borderColor[4];
+	GLenum TextureSamplerType;
+	GLenum TextureWrapMethod;
+	GLenum MinFilterParam;
+	GLenum MagFilterParam;
+	GLenum InternalFormat;
+	GLenum PixelDataFormat;
+	GLenum PixelDataType;
+	GLsizei PixelDataSize;
+	GLsizei Width;
+	GLsizei Height;
+	GLsizei DepthOrArraySize;
+	float BorderColor[4];
 };
 
 class GLTextureDataComponent : public TextureDataComponent

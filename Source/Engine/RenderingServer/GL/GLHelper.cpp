@@ -14,21 +14,21 @@ GLTextureDataDesc GLHelper::GetGLTextureDataDesc(TextureDataDesc textureDataDesc
 {
 	GLTextureDataDesc l_result;
 
-	l_result.textureSamplerType = GetTextureSamplerType(textureDataDesc.SamplerType);
-	l_result.textureWrapMethod = GetTextureWrapMethod(textureDataDesc.WrapMethod);
-	l_result.minFilterParam = GetTextureFilterParam(textureDataDesc.MinFilterMethod);
-	l_result.magFilterParam = GetTextureFilterParam(textureDataDesc.MagFilterMethod);
-	l_result.internalFormat = GetTextureInternalFormat(textureDataDesc);
-	l_result.pixelDataFormat = GetTexturePixelDataFormat(textureDataDesc);
-	l_result.pixelDataType = GetTexturePixelDataType(textureDataDesc);
-	l_result.pixelDataSize = GetTexturePixelDataSize(textureDataDesc);
-	l_result.width = textureDataDesc.Width;
-	l_result.height = textureDataDesc.Height;
-	l_result.depth = textureDataDesc.Depth;
-	l_result.borderColor[0] = textureDataDesc.BorderColor[0];
-	l_result.borderColor[1] = textureDataDesc.BorderColor[1];
-	l_result.borderColor[2] = textureDataDesc.BorderColor[2];
-	l_result.borderColor[3] = textureDataDesc.BorderColor[3];
+	l_result.TextureSamplerType = GetTextureSamplerType(textureDataDesc.SamplerType);
+	l_result.TextureWrapMethod = GetTextureWrapMethod(textureDataDesc.WrapMethod);
+	l_result.MinFilterParam = GetTextureFilterParam(textureDataDesc.MinFilterMethod);
+	l_result.MagFilterParam = GetTextureFilterParam(textureDataDesc.MagFilterMethod);
+	l_result.InternalFormat = GetTextureInternalFormat(textureDataDesc);
+	l_result.PixelDataFormat = GetTexturePixelDataFormat(textureDataDesc);
+	l_result.PixelDataType = GetTexturePixelDataType(textureDataDesc);
+	l_result.PixelDataSize = GetTexturePixelDataSize(textureDataDesc);
+	l_result.Width = textureDataDesc.Width;
+	l_result.Height = textureDataDesc.Height;
+	l_result.DepthOrArraySize = textureDataDesc.DepthOrArraySize;
+	l_result.BorderColor[0] = textureDataDesc.BorderColor[0];
+	l_result.BorderColor[1] = textureDataDesc.BorderColor[1];
+	l_result.BorderColor[2] = textureDataDesc.BorderColor[2];
+	l_result.BorderColor[3] = textureDataDesc.BorderColor[3];
 
 	return l_result;
 }
@@ -43,6 +43,10 @@ GLenum GLHelper::GetTextureSamplerType(TextureSamplerType rhs)
 		return GL_TEXTURE_2D;
 	case TextureSamplerType::Sampler3D:
 		return GL_TEXTURE_3D;
+	case TextureSamplerType::Sampler1DArray:
+		return GL_TEXTURE_1D_ARRAY;
+	case TextureSamplerType::Sampler2DArray:
+		return GL_TEXTURE_2D_ARRAY;
 	case TextureSamplerType::SamplerCubemap:
 		return GL_TEXTURE_CUBE_MAP;
 	default:
@@ -850,7 +854,7 @@ bool GLHelper::AddShaderHandle(GLuint & shaderProgram, GLuint & shaderID, GLuint
 bool GLHelper::ActivateTexture(GLTextureDataComponent * GLTDC, int activateIndex)
 {
 	glActiveTexture(GL_TEXTURE0 + activateIndex);
-	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TO);
+	glBindTexture(GLTDC->m_GLTextureDataDesc.TextureSamplerType, GLTDC->m_TO);
 
 	return true;
 }
@@ -859,65 +863,43 @@ bool GLHelper::AttachTextureToFramebuffer(GLTextureDataComponent * GLTDC, GLRend
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPDC->m_FBO);
 
-	if (GLTDC->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler1D)
+	GLenum l_attachmentType;
+
+	if (GLTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::Depth)
 	{
-		if (GLTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::Depth)
-		{
-			glFramebufferTexture1D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_1D, GLTDC->m_TO, mipLevel);
-		}
-		else if (GLTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
-		{
-			glFramebufferTexture1D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_1D, GLTDC->m_TO, mipLevel);
-		}
-		else
-		{
-			glFramebufferTexture1D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + attachmentIndex, GL_TEXTURE_1D, GLTDC->m_TO, mipLevel);
-		}
+		l_attachmentType = GL_DEPTH_ATTACHMENT;
 	}
-	else if (GLTDC->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler2D)
+	else if (GLTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
 	{
-		if (GLTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::Depth)
-		{
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GLTDC->m_TO, mipLevel);
-		}
-		else if (GLTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
-		{
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, GLTDC->m_TO, mipLevel);
-		}
-		else
-		{
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + attachmentIndex, GL_TEXTURE_2D, GLTDC->m_TO, mipLevel);
-		}
-	}
-	else if (GLTDC->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
-	{
-		if (GLTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::Depth)
-		{
-			glFramebufferTexture3D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_3D, GLTDC->m_TO, mipLevel, layer);
-		}
-		else if (GLTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
-		{
-			glFramebufferTexture3D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_3D, GLTDC->m_TO, mipLevel, layer);
-		}
-		else
-		{
-			glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + attachmentIndex, GL_TEXTURE_3D, GLTDC->m_TO, mipLevel, layer);
-		}
+		l_attachmentType = GL_DEPTH_STENCIL_ATTACHMENT;
 	}
 	else
 	{
-		if (GLTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::Depth)
-		{
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TO, mipLevel);
-		}
-		else if (GLTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
-		{
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TO, mipLevel);
-		}
-		else
-		{
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + attachmentIndex, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TO, mipLevel);
-		}
+		l_attachmentType = GL_COLOR_ATTACHMENT0 + attachmentIndex;
+	}
+
+	switch (GLTDC->m_textureDataDesc.SamplerType)
+	{
+	case TextureSamplerType::Sampler1D:
+		glFramebufferTexture1D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_1D, GLTDC->m_TO, mipLevel);
+		break;
+	case TextureSamplerType::Sampler2D:
+		glFramebufferTexture2D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_2D, GLTDC->m_TO, mipLevel);
+		break;
+	case TextureSamplerType::Sampler3D:
+		glFramebufferTexture3D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_3D, GLTDC->m_TO, mipLevel, layer);
+		break;
+	case TextureSamplerType::Sampler1DArray:
+		glFramebufferTexture(GL_FRAMEBUFFER, l_attachmentType, GLTDC->m_TO, mipLevel);
+		break;
+	case TextureSamplerType::Sampler2DArray:
+		glFramebufferTexture(GL_FRAMEBUFFER, l_attachmentType, GLTDC->m_TO, mipLevel);
+		break;
+	case TextureSamplerType::SamplerCubemap:
+		glFramebufferTexture2D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TO, mipLevel);
+		break;
+	default:
+		break;
 	}
 
 	return true;

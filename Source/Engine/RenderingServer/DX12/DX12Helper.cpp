@@ -110,18 +110,31 @@ D3D12_RESOURCE_DESC DX12Helper::GetDX12TextureDataDesc(TextureDataDesc textureDa
 	l_result.Height = textureDataDesc.Height;
 	l_result.Width = textureDataDesc.Width;
 	l_result.MipLevels = GetTextureMipLevels(textureDataDesc);
-	if (textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
+
+	switch (textureDataDesc.SamplerType)
 	{
-		l_result.DepthOrArraySize = textureDataDesc.Depth;
-	}
-	else if (textureDataDesc.SamplerType == TextureSamplerType::SamplerCubemap)
-	{
-		l_result.DepthOrArraySize = 6;
-	}
-	else
-	{
+	case TextureSamplerType::Sampler1D:
 		l_result.DepthOrArraySize = 1;
+		break;
+	case TextureSamplerType::Sampler2D:
+		l_result.DepthOrArraySize = 1;
+		break;
+	case TextureSamplerType::Sampler3D:
+		l_result.DepthOrArraySize = textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::Sampler1DArray:
+		l_result.DepthOrArraySize = textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::Sampler2DArray:
+		l_result.DepthOrArraySize = textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::SamplerCubemap:
+		l_result.DepthOrArraySize = 6;
+		break;
+	default:
+		break;
 	}
+
 	l_result.Format = GetTextureFormat(textureDataDesc);
 	l_result.SampleDesc.Count = 1;
 	l_result.SampleDesc.Quality = 0;
@@ -290,21 +303,22 @@ D3D12_RESOURCE_DIMENSION DX12Helper::GetTextureDimension(TextureDataDesc texture
 {
 	D3D12_RESOURCE_DIMENSION l_result;
 
-	if (textureDataDesc.SamplerType == TextureSamplerType::Sampler1D)
+	switch (textureDataDesc.SamplerType)
 	{
-		l_result = D3D12_RESOURCE_DIMENSION_TEXTURE1D;
-	}
-	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler2D)
-	{
-		l_result = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	}
-	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
-	{
-		l_result = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
-	}
-	else
-	{
-		l_result = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	case TextureSamplerType::Sampler1D: l_result = D3D12_RESOURCE_DIMENSION_TEXTURE1D;
+		break;
+	case TextureSamplerType::Sampler2D: l_result = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		break;
+	case TextureSamplerType::Sampler3D: l_result = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
+		break;
+	case TextureSamplerType::Sampler1DArray: l_result = D3D12_RESOURCE_DIMENSION_TEXTURE1D;
+		break;
+	case TextureSamplerType::Sampler2DArray: l_result = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		break;
+	case TextureSamplerType::SamplerCubemap: l_result = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		break;
+	default:
+		break;
 	}
 
 	return l_result;
@@ -452,29 +466,42 @@ D3D12_SHADER_RESOURCE_VIEW_DESC DX12Helper::GetSRVDesc(TextureDataDesc textureDa
 		l_result.Format = D3D12TextureDesc.Format;
 	}
 
-	if (textureDataDesc.SamplerType == TextureSamplerType::Sampler1D)
+	switch (textureDataDesc.SamplerType)
 	{
+	case TextureSamplerType::Sampler1D:
 		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
 		l_result.Texture1D.MostDetailedMip = 0;
 		l_result.Texture1D.MipLevels = GetMipLevels(textureDataDesc);
-	}
-	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler2D)
-	{
+		break;
+	case TextureSamplerType::Sampler2D:
 		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		l_result.Texture2D.MostDetailedMip = 0;
 		l_result.Texture2D.MipLevels = GetMipLevels(textureDataDesc);
-	}
-	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
-	{
+		break;
+	case TextureSamplerType::Sampler3D:
 		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
 		l_result.Texture3D.MostDetailedMip = 0;
 		l_result.Texture3D.MipLevels = GetMipLevels(textureDataDesc);
-	}
-	else
-	{
+		break;
+	case TextureSamplerType::Sampler1DArray:
+		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1DARRAY;
+		l_result.Texture1DArray.MostDetailedMip = 0;
+		l_result.Texture1DArray.MipLevels = GetMipLevels(textureDataDesc);
+		l_result.Texture1DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::Sampler2DArray:
+		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+		l_result.Texture2DArray.MostDetailedMip = 0;
+		l_result.Texture2DArray.MipLevels = GetMipLevels(textureDataDesc);
+		l_result.Texture2DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::SamplerCubemap:
 		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
 		l_result.TextureCube.MostDetailedMip = 0;
 		l_result.TextureCube.MipLevels = GetMipLevels(textureDataDesc);
+		break;
+	default:
+		break;
 	}
 
 	return l_result;
@@ -484,26 +511,38 @@ D3D12_UNORDERED_ACCESS_VIEW_DESC DX12Helper::GetUAVDesc(TextureDataDesc textureD
 {
 	D3D12_UNORDERED_ACCESS_VIEW_DESC l_result = {};
 
-	if (textureDataDesc.SamplerType == TextureSamplerType::Sampler1D)
+	switch (textureDataDesc.SamplerType)
 	{
+	case TextureSamplerType::Sampler1D:
 		l_result.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE1D;
 		l_result.Texture1D.MipSlice = 0;
-	}
-	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler2D)
-	{
+		break;
+	case TextureSamplerType::Sampler2D:
 		l_result.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
 		l_result.Texture2D.MipSlice = 0;
-	}
-	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
-	{
+		break;
+	case TextureSamplerType::Sampler3D:
 		l_result.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
 		l_result.Texture3D.MipSlice = 0;
-	}
-	else
-	{
+		break;
+	case TextureSamplerType::Sampler1DArray:
+		l_result.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE1DARRAY;
+		l_result.Texture1DArray.MipSlice = 0;
+		l_result.Texture1DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::Sampler2DArray:
 		l_result.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
-		l_result.Texture2DArray.ArraySize = 6;
+		l_result.Texture2DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::SamplerCubemap:
+		l_result.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
+		l_result.Texture2DArray.MipSlice = 0;
+		l_result.Texture2DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: Use 2D texture array for UAV of cubemap.");
+		break;
+	default:
+		break;
 	}
 
 	return l_result;
@@ -513,30 +552,44 @@ D3D12_RENDER_TARGET_VIEW_DESC DX12Helper::GetRTVDesc(TextureDataDesc textureData
 {
 	D3D12_RENDER_TARGET_VIEW_DESC l_result = {};
 
-	if (textureDataDesc.SamplerType == TextureSamplerType::Sampler1D)
+	switch (textureDataDesc.SamplerType)
 	{
+	case TextureSamplerType::Sampler1D:
 		l_result.Format = GetTextureFormat(textureDataDesc);
 		l_result.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1D;
 		l_result.Texture1D.MipSlice = 0;
-	}
-	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler2D)
-	{
+		break;
+	case TextureSamplerType::Sampler2D:
 		l_result.Format = GetTextureFormat(textureDataDesc);
 		l_result.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 		l_result.Texture2D.MipSlice = 0;
-	}
-	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
-	{
+		break;
+	case TextureSamplerType::Sampler3D:
 		l_result.Format = GetTextureFormat(textureDataDesc);
 		l_result.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE3D;
 		l_result.Texture3D.MipSlice = 0;
-	}
-	else
-	{
+		break;
+	case TextureSamplerType::Sampler1DArray:
+		l_result.Format = GetTextureFormat(textureDataDesc);
+		l_result.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1DARRAY;
+		l_result.Texture1DArray.MipSlice = 0;
+		l_result.Texture1DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::Sampler2DArray:
+		l_result.Format = GetTextureFormat(textureDataDesc);
+		l_result.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
+		l_result.Texture2DArray.MipSlice = 0;
+		l_result.Texture2DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::SamplerCubemap:
 		l_result.Format = GetTextureFormat(textureDataDesc);
 		l_result.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
 		l_result.Texture2DArray.ArraySize = 6;
+		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: Use 2D texture array for RTV of cubemap.");
+		break;
+	default:
+		break;
 	}
 
 	return l_result;
@@ -555,25 +608,40 @@ D3D12_DEPTH_STENCIL_VIEW_DESC DX12Helper::GetDSVDesc(TextureDataDesc textureData
 		l_result.Format = DXGI_FORMAT_D32_FLOAT;
 	}
 
-	if (textureDataDesc.SamplerType == TextureSamplerType::Sampler1D)
+	switch (textureDataDesc.SamplerType)
 	{
+	case TextureSamplerType::Sampler1D:
 		l_result.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE1D;
 		l_result.Texture1D.MipSlice = 0;
-	}
-	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler2D)
-	{
+		break;
+	case TextureSamplerType::Sampler2D:
 		l_result.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 		l_result.Texture2D.MipSlice = 0;
-	}
-	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
-	{
-		// Not supported
-	}
-	else
-	{
+		break;
+	case TextureSamplerType::Sampler3D:
+		l_result.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
+		l_result.Texture2DArray.MipSlice = 0;
+		l_result.Texture2DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: Use 2D texture array for DSV of 3D texture.");
+		break;
+	case TextureSamplerType::Sampler1DArray:
+		l_result.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE1DARRAY;
+		l_result.Texture1DArray.MipSlice = 0;
+		l_result.Texture1DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::Sampler2DArray:
+		l_result.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
+		l_result.Texture2DArray.MipSlice = 0;
+		l_result.Texture2DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::SamplerCubemap:
 		l_result.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
 		l_result.Texture2DArray.ArraySize = 6;
+		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: Use 2D texture array for DSV of cubemap.");
+		break;
+	default:
+		break;
 	}
 
 	return l_result;
@@ -777,7 +845,7 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D
 				{
 					if (l_resourceBinderLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
 					{
-						InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer!");
+						InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer!");
 					}
 					else
 					{
@@ -817,7 +885,7 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D
 				{
 					if (l_resourceBinderLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
 					{
-						InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer!");
+						InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer!");
 					}
 					else
 					{
@@ -849,7 +917,7 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D
 			std::memcpy(l_errorMessageVector.data(), l_errorMessagePtr, bufferSize);
 			l_error->Release();
 
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: ", DX12RPDC->m_componentName.c_str(), " RootSignature serialization error: ", &l_errorMessageVector[0], "\n -- --------------------------------------------------- -- ");
+			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " RootSignature serialization error: ", &l_errorMessageVector[0], "\n -- --------------------------------------------------- -- ");
 		}
 		else
 		{

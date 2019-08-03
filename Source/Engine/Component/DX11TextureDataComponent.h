@@ -7,9 +7,8 @@ typedef struct D3D11_TEXTURE_DESC
 {
 	UINT Width;
 	UINT Height;
-	UINT Depth;
+	UINT DepthOrArraySize;
 	UINT MipLevels;
-	UINT ArraySize;
 	DXGI_FORMAT Format;
 	DXGI_SAMPLE_DESC SampleDesc;
 	D3D11_USAGE Usage;

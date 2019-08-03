@@ -77,7 +77,7 @@ enum class MeshShapeType { Line, Quad, Cube, Sphere, Terrain, Custom };
 enum class MeshPrimitiveTopology { Point, Line, Triangle, TriangleStrip };
 
 // texture custom types
-enum class TextureSamplerType { Sampler1D, Sampler2D, Sampler3D, SamplerCubemap };
+enum class TextureSamplerType { Sampler1D, Sampler2D, Sampler3D, Sampler1DArray, Sampler2DArray, SamplerCubemap };
 
 enum class TextureUsageType { Invisible, Normal, Albedo, Metallic, Roughness, AmbientOcclusion, ColorAttachment, DepthAttachment, DepthStencilAttachment, RawImage };
 
@@ -97,7 +97,7 @@ struct TextureDataDesc
 	TextureWrapMethod WrapMethod;
 	unsigned int Width = 0;
 	unsigned int Height = 0;
-	unsigned int Depth = 0;
+	unsigned int DepthOrArraySize = 0;
 	float BorderColor[4];
 };
 

@@ -16,15 +16,31 @@ D3D11_TEXTURE_DESC DX11Helper::GetDX11TextureDataDesc(TextureDataDesc textureDat
 
 	l_result.Width = textureDataDesc.Width;
 	l_result.Height = textureDataDesc.Height;
-	l_result.Depth = textureDataDesc.Depth;
-	if (textureDataDesc.SamplerType == TextureSamplerType::SamplerCubemap)
+
+	switch (textureDataDesc.SamplerType)
 	{
-		l_result.ArraySize = 6;
+	case TextureSamplerType::Sampler1D:
+		l_result.DepthOrArraySize = 1;
+		break;
+	case TextureSamplerType::Sampler2D:
+		l_result.DepthOrArraySize = 1;
+		break;
+	case TextureSamplerType::Sampler3D:
+		l_result.DepthOrArraySize = textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::Sampler1DArray:
+		l_result.DepthOrArraySize = textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::Sampler2DArray:
+		l_result.DepthOrArraySize = textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::SamplerCubemap:
+		l_result.DepthOrArraySize = 6;
+		break;
+	default:
+		break;
 	}
-	else
-	{
-		l_result.ArraySize = 1;
-	}
+
 	l_result.MipLevels = GetTextureMipLevels(textureDataDesc);
 	l_result.Format = GetTextureFormat(textureDataDesc);
 	l_result.SampleDesc.Count = 1;
@@ -323,7 +339,7 @@ D3D11_TEXTURE1D_DESC DX11Helper::Get1DTextureDataDesc(D3D11_TEXTURE_DESC texture
 
 	l_result.Width = textureDataDesc.Width;
 	l_result.MipLevels = textureDataDesc.MipLevels;
-	l_result.ArraySize = textureDataDesc.ArraySize;
+	l_result.ArraySize = textureDataDesc.DepthOrArraySize;
 	l_result.Format = textureDataDesc.Format;
 	l_result.Usage = textureDataDesc.Usage;
 	l_result.BindFlags = textureDataDesc.BindFlags;
@@ -340,7 +356,7 @@ D3D11_TEXTURE2D_DESC DX11Helper::Get2DTextureDataDesc(D3D11_TEXTURE_DESC texture
 	l_result.Width = textureDataDesc.Width;
 	l_result.Height = textureDataDesc.Height;
 	l_result.MipLevels = textureDataDesc.MipLevels;
-	l_result.ArraySize = textureDataDesc.ArraySize;
+	l_result.ArraySize = textureDataDesc.DepthOrArraySize;
 	l_result.Format = textureDataDesc.Format;
 	l_result.SampleDesc = textureDataDesc.SampleDesc;
 	l_result.Usage = textureDataDesc.Usage;
@@ -357,7 +373,7 @@ D3D11_TEXTURE3D_DESC DX11Helper::Get3DTextureDataDesc(D3D11_TEXTURE_DESC texture
 
 	l_result.Width = textureDataDesc.Width;
 	l_result.Height = textureDataDesc.Height;
-	l_result.Depth = textureDataDesc.Depth;
+	l_result.Depth = textureDataDesc.DepthOrArraySize;
 	l_result.MipLevels = textureDataDesc.MipLevels;
 	l_result.Format = textureDataDesc.Format;
 	l_result.Usage = textureDataDesc.Usage;
@@ -385,30 +401,42 @@ D3D11_SHADER_RESOURCE_VIEW_DESC DX11Helper::GetSRVDesc(TextureDataDesc textureDa
 		l_result.Format = D3D11TextureDesc.Format;
 	}
 
-	if (textureDataDesc.SamplerType == TextureSamplerType::Sampler1D)
+	switch (textureDataDesc.SamplerType)
 	{
+	case TextureSamplerType::Sampler1D:
 		l_result.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE1D;
 		l_result.Texture1D.MostDetailedMip = 0;
 		l_result.Texture1D.MipLevels = GetSRVMipLevels(textureDataDesc);
-	}
-	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler2D)
-	{
+		break;
+	case TextureSamplerType::Sampler2D:
 		l_result.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 		l_result.Texture2D.MostDetailedMip = 0;
 		l_result.Texture2D.MipLevels = GetSRVMipLevels(textureDataDesc);
-	}
-	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
-	{
+		break;
+	case TextureSamplerType::Sampler3D:
 		l_result.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
 		l_result.Texture3D.MostDetailedMip = 0;
 		l_result.Texture3D.MipLevels = GetSRVMipLevels(textureDataDesc);
-	}
-	else
-	{
-		l_result.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+		break;
+	case TextureSamplerType::Sampler1DArray:
+		l_result.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE1DARRAY;
+		l_result.Texture1DArray.MostDetailedMip = 0;
+		l_result.Texture1DArray.MipLevels = GetSRVMipLevels(textureDataDesc);
+		l_result.Texture1DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::Sampler2DArray:
+		l_result.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MostDetailedMip = 0;
 		l_result.Texture2DArray.MipLevels = GetSRVMipLevels(textureDataDesc);
-		l_result.Texture2DArray.ArraySize = 6;
+		l_result.Texture2DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::SamplerCubemap:
+		l_result.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+		l_result.TextureCube.MostDetailedMip = 0;
+		l_result.TextureCube.MipLevels = GetSRVMipLevels(textureDataDesc);
+		break;
+	default:
+		break;
 	}
 
 	return l_result;
@@ -433,26 +461,38 @@ D3D11_UNORDERED_ACCESS_VIEW_DESC DX11Helper::GetUAVDesc(TextureDataDesc textureD
 {
 	D3D11_UNORDERED_ACCESS_VIEW_DESC l_result = {};
 
-	if (textureDataDesc.SamplerType == TextureSamplerType::Sampler1D)
+	switch (textureDataDesc.SamplerType)
 	{
+	case TextureSamplerType::Sampler1D:
 		l_result.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE1D;
 		l_result.Texture1D.MipSlice = 0;
-	}
-	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler2D)
-	{
+		break;
+	case TextureSamplerType::Sampler2D:
 		l_result.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
 		l_result.Texture2D.MipSlice = 0;
-	}
-	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
-	{
+		break;
+	case TextureSamplerType::Sampler3D:
 		l_result.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
 		l_result.Texture3D.MipSlice = 0;
-	}
-	else
-	{
+		break;
+	case TextureSamplerType::Sampler1DArray:
+		l_result.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE1DARRAY;
+		l_result.Texture1DArray.MipSlice = 0;
+		l_result.Texture1DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::Sampler2DArray:
 		l_result.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
-		l_result.Texture2DArray.ArraySize = 6;
+		l_result.Texture2DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::SamplerCubemap:
+		l_result.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
+		l_result.Texture2DArray.MipSlice = 0;
+		l_result.Texture2DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: Use 2D texture array for UAV of cubemap.");
+		break;
+	default:
+		break;
 	}
 
 	return l_result;
@@ -462,30 +502,44 @@ D3D11_RENDER_TARGET_VIEW_DESC DX11Helper::GetRTVDesc(TextureDataDesc textureData
 {
 	D3D11_RENDER_TARGET_VIEW_DESC l_result = {};
 
-	if (textureDataDesc.SamplerType == TextureSamplerType::Sampler1D)
+	switch (textureDataDesc.SamplerType)
 	{
+	case TextureSamplerType::Sampler1D:
 		l_result.Format = GetTextureFormat(textureDataDesc);
 		l_result.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE1D;
 		l_result.Texture1D.MipSlice = 0;
-	}
-	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler2D)
-	{
+		break;
+	case TextureSamplerType::Sampler2D:
 		l_result.Format = GetTextureFormat(textureDataDesc);
 		l_result.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 		l_result.Texture2D.MipSlice = 0;
-	}
-	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
-	{
+		break;
+	case TextureSamplerType::Sampler3D:
 		l_result.Format = GetTextureFormat(textureDataDesc);
 		l_result.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE3D;
 		l_result.Texture3D.MipSlice = 0;
-	}
-	else
-	{
+		break;
+	case TextureSamplerType::Sampler1DArray:
+		l_result.Format = GetTextureFormat(textureDataDesc);
+		l_result.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE1DARRAY;
+		l_result.Texture1DArray.MipSlice = 0;
+		l_result.Texture1DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::Sampler2DArray:
+		l_result.Format = GetTextureFormat(textureDataDesc);
+		l_result.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+		l_result.Texture2DArray.MipSlice = 0;
+		l_result.Texture2DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::SamplerCubemap:
 		l_result.Format = GetTextureFormat(textureDataDesc);
 		l_result.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
 		l_result.Texture2DArray.ArraySize = 6;
+		InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: Use 2D texture array for RTV of cubemap.");
+		break;
+	default:
+		break;
 	}
 
 	return l_result;
@@ -504,25 +558,40 @@ D3D11_DEPTH_STENCIL_VIEW_DESC DX11Helper::GetDSVDesc(TextureDataDesc textureData
 		l_result.Format = DXGI_FORMAT_D32_FLOAT;
 	}
 
-	if (textureDataDesc.SamplerType == TextureSamplerType::Sampler1D)
+	switch (textureDataDesc.SamplerType)
 	{
+	case TextureSamplerType::Sampler1D:
 		l_result.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE1D;
 		l_result.Texture1D.MipSlice = 0;
-	}
-	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler2D)
-	{
+		break;
+	case TextureSamplerType::Sampler2D:
 		l_result.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 		l_result.Texture2D.MipSlice = 0;
-	}
-	else if (textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
-	{
-		// Not supported
-	}
-	else
-	{
+		break;
+	case TextureSamplerType::Sampler3D:
+		l_result.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+		l_result.Texture2DArray.MipSlice = 0;
+		l_result.Texture2DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: Use 2D texture array for DSV of 3D texture.");
+		break;
+	case TextureSamplerType::Sampler1DArray:
+		l_result.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE1DARRAY;
+		l_result.Texture1DArray.MipSlice = 0;
+		l_result.Texture1DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::Sampler2DArray:
+		l_result.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+		l_result.Texture2DArray.MipSlice = 0;
+		l_result.Texture2DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::SamplerCubemap:
 		l_result.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
 		l_result.Texture2DArray.ArraySize = 6;
+		InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: Use 2D texture array for DSV of cubemap.");
+		break;
+	default:
+		break;
 	}
 
 	return l_result;
