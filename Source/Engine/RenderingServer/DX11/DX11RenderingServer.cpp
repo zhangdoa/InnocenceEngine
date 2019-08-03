@@ -1377,6 +1377,33 @@ bool DX11RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, 
 
 bool DX11RenderingServer::CommandListEnd(RenderPassDataComponent * rhs)
 {
+	auto l_shaderProgram = reinterpret_cast<DX11ShaderProgramComponent*>(rhs->m_ShaderProgram);
+
+	if (l_shaderProgram->m_VSHandle)
+	{
+		m_deviceContext->VSSetShader(0, NULL, 0);
+	}
+	if (l_shaderProgram->m_TCSHandle)
+	{
+		m_deviceContext->HSSetShader(0, NULL, 0);
+	}
+	if (l_shaderProgram->m_TESHandle)
+	{
+		m_deviceContext->DSSetShader(0, NULL, 0);
+	}
+	if (l_shaderProgram->m_GSHandle)
+	{
+		m_deviceContext->GSSetShader(0, NULL, 0);
+	}
+	if (l_shaderProgram->m_FSHandle)
+	{
+		m_deviceContext->PSSetShader(0, NULL, 0);
+	}
+	if (l_shaderProgram->m_CSHandle)
+	{
+		m_deviceContext->CSSetShader(0, NULL, 0);
+	}
+
 	return true;
 }
 
