@@ -1,5 +1,6 @@
 #include "DefaultRenderingClient.h"
 #include "DefaultGPUBuffers.h"
+#include "GIBakePass.h"
 #include "BRDFLUTPass.h"
 #include "OpaquePass.h"
 #include "SSAOPass.h"
@@ -14,6 +15,7 @@
 bool DefaultRenderingClient::Setup()
 {
 	DefaultGPUBuffers::Setup();
+	GIBakePass::Setup();
 	BRDFLUTPass::Setup();
 	OpaquePass::Setup();
 	SSAOPass::Setup();
@@ -31,6 +33,7 @@ bool DefaultRenderingClient::Setup()
 bool DefaultRenderingClient::Initialize()
 {
 	DefaultGPUBuffers::Initialize();
+	GIBakePass::Initialize();
 	BRDFLUTPass::Initialize();
 	BRDFLUTPass::PrepareCommandList();
 	OpaquePass::Initialize();
