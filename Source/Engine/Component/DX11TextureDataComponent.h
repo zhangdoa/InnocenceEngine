@@ -16,6 +16,7 @@ typedef struct D3D11_TEXTURE_DESC
 	UINT BindFlags;
 	UINT CPUAccessFlags;
 	UINT MiscFlags;
+	UINT PixelDataSize;
 } D3D11_TEXTURE_DESC;
 
 class DX11TextureDataComponent : public TextureDataComponent

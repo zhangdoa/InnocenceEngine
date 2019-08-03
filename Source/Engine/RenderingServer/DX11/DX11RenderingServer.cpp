@@ -642,7 +642,8 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 	}
 	else
 	{
-		// @TODO: Cubemap support
+		auto l_desc = Get2DTextureDataDesc(l_rhs->m_DX11TextureDataDesc);
+		l_HResult = m_device->CreateTexture2D(&l_desc, NULL, (ID3D11Texture2D**)&l_rhs->m_ResourceHandle);
 	}
 
 	if (FAILED(l_HResult))
@@ -657,12 +658,20 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 		&& l_rhs->m_textureDataDesc.UsageType != TextureUsageType::DepthStencilAttachment
 		&& l_rhs->m_textureDataDesc.UsageType != TextureUsageType::RawImage)
 	{
-		unsigned int l_rowPitch = (l_rhs->m_textureDataDesc.Width * ((unsigned int)l_rhs->m_textureDataDesc.PixelDataFormat + 1)) * sizeof(unsigned char);
-
+		unsigned int l_rowPitch = l_rhs->m_textureDataDesc.Width * l_rhs->m_DX11TextureDataDesc.PixelDataSize;
 		if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
 		{
 			unsigned int l_depthPitch = l_rowPitch * l_rhs->m_textureDataDesc.Height;
 			m_deviceContext->UpdateSubresource(l_rhs->m_ResourceHandle, 0, NULL, l_rhs->m_textureData, l_rowPitch, l_depthPitch);
+		}
+		else if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::SamplerCubemap)
+		{
+			for (unsigned int i = 0; i < 6; i++)
+			{
+				unsigned int l_subresource = D3D11CalcSubresource(0, i, l_rhs->m_DX11TextureDataDesc.MipLevels);
+				void* l_rawData = (unsigned char*)l_rhs->m_textureData + l_rowPitch * l_rhs->m_textureDataDesc.Height * i;
+				m_deviceContext->UpdateSubresource(l_rhs->m_ResourceHandle, l_subresource, NULL, l_rawData, l_rowPitch, 0);
+			}
 		}
 		else
 		{

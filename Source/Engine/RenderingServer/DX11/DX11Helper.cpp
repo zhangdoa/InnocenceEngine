@@ -17,13 +17,21 @@ D3D11_TEXTURE_DESC DX11Helper::GetDX11TextureDataDesc(TextureDataDesc textureDat
 	l_result.Width = textureDataDesc.Width;
 	l_result.Height = textureDataDesc.Height;
 	l_result.Depth = textureDataDesc.Depth;
-	l_result.ArraySize = 1;
+	if (textureDataDesc.SamplerType == TextureSamplerType::SamplerCubemap)
+	{
+		l_result.ArraySize = 6;
+	}
+	else
+	{
+		l_result.ArraySize = 1;
+	}
 	l_result.MipLevels = GetTextureMipLevels(textureDataDesc);
 	l_result.Format = GetTextureFormat(textureDataDesc);
 	l_result.SampleDesc.Count = 1;
 	l_result.Usage = D3D11_USAGE_DEFAULT;
 	l_result.BindFlags = GetTextureBindFlags(textureDataDesc);
 	l_result.CPUAccessFlags = 0;
+	l_result.PixelDataSize = GetTexturePixelDataSize(textureDataDesc);
 
 	if (textureDataDesc.MagFilterMethod == TextureFilterMethod::Mip)
 	{
@@ -32,6 +40,11 @@ D3D11_TEXTURE_DESC DX11Helper::GetDX11TextureDataDesc(TextureDataDesc textureDat
 	else
 	{
 		l_result.MiscFlags = 0;
+	}
+
+	if (textureDataDesc.SamplerType == TextureSamplerType::SamplerCubemap)
+	{
+		l_result.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
 	}
 
 	return l_result;
@@ -269,6 +282,41 @@ unsigned int DX11Helper::GetTextureBindFlags(TextureDataDesc textureDataDesc)
 	return textureBindFlags;
 }
 
+unsigned int DX11Helper::GetTexturePixelDataSize(TextureDataDesc textureDataDesc)
+{
+	unsigned int l_singlePixelSize;
+
+	switch (textureDataDesc.PixelDataType)
+	{
+	case TexturePixelDataType::UBYTE:l_singlePixelSize = 1; break;
+	case TexturePixelDataType::SBYTE:l_singlePixelSize = 1; break;
+	case TexturePixelDataType::USHORT:l_singlePixelSize = 2; break;
+	case TexturePixelDataType::SSHORT:l_singlePixelSize = 2; break;
+	case TexturePixelDataType::UINT8:l_singlePixelSize = 1; break;
+	case TexturePixelDataType::SINT8:l_singlePixelSize = 1; break;
+	case TexturePixelDataType::UINT16:l_singlePixelSize = 2; break;
+	case TexturePixelDataType::SINT16:l_singlePixelSize = 2; break;
+	case TexturePixelDataType::UINT32:l_singlePixelSize = 4; break;
+	case TexturePixelDataType::SINT32:l_singlePixelSize = 4; break;
+	case TexturePixelDataType::FLOAT16:l_singlePixelSize = 2; break;
+	case TexturePixelDataType::FLOAT32:l_singlePixelSize = 4; break;
+	case TexturePixelDataType::DOUBLE:l_singlePixelSize = 8; break;
+	}
+
+	unsigned int l_channelSize;
+	switch (textureDataDesc.PixelDataFormat)
+	{
+	case TexturePixelDataFormat::R:l_channelSize = 1; break;
+	case TexturePixelDataFormat::RG:l_channelSize = 2; break;
+	case TexturePixelDataFormat::RGB:l_channelSize = 3; break;
+	case TexturePixelDataFormat::RGBA:l_channelSize = 4; break;
+	case TexturePixelDataFormat::Depth:l_channelSize = 1; break;
+	case TexturePixelDataFormat::DepthStencil:l_channelSize = 1; break;
+	}
+
+	return l_singlePixelSize * l_channelSize;
+}
+
 D3D11_TEXTURE1D_DESC DX11Helper::Get1DTextureDataDesc(D3D11_TEXTURE_DESC textureDataDesc)
 {
 	D3D11_TEXTURE1D_DESC l_result = {};
@@ -357,7 +405,10 @@ D3D11_SHADER_RESOURCE_VIEW_DESC DX11Helper::GetSRVDesc(TextureDataDesc textureDa
 	}
 	else
 	{
-		// @TODO: Cubemap support
+		l_result.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+		l_result.Texture2DArray.MostDetailedMip = 0;
+		l_result.Texture2DArray.MipLevels = GetSRVMipLevels(textureDataDesc);
+		l_result.Texture2DArray.ArraySize = 6;
 	}
 
 	return l_result;
@@ -399,7 +450,9 @@ D3D11_UNORDERED_ACCESS_VIEW_DESC DX11Helper::GetUAVDesc(TextureDataDesc textureD
 	}
 	else
 	{
-		// @TODO: Cubemap support
+		l_result.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
+		l_result.Texture2DArray.MipSlice = 0;
+		l_result.Texture2DArray.ArraySize = 6;
 	}
 
 	return l_result;
@@ -429,7 +482,10 @@ D3D11_RENDER_TARGET_VIEW_DESC DX11Helper::GetRTVDesc(TextureDataDesc textureData
 	}
 	else
 	{
-		// @TODO: Cubemap support
+		l_result.Format = GetTextureFormat(textureDataDesc);
+		l_result.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+		l_result.Texture2DArray.MipSlice = 0;
+		l_result.Texture2DArray.ArraySize = 6;
 	}
 
 	return l_result;
@@ -464,7 +520,9 @@ D3D11_DEPTH_STENCIL_VIEW_DESC DX11Helper::GetDSVDesc(TextureDataDesc textureData
 	}
 	else
 	{
-		// @TODO: Cubemap support
+		l_result.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+		l_result.Texture2DArray.MipSlice = 0;
+		l_result.Texture2DArray.ArraySize = 6;
 	}
 
 	return l_result;
@@ -521,10 +579,7 @@ bool DX11Helper::CreateResourcesBinder(DX11RenderPassDataComponent * DX11RPDC)
 {
 	for (size_t i = 0; i < DX11RPDC->m_RenderTargetsResourceBinders.size(); i++)
 	{
-		auto l_ResourceBinder = reinterpret_cast<DX11ResourceBinder*>(DX11RPDC->m_RenderTargetsResourceBinders[i]);
-		l_ResourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
-		auto l_DX11TDC = reinterpret_cast<DX11TextureDataComponent*>(DX11RPDC->m_RenderTargets[i]);
-		l_ResourceBinder->m_TextureSRV = l_DX11TDC->m_SRV;
+		DX11RPDC->m_RenderTargetsResourceBinders[i] = DX11RPDC->m_RenderTargets[i]->m_ResourceBinder;
 	}
 
 	return true;

@@ -861,6 +861,7 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 	auto l_rhs = reinterpret_cast<DX12TextureDataComponent*>(rhs);
 
 	l_rhs->m_DX12TextureDataDesc = GetDX12TextureDataDesc(l_rhs->m_textureDataDesc);
+	l_rhs->m_PixelDataSize = GetTexturePixelDataSize(l_rhs->m_textureDataDesc);
 
 	// Create the empty texture.
 	if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::ColorAttachment
@@ -907,15 +908,45 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment
 		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::RawImage))
 	{
-		const UINT64 l_uploadHeapBufferSize = GetRequiredIntermediateSize(l_rhs->m_ResourceHandle, 0, 1);
+		if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
+		{
+			UINT64 l_uploadHeapBufferSize = GetRequiredIntermediateSize(l_rhs->m_ResourceHandle, 0, l_rhs->m_textureDataDesc.Depth);
+			D3D12_SUBRESOURCE_DATA l_textureSubResourceData = {};
+			l_textureSubResourceData.pData = l_rhs->m_textureData;
+			l_textureSubResourceData.RowPitch = l_rhs->m_textureDataDesc.Width * l_rhs->m_PixelDataSize;
+			l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * l_rhs->m_textureDataDesc.Height;
 
-		auto l_uploadHeapBuffer = CreateUploadHeapBuffer(l_uploadHeapBufferSize, m_device);
+			auto l_uploadHeapBuffer = CreateUploadHeapBuffer(l_uploadHeapBufferSize, m_device);
+			UpdateSubresources(l_commandList, l_rhs->m_ResourceHandle, l_uploadHeapBuffer, 0, 0, 1, &l_textureSubResourceData);
+		}
+		else if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::SamplerCubemap)
+		{
+			UINT64 l_uploadHeapBufferSize = GetRequiredIntermediateSize(l_rhs->m_ResourceHandle, 0, 6);
 
-		D3D12_SUBRESOURCE_DATA l_textureSubResourceData = {};
-		l_textureSubResourceData.pData = l_rhs->m_textureData;
-		l_textureSubResourceData.RowPitch = l_rhs->m_textureDataDesc.Width * ((unsigned int)l_rhs->m_textureDataDesc.PixelDataFormat + 1);
-		l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * l_rhs->m_textureDataDesc.Height;
-		UpdateSubresources(l_commandList, l_rhs->m_ResourceHandle, l_uploadHeapBuffer, 0, 0, 1, &l_textureSubResourceData);
+			for (unsigned int i = 0; i < 6; i++)
+			{
+				D3D12_SUBRESOURCE_DATA l_textureSubResourceData = {};
+				l_textureSubResourceData.RowPitch = l_rhs->m_textureDataDesc.Width * l_rhs->m_PixelDataSize;
+				void* l_rawData = (unsigned char*)l_rhs->m_textureData + l_textureSubResourceData.RowPitch * l_rhs->m_textureDataDesc.Height * i;
+
+				l_textureSubResourceData.pData = l_rawData;
+				l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * l_rhs->m_textureDataDesc.Height;
+
+				auto l_uploadHeapBuffer = CreateUploadHeapBuffer(l_uploadHeapBufferSize, m_device);
+				UpdateSubresources(l_commandList, l_rhs->m_ResourceHandle, l_uploadHeapBuffer, 0, i, 1, &l_textureSubResourceData);
+			}
+		}
+		else
+		{
+			UINT64 l_uploadHeapBufferSize = GetRequiredIntermediateSize(l_rhs->m_ResourceHandle, 0, 1);
+			D3D12_SUBRESOURCE_DATA l_textureSubResourceData = {};
+			l_textureSubResourceData.pData = l_rhs->m_textureData;
+			l_textureSubResourceData.RowPitch = l_rhs->m_textureDataDesc.Width * l_rhs->m_PixelDataSize;
+			l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * l_rhs->m_textureDataDesc.Height;
+
+			auto l_uploadHeapBuffer = CreateUploadHeapBuffer(l_uploadHeapBufferSize, m_device);
+			UpdateSubresources(l_commandList, l_rhs->m_ResourceHandle, l_uploadHeapBuffer, 0, 0, 1, &l_textureSubResourceData);
+		}
 	}
 
 	//  upload heap ----> default heap
@@ -1648,32 +1679,7 @@ DX12SRV DX12RenderingServer::CreateSRV(TextureDataComponent * rhs)
 
 	DX12SRV l_result = {};
 
-	unsigned int l_mipLevels = -1;
-	if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::ColorAttachment
-		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthAttachment
-		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment
-		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::RawImage)
-	{
-		l_mipLevels = 1;
-	}
-
-	l_result.SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	l_result.SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	l_result.SRVDesc.Texture2D.MostDetailedMip = 0;
-	l_result.SRVDesc.Texture2D.MipLevels = l_mipLevels;
-
-	if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthAttachment)
-	{
-		l_result.SRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
-	}
-	else if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
-	{
-		l_result.SRVDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
-	}
-	else
-	{
-		l_result.SRVDesc.Format = l_rhs->m_DX12TextureDataDesc.Format;
-	}
+	l_result.SRVDesc = GetSRVDesc(l_rhs->m_textureDataDesc, l_rhs->m_DX12TextureDataDesc);
 
 	l_result.CPUHandle = m_currentCSUCPUHandle;
 	l_result.GPUHandle = m_currentCSUGPUHandle;

@@ -27,6 +27,7 @@ namespace DX11Helper
 	D3D11_TEXTURE_ADDRESS_MODE GetWrapMode(TextureWrapMethod textureWrapMethod);
 	unsigned int GetTextureMipLevels(TextureDataDesc textureDataDesc);
 	unsigned int GetTextureBindFlags(TextureDataDesc textureDataDesc);
+	unsigned int GetTexturePixelDataSize(TextureDataDesc textureDataDesc);
 	D3D11_TEXTURE1D_DESC Get1DTextureDataDesc(D3D11_TEXTURE_DESC textureDataDesc);
 	D3D11_TEXTURE2D_DESC Get2DTextureDataDesc(D3D11_TEXTURE_DESC textureDataDesc);
 	D3D11_TEXTURE3D_DESC Get3DTextureDataDesc(D3D11_TEXTURE_DESC textureDataDesc);
