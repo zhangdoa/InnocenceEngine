@@ -46,6 +46,7 @@ struct CSM {
 	mat4 v;
 	vec4 AABBMax;
 	vec4 AABBMin;
+	float padding[6];
 };
 
 struct SH9

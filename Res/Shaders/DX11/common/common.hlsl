@@ -41,6 +41,7 @@ struct CSM {
 	matrix v;
 	float4 AABBMax;
 	float4 AABBMin;
+	float4 padding[6];
 };
 
 struct Plane

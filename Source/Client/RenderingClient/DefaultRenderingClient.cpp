@@ -2,6 +2,7 @@
 #include "DefaultGPUBuffers.h"
 #include "GIBakePass.h"
 #include "BRDFLUTPass.h"
+#include "SunShadowPass.h"
 #include "OpaquePass.h"
 #include "SSAOPass.h"
 #include "LightPass.h"
@@ -17,6 +18,7 @@ bool DefaultRenderingClient::Setup()
 	DefaultGPUBuffers::Setup();
 	GIBakePass::Setup();
 	BRDFLUTPass::Setup();
+	SunShadowPass::Setup();
 	OpaquePass::Setup();
 	SSAOPass::Setup();
 	LightPass::Setup();
@@ -36,6 +38,7 @@ bool DefaultRenderingClient::Initialize()
 	GIBakePass::Initialize();
 	BRDFLUTPass::Initialize();
 	BRDFLUTPass::PrepareCommandList();
+	SunShadowPass::Initialize();
 	OpaquePass::Initialize();
 	SSAOPass::Initialize();
 	LightPass::Initialize();
@@ -52,6 +55,7 @@ bool DefaultRenderingClient::Initialize()
 bool DefaultRenderingClient::Render()
 {
 	DefaultGPUBuffers::Upload();
+	SunShadowPass::PrepareCommandList();
 	OpaquePass::PrepareCommandList();
 	SSAOPass::PrepareCommandList();
 	LightPass::PrepareCommandList();
