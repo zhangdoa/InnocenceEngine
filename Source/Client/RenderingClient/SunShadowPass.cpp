@@ -92,6 +92,11 @@ bool SunShadowPass::PrepareCommandList()
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
 
+	return true;
+}
+
+bool SunShadowPass::ExecuteCommandList()
+{
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
 
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);

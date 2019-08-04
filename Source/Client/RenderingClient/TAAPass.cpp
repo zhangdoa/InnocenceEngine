@@ -120,6 +120,22 @@ bool TAAPass::PrepareCommandList()
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(l_WriteRPDC);
 
+	return true;
+}
+
+bool TAAPass::ExecuteCommandList()
+{
+	RenderPassDataComponent* l_WriteRPDC;
+
+	if (l_isPassA)
+	{
+		l_WriteRPDC = m_RPDC_A;
+	}
+	else
+	{
+		l_WriteRPDC = m_RPDC_B;
+	}
+
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(l_WriteRPDC);
 
 	g_pModuleManager->getRenderingServer()->WaitForFrame(l_WriteRPDC);

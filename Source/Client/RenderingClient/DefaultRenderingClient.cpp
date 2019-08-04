@@ -66,6 +66,17 @@ bool DefaultRenderingClient::Render()
 	MotionBlurPass::PrepareCommandList(PostTAAPass::GetRPDC());
 	FinalBlendPass::PrepareCommandList(MotionBlurPass::GetRPDC());
 
+	SunShadowPass::ExecuteCommandList();
+	OpaquePass::ExecuteCommandList();
+	SSAOPass::ExecuteCommandList();
+	LightPass::ExecuteCommandList();
+	SkyPass::ExecuteCommandList();
+	PreTAAPass::ExecuteCommandList();
+	TAAPass::ExecuteCommandList();
+	PostTAAPass::ExecuteCommandList();
+	MotionBlurPass::ExecuteCommandList();
+	FinalBlendPass::ExecuteCommandList();
+
 	return true;
 }
 

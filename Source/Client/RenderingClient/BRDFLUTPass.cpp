@@ -90,10 +90,6 @@ bool BRDFLUTPass::PrepareCommandList()
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
 
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
-
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);
-
 	// Multi-scattering LUT
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_MS, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_MS);
@@ -106,6 +102,15 @@ bool BRDFLUTPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_MS, ShaderStage::Pixel, m_RPDC->m_RenderTargetsResourceBinders[0], 0, 0);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC_MS);
+
+	return true;
+}
+
+bool BRDFLUTPass::ExecuteCommandList()
+{
+	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
+
+	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);
 
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC_MS);
 

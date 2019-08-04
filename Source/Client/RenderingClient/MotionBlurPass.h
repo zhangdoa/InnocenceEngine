@@ -6,6 +6,7 @@ namespace MotionBlurPass
 	bool Setup();
 	bool Initialize();
 	bool PrepareCommandList(RenderPassDataComponent* inputRPDC);
+	bool ExecuteCommandList();
 
 	RenderPassDataComponent* GetRPDC();
 	ShaderProgramComponent* GetSPC();

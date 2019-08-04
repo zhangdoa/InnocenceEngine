@@ -188,6 +188,11 @@ bool GIBakePass::PrepareCommandList()
 	return true;
 }
 
+bool GIBakePass::ExecuteCommandList()
+{
+	return true;
+}
+
 RenderPassDataComponent * GIBakePass::GetRPDC()
 {
 	return m_RPDC;
