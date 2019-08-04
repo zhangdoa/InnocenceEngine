@@ -139,6 +139,7 @@ struct GraphicsPipelineDesc
 	BlendDesc m_BlendDesc = {};
 	RasterizerDesc m_RasterizerDesc = {};
 	ViewportDesc m_ViewportDesc = {};
+	float CleanColor[4] = { 0.0f , 0.0f, 0.0f, 0.0f };
 };
 
 struct RenderPassDesc

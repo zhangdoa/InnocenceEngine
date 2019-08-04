@@ -796,7 +796,8 @@ bool GLRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * rh
 
 bool GLRenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 {
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	auto l_cleanColor = rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor;
+	glClearColor(l_cleanColor[0], l_cleanColor[1], l_cleanColor[2], l_cleanColor[3]);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
 	glClear(GL_STENCIL_BUFFER_BIT);

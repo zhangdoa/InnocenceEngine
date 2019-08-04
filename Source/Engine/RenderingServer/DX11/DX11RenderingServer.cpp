@@ -1155,11 +1155,10 @@ bool DX11RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * 
 bool DX11RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 {
 	auto l_rhs = reinterpret_cast<DX11RenderPassDataComponent*>(rhs);
-	float l_cleanColors[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 	for (auto i : l_rhs->m_RTVs)
 	{
-		m_deviceContext->ClearRenderTargetView(i, l_cleanColors);
+		m_deviceContext->ClearRenderTargetView(i, rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
 	}
 	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
 	{

@@ -1346,17 +1346,15 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 
-	const float l_clearColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-
 	if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 	{
-		l_commandList->m_CommandList->ClearRenderTargetView(l_rhs->m_RTVDescriptorCPUHandles[l_rhs->m_CurrentFrame], l_clearColor, 0, nullptr);
+		l_commandList->m_CommandList->ClearRenderTargetView(l_rhs->m_RTVDescriptorCPUHandles[l_rhs->m_CurrentFrame], rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor, 0, nullptr);
 	}
 	else
 	{
 		for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
 		{
-			l_commandList->m_CommandList->ClearRenderTargetView(l_rhs->m_RTVDescriptorCPUHandles[i], l_clearColor, 0, nullptr);
+			l_commandList->m_CommandList->ClearRenderTargetView(l_rhs->m_RTVDescriptorCPUHandles[i], rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor, 0, nullptr);
 		}
 	}
 
