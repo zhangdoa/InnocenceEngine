@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-float PCFResolver(vec3 projCoords, sampler2DArray shadowMap, int index, float currentDepth, vec2 texelSize)
+float PCFResolver(float3 projCoords, Texture2DArray shadowMap, int index, float currentDepth, float2 texelSize)
 {
 	// PCF
 	float shadow = 0.0;
@@ -8,7 +8,7 @@ float PCFResolver(vec3 projCoords, sampler2DArray shadowMap, int index, float cu
 	{
 		for (int y = -1; y <= 1; ++y)
 		{
-			float pcfDepth = texture(shadowMap, vec3(projCoords.xy + vec2(x, y) * texelSize, index)).r;
+			float pcfDepth = shadowMap.Sample(SampleTypePoint, float3(projCoords.xy + float2(x, y) * texelSize, index)).r;
 			shadow += currentDepth > pcfDepth ? 1.0 : 0.0;
 		}
 	}
@@ -17,7 +17,7 @@ float PCFResolver(vec3 projCoords, sampler2DArray shadowMap, int index, float cu
 	return shadow;
 }
 // ----------------------------------------------------------------------------
-float VSMKernel(vec4 shadowMapValue, float currentDepth)
+float VSMKernel(float4 shadowMapValue, float currentDepth)
 {
 	float shadow = 0.0;
 	float Ex = shadowMapValue.r;
@@ -31,31 +31,28 @@ float VSMKernel(vec4 shadowMapValue, float currentDepth)
 	return shadow;
 }
 // ----------------------------------------------------------------------------
-float VSMResolver(vec3 projCoords, sampler2DArray shadowMap, int index, float currentDepth)
+float VSMResolver(float3 projCoords, Texture2DArray shadowMap, int index, float currentDepth)
 {
 	// VSM
-	vec4 shadowMapValue = texture(shadowMap, vec3(projCoords.xy, index));
+	float4 shadowMapValue = shadowMap.Sample(SampleTypePoint, float3(projCoords.xy, index));
 
 	float shadow = VSMKernel(shadowMapValue, currentDepth);
 	return shadow;
 }
 // ----------------------------------------------------------------------------
-float SunShadowResolver(vec3 fragPos)
+float SunShadowResolver(float3 fragPos)
 {
-	vec3 projCoords = vec3(0.0);
 	float shadow = 0.0;
-	vec2 textureSize = textureSize(uni_sunShadow, 0).xy;
-	vec2 texelSize = 1.0 / textureSize;
 
 	int splitIndex = NR_CSM_SPLITS;
 	for (int i = 0; i < NR_CSM_SPLITS; i++)
 	{
-		if (fragPos.x >= CSMUBO.data[i].AABBMin.x &&
-			fragPos.y >= CSMUBO.data[i].AABBMin.y &&
-			fragPos.z >= CSMUBO.data[i].AABBMin.z &&
-			fragPos.x <= CSMUBO.data[i].AABBMax.x &&
-			fragPos.y <= CSMUBO.data[i].AABBMax.y &&
-			fragPos.z <= CSMUBO.data[i].AABBMax.z)
+		if (fragPos.x >= CSMs[i].AABBMin.x &&
+			fragPos.y >= CSMs[i].AABBMin.y &&
+			fragPos.z >= CSMs[i].AABBMin.z &&
+			fragPos.x <= CSMs[i].AABBMax.x &&
+			fragPos.y <= CSMs[i].AABBMax.y &&
+			fragPos.z <= CSMs[i].AABBMax.z)
 		{
 			splitIndex = i;
 			break;
@@ -68,9 +65,16 @@ float SunShadowResolver(vec3 fragPos)
 	}
 	else
 	{
-		vec4 lightSpacePos = CSMUBO.data[splitIndex].p * CSMUBO.data[splitIndex].v * vec4(fragPos, 1.0f);
+		float2 renderTargetSize;
+		float level;
+		float elements;
+		in_SunShadow.GetDimensions(0, renderTargetSize.x, renderTargetSize.y, elements, level);
+		float2 texelSize = 1.0 / renderTargetSize;
+
+		float4 lightSpacePos = mul(float4(fragPos, 1.0f), CSMs[splitIndex].v);
+		lightSpacePos = mul(lightSpacePos, CSMs[splitIndex].p);
 		lightSpacePos = lightSpacePos / lightSpacePos.w;
-		projCoords = lightSpacePos.xyz;
+		float3 projCoords = lightSpacePos.xyz;
 
 		// transform to [0,1] range
 		projCoords = projCoords * 0.5 + 0.5;
@@ -78,7 +82,7 @@ float SunShadowResolver(vec3 fragPos)
 		// get depth of current fragment from light's perspective
 		float currentDepth = projCoords.z;
 
-		shadow = PCFResolver(projCoords, uni_sunShadow, splitIndex, currentDepth, texelSize);
+		shadow = PCFResolver(projCoords, in_SunShadow, splitIndex, currentDepth, texelSize);
 	}
 
 	return shadow;
@@ -86,6 +90,6 @@ float SunShadowResolver(vec3 fragPos)
 // ----------------------------------------------------------------------------
 float linearDepth(float depthSample)
 {
-	float zLinear = cameraUBO.zNear * cameraUBO.zFar / (cameraUBO.zFar + cameraUBO.zNear - depthSample * (cameraUBO.zFar - cameraUBO.zNear));
+	float zLinear = cam_zNear * cam_zFar / (cam_zFar + cam_zNear - depthSample * (cam_zFar - cam_zNear));
 	return zLinear;
 }

@@ -8,6 +8,8 @@ cbuffer cameraCBuffer : register(b0)
 	matrix cam_t_prev;
 	float4 cam_globalPos;
 	float cam_WHRatio;
+	float cam_zNear;
+	float cam_zFar;
 };
 
 cbuffer meshCBuffer : register(b1)

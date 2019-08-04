@@ -8,10 +8,12 @@ Texture2D in_opaquePassRT3 : register(t3);
 Texture2D in_BRDFLUT : register(t4);
 Texture2D in_BRDFMSLUT : register(t5);
 Texture2D in_SSAO : register(t6);
+Texture2DArray in_SunShadow : register(t7);
 
 SamplerState SampleTypePoint : register(s0);
 
 #include "common/BRDF.hlsl"
+#include "common/shadowResolver.hlsl"
 
 struct PixelInputType
 {
@@ -59,6 +61,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float NdotL = max(dot(N, L), 0.0);
 
 	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, roughness, F0, albedo, dirLight_luminance.xyz);
+	//Lo *= 1.0 - SunShadowResolver(posWS);
 
 	//SG SG_directionalLight = DirectionalLightToSG(normalize(-dirLight_dir.xyz), dirLight_luminance.xyz);
 	//Lo += SGGetIlluminance(SG_directionalLight, albedo, metallic, roughness, F0, N, V, L);

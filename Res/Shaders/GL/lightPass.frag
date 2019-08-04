@@ -13,8 +13,8 @@ layout(location = 3, binding = 3) uniform sampler2D uni_opaquePassRT3;
 layout(location = 4, binding = 4) uniform sampler2D uni_brdfLUT;
 layout(location = 5, binding = 5) uniform sampler2D uni_brdfMSLUT;
 layout(location = 6, binding = 6) uniform sampler2D uni_SSAOBlurPassRT0;
-layout(location = 7, binding = 7) uniform samplerCube uni_pointLightShadowMap;
-layout(location = 8, binding = 8) uniform sampler2D uni_directionalLightShadowMap;
+layout(location = 7, binding = 7) uniform sampler2DArray uni_sunShadow;
+layout(location = 8, binding = 8) uniform samplerCube uni_pointLightShadowMap;
 layout(location = 9, binding = 9) uniform samplerCube uni_irradianceMap;
 layout(location = 10, binding = 10) uniform samplerCube uni_preFiltedMap;
 layout(location = 11, binding = 11) uniform sampler2D uni_depth;
@@ -66,7 +66,7 @@ void main()
 	NdotL = max(dot(N, L), 0.0);
 
 	Lo = vec3(NdotL);
-	Lo *= 1 - DirectionalLightShadow(FragPos);
+	Lo *= 1 - SunShadowResolver(FragPos);
 
 	int splitIndex = NR_CSM_SPLITS;
 	for (int i = 0; i < NR_CSM_SPLITS; i++)
@@ -146,7 +146,7 @@ void main()
 
 	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, sunUBO.data.luminance.xyz);
 
-	//Lo *= 1 - DirectionalLightShadow(FragPos);
+	//Lo *= 1 - SunShadowResolver(FragPos);
 
 	//// point punctual light
 	//// Get the index of the current pixel in the light grid.
