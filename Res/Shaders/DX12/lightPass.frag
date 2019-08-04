@@ -60,7 +60,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float NdotH = max(dot(N, H), 0.0);
 	float NdotL = max(dot(N, L), 0.0);
 
-	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, roughness, F0, albedo, dirLight_luminance.xyz);
+	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, roughness, metallic, F0, albedo, dirLight_luminance.xyz);
 	//Lo *= 1.0 - SunShadowResolver(posWS);
 
 	//SG SG_directionalLight = DirectionalLightToSG(normalize(-dirLight_dir.xyz), dirLight_luminance.xyz);

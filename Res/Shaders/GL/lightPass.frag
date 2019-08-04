@@ -144,7 +144,7 @@ void main()
 	float NdotH = max(dot(N, H), 0.0);
 	NdotL = max(dot(N, L), 0.0);
 
-	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, sunUBO.data.luminance.xyz);
+	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, Metallic, F0, Albedo, sunUBO.data.luminance.xyz);
 
 	//Lo *= 1 - SunShadowResolver(FragPos);
 
@@ -185,7 +185,7 @@ void main()
 
 				vec3 lightLuminance = light.luminance.xyz * attenuation;
 
-				Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, lightLuminance);
+				Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, Metallic, F0, Albedo, lightLuminance);
 			}
 		}
 	}
@@ -228,7 +228,7 @@ void main()
 			}
 			illuminance *= PI;
 
-			Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, F0, Albedo, illuminance * sphereLightUBO.data[i].luminance.xyz);
+			Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, Metallic, F0, Albedo, illuminance * sphereLightUBO.data[i].luminance.xyz);
 		}
 	}
 

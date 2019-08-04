@@ -54,7 +54,7 @@ float fr_D_GGX(float NdotH, float roughness)
 	float a = roughness * roughness;
 	float a2 = a * a;
 	float f = (NdotH * a2 - NdotH) * NdotH + 1;
-	return a2 / (pow(f, 2.0));
+	return a2 / (PI * pow(f, 2.0));
 }
 // Diffuse BRDF
 // Disney model [https://blog.selfshadow.com/publications/s2015-shading-course/burley/s2015_pbs_disney_bsdf_notes.pdf]
@@ -150,29 +150,34 @@ vec3 fr_F_SchlickRoughness(float cosTheta, vec3 F0, float roughness)
 }
 // BRDF
 // ----------------------------------------------------------------------------
-vec3 getBRDF(float NdotV, float LdotH, float NdotH, float NdotL, float roughness, vec3 F0, vec3 albedo)
+vec3 getBRDF(float NdotV, float LdotH, float NdotH, float NdotL, float roughness, float metallic, vec3 F0, vec3 albedo)
 {
 	// Specular BRDF
 	float f90 = 1.0;
 	vec3 F = fr_F_Schlick(F0, f90, NdotV);
 	float G = fr_V_SmithGGXCorrelated(NdotV, NdotL, roughness);
 	float D = fr_D_GGX(NdotH, roughness);
-	vec3 Frss = F * D * G / PI;
+	vec3 Frss = F * D * G;
 
 	// Real-Time Rendering", 4th edition, pg. 341, "9.8 BRDF Models for Surface Reflection, the 4 * NdV * NdL has already been cancelled by G function
 	vec3 Frms = getFrMS(uni_brdfLUT, uni_brdfMSLUT, NdotL, NdotV, F0, roughness);
 
 	vec3 Fr = Frss + Frms;
 
+	vec3 kS = F;
+	vec3 kD = vec3(1.0, 1.0, 1.0) - kS;
+
+	kD *= 1.0 - metallic;
+
 	// Diffuse BRDF
 	vec3 Fd = fd_DisneyDiffuse2015(NdotV, NdotL, LdotH, roughness * roughness) * albedo / PI;
 
-	return (Fd + Fr);
+	return (kD * Fd + Fr);
 }
 // ----------------------------------------------------------------------------
-vec3 getIlluminance(float NdotV, float LdotH, float NdotH, float NdotL, float roughness, vec3 F0, vec3 albedo, vec3 lightLuminance)
+vec3 getIlluminance(float NdotV, float LdotH, float NdotH, float NdotL, float roughness, float metallic, vec3 F0, vec3 albedo, vec3 lightLuminance)
 {
-	vec3 BRDF = getBRDF(NdotV, LdotH, NdotH, NdotL, roughness, F0, albedo);
+	vec3 BRDF = getBRDF(NdotV, LdotH, NdotH, NdotL, roughness, metallic, F0, albedo);
 
 	return BRDF * lightLuminance * NdotL;
 }

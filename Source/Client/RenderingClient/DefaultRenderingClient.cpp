@@ -13,6 +13,8 @@
 #include "MotionBlurPass.h"
 #include "FinalBlendPass.h"
 
+#include "BRDFTestPass.h"
+
 bool DefaultRenderingClient::Setup()
 {
 	DefaultGPUBuffers::Setup();
@@ -28,6 +30,8 @@ bool DefaultRenderingClient::Setup()
 	PostTAAPass::Setup();
 	MotionBlurPass::Setup();
 	FinalBlendPass::Setup();
+
+	BRDFTestPass::Setup();
 
 	return true;
 }
@@ -49,6 +53,8 @@ bool DefaultRenderingClient::Initialize()
 	MotionBlurPass::Initialize();
 	FinalBlendPass::Initialize();
 
+	BRDFTestPass::Initialize();
+
 	return true;
 }
 
@@ -64,6 +70,7 @@ bool DefaultRenderingClient::Render()
 	TAAPass::PrepareCommandList();
 	PostTAAPass::PrepareCommandList();
 	MotionBlurPass::PrepareCommandList(PostTAAPass::GetRPDC());
+	//BRDFTestPass::PrepareCommandList();
 	FinalBlendPass::PrepareCommandList(MotionBlurPass::GetRPDC());
 
 	SunShadowPass::ExecuteCommandList();
@@ -75,6 +82,7 @@ bool DefaultRenderingClient::Render()
 	TAAPass::ExecuteCommandList();
 	PostTAAPass::ExecuteCommandList();
 	MotionBlurPass::ExecuteCommandList();
+	//BRDFTestPass::ExecuteCommandList();
 	FinalBlendPass::ExecuteCommandList();
 
 	return true;
