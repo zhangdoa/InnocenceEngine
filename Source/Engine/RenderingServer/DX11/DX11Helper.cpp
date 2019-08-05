@@ -44,9 +44,35 @@ D3D11_TEXTURE_DESC DX11Helper::GetDX11TextureDataDesc(TextureDataDesc textureDat
 	l_result.MipLevels = GetTextureMipLevels(textureDataDesc);
 	l_result.Format = GetTextureFormat(textureDataDesc);
 	l_result.SampleDesc.Count = 1;
-	l_result.Usage = D3D11_USAGE_DEFAULT;
+
+	if (textureDataDesc.CPUAccessibility != Accessibility::Immutable)
+	{
+		l_result.Usage = D3D11_USAGE_STAGING;
+	}
+	else
+	{
+		l_result.Usage = D3D11_USAGE_DEFAULT;
+	}
+
+	switch (textureDataDesc.CPUAccessibility)
+	{
+	case Accessibility::Immutable:
+		l_result.CPUAccessFlags = 0;
+		break;
+	case Accessibility::ReadOnly:
+		l_result.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		break;
+	case Accessibility::WriteOnly:
+		l_result.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		break;
+	case Accessibility::ReadWrite:
+		l_result.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+		break;
+	default:
+		break;
+	}
+
 	l_result.BindFlags = GetTextureBindFlags(textureDataDesc);
-	l_result.CPUAccessFlags = 0;
 	l_result.PixelDataSize = GetTexturePixelDataSize(textureDataDesc);
 
 	if (textureDataDesc.MagFilterMethod == TextureFilterMethod::Mip)
@@ -274,25 +300,29 @@ unsigned int DX11Helper::GetTextureMipLevels(TextureDataDesc textureDataDesc)
 unsigned int DX11Helper::GetTextureBindFlags(TextureDataDesc textureDataDesc)
 {
 	unsigned int textureBindFlags = 0;
-	if (textureDataDesc.UsageType == TextureUsageType::ColorAttachment)
+
+	if (textureDataDesc.CPUAccessibility == Accessibility::Immutable)
 	{
-		textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-	}
-	else if (textureDataDesc.UsageType == TextureUsageType::DepthAttachment)
-	{
-		textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_DEPTH_STENCIL;
-	}
-	else if (textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
-	{
-		textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_DEPTH_STENCIL;
-	}
-	else if (textureDataDesc.UsageType == TextureUsageType::RawImage)
-	{
-		textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
-	}
-	else
-	{
-		textureBindFlags = D3D11_BIND_SHADER_RESOURCE;
+		if (textureDataDesc.UsageType == TextureUsageType::ColorAttachment)
+		{
+			textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+		}
+		else if (textureDataDesc.UsageType == TextureUsageType::DepthAttachment)
+		{
+			textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_DEPTH_STENCIL;
+		}
+		else if (textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+		{
+			textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_DEPTH_STENCIL;
+		}
+		else if (textureDataDesc.UsageType == TextureUsageType::RawImage)
+		{
+			textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+		}
+		else
+		{
+			textureBindFlags = D3D11_BIND_SHADER_RESOURCE;
+		}
 	}
 
 	return textureBindFlags;

@@ -684,49 +684,52 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 
 	InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: Texture: ", l_rhs->m_ResourceHandle, " is initialized.");
 
-	// Create SRV
-	l_rhs->m_SRVDesc = GetSRVDesc(l_rhs->m_textureDataDesc, l_rhs->m_DX11TextureDataDesc);
-
-	l_HResult = m_device->CreateShaderResourceView(l_rhs->m_ResourceHandle, &l_rhs->m_SRVDesc, &l_rhs->m_SRV);
-	if (FAILED(l_HResult))
+	if (l_rhs->m_textureDataDesc.CPUAccessibility == Accessibility::Immutable)
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create SRV for texture!");
-		return false;
-	}
-#ifdef  _DEBUG
-	SetObjectName(l_rhs, l_rhs->m_SRV, "SRV");
-#endif //  _DEBUG
+		// Create SRV
+		l_rhs->m_SRVDesc = GetSRVDesc(l_rhs->m_textureDataDesc, l_rhs->m_DX11TextureDataDesc);
 
-	InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: SRV: ", l_rhs->m_SRV, " is initialized.");
-
-	// Generate mipmaps for this texture.
-	if (l_rhs->m_textureDataDesc.MagFilterMethod == TextureFilterMethod::Mip)
-	{
-		m_deviceContext->GenerateMips(l_rhs->m_SRV);
-	}
-
-	// Create UAV
-	if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::RawImage)
-	{
-		l_rhs->m_UAVDesc = GetUAVDesc(l_rhs->m_textureDataDesc, l_rhs->m_DX11TextureDataDesc);
-
-		l_HResult = m_device->CreateUnorderedAccessView(l_rhs->m_ResourceHandle, &l_rhs->m_UAVDesc, &l_rhs->m_UAV);
+		l_HResult = m_device->CreateShaderResourceView(l_rhs->m_ResourceHandle, &l_rhs->m_SRVDesc, &l_rhs->m_SRV);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create UAV for texture!");
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create SRV for texture!");
 			return false;
 		}
 #ifdef  _DEBUG
-		SetObjectName(l_rhs, l_rhs->m_UAV, "UAV");
+		SetObjectName(l_rhs, l_rhs->m_SRV, "SRV");
 #endif //  _DEBUG
 
-		InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: UAV: ", l_rhs->m_SRV, " is initialized.");
-	}
+		InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: SRV: ", l_rhs->m_SRV, " is initialized.");
 
-	auto l_resourceBinder = addResourcesBinder();
-	l_resourceBinder->m_TextureSRV = l_rhs->m_SRV;
-	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
-	l_rhs->m_ResourceBinder = l_resourceBinder;
+		// Generate mipmaps for this texture.
+		if (l_rhs->m_textureDataDesc.MagFilterMethod == TextureFilterMethod::Mip)
+		{
+			m_deviceContext->GenerateMips(l_rhs->m_SRV);
+		}
+
+		// Create UAV
+		if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::RawImage)
+		{
+			l_rhs->m_UAVDesc = GetUAVDesc(l_rhs->m_textureDataDesc, l_rhs->m_DX11TextureDataDesc);
+
+			l_HResult = m_device->CreateUnorderedAccessView(l_rhs->m_ResourceHandle, &l_rhs->m_UAVDesc, &l_rhs->m_UAV);
+			if (FAILED(l_HResult))
+			{
+				InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create UAV for texture!");
+				return false;
+			}
+#ifdef  _DEBUG
+			SetObjectName(l_rhs, l_rhs->m_UAV, "UAV");
+#endif //  _DEBUG
+
+			InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: UAV: ", l_rhs->m_SRV, " is initialized.");
+		}
+
+		auto l_resourceBinder = addResourcesBinder();
+		l_resourceBinder->m_TextureSRV = l_rhs->m_SRV;
+		l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
+		l_rhs->m_ResourceBinder = l_resourceBinder;
+	}
 
 	l_rhs->m_objectStatus = ObjectStatus::Activated;
 
@@ -1491,6 +1494,12 @@ vec4 DX11RenderingServer::ReadRenderTargetSample(RenderPassDataComponent * rhs, 
 
 std::vector<vec4> DX11RenderingServer::ReadTextureBackToCPU(RenderPassDataComponent * canvas, TextureDataComponent * TDC)
 {
+	auto l_tempTDC = AddTextureDataComponent("ReadBackTemp/");
+	l_tempTDC->m_textureDataDesc = TDC->m_textureDataDesc;
+	l_tempTDC->m_textureDataDesc.CPUAccessibility = Accessibility::ReadOnly;
+
+	InitializeTextureDataComponent(l_tempTDC);
+
 	return std::vector<vec4>();
 }
 
