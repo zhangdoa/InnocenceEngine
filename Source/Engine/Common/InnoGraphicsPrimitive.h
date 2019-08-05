@@ -175,9 +175,16 @@ struct GraphicsPipelineDesc
 	float CleanColor[4] = { 0.0f , 0.0f, 0.0f, 0.0f };
 };
 
+enum class RenderPassUsageType
+{
+	Graphics = 1,
+	Compute = 2
+};
+
 struct RenderPassDesc
 {
 	bool m_UseMultiFrames = false;
+	RenderPassUsageType m_RenderPassUsageType = RenderPassUsageType::Graphics;
 	size_t m_RenderTargetCount = 0;
 	TextureDataDesc m_RenderTargetDesc = {};
 	GraphicsPipelineDesc m_GraphicsPipelineDesc = {};
