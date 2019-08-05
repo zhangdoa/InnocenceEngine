@@ -988,7 +988,14 @@ bool GLHelper::AttachTextureToFramebuffer(GLTextureDataComponent * GLTDC, GLRend
 		glFramebufferTexture(GL_FRAMEBUFFER, l_attachmentType, GLTDC->m_TO, mipLevel);
 		break;
 	case TextureSamplerType::SamplerCubemap:
-		glFramebufferTexture2D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TO, mipLevel);
+		if (textureIndex == -1)
+		{
+			glFramebufferTexture(GL_FRAMEBUFFER, l_attachmentType, GLTDC->m_TO, mipLevel);
+		}
+		else
+		{
+			glFramebufferTexture2D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TO, mipLevel);
+		}
 		break;
 	default:
 		break;
