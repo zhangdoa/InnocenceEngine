@@ -948,10 +948,10 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 
 	auto l_resourceBinder = addResourcesBinder();
 	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Buffer;
-	l_resourceBinder->m_Accessibility = l_rhs->m_Accessibility;
+	l_resourceBinder->m_GPUAccessibility = l_rhs->m_GPUAccessibility;
 	l_resourceBinder->m_ElementSize = l_rhs->m_ElementSize;
 
-	auto l_isStructuredBuffer = (l_rhs->m_Accessibility == Accessibility::ReadWrite);
+	auto l_isStructuredBuffer = (l_rhs->m_GPUAccessibility == Accessibility::ReadWrite);
 
 	l_rhs->m_BufferDesc.ByteWidth = (unsigned int)(rhs->m_TotalSize);
 	l_rhs->m_BufferDesc.Usage = l_isStructuredBuffer ? D3D11_USAGE_DEFAULT : D3D11_USAGE_DYNAMIC;
@@ -1272,7 +1272,7 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 			BindSRV(shaderStage, (unsigned int)(localSlot), l_resourceBinder->m_TextureSRV);
 			break;
 		case ResourceBinderType::Buffer:
-			if (l_resourceBinder->m_Accessibility == Accessibility::ReadOnly)
+			if (l_resourceBinder->m_GPUAccessibility == Accessibility::ReadOnly)
 			{
 				if (accessibility != Accessibility::ReadOnly)
 				{
@@ -1330,7 +1330,7 @@ bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * ren
 			BindSRV(shaderStage, (unsigned int)(localSlot), 0);
 			break;
 		case ResourceBinderType::Buffer:
-			if (l_resourceBinder->m_Accessibility != Accessibility::ReadOnly)
+			if (l_resourceBinder->m_GPUAccessibility != Accessibility::ReadOnly)
 			{
 				if (accessibility == Accessibility::ReadOnly)
 				{

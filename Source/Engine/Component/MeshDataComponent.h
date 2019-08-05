@@ -1,6 +1,7 @@
 #pragma once
+#include "../Common/InnoType.h"
+#include "../Common/InnoGraphicsPrimitive.h"
 #include "../Common/InnoComponent.h"
-#include "../Common/InnoMath.h"
 #include "PhysicsDataComponent.h"
 #include "SkeletonDataComponent.h"
 

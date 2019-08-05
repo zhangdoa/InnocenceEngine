@@ -1175,10 +1175,10 @@ bool DX12RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 
 	auto l_resourceBinder = addResourcesBinder();
 	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Buffer;
-	l_resourceBinder->m_Accessibility = l_rhs->m_Accessibility;
+	l_resourceBinder->m_GPUAccessibility = l_rhs->m_GPUAccessibility;
 	l_resourceBinder->m_ElementSize = l_rhs->m_ElementSize;
 
-	D3D12_RESOURCE_STATES l_resourceState = l_rhs->m_Accessibility == Accessibility::ReadOnly ? D3D12_RESOURCE_STATE_GENERIC_READ : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+	D3D12_RESOURCE_STATES l_resourceState = l_rhs->m_GPUAccessibility == Accessibility::ReadOnly ? D3D12_RESOURCE_STATE_GENERIC_READ : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 
 	auto l_HResult = m_device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
@@ -1383,7 +1383,7 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 			l_commandList->m_CommandList->SetGraphicsRootDescriptorTable((unsigned int)globalSlot, l_resourceBinder->m_TextureSRV.GPUHandle);
 			break;
 		case ResourceBinderType::Buffer:
-			if (l_resourceBinder->m_Accessibility == Accessibility::ReadOnly)
+			if (l_resourceBinder->m_GPUAccessibility == Accessibility::ReadOnly)
 			{
 				if (accessibility != Accessibility::ReadOnly)
 				{

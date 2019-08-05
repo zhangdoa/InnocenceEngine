@@ -676,10 +676,10 @@ bool GLRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent 
 
 	auto l_resourceBinder = addResourcesBinder();
 	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Buffer;
-	l_resourceBinder->m_Accessibility = l_rhs->m_Accessibility;
+	l_resourceBinder->m_GPUAccessibility = l_rhs->m_GPUAccessibility;
 	l_resourceBinder->m_ElementSize = l_rhs->m_ElementSize;
 
-	if (l_rhs->m_Accessibility == Accessibility::ReadOnly)
+	if (l_rhs->m_GPUAccessibility == Accessibility::ReadOnly)
 	{
 		l_rhs->m_BufferType = GL_UNIFORM_BUFFER;
 	}
@@ -695,7 +695,7 @@ bool GLRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent 
 
 #ifdef _DEBUG
 	auto l_GPUBufferName = std::string(l_rhs->m_componentName.c_str());
-	if (l_rhs->m_Accessibility == Accessibility::ReadOnly)
+	if (l_rhs->m_GPUAccessibility == Accessibility::ReadOnly)
 	{
 		l_GPUBufferName += "_UBO";
 	}
@@ -827,7 +827,7 @@ bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderP
 			ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_resourceBinder->m_TO), (unsigned int)localSlot);
 			break;
 		case ResourceBinderType::Buffer:
-			if (l_resourceBinder->m_Accessibility == Accessibility::ReadOnly)
+			if (l_resourceBinder->m_GPUAccessibility == Accessibility::ReadOnly)
 			{
 				BindGPUBuffer(GL_UNIFORM_BUFFER, l_resourceBinder->m_BO, localSlot, startOffset, l_resourceBinder->m_ElementSize, range);
 			}

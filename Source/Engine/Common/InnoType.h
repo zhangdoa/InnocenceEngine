@@ -69,38 +69,6 @@ enum class IOMode { Text, Binary };
 
 enum class VisiblilityType { Invisible, BillBoard, Opaque, Transparent, Emissive, Debug };
 
-// mesh custom types
-using Index = unsigned int;
-
-enum class MeshUsageType { Static, Dynamic, Skeletal };
-enum class MeshShapeType { Line, Quad, Cube, Sphere, Terrain, Custom };
-enum class MeshPrimitiveTopology { Point, Line, Triangle, TriangleStrip };
-
-// texture custom types
-enum class TextureSamplerType { Sampler1D, Sampler2D, Sampler3D, Sampler1DArray, Sampler2DArray, SamplerCubemap };
-
-enum class TextureUsageType { Invisible, Normal, Albedo, Metallic, Roughness, AmbientOcclusion, ColorAttachment, DepthAttachment, DepthStencilAttachment, RawImage };
-
-enum class TexturePixelDataFormat { R, RG, RGB, RGBA, BGRA, Depth, DepthStencil };
-enum class TexturePixelDataType { UBYTE, SBYTE, USHORT, SSHORT, UINT8, SINT8, UINT16, SINT16, UINT32, SINT32, FLOAT16, FLOAT32, DOUBLE };
-enum class TextureWrapMethod { Edge, Repeat, Border };
-enum class TextureFilterMethod { Nearest, Linear, Mip };
-
-struct TextureDataDesc
-{
-	TextureSamplerType SamplerType;
-	TextureUsageType UsageType;
-	TexturePixelDataFormat PixelDataFormat;
-	TexturePixelDataType PixelDataType;
-	TextureFilterMethod MinFilterMethod;
-	TextureFilterMethod MagFilterMethod;
-	TextureWrapMethod WrapMethod;
-	unsigned int Width = 0;
-	unsigned int Height = 0;
-	unsigned int DepthOrArraySize = 0;
-	float BorderColor[4];
-};
-
 enum class RenderPassType { Shadow, GI, Opaque, Light, Transparent, Terrain, PostProcessing, Development };
 
 // shader custom types
