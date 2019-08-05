@@ -81,3 +81,10 @@ cbuffer SSAOKernelCBuffer : register(b10)
 {
 	float4 kernels[64];
 }
+
+cbuffer GICameraCBuffer : register(b11)
+{
+	matrix GI_cam_p;
+	matrix GI_cam_r[6];
+	matrix GI_cam_t;
+}

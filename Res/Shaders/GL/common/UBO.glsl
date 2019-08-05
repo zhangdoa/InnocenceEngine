@@ -77,6 +77,13 @@ layout(std140, row_major, binding = 10) uniform SSAOKernelUBOBlock
 	vec4 data[64];
 } SSAOKernelUBO;
 
+layout(std140, row_major, binding = 11) uniform GICameraUBOBlock
+{
+	mat4 p;
+	mat4 r[6];
+	mat4 t;
+} GICameraUBO;
+
 layout(std430, binding = 0) buffer gridFrustumsSSBOBlock
 {
 	Frustum data[];

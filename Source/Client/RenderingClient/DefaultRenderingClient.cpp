@@ -15,8 +15,23 @@
 
 #include "BRDFTestPass.h"
 
+#include "../../Engine/ModuleManager/IModuleManager.h"
+
+INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
+
+namespace DefaultRenderingClientNS
+{
+	std::function<void()> f_GIBake;
+	bool m_needGIBake = false;
+}
+
+using namespace DefaultRenderingClientNS;
+
 bool DefaultRenderingClient::Setup()
 {
+	f_GIBake = [&]() { m_needGIBake = true;	};
+	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_B, ButtonStatus::Pressed }, &f_GIBake);
+
 	DefaultGPUBuffers::Setup();
 	GIBakePass::Setup();
 	BRDFLUTPass::Setup();
@@ -83,7 +98,14 @@ bool DefaultRenderingClient::Render()
 	PostTAAPass::ExecuteCommandList();
 	MotionBlurPass::ExecuteCommandList();
 	//BRDFTestPass::ExecuteCommandList();
+
 	FinalBlendPass::ExecuteCommandList();
+
+	if (m_needGIBake)
+	{
+		GIBakePass::Bake();
+		m_needGIBake = false;
+	}
 
 	return true;
 }

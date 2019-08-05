@@ -119,6 +119,8 @@ bool SSAOPass::Setup()
 	m_SSAOKernelGPUBuffer->m_ElementSize = sizeof(vec4);
 	m_SSAOKernelGPUBuffer->m_ElementCount = m_kernelSize;
 	m_SSAOKernelGPUBuffer->m_InitialData = &m_SSAOKernel[0];
+	m_SSAOKernelGPUBuffer->m_BindingPoint = 10;
+
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_SSAOKernelGPUBuffer);
 
 	// Noise
