@@ -14,7 +14,7 @@ public:
 	ObjectStatus getStatus() override;
 
 	IWindowSurface* getWindowSurface() override;
-	ButtonStatusMap getButtonStatus() override;
+	const std::vector<ButtonState>& getButtonState() override;
 
 	bool sendEvent(unsigned int umsg, unsigned int WParam, int LParam) override;
 };

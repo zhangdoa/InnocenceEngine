@@ -16,7 +16,7 @@ public:
 	virtual ObjectStatus getStatus() = 0;
 
 	virtual IWindowSurface* getWindowSurface() = 0;
-	virtual ButtonStatusMap getButtonStatus() = 0;
+	virtual const std::vector<ButtonState>& getButtonState() = 0;
 
 	// Editor only
 	virtual bool sendEvent(unsigned int umsg, unsigned int WParam, int LParam) = 0;

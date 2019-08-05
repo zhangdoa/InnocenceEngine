@@ -406,7 +406,7 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	f_toggleshowImGui = [&]() {
 		m_showImGui = !m_showImGui;
 	};
-	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_I, ButtonStatus::Pressed }, &f_toggleshowImGui);
+	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonState{ INNO_KEY_I, true }, ButtonEvent{ EventLifeTime::OneShot, &f_toggleshowImGui });
 
 	if (!m_WindowSystem->setup(appHook, extraHook))
 	{

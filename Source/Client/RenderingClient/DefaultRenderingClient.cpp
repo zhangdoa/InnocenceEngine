@@ -30,7 +30,7 @@ using namespace DefaultRenderingClientNS;
 bool DefaultRenderingClient::Setup()
 {
 	f_GIBake = [&]() { m_needGIBake = true;	};
-	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_B, ButtonStatus::Pressed }, &f_GIBake);
+	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonState{ INNO_KEY_B, true }, ButtonEvent{ EventLifeTime::OneShot, &f_GIBake });
 
 	DefaultGPUBuffers::Setup();
 	GIBakePass::Setup();

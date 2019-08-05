@@ -265,7 +265,7 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 		gatherStaticMeshData();
 		m_renderingServer->BakeGIData();
 	};
-	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_B, ButtonStatus::Pressed }, &f_bakeGI);
+	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonState{ INNO_KEY_B, true }, ButtonEvent{ EventLifeTime::OneShot, &f_bakeGI });
 
 	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);

@@ -106,25 +106,40 @@ struct MeshCustomMaterial
 	float Thickness = 1.0f;
 };
 
-enum class ButtonStatus { Released, Pressed };
-using ButtonStatusMap = std::unordered_map<int, ButtonStatus>;
-
-struct ButtonData
+struct ButtonState
 {
 	int m_code = 0;
-	ButtonStatus m_status = ButtonStatus::Released;
+	bool m_isPressed = false;
 
-	bool operator==(const ButtonData &other) const
+	bool operator==(const ButtonState &other) const
 	{
-		return (m_code == other.m_code && m_status == other.m_status);
+		return (
+			m_code == other.m_code
+			&& m_isPressed == other.m_isPressed
+			);
 	}
 };
 
-struct ButtonHasher
+struct ButtonStateHasher
 {
-	std::size_t operator()(const ButtonData& k) const
+	std::size_t operator()(const ButtonState& k) const
 	{
-		return std::hash<int>()(k.m_code) ^ (std::hash<ButtonStatus>()(k.m_status) << 1);
+		return std::hash<int>()(k.m_code) ^ (std::hash<bool>()(k.m_isPressed) << 1);
+	}
+};
+
+enum class EventLifeTime { OneShot, Continuous };
+
+struct ButtonEvent
+{
+	EventLifeTime m_eventLifeTime = EventLifeTime::OneShot;
+	void* m_eventHandle = 0;
+
+	bool operator==(const ButtonEvent &other) const
+	{
+		return (m_eventLifeTime == other.m_eventLifeTime
+			&& m_eventHandle == other.m_eventHandle
+			);
 	}
 };
 

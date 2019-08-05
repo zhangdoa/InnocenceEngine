@@ -7,8 +7,8 @@
 
 extern IModuleManager* g_pModuleManager;
 
-using ButtonCallbackMap = std::unordered_map<ButtonData, std::set<std::function<void()>*>, ButtonHasher>;
-using MouseMovementCallbackMap = std::unordered_map<int, std::set<std::function<void(float)>*>>;
+using ButtonEventMap = std::unordered_multimap<ButtonState, ButtonEvent, ButtonStateHasher>;
+using MouseMovementEventMap = std::unordered_map<int, std::set<std::function<void(float)>*>>;
 
 namespace InnoEventSystemNS
 {
@@ -17,13 +17,13 @@ namespace InnoEventSystemNS
 	bool update();
 	bool terminate();
 
-	bool addButtonStatusCallback(ButtonData boundButton, std::function<void()>* buttonStatusCallbackFunctor);
+	bool addButtonStatusCallback(ButtonState buttonState, ButtonEvent buttonEvent);
 	bool addMouseMovementCallback(int mouseCode, std::function<void(float)>* mouseMovementCallback);
 
 	vec4 getMousePositionInWorldSpace();
 	vec2 getMousePositionInScreenSpace();
 
-	void buttonStatusCallback(ButtonData boundButton);
+	void buttonStatusCallback(ButtonState buttonState);
 	void framebufferSizeCallback(int width, int height);
 	void mousePositionCallback(float mouseXPos, float mouseYPos);
 	void scrollCallback(float xoffset, float yoffset);
@@ -32,9 +32,10 @@ namespace InnoEventSystemNS
 
 	const InputConfig m_inputConfig = { 256, 5 };
 
-	ButtonStatusMap m_buttonStatus;
-	ButtonCallbackMap m_buttonCallbacks;
-	MouseMovementCallbackMap m_mouseMovementCallbacks;
+	std::vector<ButtonState> m_previousFrameButtonStates;
+
+	ButtonEventMap m_buttonEvents;
+	MouseMovementEventMap m_mouseMovementEvents;
 
 	float m_mouseXOffset;
 	float m_mouseYOffset;
@@ -54,11 +55,6 @@ bool InnoEventSystemNS::initialize()
 {
 	if (InnoEventSystemNS::m_objectStatus == ObjectStatus::Created)
 	{
-		for (int i = 0; i < m_inputConfig.totalKeyCodes; i++)
-		{
-			m_buttonStatus.emplace(i, ButtonStatus::Released);
-		}
-
 		m_objectStatus = ObjectStatus::Activated;
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "EventSystem has been initialized.");
 
@@ -75,35 +71,25 @@ bool InnoEventSystemNS::update()
 {
 	if (InnoEventSystemNS::m_objectStatus == ObjectStatus::Activated)
 	{
-		m_buttonStatus = g_pModuleManager->getWindowSystem()->getButtonStatus();
+		auto l_buttonStates = g_pModuleManager->getWindowSystem()->getButtonState();
 
-		for (auto& i : m_buttonStatus)
+		for (auto& i : l_buttonStates)
 		{
-			auto l_keybinding = m_buttonCallbacks.find(ButtonData{ i.first, i.second });
-			if (l_keybinding != m_buttonCallbacks.end())
-			{
-				for (auto& j : l_keybinding->second)
-				{
-					if (j)
-					{
-						(*j)();
-					}
-				}
-			}
+			buttonStatusCallback(i);
 		}
 
-		if (m_mouseMovementCallbacks.size() != 0)
+		if (m_mouseMovementEvents.size() != 0)
 		{
 			if (m_mouseXOffset != 0)
 			{
-				for (auto& j : m_mouseMovementCallbacks.find(0)->second)
+				for (auto& j : m_mouseMovementEvents.find(0)->second)
 				{
 					(*j)(m_mouseXOffset);
 				};
 			}
 			if (m_mouseYOffset != 0)
 			{
-				for (auto& j : m_mouseMovementCallbacks.find(1)->second)
+				for (auto& j : m_mouseMovementEvents.find(1)->second)
 				{
 					(*j)(m_mouseYOffset);
 				};
@@ -114,6 +100,8 @@ bool InnoEventSystemNS::update()
 				m_mouseYOffset = 0;
 			}
 		}
+
+		m_previousFrameButtonStates = l_buttonStates;
 
 		return true;
 	}
@@ -134,31 +122,23 @@ bool InnoEventSystemNS::terminate()
 	return true;
 }
 
-bool InnoEventSystemNS::addButtonStatusCallback(ButtonData boundButton, std::function<void()>* buttonStatusCallbackFunctor)
+bool InnoEventSystemNS::addButtonStatusCallback(ButtonState buttonState, ButtonEvent buttonEvent)
 {
-	auto l_result = m_buttonCallbacks.find(boundButton);
-	if (l_result != m_buttonCallbacks.end())
-	{
-		l_result->second.emplace(buttonStatusCallbackFunctor);
-	}
-	else
-	{
-		m_buttonCallbacks.emplace(boundButton, std::set<std::function<void()>*>{buttonStatusCallbackFunctor});
-	}
+	m_buttonEvents.emplace(buttonState, buttonEvent);
 
 	return true;
 }
 
 bool InnoEventSystemNS::addMouseMovementCallback(int mouseCode, std::function<void(float)>* mouseMovementCallback)
 {
-	auto l_result = m_mouseMovementCallbacks.find(mouseCode);
-	if (l_result != m_mouseMovementCallbacks.end())
+	auto l_result = m_mouseMovementEvents.find(mouseCode);
+	if (l_result != m_mouseMovementEvents.end())
 	{
 		l_result->second.emplace(mouseMovementCallback);
 	}
 	else
 	{
-		m_mouseMovementCallbacks.emplace(mouseCode, std::set<std::function<void(float)>*>{mouseMovementCallback});
+		m_mouseMovementEvents.emplace(mouseCode, std::set<std::function<void(float)>*>{mouseMovementCallback});
 	}
 
 	return true;
@@ -212,16 +192,34 @@ vec2 InnoEventSystemNS::getMousePositionInScreenSpace()
 	return vec2(m_mouseLastX, m_mouseLastY);
 }
 
-void InnoEventSystemNS::buttonStatusCallback(ButtonData boundButton)
+void InnoEventSystemNS::buttonStatusCallback(ButtonState buttonState)
 {
-	auto l_keybinding = m_buttonCallbacks.find(boundButton);
-	if (l_keybinding != m_buttonCallbacks.end())
+	auto l_buttonEvents = m_buttonEvents.equal_range(buttonState);
+	auto l_resultCount = std::distance(l_buttonEvents.first, l_buttonEvents.second);
+
+	if (l_resultCount)
 	{
-		for (auto& j : l_keybinding->second)
+		for (auto it = l_buttonEvents.first; it != l_buttonEvents.second; it++)
 		{
-			if (j)
+			if (it->second.m_eventLifeTime == EventLifeTime::Continuous)
 			{
-				(*j)();
+				if (it->second.m_eventHandle)
+				{
+					auto l_event = reinterpret_cast<std::function<void()>*>(it->second.m_eventHandle);
+					(*l_event)();
+				}
+			}
+			else
+			{
+				auto l_previousFrameButtonState = m_previousFrameButtonStates[it->first.m_code];
+				if (l_previousFrameButtonState.m_isPressed != it->first.m_isPressed)
+				{
+					if (it->second.m_eventHandle)
+					{
+						auto l_event = reinterpret_cast<std::function<void()>*>(it->second.m_eventHandle);
+						(*l_event)();
+					}
+				}
 			}
 		}
 	}
@@ -272,9 +270,9 @@ InputConfig InnoEventSystem::getInputConfig()
 	return InnoEventSystemNS::m_inputConfig;
 }
 
-void InnoEventSystem::addButtonStatusCallback(ButtonData boundButton, std::function<void()>* buttonStatusCallbackFunctor)
+void InnoEventSystem::addButtonStatusCallback(ButtonState buttonState, ButtonEvent buttonEvent)
 {
-	InnoEventSystemNS::addButtonStatusCallback(boundButton, buttonStatusCallbackFunctor);
+	InnoEventSystemNS::addButtonStatusCallback(buttonState, buttonEvent);
 }
 
 void InnoEventSystem::addMouseMovementCallback(int mouseCode, std::function<void(float)>* mouseMovementCallback)
@@ -282,9 +280,9 @@ void InnoEventSystem::addMouseMovementCallback(int mouseCode, std::function<void
 	InnoEventSystemNS::addMouseMovementCallback(mouseCode, mouseMovementCallback);
 }
 
-void InnoEventSystem::buttonStatusCallback(ButtonData boundButton)
+void InnoEventSystem::buttonStatusCallback(ButtonState buttonState)
 {
-	InnoEventSystemNS::buttonStatusCallback(boundButton);
+	InnoEventSystemNS::buttonStatusCallback(buttonState);
 }
 
 void InnoEventSystem::framebufferSizeCallback(int width, int height)

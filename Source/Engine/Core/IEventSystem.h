@@ -22,10 +22,10 @@ public:
 
 	virtual InputConfig getInputConfig() = 0;
 
-	virtual void addButtonStatusCallback(ButtonData boundButton, std::function<void()>* buttonStatusCallbackFunctor) = 0;
+	virtual void addButtonStatusCallback(ButtonState buttonState, ButtonEvent buttonEvent) = 0;
 	virtual void addMouseMovementCallback(int mouseCode, std::function<void(float)>* mouseMovementCallback) = 0;
 
-	virtual void buttonStatusCallback(ButtonData boundButton) = 0;
+	virtual void buttonStatusCallback(ButtonState buttonState) = 0;
 	virtual void framebufferSizeCallback(int width, int height) = 0;
 	virtual void mousePositionCallback(float mouseXPos, float mouseYPos) = 0;
 	virtual void scrollCallback(float xoffset, float yoffset) = 0;

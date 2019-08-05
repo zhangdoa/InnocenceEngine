@@ -22,8 +22,6 @@ public:
 
 	LRESULT CALLBACK MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam);
 
-	ButtonStatusMap m_buttonStatus;
-
 private:
 	windowCallbackWrapper() {};
 };
@@ -37,13 +35,18 @@ namespace WinWindowSystemNS
 	IWindowSurface* m_windowSurface;
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	InitConfig m_initConfig;
+	std::vector<ButtonState> m_buttonState;
 }
+
+using namespace WinWindowSystemNS;
 
 bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 {
-	for (int i = 0; i < g_pModuleManager->getEventSystem()->getInputConfig().totalKeyCodes; i++)
+	m_buttonState.resize(g_pModuleManager->getEventSystem()->getInputConfig().totalKeyCodes);
+
+	for (size_t i = 0; i < m_buttonState.size(); i++)
 	{
-		windowCallbackWrapper::get().m_buttonStatus.emplace(i, ButtonStatus::Released);
+		m_buttonState[i].m_code = (unsigned int)i;
 	}
 
 	WinWindowSystemComponent::get().m_hInstance = static_cast<HINSTANCE>(hInstance);
@@ -160,9 +163,9 @@ IWindowSurface * WinWindowSystem::getWindowSurface()
 	return WinWindowSystemNS::m_windowSurface;
 }
 
-ButtonStatusMap WinWindowSystem::getButtonStatus()
+const std::vector<ButtonState>& WinWindowSystem::getButtonState()
 {
-	return windowCallbackWrapper::get().m_buttonStatus;
+	return m_buttonState;
 }
 
 bool WinWindowSystem::sendEvent(unsigned int umsg, unsigned int WParam, int LParam)
@@ -225,68 +228,39 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	{
 	case WM_KEYDOWN:
 	{
-		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ (int)wparam, ButtonStatus::Pressed });
-
-		auto l_result = m_buttonStatus.find((int)wparam);
-		if (l_result != m_buttonStatus.end())
-		{
-			l_result->second = ButtonStatus::Pressed;
-		}
+		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ (int)wparam, true });
+		m_buttonState[(int)wparam].m_isPressed = true;
 		return 0;
 	}
 	case WM_KEYUP:
 	{
 		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ (int)wparam, ButtonStatus::Released });
-
-		auto l_result = m_buttonStatus.find((int)wparam);
-		if (l_result != m_buttonStatus.end())
-		{
-			l_result->second = ButtonStatus::Released;
-		}
+		m_buttonState[(int)wparam].m_isPressed = false;
 		return 0;
 	}
 	case WM_LBUTTONDOWN:
 	{
-		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::Pressed });
-
-		auto l_result = m_buttonStatus.find(INNO_MOUSE_BUTTON_LEFT);
-		if (l_result != m_buttonStatus.end())
-		{
-			l_result->second = ButtonStatus::Pressed;
-		}
+		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_LEFT, true });
+		m_buttonState[INNO_MOUSE_BUTTON_LEFT].m_isPressed = true;
 		return 0;
 	}
 	case WM_LBUTTONUP:
 	{
 		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::Released });
+		m_buttonState[INNO_MOUSE_BUTTON_LEFT].m_isPressed = false;
 
-		auto l_result = m_buttonStatus.find(INNO_MOUSE_BUTTON_LEFT);
-		if (l_result != m_buttonStatus.end())
-		{
-			l_result->second = ButtonStatus::Released;
-		}
 		return 0;
 	}
 	case WM_RBUTTONDOWN:
 	{
-		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::Pressed });
-
-		auto l_result = m_buttonStatus.find(INNO_MOUSE_BUTTON_RIGHT);
-		if (l_result != m_buttonStatus.end())
-		{
-			l_result->second = ButtonStatus::Pressed;
-		}
+		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, true });
+		m_buttonState[INNO_MOUSE_BUTTON_RIGHT].m_isPressed = true;
 		return 0;
 	}
 	case WM_RBUTTONUP:
 	{
 		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::Released });
-
-		auto l_result = m_buttonStatus.find(INNO_MOUSE_BUTTON_RIGHT);
-		if (l_result != m_buttonStatus.end())
-		{
-			l_result->second = ButtonStatus::Released;
-		}
+		m_buttonState[INNO_MOUSE_BUTTON_RIGHT].m_isPressed = false;
 		return 0;
 	}
 
