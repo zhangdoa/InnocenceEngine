@@ -977,7 +977,68 @@ vec4 GLRenderingServer::ReadRenderTargetSample(RenderPassDataComponent * rhs, si
 
 std::vector<vec4> GLRenderingServer::ReadTextureBackToCPU(RenderPassDataComponent * canvas, TextureDataComponent * TDC)
 {
-	return std::vector<vec4>();
+	auto GLTDC = reinterpret_cast<GLTextureDataComponent*>(TDC);
+
+	auto l_width = GLTDC->m_GLTextureDataDesc.Width;
+	auto l_height = GLTDC->m_GLTextureDataDesc.Height;
+	auto l_depthOrArraySize = GLTDC->m_GLTextureDataDesc.DepthOrArraySize;
+
+	auto l_pixelDataFormat = GLTDC->m_GLTextureDataDesc.PixelDataFormat;
+	auto l_pixelDataType = GLTDC->m_GLTextureDataDesc.PixelDataType;
+
+	std::vector<vec4> l_textureSamples;
+	size_t l_sampleCount;
+
+	GLenum l_attachmentType;
+
+	if (GLTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::Depth)
+	{
+		l_attachmentType = GL_DEPTH_ATTACHMENT;
+	}
+	else if (GLTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
+	{
+		l_attachmentType = GL_DEPTH_STENCIL_ATTACHMENT;
+	}
+	else
+	{
+		l_attachmentType = GL_COLOR_ATTACHMENT0;
+	}
+
+	switch (GLTDC->m_textureDataDesc.SamplerType)
+	{
+	case TextureSamplerType::Sampler1D:
+		l_sampleCount = l_width;
+		l_textureSamples.resize(l_sampleCount);
+		glGetTextureSubImage(GLTDC->m_TO, 0, 0, 0, 0, l_width, 0, 0, l_pixelDataFormat, l_pixelDataType, (unsigned int)(l_sampleCount * sizeof(vec4)), &l_textureSamples[0]);
+		break;
+	case TextureSamplerType::Sampler2D:
+		l_sampleCount = l_width * l_height;
+		l_textureSamples.resize(l_sampleCount);
+		glGetTextureSubImage(GLTDC->m_TO, 0, 0, 0, 0, l_width, l_height, 0, l_pixelDataFormat, l_pixelDataType, (unsigned int)(l_sampleCount * sizeof(vec4)), &l_textureSamples[0]);
+		break;
+	case TextureSamplerType::Sampler3D:
+		l_sampleCount = l_width * l_height * l_depthOrArraySize;
+		l_textureSamples.resize(l_sampleCount);
+		glGetTextureSubImage(GLTDC->m_TO, 0, 0, 0, 0, l_width, l_height, l_depthOrArraySize, l_pixelDataFormat, l_pixelDataType, (unsigned int)(l_sampleCount * sizeof(vec4)), &l_textureSamples[0]);
+	case TextureSamplerType::Sampler1DArray:
+		l_sampleCount = l_width * l_depthOrArraySize;
+		l_textureSamples.resize(l_sampleCount);
+		glGetTextureSubImage(GLTDC->m_TO, 0, 0, 0, 0, l_width, l_depthOrArraySize, 0, l_pixelDataFormat, l_pixelDataType, (unsigned int)(l_sampleCount * sizeof(vec4)), &l_textureSamples[0]);
+	case TextureSamplerType::Sampler2DArray:
+		l_sampleCount = l_width * l_height * l_depthOrArraySize;
+		l_textureSamples.resize(l_sampleCount);
+		glGetTextureSubImage(GLTDC->m_TO, 0, 0, 0, 0, l_width, l_height, l_depthOrArraySize, l_pixelDataFormat, l_pixelDataType, (unsigned int)(l_sampleCount * sizeof(vec4)), &l_textureSamples[0]);
+		break;
+	case TextureSamplerType::SamplerCubemap:
+		l_sampleCount = l_width * l_height * 6;
+		l_textureSamples.resize(l_sampleCount);
+		glGetTextureSubImage(GLTDC->m_TO, 0, 0, 0, 0, l_width, l_height, 6, l_pixelDataFormat, l_pixelDataType, (unsigned int)(l_sampleCount * sizeof(vec4)), &l_textureSamples[0]);
+		break;
+	default:
+		break;
+	}
+
+	return l_textureSamples;
 }
 
 bool GLRenderingServer::Resize()
