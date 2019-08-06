@@ -345,6 +345,11 @@ IResourceBinder * LightCullingPass::GetLightGrid()
 	return m_lightGridTDC->m_ResourceBinder;
 }
 
+GPUBufferDataComponent * LightCullingPass::GetLightIndexList()
+{
+	return m_lightIndexListGBDC;
+}
+
 IResourceBinder * LightCullingPass::GetHeatMap()
 {
 	return m_debugTDC->m_ResourceBinder;

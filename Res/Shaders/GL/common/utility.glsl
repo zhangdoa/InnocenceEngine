@@ -1,10 +1,3 @@
-uvec2 RGBA16F2RG32UI(vec4 rhs)
-{
-	uint x = (uint(rhs.x) & 0x0000FFFF) | (uint(rhs.y) & 0x0000FFFF << 16U);
-	uint y = (uint(rhs.z) & 0x0000FFFF) | (uint(rhs.w) & 0x0000FFFF << 16U);
-	return uvec2(x, y);
-}
-
 Plane ComputePlane(vec3 p0, vec3 p1, vec3 p2)
 {
 	Plane plane;

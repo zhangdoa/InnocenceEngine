@@ -3,8 +3,9 @@
 
 #include "OpaquePass.h"
 #include "BRDFLUTPass.h"
-#include "SSAOPAss.h"
+#include "SSAOPass.h"
 #include "SunShadowPass.h"
+#include "LightCullingPass.h"
 
 #include "../../Engine/ModuleManager/IModuleManager.h"
 
@@ -48,7 +49,7 @@ bool LightPass::Setup()
 
 	m_RPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC->m_ResourceBinderLayoutDescs.resize(15);
+	m_RPDC->m_ResourceBinderLayoutDescs.resize(17);
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 0;
@@ -113,10 +114,23 @@ bool LightPass::Setup()
 	m_RPDC->m_ResourceBinderLayoutDescs[13].m_LocalSlot = 7;
 	m_RPDC->m_ResourceBinderLayoutDescs[13].m_IsRanged = true;
 
-	m_RPDC->m_ResourceBinderLayoutDescs[14].m_ResourceBinderType = ResourceBinderType::Sampler;
+	m_RPDC->m_ResourceBinderLayoutDescs[14].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_RPDC->m_ResourceBinderLayoutDescs[14].m_BinderAccessibility = Accessibility::ReadOnly;
+	m_RPDC->m_ResourceBinderLayoutDescs[14].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RPDC->m_ResourceBinderLayoutDescs[14].m_GlobalSlot = 14;
-	m_RPDC->m_ResourceBinderLayoutDescs[14].m_LocalSlot = 0;
-	m_RPDC->m_ResourceBinderLayoutDescs[14].m_IsRanged = true;
+	m_RPDC->m_ResourceBinderLayoutDescs[14].m_LocalSlot = 8;
+
+	m_RPDC->m_ResourceBinderLayoutDescs[15].m_ResourceBinderType = ResourceBinderType::Image;
+	m_RPDC->m_ResourceBinderLayoutDescs[15].m_BinderAccessibility = Accessibility::ReadOnly;
+	m_RPDC->m_ResourceBinderLayoutDescs[15].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RPDC->m_ResourceBinderLayoutDescs[15].m_GlobalSlot = 15;
+	m_RPDC->m_ResourceBinderLayoutDescs[15].m_LocalSlot = 9;
+	m_RPDC->m_ResourceBinderLayoutDescs[15].m_IsRanged = true;
+
+	m_RPDC->m_ResourceBinderLayoutDescs[16].m_ResourceBinderType = ResourceBinderType::Sampler;
+	m_RPDC->m_ResourceBinderLayoutDescs[16].m_GlobalSlot = 16;
+	m_RPDC->m_ResourceBinderLayoutDescs[16].m_LocalSlot = 0;
+	m_RPDC->m_ResourceBinderLayoutDescs[16].m_IsRanged = true;
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 
@@ -146,7 +160,7 @@ bool LightPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 14, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 16, 0);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_CameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly, false, 0, l_CameraGBDC->m_TotalSize);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_SunGBDC->m_ResourceBinder, 1, 3, Accessibility::ReadOnly, false, 0, l_SunGBDC->m_TotalSize);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_PointLightGBDC->m_ResourceBinder, 2, 4, Accessibility::ReadOnly, false, 0, l_PointLightGBDC->m_TotalSize);
@@ -164,6 +178,8 @@ bool LightPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, BRDFLUTPass::GetBRDFMSLUT(), 11, 5);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, SSAOPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 12, 6);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, SunShadowPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 13, 7);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, LightCullingPass::GetLightIndexList()->m_ResourceBinder, 14, 8, Accessibility::ReadOnly, false, 0, LightCullingPass::GetLightIndexList()->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, LightCullingPass::GetLightGrid(), 15, 9, Accessibility::ReadOnly);
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Quad);
 
@@ -177,6 +193,8 @@ bool LightPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, BRDFLUTPass::GetBRDFMSLUT(), 11, 5);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, SSAOPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 12, 6);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, SunShadowPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 13, 7);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, LightCullingPass::GetLightIndexList()->m_ResourceBinder, 14, 8, Accessibility::ReadOnly, false, 0, LightCullingPass::GetLightIndexList()->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, LightCullingPass::GetLightGrid(), 15, 9, Accessibility::ReadOnly);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
 

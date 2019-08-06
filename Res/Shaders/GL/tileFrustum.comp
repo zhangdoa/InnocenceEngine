@@ -4,6 +4,11 @@
 
 layout(local_size_x = BLOCK_SIZE, local_size_y = BLOCK_SIZE, local_size_z = 1) in;
 
+layout(std430, binding = 0) coherent buffer gridFrustumsSSBOBlock
+{
+	Frustum data[];
+} gridFrustumsSSBO;
+
 void main()
 {
 	// View space eye position is always at the origin.
@@ -36,9 +41,9 @@ void main()
 	// Right plane
 	frustum.planes[1] = ComputePlane(eyePos, viewSpace[3], viewSpace[1]);
 	// Top plane
-	frustum.planes[2] = ComputePlane(eyePos, viewSpace[1], viewSpace[0]);
+	frustum.planes[2] = ComputePlane(eyePos, viewSpace[2], viewSpace[3]);
 	// Bottom plane
-	frustum.planes[3] = ComputePlane(eyePos, viewSpace[2], viewSpace[3]);
+	frustum.planes[3] = ComputePlane(eyePos, viewSpace[1], viewSpace[0]);
 
 	// Store the computed frustum in global memory (if our thread ID is in bounds of the grid).
 	if (gl_GlobalInvocationID.x < dispatchParamsUBO.data[0].numThreads.x && gl_GlobalInvocationID.y < dispatchParamsUBO.data[0].numThreads.y)
@@ -46,4 +51,6 @@ void main()
 		uint index = gl_GlobalInvocationID.x + (gl_GlobalInvocationID.y * dispatchParamsUBO.data[0].numThreads.x);
 		gridFrustumsSSBO.data[index] = frustum;
 	}
+
+	memoryBarrier();
 }

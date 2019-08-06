@@ -1,6 +1,5 @@
 // shadertype=glsl
 #include "common/common.glsl"
-#include "common/utility.glsl"
 
 layout(location = 0) in vec2 TexCoords;
 
@@ -14,12 +13,13 @@ layout(location = 4, binding = 4) uniform sampler2D uni_brdfLUT;
 layout(location = 5, binding = 5) uniform sampler2D uni_brdfMSLUT;
 layout(location = 6, binding = 6) uniform sampler2D uni_SSAOBlurPassRT0;
 layout(location = 7, binding = 7) uniform sampler2DArray uni_sunShadow;
-layout(location = 8, binding = 8) uniform samplerCube uni_pointLightShadowMap;
-layout(location = 9, binding = 9) uniform samplerCube uni_irradianceMap;
-layout(location = 10, binding = 10) uniform samplerCube uni_preFiltedMap;
-layout(location = 11, binding = 11) uniform sampler2D uni_depth;
 
-layout(binding = 0, rgba16f) uniform image2D uni_lightGrid;
+layout(std430, binding = 8) coherent buffer lightIndexListSSBOBlock
+{
+	uint data[];
+} lightIndexListSSBO;
+
+layout(location = 9, binding = 9) uniform sampler2D uni_lightGrid;
 
 #include "common/BRDF.glsl"
 #include "common/shadowResolver.glsl"
@@ -148,21 +148,20 @@ void main()
 
 	//Lo *= 1 - SunShadowResolver(FragPos);
 
-	//// point punctual light
-	//// Get the index of the current pixel in the light grid.
-	//ivec2 tileIndex = ivec2(floor(gl_FragCoord.xy / BLOCK_SIZE));
+	// point punctual light
+	// Get the index of the current pixel in the light grid.
+	ivec2 tileIndex = ivec2(floor(gl_FragCoord.xy / BLOCK_SIZE));
 
-	//// Get the start position and offset of the light in the light index list.
-	//vec4 lightGridRGBA16F = imageLoad(uni_lightGrid, tileIndex);
-	//uvec2 lightGrid = RGBA16F2RG32UI(lightGridRGBA16F);
-	//uint startOffset = lightGrid.x;
-	//uint lightCount = lightGrid.y;
+	// Get the start position and offset of the light in the light index list.
+	vec4 lightGrid = texture(uni_lightGrid, tileIndex);
+	uint startOffset = floatBitsToUint(lightGrid.x);
+	uint lightCount = floatBitsToUint(lightGrid.y);
 
-	//for (int i = 0; i < lightCount; ++i)
-	for (int i = 0; i < NR_POINT_LIGHTS; ++i)
+	for (int i = 0; i < lightCount; ++i)
+		//for (int i = 0; i < NR_POINT_LIGHTS; ++i)
 	{
-		//uint lightIndex = lightIndexListSSBO.data[startOffset + i];
-		uint lightIndex = i;
+		uint lightIndex = lightIndexListSSBO.data[startOffset + i];
+		//uint lightIndex = i;
 		pointLight light = pointLightUBO.data[lightIndex];
 
 		float lightRadius = light.luminance.w;

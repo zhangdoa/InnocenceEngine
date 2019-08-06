@@ -80,18 +80,3 @@ layout(std140, row_major, binding = 11) uniform GICameraUBOBlock
 	mat4 r[6];
 	mat4 t;
 } GICameraUBO;
-
-layout(std430, binding = 0) buffer gridFrustumsSSBOBlock
-{
-	Frustum data[];
-} gridFrustumsSSBO;
-
-layout(std430, binding = 1) buffer lightListIndexCounterSSBOBlock
-{
-	uint data;
-} lightListIndexCounterSSBO;
-
-layout(std430, binding = 2) buffer lightIndexListSSBOBlock
-{
-	uint data[];
-} lightIndexListSSBO;

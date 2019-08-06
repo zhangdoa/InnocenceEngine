@@ -23,7 +23,10 @@ INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 namespace DefaultRenderingClientNS
 {
 	std::function<void()> f_GIBake;
+	std::function<void()> f_showLightHeatmap;
+
 	bool m_needGIBake = false;
+	bool m_showLightHeatmap = false;
 }
 
 using namespace DefaultRenderingClientNS;
@@ -32,6 +35,9 @@ bool DefaultRenderingClient::Setup()
 {
 	f_GIBake = [&]() { m_needGIBake = true;	};
 	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonState{ INNO_KEY_B, true }, ButtonEvent{ EventLifeTime::OneShot, &f_GIBake });
+
+	f_showLightHeatmap = [&]() { m_showLightHeatmap = !m_showLightHeatmap;	};
+	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonState{ INNO_KEY_T, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showLightHeatmap });
 
 	DefaultGPUBuffers::Setup();
 	LightCullingPass::Setup();
@@ -116,8 +122,8 @@ bool DefaultRenderingClient::Render()
 		BRDFTestPass::PrepareCommandList();
 		l_canvas = BRDFTestPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
 	}
-	static bool l_drawLightHeatMap = true;
-	if (l_drawLightHeatMap)
+
+	if (m_showLightHeatmap)
 	{
 		l_canvas = LightCullingPass::GetHeatMap();
 	}

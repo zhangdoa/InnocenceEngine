@@ -4,8 +4,23 @@
 
 layout(local_size_x = BLOCK_SIZE, local_size_y = BLOCK_SIZE, local_size_z = 1) in;
 
-layout(binding = 3, rgba16f) uniform image2D uni_lightGrid;
-layout(binding = 4, rgba16f) uniform image2D uni_debugTexture;
+layout(std430, binding = 0) coherent buffer gridFrustumsSSBOBlock
+{
+	Frustum data[];
+} gridFrustumsSSBO;
+
+layout(std430, binding = 1) buffer lightListIndexCounterSSBOBlock
+{
+	uint data;
+} lightListIndexCounterSSBO;
+
+layout(std430, binding = 2) coherent buffer lightIndexListSSBOBlock
+{
+	uint data[];
+} lightIndexListSSBO;
+
+layout(binding = 3, rgba16f) uniform coherent image2D uni_lightGrid;
+layout(binding = 4, rgba16f) uniform coherent image2D uni_debugTexture;
 
 layout(binding = 0) uniform usampler2D depthTexture;
 
@@ -30,20 +45,11 @@ const vec4 heatArray[8] = {
 void AppendLight(uint lightIndex)
 {
 	uint index = l_LightCount; // Index into the visible lights array.
-	atomicAdd(l_LightCount, 1);
 	if (index < 1024)
 	{
 		l_LightList[index] = lightIndex;
 	}
-}
-
-vec4 RG32UI2RGBA16F(uvec2 rhs)
-{
-	return vec4(float(rhs.x & 0x0000FFFF), float((rhs.x & 0xFFFF0000) >> 16U), float(rhs.y & 0x0000FFFF), float((rhs.y & 0xFFFF0000) >> 16U));
-	//return vec4(uintBitsToFloat(rhs.x & 0x0000FFFF),
-	//	uintBitsToFloat((rhs.x & 0xFFFF0000) >> 16U),
-	//	uintBitsToFloat(rhs.y & 0x0000FFFF),
-	//	uintBitsToFloat((rhs.y & 0xFFFF0000) >> 16U));
+	atomicAdd(l_LightCount, 1);
 }
 
 void main()
@@ -80,7 +86,7 @@ void main()
 	// Convert depth values to view space.
 	float minDepthVS = ClipToView(vec4(0, 0, fMinDepth, 1), skyUBO.p_inv).z;
 	float maxDepthVS = ClipToView(vec4(0, 0, fMaxDepth, 1), skyUBO.p_inv).z;
-	float nearClipVS = ClipToView(vec4(0, 0, -1, 1), skyUBO.p_inv).z;
+	float nearClipVS = ClipToView(vec4(0, 0, 0, 1), skyUBO.p_inv).z;
 	float farClipVS = ClipToView(vec4(0, 0, 1, 1), skyUBO.p_inv).z;
 
 	// Clipping plane for minimum depth value
@@ -113,8 +119,7 @@ void main()
 	{
 		l_LightIndexStartOffset = lightListIndexCounterSSBO.data;
 		atomicAdd(lightListIndexCounterSSBO.data, l_LightCount);
-		uvec2 l_lightGridValueOrig = uvec2(l_LightIndexStartOffset, l_LightCount);
-		vec4 l_lightGridValueWrite = RG32UI2RGBA16F(l_lightGridValueOrig);
+		vec4 l_lightGridValueWrite = vec4(uintBitsToFloat(l_LightIndexStartOffset), uintBitsToFloat(l_LightCount), 0, 0);
 		imageStore(uni_lightGrid, ivec2(gl_WorkGroupID.xy), l_lightGridValueWrite);
 	}
 
@@ -155,4 +160,5 @@ void main()
 	{
 		imageStore(uni_debugTexture, writeTexCoord, vec4(0, 0, 0, 1));
 	}
+	memoryBarrier();
 }

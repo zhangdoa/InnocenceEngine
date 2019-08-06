@@ -65,43 +65,37 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, roughness, metallic, F0, albedo, dirLight_luminance.xyz);
 	//Lo *= 1.0 - SunShadowResolver(posWS);
 
-	//SG SG_directionalLight = DirectionalLightToSG(normalize(-dirLight_dir.xyz), dirLight_luminance.xyz);
-	//Lo += SGGetIlluminance(SG_directionalLight, albedo, metallic, roughness, F0, N, V, L);
+	// point punctual light
+	// Get the index of the current pixel in the light grid.
+	uint2 tileIndex = uint2(floor(input.position.xy / BLOCK_SIZE));
 
-	//// point punctual light
-	//// Get the index of the current pixel in the light grid.
-	//uint2 tileIndex = uint2(floor(input.position.xy / BLOCK_SIZE));
+	// Get the start position and offset of the light in the light index list.
+	uint startOffset = in_LightGrid[tileIndex].x;
+	uint lightCount = in_LightGrid[tileIndex].y;
 
-	//// Get the start position and offset of the light in the light index list.
-	//uint startOffset = in_LightGrid[tileIndex].x;
-	//uint lightCount = in_LightGrid[tileIndex].y;
+	[loop]
+	for (uint i = 0; i < lightCount; ++i)
+	{
+		uint lightIndex = in_LightIndexList[startOffset + i];
+		pointLight light = pointLights[lightIndex];
 
-	//for (int i = 0; i < lightCount; ++i)
-	//{
-	//	uint lightIndex = in_LightIndexList[startOffset + i];
-	//	pointLight light = pointLights[lightIndex];
+		float3 unormalizedL = light.position.xyz - posWS;
+		float lightAttRadius = light.luminance.w;
 
-	//	float3 unormalizedL = light.position.xyz - posWS;
-	//	float lightAttRadius = light.luminance.w;
+		L = normalize(unormalizedL);
+		H = normalize(V + L);
 
-	//	L = normalize(unormalizedL);
-	//	H = normalize(V + L);
+		LdotH = max(dot(L, H), 0.0);
+		NdotH = max(dot(N, H), 0.0);
+		NdotL = max(dot(N, L), 0.0);
 
-	//	LdotH = max(dot(L, H), 0.0);
-	//	NdotH = max(dot(N, H), 0.0);
-	//	NdotL = max(dot(N, L), 0.0);
+		float attenuation = 1.0;
+		float invSqrAttRadius = 1.0 / max(lightAttRadius * lightAttRadius, eps);
+		attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
 
-	//	float attenuation = 1.0;
-	//	float invSqrAttRadius = 1.0 / max(lightAttRadius * lightAttRadius, eps);
-	//	attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
-
-	//	float3 lightLuminance = light.luminance.xyz * attenuation;
-	//	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, roughness, F0, albedo, lightLuminance);
-
-	//	//use 1cm sphere light to represent point light
-	//	//SG SG_pointLight = SphereLightToSG(L, 0.01, lightLuminance, distance);
-	//	//Lo += SGGetIlluminance(SG_pointLight, albedo, metallic, roughness, F0, N, V, L);
-	//}
+		float3 lightLuminance = light.luminance.xyz * attenuation;
+		Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, roughness, metallic, F0, albedo, lightLuminance);
+	}
 
 	//// sphere area light
 	//for (int i = 0; i < NR_SPHERE_LIGHTS; ++i)

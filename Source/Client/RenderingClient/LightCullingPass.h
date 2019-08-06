@@ -10,5 +10,6 @@ namespace LightCullingPass
 	bool Terminate();
 
 	IResourceBinder* GetLightGrid();
+	GPUBufferDataComponent* GetLightIndexList();
 	IResourceBinder* GetHeatMap();
 };
