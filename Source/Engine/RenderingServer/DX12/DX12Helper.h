@@ -36,6 +36,8 @@ namespace DX12Helper
 	unsigned int GetTextureMipLevels(TextureDataDesc textureDataDesc);
 	D3D12_RESOURCE_FLAGS GetTextureBindFlags(TextureDataDesc textureDataDesc);
 	unsigned int GetTexturePixelDataSize(TextureDataDesc textureDataDesc);
+	D3D12_RESOURCE_STATES GetTextureWriteState(TextureDataDesc textureDataDesc);
+	D3D12_RESOURCE_STATES GetTextureReadState(TextureDataDesc textureDataDesc);
 	D3D12_SHADER_RESOURCE_VIEW_DESC GetSRVDesc(TextureDataDesc textureDataDesc, D3D12_RESOURCE_DESC D3D12TextureDesc);
 	D3D12_UNORDERED_ACCESS_VIEW_DESC GetUAVDesc(TextureDataDesc textureDataDesc, D3D12_RESOURCE_DESC D3D12TextureDesc);
 	D3D12_RENDER_TARGET_VIEW_DESC GetRTVDesc(TextureDataDesc textureDataDesc);

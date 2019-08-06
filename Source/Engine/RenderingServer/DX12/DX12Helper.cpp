@@ -466,6 +466,56 @@ unsigned int DX12Helper::GetTexturePixelDataSize(TextureDataDesc textureDataDesc
 	return l_singlePixelSize * l_channelSize;
 }
 
+D3D12_RESOURCE_STATES DX12Helper::GetTextureWriteState(TextureDataDesc textureDataDesc)
+{
+	D3D12_RESOURCE_STATES l_result;
+
+	if (textureDataDesc.UsageType == TextureUsageType::ColorAttachment)
+	{
+		l_result = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	}
+	else if (textureDataDesc.UsageType == TextureUsageType::DepthAttachment
+		|| textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+	{
+		l_result = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+	}
+	else if (textureDataDesc.UsageType == TextureUsageType::RawImage)
+	{
+		l_result = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+	}
+	else
+	{
+		l_result = D3D12_RESOURCE_STATE_GENERIC_READ;
+	}
+
+	return l_result;
+}
+
+D3D12_RESOURCE_STATES DX12Helper::GetTextureReadState(TextureDataDesc textureDataDesc)
+{
+	D3D12_RESOURCE_STATES l_result;
+
+	if (textureDataDesc.UsageType == TextureUsageType::ColorAttachment)
+	{
+		l_result = D3D12_RESOURCE_STATE_GENERIC_READ;
+	}
+	else if (textureDataDesc.UsageType == TextureUsageType::DepthAttachment
+		|| textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+	{
+		l_result = D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+	}
+	else if (textureDataDesc.UsageType == TextureUsageType::RawImage)
+	{
+		l_result = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+	}
+	else
+	{
+		l_result = D3D12_RESOURCE_STATE_GENERIC_READ;
+	}
+
+	return l_result;
+}
+
 UINT DX12Helper::GetMipLevels(TextureDataDesc textureDataDesc)
 {
 	if (textureDataDesc.UsageType == TextureUsageType::ColorAttachment
