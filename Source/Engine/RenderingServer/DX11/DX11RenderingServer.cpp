@@ -1613,13 +1613,63 @@ vec4 DX11RenderingServer::ReadRenderTargetSample(RenderPassDataComponent * rhs, 
 
 std::vector<vec4> DX11RenderingServer::ReadTextureBackToCPU(RenderPassDataComponent * canvas, TextureDataComponent * TDC)
 {
-	auto l_tempTDC = AddTextureDataComponent("ReadBackTemp/");
-	l_tempTDC->m_textureDataDesc = TDC->m_textureDataDesc;
-	l_tempTDC->m_textureDataDesc.CPUAccessibility = Accessibility::ReadOnly;
+	// @TODO: Support different pixel data type
+	std::vector<vec4> l_result;
 
-	InitializeTextureDataComponent(l_tempTDC);
+	auto l_srcTDC = reinterpret_cast<DX11TextureDataComponent*>(TDC);
 
-	return std::vector<vec4>();
+	auto l_destTDC = reinterpret_cast<DX11TextureDataComponent*>(AddTextureDataComponent("ReadBackTemp/"));
+	l_destTDC->m_textureDataDesc = TDC->m_textureDataDesc;
+	l_destTDC->m_textureDataDesc.CPUAccessibility = Accessibility::ReadOnly;
+
+	InitializeTextureDataComponent(l_destTDC);
+
+	m_deviceContext->CopyResource(l_destTDC->m_ResourceHandle, l_srcTDC->m_ResourceHandle);
+
+	D3D11_MAPPED_SUBRESOURCE l_mappedResource;
+	auto l_HResult = m_deviceContext->Map(l_destTDC->m_ResourceHandle, 0, D3D11_MAP_READ, 0, &l_mappedResource);
+
+	if (FAILED(l_HResult))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't map texture for CPU to read!");
+	}
+	else
+	{
+		size_t l_sampleCount;
+
+		switch (l_srcTDC->m_textureDataDesc.SamplerType)
+		{
+		case TextureSamplerType::Sampler1D:
+			l_sampleCount = l_srcTDC->m_textureDataDesc.Width;
+			break;
+		case TextureSamplerType::Sampler2D:
+			l_sampleCount = l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_textureDataDesc.Height;
+			break;
+		case TextureSamplerType::Sampler3D:
+			l_sampleCount = l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_textureDataDesc.Height * l_srcTDC->m_textureDataDesc.DepthOrArraySize;
+			break;
+		case TextureSamplerType::Sampler1DArray:
+			l_sampleCount = l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_textureDataDesc.DepthOrArraySize;
+			break;
+		case TextureSamplerType::Sampler2DArray:
+			l_sampleCount = l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_textureDataDesc.Height * l_srcTDC->m_textureDataDesc.DepthOrArraySize;
+			break;
+		case TextureSamplerType::SamplerCubemap:
+			l_sampleCount = l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_textureDataDesc.Height * 6;
+			break;
+		default:
+			break;
+		}
+		l_result.resize(l_sampleCount);
+
+		std::memcpy(l_result.data(), l_mappedResource.pData, l_sampleCount * sizeof(vec4));
+	}
+
+	m_deviceContext->Unmap(l_destTDC->m_ResourceHandle, 0);
+
+	DeleteTextureDataComponent(l_destTDC);
+
+	return l_result;
 }
 
 bool DX11RenderingServer::Resize()
