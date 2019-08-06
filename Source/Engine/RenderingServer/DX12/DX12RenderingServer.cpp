@@ -1216,37 +1216,134 @@ bool DX12RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 
 bool DX12RenderingServer::DeleteMeshDataComponent(MeshDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX12MeshDataComponent*>(rhs);
+
+	l_rhs->m_vertexBuffer->Release();
+	l_rhs->m_indexBuffer->Release();
+
+	m_MeshDataComponentPool->Destroy(l_rhs);
+
+	m_initializedMeshes.erase(l_rhs);
+
 	return true;
 }
 
 bool DX12RenderingServer::DeleteTextureDataComponent(TextureDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX12TextureDataComponent*>(rhs);
+
+	l_rhs->m_ResourceHandle->Release();
+
+	if (l_rhs->m_ResourceBinder)
+	{
+		m_ResourcesBinderPool->Destroy(l_rhs->m_ResourceBinder);
+	}
+
+	m_TextureDataComponentPool->Destroy(l_rhs);
+
+	m_initializedTextures.erase(l_rhs);
+
 	return true;
 }
 
 bool DX12RenderingServer::DeleteMaterialDataComponent(MaterialDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX12MaterialDataComponent*>(rhs);
+
+	m_MaterialDataComponentPool->Destroy(l_rhs);
+
+	m_initializedMaterials.erase(l_rhs);
+
 	return true;
 }
 
 bool DX12RenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
+	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(l_rhs->m_PipelineStateObject);
+
+	l_PSO->m_PSO->Release();
+
+	m_PSOPool->Destroy(l_PSO);
+
+	if (l_rhs->m_DepthStencilRenderTarget)
+	{
+		DeleteTextureDataComponent(l_rhs->m_DepthStencilRenderTarget);
+	}
+
+	for (size_t i = 0; i < l_rhs->m_RenderTargets.size(); i++)
+	{
+		DeleteTextureDataComponent(l_rhs->m_RenderTargets[i]);
+		m_ResourcesBinderPool->Destroy(l_rhs->m_RenderTargetsResourceBinders[i]);
+	}
+
+	m_RenderPassDataComponentPool->Destroy(l_rhs);
+
 	return true;
 }
 
 bool DX12RenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX12ShaderProgramComponent*>(rhs);
+
+	if (l_rhs->m_VSBuffer)
+	{
+		l_rhs->m_VSBuffer->Release();
+	}
+	if (l_rhs->m_HSBuffer)
+	{
+		l_rhs->m_HSBuffer->Release();
+	}
+	if (l_rhs->m_DSBuffer)
+	{
+		l_rhs->m_DSBuffer->Release();
+	}
+	if (l_rhs->m_GSBuffer)
+	{
+		l_rhs->m_GSBuffer->Release();
+	}
+	if (l_rhs->m_PSBuffer)
+	{
+		l_rhs->m_PSBuffer->Release();
+	}
+	if (l_rhs->m_CSBuffer)
+	{
+		l_rhs->m_CSBuffer->Release();
+	}
+
+	m_ShaderProgramComponentPool->Destroy(l_rhs);
+
 	return true;
 }
 
 bool DX12RenderingServer::DeleteSamplerDataComponent(SamplerDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX12SamplerDataComponent*>(rhs);
+
+	if (l_rhs->m_ResourceBinder)
+	{
+		m_ResourcesBinderPool->Destroy(l_rhs->m_ResourceBinder);
+	}
+
+	m_SamplerDataComponentPool->Destroy(l_rhs);
+
 	return false;
 }
 
 bool DX12RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * rhs)
 {
-	return false;
+	auto l_rhs = reinterpret_cast<DX12GPUBufferDataComponent*>(rhs);
+
+	l_rhs->m_ResourceHandle->Release();
+
+	if (l_rhs->m_ResourceBinder)
+	{
+		m_ResourcesBinderPool->Destroy(l_rhs->m_ResourceBinder);
+	}
+
+	m_GPUBufferDataComponentPool->Destroy(l_rhs);
+
+	return true;
 }
 
 bool DX12RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue)
@@ -1387,7 +1484,7 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 			{
 				if (accessibility != Accessibility::ReadOnly)
 				{
-					InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Not allow GPU write to Constant Buffer!");
+					InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Not allow GPU write to Constant Buffer!");
 				}
 				else
 				{

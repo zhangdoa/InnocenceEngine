@@ -719,36 +719,140 @@ bool GLRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent 
 
 bool GLRenderingServer::DeleteMeshDataComponent(MeshDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<GLMeshDataComponent*>(rhs);
+
+	glDeleteVertexArrays(1, &l_rhs->m_VAO);
+	glDeleteBuffers(1, &l_rhs->m_VBO);
+	glDeleteBuffers(1, &l_rhs->m_IBO);
+
+	m_MeshDataComponentPool->Destroy(l_rhs);
+
+	m_initializedMeshes.erase(l_rhs);
+
 	return true;
 }
 
 bool GLRenderingServer::DeleteTextureDataComponent(TextureDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<GLTextureDataComponent*>(rhs);
+
+	glDeleteTextures(1, &l_rhs->m_TO);
+
+	if (l_rhs->m_ResourceBinder)
+	{
+		m_ResourcesBinderPool->Destroy(l_rhs->m_ResourceBinder);
+	}
+
+	m_TextureDataComponentPool->Destroy(l_rhs);
+
+	m_initializedTextures.erase(l_rhs);
+
 	return true;
 }
 
 bool GLRenderingServer::DeleteMaterialDataComponent(MaterialDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<GLMaterialDataComponent*>(rhs);
+
+	m_MaterialDataComponentPool->Destroy(l_rhs);
+
+	m_initializedMaterials.erase(l_rhs);
+
 	return true;
 }
 
 bool GLRenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<GLRenderPassDataComponent*>(rhs);
+	auto l_PSO = reinterpret_cast<GLPipelineStateObject*>(l_rhs->m_PipelineStateObject);
+
+	if (l_rhs->m_RBO)
+	{
+		glDeleteRenderbuffers(1, &l_rhs->m_RBO);
+	}
+	glDeleteFramebuffers(1, &l_rhs->m_FBO);
+
+	if (l_rhs->m_DepthStencilRenderTarget)
+	{
+		DeleteTextureDataComponent(l_rhs->m_DepthStencilRenderTarget);
+	}
+
+	for (size_t i = 0; i < l_rhs->m_RenderTargets.size(); i++)
+	{
+		DeleteTextureDataComponent(l_rhs->m_RenderTargets[i]);
+		m_ResourcesBinderPool->Destroy(l_rhs->m_RenderTargetsResourceBinders[i]);
+	}
+
+	m_RenderPassDataComponentPool->Destroy(l_rhs);
+
 	return true;
 }
 
 bool GLRenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<GLShaderProgramComponent*>(rhs);
+
+	if (l_rhs->m_VSID)
+	{
+		glDeleteShader(l_rhs->m_VSID);
+	}
+	if (l_rhs->m_TCSID)
+	{
+		glDeleteShader(l_rhs->m_TCSID);
+	}
+	if (l_rhs->m_TESID)
+	{
+		glDeleteShader(l_rhs->m_TESID);
+	}
+	if (l_rhs->m_GSID)
+	{
+		glDeleteShader(l_rhs->m_GSID);
+	}
+	if (l_rhs->m_FSID)
+	{
+		glDeleteShader(l_rhs->m_FSID);
+	}
+	if (l_rhs->m_CSID)
+	{
+		glDeleteShader(l_rhs->m_CSID);
+	}
+
+	glDeleteProgram(l_rhs->m_ProgramID);
+
+	m_ShaderProgramComponentPool->Destroy(l_rhs);
+
 	return true;
 }
 
 bool GLRenderingServer::DeleteSamplerDataComponent(SamplerDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<GLSamplerDataComponent*>(rhs);
+
+	glDeleteSamplers(1, &l_rhs->m_SO);
+
+	if (l_rhs->m_ResourceBinder)
+	{
+		m_ResourcesBinderPool->Destroy(l_rhs->m_ResourceBinder);
+	}
+
+	m_SamplerDataComponentPool->Destroy(l_rhs);
+
 	return true;
 }
 
 bool GLRenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<GLGPUBufferDataComponent*>(rhs);
+
+	glDeleteBuffers(1, &l_rhs->m_Handle);
+
+	if (l_rhs->m_ResourceBinder)
+	{
+		m_ResourcesBinderPool->Destroy(l_rhs->m_ResourceBinder);
+	}
+
+	m_GPUBufferDataComponentPool->Destroy(l_rhs);
+
 	return true;
 }
 
@@ -986,6 +1090,7 @@ std::vector<vec4> GLRenderingServer::ReadTextureBackToCPU(RenderPassDataComponen
 	auto l_pixelDataFormat = GLTDC->m_GLTextureDataDesc.PixelDataFormat;
 	auto l_pixelDataType = GLTDC->m_GLTextureDataDesc.PixelDataType;
 
+	// @TODO: Support different pixel data type
 	std::vector<vec4> l_textureSamples;
 	size_t l_sampleCount;
 
@@ -1020,10 +1125,12 @@ std::vector<vec4> GLRenderingServer::ReadTextureBackToCPU(RenderPassDataComponen
 		l_sampleCount = l_width * l_height * l_depthOrArraySize;
 		l_textureSamples.resize(l_sampleCount);
 		glGetTextureSubImage(GLTDC->m_TO, 0, 0, 0, 0, l_width, l_height, l_depthOrArraySize, l_pixelDataFormat, l_pixelDataType, (unsigned int)(l_sampleCount * sizeof(vec4)), &l_textureSamples[0]);
+		break;
 	case TextureSamplerType::Sampler1DArray:
 		l_sampleCount = l_width * l_depthOrArraySize;
 		l_textureSamples.resize(l_sampleCount);
 		glGetTextureSubImage(GLTDC->m_TO, 0, 0, 0, 0, l_width, l_depthOrArraySize, 0, l_pixelDataFormat, l_pixelDataType, (unsigned int)(l_sampleCount * sizeof(vec4)), &l_textureSamples[0]);
+		break;
 	case TextureSamplerType::Sampler2DArray:
 		l_sampleCount = l_width * l_height * l_depthOrArraySize;
 		l_textureSamples.resize(l_sampleCount);

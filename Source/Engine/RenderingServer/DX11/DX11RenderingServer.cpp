@@ -847,10 +847,10 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 	{
 		ID3D10Blob* l_shaderFileBuffer = 0;
 		LoadShaderFile(&l_shaderFileBuffer, ShaderStage::Hull, l_rhs->m_ShaderFilePaths.m_HSPath);
-		auto l_HResult = m_device->CreateHullShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_TCSHandle);
+		auto l_HResult = m_device->CreateHullShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_HSHandle);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create TCS shader!");
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create HS shader!");
 			return false;
 		};
 	}
@@ -858,10 +858,10 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 	{
 		ID3D10Blob* l_shaderFileBuffer = 0;
 		LoadShaderFile(&l_shaderFileBuffer, ShaderStage::Domain, l_rhs->m_ShaderFilePaths.m_DSPath);
-		auto l_HResult = m_device->CreateDomainShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_TESHandle);
+		auto l_HResult = m_device->CreateDomainShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_DSHandle);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create TES shader!");
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create DS shader!");
 			return false;
 		};
 	}
@@ -1045,37 +1045,156 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 
 bool DX11RenderingServer::DeleteMeshDataComponent(MeshDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX11MeshDataComponent*>(rhs);
+
+	l_rhs->m_vertexBuffer->Release();
+	l_rhs->m_indexBuffer->Release();
+
+	m_MeshDataComponentPool->Destroy(l_rhs);
+
+	m_initializedMeshes.erase(l_rhs);
+
 	return true;
 }
 
 bool DX11RenderingServer::DeleteTextureDataComponent(TextureDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX11TextureDataComponent*>(rhs);
+
+	l_rhs->m_ResourceHandle->Release();
+
+	if (l_rhs->m_SRV)
+	{
+		l_rhs->m_SRV->Release();
+	}
+
+	if (l_rhs->m_UAV)
+	{
+		l_rhs->m_UAV->Release();
+	}
+
+	if (l_rhs->m_ResourceBinder)
+	{
+		m_ResourcesBinderPool->Destroy(l_rhs->m_ResourceBinder);
+	}
+
+	m_TextureDataComponentPool->Destroy(l_rhs);
+
+	m_initializedTextures.erase(l_rhs);
+
 	return true;
 }
 
 bool DX11RenderingServer::DeleteMaterialDataComponent(MaterialDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX11MaterialDataComponent*>(rhs);
+
+	m_MaterialDataComponentPool->Destroy(l_rhs);
+
+	m_initializedMaterials.erase(l_rhs);
+
 	return true;
 }
 
 bool DX11RenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX11RenderPassDataComponent*>(rhs);
+	auto l_PSO = reinterpret_cast<DX11PipelineStateObject*>(l_rhs->m_PipelineStateObject);
+
+	l_PSO->m_RasterizerState->Release();
+	if (l_PSO->m_BlendState)
+	{
+		l_PSO->m_BlendState->Release();
+	}
+	if (l_PSO->m_DepthStencilState)
+	{
+		l_PSO->m_DepthStencilState->Release();
+	}
+	l_PSO->m_InputLayout->Release();
+
+	m_PSOPool->Destroy(l_PSO);
+
+	if (l_rhs->m_DSV)
+	{
+		l_rhs->m_DSV->Release();
+		DeleteTextureDataComponent(l_rhs->m_DepthStencilRenderTarget);
+	}
+
+	for (size_t i = 0; i < l_rhs->m_RenderTargets.size(); i++)
+	{
+		DeleteTextureDataComponent(l_rhs->m_RenderTargets[i]);
+		m_ResourcesBinderPool->Destroy(l_rhs->m_RenderTargetsResourceBinders[i]);
+	}
+
+	m_RenderPassDataComponentPool->Destroy(l_rhs);
+
 	return true;
 }
 
 bool DX11RenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<DX11ShaderProgramComponent*>(rhs);
+
+	if (l_rhs->m_VSHandle)
+	{
+		l_rhs->m_VSHandle->Release();
+	}
+	if (l_rhs->m_HSHandle)
+	{
+		l_rhs->m_HSHandle->Release();
+	}
+	if (l_rhs->m_DSHandle)
+	{
+		l_rhs->m_DSHandle->Release();
+	}
+	if (l_rhs->m_GSHandle)
+	{
+		l_rhs->m_GSHandle->Release();
+	}
+	if (l_rhs->m_FSHandle)
+	{
+		l_rhs->m_FSHandle->Release();
+	}
+	if (l_rhs->m_CSHandle)
+	{
+		l_rhs->m_CSHandle->Release();
+	}
+
+	m_ShaderProgramComponentPool->Destroy(l_rhs);
+
 	return true;
 }
 
 bool DX11RenderingServer::DeleteSamplerDataComponent(SamplerDataComponent * rhs)
 {
-	return false;
+	auto l_rhs = reinterpret_cast<DX11SamplerDataComponent*>(rhs);
+
+	l_rhs->m_SamplerState->Release();
+
+	if (l_rhs->m_ResourceBinder)
+	{
+		m_ResourcesBinderPool->Destroy(l_rhs->m_ResourceBinder);
+	}
+
+	m_SamplerDataComponentPool->Destroy(l_rhs);
+
+	return true;
 }
 
 bool DX11RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * rhs)
 {
-	return false;
+	auto l_rhs = reinterpret_cast<DX11GPUBufferDataComponent*>(rhs);
+
+	l_rhs->m_BufferPtr->Release();
+
+	if (l_rhs->m_ResourceBinder)
+	{
+		m_ResourcesBinderPool->Destroy(l_rhs->m_ResourceBinder);
+	}
+
+	m_GPUBufferDataComponentPool->Destroy(l_rhs);
+
+	return true;
 }
 
 bool DX11RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue)
@@ -1118,13 +1237,13 @@ bool DX11RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * 
 	{
 		m_deviceContext->VSSetShader(l_shaderProgram->m_VSHandle, NULL, 0);
 	}
-	if (l_shaderProgram->m_TCSHandle)
+	if (l_shaderProgram->m_HSHandle)
 	{
-		m_deviceContext->HSSetShader(l_shaderProgram->m_TCSHandle, NULL, 0);
+		m_deviceContext->HSSetShader(l_shaderProgram->m_HSHandle, NULL, 0);
 	}
-	if (l_shaderProgram->m_TESHandle)
+	if (l_shaderProgram->m_DSHandle)
 	{
-		m_deviceContext->DSSetShader(l_shaderProgram->m_TESHandle, NULL, 0);
+		m_deviceContext->DSSetShader(l_shaderProgram->m_DSHandle, NULL, 0);
 	}
 	if (l_shaderProgram->m_GSHandle)
 	{
@@ -1385,11 +1504,11 @@ bool DX11RenderingServer::CommandListEnd(RenderPassDataComponent * rhs)
 	{
 		m_deviceContext->VSSetShader(0, NULL, 0);
 	}
-	if (l_shaderProgram->m_TCSHandle)
+	if (l_shaderProgram->m_HSHandle)
 	{
 		m_deviceContext->HSSetShader(0, NULL, 0);
 	}
-	if (l_shaderProgram->m_TESHandle)
+	if (l_shaderProgram->m_DSHandle)
 	{
 		m_deviceContext->DSSetShader(0, NULL, 0);
 	}
