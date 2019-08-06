@@ -5,11 +5,10 @@
 class DX11ResourceBinder : public IResourceBinder
 {
 public:
-	ID3D11ShaderResourceView* m_TextureSRV = 0;
 	ID3D11SamplerState* m_Sampler = 0;
 	ID3D11Buffer* m_Buffer = 0;
-	ID3D11ShaderResourceView* m_BufferSRV = 0;
-	ID3D11UnorderedAccessView* m_BufferUAV = 0;
+	ID3D11ShaderResourceView* m_SRV = 0;
+	ID3D11UnorderedAccessView* m_UAV = 0;
 };
 
 class DX11PipelineStateObject : public IPipelineStateObject

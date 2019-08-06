@@ -726,7 +726,8 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 		}
 
 		auto l_resourceBinder = addResourcesBinder();
-		l_resourceBinder->m_TextureSRV = l_rhs->m_SRV;
+		l_resourceBinder->m_SRV = l_rhs->m_SRV;
+		l_resourceBinder->m_UAV = l_rhs->m_UAV;
 		l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
 		l_rhs->m_ResourceBinder = l_resourceBinder;
 	}
@@ -1014,7 +1015,7 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 #ifdef  _DEBUG
 		SetObjectName(l_rhs, l_rhs->m_BufferPtr, "SRV");
 #endif //  _DEBUG
-		l_resourceBinder->m_BufferSRV = l_rhs->m_SRV;
+		l_resourceBinder->m_SRV = l_rhs->m_SRV;
 
 		D3D11_UNORDERED_ACCESS_VIEW_DESC l_UAVDesc;
 		l_UAVDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -1033,7 +1034,7 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 #ifdef  _DEBUG
 		SetObjectName(l_rhs, l_rhs->m_BufferPtr, "UAV");
 #endif //  _DEBUG
-		l_resourceBinder->m_BufferUAV = l_rhs->m_UAV;
+		l_resourceBinder->m_UAV = l_rhs->m_UAV;
 	}
 
 	l_rhs->m_ResourceBinder = l_resourceBinder;
@@ -1201,19 +1202,38 @@ bool DX11RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponen
 {
 	auto l_rhs = reinterpret_cast<DX11GPUBufferDataComponent*>(rhs);
 
-	D3D11_MAPPED_SUBRESOURCE l_MappedResource;
-
-	auto l_HResult = m_deviceContext->Map(l_rhs->m_BufferPtr, 0, D3D11_MAP_WRITE_DISCARD, 0, &l_MappedResource);
-	if (FAILED(l_HResult))
+	if (l_rhs->m_GPUAccessibility == Accessibility::ReadOnly)
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't lock the shader buffer!");
-		return false;
+		D3D11_MAPPED_SUBRESOURCE l_MappedResource;
+
+		auto l_HResult = m_deviceContext->Map(l_rhs->m_BufferPtr, 0, D3D11_MAP_WRITE_DISCARD, 0, &l_MappedResource);
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't lock Constant Buffer!");
+			return false;
+		}
+
+		auto l_dataPtr = l_MappedResource.pData;
+		std::memcpy(l_dataPtr, GPUBufferValue, l_rhs->m_TotalSize);
+
+		m_deviceContext->Unmap(l_rhs->m_BufferPtr, 0);
 	}
+	else
+	{
+		D3D11_MAPPED_SUBRESOURCE l_MappedResource;
 
-	auto l_dataPtr = l_MappedResource.pData;
-	std::memcpy(l_dataPtr, GPUBufferValue, l_rhs->m_TotalSize);
+		auto l_HResult = m_deviceContext->Map(l_rhs->m_BufferPtr, 0, D3D11_MAP_WRITE, 0, &l_MappedResource);
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't lock Structured Buffer!");
+			return false;
+		}
 
-	m_deviceContext->Unmap(l_rhs->m_BufferPtr, 0);
+		auto l_dataPtr = l_MappedResource.pData;
+		std::memcpy(l_dataPtr, GPUBufferValue, l_rhs->m_TotalSize);
+
+		m_deviceContext->Unmap(l_rhs->m_BufferPtr, 0);
+	}
 
 	return true;
 }
@@ -1227,9 +1247,6 @@ bool DX11RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * 
 {
 	auto l_rhs = reinterpret_cast<DX11RenderPassDataComponent*>(rhs);
 	auto l_PSO = reinterpret_cast<DX11PipelineStateObject*>(l_rhs->m_PipelineStateObject);
-
-	m_deviceContext->IASetInputLayout(l_PSO->m_InputLayout);
-	m_deviceContext->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
 
 	auto l_shaderProgram = reinterpret_cast<DX11ShaderProgramComponent*>(l_rhs->m_ShaderProgram);
 
@@ -1258,17 +1275,23 @@ bool DX11RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * 
 		m_deviceContext->CSSetShader(l_shaderProgram->m_CSHandle, NULL, 0);
 	}
 
-	m_deviceContext->RSSetViewports(1, &l_PSO->m_Viewport);
-	m_deviceContext->RSSetState(l_PSO->m_RasterizerState);
+	if (l_rhs->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
+	{
+		m_deviceContext->IASetInputLayout(l_PSO->m_InputLayout);
+		m_deviceContext->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
 
-	m_deviceContext->OMSetRenderTargets((unsigned int)l_rhs->m_RTVs.size(), &l_rhs->m_RTVs[0], l_rhs->m_DSV);
-	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
-	{
-		m_deviceContext->OMSetDepthStencilState(l_PSO->m_DepthStencilState, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilReference);
-	}
-	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc.m_UseBlend)
-	{
-		m_deviceContext->OMSetBlendState(l_PSO->m_BlendState, NULL, 0xFFFFFFFF);
+		m_deviceContext->RSSetViewports(1, &l_PSO->m_Viewport);
+		m_deviceContext->RSSetState(l_PSO->m_RasterizerState);
+
+		m_deviceContext->OMSetRenderTargets((unsigned int)l_rhs->m_RTVs.size(), &l_rhs->m_RTVs[0], l_rhs->m_DSV);
+		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+		{
+			m_deviceContext->OMSetDepthStencilState(l_PSO->m_DepthStencilState, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilReference);
+		}
+		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc.m_UseBlend)
+		{
+			m_deviceContext->OMSetBlendState(l_PSO->m_BlendState, NULL, 0xFFFFFFFF);
+		}
 	}
 
 	return true;
@@ -1278,13 +1301,16 @@ bool DX11RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 {
 	auto l_rhs = reinterpret_cast<DX11RenderPassDataComponent*>(rhs);
 
-	for (auto i : l_rhs->m_RTVs)
+	if (rhs->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
 	{
-		m_deviceContext->ClearRenderTargetView(i, rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
-	}
-	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
-	{
-		m_deviceContext->ClearDepthStencilView(l_rhs->m_DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0x00);
+		for (auto i : l_rhs->m_RTVs)
+		{
+			m_deviceContext->ClearRenderTargetView(i, rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
+		}
+		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+		{
+			m_deviceContext->ClearDepthStencilView(l_rhs->m_DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0x00);
+		}
 	}
 
 	return true;
@@ -1315,6 +1341,21 @@ bool BindSRV(ShaderStage shaderStage, unsigned int slot, ID3D11ShaderResourceVie
 	default:
 		break;
 	}
+	return true;
+}
+
+bool BindUAV(ShaderStage shaderStage, unsigned int slot, ID3D11UnorderedAccessView * UAV)
+{
+	if (shaderStage == ShaderStage::Compute)
+	{
+		m_deviceContext->CSSetUnorderedAccessViews((unsigned int)slot, 1, &UAV, nullptr);
+	}
+	else
+	{
+		InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Only allow Compute shader access UAV!");
+		return false;
+	}
+
 	return true;
 }
 
@@ -1391,7 +1432,14 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 			m_deviceContext->PSSetSamplers((unsigned int)localSlot, 1, &l_resourceBinder->m_Sampler);
 			break;
 		case ResourceBinderType::Image:
-			BindSRV(shaderStage, (unsigned int)(localSlot), l_resourceBinder->m_TextureSRV);
+			if (accessibility != Accessibility::ReadOnly)
+			{
+				BindUAV(shaderStage, (unsigned int)(localSlot), l_resourceBinder->m_UAV);
+			}
+			else
+			{
+				BindSRV(shaderStage, (unsigned int)(localSlot), l_resourceBinder->m_SRV);
+			}
 			break;
 		case ResourceBinderType::Buffer:
 			if (l_resourceBinder->m_GPUAccessibility == Accessibility::ReadOnly)
@@ -1411,21 +1459,13 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 			}
 			else
 			{
-				if (accessibility == Accessibility::ReadOnly)
+				if (accessibility != Accessibility::ReadOnly)
 				{
-					BindSRV(shaderStage, (unsigned int)localSlot, l_resourceBinder->m_BufferSRV);
+					BindUAV(shaderStage, (unsigned int)(localSlot), l_resourceBinder->m_UAV);
 				}
 				else
 				{
-					if (shaderStage == ShaderStage::Compute)
-					{
-						m_deviceContext->CSSetUnorderedAccessViews((unsigned int)localSlot, 1, &l_resourceBinder->m_BufferUAV, nullptr);
-					}
-					else
-					{
-						InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Only allow Compute shader write to Structured Buffer!");
-						return false;
-					}
+					BindSRV(shaderStage, (unsigned int)(localSlot), l_resourceBinder->m_SRV);
 				}
 			}
 			break;
@@ -1449,26 +1489,25 @@ bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * ren
 			m_deviceContext->PSSetSamplers((unsigned int)localSlot, 1, 0);
 			break;
 		case ResourceBinderType::Image:
-			BindSRV(shaderStage, (unsigned int)(localSlot), 0);
+			if (accessibility != Accessibility::ReadOnly)
+			{
+				BindUAV(shaderStage, (unsigned int)(localSlot), 0);
+			}
+			else
+			{
+				BindSRV(shaderStage, (unsigned int)(localSlot), 0);
+			}
 			break;
 		case ResourceBinderType::Buffer:
 			if (l_resourceBinder->m_GPUAccessibility != Accessibility::ReadOnly)
 			{
-				if (accessibility == Accessibility::ReadOnly)
+				if (accessibility != Accessibility::ReadOnly)
 				{
-					BindSRV(shaderStage, (unsigned int)localSlot, 0);
+					BindUAV(shaderStage, (unsigned int)(localSlot), 0);
 				}
 				else
 				{
-					if (shaderStage == ShaderStage::Compute)
-					{
-						m_deviceContext->CSSetUnorderedAccessViews((unsigned int)localSlot, 1, 0, nullptr);
-					}
-					else
-					{
-						InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Only allow Compute shader write to Structured Buffer!");
-						return false;
-					}
+					BindSRV(shaderStage, (unsigned int)(localSlot), 0);
 				}
 			}
 			break;
@@ -1579,6 +1618,13 @@ bool DX11RenderingServer::Present()
 	{
 		m_swapChain->Present(0, 0);
 	}
+
+	return true;
+}
+
+bool DX11RenderingServer::DispatchCompute(RenderPassDataComponent * renderPass, unsigned int threadGroupX, unsigned int threadGroupY, unsigned int threadGroupZ)
+{
+	m_deviceContext->Dispatch(threadGroupX, threadGroupY, threadGroupZ);
 
 	return true;
 }

@@ -846,6 +846,11 @@ bool VKRenderingServer::Present()
 	return true;
 }
 
+bool VKRenderingServer::DispatchCompute(RenderPassDataComponent * renderPass, unsigned int threadGroupX, unsigned int threadGroupY, unsigned int threadGroupZ)
+{
+	return true;
+}
+
 bool VKRenderingServer::CopyDepthBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
 {
 	return true;

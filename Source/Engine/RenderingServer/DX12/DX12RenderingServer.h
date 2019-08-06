@@ -50,6 +50,8 @@ public:
 	bool SetUserPipelineOutput(IResourceBinder* resourceBinder) override;
 	bool Present() override;
 
+	bool DispatchCompute(RenderPassDataComponent * renderPass, unsigned int threadGroupX, unsigned int threadGroupY, unsigned int threadGroupZ) override;
+
 	bool CopyDepthBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest) override;
 	bool CopyStencilBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest) override;
 	bool CopyColorBuffer(RenderPassDataComponent * src, size_t srcIndex, RenderPassDataComponent * dest, size_t destIndex) override;

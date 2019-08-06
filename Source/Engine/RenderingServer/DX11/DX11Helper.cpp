@@ -305,7 +305,7 @@ unsigned int DX11Helper::GetTextureBindFlags(TextureDataDesc textureDataDesc)
 	{
 		if (textureDataDesc.UsageType == TextureUsageType::ColorAttachment)
 		{
-			textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+			textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET | D3D11_BIND_UNORDERED_ACCESS;
 		}
 		else if (textureDataDesc.UsageType == TextureUsageType::DepthAttachment)
 		{
@@ -490,6 +490,19 @@ unsigned int DX11Helper::GetSRVMipLevels(TextureDataDesc textureDataDesc)
 D3D11_UNORDERED_ACCESS_VIEW_DESC DX11Helper::GetUAVDesc(TextureDataDesc textureDataDesc, D3D11_TEXTURE_DESC D3D11TextureDesc)
 {
 	D3D11_UNORDERED_ACCESS_VIEW_DESC l_result = {};
+
+	if (textureDataDesc.UsageType == TextureUsageType::DepthAttachment)
+	{
+		l_result.Format = DXGI_FORMAT_R32_FLOAT;
+	}
+	else if (textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+	{
+		l_result.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+	}
+	else
+	{
+		l_result.Format = D3D11TextureDesc.Format;
+	}
 
 	switch (textureDataDesc.SamplerType)
 	{

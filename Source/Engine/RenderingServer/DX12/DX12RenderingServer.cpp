@@ -1723,6 +1723,11 @@ bool DX12RenderingServer::Present()
 	return true;
 }
 
+bool DX12RenderingServer::DispatchCompute(RenderPassDataComponent * renderPass, unsigned int threadGroupX, unsigned int threadGroupY, unsigned int threadGroupZ)
+{
+	return true;
+}
+
 bool DX12RenderingServer::CopyDepthBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
 {
 	auto l_src = reinterpret_cast<DX12RenderPassDataComponent*>(src);

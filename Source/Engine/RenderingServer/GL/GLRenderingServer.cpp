@@ -1023,6 +1023,14 @@ bool GLRenderingServer::Present()
 	return true;
 }
 
+bool GLRenderingServer::DispatchCompute(RenderPassDataComponent * renderPass, unsigned int threadGroupX, unsigned int threadGroupY, unsigned int threadGroupZ)
+{
+	glDispatchCompute(threadGroupX, threadGroupY, threadGroupZ);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+
+	return true;
+}
+
 bool GLRenderingServer::CopyDepthBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
 {
 	auto l_src = reinterpret_cast<GLRenderPassDataComponent*>(src);

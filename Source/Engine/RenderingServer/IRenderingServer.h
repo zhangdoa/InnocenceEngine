@@ -71,6 +71,8 @@ public:
 	virtual bool SetUserPipelineOutput(IResourceBinder * resourceBinder) = 0;
 	virtual bool Present() = 0;
 
+	virtual bool DispatchCompute(RenderPassDataComponent * renderPass, unsigned int threadGroupX, unsigned int threadGroupY, unsigned int threadGroupZ) = 0;
+
 	virtual bool CopyDepthBuffer(RenderPassDataComponent* src, RenderPassDataComponent* dest) = 0;
 	virtual bool CopyStencilBuffer(RenderPassDataComponent* src, RenderPassDataComponent* dest) = 0;
 	virtual bool CopyColorBuffer(RenderPassDataComponent* src, size_t srcIndex, RenderPassDataComponent* dest, size_t destIndex) = 0;
