@@ -107,6 +107,20 @@ bool DefaultGPUBuffers::Upload()
 	return true;
 }
 
+bool DefaultGPUBuffers::Terminate()
+{
+	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_CameraGBDC);
+	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_MeshGBDC);
+	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_MaterialGBDC);
+	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_SunGBDC);;
+	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_PointLightGBDC);
+	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_SphereLightGBDC);
+	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_CSMGBDC);
+	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_SkyGBDC);
+
+	return true;
+}
+
 GPUBufferDataComponent * DefaultGPUBuffers::GetGPUBufferDataComponent(GPUBufferUsageType usageType)
 {
 	GPUBufferDataComponent* l_result;

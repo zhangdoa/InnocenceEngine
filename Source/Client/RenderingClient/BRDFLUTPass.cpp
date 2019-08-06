@@ -119,6 +119,14 @@ bool BRDFLUTPass::ExecuteCommandList()
 	return true;
 }
 
+bool BRDFLUTPass::Terminate()
+{
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC_MS);
+
+	return true;
+}
+
 IResourceBinder * BRDFLUTPass::GetBRDFLUT()
 {
 	return m_RPDC->m_RenderTargetsResourceBinders[0];

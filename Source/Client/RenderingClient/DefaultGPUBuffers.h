@@ -8,6 +8,7 @@ namespace DefaultGPUBuffers
 	bool Setup();
 	bool Initialize();
 	bool Upload();
+	bool Terminate();
 
 	GPUBufferDataComponent* GetGPUBufferDataComponent(GPUBufferUsageType usageType);
 };

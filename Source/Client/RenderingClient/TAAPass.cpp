@@ -143,6 +143,14 @@ bool TAAPass::ExecuteCommandList()
 	return true;
 }
 
+bool TAAPass::Terminate()
+{
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC_A);
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC_B);
+
+	return true;
+}
+
 RenderPassDataComponent * TAAPass::GetRPDC()
 {
 	if (l_isPassA)

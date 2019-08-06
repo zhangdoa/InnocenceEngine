@@ -53,6 +53,7 @@ namespace GIBakePass
 	bool Bake();
 	bool PrepareCommandList();
 	bool ExecuteCommandList();
+	bool Terminate();
 
 	RenderPassDataComponent* GetRPDC();
 	ShaderProgramComponent* GetSPC();

@@ -101,6 +101,13 @@ bool PreTAAPass::ExecuteCommandList()
 	return true;
 }
 
+bool PreTAAPass::Terminate()
+{
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+
+	return true;
+}
+
 RenderPassDataComponent * PreTAAPass::GetRPDC()
 {
 	return m_RPDC;

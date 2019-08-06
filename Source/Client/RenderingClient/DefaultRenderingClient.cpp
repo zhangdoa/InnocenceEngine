@@ -112,5 +112,21 @@ bool DefaultRenderingClient::Render()
 
 bool DefaultRenderingClient::Terminate()
 {
+	DefaultGPUBuffers::Terminate();
+	GIBakePass::Terminate();
+	BRDFLUTPass::Terminate();
+	SunShadowPass::Terminate();
+	OpaquePass::Terminate();
+	SSAOPass::Terminate();
+	LightPass::Terminate();
+	SkyPass::Terminate();
+	PreTAAPass::Terminate();
+	TAAPass::Terminate();
+	PostTAAPass::Terminate();
+	MotionBlurPass::Terminate();
+	FinalBlendPass::Terminate();
+
+	BRDFTestPass::Terminate();
+
 	return true;
 }

@@ -104,6 +104,13 @@ bool SunShadowPass::ExecuteCommandList()
 	return true;
 }
 
+bool SunShadowPass::Terminate()
+{
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+
+	return true;
+}
+
 RenderPassDataComponent * SunShadowPass::GetRPDC()
 {
 	return m_RPDC;

@@ -91,6 +91,13 @@ bool PostTAAPass::ExecuteCommandList()
 	return true;
 }
 
+bool PostTAAPass::Terminate()
+{
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+
+	return true;
+}
+
 RenderPassDataComponent * PostTAAPass::GetRPDC()
 {
 	return m_RPDC;

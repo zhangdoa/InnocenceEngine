@@ -42,7 +42,7 @@ namespace GIBakePass
 
 	const unsigned int m_captureResolution = 128;
 	const unsigned int m_sampleCountPerFace = m_captureResolution * m_captureResolution;
-	const unsigned int m_subDivideDimension = 4;
+	const unsigned int m_subDivideDimension = 2;
 	const unsigned int m_totalCaptureProbes = m_subDivideDimension * m_subDivideDimension * m_subDivideDimension;
 
 	TextureDataComponent* m_testSampleCubemap;
@@ -723,6 +723,13 @@ bool GIBakePass::PrepareCommandList()
 
 bool GIBakePass::ExecuteCommandList()
 {
+	return true;
+}
+
+bool GIBakePass::Terminate()
+{
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC_Bake);
+
 	return true;
 }
 

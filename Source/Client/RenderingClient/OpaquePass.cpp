@@ -174,6 +174,13 @@ bool OpaquePass::ExecuteCommandList()
 	return true;
 }
 
+bool OpaquePass::Terminate()
+{
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+
+	return true;
+}
+
 RenderPassDataComponent * OpaquePass::GetRPDC()
 {
 	return m_RPDC;

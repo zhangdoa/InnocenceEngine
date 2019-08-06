@@ -93,6 +93,13 @@ bool SkyPass::ExecuteCommandList()
 	return true;
 }
 
+bool SkyPass::Terminate()
+{
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+
+	return true;
+}
+
 RenderPassDataComponent * SkyPass::GetRPDC()
 {
 	return m_RPDC;

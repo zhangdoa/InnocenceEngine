@@ -7,6 +7,7 @@ namespace FinalBlendPass
 	bool Initialize();
 	bool PrepareCommandList(RenderPassDataComponent* inputRPDC);
 	bool ExecuteCommandList();
+	bool Terminate();
 
 	ShaderProgramComponent* getSPC();
 };

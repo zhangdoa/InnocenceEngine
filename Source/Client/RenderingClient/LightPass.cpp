@@ -192,6 +192,13 @@ bool LightPass::ExecuteCommandList()
 	return true;
 }
 
+bool LightPass::Terminate()
+{
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+
+	return true;
+}
+
 RenderPassDataComponent * LightPass::GetRPDC()
 {
 	return m_RPDC;

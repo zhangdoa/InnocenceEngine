@@ -92,6 +92,13 @@ bool FinalBlendPass::ExecuteCommandList()
 	return true;
 }
 
+bool FinalBlendPass::Terminate()
+{
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+
+	return true;
+}
+
 ShaderProgramComponent * FinalBlendPass::getSPC()
 {
 	return m_SPC;

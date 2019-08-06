@@ -174,6 +174,13 @@ bool BRDFTestPass::ExecuteCommandList()
 	return true;
 }
 
+bool BRDFTestPass::Terminate()
+{
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+
+	return true;
+}
+
 RenderPassDataComponent * BRDFTestPass::GetRPDC()
 {
 	return m_RPDC;

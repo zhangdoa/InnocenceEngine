@@ -106,6 +106,13 @@ bool MotionBlurPass::ExecuteCommandList()
 	return true;
 }
 
+bool MotionBlurPass::Terminate()
+{
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+
+	return true;
+}
+
 RenderPassDataComponent * MotionBlurPass::GetRPDC()
 {
 	return m_RPDC;

@@ -210,6 +210,13 @@ bool SSAOPass::ExecuteCommandList()
 	return true;
 }
 
+bool SSAOPass::Terminate()
+{
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+
+	return true;
+}
+
 RenderPassDataComponent * SSAOPass::GetRPDC()
 {
 	return m_RPDC;
