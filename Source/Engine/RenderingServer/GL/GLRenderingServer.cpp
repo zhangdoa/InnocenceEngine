@@ -1036,7 +1036,7 @@ bool GLRenderingServer::Present()
 bool GLRenderingServer::DispatchCompute(RenderPassDataComponent * renderPass, unsigned int threadGroupX, unsigned int threadGroupY, unsigned int threadGroupZ)
 {
 	glDispatchCompute(threadGroupX, threadGroupY, threadGroupZ);
-	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+	glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
 	return true;
 }
