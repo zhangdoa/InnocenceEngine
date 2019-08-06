@@ -783,7 +783,7 @@ bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	SetObjectName(l_rhs, l_rhs->m_vertexBuffer, "VB");
 #endif //  _DEBUG
 
-	auto l_uploadHeapBuffer = CreateUploadHeapBuffer(l_verticesDataSize, m_device);
+	auto l_vertexUploadHeapBuffer = CreateUploadHeapBuffer(l_verticesDataSize, m_device);
 
 	auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
 
@@ -792,7 +792,7 @@ bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	l_verticesSubResourceData.pData = &l_rhs->m_vertices[0];
 	l_verticesSubResourceData.RowPitch = l_verticesDataSize;
 	l_verticesSubResourceData.SlicePitch = 1;
-	UpdateSubresources(l_commandList, l_rhs->m_vertexBuffer, l_uploadHeapBuffer, 0, 0, 1, &l_verticesSubResourceData);
+	UpdateSubresources(l_commandList, l_rhs->m_vertexBuffer, l_vertexUploadHeapBuffer, 0, 0, 1, &l_verticesSubResourceData);
 
 	//  upload heap ----> default heap
 	l_commandList->ResourceBarrier(
@@ -821,14 +821,14 @@ bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	SetObjectName(l_rhs, l_rhs->m_indexBuffer, "IB");
 #endif //  _DEBUG
 
-	l_uploadHeapBuffer = CreateUploadHeapBuffer(l_indicesDataSize, m_device);
+	auto l_indexUploadHeapBuffer = CreateUploadHeapBuffer(l_indicesDataSize, m_device);
 
 	// main memory ----> upload heap
 	D3D12_SUBRESOURCE_DATA l_indicesSubResourceData = {};
 	l_indicesSubResourceData.pData = &l_rhs->m_indices[0];
 	l_indicesSubResourceData.RowPitch = l_indicesDataSize;
 	l_indicesSubResourceData.SlicePitch = 1;
-	UpdateSubresources(l_commandList, l_rhs->m_indexBuffer, l_uploadHeapBuffer, 0, 0, 1, &l_indicesSubResourceData);
+	UpdateSubresources(l_commandList, l_rhs->m_indexBuffer, l_indexUploadHeapBuffer, 0, 0, 1, &l_indicesSubResourceData);
 
 	//  upload heap ----> default heap
 	l_commandList->ResourceBarrier(
@@ -836,6 +836,9 @@ bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 		&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_indexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER));
 
 	EndSingleTimeCommands(l_commandList, m_device, m_globalCommandQueue);
+
+	l_vertexUploadHeapBuffer->Release();
+	l_indexUploadHeapBuffer->Release();
 
 	// Initialize the index buffer view.
 	l_rhs->m_IBV.Format = DXGI_FORMAT_R32_UINT;
@@ -863,116 +866,131 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 	l_rhs->m_DX12TextureDataDesc = GetDX12TextureDataDesc(l_rhs->m_textureDataDesc);
 	l_rhs->m_PixelDataSize = GetTexturePixelDataSize(l_rhs->m_textureDataDesc);
 
-	// Create the empty texture.
-	if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::ColorAttachment
-		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthAttachment
-		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment
-		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::RawImage)
+	if (l_rhs->m_textureDataDesc.CPUAccessibility != Accessibility::Immutable)
 	{
-		D3D12_CLEAR_VALUE l_clearValue;
-		if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::ColorAttachment)
-		{
-			l_clearValue = D3D12_CLEAR_VALUE{ l_rhs->m_DX12TextureDataDesc.Format, { 0.0f, 0.0f, 0.0f, 0.0f } };
-		}
-		else if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthAttachment)
-		{
-			l_clearValue.Format = DXGI_FORMAT_D32_FLOAT;
-			l_clearValue.DepthStencil = D3D12_DEPTH_STENCIL_VALUE{ 1.0f, 0x00 };
-		}
-		else if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
-		{
-			l_clearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-			l_clearValue.DepthStencil = D3D12_DEPTH_STENCIL_VALUE{ 1.0f, 0x00 };
-		}
-		l_rhs->m_ResourceHandle = CreateDefaultHeapBuffer(&l_rhs->m_DX12TextureDataDesc, m_device, &l_clearValue);
+		auto l_bufferSize = l_rhs->m_DX12TextureDataDesc.Width * l_rhs->m_DX12TextureDataDesc.Height * l_rhs->m_DX12TextureDataDesc.DepthOrArraySize * l_rhs->m_PixelDataSize;
+		l_rhs->m_ResourceHandle = CreateReadBackHeapBuffer(l_bufferSize, m_device);
 	}
 	else
-	{
-		l_rhs->m_ResourceHandle = CreateDefaultHeapBuffer(&l_rhs->m_DX12TextureDataDesc, m_device);
-	}
-
-	if (l_rhs->m_ResourceHandle == nullptr)
-	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't create texture!");
-		return false;
-	}
-#ifdef _DEBUG
-	SetObjectName(l_rhs, l_rhs->m_ResourceHandle, "Texture");
-#endif // _DEBUG
-
-	auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
-
-	// main memory ----> upload heap
-	if (!(l_rhs->m_textureDataDesc.UsageType == TextureUsageType::ColorAttachment
-		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthAttachment
-		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment
-		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::RawImage))
-	{
-		if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::SamplerCubemap)
+	{	// Create the empty texture.
+		if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::ColorAttachment
+			|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthAttachment
+			|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment
+			|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::RawImage)
 		{
-			UINT64 l_uploadHeapBufferSize = GetRequiredIntermediateSize(l_rhs->m_ResourceHandle, 0, 6);
-
-			for (unsigned int i = 0; i < 6; i++)
+			D3D12_CLEAR_VALUE l_clearValue;
+			if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::ColorAttachment)
 			{
-				D3D12_SUBRESOURCE_DATA l_textureSubResourceData = {};
-				l_textureSubResourceData.RowPitch = l_rhs->m_textureDataDesc.Width * l_rhs->m_PixelDataSize;
-				void* l_rawData = (unsigned char*)l_rhs->m_textureData + l_textureSubResourceData.RowPitch * l_rhs->m_textureDataDesc.Height * i;
-
-				l_textureSubResourceData.pData = l_rawData;
-				l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * l_rhs->m_textureDataDesc.Height;
-
-				auto l_uploadHeapBuffer = CreateUploadHeapBuffer(l_uploadHeapBufferSize, m_device);
-				UpdateSubresources(l_commandList, l_rhs->m_ResourceHandle, l_uploadHeapBuffer, 0, i, 1, &l_textureSubResourceData);
+				l_clearValue = D3D12_CLEAR_VALUE{ l_rhs->m_DX12TextureDataDesc.Format, { 0.0f, 0.0f, 0.0f, 0.0f } };
 			}
+			else if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthAttachment)
+			{
+				l_clearValue.Format = DXGI_FORMAT_D32_FLOAT;
+				l_clearValue.DepthStencil = D3D12_DEPTH_STENCIL_VALUE{ 1.0f, 0x00 };
+			}
+			else if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+			{
+				l_clearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+				l_clearValue.DepthStencil = D3D12_DEPTH_STENCIL_VALUE{ 1.0f, 0x00 };
+			}
+			l_rhs->m_ResourceHandle = CreateDefaultHeapBuffer(&l_rhs->m_DX12TextureDataDesc, m_device, &l_clearValue);
 		}
 		else
 		{
-			UINT64 l_uploadHeapBufferSize = GetRequiredIntermediateSize(l_rhs->m_ResourceHandle, 0, 1);
-			D3D12_SUBRESOURCE_DATA l_textureSubResourceData = {};
-			l_textureSubResourceData.pData = l_rhs->m_textureData;
-			l_textureSubResourceData.RowPitch = l_rhs->m_textureDataDesc.Width * l_rhs->m_PixelDataSize;
-			l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * l_rhs->m_textureDataDesc.Height;
-
-			auto l_uploadHeapBuffer = CreateUploadHeapBuffer(l_uploadHeapBufferSize, m_device);
-			UpdateSubresources(l_commandList, l_rhs->m_ResourceHandle, l_uploadHeapBuffer, 0, 0, 1, &l_textureSubResourceData);
+			l_rhs->m_ResourceHandle = CreateDefaultHeapBuffer(&l_rhs->m_DX12TextureDataDesc, m_device);
 		}
-	}
 
-	//  upload heap ----> default heap
-	if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::ColorAttachment)
-	{
-		l_commandList->ResourceBarrier(
-			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_ResourceHandle, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ));
-	}
-	else if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthAttachment
-		|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
-	{
-		l_commandList->ResourceBarrier(
-			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_ResourceHandle, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_DEPTH_WRITE));
-	}
-	else if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::RawImage)
-	{
-		l_commandList->ResourceBarrier(
-			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_ResourceHandle, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-	}
-	else
-	{
-		l_commandList->ResourceBarrier(
-			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_ResourceHandle, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ));
-	}
+		if (l_rhs->m_ResourceHandle == nullptr)
+		{
+			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't create texture!");
+			return false;
+		}
+#ifdef _DEBUG
+		SetObjectName(l_rhs, l_rhs->m_ResourceHandle, "Texture");
+#endif // _DEBUG
 
-	EndSingleTimeCommands(l_commandList, m_device, m_globalCommandQueue);
+		std::vector<ID3D12Resource*> l_uploadBuffers;
+
+		auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
+
+		// main memory ----> upload heap
+		if (!(l_rhs->m_textureDataDesc.UsageType == TextureUsageType::ColorAttachment
+			|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthAttachment
+			|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment
+			|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::RawImage))
+		{
+			if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::SamplerCubemap)
+			{
+				UINT64 l_uploadHeapBufferSize = GetRequiredIntermediateSize(l_rhs->m_ResourceHandle, 0, 6);
+
+				for (unsigned int i = 0; i < 6; i++)
+				{
+					D3D12_SUBRESOURCE_DATA l_textureSubResourceData = {};
+					l_textureSubResourceData.RowPitch = l_rhs->m_textureDataDesc.Width * l_rhs->m_PixelDataSize;
+					void* l_rawData = (unsigned char*)l_rhs->m_textureData + l_textureSubResourceData.RowPitch * l_rhs->m_textureDataDesc.Height * i;
+
+					l_textureSubResourceData.pData = l_rawData;
+					l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * l_rhs->m_textureDataDesc.Height;
+
+					auto l_uploadHeapBuffer = CreateUploadHeapBuffer(l_uploadHeapBufferSize, m_device);
+					UpdateSubresources(l_commandList, l_rhs->m_ResourceHandle, l_uploadHeapBuffer, 0, i, 1, &l_textureSubResourceData);
+					l_uploadBuffers.emplace_back(l_uploadHeapBuffer);
+				}
+			}
+			else
+			{
+				UINT64 l_uploadHeapBufferSize = GetRequiredIntermediateSize(l_rhs->m_ResourceHandle, 0, 1);
+				D3D12_SUBRESOURCE_DATA l_textureSubResourceData = {};
+				l_textureSubResourceData.pData = l_rhs->m_textureData;
+				l_textureSubResourceData.RowPitch = l_rhs->m_textureDataDesc.Width * l_rhs->m_PixelDataSize;
+				l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * l_rhs->m_textureDataDesc.Height;
+
+				auto l_uploadHeapBuffer = CreateUploadHeapBuffer(l_uploadHeapBufferSize, m_device);
+				UpdateSubresources(l_commandList, l_rhs->m_ResourceHandle, l_uploadHeapBuffer, 0, 0, 1, &l_textureSubResourceData);
+				l_uploadBuffers.emplace_back(l_uploadHeapBuffer);
+			}
+		}
+
+		//  upload heap ----> default heap
+		if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::ColorAttachment)
+		{
+			l_commandList->ResourceBarrier(
+				1,
+				&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_ResourceHandle, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ));
+		}
+		else if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthAttachment
+			|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+		{
+			l_commandList->ResourceBarrier(
+				1,
+				&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_ResourceHandle, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_DEPTH_WRITE));
+		}
+		else if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::RawImage)
+		{
+			l_commandList->ResourceBarrier(
+				1,
+				&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_ResourceHandle, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+		}
+		else
+		{
+			l_commandList->ResourceBarrier(
+				1,
+				&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_ResourceHandle, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ));
+		}
+		EndSingleTimeCommands(l_commandList, m_device, m_globalCommandQueue);
+
+		for (auto i : l_uploadBuffers)
+		{
+			i->Release();
+		}
+
+		auto l_resourceBinder = addResourcesBinder();
+		l_resourceBinder->m_TextureSRV = CreateSRV(l_rhs);
+		l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
+		l_rhs->m_ResourceBinder = l_resourceBinder;
+	}
 
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: texture ", l_rhs, " is initialized.");
-
-	auto l_resourceBinder = addResourcesBinder();
-	l_resourceBinder->m_TextureSRV = CreateSRV(l_rhs);
-	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
-	l_rhs->m_ResourceBinder = l_resourceBinder;
 
 	l_rhs->m_objectStatus = ObjectStatus::Activated;
 
@@ -1739,7 +1757,87 @@ vec4 DX12RenderingServer::ReadRenderTargetSample(RenderPassDataComponent * rhs, 
 
 std::vector<vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataComponent * canvas, TextureDataComponent * TDC)
 {
-	return std::vector<vec4>();
+	// @TODO: Support different pixel data type
+
+	auto l_srcTDC = reinterpret_cast<DX12TextureDataComponent*>(TDC);
+
+	size_t l_sampleCount;
+
+	switch (l_srcTDC->m_textureDataDesc.SamplerType)
+	{
+	case TextureSamplerType::Sampler1D:
+		l_sampleCount = l_srcTDC->m_textureDataDesc.Width;
+		break;
+	case TextureSamplerType::Sampler2D:
+		l_sampleCount = l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_textureDataDesc.Height;
+		break;
+	case TextureSamplerType::Sampler3D:
+		l_sampleCount = l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_textureDataDesc.Height * l_srcTDC->m_textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::Sampler1DArray:
+		l_sampleCount = l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::Sampler2DArray:
+		l_sampleCount = l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_textureDataDesc.Height * l_srcTDC->m_textureDataDesc.DepthOrArraySize;
+		break;
+	case TextureSamplerType::SamplerCubemap:
+		l_sampleCount = l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_textureDataDesc.Height * 6;
+		break;
+	default:
+		break;
+	}
+
+	std::vector<vec4> l_result;
+	l_result.resize(l_sampleCount);
+
+	auto l_destTDC = reinterpret_cast<DX12TextureDataComponent*>(AddTextureDataComponent("ReadBackTemp/"));
+	l_destTDC->m_textureDataDesc = TDC->m_textureDataDesc;
+	l_destTDC->m_textureDataDesc.CPUAccessibility = Accessibility::ReadOnly;
+
+	InitializeTextureDataComponent(l_destTDC);
+
+	auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
+
+	D3D12_TEXTURE_COPY_LOCATION l_srcLocation;
+	l_srcLocation.pResource = l_srcTDC->m_ResourceHandle;
+	l_srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+	l_srcLocation.PlacedFootprint.Offset = 0;
+	l_srcLocation.PlacedFootprint.Footprint.Format = l_srcTDC->m_DX12TextureDataDesc.Format;
+	l_srcLocation.PlacedFootprint.Footprint.Width = (unsigned int)l_srcTDC->m_DX12TextureDataDesc.Width;
+	l_srcLocation.PlacedFootprint.Footprint.Height = (unsigned int)l_srcTDC->m_DX12TextureDataDesc.Height;
+	if (l_srcTDC->m_textureDataDesc.SamplerType == TextureSamplerType::SamplerCubemap)
+	{
+		l_srcLocation.PlacedFootprint.Footprint.Depth = 1;
+	}
+	else
+	{
+		l_srcLocation.PlacedFootprint.Footprint.Depth = (unsigned int)l_srcTDC->m_DX12TextureDataDesc.DepthOrArraySize;
+	}
+	l_srcLocation.PlacedFootprint.Footprint.RowPitch = (unsigned int)l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_PixelDataSize;
+
+	auto l_destLocation = l_srcLocation;
+	l_destLocation.pResource = l_destTDC->m_ResourceHandle;
+	l_destLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+
+	l_commandList->CopyTextureRegion(&l_destLocation, 0, 0, 0, &l_srcLocation, NULL);
+
+	EndSingleTimeCommands(l_commandList, m_device, m_globalCommandQueue);
+
+	CD3DX12_RANGE m_ReadRange(0, l_sampleCount * sizeof(float));
+	void* l_pData;
+	auto l_HResult = l_destTDC->m_ResourceHandle->Map(0, &m_ReadRange, &l_pData);
+
+	if (FAILED(l_HResult))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't map texture for CPU to read!");
+	}
+
+	std::memcpy(l_result.data(), l_pData, l_sampleCount * sizeof(float));
+	l_destTDC->m_ResourceHandle->Unmap(0, 0);
+
+	DeleteTextureDataComponent(l_destTDC);
+
+	return l_result;
 }
 
 bool DX12RenderingServer::Resize()

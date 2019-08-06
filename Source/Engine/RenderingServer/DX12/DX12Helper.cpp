@@ -103,14 +103,33 @@ ID3D12Resource* DX12Helper::CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourc
 	return l_defaultHeapBuffer;
 }
 
+ID3D12Resource * DX12Helper::CreateReadBackHeapBuffer(UINT64 size, ID3D12Device * device, const char * name)
+{
+	ID3D12Resource* l_readBackHeapBuffer;
+
+	auto l_HResult = device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(size),
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr,
+		IID_PPV_ARGS(&l_readBackHeapBuffer));
+
+	if (FAILED(l_HResult))
+	{
+		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingServer: Can't create read-back heap buffer!");
+		return nullptr;
+	}
+
+	return l_readBackHeapBuffer;
+}
+
 D3D12_RESOURCE_DESC DX12Helper::GetDX12TextureDataDesc(TextureDataDesc textureDataDesc)
 {
 	D3D12_RESOURCE_DESC l_result = {};
 
-	l_result.Height = textureDataDesc.Height;
 	l_result.Width = textureDataDesc.Width;
-	l_result.MipLevels = GetTextureMipLevels(textureDataDesc);
-
+	l_result.Height = textureDataDesc.Height;
 	switch (textureDataDesc.SamplerType)
 	{
 	case TextureSamplerType::Sampler1D:
@@ -135,11 +154,25 @@ D3D12_RESOURCE_DESC DX12Helper::GetDX12TextureDataDesc(TextureDataDesc textureDa
 		break;
 	}
 
-	l_result.Format = GetTextureFormat(textureDataDesc);
-	l_result.SampleDesc.Count = 1;
-	l_result.SampleDesc.Quality = 0;
-	l_result.Dimension = GetTextureDimension(textureDataDesc);
-	l_result.Flags = GetTextureBindFlags(textureDataDesc);
+	if (textureDataDesc.CPUAccessibility != Accessibility::Immutable)
+	{
+		l_result.MipLevels = 1;
+		l_result.Format = DXGI_FORMAT_UNKNOWN;
+		l_result.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		l_result.SampleDesc.Count = 1;
+		l_result.SampleDesc.Quality = 0;
+		l_result.Flags = D3D12_RESOURCE_FLAG_NONE;
+		l_result.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	}
+	else
+	{
+		l_result.MipLevels = GetTextureMipLevels(textureDataDesc);
+		l_result.Format = GetTextureFormat(textureDataDesc);
+		l_result.SampleDesc.Count = 1;
+		l_result.SampleDesc.Quality = 0;
+		l_result.Dimension = GetTextureDimension(textureDataDesc);
+		l_result.Flags = GetTextureBindFlags(textureDataDesc);
+	}
 
 	return l_result;
 }
@@ -376,26 +409,26 @@ unsigned int DX12Helper::GetTextureMipLevels(TextureDataDesc textureDataDesc)
 
 D3D12_RESOURCE_FLAGS DX12Helper::GetTextureBindFlags(TextureDataDesc textureDataDesc)
 {
-	D3D12_RESOURCE_FLAGS textureBindFlags = {};
+	D3D12_RESOURCE_FLAGS l_result = {};
 
 	if (textureDataDesc.UsageType == TextureUsageType::ColorAttachment)
 	{
-		textureBindFlags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		l_result = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 	}
 	else if (textureDataDesc.UsageType == TextureUsageType::DepthAttachment)
 	{
-		textureBindFlags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+		l_result = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 	}
 	else if (textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
 	{
-		textureBindFlags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+		l_result = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 	}
 	else if (textureDataDesc.UsageType == TextureUsageType::RawImage)
 	{
-		textureBindFlags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		l_result = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 	}
 
-	return textureBindFlags;
+	return l_result;
 }
 
 unsigned int DX12Helper::GetTexturePixelDataSize(TextureDataDesc textureDataDesc)
