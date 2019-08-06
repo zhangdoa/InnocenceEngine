@@ -1,5 +1,6 @@
 #include "DefaultRenderingClient.h"
 #include "DefaultGPUBuffers.h"
+#include "LightCullingPass.h"
 #include "GIBakePass.h"
 #include "BRDFLUTPass.h"
 #include "SunShadowPass.h"
@@ -33,6 +34,7 @@ bool DefaultRenderingClient::Setup()
 	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonState{ INNO_KEY_B, true }, ButtonEvent{ EventLifeTime::OneShot, &f_GIBake });
 
 	DefaultGPUBuffers::Setup();
+	LightCullingPass::Setup();
 	GIBakePass::Setup();
 	BRDFLUTPass::Setup();
 	SunShadowPass::Setup();
@@ -54,6 +56,7 @@ bool DefaultRenderingClient::Setup()
 bool DefaultRenderingClient::Initialize()
 {
 	DefaultGPUBuffers::Initialize();
+	LightCullingPass::Initialize();
 	GIBakePass::Initialize();
 	BRDFLUTPass::Initialize();
 	BRDFLUTPass::PrepareCommandList();
@@ -75,19 +78,53 @@ bool DefaultRenderingClient::Initialize()
 
 bool DefaultRenderingClient::Render()
 {
+	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
+	IResourceBinder* l_canvas;
+
 	DefaultGPUBuffers::Upload();
+	LightCullingPass::PrepareCommandList();
+
 	SunShadowPass::PrepareCommandList();
 	OpaquePass::PrepareCommandList();
 	SSAOPass::PrepareCommandList();
 	LightPass::PrepareCommandList();
-	SkyPass::PrepareCommandList();
-	PreTAAPass::PrepareCommandList();
-	TAAPass::PrepareCommandList();
-	PostTAAPass::PrepareCommandList();
-	MotionBlurPass::PrepareCommandList(PostTAAPass::GetRPDC());
-	//BRDFTestPass::PrepareCommandList();
-	FinalBlendPass::PrepareCommandList(MotionBlurPass::GetRPDC());
 
+	if (l_renderingConfig.drawSky)
+	{
+		SkyPass::PrepareCommandList();
+	}
+
+	PreTAAPass::PrepareCommandList();
+	l_canvas = PreTAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
+
+	if (l_renderingConfig.useTAA)
+	{
+		TAAPass::PrepareCommandList();
+		PostTAAPass::PrepareCommandList();
+		l_canvas = PostTAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
+	}
+
+	if (l_renderingConfig.useMotionBlur)
+	{
+		MotionBlurPass::PrepareCommandList(l_canvas);
+		l_canvas = MotionBlurPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
+	}
+
+	static bool l_drawBRDFTest = false;
+	if (l_drawBRDFTest)
+	{
+		BRDFTestPass::PrepareCommandList();
+		l_canvas = BRDFTestPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
+	}
+	static bool l_drawLightHeatMap = true;
+	if (l_drawLightHeatMap)
+	{
+		l_canvas = LightCullingPass::GetHeatMap();
+	}
+
+	FinalBlendPass::PrepareCommandList(l_canvas);
+
+	LightCullingPass::ExecuteCommandList();
 	SunShadowPass::ExecuteCommandList();
 	OpaquePass::ExecuteCommandList();
 	SSAOPass::ExecuteCommandList();
@@ -97,7 +134,7 @@ bool DefaultRenderingClient::Render()
 	TAAPass::ExecuteCommandList();
 	PostTAAPass::ExecuteCommandList();
 	MotionBlurPass::ExecuteCommandList();
-	//BRDFTestPass::ExecuteCommandList();
+	BRDFTestPass::ExecuteCommandList();
 
 	FinalBlendPass::ExecuteCommandList();
 
@@ -113,6 +150,7 @@ bool DefaultRenderingClient::Render()
 bool DefaultRenderingClient::Terminate()
 {
 	DefaultGPUBuffers::Terminate();
+	LightCullingPass::Terminate();
 	GIBakePass::Terminate();
 	BRDFLUTPass::Terminate();
 	SunShadowPass::Terminate();

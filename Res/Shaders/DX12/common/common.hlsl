@@ -44,6 +44,11 @@ struct CSM {
 	float4 padding[6];
 };
 
+struct DispatchParam {
+	uint4 numThreadGroups;
+	uint4 numThreads;
+};
+
 struct Plane
 {
 	float3 N;

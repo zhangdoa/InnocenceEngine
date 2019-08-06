@@ -61,10 +61,7 @@ layout(std140, row_major, binding = 7) uniform skyUBOBlock
 
 layout(std140, binding = 8) uniform dispatchParamsUBOBlock
 {
-	uvec3 numThreadGroups;
-	uint padding1;
-	uvec3 numThreads;
-	uint padding2;
+	DispatchParam data[2];
 } dispatchParamsUBO;
 
 layout(std140, row_major, binding = 9) uniform SH9UBOBlock

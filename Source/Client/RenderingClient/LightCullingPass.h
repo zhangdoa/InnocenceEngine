@@ -1,14 +1,14 @@
 #pragma once
 #include "../../Engine/RenderingServer/IRenderingServer.h"
 
-namespace MotionBlurPass
+namespace LightCullingPass
 {
 	bool Setup();
 	bool Initialize();
-	bool PrepareCommandList(IResourceBinder* input);
+	bool PrepareCommandList();
 	bool ExecuteCommandList();
 	bool Terminate();
 
-	RenderPassDataComponent* GetRPDC();
-	ShaderProgramComponent* GetSPC();
+	IResourceBinder* GetLightGrid();
+	IResourceBinder* GetHeatMap();
 };

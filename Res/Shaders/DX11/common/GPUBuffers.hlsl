@@ -66,10 +66,7 @@ cbuffer skyCBuffer : register(b7)
 
 cbuffer dispatchParamsCBuffer : register(b8)
 {
-	uint3 numThreadGroups;
-	uint dispatchParamsCBuffer_padding1;
-	uint3 numThreads;
-	uint  dispatchParamsCBuffer_padding2;
+	DispatchParam dispatchParams[2];
 }
 
 cbuffer SH9CBuffer : register(b9)

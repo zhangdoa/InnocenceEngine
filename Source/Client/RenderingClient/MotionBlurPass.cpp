@@ -69,7 +69,7 @@ bool MotionBlurPass::Initialize()
 	return true;
 }
 
-bool MotionBlurPass::PrepareCommandList(RenderPassDataComponent* inputRPDC)
+bool MotionBlurPass::PrepareCommandList(IResourceBinder* input)
 {
 	auto l_CameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Camera);
 	auto l_SunGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sun);
@@ -83,14 +83,14 @@ bool MotionBlurPass::PrepareCommandList(RenderPassDataComponent* inputRPDC)
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 2, 0);
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[3], 0, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, inputRPDC->m_RenderTargetsResourceBinders[0], 1, 1);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, input, 1, 1);
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Quad);
 
 	g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_mesh);
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[3], 0, 0);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, inputRPDC->m_RenderTargetsResourceBinders[0], 1, 1);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, input, 1, 1);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
 

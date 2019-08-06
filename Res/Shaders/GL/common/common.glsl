@@ -49,6 +49,11 @@ struct CSM {
 	float padding[6];
 };
 
+struct DispatchParam {
+	uvec4 numThreadGroups;
+	uvec4 numThreads;
+};
+
 struct SH9
 {
 	vec4 L00;

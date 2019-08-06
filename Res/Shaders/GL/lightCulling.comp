@@ -4,9 +4,10 @@
 
 layout(local_size_x = BLOCK_SIZE, local_size_y = BLOCK_SIZE, local_size_z = 1) in;
 
+layout(binding = 3, rgba16f) uniform image2D uni_lightGrid;
+layout(binding = 4, rgba16f) uniform image2D uni_debugTexture;
+
 layout(binding = 0) uniform usampler2D depthTexture;
-layout(binding = 1, rgba16f) uniform volatile coherent image2D uni_lightGrid;
-layout(binding = 2, rgba16f) uniform volatile coherent image2D uni_debugTexture;
 
 shared uint l_uMinDepth;
 shared uint l_uMaxDepth;
@@ -62,7 +63,7 @@ void main()
 		l_uMaxDepth = 0;
 		l_LightCount = 0;
 		l_LightIndexStartOffset = 0;
-		l_TileFrustum = gridFrustumsSSBO.data[gl_WorkGroupID.x + (gl_WorkGroupID.y * dispatchParamsUBO.numThreadGroups.x)];
+		l_TileFrustum = gridFrustumsSSBO.data[gl_WorkGroupID.x + (gl_WorkGroupID.y * dispatchParamsUBO.data[1].numThreadGroups.x)];
 	}
 
 	groupMemoryBarrier();
@@ -97,10 +98,10 @@ void main()
 			Sphere sphere = { lightPos_VS.xyz, light.luminance.w };
 			if (SphereInsideFrustum(sphere, l_TileFrustum, nearClipVS, farClipVS))
 			{
-				//if (!SphereInsidePlane(sphere, minPlane))
-				//{
-				AppendLight(i);
-				//}
+				if (!SphereInsidePlane(sphere, minPlane))
+				{
+					AppendLight(i);
+				}
 			}
 		}
 	}

@@ -41,9 +41,9 @@ void main()
 	frustum.planes[3] = ComputePlane(eyePos, viewSpace[2], viewSpace[3]);
 
 	// Store the computed frustum in global memory (if our thread ID is in bounds of the grid).
-	if (gl_GlobalInvocationID.x < dispatchParamsUBO.numThreads.x && gl_GlobalInvocationID.y < dispatchParamsUBO.numThreads.y)
+	if (gl_GlobalInvocationID.x < dispatchParamsUBO.data[0].numThreads.x && gl_GlobalInvocationID.y < dispatchParamsUBO.data[0].numThreads.y)
 	{
-		uint index = gl_GlobalInvocationID.x + (gl_GlobalInvocationID.y * dispatchParamsUBO.numThreads.x);
+		uint index = gl_GlobalInvocationID.x + (gl_GlobalInvocationID.y * dispatchParamsUBO.data[0].numThreads.x);
 		gridFrustumsSSBO.data[index] = frustum;
 	}
 }
