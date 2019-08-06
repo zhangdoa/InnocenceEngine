@@ -33,6 +33,7 @@ namespace GLHelper
 
 	bool AddShaderHandle(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderStage, const ShaderFilePath& shaderFilePath);
 	bool ActivateTexture(GLTextureDataComponent * GLTDC, int activateIndex);
+	bool BindTextureAsImage(GLTextureDataComponent * GLTDC, int bindingSlot, Accessibility accessibility);
 
 	/*
 	attachmentIndex: GL_COLOR_ATTACHMENT0 to GL_MAX_COLOR_ATTACHMENTS

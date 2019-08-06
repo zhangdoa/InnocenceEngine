@@ -882,13 +882,16 @@ bool GLRenderingServer::CommandListBegin(RenderPassDataComponent * rhs, size_t f
 bool GLRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * rhs)
 {
 	auto l_rhs = reinterpret_cast<GLRenderPassDataComponent*>(rhs);
-	auto l_GLPSO = reinterpret_cast<GLPipelineStateObject*>(l_rhs->m_PipelineStateObject);
-
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, l_rhs->m_FBO);
-	if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	if (l_rhs->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
 	{
-		glBindRenderbuffer(GL_RENDERBUFFER, l_rhs->m_RBO);
-		glRenderbufferStorage(GL_RENDERBUFFER, l_rhs->m_renderBufferInternalFormat, (GLsizei)l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width, (GLsizei)l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height);
+		auto l_GLPSO = reinterpret_cast<GLPipelineStateObject*>(l_rhs->m_PipelineStateObject);
+
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, l_rhs->m_FBO);
+		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+		{
+			glBindRenderbuffer(GL_RENDERBUFFER, l_rhs->m_RBO);
+			glRenderbufferStorage(GL_RENDERBUFFER, l_rhs->m_renderBufferInternalFormat, (GLsizei)l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width, (GLsizei)l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height);
+		}
 	}
 
 	auto l_shaderProgram = reinterpret_cast<GLShaderProgramComponent*>(l_rhs->m_ShaderProgram);
@@ -928,7 +931,14 @@ bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderP
 			//glBindSampler((unsigned int)localSlot, l_resourceBinder->m_SO);
 			break;
 		case ResourceBinderType::Image:
-			ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_resourceBinder->m_TO), (unsigned int)localSlot);
+			if (accessibility == Accessibility::ReadOnly)
+			{
+				ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_resourceBinder->m_TO), (unsigned int)localSlot);
+			}
+			else
+			{
+				BindTextureAsImage(reinterpret_cast<GLTextureDataComponent*>(l_resourceBinder->m_TO), (unsigned int)localSlot, accessibility);
+			}
 			break;
 		case ResourceBinderType::Buffer:
 			if (l_resourceBinder->m_GPUAccessibility == Accessibility::ReadOnly)

@@ -6,6 +6,7 @@ class DX12ResourceBinder : public IResourceBinder
 {
 public:
 	DX12SRV m_TextureSRV = {};
+	DX12UAV m_TextureUAV = {};
 	DX12Sampler m_Sampler = {};
 	ID3D12Resource* m_Buffer = 0;
 };
@@ -22,14 +23,15 @@ public:
 	D3D12_VIEWPORT m_Viewport = {};
 	D3D12_RECT m_Scissor = {};
 
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC m_PSODesc = {};
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC m_GraphicsPSODesc = {};
+	D3D12_COMPUTE_PIPELINE_STATE_DESC m_ComputePSODesc = {};
 	ID3D12PipelineState* m_PSO = 0;
 };
 
 class DX12CommandList : public ICommandList
 {
 public:
-	ID3D12GraphicsCommandList* m_CommandList = 0;
+	ID3D12GraphicsCommandList* m_GraphicsCommandList = 0;
 };
 
 class DX12CommandQueue : public ICommandQueue

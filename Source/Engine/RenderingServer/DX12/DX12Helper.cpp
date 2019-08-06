@@ -860,7 +860,22 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D
 			{
 			case ResourceBinderType::Sampler: l_rootDescriptorTables[l_currentTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_LocalSlot);
 				break;
-			case ResourceBinderType::Image:l_rootDescriptorTables[l_currentTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_LocalSlot);
+			case ResourceBinderType::Image:
+				if (l_resourceBinderLayoutDesc.m_BinderAccessibility == Accessibility::ReadOnly)
+				{
+					l_rootDescriptorTables[l_currentTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_LocalSlot);
+				}
+				else
+				{
+					if (l_resourceBinderLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
+					{
+						InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer!");
+					}
+					else
+					{
+						l_rootDescriptorTables[l_currentTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_LocalSlot);
+					}
+				}
 				break;
 			case ResourceBinderType::Buffer:
 				if (l_resourceBinderLayoutDesc.m_BinderAccessibility == Accessibility::ReadOnly)
@@ -979,121 +994,144 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D
 bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device)
 {
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(DX12RPDC->m_PipelineStateObject);
-
-	GenerateDepthStencilStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
-	GenerateBlendStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
-	GenerateRasterizerStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
-	GenerateViewportStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
-
-	l_PSO->m_PSODesc.pRootSignature = DX12RPDC->m_RootSignature;
-
-	D3D12_INPUT_ELEMENT_DESC l_polygonLayout[5];
-	unsigned int l_numElements;
-
-	// Create the vertex input layout description.
-	l_polygonLayout[0].SemanticName = "POSITION";
-	l_polygonLayout[0].SemanticIndex = 0;
-	l_polygonLayout[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	l_polygonLayout[0].InputSlot = 0;
-	l_polygonLayout[0].AlignedByteOffset = 0;
-	l_polygonLayout[0].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-	l_polygonLayout[0].InstanceDataStepRate = 0;
-
-	l_polygonLayout[1].SemanticName = "TEXCOORD";
-	l_polygonLayout[1].SemanticIndex = 0;
-	l_polygonLayout[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-	l_polygonLayout[1].InputSlot = 0;
-	l_polygonLayout[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-	l_polygonLayout[1].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-	l_polygonLayout[1].InstanceDataStepRate = 0;
-
-	l_polygonLayout[2].SemanticName = "PADA";
-	l_polygonLayout[2].SemanticIndex = 0;
-	l_polygonLayout[2].Format = DXGI_FORMAT_R32G32_FLOAT;
-	l_polygonLayout[2].InputSlot = 0;
-	l_polygonLayout[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-	l_polygonLayout[2].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-	l_polygonLayout[2].InstanceDataStepRate = 0;
-
-	l_polygonLayout[3].SemanticName = "NORMAL";
-	l_polygonLayout[3].SemanticIndex = 0;
-	l_polygonLayout[3].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	l_polygonLayout[3].InputSlot = 0;
-	l_polygonLayout[3].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-	l_polygonLayout[3].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-	l_polygonLayout[3].InstanceDataStepRate = 0;
-
-	l_polygonLayout[4].SemanticName = "PADB";
-	l_polygonLayout[4].SemanticIndex = 0;
-	l_polygonLayout[4].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	l_polygonLayout[4].InputSlot = 0;
-	l_polygonLayout[4].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-	l_polygonLayout[4].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-	l_polygonLayout[4].InstanceDataStepRate = 0;
-
-	// Get a count of the elements in the layout.
-	l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
-	l_PSO->m_PSODesc.InputLayout = { l_polygonLayout, l_numElements };
-
 	auto l_DX12SPC = reinterpret_cast<DX12ShaderProgramComponent*>(DX12RPDC->m_ShaderProgram);
 
-	if (l_DX12SPC->m_VSBuffer)
+	if (DX12RPDC->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
 	{
-		D3D12_SHADER_BYTECODE l_VSBytecode;
-		l_VSBytecode.pShaderBytecode = l_DX12SPC->m_VSBuffer->GetBufferPointer();
-		l_VSBytecode.BytecodeLength = l_DX12SPC->m_VSBuffer->GetBufferSize();
-		l_PSO->m_PSODesc.VS = l_VSBytecode;
+		GenerateDepthStencilStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
+		GenerateBlendStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
+		GenerateRasterizerStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
+		GenerateViewportStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
+
+		l_PSO->m_GraphicsPSODesc.pRootSignature = DX12RPDC->m_RootSignature;
+
+		D3D12_INPUT_ELEMENT_DESC l_polygonLayout[5];
+		unsigned int l_numElements;
+
+		// Create the vertex input layout description.
+		l_polygonLayout[0].SemanticName = "POSITION";
+		l_polygonLayout[0].SemanticIndex = 0;
+		l_polygonLayout[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		l_polygonLayout[0].InputSlot = 0;
+		l_polygonLayout[0].AlignedByteOffset = 0;
+		l_polygonLayout[0].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+		l_polygonLayout[0].InstanceDataStepRate = 0;
+
+		l_polygonLayout[1].SemanticName = "TEXCOORD";
+		l_polygonLayout[1].SemanticIndex = 0;
+		l_polygonLayout[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+		l_polygonLayout[1].InputSlot = 0;
+		l_polygonLayout[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+		l_polygonLayout[1].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+		l_polygonLayout[1].InstanceDataStepRate = 0;
+
+		l_polygonLayout[2].SemanticName = "PADA";
+		l_polygonLayout[2].SemanticIndex = 0;
+		l_polygonLayout[2].Format = DXGI_FORMAT_R32G32_FLOAT;
+		l_polygonLayout[2].InputSlot = 0;
+		l_polygonLayout[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+		l_polygonLayout[2].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+		l_polygonLayout[2].InstanceDataStepRate = 0;
+
+		l_polygonLayout[3].SemanticName = "NORMAL";
+		l_polygonLayout[3].SemanticIndex = 0;
+		l_polygonLayout[3].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		l_polygonLayout[3].InputSlot = 0;
+		l_polygonLayout[3].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+		l_polygonLayout[3].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+		l_polygonLayout[3].InstanceDataStepRate = 0;
+
+		l_polygonLayout[4].SemanticName = "PADB";
+		l_polygonLayout[4].SemanticIndex = 0;
+		l_polygonLayout[4].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		l_polygonLayout[4].InputSlot = 0;
+		l_polygonLayout[4].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+		l_polygonLayout[4].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+		l_polygonLayout[4].InstanceDataStepRate = 0;
+
+		// Get a count of the elements in the layout.
+		l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
+		l_PSO->m_GraphicsPSODesc.InputLayout = { l_polygonLayout, l_numElements };
+
+		if (l_DX12SPC->m_VSBuffer)
+		{
+			D3D12_SHADER_BYTECODE l_VSBytecode;
+			l_VSBytecode.pShaderBytecode = l_DX12SPC->m_VSBuffer->GetBufferPointer();
+			l_VSBytecode.BytecodeLength = l_DX12SPC->m_VSBuffer->GetBufferSize();
+			l_PSO->m_GraphicsPSODesc.VS = l_VSBytecode;
+		}
+		if (l_DX12SPC->m_HSBuffer)
+		{
+			D3D12_SHADER_BYTECODE l_HSBytecode;
+			l_HSBytecode.pShaderBytecode = l_DX12SPC->m_HSBuffer->GetBufferPointer();
+			l_HSBytecode.BytecodeLength = l_DX12SPC->m_HSBuffer->GetBufferSize();
+			l_PSO->m_GraphicsPSODesc.HS = l_HSBytecode;
+		}
+		if (l_DX12SPC->m_DSBuffer)
+		{
+			D3D12_SHADER_BYTECODE l_DSBytecode;
+			l_DSBytecode.pShaderBytecode = l_DX12SPC->m_DSBuffer->GetBufferPointer();
+			l_DSBytecode.BytecodeLength = l_DX12SPC->m_DSBuffer->GetBufferSize();
+			l_PSO->m_GraphicsPSODesc.DS = l_DSBytecode;
+		}
+		if (l_DX12SPC->m_GSBuffer)
+		{
+			D3D12_SHADER_BYTECODE l_GSBytecode;
+			l_GSBytecode.pShaderBytecode = l_DX12SPC->m_GSBuffer->GetBufferPointer();
+			l_GSBytecode.BytecodeLength = l_DX12SPC->m_GSBuffer->GetBufferSize();
+			l_PSO->m_GraphicsPSODesc.GS = l_GSBytecode;
+		}
+		if (l_DX12SPC->m_PSBuffer)
+		{
+			D3D12_SHADER_BYTECODE l_PSBytecode;
+			l_PSBytecode.pShaderBytecode = l_DX12SPC->m_PSBuffer->GetBufferPointer();
+			l_PSBytecode.BytecodeLength = l_DX12SPC->m_PSBuffer->GetBufferSize();
+			l_PSO->m_GraphicsPSODesc.PS = l_PSBytecode;
+		}
+
+		l_PSO->m_GraphicsPSODesc.NumRenderTargets = (unsigned int)DX12RPDC->m_RenderPassDesc.m_RenderTargetCount;
+		for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+		{
+			l_PSO->m_GraphicsPSODesc.RTVFormats[i] = DX12RPDC->m_RTVDesc.Format;
+		}
+
+		l_PSO->m_GraphicsPSODesc.DSVFormat = DX12RPDC->m_DSVDesc.Format;
+		l_PSO->m_GraphicsPSODesc.DepthStencilState = l_PSO->m_DepthStencilDesc;
+		l_PSO->m_GraphicsPSODesc.RasterizerState = l_PSO->m_RasterizerDesc;
+		l_PSO->m_GraphicsPSODesc.BlendState = l_PSO->m_BlendDesc;
+		l_PSO->m_GraphicsPSODesc.SampleMask = UINT_MAX;
+		l_PSO->m_GraphicsPSODesc.PrimitiveTopologyType = l_PSO->m_PrimitiveTopologyType;
+		l_PSO->m_GraphicsPSODesc.SampleDesc.Count = 1;
+
+		auto l_HResult = device->CreateGraphicsPipelineState(&l_PSO->m_GraphicsPSODesc, IID_PPV_ARGS(&l_PSO->m_PSO));
+
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create Graphics PSO!");
+			return false;
+		}
 	}
-	if (l_DX12SPC->m_HSBuffer)
+	else
 	{
-		D3D12_SHADER_BYTECODE l_HSBytecode;
-		l_HSBytecode.pShaderBytecode = l_DX12SPC->m_HSBuffer->GetBufferPointer();
-		l_HSBytecode.BytecodeLength = l_DX12SPC->m_HSBuffer->GetBufferSize();
-		l_PSO->m_PSODesc.HS = l_HSBytecode;
-	}
-	if (l_DX12SPC->m_DSBuffer)
-	{
-		D3D12_SHADER_BYTECODE l_DSBytecode;
-		l_DSBytecode.pShaderBytecode = l_DX12SPC->m_DSBuffer->GetBufferPointer();
-		l_DSBytecode.BytecodeLength = l_DX12SPC->m_DSBuffer->GetBufferSize();
-		l_PSO->m_PSODesc.DS = l_DSBytecode;
-	}
-	if (l_DX12SPC->m_GSBuffer)
-	{
-		D3D12_SHADER_BYTECODE l_GSBytecode;
-		l_GSBytecode.pShaderBytecode = l_DX12SPC->m_GSBuffer->GetBufferPointer();
-		l_GSBytecode.BytecodeLength = l_DX12SPC->m_GSBuffer->GetBufferSize();
-		l_PSO->m_PSODesc.GS = l_GSBytecode;
-	}
-	if (l_DX12SPC->m_PSBuffer)
-	{
-		D3D12_SHADER_BYTECODE l_PSBytecode;
-		l_PSBytecode.pShaderBytecode = l_DX12SPC->m_PSBuffer->GetBufferPointer();
-		l_PSBytecode.BytecodeLength = l_DX12SPC->m_PSBuffer->GetBufferSize();
-		l_PSO->m_PSODesc.PS = l_PSBytecode;
+		l_PSO->m_ComputePSODesc.pRootSignature = DX12RPDC->m_RootSignature;
+
+		if (l_DX12SPC->m_CSBuffer)
+		{
+			D3D12_SHADER_BYTECODE l_CSBytecode;
+			l_CSBytecode.pShaderBytecode = l_DX12SPC->m_CSBuffer->GetBufferPointer();
+			l_CSBytecode.BytecodeLength = l_DX12SPC->m_CSBuffer->GetBufferSize();
+			l_PSO->m_ComputePSODesc.CS = l_CSBytecode;
+		}
+
+		auto l_HResult = device->CreateComputePipelineState(&l_PSO->m_ComputePSODesc, IID_PPV_ARGS(&l_PSO->m_PSO));
+
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create Compute PSO!");
+			return false;
+		}
 	}
 
-	l_PSO->m_PSODesc.NumRenderTargets = (unsigned int)DX12RPDC->m_RenderPassDesc.m_RenderTargetCount;
-	for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
-	{
-		l_PSO->m_PSODesc.RTVFormats[i] = DX12RPDC->m_RTVDesc.Format;
-	}
-
-	l_PSO->m_PSODesc.DSVFormat = DX12RPDC->m_DSVDesc.Format;
-	l_PSO->m_PSODesc.DepthStencilState = l_PSO->m_DepthStencilDesc;
-	l_PSO->m_PSODesc.RasterizerState = l_PSO->m_RasterizerDesc;
-	l_PSO->m_PSODesc.BlendState = l_PSO->m_BlendDesc;
-	l_PSO->m_PSODesc.SampleMask = UINT_MAX;
-	l_PSO->m_PSODesc.PrimitiveTopologyType = l_PSO->m_PrimitiveTopologyType;
-	l_PSO->m_PSODesc.SampleDesc.Count = 1;
-
-	auto l_HResult = device->CreateGraphicsPipelineState(&l_PSO->m_PSODesc, IID_PPV_ARGS(&l_PSO->m_PSO));
-
-	if (FAILED(l_HResult))
-	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create PSO!");
-		return false;
-	}
 #ifdef _DEBUG
 	SetObjectName(DX12RPDC, l_PSO->m_PSO, "PSO");
 #endif // _DEBUG
@@ -1165,17 +1203,17 @@ bool DX12Helper::CreateCommandLists(DX12RenderPassDataComponent* DX12RPDC, ID3D1
 	{
 		auto l_CommandList = reinterpret_cast<DX12CommandList*>(DX12RPDC->m_CommandLists[i]);
 
-		auto l_HResult = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, DX12RPDC->m_CommandAllocators[i], NULL, IID_PPV_ARGS(&l_CommandList->m_CommandList));
+		auto l_HResult = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, DX12RPDC->m_CommandAllocators[i], NULL, IID_PPV_ARGS(&l_CommandList->m_GraphicsCommandList));
 		if (FAILED(l_HResult))
 		{
 			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create CommandList!");
 			return false;
 		}
 #ifdef _DEBUG
-		SetObjectName(DX12RPDC, l_CommandList->m_CommandList, ("CommandList_" + std::to_string(i)).c_str());
+		SetObjectName(DX12RPDC, l_CommandList->m_GraphicsCommandList, ("CommandList_" + std::to_string(i)).c_str());
 #endif // _DEBUG
 
-		l_CommandList->m_CommandList->Close();
+		l_CommandList->m_GraphicsCommandList->Close();
 	}
 
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " CommandList has been created.");

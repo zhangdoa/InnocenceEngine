@@ -951,6 +951,32 @@ bool GLHelper::ActivateTexture(GLTextureDataComponent * GLTDC, int activateIndex
 	return true;
 }
 
+bool GLHelper::BindTextureAsImage(GLTextureDataComponent * GLTDC, int bindingSlot, Accessibility accessibility)
+{
+	GLenum l_accessibility;
+
+	switch (accessibility)
+	{
+	case Accessibility::Immutable:
+		l_accessibility = GL_READ_ONLY;
+		break;
+	case Accessibility::ReadOnly:
+		l_accessibility = GL_READ_ONLY;
+		break;
+	case Accessibility::WriteOnly:
+		l_accessibility = GL_WRITE_ONLY;
+		break;
+	case Accessibility::ReadWrite:
+		l_accessibility = GL_READ_WRITE;
+		break;
+	default:
+		break;
+	}
+	glBindImageTexture(bindingSlot, GLTDC->m_TO, 0, false, 0, l_accessibility, GLTDC->m_GLTextureDataDesc.InternalFormat);
+
+	return true;
+}
+
 bool GLHelper::AttachTextureToFramebuffer(GLTextureDataComponent * GLTDC, GLRenderPassDataComponent * GLRPDC, unsigned int attachmentIndex, unsigned int textureIndex, unsigned int mipLevel, unsigned int layer)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPDC->m_FBO);
