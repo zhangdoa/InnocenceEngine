@@ -506,7 +506,7 @@ D3D12_RESOURCE_STATES DX12Helper::GetTextureReadState(TextureDataDesc textureDat
 	}
 	else if (textureDataDesc.UsageType == TextureUsageType::RawImage)
 	{
-		l_result = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+		l_result = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 	}
 	else
 	{
