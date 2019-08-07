@@ -2,6 +2,7 @@
 #include "DefaultGPUBuffers.h"
 #include "LightCullingPass.h"
 #include "GIBakePass.h"
+#include "GIResolvePass.h"
 #include "BRDFLUTPass.h"
 #include "SunShadowPass.h"
 #include "OpaquePass.h"
@@ -43,6 +44,7 @@ bool DefaultRenderingClient::Setup()
 	DefaultGPUBuffers::Setup();
 	LightCullingPass::Setup();
 	GIBakePass::Setup();
+	GIResolvePass::Setup();
 	BRDFLUTPass::Setup();
 	SunShadowPass::Setup();
 	OpaquePass::Setup();
@@ -66,6 +68,7 @@ bool DefaultRenderingClient::Initialize()
 	DefaultGPUBuffers::Initialize();
 	LightCullingPass::Initialize();
 	GIBakePass::Initialize();
+	GIResolvePass::Initialize();
 	BRDFLUTPass::Initialize();
 	BRDFLUTPass::PrepareCommandList();
 	BRDFLUTPass::ExecuteCommandList();
@@ -93,6 +96,7 @@ bool DefaultRenderingClient::Render()
 
 	DefaultGPUBuffers::Upload();
 	LightCullingPass::PrepareCommandList();
+	GIResolvePass::PrepareCommandList();
 
 	SunShadowPass::PrepareCommandList();
 	OpaquePass::PrepareCommandList();
@@ -136,6 +140,8 @@ bool DefaultRenderingClient::Render()
 	FinalBlendPass::PrepareCommandList(l_canvas);
 
 	LightCullingPass::ExecuteCommandList();
+	GIResolvePass::ExecuteCommandList();
+
 	SunShadowPass::ExecuteCommandList();
 	OpaquePass::ExecuteCommandList();
 	SSAOPass::ExecuteCommandList();
@@ -163,6 +169,7 @@ bool DefaultRenderingClient::Terminate()
 {
 	DefaultGPUBuffers::Terminate();
 	LightCullingPass::Terminate();
+	GIResolvePass::Terminate();
 	GIBakePass::Terminate();
 	BRDFLUTPass::Terminate();
 	SunShadowPass::Terminate();
