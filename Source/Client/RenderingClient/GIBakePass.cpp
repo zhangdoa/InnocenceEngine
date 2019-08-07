@@ -51,6 +51,7 @@ namespace GIBakePass
 	RenderPassDataComponent* m_RPDC_Bake;
 	ShaderProgramComponent* m_SPC_Bake;
 	SamplerDataComponent* m_SDC_Bake;
+	TextureDataComponent* m_testSurfelTexture;
 
 	GPUBufferDataComponent* m_GICameraGBDC;
 
@@ -64,6 +65,8 @@ namespace GIBakePass
 	RenderPassDataComponent* m_RPDC_Relight;
 	ShaderProgramComponent* m_SPC_Relight;
 	SamplerDataComponent* m_SDC_Relight;
+
+	std::function<void()> f_sceneLoadingFinishCallback;
 }
 
 bool GIBakePass::loadGIData()
@@ -504,6 +507,9 @@ bool GIBakePass::serializeBrickFactors()
 
 bool GIBakePass::Setup()
 {
+	f_sceneLoadingFinishCallback = []() { loadGIData(); };
+	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
+
 	////
 	m_testSampleCubemap = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("TestSampleCubemap/");
 
@@ -592,6 +598,7 @@ bool GIBakePass::Setup()
 	m_RPDC_Bake->m_RenderPassDesc.m_RenderTargetDesc.SamplerType = TextureSamplerType::SamplerCubemap;
 	m_RPDC_Bake->m_RenderPassDesc.m_RenderTargetDesc.Width = m_captureResolution;
 	m_RPDC_Bake->m_RenderPassDesc.m_RenderTargetDesc.Height = m_captureResolution;
+	m_RPDC_Bake->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::FLOAT32;
 
 	m_RPDC_Bake->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
 	m_RPDC_Bake->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
@@ -671,6 +678,11 @@ bool GIBakePass::Setup()
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_GICameraGBDC);
 
+	////
+	m_testSurfelTexture = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("TestSurfel/");
+	m_testSurfelTexture->m_textureDataDesc = m_RPDC_Bake->m_RenderPassDesc.m_RenderTargetDesc;
+	m_testSurfelTexture->m_textureDataDesc.UsageType = TextureUsageType::Normal;
+
 	return true;
 }
 
@@ -681,37 +693,34 @@ bool GIBakePass::Initialize()
 
 bool GIBakePass::Bake()
 {
-	if (!loadGIData())
-	{
-		auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
-		auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
+	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
+	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
 
-		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MeshGBDC, g_pModuleManager->getRenderingFrontend()->getGIPassMeshGPUData());
-		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MaterialGBDC, g_pModuleManager->getRenderingFrontend()->getGIPassMaterialGPUData());
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MeshGBDC, g_pModuleManager->getRenderingFrontend()->getGIPassMeshGPUData());
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MaterialGBDC, g_pModuleManager->getRenderingFrontend()->getGIPassMaterialGPUData());
 
-		m_probeCaches.clear();
-		m_probes.clear();
-		m_surfels.clear();
-		m_bricks.clear();
-		m_brickCaches.clear();
-		m_brickFactors.clear();
+	m_probeCaches.clear();
+	m_probes.clear();
+	m_surfels.clear();
+	m_bricks.clear();
+	m_brickCaches.clear();
+	m_brickFactors.clear();
 
-		generateProbes();
-		generateBricks();
+	generateProbes();
+	generateBricks();
 
-		capture();
+	capture();
 
-		//eliminateDuplicatedSurfels();
-		//eliminateEmptyBricks();
+	eliminateDuplicatedSurfels();
+	eliminateEmptyBricks();
 
-		//assignSurfelRangeToBricks();
-		//assignBrickFactorToProbes();
+	assignSurfelRangeToBricks();
+	assignBrickFactorToProbes();
 
-		//serializeProbes();
-		//serializeSurfels();
-		//serializeBricks();
-		//serializeBrickFactors();
-	}
+	serializeProbes();
+	serializeSurfels();
+	serializeBricks();
+	serializeBrickFactors();
 
 	return true;
 }
@@ -741,4 +750,24 @@ RenderPassDataComponent * GIBakePass::GetRPDC()
 ShaderProgramComponent * GIBakePass::GetSPC()
 {
 	return m_SPC_Bake;
+}
+
+const std::vector<Surfel>& GIBakePass::GetSurfels()
+{
+	return m_surfels;
+}
+
+const std::vector<Brick>& GIBakePass::GetBricks()
+{
+	return m_bricks;
+}
+
+const std::vector<BrickFactor>& GIBakePass::GetBrickFactors()
+{
+	return m_brickFactors;
+}
+
+const std::vector<Probe>& GIBakePass::GetProbes()
+{
+	return m_probes;
 }

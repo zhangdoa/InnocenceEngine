@@ -57,4 +57,8 @@ namespace GIBakePass
 
 	RenderPassDataComponent* GetRPDC();
 	ShaderProgramComponent* GetSPC();
+	const std::vector<Surfel>& GetSurfels();
+	const std::vector<Brick>& GetBricks();
+	const std::vector<BrickFactor>& GetBrickFactors();
+	const std::vector<Probe>& GetProbes();
 };
