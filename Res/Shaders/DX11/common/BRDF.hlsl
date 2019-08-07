@@ -39,7 +39,7 @@ float D_GGX(float NdotH, float roughness)
 	float a = roughness * roughness;
 	float a2 = a * a;
 	float f = (NdotH * a2 - NdotH) * NdotH + 1;
-	return a2 / (PI * pow(f, 2.0));
+	return a2 / max(PI * pow(f, 2.0), 0.00001);
 }
 // Diffuse BRDF
 // Disney model [https://blog.selfshadow.com/publications/s2015-shading-course/burley/s2015_pbs_disney_bsdf_notes.pdf]

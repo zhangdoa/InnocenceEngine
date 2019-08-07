@@ -41,7 +41,7 @@ float fr_V_SmithGGXCorrelated(float NdotL, float NdotV, float alphaG)
 {
 	float alphaG2 = alphaG * alphaG;
 	float NdotV_ = max(NdotV, eps);
-	float	NdotL_ = max(NdotL, eps);
+	float NdotL_ = max(NdotL, eps);
 	float Lambda_GGXV = NdotL_ * sqrt(NdotV_ * NdotV_ * (1.0 - alphaG2) + alphaG2);
 	float Lambda_GGXL = NdotV_ * sqrt(NdotL_ * NdotL_ * (1.0 - alphaG2) + alphaG2);
 	return 0.5 / (Lambda_GGXV + Lambda_GGXL);
@@ -54,7 +54,7 @@ float fr_D_GGX(float NdotH, float roughness)
 	float a = roughness * roughness;
 	float a2 = a * a;
 	float f = (NdotH * a2 - NdotH) * NdotH + 1;
-	return a2 / (PI * pow(f, 2.0));
+	return a2 / max(PI * pow(f, 2.0), 0.00001);
 }
 // Diffuse BRDF
 // Disney model [https://blog.selfshadow.com/publications/s2015-shading-course/burley/s2015_pbs_disney_bsdf_notes.pdf]
