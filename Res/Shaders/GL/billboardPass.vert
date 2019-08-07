@@ -8,16 +8,14 @@ layout(location = 4) in vec4 inPad2;
 
 layout(location = 0) out vec2 thefrag_TexCoord;
 
-layout(location = 0) uniform mat4 uni_p;
-layout(location = 1) uniform mat4 uni_r;
-layout(location = 2) uniform mat4 uni_t;
-layout(location = 3) uniform vec4 uni_pos;
-layout(location = 4) uniform vec2 uni_size;
-
 void main()
 {
-	gl_Position = uni_p * uni_r * uni_t * vec4(uni_pos.xyz, 1.0);
+	vec4 posWS = vec4(meshUBO.m[3][0], meshUBO.m[3][1], meshUBO.m[3][2], 1.0f);
+	float distance = length(posWS - cameraUBO.globalPos);
+	gl_Position = cameraUBO.p_original * cameraUBO.r * cameraUBO.t *  posWS;
 	gl_Position /= gl_Position.w;
-	gl_Position.xy += inPosition.xy * uni_size;
+	float denom = distance;
+	vec2 shearingRatio = vec2(1.0f / cameraUBO.WHRatio, 1.0) / clamp(denom, 1.0f, distance);
+	gl_Position.xy += inPosition.xy * shearingRatio;
 	thefrag_TexCoord = inTexCoord;
 }

@@ -1,14 +1,15 @@
 // shadertype=hlsl
-#include "common/common.hlsl"
+
+Texture2D basePassRT0 : register(t0);
+Texture2D billboardPassRT0 : register(t1);
+
+SamplerState SampleTypePoint : register(s0);
 
 struct PixelInputType
 {
 	float4 position : SV_POSITION;
 	float2 texcoord : TEXCOORD0;
 };
-
-Texture2D basePassRT0 : register(t0);
-SamplerState SamplerTypePoint : register(s0);
 
 //Academy Color Encoding System
 //http://www.oscars.org/science-technology/sci-tech-projects/aces
@@ -23,14 +24,18 @@ float3 acesFilm(const float3 x) {
 
 float4 main(PixelInputType input) : SV_TARGET
 {
-	float3 finalColor = basePassRT0.Sample(SamplerTypePoint, input.texcoord).xyz;
+	float3 finalColor = basePassRT0.Sample(SampleTypePoint, input.texcoord).xyz;
+	float3 billboardPass = billboardPassRT0.Sample(SampleTypePoint, input.texcoord).xyz;
 
-//HDR to LDR
-finalColor = acesFilm(finalColor);
+	//HDR to LDR
+	finalColor = acesFilm(finalColor);
 
-//gamma correction
-float gammaRatio = 1.0 / 2.2;
-finalColor = pow(finalColor, float3(gammaRatio, gammaRatio, gammaRatio));
+	//gamma correction
+	float gammaRatio = 1.0 / 2.2;
+	finalColor = pow(finalColor, float3(gammaRatio, gammaRatio, gammaRatio));
 
-return float4(finalColor, 1.0f);
+	// billboard overlay
+	finalColor += billboardPass.rgb;
+
+	return float4(finalColor, 1.0f);
 }

@@ -3,7 +3,7 @@
 layout(location = 0) out vec4 uni_billboardPassRT0;
 layout(location = 0) in vec2 thefrag_TexCoord;
 
-layout(location = 5, binding = 0) uniform sampler2D uni_texture;
+layout(location = 0, binding = 0) uniform sampler2D uni_texture;
 
 void main()
 {

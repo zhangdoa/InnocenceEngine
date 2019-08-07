@@ -12,6 +12,7 @@
 #include "TAAPass.h"
 #include "PostTAAPass.h"
 #include "MotionBlurPass.h"
+#include "BillboardPass.h"
 #include "FinalBlendPass.h"
 
 #include "BRDFTestPass.h"
@@ -52,6 +53,7 @@ bool DefaultRenderingClient::Setup()
 	TAAPass::Setup();
 	PostTAAPass::Setup();
 	MotionBlurPass::Setup();
+	BillboardPass::Setup();
 	FinalBlendPass::Setup();
 
 	BRDFTestPass::Setup();
@@ -66,6 +68,7 @@ bool DefaultRenderingClient::Initialize()
 	GIBakePass::Initialize();
 	BRDFLUTPass::Initialize();
 	BRDFLUTPass::PrepareCommandList();
+	BRDFLUTPass::ExecuteCommandList();
 	SunShadowPass::Initialize();
 	OpaquePass::Initialize();
 	SSAOPass::Initialize();
@@ -75,6 +78,7 @@ bool DefaultRenderingClient::Initialize()
 	TAAPass::Initialize();
 	PostTAAPass::Initialize();
 	MotionBlurPass::Initialize();
+	BillboardPass::Initialize();
 	FinalBlendPass::Initialize();
 
 	BRDFTestPass::Initialize();
@@ -128,6 +132,7 @@ bool DefaultRenderingClient::Render()
 		l_canvas = LightCullingPass::GetHeatMap();
 	}
 
+	BillboardPass::PrepareCommandList();
 	FinalBlendPass::PrepareCommandList(l_canvas);
 
 	LightCullingPass::ExecuteCommandList();
@@ -142,6 +147,7 @@ bool DefaultRenderingClient::Render()
 	MotionBlurPass::ExecuteCommandList();
 	BRDFTestPass::ExecuteCommandList();
 
+	BillboardPass::ExecuteCommandList();
 	FinalBlendPass::ExecuteCommandList();
 
 	if (m_needGIBake)
@@ -168,6 +174,7 @@ bool DefaultRenderingClient::Terminate()
 	TAAPass::Terminate();
 	PostTAAPass::Terminate();
 	MotionBlurPass::Terminate();
+	BillboardPass::Terminate();
 	FinalBlendPass::Terminate();
 
 	BRDFTestPass::Terminate();

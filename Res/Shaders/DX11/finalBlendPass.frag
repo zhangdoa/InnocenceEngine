@@ -1,6 +1,7 @@
 // shadertype=hlsl
 
 Texture2D basePassRT0 : register(t0);
+Texture2D billboardPassRT0 : register(t1);
 
 SamplerState SampleTypePoint : register(s0);
 
@@ -24,6 +25,7 @@ float3 acesFilm(const float3 x) {
 float4 main(PixelInputType input) : SV_TARGET
 {
 	float3 finalColor = basePassRT0.Sample(SampleTypePoint, input.texcoord).xyz;
+	float3 billboardPass = billboardPassRT0.Sample(SampleTypePoint, input.texcoord).xyz;
 
 	//HDR to LDR
 	finalColor = acesFilm(finalColor);
@@ -31,6 +33,9 @@ float4 main(PixelInputType input) : SV_TARGET
 	//gamma correction
 	float gammaRatio = 1.0 / 2.2;
 	finalColor = pow(finalColor, float3(gammaRatio, gammaRatio, gammaRatio));
+
+	// billboard overlay
+	finalColor += billboardPass.rgb;
 
 	return float4(finalColor, 1.0f);
 }
