@@ -41,7 +41,7 @@ vec4 ClipToView(vec4 clip, mat4 in_p_inv)
 	// View space position.
 	vec4 view = in_p_inv * clip;
 	// Perspective projection.
-	view = view / view.w;
+	view /= view.w;
 
 	return view;
 }

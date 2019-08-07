@@ -17,6 +17,8 @@ void main()
 	// Compute the 4 corner points on the far clipping plane to use as the
 	// frustum vertices.
 	vec4 screenSpace[4];
+	vec4 viewSpace[4];
+
 	// Bottom left point
 	screenSpace[0] = vec4(gl_GlobalInvocationID.xy * BLOCK_SIZE, -1.0f, 1.0f);
 	// Bottom right point
@@ -26,24 +28,23 @@ void main()
 	// Top right point
 	screenSpace[3] = vec4(vec2(gl_GlobalInvocationID.x + 1, gl_GlobalInvocationID.y + 1) * BLOCK_SIZE, -1.0f, 1.0f);
 
-	vec3 viewSpace[4];
 	// Now convert the screen space points to view space
 	for (int i = 0; i < 4; i++)
 	{
-		viewSpace[i] = ScreenToView(screenSpace[i], skyUBO.viewportSize, skyUBO.p_inv).xyz;
+		viewSpace[i] = ScreenToView(screenSpace[i], skyUBO.viewportSize, skyUBO.p_inv);
 	}
 
 	// Now build the frustum planes from the view space points
 	Frustum frustum;
 
 	// Left plane
-	frustum.planes[0] = ComputePlane(eyePos, viewSpace[0], viewSpace[2]);
+	frustum.planes[0] = ComputePlane(eyePos, viewSpace[2].xyz, viewSpace[0].xyz);
 	// Right plane
-	frustum.planes[1] = ComputePlane(eyePos, viewSpace[3], viewSpace[1]);
+	frustum.planes[1] = ComputePlane(eyePos, viewSpace[1].xyz, viewSpace[3].xyz);
 	// Top plane
-	frustum.planes[2] = ComputePlane(eyePos, viewSpace[2], viewSpace[3]);
+	frustum.planes[2] = ComputePlane(eyePos, viewSpace[3].xyz, viewSpace[2].xyz);
 	// Bottom plane
-	frustum.planes[3] = ComputePlane(eyePos, viewSpace[1], viewSpace[0]);
+	frustum.planes[3] = ComputePlane(eyePos, viewSpace[0].xyz, viewSpace[1].xyz);
 
 	// Store the computed frustum in global memory (if our thread ID is in bounds of the grid).
 	if (gl_GlobalInvocationID.x < dispatchParamsUBO.data[0].numThreads.x && gl_GlobalInvocationID.y < dispatchParamsUBO.data[0].numThreads.y)

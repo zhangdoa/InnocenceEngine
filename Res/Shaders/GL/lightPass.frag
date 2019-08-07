@@ -157,11 +157,11 @@ void main()
 	uint startOffset = floatBitsToUint(lightGrid.x);
 	uint lightCount = floatBitsToUint(lightGrid.y);
 
-	for (int i = 0; i < lightCount; ++i)
-		//for (int i = 0; i < NR_POINT_LIGHTS; ++i)
+	//for (int i = 0; i < lightCount; ++i)
+	for (int i = 0; i < NR_POINT_LIGHTS; ++i)
 	{
-		uint lightIndex = lightIndexListSSBO.data[startOffset + i];
-		//uint lightIndex = i;
+		//uint lightIndex = lightIndexListSSBO.data[startOffset + i];
+		uint lightIndex = i;
 		pointLight light = pointLightUBO.data[lightIndex];
 
 		float lightRadius = light.luminance.w;

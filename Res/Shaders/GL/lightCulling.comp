@@ -22,7 +22,7 @@ layout(std430, binding = 2) coherent buffer lightIndexListSSBOBlock
 layout(binding = 3, rgba16f) uniform coherent image2D uni_lightGrid;
 layout(binding = 4, rgba16f) uniform coherent image2D uni_debugTexture;
 
-layout(binding = 0) uniform usampler2D depthTexture;
+layout(binding = 0) uniform sampler2D depthTexture;
 
 shared uint l_uMinDepth;
 shared uint l_uMaxDepth;
@@ -57,7 +57,8 @@ void main()
 	// Calculate min & max depth in threadgroup / tile.
 	vec2 readTextureCoord = vec2(gl_GlobalInvocationID.xy) / skyUBO.viewportSize;
 
-	uint uDepth = texture(depthTexture, readTextureCoord).r;
+	float fDepth = texture(depthTexture, readTextureCoord).r;
+	uint uDepth = floatBitsToUint(fDepth);
 
 	ivec2 writeTexCoord = ivec2(gl_GlobalInvocationID.xy);
 
@@ -102,7 +103,7 @@ void main()
 			vec4 lightPos_VS = cameraUBO.t * light.position;
 			lightPos_VS = cameraUBO.r * lightPos_VS;
 			Sphere sphere = { lightPos_VS.xyz, light.luminance.w };
-			if (SphereInsideFrustum(sphere, l_TileFrustum, nearClipVS, farClipVS))
+			if (SphereInsideFrustum(sphere, l_TileFrustum, nearClipVS, maxDepthVS))
 			{
 				if (!SphereInsidePlane(sphere, minPlane))
 				{
