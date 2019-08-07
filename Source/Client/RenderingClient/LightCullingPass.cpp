@@ -16,8 +16,6 @@ namespace LightCullingPass
 	ShaderProgramComponent* m_SPC_TileFrustum;
 	ShaderProgramComponent* m_SPC_LightCulling;
 
-	GPUBufferDataComponent* m_dispatchParamsGBDC;
-
 	GPUBufferDataComponent* m_tileFrustumGBDC;
 	GPUBufferDataComponent* m_lightListIndexCounterGBDC;
 	GPUBufferDataComponent* m_lightIndexListGBDC;
@@ -31,8 +29,6 @@ namespace LightCullingPass
 	TVec4<unsigned int> m_tileFrustumNumThreadGroups;
 	TVec4<unsigned int> m_lightCullingNumThreads;
 	TVec4<unsigned int> m_lightCullingNumThreadGroups;
-
-	std::vector<DispatchParamsGPUData> m_DispatchParamsGPUData;
 
 	bool createGridFrustumsBuffer();
 	bool createLightIndexCounterBuffer();
@@ -245,15 +241,6 @@ bool LightCullingPass::Setup()
 	createLightGridTDC();
 	createDebugTDC();
 
-	m_dispatchParamsGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("DispatchParamsGPUBuffer/");
-	m_dispatchParamsGBDC->m_ElementCount = 2;
-	m_dispatchParamsGBDC->m_ElementSize = sizeof(DispatchParamsGPUData);
-	m_dispatchParamsGBDC->m_BindingPoint = 8;
-
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_dispatchParamsGBDC);
-
-	m_DispatchParamsGPUData.resize(2);
-
 	return true;
 }
 
@@ -267,22 +254,27 @@ bool LightCullingPass::PrepareCommandList()
 	auto l_CameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Camera);
 	auto l_PointLightGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PointLight);
 	auto l_SkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sky);
+	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Compute);
 
 	auto l_lightListIndexCounter = 1;
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_lightListIndexCounterGBDC, &l_lightListIndexCounter);
 
-	m_DispatchParamsGPUData[0].numThreadGroups = m_tileFrustumNumThreadGroups;
-	m_DispatchParamsGPUData[0].numThreads = m_tileFrustumNumThreads;
-	m_DispatchParamsGPUData[1].numThreadGroups = m_lightCullingNumThreadGroups;
-	m_DispatchParamsGPUData[1].numThreads = m_lightCullingNumThreads;
+	DispatchParamsGPUData l_tileFrustumWorkload;
+	l_tileFrustumWorkload.numThreadGroups = m_tileFrustumNumThreadGroups;
+	l_tileFrustumWorkload.numThreads = m_tileFrustumNumThreads;
 
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_dispatchParamsGBDC, m_DispatchParamsGPUData);
+	DispatchParamsGPUData lightCullingWorkload;
+	lightCullingWorkload.numThreadGroups = m_lightCullingNumThreadGroups;
+	lightCullingWorkload.numThreads = m_lightCullingNumThreads;
+
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_dispatchParamsGBDC, &l_tileFrustumWorkload, 0, 1);
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_dispatchParamsGBDC, &lightCullingWorkload, 1, 1);
 
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_Frustum, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_Frustum);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_Frustum);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Frustum, ShaderStage::Compute, l_SkyGBDC->m_ResourceBinder, 0, 7, Accessibility::ReadOnly, false, 0, l_SkyGBDC->m_TotalSize);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Frustum, ShaderStage::Compute, m_dispatchParamsGBDC->m_ResourceBinder, 1, 8, Accessibility::ReadOnly, false, 0, m_dispatchParamsGBDC->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Frustum, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 1, 8, Accessibility::ReadOnly, false, 0, l_dispatchParamsGBDC->m_TotalSize);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Frustum, ShaderStage::Compute, m_tileFrustumGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite, false, 0, m_tileFrustumGBDC->m_TotalSize);
 
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_RPDC_Frustum, m_tileFrustumNumThreadGroups.x, m_tileFrustumNumThreadGroups.y, m_tileFrustumNumThreadGroups.z);
@@ -298,7 +290,7 @@ bool LightCullingPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, l_CameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly, false, 0, l_CameraGBDC->m_TotalSize);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, l_PointLightGBDC->m_ResourceBinder, 1, 4, Accessibility::ReadOnly, false, 0, l_PointLightGBDC->m_TotalSize);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, l_SkyGBDC->m_ResourceBinder, 2, 7, Accessibility::ReadOnly, false, 0, l_SkyGBDC->m_TotalSize);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_dispatchParamsGBDC->m_ResourceBinder, 3, 8, Accessibility::ReadOnly, false, 0, m_dispatchParamsGBDC->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 3, 8, Accessibility::ReadOnly, false, 0, l_dispatchParamsGBDC->m_TotalSize);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_tileFrustumGBDC->m_ResourceBinder, 4, 0, Accessibility::ReadWrite, false, 0, m_tileFrustumGBDC->m_TotalSize);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightListIndexCounterGBDC->m_ResourceBinder, 5, 1, Accessibility::ReadWrite, false, 0, m_lightListIndexCounterGBDC->m_TotalSize);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightIndexListGBDC->m_ResourceBinder, 6, 2, Accessibility::ReadWrite, false, 0, m_lightIndexListGBDC->m_TotalSize);

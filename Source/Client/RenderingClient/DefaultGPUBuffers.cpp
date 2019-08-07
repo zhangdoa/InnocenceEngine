@@ -14,8 +14,10 @@ namespace DefaultGPUBuffers
 	GPUBufferDataComponent* m_SphereLightGBDC;
 	GPUBufferDataComponent* m_CSMGBDC;
 	GPUBufferDataComponent* m_SkyGBDC;
-	GPUBufferDataComponent* m_BillboardGBDC;
+	GPUBufferDataComponent* m_dispatchParamsGBDC;
+	GPUBufferDataComponent* m_billboardGBDC;
 
+	std::vector<DispatchParamsGPUData> m_DispatchParamsGPUData;
 	std::vector<MeshGPUData> m_billboardGPUData;
 }
 
@@ -84,12 +86,20 @@ bool DefaultGPUBuffers::Initialize()
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_SkyGBDC);
 
-	m_BillboardGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("BillboardGPUBuffer/");
-	m_BillboardGBDC->m_ElementCount = l_RenderingCapability.maxMeshes;
-	m_BillboardGBDC->m_ElementSize = sizeof(MeshGPUData);
-	m_BillboardGBDC->m_BindingPoint = 12;
+	// @TODO: get rid of hard-code stuffs
+	m_dispatchParamsGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("DispatchParamsGPUBuffer/");
+	m_dispatchParamsGBDC->m_ElementCount = 8;
+	m_dispatchParamsGBDC->m_ElementSize = sizeof(DispatchParamsGPUData);
+	m_dispatchParamsGBDC->m_BindingPoint = 8;
 
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_BillboardGBDC);
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_dispatchParamsGBDC);
+
+	m_billboardGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("BillboardGPUBuffer/");
+	m_billboardGBDC->m_ElementCount = l_RenderingCapability.maxMeshes;
+	m_billboardGBDC->m_ElementSize = sizeof(MeshGPUData);
+	m_billboardGBDC->m_BindingPoint = 12;
+
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_billboardGBDC);
 
 	m_billboardGPUData.resize(l_RenderingCapability.maxMeshes);
 
@@ -124,7 +134,7 @@ bool DefaultGPUBuffers::Upload()
 		m_billboardGPUData[i].m = l_billboardPassGPUData[i].m;
 	}
 
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_BillboardGBDC, m_billboardGPUData);
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_billboardGBDC, m_billboardGPUData);
 
 	return true;
 }
@@ -139,6 +149,8 @@ bool DefaultGPUBuffers::Terminate()
 	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_SphereLightGBDC);
 	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_CSMGBDC);
 	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_SkyGBDC);
+	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_dispatchParamsGBDC);
+	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_billboardGBDC);
 
 	return true;
 }
@@ -149,27 +161,27 @@ GPUBufferDataComponent * DefaultGPUBuffers::GetGPUBufferDataComponent(GPUBufferU
 
 	switch (usageType)
 	{
-	case DefaultGPUBuffers::GPUBufferUsageType::Camera: l_result = m_CameraGBDC;
+	case GPUBufferUsageType::Camera: l_result = m_CameraGBDC;
 		break;
-	case DefaultGPUBuffers::GPUBufferUsageType::Mesh: l_result = m_MeshGBDC;
+	case GPUBufferUsageType::Mesh: l_result = m_MeshGBDC;
 		break;
-	case DefaultGPUBuffers::GPUBufferUsageType::Material: l_result = m_MaterialGBDC;
+	case GPUBufferUsageType::Material: l_result = m_MaterialGBDC;
 		break;
-	case DefaultGPUBuffers::GPUBufferUsageType::Sun: l_result = m_SunGBDC;
+	case GPUBufferUsageType::Sun: l_result = m_SunGBDC;
 		break;
-	case DefaultGPUBuffers::GPUBufferUsageType::PointLight: l_result = m_PointLightGBDC;
+	case GPUBufferUsageType::PointLight: l_result = m_PointLightGBDC;
 		break;
-	case DefaultGPUBuffers::GPUBufferUsageType::SphereLight: l_result = m_SphereLightGBDC;
+	case GPUBufferUsageType::SphereLight: l_result = m_SphereLightGBDC;
 		break;
-	case DefaultGPUBuffers::GPUBufferUsageType::CSM: l_result = m_CSMGBDC;
+	case GPUBufferUsageType::CSM: l_result = m_CSMGBDC;
 		break;
-	case DefaultGPUBuffers::GPUBufferUsageType::Sky: l_result = m_SkyGBDC;
+	case GPUBufferUsageType::Sky: l_result = m_SkyGBDC;
 		break;
-	case DefaultGPUBuffers::GPUBufferUsageType::Compute:
+	case GPUBufferUsageType::Compute: l_result = m_dispatchParamsGBDC;
 		break;
-	case DefaultGPUBuffers::GPUBufferUsageType::SH9:
+	case GPUBufferUsageType::SH9:
 		break;
-	case DefaultGPUBuffers::GPUBufferUsageType::Billboard: l_result = m_BillboardGBDC;
+	case GPUBufferUsageType::Billboard: l_result = m_billboardGBDC;
 		break;
 	default:
 		break;

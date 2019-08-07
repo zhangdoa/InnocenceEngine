@@ -61,7 +61,7 @@ layout(std140, row_major, binding = 7) uniform skyUBOBlock
 
 layout(std140, binding = 8) uniform dispatchParamsUBOBlock
 {
-	DispatchParam data[2];
+	DispatchParam data[8];
 } dispatchParamsUBO;
 
 layout(std140, row_major, binding = 9) uniform SH9UBOBlock

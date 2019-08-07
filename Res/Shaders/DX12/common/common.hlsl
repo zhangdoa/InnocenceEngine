@@ -21,7 +21,7 @@ struct cameraData
 	float WHRatio;
 	float zNear;
 	float zFar;
-	float padding[25];
+	float padding[4];
 };
 
 struct meshData
@@ -30,7 +30,7 @@ struct meshData
 	matrix m_prev;
 	matrix normalMat;
 	float UUID;
-	float padding[15];
+	float padding[3];
 };
 
 struct materialData
@@ -162,5 +162,33 @@ float4 ScreenToView(float4 screen, float2 in_viewportSize, matrix in_p_inv)
 
 	return ClipToView(clip, in_p_inv);
 }
+
+struct Surfel
+{
+	float4 pos;
+	float4 normal;
+	float4 albedo;
+	float4 MRAT;
+};
+
+struct Brick
+{
+	unsigned int surfelRangeBegin;
+	unsigned int surfelRangeEnd;
+};
+
+struct BrickFactor
+{
+	float basisWeight;
+	unsigned int brickIndex;
+};
+
+struct Probe
+{
+	float4 pos;
+	unsigned int brickFactorRangeBegin;
+	unsigned int brickFactorRangeEnd;
+	float padding;
+};
 
 #include "common/GPUBuffers.hlsl"

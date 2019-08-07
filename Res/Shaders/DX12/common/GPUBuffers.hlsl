@@ -45,7 +45,7 @@ cbuffer skyCBuffer : register(b7)
 
 cbuffer dispatchParamsCBuffer : register(b8)
 {
-	DispatchParam dispatchParams[2];
+	DispatchParam dispatchParams[8];
 }
 
 cbuffer SH9CBuffer : register(b9)
