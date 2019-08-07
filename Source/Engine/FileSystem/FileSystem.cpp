@@ -85,6 +85,8 @@ bool InnoFileSystemNS::prepareForLoadingScene(const std::string& fileName)
 
 bool InnoFileSystemNS::loadScene(const std::string& fileName)
 {
+	m_currentScene = fileName;
+
 	for (auto i : m_sceneLoadingStartCallbacks)
 	{
 		(*i)();
@@ -98,8 +100,6 @@ bool InnoFileSystemNS::loadScene(const std::string& fileName)
 	}
 
 	InnoFileSystemNS::m_isLoadingScene = false;
-
-	m_currentScene = fileName;
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem: scene " + fileName + " has been loaded.");
 
