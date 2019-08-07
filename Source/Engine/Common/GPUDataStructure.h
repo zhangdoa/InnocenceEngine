@@ -105,8 +105,7 @@ struct TransparentPassGPUData
 
 struct BillboardPassGPUData
 {
-	vec4 globalPos;
-	float distanceToCamera;
+	mat4 m;
 	WorldEditorIconType iconType;
 };
 

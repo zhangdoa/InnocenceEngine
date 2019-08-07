@@ -604,8 +604,7 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 	for (auto i : GetComponentManager(DirectionalLightComponent)->GetAllComponents())
 	{
 		BillboardPassGPUData l_billboardPAssGPUData;
-		l_billboardPAssGPUData.globalPos = GetComponent(TransformComponent, i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_billboardPAssGPUData.distanceToCamera = (m_cameraGPUData.GetValue().globalPos - l_billboardPAssGPUData.globalPos).length();
+		l_billboardPAssGPUData.m = InnoMath::toTranslationMatrix(GetComponent(TransformComponent, i->m_parentEntity)->m_globalTransformVector.m_pos);
 		l_billboardPAssGPUData.iconType = WorldEditorIconType::DIRECTIONAL_LIGHT;
 
 		m_billboardPassGPUData.emplace_back(l_billboardPAssGPUData);
@@ -615,8 +614,7 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 	for (auto i : GetComponentManager(PointLightComponent)->GetAllComponents())
 	{
 		BillboardPassGPUData l_billboardPAssGPUData;
-		l_billboardPAssGPUData.globalPos = GetComponent(TransformComponent, i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_billboardPAssGPUData.distanceToCamera = (m_cameraGPUData.GetValue().globalPos - l_billboardPAssGPUData.globalPos).length();
+		l_billboardPAssGPUData.m = InnoMath::toTranslationMatrix(GetComponent(TransformComponent, i->m_parentEntity)->m_globalTransformVector.m_pos);
 		l_billboardPAssGPUData.iconType = WorldEditorIconType::POINT_LIGHT;
 
 		m_billboardPassGPUData.emplace_back(l_billboardPAssGPUData);
@@ -626,8 +624,7 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 	for (auto i : GetComponentManager(SphereLightComponent)->GetAllComponents())
 	{
 		BillboardPassGPUData l_billboardPAssGPUData;
-		l_billboardPAssGPUData.globalPos = GetComponent(TransformComponent, i->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_billboardPAssGPUData.distanceToCamera = (m_cameraGPUData.GetValue().globalPos - l_billboardPAssGPUData.globalPos).length();
+		l_billboardPAssGPUData.m = InnoMath::toTranslationMatrix(GetComponent(TransformComponent, i->m_parentEntity)->m_globalTransformVector.m_pos);
 		l_billboardPAssGPUData.iconType = WorldEditorIconType::SPHERE_LIGHT;
 
 		m_billboardPassGPUData.emplace_back(l_billboardPAssGPUData);
