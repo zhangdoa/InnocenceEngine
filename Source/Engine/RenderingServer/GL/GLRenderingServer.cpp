@@ -1127,41 +1127,68 @@ std::vector<vec4> GLRenderingServer::ReadTextureBackToCPU(RenderPassDataComponen
 		l_attachmentType = GL_COLOR_ATTACHMENT0;
 	}
 
+	GLuint l_tempFramebuffer = 0;
+	glGenFramebuffers(1, &l_tempFramebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, l_tempFramebuffer);
+	glReadBuffer(GL_COLOR_ATTACHMENT0);
+
 	switch (GLTDC->m_textureDataDesc.SamplerType)
 	{
 	case TextureSamplerType::Sampler1D:
 		l_sampleCount = l_width;
 		l_textureSamples.resize(l_sampleCount);
-		glGetTextureSubImage(GLTDC->m_TO, 0, 0, 0, 0, l_width, 0, 0, l_pixelDataFormat, l_pixelDataType, (unsigned int)(l_sampleCount * sizeof(vec4)), &l_textureSamples[0]);
+		glFramebufferTexture1D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_1D, GLTDC->m_TO, 0);
+		glReadPixels(0, 0, l_width, 0, l_pixelDataFormat, l_pixelDataType, &l_textureSamples[0]);
 		break;
 	case TextureSamplerType::Sampler2D:
 		l_sampleCount = l_width * l_height;
 		l_textureSamples.resize(l_sampleCount);
-		glGetTextureSubImage(GLTDC->m_TO, 0, 0, 0, 0, l_width, l_height, 0, l_pixelDataFormat, l_pixelDataType, (unsigned int)(l_sampleCount * sizeof(vec4)), &l_textureSamples[0]);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_2D, GLTDC->m_TO, 0);
+		glReadPixels(0, 0, l_width, l_height, l_pixelDataFormat, l_pixelDataType, &l_textureSamples[0]);
 		break;
 	case TextureSamplerType::Sampler3D:
-		l_sampleCount = l_width * l_height * l_depthOrArraySize;
-		l_textureSamples.resize(l_sampleCount);
-		glGetTextureSubImage(GLTDC->m_TO, 0, 0, 0, 0, l_width, l_height, l_depthOrArraySize, l_pixelDataFormat, l_pixelDataType, (unsigned int)(l_sampleCount * sizeof(vec4)), &l_textureSamples[0]);
+		l_sampleCount = l_width * l_height;
+		l_textureSamples.resize(l_sampleCount * l_depthOrArraySize);
+		for (unsigned int i = 0; i < (unsigned int)l_depthOrArraySize; i++)
+		{
+			glFramebufferTextureLayer(GL_FRAMEBUFFER, l_attachmentType, GLTDC->m_TO, 0, i);
+			glReadPixels(0, 0, l_width, 0, l_pixelDataFormat, l_pixelDataType, &l_textureSamples[l_depthOrArraySize * l_sampleCount]);
+		}
 		break;
 	case TextureSamplerType::Sampler1DArray:
-		l_sampleCount = l_width * l_depthOrArraySize;
-		l_textureSamples.resize(l_sampleCount);
-		glGetTextureSubImage(GLTDC->m_TO, 0, 0, 0, 0, l_width, l_depthOrArraySize, 0, l_pixelDataFormat, l_pixelDataType, (unsigned int)(l_sampleCount * sizeof(vec4)), &l_textureSamples[0]);
+		l_sampleCount = l_width;
+		l_textureSamples.resize(l_sampleCount * l_depthOrArraySize);
+		for (unsigned int i = 0; i < (unsigned int)l_depthOrArraySize; i++)
+		{
+			glFramebufferTextureLayer(GL_FRAMEBUFFER, l_attachmentType, GLTDC->m_TO, 0, i);
+			glReadPixels(0, 0, l_width, 0, l_pixelDataFormat, l_pixelDataType, &l_textureSamples[l_depthOrArraySize * l_sampleCount]);
+		}
 		break;
 	case TextureSamplerType::Sampler2DArray:
-		l_sampleCount = l_width * l_height * l_depthOrArraySize;
-		l_textureSamples.resize(l_sampleCount);
-		glGetTextureSubImage(GLTDC->m_TO, 0, 0, 0, 0, l_width, l_height, l_depthOrArraySize, l_pixelDataFormat, l_pixelDataType, (unsigned int)(l_sampleCount * sizeof(vec4)), &l_textureSamples[0]);
+		l_sampleCount = l_width * l_height;
+		l_textureSamples.resize(l_sampleCount * l_depthOrArraySize);
+		for (unsigned int i = 0; i < (unsigned int)l_depthOrArraySize; i++)
+		{
+			glFramebufferTextureLayer(GL_FRAMEBUFFER, l_attachmentType, GLTDC->m_TO, 0, i);
+			glReadPixels(0, 0, l_width, l_height, l_pixelDataFormat, l_pixelDataType, &l_textureSamples[l_depthOrArraySize * l_sampleCount]);
+		}
 		break;
 	case TextureSamplerType::SamplerCubemap:
-		l_sampleCount = l_width * l_height * 6;
-		l_textureSamples.resize(l_sampleCount);
-		glGetTextureSubImage(GLTDC->m_TO, 0, 0, 0, 0, l_width, l_height, 6, l_pixelDataFormat, l_pixelDataType, (unsigned int)(l_sampleCount * sizeof(vec4)), &l_textureSamples[0]);
+		l_sampleCount = l_width * l_height;
+		l_textureSamples.resize(l_sampleCount * 6);
+		for (unsigned int i = 0; i < 6; i++)
+		{
+			glFramebufferTexture2D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, GLTDC->m_TO, 0);
+			glReadPixels(0, 0, l_width, l_height, l_pixelDataFormat, l_pixelDataType, &l_textureSamples[i * l_sampleCount]);
+		}
 		break;
 	default:
 		break;
 	}
+
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glDeleteFramebuffers(1, &l_tempFramebuffer);
 
 	return l_textureSamples;
 }
