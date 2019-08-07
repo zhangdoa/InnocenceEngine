@@ -158,7 +158,7 @@ PixelOutputType main(PixelInputType input)
 	float3 lightdir = -dirLight_dir.xyz;
 	float planetRadius = 6371e3;
 	float atmosphereHeight = 100e3;
-	float3 eye_position = cam_globalPos.xyz + float3(0.0, planetRadius, 0.0);
+	float3 eye_position = cameraCBuffer.globalPos.xyz + float3(0.0, planetRadius, 0.0);
 
 	color = atmosphere(
 		eyedir,           // normalized ray direction

@@ -21,10 +21,10 @@ struct PixelInputType
 
 struct PixelOutputType
 {
-	float4 geometryPassRT0 : SV_Target0;
-	float4 geometryPassRT1 : SV_Target1;
-	float4 geometryPassRT2 : SV_Target2;
-	float4 geometryPassRT3 : SV_Target3;
+	float4 opaquePassRT0 : SV_Target0;
+	float4 opaquePassRT1 : SV_Target1;
+	float4 opaquePassRT2 : SV_Target2;
+	float4 opaquePassRT3 : SV_Target3;
 };
 
 PixelOutputType main(PixelInputType input) : SV_TARGET
@@ -32,7 +32,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	PixelOutputType output;
 
 	float3 normalInWorldSpace;
-	if (useNormalTexture)
+	if (materialCBuffer.useNormalTexture)
 	{
 		// get edge vectors of the pixel triangle
 		float3 dp1 = ddx_fine(input.frag_WorldSpacePos);
@@ -60,7 +60,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 
 	float transparency = 1.0;
 	float3 out_Albedo;
-	if (useAlbedoTexture)
+	if (materialCBuffer.useAlbedoTexture)
 	{
 		float4 l_albedo = t2d_albedo.Sample(SampleTypeWrap, input.frag_TexCoord);
 		transparency = l_albedo.a;
@@ -75,48 +75,46 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	}
 	else
 	{
-		out_Albedo = albedo.rgb;
+		out_Albedo = materialCBuffer.albedo.rgb;
 	}
 
 	float out_Metallic;
-	if (useMetallicTexture)
+	if (materialCBuffer.useMetallicTexture)
 	{
 		out_Metallic = t2d_metallic.Sample(SampleTypeWrap, input.frag_TexCoord).r;
 	}
 	else
 	{
-		out_Metallic = MRAT.r;
+		out_Metallic = materialCBuffer.MRAT.r;
 	}
 
 	float out_Roughness;
-	if (useRoughnessTexture)
+	if (materialCBuffer.useRoughnessTexture)
 	{
 		out_Roughness = t2d_roughness.Sample(SampleTypeWrap, input.frag_TexCoord).r;
 	}
 	else
 	{
-		out_Roughness = MRAT.g;
+		out_Roughness = materialCBuffer.MRAT.g;
 	}
 
 	float out_AO;
-	if (useAOTexture)
+	if (materialCBuffer.useAOTexture)
 	{
 		out_AO = t2d_ao.Sample(SampleTypeWrap, input.frag_TexCoord).r;
 	}
 	else
 	{
-		out_AO = MRAT.b;
+		out_AO = materialCBuffer.MRAT.b;
 	}
 
-	output.geometryPassRT0 = float4(input.frag_WorldSpacePos, out_Metallic);
-
-	output.geometryPassRT1 = float4(normalInWorldSpace, out_Roughness);
-
-	output.geometryPassRT2 = float4(out_Albedo, out_AO);
+	output.opaquePassRT0 = float4(input.frag_WorldSpacePos, out_Metallic);
+	output.opaquePassRT1 = float4(normalInWorldSpace, out_Roughness);
+	output.opaquePassRT2 = float4(out_Albedo, out_AO);
 
 	float4 motionVec = (input.frag_ClipSpacePos_orig / input.frag_ClipSpacePos_orig.w - input.frag_ClipSpacePos_prev / input.frag_ClipSpacePos_prev.w);
 
-	output.geometryPassRT3 = float4(motionVec.xyz * 0.5, transparency);
+	output.opaquePassRT3 = float4(motionVec.xyz * 0.5, transparency);
 
   return output;
 }

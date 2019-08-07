@@ -30,7 +30,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	PixelOutputType output;
 
 	float3 normalInWorldSpace;
-	if (useNormalTexture)
+	if (materialCBuffer.useNormalTexture)
 	{
 		// get edge vectors of the pixel triangle
 		float3 dp1 = ddx_fine(input.posWS.xyz);
@@ -58,7 +58,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 
 	float transparency = 1.0;
 	float3 out_Albedo;
-	if (useAlbedoTexture)
+	if (materialCBuffer.useAlbedoTexture)
 	{
 		float4 l_albedo = t2d_albedo.Sample(SampleTypeWrap, input.texcoord);
 		transparency = l_albedo.a;
@@ -73,37 +73,37 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	}
 	else
 	{
-		out_Albedo = albedo.rgb;
+		out_Albedo = materialCBuffer.albedo.rgb;
 	}
 
 	float out_Metallic;
-	if (useMetallicTexture)
+	if (materialCBuffer.useMetallicTexture)
 	{
 		out_Metallic = t2d_metallic.Sample(SampleTypeWrap, input.texcoord).r;
 	}
 	else
 	{
-		out_Metallic = MRAT.r;
+		out_Metallic = materialCBuffer.MRAT.r;
 	}
 
 	float out_Roughness;
-	if (useRoughnessTexture)
+	if (materialCBuffer.useRoughnessTexture)
 	{
 		out_Roughness = t2d_roughness.Sample(SampleTypeWrap, input.texcoord).r;
 	}
 	else
 	{
-		out_Roughness = MRAT.g;
+		out_Roughness = materialCBuffer.MRAT.g;
 	}
 
 	float out_AO;
-	if (useAOTexture)
+	if (materialCBuffer.useAOTexture)
 	{
 		out_AO = t2d_ao.Sample(SampleTypeWrap, input.texcoord).r;
 	}
 	else
 	{
-		out_AO = MRAT.b;
+		out_AO = materialCBuffer.MRAT.b;
 	}
 
 	output.opaquePassRT0 = float4(input.posWS.xyz, out_Metallic);

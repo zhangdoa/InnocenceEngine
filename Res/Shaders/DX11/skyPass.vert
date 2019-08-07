@@ -22,8 +22,8 @@ PixelInputType main(VertexInputType input)
 
 	output.frag_TexCoord = input.position.xyz * -1.0;
 	float4 pos = float4(-1.0 * input.position.xyz, 1.0);
-	pos = mul(pos, cam_r);
-	pos = mul(pos, cam_p_original);
+	pos = mul(pos, cameraCBuffer.r);
+	pos = mul(pos, cameraCBuffer.p_original);
 	pos.z = pos.w;
 	output.frag_ClipSpacePos = pos;
 

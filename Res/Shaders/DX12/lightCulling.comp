@@ -91,8 +91,8 @@ void main(ComputeInputType input)
 		// w component of luminance is the attenuation radius
 		if (light.luminance.w > 0.0f)
 		{
-			float4 lightPos_VS = mul(light.position, cam_t);
-			lightPos_VS = mul(lightPos_VS, cam_r);
+			float4 lightPos_VS = mul(light.position, cameraCBuffer.t);
+			lightPos_VS = mul(lightPos_VS, cameraCBuffer.r);
 			Sphere sphere = { lightPos_VS.xyz, light.luminance.w };
 			if (SphereInsideFrustum(sphere, l_TileFrustum, nearClipVS, maxDepthVS))
 			{

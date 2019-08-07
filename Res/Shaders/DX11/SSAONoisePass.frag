@@ -42,14 +42,14 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	// world space position to view space
 	float3 fragPos = in_Position.Sample(SampleTypePoint, screenTexCoords).xyz;
 	float4 fragPosV4 = float4(fragPos, 1.0f);
-	fragPosV4 = mul(fragPosV4, cam_t);
-	fragPosV4 = mul(fragPosV4, cam_r);
+	fragPosV4 = mul(fragPosV4, cameraCBuffer.t);
+	fragPosV4 = mul(fragPosV4, cameraCBuffer.r);
 	fragPos = fragPosV4.xyz;
 
 	// world space normal to view space
 	float3 normal = in_Normal.Sample(SampleTypePoint, screenTexCoords).xyz;
 	float4 normalV4 = float4(normal, 0.0f);
-	normalV4 = mul(normalV4, cam_r);
+	normalV4 = mul(normalV4, cameraCBuffer.r);
 	normal = normalV4.xyz;
 	normal = normalize(normal);
 
@@ -68,7 +68,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 
 		// project sample position (to sample texture) (to get position on screen/texture)
 		float4 randomFragSampleCoord = float4(randomHemisphereSamplePos, 1.0f);
-		randomFragSampleCoord = mul(randomFragSampleCoord, cam_p_jittered); // from view to clip-space
+		randomFragSampleCoord = mul(randomFragSampleCoord, cameraCBuffer.p_jittered); // from view to clip-space
 		randomFragSampleCoord.xyz /= randomFragSampleCoord.w; // perspective divide
 		randomFragSampleCoord.xyz = randomFragSampleCoord.xyz * 0.5f + 0.5f; // transform to range 0.0 - 1.0
 
@@ -82,8 +82,8 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 
 		// alpha channel is used previously, remove its unwanted influence
 		randomFragSamplePos.w = 1.0f;
-		randomFragSamplePos = mul(randomFragSamplePos, cam_t);
-		randomFragSamplePos = mul(randomFragSamplePos, cam_r);
+		randomFragSamplePos = mul(randomFragSamplePos, cameraCBuffer.t);
+		randomFragSamplePos = mul(randomFragSamplePos, cameraCBuffer.r);
 
 		// range check & accumulate
 		float rangeCheck = smoothstep(0.0, 1.0, radius / max(abs(fragPos.z - randomFragSamplePos.z), 0.0001f));

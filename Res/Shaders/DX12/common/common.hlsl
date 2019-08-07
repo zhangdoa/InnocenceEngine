@@ -9,15 +9,53 @@ static const int NR_CSM_SPLITS = 4;
 
 #define BLOCK_SIZE 16
 
+struct cameraData
+{
+	matrix p_original;
+	matrix p_jittered;
+	matrix r;
+	matrix t;
+	matrix r_prev;
+	matrix t_prev;
+	float4 globalPos;
+	float WHRatio;
+	float zNear;
+	float zFar;
+	float padding[25];
+};
+
+struct meshData
+{
+	matrix m;
+	matrix m_prev;
+	matrix normalMat;
+	float UUID;
+	float padding[15];
+};
+
+struct materialData
+{
+	float4 albedo;
+	float4 MRAT;
+	bool useNormalTexture;
+	bool useAlbedoTexture;
+	bool useMetallicTexture;
+	bool useRoughnessTexture;
+	bool useAOTexture;
+	bool padding[3];
+};
+
 // w component of luminance is attenuationRadius
-struct pointLight {
+struct pointLight
+{
 	float4 position;
 	float4 luminance;
 	//float attenuationRadius;
 };
 
 // w component of luminance is sphereRadius
-struct sphereLight {
+struct sphereLight
+{
 	float4 position;
 	float4 luminance;
 	//float sphereRadius;

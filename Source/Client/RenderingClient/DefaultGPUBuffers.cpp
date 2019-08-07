@@ -14,6 +14,9 @@ namespace DefaultGPUBuffers
 	GPUBufferDataComponent* m_SphereLightGBDC;
 	GPUBufferDataComponent* m_CSMGBDC;
 	GPUBufferDataComponent* m_SkyGBDC;
+	GPUBufferDataComponent* m_BillboardGBDC;
+
+	std::vector<MeshGPUData> m_billboardGPUData;
 }
 
 bool DefaultGPUBuffers::Setup()
@@ -81,6 +84,15 @@ bool DefaultGPUBuffers::Initialize()
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_SkyGBDC);
 
+	m_BillboardGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("BillboardGPUBuffer/");
+	m_BillboardGBDC->m_ElementCount = l_RenderingCapability.maxMeshes;
+	m_BillboardGBDC->m_ElementSize = sizeof(MeshGPUData);
+	m_BillboardGBDC->m_BindingPoint = 12;
+
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_BillboardGBDC);
+
+	m_billboardGPUData.resize(l_RenderingCapability.maxMeshes);
+
 	return true;
 }
 
@@ -103,6 +115,16 @@ bool DefaultGPUBuffers::Upload()
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_SphereLightGBDC, l_SphereLightGPUData);
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_CSMGBDC, l_CSMGPUData);
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_SkyGBDC, &l_SkyGPUData);
+
+	auto l_drawCallCount = g_pModuleManager->getRenderingFrontend()->getBillboardPassDrawCallCount();
+	auto l_billboardPassGPUData = g_pModuleManager->getRenderingFrontend()->getBillboardPassGPUData();
+
+	for (unsigned int i = 0; i < l_drawCallCount; i++)
+	{
+		m_billboardGPUData[i].m = l_billboardPassGPUData[i].m;
+	}
+
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_BillboardGBDC, m_billboardGPUData);
 
 	return true;
 }
@@ -146,6 +168,8 @@ GPUBufferDataComponent * DefaultGPUBuffers::GetGPUBufferDataComponent(GPUBufferU
 	case DefaultGPUBuffers::GPUBufferUsageType::Compute:
 		break;
 	case DefaultGPUBuffers::GPUBufferUsageType::SH9:
+		break;
+	case DefaultGPUBuffers::GPUBufferUsageType::Billboard: l_result = m_BillboardGBDC;
 		break;
 	default:
 		break;

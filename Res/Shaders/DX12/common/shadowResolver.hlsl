@@ -90,6 +90,6 @@ float SunShadowResolver(float3 fragPos)
 // ----------------------------------------------------------------------------
 float linearDepth(float depthSample)
 {
-	float zLinear = cam_zNear * cam_zFar / (cam_zFar + cam_zNear - depthSample * (cam_zFar - cam_zNear));
+	float zLinear = cameraCBuffer.zNear * cameraCBuffer.zFar / (cameraCBuffer.zFar + cameraCBuffer.zNear - depthSample * (cameraCBuffer.zFar - cameraCBuffer.zNear));
 	return zLinear;
 }

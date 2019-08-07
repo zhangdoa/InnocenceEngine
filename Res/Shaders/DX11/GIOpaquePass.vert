@@ -21,9 +21,9 @@ GeometryInputType main(VertexInputType input)
 {
 	GeometryInputType output;
 
-	output.posWS = mul(input.position, m);
+	output.posWS = mul(input.position, meshCBuffer.m);
 	output.texcoord = input.texcoord;
-	output.normal = mul(input.normal, normalMat);
+	output.normal = mul(input.normal, meshCBuffer.normalMat);
 
 	return output;
 }

@@ -80,3 +80,11 @@ layout(std140, row_major, binding = 11) uniform GICameraUBOBlock
 	mat4 r[6];
 	mat4 t;
 } GICameraUBO;
+
+layout(std140, row_major, binding = 12) uniform billboardUBOBlock
+{
+	mat4 m;
+	mat4 m_prev;
+	mat4 normalMat;
+	float UUID;
+} billboardUBO;

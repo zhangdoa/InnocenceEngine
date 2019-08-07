@@ -49,7 +49,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	F0 = lerp(F0, albedo, metallic);
 
 	float3 N = normalize(normalWS);
-	float3 V = normalize(cam_globalPos.xyz - posWS);
+	float3 V = normalize(cameraCBuffer.globalPos.xyz - posWS);
 	float NdotV = max(dot(N, V), 0.0);
 
 	float3 Lo = float3(0, 0, 0);

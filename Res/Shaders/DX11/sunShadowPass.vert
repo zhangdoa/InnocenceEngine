@@ -19,6 +19,6 @@ GeometryInputType main(VertexInputType input)
 {
 	GeometryInputType output;
 
-	output.posWS = mul(input.position, m);
+	output.posWS = mul(input.position, meshCBuffer.m);
 	return output;
 }

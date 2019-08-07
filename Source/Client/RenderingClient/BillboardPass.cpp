@@ -14,8 +14,6 @@ namespace BillboardPass
 	RenderPassDataComponent* m_RPDC;
 	ShaderProgramComponent* m_SPC;
 	SamplerDataComponent* m_SDC;
-
-	std::vector<MeshGPUData> m_meshGPUData;
 }
 
 bool BillboardPass::Setup()
@@ -53,7 +51,7 @@ bool BillboardPass::Setup()
 
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 1;
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 1;
+	m_RPDC->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 12;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Image;
 	m_RPDC->m_ResourceBinderLayoutDescs[2].m_GlobalSlot = 2;
@@ -73,11 +71,6 @@ bool BillboardPass::Setup()
 
 	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
 
-	//
-	auto l_RenderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
-
-	m_meshGPUData.resize(l_RenderingCapability.maxMeshes);
-
 	return true;
 }
 
@@ -89,7 +82,7 @@ bool BillboardPass::Initialize()
 bool BillboardPass::PrepareCommandList()
 {
 	auto l_CameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Camera);
-	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
+	auto l_BillboardGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Billboard);
 
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
@@ -108,7 +101,7 @@ bool BillboardPass::PrepareCommandList()
 	{
 		auto l_iconTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(l_billboardPassGPUData[i].iconType);
 
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, true, i, l_MeshGBDC->m_ElementSize);
+		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_BillboardGBDC->m_ResourceBinder, 1, 12, Accessibility::ReadOnly, true, i, l_BillboardGBDC->m_ElementSize);
 
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_iconTexture->m_ResourceBinder, 2, 0);
 
@@ -124,21 +117,6 @@ bool BillboardPass::PrepareCommandList()
 
 bool BillboardPass::ExecuteCommandList()
 {
-	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
-
-	auto l_drawCallCount = g_pModuleManager->getRenderingFrontend()->getBillboardPassDrawCallCount();
-	auto l_billboardPassGPUData = g_pModuleManager->getRenderingFrontend()->getBillboardPassGPUData();
-
-	for (unsigned int i = 0; i < l_drawCallCount; i++)
-	{
-		MeshGPUData l_meshGPUData;
-		l_meshGPUData.m = l_billboardPassGPUData[i].m;
-
-		m_meshGPUData[i] = l_meshGPUData;
-	}
-
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MeshGBDC, m_meshGPUData);
-
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
 
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);

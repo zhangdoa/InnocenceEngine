@@ -20,14 +20,14 @@ PixelInputType main(VertexInputType input)
 {
 	PixelInputType output;
 
-	float4 posWS = float4(m[3][0], m[3][1], m[3][2], 1.0);
-	float distance = length(posWS - cam_globalPos);
-	output.posCS = mul(posWS, cam_t);
-	output.posCS = mul(output.posCS, cam_r);
-	output.posCS = mul(output.posCS, cam_p_original);
+	float4 posWS = float4(billboardCBuffer.m[3][0], billboardCBuffer.m[3][1], billboardCBuffer.m[3][2], 1.0);
+	float distance = length(posWS - cameraCBuffer.globalPos);
+	output.posCS = mul(posWS, cameraCBuffer.t);
+	output.posCS = mul(output.posCS, cameraCBuffer.r);
+	output.posCS = mul(output.posCS, cameraCBuffer.p_original);
 	output.posCS /= output.posCS.w;
 	float denom = distance;
-	float2 shearingRatio = float2(1.0 / cam_WHRatio, 1.0) / clamp(denom, 1.0, distance);
+	float2 shearingRatio = float2(1.0 / cameraCBuffer.WHRatio, 1.0) / clamp(denom, 1.0, distance);
 	output.posCS.xy += input.position.xy * shearingRatio;
 	output.texcoord = input.texcoord;
 

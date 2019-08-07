@@ -27,7 +27,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 {
 	PixelOutputType output;
 
-	float3 V = normalize(cam_globalPos - input.frag_WorldSpacePos);
+	float3 V = normalize(cameraCBuffer.globalPos - input.frag_WorldSpacePos);
 	float3 L = V;
 	float3 H = normalize(V + L);
 	float3 N = input.frag_Normal;
@@ -37,12 +37,12 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float NdotL = max(dot(N, L), 0.0);
 	float NdotV = max(dot(N, V), 0.0);
 
-	float out_roughness = MRAT.g;
-	float out_metallic = MRAT.r;
+	float out_roughness = materialCBuffer.MRAT.g;
+	float out_metallic = materialCBuffer.MRAT.r;
 	float3 F0 = float3(0.04, 0.04, 0.04);
-	float3 out_albedo = albedo.rgb;
+	float3 out_albedo = materialCBuffer.albedo.rgb;
 	float3 luminance = float3(1.0, 1.0, 1.0);
-	F0 = lerp(F0, albedo, out_metallic);
+	F0 = lerp(F0, out_albedo, out_metallic);
 
 	float F90 = 1.0;
 	float3 F = fresnelSchlick(F0, F90, LdotH);
