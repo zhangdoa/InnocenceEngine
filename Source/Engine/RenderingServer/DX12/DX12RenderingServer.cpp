@@ -1352,11 +1352,17 @@ bool DX12RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * 
 	return true;
 }
 
-bool DX12RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue)
+bool DX12RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue, size_t startOffset, size_t range)
 {
 	auto l_rhs = reinterpret_cast<DX12GPUBufferDataComponent*>(rhs);
 
-	std::memcpy(l_rhs->m_MappedMemory, GPUBufferValue, l_rhs->m_TotalSize);
+	auto l_size = l_rhs->m_TotalSize;
+	if (range != SIZE_MAX)
+	{
+		l_size = range * l_rhs->m_ElementSize;
+	}
+
+	std::memcpy((char*)l_rhs->m_MappedMemory + startOffset * l_rhs->m_ElementSize, GPUBufferValue, l_size);
 
 	return true;
 }

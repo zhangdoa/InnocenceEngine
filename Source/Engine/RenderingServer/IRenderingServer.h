@@ -45,18 +45,18 @@ public:
 	virtual	bool DeleteSamplerDataComponent(SamplerDataComponent* rhs) = 0;
 	virtual	bool DeleteGPUBufferDataComponent(GPUBufferDataComponent* rhs) = 0;
 
-	virtual bool UploadGPUBufferDataComponentImpl(GPUBufferDataComponent* rhs, const void* GPUBufferValue) = 0;
+	virtual bool UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue, size_t startOffset, size_t range) = 0;
 
 	template<typename T>
-	void UploadGPUBufferDataComponent(GPUBufferDataComponent* rhs, const T* GPUBufferValue)
+	bool UploadGPUBufferDataComponent(GPUBufferDataComponent* rhs, const T* GPUBufferValue, size_t startOffset = 0, size_t range = SIZE_MAX)
 	{
-		UploadGPUBufferDataComponentImpl(rhs, GPUBufferValue);
+		return UploadGPUBufferDataComponentImpl(rhs, GPUBufferValue, startOffset, range);
 	}
 
 	template<typename T>
-	void UploadGPUBufferDataComponent(GPUBufferDataComponent* rhs, const std::vector<T>& GPUBufferValue)
+	bool UploadGPUBufferDataComponent(GPUBufferDataComponent* rhs, const std::vector<T>& GPUBufferValue, size_t startOffset = 0, size_t range = SIZE_MAX)
 	{
-		UploadGPUBufferDataComponentImpl(rhs, &GPUBufferValue[0]);
+		return UploadGPUBufferDataComponentImpl(rhs, &GPUBufferValue[0], startOffset, range);
 	}
 
 	virtual bool CommandListBegin(RenderPassDataComponent * rhs, size_t frameIndex) = 0;

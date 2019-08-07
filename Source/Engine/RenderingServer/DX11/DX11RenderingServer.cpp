@@ -1198,42 +1198,41 @@ bool DX11RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * 
 	return true;
 }
 
-bool DX11RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue)
+bool DX11RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue, size_t startOffset, size_t range)
 {
 	auto l_rhs = reinterpret_cast<DX11GPUBufferDataComponent*>(rhs);
 
+	D3D11_MAP l_mapMethod;
+
 	if (l_rhs->m_GPUAccessibility == Accessibility::ReadOnly)
 	{
-		D3D11_MAPPED_SUBRESOURCE l_MappedResource;
-
-		auto l_HResult = m_deviceContext->Map(l_rhs->m_BufferPtr, 0, D3D11_MAP_WRITE_DISCARD, 0, &l_MappedResource);
-		if (FAILED(l_HResult))
-		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't lock Constant Buffer!");
-			return false;
-		}
-
-		auto l_dataPtr = l_MappedResource.pData;
-		std::memcpy(l_dataPtr, GPUBufferValue, l_rhs->m_TotalSize);
-
-		m_deviceContext->Unmap(l_rhs->m_BufferPtr, 0);
+		l_mapMethod = D3D11_MAP_WRITE_DISCARD;
 	}
 	else
 	{
-		D3D11_MAPPED_SUBRESOURCE l_MappedResource;
-
-		auto l_HResult = m_deviceContext->Map(l_rhs->m_BufferPtr, 0, D3D11_MAP_WRITE, 0, &l_MappedResource);
-		if (FAILED(l_HResult))
-		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't lock Structured Buffer!");
-			return false;
-		}
-
-		auto l_dataPtr = l_MappedResource.pData;
-		std::memcpy(l_dataPtr, GPUBufferValue, l_rhs->m_TotalSize);
-
-		m_deviceContext->Unmap(l_rhs->m_BufferPtr, 0);
+		l_mapMethod = D3D11_MAP_WRITE;
 	}
+
+	D3D11_MAPPED_SUBRESOURCE l_MappedResource;
+
+	auto l_HResult = m_deviceContext->Map(l_rhs->m_BufferPtr, 0, l_mapMethod, 0, &l_MappedResource);
+	if (FAILED(l_HResult))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't lock GPU Buffer!");
+		return false;
+	}
+
+	auto l_dataPtr = (char*)l_MappedResource.pData;
+
+	auto l_size = l_rhs->m_TotalSize;
+	if (range != SIZE_MAX)
+	{
+		l_size = range * l_rhs->m_ElementSize;
+	}
+
+	std::memcpy(l_dataPtr + startOffset * l_rhs->m_ElementSize, GPUBufferValue, l_size);
+
+	m_deviceContext->Unmap(l_rhs->m_BufferPtr, 0);
 
 	return true;
 }

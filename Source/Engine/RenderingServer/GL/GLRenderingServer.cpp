@@ -856,12 +856,17 @@ bool GLRenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * rh
 	return true;
 }
 
-bool GLRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue)
+bool GLRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue, size_t startOffset, size_t range)
 {
 	auto l_rhs = reinterpret_cast<GLGPUBufferDataComponent*>(rhs);
 
 	glBindBuffer(l_rhs->m_BufferType, l_rhs->m_Handle);
-	glBufferSubData(l_rhs->m_BufferType, 0, l_rhs->m_TotalSize, GPUBufferValue);
+	auto l_size = l_rhs->m_TotalSize;
+	if (range != SIZE_MAX)
+	{
+		l_size = range * l_rhs->m_ElementSize;
+	}
+	glBufferSubData(l_rhs->m_BufferType, startOffset * l_rhs->m_ElementSize, l_size, GPUBufferValue);
 
 	return true;
 }

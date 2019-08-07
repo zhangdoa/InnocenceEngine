@@ -34,7 +34,7 @@ public:
 	bool DeleteShaderProgramComponent(ShaderProgramComponent * rhs) override;
 	bool DeleteSamplerDataComponent(SamplerDataComponent * rhs) override;
 	bool DeleteGPUBufferDataComponent(GPUBufferDataComponent * rhs) override;
-	bool UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue) override;
+	bool UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue, size_t startOffset, size_t range) override;
 
 	bool CommandListBegin(RenderPassDataComponent * rhs, size_t frameIndex) override;
 	bool BindRenderPassDataComponent(RenderPassDataComponent * rhs) override;
