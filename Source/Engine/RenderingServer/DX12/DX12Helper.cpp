@@ -607,6 +607,7 @@ D3D12_UNORDERED_ACCESS_VIEW_DESC DX12Helper::GetUAVDesc(TextureDataDesc textureD
 	case TextureSamplerType::Sampler3D:
 		l_result.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
 		l_result.Texture3D.MipSlice = 0;
+		l_result.Texture3D.WSize = textureDataDesc.DepthOrArraySize;
 		break;
 	case TextureSamplerType::Sampler1DArray:
 		l_result.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE1DARRAY;
