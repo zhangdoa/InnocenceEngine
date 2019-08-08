@@ -18,6 +18,7 @@ cbuffer sunCBuffer : register(b3)
 	float4 dirLight_dir;
 	float4 dirLight_luminance;
 	matrix dirLight_r;
+	float4 padding[2];
 };
 
 cbuffer pointLightCBuffer : register(b4)
@@ -40,7 +41,7 @@ cbuffer skyCBuffer : register(b7)
 	matrix p_inv;
 	matrix v_inv;
 	float2 viewportSize;
-	float2 sky_padding1;
+	float4 sky_padding[7];
 };
 
 cbuffer dispatchParamsCBuffer : register(b8)

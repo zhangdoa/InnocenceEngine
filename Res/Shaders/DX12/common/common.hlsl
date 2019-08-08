@@ -11,17 +11,17 @@ static const int NR_CSM_SPLITS = 4;
 
 struct cameraData
 {
-	matrix p_original;
-	matrix p_jittered;
-	matrix r;
-	matrix t;
-	matrix r_prev;
-	matrix t_prev;
-	float4 globalPos;
-	float WHRatio;
-	float zNear;
-	float zFar;
-	float padding[4];
+	matrix p_original; // 0 - 3
+	matrix p_jittered; // 4 - 7
+	matrix r; // 8 - 11
+	matrix t; // 12 - 15
+	matrix r_prev; // 16 - 19
+	matrix t_prev; // 20 - 23
+	float4 globalPos; // 24
+	float WHRatio; // Tight packing 25
+	float zNear; // Tight packing 25
+	float zFar; // Tight packing 25
+	float padding[6]; // 26 - 31
 };
 
 struct meshData
@@ -35,14 +35,14 @@ struct meshData
 
 struct materialData
 {
-	float4 albedo;
-	float4 MRAT;
-	bool useNormalTexture;
-	bool useAlbedoTexture;
-	bool useMetallicTexture;
-	bool useRoughnessTexture;
-	bool useAOTexture;
-	bool padding[3];
+	float4 albedo; // 0
+	float4 MRAT; // 1
+	bool useNormalTexture;  // Tight packing 2
+	bool useAlbedoTexture;  // Tight packing 2
+	bool useMetallicTexture;  // Tight packing 2
+	bool useRoughnessTexture;  // Tight packing 2
+	bool useAOTexture; // 3
+	float padding[12]; // 4 - 15
 };
 
 // w component of luminance is attenuationRadius
@@ -74,7 +74,8 @@ struct SH9
 	float4 L22;
 };
 
-struct CSM {
+struct CSM
+{
 	matrix p;
 	matrix v;
 	float4 AABBMax;
@@ -82,7 +83,8 @@ struct CSM {
 	float4 padding[6];
 };
 
-struct DispatchParam {
+struct DispatchParam
+{
 	uint4 numThreadGroups;
 	uint4 numThreads;
 };
@@ -188,7 +190,7 @@ struct Probe
 	float4 pos;
 	unsigned int brickFactorRangeBegin;
 	unsigned int brickFactorRangeEnd;
-	float padding;
+	float padding[2];
 };
 
 #include "common/GPUBuffers.hlsl"
