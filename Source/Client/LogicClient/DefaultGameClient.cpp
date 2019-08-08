@@ -176,6 +176,10 @@ namespace GameClientNS
 	std::vector<TransformComponent*> m_transparentSphereTransformComponents;
 	std::vector<VisibleComponent*> m_transparentSphereVisibleComponents;
 
+	std::vector<InnoEntity*> m_occlusionCubeEntites;
+	std::vector<TransformComponent*> m_occlusionCubeTransformComponents;
+	std::vector<VisibleComponent*> m_occlusionCubeVisibleComponents;
+
 	std::vector<InnoEntity*> m_pointLightEntites;
 	std::vector<TransformComponent*> m_pointLightTransformComponents;
 	std::vector<PointLightComponent*> m_pointLightComponents;
@@ -183,6 +187,7 @@ namespace GameClientNS
 	bool setup();
 
 	bool setupReferenceSpheres();
+	bool setupOcclusionCubes();
 	bool setupOpaqueSpheres();
 	bool setupTransparentSpheres();
 	bool setupPointLights();
@@ -248,6 +253,73 @@ bool GameClientNS::setupReferenceSpheres()
 					2.0f,
 					(j * l_breadthInterval) - 2.0f * (l_matrixDim - 1),
 					1.0f);
+		}
+	}
+
+	return true;
+}
+
+bool GameClientNS::setupOcclusionCubes()
+{
+	unsigned int l_matrixDim = 8;
+	float l_breadthInterval = 16.0f;
+	auto l_containerSize = l_matrixDim * l_matrixDim;
+
+	m_occlusionCubeTransformComponents.clear();
+	m_occlusionCubeVisibleComponents.clear();
+	m_occlusionCubeEntites.clear();
+
+	m_occlusionCubeTransformComponents.reserve(l_containerSize);
+	m_occlusionCubeVisibleComponents.reserve(l_containerSize);
+	m_occlusionCubeEntites.reserve(l_containerSize);
+
+	for (unsigned int i = 0; i < l_containerSize; i++)
+	{
+		m_occlusionCubeTransformComponents.emplace_back();
+		m_occlusionCubeVisibleComponents.emplace_back();
+		auto l_entityName = std::string("OcclusionCube_" + std::to_string(i) + "/");
+		m_occlusionCubeEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Gameplay, l_entityName.c_str()));
+	}
+
+	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
+
+	for (unsigned int i = 0; i < l_containerSize; i++)
+	{
+		m_occlusionCubeTransformComponents[i] = SpawnComponent(TransformComponent, m_occlusionCubeEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_occlusionCubeTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
+		m_occlusionCubeVisibleComponents[i] = SpawnComponent(VisibleComponent, m_occlusionCubeEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_occlusionCubeVisibleComponents[i]->m_visiblilityType = VisiblilityType::Opaque;
+		m_occlusionCubeVisibleComponents[i]->m_meshShapeType = MeshShapeType::Cube;
+		m_occlusionCubeVisibleComponents[i]->m_meshUsageType = MeshUsageType::Static;
+		m_occlusionCubeVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
+		m_occlusionCubeVisibleComponents[i]->m_simulatePhysics = true;
+	}
+
+	std::default_random_engine l_generator;
+	std::uniform_real_distribution<float> l_randomPosDelta(0.0f, 1.0f);
+	std::uniform_real_distribution<float> l_randomRotDelta(0.0f, 180.0f);
+	std::uniform_real_distribution<float> l_randomScaleDelta(1.0f, 8.0f);
+
+	for (unsigned int i = 0; i < l_matrixDim; i++)
+	{
+		for (unsigned int j = 0; j < l_matrixDim; j++)
+		{
+			auto l_currentComponent = m_occlusionCubeTransformComponents[i * l_matrixDim + j];
+
+			l_currentComponent->m_localTransformVector.m_scale =
+				vec4(1.0f, l_randomScaleDelta(l_generator), 1.0f, 1.0f);
+
+			l_currentComponent->m_localTransformVector.m_pos =
+				vec4(
+				(-(l_matrixDim - 1.0f) * l_breadthInterval / 2.0f) + (i * l_breadthInterval),
+					l_currentComponent->m_localTransformVector.m_scale.y / 2.0f,
+					(j * l_breadthInterval) - 2.0f * (l_matrixDim - 1),
+					1.0f);
+
+			l_currentComponent->m_localTransformVector.m_rot =
+				InnoMath::caclRotatedLocalRotator(l_currentComponent->m_localTransformVector.m_rot,
+					vec4(0.0f, 1.0f, 0.0f, 0.0f),
+					l_randomRotDelta(l_generator));
 		}
 	}
 
@@ -455,6 +527,7 @@ bool GameClientNS::setup()
 
 	f_sceneLoadingFinishCallback = [&]() {
 		setupReferenceSpheres();
+		setupOcclusionCubes();
 		setupOpaqueSpheres();
 		setupTransparentSpheres();
 		//setupPointLights();
