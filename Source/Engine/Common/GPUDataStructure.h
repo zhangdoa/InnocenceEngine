@@ -80,8 +80,9 @@ struct alignas(16) SkyGPUData
 {
 	mat4 p_inv;
 	mat4 r_inv;
+	vec4 posWSNormalizer;
 	vec2 viewportSize;
-	float padding[30];
+	float padding[26];
 };
 
 struct alignas(16) DispatchParamsGPUData

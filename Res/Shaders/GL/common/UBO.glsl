@@ -56,6 +56,7 @@ layout(std140, row_major, binding = 7) uniform skyUBOBlock
 {
 	mat4 p_inv;
 	mat4 v_inv;
+	vec4 posWSNormalizer;
 	vec2 viewportSize;
 } skyUBO;
 

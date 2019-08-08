@@ -40,8 +40,9 @@ cbuffer skyCBuffer : register(b7)
 {
 	matrix p_inv;
 	matrix v_inv;
+	float4 posWSNormalizer;
 	float2 viewportSize;
-	float4 sky_padding[7];
+	float4 sky_padding[6];
 };
 
 cbuffer dispatchParamsCBuffer : register(b8)

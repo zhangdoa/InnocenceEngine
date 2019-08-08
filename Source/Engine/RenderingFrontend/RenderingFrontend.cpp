@@ -472,6 +472,7 @@ bool InnoRenderingFrontendNS::updateSkyData()
 
 	l_SkyGPUData.p_inv = m_cameraGPUData.GetValue().p_original.inverse();
 	l_SkyGPUData.r_inv = m_cameraGPUData.GetValue().r.inverse();
+	l_SkyGPUData.posWSNormalizer = g_pModuleManager->getPhysicsSystem()->getTotalSceneAABB().m_extend;
 	l_SkyGPUData.viewportSize.x = (float)m_screenResolution.x;
 	l_SkyGPUData.viewportSize.y = (float)m_screenResolution.y;
 
