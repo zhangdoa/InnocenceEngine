@@ -12,6 +12,12 @@ using namespace physx;
 
 #define PVD_HOST "127.0.0.1"
 
+struct PhysXActor
+{
+	bool isDynamic = false;
+	PxRigidActor* m_PxRigidActor = 0;
+};
+
 namespace PhysXWrapperNS
 {
 	bool setup();
@@ -19,10 +25,10 @@ namespace PhysXWrapperNS
 	bool update();
 	bool terminate();
 
-	bool createPxSphere(void* component, vec4 globalPos, float radius);
-	bool createPxBox(void* component, vec4 globalPos, vec4 rot, vec4 size);
+	bool createPxSphere(void* component, vec4 globalPos, float radius, bool isDynamic);
+	bool createPxBox(void* component, vec4 globalPos, vec4 rot, vec4 size, bool isDynamic);
 
-	std::vector<PxRigidActor*> PxRigidActors;
+	std::vector<PhysXActor> PhysXActors;
 
 	static PxDefaultAllocator gDefaultAllocatorCallback;
 	static PxDefaultErrorCallback gDefaultErrorCallback;
@@ -87,17 +93,17 @@ bool PhysXWrapperNS::setup()
 	PxRigidStatic* groundPlane = PxCreatePlane(*gPhysics, PxPlane(0, 1, 0, 0), *gMaterial);
 	gScene->addActor(*groundPlane);
 
-	PxRigidActors.reserve(16384);
+	PhysXActors.reserve(16384);
 
 	f_sceneLoadingStartCallback = [&]() {
 		m_needSimulate = false;
 
-		for (auto i : PxRigidActors)
+		for (auto i : PhysXActors)
 		{
-			gScene->removeActor(*i);
+			gScene->removeActor(*i.m_PxRigidActor);
 		}
 
-		PxRigidActors.clear();
+		PhysXActors.clear();
 
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "PhysXWrapper: All PhysX Actors has been removed.");
 	};
@@ -129,19 +135,22 @@ bool PhysXWrapperNS::update()
 				gScene->simulate(g_pModuleManager->getTickTime() / 1000.0f);
 				gScene->fetchResults(true);
 
-				for (auto i : PxRigidActors)
+				for (auto i : PhysXActors)
 				{
-					PxTransform t = i->getGlobalPose();
-					PxVec3 p = t.p;
-					PxQuat q = t.q;
-
-					auto l_rigidBody = reinterpret_cast<PxRigidDynamic*>(i);
-
-					if (l_rigidBody->userData)
+					if (i.isDynamic)
 					{
-						auto l_transformComponent = reinterpret_cast<TransformComponent*>(l_rigidBody->userData);
-						l_transformComponent->m_localTransformVector.m_pos = vec4(p.x, p.y, p.z, 1.0f);
-						l_transformComponent->m_localTransformVector.m_rot = vec4(q.x, q.y, q.z, q.w);
+						PxTransform t = i.m_PxRigidActor->getGlobalPose();
+						PxVec3 p = t.p;
+						PxQuat q = t.q;
+
+						auto l_rigidBody = reinterpret_cast<PxRigidDynamic*>(i.m_PxRigidActor);
+
+						if (l_rigidBody->userData)
+						{
+							auto l_transformComponent = reinterpret_cast<TransformComponent*>(l_rigidBody->userData);
+							l_transformComponent->m_localTransformVector.m_pos = vec4(p.x, p.y, p.z, 1.0f);
+							l_transformComponent->m_localTransformVector.m_rot = vec4(q.x, q.y, q.z, q.w);
+						}
 					}
 				}
 				m_allowUpdate = true;
@@ -168,38 +177,68 @@ bool PhysXWrapperNS::terminate()
 	return true;
 }
 
-bool PhysXWrapperNS::createPxSphere(void* component, vec4 globalPos, float radius)
+bool PhysXWrapperNS::createPxSphere(void* component, vec4 globalPos, float radius, bool isDynamic)
 {
 	std::lock_guard<std::mutex> lock{ PhysXWrapperNS::m_mutex };
 
 	PxShape* shape = gPhysics->createShape(PxSphereGeometry(radius), *gMaterial);
 	PxTransform globalTm(PxVec3(globalPos.x, globalPos.y, globalPos.z));
-	PxRigidDynamic* body = gPhysics->createRigidDynamic(globalTm);
-	body->userData = component;
-	body->attachShape(*shape);
-	PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
-	gScene->addActor(*body);
+
+	PxRigidActor* l_actor;
+	if (isDynamic)
+	{
+		PxRigidDynamic* body = gPhysics->createRigidDynamic(globalTm);
+		body->userData = component;
+		body->attachShape(*shape);
+		PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
+		l_actor = body;
+	}
+	else
+	{
+		PxRigidStatic* body = gPhysics->createRigidStatic(globalTm);
+		body->userData = component;
+		body->attachShape(*shape);
+		l_actor = body;
+	}
+
+	gScene->addActor(*l_actor);
 	shape->release();
-	PxRigidActors.emplace_back(body);
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysXWrapper: PxRigidDynamic has been created for " + InnoUtility::pointerToString(component) + ".");
+	PhysXActors.emplace_back(PhysXActor{ isDynamic, l_actor });
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysXWrapper: PxRigidActor has been created for " + InnoUtility::pointerToString(component) + ".");
 
 	return true;
 }
 
-bool PhysXWrapperNS::createPxBox(void* component, vec4 globalPos, vec4 rot, vec4 size)
+bool PhysXWrapperNS::createPxBox(void* component, vec4 globalPos, vec4 rot, vec4 size, bool isDynamic)
 {
 	std::lock_guard<std::mutex> lock{ PhysXWrapperNS::m_mutex };
 
 	PxShape* shape = gPhysics->createShape(PxBoxGeometry(size.x, size.y, size.z), *gMaterial);
 	PxTransform globalTm(PxVec3(globalPos.x, globalPos.y, globalPos.z), PxQuat(rot.x, rot.y, rot.z, rot.w));
-	PxRigidDynamic* body = gPhysics->createRigidDynamic(globalTm);
-	body->userData = component;
-	body->attachShape(*shape);
-	PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
-	gScene->addActor(*body);
+
+	PxRigidActor* l_actor;
+
+	if (isDynamic)
+	{
+		PxRigidDynamic* body = gPhysics->createRigidDynamic(globalTm);
+		body->userData = component;
+		body->attachShape(*shape);
+		PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
+		l_actor = body;
+	}
+	else
+	{
+		PxRigidStatic* body = gPhysics->createRigidStatic(globalTm);
+		body->userData = component;
+		body->attachShape(*shape);
+
+		l_actor = body;
+	}
+
+	gScene->addActor(*l_actor);
 	shape->release();
-	PxRigidActors.emplace_back(body);
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysXWrapper: PxRigidDynamic has been created for " + InnoUtility::pointerToString(component) + ".");
+	PhysXActors.emplace_back(PhysXActor{ isDynamic, l_actor });
+	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysXWrapper: PxRigidActor has been created for " + InnoUtility::pointerToString(component) + ".");
 
 	return true;
 }
@@ -224,12 +263,12 @@ bool PhysXWrapper::terminate()
 	return PhysXWrapperNS::terminate();
 }
 
-bool PhysXWrapper::createPxSphere(void* component, vec4 globalPos, float radius)
+bool PhysXWrapper::createPxSphere(void* component, vec4 globalPos, float radius, bool isDynamic)
 {
-	return PhysXWrapperNS::createPxSphere(component, globalPos, radius);
+	return PhysXWrapperNS::createPxSphere(component, globalPos, radius, isDynamic);
 }
 
-bool PhysXWrapper::createPxBox(void* component, vec4 globalPos, vec4 rot, vec4 size)
+bool PhysXWrapper::createPxBox(void* component, vec4 globalPos, vec4 rot, vec4 size, bool isDynamic)
 {
-	return PhysXWrapperNS::createPxBox(component, globalPos, rot, size);
+	return PhysXWrapperNS::createPxBox(component, globalPos, rot, size, isDynamic);
 }

@@ -143,13 +143,13 @@ bool InnoPhysicsSystemNS::generatePhysicsDataComponent(VisibleComponent* VC)
 		switch (VC->m_meshShapeType)
 		{
 		case MeshShapeType::Cube:
-			PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector.m_pos, l_transformComponent->m_localTransformVector.m_rot, l_transformComponent->m_localTransformVector.m_scale);
+			PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector.m_pos, l_transformComponent->m_localTransformVector.m_rot, l_transformComponent->m_localTransformVector.m_scale, (VC->m_meshUsageType == MeshUsageType::Dynamic));
 			break;
 		case MeshShapeType::Sphere:
-			PhysXWrapper::get().createPxSphere(l_transformComponent, l_transformComponent->m_localTransformVector.m_pos, l_transformComponent->m_localTransformVector.m_scale.x);
+			PhysXWrapper::get().createPxSphere(l_transformComponent, l_transformComponent->m_localTransformVector.m_pos, l_transformComponent->m_localTransformVector.m_scale.x, (VC->m_meshUsageType == MeshUsageType::Dynamic));
 			break;
 		case MeshShapeType::Custom:
-			PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector.m_pos, l_transformComponent->m_localTransformVector.m_rot, l_boundMax - l_boundMin);
+			PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector.m_pos, l_transformComponent->m_localTransformVector.m_rot, l_boundMax - l_boundMin, (VC->m_meshUsageType == MeshUsageType::Dynamic));
 			break;
 		default:
 			break;
