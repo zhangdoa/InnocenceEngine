@@ -1,0 +1,48 @@
+// shadertype=hlsl
+#include "common/common.hlsl"
+
+struct ComputeInputType
+{
+	uint3 groupID : SV_GroupID;           // 3D index of the thread group in the dispatch.
+	uint3 groupThreadID : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
+	uint3 dispatchThreadID : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
+	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
+};
+
+Texture2D in_BRDFLUT : register(t0);
+Texture2D in_BRDFMSLUT : register(t1);
+
+SamplerState SampleTypePoint : register(s0);
+
+RWStructuredBuffer<Probe> in_probes : register(u0);
+RWStructuredBuffer<BrickFactor> in_brickFactors : register(u1);
+RWStructuredBuffer<float4> in_brickIrradiance : register(u2);
+RWTexture3D<float4> out_irradianceVolume : register(u3);
+
+#include "common/BRDF.hlsl"
+
+[numthreads(8, 8, 8)]
+void main(ComputeInputType input)
+{
+	if (input.dispatchThreadID.x < dispatchParams[4].numThreads.x
+		&& input.dispatchThreadID.y < dispatchParams[4].numThreads.y
+		&& input.dispatchThreadID.z < dispatchParams[4].numThreads.z)
+	{
+		float3 l_writeCoord = float3(input.dispatchThreadID.x, input.dispatchThreadID.y, input.dispatchThreadID.z);
+
+		uint l_probeIndex = input.dispatchThreadID.x + (input.dispatchThreadID.y * dispatchParams[4].numThreads.x) + (input.dispatchThreadID.z * dispatchParams[4].numThreads.x * dispatchParams[4].numThreads.y);
+		Probe l_probe = in_probes[l_probeIndex];
+
+		float4 Lo = float4(0.0, 0.0, 0.0, 0.0);
+
+		for (uint i = l_probe.brickFactorRangeBegin; i < l_probe.brickFactorRangeEnd; i++)
+		{
+			BrickFactor l_brickFactor = in_brickFactors[i];
+			Lo += in_brickIrradiance[l_brickFactor.brickIndex];
+		}
+
+		Lo /= (l_probe.brickFactorRangeEnd - l_probe.brickFactorRangeBegin);
+
+		out_irradianceVolume[l_writeCoord] = Lo;
+	}
+}

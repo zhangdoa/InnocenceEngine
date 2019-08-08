@@ -40,10 +40,9 @@ struct BrickFactor
 struct Probe
 {
 	vec4 pos;
-	SH9 skyVisibility;
-	SH9 radiance;
 	unsigned int brickFactorRangeBegin;
 	unsigned int brickFactorRangeEnd;
+	float padding[2];
 };
 
 namespace GIBakePass
@@ -61,4 +60,5 @@ namespace GIBakePass
 	const std::vector<Brick>& GetBricks();
 	const std::vector<BrickFactor>& GetBrickFactors();
 	const std::vector<Probe>& GetProbes();
+	unsigned int GetProbeDimension();
 };

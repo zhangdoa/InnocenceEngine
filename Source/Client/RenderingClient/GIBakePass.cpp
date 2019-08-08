@@ -771,3 +771,8 @@ const std::vector<Probe>& GIBakePass::GetProbes()
 {
 	return m_probes;
 }
+
+unsigned int GIBakePass::GetProbeDimension()
+{
+	return m_subDivideDimension;
+}

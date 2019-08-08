@@ -188,7 +188,7 @@ struct Probe
 	float4 pos;
 	unsigned int brickFactorRangeBegin;
 	unsigned int brickFactorRangeEnd;
-	float padding;
+	float padding[2];
 };
 
 #include "common/GPUBuffers.hlsl"
