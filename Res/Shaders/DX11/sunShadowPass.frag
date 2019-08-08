@@ -16,7 +16,10 @@ PixelOutputType main(PixelInputType input)
 {
 	PixelOutputType output;
 
-	output.sunShadowPass = float4(input.posCS.z, input.posCS.z * input.posCS.z, 0.0, 1.0);
+	float depth = input.posCS.z;
+	depth = depth * 0.5 + 0.5;
+
+	output.sunShadowPass = float4(depth, depth * depth, 0.0, 1.0);
 
 	return output;
 }

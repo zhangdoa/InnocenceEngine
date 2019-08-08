@@ -64,7 +64,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float NdotL = max(dot(N, L), 0.0);
 
 	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, roughness, metallic, F0, albedo, dirLight_luminance.xyz);
-	//Lo *= 1.0 - SunShadowResolver(posWS);
+	Lo *= 1.0 - SunShadowResolver(posWS);
 
 	// point punctual light
 	// Get the index of the current pixel in the light grid.

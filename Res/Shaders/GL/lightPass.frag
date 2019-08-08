@@ -146,7 +146,7 @@ void main()
 
 	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, Metallic, F0, Albedo, sunUBO.data.luminance.xyz);
 
-	//Lo *= 1 - SunShadowResolver(FragPos);
+	Lo *= 1.0 - SunShadowResolver(FragPos);
 
 	// point punctual light
 	// Get the index of the current pixel in the light grid.

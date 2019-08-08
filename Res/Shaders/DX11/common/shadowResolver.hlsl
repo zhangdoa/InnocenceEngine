@@ -78,7 +78,7 @@ float SunShadowResolver(float3 fragPos)
 
 		// transform to [0,1] range
 		projCoords = projCoords * 0.5 + 0.5;
-
+		projCoords.y = 1.0 - projCoords.y;
 		// get depth of current fragment from light's perspective
 		float currentDepth = projCoords.z;
 
