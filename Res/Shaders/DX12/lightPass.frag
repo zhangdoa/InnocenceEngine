@@ -11,6 +11,7 @@ Texture2D in_SSAO : register(t6);
 Texture2DArray in_SunShadow : register(t7);
 StructuredBuffer<uint> in_LightIndexList : register(t8);
 Texture2D<uint2> in_LightGrid : register(t9);
+Texture3D<float4> in_IrradianceVolume : register(t10);
 
 SamplerState SampleTypePoint : register(s0);
 
@@ -134,6 +135,10 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 
 	//	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, roughness, F0, albedo, illuminance * sphereLights[i].luminance.xyz);
 	//}
+
+	// GI
+	float4 indirectLight = in_IrradianceVolume[posWS / posWSNormalizer.xyz];
+	Lo += (1 - metallic) * indirectLight.xyz;
 
 	// ambient occlusion
 	Lo *= ao;

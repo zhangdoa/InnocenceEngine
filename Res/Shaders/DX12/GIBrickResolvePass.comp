@@ -1,0 +1,44 @@
+// shadertype=hlsl
+#include "common/common.hlsl"
+
+struct ComputeInputType
+{
+	uint3 groupID : SV_GroupID;           // 3D index of the thread group in the dispatch.
+	uint3 groupThreadID : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
+	uint3 dispatchThreadID : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
+	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
+};
+
+Texture2D in_BRDFLUT : register(t0);
+Texture2D in_BRDFMSLUT : register(t1);
+
+SamplerState SampleTypePoint : register(s0);
+
+RWStructuredBuffer<Brick> in_bricks : register(u0);
+RWStructuredBuffer<float4> in_surfelIrradiance : register(u1);
+RWStructuredBuffer<float4> out_brickIrradiance : register(u2);
+
+#include "common/BRDF.hlsl"
+
+[numthreads(8, 8, 8)]
+void main(ComputeInputType input)
+{
+	if (input.dispatchThreadID.x < dispatchParams[3].numThreads.x
+		&& input.dispatchThreadID.y < dispatchParams[3].numThreads.y
+		&& input.dispatchThreadID.z < dispatchParams[3].numThreads.z)
+	{
+		uint l_brickIndex = input.dispatchThreadID.x + (input.dispatchThreadID.y * dispatchParams[3].numThreads.x) + (input.dispatchThreadID.z * dispatchParams[3].numThreads.x * dispatchParams[3].numThreads.y);
+		Brick l_brick = in_bricks[l_brickIndex];
+
+		float4 Lo = float4(0.0, 0.0, 0.0, 0.0);
+
+		for (uint i = l_brick.surfelRangeBegin; i < l_brick.surfelRangeEnd; i++)
+		{
+			Lo += in_surfelIrradiance[i];
+		}
+
+		Lo /= (l_brick.surfelRangeEnd - l_brick.surfelRangeBegin);
+
+		out_brickIrradiance[l_brickIndex] = Lo;
+	}
+}

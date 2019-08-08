@@ -11,4 +11,5 @@ namespace GIResolvePass
 
 	RenderPassDataComponent* GetRPDC();
 	ShaderProgramComponent* GetSPC();
+	IResourceBinder* GetIrradianceVolume();
 };
