@@ -677,7 +677,9 @@ bool GLRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent 
 	auto l_resourceBinder = addResourcesBinder();
 	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Buffer;
 	l_resourceBinder->m_GPUAccessibility = l_rhs->m_GPUAccessibility;
+	l_resourceBinder->m_ElementCount = l_rhs->m_ElementCount;
 	l_resourceBinder->m_ElementSize = l_rhs->m_ElementSize;
+	l_resourceBinder->m_TotalSize = l_rhs->m_TotalSize;
 
 	if (l_rhs->m_GPUAccessibility == Accessibility::ReadOnly)
 	{
@@ -917,14 +919,34 @@ bool GLRenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 	return true;
 }
 
-bool BindGPUBuffer(GLenum bufferType, GLuint BO, size_t localSlot, size_t startOffset, size_t elementSize, size_t range)
+bool BindGPUBuffer(Accessibility accessibility, GLuint BO, size_t localSlot, size_t startOffset, size_t elementSize, size_t totalSize, size_t elementCount)
 {
-	glBindBufferRange(bufferType, (GLuint)localSlot, BO, startOffset * elementSize, range);
+	GLenum l_bufferType;
+	if (accessibility == Accessibility::ReadOnly)
+	{
+		l_bufferType = GL_UNIFORM_BUFFER;
+	}
+	else
+	{
+		l_bufferType = GL_SHADER_STORAGE_BUFFER;
+	}
+
+	GLsizei l_range;
+	if (elementCount != SIZE_MAX)
+	{
+		l_range = (GLsizei)elementSize * (GLsizei)elementCount;
+	}
+	else
+	{
+		l_range = (GLsizei)totalSize;
+	}
+
+	glBindBufferRange(l_bufferType, (GLuint)localSlot, BO, startOffset * elementSize, l_range);
 
 	return true;
 }
 
-bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range)
+bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	auto l_resourceBinder = reinterpret_cast<GLResourceBinder*>(binder);
 
@@ -946,14 +968,7 @@ bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderP
 			}
 			break;
 		case ResourceBinderType::Buffer:
-			if (l_resourceBinder->m_GPUAccessibility == Accessibility::ReadOnly)
-			{
-				BindGPUBuffer(GL_UNIFORM_BUFFER, l_resourceBinder->m_BO, localSlot, startOffset, l_resourceBinder->m_ElementSize, range);
-			}
-			else
-			{
-				BindGPUBuffer(GL_SHADER_STORAGE_BUFFER, l_resourceBinder->m_BO, localSlot, startOffset, l_resourceBinder->m_ElementSize, range);
-			}
+			BindGPUBuffer(l_resourceBinder->m_GPUAccessibility, l_resourceBinder->m_BO, localSlot, startOffset, l_resourceBinder->m_ElementSize, l_resourceBinder->m_TotalSize, elementCount);
 			break;
 		default:
 			break;
@@ -974,7 +989,7 @@ bool GLRenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass, M
 	return true;
 }
 
-bool GLRenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, bool partialBinding, size_t startOffset, size_t range)
+bool GLRenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	return true;
 }
@@ -1017,15 +1032,15 @@ bool GLRenderingServer::Present()
 
 	CleanRenderTargets(m_SwapChainRPDC);
 
-	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_SwapChainSDC->m_ResourceBinder, 0, 1, Accessibility::ReadOnly, false, 0, 0);
+	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_SwapChainSDC->m_ResourceBinder, 0, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
 
-	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, false, 0, 0);
+	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Quad);
 
 	DispatchDrawCall(m_SwapChainRPDC, l_mesh, 1);
 
-	DeactivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, false, 0, 0);
+	DeactivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	CommandListEnd(m_SwapChainRPDC);
 

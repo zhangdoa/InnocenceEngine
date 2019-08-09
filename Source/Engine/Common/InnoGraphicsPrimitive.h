@@ -203,7 +203,9 @@ class IResourceBinder
 public:
 	ResourceBinderType m_ResourceBinderType = ResourceBinderType::Sampler;
 	Accessibility m_GPUAccessibility = Accessibility::ReadOnly;
+	size_t m_ElementCount = 0;
 	size_t m_ElementSize = 0;
+	size_t m_TotalSize = 0;
 };
 
 struct ResourceBinderLayoutDesc

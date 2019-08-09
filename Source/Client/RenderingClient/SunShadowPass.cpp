@@ -79,7 +79,7 @@ bool SunShadowPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Geometry, l_CSMGBDC->m_ResourceBinder, 1, 6, Accessibility::ReadOnly, false, 0, l_CSMGBDC->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Geometry, l_CSMGBDC->m_ResourceBinder, 1, 6, Accessibility::ReadOnly);
 
 	unsigned int l_offset = 0;
 
@@ -90,7 +90,7 @@ bool SunShadowPass::PrepareCommandList()
 
 		if (l_opaquePassGPUData.mesh->m_objectStatus == ObjectStatus::Activated)
 		{
-			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 0, 1, Accessibility::ReadOnly, true, l_offset, l_MeshGBDC->m_ElementSize);
+			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 0, 1, Accessibility::ReadOnly, l_offset, 1);
 
 			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_opaquePassGPUData.mesh);
 		}

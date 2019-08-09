@@ -273,13 +273,13 @@ bool LightCullingPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_Frustum, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_Frustum);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_Frustum);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Frustum, ShaderStage::Compute, l_SkyGBDC->m_ResourceBinder, 0, 7, Accessibility::ReadOnly, false, 0, l_SkyGBDC->m_TotalSize);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Frustum, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 1, 8, Accessibility::ReadOnly, false, 0, l_dispatchParamsGBDC->m_TotalSize);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Frustum, ShaderStage::Compute, m_tileFrustumGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite, false, 0, m_tileFrustumGBDC->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Frustum, ShaderStage::Compute, l_SkyGBDC->m_ResourceBinder, 0, 7, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Frustum, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 1, 8, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Frustum, ShaderStage::Compute, m_tileFrustumGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite, 0);
 
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_RPDC_Frustum, m_tileFrustumNumThreadGroups.x, m_tileFrustumNumThreadGroups.y, m_tileFrustumNumThreadGroups.z);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Frustum, ShaderStage::Compute, m_tileFrustumGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite, false, 0, m_tileFrustumGBDC->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Frustum, ShaderStage::Compute, m_tileFrustumGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite, 0);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC_Frustum);
 
@@ -287,22 +287,22 @@ bool LightCullingPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_LightCulling, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_LightCulling);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_LightCulling);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, l_CameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly, false, 0, l_CameraGBDC->m_TotalSize);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, l_PointLightGBDC->m_ResourceBinder, 1, 4, Accessibility::ReadOnly, false, 0, l_PointLightGBDC->m_TotalSize);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, l_SkyGBDC->m_ResourceBinder, 2, 7, Accessibility::ReadOnly, false, 0, l_SkyGBDC->m_TotalSize);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 3, 8, Accessibility::ReadOnly, false, 0, l_dispatchParamsGBDC->m_TotalSize);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_tileFrustumGBDC->m_ResourceBinder, 4, 0, Accessibility::ReadWrite, false, 0, m_tileFrustumGBDC->m_TotalSize);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightListIndexCounterGBDC->m_ResourceBinder, 5, 1, Accessibility::ReadWrite, false, 0, m_lightListIndexCounterGBDC->m_TotalSize);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightIndexListGBDC->m_ResourceBinder, 6, 2, Accessibility::ReadWrite, false, 0, m_lightIndexListGBDC->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, l_CameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, l_PointLightGBDC->m_ResourceBinder, 1, 4, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, l_SkyGBDC->m_ResourceBinder, 2, 7, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 3, 8, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_tileFrustumGBDC->m_ResourceBinder, 4, 0, Accessibility::ReadWrite, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightListIndexCounterGBDC->m_ResourceBinder, 5, 1, Accessibility::ReadWrite, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightIndexListGBDC->m_ResourceBinder, 6, 2, Accessibility::ReadWrite, 0);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightGridTDC->m_ResourceBinder, 7, 3, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_debugTDC->m_ResourceBinder, 8, 4, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, OpaquePass::GetRPDC()->m_DepthStencilRenderTarget->m_ResourceBinder, 9, 0, Accessibility::ReadOnly);
 
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_RPDC_LightCulling, m_lightCullingNumThreadGroups.x, m_lightCullingNumThreadGroups.y, m_lightCullingNumThreadGroups.z);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_tileFrustumGBDC->m_ResourceBinder, 4, 0, Accessibility::ReadWrite, false, 0, m_tileFrustumGBDC->m_TotalSize);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightListIndexCounterGBDC->m_ResourceBinder, 5, 1, Accessibility::ReadWrite, false, 0, m_lightListIndexCounterGBDC->m_TotalSize);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightIndexListGBDC->m_ResourceBinder, 6, 2, Accessibility::ReadWrite, false, 0, m_lightIndexListGBDC->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_tileFrustumGBDC->m_ResourceBinder, 4, 0, Accessibility::ReadWrite, 0);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightListIndexCounterGBDC->m_ResourceBinder, 5, 1, Accessibility::ReadWrite, 0);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightIndexListGBDC->m_ResourceBinder, 6, 2, Accessibility::ReadWrite, 0);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightGridTDC->m_ResourceBinder, 7, 3, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_debugTDC->m_ResourceBinder, 8, 4, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, OpaquePass::GetRPDC()->m_DepthStencilRenderTarget->m_ResourceBinder, 9, 0, Accessibility::ReadOnly);

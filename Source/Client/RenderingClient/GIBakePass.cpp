@@ -1,6 +1,5 @@
 #include "GIBakePass.h"
 #include "DefaultGPUBuffers.h"
-#include "../../Engine/Core/InnoLogger.h"
 
 #include "../../Engine/ModuleManager/IModuleManager.h"
 INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
@@ -138,7 +137,8 @@ bool GIBakePass::generateProbes()
 			l_currentPos.y += l_probeDistance.y;
 		}
 		l_currentPos.x += l_probeDistance.x;
-		InnoLogger::Log(LogLevel::Verbose, "GIBakePass: Generating probes: ", (float)l_probeIndex * 100.0f / (float)m_totalCaptureProbes, "%");
+
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Generating probes: ", (float)l_probeIndex * 100.0f / l_totalProbeCount, "%");
 	}
 
 	return true;
@@ -186,7 +186,7 @@ bool GIBakePass::generateBricks()
 			l_currentPos.y += l_brickSize;
 		}
 		l_currentPos.x += l_brickSize;
-		InnoLogger::Log(LogLevel::Verbose, "GIBakePass: Generating brick: ", (float)l_brickIndex * 100.0f / (float)l_totalBricks, "%");
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Generating brick: ", (float)l_brickIndex * 100.0f / (float)l_totalBricks, "%");
 	}
 
 	return true;
@@ -251,7 +251,7 @@ bool GIBakePass::drawOpaquePass(unsigned int probeIndex, const mat4& p, const st
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_Bake);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_Bake);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Bake, ShaderStage::Pixel, m_SDC_Bake->m_ResourceBinder, 8, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Bake, ShaderStage::Geometry, m_GICameraGBDC->m_ResourceBinder, 0, 11, Accessibility::ReadOnly, false, 0, l_MeshGBDC->m_TotalSize);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Bake, ShaderStage::Geometry, m_GICameraGBDC->m_ResourceBinder, 0, 11, Accessibility::ReadOnly);
 
 	unsigned int l_offset = 0;
 
@@ -262,8 +262,8 @@ bool GIBakePass::drawOpaquePass(unsigned int probeIndex, const mat4& p, const st
 
 		if (l_GIPassGPUData.mesh->m_objectStatus == ObjectStatus::Activated)
 		{
-			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Bake, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, true, l_offset, l_MeshGBDC->m_ElementSize);
-			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Bake, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, true, l_offset, l_MaterialGBDC->m_ElementSize);
+			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Bake, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_offset, 1);
+			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Bake, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_offset, 1);
 
 			if (l_GIPassGPUData.material->m_objectStatus == ObjectStatus::Activated)
 			{

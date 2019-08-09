@@ -62,9 +62,9 @@ public:
 	virtual bool CommandListBegin(RenderPassDataComponent * rhs, size_t frameIndex) = 0;
 	virtual bool BindRenderPassDataComponent(RenderPassDataComponent * rhs) = 0;
 	virtual bool CleanRenderTargets(RenderPassDataComponent * rhs) = 0;
-	virtual bool ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility = Accessibility::ReadOnly, bool partialBinding = false, size_t startOffset = 0, size_t range = 0) = 0;
+	virtual bool ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility = Accessibility::ReadOnly, size_t startOffset = 0, size_t elementCount = SIZE_MAX) = 0;
 	virtual bool DispatchDrawCall(RenderPassDataComponent * renderPass, MeshDataComponent* mesh, size_t instanceCount = 1) = 0;
-	virtual bool DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility = Accessibility::ReadOnly, bool partialBinding = false, size_t startOffset = 0, size_t range = 0) = 0;
+	virtual bool DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility = Accessibility::ReadOnly, size_t startOffset = 0, size_t elementCount = SIZE_MAX) = 0;
 	virtual bool CommandListEnd(RenderPassDataComponent * rhs) = 0;
 	virtual bool ExecuteCommandList(RenderPassDataComponent * rhs) = 0;
 	virtual bool WaitForFrame(RenderPassDataComponent * rhs) = 0;
