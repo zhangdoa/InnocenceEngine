@@ -811,7 +811,7 @@ bool VKRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderP
 	return true;
 }
 
-bool VKRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh)
+bool VKRenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass, MeshDataComponent* mesh, size_t instanceCount)
 {
 	return true;
 }

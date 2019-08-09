@@ -1595,7 +1595,7 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 	return true;
 }
 
-bool DX12RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh)
+bool DX12RenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass, MeshDataComponent* mesh, size_t instanceCount)
 {
 	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
@@ -1605,7 +1605,7 @@ bool DX12RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, 
 	l_commandList->m_GraphicsCommandList->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
 	l_commandList->m_GraphicsCommandList->IASetVertexBuffers(0, 1, &l_mesh->m_VBV);
 	l_commandList->m_GraphicsCommandList->IASetIndexBuffer(&l_mesh->m_IBV);
-	l_commandList->m_GraphicsCommandList->DrawIndexedInstanced((unsigned int)l_mesh->m_indicesSize, 1, 0, 0, 0);
+	l_commandList->m_GraphicsCommandList->DrawIndexedInstanced((unsigned int)l_mesh->m_indicesSize, (unsigned int)instanceCount, 0, 0, 0);
 
 	return true;
 }
@@ -1710,7 +1710,7 @@ bool DX12RenderingServer::Present()
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Quad);
 
-	DispatchDrawCall(m_SwapChainRPDC, l_mesh);
+	DispatchDrawCall(m_SwapChainRPDC, l_mesh, 1);
 
 	DeactivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, false, 0, 0);
 

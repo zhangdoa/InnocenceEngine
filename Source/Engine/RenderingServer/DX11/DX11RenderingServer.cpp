@@ -1518,7 +1518,7 @@ bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * ren
 	return true;
 }
 
-bool DX11RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh)
+bool DX11RenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass, MeshDataComponent* mesh, size_t instanceCount)
 {
 	auto l_rhs = reinterpret_cast<DX11MeshDataComponent*>(mesh);
 
@@ -1529,7 +1529,7 @@ bool DX11RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, 
 
 	m_deviceContext->IASetIndexBuffer(l_rhs->m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-	m_deviceContext->DrawIndexed((unsigned int)l_rhs->m_indicesSize, 0, 0);
+	m_deviceContext->DrawIndexedInstanced((unsigned int)l_rhs->m_indicesSize, (unsigned int)instanceCount, 0, 0, 0);
 
 	return true;
 }
@@ -1597,7 +1597,7 @@ bool DX11RenderingServer::Present()
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Quad);
 
-	DispatchDrawCall(m_SwapChainRPDC, l_mesh);
+	DispatchDrawCall(m_SwapChainRPDC, l_mesh, 1);
 
 	DeactivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, false, 0, 0);
 

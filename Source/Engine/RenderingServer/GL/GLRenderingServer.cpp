@@ -963,13 +963,13 @@ bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderP
 	return true;
 }
 
-bool GLRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent * mesh)
+bool GLRenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass, MeshDataComponent* mesh, size_t instanceCount)
 {
 	auto l_GLPSO = reinterpret_cast<GLPipelineStateObject*>(renderPass->m_PipelineStateObject);
 	auto l_mesh = reinterpret_cast<GLMeshDataComponent*>(mesh);
 
 	glBindVertexArray(l_mesh->m_VAO);
-	glDrawElements(l_GLPSO->m_GLPrimitiveTopology, (GLsizei)l_mesh->m_indicesSize, GL_UNSIGNED_INT, 0);
+	glDrawElementsInstanced(l_GLPSO->m_GLPrimitiveTopology, (GLsizei)l_mesh->m_indicesSize, GL_UNSIGNED_INT, 0, (GLsizei)instanceCount);
 
 	return true;
 }
@@ -1023,7 +1023,7 @@ bool GLRenderingServer::Present()
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Quad);
 
-	DispatchDrawCall(m_SwapChainRPDC, l_mesh);
+	DispatchDrawCall(m_SwapChainRPDC, l_mesh, 1);
 
 	DeactivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, false, 0, 0);
 
