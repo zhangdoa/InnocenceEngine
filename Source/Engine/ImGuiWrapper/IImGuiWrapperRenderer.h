@@ -3,10 +3,10 @@
 #include "../Common/InnoClassTemplate.h"
 #include "../ThirdParty/ImGui/imgui.h"
 
-class IImGuiWrapperImpl
+class IImGuiWrapperRenderer
 {
 public:
-	INNO_CLASS_INTERFACE_NON_COPYABLE(IImGuiWrapperImpl);
+	INNO_CLASS_INTERFACE_NON_COPYABLE(IImGuiWrapperRenderer);
 
 	virtual bool setup() = 0;
 	virtual bool initialize() = 0;

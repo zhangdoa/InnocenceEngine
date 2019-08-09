@@ -1,17 +1,25 @@
 #include "ImGuiWrapper.h"
+#include "../ThirdParty/ImGui/imgui.h"
 
 #if defined INNO_PLATFORM_WIN
-#include "ImGuiWrapperWinDX.h"
-#include "ImGuiWrapperWinGL.h"
-#include "ImGuiWrapperWinVK.h"
+#include "ImGuiWrapperWindowWin.h"
+#include "ImGuiWrapperDX11.h"
+#endif
+
+#if !defined INNO_PLATFORM_MAC && defined INNO_RENDERER_OPENGL
+#include "ImGuiWrapperGL.h"
 #endif
 
 #if defined INNO_PLATFORM_MAC
-#include "ImGuiWrapperMacGL.h"
+#include "ImGuiWrapperWindowMac.h"
 #endif
 
 #if defined INNO_PLATFORM_LINUX
-#include "ImGuiWrapperLinuxGL.h"
+#include "ImGuiWrapperWindowLinux.h"
+#endif
+
+#if defined INNO_RENDERER_VULKAN
+#include "ImGuiWrapperVK.h"
 #endif
 
 #include "../ModuleManager/IModuleManager.h"
@@ -40,61 +48,52 @@ namespace ImGuiWrapperNS
 	static bool m_useZoom = false;
 	static bool m_showRenderPassResult = false;
 
-	IImGuiWrapperImpl* m_wrapperImpl;
+	IImGuiWrapperWindow* m_windowImpl;
+	IImGuiWrapperRenderer* m_rendererImpl;
 }
+
+using namespace ImGuiWrapperNS;
 
 bool ImGuiWrapper::setup()
 {
 	auto l_initConfig = g_pModuleManager->getInitConfig();
 
 #if defined INNO_PLATFORM_WIN
-	switch (l_initConfig.renderingServer)
-	{
-	case RenderingServer::GL:
-		ImGuiWrapperNS::m_wrapperImpl = new ImGuiWrapperWinGL();
-		break;
-	case RenderingServer::DX11:
-		ImGuiWrapperNS::m_wrapperImpl = new ImGuiWrapperWinDX11();
-		break;
-	case RenderingServer::DX12:
-		ImGuiWrapperNS::m_isParity = false;
-		break;
-	case RenderingServer::VK:
-		ImGuiWrapperNS::m_isParity = false;
-		//ImGuiWrapperNS::m_wrapperImpl = new ImGuiWrapperWinVK();
-	case RenderingServer::MT:
-		ImGuiWrapperNS::m_isParity = false;
-		break;
-	default:
-		break;
-	}
+	m_windowImpl = new ImGuiWrapperWindowWin();
 #endif
 
-#if defined INNO_PLATFORM_MAC
 	switch (l_initConfig.renderingServer)
 	{
 	case RenderingServer::GL:
-		ImGuiWrapperNS::m_isParity = false;
-		//ImGuiWrapperNS::m_wrapperImpl = new ImGuiWrapperWinGL();
+#if !defined INNO_PLATFORM_MAC && defined INNO_RENDERER_OPENGL
+		m_rendererImpl = new ImGuiWrapperGL();
+#endif
 		break;
 	case RenderingServer::DX11:
-		ImGuiWrapperNS::m_isParity = false;
+#if defined INNO_PLATFORM_WIN
+		m_rendererImpl = new ImGuiWrapperDX11();
+#endif
 		break;
 	case RenderingServer::DX12:
+#if defined INNO_PLATFORM_WIN
 		ImGuiWrapperNS::m_isParity = false;
+#endif
 		break;
 	case RenderingServer::VK:
-		ImGuiWrapperNS::m_isParity = false;
+#if defined INNO_RENDERER_VULKAN
+		m_rendererImpl = new ImGuiWrapperVK();
+#endif
 		break;
 	case RenderingServer::MT:
+#if defined INNO_PLATFORM_MAC
 		ImGuiWrapperNS::m_isParity = false;
+#endif
+		break;
 	default:
 		break;
 	}
-#endif
 
 #if defined INNO_PLATFORM_LINUX
-	ImGuiWrapperNS::m_wrapperImpl = new ImGuiWrapperLinuxGL();
 	ImGuiWrapperNS::m_isParity = false;
 #endif
 
@@ -104,7 +103,8 @@ bool ImGuiWrapper::setup()
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 
-		ImGuiWrapperNS::m_wrapperImpl->setup();
+		ImGuiWrapperNS::m_windowImpl->setup();
+		ImGuiWrapperNS::m_rendererImpl->setup();
 	}
 
 	return true;
@@ -114,7 +114,8 @@ bool ImGuiWrapper::initialize()
 {
 	if (ImGuiWrapperNS::m_isParity)
 	{
-		ImGuiWrapperNS::m_wrapperImpl->initialize();
+		ImGuiWrapperNS::m_windowImpl->initialize();
+		ImGuiWrapperNS::m_rendererImpl->initialize();
 
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 
@@ -169,7 +170,7 @@ bool ImGuiWrapper::initialize()
 
 		// Load Fonts
 		auto l_workingDir = g_pModuleManager->getFileSystem()->getWorkingDirectory();
-		l_workingDir += "res//fonts//FreeSans.otf";
+		l_workingDir += "Res//Fonts//FreeSans.otf";
 		io.Fonts->AddFontFromFileTTF(l_workingDir.c_str(), 16.0f);
 
 		ImGuiWrapperNS::m_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
@@ -182,7 +183,8 @@ bool ImGuiWrapper::update()
 {
 	if (ImGuiWrapperNS::m_isParity)
 	{
-		ImGuiWrapperNS::m_wrapperImpl->newFrame();
+		ImGuiWrapperNS::m_windowImpl->newFrame();
+		ImGuiWrapperNS::m_rendererImpl->newFrame();
 
 		ImGui::NewFrame();
 		{
@@ -199,7 +201,7 @@ bool ImGuiWrapper::render()
 	if (ImGuiWrapperNS::m_isParity)
 	{
 		ImGui::Render();
-		ImGuiWrapperNS::m_wrapperImpl->render();
+		ImGuiWrapperNS::m_rendererImpl->render();
 	}
 	return true;
 }
@@ -208,7 +210,8 @@ bool ImGuiWrapper::terminate()
 {
 	if (ImGuiWrapperNS::m_isParity)
 	{
-		ImGuiWrapperNS::m_wrapperImpl->terminate();
+		ImGuiWrapperNS::m_windowImpl->terminate();
+		ImGuiWrapperNS::m_rendererImpl->terminate();
 		ImGui::DestroyContext();
 	}
 	return true;
@@ -246,7 +249,7 @@ void ImGuiWrapperNS::showApplicationProfiler()
 
 	if (m_showRenderPassResult)
 	{
-		ImGuiWrapperNS::m_wrapperImpl->showRenderResult(RenderPassType(l_showRenderPassResultItem));
+		ImGuiWrapperNS::m_rendererImpl->showRenderResult(RenderPassType(l_showRenderPassResultItem));
 	}
 
 	if (ImGui::Button("Bake GI"))
@@ -259,7 +262,7 @@ void ImGuiWrapperNS::showApplicationProfiler()
 		g_pModuleManager->getRenderingFrontend()->runRayTrace();
 	}
 
-	static char scene_filePath[128] = "..//res//scenes//Intro.InnoScene";
+	static char scene_filePath[128];
 	ImGui::InputText("Scene file path", scene_filePath, IM_ARRAYSIZE(scene_filePath));
 
 	if (ImGui::Button("Save scene"))
@@ -326,7 +329,7 @@ void ImGuiWrapperNS::showFileExplorer()
 
 		ImGui::BeginGroup();
 		{
-			ImGui::Image(ImGuiWrapperNS::m_wrapperImpl->getFileExplorerIconTextureID(FileExplorerIconType::UNKNOWN), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::Image(ImGuiWrapperNS::m_rendererImpl->getFileExplorerIconTextureID(FileExplorerIconType::UNKNOWN), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			{
 				if (ImGui::OpenPopupOnItemClick("Directory Left-click", 0))
 				{
@@ -356,7 +359,7 @@ void ImGuiWrapperNS::showFileExplorer()
 	{
 		ImGui::BeginGroup();
 		{
-			ImGui::Image(ImGuiWrapperNS::m_wrapperImpl->getFileExplorerIconTextureID(i.iconType), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
+			ImGui::Image(ImGuiWrapperNS::m_rendererImpl->getFileExplorerIconTextureID(i.iconType), l_iconSize, ImVec2(0.0, 1.0), ImVec2(1.0, 0.0));
 			{
 				if (ImGui::OpenPopupOnItemClick("Asset Right-click", 1))
 				{

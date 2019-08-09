@@ -1,6 +1,5 @@
 #pragma once
 #include "../Common/InnoType.h"
-#include "../ThirdParty/ImGui/imgui.h"
 
 class ImGuiWrapper
 {
