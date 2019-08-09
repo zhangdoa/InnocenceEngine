@@ -141,6 +141,7 @@ bool DefaultRenderingClient::Render()
 
 	BillboardPass::PrepareCommandList();
 	DebugPass::PrepareCommandList();
+
 	FinalBlendPass::PrepareCommandList(l_canvas);
 
 	//LightCullingPass::ExecuteCommandList();
@@ -159,6 +160,7 @@ bool DefaultRenderingClient::Render()
 
 	BillboardPass::ExecuteCommandList();
 	DebugPass::ExecuteCommandList();
+
 	FinalBlendPass::ExecuteCommandList();
 
 	if (m_needGIBake)

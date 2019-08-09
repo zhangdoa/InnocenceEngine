@@ -138,7 +138,7 @@ bool GIBakePass::generateProbes()
 		}
 		l_currentPos.x += l_probeDistance.x;
 
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Generating probes: ", (float)l_probeIndex * 100.0f / l_totalProbeCount, "%");
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Generating probes: ", (float)l_probeIndex * 100.0f / m_totalCaptureProbes, "%");
 	}
 
 	return true;

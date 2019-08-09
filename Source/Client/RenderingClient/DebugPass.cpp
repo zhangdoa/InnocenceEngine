@@ -107,17 +107,23 @@ bool DebugPass::PrepareCommandList()
 		g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 		g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
 		g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
-		g_pModuleManager->getRenderingServer()->CopyDepthBuffer(OpaquePass::GetRPDC(), m_RPDC);
 
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_CameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
+		auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
 
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_DebugGBDC->m_ResourceBinder, 1, 13, Accessibility::ReadOnly, 0, l_probes.size());
-		auto l_sphere = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Sphere);
-		g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_sphere, l_probes.size());
+		if (l_renderingConfig.drawDebugObject)
+		{
+			g_pModuleManager->getRenderingServer()->CopyDepthBuffer(OpaquePass::GetRPDC(), m_RPDC);
 
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_DebugGBDC->m_ResourceBinder, 1, 13, Accessibility::ReadOnly, l_probes.size(), l_bricks.size());
-		auto l_cube = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Cube);
-		g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_cube, l_bricks.size());
+			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_CameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
+
+			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_DebugGBDC->m_ResourceBinder, 1, 13, Accessibility::ReadOnly, 0, l_probes.size());
+			auto l_sphere = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Sphere);
+			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_sphere, l_probes.size());
+
+			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_DebugGBDC->m_ResourceBinder, 1, 13, Accessibility::ReadOnly, l_probes.size(), l_bricks.size());
+			auto l_cube = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Cube);
+			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_cube, l_bricks.size());
+		}
 
 		g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
 	}
