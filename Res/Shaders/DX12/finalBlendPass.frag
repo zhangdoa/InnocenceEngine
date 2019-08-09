@@ -2,6 +2,7 @@
 
 Texture2D basePassRT0 : register(t0);
 Texture2D billboardPassRT0 : register(t1);
+Texture2D debugPassRT0 : register(t2);
 
 SamplerState SampleTypePoint : register(s0);
 
@@ -26,6 +27,7 @@ float4 main(PixelInputType input) : SV_TARGET
 {
 	float3 finalColor = basePassRT0.Sample(SampleTypePoint, input.texcoord).xyz;
 	float3 billboardPass = billboardPassRT0.Sample(SampleTypePoint, input.texcoord).xyz;
+	float3 debugPass = debugPassRT0.Sample(SampleTypePoint, input.texcoord).xyz;
 
 	//HDR to LDR
 	finalColor = acesFilm(finalColor);
@@ -36,6 +38,9 @@ float4 main(PixelInputType input) : SV_TARGET
 
 	// billboard overlay
 	finalColor += billboardPass.rgb;
+
+	// debug overlay
+	finalColor += debugPass.rgb;
 
 	return float4(finalColor, 1.0f);
 }

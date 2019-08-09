@@ -2,6 +2,7 @@
 #include "DefaultGPUBuffers.h"
 
 #include "BillboardPass.h"
+#include "DebugPass.h"
 
 #include "../../Engine/ModuleManager/IModuleManager.h"
 
@@ -35,7 +36,7 @@ bool FinalBlendPass::Setup()
 
 	m_RPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC->m_ResourceBinderLayoutDescs.resize(3);
+	m_RPDC->m_ResourceBinderLayoutDescs.resize(4);
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 0;
@@ -46,10 +47,15 @@ bool FinalBlendPass::Setup()
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 1;
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_IsRanged = true;
 
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Sampler;
+	m_RPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Image;
 	m_RPDC->m_ResourceBinderLayoutDescs[2].m_GlobalSlot = 2;
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_LocalSlot = 0;
+	m_RPDC->m_ResourceBinderLayoutDescs[2].m_LocalSlot = 2;
 	m_RPDC->m_ResourceBinderLayoutDescs[2].m_IsRanged = true;
+
+	m_RPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Sampler;
+	m_RPDC->m_ResourceBinderLayoutDescs[3].m_GlobalSlot = 3;
+	m_RPDC->m_ResourceBinderLayoutDescs[3].m_LocalSlot = 0;
+	m_RPDC->m_ResourceBinderLayoutDescs[3].m_IsRanged = true;
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 
@@ -74,10 +80,11 @@ bool FinalBlendPass::PrepareCommandList(IResourceBinder* input)
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 2, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 3, 0);
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, input, 0, 0);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, BillboardPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 1, 1);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, DebugPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 2, 2);
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Quad);
 
@@ -85,6 +92,7 @@ bool FinalBlendPass::PrepareCommandList(IResourceBinder* input)
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, input, 0, 0);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, BillboardPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 1, 1);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, DebugPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 2, 2);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
 

@@ -16,6 +16,7 @@ namespace DefaultGPUBuffers
 	GPUBufferDataComponent* m_SkyGBDC;
 	GPUBufferDataComponent* m_dispatchParamsGBDC;
 	GPUBufferDataComponent* m_billboardGBDC;
+	GPUBufferDataComponent* m_debugGBDC;
 
 	std::vector<DispatchParamsGPUData> m_DispatchParamsGPUData;
 	std::vector<MeshGPUData> m_billboardGPUData;
@@ -103,6 +104,14 @@ bool DefaultGPUBuffers::Initialize()
 
 	m_billboardGPUData.resize(l_RenderingCapability.maxMeshes);
 
+	m_debugGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("DebugGPUBuffer/");
+	m_debugGBDC->m_ElementCount = l_RenderingCapability.maxMeshes;
+	m_debugGBDC->m_ElementSize = sizeof(mat4);
+	m_debugGBDC->m_BindingPoint = 13;
+	m_debugGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
+
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_debugGBDC);
+
 	return true;
 }
 
@@ -182,6 +191,8 @@ GPUBufferDataComponent * DefaultGPUBuffers::GetGPUBufferDataComponent(GPUBufferU
 	case GPUBufferUsageType::SH9:
 		break;
 	case GPUBufferUsageType::Billboard: l_result = m_billboardGBDC;
+		break;
+	case GPUBufferUsageType::Debug: l_result = m_debugGBDC;
 		break;
 	default:
 		break;

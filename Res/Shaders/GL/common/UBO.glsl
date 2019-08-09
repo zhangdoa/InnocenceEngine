@@ -89,3 +89,8 @@ layout(std140, row_major, binding = 12) uniform billboardUBOBlock
 	mat4 normalMat;
 	float UUID;
 } billboardUBO;
+
+layout(std430, row_major, binding = 13) buffer debugSSBOBlock
+{
+	mat4 m[];
+} debugSSBO;

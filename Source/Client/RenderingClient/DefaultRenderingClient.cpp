@@ -14,6 +14,7 @@
 #include "PostTAAPass.h"
 #include "MotionBlurPass.h"
 #include "BillboardPass.h"
+#include "DebugPass.h"
 #include "FinalBlendPass.h"
 
 #include "BRDFTestPass.h"
@@ -44,7 +45,7 @@ bool DefaultRenderingClient::Setup()
 	DefaultGPUBuffers::Setup();
 	LightCullingPass::Setup();
 	GIBakePass::Setup();
-	GIResolvePass::Setup();
+	//GIResolvePass::Setup();
 	BRDFLUTPass::Setup();
 	SunShadowPass::Setup();
 	OpaquePass::Setup();
@@ -56,6 +57,7 @@ bool DefaultRenderingClient::Setup()
 	PostTAAPass::Setup();
 	MotionBlurPass::Setup();
 	BillboardPass::Setup();
+	DebugPass::Setup();
 	FinalBlendPass::Setup();
 
 	BRDFTestPass::Setup();
@@ -68,7 +70,7 @@ bool DefaultRenderingClient::Initialize()
 	DefaultGPUBuffers::Initialize();
 	LightCullingPass::Initialize();
 	GIBakePass::Initialize();
-	GIResolvePass::Initialize();
+	//GIResolvePass::Initialize();
 	BRDFLUTPass::Initialize();
 	BRDFLUTPass::PrepareCommandList();
 	BRDFLUTPass::ExecuteCommandList();
@@ -82,6 +84,7 @@ bool DefaultRenderingClient::Initialize()
 	PostTAAPass::Initialize();
 	MotionBlurPass::Initialize();
 	BillboardPass::Initialize();
+	DebugPass::Initialize();
 	FinalBlendPass::Initialize();
 
 	BRDFTestPass::Initialize();
@@ -95,8 +98,8 @@ bool DefaultRenderingClient::Render()
 	IResourceBinder* l_canvas;
 
 	DefaultGPUBuffers::Upload();
-	LightCullingPass::PrepareCommandList();
-	GIResolvePass::PrepareCommandList();
+	//LightCullingPass::PrepareCommandList();
+	//GIResolvePass::PrepareCommandList();
 
 	SunShadowPass::PrepareCommandList();
 	OpaquePass::PrepareCommandList();
@@ -137,10 +140,11 @@ bool DefaultRenderingClient::Render()
 	}
 
 	BillboardPass::PrepareCommandList();
+	DebugPass::PrepareCommandList();
 	FinalBlendPass::PrepareCommandList(l_canvas);
 
-	LightCullingPass::ExecuteCommandList();
-	GIResolvePass::ExecuteCommandList();
+	//LightCullingPass::ExecuteCommandList();
+	//GIResolvePass::ExecuteCommandList();
 
 	SunShadowPass::ExecuteCommandList();
 	OpaquePass::ExecuteCommandList();
@@ -154,6 +158,7 @@ bool DefaultRenderingClient::Render()
 	BRDFTestPass::ExecuteCommandList();
 
 	BillboardPass::ExecuteCommandList();
+	DebugPass::ExecuteCommandList();
 	FinalBlendPass::ExecuteCommandList();
 
 	if (m_needGIBake)
@@ -169,7 +174,7 @@ bool DefaultRenderingClient::Terminate()
 {
 	DefaultGPUBuffers::Terminate();
 	LightCullingPass::Terminate();
-	GIResolvePass::Terminate();
+	//GIResolvePass::Terminate();
 	GIBakePass::Terminate();
 	BRDFLUTPass::Terminate();
 	SunShadowPass::Terminate();
@@ -182,6 +187,7 @@ bool DefaultRenderingClient::Terminate()
 	PostTAAPass::Terminate();
 	MotionBlurPass::Terminate();
 	BillboardPass::Terminate();
+	DebugPass::Terminate();
 	FinalBlendPass::Terminate();
 
 	BRDFTestPass::Terminate();
