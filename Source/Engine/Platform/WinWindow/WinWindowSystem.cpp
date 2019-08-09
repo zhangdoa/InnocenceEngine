@@ -37,7 +37,8 @@ namespace WinWindowSystemNS
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	InitConfig m_initConfig;
 	std::vector<ButtonState> m_buttonState;
-}
+	std::set<WindowEventCallbackFunctor*> m_windowEventCallbackFunctor;
+};
 
 using namespace WinWindowSystemNS;
 
@@ -175,6 +176,12 @@ bool WinWindowSystem::sendEvent(unsigned int umsg, unsigned int WParam, int LPar
 	return true;
 }
 
+bool WinWindowSystem::addEventCallback(WindowEventCallbackFunctor* functor)
+{
+	m_windowEventCallbackFunctor.emplace(functor);
+	return true;
+}
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	// For to eliminate fake OpenGL window handle event
@@ -216,13 +223,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	}
 }
 
-//extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
 LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
 {
-	if (WinWindowSystemNS::m_initConfig.engineMode == EngineMode::GAME)
+	for (auto i : m_windowEventCallbackFunctor)
 	{
-		//ImGui_ImplWin32_WndProcHandler(hwnd, umsg, wparam, lparam);
+		(*i)(hwnd, umsg, (unsigned int)wparam, (int)lparam);
 	}
 
 	switch (umsg)

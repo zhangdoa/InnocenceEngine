@@ -3,6 +3,8 @@
 #include "../Common/InnoClassTemplate.h"
 #include "IWindowSurface.h"
 
+using WindowEventCallbackFunctor = std::function<void(void*, unsigned int, unsigned int, int)>;
+
 class IWindowSystem
 {
 public:
@@ -20,4 +22,5 @@ public:
 
 	// Editor only
 	virtual bool sendEvent(unsigned int umsg, unsigned int WParam, int LParam) = 0;
+	virtual bool addEventCallback(WindowEventCallbackFunctor* functor) = 0;
 };
