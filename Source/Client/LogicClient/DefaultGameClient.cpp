@@ -7,7 +7,6 @@
 #include "../../Engine/ComponentManager/ICameraComponentManager.h"
 
 #include "../../Engine/ModuleManager/IModuleManager.h"
-
 INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 
 namespace PlayerComponentCollection
@@ -629,16 +628,16 @@ bool GameClientNS::update()
 
 void GameClientNS::runTest(unsigned int testTime, std::function<bool()> testCase)
 {
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "Start test...");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "Start test...");
 	for (unsigned int i = 0; i < testTime; i++)
 	{
 		auto l_result = testCase();
 		if (!l_result)
 		{
-			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "Test failure.");
+			g_pModuleManager->getLogSystem()->Log(LogLevel::Warning, "Test failure.");
 		}
 	}
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "Finished test for " + std::to_string(testTime) + " times.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "Finished test for ", testTime, " times.");
 }
 
 void PlayerComponentCollection::update(float seed)
