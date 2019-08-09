@@ -1731,3 +1731,13 @@ bool DX11RenderingServer::BakeGIData()
 {
 	return true;
 }
+
+void * DX11RenderingServer::GetDevice()
+{
+	return m_device;
+}
+
+void * DX11RenderingServer::GetDeviceContext()
+{
+	return m_deviceContext;
+}

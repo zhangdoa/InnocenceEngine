@@ -62,4 +62,7 @@ public:
 
 	bool ReloadShader(RenderPassType renderPassType) override;
 	bool BakeGIData() override;
+
+	void* GetDevice();
+	void* GetDeviceContext();
 };
