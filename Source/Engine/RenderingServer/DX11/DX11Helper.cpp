@@ -1061,7 +1061,7 @@ bool DX11Helper::GenerateBlendStateDesc(BlendDesc blendDesc, DX11PipelineStateOb
 bool DX11Helper::GenerateRasterizerStateDesc(RasterizerDesc rasterizerDesc, DX11PipelineStateObject * PSO)
 {
 	PSO->m_PrimitiveTopology = GetPrimitiveTopology(rasterizerDesc.m_PrimitiveTopology);
-	PSO->m_RasterizerDesc.AntialiasedLineEnable = true;
+	PSO->m_RasterizerDesc.AntialiasedLineEnable = false;
 	if (rasterizerDesc.m_UseCulling)
 	{
 		PSO->m_RasterizerDesc.CullMode = rasterizerDesc.m_RasterizerCullMode == RasterizerCullMode::Front ? D3D11_CULL_FRONT : D3D11_CULL_BACK;

@@ -1553,7 +1553,7 @@ bool DX12Helper::GenerateRasterizerStateDesc(RasterizerDesc rasterizerDesc, DX12
 	PSO->m_RasterizerDesc.SlopeScaledDepthBias = 0.0f;
 	PSO->m_RasterizerDesc.DepthClipEnable = false;
 	PSO->m_RasterizerDesc.MultisampleEnable = rasterizerDesc.m_AllowMultisample;
-	PSO->m_RasterizerDesc.AntialiasedLineEnable = true;
+	PSO->m_RasterizerDesc.AntialiasedLineEnable = false;
 
 	PSO->m_PrimitiveTopology = GetPrimitiveTopology(rasterizerDesc.m_PrimitiveTopology);
 	PSO->m_PrimitiveTopologyType = GetPrimitiveTopologyType(rasterizerDesc.m_PrimitiveTopology);
