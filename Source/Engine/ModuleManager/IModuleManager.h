@@ -16,6 +16,7 @@
 #include "../Core/IEventSystem.h"
 #include "../Core/IWindowSystem.h"
 #include "../RenderingFrontend/IRenderingFrontend.h"
+#include "../RenderingFrontend/IGUISystem.h"
 #include "../RenderingServer/IRenderingServer.h"
 
 #include "../Core/IRenderingClient.h"
@@ -57,6 +58,7 @@ public:
 	INNO_ENGINE_API virtual IEventSystem* getEventSystem() = 0;
 	INNO_ENGINE_API virtual IWindowSystem* getWindowSystem() = 0;
 	INNO_ENGINE_API virtual IRenderingFrontend* getRenderingFrontend() = 0;
+	INNO_ENGINE_API virtual IGUISystem* getGUISystem() = 0;
 	INNO_ENGINE_API virtual IRenderingServer* getRenderingServer() = 0;
 
 	INNO_ENGINE_API virtual InitConfig getInitConfig() = 0;

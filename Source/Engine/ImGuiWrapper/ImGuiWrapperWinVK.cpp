@@ -2,7 +2,6 @@
 #include "../Component/WinWindowSystemComponent.h"
 
 #include "../ModuleManager/IModuleManager.h"
-
 extern IModuleManager* g_pModuleManager;
 
 namespace ImGuiWrapperWinVKNS
@@ -13,14 +12,14 @@ namespace ImGuiWrapperWinVKNS
 bool ImGuiWrapperWinVK::setup()
 {
 	ImGuiWrapperWinVKNS::m_objectStatus = ObjectStatus::Activated;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperWinVK setup finished.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWrapperWinVK setup finished.");
 
 	return true;
 }
 
 bool ImGuiWrapperWinVK::initialize()
 {
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperWinVK has been initialized.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWrapperWinVK has been initialized.");
 
 	return true;
 }
@@ -38,7 +37,7 @@ bool ImGuiWrapperWinVK::render()
 bool ImGuiWrapperWinVK::terminate()
 {
 	ImGuiWrapperWinVKNS::m_objectStatus = ObjectStatus::Terminated;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "ImGuiWrapperWinVK has been terminated.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWrapperWinVK has been terminated.");
 
 	return true;
 }

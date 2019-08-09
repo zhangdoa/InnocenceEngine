@@ -27,6 +27,7 @@ public:
 	IEventSystem* getEventSystem() override;
 	IWindowSystem* getWindowSystem() override;
 	IRenderingFrontend* getRenderingFrontend() override;
+	IGUISystem* getGUISystem() override;
 	IRenderingServer* getRenderingServer() override;
 
 	InitConfig getInitConfig() override;

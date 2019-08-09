@@ -19,6 +19,7 @@
 #include "../PhysicsSystem/PhysicsSystem.h"
 #include "../Core/EventSystem.h"
 #include "../RenderingFrontend/RenderingFrontend.h"
+#include "../RenderingFrontend/GUISystem.h"
 #if defined INNO_PLATFORM_WIN
 #include "../Platform/WinWindow/WinWindowSystem.h"
 #include "../RenderingServer/DX11/DX11RenderingServer.h"
@@ -37,8 +38,6 @@
 #if defined INNO_RENDERER_VULKAN
 #include "../RenderingServer/VK/VKRenderingServer.h"
 #endif
-
-#include "../ImGuiWrapper/ImGuiWrapper.h"
 
 INNO_ENGINE_API IModuleManager* g_pModuleManager;
 
@@ -141,6 +140,7 @@ namespace InnoModuleManagerNS
 	std::unique_ptr<IEventSystem> m_EventSystem;
 	std::unique_ptr<IWindowSystem> m_WindowSystem;
 	std::unique_ptr<IRenderingFrontend> m_RenderingFrontend;
+	std::unique_ptr<IGUISystem> m_GUISystem;
 	std::unique_ptr<IRenderingServer> m_RenderingServer;
 
 	IRenderingClient* m_RenderingClient;
@@ -149,9 +149,6 @@ namespace InnoModuleManagerNS
 	FixedSizeString<128> m_applicationName;
 
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-
-	bool m_showImGui = false;
-	std::function<void()> f_toggleshowImGui;
 
 	std::atomic<bool> m_isRendering = false;
 	std::atomic<bool> m_allowRender = false;
@@ -313,6 +310,12 @@ bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook
 		return false;
 	}
 
+	m_GUISystem = std::make_unique<InnoGUISystem>();
+	if (!m_GUISystem.get())
+	{
+		return false;
+	}
+
 	switch (m_initConfig.renderingServer)
 	{
 	case RenderingServer::GL:
@@ -404,11 +407,6 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 
 	subSystemSetup(TestSystem);
 
-	f_toggleshowImGui = [&]() {
-		m_showImGui = !m_showImGui;
-	};
-	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonState{ INNO_KEY_I, true }, ButtonEvent{ EventLifeTime::OneShot, &f_toggleshowImGui });
-
 	if (!m_WindowSystem->setup(appHook, extraHook))
 	{
 		return false;
@@ -447,16 +445,17 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	}
 	InnoLogger::Log(LogLevel::Success, "RenderingFrontend setup finished.");
 
+	if (!m_GUISystem->setup())
+	{
+		return false;
+	}
+	InnoLogger::Log(LogLevel::Success, "GUISystem setup finished.");
+
 	if (!m_RenderingServer->Setup())
 	{
 		return false;
 	}
 	InnoLogger::Log(LogLevel::Success, "RenderingServer setup finished.");
-
-	//if (!ImGuiWrapper::get().setup())
-	//{
-	//	return false;
-	//}
 
 	if (!m_RenderingClient->Setup())
 	{
@@ -504,13 +503,12 @@ bool InnoModuleManagerNS::initialize()
 	subSystemInit(AssetSystem);
 	subSystemInit(PhysicsSystem);
 	subSystemInit(EventSystem);
+	subSystemInit(WindowSystem);
 
-	m_WindowSystem->initialize();
+	subSystemInit(RenderingFrontend);
+	subSystemInit(GUISystem);
 
-	m_RenderingFrontend->initialize();
 	m_RenderingServer->Initialize();
-
-	//ImGuiWrapper::get().initialize();
 
 	if (!m_RenderingClient->Initialize())
 	{
@@ -582,15 +580,7 @@ bool InnoModuleManagerNS::update()
 
 					m_RenderingClient->Render();
 
-					//if (m_showImGui)
-					//{
-					//	ImGuiWrapper::get().update();
-					//}
-
-					//if (m_showImGui)
-					//{
-					//	ImGuiWrapper::get().render();
-					//}
+					m_GUISystem->update();
 
 					m_RenderingServer->Present();
 
@@ -627,29 +617,16 @@ bool InnoModuleManagerNS::terminate()
 		return false;
 	}
 
-	//if (!ImGuiWrapper::get().terminate())
-	//{
-	//	InnoLogger::Log(LogLevel::Error, "GuiSystem can't be terminated!");
-	//	return false;
-	//}
-
 	if (!m_RenderingServer->Terminate())
 	{
 		InnoLogger::Log(LogLevel::Error, "RenderingServer can't be terminated!");
 		return false;
 	}
 
-	if (!m_RenderingFrontend->terminate())
-	{
-		InnoLogger::Log(LogLevel::Error, "RenderingFrontend can't be terminated!");
-		return false;
-	}
+	subSystemTerm(GUISystem);
+	subSystemTerm(RenderingFrontend);
 
-	if (!m_WindowSystem->terminate())
-	{
-		InnoLogger::Log(LogLevel::Error, "WindowSystem can't be terminated!");
-		return false;
-	}
+	subSystemTerm(WindowSystem);
 
 	subSystemTerm(EventSystem);
 	subSystemTerm(PhysicsSystem);
@@ -729,21 +706,10 @@ subSystemGetDefi(SceneHierarchyManager);
 subSystemGetDefi(AssetSystem);
 subSystemGetDefi(PhysicsSystem);
 subSystemGetDefi(EventSystem);
-
-IWindowSystem * InnoModuleManager::getWindowSystem()
-{
-	return m_WindowSystem.get();
-}
-
-IRenderingFrontend * InnoModuleManager::getRenderingFrontend()
-{
-	return m_RenderingFrontend.get();
-}
-
-IRenderingServer * InnoModuleManager::getRenderingServer()
-{
-	return m_RenderingServer.get();
-}
+subSystemGetDefi(WindowSystem);
+subSystemGetDefi(RenderingFrontend);
+subSystemGetDefi(GUISystem);
+subSystemGetDefi(RenderingServer);
 
 IComponentManager * InnoModuleManager::getComponentManager(ComponentType componentType)
 {

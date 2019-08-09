@@ -10,7 +10,6 @@ if (OPENGL_FOUND)
 add_library(ImGuiWrapperWinGL ImGuiWrapperWinGL.h ImGuiWrapperWinGL.cpp)
 target_link_libraries(ImGuiWrapperWinGL ImGui)
 target_link_libraries(ImGuiWrapper ImGuiWrapperWinGL)
-target_link_libraries(ImGuiWrapper InnoGLRenderingBackend)
 endif (OPENGL_FOUND)
 
 if (VULKAN)

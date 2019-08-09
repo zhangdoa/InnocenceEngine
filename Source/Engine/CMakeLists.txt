@@ -5,7 +5,7 @@ add_subdirectory("AssetSystem")
 add_subdirectory("PhysicsSystem")
 add_subdirectory("RenderingServer")
 add_subdirectory("RenderingFrontend")
-#add_subdirectory("ImGuiWrapper")
+add_subdirectory("ImGuiWrapper")
 add_subdirectory("RayTracer")
 
 add_subdirectory("EntityManager")

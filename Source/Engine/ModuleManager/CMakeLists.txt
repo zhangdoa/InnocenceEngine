@@ -43,13 +43,6 @@ if (INNO_PLATFORM_LINUX)
 target_link_libraries(InnoEngine LinuxWindow)
 endif (INNO_PLATFORM_LINUX)
 
-find_library(ASSIMP assimp)
-target_link_libraries(InnoEngine "${ASSIMP}")
-
-target_link_libraries(InnoEngine STB_Image)
-
-#target_link_libraries(InnoEngine ImGuiWrapper)
-
 if (INNO_PLATFORM_LINUX)
 target_link_libraries(InnoEngine -lX11 -lXrandr -lXinerama -lXi -lXxf86vm -lXcursor -ldl -lm -lpthread -lstdc++fs)
 endif (INNO_PLATFORM_LINUX)

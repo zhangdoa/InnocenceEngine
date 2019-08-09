@@ -586,43 +586,43 @@ void ImGuiWrapperNS::showVisiableComponentPropertyEditor(void * rhs)
 				static float float_min = 0.0f;
 				static float float_max = 1.0f;
 
-				static ImVec4 albedo = ImColor(l_material->albedo_r, l_material->albedo_g, l_material->albedo_b, l_material->alpha);
+				static ImVec4 albedo = ImColor(l_material->AlbedoR, l_material->AlbedoG, l_material->AlbedoB, l_material->Alpha);
 
 				if (ImGui::ColorPicker4("Albedo color", (float*)&albedo, ImGuiColorEditFlags_RGB))
 				{
-					l_material->albedo_r = albedo.x;
-					l_material->albedo_g = albedo.y;
-					l_material->albedo_b = albedo.z;
-					l_material->alpha = albedo.w;
+					l_material->AlbedoR = albedo.x;
+					l_material->AlbedoG = albedo.y;
+					l_material->AlbedoB = albedo.z;
+					l_material->Alpha = albedo.w;
 				}
 
 				const ImVec2 small_slider_size(18, 180);
 
 				auto tt = ImGui::GetCursorPos().x;
-				static float metallic = l_material->metallic;
+				static float metallic = l_material->Metallic;
 				if (ImGui::DragFloat("Metallic", &metallic, 0.01f, float_min, float_max))
 				{
-					l_material->metallic = metallic;
+					l_material->Metallic = metallic;
 				}
 
-				static float roughness = l_material->roughness;
+				static float roughness = l_material->Roughness;
 				if (ImGui::DragFloat("Roughness", &roughness, 0.01f, float_min, float_max))
 				{
-					l_material->roughness = roughness;
+					l_material->Roughness = roughness;
 				}
 
-				static float ao = l_material->ao;
+				static float ao = l_material->AO;
 				if (ImGui::DragFloat("Ambient Occlusion", &ao, 0.01f, float_min, float_max))
 				{
-					l_material->ao = ao;
+					l_material->AO = ao;
 				}
 
-				if (l_rhs->m_visiblilityType == VisiblilityType::INNO_TRANSPARENT)
+				if (l_rhs->m_visiblilityType == VisiblilityType::Transparent)
 				{
-					static float thickness = l_material->thickness;
+					static float thickness = l_material->Thickness;
 					if (ImGui::DragFloat("Thickness", &thickness, 0.01f, float_min, float_max))
 					{
-						l_material->thickness = thickness;
+						l_material->Thickness = thickness;
 					}
 				}
 			}
