@@ -31,7 +31,7 @@ namespace VisibleComponentManagerNS
 		}
 		else
 		{
-			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: don't assign unit mesh to a custom mesh shape component!");
+			InnoLogger::Log(LogLevel::Error, "VisibleComponentManager: don't assign unit mesh to a custom mesh shape component!");
 		}
 	}
 }

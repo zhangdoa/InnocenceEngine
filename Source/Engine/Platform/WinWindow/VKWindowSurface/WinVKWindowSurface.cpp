@@ -1,6 +1,7 @@
 #include "WinVKWindowSurface.h"
 #include "../../../Component/WinWindowSystemComponent.h"
 #include "../../../Component/VKRenderingBackendComponent.h"
+#include "../../Engine/Core/InnoLogger.h"
 
 #include "../../../ModuleManager/IModuleManager.h"
 
@@ -58,7 +59,7 @@ bool WinVKWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 	WinWindowSystemComponent::get().m_HDC = GetDC(WinWindowSystemComponent::get().m_hwnd);
 
 	m_objectStatus = ObjectStatus::Activated;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinVKWindowSurface setup finished.");
+	InnoLogger::Log(LogLevel::Success, "WinVKWindowSurface setup finished.");
 
 	return true;
 }
@@ -74,7 +75,7 @@ bool WinVKWindowSurfaceNS::initialize()
 	if (vkCreateWin32SurfaceKHR(VKRenderingBackendComponent::get().m_instance, &createInfo, NULL, &VKRenderingBackendComponent::get().m_windowSurface) != VK_SUCCESS)
 	{
 		m_objectStatus = ObjectStatus::Created;
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "WinVKWindowSurface: Failed to create window surface!");
+		InnoLogger::Log(LogLevel::Error, "WinVKWindowSurface: Failed to create window surface!");
 		return false;
 	}
 
@@ -86,7 +87,7 @@ bool WinVKWindowSurfaceNS::initialize()
 		SetFocus(WinWindowSystemComponent::get().m_hwnd);
 	}
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinVKWindowSurface has been initialized.");
+	InnoLogger::Log(LogLevel::Success, "WinVKWindowSurface has been initialized.");
 	return true;
 }
 
@@ -98,7 +99,7 @@ bool WinVKWindowSurfaceNS::update()
 bool WinVKWindowSurfaceNS::terminate()
 {
 	m_objectStatus = ObjectStatus::Terminated;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinVKWindowSurfaceNS has been terminated.");
+	InnoLogger::Log(LogLevel::Success, "WinVKWindowSurfaceNS has been terminated.");
 
 	return true;
 }

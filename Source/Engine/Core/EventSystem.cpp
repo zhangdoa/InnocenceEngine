@@ -2,9 +2,9 @@
 #include "../Common/CommonMacro.inl"
 #include "../ComponentManager/ITransformComponentManager.h"
 #include "../ComponentManager/ICameraComponentManager.h"
+#include "../Core/InnoLogger.h"
 
 #include "../ModuleManager/IModuleManager.h"
-
 extern IModuleManager* g_pModuleManager;
 
 using ButtonEventMap = std::unordered_multimap<ButtonState, ButtonEvent, ButtonStateHasher>;
@@ -56,13 +56,13 @@ bool InnoEventSystemNS::initialize()
 	if (InnoEventSystemNS::m_objectStatus == ObjectStatus::Created)
 	{
 		m_objectStatus = ObjectStatus::Activated;
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "EventSystem has been initialized.");
+		InnoLogger::Log(LogLevel::Success, "EventSystem has been initialized.");
 
 		return true;
 	}
 	else
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "EventSystem: Object is not created!");
+		InnoLogger::Log(LogLevel::Error, "EventSystem: Object is not created!");
 		return false;
 	}
 }
@@ -117,7 +117,7 @@ bool InnoEventSystemNS::update()
 bool InnoEventSystemNS::terminate()
 {
 	m_objectStatus = ObjectStatus::Terminated;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "EventSystem has been terminated.");
+	InnoLogger::Log(LogLevel::Success, "EventSystem has been terminated.");
 
 	return true;
 }

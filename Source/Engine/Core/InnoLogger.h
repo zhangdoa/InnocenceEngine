@@ -1,7 +1,6 @@
 #pragma once
+#include "../Common/InnoType.h"
 #include "../Common/InnoMath.h"
-
-enum class LogLevel { Verbose, Success, Warning, Error };
 
 class InnoLogger
 {
@@ -26,7 +25,6 @@ public:
 	static void SetDefaultLogLevel(LogLevel logLevel);
 	static LogLevel GetDefaultLogLevel();
 
-private:
 	static void LogStartOfLine(LogLevel logLevel);
 
 	template<typename Arg>

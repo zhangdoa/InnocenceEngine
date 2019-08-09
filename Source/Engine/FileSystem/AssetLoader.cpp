@@ -2,6 +2,8 @@
 
 #include "stb/stb_image.h"
 
+#include "../../Engine/Core/InnoLogger.h"
+
 #include "../ModuleManager/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
 
@@ -28,7 +30,7 @@ ModelMap InnoFileSystemNS::AssetLoader::loadModel(const std::string & fileName)
 		auto l_loadedModelMap = m_loadedModelMap.find(fileName);
 		if (l_loadedModelMap != m_loadedModelMap.end())
 		{
-			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: AssetLoader: " + fileName + " has been already loaded.");
+			InnoLogger::Log(LogLevel::Verbose, "FileSystem: AssetLoader: ", fileName.c_str(), " has been already loaded.");
 			// Just copy new materials
 			for (auto& i : l_loadedModelMap->second)
 			{
@@ -45,7 +47,7 @@ ModelMap InnoFileSystemNS::AssetLoader::loadModel(const std::string & fileName)
 	}
 	else
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: AssimpWrapper: " + fileName + " is not supported!");
+		InnoLogger::Log(LogLevel::Warning, "FileSystem: AssimpWrapper: ", fileName.c_str(), " is not supported!");
 		return ModelMap();
 	}
 }
@@ -65,7 +67,7 @@ TextureDataComponent* InnoFileSystemNS::AssetLoader::loadTexture(const std::stri
 	auto l_loadedTDC = m_loadedTexture.find(fileName);
 	if (l_loadedTDC != m_loadedTexture.end())
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: AssetLoader: " + fileName + " has been already loaded.");
+		InnoLogger::Log(LogLevel::Verbose, "FileSystem: AssetLoader: ", fileName.c_str(), " has been already loaded.");
 		l_TDC = l_loadedTDC->second;
 	}
 	else
@@ -111,7 +113,7 @@ TextureDataComponent* InnoFileSystemNS::AssetLoader::loadTextureFromDisk(const s
 		l_TDC->m_textureData = l_rawData;
 		l_TDC->m_objectStatus = ObjectStatus::Created;
 
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: AssetLoader: STB_Image: " + l_fullPath + " has been loaded.");
+		InnoLogger::Log(LogLevel::Verbose, "FileSystem: AssetLoader: STB_Image: ", l_fullPath.c_str(), " has been loaded.");
 
 		m_loadedTexture.emplace(fileName, l_TDC);
 
@@ -119,7 +121,7 @@ TextureDataComponent* InnoFileSystemNS::AssetLoader::loadTextureFromDisk(const s
 	}
 	else
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: AssetLoader: STB_Image: Failed to load texture: " + l_fullPath);
+		InnoLogger::Log(LogLevel::Error, "FileSystem: AssetLoader: STB_Image: Failed to load texture: ", l_fullPath.c_str());
 
 		return nullptr;
 	}

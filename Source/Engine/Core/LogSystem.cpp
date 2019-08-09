@@ -6,50 +6,109 @@ namespace InnoLogSystemNS
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 }
 
-void InnoLogSystem::printLog(double logMessage)
-{
-	InnoLogger::Log(LogLevel::Verbose, logMessage);
-}
-
-void InnoLogSystem::printLog(const vec2 & logMessage)
-{
-	InnoLogger::Log(LogLevel::Verbose, logMessage);
-}
-
-void InnoLogSystem::printLog(const vec4 & logMessage)
-{
-	InnoLogger::Log(LogLevel::Verbose, logMessage);
-}
-
-void InnoLogSystem::printLog(const mat4 & logMessage)
-{
-	InnoLogger::Log(LogLevel::Verbose, logMessage);
-}
-
-void InnoLogSystem::printLog(LogType LogType, const std::string & logMessage)
-{
-	switch (LogType)
-	{
-	case LogType::INNO_DEV_VERBOSE:
-		InnoLogger::Log(LogLevel::Verbose, logMessage.c_str());
-		break;
-	case LogType::INNO_WARNING:
-		InnoLogger::Log(LogLevel::Warning, logMessage.c_str());
-		break;
-	case LogType::INNO_ERROR:
-		InnoLogger::Log(LogLevel::Error, logMessage.c_str());
-		break;
-	case LogType::INNO_DEV_SUCCESS:
-		InnoLogger::Log(LogLevel::Success, logMessage.c_str());
-		break;
-	default:
-		break;
-	}
-}
-
 ObjectStatus InnoLogSystem::getStatus()
 {
 	return InnoLogSystemNS::m_objectStatus;
+}
+
+void InnoLogSystem::SetDefaultLogLevel(LogLevel logLevel)
+{
+	InnoLogger::SetDefaultLogLevel(logLevel);
+}
+
+LogLevel InnoLogSystem::GetDefaultLogLevel()
+{
+	return InnoLogger::GetDefaultLogLevel();
+}
+
+void InnoLogSystem::LogStartOfLine(LogLevel logLevel)
+{
+	InnoLogger::LogStartOfLine(logLevel);
+}
+
+void InnoLogSystem::LogEndOfLine()
+{
+	InnoLogger::LogEndOfLine();
+}
+
+void InnoLogSystem::LogImpl(const void * logMessage)
+{
+	InnoLogger::LogImpl(logMessage);
+}
+
+void InnoLogSystem::LogImpl(bool logMessage)
+{
+	InnoLogger::LogImpl(logMessage);
+}
+
+void InnoLogSystem::LogImpl(uint8_t logMessage)
+{
+	InnoLogger::LogImpl(logMessage);
+}
+
+void InnoLogSystem::LogImpl(uint16_t logMessage)
+{
+	InnoLogger::LogImpl(logMessage);
+}
+
+void InnoLogSystem::LogImpl(uint32_t logMessage)
+{
+	InnoLogger::LogImpl(logMessage);
+}
+
+void InnoLogSystem::LogImpl(uint64_t logMessage)
+{
+	InnoLogger::LogImpl(logMessage);
+}
+
+void InnoLogSystem::LogImpl(int8_t logMessage)
+{
+	InnoLogger::LogImpl(logMessage);
+}
+
+void InnoLogSystem::LogImpl(int16_t logMessage)
+{
+	InnoLogger::LogImpl(logMessage);
+}
+
+void InnoLogSystem::LogImpl(int32_t logMessage)
+{
+	InnoLogger::LogImpl(logMessage);
+}
+
+void InnoLogSystem::LogImpl(int64_t logMessage)
+{
+	InnoLogger::LogImpl(logMessage);
+}
+
+void InnoLogSystem::LogImpl(float logMessage)
+{
+	InnoLogger::LogImpl(logMessage);
+}
+
+void InnoLogSystem::LogImpl(double logMessage)
+{
+	InnoLogger::LogImpl(logMessage);
+}
+
+void InnoLogSystem::LogImpl(const vec2 & logMessage)
+{
+	InnoLogger::LogImpl(logMessage);
+}
+
+void InnoLogSystem::LogImpl(const vec4 & logMessage)
+{
+	InnoLogger::LogImpl(logMessage);
+}
+
+void InnoLogSystem::LogImpl(const mat4 & logMessage)
+{
+	InnoLogger::LogImpl(logMessage);
+}
+
+void InnoLogSystem::LogImpl(const char * logMessage)
+{
+	InnoLogger::LogImpl(logMessage);
 }
 
 bool InnoLogSystem::setup()

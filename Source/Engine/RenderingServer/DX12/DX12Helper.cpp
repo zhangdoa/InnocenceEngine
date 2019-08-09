@@ -21,7 +21,7 @@ ID3D12GraphicsCommandList* DX12Helper::BeginSingleTimeCommands(ID3D12Device* dev
 	auto l_HResult = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, globalCommandAllocator, NULL, IID_PPV_ARGS(&l_commandList));
 	if (FAILED(l_HResult))
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingServer: Can't create command list!");
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create command list!");
 		return nullptr;
 	}
 
@@ -33,20 +33,20 @@ bool DX12Helper::EndSingleTimeCommands(ID3D12GraphicsCommandList* commandList, I
 	auto l_HResult = commandList->Close();
 	if (FAILED(l_HResult))
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingServer: Can't close the command list for single command!");
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't close the command list for single command!");
 	}
 
 	ID3D12Fence1* l_uploadFinishFence;
 	l_HResult = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&l_uploadFinishFence));
 	if (FAILED(l_HResult))
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingServer: Can't create fence for single command!");
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create fence for single command!");
 	}
 
 	auto l_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 	if (l_fenceEvent == nullptr)
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingServer: Can't create fence event for single command!");
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create fence event for single command!");
 	}
 
 	ID3D12CommandList* ppCommandLists[] = { commandList };
@@ -75,7 +75,7 @@ ID3D12Resource* DX12Helper::CreateUploadHeapBuffer(UINT64 size, ID3D12Device* de
 
 	if (FAILED(l_HResult))
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingServer: Can't create upload heap buffer!");
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create upload heap buffer!");
 		return nullptr;
 	}
 
@@ -96,7 +96,7 @@ ID3D12Resource* DX12Helper::CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourc
 
 	if (FAILED(l_HResult))
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingServer: Can't create default heap buffer!");
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create default heap buffer!");
 		return false;
 	}
 
@@ -117,7 +117,7 @@ ID3D12Resource * DX12Helper::CreateReadBackHeapBuffer(UINT64 size, ID3D12Device 
 
 	if (FAILED(l_HResult))
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingServer: Can't create read-back heap buffer!");
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create read-back heap buffer!");
 		return nullptr;
 	}
 

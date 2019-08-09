@@ -1,8 +1,8 @@
 #include "GIBakePass.h"
 #include "DefaultGPUBuffers.h"
+#include "../../Engine/Core/InnoLogger.h"
 
 #include "../../Engine/ModuleManager/IModuleManager.h"
-
 INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 
 #include "../../Engine/Core/IOService.h"
@@ -138,7 +138,7 @@ bool GIBakePass::generateProbes()
 			l_currentPos.y += l_probeDistance.y;
 		}
 		l_currentPos.x += l_probeDistance.x;
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: Generating probes: " + std::to_string((float)l_probeIndex * 100.0f / (float)m_totalCaptureProbes) + "%");
+		InnoLogger::Log(LogLevel::Verbose, "GIBakePass: Generating probes: ", (float)l_probeIndex * 100.0f / (float)m_totalCaptureProbes, "%");
 	}
 
 	return true;
@@ -186,7 +186,7 @@ bool GIBakePass::generateBricks()
 			l_currentPos.y += l_brickSize;
 		}
 		l_currentPos.x += l_brickSize;
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: Generating brick: " + std::to_string((float)l_brickIndex * 100.0f / (float)l_totalBricks) + "%");
+		InnoLogger::Log(LogLevel::Verbose, "GIBakePass: Generating brick: ", (float)l_brickIndex * 100.0f / (float)l_totalBricks, "%");
 	}
 
 	return true;

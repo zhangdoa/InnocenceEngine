@@ -7,4 +7,5 @@ class PhysicsDataComponent : public InnoComponent
 public:
 	AABB m_AABB = {};
 	Sphere m_sphere = {};
+	PhysicsDataComponent* m_childrenNodes[8];
 };

@@ -7,6 +7,7 @@
 #include "../ComponentManager/ISpotLightComponentManager.h"
 #include "../ComponentManager/ISphereLightComponentManager.h"
 #include "../ComponentManager/ICameraComponentManager.h"
+#include "../Core/InnoLogger.h"
 
 #include "../ModuleManager/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
@@ -40,7 +41,7 @@ namespace InnoFileSystemNS::JSONParser
 		}
 		else
 		{
-			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: saveComponentData<T>: Entity ID " + std::string(rhs->m_parentEntity->m_entityID.c_str()) + " is invalid.");
+			InnoLogger::Log(LogLevel::Warning, "FileSystem: saveComponentData<T>: Entity ID ", rhs->m_parentEntity->m_entityID.c_str(), " is invalid.");
 			return false;
 		}
 	}
@@ -66,7 +67,7 @@ bool InnoFileSystemNS::JSONParser::loadJsonDataFromDisk(const std::string & file
 
 	if (!i.is_open())
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: can't open JSON file : " + fileName + "!");
+		InnoLogger::Log(LogLevel::Error, "FileSystem: can't open JSON file : ", fileName.c_str(), "!");
 		return false;
 	}
 
@@ -83,7 +84,7 @@ bool InnoFileSystemNS::JSONParser::saveJsonDataToDisk(const std::string & fileNa
 	o << std::setw(4) << data << std::endl;
 	o.close();
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: JSON file : " + fileName + " has been saved.");
+	InnoLogger::Log(LogLevel::Verbose, "FileSystem: JSON file : ", fileName.c_str(), " has been saved.");
 
 	return true;
 }
@@ -426,7 +427,7 @@ std::vector<AnimationDataComponent*> InnoFileSystemNS::JSONParser::processAnimat
 
 		if (!l_animationFile.is_open())
 		{
-			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: std::ifstream: can't open file " + l_animationFileName + "!");
+			InnoLogger::Log(LogLevel::Error, "FileSystem: std::ifstream: can't open file ", l_animationFileName.c_str(), "!");
 		}
 		auto l_ADC = g_pModuleManager->getRenderingFrontend()->addAnimationDataComponent();
 
@@ -500,7 +501,7 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j)
 	auto l_loadedModelPair = m_loadedModelPair.find(l_meshFileName);
 	if (l_loadedModelPair != m_loadedModelPair.end())
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: JSONParser: " + l_meshFileName + " has been already loaded.");
+		InnoLogger::Log(LogLevel::Verbose, "FileSystem: JSONParser: ", l_meshFileName.c_str(), " has been already loaded.");
 		l_result = l_loadedModelPair->second;
 	}
 	else
@@ -509,7 +510,7 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j)
 
 		if (!l_meshFile.is_open())
 		{
-			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: std::ifstream: can't open file " + l_meshFileName + "!");
+			InnoLogger::Log(LogLevel::Error, "FileSystem: std::ifstream: can't open file ", l_meshFileName.c_str(), "!");
 			return ModelPair();
 		}
 
@@ -564,7 +565,7 @@ SkeletonDataComponent * InnoFileSystemNS::JSONParser::processSkeletonJsonData(co
 	auto l_loadedSDC = m_loadedSDC.find(skeletonFileName);
 	if (l_loadedSDC != m_loadedSDC.end())
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: JSONParser: " + skeletonFileName + " has been already loaded.");
+		InnoLogger::Log(LogLevel::Verbose, "FileSystem: JSONParser: ", skeletonFileName.c_str(), " has been already loaded.");
 		return l_loadedSDC->second;
 	}
 	else
@@ -711,7 +712,7 @@ bool InnoFileSystemNS::JSONParser::saveScene(const std::string& fileName)
 
 	saveJsonDataToDisk(fileName, topLevel);
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem: scene " + fileName + " has been saved.");
+	InnoLogger::Log(LogLevel::Success, "FileSystem: scene ", fileName.c_str(), " has been saved.");
 
 	return true;
 }
@@ -764,7 +765,7 @@ bool InnoFileSystemNS::JSONParser::loadScene(const std::string & fileName)
 		}
 	}
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem: scene loading finished.");
+	InnoLogger::Log(LogLevel::Success, "FileSystem: scene loading finished.");
 
 	assignComponentRuntimeData();
 
@@ -786,7 +787,7 @@ bool InnoFileSystemNS::JSONParser::assignComponentRuntimeData()
 			}
 			else
 			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: can't find TransformComponent with entity name" + std::string(l_orphan.second.c_str()) + "!");
+				InnoLogger::Log(LogLevel::Error, "FileSystem: can't find TransformComponent with entity name", l_orphan.second.c_str(), "!");
 			}
 		}
 	}

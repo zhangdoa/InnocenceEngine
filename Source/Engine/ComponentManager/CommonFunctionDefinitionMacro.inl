@@ -55,6 +55,6 @@ m_ComponentsMap.erase_if([&](auto val) { return val.second->m_objectUsage == Obj
 	} \
 	else \
 	{ \
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, std::string(#className) + "Manager :Can't find " + std::string(#className) + " by Entity: " + std::string(l_parentEntity->m_entityName.c_str()) + "!"); \
+		InnoLogger::Log(LogLevel::Error, #className, "Manager :Can't find ",#className," by Entity: " ,l_parentEntity->m_entityName.c_str(), "!"); \
 		return nullptr; \
 	}

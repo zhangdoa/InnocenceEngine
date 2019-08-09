@@ -5,13 +5,13 @@
 #include "../ComponentManager/ICameraComponentManager.h"
 
 #include "../Common/InnoMathHelper.h"
+#include "../Core/InnoLogger.h"
 
 #if defined INNO_PLATFORM_WIN
 #include "PhysXWrapper.h"
 #endif
 
 #include "../ModuleManager/IModuleManager.h"
-
 extern IModuleManager* g_pModuleManager;
 
 namespace InnoPhysicsSystemNS
@@ -95,7 +95,7 @@ bool InnoPhysicsSystemNS::generatePhysicsDataComponent(MeshDataComponent* MDC)
 	l_PDC->m_AABB = l_AABB;
 	l_PDC->m_sphere = l_sphere;
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysicsSystem: PhysicsDataComponent has been generated for MeshDataComponent:" + std::string(MDC->m_parentEntity->m_entityName.c_str()) + ".");
+	InnoLogger::Log(LogLevel::Verbose, "PhysicsSystem: PhysicsDataComponent has been generated for MeshDataComponent:", MDC->m_parentEntity->m_entityName.c_str(), ".");
 
 	MDC->m_PDC = l_PDC;
 
@@ -158,7 +158,7 @@ bool InnoPhysicsSystemNS::generatePhysicsDataComponent(VisibleComponent* VC)
 #endif
 
 	VC->m_PDC = l_PDC;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysicsSystem: PhysicsDataComponent has been generated for VisibleComponent:" + std::string(VC->m_parentEntity->m_entityName.c_str()) + ".");
+	InnoLogger::Log(LogLevel::Verbose, "PhysicsSystem: PhysicsDataComponent has been generated for VisibleComponent:", VC->m_parentEntity->m_entityName.c_str(), ".");
 
 	return true;
 }
@@ -168,12 +168,12 @@ bool InnoPhysicsSystem::initialize()
 	if (InnoPhysicsSystemNS::m_objectStatus == ObjectStatus::Created)
 	{
 		InnoPhysicsSystemNS::m_objectStatus = ObjectStatus::Activated;
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "PhysicsSystem has been initialized.");
+		InnoLogger::Log(LogLevel::Success, "PhysicsSystem has been initialized.");
 		return true;
 	}
 	else
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "PhysicsSystem: Object is not created!");
+		InnoLogger::Log(LogLevel::Error, "PhysicsSystem: Object is not created!");
 		return false;
 	}
 	return true;
@@ -374,7 +374,7 @@ bool InnoPhysicsSystem::update()
 bool InnoPhysicsSystem::terminate()
 {
 	InnoPhysicsSystemNS::m_objectStatus = ObjectStatus::Terminated;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "PhysicsSystem has been terminated.");
+	InnoLogger::Log(LogLevel::Success, "PhysicsSystem has been terminated.");
 	return true;
 }
 

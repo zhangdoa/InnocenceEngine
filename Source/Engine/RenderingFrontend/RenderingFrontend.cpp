@@ -7,8 +7,9 @@
 #include "../ComponentManager/ISphereLightComponentManager.h"
 #include "../ComponentManager/ICameraComponentManager.h"
 
-#include "../ModuleManager/IModuleManager.h"
+#include "../Core/InnoLogger.h"
 
+#include "../ModuleManager/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
 
 #include "../RayTracer/RayTracer.h"
@@ -373,12 +374,12 @@ bool InnoRenderingFrontendNS::initialize()
 		m_rayTracer->Initialize();
 
 		InnoRenderingFrontendNS::m_objectStatus = ObjectStatus::Activated;
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "RenderingFrontend has been initialized.");
+		InnoLogger::Log(LogLevel::Success, "RenderingFrontend has been initialized.");
 		return true;
 	}
 	else
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingFrontend: Object is not created!");
+		InnoLogger::Log(LogLevel::Error, "RenderingFrontend: Object is not created!");
 		return false;
 	}
 }
@@ -738,7 +739,7 @@ bool InnoRenderingFrontendNS::update()
 				auto l_result = m_renderingServer->InitializeMeshDataComponent(l_Mesh);
 				if (!l_result)
 				{
-					g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "InnoRenderingFrontend: can't initialize MeshDataComponent for " + std::string(l_Mesh->m_parentEntity->m_entityName.c_str()) + "!");
+					InnoLogger::Log(LogLevel::Error, "InnoRenderingFrontend: can't initialize MeshDataComponent for ", l_Mesh->m_parentEntity->m_entityName.c_str(), "!");
 				}
 			}
 		}
@@ -753,7 +754,7 @@ bool InnoRenderingFrontendNS::update()
 				auto l_result = m_renderingServer->InitializeMaterialDataComponent(l_Mesh);
 				if (!l_result)
 				{
-					g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "InnoRenderingFrontend: can't initialize MaterialDataComponent for " + std::string(l_Mesh->m_parentEntity->m_entityName.c_str()) + "!");
+					InnoLogger::Log(LogLevel::Error, "InnoRenderingFrontend: can't initialize MaterialDataComponent for ", l_Mesh->m_parentEntity->m_entityName.c_str(), "!");
 				}
 			}
 		}
@@ -772,7 +773,7 @@ bool InnoRenderingFrontendNS::terminate()
 	m_rayTracer->Terminate();
 
 	m_objectStatus = ObjectStatus::Terminated;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "RenderingFrontend has been terminated.");
+	InnoLogger::Log(LogLevel::Success, "RenderingFrontend has been terminated.");
 	return true;
 }
 
@@ -858,7 +859,7 @@ MeshDataComponent * InnoRenderingFrontend::getMeshDataComponent(MeshShapeType me
 	case MeshShapeType::Terrain:
 		return InnoRenderingFrontendNS::m_terrainMesh; break;
 	case MeshShapeType::Custom:
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingFrontend: wrong MeshShapeType!");
+		InnoLogger::Log(LogLevel::Error, "RenderingFrontend: wrong MeshShapeType!");
 		return nullptr; break;
 	default:
 		return nullptr; break;

@@ -1,5 +1,6 @@
 #include "WinWindowSystem.h"
 #include "../../Component/WinWindowSystemComponent.h"
+#include "../../Core/InnoLogger.h"
 
 #include "DXWindowSurface/WinDXWindowSurface.h"
 #include "GLWindowSurface/WinGLWindowSurface.h"
@@ -90,7 +91,7 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 	WinWindowSystemNS::m_windowSurface->setup(WinWindowSystemComponent::get().m_hInstance, WinWindowSystemComponent::get().m_hwnd, WindowProc);
 
 	WinWindowSystemNS::m_objectStatus = ObjectStatus::Activated;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinWindowSystem setup finished.");
+	InnoLogger::Log(LogLevel::Success, "WinWindowSystem setup finished.");
 
 	return true;
 }
@@ -98,7 +99,7 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 bool WinWindowSystem::initialize()
 {
 	WinWindowSystemNS::m_windowSurface->initialize();
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinWindowSystem has been initialized.");
+	InnoLogger::Log(LogLevel::Success, "WinWindowSystem has been initialized.");
 	return true;
 }
 
@@ -136,7 +137,7 @@ bool WinWindowSystem::terminate()
 		DestroyWindow(WinWindowSystemComponent::get().m_hwnd);
 		WinWindowSystemComponent::get().m_hwnd = NULL;
 
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "WinWindowSystem: Window closed.");
+		InnoLogger::Log(LogLevel::Warning, "WinWindowSystem: Window closed.");
 
 		// Remove the application instance.
 		UnregisterClass(WinWindowSystemComponent::get().m_applicationName, WinWindowSystemComponent::get().m_hInstance);
@@ -149,7 +150,7 @@ bool WinWindowSystem::terminate()
 	PostQuitMessage(0);
 
 	WinWindowSystemNS::m_objectStatus = ObjectStatus::Terminated;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinWindowSystem has been terminated.");
+	InnoLogger::Log(LogLevel::Success, "WinWindowSystem has been terminated.");
 	return true;
 }
 
@@ -186,7 +187,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 	case WM_DESTROY:
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "WinWindowSystem: WM_DESTROY signal received.");
+		InnoLogger::Log(LogLevel::Warning, "WinWindowSystem: WM_DESTROY signal received.");
 		WinWindowSystemNS::m_objectStatus = ObjectStatus::Suspended;
 	}
 	case WM_PAINT:

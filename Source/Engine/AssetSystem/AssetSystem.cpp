@@ -1,8 +1,9 @@
 #include "AssetSystem.h"
 #include "../Common/ComponentHeaders.h"
-#include "../ModuleManager/IModuleManager.h"
 #include "../Common/InnoMathHelper.h"
+#include "../Core/InnoLogger.h"
 
+#include "../ModuleManager/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
 
 namespace InnoAssetSystemNS
@@ -23,12 +24,12 @@ bool InnoAssetSystem::initialize()
 	if (InnoAssetSystemNS::m_objectStatus == ObjectStatus::Created)
 	{
 		InnoAssetSystemNS::m_objectStatus = ObjectStatus::Activated;
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "AssetSystem has been initialized.");
+		InnoLogger::Log(LogLevel::Success, "AssetSystem has been initialized.");
 		return true;
 	}
 	else
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "AssetSystem: Object is not created!");
+		InnoLogger::Log(LogLevel::Error, "AssetSystem: Object is not created!");
 		return false;
 	}
 }
@@ -49,7 +50,7 @@ bool InnoAssetSystem::update()
 bool InnoAssetSystem::terminate()
 {
 	InnoAssetSystemNS::m_objectStatus = ObjectStatus::Terminated;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "AssetSystem has been terminated.");
+	InnoLogger::Log(LogLevel::Success, "AssetSystem has been terminated.");
 	return true;
 }
 

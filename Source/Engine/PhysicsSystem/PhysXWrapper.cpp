@@ -4,8 +4,9 @@
 #include "PxPhysicsAPI.h"
 #endif
 
-#include "../ModuleManager/IModuleManager.h"
+#include "../../Engine/Core/InnoLogger.h"
 
+#include "../ModuleManager/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
 
 using namespace physx;
@@ -57,7 +58,7 @@ bool PhysXWrapperNS::setup()
 		gDefaultErrorCallback);
 	if (!gFoundation)
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "PhysXWrapper: PxCreateFoundation failed!");
+		InnoLogger::Log(LogLevel::Error, "PhysXWrapper: PxCreateFoundation failed!");
 		return false;
 	}
 	bool recordMemoryAllocations = true;
@@ -70,7 +71,7 @@ bool PhysXWrapperNS::setup()
 
 	if (!gPhysics)
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "PhysXWrapper: PxCreatePhysics failed!");
+		InnoLogger::Log(LogLevel::Error, "PhysXWrapper: PxCreatePhysics failed!");
 		return false;
 	}
 
@@ -105,7 +106,7 @@ bool PhysXWrapperNS::setup()
 
 		PhysXActors.clear();
 
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "PhysXWrapper: All PhysX Actors has been removed.");
+		InnoLogger::Log(LogLevel::Success, "PhysXWrapper: All PhysX Actors has been removed.");
 	};
 
 	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
@@ -172,7 +173,7 @@ bool PhysXWrapperNS::terminate()
 
 	gFoundation->release();
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "PhysXWrapper: PhysX has been terminated.");
+	InnoLogger::Log(LogLevel::Success, "PhysXWrapper: PhysX has been terminated.");
 
 	return true;
 }
@@ -204,7 +205,7 @@ bool PhysXWrapperNS::createPxSphere(void* component, vec4 globalPos, float radiu
 	gScene->addActor(*l_actor);
 	shape->release();
 	PhysXActors.emplace_back(PhysXActor{ isDynamic, l_actor });
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysXWrapper: PxRigidActor has been created for " + InnoUtility::pointerToString(component) + ".");
+	InnoLogger::Log(LogLevel::Verbose, "PhysXWrapper: PxRigidActor has been created for ", component, ".");
 
 	return true;
 }
@@ -238,7 +239,7 @@ bool PhysXWrapperNS::createPxBox(void* component, vec4 globalPos, vec4 rot, vec4
 	gScene->addActor(*l_actor);
 	shape->release();
 	PhysXActors.emplace_back(PhysXActor{ isDynamic, l_actor });
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "PhysXWrapper: PxRigidActor has been created for " + InnoUtility::pointerToString(component) + ".");
+	InnoLogger::Log(LogLevel::Verbose, "PhysXWrapper: PxRigidActor has been created for ", component, ".");
 
 	return true;
 }

@@ -65,6 +65,8 @@ struct DirectoryMetadata
 	std::vector<AssetMetadata> childrenAssets;
 };
 
+enum class LogLevel { Verbose, Success, Warning, Error };
+
 enum class IOMode { Text, Binary };
 
 enum class VisiblilityType { Invisible, BillBoard, Opaque, Transparent, Emissive, Debug };
@@ -142,8 +144,6 @@ struct ButtonEvent
 			);
 	}
 };
-
-enum class LogType { INNO_DEV_VERBOSE, INNO_WARNING, INNO_ERROR, INNO_DEV_SUCCESS };
 
 #define INNO_KEY_SPACE              32
 #define INNO_KEY_APOSTROPHE         39  /* ' */

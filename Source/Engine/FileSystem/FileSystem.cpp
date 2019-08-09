@@ -3,9 +3,9 @@
 #include "../Component/MeshDataComponent.h"
 #include "../Component/TextureDataComponent.h"
 #include "../ComponentManager/IVisibleComponentManager.h"
+#include "../Core/InnoLogger.h"
 
 #include "../ModuleManager/IModuleManager.h"
-
 extern IModuleManager* g_pModuleManager;
 
 #include "../Core/IOService.h"
@@ -47,7 +47,7 @@ bool InnoFileSystemNS::convertModel(const std::string & fileName, const std::str
 	}
 	else
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: " + fileName + " is not supported!");
+		InnoLogger::Log(LogLevel::Warning, "FileSystem: ", fileName.c_str(), " is not supported!");
 
 		return false;
 	}
@@ -73,7 +73,7 @@ bool InnoFileSystemNS::prepareForLoadingScene(const std::string& fileName)
 	{
 		if (m_currentScene == fileName)
 		{
-			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: scene " + fileName + " has already loaded now.");
+			InnoLogger::Log(LogLevel::Warning, "FileSystem: scene ", fileName.c_str(), " has already loaded now.");
 			return true;
 		}
 		m_nextLoadingScene = fileName;
@@ -101,7 +101,7 @@ bool InnoFileSystemNS::loadScene(const std::string& fileName)
 
 	InnoFileSystemNS::m_isLoadingScene = false;
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem: scene " + fileName + " has been loaded.");
+	InnoLogger::Log(LogLevel::Success, "FileSystem: scene ", fileName.c_str(), " has been loaded.");
 
 	GetComponentManager(VisibleComponent)->LoadAssetsForComponents();
 
@@ -121,12 +121,12 @@ bool InnoFileSystem::initialize()
 	if (InnoFileSystemNS::m_objectStatus == ObjectStatus::Created)
 	{
 		InnoFileSystemNS::m_objectStatus = ObjectStatus::Activated;
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem has been initialized.");
+		InnoLogger::Log(LogLevel::Success, "FileSystem has been initialized.");
 		return true;
 	}
 	else
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: Object is not created!");
+		InnoLogger::Log(LogLevel::Error, "FileSystem: Object is not created!");
 		return false;
 	}
 }
@@ -237,7 +237,7 @@ bool InnoFileSystem::addCPPClassFiles(const CPPClassDesc & desc)
 
 	if (!l_headerFile.is_open())
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: std::ofstream: can't open file " + l_headerFileName + "!");
+		InnoLogger::Log(LogLevel::Error, "FileSystem: std::ofstream: can't open file ", l_headerFileName.c_str(), "!");
 		return false;
 	}
 
@@ -325,6 +325,6 @@ bool InnoFileSystem::addCPPClassFiles(const CPPClassDesc & desc)
 
 	l_headerFile.close();
 
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem: " + l_headerFileName + " has been generated.");
+	InnoLogger::Log(LogLevel::Success, "FileSystem: ", l_headerFileName.c_str(), " has been generated.");
 	return true;
 }

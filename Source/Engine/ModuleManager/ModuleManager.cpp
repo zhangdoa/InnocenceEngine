@@ -1,6 +1,7 @@
 #include "ModuleManager.h"
 #include "../Core/TimeSystem.h"
 #include "../Core/LogSystem.h"
+#include "../Core/InnoLogger.h"
 #include "../Core/MemorySystem.h"
 #include "../Core/TaskSystem.h"
 #include "../Core/TestSystem.h"
@@ -53,7 +54,7 @@ if (!g_pModuleManager->get##className()->setup()) \
 { \
 	return false; \
 } \
-g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, std::string(#className) + " setup finished."); \
+InnoLogger::Log(LogLevel::Success, #className, " setup finished."); \
 
 #define subSystemInit( className ) \
 if (!g_pModuleManager->get##className()->initialize()) \
@@ -85,7 +86,7 @@ if (!g_pModuleManager->getComponentManager(ComponentType::className)->Setup()) \
 { \
 	return false; \
 } \
-g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, std::string(#className) + " setup finished."); \
+InnoLogger::Log(LogLevel::Success, #className, " setup finished."); \
 
 #define ComponentManagerInit( className ) \
 if (!g_pModuleManager->getComponentManager(ComponentType::className)->Initialize()) \
@@ -166,7 +167,7 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 
 	if (arg == "")
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "ModuleManager: No arguments found, use default settings.");
+		InnoLogger::Log(LogLevel::Warning, "ModuleManager: No arguments found, use default settings.");
 		return l_result;
 	}
 
@@ -174,7 +175,7 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 
 	if (l_engineModeArgPos == std::string::npos)
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "ModuleManager: No engine mode argument found, use default game mode.");
+		InnoLogger::Log(LogLevel::Warning, "ModuleManager: No engine mode argument found, use default game mode.");
 	}
 	else
 	{
@@ -184,16 +185,16 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 		if (l_engineModeArguments == "0")
 		{
 			l_result.engineMode = EngineMode::GAME;
-			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "ModuleManager: Launch in game mode.");
+			InnoLogger::Log(LogLevel::Verbose, "ModuleManager: Launch in game mode.");
 		}
 		else if (l_engineModeArguments == "1")
 		{
 			l_result.engineMode = EngineMode::EDITOR;
-			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "ModuleManager: Launch in editor mode.");
+			InnoLogger::Log(LogLevel::Verbose, "ModuleManager: Launch in editor mode.");
 		}
 		else
 		{
-			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "ModuleManager: Unsupported engine mode.");
+			InnoLogger::Log(LogLevel::Warning, "ModuleManager: Unsupported engine mode.");
 		}
 	}
 
@@ -201,7 +202,7 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 
 	if (l_renderingServerArgPos == std::string::npos)
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "ModuleManager: No rendering backend argument found, use default OpenGL rendering backend.");
+		InnoLogger::Log(LogLevel::Warning, "ModuleManager: No rendering backend argument found, use default OpenGL rendering backend.");
 	}
 	else
 	{
@@ -213,7 +214,7 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 #if !defined INNO_PLATFORM_MAC && defined INNO_RENDERER_OPENGL
 			l_result.renderingServer = RenderingServer::GL;
 #else
-			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "ModuleManager: OpenGL is not supported on current platform, no rendering backend will be launched.");
+			InnoLogger::Log(LogLevel::Warning, "ModuleManager: OpenGL is not supported on current platform, no rendering backend will be launched.");
 #endif
 		}
 		else if (l_rendererArguments == "1")
@@ -221,7 +222,7 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 #if defined INNO_PLATFORM_WIN
 			l_result.renderingServer = RenderingServer::DX11;
 #else
-			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "ModuleManager: DirectX 11 is not supported on current platform, use default OpenGL rendering backend.");
+			InnoLogger::Log(LogLevel::Warning, "ModuleManager: DirectX 11 is not supported on current platform, use default OpenGL rendering backend.");
 #endif
 		}
 		else if (l_rendererArguments == "2")
@@ -229,7 +230,7 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 #if defined INNO_PLATFORM_WIN
 			l_result.renderingServer = RenderingServer::DX12;
 #else
-			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "ModuleManager: DirectX 12 is not supported on current platform, use default OpenGL rendering backend.");
+			InnoLogger::Log(LogLevel::Warning, "ModuleManager: DirectX 12 is not supported on current platform, use default OpenGL rendering backend.");
 #endif
 		}
 		else if (l_rendererArguments == "3")
@@ -237,7 +238,7 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 #if defined INNO_RENDERER_VULKAN
 			l_result.renderingServer = RenderingServer::VK;
 #else
-			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "ModuleManager: Vulkan is not supported on current platform, use default OpenGL rendering backend.");
+			InnoLogger::Log(LogLevel::Warning, "ModuleManager: Vulkan is not supported on current platform, use default OpenGL rendering backend.");
 #endif
 		}
 		else if (l_rendererArguments == "4")
@@ -245,12 +246,12 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 #if defined INNO_PLATFORM_MAC
 			l_result.renderingServer = RenderingServer::MT;
 #else
-			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "ModuleManager: Metal is not supported on current platform, use default OpenGL rendering backend.");
+			InnoLogger::Log(LogLevel::Warning, "ModuleManager: Metal is not supported on current platform, use default OpenGL rendering backend.");
 #endif
 		}
 		else
 		{
-			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "ModuleManager: Unsupported rendering backend, use default OpenGL rendering backend.");
+			InnoLogger::Log(LogLevel::Warning, "ModuleManager: Unsupported rendering backend, use default OpenGL rendering backend.");
 		}
 	}
 
@@ -412,7 +413,7 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	{
 		return false;
 	}
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WindowSystem setup finished.");
+	InnoLogger::Log(LogLevel::Success, "WindowSystem setup finished.");
 
 	subSystemSetup(AssetSystem);
 	subSystemSetup(FileSystem);
@@ -421,7 +422,7 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	{
 		return false;
 	}
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "EntityManager setup finished.");
+	InnoLogger::Log(LogLevel::Success, "EntityManager setup finished.");
 
 	ComponentManagerSetup(TransformComponent);
 	ComponentManagerSetup(VisibleComponent);
@@ -435,7 +436,7 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	{
 		return false;
 	}
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "SceneHierarchyManager setup finished.");
+	InnoLogger::Log(LogLevel::Success, "SceneHierarchyManager setup finished.");
 
 	subSystemSetup(PhysicsSystem);
 	subSystemSetup(EventSystem);
@@ -444,13 +445,13 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	{
 		return false;
 	}
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "RenderingFrontend setup finished.");
+	InnoLogger::Log(LogLevel::Success, "RenderingFrontend setup finished.");
 
 	if (!m_RenderingServer->Setup())
 	{
 		return false;
 	}
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "RenderingServer setup finished.");
+	InnoLogger::Log(LogLevel::Success, "RenderingServer setup finished.");
 
 	//if (!ImGuiWrapper::get().setup())
 	//{
@@ -468,7 +469,7 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	}
 
 	m_objectStatus = ObjectStatus::Created;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "Engine setup finished.");
+	InnoLogger::Log(LogLevel::Success, "Engine setup finished.");
 	return true;
 }
 
@@ -522,7 +523,7 @@ bool InnoModuleManagerNS::initialize()
 	}
 
 	m_objectStatus = ObjectStatus::Activated;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "Engine has been initialized.");
+	InnoLogger::Log(LogLevel::Success, "Engine has been initialized.");
 	return true;
 }
 
@@ -606,7 +607,7 @@ bool InnoModuleManagerNS::update()
 		else
 		{
 			m_objectStatus = ObjectStatus::Suspended;
-			m_LogSystem->printLog(LogType::INNO_WARNING, "Engine is stand-by.");
+			InnoLogger::Log(LogLevel::Warning, "Engine is stand-by.");
 			return true;
 		}
 	}
@@ -616,37 +617,37 @@ bool InnoModuleManagerNS::terminate()
 {
 	if (!m_RenderingClient->Terminate())
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "Rendering client can't be terminated!");
+		InnoLogger::Log(LogLevel::Error, "Rendering client can't be terminated!");
 		return false;
 	}
 
 	if (!m_LogicClient->terminate())
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "Logic client can't be terminated!");
+		InnoLogger::Log(LogLevel::Error, "Logic client can't be terminated!");
 		return false;
 	}
 
 	//if (!ImGuiWrapper::get().terminate())
 	//{
-	//	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "GuiSystem can't be terminated!");
+	//	InnoLogger::Log(LogLevel::Error, "GuiSystem can't be terminated!");
 	//	return false;
 	//}
 
 	if (!m_RenderingServer->Terminate())
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingServer can't be terminated!");
+		InnoLogger::Log(LogLevel::Error, "RenderingServer can't be terminated!");
 		return false;
 	}
 
 	if (!m_RenderingFrontend->terminate())
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "RenderingFrontend can't be terminated!");
+		InnoLogger::Log(LogLevel::Error, "RenderingFrontend can't be terminated!");
 		return false;
 	}
 
 	if (!m_WindowSystem->terminate())
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "WindowSystem can't be terminated!");
+		InnoLogger::Log(LogLevel::Error, "WindowSystem can't be terminated!");
 		return false;
 	}
 
@@ -656,7 +657,7 @@ bool InnoModuleManagerNS::terminate()
 
 	if (!m_SceneHierarchyManager->Terminate())
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "SceneHierarchyManager can't be terminated!");
+		InnoLogger::Log(LogLevel::Error, "SceneHierarchyManager can't be terminated!");
 		return false;
 	}
 
@@ -670,7 +671,7 @@ bool InnoModuleManagerNS::terminate()
 
 	if (!m_EntityManager->Terminate())
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "EntityManager can't be terminated!");
+		InnoLogger::Log(LogLevel::Error, "EntityManager can't be terminated!");
 		return false;
 	}
 
@@ -683,7 +684,7 @@ bool InnoModuleManagerNS::terminate()
 	subSystemTerm(TimeSystem);
 
 	m_objectStatus = ObjectStatus::Terminated;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "Engine has been terminated.");
+	InnoLogger::Log(LogLevel::Success, "Engine has been terminated.");
 
 	return true;
 }

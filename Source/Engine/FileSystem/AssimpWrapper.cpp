@@ -5,6 +5,7 @@
 #include "assimp/DefaultLogger.hpp"
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
+#include "../Core/InnoLogger.h"
 
 #include "../ModuleManager/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
@@ -35,7 +36,7 @@ bool InnoFileSystemNS::AssimpWrapper::convertModel(const std::string & fileName,
 	// Check if the file was converted already
 	if (IOService::isFileExist(l_exportFileRelativePath))
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: AssimpWrapper: " + fileName + " has already been converted!");
+		InnoLogger::Log(LogLevel::Warning, "FileSystem: AssimpWrapper: ", fileName.c_str(), " has already been converted!");
 		return true;
 	}
 
@@ -46,7 +47,7 @@ bool InnoFileSystemNS::AssimpWrapper::convertModel(const std::string & fileName,
 	// Check if the file was exist
 	if (IOService::isFileExist(fileName))
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "FileSystem: AssimpWrapper: converting " + fileName + "...");
+		InnoLogger::Log(LogLevel::Verbose, "FileSystem: AssimpWrapper: converting ", fileName.c_str(), "...");
 #if defined _DEBUG
 		std::string l_logFilePath = IOService::getWorkingDirectory() + "res/log/AssimpLog" + fileName + ".txt";
 		Assimp::DefaultLogger::create(l_logFilePath.c_str(), Assimp::Logger::VERBOSE);
@@ -55,24 +56,24 @@ bool InnoFileSystemNS::AssimpWrapper::convertModel(const std::string & fileName,
 	}
 	else
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: AssimpWrapper: " + fileName + " doesn't exist!");
+		InnoLogger::Log(LogLevel::Error, "FileSystem: AssimpWrapper: ", fileName.c_str(), " doesn't exist!");
 		return false;
 	}
 	if (l_assScene)
 	{
 		if (l_assScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_assScene->mRootNode)
 		{
-			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: AssimpWrapper: " + std::string{ l_assImporter.GetErrorString() });
+			InnoLogger::Log(LogLevel::Error, "FileSystem: AssimpWrapper: ", l_assImporter.GetErrorString());
 			return false;
 		}
 		auto l_result = processAssimpScene(l_assScene, l_exportFileName);
 		JSONParser::saveJsonDataToDisk(l_exportFileRelativePath, l_result);
 
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "FileSystem: AssimpWrapper: " + fileName + " has been converted.");
+		InnoLogger::Log(LogLevel::Success, "FileSystem: AssimpWrapper: ", fileName.c_str(), " has been converted.");
 	}
 	else
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: AssimpWrapper: can't load file " + fileName + "!");
+		InnoLogger::Log(LogLevel::Error, "FileSystem: AssimpWrapper: can't load file ", fileName.c_str(), "!");
 		return false;
 	}
 
@@ -400,7 +401,7 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * a
 
 			if (aiTextureType(i) == aiTextureType::aiTextureType_NONE)
 			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: AssimpWrapper: " + l_localPath + " is unknown texture type!");
+				InnoLogger::Log(LogLevel::Warning, "FileSystem: AssimpWrapper: ", l_AssString.C_Str(), " is unknown texture type!");
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_NORMALS)
 			{
@@ -424,7 +425,7 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * a
 			}
 			else
 			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_WARNING, "FileSystem: AssimpWrapper: " + l_localPath + " is unsupported texture type!");
+				InnoLogger::Log(LogLevel::Warning, "FileSystem: AssimpWrapper: ", l_AssString.C_Str(), " is unsupported texture type!");
 			}
 		}
 	}
@@ -547,7 +548,7 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpAnimation(const aiAnimation *
 
 			if (l_channel->mNumPositionKeys != l_channel->mNumRotationKeys)
 			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "FileSystem: AssimpWrapper: Position key number is different than rotation key number in node: " + std::string(l_channel->mNodeName.C_Str()) + "!");
+				InnoLogger::Log(LogLevel::Error, "FileSystem: AssimpWrapper: Position key number is different than rotation key number in node: ", l_channel->mNodeName.C_Str(), "!");
 				l_file.close();
 				return;
 			}

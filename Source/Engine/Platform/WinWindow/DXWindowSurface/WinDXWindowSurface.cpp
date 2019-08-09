@@ -1,8 +1,8 @@
 #include "WinDXWindowSurface.h"
 #include "../../../Component/WinWindowSystemComponent.h"
+#include "../../Engine/Core/InnoLogger.h"
 
 #include "../../../ModuleManager/IModuleManager.h"
-
 extern IModuleManager* g_pModuleManager;
 
 namespace WinDXWindowSurfaceNS
@@ -65,14 +65,14 @@ bool WinDXWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 	}
 
 	m_objectStatus = ObjectStatus::Activated;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinDXWindowSurface setup finished.");
+	InnoLogger::Log(LogLevel::Success, "WinDXWindowSurface setup finished.");
 
 	return true;
 }
 
 bool WinDXWindowSurfaceNS::initialize()
 {
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinDXWindowSurface has been initialized.");
+	InnoLogger::Log(LogLevel::Success, "WinDXWindowSurface has been initialized.");
 	return true;
 }
 
@@ -84,7 +84,7 @@ bool WinDXWindowSurfaceNS::update()
 bool WinDXWindowSurfaceNS::terminate()
 {
 	m_objectStatus = ObjectStatus::Terminated;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "WinGLWindowSystemNS has been terminated.");
+	InnoLogger::Log(LogLevel::Success, "WinGLWindowSystemNS has been terminated.");
 
 	return true;
 }
