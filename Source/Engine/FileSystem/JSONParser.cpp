@@ -204,39 +204,45 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const VisibleComponent& p)
 void InnoFileSystemNS::JSONParser::to_json(json& j, const DirectionalLightComponent& p)
 {
 	json color;
-	to_json(color, p.m_color);
+	to_json(color, p.m_RGBColor);
 
 	j = json
 	{
 		{"ComponentType", InnoUtility::getComponentType<DirectionalLightComponent>()},
-		{"LuminousFlux", p.m_luminousFlux},
-		{"Color", color},
+		{"RGBColor", color},
+		{"ColorTemperature", p.m_ColorTemperature},
+		{"LuminousFlux", p.m_LuminousFlux},
+		{"UseColorTemperature", p.m_UseColorTemperature},
 	};
 }
 
 void InnoFileSystemNS::JSONParser::to_json(json& j, const PointLightComponent& p)
 {
 	json color;
-	to_json(color, p.m_color);
+	to_json(color, p.m_RGBColor);
 
 	j = json
 	{
 		{"ComponentType", InnoUtility::getComponentType<PointLightComponent>()},
-		{"LuminousFlux", p.m_luminousFlux},
-		{"Color", color},
+		{"RGBColor", color},
+		{"ColorTemperature", p.m_ColorTemperature},
+		{"LuminousFlux", p.m_LuminousFlux},
+		{"UseColorTemperature", p.m_UseColorTemperature},
 	};
 }
 
 void InnoFileSystemNS::JSONParser::to_json(json& j, const SpotLightComponent& p)
 {
 	json color;
-	to_json(color, p.m_color);
+	to_json(color, p.m_RGBColor);
 
 	j = json
 	{
 		{"ComponentType", InnoUtility::getComponentType<SpotLightComponent>()},
-		{"LuminousFlux", p.m_luminousFlux},
-		{"Color", color},
+		{"RGBColor", color},
+		{"ColorTemperature", p.m_ColorTemperature},
+		{"LuminousFlux", p.m_LuminousFlux},
+		{"UseColorTemperature", p.m_UseColorTemperature},
 		{"CutoffAngle", p.m_cutoffAngle},
 	};
 }
@@ -244,13 +250,15 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const SpotLightComponent& p)
 void InnoFileSystemNS::JSONParser::to_json(json& j, const SphereLightComponent& p)
 {
 	json color;
-	to_json(color, p.m_color);
+	to_json(color, p.m_RGBColor);
 
 	j = json
 	{
 		{"ComponentType", InnoUtility::getComponentType<SphereLightComponent>()},
-		{"LuminousFlux", p.m_luminousFlux},
-		{"Color", color},
+		{"RGBColor", color},
+		{"ColorTemperature", p.m_ColorTemperature},
+		{"LuminousFlux", p.m_LuminousFlux},
+		{"UseColorTemperature", p.m_UseColorTemperature},
 		{"SphereRadius", p.m_sphereRadius},
 	};
 }
@@ -261,8 +269,8 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const CameraComponent& p)
 	{
 		{"ComponentType", InnoUtility::getComponentType<CameraComponent>()},
 		{"FOVX", p.m_FOVX},
-		{"widthScale", p.m_widthScale},
-		{"heightScale", p.m_heightScale},
+		{"WidthScale", p.m_widthScale},
+		{"HeightScale", p.m_heightScale},
 		{"zNear", p.m_zNear},
 		{"zFar", p.m_zFar},
 	};
@@ -325,35 +333,43 @@ void InnoFileSystemNS::JSONParser::from_json(const json & j, vec4 & p)
 
 void InnoFileSystemNS::JSONParser::from_json(const json & j, DirectionalLightComponent & p)
 {
-	p.m_luminousFlux = j["LuminousFlux"];
-	from_json(j["Color"], p.m_color);
+	from_json(j["RGBColor"], p.m_RGBColor);
+	p.m_ColorTemperature = j["ColorTemperature"];
+	p.m_LuminousFlux = j["LuminousFlux"];
+	p.m_UseColorTemperature = j["UseColorTemperature"];
 }
 
 void InnoFileSystemNS::JSONParser::from_json(const json & j, PointLightComponent & p)
 {
-	p.m_luminousFlux = j["LuminousFlux"];
-	from_json(j["Color"], p.m_color);
+	from_json(j["RGBColor"], p.m_RGBColor);
+	p.m_ColorTemperature = j["ColorTemperature"];
+	p.m_LuminousFlux = j["LuminousFlux"];
+	p.m_UseColorTemperature = j["UseColorTemperature"];
 }
 
 void InnoFileSystemNS::JSONParser::from_json(const json & j, SpotLightComponent & p)
 {
-	p.m_luminousFlux = j["LuminousFlux"];
-	from_json(j["Color"], p.m_color);
+	from_json(j["RGBColor"], p.m_RGBColor);
+	p.m_ColorTemperature = j["ColorTemperature"];
+	p.m_LuminousFlux = j["LuminousFlux"];
+	p.m_UseColorTemperature = j["UseColorTemperature"];
 	p.m_cutoffAngle = j["CutoffAngle"];
 }
 
 void InnoFileSystemNS::JSONParser::from_json(const json & j, SphereLightComponent & p)
 {
-	p.m_luminousFlux = j["LuminousFlux"];
-	from_json(j["Color"], p.m_color);
+	from_json(j["RGBColor"], p.m_RGBColor);
+	p.m_ColorTemperature = j["ColorTemperature"];
+	p.m_LuminousFlux = j["LuminousFlux"];
+	p.m_UseColorTemperature = j["UseColorTemperature"];
 	p.m_sphereRadius = j["SphereRadius"];
 }
 
 void InnoFileSystemNS::JSONParser::from_json(const json& j, CameraComponent& p)
 {
 	p.m_FOVX = j["FOVX"];
-	p.m_widthScale = j["widthScale"];
-	p.m_heightScale = j["heightScale"];
+	p.m_widthScale = j["WidthScale"];
+	p.m_heightScale = j["HeightScale"];
 	p.m_zNear = j["zNear"];
 	p.m_zFar = j["zFar"];
 }

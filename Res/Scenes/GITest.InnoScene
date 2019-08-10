@@ -27,8 +27,8 @@
         {
           "ComponentType": 6,
           "FOVX": 90.0,
-          "widthScale": 16.0,
-          "heightScale": 9.0,
+          "WidthScale": 16.0,
+          "HeightScale": 9.0,
           "zNear": 0.1,
           "zFar": 2000.0
         }
@@ -61,14 +61,16 @@
           "ParentTransformComponentEntityName": "RootTransform"
         },
         {
-          "Color": {
+          "RGBColor": {
             "W": 1.0,
             "Z": 1.0,
             "Y": 1.0,
             "X": 1.0
           },
           "ComponentType": 2,
-          "LuminousFlux": 1.0
+          "ColorTemperature": 5780.0,
+          "LuminousFlux": 1.0,
+          "UseColorTemperature": true
         }
       ],
       "EntityID": "55467c3b1220a81f359b63e29ce45340",
@@ -328,14 +330,16 @@
           "ParentTransformComponentEntityName": "RootTransform"
         },
         {
-          "Color": {
+          "RGBColor": {
             "W": 1.0,
             "Z": 0.2,
             "Y": 0.2,
             "X": 0.5
           },
           "ComponentType": 3,
-          "LuminousFlux": 120.0
+          "ColorTemperature": 5780.0,
+          "LuminousFlux": 120.0,
+          "UseColorTemperature": false
         }
       ],
       "EntityID": "c2fed124d84f029192d2624b84e0de1c",
@@ -366,14 +370,16 @@
           "ParentTransformComponentEntityName": "RootTransform"
         },
         {
-          "Color": {
+          "RGBColor": {
             "W": 1.0,
             "Z": 0.5240174531936646,
             "Y": 0.0457657165825367,
             "X": 0.3256159722805023
           },
           "ComponentType": 5,
+          "ColorTemperature": 5780.0,
           "LuminousFlux": 60.0,
+          "UseColorTemperature": false,
           "SphereRadius": 3.200000047683716
         }
       ],

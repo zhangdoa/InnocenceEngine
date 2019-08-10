@@ -477,8 +477,8 @@ bool GameClientNS::setupPointLights()
 		m_pointLightTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_pointLightTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_pointLightComponents[i] = SpawnComponent(PointLightComponent, m_pointLightEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
-		m_pointLightComponents[i]->m_luminousFlux = 100.0f;
-		m_pointLightComponents[i]->m_color = vec4(l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), 1.0f);
+		m_pointLightComponents[i]->m_LuminousFlux = 100.0f;
+		m_pointLightComponents[i]->m_RGBColor = vec4(l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), 1.0f);
 	}
 
 	for (unsigned int i = 0; i < l_matrixDim; i++)

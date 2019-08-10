@@ -4,6 +4,7 @@
 #include "../Core/InnoLogger.h"
 #include "../Common/CommonMacro.inl"
 #include "CommonFunctionDefinitionMacro.inl"
+#include "../Common/InnoMathHelper.h"
 
 #include "../ModuleManager/IModuleManager.h"
 
@@ -20,12 +21,21 @@ namespace PointLightComponentManagerNS
 	std::function<void()> f_SceneLoadingStartCallback;
 	std::function<void()> f_SceneLoadingFinishCallback;
 
+	void UpdateColorTemperature(PointLightComponent* rhs);
 	void UpdateAttenuationRadius(PointLightComponent* rhs);
+}
+
+void PointLightComponentManagerNS::UpdateColorTemperature(PointLightComponent * rhs)
+{
+	if (rhs->m_UseColorTemperature)
+	{
+		rhs->m_RGBColor = InnoMath::colorTemperatureToRGB(rhs->m_ColorTemperature);
+	}
 }
 
 void PointLightComponentManagerNS::UpdateAttenuationRadius(PointLightComponent* rhs)
 {
-	auto l_RGBColor = rhs->m_color.normalize();
+	auto l_RGBColor = rhs->m_RGBColor.normalize();
 	// "Real-Time Rendering", 4th Edition, p.278
 	// https://en.wikipedia.org/wiki/Relative_luminance
 	// weight with respect to CIE photometric curve
@@ -33,7 +43,7 @@ void PointLightComponentManagerNS::UpdateAttenuationRadius(PointLightComponent* 
 
 	// Luminance (nt) is illuminance (lx) per solid angle, while luminous intensity (cd) is luminous flux (lm) per solid angle, thus for one area unit (m^2), the ratio of nt/lx is same as cd/lm
 	// For omni isotropic light, after the intergration per solid angle, the luminous flux (lm) is 4 pi times the luminous intensity (cd)
-	auto l_weightedLuminousFlux = rhs->m_luminousFlux * l_relativeLuminanceRatio;
+	auto l_weightedLuminousFlux = rhs->m_LuminousFlux * l_relativeLuminanceRatio;
 
 	// 1. get luminous efficacy (lm/w), assume 683 lm/w (100% luminous efficiency) always
 	// 2. luminous flux (lm) to radiant flux (w), omitted because linearity assumption in step 1
@@ -74,6 +84,7 @@ bool InnoPointLightComponentManager::Simulate()
 {
 	for (auto i : m_Components)
 	{
+		UpdateColorTemperature(i);
 		UpdateAttenuationRadius(i);
 	}
 	return true;

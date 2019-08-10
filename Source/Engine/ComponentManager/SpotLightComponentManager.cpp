@@ -4,6 +4,7 @@
 #include "../Core/InnoLogger.h"
 #include "../Common/CommonMacro.inl"
 #include "CommonFunctionDefinitionMacro.inl"
+#include "../Common/InnoMathHelper.h"
 
 #include "../ModuleManager/IModuleManager.h"
 
@@ -19,6 +20,16 @@ namespace SpotLightComponentManagerNS
 
 	std::function<void()> f_SceneLoadingStartCallback;
 	std::function<void()> f_SceneLoadingFinishCallback;
+
+	void UpdateColorTemperature(SpotLightComponent* rhs);
+}
+
+void SpotLightComponentManagerNS::UpdateColorTemperature(SpotLightComponent * rhs)
+{
+	if (rhs->m_UseColorTemperature)
+	{
+		rhs->m_RGBColor = InnoMath::colorTemperatureToRGB(rhs->m_ColorTemperature);
+	}
 }
 
 using namespace SpotLightComponentManagerNS;
@@ -48,6 +59,11 @@ bool InnoSpotLightComponentManager::Initialize()
 
 bool InnoSpotLightComponentManager::Simulate()
 {
+	for (auto i : m_Components)
+	{
+		UpdateColorTemperature(i);
+	}
+
 	return true;
 }
 

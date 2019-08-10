@@ -38,6 +38,7 @@ namespace ImGuiWrapperNS
 	void showWorldExplorer();
 	void showTransformComponentPropertyEditor(void* rhs);
 	void showVisiableComponentPropertyEditor(void* rhs);
+	void showLightComponentPropertyEditor(void* rhs);
 	void showDirectionalLightComponentPropertyEditor(void* rhs);
 	void showPointLightComponentPropertyEditor(void* rhs);
 	void showSphereLightComponentPropertyEditor(void* rhs);
@@ -480,7 +481,7 @@ void ImGuiWrapperNS::showWorldExplorer()
 	}
 	ImGui::End();
 
-	ImGui::Begin("Property Editor", 0);
+	ImGui::Begin("Properties", 0);
 	{
 		if (selectedComponent)
 		{
@@ -488,10 +489,21 @@ void ImGuiWrapperNS::showWorldExplorer()
 			{
 			case ComponentType::TransformComponent: showTransformComponentPropertyEditor(selectedComponent); break;
 			case ComponentType::VisibleComponent: showVisiableComponentPropertyEditor(selectedComponent); break;
-			case ComponentType::DirectionalLightComponent: showDirectionalLightComponentPropertyEditor(selectedComponent); break;
-			case ComponentType::PointLightComponent: showPointLightComponentPropertyEditor(selectedComponent); break;
-			case ComponentType::SpotLightComponent: break;
-			case ComponentType::SphereLightComponent: showSphereLightComponentPropertyEditor(selectedComponent); break;
+			case ComponentType::DirectionalLightComponent:
+				showLightComponentPropertyEditor(selectedComponent);
+				showDirectionalLightComponentPropertyEditor(selectedComponent);
+				break;
+			case ComponentType::PointLightComponent:
+				showLightComponentPropertyEditor(selectedComponent);
+				showPointLightComponentPropertyEditor(selectedComponent);
+				break;
+			case ComponentType::SpotLightComponent:
+				showLightComponentPropertyEditor(selectedComponent);
+				break;
+			case ComponentType::SphereLightComponent:
+				showLightComponentPropertyEditor(selectedComponent);
+				showSphereLightComponentPropertyEditor(selectedComponent);
+				break;
 			default:
 				break;
 			}
@@ -584,7 +596,7 @@ void ImGuiWrapperNS::showVisiableComponentPropertyEditor(void * rhs)
 	{
 		if (selectedComponent)
 		{
-			ImGui::BeginChild("MaterialDataComponent Editor", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.7f, 400.0f), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::BeginChild("MaterialDataComponent Property", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.7f, 400.0f), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			{
 				auto l_material = &selectedComponent->m_meshCustomMaterial;
 
@@ -636,25 +648,44 @@ void ImGuiWrapperNS::showVisiableComponentPropertyEditor(void * rhs)
 	}
 }
 
-void ImGuiWrapperNS::showDirectionalLightComponentPropertyEditor(void * rhs)
+void ImGuiWrapperNS::showLightComponentPropertyEditor(void * rhs)
 {
-	auto l_rhs = reinterpret_cast<DirectionalLightComponent*>(rhs);
-	ImGui::BeginChild("DirectionalLightComponent Editor", ImVec2(ImGui::GetWindowContentRegionWidth(), 400.0f), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+	auto l_rhs = reinterpret_cast<LightComponent*>(rhs);
+
+	ImGui::BeginChild("LightComponent Property", ImVec2(ImGui::GetWindowContentRegionWidth(), 400.0f), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 	{
-		static ImVec4 radiance = ImColor(l_rhs->m_color.x, l_rhs->m_color.y, l_rhs->m_color.z, l_rhs->m_color.w);
+		static ImVec4 radiance = ImColor(l_rhs->m_RGBColor.x, l_rhs->m_RGBColor.y, l_rhs->m_RGBColor.z, l_rhs->m_RGBColor.w);
 
 		if (ImGui::ColorPicker4("Radiance color", (float*)&radiance, ImGuiColorEditFlags_RGB))
 		{
-			l_rhs->m_color.x = radiance.x;
-			l_rhs->m_color.y = radiance.y;
-			l_rhs->m_color.z = radiance.z;
-			l_rhs->m_color.w = radiance.w;
+			l_rhs->m_RGBColor.x = radiance.x;
+			l_rhs->m_RGBColor.y = radiance.y;
+			l_rhs->m_RGBColor.z = radiance.z;
+			l_rhs->m_RGBColor.w = radiance.w;
 		}
-		static float luminousFlux = l_rhs->m_luminousFlux;
+		static float colorTemperature = l_rhs->m_ColorTemperature;
+		if (ImGui::DragFloat("Color temperature", &colorTemperature, 0.01f, 1000.0f, 16000.0f))
+		{
+			l_rhs->m_ColorTemperature = colorTemperature;
+		}
+		static float luminousFlux = l_rhs->m_LuminousFlux;
 		if (ImGui::DragFloat("Luminous flux", &luminousFlux, 0.01f, 0.0f, 100000.0f))
 		{
-			l_rhs->m_luminousFlux = luminousFlux;
+			l_rhs->m_LuminousFlux = luminousFlux;
 		}
+		static bool useColorTemperature = l_rhs->m_UseColorTemperature;
+		if (ImGui::Checkbox("Use color temperature", &useColorTemperature))
+		{
+			l_rhs->m_UseColorTemperature = useColorTemperature;
+		}
+	}
+	ImGui::EndChild();
+}
+
+void ImGuiWrapperNS::showDirectionalLightComponentPropertyEditor(void * rhs)
+{
+	ImGui::BeginChild("DirectionalLightComponent Property", ImVec2(ImGui::GetWindowContentRegionWidth(), 400.0f), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+	{
 	}
 	ImGui::EndChild();
 }
@@ -662,22 +693,8 @@ void ImGuiWrapperNS::showDirectionalLightComponentPropertyEditor(void * rhs)
 void ImGuiWrapperNS::showPointLightComponentPropertyEditor(void * rhs)
 {
 	auto l_rhs = reinterpret_cast<PointLightComponent*>(rhs);
-	ImGui::BeginChild("DirectionalLightComponent Editor", ImVec2(ImGui::GetWindowContentRegionWidth(), 400.0f), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+	ImGui::BeginChild("PointLightComponent Property", ImVec2(ImGui::GetWindowContentRegionWidth(), 400.0f), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 	{
-		static ImVec4 radiance = ImColor(l_rhs->m_color.x, l_rhs->m_color.y, l_rhs->m_color.z, l_rhs->m_color.w);
-
-		if (ImGui::ColorPicker4("Radiance color", (float*)&radiance, ImGuiColorEditFlags_RGB))
-		{
-			l_rhs->m_color.x = radiance.x;
-			l_rhs->m_color.y = radiance.y;
-			l_rhs->m_color.z = radiance.z;
-			l_rhs->m_color.w = radiance.w;
-		}
-		static float luminousFlux = l_rhs->m_luminousFlux;
-		if (ImGui::DragFloat("Luminous flux", &luminousFlux, 0.01f, 0.0f, 100000.0f))
-		{
-			l_rhs->m_luminousFlux = luminousFlux;
-		}
 	}
 	ImGui::EndChild();
 }
@@ -685,22 +702,8 @@ void ImGuiWrapperNS::showPointLightComponentPropertyEditor(void * rhs)
 void ImGuiWrapperNS::showSphereLightComponentPropertyEditor(void * rhs)
 {
 	auto l_rhs = reinterpret_cast<SphereLightComponent*>(rhs);
-	ImGui::BeginChild("DirectionalLightComponent Editor", ImVec2(ImGui::GetWindowContentRegionWidth(), 400.0f), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+	ImGui::BeginChild("SphereLightComponent Property", ImVec2(ImGui::GetWindowContentRegionWidth(), 400.0f), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 	{
-		static ImVec4 radiance = ImColor(l_rhs->m_color.x, l_rhs->m_color.y, l_rhs->m_color.z, l_rhs->m_color.w);
-
-		if (ImGui::ColorPicker4("Radiance color", (float*)&radiance, ImGuiColorEditFlags_RGB))
-		{
-			l_rhs->m_color.x = radiance.x;
-			l_rhs->m_color.y = radiance.y;
-			l_rhs->m_color.z = radiance.z;
-			l_rhs->m_color.w = radiance.w;
-		}
-		static float luminousFlux = l_rhs->m_luminousFlux;
-		if (ImGui::DragFloat("Luminous flux", &luminousFlux, 0.01f, 0.0f, 100000.0f))
-		{
-			l_rhs->m_luminousFlux = luminousFlux;
-		}
 		static float sphereRadius = l_rhs->m_sphereRadius;
 		if (ImGui::DragFloat("Sphere radius", &sphereRadius, 0.01f, 0.1f, 10000.0f))
 		{

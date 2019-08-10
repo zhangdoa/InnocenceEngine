@@ -447,7 +447,7 @@ bool InnoRenderingFrontendNS::updateSunData()
 	SunGPUData l_SunGPUData;
 
 	l_SunGPUData.dir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
-	l_SunGPUData.luminance = l_directionalLight->m_color * l_directionalLight->m_luminousFlux;
+	l_SunGPUData.luminance = l_directionalLight->m_RGBColor * l_directionalLight->m_LuminousFlux;
 	l_SunGPUData.r = InnoMath::getInvertRotationMatrix(l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
 
 	m_sunGPUData.SetValue(l_SunGPUData);
@@ -492,7 +492,7 @@ bool InnoRenderingFrontendNS::updateLightData()
 	{
 		PointLightGPUData l_PointLightGPUData;
 		l_PointLightGPUData.pos = GetComponent(TransformComponent, l_pointLightComponents[i]->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_PointLightGPUData.luminance = l_pointLightComponents[i]->m_color * l_pointLightComponents[i]->m_luminousFlux;
+		l_PointLightGPUData.luminance = l_pointLightComponents[i]->m_RGBColor * l_pointLightComponents[i]->m_LuminousFlux;
 		l_PointLightGPUData.luminance.w = l_pointLightComponents[i]->m_attenuationRadius;
 		m_pointLightGPUData[i] = l_PointLightGPUData;
 	}
@@ -502,7 +502,7 @@ bool InnoRenderingFrontendNS::updateLightData()
 	{
 		SphereLightGPUData l_SphereLightGPUData;
 		l_SphereLightGPUData.pos = GetComponent(TransformComponent, l_sphereLightComponents[i]->m_parentEntity)->m_globalTransformVector.m_pos;
-		l_SphereLightGPUData.luminance = l_sphereLightComponents[i]->m_color * l_sphereLightComponents[i]->m_luminousFlux;
+		l_SphereLightGPUData.luminance = l_sphereLightComponents[i]->m_RGBColor * l_sphereLightComponents[i]->m_LuminousFlux;
 		l_SphereLightGPUData.luminance.w = l_sphereLightComponents[i]->m_sphereRadius;
 		m_sphereLightGPUData[i] = l_SphereLightGPUData;
 	}

@@ -29,6 +29,7 @@ namespace DirectionalLightComponentManagerNS
 
 	std::vector<AABB> splitVerticesToAABBs(const std::vector<Vertex>& frustumsVertices, const std::vector<float>& splitFactors);
 	void UpdateCSMData(DirectionalLightComponent* rhs);
+	void UpdateColorTemperature(DirectionalLightComponent* rhs);
 }
 
 std::vector<AABB> DirectionalLightComponentManagerNS::splitVerticesToAABBs(const std::vector<Vertex>& frustumsVertices, const std::vector<float>& splitFactors)
@@ -220,7 +221,7 @@ void DirectionalLightComponentManagerNS::UpdateCSMData(DirectionalLightComponent
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 		l_frustumVerticesLS[i].m_pos = InnoMath::mul(l_lightRotMat, l_frustumVerticesLS[i].m_pos);
 #endif
-}
+	}
 
 	//5.calculate AABBs in light space
 	auto l_AABBsLS = splitVerticesToAABBs(l_frustumVerticesLS, l_CSMSplitFactors);
@@ -246,6 +247,14 @@ void DirectionalLightComponentManagerNS::UpdateCSMData(DirectionalLightComponent
 
 		mat4 p = InnoMath::generateOrthographicMatrix(l_minExtents.x, l_maxExtents.x, l_minExtents.y, l_maxExtents.y, l_minExtents.z, l_maxExtents.z);
 		m_projectionMatrices.emplace_back(p);
+	}
+}
+
+void DirectionalLightComponentManagerNS::UpdateColorTemperature(DirectionalLightComponent * rhs)
+{
+	if (rhs->m_UseColorTemperature)
+	{
+		rhs->m_RGBColor = InnoMath::colorTemperatureToRGB(rhs->m_ColorTemperature);
 	}
 }
 
@@ -279,6 +288,7 @@ bool InnoDirectionalLightComponentManager::Simulate()
 	for (auto i : m_Components)
 	{
 		UpdateCSMData(i);
+		UpdateColorTemperature(i);
 	}
 	return true;
 }
