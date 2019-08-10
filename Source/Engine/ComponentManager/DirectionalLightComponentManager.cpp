@@ -56,8 +56,9 @@ std::vector<AABB> DirectionalLightComponentManagerNS::splitVerticesToAABBs(const
 	//3. assemble split frustum corners
 	std::vector<Vertex> l_frustumsCornerVertices(32);
 
-	static bool l_fitToScene = true;
-	if (l_fitToScene)
+	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
+
+	if (l_renderingConfig.CSMFitToScene)
 	{
 		for (size_t i = 0; i < 4; i++)
 		{
@@ -119,22 +120,23 @@ void DirectionalLightComponentManagerNS::UpdateCSMData(DirectionalLightComponent
 	auto l_tCamera = InnoMath::toTranslationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_pos);
 	auto l_frustumVerticesVS = InnoMath::generateFrustumVerticesVS(l_cameraComponent->m_projectionMatrix);
 
-	static bool l_adjustDrawDistance = false;
-	if (l_adjustDrawDistance)
+	// extend scene AABB to include the bound sphere, for to eliminate rotation conflict
+	auto l_totalSceneAABB = g_pModuleManager->getPhysicsSystem()->getVisibleSceneAABB();
+	auto l_sphereRadius = (l_totalSceneAABB.m_boundMax - l_totalSceneAABB.m_center).length();
+	auto l_boundMax = l_totalSceneAABB.m_center + l_sphereRadius;
+	l_boundMax.w = 1.0f;
+	auto l_boundMin = l_totalSceneAABB.m_center - l_sphereRadius;
+	l_boundMin.w = 1.0f;
+
+	// transform scene AABB vertices to view space
+	auto l_sceneAABBVerticesWS = InnoMath::generateAABBVertices(l_boundMax, l_boundMin);
+	auto l_sceneAABBVerticesVS = InnoMath::worldToViewSpace(l_sceneAABBVerticesWS, l_tCamera, l_rCamera);
+	auto l_sceneAABBVS = InnoMath::generateAABB(&l_sceneAABBVerticesVS[0], l_sceneAABBVerticesVS.size());
+
+	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
+
+	if (l_renderingConfig.CSMAdjustDrawDistance)
 	{
-		// extend scene AABB to include the bound sphere, for to eliminate rotation conflict
-		auto l_totalSceneAABB = g_pModuleManager->getPhysicsSystem()->getVisibleSceneAABB();
-		auto l_sphereRadius = (l_totalSceneAABB.m_boundMax - l_totalSceneAABB.m_center).length();
-		auto l_boundMax = l_totalSceneAABB.m_center + l_sphereRadius;
-		l_boundMax.w = 1.0f;
-		auto l_boundMin = l_totalSceneAABB.m_center - l_sphereRadius;
-		l_boundMin.w = 1.0f;
-
-		// transform scene AABB vertices to view space
-		auto l_sceneAABBVerticesWS = InnoMath::generateAABBVertices(l_boundMax, l_boundMin);
-		auto l_sceneAABBVerticesVS = InnoMath::worldToViewSpace(l_sceneAABBVerticesWS, l_tCamera, l_rCamera);
-		auto l_sceneAABBVS = InnoMath::generateAABB(&l_sceneAABBVerticesVS[0], l_sceneAABBVerticesVS.size());
-
 		// compare draw distance and z component of the farest scene AABB vertex in view space
 		auto l_distance_original = std::abs(l_frustumVerticesVS[4].m_pos.z - l_frustumVerticesVS[0].m_pos.z);
 		auto l_distance_adjusted = l_frustumVerticesVS[0].m_pos.z - l_sceneAABBVS.m_boundMin.z;
@@ -153,45 +155,44 @@ void DirectionalLightComponentManagerNS::UpdateCSMData(DirectionalLightComponent
 					l_frustumVerticesVS[i].m_pos.z = l_sceneAABBVS.m_boundMin.z;
 				}
 			}
+		}
+	}
 
-			// @TODO: eliminate false positive off the side plane
-			static bool l_adjustSidePlane = true;
-			if (l_adjustSidePlane)
-			{
-				// Adjust x and y to include the scene
-				// +x axis
-				if (l_sceneAABBVS.m_boundMax.x > l_frustumVerticesVS[2].m_pos.x)
-				{
-					l_frustumVerticesVS[2].m_pos.x = l_sceneAABBVS.m_boundMax.x;
-					l_frustumVerticesVS[3].m_pos.x = l_sceneAABBVS.m_boundMax.x;
-					l_frustumVerticesVS[6].m_pos.x = l_sceneAABBVS.m_boundMax.x;
-					l_frustumVerticesVS[7].m_pos.x = l_sceneAABBVS.m_boundMax.x;
-				}
-				// -x axis
-				if (l_sceneAABBVS.m_boundMin.x < l_frustumVerticesVS[0].m_pos.x)
-				{
-					l_frustumVerticesVS[0].m_pos.x = l_sceneAABBVS.m_boundMin.x;
-					l_frustumVerticesVS[1].m_pos.x = l_sceneAABBVS.m_boundMin.x;
-					l_frustumVerticesVS[4].m_pos.x = l_sceneAABBVS.m_boundMin.x;
-					l_frustumVerticesVS[5].m_pos.x = l_sceneAABBVS.m_boundMin.x;
-				}
-				// +y axis
-				if (l_sceneAABBVS.m_boundMax.y > l_frustumVerticesVS[0].m_pos.y)
-				{
-					l_frustumVerticesVS[0].m_pos.y = l_sceneAABBVS.m_boundMax.y;
-					l_frustumVerticesVS[3].m_pos.y = l_sceneAABBVS.m_boundMax.y;
-					l_frustumVerticesVS[4].m_pos.y = l_sceneAABBVS.m_boundMax.y;
-					l_frustumVerticesVS[7].m_pos.y = l_sceneAABBVS.m_boundMax.y;
-				}
-				// -y axis
-				if (l_sceneAABBVS.m_boundMin.y < l_frustumVerticesVS[1].m_pos.y)
-				{
-					l_frustumVerticesVS[1].m_pos.y = l_sceneAABBVS.m_boundMin.y;
-					l_frustumVerticesVS[2].m_pos.y = l_sceneAABBVS.m_boundMin.y;
-					l_frustumVerticesVS[5].m_pos.y = l_sceneAABBVS.m_boundMin.y;
-					l_frustumVerticesVS[6].m_pos.y = l_sceneAABBVS.m_boundMin.y;
-				}
-			}
+	// @TODO: eliminate false positive off the side plane
+	if (l_renderingConfig.CSMAdjustSidePlane)
+	{
+		// Adjust x and y to include the scene
+		// +x axis
+		if (l_sceneAABBVS.m_boundMax.x > l_frustumVerticesVS[2].m_pos.x)
+		{
+			l_frustumVerticesVS[2].m_pos.x = l_sceneAABBVS.m_boundMax.x;
+			l_frustumVerticesVS[3].m_pos.x = l_sceneAABBVS.m_boundMax.x;
+			l_frustumVerticesVS[6].m_pos.x = l_sceneAABBVS.m_boundMax.x;
+			l_frustumVerticesVS[7].m_pos.x = l_sceneAABBVS.m_boundMax.x;
+		}
+		// -x axis
+		if (l_sceneAABBVS.m_boundMin.x < l_frustumVerticesVS[0].m_pos.x)
+		{
+			l_frustumVerticesVS[0].m_pos.x = l_sceneAABBVS.m_boundMin.x;
+			l_frustumVerticesVS[1].m_pos.x = l_sceneAABBVS.m_boundMin.x;
+			l_frustumVerticesVS[4].m_pos.x = l_sceneAABBVS.m_boundMin.x;
+			l_frustumVerticesVS[5].m_pos.x = l_sceneAABBVS.m_boundMin.x;
+		}
+		// +y axis
+		if (l_sceneAABBVS.m_boundMax.y > l_frustumVerticesVS[0].m_pos.y)
+		{
+			l_frustumVerticesVS[0].m_pos.y = l_sceneAABBVS.m_boundMax.y;
+			l_frustumVerticesVS[3].m_pos.y = l_sceneAABBVS.m_boundMax.y;
+			l_frustumVerticesVS[4].m_pos.y = l_sceneAABBVS.m_boundMax.y;
+			l_frustumVerticesVS[7].m_pos.y = l_sceneAABBVS.m_boundMax.y;
+		}
+		// -y axis
+		if (l_sceneAABBVS.m_boundMin.y < l_frustumVerticesVS[1].m_pos.y)
+		{
+			l_frustumVerticesVS[1].m_pos.y = l_sceneAABBVS.m_boundMin.y;
+			l_frustumVerticesVS[2].m_pos.y = l_sceneAABBVS.m_boundMin.y;
+			l_frustumVerticesVS[5].m_pos.y = l_sceneAABBVS.m_boundMin.y;
+			l_frustumVerticesVS[6].m_pos.y = l_sceneAABBVS.m_boundMin.y;
 		}
 	}
 
@@ -219,7 +220,7 @@ void DirectionalLightComponentManagerNS::UpdateCSMData(DirectionalLightComponent
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 		l_frustumVerticesLS[i].m_pos = InnoMath::mul(l_lightRotMat, l_frustumVerticesLS[i].m_pos);
 #endif
-	}
+}
 
 	//5.calculate AABBs in light space
 	auto l_AABBsLS = splitVerticesToAABBs(l_frustumVerticesLS, l_CSMSplitFactors);

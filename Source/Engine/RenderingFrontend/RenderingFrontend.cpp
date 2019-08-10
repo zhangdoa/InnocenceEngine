@@ -196,6 +196,9 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 	m_renderingConfig.drawSky = true;
 	//m_renderingConfig.drawTerrain = true;
 	//m_renderingConfig.drawDebugObject = true;
+	m_renderingConfig.CSMFitToScene = false;
+	m_renderingConfig.CSMAdjustDrawDistance = true;
+	m_renderingConfig.CSMAdjustSidePlane = false;
 
 	m_renderingCapability.maxCSMSplits = 4;
 	m_renderingCapability.maxPointLights = 1024;

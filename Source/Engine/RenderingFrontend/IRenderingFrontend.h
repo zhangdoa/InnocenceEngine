@@ -23,6 +23,9 @@ struct RenderingConfig
 	bool drawTerrain = false;
 	bool drawSky = false;
 	bool drawDebugObject = false;
+	bool CSMFitToScene = false;
+	bool CSMAdjustDrawDistance = false;
+	bool CSMAdjustSidePlane = false;
 };
 
 struct RenderingCapability

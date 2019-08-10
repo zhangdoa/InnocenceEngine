@@ -226,9 +226,11 @@ void ImGuiWrapperNS::showApplicationProfiler()
 	ImGui::Checkbox("Use Bloom", &m_renderingConfig.useBloom);
 	ImGui::Checkbox("Draw terrain", &m_renderingConfig.drawTerrain);
 	ImGui::Checkbox("Draw sky", &m_renderingConfig.drawSky);
-	if (ImGui::Checkbox("Draw debug object", &m_renderingConfig.drawDebugObject))
-	{
-	}
+	ImGui::Checkbox("Draw debug object", &m_renderingConfig.drawDebugObject);
+	ImGui::Checkbox("CSM fit to scene", &m_renderingConfig.CSMFitToScene);
+	ImGui::Checkbox("CSM adjust draw distance", &m_renderingConfig.CSMAdjustDrawDistance);
+	ImGui::Checkbox("CSM adjust side plane", &m_renderingConfig.CSMAdjustSidePlane);
+
 	ImGui::Checkbox("Use zoom", &m_useZoom);
 
 	const char* items[] = { "Shadow", "GI", "Opaque", "Light", "Transparent", "Terrain", "Post-processing", "Development" };
