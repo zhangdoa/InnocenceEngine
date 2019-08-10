@@ -667,6 +667,7 @@ bool GLHelper::GenerateDepthStencilState(DepthStencilDesc DSDesc, GLPipelineStat
 		if (DSDesc.m_AllowDepthClamp)
 		{
 			PSO->m_Activate.emplace_back([]() { glEnable(GL_DEPTH_CLAMP); });
+			PSO->m_Deactivate.emplace_front([]() { glDisable(GL_DEPTH_CLAMP); });
 		}
 	}
 
