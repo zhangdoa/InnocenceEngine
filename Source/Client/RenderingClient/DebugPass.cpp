@@ -78,40 +78,40 @@ bool DebugPass::Initialize()
 
 bool DebugPass::PrepareCommandList()
 {
-	auto l_CameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Camera);
-	auto l_DebugGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Debug);
+	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
 
-	auto l_probes = GIBakePass::GetProbes();
-	if (l_probes.size() > 0)
+	if (l_renderingConfig.drawDebugObject)
 	{
-		for (size_t i = 0; i < l_probes.size(); i++)
+		auto l_CameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Camera);
+		auto l_DebugGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Debug);
+
+		auto l_probes = GIBakePass::GetProbes();
+		if (l_probes.size() > 0)
 		{
-			m_debugSphereGPUData[i] = InnoMath::toTranslationMatrix(l_probes[i].pos);
-			m_debugSphereGPUData[i].m00 *= 0.5f;
-			m_debugSphereGPUData[i].m11 *= 0.5f;
-			m_debugSphereGPUData[i].m22 *= 0.5f;
-		}
+			for (size_t i = 0; i < l_probes.size(); i++)
+			{
+				m_debugSphereGPUData[i] = InnoMath::toTranslationMatrix(l_probes[i].pos);
+				m_debugSphereGPUData[i].m00 *= 0.5f;
+				m_debugSphereGPUData[i].m11 *= 0.5f;
+				m_debugSphereGPUData[i].m22 *= 0.5f;
+			}
 
-		auto l_bricks = GIBakePass::GetBricks();
-		for (size_t i = 0; i < l_bricks.size(); i++)
-		{
-			m_debugCubeGPUData[i] = InnoMath::toTranslationMatrix(l_bricks[i].boundBox.m_center);
-			m_debugCubeGPUData[i].m00 *= l_bricks[i].boundBox.m_extend.x / 2.0f;
-			m_debugCubeGPUData[i].m11 *= l_bricks[i].boundBox.m_extend.y / 2.0f;
-			m_debugCubeGPUData[i].m22 *= l_bricks[i].boundBox.m_extend.z / 2.0f;
-		}
+			auto l_bricks = GIBakePass::GetBricks();
+			for (size_t i = 0; i < l_bricks.size(); i++)
+			{
+				m_debugCubeGPUData[i] = InnoMath::toTranslationMatrix(l_bricks[i].boundBox.m_center);
+				m_debugCubeGPUData[i].m00 *= l_bricks[i].boundBox.m_extend.x / 2.0f;
+				m_debugCubeGPUData[i].m11 *= l_bricks[i].boundBox.m_extend.y / 2.0f;
+				m_debugCubeGPUData[i].m22 *= l_bricks[i].boundBox.m_extend.z / 2.0f;
+			}
 
-		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_DebugGBDC, m_debugSphereGPUData, 0, l_probes.size());
-		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_DebugGBDC, m_debugCubeGPUData, l_probes.size(), l_bricks.size());
+			g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_DebugGBDC, m_debugSphereGPUData, 0, l_probes.size());
+			g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_DebugGBDC, m_debugCubeGPUData, l_probes.size(), l_bricks.size());
 
-		g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
-		g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
-		g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
+			g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
+			g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
+			g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
 
-		auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
-
-		if (l_renderingConfig.drawDebugObject)
-		{
 			g_pModuleManager->getRenderingServer()->CopyDepthBuffer(OpaquePass::GetRPDC(), m_RPDC);
 
 			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_CameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
