@@ -4,11 +4,11 @@
 
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
-    //a.setStyle(new DarkStyle);
+	QApplication a(argc, argv);
+	//a.setStyle(new DarkStyle);
 
-    MainWindow w;
-    w.show();
-    w.initializeEngine();
-    return a.exec();
+	MainWindow w;
+	w.show();
+	w.initializeEngine();
+	return a.exec();
 }

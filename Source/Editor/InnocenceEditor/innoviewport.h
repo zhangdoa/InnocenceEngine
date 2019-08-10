@@ -8,33 +8,33 @@
 
 class ViewportEventFilter : public QObject
 {
-    Q_OBJECT
+	Q_OBJECT
 
 protected:
-    bool eventFilter(QObject *obj, QEvent *event) override;
+	bool eventFilter(QObject *obj, QEvent *event) override;
 };
 
 class InnoViewport : public QWidget
 {
-    Q_OBJECT
+	Q_OBJECT
 
 public:
-    explicit InnoViewport(QWidget *parent = nullptr);
-    virtual ~InnoViewport() override;
+	explicit InnoViewport(QWidget *parent = nullptr);
+	virtual ~InnoViewport() override;
 
-    void initialize();
+	void initialize();
 
-    ViewportEventFilter* m_viewportEventFilter;
+	ViewportEventFilter* m_viewportEventFilter;
 
 protected:
-    virtual QPaintEngine* paintEngine() const override { return NULL; }
+	virtual QPaintEngine* paintEngine() const override { return NULL; }
 
-    void showEvent(QShowEvent* showEvent) override;
+	void showEvent(QShowEvent* showEvent) override;
 
-    void resizeEvent(QResizeEvent* resizeEvent) override;
+	void resizeEvent(QResizeEvent* resizeEvent) override;
 
 private:
-    void Resize(float width, float height);
+	void Resize(float width, float height);
 };
 
 #endif // INNOVIEWPORT_H

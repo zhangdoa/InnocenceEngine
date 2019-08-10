@@ -24,6 +24,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++17
 
 SOURCES += \
+    lightcomponentpropertyeditor.cpp \
         main.cpp \
         mainwindow.cpp \
         DarkStyle.cpp \
@@ -43,6 +44,7 @@ SOURCES += \
 
 
 HEADERS += \
+    lightcomponentpropertyeditor.h \
         mainwindow.h \
         DarkStyle.h \
     innoviewport.h \

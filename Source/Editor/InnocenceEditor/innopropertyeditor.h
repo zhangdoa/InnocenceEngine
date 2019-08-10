@@ -3,26 +3,28 @@
 
 #include <QWidget>
 #include "transformcomponentpropertyeditor.h"
+#include "lightcomponentpropertyeditor.h"
 #include "directionallightcomponentpropertyeditor.h"
 #include "pointlightcomponentpropertyeditor.h"
 #include "spherelightcomponentpropertyeditor.h"
 
 class InnoPropertyEditor : public QWidget
 {
-    Q_OBJECT
+	Q_OBJECT
 public:
-    explicit InnoPropertyEditor(QWidget *parent = nullptr);
-    void initialize();
-    void clear();
+	explicit InnoPropertyEditor(QWidget *parent = nullptr);
+	void initialize();
+	void clear();
 
-    void editComponent(int componentType, void* componentPtr);
-    void remove();
+	void editComponent(int componentType, void* componentPtr);
+	void remove();
 
 private:
-    TransformComponentPropertyEditor* m_transformComponentPropertyEditor;
-    DirectionalLightComponentPropertyEditor* m_directionalLightComponentPropertyEditor;
-    PointLightComponentPropertyEditor* m_pointLightComponentPropertyEditor;
-    SphereLightComponentPropertyEditor* m_sphereLightComponentPropertyEditor;
+	TransformComponentPropertyEditor* m_transformComponentPropertyEditor;
+	LightComponentPropertyEditor* m_lightComponentPropertyEditor;
+	DirectionalLightComponentPropertyEditor* m_directionalLightComponentPropertyEditor;
+	PointLightComponentPropertyEditor* m_pointLightComponentPropertyEditor;
+	SphereLightComponentPropertyEditor* m_sphereLightComponentPropertyEditor;
 
 signals:
 

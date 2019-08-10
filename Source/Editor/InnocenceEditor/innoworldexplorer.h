@@ -6,24 +6,24 @@
 
 class InnoWorldExplorer : public QTreeWidget
 {
-    Q_OBJECT
+	Q_OBJECT
 public:
-    explicit InnoWorldExplorer(QWidget *parent = nullptr);
+	explicit InnoWorldExplorer(QWidget *parent = nullptr);
 
-    void initialize(InnoPropertyEditor* propertyEditor);
+	void initialize(InnoPropertyEditor* propertyEditor);
 
 protected:
-    virtual void selectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
+	virtual void selectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
 
 private:
-    void addChild(QTreeWidgetItem* parent, QTreeWidgetItem* child);
+	void addChild(QTreeWidgetItem* parent, QTreeWidgetItem* child);
 
-    InnoPropertyEditor* m_propertyEditor;
+	InnoPropertyEditor* m_propertyEditor;
 
-    QTreeWidgetItem* m_rootItem;
+	QTreeWidgetItem* m_rootItem;
 
-    std::function<void()> f_sceneLoadingFinishCallback;
-    void buildTree();
+	std::function<void()> f_sceneLoadingFinishCallback;
+	void buildTree();
 };
 
 #endif // INNOWORLDEXPLORER_H

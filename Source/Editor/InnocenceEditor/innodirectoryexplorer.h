@@ -7,22 +7,22 @@
 
 class InnoDirectoryExplorer : public QTreeView
 {
-    Q_OBJECT
+	Q_OBJECT
 public:
-    explicit InnoDirectoryExplorer(QWidget *parent = nullptr);
+	explicit InnoDirectoryExplorer(QWidget *parent = nullptr);
 
-    void initialize(InnoFileExplorer* fileExplorer);
+	void initialize(InnoFileExplorer* fileExplorer);
 
 private:
-    void SetRootDirectory(const std::string& directory);
+	void SetRootDirectory(const std::string& directory);
 
-    QFileSystemModel* m_dirModel;
-    InnoFileExplorer* m_fileExplorer;
+	QFileSystemModel* m_dirModel;
+	InnoFileExplorer* m_fileExplorer;
 signals:
 
 public slots:
-    void UpdateFileExplorer(QModelIndex index);
-    void UpdateFromFileExplorer(QModelIndex index);
+	void UpdateFileExplorer(QModelIndex index);
+	void UpdateFromFileExplorer(QModelIndex index);
 };
 
 #endif // INNODIRECTORYEXPLORER_H

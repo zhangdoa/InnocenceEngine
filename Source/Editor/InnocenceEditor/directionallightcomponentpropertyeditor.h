@@ -11,34 +11,20 @@
 
 class DirectionalLightComponentPropertyEditor : public IComponentPropertyEditor
 {
-    Q_OBJECT
+	Q_OBJECT
 public:
-    DirectionalLightComponentPropertyEditor();
+	DirectionalLightComponentPropertyEditor();
 
-    void initialize() override;
-    void edit(void* component) override;
-
-    void GetLuminousFlux();
-    void GetColor();
+	void initialize() override;
+	void edit(void* component) override;
 
 private:
-    QLabel* m_luminousFluxLabel;
-    ComboLabelText* m_luminousFlux;
+	QValidator* m_validator;
 
-    QLabel* m_colorLabel;
-    ComboLabelText* m_colorR;
-    ComboLabelText* m_colorG;
-    ComboLabelText* m_colorB;
-
-    QValidator* m_validator;
-
-    DirectionalLightComponent* m_component;
+	DirectionalLightComponent* m_component;
 
 public slots:
-    void SetLuminousFlux();
-    void SetColor();
-
-    void remove() override;
+	void remove() override;
 };
 
 #endif // DIRECTIONALLIGHTCOMPONENTPROPERTYEDITOR_H

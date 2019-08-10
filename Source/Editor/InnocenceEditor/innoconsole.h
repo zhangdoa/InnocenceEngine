@@ -5,7 +5,7 @@
 class InnoConsole : public QTextEdit
 {
 public:
-    InnoConsole();
+	InnoConsole();
 };
 
 #endif // INNOCONSOLE_H

@@ -5,45 +5,32 @@
 #include <QWidget>
 #include <QGridLayout>
 #include <QDoubleValidator>
-#include "IComponentPropertyEditor.h"
+#include "icomponentpropertyeditor.h"
 #include "combolabeltext.h"
 #include "../../Engine/Component/SphereLightComponent.h"
 
 class SphereLightComponentPropertyEditor : public IComponentPropertyEditor
 {
-    Q_OBJECT
+	Q_OBJECT
 public:
-    SphereLightComponentPropertyEditor();
+	SphereLightComponentPropertyEditor();
 
-    void initialize() override;
-    void edit(void* component) override;
+	void initialize() override;
+	void edit(void* component) override;
 
-    void GetSphereRadius();
-    void GetLuminousFlux();
-    void GetColor();
+	void GetSphereRadius();
 
 private:
-    QLabel* m_sphereRadiusLabel;
-    ComboLabelText* m_sphereRadius;
+	QLabel* m_sphereRadiusLabel;
+	ComboLabelText* m_sphereRadius;
 
-    QLabel* m_luminousFluxLabel;
-    ComboLabelText* m_luminousFlux;
+	QValidator* m_validator;
 
-    QLabel* m_colorLabel;
-    ComboLabelText* m_colorR;
-    ComboLabelText* m_colorG;
-    ComboLabelText* m_colorB;
-
-    QValidator* m_validator;
-
-    SphereLightComponent* m_component;
+	SphereLightComponent* m_component;
 
 public slots:
-    void SetSphereRadius();
-    void SetLuminousFlux();
-    void SetColor();
-
-    void remove() override;
+	void SetSphereRadius();
+	void remove() override;
 };
 
 #endif // SPHERELIGHTCOMPONENTPROPERTYEDITOR_H

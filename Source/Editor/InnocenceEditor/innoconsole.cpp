@@ -2,5 +2,4 @@
 
 InnoConsole::InnoConsole()
 {
-
 }

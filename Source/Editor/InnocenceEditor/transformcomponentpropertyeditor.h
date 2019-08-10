@@ -11,42 +11,42 @@
 
 class TransformComponentPropertyEditor : public IComponentPropertyEditor
 {
-    Q_OBJECT
+	Q_OBJECT
 public:
-    TransformComponentPropertyEditor();
+	TransformComponentPropertyEditor();
 
-    void initialize() override;
-    void edit(void* component) override;
+	void initialize() override;
+	void edit(void* component) override;
 
-    void GetPosition();
-    void GetRotation();
-    void GetScale();
+	void GetPosition();
+	void GetRotation();
+	void GetScale();
 
 private:
-    QLabel* m_posLabel;
-    ComboLabelText* m_posX;
-    ComboLabelText* m_posY;
-    ComboLabelText* m_posZ;
+	QLabel* m_posLabel;
+	ComboLabelText* m_posX;
+	ComboLabelText* m_posY;
+	ComboLabelText* m_posZ;
 
-    QLabel* m_rotLabel;
-    ComboLabelText* m_rotX;
-    ComboLabelText* m_rotY;
-    ComboLabelText* m_rotZ;
+	QLabel* m_rotLabel;
+	ComboLabelText* m_rotX;
+	ComboLabelText* m_rotY;
+	ComboLabelText* m_rotZ;
 
-    QLabel* m_scaleLabel;
-    ComboLabelText* m_scaleX;
-    ComboLabelText* m_scaleY;
-    ComboLabelText* m_scaleZ;
+	QLabel* m_scaleLabel;
+	ComboLabelText* m_scaleX;
+	ComboLabelText* m_scaleY;
+	ComboLabelText* m_scaleZ;
 
-    QValidator* m_validator;
+	QValidator* m_validator;
 
-    TransformComponent* m_component;
+	TransformComponent* m_component;
 
 public slots:
-    void SetPosition();
-    void SetRotation();
-    void SetScale();
-    void remove() override;
+	void SetPosition();
+	void SetRotation();
+	void SetScale();
+	void remove() override;
 };
 
 #endif // TRANSFORMCOMPONENTPROPERTYEDITOR_H
