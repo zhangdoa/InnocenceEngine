@@ -2157,4 +2157,12 @@ namespace InnoMath
 
 		return l_result;
 	};
+
+	template<class T>
+	auto clamp(T x, T min, T max)->T
+	{
+		if (x < min) { return min; }
+		if (x > max) { return max; }
+		return x;
+	}
 }

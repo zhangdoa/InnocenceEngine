@@ -266,4 +266,45 @@ namespace InnoMath
 
 		return generateAABBVertices(boundMax, boundMin);
 	}
+
+	inline vec4 colorTemperatureToRGB(float kelvin)
+	{
+		float temp = kelvin / 100.0f;
+
+		float red, green, blue;
+
+		if (temp <= 66.0f)
+		{
+			red = 255.0f;
+
+			green = temp;
+			green = 99.4708025861f * std::log(green) - 161.1195681661f;
+
+			if (temp <= 19)
+			{
+				blue = 0.0f;
+			}
+			else
+			{
+				blue = temp - 10.0f;
+				blue = 138.5177312231f * std::log(blue) - 305.0447927307f;
+			}
+		}
+		else
+		{
+			red = temp - 60.0f;
+			red = 329.698727446f * std::pow(red, -0.1332047592f);
+
+			green = temp - 60.0f;
+			green = 288.1221695283f * std::pow(green, -0.0755148492f);
+
+			blue = 255.0f;
+		}
+
+		red /= 255.0f;
+		green /= 255.0f;
+		blue /= 255.0f;
+
+		return vec4(clamp(red, 0.0f, 1.0f), clamp(green, 0.0f, 1.0f), clamp(blue, 0.0f, 1.0f), 1.0f);
+	}
 }
