@@ -13,6 +13,6 @@ public:
 	size_t m_indicesSize = 0;
 	PhysicsDataComponent* m_PDC = 0;
 	SkeletonDataComponent* m_SDC = 0;
-	InnoArray<Vertex> m_vertices;
-	InnoArray<Index> m_indices;
+	Array<Vertex> m_vertices;
+	Array<Index> m_indices;
 };

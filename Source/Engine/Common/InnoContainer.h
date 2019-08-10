@@ -522,130 +522,253 @@ private:
 	std::condition_variable_any m_condition;
 };
 
-template<class T>
-class InnoArray
+namespace InnoContainer
 {
-public:
-	InnoArray() = default;
-	InnoArray(size_t elementCount)
+	template<class T>
+	class Array
 	{
-		reserve(elementCount);
-	}
-
-	~InnoArray()
-	{
-		if (m_HeapAddress)
+	public:
+		Array() = default;
+		Array(size_t elementCount)
 		{
-			InnoMemory::Deallocate(m_HeapAddress);
-			m_CurrentFreeIndex = 0;
-			m_HeapAddress = nullptr;
-			m_ElementCount = 0;
-			m_ElementSize = 0;
+			reserve(elementCount);
 		}
-	}
 
-	InnoArray(const InnoArray<T> & rhs)
+		~Array()
+		{
+			if (m_HeapAddress)
+			{
+				InnoMemory::Deallocate(m_HeapAddress);
+				m_CurrentFreeIndex = 0;
+				m_HeapAddress = nullptr;
+				m_ElementCount = 0;
+				m_ElementSize = 0;
+			}
+		}
+
+		Array(const Array<T> & rhs)
+		{
+			m_ElementSize = rhs.m_ElementSize;
+			m_ElementCount = rhs.m_ElementCount;
+			m_HeapAddress = reinterpret_cast<T*>(InnoMemory::Allocate(m_ElementCount * m_ElementSize));
+			std::memcpy(m_HeapAddress, rhs.m_HeapAddress, m_ElementCount * m_ElementSize);
+			m_CurrentFreeIndex = rhs.m_CurrentFreeIndex;
+		}
+
+		Array<T>& operator=(const Array<T> & rhs)
+		{
+			m_ElementSize = rhs.m_ElementSize;
+			m_ElementCount = rhs.m_ElementCount;
+			m_HeapAddress = reinterpret_cast<T*>(InnoMemory::Allocate(m_ElementCount * m_ElementSize));
+			std::memcpy(m_HeapAddress, rhs.m_HeapAddress, m_ElementCount * m_ElementSize);
+			m_CurrentFreeIndex = rhs.m_CurrentFreeIndex;
+			return *this;
+		}
+
+		Array(Array<T> && rhs)
+		{
+			m_ElementSize = rhs.m_ElementSize;
+			m_ElementCount = rhs.m_ElementCount;
+			m_HeapAddress = rhs.m_HeapAddress;
+			rhs.m_HeapAddress = nullptr;
+			m_CurrentFreeIndex = rhs.m_CurrentFreeIndex;
+		}
+
+		Array<T>& operator=(Array<T> && rhs)
+		{
+			m_ElementSize = rhs.m_ElementSize;
+			m_ElementCount = rhs.m_ElementCount;
+			m_HeapAddress = rhs.m_HeapAddress;
+			rhs.m_HeapAddress = nullptr;
+			m_CurrentFreeIndex = rhs.m_CurrentFreeIndex;
+			return *this;
+		}
+
+		Array(const T* begin, const T* end)
+		{
+			m_ElementSize = sizeof(T);
+			m_ElementCount = (end - begin);
+			m_HeapAddress = reinterpret_cast<T*>(InnoMemory::Allocate(m_ElementCount * m_ElementSize));
+			std::memcpy(m_HeapAddress, begin, m_ElementCount * m_ElementSize);
+			m_CurrentFreeIndex = m_ElementCount;
+		}
+
+		T& operator[](size_t pos)
+		{
+			assert(pos < m_ElementCount && "Trying to access out-of-boundary address.");
+			return *(m_HeapAddress + pos);
+		}
+
+		const T& operator[](size_t pos) const
+		{
+			assert(pos < m_ElementCount && "Trying to access out-of-boundary address.");
+			return *(m_HeapAddress + pos);
+		}
+
+		auto begin()
+		{
+			return m_HeapAddress;
+		}
+
+		auto end()
+		{
+			return m_HeapAddress + m_ElementCount;
+		}
+
+		const auto begin() const
+		{
+			return m_HeapAddress;
+		}
+
+		const auto end() const
+		{
+			return m_HeapAddress + m_ElementCount;
+		}
+
+		const auto size() const
+		{
+			return m_ElementCount;
+		}
+
+		auto reserve(size_t elementCount)
+		{
+			m_ElementSize = sizeof(T);
+			m_ElementCount = elementCount;
+			m_HeapAddress = reinterpret_cast<T*>(InnoMemory::Allocate(m_ElementCount * m_ElementSize));
+			m_CurrentFreeIndex = 0;
+		}
+
+		auto emplace_back(const T& value)
+		{
+			assert(m_CurrentFreeIndex <= m_ElementCount && "Heap overflow occurred due to unsafe emplace back operation.");
+			this->operator[](m_CurrentFreeIndex) = value;
+			m_CurrentFreeIndex++;
+		}
+
+	private:
+		T* m_HeapAddress;
+		size_t m_ElementSize;
+		size_t m_ElementCount;
+		size_t m_CurrentFreeIndex;
+	};
+
+	template <typename T>
+	class RingBuffer
 	{
-		m_ElementSize = rhs.m_ElementSize;
-		m_ElementCount = rhs.m_ElementCount;
-		m_HeapAddress = reinterpret_cast<T*>(InnoMemory::Allocate(m_ElementCount * m_ElementSize));
-		std::memcpy(m_HeapAddress, rhs.m_HeapAddress, m_ElementCount * m_ElementSize);
-		m_CurrentFreeIndex = rhs.m_CurrentFreeIndex;
-	}
+	public:
+		RingBuffer() = default;
+		RingBuffer(size_t elementCount)
+		{
+			reserve(elementCount);
+		}
 
-	InnoArray<T>& operator=(const InnoArray<T> & rhs)
+		~RingBuffer() = default;
+
+		RingBuffer(const RingBuffer<T> & rhs)
+		{
+			m_CurrentElement = rhs.m_CurrentElement;
+			m_ElementCount = rhs.m_ElementCount;
+			m_Array = rhs.m_Array;
+		}
+
+		RingBuffer<T>& operator=(const RingBuffer<T> & rhs)
+		{
+			m_CurrentElement = rhs.m_CurrentElement;
+			m_ElementCount = rhs.m_ElementCount;
+			m_Array = rhs.m_Array;
+			return *this;
+		}
+
+		RingBuffer(RingBuffer<T> && rhs)
+		{
+			m_CurrentElement = rhs.m_CurrentElement;
+			m_ElementCount = rhs.m_ElementCount;
+			m_Array = std::move(rhs.m_Array);
+		}
+
+		RingBuffer<T>& operator=(RingBuffer<T> && rhs)
+		{
+			m_CurrentElement = rhs.m_CurrentElement;
+			m_ElementCount = rhs.m_ElementCount;
+			m_Array = std::move(rhs.m_Array);
+			return *this;
+		}
+
+		T& operator[](size_t pos)
+		{
+			return m_Array[pos % m_ElementCount];
+		}
+
+		const T& operator[](size_t pos) const
+		{
+			return m_Array[pos % m_ElementCount];
+		}
+
+		auto reserve(size_t elementCount)
+		{
+			m_ElementCount = elementCount;
+			m_Array.reserve(m_ElementCount);
+		}
+
+		const auto size() const
+		{
+			return m_ElementCount;
+		}
+
+		auto emplace_back(const T& value)
+		{
+			this->operator[](m_CurrentElement) = value;
+			m_CurrentElement++;
+			m_CurrentElement %= m_ElementCount;
+		}
+
+	private:
+		size_t m_CurrentElement = 0;
+		size_t m_ElementCount = 0;
+		std::shared_mutex Mutex;
+		Array<T> m_Array;
+	};
+
+	template <typename T>
+	class DoubleBuffer
 	{
-		m_ElementSize = rhs.m_ElementSize;
-		m_ElementCount = rhs.m_ElementCount;
-		m_HeapAddress = reinterpret_cast<T*>(InnoMemory::Allocate(m_ElementCount * m_ElementSize));
-		std::memcpy(m_HeapAddress, rhs.m_HeapAddress, m_ElementCount * m_ElementSize);
-		m_CurrentFreeIndex = rhs.m_CurrentFreeIndex;
-		return *this;
-	}
+	public:
+		DoubleBuffer() = default;
+		~DoubleBuffer() = default;
+		T GetValue()
+		{
+			std::lock_guard<std::shared_mutex> lock{ Mutex };
+			if (IsAReady)
+			{
+				return A;
+			}
+			else
+			{
+				return B;
+			}
+		}
 
-	InnoArray(InnoArray<T> && rhs)
-	{
-		m_ElementSize = rhs.m_ElementSize;
-		m_ElementCount = rhs.m_ElementCount;
-		m_HeapAddress = rhs.m_HeapAddress;
-		rhs.m_HeapAddress = nullptr;
-		m_CurrentFreeIndex = rhs.m_CurrentFreeIndex;
-	}
+		void SetValue(const T& value)
+		{
+			std::unique_lock<std::shared_mutex>Lock{ Mutex };
+			if (IsAReady)
+			{
+				B = value;
+				IsAReady = false;
+			}
+			else
+			{
+				A = value;
+				IsAReady = true;
+			}
+		}
 
-	InnoArray<T>& operator=(InnoArray<T> && rhs)
-	{
-		m_ElementSize = rhs.m_ElementSize;
-		m_ElementCount = rhs.m_ElementCount;
-		m_HeapAddress = rhs.m_HeapAddress;
-		rhs.m_HeapAddress = nullptr;
-		m_CurrentFreeIndex = rhs.m_CurrentFreeIndex;
-		return *this;
-	}
+	private:
+		std::atomic<bool> IsAReady = true;
+		std::shared_mutex Mutex;
+		T A;
+		T B;
+	};
+}
 
-	InnoArray(const T* begin, const T* end)
-	{
-		m_ElementSize = sizeof(T);
-		m_ElementCount = (end - begin);
-		m_HeapAddress = reinterpret_cast<T*>(InnoMemory::Allocate(m_ElementCount * m_ElementSize));
-		std::memcpy(m_HeapAddress, begin, m_ElementCount * m_ElementSize);
-		m_CurrentFreeIndex = m_ElementCount;
-	}
-
-	T& operator[](size_t pos)
-	{
-		assert(pos < m_ElementCount && "Trying to access out-of-boundary address.");
-		return *(m_HeapAddress + pos);
-	}
-
-	const T& operator[](size_t pos) const
-	{
-		assert(pos < m_ElementCount && "Trying to access out-of-boundary address.");
-		return *(m_HeapAddress + pos);
-	}
-
-	auto begin()
-	{
-		return m_HeapAddress;
-	}
-
-	auto end()
-	{
-		return m_HeapAddress + m_ElementCount;
-	}
-
-	const auto begin() const
-	{
-		return m_HeapAddress;
-	}
-
-	const auto end() const
-	{
-		return m_HeapAddress + m_ElementCount;
-	}
-
-	const auto size() const
-	{
-		return m_ElementCount;
-	}
-
-	auto reserve(size_t elementCount)
-	{
-		m_ElementSize = sizeof(T);
-		m_ElementCount = elementCount;
-		m_HeapAddress = reinterpret_cast<T*>(InnoMemory::Allocate(m_ElementCount * m_ElementSize));
-		m_CurrentFreeIndex = 0;
-	}
-
-	auto emplace_back(const T& value)
-	{
-		assert(m_CurrentFreeIndex <= m_ElementCount && "Heap overflow occurred due to unsafe emplace back operation.");
-		this->operator[](m_CurrentFreeIndex) = value;
-		m_CurrentFreeIndex++;
-	}
-
-private:
-	T* m_HeapAddress;
-	size_t m_ElementSize;
-	size_t m_ElementCount;
-	size_t m_CurrentFreeIndex;
-};
+using namespace InnoContainer;

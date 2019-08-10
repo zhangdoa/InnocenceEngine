@@ -14,47 +14,6 @@ extern IModuleManager* g_pModuleManager;
 
 #include "../RayTracer/RayTracer.h"
 
-template <typename T>
-class DoubleBuffer
-{
-public:
-	DoubleBuffer() = default;
-	~DoubleBuffer() = default;
-	T GetValue()
-	{
-		std::lock_guard<std::shared_mutex> lock{ Mutex };
-		if (IsAReady)
-		{
-			return A;
-		}
-		else
-		{
-			return B;
-		}
-	}
-
-	void SetValue(const T& value)
-	{
-		std::unique_lock<std::shared_mutex>Lock{ Mutex };
-		if (IsAReady)
-		{
-			B = value;
-			IsAReady = false;
-		}
-		else
-		{
-			A = value;
-			IsAReady = true;
-		}
-	}
-
-private:
-	std::atomic<bool> IsAReady = true;
-	std::shared_mutex Mutex;
-	T A;
-	T B;
-};
-
 namespace InnoRenderingFrontendNS
 {
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;

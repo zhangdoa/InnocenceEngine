@@ -186,7 +186,7 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 {
 	auto l_verticesNumber = aiMesh->mNumVertices;
 
-	InnoArray<Vertex> l_vertices;
+	Array<Vertex> l_vertices;
 
 	l_vertices.reserve(l_verticesNumber);
 
@@ -242,7 +242,7 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 		l_vertices[i] = l_Vertex;
 	}
 
-	InnoArray<Index> l_indices;
+	Array<Index> l_indices;
 	size_t l_indiceSize = 0;
 
 	// bones weight

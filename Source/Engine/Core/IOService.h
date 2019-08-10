@@ -22,7 +22,7 @@ namespace IOService
 	}
 
 	template<typename T>
-	inline bool serializeVector(std::ostream& os, const InnoArray<T>& vector)
+	inline bool serializeVector(std::ostream& os, const Array<T>& vector)
 	{
 		serialize(os, (void*)&vector[0], vector.size() * sizeof(T));
 		return true;
@@ -47,7 +47,7 @@ namespace IOService
 	}
 
 	template<typename T>
-	inline bool deserializeVector(std::istream& is, std::streamoff startPos, std::size_t size, InnoArray<T>& vector)
+	inline bool deserializeVector(std::istream& is, std::streamoff startPos, std::size_t size, Array<T>& vector)
 	{
 		// get pointer to associated buffer object
 		auto pbuf = is.rdbuf();
@@ -67,7 +67,7 @@ namespace IOService
 	}
 
 	template<typename T>
-	inline bool deserializeVector(std::istream& is, InnoArray<T>& vector)
+	inline bool deserializeVector(std::istream& is, Array<T>& vector)
 	{
 		// get pointer to associated buffer object
 		auto pbuf = is.rdbuf();
