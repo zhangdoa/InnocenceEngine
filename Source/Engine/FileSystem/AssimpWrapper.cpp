@@ -189,6 +189,7 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 	Array<Vertex> l_vertices;
 
 	l_vertices.reserve(l_verticesNumber);
+	l_vertices.fulfill();
 
 	for (unsigned int i = 0; i < l_verticesNumber; i++)
 	{
@@ -291,6 +292,7 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 		}
 
 		l_indices.reserve(l_verticesNumber);
+		l_indices.fulfill();
 
 		for (unsigned int i = 0; i < l_verticesNumber; i++)
 		{
@@ -311,6 +313,7 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 			}
 
 			l_indices.reserve(l_indiceSize);
+			l_indices.fulfill();
 
 			unsigned int l_index = 0;
 			for (unsigned int i = 0; i < aiMesh->mNumFaces; i++)
@@ -327,6 +330,7 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 		else
 		{
 			l_indices.reserve(l_verticesNumber);
+			l_indices.fulfill();
 
 			for (unsigned int i = 0; i < l_verticesNumber; i++)
 			{

@@ -29,12 +29,12 @@ namespace InnoRenderingFrontendNS
 
 	RenderPassDesc m_DefaultRenderPassDesc;
 
-	DoubleBuffer<CameraGPUData> m_cameraGPUData;
-	DoubleBuffer<SunGPUData> m_sunGPUData;
+	DoubleBuffer<CameraGPUData, true> m_cameraGPUData;
+	DoubleBuffer<SunGPUData, true> m_sunGPUData;
 	std::vector<CSMGPUData> m_CSMGPUData;
 	std::vector<PointLightGPUData> m_pointLightGPUData;
 	std::vector<SphereLightGPUData> m_sphereLightGPUData;
-	DoubleBuffer<SkyGPUData> m_skyGPUData;
+	DoubleBuffer<SkyGPUData, true> m_skyGPUData;
 
 	unsigned int m_opaquePassDrawCallCount = 0;
 	std::vector<OpaquePassGPUData> m_opaquePassGPUData;

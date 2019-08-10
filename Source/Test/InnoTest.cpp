@@ -39,10 +39,12 @@ void TestArray(size_t testCaseCount)
 
 	Array<float> l_Array;
 	l_Array.reserve(testCaseCount);
+
 	for (size_t i = 0; i < testCaseCount; i++)
 	{
-		l_Array[i] = (float)i;
+		l_Array.emplace_back((float)i);
 	}
+
 	auto l_ArrayCopy = l_Array;
 
 	Array<float> l_Array2;
@@ -199,6 +201,13 @@ private:
 	FixedSizeString<64> m_Name;
 };
 
+struct JobReport
+{
+	const char* m_JobName = 0;
+	unsigned int m_ThreadID = 0;
+	unsigned long long m_ExecutionTime = 0;
+};
+
 enum class ThreadState { Idle, Busy };
 
 #include<unordered_set>
@@ -237,62 +246,11 @@ public:
 	}
 
 private:
-	std::string GetThreadID()
-	{
-		std::stringstream ss;
-		ss << m_ID.second;
-		return ss.str();
-	}
+	std::string GetThreadID();
 
-	void ExecuteJob(IJob* job)
-	{
-#if defined _DEBUG
-		auto l_StartTime = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
-#endif
-		job->Execute();
-#if defined _DEBUG
-		auto l_FinishTime = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
-		auto l_Duration = l_FinishTime - l_StartTime;
-#endif
-	}
+	void ExecuteJob(IJob* job);
 
-	void Worker(unsigned int ThreadIndex)
-	{
-		auto l_ID = std::this_thread::get_id();
-		m_ID = std::make_pair(ThreadIndex, l_ID);
-		m_ThreadStatus = ThreadState::Idle;
-		InnoLogger::Log(LogLevel::Success, "InnoJobScheduler: Thread ", GetThreadID().c_str(), " has been occupied.");
-
-		while (!m_Done)
-		{
-			m_ThreadStatus = ThreadState::Busy;
-			IJob* l_job;
-			if (m_JobQueue.waitPop(l_job))
-			{
-				auto l_UpStreamJob = l_job->GetUpstreamJob();
-				if (l_UpStreamJob)
-				{
-					if (!l_UpStreamJob->IsFinished())
-					{
-						// @TODO: Balance workload around different worker threads
-						m_JobQueue.push(l_job);
-					}
-					else
-					{
-						ExecuteJob(l_job);
-					}
-				}
-				else
-				{
-					ExecuteJob(l_job);
-				}
-			}
-			m_ThreadStatus = ThreadState::Idle;
-		}
-
-		m_ThreadStatus = ThreadState::Idle;
-		InnoLogger::Log(LogLevel::Success, "InnoJobScheduler: Thread ", GetThreadID().c_str(), " has been released.");
-	}
+	void Worker(unsigned int ThreadIndex);
 
 	std::thread* m_ThreadHandle;
 	std::pair<unsigned int, std::thread::id> m_ID;
@@ -307,6 +265,73 @@ namespace InnoJobSchedulerNS
 	std::vector<std::unique_ptr<InnoThread>> m_Threads;
 	std::atomic_bool m_isAllThreadsIdle = true;
 	std::unordered_set<std::unique_ptr<IJob>> m_JobPool;
+	RingBuffer<JobReport, true>* m_JobReports;
+	std::shared_mutex m_Mutex;
+}
+
+using namespace InnoJobSchedulerNS;
+
+inline std::string InnoThread::GetThreadID()
+{
+	std::stringstream ss;
+	ss << m_ID.second;
+	return ss.str();
+}
+
+std::atomic_int t = 0;
+
+inline void InnoThread::ExecuteJob(IJob * job)
+{
+#if defined _DEBUG
+	auto l_StartTime = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
+#endif
+	job->Execute();
+#if defined _DEBUG
+	auto l_FinishTime = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
+	auto l_Duration = l_FinishTime - l_StartTime;
+
+	auto l_report = JobReport{ job->GetName(), m_ID.first, l_Duration };
+	std::unique_lock<std::shared_mutex> lock{ m_Mutex };
+	m_JobReports->emplace_back(l_report);
+#endif
+}
+
+inline void InnoThread::Worker(unsigned int ThreadIndex)
+{
+	auto l_ID = std::this_thread::get_id();
+	m_ID = std::make_pair(ThreadIndex, l_ID);
+	m_ThreadStatus = ThreadState::Idle;
+	InnoLogger::Log(LogLevel::Success, "InnoJobScheduler: Thread ", GetThreadID().c_str(), " has been occupied.");
+
+	while (!m_Done)
+	{
+		m_ThreadStatus = ThreadState::Busy;
+		IJob* l_job;
+		if (m_JobQueue.waitPop(l_job))
+		{
+			auto l_UpStreamJob = l_job->GetUpstreamJob();
+			if (l_UpStreamJob)
+			{
+				if (!l_UpStreamJob->IsFinished())
+				{
+					// @TODO: Balance workload around different worker threads
+					m_JobQueue.push(l_job);
+				}
+				else
+				{
+					ExecuteJob(l_job);
+				}
+			}
+			else
+			{
+				ExecuteJob(l_job);
+			}
+		}
+		m_ThreadStatus = ThreadState::Idle;
+	}
+
+	m_ThreadStatus = ThreadState::Idle;
+	InnoLogger::Log(LogLevel::Success, "InnoJobScheduler: Thread ", GetThreadID().c_str(), " has been released.");
 }
 
 class InnoJobScheduler
@@ -341,15 +366,15 @@ IJob* GenerateJob(const char* name, Func&& func, Args&&... args)
 
 bool InnoJobScheduler::Setup()
 {
-	InnoJobSchedulerNS::m_NumThreads = std::max<unsigned int>(std::thread::hardware_concurrency(), 2u);
+	m_NumThreads = std::max<unsigned int>(std::thread::hardware_concurrency(), 2u);
 
-	InnoJobSchedulerNS::m_Threads.resize(InnoJobSchedulerNS::m_NumThreads);
+	m_Threads.resize(m_NumThreads);
 
 	try
 	{
-		for (std::uint32_t i = 0u; i < InnoJobSchedulerNS::m_NumThreads; ++i)
+		for (std::uint32_t i = 0u; i < m_NumThreads; ++i)
 		{
-			InnoJobSchedulerNS::m_Threads[i] = std::make_unique<InnoThread>(i);
+			m_Threads[i] = std::make_unique<InnoThread>(i);
 		}
 	}
 	catch (...)
@@ -357,6 +382,8 @@ bool InnoJobScheduler::Setup()
 		Terminate();
 		throw;
 	}
+	m_JobReports = new RingBuffer<JobReport, true>();
+	m_JobReports->reserve(256);
 
 	return true;
 }
@@ -373,20 +400,28 @@ bool InnoJobScheduler::Update()
 
 bool InnoJobScheduler::Terminate()
 {
-	for (size_t i = 0; i < InnoJobSchedulerNS::m_NumThreads; i++)
+	for (size_t i = 0; i < m_NumThreads; i++)
 	{
-		InnoJobSchedulerNS::m_Threads[i].reset();
+		m_Threads[i].reset();
 	}
+
+	for (size_t i = 0; i < m_JobReports->size(); i++)
+	{
+		InnoLogger::Log(LogLevel::Verbose, "InnoJobScheduler: JobReport: ", m_JobReports->operator[](i).m_JobName, " on thread ", m_JobReports->operator[](i).m_ThreadID, " executed in ", (float)m_JobReports->operator[](i).m_ExecutionTime / 1000.0f, " ms.");
+	};
+
+	delete m_JobReports;
+
 	return true;
 }
 
 void InnoJobScheduler::WaitSync()
 {
-	while (!InnoJobSchedulerNS::m_isAllThreadsIdle)
+	while (!m_isAllThreadsIdle)
 	{
-		for (size_t i = 0; i < InnoJobSchedulerNS::m_Threads.size(); i++)
+		for (size_t i = 0; i < m_Threads.size(); i++)
 		{
-			InnoJobSchedulerNS::m_isAllThreadsIdle = (InnoJobSchedulerNS::m_Threads[i]->GetStatus() == ThreadState::Idle);
+			m_isAllThreadsIdle = (m_Threads[i]->GetStatus() == ThreadState::Idle);
 		}
 	}
 	InnoLogger::Log(LogLevel::Verbose, "InnoJobScheduler: Reached synchronization point");
@@ -394,7 +429,7 @@ void InnoJobScheduler::WaitSync()
 
 void InnoJobScheduler::AddJob(std::unique_ptr<IJob>&& job)
 {
-	InnoJobSchedulerNS::m_JobPool.emplace(std::move(job));
+	m_JobPool.emplace(std::move(job));
 }
 
 void InnoJobScheduler::ExecuteJob(IJob* job, int threadID)
@@ -408,11 +443,11 @@ void InnoJobScheduler::ExecuteJob(IJob* job, int threadID)
 	{
 		std::random_device RD;
 		std::mt19937 Gen(RD());
-		std::uniform_int_distribution<> Dis(0, InnoJobSchedulerNS::m_NumThreads - 1);
+		std::uniform_int_distribution<> Dis(0, m_NumThreads - 1);
 		l_ThreadIndex = Dis(Gen);
 	}
 
-	InnoJobSchedulerNS::m_Threads[l_ThreadIndex]->AddJobToQueue(job);
+	m_Threads[l_ThreadIndex]->AddJobToQueue(job);
 }
 
 std::atomic_int FinishedJobCount = 0;
@@ -516,6 +551,8 @@ void TestJob(size_t testCaseCount)
 	while (FinishedJobCount != testCaseCount)
 	{
 	}
+
+	InnoJobScheduler::WaitSync();
 
 	auto l_Timestamp1 = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Millisecond);
 

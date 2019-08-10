@@ -67,6 +67,8 @@ DirectoryMetadata* InnoAssetSystem::getRootDirectoryMetadata()
 void InnoAssetSystem::addUnitCube(MeshDataComponent& meshDataComponent)
 {
 	meshDataComponent.m_vertices.reserve(8);
+	meshDataComponent.m_vertices.fulfill();
+
 	InnoMath::generateNDC(&meshDataComponent.m_vertices[0]);
 
 	std::vector<Index> l_indices =
@@ -80,6 +82,7 @@ void InnoAssetSystem::addUnitCube(MeshDataComponent& meshDataComponent)
 	};
 
 	meshDataComponent.m_indices.reserve(36);
+	meshDataComponent.m_indices.fulfill();
 
 	for (unsigned int i = 0; i < 36; i++)
 	{
@@ -173,6 +176,7 @@ void InnoAssetSystem::addUnitSphere(MeshDataComponent& meshDataComponent)
 void InnoAssetSystem::addUnitQuad(MeshDataComponent& meshDataComponent)
 {
 	meshDataComponent.m_vertices.reserve(4);
+	meshDataComponent.m_vertices.fulfill();
 
 	meshDataComponent.m_vertices[0].m_pos = vec4(1.0f, 1.0f, 0.0f, 1.0f);
 	meshDataComponent.m_vertices[0].m_texCoord = vec2(1.0f, 1.0f);
@@ -187,6 +191,8 @@ void InnoAssetSystem::addUnitQuad(MeshDataComponent& meshDataComponent)
 	meshDataComponent.m_vertices[3].m_texCoord = vec2(0.0f, 1.0f);
 
 	meshDataComponent.m_indices.reserve(6);
+	meshDataComponent.m_indices.fulfill();
+
 	meshDataComponent.m_indices[0] = 0;
 	meshDataComponent.m_indices[1] = 1;
 	meshDataComponent.m_indices[2] = 3;
@@ -200,6 +206,7 @@ void InnoAssetSystem::addUnitQuad(MeshDataComponent& meshDataComponent)
 void InnoAssetSystem::addUnitLine(MeshDataComponent& meshDataComponent)
 {
 	meshDataComponent.m_vertices.reserve(2);
+	meshDataComponent.m_vertices.fulfill();
 
 	meshDataComponent.m_vertices[0].m_pos = vec4(1.0f, 1.0f, 0.0f, 1.0f);
 	meshDataComponent.m_vertices[0].m_texCoord = vec2(1.0f, 1.0f);
@@ -208,6 +215,8 @@ void InnoAssetSystem::addUnitLine(MeshDataComponent& meshDataComponent)
 	meshDataComponent.m_vertices[1].m_texCoord = vec2(0.0f, 0.0f);
 
 	meshDataComponent.m_indices.reserve(2);
+	meshDataComponent.m_indices.fulfill();
+
 	meshDataComponent.m_indices[0] = 0;
 	meshDataComponent.m_indices[1] = 1;
 

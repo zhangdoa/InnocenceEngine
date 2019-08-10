@@ -524,7 +524,7 @@ private:
 
 namespace InnoContainer
 {
-	template<class T>
+	template<class T, bool ThreadSafe = false>
 	class Array
 	{
 	public:
@@ -539,14 +539,14 @@ namespace InnoContainer
 			if (m_HeapAddress)
 			{
 				InnoMemory::Deallocate(m_HeapAddress);
-				m_CurrentFreeIndex = 0;
 				m_HeapAddress = nullptr;
+				m_CurrentFreeIndex = 0;
 				m_ElementCount = 0;
 				m_ElementSize = 0;
 			}
 		}
 
-		Array(const Array<T> & rhs)
+		Array(const Array<T, ThreadSafe> & rhs)
 		{
 			m_ElementSize = rhs.m_ElementSize;
 			m_ElementCount = rhs.m_ElementCount;
@@ -555,7 +555,7 @@ namespace InnoContainer
 			m_CurrentFreeIndex = rhs.m_CurrentFreeIndex;
 		}
 
-		Array<T>& operator=(const Array<T> & rhs)
+		Array<T, ThreadSafe>& operator=(const Array<T, ThreadSafe> & rhs)
 		{
 			m_ElementSize = rhs.m_ElementSize;
 			m_ElementCount = rhs.m_ElementCount;
@@ -565,7 +565,7 @@ namespace InnoContainer
 			return *this;
 		}
 
-		Array(Array<T> && rhs)
+		Array(Array<T, ThreadSafe> && rhs)
 		{
 			m_ElementSize = rhs.m_ElementSize;
 			m_ElementCount = rhs.m_ElementCount;
@@ -574,7 +574,7 @@ namespace InnoContainer
 			m_CurrentFreeIndex = rhs.m_CurrentFreeIndex;
 		}
 
-		Array<T>& operator=(Array<T> && rhs)
+		Array<T, ThreadSafe>& operator=(Array<T, ThreadSafe> && rhs)
 		{
 			m_ElementSize = rhs.m_ElementSize;
 			m_ElementCount = rhs.m_ElementCount;
@@ -596,12 +596,22 @@ namespace InnoContainer
 		T& operator[](size_t pos)
 		{
 			assert(pos < m_ElementCount && "Trying to access out-of-boundary address.");
+			assert(pos <= m_CurrentFreeIndex && "Trying to access non-initialized address.");
+			if constexpr (ThreadSafe)
+			{
+				std::shared_lock<std::shared_mutex> lock{ m_Mutex };
+			}
 			return *(m_HeapAddress + pos);
 		}
 
 		const T& operator[](size_t pos) const
 		{
 			assert(pos < m_ElementCount && "Trying to access out-of-boundary address.");
+			assert(pos <= m_CurrentFreeIndex && "Trying to access non-initialized address.");
+			if constexpr (ThreadSafe)
+			{
+				std::shared_lock<std::shared_mutex> lock{ m_Mutex };
+			}
 			return *(m_HeapAddress + pos);
 		}
 
@@ -625,9 +635,14 @@ namespace InnoContainer
 			return m_HeapAddress + m_ElementCount;
 		}
 
-		const auto size() const
+		const auto capacity() const
 		{
 			return m_ElementCount;
+		}
+
+		const auto size() const
+		{
+			return m_CurrentFreeIndex;
 		}
 
 		auto reserve(size_t elementCount)
@@ -638,10 +653,23 @@ namespace InnoContainer
 			m_CurrentFreeIndex = 0;
 		}
 
+		auto fulfill()
+		{
+			for (size_t i = 0; i < m_ElementCount; i++)
+			{
+				*(m_HeapAddress + i) = T();
+			}
+			m_CurrentFreeIndex = m_ElementCount;
+		}
+
 		auto emplace_back(const T& value)
 		{
-			assert(m_CurrentFreeIndex <= m_ElementCount && "Heap overflow occurred due to unsafe emplace back operation.");
-			this->operator[](m_CurrentFreeIndex) = value;
+			assert(m_CurrentFreeIndex <= m_ElementCount && "Heap overflow occurred due to out-of-boundary emplace back operation.");
+			if constexpr (ThreadSafe)
+			{
+				std::unique_lock<std::shared_mutex> lock{ m_Mutex };
+			}
+			*(m_HeapAddress + m_CurrentFreeIndex) = value;
 			m_CurrentFreeIndex++;
 		}
 
@@ -650,9 +678,10 @@ namespace InnoContainer
 		size_t m_ElementSize;
 		size_t m_ElementCount;
 		size_t m_CurrentFreeIndex;
+		std::shared_mutex m_Mutex;
 	};
 
-	template <typename T>
+	template <typename T, bool ThreadSafe = false>
 	class RingBuffer
 	{
 	public:
@@ -664,43 +693,57 @@ namespace InnoContainer
 
 		~RingBuffer() = default;
 
-		RingBuffer(const RingBuffer<T> & rhs)
+		RingBuffer(const RingBuffer<T, ThreadSafe> & rhs)
 		{
 			m_CurrentElement = rhs.m_CurrentElement;
 			m_ElementCount = rhs.m_ElementCount;
+			m_isLoopingOverOnce = rhs.m_isLoopingOverOnce;
 			m_Array = rhs.m_Array;
 		}
 
-		RingBuffer<T>& operator=(const RingBuffer<T> & rhs)
+		RingBuffer<T, ThreadSafe>& operator=(const RingBuffer<T, ThreadSafe> & rhs)
 		{
 			m_CurrentElement = rhs.m_CurrentElement;
 			m_ElementCount = rhs.m_ElementCount;
+			m_isLoopingOverOnce = rhs.m_isLoopingOverOnce;
 			m_Array = rhs.m_Array;
 			return *this;
 		}
 
-		RingBuffer(RingBuffer<T> && rhs)
+		RingBuffer(RingBuffer<T, ThreadSafe> && rhs)
 		{
 			m_CurrentElement = rhs.m_CurrentElement;
 			m_ElementCount = rhs.m_ElementCount;
+			m_isLoopingOverOnce = rhs.m_isLoopingOverOnce;
 			m_Array = std::move(rhs.m_Array);
 		}
 
-		RingBuffer<T>& operator=(RingBuffer<T> && rhs)
+		RingBuffer<T, ThreadSafe>& operator=(RingBuffer<T, ThreadSafe> && rhs)
 		{
 			m_CurrentElement = rhs.m_CurrentElement;
 			m_ElementCount = rhs.m_ElementCount;
+			m_isLoopingOverOnce = rhs.m_isLoopingOverOnce;
 			m_Array = std::move(rhs.m_Array);
 			return *this;
 		}
 
 		T& operator[](size_t pos)
 		{
+			if constexpr (ThreadSafe)
+			{
+				std::shared_lock<std::shared_mutex> lock{ m_Mutex };
+			}
+
 			return m_Array[pos % m_ElementCount];
 		}
 
 		const T& operator[](size_t pos) const
 		{
+			if constexpr (ThreadSafe)
+			{
+				std::shared_lock<std::shared_mutex> lock{ m_Mutex };
+			}
+
 			return m_Array[pos % m_ElementCount];
 		}
 
@@ -708,28 +751,52 @@ namespace InnoContainer
 		{
 			m_ElementCount = elementCount;
 			m_Array.reserve(m_ElementCount);
+			m_Array.fulfill();
 		}
 
-		const auto size() const
+		const auto capacity() const
 		{
 			return m_ElementCount;
 		}
 
+		const auto size() const
+		{
+			if (m_isLoopingOverOnce)
+			{
+				return m_ElementCount;
+			}
+			else
+			{
+				return m_CurrentElement;
+			}
+		}
+
 		auto emplace_back(const T& value)
 		{
-			this->operator[](m_CurrentElement) = value;
+			if constexpr (ThreadSafe)
+			{
+				std::unique_lock<std::shared_mutex> lock{ m_Mutex };
+			}
+
+			m_Array[m_CurrentElement] = value;
+
 			m_CurrentElement++;
-			m_CurrentElement %= m_ElementCount;
+			if (m_CurrentElement >= m_ElementCount)
+			{
+				m_CurrentElement = 0;
+				m_isLoopingOverOnce = true;
+			}
 		}
 
 	private:
 		size_t m_CurrentElement = 0;
 		size_t m_ElementCount = 0;
-		std::shared_mutex Mutex;
-		Array<T> m_Array;
+		bool m_isLoopingOverOnce = false;
+		Array<T, ThreadSafe> m_Array;
+		std::shared_mutex m_Mutex;
 	};
 
-	template <typename T>
+	template <typename T, bool ThreadSafe = false>
 	class DoubleBuffer
 	{
 	public:
@@ -737,37 +804,43 @@ namespace InnoContainer
 		~DoubleBuffer() = default;
 		T GetValue()
 		{
-			std::lock_guard<std::shared_mutex> lock{ Mutex };
-			if (IsAReady)
+			if constexpr (ThreadSafe)
 			{
-				return A;
+				std::shared_lock<std::shared_mutex> lock{ m_Mutex };
+			}
+			if (m_IsAReady)
+			{
+				return m_A;
 			}
 			else
 			{
-				return B;
+				return m_B;
 			}
 		}
 
 		void SetValue(const T& value)
 		{
-			std::unique_lock<std::shared_mutex>Lock{ Mutex };
-			if (IsAReady)
+			if constexpr (ThreadSafe)
 			{
-				B = value;
-				IsAReady = false;
+				std::unique_lock<std::shared_mutex>Lock{ m_Mutex };
+			}
+			if (m_IsAReady)
+			{
+				m_B = value;
+				m_IsAReady = false;
 			}
 			else
 			{
-				A = value;
-				IsAReady = true;
+				m_A = value;
+				m_IsAReady = true;
 			}
 		}
 
 	private:
-		std::atomic<bool> IsAReady = true;
-		std::shared_mutex Mutex;
-		T A;
-		T B;
+		std::atomic<bool> m_IsAReady = true;
+		std::shared_mutex m_Mutex;
+		T m_A;
+		T m_B;
 	};
 }
 
