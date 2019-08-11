@@ -43,11 +43,15 @@ namespace ImGuiWrapperNS
 	void showPointLightComponentPropertyEditor(void* rhs);
 	void showSphereLightComponentPropertyEditor(void* rhs);
 
+	void showConcurrencyProfiler();
+
 	bool m_isParity = true;
 
 	static RenderingConfig m_renderingConfig;
 	static bool m_useZoom = false;
 	static bool m_showRenderPassResult = false;
+	static bool m_showConcurrencyProfiler = false;
+	std::vector<RingBuffer<InnoTaskReport, true>> m_taskReports;
 
 	IImGuiWrapperWindow* m_windowImpl;
 	IImGuiWrapperRenderer* m_rendererImpl;
@@ -107,6 +111,9 @@ bool ImGuiWrapper::setup()
 		ImGuiWrapperNS::m_windowImpl->setup();
 		ImGuiWrapperNS::m_rendererImpl->setup();
 	}
+
+	auto l_maxThreads = g_pModuleManager->getTaskSystem()->GetTotalThreadsNumber();
+	m_taskReports.resize(l_maxThreads);
 
 	return true;
 }
@@ -192,6 +199,7 @@ bool ImGuiWrapper::update()
 			ImGuiWrapperNS::showApplicationProfiler();
 			//ImGuiWrapperNS::showFileExplorer();
 			ImGuiWrapperNS::showWorldExplorer();
+			ImGuiWrapperNS::showConcurrencyProfiler();
 		}
 	}
 	return true;
@@ -222,6 +230,7 @@ void ImGuiWrapperNS::showApplicationProfiler()
 {
 	ImGui::Begin("Profiler", 0, ImGuiWindowFlags_AlwaysAutoResize);
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	ImGui::Checkbox("Show concurrency profiler", &m_showConcurrencyProfiler);
 	ImGui::Checkbox("Use Motion Blur", &m_renderingConfig.useMotionBlur);
 	ImGui::Checkbox("Use TAA", &m_renderingConfig.useTAA);
 	ImGui::Checkbox("Use Bloom", &m_renderingConfig.useBloom);
@@ -711,4 +720,82 @@ void ImGuiWrapperNS::showSphereLightComponentPropertyEditor(void * rhs)
 		}
 	}
 	ImGui::EndChild();
+}
+
+ImVec4 generateButtonColor(const char* name)
+{
+	auto l_ptr = reinterpret_cast<intptr_t>(name);
+	auto l_hue = l_ptr * 4 % 180;
+	auto l_RGB = InnoMath::HSVtoRGB(vec4((float)l_hue, 1.0f, 1.0f, 1.0f));
+	return ImVec4(l_RGB.x, l_RGB.y, l_RGB.z, 1.0f);
+}
+
+void ImGuiWrapperNS::showConcurrencyProfiler()
+{
+	if (m_showConcurrencyProfiler)
+	{
+		auto l_maxThreads = g_pModuleManager->getTaskSystem()->GetTotalThreadsNumber();
+
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 1));
+		ImGui::Begin("ConcurrencyProfiler", 0);
+
+		for (unsigned int i = 0; i < l_maxThreads; i++)
+		{
+			auto l_taskReport = g_pModuleManager->getTaskSystem()->GetTaskReport(i);
+
+			auto l_taskReportCount = l_taskReport.size();
+
+			ImGui::Text("Thread %d", i);
+			ImGui::Separator();
+			ImGui::BeginGroup();
+			if (l_taskReportCount > 0)
+			{
+				auto l_windowWidth = ImGui::GetWindowContentRegionWidth();
+
+				auto l_relativeStartTime = l_taskReport[0].m_StartTime;
+				auto l_relativeEndTime = l_taskReport.currentElement().m_FinishTime;
+				auto l_totalDuration = float(l_relativeEndTime - l_relativeStartTime);
+				auto l_lastTaskReportButtonPos = l_relativeStartTime;
+				unsigned long long l_workDuration = 0;
+
+				for (size_t j = 0; j < l_taskReportCount; j++)
+				{
+					auto l_startTime = l_taskReport[j].m_StartTime;
+					auto l_finishTime = l_taskReport[j].m_FinishTime;
+
+					l_workDuration += (l_finishTime - l_startTime);
+
+					auto l_invisibleButtonWidth = ((float)(l_startTime - l_lastTaskReportButtonPos) + 1.0f) * 10.0f / l_totalDuration;
+					l_invisibleButtonWidth = InnoMath::clamp(l_invisibleButtonWidth, 0.005f, 20.0f);
+					auto l_visibleButtonWidth = ((float)(l_finishTime - l_startTime) + 1.0f) * 10.0f / l_totalDuration;
+					l_visibleButtonWidth = InnoMath::clamp(l_visibleButtonWidth, 0.005f, 20.0f);
+					ImGui::PushStyleColor(ImGuiCol_Button, generateButtonColor(l_taskReport[j].m_TaskName));
+					ImGui::Button("", ImVec2(l_visibleButtonWidth * l_windowWidth, 20));
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("%s\nStart %5.3f ms\nEnd %5.3f ms\nDuration %5.3f ms",
+							l_taskReport[j].m_TaskName,
+							(float)l_startTime / 1000.0f,
+							(float)l_finishTime / 1000.0f,
+							((float)l_finishTime - (float)l_startTime) / 1000.0f
+						);
+					}
+					ImGui::PopStyleColor(1);
+					ImGui::SameLine();
+					ImGui::Button("", ImVec2(l_invisibleButtonWidth * l_windowWidth, 20));
+					ImGui::SameLine();
+
+					l_lastTaskReportButtonPos = l_finishTime;
+				}
+
+				ImGui::Separator();
+				auto l_usage = (float)l_workDuration / (float)l_totalDuration;
+				ImGui::Text("Usage: %5.3f Report Length: %5.3f ms ", l_usage, (float)l_totalDuration / 1000.0f);
+			}
+			ImGui::EndGroup();
+			ImGui::Separator();
+		}
+		ImGui::PopStyleVar();
+		ImGui::End();
+	}
 }
