@@ -728,7 +728,7 @@ namespace InnoContainer
 
 		RingBuffer(const RingBuffer<T, ThreadSafe> & rhs)
 		{
-			m_CurrentElement = rhs.m_CurrentElement;
+			m_CurrentElementIndex = rhs.m_CurrentElementIndex;
 			m_ElementCount = rhs.m_ElementCount;
 			m_isLoopingOverOnce = rhs.m_isLoopingOverOnce;
 			m_Array = rhs.m_Array;
@@ -736,7 +736,7 @@ namespace InnoContainer
 
 		RingBuffer<T, ThreadSafe>& operator=(const RingBuffer<T, ThreadSafe> & rhs)
 		{
-			m_CurrentElement = rhs.m_CurrentElement;
+			m_CurrentElementIndex = rhs.m_CurrentElementIndex;
 			m_ElementCount = rhs.m_ElementCount;
 			m_isLoopingOverOnce = rhs.m_isLoopingOverOnce;
 			m_Array = rhs.m_Array;
@@ -745,7 +745,7 @@ namespace InnoContainer
 
 		RingBuffer(RingBuffer<T, ThreadSafe> && rhs)
 		{
-			m_CurrentElement = rhs.m_CurrentElement;
+			m_CurrentElementIndex = rhs.m_CurrentElementIndex;
 			m_ElementCount = rhs.m_ElementCount;
 			m_isLoopingOverOnce = rhs.m_isLoopingOverOnce;
 			m_Array = std::move(rhs.m_Array);
@@ -753,7 +753,7 @@ namespace InnoContainer
 
 		RingBuffer<T, ThreadSafe>& operator=(RingBuffer<T, ThreadSafe> && rhs)
 		{
-			m_CurrentElement = rhs.m_CurrentElement;
+			m_CurrentElementIndex = rhs.m_CurrentElementIndex;
 			m_ElementCount = rhs.m_ElementCount;
 			m_isLoopingOverOnce = rhs.m_isLoopingOverOnce;
 			m_Array = std::move(rhs.m_Array);
@@ -808,8 +808,41 @@ namespace InnoContainer
 			}
 			else
 			{
-				return m_CurrentElement;
+				return m_CurrentElementIndex;
 			}
+		}
+
+		const auto currentElementPos() const
+		{
+			return m_CurrentElementIndex == 0 ? 0 : m_CurrentElementIndex - 1;
+		}
+
+		template<typename U = T & >
+		EnableType<U, ThreadSafe> currentElement()
+		{
+			std::shared_lock<std::shared_mutex> lock{ m_Mutex };
+
+			return m_Array[m_CurrentElementIndex == 0 ? 0 : m_CurrentElementIndex - 1];
+		}
+
+		template<typename U = T & >
+		DisableType<U, ThreadSafe> currentElement()
+		{
+			return m_Array[m_CurrentElementIndex == 0 ? 0 : m_CurrentElementIndex - 1];
+		}
+
+		template<typename U = const T & >
+		EnableType<U, ThreadSafe> currentElement() const
+		{
+			std::shared_lock<std::shared_mutex> lock{ m_Mutex };
+
+			return m_Array[m_CurrentElementIndex == 0 ? 0 : m_CurrentElementIndex - 1];
+		}
+
+		template<typename U = const T & >
+		DisableType<U, ThreadSafe> currentElement() const
+		{
+			return m_Array[m_CurrentElementIndex == 0 ? 0 : m_CurrentElementIndex - 1];
 		}
 
 		template<typename U = void>
@@ -817,13 +850,13 @@ namespace InnoContainer
 		{
 			std::unique_lock<std::shared_mutex> lock{ m_Mutex };
 
-			m_Array[m_CurrentElement] = value;
+			m_Array[m_CurrentElementIndex] = value;
 
-			m_CurrentElement++;
+			m_CurrentElementIndex++;
 
-			if (m_CurrentElement >= m_ElementCount)
+			if (m_CurrentElementIndex >= m_ElementCount)
 			{
-				m_CurrentElement = 0;
+				m_CurrentElementIndex = 0;
 				m_isLoopingOverOnce = true;
 			}
 		}
@@ -831,19 +864,19 @@ namespace InnoContainer
 		template<typename U = void>
 		DisableType<U, ThreadSafe> emplace_back(const T& value)
 		{
-			m_Array[m_CurrentElement] = value;
+			m_Array[m_CurrentElementIndex] = value;
 
-			m_CurrentElement++;
+			m_CurrentElementIndex++;
 
-			if (m_CurrentElement >= m_ElementCount)
+			if (m_CurrentElementIndex >= m_ElementCount)
 			{
-				m_CurrentElement = 0;
+				m_CurrentElementIndex = 0;
 				m_isLoopingOverOnce = true;
 			}
 		}
 
 	private:
-		size_t m_CurrentElement = 0;
+		size_t m_CurrentElementIndex = 0;
 		size_t m_ElementCount = 0;
 		bool m_isLoopingOverOnce = false;
 		Array<T, ThreadSafe> m_Array;
