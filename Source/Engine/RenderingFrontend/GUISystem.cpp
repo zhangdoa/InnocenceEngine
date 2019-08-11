@@ -32,10 +32,18 @@ bool InnoGUISystem::update()
 	if (m_showImGui)
 	{
 		ImGuiWrapper::get().update();
-		ImGuiWrapper::get().render();
 	}
 
-	return false;
+	return true;
+}
+
+bool InnoGUISystem::render()
+{
+	if (m_showImGui)
+	{
+		ImGuiWrapper::get().render();
+	}
+	return true;
 }
 
 bool InnoGUISystem::terminate()

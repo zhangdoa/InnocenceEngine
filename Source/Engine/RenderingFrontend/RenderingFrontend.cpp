@@ -296,28 +296,33 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 	m_terrainMesh->m_objectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMesh);
 
-	m_renderingServer->InitializeMeshDataComponent(m_unitLineMesh);
-	m_renderingServer->InitializeMeshDataComponent(m_unitQuadMesh);
-	m_renderingServer->InitializeMeshDataComponent(m_unitCubeMesh);
-	m_renderingServer->InitializeMeshDataComponent(m_unitSphereMesh);
-	m_renderingServer->InitializeMeshDataComponent(m_terrainMesh);
+	auto l_DefaultAssetInitializeTask = g_pModuleManager->getTaskSystem()->submit("DefaultAssetInitializeTask", 2, nullptr,
+		[&]() {
+		m_renderingServer->InitializeMeshDataComponent(m_unitLineMesh);
+		m_renderingServer->InitializeMeshDataComponent(m_unitQuadMesh);
+		m_renderingServer->InitializeMeshDataComponent(m_unitCubeMesh);
+		m_renderingServer->InitializeMeshDataComponent(m_unitSphereMesh);
+		m_renderingServer->InitializeMeshDataComponent(m_terrainMesh);
 
-	m_renderingServer->InitializeTextureDataComponent(m_basicNormalTexture);
-	m_renderingServer->InitializeTextureDataComponent(m_basicAlbedoTexture);
-	m_renderingServer->InitializeTextureDataComponent(m_basicMetallicTexture);
-	m_renderingServer->InitializeTextureDataComponent(m_basicRoughnessTexture);
-	m_renderingServer->InitializeTextureDataComponent(m_basicAOTexture);
+		m_renderingServer->InitializeTextureDataComponent(m_basicNormalTexture);
+		m_renderingServer->InitializeTextureDataComponent(m_basicAlbedoTexture);
+		m_renderingServer->InitializeTextureDataComponent(m_basicMetallicTexture);
+		m_renderingServer->InitializeTextureDataComponent(m_basicRoughnessTexture);
+		m_renderingServer->InitializeTextureDataComponent(m_basicAOTexture);
 
-	m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_OBJ);
-	m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_PNG);
-	m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_SHADER);
-	m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_UNKNOWN);
+		m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_OBJ);
+		m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_PNG);
+		m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_SHADER);
+		m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_UNKNOWN);
 
-	m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_DirectionalLight);
-	m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_PointLight);
-	m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_SphereLight);
+		m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_DirectionalLight);
+		m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_PointLight);
+		m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_SphereLight);
 
-	m_renderingServer->InitializeMaterialDataComponent(m_basicMaterial);
+		m_renderingServer->InitializeMaterialDataComponent(m_basicMaterial);
+	});
+
+	l_DefaultAssetInitializeTask->Wait();
 
 	return true;
 }

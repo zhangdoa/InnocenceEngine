@@ -90,7 +90,7 @@ bool InnoTransformComponentManager::Initialize()
 
 bool InnoTransformComponentManager::Simulate()
 {
-	auto l_SimulateTask = g_pModuleManager->getTaskSystem()->submit("TransformComponentsSimulateTask", -1, nullptr, [&]()
+	auto l_SimulateTask = g_pModuleManager->getTaskSystem()->submit("TransformComponentsSimulateTask", 0, nullptr, [&]()
 	{
 		SimulateTransformComponents();
 	});

@@ -192,6 +192,14 @@ bool ImGuiWrapper::update()
 	if (ImGuiWrapperNS::m_isParity)
 	{
 		ImGuiWrapperNS::m_windowImpl->newFrame();
+	}
+	return true;
+}
+
+bool ImGuiWrapper::render()
+{
+	if (ImGuiWrapperNS::m_isParity)
+	{
 		ImGuiWrapperNS::m_rendererImpl->newFrame();
 
 		ImGui::NewFrame();
@@ -201,15 +209,8 @@ bool ImGuiWrapper::update()
 			ImGuiWrapperNS::showWorldExplorer();
 			ImGuiWrapperNS::showConcurrencyProfiler();
 		}
-	}
-	return true;
-}
-
-bool ImGuiWrapper::render()
-{
-	if (ImGuiWrapperNS::m_isParity)
-	{
 		ImGui::Render();
+
 		ImGuiWrapperNS::m_rendererImpl->render();
 	}
 	return true;

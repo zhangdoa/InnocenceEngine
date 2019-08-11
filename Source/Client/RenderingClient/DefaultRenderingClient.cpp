@@ -194,14 +194,16 @@ bool DefaultRenderingClient::Setup()
 		BRDFTestPass::Terminate();
 	};
 
-	f_SetupTask();
+	auto l_DefaultRenderingClientSetupTask = g_pModuleManager->getTaskSystem()->submit("DefaultRenderingClientSetupTask", 2, nullptr, f_SetupTask);
+	l_DefaultRenderingClientSetupTask->Wait();
 
 	return true;
 }
 
 bool DefaultRenderingClient::Initialize()
 {
-	f_InitializeTask();
+	auto l_DefaultRenderingClientInitializeTask = g_pModuleManager->getTaskSystem()->submit("DefaultRenderingClientSetupTask", 2, nullptr, f_InitializeTask);
+	l_DefaultRenderingClientInitializeTask->Wait();
 
 	return true;
 }

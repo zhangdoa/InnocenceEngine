@@ -21,6 +21,8 @@ namespace WinGLWindowSurfaceNS
 
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	InitConfig m_initConfig;
+
+	std::function<void()> f_CreateGLContextTask;
 }
 
 bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
@@ -134,98 +136,100 @@ bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 			WinWindowSystemComponent::get().m_hInstance, NULL);				// instance, param
 	}
 
-	WinWindowSystemComponent::get().m_HDC = GetDC(WinWindowSystemComponent::get().m_hwnd);
-
-	const int pixelAttribs[] = {
-		WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
-		WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
-		WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
-		WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
-		WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
-		WGL_COLOR_BITS_ARB, 32,
-		WGL_ALPHA_BITS_ARB, 8,
-		WGL_DEPTH_BITS_ARB, 24,
-		WGL_STENCIL_BITS_ARB, 8,
-		WGL_SAMPLE_BUFFERS_ARB, GL_TRUE,
-		WGL_SAMPLES_ARB, 4,
-		0
-	};
-
-	int pixelFormatID;
-	UINT numFormats;
-	const bool status = wglChoosePixelFormatARB(WinWindowSystemComponent::get().m_HDC, pixelAttribs, NULL, 1, &pixelFormatID, &numFormats);
-
-	if (status == false || numFormats == 0)
+	f_CreateGLContextTask = [&]()
 	{
-		m_objectStatus = ObjectStatus::Created;
-		InnoLogger::Log(LogLevel::Error, "WinWindowSystem: wglChoosePixelFormatARB() failed.");
-		return false;
-	}
+		WinWindowSystemComponent::get().m_HDC = GetDC(WinWindowSystemComponent::get().m_hwnd);
 
-	PIXELFORMATDESCRIPTOR PFD;
-	DescribePixelFormat(WinWindowSystemComponent::get().m_HDC, pixelFormatID, sizeof(PFD), &PFD);
-	SetPixelFormat(WinWindowSystemComponent::get().m_HDC, pixelFormatID, &PFD);
+		const int pixelAttribs[] = {
+			WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
+			WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
+			WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
+			WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
+			WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
+			WGL_COLOR_BITS_ARB, 32,
+			WGL_ALPHA_BITS_ARB, 8,
+			WGL_DEPTH_BITS_ARB, 24,
+			WGL_STENCIL_BITS_ARB, 8,
+			WGL_SAMPLE_BUFFERS_ARB, GL_TRUE,
+			WGL_SAMPLES_ARB, 4,
+			0
+		};
 
-	const int major_min = 4, minor_min = 6;
-	std::vector<int> contextAttribs =
-	{
-		WGL_CONTEXT_MAJOR_VERSION_ARB, major_min,
-		WGL_CONTEXT_MINOR_VERSION_ARB, minor_min,
-		WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
-		WGL_CONTEXT_FLAGS_ARB
-	};
+		int pixelFormatID;
+		UINT numFormats;
+		const bool status = wglChoosePixelFormatARB(WinWindowSystemComponent::get().m_HDC, pixelAttribs, NULL, 1, &pixelFormatID, &numFormats);
 
-#ifdef _DEBUG
-	contextAttribs.emplace_back(WGL_CONTEXT_DEBUG_BIT_ARB);
-#endif // _DEBUG
-	contextAttribs.emplace_back(0);
-
-	m_HGLRC = wglCreateContextAttribsARB(WinWindowSystemComponent::get().m_HDC, 0, &contextAttribs[0]);
-
-	if (m_HGLRC == NULL)
-	{
-		m_objectStatus = ObjectStatus::Created;
-		InnoLogger::Log(LogLevel::Error, "WinWindowSystem: wglCreateContextAttribsARB() failed.");
-		return false;
-	}
-
-	// delete temporary context and window
-	wglMakeCurrent(NULL, NULL);
-	wglDeleteContext(fakeRC);
-	ReleaseDC(fakeWND, fakeDC);
-	DestroyWindow(fakeWND);
-
-	if (!wglMakeCurrent(WinWindowSystemComponent::get().m_HDC, m_HGLRC))
-	{
-		m_objectStatus = ObjectStatus::Created;
-		InnoLogger::Log(LogLevel::Error, "WinWindowSystem: wglMakeCurrent() failed.");
-		return false;
-	}
-
-	// init opengl loader here (extra safe version)
-	// glad: load all OpenGL function pointers
-	// ---------------------------------------
-	if (!gladLoadGL())
-	{
-		m_objectStatus = ObjectStatus::Created;
-		InnoLogger::Log(LogLevel::Error, "WinWindowSystem: Failed to initialize GLAD.");
-		return false;
-	}
-
-	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
-
-	if (!l_renderingConfig.VSync)
-	{
-		PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = nullptr;
-		wglSwapIntervalEXT = reinterpret_cast<PFNWGLSWAPINTERVALEXTPROC>(wglGetProcAddress("wglSwapIntervalEXT"));
-		if (wglSwapIntervalEXT == nullptr)
+		if (status == false || numFormats == 0)
 		{
 			m_objectStatus = ObjectStatus::Created;
-			InnoLogger::Log(LogLevel::Error, "WinWindowSystem: wglGetProcAddress(wglSwapIntervalEXT) failed.");
+			InnoLogger::Log(LogLevel::Error, "WinWindowSystem: wglChoosePixelFormatARB() failed.");
 			return false;
 		}
-		wglSwapIntervalEXT(0);
-	}
+
+		PIXELFORMATDESCRIPTOR PFD;
+		DescribePixelFormat(WinWindowSystemComponent::get().m_HDC, pixelFormatID, sizeof(PFD), &PFD);
+		SetPixelFormat(WinWindowSystemComponent::get().m_HDC, pixelFormatID, &PFD);
+
+		const int major_min = 4, minor_min = 6;
+		std::vector<int> contextAttribs =
+		{
+			WGL_CONTEXT_MAJOR_VERSION_ARB, major_min,
+			WGL_CONTEXT_MINOR_VERSION_ARB, minor_min,
+			WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+			WGL_CONTEXT_FLAGS_ARB
+		};
+
+#ifdef _DEBUG
+		contextAttribs.emplace_back(WGL_CONTEXT_DEBUG_BIT_ARB);
+#endif // _DEBUG
+		contextAttribs.emplace_back(0);
+
+		m_HGLRC = wglCreateContextAttribsARB(WinWindowSystemComponent::get().m_HDC, 0, &contextAttribs[0]);
+
+		if (m_HGLRC == NULL)
+		{
+			m_objectStatus = ObjectStatus::Created;
+			InnoLogger::Log(LogLevel::Error, "WinWindowSystem: wglCreateContextAttribsARB() failed.");
+		}
+
+		// delete temporary context and window
+		wglMakeCurrent(NULL, NULL);
+		wglDeleteContext(fakeRC);
+		ReleaseDC(fakeWND, fakeDC);
+		DestroyWindow(fakeWND);
+
+		if (!wglMakeCurrent(WinWindowSystemComponent::get().m_HDC, m_HGLRC))
+		{
+			m_objectStatus = ObjectStatus::Created;
+			InnoLogger::Log(LogLevel::Error, "WinWindowSystem: wglMakeCurrent() failed.");
+		}
+
+		// init opengl loader here (extra safe version)
+		// glad: load all OpenGL function pointers
+		// ---------------------------------------
+		if (!gladLoadGL())
+		{
+			m_objectStatus = ObjectStatus::Created;
+			InnoLogger::Log(LogLevel::Error, "WinWindowSystem: Failed to initialize GLAD.");
+		}
+
+		auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
+
+		if (!l_renderingConfig.VSync)
+		{
+			PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = nullptr;
+			wglSwapIntervalEXT = reinterpret_cast<PFNWGLSWAPINTERVALEXTPROC>(wglGetProcAddress("wglSwapIntervalEXT"));
+			if (wglSwapIntervalEXT == nullptr)
+			{
+				m_objectStatus = ObjectStatus::Created;
+				InnoLogger::Log(LogLevel::Error, "WinWindowSystem: wglGetProcAddress(wglSwapIntervalEXT) failed.");
+			}
+			wglSwapIntervalEXT(0);
+		}
+	};
+
+	auto l_CreateGLContextTask = g_pModuleManager->getTaskSystem()->submit("CreateGLContextTask", 2, nullptr, f_CreateGLContextTask);
+	l_CreateGLContextTask->Wait();
 
 	if (m_initConfig.engineMode == EngineMode::GAME)
 	{

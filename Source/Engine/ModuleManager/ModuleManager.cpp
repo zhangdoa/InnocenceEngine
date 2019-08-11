@@ -544,7 +544,7 @@ bool InnoModuleManagerNS::update()
 	{
 		auto l_tickStartTime = m_TimeSystem->getCurrentTimeFromEpoch();
 
-		auto l_LogicClientUpdateTask = g_pModuleManager->getTaskSystem()->submit("LogicClientUpdateTask", -1, nullptr, f_LogicClientUpdateTask);
+		auto l_LogicClientUpdateTask = g_pModuleManager->getTaskSystem()->submit("LogicClientUpdateTask", 0, nullptr, f_LogicClientUpdateTask);
 
 		subSystemUpdate(TimeSystem);
 		subSystemUpdate(LogSystem);
@@ -571,7 +571,7 @@ bool InnoModuleManagerNS::update()
 
 		subSystemUpdate(PhysicsSystem);
 
-		auto l_PhysicsSystemCullingTask = g_pModuleManager->getTaskSystem()->submit("PhysicsSystemCullingTask", -1, l_LogicClientUpdateTask, f_PhysicsSystemCullingTask);
+		auto l_PhysicsSystemCullingTask = g_pModuleManager->getTaskSystem()->submit("PhysicsSystemCullingTask", 1, l_LogicClientUpdateTask, f_PhysicsSystemCullingTask);
 
 		subSystemUpdate(EventSystem);
 
@@ -584,12 +584,21 @@ bool InnoModuleManagerNS::update()
 				auto l_RenderingFrontendUpdateTask = g_pModuleManager->getTaskSystem()->submit("RenderingFrontendUpdateTask", 1, l_PhysicsSystemCullingTask, f_RenderingFrontendUpdateTask);
 				l_RenderingFrontendUpdateTask->Wait();
 
-				m_RenderingFrontend->transferDataToGPU();
-				m_RenderingClient->Render();
-
 				m_GUISystem->update();
 
-				m_RenderingServer->Present();
+				auto l_RenderingServerTask = g_pModuleManager->getTaskSystem()->submit("RenderingServerTask", 2, l_RenderingFrontendUpdateTask,
+					[&]() {
+					m_RenderingFrontend->transferDataToGPU();
+
+					m_RenderingClient->Render();
+
+					m_GUISystem->render();
+
+					m_RenderingServer->Present();
+				});
+				l_RenderingServerTask->Wait();
+
+				g_pModuleManager->getWindowSystem()->getWindowSurface()->swapBuffer();
 
 				m_TransformComponentManager->SaveCurrentFrameTransform();
 
