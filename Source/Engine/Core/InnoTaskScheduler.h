@@ -58,7 +58,8 @@ private:
 
 struct InnoTaskReport
 {
-	float m_Duration;
+	unsigned long long m_StartTime;
+	unsigned long long m_FinishTime;
 	unsigned int m_ThreadID;
 	const char* m_TaskName;
 };
@@ -74,6 +75,7 @@ public:
 	static void WaitSync();
 
 	static IInnoTask* AddTaskImpl(std::unique_ptr<IInnoTask>&& task, int threadID);
+	static size_t GetTotalThreadsNumber();
 
-	static const RingBuffer<InnoTaskReport, true>& GetTaskReport();
+	static const RingBuffer<InnoTaskReport, true>& GetTaskReport(int threadID);
 };

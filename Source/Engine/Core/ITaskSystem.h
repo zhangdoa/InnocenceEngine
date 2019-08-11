@@ -17,7 +17,8 @@ public:
 
 	virtual void waitAllTasksToFinish() = 0;
 
-	virtual const RingBuffer<InnoTaskReport, true>& GetTaskReport() = 0;
+	virtual const RingBuffer<InnoTaskReport, true>& GetTaskReport(int threadID) = 0;
+	virtual size_t GetTotalThreadsNumber() = 0;
 
 	template <typename Func, typename... Args>
 	IInnoTask* submit(const char* name, int threadID, Func&& func, Args&&... args)

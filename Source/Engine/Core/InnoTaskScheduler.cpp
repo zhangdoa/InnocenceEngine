@@ -11,6 +11,7 @@ public:
 	explicit InnoThread(unsigned int ThreadIndex)
 	{
 		m_ThreadHandle = new std::thread(&InnoThread::Worker, this, ThreadIndex);
+		m_TaskReport.reserve(256);
 	};
 
 	~InnoThread(void)
@@ -34,6 +35,11 @@ public:
 		return m_ThreadState;
 	}
 
+	const RingBuffer<InnoTaskReport, true>& GetTaskReport()
+	{
+		return m_TaskReport;
+	}
+
 	IInnoTask* AddTask(std::unique_ptr<IInnoTask>&& task)
 	{
 		auto l_result = task.get();
@@ -51,21 +57,21 @@ private:
 	std::atomic<ThreadState> m_ThreadState;
 	std::atomic_bool m_Done = false;
 	ThreadSafeQueue<std::unique_ptr<IInnoTask>> m_WorkQueue;
+	RingBuffer<InnoTaskReport, true> m_TaskReport;
 };
 
 namespace InnoTaskSchedulerNS
 {
-	std::atomic_uint m_NumThreads = 0;
+	std::atomic_size_t m_NumThreads = 0;
 	std::vector<std::unique_ptr<InnoThread>> m_Threads;
 	std::atomic_bool m_isAllThreadsIdle = true;
-	RingBuffer<InnoTaskReport, true> m_TaskReport;
 }
 
 using namespace InnoTaskSchedulerNS;
 
 bool InnoTaskScheduler::Setup()
 {
-	m_NumThreads = std::max<unsigned int>(std::thread::hardware_concurrency(), 2u);
+	m_NumThreads = std::max<size_t>(std::thread::hardware_concurrency(), 2u);
 
 	m_Threads.resize(m_NumThreads);
 
@@ -81,8 +87,6 @@ bool InnoTaskScheduler::Setup()
 		Terminate();
 		throw;
 	}
-
-	m_TaskReport.reserve(256);
 
 	return true;
 }
@@ -129,16 +133,21 @@ IInnoTask * InnoTaskScheduler::AddTaskImpl(std::unique_ptr<IInnoTask>&& task, in
 	{
 		std::random_device RD;
 		std::mt19937 Gen(RD());
-		std::uniform_int_distribution<> Dis(0, m_NumThreads - 1);
+		std::uniform_int_distribution<> Dis(0, (unsigned int)m_NumThreads - 1);
 		l_ThreadIndex = Dis(Gen);
 	}
 
 	return m_Threads[l_ThreadIndex]->AddTask(std::move(task));
 }
 
-const RingBuffer<InnoTaskReport, true>& InnoTaskScheduler::GetTaskReport()
+size_t InnoTaskScheduler::GetTotalThreadsNumber()
 {
-	return m_TaskReport;
+	return m_NumThreads;
+}
+
+const RingBuffer<InnoTaskReport, true>& InnoTaskScheduler::GetTaskReport(int threadID)
+{
+	return m_Threads[threadID]->GetTaskReport();
 }
 
 inline std::string InnoThread::GetThreadID()
@@ -167,8 +176,7 @@ inline void InnoThread::Worker(unsigned int ThreadIndex)
 			pTask->Execute();
 #if defined _DEBUG
 			auto l_FinishTime = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
-			auto l_Duration = l_FinishTime - l_StartTime;
-			InnoTaskReport l_TaskReport = { (float)l_Duration, m_ID.first, pTask->GetName() };
+			InnoTaskReport l_TaskReport = { l_StartTime, l_FinishTime, m_ID.first, pTask->GetName() };
 			m_TaskReport.emplace_back(l_TaskReport);
 #endif
 			m_ThreadState = ThreadState::Idle;

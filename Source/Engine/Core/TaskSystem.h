@@ -15,7 +15,8 @@ public:
 
 	void waitAllTasksToFinish() override;
 
-	const RingBuffer<InnoTaskReport, true>& GetTaskReport() override;
+	const RingBuffer<InnoTaskReport, true>& GetTaskReport(int threadID) override;
+	size_t GetTotalThreadsNumber() override;
 
 protected:
 	IInnoTask* addTaskImpl(std::unique_ptr<IInnoTask>&& task, int threadID) override;
