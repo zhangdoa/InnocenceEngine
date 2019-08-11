@@ -524,6 +524,12 @@ private:
 
 namespace InnoContainer
 {
+	template<typename U, bool cond>
+	using EnableType = typename std::enable_if<cond, U>::type;
+
+	template<typename U, bool cond>
+	using DisableType = typename std::enable_if<!cond, U>::type;
+
 	template<class T, bool ThreadSafe = false>
 	class Array
 	{
@@ -593,25 +599,43 @@ namespace InnoContainer
 			m_CurrentFreeIndex = m_ElementCount;
 		}
 
-		T& operator[](size_t pos)
+		template<typename U = T & >
+		EnableType<U, ThreadSafe> operator[](size_t pos)
 		{
+			std::shared_lock<std::shared_mutex> lock{ m_Mutex };
+
 			assert(pos < m_ElementCount && "Trying to access out-of-boundary address.");
 			assert(pos <= m_CurrentFreeIndex && "Trying to access non-initialized address.");
-			if constexpr (ThreadSafe)
-			{
-				std::shared_lock<std::shared_mutex> lock{ m_Mutex };
-			}
+
 			return *(m_HeapAddress + pos);
 		}
 
-		const T& operator[](size_t pos) const
+		template<typename U = T & >
+		DisableType<U, ThreadSafe> operator[](size_t pos)
 		{
 			assert(pos < m_ElementCount && "Trying to access out-of-boundary address.");
 			assert(pos <= m_CurrentFreeIndex && "Trying to access non-initialized address.");
-			if constexpr (ThreadSafe)
-			{
-				std::shared_lock<std::shared_mutex> lock{ m_Mutex };
-			}
+
+			return *(m_HeapAddress + pos);
+		}
+
+		template<typename U = const T & >
+		EnableType<U, ThreadSafe> operator[](size_t pos) const
+		{
+			std::shared_lock<std::shared_mutex> lock{ m_Mutex };
+
+			assert(pos < m_ElementCount && "Trying to access out-of-boundary address.");
+			assert(pos <= m_CurrentFreeIndex && "Trying to access non-initialized address.");
+
+			return *(m_HeapAddress + pos);
+		}
+
+		template<typename U = const T & >
+		DisableType<U, ThreadSafe> operator[](size_t pos) const
+		{
+			assert(pos < m_ElementCount && "Trying to access out-of-boundary address.");
+			assert(pos <= m_CurrentFreeIndex && "Trying to access non-initialized address.");
+
 			return *(m_HeapAddress + pos);
 		}
 
@@ -662,13 +686,22 @@ namespace InnoContainer
 			m_CurrentFreeIndex = m_ElementCount;
 		}
 
-		auto emplace_back(const T& value)
+		template<typename U = void>
+		EnableType<U, ThreadSafe> emplace_back(const T& value)
+		{
+			std::unique_lock<std::shared_mutex> lock{ m_Mutex };
+
+			assert(m_CurrentFreeIndex <= m_ElementCount && "Heap overflow occurred due to out-of-boundary emplace back operation.");
+
+			*(m_HeapAddress + m_CurrentFreeIndex) = value;
+			m_CurrentFreeIndex++;
+		}
+
+		template<typename U = void>
+		DisableType<U, ThreadSafe> emplace_back(const T& value)
 		{
 			assert(m_CurrentFreeIndex <= m_ElementCount && "Heap overflow occurred due to out-of-boundary emplace back operation.");
-			if constexpr (ThreadSafe)
-			{
-				std::unique_lock<std::shared_mutex> lock{ m_Mutex };
-			}
+
 			*(m_HeapAddress + m_CurrentFreeIndex) = value;
 			m_CurrentFreeIndex++;
 		}
@@ -727,23 +760,31 @@ namespace InnoContainer
 			return *this;
 		}
 
-		T& operator[](size_t pos)
+		template<typename U = T & >
+		EnableType<U, ThreadSafe> operator[](size_t pos)
 		{
-			if constexpr (ThreadSafe)
-			{
-				std::shared_lock<std::shared_mutex> lock{ m_Mutex };
-			}
+			std::shared_lock<std::shared_mutex> lock{ m_Mutex };
 
 			return m_Array[pos % m_ElementCount];
 		}
 
-		const T& operator[](size_t pos) const
+		template<typename U = T & >
+		DisableType<U, ThreadSafe> operator[](size_t pos)
 		{
-			if constexpr (ThreadSafe)
-			{
-				std::shared_lock<std::shared_mutex> lock{ m_Mutex };
-			}
+			return m_Array[pos % m_ElementCount];
+		}
 
+		template<typename U = const T & >
+		EnableType<U, ThreadSafe> operator[](size_t pos) const
+		{
+			std::shared_lock<std::shared_mutex> lock{ m_Mutex };
+
+			return m_Array[pos % m_ElementCount];
+		}
+
+		template<typename U = const T & >
+		DisableType<U, ThreadSafe> operator[](size_t pos) const
+		{
 			return m_Array[pos % m_ElementCount];
 		}
 
@@ -771,16 +812,29 @@ namespace InnoContainer
 			}
 		}
 
-		auto emplace_back(const T& value)
+		template<typename U = void>
+		EnableType<U, ThreadSafe> emplace_back(const T& value)
 		{
-			if constexpr (ThreadSafe)
-			{
-				std::unique_lock<std::shared_mutex> lock{ m_Mutex };
-			}
+			std::unique_lock<std::shared_mutex> lock{ m_Mutex };
 
 			m_Array[m_CurrentElement] = value;
 
 			m_CurrentElement++;
+
+			if (m_CurrentElement >= m_ElementCount)
+			{
+				m_CurrentElement = 0;
+				m_isLoopingOverOnce = true;
+			}
+		}
+
+		template<typename U = void>
+		DisableType<U, ThreadSafe> emplace_back(const T& value)
+		{
+			m_Array[m_CurrentElement] = value;
+
+			m_CurrentElement++;
+
 			if (m_CurrentElement >= m_ElementCount)
 			{
 				m_CurrentElement = 0;
@@ -793,7 +847,7 @@ namespace InnoContainer
 		size_t m_ElementCount = 0;
 		bool m_isLoopingOverOnce = false;
 		Array<T, ThreadSafe> m_Array;
-		std::shared_mutex m_Mutex;
+		mutable std::shared_mutex m_Mutex;
 	};
 
 	template <typename T, bool ThreadSafe = false>
@@ -802,7 +856,24 @@ namespace InnoContainer
 	public:
 		DoubleBuffer() = default;
 		~DoubleBuffer() = default;
-		T GetValue()
+
+		template<typename U = T>
+		EnableType<U, ThreadSafe> GetValue()
+		{
+			std::shared_lock<std::shared_mutex> lock{ m_Mutex };
+
+			if (m_IsAReady)
+			{
+				return m_A;
+			}
+			else
+			{
+				return m_B;
+			}
+		}
+
+		template<typename U = T>
+		DisableType<U, ThreadSafe> GetValue()
 		{
 			if constexpr (ThreadSafe)
 			{
@@ -818,12 +889,26 @@ namespace InnoContainer
 			}
 		}
 
-		void SetValue(const T& value)
+		template<typename U = void>
+		EnableType<U, ThreadSafe> SetValue(const T& value)
 		{
-			if constexpr (ThreadSafe)
+			std::shared_lock<std::shared_mutex> lock{ m_Mutex };
+
+			if (m_IsAReady)
 			{
-				std::unique_lock<std::shared_mutex>Lock{ m_Mutex };
+				m_B = value;
+				m_IsAReady = false;
 			}
+			else
+			{
+				m_A = value;
+				m_IsAReady = true;
+			}
+		}
+
+		template<typename U = void>
+		DisableType<U, ThreadSafe> SetValue(const T& value)
+		{
 			if (m_IsAReady)
 			{
 				m_B = value;
