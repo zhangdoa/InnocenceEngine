@@ -612,7 +612,7 @@ bool GameClientNS::update()
 		auto l_tickTime = g_pModuleManager->getTickTime();
 		seed += (l_tickTime / 1000.0f);
 
-		auto updateGameTask = g_pModuleManager->getTaskSystem()->submit("PlayerComponentCollectionUpdateTask", [&]()
+		auto updateGameTask = g_pModuleManager->getTaskSystem()->submit("PlayerComponentCollectionUpdateTask", -1, [&]()
 		{
 			auto l_seed = (1.0f - l_tickTime / 100.0f);
 			l_seed = l_seed > 0.0f ? l_seed : 0.01f;

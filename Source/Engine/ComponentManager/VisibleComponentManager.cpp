@@ -19,6 +19,8 @@ namespace VisibleComponentManagerNS
 
 	std::function<void()> f_SceneLoadingStartCallback;
 	std::function<void()> f_SceneLoadingFinishCallback;
+	std::function<void(VisibleComponent*)> f_LoadAssetTask;
+	std::function<void(VisibleComponent*)> f_AssignUnitMeshTask;
 
 	void assignUnitMesh(MeshShapeType meshUsageType, VisibleComponent* visibleComponent)
 	{
@@ -52,6 +54,20 @@ bool InnoVisibleComponentManager::Setup()
 
 	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_SceneLoadingStartCallback);
 	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_SceneLoadingFinishCallback);
+
+	f_LoadAssetTask = [=](VisibleComponent* i)
+	{
+		i->m_modelMap = g_pModuleManager->getFileSystem()->loadModel(i->m_modelFileName);
+		g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(i);
+		i->m_objectStatus = ObjectStatus::Activated;
+	};
+
+	f_AssignUnitMeshTask = [=](VisibleComponent* i)
+	{
+		assignUnitMesh(i->m_meshShapeType, i);
+		g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(i);
+		i->m_objectStatus = ObjectStatus::Activated;
+	};
 
 	return true;
 }
@@ -101,22 +117,12 @@ void InnoVisibleComponentManager::LoadAssetsForComponents()
 			{
 				if (!i->m_modelFileName.empty())
 				{
-					g_pModuleManager->getTaskSystem()->submit("LoadAssetTask", [=]()
-					{
-						i->m_modelMap = g_pModuleManager->getFileSystem()->loadModel(i->m_modelFileName);
-						g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(i);
-						i->m_objectStatus = ObjectStatus::Activated;
-					});
+					g_pModuleManager->getTaskSystem()->submit("LoadAssetTask", -1, f_LoadAssetTask, i);
 				}
 			}
 			else
 			{
-				g_pModuleManager->getTaskSystem()->submit("LoadAssetTask", [=]()
-				{
-					assignUnitMesh(i->m_meshShapeType, i);
-					g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(i);
-					i->m_objectStatus = ObjectStatus::Activated;
-				});
+				g_pModuleManager->getTaskSystem()->submit("AssignUnitMeshTask", -1, f_AssignUnitMeshTask, i);
 			}
 		}
 	}

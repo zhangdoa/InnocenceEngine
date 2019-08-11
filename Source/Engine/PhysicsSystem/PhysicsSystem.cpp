@@ -358,7 +358,7 @@ bool InnoPhysicsSystemNS::update()
 	PhysXWrapper::get().update();
 #endif
 
-	g_pModuleManager->getTaskSystem()->submit("CullingTask", [&]()
+	g_pModuleManager->getTaskSystem()->submit("CullingTask", -1, [&]()
 	{
 		updateCulling();
 	});

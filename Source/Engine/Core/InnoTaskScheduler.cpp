@@ -3,7 +3,7 @@
 #include "InnoLogger.h"
 #include "InnoTimer.h"
 
-enum class ThreadStatus { Idle, Busy };
+enum class ThreadState { Idle, Busy };
 
 class InnoThread
 {
@@ -29,58 +29,26 @@ public:
 	InnoThread(InnoThread&& other) = default;
 	InnoThread& operator=(InnoThread&& other) = default;
 
-	ThreadStatus GetStatus() const
+	ThreadState GetState() const
 	{
-		return m_ThreadStatus;
+		return m_ThreadState;
 	}
 
 	IInnoTask* AddTask(std::unique_ptr<IInnoTask>&& task)
 	{
+		auto l_result = task.get();
 		m_WorkQueue.push(std::move(task));
-		return task.get();
+		return l_result;
 	}
 
 private:
-	std::string GetThreadID()
-	{
-		std::stringstream ss;
-		ss << m_ID.second;
-		return ss.str();
-	}
+	std::string GetThreadID();
 
-	void Worker(unsigned int ThreadIndex)
-	{
-		auto l_ID = std::this_thread::get_id();
-		m_ID = std::make_pair(ThreadIndex, l_ID);
-		m_ThreadStatus = ThreadStatus::Idle;
-		InnoLogger::Log(LogLevel::Success, "InnoTaskScheduler: Thread ", GetThreadID().c_str(), " has been occupied.");
-
-		while (!m_Done)
-		{
-			std::unique_ptr<IInnoTask> pTask{ nullptr };
-			if (m_WorkQueue.waitPop(pTask))
-			{
-				m_ThreadStatus = ThreadStatus::Busy;
-#if defined _DEBUG
-				auto l_StartTime = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
-#endif
-				pTask->Execute();
-#if defined _DEBUG
-				auto l_FinishTime = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
-				auto l_Duration = l_FinishTime - l_StartTime;
-				InnoTaskReport l_TaskReport = { (float)l_Duration, m_ID.first, pTask->GetName() };
-#endif
-				m_ThreadStatus = ThreadStatus::Idle;
-			}
-		}
-
-		m_ThreadStatus = ThreadStatus::Idle;
-		InnoLogger::Log(LogLevel::Success, "InnoTaskScheduler: Thread ", GetThreadID().c_str(), " has been released.");
-	}
+	void Worker(unsigned int ThreadIndex);
 
 	std::thread* m_ThreadHandle;
 	std::pair<unsigned int, std::thread::id> m_ID;
-	std::atomic<ThreadStatus> m_ThreadStatus;
+	std::atomic<ThreadState> m_ThreadState;
 	std::atomic_bool m_Done = false;
 	ThreadSafeQueue<std::unique_ptr<IInnoTask>> m_WorkQueue;
 };
@@ -90,19 +58,22 @@ namespace InnoTaskSchedulerNS
 	std::atomic_uint m_NumThreads = 0;
 	std::vector<std::unique_ptr<InnoThread>> m_Threads;
 	std::atomic_bool m_isAllThreadsIdle = true;
+	RingBuffer<InnoTaskReport, true> m_TaskReport;
 }
+
+using namespace InnoTaskSchedulerNS;
 
 bool InnoTaskScheduler::Setup()
 {
-	InnoTaskSchedulerNS::m_NumThreads = std::max<unsigned int>(std::thread::hardware_concurrency(), 2u);
+	m_NumThreads = std::max<unsigned int>(std::thread::hardware_concurrency(), 2u);
 
-	InnoTaskSchedulerNS::m_Threads.resize(InnoTaskSchedulerNS::m_NumThreads);
+	m_Threads.resize(m_NumThreads);
 
 	try
 	{
-		for (std::uint32_t i = 0u; i < InnoTaskSchedulerNS::m_NumThreads; ++i)
+		for (std::uint32_t i = 0u; i < m_NumThreads; ++i)
 		{
-			InnoTaskSchedulerNS::m_Threads[i] = std::make_unique<InnoThread>(i);
+			m_Threads[i] = std::make_unique<InnoThread>(i);
 		}
 	}
 	catch (...)
@@ -110,6 +81,8 @@ bool InnoTaskScheduler::Setup()
 		Terminate();
 		throw;
 	}
+
+	m_TaskReport.reserve(256);
 
 	return true;
 }
@@ -126,20 +99,20 @@ bool InnoTaskScheduler::Update()
 
 bool InnoTaskScheduler::Terminate()
 {
-	for (size_t i = 0; i < InnoTaskSchedulerNS::m_Threads.size(); i++)
+	for (size_t i = 0; i < m_Threads.size(); i++)
 	{
-		InnoTaskSchedulerNS::m_Threads[i].reset();
+		m_Threads[i].reset();
 	}
 	return true;
 }
 
 void InnoTaskScheduler::WaitSync()
 {
-	while (!InnoTaskSchedulerNS::m_isAllThreadsIdle)
+	while (!m_isAllThreadsIdle)
 	{
-		for (size_t i = 0; i < InnoTaskSchedulerNS::m_Threads.size(); i++)
+		for (size_t i = 0; i < m_Threads.size(); i++)
 		{
-			InnoTaskSchedulerNS::m_isAllThreadsIdle = (InnoTaskSchedulerNS::m_Threads[i]->GetStatus() == ThreadStatus::Idle);
+			m_isAllThreadsIdle = (m_Threads[i]->GetState() == ThreadState::Idle);
 		}
 	}
 	InnoLogger::Log(LogLevel::Verbose, "InnoTaskScheduler: Reached synchronization point");
@@ -156,10 +129,52 @@ IInnoTask * InnoTaskScheduler::AddTaskImpl(std::unique_ptr<IInnoTask>&& task, in
 	{
 		std::random_device RD;
 		std::mt19937 Gen(RD());
-		std::uniform_int_distribution<> Dis(0, InnoTaskSchedulerNS::m_NumThreads - 1);
+		std::uniform_int_distribution<> Dis(0, m_NumThreads - 1);
 		l_ThreadIndex = Dis(Gen);
 	}
 
-	InnoTaskSchedulerNS::m_Threads[l_ThreadIndex]->AddTask(std::move(task));
-	return task.get();
+	return m_Threads[l_ThreadIndex]->AddTask(std::move(task));
+}
+
+const RingBuffer<InnoTaskReport, true>& InnoTaskScheduler::GetTaskReport()
+{
+	return m_TaskReport;
+}
+
+inline std::string InnoThread::GetThreadID()
+{
+	std::stringstream ss;
+	ss << m_ID.second;
+	return ss.str();
+}
+
+inline void InnoThread::Worker(unsigned int ThreadIndex)
+{
+	auto l_ID = std::this_thread::get_id();
+	m_ID = std::make_pair(ThreadIndex, l_ID);
+	m_ThreadState = ThreadState::Idle;
+	InnoLogger::Log(LogLevel::Success, "InnoTaskScheduler: Thread ", GetThreadID().c_str(), " has been occupied.");
+
+	while (!m_Done)
+	{
+		std::unique_ptr<IInnoTask> pTask{ nullptr };
+		if (m_WorkQueue.waitPop(pTask))
+		{
+			m_ThreadState = ThreadState::Busy;
+#if defined _DEBUG
+			auto l_StartTime = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
+#endif
+			pTask->Execute();
+#if defined _DEBUG
+			auto l_FinishTime = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
+			auto l_Duration = l_FinishTime - l_StartTime;
+			InnoTaskReport l_TaskReport = { (float)l_Duration, m_ID.first, pTask->GetName() };
+			m_TaskReport.emplace_back(l_TaskReport);
+#endif
+			m_ThreadState = ThreadState::Idle;
+		}
+	}
+
+	m_ThreadState = ThreadState::Idle;
+	InnoLogger::Log(LogLevel::Success, "InnoTaskScheduler: Thread ", GetThreadID().c_str(), " has been released.");
 }

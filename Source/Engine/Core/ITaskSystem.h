@@ -17,10 +17,10 @@ public:
 
 	virtual void waitAllTasksToFinish() = 0;
 
-	virtual std::string getThreadId() = 0;
+	virtual const RingBuffer<InnoTaskReport, true>& GetTaskReport() = 0;
 
 	template <typename Func, typename... Args>
-	IInnoTask* submit(const char* name, Func&& func, Args&&... args, int threadID = -1)
+	IInnoTask* submit(const char* name, int threadID, Func&& func, Args&&... args)
 	{
 		auto BoundTask = std::bind(std::forward<Func>(func), std::forward<Args>(args)...);
 		using ResultType = std::invoke_result_t<decltype(BoundTask)>;

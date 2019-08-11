@@ -53,9 +53,9 @@ void InnoTaskSystem::waitAllTasksToFinish()
 	InnoTaskScheduler::WaitSync();
 }
 
-std::string InnoTaskSystem::getThreadId()
+const RingBuffer<InnoTaskReport, true>& InnoTaskSystem::GetTaskReport()
 {
-	return std::string();
+	return InnoTaskScheduler::GetTaskReport();
 }
 
 IInnoTask * InnoTaskSystem::addTaskImpl(std::unique_ptr<IInnoTask>&& task, int threadID)

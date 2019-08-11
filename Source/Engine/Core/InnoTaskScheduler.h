@@ -2,6 +2,7 @@
 #include <memory>
 #include <type_traits>
 #include <future>
+#include "../Common/InnoContainer.h"
 
 class IInnoTask
 {
@@ -15,6 +16,7 @@ public:
 
 	virtual void Execute() = 0;
 	virtual const char* GetName() = 0;
+	virtual void Wait() = 0;
 };
 
 template <typename Functor>
@@ -35,6 +37,7 @@ public:
 	void Execute() override
 	{
 		m_Functor();
+		m_IsFinished = true;
 	}
 
 	const char* GetName() override
@@ -42,16 +45,22 @@ public:
 		return m_Name;
 	}
 
+	void Wait() override
+	{
+		while (!m_IsFinished);
+	}
+
 private:
 	Functor m_Functor;
 	const char* m_Name;
+	std::atomic_bool m_IsFinished = false;
 };
 
 struct InnoTaskReport
 {
-	float Duration;
-	unsigned int ThreadID;
-	const char* TaskName;
+	float m_Duration;
+	unsigned int m_ThreadID;
+	const char* m_TaskName;
 };
 
 class InnoTaskScheduler
@@ -66,5 +75,5 @@ public:
 
 	static IInnoTask* AddTaskImpl(std::unique_ptr<IInnoTask>&& task, int threadID);
 
-	static InnoTaskReport GetReport();
+	static const RingBuffer<InnoTaskReport, true>& GetTaskReport();
 };
