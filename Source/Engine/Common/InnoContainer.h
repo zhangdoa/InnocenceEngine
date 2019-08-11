@@ -890,7 +890,7 @@ namespace InnoContainer
 		DoubleBuffer() = default;
 		~DoubleBuffer() = default;
 
-		template<typename U = T>
+		template<typename U = T & >
 		EnableType<U, ThreadSafe> GetValue()
 		{
 			std::shared_lock<std::shared_mutex> lock{ m_Mutex };
@@ -905,7 +905,7 @@ namespace InnoContainer
 			}
 		}
 
-		template<typename U = T>
+		template<typename U = T & >
 		DisableType<U, ThreadSafe> GetValue()
 		{
 			if constexpr (ThreadSafe)
