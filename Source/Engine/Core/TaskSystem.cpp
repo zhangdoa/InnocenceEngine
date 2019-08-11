@@ -63,7 +63,7 @@ size_t InnoTaskSystem::GetTotalThreadsNumber()
 	return InnoTaskScheduler::GetTotalThreadsNumber();
 }
 
-IInnoTask * InnoTaskSystem::addTaskImpl(std::unique_ptr<IInnoTask>&& task, int threadID)
+std::shared_ptr<IInnoTask> InnoTaskSystem::addTaskImpl(std::unique_ptr<IInnoTask>&& task, int threadID)
 {
 	return InnoTaskScheduler::AddTaskImpl(std::move(task), threadID);
 }

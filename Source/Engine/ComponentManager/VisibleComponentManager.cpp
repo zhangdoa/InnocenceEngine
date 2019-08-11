@@ -117,12 +117,12 @@ void InnoVisibleComponentManager::LoadAssetsForComponents()
 			{
 				if (!i->m_modelFileName.empty())
 				{
-					g_pModuleManager->getTaskSystem()->submit("LoadAssetTask", -1, f_LoadAssetTask, i);
+					g_pModuleManager->getTaskSystem()->submit("LoadAssetTask", -1, nullptr, f_LoadAssetTask, i);
 				}
 			}
 			else
 			{
-				g_pModuleManager->getTaskSystem()->submit("AssignUnitMeshTask", -1, f_AssignUnitMeshTask, i);
+				g_pModuleManager->getTaskSystem()->submit("AssignUnitMeshTask", -1, nullptr, f_AssignUnitMeshTask, i);
 			}
 		}
 	}

@@ -30,33 +30,24 @@ public:
 	InnoThread(InnoThread&& other) = default;
 	InnoThread& operator=(InnoThread&& other) = default;
 
-	ThreadState GetState() const
-	{
-		return m_ThreadState;
-	}
+	ThreadState GetState() const;
 
-	const RingBuffer<InnoTaskReport, true>& GetTaskReport()
-	{
-		return m_TaskReport;
-	}
+	const RingBuffer<InnoTaskReport, true>& GetTaskReport();
 
-	IInnoTask* AddTask(std::unique_ptr<IInnoTask>&& task)
-	{
-		auto l_result = task.get();
-		m_WorkQueue.push(std::move(task));
-		return l_result;
-	}
+	std::shared_ptr<IInnoTask> AddTask(std::shared_ptr<IInnoTask>&& task);
 
 private:
 	std::string GetThreadID();
 
 	void Worker(unsigned int ThreadIndex);
 
+	void ExecuteTask(std::shared_ptr<IInnoTask>&& task);
+
 	std::thread* m_ThreadHandle;
 	std::pair<unsigned int, std::thread::id> m_ID;
 	std::atomic<ThreadState> m_ThreadState;
 	std::atomic_bool m_Done = false;
-	ThreadSafeQueue<std::unique_ptr<IInnoTask>> m_WorkQueue;
+	ThreadSafeQueue<std::shared_ptr<IInnoTask>> m_WorkQueue;
 	RingBuffer<InnoTaskReport, true> m_TaskReport;
 };
 
@@ -122,7 +113,7 @@ void InnoTaskScheduler::WaitSync()
 	InnoLogger::Log(LogLevel::Verbose, "InnoTaskScheduler: Reached synchronization point");
 }
 
-IInnoTask * InnoTaskScheduler::AddTaskImpl(std::unique_ptr<IInnoTask>&& task, int threadID)
+std::shared_ptr<IInnoTask> InnoTaskScheduler::AddTaskImpl(std::unique_ptr<IInnoTask>&& task, int threadID)
 {
 	int l_ThreadIndex;
 	if (threadID != -1)
@@ -150,11 +141,43 @@ const RingBuffer<InnoTaskReport, true>& InnoTaskScheduler::GetTaskReport(int thr
 	return m_Threads[threadID]->GetTaskReport();
 }
 
+inline ThreadState InnoThread::GetState() const
+{
+	return m_ThreadState;
+}
+
+inline const RingBuffer<InnoTaskReport, true>& InnoThread::GetTaskReport()
+{
+	return m_TaskReport;
+}
+
+inline std::shared_ptr<IInnoTask> InnoThread::AddTask(std::shared_ptr<IInnoTask>&& task)
+{
+	std::shared_ptr<IInnoTask> l_result{ task };
+	m_WorkQueue.push(task);
+	return l_result;
+}
+
 inline std::string InnoThread::GetThreadID()
 {
 	std::stringstream ss;
 	ss << m_ID.second;
 	return ss.str();
+}
+
+inline void InnoThread::ExecuteTask(std::shared_ptr<IInnoTask>&& task)
+{
+#if defined _DEBUG
+	auto l_StartTime = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
+#endif
+
+	task->Execute();
+
+#if defined _DEBUG
+	auto l_FinishTime = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
+	InnoTaskReport l_TaskReport = { l_StartTime, l_FinishTime, m_ID.first, task->GetName() };
+	m_TaskReport.emplace_back(l_TaskReport);
+#endif
 }
 
 inline void InnoThread::Worker(unsigned int ThreadIndex)
@@ -166,19 +189,28 @@ inline void InnoThread::Worker(unsigned int ThreadIndex)
 
 	while (!m_Done)
 	{
-		std::unique_ptr<IInnoTask> pTask{ nullptr };
+		std::shared_ptr<IInnoTask> pTask{ nullptr };
 		if (m_WorkQueue.waitPop(pTask))
 		{
 			m_ThreadState = ThreadState::Busy;
-#if defined _DEBUG
-			auto l_StartTime = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
-#endif
-			pTask->Execute();
-#if defined _DEBUG
-			auto l_FinishTime = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
-			InnoTaskReport l_TaskReport = { l_StartTime, l_FinishTime, m_ID.first, pTask->GetName() };
-			m_TaskReport.emplace_back(l_TaskReport);
-#endif
+			auto l_upstreamTask = pTask->GetUpstreamTask();
+
+			if (l_upstreamTask != nullptr)
+			{
+				if (l_upstreamTask->IsFinished())
+				{
+					ExecuteTask(std::move(pTask));
+				}
+				else
+				{
+					AddTask(std::move(pTask));
+				}
+			}
+			else
+			{
+				ExecuteTask(std::move(pTask));
+			}
+
 			m_ThreadState = ThreadState::Idle;
 		}
 	}

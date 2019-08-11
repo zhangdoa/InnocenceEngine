@@ -67,6 +67,8 @@ public:
 	virtual TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) = 0;
 	virtual MaterialDataComponent* getDefaultMaterialDataComponent() = 0;
 
+	virtual bool transferDataToGPU() = 0;
+
 	virtual TVec2<unsigned int> getScreenResolution() = 0;
 	virtual bool setScreenResolution(TVec2<unsigned int> screenResolution) = 0;
 
@@ -77,20 +79,20 @@ public:
 
 	virtual RenderPassDesc getDefaultRenderPassDesc() = 0;
 
-	virtual CameraGPUData getCameraGPUData() = 0;
-	virtual SunGPUData getSunGPUData() = 0;
+	virtual const CameraGPUData& getCameraGPUData() = 0;
+	virtual const SunGPUData& getSunGPUData() = 0;
 	virtual const std::vector<CSMGPUData>& getCSMGPUData() = 0;
 	virtual const std::vector<PointLightGPUData>& getPointLightGPUData() = 0;
 	virtual const std::vector<SphereLightGPUData>& getSphereLightGPUData() = 0;
-	virtual SkyGPUData getSkyGPUData() = 0;
+	virtual const SkyGPUData& getSkyGPUData() = 0;
 
 	virtual unsigned int getOpaquePassDrawCallCount() = 0;
-	virtual const std::vector<OpaquePassGPUData>& getOpaquePassGPUData() = 0;
+	virtual const std::vector<OpaquePassDrawCallData>& getOpaquePassDrawCallData() = 0;
 	virtual const std::vector<MeshGPUData>& getOpaquePassMeshGPUData() = 0;
 	virtual const std::vector<MaterialGPUData>& getOpaquePassMaterialGPUData() = 0;
 
 	virtual unsigned int getTransparentPassDrawCallCount() = 0;
-	virtual const std::vector<TransparentPassGPUData>& getTransparentPassGPUData() = 0;
+	virtual const std::vector<TransparentPassDrawCallData>& getTransparentPassDrawCallData() = 0;
 	virtual const std::vector<MeshGPUData>& getTransparentPassMeshGPUData() = 0;
 	virtual const std::vector<MaterialGPUData>& getTransparentPassMaterialGPUData() = 0;
 
@@ -101,7 +103,7 @@ public:
 	virtual const std::vector<DebuggerPassGPUData>& getDebuggerPassGPUData() = 0;
 
 	virtual unsigned int getGIPassDrawCallCount() = 0;
-	virtual const std::vector<OpaquePassGPUData>& getGIPassGPUData() = 0;
+	virtual const std::vector<OpaquePassDrawCallData>& getGIPassGPUData() = 0;
 	virtual const std::vector<MeshGPUData>& getGIPassMeshGPUData() = 0;
 	virtual const std::vector<MaterialGPUData>& getGIPassMaterialGPUData() = 0;
 };

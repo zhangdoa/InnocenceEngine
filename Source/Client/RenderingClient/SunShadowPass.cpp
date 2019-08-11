@@ -87,7 +87,7 @@ bool SunShadowPass::PrepareCommandList()
 	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
 	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
 	{
-		auto l_opaquePassGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassGPUData()[i];
+		auto l_opaquePassGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallData()[i];
 
 		if (l_opaquePassGPUData.mesh->m_objectStatus == ObjectStatus::Activated)
 		{

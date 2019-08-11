@@ -91,13 +91,13 @@ struct alignas(16) DispatchParamsGPUData
 	TVec4<unsigned int> numThreads;
 };
 
-struct OpaquePassGPUData
+struct OpaquePassDrawCallData
 {
 	MeshDataComponent* mesh;
 	MaterialDataComponent* material;
 };
 
-struct TransparentPassGPUData
+struct TransparentPassDrawCallData
 {
 	MeshDataComponent* mesh;
 	unsigned int meshGPUDataIndex;

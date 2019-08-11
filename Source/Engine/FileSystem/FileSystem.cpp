@@ -39,7 +39,7 @@ bool InnoFileSystemNS::convertModel(const std::string & fileName, const std::str
 
 	if (l_extension == ".obj" || l_extension == ".OBJ" || l_extension == ".fbx" || l_extension == ".FBX")
 	{
-		auto tempTask = g_pModuleManager->getTaskSystem()->submit("ConvertModelTask", -1, [=]()
+		auto tempTask = g_pModuleManager->getTaskSystem()->submit("ConvertModelTask", -1, nullptr, [=]()
 		{
 			AssimpWrapper::convertModel(fileName, exportPath);
 		});

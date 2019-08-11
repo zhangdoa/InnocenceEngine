@@ -21,7 +21,7 @@ public:
 	virtual size_t GetTotalThreadsNumber() = 0;
 
 	template <typename Func, typename... Args>
-	IInnoTask* submit(const char* name, int threadID, Func&& func, Args&&... args)
+	std::shared_ptr<IInnoTask> submit(const char* name, int threadID, const std::shared_ptr<IInnoTask>& upstreamTask, Func&& func, Args&&... args)
 	{
 		auto BoundTask = std::bind(std::forward<Func>(func), std::forward<Args>(args)...);
 		using ResultType = std::invoke_result_t<decltype(BoundTask)>;
@@ -29,9 +29,9 @@ public:
 		using TaskType = InnoTask<PackagedTask>;
 
 		PackagedTask Task{ std::move(BoundTask) };
-		return addTaskImpl(std::make_unique<TaskType>(std::move(Task), name), threadID);
+		return addTaskImpl(std::make_unique<TaskType>(std::move(Task), name, upstreamTask), threadID);
 	}
 
 protected:
-	virtual IInnoTask* addTaskImpl(std::unique_ptr<IInnoTask>&& task, int threadID) = 0;
+	virtual std::shared_ptr<IInnoTask> addTaskImpl(std::unique_ptr<IInnoTask>&& task, int threadID) = 0;
 };

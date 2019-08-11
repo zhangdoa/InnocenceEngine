@@ -153,6 +153,10 @@ namespace InnoModuleManagerNS
 	std::atomic<bool> m_isRendering = false;
 	std::atomic<bool> m_allowRender = false;
 
+	std::function<void()> f_LogicClientUpdateTask;
+	std::function<void()> f_PhysicsSystemCullingTask;
+	std::function<void()> f_RenderingFrontendUpdateTask;
+
 	float m_tickTime = 0;
 }
 
@@ -467,8 +471,13 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 		return false;
 	}
 
+	f_LogicClientUpdateTask = [&]() {m_LogicClient->update(); };
+	f_PhysicsSystemCullingTask = [&]() {m_PhysicsSystem->updateCulling(); };
+	f_RenderingFrontendUpdateTask = [&]() {m_RenderingFrontend->update(); };
+
 	m_objectStatus = ObjectStatus::Created;
 	InnoLogger::Log(LogLevel::Success, "Engine setup finished.");
+
 	return true;
 }
 
@@ -520,6 +529,10 @@ bool InnoModuleManagerNS::initialize()
 		return false;
 	}
 
+	f_LogicClientUpdateTask();
+	f_PhysicsSystemCullingTask();
+	f_RenderingFrontendUpdateTask();
+
 	m_objectStatus = ObjectStatus::Activated;
 	InnoLogger::Log(LogLevel::Success, "Engine has been initialized.");
 	return true;
@@ -529,12 +542,10 @@ bool InnoModuleManagerNS::update()
 {
 	while (1)
 	{
-		if (!m_LogicClient->update())
-		{
-			return false;
-		}
-
 		auto l_tickStartTime = m_TimeSystem->getCurrentTimeFromEpoch();
+
+		auto l_LogicClientUpdateTask = g_pModuleManager->getTaskSystem()->submit("LogicClientUpdateTask", -1, nullptr, f_LogicClientUpdateTask);
+
 		subSystemUpdate(TimeSystem);
 		subSystemUpdate(LogSystem);
 		subSystemUpdate(MemorySystem);
@@ -547,6 +558,7 @@ bool InnoModuleManagerNS::update()
 		{
 			return false;
 		}
+
 		ComponentManagerUpdate(TransformComponent);
 		ComponentManagerUpdate(VisibleComponent);
 		ComponentManagerUpdate(DirectionalLightComponent);
@@ -556,36 +568,28 @@ bool InnoModuleManagerNS::update()
 		ComponentManagerUpdate(CameraComponent);
 
 		subSystemUpdate(AssetSystem);
+
 		subSystemUpdate(PhysicsSystem);
+
+		auto l_PhysicsSystemCullingTask = g_pModuleManager->getTaskSystem()->submit("PhysicsSystemCullingTask", -1, l_LogicClientUpdateTask, f_PhysicsSystemCullingTask);
+
 		subSystemUpdate(EventSystem);
 
-		if (m_WindowSystem->getStatus() == ObjectStatus::Activated)
+		if (!m_FileSystem->isLoadingScene())
 		{
-			if (!m_FileSystem->isLoadingScene())
+			if (m_WindowSystem->getStatus() == ObjectStatus::Activated)
 			{
 				m_WindowSystem->update();
 
-				if (!m_allowRender)
-				{
-					m_RenderingFrontend->update();
+				auto l_RenderingFrontendUpdateTask = g_pModuleManager->getTaskSystem()->submit("RenderingFrontendUpdateTask", 1, l_PhysicsSystemCullingTask, f_RenderingFrontendUpdateTask);
+				l_RenderingFrontendUpdateTask->Wait();
 
-					m_allowRender = true;
-				}
+				m_RenderingFrontend->transferDataToGPU();
+				m_RenderingClient->Render();
 
-				if (!m_isRendering && m_allowRender)
-				{
-					m_allowRender = false;
+				m_GUISystem->update();
 
-					m_isRendering = true;
-
-					m_RenderingClient->Render();
-
-					m_GUISystem->update();
-
-					m_RenderingServer->Present();
-
-					m_isRendering = false;
-				}
+				m_RenderingServer->Present();
 
 				m_TransformComponentManager->SaveCurrentFrameTransform();
 
@@ -593,12 +597,12 @@ bool InnoModuleManagerNS::update()
 
 				m_tickTime = float(l_tickEndTime - l_tickStartTime) / 1000.0f;
 			}
-		}
-		else
-		{
-			m_objectStatus = ObjectStatus::Suspended;
-			InnoLogger::Log(LogLevel::Warning, "Engine is stand-by.");
-			return true;
+			else
+			{
+				m_objectStatus = ObjectStatus::Suspended;
+				InnoLogger::Log(LogLevel::Warning, "Engine is stand-by.");
+				return true;
+			}
 		}
 	}
 }

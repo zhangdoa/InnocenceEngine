@@ -19,5 +19,5 @@ public:
 	size_t GetTotalThreadsNumber() override;
 
 protected:
-	IInnoTask* addTaskImpl(std::unique_ptr<IInnoTask>&& task, int threadID) override;
+	std::shared_ptr<IInnoTask> addTaskImpl(std::unique_ptr<IInnoTask>&& task, int threadID) override;
 };

@@ -115,3 +115,15 @@ const std::vector<CameraComponent*>& InnoCameraComponentManager::GetAllComponent
 {
 	return m_Components.getRawData();
 }
+
+CameraComponent * InnoCameraComponentManager::GetMainCamera()
+{
+	if (m_Components.size() > 0)
+	{
+		return m_Components[0];
+	}
+	else
+	{
+		return nullptr;
+	}
+}

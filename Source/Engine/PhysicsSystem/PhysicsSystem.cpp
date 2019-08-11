@@ -22,7 +22,6 @@ namespace InnoPhysicsSystemNS
 	bool generatePhysicsDataComponent(MeshDataComponent* MDC);
 	bool generatePhysicsDataComponent(VisibleComponent* VC);
 
-	void updateCulling();
 	void updateVisibleSceneBoundary(const AABB& rhs);
 	void updateTotalSceneBoundary(const AABB& rhs);
 
@@ -43,6 +42,8 @@ namespace InnoPhysicsSystemNS
 
 	std::function<void()> f_sceneLoadingStartCallback;
 }
+
+using namespace InnoPhysicsSystemNS;
 
 bool InnoPhysicsSystemNS::setup()
 {
@@ -203,7 +204,100 @@ bool intersectCheck(const TFrustum<T> & lhs, const TAABB<T> & rhs)
 	return false;
 }
 
-void InnoPhysicsSystemNS::updateCulling()
+void InnoPhysicsSystemNS::updateVisibleSceneBoundary(const AABB& rhs)
+{
+	auto boundMax = rhs.m_boundMax;
+	auto boundMin = rhs.m_boundMin;
+
+	if (boundMax.x > m_visibleSceneBoundMax.x)
+	{
+		m_visibleSceneBoundMax.x = boundMax.x;
+	}
+	if (boundMax.y > m_visibleSceneBoundMax.y)
+	{
+		m_visibleSceneBoundMax.y = boundMax.y;
+	}
+	if (boundMax.z > m_visibleSceneBoundMax.z)
+	{
+		m_visibleSceneBoundMax.z = boundMax.z;
+	}
+	if (boundMin.x < m_visibleSceneBoundMin.x)
+	{
+		m_visibleSceneBoundMin.x = boundMin.x;
+	}
+	if (boundMin.y < m_visibleSceneBoundMin.y)
+	{
+		m_visibleSceneBoundMin.y = boundMin.y;
+	}
+	if (boundMin.z < m_visibleSceneBoundMin.z)
+	{
+		m_visibleSceneBoundMin.z = boundMin.z;
+	}
+}
+
+void InnoPhysicsSystemNS::updateTotalSceneBoundary(const AABB& rhs)
+{
+	auto boundMax = rhs.m_boundMax;
+	auto boundMin = rhs.m_boundMin;
+
+	if (boundMax.x > m_totalSceneBoundMax.x)
+	{
+		m_totalSceneBoundMax.x = boundMax.x;
+	}
+	if (boundMax.y > m_totalSceneBoundMax.y)
+	{
+		m_totalSceneBoundMax.y = boundMax.y;
+	}
+	if (boundMax.z > m_totalSceneBoundMax.z)
+	{
+		m_totalSceneBoundMax.z = boundMax.z;
+	}
+	if (boundMin.x < m_totalSceneBoundMin.x)
+	{
+		m_totalSceneBoundMin.x = boundMin.x;
+	}
+	if (boundMin.y < m_totalSceneBoundMin.y)
+	{
+		m_totalSceneBoundMin.y = boundMin.y;
+	}
+	if (boundMin.z < m_totalSceneBoundMin.z)
+	{
+		m_totalSceneBoundMin.z = boundMin.z;
+	}
+}
+
+bool InnoPhysicsSystemNS::update()
+{
+#if defined INNO_PLATFORM_WIN
+	PhysXWrapper::get().update();
+#endif
+
+	return true;
+}
+
+bool InnoPhysicsSystem::update()
+{
+	return InnoPhysicsSystemNS::update();
+}
+
+bool InnoPhysicsSystem::terminate()
+{
+	InnoPhysicsSystemNS::m_objectStatus = ObjectStatus::Terminated;
+	InnoLogger::Log(LogLevel::Success, "PhysicsSystem has been terminated.");
+	return true;
+}
+
+ObjectStatus InnoPhysicsSystem::getStatus()
+{
+	return InnoPhysicsSystemNS::m_objectStatus;
+}
+
+bool InnoPhysicsSystem::generatePhysicsDataComponent(MeshDataComponent* MDC)
+{
+	return InnoPhysicsSystemNS::generatePhysicsDataComponent(MDC);
+}
+
+void InnoPhysicsSystem::updateCulling()
 {
 	m_isCullingDataPackValid = false;
 
@@ -283,109 +377,6 @@ void InnoPhysicsSystemNS::updateCulling()
 	m_cullingDataPack.setRawData(std::move(l_cullingDataPacks));
 
 	m_isCullingDataPackValid = true;
-}
-
-void InnoPhysicsSystemNS::updateVisibleSceneBoundary(const AABB& rhs)
-{
-	auto boundMax = rhs.m_boundMax;
-	auto boundMin = rhs.m_boundMin;
-
-	if (boundMax.x > m_visibleSceneBoundMax.x)
-	{
-		m_visibleSceneBoundMax.x = boundMax.x;
-	}
-	if (boundMax.y > m_visibleSceneBoundMax.y)
-	{
-		m_visibleSceneBoundMax.y = boundMax.y;
-	}
-	if (boundMax.z > m_visibleSceneBoundMax.z)
-	{
-		m_visibleSceneBoundMax.z = boundMax.z;
-	}
-	if (boundMin.x < m_visibleSceneBoundMin.x)
-	{
-		m_visibleSceneBoundMin.x = boundMin.x;
-	}
-	if (boundMin.y < m_visibleSceneBoundMin.y)
-	{
-		m_visibleSceneBoundMin.y = boundMin.y;
-	}
-	if (boundMin.z < m_visibleSceneBoundMin.z)
-	{
-		m_visibleSceneBoundMin.z = boundMin.z;
-	}
-}
-
-void InnoPhysicsSystemNS::updateTotalSceneBoundary(const AABB& rhs)
-{
-	auto boundMax = rhs.m_boundMax;
-	auto boundMin = rhs.m_boundMin;
-
-	if (boundMax.x > m_totalSceneBoundMax.x)
-	{
-		m_totalSceneBoundMax.x = boundMax.x;
-	}
-	if (boundMax.y > m_totalSceneBoundMax.y)
-	{
-		m_totalSceneBoundMax.y = boundMax.y;
-	}
-	if (boundMax.z > m_totalSceneBoundMax.z)
-	{
-		m_totalSceneBoundMax.z = boundMax.z;
-	}
-	if (boundMin.x < m_totalSceneBoundMin.x)
-	{
-		m_totalSceneBoundMin.x = boundMin.x;
-	}
-	if (boundMin.y < m_totalSceneBoundMin.y)
-	{
-		m_totalSceneBoundMin.y = boundMin.y;
-	}
-	if (boundMin.z < m_totalSceneBoundMin.z)
-	{
-		m_totalSceneBoundMin.z = boundMin.z;
-	}
-}
-
-bool InnoPhysicsSystemNS::update()
-{
-	if (g_pModuleManager->getFileSystem()->isLoadingScene())
-	{
-		return true;
-	}
-
-#if defined INNO_PLATFORM_WIN
-	PhysXWrapper::get().update();
-#endif
-
-	g_pModuleManager->getTaskSystem()->submit("CullingTask", -1, [&]()
-	{
-		updateCulling();
-	});
-
-	return true;
-}
-
-bool InnoPhysicsSystem::update()
-{
-	return InnoPhysicsSystemNS::update();
-}
-
-bool InnoPhysicsSystem::terminate()
-{
-	InnoPhysicsSystemNS::m_objectStatus = ObjectStatus::Terminated;
-	InnoLogger::Log(LogLevel::Success, "PhysicsSystem has been terminated.");
-	return true;
-}
-
-ObjectStatus InnoPhysicsSystem::getStatus()
-{
-	return InnoPhysicsSystemNS::m_objectStatus;
-}
-
-bool InnoPhysicsSystem::generatePhysicsDataComponent(MeshDataComponent* MDC)
-{
-	return InnoPhysicsSystemNS::generatePhysicsDataComponent(MDC);
 }
 
 std::optional<std::vector<CullingDataPack>> InnoPhysicsSystem::getCullingDataPack()

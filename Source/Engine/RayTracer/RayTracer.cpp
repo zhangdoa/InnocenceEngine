@@ -330,7 +330,7 @@ bool InnoRayTracer::Execute()
 	{
 		InnoRayTracerNS::m_isWorking = true;
 
-		auto l_rayTracingTask = g_pModuleManager->getTaskSystem()->submit("RayTracingTask", -1, [&]() { ExecuteRayTracing(); InnoRayTracerNS::m_isWorking = false; });
+		auto l_rayTracingTask = g_pModuleManager->getTaskSystem()->submit("RayTracingTask", -1, nullptr, [&]() { ExecuteRayTracing(); InnoRayTracerNS::m_isWorking = false; });
 	}
 
 	return true;

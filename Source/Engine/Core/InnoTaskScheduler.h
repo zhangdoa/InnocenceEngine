@@ -16,6 +16,8 @@ public:
 
 	virtual void Execute() = 0;
 	virtual const char* GetName() = 0;
+	virtual const std::shared_ptr<IInnoTask>& GetUpstreamTask() = 0;
+	virtual bool IsFinished() = 0;
 	virtual void Wait() = 0;
 };
 
@@ -23,8 +25,8 @@ template <typename Functor>
 class InnoTask : public IInnoTask
 {
 public:
-	InnoTask(Functor&& functor, const char* name)
-		:m_Functor{ std::move(functor) }, m_Name{ name }
+	InnoTask(Functor&& functor, const char* name, const std::shared_ptr<IInnoTask>& upstreamTask)
+		:m_Functor{ std::move(functor) }, m_Name{ name }, m_UpstreamTask{ upstreamTask }
 	{
 	}
 
@@ -45,6 +47,16 @@ public:
 		return m_Name;
 	}
 
+	const std::shared_ptr<IInnoTask>& GetUpstreamTask() override
+	{
+		return m_UpstreamTask;
+	}
+
+	bool IsFinished() override
+	{
+		return m_IsFinished;
+	}
+
 	void Wait() override
 	{
 		while (!m_IsFinished);
@@ -53,6 +65,7 @@ public:
 private:
 	Functor m_Functor;
 	const char* m_Name;
+	std::shared_ptr<IInnoTask> m_UpstreamTask;
 	std::atomic_bool m_IsFinished = false;
 };
 
@@ -74,7 +87,7 @@ public:
 
 	static void WaitSync();
 
-	static IInnoTask* AddTaskImpl(std::unique_ptr<IInnoTask>&& task, int threadID);
+	static std::shared_ptr<IInnoTask> AddTaskImpl(std::unique_ptr<IInnoTask>&& task, int threadID);
 	static size_t GetTotalThreadsNumber();
 
 	static const RingBuffer<InnoTaskReport, true>& GetTaskReport(int threadID);

@@ -131,7 +131,7 @@ bool PhysXWrapperNS::update()
 		{
 			m_allowUpdate = false;
 
-			auto PhysXUpdateTask = g_pModuleManager->getTaskSystem()->submit("PhysXUpdateTask", -1, [&]()
+			auto PhysXUpdateTask = g_pModuleManager->getTaskSystem()->submit("PhysXUpdateTask", -1, nullptr, [&]()
 			{
 				gScene->simulate(g_pModuleManager->getTickTime() / 1000.0f);
 				gScene->fetchResults(true);

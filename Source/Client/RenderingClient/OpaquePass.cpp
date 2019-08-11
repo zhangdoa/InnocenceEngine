@@ -127,33 +127,34 @@ bool OpaquePass::PrepareCommandList()
 	unsigned int l_offset = 0;
 
 	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
+	auto l_opaquePassDrawCallData = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallData();
+
 	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
 	{
-		auto l_opaquePassGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassGPUData()[i];
-
-		if (l_opaquePassGPUData.mesh->m_objectStatus == ObjectStatus::Activated)
+		auto l_drawCallData = l_opaquePassDrawCallData[i];
+		if (l_drawCallData.mesh->m_objectStatus == ObjectStatus::Activated)
 		{
 			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_offset, 1);
 			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_offset, 1);
 
-			if (l_opaquePassGPUData.material->m_objectStatus == ObjectStatus::Activated)
+			if (l_drawCallData.material->m_objectStatus == ObjectStatus::Activated)
 			{
-				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_opaquePassGPUData.material->m_ResourceBinders[0], 3, 0);
-				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_opaquePassGPUData.material->m_ResourceBinders[1], 4, 1);
-				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_opaquePassGPUData.material->m_ResourceBinders[2], 5, 2);
-				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_opaquePassGPUData.material->m_ResourceBinders[3], 6, 3);
-				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_opaquePassGPUData.material->m_ResourceBinders[4], 7, 4);
+				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_ResourceBinders[0], 3, 0);
+				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_ResourceBinders[1], 4, 1);
+				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_ResourceBinders[2], 5, 2);
+				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_ResourceBinders[3], 6, 3);
+				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_ResourceBinders[4], 7, 4);
 			}
 
-			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_opaquePassGPUData.mesh);
+			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_drawCallData.mesh);
 
-			if (l_opaquePassGPUData.material->m_objectStatus == ObjectStatus::Activated)
+			if (l_drawCallData.material->m_objectStatus == ObjectStatus::Activated)
 			{
-				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_opaquePassGPUData.material->m_ResourceBinders[0], 3, 0);
-				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_opaquePassGPUData.material->m_ResourceBinders[1], 4, 1);
-				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_opaquePassGPUData.material->m_ResourceBinders[2], 5, 2);
-				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_opaquePassGPUData.material->m_ResourceBinders[3], 6, 3);
-				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_opaquePassGPUData.material->m_ResourceBinders[4], 7, 4);
+				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_ResourceBinders[0], 3, 0);
+				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_ResourceBinders[1], 4, 1);
+				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_ResourceBinders[2], 5, 2);
+				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_ResourceBinders[3], 6, 3);
+				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_ResourceBinders[4], 7, 4);
 			}
 		}
 

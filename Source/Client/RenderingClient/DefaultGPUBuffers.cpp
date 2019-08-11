@@ -119,6 +119,7 @@ bool DefaultGPUBuffers::Upload()
 {
 	auto l_CameraGPUData = g_pModuleManager->getRenderingFrontend()->getCameraGPUData();
 	auto l_MeshGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassMeshGPUData();
+	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
 	auto l_MaterialGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassMaterialGPUData();
 	auto l_SunGPUData = g_pModuleManager->getRenderingFrontend()->getSunGPUData();
 	auto l_PointLightGPUData = g_pModuleManager->getRenderingFrontend()->getPointLightGPUData();
@@ -127,11 +128,17 @@ bool DefaultGPUBuffers::Upload()
 	auto l_SkyGPUData = g_pModuleManager->getRenderingFrontend()->getSkyGPUData();
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_CameraGBDC, &l_CameraGPUData);
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_MeshGBDC, l_MeshGPUData);
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_MaterialGBDC, l_MaterialGPUData);
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_MeshGBDC, l_MeshGPUData, 0, l_totalDrawCallCount);
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_MaterialGBDC, l_MaterialGPUData, 0, l_totalDrawCallCount);
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_SunGBDC, &l_SunGPUData);
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_PointLightGBDC, l_PointLightGPUData);
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_SphereLightGBDC, l_SphereLightGPUData);
+	if (l_SphereLightGPUData.size() > 0)
+	{
+		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_PointLightGBDC, l_PointLightGPUData, 0, l_PointLightGPUData.size());
+	}
+	if (l_SphereLightGPUData.size() > 0)
+	{
+		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_SphereLightGBDC, l_SphereLightGPUData, 0, l_SphereLightGPUData.size());
+	}
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_CSMGBDC, l_CSMGPUData);
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_SkyGBDC, &l_SkyGPUData);
 

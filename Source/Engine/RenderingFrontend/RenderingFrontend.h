@@ -30,6 +30,8 @@ public:
 	TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) override;
 	MaterialDataComponent* getDefaultMaterialDataComponent() override;
 
+	bool transferDataToGPU() override;
+
 	TVec2<unsigned int> getScreenResolution() override;
 	bool setScreenResolution(TVec2<unsigned int> screenResolution) override;
 
@@ -40,20 +42,20 @@ public:
 
 	RenderPassDesc getDefaultRenderPassDesc() override;
 
-	CameraGPUData getCameraGPUData() override;
-	SunGPUData getSunGPUData() override;
+	const CameraGPUData& getCameraGPUData() override;
+	const SunGPUData& getSunGPUData() override;
 	const std::vector<CSMGPUData>& getCSMGPUData() override;
 	const std::vector<PointLightGPUData>& getPointLightGPUData() override;
 	const std::vector<SphereLightGPUData>& getSphereLightGPUData() override;
-	SkyGPUData getSkyGPUData() override;
+	const SkyGPUData& getSkyGPUData() override;
 
 	unsigned int getOpaquePassDrawCallCount() override;
-	const std::vector<OpaquePassGPUData>& getOpaquePassGPUData() override;
+	const std::vector<OpaquePassDrawCallData>& getOpaquePassDrawCallData() override;
 	const std::vector<MeshGPUData>& getOpaquePassMeshGPUData() override;
 	const std::vector<MaterialGPUData>& getOpaquePassMaterialGPUData() override;
 
 	unsigned int getTransparentPassDrawCallCount() override;
-	const std::vector<TransparentPassGPUData>& getTransparentPassGPUData() override;
+	const std::vector<TransparentPassDrawCallData>& getTransparentPassDrawCallData() override;
 	const std::vector<MeshGPUData>& getTransparentPassMeshGPUData() override;
 	const std::vector<MaterialGPUData>& getTransparentPassMaterialGPUData() override;
 
@@ -64,7 +66,7 @@ public:
 	const std::vector<DebuggerPassGPUData>& getDebuggerPassGPUData() override;
 
 	unsigned int getGIPassDrawCallCount() override;
-	const std::vector<OpaquePassGPUData>& getGIPassGPUData() override;
+	const std::vector<OpaquePassDrawCallData>& getGIPassGPUData() override;
 	const std::vector<MeshGPUData>& getGIPassMeshGPUData() override;
 	const std::vector<MaterialGPUData>& getGIPassMaterialGPUData() override;
 };
