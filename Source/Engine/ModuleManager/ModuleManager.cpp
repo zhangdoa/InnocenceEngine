@@ -542,8 +542,6 @@ bool InnoModuleManagerNS::update()
 {
 	while (1)
 	{
-		auto l_tickStartTime = m_TimeSystem->getCurrentTimeFromEpoch();
-
 		auto l_LogicClientUpdateTask = g_pModuleManager->getTaskSystem()->submit("LogicClientUpdateTask", 0, nullptr, f_LogicClientUpdateTask);
 
 		subSystemUpdate(TimeSystem);
@@ -582,12 +580,13 @@ bool InnoModuleManagerNS::update()
 				m_WindowSystem->update();
 
 				auto l_RenderingFrontendUpdateTask = g_pModuleManager->getTaskSystem()->submit("RenderingFrontendUpdateTask", 1, l_PhysicsSystemCullingTask, f_RenderingFrontendUpdateTask);
-				l_RenderingFrontendUpdateTask->Wait();
 
 				m_GUISystem->update();
 
 				auto l_RenderingServerTask = g_pModuleManager->getTaskSystem()->submit("RenderingServerTask", 2, l_RenderingFrontendUpdateTask,
 					[&]() {
+					auto l_tickStartTime = m_TimeSystem->getCurrentTimeFromEpoch();
+
 					m_RenderingFrontend->transferDataToGPU();
 
 					m_RenderingClient->Render();
@@ -595,16 +594,16 @@ bool InnoModuleManagerNS::update()
 					m_GUISystem->render();
 
 					m_RenderingServer->Present();
+
+					g_pModuleManager->getWindowSystem()->getWindowSurface()->swapBuffer();
+
+					auto l_tickEndTime = m_TimeSystem->getCurrentTimeFromEpoch();
+
+					m_tickTime = float(l_tickEndTime - l_tickStartTime) / 1000.0f;
 				});
 				l_RenderingServerTask->Wait();
 
-				g_pModuleManager->getWindowSystem()->getWindowSurface()->swapBuffer();
-
 				m_TransformComponentManager->SaveCurrentFrameTransform();
-
-				auto l_tickEndTime = m_TimeSystem->getCurrentTimeFromEpoch();
-
-				m_tickTime = float(l_tickEndTime - l_tickStartTime) / 1000.0f;
 			}
 			else
 			{
