@@ -1585,17 +1585,17 @@ bool DX12Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderStage shaderStage, const
 
 	switch (shaderStage)
 	{
-	case ShaderStage::Vertex: l_shaderTypeName = "vs_5_1";
+	case ShaderStage::Vertex: l_shaderTypeName = "vs_5_0";
 		break;
-	case ShaderStage::Hull: l_shaderTypeName = "hs_5_1";
+	case ShaderStage::Hull: l_shaderTypeName = "hs_5_0";
 		break;
-	case ShaderStage::Domain: l_shaderTypeName = "ds_5_1";
+	case ShaderStage::Domain: l_shaderTypeName = "ds_5_0";
 		break;
-	case ShaderStage::Geometry: l_shaderTypeName = "gs_5_1";
+	case ShaderStage::Geometry: l_shaderTypeName = "gs_5_0";
 		break;
-	case ShaderStage::Pixel: l_shaderTypeName = "ps_5_1";
+	case ShaderStage::Pixel: l_shaderTypeName = "ps_5_0";
 		break;
-	case ShaderStage::Compute: l_shaderTypeName = "cs_5_1";
+	case ShaderStage::Compute: l_shaderTypeName = "cs_5_0";
 		break;
 	default:
 		break;
