@@ -686,6 +686,11 @@ namespace InnoContainer
 			m_CurrentFreeIndex = m_ElementCount;
 		}
 
+		auto clear()
+		{
+			m_CurrentFreeIndex = 0;
+		}
+
 		template<typename U = void>
 		EnableType<U, ThreadSafe> emplace_back(const T& value)
 		{
