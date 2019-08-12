@@ -21,8 +21,6 @@ namespace WinGLWindowSurfaceNS
 
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	InitConfig m_initConfig;
-
-	std::function<void()> f_CreateGLContextTask;
 }
 
 bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
@@ -136,7 +134,7 @@ bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 			WinWindowSystemComponent::get().m_hInstance, NULL);				// instance, param
 	}
 
-	f_CreateGLContextTask = [&]()
+	auto f_CreateGLContextTask = [&]()
 	{
 		WinWindowSystemComponent::get().m_HDC = GetDC(WinWindowSystemComponent::get().m_hwnd);
 
@@ -163,7 +161,6 @@ bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 		{
 			m_objectStatus = ObjectStatus::Created;
 			InnoLogger::Log(LogLevel::Error, "WinWindowSystem: wglChoosePixelFormatARB() failed.");
-			return false;
 		}
 
 		PIXELFORMATDESCRIPTOR PFD;
@@ -191,13 +188,19 @@ bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 			m_objectStatus = ObjectStatus::Created;
 			InnoLogger::Log(LogLevel::Error, "WinWindowSystem: wglCreateContextAttribsARB() failed.");
 		}
+	};
 
-		// delete temporary context and window
-		wglMakeCurrent(NULL, NULL);
-		wglDeleteContext(fakeRC);
-		ReleaseDC(fakeWND, fakeDC);
-		DestroyWindow(fakeWND);
+	auto l_CreateGLContextTask = g_pModuleManager->getTaskSystem()->submit("CreateGLContextTask", 2, nullptr, f_CreateGLContextTask);
+	l_CreateGLContextTask->Wait();
 
+	// delete temporary context and window
+	wglMakeCurrent(NULL, NULL);
+	wglDeleteContext(fakeRC);
+	ReleaseDC(fakeWND, fakeDC);
+	DestroyWindow(fakeWND);
+
+	auto f_ActivateGLContextTask = [&]()
+	{
 		if (!wglMakeCurrent(WinWindowSystemComponent::get().m_HDC, m_HGLRC))
 		{
 			m_objectStatus = ObjectStatus::Created;
@@ -228,8 +231,8 @@ bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 		}
 	};
 
-	auto l_CreateGLContextTask = g_pModuleManager->getTaskSystem()->submit("CreateGLContextTask", 2, nullptr, f_CreateGLContextTask);
-	l_CreateGLContextTask->Wait();
+	auto l_ActivateGLContextTask = g_pModuleManager->getTaskSystem()->submit("ActivateGLContextTask", 2, nullptr, f_ActivateGLContextTask);
+	l_ActivateGLContextTask->Wait();
 
 	if (m_initConfig.engineMode == EngineMode::GAME)
 	{
