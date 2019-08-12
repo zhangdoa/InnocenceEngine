@@ -19,7 +19,6 @@ namespace DefaultGPUBuffers
 	GPUBufferDataComponent* m_debugGBDC;
 
 	std::vector<DispatchParamsGPUData> m_DispatchParamsGPUData;
-	std::vector<MeshGPUData> m_billboardGPUData;
 }
 
 bool DefaultGPUBuffers::Setup()
@@ -99,10 +98,9 @@ bool DefaultGPUBuffers::Initialize()
 	m_billboardGBDC->m_ElementCount = l_RenderingCapability.maxMeshes;
 	m_billboardGBDC->m_ElementSize = sizeof(MeshGPUData);
 	m_billboardGBDC->m_BindingPoint = 12;
+	m_billboardGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_billboardGBDC);
-
-	m_billboardGPUData.resize(l_RenderingCapability.maxMeshes);
 
 	m_debugGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("DebugGPUBuffer/");
 	m_debugGBDC->m_ElementCount = l_RenderingCapability.maxMeshes;
@@ -118,18 +116,25 @@ bool DefaultGPUBuffers::Initialize()
 bool DefaultGPUBuffers::Upload()
 {
 	auto l_CameraGPUData = g_pModuleManager->getRenderingFrontend()->getCameraGPUData();
-	auto l_MeshGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassMeshGPUData();
 	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
+	auto l_MeshGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassMeshGPUData();
 	auto l_MaterialGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassMaterialGPUData();
 	auto l_SunGPUData = g_pModuleManager->getRenderingFrontend()->getSunGPUData();
 	auto l_PointLightGPUData = g_pModuleManager->getRenderingFrontend()->getPointLightGPUData();
 	auto l_SphereLightGPUData = g_pModuleManager->getRenderingFrontend()->getSphereLightGPUData();
 	auto l_CSMGPUData = g_pModuleManager->getRenderingFrontend()->getCSMGPUData();
 	auto l_SkyGPUData = g_pModuleManager->getRenderingFrontend()->getSkyGPUData();
+	auto l_billboardPassMeshGPUData = g_pModuleManager->getRenderingFrontend()->getBillboardPassMeshGPUData();
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_CameraGBDC, &l_CameraGPUData);
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_MeshGBDC, l_MeshGPUData, 0, l_totalDrawCallCount);
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_MaterialGBDC, l_MaterialGPUData, 0, l_totalDrawCallCount);
+	if (l_MeshGPUData.size() > 0)
+	{
+		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_MeshGBDC, l_MeshGPUData, 0, l_totalDrawCallCount);
+	}
+	if (l_MaterialGPUData.size() > 0)
+	{
+		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_MaterialGBDC, l_MaterialGPUData, 0, l_totalDrawCallCount);
+	}
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_SunGBDC, &l_SunGPUData);
 	if (l_SphereLightGPUData.size() > 0)
 	{
@@ -139,18 +144,16 @@ bool DefaultGPUBuffers::Upload()
 	{
 		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_SphereLightGBDC, l_SphereLightGPUData, 0, l_SphereLightGPUData.size());
 	}
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_CSMGBDC, l_CSMGPUData);
+	if (l_CSMGPUData.size() > 0)
+	{
+		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_CSMGBDC, l_CSMGPUData);
+	}
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_SkyGBDC, &l_SkyGPUData);
 
-	auto l_drawCallCount = g_pModuleManager->getRenderingFrontend()->getBillboardPassDrawCallCount();
-	auto l_billboardPassGPUData = g_pModuleManager->getRenderingFrontend()->getBillboardPassGPUData();
-
-	for (unsigned int i = 0; i < l_drawCallCount; i++)
+	if (l_billboardPassMeshGPUData.size() > 0)
 	{
-		m_billboardGPUData[i].m = l_billboardPassGPUData[i].m;
+		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_billboardGBDC, l_billboardPassMeshGPUData, 0, l_billboardPassMeshGPUData.size());
 	}
-
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_billboardGBDC, m_billboardGPUData);
 
 	return true;
 }

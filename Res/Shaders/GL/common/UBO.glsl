@@ -82,12 +82,9 @@ layout(std140, row_major, binding = 11) uniform GICameraUBOBlock
 	mat4 t;
 } GICameraUBO;
 
-layout(std140, row_major, binding = 12) uniform billboardUBOBlock
+layout(std430, row_major, binding = 12) buffer billboardUBOBlock
 {
-	mat4 m;
-	mat4 m_prev;
-	mat4 normalMat;
-	float UUID;
+	meshData data[];
 } billboardUBO;
 
 layout(std430, row_major, binding = 13) buffer debugSSBOBlock

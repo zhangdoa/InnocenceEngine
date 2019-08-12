@@ -21,21 +21,32 @@ struct Sphere
 	float r;
 };
 
-struct dirLight {
+struct meshData
+{
+	mat4 m;
+	mat4 m_prev;
+	mat4 normalMat;
+	float UUID;
+};
+
+struct dirLight
+{
 	vec4 direction;
 	vec4 luminance;
 	mat4 r;
 };
 
 // w component of luminance is attenuationRadius
-struct pointLight {
+struct pointLight
+{
 	vec4 position;
 	vec4 luminance;
 	//float attenuationRadius;
 };
 
 // w component of luminance is sphereRadius
-struct sphereLight {
+struct sphereLight
+{
 	vec4 position;
 	vec4 luminance;
 	//float sphereRadius;
@@ -49,7 +60,8 @@ struct CSM {
 	float padding[6];
 };
 
-struct DispatchParam {
+struct DispatchParam
+{
 	uvec4 numThreadGroups;
 	uvec4 numThreads;
 };

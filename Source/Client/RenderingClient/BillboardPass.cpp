@@ -52,6 +52,8 @@ bool BillboardPass::Setup()
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 1;
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 12;
+	m_RPDC->m_ResourceBinderLayoutDescs[1].m_BinderAccessibility = Accessibility::ReadOnly;
+	m_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Image;
 	m_RPDC->m_ResourceBinderLayoutDescs[2].m_GlobalSlot = 2;
@@ -94,18 +96,20 @@ bool BillboardPass::PrepareCommandList()
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Quad);
 
-	auto l_drawCallCount = g_pModuleManager->getRenderingFrontend()->getBillboardPassDrawCallCount();
-	auto l_billboardPassGPUData = g_pModuleManager->getRenderingFrontend()->getBillboardPassGPUData();
+	auto l_billboardPassDrawCallData = g_pModuleManager->getRenderingFrontend()->getBillboardPassDrawCallData();
+	auto l_drawCallCount = l_billboardPassDrawCallData.size();
 
 	for (unsigned int i = 0; i < l_drawCallCount; i++)
 	{
-		auto l_iconTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(l_billboardPassGPUData[i].iconType);
+		auto l_iconTexture = l_billboardPassDrawCallData[i].iconTexture;
+		auto l_offset = l_billboardPassDrawCallData[i].meshGPUDataOffset;
+		auto l_instanceCount = l_billboardPassDrawCallData[i].instanceCount;
 
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_BillboardGBDC->m_ResourceBinder, 1, 12, Accessibility::ReadOnly, i, 1);
+		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_BillboardGBDC->m_ResourceBinder, 1, 12, Accessibility::ReadOnly, l_offset, l_instanceCount);
 
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_iconTexture->m_ResourceBinder, 2, 0);
 
-		g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_mesh);
+		g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_mesh, l_instanceCount);
 
 		g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_iconTexture->m_ResourceBinder, 2, 0);
 	}

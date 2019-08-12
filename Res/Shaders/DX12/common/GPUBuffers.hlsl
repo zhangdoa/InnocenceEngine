@@ -66,8 +66,3 @@ cbuffer GICameraCBuffer : register(b11)
 	matrix GI_cam_r[6];
 	matrix GI_cam_t;
 };
-
-cbuffer billboardCBuffer : register(b12)
-{
-	meshData billboardCBuffer;
-};

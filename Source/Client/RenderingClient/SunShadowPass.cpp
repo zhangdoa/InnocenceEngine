@@ -85,15 +85,17 @@ bool SunShadowPass::PrepareCommandList()
 	unsigned int l_offset = 0;
 
 	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
+	auto l_opaquePassDrawCallData = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallData();
+
 	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
 	{
-		auto l_opaquePassGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallData()[i];
+		auto l_drawCallData = l_opaquePassDrawCallData[i];
 
-		if (l_opaquePassGPUData.mesh->m_objectStatus == ObjectStatus::Activated)
+		if (l_drawCallData.mesh->m_objectStatus == ObjectStatus::Activated)
 		{
 			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 0, 1, Accessibility::ReadOnly, l_offset, 1);
 
-			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_opaquePassGPUData.mesh);
+			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_drawCallData.mesh);
 		}
 
 		l_offset++;

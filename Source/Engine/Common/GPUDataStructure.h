@@ -104,10 +104,11 @@ struct TransparentPassDrawCallData
 	unsigned int materialGPUDataIndex;
 };
 
-struct BillboardPassGPUData
+struct BillboardPassDrawCallData
 {
-	mat4 m;
-	WorldEditorIconType iconType;
+	TextureDataComponent* iconTexture;
+	unsigned int meshGPUDataOffset;
+	unsigned int instanceCount;
 };
 
 struct DebuggerPassGPUData

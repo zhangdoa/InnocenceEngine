@@ -127,6 +127,14 @@ bool DebugPass::PrepareCommandList()
 
 		g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
 	}
+	else
+	{
+		g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
+		g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
+		g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
+
+		g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
+	}
 
 	return true;
 }

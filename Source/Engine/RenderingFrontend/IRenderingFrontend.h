@@ -96,8 +96,8 @@ public:
 	virtual const std::vector<MeshGPUData>& getTransparentPassMeshGPUData() = 0;
 	virtual const std::vector<MaterialGPUData>& getTransparentPassMaterialGPUData() = 0;
 
-	virtual unsigned int getBillboardPassDrawCallCount() = 0;
-	virtual const std::vector<BillboardPassGPUData>& getBillboardPassGPUData() = 0;
+	virtual const std::vector<BillboardPassDrawCallData>& getBillboardPassDrawCallData() = 0;
+	virtual const std::vector<MeshGPUData>& getBillboardPassMeshGPUData() = 0;
 
 	virtual unsigned int getDebuggerPassDrawCallCount() = 0;
 	virtual const std::vector<DebuggerPassGPUData>& getDebuggerPassGPUData() = 0;
