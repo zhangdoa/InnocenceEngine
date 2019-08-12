@@ -2,9 +2,9 @@
 #include "../Common/InnoType.h"
 #include "../Common/InnoGraphicsPrimitive.h"
 #include "../Common/InnoComponent.h"
-#include "PhysicsDataComponent.h"
 #include "SkeletonDataComponent.h"
 
+class PhysicsDataComponent;
 class MeshDataComponent : public InnoComponent
 {
 public:

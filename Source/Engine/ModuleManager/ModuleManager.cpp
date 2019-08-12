@@ -154,6 +154,7 @@ namespace InnoModuleManagerNS
 	std::atomic<bool> m_allowRender = false;
 
 	std::function<void()> f_LogicClientUpdateTask;
+	std::function<void()> f_PhysicsSystemUpdateBVHTask;
 	std::function<void()> f_PhysicsSystemCullingTask;
 	std::function<void()> f_RenderingFrontendUpdateTask;
 
@@ -472,6 +473,7 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	}
 
 	f_LogicClientUpdateTask = [&]() {m_LogicClient->update(); };
+	f_PhysicsSystemUpdateBVHTask = [&]() {m_PhysicsSystem->updateBVH(); };
 	f_PhysicsSystemCullingTask = [&]() {m_PhysicsSystem->updateCulling(); };
 	f_RenderingFrontendUpdateTask = [&]() {m_RenderingFrontend->update(); };
 
@@ -566,6 +568,8 @@ bool InnoModuleManagerNS::update()
 		ComponentManagerUpdate(CameraComponent);
 
 		subSystemUpdate(AssetSystem);
+
+		f_PhysicsSystemUpdateBVHTask();
 
 		subSystemUpdate(PhysicsSystem);
 

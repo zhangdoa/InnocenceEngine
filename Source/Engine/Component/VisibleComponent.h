@@ -2,7 +2,6 @@
 #include "../Common/InnoComponent.h"
 #include "MeshDataComponent.h"
 #include "MaterialDataComponent.h"
-#include "PhysicsDataComponent.h"
 
 using ModelPair = std::pair<MeshDataComponent*, MaterialDataComponent*>;
 using ModelMap = std::unordered_map<MeshDataComponent*, MaterialDataComponent*>;

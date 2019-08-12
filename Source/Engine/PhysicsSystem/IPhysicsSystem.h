@@ -33,6 +33,7 @@ public:
 	virtual bool generatePhysicsDataComponent(MeshDataComponent* MDC) = 0;
 	virtual bool generateAABBInWorldSpace(PhysicsDataComponent* PDC, const mat4& m) = 0;
 	virtual bool generatePhysicsProxy(VisibleComponent* VC) = 0;
+	virtual void updateBVH() = 0;
 	virtual void updateCulling() = 0;
 	virtual std::optional<std::vector<CullingDataPack>> getCullingDataPack() = 0;
 	virtual AABB getVisibleSceneAABB() = 0;
