@@ -21,5 +21,4 @@ public:
 	ModelMap m_modelMap;
 
 	bool m_simulatePhysics = false;
-	PhysicsDataComponent* m_PDC = 0;
 };

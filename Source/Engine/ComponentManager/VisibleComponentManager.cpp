@@ -4,6 +4,7 @@
 #include "../Core/InnoLogger.h"
 #include "../Common/CommonMacro.inl"
 #include "CommonFunctionDefinitionMacro.inl"
+#include "../ComponentManager/ITransformComponentManager.h"
 
 #include "../ModuleManager/IModuleManager.h"
 
@@ -58,14 +59,35 @@ bool InnoVisibleComponentManager::Setup()
 	f_LoadAssetTask = [=](VisibleComponent* i)
 	{
 		i->m_modelMap = g_pModuleManager->getFileSystem()->loadModel(i->m_modelFileName);
-		g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(i);
+
+		auto l_transformComponent = GetComponent(TransformComponent, i->m_parentEntity);
+		auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
+
+		for (auto j : i->m_modelMap)
+		{
+			g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(j.first);
+			g_pModuleManager->getPhysicsSystem()->generateAABBInWorldSpace(j.first->m_PDC, l_globalTm);
+		}
+
+		g_pModuleManager->getPhysicsSystem()->generatePhysicsProxy(i);
 		i->m_objectStatus = ObjectStatus::Activated;
 	};
 
 	f_AssignUnitMeshTask = [=](VisibleComponent* i)
 	{
 		assignUnitMesh(i->m_meshShapeType, i);
-		g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(i);
+
+		auto l_transformComponent = GetComponent(TransformComponent, i->m_parentEntity);
+		auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
+
+		for (auto j : i->m_modelMap)
+		{
+			g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(j.first);
+			g_pModuleManager->getPhysicsSystem()->generateAABBInWorldSpace(j.first->m_PDC, l_globalTm);
+		}
+
+		g_pModuleManager->getPhysicsSystem()->generatePhysicsProxy(i);
+
 		i->m_objectStatus = ObjectStatus::Activated;
 	};
 

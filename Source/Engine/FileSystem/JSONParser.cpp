@@ -549,8 +549,6 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j)
 		l_MeshDC->m_meshShapeType = MeshShapeType::Custom;
 		l_MeshDC->m_objectStatus = ObjectStatus::Created;
 
-		g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(l_MeshDC);
-
 		l_result.first = l_MeshDC;
 
 		// Load skeleton data

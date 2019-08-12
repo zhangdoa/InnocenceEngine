@@ -259,34 +259,29 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 	m_unitLineMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
 	m_unitLineMesh->m_meshShapeType = MeshShapeType::Line;
 	m_unitLineMesh->m_objectStatus = ObjectStatus::Created;
-	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMesh);
 
 	m_unitQuadMesh = m_renderingServer->AddMeshDataComponent("UnitQuadMesh/");
 	g_pModuleManager->getAssetSystem()->addUnitQuad(*m_unitQuadMesh);
 	m_unitQuadMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitQuadMesh->m_meshShapeType = MeshShapeType::Quad;
 	m_unitQuadMesh->m_objectStatus = ObjectStatus::Created;
-	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMesh);
 
 	m_unitCubeMesh = m_renderingServer->AddMeshDataComponent("UnitCubeMesh/");
 	g_pModuleManager->getAssetSystem()->addUnitCube(*m_unitCubeMesh);
 	m_unitCubeMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitCubeMesh->m_meshShapeType = MeshShapeType::Cube;
 	m_unitCubeMesh->m_objectStatus = ObjectStatus::Created;
-	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMesh);
 
 	m_unitSphereMesh = m_renderingServer->AddMeshDataComponent("UnitSphereMesh/");
 	g_pModuleManager->getAssetSystem()->addUnitSphere(*m_unitSphereMesh);
 	m_unitSphereMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitSphereMesh->m_meshShapeType = MeshShapeType::Sphere;
 	m_unitSphereMesh->m_objectStatus = ObjectStatus::Created;
-	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMesh);
 
 	m_terrainMesh = m_renderingServer->AddMeshDataComponent("TerrainMesh/");
 	g_pModuleManager->getAssetSystem()->addTerrain(*m_terrainMesh);
 	m_terrainMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_terrainMesh->m_objectStatus = ObjectStatus::Created;
-	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMesh);
 
 	auto l_DefaultAssetInitializeTask = g_pModuleManager->getTaskSystem()->submit("DefaultAssetInitializeTask", 2, nullptr,
 		[&]() {
@@ -676,37 +671,35 @@ bool InnoRenderingFrontendNS::gatherStaticMeshData()
 		{
 			auto l_transformComponent = GetComponent(TransformComponent, visibleComponent->m_parentEntity);
 			auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
-			if (visibleComponent->m_PDC)
+
+			for (auto& l_modelPair : visibleComponent->m_modelMap)
 			{
-				for (auto& l_modelPair : visibleComponent->m_modelMap)
-				{
-					OpaquePassDrawCallData l_GIPassGPUData;
+				OpaquePassDrawCallData l_GIPassGPUData;
 
-					l_GIPassGPUData.mesh = l_modelPair.first;
-					l_GIPassGPUData.material = l_modelPair.second;
+				l_GIPassGPUData.mesh = l_modelPair.first;
+				l_GIPassGPUData.material = l_modelPair.second;
 
-					MeshGPUData l_meshGPUData;
+				MeshGPUData l_meshGPUData;
 
-					l_meshGPUData.m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
-					l_meshGPUData.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
-					l_meshGPUData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-					l_meshGPUData.UUID = (float)visibleComponent->m_UUID;
+				l_meshGPUData.m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
+				l_meshGPUData.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
+				l_meshGPUData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
+				l_meshGPUData.UUID = (float)visibleComponent->m_UUID;
 
-					MaterialGPUData l_materialGPUData;
+				MaterialGPUData l_materialGPUData;
 
-					l_materialGPUData.useNormalTexture = !(l_GIPassGPUData.material->m_normalTexture == nullptr);
-					l_materialGPUData.useAlbedoTexture = !(l_GIPassGPUData.material->m_albedoTexture == nullptr);
-					l_materialGPUData.useMetallicTexture = !(l_GIPassGPUData.material->m_metallicTexture == nullptr);
-					l_materialGPUData.useRoughnessTexture = !(l_GIPassGPUData.material->m_roughnessTexture == nullptr);
-					l_materialGPUData.useAOTexture = !(l_GIPassGPUData.material->m_aoTexture == nullptr);
+				l_materialGPUData.useNormalTexture = !(l_GIPassGPUData.material->m_normalTexture == nullptr);
+				l_materialGPUData.useAlbedoTexture = !(l_GIPassGPUData.material->m_albedoTexture == nullptr);
+				l_materialGPUData.useMetallicTexture = !(l_GIPassGPUData.material->m_metallicTexture == nullptr);
+				l_materialGPUData.useRoughnessTexture = !(l_GIPassGPUData.material->m_roughnessTexture == nullptr);
+				l_materialGPUData.useAOTexture = !(l_GIPassGPUData.material->m_aoTexture == nullptr);
 
-					l_materialGPUData.customMaterial = l_modelPair.second->m_meshCustomMaterial;
+				l_materialGPUData.customMaterial = l_modelPair.second->m_meshCustomMaterial;
 
-					m_GIPassGPUData[l_index] = l_GIPassGPUData;
-					m_GIPassMeshGPUData[l_index] = l_meshGPUData;
-					m_GIPassMaterialGPUData[l_index] = l_materialGPUData;
-					l_index++;
-				}
+				m_GIPassGPUData[l_index] = l_GIPassGPUData;
+				m_GIPassMeshGPUData[l_index] = l_meshGPUData;
+				m_GIPassMaterialGPUData[l_index] = l_materialGPUData;
+				l_index++;
 			}
 		}
 	}
