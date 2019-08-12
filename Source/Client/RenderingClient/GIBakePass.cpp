@@ -1,5 +1,6 @@
 #include "GIBakePass.h"
 #include "DefaultGPUBuffers.h"
+#include "../../Engine/Common/InnoMathHelper.h"
 
 #include "../../Engine/ModuleManager/IModuleManager.h"
 INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
@@ -19,7 +20,6 @@ namespace GIBakePass
 	bool loadGIData();
 
 	bool generateProbes();
-	bool generateBricks();
 
 	bool capture();
 	bool drawCubemaps(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v);
@@ -28,10 +28,8 @@ namespace GIBakePass
 	bool drawSkyVisibilityPass(const mat4& p, const std::vector<mat4>& v);
 
 	bool eliminateDuplicatedSurfels();
-	bool eliminateEmptyBricks();
-	bool isBrickEmpty(const std::vector<Surfel>& surfels, const Brick& brick);
-	bool assignSurfelRangeToBricks();
-	bool findSurfelRangeForBrick(Brick& brick);
+	bool generateBricks();
+
 	bool assignBrickFactorToProbes();
 
 	bool serializeProbes();
@@ -39,13 +37,16 @@ namespace GIBakePass
 	bool serializeBricks();
 	bool serializeBrickFactors();
 
+	const unsigned int m_probeMapResolution = 1024;
 	const unsigned int m_captureResolution = 128;
 	const unsigned int m_sampleCountPerFace = m_captureResolution * m_captureResolution;
 	const unsigned int m_subDivideDimension = 2;
-	const unsigned int m_totalCaptureProbes = m_subDivideDimension * m_subDivideDimension * m_subDivideDimension;
 
 	TextureDataComponent* m_testSampleCubemap;
 	TextureDataComponent* m_testSample3DTexture;
+
+	RenderPassDataComponent* m_RPDC_Probe;
+	ShaderProgramComponent* m_SPC_Probe;
 
 	RenderPassDataComponent* m_RPDC_Bake;
 	ShaderProgramComponent* m_SPC_Bake;
@@ -106,87 +107,69 @@ bool GIBakePass::generateProbes()
 
 	auto l_sceneCenter = l_sceneAABB.m_center;
 	auto l_extendedAxisSize = l_sceneAABB.m_extend;
-	l_extendedAxisSize = l_extendedAxisSize - vec4(32.0, 2.0f, 32.0f, 0.0f);
-	l_extendedAxisSize.w = 0.0f;
-	auto l_probeDistance = l_extendedAxisSize / (float)(m_subDivideDimension + 1);
-	auto l_startPos = l_sceneAABB.m_center - (l_extendedAxisSize / 2.0f);
-	l_startPos.x += l_probeDistance.x;
-	l_startPos.z += l_probeDistance.z;
-	auto l_currentPos = l_startPos;
 
-	unsigned int l_probeIndex = 0;
-	for (size_t i = 0; i < m_subDivideDimension; i++)
+	auto l_p = InnoMath::generateOrthographicMatrix(-l_extendedAxisSize.x / 2.0f, l_extendedAxisSize.x / 2.0f, -l_extendedAxisSize.z / 2.0f, l_extendedAxisSize.z / 2.0f, -l_extendedAxisSize.y / 2.0f, l_extendedAxisSize.y / 2.0f);
+
+	std::vector<mat4> l_GICameraGPUData(8);
+	l_GICameraGPUData[0] = l_p;
+	l_GICameraGPUData[1] = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 0.0f));
+	l_GICameraGPUData[7] = InnoMath::generateIdentityMatrix<float>();
+
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_GICameraGBDC, l_GICameraGPUData);
+
+	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
+
+	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_Probe, 0);
+	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_Probe);
+	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_Probe);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Probe, ShaderStage::Vertex, m_GICameraGBDC->m_ResourceBinder, 0, 11, Accessibility::ReadOnly);
+
+	unsigned int l_offset = 0;
+
+	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getGIPassDrawCallCount();
+	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
 	{
-		l_currentPos.y = l_startPos.y;
-		for (size_t j = 0; j < m_subDivideDimension; j++)
+		auto l_GIPassGPUData = g_pModuleManager->getRenderingFrontend()->getGIPassGPUData()[i];
+
+		if (l_GIPassGPUData.mesh->m_objectStatus == ObjectStatus::Activated)
 		{
-			l_currentPos.z = l_startPos.z;
-			for (size_t k = 0; k < m_subDivideDimension; k++)
-			{
-				Probe l_probe;
-				l_probe.pos = l_currentPos;
-				m_probes.emplace_back(l_probe);
+			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Probe, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_offset, 1);
 
-				ProbeCache l_probeCache;
-				l_probeCache.pos = l_currentPos;
-				m_probeCaches.emplace_back(l_probeCache);
-
-				l_currentPos.z += l_probeDistance.z;
-				l_probeIndex++;
-			}
-			l_currentPos.y += l_probeDistance.y;
+			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC_Probe, l_GIPassGPUData.mesh);
 		}
-		l_currentPos.x += l_probeDistance.x;
 
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Generating probes: ", (float)l_probeIndex * 100.0f / m_totalCaptureProbes, "%");
+		l_offset++;
 	}
 
-	return true;
-}
+	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC_Probe);
 
-bool GIBakePass::generateBricks()
-{
-	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getTotalSceneAABB();
+	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC_Probe);
 
-	auto l_sceneCenter = l_sceneAABB.m_center;
-	auto l_extendedAxisSize = l_sceneAABB.m_extend;
-	l_extendedAxisSize.w = 0.0f;
-	auto l_startPos = l_sceneAABB.m_center - (l_extendedAxisSize / 2.0f);
-	auto l_currentPos = l_startPos;
+	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC_Probe);
 
-	auto l_brickSize = 16.0f;
-	auto l_maxBrickCountX = (unsigned int)std::ceil(l_extendedAxisSize.x / l_brickSize);
-	auto l_maxBrickCountY = (unsigned int)std::ceil(l_extendedAxisSize.y / l_brickSize);
-	auto l_maxBrickCountZ = (unsigned int)std::ceil(l_extendedAxisSize.z / l_brickSize);
+	auto l_probePos = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Probe, m_RPDC_Probe->m_RenderTargets[0]);
 
-	auto l_totalBricks = l_maxBrickCountX * l_maxBrickCountY * l_maxBrickCountZ;
+	auto l_size = l_probePos.size();
+	auto l_interval = 256;
+	auto l_divide = m_probeMapResolution / l_interval;
 
-	unsigned int l_brickIndex = 0;
-	for (size_t i = 0; i < l_maxBrickCountX; i++)
+	for (size_t i = 0; i < l_divide; i++)
 	{
-		l_currentPos.y = l_startPos.y;
-		for (size_t j = 0; j < l_maxBrickCountY; j++)
+		for (size_t j = 0; j < l_divide; j++)
 		{
-			l_currentPos.z = l_startPos.z;
-			for (size_t k = 0; k < l_maxBrickCountZ; k++)
-			{
-				AABB l_brickAABB;
-				l_brickAABB.m_boundMin = l_currentPos;
-				l_brickAABB.m_extend = vec4(l_brickSize, l_brickSize, l_brickSize, 0.0f);
-				l_brickAABB.m_boundMax = l_currentPos + l_brickAABB.m_extend;
-				l_brickAABB.m_center = l_currentPos + (l_brickAABB.m_extend / 2.0f);
+			Probe l_Probe;
+			l_Probe.pos = l_probePos[i * l_interval + j * l_interval * m_probeMapResolution];
+			l_Probe.pos.x += l_sceneCenter.x;
+			l_Probe.pos.y += 2.0f;
+			l_Probe.pos.z += l_sceneCenter.z;
 
-				Brick l_brick;
-				l_brick.boundBox = l_brickAABB;
-				m_brickCaches.emplace_back(l_brick);
+			m_probes.emplace_back(l_Probe);
 
-				l_currentPos.z += l_brickSize;
-				l_brickIndex++;
-			}
-			l_currentPos.y += l_brickSize;
+			ProbeCache l_ProbeCache;
+			l_ProbeCache.pos = l_Probe.pos;
+
+			m_probeCaches.emplace_back(l_ProbeCache);
 		}
-		l_currentPos.x += l_brickSize;
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Generating brick: ", (float)l_brickIndex * 100.0f / (float)l_totalBricks, "%");
 	}
 
 	return true;
@@ -210,7 +193,9 @@ bool GIBakePass::capture()
 		l_rPX, l_rNX, l_rPY, l_rNY, l_rPZ, l_rNZ
 	};
 
-	for (unsigned int i = 0; i < m_totalCaptureProbes; i++)
+	auto l_probeCount = m_probeCaches.size();
+
+	for (unsigned int i = 0; i < l_probeCount; i++)
 	{
 		drawCubemaps(i, l_p, l_v);
 		readBackSurfelCaches(i);
@@ -357,103 +342,19 @@ bool GIBakePass::eliminateDuplicatedSurfels()
 	return true;
 }
 
-bool GIBakePass::eliminateEmptyBricks()
+bool GIBakePass::generateBricks()
 {
-	for (size_t i = 0; i < m_brickCaches.size(); i++)
-	{
-		if (!isBrickEmpty(m_surfels, m_brickCaches[i]))
-		{
-			m_bricks.emplace_back(m_brickCaches[i]);
-		}
-	}
-
-	m_bricks.shrink_to_fit();
-
-	std::sort(m_bricks.begin(), m_bricks.end(), [&](Brick A, Brick B)
-	{
-		if (A.boundBox.m_center.x != B.boundBox.m_center.x) {
-			return A.boundBox.m_center.x < B.boundBox.m_center.x;
-		}
-		if (A.boundBox.m_center.y != B.boundBox.m_center.y) {
-			return A.boundBox.m_center.y < B.boundBox.m_center.y;
-		}
-		return A.boundBox.m_center.z < B.boundBox.m_center.z;
-	});
-
-	return true;
-}
-
-bool GIBakePass::isBrickEmpty(const std::vector<Surfel>& surfels, const Brick& brick)
-{
-	auto l_nearestSurfel = std::find_if(surfels.begin(), surfels.end(), [&](Surfel val) {
-		return InnoMath::isAGreaterThanBVec3(val.pos, brick.boundBox.m_boundMin);
-	});
-
-	if (l_nearestSurfel != surfels.end())
-	{
-		auto l_farestSurfel = std::find_if(surfels.begin(), surfels.end(), [&](Surfel val) {
-			return InnoMath::isALessThanBVec3(val.pos, brick.boundBox.m_boundMax);
-		});
-
-		if (l_farestSurfel != surfels.end())
-		{
-			return false;
-		}
-	}
-
-	return true;
-}
-
-bool GIBakePass::assignSurfelRangeToBricks()
-{
-	for (size_t i = 0; i < m_bricks.size(); i++)
-	{
-		findSurfelRangeForBrick(m_bricks[i]);
-	}
-
-	return true;
-}
-
-bool GIBakePass::findSurfelRangeForBrick(Brick& brick)
-{
-	auto l_firstSurfel = std::find_if(m_surfels.begin(), m_surfels.end(), [&](Surfel val) {
-		return InnoMath::isAGreaterThanBVec3(val.pos, brick.boundBox.m_boundMin);
-	});
-
-	auto l_firstSurfelIndex = std::distance(m_surfels.begin(), l_firstSurfel);
-	brick.surfelRangeBegin = (unsigned int)l_firstSurfelIndex;
-
-	auto l_lastSurfel = std::find_if(m_surfels.begin(), m_surfels.end(), [&](Surfel val) {
-		return InnoMath::isAGreaterThanBVec3(val.pos, brick.boundBox.m_boundMax);
-	});
-
-	auto l_lastSurfelIndex = std::distance(m_surfels.begin(), l_lastSurfel);
-	brick.surfelRangeEnd = (unsigned int)l_lastSurfelIndex;
+	auto l_surfelsCount = m_surfels.size();
+	auto l_brickSize = vec4(16.0f, 16.0f, 16.0f, 0.0f);
+	vec4 l_startPos = m_surfels[0].pos;
+	vec4 l_endPos = m_surfels[l_surfelsCount - 1].pos;
+	vec4 l_currentMaxPos = l_startPos + l_brickSize;
 
 	return true;
 }
 
 bool GIBakePass::assignBrickFactorToProbes()
 {
-	for (size_t i = 0; i < m_probes.size(); i++)
-	{
-		m_probes[i].brickFactorRangeBegin = (unsigned int)m_brickFactors.size();
-
-		for (size_t j = 0; j < m_bricks.size(); j++)
-		{
-			if (!isBrickEmpty(m_probeCaches[i].surfelCaches, m_bricks[j]))
-			{
-				BrickFactor l_brickFactor;
-				l_brickFactor.basisWeight = 1.0f;
-				l_brickFactor.brickIndex = (unsigned int)j;
-
-				m_brickFactors.emplace_back(l_brickFactor);
-			}
-		}
-
-		m_probes[i].brickFactorRangeEnd = (unsigned int)m_brickFactors.size() - 1;
-	}
-
 	return true;
 }
 
@@ -581,6 +482,43 @@ bool GIBakePass::Setup()
 	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_testSample3DTexture);
 
 	////
+	m_SPC_Probe = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIProbePass/");
+
+	m_SPC_Probe->m_ShaderFilePaths.m_VSPath = "GIProbePass.vert/";
+	m_SPC_Probe->m_ShaderFilePaths.m_PSPath = "GIProbePass.frag/";
+
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_Probe);
+
+	m_RPDC_Probe = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIProbePass/");
+
+	m_RPDC_Probe->m_RenderPassDesc = l_RenderPassDesc;
+	m_RPDC_Probe->m_RenderPassDesc.m_RenderTargetDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_RPDC_Probe->m_RenderPassDesc.m_RenderTargetDesc.Width = m_probeMapResolution;
+	m_RPDC_Probe->m_RenderPassDesc.m_RenderTargetDesc.Height = m_probeMapResolution;
+	m_RPDC_Probe->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::FLOAT32;
+
+	m_RPDC_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
+	m_RPDC_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
+	m_RPDC_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
+
+	m_RPDC_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = true;
+	m_RPDC_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = m_probeMapResolution;
+	m_RPDC_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = m_probeMapResolution;
+
+	m_RPDC_Probe->m_ResourceBinderLayoutDescs.resize(2);
+	m_RPDC_Probe->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_RPDC_Probe->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
+	m_RPDC_Probe->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 11;
+
+	m_RPDC_Probe->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_RPDC_Probe->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 1;
+	m_RPDC_Probe->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 1;
+
+	m_RPDC_Probe->m_ShaderProgram = m_SPC_Probe;
+
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_Probe);
+
+	////
 	m_SPC_Bake = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIBakeOpaquePass/");
 
 	m_SPC_Bake->m_ShaderFilePaths.m_VSPath = "GIOpaquePass.vert/";
@@ -671,6 +609,7 @@ bool GIBakePass::Setup()
 
 	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC_Bake);
 
+	////
 	m_GICameraGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("GICameraGPUBuffer/");
 	m_GICameraGBDC->m_ElementSize = sizeof(mat4) * 8;
 	m_GICameraGBDC->m_ElementCount = 1;
@@ -707,20 +646,17 @@ bool GIBakePass::Bake()
 	m_brickFactors.clear();
 
 	generateProbes();
-	generateBricks();
 
 	capture();
 
 	eliminateDuplicatedSurfels();
-	eliminateEmptyBricks();
 
-	assignSurfelRangeToBricks();
-	assignBrickFactorToProbes();
+	generateBricks();
 
-	serializeProbes();
-	serializeSurfels();
-	serializeBricks();
-	serializeBrickFactors();
+	//serializeProbes();
+	//serializeSurfels();
+	//serializeBricks();
+	//serializeBrickFactors();
 
 	return true;
 }
