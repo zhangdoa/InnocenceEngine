@@ -908,10 +908,6 @@ namespace InnoContainer
 		template<typename U = T & >
 		DisableType<U, ThreadSafe> GetValue()
 		{
-			if constexpr (ThreadSafe)
-			{
-				std::shared_lock<std::shared_mutex> lock{ m_Mutex };
-			}
 			if (m_IsAReady)
 			{
 				return m_A;
@@ -923,40 +919,40 @@ namespace InnoContainer
 		}
 
 		template<typename U = void>
-		EnableType<U, ThreadSafe> SetValue(const T& value)
+		EnableType<U, ThreadSafe> SetValue(T&& value)
 		{
-			std::shared_lock<std::shared_mutex> lock{ m_Mutex };
+			std::unique_lock<std::shared_mutex> lock{ m_Mutex };
 
 			if (m_IsAReady)
 			{
-				m_B = value;
+				m_B = std::move(value);
 				m_IsAReady = false;
 			}
 			else
 			{
-				m_A = value;
+				m_A = std::move(value);
 				m_IsAReady = true;
 			}
 		}
 
 		template<typename U = void>
-		DisableType<U, ThreadSafe> SetValue(const T& value)
+		DisableType<U, ThreadSafe> SetValue(T&& value)
 		{
 			if (m_IsAReady)
 			{
-				m_B = value;
+				m_B = std::move(value);
 				m_IsAReady = false;
 			}
 			else
 			{
-				m_A = value;
+				m_A = std::move(value);
 				m_IsAReady = true;
 			}
 		}
 
 	private:
 		std::atomic<bool> m_IsAReady = true;
-		std::shared_mutex m_Mutex;
+		mutable std::shared_mutex m_Mutex;
 		T m_A;
 		T m_B;
 	};
