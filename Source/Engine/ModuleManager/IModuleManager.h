@@ -30,6 +30,7 @@ struct InitConfig
 {
 	EngineMode engineMode = EngineMode::GAME;
 	RenderingServer renderingServer = RenderingServer::GL;
+	LogLevel logLevel = LogLevel::Success;
 };
 
 class IModuleManager

@@ -257,6 +257,38 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 		}
 	}
 
+	auto l_logLevelArgPos = arg.find("loglevel");
+	if (l_engineModeArgPos == std::string::npos)
+	{
+		InnoLogger::SetDefaultLogLevel(LogLevel::Success);
+	}
+	else
+	{
+		std::string l_logLevelArguments = arg.substr(l_logLevelArgPos + 9);
+		l_logLevelArguments = l_logLevelArguments.substr(0, 1);
+
+		if (l_logLevelArguments == "0")
+		{
+			InnoLogger::SetDefaultLogLevel(LogLevel::Verbose);
+		}
+		else if (l_logLevelArguments == "1")
+		{
+			InnoLogger::SetDefaultLogLevel(LogLevel::Success);
+		}
+		else if (l_logLevelArguments == "2")
+		{
+			InnoLogger::SetDefaultLogLevel(LogLevel::Warning);
+		}
+		else if (l_logLevelArguments == "3")
+		{
+			InnoLogger::SetDefaultLogLevel(LogLevel::Error);
+		}
+		else
+		{
+			InnoLogger::Log(LogLevel::Warning, "ModuleManager: Unsupported log level.");
+		}
+	}
+
 	return l_result;
 }
 

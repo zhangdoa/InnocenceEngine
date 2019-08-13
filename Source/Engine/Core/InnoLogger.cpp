@@ -259,7 +259,6 @@ void InnoLogger::LogImpl(const char* logMessage)
 
 bool InnoLogger::Setup()
 {
-	InnoLoggerNS::m_LogLevel = LogLevel::Success;
 	std::stringstream ss;
 	ss << InnoLoggerNS::GetTimestamp << ".InnoLog";
 	InnoLoggerNS::m_LogFile.open(ss.str(), std::ios::out | std::ios::trunc);
