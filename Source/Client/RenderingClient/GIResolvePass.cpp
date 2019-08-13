@@ -11,8 +11,6 @@ using namespace DefaultGPUBuffers;
 
 namespace GIResolvePass
 {
-	bool initializeGPUBuffers();
-	bool deleteGPUBuffers();
 	bool litSurfels();
 	bool litBricks();
 	bool litProbes();
@@ -40,7 +38,7 @@ namespace GIResolvePass
 	bool l_GIDataLoaded = false;
 }
 
-bool GIResolvePass::initializeGPUBuffers()
+bool GIResolvePass::InitializeGPUBuffers()
 {
 	auto l_surfels = GIBakePass::GetSurfels();
 
@@ -118,9 +116,9 @@ bool GIResolvePass::initializeGPUBuffers()
 		m_irradianceVolume = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("IrradianceVolume/");
 		m_irradianceVolume->m_textureDataDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
-		m_irradianceVolume->m_textureDataDesc.Width = 128;
-		m_irradianceVolume->m_textureDataDesc.Height = 128;
-		m_irradianceVolume->m_textureDataDesc.DepthOrArraySize = 128;
+		m_irradianceVolume->m_textureDataDesc.Width = 4;
+		m_irradianceVolume->m_textureDataDesc.Height = 1;
+		m_irradianceVolume->m_textureDataDesc.DepthOrArraySize = 4 * 6;
 		m_irradianceVolume->m_textureDataDesc.UsageType = TextureUsageType::RawImage;
 		m_irradianceVolume->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler3D;
 		m_irradianceVolume->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
@@ -135,7 +133,7 @@ bool GIResolvePass::initializeGPUBuffers()
 	return true;
 }
 
-bool GIResolvePass::deleteGPUBuffers()
+bool GIResolvePass::DeleteGPUBuffers()
 {
 	if (m_surfelGBDC)
 	{
@@ -293,8 +291,8 @@ bool GIResolvePass::Setup()
 
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_probeRPDC);
 
-	f_sceneLoadingFinishCallback = []() { initializeGPUBuffers(); };
-	f_sceneLoadingStartCallback = []() { deleteGPUBuffers(); };
+	f_sceneLoadingFinishCallback = []() { InitializeGPUBuffers(); };
+	f_sceneLoadingStartCallback = []() { DeleteGPUBuffers(); };
 
 	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);

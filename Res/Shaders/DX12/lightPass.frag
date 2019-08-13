@@ -137,7 +137,41 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	//}
 
 	// GI
-	float4 indirectLight = in_IrradianceVolume[posWS / posWSNormalizer.xyz];
+	// [https://steamcdn-a.akamaihd.net/apps/valve/2006/SIGGRAPH06_Course_ShadingInValvesSourceEngine.pdf]
+	float3 nSquared = N * N;
+	int3 isNegative = (N < 0.0);
+	float3 GISampleCoord = posWS / posWSNormalizer.xyz;
+	GISampleCoord *= float3(4, 1, 4);
+	float3 GISampleCoordPX = GISampleCoord;
+	float3 GISampleCoordNX = GISampleCoord + float3(0, 0, 4);
+	float3 GISampleCoordPY = GISampleCoord + float3(0, 0, 4 * 2);
+	float3 GISampleCoordNY = GISampleCoord + float3(0, 0, 4 * 3);
+	float3 GISampleCoordPZ = GISampleCoord + float3(0, 0, 4 * 4);
+	float3 GISampleCoordNZ = GISampleCoord + float3(0, 0, 4 * 5);
+
+	float4 indirectLight = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	if (isNegative.x)
+	{
+		indirectLight += nSquared.x * in_IrradianceVolume[GISampleCoordNX];
+	}
+	else
+	{
+		indirectLight += nSquared.x * in_IrradianceVolume[GISampleCoordPX];
+	}	if (isNegative.y)
+	{
+		indirectLight += nSquared.y * in_IrradianceVolume[GISampleCoordNY];
+	}
+	else
+	{
+		indirectLight += nSquared.y * in_IrradianceVolume[GISampleCoordPY];
+	}	if (isNegative.z)
+	{
+		indirectLight += nSquared.z * in_IrradianceVolume[GISampleCoordNZ];
+	}
+	else
+	{
+		indirectLight += nSquared.z * in_IrradianceVolume[GISampleCoordPZ];
+	}
 	Lo += (1 - metallic) * indirectLight.xyz;
 
 	// ambient occlusion

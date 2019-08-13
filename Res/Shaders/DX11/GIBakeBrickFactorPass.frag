@@ -4,7 +4,7 @@
 struct PixelInputType
 {
 	float4 posCS : SV_POSITION;
-	float4 posWS : POSITION;
+	float depthVS : DEPTH;
 	float UUID : ID;
 	uint rtvId : SV_RenderTargetArrayIndex;
 };
@@ -18,7 +18,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 {
 	PixelOutputType output;
 
-	output.GIBrickFactorPassRT0 = float4(input.posWS.xyz, input.UUID);
+	output.GIBrickFactorPassRT0 = float4(input.depthVS, input.UUID, 0.0f, 0.0f);
 
   return output;
 }

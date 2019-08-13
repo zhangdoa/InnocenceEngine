@@ -45,9 +45,7 @@ struct BrickFactor
 struct Probe
 {
 	vec4 pos;
-	unsigned int brickFactorRangeBegin;
-	unsigned int brickFactorRangeEnd;
-	float padding[2];
+	unsigned int brickFactorRange[12];
 };
 
 namespace GIBakePass

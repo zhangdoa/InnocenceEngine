@@ -5,13 +5,13 @@ layout(triangle_strip, max_vertices = 18) out;
 
 layout(location = 0) in VS_OUT
 {
-	vec4 posWS;
+	vec3 posWS;
 	float UUID;
 } gs_in[3];
 
 layout(location = 0) out GS_OUT
 {
-	vec4 posWS;
+	float depthVS;
 	float UUID;
 } gs_out;
 
@@ -22,9 +22,10 @@ void main()
 		gl_Layer = face;
 		for (int i = 0; i < 3; ++i)
 		{
-			gs_out.posWS = gs_in[i].posWS;
+			vec4 posVS = GICameraUBO.r[face] * GICameraUBO.t * vec4(gs_in[i].posWS, 1.0f);
+			gs_out.depthVS = posVS.z;
 			gs_out.UUID = gs_in[i].UUID;
-			gl_Position = GICameraUBO.p * GICameraUBO.r[face] * GICameraUBO.t * gs_out.posWS;
+			gl_Position = GICameraUBO.p * posVS;
 			EmitVertex();
 		}
 		EndPrimitive();

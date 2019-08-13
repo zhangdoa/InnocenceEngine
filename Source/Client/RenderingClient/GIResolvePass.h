@@ -8,6 +8,8 @@ namespace GIResolvePass
 	bool PrepareCommandList();
 	bool ExecuteCommandList();
 	bool Terminate();
+	bool InitializeGPUBuffers();
+	bool DeleteGPUBuffers();
 
 	RenderPassDataComponent* GetRPDC();
 	ShaderProgramComponent* GetSPC();

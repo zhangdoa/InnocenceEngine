@@ -9,15 +9,16 @@ layout(location = 4) in vec4 inPad2;
 
 layout(location = 0) out VS_OUT
 {
-	vec4 posWS;
+	vec3 posWS;
 	float UUID;
 } vs_out;
 
 void main()
 {
 	// output the fragment position in world space
-	vs_out.posWS = meshUBO.m * inPosition;
+	vec4 posWS = meshUBO.m * inPosition;
 	vs_out.UUID = meshUBO.UUID;
+	vs_out.posWS = posWS.xyz;
 
-	gl_Position = vs_out.posWS;
+	gl_Position = posWS;
 }

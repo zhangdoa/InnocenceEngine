@@ -1,5 +1,7 @@
 #include "GIBakePass.h"
 #include "DefaultGPUBuffers.h"
+#include "GIResolvePass.h"
+
 #include "../../Engine/Common/InnoMathHelper.h"
 
 #include "../../Engine/ModuleManager/IModuleManager.h"
@@ -586,42 +588,72 @@ bool GIBakePass::drawBricks(unsigned int probeIndex, const mat4 & p, const std::
 
 bool GIBakePass::readBackBrickFactors(unsigned int probeIndex)
 {
-	auto l_brickID = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_BrickFactor, m_RPDC_BrickFactor->m_RenderTargets[0]);
+	auto l_brickIDResults = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_BrickFactor, m_RPDC_BrickFactor->m_RenderTargets[0]);
 
-	auto l_brickFactorSize = l_brickID.size();
+	auto l_brickIDResultSize = l_brickIDResults.size();
 
-	std::vector<BrickFactor> l_brickFactors;
-	l_brickFactors.reserve(l_brickFactorSize);
+	l_brickIDResultSize /= 6;
 
-	for (size_t i = 0; i < l_brickFactorSize; i++)
+	// 6 axis-aligned coefficients
+	for (size_t i = 0; i < 6; i++)
 	{
-		if (l_brickID[i].w != 0.0f)
+		std::vector<BrickFactor> l_brickFactors;
+		l_brickFactors.reserve(l_brickIDResultSize);
+
+		for (size_t j = 0; j < l_brickIDResultSize; j++)
 		{
-			BrickFactor l_BrickFactor;
+			auto& l_brickIDResult = l_brickIDResults[i * l_brickIDResultSize + j];
+			if (l_brickIDResult.y != 0.0f)
+			{
+				BrickFactor l_BrickFactor;
 
-			l_BrickFactor.basisWeight = 1.0f;
+				l_BrickFactor.basisWeight = std::abs(l_brickIDResult.x);
 
-			// Index start from 1
-			l_BrickFactor.brickIndex = (unsigned int)(l_brickID[i].w - 1.0f);
-			l_brickFactors.emplace_back(l_BrickFactor);
+				// Index start from 1
+				l_BrickFactor.brickIndex = (unsigned int)(std::round(l_brickIDResult.y) - 1.0f);
+				l_brickFactors.emplace_back(l_BrickFactor);
+			}
 		}
+
+		std::sort(l_brickFactors.begin(), l_brickFactors.end(), [&](BrickFactor A, BrickFactor B)
+		{
+			return A.brickIndex < B.brickIndex;
+		});
+
+		l_brickFactors.erase(std::unique(l_brickFactors.begin(), l_brickFactors.end()), l_brickFactors.end());
+		l_brickFactors.shrink_to_fit();
+
+		// Calculate brick weight
+		auto l_brickFactorSize = l_brickFactors.size();
+
+		if (l_brickFactorSize == 1)
+		{
+			l_brickFactors[0].basisWeight = 1.0f;
+		}
+		else
+		{
+			float denom = 0.0f;
+			for (size_t i = 0; i < l_brickFactorSize; i++)
+			{
+				denom += l_brickFactors[i].basisWeight;
+			}
+
+			for (size_t i = 0; i < l_brickFactorSize; i++)
+			{
+				// Reverse view space Z axis
+				l_brickFactors[i].basisWeight = (denom - l_brickFactors[i].basisWeight) / denom;
+			}
+		}
+
+		// Assign brick factor range to probes
+		auto l_brickFactorRangeBegin = m_brickFactors.size();
+		auto l_brickFactorRangeEnd = l_brickFactorRangeBegin + l_brickFactors.size() - 1;
+
+		m_probes[probeIndex].brickFactorRange[i * 2] = (unsigned int)l_brickFactorRangeBegin;
+		m_probes[probeIndex].brickFactorRange[i * 2 + 1] = (unsigned int)l_brickFactorRangeEnd;
+
+		m_brickFactors.insert(m_brickFactors.end(), std::make_move_iterator(l_brickFactors.begin()), std::make_move_iterator(l_brickFactors.end()));
 	}
-
-	std::sort(l_brickFactors.begin(), l_brickFactors.end(), [&](BrickFactor A, BrickFactor B)
-	{
-		return A.brickIndex < B.brickIndex;
-	});
-
-	l_brickFactors.erase(std::unique(l_brickFactors.begin(), l_brickFactors.end()), l_brickFactors.end());
-	l_brickFactors.shrink_to_fit();
-
-	auto l_brickFactorRangeBegin = m_brickFactors.size();
-	auto l_brickFactorRangeEnd = l_brickFactorRangeBegin + l_brickFactors.size() - 1;
-
-	m_probes[probeIndex].brickFactorRangeBegin = (unsigned int)l_brickFactorRangeBegin;
-	m_probes[probeIndex].brickFactorRangeEnd = (unsigned int)l_brickFactorRangeEnd;
-
-	m_brickFactors.insert(m_brickFactors.end(), std::make_move_iterator(l_brickFactors.begin()), std::make_move_iterator(l_brickFactors.end()));
 
 	return true;
 }
@@ -973,6 +1005,10 @@ bool GIBakePass::Bake()
 
 	serializeBrickFactors();
 	serializeProbes();
+
+	loadGIData();
+	GIResolvePass::DeleteGPUBuffers();
+	GIResolvePass::InitializeGPUBuffers();
 
 	return true;
 }
