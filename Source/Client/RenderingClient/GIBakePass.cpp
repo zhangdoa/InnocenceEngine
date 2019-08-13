@@ -29,18 +29,22 @@ namespace GIBakePass
 
 	bool eliminateDuplicatedSurfels();
 	bool generateBricks();
+
 	bool serializeSurfels();
 	bool serializeBricks();
 
 	bool assignBrickFactorToProbes();
+	bool drawBricks(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v);
+	bool readBackBrickFactors(unsigned int probeIndex);
 
 	bool serializeBrickFactors();
 	bool serializeProbes();
 
 	const unsigned int m_probeMapResolution = 1024;
+	const unsigned int m_probeMapSamplingInterval = 256;
 	const unsigned int m_captureResolution = 128;
 	const unsigned int m_sampleCountPerFace = m_captureResolution * m_captureResolution;
-	const unsigned int m_subDivideDimension = 2;
+	const vec4 m_brickSize = vec4(64.0f, 64.0f, 64.0f, 0.0f);
 
 	TextureDataComponent* m_testSampleCubemap;
 	TextureDataComponent* m_testSample3DTexture;
@@ -68,6 +72,11 @@ namespace GIBakePass
 	ShaderProgramComponent* m_SPC_Relight;
 	SamplerDataComponent* m_SDC_Relight;
 
+	bool m_IsSurfelLoaded = false;
+	bool m_IsBrickLoaded = false;
+	bool m_IsBrickFactorLoaded = false;
+	bool m_IsProbeLoaded = false;
+
 	std::function<void()> f_sceneLoadingFinishCallback;
 }
 
@@ -76,31 +85,43 @@ bool GIBakePass::loadGIData()
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
 
+	std::ifstream l_surfelFile;
+	l_surfelFile.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoSurfel", std::ios::binary);
+
+	if (l_surfelFile.is_open())
+	{
+		IOService::deserializeVector(l_surfelFile, m_surfels);
+		m_IsSurfelLoaded = true;
+	}
+
+	std::ifstream l_brickFile;
+	l_brickFile.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoBrick", std::ios::binary);
+
+	if (l_brickFile.is_open())
+	{
+		IOService::deserializeVector(l_brickFile, m_bricks);
+		m_IsBrickLoaded = true;
+	}
+
+	std::ifstream l_brickFactorFile;
+	l_brickFactorFile.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoBrickFactor", std::ios::binary);
+
+	if (l_brickFactorFile.is_open())
+	{
+		IOService::deserializeVector(l_brickFactorFile, m_brickFactors);
+		m_IsBrickFactorLoaded = true;
+	}
+
 	std::ifstream l_probeFile;
 	l_probeFile.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoProbe", std::ios::binary);
 
 	if (l_probeFile.is_open())
 	{
 		IOService::deserializeVector(l_probeFile, m_probes);
-
-		std::ifstream l_surfelFile;
-		l_surfelFile.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoSurfel", std::ios::binary);
-		IOService::deserializeVector(l_surfelFile, m_surfels);
-
-		std::ifstream l_brickFile;
-		l_brickFile.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoBrick", std::ios::binary);
-		IOService::deserializeVector(l_brickFile, m_bricks);
-
-		std::ifstream l_brickFactorFile;
-		l_brickFactorFile.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoBrickFactor", std::ios::binary);
-		IOService::deserializeVector(l_brickFactorFile, m_brickFactors);
-
-		return true;
+		m_IsProbeLoaded = true;
 	}
-	else
-	{
-		return false;
-	}
+
+	return m_IsProbeLoaded && m_IsBrickFactorLoaded && m_IsBrickLoaded && m_IsSurfelLoaded;
 }
 
 bool GIBakePass::generateProbes()
@@ -152,15 +173,14 @@ bool GIBakePass::generateProbes()
 	auto l_probePos = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Probe, m_RPDC_Probe->m_RenderTargets[0]);
 
 	auto l_size = l_probePos.size();
-	auto l_interval = 256;
-	auto l_divide = m_probeMapResolution / l_interval;
+	auto l_divide = m_probeMapResolution / m_probeMapSamplingInterval;
 
 	for (size_t i = 0; i < l_divide; i++)
 	{
 		for (size_t j = 0; j < l_divide; j++)
 		{
 			Probe l_Probe;
-			l_Probe.pos = l_probePos[i * l_interval + j * l_interval * m_probeMapResolution];
+			l_Probe.pos = l_probePos[i * m_probeMapSamplingInterval + j * m_probeMapSamplingInterval * m_probeMapResolution];
 			l_Probe.pos.x += l_sceneCenter.x;
 			l_Probe.pos.y += 2.0f;
 			l_Probe.pos.z += l_sceneCenter.z;
@@ -320,9 +340,6 @@ bool GIBakePass::readBackSurfelCaches(unsigned int probeIndex)
 
 bool GIBakePass::eliminateDuplicatedSurfels()
 {
-	m_surfels.erase(std::unique(m_surfels.begin(), m_surfels.end()), m_surfels.end());
-	m_surfels.shrink_to_fit();
-
 	std::sort(m_surfels.begin(), m_surfels.end(), [&](Surfel A, Surfel B)
 	{
 		if (A.pos.x != B.pos.x) {
@@ -333,6 +350,9 @@ bool GIBakePass::eliminateDuplicatedSurfels()
 		}
 		return A.pos.z < B.pos.z;
 	});
+
+	m_surfels.erase(std::unique(m_surfels.begin(), m_surfels.end()), m_surfels.end());
+	m_surfels.shrink_to_fit();
 
 	return true;
 }
@@ -354,33 +374,31 @@ bool GIBakePass::generateBricks()
 		l_endPos = InnoMath::elementWiseMax(m_surfels[i].pos, l_endPos);
 	}
 
-	auto l_brickSize = vec4(64.0f, 64.0f, 64.0f, 0.0f);
-
 	// Fit the end corner to contain at least one brick in each axis
 	auto l_adjustedEndPos = l_endPos;
-	l_adjustedEndPos.x = (std::trunc(l_endPos.x / l_brickSize.x) + 1) * l_brickSize.x;
-	l_adjustedEndPos.y = (std::trunc(l_endPos.y / l_brickSize.y) + 1) * l_brickSize.y;
-	l_adjustedEndPos.z = (std::trunc(l_endPos.z / l_brickSize.z) + 1) * l_brickSize.z;
+	l_adjustedEndPos.x = (std::trunc(l_endPos.x / m_brickSize.x) + 1) * m_brickSize.x;
+	l_adjustedEndPos.y = (std::trunc(l_endPos.y / m_brickSize.y) + 1) * m_brickSize.y;
+	l_adjustedEndPos.z = (std::trunc(l_endPos.z / m_brickSize.z) + 1) * m_brickSize.z;
 	l_endPos = l_adjustedEndPos;
 
 	// Assign surfels to brick cache
-	vec4 l_currentMaxPos = l_startPos + l_brickSize;
+	vec4 l_currentMaxPos = l_startPos + m_brickSize;
 	vec4 l_currentMinPos = l_startPos;
 
 	while (l_currentMaxPos.x <= l_endPos.x)
 	{
-		l_currentMaxPos.y = l_startPos.y + l_brickSize.y;
+		l_currentMaxPos.y = l_startPos.y + m_brickSize.y;
 		l_currentMinPos.y = l_startPos.y;
 
 		while (l_currentMaxPos.y <= l_endPos.y)
 		{
-			l_currentMaxPos.z = l_startPos.z + l_brickSize.z;
+			l_currentMaxPos.z = l_startPos.z + m_brickSize.z;
 			l_currentMinPos.z = l_startPos.z;
 
 			while (l_currentMaxPos.z <= l_endPos.z)
 			{
 				BrickCache l_BrickCache;
-				l_BrickCache.pos = l_currentMinPos + l_brickSize / 2.0f;
+				l_BrickCache.pos = l_currentMinPos + m_brickSize / 2.0f;
 				l_BrickCache.surfelCaches.reserve(l_surfelsCount);
 
 				for (size_t i = 0; i < l_surfelsCount; i++)
@@ -401,16 +419,16 @@ bool GIBakePass::generateBricks()
 					m_brickCaches.emplace_back(std::move(l_BrickCache));
 				}
 
-				l_currentMaxPos.z += l_brickSize.z;
-				l_currentMinPos.z += l_brickSize.z;
+				l_currentMaxPos.z += m_brickSize.z;
+				l_currentMinPos.z += m_brickSize.z;
 			}
 
-			l_currentMaxPos.y += l_brickSize.y;
-			l_currentMinPos.y += l_brickSize.y;
+			l_currentMaxPos.y += m_brickSize.y;
+			l_currentMinPos.y += m_brickSize.y;
 		}
 
-		l_currentMaxPos.x += l_brickSize.x;
-		l_currentMinPos.x += l_brickSize.x;
+		l_currentMaxPos.x += m_brickSize.x;
+		l_currentMinPos.x += m_brickSize.x;
 	}
 
 	// Generate real bricks with surfel range
@@ -423,7 +441,7 @@ bool GIBakePass::generateBricks()
 	for (size_t i = 0; i < l_bricksCount; i++)
 	{
 		Brick l_brick;
-		l_brick.boundBox = InnoMath::generateAABB(m_brickCaches[i].pos + l_brickSize / 2.0f, m_brickCaches[i].pos - l_brickSize / 2.0f);
+		l_brick.boundBox = InnoMath::generateAABB(m_brickCaches[i].pos + m_brickSize / 2.0f, m_brickCaches[i].pos - m_brickSize / 2.0f);
 		l_brick.surfelRangeBegin = (unsigned int)l_offset;
 		l_brick.surfelRangeEnd = (unsigned int)(l_offset + m_brickCaches[i].surfelCaches.size() - 1);
 		l_offset = m_brickCaches[i].surfelCaches.size();
@@ -438,17 +456,133 @@ bool GIBakePass::generateBricks()
 
 bool GIBakePass::assignBrickFactorToProbes()
 {
+	auto l_rPX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
+	auto l_rNX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(-1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
+	auto l_rPY = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 1.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 0.0f));
+	auto l_rNY = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 0.0f));
+	auto l_rPZ = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
+	auto l_rNZ = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, -1.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
+
+	std::vector<mat4> l_v =
+	{
+		l_rPX, l_rNX, l_rPY, l_rNY, l_rPZ, l_rNZ
+	};
+
+	auto l_cameraGPUData = g_pModuleManager->getRenderingFrontend()->getCameraGPUData();
+
+	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, l_cameraGPUData.zNear, l_cameraGPUData.zFar);
+
+	auto l_probesCount = m_probes.size();
+
+	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
+	auto l_bricksCount = m_bricks.size();
+
+	std::vector<MeshGPUData> l_bricksCubeMeshGPUData;
+	l_bricksCubeMeshGPUData.resize(l_bricksCount);
+
+	for (size_t i = 0; i < l_bricksCount; i++)
+	{
+		auto l_t = InnoMath::toTranslationMatrix(m_bricks[i].boundBox.m_center);
+		auto l_s = InnoMath::toScaleMatrix(vec4(m_brickSize.x, m_brickSize.y, m_brickSize.z, 1.0f));
+
+		l_bricksCubeMeshGPUData[i].m = l_t * l_s;
+
+		// Index start from 1
+		l_bricksCubeMeshGPUData[i].UUID = (float)i + 1.0f;
+	}
+
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MeshGBDC, l_bricksCubeMeshGPUData, 0, l_bricksCubeMeshGPUData.size());
+
+	for (size_t i = 0; i < l_probesCount; i++)
+	{
+		drawBricks((unsigned int)i, l_p, l_v);
+		readBackBrickFactors((unsigned int)i);
+	}
+
 	return true;
 }
 
-bool GIBakePass::serializeProbes()
+bool GIBakePass::drawBricks(unsigned int probeIndex, const mat4 & p, const std::vector<mat4>& v)
 {
-	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
-	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
+	std::vector<mat4> l_GICameraGPUData(8);
+	l_GICameraGPUData[0] = p;
+	for (size_t i = 0; i < 6; i++)
+	{
+		l_GICameraGPUData[i + 1] = v[i];
+	}
+	l_GICameraGPUData[7] = InnoMath::getInvertTranslationMatrix(m_probes[probeIndex].pos);
 
-	std::ofstream l_file;
-	l_file.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoProbe", std::ios::binary);
-	IOService::serializeVector(l_file, m_probes);
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_GICameraGBDC, l_GICameraGPUData);
+
+	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
+
+	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Cube);
+
+	unsigned int l_offset = 0;
+
+	auto l_totalDrawCallCount = m_bricks.size();
+
+	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_BrickFactor, 0);
+	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_BrickFactor);
+	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_BrickFactor);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_BrickFactor, ShaderStage::Vertex, m_GICameraGBDC->m_ResourceBinder, 0, 11, Accessibility::ReadOnly);
+
+	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
+	{
+		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_BrickFactor, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_offset, 1);
+
+		g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC_BrickFactor, l_mesh);
+
+		l_offset++;
+	}
+
+	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC_BrickFactor);
+
+	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC_BrickFactor);
+
+	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC_BrickFactor);
+
+	return true;
+}
+
+bool GIBakePass::readBackBrickFactors(unsigned int probeIndex)
+{
+	auto l_brickID = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_BrickFactor, m_RPDC_BrickFactor->m_RenderTargets[0]);
+
+	auto l_brickFactorSize = l_brickID.size();
+
+	std::vector<BrickFactor> l_brickFactors;
+	l_brickFactors.reserve(l_brickFactorSize);
+
+	for (size_t i = 0; i < l_brickFactorSize; i++)
+	{
+		if (l_brickID[i].w != 0.0f)
+		{
+			BrickFactor l_BrickFactor;
+
+			l_BrickFactor.basisWeight = 1.0f;
+
+			// Index start from 1
+			l_BrickFactor.brickIndex = (unsigned int)l_brickID[i].w - 1;
+			l_brickFactors.emplace_back(l_BrickFactor);
+		}
+	}
+
+	std::sort(l_brickFactors.begin(), l_brickFactors.end(), [&](BrickFactor A, BrickFactor B)
+	{
+		return A.brickIndex < B.brickIndex;
+	});
+
+	l_brickFactors.erase(std::unique(l_brickFactors.begin(), l_brickFactors.end()), l_brickFactors.end());
+	l_brickFactors.shrink_to_fit();
+
+	auto l_brickFactorRangeBegin = m_brickFactors.size();
+	auto l_brickFactorRangeEnd = l_brickFactorRangeBegin + l_brickFactors.size() - 1;
+
+	m_probes[probeIndex].brickFactorRangeBegin = (unsigned int)l_brickFactorRangeBegin;
+	m_probes[probeIndex].brickFactorRangeEnd = (unsigned int)l_brickFactorRangeEnd;
+
+	m_brickFactors.insert(m_brickFactors.end(), std::make_move_iterator(l_brickFactors.begin()), std::make_move_iterator(l_brickFactors.end()));
 
 	return true;
 }
@@ -489,9 +623,29 @@ bool GIBakePass::serializeBrickFactors()
 	return true;
 }
 
+bool GIBakePass::serializeProbes()
+{
+	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
+
+	std::ofstream l_file;
+	l_file.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoProbe", std::ios::binary);
+	IOService::serializeVector(l_file, m_probes);
+
+	return true;
+}
+
 bool GIBakePass::Setup()
 {
-	f_sceneLoadingFinishCallback = []() { loadGIData(); };
+	f_sceneLoadingFinishCallback = []()
+	{
+		m_IsSurfelLoaded = false;
+		m_IsBrickLoaded = false;
+		m_IsBrickFactorLoaded = false;
+		m_IsProbeLoaded = false;
+		loadGIData();
+	};
+
 	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
 	////
@@ -693,6 +847,44 @@ bool GIBakePass::Setup()
 	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC_Surfel);
 
 	////
+	m_SPC_BrickFactor = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIBakeBrickFactorPass/");
+
+	m_SPC_BrickFactor->m_ShaderFilePaths.m_VSPath = "GIBakeBrickFactorPass.vert/";
+	m_SPC_BrickFactor->m_ShaderFilePaths.m_GSPath = "GIBakeBrickFactorPass.geom/";
+	m_SPC_BrickFactor->m_ShaderFilePaths.m_PSPath = "GIBakeBrickFactorPass.frag/";
+
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_BrickFactor);
+
+	m_RPDC_BrickFactor = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIBakeBrickFactorPass/");
+
+	m_RPDC_BrickFactor->m_RenderPassDesc = l_RenderPassDesc;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.SamplerType = TextureSamplerType::SamplerCubemap;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Width = m_probeMapResolution;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Height = m_probeMapResolution;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::FLOAT32;
+
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
+
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = true;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = m_probeMapResolution;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = m_probeMapResolution;
+
+	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs.resize(2);
+	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
+	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 11;
+
+	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 1;
+	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 1;
+
+	m_RPDC_BrickFactor->m_ShaderProgram = m_SPC_BrickFactor;
+
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_BrickFactor);
+
+	////
 	m_GICameraGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("GICameraGPUBuffer/");
 	m_GICameraGBDC->m_ElementSize = sizeof(mat4) * 8;
 	m_GICameraGBDC->m_ElementCount = 1;
@@ -738,9 +930,10 @@ bool GIBakePass::Bake()
 	serializeSurfels();
 	serializeBricks();
 
-	//serializeProbes();
-	//serializeBricks();
-	//serializeBrickFactors();
+	assignBrickFactorToProbes();
+
+	serializeBrickFactors();
+	serializeProbes();
 
 	return true;
 }
@@ -790,9 +983,4 @@ const std::vector<BrickFactor>& GIBakePass::GetBrickFactors()
 const std::vector<Probe>& GIBakePass::GetProbes()
 {
 	return m_probes;
-}
-
-unsigned int GIBakePass::GetProbeDimension()
-{
-	return m_subDivideDimension;
 }

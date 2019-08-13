@@ -35,6 +35,11 @@ struct BrickFactor
 {
 	float basisWeight;
 	unsigned int brickIndex;
+
+	bool operator==(const BrickFactor &other) const
+	{
+		return (brickIndex == other.brickIndex);
+	}
 };
 
 struct Probe
@@ -60,5 +65,4 @@ namespace GIBakePass
 	const std::vector<Brick>& GetBricks();
 	const std::vector<BrickFactor>& GetBrickFactors();
 	const std::vector<Probe>& GetProbes();
-	unsigned int GetProbeDimension();
 };
