@@ -396,64 +396,14 @@ bool intersectCheck(const TFrustum<T> & lhs, const TAABB<T> & rhs)
 
 void InnoPhysicsSystemNS::updateVisibleSceneBoundary(const AABB& rhs)
 {
-	auto boundMax = rhs.m_boundMax;
-	auto boundMin = rhs.m_boundMin;
-
-	if (boundMax.x > m_visibleSceneBoundMax.x)
-	{
-		m_visibleSceneBoundMax.x = boundMax.x;
-	}
-	if (boundMax.y > m_visibleSceneBoundMax.y)
-	{
-		m_visibleSceneBoundMax.y = boundMax.y;
-	}
-	if (boundMax.z > m_visibleSceneBoundMax.z)
-	{
-		m_visibleSceneBoundMax.z = boundMax.z;
-	}
-	if (boundMin.x < m_visibleSceneBoundMin.x)
-	{
-		m_visibleSceneBoundMin.x = boundMin.x;
-	}
-	if (boundMin.y < m_visibleSceneBoundMin.y)
-	{
-		m_visibleSceneBoundMin.y = boundMin.y;
-	}
-	if (boundMin.z < m_visibleSceneBoundMin.z)
-	{
-		m_visibleSceneBoundMin.z = boundMin.z;
-	}
+	m_visibleSceneBoundMax = InnoMath::elementWiseMax(rhs.m_boundMax, m_visibleSceneBoundMax);
+	m_visibleSceneBoundMin = InnoMath::elementWiseMin(rhs.m_boundMin, m_visibleSceneBoundMin);
 }
 
 void InnoPhysicsSystemNS::updateTotalSceneBoundary(const AABB& rhs)
 {
-	auto boundMax = rhs.m_boundMax;
-	auto boundMin = rhs.m_boundMin;
-
-	if (boundMax.x >= m_totalSceneBoundMax.x)
-	{
-		m_totalSceneBoundMax.x = boundMax.x;
-	}
-	if (boundMax.y >= m_totalSceneBoundMax.y)
-	{
-		m_totalSceneBoundMax.y = boundMax.y;
-	}
-	if (boundMax.z >= m_totalSceneBoundMax.z)
-	{
-		m_totalSceneBoundMax.z = boundMax.z;
-	}
-	if (boundMin.x <= m_totalSceneBoundMin.x)
-	{
-		m_totalSceneBoundMin.x = boundMin.x;
-	}
-	if (boundMin.y <= m_totalSceneBoundMin.y)
-	{
-		m_totalSceneBoundMin.y = boundMin.y;
-	}
-	if (boundMin.z <= m_totalSceneBoundMin.z)
-	{
-		m_totalSceneBoundMin.z = boundMin.z;
-	}
+	m_totalSceneBoundMax = InnoMath::elementWiseMax(rhs.m_boundMax, m_totalSceneBoundMax);
+	m_totalSceneBoundMin = InnoMath::elementWiseMin(rhs.m_boundMin, m_totalSceneBoundMin);
 
 	m_RootPhysicsDataComponent.m_AABBWS = InnoMath::generateAABB(m_totalSceneBoundMax, m_totalSceneBoundMin);
 	m_RootPhysicsDataComponent.m_SphereWS = InnoMath::generateBoundSphere(m_RootPhysicsDataComponent.m_AABBWS);
@@ -461,33 +411,8 @@ void InnoPhysicsSystemNS::updateTotalSceneBoundary(const AABB& rhs)
 
 void InnoPhysicsSystemNS::updateStaticSceneBoundary(const AABB & rhs)
 {
-	auto boundMax = rhs.m_boundMax;
-	auto boundMin = rhs.m_boundMin;
-
-	if (boundMax.x > m_staticSceneBoundMax.x)
-	{
-		m_staticSceneBoundMax.x = boundMax.x;
-	}
-	if (boundMax.y > m_staticSceneBoundMax.y)
-	{
-		m_staticSceneBoundMax.y = boundMax.y;
-	}
-	if (boundMax.z > m_staticSceneBoundMax.z)
-	{
-		m_staticSceneBoundMax.z = boundMax.z;
-	}
-	if (boundMin.x < m_staticSceneBoundMin.x)
-	{
-		m_staticSceneBoundMin.x = boundMin.x;
-	}
-	if (boundMin.y < m_staticSceneBoundMin.y)
-	{
-		m_staticSceneBoundMin.y = boundMin.y;
-	}
-	if (boundMin.z < m_staticSceneBoundMin.z)
-	{
-		m_staticSceneBoundMin.z = boundMin.z;
-	}
+	m_staticSceneBoundMax = InnoMath::elementWiseMax(rhs.m_boundMax, m_staticSceneBoundMax);
+	m_staticSceneBoundMin = InnoMath::elementWiseMin(rhs.m_boundMin, m_staticSceneBoundMin);
 }
 
 bool InnoPhysicsSystemNS::update()

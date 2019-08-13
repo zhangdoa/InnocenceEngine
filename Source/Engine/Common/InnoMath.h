@@ -2165,4 +2165,86 @@ namespace InnoMath
 		if (x > max) { return max; }
 		return x;
 	}
+
+	template<class T>
+	auto elementWiseMax(const TVec4<T>& A, const TVec4<T>& B)->TVec4<T>
+	{
+		TVec4<T> l_result;
+
+		if (A.x >= B.x)
+		{
+			l_result.x = A.x;
+		}
+		else
+		{
+			l_result.x = B.x;
+		}
+		if (A.y >= B.y)
+		{
+			l_result.y = A.y;
+		}
+		else
+		{
+			l_result.y = B.y;
+		}
+		if (A.z >= B.z)
+		{
+			l_result.z = A.z;
+		}
+		else
+		{
+			l_result.z = B.z;
+		}
+		if (A.w >= B.w)
+		{
+			l_result.w = A.w;
+		}
+		else
+		{
+			l_result.w = B.w;
+		}
+
+		return l_result;
+	}
+
+	template<class T>
+	auto elementWiseMin(const TVec4<T>& A, const TVec4<T>& B)->TVec4<T>
+	{
+		TVec4<T> l_result;
+
+		if (A.x <= B.x)
+		{
+			l_result.x = A.x;
+		}
+		else
+		{
+			l_result.x = B.x;
+		}
+		if (A.y <= B.y)
+		{
+			l_result.y = A.y;
+		}
+		else
+		{
+			l_result.y = B.y;
+		}
+		if (A.z <= B.z)
+		{
+			l_result.z = A.z;
+		}
+		else
+		{
+			l_result.z = B.z;
+		}
+		if (A.w <= B.w)
+		{
+			l_result.w = A.w;
+		}
+		else
+		{
+			l_result.w = B.w;
+		}
+
+		return l_result;
+	}
 }
