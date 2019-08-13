@@ -169,11 +169,11 @@ bool GIResolvePass::deleteGPUBuffers()
 
 bool GIResolvePass::Setup()
 {
-	m_surfelSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GISurfelResolvePass/");
-	m_surfelSPC->m_ShaderFilePaths.m_CSPath = "GISurfelResolvePass.comp/";
+	m_surfelSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIResolveSurfelPass/");
+	m_surfelSPC->m_ShaderFilePaths.m_CSPath = "GIResolveSurfelPass.comp/";
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_surfelSPC);
 
-	m_surfelRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GISurfelResolvePass/");
+	m_surfelRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIResolveSurfelPass/");
 
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
@@ -211,11 +211,11 @@ bool GIResolvePass::Setup()
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_surfelRPDC);
 
 	////
-	m_brickSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIBrickResolvePass/");
-	m_brickSPC->m_ShaderFilePaths.m_CSPath = "GIBrickResolvePass.comp/";
+	m_brickSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIResolveBrickPass/");
+	m_brickSPC->m_ShaderFilePaths.m_CSPath = "GIResolveBrickPass.comp/";
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_brickSPC);
 
-	m_brickRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIBrickResolvePass/");
+	m_brickRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIResolveBrickPass/");
 
 	m_brickRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -247,11 +247,11 @@ bool GIResolvePass::Setup()
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_brickRPDC);
 
 	////
-	m_probeSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIProbeResolvePass/");
-	m_probeSPC->m_ShaderFilePaths.m_CSPath = "GIProbeResolvePass.comp/";
+	m_probeSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIResolveProbePass/");
+	m_probeSPC->m_ShaderFilePaths.m_CSPath = "GIResolveProbePass.comp/";
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_probeSPC);
 
-	m_probeRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIProbeResolvePass/");
+	m_probeRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIResolveProbePass/");
 
 	m_probeRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
