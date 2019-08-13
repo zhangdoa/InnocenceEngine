@@ -7,7 +7,7 @@ INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 
 #include "../../Engine/Core/IOService.h"
 
-struct ProbeCache
+struct BrickCache
 {
 	vec4 pos;
 	std::vector<Surfel> surfelCaches;
@@ -21,21 +21,21 @@ namespace GIBakePass
 
 	bool generateProbes();
 
-	bool capture();
+	bool captureSurfels();
 	bool drawCubemaps(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v);
 	bool drawOpaquePass(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v);
-	bool readBackSurfelCaches(unsigned int probeIndex);
 	bool drawSkyVisibilityPass(const mat4& p, const std::vector<mat4>& v);
+	bool readBackSurfelCaches(unsigned int probeIndex);
 
 	bool eliminateDuplicatedSurfels();
 	bool generateBricks();
+	bool serializeSurfels();
+	bool serializeBricks();
 
 	bool assignBrickFactorToProbes();
 
-	bool serializeProbes();
-	bool serializeSurfels();
-	bool serializeBricks();
 	bool serializeBrickFactors();
+	bool serializeProbes();
 
 	const unsigned int m_probeMapResolution = 1024;
 	const unsigned int m_captureResolution = 128;
@@ -55,12 +55,11 @@ namespace GIBakePass
 
 	GPUBufferDataComponent* m_GICameraGBDC;
 
-	std::vector<ProbeCache> m_probeCaches;
 	std::vector<Probe> m_probes;
-	std::vector<BrickFactor> m_brickFactors;
-	std::vector<Brick> m_brickCaches;
-	std::vector<Brick> m_bricks;
 	std::vector<Surfel> m_surfels;
+	std::vector<BrickCache> m_brickCaches;
+	std::vector<Brick> m_bricks;
+	std::vector<BrickFactor> m_brickFactors;
 
 	RenderPassDataComponent* m_RPDC_Relight;
 	ShaderProgramComponent* m_SPC_Relight;
@@ -164,18 +163,13 @@ bool GIBakePass::generateProbes()
 			l_Probe.pos.z += l_sceneCenter.z;
 
 			m_probes.emplace_back(l_Probe);
-
-			ProbeCache l_ProbeCache;
-			l_ProbeCache.pos = l_Probe.pos;
-
-			m_probeCaches.emplace_back(l_ProbeCache);
 		}
 	}
 
 	return true;
 }
 
-bool GIBakePass::capture()
+bool GIBakePass::captureSurfels()
 {
 	auto l_cameraGPUData = g_pModuleManager->getRenderingFrontend()->getCameraGPUData();
 
@@ -193,7 +187,7 @@ bool GIBakePass::capture()
 		l_rPX, l_rNX, l_rPY, l_rNY, l_rPZ, l_rNZ
 	};
 
-	auto l_probeCount = m_probeCaches.size();
+	auto l_probeCount = m_probes.size();
 
 	for (unsigned int i = 0; i < l_probeCount; i++)
 	{
@@ -283,6 +277,16 @@ bool GIBakePass::drawOpaquePass(unsigned int probeIndex, const mat4& p, const st
 	return true;
 }
 
+bool GIBakePass::drawSkyVisibilityPass(const mat4& p, const std::vector<mat4>& v)
+{
+	auto l_MDC = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Cube);
+
+	auto l_capturePos = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	auto l_t = InnoMath::getInvertTranslationMatrix(l_capturePos);
+
+	return true;
+}
+
 bool GIBakePass::readBackSurfelCaches(unsigned int probeIndex)
 {
 	auto l_posWSMetallic = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Bake, m_RPDC_Bake->m_RenderTargets[0]);
@@ -306,19 +310,7 @@ bool GIBakePass::readBackSurfelCaches(unsigned int probeIndex)
 		l_surfels[i].MRAT.w = 1.0f;
 	}
 
-	m_probeCaches[probeIndex].surfelCaches = l_surfels;
-
 	m_surfels.insert(m_surfels.end(), l_surfels.begin(), l_surfels.end());
-
-	return true;
-}
-
-bool GIBakePass::drawSkyVisibilityPass(const mat4& p, const std::vector<mat4>& v)
-{
-	auto l_MDC = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Cube);
-
-	auto l_capturePos = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	auto l_t = InnoMath::getInvertTranslationMatrix(l_capturePos);
 
 	return true;
 }
@@ -344,11 +336,99 @@ bool GIBakePass::eliminateDuplicatedSurfels()
 
 bool GIBakePass::generateBricks()
 {
+	// Find bound corner position
 	auto l_surfelsCount = m_surfels.size();
-	auto l_brickSize = vec4(16.0f, 16.0f, 16.0f, 0.0f);
-	vec4 l_startPos = m_surfels[0].pos;
-	vec4 l_endPos = m_surfels[l_surfelsCount - 1].pos;
+
+	auto l_startPos = InnoMath::maxVec4<float>;
+	l_startPos.w = 1.0f;
+
+	auto l_endPos = InnoMath::minVec4<float>;
+	l_endPos.w = 1.0f;
+
+	for (size_t i = 0; i < l_surfelsCount; i++)
+	{
+		l_startPos = InnoMath::elementWiseMin(m_surfels[i].pos, l_startPos);
+		l_endPos = InnoMath::elementWiseMax(m_surfels[i].pos, l_endPos);
+	}
+
+	auto l_brickSize = vec4(64.0f, 64.0f, 64.0f, 0.0f);
+
+	// Fit the end corner to contain at least one brick in each axis
+	auto l_adjustedEndPos = l_endPos;
+	l_adjustedEndPos.x = (std::trunc(l_endPos.x / l_brickSize.x) + 1) * l_brickSize.x;
+	l_adjustedEndPos.y = (std::trunc(l_endPos.y / l_brickSize.y) + 1) * l_brickSize.y;
+	l_adjustedEndPos.z = (std::trunc(l_endPos.z / l_brickSize.z) + 1) * l_brickSize.z;
+	l_endPos = l_adjustedEndPos;
+
+	// Assign surfels to brick cache
 	vec4 l_currentMaxPos = l_startPos + l_brickSize;
+	vec4 l_currentMinPos = l_startPos;
+
+	while (l_currentMaxPos.x <= l_endPos.x)
+	{
+		l_currentMaxPos.y = l_startPos.y + l_brickSize.y;
+		l_currentMinPos.y = l_startPos.y;
+
+		while (l_currentMaxPos.y <= l_endPos.y)
+		{
+			l_currentMaxPos.z = l_startPos.z + l_brickSize.z;
+			l_currentMinPos.z = l_startPos.z;
+
+			while (l_currentMaxPos.z <= l_endPos.z)
+			{
+				BrickCache l_BrickCache;
+				l_BrickCache.pos = l_currentMinPos + l_brickSize / 2.0f;
+				l_BrickCache.surfelCaches.reserve(l_surfelsCount);
+
+				for (size_t i = 0; i < l_surfelsCount; i++)
+				{
+					if (
+						InnoMath::isALessEqualThanBVec3(m_surfels[i].pos, l_currentMaxPos)
+						&& InnoMath::isAGreaterEqualThanBVec3(m_surfels[i].pos, l_currentMinPos)
+						)
+					{
+						l_BrickCache.surfelCaches.emplace_back(m_surfels[i]);
+					}
+				}
+
+				l_BrickCache.surfelCaches.shrink_to_fit();
+
+				if (l_BrickCache.surfelCaches.size() > 0)
+				{
+					m_brickCaches.emplace_back(std::move(l_BrickCache));
+				}
+
+				l_currentMaxPos.z += l_brickSize.z;
+				l_currentMinPos.z += l_brickSize.z;
+			}
+
+			l_currentMaxPos.y += l_brickSize.y;
+			l_currentMinPos.y += l_brickSize.y;
+		}
+
+		l_currentMaxPos.x += l_brickSize.x;
+		l_currentMinPos.x += l_brickSize.x;
+	}
+
+	// Generate real bricks with surfel range
+	auto l_bricksCount = m_brickCaches.size();
+
+	m_surfels.clear();
+
+	size_t l_offset = 0;
+
+	for (size_t i = 0; i < l_bricksCount; i++)
+	{
+		Brick l_brick;
+		l_brick.boundBox = InnoMath::generateAABB(m_brickCaches[i].pos + l_brickSize / 2.0f, m_brickCaches[i].pos - l_brickSize / 2.0f);
+		l_brick.surfelRangeBegin = (unsigned int)l_offset;
+		l_brick.surfelRangeEnd = (unsigned int)(l_offset + m_brickCaches[i].surfelCaches.size() - 1);
+		l_offset = m_brickCaches[i].surfelCaches.size();
+
+		m_surfels.insert(m_surfels.end(), std::make_move_iterator(m_brickCaches[i].surfelCaches.begin()), std::make_move_iterator(m_brickCaches[i].surfelCaches.end()));
+
+		m_bricks.emplace_back(l_brick);
+	}
 
 	return true;
 }
@@ -638,7 +718,6 @@ bool GIBakePass::Bake()
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MeshGBDC, g_pModuleManager->getRenderingFrontend()->getGIPassMeshGPUData());
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MaterialGBDC, g_pModuleManager->getRenderingFrontend()->getGIPassMaterialGPUData());
 
-	m_probeCaches.clear();
 	m_probes.clear();
 	m_surfels.clear();
 	m_bricks.clear();
@@ -647,14 +726,16 @@ bool GIBakePass::Bake()
 
 	generateProbes();
 
-	capture();
+	captureSurfels();
 
 	eliminateDuplicatedSurfels();
 
 	generateBricks();
 
+	serializeSurfels();
+	serializeBricks();
+
 	//serializeProbes();
-	//serializeSurfels();
 	//serializeBricks();
 	//serializeBrickFactors();
 
