@@ -42,9 +42,9 @@ namespace GIBakePass
 
 	const unsigned int m_probeMapResolution = 1024;
 	const unsigned int m_probeMapSamplingInterval = 256;
-	const unsigned int m_captureResolution = 128;
+	const unsigned int m_captureResolution = 64;
 	const unsigned int m_sampleCountPerFace = m_captureResolution * m_captureResolution;
-	const vec4 m_brickSize = vec4(64.0f, 64.0f, 64.0f, 0.0f);
+	const vec4 m_brickSize = vec4(16.0f, 16.0f, 16.0f, 0.0f);
 
 	TextureDataComponent* m_testSampleCubemap;
 	TextureDataComponent* m_testSample3DTexture;
@@ -126,6 +126,8 @@ bool GIBakePass::loadGIData()
 
 bool GIBakePass::generateProbes()
 {
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Generate probes...");
+
 	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getTotalSceneAABB();
 
 	auto l_sceneCenter = l_sceneAABB.m_center;
@@ -189,11 +191,15 @@ bool GIBakePass::generateProbes()
 		}
 	}
 
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "GIBakePass: ", m_probes.size(), " probes generated.");
+
 	return true;
 }
 
 bool GIBakePass::captureSurfels()
 {
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Capture surfels...");
+
 	auto l_cameraGPUData = g_pModuleManager->getRenderingFrontend()->getCameraGPUData();
 
 	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, l_cameraGPUData.zNear, l_cameraGPUData.zFar);
@@ -216,7 +222,11 @@ bool GIBakePass::captureSurfels()
 	{
 		drawCubemaps(i, l_p, l_v);
 		readBackSurfelCaches(i);
+
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Capture surfel ", (float)i * 100.0f / (float)l_probeCount, "%...");
 	}
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "GIBakePass: ", m_surfels.size(), " surfels captured.");
 
 	return true;
 }
@@ -340,6 +350,8 @@ bool GIBakePass::readBackSurfelCaches(unsigned int probeIndex)
 
 bool GIBakePass::eliminateDuplicatedSurfels()
 {
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Eliminate duplicated surfels...");
+
 	std::sort(m_surfels.begin(), m_surfels.end(), [&](Surfel A, Surfel B)
 	{
 		if (A.pos.x != B.pos.x) {
@@ -354,11 +366,15 @@ bool GIBakePass::eliminateDuplicatedSurfels()
 	m_surfels.erase(std::unique(m_surfels.begin(), m_surfels.end()), m_surfels.end());
 	m_surfels.shrink_to_fit();
 
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "GIBakePass: Duplicated surfels have been removed, there are ", m_surfels.size(), " surfels now.");
+
 	return true;
 }
 
 bool GIBakePass::generateBricks()
 {
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Generate brick caches...");
+
 	// Find bound corner position
 	auto l_surfelsCount = m_surfels.size();
 
@@ -380,6 +396,14 @@ bool GIBakePass::generateBricks()
 	l_adjustedEndPos.y = (std::trunc(l_endPos.y / m_brickSize.y) + 1) * m_brickSize.y;
 	l_adjustedEndPos.z = (std::trunc(l_endPos.z / m_brickSize.z) + 1) * m_brickSize.z;
 	l_endPos = l_adjustedEndPos;
+
+	auto l_extends = l_endPos - l_startPos;
+	auto l_bricksCountX = std::trunc(l_extends.x / m_brickSize.x);
+	auto l_bricksCountY = std::trunc(l_extends.y / m_brickSize.y);
+	auto l_bricksCountZ = std::trunc(l_extends.z / m_brickSize.z);
+
+	auto l_totalBricksWorkCount = l_bricksCountX * l_bricksCountY * l_bricksCountZ;
+	unsigned int l_index = 0;
 
 	// Assign surfels to brick cache
 	vec4 l_currentMaxPos = l_startPos + m_brickSize;
@@ -419,6 +443,9 @@ bool GIBakePass::generateBricks()
 					m_brickCaches.emplace_back(std::move(l_BrickCache));
 				}
 
+				g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Generate brick caches ", (float)l_index * 100.0f / (float)l_totalBricksWorkCount, "%...");
+
+				l_index++;
 				l_currentMaxPos.z += m_brickSize.z;
 				l_currentMinPos.z += m_brickSize.z;
 			}
@@ -430,6 +457,10 @@ bool GIBakePass::generateBricks()
 		l_currentMaxPos.x += m_brickSize.x;
 		l_currentMinPos.x += m_brickSize.x;
 	}
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "GIBakePass: Brick caches have been generated.");
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Generate bricks...");
 
 	// Generate real bricks with surfel range
 	auto l_bricksCount = m_brickCaches.size();
@@ -449,7 +480,11 @@ bool GIBakePass::generateBricks()
 		m_surfels.insert(m_surfels.end(), std::make_move_iterator(m_brickCaches[i].surfelCaches.begin()), std::make_move_iterator(m_brickCaches[i].surfelCaches.end()));
 
 		m_bricks.emplace_back(l_brick);
+
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Generate bricks ", (float)i * 100.0f / (float)l_bricksCount, "%...");
 	}
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "GIBakePass: Bricks have been generated.");
 
 	return true;
 }
@@ -497,7 +532,11 @@ bool GIBakePass::assignBrickFactorToProbes()
 	{
 		drawBricks((unsigned int)i, l_p, l_v);
 		readBackBrickFactors((unsigned int)i);
+
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Assign brick factor to probes ", (float)i * 100.0f / (float)l_probesCount, "%...");
 	}
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "GIBakePass: Brick factors have been generated.");
 
 	return true;
 }
