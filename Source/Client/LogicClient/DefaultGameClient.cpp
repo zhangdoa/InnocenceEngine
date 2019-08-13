@@ -316,7 +316,7 @@ bool GameClientNS::setupOcclusionCubes()
 					1.0f);
 
 			l_currentComponent->m_localTransformVector.m_rot =
-				InnoMath::caclRotatedLocalRotator(l_currentComponent->m_localTransformVector.m_rot,
+				InnoMath::calcRotatedLocalRotator(l_currentComponent->m_localTransformVector.m_rot,
 					vec4(0.0f, 1.0f, 0.0f, 0.0f),
 					l_randomRotDelta(l_generator));
 		}
@@ -379,7 +379,7 @@ bool GameClientNS::setupOpaqueSpheres()
 					1.0f);
 
 			l_currentComponent->m_localTransformVector.m_rot =
-				InnoMath::caclRotatedLocalRotator(l_currentComponent->m_localTransformVector.m_rot,
+				InnoMath::calcRotatedLocalRotator(l_currentComponent->m_localTransformVector.m_rot,
 					vec4(l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), 0.0f).normalize(),
 					l_randomRotDelta(l_generator));
 		}

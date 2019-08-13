@@ -973,6 +973,30 @@ namespace InnoMath
 	}
 
 	template<class T>
+	auto isAGreaterEqualThanB(const TVec2<T>& a, const TVec2<T>& b) -> bool
+	{
+		return a.x >= b.x
+			&& a.y >= b.y;
+	}
+
+	template<class T>
+	auto isAGreaterEqualThanBVec3(const TVec4<T>& a, const TVec4<T>& b) -> bool
+	{
+		return a.x >= b.x
+			&& a.y >= b.y
+			&& a.z >= b.z;
+	}
+
+	template<class T>
+	auto isAGreaterEqualThanB(const TVec4<T>& a, const TVec4<T>& b) -> bool
+	{
+		return a.x >= b.x
+			&& a.y >= b.y
+			&& a.z >= b.z
+			&& a.w >= b.w;
+	}
+
+	template<class T>
 	auto isALessThanB(const TVec2<T>& a, const TVec2<T>& b) -> bool
 	{
 		return a.x < b.x
@@ -994,6 +1018,150 @@ namespace InnoMath
 			&& a.y < b.y
 			&& a.z < b.z
 			&& a.w < b.w;
+	}
+
+	template<class T>
+	auto isALessEqualThanB(const TVec2<T>& a, const TVec2<T>& b) -> bool
+	{
+		return a.x <= b.x
+			&& a.y <= b.y;
+	}
+
+	template<class T>
+	auto isALessEqualThanBVec3(const TVec4<T>& a, const TVec4<T>& b) -> bool
+	{
+		return a.x <= b.x
+			&& a.y <= b.y
+			&& a.z <= b.z;
+	}
+
+	template<class T>
+	auto isALessEqualThanB(const TVec4<T>& a, const TVec4<T>& b) -> bool
+	{
+		return a.x <= b.x
+			&& a.y <= b.y
+			&& a.z <= b.z
+			&& a.w <= b.w;
+	}
+
+	template<class T>
+	auto clamp(T x, T min, T max)->T
+	{
+		if (x < min) { return min; }
+		if (x > max) { return max; }
+		return x;
+	}
+
+	template<class T>
+	auto clamp(const TVec2<T>& x, const TVec2<T>& min, const TVec2<T>& max)->TVec2<T>
+	{
+		if (isALessThanB(x, min)) { return min; }
+		if (isAGreaterThanB(x, max)) { return max; }
+		return x;
+	}
+
+	template<class T>
+	auto clampVec3(const TVec4<T>& x, const TVec4<T>& min, const TVec4<T>& max)->TVec4<T>
+	{
+		if (isALessThanBVec3(x, min)) { return min; }
+		if (isAGreaterThanBVec3(x, max)) { return max; }
+		return x;
+	}
+
+	template<class T>
+	auto clamp(const TVec4<T>& x, const TVec4<T>& min, const TVec4<T>& max)->TVec4<T>
+	{
+		if (isALessThanB(x, min)) { return min; }
+		if (isAGreaterThanB(x, max)) { return max; }
+		return x;
+	}
+
+	template<class T>
+	auto elementWiseMax(const TVec4<T>& A, const TVec4<T>& B)->TVec4<T>
+	{
+		TVec4<T> l_result;
+
+		if (A.x >= B.x)
+		{
+			l_result.x = A.x;
+		}
+		else
+		{
+			l_result.x = B.x;
+		}
+		if (A.y >= B.y)
+		{
+			l_result.y = A.y;
+		}
+		else
+		{
+			l_result.y = B.y;
+		}
+		if (A.z >= B.z)
+		{
+			l_result.z = A.z;
+		}
+		else
+		{
+			l_result.z = B.z;
+		}
+		if (A.w >= B.w)
+		{
+			l_result.w = A.w;
+		}
+		else
+		{
+			l_result.w = B.w;
+		}
+
+		return l_result;
+	}
+
+	template<class T>
+	auto elementWiseMin(const TVec4<T>& A, const TVec4<T>& B)->TVec4<T>
+	{
+		TVec4<T> l_result;
+
+		if (A.x <= B.x)
+		{
+			l_result.x = A.x;
+		}
+		else
+		{
+			l_result.x = B.x;
+		}
+		if (A.y <= B.y)
+		{
+			l_result.y = A.y;
+		}
+		else
+		{
+			l_result.y = B.y;
+		}
+		if (A.z <= B.z)
+		{
+			l_result.z = A.z;
+		}
+		else
+		{
+			l_result.z = B.z;
+		}
+		if (A.w <= B.w)
+		{
+			l_result.w = A.w;
+		}
+		else
+		{
+			l_result.w = B.w;
+		}
+
+		return l_result;
+	}
+
+	template<class T>
+	auto lerp(const TVec2<T>& a, const TVec2<T>& b, T alpha) -> TVec2<T>
+	{
+		return a * alpha + b * (one<T> -alpha);
 	}
 
 	template<class T>
@@ -1890,13 +2058,13 @@ namespace InnoMath
 	}
 
 	template<class T>
-	auto caclRotatedLocalRotator(const TVec4<T> & localRot, const TVec4<T> & axis, T angle)->TVec4<T>
+	auto calcRotatedLocalRotator(const TVec4<T> & localRot, const TVec4<T> & axis, T angle)->TVec4<T>
 	{
 		return getQuatRotator(axis, angle).quatMul(localRot);
 	}
 
 	template<class T>
-	auto caclRotatedGlobalPositions(const TVec4<T> & localPos, const TVec4<T> & globalPos, const TVec4<T> & axis, T angle)->std::tuple<TVec4<T>, TVec4<T>>
+	auto calcRotatedGlobalPositions(const TVec4<T> & localPos, const TVec4<T> & globalPos, const TVec4<T> & axis, T angle)->std::tuple<TVec4<T>, TVec4<T>>
 	{
 		auto l_rotator = getQuatRotator(axis, angle);
 
@@ -1913,7 +2081,7 @@ namespace InnoMath
 	}
 
 	template<class T>
-	auto caclGlobalPos(const TMat4<T> & parentTransformationMatrix, const TVec4<T> & localPos) -> TVec4<T>
+	auto calcGlobalPos(const TMat4<T> & parentTransformationMatrix, const TVec4<T> & localPos) -> TVec4<T>
 	{
 #if defined USE_COLUMN_MAJOR_MEMORY_LAYOUT
 		auto result = TVec4<T>();
@@ -1929,13 +2097,13 @@ namespace InnoMath
 	}
 
 	template<class T>
-	auto caclGlobalRot(const TVec4<T> & parentRot, const TVec4<T> & localRot) -> TVec4<T>
+	auto calcGlobalRot(const TVec4<T> & parentRot, const TVec4<T> & localRot) -> TVec4<T>
 	{
 		return parentRot.quatMul(localRot);
 	}
 
 	template<class T>
-	auto caclGlobalScale(const TVec4<T> & parentScale, const TVec4<T> & localScale) -> TVec4<T>
+	auto calcGlobalScale(const TVec4<T> & parentScale, const TVec4<T> & localScale) -> TVec4<T>
 	{
 		return parentScale.scale(localScale);
 	}
@@ -1944,14 +2112,14 @@ namespace InnoMath
 	auto LocalTransformVectorToGlobal(const TTransformVector<T> & localTransformVector, const TTransformVector<T> & parentTransformVector, const TTransformMatrix<T> & parentTransformMatrix)->TTransformVector<T>
 	{
 		TTransformVector<T> m;
-		m.m_pos = InnoMath::caclGlobalPos(parentTransformMatrix.m_transformationMat, localTransformVector.m_pos);
-		m.m_rot = InnoMath::caclGlobalRot(parentTransformVector.m_rot, localTransformVector.m_rot);
-		m.m_scale = InnoMath::caclGlobalScale(parentTransformVector.m_scale, localTransformVector.m_scale);
+		m.m_pos = InnoMath::calcGlobalPos(parentTransformMatrix.m_transformationMat, localTransformVector.m_pos);
+		m.m_rot = InnoMath::calcGlobalRot(parentTransformVector.m_rot, localTransformVector.m_rot);
+		m.m_scale = InnoMath::calcGlobalScale(parentTransformVector.m_scale, localTransformVector.m_scale);
 		return m;
 	}
 
 	template<class T>
-	auto caclTransformationMatrix(const TTransformMatrix<T> & transform) -> TMat4<T>
+	auto calcTransformationMatrix(const TTransformMatrix<T> & transform) -> TMat4<T>
 	{
 		// @TODO: calculate by hand
 		return transform.m_translationMat * transform.m_rotationMat * transform.m_scaleMat;
@@ -1964,12 +2132,12 @@ namespace InnoMath
 		m.m_translationMat = InnoMath::toTranslationMatrix(transformVector.m_pos);
 		m.m_rotationMat = InnoMath::toRotationMatrix(transformVector.m_rot);
 		m.m_scaleMat = InnoMath::toScaleMatrix(transformVector.m_scale);
-		m.m_transformationMat = caclTransformationMatrix(m);
+		m.m_transformationMat = calcTransformationMatrix(m);
 		return m;
 	}
 
 	template<class T>
-	auto caclLookAtMatrix(const TVec4<T> & globalPos, const TVec4<T> & localRot) -> TMat4<T>
+	auto calcLookAtMatrix(const TVec4<T> & globalPos, const TVec4<T> & localRot) -> TMat4<T>
 	{
 		return TMat4<T>().lookAt(globalPos, globalPos + getDirection(direction::FORWARD, localRot), getDirection(direction::UP, localRot));
 	}
@@ -2157,94 +2325,4 @@ namespace InnoMath
 
 		return l_result;
 	};
-
-	template<class T>
-	auto clamp(T x, T min, T max)->T
-	{
-		if (x < min) { return min; }
-		if (x > max) { return max; }
-		return x;
-	}
-
-	template<class T>
-	auto elementWiseMax(const TVec4<T>& A, const TVec4<T>& B)->TVec4<T>
-	{
-		TVec4<T> l_result;
-
-		if (A.x >= B.x)
-		{
-			l_result.x = A.x;
-		}
-		else
-		{
-			l_result.x = B.x;
-		}
-		if (A.y >= B.y)
-		{
-			l_result.y = A.y;
-		}
-		else
-		{
-			l_result.y = B.y;
-		}
-		if (A.z >= B.z)
-		{
-			l_result.z = A.z;
-		}
-		else
-		{
-			l_result.z = B.z;
-		}
-		if (A.w >= B.w)
-		{
-			l_result.w = A.w;
-		}
-		else
-		{
-			l_result.w = B.w;
-		}
-
-		return l_result;
-	}
-
-	template<class T>
-	auto elementWiseMin(const TVec4<T>& A, const TVec4<T>& B)->TVec4<T>
-	{
-		TVec4<T> l_result;
-
-		if (A.x <= B.x)
-		{
-			l_result.x = A.x;
-		}
-		else
-		{
-			l_result.x = B.x;
-		}
-		if (A.y <= B.y)
-		{
-			l_result.y = A.y;
-		}
-		else
-		{
-			l_result.y = B.y;
-		}
-		if (A.z <= B.z)
-		{
-			l_result.z = A.z;
-		}
-		else
-		{
-			l_result.z = B.z;
-		}
-		if (A.w <= B.w)
-		{
-			l_result.w = A.w;
-		}
-		else
-		{
-			l_result.w = B.w;
-		}
-
-		return l_result;
-	}
 }
