@@ -338,13 +338,13 @@ bool GIResolvePass::litSurfels()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_CameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_SunGBDC->m_ResourceBinder, 1, 3, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 2, 8, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadWrite, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 4, 1, Accessibility::ReadWrite, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 4, 1, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_surfelRPDC, l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadWrite, 0);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 4, 1, Accessibility::ReadWrite, 0);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 4, 1, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_surfelRPDC);
 
@@ -378,15 +378,15 @@ bool GIResolvePass::litBricks()
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_brickRPDC);
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 0, 8, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_brickGBDC->m_ResourceBinder, 1, 0, Accessibility::ReadWrite, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 2, 1, Accessibility::ReadWrite, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_brickIrradianceGBDC->m_ResourceBinder, 3, 2, Accessibility::ReadWrite, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_brickGBDC->m_ResourceBinder, 1, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 2, 1, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_brickIrradianceGBDC->m_ResourceBinder, 3, 2, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_brickRPDC, l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_brickGBDC->m_ResourceBinder, 1, 0, Accessibility::ReadWrite, 0);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 2, 1, Accessibility::ReadWrite, 0);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_brickIrradianceGBDC->m_ResourceBinder, 3, 2, Accessibility::ReadWrite, 0);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_brickGBDC->m_ResourceBinder, 1, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 2, 1, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_brickIrradianceGBDC->m_ResourceBinder, 3, 2, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_brickRPDC);
 
@@ -421,17 +421,17 @@ bool GIResolvePass::litProbes()
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_probeRPDC);
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 0, 8, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_SkyGBDC->m_ResourceBinder, 1, 7, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_probeGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_brickFactorGBDC->m_ResourceBinder, 3, 1, Accessibility::ReadWrite, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_brickIrradianceGBDC->m_ResourceBinder, 4, 2, Accessibility::ReadWrite, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, l_SkyGBDC->m_ResourceBinder, 1, 7, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_probeGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_brickFactorGBDC->m_ResourceBinder, 3, 1, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_brickIrradianceGBDC->m_ResourceBinder, 4, 2, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_irradianceVolume->m_ResourceBinder, 5, 3, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_probeRPDC, l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_probeGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite, 0);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_brickFactorGBDC->m_ResourceBinder, 3, 1, Accessibility::ReadWrite, 0);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_brickIrradianceGBDC->m_ResourceBinder, 4, 2, Accessibility::ReadWrite, 0);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_probeGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_brickFactorGBDC->m_ResourceBinder, 3, 1, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_brickIrradianceGBDC->m_ResourceBinder, 4, 2, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_irradianceVolume->m_ResourceBinder, 5, 3, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_probeRPDC);
@@ -462,6 +462,10 @@ bool GIResolvePass::ExecuteCommandList()
 		g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_brickRPDC);
 
 		g_pModuleManager->getRenderingServer()->WaitForFrame(m_brickRPDC);
+
+		g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_probeRPDC);
+
+		g_pModuleManager->getRenderingServer()->WaitForFrame(m_probeRPDC);
 	}
 
 	return true;
@@ -471,6 +475,7 @@ bool GIResolvePass::Terminate()
 {
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_surfelRPDC);
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_brickRPDC);
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_probeRPDC);
 
 	return true;
 }

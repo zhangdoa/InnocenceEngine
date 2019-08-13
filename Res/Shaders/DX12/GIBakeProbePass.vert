@@ -1,0 +1,29 @@
+// shadertype=hlsl
+#include "common/common.hlsl"
+
+struct VertexInputType
+{
+	float4 position : POSITION;
+	float2 texcoord : TEXCOORD;
+	float2 pada : PADA;
+	float4 normal : NORMAL;
+	float4 padb : PADB;
+};
+
+struct PixelInputType
+{
+	float4 posCS : SV_POSITION;
+	float4 posWS : POSITION;
+};
+
+PixelInputType main(VertexInputType input)
+{
+	PixelInputType output;
+
+	output.posWS = mul(input.position, meshCBuffer.m);
+	output.posCS = mul(output.posWS, GI_cam_t);
+	output.posCS = mul(output.posCS, GI_cam_r[0]);
+	output.posCS = mul(output.posCS, GI_cam_p);
+
+	return output;
+}

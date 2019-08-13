@@ -563,7 +563,7 @@ bool GIBakePass::readBackBrickFactors(unsigned int probeIndex)
 			l_BrickFactor.basisWeight = 1.0f;
 
 			// Index start from 1
-			l_BrickFactor.brickIndex = (unsigned int)l_brickID[i].w - 1;
+			l_BrickFactor.brickIndex = (unsigned int)(l_brickID[i].w - 1.0f);
 			l_brickFactors.emplace_back(l_BrickFactor);
 		}
 	}
