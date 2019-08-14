@@ -653,10 +653,7 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 	}
 
 	// Submit raw data to GPU memory
-	if (l_rhs->m_textureDataDesc.UsageType != TextureUsageType::ColorAttachment
-		&& l_rhs->m_textureDataDesc.UsageType != TextureUsageType::DepthAttachment
-		&& l_rhs->m_textureDataDesc.UsageType != TextureUsageType::DepthStencilAttachment
-		&& l_rhs->m_textureDataDesc.UsageType != TextureUsageType::RawImage)
+	if (l_rhs->m_textureData)
 	{
 		unsigned int l_rowPitch = l_rhs->m_textureDataDesc.Width * l_rhs->m_DX11TextureDataDesc.PixelDataSize;
 		if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)

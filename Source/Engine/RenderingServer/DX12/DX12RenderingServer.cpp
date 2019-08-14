@@ -918,10 +918,7 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 		auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
 
 		// main memory ----> upload heap
-		if (!(l_rhs->m_textureDataDesc.UsageType == TextureUsageType::ColorAttachment
-			|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthAttachment
-			|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment
-			|| l_rhs->m_textureDataDesc.UsageType == TextureUsageType::RawImage))
+		if (l_rhs->m_textureData)
 		{
 			if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::SamplerCubemap)
 			{
