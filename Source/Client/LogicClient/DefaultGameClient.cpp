@@ -261,7 +261,7 @@ bool GameClientNS::setupReferenceSpheres()
 bool GameClientNS::setupOcclusionCubes()
 {
 	unsigned int l_matrixDim = 8;
-	float l_breadthInterval = 16.0f;
+	float l_breadthInterval = 42.0f;
 	auto l_containerSize = l_matrixDim * l_matrixDim;
 
 	m_occlusionCubeTransformComponents.clear();
@@ -294,10 +294,14 @@ bool GameClientNS::setupOcclusionCubes()
 		m_occlusionCubeVisibleComponents[i]->m_simulatePhysics = true;
 	}
 
-	std::default_random_engine l_generator;
-	std::uniform_real_distribution<float> l_randomPosDelta(0.0f, 1.0f);
+	std::default_random_engine l_generator(42);
 	std::uniform_real_distribution<float> l_randomRotDelta(0.0f, 180.0f);
-	std::uniform_real_distribution<float> l_randomScaleDelta(1.0f, 8.0f);
+	std::uniform_real_distribution<float> l_randomHeightDelta(16.0f, 48.0f);
+	std::uniform_real_distribution<float> l_randomWidthDelta(10.0f, 12.0f);
+	std::uniform_real_distribution<float> l_randomDepthDelta(8.0f, 10.0f);
+
+	auto l_halfMatrixDim = float(l_matrixDim - 1) / 2.0f;
+	auto l_offset = l_halfMatrixDim * l_breadthInterval;
 
 	for (unsigned int i = 0; i < l_matrixDim; i++)
 	{
@@ -305,14 +309,16 @@ bool GameClientNS::setupOcclusionCubes()
 		{
 			auto l_currentComponent = m_occlusionCubeTransformComponents[i * l_matrixDim + j];
 
+			auto l_heightOffset = l_halfMatrixDim * 3.0f - std::abs((float)i - l_halfMatrixDim) - std::abs((float)j - l_halfMatrixDim);
+			l_heightOffset *= 4.0f;
 			l_currentComponent->m_localTransformVector.m_scale =
-				vec4(1.0f, l_randomScaleDelta(l_generator), 1.0f, 1.0f);
+				vec4(l_randomWidthDelta(l_generator), l_heightOffset, l_randomDepthDelta(l_generator), 1.0f);
 
 			l_currentComponent->m_localTransformVector.m_pos =
 				vec4(
-				(-(l_matrixDim - 1.0f) * l_breadthInterval / 2.0f) + (i * l_breadthInterval),
+				(i * l_breadthInterval) - l_offset,
 					l_currentComponent->m_localTransformVector.m_scale.y / 2.0f,
-					(j * l_breadthInterval) - 2.0f * (l_matrixDim - 1),
+					(j * l_breadthInterval) - l_offset,
 					1.0f);
 
 			l_currentComponent->m_localTransformVector.m_rot =
@@ -544,6 +550,7 @@ bool GameClientNS::initialize()
 	f_testFunc = []() {	g_pModuleManager->getFileSystem()->loadScene("Res//Scenes//Intro.InnoScene");
 	};
 	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_testFunc });
+
 	return true;
 }
 
