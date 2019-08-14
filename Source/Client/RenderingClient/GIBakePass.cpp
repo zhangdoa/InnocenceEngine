@@ -148,6 +148,7 @@ bool GIBakePass::generateProbes()
 
 	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getTotalSceneAABB();
 
+	auto l_startPos = l_sceneAABB.m_boundMin;
 	auto l_sceneCenter = l_sceneAABB.m_center;
 	auto l_extendedAxisSize = l_sceneAABB.m_extend;
 
@@ -190,24 +191,103 @@ bool GIBakePass::generateProbes()
 
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC_Probe);
 
-	auto l_probePos = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Probe, m_RPDC_Probe->m_RenderTargets[0]);
+	// Read back results and generate probes on x-z plate
+	auto l_probePosTextureResults = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Probe, m_RPDC_Probe->m_RenderTargets[0]);
 
-	auto l_size = l_probePos.size();
-	auto l_divide = m_probeMapResolution / m_probeMapSamplingInterval;
+	auto l_totalTextureSize = l_probePosTextureResults.size();
 
-	for (size_t i = 0; i < l_divide; i++)
+	m_probes.reserve(l_totalTextureSize);
+
+	auto l_probesCountPerLine = m_probeMapResolution / m_probeMapSamplingInterval;
+
+	for (size_t i = 0; i < l_probesCountPerLine; i++)
 	{
-		for (size_t j = 0; j < l_divide; j++)
+		for (size_t j = 0; j < l_probesCountPerLine; j++)
 		{
+			auto l_currentIndex = i * m_probeMapSamplingInterval * m_probeMapResolution + j * m_probeMapSamplingInterval;
+			auto l_textureResult = l_probePosTextureResults[l_currentIndex];
+
 			Probe l_Probe;
-			l_Probe.pos = l_probePos[i * m_probeMapSamplingInterval + j * m_probeMapSamplingInterval * m_probeMapResolution];
-			l_Probe.pos.x += l_sceneCenter.x;
-			l_Probe.pos.y += m_probeHeightOffset;
-			l_Probe.pos.z += l_sceneCenter.z;
+			l_Probe.pos = l_textureResult;
+			l_Probe.pos.y = l_textureResult.y + m_probeHeightOffset;
 
 			m_probes.emplace_back(l_Probe);
 		}
 	}
+
+	// Generate probes along the wall
+	auto l_probesCount = m_probes.size();
+	auto l_posIntervalX = std::abs((l_probePosTextureResults[0] - l_probePosTextureResults[m_probeMapSamplingInterval - 1]).x);
+	auto l_posIntervalZ = std::abs((l_probePosTextureResults[0] - l_probePosTextureResults[m_probeMapResolution * m_probeMapSamplingInterval - 1]).z);
+
+	for (size_t i = 0; i < l_probesCount; i++)
+	{
+		// Not the last one in all, not any one in last column, and not the last one each row
+		if (i + 1 < l_probesCount && (i + l_probesCountPerLine) < l_probesCount && ((i + 1) % l_probesCountPerLine))
+		{
+			auto l_currentProbe = m_probes[i];
+			auto l_nextRowProbe = m_probes[i + 1];
+			auto l_nextColumnProbe = m_probes[i + l_probesCountPerLine];
+
+			auto ddx = l_currentProbe.pos.y - l_nextRowProbe.pos.y;
+			auto ddy = l_currentProbe.pos.y - l_nextColumnProbe.pos.y;
+
+			if (ddx > l_posIntervalX)
+			{
+				auto l_verticalProbesCount = std::floor(ddx / l_posIntervalX);
+
+				for (size_t k = 0; k < l_verticalProbesCount; k++)
+				{
+					Probe l_verticalProbe;
+					l_verticalProbe.pos = l_nextRowProbe.pos;
+					l_verticalProbe.pos.y += l_posIntervalX * (k + 1);
+
+					m_probes.emplace_back(l_verticalProbe);
+				}
+			}
+			if (ddx < -l_posIntervalX)
+			{
+				auto l_verticalProbesCount = std::floor(std::abs(ddx) / l_posIntervalX);
+
+				for (size_t k = 0; k < l_verticalProbesCount; k++)
+				{
+					Probe l_verticalProbe;
+					l_verticalProbe.pos = l_currentProbe.pos;
+					l_verticalProbe.pos.y += l_posIntervalX * (k + 1);
+
+					m_probes.emplace_back(l_verticalProbe);
+				}
+			}
+			if (ddy > l_posIntervalZ)
+			{
+				auto l_verticalProbesCount = std::floor(ddy / l_posIntervalZ);
+
+				for (size_t k = 0; k < l_verticalProbesCount; k++)
+				{
+					Probe l_verticalProbe;
+					l_verticalProbe.pos = l_nextColumnProbe.pos;
+					l_verticalProbe.pos.y += l_posIntervalZ * (k + 1);
+
+					m_probes.emplace_back(l_verticalProbe);
+				}
+			}
+			if (ddy < -l_posIntervalZ)
+			{
+				auto l_verticalProbesCount = std::floor(std::abs(ddy) / l_posIntervalZ);
+
+				for (size_t k = 0; k < l_verticalProbesCount; k++)
+				{
+					Probe l_verticalProbe;
+					l_verticalProbe.pos = l_currentProbe.pos;
+					l_verticalProbe.pos.y += l_posIntervalZ * (k + 1);
+
+					m_probes.emplace_back(l_verticalProbe);
+				}
+			}
+		}
+	}
+
+	m_probes.shrink_to_fit();
 
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "GIBakePass: ", m_probes.size(), " probes generated.");
 
