@@ -59,6 +59,7 @@ namespace DX11RenderingServerNS
 
 	DXGI_SWAP_CHAIN_DESC m_swapChainDesc = {};
 	IDXGISwapChain4* m_swapChain = 0;
+	const unsigned int m_swapChainImageCount = 3;
 	std::vector<ID3D11Texture2D*> m_swapChainTextures;
 
 	ID3D10Blob* m_InputLayoutDummyShaderBuffer = 0;
@@ -192,8 +193,7 @@ bool DX11RenderingServer::Setup()
 	// Initialize the swap chain description.
 	ZeroMemory(&m_swapChainDesc, sizeof(m_swapChainDesc));
 
-	// Set to a single back buffer.
-	m_swapChainDesc.BufferCount = 1;
+	m_swapChainDesc.BufferCount = m_swapChainImageCount;
 
 	// Set the width and height of the back buffer.
 	m_swapChainDesc.BufferDesc.Width = l_screenResolution.x;
@@ -235,7 +235,7 @@ bool DX11RenderingServer::Setup()
 	m_swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
 
 	// Discard the back buffer contents after presenting.
-	m_swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+	m_swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 
 	// Don't set the advanced flags.
 	m_swapChainDesc.Flags = 0;
@@ -266,14 +266,20 @@ bool DX11RenderingServer::Setup()
 	m_deviceContext = reinterpret_cast<ID3D11DeviceContext4*>(l_deviceContext);
 	m_swapChain = reinterpret_cast<IDXGISwapChain4*>(l_swapChain);
 
-	m_swapChainTextures.resize(1);
+	m_swapChainTextures.resize(m_swapChainImageCount);
+
 	// Get the pointer to the back buffer.
-	l_HResult = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&m_swapChainTextures[0]);
-	if (FAILED(l_HResult))
+
+	for (size_t i = 0; i < m_swapChainImageCount; i++)
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't get back buffer pointer!");
-		m_objectStatus = ObjectStatus::Suspended;
-		return false;
+		l_HResult = m_swapChain->GetBuffer((unsigned int)i, __uuidof(ID3D11Texture2D), (LPVOID*)&m_swapChainTextures[i]);
+
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't get back buffer pointer!");
+			m_objectStatus = ObjectStatus::Suspended;
+			return false;
+		}
 	}
 
 	// @TODO: Find a better solution
@@ -324,16 +330,15 @@ bool DX11RenderingServer::Initialize()
 
 		ReserveRenderTargets(m_SwapChainRPDC, this);
 
+		m_SwapChainRPDC->m_RenderTargetsResourceBinders.resize(m_SwapChainRPDC->m_RenderTargets.size());
+
 		auto l_DX11TDC = reinterpret_cast<DX11TextureDataComponent*>(m_SwapChainRPDC->m_RenderTargets[0]);
 
 		l_DX11TDC->m_ResourceHandle = m_swapChainTextures[0];
 		l_DX11TDC->m_objectStatus = ObjectStatus::Activated;
+		m_SwapChainRPDC->m_RenderTargetsResourceBinders[0] = addResourcesBinder();
 
 		CreateViews(m_SwapChainRPDC, m_device);
-
-		m_SwapChainRPDC->m_RenderTargetsResourceBinders.resize(1);
-
-		m_SwapChainRPDC->m_RenderTargetsResourceBinders[0] = addResourcesBinder();
 
 		CreateResourcesBinder(m_SwapChainRPDC);
 
@@ -1278,7 +1283,14 @@ bool DX11RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * 
 		m_deviceContext->RSSetViewports(1, &l_PSO->m_Viewport);
 		m_deviceContext->RSSetState(l_PSO->m_RasterizerState);
 
-		m_deviceContext->OMSetRenderTargets((unsigned int)l_rhs->m_RTVs.size(), &l_rhs->m_RTVs[0], l_rhs->m_DSV);
+		if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+		{
+			m_deviceContext->OMSetRenderTargets(1, &l_rhs->m_RTVs[l_rhs->m_CurrentFrame], l_rhs->m_DSV);
+		}
+		else
+		{
+			m_deviceContext->OMSetRenderTargets((unsigned int)l_rhs->m_RTVs.size(), &l_rhs->m_RTVs[0], l_rhs->m_DSV);
+		}
 		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
 		{
 			m_deviceContext->OMSetDepthStencilState(l_PSO->m_DepthStencilState, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilReference);
@@ -1296,12 +1308,20 @@ bool DX11RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 {
 	auto l_rhs = reinterpret_cast<DX11RenderPassDataComponent*>(rhs);
 
-	if (rhs->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
+	if (l_rhs->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
 	{
-		for (auto i : l_rhs->m_RTVs)
+		if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 		{
-			m_deviceContext->ClearRenderTargetView(i, rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
+			m_deviceContext->ClearRenderTargetView(l_rhs->m_RTVs[l_rhs->m_CurrentFrame], l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
 		}
+		else
+		{
+			for (auto i : l_rhs->m_RTVs)
+			{
+				m_deviceContext->ClearRenderTargetView(i, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
+			}
+		}
+
 		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
 		{
 			m_deviceContext->ClearDepthStencilView(l_rhs->m_DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0x00);
