@@ -360,9 +360,6 @@ VkSamplerMipmapMode VKHelper::getTextureFilterParam(TextureFilterMethod rhs)
 	case TextureFilterMethod::Linear:
 		l_result = VkSamplerMipmapMode::VK_SAMPLER_MIPMAP_MODE_LINEAR;
 		break;
-	case TextureFilterMethod::Mip:
-		l_result = VkSamplerMipmapMode::VK_SAMPLER_MIPMAP_MODE_MAX_ENUM; // ????????
-		break;
 	default:
 		break;
 	}

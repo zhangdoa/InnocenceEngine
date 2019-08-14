@@ -704,7 +704,7 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 		InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: SRV: ", l_rhs->m_SRV, " is initialized.");
 
 		// Generate mipmaps for this texture.
-		if (l_rhs->m_textureDataDesc.MagFilterMethod == TextureFilterMethod::Mip)
+		if (l_rhs->m_textureDataDesc.UseMipMap)
 		{
 			m_deviceContext->GenerateMips(l_rhs->m_SRV);
 		}
@@ -911,7 +911,7 @@ bool DX11RenderingServer::InitializeSamplerDataComponent(SamplerDataComponent * 
 {
 	auto l_rhs = reinterpret_cast<DX11SamplerDataComponent*>(rhs);
 
-	l_rhs->m_DX11SamplerDesc.Filter = GetFilterMode(l_rhs->m_SamplerDesc.m_MinFilterMethod);
+	l_rhs->m_DX11SamplerDesc.Filter = GetFilterMode(l_rhs->m_SamplerDesc.m_MinFilterMethod, l_rhs->m_SamplerDesc.m_MagFilterMethod);
 	l_rhs->m_DX11SamplerDesc.AddressU = GetWrapMode(l_rhs->m_SamplerDesc.m_WrapMethodU);
 	l_rhs->m_DX11SamplerDesc.AddressV = GetWrapMode(l_rhs->m_SamplerDesc.m_WrapMethodV);
 	l_rhs->m_DX11SamplerDesc.AddressW = GetWrapMode(l_rhs->m_SamplerDesc.m_WrapMethodW);

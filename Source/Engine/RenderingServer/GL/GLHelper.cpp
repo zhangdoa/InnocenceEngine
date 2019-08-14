@@ -20,8 +20,8 @@ GLTextureDataDesc GLHelper::GetGLTextureDataDesc(TextureDataDesc textureDataDesc
 
 	l_result.TextureSamplerType = GetTextureSamplerType(textureDataDesc.SamplerType);
 	l_result.TextureWrapMethod = GetTextureWrapMethod(textureDataDesc.WrapMethod);
-	l_result.MinFilterParam = GetTextureFilterParam(textureDataDesc.MinFilterMethod);
-	l_result.MagFilterParam = GetTextureFilterParam(textureDataDesc.MagFilterMethod);
+	l_result.MinFilterParam = GetTextureFilterParam(textureDataDesc.MinFilterMethod, textureDataDesc.UseMipMap);
+	l_result.MagFilterParam = GetTextureFilterParam(textureDataDesc.MagFilterMethod, false);
 	l_result.InternalFormat = GetTextureInternalFormat(textureDataDesc);
 	l_result.PixelDataFormat = GetTexturePixelDataFormat(textureDataDesc);
 	l_result.PixelDataType = GetTexturePixelDataType(textureDataDesc);
@@ -72,15 +72,25 @@ GLenum GLHelper::GetTextureWrapMethod(TextureWrapMethod rhs)
 	return l_result;
 }
 
-GLenum GLHelper::GetTextureFilterParam(TextureFilterMethod rhs)
+GLenum GLHelper::GetTextureFilterParam(TextureFilterMethod rhs, bool useMipMap)
 {
 	GLenum l_result;
 
-	switch (rhs)
+	if (useMipMap)
 	{
-	case TextureFilterMethod::Nearest: l_result = GL_NEAREST; break;
-	case TextureFilterMethod::Linear: l_result = GL_LINEAR; break;
-	case TextureFilterMethod::Mip: l_result = GL_LINEAR_MIPMAP_LINEAR; break;
+		switch (rhs)
+		{
+		case TextureFilterMethod::Nearest: l_result = GL_LINEAR_MIPMAP_NEAREST; break;
+		case TextureFilterMethod::Linear: l_result = GL_LINEAR_MIPMAP_LINEAR; break;
+		}
+	}
+	else
+	{
+		switch (rhs)
+		{
+		case TextureFilterMethod::Nearest: l_result = GL_NEAREST; break;
+		case TextureFilterMethod::Linear: l_result = GL_LINEAR; break;
+		}
 	}
 
 	return l_result;

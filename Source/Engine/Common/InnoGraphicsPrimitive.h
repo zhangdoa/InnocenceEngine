@@ -20,7 +20,7 @@ enum class TextureUsageType { Invisible, Normal, Albedo, Metallic, Roughness, Am
 enum class TexturePixelDataFormat { R, RG, RGB, RGBA, BGRA, Depth, DepthStencil };
 enum class TexturePixelDataType { UBYTE, SBYTE, USHORT, SSHORT, UINT8, SINT8, UINT16, SINT16, UINT32, SINT32, FLOAT16, FLOAT32, DOUBLE };
 enum class TextureWrapMethod { Edge, Repeat, Border };
-enum class TextureFilterMethod { Nearest, Linear, Mip };
+enum class TextureFilterMethod { Nearest, Linear };
 
 struct TextureDataDesc
 {
@@ -33,6 +33,7 @@ struct TextureDataDesc
 	TextureFilterMethod MinFilterMethod;
 	TextureFilterMethod MagFilterMethod;
 	TextureWrapMethod WrapMethod;
+	bool UseMipMap = false;
 	unsigned int Width = 0;
 	unsigned int Height = 0;
 	unsigned int DepthOrArraySize = 0;

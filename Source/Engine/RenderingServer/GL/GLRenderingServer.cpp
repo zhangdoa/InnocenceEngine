@@ -501,7 +501,7 @@ bool GLRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 	}
 
 	// should generate mipmap or not
-	if (l_rhs->m_GLTextureDataDesc.MinFilterParam == GL_LINEAR_MIPMAP_LINEAR)
+	if (l_rhs->m_textureDataDesc.UseMipMap)
 	{
 		glGenerateMipmap(l_rhs->m_GLTextureDataDesc.TextureSamplerType);
 	}
@@ -658,8 +658,8 @@ bool GLRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent * rh
 	auto l_textureWrapMethodU = GetTextureWrapMethod(l_rhs->m_SamplerDesc.m_WrapMethodU);
 	auto l_textureWrapMethodV = GetTextureWrapMethod(l_rhs->m_SamplerDesc.m_WrapMethodV);
 	auto l_textureWrapMethodW = GetTextureWrapMethod(l_rhs->m_SamplerDesc.m_WrapMethodW);
-	auto l_minFilterParam = GetTextureFilterParam(l_rhs->m_SamplerDesc.m_MinFilterMethod);
-	auto l_magFilterParam = GetTextureFilterParam(l_rhs->m_SamplerDesc.m_MagFilterMethod);
+	auto l_minFilterParam = GetTextureFilterParam(l_rhs->m_SamplerDesc.m_MinFilterMethod, l_rhs->m_SamplerDesc.m_UseMipMap);
+	auto l_magFilterParam = GetTextureFilterParam(l_rhs->m_SamplerDesc.m_MagFilterMethod, l_rhs->m_SamplerDesc.m_UseMipMap);
 
 	glSamplerParameteri(l_rhs->m_SO, GL_TEXTURE_WRAP_R, l_textureWrapMethodU);
 	glSamplerParameteri(l_rhs->m_SO, GL_TEXTURE_WRAP_S, l_textureWrapMethodV);

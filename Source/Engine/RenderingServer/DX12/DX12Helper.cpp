@@ -357,21 +357,31 @@ D3D12_RESOURCE_DIMENSION DX12Helper::GetTextureDimension(TextureDataDesc texture
 	return l_result;
 }
 
-D3D12_FILTER DX12Helper::GetFilterMode(TextureFilterMethod textureFilterMethod)
+D3D12_FILTER DX12Helper::GetFilterMode(TextureFilterMethod minFilterMethod, TextureFilterMethod magFilterMethod)
 {
 	D3D12_FILTER l_result;
 
-	// @TODO: Completeness of the filter
-	switch (textureFilterMethod)
+	if (minFilterMethod == TextureFilterMethod::Nearest)
 	{
-	case TextureFilterMethod::Nearest: l_result = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-		break;
-	case TextureFilterMethod::Linear: l_result = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-		break;
-	case TextureFilterMethod::Mip: l_result = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-		break;
-	default:
-		break;
+		if (magFilterMethod == TextureFilterMethod::Nearest)
+		{
+			l_result = D3D12_FILTER_MIN_MAG_MIP_POINT;
+		}
+		else
+		{
+			l_result = D3D12_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT;
+		}
+	}
+	else
+	{
+		if (magFilterMethod == TextureFilterMethod::Nearest)
+		{
+			l_result = D3D12_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
+		}
+		else
+		{
+			l_result = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+		}
 	}
 
 	return l_result;
@@ -399,7 +409,7 @@ D3D12_TEXTURE_ADDRESS_MODE DX12Helper::GetWrapMode(TextureWrapMethod textureWrap
 unsigned int DX12Helper::GetTextureMipLevels(TextureDataDesc textureDataDesc)
 {
 	unsigned int textureMipLevels = 1;
-	if (textureDataDesc.MagFilterMethod == TextureFilterMethod::Mip)
+	if (textureDataDesc.UseMipMap)
 	{
 		textureMipLevels = 0;
 	}

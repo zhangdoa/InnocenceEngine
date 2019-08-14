@@ -8,7 +8,7 @@ namespace GLHelper
 	GLTextureDataDesc GetGLTextureDataDesc(TextureDataDesc textureDataDesc);
 	GLenum GetTextureSamplerType(TextureSamplerType rhs);
 	GLenum GetTextureWrapMethod(TextureWrapMethod rhs);
-	GLenum GetTextureFilterParam(TextureFilterMethod rhs);
+	GLenum GetTextureFilterParam(TextureFilterMethod rhs, bool useMipMap);
 	GLenum GetTextureInternalFormat(TextureDataDesc textureDataDesc);
 	GLenum GetTexturePixelDataFormat(TextureDataDesc textureDataDesc);
 	GLenum GetTexturePixelDataType(TextureDataDesc textureDataDesc);

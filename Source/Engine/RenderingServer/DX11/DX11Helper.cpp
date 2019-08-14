@@ -75,7 +75,7 @@ D3D11_TEXTURE_DESC DX11Helper::GetDX11TextureDataDesc(TextureDataDesc textureDat
 	l_result.BindFlags = GetTextureBindFlags(textureDataDesc);
 	l_result.PixelDataSize = GetTexturePixelDataSize(textureDataDesc);
 
-	if (textureDataDesc.MagFilterMethod == TextureFilterMethod::Mip)
+	if (textureDataDesc.UseMipMap)
 	{
 		l_result.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
 	}
@@ -247,21 +247,31 @@ DXGI_FORMAT DX11Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 	return l_internalFormat;
 }
 
-D3D11_FILTER DX11Helper::GetFilterMode(TextureFilterMethod textureFilterMethod)
+D3D11_FILTER DX11Helper::GetFilterMode(TextureFilterMethod minFilterMethod, TextureFilterMethod magFilterMethod)
 {
 	D3D11_FILTER l_result;
 
-	// @TODO: Completeness of the filter
-	switch (textureFilterMethod)
+	if (minFilterMethod == TextureFilterMethod::Nearest)
 	{
-	case TextureFilterMethod::Nearest: l_result = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		break;
-	case TextureFilterMethod::Linear: l_result = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		break;
-	case TextureFilterMethod::Mip: l_result = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		break;
-	default:
-		break;
+		if (magFilterMethod == TextureFilterMethod::Nearest)
+		{
+			l_result = D3D11_FILTER_MIN_MAG_MIP_POINT;
+		}
+		else
+		{
+			l_result = D3D11_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT;
+		}
+	}
+	else
+	{
+		if (magFilterMethod == TextureFilterMethod::Nearest)
+		{
+			l_result = D3D11_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
+		}
+		else
+		{
+			l_result = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		}
 	}
 
 	return l_result;
@@ -289,7 +299,7 @@ D3D11_TEXTURE_ADDRESS_MODE DX11Helper::GetWrapMode(TextureWrapMethod textureWrap
 unsigned int DX11Helper::GetTextureMipLevels(TextureDataDesc textureDataDesc)
 {
 	unsigned int textureMipLevels = 1;
-	if (textureDataDesc.MagFilterMethod == TextureFilterMethod::Mip)
+	if (textureDataDesc.UseMipMap)
 	{
 		textureMipLevels = 0;
 	}
@@ -321,7 +331,7 @@ unsigned int DX11Helper::GetTextureBindFlags(TextureDataDesc textureDataDesc)
 		}
 		else
 		{
-			textureBindFlags = D3D11_BIND_SHADER_RESOURCE;
+			textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
 		}
 	}
 

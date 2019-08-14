@@ -23,7 +23,7 @@ namespace DX11Helper
 
 	D3D11_TEXTURE_DESC GetDX11TextureDataDesc(TextureDataDesc textureDataDesc);
 	DXGI_FORMAT GetTextureFormat(TextureDataDesc textureDataDesc);
-	D3D11_FILTER GetFilterMode(TextureFilterMethod textureFilterMethod);
+	D3D11_FILTER GetFilterMode(TextureFilterMethod minFilterMethod, TextureFilterMethod magFilterMethod);
 	D3D11_TEXTURE_ADDRESS_MODE GetWrapMode(TextureWrapMethod textureWrapMethod);
 	unsigned int GetTextureMipLevels(TextureDataDesc textureDataDesc);
 	unsigned int GetTextureBindFlags(TextureDataDesc textureDataDesc);
