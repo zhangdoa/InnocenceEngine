@@ -30,8 +30,12 @@ namespace GIBakePass
 	bool readBackSurfelCaches(unsigned int probeIndex);
 
 	bool eliminateDuplicatedSurfels();
-	bool generateBricks();
+	bool serializeSurfelCaches();
 
+	bool generateBrickCaches();
+	bool serializeBrickCaches();
+
+	bool generateBricks();
 	bool serializeSurfels();
 	bool serializeBricks();
 
@@ -486,7 +490,19 @@ bool GIBakePass::eliminateDuplicatedSurfels()
 	return true;
 }
 
-bool GIBakePass::generateBricks()
+bool GIBakePass::serializeSurfelCaches()
+{
+	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
+
+	std::ofstream l_file;
+	l_file.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoSurfelCache", std::ios::binary);
+	IOService::serializeVector(l_file, m_surfels);
+
+	return true;
+}
+
+bool GIBakePass::generateBrickCaches()
 {
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Generate brick caches...");
 
@@ -575,6 +591,23 @@ bool GIBakePass::generateBricks()
 
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "GIBakePass: Brick caches have been generated.");
 
+	return true;
+}
+
+bool GIBakePass::serializeBrickCaches()
+{
+	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
+
+	std::ofstream l_file;
+	l_file.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoBrickCache", std::ios::binary);
+	IOService::serializeVector(l_file, m_brickCaches);
+
+	return true;
+}
+
+bool GIBakePass::generateBricks()
+{
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Generate bricks...");
 
 	// Generate real bricks with surfel range
@@ -600,6 +633,30 @@ bool GIBakePass::generateBricks()
 	}
 
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "GIBakePass: Bricks have been generated.");
+
+	return true;
+}
+
+bool GIBakePass::serializeSurfels()
+{
+	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
+
+	std::ofstream l_file;
+	l_file.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoSurfel", std::ios::binary);
+	IOService::serializeVector(l_file, m_surfels);
+
+	return true;
+}
+
+bool GIBakePass::serializeBricks()
+{
+	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
+
+	std::ofstream l_file;
+	l_file.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoBrick", std::ios::binary);
+	IOService::serializeVector(l_file, m_bricks);
 
 	return true;
 }
@@ -848,30 +905,6 @@ bool GIBakePass::assignBrickFactorToProbesByCPU()
 	}
 
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "GIBakePass: Brick factors have been generated.");
-
-	return true;
-}
-
-bool GIBakePass::serializeSurfels()
-{
-	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
-	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
-
-	std::ofstream l_file;
-	l_file.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoSurfel", std::ios::binary);
-	IOService::serializeVector(l_file, m_surfels);
-
-	return true;
-}
-
-bool GIBakePass::serializeBricks()
-{
-	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
-	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
-
-	std::ofstream l_file;
-	l_file.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoBrick", std::ios::binary);
-	IOService::serializeVector(l_file, m_bricks);
 
 	return true;
 }
@@ -1181,6 +1214,10 @@ bool GIBakePass::Bake()
 	captureSurfels();
 
 	eliminateDuplicatedSurfels();
+	serializeSurfelCaches();
+
+	generateBrickCaches();
+	serializeBrickCaches();
 
 	generateBricks();
 
