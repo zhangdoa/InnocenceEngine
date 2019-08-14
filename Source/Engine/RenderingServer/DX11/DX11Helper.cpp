@@ -817,9 +817,6 @@ bool DX11Helper::CreateStateObjects(DX11RenderPassDataComponent * DX11RPDC, ID3D
 			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the depth stencil state object for ", DX11RPDC->m_componentName.c_str(), "!");
 			return false;
 		}
-#ifdef  _DEBUG
-		SetObjectName(DX11RPDC, l_PSO->m_DepthStencilState, "DSSO");
-#endif //  _DEBUG
 	}
 
 	// Blend state object
@@ -831,9 +828,6 @@ bool DX11Helper::CreateStateObjects(DX11RenderPassDataComponent * DX11RPDC, ID3D
 			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the blend state object for ", DX11RPDC->m_componentName.c_str(), "!");
 			return false;
 		}
-#ifdef  _DEBUG
-		SetObjectName(DX11RPDC, l_PSO->m_BlendState, "BSO");
-#endif //  _DEBUG
 	}
 
 	// Rasterizer state object
@@ -843,9 +837,6 @@ bool DX11Helper::CreateStateObjects(DX11RenderPassDataComponent * DX11RPDC, ID3D
 		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the rasterizer state object for ", DX11RPDC->m_componentName.c_str(), "!");
 		return false;
 	}
-#ifdef  _DEBUG
-	SetObjectName(DX11RPDC, l_PSO->m_RasterizerState, "RSO");
-#endif //  _DEBUG
 
 	return true;
 }

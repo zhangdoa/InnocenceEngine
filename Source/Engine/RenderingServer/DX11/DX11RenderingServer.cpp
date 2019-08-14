@@ -926,9 +926,6 @@ bool DX11RenderingServer::InitializeSamplerDataComponent(SamplerDataComponent * 
 		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create sampler state object for ", rhs->m_componentName.c_str(), "!");
 		return false;
 	}
-#ifdef  _DEBUG
-	SetObjectName(rhs, l_rhs->m_SamplerState, "SSO");
-#endif //  _DEBUG
 
 	auto l_resourceBinder = addResourcesBinder();
 	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Sampler;
@@ -1012,7 +1009,7 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 			return false;
 		}
 #ifdef  _DEBUG
-		SetObjectName(l_rhs, l_rhs->m_BufferPtr, "SRV");
+		SetObjectName(l_rhs, l_rhs->m_SRV, "SRV");
 #endif //  _DEBUG
 		l_resourceBinder->m_SRV = l_rhs->m_SRV;
 
@@ -1031,7 +1028,7 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 			return false;
 		}
 #ifdef  _DEBUG
-		SetObjectName(l_rhs, l_rhs->m_BufferPtr, "UAV");
+		SetObjectName(l_rhs, l_rhs->m_UAV, "UAV");
 #endif //  _DEBUG
 		l_resourceBinder->m_UAV = l_rhs->m_UAV;
 	}
