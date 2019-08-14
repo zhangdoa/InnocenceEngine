@@ -35,18 +35,22 @@ namespace GIBakePass
 	bool serializeSurfels();
 	bool serializeBricks();
 
-	bool assignBrickFactorToProbes();
+	bool assignBrickFactorToProbesByGPU();
 	bool drawBricks(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v);
 	bool readBackBrickFactors(unsigned int probeIndex);
+
+	bool assignBrickFactorToProbesByCPU();
 
 	bool serializeBrickFactors();
 	bool serializeProbes();
 
 	const unsigned int m_probeMapResolution = 1024;
-	const unsigned int m_probeMapSamplingInterval = 256;
+	const float m_probeHeightOffset = 4.0f;
+	const unsigned int m_probeMapSamplingInterval = 128;
 	const unsigned int m_captureResolution = 64;
 	const unsigned int m_sampleCountPerFace = m_captureResolution * m_captureResolution;
-	const vec4 m_brickSize = vec4(16.0f, 16.0f, 16.0f, 0.0f);
+	const vec4 m_brickSize = vec4(8.0f, 8.0f, 8.0f, 0.0f);
+	vec4 m_irradianceVolumeRange;
 
 	TextureDataComponent* m_testSampleCubemap;
 	TextureDataComponent* m_testSample3DTexture;
@@ -100,6 +104,19 @@ bool GIBakePass::loadGIData()
 	if (l_brickFile.is_open())
 	{
 		IOService::deserializeVector(l_brickFile, m_bricks);
+
+		auto l_bricksCount = m_bricks.size();
+
+		auto l_min = InnoMath::maxVec4<float>;
+		auto l_max = InnoMath::minVec4<float>;
+
+		for (size_t i = 0; i < l_bricksCount; i++)
+		{
+			l_min = InnoMath::elementWiseMin(l_min, m_bricks[i].boundBox.m_boundMin);
+			l_max = InnoMath::elementWiseMax(l_max, m_bricks[i].boundBox.m_boundMax);
+		}
+		m_irradianceVolumeRange = l_max - l_min;
+
 		m_IsBrickLoaded = true;
 	}
 
@@ -118,6 +135,7 @@ bool GIBakePass::loadGIData()
 	if (l_probeFile.is_open())
 	{
 		IOService::deserializeVector(l_probeFile, m_probes);
+
 		m_IsProbeLoaded = true;
 	}
 
@@ -184,7 +202,7 @@ bool GIBakePass::generateProbes()
 			Probe l_Probe;
 			l_Probe.pos = l_probePos[i * m_probeMapSamplingInterval + j * m_probeMapSamplingInterval * m_probeMapResolution];
 			l_Probe.pos.x += l_sceneCenter.x;
-			l_Probe.pos.y += 2.0f;
+			l_Probe.pos.y += m_probeHeightOffset;
 			l_Probe.pos.z += l_sceneCenter.z;
 
 			m_probes.emplace_back(l_Probe);
@@ -506,7 +524,7 @@ bool GIBakePass::generateBricks()
 	return true;
 }
 
-bool GIBakePass::assignBrickFactorToProbes()
+bool GIBakePass::assignBrickFactorToProbesByGPU()
 {
 	auto l_rPX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
 	auto l_rNX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(-1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
@@ -669,6 +687,87 @@ bool GIBakePass::readBackBrickFactors(unsigned int probeIndex)
 
 		m_brickFactors.insert(m_brickFactors.end(), std::make_move_iterator(l_brickFactors.begin()), std::make_move_iterator(l_brickFactors.end()));
 	}
+
+	return true;
+}
+
+bool GIBakePass::assignBrickFactorToProbesByCPU()
+{
+	auto l_probesCount = m_probes.size();
+	auto l_bricksCount = m_bricks.size();
+
+	std::vector<vec4> l_directions =
+	{
+		vec4(1.0f, 0.0f, 0.0f, 0.0f),
+		vec4(-1.0f, 0.0f, 0.0f, 0.0f),
+		vec4(0.0f, 1.0f, 0.0f, 0.0f),
+		vec4(0.0f, -1.0f, 0.0f, 0.0f),
+		vec4(0.0f, 0.0f, 1.0f, 0.0f),
+		vec4(0.0f, 0.0f, -1.0f, 0.0f)
+	};
+
+	for (size_t i = 0; i < l_probesCount; i++)
+	{
+		std::vector<BrickFactor> l_brickFactors;
+		l_brickFactors.reserve(l_bricksCount);
+
+		Ray l_ray;
+		l_ray.m_origin = m_probes[i].pos;
+
+		for (size_t j = 0; j < 6; j++)
+		{
+			l_ray.m_direction = l_directions[j];
+
+			for (size_t k = 0; k < l_bricksCount; k++)
+			{
+				if (InnoMath::intersectCheck(m_bricks[k].boundBox, l_ray))
+				{
+					BrickFactor l_BrickFactor;
+
+					l_BrickFactor.basisWeight = (m_bricks[k].boundBox.m_center - l_ray.m_origin).length();
+					l_BrickFactor.brickIndex = (unsigned int)k;
+
+					l_brickFactors.emplace_back(l_BrickFactor);
+				}
+			}
+
+			l_brickFactors.shrink_to_fit();
+
+			// Calculate brick weight
+			auto l_brickFactorSize = l_brickFactors.size();
+
+			if (l_brickFactorSize == 1)
+			{
+				l_brickFactors[0].basisWeight = 1.0f;
+			}
+			else
+			{
+				float denom = 0.0f;
+				for (size_t i = 0; i < l_brickFactorSize; i++)
+				{
+					denom += l_brickFactors[i].basisWeight;
+				}
+
+				for (size_t i = 0; i < l_brickFactorSize; i++)
+				{
+					l_brickFactors[i].basisWeight = (l_brickFactors[i].basisWeight) / denom;
+				}
+			}
+
+			// Assign brick factor range to probes
+			auto l_brickFactorRangeBegin = m_brickFactors.size();
+			auto l_brickFactorRangeEnd = l_brickFactorRangeBegin + l_brickFactors.size() - 1;
+
+			m_probes[i].brickFactorRange[j * 2] = (unsigned int)l_brickFactorRangeBegin;
+			m_probes[i].brickFactorRange[j * 2 + 1] = (unsigned int)l_brickFactorRangeEnd;
+
+			m_brickFactors.insert(m_brickFactors.end(), std::make_move_iterator(l_brickFactors.begin()), std::make_move_iterator(l_brickFactors.end()));
+		}
+
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Assign brick factor to probes ", (float)i * 100.0f / (float)l_probesCount, "%...");
+	}
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "GIBakePass: Brick factors have been generated.");
 
 	return true;
 }
@@ -945,8 +1044,8 @@ bool GIBakePass::Setup()
 
 	m_RPDC_BrickFactor->m_RenderPassDesc = l_RenderPassDesc;
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.SamplerType = TextureSamplerType::SamplerCubemap;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Width = m_probeMapResolution;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Height = m_probeMapResolution;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Width = m_probeMapSamplingInterval;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Height = m_probeMapSamplingInterval;
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::FLOAT32;
 
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
@@ -954,8 +1053,8 @@ bool GIBakePass::Setup()
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
 
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = true;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = m_probeMapResolution;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = m_probeMapResolution;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = m_probeMapSamplingInterval;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = m_probeMapSamplingInterval;
 
 	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs.resize(2);
 	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
@@ -1008,7 +1107,8 @@ bool GIBakePass::Bake()
 	serializeSurfels();
 	serializeBricks();
 
-	assignBrickFactorToProbes();
+	//assignBrickFactorToProbesByCPU();
+	assignBrickFactorToProbesByGPU();
 
 	serializeBrickFactors();
 	serializeProbes();
@@ -1065,4 +1165,9 @@ const std::vector<BrickFactor>& GIBakePass::GetBrickFactors()
 const std::vector<Probe>& GIBakePass::GetProbes()
 {
 	return m_probes;
+}
+
+vec4 GIBakePass::GetIrradianceVolumeRange()
+{
+	return m_irradianceVolumeRange;
 }

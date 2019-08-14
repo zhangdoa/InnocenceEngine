@@ -130,9 +130,9 @@ bool GIResolvePass::InitializeGPUBuffers()
 		m_irradianceVolume = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("IrradianceVolume/");
 		m_irradianceVolume->m_textureDataDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
-		m_irradianceVolume->m_textureDataDesc.Width = 4;
+		m_irradianceVolume->m_textureDataDesc.Width = 8;
 		m_irradianceVolume->m_textureDataDesc.Height = 1;
-		m_irradianceVolume->m_textureDataDesc.DepthOrArraySize = 4 * 6;
+		m_irradianceVolume->m_textureDataDesc.DepthOrArraySize = 8 * 6;
 		m_irradianceVolume->m_textureDataDesc.UsageType = TextureUsageType::RawImage;
 		m_irradianceVolume->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler3D;
 		m_irradianceVolume->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
@@ -546,11 +546,18 @@ bool GIResolvePass::litProbes()
 
 	auto l_threadCountPerGroup = 8;
 	auto l_totalThreadGroupsCount = (double)m_probeGBDC->m_ElementCount / (l_threadCountPerGroup * l_threadCountPerGroup * l_threadCountPerGroup);
+
+	l_totalThreadGroupsCount = InnoMath::clamp(l_totalThreadGroupsCount, 1.0, l_totalThreadGroupsCount);
+
 	auto l_averangeThreadGroupsCountPerSide = std::pow(l_totalThreadGroupsCount, 1.0 / 3.0);
 
-	auto l_numThreadsX = (unsigned int)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroup);
-	auto l_numThreadsY = (unsigned int)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroup);
-	auto l_numThreadsZ = (unsigned int)std::ceil((double)m_probeGBDC->m_ElementCount / (l_numThreadsX * l_numThreadsY));
+	auto l_numThreadsX = std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroup);
+	auto l_numThreadsY = std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroup);
+	auto l_numThreadsZ = std::ceil((double)m_probeGBDC->m_ElementCount / (l_numThreadsX * l_numThreadsY));
+
+	l_numThreadsX = InnoMath::clamp(l_totalThreadGroupsCount, (double)l_threadCountPerGroup, l_totalThreadGroupsCount);
+	l_numThreadsY = InnoMath::clamp(l_totalThreadGroupsCount, (double)l_threadCountPerGroup, l_totalThreadGroupsCount);
+	l_numThreadsZ = InnoMath::clamp(l_totalThreadGroupsCount, (double)l_threadCountPerGroup, l_totalThreadGroupsCount);
 
 	auto l_numThreadGroupsX = (unsigned int)std::ceil((double)l_numThreadsX / (double)l_threadCountPerGroup);
 	auto l_numThreadGroupsY = (unsigned int)std::ceil((double)l_numThreadsY / (double)l_threadCountPerGroup);
@@ -558,7 +565,7 @@ bool GIResolvePass::litProbes()
 
 	DispatchParamsGPUData l_probeLitWorkload;
 	l_probeLitWorkload.numThreadGroups = TVec4<unsigned int>(l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ, 0);
-	l_probeLitWorkload.numThreads = TVec4<unsigned int>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
+	l_probeLitWorkload.numThreads = TVec4<unsigned int>((unsigned int)l_numThreadsX, (unsigned int)l_numThreadsY, (unsigned int)l_numThreadsZ, 0);
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_dispatchParamsGBDC, &l_probeLitWorkload, 4, 1);
 
