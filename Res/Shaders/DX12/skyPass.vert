@@ -13,14 +13,12 @@ struct VertexInputType
 struct PixelInputType
 {
 	float4 frag_ClipSpacePos : SV_POSITION;
-	float3 frag_TexCoord : TEXCOORD;
 };
 
 PixelInputType main(VertexInputType input)
 {
 	PixelInputType output;
 
-	output.frag_TexCoord = input.position.xyz * -1.0;
 	float4 pos = float4(-1.0 * input.position.xyz, 1.0);
 	pos = mul(pos, cameraCBuffer.r);
 	pos = mul(pos, cameraCBuffer.p_original);

@@ -82,7 +82,7 @@ bool DebugPass::PrepareCommandList()
 
 	if (l_renderingConfig.drawDebugObject)
 	{
-		auto l_CameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Camera);
+		auto l_MainCameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::MainCamera);
 		auto l_DebugGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Debug);
 
 		auto l_probes = GIBakePass::GetProbes();
@@ -114,7 +114,7 @@ bool DebugPass::PrepareCommandList()
 
 			g_pModuleManager->getRenderingServer()->CopyDepthBuffer(OpaquePass::GetRPDC(), m_RPDC);
 
-			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_CameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
+			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MainCameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 
 			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_DebugGBDC->m_ResourceBinder, 1, 13, Accessibility::ReadOnly, 0, l_probes.size());
 			auto l_sphere = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Sphere);

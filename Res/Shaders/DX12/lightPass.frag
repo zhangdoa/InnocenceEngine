@@ -44,7 +44,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float roughness = GPassRT1.w;
 	float3 albedo = GPassRT2.xyz;
 	float ao = GPassRT2.w;
-	ao *= pow(SSAO, 2.0f);
+	ao *= SSAO;
 
 	float3 F0 = float3(0.04, 0.04, 0.04);
 	F0 = lerp(F0, albedo, metallic);
@@ -157,21 +157,24 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	else
 	{
 		indirectLight += nSquared.x * in_IrradianceVolume[GISampleCoordPX];
-	}	if (isNegative.y)
+	}
+	if (isNegative.y)
 	{
 		indirectLight += nSquared.y * in_IrradianceVolume[GISampleCoordNY];
 	}
 	else
 	{
 		indirectLight += nSquared.y * in_IrradianceVolume[GISampleCoordPY];
-	}	if (isNegative.z)
+	}
+	if (isNegative.z)
 	{
 		indirectLight += nSquared.z * in_IrradianceVolume[GISampleCoordNZ];
 	}
 	else
 	{
 		indirectLight += nSquared.z * in_IrradianceVolume[GISampleCoordPZ];
-	}
+	}
+
 	Lo += (1 - metallic) * indirectLight.xyz;
 
 	// ambient occlusion

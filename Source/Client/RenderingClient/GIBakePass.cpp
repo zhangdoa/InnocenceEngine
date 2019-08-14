@@ -26,7 +26,7 @@ namespace GIBakePass
 	bool captureSurfels();
 	bool drawCubemaps(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v);
 	bool drawOpaquePass(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v);
-	bool drawSkyVisibilityPass(const mat4& p, const std::vector<mat4>& v);
+	bool drawSkyVisibilityPass(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v);
 	bool readBackSurfelCaches(unsigned int probeIndex);
 
 	bool eliminateDuplicatedSurfels();
@@ -61,8 +61,6 @@ namespace GIBakePass
 
 	RenderPassDataComponent* m_RPDC_BrickFactor;
 	ShaderProgramComponent* m_SPC_BrickFactor;
-
-	GPUBufferDataComponent* m_GICameraGBDC;
 
 	std::vector<Probe> m_probes;
 	std::vector<Surfel> m_surfels;
@@ -142,14 +140,14 @@ bool GIBakePass::generateProbes()
 	l_GICameraGPUData[1] = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 0.0f));
 	l_GICameraGPUData[7] = InnoMath::generateIdentityMatrix<float>();
 
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_GICameraGBDC, l_GICameraGPUData);
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(GetGPUBufferDataComponent(GPUBufferUsageType::GICamera), l_GICameraGPUData);
 
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
 
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_Probe, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_Probe);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_Probe);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Probe, ShaderStage::Vertex, m_GICameraGBDC->m_ResourceBinder, 0, 11, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Probe, ShaderStage::Vertex, GetGPUBufferDataComponent(GPUBufferUsageType::GICamera)->m_ResourceBinder, 0, 10, Accessibility::ReadOnly);
 
 	unsigned int l_offset = 0;
 
@@ -239,7 +237,7 @@ bool GIBakePass::drawCubemaps(unsigned int probeIndex, const mat4& p, const std:
 
 	drawOpaquePass(probeIndex, p, v);
 
-	drawSkyVisibilityPass(p, v);
+	drawSkyVisibilityPass(probeIndex, p, v);
 
 	return true;
 }
@@ -256,7 +254,7 @@ bool GIBakePass::drawOpaquePass(unsigned int probeIndex, const mat4& p, const st
 	}
 	l_GICameraGPUData[7] = l_t;
 
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_GICameraGBDC, l_GICameraGPUData);
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(GetGPUBufferDataComponent(GPUBufferUsageType::GICamera), l_GICameraGPUData);
 
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
 	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
@@ -265,7 +263,7 @@ bool GIBakePass::drawOpaquePass(unsigned int probeIndex, const mat4& p, const st
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_Surfel);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_Surfel);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, m_SDC_Surfel->m_ResourceBinder, 8, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Geometry, m_GICameraGBDC->m_ResourceBinder, 0, 11, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Geometry, GetGPUBufferDataComponent(GPUBufferUsageType::GICamera)->m_ResourceBinder, 0, 10, Accessibility::ReadOnly);
 
 	unsigned int l_offset = 0;
 
@@ -312,12 +310,29 @@ bool GIBakePass::drawOpaquePass(unsigned int probeIndex, const mat4& p, const st
 	return true;
 }
 
-bool GIBakePass::drawSkyVisibilityPass(const mat4& p, const std::vector<mat4>& v)
+bool GIBakePass::drawSkyVisibilityPass(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v)
 {
-	auto l_MDC = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Cube);
+	auto l_depthStencilRT = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_DepthStencilRenderTarget);
 
-	auto l_capturePos = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	auto l_t = InnoMath::getInvertTranslationMatrix(l_capturePos);
+	auto l_depthStencilRTSize = l_depthStencilRT.size();
+
+	l_depthStencilRTSize /= 6;
+
+	for (size_t i = 0; i < 6; i++)
+	{
+		unsigned int l_stencil = 0;
+		for (size_t j = 0; j < l_depthStencilRTSize; j++)
+		{
+			auto& l_depthStencil = l_depthStencilRT[i * l_depthStencilRTSize + j];
+
+			if (l_depthStencil.w == 1.0f)
+			{
+				l_stencil++;
+			}
+		}
+
+		m_probes[probeIndex].skyVisibility[i] = (float)l_stencil / (float)l_depthStencilRTSize;
+	}
 
 	return true;
 }
@@ -553,7 +568,7 @@ bool GIBakePass::drawBricks(unsigned int probeIndex, const mat4 & p, const std::
 	}
 	l_GICameraGPUData[7] = InnoMath::getInvertTranslationMatrix(m_probes[probeIndex].pos);
 
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_GICameraGBDC, l_GICameraGPUData);
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(GetGPUBufferDataComponent(GPUBufferUsageType::GICamera), l_GICameraGPUData);
 
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
 
@@ -566,7 +581,7 @@ bool GIBakePass::drawBricks(unsigned int probeIndex, const mat4 & p, const std::
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_BrickFactor, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_BrickFactor);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_BrickFactor);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_BrickFactor, ShaderStage::Vertex, m_GICameraGBDC->m_ResourceBinder, 0, 11, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_BrickFactor, ShaderStage::Vertex, GetGPUBufferDataComponent(GPUBufferUsageType::GICamera)->m_ResourceBinder, 0, 10, Accessibility::ReadOnly);
 
 	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
 	{
@@ -816,7 +831,7 @@ bool GIBakePass::Setup()
 	m_RPDC_Probe->m_ResourceBinderLayoutDescs.resize(2);
 	m_RPDC_Probe->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC_Probe->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
-	m_RPDC_Probe->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 11;
+	m_RPDC_Probe->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 10;
 
 	m_RPDC_Probe->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC_Probe->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 1;
@@ -865,7 +880,7 @@ bool GIBakePass::Setup()
 	m_RPDC_Surfel->m_ResourceBinderLayoutDescs.resize(9);
 	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 11;
+	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 10;
 
 	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 1;
@@ -945,7 +960,7 @@ bool GIBakePass::Setup()
 	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs.resize(2);
 	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
-	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 11;
+	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 10;
 
 	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 1;
@@ -954,14 +969,6 @@ bool GIBakePass::Setup()
 	m_RPDC_BrickFactor->m_ShaderProgram = m_SPC_BrickFactor;
 
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_BrickFactor);
-
-	////
-	m_GICameraGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("GICameraGPUBuffer/");
-	m_GICameraGBDC->m_ElementSize = sizeof(mat4) * 8;
-	m_GICameraGBDC->m_ElementCount = 1;
-	m_GICameraGBDC->m_BindingPoint = 11;
-
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_GICameraGBDC);
 
 	////
 	m_testSurfelTexture = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("TestSurfel/");

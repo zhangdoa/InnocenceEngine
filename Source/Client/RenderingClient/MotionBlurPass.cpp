@@ -71,12 +71,6 @@ bool MotionBlurPass::Initialize()
 
 bool MotionBlurPass::PrepareCommandList(IResourceBinder* input)
 {
-	auto l_CameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Camera);
-	auto l_SunGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sun);
-	auto l_PointLightGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PointLight);
-	auto l_SphereLightGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::SphereLight);
-	auto l_SkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sky);
-
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);

@@ -189,6 +189,8 @@ struct Probe
 {
 	float4 pos;
 	uint brickFactorRange[12];
+	float skyVisibility[6];
+	uint padding[10];
 };
 
 #include "common/GPUBuffers.hlsl"

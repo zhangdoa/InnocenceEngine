@@ -6,7 +6,7 @@ INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 
 namespace DefaultGPUBuffers
 {
-	GPUBufferDataComponent* m_CameraGBDC;
+	GPUBufferDataComponent* m_MainCameraGBDC;
 	GPUBufferDataComponent* m_MeshGBDC;
 	GPUBufferDataComponent* m_MaterialGBDC;
 	GPUBufferDataComponent* m_SunGBDC;
@@ -15,6 +15,8 @@ namespace DefaultGPUBuffers
 	GPUBufferDataComponent* m_CSMGBDC;
 	GPUBufferDataComponent* m_SkyGBDC;
 	GPUBufferDataComponent* m_dispatchParamsGBDC;
+	GPUBufferDataComponent* m_GICameraGBDC;
+	GPUBufferDataComponent* m_GISkyGBDC;
 	GPUBufferDataComponent* m_billboardGBDC;
 	GPUBufferDataComponent* m_debugGBDC;
 
@@ -30,12 +32,12 @@ bool DefaultGPUBuffers::Initialize()
 {
 	auto l_RenderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
-	m_CameraGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("CameraGPUBuffer/");
-	m_CameraGBDC->m_ElementCount = 1;
-	m_CameraGBDC->m_ElementSize = sizeof(CameraGPUData);
-	m_CameraGBDC->m_BindingPoint = 0;
+	m_MainCameraGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("CameraGPUBuffer/");
+	m_MainCameraGBDC->m_ElementCount = 1;
+	m_MainCameraGBDC->m_ElementSize = sizeof(CameraGPUData);
+	m_MainCameraGBDC->m_BindingPoint = 0;
 
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_CameraGBDC);
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_MainCameraGBDC);
 
 	m_MeshGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("MeshGPUBuffer/");
 	m_MeshGBDC->m_ElementCount = l_RenderingCapability.maxMeshes;
@@ -94,6 +96,20 @@ bool DefaultGPUBuffers::Initialize()
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_dispatchParamsGBDC);
 
+	m_GICameraGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("GICameraGPUBuffer/");
+	m_GICameraGBDC->m_ElementSize = sizeof(mat4) * 8;
+	m_GICameraGBDC->m_ElementCount = 1;
+	m_GICameraGBDC->m_BindingPoint = 10;
+
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_GICameraGBDC);
+
+	m_GISkyGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("GISkyGPUBuffer/");
+	m_GISkyGBDC->m_ElementSize = sizeof(mat4) * 8;
+	m_GISkyGBDC->m_ElementCount = 1;
+	m_GISkyGBDC->m_BindingPoint = 11;
+
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_GISkyGBDC);
+
 	m_billboardGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("BillboardGPUBuffer/");
 	m_billboardGBDC->m_ElementCount = l_RenderingCapability.maxMeshes;
 	m_billboardGBDC->m_ElementSize = sizeof(MeshGPUData);
@@ -126,7 +142,7 @@ bool DefaultGPUBuffers::Upload()
 	auto l_SkyGPUData = g_pModuleManager->getRenderingFrontend()->getSkyGPUData();
 	auto l_billboardPassMeshGPUData = g_pModuleManager->getRenderingFrontend()->getBillboardPassMeshGPUData();
 
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_CameraGBDC, &l_CameraGPUData);
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_MainCameraGBDC, &l_CameraGPUData);
 	if (l_MeshGPUData.size() > 0)
 	{
 		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_MeshGBDC, l_MeshGPUData, 0, l_totalDrawCallCount);
@@ -160,7 +176,7 @@ bool DefaultGPUBuffers::Upload()
 
 bool DefaultGPUBuffers::Terminate()
 {
-	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_CameraGBDC);
+	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_MainCameraGBDC);
 	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_MeshGBDC);
 	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_MaterialGBDC);
 	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_SunGBDC);;
@@ -169,6 +185,8 @@ bool DefaultGPUBuffers::Terminate()
 	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_CSMGBDC);
 	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_SkyGBDC);
 	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_dispatchParamsGBDC);
+	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_GICameraGBDC);
+	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_GISkyGBDC);
 	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_billboardGBDC);
 
 	return true;
@@ -180,7 +198,7 @@ GPUBufferDataComponent * DefaultGPUBuffers::GetGPUBufferDataComponent(GPUBufferU
 
 	switch (usageType)
 	{
-	case GPUBufferUsageType::Camera: l_result = m_CameraGBDC;
+	case GPUBufferUsageType::MainCamera: l_result = m_MainCameraGBDC;
 		break;
 	case GPUBufferUsageType::Mesh: l_result = m_MeshGBDC;
 		break;
@@ -198,7 +216,9 @@ GPUBufferDataComponent * DefaultGPUBuffers::GetGPUBufferDataComponent(GPUBufferU
 		break;
 	case GPUBufferUsageType::Compute: l_result = m_dispatchParamsGBDC;
 		break;
-	case GPUBufferUsageType::SH9:
+	case GPUBufferUsageType::GICamera:l_result = m_GICameraGBDC;
+		break;
+	case GPUBufferUsageType::GISky: l_result = m_GISkyGBDC;
 		break;
 	case GPUBufferUsageType::Billboard: l_result = m_billboardGBDC;
 		break;

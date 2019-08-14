@@ -3,7 +3,7 @@
 
 namespace DefaultGPUBuffers
 {
-	enum class GPUBufferUsageType { Camera, Mesh, Material, Sun, PointLight, SphereLight, CSM, Sky, Compute, SH9, Billboard, Debug };
+	enum class GPUBufferUsageType { MainCamera, Mesh, Material, Sun, PointLight, SphereLight, CSM, Sky, Compute, GICamera, GISky, Billboard, Debug };
 
 	bool Setup();
 	bool Initialize();

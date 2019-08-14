@@ -50,19 +50,22 @@ cbuffer dispatchParamsCBuffer : register(b8)
 	DispatchParam dispatchParams[8];
 }
 
-cbuffer SH9CBuffer : register(b9)
-{
-	SH9 SH9s[64];
-};
-
-cbuffer SSAOKernelCBuffer : register(b10)
+cbuffer SSAOKernelCBuffer : register(b9)
 {
 	float4 kernels[64];
 };
 
-cbuffer GICameraCBuffer : register(b11)
+cbuffer GICameraCBuffer : register(b10)
 {
 	matrix GI_cam_p;
 	matrix GI_cam_r[6];
 	matrix GI_cam_t;
+};
+
+cbuffer GISkyCBuffer : register(b11)
+{
+	matrix GISky_p_inv;
+	matrix GISky_v_inv[6];
+	float2 GISky_viewportSize;
+	float4 GISky_padding[3];
 };

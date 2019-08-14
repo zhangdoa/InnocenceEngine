@@ -65,22 +65,24 @@ layout(std140, binding = 8) uniform dispatchParamsUBOBlock
 	DispatchParam data[8];
 } dispatchParamsUBO;
 
-layout(std140, row_major, binding = 9) uniform SH9UBOBlock
-{
-	SH9 data[64];
-} SH9UBO;
-
-layout(std140, row_major, binding = 10) uniform SSAOKernelUBOBlock
+layout(std140, row_major, binding = 9) uniform SSAOKernelUBOBlock
 {
 	vec4 data[64];
 } SSAOKernelUBO;
 
-layout(std140, row_major, binding = 11) uniform GICameraUBOBlock
+layout(std140, row_major, binding = 10) uniform GICameraUBOBlock
 {
 	mat4 p;
 	mat4 r[6];
 	mat4 t;
 } GICameraUBO;
+
+layout(std140, row_major, binding = 11) uniform GISkyUBOUBOBlock
+{
+	mat4 p_inv;
+	mat4 v_inv[6];
+	vec2 viewportSize;
+} GISkyUBO;
 
 layout(std430, row_major, binding = 12) buffer billboardUBOBlock
 {

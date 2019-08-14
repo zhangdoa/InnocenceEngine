@@ -11,9 +11,21 @@ using namespace DefaultGPUBuffers;
 
 namespace GIResolvePass
 {
+	bool setupSky();
+	bool setupSurfels();
+	bool setupBricks();
+	bool setupProbes();
+
+	bool generateSkyRadiance();
 	bool litSurfels();
 	bool litBricks();
 	bool litProbes();
+
+	RenderPassDataComponent* m_skyRPDC;
+	ShaderProgramComponent* m_skySPC;
+
+	RenderPassDataComponent* m_skyConvRPDC;
+	ShaderProgramComponent* m_skyConvSPC;
 
 	RenderPassDataComponent* m_surfelRPDC = 0;
 	ShaderProgramComponent* m_surfelSPC = 0;
@@ -23,6 +35,8 @@ namespace GIResolvePass
 
 	RenderPassDataComponent* m_probeRPDC = 0;
 	ShaderProgramComponent* m_probeSPC = 0;
+
+	GPUBufferDataComponent* m_skyConvGBDC = 0;
 
 	GPUBufferDataComponent* m_surfelGBDC = 0;
 	GPUBufferDataComponent* m_surfelIrradianceGBDC = 0;
@@ -167,6 +181,80 @@ bool GIResolvePass::DeleteGPUBuffers()
 
 bool GIResolvePass::Setup()
 {
+	setupSky();
+	setupSurfels();
+	setupBricks();
+	setupProbes();
+
+	f_sceneLoadingFinishCallback = []() { InitializeGPUBuffers(); };
+	f_sceneLoadingStartCallback = []() { DeleteGPUBuffers(); };
+
+	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
+	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
+
+	return true;
+}
+
+bool GIResolvePass::Initialize()
+{
+	return true;
+}
+
+bool GIResolvePass::setupSky()
+{
+	m_skySPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIResolveSkyPass/");
+
+	m_skySPC->m_ShaderFilePaths.m_VSPath = "GIResolveSkyPass.vert/";
+	m_skySPC->m_ShaderFilePaths.m_GSPath = "GIResolveSkyPass.geom/";
+	m_skySPC->m_ShaderFilePaths.m_PSPath = "GIResolveSkyPass.frag/";
+
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_skySPC);
+
+	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+
+	m_skyRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIResolveSkyPass/");
+
+	m_skyRPDC->m_RenderPassDesc = l_RenderPassDesc;
+
+	m_skyRPDC->m_RenderPassDesc.m_RenderTargetDesc.SamplerType = TextureSamplerType::SamplerCubemap;
+	m_skyRPDC->m_RenderPassDesc.m_RenderTargetDesc.Width = 32;
+	m_skyRPDC->m_RenderPassDesc.m_RenderTargetDesc.Height = 32;
+
+	m_skyRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
+	m_skyRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
+	m_skyRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::Always;
+	m_skyRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = 32;
+	m_skyRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = 32;
+
+	m_skyRPDC->m_ResourceBinderLayoutDescs.resize(3);
+	m_skyRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_skyRPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
+	m_skyRPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 10;
+
+	m_skyRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_skyRPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 1;
+	m_skyRPDC->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 3;
+
+	m_skyRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_skyRPDC->m_ResourceBinderLayoutDescs[2].m_GlobalSlot = 2;
+	m_skyRPDC->m_ResourceBinderLayoutDescs[2].m_LocalSlot = 11;
+
+	m_skyRPDC->m_ShaderProgram = m_skySPC;
+
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_skyRPDC);
+
+	////
+	m_skyConvGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("SkyConvGPUBuffer/");
+	m_skyConvGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
+	m_skyConvGBDC->m_ElementCount = 6;
+	m_skyConvGBDC->m_ElementSize = sizeof(vec4);
+	m_skyConvGBDC->m_BindingPoint = 4;
+
+	return true;
+}
+
+bool GIResolvePass::setupSurfels()
+{
 	m_surfelSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIResolveSurfelPass/");
 	m_surfelSPC->m_ShaderFilePaths.m_CSPath = "GIResolveSurfelPass.comp/";
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_surfelSPC);
@@ -208,12 +296,20 @@ bool GIResolvePass::Setup()
 
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_surfelRPDC);
 
-	////
+	return true;
+}
+
+bool GIResolvePass::setupBricks()
+{
 	m_brickSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIResolveBrickPass/");
 	m_brickSPC->m_ShaderFilePaths.m_CSPath = "GIResolveBrickPass.comp/";
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_brickSPC);
 
 	m_brickRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIResolveBrickPass/");
+
+	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+	l_RenderPassDesc.m_RenderTargetCount = 0;
+	l_RenderPassDesc.m_RenderPassUsageType = RenderPassUsageType::Compute;
 
 	m_brickRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -244,12 +340,20 @@ bool GIResolvePass::Setup()
 
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_brickRPDC);
 
-	////
+	return true;
+}
+
+bool GIResolvePass::setupProbes()
+{
 	m_probeSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIResolveProbePass/");
 	m_probeSPC->m_ShaderFilePaths.m_CSPath = "GIResolveProbePass.comp/";
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_probeSPC);
 
 	m_probeRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIResolveProbePass/");
+
+	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+	l_RenderPassDesc.m_RenderTargetCount = 0;
+	l_RenderPassDesc.m_RenderPassUsageType = RenderPassUsageType::Compute;
 
 	m_probeRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -291,23 +395,67 @@ bool GIResolvePass::Setup()
 
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_probeRPDC);
 
-	f_sceneLoadingFinishCallback = []() { InitializeGPUBuffers(); };
-	f_sceneLoadingStartCallback = []() { DeleteGPUBuffers(); };
-
-	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
-	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
-
 	return true;
 }
 
-bool GIResolvePass::Initialize()
+bool GIResolvePass::generateSkyRadiance()
 {
+	auto l_SunGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sun);
+	auto l_GICameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GICamera);
+	auto l_GISkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GISky);
+
+	auto l_cameraGPUData = g_pModuleManager->getRenderingFrontend()->getCameraGPUData();
+
+	std::vector<mat4> l_GICameraGPUData(8);
+	std::vector<mat4> l_GISkyGPUData(8);
+
+	l_GICameraGPUData[0] = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, l_cameraGPUData.zNear, l_cameraGPUData.zFar);
+	l_GISkyGPUData[0] = l_GICameraGPUData[0].inverse();
+
+	auto l_rPX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
+	auto l_rNX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(-1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
+	auto l_rPY = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 1.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 0.0f));
+	auto l_rNY = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 0.0f));
+	auto l_rPZ = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
+	auto l_rNZ = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, -1.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
+
+	std::vector<mat4> l_v =
+	{
+		l_rPX, l_rNX, l_rPY, l_rNY, l_rPZ, l_rNZ
+	};
+
+	for (size_t i = 0; i < 6; i++)
+	{
+		l_GICameraGPUData[i + 1] = l_v[i];
+		l_GISkyGPUData[i + 1] = l_v[i].inverse();
+	}
+	l_GICameraGPUData[7] = InnoMath::generateIdentityMatrix<float>();
+	l_GISkyGPUData[7].m00 = 32.0f;
+	l_GISkyGPUData[7].m01 = 32.0f;
+
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GICameraGBDC, l_GICameraGPUData);
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GISkyGBDC, l_GISkyGPUData);
+
+	g_pModuleManager->getRenderingServer()->CommandListBegin(m_skyRPDC, 0);
+	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_skyRPDC);
+	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_skyRPDC);
+
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyRPDC, ShaderStage::Geometry, l_GICameraGBDC->m_ResourceBinder, 0, 10, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyRPDC, ShaderStage::Pixel, l_SunGBDC->m_ResourceBinder, 1, 3, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyRPDC, ShaderStage::Pixel, l_GISkyGBDC->m_ResourceBinder, 2, 11, Accessibility::ReadOnly);
+
+	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Cube);
+
+	g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_skyRPDC, l_mesh);
+
+	g_pModuleManager->getRenderingServer()->CommandListEnd(m_skyRPDC);
+
 	return true;
 }
 
 bool GIResolvePass::litSurfels()
 {
-	auto l_CameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Camera);
+	auto l_MainCameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::MainCamera);
 	auto l_SunGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sun);
 	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Compute);
 
@@ -333,7 +481,7 @@ bool GIResolvePass::litSurfels()
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_surfelRPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_surfelRPDC);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_CameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_MainCameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_SunGBDC->m_ResourceBinder, 1, 3, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 2, 8, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadWrite);
@@ -441,6 +589,7 @@ bool GIResolvePass::PrepareCommandList()
 {
 	if (l_GIDataLoaded)
 	{
+		generateSkyRadiance();
 		litSurfels();
 		litBricks();
 		litProbes();
@@ -453,6 +602,10 @@ bool GIResolvePass::ExecuteCommandList()
 {
 	if (l_GIDataLoaded)
 	{
+		g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_skyRPDC);
+
+		g_pModuleManager->getRenderingServer()->WaitForFrame(m_skyRPDC);
+
 		g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_surfelRPDC);
 
 		g_pModuleManager->getRenderingServer()->WaitForFrame(m_surfelRPDC);
@@ -471,6 +624,7 @@ bool GIResolvePass::ExecuteCommandList()
 
 bool GIResolvePass::Terminate()
 {
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_skyRPDC);
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_surfelRPDC);
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_brickRPDC);
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_probeRPDC);

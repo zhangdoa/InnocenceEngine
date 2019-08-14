@@ -54,7 +54,7 @@ void main()
 	float safe_roughness = (Roughness + eps) / (1.0 + eps);
 	float AO = GPassRT2.a;
 	float SSAO = texture(uni_SSAOBlurPassRT0, screenTexCoords).x;
-	AO *= pow(SSAO, 2.0f);
+	AO *= SSAO;
 
 	vec3 Lo = vec3(0.0);
 	vec3 N = normalize(Normal);

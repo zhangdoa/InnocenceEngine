@@ -46,6 +46,8 @@ struct Probe
 {
 	vec4 pos;
 	unsigned int brickFactorRange[12];
+	float skyVisibility[6];
+	unsigned int padding[10];
 };
 
 namespace GIBakePass
