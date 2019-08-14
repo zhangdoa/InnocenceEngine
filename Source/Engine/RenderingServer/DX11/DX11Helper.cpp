@@ -674,10 +674,12 @@ bool DX11Helper::CreateRenderTargets(DX11RenderPassDataComponent * DX11RPDC, IRe
 		if (DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
 		{
 			DX11RPDC->m_DepthStencilRenderTarget->m_textureDataDesc.UsageType = TextureUsageType::DepthStencilAttachment;
+			DX11RPDC->m_DepthStencilRenderTarget->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
 		}
 		else
 		{
 			DX11RPDC->m_DepthStencilRenderTarget->m_textureDataDesc.UsageType = TextureUsageType::DepthAttachment;
+			DX11RPDC->m_DepthStencilRenderTarget->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
 		}
 
 		DX11RPDC->m_DepthStencilRenderTarget->m_textureData = nullptr;

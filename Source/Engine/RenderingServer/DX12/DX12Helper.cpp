@@ -768,10 +768,12 @@ bool DX12Helper::CreateRenderTargets(DX12RenderPassDataComponent* DX12RPDC, IRen
 		if (DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
 		{
 			DX12RPDC->m_DepthStencilRenderTarget->m_textureDataDesc.UsageType = TextureUsageType::DepthStencilAttachment;
+			DX12RPDC->m_DepthStencilRenderTarget->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
 		}
 		else
 		{
 			DX12RPDC->m_DepthStencilRenderTarget->m_textureDataDesc.UsageType = TextureUsageType::DepthAttachment;
+			DX12RPDC->m_DepthStencilRenderTarget->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
 		}
 
 		DX12RPDC->m_DepthStencilRenderTarget->m_textureData = { nullptr };
