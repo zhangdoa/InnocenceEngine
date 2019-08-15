@@ -10,7 +10,8 @@ mkdir -p ../Include/vulkan
 cp -R Vulkan-Headers/include/vulkan/ ../Include/vulkan/
 
 mkdir -p ../Include/stb
-cp  stb/stb_image.h ../Include/stb/
+cp stb/stb_image.h ../Include/stb/
+cp stb/stb_image_write.h ../Include/stb/
 
 mkdir -p ../../Engine/ThirdParty/ImGui/
 cp imgui/*.h ../../Engine/ThirdParty/ImGui/

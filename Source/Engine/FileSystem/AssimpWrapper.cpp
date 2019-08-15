@@ -1,5 +1,7 @@
 #include "AssimpWrapper.h"
 
+#include "stb/stb_image_write.h"
+
 #include "assimp/Importer.hpp"
 #include "assimp/Exporter.hpp"
 #include "assimp/DefaultLogger.hpp"
@@ -533,50 +535,57 @@ Binary data structure:
 
 void InnoFileSystemNS::AssimpWrapper::processAssimpAnimation(const aiAnimation * aiAnimation, const std::string& exportFileRelativePath)
 {
-	std::ofstream l_file(IOService::getWorkingDirectory() + exportFileRelativePath, std::ios::binary);
-	//
+	//std::ofstream l_file(IOService::getWorkingDirectory() + exportFileRelativePath, std::ios::binary);
+
 	auto l_duration = aiAnimation->mDuration;
-	IOService::serialize(l_file, &l_duration, sizeof(decltype(l_duration)));
-	//
+	//IOService::serialize(l_file, &l_duration, sizeof(decltype(l_duration)));
+
 	auto l_numChannels = aiAnimation->mNumChannels;
 	if (l_numChannels)
 	{
-		IOService::serialize(l_file, &l_numChannels, sizeof(decltype(l_numChannels)));
-		//
+		auto l_numKeys = aiAnimation->mChannels[0]->mNumPositionKeys;
+
+		std::vector<vec4> l_textureData;
+
+		// Position-xyz, time-w, rotation-xyzw
+		l_textureData.reserve(l_numChannels * l_numKeys * 2);
+
+		//IOService::serialize(l_file, &l_numChannels, sizeof(decltype(l_numChannels)));
 		for (unsigned int i = 0; i < l_numChannels; i++)
 		{
-			//
 			auto l_channel = aiAnimation->mChannels[i];
-			auto l_channelIndex = i;
-			IOService::serialize(l_file, &l_channelIndex, sizeof(decltype(l_channelIndex)));
+			//auto l_channelIndex = i;
+			//IOService::serialize(l_file, &l_channelIndex, sizeof(decltype(l_channelIndex)));
 
 			if (l_channel->mNumPositionKeys != l_channel->mNumRotationKeys)
 			{
 				InnoLogger::Log(LogLevel::Error, "FileSystem: AssimpWrapper: Position key number is different than rotation key number in node: ", l_channel->mNodeName.C_Str(), "!");
-				l_file.close();
+				//l_file.close();
 				return;
 			}
-			//
-			IOService::serialize(l_file, &l_channel->mNumPositionKeys, sizeof(decltype(l_channel->mNumPositionKeys)));
+
+			//IOService::serialize(l_file, &l_channel->mNumPositionKeys, sizeof(decltype(l_channel->mNumPositionKeys)));
 			for (unsigned int j = 0; j < l_channel->mNumPositionKeys; j++)
 			{
-				auto l_posKey = l_channel->mPositionKeys[i];
+				auto l_posKey = l_channel->mPositionKeys[j];
 				auto l_posKeyTime = l_posKey.mTime;
 				auto l_posKeyValue = l_posKey.mValue;
-				auto l_pos = vec4(l_posKeyValue.x, l_posKeyValue.y, l_posKeyValue.z, 1.0f);
-				auto l_rotKey = l_channel->mRotationKeys[i];
+				auto l_pos = vec4(l_posKeyValue.x, l_posKeyValue.y, l_posKeyValue.z, (float)l_posKeyTime);
+
+				l_textureData.emplace_back(l_pos);
+
+				auto l_rotKey = l_channel->mRotationKeys[j];
 				auto l_rotKeyValue = l_rotKey.mValue;
 				auto l_rot = vec4(l_rotKeyValue.x, l_rotKeyValue.y, l_rotKeyValue.z, l_rotKeyValue.w);
 
-				Key l_key;
-				l_key.m_Pos = l_pos;
-				l_key.m_Rot = l_rot;
-				l_key.m_Time = l_posKeyTime;
+				l_textureData.emplace_back(l_rot);
 
-				IOService::serialize(l_file, &l_key, sizeof(decltype(l_key)));
+				//IOService::serialize(l_file, &l_key, sizeof(decltype(l_key)));
 			}
 		}
+
+		stbi_write_png((IOService::getWorkingDirectory() + exportFileRelativePath).c_str(), (int)l_numKeys * 2 * 4, (int)l_numChannels, 4, l_textureData.data(), (int)l_numKeys * 2 * sizeof(vec4));
 	}
 
-	l_file.close();
+	//l_file.close();
 }

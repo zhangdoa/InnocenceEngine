@@ -439,41 +439,7 @@ std::vector<AnimationDataComponent*> InnoFileSystemNS::JSONParser::processAnimat
 	{
 		auto l_animationFileName = i.get<std::string>();
 
-		std::ifstream l_animationFile(IOService::getWorkingDirectory() + l_animationFileName, std::ios::binary);
-
-		if (!l_animationFile.is_open())
-		{
-			InnoLogger::Log(LogLevel::Error, "FileSystem: std::ifstream: can't open file ", l_animationFileName.c_str(), "!");
-		}
 		auto l_ADC = g_pModuleManager->getRenderingFrontend()->addAnimationDataComponent();
-
-		auto pbuf = l_animationFile.rdbuf();
-		pbuf->pubseekpos(0, l_animationFile.in);
-
-		double l_duration;
-		pbuf->sgetn((char*)&l_duration, sizeof(l_duration));
-
-		unsigned int l_numChannels;
-		pbuf->sgetn((char*)&l_numChannels, sizeof(l_numChannels));
-		l_ADC->m_NumChannels = l_numChannels;
-
-		for (unsigned int i = 0; i < l_numChannels; i++)
-		{
-			Channel l_channel;
-			unsigned int l_channelIndex;
-			pbuf->sgetn((char*)&l_channelIndex, sizeof(l_channelIndex));
-			l_channel.m_ChannelID = l_channelIndex;
-
-			unsigned int l_numKeys;
-			pbuf->sgetn((char*)&l_numKeys, sizeof(l_numKeys));
-			l_channel.m_NumKeys = l_numKeys;
-
-			for (unsigned int j = 0; j < l_numKeys; j++)
-			{
-				Key l_key;
-				pbuf->sgetn((char*)&l_key, sizeof(l_key));
-			}
-		}
 	}
 
 	return std::vector<AnimationDataComponent*>();

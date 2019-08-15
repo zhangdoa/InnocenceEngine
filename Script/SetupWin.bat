@@ -9,6 +9,7 @@ xcopy /e/s/y assimp\include\assimp\* ..\Include\assimp\
 xcopy /y Vulkan-Headers\include\vulkan\* ..\Include\vulkan\
 
 xcopy /y stb\stb_image.h ..\Include\stb\
+xcopy /y stb\stb_image_write.h ..\Include\stb\
 
 xcopy /y imgui\*.h ..\..\Engine\ThirdParty\ImGui\
 xcopy /y imgui\*.cpp ..\..\Engine\ThirdParty\ImGui\
