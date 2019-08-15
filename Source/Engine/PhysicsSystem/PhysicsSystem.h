@@ -20,5 +20,6 @@ public:
 	void updateCulling() override;
 	std::optional<std::vector<CullingDataPack>> getCullingDataPack() override;
 	AABB getVisibleSceneAABB() override;
+	AABB getStaticSceneAABB() override;
 	AABB getTotalSceneAABB() override;
 };

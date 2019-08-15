@@ -638,6 +638,11 @@ AABB InnoPhysicsSystem::getVisibleSceneAABB()
 	return InnoPhysicsSystemNS::m_visibleSceneAABB;
 }
 
+AABB InnoPhysicsSystem::getStaticSceneAABB()
+{
+	return InnoPhysicsSystemNS::m_RootPhysicsDataComponent.m_AABBWS;
+}
+
 AABB InnoPhysicsSystem::getTotalSceneAABB()
 {
 	return InnoPhysicsSystemNS::m_totalSceneAABB;
