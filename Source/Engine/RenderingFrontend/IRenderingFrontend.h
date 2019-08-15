@@ -101,9 +101,4 @@ public:
 
 	virtual unsigned int getDebuggerPassDrawCallCount() = 0;
 	virtual const std::vector<DebuggerPassGPUData>& getDebuggerPassGPUData() = 0;
-
-	virtual unsigned int getGIPassDrawCallCount() = 0;
-	virtual const std::vector<OpaquePassDrawCallData>& getGIPassGPUData() = 0;
-	virtual const std::vector<MeshGPUData>& getGIPassMeshGPUData() = 0;
-	virtual const std::vector<MaterialGPUData>& getGIPassMaterialGPUData() = 0;
 };

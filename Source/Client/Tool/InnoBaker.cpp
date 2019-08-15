@@ -1,5 +1,8 @@
 #include "InnoBaker.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+#include "../../Engine/Common/CommonMacro.inl"
+#include "../../Engine/ComponentManager/ITransformComponentManager.h"
+#include "../../Engine/ComponentManager/IVisibleComponentManager.h"
 
 #include "../../Engine/Common/InnoMathHelper.h"
 
@@ -16,6 +19,7 @@ struct BrickCache
 
 namespace InnoBakerNS
 {
+	bool gatherStaticMeshData();
 	bool generateProbes();
 
 	bool captureSurfels();
@@ -43,12 +47,18 @@ namespace InnoBakerNS
 	bool serializeBrickFactors();
 	bool serializeProbes();
 
+	unsigned int m_staticMeshDrawCallCount = 0;
+	std::vector<OpaquePassDrawCallData> m_staticMeshDrawCallData;
+	std::vector<MeshGPUData> m_staticMeshMeshGPUData;
+	std::vector<MaterialGPUData> m_staticMeshMaterialGPUData;
+
 	const unsigned int m_probeMapResolution = 1024;
 	const float m_probeHeightOffset = 4.0f;
 	const unsigned int m_probeMapSamplingInterval = 128;
 	const unsigned int m_captureResolution = 64;
 	const unsigned int m_sampleCountPerFace = m_captureResolution * m_captureResolution;
 	const vec4 m_brickSize = vec4(8.0f, 8.0f, 8.0f, 0.0f);
+
 	std::vector<Probe> m_probes;
 	std::vector<Surfel> m_surfels;
 	std::vector<BrickCache> m_brickCaches;
@@ -68,6 +78,64 @@ namespace InnoBakerNS
 
 using namespace InnoBakerNS;
 using namespace DefaultGPUBuffers;
+
+bool InnoBakerNS::gatherStaticMeshData()
+{
+	unsigned int l_index = 0;
+
+	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
+	for (auto visibleComponent : l_visibleComponents)
+	{
+		if (visibleComponent->m_visiblilityType == VisiblilityType::Opaque
+			&& visibleComponent->m_objectStatus == ObjectStatus::Activated
+			&& visibleComponent->m_meshUsageType == MeshUsageType::Static
+			)
+		{
+			auto l_transformComponent = GetComponent(TransformComponent, visibleComponent->m_parentEntity);
+			auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
+
+			for (auto& l_modelPair : visibleComponent->m_modelMap)
+			{
+				OpaquePassDrawCallData l_staticMeshGPUData;
+
+				l_staticMeshGPUData.mesh = l_modelPair.first;
+				l_staticMeshGPUData.material = l_modelPair.second;
+
+				MeshGPUData l_meshGPUData;
+
+				l_meshGPUData.m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
+				l_meshGPUData.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
+				l_meshGPUData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
+				l_meshGPUData.UUID = (float)visibleComponent->m_UUID;
+
+				MaterialGPUData l_materialGPUData;
+
+				l_materialGPUData.useNormalTexture = !(l_staticMeshGPUData.material->m_normalTexture == nullptr);
+				l_materialGPUData.useAlbedoTexture = !(l_staticMeshGPUData.material->m_albedoTexture == nullptr);
+				l_materialGPUData.useMetallicTexture = !(l_staticMeshGPUData.material->m_metallicTexture == nullptr);
+				l_materialGPUData.useRoughnessTexture = !(l_staticMeshGPUData.material->m_roughnessTexture == nullptr);
+				l_materialGPUData.useAOTexture = !(l_staticMeshGPUData.material->m_aoTexture == nullptr);
+
+				l_materialGPUData.customMaterial = l_modelPair.second->m_meshCustomMaterial;
+
+				m_staticMeshDrawCallData[l_index] = l_staticMeshGPUData;
+				m_staticMeshMeshGPUData[l_index] = l_meshGPUData;
+				m_staticMeshMaterialGPUData[l_index] = l_materialGPUData;
+				l_index++;
+			}
+		}
+	}
+
+	m_staticMeshDrawCallCount = l_index;
+
+	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
+	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
+
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MeshGBDC, m_staticMeshMeshGPUData, 0, m_staticMeshMeshGPUData.size());
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MaterialGBDC, m_staticMeshMaterialGPUData, 0, m_staticMeshMaterialGPUData.size());
+
+	return true;
+}
 
 bool InnoBakerNS::generateProbes()
 {
@@ -97,16 +165,15 @@ bool InnoBakerNS::generateProbes()
 
 	unsigned int l_offset = 0;
 
-	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getGIPassDrawCallCount();
-	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
+	for (unsigned int i = 0; i < m_staticMeshDrawCallCount; i++)
 	{
-		auto l_GIPassGPUData = g_pModuleManager->getRenderingFrontend()->getGIPassGPUData()[i];
+		auto l_staticMeshGPUData = m_staticMeshDrawCallData[i];
 
-		if (l_GIPassGPUData.mesh->m_objectStatus == ObjectStatus::Activated)
+		if (l_staticMeshGPUData.mesh->m_objectStatus == ObjectStatus::Activated)
 		{
 			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Probe, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_offset, 1);
 
-			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC_Probe, l_GIPassGPUData.mesh);
+			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC_Probe, l_staticMeshGPUData.mesh);
 		}
 
 		l_offset++;
@@ -292,34 +359,33 @@ bool InnoBakerNS::drawOpaquePass(unsigned int probeIndex, const mat4& p, const s
 
 	unsigned int l_offset = 0;
 
-	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getGIPassDrawCallCount();
-	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
+	for (unsigned int i = 0; i < m_staticMeshDrawCallCount; i++)
 	{
-		auto l_GIPassGPUData = g_pModuleManager->getRenderingFrontend()->getGIPassGPUData()[i];
+		auto l_staticMeshGPUData = m_staticMeshDrawCallData[i];
 
-		if (l_GIPassGPUData.mesh->m_objectStatus == ObjectStatus::Activated)
+		if (l_staticMeshGPUData.mesh->m_objectStatus == ObjectStatus::Activated)
 		{
 			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_offset, 1);
 			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_offset, 1);
 
-			if (l_GIPassGPUData.material->m_objectStatus == ObjectStatus::Activated)
+			if (l_staticMeshGPUData.material->m_objectStatus == ObjectStatus::Activated)
 			{
-				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_GIPassGPUData.material->m_ResourceBinders[0], 3, 0);
-				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_GIPassGPUData.material->m_ResourceBinders[1], 4, 1);
-				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_GIPassGPUData.material->m_ResourceBinders[2], 5, 2);
-				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_GIPassGPUData.material->m_ResourceBinders[3], 6, 3);
-				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_GIPassGPUData.material->m_ResourceBinders[4], 7, 4);
+				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticMeshGPUData.material->m_ResourceBinders[0], 3, 0);
+				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticMeshGPUData.material->m_ResourceBinders[1], 4, 1);
+				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticMeshGPUData.material->m_ResourceBinders[2], 5, 2);
+				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticMeshGPUData.material->m_ResourceBinders[3], 6, 3);
+				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticMeshGPUData.material->m_ResourceBinders[4], 7, 4);
 			}
 
-			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC_Surfel, l_GIPassGPUData.mesh);
+			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC_Surfel, l_staticMeshGPUData.mesh);
 
-			if (l_GIPassGPUData.material->m_objectStatus == ObjectStatus::Activated)
+			if (l_staticMeshGPUData.material->m_objectStatus == ObjectStatus::Activated)
 			{
-				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_GIPassGPUData.material->m_ResourceBinders[0], 3, 0);
-				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_GIPassGPUData.material->m_ResourceBinders[1], 4, 1);
-				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_GIPassGPUData.material->m_ResourceBinders[2], 5, 2);
-				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_GIPassGPUData.material->m_ResourceBinders[3], 6, 3);
-				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_GIPassGPUData.material->m_ResourceBinders[4], 7, 4);
+				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticMeshGPUData.material->m_ResourceBinders[0], 3, 0);
+				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticMeshGPUData.material->m_ResourceBinders[1], 4, 1);
+				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticMeshGPUData.material->m_ResourceBinders[2], 5, 2);
+				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticMeshGPUData.material->m_ResourceBinders[3], 6, 3);
+				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticMeshGPUData.material->m_ResourceBinders[4], 7, 4);
 			}
 		}
 
@@ -1029,54 +1095,47 @@ void InnoBaker::Initialize()
 
 void InnoBaker::LoadScene(std::string & sceneName)
 {
-	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
-	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
-
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MeshGBDC, g_pModuleManager->getRenderingFrontend()->getGIPassMeshGPUData());
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MaterialGBDC, g_pModuleManager->getRenderingFrontend()->getGIPassMaterialGPUData());
-
 	m_probes.clear();
 	m_surfels.clear();
 	m_bricks.clear();
 	m_brickCaches.clear();
 	m_brickFactors.clear();
 
+	g_pModuleManager->getFileSystem()->loadScene(sceneName);
+}
+
+void InnoBaker::BakeSurfelCache()
+{
+	gatherStaticMeshData();
 	generateProbes();
 
 	captureSurfels();
 
 	eliminateDuplicatedSurfels();
 	serializeSurfelCaches();
+}
 
+void InnoBaker::BakeBrickCache(std::string & surfelCacheFileName)
+{
 	generateBrickCaches();
 	serializeBrickCaches();
+}
 
+void InnoBaker::BakeBrick(std::string & brickCacheFileName)
+{
 	generateBricks();
 
 	serializeSurfels();
 	serializeBricks();
+}
 
+void InnoBaker::BakeBrickFactor(std::string & brickFileName)
+{
 	//assignBrickFactorToProbesByCPU();
 	assignBrickFactorToProbesByGPU();
 
 	serializeBrickFactors();
 	serializeProbes();
-}
-
-void InnoBaker::BakeSurfelCache()
-{
-}
-
-void InnoBaker::BakeBrickCache(std::string & surfelCacheFileName)
-{
-}
-
-void InnoBaker::BakeBrick(std::string & brickCacheFileName)
-{
-}
-
-void InnoBaker::BakeBrickFactor(std::string & brickFileName)
-{
 }
 
 bool InnoBakerRenderingClient::Setup()

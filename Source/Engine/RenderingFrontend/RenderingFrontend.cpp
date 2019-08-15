@@ -52,11 +52,6 @@ namespace InnoRenderingFrontendNS
 	unsigned int m_debuggerPassDrawCallCount = 0;
 	std::vector<DebuggerPassGPUData> m_debuggerPassGPUData;
 
-	unsigned int m_GIPassDrawCallCount = 0;
-	std::vector<OpaquePassDrawCallData> m_GIPassGPUData;
-	std::vector<MeshGPUData> m_GIPassMeshGPUData;
-	std::vector<MaterialGPUData> m_GIPassMaterialGPUData;
-
 	ThreadSafeVector<CullingDataPack> m_cullingDataPack;
 
 	std::vector<Plane> m_debugPlanes;
@@ -117,8 +112,6 @@ namespace InnoRenderingFrontendNS
 	bool updateMeshData();
 	bool updateBillboardPassData();
 	bool updateDebuggerPassData();
-
-	bool gatherStaticMeshData();
 }
 
 using namespace InnoRenderingFrontendNS;
@@ -194,21 +187,12 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 		m_transparentPassDrawCallCount = 0;
 
 		m_debuggerPassGPUData.clear();
-
-		m_GIPassGPUData.clear();
-		m_GIPassMeshGPUData.clear();
-		m_GIPassMaterialGPUData.clear();
-		m_GIPassDrawCallCount = 0;
 	};
 
 	f_sceneLoadingFinishCallback = [&]() {
 		m_transparentPassGPUData.resize(m_renderingCapability.maxMeshes);
 		m_transparentPassMeshGPUData.resize(m_renderingCapability.maxMeshes);
 		m_transparentPassMaterialGPUData.resize(m_renderingCapability.maxMaterials);
-
-		m_GIPassGPUData.resize(m_renderingCapability.maxMeshes);
-		m_GIPassMeshGPUData.resize(m_renderingCapability.maxMeshes);
-		m_GIPassMaterialGPUData.resize(m_renderingCapability.maxMaterials);
 	};
 
 	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
@@ -649,58 +633,6 @@ bool InnoRenderingFrontendNS::updateDebuggerPassData()
 	return true;
 }
 
-bool InnoRenderingFrontendNS::gatherStaticMeshData()
-{
-	unsigned int l_index = 0;
-
-	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
-	for (auto visibleComponent : l_visibleComponents)
-	{
-		if (visibleComponent->m_visiblilityType == VisiblilityType::Opaque
-			&& visibleComponent->m_objectStatus == ObjectStatus::Activated
-			&& visibleComponent->m_meshUsageType == MeshUsageType::Static
-			)
-		{
-			auto l_transformComponent = GetComponent(TransformComponent, visibleComponent->m_parentEntity);
-			auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
-
-			for (auto& l_modelPair : visibleComponent->m_modelMap)
-			{
-				OpaquePassDrawCallData l_GIPassGPUData;
-
-				l_GIPassGPUData.mesh = l_modelPair.first;
-				l_GIPassGPUData.material = l_modelPair.second;
-
-				MeshGPUData l_meshGPUData;
-
-				l_meshGPUData.m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
-				l_meshGPUData.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
-				l_meshGPUData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-				l_meshGPUData.UUID = (float)visibleComponent->m_UUID;
-
-				MaterialGPUData l_materialGPUData;
-
-				l_materialGPUData.useNormalTexture = !(l_GIPassGPUData.material->m_normalTexture == nullptr);
-				l_materialGPUData.useAlbedoTexture = !(l_GIPassGPUData.material->m_albedoTexture == nullptr);
-				l_materialGPUData.useMetallicTexture = !(l_GIPassGPUData.material->m_metallicTexture == nullptr);
-				l_materialGPUData.useRoughnessTexture = !(l_GIPassGPUData.material->m_roughnessTexture == nullptr);
-				l_materialGPUData.useAOTexture = !(l_GIPassGPUData.material->m_aoTexture == nullptr);
-
-				l_materialGPUData.customMaterial = l_modelPair.second->m_meshCustomMaterial;
-
-				m_GIPassGPUData[l_index] = l_GIPassGPUData;
-				m_GIPassMeshGPUData[l_index] = l_meshGPUData;
-				m_GIPassMaterialGPUData[l_index] = l_materialGPUData;
-				l_index++;
-			}
-		}
-	}
-
-	m_GIPassDrawCallCount = l_index;
-
-	return true;
-}
-
 bool InnoRenderingFrontendNS::update()
 {
 	if (m_objectStatus == ObjectStatus::Activated)
@@ -1064,24 +996,4 @@ unsigned int InnoRenderingFrontend::getDebuggerPassDrawCallCount()
 const std::vector<DebuggerPassGPUData>& InnoRenderingFrontend::getDebuggerPassGPUData()
 {
 	return m_debuggerPassGPUData;
-}
-
-unsigned int InnoRenderingFrontend::getGIPassDrawCallCount()
-{
-	return m_GIPassDrawCallCount;
-}
-
-const std::vector<OpaquePassDrawCallData>& InnoRenderingFrontend::getGIPassGPUData()
-{
-	return m_GIPassGPUData;
-}
-
-const std::vector<MeshGPUData>& InnoRenderingFrontend::getGIPassMeshGPUData()
-{
-	return m_GIPassMeshGPUData;
-}
-
-const std::vector<MaterialGPUData>& InnoRenderingFrontend::getGIPassMaterialGPUData()
-{
-	return m_GIPassMaterialGPUData;
 }

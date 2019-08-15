@@ -64,9 +64,4 @@ public:
 
 	unsigned int getDebuggerPassDrawCallCount() override;
 	const std::vector<DebuggerPassGPUData>& getDebuggerPassGPUData() override;
-
-	unsigned int getGIPassDrawCallCount() override;
-	const std::vector<OpaquePassDrawCallData>& getGIPassGPUData() override;
-	const std::vector<MeshGPUData>& getGIPassMeshGPUData() override;
-	const std::vector<MaterialGPUData>& getGIPassMaterialGPUData() override;
 };
