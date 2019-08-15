@@ -1,5 +1,5 @@
 #include "BRDFTestPass.h"
-#include "DefaultGPUBuffers.h"
+#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
 #include "BRDFLUTPass.h"
 

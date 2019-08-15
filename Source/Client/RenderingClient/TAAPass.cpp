@@ -1,5 +1,5 @@
 #include "TAAPass.h"
-#include "DefaultGPUBuffers.h"
+#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
 #include "PreTAAPass.h"
 #include "OpaquePass.h"

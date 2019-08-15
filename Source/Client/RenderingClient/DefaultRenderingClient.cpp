@@ -1,7 +1,7 @@
 #include "DefaultRenderingClient.h"
-#include "DefaultGPUBuffers.h"
+#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 #include "LightCullingPass.h"
-#include "GIBakePass.h"
+#include "GIDataLoader.h"
 #include "GIResolvePass.h"
 #include "BRDFLUTPass.h"
 #include "SunShadowPass.h"
@@ -25,13 +25,11 @@ INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 
 namespace DefaultRenderingClientNS
 {
-	std::function<void()> f_GIBake;
 	std::function<void()> f_showLightHeatmap;
 	std::function<void()> f_SetupTask;
 	std::function<void()> f_InitializeTask;
 	std::function<void()> f_RenderTask;
 	std::function<void()> f_TerminateTask;
-	bool m_needGIBake = false;
 	bool m_showLightHeatmap = false;
 }
 
@@ -39,18 +37,16 @@ using namespace DefaultRenderingClientNS;
 
 bool DefaultRenderingClient::Setup()
 {
-	f_GIBake = [&]() { m_needGIBake = true;	};
-	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonState{ INNO_KEY_B, true }, ButtonEvent{ EventLifeTime::OneShot, &f_GIBake });
-
 	f_showLightHeatmap = [&]() { m_showLightHeatmap = !m_showLightHeatmap;	};
 	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonState{ INNO_KEY_T, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showLightHeatmap });
 
 	f_SetupTask = [&]()
 	{
 		DefaultGPUBuffers::Setup();
+		GIDataLoader::Setup();
+
 		LightCullingPass::Setup();
-		GIBakePass::Setup();
-		//GIResolvePass::Setup();
+		GIResolvePass::Setup();
 		BRDFLUTPass::Setup();
 		SunShadowPass::Setup();
 		OpaquePass::Setup();
@@ -72,8 +68,7 @@ bool DefaultRenderingClient::Setup()
 	{
 		DefaultGPUBuffers::Initialize();
 		LightCullingPass::Initialize();
-		GIBakePass::Initialize();
-		//GIResolvePass::Initialize();
+		GIResolvePass::Initialize();
 		BRDFLUTPass::Initialize();
 		BRDFLUTPass::PrepareCommandList();
 		BRDFLUTPass::ExecuteCommandList();
@@ -100,7 +95,7 @@ bool DefaultRenderingClient::Setup()
 
 		DefaultGPUBuffers::Upload();
 		//LightCullingPass::PrepareCommandList();
-		//GIResolvePass::PrepareCommandList();
+		GIResolvePass::PrepareCommandList();
 
 		SunShadowPass::PrepareCommandList();
 		OpaquePass::PrepareCommandList();
@@ -146,7 +141,7 @@ bool DefaultRenderingClient::Setup()
 		FinalBlendPass::PrepareCommandList(l_canvas);
 
 		//LightCullingPass::ExecuteCommandList();
-		//GIResolvePass::ExecuteCommandList();
+		GIResolvePass::ExecuteCommandList();
 
 		SunShadowPass::ExecuteCommandList();
 		OpaquePass::ExecuteCommandList();
@@ -163,12 +158,6 @@ bool DefaultRenderingClient::Setup()
 		DebugPass::ExecuteCommandList();
 
 		FinalBlendPass::ExecuteCommandList();
-
-		if (m_needGIBake)
-		{
-			GIBakePass::Bake();
-			m_needGIBake = false;
-		}
 	};
 
 	f_TerminateTask = [&]()
@@ -176,7 +165,7 @@ bool DefaultRenderingClient::Setup()
 		DefaultGPUBuffers::Terminate();
 		LightCullingPass::Terminate();
 		//GIResolvePass::Terminate();
-		GIBakePass::Terminate();
+		GIDataLoader::Terminate();
 		BRDFLUTPass::Terminate();
 		SunShadowPass::Terminate();
 		OpaquePass::Terminate();

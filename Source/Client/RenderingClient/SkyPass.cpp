@@ -1,5 +1,5 @@
 #include "SkyPass.h"
-#include "DefaultGPUBuffers.h"
+#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
 #include "../../Engine/ModuleManager/IModuleManager.h"
 

@@ -1,7 +1,7 @@
 #include "GIResolvePass.h"
-#include "DefaultGPUBuffers.h"
+#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
-#include "GIBakePass.h"
+#include "GIDataLoader.h"
 
 #include "../../Engine/ModuleManager/IModuleManager.h"
 
@@ -48,13 +48,15 @@ namespace GIResolvePass
 
 	std::function<void()> f_sceneLoadingFinishCallback;
 	std::function<void()> f_sceneLoadingStartCallback;
+	std::function<void()> f_reloadGIData;
+	bool m_needToReloadGIData = false;
 
-	bool l_GIDataLoaded = false;
+	bool m_GIDataLoaded = false;
 }
 
 bool GIResolvePass::InitializeGPUBuffers()
 {
-	auto l_surfels = GIBakePass::GetSurfels();
+	auto l_surfels = GIDataLoader::GetSurfels();
 
 	if (l_surfels.size())
 	{
@@ -75,7 +77,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 
 		g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_surfelIrradianceGBDC);
 
-		auto l_bricks = GIBakePass::GetBricks();
+		auto l_bricks = GIDataLoader::GetBricks();
 
 		std::vector<unsigned int> l_brickGPUData;
 
@@ -103,7 +105,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 
 		g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_brickIrradianceGBDC);
 
-		auto l_brickFactors = GIBakePass::GetBrickFactors();
+		auto l_brickFactors = GIDataLoader::GetBrickFactors();
 
 		m_brickFactorGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("BrickFactorGPUBuffer/");
 		m_brickFactorGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
@@ -114,7 +116,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 
 		g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_brickFactorGBDC);
 
-		auto l_probes = GIBakePass::GetProbes();
+		auto l_probes = GIDataLoader::GetProbes();
 
 		m_probeGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("ProbeGPUBuffer/");
 		m_probeGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
@@ -141,7 +143,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 
 		g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_irradianceVolume);
 
-		l_GIDataLoaded = true;
+		m_GIDataLoaded = true;
 	}
 
 	return true;
@@ -174,13 +176,16 @@ bool GIResolvePass::DeleteGPUBuffers()
 		g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_probeGBDC);
 	}
 
-	l_GIDataLoaded = false;
+	m_GIDataLoaded = false;
 
 	return true;
 }
 
 bool GIResolvePass::Setup()
 {
+	f_reloadGIData = [&]() { m_needToReloadGIData = true; };
+	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonState{ INNO_KEY_B, true }, ButtonEvent{ EventLifeTime::OneShot, &f_reloadGIData });
+
 	setupSky();
 	setupSurfels();
 	setupBricks();
@@ -544,6 +549,10 @@ bool GIResolvePass::litProbes()
 	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Compute);
 	auto l_SkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sky);
 
+	SkyGPUData l_SkyGPUData = g_pModuleManager->getRenderingFrontend()->getSkyGPUData();
+	l_SkyGPUData.posWSNormalizer = GIDataLoader::GetIrradianceVolumeRange();
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_SkyGBDC, &l_SkyGPUData);
+
 	auto l_threadCountPerGroup = 8;
 	auto l_totalThreadGroupsCount = (double)m_probeGBDC->m_ElementCount / (l_threadCountPerGroup * l_threadCountPerGroup * l_threadCountPerGroup);
 
@@ -594,7 +603,15 @@ bool GIResolvePass::litProbes()
 
 bool GIResolvePass::PrepareCommandList()
 {
-	if (l_GIDataLoaded)
+	if (m_needToReloadGIData)
+	{
+		GIDataLoader::ReloadGIData();
+		m_needToReloadGIData = false;
+		DeleteGPUBuffers();
+		InitializeGPUBuffers();
+	}
+
+	if (m_GIDataLoaded)
 	{
 		generateSkyRadiance();
 		litSurfels();
@@ -607,7 +624,7 @@ bool GIResolvePass::PrepareCommandList()
 
 bool GIResolvePass::ExecuteCommandList()
 {
-	if (l_GIDataLoaded)
+	if (m_GIDataLoaded)
 	{
 		g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_skyRPDC);
 

@@ -116,3 +116,52 @@ struct DebuggerPassGPUData
 	mat4 m;
 	MeshDataComponent* mesh;
 };
+
+// Sample point on geometry surface
+struct Surfel
+{
+	vec4 pos;
+	vec4 normal;
+	vec4 albedo;
+	vec4 MRAT;
+
+	bool operator==(const Surfel &other) const
+	{
+		return (pos == other.pos);
+	}
+};
+
+// 1x1x1 m^3 of surfels
+using SurfelGrid = Surfel;
+
+// 4x4x4 m^3 of surfels
+struct Brick
+{
+	AABB boundBox;
+	unsigned int surfelRangeBegin;
+	unsigned int surfelRangeEnd;
+
+	bool operator==(const Brick &other) const
+	{
+		return (boundBox.m_center == other.boundBox.m_center);
+	}
+};
+
+struct BrickFactor
+{
+	float basisWeight;
+	unsigned int brickIndex;
+
+	bool operator==(const BrickFactor &other) const
+	{
+		return (brickIndex == other.brickIndex);
+	}
+};
+
+struct Probe
+{
+	vec4 pos;
+	unsigned int brickFactorRange[12];
+	float skyVisibility[6];
+	unsigned int padding[10];
+};

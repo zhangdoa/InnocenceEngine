@@ -1,5 +1,5 @@
 #include "FinalBlendPass.h"
-#include "DefaultGPUBuffers.h"
+#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
 #include "BillboardPass.h"
 #include "DebugPass.h"

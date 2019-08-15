@@ -1,5 +1,5 @@
 #include "BRDFLUTPass.h"
-#include "DefaultGPUBuffers.h"
+#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
 #include "LightPass.h"
 #include "SkyPass.h"

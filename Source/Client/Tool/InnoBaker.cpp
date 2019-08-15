@@ -1,6 +1,5 @@
-#include "GIBakePass.h"
-#include "DefaultGPUBuffers.h"
-#include "GIResolvePass.h"
+#include "InnoBaker.h"
+#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
 #include "../../Engine/Common/InnoMathHelper.h"
 
@@ -15,12 +14,8 @@ struct BrickCache
 	std::vector<Surfel> surfelCaches;
 };
 
-using namespace DefaultGPUBuffers;
-
-namespace GIBakePass
+namespace InnoBakerNS
 {
-	bool loadGIData();
-
 	bool generateProbes();
 
 	bool captureSurfels();
@@ -54,10 +49,11 @@ namespace GIBakePass
 	const unsigned int m_captureResolution = 64;
 	const unsigned int m_sampleCountPerFace = m_captureResolution * m_captureResolution;
 	const vec4 m_brickSize = vec4(8.0f, 8.0f, 8.0f, 0.0f);
-	vec4 m_irradianceVolumeRange;
-
-	TextureDataComponent* m_testSampleCubemap;
-	TextureDataComponent* m_testSample3DTexture;
+	std::vector<Probe> m_probes;
+	std::vector<Surfel> m_surfels;
+	std::vector<BrickCache> m_brickCaches;
+	std::vector<Brick> m_bricks;
+	std::vector<BrickFactor> m_brickFactors;
 
 	RenderPassDataComponent* m_RPDC_Probe;
 	ShaderProgramComponent* m_SPC_Probe;
@@ -65,90 +61,17 @@ namespace GIBakePass
 	RenderPassDataComponent* m_RPDC_Surfel;
 	ShaderProgramComponent* m_SPC_Surfel;
 	SamplerDataComponent* m_SDC_Surfel;
-	TextureDataComponent* m_testSurfelTexture;
 
 	RenderPassDataComponent* m_RPDC_BrickFactor;
 	ShaderProgramComponent* m_SPC_BrickFactor;
-
-	std::vector<Probe> m_probes;
-	std::vector<Surfel> m_surfels;
-	std::vector<BrickCache> m_brickCaches;
-	std::vector<Brick> m_bricks;
-	std::vector<BrickFactor> m_brickFactors;
-
-	RenderPassDataComponent* m_RPDC_Relight;
-	ShaderProgramComponent* m_SPC_Relight;
-	SamplerDataComponent* m_SDC_Relight;
-
-	bool m_IsSurfelLoaded = false;
-	bool m_IsBrickLoaded = false;
-	bool m_IsBrickFactorLoaded = false;
-	bool m_IsProbeLoaded = false;
-
-	std::function<void()> f_sceneLoadingFinishCallback;
 }
 
-bool GIBakePass::loadGIData()
+using namespace InnoBakerNS;
+using namespace DefaultGPUBuffers;
+
+bool InnoBakerNS::generateProbes()
 {
-	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
-	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
-
-	std::ifstream l_surfelFile;
-	l_surfelFile.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoSurfel", std::ios::binary);
-
-	if (l_surfelFile.is_open())
-	{
-		IOService::deserializeVector(l_surfelFile, m_surfels);
-		m_IsSurfelLoaded = true;
-	}
-
-	std::ifstream l_brickFile;
-	l_brickFile.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoBrick", std::ios::binary);
-
-	if (l_brickFile.is_open())
-	{
-		IOService::deserializeVector(l_brickFile, m_bricks);
-
-		auto l_bricksCount = m_bricks.size();
-
-		auto l_min = InnoMath::maxVec4<float>;
-		auto l_max = InnoMath::minVec4<float>;
-
-		for (size_t i = 0; i < l_bricksCount; i++)
-		{
-			l_min = InnoMath::elementWiseMin(l_min, m_bricks[i].boundBox.m_boundMin);
-			l_max = InnoMath::elementWiseMax(l_max, m_bricks[i].boundBox.m_boundMax);
-		}
-		m_irradianceVolumeRange = l_max - l_min;
-
-		m_IsBrickLoaded = true;
-	}
-
-	std::ifstream l_brickFactorFile;
-	l_brickFactorFile.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoBrickFactor", std::ios::binary);
-
-	if (l_brickFactorFile.is_open())
-	{
-		IOService::deserializeVector(l_brickFactorFile, m_brickFactors);
-		m_IsBrickFactorLoaded = true;
-	}
-
-	std::ifstream l_probeFile;
-	l_probeFile.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoProbe", std::ios::binary);
-
-	if (l_probeFile.is_open())
-	{
-		IOService::deserializeVector(l_probeFile, m_probes);
-
-		m_IsProbeLoaded = true;
-	}
-
-	return m_IsProbeLoaded && m_IsBrickFactorLoaded && m_IsBrickLoaded && m_IsSurfelLoaded;
-}
-
-bool GIBakePass::generateProbes()
-{
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Generate probes...");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Generate probes...");
 
 	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getTotalSceneAABB();
 
@@ -293,14 +216,14 @@ bool GIBakePass::generateProbes()
 
 	m_probes.shrink_to_fit();
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "GIBakePass: ", m_probes.size(), " probes generated.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", m_probes.size(), " probes generated.");
 
 	return true;
 }
 
-bool GIBakePass::captureSurfels()
+bool InnoBakerNS::captureSurfels()
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Capture surfels...");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Capture surfels...");
 
 	auto l_cameraGPUData = g_pModuleManager->getRenderingFrontend()->getCameraGPUData();
 
@@ -325,15 +248,15 @@ bool GIBakePass::captureSurfels()
 		drawCubemaps(i, l_p, l_v);
 		readBackSurfelCaches(i);
 
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Capture surfel ", (float)i * 100.0f / (float)l_probeCount, "%...");
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Capture surfel ", (float)i * 100.0f / (float)l_probeCount, "%...");
 	}
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "GIBakePass: ", m_surfels.size(), " surfels captured.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", m_surfels.size(), " surfels captured.");
 
 	return true;
 }
 
-bool GIBakePass::drawCubemaps(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v)
+bool InnoBakerNS::drawCubemaps(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v)
 {
 	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
 
@@ -344,7 +267,7 @@ bool GIBakePass::drawCubemaps(unsigned int probeIndex, const mat4& p, const std:
 	return true;
 }
 
-bool GIBakePass::drawOpaquePass(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v)
+bool InnoBakerNS::drawOpaquePass(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v)
 {
 	auto l_t = InnoMath::getInvertTranslationMatrix(m_probes[probeIndex].pos);
 
@@ -412,7 +335,7 @@ bool GIBakePass::drawOpaquePass(unsigned int probeIndex, const mat4& p, const st
 	return true;
 }
 
-bool GIBakePass::drawSkyVisibilityPass(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v)
+bool InnoBakerNS::drawSkyVisibilityPass(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v)
 {
 	auto l_depthStencilRT = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_DepthStencilRenderTarget);
 
@@ -439,7 +362,7 @@ bool GIBakePass::drawSkyVisibilityPass(unsigned int probeIndex, const mat4& p, c
 	return true;
 }
 
-bool GIBakePass::readBackSurfelCaches(unsigned int probeIndex)
+bool InnoBakerNS::readBackSurfelCaches(unsigned int probeIndex)
 {
 	auto l_posWSMetallic = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_RenderTargets[0]);
 	auto l_normalRoughness = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_RenderTargets[1]);
@@ -467,9 +390,9 @@ bool GIBakePass::readBackSurfelCaches(unsigned int probeIndex)
 	return true;
 }
 
-bool GIBakePass::eliminateDuplicatedSurfels()
+bool InnoBakerNS::eliminateDuplicatedSurfels()
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Eliminate duplicated surfels...");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Eliminate duplicated surfels...");
 
 	std::sort(m_surfels.begin(), m_surfels.end(), [&](Surfel A, Surfel B)
 	{
@@ -485,12 +408,12 @@ bool GIBakePass::eliminateDuplicatedSurfels()
 	m_surfels.erase(std::unique(m_surfels.begin(), m_surfels.end()), m_surfels.end());
 	m_surfels.shrink_to_fit();
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "GIBakePass: Duplicated surfels have been removed, there are ", m_surfels.size(), " surfels now.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Duplicated surfels have been removed, there are ", m_surfels.size(), " surfels now.");
 
 	return true;
 }
 
-bool GIBakePass::serializeSurfelCaches()
+bool InnoBakerNS::serializeSurfelCaches()
 {
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
@@ -502,9 +425,9 @@ bool GIBakePass::serializeSurfelCaches()
 	return true;
 }
 
-bool GIBakePass::generateBrickCaches()
+bool InnoBakerNS::generateBrickCaches()
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Generate brick caches...");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Generate brick caches...");
 
 	// Find bound corner position
 	auto l_surfelsCount = m_surfels.size();
@@ -574,7 +497,7 @@ bool GIBakePass::generateBrickCaches()
 					m_brickCaches.emplace_back(std::move(l_BrickCache));
 				}
 
-				g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Generate brick caches ", (float)l_index * 100.0f / (float)l_totalBricksWorkCount, "%...");
+				g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Generate brick caches ", (float)l_index * 100.0f / (float)l_totalBricksWorkCount, "%...");
 
 				l_index++;
 				l_currentMaxPos.z += m_brickSize.z;
@@ -589,12 +512,12 @@ bool GIBakePass::generateBrickCaches()
 		l_currentMinPos.x += m_brickSize.x;
 	}
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "GIBakePass: Brick caches have been generated.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Brick caches have been generated.");
 
 	return true;
 }
 
-bool GIBakePass::serializeBrickCaches()
+bool InnoBakerNS::serializeBrickCaches()
 {
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
@@ -606,9 +529,9 @@ bool GIBakePass::serializeBrickCaches()
 	return true;
 }
 
-bool GIBakePass::generateBricks()
+bool InnoBakerNS::generateBricks()
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Generate bricks...");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Generate bricks...");
 
 	// Generate real bricks with surfel range
 	auto l_bricksCount = m_brickCaches.size();
@@ -629,15 +552,15 @@ bool GIBakePass::generateBricks()
 
 		m_bricks.emplace_back(l_brick);
 
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Generate bricks ", (float)i * 100.0f / (float)l_bricksCount, "%...");
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Generate bricks ", (float)i * 100.0f / (float)l_bricksCount, "%...");
 	}
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "GIBakePass: Bricks have been generated.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Bricks have been generated.");
 
 	return true;
 }
 
-bool GIBakePass::serializeSurfels()
+bool InnoBakerNS::serializeSurfels()
 {
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
@@ -649,7 +572,7 @@ bool GIBakePass::serializeSurfels()
 	return true;
 }
 
-bool GIBakePass::serializeBricks()
+bool InnoBakerNS::serializeBricks()
 {
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
@@ -661,7 +584,7 @@ bool GIBakePass::serializeBricks()
 	return true;
 }
 
-bool GIBakePass::assignBrickFactorToProbesByGPU()
+bool InnoBakerNS::assignBrickFactorToProbesByGPU()
 {
 	auto l_rPX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
 	auto l_rNX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(-1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
@@ -705,15 +628,15 @@ bool GIBakePass::assignBrickFactorToProbesByGPU()
 		drawBricks((unsigned int)i, l_p, l_v);
 		readBackBrickFactors((unsigned int)i);
 
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Assign brick factor to probes ", (float)i * 100.0f / (float)l_probesCount, "%...");
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Assign brick factor to probes ", (float)i * 100.0f / (float)l_probesCount, "%...");
 	}
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "GIBakePass: Brick factors have been generated.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Brick factors have been generated.");
 
 	return true;
 }
 
-bool GIBakePass::drawBricks(unsigned int probeIndex, const mat4 & p, const std::vector<mat4>& v)
+bool InnoBakerNS::drawBricks(unsigned int probeIndex, const mat4 & p, const std::vector<mat4>& v)
 {
 	std::vector<mat4> l_GICameraGPUData(8);
 	l_GICameraGPUData[0] = p;
@@ -756,7 +679,7 @@ bool GIBakePass::drawBricks(unsigned int probeIndex, const mat4 & p, const std::
 	return true;
 }
 
-bool GIBakePass::readBackBrickFactors(unsigned int probeIndex)
+bool InnoBakerNS::readBackBrickFactors(unsigned int probeIndex)
 {
 	auto l_brickIDResults = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_BrickFactor, m_RPDC_BrickFactor->m_RenderTargets[0]);
 
@@ -828,7 +751,7 @@ bool GIBakePass::readBackBrickFactors(unsigned int probeIndex)
 	return true;
 }
 
-bool GIBakePass::assignBrickFactorToProbesByCPU()
+bool InnoBakerNS::assignBrickFactorToProbesByCPU()
 {
 	auto l_probesCount = m_probes.size();
 	auto l_bricksCount = m_bricks.size();
@@ -901,15 +824,15 @@ bool GIBakePass::assignBrickFactorToProbesByCPU()
 			m_brickFactors.insert(m_brickFactors.end(), std::make_move_iterator(l_brickFactors.begin()), std::make_move_iterator(l_brickFactors.end()));
 		}
 
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "GIBakePass: Assign brick factor to probes ", (float)i * 100.0f / (float)l_probesCount, "%...");
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Assign brick factor to probes ", (float)i * 100.0f / (float)l_probesCount, "%...");
 	}
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "GIBakePass: Brick factors have been generated.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Brick factors have been generated.");
 
 	return true;
 }
 
-bool GIBakePass::serializeBrickFactors()
+bool InnoBakerNS::serializeBrickFactors()
 {
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
@@ -921,7 +844,7 @@ bool GIBakePass::serializeBrickFactors()
 	return true;
 }
 
-bool GIBakePass::serializeProbes()
+bool InnoBakerNS::serializeProbes()
 {
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
@@ -933,88 +856,9 @@ bool GIBakePass::serializeProbes()
 	return true;
 }
 
-bool GIBakePass::Setup()
+void InnoBaker::Initialize()
 {
-	f_sceneLoadingFinishCallback = []()
-	{
-		m_IsSurfelLoaded = false;
-		m_IsBrickLoaded = false;
-		m_IsBrickFactorLoaded = false;
-		m_IsProbeLoaded = false;
-		loadGIData();
-	};
-
-	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
-
-	////
-	m_testSampleCubemap = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("TestSampleCubemap/");
-
-	std::vector<vec4> l_cubemapTextureSamples(m_captureResolution * m_captureResolution * 6);
-	std::vector<vec4> l_faceColors = {
-	vec4(1.0f, 0.0f, 0.0f, 1.0f),
-	vec4(1.0f, 1.0f, 0.0f, 1.0f),
-	vec4(0.0f, 1.0f, 0.0f, 1.0f),
-	vec4(0.0f, 1.0f, 1.0f, 1.0f),
-	vec4(0.0f, 0.0f, 1.0f, 1.0f),
-	vec4(1.0f, 0.0f, 1.0f, 1.0f),
-	};
-	for (size_t i = 0; i < 6; i++)
-	{
-		for (size_t j = 0; j < m_sampleCountPerFace; j++)
-		{
-			auto l_color = l_faceColors[i] * 2.0f * (float)j / (float)m_sampleCountPerFace;
-			l_color.w = 1.0f;
-			l_cubemapTextureSamples[i * m_sampleCountPerFace + j] = l_color;
-		}
-	}
-
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
-
-	m_testSampleCubemap->m_textureDataDesc = l_RenderPassDesc.m_RenderTargetDesc;
-	m_testSampleCubemap->m_textureDataDesc.SamplerType = TextureSamplerType::SamplerCubemap;
-	m_testSampleCubemap->m_textureDataDesc.UsageType = TextureUsageType::Normal;
-	m_testSampleCubemap->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_testSampleCubemap->m_textureDataDesc.MinFilterMethod = TextureFilterMethod::Linear;
-	m_testSampleCubemap->m_textureDataDesc.MagFilterMethod = TextureFilterMethod::Linear;
-	m_testSampleCubemap->m_textureDataDesc.WrapMethod = TextureWrapMethod::Repeat;
-	m_testSampleCubemap->m_textureDataDesc.Width = m_captureResolution;
-	m_testSampleCubemap->m_textureDataDesc.Height = m_captureResolution;
-	m_testSampleCubemap->m_textureDataDesc.PixelDataType = TexturePixelDataType::FLOAT32;
-	m_testSampleCubemap->m_textureData = &l_cubemapTextureSamples[0];
-
-	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_testSampleCubemap);
-
-	////
-	std::vector<vec4> l_3DTextureSamples(m_captureResolution * m_captureResolution * m_captureResolution);
-	size_t l_pixelIndex = 0;
-	for (size_t i = 0; i < m_captureResolution; i++)
-	{
-		for (size_t j = 0; j < m_captureResolution; j++)
-		{
-			for (size_t k = 0; k < m_captureResolution; k++)
-			{
-				l_3DTextureSamples[l_pixelIndex] = vec4((float)i / (float)m_captureResolution, (float)j / (float)m_captureResolution, (float)k / (float)m_captureResolution, 1.0f);
-				l_pixelIndex++;
-			}
-		}
-	}
-
-	m_testSample3DTexture = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("TestSample3D/");
-
-	m_testSample3DTexture->m_textureDataDesc = l_RenderPassDesc.m_RenderTargetDesc;
-	m_testSample3DTexture->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler3D;
-	m_testSample3DTexture->m_textureDataDesc.UsageType = TextureUsageType::Normal;
-	m_testSample3DTexture->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_testSample3DTexture->m_textureDataDesc.MinFilterMethod = TextureFilterMethod::Linear;
-	m_testSample3DTexture->m_textureDataDesc.MagFilterMethod = TextureFilterMethod::Linear;
-	m_testSample3DTexture->m_textureDataDesc.WrapMethod = TextureWrapMethod::Repeat;
-	m_testSample3DTexture->m_textureDataDesc.Width = m_captureResolution;
-	m_testSample3DTexture->m_textureDataDesc.Height = m_captureResolution;
-	m_testSample3DTexture->m_textureDataDesc.DepthOrArraySize = m_captureResolution;
-	m_testSample3DTexture->m_textureDataDesc.PixelDataType = TexturePixelDataType::FLOAT32;
-	m_testSample3DTexture->m_textureData = &l_3DTextureSamples[0];
-
-	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_testSample3DTexture);
 
 	////
 	m_SPC_Probe = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIBakeProbePass/");
@@ -1181,21 +1025,9 @@ bool GIBakePass::Setup()
 	m_RPDC_BrickFactor->m_ShaderProgram = m_SPC_BrickFactor;
 
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_BrickFactor);
-
-	////
-	m_testSurfelTexture = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("TestSurfel/");
-	m_testSurfelTexture->m_textureDataDesc = m_RPDC_Surfel->m_RenderPassDesc.m_RenderTargetDesc;
-	m_testSurfelTexture->m_textureDataDesc.UsageType = TextureUsageType::Normal;
-
-	return true;
 }
 
-bool GIBakePass::Initialize()
-{
-	return true;
-}
-
-bool GIBakePass::Bake()
+void InnoBaker::LoadScene(std::string & sceneName)
 {
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
 	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
@@ -1229,62 +1061,46 @@ bool GIBakePass::Bake()
 
 	serializeBrickFactors();
 	serializeProbes();
+}
 
-	loadGIData();
-	GIResolvePass::DeleteGPUBuffers();
-	GIResolvePass::InitializeGPUBuffers();
+void InnoBaker::BakeSurfelCache()
+{
+}
+
+void InnoBaker::BakeBrickCache(std::string & surfelCacheFileName)
+{
+}
+
+void InnoBaker::BakeBrick(std::string & brickCacheFileName)
+{
+}
+
+void InnoBaker::BakeBrickFactor(std::string & brickFileName)
+{
+}
+
+bool InnoBakerRenderingClient::Setup()
+{
+	DefaultGPUBuffers::Setup();
 
 	return true;
 }
 
-bool GIBakePass::PrepareCommandList()
+bool InnoBakerRenderingClient::Initialize()
 {
-	return true;
-}
-
-bool GIBakePass::ExecuteCommandList()
-{
-	return true;
-}
-
-bool GIBakePass::Terminate()
-{
-	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC_Surfel);
+	DefaultGPUBuffers::Initialize();
 
 	return true;
 }
 
-RenderPassDataComponent * GIBakePass::GetRPDC()
+bool InnoBakerRenderingClient::Render()
 {
-	return m_RPDC_Surfel;
+	return true;
 }
 
-ShaderProgramComponent * GIBakePass::GetSPC()
+bool InnoBakerRenderingClient::Terminate()
 {
-	return m_SPC_Surfel;
-}
+	DefaultGPUBuffers::Terminate();
 
-const std::vector<Surfel>& GIBakePass::GetSurfels()
-{
-	return m_surfels;
-}
-
-const std::vector<Brick>& GIBakePass::GetBricks()
-{
-	return m_bricks;
-}
-
-const std::vector<BrickFactor>& GIBakePass::GetBrickFactors()
-{
-	return m_brickFactors;
-}
-
-const std::vector<Probe>& GIBakePass::GetProbes()
-{
-	return m_probes;
-}
-
-vec4 GIBakePass::GetIrradianceVolumeRange()
-{
-	return m_irradianceVolumeRange;
+	return true;
 }

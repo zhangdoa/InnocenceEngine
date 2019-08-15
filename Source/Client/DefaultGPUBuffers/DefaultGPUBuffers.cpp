@@ -1,6 +1,4 @@
 #include "DefaultGPUBuffers.h"
-#include "GIBakePass.h"
-
 #include "../../Engine/ModuleManager/IModuleManager.h"
 
 INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
@@ -140,10 +138,8 @@ bool DefaultGPUBuffers::Upload()
 	auto l_PointLightGPUData = g_pModuleManager->getRenderingFrontend()->getPointLightGPUData();
 	auto l_SphereLightGPUData = g_pModuleManager->getRenderingFrontend()->getSphereLightGPUData();
 	auto l_CSMGPUData = g_pModuleManager->getRenderingFrontend()->getCSMGPUData();
-	SkyGPUData l_SkyGPUData = g_pModuleManager->getRenderingFrontend()->getSkyGPUData();
+	auto l_SkyGPUData = g_pModuleManager->getRenderingFrontend()->getSkyGPUData();
 	auto l_billboardPassMeshGPUData = g_pModuleManager->getRenderingFrontend()->getBillboardPassMeshGPUData();
-
-	l_SkyGPUData.posWSNormalizer = GIBakePass::GetIrradianceVolumeRange();
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_MainCameraGBDC, &l_CameraGPUData);
 	if (l_MeshGPUData.size() > 0)

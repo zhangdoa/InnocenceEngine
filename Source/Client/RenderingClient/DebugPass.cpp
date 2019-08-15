@@ -1,7 +1,7 @@
 #include "DebugPass.h"
-#include "DefaultGPUBuffers.h"
+#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
-#include "GIBakePass.h"
+#include "GIDataLoader.h"
 #include "OpaquePass.h"
 
 #include "../../Engine/ModuleManager/IModuleManager.h"
@@ -85,7 +85,7 @@ bool DebugPass::PrepareCommandList()
 		auto l_MainCameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::MainCamera);
 		auto l_DebugGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Debug);
 
-		auto l_probes = GIBakePass::GetProbes();
+		auto l_probes = GIDataLoader::GetProbes();
 		if (l_probes.size() > 0)
 		{
 			for (size_t i = 0; i < l_probes.size(); i++)
@@ -96,7 +96,7 @@ bool DebugPass::PrepareCommandList()
 				m_debugSphereGPUData[i].m22 *= 0.5f;
 			}
 
-			auto l_bricks = GIBakePass::GetBricks();
+			auto l_bricks = GIDataLoader::GetBricks();
 			for (size_t i = 0; i < l_bricks.size(); i++)
 			{
 				m_debugCubeGPUData[i] = InnoMath::toTranslationMatrix(l_bricks[i].boundBox.m_center);

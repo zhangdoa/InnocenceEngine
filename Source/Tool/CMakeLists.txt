@@ -1,2 +1,0 @@
-add_executable(InnoGLSLParser GLSLParser.cpp)
-target_link_libraries(InnoGLSLParser InnoCore)

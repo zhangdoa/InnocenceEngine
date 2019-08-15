@@ -1,5 +1,5 @@
 #include "SSAOPass.h"
-#include "DefaultGPUBuffers.h"
+#include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
 #include "OpaquePass.h"
 
