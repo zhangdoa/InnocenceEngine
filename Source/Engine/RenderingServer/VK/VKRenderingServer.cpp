@@ -880,13 +880,3 @@ bool VKRenderingServer::Resize()
 {
 	return true;
 }
-
-bool VKRenderingServer::ReloadShader(RenderPassType renderPassType)
-{
-	return true;
-}
-
-bool VKRenderingServer::BakeGIData()
-{
-	return true;
-}

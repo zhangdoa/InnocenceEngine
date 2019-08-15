@@ -1226,13 +1226,3 @@ bool GLRenderingServer::Resize()
 {
 	return true;
 }
-
-bool GLRenderingServer::ReloadShader(RenderPassType renderPassType)
-{
-	return true;
-}
-
-bool GLRenderingServer::BakeGIData()
-{
-	return true;
-}

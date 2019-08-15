@@ -1902,16 +1902,6 @@ bool DX12RenderingServer::Resize()
 	return true;
 }
 
-bool DX12RenderingServer::ReloadShader(RenderPassType renderPassType)
-{
-	return true;
-}
-
-bool DX12RenderingServer::BakeGIData()
-{
-	return true;
-}
-
 DX12SRV DX12RenderingServer::CreateSRV(TextureDataComponent * rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12TextureDataComponent*>(rhs);

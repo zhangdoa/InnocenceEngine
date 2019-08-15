@@ -68,7 +68,6 @@ namespace InnoRenderingFrontendNS
 	std::function<void(RenderPassType)> f_reloadShader;
 	std::function<void()> f_sceneLoadingStartCallback;
 	std::function<void()> f_sceneLoadingFinishCallback;
-	std::function<void()> f_bakeGI;
 
 	RenderingConfig m_renderingConfig = RenderingConfig();
 
@@ -211,12 +210,6 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 		m_GIPassMeshGPUData.resize(m_renderingCapability.maxMeshes);
 		m_GIPassMaterialGPUData.resize(m_renderingCapability.maxMaterials);
 	};
-
-	f_bakeGI = []() {
-		gatherStaticMeshData();
-		m_renderingServer->BakeGIData();
-	};
-	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonState{ INNO_KEY_B, true }, ButtonEvent{ EventLifeTime::OneShot, &f_bakeGI });
 
 	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);

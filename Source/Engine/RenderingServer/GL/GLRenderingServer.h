@@ -59,7 +59,4 @@ public:
 	std::vector<vec4> ReadTextureBackToCPU(RenderPassDataComponent * canvas, TextureDataComponent * TDC) override;
 
 	bool Resize() override;
-
-	bool ReloadShader(RenderPassType renderPassType) override;
-	bool BakeGIData() override;
 };

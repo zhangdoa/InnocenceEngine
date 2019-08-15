@@ -81,7 +81,4 @@ public:
 	virtual std::vector<vec4> ReadTextureBackToCPU(RenderPassDataComponent* canvas, TextureDataComponent* TDC) = 0;
 
 	virtual bool Resize() = 0;
-
-	virtual bool ReloadShader(RenderPassType renderPassType) = 0;
-	virtual bool BakeGIData() = 0;
 };

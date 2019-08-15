@@ -60,9 +60,6 @@ public:
 
 	bool Resize() override;
 
-	bool ReloadShader(RenderPassType renderPassType) override;
-	bool BakeGIData() override;
-
 	void* GetDevice();
 	void* GetDeviceContext();
 };

@@ -61,9 +61,6 @@ public:
 
 	bool Resize() override;
 
-	bool ReloadShader(RenderPassType renderPassType) override;
-	bool BakeGIData() override;
-
 	DX12SRV CreateSRV(TextureDataComponent * rhs);
 	DX12UAV CreateUAV(TextureDataComponent * rhs);
 	DX12CBV CreateCBV(GPUBufferDataComponent* rhs);

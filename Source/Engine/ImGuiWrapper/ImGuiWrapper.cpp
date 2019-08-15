@@ -245,14 +245,6 @@ void ImGuiWrapperNS::showApplicationProfiler()
 	ImGui::Checkbox("Use zoom", &m_useZoom);
 
 	const char* items[] = { "Shadow", "GI", "Opaque", "Light", "Transparent", "Terrain", "Post-processing", "Development" };
-	static int l_reloadShaderItem = 0;
-
-	ImGui::Combo("Choose shader", &l_reloadShaderItem, items, IM_ARRAYSIZE(items));
-
-	if (ImGui::Button("Reload Shader"))
-	{
-		g_pModuleManager->getRenderingServer()->ReloadShader(RenderPassType(l_reloadShaderItem));
-	}
 
 	static int l_showRenderPassResultItem = 0;
 
@@ -263,11 +255,6 @@ void ImGuiWrapperNS::showApplicationProfiler()
 	if (m_showRenderPassResult)
 	{
 		ImGuiWrapperNS::m_rendererImpl->showRenderResult(RenderPassType(l_showRenderPassResultItem));
-	}
-
-	if (ImGui::Button("Bake GI"))
-	{
-		g_pModuleManager->getRenderingServer()->BakeGIData();
 	}
 
 	if (ImGui::Button("Run ray trace"))
@@ -556,7 +543,7 @@ void ImGuiWrapperNS::showTransformComponentPropertyEditor(void * rhs)
 	rot[2] = InnoMath::radianToAngle(eulerAngles.z);
 	rot[3] = 0.0f;
 
-	if (ImGui::DragFloat3("Rotation", rot, 0.01f, rot_min, rot_max))
+	if (ImGui::DragFloat3("Rotation", rot, 1.0f, rot_min, rot_max))
 	{
 		auto roll = InnoMath::angleToRadian(rot[0]);
 		auto pitch = InnoMath::angleToRadian(rot[1]);

@@ -1696,7 +1696,7 @@ std::vector<vec4> DX11RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 	}
 	else
 	{
-		size_t l_sampleCount;
+		size_t l_sampleCount = 0;
 
 		switch (l_srcTDC->m_textureDataDesc.SamplerType)
 		{
@@ -1734,16 +1734,6 @@ std::vector<vec4> DX11RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 }
 
 bool DX11RenderingServer::Resize()
-{
-	return true;
-}
-
-bool DX11RenderingServer::ReloadShader(RenderPassType renderPassType)
-{
-	return true;
-}
-
-bool DX11RenderingServer::BakeGIData()
 {
 	return true;
 }
