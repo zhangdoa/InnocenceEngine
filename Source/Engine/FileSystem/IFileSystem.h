@@ -32,7 +32,7 @@ public:
 	virtual bool saveFile(const std::string& filePath, const std::vector<char>& content, IOMode saveMode) = 0;
 
 	virtual std::string getCurrentSceneName() = 0;
-	virtual bool loadScene(const std::string& fileName) = 0;
+	virtual bool loadScene(const std::string& fileName, bool AsyncLoad = true) = 0;
 	virtual bool saveScene(const std::string& fileName = "") = 0;
 	virtual bool isLoadingScene() = 0;
 
@@ -41,7 +41,7 @@ public:
 
 	virtual bool convertModel(const std::string & fileName, const std::string & exportPath) = 0;
 
-	virtual ModelMap loadModel(const std::string & fileName) = 0;
+	virtual ModelMap loadModel(const std::string & fileName, bool AsyncUploadGPUResource = true) = 0;
 	virtual TextureDataComponent* loadTexture(const std::string & fileName) = 0;
 
 	virtual bool addCPPClassFiles(const CPPClassDesc& desc) = 0;

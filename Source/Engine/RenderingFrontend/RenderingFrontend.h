@@ -21,8 +21,8 @@ public:
 	SkeletonDataComponent* addSkeletonDataComponent() override;
 	AnimationDataComponent* addAnimationDataComponent() override;
 
-	bool registerMeshDataComponent(MeshDataComponent * rhs) override;
-	bool registerMaterialDataComponent(MaterialDataComponent * rhs) override;
+	bool registerMeshDataComponent(MeshDataComponent * rhs, bool AsyncUploadToGPU) override;
+	bool registerMaterialDataComponent(MaterialDataComponent * rhs, bool AsyncUploadToGPU) override;
 
 	MeshDataComponent* getMeshDataComponent(MeshShapeType meshShapeType) override;
 	TextureDataComponent* getTextureDataComponent(TextureUsageType textureUsageType) override;

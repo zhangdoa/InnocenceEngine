@@ -46,12 +46,12 @@ namespace InnoFileSystemNS::JSONParser
 		}
 	}
 
-	ModelMap processSceneJsonData(const json & j);
+	ModelMap processSceneJsonData(const json & j, bool AsyncUploadGPUResource = true);
 	std::vector<AnimationDataComponent*> processAnimationJsonData(const json & j);
-	ModelMap processNodeJsonData(const json & j);
-	ModelPair processMeshJsonData(const json& j);
+	ModelMap processNodeJsonData(const json & j, bool AsyncUploadGPUResource = true);
+	ModelPair processMeshJsonData(const json& j, bool AsyncUploadGPUResource = true);
 	SkeletonDataComponent* processSkeletonJsonData(const std::string& skeletonFileName);
-	MaterialDataComponent* processMaterialJsonData(const std::string& materialFileName);
+	MaterialDataComponent* processMaterialJsonData(const std::string& materialFileName, bool AsyncUploadGPUResource = true);
 
 	bool assignComponentRuntimeData();
 
@@ -374,16 +374,16 @@ void InnoFileSystemNS::JSONParser::from_json(const json& j, CameraComponent& p)
 	p.m_zFar = j["zFar"];
 }
 
-ModelMap InnoFileSystemNS::JSONParser::loadModelFromDisk(const std::string & fileName)
+ModelMap InnoFileSystemNS::JSONParser::loadModelFromDisk(const std::string & fileName, bool AsyncUploadGPUResource)
 {
 	json j;
 
 	loadJsonDataFromDisk(fileName, j);
 
-	return std::move(processSceneJsonData(j));
+	return std::move(processSceneJsonData(j, AsyncUploadGPUResource));
 }
 
-ModelMap InnoFileSystemNS::JSONParser::processSceneJsonData(const json & j)
+ModelMap InnoFileSystemNS::JSONParser::processSceneJsonData(const json & j, bool AsyncUploadGPUResource)
 {
 	// @TODO: Optimize
 	if (j.find("AnimationFiles") != j.end())
@@ -391,7 +391,7 @@ ModelMap InnoFileSystemNS::JSONParser::processSceneJsonData(const json & j)
 		processAnimationJsonData(j["AnimationFiles"]);
 	}
 
-	auto l_result = processNodeJsonData(j);
+	auto l_result = processNodeJsonData(j, AsyncUploadGPUResource);
 
 	auto l_m = InnoMath::generateIdentityMatrix<float>();
 
@@ -479,7 +479,7 @@ std::vector<AnimationDataComponent*> InnoFileSystemNS::JSONParser::processAnimat
 	return std::vector<AnimationDataComponent*>();
 }
 
-ModelMap InnoFileSystemNS::JSONParser::processNodeJsonData(const json & j)
+ModelMap InnoFileSystemNS::JSONParser::processNodeJsonData(const json & j, bool AsyncUploadGPUResource)
 {
 	ModelMap l_nodeResult;
 
@@ -487,7 +487,7 @@ ModelMap InnoFileSystemNS::JSONParser::processNodeJsonData(const json & j)
 	{
 		for (auto i : j["Meshes"])
 		{
-			l_nodeResult.emplace(processMeshJsonData(i));
+			l_nodeResult.emplace(processMeshJsonData(i, AsyncUploadGPUResource));
 		}
 	}
 
@@ -496,7 +496,7 @@ ModelMap InnoFileSystemNS::JSONParser::processNodeJsonData(const json & j)
 	{
 		for (auto i : j["Nodes"])
 		{
-			auto l_childrenNodeResult = std::move(processNodeJsonData(i));
+			auto l_childrenNodeResult = std::move(processNodeJsonData(i, AsyncUploadGPUResource));
 			for (auto i : l_childrenNodeResult)
 			{
 				l_nodeResult.emplace(i);
@@ -507,7 +507,7 @@ ModelMap InnoFileSystemNS::JSONParser::processNodeJsonData(const json & j)
 	return l_nodeResult;
 }
 
-ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j)
+ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j, bool AsyncUploadGPUResource)
 {
 	ModelPair l_result;
 
@@ -570,7 +570,7 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j)
 
 		m_loadedModelPair.emplace(l_meshFileName, l_result);
 
-		g_pModuleManager->getRenderingFrontend()->registerMeshDataComponent(l_MeshDC);
+		g_pModuleManager->getRenderingFrontend()->registerMeshDataComponent(l_MeshDC, AsyncUploadGPUResource);
 	}
 
 	return l_result;
@@ -616,7 +616,7 @@ SkeletonDataComponent * InnoFileSystemNS::JSONParser::processSkeletonJsonData(co
 	}
 }
 
-MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(const std::string& materialFileName)
+MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(const std::string& materialFileName, bool AsyncUploadGPUResource)
 {
 	json j;
 
@@ -661,7 +661,7 @@ MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(co
 	l_MDC->m_meshCustomMaterial.Thickness = j["Thickness"];
 	l_MDC->m_objectStatus = ObjectStatus::Created;
 
-	g_pModuleManager->getRenderingFrontend()->registerMaterialDataComponent(l_MDC);
+	g_pModuleManager->getRenderingFrontend()->registerMaterialDataComponent(l_MDC, AsyncUploadGPUResource);
 
 	return l_MDC;
 }

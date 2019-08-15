@@ -103,8 +103,6 @@ bool InnoFileSystemNS::loadScene(const std::string& fileName)
 
 	InnoLogger::Log(LogLevel::Success, "FileSystem: scene ", fileName.c_str(), " has been loaded.");
 
-	GetComponentManager(VisibleComponent)->LoadAssetsForComponents();
-
 	return true;
 }
 
@@ -141,6 +139,7 @@ bool InnoFileSystem::update()
 			InnoFileSystemNS::m_isLoadingScene = true;
 			g_pModuleManager->getTaskSystem()->waitAllTasksToFinish();
 			InnoFileSystemNS::loadScene(InnoFileSystemNS::m_nextLoadingScene);
+			GetComponentManager(VisibleComponent)->LoadAssetsForComponents();
 		}
 		return true;
 	}
@@ -187,9 +186,25 @@ std::string InnoFileSystem::getCurrentSceneName()
 	return l_currentSceneName;
 }
 
-bool InnoFileSystem::loadScene(const std::string & fileName)
+bool InnoFileSystem::loadScene(const std::string & fileName, bool AsyncLoad)
 {
-	return InnoFileSystemNS::prepareForLoadingScene(fileName);
+	if (AsyncLoad)
+	{
+		return InnoFileSystemNS::prepareForLoadingScene(fileName);
+	}
+	else
+	{
+		if (InnoFileSystemNS::m_currentScene == fileName)
+		{
+			InnoLogger::Log(LogLevel::Warning, "FileSystem: scene ", fileName.c_str(), " has already loaded now.");
+			return true;
+		}
+		InnoFileSystemNS::m_nextLoadingScene = fileName;
+		InnoFileSystemNS::m_isLoadingScene = true;
+		g_pModuleManager->getTaskSystem()->waitAllTasksToFinish();
+		InnoFileSystemNS::loadScene(InnoFileSystemNS::m_nextLoadingScene);
+		GetComponentManager(VisibleComponent)->LoadAssetsForComponents(AsyncLoad);
+	}
 }
 
 bool InnoFileSystem::saveScene(const std::string & fileName)
@@ -219,9 +234,9 @@ bool InnoFileSystem::convertModel(const std::string & fileName, const std::strin
 	return InnoFileSystemNS::convertModel(fileName, exportPath);
 }
 
-ModelMap InnoFileSystem::loadModel(const std::string & fileName)
+ModelMap InnoFileSystem::loadModel(const std::string & fileName, bool AsyncUploadGPUResource)
 {
-	return InnoFileSystemNS::AssetLoader::loadModel(fileName);
+	return InnoFileSystemNS::AssetLoader::loadModel(fileName, AsyncUploadGPUResource);
 }
 
 TextureDataComponent* InnoFileSystem::loadTexture(const std::string & fileName)

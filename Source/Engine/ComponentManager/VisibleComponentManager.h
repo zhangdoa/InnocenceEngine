@@ -15,5 +15,5 @@ public:
 	InnoComponent* Find(const InnoEntity* parentEntity) override;
 
 	const std::vector<VisibleComponent*>& GetAllComponents() override;
-	void LoadAssetsForComponents() override;
+	void LoadAssetsForComponents(bool AsyncLoad) override;
 };

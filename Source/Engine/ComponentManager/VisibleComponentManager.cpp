@@ -20,7 +20,7 @@ namespace VisibleComponentManagerNS
 
 	std::function<void()> f_SceneLoadingStartCallback;
 	std::function<void()> f_SceneLoadingFinishCallback;
-	std::function<void(VisibleComponent*)> f_LoadAssetTask;
+	std::function<void(VisibleComponent*, bool)> f_LoadAssetTask;
 	std::function<void(VisibleComponent*)> f_AssignUnitMeshTask;
 
 	void assignUnitMesh(MeshShapeType meshUsageType, VisibleComponent* visibleComponent)
@@ -56,9 +56,9 @@ bool InnoVisibleComponentManager::Setup()
 	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_SceneLoadingStartCallback);
 	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_SceneLoadingFinishCallback);
 
-	f_LoadAssetTask = [=](VisibleComponent* i)
+	f_LoadAssetTask = [=](VisibleComponent* i, bool AsyncLoad)
 	{
-		i->m_modelMap = g_pModuleManager->getFileSystem()->loadModel(i->m_modelFileName);
+		i->m_modelMap = g_pModuleManager->getFileSystem()->loadModel(i->m_modelFileName, AsyncLoad);
 
 		auto l_transformComponent = GetComponent(TransformComponent, i->m_parentEntity);
 		auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
@@ -129,7 +129,7 @@ const std::vector<VisibleComponent*>& InnoVisibleComponentManager::GetAllCompone
 	return m_Components.getRawData();
 }
 
-void InnoVisibleComponentManager::LoadAssetsForComponents()
+void InnoVisibleComponentManager::LoadAssetsForComponents(bool AsyncLoad)
 {
 	for (auto i : m_Components)
 	{
@@ -139,12 +139,26 @@ void InnoVisibleComponentManager::LoadAssetsForComponents()
 			{
 				if (!i->m_modelFileName.empty())
 				{
-					g_pModuleManager->getTaskSystem()->submit("LoadAssetTask", 4, nullptr, f_LoadAssetTask, i);
+					if (AsyncLoad)
+					{
+						g_pModuleManager->getTaskSystem()->submit("LoadAssetTask", 4, nullptr, f_LoadAssetTask, i, true);
+					}
+					else
+					{
+						f_LoadAssetTask(i, false);
+					}
 				}
 			}
 			else
 			{
-				g_pModuleManager->getTaskSystem()->submit("AssignUnitMeshTask", 4, nullptr, f_AssignUnitMeshTask, i);
+				if (AsyncLoad)
+				{
+					g_pModuleManager->getTaskSystem()->submit("AssignUnitMeshTask", 4, nullptr, f_AssignUnitMeshTask, i);
+				}
+				else
+				{
+					f_AssignUnitMeshTask(i);
+				}
 			}
 		}
 	}

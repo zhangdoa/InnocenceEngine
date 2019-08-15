@@ -19,7 +19,7 @@ public:
 	bool saveFile(const std::string& filePath, const std::vector<char>& content, IOMode saveMode) override;
 
 	std::string getCurrentSceneName() override;
-	bool loadScene(const std::string& fileName) override;
+	bool loadScene(const std::string& fileName, bool AsyncLoad) override;
 	bool saveScene(const std::string& fileName) override;
 	bool isLoadingScene() override;
 
@@ -28,7 +28,7 @@ public:
 
 	bool convertModel(const std::string & fileName, const std::string & exportPath) override;
 
-	ModelMap loadModel(const std::string & fileName) override;
+	ModelMap loadModel(const std::string & fileName, bool AsyncUploadGPUResource) override;
 	TextureDataComponent* loadTexture(const std::string & fileName) override;
 
 	bool addCPPClassFiles(const CPPClassDesc& desc) override;

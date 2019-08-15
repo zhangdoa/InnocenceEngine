@@ -58,8 +58,8 @@ public:
 	virtual SkeletonDataComponent* addSkeletonDataComponent() = 0;
 	virtual AnimationDataComponent* addAnimationDataComponent() = 0;
 
-	virtual bool registerMeshDataComponent(MeshDataComponent * rhs) = 0;
-	virtual bool registerMaterialDataComponent(MaterialDataComponent * rhs) = 0;
+	virtual bool registerMeshDataComponent(MeshDataComponent * rhs, bool AsyncUploadToGPU = true) = 0;
+	virtual bool registerMaterialDataComponent(MaterialDataComponent * rhs, bool AsyncUploadToGPU = true) = 0;
 
 	virtual MeshDataComponent* getMeshDataComponent(MeshShapeType meshShapeType) = 0;
 	virtual TextureDataComponent* getTextureDataComponent(TextureUsageType textureUsageType) = 0;

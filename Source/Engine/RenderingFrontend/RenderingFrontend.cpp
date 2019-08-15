@@ -837,10 +837,6 @@ bool InnoRenderingFrontend::transferDataToGPU()
 		if (l_Mesh)
 		{
 			auto l_result = m_renderingServer->InitializeMeshDataComponent(l_Mesh);
-			if (!l_result)
-			{
-				InnoLogger::Log(LogLevel::Error, "InnoRenderingFrontend: can't initialize MeshDataComponent for ", l_Mesh->m_parentEntity->m_entityName.c_str(), "!");
-			}
 		}
 	}
 
@@ -852,26 +848,36 @@ bool InnoRenderingFrontend::transferDataToGPU()
 		if (l_Mesh)
 		{
 			auto l_result = m_renderingServer->InitializeMaterialDataComponent(l_Mesh);
-			if (!l_result)
-			{
-				InnoLogger::Log(LogLevel::Error, "InnoRenderingFrontend: can't initialize MaterialDataComponent for ", l_Mesh->m_parentEntity->m_entityName.c_str(), "!");
-			}
 		}
 	}
 
 	return true;
 }
 
-bool InnoRenderingFrontend::registerMeshDataComponent(MeshDataComponent * rhs)
+bool InnoRenderingFrontend::registerMeshDataComponent(MeshDataComponent * rhs, bool AsyncUploadToGPU)
 {
-	m_uninitializedMeshes.push(rhs);
+	if (AsyncUploadToGPU)
+	{
+		m_uninitializedMeshes.push(rhs);
+	}
+	else
+	{
+		m_renderingServer->InitializeMeshDataComponent(rhs);
+	}
 
 	return true;
 }
 
-bool InnoRenderingFrontend::registerMaterialDataComponent(MaterialDataComponent * rhs)
+bool InnoRenderingFrontend::registerMaterialDataComponent(MaterialDataComponent * rhs, bool AsyncUploadToGPU)
 {
-	m_uninitializedMaterials.push(rhs);
+	if (AsyncUploadToGPU)
+	{
+		m_uninitializedMaterials.push(rhs);
+	}
+	else
+	{
+		m_renderingServer->InitializeMaterialDataComponent(rhs);
+	}
 
 	return true;
 }

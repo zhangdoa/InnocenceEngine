@@ -15,11 +15,11 @@ namespace InnoFileSystemNS::AssetLoader
 	std::unordered_map<std::string, ModelMap> m_loadedModelMap;
 	std::unordered_map<std::string, TextureDataComponent*> m_loadedTexture;
 
-	ModelMap loadModelFromDisk(const std::string & fileName);
+	ModelMap loadModelFromDisk(const std::string & fileName, bool AsyncUploadGPUResource = true);
 	TextureDataComponent* loadTextureFromDisk(const std::string & fileName);
 }
 
-ModelMap InnoFileSystemNS::AssetLoader::loadModel(const std::string & fileName)
+ModelMap InnoFileSystemNS::AssetLoader::loadModel(const std::string & fileName, bool AsyncUploadGPUResource)
 {
 	auto l_extension = IOService::getFileExtension(fileName);
 	if (l_extension == ".InnoModel")
@@ -42,7 +42,7 @@ ModelMap InnoFileSystemNS::AssetLoader::loadModel(const std::string & fileName)
 		}
 		else
 		{
-			return loadModelFromDisk(fileName);
+			return loadModelFromDisk(fileName, AsyncUploadGPUResource);
 		}
 	}
 	else
@@ -52,9 +52,9 @@ ModelMap InnoFileSystemNS::AssetLoader::loadModel(const std::string & fileName)
 	}
 }
 
-ModelMap InnoFileSystemNS::AssetLoader::loadModelFromDisk(const std::string & fileName)
+ModelMap InnoFileSystemNS::AssetLoader::loadModelFromDisk(const std::string & fileName, bool AsyncUploadGPUResource)
 {
-	auto l_result = JSONParser::loadModelFromDisk(fileName);
+	auto l_result = JSONParser::loadModelFromDisk(fileName, AsyncUploadGPUResource);
 	m_loadedModelMap.emplace(fileName, l_result);
 
 	return l_result;

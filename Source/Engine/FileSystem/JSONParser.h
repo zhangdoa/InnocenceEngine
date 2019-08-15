@@ -35,7 +35,7 @@ namespace InnoFileSystemNS
 		void from_json(const json& j, SphereLightComponent& p);
 		void from_json(const json& j, CameraComponent& p);
 
-		ModelMap loadModelFromDisk(const std::string & fileName);
+		ModelMap loadModelFromDisk(const std::string & fileName, bool AsyncUploadGPUResource = true);
 
 		bool saveScene(const std::string& fileName);
 		bool loadScene(const std::string& fileName);
