@@ -1675,9 +1675,10 @@ vec4 DX11RenderingServer::ReadRenderTargetSample(RenderPassDataComponent * rhs, 
 std::vector<vec4> DX11RenderingServer::ReadTextureBackToCPU(RenderPassDataComponent * canvas, TextureDataComponent * TDC)
 {
 	// @TODO: Support different pixel data type
-	std::vector<vec4> l_result;
-
 	auto l_srcTDC = reinterpret_cast<DX11TextureDataComponent*>(TDC);
+
+	std::vector<uint32_t> l_DSResult;
+	std::vector<vec4> l_result;
 
 	auto l_destTDC = reinterpret_cast<DX11TextureDataComponent*>(AddTextureDataComponent("ReadBackTemp/"));
 	l_destTDC->m_textureDataDesc = TDC->m_textureDataDesc;
@@ -1697,6 +1698,7 @@ std::vector<vec4> DX11RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 	else
 	{
 		size_t l_sampleCount = 0;
+		size_t l_sliceCount = 1;
 
 		switch (l_srcTDC->m_textureDataDesc.SamplerType)
 		{
@@ -1708,22 +1710,57 @@ std::vector<vec4> DX11RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 			break;
 		case TextureSamplerType::Sampler3D:
 			l_sampleCount = l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_textureDataDesc.Height * l_srcTDC->m_textureDataDesc.DepthOrArraySize;
+			l_sliceCount = l_srcTDC->m_textureDataDesc.DepthOrArraySize;
 			break;
 		case TextureSamplerType::Sampler1DArray:
 			l_sampleCount = l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_textureDataDesc.DepthOrArraySize;
+			l_sliceCount = l_srcTDC->m_textureDataDesc.DepthOrArraySize;
 			break;
 		case TextureSamplerType::Sampler2DArray:
 			l_sampleCount = l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_textureDataDesc.Height * l_srcTDC->m_textureDataDesc.DepthOrArraySize;
+			l_sliceCount = l_srcTDC->m_textureDataDesc.DepthOrArraySize;
 			break;
 		case TextureSamplerType::SamplerCubemap:
 			l_sampleCount = l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_textureDataDesc.Height * 6;
+			l_sliceCount = 6;
 			break;
 		default:
 			break;
 		}
 		l_result.resize(l_sampleCount);
+		l_DSResult.resize(l_sampleCount);
 
-		std::memcpy(l_result.data(), l_mappedResource.pData, l_sampleCount * sizeof(vec4));
+		if (l_mappedResource.DepthPitch)
+		{
+			if (l_srcTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::Depth)
+			{
+				std::memcpy(l_DSResult.data(), l_mappedResource.pData, l_mappedResource.DepthPitch * l_sliceCount);
+				for (size_t i = 0; i < l_sampleCount; i++)
+				{
+					auto l_depth = float(l_DSResult[i]);
+					l_result[i].x = l_depth;
+				}
+			}
+			else if (l_srcTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
+			{
+				std::memcpy(l_DSResult.data(), l_mappedResource.pData, l_mappedResource.DepthPitch * l_sliceCount);
+				for (size_t i = 0; i < l_sampleCount; i++)
+				{
+					auto l_depth = l_DSResult[i] & 0x00FFFFFF;
+					auto l_stencil = (l_DSResult[i] & 0xFF000000) >> 24;
+					l_result[i].x = float(l_depth) / float(0x00FFFFFF);
+					l_result[i].y = float(l_stencil);
+				}
+			}
+			else
+			{
+				std::memcpy(l_result.data(), l_mappedResource.pData, l_mappedResource.DepthPitch * l_sliceCount);
+			}
+		}
+		else
+		{
+			std::memcpy(l_result.data(), l_mappedResource.pData, l_mappedResource.RowPitch * l_sliceCount);
+		}
 	}
 
 	m_deviceContext->Unmap(l_destTDC->m_ResourceHandle, 0);
