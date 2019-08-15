@@ -17,35 +17,45 @@ struct BrickCache
 	std::vector<Surfel> surfelCaches;
 };
 
+struct BrickCacheSummary
+{
+	vec4 pos;
+	size_t fileIndex;
+	size_t fileSize;
+};
+
 namespace InnoBakerNS
 {
+	std::string parseFileName(const std::string & fileName);
+
 	bool gatherStaticMeshData();
-	bool generateProbes();
+	bool generateProbeCaches(std::vector<Probe>& probeCaches);
 
-	bool captureSurfels();
-	bool drawCubemaps(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v);
-	bool drawOpaquePass(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v);
-	bool drawSkyVisibilityPass(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v);
-	bool readBackSurfelCaches(unsigned int probeIndex);
+	bool captureSurfels(std::vector<Probe>& probeCaches);
+	bool drawCubemaps(Probe& probeCache, const mat4& p, const std::vector<mat4>& v);
+	bool drawOpaquePass(Probe& probeCache, const mat4& p, const std::vector<mat4>& v);
+	bool drawSkyVisibilityPass(Probe& probeCache, const mat4& p, const std::vector<mat4>& v);
+	bool readBackSurfelCaches(std::vector<Surfel>& surfelCaches);
+	bool eliminateDuplicatedSurfels(std::vector<Surfel>& surfelCaches);
 
-	bool eliminateDuplicatedSurfels();
-	bool serializeSurfelCaches();
+	bool serializeProbeCaches(const std::vector<Probe>& probeCaches);
+	bool serializeSurfelCaches(const std::vector<Surfel>& surfelCaches);
 
-	bool generateBrickCaches();
-	bool serializeBrickCaches();
+	bool generateBrickCaches(const std::vector<Surfel>& surfelCaches);
+	bool serializeBrickCaches(const std::vector<BrickCache>& brickCaches);
 
-	bool generateBricks();
-	bool serializeSurfels();
-	bool serializeBricks();
+	bool generateBricks(const std::vector<BrickCache>& brickCaches);
+	bool serializeSurfels(const std::vector<Surfel>& surfels);
+	bool serializeBricks(const std::vector<Brick>& bricks);
 
-	bool assignBrickFactorToProbesByGPU();
-	bool drawBricks(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v);
-	bool readBackBrickFactors(unsigned int probeIndex);
+	bool assignBrickFactorToProbesByGPU(const std::vector<Brick>& bricks, const std::vector<Probe>& probeCaches);
+	bool drawBricks(vec4 pos, unsigned int bricksCount, const mat4 & p, const std::vector<mat4>& v);
+	bool readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& brickFactors);
 
-	bool assignBrickFactorToProbesByCPU();
+	bool serializeBrickFactors(const std::vector<BrickFactor>& brickFactors);
+	bool serializeProbes(const std::vector<Probe>& probes);
 
-	bool serializeBrickFactors();
-	bool serializeProbes();
+	std::string m_exportFileName;
 
 	unsigned int m_staticMeshDrawCallCount = 0;
 	std::vector<OpaquePassDrawCallData> m_staticMeshDrawCallData;
@@ -57,13 +67,7 @@ namespace InnoBakerNS
 	const unsigned int m_probeMapSamplingInterval = 128;
 	const unsigned int m_captureResolution = 64;
 	const unsigned int m_sampleCountPerFace = m_captureResolution * m_captureResolution;
-	const vec4 m_brickSize = vec4(8.0f, 8.0f, 8.0f, 0.0f);
-
-	std::vector<Probe> m_probes;
-	std::vector<Surfel> m_surfels;
-	std::vector<BrickCache> m_brickCaches;
-	std::vector<Brick> m_bricks;
-	std::vector<BrickFactor> m_brickFactors;
+	const vec4 m_brickSize = vec4(16.0f, 16.0f, 16.0f, 0.0f);
 
 	RenderPassDataComponent* m_RPDC_Probe;
 	ShaderProgramComponent* m_SPC_Probe;
@@ -79,8 +83,19 @@ namespace InnoBakerNS
 using namespace InnoBakerNS;
 using namespace DefaultGPUBuffers;
 
+std::string InnoBakerNS::parseFileName(const std::string & fileName)
+{
+	auto l_startOffset = fileName.find_last_of("/");
+	auto l_endOffset = fileName.find_last_of(".");
+	auto l_result = fileName.substr(l_startOffset + 1, l_endOffset - l_startOffset - 1);
+
+	return l_result;
+}
+
 bool InnoBakerNS::gatherStaticMeshData()
 {
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Gathering static meshes...");
+
 	unsigned int l_index = 0;
 
 	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
@@ -128,6 +143,8 @@ bool InnoBakerNS::gatherStaticMeshData()
 
 	m_staticMeshDrawCallCount = l_index;
 
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: There are ", m_staticMeshDrawCallCount, " static meshes in current scene.");
+
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
 	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
 
@@ -137,11 +154,11 @@ bool InnoBakerNS::gatherStaticMeshData()
 	return true;
 }
 
-bool InnoBakerNS::generateProbes()
+bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probeCaches)
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Generate probes...");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Generate probe caches...");
 
-	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getTotalSceneAABB();
+	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getStaticSceneAABB();
 
 	auto l_startPos = l_sceneAABB.m_boundMin;
 	auto l_sceneCenter = l_sceneAABB.m_center;
@@ -155,6 +172,8 @@ bool InnoBakerNS::generateProbes()
 	l_GICameraGPUData[7] = InnoMath::generateIdentityMatrix<float>();
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(GetGPUBufferDataComponent(GPUBufferUsageType::GICamera), l_GICameraGPUData);
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to draw probe height map...");
 
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
 
@@ -185,12 +204,14 @@ bool InnoBakerNS::generateProbes()
 
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC_Probe);
 
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to generate probe location...");
+
 	// Read back results and generate probes on x-z plate
 	auto l_probePosTextureResults = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Probe, m_RPDC_Probe->m_RenderTargets[0]);
 
 	auto l_totalTextureSize = l_probePosTextureResults.size();
 
-	m_probes.reserve(l_totalTextureSize);
+	probeCaches.reserve(l_totalTextureSize);
 
 	auto l_probesCountPerLine = m_probeMapResolution / m_probeMapSamplingInterval;
 
@@ -205,12 +226,14 @@ bool InnoBakerNS::generateProbes()
 			l_Probe.pos = l_textureResult;
 			l_Probe.pos.y = l_textureResult.y + m_probeHeightOffset;
 
-			m_probes.emplace_back(l_Probe);
+			probeCaches.emplace_back(l_Probe);
 		}
 	}
+	auto l_probesCount = probeCaches.size();
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_probesCount, " probe location generated along the surface.");
 
 	// Generate probes along the wall
-	auto l_probesCount = m_probes.size();
 	auto l_posIntervalX = std::abs((l_probePosTextureResults[0] - l_probePosTextureResults[m_probeMapSamplingInterval - 1]).x);
 	auto l_posIntervalZ = std::abs((l_probePosTextureResults[0] - l_probePosTextureResults[m_probeMapResolution * m_probeMapSamplingInterval - 1]).z);
 
@@ -219,9 +242,9 @@ bool InnoBakerNS::generateProbes()
 		// Not the last one in all, not any one in last column, and not the last one each row
 		if (i + 1 < l_probesCount && (i + l_probesCountPerLine) < l_probesCount && ((i + 1) % l_probesCountPerLine))
 		{
-			auto l_currentProbe = m_probes[i];
-			auto l_nextRowProbe = m_probes[i + 1];
-			auto l_nextColumnProbe = m_probes[i + l_probesCountPerLine];
+			auto l_currentProbe = probeCaches[i];
+			auto l_nextRowProbe = probeCaches[i + 1];
+			auto l_nextColumnProbe = probeCaches[i + l_probesCountPerLine];
 
 			auto ddx = l_currentProbe.pos.y - l_nextRowProbe.pos.y;
 			auto ddy = l_currentProbe.pos.y - l_nextColumnProbe.pos.y;
@@ -236,7 +259,7 @@ bool InnoBakerNS::generateProbes()
 					l_verticalProbe.pos = l_nextRowProbe.pos;
 					l_verticalProbe.pos.y += l_posIntervalX * (k + 1);
 
-					m_probes.emplace_back(l_verticalProbe);
+					probeCaches.emplace_back(l_verticalProbe);
 				}
 			}
 			if (ddx < -l_posIntervalX)
@@ -249,7 +272,7 @@ bool InnoBakerNS::generateProbes()
 					l_verticalProbe.pos = l_currentProbe.pos;
 					l_verticalProbe.pos.y += l_posIntervalX * (k + 1);
 
-					m_probes.emplace_back(l_verticalProbe);
+					probeCaches.emplace_back(l_verticalProbe);
 				}
 			}
 			if (ddy > l_posIntervalZ)
@@ -262,7 +285,7 @@ bool InnoBakerNS::generateProbes()
 					l_verticalProbe.pos = l_nextColumnProbe.pos;
 					l_verticalProbe.pos.y += l_posIntervalZ * (k + 1);
 
-					m_probes.emplace_back(l_verticalProbe);
+					probeCaches.emplace_back(l_verticalProbe);
 				}
 			}
 			if (ddy < -l_posIntervalZ)
@@ -275,22 +298,24 @@ bool InnoBakerNS::generateProbes()
 					l_verticalProbe.pos = l_currentProbe.pos;
 					l_verticalProbe.pos.y += l_posIntervalZ * (k + 1);
 
-					m_probes.emplace_back(l_verticalProbe);
+					probeCaches.emplace_back(l_verticalProbe);
 				}
 			}
 		}
 	}
 
-	m_probes.shrink_to_fit();
+	probeCaches.shrink_to_fit();
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", m_probes.size(), " probes generated.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", probeCaches.size() - l_probesCount, " probe location generated along the wall.");
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", probeCaches.size(), " probe location generated.");
 
 	return true;
 }
 
-bool InnoBakerNS::captureSurfels()
+bool InnoBakerNS::captureSurfels(std::vector<Probe>& probeCaches)
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Capture surfels...");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to capture surfels...");
 
 	auto l_cameraGPUData = g_pModuleManager->getRenderingFrontend()->getCameraGPUData();
 
@@ -308,35 +333,43 @@ bool InnoBakerNS::captureSurfels()
 		l_rPX, l_rNX, l_rPY, l_rNY, l_rPZ, l_rNZ
 	};
 
-	auto l_probeCount = m_probes.size();
+	auto l_probeCount = probeCaches.size();
+
+	std::vector<Surfel> l_surfelCaches;
+	l_surfelCaches.reserve(l_probeCount * m_captureResolution * m_captureResolution * 6);
 
 	for (unsigned int i = 0; i < l_probeCount; i++)
 	{
-		drawCubemaps(i, l_p, l_v);
-		readBackSurfelCaches(i);
+		drawCubemaps(probeCaches[i], l_p, l_v);
+		readBackSurfelCaches(l_surfelCaches);
 
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Capture surfel ", (float)i * 100.0f / (float)l_probeCount, "%...");
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Progress: ", (float)i * 100.0f / (float)l_probeCount, "%...");
 	}
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", m_surfels.size(), " surfels captured.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_surfelCaches.size(), " surfel caches captured.");
+
+	eliminateDuplicatedSurfels(l_surfelCaches);
+
+	serializeProbeCaches(probeCaches);
+	serializeSurfelCaches(l_surfelCaches);
 
 	return true;
 }
 
-bool InnoBakerNS::drawCubemaps(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v)
+bool InnoBakerNS::drawCubemaps(Probe& probeCache, const mat4& p, const std::vector<mat4>& v)
 {
 	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
 
-	drawOpaquePass(probeIndex, p, v);
+	drawOpaquePass(probeCache, p, v);
 
-	drawSkyVisibilityPass(probeIndex, p, v);
+	drawSkyVisibilityPass(probeCache, p, v);
 
 	return true;
 }
 
-bool InnoBakerNS::drawOpaquePass(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v)
+bool InnoBakerNS::drawOpaquePass(Probe& probeCache, const mat4& p, const std::vector<mat4>& v)
 {
-	auto l_t = InnoMath::getInvertTranslationMatrix(m_probes[probeIndex].pos);
+	auto l_t = InnoMath::getInvertTranslationMatrix(probeCache.pos);
 
 	std::vector<mat4> l_GICameraGPUData(8);
 	l_GICameraGPUData[0] = p;
@@ -401,7 +434,7 @@ bool InnoBakerNS::drawOpaquePass(unsigned int probeIndex, const mat4& p, const s
 	return true;
 }
 
-bool InnoBakerNS::drawSkyVisibilityPass(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v)
+bool InnoBakerNS::drawSkyVisibilityPass(Probe& probeCache, const mat4& p, const std::vector<mat4>& v)
 {
 	auto l_depthStencilRT = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_DepthStencilRenderTarget);
 
@@ -416,19 +449,19 @@ bool InnoBakerNS::drawSkyVisibilityPass(unsigned int probeIndex, const mat4& p, 
 		{
 			auto& l_depthStencil = l_depthStencilRT[i * l_depthStencilRTSize + j];
 
-			if (l_depthStencil.w == 1.0f)
+			if (l_depthStencil.y == 1.0f)
 			{
 				l_stencil++;
 			}
 		}
 
-		m_probes[probeIndex].skyVisibility[i] = (float)l_stencil / (float)l_depthStencilRTSize;
+		probeCache.skyVisibility[i] = (float)l_stencil / (float)l_depthStencilRTSize;
 	}
 
 	return true;
 }
 
-bool InnoBakerNS::readBackSurfelCaches(unsigned int probeIndex)
+bool InnoBakerNS::readBackSurfelCaches(std::vector<Surfel>& surfelCaches)
 {
 	auto l_posWSMetallic = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_RenderTargets[0]);
 	auto l_normalRoughness = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_RenderTargets[1]);
@@ -451,16 +484,16 @@ bool InnoBakerNS::readBackSurfelCaches(unsigned int probeIndex)
 		l_surfels[i].MRAT.w = 1.0f;
 	}
 
-	m_surfels.insert(m_surfels.end(), l_surfels.begin(), l_surfels.end());
+	surfelCaches.insert(surfelCaches.end(), l_surfels.begin(), l_surfels.end());
 
 	return true;
 }
 
-bool InnoBakerNS::eliminateDuplicatedSurfels()
+bool InnoBakerNS::eliminateDuplicatedSurfels(std::vector<Surfel>& surfelCaches)
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Eliminate duplicated surfels...");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to eliminate duplicated surfels...");
 
-	std::sort(m_surfels.begin(), m_surfels.end(), [&](Surfel A, Surfel B)
+	std::sort(surfelCaches.begin(), surfelCaches.end(), [&](Surfel A, Surfel B)
 	{
 		if (A.pos.x != B.pos.x) {
 			return A.pos.x < B.pos.x;
@@ -471,32 +504,48 @@ bool InnoBakerNS::eliminateDuplicatedSurfels()
 		return A.pos.z < B.pos.z;
 	});
 
-	m_surfels.erase(std::unique(m_surfels.begin(), m_surfels.end()), m_surfels.end());
-	m_surfels.shrink_to_fit();
+	surfelCaches.erase(std::unique(surfelCaches.begin(), surfelCaches.end()), surfelCaches.end());
+	surfelCaches.shrink_to_fit();
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Duplicated surfels have been removed, there are ", m_surfels.size(), " surfels now.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Duplicated surfels have been removed, there are ", surfelCaches.size(), " surfels now.");
 
 	return true;
 }
 
-bool InnoBakerNS::serializeSurfelCaches()
+bool InnoBakerNS::serializeProbeCaches(const std::vector<Probe>& probeCaches)
 {
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
-	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
 
 	std::ofstream l_file;
-	l_file.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoSurfelCache", std::ios::binary);
-	IOService::serializeVector(l_file, m_surfels);
+	l_file.open(l_filePath + "Res//Intermediate//" + m_exportFileName + ".InnoProbeCache", std::ios::binary);
+	IOService::serializeVector(l_file, probeCaches);
+	l_file.close();
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "Res//Intermediate//", m_exportFileName.c_str(), ".InnoProbeCache has been saved.");
 
 	return true;
 }
 
-bool InnoBakerNS::generateBrickCaches()
+bool InnoBakerNS::serializeSurfelCaches(const std::vector<Surfel>& surfelCaches)
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Generate brick caches...");
+	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+
+	std::ofstream l_file;
+	l_file.open(l_filePath + "Res//Intermediate//" + m_exportFileName + ".InnoSurfelCache", std::ios::binary);
+	IOService::serializeVector(l_file, surfelCaches);
+	l_file.close();
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "Res//Intermediate//", m_exportFileName.c_str(), ".InnoSurfelCache has been saved.");
+
+	return true;
+}
+
+bool InnoBakerNS::generateBrickCaches(const std::vector<Surfel>& surfelCaches)
+{
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to generate brick caches...");
 
 	// Find bound corner position
-	auto l_surfelsCount = m_surfels.size();
+	auto l_surfelsCount = surfelCaches.size();
 
 	auto l_startPos = InnoMath::maxVec4<float>;
 	l_startPos.w = 1.0f;
@@ -506,8 +555,8 @@ bool InnoBakerNS::generateBrickCaches()
 
 	for (size_t i = 0; i < l_surfelsCount; i++)
 	{
-		l_startPos = InnoMath::elementWiseMin(m_surfels[i].pos, l_startPos);
-		l_endPos = InnoMath::elementWiseMax(m_surfels[i].pos, l_endPos);
+		l_startPos = InnoMath::elementWiseMin(surfelCaches[i].pos, l_startPos);
+		l_endPos = InnoMath::elementWiseMax(surfelCaches[i].pos, l_endPos);
 	}
 
 	// Fit the end corner to contain at least one brick in each axis
@@ -523,11 +572,15 @@ bool InnoBakerNS::generateBrickCaches()
 	auto l_bricksCountZ = std::trunc(l_extends.z / m_brickSize.z);
 
 	auto l_totalBricksWorkCount = l_bricksCountX * l_bricksCountY * l_bricksCountZ;
-	unsigned int l_index = 0;
+	std::vector<BrickCache> l_brickCaches;
+
+	l_brickCaches.reserve((unsigned int)l_totalBricksWorkCount);
 
 	// Assign surfels to brick cache
 	vec4 l_currentMaxPos = l_startPos + m_brickSize;
 	vec4 l_currentMinPos = l_startPos;
+
+	unsigned int l_progressCounter = 0;
 
 	while (l_currentMaxPos.x <= l_endPos.x)
 	{
@@ -548,11 +601,11 @@ bool InnoBakerNS::generateBrickCaches()
 				for (size_t i = 0; i < l_surfelsCount; i++)
 				{
 					if (
-						InnoMath::isALessEqualThanBVec3(m_surfels[i].pos, l_currentMaxPos)
-						&& InnoMath::isAGreaterEqualThanBVec3(m_surfels[i].pos, l_currentMinPos)
+						InnoMath::isALessEqualThanBVec3(surfelCaches[i].pos, l_currentMaxPos)
+						&& InnoMath::isAGreaterEqualThanBVec3(surfelCaches[i].pos, l_currentMinPos)
 						)
 					{
-						l_BrickCache.surfelCaches.emplace_back(m_surfels[i]);
+						l_BrickCache.surfelCaches.emplace_back(surfelCaches[i]);
 					}
 				}
 
@@ -560,12 +613,12 @@ bool InnoBakerNS::generateBrickCaches()
 
 				if (l_BrickCache.surfelCaches.size() > 0)
 				{
-					m_brickCaches.emplace_back(std::move(l_BrickCache));
+					l_brickCaches.emplace_back(std::move(l_BrickCache));
 				}
 
-				g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Generate brick caches ", (float)l_index * 100.0f / (float)l_totalBricksWorkCount, "%...");
+				g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Progress: ", (float)l_progressCounter * 100.0f / (float)l_totalBricksWorkCount, "%...");
 
-				l_index++;
+				l_progressCounter++;
 				l_currentMaxPos.z += m_brickSize.z;
 				l_currentMinPos.z += m_brickSize.z;
 			}
@@ -578,80 +631,133 @@ bool InnoBakerNS::generateBrickCaches()
 		l_currentMinPos.x += m_brickSize.x;
 	}
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Brick caches have been generated.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_progressCounter, " brick caches have been generated.");
+
+	serializeBrickCaches(l_brickCaches);
 
 	return true;
 }
 
-bool InnoBakerNS::serializeBrickCaches()
+bool InnoBakerNS::serializeBrickCaches(const std::vector<BrickCache>& brickCaches)
 {
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
-	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
 
-	std::ofstream l_file;
-	l_file.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoBrickCache", std::ios::binary);
-	IOService::serializeVector(l_file, m_brickCaches);
+	auto l_brickCacheCount = brickCaches.size();
+	std::ofstream l_summaryFile;
+	l_summaryFile.open(l_filePath + "Res//Intermediate//" + m_exportFileName + ".InnoBrickCacheSummary", std::ios::binary);
+	l_summaryFile << l_brickCacheCount;
+
+	unsigned int l_validBrickCounter = 0;
+	unsigned int l_fileIndex = 0;
+
+	std::ofstream l_surfelCacheFile;
+
+	for (size_t i = 0; i < l_brickCacheCount; i++)
+	{
+		l_summaryFile << brickCaches[i].pos.x << brickCaches[i].pos.y << brickCaches[i].pos.z << brickCaches[i].pos.w;
+		l_summaryFile << l_fileIndex;
+		l_summaryFile << brickCaches[i].surfelCaches.size();
+
+		if (l_validBrickCounter == 0)
+		{
+			l_surfelCacheFile.open(l_filePath + "Res//Intermediate//" + m_exportFileName + "_" + std::to_string(l_fileIndex) + ".InnoBrickCache", std::ios::binary);
+			IOService::serializeVector(l_surfelCacheFile, brickCaches[i].surfelCaches);
+		}
+
+		l_validBrickCounter++;
+		if (l_validBrickCounter > 512)
+		{
+			l_validBrickCounter = 0;
+
+			l_surfelCacheFile.close();
+
+			l_fileIndex++;
+		}
+	}
+
+	l_summaryFile.close();
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "Res//Intermediate//", m_exportFileName.c_str(), ".InnoBrickCacheSummary has been saved.");
 
 	return true;
 }
 
-bool InnoBakerNS::generateBricks()
+bool InnoBakerNS::generateBricks(const std::vector<BrickCache>& brickCaches)
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Generate bricks...");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to generate bricks...");
 
 	// Generate real bricks with surfel range
-	auto l_bricksCount = m_brickCaches.size();
+	auto l_bricksCount = brickCaches.size();
+	std::vector<Brick> l_bricks;
+	l_bricks.reserve(l_bricksCount);
+	std::vector<Surfel> l_surfels;
 
-	m_surfels.clear();
+	size_t l_surfelsCount = 0;
+	for (size_t i = 0; i < l_bricksCount; i++)
+	{
+		l_surfelsCount += brickCaches[i].surfelCaches.size();
+	}
+
+	l_surfels.reserve(l_surfelsCount);
 
 	size_t l_offset = 0;
 
 	for (size_t i = 0; i < l_bricksCount; i++)
 	{
 		Brick l_brick;
-		l_brick.boundBox = InnoMath::generateAABB(m_brickCaches[i].pos + m_brickSize / 2.0f, m_brickCaches[i].pos - m_brickSize / 2.0f);
+		l_brick.boundBox = InnoMath::generateAABB(brickCaches[i].pos + m_brickSize / 2.0f, brickCaches[i].pos - m_brickSize / 2.0f);
 		l_brick.surfelRangeBegin = (unsigned int)l_offset;
-		l_brick.surfelRangeEnd = (unsigned int)(l_offset + m_brickCaches[i].surfelCaches.size() - 1);
-		l_offset = m_brickCaches[i].surfelCaches.size();
+		l_brick.surfelRangeEnd = (unsigned int)(l_offset + brickCaches[i].surfelCaches.size() - 1);
+		l_offset = brickCaches[i].surfelCaches.size();
 
-		m_surfels.insert(m_surfels.end(), std::make_move_iterator(m_brickCaches[i].surfelCaches.begin()), std::make_move_iterator(m_brickCaches[i].surfelCaches.end()));
+		l_surfels.insert(l_surfels.end(), std::make_move_iterator(brickCaches[i].surfelCaches.begin()), std::make_move_iterator(brickCaches[i].surfelCaches.end()));
 
-		m_bricks.emplace_back(l_brick);
+		l_bricks.emplace_back(l_brick);
 
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Generate bricks ", (float)i * 100.0f / (float)l_bricksCount, "%...");
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Progress: ", (float)i * 100.0f / (float)l_bricksCount, "%...");
 	}
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Bricks have been generated.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_bricksCount, " bricks have been generated.");
+
+	serializeSurfels(l_surfels);
+	serializeBricks(l_bricks);
 
 	return true;
 }
 
-bool InnoBakerNS::serializeSurfels()
+bool InnoBakerNS::serializeSurfels(const std::vector<Surfel>& surfels)
 {
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
-	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
 
 	std::ofstream l_file;
-	l_file.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoSurfel", std::ios::binary);
-	IOService::serializeVector(l_file, m_surfels);
+	l_file.open(l_filePath + "Res//Scenes//" + m_exportFileName + ".InnoSurfel", std::ios::binary);
+	IOService::serializeVector(l_file, surfels);
+	l_file.close();
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "Res//Scenes//", m_exportFileName.c_str(), ".InnoSurfel has been saved.");
 
 	return true;
 }
 
-bool InnoBakerNS::serializeBricks()
+bool InnoBakerNS::serializeBricks(const std::vector<Brick>& bricks)
 {
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
-	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
 
 	std::ofstream l_file;
-	l_file.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoBrick", std::ios::binary);
-	IOService::serializeVector(l_file, m_bricks);
+	l_file.open(l_filePath + "Res//Scenes//" + m_exportFileName + ".InnoBrick", std::ios::binary);
+	IOService::serializeVector(l_file, bricks);
+	l_file.close();
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "Res//Scenes//", m_exportFileName.c_str(), ".InnoBrick has been saved.");
 
 	return true;
 }
 
-bool InnoBakerNS::assignBrickFactorToProbesByGPU()
+bool InnoBakerNS::assignBrickFactorToProbesByGPU(const std::vector<Brick>& bricks, const std::vector<Probe>& probeCaches)
 {
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to generate brick factor and assign to probes...");
+
+	// Upload camera data and brick cubes data to GPU memory
 	auto l_rPX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
 	auto l_rNX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(-1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
 	auto l_rPY = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 1.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 0.0f));
@@ -668,17 +774,14 @@ bool InnoBakerNS::assignBrickFactorToProbesByGPU()
 
 	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, l_cameraGPUData.zNear, l_cameraGPUData.zFar);
 
-	auto l_probesCount = m_probes.size();
-
-	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
-	auto l_bricksCount = m_bricks.size();
+	auto l_bricksCount = bricks.size();
 
 	std::vector<MeshGPUData> l_bricksCubeMeshGPUData;
 	l_bricksCubeMeshGPUData.resize(l_bricksCount);
 
 	for (size_t i = 0; i < l_bricksCount; i++)
 	{
-		auto l_t = InnoMath::toTranslationMatrix(m_bricks[i].boundBox.m_center);
+		auto l_t = InnoMath::toTranslationMatrix(bricks[i].boundBox.m_center);
 		auto l_s = InnoMath::toScaleMatrix(vec4(m_brickSize.x, m_brickSize.y, m_brickSize.z, 1.0f));
 
 		l_bricksCubeMeshGPUData[i].m = l_t * l_s;
@@ -687,22 +790,35 @@ bool InnoBakerNS::assignBrickFactorToProbesByGPU()
 		l_bricksCubeMeshGPUData[i].UUID = (float)i + 1.0f;
 	}
 
+	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MeshGBDC, l_bricksCubeMeshGPUData, 0, l_bricksCubeMeshGPUData.size());
+
+	// assign bricks to probe by the depth test result
+	auto l_probesCount = probeCaches.size();
+
+	std::vector<Probe> l_probes = probeCaches;
+	std::vector<BrickFactor> l_brickFactors;
+	l_brickFactors.reserve(l_probesCount * l_bricksCount);
 
 	for (size_t i = 0; i < l_probesCount; i++)
 	{
-		drawBricks((unsigned int)i, l_p, l_v);
-		readBackBrickFactors((unsigned int)i);
+		drawBricks(probeCaches[i].pos, (unsigned int)l_bricksCount, l_p, l_v);
+		readBackBrickFactors(l_probes[i], l_brickFactors);
 
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Assign brick factor to probes ", (float)i * 100.0f / (float)l_probesCount, "%...");
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Progress: ", (float)i * 100.0f / (float)l_probesCount, "%...");
 	}
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Brick factors have been generated.");
+	l_brickFactors.shrink_to_fit();
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_brickFactors.size(), " brick factors have been generated.");
+
+	serializeBrickFactors(l_brickFactors);
+	serializeProbes(l_probes);
 
 	return true;
 }
 
-bool InnoBakerNS::drawBricks(unsigned int probeIndex, const mat4 & p, const std::vector<mat4>& v)
+bool InnoBakerNS::drawBricks(vec4 pos, unsigned int bricksCount, const mat4 & p, const std::vector<mat4>& v)
 {
 	std::vector<mat4> l_GICameraGPUData(8);
 	l_GICameraGPUData[0] = p;
@@ -710,7 +826,7 @@ bool InnoBakerNS::drawBricks(unsigned int probeIndex, const mat4 & p, const std:
 	{
 		l_GICameraGPUData[i + 1] = v[i];
 	}
-	l_GICameraGPUData[7] = InnoMath::getInvertTranslationMatrix(m_probes[probeIndex].pos);
+	l_GICameraGPUData[7] = InnoMath::getInvertTranslationMatrix(pos);
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(GetGPUBufferDataComponent(GPUBufferUsageType::GICamera), l_GICameraGPUData);
 
@@ -720,14 +836,12 @@ bool InnoBakerNS::drawBricks(unsigned int probeIndex, const mat4 & p, const std:
 
 	unsigned int l_offset = 0;
 
-	auto l_totalDrawCallCount = m_bricks.size();
-
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_BrickFactor, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_BrickFactor);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_BrickFactor);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_BrickFactor, ShaderStage::Vertex, GetGPUBufferDataComponent(GPUBufferUsageType::GICamera)->m_ResourceBinder, 0, 10, Accessibility::ReadOnly);
 
-	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
+	for (unsigned int i = 0; i < bricksCount; i++)
 	{
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_BrickFactor, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_offset, 1);
 
@@ -745,7 +859,7 @@ bool InnoBakerNS::drawBricks(unsigned int probeIndex, const mat4 & p, const std:
 	return true;
 }
 
-bool InnoBakerNS::readBackBrickFactors(unsigned int probeIndex)
+bool InnoBakerNS::readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& brickFactors)
 {
 	auto l_brickIDResults = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_BrickFactor, m_RPDC_BrickFactor->m_RenderTargets[0]);
 
@@ -805,125 +919,55 @@ bool InnoBakerNS::readBackBrickFactors(unsigned int probeIndex)
 		}
 
 		// Assign brick factor range to probes
-		auto l_brickFactorRangeBegin = m_brickFactors.size();
+		auto l_brickFactorRangeBegin = brickFactors.size();
 		auto l_brickFactorRangeEnd = l_brickFactorRangeBegin + l_brickFactors.size() - 1;
 
-		m_probes[probeIndex].brickFactorRange[i * 2] = (unsigned int)l_brickFactorRangeBegin;
-		m_probes[probeIndex].brickFactorRange[i * 2 + 1] = (unsigned int)l_brickFactorRangeEnd;
+		probe.brickFactorRange[i * 2] = (unsigned int)l_brickFactorRangeBegin;
+		probe.brickFactorRange[i * 2 + 1] = (unsigned int)l_brickFactorRangeEnd;
 
-		m_brickFactors.insert(m_brickFactors.end(), std::make_move_iterator(l_brickFactors.begin()), std::make_move_iterator(l_brickFactors.end()));
+		brickFactors.insert(brickFactors.end(), std::make_move_iterator(l_brickFactors.begin()), std::make_move_iterator(l_brickFactors.end()));
 	}
 
 	return true;
 }
 
-bool InnoBakerNS::assignBrickFactorToProbesByCPU()
-{
-	auto l_probesCount = m_probes.size();
-	auto l_bricksCount = m_bricks.size();
-
-	std::vector<vec4> l_directions =
-	{
-		vec4(1.0f, 0.0f, 0.0f, 0.0f),
-		vec4(-1.0f, 0.0f, 0.0f, 0.0f),
-		vec4(0.0f, 1.0f, 0.0f, 0.0f),
-		vec4(0.0f, -1.0f, 0.0f, 0.0f),
-		vec4(0.0f, 0.0f, 1.0f, 0.0f),
-		vec4(0.0f, 0.0f, -1.0f, 0.0f)
-	};
-
-	for (size_t i = 0; i < l_probesCount; i++)
-	{
-		std::vector<BrickFactor> l_brickFactors;
-		l_brickFactors.reserve(l_bricksCount);
-
-		Ray l_ray;
-		l_ray.m_origin = m_probes[i].pos;
-
-		for (size_t j = 0; j < 6; j++)
-		{
-			l_ray.m_direction = l_directions[j];
-
-			for (size_t k = 0; k < l_bricksCount; k++)
-			{
-				if (InnoMath::intersectCheck(m_bricks[k].boundBox, l_ray))
-				{
-					BrickFactor l_BrickFactor;
-
-					l_BrickFactor.basisWeight = (m_bricks[k].boundBox.m_center - l_ray.m_origin).length();
-					l_BrickFactor.brickIndex = (unsigned int)k;
-
-					l_brickFactors.emplace_back(l_BrickFactor);
-				}
-			}
-
-			l_brickFactors.shrink_to_fit();
-
-			// Calculate brick weight
-			auto l_brickFactorSize = l_brickFactors.size();
-
-			if (l_brickFactorSize == 1)
-			{
-				l_brickFactors[0].basisWeight = 1.0f;
-			}
-			else
-			{
-				float denom = 0.0f;
-				for (size_t i = 0; i < l_brickFactorSize; i++)
-				{
-					denom += l_brickFactors[i].basisWeight;
-				}
-
-				for (size_t i = 0; i < l_brickFactorSize; i++)
-				{
-					l_brickFactors[i].basisWeight = (l_brickFactors[i].basisWeight) / denom;
-				}
-			}
-
-			// Assign brick factor range to probes
-			auto l_brickFactorRangeBegin = m_brickFactors.size();
-			auto l_brickFactorRangeEnd = l_brickFactorRangeBegin + l_brickFactors.size() - 1;
-
-			m_probes[i].brickFactorRange[j * 2] = (unsigned int)l_brickFactorRangeBegin;
-			m_probes[i].brickFactorRange[j * 2 + 1] = (unsigned int)l_brickFactorRangeEnd;
-
-			m_brickFactors.insert(m_brickFactors.end(), std::make_move_iterator(l_brickFactors.begin()), std::make_move_iterator(l_brickFactors.end()));
-		}
-
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Assign brick factor to probes ", (float)i * 100.0f / (float)l_probesCount, "%...");
-	}
-
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Brick factors have been generated.");
-
-	return true;
-}
-
-bool InnoBakerNS::serializeBrickFactors()
+bool InnoBakerNS::serializeBrickFactors(const std::vector<BrickFactor>& brickFactors)
 {
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
-	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
 
 	std::ofstream l_file;
-	l_file.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoBrickFactor", std::ios::binary);
-	IOService::serializeVector(l_file, m_brickFactors);
+	l_file.open(l_filePath + "Res//Scenes//" + m_exportFileName + ".InnoBrickFactor", std::ios::binary);
+	IOService::serializeVector(l_file, brickFactors);
+	l_file.close();
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "Res//Scenes//", m_exportFileName.c_str(), ".InnoBrickFactor has been saved.");
 
 	return true;
 }
 
-bool InnoBakerNS::serializeProbes()
+bool InnoBakerNS::serializeProbes(const std::vector<Probe>& probes)
 {
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
-	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
 
 	std::ofstream l_file;
-	l_file.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoProbe", std::ios::binary);
-	IOService::serializeVector(l_file, m_probes);
+	l_file.open(l_filePath + "Res//Scenes//" + m_exportFileName + ".InnoProbe", std::ios::binary);
+	IOService::serializeVector(l_file, probes);
+	l_file.close();
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "Res//Scenes//", m_exportFileName.c_str(), ".InnoProbe has been saved.");
 
 	return true;
 }
 
-void InnoBaker::Initialize()
+void InnoBaker::Setup()
 {
+	////
+	auto l_RenderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
+
+	m_staticMeshDrawCallData.resize(l_RenderingCapability.maxMeshes);
+	m_staticMeshMeshGPUData.resize(l_RenderingCapability.maxMeshes);
+	m_staticMeshMaterialGPUData.resize(l_RenderingCapability.maxMaterials);
+
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	////
@@ -1093,54 +1137,107 @@ void InnoBaker::Initialize()
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_BrickFactor);
 }
 
-void InnoBaker::LoadScene(std::string & sceneName)
+void InnoBaker::BakeProbeCache(const std::string & sceneName)
 {
-	m_probes.clear();
-	m_surfels.clear();
-	m_bricks.clear();
-	m_brickCaches.clear();
-	m_brickFactors.clear();
+	g_pModuleManager->getFileSystem()->loadScene(sceneName, false);
+	g_pModuleManager->getPhysicsSystem()->updateCulling();
+	g_pModuleManager->getRenderingFrontend()->update();
+	m_exportFileName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
 
-	g_pModuleManager->getFileSystem()->loadScene(sceneName);
-}
+	std::vector<Probe> l_probeCaches;
 
-void InnoBaker::BakeSurfelCache()
-{
 	gatherStaticMeshData();
-	generateProbes();
+	generateProbeCaches(l_probeCaches);
 
-	captureSurfels();
-
-	eliminateDuplicatedSurfels();
-	serializeSurfelCaches();
+	captureSurfels(l_probeCaches);
 }
 
-void InnoBaker::BakeBrickCache(std::string & surfelCacheFileName)
+void InnoBaker::BakeBrickCache(const std::string & surfelCacheFileName)
 {
-	generateBrickCaches();
-	serializeBrickCaches();
+	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	m_exportFileName = parseFileName(surfelCacheFileName);
+
+	std::ifstream l_surfelCacheFile;
+
+	l_surfelCacheFile.open(l_filePath + surfelCacheFileName, std::ios::binary);
+
+	std::vector<Surfel> l_surfelCaches;
+
+	if (l_surfelCacheFile.is_open())
+	{
+		IOService::deserializeVector(l_surfelCacheFile, l_surfelCaches);
+		generateBrickCaches(l_surfelCaches);
+	}
+	else
+	{
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "InnoBakerNS: Surfel cache file not exists!");
+	}
 }
 
-void InnoBaker::BakeBrick(std::string & brickCacheFileName)
+void InnoBaker::BakeBrick(const std::string & brickCacheFileName)
 {
-	generateBricks();
+	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	m_exportFileName = parseFileName(brickCacheFileName);
 
-	serializeSurfels();
-	serializeBricks();
+	std::ifstream l_brickCacheFile;
+
+	l_brickCacheFile.open(l_filePath + brickCacheFileName, std::ios::binary);
+
+	if (l_brickCacheFile.is_open())
+	{
+		std::vector<BrickCache> l_brickCaches;
+
+		IOService::deserializeVector(l_brickCacheFile, l_brickCaches);
+		generateBricks(l_brickCaches);
+	}
+	else
+	{
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "InnoBakerNS: Brick cache file not exists!");
+	}
 }
 
-void InnoBaker::BakeBrickFactor(std::string & brickFileName)
+void InnoBaker::BakeBrickFactor(const std::string & brickFileName, const std::string & probeCacheFileName)
 {
-	//assignBrickFactorToProbesByCPU();
-	assignBrickFactorToProbesByGPU();
+	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	m_exportFileName = parseFileName(brickFileName);
 
-	serializeBrickFactors();
-	serializeProbes();
+	std::ifstream l_brickFile;
+
+	l_brickFile.open(l_filePath + brickFileName, std::ios::binary);
+
+	if (l_brickFile.is_open())
+	{
+		std::vector<Brick> l_bricks;
+
+		IOService::deserializeVector(l_brickFile, l_bricks);
+
+		std::ifstream l_probeCachesFile;
+
+		l_probeCachesFile.open(l_filePath + probeCacheFileName, std::ios::binary);
+
+		if (l_probeCachesFile.is_open())
+		{
+			std::vector<Probe> l_probeCaches;
+
+			IOService::deserializeVector(l_probeCachesFile, l_probeCaches);
+
+			assignBrickFactorToProbesByGPU(l_bricks, l_probeCaches);
+		}
+		else
+		{
+			g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "InnoBakerNS: Probe cache file not exists!");
+		}
+	}
+	else
+	{
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "InnoBakerNS: Brick file not exists!");
+	}
 }
 
 bool InnoBakerRenderingClient::Setup()
 {
 	DefaultGPUBuffers::Setup();
+	InnoBaker::Setup();
 
 	return true;
 }
