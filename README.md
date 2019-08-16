@@ -13,39 +13,104 @@
 
 ## Features
 
-- Strict Entity–Component–System architecture
+- Strict **E**ntity–**C**omponent–**S**ystem architecture, No OOP overhead/console-like programming experience/allow unlimited feature module extension.
 
-No OOP overhead/Console-like programming experience/Allow unlimited feature module extension
+```cpp
+// the "E"
+auto l_testEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Gameplay, "testEntity/");
 
-- Custom container, string and math classes
+// the "C"
+auto l_testTransformComponent = SpawnComponent(TransformComponent, l_testEntity, ObjectSource::Runtime, ObjectUsage::Gameplay);
 
-No STL overhead/No 3rd-party math library dependency
+l_testTransformComponent->->m_localTransformVector.m_pos = vec4(42.0f, 1.0f, PI<float>, 1.0f);
 
-- Job-graph based parallel task model
+// the engine provided "S" will take care other businesses
+```
 
-Fully utilize modern hardware / lock-free in client logic code
+- Custom container, string and math classes, no STL overhead/No 3rd-party math library dependency.
 
-- Object pool memory model
+```cpp
+RingBuffer<float> l_testRingBuffer(32);
+// All custom containers have a thread-safe version
+Array<float, true> l_testThreadSafeArray;
+FixedSizeString<64> l_testString;
 
-O(n) allocation/deallocation
+l_testString = "Hello,World/";
 
-- Logic Client as the plugin
+for (size_t i = 0; i < l_testString.size(); i++)
+{
+	l_testRingBuffer.emplace_back((float)i);
+}
 
-The only rule is using the engine's interface to write your logic code, and write whatever you want
+l_testThreadSafeArray.reserve();
+l_testThreadSafeArray.emplace_back(l_testRingBuffer[42]);
+```
 
-- The major graphics API support
+- Job-graph based parallel task model, fully utilize modern hardware/lock-free in client logic code.
 
-From OpenGL 4.6 to DirectX 11, from DirectX 12 to Vulkan, and Metal, all supported by one unified interface
+```cpp
+std::function<void()> f_JobA;
+f_JobA = []()
+{ 	
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Warning, "I'm worried that C++ would be quite a mess for me.");
+};
 
-- Client-Server rendering architecture
+auto f_JobB = [=](int val)
+{ 
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "There are always some user-friendly programming languages waiting for you, just search for more than ", val, " seconds you'll find them."); 
+};
 
-Allow fully user-designed rendering pipeline from the first triangle to the last swap chain
+// Job A will be executed on thread 5 as soon as possible
+auto l_testTaskA = g_pModuleManager->getTaskSystem()->submit("ANonSenseTask", 5, nullptr, f_JobA);
 
-- Physically-based lighting
+// Job B will be executed with a parameter just after Job A finished
+auto l_testTaskB = g_pModuleManager->getTaskSystem()->submit("NotANonSenseTask", 2, f_JobA, f_JobB, std::numeric_limits<int>::max());
 
-Photometry lighting interface
+// Blocking-wait on the caller thread
+l_testTaskB->Wait();
+```
 
-- Default rendering client support features like
+- Object pool memory model, O(n) allocation/deallocation.
+
+```cpp
+struct POD
+{
+	float m_Float;
+	int m_Int;
+	void* m_Ptr;
+}
+
+auto l_objectPoolInstance =  g_pModuleManager->getMemorySystem()->createObjectPool(sizeof(POD), 65536);
+auto l_PODInstance = l_objectPoolInstance->Spawn();
+l_PODInstance->m_Float = 42.0f;
+l_objectPoolInstance->Destroy(l_PODInstance);
+```
+
+- Logic Client as the plugin, the only coding rule is using the engine's interface to write your logic code, and write whatever you want.
+
+- The major graphics API support, from OpenGL 4.6 to DirectX 11, from DirectX 12 to Vulkan, and Metal, all supported by one unified interface.
+
+- Client-Server rendering architecture, allow fully user-designed rendering pipeline from the first triangle to the last swap chain.
+
+```cpp
+auto l_renderingServer = g_pModuleManager->getRenderingServer();
+
+// m_RPDC = l_renderingServer->AddRenderPassDataComponent("LightPass/");
+l_renderingServer->CommandListBegin(m_RPDC, 0);
+l_renderingServer->BindRenderPassDataComponent(m_RPDC);
+l_renderingServer->CleanRenderTargets(m_RPDC);
+l_renderingServer->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 17, 0);
+l_renderingServer->DispatchDrawCall(m_RPDC, m_quadMesh);
+l_renderingServer->CommandListEnd(m_RPDC);
+
+// Execute on separate threads
+l_renderingServer->ExecuteCommandList(m_RPDC);
+l_renderingServer->WaitForFrame(m_RPDC);
+```
+
+- Physically-based lighting, photometry lighting interface with support of feature like color temperature.
+
+- Default rendering client support features like:
   - Tiled-deferred rendering pipeline
   - Retro Blinn-Phong/Classic Cook-Torrance BRDF (Disney diffuse + Multi-scattering GGX specular) for opaque material
   - OIT rendering (w.r.t. transparency and thickness)
@@ -57,41 +122,33 @@ Photometry lighting interface
   - TAA
   - ACES tone mapping
 
-- Real-time GI
+- Real-time GI, baked PRT for the complex large scale scene or bake-free SVOGI for the limited small scale scene, fully dynamic and lightmap-free.
 
-Baked PRT for the complex large scale scene or bake-free SVOGI for the limited small scale scene, fully dynamic and lightmap-free
+- Unified asset management, using popular JSON format for all text data and support easy-to-use binary data I/O.
 
-- Unified asset management
+- Physics simulation, NVIDIA's PhysX integrated.
 
-Using popular JSON format for all text data
-
-- Physics simulation
-
-NVIDIA's PhysX integrated
-
-- GUI Editor
-
-Qt-based, easy to extend and no coupling with the engine
+- GUI Editor, Qt-based, easy to extend, easy to modify.
 
 And so on...
 
-## License
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine?ref=badge_large)
-
-## How to build
+## How to build?
 All scripts are in /Script folder
 
 ### Windows
 
-#### Build Engine
 Tested OS version: Windows 10 version 1903
 
 ##### Prerequisites
+
 - MSVC 19.00 or higher
 - CMake 3.10 or higher 
 - Vulkan pre-compiled library (Optional)
+- Qt Creator 5.13 or higher
 
-Run following scripts will build Debug and Release configurations in parallel
+#### Build Engine
+
+Run following scripts will build Debug and Release configurations in parallel:
 
 ``` cmd
 @echo | SetupWin.bat
@@ -104,10 +161,6 @@ PostBuildWin.ps1
 ```
 
 #### Build Editor
-Tested OS version: Windows 10 1903
-
-##### Prerequisites
-- Qt Creator 5.13 or higher
 
 1. Open `Source\Editor\InnocenceEditor\InnocenceEditor.pro` with Qt Creator
 2. Change "Projects - Build Settings - General - Build directory" to `..\..\..\Bin` for Debug, Profile and Release build configurations
@@ -115,16 +168,18 @@ Tested OS version: Windows 10 1903
 4. Build the project
 
 ### Linux
+
 Tested OS version: Ubuntu 18.04 LTS
 
-#### Build Engine
-
 ##### Prerequisites
+
 - GCC 8.0 or Clang 7.0 or higher 
 - CMake 3.10 or higher 
 - OpenGL library(lGL)
 
-Run following scripts
+#### Build Engine
+
+Run following scripts:
 
 ``` shell
 echo | SetupLinux.sh
@@ -134,15 +189,17 @@ echo | PostBuildLinux.sh
 ```
 
 ### macOS
-Tested OS version: macOS 10.13.6
 
-#### Build Engine
+Tested OS version : macOS 10.13.6
 
 ##### Prerequisites
+
 - CMake 3.10 or higher 
 - Apple Clang 10.0 or LLVM Clang 8.0 or higher
 
-Run following scripts
+#### Build Engine
+
+Run following scripts:
 
 ``` shell
 echo | SetupMac.sh
@@ -151,29 +208,33 @@ echo | BuildMac.sh
 echo | PostBuildMac.sh
 ```
 
-## How to use
+## How to use?
 
 ### Windows
 
 #### Launch game
-Run following script
+
+Run following script:
 
 ``` powershell
 StartEngineWin.ps1
 ```
 
 #### Launch editor
+
 Launch through Qt Creator
 
 ### Linux
-Run following script
+
+Run following script:
 
 ``` shell
 echo | StartEngineLinux.sh
 ```
 
 ### macOS
-Run following script
+
+Run following script:
 
 ``` shell
 echo | StartEngineMac.sh
@@ -200,26 +261,57 @@ echo | StartEngineMac.sh
 2. Open Source/Engine/Platform/MacOS/InnoMain.InnoMain.xcodeproj
 3. Select "Product" - "Run" (⌘ + R)
 
-## Available launch arguments
+## How to bake scene?
 
+### Windows
+
+Run following script:
+
+``` powershell
+BakeScene.ps1 -sceneName [scene file name without extension]
 ```
--renderer [value]
-```
-| Value | --- | Notes |
-| --- | --- | --- |
-| 0 | OpenGL | Not available on macOS, current support version 4.6 |
-| 1 | DirectX 11 |  Only available on Windows, current support version 11.4 |
-| 2 | DirectX 12 | Only available on Windows, current support version 12.1 |
-| 3 | Vulkan | Not available on macOS, current support version 1.1.92.1 |
-| 4 | Metal | Only available on macOS, current support version 2 |
+
+## Available launch arguments
 
 ```
 -mode [value]
 ```
 | Value |Notes |
 | --- | --- |
-| 0 | game mode |
-| 1 | reserved for editor |
+| 0 | engine will handle the window creation and event management, for "slave-client" model like the normal game client |
+| 1 | engine requires client providing an external window handle, for "host-client" model like the external editor |
+
+```
+-renderer [value]
+```
+| Value | --- | Notes |
+| --- | --- | --- |
+| 0 | OpenGL | Not available on macOS, currently supported version 4.6 |
+| 1 | DirectX 11 |  Only available on Windows, currently supported version 11.4 |
+| 2 | DirectX 12 | Only available on Windows, currently supported version 12.1 |
+| 3 | Vulkan | Not available on macOS, currently supported 1.1.92.1 (WIP) |
+| 4 | Metal | Only available on macOS, currently supported version 2 (WIP) |
+
+```
+-loglevel [value]
+```
+| Value |Notes |
+| --- | --- |
+| 0 | print verbose level and all the other higher level log messages |
+| 1 | only print success level and higher level log messages |
+| 2 | only print warning level and higher level log messages |
+| 3 | only print error level log messages |
+
+## Shader languages compatibilities
+
+- OpenGL rendering server requires SPIR-V binary format shader file for release build, please use `ParseGLShader.bat` and `CompileGLShaderToSPIR-V.bat` to generate them.
+
+- Vulkan rendering server requires SPIR-V binary format shader file,  please use `CompileVKShaderToSPIR-V.bat` to generate them.
+
+- Use `ConvertSPIR-VToGLSL.bat` and `ConvertSPIR-VToHLSL.bat` to generate human readable GLSL and HLSL files from SPIR-V binary shader file. 
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine?ref=badge_large)
 
 ## References & Dependencies
 
@@ -289,13 +381,17 @@ And more...
 
 ### Online tutorials & resources
 
+[cppreference.com](https://en.cppreference.com)
+
+[Standard C++](https://isocpp.org)
+
+[Modernes C++](http://modernescpp.com/index.php)
+
 [Mathematics - Martin Baker](http://www.euclideanspace.com/maths)
 
 [Wolfram MathWorld: The Web's Most Extensive Mathematics Resource](http://mathworld.wolfram.com)
 
-[cppreference.com](https://en.cppreference.com)
-
-[Standard C++](https://isocpp.org)
+[GameDev.net](https://www.gamedev.net/)
 
 [Gamasutra](http://www.gamasutra.com)
 
@@ -303,18 +399,30 @@ And more...
 
 [Advances in Real-Time Rendering in 3D Graphics and Games](http://advances.realtimerendering.com)
 
+[OpenGL Wiki](https://www.khronos.org/opengl/wiki)
+
 [Learn OpenGL](https://learnopengl.com)
 
 [OpenGL Step by Step](http://ogldev.atspace.co.uk)
 
+[DirectX 11 official documents](https://docs.microsoft.com/en-us/windows/win32/direct3d11/atoc-dx-graphics-direct3d-11)
+
+[DirectX 12 official documents](https://docs.microsoft.com/en-us/windows/win32/direct3d12/direct3d-12-graphics)
+
 [RasterTek - DirectX 10, DirectX 11, and DirectX 12 tutorials](http://www.rastertek.com/)
 
-[thebennybox's YouTube channel](https://www.youtube.com/user/thebennybox)
+[Vulkan official documents](https://www.khronos.org/registry/vulkan/)
 
-[Randy Gaul's Game Programming Blog](http://www.randygaul.net)
+[Vulkan Tutorial](https://vulkan-tutorial.com/)
+
+[Metal official documents](https://developer.apple.com/metal/)
 
 [Sébastien Lagarde's blog](https://seblagarde.wordpress.com)
 
 [Stephen Hill's blog](http://blog.selfshadow.com)
+
+[thebennybox's YouTube channel](https://www.youtube.com/user/thebennybox)
+
+[Randy Gaul's Game Programming Blog](http://www.randygaul.net)
 
 And more...
