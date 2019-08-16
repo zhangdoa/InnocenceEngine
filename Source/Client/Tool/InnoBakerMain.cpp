@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 
 	if (l_bakeStageArgPos != std::string::npos)
 	{
-		auto l_probeArgPos = l_windowArguments.find("probe");
+		auto l_probeArgPos = l_windowArguments.find("probe ");
 
 		if (l_probeArgPos != std::string::npos)
 		{
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 			InnoBaker::BakeProbeCache(l_sceneFileName);
 		}
 
-		auto l_brickcacheStageArgPos = l_windowArguments.find("brickcache");
+		auto l_brickcacheStageArgPos = l_windowArguments.find("brickcache ");
 
 		if (l_brickcacheStageArgPos != std::string::npos)
 		{
@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 			InnoBaker::BakeBrickCache(l_surfelCacheFileName);
 		}
 
-		auto l_brickStageArgPos = l_windowArguments.find("brick");
+		auto l_brickStageArgPos = l_windowArguments.find("brick ");
 
 		if (l_brickStageArgPos != std::string::npos)
 		{
@@ -125,18 +125,19 @@ int main(int argc, char *argv[])
 			InnoBaker::BakeBrick(l_brickCacheFileName);
 		}
 
-		auto l_brickfactorStageArgPos = l_windowArguments.find("brickfactor");
+		auto l_brickfactorStageArgPos = l_windowArguments.find("brickfactor ");
 
 		if (l_brickfactorStageArgPos != std::string::npos)
 		{
-			std::string l_brickFileName = l_windowArguments.substr(l_brickfactorStageArgPos + 11);
-			l_brickFileName = l_brickFileName.substr(1, l_brickFileName.size() - 1);
+			std::string l_brickfactorStageArg = l_windowArguments.substr(l_brickfactorStageArgPos + 11);
+			l_brickfactorStageArg = l_brickfactorStageArg.substr(1, l_brickfactorStageArg.size() - 1);
 
-			auto l_probeCacheFileNameArgPos = l_windowArguments.find("probecache");
+			auto l_probeCacheFileNameArgPos = l_brickfactorStageArg.find("probecache ");
 
 			if (l_probeCacheFileNameArgPos != std::string::npos)
 			{
-				std::string l_probeCacheFileName = l_windowArguments.substr(l_probeCacheFileNameArgPos + 10);
+				auto l_brickFileName = l_brickfactorStageArg.substr(0, l_probeCacheFileNameArgPos - 1);
+				auto l_probeCacheFileName = l_brickfactorStageArg.substr(l_probeCacheFileNameArgPos + 10);
 				l_probeCacheFileName = l_probeCacheFileName.substr(1, l_probeCacheFileName.size() - 1);
 
 				InnoBaker::BakeBrickFactor(l_brickFileName, l_probeCacheFileName);
@@ -148,7 +149,7 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-	m_pModuleManager->run();
+
 	m_pModuleManager->terminate();
 
 	return 0;

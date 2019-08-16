@@ -44,6 +44,7 @@ namespace InnoBakerNS
 	bool generateBrickCaches(const std::vector<Surfel>& surfelCaches);
 	bool serializeBrickCaches(const std::vector<BrickCache>& brickCaches);
 
+	bool deserializeBrickCaches(const std::vector<BrickCacheSummary>& brickCacheSummaries, std::vector<BrickCache>& brickCaches);
 	bool generateBricks(const std::vector<BrickCache>& brickCaches);
 	bool serializeSurfels(const std::vector<Surfel>& surfels);
 	bool serializeBricks(const std::vector<Brick>& bricks);
@@ -358,8 +359,6 @@ bool InnoBakerNS::captureSurfels(std::vector<Probe>& probeCaches)
 
 bool InnoBakerNS::drawCubemaps(Probe& probeCache, const mat4& p, const std::vector<mat4>& v)
 {
-	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
-
 	drawOpaquePass(probeCache, p, v);
 
 	drawSkyVisibilityPass(probeCache, p, v);
@@ -455,7 +454,7 @@ bool InnoBakerNS::drawSkyVisibilityPass(Probe& probeCache, const mat4& p, const 
 			}
 		}
 
-		probeCache.skyVisibility[i] = (float)l_stencil / (float)l_depthStencilRTSize;
+		probeCache.skyVisibility[i] = 1.0f - ((float)l_stencil / (float)l_depthStencilRTSize);
 	}
 
 	return true;
@@ -640,44 +639,72 @@ bool InnoBakerNS::generateBrickCaches(const std::vector<Surfel>& surfelCaches)
 
 bool InnoBakerNS::serializeBrickCaches(const std::vector<BrickCache>& brickCaches)
 {
-	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
-
 	auto l_brickCacheCount = brickCaches.size();
+
+	// Serialize metadata
+	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 	std::ofstream l_summaryFile;
 	l_summaryFile.open(l_filePath + "Res//Intermediate//" + m_exportFileName + ".InnoBrickCacheSummary", std::ios::binary);
-	l_summaryFile << l_brickCacheCount;
 
-	unsigned int l_validBrickCounter = 0;
-	unsigned int l_fileIndex = 0;
-
-	std::ofstream l_surfelCacheFile;
+	std::vector<BrickCacheSummary> l_brickCacheSummaries;
+	l_brickCacheSummaries.reserve(l_brickCacheCount);
 
 	for (size_t i = 0; i < l_brickCacheCount; i++)
 	{
-		l_summaryFile << brickCaches[i].pos.x << brickCaches[i].pos.y << brickCaches[i].pos.z << brickCaches[i].pos.w;
-		l_summaryFile << l_fileIndex;
-		l_summaryFile << brickCaches[i].surfelCaches.size();
+		BrickCacheSummary l_brickCacheSummary;
 
-		if (l_validBrickCounter == 0)
-		{
-			l_surfelCacheFile.open(l_filePath + "Res//Intermediate//" + m_exportFileName + "_" + std::to_string(l_fileIndex) + ".InnoBrickCache", std::ios::binary);
-			IOService::serializeVector(l_surfelCacheFile, brickCaches[i].surfelCaches);
-		}
+		l_brickCacheSummary.pos = brickCaches[i].pos;
+		l_brickCacheSummary.fileIndex = i;
+		l_brickCacheSummary.fileSize = brickCaches[i].surfelCaches.size();
 
-		l_validBrickCounter++;
-		if (l_validBrickCounter > 512)
-		{
-			l_validBrickCounter = 0;
-
-			l_surfelCacheFile.close();
-
-			l_fileIndex++;
-		}
+		l_brickCacheSummaries.emplace_back(l_brickCacheSummary);
 	}
+
+	IOService::serializeVector(l_summaryFile, l_brickCacheSummaries);
 
 	l_summaryFile.close();
 
+	// Serialize surfels cache for each brick
+	std::ofstream l_surfelCacheFile;
+	l_surfelCacheFile.open(l_filePath + "Res//Intermediate//" + m_exportFileName + ".InnoBrickCache", std::ios::binary);
+
+	for (size_t i = 0; i < l_brickCacheCount; i++)
+	{
+		IOService::serializeVector(l_surfelCacheFile, brickCaches[i].surfelCaches);
+	}
+	l_surfelCacheFile.close();
+
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "Res//Intermediate//", m_exportFileName.c_str(), ".InnoBrickCacheSummary has been saved.");
+
+	return true;
+}
+
+bool InnoBakerNS::deserializeBrickCaches(const std::vector<BrickCacheSummary>& brickCacheSummaries, std::vector<BrickCache>& brickCaches)
+{
+	auto l_brickCount = brickCacheSummaries.size();
+	brickCaches.reserve(l_brickCount);
+
+	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+
+	std::ifstream l_file;
+	l_file.open(l_filePath + "Res//Intermediate//" + m_exportFileName + ".InnoBrickCache", std::ios::binary);
+
+	size_t l_startOffset = 0;
+
+	for (size_t i = 0; i < l_brickCount; i++)
+	{
+		BrickCache l_brickCache;
+		l_brickCache.pos = brickCacheSummaries[i].pos;
+
+		auto l_fileSize = brickCacheSummaries[i].fileSize;
+		l_brickCache.surfelCaches.resize(l_fileSize);
+
+		IOService::deserializeVector(l_file, l_startOffset * sizeof(Surfel), l_fileSize * sizeof(Surfel), l_brickCache.surfelCaches);
+
+		l_startOffset += l_fileSize;
+
+		brickCaches.emplace_back(std::move(l_brickCache));
+	}
 
 	return true;
 }
@@ -770,9 +797,7 @@ bool InnoBakerNS::assignBrickFactorToProbesByGPU(const std::vector<Brick>& brick
 		l_rPX, l_rNX, l_rPY, l_rNY, l_rPZ, l_rNZ
 	};
 
-	auto l_cameraGPUData = g_pModuleManager->getRenderingFrontend()->getCameraGPUData();
-
-	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, l_cameraGPUData.zNear, l_cameraGPUData.zFar);
+	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, 2000.0f);
 
 	auto l_bricksCount = bricks.size();
 
@@ -839,7 +864,7 @@ bool InnoBakerNS::drawBricks(vec4 pos, unsigned int bricksCount, const mat4 & p,
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_BrickFactor, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_BrickFactor);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_BrickFactor);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_BrickFactor, ShaderStage::Vertex, GetGPUBufferDataComponent(GPUBufferUsageType::GICamera)->m_ResourceBinder, 0, 10, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_BrickFactor, ShaderStage::Geometry, GetGPUBufferDataComponent(GPUBufferUsageType::GICamera)->m_ResourceBinder, 0, 10, Accessibility::ReadOnly);
 
 	for (unsigned int i = 0; i < bricksCount; i++)
 	{
@@ -1179,15 +1204,18 @@ void InnoBaker::BakeBrick(const std::string & brickCacheFileName)
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 	m_exportFileName = parseFileName(brickCacheFileName);
 
-	std::ifstream l_brickCacheFile;
+	std::ifstream l_brickCacheSummaryFile;
 
-	l_brickCacheFile.open(l_filePath + brickCacheFileName, std::ios::binary);
+	l_brickCacheSummaryFile.open(l_filePath + brickCacheFileName, std::ios::binary);
 
-	if (l_brickCacheFile.is_open())
+	if (l_brickCacheSummaryFile.is_open())
 	{
+		std::vector<BrickCacheSummary> l_brickCacheSummaries;
 		std::vector<BrickCache> l_brickCaches;
 
-		IOService::deserializeVector(l_brickCacheFile, l_brickCaches);
+		IOService::deserializeVector(l_brickCacheSummaryFile, l_brickCacheSummaries);
+
+		deserializeBrickCaches(l_brickCacheSummaries, l_brickCaches);
 		generateBricks(l_brickCaches);
 	}
 	else
