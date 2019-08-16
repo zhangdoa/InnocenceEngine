@@ -22,9 +22,9 @@ auto l_testEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Ru
 // the "C"
 auto l_testTransformComponent = SpawnComponent(TransformComponent, l_testEntity, ObjectSource::Runtime, ObjectUsage::Gameplay);
 
-l_testTransformComponent->->m_localTransformVector.m_pos = vec4(42.0f, 1.0f, PI<float>, 1.0f);
+l_testTransformComponent->m_localTransformVector.m_pos = vec4(42.0f, 1.0f, PI<float>, 1.0f);
 
-// the engine provided "S" will take care other businesses
+// the engine provided "S" will take care of other businesses
 ```
 
 - Custom container, string and math classes, no STL overhead/No 3rd-party math library dependency.
@@ -44,6 +44,11 @@ for (size_t i = 0; i < l_testString.size(); i++)
 
 l_testThreadSafeArray.reserve();
 l_testThreadSafeArray.emplace_back(l_testRingBuffer[42]);
+
+auto l_maxPoint = vec4(l_testThreadSafeArray[0], l_testRingBuffer[1], l_testRingBuffer[16], 1.0f);
+auto l_minPoint = vec4(42.0f, l_testThreadSafeArray[0], -l_testRingBuffer[16], 1.0f);
+
+auto l_testAABB = InnoMath::generateAABB(l_maxPoint, l_minPoint);
 ```
 
 - Job-graph based parallel task model, fully utilize modern hardware/lock-free in client logic code.
@@ -86,11 +91,11 @@ l_PODInstance->m_Float = 42.0f;
 l_objectPoolInstance->Destroy(l_PODInstance);
 ```
 
-- Logic Client as the plugin, the only coding rule is using the engine's interface to write your logic code, and write whatever you want.
+- Logic Client as the plugin, the only coding rule is using the engine's interface to write your logic code and write whatever you want.
 
 - The major graphics API support, from OpenGL 4.6 to DirectX 11, from DirectX 12 to Vulkan, and Metal, all supported by one unified interface.
 
-- Client-Server rendering architecture, allow fully user-designed rendering pipeline from the first triangle to the last swap chain.
+- Client-Server rendering architecture, allow any kind of user-designed rendering pipeline from the first triangle draw call to the last swap chain presentation.
 
 ```cpp
 auto l_renderingServer = g_pModuleManager->getRenderingServer();
@@ -108,7 +113,7 @@ l_renderingServer->ExecuteCommandList(m_RPDC);
 l_renderingServer->WaitForFrame(m_RPDC);
 ```
 
-- Physically-based lighting, photometry lighting interface with support of feature like color temperature.
+- Physically-based lighting, photometry lighting interface with support of real life light measurements like color temperature, luminous flux and so on.
 
 - Default rendering client support features like:
   - Tiled-deferred rendering pipeline
