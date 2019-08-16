@@ -141,42 +141,47 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float3 nSquared = N * N;
 	int3 isNegative = (N < 0.0);
 	float3 GISampleCoord = posWS / posWSNormalizer.xyz;
-	GISampleCoord *= float3(4, 1, 4);
-	float3 GISampleCoordPX = GISampleCoord;
-	float3 GISampleCoordNX = GISampleCoord + float3(0, 0, 4);
-	float3 GISampleCoordPY = GISampleCoord + float3(0, 0, 4 * 2);
-	float3 GISampleCoordNY = GISampleCoord + float3(0, 0, 4 * 3);
-	float3 GISampleCoordPZ = GISampleCoord + float3(0, 0, 4 * 4);
-	float3 GISampleCoordNZ = GISampleCoord + float3(0, 0, 4 * 5);
+	int3 isOutside = (GISampleCoord > 1.0);
+	float3 probeCount = float3(GISky_viewportSize[2][0], GISky_viewportSize[3][0], GISky_viewportSize[0][1]);
 
-	float4 indirectLight = float4(0.0f, 0.0f, 0.0f, 0.0f);
-	if (isNegative.x)
+	if (!isOutside.x && !isOutside.y && !isOutside.z)
 	{
-		indirectLight += nSquared.x * in_IrradianceVolume[GISampleCoordNX];
-	}
-	else
-	{
-		indirectLight += nSquared.x * in_IrradianceVolume[GISampleCoordPX];
-	}
-	if (isNegative.y)
-	{
-		indirectLight += nSquared.y * in_IrradianceVolume[GISampleCoordNY];
-	}
-	else
-	{
-		indirectLight += nSquared.y * in_IrradianceVolume[GISampleCoordPY];
-	}
-	if (isNegative.z)
-	{
-		indirectLight += nSquared.z * in_IrradianceVolume[GISampleCoordNZ];
-	}
-	else
-	{
-		indirectLight += nSquared.z * in_IrradianceVolume[GISampleCoordPZ];
-	}
+		GISampleCoord *= probeCount;
+		float3 GISampleCoordPX = GISampleCoord;
+		float3 GISampleCoordNX = GISampleCoord + float3(0, 0, probeCount.z);
+		float3 GISampleCoordPY = GISampleCoord + float3(0, 0, probeCount.z * 2);
+		float3 GISampleCoordNY = GISampleCoord + float3(0, 0, probeCount.z * 3);
+		float3 GISampleCoordPZ = GISampleCoord + float3(0, 0, probeCount.z * 4);
+		float3 GISampleCoordNZ = GISampleCoord + float3(0, 0, probeCount.z * 5);
 
-	Lo += (1 - metallic) * indirectLight.xyz;
+		float4 indirectLight = float4(0.0f, 0.0f, 0.0f, 0.0f);
+		if (isNegative.x)
+		{
+			indirectLight += nSquared.x * in_IrradianceVolume[GISampleCoordNX];
+		}
+		else
+		{
+			indirectLight += nSquared.x * in_IrradianceVolume[GISampleCoordPX];
+		}
+		if (isNegative.y)
+		{
+			indirectLight += nSquared.y * in_IrradianceVolume[GISampleCoordNY];
+		}
+		else
+		{
+			indirectLight += nSquared.y * in_IrradianceVolume[GISampleCoordPY];
+		}
+		if (isNegative.z)
+		{
+			indirectLight += nSquared.z * in_IrradianceVolume[GISampleCoordNZ];
+		}
+		else
+		{
+			indirectLight += nSquared.z * in_IrradianceVolume[GISampleCoordPZ];
+		}
 
+		Lo += (1 - metallic) * indirectLight.xyz;
+	}
 	// ambient occlusion
 	Lo *= ao;
 

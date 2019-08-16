@@ -42,6 +42,7 @@ xcuserdata/
 *.InnoBrick
 *.InnoBrickFactor
 *.InnoProbe
+*.InnoProbeInfo
 *.InnoSurfel
 
 # For Qt

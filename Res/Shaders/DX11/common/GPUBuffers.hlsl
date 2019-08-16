@@ -66,6 +66,5 @@ cbuffer GISkyCBuffer : register(b11)
 {
 	matrix GISky_p_inv;
 	matrix GISky_v_inv[6];
-	float2 GISky_viewportSize;
-	float4 GISky_padding[3];
+	matrix GISky_viewportSize;
 };

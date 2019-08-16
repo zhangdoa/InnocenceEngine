@@ -25,24 +25,18 @@ RWTexture3D<float4> out_irradianceVolume : register(u3);
 [numthreads(8, 8, 8)]
 void main(ComputeInputType input)
 {
-	if (input.dispatchThreadID.x < dispatchParams[4].numThreads.x
-		&& input.dispatchThreadID.y < dispatchParams[4].numThreads.y
-		&& input.dispatchThreadID.z < dispatchParams[4].numThreads.z)
+	if (input.dispatchThreadID.x < GISky_viewportSize[2][0]
+		&& input.dispatchThreadID.y < GISky_viewportSize[3][0]
+		&& input.dispatchThreadID.z < GISky_viewportSize[0][1])
 	{
-		uint idX = input.dispatchThreadID.x;
-		uint idY = input.dispatchThreadID.y * dispatchParams[4].numThreads.x;
-		uint idZ = input.dispatchThreadID.z * dispatchParams[4].numThreads.x * dispatchParams[4].numThreads.y;
-
-		uint l_probeIndex = idX + idY + idZ;
+		uint l_probeIndex = input.dispatchThreadID.x + input.dispatchThreadID.y * GISky_viewportSize[2][0] + input.dispatchThreadID.z * GISky_viewportSize[2][0] * GISky_viewportSize[3][0];
 		Probe l_probe = in_probes[l_probeIndex];
-
-		float3 l_writeCoord = l_probe.pos / posWSNormalizer.xyz;
-		l_writeCoord *= float3(4, 1, 4);
-
 		float4 Lo[6];
 
 		for (uint i = 0; i < 6; i++)
 		{
+			float3 l_writeCoord = (l_probe.pos.xyz);
+
 			Lo[i] = float4(0.0, 0.0, 0.0, 0.0);
 
 			uint brickFactorRangeBegin = l_probe.brickFactorRange[i * 2];
@@ -64,8 +58,10 @@ void main(ComputeInputType input)
 			}
 
 			//Lo[i] += in_skyRadiance[i] * l_probe.skyVisibility[i];
+			//Lo[i] += float4(0.1, 0.2, 0.6, 0.0) * l_probe.skyVisibility[i];
 
-			l_writeCoord = l_writeCoord + float3(0, 0, float(i) * 4);
+			// packaged 3D probe counts in GISky_viewportSize, depth slice offset
+			l_writeCoord = l_writeCoord + float3(0, 0, float(i) * GISky_viewportSize[0][1]);
 			out_irradianceVolume[l_writeCoord] = Lo[i];
 		}
 	}

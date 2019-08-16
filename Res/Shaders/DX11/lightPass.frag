@@ -142,16 +142,17 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	int3 isNegative = (N < 0.0);
 	float3 GISampleCoord = posWS / posWSNormalizer.xyz;
 	int3 isOutside = (GISampleCoord > 1.0);
+	float3 probeCount = float3(GISky_viewportSize[2][0], GISky_viewportSize[3][0], GISky_viewportSize[0][1]);
 
 	if (!isOutside.x && !isOutside.y && !isOutside.z)
 	{
-		GISampleCoord *= float3(8, 1, 8);
+		GISampleCoord *= probeCount;
 		float3 GISampleCoordPX = GISampleCoord;
-		float3 GISampleCoordNX = GISampleCoord + float3(0, 0, 8);
-		float3 GISampleCoordPY = GISampleCoord + float3(0, 0, 8 * 2);
-		float3 GISampleCoordNY = GISampleCoord + float3(0, 0, 8 * 3);
-		float3 GISampleCoordPZ = GISampleCoord + float3(0, 0, 8 * 4);
-		float3 GISampleCoordNZ = GISampleCoord + float3(0, 0, 8 * 5);
+		float3 GISampleCoordNX = GISampleCoord + float3(0, 0, probeCount.z);
+		float3 GISampleCoordPY = GISampleCoord + float3(0, 0, probeCount.z * 2);
+		float3 GISampleCoordNY = GISampleCoord + float3(0, 0, probeCount.z * 3);
+		float3 GISampleCoordPZ = GISampleCoord + float3(0, 0, probeCount.z * 4);
+		float3 GISampleCoordNZ = GISampleCoord + float3(0, 0, probeCount.z * 5);
 
 		float4 indirectLight = float4(0.0f, 0.0f, 0.0f, 0.0f);
 		if (isNegative.x)

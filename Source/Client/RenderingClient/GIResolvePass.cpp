@@ -116,7 +116,70 @@ bool GIResolvePass::InitializeGPUBuffers()
 
 		g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_brickFactorGBDC);
 
-		auto l_probes = GIDataLoader::GetProbes();
+		std::vector<Probe> l_probes = GIDataLoader::GetProbes();
+
+		TVec4<unsigned int> l_probeIndex;
+		float l_minPos;
+
+		std::sort(l_probes.begin(), l_probes.end(), [&](Probe A, Probe B)
+		{
+			return A.pos.x < B.pos.x;
+		});
+
+		l_minPos = l_probes[0].pos.x;
+
+		for (size_t i = 0; i < l_probes.size(); i++)
+		{
+			auto l_probePosWS = l_probes[i].pos;
+
+			if (l_probePosWS.x > l_minPos)
+			{
+				l_minPos = l_probePosWS.x;
+				l_probeIndex.x++;
+			}
+
+			l_probes[i].pos.x = (float)l_probeIndex.x;
+		}
+
+		std::sort(l_probes.begin(), l_probes.end(), [&](Probe A, Probe B)
+		{
+			return A.pos.y < B.pos.y;
+		});
+
+		l_minPos = l_probes[0].pos.y;
+
+		for (size_t i = 0; i < l_probes.size(); i++)
+		{
+			auto l_probePosWS = l_probes[i].pos;
+
+			if (l_probePosWS.y > l_minPos)
+			{
+				l_minPos = l_probePosWS.y;
+				l_probeIndex.y++;
+			}
+
+			l_probes[i].pos.y = (float)l_probeIndex.y;
+		}
+
+		std::sort(l_probes.begin(), l_probes.end(), [&](Probe A, Probe B)
+		{
+			return A.pos.z < B.pos.z;
+		});
+
+		l_minPos = l_probes[0].pos.z;
+
+		for (size_t i = 0; i < l_probes.size(); i++)
+		{
+			auto l_probePosWS = l_probes[i].pos;
+
+			if (l_probePosWS.z > l_minPos)
+			{
+				l_minPos = l_probePosWS.z;
+				l_probeIndex.z++;
+			}
+
+			l_probes[i].pos.z = (float)l_probeIndex.z;
+		}
 
 		m_probeGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("ProbeGPUBuffer/");
 		m_probeGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
@@ -132,9 +195,11 @@ bool GIResolvePass::InitializeGPUBuffers()
 		m_irradianceVolume = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("IrradianceVolume/");
 		m_irradianceVolume->m_textureDataDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
-		m_irradianceVolume->m_textureDataDesc.Width = 8;
-		m_irradianceVolume->m_textureDataDesc.Height = 1;
-		m_irradianceVolume->m_textureDataDesc.DepthOrArraySize = 8 * 6;
+		auto l_probeCount = GIDataLoader::GetProbeCount();
+
+		m_irradianceVolume->m_textureDataDesc.Width = (unsigned int)l_probeCount.x;
+		m_irradianceVolume->m_textureDataDesc.Height = (unsigned int)l_probeCount.y;
+		m_irradianceVolume->m_textureDataDesc.DepthOrArraySize = (unsigned int)l_probeCount.z * 6;
 		m_irradianceVolume->m_textureDataDesc.UsageType = TextureUsageType::RawImage;
 		m_irradianceVolume->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler3D;
 		m_irradianceVolume->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
@@ -174,6 +239,10 @@ bool GIResolvePass::DeleteGPUBuffers()
 	if (m_probeGBDC)
 	{
 		g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_probeGBDC);
+	}
+	if (m_irradianceVolume)
+	{
+		g_pModuleManager->getRenderingServer()->DeleteTextureDataComponent(m_irradianceVolume);
 	}
 
 	m_GIDataLoaded = false;
@@ -362,7 +431,7 @@ bool GIResolvePass::setupProbes()
 
 	m_probeRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_probeRPDC->m_ResourceBinderLayoutDescs.resize(6);
+	m_probeRPDC->m_ResourceBinderLayoutDescs.resize(7);
 	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 8;
@@ -395,6 +464,10 @@ bool GIResolvePass::setupProbes()
 	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_GlobalSlot = 5;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_LocalSlot = 3;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_IsRanged = true;
+
+	m_probeRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[6].m_GlobalSlot = 6;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[6].m_LocalSlot = 11;
 
 	m_probeRPDC->m_ShaderProgram = m_probeSPC;
 
@@ -437,6 +510,11 @@ bool GIResolvePass::generateSkyRadiance()
 	l_GICameraGPUData[7] = InnoMath::generateIdentityMatrix<float>();
 	l_GISkyGPUData[7].m00 = 32.0f;
 	l_GISkyGPUData[7].m01 = 32.0f;
+
+	auto l_probeCount = GIDataLoader::GetProbeCount();
+	l_GISkyGPUData[7].m02 = l_probeCount.x;
+	l_GISkyGPUData[7].m03 = l_probeCount.y;
+	l_GISkyGPUData[7].m10 = l_probeCount.z;
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GICameraGBDC, l_GICameraGPUData);
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GISkyGBDC, l_GISkyGPUData);
@@ -548,6 +626,7 @@ bool GIResolvePass::litProbes()
 {
 	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Compute);
 	auto l_SkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sky);
+	auto l_GISkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GISky);
 
 	SkyGPUData l_SkyGPUData = g_pModuleManager->getRenderingFrontend()->getSkyGPUData();
 	l_SkyGPUData.posWSNormalizer = GIDataLoader::GetIrradianceVolumeRange();
@@ -562,7 +641,7 @@ bool GIResolvePass::litProbes()
 
 	auto l_numThreadsX = std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroup);
 	auto l_numThreadsY = std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroup);
-	auto l_numThreadsZ = std::ceil((double)m_probeGBDC->m_ElementCount / (l_numThreadsX * l_numThreadsY));
+	auto l_numThreadsZ = std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroup);
 
 	l_numThreadsX = InnoMath::clamp(l_totalThreadGroupsCount, (double)l_threadCountPerGroup, l_totalThreadGroupsCount);
 	l_numThreadsY = InnoMath::clamp(l_totalThreadGroupsCount, (double)l_threadCountPerGroup, l_totalThreadGroupsCount);
@@ -588,6 +667,7 @@ bool GIResolvePass::litProbes()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_brickFactorGBDC->m_ResourceBinder, 3, 1, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_brickIrradianceGBDC->m_ResourceBinder, 4, 2, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_irradianceVolume->m_ResourceBinder, 5, 3, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, l_GISkyGBDC->m_ResourceBinder, 6, 11, Accessibility::ReadOnly);
 
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_probeRPDC, l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ);
 

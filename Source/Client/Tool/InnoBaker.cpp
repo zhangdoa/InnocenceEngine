@@ -30,6 +30,7 @@ namespace InnoBakerNS
 
 	bool gatherStaticMeshData();
 	bool generateProbeCaches(std::vector<Probe>& probeCaches);
+	bool serializeProbeInfos(vec4 probeCounts);
 
 	bool captureSurfels(std::vector<Probe>& probeCaches);
 	bool drawCubemaps(Probe& probeCache, const mat4& p, const std::vector<mat4>& v);
@@ -68,7 +69,7 @@ namespace InnoBakerNS
 	const unsigned int m_probeMapSamplingInterval = 128;
 	const unsigned int m_captureResolution = 64;
 	const unsigned int m_sampleCountPerFace = m_captureResolution * m_captureResolution;
-	const vec4 m_brickSize = vec4(16.0f, 16.0f, 16.0f, 0.0f);
+	const vec4 m_brickSize = vec4(8.0f, 8.0f, 8.0f, 0.0f);
 
 	RenderPassDataComponent* m_RPDC_Probe;
 	ShaderProgramComponent* m_SPC_Probe;
@@ -238,6 +239,8 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probeCaches)
 	auto l_posIntervalX = std::abs((l_probePosTextureResults[0] - l_probePosTextureResults[m_probeMapSamplingInterval - 1]).x);
 	auto l_posIntervalZ = std::abs((l_probePosTextureResults[0] - l_probePosTextureResults[m_probeMapResolution * m_probeMapSamplingInterval - 1]).z);
 
+	unsigned int l_maxVerticalProbesCount = 1;
+
 	for (size_t i = 0; i < l_probesCount; i++)
 	{
 		// Not the last one in all, not any one in last column, and not the last one each row
@@ -254,6 +257,8 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probeCaches)
 			{
 				auto l_verticalProbesCount = std::floor(ddx / l_posIntervalX);
 
+				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 1, l_maxVerticalProbesCount);
+
 				for (size_t k = 0; k < l_verticalProbesCount; k++)
 				{
 					Probe l_verticalProbe;
@@ -266,6 +271,8 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probeCaches)
 			if (ddx < -l_posIntervalX)
 			{
 				auto l_verticalProbesCount = std::floor(std::abs(ddx) / l_posIntervalX);
+
+				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 1, l_maxVerticalProbesCount);
 
 				for (size_t k = 0; k < l_verticalProbesCount; k++)
 				{
@@ -280,6 +287,8 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probeCaches)
 			{
 				auto l_verticalProbesCount = std::floor(ddy / l_posIntervalZ);
 
+				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 1, l_maxVerticalProbesCount);
+
 				for (size_t k = 0; k < l_verticalProbesCount; k++)
 				{
 					Probe l_verticalProbe;
@@ -292,6 +301,8 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probeCaches)
 			if (ddy < -l_posIntervalZ)
 			{
 				auto l_verticalProbesCount = std::floor(std::abs(ddy) / l_posIntervalZ);
+
+				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 1, l_maxVerticalProbesCount);
 
 				for (size_t k = 0; k < l_verticalProbesCount; k++)
 				{
@@ -309,7 +320,21 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probeCaches)
 
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", probeCaches.size() - l_probesCount, " probe location generated along the wall.");
 
+	serializeProbeInfos(vec4((float)l_probesCountPerLine, (float)l_maxVerticalProbesCount, (float)l_probesCountPerLine, 1.0f));
+
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", probeCaches.size(), " probe location generated.");
+
+	return true;
+}
+
+bool InnoBakerNS::serializeProbeInfos(vec4 probeCounts)
+{
+	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+
+	std::ofstream l_file;
+	l_file.open(l_filePath + "Res//Scenes//" + m_exportFileName + ".InnoProbeInfo", std::ios::binary);
+	l_file.write((char*)&probeCounts, sizeof(probeCounts));
+	l_file.close();
 
 	return true;
 }

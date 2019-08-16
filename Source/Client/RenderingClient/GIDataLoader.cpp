@@ -23,6 +23,7 @@ namespace GIDataLoader
 	std::vector<Surfel> m_surfels;
 	std::vector<Brick> m_bricks;
 	std::vector<BrickFactor> m_brickFactors;
+	vec4 m_probeCount;
 
 	bool m_IsSurfelLoaded = false;
 	bool m_IsBrickLoaded = false;
@@ -85,6 +86,18 @@ bool GIDataLoader::loadGIData()
 		IOService::deserializeVector(l_probeFile, m_probes);
 
 		m_IsProbeLoaded = true;
+	}
+
+	std::ifstream l_probeInfoFile;
+	l_probeInfoFile.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoProbeInfo", std::ios::binary);
+
+	if (l_probeInfoFile.is_open())
+	{
+		IOService::deserialize(l_probeInfoFile, &m_probeCount);
+	}
+	else
+	{
+		m_IsProbeLoaded = false;
 	}
 
 	return m_IsProbeLoaded && m_IsBrickFactorLoaded && m_IsBrickLoaded && m_IsSurfelLoaded;
@@ -219,4 +232,9 @@ const std::vector<Probe>& GIDataLoader::GetProbes()
 vec4 GIDataLoader::GetIrradianceVolumeRange()
 {
 	return m_irradianceVolumeRange;
+}
+
+vec4 GIDataLoader::GetProbeCount()
+{
+	return m_probeCount;
 }
