@@ -32,12 +32,19 @@ void main(ComputeInputType input)
 
 		float4 Lo = float4(0.0, 0.0, 0.0, 0.0);
 
-		for (uint i = l_brick.surfelRangeBegin; i < l_brick.surfelRangeEnd; i++)
+		if (l_brick.surfelRangeBegin != l_brick.surfelRangeEnd)
 		{
-			Lo += in_surfelIrradiance[i];
+			Lo = in_surfelIrradiance[l_brick.surfelRangeBegin];
 		}
+		else
+		{
+			for (uint i = l_brick.surfelRangeBegin; i <= l_brick.surfelRangeEnd; i++)
+			{
+				Lo += in_surfelIrradiance[i];
+			}
 
-		Lo /= (l_brick.surfelRangeEnd - l_brick.surfelRangeBegin);
+			Lo /= (l_brick.surfelRangeEnd - l_brick.surfelRangeBegin);
+		}
 
 		out_brickIrradiance[l_brickIndex] = Lo;
 	}

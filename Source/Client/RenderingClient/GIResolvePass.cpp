@@ -2,6 +2,7 @@
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
 #include "GIDataLoader.h"
+#include "SunShadowPass.h"
 
 #include "../../Engine/ModuleManager/IModuleManager.h"
 
@@ -341,7 +342,7 @@ bool GIResolvePass::setupSurfels()
 
 	m_surfelRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_surfelRPDC->m_ResourceBinderLayoutDescs.resize(5);
+	m_surfelRPDC->m_ResourceBinderLayoutDescs.resize(7);
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 0;
@@ -365,6 +366,15 @@ bool GIResolvePass::setupSurfels()
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_GlobalSlot = 4;
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_LocalSlot = 1;
+
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_GlobalSlot = 5;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_LocalSlot = 6;
+
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Image;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_GlobalSlot = 6;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_LocalSlot = 0;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_IsRanged = true;
 
 	m_surfelRPDC->m_ShaderProgram = m_surfelSPC;
 
@@ -541,6 +551,7 @@ bool GIResolvePass::litSurfels()
 	auto l_MainCameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::MainCamera);
 	auto l_SunGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sun);
 	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Compute);
+	auto l_CSMGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::CSM);
 
 	auto l_threadCountPerGroup = 8;
 	auto l_totalThreadGroupsCount = (double)m_surfelGBDC->m_ElementCount / (l_threadCountPerGroup * l_threadCountPerGroup * l_threadCountPerGroup);
@@ -569,11 +580,14 @@ bool GIResolvePass::litSurfels()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 2, 8, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 4, 1, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_CSMGBDC->m_ResourceBinder, 5, 6, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, SunShadowPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 6, 0);
 
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_surfelRPDC, l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ);
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 4, 1, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, SunShadowPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 6, 0);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_surfelRPDC);
 
