@@ -862,7 +862,9 @@ bool InnoRenderingFrontend::registerMeshDataComponent(MeshDataComponent * rhs, b
 	}
 	else
 	{
-		m_renderingServer->InitializeMeshDataComponent(rhs);
+		auto l_MeshDataComponentInitializeTask = g_pModuleManager->getTaskSystem()->submit("MeshDataComponentInitializeTask", 2, nullptr,
+			[=]() {m_renderingServer->InitializeMeshDataComponent(rhs); });
+		l_MeshDataComponentInitializeTask->Wait();
 	}
 
 	return true;
@@ -876,7 +878,9 @@ bool InnoRenderingFrontend::registerMaterialDataComponent(MaterialDataComponent 
 	}
 	else
 	{
-		m_renderingServer->InitializeMaterialDataComponent(rhs);
+		auto l_MaterialDataComponentInitializeTask = g_pModuleManager->getTaskSystem()->submit("MaterialDataComponentInitializeTask", 2, nullptr,
+			[=]() {m_renderingServer->InitializeMaterialDataComponent(rhs); });
+		l_MaterialDataComponentInitializeTask->Wait();
 	}
 
 	return true;
