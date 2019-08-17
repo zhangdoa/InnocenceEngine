@@ -548,7 +548,7 @@ bool GIResolvePass::litSurfels()
 
 	auto l_numThreadsX = (unsigned int)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroup);
 	auto l_numThreadsY = (unsigned int)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroup);
-	auto l_numThreadsZ = (unsigned int)std::ceil((double)m_surfelGBDC->m_ElementCount / (l_numThreadsX * l_numThreadsY));
+	auto l_numThreadsZ = (unsigned int)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroup);
 
 	auto l_numThreadGroupsX = (unsigned int)std::ceil((double)l_numThreadsX / (double)l_threadCountPerGroup);
 	auto l_numThreadGroupsY = (unsigned int)std::ceil((double)l_numThreadsY / (double)l_threadCountPerGroup);
@@ -590,7 +590,7 @@ bool GIResolvePass::litBricks()
 
 	auto l_numThreadsX = (unsigned int)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroup);
 	auto l_numThreadsY = (unsigned int)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroup);
-	auto l_numThreadsZ = (unsigned int)std::ceil((double)m_brickGBDC->m_ElementCount / (l_numThreadsX * l_numThreadsY));
+	auto l_numThreadsZ = (unsigned int)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroup);
 
 	auto l_numThreadGroupsX = (unsigned int)std::ceil((double)l_numThreadsX / (double)l_threadCountPerGroup);
 	auto l_numThreadGroupsY = (unsigned int)std::ceil((double)l_numThreadsY / (double)l_threadCountPerGroup);
@@ -633,19 +633,11 @@ bool GIResolvePass::litProbes()
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_SkyGBDC, &l_SkyGPUData);
 
 	auto l_threadCountPerGroup = 8;
-	auto l_totalThreadGroupsCount = (double)m_probeGBDC->m_ElementCount / (l_threadCountPerGroup * l_threadCountPerGroup * l_threadCountPerGroup);
+	auto l_probeCount = GIDataLoader::GetProbeCount();
 
-	l_totalThreadGroupsCount = InnoMath::clamp(l_totalThreadGroupsCount, 1.0, l_totalThreadGroupsCount);
-
-	auto l_averangeThreadGroupsCountPerSide = std::pow(l_totalThreadGroupsCount, 1.0 / 3.0);
-
-	auto l_numThreadsX = std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroup);
-	auto l_numThreadsY = std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroup);
-	auto l_numThreadsZ = std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroup);
-
-	l_numThreadsX = InnoMath::clamp(l_totalThreadGroupsCount, (double)l_threadCountPerGroup, l_totalThreadGroupsCount);
-	l_numThreadsY = InnoMath::clamp(l_totalThreadGroupsCount, (double)l_threadCountPerGroup, l_totalThreadGroupsCount);
-	l_numThreadsZ = InnoMath::clamp(l_totalThreadGroupsCount, (double)l_threadCountPerGroup, l_totalThreadGroupsCount);
+	auto l_numThreadsX = l_probeCount.x;
+	auto l_numThreadsY = l_probeCount.y;
+	auto l_numThreadsZ = l_probeCount.z;
 
 	auto l_numThreadGroupsX = (unsigned int)std::ceil((double)l_numThreadsX / (double)l_threadCountPerGroup);
 	auto l_numThreadGroupsY = (unsigned int)std::ceil((double)l_numThreadsY / (double)l_threadCountPerGroup);
