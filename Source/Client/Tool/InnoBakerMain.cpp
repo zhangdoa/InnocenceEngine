@@ -125,28 +125,14 @@ int main(int argc, char *argv[])
 			InnoBaker::BakeBrick(l_brickCacheFileName);
 		}
 
-		auto l_brickfactorStageArgPos = l_windowArguments.find("brickfactor ");
+		auto l_brickFactorStageArgPos = l_windowArguments.find("brickfactor ");
 
-		if (l_brickfactorStageArgPos != std::string::npos)
+		if (l_brickFactorStageArgPos != std::string::npos)
 		{
-			std::string l_brickfactorStageArg = l_windowArguments.substr(l_brickfactorStageArgPos + 11);
-			l_brickfactorStageArg = l_brickfactorStageArg.substr(1, l_brickfactorStageArg.size() - 1);
+			std::string l_brickFileName = l_windowArguments.substr(l_brickFactorStageArgPos + 11);
+			l_brickFileName = l_brickFileName.substr(1, l_brickFileName.size() - 1);
 
-			auto l_probeCacheFileNameArgPos = l_brickfactorStageArg.find("probecache ");
-
-			if (l_probeCacheFileNameArgPos != std::string::npos)
-			{
-				auto l_brickFileName = l_brickfactorStageArg.substr(0, l_probeCacheFileNameArgPos - 1);
-				auto l_probeCacheFileName = l_brickfactorStageArg.substr(l_probeCacheFileNameArgPos + 10);
-				l_probeCacheFileName = l_probeCacheFileName.substr(1, l_probeCacheFileName.size() - 1);
-
-				InnoBaker::BakeBrickFactor(l_brickFileName, l_probeCacheFileName);
-			}
-			else
-			{
-				m_pModuleManager.get()->getLogSystem()->Log(LogLevel::Error, "No probe caches file specified!");
-				return -1;
-			}
+			InnoBaker::BakeBrickFactor(l_brickFileName);
 		}
 	}
 

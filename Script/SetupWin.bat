@@ -1,7 +1,7 @@
 git submodule update
 
 mkdir ..\Res\ConvertedAssets
-mkdir ...\Res\Intermediate
+mkdir ..\Res\Intermediate
 
 cd ../Source/External/GitSubmodules
 xcopy /e/s/y assimp\include\assimp\* ..\Include\assimp\
