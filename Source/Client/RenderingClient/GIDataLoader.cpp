@@ -234,7 +234,7 @@ vec4 GIDataLoader::GetIrradianceVolumeRange()
 	return m_irradianceVolumeRange;
 }
 
-vec4 GIDataLoader::GetProbeCount()
+vec4 GIDataLoader::GetProbeMaxCount()
 {
 	return m_probeCount;
 }

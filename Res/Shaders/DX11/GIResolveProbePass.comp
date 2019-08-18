@@ -25,11 +25,10 @@ RWTexture3D<float4> out_irradianceVolume : register(u3);
 [numthreads(8, 8, 8)]
 void main(ComputeInputType input)
 {
-	if (input.dispatchThreadID.x < GISky_viewportSize[2][0]
-		&& input.dispatchThreadID.y < GISky_viewportSize[3][0]
-		&& input.dispatchThreadID.z < GISky_viewportSize[0][1])
+	uint l_probeIndex = input.dispatchThreadID.x + (input.dispatchThreadID.y * dispatchParams[4].numThreads.x) + (input.dispatchThreadID.z * dispatchParams[4].numThreads.x * dispatchParams[4].numThreads.y);
+
+	if (l_probeIndex < GISky_viewportSize[1][1])
 	{
-		uint l_probeIndex = input.dispatchThreadID.x + input.dispatchThreadID.y * GISky_viewportSize[2][0] + input.dispatchThreadID.z * GISky_viewportSize[2][0] * GISky_viewportSize[3][0];
 		Probe l_probe = in_probes[l_probeIndex];
 		float4 Lo[6];
 
@@ -57,8 +56,7 @@ void main(ComputeInputType input)
 				Lo[i] = in_brickIrradiance[in_brickFactors[brickFactorRangeBegin].brickIndex];
 			}
 
-			//Lo[i] += in_skyRadiance[i] * l_probe.skyVisibility[i];
-			//Lo[i] += float4(0.1, 0.2, 0.6, 0.0) * l_probe.skyVisibility[i];
+			Lo[i].w = l_probe.skyVisibility[i];
 
 			// packaged 3D probe counts in GISky_viewportSize, depth slice offset
 			l_writeCoord = l_writeCoord + float3(0, 0, float(i) * GISky_viewportSize[0][1]);

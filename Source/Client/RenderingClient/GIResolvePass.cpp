@@ -196,11 +196,9 @@ bool GIResolvePass::InitializeGPUBuffers()
 		m_irradianceVolume = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("IrradianceVolume/");
 		m_irradianceVolume->m_textureDataDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
-		auto l_probeCount = GIDataLoader::GetProbeCount();
-
-		m_irradianceVolume->m_textureDataDesc.Width = (unsigned int)l_probeCount.x;
-		m_irradianceVolume->m_textureDataDesc.Height = (unsigned int)l_probeCount.y;
-		m_irradianceVolume->m_textureDataDesc.DepthOrArraySize = (unsigned int)l_probeCount.z * 6;
+		m_irradianceVolume->m_textureDataDesc.Width = (unsigned int)l_probeIndex.x + 1;
+		m_irradianceVolume->m_textureDataDesc.Height = (unsigned int)l_probeIndex.y + 1;
+		m_irradianceVolume->m_textureDataDesc.DepthOrArraySize = ((unsigned int)l_probeIndex.z + 1) * 6;
 		m_irradianceVolume->m_textureDataDesc.UsageType = TextureUsageType::RawImage;
 		m_irradianceVolume->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler3D;
 		m_irradianceVolume->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
@@ -521,10 +519,11 @@ bool GIResolvePass::generateSkyRadiance()
 	l_GISkyGPUData[7].m00 = 32.0f;
 	l_GISkyGPUData[7].m01 = 32.0f;
 
-	auto l_probeCount = GIDataLoader::GetProbeCount();
+	auto l_probeCount = GIDataLoader::GetProbeMaxCount();
 	l_GISkyGPUData[7].m02 = l_probeCount.x;
 	l_GISkyGPUData[7].m03 = l_probeCount.y;
 	l_GISkyGPUData[7].m10 = l_probeCount.z;
+	l_GISkyGPUData[7].m11 = (float)m_probeGBDC->m_ElementCount;
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GICameraGBDC, l_GICameraGPUData);
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GISkyGBDC, l_GISkyGPUData);
@@ -553,17 +552,17 @@ bool GIResolvePass::litSurfels()
 	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Compute);
 	auto l_CSMGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::CSM);
 
-	auto l_threadCountPerGroup = 8;
-	auto l_totalThreadGroupsCount = (double)m_surfelGBDC->m_ElementCount / (l_threadCountPerGroup * l_threadCountPerGroup * l_threadCountPerGroup);
+	auto l_threadCountPerGroupPerSide = 8;
+	auto l_totalThreadGroupsCount = (double)m_surfelGBDC->m_ElementCount / (l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide);
 	auto l_averangeThreadGroupsCountPerSide = std::pow(l_totalThreadGroupsCount, 1.0 / 3.0);
 
-	auto l_numThreadsX = (unsigned int)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroup);
-	auto l_numThreadsY = (unsigned int)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroup);
-	auto l_numThreadsZ = (unsigned int)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroup);
+	auto l_numThreadsX = (unsigned int)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
+	auto l_numThreadsY = (unsigned int)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
+	auto l_numThreadsZ = (unsigned int)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
 
-	auto l_numThreadGroupsX = (unsigned int)std::ceil((double)l_numThreadsX / (double)l_threadCountPerGroup);
-	auto l_numThreadGroupsY = (unsigned int)std::ceil((double)l_numThreadsY / (double)l_threadCountPerGroup);
-	auto l_numThreadGroupsZ = (unsigned int)std::ceil((double)l_numThreadsZ / (double)l_threadCountPerGroup);
+	auto l_numThreadGroupsX = (unsigned int)std::ceil((double)l_numThreadsX / (double)l_threadCountPerGroupPerSide);
+	auto l_numThreadGroupsY = (unsigned int)std::ceil((double)l_numThreadsY / (double)l_threadCountPerGroupPerSide);
+	auto l_numThreadGroupsZ = (unsigned int)std::ceil((double)l_numThreadsZ / (double)l_threadCountPerGroupPerSide);
 
 	DispatchParamsGPUData l_surfelLitWorkload;
 	l_surfelLitWorkload.numThreadGroups = TVec4<unsigned int>(l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ, 0);
@@ -598,17 +597,17 @@ bool GIResolvePass::litBricks()
 {
 	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Compute);
 
-	auto l_threadCountPerGroup = 8;
-	auto l_totalThreadGroupsCount = (double)m_brickGBDC->m_ElementCount / (l_threadCountPerGroup * l_threadCountPerGroup * l_threadCountPerGroup);
+	auto l_threadCountPerGroupPerSide = 8;
+	auto l_totalThreadGroupsCount = (double)m_brickGBDC->m_ElementCount / (l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide);
 	auto l_averangeThreadGroupsCountPerSide = std::pow(l_totalThreadGroupsCount, 1.0 / 3.0);
 
-	auto l_numThreadsX = (unsigned int)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroup);
-	auto l_numThreadsY = (unsigned int)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroup);
-	auto l_numThreadsZ = (unsigned int)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroup);
+	auto l_numThreadsX = (unsigned int)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
+	auto l_numThreadsY = (unsigned int)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
+	auto l_numThreadsZ = (unsigned int)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
 
-	auto l_numThreadGroupsX = (unsigned int)std::ceil((double)l_numThreadsX / (double)l_threadCountPerGroup);
-	auto l_numThreadGroupsY = (unsigned int)std::ceil((double)l_numThreadsY / (double)l_threadCountPerGroup);
-	auto l_numThreadGroupsZ = (unsigned int)std::ceil((double)l_numThreadsZ / (double)l_threadCountPerGroup);
+	auto l_numThreadGroupsX = (unsigned int)std::ceil((double)l_numThreadsX / (double)l_threadCountPerGroupPerSide);
+	auto l_numThreadGroupsY = (unsigned int)std::ceil((double)l_numThreadsY / (double)l_threadCountPerGroupPerSide);
+	auto l_numThreadGroupsZ = (unsigned int)std::ceil((double)l_numThreadsZ / (double)l_threadCountPerGroupPerSide);
 
 	DispatchParamsGPUData l_brickLitWorkload;
 	l_brickLitWorkload.numThreadGroups = TVec4<unsigned int>(l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ, 0);
@@ -646,20 +645,17 @@ bool GIResolvePass::litProbes()
 	l_SkyGPUData.posWSNormalizer = GIDataLoader::GetIrradianceVolumeRange();
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_SkyGBDC, &l_SkyGPUData);
 
-	auto l_threadCountPerGroup = 8;
-	auto l_probeCount = GIDataLoader::GetProbeCount();
+	auto l_threadCountPerGroupPerSide = 8;
+	auto l_totalThreadGroupsCount = (double)m_probeGBDC->m_ElementCount / (l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide);
+	auto l_averangeThreadGroupsCountPerSide = (unsigned int)std::ceil(std::pow(l_totalThreadGroupsCount, 1.0 / 3.0));
 
-	auto l_numThreadsX = l_probeCount.x;
-	auto l_numThreadsY = l_probeCount.y;
-	auto l_numThreadsZ = l_probeCount.z;
-
-	auto l_numThreadGroupsX = (unsigned int)std::ceil((double)l_numThreadsX / (double)l_threadCountPerGroup);
-	auto l_numThreadGroupsY = (unsigned int)std::ceil((double)l_numThreadsY / (double)l_threadCountPerGroup);
-	auto l_numThreadGroupsZ = (unsigned int)std::ceil((double)l_numThreadsZ / (double)l_threadCountPerGroup);
+	auto l_numThreadsX = (unsigned int)(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
+	auto l_numThreadsY = (unsigned int)(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
+	auto l_numThreadsZ = (unsigned int)(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
 
 	DispatchParamsGPUData l_probeLitWorkload;
-	l_probeLitWorkload.numThreadGroups = TVec4<unsigned int>(l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ, 0);
-	l_probeLitWorkload.numThreads = TVec4<unsigned int>((unsigned int)l_numThreadsX, (unsigned int)l_numThreadsY, (unsigned int)l_numThreadsZ, 0);
+	l_probeLitWorkload.numThreadGroups = TVec4<unsigned int>(l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, 0);
+	l_probeLitWorkload.numThreads = TVec4<unsigned int>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_dispatchParamsGBDC, &l_probeLitWorkload, 4, 1);
 
@@ -675,7 +671,7 @@ bool GIResolvePass::litProbes()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_irradianceVolume->m_ResourceBinder, 5, 3, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, l_GISkyGBDC->m_ResourceBinder, 6, 11, Accessibility::ReadOnly);
 
-	g_pModuleManager->getRenderingServer()->DispatchCompute(m_probeRPDC, l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ);
+	g_pModuleManager->getRenderingServer()->DispatchCompute(m_probeRPDC, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide);
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_probeGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_brickFactorGBDC->m_ResourceBinder, 3, 1, Accessibility::ReadWrite);
