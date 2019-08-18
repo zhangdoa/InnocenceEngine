@@ -41,7 +41,7 @@ namespace InnoBakerNS
 
 	bool serializeSurfelCaches(const std::vector<Surfel>& surfelCaches);
 
-	bool generateBrickCaches(const std::vector<Surfel>& surfelCaches);
+	bool generateBrickCaches(std::vector<Surfel>& surfelCaches);
 	bool serializeBrickCaches(const std::vector<BrickCache>& brickCaches);
 
 	bool deserializeBrickCaches(const std::vector<BrickCacheSummary>& brickCacheSummaries, std::vector<BrickCache>& brickCaches);
@@ -566,7 +566,7 @@ bool InnoBakerNS::serializeSurfelCaches(const std::vector<Surfel>& surfelCaches)
 	return true;
 }
 
-bool InnoBakerNS::generateBrickCaches(const std::vector<Surfel>& surfelCaches)
+bool InnoBakerNS::generateBrickCaches(std::vector<Surfel>& surfelCaches)
 {
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to generate brick caches...");
 
@@ -597,16 +597,14 @@ bool InnoBakerNS::generateBrickCaches(const std::vector<Surfel>& surfelCaches)
 	auto l_bricksCountY = std::trunc(l_extends.y / m_brickSize.y);
 	auto l_bricksCountZ = std::trunc(l_extends.z / m_brickSize.z);
 
-	auto l_totalBricksWorkCount = l_bricksCountX * l_bricksCountY * l_bricksCountZ;
-	std::vector<BrickCache> l_brickCaches;
+	// generate all possible brick position
+	auto l_totalBricksWorkCount = (int)(l_bricksCountX * l_bricksCountY * l_bricksCountZ);
 
-	l_brickCaches.reserve((unsigned int)l_totalBricksWorkCount);
+	std::vector<vec4> l_brickPos;
+	l_brickPos.reserve(l_totalBricksWorkCount);
 
-	// Assign surfels to brick cache
-	vec4 l_currentMaxPos = l_startPos + m_brickSize;
-	vec4 l_currentMinPos = l_startPos;
-
-	unsigned int l_progressCounter = 0;
+	auto l_currentMaxPos = l_startPos + m_brickSize;
+	auto l_currentMinPos = l_startPos;
 
 	while (l_currentMaxPos.x <= l_endPos.x)
 	{
@@ -620,31 +618,8 @@ bool InnoBakerNS::generateBrickCaches(const std::vector<Surfel>& surfelCaches)
 
 			while (l_currentMaxPos.z <= l_endPos.z)
 			{
-				BrickCache l_BrickCache;
-				l_BrickCache.pos = l_currentMinPos + m_brickSize / 2.0f;
-				l_BrickCache.surfelCaches.reserve(l_surfelsCount);
+				l_brickPos.emplace_back(l_currentMinPos + m_brickSize / 2.0f);
 
-				for (size_t i = 0; i < l_surfelsCount; i++)
-				{
-					if (
-						InnoMath::isALessEqualThanBVec3(surfelCaches[i].pos, l_currentMaxPos)
-						&& InnoMath::isAGreaterEqualThanBVec3(surfelCaches[i].pos, l_currentMinPos)
-						)
-					{
-						l_BrickCache.surfelCaches.emplace_back(surfelCaches[i]);
-					}
-				}
-
-				l_BrickCache.surfelCaches.shrink_to_fit();
-
-				if (l_BrickCache.surfelCaches.size() > 0)
-				{
-					l_brickCaches.emplace_back(std::move(l_BrickCache));
-				}
-
-				g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Progress: ", (float)l_progressCounter * 100.0f / (float)l_totalBricksWorkCount, "%...");
-
-				l_progressCounter++;
 				l_currentMaxPos.z += m_brickSize.z;
 				l_currentMinPos.z += m_brickSize.z;
 			}
@@ -657,9 +632,67 @@ bool InnoBakerNS::generateBrickCaches(const std::vector<Surfel>& surfelCaches)
 		l_currentMinPos.x += m_brickSize.x;
 	}
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_progressCounter, " brick caches have been generated.");
+	// Assign surfels to brick cache
+	ThreadSafeVector<BrickCache> l_brickCaches;
+	l_brickCaches.reserve(l_totalBricksWorkCount);
 
-	serializeBrickCaches(l_brickCaches);
+	std::atomic_int l_currentWorkloadIndex = 0;
+
+	std::vector<std::shared_ptr<IInnoTask>> l_tasks;
+	l_tasks.reserve(l_totalBricksWorkCount);
+
+	while (l_currentWorkloadIndex < l_totalBricksWorkCount)
+	{
+		auto l_task = g_pModuleManager->getTaskSystem()->submit("InnoBakerBrickCacheTask", -1, nullptr,
+			[&]() {
+			l_currentWorkloadIndex++;
+
+			if (l_currentWorkloadIndex < l_totalBricksWorkCount)
+			{
+				size_t l_currentBrickIndex = l_currentWorkloadIndex;
+
+				BrickCache l_BrickCache;
+				l_BrickCache.pos = l_brickPos[l_currentBrickIndex];
+				l_BrickCache.surfelCaches.reserve(l_surfelsCount);
+
+				auto l_currentMaxPos = l_BrickCache.pos + m_brickSize / 2.0f;
+				auto l_currentMinPos = l_BrickCache.pos - m_brickSize / 2.0f;
+
+				for (size_t j = 0; j < l_surfelsCount; j++)
+				{
+					if (
+						InnoMath::isALessEqualThanBVec3(surfelCaches[j].pos, l_currentMaxPos)
+						&& InnoMath::isAGreaterEqualThanBVec3(surfelCaches[j].pos, l_currentMinPos)
+						)
+					{
+						l_BrickCache.surfelCaches.emplace_back(surfelCaches[j]);
+					}
+				}
+
+				if (l_BrickCache.surfelCaches.size() > 0)
+				{
+					l_brickCaches.emplace_back(std::move(l_BrickCache));
+				}
+
+				g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Progress: ", (float)l_currentBrickIndex * 100.0f / (float)l_totalBricksWorkCount, "%...");
+			}
+		});
+
+		l_tasks.emplace_back(l_task);
+	}
+
+	for (auto i : l_tasks)
+	{
+		i->Wait();
+	}
+
+	g_pModuleManager->getTaskSystem()->waitAllTasksToFinish();
+
+	l_brickCaches.shrink_to_fit();
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_brickCaches.size(), " brick caches have been generated.");
+
+	serializeBrickCaches(l_brickCaches.getRawData());
 
 	return true;
 }
