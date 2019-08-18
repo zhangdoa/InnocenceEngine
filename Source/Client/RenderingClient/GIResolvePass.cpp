@@ -133,7 +133,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 		{
 			auto l_probePosWS = l_probes[i].pos;
 
-			if (l_probePosWS.x > l_minPos)
+			if ((l_probePosWS.x - l_minPos) > epsilon2<float>)
 			{
 				l_minPos = l_probePosWS.x;
 				l_probeIndex.x++;
@@ -153,7 +153,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 		{
 			auto l_probePosWS = l_probes[i].pos;
 
-			if (l_probePosWS.y > l_minPos)
+			if ((l_probePosWS.y - l_minPos) > epsilon2<float>)
 			{
 				l_minPos = l_probePosWS.y;
 				l_probeIndex.y++;
@@ -173,7 +173,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 		{
 			auto l_probePosWS = l_probes[i].pos;
 
-			if (l_probePosWS.z > l_minPos)
+			if ((l_probePosWS.z - l_minPos) > epsilon2<float>)
 			{
 				l_minPos = l_probePosWS.z;
 				l_probeIndex.z++;
@@ -181,7 +181,6 @@ bool GIResolvePass::InitializeGPUBuffers()
 
 			l_probes[i].pos.z = (float)l_probeIndex.z;
 		}
-
 		m_probeGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("ProbeGPUBuffer/");
 		m_probeGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 		m_probeGBDC->m_ElementCount = l_probes.size();

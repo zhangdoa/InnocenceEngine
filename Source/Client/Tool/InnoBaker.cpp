@@ -250,6 +250,9 @@ vec4 InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<v
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_probesCount, " probe location generated over the surface.");
 
 	// Generate probes along the wall
+	std::vector<Probe> l_wallProbes;
+	l_wallProbes.reserve(l_totalTextureSize);
+
 	auto l_posIntervalX = std::abs((heightMap[0] - heightMap[probeMapSamplingInterval - 1]).x);
 	auto l_posIntervalZ = std::abs((heightMap[0] - heightMap[m_probeMapResolution * probeMapSamplingInterval - 1]).z);
 
@@ -258,12 +261,26 @@ vec4 InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<v
 	for (size_t i = 0; i < l_probesCount; i++)
 	{
 		// Not the last one in all, not any one in last column, and not the last one each row
-		if (i + 1 < l_probesCount && (i + l_probesCountPerLine) < l_probesCount && ((i + 1) % l_probesCountPerLine))
+		if ((i + 1 < l_probesCount) && ((i + l_probesCountPerLine) < l_probesCount) && ((i + 1) % l_probesCountPerLine))
 		{
 			auto l_currentProbe = probes[i];
 			auto l_nextRowProbe = probes[i + 1];
 			auto l_nextColumnProbe = probes[i + l_probesCountPerLine];
 
+			// Eliminate sampling error
+			auto epsX = std::abs(l_currentProbe.pos.x - l_nextColumnProbe.pos.x);
+			auto epsZ = std::abs(l_currentProbe.pos.z - l_nextRowProbe.pos.z);
+
+			if (epsX)
+			{
+				l_nextColumnProbe.pos.x = l_currentProbe.pos.x;
+			}
+			if (epsZ)
+			{
+				l_nextRowProbe.pos.z = l_currentProbe.pos.z;
+			}
+
+			// Texture space partial derivatives
 			auto ddx = l_currentProbe.pos.y - l_nextRowProbe.pos.y;
 			auto ddy = l_currentProbe.pos.y - l_nextColumnProbe.pos.y;
 
@@ -271,7 +288,7 @@ vec4 InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<v
 			{
 				auto l_verticalProbesCount = std::floor(ddx / l_posIntervalX);
 
-				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 1, l_maxVerticalProbesCount);
+				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 2, l_maxVerticalProbesCount);
 
 				for (size_t k = 0; k < l_verticalProbesCount; k++)
 				{
@@ -279,14 +296,14 @@ vec4 InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<v
 					l_verticalProbe.pos = l_nextRowProbe.pos;
 					l_verticalProbe.pos.y += l_posIntervalX * (k + 1);
 
-					probes.emplace_back(l_verticalProbe);
+					l_wallProbes.emplace_back(l_verticalProbe);
 				}
 			}
 			if (ddx < -l_posIntervalX)
 			{
 				auto l_verticalProbesCount = std::floor(std::abs(ddx) / l_posIntervalX);
 
-				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 1, l_maxVerticalProbesCount);
+				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 2, l_maxVerticalProbesCount);
 
 				for (size_t k = 0; k < l_verticalProbesCount; k++)
 				{
@@ -294,14 +311,14 @@ vec4 InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<v
 					l_verticalProbe.pos = l_currentProbe.pos;
 					l_verticalProbe.pos.y += l_posIntervalX * (k + 1);
 
-					probes.emplace_back(l_verticalProbe);
+					l_wallProbes.emplace_back(l_verticalProbe);
 				}
 			}
 			if (ddy > l_posIntervalZ)
 			{
 				auto l_verticalProbesCount = std::floor(ddy / l_posIntervalZ);
 
-				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 1, l_maxVerticalProbesCount);
+				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 2, l_maxVerticalProbesCount);
 
 				for (size_t k = 0; k < l_verticalProbesCount; k++)
 				{
@@ -309,14 +326,14 @@ vec4 InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<v
 					l_verticalProbe.pos = l_nextColumnProbe.pos;
 					l_verticalProbe.pos.y += l_posIntervalZ * (k + 1);
 
-					probes.emplace_back(l_verticalProbe);
+					l_wallProbes.emplace_back(l_verticalProbe);
 				}
 			}
 			if (ddy < -l_posIntervalZ)
 			{
 				auto l_verticalProbesCount = std::floor(std::abs(ddy) / l_posIntervalZ);
 
-				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 1, l_maxVerticalProbesCount);
+				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 2, l_maxVerticalProbesCount);
 
 				for (size_t k = 0; k < l_verticalProbesCount; k++)
 				{
@@ -324,12 +341,14 @@ vec4 InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<v
 					l_verticalProbe.pos = l_currentProbe.pos;
 					l_verticalProbe.pos.y += l_posIntervalZ * (k + 1);
 
-					probes.emplace_back(l_verticalProbe);
+					l_wallProbes.emplace_back(l_verticalProbe);
 				}
 			}
 		}
 	}
 
+	l_wallProbes.shrink_to_fit();
+	probes.insert(probes.end(), l_wallProbes.begin(), l_wallProbes.end());
 	probes.shrink_to_fit();
 
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", probes.size() - l_probesCount, " probe location generated along the wall.");
