@@ -1198,10 +1198,14 @@ void InnoBaker::BakeProbeCache(const std::string & sceneName)
 	std::vector<Probe> l_probesForSurfelCaches;
 	std::vector<Probe> l_probesForRuntime;
 
-	gatherStaticMeshData();
-	generateProbeCaches(l_probesForSurfelCaches, l_probesForRuntime);
+	auto l_InnoBakerProbeCacheTask = g_pModuleManager->getTaskSystem()->submit("InnoBakerProbeCacheTask", 2, nullptr,
+		[&]() {
+		gatherStaticMeshData();
+		generateProbeCaches(l_probesForSurfelCaches, l_probesForRuntime);
+		captureSurfels(l_probesForSurfelCaches, l_probesForRuntime);
+	});
 
-	captureSurfels(l_probesForSurfelCaches, l_probesForRuntime);
+	l_InnoBakerProbeCacheTask->Wait();
 }
 
 void InnoBaker::BakeBrickCache(const std::string & surfelCacheFileName)
@@ -1276,7 +1280,12 @@ void InnoBaker::BakeBrickFactor(const std::string & brickFileName)
 
 			IOService::deserializeVector(l_probeFile, l_probes);
 
-			assignBrickFactorToProbesByGPU(l_bricks, l_probes);
+			auto l_InnoBakerBrickFactorTask = g_pModuleManager->getTaskSystem()->submit("InnoBakerBrickFactorTask", 2, nullptr,
+				[&]() {
+				assignBrickFactorToProbesByGPU(l_bricks, l_probes);
+			});
+
+			l_InnoBakerBrickFactorTask->Wait();
 		}
 		else
 		{
@@ -1291,15 +1300,23 @@ void InnoBaker::BakeBrickFactor(const std::string & brickFileName)
 
 bool InnoBakerRenderingClient::Setup()
 {
-	DefaultGPUBuffers::Setup();
-	InnoBaker::Setup();
+	auto l_InnoBakerRenderingClientSetupTask = g_pModuleManager->getTaskSystem()->submit("InnoBakerRenderingClientSetupTask", 2, nullptr,
+		[]() {
+		DefaultGPUBuffers::Setup();
+		InnoBaker::Setup();
+	});
+	l_InnoBakerRenderingClientSetupTask->Wait();
 
 	return true;
 }
 
 bool InnoBakerRenderingClient::Initialize()
 {
-	DefaultGPUBuffers::Initialize();
+	auto l_InnoBakerRenderingClientInitializeTask = g_pModuleManager->getTaskSystem()->submit("InnoBakerRenderingClientInitializeTask", 2, nullptr,
+		[]() {
+		DefaultGPUBuffers::Initialize();
+	});
+	l_InnoBakerRenderingClientInitializeTask->Wait();
 
 	return true;
 }
