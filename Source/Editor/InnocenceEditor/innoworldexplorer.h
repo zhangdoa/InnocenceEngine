@@ -2,6 +2,7 @@
 #define INNOWORLDEXPLORER_H
 
 #include <QTreeWidget>
+#include <QMenu>
 #include "innopropertyeditor.h"
 
 class InnoWorldExplorer : public QTreeWidget
@@ -15,6 +16,12 @@ public:
 protected:
 	virtual void selectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
 
+private slots:
+    void onCustomContextMenuRequested(const QPoint& pos);
+    void showContextMenu(QTreeWidgetItem* item, const QPoint& globalPos);
+    void showGeneralMenu(const QPoint& globalPos);
+
+    InnoEntity *AddEntity(const QString& name);
 private:
 	void addChild(QTreeWidgetItem* parent, QTreeWidgetItem* child);
 
