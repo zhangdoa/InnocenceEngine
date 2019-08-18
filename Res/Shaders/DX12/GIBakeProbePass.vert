@@ -24,6 +24,7 @@ PixelInputType main(VertexInputType input)
 	output.posCS = mul(output.posWS, GI_cam_t);
 	output.posCS = mul(output.posCS, GI_cam_r[0]);
 	output.posCS = mul(output.posCS, GI_cam_p);
+	output.posCS.z = output.posCS.z * 0.5 + 0.5;
 
 	return output;
 }

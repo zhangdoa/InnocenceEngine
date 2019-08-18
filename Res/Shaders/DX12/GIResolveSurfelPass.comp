@@ -12,6 +12,52 @@ struct ComputeInputType
 RWStructuredBuffer<Surfel> in_surfels : register(u0);
 RWStructuredBuffer<float4> out_irradiance : register(u1);
 
+Texture2DArray<float4> in_shadowMap : register(t0);
+
+float SunShadowResolver(float3 fragPos)
+{
+	float shadow = 0.0;
+
+	int splitIndex = NR_CSM_SPLITS;
+	for (int i = 0; i < NR_CSM_SPLITS; i++)
+	{
+		if (fragPos.x >= CSMs[i].AABBMin.x &&
+			fragPos.y >= CSMs[i].AABBMin.y &&
+			fragPos.z >= CSMs[i].AABBMin.z &&
+			fragPos.x <= CSMs[i].AABBMax.x &&
+			fragPos.y <= CSMs[i].AABBMax.y &&
+			fragPos.z <= CSMs[i].AABBMax.z)
+		{
+			splitIndex = i;
+			break;
+		}
+	}
+
+	if (splitIndex == NR_CSM_SPLITS)
+	{
+		shadow = 0.0;
+	}
+	else
+	{
+		float4 lightSpacePos = mul(float4(fragPos, 1.0f), CSMs[splitIndex].v);
+		lightSpacePos = mul(lightSpacePos, CSMs[splitIndex].p);
+		lightSpacePos = lightSpacePos / lightSpacePos.w;
+		float3 projCoords = lightSpacePos.xyz;
+
+		// transform to [0,1] range
+		projCoords = projCoords * 0.5 + 0.5;
+		projCoords.y = 1.0 - projCoords.y;
+		// get depth of current fragment from light's perspective
+		float currentDepth = projCoords.z;
+
+		float4 shadowMapValue = in_shadowMap[float3(projCoords.xy * 2048, splitIndex)];
+
+		shadow = currentDepth > shadowMapValue ? 1.0 : 0.0;
+	}
+
+	return shadow;
+}
+
 [numthreads(8, 8, 8)]
 void main(ComputeInputType input)
 {
@@ -39,6 +85,8 @@ void main(ComputeInputType input)
 		float3 BRDF = kD * albedo / PI;
 
 		float3 Lo = BRDF * dirLight_luminance.xyz * NdotL;
+
+		//Lo *= 1 - SunShadowResolver(posWS);
 
 		out_irradiance[l_surfelIndex] = float4(Lo, 1.0);
 	}
