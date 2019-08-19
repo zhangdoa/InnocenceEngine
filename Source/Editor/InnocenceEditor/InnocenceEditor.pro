@@ -35,6 +35,7 @@ SOURCES += \
     innoworldexplorer.cpp \
     innorenderconfigurator.cpp \
     innopropertyeditor.cpp \
+    materialdatacomponentpropertyeditor.cpp \
     transformcomponentpropertyeditor.cpp \
     adjustlabel.cpp \
     combolabeltext.cpp \
@@ -56,6 +57,7 @@ HEADERS += \
     innorenderconfigurator.h \
     innopropertyeditor.h \
     icomponentpropertyeditor.h \
+    materialdatacomponentpropertyeditor.h \
     transformcomponentpropertyeditor.h \
     adjustlabel.h \
     combolabeltext.h \

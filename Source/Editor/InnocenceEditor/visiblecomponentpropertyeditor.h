@@ -7,6 +7,7 @@
 #include <QTableWidget>
 #include "icomponentpropertyeditor.h"
 #include "../../Engine/Component/VisibleComponent.h"
+#include "materialdatacomponentpropertyeditor.h"
 
 class VisibleComponentPropertyEditor : public IComponentPropertyEditor
 {
@@ -22,6 +23,7 @@ public:
 private:
     QLabel* m_modelListLabel;
     QTableWidget* m_modelList;
+    MaterialDataComponentPropertyEditor* m_MDCEditor;
 
 	VisibleComponent* m_component;
 

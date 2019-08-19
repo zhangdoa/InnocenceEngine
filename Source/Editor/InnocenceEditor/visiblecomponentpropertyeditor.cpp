@@ -1,11 +1,15 @@
 #include "visiblecomponentpropertyeditor.h"
 
+
 VisibleComponentPropertyEditor::VisibleComponentPropertyEditor()
 {
 }
 
 void VisibleComponentPropertyEditor::initialize()
 {
+    m_MDCEditor = new MaterialDataComponentPropertyEditor();
+    m_MDCEditor->initialize();
+
 	m_gridLayout = new QGridLayout();
 	m_gridLayout->setMargin(4);
 
@@ -70,6 +74,7 @@ void VisibleComponentPropertyEditor::tableItemClicked(int row, int column)
     else
     {
         auto l_material = static_cast<MaterialDataComponent*>(item->data(Qt::UserRole).value<void*>());
+        m_MDCEditor->edit(l_material);
     }
 }
 
