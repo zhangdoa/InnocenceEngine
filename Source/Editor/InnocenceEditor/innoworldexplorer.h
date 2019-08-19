@@ -3,6 +3,7 @@
 
 #include <QTreeWidget>
 #include <QMenu>
+#include <QShortcut>
 #include "innopropertyeditor.h"
 
 class InnoWorldExplorer : public QTreeWidget
@@ -21,14 +22,19 @@ private slots:
     void showContextMenu(QTreeWidgetItem* item, const QPoint& globalPos);
     void showGeneralMenu(const QPoint& globalPos);
 
-    InnoEntity *AddEntity(const QString& name);
+    void addEntity();
+    void startRename();
+    void endRename();
+    void deleteEntity();
+    void deleteComponent();
 private:
 	void addChild(QTreeWidgetItem* parent, QTreeWidgetItem* child);
+    void destroyComponent(InnoComponent* component);
 
 	InnoPropertyEditor* m_propertyEditor;
 
 	QTreeWidgetItem* m_rootItem;
-
+    QTreeWidgetItem* m_currentEditingItem;
 	std::function<void()> f_sceneLoadingFinishCallback;
 	void buildTree();
 };
