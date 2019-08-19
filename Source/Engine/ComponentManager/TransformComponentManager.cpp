@@ -32,6 +32,7 @@ namespace TransformComponentManagerNS
 				i->m_transformHierarchyLevel = i->m_parentTransformComponent->m_transformHierarchyLevel + 1;
 			}
 		}
+
 		//from top to bottom
 		std::sort(m_Components.begin(), m_Components.end(), [&](TransformComponent* a, TransformComponent* b)
 		{
@@ -41,8 +42,27 @@ namespace TransformComponentManagerNS
 
 	void SimulateTransformComponents()
 	{
+		auto l_tickTime = g_pModuleManager->getTickTime();
+		auto l_ratio = (1.0f - l_tickTime / 100.0f);
+		l_ratio = InnoMath::clamp(l_ratio, 0.01f, 0.99f);
+
 		std::for_each(m_Components.begin(), m_Components.end(), [&](TransformComponent* val)
 		{
+			if (!InnoMath::isCloseEnough(val->m_localTransformVector.m_pos, val->m_localTransformVector_target.m_pos))
+			{
+				val->m_localTransformVector.m_pos = InnoMath::lerp(val->m_localTransformVector.m_pos, val->m_localTransformVector_target.m_pos, l_ratio);
+			}
+
+			if (!InnoMath::isCloseEnough(val->m_localTransformVector.m_rot, val->m_localTransformVector_target.m_rot))
+			{
+				val->m_localTransformVector.m_rot = InnoMath::slerp(val->m_localTransformVector.m_rot, val->m_localTransformVector_target.m_rot, l_ratio);
+			}
+
+			if (!InnoMath::isCloseEnough(val->m_localTransformVector.m_scale, val->m_localTransformVector_target.m_scale))
+			{
+				val->m_localTransformVector.m_scale = InnoMath::lerp(val->m_localTransformVector.m_scale, val->m_localTransformVector_target.m_scale, l_ratio);
+			}
+
 			if (val->m_parentTransformComponent)
 			{
 				val->m_globalTransformVector = InnoMath::LocalTransformVectorToGlobal(val->m_localTransformVector, val->m_parentTransformComponent->m_globalTransformVector, val->m_parentTransformComponent->m_globalTransformMatrix);
@@ -65,7 +85,17 @@ bool InnoTransformComponentManager::Setup()
 
 	f_SceneLoadingFinishCallback = [&]() {
 		SortTransformComponentsVector();
-		SimulateTransformComponents();
+
+		for (auto i : m_Components)
+		{
+			i->m_localTransformVector_target = i->m_localTransformVector;
+
+			if (i->m_parentTransformComponent)
+			{
+				i->m_globalTransformVector = InnoMath::LocalTransformVectorToGlobal(i->m_localTransformVector, i->m_parentTransformComponent->m_globalTransformVector, i->m_parentTransformComponent->m_globalTransformMatrix);
+				i->m_globalTransformMatrix = InnoMath::TransformVectorToTransformMatrix(i->m_globalTransformVector);
+			}
+		}
 	};
 
 	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_SceneLoadingStartCallback);
@@ -75,6 +105,7 @@ bool InnoTransformComponentManager::Setup()
 
 	m_RootTransformComponent = SpawnComponent(TransformComponent, m_RootTransformEntity, ObjectSource::Runtime, ObjectUsage::Engine);
 
+	m_RootTransformComponent->m_localTransformVector_target = m_RootTransformComponent->m_localTransformVector;
 	m_RootTransformComponent->m_globalTransformVector = m_RootTransformComponent->m_localTransformVector;
 	m_RootTransformComponent->m_globalTransformMatrix = InnoMath::TransformVectorToTransformMatrix(m_RootTransformComponent->m_globalTransformVector);
 

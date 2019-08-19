@@ -171,7 +171,8 @@ void TransformComponentPropertyEditor::SetPosition()
 	float z = m_posZ->GetAsFloat();
 	vec4 pos(x, y, z, 1.0f);
 
-	m_component->m_localTransformVector.m_pos = pos;
+	m_component->m_localTransformVector_target.m_pos = pos;
+	m_component->m_localTransformVector = m_localTransformVector_target;
 }
 
 void TransformComponentPropertyEditor::SetRotation()
@@ -187,7 +188,8 @@ void TransformComponentPropertyEditor::SetRotation()
 	auto pitch = InnoMath::angleToRadian(y);
 	auto yaw = InnoMath::angleToRadian(z);
 
-	m_component->m_localTransformVector.m_rot = InnoMath::eulerAngleToQuat(roll, pitch, yaw);
+	m_component->m_localTransformVector_target.m_rot = InnoMath::eulerAngleToQuat(roll, pitch, yaw);
+	m_component->m_localTransformVector = m_localTransformVector_target;
 }
 
 void TransformComponentPropertyEditor::SetScale()
@@ -198,7 +200,8 @@ void TransformComponentPropertyEditor::SetScale()
 	float x = m_scaleX->GetAsFloat();
 	float y = m_scaleY->GetAsFloat();
 	float z = m_scaleZ->GetAsFloat();
-	m_component->m_localTransformVector.m_scale = vec4(x, y, z, 1.0f);
+	m_component->m_localTransformVector_target.m_scale = vec4(x, y, z, 1.0f);
+	m_component->m_localTransformVector = m_localTransformVector_target;
 }
 
 void TransformComponentPropertyEditor::remove()

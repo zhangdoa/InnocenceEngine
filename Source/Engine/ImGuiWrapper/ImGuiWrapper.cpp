@@ -528,9 +528,9 @@ void ImGuiWrapperNS::showTransformComponentPropertyEditor(void * rhs)
 
 	if (ImGui::DragFloat3("Position", pos, 0.0001f, float_min, float_max))
 	{
-		l_rhs->m_localTransformVector.m_pos.x = pos[0];
-		l_rhs->m_localTransformVector.m_pos.y = pos[1];
-		l_rhs->m_localTransformVector.m_pos.z = pos[2];
+		l_rhs->m_localTransformVector_target.m_pos.x = pos[0];
+		l_rhs->m_localTransformVector_target.m_pos.y = pos[1];
+		l_rhs->m_localTransformVector_target.m_pos.z = pos[2];
 	}
 
 	static float rot_min = -180.0f;
@@ -549,8 +549,23 @@ void ImGuiWrapperNS::showTransformComponentPropertyEditor(void * rhs)
 		auto pitch = InnoMath::angleToRadian(rot[1]);
 		auto yaw = InnoMath::angleToRadian(rot[2]);
 
-		l_rhs->m_localTransformVector.m_rot = InnoMath::eulerAngleToQuat(roll, pitch, yaw);
+		l_rhs->m_localTransformVector_target.m_rot = InnoMath::eulerAngleToQuat(roll, pitch, yaw);
 	}
+
+	static float scale[4];
+	scale[0] = l_rhs->m_localTransformVector.m_scale.x;
+	scale[1] = l_rhs->m_localTransformVector.m_scale.y;
+	scale[2] = l_rhs->m_localTransformVector.m_scale.z;
+	scale[3] = 0.0f;
+
+	if (ImGui::DragFloat3("Scale", scale, 0.0001f, float_min, float_max))
+	{
+		l_rhs->m_localTransformVector_target.m_scale.x = scale[0];
+		l_rhs->m_localTransformVector_target.m_scale.y = scale[1];
+		l_rhs->m_localTransformVector_target.m_scale.z = scale[2];
+	}
+
+	l_rhs->m_localTransformVector = l_rhs->m_localTransformVector_target;
 }
 
 void ImGuiWrapperNS::showVisiableComponentPropertyEditor(void * rhs)

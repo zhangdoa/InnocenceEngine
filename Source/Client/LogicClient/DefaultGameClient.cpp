@@ -18,7 +18,6 @@ namespace PlayerComponentCollection
 	InnoEntity* m_cameraParentEntity;
 
 	TransformComponent* m_cameraTransformComponent;
-	CameraComponent* m_cameraComponent;
 
 	std::function<void()> f_moveForward;
 	std::function<void()> f_moveBackward;
@@ -42,9 +41,6 @@ namespace PlayerComponentCollection
 	bool m_smoothInterp = true;
 
 	void move(vec4 direction, float length);
-	vec4 m_targetPawnPos;
-	vec4 m_targetCameraPos;
-	vec4 m_targetCameraRot;
 	vec4 m_targetCameraRotX;
 	vec4 m_targetCameraRotY;
 
@@ -69,10 +65,7 @@ bool PlayerComponentCollection::setup()
 			m_cameraParentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Gameplay, "playerCharacterCamera/");
 		}
 		m_cameraTransformComponent = GetComponent(TransformComponent, m_cameraParentEntity);
-		m_cameraComponent = GetComponent(CameraComponent, m_cameraParentEntity);
 
-		m_targetCameraPos = m_cameraTransformComponent->m_localTransformVector.m_pos;
-		m_targetCameraRot = m_cameraTransformComponent->m_localTransformVector.m_rot;
 		m_targetCameraRotX = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 		m_targetCameraRotY = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
@@ -122,7 +115,7 @@ void PlayerComponentCollection::move(vec4 direction, float length)
 	if (m_canMove)
 	{
 		auto l_currentCameraPos = m_cameraTransformComponent->m_localTransformVector.m_pos;
-		m_targetCameraPos = InnoMath::moveTo(l_currentCameraPos, direction, length);
+		m_cameraTransformComponent->m_localTransformVector_target.m_pos = InnoMath::moveTo(l_currentCameraPos, direction, length);
 	}
 }
 
@@ -136,7 +129,7 @@ void PlayerComponentCollection::rotateAroundPositiveYAxis(float offset)
 			vec4(0.0f, 1.0f, 0.0f, 0.0f),
 			((-offset * m_rotateSpeed) / 180.0f)* PI<float>
 		);
-		m_targetCameraRot = m_targetCameraRotY.quatMul(m_targetCameraRot);
+		m_cameraTransformComponent->m_localTransformVector_target.m_rot = m_targetCameraRotY.quatMul(m_cameraTransformComponent->m_localTransformVector_target.m_rot);
 
 		m_canSlerp = true;
 	}
@@ -148,12 +141,12 @@ void PlayerComponentCollection::rotateAroundRightAxis(float offset)
 	{
 		m_canSlerp = false;
 
-		auto l_right = InnoMath::getDirection(direction::RIGHT, m_targetCameraRot);
+		auto l_right = InnoMath::getDirection(direction::RIGHT, m_cameraTransformComponent->m_localTransformVector_target.m_rot);
 		m_targetCameraRotX = InnoMath::getQuatRotator(
 			l_right,
 			((offset * m_rotateSpeed) / 180.0f)* PI<float>
 		);
-		m_targetCameraRot = m_targetCameraRotX.quatMul(m_targetCameraRot);
+		m_cameraTransformComponent->m_localTransformVector_target.m_rot = m_targetCameraRotX.quatMul(m_cameraTransformComponent->m_localTransformVector_target.m_rot);
 
 		m_canSlerp = true;
 	}
@@ -233,7 +226,7 @@ bool GameClientNS::setupReferenceSpheres()
 	{
 		m_referenceSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_referenceSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
-		m_referenceSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		m_referenceSphereTransformComponents[i]->m_localTransformVector_target.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_referenceSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_referenceSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::Opaque;
 		m_referenceSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::Sphere;
@@ -246,7 +239,7 @@ bool GameClientNS::setupReferenceSpheres()
 	{
 		for (unsigned int j = 0; j < l_matrixDim; j++)
 		{
-			m_referenceSphereTransformComponents[i * l_matrixDim + j]->m_localTransformVector.m_pos =
+			m_referenceSphereTransformComponents[i * l_matrixDim + j]->m_localTransformVector_target.m_pos =
 				vec4(
 				(-(l_matrixDim - 1.0f) * l_breadthInterval / 2.0f) + (i * l_breadthInterval) + 100.0f,
 					2.0f,
@@ -311,18 +304,18 @@ bool GameClientNS::setupOcclusionCubes()
 
 			auto l_heightOffset = l_halfMatrixDim * 3.0f - std::abs((float)i - l_halfMatrixDim) - std::abs((float)j - l_halfMatrixDim);
 			l_heightOffset *= 4.0f;
-			l_currentComponent->m_localTransformVector.m_scale =
+			l_currentComponent->m_localTransformVector_target.m_scale =
 				vec4(l_randomWidthDelta(l_generator), l_heightOffset, l_randomDepthDelta(l_generator), 1.0f);
 
-			l_currentComponent->m_localTransformVector.m_pos =
+			l_currentComponent->m_localTransformVector_target.m_pos =
 				vec4(
 				(i * l_breadthInterval) - l_offset,
-					l_currentComponent->m_localTransformVector.m_scale.y / 2.0f,
+					l_currentComponent->m_localTransformVector_target.m_scale.y / 2.0f,
 					(j * l_breadthInterval) - l_offset,
 					1.0f);
 
-			l_currentComponent->m_localTransformVector.m_rot =
-				InnoMath::calcRotatedLocalRotator(l_currentComponent->m_localTransformVector.m_rot,
+			l_currentComponent->m_localTransformVector_target.m_rot =
+				InnoMath::calcRotatedLocalRotator(l_currentComponent->m_localTransformVector_target.m_rot,
 					vec4(0.0f, 1.0f, 0.0f, 0.0f),
 					l_randomRotDelta(l_generator));
 		}
@@ -359,7 +352,7 @@ bool GameClientNS::setupOpaqueSpheres()
 	{
 		m_opaqueSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_opaqueSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
-		m_opaqueSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		m_opaqueSphereTransformComponents[i]->m_localTransformVector_target.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_opaqueSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_opaqueSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::Opaque;
 		m_opaqueSphereVisibleComponents[i]->m_meshShapeType = (i & 0x00000001) ? MeshShapeType::Sphere : MeshShapeType::Cube;
@@ -377,15 +370,15 @@ bool GameClientNS::setupOpaqueSpheres()
 		for (unsigned int j = 0; j < l_matrixDim; j++)
 		{
 			auto l_currentComponent = m_opaqueSphereTransformComponents[i * l_matrixDim + j];
-			l_currentComponent->m_localTransformVector.m_pos =
+			l_currentComponent->m_localTransformVector_target.m_pos =
 				vec4(
 				(-(l_matrixDim - 1.0f) * l_breadthInterval / 2.0f) + (i * l_breadthInterval),
 					l_randomPosDelta(l_generator) * 50.0f,
 					(j * l_breadthInterval) - 2.0f * (l_matrixDim - 1),
 					1.0f);
 
-			l_currentComponent->m_localTransformVector.m_rot =
-				InnoMath::calcRotatedLocalRotator(l_currentComponent->m_localTransformVector.m_rot,
+			l_currentComponent->m_localTransformVector_target.m_rot =
+				InnoMath::calcRotatedLocalRotator(l_currentComponent->m_localTransformVector_target.m_rot,
 					vec4(l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), 0.0f).normalize(),
 					l_randomRotDelta(l_generator));
 		}
@@ -422,7 +415,7 @@ bool GameClientNS::setupTransparentSpheres()
 	{
 		m_transparentSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_transparentSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
-		m_transparentSphereTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		m_transparentSphereTransformComponents[i]->m_localTransformVector_target.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_transparentSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_transparentSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::Transparent;
 		m_transparentSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::Sphere;
@@ -435,7 +428,7 @@ bool GameClientNS::setupTransparentSpheres()
 	{
 		for (unsigned int j = 0; j < l_matrixDim; j++)
 		{
-			m_transparentSphereTransformComponents[i * l_matrixDim + j]->m_localTransformVector.m_pos =
+			m_transparentSphereTransformComponents[i * l_matrixDim + j]->m_localTransformVector_target.m_pos =
 				vec4(
 				(-(l_matrixDim - 1.0f) * l_breadthInterval / 2.0f)
 					+ (i * l_breadthInterval),
@@ -481,7 +474,7 @@ bool GameClientNS::setupPointLights()
 		m_pointLightTransformComponents[i] = SpawnComponent(TransformComponent, m_pointLightEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		g_pModuleManager->getComponentManager(ComponentType::TransformComponent);
 		m_pointLightTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
-		m_pointLightTransformComponents[i]->m_localTransformVector.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		m_pointLightTransformComponents[i]->m_localTransformVector_target.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_pointLightComponents[i] = SpawnComponent(PointLightComponent, m_pointLightEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_pointLightComponents[i]->m_LuminousFlux = 100.0f;
 		m_pointLightComponents[i]->m_RGBColor = vec4(l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), 1.0f);
@@ -491,7 +484,7 @@ bool GameClientNS::setupPointLights()
 	{
 		for (unsigned int j = 0; j < l_matrixDim; j++)
 		{
-			m_pointLightTransformComponents[i * l_matrixDim + j]->m_localTransformVector.m_pos =
+			m_pointLightTransformComponents[i * l_matrixDim + j]->m_localTransformVector_target.m_pos =
 				vec4(
 				(-(l_matrixDim - 1.0f) * l_breadthInterval * l_randomPosDelta(l_generator) / 2.0f)
 					+ (i * l_breadthInterval), l_randomPosDelta(l_generator) * 32.0f,
@@ -646,29 +639,6 @@ void GameClientNS::runTest(unsigned int testTime, std::function<bool()> testCase
 
 void PlayerComponentCollection::update(float seed)
 {
-	auto l_currentCameraPos = m_cameraTransformComponent->m_localTransformVector.m_pos;
-	auto l_currentCameraRot = m_cameraTransformComponent->m_localTransformVector.m_rot;
-
-	if (m_smoothInterp)
-	{
-		if (!InnoMath::isCloseEnough(l_currentCameraPos, m_targetCameraPos))
-		{
-			m_cameraTransformComponent->m_localTransformVector.m_pos = InnoMath::lerp(l_currentCameraPos, m_targetCameraPos, seed);
-		}
-
-		if (m_canSlerp)
-		{
-			if (!InnoMath::isCloseEnough(l_currentCameraRot, m_targetCameraRot))
-			{
-				m_cameraTransformComponent->m_localTransformVector.m_rot = InnoMath::slerp(l_currentCameraRot, m_targetCameraRot, seed);
-			}
-		}
-	}
-	else
-	{
-		m_cameraTransformComponent->m_localTransformVector.m_pos = m_targetCameraPos;
-		m_cameraTransformComponent->m_localTransformVector.m_rot = m_targetCameraRot;
-	}
 }
 
 void GameClientNS::updateSpheres()
