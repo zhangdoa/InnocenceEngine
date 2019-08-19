@@ -435,14 +435,27 @@ ModelMap InnoFileSystemNS::JSONParser::processSceneJsonData(const json & j, bool
 
 std::vector<AnimationDataComponent*> InnoFileSystemNS::JSONParser::processAnimationJsonData(const json & j)
 {
+	std::vector<AnimationDataComponent*> l_result;
+	l_result.reserve(j.size());
+
 	for (auto i : j)
 	{
 		auto l_animationFileName = i.get<std::string>();
 
 		auto l_ADC = g_pModuleManager->getRenderingFrontend()->addAnimationDataComponent();
+
+		l_ADC->m_animationTexture = AssetLoader::loadTexture(l_animationFileName);
+		l_ADC->m_animationTexture->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
+		l_ADC->m_animationTexture->m_textureDataDesc.UsageType = TextureUsageType::Normal;
+
+		auto l_AnimationTextureInitializeTask = g_pModuleManager->getTaskSystem()->submit("AnimationTextureInitializeTask", 2, nullptr,
+			[=]() { g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(l_ADC->m_animationTexture); });
+		l_AnimationTextureInitializeTask->Wait();
+
+		l_result.emplace_back(l_ADC);
 	}
 
-	return std::vector<AnimationDataComponent*>();
+	return l_result;
 }
 
 ModelMap InnoFileSystemNS::JSONParser::processNodeJsonData(const json & j, bool AsyncUploadGPUResource)
