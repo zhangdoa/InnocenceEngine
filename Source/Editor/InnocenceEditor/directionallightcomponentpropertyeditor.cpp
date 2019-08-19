@@ -20,7 +20,6 @@ void DirectionalLightComponentPropertyEditor::initialize()
 	m_title->setStyleSheet(
 		"background-repeat: no-repeat;"
 		"background-position: left;"
-		"padding-left: 20px;"
 	);
 
 	m_line = new QWidget();

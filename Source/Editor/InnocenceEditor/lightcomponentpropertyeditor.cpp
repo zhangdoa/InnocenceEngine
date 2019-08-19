@@ -15,8 +15,7 @@ void LightComponentPropertyEditor::initialize()
 	m_title = new QLabel("LightComponent");
 	m_title->setStyleSheet(
 		"background-repeat: no-repeat;"
-		"background-position: left;"
-		"padding-left: 20px;"
+        "background-position: left;"
 	);
 
 	m_colorLabel = new QLabel("Color");
@@ -53,7 +52,9 @@ void LightComponentPropertyEditor::initialize()
 	m_gridLayout->addWidget(m_title, row, 0, 1, 7);
 	row++;
 
-	m_gridLayout->addWidget(m_colorLabel, row, 0, 1, 1);
+    m_gridLayout->addWidget(m_colorLabel, row, 0, 1, 7);
+    row++;
+
 	m_gridLayout->addWidget(m_colorR->GetLabelWidget(), row, 1, 1, 1);
 	m_gridLayout->addWidget(m_colorR->GetTextWidget(), row, 2, 1, 1);
 	m_gridLayout->addWidget(m_colorG->GetLabelWidget(), row, 3, 1, 1);
@@ -62,17 +63,23 @@ void LightComponentPropertyEditor::initialize()
 	m_gridLayout->addWidget(m_colorB->GetTextWidget(), row, 6, 1, 1);
 	row++;
 
-	m_gridLayout->addWidget(m_luminousFluxLabel, row, 0, 1, 1);
+    m_gridLayout->addWidget(m_luminousFluxLabel, row, 0, 1, 7);
+    row++;
+
 	m_gridLayout->addWidget(m_LuminousFlux->GetLabelWidget(), row, 1, 1, 1);
 	m_gridLayout->addWidget(m_LuminousFlux->GetTextWidget(), row, 2, 1, 1);
 	row++;
 
-	m_gridLayout->addWidget(m_colorTemperatureLabel, row, 0, 1, 1);
+    m_gridLayout->addWidget(m_colorTemperatureLabel, row, 0, 1, 7);
+    row++;
+
 	m_gridLayout->addWidget(m_colorTemperature->GetLabelWidget(), row, 1, 1, 1);
 	m_gridLayout->addWidget(m_colorTemperature->GetTextWidget(), row, 2, 1, 1);
 	row++;
 
-    m_gridLayout->addWidget(m_useColorTemperatureLabel, row, 0, 1, 1);
+    m_gridLayout->addWidget(m_useColorTemperatureLabel, row, 0, 1, 7);
+    row++;
+
     m_gridLayout->addWidget(m_useColorTemperature, row, 1, 1, 1);
 	row++;
 

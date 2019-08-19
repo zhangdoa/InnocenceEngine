@@ -20,7 +20,6 @@ void SphereLightComponentPropertyEditor::initialize()
 	m_title->setStyleSheet(
 		"background-repeat: no-repeat;"
 		"background-position: left;"
-		"padding-left: 20px;"
 	);
 
 	m_sphereRadiusLabel = new QLabel("Sphere Radius");

@@ -18,9 +18,8 @@ void PointLightComponentPropertyEditor::initialize()
 
 	m_title = new QLabel("PointLightComponent");
 	m_title->setStyleSheet(
-		"background-repeat: no-repeat;"
-		"background-position: left;"
-		"padding-left: 20px;"
+        "background-repeat: no-repeat;"
+        "background-position: left;"
 	);
 
 	m_line = new QWidget();

@@ -20,7 +20,6 @@ void TransformComponentPropertyEditor::initialize()
 	m_title->setStyleSheet(
 		"background-repeat: no-repeat;"
 		"background-position: left;"
-		"padding-left: 20px;"
 	);
 
 	m_posLabel = new QLabel("Position");
@@ -65,7 +64,8 @@ void TransformComponentPropertyEditor::initialize()
 	m_gridLayout->addWidget(m_title, row, 0, 1, 7);
 	row++;
 
-	m_gridLayout->addWidget(m_posLabel, row, 0, 1, 1);
+    m_gridLayout->addWidget(m_posLabel, row, 0, 1, 7);
+    row++;
 	m_gridLayout->addWidget(m_posX->GetLabelWidget(), row, 1, 1, 1);
 	m_gridLayout->addWidget(m_posX->GetTextWidget(), row, 2, 1, 1);
 	m_gridLayout->addWidget(m_posY->GetLabelWidget(), row, 3, 1, 1);
@@ -74,7 +74,8 @@ void TransformComponentPropertyEditor::initialize()
 	m_gridLayout->addWidget(m_posZ->GetTextWidget(), row, 6, 1, 1);
 	row++;
 
-	m_gridLayout->addWidget(m_rotLabel, row, 0, 1, 1);
+    m_gridLayout->addWidget(m_rotLabel, row, 0, 1, 7);
+    row++;
 	m_gridLayout->addWidget(m_rotX->GetLabelWidget(), row, 1, 1, 1);
 	m_gridLayout->addWidget(m_rotX->GetTextWidget(), row, 2, 1, 1);
 	m_gridLayout->addWidget(m_rotY->GetLabelWidget(), row, 3, 1, 1);
@@ -83,7 +84,8 @@ void TransformComponentPropertyEditor::initialize()
 	m_gridLayout->addWidget(m_rotZ->GetTextWidget(), row, 6, 1, 1);
 	row++;
 
-	m_gridLayout->addWidget(m_scaleLabel, row, 0, 1, 1);
+    m_gridLayout->addWidget(m_scaleLabel, row, 0, 1, 7);
+    row++;
 	m_gridLayout->addWidget(m_scaleX->GetLabelWidget(), row, 1, 1, 1);
 	m_gridLayout->addWidget(m_scaleX->GetTextWidget(), row, 2, 1, 1);
 	m_gridLayout->addWidget(m_scaleY->GetLabelWidget(), row, 3, 1, 1);
