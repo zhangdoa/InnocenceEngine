@@ -45,7 +45,6 @@ namespace TransformComponentManagerNS
 		{
 			if (val->m_parentTransformComponent)
 			{
-				val->m_localTransformMatrix = InnoMath::TransformVectorToTransformMatrix(val->m_localTransformVector);
 				val->m_globalTransformVector = InnoMath::LocalTransformVectorToGlobal(val->m_localTransformVector, val->m_parentTransformComponent->m_globalTransformVector, val->m_parentTransformComponent->m_globalTransformMatrix);
 				val->m_globalTransformMatrix = InnoMath::TransformVectorToTransformMatrix(val->m_globalTransformVector);
 			}
@@ -76,9 +75,8 @@ bool InnoTransformComponentManager::Setup()
 
 	m_RootTransformComponent = SpawnComponent(TransformComponent, m_RootTransformEntity, ObjectSource::Runtime, ObjectUsage::Engine);
 
-	m_RootTransformComponent->m_localTransformMatrix = InnoMath::TransformVectorToTransformMatrix(m_RootTransformComponent->m_localTransformVector);
 	m_RootTransformComponent->m_globalTransformVector = m_RootTransformComponent->m_localTransformVector;
-	m_RootTransformComponent->m_globalTransformMatrix = m_RootTransformComponent->m_localTransformMatrix;
+	m_RootTransformComponent->m_globalTransformMatrix = InnoMath::TransformVectorToTransformMatrix(m_RootTransformComponent->m_globalTransformVector);
 
 	return true;
 }

@@ -6,8 +6,6 @@ class TransformComponent : public InnoComponent
 {
 public:
 	TransformVector m_localTransformVector;
-	TransformMatrix m_localTransformMatrix;
-
 	TransformVector m_globalTransformVector;
 	TransformMatrix m_globalTransformMatrix;
 

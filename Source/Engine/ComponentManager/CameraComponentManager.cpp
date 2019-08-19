@@ -51,7 +51,7 @@ void CameraComponentManagerNS::generateRayOfEye(CameraComponent * cameraComponen
 {
 	auto l_transformComponent = GetComponent(TransformComponent, cameraComponent->m_parentEntity);
 	cameraComponent->m_rayOfEye.m_origin = l_transformComponent->m_globalTransformVector.m_pos;
-	cameraComponent->m_rayOfEye.m_direction = InnoMath::getDirection(direction::BACKWARD, l_transformComponent->m_localTransformVector.m_rot);
+	cameraComponent->m_rayOfEye.m_direction = InnoMath::getDirection(direction::BACKWARD, l_transformComponent->m_globalTransformVector.m_rot);
 }
 
 using namespace CameraComponentManagerNS;
