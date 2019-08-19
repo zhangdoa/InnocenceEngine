@@ -40,7 +40,8 @@ SOURCES += \
     combolabeltext.cpp \
     directionallightcomponentpropertyeditor.cpp \
     pointlightcomponentpropertyeditor.cpp \
-    spherelightcomponentpropertyeditor.cpp
+    spherelightcomponentpropertyeditor.cpp \
+    visiblecomponentpropertyeditor.cpp
 
 
 HEADERS += \
@@ -60,7 +61,8 @@ HEADERS += \
     combolabeltext.h \
     directionallightcomponentpropertyeditor.h \
     pointlightcomponentpropertyeditor.h \
-    spherelightcomponentpropertyeditor.h
+    spherelightcomponentpropertyeditor.h \
+    visiblecomponentpropertyeditor.h
 
 FORMS += \
         mainwindow.ui

@@ -13,6 +13,9 @@ void InnoPropertyEditor::initialize()
 	m_transformComponentPropertyEditor = new TransformComponentPropertyEditor();
 	m_transformComponentPropertyEditor->initialize();
 
+    m_visibleComponentPropertyEditor = new VisibleComponentPropertyEditor();
+    m_visibleComponentPropertyEditor->initialize();
+
 	m_lightComponentPropertyEditor = new LightComponentPropertyEditor();
 	m_lightComponentPropertyEditor->initialize();
 
@@ -28,6 +31,7 @@ void InnoPropertyEditor::initialize()
 	this->layout()->setAlignment(Qt::AlignTop);
 
 	this->layout()->addWidget(m_transformComponentPropertyEditor);
+    this->layout()->addWidget(m_visibleComponentPropertyEditor);
 	this->layout()->addWidget(m_lightComponentPropertyEditor);
 	this->layout()->addWidget(m_directionalLightComponentPropertyEditor);
 	this->layout()->addWidget(m_pointLightComponentPropertyEditor);
@@ -49,6 +53,9 @@ void InnoPropertyEditor::editComponent(int componentType, void *componentPtr)
 	case ComponentType::TransformComponent:
 		m_transformComponentPropertyEditor->edit(componentPtr);
 		break;
+    case ComponentType::VisibleComponent:
+        m_visibleComponentPropertyEditor->edit(componentPtr);
+        break;
 	case ComponentType::DirectionalLightComponent:
 		m_lightComponentPropertyEditor->edit(componentPtr);
 		m_directionalLightComponentPropertyEditor->edit(componentPtr);
@@ -67,6 +74,7 @@ void InnoPropertyEditor::editComponent(int componentType, void *componentPtr)
 void InnoPropertyEditor::remove()
 {
 	m_transformComponentPropertyEditor->remove();
+    m_visibleComponentPropertyEditor->remove();
 	m_lightComponentPropertyEditor->remove();
 	m_directionalLightComponentPropertyEditor->remove();
 	m_pointLightComponentPropertyEditor->remove();

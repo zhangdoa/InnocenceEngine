@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include "transformcomponentpropertyeditor.h"
+#include "visiblecomponentpropertyeditor.h"
 #include "lightcomponentpropertyeditor.h"
 #include "directionallightcomponentpropertyeditor.h"
 #include "pointlightcomponentpropertyeditor.h"
@@ -21,6 +22,7 @@ public:
 
 private:
 	TransformComponentPropertyEditor* m_transformComponentPropertyEditor;
+    VisibleComponentPropertyEditor* m_visibleComponentPropertyEditor;
 	LightComponentPropertyEditor* m_lightComponentPropertyEditor;
 	DirectionalLightComponentPropertyEditor* m_directionalLightComponentPropertyEditor;
 	PointLightComponentPropertyEditor* m_pointLightComponentPropertyEditor;
