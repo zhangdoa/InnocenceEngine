@@ -188,22 +188,24 @@ std::string InnoFileSystem::getCurrentSceneName()
 
 bool InnoFileSystem::loadScene(const std::string & fileName, bool AsyncLoad)
 {
+	if (InnoFileSystemNS::m_currentScene == fileName)
+	{
+		InnoLogger::Log(LogLevel::Warning, "FileSystem: scene ", fileName.c_str(), " has already loaded now.");
+		return true;
+	}
+
 	if (AsyncLoad)
 	{
 		return InnoFileSystemNS::prepareForLoadingScene(fileName);
 	}
 	else
 	{
-		if (InnoFileSystemNS::m_currentScene == fileName)
-		{
-			InnoLogger::Log(LogLevel::Warning, "FileSystem: scene ", fileName.c_str(), " has already loaded now.");
-			return true;
-		}
 		InnoFileSystemNS::m_nextLoadingScene = fileName;
 		InnoFileSystemNS::m_isLoadingScene = true;
 		g_pModuleManager->getTaskSystem()->waitAllTasksToFinish();
 		InnoFileSystemNS::loadScene(InnoFileSystemNS::m_nextLoadingScene);
 		GetComponentManager(VisibleComponent)->LoadAssetsForComponents(AsyncLoad);
+		return true;
 	}
 }
 
