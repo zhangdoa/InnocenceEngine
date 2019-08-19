@@ -48,7 +48,7 @@ bool WinVKWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 	auto l_posX = (GetSystemMetrics(SM_CXSCREEN) - l_screenWidth) / 2;
 	auto l_posY = (GetSystemMetrics(SM_CYSCREEN) - l_screenHeight) / 2;
 
-	if (m_initConfig.engineMode == EngineMode::GAME)
+	if (m_initConfig.engineMode == EngineMode::Host)
 	{
 		// Create the window with the screen settings and get the handle to it.
 		WinWindowSystemComponent::get().m_hwnd = CreateWindowEx(0, WinWindowSystemComponent::get().m_applicationName, (LPCSTR)l_windowName.c_str(),
@@ -79,7 +79,7 @@ bool WinVKWindowSurfaceNS::initialize()
 		return false;
 	}
 
-	if (m_initConfig.engineMode == EngineMode::GAME)
+	if (m_initConfig.engineMode == EngineMode::Host)
 	{
 		// Bring the window up on the screen and set it as main focus.
 		ShowWindow(WinWindowSystemComponent::get().m_hwnd, true);

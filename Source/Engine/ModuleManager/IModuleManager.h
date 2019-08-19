@@ -22,13 +22,13 @@
 #include "../Core/IRenderingClient.h"
 #include "../Core/ILogicClient.h"
 
-enum EngineMode { GAME, EDITOR };
+enum EngineMode { Host, Slave };
 
 enum RenderingServer { GL, DX11, DX12, VK, MT };
 
 struct InitConfig
 {
-	EngineMode engineMode = EngineMode::GAME;
+	EngineMode engineMode = EngineMode::Host;
 	RenderingServer renderingServer = RenderingServer::GL;
 	LogLevel logLevel = LogLevel::Success;
 };

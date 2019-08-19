@@ -186,13 +186,13 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 
 		if (l_engineModeArguments == "0")
 		{
-			l_result.engineMode = EngineMode::GAME;
-			InnoLogger::Log(LogLevel::Verbose, "ModuleManager: Launch in game mode.");
+			l_result.engineMode = EngineMode::Host;
+			InnoLogger::Log(LogLevel::Success, "ModuleManager: Launch in host mode, engine will handle OS event.");
 		}
 		else if (l_engineModeArguments == "1")
 		{
-			l_result.engineMode = EngineMode::EDITOR;
-			InnoLogger::Log(LogLevel::Verbose, "ModuleManager: Launch in editor mode.");
+			l_result.engineMode = EngineMode::Slave;
+			InnoLogger::Log(LogLevel::Success, "ModuleManager: Launch in slave mode, engine requires client handle OS event.");
 		}
 		else
 		{

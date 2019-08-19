@@ -106,7 +106,7 @@ bool WinWindowSystem::initialize()
 
 bool WinWindowSystem::update()
 {
-	if (WinWindowSystemNS::m_initConfig.engineMode == EngineMode::GAME)
+	if (WinWindowSystemNS::m_initConfig.engineMode == EngineMode::Host)
 	{
 		//update window
 		MSG msg;
@@ -129,7 +129,7 @@ bool WinWindowSystem::terminate()
 {
 	WinWindowSystemNS::m_windowSurface->terminate();
 
-	if (WinWindowSystemNS::m_initConfig.engineMode == EngineMode::GAME)
+	if (WinWindowSystemNS::m_initConfig.engineMode == EngineMode::Host)
 	{
 		// Show the mouse cursor.
 		ShowCursor(true);

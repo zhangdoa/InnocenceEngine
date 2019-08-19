@@ -18,10 +18,10 @@ InnoViewport::InnoViewport(QWidget *parent)
 
 	m_viewportEventFilter = new ViewportEventFilter();
 
-	void* hInstance = (void*)::GetModuleHandle(NULL);
+    void* hInstance = reinterpret_cast<void*>(::GetModuleHandle(nullptr));
 	WId l_hwnd = QWidget::winId();
-	const char* l_args = "-renderer 1 -mode 1";
-	InnoApplication::Setup(hInstance, &l_hwnd, (char*)l_args);
+    auto l_args = "-renderer 1 -mode 1 -loglevel 1";
+    InnoApplication::Setup(hInstance, &l_hwnd, const_cast<char*>(l_args));
 	InnoApplication::Initialize();
 
 	auto l_engine = [&]() {
@@ -72,7 +72,7 @@ void InnoViewport::Resize(float width, float height)
 	{
 		if (g_pModuleManager->getStatus() == ObjectStatus::Activated)
 		{
-			TVec2<unsigned int> l_newResolution = TVec2<unsigned int>(width, height);
+            TVec2<unsigned int> l_newResolution = TVec2<unsigned int>(width, height);
 			g_pModuleManager->getRenderingFrontend()->setScreenResolution(l_newResolution);
 			g_pModuleManager->getRenderingServer()->Resize();
 		}

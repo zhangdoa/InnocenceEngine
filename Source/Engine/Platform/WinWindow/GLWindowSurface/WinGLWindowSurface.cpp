@@ -120,7 +120,7 @@ bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 	auto l_posX = (GetSystemMetrics(SM_CXSCREEN) - l_screenWidth) / 2;
 	auto l_posY = (GetSystemMetrics(SM_CYSCREEN) - l_screenHeight) / 2;
 
-	if (m_initConfig.engineMode == EngineMode::GAME)
+	if (m_initConfig.engineMode == EngineMode::Host)
 	{
 		auto l_windowName = g_pModuleManager->getApplicationName();
 
@@ -234,7 +234,7 @@ bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 	auto l_ActivateGLContextTask = g_pModuleManager->getTaskSystem()->submit("ActivateGLContextTask", 2, nullptr, f_ActivateGLContextTask);
 	l_ActivateGLContextTask->Wait();
 
-	if (m_initConfig.engineMode == EngineMode::GAME)
+	if (m_initConfig.engineMode == EngineMode::Host)
 	{
 		ShowWindow(WinWindowSystemComponent::get().m_hwnd, true);
 		SetForegroundWindow(WinWindowSystemComponent::get().m_hwnd);
