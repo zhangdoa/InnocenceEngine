@@ -48,7 +48,6 @@ namespace InnoFileSystemNS::JSONParser
 
 	ModelMap processSceneJsonData(const json & j, bool AsyncUploadGPUResource = true);
 	std::vector<AnimationDataComponent*> processAnimationJsonData(const json & j);
-	ModelMap processNodeJsonData(const json & j, bool AsyncUploadGPUResource = true);
 	ModelPair processMeshJsonData(const json& j, bool AsyncUploadGPUResource = true);
 	SkeletonDataComponent* processSkeletonJsonData(const std::string& skeletonFileName);
 	MaterialDataComponent* processMaterialJsonData(const std::string& materialFileName, bool AsyncUploadGPUResource = true);
@@ -391,7 +390,15 @@ ModelMap InnoFileSystemNS::JSONParser::processSceneJsonData(const json & j, bool
 		processAnimationJsonData(j["AnimationFiles"]);
 	}
 
-	auto l_result = processNodeJsonData(j, AsyncUploadGPUResource);
+	ModelMap l_result;
+
+	if (j.find("Meshes") != j.end())
+	{
+		for (auto i : j["Meshes"])
+		{
+			l_result.emplace(processMeshJsonData(i, AsyncUploadGPUResource));
+		}
+	}
 
 	auto l_m = InnoMath::generateIdentityMatrix<float>();
 
@@ -456,34 +463,6 @@ std::vector<AnimationDataComponent*> InnoFileSystemNS::JSONParser::processAnimat
 	}
 
 	return l_result;
-}
-
-ModelMap InnoFileSystemNS::JSONParser::processNodeJsonData(const json & j, bool AsyncUploadGPUResource)
-{
-	ModelMap l_nodeResult;
-
-	if (j.find("Meshes") != j.end())
-	{
-		for (auto i : j["Meshes"])
-		{
-			l_nodeResult.emplace(processMeshJsonData(i, AsyncUploadGPUResource));
-		}
-	}
-
-	// children nodes
-	if (j.find("Nodes") != j.end())
-	{
-		for (auto i : j["Nodes"])
-		{
-			auto l_childrenNodeResult = std::move(processNodeJsonData(i, AsyncUploadGPUResource));
-			for (auto i : l_childrenNodeResult)
-			{
-				l_nodeResult.emplace(i);
-			}
-		}
-	}
-
-	return l_nodeResult;
 }
 
 ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j, bool AsyncUploadGPUResource)

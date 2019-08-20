@@ -20,7 +20,7 @@ namespace InnoFileSystemNS
 	namespace AssimpWrapper
 	{
 		json processAssimpScene(const aiScene* aiScene, const std::string& exportName);
-		json processAssimpNode(const aiNode * node, const aiScene * scene, const std::string& exportName);
+		bool processAssimpNode(json& j, const aiNode * node, const aiScene * scene, const std::string& exportName);
 		json processAssimpMesh(const aiScene * scene, const std::string& exportName, unsigned int meshIndex);
 		size_t processMeshData(const aiMesh * aiMesh, const std::string& exportFileRelativePath);
 		void processAssimpBone(const aiMesh * aiMesh, const std::string& exportFileRelativePath);
@@ -96,9 +96,9 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpScene(const aiScene* aiScene,
 		+ "-" + std::to_string(l_timeData.Millisecond)
 		+ "]";
 
-	json l_sceneData;
+	json j;
 
-	l_sceneData["Timestamp"] = l_timeDataStr;
+	j["Timestamp"] = l_timeDataStr;
 
 	if (aiScene->mNumAnimations)
 	{
@@ -106,7 +106,7 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpScene(const aiScene* aiScene,
 		{
 			auto l_animationFileName = "//Res//ConvertedAssets//" + exportName + "_" + std::to_string(i) + ".InnoAnimation";
 			processAssimpAnimation(aiScene->mAnimations[i], l_animationFileName);
-			l_sceneData["AnimationFiles"].emplace_back(l_animationFileName);
+			j["AnimationFiles"].emplace_back(l_animationFileName);
 		}
 
 		auto l_rootTransformationMat = aiScene->mRootNode->mTransformation;
@@ -116,27 +116,23 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpScene(const aiScene* aiScene,
 		auto l_rot = vec4(l_aiRot.x, l_aiRot.y, l_aiRot.z, l_aiRot.w);
 		auto l_pos = vec4(l_aiPos.x, l_aiPos.y, l_aiPos.z, 1.0f);
 
-		JSONParser::to_json(l_sceneData["RootOffsetRotation"], l_rot);
-		JSONParser::to_json(l_sceneData["RootOffsetPosition"], l_pos);
+		JSONParser::to_json(j["RootOffsetRotation"], l_rot);
+		JSONParser::to_json(j["RootOffsetPosition"], l_pos);
 	}
 
-	l_sceneData["Nodes"].emplace_back(processAssimpNode(aiScene->mRootNode, aiScene, exportName));
+	processAssimpNode(j, aiScene->mRootNode, aiScene, exportName);
 
-	return l_sceneData;
+	return j;
 }
 
-json InnoFileSystemNS::AssimpWrapper::processAssimpNode(const aiNode * node, const aiScene * scene, const std::string& exportName)
+bool InnoFileSystemNS::AssimpWrapper::processAssimpNode(json& j, const aiNode * node, const aiScene * scene, const std::string& exportName)
 {
-	json l_nodeData;
-
-	l_nodeData["NodeName"] = *node->mName.C_Str();
-
 	// process each mesh located at the current node
 	if (node->mNumMeshes)
 	{
 		for (unsigned int i = 0; i < node->mNumMeshes; i++)
 		{
-			l_nodeData["Meshes"].emplace_back(processAssimpMesh(scene, exportName, node->mMeshes[i]));
+			j["Meshes"].emplace_back(processAssimpMesh(scene, exportName, node->mMeshes[i]));
 		}
 	}
 
@@ -145,11 +141,11 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpNode(const aiNode * node, con
 	{
 		for (unsigned int i = 0; i < node->mNumChildren; i++)
 		{
-			l_nodeData["Nodes"].emplace_back(processAssimpNode(node->mChildren[i], scene, exportName));
+			processAssimpNode(j, node->mChildren[i], scene, exportName);
 		}
 	}
 
-	return l_nodeData;
+	return true;
 }
 
 json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, const std::string& exportName, unsigned int meshIndex)
@@ -164,6 +160,7 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, c
 	auto l_meshFileName = "//Res//ConvertedAssets//" + exportName + "_" + std::to_string(meshIndex) + ".InnoMesh";
 	l_meshData["IndicesNumber"] = processMeshData(l_aiMesh, l_meshFileName);
 	l_meshData["MeshFile"] = l_meshFileName;
+	l_meshData["MeshType"] = MeshShapeType::Custom;
 
 	// process bones
 	if (l_aiMesh->mNumBones)
