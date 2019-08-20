@@ -18,23 +18,33 @@ protected:
 	virtual void selectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
 
 private slots:
-    void onCustomContextMenuRequested(const QPoint& pos);
-    void showContextMenu(QTreeWidgetItem* item, const QPoint& globalPos);
-    void showGeneralMenu(const QPoint& globalPos);
+	void onCustomContextMenuRequested(const QPoint& pos);
+	void showContextMenu(QTreeWidgetItem* item, const QPoint& globalPos);
+	void showGeneralMenu(const QPoint& globalPos);
 
-    void addEntity();
-    void startRename();
-    void endRename();
-    void deleteEntity();
-    void deleteComponent();
+	void startRename();
+	void endRename();
+
+	void addEntity();
+	void deleteEntity();
+
+	void addTransformComponent();
+	void addVisibleComponent();
+	void addDirectionalLightComponent();
+	void addPointLightComponent();
+	void addSpotLightComponent();
+	void addSphereLightComponent();
+    void addCameraComponent();
+
+	void deleteComponent();
 private:
 	void addChild(QTreeWidgetItem* parent, QTreeWidgetItem* child);
-    void destroyComponent(InnoComponent* component);
+	void destroyComponent(InnoComponent* component);
 
 	InnoPropertyEditor* m_propertyEditor;
 
 	QTreeWidgetItem* m_rootItem;
-    QTreeWidgetItem* m_currentEditingItem;
+	QTreeWidgetItem* m_currentEditingItem;
 	std::function<void()> f_sceneLoadingFinishCallback;
 	void buildTree();
 };

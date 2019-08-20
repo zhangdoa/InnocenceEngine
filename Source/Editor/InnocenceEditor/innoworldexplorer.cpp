@@ -4,6 +4,15 @@
 
 INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 
+#include "../../Engine/Common/CommonMacro.inl"
+#include "../../Engine/ComponentManager/ITransformComponentManager.h"
+#include "../../Engine/ComponentManager/IVisibleComponentManager.h"
+#include "../../Engine/ComponentManager/IDirectionalLightComponentManager.h"
+#include "../../Engine/ComponentManager/IPointLightComponentManager.h"
+#include "../../Engine/ComponentManager/ISpotLightComponentManager.h"
+#include "../../Engine/ComponentManager/ISphereLightComponentManager.h"
+#include "../../Engine/ComponentManager/ICameraComponentManager.h"
+
 InnoWorldExplorer::InnoWorldExplorer(QWidget* parent) : QTreeWidget(parent)
 {
 	this->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -94,25 +103,6 @@ void InnoWorldExplorer::addChild(QTreeWidgetItem *parent, QTreeWidgetItem *child
 	parent->addChild(child);
 }
 
-void InnoWorldExplorer::destroyComponent(InnoComponent *component)
-{
-}
-
-void InnoWorldExplorer::addEntity()
-{
-	auto l_entity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Asset, ObjectUsage::Gameplay, "newEntity/");
-
-	QTreeWidgetItem* l_entityItem = new QTreeWidgetItem();
-
-	l_entityItem->setText(0, l_entity->m_entityName.c_str());
-	l_entityItem->setData(0, Qt::UserRole, QVariant(-1));
-	l_entityItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_entity));
-
-	addChild(m_rootItem, l_entityItem);
-	this->setCurrentItem(l_entityItem);
-	startRename();
-}
-
 void InnoWorldExplorer::startRename()
 {
 	auto l_items = this->selectedItems();
@@ -146,6 +136,21 @@ void InnoWorldExplorer::endRename()
 	disconnect(this, SIGNAL(itemSelectionChanged()), this, SLOT(endRename()));
 }
 
+void InnoWorldExplorer::addEntity()
+{
+	auto l_entity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Asset, ObjectUsage::Gameplay, "newEntity/");
+
+	QTreeWidgetItem* l_entityItem = new QTreeWidgetItem();
+
+	l_entityItem->setText(0, l_entity->m_entityName.c_str());
+	l_entityItem->setData(0, Qt::UserRole, QVariant(-1));
+	l_entityItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_entity));
+
+	addChild(m_rootItem, l_entityItem);
+	this->setCurrentItem(l_entityItem);
+	startRename();
+}
+
 void InnoWorldExplorer::deleteEntity()
 {
 	auto l_items = this->selectedItems();
@@ -158,18 +163,227 @@ void InnoWorldExplorer::deleteEntity()
 
 		for (int i = 0; i < item->childCount(); i++)
 		{
-            auto l_childItem = item->child(i);
-            auto l_componentPtr = reinterpret_cast<InnoComponent*>(l_childItem->data(1, Qt::UserRole).value<void*>());
-			destroyComponent(l_componentPtr);
-
-            l_childItem->parent()->removeChild(l_childItem);
+			auto l_childItem = item->child(i);
+			auto l_componentPtr = reinterpret_cast<InnoComponent*>(l_childItem->data(1, Qt::UserRole).value<void*>());
+			destroyComponent(l_componentPtr);           
 		}
 
-		g_pModuleManager->getEntityManager()->Destory(l_entityPtr);
+		g_pModuleManager->getEntityManager()->Destroy(l_entityPtr);
 
 		item->parent()->removeChild(item);
+	}
+}
 
-		delete item;
+void InnoWorldExplorer::addTransformComponent()
+{
+	auto l_items = this->selectedItems();
+	QTreeWidgetItem* item;
+	if (l_items.count() != 0)
+	{
+		item = l_items[0];
+		auto l_entityPtr = reinterpret_cast<InnoEntity*>(item->data(1, Qt::UserRole).value<void*>());
+
+		auto l_componentPtr = SpawnComponent(TransformComponent, l_entityPtr, ObjectSource::Asset, ObjectUsage::Gameplay);
+		auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
+		l_componentPtr->m_parentTransformComponent = l_rootTranformComponent;
+
+		QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
+
+		l_componentItem->setText(0, l_componentPtr->m_componentName.c_str());
+		l_componentItem->setData(0, Qt::UserRole, QVariant((int)ComponentType::TransformComponent));
+		l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_componentPtr));
+
+		addChild(item, l_componentItem);
+		this->setCurrentItem(l_componentItem);
+		startRename();
+	}
+}
+
+void InnoWorldExplorer::addVisibleComponent()
+{
+    auto l_items = this->selectedItems();
+    QTreeWidgetItem* item;
+    if (l_items.count() != 0)
+    {
+        item = l_items[0];
+        auto l_entityPtr = reinterpret_cast<InnoEntity*>(item->data(1, Qt::UserRole).value<void*>());
+
+        auto l_componentPtr = SpawnComponent(VisibleComponent, l_entityPtr, ObjectSource::Asset, ObjectUsage::Gameplay);
+
+        QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
+
+        l_componentItem->setText(0, l_componentPtr->m_componentName.c_str());
+        l_componentItem->setData(0, Qt::UserRole, QVariant((int)ComponentType::VisibleComponent));
+        l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_componentPtr));
+
+        addChild(item, l_componentItem);
+        this->setCurrentItem(l_componentItem);
+        startRename();
+    }
+}
+
+void InnoWorldExplorer::addDirectionalLightComponent()
+{
+    auto l_items = this->selectedItems();
+    QTreeWidgetItem* item;
+    if (l_items.count() != 0)
+    {
+        item = l_items[0];
+        auto l_entityPtr = reinterpret_cast<InnoEntity*>(item->data(1, Qt::UserRole).value<void*>());
+
+        auto l_componentPtr = SpawnComponent(DirectionalLightComponent, l_entityPtr, ObjectSource::Asset, ObjectUsage::Gameplay);
+
+        QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
+
+        l_componentItem->setText(0, l_componentPtr->m_componentName.c_str());
+        l_componentItem->setData(0, Qt::UserRole, QVariant((int)ComponentType::DirectionalLightComponent));
+        l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_componentPtr));
+
+        addChild(item, l_componentItem);
+        this->setCurrentItem(l_componentItem);
+        startRename();
+    }
+}
+
+void InnoWorldExplorer::addPointLightComponent()
+{
+    auto l_items = this->selectedItems();
+    QTreeWidgetItem* item;
+    if (l_items.count() != 0)
+    {
+        item = l_items[0];
+        auto l_entityPtr = reinterpret_cast<InnoEntity*>(item->data(1, Qt::UserRole).value<void*>());
+
+        auto l_componentPtr = SpawnComponent(PointLightComponent, l_entityPtr, ObjectSource::Asset, ObjectUsage::Gameplay);
+
+        QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
+
+        l_componentItem->setText(0, l_componentPtr->m_componentName.c_str());
+        l_componentItem->setData(0, Qt::UserRole, QVariant((int)ComponentType::PointLightComponent));
+        l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_componentPtr));
+
+        addChild(item, l_componentItem);
+        this->setCurrentItem(l_componentItem);
+        startRename();
+    }
+}
+
+void InnoWorldExplorer::addSpotLightComponent()
+{
+    auto l_items = this->selectedItems();
+    QTreeWidgetItem* item;
+    if (l_items.count() != 0)
+    {
+        item = l_items[0];
+        auto l_entityPtr = reinterpret_cast<InnoEntity*>(item->data(1, Qt::UserRole).value<void*>());
+
+        auto l_componentPtr = SpawnComponent(SpotLightComponent, l_entityPtr, ObjectSource::Asset, ObjectUsage::Gameplay);
+
+        QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
+
+        l_componentItem->setText(0, l_componentPtr->m_componentName.c_str());
+        l_componentItem->setData(0, Qt::UserRole, QVariant((int)ComponentType::SpotLightComponent));
+        l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_componentPtr));
+
+        addChild(item, l_componentItem);
+        this->setCurrentItem(l_componentItem);
+        startRename();
+    }
+}
+
+void InnoWorldExplorer::addSphereLightComponent()
+{
+    auto l_items = this->selectedItems();
+    QTreeWidgetItem* item;
+    if (l_items.count() != 0)
+    {
+        item = l_items[0];
+        auto l_entityPtr = reinterpret_cast<InnoEntity*>(item->data(1, Qt::UserRole).value<void*>());
+
+        auto l_componentPtr = SpawnComponent(SphereLightComponent, l_entityPtr, ObjectSource::Asset, ObjectUsage::Gameplay);
+
+        QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
+
+        l_componentItem->setText(0, l_componentPtr->m_componentName.c_str());
+        l_componentItem->setData(0, Qt::UserRole, QVariant((int)ComponentType::SphereLightComponent));
+        l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_componentPtr));
+
+        addChild(item, l_componentItem);
+        this->setCurrentItem(l_componentItem);
+        startRename();
+    }
+}
+
+void InnoWorldExplorer::addCameraComponent()
+{
+    auto l_items = this->selectedItems();
+    QTreeWidgetItem* item;
+    if (l_items.count() != 0)
+    {
+        item = l_items[0];
+        auto l_entityPtr = reinterpret_cast<InnoEntity*>(item->data(1, Qt::UserRole).value<void*>());
+
+        auto l_componentPtr = SpawnComponent(CameraComponent, l_entityPtr, ObjectSource::Asset, ObjectUsage::Gameplay);
+
+        QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
+
+        l_componentItem->setText(0, l_componentPtr->m_componentName.c_str());
+        l_componentItem->setData(0, Qt::UserRole, QVariant((int)ComponentType::CameraComponent));
+        l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_componentPtr));
+
+        addChild(item, l_componentItem);
+        this->setCurrentItem(l_componentItem);
+        startRename();
+    }
+}
+
+void InnoWorldExplorer::destroyComponent(InnoComponent *component)
+{
+	switch (component->m_ComponentType)
+	{
+	case ComponentType::TransformComponent:
+		DestroyComponent(TransformComponent, component);
+		break;
+	case ComponentType::VisibleComponent:
+		DestroyComponent(VisibleComponent, component);
+		break;
+	case ComponentType::DirectionalLightComponent:
+		DestroyComponent(DirectionalLightComponent, component);
+		break;
+	case ComponentType::PointLightComponent:
+		DestroyComponent(PointLightComponent, component);
+		break;
+	case ComponentType::SpotLightComponent:
+		DestroyComponent(SpotLightComponent, component);
+		break;
+	case ComponentType::SphereLightComponent:
+		DestroyComponent(SphereLightComponent, component);
+		break;
+	case ComponentType::CameraComponent:
+		DestroyComponent(CameraComponent, component);
+		break;
+	case ComponentType::PhysicsDataComponent:
+		break;
+	case ComponentType::MeshDataComponent:
+		break;
+	case ComponentType::MaterialDataComponent:
+		break;
+	case ComponentType::TextureDataComponent:
+		break;
+	case ComponentType::SkeletonDataComponent:
+		break;
+	case ComponentType::AnimationDataComponent:
+		break;
+	case ComponentType::RenderPassDataComponent:
+		break;
+	case ComponentType::ShaderProgramComponent:
+		break;
+	case ComponentType::SamplerDataComponent:
+		break;
+	case ComponentType::GPUBufferDataComponent:
+		break;
+	default:
+		break;
 	}
 }
 
@@ -184,7 +398,7 @@ void InnoWorldExplorer::deleteComponent()
 		auto l_componentPtr = reinterpret_cast<InnoComponent*>(item->data(1, Qt::UserRole).value<void*>());
 		destroyComponent(l_componentPtr);
 
-        item->parent()->removeChild(item);
+		item->parent()->removeChild(item);
 	}
 }
 
@@ -220,7 +434,16 @@ void InnoWorldExplorer::showContextMenu(QTreeWidgetItem* item, const QPoint& glo
 		{
 			menu.addAction("Entity context menu");
 			menu.addAction("Rename", this, SLOT(startRename()));
-			menu.addAction("Add Component");
+
+			auto addCompoentMenu = menu.addMenu("Add Component");
+			addCompoentMenu->addAction("Add TransformComponent", this, SLOT(addTransformComponent()));
+			addCompoentMenu->addAction("Add VisibleComponent", this, SLOT(addVisibleComponent()));
+			addCompoentMenu->addAction("Add DirectionalLightComponent", this, SLOT(addDirectionalLightComponent()));
+			addCompoentMenu->addAction("Add PointLightComponent", this, SLOT(addPointLightComponent()));
+			addCompoentMenu->addAction("Add SpotLightComponent", this, SLOT(addSpotLightComponent()));
+			addCompoentMenu->addAction("Add SphereLightComponent", this, SLOT(addSphereLightComponent()));
+			addCompoentMenu->addAction("Add CameraComponent", this, SLOT(addCameraComponent()));
+
 			menu.addAction("Delete", this, SLOT(deleteEntity()));
 		}
 	}
