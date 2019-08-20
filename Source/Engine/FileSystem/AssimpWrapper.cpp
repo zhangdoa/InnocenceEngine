@@ -160,7 +160,7 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, c
 	auto l_meshFileName = "//Res//ConvertedAssets//" + exportName + "_" + std::to_string(meshIndex) + ".InnoMesh";
 	l_meshData["IndicesNumber"] = processMeshData(l_aiMesh, l_meshFileName);
 	l_meshData["MeshFile"] = l_meshFileName;
-	l_meshData["MeshType"] = MeshShapeType::Custom;
+	l_meshData["MeshShapeType"] = MeshShapeType::Custom;
 
 	// process bones
 	if (l_aiMesh->mNumBones)

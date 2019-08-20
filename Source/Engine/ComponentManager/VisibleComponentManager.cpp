@@ -23,19 +23,12 @@ namespace VisibleComponentManagerNS
 	std::function<void(VisibleComponent*, bool)> f_LoadAssetTask;
 	std::function<void(VisibleComponent*)> f_AssignUnitMeshTask;
 
-	void assignUnitMesh(MeshShapeType meshUsageType, VisibleComponent* visibleComponent)
+	void assignUnitMesh(MeshShapeType meshShapeType, VisibleComponent* visibleComponent)
 	{
-		if (meshUsageType != MeshShapeType::Custom)
-		{
-			auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(meshUsageType);
-			auto l_material = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
-			l_material->m_objectStatus = ObjectStatus::Created;
-			visibleComponent->m_modelMap.emplace(l_mesh, l_material);
-		}
-		else
-		{
-			InnoLogger::Log(LogLevel::Error, "VisibleComponentManager: don't assign unit mesh to a custom mesh shape component!");
-		}
+		auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(meshShapeType);
+		auto l_material = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
+		l_material->m_objectStatus = ObjectStatus::Created;
+		visibleComponent->m_modelMap.emplace(l_mesh, l_material);
 	}
 }
 
@@ -135,29 +128,33 @@ void InnoVisibleComponentManager::LoadAssetsForComponents(bool AsyncLoad)
 	{
 		if (i->m_visiblilityType != VisiblilityType::Invisible)
 		{
-			if (i->m_meshShapeType == MeshShapeType::Custom)
+			if (!i->m_modelFileName.empty())
 			{
-				if (!i->m_modelFileName.empty())
+				if (AsyncLoad)
 				{
-					if (AsyncLoad)
-					{
-						g_pModuleManager->getTaskSystem()->submit("LoadAssetTask", 4, nullptr, f_LoadAssetTask, i, true);
-					}
-					else
-					{
-						f_LoadAssetTask(i, false);
-					}
+					g_pModuleManager->getTaskSystem()->submit("LoadAssetTask", 4, nullptr, f_LoadAssetTask, i, true);
+				}
+				else
+				{
+					f_LoadAssetTask(i, false);
 				}
 			}
 			else
 			{
-				if (AsyncLoad)
+				if (i->m_meshShapeType != MeshShapeType::Custom)
 				{
-					g_pModuleManager->getTaskSystem()->submit("AssignUnitMeshTask", 4, nullptr, f_AssignUnitMeshTask, i);
+					if (AsyncLoad)
+					{
+						g_pModuleManager->getTaskSystem()->submit("AssignUnitMeshTask", 4, nullptr, f_AssignUnitMeshTask, i);
+					}
+					else
+					{
+						f_AssignUnitMeshTask(i);
+					}
 				}
 				else
 				{
-					f_AssignUnitMeshTask(i);
+					InnoLogger::Log(LogLevel::Warning, "VisibleComponentManager: Custom shape mesh specified without a model preset file.");
 				}
 			}
 		}

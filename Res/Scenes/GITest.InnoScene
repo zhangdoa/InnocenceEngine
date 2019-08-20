@@ -6,15 +6,15 @@
           "ComponentType": 0,
           "LocalTransformVector": {
             "Position": {
-              "X": -1.820589303970337,
-              "Y": 1.3627287149429321,
-              "Z": 1.9806164503097534
+              "X": -23.139421463012695,
+              "Y": 39.992523193359375,
+              "Z": 17.598108291625977
             },
             "Rotation": {
-              "W": -0.21541401743888855,
-              "X": 0.027276158332824707,
-              "Y": 0.9684072136878967,
-              "Z": 0.1226392388343811
+              "W": 0.8293551206588745,
+              "X": -0.36889851093292236,
+              "Y": -0.3834053874015808,
+              "Z": -0.1705411970615387
             },
             "Scale": {
               "X": 1.0,
@@ -27,13 +27,13 @@
         {
           "ComponentType": 6,
           "FOVX": 90.0,
-          "WidthScale": 16.0,
           "HeightScale": 9.0,
-          "zNear": 0.1,
-          "zFar": 2000.0
+          "WidthScale": 16.0,
+          "zFar": 2000.0,
+          "zNear": 0.10000000149011612
         }
       ],
-      "EntityID": "8ebdcf16ba11961a7b5dee1876cfc62d",
+      "EntityID": "f57dce5edc2ef35fdf5dea305789e66",
       "EntityName": "playerCharacterCamera"
     },
     {
@@ -47,8 +47,8 @@
               "Z": 0.0
             },
             "Rotation": {
-              "W": 0.7071315050125122,
-              "X": -0.7070821523666382,
+              "W": 0.8660253882408142,
+              "X": -0.5,
               "Y": 0.0,
               "Z": 0.0
             },
@@ -61,19 +61,19 @@
           "ParentTransformComponentEntityName": "RootTransform"
         },
         {
+          "ColorTemperature": 5780.0,
+          "ComponentType": 2,
+          "LuminousFlux": 1.0,
           "RGBColor": {
             "W": 1.0,
-            "Z": 1.0,
-            "Y": 1.0,
-            "X": 1.0
+            "X": 1.0,
+            "Y": 0.9507150650024414,
+            "Z": 0.9043404459953308
           },
-          "ComponentType": 2,
-          "ColorTemperature": 5780.0,
-          "LuminousFlux": 1.0,
           "UseColorTemperature": true
         }
       ],
-      "EntityID": "55467c3b1220a81f359b63e29ce45340",
+      "EntityID": "f80b683f74efc628bed6db88e430e25",
       "EntityName": "sun"
     },
     {
@@ -83,46 +83,7 @@
           "LocalTransformVector": {
             "Position": {
               "X": 0.0,
-              "Y": 150.0,
-              "Z": 0.0
-            },
-            "Rotation": {
-              "W": 1.0,
-              "X": 0.0,
-              "Y": 0.0,
-              "Z": 0.0
-            },
-            "Scale": {
-              "X": 10.0,
-              "Y": 10.0,
-              "Z": 10.0
-            }
-          },
-          "ParentTransformComponentEntityName": "RootTransform"
-        },
-        {
-          "ComponentType": 1,
-          "MeshPrimitiveTopology": 2,
-          "MeshShapeType": 5,
-          "MeshUsageType": 0,
-          "ModelFileName": "Res//ConvertedAssets//sibenik.InnoModel",
-          "TextureWrapMethod": 1,
-          "VisiblilityType": 2,
-          "drawAABB": false,
-          "SimulatePhysics": false
-        }
-      ],
-      "EntityID": "775d351b562850c7e013f7532187ac58",
-      "EntityName": "Sibenik"
-    },
-    {
-      "ChildrenComponents": [
-        {
-          "ComponentType": 0,
-          "LocalTransformVector": {
-            "Position": {
-              "X": 0.0,
-              "Y": 0.1,
+              "Y": -0.10000000149011612,
               "Z": 0.0
             },
             "Rotation": {
@@ -133,7 +94,7 @@
             },
             "Scale": {
               "X": 200.0,
-              "Y": 0.1,
+              "Y": 0.10000000149011612,
               "Z": 200.0
             }
           },
@@ -145,12 +106,12 @@
           "MeshShapeType": 2,
           "MeshUsageType": 0,
           "ModelFileName": "",
+          "SimulatePhysics": true,
           "TextureWrapMethod": 1,
-          "VisiblilityType": 2,
-          "SimulatePhysics": true
+          "VisiblilityType": 2
         }
       ],
-      "EntityID": "be5c104071400205215f368e464c99d2",
+      "EntityID": "59ef9e5be5118fdebe80690d6a14c3d",
       "EntityName": "landscape"
     },
     {
@@ -159,19 +120,19 @@
           "ComponentType": 0,
           "LocalTransformVector": {
             "Position": {
-              "X": 4.0,
-              "Y": 2.0,
-              "Z": 1.0
+              "X": 16.0,
+              "Y": 5.0,
+              "Z": 4.0
             },
             "Rotation": {
-              "W": 1.0,
-              "X": 0.0,
+              "W": 0.9537169337272644,
+              "X": -0.30070582032203674,
               "Y": 0.0,
               "Z": 0.0
             },
             "Scale": {
-              "X": 1.0,
-              "Y": 1.0,
+              "X": 6.0,
+              "Y": 8.0,
               "Z": 1.0
             }
           },
@@ -179,17 +140,93 @@
         },
         {
           "ComponentType": 1,
-          "MeshPrimitiveTopology": 3,
-          "MeshShapeType": 3,
-          "MeshUsageType": 1,
-          "ModelFileName": "",
+          "MeshPrimitiveTopology": 2,
+          "MeshShapeType": 2,
+          "MeshUsageType": 0,
+          "ModelFileName": "Res//ModelPresets//Building1.InnoModel",
+          "SimulatePhysics": true,
           "TextureWrapMethod": 1,
-          "VisiblilityType": 3,
-          "SimulatePhysics": true
+          "VisiblilityType": 2
         }
       ],
-      "EntityID": "3c1ad32f03803d38938f073c5b45e6b1",
-      "EntityName": "transparentSphere"
+      "EntityID": "ca263b7a067127724c45cbb4368646b",
+      "EntityName": "building1"
+    },
+    {
+      "ChildrenComponents": [
+        {
+          "ComponentType": 0,
+          "LocalTransformVector": {
+            "Position": {
+              "X": -16.0,
+              "Y": 1.0,
+              "Z": -5.0
+            },
+            "Rotation": {
+              "W": 0.9807852506637573,
+              "X": 0.0,
+              "Y": 0.19509032368659973,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 2.0,
+              "Y": 6.0,
+              "Z": 6.0
+            }
+          },
+          "ParentTransformComponentEntityName": "RootTransform"
+        },
+        {
+          "ComponentType": 1,
+          "MeshPrimitiveTopology": 2,
+          "MeshShapeType": 2,
+          "MeshUsageType": 0,
+          "ModelFileName": "Res//ModelPresets//Building2.InnoModel",
+          "SimulatePhysics": true,
+          "TextureWrapMethod": 1,
+          "VisiblilityType": 2
+        }
+      ],
+      "EntityID": "5c79034afd6e2d2072970225a6d5bb0",
+      "EntityName": "building2"
+    },
+    {
+      "ChildrenComponents": [
+        {
+          "ComponentType": 0,
+          "LocalTransformVector": {
+            "Position": {
+              "X": 5.0,
+              "Y": 5.0,
+              "Z": -16.0
+            },
+            "Rotation": {
+              "W": 0.9600498676300049,
+              "X": 0.0,
+              "Y": -0.2798290252685547,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 9.0,
+              "Y": 5.0,
+              "Z": 3.0
+            }
+          },
+          "ParentTransformComponentEntityName": "RootTransform"
+        },
+        {
+          "ComponentType": 1,
+          "MeshPrimitiveTopology": 2,
+          "MeshShapeType": 2,
+          "MeshUsageType": 0,
+          "ModelFileName": "Res//ModelPresets//Building3.InnoModel",
+          "SimulatePhysics": true,
+          "TextureWrapMethod": 1,
+          "VisiblilityType": 2
+        }
+      ],
+      "EntityID": "313bd8a7093abc377b8272e8ffb8ba6",
+      "EntityName": "building3"
     },
     {
       "ChildrenComponents": [
@@ -198,57 +235,19 @@
           "LocalTransformVector": {
             "Position": {
               "X": 2.0,
-              "Y": 1.0,
-              "Z": -5.0
+              "Y": 4.0,
+              "Z": 20.0
             },
             "Rotation": {
-              "W": 1.0,
+              "W": 0.8314695954322815,
               "X": 0.0,
-              "Y": 0.0,
+              "Y": -0.5555702447891235,
               "Z": 0.0
             },
             "Scale": {
-              "X": 1.0,
-              "Y": 1.0,
-              "Z": 1.0
-            }
-          },
-          "ParentTransformComponentEntityName": "RootTransform"
-        },
-        {
-          "ComponentType": 1,
-          "MeshPrimitiveTopology": 3,
-          "MeshShapeType": 3,
-          "MeshUsageType": 1,
-          "ModelFileName": "",
-          "TextureWrapMethod": 1,
-          "VisiblilityType": 2,
-          "SimulatePhysics": true
-        }
-      ],
-      "EntityID": "1935246950c8de59edec48e38d060e6a",
-      "EntityName": "opaqueSphere"
-    },
-    {
-      "ChildrenComponents": [
-        {
-          "ComponentType": 0,
-          "LocalTransformVector": {
-            "Position": {
-              "X": 0.0,
-              "Y": 0.0,
-              "Z": 0.0
-            },
-            "Rotation": {
-              "W": 1.0,
-              "X": 0.0,
-              "Y": 0.0,
-              "Z": 0.0
-            },
-            "Scale": {
-              "X": 5.0,
-              "Y": 5.0,
-              "Z": 5.0
+              "X": 4.0,
+              "Y": 4.0,
+              "Z": 8.0
             }
           },
           "ParentTransformComponentEntityName": "RootTransform"
@@ -256,54 +255,16 @@
         {
           "ComponentType": 1,
           "MeshPrimitiveTopology": 2,
-          "MeshShapeType": 5,
-          "MeshUsageType": 1,
-          "ModelFileName": "",
+          "MeshShapeType": 2,
+          "MeshUsageType": 0,
+          "ModelFileName": "Res//ModelPresets//Building4.InnoModel",
+          "SimulatePhysics": true,
           "TextureWrapMethod": 1,
-          "VisiblilityType": 3,
-          "SimulatePhysics": true
+          "VisiblilityType": 2
         }
       ],
-      "EntityID": "51fed505c9584a37daf68df67af610c2",
-      "EntityName": "TransparentTest"
-    },
-    {
-      "ChildrenComponents": [
-        {
-          "ComponentType": 0,
-          "LocalTransformVector": {
-            "Position": {
-              "X": 0.019999999552965164,
-              "Y": 0.20000000298023224,
-              "Z": 3.5
-            },
-            "Rotation": {
-              "W": 1.0,
-              "X": 0.0,
-              "Y": 0.0,
-              "Z": 0.0
-            },
-            "Scale": {
-              "X": 1.0,
-              "Y": 1.0,
-              "Z": 1.0
-            }
-          },
-          "ParentTransformComponentEntityName": "RootTransform"
-        },
-        {
-          "ComponentType": 1,
-          "MeshPrimitiveTopology": 2,
-          "MeshShapeType": 5,
-          "MeshUsageType": 1,
-          "ModelFileName": "Res//ConvertedAssets//Orb.InnoModel",
-          "TextureWrapMethod": 1,
-          "VisiblilityType": 2,
-          "SimulatePhysics": true
-        }
-      ],
-      "EntityID": "038c1d165dd678461749f5c3a8e30e44",
-      "EntityName": "pawn2"
+      "EntityID": "a47d3dccf353d4044d807012515109a",
+      "EntityName": "building4"
     },
     {
       "ChildrenComponents": [
@@ -330,19 +291,19 @@
           "ParentTransformComponentEntityName": "RootTransform"
         },
         {
+          "ColorTemperature": 5780.0,
+          "ComponentType": 3,
+          "LuminousFlux": 120.0,
           "RGBColor": {
             "W": 1.0,
-            "Z": 0.2,
-            "Y": 0.2,
-            "X": 0.5
+            "X": 0.5,
+            "Y": 0.20000000298023224,
+            "Z": 0.20000000298023224
           },
-          "ComponentType": 3,
-          "ColorTemperature": 5780.0,
-          "LuminousFlux": 120.0,
           "UseColorTemperature": false
         }
       ],
-      "EntityID": "c2fed124d84f029192d2624b84e0de1c",
+      "EntityID": "96acf661f248ac621a77d6e6d9b0778",
       "EntityName": "pointLight"
     },
     {
@@ -370,22 +331,26 @@
           "ParentTransformComponentEntityName": "RootTransform"
         },
         {
+          "ColorTemperature": 5780.0,
+          "ComponentType": 5,
+          "LuminousFlux": 60.0,
           "RGBColor": {
             "W": 1.0,
-            "Z": 0.5240174531936646,
+            "X": 0.3256159722805023,
             "Y": 0.0457657165825367,
-            "X": 0.3256159722805023
+            "Z": 0.5240174531936646
           },
-          "ComponentType": 5,
-          "ColorTemperature": 5780.0,
-          "LuminousFlux": 60.0,
-          "UseColorTemperature": false,
-          "SphereRadius": 3.200000047683716
+          "SphereRadius": 3.200000047683716,
+          "UseColorTemperature": false
         }
       ],
-      "EntityID": "d7a9d339941c3c19aa9051aaeba5a98a",
+      "EntityID": "1320f1cfdcfb12301ac378cc91f5dcd",
       "EntityName": "sphereLight"
+    },
+    {
+      "EntityID": "750460d4b5ac40ee369359e328fcb33",
+      "EntityName": "newEntity"
     }
   ],
-  "SceneName": "..//res//scenes//Intro.InnoScene"
+  "SceneName": "Res/Scenes/GITest.InnoScene"
 }

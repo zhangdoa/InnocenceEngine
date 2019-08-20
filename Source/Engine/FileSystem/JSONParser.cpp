@@ -469,51 +469,73 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j, bool
 {
 	ModelPair l_result;
 
-	// Load mesh data
-	auto l_meshFileName = j["MeshFile"].get<std::string>();
+	MeshShapeType l_meshShapeType = MeshShapeType(j["MeshShapeType"].get<int>());
+	if (l_meshShapeType == MeshShapeType::Custom)
+	{	// Load mesh data
+		auto l_meshFileName = j["MeshFile"].get<std::string>();
 
-	auto l_loadedModelPair = m_loadedModelPair.find(l_meshFileName);
-	if (l_loadedModelPair != m_loadedModelPair.end())
-	{
-		InnoLogger::Log(LogLevel::Verbose, "FileSystem: JSONParser: ", l_meshFileName.c_str(), " has been already loaded.");
-		l_result = l_loadedModelPair->second;
+		auto l_loadedModelPair = m_loadedModelPair.find(l_meshFileName);
+		if (l_loadedModelPair != m_loadedModelPair.end())
+		{
+			InnoLogger::Log(LogLevel::Verbose, "FileSystem: JSONParser: ", l_meshFileName.c_str(), " has been already loaded.");
+			l_result = l_loadedModelPair->second;
+		}
+		else
+		{
+			std::ifstream l_meshFile(IOService::getWorkingDirectory() + l_meshFileName, std::ios::binary);
+
+			if (!l_meshFile.is_open())
+			{
+				InnoLogger::Log(LogLevel::Error, "FileSystem: std::ifstream: can't open file ", l_meshFileName.c_str(), "!");
+				return ModelPair();
+			}
+
+			auto l_MeshDC = g_pModuleManager->getRenderingFrontend()->addMeshDataComponent();
+
+			size_t l_verticesNumber = j["VerticesNumber"];
+			size_t l_indicesNumber = j["IndicesNumber"];
+
+			l_MeshDC->m_vertices.reserve(l_verticesNumber);
+			l_MeshDC->m_vertices.fulfill();
+			l_MeshDC->m_indices.reserve(l_indicesNumber);
+			l_MeshDC->m_indices.fulfill();
+
+			IOService::deserializeVector(l_meshFile, 0, l_verticesNumber * sizeof(Vertex), l_MeshDC->m_vertices);
+			IOService::deserializeVector(l_meshFile, l_verticesNumber * sizeof(Vertex), l_indicesNumber * sizeof(Index), l_MeshDC->m_indices);
+
+			l_meshFile.close();
+
+			l_MeshDC->m_indicesSize = l_MeshDC->m_indices.size();
+			l_MeshDC->m_meshShapeType = MeshShapeType::Custom;
+			l_MeshDC->m_objectStatus = ObjectStatus::Created;
+
+			l_result.first = l_MeshDC;
+
+			// Load skeleton data
+			if (j.find("SkeletonFile") != j.end())
+			{
+				l_result.first->m_SDC = processSkeletonJsonData(j["SkeletonFile"]);
+			}
+
+			// Load material data
+			if (j.find("MaterialFile") != j.end())
+			{
+				l_result.second = processMaterialJsonData(j["MaterialFile"]);
+			}
+			else
+			{
+				l_result.second = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
+				l_result.second->m_objectStatus = ObjectStatus::Created;
+			}
+
+			m_loadedModelPair.emplace(l_meshFileName, l_result);
+
+			g_pModuleManager->getRenderingFrontend()->registerMeshDataComponent(l_MeshDC, AsyncUploadGPUResource);
+		}
 	}
 	else
 	{
-		std::ifstream l_meshFile(IOService::getWorkingDirectory() + l_meshFileName, std::ios::binary);
-
-		if (!l_meshFile.is_open())
-		{
-			InnoLogger::Log(LogLevel::Error, "FileSystem: std::ifstream: can't open file ", l_meshFileName.c_str(), "!");
-			return ModelPair();
-		}
-
-		auto l_MeshDC = g_pModuleManager->getRenderingFrontend()->addMeshDataComponent();
-
-		size_t l_verticesNumber = j["VerticesNumber"];
-		size_t l_indicesNumber = j["IndicesNumber"];
-
-		l_MeshDC->m_vertices.reserve(l_verticesNumber);
-		l_MeshDC->m_vertices.fulfill();
-		l_MeshDC->m_indices.reserve(l_indicesNumber);
-		l_MeshDC->m_indices.fulfill();
-
-		IOService::deserializeVector(l_meshFile, 0, l_verticesNumber * sizeof(Vertex), l_MeshDC->m_vertices);
-		IOService::deserializeVector(l_meshFile, l_verticesNumber * sizeof(Vertex), l_indicesNumber * sizeof(Index), l_MeshDC->m_indices);
-
-		l_meshFile.close();
-
-		l_MeshDC->m_indicesSize = l_MeshDC->m_indices.size();
-		l_MeshDC->m_meshShapeType = MeshShapeType::Custom;
-		l_MeshDC->m_objectStatus = ObjectStatus::Created;
-
-		l_result.first = l_MeshDC;
-
-		// Load skeleton data
-		if (j.find("SkeletonFile") != j.end())
-		{
-			l_result.first->m_SDC = processSkeletonJsonData(j["SkeletonFile"]);
-		}
+		l_result.first = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(l_meshShapeType);
 
 		// Load material data
 		if (j.find("MaterialFile") != j.end())
@@ -525,10 +547,6 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j, bool
 			l_result.second = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
 			l_result.second->m_objectStatus = ObjectStatus::Created;
 		}
-
-		m_loadedModelPair.emplace(l_meshFileName, l_result);
-
-		g_pModuleManager->getRenderingFrontend()->registerMeshDataComponent(l_MeshDC, AsyncUploadGPUResource);
 	}
 
 	return l_result;

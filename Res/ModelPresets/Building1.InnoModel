@@ -1,0 +1,13 @@
+{
+  "Meshes": [
+    {
+      "IndicesNumber": 0,
+      "MaterialFile": "//Res//ModelPresets//Building1.InnoMaterial",
+      "MeshFile": "",
+      "MeshName": 0,
+      "MeshShapeType": 2,
+      "VerticesNumber": 0
+    }
+  ],
+  "Timestamp": "[2019-8-20-10-18-36-342]"
+}
