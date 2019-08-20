@@ -22,7 +22,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 
 	float averangeRsF1 = 0.0;
 	float currentRsF1 = 0.0;
-	const unsigned int textureSize = 512u;
+	const uint textureSize = 512u;
 	// "Real-Time Rendering", 4th edition, pg. 346, "9.8.2 Multiple-Bounce Surface Reflection", "The function $\overline{RsF1}$ is the cosine-weighted average value of RsF1 over the hemisphere"
 	for (uint i = 0u; i < textureSize; ++i)
 	{

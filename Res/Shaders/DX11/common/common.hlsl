@@ -175,14 +175,14 @@ struct Surfel
 
 struct Brick
 {
-	unsigned int surfelRangeBegin;
-	unsigned int surfelRangeEnd;
+	uint surfelRangeBegin;
+	uint surfelRangeEnd;
 };
 
 struct BrickFactor
 {
 	float basisWeight;
-	unsigned int brickIndex;
+	uint brickIndex;
 };
 
 struct Probe

@@ -15,7 +15,7 @@ struct PixelOutputType
 // ----------------------------------------------------------------------------
 // http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
 // efficient VanDerCorpus calculation.
-float RadicalInverse_VdC(unsigned int bits)
+float RadicalInverse_VdC(uint bits)
 {
 	bits = (bits << 16u) | (bits >> 16u);
 	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
@@ -25,7 +25,7 @@ float RadicalInverse_VdC(unsigned int bits)
 	return float(bits) * 2.3283064365386963e-10; // / 0x100000000
 }
 // ----------------------------------------------------------------------------
-float2 Hammersley(unsigned int i, unsigned int N)
+float2 Hammersley(uint i, uint N)
 {
 	return float2(float(i) / float(N), RadicalInverse_VdC(i));
 }
@@ -96,8 +96,8 @@ float4 IntegrateBRDF(float NdotV, float roughness)
 
 	float3 N = float3(0.0, 0.0, 1.0);
 
-	const unsigned int SAMPLE_COUNT = 1024u;
-	for (unsigned int i = 0u; i < SAMPLE_COUNT; ++i)
+	const uint SAMPLE_COUNT = 1024u;
+	for (uint i = 0u; i < SAMPLE_COUNT; ++i)
 	{
 		// generates a sample floattor that's biased towards the
 		// preferred alignment direction (importance sampling).
