@@ -86,6 +86,10 @@ public:
 	virtual const std::vector<SphereLightGPUData>& getSphereLightGPUData() = 0;
 	virtual const SkyGPUData& getSkyGPUData() = 0;
 
+	virtual unsigned int getSunShadowPassDrawCallCount() = 0;
+	virtual const std::vector<OpaquePassDrawCallData>& getSunShadowPassDrawCallData() = 0;
+	virtual const std::vector<MeshGPUData>& getSunShadowPassMeshGPUData() = 0;
+
 	virtual unsigned int getOpaquePassDrawCallCount() = 0;
 	virtual const std::vector<OpaquePassDrawCallData>& getOpaquePassDrawCallData() = 0;
 	virtual const std::vector<MeshGPUData>& getOpaquePassMeshGPUData() = 0;

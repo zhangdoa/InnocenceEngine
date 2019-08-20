@@ -57,8 +57,7 @@ namespace InnoPhysicsSystemNS
 	std::vector<PhysicsDataComponent*> m_IntermediateComponents;
 	std::vector<BVHResult> m_BVHResults;
 
-	std::atomic<bool> m_isCullingDataPackValid = false;
-	ThreadSafeVector<CullingDataPack> m_cullingDataPack;
+	DoubleBuffer<std::vector<CullingData>, true> m_cullingData;
 
 	std::atomic<size_t> m_BVHWorkloadCount = 0;
 
@@ -81,8 +80,6 @@ bool InnoPhysicsSystemNS::setup()
 #endif
 
 	f_sceneLoadingStartCallback = [&]() {
-		m_cullingDataPack.clear();
-		m_isCullingDataPackValid = false;
 	};
 
 	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
@@ -449,17 +446,17 @@ bool InnoPhysicsSystem::generatePhysicsDataComponent(MeshDataComponent* MDC)
 	return InnoPhysicsSystemNS::generatePhysicsDataComponent(MDC);
 }
 
-bool BVHCulling(PhysicsDataComponent* PDC, const Frustum& frustum, std::vector<CullingDataPack>& cullingDataPacks)
+bool BVHCulling(PhysicsDataComponent* PDC, const Frustum& frustum, std::vector<CullingData>& cullingDatas)
 {
 	if (InnoMath::intersectCheck(frustum, PDC->m_SphereWS))
 	{
 		if (PDC->m_LeftChildNode)
 		{
-			BVHCulling(PDC->m_LeftChildNode, frustum, cullingDataPacks);
+			BVHCulling(PDC->m_LeftChildNode, frustum, cullingDatas);
 		}
 		if (PDC->m_RightChildNode)
 		{
-			BVHCulling(PDC->m_RightChildNode, frustum, cullingDataPacks);
+			BVHCulling(PDC->m_RightChildNode, frustum, cullingDatas);
 		}
 
 		if (!PDC->m_IsIntermediate)
@@ -469,18 +466,18 @@ bool BVHCulling(PhysicsDataComponent* PDC, const Frustum& frustum, std::vector<C
 			auto l_transformComponent = GetComponent(TransformComponent, PDC->m_VisibleComponent->m_parentEntity);
 			auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
-			CullingDataPack l_cullingDataPack;
+			CullingData l_cullingData;
 
-			l_cullingDataPack.m = l_globalTm;
-			l_cullingDataPack.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
-			l_cullingDataPack.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-			l_cullingDataPack.mesh = PDC->m_ModelPair.first;
-			l_cullingDataPack.material = PDC->m_ModelPair.second;
-			l_cullingDataPack.visiblilityType = PDC->m_VisibleComponent->m_visiblilityType;
-			l_cullingDataPack.meshUsageType = PDC->m_VisibleComponent->m_meshUsageType;
-			l_cullingDataPack.UUID = PDC->m_VisibleComponent->m_UUID;
+			l_cullingData.m = l_globalTm;
+			l_cullingData.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
+			l_cullingData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
+			l_cullingData.mesh = PDC->m_ModelPair.first;
+			l_cullingData.material = PDC->m_ModelPair.second;
+			l_cullingData.visiblilityType = PDC->m_VisibleComponent->m_visiblilityType;
+			l_cullingData.meshUsageType = PDC->m_VisibleComponent->m_meshUsageType;
+			l_cullingData.UUID = PDC->m_VisibleComponent->m_UUID;
 
-			cullingDataPacks.emplace_back(l_cullingDataPack);
+			cullingDatas.emplace_back(l_cullingData);
 		}
 
 		return true;
@@ -550,18 +547,6 @@ void InnoPhysicsSystem::updateBVH()
 
 void InnoPhysicsSystem::updateCulling()
 {
-	m_isCullingDataPackValid = false;
-
-	m_cullingDataPack.clear();
-
-	m_visibleSceneBoundMax = InnoMath::minVec4<float>;
-	m_visibleSceneBoundMax.w = 1.0f;
-
-	m_visibleSceneBoundMin = InnoMath::maxVec4<float>;
-	m_visibleSceneBoundMin.w = 1.0f;
-
-	std::vector<CullingDataPack> l_cullingDataPacks;
-
 	auto l_mainCamera = GetComponentManager(CameraComponent)->GetMainCamera();
 
 	if (l_mainCamera == nullptr)
@@ -578,7 +563,17 @@ void InnoPhysicsSystem::updateCulling()
 
 	auto l_cameraFrustum = l_mainCamera->m_frustum;
 
+	m_visibleSceneBoundMax = InnoMath::minVec4<float>;
+	m_visibleSceneBoundMax.w = 1.0f;
+
+	m_visibleSceneBoundMin = InnoMath::maxVec4<float>;
+	m_visibleSceneBoundMin.w = 1.0f;
+
 	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
+
+	std::vector<CullingData> l_cullingDataVector;
+	l_cullingDataVector.reserve(l_visibleComponents.size());
+
 	for (auto visibleComponent : l_visibleComponents)
 	{
 		if (visibleComponent->m_visiblilityType != VisiblilityType::Invisible && visibleComponent->m_objectStatus == ObjectStatus::Activated)
@@ -589,8 +584,20 @@ void InnoPhysicsSystem::updateCulling()
 			for (auto& l_modelPair : visibleComponent->m_modelMap)
 			{
 				auto l_PDC = l_modelPair.first->m_PDC;
+
 				if (l_PDC)
 				{
+					CullingData l_cullingData;
+
+					l_cullingData.m = l_globalTm;
+					l_cullingData.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
+					l_cullingData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
+					l_cullingData.mesh = l_modelPair.first;
+					l_cullingData.material = l_modelPair.second;
+					l_cullingData.visiblilityType = visibleComponent->m_visiblilityType;
+					l_cullingData.meshUsageType = visibleComponent->m_meshUsageType;
+					l_cullingData.UUID = visibleComponent->m_UUID;
+
 					auto l_OBBws = InnoMath::transformAABBSpace(l_PDC->m_AABBLS, l_globalTm);
 
 					auto l_boundingSphere = Sphere();
@@ -600,20 +607,15 @@ void InnoPhysicsSystem::updateCulling()
 					if (InnoMath::intersectCheck(l_cameraFrustum, l_boundingSphere))
 					{
 						updateVisibleSceneBoundary(l_OBBws);
-
-						thread_local CullingDataPack l_cullingDataPack;
-
-						l_cullingDataPack.m = l_globalTm;
-						l_cullingDataPack.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
-						l_cullingDataPack.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-						l_cullingDataPack.mesh = l_modelPair.first;
-						l_cullingDataPack.material = l_modelPair.second;
-						l_cullingDataPack.visiblilityType = visibleComponent->m_visiblilityType;
-						l_cullingDataPack.meshUsageType = visibleComponent->m_meshUsageType;
-						l_cullingDataPack.UUID = visibleComponent->m_UUID;
-
-						l_cullingDataPacks.emplace_back(l_cullingDataPack);
+						l_cullingData.cullingDataChannel = CullingDataChannel::MainCamera;
 					}
+					else
+					{
+						//@TODO: Culling from sun
+						l_cullingData.cullingDataChannel = CullingDataChannel::Shadow;
+					}
+
+					l_cullingDataVector.emplace_back(l_cullingData);
 
 					updateTotalSceneBoundary(l_OBBws);
 				}
@@ -621,26 +623,19 @@ void InnoPhysicsSystem::updateCulling()
 		}
 	}
 
-	//BVHCulling(&m_RootPhysicsDataComponent, l_cameraFrustum, l_cullingDataPacks);
+	//BVHCulling(&m_RootPhysicsDataComponent, l_cameraFrustum, l_cullingDatas);
 
 	auto l_t = &m_BVHResults;
 
 	m_visibleSceneAABB = InnoMath::generateAABB(InnoPhysicsSystemNS::m_visibleSceneBoundMax, InnoPhysicsSystemNS::m_visibleSceneBoundMin);
 	m_totalSceneAABB = InnoMath::generateAABB(InnoPhysicsSystemNS::m_totalSceneBoundMax, InnoPhysicsSystemNS::m_totalSceneBoundMin);
 
-	m_cullingDataPack.setRawData(std::move(l_cullingDataPacks));
-
-	m_isCullingDataPackValid = true;
+	m_cullingData.SetValue(std::move(l_cullingDataVector));
 }
 
-std::optional<std::vector<CullingDataPack>> InnoPhysicsSystem::getCullingDataPack()
+const std::vector<CullingData>& InnoPhysicsSystem::getCullingData()
 {
-	if (InnoPhysicsSystemNS::m_isCullingDataPackValid)
-	{
-		return InnoPhysicsSystemNS::m_cullingDataPack.getRawData();
-	}
-
-	return std::nullopt;
+	return InnoPhysicsSystemNS::m_cullingData.GetValue();
 }
 
 AABB InnoPhysicsSystem::getVisibleSceneAABB()

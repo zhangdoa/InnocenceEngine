@@ -6,7 +6,8 @@ INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 namespace DefaultGPUBuffers
 {
 	GPUBufferDataComponent* m_MainCameraGBDC;
-	GPUBufferDataComponent* m_MeshGBDC;
+	GPUBufferDataComponent* m_SunShadowPassMeshGBDC;
+	GPUBufferDataComponent* m_OpaquePassMeshGBDC;
 	GPUBufferDataComponent* m_MaterialGBDC;
 	GPUBufferDataComponent* m_SunGBDC;
 	GPUBufferDataComponent* m_PointLightGBDC;
@@ -38,12 +39,19 @@ bool DefaultGPUBuffers::Initialize()
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_MainCameraGBDC);
 
-	m_MeshGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("MeshGPUBuffer/");
-	m_MeshGBDC->m_ElementCount = l_RenderingCapability.maxMeshes;
-	m_MeshGBDC->m_ElementSize = sizeof(MeshGPUData);
-	m_MeshGBDC->m_BindingPoint = 1;
+	m_SunShadowPassMeshGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("SunShadowPassMeshGPUBuffer/");
+	m_SunShadowPassMeshGBDC->m_ElementCount = l_RenderingCapability.maxMeshes;
+	m_SunShadowPassMeshGBDC->m_ElementSize = sizeof(MeshGPUData);
+	m_SunShadowPassMeshGBDC->m_BindingPoint = 1;
 
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_MeshGBDC);
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_SunShadowPassMeshGBDC);
+
+	m_OpaquePassMeshGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("OpaquePassMeshGPUBuffer/");
+	m_OpaquePassMeshGBDC->m_ElementCount = l_RenderingCapability.maxMeshes;
+	m_OpaquePassMeshGBDC->m_ElementSize = sizeof(MeshGPUData);
+	m_OpaquePassMeshGBDC->m_BindingPoint = 1;
+
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_OpaquePassMeshGBDC);
 
 	m_MaterialGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("MaterialGPUBuffer/");
 	m_MaterialGBDC->m_ElementCount = l_RenderingCapability.maxMaterials;
@@ -131,8 +139,10 @@ bool DefaultGPUBuffers::Initialize()
 bool DefaultGPUBuffers::Upload()
 {
 	auto l_CameraGPUData = g_pModuleManager->getRenderingFrontend()->getCameraGPUData();
-	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
-	auto l_MeshGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassMeshGPUData();
+	auto l_SunShadowPassTotalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getSunShadowPassDrawCallCount();
+	auto l_SunShadowPassMeshGPUData = g_pModuleManager->getRenderingFrontend()->getSunShadowPassMeshGPUData();
+	auto l_OpaquePassTotalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
+	auto l_OpaquePassMeshGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassMeshGPUData();
 	auto l_MaterialGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassMaterialGPUData();
 	auto l_SunGPUData = g_pModuleManager->getRenderingFrontend()->getSunGPUData();
 	auto l_PointLightGPUData = g_pModuleManager->getRenderingFrontend()->getPointLightGPUData();
@@ -142,13 +152,17 @@ bool DefaultGPUBuffers::Upload()
 	auto l_billboardPassMeshGPUData = g_pModuleManager->getRenderingFrontend()->getBillboardPassMeshGPUData();
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_MainCameraGBDC, &l_CameraGPUData);
-	if (l_MeshGPUData.size() > 0)
+	if (l_SunShadowPassMeshGPUData.size() > 0)
 	{
-		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_MeshGBDC, l_MeshGPUData, 0, l_totalDrawCallCount);
+		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_SunShadowPassMeshGBDC, l_SunShadowPassMeshGPUData, 0, l_SunShadowPassTotalDrawCallCount);
+	}
+	if (l_OpaquePassMeshGPUData.size() > 0)
+	{
+		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_OpaquePassMeshGBDC, l_OpaquePassMeshGPUData, 0, l_OpaquePassTotalDrawCallCount);
 	}
 	if (l_MaterialGPUData.size() > 0)
 	{
-		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_MaterialGBDC, l_MaterialGPUData, 0, l_totalDrawCallCount);
+		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_MaterialGBDC, l_MaterialGPUData, 0, l_OpaquePassTotalDrawCallCount);
 	}
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_SunGBDC, &l_SunGPUData);
 	if (l_SphereLightGPUData.size() > 0)
@@ -176,7 +190,7 @@ bool DefaultGPUBuffers::Upload()
 bool DefaultGPUBuffers::Terminate()
 {
 	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_MainCameraGBDC);
-	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_MeshGBDC);
+	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_OpaquePassMeshGBDC);
 	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_MaterialGBDC);
 	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_SunGBDC);;
 	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_PointLightGBDC);
@@ -199,7 +213,9 @@ GPUBufferDataComponent * DefaultGPUBuffers::GetGPUBufferDataComponent(GPUBufferU
 	{
 	case GPUBufferUsageType::MainCamera: l_result = m_MainCameraGBDC;
 		break;
-	case GPUBufferUsageType::Mesh: l_result = m_MeshGBDC;
+	case GPUBufferUsageType::SunShadowPassMesh: l_result = m_SunShadowPassMeshGBDC;
+		break;
+	case GPUBufferUsageType::OpaquePassMesh: l_result = m_OpaquePassMeshGBDC;
 		break;
 	case GPUBufferUsageType::Material: l_result = m_MaterialGBDC;
 		break;

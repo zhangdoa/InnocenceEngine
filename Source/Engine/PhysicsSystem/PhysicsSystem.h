@@ -18,7 +18,7 @@ public:
 	bool generatePhysicsProxy(VisibleComponent* VC) override;
 	void updateBVH() override;
 	void updateCulling() override;
-	std::optional<std::vector<CullingDataPack>> getCullingDataPack() override;
+	const std::vector<CullingData>& getCullingData() override;
 	AABB getVisibleSceneAABB() override;
 	AABB getStaticSceneAABB() override;
 	AABB getTotalSceneAABB() override;

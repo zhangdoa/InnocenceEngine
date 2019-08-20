@@ -74,7 +74,7 @@ bool SunShadowPass::Initialize()
 
 bool SunShadowPass::PrepareCommandList()
 {
-	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
+	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::SunShadowPassMesh);
 	auto l_CSMGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::CSM);
 
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
@@ -84,12 +84,12 @@ bool SunShadowPass::PrepareCommandList()
 
 	unsigned int l_offset = 0;
 
-	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
-	auto l_opaquePassDrawCallData = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallData();
+	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getSunShadowPassDrawCallCount();
+	auto l_sunShadowPassDrawCallData = g_pModuleManager->getRenderingFrontend()->getSunShadowPassDrawCallData();
 
 	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
 	{
-		auto l_drawCallData = l_opaquePassDrawCallData[i];
+		auto l_drawCallData = l_sunShadowPassDrawCallData[i];
 
 		if (l_drawCallData.mesh->m_objectStatus == ObjectStatus::Activated)
 		{

@@ -37,6 +37,10 @@ namespace InnoRenderingFrontendNS
 	DoubleBuffer<std::vector<SphereLightGPUData>, true> m_sphereLightGPUData;
 	DoubleBuffer<SkyGPUData, true> m_skyGPUData;
 
+	unsigned int m_sunShadowPassDrawCallCount = 0;
+	DoubleBuffer<std::vector<OpaquePassDrawCallData>, true> m_sunShadowPassDrawCallData;
+	DoubleBuffer<std::vector<MeshGPUData>, true> m_sunShadowPassMeshGPUData;
+
 	unsigned int m_opaquePassDrawCallCount = 0;
 	DoubleBuffer<std::vector<OpaquePassDrawCallData>, true> m_opaquePassDrawCallData;
 	DoubleBuffer<std::vector<MeshGPUData>, true> m_opaquePassMeshGPUData;
@@ -53,7 +57,7 @@ namespace InnoRenderingFrontendNS
 	unsigned int m_debuggerPassDrawCallCount = 0;
 	std::vector<DebuggerPassGPUData> m_debuggerPassGPUData;
 
-	ThreadSafeVector<CullingDataPack> m_cullingDataPack;
+	std::vector<CullingData> m_cullingData;
 
 	std::vector<Plane> m_debugPlanes;
 	std::vector<Sphere> m_debugSpheres;
@@ -110,6 +114,8 @@ namespace InnoRenderingFrontendNS
 	bool updateSkyData();
 	bool updatePointLightData();
 	bool updateSphereLightData();
+
+	bool updateSunShadowPassData();
 	bool updateMeshData();
 	bool updateBillboardPassData();
 	bool updateDebuggerPassData();
@@ -178,8 +184,9 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 	m_DefaultRenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)m_screenResolution.y;
 
 	f_sceneLoadingStartCallback = [&]() {
-		m_cullingDataPack.clear();
+		m_cullingData.clear();
 
+		m_sunShadowPassDrawCallCount = 0;
 		m_opaquePassDrawCallCount = 0;
 
 		m_transparentPassGPUData.clear();
@@ -489,10 +496,11 @@ bool InnoRenderingFrontendNS::updateSphereLightData()
 
 bool InnoRenderingFrontendNS::updateMeshData()
 {
+	unsigned int l_sunShadowPassIndex = 0;
 	unsigned int l_opaquePassIndex = 0;
 	unsigned int l_transparentPassIndex = 0;
 
-	auto l_cullingDataSize = m_cullingDataPack.size();
+	auto l_cullingDataSize = m_cullingData.size();
 
 	std::vector<OpaquePassDrawCallData> l_opaquePassDrawCallDataVector;
 	l_opaquePassDrawCallDataVector.resize(l_cullingDataSize);
@@ -501,11 +509,16 @@ bool InnoRenderingFrontendNS::updateMeshData()
 	std::vector<MaterialGPUData> l_opaquePassMaterialGPUData;
 	l_opaquePassMaterialGPUData.resize(l_cullingDataSize);
 
+	std::vector<OpaquePassDrawCallData> l_sunShadowPassDrawCallDataVector;
+	l_sunShadowPassDrawCallDataVector.reserve(l_cullingDataSize);
+	std::vector<MeshGPUData> l_sunShadowPassMeshGPUData;
+	l_sunShadowPassMeshGPUData.reserve(l_cullingDataSize);
+
 	std::vector<TransparentPassDrawCallData> l_sortedTransparentPassDrawCallData;
 
 	for (size_t i = 0; i < l_cullingDataSize; i++)
 	{
-		auto l_cullingData = m_cullingDataPack[i];
+		auto l_cullingData = m_cullingData[i];
 		if (l_cullingData.mesh != nullptr)
 		{
 			if (l_cullingData.mesh->m_objectStatus == ObjectStatus::Activated)
@@ -535,11 +548,17 @@ bool InnoRenderingFrontendNS::updateMeshData()
 						l_materialGPUData.materialType = int(l_cullingData.meshUsageType);
 						l_materialGPUData.customMaterial = l_cullingData.material->m_meshCustomMaterial;
 
-						l_opaquePassDrawCallDataVector[l_opaquePassIndex] = l_opaquePassDrawCallData;
-						l_opaquePassMeshGPUData[l_opaquePassIndex] = l_meshGPUData;
-						l_opaquePassMaterialGPUData[l_opaquePassIndex] = l_materialGPUData;
+						if (l_cullingData.cullingDataChannel != CullingDataChannel::Shadow)
+						{
+							l_opaquePassDrawCallDataVector[l_opaquePassIndex] = l_opaquePassDrawCallData;
+							l_opaquePassMeshGPUData[l_opaquePassIndex] = l_meshGPUData;
+							l_opaquePassMaterialGPUData[l_opaquePassIndex] = l_materialGPUData;
+							l_opaquePassIndex++;
+						}
 
-						l_opaquePassIndex++;
+						l_sunShadowPassDrawCallDataVector.emplace_back(l_opaquePassDrawCallData);
+						l_sunShadowPassMeshGPUData.emplace_back(l_meshGPUData);
+						l_sunShadowPassIndex++;
 					}
 					else if (l_cullingData.visiblilityType == VisiblilityType::Transparent)
 					{
@@ -568,6 +587,10 @@ bool InnoRenderingFrontendNS::updateMeshData()
 			}
 		}
 	}
+
+	m_sunShadowPassDrawCallData.SetValue(std::move(l_sunShadowPassDrawCallDataVector));
+	m_sunShadowPassMeshGPUData.SetValue(std::move(l_sunShadowPassMeshGPUData));
+	m_sunShadowPassDrawCallCount = l_sunShadowPassIndex;
 
 	m_opaquePassDrawCallData.SetValue(std::move(l_opaquePassDrawCallDataVector));
 	m_opaquePassMeshGPUData.SetValue(std::move(l_opaquePassMeshGPUData));
@@ -688,14 +711,7 @@ bool InnoRenderingFrontendNS::update()
 		updateSkyData();
 
 		// copy culling data pack for local scope
-		auto l_cullingDataPack = g_pModuleManager->getPhysicsSystem()->getCullingDataPack();
-		if (l_cullingDataPack.has_value())
-		{
-			if ((*l_cullingDataPack).size() > 0)
-			{
-				m_cullingDataPack.setRawData(std::move(*l_cullingDataPack));
-			}
-		}
+		m_cullingData = g_pModuleManager->getPhysicsSystem()->getCullingData();
 
 		updateMeshData();
 
@@ -995,6 +1011,21 @@ const std::vector<SphereLightGPUData>& InnoRenderingFrontend::getSphereLightGPUD
 const SkyGPUData& InnoRenderingFrontend::getSkyGPUData()
 {
 	return m_skyGPUData.GetValue();
+}
+
+unsigned int InnoRenderingFrontend::getSunShadowPassDrawCallCount()
+{
+	return m_sunShadowPassDrawCallCount;
+}
+
+const std::vector<OpaquePassDrawCallData>& InnoRenderingFrontend::getSunShadowPassDrawCallData()
+{
+	return m_sunShadowPassDrawCallData.GetValue();
+}
+
+const std::vector<MeshGPUData>& InnoRenderingFrontend::getSunShadowPassMeshGPUData()
+{
+	return m_sunShadowPassMeshGPUData.GetValue();
 }
 
 unsigned int InnoRenderingFrontend::getOpaquePassDrawCallCount()

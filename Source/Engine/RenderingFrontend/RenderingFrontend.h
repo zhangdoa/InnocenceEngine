@@ -49,6 +49,10 @@ public:
 	const std::vector<SphereLightGPUData>& getSphereLightGPUData() override;
 	const SkyGPUData& getSkyGPUData() override;
 
+	unsigned int getSunShadowPassDrawCallCount() override;
+	const std::vector<OpaquePassDrawCallData>& getSunShadowPassDrawCallData() override;
+	const std::vector<MeshGPUData>& getSunShadowPassMeshGPUData() override;
+
 	unsigned int getOpaquePassDrawCallCount() override;
 	const std::vector<OpaquePassDrawCallData>& getOpaquePassDrawCallData() override;
 	const std::vector<MeshGPUData>& getOpaquePassMeshGPUData() override;

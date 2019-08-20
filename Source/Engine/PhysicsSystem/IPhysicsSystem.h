@@ -1,12 +1,15 @@
 #pragma once
 #include "../Common/InnoType.h"
-#include "../Common/STL17.h"
 
 #include "../Common/InnoClassTemplate.h"
 #include "../Component/VisibleComponent.h"
 #include "../Component/MeshDataComponent.h"
 
-struct CullingDataPack
+enum class CullingDataChannel {
+	Shadow = 1, MainCamera = 2, All = Shadow | MainCamera
+};
+
+struct CullingData
 {
 	mat4 m;
 	mat4 m_prev;
@@ -15,6 +18,7 @@ struct CullingDataPack
 	MaterialDataComponent* material;
 	VisiblilityType visiblilityType;
 	MeshUsageType meshUsageType;
+	CullingDataChannel cullingDataChannel;
 	unsigned int UUID;
 };
 
@@ -35,7 +39,7 @@ public:
 	virtual bool generatePhysicsProxy(VisibleComponent* VC) = 0;
 	virtual void updateBVH() = 0;
 	virtual void updateCulling() = 0;
-	virtual std::optional<std::vector<CullingDataPack>> getCullingDataPack() = 0;
+	virtual const std::vector<CullingData>& getCullingData() = 0;
 	virtual AABB getVisibleSceneAABB() = 0;
 	virtual AABB getStaticSceneAABB() = 0;
 	virtual AABB getTotalSceneAABB() = 0;
