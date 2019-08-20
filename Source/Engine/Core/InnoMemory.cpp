@@ -45,36 +45,15 @@ class ObjectPool : public IObjectPool
 public:
 	ObjectPool() = delete;
 
-	explicit ObjectPool(std::size_t objectSize, unsigned int poolCapability)
+	explicit ObjectPool(std::size_t objectSize, std::size_t poolCapability)
 	{
+		m_PoolCapability = poolCapability;
 		m_Pool = std::make_unique<MemoryPool>(objectSize, poolCapability);
 		m_ChunkPool = std::make_unique<MemoryPool>(sizeof(Chunk), poolCapability);
 		m_CurrentFreeChunk = reinterpret_cast<Chunk*>(m_ChunkPool->GetHeapAddress());
 		m_ObjectSize = objectSize;
 
-		auto l_ChuckUC = m_ChunkPool->GetHeapAddress();
-		auto l_ObjectUC = m_Pool->GetHeapAddress();
-		Chunk* l_PrevFreeChunk = nullptr;
-
-		for (unsigned long long i = 0; i < poolCapability; i++)
-		{
-			auto l_NewFreeChunk = new(l_ChuckUC) Chunk();
-
-			l_NewFreeChunk->m_Target = l_ObjectUC;
-			l_NewFreeChunk->m_Prev = l_PrevFreeChunk;
-
-			// Link from front to end
-			if (l_PrevFreeChunk)
-			{
-				l_NewFreeChunk->m_Prev->m_Next = l_NewFreeChunk;
-			}
-
-			l_NewFreeChunk->m_Next = nullptr;
-			l_PrevFreeChunk = l_NewFreeChunk;
-
-			l_ChuckUC += sizeof(Chunk);
-			l_ObjectUC += objectSize;
-		}
+		ConstructPool();
 
 		InnoLogger::Log(LogLevel::Verbose, "InnoMemory: Object pool has been allocated at ", this, ".");
 	}
@@ -142,11 +121,45 @@ public:
 		}
 	}
 
+	void Clear()
+	{
+		ConstructPool();
+	}
+
 private:
+
+	void ConstructPool()
+	{
+		auto l_ChuckUC = m_ChunkPool->GetHeapAddress();
+		auto l_ObjectUC = m_Pool->GetHeapAddress();
+		Chunk* l_PrevFreeChunk = nullptr;
+
+		for (auto i = 0; i < m_PoolCapability; i++)
+		{
+			auto l_NewFreeChunk = new(l_ChuckUC) Chunk();
+
+			l_NewFreeChunk->m_Target = l_ObjectUC;
+			l_NewFreeChunk->m_Prev = l_PrevFreeChunk;
+
+			// Link from front to end
+			if (l_PrevFreeChunk)
+			{
+				l_NewFreeChunk->m_Prev->m_Next = l_NewFreeChunk;
+			}
+
+			l_NewFreeChunk->m_Next = nullptr;
+			l_PrevFreeChunk = l_NewFreeChunk;
+
+			l_ChuckUC += sizeof(Chunk);
+			l_ObjectUC += m_ObjectSize;
+		}
+	}
+
 	std::unique_ptr<MemoryPool> m_Pool;
 	std::unique_ptr<MemoryPool> m_ChunkPool;
-	Chunk* m_CurrentFreeChunk;
+	std::size_t m_PoolCapability;
 	std::size_t m_ObjectSize;
+	Chunk* m_CurrentFreeChunk;
 };
 
 class MemoryMemo
@@ -210,4 +223,18 @@ IObjectPool * InnoMemory::CreateObjectPool(std::size_t objectSize, unsigned int 
 	auto l_IObjectPoolAddress = reinterpret_cast<IObjectPool*>(InnoMemory::Allocate(sizeof(ObjectPool)));
 	auto l_IObjectPool = new(l_IObjectPoolAddress) ObjectPool(objectSize, poolCapability);
 	return l_IObjectPool;
+}
+
+bool InnoMemory::ClearObjectPool(IObjectPool * objectPool)
+{
+	auto l_objectPool = reinterpret_cast<ObjectPool*>(objectPool);
+	l_objectPool->Clear();
+
+	return true;
+}
+
+bool InnoMemory::DestroyObjectPool(IObjectPool * objectPool)
+{
+	InnoMemory::Deallocate(objectPool);
+	return true;
 }

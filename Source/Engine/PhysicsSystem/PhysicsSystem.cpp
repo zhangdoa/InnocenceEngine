@@ -98,7 +98,7 @@ bool InnoPhysicsSystem::setup()
 
 bool InnoPhysicsSystemNS::generatePhysicsDataComponent(MeshDataComponent* MDC)
 {
-	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_PhysicsDataComponentPool, sizeof(PhysicsDataComponent));
+	auto l_rawPtr = m_PhysicsDataComponentPool->Spawn();
 	auto l_PDC = new(l_rawPtr)PhysicsDataComponent();
 
 	l_PDC->m_parentEntity = MDC->m_parentEntity;

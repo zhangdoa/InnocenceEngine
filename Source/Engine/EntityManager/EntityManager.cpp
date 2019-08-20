@@ -25,7 +25,8 @@ bool InnoEntityManager::Setup()
 		{
 			if (i->m_objectUsage == ObjectUsage::Gameplay)
 			{
-				Destroy(i);
+				i->m_objectStatus = ObjectStatus::Terminated;
+				m_EntityPool->Destroy(i);
 			}
 		}
 

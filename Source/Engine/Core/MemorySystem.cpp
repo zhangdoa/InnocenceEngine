@@ -52,29 +52,13 @@ ObjectStatus InnoMemorySystem::getStatus()
 	return InnoMemorySystemNS::m_objectStatus;
 }
 
-void* InnoMemorySystem::allocateMemoryPool(size_t objectSize, unsigned int poolCapability)
-{
-	return InnoMemory::CreateObjectPool(objectSize, poolCapability);
-}
-
-void * InnoMemorySystem::allocateRawMemory(size_t size)
+void * InnoMemorySystem::allocate(size_t size)
 {
 	return InnoMemory::Allocate(size);
 }
 
-bool InnoMemorySystem::deallocateRawMemory(void * ptr)
+bool InnoMemorySystem::deallocate(void * ptr)
 {
 	InnoMemory::Deallocate(ptr);
-	return true;
-}
-
-void * InnoMemorySystem::spawnObject(void * memoryPool, size_t objectSize)
-{
-	return reinterpret_cast<IObjectPool*>(memoryPool)->Spawn();
-}
-
-bool InnoMemorySystem::destroyObject(void * memoryPool, size_t objectSize, void * object)
-{
-	reinterpret_cast<IObjectPool*>(memoryPool)->Destroy(object);
 	return true;
 }

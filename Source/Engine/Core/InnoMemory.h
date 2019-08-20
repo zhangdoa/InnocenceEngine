@@ -26,4 +26,6 @@ public:
 	static void Deallocate(void* const ptr);
 
 	static IObjectPool* CreateObjectPool(std::size_t objectSize, unsigned int poolCapability);
+	static bool ClearObjectPool(IObjectPool* objectPool);
+	static bool DestroyObjectPool(IObjectPool* objectPool);
 };

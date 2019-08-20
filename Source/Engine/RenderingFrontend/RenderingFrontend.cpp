@@ -8,6 +8,7 @@
 #include "../ComponentManager/ICameraComponentManager.h"
 
 #include "../Core/InnoLogger.h"
+#include "../Core/InnoMemory.h"
 
 #include "../ModuleManager/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
@@ -66,8 +67,8 @@ namespace InnoRenderingFrontendNS
 
 	RenderingConfig m_renderingConfig = RenderingConfig();
 
-	void* m_SkeletonDataComponentPool;
-	void* m_AnimationDataComponentPool;
+	IObjectPool* m_SkeletonDataComponentPool;
+	IObjectPool* m_AnimationDataComponentPool;
 
 	ThreadSafeQueue<MeshDataComponent*> m_uninitializedMeshes;
 	ThreadSafeQueue<MaterialDataComponent*> m_uninitializedMaterials;
@@ -198,8 +199,8 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
-	m_SkeletonDataComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(SkeletonDataComponent), 2048);
-	m_AnimationDataComponentPool = g_pModuleManager->getMemorySystem()->allocateMemoryPool(sizeof(AnimationDataComponent), 16384);
+	m_SkeletonDataComponentPool = InnoMemory::CreateObjectPool(sizeof(SkeletonDataComponent), 2048);
+	m_AnimationDataComponentPool = InnoMemory::CreateObjectPool(sizeof(AnimationDataComponent), 16384);
 
 	m_rayTracer->Setup();
 
@@ -768,7 +769,7 @@ MaterialDataComponent * InnoRenderingFrontend::addMaterialDataComponent()
 SkeletonDataComponent * InnoRenderingFrontend::addSkeletonDataComponent()
 {
 	static std::atomic<unsigned int> skeletonCount = 0;
-	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_SkeletonDataComponentPool, sizeof(SkeletonDataComponent));
+	auto l_rawPtr = m_SkeletonDataComponentPool->Spawn();
 	auto l_SDC = new(l_rawPtr)SkeletonDataComponent();
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Skeleton_" + std::to_string(skeletonCount) + "/").c_str());
 	l_SDC->m_parentEntity = l_parentEntity;
@@ -782,7 +783,7 @@ SkeletonDataComponent * InnoRenderingFrontend::addSkeletonDataComponent()
 AnimationDataComponent * InnoRenderingFrontend::addAnimationDataComponent()
 {
 	static std::atomic<unsigned int> animationCount = 0;
-	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_AnimationDataComponentPool, sizeof(AnimationDataComponent));
+	auto l_rawPtr = m_AnimationDataComponentPool->Spawn();
 	auto l_ADC = new(l_rawPtr)AnimationDataComponent();
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Animation_" + std::to_string(animationCount) + "/").c_str());
 	l_ADC->m_parentEntity = l_parentEntity;

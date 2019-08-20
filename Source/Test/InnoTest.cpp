@@ -130,6 +130,9 @@ void TestInnoMemory(size_t testCaseCount)
 	auto l_SpeedRatio2 = double(l_Timestamp3 - l_StartTime2) / double(l_Timestamp4 - l_Timestamp3);
 
 	InnoLogger::Log(LogLevel::Success, "Custom object pool deallocation VS free() speed ratio is ", l_SpeedRatio1);
+
+	InnoMemory::ClearObjectPool(l_objectPool);
+	InnoMemory::DestroyObjectPool(l_objectPool);
 }
 
 class IJob
