@@ -46,10 +46,7 @@ xcuserdata/
 *.InnoSurfel
 
 # For Qt
-/Source/Editor/InnocenceEditor/darkstyle/
-/Source/Editor/InnocenceEditor/DarkStyle.cpp
-/Source/Editor/InnocenceEditor/DarkStyle.h
-/Source/Editor/InnocenceEditor/darkstyle.qrc
+/Source/Editor/InnocenceEditor/qdarkstyle/
 /Source/Editor/InnocenceEditor/InnocenceEditor.pro.user
 
 #For ImGui

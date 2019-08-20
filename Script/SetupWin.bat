@@ -29,10 +29,9 @@ move /y temp.h.new ..\..\Engine\ThirdParty\ImGui\imgui_impl_opengl3.h
 
 xcopy /y json\single_include\nlohmann\json.hpp ..\Include\json\
 
-xcopy /e/s/y Qt-Frameless-Window-DarkStyle\darkstyle\* ..\..\editor\InnocenceEditor\darkstyle\
-xcopy /y Qt-Frameless-Window-DarkStyle\darkstyle.qrc ..\..\editor\InnocenceEditor\
-xcopy /y Qt-Frameless-Window-DarkStyle\Darkstyle.h ..\..\editor\InnocenceEditor\
-xcopy /y Qt-Frameless-Window-DarkStyle\Darkstyle.cpp ..\..\editor\InnocenceEditor\
+xcopy /e/s/y QDarkStyleSheet\qdarkstyle\rc\* ..\..\Editor\InnocenceEditor\qdarkstyle\rc\
+xcopy /y QDarkStyleSheet\qdarkstyle\style.qss ..\..\Editor\InnocenceEditor\qdarkstyle\
+xcopy /y QDarkStyleSheet\qdarkstyle\style.qrc ..\..\Editor\InnocenceEditor\qdarkstyle\
 
 mkdir ..\Include\GL
 powershell -Command "Invoke-WebRequest https://www.khronos.org/registry/OpenGL/api/GL/wglext.h -OutFile ..\Include\GL\wglext.h"

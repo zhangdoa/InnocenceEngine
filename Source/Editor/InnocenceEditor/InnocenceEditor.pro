@@ -27,7 +27,6 @@ SOURCES += \
     lightcomponentpropertyeditor.cpp \
         main.cpp \
         mainwindow.cpp \
-        DarkStyle.cpp \
     innoviewport.cpp \
     innoconsole.cpp \
     innodirectoryexplorer.cpp \
@@ -48,7 +47,6 @@ SOURCES += \
 HEADERS += \
     lightcomponentpropertyeditor.h \
         mainwindow.h \
-        DarkStyle.h \
     innoviewport.h \
     innoconsole.h \
     innodirectoryexplorer.h \
@@ -69,7 +67,7 @@ HEADERS += \
 FORMS += \
         mainwindow.ui
 
-RESOURCES += darkstyle.qrc
+RESOURCES += qdarkstyle/style.qrc
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

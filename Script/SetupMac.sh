@@ -27,11 +27,10 @@ mv -f temp.h.new ../../Engine/ThirdParty/ImGui/imgui_impl_opengl3.h
 mkdir -p ../Include/json/
 cp json/single_include/nlohmann/json.hpp ../Include/json/
 
-mkdir -p ../../editor/InnocenceEditor/darkstyle/
-cp Qt-Frameless-Window-DarkStyle/darkstyle/* ../../Editor/InnocenceEditor/darkstyle/
-cp Qt-Frameless-Window-DarkStyle/darkstyle.qrc ../../Editor/InnocenceEditor/
-cp Qt-Frameless-Window-DarkStyle/DarkStyle.h ../../Editor/InnocenceEditor/
-cp Qt-Frameless-Window-DarkStyle/DarkStyle.cpp ../../Editor/InnocenceEditor/
+mkdir -p ../../editor/InnocenceEditor/qdarkstyle/
+cp QDarkStyleSheet/qdarkstyle/rc/* ../../Editor/InnocenceEditor/qdarkstyle/rc/
+cp QDarkStyleSheet/qdarkstyle/style.qss ../../Editor/InnocenceEditor/qdarkstyle/
+cp QDarkStyleSheet/qdarkstyle/style.qrc ../../Editor/InnocenceEditor/qdarkstyle/
 
 cd ../
 
