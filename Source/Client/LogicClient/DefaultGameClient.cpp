@@ -458,6 +458,8 @@ bool GameClientNS::setupPointLights()
 
 	std::default_random_engine l_generator;
 	std::uniform_real_distribution<float> l_randomPosDelta(0.0f, 1.0f);
+	std::uniform_real_distribution<float> l_randomLuminousFlux(10.0f, 100.0f);
+	std::uniform_real_distribution<float> l_randomColorTemperature(2000.0f, 14000.0f);
 
 	for (unsigned int i = 0; i < l_containerSize; i++)
 	{
@@ -476,8 +478,8 @@ bool GameClientNS::setupPointLights()
 		m_pointLightTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_pointLightTransformComponents[i]->m_localTransformVector_target.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_pointLightComponents[i] = SpawnComponent(PointLightComponent, m_pointLightEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
-		m_pointLightComponents[i]->m_LuminousFlux = 100.0f;
-		m_pointLightComponents[i]->m_RGBColor = vec4(l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), 1.0f);
+		m_pointLightComponents[i]->m_LuminousFlux = l_randomLuminousFlux(l_generator);
+		m_pointLightComponents[i]->m_ColorTemperature = l_randomColorTemperature(l_generator);
 	}
 
 	for (unsigned int i = 0; i < l_matrixDim; i++)
