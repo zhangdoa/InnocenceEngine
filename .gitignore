@@ -45,6 +45,11 @@ xcuserdata/
 *.InnoProbeInfo
 *.InnoSurfel
 
+# Large binary assets
+/Res/Fonts/*
+/Res/Models/*
+/Res/Textures/*
+
 # For Qt
 /Source/Editor/InnocenceEditor/qdarkstyle/
 /Source/Editor/InnocenceEditor/InnocenceEditor.pro.user
