@@ -32,7 +32,26 @@ using EntityID = FixedSizeString<32>;
 using ComponentName = FixedSizeString<128>;
 using EntityName = FixedSizeString<128>;
 
-enum class ComponentType { TransformComponent, VisibleComponent, DirectionalLightComponent, PointLightComponent, SpotLightComponent, SphereLightComponent, CameraComponent, PhysicsDataComponent, MeshDataComponent, MaterialDataComponent, TextureDataComponent };
+enum class ComponentType
+{
+	TransformComponent,
+	VisibleComponent,
+	DirectionalLightComponent,
+	PointLightComponent,
+	SpotLightComponent,
+	SphereLightComponent,
+	CameraComponent,
+	PhysicsDataComponent,
+	MeshDataComponent,
+	MaterialDataComponent,
+	TextureDataComponent,
+	SkeletonDataComponent,
+	AnimationDataComponent,
+	RenderPassDataComponent,
+	ShaderProgramComponent,
+	SamplerDataComponent,
+	GPUBufferDataComponent
+};
 
 struct TimeData
 {

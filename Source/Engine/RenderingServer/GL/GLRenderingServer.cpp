@@ -11,6 +11,8 @@
 
 using namespace GLHelper;
 
+#include "../CommonFunctionDefinationMacro.inl"
+
 #include "../../ModuleManager/IModuleManager.h"
 
 extern IModuleManager* g_pModuleManager;
@@ -216,152 +218,13 @@ ObjectStatus GLRenderingServer::GetStatus()
 	return m_objectStatus;
 }
 
-MeshDataComponent * GLRenderingServer::AddMeshDataComponent(const char * name)
-{
-	static std::atomic<unsigned int> l_count = 0;
-	l_count++;
-	auto l_rawPtr = m_MeshDataComponentPool->Spawn();
-	auto l_result = new(l_rawPtr)GLMeshDataComponent();
-	std::string l_name;
-	if (strcmp(name, ""))
-	{
-		l_name = name;
-	}
-	else
-	{
-		l_name = ("Mesh_" + std::to_string(l_count) + "/");
-	}
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
-	l_result->m_parentEntity = l_parentEntity;
-	l_result->m_componentName = l_name.c_str();
-	return l_result;
-}
-
-TextureDataComponent * GLRenderingServer::AddTextureDataComponent(const char * name)
-{
-	static std::atomic<unsigned int> l_count = 0;
-	l_count++;
-	auto l_rawPtr = m_TextureDataComponentPool->Spawn();
-	auto l_result = new(l_rawPtr)GLTextureDataComponent();
-	std::string l_name;
-	if (strcmp(name, ""))
-	{
-		l_name = name;
-	}
-	else
-	{
-		l_name = ("Texture_" + std::to_string(l_count) + "/");
-	}
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
-	l_result->m_parentEntity = l_parentEntity;
-	l_result->m_componentName = l_name.c_str();
-	return l_result;
-}
-
-MaterialDataComponent * GLRenderingServer::AddMaterialDataComponent(const char * name)
-{
-	static std::atomic<unsigned int> l_count = 0;
-	l_count++;
-	auto l_rawPtr = m_MaterialDataComponentPool->Spawn();
-	auto l_result = new(l_rawPtr)GLMaterialDataComponent();
-	std::string l_name;
-	if (strcmp(name, ""))
-	{
-		l_name = name;
-	}
-	else
-	{
-		l_name = ("Material_" + std::to_string(l_count) + "/");
-	}
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
-	l_result->m_parentEntity = l_parentEntity;
-	l_result->m_componentName = l_name.c_str();
-	return l_result;
-}
-
-RenderPassDataComponent * GLRenderingServer::AddRenderPassDataComponent(const char * name)
-{
-	static std::atomic<unsigned int> l_count = 0;
-	l_count++;
-	auto l_rawPtr = m_RenderPassDataComponentPool->Spawn();
-	auto l_result = new(l_rawPtr)GLRenderPassDataComponent();
-	std::string l_name;
-	if (strcmp(name, ""))
-	{
-		l_name = name;
-	}
-	else
-	{
-		l_name = ("RenderPass_" + std::to_string(l_count) + "/");
-	}
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
-	l_result->m_parentEntity = l_parentEntity;
-	l_result->m_componentName = l_name.c_str();
-	return l_result;
-}
-
-ShaderProgramComponent * GLRenderingServer::AddShaderProgramComponent(const char * name)
-{
-	static std::atomic<unsigned int> l_count = 0;
-	l_count++;
-	auto l_rawPtr = m_ShaderProgramComponentPool->Spawn();
-	auto l_result = new(l_rawPtr)GLShaderProgramComponent();
-	std::string l_name;
-	if (strcmp(name, ""))
-	{
-		l_name = name;
-	}
-	else
-	{
-		l_name = ("ShaderProgram_" + std::to_string(l_count) + "/");
-	}
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
-	l_result->m_parentEntity = l_parentEntity;
-	l_result->m_componentName = l_name.c_str();
-	return l_result;
-}
-
-SamplerDataComponent * GLRenderingServer::AddSamplerDataComponent(const char * name)
-{
-	static std::atomic<unsigned int> l_count = 0;
-	l_count++;
-	auto l_rawPtr = m_SamplerDataComponentPool->Spawn();
-	auto l_result = new(l_rawPtr)GLSamplerDataComponent();
-	std::string l_name;
-	if (strcmp(name, ""))
-	{
-		l_name = name;
-	}
-	else
-	{
-		l_name = ("SamplerData_" + std::to_string(l_count) + "/");
-	}
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
-	l_result->m_parentEntity = l_parentEntity;
-	l_result->m_componentName = l_name.c_str();
-	return l_result;
-}
-
-GPUBufferDataComponent * GLRenderingServer::AddGPUBufferDataComponent(const char * name)
-{
-	static std::atomic<unsigned int> l_count = 0;
-	l_count++;
-	auto l_rawPtr = m_GPUBufferDataComponentPool->Spawn();
-	auto l_result = new(l_rawPtr)GLGPUBufferDataComponent();
-	std::string l_name;
-	if (strcmp(name, ""))
-	{
-		l_name = name;
-	}
-	else
-	{
-		l_name = ("GPUBufferData_" + std::to_string(l_count) + "/");
-	}
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
-	l_result->m_parentEntity = l_parentEntity;
-	l_result->m_componentName = l_name.c_str();
-	return l_result;
-}
+AddComponent(GL, MeshData);
+AddComponent(GL, TextureData);
+AddComponent(GL, MaterialData);
+AddComponent(GL, RenderPassData);
+AddComponent(GL, ShaderProgram);
+AddComponent(GL, SamplerData);
+AddComponent(GL, GPUBufferData);
 
 bool GLRenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 {

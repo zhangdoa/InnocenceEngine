@@ -102,6 +102,9 @@ bool InnoPhysicsSystemNS::generatePhysicsDataComponent(MeshDataComponent* MDC)
 	auto l_PDC = new(l_rawPtr)PhysicsDataComponent();
 
 	l_PDC->m_parentEntity = MDC->m_parentEntity;
+	l_PDC->m_objectSource = ObjectSource::Runtime;
+	l_PDC->m_objectUsage = ObjectUsage::Engine;
+	l_PDC->m_ComponentType = ComponentType::PhysicsDataComponent;
 
 	auto l_AABB = InnoMath::generateAABB(&MDC->m_vertices[0], MDC->m_vertices.size());
 	auto l_sphere = InnoMath::generateBoundSphere(l_AABB);

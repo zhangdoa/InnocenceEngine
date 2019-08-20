@@ -11,6 +11,8 @@
 
 using namespace VKHelper;
 
+#include "../CommonFunctionDefinationMacro.inl"
+
 #include "../../ModuleManager/IModuleManager.h"
 
 extern IModuleManager* g_pModuleManager;
@@ -569,152 +571,13 @@ ObjectStatus VKRenderingServer::GetStatus()
 	return m_objectStatus;
 }
 
-MeshDataComponent * VKRenderingServer::AddMeshDataComponent(const char * name)
-{
-	static std::atomic<unsigned int> l_count = 0;
-	l_count++;
-	auto l_rawPtr = m_MeshDataComponentPool->Spawn();
-	auto l_result = new(l_rawPtr)VKMeshDataComponent();
-	std::string l_name;
-	if (strcmp(name, ""))
-	{
-		l_name = name;
-	}
-	else
-	{
-		l_name = ("Mesh_" + std::to_string(l_count) + "/");
-	}
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
-	l_result->m_parentEntity = l_parentEntity;
-	l_result->m_componentName = l_name.c_str();
-	return l_result;
-}
-
-TextureDataComponent * VKRenderingServer::AddTextureDataComponent(const char * name)
-{
-	static std::atomic<unsigned int> l_count = 0;
-	l_count++;
-	auto l_rawPtr = m_TextureDataComponentPool->Spawn();
-	auto l_result = new(l_rawPtr)VKTextureDataComponent();
-	std::string l_name;
-	if (strcmp(name, ""))
-	{
-		l_name = name;
-	}
-	else
-	{
-		l_name = ("Texture_" + std::to_string(l_count) + "/");
-	}
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
-	l_result->m_parentEntity = l_parentEntity;
-	l_result->m_componentName = l_name.c_str();
-	return l_result;
-}
-
-MaterialDataComponent * VKRenderingServer::AddMaterialDataComponent(const char * name)
-{
-	static std::atomic<unsigned int> l_count = 0;
-	l_count++;
-	auto l_rawPtr = m_MaterialDataComponentPool->Spawn();
-	auto l_result = new(l_rawPtr)VKMaterialDataComponent();
-	std::string l_name;
-	if (strcmp(name, ""))
-	{
-		l_name = name;
-	}
-	else
-	{
-		l_name = ("Material_" + std::to_string(l_count) + "/");
-	}
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
-	l_result->m_parentEntity = l_parentEntity;
-	l_result->m_componentName = l_name.c_str();
-	return l_result;
-}
-
-RenderPassDataComponent * VKRenderingServer::AddRenderPassDataComponent(const char * name)
-{
-	static std::atomic<unsigned int> l_count = 0;
-	l_count++;
-	auto l_rawPtr = m_RenderPassDataComponentPool->Spawn();
-	auto l_result = new(l_rawPtr)VKRenderPassDataComponent();
-	std::string l_name;
-	if (strcmp(name, ""))
-	{
-		l_name = name;
-	}
-	else
-	{
-		l_name = ("RenderPass_" + std::to_string(l_count) + "/");
-	}
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
-	l_result->m_parentEntity = l_parentEntity;
-	l_result->m_componentName = l_name.c_str();
-	return l_result;
-}
-
-ShaderProgramComponent * VKRenderingServer::AddShaderProgramComponent(const char * name)
-{
-	static std::atomic<unsigned int> l_count = 0;
-	l_count++;
-	auto l_rawPtr = m_ShaderProgramComponentPool->Spawn();
-	auto l_result = new(l_rawPtr)VKShaderProgramComponent();
-	std::string l_name;
-	if (strcmp(name, ""))
-	{
-		l_name = name;
-	}
-	else
-	{
-		l_name = ("ShaderProgram_" + std::to_string(l_count) + "/");
-	}
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
-	l_result->m_parentEntity = l_parentEntity;
-	l_result->m_componentName = l_name.c_str();
-	return l_result;
-}
-
-SamplerDataComponent * VKRenderingServer::AddSamplerDataComponent(const char * name)
-{
-	static std::atomic<unsigned int> l_count = 0;
-	l_count++;
-	auto l_rawPtr = m_SamplerDataComponentPool->Spawn();
-	auto l_result = new(l_rawPtr)VKSamplerDataComponent();
-	std::string l_name;
-	if (strcmp(name, ""))
-	{
-		l_name = name;
-	}
-	else
-	{
-		l_name = ("SamplerData_" + std::to_string(l_count) + "/");
-	}
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
-	l_result->m_parentEntity = l_parentEntity;
-	l_result->m_componentName = l_name.c_str();
-	return l_result;
-}
-
-GPUBufferDataComponent * VKRenderingServer::AddGPUBufferDataComponent(const char * name)
-{
-	static std::atomic<unsigned int> l_count = 0;
-	l_count++;
-	auto l_rawPtr = m_GPUBufferDataComponentPool->Spawn();
-	auto l_result = new(l_rawPtr)VKGPUBufferDataComponent();
-	std::string l_name;
-	if (strcmp(name, ""))
-	{
-		l_name = name;
-	}
-	else
-	{
-		l_name = ("GPUBufferData_" + std::to_string(l_count) + "/");
-	}
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
-	l_result->m_parentEntity = l_parentEntity;
-	l_result->m_componentName = l_name.c_str();
-	return l_result;
-}
+AddComponent(VK, MeshData);
+AddComponent(VK, TextureData);
+AddComponent(VK, MaterialData);
+AddComponent(VK, RenderPassData);
+AddComponent(VK, ShaderProgram);
+AddComponent(VK, SamplerData);
+AddComponent(VK, GPUBufferData);
 
 bool VKRenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 {

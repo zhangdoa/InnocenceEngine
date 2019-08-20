@@ -13,6 +13,8 @@
 
 using namespace DX11Helper;
 
+#include "../CommonFunctionDefinationMacro.inl"
+
 #include "../../ModuleManager/IModuleManager.h"
 
 extern IModuleManager* g_pModuleManager;
@@ -386,152 +388,13 @@ ObjectStatus DX11RenderingServer::GetStatus()
 	return m_objectStatus;
 }
 
-MeshDataComponent * DX11RenderingServer::AddMeshDataComponent(const char * name)
-{
-	static std::atomic<unsigned int> l_count = 0;
-	l_count++;
-	auto l_rawPtr = m_MeshDataComponentPool->Spawn();
-	auto l_result = new(l_rawPtr)DX11MeshDataComponent();
-	std::string l_name;
-	if (strcmp(name, ""))
-	{
-		l_name = name;
-	}
-	else
-	{
-		l_name = ("Mesh_" + std::to_string(l_count) + "/");
-	}
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
-	l_result->m_parentEntity = l_parentEntity;
-	l_result->m_componentName = l_name.c_str();
-	return l_result;
-}
-
-TextureDataComponent * DX11RenderingServer::AddTextureDataComponent(const char * name)
-{
-	static std::atomic<unsigned int> l_count = 0;
-	l_count++;
-	auto l_rawPtr = m_TextureDataComponentPool->Spawn();
-	auto l_result = new(l_rawPtr)DX11TextureDataComponent();
-	std::string l_name;
-	if (strcmp(name, ""))
-	{
-		l_name = name;
-	}
-	else
-	{
-		l_name = ("Texture_" + std::to_string(l_count) + "/");
-	}
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
-	l_result->m_parentEntity = l_parentEntity;
-	l_result->m_componentName = l_name.c_str();
-	return l_result;
-}
-
-MaterialDataComponent * DX11RenderingServer::AddMaterialDataComponent(const char * name)
-{
-	static std::atomic<unsigned int> l_count = 0;
-	l_count++;
-	auto l_rawPtr = m_MaterialDataComponentPool->Spawn();
-	auto l_result = new(l_rawPtr)DX11MaterialDataComponent();
-	std::string l_name;
-	if (strcmp(name, ""))
-	{
-		l_name = name;
-	}
-	else
-	{
-		l_name = ("Material_" + std::to_string(l_count) + "/");
-	}
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
-	l_result->m_parentEntity = l_parentEntity;
-	l_result->m_componentName = l_name.c_str();
-	return l_result;
-}
-
-RenderPassDataComponent * DX11RenderingServer::AddRenderPassDataComponent(const char * name)
-{
-	static std::atomic<unsigned int> l_count = 0;
-	l_count++;
-	auto l_rawPtr = m_RenderPassDataComponentPool->Spawn();
-	auto l_result = new(l_rawPtr)DX11RenderPassDataComponent();
-	std::string l_name;
-	if (strcmp(name, ""))
-	{
-		l_name = name;
-	}
-	else
-	{
-		l_name = ("RenderPass_" + std::to_string(l_count) + "/");
-	}
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
-	l_result->m_parentEntity = l_parentEntity;
-	l_result->m_componentName = l_name.c_str();
-	return l_result;
-}
-
-ShaderProgramComponent * DX11RenderingServer::AddShaderProgramComponent(const char * name)
-{
-	static std::atomic<unsigned int> l_count = 0;
-	l_count++;
-	auto l_rawPtr = m_ShaderProgramComponentPool->Spawn();
-	auto l_result = new(l_rawPtr)DX11ShaderProgramComponent();
-	std::string l_name;
-	if (strcmp(name, ""))
-	{
-		l_name = name;
-	}
-	else
-	{
-		l_name = ("ShaderProgram_" + std::to_string(l_count) + "/");
-	}
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
-	l_result->m_parentEntity = l_parentEntity;
-	l_result->m_componentName = l_name.c_str();
-	return l_result;
-}
-
-SamplerDataComponent * DX11RenderingServer::AddSamplerDataComponent(const char * name)
-{
-	static std::atomic<unsigned int> l_count = 0;
-	l_count++;
-	auto l_rawPtr = m_SamplerDataComponentPool->Spawn();
-	auto l_result = new(l_rawPtr)DX11SamplerDataComponent();
-	std::string l_name;
-	if (strcmp(name, ""))
-	{
-		l_name = name;
-	}
-	else
-	{
-		l_name = ("SamplerData_" + std::to_string(l_count) + "/");
-	}
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
-	l_result->m_parentEntity = l_parentEntity;
-	l_result->m_componentName = l_name.c_str();
-	return l_result;
-}
-
-GPUBufferDataComponent * DX11RenderingServer::AddGPUBufferDataComponent(const char * name)
-{
-	static std::atomic<unsigned int> l_count = 0;
-	l_count++;
-	auto l_rawPtr = m_GPUBufferDataComponentPool->Spawn();
-	auto l_result = new(l_rawPtr)DX11GPUBufferDataComponent();
-	std::string l_name;
-	if (strcmp(name, ""))
-	{
-		l_name = name;
-	}
-	else
-	{
-		l_name = ("GPUBufferData_" + std::to_string(l_count) + "/");
-	}
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str());
-	l_result->m_parentEntity = l_parentEntity;
-	l_result->m_componentName = l_name.c_str();
-	return l_result;
-}
+AddComponent(DX11, MeshData);
+AddComponent(DX11, TextureData);
+AddComponent(DX11, MaterialData);
+AddComponent(DX11, RenderPassData);
+AddComponent(DX11, ShaderProgram);
+AddComponent(DX11, SamplerData);
+AddComponent(DX11, GPUBufferData);
 
 bool DX11RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 {

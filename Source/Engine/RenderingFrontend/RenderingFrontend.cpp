@@ -730,6 +730,9 @@ SkeletonDataComponent * InnoRenderingFrontend::addSkeletonDataComponent()
 	auto l_SDC = new(l_rawPtr)SkeletonDataComponent();
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Skeleton_" + std::to_string(skeletonCount) + "/").c_str());
 	l_SDC->m_parentEntity = l_parentEntity;
+	l_SDC->m_objectSource = ObjectSource::Runtime;
+	l_SDC->m_objectUsage = ObjectUsage::Engine;
+	l_SDC->m_ComponentType = ComponentType::SkeletonDataComponent;
 	skeletonCount++;
 	return l_SDC;
 }
@@ -741,6 +744,9 @@ AnimationDataComponent * InnoRenderingFrontend::addAnimationDataComponent()
 	auto l_ADC = new(l_rawPtr)AnimationDataComponent();
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Animation_" + std::to_string(animationCount) + "/").c_str());
 	l_ADC->m_parentEntity = l_parentEntity;
+	l_ADC->m_objectSource = ObjectSource::Runtime;
+	l_ADC->m_objectUsage = ObjectUsage::Engine;
+	l_ADC->m_ComponentType = ComponentType::AnimationDataComponent;
 	animationCount++;
 	return l_ADC;
 }
