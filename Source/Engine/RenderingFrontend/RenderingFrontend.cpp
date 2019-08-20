@@ -315,51 +315,58 @@ bool InnoRenderingFrontendNS::updateCameraData()
 {
 	auto l_mainCamera = GetComponentManager(CameraComponent)->GetMainCamera();
 
+	if (l_mainCamera == nullptr)
+	{
+		return false;
+	}
+
+	auto l_mainCameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_parentEntity);
+
+	if (l_mainCameraTransformComponent == nullptr)
+	{
+		return false;
+	}
+
 	CameraGPUData l_CameraGPUData;
 
-	if (l_mainCamera)
+	auto l_p = l_mainCamera->m_projectionMatrix;
+
+	l_CameraGPUData.p_original = l_p;
+	l_CameraGPUData.p_jittered = l_p;
+
+	if (m_renderingConfig.useTAA)
 	{
-		auto l_mainCameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_parentEntity);
-
-		auto l_p = l_mainCamera->m_projectionMatrix;
-
-		l_CameraGPUData.p_original = l_p;
-		l_CameraGPUData.p_jittered = l_p;
-
-		if (m_renderingConfig.useTAA)
+		//TAA jitter for projection matrix
+		auto& l_currentHaltonStep = currentHaltonStep;
+		if (l_currentHaltonStep >= 16)
 		{
-			//TAA jitter for projection matrix
-			auto& l_currentHaltonStep = currentHaltonStep;
-			if (l_currentHaltonStep >= 16)
-			{
-				l_currentHaltonStep = 0;
-			}
-			l_CameraGPUData.p_jittered.m02 = m_haltonSampler[l_currentHaltonStep].x / m_screenResolution.x;
-			l_CameraGPUData.p_jittered.m12 = m_haltonSampler[l_currentHaltonStep].y / m_screenResolution.y;
-			l_currentHaltonStep += 1;
+			l_currentHaltonStep = 0;
 		}
-
-		l_CameraGPUData.r =
-			InnoMath::getInvertRotationMatrix(
-				l_mainCameraTransformComponent->m_globalTransformVector.m_rot
-			);
-
-		l_CameraGPUData.t =
-			InnoMath::getInvertTranslationMatrix(
-				l_mainCameraTransformComponent->m_globalTransformVector.m_pos
-			);
-
-		l_CameraGPUData.r_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_rotationMat.inverse();
-		l_CameraGPUData.t_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_translationMat.inverse();
-
-		l_CameraGPUData.globalPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
-
-		l_CameraGPUData.WHRatio = l_mainCamera->m_WHRatio;
-		l_CameraGPUData.zNear = l_mainCamera->m_zNear;
-		l_CameraGPUData.zFar = l_mainCamera->m_zFar;
-
-		m_cameraGPUData.SetValue(std::move(l_CameraGPUData));
+		l_CameraGPUData.p_jittered.m02 = m_haltonSampler[l_currentHaltonStep].x / m_screenResolution.x;
+		l_CameraGPUData.p_jittered.m12 = m_haltonSampler[l_currentHaltonStep].y / m_screenResolution.y;
+		l_currentHaltonStep += 1;
 	}
+
+	l_CameraGPUData.r =
+		InnoMath::getInvertRotationMatrix(
+			l_mainCameraTransformComponent->m_globalTransformVector.m_rot
+		);
+
+	l_CameraGPUData.t =
+		InnoMath::getInvertTranslationMatrix(
+			l_mainCameraTransformComponent->m_globalTransformVector.m_pos
+		);
+
+	l_CameraGPUData.r_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_rotationMat.inverse();
+	l_CameraGPUData.t_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_translationMat.inverse();
+
+	l_CameraGPUData.globalPos = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
+
+	l_CameraGPUData.WHRatio = l_mainCamera->m_WHRatio;
+	l_CameraGPUData.zNear = l_mainCamera->m_zNear;
+	l_CameraGPUData.zFar = l_mainCamera->m_zFar;
+
+	m_cameraGPUData.SetValue(std::move(l_CameraGPUData));
 
 	return true;
 }
@@ -376,6 +383,12 @@ bool InnoRenderingFrontendNS::updateSunData()
 	{
 		auto l_directionalLight = l_directionalLightComponents[0];
 		auto l_directionalLightTransformComponent = GetComponent(TransformComponent, l_directionalLight->m_parentEntity);
+
+		if (l_directionalLightTransformComponent == nullptr)
+		{
+			return false;
+		}
+
 		auto l_lightRotMat = l_directionalLightTransformComponent->m_globalTransformMatrix.m_rotationMat.inverse();
 
 		SunGPUData l_SunGPUData;
@@ -431,9 +444,13 @@ bool InnoRenderingFrontendNS::updatePointLightData()
 
 		for (size_t i = 0; i < l_pointLightComponentCount; i++)
 		{
-			l_PointLightGPUData[i].pos = GetComponent(TransformComponent, l_pointLightComponents[i]->m_parentEntity)->m_globalTransformVector.m_pos;
-			l_PointLightGPUData[i].luminance = l_pointLightComponents[i]->m_RGBColor * l_pointLightComponents[i]->m_LuminousFlux;
-			l_PointLightGPUData[i].luminance.w = l_pointLightComponents[i]->m_attenuationRadius;
+			auto l_transformCompoent = GetComponent(TransformComponent, l_pointLightComponents[i]->m_parentEntity);
+			if (l_transformCompoent != nullptr)
+			{
+				l_PointLightGPUData[i].pos = l_transformCompoent->m_globalTransformVector.m_pos;
+				l_PointLightGPUData[i].luminance = l_pointLightComponents[i]->m_RGBColor * l_pointLightComponents[i]->m_LuminousFlux;
+				l_PointLightGPUData[i].luminance.w = l_pointLightComponents[i]->m_attenuationRadius;
+			}
 		}
 
 		m_pointLightGPUData.SetValue(std::move(l_PointLightGPUData));
@@ -454,9 +471,13 @@ bool InnoRenderingFrontendNS::updateSphereLightData()
 
 		for (size_t i = 0; i < l_sphereLightComponentCount; i++)
 		{
-			l_SphereLightGPUData[i].pos = GetComponent(TransformComponent, l_sphereLightComponents[i]->m_parentEntity)->m_globalTransformVector.m_pos;
-			l_SphereLightGPUData[i].luminance = l_sphereLightComponents[i]->m_RGBColor * l_sphereLightComponents[i]->m_LuminousFlux;
-			l_SphereLightGPUData[i].luminance.w = l_sphereLightComponents[i]->m_sphereRadius;
+			auto l_transformCompoent = GetComponent(TransformComponent, l_sphereLightComponents[i]->m_parentEntity);
+			if (l_transformCompoent != nullptr)
+			{
+				l_SphereLightGPUData[i].pos = l_transformCompoent->m_globalTransformVector.m_pos;
+				l_SphereLightGPUData[i].luminance = l_sphereLightComponents[i]->m_RGBColor * l_sphereLightComponents[i]->m_LuminousFlux;
+				l_SphereLightGPUData[i].luminance.w = l_sphereLightComponents[i]->m_sphereRadius;
+			}
 		}
 
 		m_sphereLightGPUData.SetValue(std::move(l_SphereLightGPUData));
@@ -595,8 +616,15 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 	for (auto i : l_directionalLightComponents)
 	{
 		MeshGPUData l_meshGPUData;
-		l_meshGPUData.m = InnoMath::toTranslationMatrix(GetComponent(TransformComponent, i->m_parentEntity)->m_globalTransformVector.m_pos);
+
+		auto l_transformCompoent = GetComponent(TransformComponent, i->m_parentEntity);
+		if (l_transformCompoent != nullptr)
+		{
+			l_meshGPUData.m = InnoMath::toTranslationMatrix(l_transformCompoent->m_globalTransformVector.m_pos);
+		}
+
 		l_billboardPassMeshGPUData.emplace_back(l_meshGPUData);
+
 		l_index++;
 	}
 
@@ -604,8 +632,15 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 	for (auto i : l_pointLightComponents)
 	{
 		MeshGPUData l_meshGPUData;
-		l_meshGPUData.m = InnoMath::toTranslationMatrix(GetComponent(TransformComponent, i->m_parentEntity)->m_globalTransformVector.m_pos);
+
+		auto l_transformCompoent = GetComponent(TransformComponent, i->m_parentEntity);
+		if (l_transformCompoent != nullptr)
+		{
+			l_meshGPUData.m = InnoMath::toTranslationMatrix(l_transformCompoent->m_globalTransformVector.m_pos);
+		}
+
 		l_billboardPassMeshGPUData.emplace_back(l_meshGPUData);
+
 		l_index++;
 	}
 
@@ -613,8 +648,15 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 	for (auto i : l_sphereLightComponents)
 	{
 		MeshGPUData l_meshGPUData;
-		l_meshGPUData.m = InnoMath::toTranslationMatrix(GetComponent(TransformComponent, i->m_parentEntity)->m_globalTransformVector.m_pos);
+
+		auto l_transformCompoent = GetComponent(TransformComponent, i->m_parentEntity);
+		if (l_transformCompoent != nullptr)
+		{
+			l_meshGPUData.m = InnoMath::toTranslationMatrix(l_transformCompoent->m_globalTransformVector.m_pos);
+		}
+
 		l_billboardPassMeshGPUData.emplace_back(l_meshGPUData);
+
 		l_index++;
 	}
 

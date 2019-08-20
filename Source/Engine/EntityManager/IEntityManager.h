@@ -14,7 +14,7 @@ public:
 	virtual bool Simulate() = 0;
 	virtual bool Terminate() = 0;
 	virtual InnoEntity* Spawn(ObjectSource objectSource, ObjectUsage objectUsage, const char* entityName = "") = 0;
-	virtual bool Destory(InnoEntity* entity) = 0;
+	virtual bool Destroy(InnoEntity* entity) = 0;
 	virtual std::optional<InnoEntity*> Find(const char* entityName) = 0;
 	virtual const std::vector<InnoEntity*>& GetEntities() = 0;
 	virtual uint32_t AcquireUUID() = 0;

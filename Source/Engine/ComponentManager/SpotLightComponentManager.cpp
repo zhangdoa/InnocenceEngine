@@ -77,7 +77,7 @@ InnoComponent * InnoSpotLightComponentManager::Spawn(const InnoEntity* parentEnt
 	SpawnComponentImpl(SpotLightComponent);
 }
 
-void InnoSpotLightComponentManager::Destory(InnoComponent * component)
+void InnoSpotLightComponentManager::Destroy(InnoComponent * component)
 {
 	DestroyComponentImpl(SpotLightComponent);
 }

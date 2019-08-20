@@ -564,57 +564,64 @@ void InnoPhysicsSystem::updateCulling()
 
 	auto l_mainCamera = GetComponentManager(CameraComponent)->GetMainCamera();
 
-	if (l_mainCamera != nullptr)
+	if (l_mainCamera == nullptr)
 	{
-		auto l_mainCameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_parentEntity);
+		return;
+	}
 
-		auto l_cameraFrustum = l_mainCamera->m_frustum;
+	auto l_mainCameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_parentEntity);
 
-		auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
-		for (auto visibleComponent : l_visibleComponents)
+	if (l_mainCameraTransformComponent == nullptr)
+	{
+		return;
+	}
+
+	auto l_cameraFrustum = l_mainCamera->m_frustum;
+
+	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
+	for (auto visibleComponent : l_visibleComponents)
+	{
+		if (visibleComponent->m_visiblilityType != VisiblilityType::Invisible && visibleComponent->m_objectStatus == ObjectStatus::Activated)
 		{
-			if (visibleComponent->m_visiblilityType != VisiblilityType::Invisible && visibleComponent->m_objectStatus == ObjectStatus::Activated)
+			auto l_transformComponent = GetComponent(TransformComponent, visibleComponent->m_parentEntity);
+			auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
+
+			for (auto& l_modelPair : visibleComponent->m_modelMap)
 			{
-				auto l_transformComponent = GetComponent(TransformComponent, visibleComponent->m_parentEntity);
-				auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
-
-				for (auto& l_modelPair : visibleComponent->m_modelMap)
+				auto l_PDC = l_modelPair.first->m_PDC;
+				if (l_PDC)
 				{
-					auto l_PDC = l_modelPair.first->m_PDC;
-					if (l_PDC)
+					auto l_OBBws = InnoMath::transformAABBSpace(l_PDC->m_AABBLS, l_globalTm);
+
+					auto l_boundingSphere = Sphere();
+					l_boundingSphere.m_center = l_OBBws.m_center;
+					l_boundingSphere.m_radius = l_OBBws.m_extend.length();
+
+					if (InnoMath::intersectCheck(l_cameraFrustum, l_boundingSphere))
 					{
-						auto l_OBBws = InnoMath::transformAABBSpace(l_PDC->m_AABBLS, l_globalTm);
+						updateVisibleSceneBoundary(l_OBBws);
 
-						auto l_boundingSphere = Sphere();
-						l_boundingSphere.m_center = l_OBBws.m_center;
-						l_boundingSphere.m_radius = l_OBBws.m_extend.length();
+						thread_local CullingDataPack l_cullingDataPack;
 
-						if (InnoMath::intersectCheck(l_cameraFrustum, l_boundingSphere))
-						{
-							updateVisibleSceneBoundary(l_OBBws);
+						l_cullingDataPack.m = l_globalTm;
+						l_cullingDataPack.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
+						l_cullingDataPack.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
+						l_cullingDataPack.mesh = l_modelPair.first;
+						l_cullingDataPack.material = l_modelPair.second;
+						l_cullingDataPack.visiblilityType = visibleComponent->m_visiblilityType;
+						l_cullingDataPack.meshUsageType = visibleComponent->m_meshUsageType;
+						l_cullingDataPack.UUID = visibleComponent->m_UUID;
 
-							thread_local CullingDataPack l_cullingDataPack;
-
-							l_cullingDataPack.m = l_globalTm;
-							l_cullingDataPack.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
-							l_cullingDataPack.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-							l_cullingDataPack.mesh = l_modelPair.first;
-							l_cullingDataPack.material = l_modelPair.second;
-							l_cullingDataPack.visiblilityType = visibleComponent->m_visiblilityType;
-							l_cullingDataPack.meshUsageType = visibleComponent->m_meshUsageType;
-							l_cullingDataPack.UUID = visibleComponent->m_UUID;
-
-							l_cullingDataPacks.emplace_back(l_cullingDataPack);
-						}
-
-						updateTotalSceneBoundary(l_OBBws);
+						l_cullingDataPacks.emplace_back(l_cullingDataPack);
 					}
+
+					updateTotalSceneBoundary(l_OBBws);
 				}
 			}
 		}
-
-		//BVHCulling(&m_RootPhysicsDataComponent, l_cameraFrustum, l_cullingDataPacks);
 	}
+
+	//BVHCulling(&m_RootPhysicsDataComponent, l_cameraFrustum, l_cullingDataPacks);
 
 	auto l_t = &m_BVHResults;
 

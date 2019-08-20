@@ -6,3 +6,6 @@ reinterpret_cast<className*>(GetComponentManager(className)->Spawn(parentEntity,
 
 #define GetComponent( className, parentEntity ) \
 reinterpret_cast<className*>(GetComponentManager(className)->Find(parentEntity))
+
+#define DestroyComponent( className, component ) \
+GetComponentManager(className)->Destroy(component)

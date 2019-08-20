@@ -137,7 +137,7 @@ InnoComponent * InnoTransformComponentManager::Spawn(const InnoEntity* parentEnt
 	SpawnComponentImpl(TransformComponent);
 }
 
-void InnoTransformComponentManager::Destory(InnoComponent * component)
+void InnoTransformComponentManager::Destroy(InnoComponent * component)
 {
 	DestroyComponentImpl(TransformComponent);
 }

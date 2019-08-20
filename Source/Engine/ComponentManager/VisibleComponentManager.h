@@ -11,7 +11,7 @@ public:
 	bool Simulate() override;
 	bool Terminate() override;
 	InnoComponent* Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage) override;
-	void Destory(InnoComponent* component) override;
+	void Destroy(InnoComponent* component) override;
 	InnoComponent* Find(const InnoEntity* parentEntity) override;
 
 	const std::vector<VisibleComponent*>& GetAllComponents() override;

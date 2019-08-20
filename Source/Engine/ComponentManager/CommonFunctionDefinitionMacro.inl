@@ -3,7 +3,7 @@ for (auto i : m_Components) \
 { \
 	if (i->m_objectUsage == ObjectUsage::Gameplay) \
 	{ \
-		Destory(i); \
+		Destroy(i); \
 	} \
 } \
  \
@@ -44,6 +44,8 @@ m_ComponentsMap.erase_if([&](auto val) { return val.second->m_objectUsage == Obj
 
 #define DestroyComponentImpl( className ) \
 	component->m_objectStatus = ObjectStatus::Terminated; \
+	m_Components.eraseByValue(reinterpret_cast<className*>(component)); \
+	m_ComponentsMap.erase(component->m_parentEntity); \
 	m_ComponentPool->Destroy(component);
 
 #define GetComponentImpl( className, parentEntity ) \
@@ -55,6 +57,6 @@ m_ComponentsMap.erase_if([&](auto val) { return val.second->m_objectUsage == Obj
 	} \
 	else \
 	{ \
-		InnoLogger::Log(LogLevel::Error, #className, "Manager :Can't find ",#className," by Entity: " ,l_parentEntity->m_entityName.c_str(), "!"); \
+		InnoLogger::Log(LogLevel::Error, #className, "Manager: Can't find ", #className," by Entity: " ,l_parentEntity->m_entityName.c_str(), "!"); \
 		return nullptr; \
 	}

@@ -77,7 +77,7 @@ InnoComponent * InnoSphereLightComponentManager::Spawn(const InnoEntity* parentE
 	SpawnComponentImpl(SphereLightComponent);
 }
 
-void InnoSphereLightComponentManager::Destory(InnoComponent * component)
+void InnoSphereLightComponentManager::Destroy(InnoComponent * component)
 {
 	DestroyComponentImpl(SphereLightComponent);
 }

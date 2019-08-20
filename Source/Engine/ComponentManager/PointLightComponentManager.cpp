@@ -100,7 +100,7 @@ InnoComponent * InnoPointLightComponentManager::Spawn(const InnoEntity* parentEn
 	SpawnComponentImpl(PointLightComponent);
 }
 
-void InnoPointLightComponentManager::Destory(InnoComponent * component)
+void InnoPointLightComponentManager::Destroy(InnoComponent * component)
 {
 	DestroyComponentImpl(PointLightComponent);
 }

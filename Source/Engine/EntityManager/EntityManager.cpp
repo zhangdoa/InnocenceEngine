@@ -25,7 +25,7 @@ bool InnoEntityManager::Setup()
 		{
 			if (i->m_objectUsage == ObjectUsage::Gameplay)
 			{
-				Destory(i);
+				Destroy(i);
 			}
 		}
 
@@ -77,8 +77,9 @@ InnoEntity * InnoEntityManager::Spawn(ObjectSource objectSource, ObjectUsage obj
 	return l_Entity;
 }
 
-bool InnoEntityManager::Destory(InnoEntity * entity)
+bool InnoEntityManager::Destroy(InnoEntity * entity)
 {
+	m_Entities.eraseByValue(entity);
 	InnoLogger::Log(LogLevel::Verbose, "EntityManager: Entity ", entity->m_entityName.c_str(), " has been removed.");
 	m_EntityPool->Destroy(entity);
 	return true;

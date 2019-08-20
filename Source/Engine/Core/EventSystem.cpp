@@ -154,10 +154,17 @@ vec4 InnoEventSystemNS::getMousePositionInWorldSpace()
 	auto l_w = 1.0f;
 	vec4 l_ndcSpace = vec4(l_x, l_y, l_z, l_w);
 
-	auto l_cameraComponents = GetComponentManager(CameraComponent)->GetAllComponents();
-	auto l_mainCamera = l_cameraComponents[0];
-	auto pCamera = l_mainCamera->m_projectionMatrix;
+	auto l_mainCamera = GetComponentManager(CameraComponent)->GetMainCamera();
+	if (l_mainCamera == nullptr)
+	{
+		return vec4();
+	}
 	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_parentEntity);
+	if (l_cameraTransformComponent == nullptr)
+	{
+		return vec4();
+	}
+	auto pCamera = l_mainCamera->m_projectionMatrix;
 	auto rCamera =
 		InnoMath::getInvertRotationMatrix(
 			l_cameraTransformComponent->m_globalTransformVector.m_rot

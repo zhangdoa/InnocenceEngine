@@ -114,7 +114,7 @@ InnoComponent * InnoVisibleComponentManager::Spawn(const InnoEntity* parentEntit
 	SpawnComponentImpl(VisibleComponent);
 }
 
-void InnoVisibleComponentManager::Destory(InnoComponent * component)
+void InnoVisibleComponentManager::Destroy(InnoComponent * component)
 {
 	DestroyComponentImpl(VisibleComponent);
 }

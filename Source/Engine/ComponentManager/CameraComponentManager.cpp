@@ -37,21 +37,28 @@ void CameraComponentManagerNS::generateProjectionMatrix(CameraComponent * camera
 
 void CameraComponentManagerNS::generateFrustum(CameraComponent * cameraComponent)
 {
-	auto l_cameraTransformComponent = GetComponent(TransformComponent, cameraComponent->m_parentEntity);
+	auto l_transformComponent = GetComponent(TransformComponent, cameraComponent->m_parentEntity);
 
-	auto l_pCamera = cameraComponent->m_projectionMatrix;
-	auto l_rCamera = InnoMath::toRotationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_rot);
-	auto l_tCamera = InnoMath::toTranslationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_pos);
+	if (l_transformComponent != nullptr)
+	{
+		auto l_pCamera = cameraComponent->m_projectionMatrix;
+		auto l_rCamera = InnoMath::toRotationMatrix(l_transformComponent->m_globalTransformVector.m_rot);
+		auto l_tCamera = InnoMath::toTranslationMatrix(l_transformComponent->m_globalTransformVector.m_pos);
 
-	auto l_vertices = InnoMath::generateFrustumVerticesWS(l_pCamera, l_rCamera, l_tCamera);
-	cameraComponent->m_frustum = InnoMath::makeFrustum(&l_vertices[0]);
+		auto l_vertices = InnoMath::generateFrustumVerticesWS(l_pCamera, l_rCamera, l_tCamera);
+		cameraComponent->m_frustum = InnoMath::makeFrustum(&l_vertices[0]);
+	}
 }
 
 void CameraComponentManagerNS::generateRayOfEye(CameraComponent * cameraComponent)
 {
 	auto l_transformComponent = GetComponent(TransformComponent, cameraComponent->m_parentEntity);
-	cameraComponent->m_rayOfEye.m_origin = l_transformComponent->m_globalTransformVector.m_pos;
-	cameraComponent->m_rayOfEye.m_direction = InnoMath::getDirection(direction::BACKWARD, l_transformComponent->m_globalTransformVector.m_rot);
+
+	if (l_transformComponent != nullptr)
+	{
+		cameraComponent->m_rayOfEye.m_origin = l_transformComponent->m_globalTransformVector.m_pos;
+		cameraComponent->m_rayOfEye.m_direction = InnoMath::getDirection(direction::BACKWARD, l_transformComponent->m_globalTransformVector.m_rot);
+	}
 }
 
 using namespace CameraComponentManagerNS;
@@ -101,7 +108,7 @@ InnoComponent * InnoCameraComponentManager::Spawn(const InnoEntity* parentEntity
 	SpawnComponentImpl(CameraComponent);
 }
 
-void InnoCameraComponentManager::Destory(InnoComponent * component)
+void InnoCameraComponentManager::Destroy(InnoComponent * component)
 {
 	DestroyComponentImpl(CameraComponent);
 }

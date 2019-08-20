@@ -114,9 +114,16 @@ void DirectionalLightComponentManagerNS::UpdateCSMData(DirectionalLightComponent
 	m_projectionMatrices.clear();
 
 	//1. get frustum vertices in view space
-	auto l_cameraComponents = GetComponentManager(CameraComponent)->GetAllComponents();
-	auto l_cameraComponent = l_cameraComponents[0];
+	auto l_cameraComponent = GetComponentManager(CameraComponent)->GetMainCamera();
+	if (l_cameraComponent == nullptr)
+	{
+		return;
+	}
 	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_cameraComponent->m_parentEntity);
+	if (l_cameraTransformComponent == nullptr)
+	{
+		return;
+	}
 	auto l_rCamera = InnoMath::toRotationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_rot);
 	auto l_tCamera = InnoMath::toTranslationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_pos);
 	auto l_frustumVerticesVS = InnoMath::generateFrustumVerticesVS(l_cameraComponent->m_projectionMatrix);
@@ -303,7 +310,7 @@ InnoComponent * InnoDirectionalLightComponentManager::Spawn(const InnoEntity* pa
 	SpawnComponentImpl(DirectionalLightComponent);
 }
 
-void InnoDirectionalLightComponentManager::Destory(InnoComponent * component)
+void InnoDirectionalLightComponentManager::Destroy(InnoComponent * component)
 {
 	DestroyComponentImpl(DirectionalLightComponent);
 }

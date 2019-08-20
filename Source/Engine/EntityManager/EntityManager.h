@@ -11,7 +11,7 @@ public:
 	bool Simulate() override;
 	bool Terminate() override;
 	InnoEntity* Spawn(ObjectSource objectSource, ObjectUsage objectUsage, const char* entityName) override;
-	bool Destory(InnoEntity* entity) override;
+	bool Destroy(InnoEntity* entity) override;
 	const std::vector<InnoEntity*>& GetEntities() override;
 	std::optional<InnoEntity*> Find(const char* entityName) override;
 	uint32_t AcquireUUID() override;
