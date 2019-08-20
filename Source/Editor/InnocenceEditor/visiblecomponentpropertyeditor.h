@@ -5,6 +5,7 @@
 #include <QWidget>
 #include <QGridLayout>
 #include <QTableWidget>
+#include <QMenu>
 #include "icomponentpropertyeditor.h"
 #include "../../Engine/Component/VisibleComponent.h"
 #include "materialdatacomponentpropertyeditor.h"
@@ -30,7 +31,10 @@ private:
 public slots:
 
     void remove() override;
+
 private slots:
+    void onCustomContextMenuRequested(const QPoint& pos);
+    void showContextMenu(const QPoint& globalPos);
     void tableItemClicked(int row, int column);
 };
 
