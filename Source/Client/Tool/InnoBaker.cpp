@@ -368,7 +368,7 @@ bool InnoBakerNS::captureSurfels(std::vector<Probe>& probes)
 
 	auto l_cameraGPUData = g_pModuleManager->getRenderingFrontend()->getCameraGPUData();
 
-	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, 16.0f);
+	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, l_cameraGPUData.zNear, l_cameraGPUData.zFar);
 
 	auto l_rPX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
 	auto l_rNX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(-1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
@@ -580,19 +580,36 @@ bool InnoBakerNS::generateBrickCaches(std::vector<Surfel>& surfelCaches)
 	}
 
 	// Fit the end corner to contain at least one brick in each axis
-	auto l_adjustedEndPos = l_endPos;
-	l_adjustedEndPos.x = (std::trunc(l_endPos.x / m_brickSize.x) + 1) * m_brickSize.x;
-	l_adjustedEndPos.y = (std::trunc(l_endPos.y / m_brickSize.y) + 1) * m_brickSize.y;
-	l_adjustedEndPos.z = (std::trunc(l_endPos.z / m_brickSize.z) + 1) * m_brickSize.z;
-	l_endPos = l_adjustedEndPos;
-
 	auto l_extends = l_endPos - l_startPos;
 	l_extends.w = 1.0f;
 
-	auto l_bricksCountX = (size_t)std::trunc(l_extends.x / m_brickSize.x);
-	auto l_bricksCountY = (size_t)std::trunc(l_extends.y / m_brickSize.y);
-	auto l_bricksCountZ = (size_t)std::trunc(l_extends.z / m_brickSize.z);
+	if (l_extends.x < m_brickSize.x)
+	{
+		l_endPos.x = l_startPos.x + m_brickSize.x;
+	}
+	if (l_extends.y < m_brickSize.y)
+	{
+		l_endPos.y = l_startPos.y + m_brickSize.y;
+	}
+	if (l_extends.z < m_brickSize.z)
+	{
+		l_endPos.z = l_startPos.z + m_brickSize.z;
+	}
+
+	// Adjusted extends
+	auto l_adjustedExtends = l_endPos - l_startPos;
+	l_adjustedExtends.w = 1.0f;
+
+	auto l_bricksCountX = (size_t)std::ceil(l_adjustedExtends.x / m_brickSize.x);
+	auto l_bricksCountY = (size_t)std::ceil(l_adjustedExtends.y / m_brickSize.y);
+	auto l_bricksCountZ = (size_t)std::ceil(l_adjustedExtends.z / m_brickSize.z);
 	auto l_brickCount = TVec4<size_t>(l_bricksCountX, l_bricksCountY, l_bricksCountZ, 1);
+
+	// Adjusted end
+	auto l_adjustedEndPos = l_startPos;
+	l_adjustedEndPos.x += l_bricksCountX * m_brickSize.x;
+	l_adjustedEndPos.y += l_bricksCountY * m_brickSize.y;
+	l_adjustedEndPos.z += l_bricksCountZ * m_brickSize.z;
 
 	// generate all possible brick position
 	auto l_totalBricksWorkCount = l_bricksCountX * l_bricksCountY * l_bricksCountZ;
@@ -605,17 +622,17 @@ bool InnoBakerNS::generateBrickCaches(std::vector<Surfel>& surfelCaches)
 
 	auto l_averangeSurfelInABrick = l_surfelsCount / l_totalBricksWorkCount;
 
-	while (l_currentMaxPos.x <= l_endPos.x)
+	while (l_currentMaxPos.z <= l_adjustedEndPos.z)
 	{
 		l_currentMaxPos.y = l_startPos.y + m_brickSize.y;
 		l_currentMinPos.y = l_startPos.y;
 
-		while (l_currentMaxPos.y <= l_endPos.y)
+		while (l_currentMaxPos.y <= l_adjustedEndPos.y)
 		{
-			l_currentMaxPos.z = l_startPos.z + m_brickSize.z;
-			l_currentMinPos.z = l_startPos.z;
+			l_currentMaxPos.x = l_startPos.x + m_brickSize.x;
+			l_currentMinPos.x = l_startPos.x;
 
-			while (l_currentMaxPos.z <= l_endPos.z)
+			while (l_currentMaxPos.x <= l_adjustedEndPos.x)
 			{
 				BrickCache l_brickCache;
 				l_brickCache.pos = l_currentMinPos + m_brickSize / 2.0f;
@@ -623,16 +640,16 @@ bool InnoBakerNS::generateBrickCaches(std::vector<Surfel>& surfelCaches)
 
 				l_brickCaches.emplace_back(std::move(l_brickCache));
 
-				l_currentMaxPos.z += m_brickSize.z;
-				l_currentMinPos.z += m_brickSize.z;
+				l_currentMaxPos.x += m_brickSize.x;
+				l_currentMinPos.x += m_brickSize.x;
 			}
 
 			l_currentMaxPos.y += m_brickSize.y;
 			l_currentMinPos.y += m_brickSize.y;
 		}
 
-		l_currentMaxPos.x += m_brickSize.x;
-		l_currentMinPos.x += m_brickSize.x;
+		l_currentMaxPos.z += m_brickSize.z;
+		l_currentMinPos.z += m_brickSize.z;
 	}
 
 	// Assign surfels to brick cache
@@ -640,9 +657,9 @@ bool InnoBakerNS::generateBrickCaches(std::vector<Surfel>& surfelCaches)
 	{
 		auto l_posVS = surfelCaches[i].pos - l_startPos;
 		auto l_normalizedPos = l_posVS.scale(l_extends.reciprocal());
-		auto l_brickIndexX = (size_t)std::floor((float)l_brickCount.x * l_normalizedPos.x);
-		auto l_brickIndexY = (size_t)std::floor((float)l_brickCount.y * l_normalizedPos.y);
-		auto l_brickIndexZ = (size_t)std::floor((float)l_brickCount.z * l_normalizedPos.z);
+		auto l_brickIndexX = (size_t)std::floor((float)(l_brickCount.x - 1) * l_normalizedPos.x);
+		auto l_brickIndexY = (size_t)std::floor((float)(l_brickCount.y - 1) * l_normalizedPos.y);
+		auto l_brickIndexZ = (size_t)std::floor((float)(l_brickCount.z - 1) * l_normalizedPos.z);
 		auto l_brickIndex = l_brickIndexX + l_brickIndexY * l_brickCount.x + l_brickIndexZ * l_brickCount.x * l_brickCount.y;
 
 		l_brickCaches[l_brickIndex].surfelCaches.emplace_back(surfelCaches[i]);
@@ -771,7 +788,7 @@ bool InnoBakerNS::generateBricks(const std::vector<BrickCache>& brickCaches)
 		l_brick.boundBox = InnoMath::generateAABB(brickCaches[i].pos + m_brickSize / 2.0f, brickCaches[i].pos - m_brickSize / 2.0f);
 		l_brick.surfelRangeBegin = (unsigned int)l_offset;
 		l_brick.surfelRangeEnd = (unsigned int)(l_offset + brickCaches[i].surfelCaches.size() - 1);
-		l_offset = brickCaches[i].surfelCaches.size();
+		l_offset += brickCaches[i].surfelCaches.size();
 
 		l_surfels.insert(l_surfels.end(), std::make_move_iterator(brickCaches[i].surfelCaches.begin()), std::make_move_iterator(brickCaches[i].surfelCaches.end()));
 
