@@ -11,7 +11,7 @@ layout(location = 0) in VS_OUT
 
 layout(location = 0) out GS_OUT
 {
-	float depthVS;
+	float distanceVS;
 	float UUID;
 } gs_out;
 
@@ -23,7 +23,7 @@ void main()
 		for (int i = 0; i < 3; ++i)
 		{
 			vec4 posVS = GICameraUBO.r[face] * GICameraUBO.t * vec4(gs_in[i].posWS, 1.0f);
-			gs_out.depthVS = posVS.z;
+			gs_out.distanceVS = length(posVS.xyz);
 			gs_out.UUID = gs_in[i].UUID;
 			gl_Position = GICameraUBO.p * posVS;
 			EmitVertex();

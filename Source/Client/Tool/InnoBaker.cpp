@@ -854,15 +854,31 @@ bool InnoBakerNS::assignBrickFactorToProbesByGPU(const std::vector<Brick>& brick
 
 	auto l_bricksCount = bricks.size();
 
+	auto l_startPos = InnoMath::maxVec4<float>;
+	l_startPos.w = 1.0f;
+
+	auto l_endPos = InnoMath::minVec4<float>;
+	l_endPos.w = 1.0f;
+
+	for (size_t i = 0; i < l_bricksCount; i++)
+	{
+		l_startPos = InnoMath::elementWiseMin(bricks[i].boundBox.m_boundMin, l_startPos);
+		l_endPos = InnoMath::elementWiseMax(bricks[i].boundBox.m_boundMax, l_endPos);
+	}
+
+	auto l_brickTotalExtend = l_endPos - l_startPos;
+	l_brickTotalExtend.w = 1.0f;
+
 	std::vector<MeshGPUData> l_bricksCubeMeshGPUData;
 	l_bricksCubeMeshGPUData.resize(l_bricksCount);
 
 	for (size_t i = 0; i < l_bricksCount; i++)
 	{
-		auto l_t = InnoMath::toTranslationMatrix(bricks[i].boundBox.m_center);
-		auto l_s = InnoMath::toScaleMatrix(vec4(m_brickSize.x, m_brickSize.y, m_brickSize.z, 1.0f));
+		auto l_normalizedPos = (bricks[i].boundBox.m_center - l_startPos).scale(l_brickTotalExtend.reciprocal());
+		l_normalizedPos.w = 1.0f;
+		auto l_t = InnoMath::toTranslationMatrix(l_normalizedPos);
 
-		l_bricksCubeMeshGPUData[i].m = l_t * l_s;
+		l_bricksCubeMeshGPUData[i].m = l_t;
 
 		// Index start from 1
 		l_bricksCubeMeshGPUData[i].UUID = (float)i + 1.0f;
@@ -957,7 +973,7 @@ bool InnoBakerNS::readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& b
 			{
 				BrickFactor l_BrickFactor;
 
-				l_BrickFactor.basisWeight = std::abs(l_brickIDResult.x);
+				l_BrickFactor.basisWeight = l_brickIDResult.x;
 
 				// Index start from 1
 				l_BrickFactor.brickIndex = (unsigned int)(std::round(l_brickIDResult.y) - 1.0f);
@@ -982,8 +998,27 @@ bool InnoBakerNS::readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& b
 			}
 			else
 			{
+				// Weight
 				auto l_brickFactorSize = l_brickFactors.size();
 
+				auto l_min = std::numeric_limits<float>().max();
+				auto l_max = std::numeric_limits<float>().min();
+
+				for (size_t i = 0; i < l_brickFactorSize; i++)
+				{
+					l_min = l_brickFactors[i].basisWeight <= l_min ? l_brickFactors[i].basisWeight : l_min;
+					l_max = l_brickFactors[i].basisWeight >= l_max ? l_brickFactors[i].basisWeight : l_max;
+				}
+
+				auto l_range = l_max + l_min;
+
+				// Reverse along the view space Z axis
+				for (size_t i = 0; i < l_brickFactorSize; i++)
+				{
+					l_brickFactors[i].basisWeight = (l_range - l_brickFactors[i].basisWeight);
+				}
+
+				// Normalize
 				float denom = 0.0f;
 				for (size_t i = 0; i < l_brickFactorSize; i++)
 				{
@@ -992,19 +1027,13 @@ bool InnoBakerNS::readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& b
 
 				for (size_t i = 0; i < l_brickFactorSize; i++)
 				{
-					// Reverse view space Z axis
-					l_brickFactors[i].basisWeight = (denom - l_brickFactors[i].basisWeight) / denom;
+					l_brickFactors[i].basisWeight /= denom;
 				}
 			}
 
 			// Assign brick factor range to probes
 			auto l_brickFactorRangeBegin = brickFactors.size();
 			auto l_brickFactorRangeEnd = l_brickFactorRangeBegin + l_brickFactors.size() - 1;
-
-			if (l_brickFactorRangeEnd == 4294967295)
-			{
-				auto l = 2;
-			}
 
 			probe.brickFactorRange[i * 2] = (unsigned int)l_brickFactorRangeBegin;
 			probe.brickFactorRange[i * 2 + 1] = (unsigned int)l_brickFactorRangeEnd;
@@ -1201,8 +1230,8 @@ void InnoBaker::Setup()
 
 	m_RPDC_BrickFactor->m_RenderPassDesc = l_RenderPassDesc;
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.SamplerType = TextureSamplerType::SamplerCubemap;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Width = 128;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Height = 128;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Width = 64;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Height = 64;
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::FLOAT32;
 
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
@@ -1210,8 +1239,8 @@ void InnoBaker::Setup()
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
 
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = true;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = 128;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = 128;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = 64;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = 64;
 
 	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs.resize(2);
 	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;

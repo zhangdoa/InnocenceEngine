@@ -10,7 +10,7 @@ struct GeometryInputType
 struct PixelInputType
 {
 	float4 posCS : SV_POSITION;
-	float depthVS : DEPTH;
+	float distanceVS : DISTANCE;
 	float UUID : ID;
 	uint rtvId : SV_RenderTargetArrayIndex;
 };
@@ -29,7 +29,7 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 		{
 			output.posCS = mul(input[i].posWS, GI_cam_t);
 			output.posCS = mul(output.posCS, GI_cam_r[face]);
-			output.depthVS = output.posCS.z;
+			output.distanceVS = length(output.posCS.xyz);
 			output.posCS = mul(output.posCS, GI_cam_p);
 			output.UUID = input[i].UUID;
 			outStream.Append(output);
