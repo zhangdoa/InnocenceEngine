@@ -34,19 +34,22 @@ void main(ComputeInputType input)
 			uint brickFactorRangeBegin = l_probe.brickFactorRange[i * 2];
 			uint brickFactorRangeEnd = l_probe.brickFactorRange[i * 2 + 1];
 
-			if (brickFactorRangeBegin != brickFactorRangeEnd)
+			if (brickFactorRangeBegin != -1)
 			{
-				for (uint j = brickFactorRangeBegin; j < brickFactorRangeEnd; j++)
+				if (brickFactorRangeBegin != brickFactorRangeEnd)
 				{
-					BrickFactor l_brickFactor = in_brickFactors[j];
-					Lo[i] += in_brickIrradiance[l_brickFactor.brickIndex] * l_brickFactor.basisWeight;
-				}
+					for (uint j = brickFactorRangeBegin; j < brickFactorRangeEnd; j++)
+					{
+						BrickFactor l_brickFactor = in_brickFactors[j];
+						Lo[i] += in_brickIrradiance[l_brickFactor.brickIndex] * l_brickFactor.basisWeight;
+					}
 
-				Lo[i] /= (brickFactorRangeEnd - brickFactorRangeBegin);
-			}
-			else
-			{
-				Lo[i] = in_brickIrradiance[in_brickFactors[brickFactorRangeBegin].brickIndex];
+					Lo[i] /= (brickFactorRangeEnd - brickFactorRangeBegin);
+				}
+				else
+				{
+					Lo[i] = in_brickIrradiance[in_brickFactors[brickFactorRangeBegin].brickIndex];
+				}
 			}
 
 			Lo[i].w = l_probe.skyVisibility[i];

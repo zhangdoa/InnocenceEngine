@@ -36,6 +36,7 @@ namespace InnoBakerNS
 	bool captureSurfels(std::vector<Probe>& probes);
 	bool drawOpaquePass(Probe& probe, const mat4& p, const std::vector<mat4>& v);
 	bool readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfelCaches);
+	bool eliminateDuplicatedSurfels(std::vector<Surfel>& surfelCaches);
 
 	bool serializeSurfelCaches(const std::vector<Surfel>& surfelCaches);
 
@@ -395,11 +396,11 @@ bool InnoBakerNS::captureSurfels(std::vector<Probe>& probes)
 		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Progress: ", (float)i * 100.0f / (float)l_probeForSurfelCachesCount, "%...");
 	}
 
-	l_surfelCaches.shrink_to_fit();
-
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_surfelCaches.size(), " surfel caches captured.");
 
 	serializeProbes(probes);
+
+	eliminateDuplicatedSurfels(l_surfelCaches);
 
 	serializeSurfelCaches(l_surfelCaches);
 
@@ -519,6 +520,13 @@ bool InnoBakerNS::readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfel
 
 	surfelCaches.insert(surfelCaches.end(), l_surfels.begin(), l_surfels.end());
 
+	return true;
+}
+
+bool InnoBakerNS::eliminateDuplicatedSurfels(std::vector<Surfel>& surfelCaches)
+{
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to eliminate duplicated surfels...");
+
 	std::sort(surfelCaches.begin(), surfelCaches.end(), [&](Surfel A, Surfel B)
 	{
 		if (A.pos.x != B.pos.x) {
@@ -531,6 +539,9 @@ bool InnoBakerNS::readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfel
 	});
 
 	surfelCaches.erase(std::unique(surfelCaches.begin(), surfelCaches.end()), surfelCaches.end());
+	surfelCaches.shrink_to_fit();
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Duplicated surfels have been removed, there are ", surfelCaches.size(), " surfels now.");
 
 	return true;
 }
@@ -937,44 +948,57 @@ bool InnoBakerNS::readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& b
 			}
 		}
 
-		std::sort(l_brickFactors.begin(), l_brickFactors.end(), [&](BrickFactor A, BrickFactor B)
-		{
-			return A.brickIndex < B.brickIndex;
-		});
-
-		l_brickFactors.erase(std::unique(l_brickFactors.begin(), l_brickFactors.end()), l_brickFactors.end());
-		l_brickFactors.shrink_to_fit();
-
 		// Calculate brick weight
-		auto l_brickFactorSize = l_brickFactors.size();
-
-		if (l_brickFactorSize == 1)
+		if (l_brickFactors.size() > 0)
 		{
-			l_brickFactors[0].basisWeight = 1.0f;
+			std::sort(l_brickFactors.begin(), l_brickFactors.end(), [&](BrickFactor A, BrickFactor B)
+			{
+				return A.brickIndex < B.brickIndex;
+			});
+
+			l_brickFactors.erase(std::unique(l_brickFactors.begin(), l_brickFactors.end()), l_brickFactors.end());
+			l_brickFactors.shrink_to_fit();
+
+			if (l_brickFactors.size() == 1)
+			{
+				l_brickFactors[0].basisWeight = 1.0f;
+			}
+			else
+			{
+				auto l_brickFactorSize = l_brickFactors.size();
+
+				float denom = 0.0f;
+				for (size_t i = 0; i < l_brickFactorSize; i++)
+				{
+					denom += l_brickFactors[i].basisWeight;
+				}
+
+				for (size_t i = 0; i < l_brickFactorSize; i++)
+				{
+					// Reverse view space Z axis
+					l_brickFactors[i].basisWeight = (denom - l_brickFactors[i].basisWeight) / denom;
+				}
+			}
+
+			// Assign brick factor range to probes
+			auto l_brickFactorRangeBegin = brickFactors.size();
+			auto l_brickFactorRangeEnd = l_brickFactorRangeBegin + l_brickFactors.size() - 1;
+
+			if (l_brickFactorRangeEnd == 4294967295)
+			{
+				auto l = 2;
+			}
+
+			probe.brickFactorRange[i * 2] = (unsigned int)l_brickFactorRangeBegin;
+			probe.brickFactorRange[i * 2 + 1] = (unsigned int)l_brickFactorRangeEnd;
+
+			brickFactors.insert(brickFactors.end(), std::make_move_iterator(l_brickFactors.begin()), std::make_move_iterator(l_brickFactors.end()));
 		}
 		else
 		{
-			float denom = 0.0f;
-			for (size_t i = 0; i < l_brickFactorSize; i++)
-			{
-				denom += l_brickFactors[i].basisWeight;
-			}
-
-			for (size_t i = 0; i < l_brickFactorSize; i++)
-			{
-				// Reverse view space Z axis
-				l_brickFactors[i].basisWeight = (denom - l_brickFactors[i].basisWeight) / denom;
-			}
+			probe.brickFactorRange[i * 2] = -1;
+			probe.brickFactorRange[i * 2 + 1] = -1;
 		}
-
-		// Assign brick factor range to probes
-		auto l_brickFactorRangeBegin = brickFactors.size();
-		auto l_brickFactorRangeEnd = l_brickFactorRangeBegin + l_brickFactors.size() - 1;
-
-		probe.brickFactorRange[i * 2] = (unsigned int)l_brickFactorRangeBegin;
-		probe.brickFactorRange[i * 2 + 1] = (unsigned int)l_brickFactorRangeEnd;
-
-		brickFactors.insert(brickFactors.end(), std::make_move_iterator(l_brickFactors.begin()), std::make_move_iterator(l_brickFactors.end()));
 	}
 
 	return true;
@@ -1160,8 +1184,8 @@ void InnoBaker::Setup()
 
 	m_RPDC_BrickFactor->m_RenderPassDesc = l_RenderPassDesc;
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.SamplerType = TextureSamplerType::SamplerCubemap;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Width = m_probeInterval;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Height = m_probeInterval;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Width = 128;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Height = 128;
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::FLOAT32;
 
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
@@ -1169,8 +1193,8 @@ void InnoBaker::Setup()
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
 
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = true;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = m_probeInterval;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = m_probeInterval;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = 128;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = 128;
 
 	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs.resize(2);
 	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;

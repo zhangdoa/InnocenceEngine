@@ -52,55 +52,61 @@ layout(binding = 3, rgba32f) uniform writeonly image3D out_irradianceVolume;
 
 void main()
 {
-    uint _391 = (gl_GlobalInvocationID.x + (gl_GlobalInvocationID.y * _30.dispatchParams[4].numThreads.x)) + ((gl_GlobalInvocationID.z * _30.dispatchParams[4].numThreads.x) * _30.dispatchParams[4].numThreads.y);
-    if (float(_391) < _58.GISky_viewportSize[1].y)
+    uint _396 = (gl_GlobalInvocationID.x + (gl_GlobalInvocationID.y * _30.dispatchParams[4].numThreads.x)) + ((gl_GlobalInvocationID.z * _30.dispatchParams[4].numThreads.x) * _30.dispatchParams[4].numThreads.y);
+    if (float(_396) < _58.GISky_viewportSize[1].y)
     {
-        uint _563[12];
-        _563[0] = in_probes_1._data[_391].brickFactorRange[0];
-        _563[1] = in_probes_1._data[_391].brickFactorRange[1];
-        _563[2] = in_probes_1._data[_391].brickFactorRange[2];
-        _563[3] = in_probes_1._data[_391].brickFactorRange[3];
-        _563[4] = in_probes_1._data[_391].brickFactorRange[4];
-        _563[5] = in_probes_1._data[_391].brickFactorRange[5];
-        _563[6] = in_probes_1._data[_391].brickFactorRange[6];
-        _563[7] = in_probes_1._data[_391].brickFactorRange[7];
-        _563[8] = in_probes_1._data[_391].brickFactorRange[8];
-        _563[9] = in_probes_1._data[_391].brickFactorRange[9];
-        _563[10] = in_probes_1._data[_391].brickFactorRange[10];
-        _563[11] = in_probes_1._data[_391].brickFactorRange[11];
-        float _564[6];
-        _564[0] = in_probes_1._data[_391].skyVisibility[0];
-        _564[1] = in_probes_1._data[_391].skyVisibility[1];
-        _564[2] = in_probes_1._data[_391].skyVisibility[2];
-        _564[3] = in_probes_1._data[_391].skyVisibility[3];
-        _564[4] = in_probes_1._data[_391].skyVisibility[4];
-        _564[5] = in_probes_1._data[_391].skyVisibility[5];
-        uint _600;
-        _600 = 0u;
-        vec3 _475;
-        vec4 _369[6];
-        for (; _600 < 6u; _369[_600].w = _564[_600], imageStore(out_irradianceVolume, ivec3(uvec3(_475 + vec3(0.0, 0.0, float(_600) * _58.GISky_viewportSize[0].y))), _369[_600]), _600++)
+        uint _572[12];
+        _572[0] = in_probes_1._data[_396].brickFactorRange[0];
+        _572[1] = in_probes_1._data[_396].brickFactorRange[1];
+        _572[2] = in_probes_1._data[_396].brickFactorRange[2];
+        _572[3] = in_probes_1._data[_396].brickFactorRange[3];
+        _572[4] = in_probes_1._data[_396].brickFactorRange[4];
+        _572[5] = in_probes_1._data[_396].brickFactorRange[5];
+        _572[6] = in_probes_1._data[_396].brickFactorRange[6];
+        _572[7] = in_probes_1._data[_396].brickFactorRange[7];
+        _572[8] = in_probes_1._data[_396].brickFactorRange[8];
+        _572[9] = in_probes_1._data[_396].brickFactorRange[9];
+        _572[10] = in_probes_1._data[_396].brickFactorRange[10];
+        _572[11] = in_probes_1._data[_396].brickFactorRange[11];
+        float _573[6];
+        _573[0] = in_probes_1._data[_396].skyVisibility[0];
+        _573[1] = in_probes_1._data[_396].skyVisibility[1];
+        _573[2] = in_probes_1._data[_396].skyVisibility[2];
+        _573[3] = in_probes_1._data[_396].skyVisibility[3];
+        _573[4] = in_probes_1._data[_396].skyVisibility[4];
+        _573[5] = in_probes_1._data[_396].skyVisibility[5];
+        uint _609;
+        _609 = 0u;
+        vec3 _480;
+        vec4 _374[6];
+        for (; _609 < 6u; _374[_609].w = _573[_609], imageStore(out_irradianceVolume, ivec3(uvec3(_480 + vec3(0.0, 0.0, float(_609) * _58.GISky_viewportSize[0].y))), _374[_609]), _609++)
         {
-            _475 = in_probes_1._data[_391].pos.xyz;
-            _369[_600] = vec4(0.0);
-            uint _479 = _600 * 2u;
-            uint _481 = _563[_479];
-            uint _484 = (_600 * 2u) + 1u;
-            uint _486 = _563[_484];
-            if (_481 != _486)
+            _480 = in_probes_1._data[_396].pos.xyz;
+            _374[_609] = vec4(0.0);
+            uint _484 = _609 * 2u;
+            uint _486 = _572[_484];
+            uint _489 = (_609 * 2u) + 1u;
+            uint _491 = _572[_489];
+            if (_486 != 4294967295u)
             {
-                for (uint _601 = _481; _601 < _486; )
+                if (_486 != _491)
                 {
-                    _369[_600] += (in_brickIrradiance_1._data[in_brickFactors_1._data[_601].brickIndex] * in_brickFactors_1._data[_601].basisWeight);
-                    _601++;
-                    continue;
+                    for (uint _610 = _486; _610 < _491; )
+                    {
+                        _374[_609] += (in_brickIrradiance_1._data[in_brickFactors_1._data[_610].brickIndex] * in_brickFactors_1._data[_610].basisWeight);
+                        _610++;
+                        continue;
+                    }
+                    _374[_609] /= vec4(float(_491 - _486));
                 }
-                _369[_600] /= vec4(float(_486 - _481));
+                else
+                {
+                    _374[_609] = in_brickIrradiance_1._data[in_brickFactors_1._data[_486].brickIndex];
+                }
                 continue;
             }
             else
             {
-                _369[_600] = in_brickIrradiance_1._data[in_brickFactors_1._data[_481].brickIndex];
                 continue;
             }
             continue;
