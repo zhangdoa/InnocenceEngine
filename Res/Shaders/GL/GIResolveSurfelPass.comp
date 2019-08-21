@@ -1,0 +1,46 @@
+// shadertype=glsl
+#include "common/common.glsl"
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+
+layout(std430, binding = 0) buffer surfelsSSBOBlock
+{
+	Surfel data[];
+} surfelsSSBO;
+
+layout(std430, binding = 1) buffer irradianceSSBOBlock
+{
+	vec4 data[];
+} irradianceSSBO;
+
+void main()
+{
+	if ((gl_GlobalInvocationID.x < dispatchParamsUBO.data[2].numThreads.x)
+		&& (gl_GlobalInvocationID.y < dispatchParamsUBO.data[2].numThreads.y)
+		&& (gl_GlobalInvocationID.z < dispatchParamsUBO.data[2].numThreads.z)
+		)
+	{
+		uint l_surfelIndex = (gl_GlobalInvocationID.x + (gl_GlobalInvocationID.y * dispatchParamsUBO.data[2].numThreads.x)) + (gl_GlobalInvocationID.z * dispatchParamsUBO.data[2].numThreads.x * dispatchParamsUBO.data[2].numThreads.y);
+		Surfel l_surfel = surfelsSSBO.data[l_surfelIndex];
+
+		vec3 posWS = l_surfel.pos.xyz;
+		float metallic = l_surfel.MRAT.x;
+		vec3 normalWS = l_surfel.normal.xyz;
+		vec3 albedo = l_surfel.albedo.xyz;
+
+		vec3 N = normalize(normalWS);
+		vec3 V = normalize(cameraUBO.globalPos.xyz - posWS);
+		vec3 L = normalize(-sunUBO.data.direction.xyz);
+		float NdotV = max(dot(N, V), 0.0);
+		float NdotL = max(dot(N, L), 0.0);
+
+		float kD = 1.0 - metallic;
+
+		// Diffuse BRDF
+		vec3 BRDF = kD * albedo / PI;
+
+		vec3 Lo = BRDF * sunUBO.data.luminance.xyz * NdotL;
+
+		irradianceSSBO.data[l_surfelIndex] = vec4(Lo, 1.0);
+	}
+}

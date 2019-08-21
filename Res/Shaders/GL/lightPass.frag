@@ -21,6 +21,8 @@ layout(std430, binding = 8) coherent buffer lightIndexListSSBOBlock
 
 layout(location = 9, binding = 9) uniform sampler2D uni_lightGrid;
 
+layout(location = 10, binding = 10) uniform sampler3D uni_IrradianceVolume;
+
 #include "common/BRDF.glsl"
 #include "common/shadowResolver.glsl"
 
@@ -42,8 +44,8 @@ void main()
 	//vec4 posCS = vec4(screenTexCoord.x * 2.0f - 1.0f, screenTexCoord.y * 2.0f - 1.0f, depth * 2.0f - 1.0f, 1.0f);
 	//vec4 posVS = skyUBO.p_inv * posCS;
 	//posVS /= posVS.w;
-	//vec4 posWS = skyUBO.v_inv * posVS;
-	//vec3 FragPos = posWS.rgb;
+	//vec4 FragPos = skyUBO.v_inv * posVS;
+	//vec3 FragPos = FragPos.rgb;
 
 	vec3 FragPos = GPassRT0.rgb;
 	vec3 Normal = GPassRT1.rgb;
@@ -229,6 +231,51 @@ void main()
 
 			Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, Metallic, F0, Albedo, illuminance * sphereLightUBO.data[i].luminance.xyz);
 		}
+	}
+
+	// GI
+	// [https://steamcdn-a.akamaihd.net/apps/valve/2006/SIGGRAPH06_Course_ShadingInValvesSourceEngine.pdf]
+	vec3 nSquared = N * N;
+	ivec3 isNegative = ivec3(int(N.x < 0.0), int(N.y < 0.0), int(N.z < 0.0));
+	vec3 GISampleCoord = FragPos / skyUBO.posWSNormalizer.xyz;
+	ivec3 isOutside = ivec3(int(GISampleCoord.x > 1.0), int(GISampleCoord.y > 1.0), int(GISampleCoord.z > 1.0));
+
+	if ((isOutside.x == 0) && (isOutside.y == 0) && (isOutside.z == 0))
+	{
+		vec3 GISampleCoordPX = GISampleCoord;
+		vec3 GISampleCoordNX = GISampleCoord + vec3(0, 0, 1);
+		vec3 GISampleCoordPY = GISampleCoord + vec3(0, 0, 2);
+		vec3 GISampleCoordNY = GISampleCoord + vec3(0, 0, 3);
+		vec3 GISampleCoordPZ = GISampleCoord + vec3(0, 0, 4);
+		vec3 GISampleCoordNZ = GISampleCoord + vec3(0, 0, 5);
+
+		vec4 indirectLight = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+		if ((isNegative.x == 1))
+		{
+			indirectLight.xyz += nSquared.x * texture(uni_IrradianceVolume, GISampleCoordNX).xyz;
+		}
+		else
+		{
+			indirectLight.xyz += nSquared.x * texture(uni_IrradianceVolume, GISampleCoordPX).xyz;
+		}
+		if ((isNegative.y == 1))
+		{
+			indirectLight.xyz += nSquared.y * texture(uni_IrradianceVolume, GISampleCoordNY).xyz;
+		}
+		else
+		{
+			indirectLight.xyz += nSquared.y * texture(uni_IrradianceVolume, GISampleCoordPY).xyz;
+		}
+		if ((isNegative.z == 1))
+		{
+			indirectLight.xyz += nSquared.z * texture(uni_IrradianceVolume, GISampleCoordNZ).xyz;
+		}
+		else
+		{
+			indirectLight.xyz += nSquared.z * texture(uni_IrradianceVolume, GISampleCoordPZ).xyz;
+		}
+
+		Lo += (1 - Metallic) * indirectLight.xyz;
 	}
 
 	// ambient occlusion

@@ -79,6 +79,34 @@ struct SH9
 	vec4 L22;
 };
 
+struct Surfel
+{
+	vec4 pos;
+	vec4 normal;
+	vec4 albedo;
+	vec4 MRAT;
+};
+
+struct Brick
+{
+	uint surfelRangeBegin;
+	uint surfelRangeEnd;
+};
+
+struct BrickFactor
+{
+	float basisWeight;
+	uint brickIndex;
+};
+
+struct Probe
+{
+	vec4 pos;
+	uint brickFactorRange[12];
+	float skyVisibility[6];
+	uint padding[10];
+};
+
 const float eps = 0.00001;
 const float PI = 3.14159265359;
 const float SQRT_3 = 1.73205080f;
