@@ -70,7 +70,7 @@ float3 AverangeFresnel(float3 F0)
 {
 	return 20.0 * F0 / 21.0 + 1.0 / 21.0;
 }
-float3 getFrMS(Texture2D BRDFLUT, Texture2D BRDFMSLUT, float NdotL, float NdotV, float3 F0, float roughness)
+float3 getFrMS(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePoint, float NdotL, float NdotV, float3 F0, float roughness)
 {
 	float alpha = roughness * roughness;
 	float3 f_averange = AverangeFresnel(F0);
@@ -88,7 +88,7 @@ float3 getFrMS(Texture2D BRDFLUT, Texture2D BRDFMSLUT, float NdotL, float NdotV,
 	return frMS;
 }
 // ----------------------------------------------------------------------------
-float3 getBRDF(float NdotV, float LdotH, float NdotH, float NdotL, float roughness, float metallic, float3 F0, float3 albedo)
+float3 getBRDF(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePoint, float NdotV, float LdotH, float NdotH, float NdotL, float roughness, float metallic, float3 F0, float3 albedo)
 {
 	// Specular BRDF
 	float F90 = 1.0;
@@ -98,7 +98,7 @@ float3 getBRDF(float NdotV, float LdotH, float NdotH, float NdotL, float roughne
 	float3 Frss = F * G * D;
 
 	// Real-Time Rendering", 4th edition, pg. 341, "9.8 BRDF Models for Surface Reflection, the 4 * NdV * NdL has already been cancelled by G function
-	float3 Frms = getFrMS(in_BRDFLUT, in_BRDFMSLUT, NdotL, NdotV, F0, roughness);
+	float3 Frms = getFrMS(BRDFLUT, BRDFMSLUT, SampleTypePoint, NdotL, NdotV, F0, roughness);
 
 	float3 Fr = Frss + Frms;
 
@@ -112,9 +112,9 @@ float3 getBRDF(float NdotV, float LdotH, float NdotH, float NdotL, float roughne
 	return (kD * Fd + Fr);
 }
 // ----------------------------------------------------------------------------
-float3 getIlluminance(float NdotV, float LdotH, float NdotH, float NdotL, float roughness, float metallic, float3 F0, float3 albedo, float3 lightLuminance)
+float3 getIlluminance(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePoint, float NdotV, float LdotH, float NdotH, float NdotL, float roughness, float metallic, float3 F0, float3 albedo, float3 lightLuminance)
 {
-	float3 BRDF = getBRDF(NdotV, LdotH, NdotH, NdotL, roughness, metallic, F0, albedo);
+	float3 BRDF = getBRDF(BRDFLUT, BRDFMSLUT, SampleTypePoint, NdotV, LdotH, NdotH, NdotL, roughness, metallic, F0, albedo);
 
 	return BRDF * lightLuminance * NdotL;
 }

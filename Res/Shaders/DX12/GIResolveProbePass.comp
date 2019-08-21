@@ -9,18 +9,11 @@ struct ComputeInputType
 	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
-Texture2D in_BRDFLUT : register(t0);
-Texture2D in_BRDFMSLUT : register(t1);
-
-SamplerState SampleTypePoint : register(s0);
-
 RWStructuredBuffer<Probe> in_probes : register(u0);
 RWStructuredBuffer<BrickFactor> in_brickFactors : register(u1);
 RWStructuredBuffer<float4> in_brickIrradiance : register(u2);
 //RWStructuredBuffer<float4> in_skyRadiance : register(u3);
 RWTexture3D<float4> out_irradianceVolume : register(u3);
-
-#include "common/BRDF.hlsl"
 
 [numthreads(8, 8, 8)]
 void main(ComputeInputType input)

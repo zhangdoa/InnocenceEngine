@@ -63,7 +63,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float NdotH = max(dot(N, H), 0.0);
 	float NdotL = max(dot(N, L), 0.0);
 
-	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, roughness, metallic, F0, albedo, dirLight_luminance.xyz);
+	Lo += getIlluminance(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotV, LdotH, NdotH, NdotL, roughness, metallic, F0, albedo, dirLight_luminance.xyz);
 	Lo *= 1.0 - SunShadowResolver(posWS);
 
 	// point punctual light
@@ -95,7 +95,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 		attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
 
 		float3 lightLuminance = light.luminance.xyz * attenuation;
-		Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, roughness, metallic, F0, albedo, lightLuminance);
+		Lo += getIlluminance(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotV, LdotH, NdotH, NdotL, roughness, metallic, F0, albedo, lightLuminance);
 	}
 
 	//// sphere area light
@@ -133,7 +133,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	//	}
 	//	illuminance *= PI;
 
-	//	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, roughness, F0, albedo, illuminance * sphereLights[i].luminance.xyz);
+	//	Lo += getIlluminance(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotV, LdotH, NdotH, NdotL, roughness, F0, albedo, illuminance * sphereLights[i].luminance.xyz);
 	//}
 
 	// GI

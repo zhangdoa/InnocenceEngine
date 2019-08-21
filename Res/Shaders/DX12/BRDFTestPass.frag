@@ -50,7 +50,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float D = D_GGX(NdotH, out_roughness);
 	float3 Frss = F * G * D;
 
-	float3 Frms = getFrMS(in_BRDFLUT, in_BRDFMSLUT, NdotL, NdotV, F0, out_roughness);
+	float3 Frms = getFrMS(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotL, NdotV, F0, out_roughness);
 
 	float3 Fr = Frss + Frms;
 
