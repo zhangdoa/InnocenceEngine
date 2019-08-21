@@ -355,7 +355,7 @@ bool InnoBakerNS::serializeProbeInfos(vec4 probeCounts)
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 
 	std::ofstream l_file;
-	l_file.open(l_filePath + "Res//Scenes//" + m_exportFileName + ".InnoProbeInfo", std::ios::binary);
+	l_file.open(l_filePath + "Res//Scenes//" + m_exportFileName + ".InnoProbeInfo", std::ios::binary | std::ios::trunc);
 	l_file.write((char*)&probeCounts, sizeof(probeCounts));
 	l_file.close();
 
@@ -551,7 +551,7 @@ bool InnoBakerNS::serializeSurfelCaches(const std::vector<Surfel>& surfelCaches)
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 
 	std::ofstream l_file;
-	l_file.open(l_filePath + "Res//Intermediate//" + m_exportFileName + ".InnoSurfelCache", std::ios::binary);
+	l_file.open(l_filePath + "Res//Intermediate//" + m_exportFileName + ".InnoSurfelCache", std::ios::binary | std::ios::trunc);
 	IOService::serializeVector(l_file, surfelCaches);
 	l_file.close();
 
@@ -697,7 +697,7 @@ bool InnoBakerNS::serializeBrickCaches(const std::vector<BrickCache>& brickCache
 	// Serialize metadata
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 	std::ofstream l_summaryFile;
-	l_summaryFile.open(l_filePath + "Res//Intermediate//" + m_exportFileName + ".InnoBrickCacheSummary", std::ios::binary);
+	l_summaryFile.open(l_filePath + "Res//Intermediate//" + m_exportFileName + ".InnoBrickCacheSummary", std::ios::binary | std::ios::trunc);
 
 	std::vector<BrickCacheSummary> l_brickCacheSummaries;
 	l_brickCacheSummaries.reserve(l_brickCacheCount);
@@ -719,7 +719,7 @@ bool InnoBakerNS::serializeBrickCaches(const std::vector<BrickCache>& brickCache
 
 	// Serialize surfels cache for each brick
 	std::ofstream l_surfelCacheFile;
-	l_surfelCacheFile.open(l_filePath + "Res//Intermediate//" + m_exportFileName + ".InnoBrickCache", std::ios::binary);
+	l_surfelCacheFile.open(l_filePath + "Res//Intermediate//" + m_exportFileName + ".InnoBrickCache", std::ios::binary | std::ios::trunc);
 
 	for (size_t i = 0; i < l_brickCacheCount; i++)
 	{
@@ -810,7 +810,7 @@ bool InnoBakerNS::serializeSurfels(const std::vector<Surfel>& surfels)
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 
 	std::ofstream l_file;
-	l_file.open(l_filePath + "Res//Scenes//" + m_exportFileName + ".InnoSurfel", std::ios::binary);
+	l_file.open(l_filePath + "Res//Scenes//" + m_exportFileName + ".InnoSurfel", std::ios::binary | std::ios::trunc);
 	IOService::serializeVector(l_file, surfels);
 	l_file.close();
 
@@ -824,7 +824,7 @@ bool InnoBakerNS::serializeBricks(const std::vector<Brick>& bricks)
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 
 	std::ofstream l_file;
-	l_file.open(l_filePath + "Res//Scenes//" + m_exportFileName + ".InnoBrick", std::ios::binary);
+	l_file.open(l_filePath + "Res//Scenes//" + m_exportFileName + ".InnoBrick", std::ios::binary | std::ios::trunc);
 	IOService::serializeVector(l_file, bricks);
 	l_file.close();
 
@@ -1055,7 +1055,7 @@ bool InnoBakerNS::serializeBrickFactors(const std::vector<BrickFactor>& brickFac
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 
 	std::ofstream l_file;
-	l_file.open(l_filePath + "Res//Scenes//" + m_exportFileName + ".InnoBrickFactor", std::ios::binary);
+	l_file.open(l_filePath + "Res//Scenes//" + m_exportFileName + ".InnoBrickFactor", std::ios::binary | std::ios::trunc);
 	IOService::serializeVector(l_file, brickFactors);
 	l_file.close();
 
@@ -1069,7 +1069,7 @@ bool InnoBakerNS::serializeProbes(const std::vector<Probe>& probes)
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 
 	std::ofstream l_file;
-	l_file.open(l_filePath + "Res//Scenes//" + m_exportFileName + ".InnoProbe", std::ios::binary);
+	l_file.open(l_filePath + "Res//Scenes//" + m_exportFileName + ".InnoProbe", std::ios::binary | std::ios::trunc);
 	IOService::serializeVector(l_file, probes);
 	l_file.close();
 
@@ -1337,6 +1337,8 @@ void InnoBaker::BakeBrickFactor(const std::string & brickFileName)
 
 		IOService::deserializeVector(l_brickFile, l_bricks);
 
+		l_brickFile.close();
+
 		std::ifstream l_probeFile;
 
 		l_probeFile.open(l_filePath + "Res//Scenes//" + m_exportFileName + ".InnoProbe", std::ios::binary);
@@ -1346,6 +1348,8 @@ void InnoBaker::BakeBrickFactor(const std::string & brickFileName)
 			std::vector<Probe> l_probes;
 
 			IOService::deserializeVector(l_probeFile, l_probes);
+
+			l_probeFile.close();
 
 			auto l_InnoBakerBrickFactorTask = g_pModuleManager->getTaskSystem()->submit("InnoBakerBrickFactorTask", 2, nullptr,
 				[&]() {
