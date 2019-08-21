@@ -29,15 +29,13 @@ namespace InnoBakerNS
 	std::string parseFileName(const std::string & fileName);
 
 	bool gatherStaticMeshData();
-	bool generateProbeCaches(std::vector<Probe>& probesForSurfelCaches, std::vector<Probe>& probesForRuntime);
+	bool generateProbeCaches(std::vector<Probe>& probes);
 	vec4 generateProbes(std::vector<Probe>& probes, const std::vector<vec4>& heightMap, unsigned int probeMapSamplingInterval);
 	bool serializeProbeInfos(vec4 probeCounts);
 
-	bool captureSurfels(std::vector<Probe>& probesForSurfelCaches, std::vector<Probe>& probesForRuntime);
+	bool captureSurfels(std::vector<Probe>& probes);
 	bool drawOpaquePass(Probe& probe, const mat4& p, const std::vector<mat4>& v);
-	bool readBackSurfelCaches(std::vector<Surfel>& surfelCaches);
-	bool eliminateDuplicatedSurfels(std::vector<Surfel>& surfelCaches);
-	bool drawSkyVisibilityPass(Probe& probe, const mat4& p, const std::vector<mat4>& v);
+	bool readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfelCaches);
 
 	bool serializeSurfelCaches(const std::vector<Surfel>& surfelCaches);
 
@@ -65,11 +63,9 @@ namespace InnoBakerNS
 
 	const unsigned int m_probeMapResolution = 1024;
 	const float m_probeHeightOffset = 4.0f;
-	const unsigned int m_probeCacheInterval = 128;
 	const unsigned int m_probeInterval = 32;
-	const unsigned int m_captureResolution = 64;
-	const unsigned int m_sampleCountPerFace = m_captureResolution * m_captureResolution;
-	const vec4 m_brickSize = vec4(8.0f, 8.0f, 8.0f, 0.0f);
+	const unsigned int m_captureResolution = 16;
+	const vec4 m_brickSize = vec4(4.0f, 4.0f, 4.0f, 0.0f);
 
 	RenderPassDataComponent* m_RPDC_Probe;
 	ShaderProgramComponent* m_SPC_Probe;
@@ -156,7 +152,7 @@ bool InnoBakerNS::gatherStaticMeshData()
 	return true;
 }
 
-bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probesForSurfelCaches, std::vector<Probe>& probesForRuntime)
+bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 {
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Generate probe caches...");
 
@@ -208,17 +204,14 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probesForSurfelCaches,
 
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to generate probe location...");
 
-	// Read back results and generate probe caches and real probes
+	// Read back results and generate probes
 	auto l_probePosTextureResults = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Probe, m_RPDC_Probe->m_RenderTargets[0]);
 
-	generateProbes(probesForSurfelCaches, l_probePosTextureResults, m_probeCacheInterval);
-
-	auto l_probesCount = generateProbes(probesForRuntime, l_probePosTextureResults, m_probeInterval);
+	auto l_probesCount = generateProbes(probes, l_probePosTextureResults, m_probeInterval);
 
 	serializeProbeInfos(l_probesCount);
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", probesForSurfelCaches.size(), " probes for surfel cache location generated.");
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", probesForRuntime.size(), " probes for runtime generated.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", probes.size(), " probes generated.");
 
 	return true;
 }
@@ -368,13 +361,13 @@ bool InnoBakerNS::serializeProbeInfos(vec4 probeCounts)
 	return true;
 }
 
-bool InnoBakerNS::captureSurfels(std::vector<Probe>& probesForSurfelCaches, std::vector<Probe>& probesForRuntime)
+bool InnoBakerNS::captureSurfels(std::vector<Probe>& probes)
 {
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to capture surfels...");
 
 	auto l_cameraGPUData = g_pModuleManager->getRenderingFrontend()->getCameraGPUData();
 
-	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, l_cameraGPUData.zNear, l_cameraGPUData.zFar);
+	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, 0.1f, 16.0f);
 
 	auto l_rPX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
 	auto l_rNX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(-1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
@@ -388,40 +381,27 @@ bool InnoBakerNS::captureSurfels(std::vector<Probe>& probesForSurfelCaches, std:
 		l_rPX, l_rNX, l_rPY, l_rNY, l_rPZ, l_rNZ
 	};
 
-	auto l_probeForSurfelCachesCount = probesForSurfelCaches.size();
+	auto l_probeForSurfelCachesCount = probes.size();
 
 	std::vector<Surfel> l_surfelCaches;
 	l_surfelCaches.reserve(l_probeForSurfelCachesCount * m_captureResolution * m_captureResolution * 6);
 
 	for (unsigned int i = 0; i < l_probeForSurfelCachesCount; i++)
 	{
-		drawOpaquePass(probesForSurfelCaches[i], l_p, l_v);
+		drawOpaquePass(probes[i], l_p, l_v);
 
-		readBackSurfelCaches(l_surfelCaches);
+		readBackSurfelCaches(probes[i], l_surfelCaches);
 
 		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Progress: ", (float)i * 100.0f / (float)l_probeForSurfelCachesCount, "%...");
 	}
 
+	l_surfelCaches.shrink_to_fit();
+
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_surfelCaches.size(), " surfel caches captured.");
 
-	eliminateDuplicatedSurfels(l_surfelCaches);
+	serializeProbes(probes);
 
 	serializeSurfelCaches(l_surfelCaches);
-
-	// Sky visibility
-	auto l_probeForRuntimeCount = probesForRuntime.size();
-
-	for (unsigned int i = 0; i < l_probeForRuntimeCount; i++)
-	{
-		drawOpaquePass(probesForRuntime[i], l_p, l_v);
-		drawSkyVisibilityPass(probesForRuntime[i], l_p, l_v);
-
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Progress: ", (float)i * 100.0f / (float)l_probeForRuntimeCount, "%...");
-	}
-
-	serializeProbes(probesForRuntime);
-
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: sky visibility generated.");
 
 	return true;
 }
@@ -493,38 +473,12 @@ bool InnoBakerNS::drawOpaquePass(Probe& probeCache, const mat4& p, const std::ve
 	return true;
 }
 
-bool InnoBakerNS::drawSkyVisibilityPass(Probe& probeCache, const mat4& p, const std::vector<mat4>& v)
-{
-	auto l_depthStencilRT = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_DepthStencilRenderTarget);
-
-	auto l_depthStencilRTSize = l_depthStencilRT.size();
-
-	l_depthStencilRTSize /= 6;
-
-	for (size_t i = 0; i < 6; i++)
-	{
-		unsigned int l_stencil = 0;
-		for (size_t j = 0; j < l_depthStencilRTSize; j++)
-		{
-			auto& l_depthStencil = l_depthStencilRT[i * l_depthStencilRTSize + j];
-
-			if (l_depthStencil.y == 1.0f)
-			{
-				l_stencil++;
-			}
-		}
-
-		probeCache.skyVisibility[i] = 1.0f - ((float)l_stencil / (float)l_depthStencilRTSize);
-	}
-
-	return true;
-}
-
-bool InnoBakerNS::readBackSurfelCaches(std::vector<Surfel>& surfelCaches)
+bool InnoBakerNS::readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfelCaches)
 {
 	auto l_posWSMetallic = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_RenderTargets[0]);
 	auto l_normalRoughness = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_RenderTargets[1]);
 	auto l_albedoAO = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_RenderTargets[2]);
+	auto l_depthStencilRT = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_DepthStencilRenderTarget);
 
 	auto l_surfelSize = l_posWSMetallic.size();
 
@@ -543,14 +497,27 @@ bool InnoBakerNS::readBackSurfelCaches(std::vector<Surfel>& surfelCaches)
 		l_surfels[i].MRAT.w = 1.0f;
 	}
 
+	auto l_depthStencilRTSize = l_depthStencilRT.size();
+
+	l_depthStencilRTSize /= 6;
+
+	for (size_t i = 0; i < 6; i++)
+	{
+		unsigned int l_stencil = 0;
+		for (size_t j = 0; j < l_depthStencilRTSize; j++)
+		{
+			auto& l_depthStencil = l_depthStencilRT[i * l_depthStencilRTSize + j];
+
+			if (l_depthStencil.y == 1.0f)
+			{
+				l_stencil++;
+			}
+		}
+
+		probe.skyVisibility[i] = 1.0f - ((float)l_stencil / (float)l_depthStencilRTSize);
+	}
+
 	surfelCaches.insert(surfelCaches.end(), l_surfels.begin(), l_surfels.end());
-
-	return true;
-}
-
-bool InnoBakerNS::eliminateDuplicatedSurfels(std::vector<Surfel>& surfelCaches)
-{
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to eliminate duplicated surfels...");
 
 	std::sort(surfelCaches.begin(), surfelCaches.end(), [&](Surfel A, Surfel B)
 	{
@@ -564,9 +531,6 @@ bool InnoBakerNS::eliminateDuplicatedSurfels(std::vector<Surfel>& surfelCaches)
 	});
 
 	surfelCaches.erase(std::unique(surfelCaches.begin(), surfelCaches.end()), surfelCaches.end());
-	surfelCaches.shrink_to_fit();
-
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Duplicated surfels have been removed, there are ", surfelCaches.size(), " surfels now.");
 
 	return true;
 }
@@ -612,18 +576,23 @@ bool InnoBakerNS::generateBrickCaches(std::vector<Surfel>& surfelCaches)
 	l_endPos = l_adjustedEndPos;
 
 	auto l_extends = l_endPos - l_startPos;
-	auto l_bricksCountX = std::trunc(l_extends.x / m_brickSize.x);
-	auto l_bricksCountY = std::trunc(l_extends.y / m_brickSize.y);
-	auto l_bricksCountZ = std::trunc(l_extends.z / m_brickSize.z);
+	l_extends.w = 1.0f;
+
+	auto l_bricksCountX = (size_t)std::trunc(l_extends.x / m_brickSize.x);
+	auto l_bricksCountY = (size_t)std::trunc(l_extends.y / m_brickSize.y);
+	auto l_bricksCountZ = (size_t)std::trunc(l_extends.z / m_brickSize.z);
+	auto l_brickCount = TVec4<size_t>(l_bricksCountX, l_bricksCountY, l_bricksCountZ, 1);
 
 	// generate all possible brick position
-	auto l_totalBricksWorkCount = (int)(l_bricksCountX * l_bricksCountY * l_bricksCountZ);
+	auto l_totalBricksWorkCount = l_bricksCountX * l_bricksCountY * l_bricksCountZ;
 
-	std::vector<vec4> l_brickPos;
-	l_brickPos.reserve(l_totalBricksWorkCount);
+	std::vector<BrickCache> l_brickCaches;
+	l_brickCaches.reserve(l_totalBricksWorkCount);
 
 	auto l_currentMaxPos = l_startPos + m_brickSize;
 	auto l_currentMinPos = l_startPos;
+
+	auto l_averangeSurfelInABrick = l_surfelsCount / l_totalBricksWorkCount;
 
 	while (l_currentMaxPos.x <= l_endPos.x)
 	{
@@ -637,7 +606,11 @@ bool InnoBakerNS::generateBrickCaches(std::vector<Surfel>& surfelCaches)
 
 			while (l_currentMaxPos.z <= l_endPos.z)
 			{
-				l_brickPos.emplace_back(l_currentMinPos + m_brickSize / 2.0f);
+				BrickCache l_brickCache;
+				l_brickCache.pos = l_currentMinPos + m_brickSize / 2.0f;
+				l_brickCache.surfelCaches.reserve(l_averangeSurfelInABrick);
+
+				l_brickCaches.emplace_back(std::move(l_brickCache));
 
 				l_currentMaxPos.z += m_brickSize.z;
 				l_currentMinPos.z += m_brickSize.z;
@@ -652,66 +625,39 @@ bool InnoBakerNS::generateBrickCaches(std::vector<Surfel>& surfelCaches)
 	}
 
 	// Assign surfels to brick cache
-	ThreadSafeVector<BrickCache> l_brickCaches;
-	l_brickCaches.reserve(l_totalBricksWorkCount);
-
-	std::atomic_int l_currentWorkloadIndex = 0;
-
-	std::vector<std::shared_ptr<IInnoTask>> l_tasks;
-	l_tasks.reserve(l_totalBricksWorkCount);
-
-	while (l_currentWorkloadIndex < l_totalBricksWorkCount)
+	for (size_t i = 0; i < l_surfelsCount; i++)
 	{
-		auto l_task = g_pModuleManager->getTaskSystem()->submit("InnoBakerBrickCacheTask", -1, nullptr,
-			[&]() {
-			l_currentWorkloadIndex++;
+		auto l_posVS = surfelCaches[i].pos - l_startPos;
+		auto l_normalizedPos = l_posVS.scale(l_extends.reciprocal());
+		auto l_brickIndexX = (size_t)std::floor((float)l_brickCount.x * l_normalizedPos.x);
+		auto l_brickIndexY = (size_t)std::floor((float)l_brickCount.y * l_normalizedPos.y);
+		auto l_brickIndexZ = (size_t)std::floor((float)l_brickCount.z * l_normalizedPos.z);
+		auto l_brickIndex = l_brickIndexX + l_brickIndexY * l_brickCount.x + l_brickIndexZ * l_brickCount.x * l_brickCount.y;
 
-			if (l_currentWorkloadIndex < l_totalBricksWorkCount)
-			{
-				size_t l_currentBrickIndex = l_currentWorkloadIndex;
+		l_brickCaches[l_brickIndex].surfelCaches.emplace_back(surfelCaches[i]);
 
-				BrickCache l_BrickCache;
-				l_BrickCache.pos = l_brickPos[l_currentBrickIndex];
-				l_BrickCache.surfelCaches.reserve(l_surfelsCount);
-
-				auto l_currentMaxPos = l_BrickCache.pos + m_brickSize / 2.0f;
-				auto l_currentMinPos = l_BrickCache.pos - m_brickSize / 2.0f;
-
-				for (size_t j = 0; j < l_surfelsCount; j++)
-				{
-					if (
-						InnoMath::isALessEqualThanBVec3(surfelCaches[j].pos, l_currentMaxPos)
-						&& InnoMath::isAGreaterEqualThanBVec3(surfelCaches[j].pos, l_currentMinPos)
-						)
-					{
-						l_BrickCache.surfelCaches.emplace_back(surfelCaches[j]);
-					}
-				}
-
-				if (l_BrickCache.surfelCaches.size() > 0)
-				{
-					l_brickCaches.emplace_back(std::move(l_BrickCache));
-				}
-
-				g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Progress: ", (float)l_currentBrickIndex * 100.0f / (float)l_totalBricksWorkCount, "%...");
-			}
-		});
-
-		l_tasks.emplace_back(l_task);
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Progress: ", (float)i * 100.0f / (float)l_totalBricksWorkCount, "%...");
 	}
 
-	for (auto i : l_tasks)
-	{
-		i->Wait();
-	}
-
-	g_pModuleManager->getTaskSystem()->waitAllTasksToFinish();
+	// Remove empty bricks
+	l_brickCaches.erase(
+		std::remove_if(l_brickCaches.begin(), l_brickCaches.end(),
+			[&](auto val) {
+		return val.surfelCaches.size() == 0;
+	}), l_brickCaches.end());
 
 	l_brickCaches.shrink_to_fit();
 
+	auto l_finalBrickCount = l_brickCaches.size();
+
+	for (size_t i = 0; i < l_finalBrickCount; i++)
+	{
+		l_brickCaches[i].surfelCaches.shrink_to_fit();
+	}
+
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_brickCaches.size(), " brick caches have been generated.");
 
-	serializeBrickCaches(l_brickCaches.getRawData());
+	serializeBrickCaches(l_brickCaches);
 
 	return true;
 }
@@ -1214,8 +1160,8 @@ void InnoBaker::Setup()
 
 	m_RPDC_BrickFactor->m_RenderPassDesc = l_RenderPassDesc;
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.SamplerType = TextureSamplerType::SamplerCubemap;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Width = m_probeCacheInterval;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Height = m_probeCacheInterval;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Width = m_probeInterval;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Height = m_probeInterval;
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::FLOAT32;
 
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
@@ -1223,8 +1169,8 @@ void InnoBaker::Setup()
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
 
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = true;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = m_probeCacheInterval;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = m_probeCacheInterval;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = m_probeInterval;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = m_probeInterval;
 
 	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs.resize(2);
 	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
@@ -1247,14 +1193,13 @@ void InnoBaker::BakeProbeCache(const std::string & sceneName)
 	g_pModuleManager->getRenderingFrontend()->update();
 	m_exportFileName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
 
-	std::vector<Probe> l_probesForSurfelCaches;
-	std::vector<Probe> l_probesForRuntime;
+	std::vector<Probe> l_probes;
 
 	auto l_InnoBakerProbeCacheTask = g_pModuleManager->getTaskSystem()->submit("InnoBakerProbeCacheTask", 2, nullptr,
 		[&]() {
 		gatherStaticMeshData();
-		generateProbeCaches(l_probesForSurfelCaches, l_probesForRuntime);
-		captureSurfels(l_probesForSurfelCaches, l_probesForRuntime);
+		generateProbeCaches(l_probes);
+		captureSurfels(l_probes);
 	});
 
 	l_InnoBakerProbeCacheTask->Wait();
