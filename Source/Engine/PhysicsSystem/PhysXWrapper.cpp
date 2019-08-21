@@ -151,6 +151,7 @@ bool PhysXWrapperNS::update()
 							auto l_transformComponent = reinterpret_cast<TransformComponent*>(l_rigidBody->userData);
 							l_transformComponent->m_localTransformVector_target.m_pos = vec4(p.x, p.y, p.z, 1.0f);
 							l_transformComponent->m_localTransformVector_target.m_rot = vec4(q.x, q.y, q.z, q.w);
+							l_transformComponent->m_localTransformVector = l_transformComponent->m_localTransformVector_target;
 						}
 					}
 				}
