@@ -537,19 +537,19 @@ bool GIResolvePass::generateSkyRadiance()
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GICameraGBDC, l_GICameraGPUData);
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GISkyGBDC, l_GISkyGPUData);
 
-	//g_pModuleManager->getRenderingServer()->CommandListBegin(m_skyRPDC, 0);
-	//g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_skyRPDC);
-	//g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_skyRPDC);
+	g_pModuleManager->getRenderingServer()->CommandListBegin(m_skyRPDC, 0);
+	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_skyRPDC);
+	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_skyRPDC);
 
-	//g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyRPDC, ShaderStage::Geometry, l_GICameraGBDC->m_ResourceBinder, 0, 10, Accessibility::ReadOnly);
-	//g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyRPDC, ShaderStage::Pixel, l_SunGBDC->m_ResourceBinder, 1, 3, Accessibility::ReadOnly);
-	//g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyRPDC, ShaderStage::Pixel, l_GISkyGBDC->m_ResourceBinder, 2, 11, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyRPDC, ShaderStage::Geometry, l_GICameraGBDC->m_ResourceBinder, 0, 10, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyRPDC, ShaderStage::Pixel, l_SunGBDC->m_ResourceBinder, 1, 3, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyRPDC, ShaderStage::Pixel, l_GISkyGBDC->m_ResourceBinder, 2, 11, Accessibility::ReadOnly);
 
-	//auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Cube);
+	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Cube);
 
-	//g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_skyRPDC, l_mesh);
+	g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_skyRPDC, l_mesh);
 
-	//g_pModuleManager->getRenderingServer()->CommandListEnd(m_skyRPDC);
+	g_pModuleManager->getRenderingServer()->CommandListEnd(m_skyRPDC);
 
 	return true;
 }
@@ -717,9 +717,9 @@ bool GIResolvePass::ExecuteCommandList()
 {
 	if (m_GIDataLoaded)
 	{
-		//g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_skyRPDC);
+		g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_skyRPDC);
 
-		//g_pModuleManager->getRenderingServer()->WaitForFrame(m_skyRPDC);
+		g_pModuleManager->getRenderingServer()->WaitForFrame(m_skyRPDC);
 
 		g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_surfelRPDC);
 
