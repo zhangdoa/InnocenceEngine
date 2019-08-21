@@ -1722,9 +1722,9 @@ namespace InnoMath
 		l_m.m21 = l_Y.z;
 		l_m.m22 = l_Z.z;
 		l_m.m23 = T();
-		l_m.m30 = -(eyePos.x);
-		l_m.m31 = -(eyePos.y);
-		l_m.m32 = -(eyePos.z);
+		l_m.m30 = eyePos.x;
+		l_m.m31 = eyePos.y;
+		l_m.m32 = eyePos.z;
 		l_m.m33 = one<T>;
 
 		return l_m;
@@ -1747,15 +1747,15 @@ namespace InnoMath
 		l_m.m00 = l_X.x;
 		l_m.m01 = l_X.y;
 		l_m.m02 = l_X.z;
-		l_m.m03 = -(eyePos.x);
+		l_m.m03 = eyePos.x;
 		l_m.m10 = l_Y.x;
 		l_m.m11 = l_Y.y;
 		l_m.m12 = l_Y.z;
-		l_m.m13 = -(eyePos.y);
+		l_m.m13 = eyePos.y;
 		l_m.m20 = l_Z.x;
 		l_m.m21 = l_Z.y;
 		l_m.m22 = l_Z.z;
-		l_m.m23 = -(eyePos.z);
+		l_m.m23 = eyePos.z;
 		l_m.m30 = T();
 		l_m.m31 = T();
 		l_m.m32 = T();
