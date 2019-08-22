@@ -50,7 +50,7 @@ namespace InnoBakerNS
 
 	bool assignBrickFactorToProbesByGPU(const std::vector<Brick>& bricks, std::vector<Probe>& probes);
 	bool drawBricks(vec4 pos, unsigned int bricksCount, const mat4 & p, const std::vector<mat4>& v);
-	bool readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& brickFactors);
+	bool readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& brickFactors, const std::vector<Brick>& bricks);
 
 	bool serializeBrickFactors(const std::vector<BrickFactor>& brickFactors);
 	bool serializeProbes(const std::vector<Probe>& probes);
@@ -874,11 +874,14 @@ bool InnoBakerNS::assignBrickFactorToProbesByGPU(const std::vector<Brick>& brick
 
 	for (size_t i = 0; i < l_bricksCount; i++)
 	{
-		auto l_normalizedPos = (bricks[i].boundBox.m_center - l_startPos).scale(l_brickTotalExtend.reciprocal());
-		l_normalizedPos.w = 1.0f;
-		auto l_t = InnoMath::toTranslationMatrix(l_normalizedPos);
+		auto l_t = InnoMath::toTranslationMatrix(bricks[i].boundBox.m_center);
 
 		l_bricksCubeMeshGPUData[i].m = l_t;
+
+		// @TODO: Find a better way to assign without error
+		l_bricksCubeMeshGPUData[i].m.m00 *= (bricks[i].boundBox.m_extend.x / 2.0f) - 0.1f;
+		l_bricksCubeMeshGPUData[i].m.m11 *= (bricks[i].boundBox.m_extend.y / 2.0f) - 0.1f;
+		l_bricksCubeMeshGPUData[i].m.m22 *= (bricks[i].boundBox.m_extend.z / 2.0f) - 0.1f;
 
 		// Index start from 1
 		l_bricksCubeMeshGPUData[i].UUID = (float)i + 1.0f;
@@ -896,7 +899,7 @@ bool InnoBakerNS::assignBrickFactorToProbesByGPU(const std::vector<Brick>& brick
 	for (size_t i = 0; i < l_probesCount; i++)
 	{
 		drawBricks(probes[i].pos, (unsigned int)l_bricksCount, l_p, l_v);
-		readBackBrickFactors(probes[i], l_brickFactors);
+		readBackBrickFactors(probes[i], l_brickFactors, bricks);
 
 		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Progress: ", (float)i * 100.0f / (float)l_probesCount, "%...");
 	}
@@ -952,7 +955,7 @@ bool InnoBakerNS::drawBricks(vec4 pos, unsigned int bricksCount, const mat4 & p,
 	return true;
 }
 
-bool InnoBakerNS::readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& brickFactors)
+bool InnoBakerNS::readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& brickFactors, const std::vector<Brick>& bricks)
 {
 	auto l_brickIDResults = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_BrickFactor, m_RPDC_BrickFactor->m_RenderTargets[0]);
 
@@ -972,8 +975,6 @@ bool InnoBakerNS::readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& b
 			if (l_brickIDResult.y != 0.0f)
 			{
 				BrickFactor l_BrickFactor;
-
-				l_BrickFactor.basisWeight = l_brickIDResult.x;
 
 				// Index start from 1
 				l_BrickFactor.brickIndex = (unsigned int)(std::round(l_brickIDResult.y) - 1.0f);
@@ -1000,6 +1001,12 @@ bool InnoBakerNS::readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& b
 			{
 				// Weight
 				auto l_brickFactorSize = l_brickFactors.size();
+
+				// World space distance
+				for (size_t i = 0; i < l_brickFactorSize; i++)
+				{
+					l_brickFactors[i].basisWeight = (bricks[l_brickFactors[i].brickIndex].boundBox.m_center - probe.pos).length();
+				}
 
 				auto l_min = std::numeric_limits<float>().max();
 				auto l_max = std::numeric_limits<float>().min();
