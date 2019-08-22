@@ -47,6 +47,8 @@ namespace GIResolvePass
 	GPUBufferDataComponent* m_probeGBDC = 0;
 	TextureDataComponent* m_irradianceVolume = 0;
 
+	vec4 m_irradianceVolumePosOffset;
+
 	std::function<void()> f_sceneLoadingFinishCallback;
 	std::function<void()> f_sceneLoadingStartCallback;
 	std::function<void()> f_reloadGIData;
@@ -135,6 +137,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 			});
 
 			l_minPos = l_probes[0].pos.x;
+			m_irradianceVolumePosOffset.x = l_minPos - 2.0f;
 
 			for (size_t i = 0; i < l_probes.size(); i++)
 			{
@@ -155,6 +158,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 			});
 
 			l_minPos = l_probes[0].pos.y;
+			m_irradianceVolumePosOffset.y = l_minPos - 2.0f;
 
 			for (size_t i = 0; i < l_probes.size(); i++)
 			{
@@ -175,6 +179,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 			});
 
 			l_minPos = l_probes[0].pos.z;
+			m_irradianceVolumePosOffset.z = l_minPos - 2.0f;
 
 			for (size_t i = 0; i < l_probes.size(); i++)
 			{
@@ -188,6 +193,9 @@ bool GIResolvePass::InitializeGPUBuffers()
 
 				l_probes[i].pos.z = (float)l_probeIndex.z;
 			}
+
+			m_irradianceVolumePosOffset.w = 1.0f;
+
 			m_probeGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("ProbeGPUBuffer/");
 			m_probeGBDC->m_CPUAccessibility = Accessibility::Immutable;
 			m_probeGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
@@ -550,6 +558,9 @@ bool GIResolvePass::generateSkyRadiance()
 	l_GISkyGPUData[7].m11 = (float)m_surfelGBDC->m_ElementCount;
 	l_GISkyGPUData[7].m12 = (float)m_brickGBDC->m_ElementCount;
 	l_GISkyGPUData[7].m13 = (float)m_probeGBDC->m_ElementCount;
+	l_GISkyGPUData[7].m20 = m_irradianceVolumePosOffset.x;
+	l_GISkyGPUData[7].m21 = m_irradianceVolumePosOffset.y;
+	l_GISkyGPUData[7].m22 = m_irradianceVolumePosOffset.z;
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GICameraGBDC, l_GICameraGPUData);
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GISkyGBDC, l_GISkyGPUData);

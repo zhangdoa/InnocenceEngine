@@ -247,8 +247,8 @@ vec4 InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<v
 	std::vector<Probe> l_wallProbes;
 	l_wallProbes.reserve(l_totalTextureSize);
 
-	auto l_posIntervalX = std::abs((heightMap[0] - heightMap[probeMapSamplingInterval - 1]).x);
-	auto l_posIntervalZ = std::abs((heightMap[0] - heightMap[m_probeMapResolution * probeMapSamplingInterval - 1]).z);
+	//auto l_posIntervalX = std::abs((heightMap[0] - heightMap[probeMapSamplingInterval - 1]).x);
+	//auto l_posIntervalZ = std::abs((heightMap[0] - heightMap[m_probeMapResolution * probeMapSamplingInterval - 1]).z);
 
 	unsigned int l_maxVerticalProbesCount = 1;
 
@@ -278,9 +278,9 @@ vec4 InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<v
 			auto ddx = l_currentProbe.pos.y - l_nextRowProbe.pos.y;
 			auto ddy = l_currentProbe.pos.y - l_nextColumnProbe.pos.y;
 
-			if (ddx > l_posIntervalX)
+			if (ddx > m_probeHeightOffset)
 			{
-				auto l_verticalProbesCount = std::floor(ddx / l_posIntervalX);
+				auto l_verticalProbesCount = std::floor(ddx / m_probeHeightOffset);
 
 				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 2, l_maxVerticalProbesCount);
 
@@ -288,14 +288,14 @@ vec4 InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<v
 				{
 					Probe l_verticalProbe;
 					l_verticalProbe.pos = l_nextRowProbe.pos;
-					l_verticalProbe.pos.y += l_posIntervalX * (k + 1);
+					l_verticalProbe.pos.y += m_probeHeightOffset * (k + 1);
 
 					l_wallProbes.emplace_back(l_verticalProbe);
 				}
 			}
-			if (ddx < -l_posIntervalX)
+			if (ddx < -m_probeHeightOffset)
 			{
-				auto l_verticalProbesCount = std::floor(std::abs(ddx) / l_posIntervalX);
+				auto l_verticalProbesCount = std::floor(std::abs(ddx) / m_probeHeightOffset);
 
 				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 2, l_maxVerticalProbesCount);
 
@@ -303,14 +303,14 @@ vec4 InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<v
 				{
 					Probe l_verticalProbe;
 					l_verticalProbe.pos = l_currentProbe.pos;
-					l_verticalProbe.pos.y += l_posIntervalX * (k + 1);
+					l_verticalProbe.pos.y += m_probeHeightOffset * (k + 1);
 
 					l_wallProbes.emplace_back(l_verticalProbe);
 				}
 			}
-			if (ddy > l_posIntervalZ)
+			if (ddy > m_probeHeightOffset)
 			{
-				auto l_verticalProbesCount = std::floor(ddy / l_posIntervalZ);
+				auto l_verticalProbesCount = std::floor(ddy / m_probeHeightOffset);
 
 				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 2, l_maxVerticalProbesCount);
 
@@ -318,14 +318,14 @@ vec4 InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<v
 				{
 					Probe l_verticalProbe;
 					l_verticalProbe.pos = l_nextColumnProbe.pos;
-					l_verticalProbe.pos.y += l_posIntervalZ * (k + 1);
+					l_verticalProbe.pos.y += m_probeHeightOffset * (k + 1);
 
 					l_wallProbes.emplace_back(l_verticalProbe);
 				}
 			}
-			if (ddy < -l_posIntervalZ)
+			if (ddy < -m_probeHeightOffset)
 			{
-				auto l_verticalProbesCount = std::floor(std::abs(ddy) / l_posIntervalZ);
+				auto l_verticalProbesCount = std::floor(std::abs(ddy) / m_probeHeightOffset);
 
 				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 2, l_maxVerticalProbesCount);
 
@@ -333,7 +333,7 @@ vec4 InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<v
 				{
 					Probe l_verticalProbe;
 					l_verticalProbe.pos = l_currentProbe.pos;
-					l_verticalProbe.pos.y += l_posIntervalZ * (k + 1);
+					l_verticalProbe.pos.y += m_probeHeightOffset * (k + 1);
 
 					l_wallProbes.emplace_back(l_verticalProbe);
 				}
@@ -1003,38 +1003,38 @@ bool InnoBakerNS::readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& b
 				auto l_brickFactorSize = l_brickFactors.size();
 
 				// World space distance
-				for (size_t i = 0; i < l_brickFactorSize; i++)
+				for (size_t j = 0; j < l_brickFactorSize; j++)
 				{
-					l_brickFactors[i].basisWeight = (bricks[l_brickFactors[i].brickIndex].boundBox.m_center - probe.pos).length();
+					l_brickFactors[j].basisWeight = (bricks[l_brickFactors[j].brickIndex].boundBox.m_center - probe.pos).length();
 				}
 
 				auto l_min = std::numeric_limits<float>().max();
 				auto l_max = std::numeric_limits<float>().min();
 
-				for (size_t i = 0; i < l_brickFactorSize; i++)
+				for (size_t j = 0; j < l_brickFactorSize; j++)
 				{
-					l_min = l_brickFactors[i].basisWeight <= l_min ? l_brickFactors[i].basisWeight : l_min;
-					l_max = l_brickFactors[i].basisWeight >= l_max ? l_brickFactors[i].basisWeight : l_max;
+					l_min = l_brickFactors[j].basisWeight <= l_min ? l_brickFactors[j].basisWeight : l_min;
+					l_max = l_brickFactors[j].basisWeight >= l_max ? l_brickFactors[j].basisWeight : l_max;
 				}
 
 				auto l_range = l_max + l_min;
 
 				// Reverse along the view space Z axis
-				for (size_t i = 0; i < l_brickFactorSize; i++)
+				for (size_t j = 0; j < l_brickFactorSize; j++)
 				{
-					l_brickFactors[i].basisWeight = (l_range - l_brickFactors[i].basisWeight);
+					l_brickFactors[j].basisWeight = (l_range - l_brickFactors[j].basisWeight);
 				}
 
 				// Normalize
 				float denom = 0.0f;
-				for (size_t i = 0; i < l_brickFactorSize; i++)
+				for (size_t j = 0; j < l_brickFactorSize; j++)
 				{
-					denom += l_brickFactors[i].basisWeight;
+					denom += l_brickFactors[j].basisWeight;
 				}
 
-				for (size_t i = 0; i < l_brickFactorSize; i++)
+				for (size_t j = 0; j < l_brickFactorSize; j++)
 				{
-					l_brickFactors[i].basisWeight /= denom;
+					l_brickFactors[j].basisWeight /= denom;
 				}
 			}
 

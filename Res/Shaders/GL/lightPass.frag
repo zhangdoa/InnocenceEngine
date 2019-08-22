@@ -237,17 +237,20 @@ void main()
 	// [https://steamcdn-a.akamaihd.net/apps/valve/2006/SIGGRAPH06_Course_ShadingInValvesSourceEngine.pdf]
 	vec3 nSquared = N * N;
 	ivec3 isNegative = ivec3(int(N.x < 0.0), int(N.y < 0.0), int(N.z < 0.0));
-	vec3 GISampleCoord = FragPos / skyUBO.posWSNormalizer.xyz;
+	vec3 GISampleCoordOffset = vec3(GISkyUBO.viewportSize[0][2], GISkyUBO.viewportSize[1][2], GISkyUBO.viewportSize[2][2]);
+	vec3 GISampleCoord = (FragPos - GISampleCoordOffset) / skyUBO.posWSNormalizer.xyz;
 	ivec3 isOutside = ivec3(int(GISampleCoord.x > 1.0), int(GISampleCoord.y > 1.0), int(GISampleCoord.z > 1.0));
+
+	GISampleCoord.z /= 6.0;
 
 	if ((isOutside.x == 0) && (isOutside.y == 0) && (isOutside.z == 0))
 	{
 		vec3 GISampleCoordPX = GISampleCoord;
-		vec3 GISampleCoordNX = GISampleCoord + vec3(0, 0, 1);
-		vec3 GISampleCoordPY = GISampleCoord + vec3(0, 0, 2);
-		vec3 GISampleCoordNY = GISampleCoord + vec3(0, 0, 3);
-		vec3 GISampleCoordPZ = GISampleCoord + vec3(0, 0, 4);
-		vec3 GISampleCoordNZ = GISampleCoord + vec3(0, 0, 5);
+		vec3 GISampleCoordNX = GISampleCoord + vec3(0, 0, 1.0 / 6.0);
+		vec3 GISampleCoordPY = GISampleCoord + vec3(0, 0, 2.0 / 6.0);
+		vec3 GISampleCoordNY = GISampleCoord + vec3(0, 0, 3.0 / 6.0);
+		vec3 GISampleCoordPZ = GISampleCoord + vec3(0, 0, 4.0 / 6.0);
+		vec3 GISampleCoordNZ = GISampleCoord + vec3(0, 0, 5.0 / 6.0);
 
 		vec4 indirectLight = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 		if ((isNegative.x == 1))

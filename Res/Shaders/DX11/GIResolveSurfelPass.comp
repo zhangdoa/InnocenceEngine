@@ -14,6 +14,10 @@ RWStructuredBuffer<float4> out_irradiance : register(u1);
 
 Texture2DArray<float4> in_shadowMap : register(t0);
 
+#include "common/BRDF.hlsl"
+
+#define COOK_TORRANCE
+
 float SunShadowResolver(float3 fragPos)
 {
 	float shadow = 0.0;
@@ -72,21 +76,50 @@ void main(ComputeInputType input)
 			Surfel l_surfel = in_surfels[l_surfelIndex];
 
 			float3 posWS = l_surfel.pos.xyz;
-			float metallic = l_surfel.MRAT.x;
 			float3 normalWS = l_surfel.normal.xyz;
 			float3 albedo = l_surfel.albedo.xyz;
 
 			float3 N = normalize(normalWS);
 			float3 V = normalize(cameraCBuffer.globalPos.xyz - posWS);
 			float3 L = normalize(-dirLight_dir.xyz);
-			float NdotV = max(dot(N, V), 0.0);
+
 			float NdotL = max(dot(N, L), 0.0);
 
-			float kD = 1.0 - metallic;
+			float3 BRDF;
+
+#ifdef COOK_TORRANCE
+			float metallic = l_surfel.MRAT.x;
+			float roughness = l_surfel.MRAT.y;
+
+			float3 F0 = float3(0.04, 0.04, 0.04);
+			F0 = lerp(F0, albedo, metallic);
+
+			float NdotV = max(dot(N, V), 0.0);
+			float3 H = normalize(V + L);
+			float LdotH = max(dot(L, H), 0.0);
+			float NdotH = max(dot(N, H), 0.0);
+
+			// Specular BRDF
+			float F90 = 1.0;
+			float3 F = fresnelSchlick(F0, F90, LdotH);
+			float G = V_SmithGGXCorrelated(NdotV, NdotL, roughness);
+			float D = D_GGX(NdotH, roughness);
+			float3 Frss = F * G * D;
+
+			float3 Fr = Frss;
+
+			float3 kS = F;
+			float3 kD = float3(1.0, 1.0, 1.0) - kS;
+			kD *= 1.0 - metallic;
 
 			// Diffuse BRDF
-			float3 BRDF = kD * albedo / PI;
+			float3 Fd = DisneyDiffuse2015(NdotV, NdotL, LdotH, roughness * roughness) * albedo / PI;
 
+			BRDF = Fd + Fr;
+#else
+			// Diffuse BRDF
+			BRDF = albedo / PI;
+#endif
 			float3 Lo = BRDF * dirLight_luminance.xyz * NdotL;
 
 			//Lo *= 1 - SunShadowResolver(posWS);

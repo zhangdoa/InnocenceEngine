@@ -38,13 +38,13 @@ void main(ComputeInputType input)
 			{
 				if (brickFactorRangeBegin != brickFactorRangeEnd)
 				{
-					for (uint j = brickFactorRangeBegin; j < brickFactorRangeEnd; j++)
+					for (uint j = brickFactorRangeBegin; j <= brickFactorRangeEnd; j++)
 					{
 						BrickFactor l_brickFactor = in_brickFactors[j];
 						Lo[i] += in_brickIrradiance[l_brickFactor.brickIndex] * l_brickFactor.basisWeight;
 					}
 
-					Lo[i] /= (brickFactorRangeEnd - brickFactorRangeBegin);
+					Lo[i] /= (brickFactorRangeEnd - brickFactorRangeBegin + 1);
 				}
 				else
 				{

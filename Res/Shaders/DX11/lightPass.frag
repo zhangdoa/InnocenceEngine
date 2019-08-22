@@ -140,17 +140,20 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	// [https://steamcdn-a.akamaihd.net/apps/valve/2006/SIGGRAPH06_Course_ShadingInValvesSourceEngine.pdf]
 	float3 nSquared = N * N;
 	int3 isNegative = (N < 0.0);
-	float3 GISampleCoord = posWS / posWSNormalizer.xyz;
+	float3 GISampleCoordOffset = float3(GISky_viewportSize[0][2], GISky_viewportSize[1][2], GISky_viewportSize[2][2]);
+	float3 GISampleCoord = (posWS - GISampleCoordOffset) / posWSNormalizer.xyz;
 	int3 isOutside = (GISampleCoord > 1.0);
+
+	GISampleCoord.z /= 6.0;
 
 	if (!isOutside.x && !isOutside.y && !isOutside.z)
 	{
 		float3 GISampleCoordPX = GISampleCoord;
-		float3 GISampleCoordNX = GISampleCoord + float3(0, 0, 1);
-		float3 GISampleCoordPY = GISampleCoord + float3(0, 0, 2);
-		float3 GISampleCoordNY = GISampleCoord + float3(0, 0, 3);
-		float3 GISampleCoordPZ = GISampleCoord + float3(0, 0, 4);
-		float3 GISampleCoordNZ = GISampleCoord + float3(0, 0, 5);
+		float3 GISampleCoordNX = GISampleCoord + float3(0, 0, 1.0 / 6.0);
+		float3 GISampleCoordPY = GISampleCoord + float3(0, 0, 2.0 / 6.0);
+		float3 GISampleCoordNY = GISampleCoord + float3(0, 0, 3.0 / 6.0);
+		float3 GISampleCoordPZ = GISampleCoord + float3(0, 0, 4.0 / 6.0);
+		float3 GISampleCoordNZ = GISampleCoord + float3(0, 0, 5.0 / 6.0);
 
 		float4 indirectLight = float4(0.0f, 0.0f, 0.0f, 0.0f);
 		if (isNegative.x)

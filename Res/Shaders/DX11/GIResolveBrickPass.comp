@@ -35,7 +35,7 @@ void main(ComputeInputType input)
 					Lo += in_surfelIrradiance[i];
 				}
 
-				Lo /= (l_brick.surfelRangeEnd - l_brick.surfelRangeBegin);
+				Lo /= (l_brick.surfelRangeEnd - l_brick.surfelRangeBegin + 1);
 			}
 			else
 			{

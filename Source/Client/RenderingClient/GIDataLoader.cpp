@@ -53,19 +53,6 @@ bool GIDataLoader::loadGIData()
 	if (l_brickFile.is_open())
 	{
 		IOService::deserializeVector(l_brickFile, m_bricks);
-
-		auto l_bricksCount = m_bricks.size();
-
-		auto l_min = InnoMath::maxVec4<float>;
-		auto l_max = InnoMath::minVec4<float>;
-
-		for (size_t i = 0; i < l_bricksCount; i++)
-		{
-			l_min = InnoMath::elementWiseMin(l_min, m_bricks[i].boundBox.m_boundMin);
-			l_max = InnoMath::elementWiseMax(l_max, m_bricks[i].boundBox.m_boundMax);
-		}
-		m_irradianceVolumeRange = l_max - l_min;
-
 		m_IsBrickLoaded = true;
 	}
 
@@ -84,6 +71,22 @@ bool GIDataLoader::loadGIData()
 	if (l_probeFile.is_open())
 	{
 		IOService::deserializeVector(l_probeFile, m_probes);
+
+		auto l_bricksCount = m_probes.size();
+
+		auto l_min = InnoMath::maxVec4<float>;
+		auto l_max = InnoMath::minVec4<float>;
+
+		for (size_t i = 0; i < l_bricksCount; i++)
+		{
+			l_min = InnoMath::elementWiseMin(l_min, m_probes[i].pos);
+			l_max = InnoMath::elementWiseMax(l_max, m_probes[i].pos);
+		}
+		m_irradianceVolumeRange = l_max - l_min;
+
+		m_irradianceVolumeRange.x += 4.0f;
+		m_irradianceVolumeRange.y += 4.0f;
+		m_irradianceVolumeRange.z += 4.0f;
 
 		m_IsProbeLoaded = true;
 	}
