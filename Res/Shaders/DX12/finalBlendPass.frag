@@ -25,22 +25,25 @@ float3 acesFilm(const float3 x) {
 
 float4 main(PixelInputType input) : SV_TARGET
 {
-	float3 finalColor = basePassRT0.Sample(SampleTypePoint, input.texcoord).xyz;
-	float3 billboardPass = billboardPassRT0.Sample(SampleTypePoint, input.texcoord).xyz;
-	float3 debugPass = debugPassRT0.Sample(SampleTypePoint, input.texcoord).xyz;
+	float4 finalColor = basePassRT0.Sample(SampleTypePoint, input.texcoord);
+	float4 billboardPass = billboardPassRT0.Sample(SampleTypePoint, input.texcoord);
+	float4 debugPass = debugPassRT0.Sample(SampleTypePoint, input.texcoord);
 
 	//HDR to LDR
-	finalColor = acesFilm(finalColor);
+	finalColor.rgb = acesFilm(finalColor.rgb);
 
 	//gamma correction
 	float gammaRatio = 1.0 / 2.2;
-	finalColor = pow(finalColor, float3(gammaRatio, gammaRatio, gammaRatio));
+	finalColor.rgb = pow(finalColor.rgb, float3(gammaRatio, gammaRatio, gammaRatio));
 
 	// billboard overlay
-	finalColor += billboardPass.rgb;
+	finalColor.rgb += billboardPass.rgb;
 
 	// debug overlay
-	finalColor += debugPass.rgb;
+	if (debugPass.a == 1.0)
+	{
+		finalColor.rgb = debugPass.rgb;
+	}
 
-	return float4(finalColor, 1.0f);
+	return float4(finalColor.rgb, 1.0f);
 }

@@ -31,6 +31,7 @@ namespace DebugPass
 	GPUBufferDataComponent* m_debugCubeMeshGBDC;
 	GPUBufferDataComponent* m_debugMaterialGBDC;
 
+	const size_t m_maxDebugMeshes = 65536;
 	const size_t m_maxDebugMaterial = 512;
 	std::vector<DebugMeshGPUData> m_debugSphereGPUData;
 	std::vector<DebugMeshGPUData> m_debugCubeGPUData;
@@ -39,10 +40,8 @@ namespace DebugPass
 
 bool DebugPass::Setup()
 {
-	auto l_RenderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
-
 	m_debugSphereMeshGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("DebugSphereMeshGPUBuffer/");
-	m_debugSphereMeshGBDC->m_ElementCount = l_RenderingCapability.maxMeshes;
+	m_debugSphereMeshGBDC->m_ElementCount = m_maxDebugMeshes;
 	m_debugSphereMeshGBDC->m_ElementSize = sizeof(DebugMeshGPUData);
 	m_debugSphereMeshGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_debugSphereMeshGBDC->m_BindingPoint = 0;
@@ -50,7 +49,7 @@ bool DebugPass::Setup()
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_debugSphereMeshGBDC);
 
 	m_debugCubeMeshGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("DebugCubeMeshGPUBuffer/");
-	m_debugCubeMeshGBDC->m_ElementCount = l_RenderingCapability.maxMeshes;
+	m_debugCubeMeshGBDC->m_ElementCount = m_maxDebugMeshes;
 	m_debugCubeMeshGBDC->m_ElementSize = sizeof(DebugMeshGPUData);
 	m_debugCubeMeshGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_debugCubeMeshGBDC->m_BindingPoint = 0;
@@ -114,8 +113,8 @@ bool DebugPass::Setup()
 
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
 
-	m_debugSphereGPUData.resize(l_RenderingCapability.maxMeshes);
-	m_debugCubeGPUData.resize(l_RenderingCapability.maxMeshes);
+	m_debugSphereGPUData.resize(m_maxDebugMeshes);
+	m_debugCubeGPUData.resize(m_maxDebugMeshes);
 	m_debugMaterialGPUData.resize(m_maxDebugMaterial);
 
 	return true;
@@ -136,8 +135,10 @@ bool DebugPass::PrepareCommandList()
 		auto l_sphere = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Sphere);
 		auto l_cube = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Cube);
 
-		m_debugMaterialGPUData[0].color = vec4(0.2f, 0.3f, 0.4f, 1.0f);
-		m_debugMaterialGPUData[1].color = vec4(0.4f, 0.3f, 0.2f, 1.0f);
+		m_debugMaterialGPUData[0].color = vec4(0.1f, 0.2f, 0.4f, 1.0f);
+		m_debugMaterialGPUData[1].color = vec4(0.4f, 0.2f, 0.1f, 1.0f);
+		m_debugMaterialGPUData[2].color = vec4(0.9f, 0.1f, 0.0f, 1.0f);
+		m_debugMaterialGPUData[3].color = vec4(0.8f, 0.1f, 0.1f, 1.0f);
 
 		auto l_probes = GIDataLoader::GetProbes();
 
@@ -162,7 +163,32 @@ bool DebugPass::PrepareCommandList()
 				m_debugCubeGPUData[i].materialID = 1;
 			}
 
-			g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_debugMaterialGBDC, m_debugMaterialGPUData, 0, 2);
+			auto l_brickFactor = GIDataLoader::GetBrickFactors();
+
+			// @TODO:
+			auto l_probeIndexBegin = 15;
+			auto l_probeIndexEnd = 16;
+
+			for (size_t probeIndex = l_probeIndexBegin; probeIndex < l_probeIndexEnd; probeIndex++)
+			{
+				m_debugSphereGPUData[probeIndex].materialID = 2;
+
+				auto l_probe = l_probes[probeIndex];
+
+				for (size_t i = 0; i < 6; i++)
+				{
+					auto l_brickFactorBegin = l_probe.brickFactorRange[i * 2];
+					auto l_brickFactorEnd = l_probe.brickFactorRange[i * 2 + 1];
+
+					for (size_t j = l_brickFactorBegin; j < l_brickFactorEnd; j++)
+					{
+						auto l_brickIndex = l_brickFactor[j].brickIndex;
+						m_debugCubeGPUData[l_brickIndex].materialID = 3;
+					}
+				}
+			}
+
+			g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_debugMaterialGBDC, m_debugMaterialGPUData, 0, 4);
 			g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_debugSphereMeshGBDC, m_debugSphereGPUData, 0, l_probes.size());
 			g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_debugCubeMeshGBDC, m_debugCubeGPUData, 0, l_bricks.size());
 
@@ -180,6 +206,7 @@ bool DebugPass::PrepareCommandList()
 			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_sphere, l_probes.size());
 
 			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, m_debugCubeMeshGBDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
+
 			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_cube, l_bricks.size());
 
 			g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);

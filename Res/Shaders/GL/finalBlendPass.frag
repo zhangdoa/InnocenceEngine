@@ -51,7 +51,10 @@ void main()
 	finalColor += billboardPassResult.rgb;
 
 	// debugger overlay
-	finalColor += debuggerPassResult.rgb;
+	if (debuggerPassResult.a == 1.0)
+	{
+		finalColor = debuggerPassResult.rgb;
+	}
 
 	FragColor = vec4(finalColor, 1.0);
 }
