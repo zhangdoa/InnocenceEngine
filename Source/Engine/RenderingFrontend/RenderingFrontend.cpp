@@ -165,7 +165,7 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 	m_renderingCapability.maxCSMSplits = 4;
 	m_renderingCapability.maxPointLights = 1024;
 	m_renderingCapability.maxSphereLights = 128;
-	m_renderingCapability.maxMeshes = 16384;
+	m_renderingCapability.maxMeshes = 32768;
 	m_renderingCapability.maxMaterials = 32768;
 	m_renderingCapability.maxTextures = 32768;
 
