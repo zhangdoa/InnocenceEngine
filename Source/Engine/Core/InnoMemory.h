@@ -23,6 +23,7 @@ class InnoMemory
 {
 public:
 	static void* Allocate(const std::size_t size);
+	static void* Reallocate(void* const ptr, const std::size_t size);
 	static void Deallocate(void* const ptr);
 
 	static IObjectPool* CreateObjectPool(std::size_t objectSize, unsigned int poolCapability);

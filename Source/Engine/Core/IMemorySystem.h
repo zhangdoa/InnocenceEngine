@@ -16,4 +16,5 @@ public:
 
 	virtual void* allocate(size_t size) = 0;
 	virtual bool deallocate(void* ptr) = 0;
+	virtual void* reallocate(void* ptr, size_t size) = 0;
 };

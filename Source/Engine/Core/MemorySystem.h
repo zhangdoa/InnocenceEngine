@@ -15,4 +15,5 @@ public:
 
 	void* allocate(size_t size) override;
 	bool deallocate(void* ptr) override;
+	void* reallocate(void* ptr, size_t size) override;
 };

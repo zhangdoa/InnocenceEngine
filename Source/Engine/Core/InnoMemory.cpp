@@ -15,7 +15,7 @@ class MemoryPool
 {
 public:
 	MemoryPool() = delete;
-	explicit MemoryPool(std::size_t objectSize, unsigned int capability) noexcept
+	explicit MemoryPool(std::size_t objectSize, std::size_t capability) noexcept
 	{
 		m_ObjectSize = objectSize;
 		m_Capability = capability;
@@ -35,8 +35,8 @@ public:
 
 private:
 	std::size_t m_ObjectSize = 0;
-	unsigned long long m_Capability = 0;
-	unsigned long long m_PoolSize = 0;
+	std::size_t m_Capability = 0;
+	std::size_t m_PoolSize = 0;
 	unsigned char* m_HeapAddress = nullptr;
 };
 
@@ -162,21 +162,18 @@ private:
 	Chunk* m_CurrentFreeChunk;
 };
 
-class MemoryMemo
+namespace MemoryMemo
 {
-public:
-	static MemoryMemo& Get()
-	{
-		static MemoryMemo l_Instance;
-		return l_Instance;
-	}
+	std::shared_mutex m_Mutex;
+	std::unordered_map<void*, std::size_t> m_Memo;
 
 	bool Record(void* ptr, std::size_t size)
 	{
+		std::unique_lock<std::shared_mutex> lock{ m_Mutex };
 		auto l_Result = m_Memo.find(ptr);
 		if (l_Result != m_Memo.end())
 		{
-			InnoLogger::Log(LogLevel::Error, "InnoMemory: MemoryMemo: Allocate collision happened at ", ptr, " !");
+			InnoLogger::Log(LogLevel::Warning, "InnoMemory: MemoryMemo: Allocate collision happened at ", ptr, ".");
 			return false;
 		}
 		else
@@ -188,6 +185,7 @@ public:
 
 	bool Erase(void* ptr)
 	{
+		std::unique_lock<std::shared_mutex> lock{ m_Mutex };
 		auto l_Result = m_Memo.find(ptr);
 		if (l_Result != m_Memo.end())
 		{
@@ -196,26 +194,31 @@ public:
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Error, "InnoMemory: MemoryMemo: Deallocate collision happened at ", ptr, " !");
+			InnoLogger::Log(LogLevel::Warning, "InnoMemory: MemoryMemo: Deallocate collision happened at ", ptr, ".");
 			return false;
 		}
 	}
-
-private:
-	ThreadSafeUnorderedMap<void*, std::size_t> m_Memo;
 };
 
 void * InnoMemory::Allocate(const std::size_t size)
 {
-	auto m_Ptr = ::new char[size];
-	MemoryMemo::Get().Record(m_Ptr, size);
-	return m_Ptr;
+	auto l_result = ::new char[size];
+	MemoryMemo::Record(l_result, size);
+	return l_result;
+}
+
+void * InnoMemory::Reallocate(void * const ptr, const std::size_t size)
+{
+	MemoryMemo::Erase(ptr);
+	MemoryMemo::Record(ptr, size);
+	auto l_result = realloc(ptr, size);
+	return l_result;
 }
 
 void InnoMemory::Deallocate(void * const ptr)
 {
+	MemoryMemo::Erase(ptr);
 	delete[](char*)ptr;
-	MemoryMemo::Get().Erase(ptr);
 }
 
 IObjectPool * InnoMemory::CreateObjectPool(std::size_t objectSize, unsigned int poolCapability)

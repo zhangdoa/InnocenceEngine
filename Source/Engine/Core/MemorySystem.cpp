@@ -62,3 +62,8 @@ bool InnoMemorySystem::deallocate(void * ptr)
 	InnoMemory::Deallocate(ptr);
 	return true;
 }
+
+void * InnoMemorySystem::reallocate(void * ptr, size_t size)
+{
+	return InnoMemory::Reallocate(ptr, size);
+}
