@@ -64,6 +64,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 		auto l_GIResolvePassInitializeGPUBuffersTask = g_pModuleManager->getTaskSystem()->submit("GIResolvePassInitializeGPUBuffersTask", 2, nullptr,
 			[&]() {
 			m_surfelGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("SurfelGPUBuffer/");
+			m_surfelGBDC->m_CPUAccessibility = Accessibility::Immutable;
 			m_surfelGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 			m_surfelGBDC->m_ElementCount = l_surfels.size();
 			m_surfelGBDC->m_ElementSize = sizeof(Surfel);
@@ -73,6 +74,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 			g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_surfelGBDC);
 
 			m_surfelIrradianceGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("SurfelIrradianceGPUBuffer/");
+			m_surfelIrradianceGBDC->m_CPUAccessibility = Accessibility::Immutable;
 			m_surfelIrradianceGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 			m_surfelIrradianceGBDC->m_ElementCount = l_surfels.size();
 			m_surfelIrradianceGBDC->m_ElementSize = sizeof(vec4);
@@ -92,6 +94,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 			}
 
 			m_brickGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("BrickGPUBuffer/");
+			m_brickGBDC->m_CPUAccessibility = Accessibility::Immutable;
 			m_brickGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 			m_brickGBDC->m_ElementCount = l_bricks.size();
 			m_brickGBDC->m_ElementSize = sizeof(unsigned int) * 2;
@@ -101,6 +104,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 			g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_brickGBDC);
 
 			m_brickIrradianceGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("BrickIrradianceGPUBuffer/");
+			m_brickIrradianceGBDC->m_CPUAccessibility = Accessibility::Immutable;
 			m_brickIrradianceGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 			m_brickIrradianceGBDC->m_ElementCount = l_bricks.size();
 			m_brickIrradianceGBDC->m_ElementSize = sizeof(vec4);
@@ -111,6 +115,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 			auto l_brickFactors = GIDataLoader::GetBrickFactors();
 
 			m_brickFactorGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("BrickFactorGPUBuffer/");
+			m_brickFactorGBDC->m_CPUAccessibility = Accessibility::Immutable;
 			m_brickFactorGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 			m_brickFactorGBDC->m_ElementCount = l_brickFactors.size();
 			m_brickFactorGBDC->m_ElementSize = sizeof(BrickFactor);
@@ -184,6 +189,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 				l_probes[i].pos.z = (float)l_probeIndex.z;
 			}
 			m_probeGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("ProbeGPUBuffer/");
+			m_probeGBDC->m_CPUAccessibility = Accessibility::Immutable;
 			m_probeGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 			m_probeGBDC->m_ElementCount = l_probes.size();
 			m_probeGBDC->m_ElementSize = sizeof(Probe);
