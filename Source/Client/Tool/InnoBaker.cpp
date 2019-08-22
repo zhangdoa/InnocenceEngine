@@ -234,7 +234,20 @@ vec4 InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<v
 
 			Probe l_Probe;
 			l_Probe.pos = l_textureResult;
-			l_Probe.pos.y = l_textureResult.y + m_probeHeightOffset;
+
+			auto l_adjustedHeight = std::ceil(l_textureResult.y / m_probeHeightOffset);
+
+			// Edge case
+			if (l_textureResult.y == 0.0f)
+			{
+				l_adjustedHeight = m_probeHeightOffset;
+			}
+			else
+			{
+				l_adjustedHeight = l_adjustedHeight * m_probeHeightOffset;
+			}
+
+			l_Probe.pos.y = l_adjustedHeight;
 
 			probes.emplace_back(l_Probe);
 		}
@@ -282,7 +295,7 @@ vec4 InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<v
 			{
 				auto l_verticalProbesCount = std::floor(ddx / m_probeHeightOffset);
 
-				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 2, l_maxVerticalProbesCount);
+				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 1, l_maxVerticalProbesCount);
 
 				for (size_t k = 0; k < l_verticalProbesCount; k++)
 				{
@@ -297,7 +310,7 @@ vec4 InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<v
 			{
 				auto l_verticalProbesCount = std::floor(std::abs(ddx) / m_probeHeightOffset);
 
-				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 2, l_maxVerticalProbesCount);
+				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 1, l_maxVerticalProbesCount);
 
 				for (size_t k = 0; k < l_verticalProbesCount; k++)
 				{
@@ -312,7 +325,7 @@ vec4 InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<v
 			{
 				auto l_verticalProbesCount = std::floor(ddy / m_probeHeightOffset);
 
-				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 2, l_maxVerticalProbesCount);
+				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 1, l_maxVerticalProbesCount);
 
 				for (size_t k = 0; k < l_verticalProbesCount; k++)
 				{
@@ -327,7 +340,7 @@ vec4 InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<v
 			{
 				auto l_verticalProbesCount = std::floor(std::abs(ddy) / m_probeHeightOffset);
 
-				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 2, l_maxVerticalProbesCount);
+				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 1, l_maxVerticalProbesCount);
 
 				for (size_t k = 0; k < l_verticalProbesCount; k++)
 				{
