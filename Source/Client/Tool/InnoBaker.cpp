@@ -65,7 +65,8 @@ namespace InnoBakerNS
 	const unsigned int m_probeMapResolution = 1024;
 	const float m_probeHeightOffset = 4.0f;
 	const unsigned int m_probeInterval = 32;
-	const unsigned int m_captureResolution = 16;
+	const unsigned int m_captureResolution = 32;
+	const unsigned int m_surfelSampleCountPerFace = 16;
 	const vec4 m_brickSize = vec4(4.0f, 4.0f, 4.0f, 0.0f);
 
 	RenderPassDataComponent* m_RPDC_Probe;
@@ -398,7 +399,7 @@ bool InnoBakerNS::captureSurfels(std::vector<Probe>& probes)
 	auto l_probeForSurfelCachesCount = probes.size();
 
 	std::vector<Surfel> l_surfelCaches;
-	l_surfelCaches.reserve(l_probeForSurfelCachesCount * m_captureResolution * m_captureResolution * 6);
+	l_surfelCaches.reserve(l_probeForSurfelCachesCount * m_surfelSampleCountPerFace * m_surfelSampleCountPerFace * 6);
 
 	for (unsigned int i = 0; i < l_probeForSurfelCachesCount; i++)
 	{
@@ -494,20 +495,21 @@ bool InnoBakerNS::readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfel
 	auto l_albedoAO = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_RenderTargets[2]);
 	auto l_depthStencilRT = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_DepthStencilRenderTarget);
 
-	auto l_surfelSize = l_posWSMetallic.size();
+	auto l_surfelsCount = m_surfelSampleCountPerFace * m_surfelSampleCountPerFace * 6;
+	auto l_sampleStep = m_captureResolution / m_surfelSampleCountPerFace;
 
-	std::vector<Surfel> l_surfels(l_surfelSize);
-	for (size_t i = 0; i < l_surfelSize; i++)
+	std::vector<Surfel> l_surfels(l_surfelsCount);
+	for (size_t i = 0; i < l_surfelsCount; i++)
 	{
-		l_surfels[i].pos = l_posWSMetallic[i];
+		l_surfels[i].pos = l_posWSMetallic[i * l_sampleStep];
 		l_surfels[i].pos.w = 1.0f;
-		l_surfels[i].normal = l_normalRoughness[i];
+		l_surfels[i].normal = l_normalRoughness[i * l_sampleStep];
 		l_surfels[i].normal.w = 0.0f;
-		l_surfels[i].albedo = l_albedoAO[i];
+		l_surfels[i].albedo = l_albedoAO[i * l_sampleStep];
 		l_surfels[i].albedo.w = 1.0f;
-		l_surfels[i].MRAT.x = l_posWSMetallic[i].w;
-		l_surfels[i].MRAT.y = l_normalRoughness[i].w;
-		l_surfels[i].MRAT.z = l_albedoAO[i].w;
+		l_surfels[i].MRAT.x = l_posWSMetallic[i * l_sampleStep].w;
+		l_surfels[i].MRAT.y = l_normalRoughness[i * l_sampleStep].w;
+		l_surfels[i].MRAT.z = l_albedoAO[i * l_sampleStep].w;
 		l_surfels[i].MRAT.w = 1.0f;
 	}
 

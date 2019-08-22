@@ -48,6 +48,7 @@ namespace GIResolvePass
 	TextureDataComponent* m_irradianceVolume = 0;
 
 	vec4 m_irradianceVolumePosOffset;
+	vec4 m_irradianceVolumeRange;
 
 	std::function<void()> f_sceneLoadingFinishCallback;
 	std::function<void()> f_sceneLoadingStartCallback;
@@ -85,6 +86,19 @@ bool GIResolvePass::InitializeGPUBuffers()
 			g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_surfelIrradianceGBDC);
 
 			auto l_bricks = GIDataLoader::GetBricks();
+
+			auto l_bricksCount = l_bricks.size();
+
+			auto l_min = InnoMath::maxVec4<float>;
+			auto l_max = InnoMath::minVec4<float>;
+
+			for (size_t i = 0; i < l_bricksCount; i++)
+			{
+				l_min = InnoMath::elementWiseMin(l_min, l_bricks[i].boundBox.m_boundMin);
+				l_max = InnoMath::elementWiseMax(l_max, l_bricks[i].boundBox.m_boundMax);
+			}
+			m_irradianceVolumeRange = l_max - l_min;
+			m_irradianceVolumePosOffset = l_min;
 
 			std::vector<unsigned int> l_brickGPUData;
 
@@ -137,7 +151,6 @@ bool GIResolvePass::InitializeGPUBuffers()
 			});
 
 			l_minPos = l_probes[0].pos.x;
-			m_irradianceVolumePosOffset.x = l_minPos - 2.0f;
 
 			for (size_t i = 0; i < l_probes.size(); i++)
 			{
@@ -158,7 +171,6 @@ bool GIResolvePass::InitializeGPUBuffers()
 			});
 
 			l_minPos = l_probes[0].pos.y;
-			m_irradianceVolumePosOffset.y = l_minPos - 2.0f;
 
 			for (size_t i = 0; i < l_probes.size(); i++)
 			{
@@ -179,7 +191,6 @@ bool GIResolvePass::InitializeGPUBuffers()
 			});
 
 			l_minPos = l_probes[0].pos.z;
-			m_irradianceVolumePosOffset.z = l_minPos - 2.0f;
 
 			for (size_t i = 0; i < l_probes.size(); i++)
 			{
@@ -193,8 +204,6 @@ bool GIResolvePass::InitializeGPUBuffers()
 
 				l_probes[i].pos.z = (float)l_probeIndex.z;
 			}
-
-			m_irradianceVolumePosOffset.w = 1.0f;
 
 			m_probeGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("ProbeGPUBuffer/");
 			m_probeGBDC->m_CPUAccessibility = Accessibility::Immutable;
@@ -675,7 +684,7 @@ bool GIResolvePass::litProbes()
 	auto l_GISkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GISky);
 
 	SkyGPUData l_SkyGPUData = g_pModuleManager->getRenderingFrontend()->getSkyGPUData();
-	l_SkyGPUData.posWSNormalizer = GIDataLoader::GetIrradianceVolumeRange();
+	l_SkyGPUData.posWSNormalizer = m_irradianceVolumeRange;
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_SkyGBDC, &l_SkyGPUData);
 
 	auto l_threadCountPerGroupPerSide = 8;

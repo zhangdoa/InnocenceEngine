@@ -12,6 +12,5 @@ namespace GIDataLoader
 	const std::vector<Brick>& GetBricks();
 	const std::vector<BrickFactor>& GetBrickFactors();
 	const std::vector<Probe>& GetProbes();
-	vec4 GetIrradianceVolumeRange();
 	vec4 GetProbeMaxCount();
 };

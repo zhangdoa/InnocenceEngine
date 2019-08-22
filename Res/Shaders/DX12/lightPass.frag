@@ -142,11 +142,11 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	int3 isNegative = (N < 0.0);
 	float3 GISampleCoordOffset = float3(GISky_viewportSize[0][2], GISky_viewportSize[1][2], GISky_viewportSize[2][2]);
 	float3 GISampleCoord = (posWS - GISampleCoordOffset) / posWSNormalizer.xyz;
-	int3 isOutside = (GISampleCoord > 1.0);
+	int3 isOutside = ((GISampleCoord > 1.0) || (GISampleCoord < 0.0));
 
 	GISampleCoord.z /= 6.0;
 
-	if (!isOutside.x && !isOutside.y && !isOutside.z)
+	if ((!isOutside.x) && (!isOutside.y) && (!isOutside.z))
 	{
 		float3 GISampleCoordPX = GISampleCoord;
 		float3 GISampleCoordNX = GISampleCoord + float3(0, 0, 1.0 / 6.0);
