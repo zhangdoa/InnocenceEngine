@@ -88,8 +88,3 @@ layout(std430, row_major, binding = 12) buffer billboardUBOBlock
 {
 	meshData data[];
 } billboardUBO;
-
-layout(std430, row_major, binding = 13) buffer debugSSBOBlock
-{
-	mat4 m[];
-} debugSSBO;

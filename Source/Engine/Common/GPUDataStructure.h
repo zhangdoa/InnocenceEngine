@@ -111,9 +111,8 @@ struct BillboardPassDrawCallData
 	unsigned int instanceCount;
 };
 
-struct DebuggerPassGPUData
+struct DebugPassDrawCallData
 {
-	mat4 m;
 	MeshDataComponent* mesh;
 };
 

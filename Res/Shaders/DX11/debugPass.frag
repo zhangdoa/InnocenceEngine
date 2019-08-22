@@ -1,9 +1,17 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
 
+struct DebugMaterialData
+{
+	float4 color;
+};
+
+StructuredBuffer<DebugMaterialData> debugMaterialSBuffer : register(t1);
+
 struct PixelInputType
 {
 	float4 posCS : SV_POSITION;
+	uint materialID : MATERIALID;
 };
 
 struct PixelOutputType
@@ -15,7 +23,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 {
 	PixelOutputType output;
 
-	output.debugPassRT0 = float4(0.2, 0.3, 0.4, 1.0);
+	output.debugPassRT0 = debugMaterialSBuffer[input.materialID].color;
 
 	return output;
 }

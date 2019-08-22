@@ -66,6 +66,7 @@ public:
 	const std::vector<BillboardPassDrawCallData>& getBillboardPassDrawCallData() override;
 	const std::vector<MeshGPUData>& getBillboardPassMeshGPUData() override;
 
-	unsigned int getDebuggerPassDrawCallCount() override;
-	const std::vector<DebuggerPassGPUData>& getDebuggerPassGPUData() override;
+	unsigned int getDebugPassDrawCallCount() override;
+	const std::vector<DebugPassDrawCallData>& getDebugPassDrawCallData() override;
+	const std::vector<MeshGPUData>& getDebugPassMeshGPUData() override;
 };

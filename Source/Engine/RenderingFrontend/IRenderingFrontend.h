@@ -103,6 +103,7 @@ public:
 	virtual const std::vector<BillboardPassDrawCallData>& getBillboardPassDrawCallData() = 0;
 	virtual const std::vector<MeshGPUData>& getBillboardPassMeshGPUData() = 0;
 
-	virtual unsigned int getDebuggerPassDrawCallCount() = 0;
-	virtual const std::vector<DebuggerPassGPUData>& getDebuggerPassGPUData() = 0;
+	virtual unsigned int getDebugPassDrawCallCount() = 0;
+	virtual const std::vector<DebugPassDrawCallData>& getDebugPassDrawCallData() = 0;
+	virtual const std::vector<MeshGPUData>& getDebugPassMeshGPUData() = 0;
 };

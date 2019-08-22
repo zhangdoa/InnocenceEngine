@@ -1,7 +1,14 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
 
-StructuredBuffer<matrix> debugSBuffer : register(t13);
+struct DebugMeshData
+{
+	matrix m;
+	uint materialID;
+	uint padding[15];
+};
+
+StructuredBuffer<DebugMeshData> debugMeshSBuffer : register(t0);
 
 struct VertexInputType
 {
@@ -16,13 +23,15 @@ struct VertexInputType
 struct PixelInputType
 {
 	float4 posCS : SV_POSITION;
+	uint materialID : MATERIALID;
 };
 
 PixelInputType main(VertexInputType input)
 {
 	PixelInputType output;
 
-	output.posCS = mul(input.position, debugSBuffer[input.instanceId]);
+	output.materialID = debugMeshSBuffer[input.instanceId].materialID;
+	output.posCS = mul(input.position, debugMeshSBuffer[input.instanceId].m);
 	output.posCS = mul(output.posCS, cameraCBuffer.t);
 	output.posCS = mul(output.posCS, cameraCBuffer.r);
 	output.posCS = mul(output.posCS, cameraCBuffer.p_jittered);

@@ -54,8 +54,9 @@ namespace InnoRenderingFrontendNS
 	DoubleBuffer<std::vector<BillboardPassDrawCallData>, true> m_billboardPassDrawCallData;
 	DoubleBuffer<std::vector<MeshGPUData>, true> m_billboardMeshGPUData;
 
-	unsigned int m_debuggerPassDrawCallCount = 0;
-	std::vector<DebuggerPassGPUData> m_debuggerPassGPUData;
+	unsigned int m_debugPassDrawCallCount = 0;
+	DoubleBuffer<std::vector<DebugPassDrawCallData>, true> m_debugPassDrawCallData;
+	DoubleBuffer<std::vector<MeshGPUData>, true> m_debugPassMeshGPUData;
 
 	std::vector<CullingData> m_cullingData;
 
@@ -194,7 +195,7 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 		m_transparentPassMaterialGPUData.clear();
 		m_transparentPassDrawCallCount = 0;
 
-		m_debuggerPassGPUData.clear();
+		m_debugPassDrawCallCount = 0;
 	};
 
 	f_sceneLoadingFinishCallback = [&]() {
@@ -694,7 +695,7 @@ bool InnoRenderingFrontendNS::updateDebuggerPassData()
 {
 	unsigned int l_index = 0;
 	// @TODO: Implementation
-	m_debuggerPassDrawCallCount = l_index;
+	m_debugPassDrawCallCount = l_index;
 
 	return true;
 }
@@ -1078,12 +1079,17 @@ const std::vector<MeshGPUData>& InnoRenderingFrontend::getBillboardPassMeshGPUDa
 	return m_billboardMeshGPUData.GetValue();
 }
 
-unsigned int InnoRenderingFrontend::getDebuggerPassDrawCallCount()
+unsigned int InnoRenderingFrontend::getDebugPassDrawCallCount()
 {
-	return m_debuggerPassDrawCallCount;
+	return m_debugPassDrawCallCount;
 }
 
-const std::vector<DebuggerPassGPUData>& InnoRenderingFrontend::getDebuggerPassGPUData()
+const std::vector<DebugPassDrawCallData>& InnoRenderingFrontend::getDebugPassDrawCallData()
 {
-	return m_debuggerPassGPUData;
+	return m_debugPassDrawCallData.GetValue();
+}
+
+const std::vector<MeshGPUData>& InnoRenderingFrontend::getDebugPassMeshGPUData()
+{
+	return m_debugPassMeshGPUData.GetValue();
 }
