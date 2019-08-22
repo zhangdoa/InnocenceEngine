@@ -24,7 +24,7 @@ namespace DX12Helper
 
 	ID3D12GraphicsCommandList* BeginSingleTimeCommands(ID3D12Device* device, ID3D12CommandAllocator* globalCommandAllocator);
 	bool EndSingleTimeCommands(ID3D12GraphicsCommandList* commandList, ID3D12Device* device, ID3D12CommandQueue* globalCommandQueue);
-	ID3D12Resource* CreateUploadHeapBuffer(UINT64 size, ID3D12Device* device, const char* name = "");
+	ID3D12Resource* CreateUploadHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, ID3D12Device* device, const char* name = "");
 	ID3D12Resource* CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, ID3D12Device* device, D3D12_CLEAR_VALUE* clearValue = nullptr, const char* name = "");
 	ID3D12Resource* CreateReadBackHeapBuffer(UINT64 size, ID3D12Device* device, const char* name = "");
 

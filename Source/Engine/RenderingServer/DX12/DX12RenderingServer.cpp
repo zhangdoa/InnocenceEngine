@@ -648,7 +648,7 @@ bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	SetObjectName(l_rhs, l_rhs->m_vertexBuffer, "VB");
 #endif //  _DEBUG
 
-	auto l_vertexUploadHeapBuffer = CreateUploadHeapBuffer(l_verticesDataSize, m_device);
+	auto l_vertexUploadHeapBuffer = CreateUploadHeapBuffer(&l_verticesResourceDesc, m_device);
 
 	auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
 
@@ -686,7 +686,7 @@ bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	SetObjectName(l_rhs, l_rhs->m_indexBuffer, "IB");
 #endif //  _DEBUG
 
-	auto l_indexUploadHeapBuffer = CreateUploadHeapBuffer(l_indicesDataSize, m_device);
+	auto l_indexUploadHeapBuffer = CreateUploadHeapBuffer(&l_indicesResourceDesc, m_device);
 
 	// main memory ----> upload heap
 	D3D12_SUBRESOURCE_DATA l_indicesSubResourceData = {};
@@ -796,7 +796,8 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 					l_textureSubResourceData.pData = l_rawData;
 					l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * l_rhs->m_textureDataDesc.Height;
 
-					auto l_uploadHeapBuffer = CreateUploadHeapBuffer(l_uploadHeapBufferSize, m_device);
+					auto l_resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_uploadHeapBufferSize);
+					auto l_uploadHeapBuffer = CreateUploadHeapBuffer(&l_resourceDesc, m_device);
 					UpdateSubresources(l_commandList, l_rhs->m_ResourceHandle, l_uploadHeapBuffer, 0, i, 1, &l_textureSubResourceData);
 					l_uploadBuffers.emplace_back(l_uploadHeapBuffer);
 				}
@@ -809,7 +810,8 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 				l_textureSubResourceData.RowPitch = l_rhs->m_textureDataDesc.Width * l_rhs->m_PixelDataSize;
 				l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * l_rhs->m_textureDataDesc.Height;
 
-				auto l_uploadHeapBuffer = CreateUploadHeapBuffer(l_uploadHeapBufferSize, m_device);
+				auto l_resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_uploadHeapBufferSize);
+				auto l_uploadHeapBuffer = CreateUploadHeapBuffer(&l_resourceDesc, m_device);
 				UpdateSubresources(l_commandList, l_rhs->m_ResourceHandle, l_uploadHeapBuffer, 0, 0, 1, &l_textureSubResourceData);
 				l_uploadBuffers.emplace_back(l_uploadHeapBuffer);
 			}
@@ -832,6 +834,8 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 		}
 
 		l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
+		l_resourceBinder->m_Texture = l_rhs;
+
 		l_rhs->m_ResourceBinder = l_resourceBinder;
 	}
 
@@ -1043,32 +1047,39 @@ bool DX12RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 	l_resourceBinder->m_ElementSize = l_rhs->m_ElementSize;
 	l_resourceBinder->m_TotalSize = l_rhs->m_TotalSize;
 
-	if (l_rhs->m_GPUAccessibility != Accessibility::ReadOnly)
-	{
-		auto l_resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_rhs->m_TotalSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-
-		l_rhs->m_ResourceHandle = CreateUploadHeapBuffer(l_rhs->m_TotalSize, m_device);
-
-		//auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
-
-		//l_commandList->ResourceBarrier(1,
-		//	&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_ResourceHandle, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-
-		//EndSingleTimeCommands(l_commandList, m_device, m_globalCommandQueue);
-	}
-	else
-	{
-		l_rhs->m_ResourceHandle = CreateUploadHeapBuffer(l_rhs->m_TotalSize, m_device);
-	}
+	auto l_resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_rhs->m_TotalSize);
+	l_rhs->m_UploadHeapResourceHandle = CreateUploadHeapBuffer(&l_resourceDesc, m_device);
 
 #ifdef _DEBUG
-	SetObjectName(rhs, l_rhs->m_ResourceHandle, "GPUBuffer");
+	SetObjectName(rhs, l_rhs->m_UploadHeapResourceHandle, "UploadHeapGPUBuffer");
 #endif // _DEBUG
 
-	l_resourceBinder->m_Buffer = l_rhs->m_ResourceHandle;
+	if (l_rhs->m_GPUAccessibility != Accessibility::ReadOnly)
+	{
+		if (l_rhs->m_CPUAccessibility == Accessibility::Immutable || l_rhs->m_CPUAccessibility == Accessibility::WriteOnly)
+		{
+			auto l_defaultHeapResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_rhs->m_TotalSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+			l_rhs->m_DefaultHeapResourceHandle = CreateDefaultHeapBuffer(&l_defaultHeapResourceDesc, m_device);
+
+			auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
+			l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapResourceHandle, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+			EndSingleTimeCommands(l_commandList, m_device, m_globalCommandQueue);
+
+#ifdef _DEBUG
+			SetObjectName(rhs, l_rhs->m_DefaultHeapResourceHandle, "DefaultHeapGPUBuffer");
+#endif // _DEBUG
+		}
+		else
+		{
+			InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Not support CPU-readable GPU buffer currently.");
+		}
+	}
+
+	l_resourceBinder->m_DefaultHeapBuffer = l_rhs->m_DefaultHeapResourceHandle;
+	l_resourceBinder->m_UploadHeapBuffer = l_rhs->m_UploadHeapResourceHandle;
 
 	CD3DX12_RANGE m_readRange(0, 0);
-	l_rhs->m_ResourceHandle->Map(0, &m_readRange, &l_rhs->m_MappedMemory);
+	l_rhs->m_UploadHeapResourceHandle->Map(0, &m_readRange, &l_rhs->m_MappedMemory);
 
 	if (l_rhs->m_InitialData)
 	{
@@ -1202,7 +1213,15 @@ bool DX12RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * 
 {
 	auto l_rhs = reinterpret_cast<DX12GPUBufferDataComponent*>(rhs);
 
-	l_rhs->m_ResourceHandle->Release();
+	if (l_rhs->m_DefaultHeapResourceHandle)
+	{
+		l_rhs->m_DefaultHeapResourceHandle->Release();
+	}
+
+	if (l_rhs->m_UploadHeapResourceHandle)
+	{
+		l_rhs->m_UploadHeapResourceHandle->Release();
+	}
 
 	if (l_rhs->m_ResourceBinder)
 	{
@@ -1225,6 +1244,17 @@ bool DX12RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponen
 	}
 
 	std::memcpy((char*)l_rhs->m_MappedMemory + startOffset * l_rhs->m_ElementSize, GPUBufferValue, l_size);
+
+	if (l_rhs->m_DefaultHeapResourceHandle)
+	{
+		auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
+
+		l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapResourceHandle, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_DEST));
+		l_commandList->CopyResource(l_rhs->m_DefaultHeapResourceHandle, l_rhs->m_UploadHeapResourceHandle);
+		l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapResourceHandle, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+
+		EndSingleTimeCommands(l_commandList, m_device, m_globalCommandQueue);
+	}
 
 	return true;
 }
@@ -1371,6 +1401,7 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 			case ResourceBinderType::Image:
 				if (accessibility != Accessibility::ReadOnly)
 				{
+					l_commandList->m_GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_resourceBinder->m_Texture->m_ResourceHandle, l_resourceBinder->m_Texture->m_ReadState, l_resourceBinder->m_Texture->m_WriteState));
 					l_commandList->m_GraphicsCommandList->SetComputeRootDescriptorTable((unsigned int)globalSlot, l_resourceBinder->m_TextureUAV.GPUHandle);
 				}
 				else
@@ -1387,18 +1418,18 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 					}
 					else
 					{
-						l_commandList->m_GraphicsCommandList->SetComputeRootConstantBufferView((unsigned int)globalSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+						l_commandList->m_GraphicsCommandList->SetComputeRootConstantBufferView((unsigned int)globalSlot, l_resourceBinder->m_UploadHeapBuffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 					}
 				}
 				else
 				{
 					if (accessibility != Accessibility::ReadOnly)
 					{
-						l_commandList->m_GraphicsCommandList->SetComputeRootUnorderedAccessView((unsigned int)globalSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+						l_commandList->m_GraphicsCommandList->SetComputeRootUnorderedAccessView((unsigned int)globalSlot, l_resourceBinder->m_DefaultHeapBuffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 					}
 					else
 					{
-						l_commandList->m_GraphicsCommandList->SetComputeRootShaderResourceView((unsigned int)globalSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+						l_commandList->m_GraphicsCommandList->SetComputeRootShaderResourceView((unsigned int)globalSlot, l_resourceBinder->m_DefaultHeapBuffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 					}
 				}
 
@@ -1417,6 +1448,7 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 			case ResourceBinderType::Image:
 				if (accessibility != Accessibility::ReadOnly)
 				{
+					l_commandList->m_GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_resourceBinder->m_Texture->m_ResourceHandle, l_resourceBinder->m_Texture->m_ReadState, l_resourceBinder->m_Texture->m_WriteState));
 					l_commandList->m_GraphicsCommandList->SetGraphicsRootDescriptorTable((unsigned int)globalSlot, l_resourceBinder->m_TextureUAV.GPUHandle);
 				}
 				else
@@ -1433,18 +1465,18 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 					}
 					else
 					{
-						l_commandList->m_GraphicsCommandList->SetGraphicsRootConstantBufferView((unsigned int)globalSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+						l_commandList->m_GraphicsCommandList->SetGraphicsRootConstantBufferView((unsigned int)globalSlot, l_resourceBinder->m_UploadHeapBuffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 					}
 				}
 				else
 				{
 					if (accessibility != Accessibility::ReadOnly)
 					{
-						l_commandList->m_GraphicsCommandList->SetGraphicsRootUnorderedAccessView((unsigned int)globalSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+						l_commandList->m_GraphicsCommandList->SetGraphicsRootUnorderedAccessView((unsigned int)globalSlot, l_resourceBinder->m_DefaultHeapBuffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 					}
 					else
 					{
-						l_commandList->m_GraphicsCommandList->SetGraphicsRootShaderResourceView((unsigned int)globalSlot, l_resourceBinder->m_Buffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+						l_commandList->m_GraphicsCommandList->SetGraphicsRootShaderResourceView((unsigned int)globalSlot, l_resourceBinder->m_DefaultHeapBuffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 					}
 				}
 				break;
@@ -1474,6 +1506,24 @@ bool DX12RenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass,
 
 bool DX12RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
+	auto l_resourceBinder = reinterpret_cast<DX12ResourceBinder*>(binder);
+	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
+
+	if (l_resourceBinder)
+	{
+		if (shaderStage == ShaderStage::Compute)
+		{
+			if (l_resourceBinder->m_ResourceBinderType == ResourceBinderType::Image)
+			{
+				if (accessibility != Accessibility::ReadOnly)
+				{
+					l_commandList->m_GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_resourceBinder->m_Texture->m_ResourceHandle, l_resourceBinder->m_Texture->m_WriteState, l_resourceBinder->m_Texture->m_ReadState));
+				}
+			}
+		}
+	}
+
 	return true;
 }
 
@@ -1813,7 +1863,7 @@ DX12CBV DX12RenderingServer::CreateCBV(GPUBufferDataComponent* rhs)
 
 	DX12CBV l_result;
 
-	l_result.CBVDesc.BufferLocation = l_rhs->m_ResourceHandle->GetGPUVirtualAddress();
+	l_result.CBVDesc.BufferLocation = l_rhs->m_UploadHeapResourceHandle->GetGPUVirtualAddress();
 	l_result.CBVDesc.SizeInBytes = (unsigned int)l_rhs->m_ElementSize;
 
 	l_result.CPUHandle = m_currentCSUCPUHandle;

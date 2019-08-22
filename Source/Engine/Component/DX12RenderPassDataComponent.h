@@ -8,7 +8,9 @@ public:
 	DX12SRV m_TextureSRV = {};
 	DX12UAV m_TextureUAV = {};
 	DX12Sampler m_Sampler = {};
-	ID3D12Resource* m_Buffer = 0;
+	DX12TextureDataComponent* m_Texture = 0;
+	ID3D12Resource* m_DefaultHeapBuffer = 0;
+	ID3D12Resource* m_UploadHeapBuffer = 0;
 };
 
 class DX12PipelineStateObject : public IPipelineStateObject

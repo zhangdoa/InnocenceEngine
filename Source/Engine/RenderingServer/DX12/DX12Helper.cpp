@@ -61,14 +61,14 @@ bool DX12Helper::EndSingleTimeCommands(ID3D12GraphicsCommandList* commandList, I
 	return true;
 }
 
-ID3D12Resource* DX12Helper::CreateUploadHeapBuffer(UINT64 size, ID3D12Device* device, const char* name)
+ID3D12Resource* DX12Helper::CreateUploadHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, ID3D12Device* device, const char* name)
 {
 	ID3D12Resource* l_uploadHeapBuffer;
 
 	auto l_HResult = device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(size),
+		resourceDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&l_uploadHeapBuffer));
