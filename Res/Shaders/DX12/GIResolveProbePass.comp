@@ -20,7 +20,7 @@ void main(ComputeInputType input)
 {
 	uint l_probeIndex = input.dispatchThreadID.x + (input.dispatchThreadID.y * dispatchParams[4].numThreads.x) + (input.dispatchThreadID.z * dispatchParams[4].numThreads.x * dispatchParams[4].numThreads.y);
 
-	if (l_probeIndex < GISky_viewportSize[1][1])
+	if (l_probeIndex < GISky_viewportSize[3][1])
 	{
 		Probe l_probe = in_probes[l_probeIndex];
 		float4 Lo[6];

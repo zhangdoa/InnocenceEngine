@@ -81,7 +81,7 @@ layout(std140, row_major, binding = 11) uniform GISkyUBOUBOBlock
 {
 	mat4 p_inv;
 	mat4 v_inv[6];
-	vec2 viewportSize;
+	mat4 viewportSize;
 } GISkyUBO;
 
 layout(std430, row_major, binding = 12) buffer billboardUBOBlock

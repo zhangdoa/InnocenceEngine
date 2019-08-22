@@ -21,24 +21,28 @@ void main(ComputeInputType input)
 		&& input.dispatchThreadID.z < dispatchParams[3].numThreads.z)
 	{
 		uint l_brickIndex = input.dispatchThreadID.x + (input.dispatchThreadID.y * dispatchParams[3].numThreads.x) + (input.dispatchThreadID.z * dispatchParams[3].numThreads.x * dispatchParams[3].numThreads.y);
-		Brick l_brick = in_bricks[l_brickIndex];
 
-		float4 Lo = float4(0.0, 0.0, 0.0, 0.0);
-
-		if (l_brick.surfelRangeBegin != l_brick.surfelRangeEnd)
+		if (l_brickIndex < GISky_viewportSize[2][1])
 		{
-			for (uint i = l_brick.surfelRangeBegin; i <= l_brick.surfelRangeEnd; i++)
+			Brick l_brick = in_bricks[l_brickIndex];
+
+			float4 Lo = float4(0.0, 0.0, 0.0, 0.0);
+
+			if (l_brick.surfelRangeBegin != l_brick.surfelRangeEnd)
 			{
-				Lo += in_surfelIrradiance[i];
+				for (uint i = l_brick.surfelRangeBegin; i <= l_brick.surfelRangeEnd; i++)
+				{
+					Lo += in_surfelIrradiance[i];
+				}
+
+				Lo /= (l_brick.surfelRangeEnd - l_brick.surfelRangeBegin);
+			}
+			else
+			{
+				Lo = in_surfelIrradiance[l_brick.surfelRangeBegin];
 			}
 
-			Lo /= (l_brick.surfelRangeEnd - l_brick.surfelRangeBegin);
+			out_brickIrradiance[l_brickIndex] = Lo;
 		}
-		else
-		{
-			Lo = in_surfelIrradiance[l_brick.surfelRangeBegin];
-		}
-
-		out_brickIrradiance[l_brickIndex] = Lo;
 	}
 }

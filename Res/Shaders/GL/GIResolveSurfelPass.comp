@@ -21,26 +21,30 @@ void main()
 		)
 	{
 		uint l_surfelIndex = (gl_GlobalInvocationID.x + (gl_GlobalInvocationID.y * dispatchParamsUBO.data[2].numThreads.x)) + (gl_GlobalInvocationID.z * dispatchParamsUBO.data[2].numThreads.x * dispatchParamsUBO.data[2].numThreads.y);
-		Surfel l_surfel = surfelsSSBO.data[l_surfelIndex];
 
-		vec3 posWS = l_surfel.pos.xyz;
-		float metallic = l_surfel.MRAT.x;
-		vec3 normalWS = l_surfel.normal.xyz;
-		vec3 albedo = l_surfel.albedo.xyz;
+		if (l_surfelIndex < GISkyUBO.viewportSize[1][1])
+		{
+			Surfel l_surfel = surfelsSSBO.data[l_surfelIndex];
 
-		vec3 N = normalize(normalWS);
-		vec3 V = normalize(cameraUBO.globalPos.xyz - posWS);
-		vec3 L = normalize(-sunUBO.data.direction.xyz);
-		float NdotV = max(dot(N, V), 0.0);
-		float NdotL = max(dot(N, L), 0.0);
+			vec3 posWS = l_surfel.pos.xyz;
+			float metallic = l_surfel.MRAT.x;
+			vec3 normalWS = l_surfel.normal.xyz;
+			vec3 albedo = l_surfel.albedo.xyz;
 
-		float kD = 1.0 - metallic;
+			vec3 N = normalize(normalWS);
+			vec3 V = normalize(cameraUBO.globalPos.xyz - posWS);
+			vec3 L = normalize(-sunUBO.data.direction.xyz);
+			float NdotV = max(dot(N, V), 0.0);
+			float NdotL = max(dot(N, L), 0.0);
 
-		// Diffuse BRDF
-		vec3 BRDF = kD * albedo / PI;
+			float kD = 1.0 - metallic;
 
-		vec3 Lo = BRDF * sunUBO.data.luminance.xyz * NdotL;
+			// Diffuse BRDF
+			vec3 BRDF = kD * albedo / PI;
 
-		irradianceSSBO.data[l_surfelIndex] = vec4(Lo, 1.0);
+			vec3 Lo = BRDF * sunUBO.data.luminance.xyz * NdotL;
+
+			irradianceSSBO.data[l_surfelIndex] = vec4(Lo, 1.0);
+		}
 	}
 }

@@ -66,28 +66,32 @@ void main(ComputeInputType input)
 		&& input.dispatchThreadID.z < dispatchParams[2].numThreads.z)
 	{
 		uint l_surfelIndex = input.dispatchThreadID.x + (input.dispatchThreadID.y * dispatchParams[2].numThreads.x) + (input.dispatchThreadID.z * dispatchParams[2].numThreads.x * dispatchParams[2].numThreads.y);
-		Surfel l_surfel = in_surfels[l_surfelIndex];
 
-		float3 posWS = l_surfel.pos.xyz;
-		float metallic = l_surfel.MRAT.x;
-		float3 normalWS = l_surfel.normal.xyz;
-		float3 albedo = l_surfel.albedo.xyz;
+		if (l_surfelIndex < GISky_viewportSize[1][1])
+		{
+			Surfel l_surfel = in_surfels[l_surfelIndex];
 
-		float3 N = normalize(normalWS);
-		float3 V = normalize(cameraCBuffer.globalPos.xyz - posWS);
-		float3 L = normalize(-dirLight_dir.xyz);
-		float NdotV = max(dot(N, V), 0.0);
-		float NdotL = max(dot(N, L), 0.0);
+			float3 posWS = l_surfel.pos.xyz;
+			float metallic = l_surfel.MRAT.x;
+			float3 normalWS = l_surfel.normal.xyz;
+			float3 albedo = l_surfel.albedo.xyz;
 
-		float kD = 1.0 - metallic;
+			float3 N = normalize(normalWS);
+			float3 V = normalize(cameraCBuffer.globalPos.xyz - posWS);
+			float3 L = normalize(-dirLight_dir.xyz);
+			float NdotV = max(dot(N, V), 0.0);
+			float NdotL = max(dot(N, L), 0.0);
 
-		// Diffuse BRDF
-		float3 BRDF = kD * albedo / PI;
+			float kD = 1.0 - metallic;
 
-		float3 Lo = BRDF * dirLight_luminance.xyz * NdotL;
+			// Diffuse BRDF
+			float3 BRDF = kD * albedo / PI;
 
-		//Lo *= 1 - SunShadowResolver(posWS);
+			float3 Lo = BRDF * dirLight_luminance.xyz * NdotL;
 
-		out_irradiance[l_surfelIndex] = float4(Lo, 1.0);
+			//Lo *= 1 - SunShadowResolver(posWS);
+
+			out_irradiance[l_surfelIndex] = float4(Lo, 1.0);
+		}
 	}
 }
