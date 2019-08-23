@@ -10,7 +10,7 @@ namespace DX12Helper
 {
 	UINT GetMipLevels(TextureDataDesc textureDataDesc);
 
-	const wchar_t* m_shaderRelativePath = L"Res//Shaders//DX12//";
+	const wchar_t* m_shaderRelativePath = L"Res//Shaders//DX//";
 }
 
 ID3D12GraphicsCommandList* DX12Helper::BeginSingleTimeCommands(ID3D12Device* device, ID3D12CommandAllocator* globalCommandAllocator)
