@@ -226,9 +226,9 @@ ProbeInfo InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vec
 
 	auto l_probesCountPerLine = m_probeMapResolution / probeMapSamplingInterval;
 
-	for (size_t i = 0; i < l_probesCountPerLine; i++)
+	for (size_t i = 1; i < l_probesCountPerLine; i++)
 	{
-		for (size_t j = 0; j < l_probesCountPerLine; j++)
+		for (size_t j = 1; j < l_probesCountPerLine; j++)
 		{
 			auto l_currentIndex = i * probeMapSamplingInterval * m_probeMapResolution + j * probeMapSamplingInterval;
 			auto l_textureResult = heightMap[l_currentIndex];
