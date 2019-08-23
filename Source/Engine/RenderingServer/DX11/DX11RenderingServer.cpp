@@ -1194,6 +1194,34 @@ bool DX11RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 	return true;
 }
 
+bool BindSampler(ShaderStage shaderStage, unsigned int slot, ID3D11SamplerState* sampler)
+{
+	switch (shaderStage)
+	{
+	case ShaderStage::Vertex:
+		m_deviceContext->VSSetSamplers(slot, 1, &sampler);
+		break;
+	case ShaderStage::Hull:
+		m_deviceContext->HSSetSamplers(slot, 1, &sampler);
+		break;
+	case ShaderStage::Domain:
+		m_deviceContext->DSSetSamplers(slot, 1, &sampler);
+		break;
+	case ShaderStage::Geometry:
+		m_deviceContext->GSSetSamplers(slot, 1, &sampler);
+		break;
+	case ShaderStage::Pixel:
+		m_deviceContext->PSSetSamplers(slot, 1, &sampler);
+		break;
+	case ShaderStage::Compute:
+		m_deviceContext->CSSetSamplers(slot, 1, &sampler);
+		break;
+	default:
+		break;
+	}
+	return true;
+}
+
 bool BindSRV(ShaderStage shaderStage, unsigned int slot, ID3D11ShaderResourceView * SRV)
 {
 	switch (shaderStage)
@@ -1307,7 +1335,7 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 		switch (l_resourceBinder->m_ResourceBinderType)
 		{
 		case ResourceBinderType::Sampler:
-			m_deviceContext->PSSetSamplers((unsigned int)localSlot, 1, &l_resourceBinder->m_Sampler);
+			BindSampler(shaderStage, (unsigned int)(localSlot), l_resourceBinder->m_Sampler);
 			break;
 		case ResourceBinderType::Image:
 			if (accessibility != Accessibility::ReadOnly)
