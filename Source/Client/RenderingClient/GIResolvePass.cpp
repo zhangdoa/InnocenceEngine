@@ -45,8 +45,10 @@ namespace GIResolvePass
 	GPUBufferDataComponent* m_brickIrradianceGBDC = 0;
 	GPUBufferDataComponent* m_brickFactorGBDC = 0;
 	GPUBufferDataComponent* m_probeGBDC = 0;
+	TextureDataComponent* m_probeVolume = 0;
 	TextureDataComponent* m_irradianceVolume = 0;
 
+	const unsigned int m_skyCubemapSize = 32;
 	vec4 m_irradianceVolumePosOffset;
 	vec4 m_irradianceVolumeRange;
 
@@ -322,16 +324,16 @@ bool GIResolvePass::setupSky()
 	m_skyRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
 	m_skyRPDC->m_RenderPassDesc.m_RenderTargetDesc.SamplerType = TextureSamplerType::SamplerCubemap;
-	m_skyRPDC->m_RenderPassDesc.m_RenderTargetDesc.Width = 32;
-	m_skyRPDC->m_RenderPassDesc.m_RenderTargetDesc.Height = 32;
+	m_skyRPDC->m_RenderPassDesc.m_RenderTargetDesc.Width = m_skyCubemapSize;
+	m_skyRPDC->m_RenderPassDesc.m_RenderTargetDesc.Height = m_skyCubemapSize;
 
 	m_skyRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
 	m_skyRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
 	m_skyRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::Always;
-	m_skyRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = 32;
-	m_skyRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = 32;
+	m_skyRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = m_skyCubemapSize;
+	m_skyRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = m_skyCubemapSize;
 
-	m_skyRPDC->m_ResourceBinderLayoutDescs.resize(3);
+	m_skyRPDC->m_ResourceBinderLayoutDescs.resize(4);
 	m_skyRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_skyRPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
 	m_skyRPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 10;
@@ -342,7 +344,11 @@ bool GIResolvePass::setupSky()
 
 	m_skyRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_skyRPDC->m_ResourceBinderLayoutDescs[2].m_GlobalSlot = 2;
-	m_skyRPDC->m_ResourceBinderLayoutDescs[2].m_LocalSlot = 11;
+	m_skyRPDC->m_ResourceBinderLayoutDescs[2].m_LocalSlot = 7;
+
+	m_skyRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_skyRPDC->m_ResourceBinderLayoutDescs[3].m_GlobalSlot = 3;
+	m_skyRPDC->m_ResourceBinderLayoutDescs[3].m_LocalSlot = 11;
 
 	m_skyRPDC->m_ShaderProgram = m_skySPC;
 
@@ -527,52 +533,9 @@ bool GIResolvePass::setupProbes()
 bool GIResolvePass::generateSkyRadiance()
 {
 	auto l_SunGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sun);
+	auto l_SkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sky);
 	auto l_GICameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GICamera);
 	auto l_GISkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GISky);
-
-	auto l_cameraGPUData = g_pModuleManager->getRenderingFrontend()->getCameraGPUData();
-
-	std::vector<mat4> l_GICameraGPUData(8);
-	std::vector<mat4> l_GISkyGPUData(8);
-
-	l_GICameraGPUData[0] = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, l_cameraGPUData.zNear, l_cameraGPUData.zFar);
-	l_GISkyGPUData[0] = l_GICameraGPUData[0].inverse();
-
-	auto l_rPX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
-	auto l_rNX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(-1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
-	auto l_rPY = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 1.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 0.0f));
-	auto l_rNY = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 0.0f));
-	auto l_rPZ = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
-	auto l_rNZ = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, -1.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
-
-	std::vector<mat4> l_v =
-	{
-		l_rPX, l_rNX, l_rPY, l_rNY, l_rPZ, l_rNZ
-	};
-
-	for (size_t i = 0; i < 6; i++)
-	{
-		l_GICameraGPUData[i + 1] = l_v[i];
-		l_GISkyGPUData[i + 1] = l_v[i].inverse();
-	}
-	l_GICameraGPUData[7] = InnoMath::generateIdentityMatrix<float>();
-	// Viewport size
-	l_GISkyGPUData[7].m00 = 32.0f;
-	l_GISkyGPUData[7].m01 = 32.0f;
-
-	auto l_probeCount = GIDataLoader::GetProbeMaxCount();
-	l_GISkyGPUData[7].m02 = l_probeCount.x;
-	l_GISkyGPUData[7].m03 = l_probeCount.y;
-	l_GISkyGPUData[7].m10 = l_probeCount.z;
-	l_GISkyGPUData[7].m11 = (float)m_surfelGBDC->m_ElementCount;
-	l_GISkyGPUData[7].m12 = (float)m_brickGBDC->m_ElementCount;
-	l_GISkyGPUData[7].m13 = (float)m_probeGBDC->m_ElementCount;
-	l_GISkyGPUData[7].m20 = m_irradianceVolumePosOffset.x;
-	l_GISkyGPUData[7].m21 = m_irradianceVolumePosOffset.y;
-	l_GISkyGPUData[7].m22 = m_irradianceVolumePosOffset.z;
-
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GICameraGBDC, l_GICameraGPUData);
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GISkyGBDC, l_GISkyGPUData);
 
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_skyRPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_skyRPDC);
@@ -580,7 +543,8 @@ bool GIResolvePass::generateSkyRadiance()
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyRPDC, ShaderStage::Geometry, l_GICameraGBDC->m_ResourceBinder, 0, 10, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyRPDC, ShaderStage::Pixel, l_SunGBDC->m_ResourceBinder, 1, 3, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyRPDC, ShaderStage::Pixel, l_GISkyGBDC->m_ResourceBinder, 2, 11, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyRPDC, ShaderStage::Pixel, l_SkyGBDC->m_ResourceBinder, 2, 7, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyRPDC, ShaderStage::Pixel, l_GISkyGBDC->m_ResourceBinder, 3, 11, Accessibility::ReadOnly);
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Cube);
 
@@ -683,10 +647,6 @@ bool GIResolvePass::litProbes()
 	auto l_SkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sky);
 	auto l_GISkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GISky);
 
-	SkyGPUData l_SkyGPUData = g_pModuleManager->getRenderingFrontend()->getSkyGPUData();
-	l_SkyGPUData.posWSNormalizer = m_irradianceVolumeRange;
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_SkyGBDC, &l_SkyGPUData);
-
 	auto l_threadCountPerGroupPerSide = 8;
 	auto l_totalThreadGroupsCount = (double)m_probeGBDC->m_ElementCount / (l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide);
 	auto l_averangeThreadGroupsCountPerSide = (unsigned int)std::ceil(std::pow(l_totalThreadGroupsCount, 1.0 / 3.0));
@@ -737,6 +697,56 @@ bool GIResolvePass::PrepareCommandList()
 
 	if (m_GIDataLoaded)
 	{
+		auto l_SkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sky);
+		auto l_GICameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GICamera);
+		auto l_GISkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GISky);
+		auto l_cameraGPUData = g_pModuleManager->getRenderingFrontend()->getCameraGPUData();
+
+		SkyGPUData l_SkyGPUData = g_pModuleManager->getRenderingFrontend()->getSkyGPUData();
+
+		// GI sky small cubemap
+		l_SkyGPUData.viewportSize.z = (float)m_skyCubemapSize;
+		l_SkyGPUData.viewportSize.w = (float)m_skyCubemapSize;
+		l_SkyGPUData.posWSNormalizer = m_irradianceVolumeRange;
+
+		GICameraGPUData l_GICameraGPUData;
+		GISkyGPUData l_GISkyGPUData;
+
+		l_GICameraGPUData.p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, l_cameraGPUData.zNear, l_cameraGPUData.zFar);
+		l_GISkyGPUData.p_inv = l_GICameraGPUData.p.inverse();
+
+		auto l_rPX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
+		auto l_rNX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(-1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
+		auto l_rPY = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 1.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 0.0f));
+		auto l_rNY = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 0.0f));
+		auto l_rPZ = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
+		auto l_rNZ = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, -1.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
+
+		std::vector<mat4> l_v =
+		{
+			l_rPX, l_rNX, l_rPY, l_rNY, l_rPZ, l_rNZ
+		};
+
+		for (size_t i = 0; i < 6; i++)
+		{
+			l_GICameraGPUData.r[i] = l_v[i];
+			l_GISkyGPUData.v_inv[i] = l_v[i].inverse();
+		}
+
+		l_GICameraGPUData.t = InnoMath::generateIdentityMatrix<float>();
+
+		auto l_probeInfo = GIDataLoader::GetProbeInfo();
+		l_GISkyGPUData.probeCount = l_probeInfo.probeCount;
+		l_GISkyGPUData.probeInterval = l_probeInfo.probeInterval;
+		l_GISkyGPUData.workload.x = (float)m_surfelGBDC->m_ElementCount;
+		l_GISkyGPUData.workload.y = (float)m_brickGBDC->m_ElementCount;
+		l_GISkyGPUData.workload.z = (float)m_probeGBDC->m_ElementCount;
+		l_GISkyGPUData.irradianceVolumeOffset = m_irradianceVolumePosOffset;
+
+		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_SkyGBDC, &l_SkyGPUData);
+		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GICameraGBDC, &l_GICameraGPUData);
+		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GISkyGBDC, &l_GISkyGPUData);
+
 		generateSkyRadiance();
 		litSurfels();
 		litBricks();
@@ -772,7 +782,7 @@ bool GIResolvePass::ExecuteCommandList()
 
 bool GIResolvePass::Terminate()
 {
-	//g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_skyRPDC);
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_skyRPDC);
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_surfelRPDC);
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_brickRPDC);
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_probeRPDC);

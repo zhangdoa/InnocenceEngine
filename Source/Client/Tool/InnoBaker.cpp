@@ -30,8 +30,8 @@ namespace InnoBakerNS
 
 	bool gatherStaticMeshData();
 	bool generateProbeCaches(std::vector<Probe>& probes);
-	vec4 generateProbes(std::vector<Probe>& probes, const std::vector<vec4>& heightMap, unsigned int probeMapSamplingInterval);
-	bool serializeProbeInfos(vec4 probeCounts);
+	ProbeInfo generateProbes(std::vector<Probe>& probes, const std::vector<vec4>& heightMap, unsigned int probeMapSamplingInterval);
+	bool serializeProbeInfos(const ProbeInfo& probeInfo);
 
 	bool captureSurfels(std::vector<Probe>& probes);
 	bool drawOpaquePass(Probe& probe, const mat4& p, const std::vector<mat4>& v);
@@ -218,7 +218,7 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 	return true;
 }
 
-vec4 InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<vec4>& heightMap, unsigned int probeMapSamplingInterval)
+ProbeInfo InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<vec4>& heightMap, unsigned int probeMapSamplingInterval)
 {
 	auto l_totalTextureSize = heightMap.size();
 
@@ -261,8 +261,11 @@ vec4 InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<v
 	std::vector<Probe> l_wallProbes;
 	l_wallProbes.reserve(l_totalTextureSize);
 
-	//auto l_posIntervalX = std::abs((heightMap[0] - heightMap[probeMapSamplingInterval - 1]).x);
-	//auto l_posIntervalZ = std::abs((heightMap[0] - heightMap[m_probeMapResolution * probeMapSamplingInterval - 1]).z);
+	ProbeInfo l_result;
+	l_result.probeInterval.x = std::abs((heightMap[0] - heightMap[probeMapSamplingInterval - 1]).x);
+	l_result.probeInterval.y = m_probeHeightOffset;
+	l_result.probeInterval.z = std::abs((heightMap[0] - heightMap[m_probeMapResolution * probeMapSamplingInterval - 1]).z);
+	l_result.probeInterval.w = 1.0f;
 
 	unsigned int l_maxVerticalProbesCount = 1;
 
@@ -361,16 +364,21 @@ vec4 InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<v
 
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", probes.size() - l_probesCount, " probe location generated along the wall.");
 
-	return vec4((float)l_probesCountPerLine, (float)l_maxVerticalProbesCount, (float)l_probesCountPerLine, 1.0f);
+	l_result.probeCount.x = (float)l_probesCountPerLine;
+	l_result.probeCount.y = (float)l_maxVerticalProbesCount;
+	l_result.probeCount.z = (float)l_probesCountPerLine;
+	l_result.probeCount.w = 1.0f;
+
+	return l_result;
 }
 
-bool InnoBakerNS::serializeProbeInfos(vec4 probeCounts)
+bool InnoBakerNS::serializeProbeInfos(const ProbeInfo& probeInfo)
 {
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 
 	std::ofstream l_file;
 	l_file.open(l_filePath + "Res//Scenes//" + m_exportFileName + ".InnoProbeInfo", std::ios::binary | std::ios::trunc);
-	l_file.write((char*)&probeCounts, sizeof(probeCounts));
+	l_file.write((char*)&probeInfo, sizeof(probeInfo));
 	l_file.close();
 
 	return true;

@@ -56,14 +56,14 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float3 Lo = float3(0, 0, 0);
 
 	// direction light, sun light
-	float3 L = normalize(-dirLight_dir.xyz);
+	float3 L = normalize(-sun_dir.xyz);
 	float3 H = normalize(V + L);
 
 	float LdotH = max(dot(L, H), 0.0);
 	float NdotH = max(dot(N, H), 0.0);
 	float NdotL = max(dot(N, L), 0.0);
 
-	Lo += getIlluminance(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotV, LdotH, NdotH, NdotL, roughness, metallic, F0, albedo, dirLight_luminance.xyz);
+	Lo += getIlluminance(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotV, LdotH, NdotH, NdotL, roughness, metallic, F0, albedo, sun_luminance.xyz);
 	Lo *= 1.0 - SunShadowResolver(posWS);
 
 	// point punctual light
@@ -140,8 +140,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	// [https://steamcdn-a.akamaihd.net/apps/valve/2006/SIGGRAPH06_Course_ShadingInValvesSourceEngine.pdf]
 	float3 nSquared = N * N;
 	int3 isNegative = (N < 0.0);
-	float3 GISampleCoordOffset = float3(GISky_viewportSize[0][2], GISky_viewportSize[1][2], GISky_viewportSize[2][2]);
-	float3 GISampleCoord = (posWS - GISampleCoordOffset) / posWSNormalizer.xyz;
+	float3 GISampleCoord = (posWS - GISky_irradianceVolumeOffset) / sky_posWSNormalizer.xyz;
 	int3 isOutside = ((GISampleCoord > 1.0) || (GISampleCoord < 0.0));
 
 	GISampleCoord.z /= 6.0;

@@ -18,8 +18,8 @@ PixelOutputType main(PixelInputType input)
 
 	float3 color = float3(0.0, 0.0, 0.0);
 
-	float3 eyedir = get_world_normal(input.frag_ClipSpacePos.xy, viewportSize, p_inv, v_inv);
-	float3 lightdir = -dirLight_dir.xyz;
+	float3 eyedir = get_world_normal(input.frag_ClipSpacePos.xy, sky_viewportSize.xy, sky_p_inv, sky_v_inv);
+	float3 lightdir = -sun_dir.xyz;
 	float planetRadius = 6371e3;
 	float atmosphereHeight = 100e3;
 	float3 eye_position = cameraCBuffer.globalPos.xyz + float3(0.0, planetRadius, 0.0);

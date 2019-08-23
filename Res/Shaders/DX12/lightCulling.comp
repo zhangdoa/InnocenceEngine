@@ -77,9 +77,9 @@ void main(ComputeInputType input)
 	float fMaxDepth = asfloat(l_uMaxDepth);
 
 	// Convert depth values to view space.
-	float minDepthVS = ClipToView(float4(0, 0, fMinDepth, 1), p_inv).z;
-	float maxDepthVS = ClipToView(float4(0, 0, fMaxDepth, 1), p_inv).z;
-	float nearClipVS = ClipToView(float4(0, 0, 0, 1), p_inv).z;
+	float minDepthVS = ClipToView(float4(0, 0, fMinDepth, 1), sky_p_inv).z;
+	float maxDepthVS = ClipToView(float4(0, 0, fMaxDepth, 1), sky_p_inv).z;
+	float nearClipVS = ClipToView(float4(0, 0, 0, 1), sky_p_inv).z;
 
 	// Clipping plane for minimum depth value
 	Plane minPlane = { float3(0, 0, -1), -minDepthVS };

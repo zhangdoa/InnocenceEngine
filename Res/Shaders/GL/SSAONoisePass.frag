@@ -13,7 +13,7 @@ const float bias = 0.05f;
 
 void main()
 {
-	vec2 texelSize = 1.0 / skyUBO.viewportSize;
+	vec2 texelSize = 1.0 / skyUBO.viewportSize.xy;
 	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
 
 	vec2 noiseScale = vec2(textureSize(uni_Position, 0)) / vec2(textureSize(uni_randomRot, 0));
@@ -49,7 +49,7 @@ void main()
 		randomFragSampleCoord.xyz = randomFragSampleCoord.xyz * 0.5f + 0.5f; // transform to range 0.0 - 1.0
 
 		randomFragSampleCoord = clamp(randomFragSampleCoord, 0.0f, 1.0f);
-			 
+
 		// get sample depth
 		vec4 randomFragSamplePos = texture(uni_Position, randomFragSampleCoord.xy);
 

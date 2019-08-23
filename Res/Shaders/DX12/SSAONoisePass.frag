@@ -63,7 +63,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	for (int i = 0; i < 64; ++i)
 	{
 		// get sample position
-		float3 randomHemisphereSampleDir = mul(kernels[i].xyz, TBN); // from tangent to view-space
+		float3 randomHemisphereSampleDir = mul(SSAOKernels[i].xyz, TBN); // from tangent to view-space
 		float3 randomHemisphereSamplePos = fragPos + randomHemisphereSampleDir * radius;
 
 		// project sample position (to sample texture) (to get position on screen/texture)

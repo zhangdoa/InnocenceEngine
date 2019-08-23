@@ -103,14 +103,14 @@ bool DefaultGPUBuffers::Initialize()
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_dispatchParamsGBDC);
 
 	m_GICameraGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("GICameraGPUBuffer/");
-	m_GICameraGBDC->m_ElementSize = sizeof(mat4) * 8;
+	m_GICameraGBDC->m_ElementSize = sizeof(GICameraGPUData);
 	m_GICameraGBDC->m_ElementCount = 1;
 	m_GICameraGBDC->m_BindingPoint = 10;
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_GICameraGBDC);
 
 	m_GISkyGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("GISkyGPUBuffer/");
-	m_GISkyGBDC->m_ElementSize = sizeof(mat4) * 8;
+	m_GISkyGBDC->m_ElementSize = sizeof(GISkyGPUData);
 	m_GISkyGBDC->m_ElementCount = 1;
 	m_GISkyGBDC->m_BindingPoint = 11;
 

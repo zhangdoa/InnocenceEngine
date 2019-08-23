@@ -21,7 +21,7 @@ namespace GIDataLoader
 	std::vector<Surfel> m_surfels;
 	std::vector<Brick> m_bricks;
 	std::vector<BrickFactor> m_brickFactors;
-	vec4 m_probeCount;
+	ProbeInfo m_probeInfo;
 
 	bool m_IsSurfelLoaded = false;
 	bool m_IsBrickLoaded = false;
@@ -78,7 +78,7 @@ bool GIDataLoader::loadGIData()
 
 	if (l_probeInfoFile.is_open())
 	{
-		IOService::deserialize(l_probeInfoFile, &m_probeCount);
+		IOService::deserialize(l_probeInfoFile, &m_probeInfo);
 	}
 	else
 	{
@@ -214,7 +214,7 @@ const std::vector<Probe>& GIDataLoader::GetProbes()
 	return m_probes;
 }
 
-vec4 GIDataLoader::GetProbeMaxCount()
+const ProbeInfo& GIDataLoader::GetProbeInfo()
 {
-	return m_probeCount;
+	return m_probeInfo;
 }

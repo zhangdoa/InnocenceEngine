@@ -22,7 +22,7 @@ void main()
 	{
 		uint l_surfelIndex = (gl_GlobalInvocationID.x + (gl_GlobalInvocationID.y * dispatchParamsUBO.data[2].numThreads.x)) + (gl_GlobalInvocationID.z * dispatchParamsUBO.data[2].numThreads.x * dispatchParamsUBO.data[2].numThreads.y);
 
-		if (l_surfelIndex < GISkyUBO.viewportSize[1][1])
+		if (l_surfelIndex < GISkyUBO.workload.x)
 		{
 			Surfel l_surfel = surfelsSSBO.data[l_surfelIndex];
 

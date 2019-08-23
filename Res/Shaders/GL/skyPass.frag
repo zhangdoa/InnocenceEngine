@@ -10,7 +10,7 @@ void main()
 {
 	vec3 color = vec3(0.0);
 
-	vec3 eyedir = get_world_normal(gl_FragCoord.xy, skyUBO.viewportSize, skyUBO.p_inv, skyUBO.v_inv);
+	vec3 eyedir = get_world_normal(gl_FragCoord.xy, skyUBO.viewportSize.xy, skyUBO.p_inv, skyUBO.v_inv);
 	vec3 lightdir = -sunUBO.data.direction.xyz;
 	float planetRadius = 6371e3;
 	float atmosphereHeight = 100e3;

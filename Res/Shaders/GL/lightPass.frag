@@ -237,8 +237,7 @@ void main()
 	// [https://steamcdn-a.akamaihd.net/apps/valve/2006/SIGGRAPH06_Course_ShadingInValvesSourceEngine.pdf]
 	vec3 nSquared = N * N;
 	ivec3 isNegative = ivec3(int(N.x < 0.0), int(N.y < 0.0), int(N.z < 0.0));
-	vec3 GISampleCoordOffset = vec3(GISkyUBO.viewportSize[0][2], GISkyUBO.viewportSize[1][2], GISkyUBO.viewportSize[2][2]);
-	vec3 GISampleCoord = (FragPos - GISampleCoordOffset) / skyUBO.posWSNormalizer.xyz;
+	vec3 GISampleCoord = (FragPos - GISkyUBO.irradianceVolumeOffset.xyz) / skyUBO.posWSNormalizer.xyz;
 	ivec3 isOutside = ivec3(int((GISampleCoord.x > 1.0) || (GISampleCoord.x < 0.0)), int((GISampleCoord.y > 1.0) || (GISampleCoord.y < 0.0)), int((GISampleCoord.z > 1.0) || (GISampleCoord.z < 0.0)));
 
 	GISampleCoord.z /= 6.0;

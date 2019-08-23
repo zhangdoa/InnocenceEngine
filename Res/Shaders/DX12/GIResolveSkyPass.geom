@@ -25,9 +25,9 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 		for (int i = 0; i < 3; ++i)
 		{
 			float4 posWS = float4(-1.0 * input[i].posWS.xyz, 1.0);
-			output.posCS = mul(posWS, GI_cam_t);
-			output.posCS = mul(output.posCS, GI_cam_r[face]);
-			output.posCS = mul(output.posCS, GI_cam_p);
+			output.posCS = mul(posWS, GICamera_t);
+			output.posCS = mul(output.posCS, GICamera_r[face]);
+			output.posCS = mul(output.posCS, GICamera_p);
 			output.posCS.z = output.posCS.w;
 			outStream.Append(output);
 		}

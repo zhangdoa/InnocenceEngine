@@ -56,8 +56,8 @@ layout(std140, row_major, binding = 7) uniform skyUBOBlock
 {
 	mat4 p_inv;
 	mat4 v_inv;
+	vec4 viewportSize;
 	vec4 posWSNormalizer;
-	vec2 viewportSize;
 } skyUBO;
 
 layout(std140, binding = 8) uniform dispatchParamsUBOBlock
@@ -81,7 +81,10 @@ layout(std140, row_major, binding = 11) uniform GISkyUBOUBOBlock
 {
 	mat4 p_inv;
 	mat4 v_inv[6];
-	mat4 viewportSize;
+	vec4 probeCount;
+	vec4 probeInterval;
+	vec4 workload;
+	vec4 irradianceVolumeOffset;
 } GISkyUBO;
 
 layout(std430, row_major, binding = 12) buffer billboardUBOBlock

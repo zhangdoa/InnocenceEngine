@@ -31,7 +31,7 @@ vec3 accurateLinearToSRGB(in vec3 linearCol)
 
 void main()
 {
-	vec2 texelSize = 1.0 / skyUBO.viewportSize;
+	vec2 texelSize = 1.0 / skyUBO.viewportSize.xy;
 	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
 
 	vec3 finalColor;

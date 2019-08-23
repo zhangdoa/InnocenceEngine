@@ -31,7 +31,7 @@ void main()
 	// Now convert the screen space points to view space
 	for (int i = 0; i < 4; i++)
 	{
-		viewSpace[i] = ScreenToView(screenSpace[i], skyUBO.viewportSize, skyUBO.p_inv);
+		viewSpace[i] = ScreenToView(screenSpace[i], skyUBO.viewportSize.xy, skyUBO.p_inv);
 	}
 
 	// Now build the frustum planes from the view space points

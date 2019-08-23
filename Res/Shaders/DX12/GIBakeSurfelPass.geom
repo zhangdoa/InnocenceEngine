@@ -30,9 +30,9 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 		for (int i = 0; i < 3; ++i)
 		{
 			output.posWS = input[i].posWS;
-			output.posCS = mul(output.posWS, GI_cam_t);
-			output.posCS = mul(output.posCS, GI_cam_r[face]);
-			output.posCS = mul(output.posCS, GI_cam_p);
+			output.posCS = mul(output.posWS, GICamera_t);
+			output.posCS = mul(output.posCS, GICamera_r[face]);
+			output.posCS = mul(output.posCS, GICamera_p);
 			output.texcoord = input[i].texcoord;
 			output.normal = input[i].normal;
 			outStream.Append(output);

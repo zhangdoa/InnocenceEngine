@@ -20,7 +20,7 @@ void main(ComputeInputType input)
 {
 	uint l_probeIndex = input.dispatchThreadID.x + (input.dispatchThreadID.y * dispatchParams[4].numThreads.x) + (input.dispatchThreadID.z * dispatchParams[4].numThreads.x * dispatchParams[4].numThreads.y);
 
-	if (l_probeIndex < GISky_viewportSize[3][1])
+	if (l_probeIndex < GISky_workload.z)
 	{
 		Probe l_probe = in_probes[l_probeIndex];
 		float4 Lo[6];
@@ -54,8 +54,7 @@ void main(ComputeInputType input)
 
 			Lo[i].w = l_probe.skyVisibility[i];
 
-			// packaged 3D probe counts in GISky_viewportSize, depth slice offset
-			l_writeCoord = l_writeCoord + float3(0, 0, float(i) * GISky_viewportSize[0][1]);
+			l_writeCoord = l_writeCoord + float3(0, 0, float(i) * GISky_probeCount.z);
 			out_irradianceVolume[l_writeCoord] = Lo[i];
 		}
 	}

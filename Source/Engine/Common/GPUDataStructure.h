@@ -80,15 +80,32 @@ struct alignas(16) SkyGPUData
 {
 	mat4 p_inv;
 	mat4 r_inv;
+	vec4 viewportSize;
 	vec4 posWSNormalizer;
-	vec2 viewportSize;
-	float padding[26];
+	float padding[24];
 };
 
 struct alignas(16) DispatchParamsGPUData
 {
 	TVec4<unsigned int> numThreadGroups;
 	TVec4<unsigned int> numThreads;
+};
+
+struct alignas(16) GICameraGPUData
+{
+	mat4 p;
+	mat4 r[6];
+	mat4 t;
+};
+
+struct alignas(16) GISkyGPUData
+{
+	mat4 p_inv;
+	mat4 v_inv[6];
+	vec4 probeCount;
+	vec4 probeInterval;
+	vec4 workload;
+	vec4 irradianceVolumeOffset;
 };
 
 struct OpaquePassDrawCallData
@@ -163,4 +180,10 @@ struct Probe
 	unsigned int brickFactorRange[12];
 	float skyVisibility[6];
 	unsigned int padding[10];
+};
+
+struct ProbeInfo
+{
+	vec4 probeCount;
+	vec4 probeInterval;
 };

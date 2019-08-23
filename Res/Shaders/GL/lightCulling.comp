@@ -55,7 +55,7 @@ void AppendLight(uint lightIndex)
 void main()
 {
 	// Calculate min & max depth in threadgroup / tile.
-	vec2 readTextureCoord = vec2(gl_GlobalInvocationID.xy) / skyUBO.viewportSize;
+	vec2 readTextureCoord = vec2(gl_GlobalInvocationID.xy) / skyUBO.viewportSize.xy;
 
 	float fDepth = texture(depthTexture, readTextureCoord).r;
 	uint uDepth = floatBitsToUint(fDepth);

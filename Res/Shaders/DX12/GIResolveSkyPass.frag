@@ -19,12 +19,11 @@ PixelOutputType main(PixelInputType input)
 
 	float3 color = float3(0.0, 0.0, 0.0);
 
-	float2 GISky_viewportSizeFloat2 = float2(GISky_viewportSize[0][0], GISky_viewportSize[1][0]);
-	float3 eyedir = get_world_normal(input.frag_ClipSpacePos.xy, GISky_viewportSizeFloat2, GISky_p_inv, GISky_v_inv[input.rtvId]);
+	float3 eyedir = get_world_normal(input.frag_ClipSpacePos.xy, sky_viewportSize.zw, GISky_p_inv, GISky_v_inv[input.rtvId]);
 
 	if (eyedir.y > -0.1)
 	{
-		float3 lightdir = -dirLight_dir.xyz;
+		float3 lightdir = -sun_dir.xyz;
 		float planetRadius = 6371e3;
 		float atmosphereHeight = 100e3;
 		float3 eye_position = float3(0.0, planetRadius, 0.0);
