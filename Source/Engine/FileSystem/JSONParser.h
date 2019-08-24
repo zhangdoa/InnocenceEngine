@@ -18,7 +18,7 @@ namespace InnoFileSystemNS
 		void to_json(json& j, const TransformComponent& p);
 		void to_json(json& j, const TransformVector& p);
 		void to_json(json& j, const VisibleComponent& p);
-		void to_json(json& j, const vec4& p);
+		void to_json(json& j, const Vec4& p);
 		void to_json(json& j, const DirectionalLightComponent& p);
 		void to_json(json& j, const PointLightComponent& p);
 		void to_json(json& j, const SpotLightComponent& p);
@@ -28,7 +28,7 @@ namespace InnoFileSystemNS
 		void from_json(const json& j, TransformComponent& p);
 		void from_json(const json& j, TransformVector& p);
 		void from_json(const json& j, VisibleComponent& p);
-		void from_json(const json& j, vec4& p);
+		void from_json(const json& j, Vec4& p);
 		void from_json(const json& j, DirectionalLightComponent& p);
 		void from_json(const json& j, PointLightComponent& p);
 		void from_json(const json& j, SpotLightComponent& p);

@@ -1,6 +1,6 @@
 #pragma once
 #include "../Common/InnoType.h"
-#include "../Common/InnoMath.h"
+#include "../Common/InnoMathHelper.h"
 
 #include "../Common/InnoClassTemplate.h"
 
@@ -30,8 +30,8 @@ public:
 	virtual void mousePositionCallback(float mouseXPos, float mouseYPos) = 0;
 	virtual void scrollCallback(float xoffset, float yoffset) = 0;
 
-	virtual vec4 getMousePositionInWorldSpace() = 0;
-	virtual vec2 getMousePositionInScreenSpace() = 0;
+	virtual Vec4 getMousePositionInWorldSpace() = 0;
+	virtual Vec2 getMousePositionInScreenSpace() = 0;
 
 	virtual ObjectStatus getStatus() = 0;
 };

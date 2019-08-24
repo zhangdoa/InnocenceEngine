@@ -1,6 +1,6 @@
 #pragma once
 #include "../Common/InnoType.h"
-#include "../Common/InnoMath.h"
+#include "../Common/InnoMathHelper.h"
 #include "../Common/InnoClassTemplate.h"
 
 class ILogSystem
@@ -60,8 +60,8 @@ protected:
 	virtual void LogImpl(int64_t logMessage) = 0;
 	virtual void LogImpl(float logMessage) = 0;
 	virtual void LogImpl(double logMessage) = 0;
-	virtual void LogImpl(const vec2& logMessage) = 0;
-	virtual void LogImpl(const vec4& logMessage) = 0;
-	virtual void LogImpl(const mat4& logMessage) = 0;
+	virtual void LogImpl(const Vec2& logMessage) = 0;
+	virtual void LogImpl(const Vec4& logMessage) = 0;
+	virtual void LogImpl(const Mat4& logMessage) = 0;
 	virtual void LogImpl(const char* logMessage) = 0;
 };

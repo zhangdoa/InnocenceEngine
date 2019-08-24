@@ -1,6 +1,6 @@
 #pragma once
 #include "../Common/InnoType.h"
-#include "../Common/InnoMath.h"
+#include "../Common/InnoMathHelper.h"
 
 class InnoLogger
 {
@@ -54,8 +54,8 @@ public:
 	static void LogImpl(int64_t logMessage);
 	static void LogImpl(float logMessage);
 	static void LogImpl(double logMessage);
-	static void LogImpl(const vec2& logMessage);
-	static void LogImpl(const vec4& logMessage);
-	static void LogImpl(const mat4& logMessage);
+	static void LogImpl(const Vec2& logMessage);
+	static void LogImpl(const Vec4& logMessage);
+	static void LogImpl(const Mat4& logMessage);
 	static void LogImpl(const char* logMessage);
 };

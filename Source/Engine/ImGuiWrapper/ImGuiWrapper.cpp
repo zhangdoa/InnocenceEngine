@@ -537,7 +537,7 @@ void ImGuiWrapperNS::showTransformComponentPropertyEditor(void * rhs)
 	static float rot_max = 180.0f;
 
 	static float rot[4];
-	vec4 eulerAngles = InnoMath::quatToEulerAngle(l_rhs->m_localTransformVector.m_rot);
+	Vec4 eulerAngles = InnoMath::quatToEulerAngle(l_rhs->m_localTransformVector.m_rot);
 	rot[0] = InnoMath::radianToAngle(eulerAngles.x);
 	rot[1] = InnoMath::radianToAngle(eulerAngles.y);
 	rot[2] = InnoMath::radianToAngle(eulerAngles.z);
@@ -729,7 +729,7 @@ ImVec4 generateButtonColor(const char* name)
 {
 	auto l_ptr = reinterpret_cast<intptr_t>(name);
 	auto l_hue = l_ptr * 4 % 180;
-	auto l_RGB = InnoMath::HSVtoRGB(vec4((float)l_hue, 1.0f, 1.0f, 1.0f));
+	auto l_RGB = InnoMath::HSVtoRGB(Vec4((float)l_hue, 1.0f, 1.0f, 1.0f));
 	return ImVec4(l_RGB.x, l_RGB.y, l_RGB.z, 1.0f);
 }
 

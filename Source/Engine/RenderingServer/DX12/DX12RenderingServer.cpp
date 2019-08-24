@@ -1697,12 +1697,12 @@ bool DX12RenderingServer::CopyColorBuffer(RenderPassDataComponent * src, size_t 
 	return true;
 }
 
-vec4 DX12RenderingServer::ReadRenderTargetSample(RenderPassDataComponent * rhs, size_t renderTargetIndex, size_t x, size_t y)
+Vec4 DX12RenderingServer::ReadRenderTargetSample(RenderPassDataComponent * rhs, size_t renderTargetIndex, size_t x, size_t y)
 {
-	return vec4();
+	return Vec4();
 }
 
-std::vector<vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataComponent * canvas, TextureDataComponent * TDC)
+std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataComponent * canvas, TextureDataComponent * TDC)
 {
 	// @TODO: Support different pixel data type
 
@@ -1734,7 +1734,7 @@ std::vector<vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 		break;
 	}
 
-	std::vector<vec4> l_result;
+	std::vector<Vec4> l_result;
 	l_result.resize(l_sampleCount);
 
 	auto l_destTDC = reinterpret_cast<DX12TextureDataComponent*>(AddTextureDataComponent("ReadBackTemp/"));

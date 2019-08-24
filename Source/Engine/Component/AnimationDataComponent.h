@@ -1,6 +1,6 @@
 #pragma once
 #include "../Common/InnoComponent.h"
-#include "../Common/InnoMath.h"
+#include "../Common/InnoMathHelper.h"
 #include "TextureDataComponent.h"
 
 class AnimationDataComponent : public InnoComponent

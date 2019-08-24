@@ -1,6 +1,6 @@
 #pragma once
 #include "../Common/InnoType.h"
-#include "../Common/InnoMath.h"
+#include "../Common/InnoMathHelper.h"
 
 class PhysXWrapper
 {
@@ -17,8 +17,8 @@ public:
 	bool update();
 	bool terminate();
 
-	bool createPxSphere(void* component, vec4 globalPos, float radius, bool isDynamic);
-	bool createPxBox(void* component, vec4 globalPos, vec4 rot, vec4 size, bool isDynamic);
+	bool createPxSphere(void* component, Vec4 globalPos, float radius, bool isDynamic);
+	bool createPxBox(void* component, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic);
 
 private:
 	PhysXWrapper() {};

@@ -11,9 +11,9 @@ enum class CullingDataChannel {
 
 struct CullingData
 {
-	mat4 m;
-	mat4 m_prev;
-	mat4 normalMat;
+	Mat4 m;
+	Mat4 m_prev;
+	Mat4 normalMat;
 	MeshDataComponent* mesh;
 	MaterialDataComponent* material;
 	VisiblilityType visiblilityType;
@@ -35,7 +35,7 @@ public:
 	virtual ObjectStatus getStatus() = 0;
 
 	virtual bool generatePhysicsDataComponent(MeshDataComponent* MDC) = 0;
-	virtual bool generateAABBInWorldSpace(PhysicsDataComponent* PDC, const mat4& m) = 0;
+	virtual bool generateAABBInWorldSpace(PhysicsDataComponent* PDC, const Mat4& m) = 0;
 	virtual bool generatePhysicsProxy(VisibleComponent* VC) = 0;
 	virtual void updateBVH() = 0;
 	virtual void updateCulling() = 0;
@@ -43,4 +43,5 @@ public:
 	virtual AABB getVisibleSceneAABB() = 0;
 	virtual AABB getStaticSceneAABB() = 0;
 	virtual AABB getTotalSceneAABB() = 0;
+	virtual PhysicsDataComponent* getRootPhysicsDataComponent() = 0;
 };

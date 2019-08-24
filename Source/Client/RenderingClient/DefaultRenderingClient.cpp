@@ -164,7 +164,7 @@ bool DefaultRenderingClient::Setup()
 	{
 		DefaultGPUBuffers::Terminate();
 		LightCullingPass::Terminate();
-		//GIResolvePass::Terminate();
+		GIResolvePass::Terminate();
 		GIDataLoader::Terminate();
 		BRDFLUTPass::Terminate();
 		SunShadowPass::Terminate();

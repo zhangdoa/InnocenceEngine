@@ -124,18 +124,18 @@ void InnoAssetSystem::addUnitSphere(MeshDataComponent& meshDataComponent)
 			x = xy * cosf(sectorAngle);             // r * cos(u) * cos(v)
 			y = xy * sinf(sectorAngle);             // r * cos(u) * sin(v)
 			Vertex l_VertexData;
-			l_VertexData.m_pos = vec4(x, y, z, 1.0f);
+			l_VertexData.m_pos = Vec4(x, y, z, 1.0f);
 
 			// normalized vertex normal (nx, ny, nz)
 			nx = x * lengthInv;
 			ny = y * lengthInv;
 			nz = z * lengthInv;
-			l_VertexData.m_normal = vec4(nx, ny, nz, 1.0f);
+			l_VertexData.m_normal = Vec4(nx, ny, nz, 1.0f);
 
 			// vertex tex coord (s, t) range between [0, 1]
 			s = (float)j / sectorCount;
 			t = (float)i / stackCount;
-			l_VertexData.m_texCoord = vec2(s, t);
+			l_VertexData.m_texCoord = Vec2(s, t);
 
 			meshDataComponent.m_vertices.emplace_back(l_VertexData);
 		}
@@ -178,17 +178,17 @@ void InnoAssetSystem::addUnitQuad(MeshDataComponent& meshDataComponent)
 	meshDataComponent.m_vertices.reserve(4);
 	meshDataComponent.m_vertices.fulfill();
 
-	meshDataComponent.m_vertices[0].m_pos = vec4(1.0f, 1.0f, 0.0f, 1.0f);
-	meshDataComponent.m_vertices[0].m_texCoord = vec2(1.0f, 1.0f);
+	meshDataComponent.m_vertices[0].m_pos = Vec4(1.0f, 1.0f, 0.0f, 1.0f);
+	meshDataComponent.m_vertices[0].m_texCoord = Vec2(1.0f, 1.0f);
 
-	meshDataComponent.m_vertices[1].m_pos = vec4(1.0f, -1.0f, 0.0f, 1.0f);
-	meshDataComponent.m_vertices[1].m_texCoord = vec2(1.0f, 0.0f);
+	meshDataComponent.m_vertices[1].m_pos = Vec4(1.0f, -1.0f, 0.0f, 1.0f);
+	meshDataComponent.m_vertices[1].m_texCoord = Vec2(1.0f, 0.0f);
 
-	meshDataComponent.m_vertices[2].m_pos = vec4(-1.0f, -1.0f, 0.0f, 1.0f);
-	meshDataComponent.m_vertices[2].m_texCoord = vec2(0.0f, 0.0f);
+	meshDataComponent.m_vertices[2].m_pos = Vec4(-1.0f, -1.0f, 0.0f, 1.0f);
+	meshDataComponent.m_vertices[2].m_texCoord = Vec2(0.0f, 0.0f);
 
-	meshDataComponent.m_vertices[3].m_pos = vec4(-1.0f, 1.0f, 0.0f, 1.0f);
-	meshDataComponent.m_vertices[3].m_texCoord = vec2(0.0f, 1.0f);
+	meshDataComponent.m_vertices[3].m_pos = Vec4(-1.0f, 1.0f, 0.0f, 1.0f);
+	meshDataComponent.m_vertices[3].m_texCoord = Vec2(0.0f, 1.0f);
 
 	meshDataComponent.m_indices.reserve(6);
 	meshDataComponent.m_indices.fulfill();
@@ -208,11 +208,11 @@ void InnoAssetSystem::addUnitLine(MeshDataComponent& meshDataComponent)
 	meshDataComponent.m_vertices.reserve(2);
 	meshDataComponent.m_vertices.fulfill();
 
-	meshDataComponent.m_vertices[0].m_pos = vec4(1.0f, 1.0f, 0.0f, 1.0f);
-	meshDataComponent.m_vertices[0].m_texCoord = vec2(1.0f, 1.0f);
+	meshDataComponent.m_vertices[0].m_pos = Vec4(1.0f, 1.0f, 0.0f, 1.0f);
+	meshDataComponent.m_vertices[0].m_texCoord = Vec2(1.0f, 1.0f);
 
-	meshDataComponent.m_vertices[1].m_pos = vec4(-1.0f, -1.0f, 0.0f, 1.0f);
-	meshDataComponent.m_vertices[1].m_texCoord = vec2(0.0f, 0.0f);
+	meshDataComponent.m_vertices[1].m_pos = Vec4(-1.0f, -1.0f, 0.0f, 1.0f);
+	meshDataComponent.m_vertices[1].m_texCoord = Vec2(0.0f, 0.0f);
 
 	meshDataComponent.m_indices.reserve(2);
 	meshDataComponent.m_indices.fulfill();
@@ -246,23 +246,23 @@ void InnoAssetSystem::addTerrain(MeshDataComponent& meshDataComponent)
 			auto l_tz1 = l_pz1 / (float)l_gridSize;
 
 			Vertex l_VertexData_1;
-			l_VertexData_1.m_pos = vec4(l_px0, 0.0f, l_pz0, 1.0f);
-			l_VertexData_1.m_texCoord = vec2(l_tx0, l_tz0);
+			l_VertexData_1.m_pos = Vec4(l_px0, 0.0f, l_pz0, 1.0f);
+			l_VertexData_1.m_texCoord = Vec2(l_tx0, l_tz0);
 			meshDataComponent.m_vertices.emplace_back(l_VertexData_1);
 
 			Vertex l_VertexData_2;
-			l_VertexData_2.m_pos = vec4(l_px0, 0.0f, l_pz1, 1.0f);
-			l_VertexData_2.m_texCoord = vec2(l_tx0, l_tz1);
+			l_VertexData_2.m_pos = Vec4(l_px0, 0.0f, l_pz1, 1.0f);
+			l_VertexData_2.m_texCoord = Vec2(l_tx0, l_tz1);
 			meshDataComponent.m_vertices.emplace_back(l_VertexData_2);
 
 			Vertex l_VertexData_3;
-			l_VertexData_3.m_pos = vec4(l_px1, 0.0f, l_pz1, 1.0f);
-			l_VertexData_3.m_texCoord = vec2(l_tx1, l_tz1);
+			l_VertexData_3.m_pos = Vec4(l_px1, 0.0f, l_pz1, 1.0f);
+			l_VertexData_3.m_texCoord = Vec2(l_tx1, l_tz1);
 			meshDataComponent.m_vertices.emplace_back(l_VertexData_3);
 
 			Vertex l_VertexData_4;
-			l_VertexData_4.m_pos = vec4(l_px1, 0.0f, l_pz0, 1.0f);
-			l_VertexData_4.m_texCoord = vec2(l_tx1, l_tz0);
+			l_VertexData_4.m_pos = Vec4(l_px1, 0.0f, l_pz0, 1.0f);
+			l_VertexData_4.m_texCoord = Vec2(l_tx1, l_tz0);
 			meshDataComponent.m_vertices.emplace_back(l_VertexData_4);
 
 			auto l_gridIndex = 4 * (i)+4 * l_gridSize * (j);

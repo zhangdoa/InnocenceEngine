@@ -57,7 +57,7 @@ void CameraComponentManagerNS::generateRayOfEye(CameraComponent * cameraComponen
 	if (l_transformComponent != nullptr)
 	{
 		cameraComponent->m_rayOfEye.m_origin = l_transformComponent->m_globalTransformVector.m_pos;
-		cameraComponent->m_rayOfEye.m_direction = InnoMath::getDirection(direction::BACKWARD, l_transformComponent->m_globalTransformVector.m_rot);
+		cameraComponent->m_rayOfEye.m_direction = InnoMath::getDirection(Direction::Backward, l_transformComponent->m_globalTransformVector.m_rot);
 	}
 }
 

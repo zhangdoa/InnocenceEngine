@@ -6,13 +6,13 @@
 
 struct alignas(16) CameraGPUData
 {
-	mat4 p_original;
-	mat4 p_jittered;
-	mat4 r;
-	mat4 t;
-	mat4 r_prev;
-	mat4 t_prev;
-	vec4 globalPos;
+	Mat4 p_original;
+	Mat4 p_jittered;
+	Mat4 r;
+	Mat4 t;
+	Mat4 r_prev;
+	Mat4 t_prev;
+	Vec4 globalPos;
 	float WHRatio;
 	float zNear;
 	float zFar;
@@ -21,42 +21,42 @@ struct alignas(16) CameraGPUData
 
 struct alignas(16) SunGPUData
 {
-	vec4 dir;
-	vec4 luminance;
-	mat4 r;
+	Vec4 dir;
+	Vec4 luminance;
+	Mat4 r;
 	float padding[8];
 };
 
 struct alignas(16) CSMGPUData
 {
-	mat4 p;
-	mat4 v;
-	vec4 AABBMax;
-	vec4 AABBMin;
+	Mat4 p;
+	Mat4 v;
+	Vec4 AABBMax;
+	Vec4 AABBMin;
 	float padding[24];
 };
 
 // w component of luminance is attenuationRadius
 struct alignas(16) PointLightGPUData
 {
-	vec4 pos;
-	vec4 luminance;
+	Vec4 pos;
+	Vec4 luminance;
 	//float attenuationRadius;
 };
 
 // w component of luminance is sphereRadius
 struct alignas(16) SphereLightGPUData
 {
-	vec4 pos;
-	vec4 luminance;
+	Vec4 pos;
+	Vec4 luminance;
 	//float sphereRadius;
 };
 
 struct alignas(16) MeshGPUData
 {
-	mat4 m;
-	mat4 m_prev;
-	mat4 normalMat;
+	Mat4 m;
+	Mat4 m_prev;
+	Mat4 normalMat;
 	float UUID;
 	float padding[15];
 };
@@ -71,17 +71,17 @@ struct alignas(16) MaterialGPUData
 	int useAOTexture = true;
 	int materialType = 0;
 	float padding1[2];
-	mat4 padding2;
-	mat4 padding3;
-	mat4 padding4;
+	Mat4 padding2;
+	Mat4 padding3;
+	Mat4 padding4;
 };
 
 struct alignas(16) SkyGPUData
 {
-	mat4 p_inv;
-	mat4 r_inv;
-	vec4 viewportSize;
-	vec4 posWSNormalizer;
+	Mat4 p_inv;
+	Mat4 r_inv;
+	Vec4 viewportSize;
+	Vec4 posWSNormalizer;
 	float padding[24];
 };
 
@@ -93,19 +93,19 @@ struct alignas(16) DispatchParamsGPUData
 
 struct alignas(16) GICameraGPUData
 {
-	mat4 p;
-	mat4 r[6];
-	mat4 t;
+	Mat4 p;
+	Mat4 r[6];
+	Mat4 t;
 };
 
 struct alignas(16) GISkyGPUData
 {
-	mat4 p_inv;
-	mat4 v_inv[6];
-	vec4 probeCount;
-	vec4 probeInterval;
-	vec4 workload;
-	vec4 irradianceVolumeOffset;
+	Mat4 p_inv;
+	Mat4 v_inv[6];
+	Vec4 probeCount;
+	Vec4 probeInterval;
+	Vec4 workload;
+	Vec4 irradianceVolumeOffset;
 };
 
 struct OpaquePassDrawCallData
@@ -136,10 +136,10 @@ struct DebugPassDrawCallData
 // Sample point on geometry surface
 struct Surfel
 {
-	vec4 pos;
-	vec4 normal;
-	vec4 albedo;
-	vec4 MRAT;
+	Vec4 pos;
+	Vec4 normal;
+	Vec4 albedo;
+	Vec4 MRAT;
 
 	bool operator==(const Surfel &other) const
 	{
@@ -176,7 +176,7 @@ struct BrickFactor
 
 struct Probe
 {
-	vec4 pos;
+	Vec4 pos;
 	unsigned int brickFactorRange[12];
 	float skyVisibility[6];
 	unsigned int padding[10];
@@ -184,6 +184,6 @@ struct Probe
 
 struct ProbeInfo
 {
-	vec4 probeCount;
-	vec4 probeInterval;
+	Vec4 probeCount;
+	Vec4 probeInterval;
 };

@@ -40,9 +40,9 @@ namespace PlayerComponentCollection
 	bool m_canSlerp = false;
 	bool m_smoothInterp = true;
 
-	void move(vec4 direction, float length);
-	vec4 m_targetCameraRotX;
-	vec4 m_targetCameraRotY;
+	void move(Vec4 direction, float length);
+	Vec4 m_targetCameraRotX;
+	Vec4 m_targetCameraRotY;
 
 	void update(float seed);
 
@@ -66,13 +66,13 @@ bool PlayerComponentCollection::setup()
 		}
 		m_cameraTransformComponent = GetComponent(TransformComponent, m_cameraParentEntity);
 
-		m_targetCameraRotX = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-		m_targetCameraRotY = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+		m_targetCameraRotX = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
+		m_targetCameraRotY = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
-		f_moveForward = [&]() { move(InnoMath::getDirection(direction::FORWARD, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
-		f_moveBackward = [&]() { move(InnoMath::getDirection(direction::BACKWARD, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
-		f_moveLeft = [&]() { move(InnoMath::getDirection(direction::LEFT, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
-		f_moveRight = [&]() { move(InnoMath::getDirection(direction::RIGHT, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
+		f_moveForward = [&]() { move(InnoMath::getDirection(Direction::Forward, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
+		f_moveBackward = [&]() { move(InnoMath::getDirection(Direction::Backward, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
+		f_moveLeft = [&]() { move(InnoMath::getDirection(Direction::Left, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
+		f_moveRight = [&]() { move(InnoMath::getDirection(Direction::Right, m_cameraTransformComponent->m_localTransformVector.m_rot), m_moveSpeed); };
 
 		f_speedUp = [&]() { m_moveSpeed = m_initialMoveSpeed * 10.0f; };
 		f_speedDown = [&]() { m_moveSpeed = m_initialMoveSpeed; };
@@ -110,7 +110,7 @@ bool PlayerComponentCollection::initialize()
 	return true;
 }
 
-void PlayerComponentCollection::move(vec4 direction, float length)
+void PlayerComponentCollection::move(Vec4 direction, float length)
 {
 	if (m_canMove)
 	{
@@ -126,7 +126,7 @@ void PlayerComponentCollection::rotateAroundPositiveYAxis(float offset)
 		m_canSlerp = false;
 
 		m_targetCameraRotY = InnoMath::getQuatRotator(
-			vec4(0.0f, 1.0f, 0.0f, 0.0f),
+			Vec4(0.0f, 1.0f, 0.0f, 0.0f),
 			((-offset * m_rotateSpeed) / 180.0f)* PI<float>
 		);
 		m_cameraTransformComponent->m_localTransformVector_target.m_rot = m_targetCameraRotY.quatMul(m_cameraTransformComponent->m_localTransformVector_target.m_rot);
@@ -141,7 +141,7 @@ void PlayerComponentCollection::rotateAroundRightAxis(float offset)
 	{
 		m_canSlerp = false;
 
-		auto l_right = InnoMath::getDirection(direction::RIGHT, m_cameraTransformComponent->m_localTransformVector_target.m_rot);
+		auto l_right = InnoMath::getDirection(Direction::Right, m_cameraTransformComponent->m_localTransformVector_target.m_rot);
 		m_targetCameraRotX = InnoMath::getQuatRotator(
 			l_right,
 			((offset * m_rotateSpeed) / 180.0f)* PI<float>
@@ -187,7 +187,7 @@ namespace GameClientNS
 	bool initialize();
 
 	bool update();
-	bool updateMaterial(const ModelMap& modelMap, vec4 albedo, vec4 MRAT);
+	bool updateMaterial(const ModelMap& modelMap, Vec4 albedo, Vec4 MRAT);
 	void updateSpheres();
 
 	void runTest(unsigned int testTime, std::function<bool()> testCase);
@@ -226,7 +226,7 @@ bool GameClientNS::setupReferenceSpheres()
 	{
 		m_referenceSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_referenceSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
-		m_referenceSphereTransformComponents[i]->m_localTransformVector_target.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		m_referenceSphereTransformComponents[i]->m_localTransformVector_target.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_referenceSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_referenceSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::Opaque;
 		m_referenceSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::Sphere;
@@ -240,7 +240,7 @@ bool GameClientNS::setupReferenceSpheres()
 		for (unsigned int j = 0; j < l_matrixDim; j++)
 		{
 			m_referenceSphereTransformComponents[i * l_matrixDim + j]->m_localTransformVector_target.m_pos =
-				vec4(
+				Vec4(
 				(-(l_matrixDim - 1.0f) * l_breadthInterval / 2.0f) + (i * l_breadthInterval) + 100.0f,
 					2.0f,
 					(j * l_breadthInterval) - 2.0f * (l_matrixDim - 1),
@@ -305,10 +305,10 @@ bool GameClientNS::setupOcclusionCubes()
 			auto l_heightOffset = l_halfMatrixDim * 3.0f - std::abs((float)i - l_halfMatrixDim) - std::abs((float)j - l_halfMatrixDim);
 			l_heightOffset *= 4.0f;
 			l_currentComponent->m_localTransformVector_target.m_scale =
-				vec4(l_randomWidthDelta(l_generator), l_heightOffset, l_randomDepthDelta(l_generator), 1.0f);
+				Vec4(l_randomWidthDelta(l_generator), l_heightOffset, l_randomDepthDelta(l_generator), 1.0f);
 
 			l_currentComponent->m_localTransformVector_target.m_pos =
-				vec4(
+				Vec4(
 				(i * l_breadthInterval) - l_offset,
 					l_currentComponent->m_localTransformVector_target.m_scale.y / 2.0f,
 					(j * l_breadthInterval) - l_offset,
@@ -316,7 +316,7 @@ bool GameClientNS::setupOcclusionCubes()
 
 			l_currentComponent->m_localTransformVector_target.m_rot =
 				InnoMath::calcRotatedLocalRotator(l_currentComponent->m_localTransformVector_target.m_rot,
-					vec4(0.0f, 1.0f, 0.0f, 0.0f),
+					Vec4(0.0f, 1.0f, 0.0f, 0.0f),
 					l_randomRotDelta(l_generator));
 		}
 	}
@@ -352,7 +352,7 @@ bool GameClientNS::setupOpaqueSpheres()
 	{
 		m_opaqueSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_opaqueSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
-		m_opaqueSphereTransformComponents[i]->m_localTransformVector_target.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		m_opaqueSphereTransformComponents[i]->m_localTransformVector_target.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_opaqueSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_opaqueSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::Opaque;
 		m_opaqueSphereVisibleComponents[i]->m_meshShapeType = (i & 0x00000001) ? MeshShapeType::Sphere : MeshShapeType::Cube;
@@ -371,7 +371,7 @@ bool GameClientNS::setupOpaqueSpheres()
 		{
 			auto l_currentComponent = m_opaqueSphereTransformComponents[i * l_matrixDim + j];
 			l_currentComponent->m_localTransformVector_target.m_pos =
-				vec4(
+				Vec4(
 				(-(l_matrixDim - 1.0f) * l_breadthInterval / 2.0f) + (i * l_breadthInterval),
 					l_randomPosDelta(l_generator) * 50.0f,
 					(j * l_breadthInterval) - 2.0f * (l_matrixDim - 1),
@@ -379,7 +379,7 @@ bool GameClientNS::setupOpaqueSpheres()
 
 			l_currentComponent->m_localTransformVector_target.m_rot =
 				InnoMath::calcRotatedLocalRotator(l_currentComponent->m_localTransformVector_target.m_rot,
-					vec4(l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), 0.0f).normalize(),
+					Vec4(l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), 0.0f).normalize(),
 					l_randomRotDelta(l_generator));
 		}
 	}
@@ -415,7 +415,7 @@ bool GameClientNS::setupTransparentSpheres()
 	{
 		m_transparentSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_transparentSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
-		m_transparentSphereTransformComponents[i]->m_localTransformVector_target.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		m_transparentSphereTransformComponents[i]->m_localTransformVector_target.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_transparentSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_transparentSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::Transparent;
 		m_transparentSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::Sphere;
@@ -429,7 +429,7 @@ bool GameClientNS::setupTransparentSpheres()
 		for (unsigned int j = 0; j < l_matrixDim; j++)
 		{
 			m_transparentSphereTransformComponents[i * l_matrixDim + j]->m_localTransformVector_target.m_pos =
-				vec4(
+				Vec4(
 				(-(l_matrixDim - 1.0f) * l_breadthInterval / 2.0f)
 					+ (i * l_breadthInterval),
 					5.0f,
@@ -476,7 +476,7 @@ bool GameClientNS::setupPointLights()
 		m_pointLightTransformComponents[i] = SpawnComponent(TransformComponent, m_pointLightEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		g_pModuleManager->getComponentManager(ComponentType::TransformComponent);
 		m_pointLightTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
-		m_pointLightTransformComponents[i]->m_localTransformVector_target.m_scale = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		m_pointLightTransformComponents[i]->m_localTransformVector_target.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_pointLightComponents[i] = SpawnComponent(PointLightComponent, m_pointLightEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_pointLightComponents[i]->m_LuminousFlux = l_randomLuminousFlux(l_generator);
 		m_pointLightComponents[i]->m_ColorTemperature = l_randomColorTemperature(l_generator);
@@ -487,7 +487,7 @@ bool GameClientNS::setupPointLights()
 		for (unsigned int j = 0; j < l_matrixDim; j++)
 		{
 			m_pointLightTransformComponents[i * l_matrixDim + j]->m_localTransformVector_target.m_pos =
-				vec4(
+				Vec4(
 				(-(l_matrixDim - 1.0f) * l_breadthInterval * l_randomPosDelta(l_generator) / 2.0f)
 					+ (i * l_breadthInterval), l_randomPosDelta(l_generator) * 32.0f,
 					(j * l_breadthInterval) - 2.0f * (l_matrixDim - 1),
@@ -504,21 +504,21 @@ bool GameClientNS::setup()
 		std::default_random_engine generator;
 
 		std::uniform_real_distribution<float> randomAxis(0.0f, 1.0f);
-		auto axisSample = vec4(randomAxis(generator) * 2.0f - 1.0f, randomAxis(generator) * 2.0f - 1.0f, randomAxis(generator) * 2.0f - 1.0f, 0.0f);
+		auto axisSample = Vec4(randomAxis(generator) * 2.0f - 1.0f, randomAxis(generator) * 2.0f - 1.0f, randomAxis(generator) * 2.0f - 1.0f, 0.0f);
 		axisSample = axisSample.normalize();
 
 		std::uniform_real_distribution<float> randomAngle(0.0f, 360.0f);
 		auto angleSample = randomAngle(generator);
 
-		vec4 originalRot = InnoMath::getQuatRotator(axisSample, angleSample);
-		mat4 rotMat = InnoMath::toRotationMatrix(originalRot);
+		Vec4 originalRot = InnoMath::getQuatRotator(axisSample, angleSample);
+		Mat4 rotMat = InnoMath::toRotationMatrix(originalRot);
 		auto resultRot = InnoMath::toQuatRotator(rotMat);
 
 		auto testResult = true;
-		testResult &= (std::abs(std::abs(originalRot.w) - std::abs(resultRot.w)) < epsilon4<float>);
-		testResult &= (std::abs(std::abs(originalRot.x) - std::abs(resultRot.x)) < epsilon4<float>);
-		testResult &= (std::abs(std::abs(originalRot.y) - std::abs(resultRot.y)) < epsilon4<float>);
-		testResult &= (std::abs(std::abs(originalRot.z) - std::abs(resultRot.z)) < epsilon4<float>);
+		testResult &= (std::abs(std::abs(originalRot.w) - std::abs(resultRot.w)) < epsilon<float, 4>);
+		testResult &= (std::abs(std::abs(originalRot.x) - std::abs(resultRot.x)) < epsilon<float, 4>);
+		testResult &= (std::abs(std::abs(originalRot.y) - std::abs(resultRot.y)) < epsilon<float, 4>);
+		testResult &= (std::abs(std::abs(originalRot.z) - std::abs(resultRot.z)) < epsilon<float, 4>);
 
 		return testResult;
 	};
@@ -549,7 +549,7 @@ bool GameClientNS::initialize()
 	return true;
 }
 
-bool GameClientNS::updateMaterial(const ModelMap& modelMap, vec4 albedo, vec4 MRAT)
+bool GameClientNS::updateMaterial(const ModelMap& modelMap, Vec4 albedo, Vec4 MRAT)
 {
 	for (auto& j : modelMap)
 	{
@@ -651,26 +651,26 @@ void GameClientNS::updateSpheres()
 		auto l_albedoFactor2 = (sin(seed / 3.0f + i) + 1.0f) / 2.0f;
 		auto l_albedoFactor3 = (sin(seed / 5.0f + i) + 1.0f) / 2.0f;
 
-		auto l_albedo1 = vec4(l_albedoFactor1, l_albedoFactor2, l_albedoFactor3, 1.0f);
-		auto l_albedo2 = vec4(l_albedoFactor3, l_albedoFactor2, l_albedoFactor1, 1.0f);
-		auto l_albedo3 = vec4(l_albedoFactor2, l_albedoFactor3, l_albedoFactor1, 1.0f);
-		auto l_albedo4 = vec4(l_albedoFactor2, l_albedoFactor1, l_albedoFactor3, 1.0f);
+		auto l_albedo1 = Vec4(l_albedoFactor1, l_albedoFactor2, l_albedoFactor3, 1.0f);
+		auto l_albedo2 = Vec4(l_albedoFactor3, l_albedoFactor2, l_albedoFactor1, 1.0f);
+		auto l_albedo3 = Vec4(l_albedoFactor2, l_albedoFactor3, l_albedoFactor1, 1.0f);
+		auto l_albedo4 = Vec4(l_albedoFactor2, l_albedoFactor1, l_albedoFactor3, 1.0f);
 
 		auto l_MRATFactor1 = ((sin(seed / 4.0f + i) + 1.0f) / 2.001f);
 		auto l_MRATFactor2 = ((sin(seed / 5.0f + i) + 1.0f) / 2.001f);
 		auto l_MRATFactor3 = ((sin(seed / 6.0f + i) + 1.0f) / 2.001f);
 
-		updateMaterial(m_opaqueSphereVisibleComponents[i]->m_modelMap, l_albedo1, vec4(l_MRATFactor1, l_MRATFactor2, 1.0f, 0.0f));
-		updateMaterial(m_opaqueSphereVisibleComponents[i + 1]->m_modelMap, l_albedo2, vec4(l_MRATFactor2, l_MRATFactor1, 1.0f, 0.0f));
-		updateMaterial(m_opaqueSphereVisibleComponents[i + 2]->m_modelMap, l_albedo3, vec4(l_MRATFactor3, l_MRATFactor2, 1.0f, 0.0f));
-		updateMaterial(m_opaqueSphereVisibleComponents[i + 3]->m_modelMap, l_albedo4, vec4(l_MRATFactor3, l_MRATFactor1, 1.0f, 0.0f));
+		updateMaterial(m_opaqueSphereVisibleComponents[i]->m_modelMap, l_albedo1, Vec4(l_MRATFactor1, l_MRATFactor2, 1.0f, 0.0f));
+		updateMaterial(m_opaqueSphereVisibleComponents[i + 1]->m_modelMap, l_albedo2, Vec4(l_MRATFactor2, l_MRATFactor1, 1.0f, 0.0f));
+		updateMaterial(m_opaqueSphereVisibleComponents[i + 2]->m_modelMap, l_albedo3, Vec4(l_MRATFactor3, l_MRATFactor2, 1.0f, 0.0f));
+		updateMaterial(m_opaqueSphereVisibleComponents[i + 3]->m_modelMap, l_albedo4, Vec4(l_MRATFactor3, l_MRATFactor1, 1.0f, 0.0f));
 	}
 
 	for (unsigned int i = 0; i < m_transparentSphereVisibleComponents.size(); i++)
 	{
-		auto l_albedo = InnoMath::HSVtoRGB(vec4((sin(seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
+		auto l_albedo = InnoMath::HSVtoRGB(Vec4((sin(seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
 		l_albedo.w = sin(seed / 6.0f + i) * 0.5f + 0.5f;
-		auto l_MRAT = vec4(0.0f, sin(seed / 4.0f + i) * 0.5f + 0.5f, 1.0f, sin(seed / 5.0f + i) * 0.5f + 0.5f);
+		auto l_MRAT = Vec4(0.0f, sin(seed / 4.0f + i) * 0.5f + 0.5f, 1.0f, sin(seed / 5.0f + i) * 0.5f + 0.5f);
 		updateMaterial(m_transparentSphereVisibleComponents[i]->m_modelMap, l_albedo, l_MRAT);
 	}
 
@@ -679,8 +679,8 @@ void GameClientNS::updateSpheres()
 	{
 		for (unsigned int j = 0; j < l_matrixDim; j++)
 		{
-			auto l_MRAT = vec4((float)(i + 1) / (float)l_matrixDim, (float)(j + 1) / (float)l_matrixDim, 1.0f, 1.0f);
-			updateMaterial(m_referenceSphereVisibleComponents[i * l_matrixDim + j]->m_modelMap, vec4(1.0f, 1.0f, 1.0f, 1.0f), l_MRAT);
+			auto l_MRAT = Vec4((float)(i + 1) / (float)l_matrixDim, (float)(j + 1) / (float)l_matrixDim, 1.0f, 1.0f);
+			updateMaterial(m_referenceSphereVisibleComponents[i * l_matrixDim + j]->m_modelMap, Vec4(1.0f, 1.0f, 1.0f, 1.0f), l_MRAT);
 		}
 	}
 }

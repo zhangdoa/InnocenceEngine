@@ -16,5 +16,5 @@ public:
 
 	const std::vector<DirectionalLightComponent*>& GetAllComponents() override;
 	const std::vector<AABB>& GetSplitAABB() override;
-	const std::vector<mat4>& GetProjectionMatrices() override;
+	const std::vector<Mat4>& GetProjectionMatrices() override;
 };

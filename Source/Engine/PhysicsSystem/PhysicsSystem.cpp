@@ -30,7 +30,7 @@ namespace InnoPhysicsSystemNS
 	bool update();
 
 	bool generatePhysicsDataComponent(MeshDataComponent* MDC);
-	bool generateAABBInWorldSpace(PhysicsDataComponent* PDC, const mat4& m);
+	bool generateAABBInWorldSpace(PhysicsDataComponent* PDC, const Mat4& m);
 	bool generatePhysicsProxy(VisibleComponent * VC);
 
 	void updateVisibleSceneBoundary(const AABB& rhs);
@@ -39,16 +39,16 @@ namespace InnoPhysicsSystemNS
 
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
-	vec4 m_visibleSceneBoundMax;
-	vec4 m_visibleSceneBoundMin;
+	Vec4 m_visibleSceneBoundMax;
+	Vec4 m_visibleSceneBoundMin;
 	AABB m_visibleSceneAABB;
 
-	vec4 m_totalSceneBoundMax;
-	vec4 m_totalSceneBoundMin;
+	Vec4 m_totalSceneBoundMax;
+	Vec4 m_totalSceneBoundMin;
 	AABB m_totalSceneAABB;
 
-	vec4 m_staticSceneBoundMax;
-	vec4 m_staticSceneBoundMin;
+	Vec4 m_staticSceneBoundMax;
+	Vec4 m_staticSceneBoundMin;
 	PhysicsDataComponent m_RootPhysicsDataComponent;
 
 	IObjectPool* m_PhysicsDataComponentPool;
@@ -72,6 +72,7 @@ bool InnoPhysicsSystemNS::setup()
 
 	m_Components.reserve(16384);
 	m_IntermediateComponents.reserve(16384);
+	m_BVHResults.reserve(32678);
 
 	m_RootPhysicsDataComponent.m_IsIntermediate = true;
 
@@ -79,7 +80,26 @@ bool InnoPhysicsSystemNS::setup()
 	PhysXWrapper::get().setup();
 #endif
 
-	f_sceneLoadingStartCallback = [&]() {
+	f_sceneLoadingStartCallback = [&]()
+	{
+		auto l_intermediatePDCCount = m_IntermediateComponents.size();
+		for (size_t i = 0; i < l_intermediatePDCCount; i++)
+		{
+			m_PhysicsDataComponentPool->Destroy(m_IntermediateComponents[i]);
+		}
+		m_IntermediateComponents.clear();
+		m_BVHResults.clear();
+		m_RootPhysicsDataComponent = PhysicsDataComponent();
+
+		m_totalSceneBoundMax = InnoMath::minVec4<float>;
+		m_totalSceneBoundMax.w = 1.0f;
+		m_totalSceneBoundMin = InnoMath::maxVec4<float>;
+		m_totalSceneBoundMin.w = 1.0f;
+
+		m_staticSceneBoundMax = InnoMath::minVec4<float>;
+		m_staticSceneBoundMax.w = 1.0f;
+		m_staticSceneBoundMin = InnoMath::maxVec4<float>;
+		m_staticSceneBoundMin.w = 1.0f;
 	};
 
 	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
@@ -120,7 +140,7 @@ bool InnoPhysicsSystemNS::generatePhysicsDataComponent(MeshDataComponent* MDC)
 	return true;
 }
 
-bool InnoPhysicsSystemNS::generateAABBInWorldSpace(PhysicsDataComponent* PDC, const mat4& m)
+bool InnoPhysicsSystemNS::generateAABBInWorldSpace(PhysicsDataComponent* PDC, const Mat4& m)
 {
 	PDC->m_AABBWS = InnoMath::transformAABBSpace(PDC->m_AABBLS, m);
 	PDC->m_SphereWS = InnoMath::generateBoundSphere(PDC->m_AABBWS);
@@ -285,6 +305,9 @@ BVHResult* generateBVHLeafNodes(PhysicsDataComponent* parentNode, std::vector<Ph
 		}
 	}
 
+	childrenNodes.clear();
+	childrenNodes.shrink_to_fit();
+
 	// Result
 	BVHResult l_result;
 
@@ -300,6 +323,7 @@ BVHResult* generateBVHLeafNodes(PhysicsDataComponent* parentNode, std::vector<Ph
 		{
 			auto l_leftNodeRawPtr = m_PhysicsDataComponentPool->Spawn();
 			auto l_leftNode = new(l_leftNodeRawPtr)PhysicsDataComponent();
+
 			l_leftNode->m_AABBWS = InnoMath::generateAABB(l_midMax, parentNode->m_AABBWS.m_boundMin);
 			l_leftNode->m_SphereWS = InnoMath::generateBoundSphere(l_leftNode->m_AABBWS);
 
@@ -316,7 +340,8 @@ BVHResult* generateBVHLeafNodes(PhysicsDataComponent* parentNode, std::vector<Ph
 			}
 		}
 
-		l_result.leftChildrenNodes = l_leftChildrenNodes;
+		l_result.leftChildrenNodes = std::move(l_leftChildrenNodes);
+		l_result.leftChildrenNodes.shrink_to_fit();
 	}
 
 	if (l_rightChildrenNodes.size() > 0)
@@ -330,6 +355,7 @@ BVHResult* generateBVHLeafNodes(PhysicsDataComponent* parentNode, std::vector<Ph
 		{
 			auto l_rightNodeRawPtr = m_PhysicsDataComponentPool->Spawn();
 			auto l_rightNode = new(l_rightNodeRawPtr)PhysicsDataComponent();
+
 			l_rightNode->m_AABBWS = InnoMath::generateAABB(parentNode->m_AABBWS.m_boundMax, l_midMin);
 			l_rightNode->m_SphereWS = InnoMath::generateBoundSphere(l_rightNode->m_AABBWS);
 
@@ -346,7 +372,8 @@ BVHResult* generateBVHLeafNodes(PhysicsDataComponent* parentNode, std::vector<Ph
 			}
 		}
 
-		l_result.rightChildrenNodes = l_rightChildrenNodes;
+		l_result.rightChildrenNodes = std::move(l_rightChildrenNodes);
+		l_result.rightChildrenNodes.shrink_to_fit();
 	}
 
 	m_BVHResults.emplace_back(std::move(l_result));
@@ -370,30 +397,6 @@ bool InnoPhysicsSystem::initialize()
 	return true;
 }
 
-template<class T>
-bool intersectCheck(const TFrustum<T> & lhs, const TAABB<T> & rhs)
-{
-	auto l_isCenterInside = isPointInFrustum(rhs.m_center, lhs);
-	if (l_isCenterInside)
-	{
-		return true;
-	}
-
-	auto l_isMaxInside = isPointInFrustum(rhs.m_boundMax, lhs);
-	if (l_isMaxInside)
-	{
-		return true;
-	}
-
-	auto l_isMinInside = isPointInFrustum(rhs.m_boundMin, lhs);
-	if (l_isMinInside)
-	{
-		return true;
-	}
-
-	return false;
-}
-
 void InnoPhysicsSystemNS::updateVisibleSceneBoundary(const AABB& rhs)
 {
 	m_visibleSceneBoundMax = InnoMath::elementWiseMax(rhs.m_boundMax, m_visibleSceneBoundMax);
@@ -404,15 +407,15 @@ void InnoPhysicsSystemNS::updateTotalSceneBoundary(const AABB& rhs)
 {
 	m_totalSceneBoundMax = InnoMath::elementWiseMax(rhs.m_boundMax, m_totalSceneBoundMax);
 	m_totalSceneBoundMin = InnoMath::elementWiseMin(rhs.m_boundMin, m_totalSceneBoundMin);
-
-	m_RootPhysicsDataComponent.m_AABBWS = InnoMath::generateAABB(m_totalSceneBoundMax, m_totalSceneBoundMin);
-	m_RootPhysicsDataComponent.m_SphereWS = InnoMath::generateBoundSphere(m_RootPhysicsDataComponent.m_AABBWS);
 }
 
 void InnoPhysicsSystemNS::updateStaticSceneBoundary(const AABB & rhs)
 {
 	m_staticSceneBoundMax = InnoMath::elementWiseMax(rhs.m_boundMax, m_staticSceneBoundMax);
 	m_staticSceneBoundMin = InnoMath::elementWiseMin(rhs.m_boundMin, m_staticSceneBoundMin);
+
+	m_RootPhysicsDataComponent.m_AABBWS = InnoMath::generateAABB(m_staticSceneBoundMax, m_staticSceneBoundMin);
+	m_RootPhysicsDataComponent.m_SphereWS = InnoMath::generateBoundSphere(m_RootPhysicsDataComponent.m_AABBWS);
 }
 
 bool InnoPhysicsSystemNS::update()
@@ -653,7 +656,12 @@ AABB InnoPhysicsSystem::getTotalSceneAABB()
 	return InnoPhysicsSystemNS::m_totalSceneAABB;
 }
 
-bool InnoPhysicsSystem::generateAABBInWorldSpace(PhysicsDataComponent* PDC, const mat4& m)
+PhysicsDataComponent * InnoPhysicsSystem::getRootPhysicsDataComponent()
+{
+	return &InnoPhysicsSystemNS::m_RootPhysicsDataComponent;
+}
+
+bool InnoPhysicsSystem::generateAABBInWorldSpace(PhysicsDataComponent* PDC, const Mat4& m)
 {
 	return InnoPhysicsSystemNS::generateAABBInWorldSpace(PDC, m);
 }

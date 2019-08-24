@@ -729,14 +729,14 @@ bool VKRenderingServer::CopyColorBuffer(RenderPassDataComponent * src, size_t sr
 	return true;
 }
 
-vec4 VKRenderingServer::ReadRenderTargetSample(RenderPassDataComponent * rhs, size_t renderTargetIndex, size_t x, size_t y)
+Vec4 VKRenderingServer::ReadRenderTargetSample(RenderPassDataComponent * rhs, size_t renderTargetIndex, size_t x, size_t y)
 {
-	return vec4();
+	return Vec4();
 }
 
-std::vector<vec4> VKRenderingServer::ReadTextureBackToCPU(RenderPassDataComponent * canvas, TextureDataComponent * TDC)
+std::vector<Vec4> VKRenderingServer::ReadTextureBackToCPU(RenderPassDataComponent * canvas, TextureDataComponent * TDC)
 {
-	return std::vector<vec4>();
+	return std::vector<Vec4>();
 }
 
 bool VKRenderingServer::Resize()

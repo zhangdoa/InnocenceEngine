@@ -17,8 +17,8 @@ namespace SSAOPass
 	SamplerDataComponent* m_SDC_RandomRot;
 
 	unsigned int m_kernelSize = 64;
-	std::vector<vec4> m_SSAOKernel;
-	std::vector<vec4> m_SSAONoise;
+	std::vector<Vec4> m_SSAOKernel;
+	std::vector<Vec4> m_SSAONoise;
 
 	GPUBufferDataComponent* m_SSAOKernelGPUBuffer;
 	TextureDataComponent* m_SSAONoiseTDC;
@@ -102,7 +102,7 @@ bool SSAOPass::Setup()
 
 	for (unsigned int i = 0; i < m_kernelSize; ++i)
 	{
-		auto l_sample = vec4(l_randomFloats(l_generator) * 2.0f - 1.0f, l_randomFloats(l_generator) * 2.0f - 1.0f, l_randomFloats(l_generator), 0.0f);
+		auto l_sample = Vec4(l_randomFloats(l_generator) * 2.0f - 1.0f, l_randomFloats(l_generator) * 2.0f - 1.0f, l_randomFloats(l_generator), 0.0f);
 		l_sample = l_sample.normalize();
 		l_sample = l_sample * l_randomFloats(l_generator);
 		float l_scale = float(i) / float(m_kernelSize);
@@ -116,7 +116,7 @@ bool SSAOPass::Setup()
 	}
 
 	m_SSAOKernelGPUBuffer = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("SSAOKernel/");
-	m_SSAOKernelGPUBuffer->m_ElementSize = sizeof(vec4);
+	m_SSAOKernelGPUBuffer->m_ElementSize = sizeof(Vec4);
 	m_SSAOKernelGPUBuffer->m_ElementCount = m_kernelSize;
 	m_SSAOKernelGPUBuffer->m_InitialData = &m_SSAOKernel[0];
 	m_SSAOKernelGPUBuffer->m_BindingPoint = 9;
@@ -131,7 +131,7 @@ bool SSAOPass::Setup()
 	for (size_t i = 0; i < m_SSAONoise.capacity(); i++)
 	{
 		// rotate around z-axis (in tangent space)
-		auto noise = vec4(l_randomFloats(l_generator) * 2.0f - 1.0f, l_randomFloats(l_generator) * 2.0f - 1.0f, 0.0f, 0.0f);
+		auto noise = Vec4(l_randomFloats(l_generator) * 2.0f - 1.0f, l_randomFloats(l_generator) * 2.0f - 1.0f, 0.0f, 0.0f);
 		noise = noise.normalize();
 		m_SSAONoise.push_back(noise);
 	}
@@ -152,7 +152,7 @@ bool SSAOPass::Setup()
 	auto l_containerSize = m_SSAONoise.size() * 4;
 	l_pixelBuffer.reserve(l_containerSize);
 
-	std::for_each(m_SSAONoise.begin(), m_SSAONoise.end(), [&](vec4 val)
+	std::for_each(m_SSAONoise.begin(), m_SSAONoise.end(), [&](Vec4 val)
 	{
 		l_pixelBuffer.emplace_back(val.x);
 		l_pixelBuffer.emplace_back(val.y);

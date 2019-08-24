@@ -113,8 +113,8 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpScene(const aiScene* aiScene,
 		aiQuaternion l_aiRot;
 		aiVector3D l_aiPos;
 		l_rootTransformationMat.DecomposeNoScaling(l_aiRot, l_aiPos);
-		auto l_rot = vec4(l_aiRot.x, l_aiRot.y, l_aiRot.z, l_aiRot.w);
-		auto l_pos = vec4(l_aiPos.x, l_aiPos.y, l_aiPos.z, 1.0f);
+		auto l_rot = Vec4(l_aiRot.x, l_aiRot.y, l_aiRot.z, l_aiRot.w);
+		auto l_pos = Vec4(l_aiPos.x, l_aiPos.y, l_aiPos.z, 1.0f);
 
 		JSONParser::to_json(j["RootOffsetRotation"], l_rot);
 		JSONParser::to_json(j["RootOffsetPosition"], l_pos);
@@ -364,8 +364,8 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpBone(const aiMesh * aiMesh, c
 		aiQuaternion l_aiRot;
 		aiVector3D l_aiPos;
 		l_bone->mOffsetMatrix.DecomposeNoScaling(l_aiRot, l_aiPos);
-		auto l_rot = vec4(l_aiRot.x, l_aiRot.y, l_aiRot.z, l_aiRot.w);
-		auto l_pos = vec4(l_aiPos.x, l_aiPos.y, l_aiPos.z, 1.0f);
+		auto l_rot = Vec4(l_aiRot.x, l_aiRot.y, l_aiRot.z, l_aiRot.w);
+		auto l_pos = Vec4(l_aiPos.x, l_aiPos.y, l_aiPos.z, 1.0f);
 
 		JSONParser::to_json(j_child["OffsetRotation"], l_rot);
 		JSONParser::to_json(j_child["OffsetPosition"], l_pos);
@@ -514,7 +514,7 @@ Duration:double
 NumChannels:unsigned int
 ChannelIndex:unsigned int
 NumKeys:unsigned int
-Key:Key(vec4+vec4+double)
+Key:Key(Vec4+Vec4+double)
 
 Binary data structure:
 |Duration
@@ -542,7 +542,7 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpAnimation(const aiAnimation *
 	{
 		auto l_numKeys = aiAnimation->mChannels[0]->mNumPositionKeys;
 
-		std::vector<vec4> l_textureData;
+		std::vector<Vec4> l_textureData;
 
 		// Position-xyz, time-w, rotation-xyzw
 		l_textureData.reserve(l_numChannels * l_numKeys * 2);
@@ -567,13 +567,13 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpAnimation(const aiAnimation *
 				auto l_posKey = l_channel->mPositionKeys[j];
 				auto l_posKeyTime = l_posKey.mTime;
 				auto l_posKeyValue = l_posKey.mValue;
-				auto l_pos = vec4(l_posKeyValue.x, l_posKeyValue.y, l_posKeyValue.z, (float)l_posKeyTime);
+				auto l_pos = Vec4(l_posKeyValue.x, l_posKeyValue.y, l_posKeyValue.z, (float)l_posKeyTime);
 
 				l_textureData.emplace_back(l_pos);
 
 				auto l_rotKey = l_channel->mRotationKeys[j];
 				auto l_rotKeyValue = l_rotKey.mValue;
-				auto l_rot = vec4(l_rotKeyValue.x, l_rotKeyValue.y, l_rotKeyValue.z, l_rotKeyValue.w);
+				auto l_rot = Vec4(l_rotKeyValue.x, l_rotKeyValue.y, l_rotKeyValue.z, l_rotKeyValue.w);
 
 				l_textureData.emplace_back(l_rot);
 
@@ -581,7 +581,7 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpAnimation(const aiAnimation *
 			}
 		}
 
-		stbi_write_png((IOService::getWorkingDirectory() + exportFileRelativePath).c_str(), (int)l_numKeys * 2 * 4, (int)l_numChannels, 4, l_textureData.data(), (int)l_numKeys * 2 * sizeof(vec4));
+		stbi_write_png((IOService::getWorkingDirectory() + exportFileRelativePath).c_str(), (int)l_numKeys * 2 * 4, (int)l_numChannels, 4, l_textureData.data(), (int)l_numKeys * 2 * sizeof(Vec4));
 	}
 
 	//l_file.close();

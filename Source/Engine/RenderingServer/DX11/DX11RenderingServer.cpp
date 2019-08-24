@@ -1558,18 +1558,18 @@ bool DX11RenderingServer::CopyColorBuffer(RenderPassDataComponent * src, size_t 
 	return true;
 }
 
-vec4 DX11RenderingServer::ReadRenderTargetSample(RenderPassDataComponent * rhs, size_t renderTargetIndex, size_t x, size_t y)
+Vec4 DX11RenderingServer::ReadRenderTargetSample(RenderPassDataComponent * rhs, size_t renderTargetIndex, size_t x, size_t y)
 {
-	return vec4();
+	return Vec4();
 }
 
-std::vector<vec4> DX11RenderingServer::ReadTextureBackToCPU(RenderPassDataComponent * canvas, TextureDataComponent * TDC)
+std::vector<Vec4> DX11RenderingServer::ReadTextureBackToCPU(RenderPassDataComponent * canvas, TextureDataComponent * TDC)
 {
 	// @TODO: Support different pixel data type
 	auto l_srcTDC = reinterpret_cast<DX11TextureDataComponent*>(TDC);
 
 	std::vector<uint32_t> l_DSResult;
-	std::vector<vec4> l_result;
+	std::vector<Vec4> l_result;
 
 	auto l_destTDC = reinterpret_cast<DX11TextureDataComponent*>(AddTextureDataComponent("ReadBackTemp/"));
 	l_destTDC->m_textureDataDesc = TDC->m_textureDataDesc;

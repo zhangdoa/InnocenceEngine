@@ -16,8 +16,8 @@ namespace InnoRayTracerNS
 
 struct HitResult
 {
-	vec4 HitPoint;
-	vec4 HitNormal;
+	Vec4 HitPoint;
+	Vec4 HitNormal;
 	float t;
 };
 
@@ -130,26 +130,26 @@ bool HitableList::Hit(const Ray & r, float tMin, float tMax, HitResult & hitResu
 	return hit_anything;
 }
 
-vec4 RandomDirectionInUnitDisk()
+Vec4 RandomDirectionInUnitDisk()
 {
 	std::default_random_engine l_generator;
 	std::uniform_real_distribution<float> l_randomDirDelta(0.0f, 1.0f);
 
-	vec4 p;
+	Vec4 p;
 	do {
-		p = vec4(l_randomDirDelta(l_generator), l_randomDirDelta(l_generator), 0.0f, 0.0f) * 2.0f - vec4(1.0f, 1.0f, 0.0f, 0.0f);
+		p = Vec4(l_randomDirDelta(l_generator), l_randomDirDelta(l_generator), 0.0f, 0.0f) * 2.0f - Vec4(1.0f, 1.0f, 0.0f, 0.0f);
 	} while (p * p >= 1.0f);
 	return p;
 }
 
-vec4 RandomDirectionInUnitSphere()
+Vec4 RandomDirectionInUnitSphere()
 {
 	std::default_random_engine l_generator;
 	std::uniform_real_distribution<float> l_randomDirDelta(0.0f, 1.0f);
 
-	vec4 p;
+	Vec4 p;
 	do {
-		p = vec4(l_randomDirDelta(l_generator), l_randomDirDelta(l_generator), l_randomDirDelta(l_generator), 0.0f) * 2.0f - vec4(1.0f, 1.0f, 1.0f, 0.0f);
+		p = Vec4(l_randomDirDelta(l_generator), l_randomDirDelta(l_generator), l_randomDirDelta(l_generator), 0.0f) * 2.0f - Vec4(1.0f, 1.0f, 1.0f, 0.0f);
 	} while (p * p >= 1.0f);
 	return p;
 }
@@ -157,7 +157,7 @@ vec4 RandomDirectionInUnitSphere()
 class RayTracingCamera
 {
 public:
-	RayTracingCamera(vec4 lookfrom, vec4 lookat, vec4 vup, float vfov, float aspect, float aperture, float focus_dist)
+	RayTracingCamera(Vec4 lookfrom, Vec4 lookat, Vec4 vup, float vfov, float aspect, float aperture, float focus_dist)
 	{
 		lens_radius = aperture / 2;
 		float theta = vfov * PI<float> / 180.0f;
@@ -173,26 +173,26 @@ public:
 	}
 
 	Ray GetRay(float s, float t) {
-		vec4 rd = RandomDirectionInUnitDisk() * lens_radius;
-		vec4 offset = u * rd.x + v * rd.y;
+		Vec4 rd = RandomDirectionInUnitDisk() * lens_radius;
+		Vec4 offset = u * rd.x + v * rd.y;
 		Ray l_result;
 		l_result.m_origin = origin + offset;
 		l_result.m_direction = lower_left_corner + horizontal * s + vertical * t - origin - offset;
 		return l_result;
 	}
 
-	vec4 origin;
-	vec4 lower_left_corner;
-	vec4 horizontal;
-	vec4 vertical;
-	vec4 u, v, w;
+	Vec4 origin;
+	Vec4 lower_left_corner;
+	Vec4 horizontal;
+	Vec4 vertical;
+	Vec4 u, v, w;
 	float lens_radius;
 };
 
-vec4 CalcRadiance(const Ray& r, Hitable* world, int depth)
+Vec4 CalcRadiance(const Ray& r, Hitable* world, int depth)
 {
 	HitResult l_result;
-	vec4 color;
+	Vec4 color;
 
 	if (world->Hit(r, 0.0f, std::numeric_limits<float>::max(), l_result) && depth < 16)
 	{
@@ -209,7 +209,7 @@ vec4 CalcRadiance(const Ray& r, Hitable* world, int depth)
 		}
 		else
 		{
-			vec4 target = l_result.HitPoint + l_result.HitNormal + RandomDirectionInUnitSphere();
+			Vec4 target = l_result.HitPoint + l_result.HitNormal + RandomDirectionInUnitSphere();
 			Ray l_ray;
 			l_ray.m_origin = l_result.HitPoint;
 			l_ray.m_direction = target - l_result.HitPoint;
@@ -218,9 +218,9 @@ vec4 CalcRadiance(const Ray& r, Hitable* world, int depth)
 	}
 	else
 	{
-		vec4 unitDir = r.m_direction.normalize();
+		Vec4 unitDir = r.m_direction.normalize();
 		float t = unitDir.y * 0.5f + 0.5f;
-		color = InnoMath::lerp(vec4(0.5f, 0.7f, 1.0f, 1.0f), vec4(1.0f, 1.0f, 1.0f, 1.0f), t);
+		color = InnoMath::lerp(Vec4(0.5f, 0.7f, 1.0f, 1.0f), Vec4(1.0f, 1.0f, 1.0f, 1.0f), t);
 	}
 
 	return color;
@@ -243,8 +243,8 @@ bool ExecuteRayTracing()
 	auto l_camera = GetComponentManager(CameraComponent)->GetAllComponents()[0];
 	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_camera->m_parentEntity);
 	auto l_lookfrom = l_cameraTransformComponent->m_globalTransformVector.m_pos;
-	auto l_lookat = l_lookfrom + InnoMath::getDirection(direction::BACKWARD, l_cameraTransformComponent->m_globalTransformVector.m_rot);
-	auto l_up = InnoMath::getDirection(direction::UP, l_cameraTransformComponent->m_globalTransformVector.m_rot);
+	auto l_lookat = l_lookfrom + InnoMath::getDirection(Direction::Backward, l_cameraTransformComponent->m_globalTransformVector.m_rot);
+	auto l_up = InnoMath::getDirection(Direction::Up, l_cameraTransformComponent->m_globalTransformVector.m_rot);
 	auto l_vfov = l_camera->m_FOVX / l_camera->m_WHRatio;
 
 	RayTracingCamera l_rayTracingCamera(l_lookfrom, l_lookat, l_up, l_vfov, l_camera->m_WHRatio, 0.1f, 10.0f);
@@ -289,7 +289,7 @@ bool ExecuteRayTracing()
 		for (int i = 0; i < nx; i++) {
 			float u = float(i) / float(nx);
 			float v = float(j) / float(ny);
-			vec4 color = CalcRadiance(l_rayTracingCamera.GetRay(u, v), l_hitableList, 0);
+			Vec4 color = CalcRadiance(l_rayTracingCamera.GetRay(u, v), l_hitableList, 0);
 			color.x = sqrtf(color.x);
 			color.y = sqrtf(color.y);
 			color.z = sqrtf(color.z);

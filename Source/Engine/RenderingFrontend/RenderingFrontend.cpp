@@ -63,7 +63,7 @@ namespace InnoRenderingFrontendNS
 	std::vector<Plane> m_debugPlanes;
 	std::vector<Sphere> m_debugSpheres;
 
-	std::vector<vec2> m_haltonSampler;
+	std::vector<Vec2> m_haltonSampler;
 	int currentHaltonStep = 0;
 
 	std::function<void(RenderPassType)> f_reloadShader;
@@ -143,7 +143,7 @@ void InnoRenderingFrontendNS::initializeHaltonSampler()
 	// in NDC space
 	for (unsigned int i = 0; i < 16; i++)
 	{
-		m_haltonSampler.emplace_back(vec2(radicalInverse(i, 3) * 2.0f - 1.0f, radicalInverse(i, 4) * 2.0f - 1.0f));
+		m_haltonSampler.emplace_back(Vec2(radicalInverse(i, 3) * 2.0f - 1.0f, radicalInverse(i, 4) * 2.0f - 1.0f));
 	}
 }
 
@@ -402,7 +402,7 @@ bool InnoRenderingFrontendNS::updateSunData()
 
 		SunGPUData l_SunGPUData;
 
-		l_SunGPUData.dir = InnoMath::getDirection(direction::BACKWARD, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+		l_SunGPUData.dir = InnoMath::getDirection(Direction::Backward, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
 		l_SunGPUData.luminance = l_directionalLight->m_RGBColor * l_directionalLight->m_LuminousFlux;
 		l_SunGPUData.r = InnoMath::getInvertRotationMatrix(l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
 

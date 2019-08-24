@@ -55,9 +55,9 @@ namespace GIResolvePass
 	TextureDataComponent* m_irradianceVolume = 0;
 
 	const unsigned int m_skyCubemapSize = 32;
-	vec4 m_minProbePos;
-	vec4 m_irradianceVolumePosOffset;
-	vec4 m_irradianceVolumeRange;
+	Vec4 m_minProbePos;
+	Vec4 m_irradianceVolumePosOffset;
+	Vec4 m_irradianceVolumeRange;
 
 	std::function<void()> f_sceneLoadingFinishCallback;
 	std::function<void()> f_sceneLoadingStartCallback;
@@ -89,7 +89,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 			m_surfelIrradianceGBDC->m_CPUAccessibility = Accessibility::Immutable;
 			m_surfelIrradianceGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 			m_surfelIrradianceGBDC->m_ElementCount = l_surfels.size();
-			m_surfelIrradianceGBDC->m_ElementSize = sizeof(vec4);
+			m_surfelIrradianceGBDC->m_ElementSize = sizeof(Vec4);
 			m_surfelIrradianceGBDC->m_BindingPoint = 1;
 
 			g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_surfelIrradianceGBDC);
@@ -132,7 +132,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 			m_brickIrradianceGBDC->m_CPUAccessibility = Accessibility::Immutable;
 			m_brickIrradianceGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 			m_brickIrradianceGBDC->m_ElementCount = l_bricks.size();
-			m_brickIrradianceGBDC->m_ElementSize = sizeof(vec4);
+			m_brickIrradianceGBDC->m_ElementSize = sizeof(Vec4);
 			m_brickIrradianceGBDC->m_BindingPoint = 1;
 
 			g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_brickIrradianceGBDC);
@@ -166,7 +166,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 			{
 				auto l_probePosWS = l_probes[i].pos;
 
-				if ((l_probePosWS.x - l_minPos) > epsilon2<float>)
+				if ((l_probePosWS.x - l_minPos) > epsilon<float, 2>)
 				{
 					l_minPos = l_probePosWS.x;
 					l_probeIndex.x++;
@@ -187,7 +187,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 			{
 				auto l_probePosWS = l_probes[i].pos;
 
-				if ((l_probePosWS.y - l_minPos) > epsilon2<float>)
+				if ((l_probePosWS.y - l_minPos) > epsilon<float, 2>)
 				{
 					l_minPos = l_probePosWS.y;
 					l_probeIndex.y++;
@@ -208,7 +208,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 			{
 				auto l_probePosWS = l_probes[i].pos;
 
-				if ((l_probePosWS.z - l_minPos) > epsilon2<float>)
+				if ((l_probePosWS.z - l_minPos) > epsilon<float, 2>)
 				{
 					l_minPos = l_probePosWS.z;
 					l_probeIndex.z++;
@@ -385,7 +385,7 @@ bool GIResolvePass::setupSky()
 	m_skyConvGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("SkyConvGPUBuffer/");
 	m_skyConvGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_skyConvGBDC->m_ElementCount = 6;
-	m_skyConvGBDC->m_ElementSize = sizeof(vec4);
+	m_skyConvGBDC->m_ElementSize = sizeof(Vec4);
 	m_skyConvGBDC->m_BindingPoint = 4;
 
 	return true;
@@ -611,6 +611,7 @@ bool GIResolvePass::setupIrradianceVolume()
 	m_irradianceVolumeSDC->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Border;
 	m_irradianceVolumeSDC->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Border;
 	m_irradianceVolumeSDC->m_SamplerDesc.m_WrapMethodW = TextureWrapMethod::Border;
+	m_irradianceVolumeSDC->m_SamplerDesc.m_BorderColor[3] = 1.0f;
 
 	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_irradianceVolumeSDC);
 
@@ -839,14 +840,14 @@ bool GIResolvePass::PrepareCommandList()
 		l_GICameraGPUData.p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, l_cameraGPUData.zNear, l_cameraGPUData.zFar);
 		l_GISkyGPUData.p_inv = l_GICameraGPUData.p.inverse();
 
-		auto l_rPX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
-		auto l_rNX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(-1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
-		auto l_rPY = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 1.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 0.0f));
-		auto l_rNY = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 0.0f));
-		auto l_rPZ = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
-		auto l_rNZ = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, -1.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
+		auto l_rPX = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(1.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
+		auto l_rNX = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(-1.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
+		auto l_rPY = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, 1.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 0.0f));
+		auto l_rNY = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 0.0f));
+		auto l_rPZ = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
+		auto l_rNZ = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, -1.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
 
-		std::vector<mat4> l_v =
+		std::vector<Mat4> l_v =
 		{
 			l_rPX, l_rNX, l_rPY, l_rNY, l_rPZ, l_rNZ
 		};

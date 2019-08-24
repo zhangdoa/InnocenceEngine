@@ -181,20 +181,20 @@ void InnoLogger::LogImpl(double logMessage)
 	InnoLoggerNS::m_LogFile << logMessage;
 }
 
-void InnoLogger::LogImpl(const vec2 & logMessage)
+void InnoLogger::LogImpl(const Vec2 & logMessage)
 {
 	std::cout
-		<< "vec2(x: "
+		<< "Vec2(x: "
 		<< logMessage.x
 		<< ", y: "
 		<< logMessage.y
 		<< ")";
 }
 
-void InnoLogger::LogImpl(const vec4 & logMessage)
+void InnoLogger::LogImpl(const Vec4 & logMessage)
 {
 	std::cout
-		<< "vec4(x: "
+		<< "Vec4(x: "
 		<< logMessage.x
 		<< ", y: "
 		<< logMessage.y
@@ -205,7 +205,7 @@ void InnoLogger::LogImpl(const vec4 & logMessage)
 		<< ")";
 }
 
-void InnoLogger::LogImpl(const mat4 & logMessage)
+void InnoLogger::LogImpl(const Mat4 & logMessage)
 {
 	std::cout
 		<< std::endl

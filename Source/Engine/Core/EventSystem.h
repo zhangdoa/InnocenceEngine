@@ -21,8 +21,8 @@ public:
 	void mousePositionCallback(float mouseXPos, float mouseYPos) override;
 	void scrollCallback(float xoffset, float yoffset) override;
 
-	vec4 getMousePositionInWorldSpace() override;
-	vec2 getMousePositionInScreenSpace() override;
+	Vec4 getMousePositionInWorldSpace() override;
+	Vec2 getMousePositionInScreenSpace() override;
 
 	ObjectStatus getStatus() override;
 };

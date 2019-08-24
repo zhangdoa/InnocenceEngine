@@ -26,8 +26,8 @@ namespace PhysXWrapperNS
 	bool update();
 	bool terminate();
 
-	bool createPxSphere(void* component, vec4 globalPos, float radius, bool isDynamic);
-	bool createPxBox(void* component, vec4 globalPos, vec4 rot, vec4 size, bool isDynamic);
+	bool createPxSphere(void* component, Vec4 globalPos, float radius, bool isDynamic);
+	bool createPxBox(void* component, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic);
 
 	std::vector<PhysXActor> PhysXActors;
 
@@ -149,8 +149,8 @@ bool PhysXWrapperNS::update()
 						if (l_rigidBody->userData)
 						{
 							auto l_transformComponent = reinterpret_cast<TransformComponent*>(l_rigidBody->userData);
-							l_transformComponent->m_localTransformVector_target.m_pos = vec4(p.x, p.y, p.z, 1.0f);
-							l_transformComponent->m_localTransformVector_target.m_rot = vec4(q.x, q.y, q.z, q.w);
+							l_transformComponent->m_localTransformVector_target.m_pos = Vec4(p.x, p.y, p.z, 1.0f);
+							l_transformComponent->m_localTransformVector_target.m_rot = Vec4(q.x, q.y, q.z, q.w);
 							l_transformComponent->m_localTransformVector = l_transformComponent->m_localTransformVector_target;
 						}
 					}
@@ -179,7 +179,7 @@ bool PhysXWrapperNS::terminate()
 	return true;
 }
 
-bool PhysXWrapperNS::createPxSphere(void* component, vec4 globalPos, float radius, bool isDynamic)
+bool PhysXWrapperNS::createPxSphere(void* component, Vec4 globalPos, float radius, bool isDynamic)
 {
 	std::lock_guard<std::mutex> lock{ PhysXWrapperNS::m_mutex };
 
@@ -211,7 +211,7 @@ bool PhysXWrapperNS::createPxSphere(void* component, vec4 globalPos, float radiu
 	return true;
 }
 
-bool PhysXWrapperNS::createPxBox(void* component, vec4 globalPos, vec4 rot, vec4 size, bool isDynamic)
+bool PhysXWrapperNS::createPxBox(void* component, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic)
 {
 	std::lock_guard<std::mutex> lock{ PhysXWrapperNS::m_mutex };
 
@@ -265,12 +265,12 @@ bool PhysXWrapper::terminate()
 	return PhysXWrapperNS::terminate();
 }
 
-bool PhysXWrapper::createPxSphere(void* component, vec4 globalPos, float radius, bool isDynamic)
+bool PhysXWrapper::createPxSphere(void* component, Vec4 globalPos, float radius, bool isDynamic)
 {
 	return PhysXWrapperNS::createPxSphere(component, globalPos, radius, isDynamic);
 }
 
-bool PhysXWrapper::createPxBox(void* component, vec4 globalPos, vec4 rot, vec4 size, bool isDynamic)
+bool PhysXWrapper::createPxBox(void* component, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic)
 {
 	return PhysXWrapperNS::createPxBox(component, globalPos, rot, size, isDynamic);
 }

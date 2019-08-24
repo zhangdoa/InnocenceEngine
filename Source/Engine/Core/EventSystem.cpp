@@ -20,8 +20,8 @@ namespace InnoEventSystemNS
 	bool addButtonStatusCallback(ButtonState buttonState, ButtonEvent buttonEvent);
 	bool addMouseMovementCallback(int mouseCode, std::function<void(float)>* mouseMovementCallback);
 
-	vec4 getMousePositionInWorldSpace();
-	vec2 getMousePositionInScreenSpace();
+	Vec4 getMousePositionInWorldSpace();
+	Vec2 getMousePositionInScreenSpace();
 
 	void buttonStatusCallback(ButtonState buttonState);
 	void framebufferSizeCallback(int width, int height);
@@ -42,7 +42,7 @@ namespace InnoEventSystemNS
 	float m_mouseLastX;
 	float m_mouseLastY;
 
-	vec4 m_mousePositionInWorldSpace;
+	Vec4 m_mousePositionInWorldSpace;
 };
 
 bool InnoEventSystemNS::setup()
@@ -144,7 +144,7 @@ bool InnoEventSystemNS::addMouseMovementCallback(int mouseCode, std::function<vo
 	return true;
 }
 
-vec4 InnoEventSystemNS::getMousePositionInWorldSpace()
+Vec4 InnoEventSystemNS::getMousePositionInWorldSpace()
 {
 	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
 
@@ -152,17 +152,17 @@ vec4 InnoEventSystemNS::getMousePositionInWorldSpace()
 	auto l_y = 1.0f - 2.0f * m_mouseLastY / l_screenResolution.y;
 	auto l_z = -1.0f;
 	auto l_w = 1.0f;
-	vec4 l_ndcSpace = vec4(l_x, l_y, l_z, l_w);
+	Vec4 l_ndcSpace = Vec4(l_x, l_y, l_z, l_w);
 
 	auto l_mainCamera = GetComponentManager(CameraComponent)->GetMainCamera();
 	if (l_mainCamera == nullptr)
 	{
-		return vec4();
+		return Vec4();
 	}
 	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_parentEntity);
 	if (l_cameraTransformComponent == nullptr)
 	{
-		return vec4();
+		return Vec4();
 	}
 	auto pCamera = l_mainCamera->m_projectionMatrix;
 	auto rCamera =
@@ -194,9 +194,9 @@ vec4 InnoEventSystemNS::getMousePositionInWorldSpace()
 	return l_ndcSpace;
 }
 
-vec2 InnoEventSystemNS::getMousePositionInScreenSpace()
+Vec2 InnoEventSystemNS::getMousePositionInScreenSpace()
 {
-	return vec2(m_mouseLastX, m_mouseLastY);
+	return Vec2(m_mouseLastX, m_mouseLastY);
 }
 
 void InnoEventSystemNS::buttonStatusCallback(ButtonState buttonState)
@@ -306,12 +306,12 @@ void InnoEventSystem::scrollCallback(float xoffset, float yoffset)
 {
 }
 
-vec4 InnoEventSystem::getMousePositionInWorldSpace()
+Vec4 InnoEventSystem::getMousePositionInWorldSpace()
 {
 	return InnoEventSystemNS::getMousePositionInWorldSpace();
 }
 
-vec2 InnoEventSystem::getMousePositionInScreenSpace()
+Vec2 InnoEventSystem::getMousePositionInScreenSpace()
 {
 	return InnoEventSystemNS::getMousePositionInScreenSpace();
 }

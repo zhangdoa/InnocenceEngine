@@ -107,14 +107,14 @@ bool GIDataLoader::Setup()
 	auto l_testCubemapResolution = 128;
 	auto l_sampleCountPerFace = l_testCubemapResolution * l_testCubemapResolution;
 
-	std::vector<vec4> l_cubemapTextureSamples(l_sampleCountPerFace * 6);
-	std::vector<vec4> l_faceColors = {
-	vec4(1.0f, 0.0f, 0.0f, 1.0f),
-	vec4(1.0f, 1.0f, 0.0f, 1.0f),
-	vec4(0.0f, 1.0f, 0.0f, 1.0f),
-	vec4(0.0f, 1.0f, 1.0f, 1.0f),
-	vec4(0.0f, 0.0f, 1.0f, 1.0f),
-	vec4(1.0f, 0.0f, 1.0f, 1.0f),
+	std::vector<Vec4> l_cubemapTextureSamples(l_sampleCountPerFace * 6);
+	std::vector<Vec4> l_faceColors = {
+	Vec4(1.0f, 0.0f, 0.0f, 1.0f),
+	Vec4(1.0f, 1.0f, 0.0f, 1.0f),
+	Vec4(0.0f, 1.0f, 0.0f, 1.0f),
+	Vec4(0.0f, 1.0f, 1.0f, 1.0f),
+	Vec4(0.0f, 0.0f, 1.0f, 1.0f),
+	Vec4(1.0f, 0.0f, 1.0f, 1.0f),
 	};
 	for (size_t i = 0; i < 6; i++)
 	{
@@ -143,7 +143,7 @@ bool GIDataLoader::Setup()
 	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_testSampleCubemap);
 
 	////
-	std::vector<vec4> l_3DTextureSamples(l_testCubemapResolution * l_testCubemapResolution * l_testCubemapResolution);
+	std::vector<Vec4> l_3DTextureSamples(l_testCubemapResolution * l_testCubemapResolution * l_testCubemapResolution);
 	size_t l_pixelIndex = 0;
 	for (size_t i = 0; i < l_testCubemapResolution; i++)
 	{
@@ -151,7 +151,7 @@ bool GIDataLoader::Setup()
 		{
 			for (size_t k = 0; k < l_testCubemapResolution; k++)
 			{
-				l_3DTextureSamples[l_pixelIndex] = vec4((float)i / (float)l_testCubemapResolution, (float)j / (float)l_testCubemapResolution, (float)k / (float)l_testCubemapResolution, 1.0f);
+				l_3DTextureSamples[l_pixelIndex] = Vec4((float)i / (float)l_testCubemapResolution, (float)j / (float)l_testCubemapResolution, (float)k / (float)l_testCubemapResolution, 1.0f);
 				l_pixelIndex++;
 			}
 		}

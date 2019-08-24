@@ -14,7 +14,7 @@ public:
 	ObjectStatus getStatus() override;
 
 	bool generatePhysicsDataComponent(MeshDataComponent* MDC) override;
-	bool generateAABBInWorldSpace(PhysicsDataComponent* PDC, const mat4& m) override;
+	bool generateAABBInWorldSpace(PhysicsDataComponent* PDC, const Mat4& m) override;
 	bool generatePhysicsProxy(VisibleComponent* VC) override;
 	void updateBVH() override;
 	void updateCulling() override;
@@ -22,4 +22,5 @@ public:
 	AABB getVisibleSceneAABB() override;
 	AABB getStaticSceneAABB() override;
 	AABB getTotalSceneAABB() override;
+	PhysicsDataComponent* getRootPhysicsDataComponent() override;
 };

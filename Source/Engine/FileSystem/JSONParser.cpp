@@ -148,7 +148,7 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const TransformVector& p)
 	};
 }
 
-void InnoFileSystemNS::JSONParser::to_json(json& j, const vec4& p)
+void InnoFileSystemNS::JSONParser::to_json(json& j, const Vec4& p)
 {
 	j = json
 	{
@@ -322,7 +322,7 @@ void InnoFileSystemNS::JSONParser::from_json(const json & j, VisibleComponent & 
 	p.m_simulatePhysics = j["SimulatePhysics"];
 }
 
-void InnoFileSystemNS::JSONParser::from_json(const json & j, vec4 & p)
+void InnoFileSystemNS::JSONParser::from_json(const json & j, Vec4 & p)
 {
 	p.x = j["X"];
 	p.y = j["Y"];
@@ -404,7 +404,7 @@ ModelMap InnoFileSystemNS::JSONParser::processSceneJsonData(const json & j, bool
 
 	if (j.find("RootOffsetRotation") != j.end())
 	{
-		vec4 l_rot;
+		Vec4 l_rot;
 		l_rot.x = j["RootOffsetRotation"]["X"];
 		l_rot.y = j["RootOffsetRotation"]["Y"];
 		l_rot.z = j["RootOffsetRotation"]["Z"];
@@ -417,7 +417,7 @@ ModelMap InnoFileSystemNS::JSONParser::processSceneJsonData(const json & j, bool
 
 	if (j.find("RootOffsetPosition") != j.end())
 	{
-		vec4 l_pos;
+		Vec4 l_pos;
 		l_pos.x = j["RootOffsetPosition"]["X"];
 		l_pos.y = j["RootOffsetPosition"]["Y"];
 		l_pos.z = j["RootOffsetPosition"]["Z"];

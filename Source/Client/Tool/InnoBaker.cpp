@@ -13,13 +13,13 @@ INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 
 struct BrickCache
 {
-	vec4 pos;
+	Vec4 pos;
 	std::vector<Surfel> surfelCaches;
 };
 
 struct BrickCacheSummary
 {
-	vec4 pos;
+	Vec4 pos;
 	size_t fileIndex;
 	size_t fileSize;
 };
@@ -30,11 +30,11 @@ namespace InnoBakerNS
 
 	bool gatherStaticMeshData();
 	bool generateProbeCaches(std::vector<Probe>& probes);
-	ProbeInfo generateProbes(std::vector<Probe>& probes, const std::vector<vec4>& heightMap, unsigned int probeMapSamplingInterval);
+	ProbeInfo generateProbes(std::vector<Probe>& probes, const std::vector<Vec4>& heightMap, unsigned int probeMapSamplingInterval);
 	bool serializeProbeInfos(const ProbeInfo& probeInfo);
 
 	bool captureSurfels(std::vector<Probe>& probes);
-	bool drawOpaquePass(Probe& probe, const mat4& p, const std::vector<mat4>& v);
+	bool drawOpaquePass(Probe& probe, const Mat4& p, const std::vector<Mat4>& v);
 	bool readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfelCaches);
 	bool eliminateDuplicatedSurfels(std::vector<Surfel>& surfelCaches);
 
@@ -49,7 +49,7 @@ namespace InnoBakerNS
 	bool serializeBricks(const std::vector<Brick>& bricks);
 
 	bool assignBrickFactorToProbesByGPU(const std::vector<Brick>& bricks, std::vector<Probe>& probes);
-	bool drawBricks(vec4 pos, unsigned int bricksCount, const mat4 & p, const std::vector<mat4>& v);
+	bool drawBricks(Vec4 pos, unsigned int bricksCount, const Mat4 & p, const std::vector<Mat4>& v);
 	bool readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& brickFactors, const std::vector<Brick>& bricks);
 
 	bool serializeBrickFactors(const std::vector<BrickFactor>& brickFactors);
@@ -63,11 +63,11 @@ namespace InnoBakerNS
 	std::vector<MaterialGPUData> m_staticMeshMaterialGPUData;
 
 	const unsigned int m_probeMapResolution = 1024;
-	const float m_probeHeightOffset = 4.0f;
+	const float m_probeHeightOffset = 6.0f;
 	const unsigned int m_probeInterval = 32;
 	const unsigned int m_captureResolution = 32;
 	const unsigned int m_surfelSampleCountPerFace = 16;
-	const vec4 m_brickSize = vec4(4.0f, 4.0f, 4.0f, 0.0f);
+	const Vec4 m_brickSize = Vec4(4.0f, 4.0f, 4.0f, 0.0f);
 
 	RenderPassDataComponent* m_RPDC_Probe;
 	ShaderProgramComponent* m_SPC_Probe;
@@ -166,9 +166,9 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 
 	auto l_p = InnoMath::generateOrthographicMatrix(-l_extendedAxisSize.x / 2.0f, l_extendedAxisSize.x / 2.0f, -l_extendedAxisSize.z / 2.0f, l_extendedAxisSize.z / 2.0f, -l_extendedAxisSize.y / 2.0f, l_extendedAxisSize.y / 2.0f);
 
-	std::vector<mat4> l_GICameraGPUData(8);
+	std::vector<Mat4> l_GICameraGPUData(8);
 	l_GICameraGPUData[0] = l_p;
-	l_GICameraGPUData[1] = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 0.0f));
+	l_GICameraGPUData[1] = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 0.0f));
 	l_GICameraGPUData[7] = InnoMath::generateIdentityMatrix<float>();
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(GetGPUBufferDataComponent(GPUBufferUsageType::GICamera), l_GICameraGPUData);
@@ -218,7 +218,7 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 	return true;
 }
 
-ProbeInfo InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<vec4>& heightMap, unsigned int probeMapSamplingInterval)
+ProbeInfo InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<Vec4>& heightMap, unsigned int probeMapSamplingInterval)
 {
 	auto l_totalTextureSize = heightMap.size();
 
@@ -392,14 +392,14 @@ bool InnoBakerNS::captureSurfels(std::vector<Probe>& probes)
 
 	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, l_cameraGPUData.zNear, l_cameraGPUData.zFar);
 
-	auto l_rPX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
-	auto l_rNX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(-1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
-	auto l_rPY = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 1.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 0.0f));
-	auto l_rNY = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 0.0f));
-	auto l_rPZ = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
-	auto l_rNZ = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, -1.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
+	auto l_rPX = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(1.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
+	auto l_rNX = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(-1.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
+	auto l_rPY = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, 1.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 0.0f));
+	auto l_rNY = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 0.0f));
+	auto l_rPZ = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
+	auto l_rNZ = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, -1.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
 
-	std::vector<mat4> l_v =
+	std::vector<Mat4> l_v =
 	{
 		l_rPX, l_rNX, l_rPY, l_rNY, l_rPZ, l_rNZ
 	};
@@ -429,11 +429,11 @@ bool InnoBakerNS::captureSurfels(std::vector<Probe>& probes)
 	return true;
 }
 
-bool InnoBakerNS::drawOpaquePass(Probe& probeCache, const mat4& p, const std::vector<mat4>& v)
+bool InnoBakerNS::drawOpaquePass(Probe& probeCache, const Mat4& p, const std::vector<Mat4>& v)
 {
 	auto l_t = InnoMath::getInvertTranslationMatrix(probeCache.pos);
 
-	std::vector<mat4> l_GICameraGPUData(8);
+	std::vector<Mat4> l_GICameraGPUData(8);
 	l_GICameraGPUData[0] = p;
 	for (size_t i = 0; i < 6; i++)
 	{
@@ -861,14 +861,14 @@ bool InnoBakerNS::assignBrickFactorToProbesByGPU(const std::vector<Brick>& brick
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to generate brick factor and assign to probes...");
 
 	// Upload camera data and brick cubes data to GPU memory
-	auto l_rPX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
-	auto l_rNX = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(-1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
-	auto l_rPY = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 1.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 0.0f));
-	auto l_rNY = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 0.0f));
-	auto l_rPZ = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, 1.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
-	auto l_rNZ = InnoMath::lookAt(vec4(0.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 0.0f, -1.0f, 1.0f), vec4(0.0f, -1.0f, 0.0f, 0.0f));
+	auto l_rPX = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(1.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
+	auto l_rNX = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(-1.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
+	auto l_rPY = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, 1.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 0.0f));
+	auto l_rNY = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 0.0f));
+	auto l_rPZ = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
+	auto l_rNZ = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, -1.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
 
-	std::vector<mat4> l_v =
+	std::vector<Mat4> l_v =
 	{
 		l_rPX, l_rNX, l_rPY, l_rNY, l_rPZ, l_rNZ
 	};
@@ -937,9 +937,9 @@ bool InnoBakerNS::assignBrickFactorToProbesByGPU(const std::vector<Brick>& brick
 	return true;
 }
 
-bool InnoBakerNS::drawBricks(vec4 pos, unsigned int bricksCount, const mat4 & p, const std::vector<mat4>& v)
+bool InnoBakerNS::drawBricks(Vec4 pos, unsigned int bricksCount, const Mat4 & p, const std::vector<Mat4>& v)
 {
-	std::vector<mat4> l_GICameraGPUData(8);
+	std::vector<Mat4> l_GICameraGPUData(8);
 	l_GICameraGPUData[0] = p;
 	for (size_t i = 0; i < 6; i++)
 	{

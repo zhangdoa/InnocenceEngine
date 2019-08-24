@@ -34,8 +34,8 @@ public:
 	void LogImpl(int64_t logMessage) override;
 	void LogImpl(float logMessage) override;
 	void LogImpl(double logMessage) override;
-	void LogImpl(const vec2 & logMessage) override;
-	void LogImpl(const vec4 & logMessage) override;
-	void LogImpl(const mat4 & logMessage) override;
+	void LogImpl(const Vec2 & logMessage) override;
+	void LogImpl(const Vec4 & logMessage) override;
+	void LogImpl(const Mat4 & logMessage) override;
 	void LogImpl(const char * logMessage) override;
 };

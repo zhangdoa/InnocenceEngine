@@ -100,7 +100,7 @@ bool BRDFTestPass::Setup()
 		for (size_t j = 0; j < m_shpereCount; j++)
 		{
 			MeshGPUData l_meshGPUData;
-			l_meshGPUData.m = InnoMath::toTranslationMatrix(vec4((float)i * l_interval, 0.0f, (float)j * l_interval, 1.0f));
+			l_meshGPUData.m = InnoMath::toTranslationMatrix(Vec4((float)i * l_interval, 0.0f, (float)j * l_interval, 1.0f));
 			l_meshGPUData.normalMat = InnoMath::generateIdentityMatrix<float>();
 
 			m_meshGPUData[l_index] = l_meshGPUData;

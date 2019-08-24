@@ -1,11 +1,11 @@
 #pragma once
 #include "../Common/InnoComponent.h"
-#include "../Common/InnoMath.h"
+#include "../Common/InnoMathHelper.h"
 
 class CameraComponent : public InnoComponent
 {
 public:
-	mat4 m_projectionMatrix;
+	Mat4 m_projectionMatrix;
 	Frustum m_frustum;
 	Ray m_rayOfEye;
 	float m_FOVX = 0.0f;

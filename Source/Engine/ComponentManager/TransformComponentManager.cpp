@@ -48,17 +48,17 @@ namespace TransformComponentManagerNS
 
 		std::for_each(m_Components.begin(), m_Components.end(), [&](TransformComponent* val)
 		{
-			if (!InnoMath::isCloseEnough(val->m_localTransformVector.m_pos, val->m_localTransformVector_target.m_pos))
+			if (!InnoMath::isCloseEnough<float, 4>(val->m_localTransformVector.m_pos, val->m_localTransformVector_target.m_pos))
 			{
 				val->m_localTransformVector.m_pos = InnoMath::lerp(val->m_localTransformVector.m_pos, val->m_localTransformVector_target.m_pos, l_ratio);
 			}
 
-			if (!InnoMath::isCloseEnough(val->m_localTransformVector.m_rot, val->m_localTransformVector_target.m_rot))
+			if (!InnoMath::isCloseEnough<float, 4>(val->m_localTransformVector.m_rot, val->m_localTransformVector_target.m_rot))
 			{
 				val->m_localTransformVector.m_rot = InnoMath::slerp(val->m_localTransformVector.m_rot, val->m_localTransformVector_target.m_rot, l_ratio);
 			}
 
-			if (!InnoMath::isCloseEnough(val->m_localTransformVector.m_scale, val->m_localTransformVector_target.m_scale))
+			if (!InnoMath::isCloseEnough<float, 4>(val->m_localTransformVector.m_scale, val->m_localTransformVector_target.m_scale))
 			{
 				val->m_localTransformVector.m_scale = InnoMath::lerp(val->m_localTransformVector.m_scale, val->m_localTransformVector_target.m_scale, l_ratio);
 			}

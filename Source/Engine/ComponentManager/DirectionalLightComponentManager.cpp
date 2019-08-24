@@ -25,7 +25,7 @@ namespace DirectionalLightComponentManagerNS
 	std::function<void()> f_SceneLoadingFinishCallback;
 
 	std::vector<AABB> m_SplitAABB;
-	std::vector<mat4> m_projectionMatrices;
+	std::vector<Mat4> m_projectionMatrices;
 
 	std::vector<AABB> splitVerticesToAABBs(const std::vector<Vertex>& frustumsVertices, const std::vector<float>& splitFactors);
 	void UpdateCSMData(DirectionalLightComponent* rhs);
@@ -34,7 +34,7 @@ namespace DirectionalLightComponentManagerNS
 
 std::vector<AABB> DirectionalLightComponentManagerNS::splitVerticesToAABBs(const std::vector<Vertex>& frustumsVertices, const std::vector<float>& splitFactors)
 {
-	std::vector<vec4> l_frustumsCornerPos;
+	std::vector<Vec4> l_frustumsCornerPos;
 	l_frustumsCornerPos.reserve(20);
 
 	//1. first 4 corner
@@ -249,10 +249,10 @@ void DirectionalLightComponentManagerNS::UpdateCSMData(DirectionalLightComponent
 
 	for (size_t i = 0; i < 4; i++)
 	{
-		vec4 l_maxExtents = l_AABBsLS[i].m_boundMax;
-		vec4 l_minExtents = l_AABBsLS[i].m_boundMin;
+		Vec4 l_maxExtents = l_AABBsLS[i].m_boundMax;
+		Vec4 l_minExtents = l_AABBsLS[i].m_boundMin;
 
-		mat4 p = InnoMath::generateOrthographicMatrix(l_minExtents.x, l_maxExtents.x, l_minExtents.y, l_maxExtents.y, l_minExtents.z, l_maxExtents.z);
+		Mat4 p = InnoMath::generateOrthographicMatrix(l_minExtents.x, l_maxExtents.x, l_minExtents.y, l_maxExtents.y, l_minExtents.z, l_maxExtents.z);
 		m_projectionMatrices.emplace_back(p);
 	}
 }
@@ -330,7 +330,7 @@ const std::vector<AABB>& InnoDirectionalLightComponentManager::GetSplitAABB()
 	return m_SplitAABB;
 }
 
-const std::vector<mat4>& InnoDirectionalLightComponentManager::GetProjectionMatrices()
+const std::vector<Mat4>& InnoDirectionalLightComponentManager::GetProjectionMatrices()
 {
 	return m_projectionMatrices;
 }

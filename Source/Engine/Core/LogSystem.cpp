@@ -91,17 +91,17 @@ void InnoLogSystem::LogImpl(double logMessage)
 	InnoLogger::LogImpl(logMessage);
 }
 
-void InnoLogSystem::LogImpl(const vec2 & logMessage)
+void InnoLogSystem::LogImpl(const Vec2 & logMessage)
 {
 	InnoLogger::LogImpl(logMessage);
 }
 
-void InnoLogSystem::LogImpl(const vec4 & logMessage)
+void InnoLogSystem::LogImpl(const Vec4 & logMessage)
 {
 	InnoLogger::LogImpl(logMessage);
 }
 
-void InnoLogSystem::LogImpl(const mat4 & logMessage)
+void InnoLogSystem::LogImpl(const Mat4 & logMessage)
 {
 	InnoLogger::LogImpl(logMessage);
 }

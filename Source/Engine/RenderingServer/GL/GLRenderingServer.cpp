@@ -256,23 +256,23 @@ bool GLRenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	glObjectLabel(GL_BUFFER, l_rhs->m_IBO, (GLsizei)l_IBOName.size(), l_IBOName.c_str());
 #endif
 
-	// position vec4
+	// position Vec4
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
 
-	// texture coordinate vec2
+	// texture coordinate Vec2
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)16);
 
-	// pad1 vec2
+	// pad1 Vec2
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)24);
 
-	// normal vec4
+	// normal Vec4
 	glEnableVertexAttribArray(3);
 	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)32);
 
-	// pad2 vec4
+	// pad2 Vec4
 	glEnableVertexAttribArray(4);
 	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)48);
 
@@ -984,12 +984,12 @@ bool GLRenderingServer::CopyColorBuffer(RenderPassDataComponent * src, size_t sr
 	return true;
 }
 
-vec4 GLRenderingServer::ReadRenderTargetSample(RenderPassDataComponent * rhs, size_t renderTargetIndex, size_t x, size_t y)
+Vec4 GLRenderingServer::ReadRenderTargetSample(RenderPassDataComponent * rhs, size_t renderTargetIndex, size_t x, size_t y)
 {
-	return vec4();
+	return Vec4();
 }
 
-std::vector<vec4> GLRenderingServer::ReadTextureBackToCPU(RenderPassDataComponent * canvas, TextureDataComponent * TDC)
+std::vector<Vec4> GLRenderingServer::ReadTextureBackToCPU(RenderPassDataComponent * canvas, TextureDataComponent * TDC)
 {
 	auto GLTDC = reinterpret_cast<GLTextureDataComponent*>(TDC);
 
@@ -1001,7 +1001,7 @@ std::vector<vec4> GLRenderingServer::ReadTextureBackToCPU(RenderPassDataComponen
 	auto l_pixelDataType = GLTDC->m_GLTextureDataDesc.PixelDataType;
 
 	// @TODO: Support different pixel data type
-	std::vector<vec4> l_textureSamples;
+	std::vector<Vec4> l_textureSamples;
 	size_t l_sampleCount;
 
 	GLenum l_attachmentType;
