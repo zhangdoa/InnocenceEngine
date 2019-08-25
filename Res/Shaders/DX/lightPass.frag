@@ -157,31 +157,30 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 		float4 indirectLight = float4(0.0f, 0.0f, 0.0f, 0.0f);
 		if (isNegative.x)
 		{
-			indirectLight += nSquared.x * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordNX).w;
+			indirectLight += nSquared.x * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordNX);
 		}
 		else
 		{
-			indirectLight += nSquared.x * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordPX).w;
+			indirectLight += nSquared.x * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordPX);
 		}
 		if (isNegative.y)
 		{
-			indirectLight += nSquared.y * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordNY).w;
+			indirectLight += nSquared.y * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordNY);
 		}
 		else
 		{
-			indirectLight += nSquared.y * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordPY).w;
+			indirectLight += nSquared.y * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordPY);
 		}
 		if (isNegative.z)
 		{
-			indirectLight += nSquared.z * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordNZ).w;
+			indirectLight += nSquared.z * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordNZ);
 		}
 		else
 		{
-			indirectLight += nSquared.z * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordPZ).w;
+			indirectLight += nSquared.z * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordPZ);
 		}
 
 		Lo += (1 - metallic) * indirectLight.xyz;
-		Lo = indirectLight;
 	}
 	// ambient occlusion
 	Lo *= ao;
