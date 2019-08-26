@@ -61,6 +61,7 @@ bool InnoPointLightComponentManager::Setup()
 {
 	m_ComponentPool = InnoMemory::CreateObjectPool(sizeof(PointLightComponent), m_MaxComponentCount);
 	m_Components.reserve(m_MaxComponentCount);
+	m_ComponentsMap.reserve(m_MaxComponentCount);
 
 	f_SceneLoadingStartCallback = [&]() {
 		CleanComponentContainers(PointLightComponent);

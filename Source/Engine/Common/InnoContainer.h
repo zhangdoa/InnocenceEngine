@@ -417,6 +417,13 @@ public:
 		invalidate();
 	}
 
+	void reserve(const std::size_t _Newcapacity)
+	{
+		std::unique_lock<std::shared_mutex> lock{ m_mutex };
+		m_unordered_map.reserve(_Newcapacity);
+		m_condition.notify_all();
+	}
+
 	void emplace(Key key, T value)
 	{
 		std::unique_lock<std::shared_mutex> lock{ m_mutex };
