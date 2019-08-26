@@ -68,24 +68,25 @@ float DisneyDiffuse2015(float NdotV, float NdotL, float LdotH, float linearRough
 // ----------------------------------------------------------------------------
 float3 AverangeFresnel(float3 F0)
 {
-	return 20.0 * F0 / 21.0 + 1.0 / 21.0;
+	return F0 * 20.0 / 21.0 + 1.0 / 21.0;
 }
 float3 getFrMS(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePoint, float NdotL, float NdotV, float3 F0, float roughness)
 {
-	float alpha = roughness * roughness;
 	float3 f_averange = AverangeFresnel(F0);
-	float rsF1_averange = BRDFMSLUT.Sample(SampleTypePoint, float2(0.0, alpha)).r;
-	float rsF1_l = BRDFLUT.Sample(SampleTypePoint, float2(NdotL, alpha)).b;
-	float rsF1_v = BRDFLUT.Sample(SampleTypePoint, float2(NdotV, alpha)).b;
 
-	float3 frMS = float3(0.0, 0.0, 0.0);
+	float rsF1_averange = BRDFMSLUT.Sample(SampleTypePoint, float2(0.0, roughness)).r;
+
+	float rsF1_l = BRDFLUT.Sample(SampleTypePoint, float2(NdotL, roughness)).b;
+	float rsF1_v = BRDFLUT.Sample(SampleTypePoint, float2(NdotV, roughness)).b;
+
 	float beta1 = 1.0 - rsF1_averange;
 	float beta2 = 1.0 - rsF1_l;
 	float beta3 = 1.0 - rsF1_v;
+	float frMS = beta2 * beta3 / (beta1 * PI);
+	// [https://blog.selfshadow.com/2018/06/04/multi-faceted-part-2/]
+	float3 fresnelMultiplier = f_averange * f_averange * rsF1_averange / ((float3(1.0, 1.0, 1.0) - f_averange * beta1) + eps);
 
-	frMS = f_averange * rsF1_averange / (PI * beta1 * (float3(1.0, 1.0, 1.0) - f_averange * beta1) + eps);
-	frMS = frMS * beta2 * beta3;
-	return frMS;
+	return frMS * fresnelMultiplier;
 }
 // ----------------------------------------------------------------------------
 float3 getBRDF(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePoint, float NdotV, float LdotH, float NdotH, float NdotL, float roughness, float metallic, float3 F0, float3 albedo)

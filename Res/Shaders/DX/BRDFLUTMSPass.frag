@@ -30,13 +30,15 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	// "Real-Time Rendering", 4th edition, pg. 346, "9.8.2 Multiple-Bounce Surface Reflection", "The function $\overline{RsF1}$ is the cosine-weighted average value of RsF1 over the hemisphere"
 	for (uint i = 0u; i < textureSize; ++i)
 	{
-		float cos = float(i) / float(renderTargetSize.x);
-		currentRsF1 = in_brdfLUT.Sample(SampleTypePoint, float2(cos, input.texcoord.y)).b;
-		currentRsF1 /= float(textureSize);
+		float mu = float(i) / float(textureSize);
+		currentRsF1 = in_brdfLUT.Sample(SampleTypePoint, float2(mu, input.texcoord.y)).b;
 		// cos-weighted
-		currentRsF1 *= cos;
+		currentRsF1 *= mu;
 		averangeRsF1 += currentRsF1;
 	}
+
+	averangeRsF1 /= float(textureSize);
+	averangeRsF1 *= 2;
 
 	output.brdfMSLUT = float4(averangeRsF1, averangeRsF1, averangeRsF1, 1.0);
 	return output;

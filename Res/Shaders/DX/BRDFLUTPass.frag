@@ -55,9 +55,9 @@ float3 ImportanceSampleGGX(float2 Xi, float3 N, float roughness)
 // ----------------------------------------------------------------------------
 float D_GGX(float NdotH, float roughness)
 {
-	float a = roughness;
+	float a = roughness * roughness;
 	float a2 = a * a;
-	float f = (NdotH * a2 - NdotH) * NdotH + 1;
+	float f = (NdotH * NdotH) *(a2 - 1) + 1;
 	return a2 / pow(f, 2.0);
 }
 // ----------------------------------------------------------------------------
@@ -121,13 +121,21 @@ float4 IntegrateBRDF(float NdotV, float roughness)
 		{
 			float G = G_Smith(N, V, L, roughness);
 			float V = G * VdotH / (NdotH * NdotV);
-			float D = D_GGX(NdotH, roughness);
 			float Fc = pow(1.0 - VdotH, 5.0);
 
 			A += (1.0 - Fc) * V;
 			B += Fc * V;
-			RsF1 += V * NdotL;
 		}
+	}
+
+	for (uint i = 0u; i < SAMPLE_COUNT; ++i)
+	{
+		float NdotL = float(i) / float(SAMPLE_COUNT);
+		float NdotH = (NdotL + NdotV) / 2.0;
+
+		float D = D_GGX(NdotH, roughness);
+		float V = V_SmithGGXCorrelated(NdotL, NdotV, roughness);
+		RsF1 += D * V * NdotL;
 	}
 
 	A /= float(SAMPLE_COUNT);
