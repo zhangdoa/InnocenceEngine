@@ -518,8 +518,11 @@ void PlainCulling(const Frustum& frustum, std::vector<CullingData>& cullingDatas
 					l_cullingData.meshUsageType = visibleComponent->m_meshUsageType;
 					l_cullingData.UUID = visibleComponent->m_UUID;
 
-					l_PDC->m_AABBWS = InnoMath::transformAABBSpace(l_PDC->m_AABBLS, l_globalTm);
-					l_PDC->m_SphereWS = generateBoundSphere(l_PDC->m_AABBWS);
+					if (visibleComponent->m_meshUsageType == MeshUsageType::Dynamic)
+					{
+						l_PDC->m_AABBWS = InnoMath::transformAABBSpace(l_PDC->m_AABBLS, l_globalTm);
+						l_PDC->m_SphereWS = generateBoundSphere(l_PDC->m_AABBWS);
+					}
 
 					if (InnoMath::intersectCheck(frustum, l_PDC->m_SphereWS))
 					{
@@ -546,8 +549,11 @@ CullingData generateCullingData(const Frustum& frustum, PhysicsDataComponent* PD
 	auto l_transformComponent = GetComponent(TransformComponent, PDC->m_VisibleComponent->m_parentEntity);
 	auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
-	PDC->m_AABBWS = InnoMath::transformAABBSpace(PDC->m_AABBLS, l_globalTm);
-	PDC->m_SphereWS = generateBoundSphere(PDC->m_AABBWS);
+	if (PDC->m_VisibleComponent->m_meshUsageType == MeshUsageType::Dynamic)
+	{
+		PDC->m_AABBWS = InnoMath::transformAABBSpace(PDC->m_AABBLS, l_globalTm);
+		PDC->m_SphereWS = generateBoundSphere(PDC->m_AABBWS);
+	}
 
 	CullingData l_cullingData;
 
