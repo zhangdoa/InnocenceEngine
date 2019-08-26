@@ -100,7 +100,7 @@ bool PlayerComponentCollection::setup()
 		m_moveSpeed = m_initialMoveSpeed;
 		m_rotateSpeed = 10.0f;
 	};
-	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
+	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback, 0);
 
 	return true;
 }
@@ -226,7 +226,7 @@ bool GameClientNS::setupReferenceSpheres()
 	{
 		m_referenceSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_referenceSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
-		m_referenceSphereTransformComponents[i]->m_localTransformVector_target.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		m_referenceSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_referenceSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_referenceSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::Opaque;
 		m_referenceSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::Sphere;
@@ -239,7 +239,7 @@ bool GameClientNS::setupReferenceSpheres()
 	{
 		for (unsigned int j = 0; j < l_matrixDim; j++)
 		{
-			m_referenceSphereTransformComponents[i * l_matrixDim + j]->m_localTransformVector_target.m_pos =
+			m_referenceSphereTransformComponents[i * l_matrixDim + j]->m_localTransformVector.m_pos =
 				Vec4(
 				(-(l_matrixDim - 1.0f) * l_breadthInterval / 2.0f) + (i * l_breadthInterval) + 100.0f,
 					2.0f,
@@ -290,8 +290,8 @@ bool GameClientNS::setupOcclusionCubes()
 	std::default_random_engine l_generator(42);
 	std::uniform_real_distribution<float> l_randomRotDelta(0.0f, 180.0f);
 	std::uniform_real_distribution<float> l_randomHeightDelta(16.0f, 48.0f);
-	std::uniform_real_distribution<float> l_randomWidthDelta(10.0f, 12.0f);
-	std::uniform_real_distribution<float> l_randomDepthDelta(8.0f, 10.0f);
+	std::uniform_real_distribution<float> l_randomWidthDelta(4.0f, 6.0f);
+	std::uniform_real_distribution<float> l_randomDepthDelta(6.0f, 8.0f);
 
 	auto l_halfMatrixDim = float(l_matrixDim - 1) / 2.0f;
 	auto l_offset = l_halfMatrixDim * l_breadthInterval;
@@ -304,18 +304,18 @@ bool GameClientNS::setupOcclusionCubes()
 
 			auto l_heightOffset = l_halfMatrixDim * 3.0f - std::abs((float)i - l_halfMatrixDim) - std::abs((float)j - l_halfMatrixDim);
 			l_heightOffset *= 4.0f;
-			l_currentComponent->m_localTransformVector_target.m_scale =
+			l_currentComponent->m_localTransformVector.m_scale =
 				Vec4(l_randomWidthDelta(l_generator), l_heightOffset, l_randomDepthDelta(l_generator), 1.0f);
 
-			l_currentComponent->m_localTransformVector_target.m_pos =
+			l_currentComponent->m_localTransformVector.m_pos =
 				Vec4(
 				(i * l_breadthInterval) - l_offset,
-					l_currentComponent->m_localTransformVector_target.m_scale.y / 2.0f,
+					l_currentComponent->m_localTransformVector.m_scale.y / 2.0f,
 					(j * l_breadthInterval) - l_offset,
 					1.0f);
 
-			l_currentComponent->m_localTransformVector_target.m_rot =
-				InnoMath::calcRotatedLocalRotator(l_currentComponent->m_localTransformVector_target.m_rot,
+			l_currentComponent->m_localTransformVector.m_rot =
+				InnoMath::calcRotatedLocalRotator(l_currentComponent->m_localTransformVector.m_rot,
 					Vec4(0.0f, 1.0f, 0.0f, 0.0f),
 					l_randomRotDelta(l_generator));
 		}
@@ -352,7 +352,7 @@ bool GameClientNS::setupOpaqueSpheres()
 	{
 		m_opaqueSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_opaqueSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
-		m_opaqueSphereTransformComponents[i]->m_localTransformVector_target.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		m_opaqueSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_opaqueSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_opaqueSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::Opaque;
 		m_opaqueSphereVisibleComponents[i]->m_meshShapeType = (i & 0x00000001) ? MeshShapeType::Sphere : MeshShapeType::Cube;
@@ -370,15 +370,15 @@ bool GameClientNS::setupOpaqueSpheres()
 		for (unsigned int j = 0; j < l_matrixDim; j++)
 		{
 			auto l_currentComponent = m_opaqueSphereTransformComponents[i * l_matrixDim + j];
-			l_currentComponent->m_localTransformVector_target.m_pos =
+			l_currentComponent->m_localTransformVector.m_pos =
 				Vec4(
 				(-(l_matrixDim - 1.0f) * l_breadthInterval / 2.0f) + (i * l_breadthInterval),
 					l_randomPosDelta(l_generator) * 50.0f,
 					(j * l_breadthInterval) - 2.0f * (l_matrixDim - 1),
 					1.0f);
 
-			l_currentComponent->m_localTransformVector_target.m_rot =
-				InnoMath::calcRotatedLocalRotator(l_currentComponent->m_localTransformVector_target.m_rot,
+			l_currentComponent->m_localTransformVector.m_rot =
+				InnoMath::calcRotatedLocalRotator(l_currentComponent->m_localTransformVector.m_rot,
 					Vec4(l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), 0.0f).normalize(),
 					l_randomRotDelta(l_generator));
 		}
@@ -415,7 +415,7 @@ bool GameClientNS::setupTransparentSpheres()
 	{
 		m_transparentSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_transparentSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
-		m_transparentSphereTransformComponents[i]->m_localTransformVector_target.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		m_transparentSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_transparentSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_transparentSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::Transparent;
 		m_transparentSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::Sphere;
@@ -428,7 +428,7 @@ bool GameClientNS::setupTransparentSpheres()
 	{
 		for (unsigned int j = 0; j < l_matrixDim; j++)
 		{
-			m_transparentSphereTransformComponents[i * l_matrixDim + j]->m_localTransformVector_target.m_pos =
+			m_transparentSphereTransformComponents[i * l_matrixDim + j]->m_localTransformVector.m_pos =
 				Vec4(
 				(-(l_matrixDim - 1.0f) * l_breadthInterval / 2.0f)
 					+ (i * l_breadthInterval),
@@ -476,7 +476,7 @@ bool GameClientNS::setupPointLights()
 		m_pointLightTransformComponents[i] = SpawnComponent(TransformComponent, m_pointLightEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		g_pModuleManager->getComponentManager(ComponentType::TransformComponent);
 		m_pointLightTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
-		m_pointLightTransformComponents[i]->m_localTransformVector_target.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		m_pointLightTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_pointLightComponents[i] = SpawnComponent(PointLightComponent, m_pointLightEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
 		m_pointLightComponents[i]->m_LuminousFlux = l_randomLuminousFlux(l_generator);
 		m_pointLightComponents[i]->m_ColorTemperature = l_randomColorTemperature(l_generator);
@@ -486,7 +486,7 @@ bool GameClientNS::setupPointLights()
 	{
 		for (unsigned int j = 0; j < l_matrixDim; j++)
 		{
-			m_pointLightTransformComponents[i * l_matrixDim + j]->m_localTransformVector_target.m_pos =
+			m_pointLightTransformComponents[i * l_matrixDim + j]->m_localTransformVector.m_pos =
 				Vec4(
 				(-(l_matrixDim - 1.0f) * l_breadthInterval * l_randomPosDelta(l_generator) / 2.0f)
 					+ (i * l_breadthInterval), l_randomPosDelta(l_generator) * 32.0f,
@@ -535,14 +535,14 @@ bool GameClientNS::setup()
 		m_objectStatus = ObjectStatus::Activated;
 	};
 
-	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
+	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback, 0);
 
 	return true;
 }
 
 bool GameClientNS::initialize()
 {
-	f_testFunc = []() {	g_pModuleManager->getFileSystem()->loadScene("Res//Scenes//Intro.InnoScene");
+	f_testFunc = []() {	g_pModuleManager->getFileSystem()->loadScene("Res//Scenes//GITest.InnoScene");
 	};
 	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_testFunc });
 
