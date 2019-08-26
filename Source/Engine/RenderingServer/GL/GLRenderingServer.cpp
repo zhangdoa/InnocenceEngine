@@ -73,6 +73,11 @@ namespace GLRenderingServerNS
 		}
 	}
 
+	GLResourceBinder* addResourcesBinder();
+	GLPipelineStateObject* addPSO();
+
+	bool resizeImpl();
+
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
 	IObjectPool* m_MeshDataComponentPool = 0;
@@ -88,28 +93,99 @@ namespace GLRenderingServerNS
 	std::unordered_set<MeshDataComponent*> m_initializedMeshes;
 	std::unordered_set<TextureDataComponent*> m_initializedTextures;
 	std::unordered_set<MaterialDataComponent*> m_initializedMaterials;
+	std::vector<GLRenderPassDataComponent*> m_RPDCs;
 
 	GLRenderPassDataComponent* m_userPipelineOutput = 0;
 	GLRenderPassDataComponent* m_SwapChainRPDC = 0;
 	GLShaderProgramComponent* m_SwapChainSPC = 0;
 	GLSamplerDataComponent* m_SwapChainSDC = 0;
+
+	std::atomic_bool m_needResize = false;
 }
 
-using namespace GLRenderingServerNS;
-
-GLResourceBinder* addResourcesBinder()
+GLResourceBinder* GLRenderingServerNS::addResourcesBinder()
 {
 	auto l_BinderRawPtr = m_ResourcesBinderPool->Spawn();
 	auto l_Binder = new(l_BinderRawPtr)GLResourceBinder();
 	return l_Binder;
 }
 
-GLPipelineStateObject* addPSO()
+GLPipelineStateObject* GLRenderingServerNS::addPSO()
 {
 	auto l_PSORawPtr = m_PSOPool->Spawn();
 	auto l_PSO = new(l_PSORawPtr)GLPipelineStateObject();
 	return l_PSO;
 }
+
+bool GLRenderingServerNS::resizeImpl()
+{
+	auto l_renderingServer = reinterpret_cast<GLRenderingServer*>(g_pModuleManager->getRenderingServer());
+	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+
+	for (auto i : m_RPDCs)
+	{
+		if (!i->m_RenderPassDesc.m_IsOffScreen)
+		{
+			if (i->m_RBO)
+			{
+				glDeleteRenderbuffers(1, &i->m_RBO);
+			}
+			glDeleteFramebuffers(1, &i->m_FBO);
+
+			for (auto j : i->m_RenderTargets)
+			{
+				l_renderingServer->DeleteTextureDataComponent(j);
+			}
+
+			i->m_RenderTargets.clear();
+
+			i->m_RenderTargetsResourceBinders.clear();
+
+			if (i->m_DepthStencilRenderTarget)
+			{
+				l_renderingServer->DeleteTextureDataComponent(i->m_DepthStencilRenderTarget);
+			}
+
+			m_PSOPool->Destroy(i->m_PipelineStateObject);
+
+			i->m_RenderPassDesc.m_RenderTargetDesc.Width = l_screenResolution.x;
+			i->m_RenderPassDesc.m_RenderTargetDesc.Height = l_screenResolution.y;
+
+			i->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)l_screenResolution.x;
+			i->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)l_screenResolution.y;
+
+			CreateFramebuffer(i);
+
+			ReserveRenderTargets(i, l_renderingServer);
+
+			CreateRenderTargets(i, l_renderingServer);
+
+			i->m_RenderTargetsResourceBinders.resize(i->m_RenderPassDesc.m_RenderTargetCount);
+
+			CreateResourcesBinder(i);
+
+			i->m_PipelineStateObject = addPSO();
+
+			CreateStateObjects(i);
+		}
+
+		m_PSOPool->Destroy(m_SwapChainRPDC->m_PipelineStateObject);
+
+		m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc.Width = l_screenResolution.x;
+		m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc.Height = l_screenResolution.y;
+
+		m_SwapChainRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)l_screenResolution.x;
+		m_SwapChainRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)l_screenResolution.y;
+
+		m_SwapChainRPDC->m_PipelineStateObject = addPSO();
+
+		CreateStateObjects(m_SwapChainRPDC);
+	}
+
+	return true;
+}
+
+using namespace GLRenderingServerNS;
 
 bool GLRenderingServer::Setup()
 {
@@ -124,6 +200,8 @@ bool GLRenderingServer::Setup()
 	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool(sizeof(GLShaderProgramComponent), 256);
 	m_SamplerDataComponentPool = InnoMemory::CreateObjectPool(sizeof(GLSamplerDataComponent), 256);
 	m_GPUBufferDataComponentPool = InnoMemory::CreateObjectPool(sizeof(GLGPUBufferDataComponent), 256);
+
+	m_RPDCs.reserve(128);
 
 	auto l_GLRenderingServerSetupTask = g_pModuleManager->getTaskSystem()->submit("GLRenderingServerSetupTask", 2, nullptr,
 		[&]() {
@@ -183,14 +261,6 @@ bool GLRenderingServer::Initialize()
 			m_SwapChainRPDC->m_ShaderProgram = m_SwapChainSPC;
 			m_SwapChainRPDC->m_FBO = 0;
 			m_SwapChainRPDC->m_RBO = 0;
-
-			ReserveRenderTargets(m_SwapChainRPDC, this);
-
-			m_SwapChainRPDC->m_RenderTargetsResourceBinders.resize(1);
-
-			m_SwapChainRPDC->m_RenderTargetsResourceBinders[0] = addResourcesBinder();
-
-			CreateResourcesBinder(m_SwapChainRPDC);
 
 			m_SwapChainRPDC->m_PipelineStateObject = addPSO();
 
@@ -457,16 +527,14 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 	CreateRenderTargets(l_rhs, this);
 
 	l_rhs->m_RenderTargetsResourceBinders.resize(l_rhs->m_RenderPassDesc.m_RenderTargetCount);
-	for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
-	{
-		l_rhs->m_RenderTargetsResourceBinders[i] = addResourcesBinder();
-	}
 
 	CreateResourcesBinder(l_rhs);
 
 	l_rhs->m_PipelineStateObject = addPSO();
 
 	CreateStateObjects(l_rhs);
+
+	m_RPDCs.emplace_back(l_rhs);
 
 	l_rhs->m_objectStatus = ObjectStatus::Activated;
 
@@ -922,6 +990,12 @@ bool GLRenderingServer::Present()
 
 	WaitForFrame(m_SwapChainRPDC);
 
+	if (m_needResize)
+	{
+		resizeImpl();
+		m_needResize = false;
+	}
+
 	return true;
 }
 
@@ -1087,5 +1161,6 @@ std::vector<Vec4> GLRenderingServer::ReadTextureBackToCPU(RenderPassDataComponen
 
 bool GLRenderingServer::Resize()
 {
+	m_needResize = true;
 	return true;
 }
