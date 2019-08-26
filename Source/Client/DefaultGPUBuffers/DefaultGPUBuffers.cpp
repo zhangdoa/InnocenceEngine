@@ -131,16 +131,16 @@ bool DefaultGPUBuffers::Upload()
 {
 	auto l_CameraGPUData = g_pModuleManager->getRenderingFrontend()->getCameraGPUData();
 	auto l_SunShadowPassTotalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getSunShadowPassDrawCallCount();
-	auto l_SunShadowPassMeshGPUData = g_pModuleManager->getRenderingFrontend()->getSunShadowPassMeshGPUData();
+	auto& l_SunShadowPassMeshGPUData = g_pModuleManager->getRenderingFrontend()->getSunShadowPassMeshGPUData();
 	auto l_OpaquePassTotalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
-	auto l_OpaquePassMeshGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassMeshGPUData();
-	auto l_MaterialGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassMaterialGPUData();
-	auto l_SunGPUData = g_pModuleManager->getRenderingFrontend()->getSunGPUData();
-	auto l_PointLightGPUData = g_pModuleManager->getRenderingFrontend()->getPointLightGPUData();
-	auto l_SphereLightGPUData = g_pModuleManager->getRenderingFrontend()->getSphereLightGPUData();
-	auto l_CSMGPUData = g_pModuleManager->getRenderingFrontend()->getCSMGPUData();
+	auto& l_OpaquePassMeshGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassMeshGPUData();
+	auto& l_MaterialGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassMaterialGPUData();
+	auto& l_SunGPUData = g_pModuleManager->getRenderingFrontend()->getSunGPUData();
+	auto& l_PointLightGPUData = g_pModuleManager->getRenderingFrontend()->getPointLightGPUData();
+	auto& l_SphereLightGPUData = g_pModuleManager->getRenderingFrontend()->getSphereLightGPUData();
+	auto& l_CSMGPUData = g_pModuleManager->getRenderingFrontend()->getCSMGPUData();
 	auto l_SkyGPUData = g_pModuleManager->getRenderingFrontend()->getSkyGPUData();
-	auto l_billboardPassMeshGPUData = g_pModuleManager->getRenderingFrontend()->getBillboardPassMeshGPUData();
+	auto& l_billboardPassMeshGPUData = g_pModuleManager->getRenderingFrontend()->getBillboardPassMeshGPUData();
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_MainCameraGBDC, &l_CameraGPUData);
 	if (l_SunShadowPassMeshGPUData.size() > 0)

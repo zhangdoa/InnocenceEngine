@@ -96,7 +96,7 @@ bool BillboardPass::PrepareCommandList()
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Quad);
 
-	auto l_billboardPassDrawCallData = g_pModuleManager->getRenderingFrontend()->getBillboardPassDrawCallData();
+	auto& l_billboardPassDrawCallData = g_pModuleManager->getRenderingFrontend()->getBillboardPassDrawCallData();
 	auto l_drawCallCount = l_billboardPassDrawCallData.size();
 
 	for (unsigned int i = 0; i < l_drawCallCount; i++)

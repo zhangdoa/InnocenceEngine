@@ -127,7 +127,7 @@ bool OpaquePass::PrepareCommandList()
 	unsigned int l_offset = 0;
 
 	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
-	auto l_opaquePassDrawCallData = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallData();
+	auto& l_opaquePassDrawCallData = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallData();
 
 	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
 	{
