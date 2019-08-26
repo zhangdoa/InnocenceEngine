@@ -13,6 +13,8 @@ extern IModuleManager* g_pModuleManager;
 #include "AssetLoader.h"
 #include "JSONParser.h"
 
+using SceneLoadingCallback = std::pair<std::function<void()>*, int>;
+
 namespace InnoFileSystemNS
 {
 	bool convertModel(const std::string & fileName, const std::string & exportPath);
@@ -23,8 +25,8 @@ namespace InnoFileSystemNS
 
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 
-	std::vector<std::function<void()>*> m_sceneLoadingStartCallbacks;
-	std::vector<std::function<void()>*> m_sceneLoadingFinishCallbacks;
+	std::vector<SceneLoadingCallback> m_sceneLoadingStartCallbacks;
+	std::vector<SceneLoadingCallback> m_sceneLoadingFinishCallbacks;
 
 	std::atomic<bool> m_isLoadingScene = false;
 	std::atomic<bool> m_prepareForLoadingScene = false;
@@ -87,16 +89,26 @@ bool InnoFileSystemNS::loadScene(const std::string& fileName)
 {
 	m_currentScene = fileName;
 
-	for (auto i : m_sceneLoadingStartCallbacks)
+	std::sort(m_sceneLoadingStartCallbacks.begin(), m_sceneLoadingStartCallbacks.end(),
+		[&](SceneLoadingCallback A, SceneLoadingCallback B) {
+		return A.second > B.second;
+	});
+
+	std::sort(m_sceneLoadingFinishCallbacks.begin(), m_sceneLoadingFinishCallbacks.end(),
+		[&](SceneLoadingCallback A, SceneLoadingCallback B) {
+		return A.second > B.second;
+	});
+
+	for (auto& i : m_sceneLoadingStartCallbacks)
 	{
-		(*i)();
+		(*i.first)();
 	}
 
 	JSONParser::loadScene(fileName);
 
-	for (auto i : m_sceneLoadingFinishCallbacks)
+	for (auto& i : m_sceneLoadingFinishCallbacks)
 	{
-		(*i)();
+		(*i.first)();
 	}
 
 	InnoFileSystemNS::m_isLoadingScene = false;
@@ -219,15 +231,15 @@ bool InnoFileSystem::isLoadingScene()
 	return InnoFileSystemNS::m_isLoadingScene;
 }
 
-bool InnoFileSystem::addSceneLoadingStartCallback(std::function<void()>* functor)
+bool InnoFileSystem::addSceneLoadingStartCallback(std::function<void()>* functor, int priority)
 {
-	InnoFileSystemNS::m_sceneLoadingStartCallbacks.emplace_back(functor);
+	InnoFileSystemNS::m_sceneLoadingStartCallbacks.emplace_back(functor, priority);
 	return true;
 }
 
-bool InnoFileSystem::addSceneLoadingFinishCallback(std::function<void()>* functor)
+bool InnoFileSystem::addSceneLoadingFinishCallback(std::function<void()>* functor, int priority)
 {
-	InnoFileSystemNS::m_sceneLoadingFinishCallbacks.emplace_back(functor);
+	InnoFileSystemNS::m_sceneLoadingFinishCallbacks.emplace_back(functor, priority);
 	return true;
 }
 
