@@ -1563,23 +1563,31 @@ namespace InnoMath
 	template<class T>
 	inline auto transformAABBSpace(const TAABB<T>& rhs, TMat4<T> Tm) -> TAABB<T>
 	{
-		TAABB<T> l_result;
+		auto l_vertices = generateAABBVertices(rhs.m_boundMax, rhs.m_boundMin);
 
-		//Column-Major memory layout
+		for (auto& i : l_vertices)
+		{
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-		l_result.m_boundMax = InnoMath::mul(rhs.m_boundMax, Tm);
-		l_result.m_boundMin = InnoMath::mul(rhs.m_boundMin, Tm);
-		l_result.m_center = InnoMath::mul(rhs.m_center, Tm);
+			i.m_pos = InnoMath::mul(i.m_pos, Tm);
 #endif
-		//Row-Major memory layout
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-		l_result.m_boundMax = InnoMath::mul(Tm, rhs.m_boundMax);
-		l_result.m_boundMin = InnoMath::mul(Tm, rhs.m_boundMin);
-		l_result.m_center = InnoMath::mul(Tm, rhs.m_center);
+			i.m_pos = InnoMath::mul(Tm, i.m_pos);
 #endif
+		}
 
-		l_result.m_extend = l_result.m_boundMax - l_result.m_boundMin;
-		l_result.m_extend.w = one<T>;
+		auto l_boundMin = maxVec4<T>;
+		auto l_boundMax = minVec4<T>;
+
+		for (auto& i : l_vertices)
+		{
+			l_boundMin = elementWiseMin(i.m_pos, l_boundMin);
+			l_boundMax = elementWiseMax(i.m_pos, l_boundMax);
+		}
+
+		l_boundMin.w = one<T>;
+		l_boundMax.w = one<T>;
+
+		auto l_result = generateAABB(l_boundMax, l_boundMin);
 
 		return l_result;
 	};
