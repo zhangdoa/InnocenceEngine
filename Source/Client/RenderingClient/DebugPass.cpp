@@ -24,7 +24,8 @@ struct DebugMaterialGPUData
 
 namespace DebugPass
 {
-	bool AddPDC(PhysicsDataComponent* PDC);
+	bool AddPDCMeshData(PhysicsDataComponent* PDC);
+	bool AddBVHNode(BVHNode* node);
 
 	RenderPassDataComponent* m_RPDC;
 	ShaderProgramComponent* m_SPC;
@@ -127,25 +128,54 @@ bool DebugPass::Initialize()
 	return true;
 }
 
-bool DebugPass::AddPDC(PhysicsDataComponent* PDC)
+bool DebugPass::AddPDCMeshData(PhysicsDataComponent* PDC)
 {
-	DebugMeshGPUData l_meshData;
+	DebugMeshGPUData l_cubeMeshData;
 
-	l_meshData.m = InnoMath::toTranslationMatrix(PDC->m_AABBWS.m_center);
-	l_meshData.m.m00 *= PDC->m_AABBWS.m_extend.x / 2.0f;
-	l_meshData.m.m11 *= PDC->m_AABBWS.m_extend.y / 2.0f;
-	l_meshData.m.m22 *= PDC->m_AABBWS.m_extend.z / 2.0f;
-	l_meshData.materialID = 4;
+	l_cubeMeshData.m = InnoMath::toTranslationMatrix(PDC->m_AABBWS.m_center);
+	l_cubeMeshData.m.m00 *= PDC->m_AABBWS.m_extend.x / 2.0f;
+	l_cubeMeshData.m.m11 *= PDC->m_AABBWS.m_extend.y / 2.0f;
+	l_cubeMeshData.m.m22 *= PDC->m_AABBWS.m_extend.z / 2.0f;
+	l_cubeMeshData.materialID = 4;
 
-	m_debugCubeGPUData.emplace_back(l_meshData);
+	m_debugCubeGPUData.emplace_back(l_cubeMeshData);
 
-	if (PDC->m_LeftChildNode)
+	DebugMeshGPUData l_sphereMeshData;
+
+	l_sphereMeshData.m = InnoMath::toTranslationMatrix(PDC->m_SphereWS.m_center);
+	l_sphereMeshData.m.m00 *= 0.5f;
+	l_sphereMeshData.m.m11 *= 0.5f;
+	l_sphereMeshData.m.m22 *= 0.5f;
+	l_sphereMeshData.materialID = 3;
+
+	m_debugSphereGPUData.emplace_back(l_sphereMeshData);
+
+	return true;
+}
+
+bool DebugPass::AddBVHNode(BVHNode* node)
+{
+	if (node)
 	{
-		AddPDC(PDC->m_LeftChildNode);
-	}
-	if (PDC->m_RightChildNode)
-	{
-		AddPDC(PDC->m_RightChildNode);
+		if (node->intermediatePDC)
+		{
+			AddPDCMeshData(node->intermediatePDC);
+			if (node->leftChildNode)
+			{
+				AddBVHNode(node->leftChildNode);
+			}
+			if (node->rightChildNode)
+			{
+				AddBVHNode(node->leftChildNode);
+			}
+		}
+
+		auto l_PDCCount = node->childrenPDCs.size();
+		for (size_t i = 0; i < l_PDCCount; i++)
+		{
+			auto l_PDC = node->childrenPDCs[i];
+			AddPDCMeshData(l_PDC);
+		}
 	}
 
 	return true;
@@ -176,70 +206,74 @@ bool DebugPass::PrepareCommandList()
 		m_debugMaterialGPUData[3].color = Vec4(0.8f, 0.1f, 0.1f, 1.0f);
 		m_debugMaterialGPUData[4].color = Vec4(0.1f, 0.6f, 0.2f, 1.0f);
 
-		auto l_probes = GIDataLoader::GetProbes();
-
-		if (l_probes.size() > 0)
+		static bool l_drawProbesAndBricks = false;
+		if (l_drawProbesAndBricks)
 		{
-			for (size_t i = 0; i < l_probes.size(); i++)
+			auto l_probes = GIDataLoader::GetProbes();
+
+			if (l_probes.size() > 0)
 			{
-				DebugMeshGPUData l_meshData;
-
-				l_meshData.m = InnoMath::toTranslationMatrix(l_probes[i].pos);
-				l_meshData.m.m00 *= 0.5f;
-				l_meshData.m.m11 *= 0.5f;
-				l_meshData.m.m22 *= 0.5f;
-				l_meshData.materialID = 0;
-
-				m_debugSphereGPUData.emplace_back(l_meshData);
-			}
-
-			auto l_bricks = GIDataLoader::GetBricks();
-
-			if (l_bricks.size() > 0)
-			{
-				for (size_t i = 0; i < l_bricks.size(); i++)
+				for (size_t i = 0; i < l_probes.size(); i++)
 				{
 					DebugMeshGPUData l_meshData;
 
-					l_meshData.m = InnoMath::toTranslationMatrix(l_bricks[i].boundBox.m_center);
-					l_meshData.m.m00 *= l_bricks[i].boundBox.m_extend.x / 2.0f;
-					l_meshData.m.m11 *= l_bricks[i].boundBox.m_extend.y / 2.0f;
-					l_meshData.m.m22 *= l_bricks[i].boundBox.m_extend.z / 2.0f;
-					l_meshData.materialID = 1;
+					l_meshData.m = InnoMath::toTranslationMatrix(l_probes[i].pos);
+					l_meshData.m.m00 *= 0.5f;
+					l_meshData.m.m11 *= 0.5f;
+					l_meshData.m.m22 *= 0.5f;
+					l_meshData.materialID = 0;
 
-					m_debugCubeGPUData.emplace_back(l_meshData);
+					m_debugSphereGPUData.emplace_back(l_meshData);
 				}
-			}
 
-			auto l_brickFactor = GIDataLoader::GetBrickFactors();
+				auto l_bricks = GIDataLoader::GetBricks();
 
-			// @TODO:
-			auto l_probeIndexBegin = 15;
-			auto l_probeIndexEnd = 16;
-
-			for (size_t probeIndex = l_probeIndexBegin; probeIndex < l_probeIndexEnd; probeIndex++)
-			{
-				m_debugSphereGPUData[probeIndex].materialID = 2;
-
-				auto l_probe = l_probes[probeIndex];
-
-				for (size_t i = 0; i < 6; i++)
+				if (l_bricks.size() > 0)
 				{
-					auto l_brickFactorBegin = l_probe.brickFactorRange[i * 2];
-					auto l_brickFactorEnd = l_probe.brickFactorRange[i * 2 + 1];
-
-					for (size_t j = l_brickFactorBegin; j < l_brickFactorEnd; j++)
+					for (size_t i = 0; i < l_bricks.size(); i++)
 					{
-						auto l_brickIndex = l_brickFactor[j].brickIndex;
-						m_debugCubeGPUData[l_brickIndex].materialID = 3;
+						DebugMeshGPUData l_meshData;
+
+						l_meshData.m = InnoMath::toTranslationMatrix(l_bricks[i].boundBox.m_center);
+						l_meshData.m.m00 *= l_bricks[i].boundBox.m_extend.x / 2.0f;
+						l_meshData.m.m11 *= l_bricks[i].boundBox.m_extend.y / 2.0f;
+						l_meshData.m.m22 *= l_bricks[i].boundBox.m_extend.z / 2.0f;
+						l_meshData.materialID = 1;
+
+						m_debugCubeGPUData.emplace_back(l_meshData);
+					}
+				}
+
+				auto l_brickFactor = GIDataLoader::GetBrickFactors();
+
+				// @TODO:
+				auto l_probeIndexBegin = 15;
+				auto l_probeIndexEnd = 16;
+
+				for (size_t probeIndex = l_probeIndexBegin; probeIndex < l_probeIndexEnd; probeIndex++)
+				{
+					m_debugSphereGPUData[probeIndex].materialID = 2;
+
+					auto l_probe = l_probes[probeIndex];
+
+					for (size_t i = 0; i < 6; i++)
+					{
+						auto l_brickFactorBegin = l_probe.brickFactorRange[i * 2];
+						auto l_brickFactorEnd = l_probe.brickFactorRange[i * 2 + 1];
+
+						for (size_t j = l_brickFactorBegin; j < l_brickFactorEnd; j++)
+						{
+							auto l_brickIndex = l_brickFactor[j].brickIndex;
+							m_debugCubeGPUData[l_brickIndex].materialID = 3;
+						}
 					}
 				}
 			}
 		}
 
-		auto l_rootPDC = g_pModuleManager->getPhysicsSystem()->getRootPhysicsDataComponent();
+		auto l_rootBVHNode = g_pModuleManager->getPhysicsSystem()->getRootBVHNode();
 
-		AddPDC(l_rootPDC);
+		AddBVHNode(l_rootBVHNode);
 
 		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_debugMaterialGBDC, m_debugMaterialGPUData, 0, m_debugMaterialGPUData.size());
 		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_debugSphereMeshGBDC, m_debugSphereGPUData, 0, m_debugSphereGPUData.size());

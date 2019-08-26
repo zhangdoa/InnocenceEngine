@@ -15,17 +15,6 @@
 #include "../ModuleManager/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
 
-struct BVHNode
-{
-	BVHNode* parentNode = 0;
-	BVHNode* leftChildNode = 0;
-	BVHNode* rightChildNode = 0;
-
-	size_t depth = 0;
-	PhysicsDataComponent* PDC = 0;
-	std::vector<PhysicsDataComponent*> childrenPDCs;
-};
-
 namespace InnoPhysicsSystemNS
 {
 	bool setup();
@@ -33,7 +22,7 @@ namespace InnoPhysicsSystemNS
 
 	PhysicsDataComponent* AddPhysicsDataComponent(InnoEntity* parentEntity);
 
-	bool generatePhysicsDataComponent(MeshDataComponent* MDC);
+	PhysicsDataComponent* generatePhysicsDataComponent(const ModelPair& modelPair);
 	bool generateAABBInWorldSpace(PhysicsDataComponent* PDC, const Mat4& m);
 	bool generatePhysicsProxy(VisibleComponent * VC);
 
@@ -146,24 +135,23 @@ PhysicsDataComponent * InnoPhysicsSystemNS::AddPhysicsDataComponent(InnoEntity *
 	return l_PDC;
 }
 
-bool InnoPhysicsSystemNS::generatePhysicsDataComponent(MeshDataComponent* MDC)
+PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const ModelPair& modelPair)
 {
-	auto l_PDC = AddPhysicsDataComponent(MDC->m_parentEntity);
-	auto l_AABB = InnoMath::generateAABB(&MDC->m_vertices[0], MDC->m_vertices.size());
-	auto l_sphere = InnoMath::generateBoundSphere(l_AABB);
+	auto l_MDC = modelPair.first;
+	auto l_PDC = AddPhysicsDataComponent(l_MDC->m_parentEntity);
 
-	l_PDC->m_AABBLS = l_AABB;
-	l_PDC->m_SphereLS = l_sphere;
-	l_PDC->m_ParentNode = m_RootPhysicsDataComponent;
+	l_PDC->m_AABBLS = InnoMath::generateAABB(&l_MDC->m_vertices[0], l_MDC->m_vertices.size());
+	l_PDC->m_SphereLS = InnoMath::generateBoundSphere(l_PDC->m_AABBLS);
 
-	InnoLogger::Log(LogLevel::Verbose, "PhysicsSystem: PhysicsDataComponent has been generated for MeshDataComponent:", MDC->m_parentEntity->m_entityName.c_str(), ".");
+	l_PDC->m_ModelPair = modelPair;
 
-	MDC->m_PDC = l_PDC;
+	InnoLogger::Log(LogLevel::Verbose, "PhysicsSystem: PhysicsDataComponent has been generated for MeshDataComponent:", l_MDC->m_parentEntity->m_entityName.c_str(), ".");
+
 	m_Components.emplace_back(l_PDC);
 
 	m_BVHWorkloadCount++;
 
-	return true;
+	return l_PDC;
 }
 
 bool InnoPhysicsSystemNS::generateAABBInWorldSpace(PhysicsDataComponent* PDC, const Mat4& m)
@@ -176,18 +164,14 @@ bool InnoPhysicsSystemNS::generateAABBInWorldSpace(PhysicsDataComponent* PDC, co
 
 bool InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent * VC)
 {
-	for (auto& l_modelPair : VC->m_modelMap)
+	for (auto i : VC->m_PDCs)
 	{
-		if (l_modelPair.first->m_PDC)
+		i->m_VisibleComponent = VC;
+		if (VC->m_meshUsageType == MeshUsageType::Static)
 		{
-			l_modelPair.first->m_PDC->m_ModelPair = l_modelPair;
-			l_modelPair.first->m_PDC->m_VisibleComponent = VC;
-			if (VC->m_meshUsageType == MeshUsageType::Static)
-			{
-				updateStaticSceneBoundary(l_modelPair.first->m_PDC->m_AABBWS);
-			}
-			updateTotalSceneBoundary(l_modelPair.first->m_PDC->m_AABBWS);
+			updateStaticSceneBoundary(i->m_AABBWS);
 		}
+		updateTotalSceneBoundary(i->m_AABBWS);
 	}
 
 #if defined INNO_PLATFORM_WIN
@@ -203,9 +187,9 @@ bool InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent * VC)
 			PhysXWrapper::get().createPxSphere(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_scale.x, (VC->m_meshUsageType == MeshUsageType::Dynamic));
 			break;
 		case MeshShapeType::Custom:
-			for (auto& l_modelPair : VC->m_modelMap)
+			for (auto i : VC->m_PDCs)
 			{
-				PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_rot, l_modelPair.first->m_PDC->m_AABBWS.m_boundMax - l_modelPair.first->m_PDC->m_AABBWS.m_boundMin, (VC->m_meshUsageType == MeshUsageType::Dynamic));
+				PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_rot, i->m_AABBWS.m_boundMax - i->m_AABBWS.m_boundMin, (VC->m_meshUsageType == MeshUsageType::Dynamic));
 			}
 			break;
 		default:
@@ -276,9 +260,9 @@ ObjectStatus InnoPhysicsSystem::getStatus()
 	return InnoPhysicsSystemNS::m_objectStatus;
 }
 
-bool InnoPhysicsSystem::generatePhysicsDataComponent(MeshDataComponent* MDC)
+PhysicsDataComponent* InnoPhysicsSystem::generatePhysicsDataComponent(const ModelPair& modelPair)
 {
-	return InnoPhysicsSystemNS::generatePhysicsDataComponent(MDC);
+	return InnoPhysicsSystemNS::generatePhysicsDataComponent(modelPair);
 }
 
 bool generateBVHLeafNodes(BVHNode* parentNode)
@@ -286,43 +270,36 @@ bool generateBVHLeafNodes(BVHNode* parentNode)
 	// Find max axis
 	float l_maxAxisLength;
 	unsigned int l_maxAxis;
-	if (parentNode->PDC->m_AABBWS.m_extend.x > parentNode->PDC->m_AABBWS.m_extend.y)
+	if (parentNode->intermediatePDC->m_AABBWS.m_extend.x > parentNode->intermediatePDC->m_AABBWS.m_extend.y)
 	{
-		if (parentNode->PDC->m_AABBWS.m_extend.x > parentNode->PDC->m_AABBWS.m_extend.z)
+		if (parentNode->intermediatePDC->m_AABBWS.m_extend.x > parentNode->intermediatePDC->m_AABBWS.m_extend.z)
 		{
-			l_maxAxisLength = parentNode->PDC->m_AABBWS.m_extend.x;
+			l_maxAxisLength = parentNode->intermediatePDC->m_AABBWS.m_extend.x;
 			l_maxAxis = 0;
 		}
 		else
 		{
-			l_maxAxisLength = parentNode->PDC->m_AABBWS.m_extend.z;
+			l_maxAxisLength = parentNode->intermediatePDC->m_AABBWS.m_extend.z;
 			l_maxAxis = 2;
 		}
 	}
 	else
 	{
-		if (parentNode->PDC->m_AABBWS.m_extend.y > parentNode->PDC->m_AABBWS.m_extend.z)
+		if (parentNode->intermediatePDC->m_AABBWS.m_extend.y > parentNode->intermediatePDC->m_AABBWS.m_extend.z)
 		{
-			l_maxAxisLength = parentNode->PDC->m_AABBWS.m_extend.y;
+			l_maxAxisLength = parentNode->intermediatePDC->m_AABBWS.m_extend.y;
 			l_maxAxis = 1;
 		}
 		else
 		{
-			l_maxAxisLength = parentNode->PDC->m_AABBWS.m_extend.z;
+			l_maxAxisLength = parentNode->intermediatePDC->m_AABBWS.m_extend.z;
 			l_maxAxis = 2;
 		}
 	}
 
-	// Construct middle split points
-	auto l_midMin = parentNode->PDC->m_AABBWS.m_boundMin;
-	auto l_midMax = parentNode->PDC->m_AABBWS.m_boundMax;
-
-	//And sort children nodes
+	// Sort children nodes
 	if (l_maxAxis == 0)
 	{
-		l_midMin.x += l_maxAxisLength / 2.0f;
-		l_midMax.x -= l_maxAxisLength / 2.0f;
-
 		std::sort(parentNode->childrenPDCs.begin(), parentNode->childrenPDCs.end(), [&](PhysicsDataComponent* A, PhysicsDataComponent* B)
 		{
 			return A->m_AABBWS.m_boundMin.x < B->m_AABBWS.m_boundMin.x;
@@ -330,9 +307,6 @@ bool generateBVHLeafNodes(BVHNode* parentNode)
 	}
 	else if (l_maxAxis == 1)
 	{
-		l_midMin.y += l_maxAxisLength / 2.0f;
-		l_midMax.y -= l_maxAxisLength / 2.0f;
-
 		std::sort(parentNode->childrenPDCs.begin(), parentNode->childrenPDCs.end(), [&](PhysicsDataComponent* A, PhysicsDataComponent* B)
 		{
 			return A->m_AABBWS.m_boundMin.y < B->m_AABBWS.m_boundMin.y;
@@ -340,13 +314,32 @@ bool generateBVHLeafNodes(BVHNode* parentNode)
 	}
 	else
 	{
-		l_midMin.z += l_maxAxisLength / 2.0f;
-		l_midMax.z -= l_maxAxisLength / 2.0f;
-
 		std::sort(parentNode->childrenPDCs.begin(), parentNode->childrenPDCs.end(), [&](PhysicsDataComponent* A, PhysicsDataComponent* B)
 		{
 			return A->m_AABBWS.m_boundMin.z < B->m_AABBWS.m_boundMin.z;
 		});
+	}
+
+	// Construct middle split points
+	auto l_midPDC = parentNode->childrenPDCs[parentNode->childrenPDCs.size() / 2];
+	auto l_midMin = parentNode->intermediatePDC->m_AABBWS.m_boundMin;
+	auto l_midMax = parentNode->intermediatePDC->m_AABBWS.m_boundMax;
+
+	//And sort children nodes
+	if (l_maxAxis == 0)
+	{
+		l_midMin.x += l_maxAxisLength / 2.0f;
+		l_midMax.x -= l_maxAxisLength / 2.0f;
+	}
+	else if (l_maxAxis == 1)
+	{
+		l_midMin.y += l_maxAxisLength / 2.0f;
+		l_midMax.y -= l_maxAxisLength / 2.0f;
+	}
+	else
+	{
+		l_midMin.z += l_maxAxisLength / 2.0f;
+		l_midMax.z -= l_maxAxisLength / 2.0f;
 	}
 
 	// Split children nodes
@@ -398,41 +391,29 @@ bool generateBVHLeafNodes(BVHNode* parentNode)
 	parentNode->childrenPDCs.clear();
 	parentNode->childrenPDCs.shrink_to_fit();
 
-	// Add intermediate nodes
+	// Add intermediate nodes and store children PDC
 	if (l_leftChildrenPDCs.size() > 0)
 	{
 		m_BVHNodes.emplace_back();
 		auto l_leftBVHNode = &m_BVHNodes[m_BVHNodes.size() - 1];
+
 		parentNode->leftChildNode = l_leftBVHNode;
+		l_leftBVHNode->parentNode = parentNode;
 		l_leftBVHNode->depth = parentNode->depth + 1;
+		l_leftBVHNode->childrenPDCs = std::move(l_leftChildrenPDCs);
+		l_leftBVHNode->childrenPDCs.shrink_to_fit();
 
-		if (l_leftChildrenPDCs.size() == 1)
+		if (l_leftChildrenPDCs.size() != 1)
 		{
-			parentNode->PDC->m_LeftChildNode = l_leftChildrenPDCs[0];
-			parentNode->PDC->m_LeftChildNode->m_ParentNode = parentNode->PDC;
-			l_leftBVHNode->PDC = parentNode->PDC->m_LeftChildNode;
-		}
-		else
-		{
-			auto l_leftPDC = AddPhysicsDataComponent(parentNode->PDC->m_parentEntity);
+			auto l_leftPDC = AddPhysicsDataComponent(parentNode->intermediatePDC->m_parentEntity);
 
-			l_leftPDC->m_AABBWS = InnoMath::generateAABB(l_midMax, parentNode->PDC->m_AABBWS.m_boundMin);
+			l_leftPDC->m_AABBWS = InnoMath::generateAABB(l_midMax, parentNode->intermediatePDC->m_AABBWS.m_boundMin);
 			l_leftPDC->m_SphereWS = InnoMath::generateBoundSphere(l_leftPDC->m_AABBWS);
 			l_leftPDC->m_IsIntermediate = true;
 
 			m_IntermediateComponents.emplace_back(l_leftPDC);
-			parentNode->PDC->m_LeftChildNode = l_leftPDC;
-			l_leftPDC->m_ParentNode = parentNode->PDC;
 
-			for (auto i : l_leftChildrenPDCs)
-			{
-				i->m_ParentNode = l_leftPDC;
-			}
-
-			l_leftBVHNode->depth = parentNode->depth + 1;
-			l_leftBVHNode->PDC = l_leftPDC;
-			l_leftBVHNode->childrenPDCs = std::move(l_leftChildrenPDCs);
-			l_leftBVHNode->childrenPDCs.shrink_to_fit();
+			l_leftBVHNode->intermediatePDC = l_leftPDC;
 		}
 	}
 
@@ -440,57 +421,45 @@ bool generateBVHLeafNodes(BVHNode* parentNode)
 	{
 		m_BVHNodes.emplace_back();
 		auto l_rightBVHNode = &m_BVHNodes[m_BVHNodes.size() - 1];
+
 		parentNode->rightChildNode = l_rightBVHNode;
+		l_rightBVHNode->parentNode = parentNode;
 		l_rightBVHNode->depth = parentNode->depth + 1;
+		l_rightBVHNode->childrenPDCs = std::move(l_rightChildrenPDCs);
+		l_rightBVHNode->childrenPDCs.shrink_to_fit();
 
-		if (l_rightChildrenPDCs.size() == 1)
+		if (l_rightChildrenPDCs.size() != 1)
 		{
-			parentNode->PDC->m_RightChildNode = l_rightChildrenPDCs[0];
-			parentNode->PDC->m_RightChildNode->m_ParentNode = parentNode->PDC;
-			l_rightBVHNode->PDC = parentNode->PDC->m_RightChildNode;
-		}
-		else
-		{
-			auto l_rightPDC = AddPhysicsDataComponent(parentNode->PDC->m_parentEntity);
+			auto l_rightPDC = AddPhysicsDataComponent(parentNode->intermediatePDC->m_parentEntity);
 
-			l_rightPDC->m_AABBWS = InnoMath::generateAABB(l_midMax, parentNode->PDC->m_AABBWS.m_boundMin);
+			l_rightPDC->m_AABBWS = InnoMath::generateAABB(l_midMax, parentNode->intermediatePDC->m_AABBWS.m_boundMin);
 			l_rightPDC->m_SphereWS = InnoMath::generateBoundSphere(l_rightPDC->m_AABBWS);
 			l_rightPDC->m_IsIntermediate = true;
 
 			m_IntermediateComponents.emplace_back(l_rightPDC);
-			parentNode->PDC->m_LeftChildNode = l_rightPDC;
-			l_rightPDC->m_ParentNode = parentNode->PDC;
 
-			for (auto i : l_rightChildrenPDCs)
-			{
-				i->m_ParentNode = l_rightPDC;
-			}
-
-			l_rightBVHNode->depth = parentNode->depth + 1;
-			l_rightBVHNode->PDC = l_rightPDC;
-			l_rightBVHNode->childrenPDCs = std::move(l_rightChildrenPDCs);
-			l_rightBVHNode->childrenPDCs.shrink_to_fit();
+			l_rightBVHNode->intermediatePDC = l_rightPDC;
 		}
 	}
 
 	return true;
 }
 
-bool generateBVH(BVHNode* node)
+void generateBVH(BVHNode* node)
 {
 	if (node)
 	{
-		if (node->depth < m_maxBVHDepth)
+		if (node->intermediatePDC)
 		{
 			generateBVHLeafNodes(node);
+		}
+
+		if (node->depth < m_maxBVHDepth)
+		{
 			generateBVH(node->leftChildNode);
 			generateBVH(node->rightChildNode);
 		}
-
-		return true;
 	}
-
-	return false;
 }
 
 void InnoPhysicsSystem::updateBVH()
@@ -509,7 +478,7 @@ void InnoPhysicsSystem::updateBVH()
 		m_BVHNodes.emplace_back();
 		m_RootBVHNode = &m_BVHNodes[m_BVHNodes.size() - 1];
 
-		m_RootBVHNode->PDC = m_RootPhysicsDataComponent;
+		m_RootBVHNode->intermediatePDC = m_RootPhysicsDataComponent;
 		m_RootBVHNode->childrenPDCs = m_Components;
 
 		generateBVH(m_RootBVHNode);
@@ -518,7 +487,7 @@ void InnoPhysicsSystem::updateBVH()
 	}
 }
 
-bool PlainCulling(const Frustum& frustum, std::vector<CullingData>& cullingDatas)
+void PlainCulling(const Frustum& frustum, std::vector<CullingData>& cullingDatas)
 {
 	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
 
@@ -529,9 +498,9 @@ bool PlainCulling(const Frustum& frustum, std::vector<CullingData>& cullingDatas
 			auto l_transformComponent = GetComponent(TransformComponent, visibleComponent->m_parentEntity);
 			auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
-			for (auto& l_modelPair : visibleComponent->m_modelMap)
+			for (auto i : visibleComponent->m_PDCs)
 			{
-				auto l_PDC = l_modelPair.first->m_PDC;
+				auto l_PDC = i;
 
 				if (l_PDC)
 				{
@@ -540,8 +509,8 @@ bool PlainCulling(const Frustum& frustum, std::vector<CullingData>& cullingDatas
 					l_cullingData.m = l_globalTm;
 					l_cullingData.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
 					l_cullingData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-					l_cullingData.mesh = l_modelPair.first;
-					l_cullingData.material = l_modelPair.second;
+					l_cullingData.mesh = l_PDC->m_ModelPair.first;
+					l_cullingData.material = l_PDC->m_ModelPair.second;
 					l_cullingData.visiblilityType = visibleComponent->m_visiblilityType;
 					l_cullingData.meshUsageType = visibleComponent->m_meshUsageType;
 					l_cullingData.UUID = visibleComponent->m_UUID;
@@ -570,8 +539,6 @@ bool PlainCulling(const Frustum& frustum, std::vector<CullingData>& cullingDatas
 			}
 		}
 	}
-
-	return true;
 }
 
 CullingData generateCullingData(const Frustum& frustum, PhysicsDataComponent* PDC)
@@ -609,42 +576,33 @@ CullingData generateCullingData(const Frustum& frustum, PhysicsDataComponent* PD
 	return l_cullingData;
 }
 
-bool BVHCulling(BVHNode* node, const Frustum& frustum, std::vector<CullingData>& cullingDatas)
+void BVHCulling(BVHNode* node, const Frustum& frustum, std::vector<CullingData>& cullingDatas)
 {
-	if (InnoMath::intersectCheck(frustum, node->PDC->m_SphereWS))
+	if (node->intermediatePDC)
 	{
-		if (node->leftChildNode)
+		if (InnoMath::intersectCheck(frustum, node->intermediatePDC->m_SphereWS))
 		{
-			BVHCulling(node->leftChildNode, frustum, cullingDatas);
-		}
-		if (node->rightChildNode)
-		{
-			BVHCulling(node->rightChildNode, frustum, cullingDatas);
-		}
-		else
-		{
-			if (!node->PDC->m_IsIntermediate)
+			if (node->leftChildNode)
 			{
-				auto l_cullingData = generateCullingData(frustum, node->PDC);
-				cullingDatas.emplace_back(l_cullingData);
+				BVHCulling(node->leftChildNode, frustum, cullingDatas);
 			}
-			else
+			if (node->rightChildNode)
 			{
-				auto l_PDCCount = node->childrenPDCs.size();
-				for (size_t i = 0; i < l_PDCCount; i++)
-				{
-					auto l_PDC = node->childrenPDCs[i];
-					auto l_cullingData = generateCullingData(frustum, l_PDC);
-
-					cullingDatas.emplace_back(l_cullingData);
-				}
+				BVHCulling(node->rightChildNode, frustum, cullingDatas);
 			}
 		}
-
-		return true;
 	}
+	else
+	{
+		auto l_PDCCount = node->childrenPDCs.size();
+		for (size_t i = 0; i < l_PDCCount; i++)
+		{
+			auto l_PDC = node->childrenPDCs[i];
+			auto l_cullingData = generateCullingData(frustum, l_PDC);
 
-	return false;
+			cullingDatas.emplace_back(l_cullingData);
+		}
+	}
 }
 
 void InnoPhysicsSystem::updateCulling()
@@ -705,9 +663,9 @@ AABB InnoPhysicsSystem::getTotalSceneAABB()
 	return InnoPhysicsSystemNS::m_totalSceneAABB;
 }
 
-PhysicsDataComponent * InnoPhysicsSystem::getRootPhysicsDataComponent()
+BVHNode * InnoPhysicsSystem::getRootBVHNode()
 {
-	return InnoPhysicsSystemNS::m_RootPhysicsDataComponent;
+	return InnoPhysicsSystemNS::m_RootBVHNode;
 }
 
 bool InnoPhysicsSystem::generateAABBInWorldSpace(PhysicsDataComponent* PDC, const Mat4& m)

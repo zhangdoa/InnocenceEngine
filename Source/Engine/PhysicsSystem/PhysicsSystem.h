@@ -13,7 +13,7 @@ public:
 
 	ObjectStatus getStatus() override;
 
-	bool generatePhysicsDataComponent(MeshDataComponent* MDC) override;
+	PhysicsDataComponent* generatePhysicsDataComponent(const ModelPair& modelPair) override;
 	bool generateAABBInWorldSpace(PhysicsDataComponent* PDC, const Mat4& m) override;
 	bool generatePhysicsProxy(VisibleComponent* VC) override;
 	void updateBVH() override;
@@ -22,5 +22,5 @@ public:
 	AABB getVisibleSceneAABB() override;
 	AABB getStaticSceneAABB() override;
 	AABB getTotalSceneAABB() override;
-	PhysicsDataComponent* getRootPhysicsDataComponent() override;
+	BVHNode* getRootBVHNode() override;
 };

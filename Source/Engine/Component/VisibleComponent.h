@@ -6,6 +6,7 @@
 using ModelPair = std::pair<MeshDataComponent*, MaterialDataComponent*>;
 using ModelMap = std::unordered_map<MeshDataComponent*, MaterialDataComponent*>;
 
+class PhysicsDataComponent;
 class VisibleComponent : public InnoComponent
 {
 public:
@@ -16,8 +17,8 @@ public:
 	TextureWrapMethod m_textureWrapMethod = TextureWrapMethod::Repeat;
 
 	std::string m_modelFileName;
+	bool m_simulatePhysics = false;
 
 	ModelMap m_modelMap;
-
-	bool m_simulatePhysics = false;
+	std::vector<PhysicsDataComponent*> m_PDCs;
 };

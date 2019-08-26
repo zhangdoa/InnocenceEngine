@@ -22,6 +22,7 @@ namespace VisibleComponentManagerNS
 	std::function<void()> f_SceneLoadingFinishCallback;
 	std::function<void(VisibleComponent*, bool)> f_LoadAssetTask;
 	std::function<void(VisibleComponent*)> f_AssignUnitMeshTask;
+	std::function<void(VisibleComponent*)> f_PDCTask;
 
 	void assignUnitMesh(MeshShapeType meshShapeType, VisibleComponent* visibleComponent)
 	{
@@ -52,34 +53,28 @@ bool InnoVisibleComponentManager::Setup()
 	f_LoadAssetTask = [=](VisibleComponent* i, bool AsyncLoad)
 	{
 		i->m_modelMap = g_pModuleManager->getFileSystem()->loadModel(i->m_modelFileName, AsyncLoad);
-
-		auto l_transformComponent = GetComponent(TransformComponent, i->m_parentEntity);
-		auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
-
-		for (auto j : i->m_modelMap)
-		{
-			g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(j.first);
-			g_pModuleManager->getPhysicsSystem()->generateAABBInWorldSpace(j.first->m_PDC, l_globalTm);
-		}
-
-		g_pModuleManager->getPhysicsSystem()->generatePhysicsProxy(i);
-		i->m_objectStatus = ObjectStatus::Activated;
 	};
 
 	f_AssignUnitMeshTask = [=](VisibleComponent* i)
 	{
 		assignUnitMesh(i->m_meshShapeType, i);
+	};
+
+	f_PDCTask = [=](VisibleComponent* i)
+	{
+		i->m_PDCs.reserve(i->m_modelMap.size());
 
 		auto l_transformComponent = GetComponent(TransformComponent, i->m_parentEntity);
 		auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
-		for (auto j : i->m_modelMap)
+		for (auto& j : i->m_modelMap)
 		{
-			g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(j.first);
-			g_pModuleManager->getPhysicsSystem()->generateAABBInWorldSpace(j.first->m_PDC, l_globalTm);
-		}
+			auto l_PDC = g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(j);
+			g_pModuleManager->getPhysicsSystem()->generateAABBInWorldSpace(l_PDC, l_globalTm);
+			i->m_PDCs.emplace_back(l_PDC);
 
-		g_pModuleManager->getPhysicsSystem()->generatePhysicsProxy(i);
+			g_pModuleManager->getPhysicsSystem()->generatePhysicsProxy(i);
+		}
 
 		i->m_objectStatus = ObjectStatus::Activated;
 	};
@@ -132,25 +127,21 @@ void InnoVisibleComponentManager::LoadAssetsForComponents(bool AsyncLoad)
 			{
 				if (AsyncLoad)
 				{
-					g_pModuleManager->getTaskSystem()->submit("LoadAssetTask", 4, nullptr, f_LoadAssetTask, i, true);
+					auto l_loadAssetTask = g_pModuleManager->getTaskSystem()->submit("LoadAssetTask", 4, nullptr, f_LoadAssetTask, i, true);
+					g_pModuleManager->getTaskSystem()->submit("PDCTask", 4, l_loadAssetTask, f_PDCTask, i);
 				}
 				else
 				{
 					f_LoadAssetTask(i, false);
+					f_PDCTask(i);
 				}
 			}
 			else
 			{
 				if (i->m_meshShapeType != MeshShapeType::Custom)
 				{
-					if (AsyncLoad)
-					{
-						g_pModuleManager->getTaskSystem()->submit("AssignUnitMeshTask", 4, nullptr, f_AssignUnitMeshTask, i);
-					}
-					else
-					{
-						f_AssignUnitMeshTask(i);
-					}
+					f_AssignUnitMeshTask(i);
+					f_PDCTask(i);
 				}
 				else
 				{

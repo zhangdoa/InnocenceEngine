@@ -22,6 +22,18 @@ struct CullingData
 	unsigned int UUID;
 };
 
+struct BVHNode
+{
+	BVHNode* parentNode = 0;
+	BVHNode* leftChildNode = 0;
+	BVHNode* rightChildNode = 0;
+
+	size_t depth = 0;
+
+	PhysicsDataComponent* intermediatePDC;
+	std::vector<PhysicsDataComponent*> childrenPDCs;
+};
+
 class IPhysicsSystem
 {
 public:
@@ -34,7 +46,7 @@ public:
 
 	virtual ObjectStatus getStatus() = 0;
 
-	virtual bool generatePhysicsDataComponent(MeshDataComponent* MDC) = 0;
+	virtual PhysicsDataComponent* generatePhysicsDataComponent(const ModelPair& modelPair) = 0;
 	virtual bool generateAABBInWorldSpace(PhysicsDataComponent* PDC, const Mat4& m) = 0;
 	virtual bool generatePhysicsProxy(VisibleComponent* VC) = 0;
 	virtual void updateBVH() = 0;
@@ -43,5 +55,5 @@ public:
 	virtual AABB getVisibleSceneAABB() = 0;
 	virtual AABB getStaticSceneAABB() = 0;
 	virtual AABB getTotalSceneAABB() = 0;
-	virtual PhysicsDataComponent* getRootPhysicsDataComponent() = 0;
+	virtual BVHNode* getRootBVHNode() = 0;
 };

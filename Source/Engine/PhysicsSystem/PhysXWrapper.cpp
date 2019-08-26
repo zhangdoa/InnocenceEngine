@@ -49,6 +49,7 @@ namespace PhysXWrapperNS
 	std::function<void()> f_sceneLoadingStartCallback;
 	std::function<void()> f_pauseSimulate;
 
+	std::shared_ptr<IInnoTask> m_currentTask;
 	std::mutex m_mutex;
 }
 
@@ -94,10 +95,15 @@ bool PhysXWrapperNS::setup()
 	PxRigidStatic* groundPlane = PxCreatePlane(*gPhysics, PxPlane(0, 1, 0, 0), *gMaterial);
 	gScene->addActor(*groundPlane);
 
-	PhysXActors.reserve(16384);
+	PhysXActors.reserve(65536);
 
 	f_sceneLoadingStartCallback = [&]() {
 		m_needSimulate = false;
+
+		if (m_currentTask != nullptr)
+		{
+			m_currentTask->Wait();
+		}
 
 		for (auto i : PhysXActors)
 		{
@@ -131,7 +137,7 @@ bool PhysXWrapperNS::update()
 		{
 			m_allowUpdate = false;
 
-			auto PhysXUpdateTask = g_pModuleManager->getTaskSystem()->submit("PhysXUpdateTask", 3, nullptr, [&]()
+			auto PhysXUpdateTask = g_pModuleManager->getTaskSystem()->submit("PhysXUpdateTask", 3, m_currentTask, [&]()
 			{
 				gScene->simulate(g_pModuleManager->getTickTime() / 1000.0f);
 				gScene->fetchResults(true);
@@ -157,6 +163,8 @@ bool PhysXWrapperNS::update()
 				}
 				m_allowUpdate = true;
 			});
+
+			m_currentTask = PhysXUpdateTask;
 		}
 	}
 
@@ -165,6 +173,10 @@ bool PhysXWrapperNS::update()
 
 bool PhysXWrapperNS::terminate()
 {
+	if (m_currentTask != nullptr)
+	{
+		m_currentTask->Wait();
+	}
 	gScene->release();
 	gDispatcher->release();
 	gPhysics->release();
@@ -215,32 +227,36 @@ bool PhysXWrapperNS::createPxBox(void* component, Vec4 globalPos, Vec4 rot, Vec4
 {
 	std::lock_guard<std::mutex> lock{ PhysXWrapperNS::m_mutex };
 
-	PxShape* shape = gPhysics->createShape(PxBoxGeometry(size.x, size.y, size.z), *gMaterial);
-	PxTransform globalTm(PxVec3(globalPos.x, globalPos.y, globalPos.z), PxQuat(rot.x, rot.y, rot.z, rot.w));
-
-	PxRigidActor* l_actor;
-
-	if (isDynamic)
+	if (size.x > 0 && size.y > 0 && size.z > 0)
 	{
-		PxRigidDynamic* body = gPhysics->createRigidDynamic(globalTm);
-		body->userData = component;
-		body->attachShape(*shape);
-		PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
-		l_actor = body;
-	}
-	else
-	{
-		PxRigidStatic* body = gPhysics->createRigidStatic(globalTm);
-		body->userData = component;
-		body->attachShape(*shape);
+		PxShape* shape = gPhysics->createShape(PxBoxGeometry(size.x, size.y, size.z), *gMaterial);
 
-		l_actor = body;
-	}
+		PxTransform globalTm(PxVec3(globalPos.x, globalPos.y, globalPos.z), PxQuat(rot.x, rot.y, rot.z, rot.w));
 
-	gScene->addActor(*l_actor);
-	shape->release();
-	PhysXActors.emplace_back(PhysXActor{ isDynamic, l_actor });
-	InnoLogger::Log(LogLevel::Verbose, "PhysXWrapper: PxRigidActor has been created for ", component, ".");
+		PxRigidActor* l_actor;
+
+		if (isDynamic)
+		{
+			PxRigidDynamic* body = gPhysics->createRigidDynamic(globalTm);
+			body->userData = component;
+			body->attachShape(*shape);
+			PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
+			l_actor = body;
+		}
+		else
+		{
+			PxRigidStatic* body = gPhysics->createRigidStatic(globalTm);
+			body->userData = component;
+			body->attachShape(*shape);
+
+			l_actor = body;
+		}
+
+		gScene->addActor(*l_actor);
+		shape->release();
+		PhysXActors.emplace_back(PhysXActor{ isDynamic, l_actor });
+		InnoLogger::Log(LogLevel::Verbose, "PhysXWrapper: PxRigidActor has been created for ", component, ".");
+	}
 
 	return true;
 }
