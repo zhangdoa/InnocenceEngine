@@ -185,6 +185,7 @@ enum class RenderPassUsageType
 struct RenderPassDesc
 {
 	bool m_UseMultiFrames = false;
+	bool m_IsOffScreen = false;
 	RenderPassUsageType m_RenderPassUsageType = RenderPassUsageType::Graphics;
 	size_t m_RenderTargetCount = 0;
 	TextureDataDesc m_RenderTargetDesc = {};

@@ -41,6 +41,7 @@ bool BRDFLUTPass::Setup()
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
+	l_RenderPassDesc.m_IsOffScreen = true;
 	l_RenderPassDesc.m_RenderTargetDesc.Width = 512;
 	l_RenderPassDesc.m_RenderTargetDesc.Height = 512;
 
