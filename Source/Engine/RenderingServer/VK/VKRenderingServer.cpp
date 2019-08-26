@@ -699,7 +699,7 @@ bool VKRenderingServer::WaitForFrame(RenderPassDataComponent * rhs)
 	return true;
 }
 
-bool VKRenderingServer::SetUserPipelineOutput(IResourceBinder* resourceBinder)
+bool VKRenderingServer::SetUserPipelineOutput(RenderPassDataComponent * rhs)
 {
 	return nullptr;
 }

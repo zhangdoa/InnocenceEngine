@@ -66,7 +66,7 @@ namespace DX11RenderingServerNS
 
 	ID3D10Blob* m_InputLayoutDummyShaderBuffer = 0;
 
-	IResourceBinder* m_userPipelineOutput = 0;
+	DX11RenderPassDataComponent* m_userPipelineOutput = 0;
 	DX11RenderPassDataComponent* m_SwapChainRPDC = 0;
 	DX11ShaderProgramComponent* m_SwapChainSPC = 0;
 	DX11SamplerDataComponent* m_SwapChainSDC = 0;
@@ -1483,9 +1483,9 @@ bool DX11RenderingServer::WaitForFrame(RenderPassDataComponent * rhs)
 	return true;
 }
 
-bool DX11RenderingServer::SetUserPipelineOutput(IResourceBinder* resourceBinder)
+bool DX11RenderingServer::SetUserPipelineOutput(RenderPassDataComponent * rhs)
 {
-	m_userPipelineOutput = resourceBinder;
+	m_userPipelineOutput = reinterpret_cast<DX11RenderPassDataComponent*>(rhs);
 
 	return true;
 }
@@ -1500,13 +1500,13 @@ bool DX11RenderingServer::Present()
 
 	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_SwapChainSDC->m_ResourceBinder, 0, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
 
-	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Quad);
 
 	DispatchDrawCall(m_SwapChainRPDC, l_mesh, 1);
 
-	DeactivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	DeactivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	CommandListEnd(m_SwapChainRPDC);
 

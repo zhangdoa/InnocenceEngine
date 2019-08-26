@@ -65,7 +65,7 @@ bool FinalBlendPass::Setup()
 
 	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
 
-	g_pModuleManager->getRenderingServer()->SetUserPipelineOutput(m_RPDC->m_RenderTargetsResourceBinders[0]);
+	g_pModuleManager->getRenderingServer()->SetUserPipelineOutput(m_RPDC);
 
 	return true;
 }

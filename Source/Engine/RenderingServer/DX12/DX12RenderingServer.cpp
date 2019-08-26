@@ -92,7 +92,7 @@ namespace DX12RenderingServerNS
 	D3D12_CPU_DESCRIPTOR_HANDLE m_currentSamplerCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_currentSamplerGPUHandle;
 
-	IResourceBinder* m_userPipelineOutput = 0;
+	DX12RenderPassDataComponent* m_userPipelineOutput = 0;
 	DX12RenderPassDataComponent* m_SwapChainRPDC = 0;
 	DX12ShaderProgramComponent* m_SwapChainSPC = 0;
 	DX12SamplerDataComponent* m_SwapChainSDC = 0;
@@ -1595,9 +1595,9 @@ bool DX12RenderingServer::WaitForFrame(RenderPassDataComponent * rhs)
 	return true;
 }
 
-bool DX12RenderingServer::SetUserPipelineOutput(IResourceBinder* resourceBinder)
+bool DX12RenderingServer::SetUserPipelineOutput(RenderPassDataComponent * rhs)
 {
-	m_userPipelineOutput = resourceBinder;
+	m_userPipelineOutput = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
 
 	return true;
 }
@@ -1618,13 +1618,13 @@ bool DX12RenderingServer::Present()
 
 	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_SwapChainSDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
-	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Quad);
 
 	DispatchDrawCall(m_SwapChainRPDC, l_mesh, 1);
 
-	DeactivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	DeactivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	CommandListEnd(m_SwapChainRPDC);
 
