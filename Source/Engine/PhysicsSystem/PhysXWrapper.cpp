@@ -137,7 +137,7 @@ bool PhysXWrapperNS::update()
 		{
 			m_allowUpdate = false;
 
-			auto PhysXUpdateTask = g_pModuleManager->getTaskSystem()->submit("PhysXUpdateTask", 3, m_currentTask, [&]()
+			m_currentTask = g_pModuleManager->getTaskSystem()->submit("PhysXUpdateTask", 3, nullptr, [&]()
 			{
 				gScene->simulate(g_pModuleManager->getTickTime() / 1000.0f);
 				gScene->fetchResults(true);
@@ -163,8 +163,6 @@ bool PhysXWrapperNS::update()
 				}
 				m_allowUpdate = true;
 			});
-
-			m_currentTask = PhysXUpdateTask;
 		}
 	}
 

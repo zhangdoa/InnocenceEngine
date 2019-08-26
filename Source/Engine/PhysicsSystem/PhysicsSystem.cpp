@@ -267,6 +267,10 @@ PhysicsDataComponent* InnoPhysicsSystem::generatePhysicsDataComponent(const Mode
 
 bool generateBVHLeafNodes(BVHNode* parentNode)
 {
+	if (parentNode->childrenPDCs.size() == 1)
+	{
+		return true;
+	}
 	// Find max axis
 	float l_maxAxisLength;
 	unsigned int l_maxAxis;
@@ -321,7 +325,6 @@ bool generateBVHLeafNodes(BVHNode* parentNode)
 	}
 
 	// Construct middle split points
-	auto l_midPDC = parentNode->childrenPDCs[parentNode->childrenPDCs.size() / 2];
 	auto l_midMin = parentNode->intermediatePDC->m_AABBWS.m_boundMin;
 	auto l_midMax = parentNode->intermediatePDC->m_AABBWS.m_boundMax;
 
@@ -355,7 +358,7 @@ bool generateBVHLeafNodes(BVHNode* parentNode)
 	{
 		if (l_maxAxis == 0)
 		{
-			if (parentNode->childrenPDCs[i]->m_AABBWS.m_boundMin.x < l_midMin.x)
+			if (parentNode->childrenPDCs[i]->m_AABBWS.m_boundMax.x < l_midMin.x)
 			{
 				l_leftChildrenPDCs.emplace_back(parentNode->childrenPDCs[i]);
 			}
@@ -366,7 +369,7 @@ bool generateBVHLeafNodes(BVHNode* parentNode)
 		}
 		else if (l_maxAxis == 1)
 		{
-			if (parentNode->childrenPDCs[i]->m_AABBWS.m_boundMin.y < l_midMin.y)
+			if (parentNode->childrenPDCs[i]->m_AABBWS.m_boundMax.y < l_midMin.y)
 			{
 				l_leftChildrenPDCs.emplace_back(parentNode->childrenPDCs[i]);
 			}
@@ -377,7 +380,7 @@ bool generateBVHLeafNodes(BVHNode* parentNode)
 		}
 		else
 		{
-			if (parentNode->childrenPDCs[i]->m_AABBWS.m_boundMin.z < l_midMin.z)
+			if (parentNode->childrenPDCs[i]->m_AABBWS.m_boundMax.z < l_midMin.z)
 			{
 				l_leftChildrenPDCs.emplace_back(parentNode->childrenPDCs[i]);
 			}
@@ -432,7 +435,7 @@ bool generateBVHLeafNodes(BVHNode* parentNode)
 		{
 			auto l_rightPDC = AddPhysicsDataComponent(parentNode->intermediatePDC->m_parentEntity);
 
-			l_rightPDC->m_AABBWS = InnoMath::generateAABB(l_midMax, parentNode->intermediatePDC->m_AABBWS.m_boundMin);
+			l_rightPDC->m_AABBWS = InnoMath::generateAABB(parentNode->intermediatePDC->m_AABBWS.m_boundMax, l_midMin);
 			l_rightPDC->m_SphereWS = InnoMath::generateBoundSphere(l_rightPDC->m_AABBWS);
 			l_rightPDC->m_IsIntermediate = true;
 
@@ -515,15 +518,12 @@ void PlainCulling(const Frustum& frustum, std::vector<CullingData>& cullingDatas
 					l_cullingData.meshUsageType = visibleComponent->m_meshUsageType;
 					l_cullingData.UUID = visibleComponent->m_UUID;
 
-					auto l_OBBws = InnoMath::transformAABBSpace(l_PDC->m_AABBLS, l_globalTm);
+					l_PDC->m_AABBWS = InnoMath::transformAABBSpace(l_PDC->m_AABBLS, l_globalTm);
+					l_PDC->m_SphereWS = generateBoundSphere(l_PDC->m_AABBWS);
 
-					auto l_boundingSphere = Sphere();
-					l_boundingSphere.m_center = l_OBBws.m_center;
-					l_boundingSphere.m_radius = l_OBBws.m_extend.length();
-
-					if (InnoMath::intersectCheck(frustum, l_boundingSphere))
+					if (InnoMath::intersectCheck(frustum, l_PDC->m_SphereWS))
 					{
-						updateVisibleSceneBoundary(l_OBBws);
+						updateVisibleSceneBoundary(l_PDC->m_AABBWS);
 						l_cullingData.cullingDataChannel = CullingDataChannel::MainCamera;
 					}
 					else
@@ -534,7 +534,7 @@ void PlainCulling(const Frustum& frustum, std::vector<CullingData>& cullingDatas
 
 					cullingDatas.emplace_back(l_cullingData);
 
-					updateTotalSceneBoundary(l_OBBws);
+					updateTotalSceneBoundary(l_PDC->m_AABBWS);
 				}
 			}
 		}
@@ -546,10 +546,8 @@ CullingData generateCullingData(const Frustum& frustum, PhysicsDataComponent* PD
 	auto l_transformComponent = GetComponent(TransformComponent, PDC->m_VisibleComponent->m_parentEntity);
 	auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
-	auto l_OBBws = InnoMath::transformAABBSpace(PDC->m_AABBLS, l_globalTm);
-
-	PDC->m_SphereWS.m_center = l_OBBws.m_center;
-	PDC->m_SphereWS.m_radius = l_OBBws.m_extend.length();
+	PDC->m_AABBWS = InnoMath::transformAABBSpace(PDC->m_AABBLS, l_globalTm);
+	PDC->m_SphereWS = generateBoundSphere(PDC->m_AABBWS);
 
 	CullingData l_cullingData;
 
@@ -564,7 +562,7 @@ CullingData generateCullingData(const Frustum& frustum, PhysicsDataComponent* PD
 
 	if (InnoMath::intersectCheck(frustum, PDC->m_SphereWS))
 	{
-		updateVisibleSceneBoundary(l_OBBws);
+		updateVisibleSceneBoundary(PDC->m_AABBWS);
 		l_cullingData.cullingDataChannel = CullingDataChannel::MainCamera;
 	}
 	else
@@ -592,16 +590,13 @@ void BVHCulling(BVHNode* node, const Frustum& frustum, std::vector<CullingData>&
 			}
 		}
 	}
-	else
+	auto l_PDCCount = node->childrenPDCs.size();
+	for (size_t i = 0; i < l_PDCCount; i++)
 	{
-		auto l_PDCCount = node->childrenPDCs.size();
-		for (size_t i = 0; i < l_PDCCount; i++)
-		{
-			auto l_PDC = node->childrenPDCs[i];
-			auto l_cullingData = generateCullingData(frustum, l_PDC);
+		auto l_PDC = node->childrenPDCs[i];
+		auto l_cullingData = generateCullingData(frustum, l_PDC);
 
-			cullingDatas.emplace_back(l_cullingData);
-		}
+		cullingDatas.emplace_back(l_cullingData);
 	}
 }
 

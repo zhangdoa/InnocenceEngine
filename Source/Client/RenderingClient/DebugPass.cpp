@@ -166,15 +166,19 @@ bool DebugPass::AddBVHNode(BVHNode* node)
 			}
 			if (node->rightChildNode)
 			{
-				AddBVHNode(node->leftChildNode);
+				AddBVHNode(node->rightChildNode);
 			}
 		}
 
 		auto l_PDCCount = node->childrenPDCs.size();
-		for (size_t i = 0; i < l_PDCCount; i++)
+
+		if (l_PDCCount)
 		{
-			auto l_PDC = node->childrenPDCs[i];
-			AddPDCMeshData(l_PDC);
+			for (size_t i = 0; i < l_PDCCount; i++)
+			{
+				auto l_PDC = node->childrenPDCs[i];
+				AddPDCMeshData(l_PDC);
+			}
 		}
 	}
 
