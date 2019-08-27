@@ -1,18 +1,14 @@
 #pragma once
 #include "../../Engine/RenderingServer/IRenderingServer.h"
 
-namespace GIResolvePass
+namespace GIResolveTestPass
 {
 	bool Setup();
 	bool Initialize();
 	bool PrepareCommandList();
 	bool ExecuteCommandList();
 	bool Terminate();
-	bool InitializeGPUBuffers();
-	bool DeleteGPUBuffers();
 
 	RenderPassDataComponent* GetRPDC();
 	ShaderProgramComponent* GetSPC();
-	IResourceBinder* GetProbeVolume();
-	IResourceBinder* GetIrradianceVolume();
 };

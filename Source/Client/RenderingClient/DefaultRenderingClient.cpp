@@ -3,6 +3,7 @@
 #include "LightCullingPass.h"
 #include "GIDataLoader.h"
 #include "GIResolvePass.h"
+#include "GIResolveTestPass.h"
 #include "BRDFLUTPass.h"
 #include "SunShadowPass.h"
 #include "OpaquePass.h"
@@ -26,10 +27,14 @@ INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 namespace DefaultRenderingClientNS
 {
 	std::function<void()> f_showLightHeatmap;
+	std::function<void()> f_showProbe;
+
 	std::function<void()> f_SetupTask;
 	std::function<void()> f_InitializeTask;
 	std::function<void()> f_RenderTask;
 	std::function<void()> f_TerminateTask;
+
+	bool m_showProbe = false;
 	bool m_showLightHeatmap = false;
 }
 
@@ -37,7 +42,10 @@ using namespace DefaultRenderingClientNS;
 
 bool DefaultRenderingClient::Setup()
 {
-	f_showLightHeatmap = [&]() { m_showLightHeatmap = !m_showLightHeatmap;	};
+	f_showProbe = [&]() { m_showProbe = !m_showProbe; };
+	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonState{ INNO_KEY_G, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showProbe });
+
+	f_showLightHeatmap = [&]() { m_showLightHeatmap = !m_showLightHeatmap; };
 	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonState{ INNO_KEY_T, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showLightHeatmap });
 
 	f_SetupTask = [&]()
@@ -47,6 +55,7 @@ bool DefaultRenderingClient::Setup()
 
 		LightCullingPass::Setup();
 		GIResolvePass::Setup();
+		GIResolveTestPass::Setup();
 		BRDFLUTPass::Setup();
 		SunShadowPass::Setup();
 		OpaquePass::Setup();
@@ -69,6 +78,7 @@ bool DefaultRenderingClient::Setup()
 		DefaultGPUBuffers::Initialize();
 		LightCullingPass::Initialize();
 		GIResolvePass::Initialize();
+		GIResolveTestPass::Initialize();
 		BRDFLUTPass::Initialize();
 		BRDFLUTPass::PrepareCommandList();
 		BRDFLUTPass::ExecuteCommandList();
@@ -96,6 +106,7 @@ bool DefaultRenderingClient::Setup()
 		DefaultGPUBuffers::Upload();
 		//LightCullingPass::PrepareCommandList();
 		GIResolvePass::PrepareCommandList();
+		GIResolveTestPass::PrepareCommandList();
 
 		SunShadowPass::PrepareCommandList();
 		OpaquePass::PrepareCommandList();
@@ -135,6 +146,11 @@ bool DefaultRenderingClient::Setup()
 			l_canvas = LightCullingPass::GetHeatMap();
 		}
 
+		if (m_showProbe)
+		{
+			l_canvas = GIResolveTestPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
+		}
+
 		BillboardPass::PrepareCommandList();
 		DebugPass::PrepareCommandList();
 
@@ -142,6 +158,7 @@ bool DefaultRenderingClient::Setup()
 
 		//LightCullingPass::ExecuteCommandList();
 		GIResolvePass::ExecuteCommandList();
+		GIResolveTestPass::ExecuteCommandList();
 
 		SunShadowPass::ExecuteCommandList();
 		OpaquePass::ExecuteCommandList();
@@ -165,6 +182,7 @@ bool DefaultRenderingClient::Setup()
 		DefaultGPUBuffers::Terminate();
 		LightCullingPass::Terminate();
 		GIResolvePass::Terminate();
+		GIResolveTestPass::Terminate();
 		GIDataLoader::Terminate();
 		BRDFLUTPass::Terminate();
 		SunShadowPass::Terminate();

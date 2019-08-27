@@ -938,6 +938,18 @@ ShaderProgramComponent * GIResolvePass::GetSPC()
 	return m_surfelSPC;
 }
 
+IResourceBinder * GIResolvePass::GetProbeVolume()
+{
+	if (m_probeVolume)
+	{
+		return m_probeVolume->m_ResourceBinder;
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
 IResourceBinder * GIResolvePass::GetIrradianceVolume()
 {
 	if (m_irradianceVolume)
