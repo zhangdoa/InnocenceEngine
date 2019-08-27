@@ -277,7 +277,7 @@ void main()
 			indirectLight.xyz += nSquared.z * texture(uni_IrradianceVolume, GISampleCoordPZ).xyz;
 		}
 
-		Lo += (1 - Metallic) * indirectLight.xyz;
+		Lo += indirectLight.xyz;
 	}
 
 	// ambient occlusion

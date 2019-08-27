@@ -12,6 +12,15 @@ layout(binding = 8, std140) uniform dispatchParamsCBuffer
     DispatchParam dispatchParams[8];
 } _26;
 
+layout(binding = 7, std140) uniform skyCBuffer
+{
+    layout(row_major) mat4 sky_p_inv;
+    layout(row_major) mat4 sky_v_inv;
+    vec4 sky_viewportSize;
+    vec4 sky_posWSNormalizer;
+    vec4 sky_padding[6];
+} _71;
+
 layout(binding = 11, std140) uniform GISkyCBuffer
 {
     layout(row_major) mat4 GISky_p_inv;
@@ -20,7 +29,7 @@ layout(binding = 11, std140) uniform GISkyCBuffer
     vec4 GISky_probeInterval;
     vec4 GISky_workload;
     vec4 GISky_irradianceVolumeOffset;
-} _65;
+} _97;
 
 layout(binding = 0, rgba32f) uniform writeonly image3D out_irradianceVolume;
 uniform sampler3D SPIRV_Cross_Combinedin_probeVolumeSampleTypePoint;
@@ -29,17 +38,17 @@ void main()
 {
     if (((gl_GlobalInvocationID.x < _26.dispatchParams[5].numThreads.x) && (gl_GlobalInvocationID.y < _26.dispatchParams[5].numThreads.y)) && (gl_GlobalInvocationID.z < _26.dispatchParams[5].numThreads.z))
     {
-        vec3 _301 = _65.GISky_probeInterval.xyz * (_65.GISky_probeCount.xyz - vec3(1.0));
-        vec3 _308 = vec3(_65.GISky_probeCount.w, _65.GISky_probeInterval.w, _65.GISky_irradianceVolumeOffset.w);
-        vec3 _321 = (clamp(vec3(gl_GlobalInvocationID) + _65.GISky_irradianceVolumeOffset.xyz, _308, _308 + _301) - _308) / _301;
-        vec4 _264[6];
-        for (uint _398 = 0u; _398 < 6u; )
+        vec3 _366 = (((((vec3(gl_GlobalInvocationID) / vec3(_26.dispatchParams[5].numThreads.xyz)) * _71.sky_posWSNormalizer.xyz) + ((_71.sky_posWSNormalizer.xyz / vec3(_26.dispatchParams[5].numThreads.xyz)) * vec3(0.5))) + _97.GISky_irradianceVolumeOffset.xyz) - vec3(_97.GISky_probeCount.w, _97.GISky_probeInterval.w, _97.GISky_irradianceVolumeOffset.w)) / (_97.GISky_probeInterval.xyz * (_97.GISky_probeCount.xyz - vec3(1.0)));
+        vec4 _290[6];
+        for (uint _450 = 0u; _450 < 6u; )
         {
-            vec3 _395 = _321;
-            _395.z = (_321.z * 0.16666667163372039794921875) + (float(_398) * 0.16666667163372039794921875);
-            _264[_398] = textureLod(SPIRV_Cross_Combinedin_probeVolumeSampleTypePoint, _395, 0.0);
-            imageStore(out_irradianceVolume, ivec3(uvec3(vec3(gl_GlobalInvocationID) + vec3(0.0, 0.0, float(_398) * float(_26.dispatchParams[5].numThreads.z)))), _264[_398]);
-            _398++;
+            vec3 _444 = _366;
+            _444.z = (_366.z + float(_450)) * 0.16666667163372039794921875;
+            vec4 _402 = textureLod(SPIRV_Cross_Combinedin_probeVolumeSampleTypePoint, _444, 0.0);
+            _290[_450] = vec4(_402.x, _402.y, _402.z, _290[_450].w);
+            _290[_450].w = 1.0;
+            imageStore(out_irradianceVolume, ivec3(uvec3(vec3(gl_GlobalInvocationID) + vec3(0.0, 0.0, float(_450) * float(_26.dispatchParams[5].numThreads.z)))), _290[_450]);
+            _450++;
             continue;
         }
     }

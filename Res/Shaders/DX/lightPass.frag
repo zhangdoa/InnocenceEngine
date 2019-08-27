@@ -180,7 +180,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 			indirectLight += nSquared.z * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordPZ);
 		}
 
-		Lo += (1 - metallic) * indirectLight.xyz;
+		Lo += indirectLight.xyz;
 	}
 	// ambient occlusion
 	Lo *= ao;
