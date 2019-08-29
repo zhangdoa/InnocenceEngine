@@ -26,6 +26,8 @@ layout(location = 10, binding = 10) uniform sampler3D uni_IrradianceVolume;
 #include "common/BRDF.glsl"
 #include "common/shadowResolver.glsl"
 
+const float sunAngularRadius = 0.000071;
+
 // ----------------------------------------------------------------------------
 void main()
 {
@@ -139,7 +141,13 @@ void main()
 	float NdotV = max(dot(N, V), 0.0);
 
 	// direction light, sun light
-	L = normalize(-sunUBO.data.direction.xyz);
+	L = normalize(-sunUBO.data.direction.xyz);;
+	float r = sin(sunAngularRadius);
+	float d = cos(sunAngularRadius);
+	float LdotV = dot(L, V);
+	vec3 S = V - LdotV * L;
+	L = LdotV < d ? normalize(d * L + normalize(S) * r) : V;
+
 	vec3 H = normalize(V + L);
 
 	float LdotH = max(dot(L, H), 0.0);
@@ -147,7 +155,6 @@ void main()
 	NdotL = max(dot(N, L), 0.0);
 
 	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, Metallic, F0, Albedo, sunUBO.data.luminance.xyz);
-
 	Lo *= 1.0 - SunShadowResolver(FragPos);
 
 	// point punctual light

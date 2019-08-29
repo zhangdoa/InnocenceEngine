@@ -106,7 +106,6 @@ bool DefaultRenderingClient::Setup()
 		DefaultGPUBuffers::Upload();
 		//LightCullingPass::PrepareCommandList();
 		GIResolvePass::PrepareCommandList();
-		GIResolveTestPass::PrepareCommandList();
 
 		SunShadowPass::PrepareCommandList();
 		OpaquePass::PrepareCommandList();
@@ -148,6 +147,7 @@ bool DefaultRenderingClient::Setup()
 
 		if (m_showProbe)
 		{
+			GIResolveTestPass::PrepareCommandList();
 			l_canvas = GIResolveTestPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
 		}
 
@@ -158,18 +158,39 @@ bool DefaultRenderingClient::Setup()
 
 		//LightCullingPass::ExecuteCommandList();
 		GIResolvePass::ExecuteCommandList();
-		GIResolveTestPass::ExecuteCommandList();
 
 		SunShadowPass::ExecuteCommandList();
 		OpaquePass::ExecuteCommandList();
 		SSAOPass::ExecuteCommandList();
 		LightPass::ExecuteCommandList();
-		SkyPass::ExecuteCommandList();
+
+		if (l_renderingConfig.drawSky)
+		{
+			SkyPass::ExecuteCommandList();
+		}
+
 		PreTAAPass::ExecuteCommandList();
-		TAAPass::ExecuteCommandList();
-		PostTAAPass::ExecuteCommandList();
-		MotionBlurPass::ExecuteCommandList();
-		BRDFTestPass::ExecuteCommandList();
+
+		if (l_renderingConfig.useTAA)
+		{
+			TAAPass::ExecuteCommandList();
+			PostTAAPass::ExecuteCommandList();
+		}
+
+		if (l_renderingConfig.useMotionBlur)
+		{
+			MotionBlurPass::ExecuteCommandList();
+		}
+
+		if (l_drawBRDFTest)
+		{
+			BRDFTestPass::ExecuteCommandList();
+		}
+
+		if (m_showProbe)
+		{
+			GIResolveTestPass::ExecuteCommandList();
+		}
 
 		BillboardPass::ExecuteCommandList();
 		DebugPass::ExecuteCommandList();

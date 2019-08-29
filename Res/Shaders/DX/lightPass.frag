@@ -29,6 +29,8 @@ struct PixelOutputType
 	float4 lightPassRT0 : SV_Target0;
 };
 
+static const float sunAngularRadius = 0.000071;
+
 PixelOutputType main(PixelInputType input) : SV_TARGET
 {
 	PixelOutputType output;
@@ -56,7 +58,13 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float3 Lo = float3(0, 0, 0);
 
 	// direction light, sun light
-	float3 L = normalize(-sun_dir.xyz);
+	float3 L = normalize(-sun_dir.xyz);;
+	float r = sin(sunAngularRadius);
+	float d = cos(sunAngularRadius);
+	float LdotV = dot(L, V);
+	float3 S = V - LdotV * L;
+	L = LdotV < d ? normalize(d * L + normalize(S) * r) : V;
+
 	float3 H = normalize(V + L);
 
 	float LdotH = max(dot(L, H), 0.0);

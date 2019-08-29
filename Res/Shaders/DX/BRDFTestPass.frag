@@ -27,10 +27,10 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 {
 	PixelOutputType output;
 
-	float3 V = normalize(cameraCBuffer.globalPos - input.frag_WorldSpacePos);
-	float3 L = V;
-	float3 H = normalize(V + L);
 	float3 N = input.frag_Normal;
+	float3 V = normalize(cameraCBuffer.globalPos - input.frag_WorldSpacePos);
+	float3 L = N;
+	float3 H = normalize(V + L);
 
 	float LdotH = max(dot(L, H), 0.0);
 	float NdotH = max(dot(N, H), 0.0);
@@ -38,6 +38,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float NdotV = max(dot(N, V), 0.0);
 
 	float out_roughness = materialCBuffer.MRAT.g;
+	out_roughness = (out_roughness + 0.05) / (1.05);
 	float out_metallic = materialCBuffer.MRAT.r;
 	float3 F0 = float3(0.04, 0.04, 0.04);
 	float3 out_albedo = materialCBuffer.albedo.rgb;
@@ -61,7 +62,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 
 	float3 Fd = DisneyDiffuse2015(NdotV, NdotL, LdotH, out_roughness * out_roughness) * out_albedo;
 
-	float3 Lo = (kD * Fd + Fr);
+	float3 Lo = (Fd * kD + Fr);
 
 	output.RT = float4(Lo, 1.0f);
 
