@@ -84,7 +84,7 @@ float3 getFrMS(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePo
 	float beta3 = 1.0 - rsF1_v;
 	float frMS = beta2 * beta3 / (beta1 * PI);
 	// [https://blog.selfshadow.com/2018/06/04/multi-faceted-part-2/]
-	float3 fresnelMultiplier = f_averange * f_averange * rsF1_averange / ((float3(1.0, 1.0, 1.0) - f_averange * beta1));
+	float3 fresnelMultiplier = f_averange * f_averange * rsF1_averange / max((float3(1.0, 1.0, 1.0) - f_averange * beta1), eps);
 
 	return frMS * fresnelMultiplier;
 }
@@ -119,12 +119,12 @@ float3 getBRDF(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePo
 	return (Fd + Fr);
 }
 // ----------------------------------------------------------------------------
-float3 getIlluminance(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePoint, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float metallic, float3 F0, float3 albedo, float3 lightLuminance)
+float3 getOutLuminance(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePoint, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float metallic, float3 F0, float3 albedo, float3 luminousFlux)
 {
 	float F90 = 1.0;
 	float3 FresnelFactor = fresnelSchlick(F0, F90, LdotH);
 
 	float3 BRDF = getBRDF(BRDFLUT, BRDFMSLUT, SampleTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, metallic, F0, FresnelFactor, albedo);
 
-	return BRDF * lightLuminance * NdotL;
+	return BRDF * luminousFlux * NdotL;
 }

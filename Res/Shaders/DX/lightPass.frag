@@ -100,7 +100,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 		pointLight light = pointLights[lightIndex];
 
 		float3 unormalizedL = light.position.xyz - posWS;
-		float lightAttRadius = light.luminance.w;
+		float lightAttRadius = light.luminousFlux.w;
 
 		float3 L = normalize(unormalizedL);
 		float3 H = normalize(V + L);
@@ -113,15 +113,15 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 		float invSqrAttRadius = 1.0 / max(lightAttRadius * lightAttRadius, eps);
 		attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
 
-		float3 lightLuminance = light.luminance.xyz * attenuation;
-		Lo += getIlluminance(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, metallic, F0, albedo, lightLuminance);
+		float3 luminousFlux = light.luminousFlux.xyz * attenuation;
+		Lo += getOutLuminance(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, metallic, F0, albedo, luminousFlux);
 	}
 
 	//// sphere area light
 	//for (int i = 0; i < NR_SPHERE_LIGHTS; ++i)
 	//{
 	//	float3 unormalizedL = sphereLights[i].position.xyz - posWS;
-	//	float lightSphereRadius = sphereLights[i].luminance.w;
+	//	float lightSphereRadius = sphereLights[i].luminousFlux.w;
 
 	//	float3 L = normalize(unormalizedL);
 	//	float3 H = normalize(V + L);
@@ -152,7 +152,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	//	}
 	//	illuminance *= PI;
 
-	//	Lo += getIlluminance(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, F0, albedo, illuminance * sphereLights[i].luminance.xyz);
+	//	Lo += getOutLuminance(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, F0, albedo, illuminance * sphereLights[i].luminousFlux.xyz);
 	//}
 
 	// GI

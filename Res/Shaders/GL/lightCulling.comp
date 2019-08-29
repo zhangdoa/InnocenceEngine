@@ -97,12 +97,12 @@ void main()
 	for (uint i = gl_LocalInvocationIndex; i < NR_POINT_LIGHTS; i += BLOCK_SIZE * BLOCK_SIZE)
 	{
 		pointLight light = pointLightUBO.data[i];
-		// w component of luminance is the attenuation radius
-		if (light.luminance.w > 0.0f)
+		// w component of luminousFlux is the attenuation radius
+		if (light.luminousFlux.w > 0.0f)
 		{
 			vec4 lightPos_VS = cameraUBO.t * light.position;
 			lightPos_VS = cameraUBO.r * lightPos_VS;
-			Sphere sphere = { lightPos_VS.xyz, light.luminance.w };
+			Sphere sphere = { lightPos_VS.xyz, light.luminousFlux.w };
 			if (SphereInsideFrustum(sphere, l_TileFrustum, nearClipVS, maxDepthVS))
 			{
 				if (!SphereInsidePlane(sphere, minPlane))

@@ -88,12 +88,12 @@ void main(ComputeInputType input)
 	for (uint i = input.groupIndex; i < NR_POINT_LIGHTS; i += BLOCK_SIZE * BLOCK_SIZE)
 	{
 		pointLight light = pointLights[i];
-		// w component of luminance is the attenuation radius
-		if (light.luminance.w > 0.0f)
+		// w component of luminousFlux is the attenuation radius
+		if (light.luminousFlux.w > 0.0f)
 		{
 			float4 lightPos_VS = mul(light.position, cameraCBuffer.t);
 			lightPos_VS = mul(lightPos_VS, cameraCBuffer.r);
-			Sphere sphere = { lightPos_VS.xyz, light.luminance.w };
+			Sphere sphere = { lightPos_VS.xyz, light.luminousFlux.w };
 			if (SphereInsideFrustum(sphere, l_TileFrustum, nearClipVS, maxDepthVS))
 			{
 				if (!SphereInsidePlane(sphere, minPlane))

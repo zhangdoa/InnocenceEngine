@@ -45,19 +45,19 @@ struct materialData
 	float padding[12]; // 4 - 15
 };
 
-// w component of luminance is attenuationRadius
+// w component of luminousFlux is attenuationRadius
 struct pointLight
 {
 	float4 position;
-	float4 luminance;
+	float4 luminousFlux;
 	//float attenuationRadius;
 };
 
-// w component of luminance is sphereRadius
+// w component of luminousFlux is sphereRadius
 struct sphereLight
 {
 	float4 position;
-	float4 luminance;
+	float4 luminousFlux;
 	//float sphereRadius;
 };
 

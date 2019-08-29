@@ -36,19 +36,19 @@ struct dirLight
 	mat4 r;
 };
 
-// w component of luminance is attenuationRadius
+// w component of luminousFlux is attenuationRadius
 struct pointLight
 {
 	vec4 position;
-	vec4 luminance;
+	vec4 luminousFlux;
 	//float attenuationRadius;
 };
 
-// w component of luminance is sphereRadius
+// w component of luminousFlux is sphereRadius
 struct sphereLight
 {
 	vec4 position;
-	vec4 luminance;
+	vec4 luminousFlux;
 	//float sphereRadius;
 };
 

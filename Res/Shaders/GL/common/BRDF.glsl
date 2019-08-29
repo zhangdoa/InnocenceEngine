@@ -182,12 +182,12 @@ vec3 getBRDF(sampler2D BRDFLUT, sampler2D BRDFMSLUT, float NdotV, float NdotL, f
 	return (Fd + Fr);
 }
 // ----------------------------------------------------------------------------
-vec3 getIlluminance(sampler2D BRDFLUT, sampler2D BRDFMSLUT, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float metallic, vec3 F0, vec3 albedo, vec3 lightLuminance)
+vec3 getOutLuminance(sampler2D BRDFLUT, sampler2D BRDFMSLUT, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float metallic, vec3 F0, vec3 albedo, vec3 luminousFlux)
 {
 	float F90 = 1.0;
 	vec3 FresnelFactor = F_Schlick(F0, F90, LdotH);
 
 	vec3 BRDF = getBRDF(BRDFLUT, BRDFMSLUT, NdotV, NdotL, NdotH, LdotH, roughness, metallic, F0, FresnelFactor, albedo);
 
-	return BRDF * lightLuminance * NdotL;
+	return BRDF * luminousFlux * NdotL;
 }

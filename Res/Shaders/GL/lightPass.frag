@@ -109,7 +109,7 @@ void main()
 #ifdef uni_drawPointLightShadow
 	pointLight light = pointLightUBO.data[0];
 
-	float lightRadius = light.luminance.w;
+	float lightRadius = light.luminousFlux.w;
 	if (lightRadius > 0)
 	{
 		vec3 unormalizedL = light.position.xyz - posWS;
@@ -123,9 +123,9 @@ void main()
 			float invSqrAttRadius = 1.0 / max(lightRadius * lightRadius, eps);
 			attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
 
-			vec3 lightLuminance = light.luminance.xyz * vec3(NdotL) * attenuation;
+			vec3 luminousFlux = light.luminousFlux.xyz * vec3(NdotL) * attenuation;
 
-			Lo = lightLuminance;
+			Lo = luminousFlux;
 		}
 	}
 	Lo *= 1 - PointLightShadow(posWS);
@@ -182,7 +182,7 @@ void main()
 		uint lightIndex = i;
 		pointLight light = pointLightUBO.data[lightIndex];
 
-		float lightRadius = light.luminance.w;
+		float lightRadius = light.luminousFlux.w;
 		if (lightRadius > 0)
 		{
 			vec3 unormalizedL = light.position.xyz - posWS;
@@ -200,9 +200,9 @@ void main()
 				float invSqrAttRadius = 1.0 / max(lightRadius * lightRadius, eps);
 				attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
 
-				vec3 lightLuminance = light.luminance.xyz * attenuation;
+				vec3 luminousFlux = light.luminousFlux.xyz * attenuation;
 
-				Lo += getIlluminance(uni_BRDFLUT, uni_BRDFMSLUT, NdotV, NdotL, NdotH, LdotH, safe_roughness, metallic, F0, albedo, lightLuminance);
+				Lo += getOutLuminance(uni_BRDFLUT, uni_BRDFMSLUT, NdotV, NdotL, NdotH, LdotH, safe_roughness, metallic, F0, albedo, luminousFlux);
 			}
 		}
 	}
@@ -212,7 +212,7 @@ void main()
 	// sphere area light
 	for (int i = 0; i < NR_SPHERE_LIGHTS; ++i)
 	{
-		float lightRadius = sphereLightUBO.data[i].luminance.w;
+		float lightRadius = sphereLightUBO.data[i].luminousFlux.w;
 		if (lightRadius > 0)
 		{
 			vec3 unormalizedL = sphereLightUBO.data[i].position.xyz - posWS;
@@ -230,7 +230,7 @@ void main()
 			float h = H2 / lightRadius;
 			float x = sqrt(max(h * h - 1, eps));
 			float y = -x * (1 / tan(Beta));
-			y = clamp(y, -1.0, 1.0);
+			//y = clamp(y, -1.0, 1.0);
 			float illuminance = 0;
 
 			if (h * cos(Beta) > 1)
@@ -245,7 +245,7 @@ void main()
 			}
 			illuminance *= PI;
 
-			Lo += getIlluminance(uni_BRDFLUT, uni_BRDFMSLUT, NdotV, NdotL, NdotH, LdotH, safe_roughness, metallic, F0, albedo, illuminance * sphereLightUBO.data[i].luminance.xyz);
+			Lo += getOutLuminance(uni_BRDFLUT, uni_BRDFMSLUT, NdotV, NdotL, NdotH, LdotH, safe_roughness, metallic, F0, albedo, illuminance * sphereLightUBO.data[i].luminousFlux.xyz);
 		}
 	}
 
