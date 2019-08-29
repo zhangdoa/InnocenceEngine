@@ -120,7 +120,7 @@ void main(ComputeInputType input)
 			// Diffuse BRDF
 			BRDF = albedo / PI;
 #endif
-			float3 Lo = BRDF * sun_luminance.xyz * NdotL;
+			float3 Lo = BRDF * sun_illuminance.xyz * NdotL;
 
 			//Lo *= 1 - SunShadowResolver(posWS);
 

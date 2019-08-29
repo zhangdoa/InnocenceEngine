@@ -31,13 +31,13 @@ float getDistanceAtt(vec3 unormalizedLightVector, float invSqrAttRadius)
 }
 // Specular Fresnel Component
 // ----------------------------------------------------------------------------
-vec3 fr_F_Schlick(vec3 f0, float f90, float u)
+vec3 F_Schlick(vec3 f0, float f90, float u)
 {
 	return f0 + (f90 - f0) * pow(1.0 - u, 5.0);
 }
 // Specular Visibility Component
 // ----------------------------------------------------------------------------
-float fr_V_SmithGGXCorrelated(float NdotL, float NdotV, float alphaG)
+float V_SmithGGXCorrelated(float NdotL, float NdotV, float alphaG)
 {
 	float alphaG2 = alphaG * alphaG;
 	float NdotV_ = max(NdotV, eps);
@@ -48,18 +48,18 @@ float fr_V_SmithGGXCorrelated(float NdotL, float NdotV, float alphaG)
 }
 // Specular Distribution Component
 // ----------------------------------------------------------------------------
-float fr_D_GGX(float NdotH, float roughness)
+float D_GGX(float NdotH, float roughness)
 {
 	// remapping to Quadratic curve
 	float a = roughness * roughness;
 	float a2 = a * a;
 	float f = (NdotH * a2 - NdotH) * NdotH + 1;
-	return a2 / max(PI * pow(f, 2.0), 0.00001);
+	return a2 / max(PI * pow(f, 2.0), eps);
 }
 // Diffuse BRDF
 // Disney model [https://blog.selfshadow.com/publications/s2015-shading-course/burley/s2015_pbs_disney_bsdf_notes.pdf]
 // ----------------------------------------------------------------------------
-vec3 fd_DisneyDiffuse2012(float NdotV, float NdotL, float LdotH, float linearRoughness)
+vec3 DisneyDiffuse2012(float NdotV, float NdotL, float LdotH, float linearRoughness)
 {
 	float NdotV_ = max(NdotV, eps);
 	float NdotL_ = max(NdotL, eps);
@@ -67,12 +67,12 @@ vec3 fd_DisneyDiffuse2012(float NdotV, float NdotL, float LdotH, float linearRou
 	float energyFactor = mix(1.0, 1.0 / 1.51, linearRoughness);
 	float fd90 = energyBias + 2.0 * LdotH * LdotH * linearRoughness;
 	vec3 f0 = vec3(1.0, 1.0, 1.0);
-	vec3 lightScatter = fr_F_Schlick(f0, fd90, NdotL_);
-	vec3 viewScatter = fr_F_Schlick(f0, fd90, NdotV_);
+	vec3 lightScatter = F_Schlick(f0, fd90, NdotL_);
+	vec3 viewScatter = F_Schlick(f0, fd90, NdotV_);
 	return lightScatter * viewScatter * energyFactor;
 }
 // ----------------------------------------------------------------------------
-float fd_DisneyDiffuse2015(float NdotV, float NdotL, float LdotH, float linearRoughness)
+float DisneyDiffuse2015(float NdotV, float NdotL, float LdotH, float linearRoughness)
 {
 	float Fl = pow(1.0 - NdotL, 5.0);
 	float Fv = pow(1.0 - NdotV, 5.0);
@@ -126,58 +126,68 @@ vec3 AverangeFresnel(vec3 F0)
 }
 vec3 getFrMS(sampler2D BRDFLUT, sampler2D BRDFMSLUT, float NdotL, float NdotV, vec3 F0, float roughness)
 {
-	float alpha = roughness * roughness;
 	vec3 f_averange = AverangeFresnel(F0);
-	float rsF1_averange = texture(BRDFMSLUT, vec2(0.0, alpha)).r;
-	float rsF1_l = texture(BRDFLUT, vec2(NdotL, alpha)).b;
-	float rsF1_v = texture(BRDFLUT, vec2(NdotV, alpha)).b;
 
-	vec3 frMS = vec3(0.0);
+	float rsF1_averange = texture(BRDFMSLUT, vec2(0.0, roughness)).r;
+
+	float rsF1_l = texture(BRDFLUT, vec2(NdotL, roughness)).b;
+	float rsF1_v = texture(BRDFLUT, vec2(NdotV, roughness)).b;
+
 	float beta1 = 1.0 - rsF1_averange;
 	float beta2 = 1.0 - rsF1_l;
 	float beta3 = 1.0 - rsF1_v;
+	float frMS = beta2 * beta3 / (beta1 * PI);
 
-	frMS = f_averange * rsF1_averange / (PI * beta1 * (vec3(1.0) - f_averange * beta1) + eps);
-	frMS = frMS * beta2 * beta3;
-	return frMS;
+	// [https://blog.selfshadow.com/2018/06/04/multi-faceted-part-2/]
+	vec3 fresnelMultiplier = f_averange * f_averange * rsF1_averange / max(vec3(1.0, 1.0, 1.0) - f_averange * beta1, eps);
+
+	return frMS * fresnelMultiplier;
 }
 // IBL
 // Corrected Fresnel
 // ----------------------------------------------------------------------------
-vec3 fr_F_SchlickRoughness(float cosTheta, vec3 F0, float roughness)
+vec3 F_SchlickRoughness(float cosTheta, vec3 F0, float roughness)
 {
 	return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
 }
 // BRDF
 // ----------------------------------------------------------------------------
-vec3 getBRDF(float NdotV, float LdotH, float NdotH, float NdotL, float roughness, float metallic, vec3 F0, vec3 albedo)
+vec3 getSpecularBRDF(sampler2D BRDFLUT, sampler2D BRDFMSLUT, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, vec3 F0, vec3 FresnelFactor)
 {
-	// Specular BRDF
-	float f90 = 1.0;
-	vec3 F = fr_F_Schlick(F0, f90, NdotV);
-	float G = fr_V_SmithGGXCorrelated(NdotV, NdotL, roughness);
-	float D = fr_D_GGX(NdotH, roughness);
-	vec3 Frss = F * D * G;
+	float G = V_SmithGGXCorrelated(NdotV, NdotL, roughness);
+	float D = D_GGX(NdotH, roughness);
+	vec3 Frss = FresnelFactor * G * D;
 
 	// Real-Time Rendering", 4th edition, pg. 341, "9.8 BRDF Models for Surface Reflection, the 4 * NdV * NdL has already been cancelled by G function
-	vec3 Frms = getFrMS(uni_brdfLUT, uni_brdfMSLUT, NdotL, NdotV, F0, roughness);
+	vec3 Frms = getFrMS(BRDFLUT, BRDFMSLUT, NdotL, NdotV, F0, roughness);
 
 	vec3 Fr = Frss + Frms;
 
-	vec3 kS = F;
-	vec3 kD = vec3(1.0, 1.0, 1.0) - kS;
+	return Fr;
+}
+vec3 getDiffuseBRDF(float NdotV, float NdotL, float LdotH, float roughness, float metallic, vec3 FresnelFactor, vec3 albedo)
+{
+	vec3 kD = vec3(1.0, 1.0, 1.0) - FresnelFactor;
 
 	kD *= 1.0 - metallic;
 
-	// Diffuse BRDF
-	vec3 Fd = fd_DisneyDiffuse2015(NdotV, NdotL, LdotH, roughness * roughness) * albedo / PI;
+	vec3 Fd = DisneyDiffuse2015(NdotV, NdotL, LdotH, roughness * roughness) * albedo / PI;
 
-	return (kD * Fd + Fr);
+	return kD * Fd;
+}
+vec3 getBRDF(sampler2D BRDFLUT, sampler2D BRDFMSLUT, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float metallic, vec3 F0, vec3 FresnelFactor, vec3 albedo)
+{
+	vec3 Fd = getDiffuseBRDF(NdotV, NdotL, LdotH, roughness, metallic, FresnelFactor, albedo);
+	vec3 Fr = getSpecularBRDF(BRDFLUT, BRDFMSLUT, NdotV, NdotL, NdotH, LdotH, roughness, F0, FresnelFactor);
+	return (Fd + Fr);
 }
 // ----------------------------------------------------------------------------
-vec3 getIlluminance(float NdotV, float LdotH, float NdotH, float NdotL, float roughness, float metallic, vec3 F0, vec3 albedo, vec3 lightLuminance)
+vec3 getIlluminance(sampler2D BRDFLUT, sampler2D BRDFMSLUT, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float metallic, vec3 F0, vec3 albedo, vec3 lightLuminance)
 {
-	vec3 BRDF = getBRDF(NdotV, LdotH, NdotH, NdotL, roughness, metallic, F0, albedo);
+	float F90 = 1.0;
+	vec3 FresnelFactor = F_Schlick(F0, F90, LdotH);
+
+	vec3 BRDF = getBRDF(BRDFLUT, BRDFMSLUT, NdotV, NdotL, NdotH, LdotH, roughness, metallic, F0, FresnelFactor, albedo);
 
 	return BRDF * lightLuminance * NdotL;
 }

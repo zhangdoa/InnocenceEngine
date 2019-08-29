@@ -14,10 +14,15 @@ void main()
 	// "Real-Time Rendering", 4th edition, pg. 346, "9.8.2 Multiple-Bounce Surface Reflection", "The function $\overline{RsF1}$ is the cosine-weighted average value of RsF1 over the hemisphere"
 	for (uint i = 0u; i < textureSize; ++i)
 	{
-		currentRsF1 = texture(uni_brdfLUT, vec2(float(i) / float(textureSize), TexCoords.y)).b;
-		currentRsF1 /= float(textureSize);
+		float mu = float(i) / float(textureSize);
+		currentRsF1 = texture(uni_brdfLUT, vec2(mu, TexCoords.y)).b;
+		// cos-weighted
+		currentRsF1 *= mu;
 		averangeRsF1 += currentRsF1;
 	}
+
+	averangeRsF1 /= float(textureSize);
+	averangeRsF1 *= 2;
 
 	uni_brdfMSLUT = vec2(averangeRsF1, 0.0);
 }

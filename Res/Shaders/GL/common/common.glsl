@@ -32,7 +32,7 @@ struct meshData
 struct dirLight
 {
 	vec4 direction;
-	vec4 luminance;
+	vec4 illuminance;
 	mat4 r;
 };
 

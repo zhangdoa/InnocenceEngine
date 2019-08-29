@@ -9,8 +9,8 @@ layout(location = 0, binding = 0) uniform sampler2D uni_opaquePassRT0;
 layout(location = 1, binding = 1) uniform sampler2D uni_opaquePassRT1;
 layout(location = 2, binding = 2) uniform sampler2D uni_opaquePassRT2;
 layout(location = 3, binding = 3) uniform sampler2D uni_opaquePassRT3;
-layout(location = 4, binding = 4) uniform sampler2D uni_brdfLUT;
-layout(location = 5, binding = 5) uniform sampler2D uni_brdfMSLUT;
+layout(location = 4, binding = 4) uniform sampler2D uni_BRDFLUT;
+layout(location = 5, binding = 5) uniform sampler2D uni_BRDFMSLUT;
 layout(location = 6, binding = 6) uniform sampler2D uni_SSAOBlurPassRT0;
 layout(location = 7, binding = 7) uniform sampler2DArray uni_sunShadow;
 
@@ -46,41 +46,39 @@ void main()
 	//vec4 posCS = vec4(screenTexCoord.x * 2.0f - 1.0f, screenTexCoord.y * 2.0f - 1.0f, depth * 2.0f - 1.0f, 1.0f);
 	//vec4 posVS = skyUBO.p_inv * posCS;
 	//posVS /= posVS.w;
-	//vec4 FragPos = skyUBO.v_inv * posVS;
-	//vec3 FragPos = FragPos.rgb;
+	//vec4 posWS = skyUBO.v_inv * posVS;
+	//vec3 posWS = posWS.rgb;
 
-	vec3 FragPos = GPassRT0.rgb;
-	vec3 Normal = GPassRT1.rgb;
-	vec3 Albedo = GPassRT2.rgb;
+	vec3 posWS = GPassRT0.rgb;
+	vec3 normal = GPassRT1.rgb;
+	vec3 albedo = GPassRT2.rgb;
 
-	float Metallic = GPassRT0.a;
-	float Roughness = GPassRT1.a;
-	float safe_roughness = (Roughness + eps) / (1.0 + eps);
+	float metallic = GPassRT0.a;
+	float roughness = GPassRT1.a;
+	float safe_roughness = (roughness + eps) / (1.0 + eps);
 	float AO = GPassRT2.a;
 	float SSAO = texture(uni_SSAOBlurPassRT0, screenTexCoords).x;
 	AO *= SSAO;
 
 	vec3 Lo = vec3(0.0);
-	vec3 N = normalize(Normal);
-	vec3 L;
-	float NdotL;
+	vec3 N = normalize(normal);
 
 #ifdef uni_drawCSMSplitedArea
-	L = normalize(-sunUBO.data.direction.xyz);
-	NdotL = max(dot(N, L), 0.0);
+	vec3 L = normalize(-sunUBO.data.direction.xyz);
+	float NdotL = max(dot(N, L), 0.0);
 
 	Lo = vec3(NdotL);
-	Lo *= 1 - SunShadowResolver(FragPos);
+	Lo *= 1 - SunShadowResolver(posWS);
 
 	int splitIndex = NR_CSM_SPLITS;
 	for (int i = 0; i < NR_CSM_SPLITS; i++)
 	{
-		if (FragPos.x >= CSMUBO.data[i].AABBMin.x &&
-			FragPos.y >= CSMUBO.data[i].AABBMin.y &&
-			FragPos.z >= CSMUBO.data[i].AABBMin.z &&
-			FragPos.x <= CSMUBO.data[i].AABBMax.x &&
-			FragPos.y <= CSMUBO.data[i].AABBMax.y &&
-			FragPos.z <= CSMUBO.data[i].AABBMax.z)
+		if (posWS.x >= CSMUBO.data[i].AABBMin.x &&
+			posWS.y >= CSMUBO.data[i].AABBMin.y &&
+			posWS.z >= CSMUBO.data[i].AABBMin.z &&
+			posWS.x <= CSMUBO.data[i].AABBMax.x &&
+			posWS.y <= CSMUBO.data[i].AABBMax.y &&
+			posWS.z <= CSMUBO.data[i].AABBMax.z)
 		{
 			splitIndex = i;
 			break;
@@ -114,12 +112,12 @@ void main()
 	float lightRadius = light.luminance.w;
 	if (lightRadius > 0)
 	{
-		vec3 unormalizedL = light.position.xyz - FragPos;
+		vec3 unormalizedL = light.position.xyz - posWS;
 
 		if (length(unormalizedL) < lightRadius)
 		{
-			L = normalize(unormalizedL);
-			NdotL = max(dot(N, L), 0.0);
+			vec3 L = normalize(unormalizedL);
+			float NdotL = max(dot(N, L), 0.0);
 
 			float attenuation = 1.0;
 			float invSqrAttRadius = 1.0 / max(lightRadius * lightRadius, eps);
@@ -130,32 +128,43 @@ void main()
 			Lo = lightLuminance;
 		}
 	}
-	Lo *= 1 - PointLightShadow(FragPos);
+	Lo *= 1 - PointLightShadow(posWS);
 #endif
 #if !defined (uni_drawCSMSplitedArea) && !defined (uni_drawPointLightShadow)
 	vec3 F0 = vec3(0.04);
-	F0 = mix(F0, Albedo, Metallic);
+	F0 = mix(F0, albedo, metallic);
 
-	vec3 V = normalize(cameraUBO.globalPos.xyz - FragPos);
+	vec3 V = normalize(cameraUBO.globalPos.xyz - posWS);
 
 	float NdotV = max(dot(N, V), 0.0);
 
 	// direction light, sun light
-	L = normalize(-sunUBO.data.direction.xyz);;
+	vec3 D = normalize(-sunUBO.data.direction.xyz);
 	float r = sin(sunAngularRadius);
 	float d = cos(sunAngularRadius);
-	float LdotV = dot(L, V);
-	vec3 S = V - LdotV * L;
-	L = LdotV < d ? normalize(d * L + normalize(S) * r) : V;
+	float DdotV = dot(D, V);
+	vec3 S = V - DdotV * D;
+	vec3 L = DdotV < d ? normalize(d * D + normalize(S) * r) : V;
 
-	vec3 H = normalize(V + L);
+	vec3 HD = normalize(V + D);
+	vec3 HL = normalize(V + L);
 
-	float LdotH = max(dot(L, H), 0.0);
-	float NdotH = max(dot(N, H), 0.0);
-	NdotL = max(dot(N, L), 0.0);
+	float DdotHD = max(dot(D, HD), 0.0);
 
-	Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, Metallic, F0, Albedo, sunUBO.data.luminance.xyz);
-	Lo *= 1.0 - SunShadowResolver(FragPos);
+	float LdotHL = max(dot(L, HL), 0.0);
+	float NdotHL = max(dot(N, HL), 0.0);
+
+	float NdotL = max(dot(N, L), 0.0);
+	float NdotD = max(dot(N, D), 0.0);
+
+	float F90 = 1.0;
+	vec3 FresnelFactor = F_Schlick(F0, F90, LdotHL);
+	vec3 Fd = getDiffuseBRDF(NdotV, NdotD, DdotHD, roughness, metallic, FresnelFactor, albedo);
+	vec3 Fr = getSpecularBRDF(uni_BRDFLUT, uni_BRDFMSLUT, NdotV, NdotL, NdotHL, LdotHL, roughness, F0, FresnelFactor);
+
+	vec3 illuminance = sunUBO.data.illuminance.xyz * NdotD;
+	Lo += illuminance * (Fd + Fr);
+	Lo *= 1.0 - SunShadowResolver(posWS);
 
 	// point punctual light
 	// Get the index of the current pixel in the light grid.
@@ -176,16 +185,16 @@ void main()
 		float lightRadius = light.luminance.w;
 		if (lightRadius > 0)
 		{
-			vec3 unormalizedL = light.position.xyz - FragPos;
+			vec3 unormalizedL = light.position.xyz - posWS;
 
 			if (length(unormalizedL) < lightRadius)
 			{
-				L = normalize(unormalizedL);
-				H = normalize(V + L);
+				vec3 L = normalize(unormalizedL);
+				vec3 H = normalize(V + L);
 
-				LdotH = max(dot(L, H), 0.0);
-				NdotH = max(dot(N, H), 0.0);
-				NdotL = max(dot(N, L), 0.0);
+				float LdotH = max(dot(L, H), 0.0);
+				float NdotH = max(dot(N, H), 0.0);
+				float NdotL = max(dot(N, L), 0.0);
 
 				float attenuation = 1.0;
 				float invSqrAttRadius = 1.0 / max(lightRadius * lightRadius, eps);
@@ -193,12 +202,12 @@ void main()
 
 				vec3 lightLuminance = light.luminance.xyz * attenuation;
 
-				Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, Metallic, F0, Albedo, lightLuminance);
+				Lo += getIlluminance(uni_BRDFLUT, uni_BRDFMSLUT, NdotV, NdotL, NdotH, LdotH, safe_roughness, metallic, F0, albedo, lightLuminance);
 			}
 		}
 	}
 
-	//Lo *= 1 - PointLightShadow(FragPos);
+	//Lo *= 1 - PointLightShadow(posWS);
 
 	// sphere area light
 	for (int i = 0; i < NR_SPHERE_LIGHTS; ++i)
@@ -206,13 +215,13 @@ void main()
 		float lightRadius = sphereLightUBO.data[i].luminance.w;
 		if (lightRadius > 0)
 		{
-			vec3 unormalizedL = sphereLightUBO.data[i].position.xyz - FragPos;
-			L = normalize(unormalizedL);
-			H = normalize(V + L);
+			vec3 unormalizedL = sphereLightUBO.data[i].position.xyz - posWS;
+			vec3 L = normalize(unormalizedL);
+			vec3 H = normalize(V + L);
 
-			LdotH = max(dot(L, H), 0.0);
-			NdotH = max(dot(N, H), 0.0);
-			NdotL = max(dot(N, L), 0.0);
+			float LdotH = max(dot(L, H), 0.0);
+			float NdotH = max(dot(N, H), 0.0);
+			float NdotL = max(dot(N, L), 0.0);
 
 			float sqrDist = dot(unormalizedL, unormalizedL);
 
@@ -236,7 +245,7 @@ void main()
 			}
 			illuminance *= PI;
 
-			Lo += getIlluminance(NdotV, LdotH, NdotH, NdotL, safe_roughness, Metallic, F0, Albedo, illuminance * sphereLightUBO.data[i].luminance.xyz);
+			Lo += getIlluminance(uni_BRDFLUT, uni_BRDFMSLUT, NdotV, NdotL, NdotH, LdotH, safe_roughness, metallic, F0, albedo, illuminance * sphereLightUBO.data[i].luminance.xyz);
 		}
 	}
 
@@ -244,7 +253,7 @@ void main()
 	// [https://steamcdn-a.akamaihd.net/apps/valve/2006/SIGGRAPH06_Course_ShadingInValvesSourceEngine.pdf]
 	vec3 nSquared = N * N;
 	ivec3 isNegative = ivec3(int(N.x < 0.0), int(N.y < 0.0), int(N.z < 0.0));
-	vec3 GISampleCoord = (FragPos - GISkyUBO.irradianceVolumeOffset.xyz) / skyUBO.posWSNormalizer.xyz;
+	vec3 GISampleCoord = (posWS - GISkyUBO.irradianceVolumeOffset.xyz) / skyUBO.posWSNormalizer.xyz;
 	ivec3 isOutside = ivec3(int((GISampleCoord.x > 1.0) || (GISampleCoord.x < 0.0)), int((GISampleCoord.y > 1.0) || (GISampleCoord.y < 0.0)), int((GISampleCoord.z > 1.0) || (GISampleCoord.z < 0.0)));
 
 	GISampleCoord.z /= 6.0;

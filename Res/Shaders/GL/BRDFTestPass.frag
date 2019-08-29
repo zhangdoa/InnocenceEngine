@@ -36,9 +36,9 @@ void main()
 	F0 = mix(F0, out_albedo, out_metallic);
 
 	float F90 = 1.0;
-	vec3 F = fr_F_Schlick(F0, F90, LdotH);
-	float G = fr_V_SmithGGXCorrelated(NdotV, NdotL, out_roughness);
-	float D = fr_D_GGX(NdotH, out_roughness);
+	vec3 F = F_Schlick(F0, F90, LdotH);
+	float G = V_SmithGGXCorrelated(NdotV, NdotL, out_roughness);
+	float D = D_GGX(NdotH, out_roughness);
 	vec3 Frss = F * G * D;
 
 	vec3 Frms = getFrMS(uni_brdfLUT, uni_brdfMSLUT, NdotL, NdotV, F0, out_roughness);
@@ -50,7 +50,7 @@ void main()
 
 	kD *= 1.0 - out_metallic;
 
-	vec3 Fd = fd_DisneyDiffuse2015(NdotV, NdotL, LdotH, out_roughness * out_roughness) * out_albedo;
+	vec3 Fd = DisneyDiffuse2015(NdotV, NdotL, LdotH, out_roughness * out_roughness) * out_albedo;
 
 	vec3 Lo = (kD * Fd + Fr);
 

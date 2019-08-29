@@ -58,20 +58,31 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float3 Lo = float3(0, 0, 0);
 
 	// direction light, sun light
-	float3 L = normalize(-sun_dir.xyz);;
+	float3 D = normalize(-sun_dir.xyz);
 	float r = sin(sunAngularRadius);
 	float d = cos(sunAngularRadius);
-	float LdotV = dot(L, V);
-	float3 S = V - LdotV * L;
-	L = LdotV < d ? normalize(d * L + normalize(S) * r) : V;
+	float DdotV = dot(D, V);
+	float3 S = V - DdotV * D;
+	float3 L = DdotV < d ? normalize(d * D + normalize(S) * r) : V;
 
-	float3 H = normalize(V + L);
+	float3 HD = normalize(V + D);
+	float3 HL = normalize(V + L);
 
-	float LdotH = max(dot(L, H), 0.0);
-	float NdotH = max(dot(N, H), 0.0);
+	float DdotHD = max(dot(D, HD), 0.0);
+
+	float LdotHL = max(dot(L, HL), 0.0);
+	float NdotHL = max(dot(N, HL), 0.0);
+
 	float NdotL = max(dot(N, L), 0.0);
+	float NdotD = max(dot(N, D), 0.0);
 
-	Lo += getIlluminance(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotV, LdotH, NdotH, NdotL, roughness, metallic, F0, albedo, sun_luminance.xyz);
+	float F90 = 1.0;
+	float3 FresnelFactor = fresnelSchlick(F0, F90, LdotHL);
+	float3 Fd = getDiffuseBRDF(NdotV, NdotD, DdotHD, roughness, metallic, FresnelFactor, albedo);
+	float3 Fr = getSpecularBRDF(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotV, NdotL, NdotHL, LdotHL, roughness, F0, FresnelFactor);
+
+	float3 illuminance = sun_illuminance.xyz * NdotD;
+	Lo += illuminance * (Fd + Fr);
 	Lo *= 1.0 - SunShadowResolver(posWS);
 
 	// point punctual light
@@ -91,19 +102,19 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 		float3 unormalizedL = light.position.xyz - posWS;
 		float lightAttRadius = light.luminance.w;
 
-		L = normalize(unormalizedL);
-		H = normalize(V + L);
+		float3 L = normalize(unormalizedL);
+		float3 H = normalize(V + L);
 
-		LdotH = max(dot(L, H), 0.0);
-		NdotH = max(dot(N, H), 0.0);
-		NdotL = max(dot(N, L), 0.0);
+		float LdotH = max(dot(L, H), 0.0);
+		float NdotH = max(dot(N, H), 0.0);
+		float NdotL = max(dot(N, L), 0.0);
 
 		float attenuation = 1.0;
 		float invSqrAttRadius = 1.0 / max(lightAttRadius * lightAttRadius, eps);
 		attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
 
 		float3 lightLuminance = light.luminance.xyz * attenuation;
-		Lo += getIlluminance(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotV, LdotH, NdotH, NdotL, roughness, metallic, F0, albedo, lightLuminance);
+		Lo += getIlluminance(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, metallic, F0, albedo, lightLuminance);
 	}
 
 	//// sphere area light
@@ -112,12 +123,12 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	//	float3 unormalizedL = sphereLights[i].position.xyz - posWS;
 	//	float lightSphereRadius = sphereLights[i].luminance.w;
 
-	//	L = normalize(unormalizedL);
-	//	H = normalize(V + L);
+	//	float3 L = normalize(unormalizedL);
+	//	float3 H = normalize(V + L);
 
-	//	LdotH = max(dot(L, H), 0.0);
-	//	NdotH = max(dot(N, H), 0.0);
-	//	NdotL = max(dot(N, L), 0.0);
+	//	float LdotH = max(dot(L, H), 0.0);
+	//	float NdotH = max(dot(N, H), 0.0);
+	//	float NdotL = max(dot(N, L), 0.0);
 
 	//	float sqrDist = dot(unormalizedL, unormalizedL);
 
@@ -141,7 +152,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	//	}
 	//	illuminance *= PI;
 
-	//	Lo += getIlluminance(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotV, LdotH, NdotH, NdotL, roughness, F0, albedo, illuminance * sphereLights[i].luminance.xyz);
+	//	Lo += getIlluminance(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, F0, albedo, illuminance * sphereLights[i].luminance.xyz);
 	//}
 
 	// GI

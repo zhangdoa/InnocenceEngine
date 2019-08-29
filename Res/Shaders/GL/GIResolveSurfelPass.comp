@@ -42,7 +42,7 @@ void main()
 			// Diffuse BRDF
 			vec3 BRDF = kD * albedo / PI;
 
-			vec3 Lo = BRDF * sunUBO.data.luminance.xyz * NdotL;
+			vec3 Lo = BRDF * sunUBO.data.illuminance.xyz * NdotL;
 
 			irradianceSSBO.data[l_surfelIndex] = vec4(Lo, 1.0);
 		}

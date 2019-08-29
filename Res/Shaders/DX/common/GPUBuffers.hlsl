@@ -16,7 +16,7 @@ cbuffer materialCBuffer : register(b2)
 cbuffer sunCBuffer : register(b3)
 {
 	float4 sun_dir;
-	float4 sun_luminance;
+	float4 sun_illuminance;
 	matrix sun_r;
 	float4 sun_padding[2];
 };
