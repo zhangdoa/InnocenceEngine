@@ -1254,6 +1254,8 @@ bool DX12RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponen
 		l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapResourceHandle, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 		EndSingleTimeCommands(l_commandList, m_device, m_globalCommandQueue);
+
+		m_globalCommandAllocator->Reset();
 	}
 
 	return true;
