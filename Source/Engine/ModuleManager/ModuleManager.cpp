@@ -9,10 +9,7 @@
 #include "../EntityManager/EntityManager.h"
 #include "../ComponentManager/TransformComponentManager.h"
 #include "../ComponentManager/VisibleComponentManager.h"
-#include "../ComponentManager/DirectionalLightComponentManager.h"
-#include "../ComponentManager/PointLightComponentManager.h"
-#include "../ComponentManager/SpotLightComponentManager.h"
-#include "../ComponentManager/SphereLightComponentManager.h"
+#include "../ComponentManager/LightComponentManager.h"
 #include "../ComponentManager/CameraComponentManager.h"
 #include "../SceneHierarchyManager/SceneHierarchyManager.h"
 #include "../AssetSystem/AssetSystem.h"
@@ -128,10 +125,7 @@ namespace InnoModuleManagerNS
 	std::unique_ptr<IEntityManager> m_EntityManager;
 	std::unique_ptr<ITransformComponentManager> m_TransformComponentManager;
 	std::unique_ptr<IVisibleComponentManager> m_VisibleComponentManager;
-	std::unique_ptr<IDirectionalLightComponentManager> m_DirectionalLightComponentManager;
-	std::unique_ptr<IPointLightComponentManager> m_PointLightComponentManager;
-	std::unique_ptr<ISpotLightComponentManager> m_SpotLightComponentManager;
-	std::unique_ptr<ISphereLightComponentManager> m_SphereLightComponentManager;
+	std::unique_ptr<ILightComponentManager> m_LightComponentManager;
 	std::unique_ptr<ICameraComponentManager> m_CameraComponentManager;
 
 	std::unique_ptr<ISceneHierarchyManager> m_SceneHierarchyManager;
@@ -305,10 +299,7 @@ bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook
 	createSubSystemInstanceDefi(EntityManager);
 	createSubSystemInstanceDefi(TransformComponentManager);
 	createSubSystemInstanceDefi(VisibleComponentManager);
-	createSubSystemInstanceDefi(DirectionalLightComponentManager);
-	createSubSystemInstanceDefi(PointLightComponentManager);
-	createSubSystemInstanceDefi(SpotLightComponentManager);
-	createSubSystemInstanceDefi(SphereLightComponentManager);
+	createSubSystemInstanceDefi(LightComponentManager);
 	createSubSystemInstanceDefi(CameraComponentManager);
 
 	createSubSystemInstanceDefi(SceneHierarchyManager);
@@ -461,10 +452,7 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 
 	ComponentManagerSetup(TransformComponent);
 	ComponentManagerSetup(VisibleComponent);
-	ComponentManagerSetup(DirectionalLightComponent);
-	ComponentManagerSetup(PointLightComponent);
-	ComponentManagerSetup(SpotLightComponent);
-	ComponentManagerSetup(SphereLightComponent);
+	ComponentManagerSetup(LightComponent);
 	ComponentManagerSetup(CameraComponent);
 
 	if (!m_SceneHierarchyManager->Setup())
@@ -532,10 +520,7 @@ bool InnoModuleManagerNS::initialize()
 
 	ComponentManagerInit(TransformComponent);
 	ComponentManagerInit(VisibleComponent);
-	ComponentManagerInit(DirectionalLightComponent);
-	ComponentManagerInit(PointLightComponent);
-	ComponentManagerInit(SpotLightComponent);
-	ComponentManagerInit(SphereLightComponent);
+	ComponentManagerInit(LightComponent);
 	ComponentManagerInit(CameraComponent);
 
 	if (!m_SceneHierarchyManager->Initialize())
@@ -593,10 +578,7 @@ bool InnoModuleManagerNS::update()
 
 		ComponentManagerUpdate(TransformComponent);
 		ComponentManagerUpdate(VisibleComponent);
-		ComponentManagerUpdate(DirectionalLightComponent);
-		ComponentManagerUpdate(PointLightComponent);
-		ComponentManagerUpdate(SpotLightComponent);
-		ComponentManagerUpdate(SphereLightComponent);
+		ComponentManagerUpdate(LightComponent);
 		ComponentManagerUpdate(CameraComponent);
 
 		subSystemUpdate(AssetSystem);
@@ -688,10 +670,7 @@ bool InnoModuleManagerNS::terminate()
 
 	ComponentManagerTerm(TransformComponent);
 	ComponentManagerTerm(VisibleComponent);
-	ComponentManagerTerm(DirectionalLightComponent);
-	ComponentManagerTerm(PointLightComponent);
-	ComponentManagerTerm(SpotLightComponent);
-	ComponentManagerTerm(SphereLightComponent);
+	ComponentManagerTerm(LightComponent);
 	ComponentManagerTerm(CameraComponent);
 
 	if (!m_EntityManager->Terminate())
@@ -770,17 +749,8 @@ IComponentManager * InnoModuleManager::getComponentManager(ComponentType compone
 	case ComponentType::VisibleComponent:
 		l_result = m_VisibleComponentManager.get();
 		break;
-	case ComponentType::DirectionalLightComponent:
-		l_result = m_DirectionalLightComponentManager.get();
-		break;
-	case ComponentType::PointLightComponent:
-		l_result = m_PointLightComponentManager.get();
-		break;
-	case ComponentType::SpotLightComponent:
-		l_result = m_SpotLightComponentManager.get();
-		break;
-	case ComponentType::SphereLightComponent:
-		l_result = m_SphereLightComponentManager.get();
+	case ComponentType::LightComponent:
+		l_result = m_LightComponentManager.get();
 		break;
 	case ComponentType::CameraComponent:
 		l_result = m_CameraComponentManager.get();

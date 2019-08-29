@@ -36,10 +36,7 @@ enum class ComponentType
 {
 	TransformComponent,
 	VisibleComponent,
-	DirectionalLightComponent,
-	PointLightComponent,
-	SpotLightComponent,
-	SphereLightComponent,
+	LightComponent,
 	CameraComponent,
 	PhysicsDataComponent,
 	MeshDataComponent,

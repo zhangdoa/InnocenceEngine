@@ -39,10 +39,6 @@ namespace ImGuiWrapperNS
 	void showTransformComponentPropertyEditor(void* rhs);
 	void showVisiableComponentPropertyEditor(void* rhs);
 	void showLightComponentPropertyEditor(void* rhs);
-	void showDirectionalLightComponentPropertyEditor(void* rhs);
-	void showPointLightComponentPropertyEditor(void* rhs);
-	void showSphereLightComponentPropertyEditor(void* rhs);
-
 	void showConcurrencyProfiler();
 
 	bool m_isParity = true;
@@ -484,23 +480,12 @@ void ImGuiWrapperNS::showWorldExplorer()
 		{
 			switch (selectedComponentType)
 			{
-			case ComponentType::TransformComponent: showTransformComponentPropertyEditor(selectedComponent); break;
-			case ComponentType::VisibleComponent: showVisiableComponentPropertyEditor(selectedComponent); break;
-			case ComponentType::DirectionalLightComponent:
-				showLightComponentPropertyEditor(selectedComponent);
-				showDirectionalLightComponentPropertyEditor(selectedComponent);
-				break;
-			case ComponentType::PointLightComponent:
-				showLightComponentPropertyEditor(selectedComponent);
-				showPointLightComponentPropertyEditor(selectedComponent);
-				break;
-			case ComponentType::SpotLightComponent:
-				showLightComponentPropertyEditor(selectedComponent);
-				break;
-			case ComponentType::SphereLightComponent:
-				showLightComponentPropertyEditor(selectedComponent);
-				showSphereLightComponentPropertyEditor(selectedComponent);
-				break;
+			case ComponentType::TransformComponent:
+				showTransformComponentPropertyEditor(selectedComponent); break;
+			case ComponentType::VisibleComponent:
+				showVisiableComponentPropertyEditor(selectedComponent); break;
+			case ComponentType::LightComponent:
+				showLightComponentPropertyEditor(selectedComponent); break;
 			default:
 				break;
 			}
@@ -690,36 +675,22 @@ void ImGuiWrapperNS::showLightComponentPropertyEditor(void * rhs)
 		{
 			l_rhs->m_UseColorTemperature = useColorTemperature;
 		}
-	}
-	ImGui::EndChild();
-}
 
-void ImGuiWrapperNS::showDirectionalLightComponentPropertyEditor(void * rhs)
-{
-	ImGui::BeginChild("DirectionalLightComponent Property", ImVec2(ImGui::GetWindowContentRegionWidth(), 400.0f), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-	{
-	}
-	ImGui::EndChild();
-}
+		static float float_min = std::numeric_limits<float>::min();
+		static float float_max = std::numeric_limits<float>::max();
 
-void ImGuiWrapperNS::showPointLightComponentPropertyEditor(void * rhs)
-{
-	auto l_rhs = reinterpret_cast<PointLightComponent*>(rhs);
-	ImGui::BeginChild("PointLightComponent Property", ImVec2(ImGui::GetWindowContentRegionWidth(), 400.0f), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-	{
-	}
-	ImGui::EndChild();
-}
+		static float pos[4];
+		pos[0] = l_rhs->m_Shape.x;
+		pos[1] = l_rhs->m_Shape.y;
+		pos[2] = l_rhs->m_Shape.z;
+		pos[3] = l_rhs->m_Shape.w;
 
-void ImGuiWrapperNS::showSphereLightComponentPropertyEditor(void * rhs)
-{
-	auto l_rhs = reinterpret_cast<SphereLightComponent*>(rhs);
-	ImGui::BeginChild("SphereLightComponent Property", ImVec2(ImGui::GetWindowContentRegionWidth(), 400.0f), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-	{
-		static float sphereRadius = l_rhs->m_sphereRadius;
-		if (ImGui::DragFloat("Sphere radius", &sphereRadius, 0.01f, 0.1f, 10000.0f))
+		if (ImGui::DragFloat3("Shape", pos, 0.01f, float_min, float_max))
 		{
-			l_rhs->m_sphereRadius = sphereRadius;
+			l_rhs->m_Shape.x = pos[0];
+			l_rhs->m_Shape.y = pos[1];
+			l_rhs->m_Shape.z = pos[2];
+			l_rhs->m_Shape.w = pos[3];
 		}
 	}
 	ImGui::EndChild();

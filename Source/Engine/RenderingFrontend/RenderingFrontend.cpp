@@ -2,9 +2,7 @@
 #include "../Common/CommonMacro.inl"
 #include "../ComponentManager/ITransformComponentManager.h"
 #include "../ComponentManager/IVisibleComponentManager.h"
-#include "../ComponentManager/IDirectionalLightComponentManager.h"
-#include "../ComponentManager/IPointLightComponentManager.h"
-#include "../ComponentManager/ISphereLightComponentManager.h"
+#include "../ComponentManager/ILightComponentManager.h"
 #include "../ComponentManager/ICameraComponentManager.h"
 
 #include "../Core/InnoLogger.h"
@@ -113,8 +111,7 @@ namespace InnoRenderingFrontendNS
 	bool updateCameraData();
 	bool updateSunData();
 	bool updateSkyData();
-	bool updatePointLightData();
-	bool updateSphereLightData();
+	bool updateLightData();
 
 	bool updateSunShadowPassData();
 	bool updateMeshData();
@@ -386,30 +383,29 @@ bool InnoRenderingFrontendNS::updateSunData()
 
 	l_CSMGPUData.resize(m_renderingCapability.maxCSMSplits);
 
-	auto l_directionalLightComponents = GetComponentManager(DirectionalLightComponent)->GetAllComponents();
+	auto l_sun = GetComponentManager(LightComponent)->GetSun();
 
-	if (l_directionalLightComponents.size() > 0)
+	if (l_sun)
 	{
-		auto l_directionalLight = l_directionalLightComponents[0];
-		auto l_directionalLightTransformComponent = GetComponent(TransformComponent, l_directionalLight->m_parentEntity);
+		auto l_sunTransformComponent = GetComponent(TransformComponent, l_sun->m_parentEntity);
 
-		if (l_directionalLightTransformComponent == nullptr)
+		if (l_sunTransformComponent == nullptr)
 		{
 			return false;
 		}
 
-		auto l_lightRotMat = l_directionalLightTransformComponent->m_globalTransformMatrix.m_rotationMat.inverse();
+		auto l_lightRotMat = l_sunTransformComponent->m_globalTransformMatrix.m_rotationMat.inverse();
 
 		SunGPUData l_SunGPUData;
 
-		l_SunGPUData.dir = InnoMath::getDirection(Direction::Backward, l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
-		l_SunGPUData.luminance = l_directionalLight->m_RGBColor * l_directionalLight->m_LuminousFlux;
-		l_SunGPUData.r = InnoMath::getInvertRotationMatrix(l_directionalLightTransformComponent->m_globalTransformVector.m_rot);
+		l_SunGPUData.dir = InnoMath::getDirection(Direction::Backward, l_sunTransformComponent->m_globalTransformVector.m_rot);
+		l_SunGPUData.luminance = l_sun->m_RGBColor * l_sun->m_LuminousFlux;
+		l_SunGPUData.r = InnoMath::getInvertRotationMatrix(l_sunTransformComponent->m_globalTransformVector.m_rot);
 
 		m_sunGPUData.SetValue(std::move(l_SunGPUData));
 
-		auto l_SplitAABB = GetComponentManager(DirectionalLightComponent)->GetSplitAABB();
-		auto l_ProjectionMatrices = GetComponentManager(DirectionalLightComponent)->GetProjectionMatrices();
+		auto l_SplitAABB = GetComponentManager(LightComponent)->GetSunSplitAABB();
+		auto l_ProjectionMatrices = GetComponentManager(LightComponent)->GetSunProjectionMatrices();
 		if (l_SplitAABB.size() > 0 && l_ProjectionMatrices.size() > 0)
 		{
 			for (size_t j = 0; j < m_renderingCapability.maxCSMSplits; j++)
@@ -441,54 +437,46 @@ bool InnoRenderingFrontendNS::updateSkyData()
 	return true;
 }
 
-bool InnoRenderingFrontendNS::updatePointLightData()
+bool InnoRenderingFrontendNS::updateLightData()
 {
-	auto l_pointLightComponents = GetComponentManager(PointLightComponent)->GetAllComponents();
-	auto l_pointLightComponentCount = l_pointLightComponents.size();
+	auto l_lightComponents = GetComponentManager(LightComponent)->GetAllComponents();
+	auto l_lightComponentCount = l_lightComponents.size();
 	std::vector<PointLightGPUData> l_PointLightGPUData;
-
-	if (l_pointLightComponentCount > 0)
-	{
-		l_PointLightGPUData.resize(l_pointLightComponentCount);
-
-		for (size_t i = 0; i < l_pointLightComponentCount; i++)
-		{
-			auto l_transformCompoent = GetComponent(TransformComponent, l_pointLightComponents[i]->m_parentEntity);
-			if (l_transformCompoent != nullptr)
-			{
-				l_PointLightGPUData[i].pos = l_transformCompoent->m_globalTransformVector.m_pos;
-				l_PointLightGPUData[i].luminance = l_pointLightComponents[i]->m_RGBColor * l_pointLightComponents[i]->m_LuminousFlux;
-				l_PointLightGPUData[i].luminance.w = l_pointLightComponents[i]->m_attenuationRadius;
-			}
-		}
-
-		m_pointLightGPUData.SetValue(std::move(l_PointLightGPUData));
-	}
-
-	return true;
-}
-
-bool InnoRenderingFrontendNS::updateSphereLightData()
-{
-	auto l_sphereLightComponents = GetComponentManager(SphereLightComponent)->GetAllComponents();
-	auto l_sphereLightComponentCount = l_sphereLightComponents.size();
 	std::vector<SphereLightGPUData> l_SphereLightGPUData;
 
-	if (l_sphereLightComponentCount > 0)
+	if (l_lightComponentCount > 0)
 	{
-		l_SphereLightGPUData.resize(l_sphereLightComponentCount);
+		l_PointLightGPUData.resize(l_lightComponentCount);
+		l_SphereLightGPUData.resize(l_lightComponentCount);
 
-		for (size_t i = 0; i < l_sphereLightComponentCount; i++)
+		for (size_t i = 0; i < l_lightComponentCount; i++)
 		{
-			auto l_transformCompoent = GetComponent(TransformComponent, l_sphereLightComponents[i]->m_parentEntity);
+			auto l_transformCompoent = GetComponent(TransformComponent, l_lightComponents[i]->m_parentEntity);
 			if (l_transformCompoent != nullptr)
 			{
-				l_SphereLightGPUData[i].pos = l_transformCompoent->m_globalTransformVector.m_pos;
-				l_SphereLightGPUData[i].luminance = l_sphereLightComponents[i]->m_RGBColor * l_sphereLightComponents[i]->m_LuminousFlux;
-				l_SphereLightGPUData[i].luminance.w = l_sphereLightComponents[i]->m_sphereRadius;
+				if (l_lightComponents[i]->m_LightType == LightType::Point)
+				{
+					PointLightGPUData l_data;
+					l_data.pos = l_transformCompoent->m_globalTransformVector.m_pos;
+					l_data.luminance = l_lightComponents[i]->m_RGBColor * l_lightComponents[i]->m_LuminousFlux;
+					l_data.luminance.w = l_lightComponents[i]->m_Shape.x;
+					l_PointLightGPUData.emplace_back(l_data);
+				}
+				else if (l_lightComponents[i]->m_LightType == LightType::Sphere)
+				{
+					SphereLightGPUData l_data;
+					l_data.pos = l_transformCompoent->m_globalTransformVector.m_pos;
+					l_data.luminance = l_lightComponents[i]->m_RGBColor * l_lightComponents[i]->m_LuminousFlux;
+					l_data.luminance.w = l_lightComponents[i]->m_Shape.x;
+					l_SphereLightGPUData.emplace_back(l_data);
+				}
 			}
 		}
 
+		l_PointLightGPUData.shrink_to_fit();
+		l_SphereLightGPUData.shrink_to_fit();
+
+		m_pointLightGPUData.SetValue(std::move(l_PointLightGPUData));
 		m_sphereLightGPUData.SetValue(std::move(l_SphereLightGPUData));
 	}
 
@@ -617,73 +605,75 @@ bool InnoRenderingFrontendNS::updateMeshData()
 
 bool InnoRenderingFrontendNS::updateBillboardPassData()
 {
-	auto l_directionalLightComponents = GetComponentManager(DirectionalLightComponent)->GetAllComponents();
-	auto l_pointLightComponents = GetComponentManager(PointLightComponent)->GetAllComponents();
-	auto l_sphereLightComponents = GetComponentManager(SphereLightComponent)->GetAllComponents();
+	auto l_lightComponents = GetComponentManager(LightComponent)->GetAllComponents();
 
 	std::vector<BillboardPassDrawCallData> l_billboardPassDrawCallDataVector;
 	l_billboardPassDrawCallDataVector.resize(3);
 	l_billboardPassDrawCallDataVector[0].iconTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(WorldEditorIconType::DIRECTIONAL_LIGHT);
-	l_billboardPassDrawCallDataVector[0].instanceCount = (unsigned int)l_directionalLightComponents.size();
 	l_billboardPassDrawCallDataVector[1].iconTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(WorldEditorIconType::POINT_LIGHT);
-	l_billboardPassDrawCallDataVector[1].instanceCount = (unsigned int)l_pointLightComponents.size();
 	l_billboardPassDrawCallDataVector[2].iconTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(WorldEditorIconType::SPHERE_LIGHT);
-	l_billboardPassDrawCallDataVector[2].instanceCount = (unsigned int)l_sphereLightComponents.size();
 
-	auto l_totalBillboardDrawCallCount = l_directionalLightComponents.size() + l_pointLightComponents.size() + l_sphereLightComponents.size();
+	auto l_totalBillboardDrawCallCount = l_lightComponents.size();
+
+	std::vector<MeshGPUData> l_directionalLightMeshGPUData;
+	l_directionalLightMeshGPUData.reserve(l_totalBillboardDrawCallCount);
+
+	std::vector<MeshGPUData> l_pointLightMeshGPUData;
+	l_pointLightMeshGPUData.reserve(l_totalBillboardDrawCallCount);
+
+	std::vector<MeshGPUData> l_sphereLightMeshGPUData;
+	l_sphereLightMeshGPUData.reserve(l_totalBillboardDrawCallCount);
+
+	for (auto i : l_lightComponents)
+	{
+		MeshGPUData l_meshGPUData;
+
+		auto l_transformCompoent = GetComponent(TransformComponent, i->m_parentEntity);
+		if (l_transformCompoent != nullptr)
+		{
+			l_meshGPUData.m = InnoMath::toTranslationMatrix(l_transformCompoent->m_globalTransformVector.m_pos);
+		}
+
+		switch (i->m_LightType)
+		{
+		case LightType::Directional:
+			l_directionalLightMeshGPUData.emplace_back(l_meshGPUData);
+			l_billboardPassDrawCallDataVector[0].instanceCount++;
+			break;
+		case LightType::Point:
+			l_pointLightMeshGPUData.emplace_back(l_meshGPUData);
+			l_billboardPassDrawCallDataVector[1].instanceCount++;
+			break;
+		case LightType::Spot:
+			break;
+		case LightType::Sphere:
+			l_sphereLightMeshGPUData.emplace_back(l_meshGPUData);
+			l_billboardPassDrawCallDataVector[2].instanceCount++;
+			break;
+		case LightType::Disk:
+			break;
+		case LightType::Tube:
+			break;
+		case LightType::Rectangle:
+			break;
+		default:
+			break;
+		}
+	}
+
+	l_billboardPassDrawCallDataVector[0].meshGPUDataOffset = 0;
+	l_billboardPassDrawCallDataVector[1].meshGPUDataOffset = (unsigned int)l_directionalLightMeshGPUData.size();
+	l_billboardPassDrawCallDataVector[2].meshGPUDataOffset = (unsigned int)(l_directionalLightMeshGPUData.size() + l_pointLightMeshGPUData.size());
+
+	l_directionalLightMeshGPUData.shrink_to_fit();
+	l_pointLightMeshGPUData.shrink_to_fit();
+	l_sphereLightMeshGPUData.shrink_to_fit();
 
 	std::vector<MeshGPUData> l_billboardPassMeshGPUData;
 	l_billboardPassMeshGPUData.reserve(l_totalBillboardDrawCallCount);
-
-	unsigned int l_index = 0;
-
-	l_billboardPassDrawCallDataVector[0].meshGPUDataOffset = l_index;
-	for (auto i : l_directionalLightComponents)
-	{
-		MeshGPUData l_meshGPUData;
-
-		auto l_transformCompoent = GetComponent(TransformComponent, i->m_parentEntity);
-		if (l_transformCompoent != nullptr)
-		{
-			l_meshGPUData.m = InnoMath::toTranslationMatrix(l_transformCompoent->m_globalTransformVector.m_pos);
-		}
-
-		l_billboardPassMeshGPUData.emplace_back(l_meshGPUData);
-
-		l_index++;
-	}
-
-	l_billboardPassDrawCallDataVector[1].meshGPUDataOffset = l_index;
-	for (auto i : l_pointLightComponents)
-	{
-		MeshGPUData l_meshGPUData;
-
-		auto l_transformCompoent = GetComponent(TransformComponent, i->m_parentEntity);
-		if (l_transformCompoent != nullptr)
-		{
-			l_meshGPUData.m = InnoMath::toTranslationMatrix(l_transformCompoent->m_globalTransformVector.m_pos);
-		}
-
-		l_billboardPassMeshGPUData.emplace_back(l_meshGPUData);
-
-		l_index++;
-	}
-
-	l_billboardPassDrawCallDataVector[2].meshGPUDataOffset = l_index;
-	for (auto i : l_sphereLightComponents)
-	{
-		MeshGPUData l_meshGPUData;
-
-		auto l_transformCompoent = GetComponent(TransformComponent, i->m_parentEntity);
-		if (l_transformCompoent != nullptr)
-		{
-			l_meshGPUData.m = InnoMath::toTranslationMatrix(l_transformCompoent->m_globalTransformVector.m_pos);
-		}
-
-		l_billboardPassMeshGPUData.emplace_back(l_meshGPUData);
-
-		l_index++;
-	}
+	l_billboardPassMeshGPUData.insert(l_billboardPassMeshGPUData.end(), l_directionalLightMeshGPUData.begin(), l_directionalLightMeshGPUData.end());
+	l_billboardPassMeshGPUData.insert(l_billboardPassMeshGPUData.end(), l_pointLightMeshGPUData.begin(), l_pointLightMeshGPUData.end());
+	l_billboardPassMeshGPUData.insert(l_billboardPassMeshGPUData.end(), l_sphereLightMeshGPUData.begin(), l_sphereLightMeshGPUData.end());
 
 	m_billboardPassDrawCallData.SetValue(std::move(l_billboardPassDrawCallDataVector));
 	m_billboardMeshGPUData.SetValue(std::move(l_billboardPassMeshGPUData));
@@ -707,8 +697,7 @@ bool InnoRenderingFrontendNS::update()
 		updateCameraData();
 
 		updateSunData();
-		updatePointLightData();
-		updateSphereLightData();
+		updateLightData();
 		updateSkyData();
 
 		// copy culling data pack for local scope

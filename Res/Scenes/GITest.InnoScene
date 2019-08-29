@@ -25,7 +25,7 @@
           "ParentTransformComponentEntityName": "RootTransform"
         },
         {
-          "ComponentType": 6,
+          "ComponentType": 3,
           "FOVX": 90.0,
           "HeightScale": 9.0,
           "WidthScale": 16.0,
@@ -63,6 +63,13 @@
         {
           "ColorTemperature": 5780.0,
           "ComponentType": 2,
+          "LightType": 0,
+          "Shape": {
+            "W": 1.0,
+            "Z": 0.0,
+            "Y": 0.0,
+            "X": 0.0
+          },
           "LuminousFlux": 1.0,
           "RGBColor": {
             "W": 1.0,
@@ -292,7 +299,14 @@
         },
         {
           "ColorTemperature": 5780.0,
-          "ComponentType": 3,
+          "ComponentType": 2,
+          "LightType": 1,
+          "Shape": {
+            "W": 1.0,
+            "Z": 0.0,
+            "Y": 0.0,
+            "X": 0.0
+          },
           "LuminousFlux": 120.0,
           "RGBColor": {
             "W": 1.0,
@@ -332,7 +346,14 @@
         },
         {
           "ColorTemperature": 5780.0,
-          "ComponentType": 5,
+          "ComponentType": 2,
+          "LightType": 3,
+          "Shape": {
+            "W": 1.0,
+            "Z": 0.0,
+            "Y": 0.0,
+            "X": 3.200000047683716
+          },
           "LuminousFlux": 60.0,
           "RGBColor": {
             "W": 1.0,
@@ -340,16 +361,11 @@
             "Y": 0.0457657165825367,
             "Z": 0.5240174531936646
           },
-          "SphereRadius": 3.200000047683716,
           "UseColorTemperature": false
         }
       ],
       "EntityID": "1320f1cfdcfb12301ac378cc91f5dcd",
       "EntityName": "sphereLight"
-    },
-    {
-      "EntityID": "750460d4b5ac40ee369359e328fcb33",
-      "EntityName": "newEntity"
     }
   ],
   "SceneName": "Res/Scenes/GITest.InnoScene"

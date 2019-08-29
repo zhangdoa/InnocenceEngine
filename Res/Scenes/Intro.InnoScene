@@ -25,7 +25,7 @@
           "ParentTransformComponentEntityName": "RootTransform"
         },
         {
-          "ComponentType": 6,
+          "ComponentType": 3,
           "FOVX": 90.0,
           "WidthScale": 16.0,
           "HeightScale": 9.0,
@@ -68,6 +68,13 @@
             "X": 1.0
           },
           "ComponentType": 2,
+          "LightType": 0,
+          "Shape": {
+            "W": 1.0,
+            "Z": 0.0,
+            "Y": 0.0,
+            "X": 0.0
+          },
           "ColorTemperature": 5780.0,
           "LuminousFlux": 1.0,
           "UseColorTemperature": true
@@ -121,158 +128,6 @@
           "ComponentType": 0,
           "LocalTransformVector": {
             "Position": {
-              "X": 0.0,
-              "Y": 0.1,
-              "Z": 0.0
-            },
-            "Rotation": {
-              "W": 1.0,
-              "X": 0.0,
-              "Y": 0.0,
-              "Z": 0.0
-            },
-            "Scale": {
-              "X": 200.0,
-              "Y": 0.1,
-              "Z": 200.0
-            }
-          },
-          "ParentTransformComponentEntityName": "RootTransform"
-        },
-        {
-          "ComponentType": 1,
-          "MeshPrimitiveTopology": 2,
-          "MeshShapeType": 2,
-          "MeshUsageType": 0,
-          "ModelFileName": "",
-          "TextureWrapMethod": 1,
-          "VisiblilityType": 2,
-          "SimulatePhysics": true
-        }
-      ],
-      "EntityID": "be5c104071400205215f368e464c99d2",
-      "EntityName": "landscape"
-    },
-    {
-      "ChildrenComponents": [
-        {
-          "ComponentType": 0,
-          "LocalTransformVector": {
-            "Position": {
-              "X": 4.0,
-              "Y": 2.0,
-              "Z": 1.0
-            },
-            "Rotation": {
-              "W": 1.0,
-              "X": 0.0,
-              "Y": 0.0,
-              "Z": 0.0
-            },
-            "Scale": {
-              "X": 1.0,
-              "Y": 1.0,
-              "Z": 1.0
-            }
-          },
-          "ParentTransformComponentEntityName": "RootTransform"
-        },
-        {
-          "ComponentType": 1,
-          "MeshPrimitiveTopology": 3,
-          "MeshShapeType": 3,
-          "MeshUsageType": 1,
-          "ModelFileName": "",
-          "TextureWrapMethod": 1,
-          "VisiblilityType": 3,
-          "SimulatePhysics": true
-        }
-      ],
-      "EntityID": "3c1ad32f03803d38938f073c5b45e6b1",
-      "EntityName": "transparentSphere"
-    },
-    {
-      "ChildrenComponents": [
-        {
-          "ComponentType": 0,
-          "LocalTransformVector": {
-            "Position": {
-              "X": 2.0,
-              "Y": 1.0,
-              "Z": -5.0
-            },
-            "Rotation": {
-              "W": 1.0,
-              "X": 0.0,
-              "Y": 0.0,
-              "Z": 0.0
-            },
-            "Scale": {
-              "X": 1.0,
-              "Y": 1.0,
-              "Z": 1.0
-            }
-          },
-          "ParentTransformComponentEntityName": "RootTransform"
-        },
-        {
-          "ComponentType": 1,
-          "MeshPrimitiveTopology": 3,
-          "MeshShapeType": 3,
-          "MeshUsageType": 1,
-          "ModelFileName": "",
-          "TextureWrapMethod": 1,
-          "VisiblilityType": 2,
-          "SimulatePhysics": true
-        }
-      ],
-      "EntityID": "1935246950c8de59edec48e38d060e6a",
-      "EntityName": "opaqueSphere"
-    },
-    {
-      "ChildrenComponents": [
-        {
-          "ComponentType": 0,
-          "LocalTransformVector": {
-            "Position": {
-              "X": 0.0,
-              "Y": 0.0,
-              "Z": 0.0
-            },
-            "Rotation": {
-              "W": 1.0,
-              "X": 0.0,
-              "Y": 0.0,
-              "Z": 0.0
-            },
-            "Scale": {
-              "X": 5.0,
-              "Y": 5.0,
-              "Z": 5.0
-            }
-          },
-          "ParentTransformComponentEntityName": "RootTransform"
-        },
-        {
-          "ComponentType": 1,
-          "MeshPrimitiveTopology": 2,
-          "MeshShapeType": 5,
-          "MeshUsageType": 1,
-          "ModelFileName": "",
-          "TextureWrapMethod": 1,
-          "VisiblilityType": 3,
-          "SimulatePhysics": true
-        }
-      ],
-      "EntityID": "51fed505c9584a37daf68df67af610c2",
-      "EntityName": "TransparentTest"
-    },
-    {
-      "ChildrenComponents": [
-        {
-          "ComponentType": 0,
-          "LocalTransformVector": {
-            "Position": {
               "X": 0.019999999552965164,
               "Y": 0.20000000298023224,
               "Z": 3.5
@@ -303,7 +158,7 @@
         }
       ],
       "EntityID": "038c1d165dd678461749f5c3a8e30e44",
-      "EntityName": "pawn2"
+      "EntityName": "orb"
     },
     {
       "ChildrenComponents": [
@@ -336,7 +191,14 @@
             "Y": 0.1604660600423813,
             "X": 0.8165938854217529
           },
-          "ComponentType": 3,
+          "ComponentType": 2,
+          "LightType": 1,
+          "Shape": {
+            "W": 1.0,
+            "Z": 0.0,
+            "Y": 0.0,
+            "X": 0.0
+          },
           "ColorTemperature": 5780.0,
           "LuminousFlux": 120.0,
           "UseColorTemperature": false
@@ -376,11 +238,17 @@
             "Y": 0.0457657165825367,
             "X": 0.3256159722805023
           },
-          "ComponentType": 5,
+          "ComponentType": 2,
+          "LightType": 3,
+          "Shape": {
+            "W": 1.0,
+            "Z": 0.0,
+            "Y": 0.0,
+            "X": 3.200000047683716
+          },
           "ColorTemperature": 5780.0,
           "LuminousFlux": 60.0,
-          "UseColorTemperature": false,
-          "SphereRadius": 3.200000047683716
+          "UseColorTemperature": false
         }
       ],
       "EntityID": "d7a9d339941c3c19aa9051aaeba5a98a",

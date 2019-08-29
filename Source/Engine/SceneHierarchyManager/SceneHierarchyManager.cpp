@@ -2,10 +2,7 @@
 #include "../Common/CommonMacro.inl"
 #include "../ComponentManager/ITransformComponentManager.h"
 #include "../ComponentManager/IVisibleComponentManager.h"
-#include "../ComponentManager/IDirectionalLightComponentManager.h"
-#include "../ComponentManager/IPointLightComponentManager.h"
-#include "../ComponentManager/ISpotLightComponentManager.h"
-#include "../ComponentManager/ISphereLightComponentManager.h"
+#include "../ComponentManager/ILightComponentManager.h"
 #include "../ComponentManager/ICameraComponentManager.h"
 
 #include "../ModuleManager/IModuleManager.h"
@@ -72,10 +69,7 @@ const SceneHierarchyMap & InnoSceneHierarchyManager::GetSceneHierarchyMap()
 	{
 		AddComponentToSceneHierarchyMap(TransformComponent);
 		AddComponentToSceneHierarchyMap(VisibleComponent);
-		AddComponentToSceneHierarchyMap(DirectionalLightComponent);
-		AddComponentToSceneHierarchyMap(PointLightComponent);
-		AddComponentToSceneHierarchyMap(SpotLightComponent);
-		AddComponentToSceneHierarchyMap(SphereLightComponent);
+		AddComponentToSceneHierarchyMap(LightComponent);
 		AddComponentToSceneHierarchyMap(CameraComponent);
 
 		m_needUpdate = false;

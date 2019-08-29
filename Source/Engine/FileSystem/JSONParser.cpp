@@ -2,10 +2,7 @@
 #include "../Common/CommonMacro.inl"
 #include "../ComponentManager/ITransformComponentManager.h"
 #include "../ComponentManager/IVisibleComponentManager.h"
-#include "../ComponentManager/IDirectionalLightComponentManager.h"
-#include "../ComponentManager/IPointLightComponentManager.h"
-#include "../ComponentManager/ISpotLightComponentManager.h"
-#include "../ComponentManager/ISphereLightComponentManager.h"
+#include "../ComponentManager/ILightComponentManager.h"
 #include "../ComponentManager/ICameraComponentManager.h"
 #include "../Core/InnoLogger.h"
 
@@ -200,65 +197,23 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const VisibleComponent& p)
 	};
 }
 
-void InnoFileSystemNS::JSONParser::to_json(json& j, const DirectionalLightComponent& p)
+void InnoFileSystemNS::JSONParser::to_json(json& j, const LightComponent& p)
 {
 	json color;
 	to_json(color, p.m_RGBColor);
 
-	j = json
-	{
-		{"ComponentType", InnoUtility::getComponentType<DirectionalLightComponent>()},
-		{"RGBColor", color},
-		{"ColorTemperature", p.m_ColorTemperature},
-		{"LuminousFlux", p.m_LuminousFlux},
-		{"UseColorTemperature", p.m_UseColorTemperature},
-	};
-}
-
-void InnoFileSystemNS::JSONParser::to_json(json& j, const PointLightComponent& p)
-{
-	json color;
-	to_json(color, p.m_RGBColor);
+	json shape;
+	to_json(shape, p.m_Shape);
 
 	j = json
 	{
-		{"ComponentType", InnoUtility::getComponentType<PointLightComponent>()},
+		{"ComponentType", InnoUtility::getComponentType<LightComponent>()},
 		{"RGBColor", color},
+		{"Shape", shape},
+		{"LightType", p.m_LightType},
 		{"ColorTemperature", p.m_ColorTemperature},
 		{"LuminousFlux", p.m_LuminousFlux},
 		{"UseColorTemperature", p.m_UseColorTemperature},
-	};
-}
-
-void InnoFileSystemNS::JSONParser::to_json(json& j, const SpotLightComponent& p)
-{
-	json color;
-	to_json(color, p.m_RGBColor);
-
-	j = json
-	{
-		{"ComponentType", InnoUtility::getComponentType<SpotLightComponent>()},
-		{"RGBColor", color},
-		{"ColorTemperature", p.m_ColorTemperature},
-		{"LuminousFlux", p.m_LuminousFlux},
-		{"UseColorTemperature", p.m_UseColorTemperature},
-		{"CutoffAngle", p.m_cutoffAngle},
-	};
-}
-
-void InnoFileSystemNS::JSONParser::to_json(json& j, const SphereLightComponent& p)
-{
-	json color;
-	to_json(color, p.m_RGBColor);
-
-	j = json
-	{
-		{"ComponentType", InnoUtility::getComponentType<SphereLightComponent>()},
-		{"RGBColor", color},
-		{"ColorTemperature", p.m_ColorTemperature},
-		{"LuminousFlux", p.m_LuminousFlux},
-		{"UseColorTemperature", p.m_UseColorTemperature},
-		{"SphereRadius", p.m_sphereRadius},
 	};
 }
 
@@ -330,38 +285,14 @@ void InnoFileSystemNS::JSONParser::from_json(const json & j, Vec4 & p)
 	p.w = j["W"];
 }
 
-void InnoFileSystemNS::JSONParser::from_json(const json & j, DirectionalLightComponent & p)
+void InnoFileSystemNS::JSONParser::from_json(const json & j, LightComponent & p)
 {
 	from_json(j["RGBColor"], p.m_RGBColor);
+	from_json(j["Shape"], p.m_Shape);
+	p.m_LightType = j["LightType"];
 	p.m_ColorTemperature = j["ColorTemperature"];
 	p.m_LuminousFlux = j["LuminousFlux"];
 	p.m_UseColorTemperature = j["UseColorTemperature"];
-}
-
-void InnoFileSystemNS::JSONParser::from_json(const json & j, PointLightComponent & p)
-{
-	from_json(j["RGBColor"], p.m_RGBColor);
-	p.m_ColorTemperature = j["ColorTemperature"];
-	p.m_LuminousFlux = j["LuminousFlux"];
-	p.m_UseColorTemperature = j["UseColorTemperature"];
-}
-
-void InnoFileSystemNS::JSONParser::from_json(const json & j, SpotLightComponent & p)
-{
-	from_json(j["RGBColor"], p.m_RGBColor);
-	p.m_ColorTemperature = j["ColorTemperature"];
-	p.m_LuminousFlux = j["LuminousFlux"];
-	p.m_UseColorTemperature = j["UseColorTemperature"];
-	p.m_cutoffAngle = j["CutoffAngle"];
-}
-
-void InnoFileSystemNS::JSONParser::from_json(const json & j, SphereLightComponent & p)
-{
-	from_json(j["RGBColor"], p.m_RGBColor);
-	p.m_ColorTemperature = j["ColorTemperature"];
-	p.m_LuminousFlux = j["LuminousFlux"];
-	p.m_UseColorTemperature = j["UseColorTemperature"];
-	p.m_sphereRadius = j["SphereRadius"];
 }
 
 void InnoFileSystemNS::JSONParser::from_json(const json& j, CameraComponent& p)
@@ -673,21 +604,7 @@ bool InnoFileSystemNS::JSONParser::saveScene(const std::string& fileName)
 			saveComponentData(topLevel, i);
 		}
 	}
-	for (auto i : GetComponentManager(DirectionalLightComponent)->GetAllComponents())
-	{
-		if (i->m_objectSource == ObjectSource::Asset)
-		{
-			saveComponentData(topLevel, i);
-		}
-	}
-	for (auto i : GetComponentManager(PointLightComponent)->GetAllComponents())
-	{
-		if (i->m_objectSource == ObjectSource::Asset)
-		{
-			saveComponentData(topLevel, i);
-		}
-	}
-	for (auto i : GetComponentManager(SphereLightComponent)->GetAllComponents())
+	for (auto i : GetComponentManager(LightComponent)->GetAllComponents())
 	{
 		if (i->m_objectSource == ObjectSource::Asset)
 		{
@@ -733,13 +650,7 @@ bool InnoFileSystemNS::JSONParser::loadScene(const std::string & fileName)
 				break;
 			case ComponentType::VisibleComponent: LoadComponentData(VisibleComponent, k, l_entity);
 				break;
-			case ComponentType::DirectionalLightComponent: LoadComponentData(DirectionalLightComponent, k, l_entity);
-				break;
-			case ComponentType::PointLightComponent: LoadComponentData(PointLightComponent, k, l_entity);
-				break;
-			case ComponentType::SpotLightComponent: LoadComponentData(SpotLightComponent, k, l_entity);
-				break;
-			case ComponentType::SphereLightComponent: LoadComponentData(SphereLightComponent, k, l_entity);
+			case ComponentType::LightComponent: LoadComponentData(LightComponent, k, l_entity);
 				break;
 			case ComponentType::CameraComponent: LoadComponentData(CameraComponent, k, l_entity);
 				break;

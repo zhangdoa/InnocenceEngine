@@ -2,8 +2,7 @@
 #include "../../Engine/Common/CommonMacro.inl"
 #include "../../Engine/ComponentManager/ITransformComponentManager.h"
 #include "../../Engine/ComponentManager/IVisibleComponentManager.h"
-#include "../../Engine/ComponentManager/IPointLightComponentManager.h"
-#include "../../Engine/ComponentManager/ISphereLightComponentManager.h"
+#include "../../Engine/ComponentManager/ILightComponentManager.h"
 #include "../../Engine/ComponentManager/ICameraComponentManager.h"
 
 #include "../../Engine/ModuleManager/IModuleManager.h"
@@ -174,7 +173,7 @@ namespace GameClientNS
 
 	std::vector<InnoEntity*> m_pointLightEntites;
 	std::vector<TransformComponent*> m_pointLightTransformComponents;
-	std::vector<PointLightComponent*> m_pointLightComponents;
+	std::vector<LightComponent*> m_pointLightComponents;
 
 	bool setup();
 
@@ -477,7 +476,8 @@ bool GameClientNS::setupPointLights()
 		g_pModuleManager->getComponentManager(ComponentType::TransformComponent);
 		m_pointLightTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_pointLightTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_pointLightComponents[i] = SpawnComponent(PointLightComponent, m_pointLightEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_pointLightComponents[i] = SpawnComponent(LightComponent, m_pointLightEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_pointLightComponents[i]->m_LightType = LightType::Point;
 		m_pointLightComponents[i]->m_LuminousFlux = l_randomLuminousFlux(l_generator);
 		m_pointLightComponents[i]->m_ColorTemperature = l_randomColorTemperature(l_generator);
 	}

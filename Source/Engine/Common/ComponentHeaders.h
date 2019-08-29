@@ -1,10 +1,7 @@
 #pragma once
 #include "../Component/TransformComponent.h"
 #include "../Component/VisibleComponent.h"
-#include "../Component/DirectionalLightComponent.h"
-#include "../Component/PointLightComponent.h"
-#include "../Component/SpotLightComponent.h"
-#include "../Component/SphereLightComponent.h"
+#include "../Component/LightComponent.h"
 #include "../Component/CameraComponent.h"
 #include "../Component/PhysicsDataComponent.h"
 #include "../Component/MeshDataComponent.h"
@@ -49,13 +46,7 @@ getClassNameTemplate(TransformComponent);
 template<>
 getClassNameTemplate(VisibleComponent);
 template<>
-getClassNameTemplate(DirectionalLightComponent);
-template<>
-getClassNameTemplate(PointLightComponent);
-template<>
-getClassNameTemplate(SpotLightComponent);
-template<>
-getClassNameTemplate(SphereLightComponent);
+getClassNameTemplate(LightComponent);
 template<>
 getClassNameTemplate(CameraComponent);
 template<>
@@ -72,13 +63,7 @@ getComponentTypeDefi(TransformComponent);
 template<>
 getComponentTypeDefi(VisibleComponent);
 template<>
-getComponentTypeDefi(DirectionalLightComponent);
-template<>
-getComponentTypeDefi(PointLightComponent);
-template<>
-getComponentTypeDefi(SpotLightComponent);
-template<>
-getComponentTypeDefi(SphereLightComponent);
+getComponentTypeDefi(LightComponent);
 template<>
 getComponentTypeDefi(CameraComponent);
 template<>
