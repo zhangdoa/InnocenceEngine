@@ -19,7 +19,7 @@ layout(std430, binding = 8) coherent buffer lightIndexListSSBOBlock
 	uint data[];
 } lightIndexListSSBO;
 
-layout(location = 9, binding = 9) uniform sampler2D uni_lightGrid;
+layout(location = 9, binding = 9) uniform usampler2D uni_lightGrid;
 
 layout(location = 10, binding = 10) uniform sampler3D uni_IrradianceVolume;
 
@@ -168,18 +168,16 @@ void main()
 
 	// point punctual light
 	// Get the index of the current pixel in the light grid.
-	ivec2 tileIndex = ivec2(floor(gl_FragCoord.xy / BLOCK_SIZE));
+	vec2 tileIndex = vec2(gl_FragCoord.xy / skyUBO.viewportSize.xy);
 
 	// Get the start position and offset of the light in the light index list.
-	vec4 lightGrid = texture(uni_lightGrid, tileIndex);
-	uint startOffset = floatBitsToUint(lightGrid.x);
-	uint lightCount = floatBitsToUint(lightGrid.y);
+	uvec4 lightGrid = texture(uni_lightGrid, tileIndex);
+	uint startOffset = lightGrid.x;
+	uint lightCount = lightGrid.y;
 
-	//for (int i = 0; i < lightCount; ++i)
-	for (int i = 0; i < NR_POINT_LIGHTS; ++i)
+	for (int i = 0; i < lightCount; ++i)
 	{
-		//uint lightIndex = lightIndexListSSBO.data[startOffset + i];
-		uint lightIndex = i;
+		uint lightIndex = lightIndexListSSBO.data[startOffset + i];
 		pointLight light = pointLightUBO.data[lightIndex];
 
 		float lightRadius = light.luminousFlux.w;

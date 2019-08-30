@@ -19,8 +19,8 @@ layout(std430, binding = 2) coherent buffer lightIndexListSSBOBlock
 	uint data[];
 } lightIndexListSSBO;
 
-layout(binding = 3, rgba16f) uniform coherent image2D uni_lightGrid;
-layout(binding = 4, rgba16f) uniform coherent image2D uni_debugTexture;
+layout(binding = 3, rg32ui) uniform writeonly uimage2D uni_lightGrid;
+layout(binding = 4, rgba16f) uniform writeonly image2D uni_debugTexture;
 
 layout(binding = 0) uniform sampler2D depthTexture;
 
@@ -44,12 +44,12 @@ const vec4 heatArray[8] = {
 
 void AppendLight(uint lightIndex)
 {
-	uint index = l_LightCount; // Index into the visible lights array.
+	uint index = atomicAdd(l_LightCount, 1); // Index into the visible lights array.
 	if (index < 1024)
 	{
 		l_LightList[index] = lightIndex;
 	}
-	atomicAdd(l_LightCount, 1);
+	
 }
 
 void main()
@@ -58,6 +58,7 @@ void main()
 	vec2 readTextureCoord = vec2(gl_GlobalInvocationID.xy) / skyUBO.viewportSize.xy;
 
 	float fDepth = texture(depthTexture, readTextureCoord).r;
+	fDepth = fDepth * 2.0 - 1.0;
 	uint uDepth = floatBitsToUint(fDepth);
 
 	ivec2 writeTexCoord = ivec2(gl_GlobalInvocationID.xy);
@@ -73,13 +74,15 @@ void main()
 		l_TileFrustum = gridFrustumsSSBO.data[gl_WorkGroupID.x + (gl_WorkGroupID.y * dispatchParamsUBO.data[1].numThreadGroups.x)];
 	}
 
-	groupMemoryBarrier();
+	memoryBarrierShared();
+	barrier();
 
 	// Get min/max depth
 	atomicMin(l_uMinDepth, uDepth);
 	atomicMax(l_uMaxDepth, uDepth);
 
-	groupMemoryBarrier();
+	memoryBarrierShared();
+	barrier();
 
 	float fMinDepth = uintBitsToFloat(l_uMinDepth);
 	float fMaxDepth = uintBitsToFloat(l_uMaxDepth);
@@ -87,8 +90,7 @@ void main()
 	// Convert depth values to view space.
 	float minDepthVS = ClipToView(vec4(0, 0, fMinDepth, 1), skyUBO.p_inv).z;
 	float maxDepthVS = ClipToView(vec4(0, 0, fMaxDepth, 1), skyUBO.p_inv).z;
-	float nearClipVS = ClipToView(vec4(0, 0, 0, 1), skyUBO.p_inv).z;
-	float farClipVS = ClipToView(vec4(0, 0, 1, 1), skyUBO.p_inv).z;
+	float nearClipVS = ClipToView(vec4(0, 0, -1, 1), skyUBO.p_inv).z;
 
 	// Clipping plane for minimum depth value
 	Plane minPlane = { vec3(0, 0, -1), -minDepthVS };
@@ -113,18 +115,18 @@ void main()
 		}
 	}
 
-	groupMemoryBarrier();
+	memoryBarrierShared();
+	barrier();
 
 	// Only local thread 0 could write to the global light index counter and light grid
 	if (gl_LocalInvocationIndex == 0)
 	{
-		l_LightIndexStartOffset = lightListIndexCounterSSBO.data;
-		atomicAdd(lightListIndexCounterSSBO.data, l_LightCount);
-		vec4 l_lightGridValueWrite = vec4(uintBitsToFloat(l_LightIndexStartOffset), uintBitsToFloat(l_LightCount), 0, 0);
-		imageStore(uni_lightGrid, ivec2(gl_WorkGroupID.xy), l_lightGridValueWrite);
+		l_LightIndexStartOffset = atomicAdd(lightListIndexCounterSSBO.data, l_LightCount);
+		imageStore(uni_lightGrid, ivec2(gl_WorkGroupID.xy), uvec2(l_LightIndexStartOffset, l_LightCount).xyyy);
 	}
 
-	groupMemoryBarrier();
+	memoryBarrierShared();
+	barrier();
 
 	// Write to global light index list
 	for (uint i = gl_LocalInvocationIndex; i < l_LightCount; i += BLOCK_SIZE * BLOCK_SIZE)

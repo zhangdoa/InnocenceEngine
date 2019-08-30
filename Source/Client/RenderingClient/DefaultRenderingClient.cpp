@@ -104,7 +104,7 @@ bool DefaultRenderingClient::Setup()
 		IResourceBinder* l_canvas;
 
 		DefaultGPUBuffers::Upload();
-		//LightCullingPass::PrepareCommandList();
+		LightCullingPass::PrepareCommandList();
 		GIResolvePass::PrepareCommandList();
 
 		SunShadowPass::PrepareCommandList();
@@ -156,7 +156,7 @@ bool DefaultRenderingClient::Setup()
 
 		FinalBlendPass::PrepareCommandList(l_canvas);
 
-		//LightCullingPass::ExecuteCommandList();
+		LightCullingPass::ExecuteCommandList();
 		GIResolvePass::ExecuteCommandList();
 
 		SunShadowPass::ExecuteCommandList();
