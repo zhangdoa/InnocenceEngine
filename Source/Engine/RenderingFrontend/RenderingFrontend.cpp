@@ -446,8 +446,8 @@ bool InnoRenderingFrontendNS::updateLightData()
 
 	if (l_lightComponentCount > 0)
 	{
-		l_PointLightGPUData.resize(l_lightComponentCount);
-		l_SphereLightGPUData.resize(l_lightComponentCount);
+		l_PointLightGPUData.reserve(l_lightComponentCount);
+		l_SphereLightGPUData.reserve(l_lightComponentCount);
 
 		for (size_t i = 0; i < l_lightComponentCount; i++)
 		{

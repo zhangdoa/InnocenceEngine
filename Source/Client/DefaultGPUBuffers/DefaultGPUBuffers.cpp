@@ -156,7 +156,7 @@ bool DefaultGPUBuffers::Upload()
 		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_MaterialGBDC, l_MaterialGPUData, 0, l_OpaquePassTotalDrawCallCount);
 	}
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_SunGBDC, &l_SunGPUData);
-	if (l_SphereLightGPUData.size() > 0)
+	if (l_PointLightGPUData.size() > 0)
 	{
 		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_PointLightGBDC, l_PointLightGPUData, 0, l_PointLightGPUData.size());
 	}

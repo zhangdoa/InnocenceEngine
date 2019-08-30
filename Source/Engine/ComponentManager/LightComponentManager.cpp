@@ -20,7 +20,7 @@ namespace LightComponentManagerNS
 	void UpdateColorTemperature(LightComponent* rhs);
 	void UpdateAttenuationRadius(LightComponent* rhs);
 
-	const size_t m_MaxComponentCount = 16;
+	const size_t m_MaxComponentCount = 8192;
 	size_t m_CurrentComponentIndex = 0;
 	IObjectPool* m_ComponentPool;
 	ThreadSafeVector<LightComponent*> m_Components;
