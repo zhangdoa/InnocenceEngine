@@ -146,7 +146,7 @@ bool InnoBakerNS::gatherStaticMeshData()
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: There are ", m_staticMeshDrawCallCount, " static meshes in current scene.");
 
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::OpaquePassMesh);
-	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
+	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::OpaquePassMaterial);
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MeshGBDC, m_staticMeshMeshGPUData, 0, m_staticMeshMeshGPUData.size());
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MaterialGBDC, m_staticMeshMaterialGPUData, 0, m_staticMeshMaterialGPUData.size());
@@ -444,7 +444,7 @@ bool InnoBakerNS::drawOpaquePass(Probe& probeCache, const Mat4& p, const std::ve
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(GetGPUBufferDataComponent(GPUBufferUsageType::GICamera), l_GICameraGPUData);
 
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::OpaquePassMesh);
-	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
+	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::OpaquePassMaterial);
 
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_Surfel, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_Surfel);

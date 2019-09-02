@@ -8,7 +8,9 @@ namespace DefaultGPUBuffers
 	GPUBufferDataComponent* m_MainCameraGBDC;
 	GPUBufferDataComponent* m_SunShadowPassMeshGBDC;
 	GPUBufferDataComponent* m_OpaquePassMeshGBDC;
-	GPUBufferDataComponent* m_MaterialGBDC;
+	GPUBufferDataComponent* m_OpaquePassMaterialGBDC;
+	GPUBufferDataComponent* m_TransparentPassMeshGBDC;
+	GPUBufferDataComponent* m_TransparentPassMaterialGBDC;
 	GPUBufferDataComponent* m_SunGBDC;
 	GPUBufferDataComponent* m_PointLightGBDC;
 	GPUBufferDataComponent* m_SphereLightGBDC;
@@ -52,12 +54,26 @@ bool DefaultGPUBuffers::Initialize()
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_OpaquePassMeshGBDC);
 
-	m_MaterialGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("MaterialGPUBuffer/");
-	m_MaterialGBDC->m_ElementCount = l_RenderingCapability.maxMaterials;
-	m_MaterialGBDC->m_ElementSize = sizeof(MaterialGPUData);
-	m_MaterialGBDC->m_BindingPoint = 2;
+	m_OpaquePassMaterialGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("MaterialGPUBuffer/");
+	m_OpaquePassMaterialGBDC->m_ElementCount = l_RenderingCapability.maxMaterials;
+	m_OpaquePassMaterialGBDC->m_ElementSize = sizeof(MaterialGPUData);
+	m_OpaquePassMaterialGBDC->m_BindingPoint = 2;
 
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_MaterialGBDC);
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_OpaquePassMaterialGBDC);
+
+	m_TransparentPassMeshGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("TransparentPassMeshGPUBuffer/");
+	m_TransparentPassMeshGBDC->m_ElementCount = l_RenderingCapability.maxMeshes;
+	m_TransparentPassMeshGBDC->m_ElementSize = sizeof(MeshGPUData);
+	m_TransparentPassMeshGBDC->m_BindingPoint = 1;
+
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_TransparentPassMeshGBDC);
+
+	m_TransparentPassMaterialGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("MaterialGPUBuffer/");
+	m_TransparentPassMaterialGBDC->m_ElementCount = l_RenderingCapability.maxMaterials;
+	m_TransparentPassMaterialGBDC->m_ElementSize = sizeof(MaterialGPUData);
+	m_TransparentPassMaterialGBDC->m_BindingPoint = 2;
+
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_TransparentPassMaterialGBDC);
 
 	m_SunGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("SunGPUBuffer/");
 	m_SunGBDC->m_ElementCount = 1;
@@ -134,7 +150,10 @@ bool DefaultGPUBuffers::Upload()
 	auto& l_SunShadowPassMeshGPUData = g_pModuleManager->getRenderingFrontend()->getSunShadowPassMeshGPUData();
 	auto l_OpaquePassTotalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
 	auto& l_OpaquePassMeshGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassMeshGPUData();
-	auto& l_MaterialGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassMaterialGPUData();
+	auto& l_OpaquePassMaterialGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassMaterialGPUData();
+	auto l_TransparentPassTotalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getTransparentPassDrawCallCount();
+	auto& l_TransparentPassMeshGPUData = g_pModuleManager->getRenderingFrontend()->getTransparentPassMeshGPUData();
+	auto& l_TransparentPassMaterialGPUData = g_pModuleManager->getRenderingFrontend()->getTransparentPassMaterialGPUData();
 	auto& l_SunGPUData = g_pModuleManager->getRenderingFrontend()->getSunGPUData();
 	auto& l_PointLightGPUData = g_pModuleManager->getRenderingFrontend()->getPointLightGPUData();
 	auto& l_SphereLightGPUData = g_pModuleManager->getRenderingFrontend()->getSphereLightGPUData();
@@ -151,9 +170,17 @@ bool DefaultGPUBuffers::Upload()
 	{
 		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_OpaquePassMeshGBDC, l_OpaquePassMeshGPUData, 0, l_OpaquePassTotalDrawCallCount);
 	}
-	if (l_MaterialGPUData.size() > 0)
+	if (l_OpaquePassMaterialGPUData.size() > 0)
 	{
-		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_MaterialGBDC, l_MaterialGPUData, 0, l_OpaquePassTotalDrawCallCount);
+		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_OpaquePassMaterialGBDC, l_OpaquePassMaterialGPUData, 0, l_OpaquePassTotalDrawCallCount);
+	}
+	if (l_TransparentPassMeshGPUData.size() > 0)
+	{
+		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_TransparentPassMeshGBDC, l_TransparentPassMeshGPUData, 0, l_TransparentPassTotalDrawCallCount);
+	}
+	if (l_TransparentPassMaterialGPUData.size() > 0)
+	{
+		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_TransparentPassMaterialGBDC, l_TransparentPassMaterialGPUData, 0, l_TransparentPassTotalDrawCallCount);
 	}
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_SunGBDC, &l_SunGPUData);
 	if (l_PointLightGPUData.size() > 0)
@@ -182,7 +209,7 @@ bool DefaultGPUBuffers::Terminate()
 {
 	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_MainCameraGBDC);
 	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_OpaquePassMeshGBDC);
-	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_MaterialGBDC);
+	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_OpaquePassMaterialGBDC);
 	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_SunGBDC);;
 	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_PointLightGBDC);
 	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_SphereLightGBDC);
@@ -208,7 +235,11 @@ GPUBufferDataComponent * DefaultGPUBuffers::GetGPUBufferDataComponent(GPUBufferU
 		break;
 	case GPUBufferUsageType::OpaquePassMesh: l_result = m_OpaquePassMeshGBDC;
 		break;
-	case GPUBufferUsageType::Material: l_result = m_MaterialGBDC;
+	case GPUBufferUsageType::OpaquePassMaterial: l_result = m_OpaquePassMaterialGBDC;
+		break;
+	case GPUBufferUsageType::TransparentPassMesh: l_result = m_TransparentPassMeshGBDC;
+		break;
+	case GPUBufferUsageType::TransparentPassMaterial: l_result = m_TransparentPassMaterialGBDC;
 		break;
 	case GPUBufferUsageType::Sun: l_result = m_SunGBDC;
 		break;

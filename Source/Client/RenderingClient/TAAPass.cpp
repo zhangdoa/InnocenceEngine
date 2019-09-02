@@ -1,7 +1,6 @@
 #include "TAAPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
-#include "PreTAAPass.h"
 #include "OpaquePass.h"
 
 #include "../../Engine/ModuleManager/IModuleManager.h"
@@ -83,7 +82,7 @@ bool TAAPass::Initialize()
 	return true;
 }
 
-bool TAAPass::PrepareCommandList()
+bool TAAPass::PrepareCommandList(IResourceBinder* input)
 {
 	RenderPassDataComponent* l_WriteRPDC;
 	RenderPassDataComponent* l_ReadRPDC;
@@ -106,7 +105,7 @@ bool TAAPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(l_WriteRPDC);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(l_WriteRPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 3, 0);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(l_WriteRPDC, ShaderStage::Pixel, PreTAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 0, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(l_WriteRPDC, ShaderStage::Pixel, input, 0, 0);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(l_WriteRPDC, ShaderStage::Pixel, l_ReadRPDC->m_RenderTargetsResourceBinders[0], 1, 1);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(l_WriteRPDC, ShaderStage::Pixel, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[3], 2, 2);
 
@@ -114,7 +113,7 @@ bool TAAPass::PrepareCommandList()
 
 	g_pModuleManager->getRenderingServer()->DispatchDrawCall(l_WriteRPDC, l_mesh);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(l_WriteRPDC, ShaderStage::Pixel, PreTAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 0, 0);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(l_WriteRPDC, ShaderStage::Pixel, input, 0, 0);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(l_WriteRPDC, ShaderStage::Pixel, l_ReadRPDC->m_RenderTargetsResourceBinders[0], 1, 1);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(l_WriteRPDC, ShaderStage::Pixel, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[3], 2, 2);
 

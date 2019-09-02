@@ -527,7 +527,7 @@ bool GameClientNS::setup()
 
 	f_sceneLoadingFinishCallback = [&]() {
 		setupReferenceSpheres();
-		setupOcclusionCubes();
+		//setupOcclusionCubes();
 		setupOpaqueSpheres();
 		setupTransparentSpheres();
 		//setupPointLights();
@@ -670,7 +670,7 @@ void GameClientNS::updateSpheres()
 	{
 		auto l_albedo = InnoMath::HSVtoRGB(Vec4((sin(seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
 		l_albedo.w = sin(seed / 6.0f + i) * 0.5f + 0.5f;
-		auto l_MRAT = Vec4(0.0f, sin(seed / 4.0f + i) * 0.5f + 0.5f, 1.0f, sin(seed / 5.0f + i) * 0.5f + 0.5f);
+		auto l_MRAT = Vec4(0.0f, sin(seed / 4.0f + i) * 0.5f + 0.5f, 1.0f, clamp(sin(seed / 5.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f));
 		updateMaterial(m_transparentSphereVisibleComponents[i]->m_modelMap, l_albedo, l_MRAT);
 	}
 
@@ -679,7 +679,7 @@ void GameClientNS::updateSpheres()
 	{
 		for (unsigned int j = 0; j < l_matrixDim; j++)
 		{
-			auto l_MRAT = Vec4((float)(i + 1) / (float)l_matrixDim, (float)(j + 1) / (float)l_matrixDim, 1.0f, 1.0f);
+			auto l_MRAT = Vec4((float)i / (float)(l_matrixDim - 1), (float)j / (float)(l_matrixDim - 1), 1.0f, 1.0f);
 			updateMaterial(m_referenceSphereVisibleComponents[i * l_matrixDim + j]->m_modelMap, Vec4(1.0f, 1.0f, 1.0f, 1.0f), l_MRAT);
 		}
 	}

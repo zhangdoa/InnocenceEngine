@@ -11,6 +11,7 @@
 #include "LightPass.h"
 #include "SkyPass.h"
 #include "PreTAAPass.h"
+#include "TransparentPass.h"
 #include "TAAPass.h"
 #include "PostTAAPass.h"
 #include "MotionBlurPass.h"
@@ -63,6 +64,7 @@ bool DefaultRenderingClient::Setup()
 		LightPass::Setup();
 		SkyPass::Setup();
 		PreTAAPass::Setup();
+		TransparentPass::Setup();
 		TAAPass::Setup();
 		PostTAAPass::Setup();
 		MotionBlurPass::Setup();
@@ -88,6 +90,7 @@ bool DefaultRenderingClient::Setup()
 		LightPass::Initialize();
 		SkyPass::Initialize();
 		PreTAAPass::Initialize();
+		TransparentPass::Initialize();
 		TAAPass::Initialize();
 		PostTAAPass::Initialize();
 		MotionBlurPass::Initialize();
@@ -118,11 +121,13 @@ bool DefaultRenderingClient::Setup()
 		}
 
 		PreTAAPass::PrepareCommandList();
-		l_canvas = PreTAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
+		TransparentPass::PrepareCommandList();
+
+		l_canvas = TransparentPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
 
 		if (l_renderingConfig.useTAA)
 		{
-			TAAPass::PrepareCommandList();
+			TAAPass::PrepareCommandList(l_canvas);
 			PostTAAPass::PrepareCommandList();
 			l_canvas = PostTAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
 		}
@@ -170,6 +175,7 @@ bool DefaultRenderingClient::Setup()
 		}
 
 		PreTAAPass::ExecuteCommandList();
+		TransparentPass::ExecuteCommandList();
 
 		if (l_renderingConfig.useTAA)
 		{
@@ -212,6 +218,7 @@ bool DefaultRenderingClient::Setup()
 		LightPass::Terminate();
 		SkyPass::Terminate();
 		PreTAAPass::Terminate();
+		TransparentPass::Terminate();
 		TAAPass::Terminate();
 		PostTAAPass::Terminate();
 		MotionBlurPass::Terminate();

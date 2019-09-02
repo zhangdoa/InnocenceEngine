@@ -3,7 +3,24 @@
 
 namespace DefaultGPUBuffers
 {
-	enum class GPUBufferUsageType { MainCamera, SunShadowPassMesh, OpaquePassMesh, Material, Sun, PointLight, SphereLight, CSM, Sky, Compute, GICamera, GISky, Billboard };
+	enum class GPUBufferUsageType
+	{
+		MainCamera,
+		SunShadowPassMesh,
+		OpaquePassMesh,
+		OpaquePassMaterial,
+		TransparentPassMesh,
+		TransparentPassMaterial,
+		Sun,
+		PointLight,
+		SphereLight,
+		CSM,
+		Sky,
+		Compute,
+		GICamera,
+		GISky,
+		Billboard
+	};
 
 	bool Setup();
 	bool Initialize();

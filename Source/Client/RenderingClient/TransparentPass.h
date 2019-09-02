@@ -1,11 +1,11 @@
 #pragma once
 #include "../../Engine/RenderingServer/IRenderingServer.h"
 
-namespace TAAPass
+namespace TransparentPass
 {
 	bool Setup();
 	bool Initialize();
-	bool PrepareCommandList(IResourceBinder* input);
+	bool PrepareCommandList();
 	bool ExecuteCommandList();
 	bool Terminate();
 

@@ -1,6 +1,6 @@
 // Frostbite Engine model [https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf]
 // ----------------------------------------------------------------------------
-// punctual light attenuation
+// Punctual light attenuation
 // ----------------------------------------------------------------------------
 float smoothDistanceAtt(float squaredDistance, float invSqrAttRadius)
 {
@@ -29,7 +29,7 @@ float V_SmithGGXCorrelated(float NdotL, float NdotV, float alphaG)
 	float alphaG2 = alphaG * alphaG;
 	float Lambda_GGXV = NdotL * sqrt(NdotV * NdotV * (1.0 - alphaG2) + alphaG2);
 	float Lambda_GGXL = NdotV * sqrt(NdotL * NdotL * (1.0 - alphaG2) + alphaG2);
-	return 0.5 / max((Lambda_GGXV + Lambda_GGXL), 0.00001);
+	return 0.5 / max((Lambda_GGXV + Lambda_GGXL), eps);
 }
 // Specular Distribution Component
 // ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ float D_GGX(float NdotH, float roughness)
 	float a = roughness * roughness;
 	float a2 = a * a;
 	float f = (NdotH * a2 - NdotH) * NdotH + 1;
-	return a2 / max(PI * pow(f, 2.0), 0.00001);
+	return a2 / max(PI * pow(f, 2.0), eps);
 }
 // Diffuse BTDF
 // Disney model [https://blog.selfshadow.com/publications/s2015-shading-course/burley/s2015_pbs_disney_bsdf_notes.pdf]
@@ -63,6 +63,43 @@ float DisneyDiffuse2015(float NdotV, float NdotL, float LdotH, float linearRough
 	float FLambert = (1 - 0.5 * Fl) * (1 - 0.5 * Fv);
 	float FRetroReflection = Rr * (Fl + Fv + Fl * Fv * (Rr - 1.0));
 	return FLambert + FRetroReflection;
+}
+// Unreal Engine model [https://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf]
+// ----------------------------------------------------------------------------
+// Specular Distribution Component
+// ----------------------------------------------------------------------------
+float Unreal_DistributionGGX(float NdotH, float roughness)
+{
+	float a = roughness * roughness;
+	// remapping to Quadratic curve
+	float a2 = a * a;
+	float NdotH2 = NdotH * NdotH;
+
+	float nom = a2;
+	float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+	denom = denom * denom;
+
+	return nom / denom;
+}
+// Specular Geometry Component
+// ----------------------------------------------------------------------------
+float Unreal_GeometrySchlickGGX(float NdotV, float roughness)
+{
+	float r = (roughness + 1.0);
+	float k = (r*r) / 8.0;
+
+	float nom = NdotV;
+	float denom = NdotV * (1.0 - k) + k;
+
+	return nom / max(denom, eps);
+}
+// ----------------------------------------------------------------------------
+float Unreal_GeometrySmith(float NdotV, float NdotL, float roughness)
+{
+	float ggx2 = Unreal_GeometrySchlickGGX(NdotV, roughness);
+	float ggx1 = Unreal_GeometrySchlickGGX(NdotL, roughness);
+
+	return ggx1 * ggx2;
 }
 // "Real-Time Rendering", 4th edition, pg. 346, "9.8.2 Multiple-Bounce Surface Reflection"
 // ----------------------------------------------------------------------------

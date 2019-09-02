@@ -108,7 +108,7 @@ float Unreal_GeometrySchlickGGX(float NdotV, float roughness)
 	float nom = NdotV;
 	float denom = NdotV * (1.0 - k) + k;
 
-	return nom / denom;
+	return nom / max(denom, eps);
 }
 // ----------------------------------------------------------------------------
 float Unreal_GeometrySmith(float NdotV, float NdotL, float roughness)
