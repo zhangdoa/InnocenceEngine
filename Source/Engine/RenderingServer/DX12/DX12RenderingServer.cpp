@@ -1710,6 +1710,37 @@ bool DX12RenderingServer::CopyDepthStencilBuffer(RenderPassDataComponent * src, 
 
 bool DX12RenderingServer::CopyColorBuffer(RenderPassDataComponent * src, size_t srcIndex, RenderPassDataComponent * dest, size_t destIndex)
 {
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(dest->m_CommandLists[dest->m_CurrentFrame]);
+
+	auto l_src = reinterpret_cast<DX12TextureDataComponent*>(src->m_RenderTargets[srcIndex]);
+	auto l_dest = reinterpret_cast<DX12TextureDataComponent*>(dest->m_RenderTargets[destIndex]);
+
+	l_commandList->m_GraphicsCommandList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(l_src->m_ResourceHandle,
+			l_src->m_ReadState,
+			D3D12_RESOURCE_STATE_COPY_SOURCE));
+
+	l_commandList->m_GraphicsCommandList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(l_dest->m_ResourceHandle,
+			l_dest->m_WriteState,
+			D3D12_RESOURCE_STATE_COPY_DEST));
+
+	l_commandList->m_GraphicsCommandList->CopyResource(l_dest->m_ResourceHandle, l_src->m_ResourceHandle);
+
+	l_commandList->m_GraphicsCommandList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(l_src->m_ResourceHandle,
+			D3D12_RESOURCE_STATE_COPY_SOURCE,
+			l_src->m_ReadState));
+
+	l_commandList->m_GraphicsCommandList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(l_dest->m_ResourceHandle,
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			l_dest->m_WriteState));
+
 	return true;
 }
 
