@@ -728,7 +728,7 @@ bool GLHelper::GenerateBlendState(BlendDesc blendDesc, GLPipelineStateObject * P
 		auto l_destRGBFactor = GetBlendFactorEnum(blendDesc.m_DestinationRGBFactor);
 		auto l_destAFactor = GetBlendFactorEnum(blendDesc.m_DestinationAlphaFactor);
 
-		PSO->m_Activate.emplace_back([=]() { glBlendFuncSeparate(l_srcRGBFactor, l_srcAFactor, l_destRGBFactor, l_destAFactor); });
+		PSO->m_Activate.emplace_back([=]() { glBlendFuncSeparate(l_srcRGBFactor, l_destRGBFactor, l_srcAFactor, l_destAFactor); });
 	}
 	return true;
 }
