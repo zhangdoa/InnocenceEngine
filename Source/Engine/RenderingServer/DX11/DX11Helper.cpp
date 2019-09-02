@@ -1055,7 +1055,7 @@ bool DX11Helper::GenerateBlendStateDesc(BlendDesc blendDesc, DX11PipelineStateOb
 		PSO->m_BlendDesc.RenderTarget[i].SrcBlendAlpha = GetBlendFactor(blendDesc.m_SourceAlphaFactor);
 		PSO->m_BlendDesc.RenderTarget[i].DestBlendAlpha = GetBlendFactor(blendDesc.m_DestinationAlphaFactor);
 		PSO->m_BlendDesc.RenderTarget[i].BlendOpAlpha = GetBlendOperation(blendDesc.m_BlendOperation);
-		PSO->m_BlendDesc.RenderTarget[i].RenderTargetWriteMask = 0xFF;
+		PSO->m_BlendDesc.RenderTarget[i].RenderTargetWriteMask = 0xF;
 	}
 
 	return true;
