@@ -73,8 +73,7 @@ public:
 
 	virtual bool DispatchCompute(RenderPassDataComponent * renderPass, unsigned int threadGroupX, unsigned int threadGroupY, unsigned int threadGroupZ) = 0;
 
-	virtual bool CopyDepthBuffer(RenderPassDataComponent* src, RenderPassDataComponent* dest) = 0;
-	virtual bool CopyStencilBuffer(RenderPassDataComponent* src, RenderPassDataComponent* dest) = 0;
+	virtual bool CopyDepthStencilBuffer(RenderPassDataComponent* src, RenderPassDataComponent* dest) = 0;
 	virtual bool CopyColorBuffer(RenderPassDataComponent* src, size_t srcIndex, RenderPassDataComponent* dest, size_t destIndex) = 0;
 
 	virtual Vec4 ReadRenderTargetSample(RenderPassDataComponent* rhs, size_t renderTargetIndex, size_t x, size_t y) = 0;

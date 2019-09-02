@@ -1672,24 +1672,38 @@ bool DX12RenderingServer::DispatchCompute(RenderPassDataComponent * renderPass, 
 	return true;
 }
 
-bool DX12RenderingServer::CopyDepthBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
+bool DX12RenderingServer::CopyDepthStencilBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
 {
-	auto l_src = reinterpret_cast<DX12RenderPassDataComponent*>(src);
-	auto l_dest = reinterpret_cast<DX12RenderPassDataComponent*>(dest);
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_dest->m_CommandLists[l_dest->m_CurrentFrame]);
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(dest->m_CommandLists[dest->m_CurrentFrame]);
 
-	l_commandList->m_GraphicsCommandList->OMSetRenderTargets((unsigned int)l_dest->m_RTVDescriptorCPUHandles.size(), &l_dest->m_RTVDescriptorCPUHandles[0], FALSE, &l_src->m_DSVDescriptorCPUHandle);
+	auto l_src = reinterpret_cast<DX12TextureDataComponent*>(src->m_DepthStencilRenderTarget);
+	auto l_dest = reinterpret_cast<DX12TextureDataComponent*>(dest->m_DepthStencilRenderTarget);
 
-	return true;
-}
+	l_commandList->m_GraphicsCommandList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(l_src->m_ResourceHandle,
+			l_src->m_ReadState,
+			D3D12_RESOURCE_STATE_COPY_SOURCE));
 
-bool DX12RenderingServer::CopyStencilBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
-{
-	auto l_src = reinterpret_cast<DX12RenderPassDataComponent*>(src);
-	auto l_dest = reinterpret_cast<DX12RenderPassDataComponent*>(dest);
-	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_dest->m_CommandLists[l_dest->m_CurrentFrame]);
+	l_commandList->m_GraphicsCommandList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(l_dest->m_ResourceHandle,
+			l_dest->m_WriteState,
+			D3D12_RESOURCE_STATE_COPY_DEST));
 
-	l_commandList->m_GraphicsCommandList->OMSetRenderTargets((unsigned int)l_dest->m_RTVDescriptorCPUHandles.size(), &l_dest->m_RTVDescriptorCPUHandles[0], FALSE, &l_src->m_DSVDescriptorCPUHandle);
+	l_commandList->m_GraphicsCommandList->CopyResource(l_dest->m_ResourceHandle, l_src->m_ResourceHandle);
+
+	l_commandList->m_GraphicsCommandList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(l_src->m_ResourceHandle,
+			D3D12_RESOURCE_STATE_COPY_SOURCE,
+			l_src->m_ReadState));
+
+	l_commandList->m_GraphicsCommandList->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(l_dest->m_ResourceHandle,
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			l_dest->m_WriteState));
 
 	return true;
 }

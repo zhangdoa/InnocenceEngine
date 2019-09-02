@@ -287,7 +287,7 @@ bool DebugPass::PrepareCommandList()
 		g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
 		g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
 
-		g_pModuleManager->getRenderingServer()->CopyDepthBuffer(OpaquePass::GetRPDC(), m_RPDC);
+		g_pModuleManager->getRenderingServer()->CopyDepthStencilBuffer(OpaquePass::GetRPDC(), m_RPDC);
 
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MainCameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 

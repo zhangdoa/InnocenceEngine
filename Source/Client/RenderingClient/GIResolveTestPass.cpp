@@ -207,7 +207,7 @@ bool GIResolveTestPass::PrepareCommandList()
 		g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_probeRPDC);
 		g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_probeRPDC);
 
-		//g_pModuleManager->getRenderingServer()->CopyDepthBuffer(OpaquePass::GetRPDC(), m_probeRPDC);
+		//g_pModuleManager->getRenderingServer()->CopyDepthStencilBuffer(OpaquePass::GetRPDC(), m_probeRPDC);
 
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Vertex, l_MainCameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, l_GISkyGBDC->m_ResourceBinder, 3, 11, Accessibility::ReadOnly);

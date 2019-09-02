@@ -182,7 +182,7 @@ bool LightPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_SkyGBDC->m_ResourceBinder, 5, 7, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_GISkyGBDC->m_ResourceBinder, 18, 11, Accessibility::ReadOnly);
 
-	g_pModuleManager->getRenderingServer()->CopyStencilBuffer(OpaquePass::GetRPDC(), m_RPDC);
+	g_pModuleManager->getRenderingServer()->CopyDepthStencilBuffer(OpaquePass::GetRPDC(), m_RPDC);
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[0], 6, 0);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[1], 7, 1);

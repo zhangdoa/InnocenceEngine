@@ -52,8 +52,7 @@ public:
 
 	bool DispatchCompute(RenderPassDataComponent * renderPass, unsigned int threadGroupX, unsigned int threadGroupY, unsigned int threadGroupZ) override;
 
-	bool CopyDepthBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest) override;
-	bool CopyStencilBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest) override;
+	bool CopyDepthStencilBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest) override;
 	bool CopyColorBuffer(RenderPassDataComponent * src, size_t srcIndex, RenderPassDataComponent * dest, size_t destIndex) override;
 
 	Vec4 ReadRenderTargetSample(RenderPassDataComponent * rhs, size_t renderTargetIndex, size_t x, size_t y) override;

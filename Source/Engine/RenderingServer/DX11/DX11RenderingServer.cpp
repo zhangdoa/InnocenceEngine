@@ -716,7 +716,7 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 		auto l_HResult = m_device->CreateHullShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_HSHandle);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create HS shader!");
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create hull shader!");
 			return false;
 		};
 	}
@@ -727,7 +727,7 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 		auto l_HResult = m_device->CreateDomainShader(l_shaderFileBuffer->GetBufferPointer(), l_shaderFileBuffer->GetBufferSize(), NULL, &l_rhs->m_DSHandle);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create DS shader!");
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create domain shader!");
 			return false;
 		};
 	}
@@ -1443,7 +1443,10 @@ bool DX11RenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass,
 
 bool DX11RenderingServer::CommandListEnd(RenderPassDataComponent * rhs)
 {
-	auto l_shaderProgram = reinterpret_cast<DX11ShaderProgramComponent*>(rhs->m_ShaderProgram);
+	auto l_rhs = reinterpret_cast<DX11RenderPassDataComponent*>(rhs);
+	auto l_PSO = reinterpret_cast<DX11PipelineStateObject*>(l_rhs->m_PipelineStateObject);
+
+	auto l_shaderProgram = reinterpret_cast<DX11ShaderProgramComponent*>(l_rhs->m_ShaderProgram);
 
 	if (l_shaderProgram->m_VSHandle)
 	{
@@ -1468,6 +1471,23 @@ bool DX11RenderingServer::CommandListEnd(RenderPassDataComponent * rhs)
 	if (l_shaderProgram->m_CSHandle)
 	{
 		m_deviceContext->CSSetShader(0, NULL, 0);
+	}
+
+	if (l_rhs->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
+	{
+		m_deviceContext->IASetInputLayout(NULL);
+		m_deviceContext->RSSetState(NULL);
+
+		m_deviceContext->OMSetRenderTargets(0, NULL, NULL);
+
+		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+		{
+			m_deviceContext->OMSetDepthStencilState(NULL, 0x00);
+		}
+		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc.m_UseBlend)
+		{
+			m_deviceContext->OMSetBlendState(NULL, NULL, 0xFFFFFFFF);
+		}
 	}
 
 	return true;
@@ -1535,26 +1555,23 @@ bool DX11RenderingServer::DispatchCompute(RenderPassDataComponent * renderPass, 
 	return true;
 }
 
-bool DX11RenderingServer::CopyDepthBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
+bool DX11RenderingServer::CopyDepthStencilBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
 {
-	auto l_src = reinterpret_cast<DX11RenderPassDataComponent*>(src);
-	auto l_dest = reinterpret_cast<DX11RenderPassDataComponent*>(dest);
-	m_deviceContext->OMSetRenderTargets((unsigned int)l_dest->m_RTVs.size(), &l_dest->m_RTVs[0], l_src->m_DSV);
+	auto l_src = reinterpret_cast<DX11TextureDataComponent*>(src->m_DepthStencilRenderTarget);
+	auto l_dest = reinterpret_cast<DX11TextureDataComponent*>(dest->m_DepthStencilRenderTarget);
 
-	return true;
-}
-
-bool DX11RenderingServer::CopyStencilBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
-{
-	auto l_src = reinterpret_cast<DX11RenderPassDataComponent*>(src);
-	auto l_dest = reinterpret_cast<DX11RenderPassDataComponent*>(dest);
-	m_deviceContext->OMSetRenderTargets((unsigned int)l_dest->m_RTVs.size(), &l_dest->m_RTVs[0], l_src->m_DSV);
+	m_deviceContext->CopyResource(l_dest->m_ResourceHandle, l_src->m_ResourceHandle);
 
 	return true;
 }
 
 bool DX11RenderingServer::CopyColorBuffer(RenderPassDataComponent * src, size_t srcIndex, RenderPassDataComponent * dest, size_t destIndex)
 {
+	auto l_src = reinterpret_cast<DX11TextureDataComponent*>(src->m_RenderTargets[srcIndex]);
+	auto l_dest = reinterpret_cast<DX11TextureDataComponent*>(dest->m_RenderTargets[srcIndex]);
+
+	m_deviceContext->CopyResource(l_dest->m_ResourceHandle, l_src->m_ResourceHandle);
+
 	return true;
 }
 

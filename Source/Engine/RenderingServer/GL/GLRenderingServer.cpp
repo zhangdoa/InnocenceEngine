@@ -1007,7 +1007,7 @@ bool GLRenderingServer::DispatchCompute(RenderPassDataComponent * renderPass, un
 	return true;
 }
 
-bool GLRenderingServer::CopyDepthBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
+bool GLRenderingServer::CopyDepthStencilBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
 {
 	auto l_src = reinterpret_cast<GLRenderPassDataComponent*>(src);
 	auto l_dest = reinterpret_cast<GLRenderPassDataComponent*>(dest);
@@ -1018,23 +1018,7 @@ bool GLRenderingServer::CopyDepthBuffer(RenderPassDataComponent * src, RenderPas
 		l_src->m_RenderPassDesc.m_RenderTargetDesc.Width, l_src->m_RenderPassDesc.m_RenderTargetDesc.Height,
 		0, 0,
 		l_dest->m_RenderPassDesc.m_RenderTargetDesc.Width, l_dest->m_RenderPassDesc.m_RenderTargetDesc.Height,
-		GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-
-	return true;
-}
-
-bool GLRenderingServer::CopyStencilBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
-{
-	auto l_src = reinterpret_cast<GLRenderPassDataComponent*>(src);
-	auto l_dest = reinterpret_cast<GLRenderPassDataComponent*>(dest);
-
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, l_src->m_FBO);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, l_dest->m_FBO);
-	glBlitFramebuffer(0, 0,
-		l_src->m_RenderPassDesc.m_RenderTargetDesc.Width, l_src->m_RenderPassDesc.m_RenderTargetDesc.Height,
-		0, 0,
-		l_dest->m_RenderPassDesc.m_RenderTargetDesc.Width, l_dest->m_RenderPassDesc.m_RenderTargetDesc.Height,
-		GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+		GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 
 	return true;
 }

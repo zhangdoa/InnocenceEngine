@@ -714,12 +714,7 @@ bool VKRenderingServer::DispatchCompute(RenderPassDataComponent * renderPass, un
 	return true;
 }
 
-bool VKRenderingServer::CopyDepthBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
-{
-	return true;
-}
-
-bool VKRenderingServer::CopyStencilBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
+bool VKRenderingServer::CopyDepthStencilBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
 {
 	return true;
 }
