@@ -130,7 +130,7 @@ void TransformComponentPropertyEditor::GetPosition()
 	if (!m_component)
 		return;
 
-	vec4 pos = m_component->m_localTransformVector.m_pos;
+    Vec4 pos = m_component->m_localTransformVector.m_pos;
 
 	m_posX->SetFromFloat(pos.x);
 	m_posY->SetFromFloat(pos.y);
@@ -142,7 +142,7 @@ void TransformComponentPropertyEditor::GetRotation()
 	if (!m_component)
 		return;
 
-	vec4 eulerAngles = InnoMath::quatToEulerAngle(m_component->m_localTransformVector.m_rot);
+    Vec4 eulerAngles = InnoMath::quatToEulerAngle(m_component->m_localTransformVector.m_rot);
 	auto roll = InnoMath::radianToAngle(eulerAngles.x);
 	auto pitch = InnoMath::radianToAngle(eulerAngles.y);
 	auto yaw = InnoMath::radianToAngle(eulerAngles.z);
@@ -157,7 +157,7 @@ void TransformComponentPropertyEditor::GetScale()
 	if (!m_component)
 		return;
 
-	vec4 scale = m_component->m_localTransformVector.m_scale;
+    Vec4 scale = m_component->m_localTransformVector.m_scale;
 	m_scaleX->SetFromFloat(scale.x);
 	m_scaleY->SetFromFloat(scale.y);
 	m_scaleZ->SetFromFloat(scale.z);
@@ -171,7 +171,7 @@ void TransformComponentPropertyEditor::SetPosition()
 	float x = m_posX->GetAsFloat();
 	float y = m_posY->GetAsFloat();
 	float z = m_posZ->GetAsFloat();
-	vec4 pos(x, y, z, 1.0f);
+    Vec4 pos(x, y, z, 1.0f);
 
 	m_component->m_localTransformVector_target.m_pos = pos;
     m_component->m_localTransformVector = m_component->m_localTransformVector_target;
@@ -202,7 +202,7 @@ void TransformComponentPropertyEditor::SetScale()
 	float x = m_scaleX->GetAsFloat();
 	float y = m_scaleY->GetAsFloat();
 	float z = m_scaleZ->GetAsFloat();
-	m_component->m_localTransformVector_target.m_scale = vec4(x, y, z, 1.0f);
+    m_component->m_localTransformVector_target.m_scale = Vec4(x, y, z, 1.0f);
     m_component->m_localTransformVector = m_component->m_localTransformVector_target;
 }
 

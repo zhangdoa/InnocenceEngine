@@ -20,6 +20,7 @@ public:
 	void edit(void* component) override;
 
 	void GetColor();
+    void GetShape();
 	void GetLuminousFlux();
 	void GetColorTemperature();
 	void GetUseColorTemperature();
@@ -29,6 +30,12 @@ private:
 	ComboLabelText* m_colorR;
 	ComboLabelText* m_colorG;
 	ComboLabelText* m_colorB;
+
+    QLabel* m_shapeLabel;
+    ComboLabelText* m_shapeX;
+    ComboLabelText* m_shapeY;
+    ComboLabelText* m_shapeZ;
+    ComboLabelText* m_shapeW;
 
 	QLabel* m_luminousFluxLabel;
 	ComboLabelText* m_LuminousFlux;
@@ -45,6 +52,7 @@ private:
 
 public slots:
 	void SetColor();
+    void SetShape();
 	void SetLuminousFlux();
 	void SetColorTemperature();
 	void SetUseColorTemperature();

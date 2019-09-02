@@ -5,9 +5,6 @@
 #include "transformcomponentpropertyeditor.h"
 #include "visiblecomponentpropertyeditor.h"
 #include "lightcomponentpropertyeditor.h"
-#include "directionallightcomponentpropertyeditor.h"
-#include "pointlightcomponentpropertyeditor.h"
-#include "spherelightcomponentpropertyeditor.h"
 
 class InnoPropertyEditor : public QWidget
 {
@@ -24,9 +21,6 @@ private:
 	TransformComponentPropertyEditor* m_transformComponentPropertyEditor;
     VisibleComponentPropertyEditor* m_visibleComponentPropertyEditor;
 	LightComponentPropertyEditor* m_lightComponentPropertyEditor;
-	DirectionalLightComponentPropertyEditor* m_directionalLightComponentPropertyEditor;
-	PointLightComponentPropertyEditor* m_pointLightComponentPropertyEditor;
-	SphereLightComponentPropertyEditor* m_sphereLightComponentPropertyEditor;
 
 signals:
 

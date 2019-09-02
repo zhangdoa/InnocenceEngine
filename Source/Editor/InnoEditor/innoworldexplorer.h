@@ -30,10 +30,7 @@ private slots:
 
 	void addTransformComponent();
 	void addVisibleComponent();
-	void addDirectionalLightComponent();
-	void addPointLightComponent();
-	void addSpotLightComponent();
-	void addSphereLightComponent();
+    void addLightComponent();
     void addCameraComponent();
 
 	void deleteComponent();

@@ -7,7 +7,7 @@
 QT       += core gui
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = InnocenceEditor
+TARGET = InnoEditor
 TEMPLATE = app
 
 # The following define makes your compiler emit warnings if you use
@@ -38,9 +38,6 @@ SOURCES += \
     transformcomponentpropertyeditor.cpp \
     adjustlabel.cpp \
     combolabeltext.cpp \
-    directionallightcomponentpropertyeditor.cpp \
-    pointlightcomponentpropertyeditor.cpp \
-    spherelightcomponentpropertyeditor.cpp \
     visiblecomponentpropertyeditor.cpp
 
 
@@ -59,9 +56,6 @@ HEADERS += \
     transformcomponentpropertyeditor.h \
     adjustlabel.h \
     combolabeltext.h \
-    directionallightcomponentpropertyeditor.h \
-    pointlightcomponentpropertyeditor.h \
-    spherelightcomponentpropertyeditor.h \
     visiblecomponentpropertyeditor.h
 
 FORMS += \

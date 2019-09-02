@@ -20,7 +20,7 @@ InnoViewport::InnoViewport(QWidget *parent)
 
     void* hInstance = reinterpret_cast<void*>(::GetModuleHandle(nullptr));
 	WId l_hwnd = QWidget::winId();
-    auto l_args = "-renderer 1 -mode 1 -loglevel 1";
+    auto l_args = "-renderer 0 -mode 1 -loglevel 1";
     InnoApplication::Setup(hInstance, &l_hwnd, const_cast<char*>(l_args));
 	InnoApplication::Initialize();
 

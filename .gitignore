@@ -51,8 +51,8 @@ xcuserdata/
 /Res/Textures/*
 
 # For Qt
-/Source/Editor/InnocenceEditor/qdarkstyle/
-/Source/Editor/InnocenceEditor/InnocenceEditor.pro.user
+/Source/Editor/InnoEditor/qdarkstyle/
+/Source/Editor/InnoEditor/InnoEditor.pro.user
 
 #For ImGui
 /Source/Engine/ThirdParty/ImGui/*

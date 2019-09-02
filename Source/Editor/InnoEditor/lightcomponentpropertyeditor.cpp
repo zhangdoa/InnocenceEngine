@@ -29,6 +29,20 @@ void LightComponentPropertyEditor::initialize()
 	m_colorB = new ComboLabelText();
 	m_colorB->Initialize("B");
 
+    m_shapeLabel = new QLabel("Shape");
+
+    m_shapeX = new ComboLabelText();
+    m_shapeX->Initialize("X");
+
+    m_shapeY = new ComboLabelText();
+    m_shapeY->Initialize("Y");
+
+    m_shapeZ = new ComboLabelText();
+    m_shapeZ->Initialize("Z");
+
+    m_shapeW = new ComboLabelText();
+    m_shapeW->Initialize("W");
+
 	m_luminousFluxLabel = new QLabel("Luminous Flux");
 
 	m_LuminousFlux = new ComboLabelText();
@@ -62,6 +76,20 @@ void LightComponentPropertyEditor::initialize()
 	m_gridLayout->addWidget(m_colorB->GetLabelWidget(), row, 5, 1, 1);
 	m_gridLayout->addWidget(m_colorB->GetTextWidget(), row, 6, 1, 1);
 	row++;
+
+
+    m_gridLayout->addWidget(m_shapeLabel, row, 0, 1, 7);
+    row++;
+
+    m_gridLayout->addWidget(m_shapeX->GetLabelWidget(), row, 1, 1, 1);
+    m_gridLayout->addWidget(m_shapeX->GetTextWidget(), row, 2, 1, 1);
+    m_gridLayout->addWidget(m_shapeY->GetLabelWidget(), row, 3, 1, 1);
+    m_gridLayout->addWidget(m_shapeY->GetTextWidget(), row, 4, 1, 1);
+    m_gridLayout->addWidget(m_shapeZ->GetLabelWidget(), row, 5, 1, 1);
+    m_gridLayout->addWidget(m_shapeZ->GetTextWidget(), row, 6, 1, 1);
+    m_gridLayout->addWidget(m_shapeW->GetLabelWidget(), row, 7, 1, 1);
+    m_gridLayout->addWidget(m_shapeW->GetTextWidget(), row, 8, 1, 1);
+    row++;
 
     m_gridLayout->addWidget(m_luminousFluxLabel, row, 0, 1, 7);
     row++;
@@ -105,6 +133,7 @@ void LightComponentPropertyEditor::edit(void *component)
 	m_component = reinterpret_cast<LightComponent*>(component);
 
 	GetColor();
+    GetShape();
 	GetLuminousFlux();
 	GetColorTemperature();
 	GetUseColorTemperature();
@@ -117,11 +146,24 @@ void LightComponentPropertyEditor::GetColor()
 	if (!m_component)
 		return;
 
-	vec4 color = m_component->m_RGBColor;
+    Vec4 color = m_component->m_RGBColor;
 
 	m_colorR->SetFromFloat(color.x);
 	m_colorG->SetFromFloat(color.y);
-	m_colorB->SetFromFloat(color.z);
+    m_colorB->SetFromFloat(color.z);
+}
+
+void LightComponentPropertyEditor::GetShape()
+{
+    if (!m_component)
+        return;
+
+    Vec4 shape = m_component->m_Shape;
+
+    m_shapeX->SetFromFloat(shape.x);
+    m_shapeY->SetFromFloat(shape.y);
+    m_shapeZ->SetFromFloat(shape.z);
+    m_shapeW->SetFromFloat(shape.w);
 }
 
 void LightComponentPropertyEditor::GetLuminousFlux()
@@ -162,9 +204,23 @@ void LightComponentPropertyEditor::SetColor()
 	float x = m_colorR->GetAsFloat();
 	float y = m_colorG->GetAsFloat();
 	float z = m_colorB->GetAsFloat();
-	vec4 color(x, y, z, 1.0f);
+    Vec4 color(x, y, z, 1.0f);
 
-	m_component->m_RGBColor = color;
+    m_component->m_RGBColor = color;
+}
+
+void LightComponentPropertyEditor::SetShape()
+{
+    if (!m_component)
+        return;
+
+    float x = m_shapeX->GetAsFloat();
+    float y = m_shapeY->GetAsFloat();
+    float z = m_shapeZ->GetAsFloat();
+    float w = m_shapeW->GetAsFloat();
+    Vec4 shape(x, y, z, w);
+
+    m_component->m_Shape = shape;
 }
 
 void LightComponentPropertyEditor::SetLuminousFlux()
