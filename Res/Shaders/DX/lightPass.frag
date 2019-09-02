@@ -15,7 +15,7 @@ Texture3D<float4> in_IrradianceVolume : register(t10);
 
 SamplerState SampleTypePoint : register(s0);
 
-#include "common/BRDF.hlsl"
+#include "common/BSDF.hlsl"
 #include "common/shadowResolver.hlsl"
 
 struct PixelInputType
@@ -78,11 +78,11 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 
 	float F90 = 1.0;
 	float3 FresnelFactor = fresnelSchlick(F0, F90, LdotHL);
-	float3 Fd = getDiffuseBRDF(NdotV, NdotD, DdotHD, roughness, metallic, FresnelFactor, albedo);
-	float3 Fr = getSpecularBRDF(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotV, NdotL, NdotHL, LdotHL, roughness, F0, FresnelFactor);
+	float3 Ft = getBTDF(NdotV, NdotD, DdotHD, roughness, metallic, FresnelFactor, albedo);
+	float3 Fr = getBRDF(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotV, NdotL, NdotHL, LdotHL, roughness, F0, FresnelFactor);
 
 	float3 illuminance = sun_illuminance.xyz * NdotD;
-	Lo += illuminance * (Fd + Fr);
+	Lo += illuminance * (Ft + Fr);
 	Lo *= 1.0 - SunShadowResolver(posWS);
 
 	// point punctual light

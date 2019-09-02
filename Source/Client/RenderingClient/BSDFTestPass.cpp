@@ -1,4 +1,4 @@
-#include "BRDFTestPass.h"
+#include "BSDFTestPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
 #include "BRDFLUTPass.h"
@@ -9,7 +9,7 @@ INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 
 using namespace DefaultGPUBuffers;
 
-namespace BRDFTestPass
+namespace BSDFTestPass
 {
 	RenderPassDataComponent* m_RPDC;
 	ShaderProgramComponent* m_SPC;
@@ -21,16 +21,16 @@ namespace BRDFTestPass
 	const size_t m_shpereCount = 10;
 }
 
-bool BRDFTestPass::Setup()
+bool BSDFTestPass::Setup()
 {
-	m_SPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("BRDFTestPass/");
+	m_SPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("BSDFTestPass/");
 
 	m_SPC->m_ShaderFilePaths.m_VSPath = "opaquePass.vert/";
-	m_SPC->m_ShaderFilePaths.m_PSPath = "BRDFTestPass.frag/";
+	m_SPC->m_ShaderFilePaths.m_PSPath = "BSDFTestPass.frag/";
 
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
 
-	m_RPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("BRDFTestPass/");
+	m_RPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("BSDFTestPass/");
 
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
@@ -81,7 +81,7 @@ bool BRDFTestPass::Setup()
 
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
 
-	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("BRDFTestPass/");
+	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("BSDFTestPass/");
 
 	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
 
@@ -119,12 +119,12 @@ bool BRDFTestPass::Setup()
 	return true;
 }
 
-bool BRDFTestPass::Initialize()
+bool BSDFTestPass::Initialize()
 {
 	return true;
 }
 
-bool BRDFTestPass::PrepareCommandList()
+bool BSDFTestPass::PrepareCommandList()
 {
 	auto l_MainCameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::MainCamera);
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::OpaquePassMesh);
@@ -165,7 +165,7 @@ bool BRDFTestPass::PrepareCommandList()
 	return true;
 }
 
-bool BRDFTestPass::ExecuteCommandList()
+bool BSDFTestPass::ExecuteCommandList()
 {
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
 
@@ -174,19 +174,19 @@ bool BRDFTestPass::ExecuteCommandList()
 	return true;
 }
 
-bool BRDFTestPass::Terminate()
+bool BSDFTestPass::Terminate()
 {
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
 
 	return true;
 }
 
-RenderPassDataComponent * BRDFTestPass::GetRPDC()
+RenderPassDataComponent * BSDFTestPass::GetRPDC()
 {
 	return m_RPDC;
 }
 
-ShaderProgramComponent * BRDFTestPass::GetSPC()
+ShaderProgramComponent * BSDFTestPass::GetSPC()
 {
 	return m_SPC;
 }

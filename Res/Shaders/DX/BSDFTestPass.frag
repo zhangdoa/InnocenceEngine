@@ -6,7 +6,7 @@ Texture2D in_BRDFMSLUT : register(t1);
 
 SamplerState SampleTypePoint : register(s0);
 
-#include "common/BRDF.hlsl"
+#include "common/BSDF.hlsl"
 
 struct PixelInputType
 {

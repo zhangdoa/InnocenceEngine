@@ -18,7 +18,7 @@
 #include "DebugPass.h"
 #include "FinalBlendPass.h"
 
-#include "BRDFTestPass.h"
+#include "BSDFTestPass.h"
 
 #include "../../Engine/ModuleManager/IModuleManager.h"
 
@@ -70,7 +70,7 @@ bool DefaultRenderingClient::Setup()
 		DebugPass::Setup();
 		FinalBlendPass::Setup();
 
-		BRDFTestPass::Setup();
+		BSDFTestPass::Setup();
 	};
 
 	f_InitializeTask = [&]()
@@ -95,7 +95,7 @@ bool DefaultRenderingClient::Setup()
 		DebugPass::Initialize();
 		FinalBlendPass::Initialize();
 
-		BRDFTestPass::Initialize();
+		BSDFTestPass::Initialize();
 	};
 
 	f_RenderTask = [&]()
@@ -136,8 +136,8 @@ bool DefaultRenderingClient::Setup()
 		static bool l_drawBRDFTest = false;
 		if (l_drawBRDFTest)
 		{
-			BRDFTestPass::PrepareCommandList();
-			l_canvas = BRDFTestPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
+			BSDFTestPass::PrepareCommandList();
+			l_canvas = BSDFTestPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
 		}
 
 		if (m_showLightHeatmap)
@@ -184,7 +184,7 @@ bool DefaultRenderingClient::Setup()
 
 		if (l_drawBRDFTest)
 		{
-			BRDFTestPass::ExecuteCommandList();
+			BSDFTestPass::ExecuteCommandList();
 		}
 
 		if (m_showProbe)
@@ -219,7 +219,7 @@ bool DefaultRenderingClient::Setup()
 		DebugPass::Terminate();
 		FinalBlendPass::Terminate();
 
-		BRDFTestPass::Terminate();
+		BSDFTestPass::Terminate();
 	};
 
 	auto l_DefaultRenderingClientSetupTask = g_pModuleManager->getTaskSystem()->submit("DefaultRenderingClientSetupTask", 2, nullptr, f_SetupTask);

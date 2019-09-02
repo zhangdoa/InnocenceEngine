@@ -41,7 +41,7 @@ float D_GGX(float NdotH, float roughness)
 	float f = (NdotH * a2 - NdotH) * NdotH + 1;
 	return a2 / max(PI * pow(f, 2.0), 0.00001);
 }
-// Diffuse BRDF
+// Diffuse BTDF
 // Disney model [https://blog.selfshadow.com/publications/s2015-shading-course/burley/s2015_pbs_disney_bsdf_notes.pdf]
 // ----------------------------------------------------------------------------
 float3 DisneyDiffuse2012(float NdotV, float NdotL, float LdotH, float linearRoughness)
@@ -89,7 +89,7 @@ float3 getFrMS(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePo
 	return frMS * fresnelMultiplier;
 }
 // ----------------------------------------------------------------------------
-float3 getSpecularBRDF(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePoint, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float3 F0, float3 FresnelFactor)
+float3 getBRDF(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePoint, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float3 F0, float3 FresnelFactor)
 {
 	float G = V_SmithGGXCorrelated(NdotV, NdotL, roughness);
 	float D = D_GGX(NdotH, roughness);
@@ -102,21 +102,21 @@ float3 getSpecularBRDF(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState Samp
 
 	return Fr;
 }
-float3 getDiffuseBRDF(float NdotV, float NdotL, float LdotH, float roughness, float metallic, float3 FresnelFactor, float3 albedo)
+float3 getBTDF(float NdotV, float NdotL, float LdotH, float roughness, float metallic, float3 FresnelFactor, float3 albedo)
 {
 	float3 kD = float3(1.0, 1.0, 1.0) - FresnelFactor;
 
 	kD *= 1.0 - metallic;
 
-	float3 Fd = DisneyDiffuse2015(NdotV, NdotL, LdotH, roughness * roughness) * albedo / PI;
+	float3 Ft = DisneyDiffuse2015(NdotV, NdotL, LdotH, roughness * roughness) * albedo / PI;
 
-	return kD * Fd;
+	return kD * Ft;
 }
-float3 getBRDF(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePoint, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float metallic, float3 F0, float3 FresnelFactor, float3 albedo)
+float3 getBSDF(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePoint, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float metallic, float3 F0, float3 FresnelFactor, float3 albedo)
 {
-	float3 Fd = getDiffuseBRDF(NdotV, NdotL, LdotH, roughness, metallic, FresnelFactor, albedo);
-	float3 Fr = getSpecularBRDF(BRDFLUT, BRDFMSLUT, SampleTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, F0, FresnelFactor);
-	return (Fd + Fr);
+	float3 Ft = getBTDF(NdotV, NdotL, LdotH, roughness, metallic, FresnelFactor, albedo);
+	float3 Fr = getBRDF(BRDFLUT, BRDFMSLUT, SampleTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, F0, FresnelFactor);
+	return (Ft + Fr);
 }
 // ----------------------------------------------------------------------------
 float3 getOutLuminance(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePoint, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float metallic, float3 F0, float3 albedo, float3 luminousFlux)
@@ -124,7 +124,7 @@ float3 getOutLuminance(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState Samp
 	float F90 = 1.0;
 	float3 FresnelFactor = fresnelSchlick(F0, F90, LdotH);
 
-	float3 BRDF = getBRDF(BRDFLUT, BRDFMSLUT, SampleTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, metallic, F0, FresnelFactor, albedo);
+	float3 BRDF = getBSDF(BRDFLUT, BRDFMSLUT, SampleTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, metallic, F0, FresnelFactor, albedo);
 
 	return BRDF * luminousFlux * NdotL;
 }

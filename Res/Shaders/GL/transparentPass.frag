@@ -10,7 +10,7 @@ layout(location = 2) in vec3 thefrag_Normal;
 layout(location = 0, binding = 0) uniform sampler2D uni_brdfLUT;
 layout(location = 1, binding = 1) uniform sampler2D uni_brdfMSLUT;
 
-#include "common/BRDF.glsl"
+#include "common/BSDF.glsl"
 
 void main()
 {

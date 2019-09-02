@@ -6,7 +6,7 @@ layout(location = 1, binding = 1) uniform sampler2D uni_brdfMSLUT;
 
 layout(location = 0) out vec4 uni_BRDFTestPassRT0;
 
-#include "common/BRDF.glsl"
+#include "common/BSDF.glsl"
 
 layout(location = 0) in vec4 thefrag_WorldSpacePos;
 layout(location = 1) in vec4 thefrag_ClipSpacePos_current;

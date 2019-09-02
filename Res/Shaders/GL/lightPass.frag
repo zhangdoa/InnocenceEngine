@@ -23,7 +23,7 @@ layout(location = 9, binding = 9) uniform usampler2D uni_lightGrid;
 
 layout(location = 10, binding = 10) uniform sampler3D uni_IrradianceVolume;
 
-#include "common/BRDF.glsl"
+#include "common/BSDF.glsl"
 #include "common/shadowResolver.glsl"
 
 const float sunAngularRadius = 0.000071;
@@ -159,11 +159,11 @@ void main()
 
 	float F90 = 1.0;
 	vec3 FresnelFactor = F_Schlick(F0, F90, LdotHL);
-	vec3 Fd = getDiffuseBRDF(NdotV, NdotD, DdotHD, roughness, metallic, FresnelFactor, albedo);
-	vec3 Fr = getSpecularBRDF(uni_BRDFLUT, uni_BRDFMSLUT, NdotV, NdotL, NdotHL, LdotHL, roughness, F0, FresnelFactor);
+	vec3 Ft = getBTDF(NdotV, NdotD, DdotHD, roughness, metallic, FresnelFactor, albedo);
+	vec3 Fr = getBRDF(uni_BRDFLUT, uni_BRDFMSLUT, NdotV, NdotL, NdotHL, LdotHL, roughness, F0, FresnelFactor);
 
 	vec3 illuminance = sunUBO.data.illuminance.xyz * NdotD;
-	Lo += illuminance * (Fd + Fr);
+	Lo += illuminance * (Ft + Fr);
 	Lo *= 1.0 - SunShadowResolver(posWS);
 
 	// point punctual light

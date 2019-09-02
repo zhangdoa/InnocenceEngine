@@ -1,7 +1,7 @@
 #pragma once
 #include "../../Engine/RenderingServer/IRenderingServer.h"
 
-namespace BRDFTestPass
+namespace BSDFTestPass
 {
 	bool Setup();
 	bool Initialize();

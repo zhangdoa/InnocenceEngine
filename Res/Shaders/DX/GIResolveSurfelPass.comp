@@ -14,7 +14,7 @@ RWStructuredBuffer<float4> out_irradiance : register(u1);
 
 Texture2DArray<float4> in_shadowMap : register(t0);
 
-#include "common/BRDF.hlsl"
+#include "common/BSDF.hlsl"
 
 #define COOK_TORRANCE
 
