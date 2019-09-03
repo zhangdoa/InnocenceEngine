@@ -407,10 +407,10 @@ bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook
 
 	l_windowSystem->setBridge(l_windowSystemBridge);
 
-	auto l_renderingServerSystem = reinterpret_cast<MTRenderingServer*>(m_RenderingServer.get());
-	auto l_renderingServerSystemBridge = reinterpret_cast<MTRenderingServerBridge*>(extraHook);
+	auto l_renderingServer = reinterpret_cast<MTRenderingServer*>(m_RenderingServer.get());
+	auto l_renderingServerBridge = reinterpret_cast<MTRenderingServerBridge*>(extraHook);
 
-	l_renderingServerSystem->setBridge(l_renderingServerSystemBridge);
+	l_renderingServer->setBridge(l_renderingServerBridge);
 #endif
 
 	return true;

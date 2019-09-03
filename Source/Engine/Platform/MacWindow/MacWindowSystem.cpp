@@ -4,10 +4,13 @@
 
 extern IModuleManager* g_pModuleManager;
 
-INNO_PRIVATE_SCOPE MacWindowSystemNS
+namespace MacWindowSystemNS
 {
+	IWindowSurface* m_windowSurface;
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-	ButtonStatusMap m_buttonStatus;
+	InitConfig m_initConfig;
+	std::vector<ButtonState> m_buttonState;
+	std::set<WindowEventCallbackFunctor*> m_windowEventCallbackFunctor;
 
   MacWindowSystemBridge* m_bridge;
 }
@@ -18,7 +21,7 @@ bool MacWindowSystem::setup(void* hInstance, void* hwnd)
   bool result = MacWindowSystemNS::m_bridge->setup(l_screenResolution.x, l_screenResolution.y);
 
 	MacWindowSystemNS::m_objectStatus = ObjectStatus::Created;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MacWindowSystem setup finished.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "MacWindowSystem setup finished.");
 
 	return true;
 }
@@ -28,7 +31,7 @@ bool MacWindowSystem::initialize()
 	bool result = MacWindowSystemNS::m_bridge->initialize();
 
 	MacWindowSystemNS::m_objectStatus = ObjectStatus::Activated;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MacWindowSystem has been initialized.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "MacWindowSystem has been initialized.");
 	return true;
 }
 
@@ -42,7 +45,7 @@ bool MacWindowSystem::terminate()
 {
 	bool result = MacWindowSystemNS::m_bridge->terminate();
 	MacWindowSystemNS::m_objectStatus = ObjectStatus::Terminated;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MacWindowSystem has been terminated.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "MacWindowSystem has been terminated.");
 	return true;
 }
 
@@ -53,13 +56,12 @@ ObjectStatus MacWindowSystem::getStatus()
 
 IWindowSurface * MacWindowSystem::getWindowSurface()
 {
-	// @TODO: return a windows surface wrapper instance
-	return nullptr;
+	return MacWindowSystemNS::m_windowSurface;
 }
 
-ButtonStatusMap MacWindowSystem::getButtonStatus()
+const std::vector<ButtonState>& MacWindowSystem::getButtonState()
 {
-	return MacWindowSystemNS::m_buttonStatus;
+	return MacWindowSystemNS::m_buttonState;
 }
 
 bool MacWindowSystem::sendEvent(unsigned int umsg, unsigned int WParam, int LParam)
@@ -67,8 +69,14 @@ bool MacWindowSystem::sendEvent(unsigned int umsg, unsigned int WParam, int LPar
 	return true;
 }
 
+bool MacWindowSystem::addEventCallback(WindowEventCallbackFunctor* functor)
+{
+	MacWindowSystemNS::m_windowEventCallbackFunctor.emplace(functor);
+	return true;
+}
+
 void MacWindowSystem::setBridge(MacWindowSystemBridge* bridge)
 {
 	MacWindowSystemNS::m_bridge = bridge;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MacWindowSystem: Bridge connected at " + InnoUtility::pointerToString(bridge));
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "MacWindowSystem: Bridge connected at ", bridge);
 }

@@ -1,23 +1,23 @@
 //
-//  MTRenderingBackendBridgeImpl.h
+//  MTRenderingServerBridgeImpl.h
 //  InnoMain
 //
 //  Created by zhangdoa on 14/04/2019.
 //  Copyright © 2019 InnocenceEngine. All rights reserved.
 //
 
-#ifndef MTRenderingBackendBridgeImpl_h
-#define MTRenderingBackendBridgeImpl_h
+#ifndef MTRenderingServerBridgeImpl_h
+#define MTRenderingServerBridgeImpl_h
 
-#import "../../../RenderingBackend/MTRenderingBackend/MTRenderingBackendBridge.h"
+#import "../../../RenderingServer/MT/MTRenderingServerBridge.h"
 #import "MacWindowDelegate.h"
 #import "MetalDelegate.h"
 
-class MTRenderingBackendBridgeImpl : public MTRenderingBackendBridge
+class MTRenderingServerBridgeImpl : public MTRenderingServerBridge
 {
 public:
-    explicit MTRenderingBackendBridgeImpl(MacWindowDelegate* macWindowDelegate, MetalDelegate* metalDelegate);
-    ~MTRenderingBackendBridgeImpl();
+    explicit MTRenderingServerBridgeImpl(MacWindowDelegate* macWindowDelegate, MetalDelegate* metalDelegate);
+    ~MTRenderingServerBridgeImpl();
 
     bool setup() override;
     bool initialize() override;
@@ -41,4 +41,4 @@ private:
     MetalDelegate* m_metalDelegate = nullptr;
 };
 
-#endif /* MTRenderingBackendBridgeImpl_h */
+#endif /* MTRenderingServerBridgeImpl_h */

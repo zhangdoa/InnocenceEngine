@@ -12,6 +12,7 @@
 
 #if defined INNO_PLATFORM_MAC
 #include "ImGuiWrapperWindowMac.h"
+#include "ImGuiWrapperMT.h"
 #endif
 
 #if defined INNO_PLATFORM_LINUX

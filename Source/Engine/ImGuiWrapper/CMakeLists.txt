@@ -26,6 +26,10 @@ target_link_libraries(ImGuiWrapper ImGuiWrapperVK)
 endif (VULKAN)
 
 if (INNO_PLATFORM_MAC)
+add_library(ImGuiWrapperMT ImGuiWrapperMT.h ImGuiWrapperMT.cpp)
+set_property(TARGET ImGuiWrapperMT PROPERTY POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(ImGuiWrapperMT ImGui)
+target_link_libraries(ImGuiWrapper ImGuiWrapperMT)
 endif (INNO_PLATFORM_MAC)
 
 if (INNO_PLATFORM_LINUX)

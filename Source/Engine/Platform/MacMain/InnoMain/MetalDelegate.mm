@@ -131,7 +131,7 @@ extern IModuleManager* g_pModuleManager;
         [commandEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
         [commandEncoder setCullMode:MTLCullModeFront];
     
-        auto l_MDC = reinterpret_cast<MTMeshDataComponent*>(g_pModuleManager->getRenderingBackend()->getMeshDataComponent(MeshShapeType::QUAD));
+        auto l_MDC = reinterpret_cast<MTMeshDataComponent*>(g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Quad));
         encodeDrawCall(commandEncoder, l_MDC);
         [commandEncoder endEncoding];
         [commandBuffer presentDrawable:drawable];
