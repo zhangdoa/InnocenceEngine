@@ -1,24 +1,31 @@
 #include "LinuxWindowSystem.h"
+
+#include "../../ModuleManager/IModuleManager.h"
+
+extern IModuleManager* g_pModuleManager;
+
 #include<X11/X.h>
 #include<X11/Xlib.h>
 #include "glad/glad.h"
 #include<GL/glx.h>
 
-#include "../IModuleManager.h"
-
-extern IModuleManager* g_pModuleManager;
+#undef Success
 
 typedef GLXContext (*glXCreateContextAttribsARBProc) (Display*, GLXFBConfig, GLXContext, Bool, const int*);
 
-INNO_PRIVATE_SCOPE LinuxWindowSystemNS
+namespace LinuxWindowSystemNS
 {
 	bool setup();
 	bool initialize();
 	bool update();
 	bool terminate();
 
+	IWindowSurface* m_windowSurface;
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-	ButtonStatusMap m_buttonStatus;
+	InitConfig m_initConfig;
+	std::vector<ButtonState> m_buttonState;
+	std::set<WindowEventCallbackFunctor*> m_windowEventCallbackFunctor;
+
 	Display* m_display;
 	Window m_window;
 	GLint m_attributes[] = {
@@ -39,7 +46,7 @@ bool LinuxWindowSystemNS::setup()
 
 	if(m_display == nullptr)
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "LinuxWindowSystem: Can't connect to X server!");
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "LinuxWindowSystem: Can't connect to X server!");
 		m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -53,14 +60,14 @@ bool LinuxWindowSystemNS::setup()
 
 	if(!m_window)
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "LinuxWindowSystem: Can't create window!");
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "LinuxWindowSystem: Can't create window!");
 		m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
 	/* Show_the_window
 	--------------- */
-	auto l_windowName = g_pModuleManager->getGameSystem()->getGameName();
+	auto l_windowName = g_pModuleManager->getApplicationName();
 	XStoreName(m_display, m_window, l_windowName.c_str());
 	XSelectInput(m_display, m_window, ExposureMask | StructureNotifyMask);
 
@@ -70,7 +77,7 @@ bool LinuxWindowSystemNS::setup()
 	GLXFBConfig *fbc = glXChooseFBConfig(m_display, DefaultScreen(m_display), m_attributes, &num_fbc);
 	if (!fbc)
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "LinuxWindowSystem: glXChooseFBConfig() failed!");
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "LinuxWindowSystem: glXChooseFBConfig() failed!");
 		m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -86,7 +93,7 @@ bool LinuxWindowSystemNS::setup()
 	glXGetProcAddress((const GLubyte*)"glXCreateContextAttribsARB");
 	if (!glXCreateContextAttribsARB)
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "LinuxWindowSystem: glXCreateContextAttribsARB() not found!");
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "LinuxWindowSystem: glXCreateContextAttribsARB() not found!");
 		m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -105,7 +112,7 @@ bool LinuxWindowSystemNS::setup()
 	m_context = glXCreateContextAttribsARB(m_display, fbc[0], NULL, true, context_attribs);
 	if (!m_context)
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "LinuxWindowSystem: Failed to create OpenGL context!");
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "LinuxWindowSystem: Failed to create OpenGL context!");
 		m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
@@ -115,20 +122,20 @@ bool LinuxWindowSystemNS::setup()
 	// ---------------------------------------
 	if (!gladLoadGL())
 	{
-		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "LinuxWindowSystem: Failed to initialize GLAD.");
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "LinuxWindowSystem: Failed to initialize GLAD.");
 		m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
 	LinuxWindowSystemNS::m_objectStatus = ObjectStatus::Activated;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "LinuxWindowSystem setup finished.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "LinuxWindowSystem setup finished.");
 
 	return true;
 }
 
 bool LinuxWindowSystemNS::initialize()
 {
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "LinuxWindowSystem has been initialized.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "LinuxWindowSystem has been initialized.");
 	return true;
 }
 
@@ -140,7 +147,7 @@ bool LinuxWindowSystemNS::update()
 bool LinuxWindowSystemNS::terminate()
 {
 	LinuxWindowSystemNS::m_objectStatus = ObjectStatus::Terminated;
-	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "LinuxWindowSystem has been terminated.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "LinuxWindowSystem has been terminated.");
 	return true;
 }
 
@@ -169,9 +176,14 @@ ObjectStatus LinuxWindowSystem::getStatus()
 	return LinuxWindowSystemNS::m_objectStatus;
 }
 
-ButtonStatusMap LinuxWindowSystem::getButtonStatus()
+IWindowSurface * LinuxWindowSystem::getWindowSurface()
 {
-	return LinuxWindowSystemNS::m_buttonStatus;
+	return LinuxWindowSystemNS::m_windowSurface;
+}
+
+const std::vector<ButtonState>& LinuxWindowSystem::getButtonState()
+{
+	return LinuxWindowSystemNS::m_buttonState;
 }
 
 bool LinuxWindowSystem::sendEvent(unsigned int umsg, unsigned int WParam, int LParam)
@@ -179,7 +191,13 @@ bool LinuxWindowSystem::sendEvent(unsigned int umsg, unsigned int WParam, int LP
 	return true;
 }
 
-void LinuxWindowSystem::swapBuffer()
+bool LinuxWindowSystem::addEventCallback(WindowEventCallbackFunctor* functor)
 {
-	glXSwapBuffers(LinuxWindowSystemNS::m_display, LinuxWindowSystemNS::m_window);
+	LinuxWindowSystemNS::m_windowEventCallbackFunctor.emplace(functor);
+	return true;
 }
+
+//void LinuxWindowSystem::swapBuffer()
+//{
+	//glXSwapBuffers(LinuxWindowSystemNS::m_display, LinuxWindowSystemNS::m_window);
+//}

@@ -701,7 +701,7 @@ bool VKRenderingServer::WaitForFrame(RenderPassDataComponent * rhs)
 
 bool VKRenderingServer::SetUserPipelineOutput(RenderPassDataComponent * rhs)
 {
-	return nullptr;
+	return true;
 }
 
 bool VKRenderingServer::Present()

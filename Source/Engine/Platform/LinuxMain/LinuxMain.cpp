@@ -1,23 +1,17 @@
-#include "../../Common/InnoApplication.h"
+#include "../../Application/InnoApplication.h"
 
 int main(int argc, char *argv[])
 {
-	if (!InnoApplication::setup(nullptr, nullptr, argv[1]))
+	if (!InnoApplication::Setup(nullptr, nullptr, argv[1]))
 	{
 		return 0;
 	}
-	if (!InnoApplication::initialize())
+	if (!InnoApplication::Initialize())
 	{
 		return 0;
 	}
-	while (InnoApplication::getStatus() == ObjectStatus::Activated)
-	{
-		if (!InnoApplication::update())
-		{
-			InnoApplication::terminate();
-			return 0;
-		}
-	}
+	InnoApplication::Run();
+	InnoApplication::Terminate();
 
 	return 0;
 }

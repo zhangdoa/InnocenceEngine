@@ -1255,7 +1255,7 @@ namespace InnoMath
 	template<class T>
 	auto calcLookAtMatrix(const TVec4<T> & globalPos, const TVec4<T> & localRot) -> TMat4<T>
 	{
-		return TMat4<T>().lookAt(globalPos, globalPos + getDirection(direction::FORWARD, localRot), getDirection(direction::UP, localRot));
+		return TMat4<T>().lookAt(globalPos, globalPos + getDirection(Direction::Forward, localRot), getDirection(Direction::Up, localRot));
 	}
 
 	template<class T>

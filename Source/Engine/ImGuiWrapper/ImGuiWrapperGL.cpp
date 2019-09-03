@@ -1,5 +1,4 @@
 #include "ImGuiWrapperGL.h"
-#include "../Component/WinWindowSystemComponent.h"
 
 #include "../ThirdParty/ImGui/imgui_impl_opengl3.cpp"
 

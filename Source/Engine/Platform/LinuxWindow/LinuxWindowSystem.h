@@ -1,5 +1,5 @@
 #pragma once
-#include "../Core/IWindowSystem.h"
+#include "../../Core/IWindowSystem.h"
 
 class LinuxWindowSystem : public IWindowSystem
 {
@@ -12,9 +12,10 @@ public:
 	bool terminate() override;
 
 	ObjectStatus getStatus() override;
-	ButtonStatusMap getButtonStatus() override;
+
+	IWindowSurface* getWindowSurface() override;
+	const std::vector<ButtonState>& getButtonState() override;
 
 	bool sendEvent(unsigned int umsg, unsigned int WParam, int LParam) override;
-
-	void swapBuffer() override;
+	bool addEventCallback(WindowEventCallbackFunctor* functor) override;
 };

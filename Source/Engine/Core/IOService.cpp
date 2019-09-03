@@ -32,7 +32,7 @@ bool IOService::setupWorkingDirectory()
 
 std::vector<char> IOService::loadFile(const std::string & filePath, IOMode openMode)
 {
-	int l_mode = 0;
+	std::ios_base::openmode l_mode = std::ios::in;
 	switch (openMode)
 	{
 	case IOMode::Text:
@@ -69,7 +69,7 @@ std::vector<char> IOService::loadFile(const std::string & filePath, IOMode openM
 
 bool IOService::saveFile(const std::string & filePath, const std::vector<char>& content, IOMode saveMode)
 {
-	int l_mode = 0;
+	std::ios_base::openmode l_mode = std::ios::out;
 	switch (saveMode)
 	{
 	case IOMode::Text:
