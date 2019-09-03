@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    paths:
+    - '*'    
+    - '!/Res/*'
+
+jobs:
+  build-windows-debug:
+    name: Windows Build
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Windows Build
+      run: |
+       git submodule init
+       git submodule update
+       cd Script
+       @echo | SetupWin.bat
+       powershell.exe ./BuildAssimpWinImpl.ps1 -buildType Debug -Wait
+       powershell.exe ./BuildPhysXWin-VS15.ps1 -Wait
+       powershell.exe ./BuildGLADImpl.ps1 -buildType Debug -Wait
+       powershell.exe ./BuildEngineImpl.ps1 -buildType Debug -Wait
+
+  build-linux:
+    name: Linux Build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Linux Build
+      run: |       
+       git submodule init
+       git submodule update
+       cd Script/
+       bash SetupLinux.sh
+       bash BuildAssimpLinux.sh
+       bash BuildGLADLinux.sh
+       bash BuildEngineLinux.sh
+
+  build-mac:
+    name: macOS Build
+    runs-on: macOS-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: macOS Build
+      run: |
+       git submodule init
+       git submodule update
+       cd Script/
+       bash SetupMac.sh
+       bash BuildAssimpMac-Xcode.sh
+       bash BuildGLADMac-Xcode.sh
+       bash BuildEngineMac.sh
