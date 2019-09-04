@@ -79,11 +79,16 @@ namespace DX12RenderingServerNS
 	std::vector<ID3D12Resource*> m_swapChainImages(m_swapChainImageCount);
 
 	ID3D12DescriptorHeap* m_CSUHeap = 0;
-	D3D12_DESCRIPTOR_HEAP_DESC m_CSUHeapDesc = {};
 	D3D12_CPU_DESCRIPTOR_HANDLE m_initialCSUCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_initialCSUGPUHandle;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_currentCSUCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_currentCSUGPUHandle;
+
+	ID3D12DescriptorHeap* m_ShaderNonVisibleCSUHeap = 0;
+	D3D12_CPU_DESCRIPTOR_HANDLE m_initialShaderNonVisibleCSUCPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE m_initialShaderNonVisibleCSUGPUHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE m_currentShaderNonVisibleCSUCPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE m_currentShaderNonVisibleCSUGPUHandle;
 
 	ID3D12DescriptorHeap* m_samplerHeap = 0;
 	D3D12_DESCRIPTOR_HEAP_DESC m_samplerHeapDesc = {};
@@ -318,19 +323,21 @@ bool DX12RenderingServerNS::CreateGlobalCommandAllocator()
 
 bool DX12RenderingServerNS::CreateGlobalCSUHeap()
 {
-	m_CSUHeapDesc.NumDescriptors = 65536;
-	m_CSUHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	m_CSUHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	D3D12_DESCRIPTOR_HEAP_DESC l_CSUHeapDesc = {};
 
-	auto l_result = m_device->CreateDescriptorHeap(&m_CSUHeapDesc, IID_PPV_ARGS(&m_CSUHeap));
+	l_CSUHeapDesc.NumDescriptors = 65536;
+	l_CSUHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	l_CSUHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+
+	auto l_result = m_device->CreateDescriptorHeap(&l_CSUHeapDesc, IID_PPV_ARGS(&m_CSUHeap));
 	if (FAILED(l_result))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create DescriptorHeap for CBV/SRV/UAV!");
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create shader-visible DescriptorHeap for CBV/SRV/UAV!");
 		m_objectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
-	m_CSUHeap->SetName(L"GlobalCSUHeap");
+	m_CSUHeap->SetName(L"ShaderVisibleGlobalCSUHeap");
 
 	m_initialCSUCPUHandle = m_CSUHeap->GetCPUDescriptorHandleForHeapStart();
 	m_initialCSUGPUHandle = m_CSUHeap->GetGPUDescriptorHandleForHeapStart();
@@ -338,7 +345,31 @@ bool DX12RenderingServerNS::CreateGlobalCSUHeap()
 	m_currentCSUCPUHandle = m_initialCSUCPUHandle;
 	m_currentCSUGPUHandle = m_initialCSUGPUHandle;
 
-	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: DescriptorHeap for CBV/SRV/UAV has been created.");
+	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Shader-visible DescriptorHeap for CBV/SRV/UAV has been created.");
+
+	D3D12_DESCRIPTOR_HEAP_DESC l_ShaderNonVisibleCSUHeapDesc = {};
+
+	l_ShaderNonVisibleCSUHeapDesc.NumDescriptors = 65536;
+	l_ShaderNonVisibleCSUHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	l_ShaderNonVisibleCSUHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	l_result = m_device->CreateDescriptorHeap(&l_ShaderNonVisibleCSUHeapDesc, IID_PPV_ARGS(&m_ShaderNonVisibleCSUHeap));
+	if (FAILED(l_result))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create shader-non-visible DescriptorHeap for CBV/SRV/UAV!");
+		m_objectStatus = ObjectStatus::Suspended;
+		return false;
+	}
+
+	m_ShaderNonVisibleCSUHeap->SetName(L"ShaderNonVisibleGlobalCSUHeap");
+
+	m_initialShaderNonVisibleCSUCPUHandle = m_ShaderNonVisibleCSUHeap->GetCPUDescriptorHandleForHeapStart();
+	m_initialShaderNonVisibleCSUGPUHandle = m_ShaderNonVisibleCSUHeap->GetGPUDescriptorHandleForHeapStart();
+
+	m_currentShaderNonVisibleCSUCPUHandle = m_initialShaderNonVisibleCSUCPUHandle;
+	m_currentShaderNonVisibleCSUGPUHandle = m_initialShaderNonVisibleCSUGPUHandle;
+
+	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Shader-non-visible DescriptorHeap for CBV/SRV/UAV has been created.");
 
 	return true;
 }
@@ -1384,6 +1415,47 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 				}
 			}
 		}
+		else
+		{
+			// @TODO: SOOO verbose API DX12 it is!
+			if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+			{
+				auto l_RT = reinterpret_cast<DX12TextureDataComponent*>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame]);
+				auto l_resourceBinder = reinterpret_cast<DX12ResourceBinder*>(l_RT->m_ResourceBinder);
+
+				l_commandList->m_GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_resourceBinder->m_Texture->m_ResourceHandle, l_resourceBinder->m_Texture->m_ReadState, l_resourceBinder->m_Texture->m_WriteState));
+
+				l_commandList->m_GraphicsCommandList->ClearUnorderedAccessViewFloat(
+					l_resourceBinder->m_TextureUAV.ShaderNonVisibleGPUHandle,
+					l_resourceBinder->m_TextureUAV.ShaderNonVisibleCPUHandle,
+					l_RT->m_ResourceHandle,
+					l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor,
+					0,
+					NULL);
+
+				l_commandList->m_GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_resourceBinder->m_Texture->m_ResourceHandle, l_resourceBinder->m_Texture->m_WriteState, l_resourceBinder->m_Texture->m_ReadState));
+			}
+			else
+			{
+				for (auto i : l_rhs->m_RenderTargets)
+				{
+					auto l_RT = reinterpret_cast<DX12TextureDataComponent*>(i);
+					auto l_resourceBinder = reinterpret_cast<DX12ResourceBinder*>(l_RT->m_ResourceBinder);
+
+					l_commandList->m_GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_resourceBinder->m_Texture->m_ResourceHandle, l_resourceBinder->m_Texture->m_ReadState, l_resourceBinder->m_Texture->m_WriteState));
+
+					l_commandList->m_GraphicsCommandList->ClearUnorderedAccessViewFloat(
+						l_resourceBinder->m_TextureUAV.ShaderNonVisibleGPUHandle,
+						l_resourceBinder->m_TextureUAV.ShaderNonVisibleCPUHandle,
+						l_RT->m_ResourceHandle,
+						l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor,
+						0,
+						NULL);
+
+					l_commandList->m_GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_resourceBinder->m_Texture->m_ResourceHandle, l_resourceBinder->m_Texture->m_WriteState, l_resourceBinder->m_Texture->m_ReadState));
+				}
+			}
+		}
 
 		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
 		{
@@ -1413,7 +1485,7 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 				if (accessibility != Accessibility::ReadOnly)
 				{
 					l_commandList->m_GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_resourceBinder->m_Texture->m_ResourceHandle, l_resourceBinder->m_Texture->m_ReadState, l_resourceBinder->m_Texture->m_WriteState));
-					l_commandList->m_GraphicsCommandList->SetComputeRootDescriptorTable((unsigned int)globalSlot, l_resourceBinder->m_TextureUAV.GPUHandle);
+					l_commandList->m_GraphicsCommandList->SetComputeRootDescriptorTable((unsigned int)globalSlot, l_resourceBinder->m_TextureUAV.ShaderVisibleGPUHandle);
 				}
 				else
 				{
@@ -1460,7 +1532,7 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 				if (accessibility != Accessibility::ReadOnly)
 				{
 					l_commandList->m_GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_resourceBinder->m_Texture->m_ResourceHandle, l_resourceBinder->m_Texture->m_ReadState, l_resourceBinder->m_Texture->m_WriteState));
-					l_commandList->m_GraphicsCommandList->SetGraphicsRootDescriptorTable((unsigned int)globalSlot, l_resourceBinder->m_TextureUAV.GPUHandle);
+					l_commandList->m_GraphicsCommandList->SetGraphicsRootDescriptorTable((unsigned int)globalSlot, l_resourceBinder->m_TextureUAV.ShaderVisibleGPUHandle);
 				}
 				else
 				{
@@ -1900,15 +1972,20 @@ DX12UAV DX12RenderingServer::CreateUAV(TextureDataComponent * rhs)
 
 	l_result.UAVDesc = GetUAVDesc(l_rhs->m_textureDataDesc, l_rhs->m_DX12TextureDataDesc);
 
-	l_result.CPUHandle = m_currentCSUCPUHandle;
-	l_result.GPUHandle = m_currentCSUGPUHandle;
+	l_result.ShaderNonVisibleCPUHandle = m_currentShaderNonVisibleCSUCPUHandle;
+	l_result.ShaderNonVisibleGPUHandle = m_currentShaderNonVisibleCSUGPUHandle;
+	l_result.ShaderVisibleCPUHandle = m_currentCSUCPUHandle;
+	l_result.ShaderVisibleGPUHandle = m_currentCSUGPUHandle;
 
 	auto l_CSUDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	m_currentCSUCPUHandle.ptr += l_CSUDescSize;
 	m_currentCSUGPUHandle.ptr += l_CSUDescSize;
+	m_currentShaderNonVisibleCSUCPUHandle.ptr += l_CSUDescSize;
+	m_currentShaderNonVisibleCSUGPUHandle.ptr += l_CSUDescSize;
 
-	m_device->CreateUnorderedAccessView(l_rhs->m_ResourceHandle, 0, &l_result.UAVDesc, l_result.CPUHandle);
+	m_device->CreateUnorderedAccessView(l_rhs->m_ResourceHandle, 0, &l_result.UAVDesc, l_result.ShaderNonVisibleCPUHandle);
+	m_device->CreateUnorderedAccessView(l_rhs->m_ResourceHandle, 0, &l_result.UAVDesc, l_result.ShaderVisibleCPUHandle);
 
 	return l_result;
 }

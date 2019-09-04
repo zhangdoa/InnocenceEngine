@@ -1191,6 +1191,24 @@ bool DX11RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 				}
 			}
 		}
+		else
+		{
+			if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+			{
+				auto l_RT = reinterpret_cast<DX11TextureDataComponent*>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame]);
+
+				m_deviceContext->ClearUnorderedAccessViewFloat(l_RT->m_UAV, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
+			}
+			else
+			{
+				for (auto i : l_rhs->m_RenderTargets)
+				{
+					auto l_RT = reinterpret_cast<DX11TextureDataComponent*>(i);
+
+					m_deviceContext->ClearUnorderedAccessViewFloat(l_RT->m_UAV, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
+				}
+			}
+		}
 
 		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
 		{
