@@ -713,29 +713,32 @@ bool DX11Helper::CreateResourcesBinder(DX11RenderPassDataComponent * DX11RPDC)
 
 bool DX11Helper::CreateViews(DX11RenderPassDataComponent * DX11RPDC, ID3D11Device * device)
 {
-	// RTV
-	DX11RPDC->m_RTVs.reserve(DX11RPDC->m_RenderPassDesc.m_RenderTargetCount);
-	for (size_t i = 0; i < DX11RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	if (DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc.UsageType != TextureUsageType::RawImage)
 	{
-		DX11RPDC->m_RTVs.emplace_back();
-	}
-
-	DX11RPDC->m_RTVDesc = GetRTVDesc(DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc);
-
-	for (unsigned int i = 0; i < DX11RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
-	{
-		auto l_DX11TDC = reinterpret_cast<DX11TextureDataComponent*>(DX11RPDC->m_RenderTargets[i]);
-
-		auto l_HResult = device->CreateRenderTargetView(l_DX11TDC->m_ResourceHandle, &DX11RPDC->m_RTVDesc, &DX11RPDC->m_RTVs[i]);
-		if (FAILED(l_HResult))
+		// RTV
+		DX11RPDC->m_RTVs.reserve(DX11RPDC->m_RenderPassDesc.m_RenderTargetCount);
+		for (size_t i = 0; i < DX11RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create RTV for ", DX11RPDC->m_componentName.c_str(), "!");
-			return false;
+			DX11RPDC->m_RTVs.emplace_back();
 		}
+
+		DX11RPDC->m_RTVDesc = GetRTVDesc(DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc);
+
+		for (unsigned int i = 0; i < DX11RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+		{
+			auto l_DX11TDC = reinterpret_cast<DX11TextureDataComponent*>(DX11RPDC->m_RenderTargets[i]);
+
+			auto l_HResult = device->CreateRenderTargetView(l_DX11TDC->m_ResourceHandle, &DX11RPDC->m_RTVDesc, &DX11RPDC->m_RTVs[i]);
+			if (FAILED(l_HResult))
+			{
+				InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create RTV for ", DX11RPDC->m_componentName.c_str(), "!");
+				return false;
+			}
 #ifdef  _DEBUG
-		auto l_RTVName = "RTV_" + std::to_string(i);
-		SetObjectName(DX11RPDC, DX11RPDC->m_RTVs[i], l_RTVName.c_str());
+			auto l_RTVName = "RTV_" + std::to_string(i);
+			SetObjectName(DX11RPDC, DX11RPDC->m_RTVs[i], l_RTVName.c_str());
 #endif //  _DEBUG
+		}
 	}
 
 	// DSV

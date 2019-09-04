@@ -1279,17 +1279,20 @@ bool PrepareRenderTargets(DX12RenderPassDataComponent* renderPass, DX12CommandLi
 {
 	if (renderPass->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
 	{
-		if (renderPass->m_RenderPassDesc.m_UseMultiFrames)
+		if (renderPass->m_RenderPassDesc.m_RenderTargetDesc.UsageType != TextureUsageType::RawImage)
 		{
-			auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent*>(renderPass->m_RenderTargets[renderPass->m_CurrentFrame]);
-			commandList->m_GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_DX12TDC->m_ResourceHandle, l_DX12TDC->m_ReadState, l_DX12TDC->m_WriteState));
-		}
-		else
-		{
-			for (size_t i = 0; i < renderPass->m_RenderPassDesc.m_RenderTargetCount; i++)
+			if (renderPass->m_RenderPassDesc.m_UseMultiFrames)
 			{
-				auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent*>(renderPass->m_RenderTargets[i]);
+				auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent*>(renderPass->m_RenderTargets[renderPass->m_CurrentFrame]);
 				commandList->m_GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_DX12TDC->m_ResourceHandle, l_DX12TDC->m_ReadState, l_DX12TDC->m_WriteState));
+			}
+			else
+			{
+				for (size_t i = 0; i < renderPass->m_RenderPassDesc.m_RenderTargetCount; i++)
+				{
+					auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent*>(renderPass->m_RenderTargets[i]);
+					commandList->m_GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_DX12TDC->m_ResourceHandle, l_DX12TDC->m_ReadState, l_DX12TDC->m_WriteState));
+				}
 			}
 		}
 
@@ -1323,13 +1326,16 @@ bool PreparePipeline(DX12RenderPassDataComponent* renderPass, DX12CommandList* c
 			l_DSVDescriptorCPUHandle = &renderPass->m_DSVDescriptorCPUHandle;
 		}
 
-		if (renderPass->m_RenderPassDesc.m_UseMultiFrames)
+		if (renderPass->m_RenderPassDesc.m_RenderTargetDesc.UsageType != TextureUsageType::RawImage)
 		{
-			commandList->m_GraphicsCommandList->OMSetRenderTargets(1, &renderPass->m_RTVDescriptorCPUHandles[renderPass->m_CurrentFrame], FALSE, l_DSVDescriptorCPUHandle);
-		}
-		else
-		{
-			commandList->m_GraphicsCommandList->OMSetRenderTargets((unsigned int)renderPass->m_RenderPassDesc.m_RenderTargetCount, &renderPass->m_RTVDescriptorCPUHandles[0], FALSE, l_DSVDescriptorCPUHandle);
+			if (renderPass->m_RenderPassDesc.m_UseMultiFrames)
+			{
+				commandList->m_GraphicsCommandList->OMSetRenderTargets(1, &renderPass->m_RTVDescriptorCPUHandles[renderPass->m_CurrentFrame], FALSE, l_DSVDescriptorCPUHandle);
+			}
+			else
+			{
+				commandList->m_GraphicsCommandList->OMSetRenderTargets((unsigned int)renderPass->m_RenderPassDesc.m_RenderTargetCount, &renderPass->m_RTVDescriptorCPUHandles[0], FALSE, l_DSVDescriptorCPUHandle);
+			}
 		}
 
 		if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
@@ -1364,15 +1370,18 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 		auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
 		auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 
-		if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+		if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.UsageType != TextureUsageType::RawImage)
 		{
-			l_commandList->m_GraphicsCommandList->ClearRenderTargetView(l_rhs->m_RTVDescriptorCPUHandles[l_rhs->m_CurrentFrame], rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor, 0, nullptr);
-		}
-		else
-		{
-			for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+			if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 			{
-				l_commandList->m_GraphicsCommandList->ClearRenderTargetView(l_rhs->m_RTVDescriptorCPUHandles[i], rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor, 0, nullptr);
+				l_commandList->m_GraphicsCommandList->ClearRenderTargetView(l_rhs->m_RTVDescriptorCPUHandles[l_rhs->m_CurrentFrame], l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor, 0, nullptr);
+			}
+			else
+			{
+				for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+				{
+					l_commandList->m_GraphicsCommandList->ClearRenderTargetView(l_rhs->m_RTVDescriptorCPUHandles[i], l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor, 0, nullptr);
+				}
 			}
 		}
 
@@ -1514,14 +1523,11 @@ bool DX12RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * ren
 
 	if (l_resourceBinder)
 	{
-		if (shaderStage == ShaderStage::Compute)
+		if (l_resourceBinder->m_ResourceBinderType == ResourceBinderType::Image)
 		{
-			if (l_resourceBinder->m_ResourceBinderType == ResourceBinderType::Image)
+			if (accessibility != Accessibility::ReadOnly)
 			{
-				if (accessibility != Accessibility::ReadOnly)
-				{
-					l_commandList->m_GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_resourceBinder->m_Texture->m_ResourceHandle, l_resourceBinder->m_Texture->m_WriteState, l_resourceBinder->m_Texture->m_ReadState));
-				}
+				l_commandList->m_GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_resourceBinder->m_Texture->m_ResourceHandle, l_resourceBinder->m_Texture->m_WriteState, l_resourceBinder->m_Texture->m_ReadState));
 			}
 		}
 	}
@@ -1536,17 +1542,20 @@ bool DX12RenderingServer::CommandListEnd(RenderPassDataComponent * rhs)
 
 	if (l_rhs->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
 	{
-		if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+		if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.UsageType != TextureUsageType::RawImage)
 		{
-			auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent*>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame]);
-			l_commandList->m_GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_DX12TDC->m_ResourceHandle, l_DX12TDC->m_WriteState, l_DX12TDC->m_ReadState));
-		}
-		else
-		{
-			for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+			if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 			{
-				auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent*>(l_rhs->m_RenderTargets[i]);
+				auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent*>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame]);
 				l_commandList->m_GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_DX12TDC->m_ResourceHandle, l_DX12TDC->m_WriteState, l_DX12TDC->m_ReadState));
+			}
+			else
+			{
+				for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+				{
+					auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent*>(l_rhs->m_RenderTargets[i]);
+					l_commandList->m_GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_DX12TDC->m_ResourceHandle, l_DX12TDC->m_WriteState, l_DX12TDC->m_ReadState));
+				}
 			}
 		}
 

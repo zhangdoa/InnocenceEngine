@@ -811,52 +811,55 @@ bool DX12Helper::CreateResourcesBinder(DX12RenderPassDataComponent * DX12RPDC, I
 
 bool DX12Helper::CreateViews(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device)
 {
-	// Reserve for RTV
-	DX12RPDC->m_RTVDescriptorCPUHandles.reserve(DX12RPDC->m_RenderPassDesc.m_RenderTargetCount);
-	for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	if (DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc.UsageType != TextureUsageType::RawImage)
 	{
-		DX12RPDC->m_RTVDescriptorCPUHandles.emplace_back();
-	}
-
-	// RTV Descriptor Heap
-	DX12RPDC->m_RTVDescriptorHeapDesc.NumDescriptors = (unsigned int)DX12RPDC->m_RenderPassDesc.m_RenderTargetCount;
-	DX12RPDC->m_RTVDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	DX12RPDC->m_RTVDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-
-	if (DX12RPDC->m_RTVDescriptorHeapDesc.NumDescriptors)
-	{
-		auto l_HResult = device->CreateDescriptorHeap(&DX12RPDC->m_RTVDescriptorHeapDesc, IID_PPV_ARGS(&DX12RPDC->m_RTVDescriptorHeap));
-		if (FAILED(l_HResult))
+		// Reserve for RTV
+		DX12RPDC->m_RTVDescriptorCPUHandles.reserve(DX12RPDC->m_RenderPassDesc.m_RenderTargetCount);
+		for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 		{
-			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create DescriptorHeap for RTV!");
-			return false;
+			DX12RPDC->m_RTVDescriptorCPUHandles.emplace_back();
 		}
+
+		// RTV Descriptor Heap
+		DX12RPDC->m_RTVDescriptorHeapDesc.NumDescriptors = (unsigned int)DX12RPDC->m_RenderPassDesc.m_RenderTargetCount;
+		DX12RPDC->m_RTVDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+		DX12RPDC->m_RTVDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+		if (DX12RPDC->m_RTVDescriptorHeapDesc.NumDescriptors)
+		{
+			auto l_HResult = device->CreateDescriptorHeap(&DX12RPDC->m_RTVDescriptorHeapDesc, IID_PPV_ARGS(&DX12RPDC->m_RTVDescriptorHeap));
+			if (FAILED(l_HResult))
+			{
+				InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Can't create DescriptorHeap for RTV!");
+				return false;
+			}
 #ifdef _DEBUG
-		SetObjectName(DX12RPDC, DX12RPDC->m_RTVDescriptorHeap, "RTVDescriptorHeap");
+			SetObjectName(DX12RPDC, DX12RPDC->m_RTVDescriptorHeap, "RTVDescriptorHeap");
 #endif // _DEBUG
 
-		DX12RPDC->m_RTVDescriptorCPUHandles[0] = DX12RPDC->m_RTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+			DX12RPDC->m_RTVDescriptorCPUHandles[0] = DX12RPDC->m_RTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+		}
+
+		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " RTV DescriptorHeap has been created.");
+
+		// RTV
+		auto l_RTVDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+		DX12RPDC->m_RTVDesc = GetRTVDesc(DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc);
+
+		for (size_t i = 1; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+		{
+			DX12RPDC->m_RTVDescriptorCPUHandles[i].ptr = DX12RPDC->m_RTVDescriptorCPUHandles[i - 1].ptr + l_RTVDescSize;
+		}
+
+		for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+		{
+			auto l_ResourceHandle = reinterpret_cast<DX12TextureDataComponent*>(DX12RPDC->m_RenderTargets[i])->m_ResourceHandle;
+			device->CreateRenderTargetView(l_ResourceHandle, &DX12RPDC->m_RTVDesc, DX12RPDC->m_RTVDescriptorCPUHandles[i]);
+		}
+
+		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " RTV has been created.");
 	}
-
-	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " RTV DescriptorHeap has been created.");
-
-	// RTV
-	auto l_RTVDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-	DX12RPDC->m_RTVDesc = GetRTVDesc(DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc);
-
-	for (size_t i = 1; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
-	{
-		DX12RPDC->m_RTVDescriptorCPUHandles[i].ptr = DX12RPDC->m_RTVDescriptorCPUHandles[i - 1].ptr + l_RTVDescSize;
-	}
-
-	for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
-	{
-		auto l_ResourceHandle = reinterpret_cast<DX12TextureDataComponent*>(DX12RPDC->m_RenderTargets[i])->m_ResourceHandle;
-		device->CreateRenderTargetView(l_ResourceHandle, &DX12RPDC->m_RTVDesc, DX12RPDC->m_RTVDescriptorCPUHandles[i]);
-	}
-
-	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " RTV has been created.");
 
 	if (DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
 	{
@@ -1153,10 +1156,13 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* 
 			l_PSO->m_GraphicsPSODesc.PS = l_PSBytecode;
 		}
 
-		l_PSO->m_GraphicsPSODesc.NumRenderTargets = (unsigned int)DX12RPDC->m_RenderPassDesc.m_RenderTargetCount;
-		for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+		if (DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc.UsageType != TextureUsageType::RawImage)
 		{
-			l_PSO->m_GraphicsPSODesc.RTVFormats[i] = DX12RPDC->m_RTVDesc.Format;
+			l_PSO->m_GraphicsPSODesc.NumRenderTargets = (unsigned int)DX12RPDC->m_RenderPassDesc.m_RenderTargetCount;
+			for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+			{
+				l_PSO->m_GraphicsPSODesc.RTVFormats[i] = DX12RPDC->m_RTVDesc.Format;
+			}
 		}
 
 		l_PSO->m_GraphicsPSODesc.DSVFormat = DX12RPDC->m_DSVDesc.Format;

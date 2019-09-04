@@ -591,6 +591,7 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 		}
 
 		auto l_resourceBinder = addResourcesBinder();
+		l_resourceBinder->m_GPUAccessibility = l_rhs->m_textureDataDesc.GPUAccessibility;
 		l_resourceBinder->m_SRV = l_rhs->m_SRV;
 		l_resourceBinder->m_UAV = l_rhs->m_UAV;
 		l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
@@ -1146,13 +1147,16 @@ bool DX11RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * 
 		m_deviceContext->RSSetViewports(1, &l_PSO->m_Viewport);
 		m_deviceContext->RSSetState(l_PSO->m_RasterizerState);
 
-		if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+		if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.UsageType != TextureUsageType::RawImage)
 		{
-			m_deviceContext->OMSetRenderTargets(1, &l_rhs->m_RTVs[l_rhs->m_CurrentFrame], l_rhs->m_DSV);
-		}
-		else
-		{
-			m_deviceContext->OMSetRenderTargets((unsigned int)l_rhs->m_RTVs.size(), &l_rhs->m_RTVs[0], l_rhs->m_DSV);
+			if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+			{
+				m_deviceContext->OMSetRenderTargets(1, &l_rhs->m_RTVs[l_rhs->m_CurrentFrame], l_rhs->m_DSV);
+			}
+			else
+			{
+				m_deviceContext->OMSetRenderTargets((unsigned int)l_rhs->m_RenderPassDesc.m_RenderTargetCount, &l_rhs->m_RTVs[0], l_rhs->m_DSV);
+			}
 		}
 		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
 		{
@@ -1173,15 +1177,18 @@ bool DX11RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 
 	if (l_rhs->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
 	{
-		if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+		if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.UsageType != TextureUsageType::RawImage)
 		{
-			m_deviceContext->ClearRenderTargetView(l_rhs->m_RTVs[l_rhs->m_CurrentFrame], l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
-		}
-		else
-		{
-			for (auto i : l_rhs->m_RTVs)
+			if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 			{
-				m_deviceContext->ClearRenderTargetView(i, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
+				m_deviceContext->ClearRenderTargetView(l_rhs->m_RTVs[l_rhs->m_CurrentFrame], l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
+			}
+			else
+			{
+				for (auto i : l_rhs->m_RTVs)
+				{
+					m_deviceContext->ClearRenderTargetView(i, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
+				}
 			}
 		}
 
@@ -1340,7 +1347,26 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 		case ResourceBinderType::Image:
 			if (accessibility != Accessibility::ReadOnly)
 			{
-				BindUAV(shaderStage, (unsigned int)(localSlot), l_resourceBinder->m_UAV);
+				if (shaderStage == ShaderStage::Compute)
+				{
+					BindUAV(shaderStage, (unsigned int)(localSlot), l_resourceBinder->m_UAV);
+				}
+				else
+				{
+					auto l_renderPass = reinterpret_cast<DX11RenderPassDataComponent*>(renderPass);
+					auto l_UAV = l_resourceBinder->m_UAV;
+					const unsigned int l_initialCounts = -1;
+
+					if (l_renderPass->m_RenderPassDesc.m_UseMultiFrames)
+					{
+						m_deviceContext->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, l_renderPass->m_DSV, 0, 1, &l_UAV, &l_initialCounts);
+					}
+					else
+					{
+						auto l_RTCount = (unsigned int)l_renderPass->m_RenderPassDesc.m_RenderTargetCount;
+						m_deviceContext->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, l_renderPass->m_DSV, 0, l_RTCount, &l_UAV, &l_initialCounts);
+					}
+				}
 			}
 			else
 			{
@@ -1397,7 +1423,14 @@ bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * ren
 		case ResourceBinderType::Image:
 			if (accessibility != Accessibility::ReadOnly)
 			{
-				BindUAV(shaderStage, (unsigned int)(localSlot), 0);
+				if (shaderStage == ShaderStage::Compute)
+				{
+					BindUAV(shaderStage, (unsigned int)(localSlot), 0);
+				}
+				else
+				{
+					m_deviceContext->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, NULL, 0, 0, NULL, NULL);
+				}
 			}
 			else
 			{
@@ -1478,7 +1511,10 @@ bool DX11RenderingServer::CommandListEnd(RenderPassDataComponent * rhs)
 		m_deviceContext->IASetInputLayout(NULL);
 		m_deviceContext->RSSetState(NULL);
 
-		m_deviceContext->OMSetRenderTargets(0, NULL, NULL);
+		if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.UsageType != TextureUsageType::RawImage)
+		{
+			m_deviceContext->OMSetRenderTargets(0, NULL, NULL);
+		}
 
 		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
 		{
