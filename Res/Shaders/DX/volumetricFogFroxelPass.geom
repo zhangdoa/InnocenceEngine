@@ -91,7 +91,7 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 	[unroll(3)]
 	for (int i = 0; i < 3; ++i)
 	{
-		output.posCS = pos[i];
+		output.posCS = input[i].posCS;
 		// expanded aabb for triangle
 		//output.AABB = AABB(pos, halfPixel);
 

@@ -44,8 +44,8 @@ bool VolumetricFogPass::Setup()
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 
 	l_RenderPassDesc.m_RenderTargetDesc.SamplerType = TextureSamplerType::Sampler3D;
-	//l_RenderPassDesc.m_RenderTargetDesc.UsageType = TextureUsageType::RawImage;
-	//l_RenderPassDesc.m_RenderTargetDesc.GPUAccessibility = Accessibility::ReadWrite;
+	l_RenderPassDesc.m_RenderTargetDesc.UsageType = TextureUsageType::RawImage;
+	l_RenderPassDesc.m_RenderTargetDesc.GPUAccessibility = Accessibility::ReadWrite;
 	l_RenderPassDesc.m_RenderTargetDesc.Width = 160;
 	l_RenderPassDesc.m_RenderTargetDesc.Height = 90;
 	l_RenderPassDesc.m_RenderTargetDesc.DepthOrArraySize = 64;
@@ -54,7 +54,7 @@ bool VolumetricFogPass::Setup()
 
 	m_froxelRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_froxelRPDC->m_ResourceBinderLayoutDescs.resize(4);
+	m_froxelRPDC->m_ResourceBinderLayoutDescs.resize(5);
 	m_froxelRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_froxelRPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
 	m_froxelRPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 0;
@@ -71,12 +71,12 @@ bool VolumetricFogPass::Setup()
 	m_froxelRPDC->m_ResourceBinderLayoutDescs[3].m_GlobalSlot = 3;
 	m_froxelRPDC->m_ResourceBinderLayoutDescs[3].m_LocalSlot = 3;
 
-	//m_froxelRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Image;
-	//m_froxelRPDC->m_ResourceBinderLayoutDescs[4].m_BinderAccessibility = Accessibility::ReadWrite;
-	//m_froxelRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
-	//m_froxelRPDC->m_ResourceBinderLayoutDescs[4].m_GlobalSlot = 4;
-	//m_froxelRPDC->m_ResourceBinderLayoutDescs[4].m_LocalSlot = 0;
-	//m_froxelRPDC->m_ResourceBinderLayoutDescs[4].m_IsRanged = true;
+	m_froxelRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Image;
+	m_froxelRPDC->m_ResourceBinderLayoutDescs[4].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_froxelRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_froxelRPDC->m_ResourceBinderLayoutDescs[4].m_GlobalSlot = 4;
+	m_froxelRPDC->m_ResourceBinderLayoutDescs[4].m_LocalSlot = 0;
+	m_froxelRPDC->m_ResourceBinderLayoutDescs[4].m_IsRanged = true;
 
 	m_froxelRPDC->m_ShaderProgram = m_froxelSPC;
 
@@ -162,7 +162,7 @@ bool VolumetricFogPass::generateFroxel()
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelRPDC, ShaderStage::Vertex, l_MainCameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelRPDC, ShaderStage::Pixel, l_SunGBDC->m_ResourceBinder, 3, 3, Accessibility::ReadOnly);
-	//g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelRPDC, ShaderStage::Pixel, m_froxelRPDC->m_RenderTargetsResourceBinders[0], 4, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelRPDC, ShaderStage::Pixel, m_froxelRPDC->m_RenderTargetsResourceBinders[0], 4, 0, Accessibility::ReadWrite);
 
 	//g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelRPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_drawCallData.meshGPUDataIndex, 1);
 	//g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelRPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_drawCallData.materialGPUDataIndex, 1);
@@ -190,7 +190,7 @@ bool VolumetricFogPass::generateFroxel()
 		l_offset++;
 	}
 
-	//g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_froxelRPDC, ShaderStage::Pixel, m_froxelRPDC->m_RenderTargetsResourceBinders[0], 4, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_froxelRPDC, ShaderStage::Pixel, m_froxelRPDC->m_RenderTargetsResourceBinders[0], 4, 0, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_froxelRPDC);
 
@@ -203,10 +203,10 @@ bool VolumetricFogPass::rayMarching()
 
 	auto l_numThreadsX = 1280;
 	auto l_numThreadsY = 720;
-	auto l_numThreadsZ = 64;
+	auto l_numThreadsZ = 1;
 
 	DispatchParamsGPUData l_rayMarchingWorkload;
-	l_rayMarchingWorkload.numThreadGroups = TVec4<unsigned int>(160, 90, 8, 0);
+	l_rayMarchingWorkload.numThreadGroups = TVec4<unsigned int>(160, 90, 1, 0);
 	l_rayMarchingWorkload.numThreads = TVec4<unsigned int>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_dispatchParamsGBDC, &l_rayMarchingWorkload, 6, 1);
@@ -220,7 +220,7 @@ bool VolumetricFogPass::rayMarching()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_froxelRPDC->m_RenderTargetsResourceBinders[0], 3, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_rayMarchingResult->m_ResourceBinder, 4, 0, Accessibility::ReadWrite);
 
-	g_pModuleManager->getRenderingServer()->DispatchCompute(m_rayMarchingRPDC, 160, 90, 8);
+	g_pModuleManager->getRenderingServer()->DispatchCompute(m_rayMarchingRPDC, 160, 90, 1);
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_froxelRPDC->m_RenderTargetsResourceBinders[0], 3, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_rayMarchingResult->m_ResourceBinder, 4, 0, Accessibility::ReadWrite);
