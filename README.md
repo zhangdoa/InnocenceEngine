@@ -22,7 +22,7 @@ auto l_testEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Ru
 // the "C"
 auto l_testTransformComponent = SpawnComponent(TransformComponent, l_testEntity, ObjectSource::Runtime, ObjectUsage::Gameplay);
 
-l_testTransformComponent->m_localTransformVector.m_pos = vec4(42.0f, 1.0f, PI<float>, 1.0f);
+l_testTransformComponent->m_localTransformVector.m_pos = Vec4(42.0f, 1.0f, PI<float>, 1.0f);
 
 // the engine provided "S" will take care of other businesses
 ```
@@ -45,8 +45,8 @@ for (size_t i = 0; i < l_testString.size(); i++)
 l_testThreadSafeArray.reserve();
 l_testThreadSafeArray.emplace_back(l_testRingBuffer[42]);
 
-auto l_maxPoint = vec4(l_testThreadSafeArray[0], l_testRingBuffer[1], l_testRingBuffer[16], 1.0f);
-auto l_minPoint = vec4(42.0f, l_testThreadSafeArray[0], -l_testRingBuffer[16], 1.0f);
+auto l_maxPoint = Vec4(l_testThreadSafeArray[0], l_testRingBuffer[1], l_testRingBuffer[16], 1.0f);
+auto l_minPoint = Vec4(42.0f, l_testThreadSafeArray[0], -l_testRingBuffer[16], 1.0f);
 
 auto l_testAABB = InnoMath::generateAABB(l_maxPoint, l_minPoint);
 ```
@@ -69,13 +69,13 @@ auto f_JobB = [=](int val)
 auto l_testTaskA = g_pModuleManager->getTaskSystem()->submit("ANonSenseTask", 5, nullptr, f_JobA);
 
 // Job B will be executed with a parameter just after Job A finished
-auto l_testTaskB = g_pModuleManager->getTaskSystem()->submit("NotANonSenseTask", 2, f_JobA, f_JobB, std::numeric_limits<int>::max());
+auto l_testTaskB = g_pModuleManager->getTaskSystem()->submit("NotANonSenseTask", 2, l_testTaskA, f_JobB, std::numeric_limits<int>::max());
 
 // Blocking-wait on the caller thread
 l_testTaskB->Wait();
 ```
 
-- Object pool memory model, O(n) allocation/deallocation.
+- Object pool memory model, O(1) allocation/deallocation.
 
 ```cpp
 struct POD
@@ -86,7 +86,7 @@ struct POD
 }
 
 auto l_objectPoolInstance =  g_pModuleManager->getMemorySystem()->createObjectPool(sizeof(POD), 65536);
-auto l_PODInstance = l_objectPoolInstance->Spawn();
+auto l_PODInstance = reinterpret_cast<POD*>(l_objectPoolInstance->Spawn());
 l_PODInstance->m_Float = 42.0f;
 l_objectPoolInstance->Destroy(l_PODInstance);
 ```
@@ -161,6 +161,7 @@ Run following scripts will build Debug and Release configurations in parallel:
 ```powershell
 BuildAssimpWin-VS15.ps1
 BuildPhysXWin-VS15.ps1
+BuildGLADWin-VS15.ps1
 BuildEngineWin-VS15.ps1
 PostBuildWin.ps1
 ```
@@ -189,7 +190,8 @@ Run following scripts:
 ``` shell
 echo | SetupLinux.sh
 echo | BuildAssimpLinux.sh
-echo | BuildLinux.sh # or BuildLinux-Clang.sh or BuildLinux-CodeBlocks.sh
+echo | BuildGLADLinux.sh
+echo | BuildEngineLinux.sh # or BuildLinux-Clang.sh or BuildLinux-CodeBlocks.sh
 echo | PostBuildLinux.sh
 ```
 
@@ -209,7 +211,8 @@ Run following scripts:
 ``` shell
 echo | SetupMac.sh
 echo | BuildAssimpMac-Xcode.sh
-echo | BuildMac.sh
+echo | BuildGLADMac-Xcode.sh
+echo | BuildEngineMac.sh
 echo | PostBuildMac.sh
 ```
 
