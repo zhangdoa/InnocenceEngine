@@ -572,6 +572,7 @@ D3D11_RENDER_TARGET_VIEW_DESC DX11Helper::GetRTVDesc(TextureDataDesc textureData
 		l_result.Format = GetTextureFormat(textureDataDesc);
 		l_result.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE3D;
 		l_result.Texture3D.MipSlice = 0;
+		l_result.Texture3D.WSize = textureDataDesc.DepthOrArraySize;
 		break;
 	case TextureSamplerType::Sampler1DArray:
 		l_result.Format = GetTextureFormat(textureDataDesc);
