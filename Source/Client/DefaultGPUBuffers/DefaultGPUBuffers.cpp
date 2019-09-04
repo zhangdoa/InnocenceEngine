@@ -11,6 +11,8 @@ namespace DefaultGPUBuffers
 	GPUBufferDataComponent* m_OpaquePassMaterialGBDC;
 	GPUBufferDataComponent* m_TransparentPassMeshGBDC;
 	GPUBufferDataComponent* m_TransparentPassMaterialGBDC;
+	GPUBufferDataComponent* m_VolumetricFogPassMeshGBDC;
+	GPUBufferDataComponent* m_VolumetricFogPassMaterialGBDC;
 	GPUBufferDataComponent* m_SunGBDC;
 	GPUBufferDataComponent* m_PointLightGBDC;
 	GPUBufferDataComponent* m_SphereLightGBDC;
@@ -54,7 +56,7 @@ bool DefaultGPUBuffers::Initialize()
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_OpaquePassMeshGBDC);
 
-	m_OpaquePassMaterialGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("MaterialGPUBuffer/");
+	m_OpaquePassMaterialGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("OpaquePassMaterialGPUBuffer/");
 	m_OpaquePassMaterialGBDC->m_ElementCount = l_RenderingCapability.maxMaterials;
 	m_OpaquePassMaterialGBDC->m_ElementSize = sizeof(MaterialGPUData);
 	m_OpaquePassMaterialGBDC->m_BindingPoint = 2;
@@ -68,12 +70,26 @@ bool DefaultGPUBuffers::Initialize()
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_TransparentPassMeshGBDC);
 
-	m_TransparentPassMaterialGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("MaterialGPUBuffer/");
+	m_TransparentPassMaterialGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("TransparentPassMaterialGPUBuffer/");
 	m_TransparentPassMaterialGBDC->m_ElementCount = l_RenderingCapability.maxMaterials;
 	m_TransparentPassMaterialGBDC->m_ElementSize = sizeof(MaterialGPUData);
 	m_TransparentPassMaterialGBDC->m_BindingPoint = 2;
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_TransparentPassMaterialGBDC);
+
+	m_VolumetricFogPassMeshGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("VolumetricFogPassMeshGPUBuffer/");
+	m_VolumetricFogPassMeshGBDC->m_ElementCount = 512;
+	m_VolumetricFogPassMeshGBDC->m_ElementSize = sizeof(MeshGPUData);
+	m_VolumetricFogPassMeshGBDC->m_BindingPoint = 1;
+
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_VolumetricFogPassMeshGBDC);
+
+	m_VolumetricFogPassMaterialGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("VolumetricFogPassMaterialGPUBuffer/");
+	m_VolumetricFogPassMaterialGBDC->m_ElementCount = 512;
+	m_VolumetricFogPassMaterialGBDC->m_ElementSize = sizeof(MaterialGPUData);
+	m_VolumetricFogPassMaterialGBDC->m_BindingPoint = 2;
+
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_VolumetricFogPassMaterialGBDC);
 
 	m_SunGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("SunGPUBuffer/");
 	m_SunGBDC->m_ElementCount = 1;
@@ -240,6 +256,10 @@ GPUBufferDataComponent * DefaultGPUBuffers::GetGPUBufferDataComponent(GPUBufferU
 	case GPUBufferUsageType::TransparentPassMesh: l_result = m_TransparentPassMeshGBDC;
 		break;
 	case GPUBufferUsageType::TransparentPassMaterial: l_result = m_TransparentPassMaterialGBDC;
+		break;
+	case GPUBufferUsageType::VolumetricFogPassMesh: l_result = m_VolumetricFogPassMeshGBDC;
+		break;
+	case GPUBufferUsageType::VolumetricFogPassMaterial: l_result = m_VolumetricFogPassMaterialGBDC;
 		break;
 	case GPUBufferUsageType::Sun: l_result = m_SunGBDC;
 		break;

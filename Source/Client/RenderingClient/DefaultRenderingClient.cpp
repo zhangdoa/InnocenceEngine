@@ -12,6 +12,7 @@
 #include "SkyPass.h"
 #include "PreTAAPass.h"
 #include "TransparentPass.h"
+#include "VolumetricFogPass.h"
 #include "TAAPass.h"
 #include "PostTAAPass.h"
 #include "MotionBlurPass.h"
@@ -65,6 +66,7 @@ bool DefaultRenderingClient::Setup()
 		SkyPass::Setup();
 		PreTAAPass::Setup();
 		TransparentPass::Setup();
+		//VolumetricFogPass::Setup();
 		TAAPass::Setup();
 		PostTAAPass::Setup();
 		MotionBlurPass::Setup();
@@ -91,6 +93,7 @@ bool DefaultRenderingClient::Setup()
 		SkyPass::Initialize();
 		PreTAAPass::Initialize();
 		TransparentPass::Initialize();
+		//VolumetricFogPass::Initialize();
 		TAAPass::Initialize();
 		PostTAAPass::Initialize();
 		MotionBlurPass::Initialize();
@@ -122,6 +125,7 @@ bool DefaultRenderingClient::Setup()
 
 		PreTAAPass::PrepareCommandList();
 		TransparentPass::PrepareCommandList();
+		//VolumetricFogPass::PrepareCommandList();
 
 		l_canvas = TransparentPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
 
@@ -176,6 +180,7 @@ bool DefaultRenderingClient::Setup()
 
 		PreTAAPass::ExecuteCommandList();
 		TransparentPass::ExecuteCommandList();
+		//VolumetricFogPass::ExecuteCommandList();
 
 		if (l_renderingConfig.useTAA)
 		{
@@ -219,6 +224,7 @@ bool DefaultRenderingClient::Setup()
 		SkyPass::Terminate();
 		PreTAAPass::Terminate();
 		TransparentPass::Terminate();
+		//VolumetricFogPass::Terminate();
 		TAAPass::Terminate();
 		PostTAAPass::Terminate();
 		MotionBlurPass::Terminate();

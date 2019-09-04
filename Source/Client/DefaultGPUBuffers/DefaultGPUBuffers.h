@@ -11,6 +11,8 @@ namespace DefaultGPUBuffers
 		OpaquePassMaterial,
 		TransparentPassMesh,
 		TransparentPassMaterial,
+		VolumetricFogPassMesh,
+		VolumetricFogPassMaterial,
 		Sun,
 		PointLight,
 		SphereLight,
