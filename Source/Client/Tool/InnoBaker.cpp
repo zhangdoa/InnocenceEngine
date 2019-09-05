@@ -1422,7 +1422,12 @@ bool InnoBakerRenderingClient::Initialize()
 	return true;
 }
 
-bool InnoBakerRenderingClient::Render()
+bool InnoBakerRenderingClient::PrepareCommandList()
+{
+	return true;
+}
+
+bool InnoBakerRenderingClient::ExecuteCommandList()
 {
 	return true;
 }

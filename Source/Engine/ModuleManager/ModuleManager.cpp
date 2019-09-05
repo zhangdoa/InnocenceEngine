@@ -147,10 +147,10 @@ namespace InnoModuleManagerNS
 	std::atomic<bool> m_isRendering = false;
 	std::atomic<bool> m_allowRender = false;
 
-	std::function<void()> f_LogicClientUpdateTask;
-	std::function<void()> f_PhysicsSystemUpdateBVHTask;
-	std::function<void()> f_PhysicsSystemCullingTask;
-	std::function<void()> f_RenderingFrontendUpdateTask;
+	std::function<void()> f_LogicClientUpdateJob;
+	std::function<void()> f_PhysicsSystemUpdateBVHJob;
+	std::function<void()> f_PhysicsSystemCullingJob;
+	std::function<void()> f_RenderingFrontendUpdateJob;
 
 	float m_tickTime = 0;
 }
@@ -492,10 +492,10 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 		return false;
 	}
 
-	f_LogicClientUpdateTask = [&]() {m_LogicClient->update(); };
-	f_PhysicsSystemUpdateBVHTask = [&]() {m_PhysicsSystem->updateBVH(); };
-	f_PhysicsSystemCullingTask = [&]() {m_PhysicsSystem->updateCulling(); };
-	f_RenderingFrontendUpdateTask = [&]() {m_RenderingFrontend->update(); };
+	f_LogicClientUpdateJob = [&]() {m_LogicClient->update(); };
+	f_PhysicsSystemUpdateBVHJob = [&]() {m_PhysicsSystem->updateBVH(); };
+	f_PhysicsSystemCullingJob = [&]() {m_PhysicsSystem->updateCulling(); };
+	f_RenderingFrontendUpdateJob = [&]() {m_RenderingFrontend->update(); };
 
 	m_objectStatus = ObjectStatus::Created;
 	InnoLogger::Log(LogLevel::Success, "Engine setup finished.");
@@ -548,9 +548,9 @@ bool InnoModuleManagerNS::initialize()
 		return false;
 	}
 
-	f_LogicClientUpdateTask();
-	f_PhysicsSystemCullingTask();
-	f_RenderingFrontendUpdateTask();
+	f_LogicClientUpdateJob();
+	f_PhysicsSystemCullingJob();
+	f_RenderingFrontendUpdateJob();
 
 	m_objectStatus = ObjectStatus::Activated;
 	InnoLogger::Log(LogLevel::Success, "Engine has been initialized.");
@@ -561,7 +561,7 @@ bool InnoModuleManagerNS::update()
 {
 	while (1)
 	{
-		auto l_LogicClientUpdateTask = g_pModuleManager->getTaskSystem()->submit("LogicClientUpdateTask", 0, nullptr, f_LogicClientUpdateTask);
+		auto l_LogicClientUpdateTask = g_pModuleManager->getTaskSystem()->submit("LogicClientUpdateTask", 0, nullptr, f_LogicClientUpdateJob);
 
 		subSystemUpdate(TimeSystem);
 		subSystemUpdate(LogSystem);
@@ -583,11 +583,11 @@ bool InnoModuleManagerNS::update()
 
 		subSystemUpdate(AssetSystem);
 
-		f_PhysicsSystemUpdateBVHTask();
+		f_PhysicsSystemUpdateBVHJob();
 
 		subSystemUpdate(PhysicsSystem);
 
-		auto l_PhysicsSystemCullingTask = g_pModuleManager->getTaskSystem()->submit("PhysicsSystemCullingTask", 1, l_LogicClientUpdateTask, f_PhysicsSystemCullingTask);
+		auto l_PhysicsSystemCullingTask = g_pModuleManager->getTaskSystem()->submit("PhysicsSystemCullingTask", 1, l_LogicClientUpdateTask, f_PhysicsSystemCullingJob);
 
 		subSystemUpdate(EventSystem);
 
@@ -597,7 +597,7 @@ bool InnoModuleManagerNS::update()
 			{
 				m_WindowSystem->update();
 
-				auto l_RenderingFrontendUpdateTask = g_pModuleManager->getTaskSystem()->submit("RenderingFrontendUpdateTask", 1, l_PhysicsSystemCullingTask, f_RenderingFrontendUpdateTask);
+				auto l_RenderingFrontendUpdateTask = g_pModuleManager->getTaskSystem()->submit("RenderingFrontendUpdateTask", 1, l_PhysicsSystemCullingTask, f_RenderingFrontendUpdateJob);
 
 				m_GUISystem->update();
 
@@ -607,7 +607,9 @@ bool InnoModuleManagerNS::update()
 
 					m_RenderingFrontend->transferDataToGPU();
 
-					m_RenderingClient->Render();
+					m_RenderingClient->PrepareCommandList();
+
+					m_RenderingClient->ExecuteCommandList();
 
 					m_GUISystem->render();
 

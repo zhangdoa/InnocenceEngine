@@ -9,6 +9,7 @@ public:
 
 	virtual bool Setup() = 0;
 	virtual bool Initialize() = 0;
-	virtual bool Render() = 0;
+	virtual bool PrepareCommandList() = 0;
+	virtual bool ExecuteCommandList() = 0;
 	virtual bool Terminate() = 0;
 };

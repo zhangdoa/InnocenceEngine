@@ -31,13 +31,15 @@ namespace DefaultRenderingClientNS
 	std::function<void()> f_showLightHeatmap;
 	std::function<void()> f_showProbe;
 
-	std::function<void()> f_SetupTask;
-	std::function<void()> f_InitializeTask;
-	std::function<void()> f_RenderTask;
-	std::function<void()> f_TerminateTask;
+	std::function<void()> f_SetupJob;
+	std::function<void()> f_InitializeJob;
+	std::function<void()> f_PrepareCommandListJob;
+	std::function<void()> f_ExecuteCommandListJob;
+	std::function<void()> f_TerminateJob;
 
 	bool m_showProbe = false;
 	bool m_showLightHeatmap = false;
+	static bool l_drawBRDFTest = false;
 }
 
 using namespace DefaultRenderingClientNS;
@@ -50,7 +52,7 @@ bool DefaultRenderingClient::Setup()
 	f_showLightHeatmap = [&]() { m_showLightHeatmap = !m_showLightHeatmap; };
 	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonState{ INNO_KEY_T, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showLightHeatmap });
 
-	f_SetupTask = [&]()
+	f_SetupJob = [&]()
 	{
 		DefaultGPUBuffers::Setup();
 		GIDataLoader::Setup();
@@ -77,7 +79,7 @@ bool DefaultRenderingClient::Setup()
 		BSDFTestPass::Setup();
 	};
 
-	f_InitializeTask = [&]()
+	f_InitializeJob = [&]()
 	{
 		DefaultGPUBuffers::Initialize();
 		LightCullingPass::Initialize();
@@ -104,7 +106,7 @@ bool DefaultRenderingClient::Setup()
 		BSDFTestPass::Initialize();
 	};
 
-	f_RenderTask = [&]()
+	f_PrepareCommandListJob = [&]()
 	{
 		auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
 		IResourceBinder* l_canvas;
@@ -142,7 +144,6 @@ bool DefaultRenderingClient::Setup()
 			l_canvas = MotionBlurPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
 		}
 
-		static bool l_drawBRDFTest = false;
 		if (l_drawBRDFTest)
 		{
 			BSDFTestPass::PrepareCommandList();
@@ -164,6 +165,11 @@ bool DefaultRenderingClient::Setup()
 		DebugPass::PrepareCommandList();
 
 		FinalBlendPass::PrepareCommandList(l_canvas);
+	};
+
+	f_ExecuteCommandListJob = [&]()
+	{
+		auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
 
 		LightCullingPass::ExecuteCommandList();
 		GIResolvePass::ExecuteCommandList();
@@ -209,7 +215,7 @@ bool DefaultRenderingClient::Setup()
 		FinalBlendPass::ExecuteCommandList();
 	};
 
-	f_TerminateTask = [&]()
+	f_TerminateJob = [&]()
 	{
 		DefaultGPUBuffers::Terminate();
 		LightCullingPass::Terminate();
@@ -235,7 +241,7 @@ bool DefaultRenderingClient::Setup()
 		BSDFTestPass::Terminate();
 	};
 
-	auto l_DefaultRenderingClientSetupTask = g_pModuleManager->getTaskSystem()->submit("DefaultRenderingClientSetupTask", 2, nullptr, f_SetupTask);
+	auto l_DefaultRenderingClientSetupTask = g_pModuleManager->getTaskSystem()->submit("DefaultRenderingClientSetupTask", 2, nullptr, f_SetupJob);
 	l_DefaultRenderingClientSetupTask->Wait();
 
 	return true;
@@ -243,22 +249,29 @@ bool DefaultRenderingClient::Setup()
 
 bool DefaultRenderingClient::Initialize()
 {
-	auto l_DefaultRenderingClientInitializeTask = g_pModuleManager->getTaskSystem()->submit("DefaultRenderingClientSetupTask", 2, nullptr, f_InitializeTask);
+	auto l_DefaultRenderingClientInitializeTask = g_pModuleManager->getTaskSystem()->submit("DefaultRenderingClientInitializeTask", 2, nullptr, f_InitializeJob);
 	l_DefaultRenderingClientInitializeTask->Wait();
 
 	return true;
 }
 
-bool DefaultRenderingClient::Render()
+bool DefaultRenderingClient::PrepareCommandList()
 {
-	f_RenderTask();
+	f_PrepareCommandListJob();
+
+	return true;
+}
+
+bool DefaultRenderingClient::ExecuteCommandList()
+{
+	f_ExecuteCommandListJob();
 
 	return true;
 }
 
 bool DefaultRenderingClient::Terminate()
 {
-	f_TerminateTask();
+	f_TerminateJob();
 
 	return true;
 }

@@ -15,6 +15,7 @@ class InnoBakerRenderingClient : public IRenderingClient
 	// Inherited via IRenderingClient
 	virtual bool Setup() override;
 	virtual bool Initialize() override;
-	virtual bool Render() override;
+	virtual bool PrepareCommandList() override;
+	virtual bool ExecuteCommandList() override;
 	virtual bool Terminate() override;
 };
