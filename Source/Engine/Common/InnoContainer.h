@@ -962,6 +962,22 @@ namespace InnoContainer
 			}
 		}
 
+		template<typename U = void>
+		EnableType<U, ThreadSafe> Reserve(size_t elementCount)
+		{
+			std::unique_lock<std::shared_mutex> lock{ m_Mutex };
+
+			m_A.reserve(elementCount);
+			m_B.reserve(elementCount);
+		}
+
+		template<typename U = void>
+		DisableType<U, ThreadSafe> Reserve(size_t elementCount)
+		{
+			m_A.reserve(elementCount);
+			m_B.reserve(elementCount);
+		}
+
 	private:
 		std::atomic<bool> m_IsAReady = true;
 		mutable std::shared_mutex m_Mutex;
