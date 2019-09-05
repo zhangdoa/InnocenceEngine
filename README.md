@@ -218,35 +218,9 @@ echo | PostBuildMac.sh
 
 ## How to use?
 
-### Windows
-
-#### Launch game
-
-Run following script:
-
-``` powershell
-StartEngineWin.ps1
-```
-
-#### Launch editor
-
-Launch through Qt Creator
-
-### Linux
-
-Run following script:
-
-``` shell
-echo | StartEngineLinux.sh
-```
-
-### macOS
-
-Run following script:
-
-``` shell
-echo | StartEngineMac.sh
-```
+1. Implement `ILogicClient` and  `IRenderingClient` classes and put the implementation source file inside `Source/Client/LogicClient` and `Source/Client/RenderingClient`
+2. Change the CMake variable `INNO_LOGIC_CLIENT` and  `INNO_RENDERING_CLIENT` in `Source\CMakeLists.txt` to your client modules class name
+3. Build engine and launch through `Bin/${BuildConfig}/InnoEditor.exe` or `Bin/${BuildConfig}/InnoMain.exe` on Windows, or corresponding executable file on Linux and macOS
 
 ## How to debug
 
