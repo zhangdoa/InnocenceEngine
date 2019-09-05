@@ -581,6 +581,49 @@ AddComponent(VK, GPUBufferData);
 
 bool VKRenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<VKMeshDataComponent*>(rhs);
+	VkDeviceSize l_bufferSize = sizeof(Vertex) * l_rhs->m_vertices.size();
+
+	VkBuffer l_stagingBuffer;
+	VkDeviceMemory l_stagingBufferMemory;
+	createBuffer(m_physicalDevice, m_device, l_bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, l_stagingBuffer, l_stagingBufferMemory);
+
+	void* l_mappedVerticesMemory;
+	vkMapMemory(m_device, l_stagingBufferMemory, 0, l_bufferSize, 0, &l_mappedVerticesMemory);
+	std::memcpy(l_mappedVerticesMemory, &l_rhs->m_vertices[0], (size_t)l_bufferSize);
+	vkUnmapMemory(m_device, l_stagingBufferMemory);
+
+	createBuffer(m_physicalDevice, m_device, l_bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, l_rhs->m_VBO, m_vertexBufferMemory);
+
+	copyBuffer(m_device, m_commandPool, m_graphicsQueue, l_stagingBuffer, l_rhs->m_VBO, l_bufferSize);
+
+	vkDestroyBuffer(m_device, l_stagingBuffer, nullptr);
+	vkFreeMemory(m_device, l_stagingBufferMemory, nullptr);
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "VKRenderingServer: VBO ", l_rhs->m_VBO, " is initialized.");
+
+	l_bufferSize = sizeof(Index) * l_rhs->m_indices.size();
+
+	createBuffer(m_physicalDevice, m_device, l_bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, l_stagingBuffer, l_stagingBufferMemory);
+
+	void* l_mappedIndicesMemory;
+	vkMapMemory(m_device, l_stagingBufferMemory, 0, l_bufferSize, 0, &l_mappedIndicesMemory);
+	std::memcpy(l_mappedIndicesMemory, &l_rhs->m_indices[0], (size_t)l_bufferSize);
+	vkUnmapMemory(m_device, l_stagingBufferMemory);
+
+	createBuffer(m_physicalDevice, m_device, l_bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, l_rhs->m_IBO, m_indexBufferMemory);
+
+	copyBuffer(m_device, m_commandPool, m_graphicsQueue, l_stagingBuffer, l_rhs->m_IBO, l_bufferSize);
+
+	vkDestroyBuffer(m_device, l_stagingBuffer, nullptr);
+	vkFreeMemory(m_device, l_stagingBufferMemory, nullptr);
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "VKRenderingServer: IBO ", l_rhs->m_IBO, " is initialized.");
+
+	l_rhs->m_objectStatus = ObjectStatus::Activated;
+
+	m_initializedMeshes.emplace(l_rhs);
+
 	return true;
 }
 
