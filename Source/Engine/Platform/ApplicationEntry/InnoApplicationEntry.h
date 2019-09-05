@@ -1,7 +1,7 @@
 #pragma once
-#include "../Common/InnoType.h"
+#include "../../Common/InnoType.h"
 
-namespace InnoApplication
+namespace InnoApplicationEntry
 {
 	bool Setup(
 		// Windows: For hInstance

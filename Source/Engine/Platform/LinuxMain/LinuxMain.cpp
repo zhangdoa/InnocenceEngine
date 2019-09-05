@@ -1,17 +1,17 @@
-#include "../../Application/InnoApplication.h"
+#include "../ApplicationEntry/InnoApplicationEntry.h"
 
 int main(int argc, char *argv[])
 {
-	if (!InnoApplication::Setup(nullptr, nullptr, argv[1]))
+	if (!InnoApplicationEntry::Setup(nullptr, nullptr, argv[1]))
 	{
 		return 0;
 	}
-	if (!InnoApplication::Initialize())
+	if (!InnoApplicationEntry::Initialize())
 	{
 		return 0;
 	}
-	InnoApplication::Run();
-	InnoApplication::Terminate();
+	InnoApplicationEntry::Run();
+	InnoApplicationEntry::Terminate();
 
 	return 0;
 }

@@ -1,10 +1,10 @@
 #pragma once
 #include "../../Engine/Core/ILogicClient.h"
 
-class DefaultGameClient : public ILogicClient
+class DefaultLogicClient : public ILogicClient
 {
 public:
-	INNO_CLASS_CONCRETE_NON_COPYABLE(DefaultGameClient);
+	INNO_CLASS_CONCRETE_NON_COPYABLE(DefaultLogicClient);
 
 	bool setup() override;
 	bool initialize() override;

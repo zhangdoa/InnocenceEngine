@@ -1,6 +1,6 @@
 add_executable(InnoMain LinuxMain.cpp)
 
-target_link_libraries(InnoMain InnoApplication)
+target_link_libraries(InnoMain InnoApplicationEntry)
 
 add_custom_target(run
     COMMAND InnoMain "-renderer 0 -mode 0"

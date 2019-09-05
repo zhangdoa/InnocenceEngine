@@ -1,0 +1,3 @@
+add_library(InnoApplicationEntry InnoApplicationEntry.h InnoApplicationEntry.cpp)
+target_link_libraries(InnoApplicationEntry Inno${INNO_LOGIC_CLIENT})
+target_link_libraries(InnoApplicationEntry Inno${INNO_RENDERING_CLIENT})

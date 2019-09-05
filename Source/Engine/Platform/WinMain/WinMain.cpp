@@ -1,7 +1,7 @@
 #include <windows.h>
 #include <windowsx.h>
 
-#include "../../Application/InnoApplication.h"
+#include "../ApplicationEntry/InnoApplicationEntry.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int nCmdshow)
 {
@@ -12,15 +12,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	err = freopen_s(&stream, "CONOUT$", "w", stdout);
 	SetConsoleTitle("Innocence Engine Debug Console");
 
-	if (!InnoApplication::Setup(hInstance, nullptr, pScmdline))
+	if (!InnoApplicationEntry::Setup(hInstance, nullptr, pScmdline))
 	{
 		return 0;
 	}
-	if (!InnoApplication::Initialize())
+	if (!InnoApplicationEntry::Initialize())
 	{
 		return 0;
 	}
-	InnoApplication::Run();
-	InnoApplication::Terminate();
+	InnoApplicationEntry::Run();
+	InnoApplicationEntry::Terminate();
 	return 0;
 }

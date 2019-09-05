@@ -1,0 +1,2 @@
+#define INNO_LOGIC_CLIENT DefaultLogicClient
+#define INNO_RENDERING_CLIENT DefaultRenderingClient

@@ -9,7 +9,7 @@
 #import "InnoNSApplication.h"
 #import "MacWindowDelegate.h"
 
-#import "../../../Application/InnoApplication.h"
+#import "../../ApplicationEntry/InnoApplicationEntry.h"
 #import "MacWindowSystemBridgeImpl.h"
 #import "MTRenderingServerBridgeImpl.h"
 
@@ -35,18 +35,18 @@ MetalDelegate* m_metalDelegate;
 
     //Start the engine C++ module
     const char* l_args = "-renderer 4 -mode 0 -loglevel 1";
-    if (!InnoApplication::Setup(m_macWindowSystemBridge, m_metalRenderingServerBridge, (char*)l_args))
+    if (!InnoApplicationEntry::Setup(m_macWindowSystemBridge, m_metalRenderingServerBridge, (char*)l_args))
     {
         return;
     }
-    if (!InnoApplication::Initialize())
+    if (!InnoApplicationEntry::Initialize())
     {
         return;
     }
 
-    InnoApplication::Run();
+    InnoApplicationEntry::Run();
 
-    InnoApplication::Terminate();
+    InnoApplicationEntry::Terminate();
 
     delete m_metalRenderingServerBridge;
     delete m_macWindowSystemBridge;

@@ -19,6 +19,9 @@ configure_file ("${CMAKE_SOURCE_DIR}/Engine/Common/Config.h.in" "${CMAKE_SOURCE_
 
 include_directories("External/Include" "External/GitSubmodules/PhysX/physx/include" "External/GitSubmodules/PhysX/pxshared/include")
 
+set(INNO_LOGIC_CLIENT DefaultLogicClient)
+set(INNO_RENDERING_CLIENT DefaultRenderingClient)
+
 option (USE_ROW_MAJOR_MEMORY_LAYOUT "Use Row-Major memory layout" ON)
 option (USE_COLUMN_MAJOR_MEMORY_LAYOUT "Use Column-Major memory layout" OFF)
 

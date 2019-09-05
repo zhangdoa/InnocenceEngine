@@ -1,4 +1,4 @@
-#include "DefaultGameClient.h"
+#include "DefaultLogicClient.h"
 #include "../../Engine/Common/CommonMacro.inl"
 #include "../../Engine/ComponentManager/ITransformComponentManager.h"
 #include "../../Engine/ComponentManager/IVisibleComponentManager.h"
@@ -566,7 +566,7 @@ bool GameClientNS::updateMaterial(const ModelMap& modelMap, Vec4 albedo, Vec4 MR
 	return true;
 };
 
-bool DefaultGameClient::setup()
+bool DefaultLogicClient::setup()
 {
 	bool l_result = true;
 	l_result = l_result && PlayerComponentCollection::setup();
@@ -575,7 +575,7 @@ bool DefaultGameClient::setup()
 	return l_result;
 }
 
-bool DefaultGameClient::initialize()
+bool DefaultLogicClient::initialize()
 {
 	bool l_result = true;
 	g_pModuleManager->getFileSystem()->loadScene("Res//Scenes//default.InnoScene");
@@ -586,23 +586,23 @@ bool DefaultGameClient::initialize()
 	return l_result;
 }
 
-bool DefaultGameClient::update()
+bool DefaultLogicClient::update()
 {
 	return 	GameClientNS::update();
 }
 
-bool DefaultGameClient::terminate()
+bool DefaultLogicClient::terminate()
 {
 	GameClientNS::m_objectStatus = ObjectStatus::Terminated;
 	return true;
 }
 
-ObjectStatus DefaultGameClient::getStatus()
+ObjectStatus DefaultLogicClient::getStatus()
 {
 	return GameClientNS::m_objectStatus;
 }
 
-std::string DefaultGameClient::getApplicationName()
+std::string DefaultLogicClient::getApplicationName()
 {
 	return std::string("InnoGameClient/");
 }
