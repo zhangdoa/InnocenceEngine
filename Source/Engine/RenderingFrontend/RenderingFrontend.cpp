@@ -30,39 +30,43 @@ namespace InnoRenderingFrontendNS
 
 	DoubleBuffer<CameraGPUData, true> m_cameraGPUData;
 	DoubleBuffer<SunGPUData, true> m_sunGPUData;
-	DoubleBuffer<std::vector<CSMGPUData>, true> m_CSMGPUData;
+
+	DoubleBuffer<std::vector<CSMGPUData>, true> m_CSMGPUDataVector;
+
 	DoubleBuffer<std::vector<PointLightGPUData>, true> m_pointLightGPUData;
 	DoubleBuffer<std::vector<SphereLightGPUData>, true> m_sphereLightGPUData;
+
 	DoubleBuffer<SkyGPUData, true> m_skyGPUData;
 
 	unsigned int m_sunShadowPassDrawCallCount = 0;
-	DoubleBuffer<std::vector<OpaquePassDrawCallData>, true> m_sunShadowPassDrawCallData;
+	DoubleBuffer<std::vector<OpaquePassDrawCallData>, true> m_sunShadowPassDrawCallDataVector;
 	DoubleBuffer<std::vector<MeshGPUData>, true> m_sunShadowPassMeshGPUData;
 
 	unsigned int m_opaquePassDrawCallCount = 0;
-	DoubleBuffer<std::vector<OpaquePassDrawCallData>, true> m_opaquePassDrawCallData;
+	DoubleBuffer<std::vector<OpaquePassDrawCallData>, true> m_opaquePassDrawCallDataVector;
 	DoubleBuffer<std::vector<MeshGPUData>, true> m_opaquePassMeshGPUData;
 	DoubleBuffer<std::vector<MaterialGPUData>, true> m_opaquePassMaterialGPUData;
 
 	unsigned int m_transparentPassDrawCallCount = 0;
-	std::vector<TransparentPassDrawCallData> m_transparentPassGPUData;
-	std::vector<MeshGPUData> m_transparentPassMeshGPUData;
-	std::vector<MaterialGPUData> m_transparentPassMaterialGPUData;
+	DoubleBuffer<std::vector<TransparentPassDrawCallData>, true> m_transparentPassDrawCallDataVector;
+	DoubleBuffer<std::vector<MeshGPUData>, true> m_transparentPassMeshGPUData;
+	DoubleBuffer<std::vector<MaterialGPUData>, true> m_transparentPassMaterialGPUData;
 
-	DoubleBuffer<std::vector<BillboardPassDrawCallData>, true> m_billboardPassDrawCallData;
-	DoubleBuffer<std::vector<MeshGPUData>, true> m_billboardMeshGPUData;
+	DoubleBuffer<std::vector<MeshGPUData>, true> m_directionalLightMeshGPUData;
+	DoubleBuffer<std::vector<MeshGPUData>, true> m_pointLightMeshGPUData;
+	DoubleBuffer<std::vector<MeshGPUData>, true> m_sphereLightMeshGPUData;
+
+	DoubleBuffer<std::vector<BillboardPassDrawCallData>, true> m_billboardPassDrawCallDataVector;
+	DoubleBuffer<std::vector<MeshGPUData>, true> m_billboardPassMeshGPUData;
 
 	unsigned int m_debugPassDrawCallCount = 0;
-	DoubleBuffer<std::vector<DebugPassDrawCallData>, true> m_debugPassDrawCallData;
+	DoubleBuffer<std::vector<DebugPassDrawCallData>, true> m_debugPassDrawCallDataVector;
 	DoubleBuffer<std::vector<MeshGPUData>, true> m_debugPassMeshGPUData;
 
 	std::vector<CullingData> m_cullingData;
 
-	std::vector<Plane> m_debugPlanes;
-	std::vector<Sphere> m_debugSpheres;
-
 	std::vector<Vec2> m_haltonSampler;
-	int currentHaltonStep = 0;
+	int m_currentHaltonStep = 0;
 
 	std::function<void(RenderPassType)> f_reloadShader;
 	std::function<void()> f_sceneLoadingStartCallback;
@@ -113,7 +117,6 @@ namespace InnoRenderingFrontendNS
 	bool updateSkyData();
 	bool updateLightData();
 
-	bool updateSunShadowPassData();
 	bool updateMeshData();
 	bool updateBillboardPassData();
 	bool updateDebuggerPassData();
@@ -181,24 +184,47 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 	m_DefaultRenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)m_screenResolution.x;
 	m_DefaultRenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)m_screenResolution.y;
 
+	m_CSMGPUDataVector.Reserve(m_renderingCapability.maxCSMSplits);
+
+	m_transparentPassDrawCallDataVector.Reserve(m_renderingCapability.maxMeshes);
+	m_transparentPassMeshGPUData.Reserve(m_renderingCapability.maxMeshes);
+	m_transparentPassMaterialGPUData.Reserve(m_renderingCapability.maxMaterials);
+
+	m_opaquePassDrawCallDataVector.Reserve(m_renderingCapability.maxMeshes);
+	m_opaquePassMeshGPUData.Reserve(m_renderingCapability.maxMeshes);
+	m_opaquePassMaterialGPUData.Reserve(m_renderingCapability.maxMaterials);
+
+	m_sunShadowPassDrawCallDataVector.Reserve(m_renderingCapability.maxMeshes);
+	m_sunShadowPassMeshGPUData.Reserve(m_renderingCapability.maxMeshes);
+
+	m_pointLightGPUData.Reserve(m_renderingCapability.maxPointLights);
+	m_sphereLightGPUData.Reserve(m_renderingCapability.maxSphereLights);
+
+	m_directionalLightMeshGPUData.Reserve(8192);
+	m_pointLightMeshGPUData.Reserve(8192);
+	m_sphereLightMeshGPUData.Reserve(8192);
+	m_billboardPassMeshGPUData.Reserve(8192);
+
 	f_sceneLoadingStartCallback = [&]() {
 		m_cullingData.clear();
 
 		m_sunShadowPassDrawCallCount = 0;
 		m_opaquePassDrawCallCount = 0;
-
-		m_transparentPassGPUData.clear();
-		m_transparentPassMeshGPUData.clear();
-		m_transparentPassMaterialGPUData.clear();
 		m_transparentPassDrawCallCount = 0;
-
 		m_debugPassDrawCallCount = 0;
 	};
 
-	f_sceneLoadingFinishCallback = [&]() {
-		m_transparentPassGPUData.resize(m_renderingCapability.maxMeshes);
-		m_transparentPassMeshGPUData.resize(m_renderingCapability.maxMeshes);
-		m_transparentPassMaterialGPUData.resize(m_renderingCapability.maxMaterials);
+	f_sceneLoadingFinishCallback = [&]()
+	{
+		// @TODO:
+		std::vector<BillboardPassDrawCallData> l_billboardPassDrawCallDataVectorA(3);
+		l_billboardPassDrawCallDataVectorA[0].iconTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(WorldEditorIconType::DIRECTIONAL_LIGHT);
+		l_billboardPassDrawCallDataVectorA[1].iconTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(WorldEditorIconType::POINT_LIGHT);
+		l_billboardPassDrawCallDataVectorA[2].iconTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(WorldEditorIconType::SPHERE_LIGHT);
+		auto l_billboardPassDrawCallDataVectorB = l_billboardPassDrawCallDataVectorA;
+
+		m_billboardPassDrawCallDataVector.SetValue(std::move(l_billboardPassDrawCallDataVectorA));
+		m_billboardPassDrawCallDataVector.SetValue(std::move(l_billboardPassDrawCallDataVectorB));
 	};
 
 	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
@@ -343,7 +369,7 @@ bool InnoRenderingFrontendNS::updateCameraData()
 	if (m_renderingConfig.useTAA)
 	{
 		//TAA jitter for projection matrix
-		auto& l_currentHaltonStep = currentHaltonStep;
+		auto& l_currentHaltonStep = m_currentHaltonStep;
 		if (l_currentHaltonStep >= 16)
 		{
 			l_currentHaltonStep = 0;
@@ -379,10 +405,6 @@ bool InnoRenderingFrontendNS::updateCameraData()
 
 bool InnoRenderingFrontendNS::updateSunData()
 {
-	std::vector<CSMGPUData> l_CSMGPUData;
-
-	l_CSMGPUData.resize(m_renderingCapability.maxCSMSplits);
-
 	auto l_sun = GetComponentManager(LightComponent)->GetSun();
 
 	if (l_sun)
@@ -406,17 +428,23 @@ bool InnoRenderingFrontendNS::updateSunData()
 
 		auto l_SplitAABB = GetComponentManager(LightComponent)->GetSunSplitAABB();
 		auto l_ProjectionMatrices = GetComponentManager(LightComponent)->GetSunProjectionMatrices();
+
+		auto& l_CSMGPUDataVector = m_CSMGPUDataVector.GetValue();
+		l_CSMGPUDataVector.clear();
+
 		if (l_SplitAABB.size() > 0 && l_ProjectionMatrices.size() > 0)
 		{
 			for (size_t j = 0; j < m_renderingCapability.maxCSMSplits; j++)
 			{
-				l_CSMGPUData[j].p = l_ProjectionMatrices[j];
-				l_CSMGPUData[j].AABBMax = l_SplitAABB[j].m_boundMax;
-				l_CSMGPUData[j].AABBMin = l_SplitAABB[j].m_boundMin;
-				l_CSMGPUData[j].v = l_lightRotMat;
-			}
+				CSMGPUData l_CSMGPUData;
 
-			m_CSMGPUData.SetValue(std::move(l_CSMGPUData));
+				l_CSMGPUData.p = l_ProjectionMatrices[j];
+				l_CSMGPUData.AABBMax = l_SplitAABB[j].m_boundMax;
+				l_CSMGPUData.AABBMin = l_SplitAABB[j].m_boundMin;
+				l_CSMGPUData.v = l_lightRotMat;
+
+				l_CSMGPUDataVector.emplace_back(l_CSMGPUData);
+			}
 		}
 	}
 
@@ -439,16 +467,17 @@ bool InnoRenderingFrontendNS::updateSkyData()
 
 bool InnoRenderingFrontendNS::updateLightData()
 {
-	auto l_lightComponents = GetComponentManager(LightComponent)->GetAllComponents();
+	auto& l_PointLightGPUData = m_pointLightGPUData.GetValue();
+	auto& l_SphereLightGPUData = m_sphereLightGPUData.GetValue();
+
+	l_PointLightGPUData.clear();
+	l_SphereLightGPUData.clear();
+
+	auto& l_lightComponents = GetComponentManager(LightComponent)->GetAllComponents();
 	auto l_lightComponentCount = l_lightComponents.size();
-	std::vector<PointLightGPUData> l_PointLightGPUData;
-	std::vector<SphereLightGPUData> l_SphereLightGPUData;
 
 	if (l_lightComponentCount > 0)
 	{
-		l_PointLightGPUData.reserve(l_lightComponentCount);
-		l_SphereLightGPUData.reserve(l_lightComponentCount);
-
 		for (size_t i = 0; i < l_lightComponentCount; i++)
 		{
 			auto l_transformCompoent = GetComponent(TransformComponent, l_lightComponents[i]->m_parentEntity);
@@ -472,12 +501,6 @@ bool InnoRenderingFrontendNS::updateLightData()
 				}
 			}
 		}
-
-		l_PointLightGPUData.shrink_to_fit();
-		l_SphereLightGPUData.shrink_to_fit();
-
-		m_pointLightGPUData.SetValue(std::move(l_PointLightGPUData));
-		m_sphereLightGPUData.SetValue(std::move(l_SphereLightGPUData));
 	}
 
 	return true;
@@ -485,25 +508,32 @@ bool InnoRenderingFrontendNS::updateLightData()
 
 bool InnoRenderingFrontendNS::updateMeshData()
 {
+	auto& l_opaquePassDrawCallDataVector = m_opaquePassDrawCallDataVector.GetValue();
+	auto& l_opaquePassMeshGPUData = m_opaquePassMeshGPUData.GetValue();
+	auto& l_opaquePassMaterialGPUData = m_opaquePassMaterialGPUData.GetValue();
+
+	auto& l_sunShadowPassDrawCallDataVector = m_sunShadowPassDrawCallDataVector.GetValue();
+	auto& l_sunShadowPassMeshGPUData = m_sunShadowPassMeshGPUData.GetValue();
+
+	auto& l_transparentPassDrawCallDataVector = m_transparentPassDrawCallDataVector.GetValue();
+	auto& l_transparentPassMeshGPUData = m_transparentPassMeshGPUData.GetValue();
+	auto& l_transparentPassMaterialGPUData = m_transparentPassMaterialGPUData.GetValue();
+
+	l_opaquePassDrawCallDataVector.clear();
+	l_opaquePassMeshGPUData.clear();
+	l_opaquePassMaterialGPUData.clear();
+
+	l_sunShadowPassDrawCallDataVector.clear();
+	l_sunShadowPassMeshGPUData.clear();
+
+	l_transparentPassDrawCallDataVector.clear();
+	l_transparentPassMeshGPUData.clear();
+	l_transparentPassMaterialGPUData.clear();
+
+	auto l_cullingDataSize = m_cullingData.size();
 	unsigned int l_sunShadowPassIndex = 0;
 	unsigned int l_opaquePassIndex = 0;
 	unsigned int l_transparentPassIndex = 0;
-
-	auto l_cullingDataSize = m_cullingData.size();
-
-	std::vector<OpaquePassDrawCallData> l_opaquePassDrawCallDataVector;
-	l_opaquePassDrawCallDataVector.resize(l_cullingDataSize);
-	std::vector<MeshGPUData> l_opaquePassMeshGPUData;
-	l_opaquePassMeshGPUData.resize(l_cullingDataSize);
-	std::vector<MaterialGPUData> l_opaquePassMaterialGPUData;
-	l_opaquePassMaterialGPUData.resize(l_cullingDataSize);
-
-	std::vector<OpaquePassDrawCallData> l_sunShadowPassDrawCallDataVector;
-	l_sunShadowPassDrawCallDataVector.reserve(l_cullingDataSize);
-	std::vector<MeshGPUData> l_sunShadowPassMeshGPUData;
-	l_sunShadowPassMeshGPUData.reserve(l_cullingDataSize);
-
-	std::vector<TransparentPassDrawCallData> l_sortedTransparentPassDrawCallData;
 
 	for (size_t i = 0; i < l_cullingDataSize; i++)
 	{
@@ -539,9 +569,9 @@ bool InnoRenderingFrontendNS::updateMeshData()
 
 						if (l_cullingData.cullingDataChannel != CullingDataChannel::Shadow)
 						{
-							l_opaquePassDrawCallDataVector[l_opaquePassIndex] = l_opaquePassDrawCallData;
-							l_opaquePassMeshGPUData[l_opaquePassIndex] = l_meshGPUData;
-							l_opaquePassMaterialGPUData[l_opaquePassIndex] = l_materialGPUData;
+							l_opaquePassDrawCallDataVector.emplace_back(l_opaquePassDrawCallData);
+							l_opaquePassMeshGPUData.emplace_back(l_meshGPUData);
+							l_opaquePassMaterialGPUData.emplace_back(l_materialGPUData);
 							l_opaquePassIndex++;
 						}
 
@@ -551,11 +581,11 @@ bool InnoRenderingFrontendNS::updateMeshData()
 					}
 					else if (l_cullingData.visiblilityType == VisiblilityType::Transparent)
 					{
-						TransparentPassDrawCallData l_transparentPassGPUData;
+						TransparentPassDrawCallData l_transparentPassDrawCallData;
 
-						l_transparentPassGPUData.mesh = l_cullingData.mesh;
-						l_transparentPassGPUData.meshGPUDataIndex = l_transparentPassIndex;
-						l_transparentPassGPUData.materialGPUDataIndex = l_transparentPassIndex;
+						l_transparentPassDrawCallData.mesh = l_cullingData.mesh;
+						l_transparentPassDrawCallData.meshGPUDataIndex = l_transparentPassIndex;
+						l_transparentPassDrawCallData.materialGPUDataIndex = l_transparentPassIndex;
 
 						MaterialGPUData l_materialGPUData;
 
@@ -567,9 +597,9 @@ bool InnoRenderingFrontendNS::updateMeshData()
 						l_materialGPUData.materialType = int(l_cullingData.meshUsageType);
 						l_materialGPUData.customMaterial = l_cullingData.material->m_meshCustomMaterial;
 
-						l_sortedTransparentPassDrawCallData.emplace_back(l_transparentPassGPUData);
-						m_transparentPassMeshGPUData[l_transparentPassIndex] = l_meshGPUData;
-						m_transparentPassMaterialGPUData[l_transparentPassIndex] = l_materialGPUData;
+						l_transparentPassDrawCallDataVector.emplace_back(l_transparentPassDrawCallData);
+						l_transparentPassMeshGPUData.emplace_back(l_meshGPUData);
+						l_transparentPassMaterialGPUData.emplace_back(l_materialGPUData);
 						l_transparentPassIndex++;
 					}
 				}
@@ -577,14 +607,7 @@ bool InnoRenderingFrontendNS::updateMeshData()
 		}
 	}
 
-	m_sunShadowPassDrawCallData.SetValue(std::move(l_sunShadowPassDrawCallDataVector));
-	m_sunShadowPassMeshGPUData.SetValue(std::move(l_sunShadowPassMeshGPUData));
 	m_sunShadowPassDrawCallCount = l_sunShadowPassIndex;
-
-	m_opaquePassDrawCallData.SetValue(std::move(l_opaquePassDrawCallDataVector));
-	m_opaquePassMeshGPUData.SetValue(std::move(l_opaquePassMeshGPUData));
-	m_opaquePassMaterialGPUData.SetValue(std::move(l_opaquePassMaterialGPUData));
-
 	m_opaquePassDrawCallCount = l_opaquePassIndex;
 	m_transparentPassDrawCallCount = l_transparentPassIndex;
 
@@ -592,37 +615,43 @@ bool InnoRenderingFrontendNS::updateMeshData()
 	auto l_t = m_cameraGPUData.GetValue().t;
 	auto l_r = m_cameraGPUData.GetValue().r;
 
-	std::sort(l_sortedTransparentPassDrawCallData.begin(), l_sortedTransparentPassDrawCallData.end(), [&](TransparentPassDrawCallData a, TransparentPassDrawCallData b) {
-		auto m_a_InViewSpace = l_t * l_r * m_transparentPassMeshGPUData[a.meshGPUDataIndex].m;
-		auto m_b_InViewSpace = l_t * l_r * m_transparentPassMeshGPUData[b.meshGPUDataIndex].m;
+	std::sort(l_transparentPassDrawCallDataVector.begin(), l_transparentPassDrawCallDataVector.end(), [&](TransparentPassDrawCallData a, TransparentPassDrawCallData b) {
+		auto m_a_InViewSpace = l_t * l_r * l_transparentPassMeshGPUData[a.meshGPUDataIndex].m;
+		auto m_b_InViewSpace = l_t * l_r * l_transparentPassMeshGPUData[b.meshGPUDataIndex].m;
 		return m_a_InViewSpace.m23 < m_b_InViewSpace.m23;
 	});
-
-	m_transparentPassGPUData = l_sortedTransparentPassDrawCallData;
 
 	return true;
 }
 
 bool InnoRenderingFrontendNS::updateBillboardPassData()
 {
-	auto l_lightComponents = GetComponentManager(LightComponent)->GetAllComponents();
-
-	std::vector<BillboardPassDrawCallData> l_billboardPassDrawCallDataVector;
-	l_billboardPassDrawCallDataVector.resize(3);
-	l_billboardPassDrawCallDataVector[0].iconTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(WorldEditorIconType::DIRECTIONAL_LIGHT);
-	l_billboardPassDrawCallDataVector[1].iconTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(WorldEditorIconType::POINT_LIGHT);
-	l_billboardPassDrawCallDataVector[2].iconTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(WorldEditorIconType::SPHERE_LIGHT);
+	auto& l_lightComponents = GetComponentManager(LightComponent)->GetAllComponents();
 
 	auto l_totalBillboardDrawCallCount = l_lightComponents.size();
 
-	std::vector<MeshGPUData> l_directionalLightMeshGPUData;
-	l_directionalLightMeshGPUData.reserve(l_totalBillboardDrawCallCount);
+	if (l_totalBillboardDrawCallCount == 0)
+	{
+		return false;
+	}
 
-	std::vector<MeshGPUData> l_pointLightMeshGPUData;
-	l_pointLightMeshGPUData.reserve(l_totalBillboardDrawCallCount);
+	auto& l_billboardPassDrawCallDataVector = m_billboardPassDrawCallDataVector.GetValue();
+	auto& l_billboardPassMeshGPUData = m_billboardPassMeshGPUData.GetValue();
+	auto& l_directionalLightMeshGPUData = m_directionalLightMeshGPUData.GetValue();
+	auto& l_pointLightMeshGPUData = m_pointLightMeshGPUData.GetValue();
+	auto& l_sphereLightMeshGPUData = m_sphereLightMeshGPUData.GetValue();
 
-	std::vector<MeshGPUData> l_sphereLightMeshGPUData;
-	l_sphereLightMeshGPUData.reserve(l_totalBillboardDrawCallCount);
+	auto l_billboardPassDrawCallDataCount = l_billboardPassDrawCallDataVector.size();
+	for (size_t i = 0; i < l_billboardPassDrawCallDataCount; i++)
+	{
+		l_billboardPassDrawCallDataVector[i].instanceCount = 0;
+	}
+
+	l_billboardPassMeshGPUData.clear();
+
+	l_directionalLightMeshGPUData.clear();
+	l_pointLightMeshGPUData.clear();
+	l_sphereLightMeshGPUData.clear();
 
 	for (auto i : l_lightComponents)
 	{
@@ -665,18 +694,9 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 	l_billboardPassDrawCallDataVector[1].meshGPUDataOffset = (unsigned int)l_directionalLightMeshGPUData.size();
 	l_billboardPassDrawCallDataVector[2].meshGPUDataOffset = (unsigned int)(l_directionalLightMeshGPUData.size() + l_pointLightMeshGPUData.size());
 
-	l_directionalLightMeshGPUData.shrink_to_fit();
-	l_pointLightMeshGPUData.shrink_to_fit();
-	l_sphereLightMeshGPUData.shrink_to_fit();
-
-	std::vector<MeshGPUData> l_billboardPassMeshGPUData;
-	l_billboardPassMeshGPUData.reserve(l_totalBillboardDrawCallCount);
 	l_billboardPassMeshGPUData.insert(l_billboardPassMeshGPUData.end(), l_directionalLightMeshGPUData.begin(), l_directionalLightMeshGPUData.end());
 	l_billboardPassMeshGPUData.insert(l_billboardPassMeshGPUData.end(), l_pointLightMeshGPUData.begin(), l_pointLightMeshGPUData.end());
 	l_billboardPassMeshGPUData.insert(l_billboardPassMeshGPUData.end(), l_sphereLightMeshGPUData.begin(), l_sphereLightMeshGPUData.end());
-
-	m_billboardPassDrawCallData.SetValue(std::move(l_billboardPassDrawCallDataVector));
-	m_billboardMeshGPUData.SetValue(std::move(l_billboardPassMeshGPUData));
 
 	return true;
 }
@@ -985,7 +1005,7 @@ const SunGPUData& InnoRenderingFrontend::getSunGPUData()
 
 const std::vector<CSMGPUData>& InnoRenderingFrontend::getCSMGPUData()
 {
-	return m_CSMGPUData.GetValue();
+	return m_CSMGPUDataVector.GetValue();
 }
 
 const std::vector<PointLightGPUData>& InnoRenderingFrontend::getPointLightGPUData()
@@ -1010,7 +1030,7 @@ unsigned int InnoRenderingFrontend::getSunShadowPassDrawCallCount()
 
 const std::vector<OpaquePassDrawCallData>& InnoRenderingFrontend::getSunShadowPassDrawCallData()
 {
-	return m_sunShadowPassDrawCallData.GetValue();
+	return m_sunShadowPassDrawCallDataVector.GetValue();
 }
 
 const std::vector<MeshGPUData>& InnoRenderingFrontend::getSunShadowPassMeshGPUData()
@@ -1025,7 +1045,7 @@ unsigned int InnoRenderingFrontend::getOpaquePassDrawCallCount()
 
 const std::vector<OpaquePassDrawCallData>& InnoRenderingFrontend::getOpaquePassDrawCallData()
 {
-	return m_opaquePassDrawCallData.GetValue();
+	return m_opaquePassDrawCallDataVector.GetValue();
 }
 
 const std::vector<MeshGPUData>& InnoRenderingFrontend::getOpaquePassMeshGPUData()
@@ -1045,27 +1065,27 @@ unsigned int InnoRenderingFrontend::getTransparentPassDrawCallCount()
 
 const std::vector<TransparentPassDrawCallData>& InnoRenderingFrontend::getTransparentPassDrawCallData()
 {
-	return m_transparentPassGPUData;
+	return m_transparentPassDrawCallDataVector.GetValue();
 }
 
 const std::vector<MeshGPUData>& InnoRenderingFrontend::getTransparentPassMeshGPUData()
 {
-	return m_transparentPassMeshGPUData;
+	return m_transparentPassMeshGPUData.GetValue();
 }
 
 const std::vector<MaterialGPUData>& InnoRenderingFrontend::getTransparentPassMaterialGPUData()
 {
-	return m_transparentPassMaterialGPUData;
+	return m_transparentPassMaterialGPUData.GetValue();
 }
 
 const std::vector<BillboardPassDrawCallData>& InnoRenderingFrontend::getBillboardPassDrawCallData()
 {
-	return m_billboardPassDrawCallData.GetValue();
+	return m_billboardPassDrawCallDataVector.GetValue();
 }
 
 const std::vector<MeshGPUData>& InnoRenderingFrontend::getBillboardPassMeshGPUData()
 {
-	return m_billboardMeshGPUData.GetValue();
+	return m_billboardPassMeshGPUData.GetValue();
 }
 
 unsigned int InnoRenderingFrontend::getDebugPassDrawCallCount()
@@ -1075,7 +1095,7 @@ unsigned int InnoRenderingFrontend::getDebugPassDrawCallCount()
 
 const std::vector<DebugPassDrawCallData>& InnoRenderingFrontend::getDebugPassDrawCallData()
 {
-	return m_debugPassDrawCallData.GetValue();
+	return m_debugPassDrawCallDataVector.GetValue();
 }
 
 const std::vector<MeshGPUData>& InnoRenderingFrontend::getDebugPassMeshGPUData()
