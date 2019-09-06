@@ -9,29 +9,30 @@ struct ComputeInputType
 	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
-Texture3D<float4> in_froxelVolume : register(t0);
+Texture3D<float4> in_irradianceVolume : register(t0);
 RWTexture2D<float4> out_result : register(u0);
 
-[numthreads(8, 8, 8)]
+SamplerState SamplerTypeLinear : register(s0);
+
+[numthreads(8, 8, 1)]
 void main(ComputeInputType input)
 {
-	if (input.dispatchThreadID.x < dispatchParams[6].numThreads.x
-		&& input.dispatchThreadID.y < dispatchParams[6].numThreads.y
-		&& input.dispatchThreadID.z < dispatchParams[6].numThreads.z)
+	if (input.dispatchThreadID.x < dispatchParams[7].numThreads.x
+		&& input.dispatchThreadID.y < dispatchParams[7].numThreads.y
+		&& input.dispatchThreadID.z < dispatchParams[7].numThreads.z)
 	{
 		float3 l_writeCoord = float3(input.dispatchThreadID);
-		float3 l_readCoord = l_writeCoord;
-		l_readCoord.xy /= float2(1280, 720);
-		l_readCoord.xy *= float2(160, 90);
+		float3 l_readCoord = l_writeCoord / float3(1280.0, 720.0, 1.0);
 
-		float4 l_result = float4(0.0, 0.0, 0.0, 1.0);
+		float3 l_irradiance = float3(0.0, 0.0, 0.0);
 
 		for (int i = 0; i < 64; i++)
 		{
-			l_readCoord.z = float(i);
-			float4 froxelPos = in_froxelVolume[l_readCoord];
-			l_result.xyz += froxelPos.xyz;
+			l_readCoord.z = float(i) / 64.0;
+			l_irradiance += in_irradianceVolume.SampleLevel(SamplerTypeLinear, l_readCoord, 0).xyz;
 		}
+
+		float4 l_result = float4(l_irradiance, 1.0);
 
 		out_result[l_writeCoord.xy] = l_result;
 	}
