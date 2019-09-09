@@ -6,8 +6,8 @@
 
 struct InputConfig
 {
-	int totalKeyCodes;
-	int totalMouseCodes;
+	int32_t totalKeyCodes;
+	int32_t totalMouseCodes;
 };
 
 class IEventSystem
@@ -22,11 +22,11 @@ public:
 
 	virtual InputConfig getInputConfig() = 0;
 
-	virtual void addButtonStatusCallback(ButtonState buttonState, ButtonEvent buttonEvent) = 0;
-	virtual void addMouseMovementCallback(int mouseCode, std::function<void(float)>* mouseMovementCallback) = 0;
+	virtual void addButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent) = 0;
+	virtual void addMouseMovementCallback(int32_t mouseCode, std::function<void(float)>* mouseMovementCallback) = 0;
 
 	virtual void buttonStatusCallback(ButtonState buttonState) = 0;
-	virtual void framebufferSizeCallback(int width, int height) = 0;
+	virtual void framebufferSizeCallback(int32_t width, int32_t height) = 0;
 	virtual void mousePositionCallback(float mouseXPos, float mouseYPos) = 0;
 	virtual void scrollCallback(float xoffset, float yoffset) = 0;
 

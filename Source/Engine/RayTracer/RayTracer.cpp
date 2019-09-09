@@ -108,7 +108,7 @@ bool HitableSphere::Hit(const Ray & r, float tMin, float tMax, HitResult & hitRe
 
 struct HitableList : public Hitable
 {
-	unsigned int m_Size;
+	uint32_t m_Size;
 	Hitable** m_List;
 	virtual bool Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult);
 };
@@ -118,7 +118,7 @@ bool HitableList::Hit(const Ray & r, float tMin, float tMax, HitResult & hitResu
 	HitResult l_hitResult;
 	bool hit_anything = false;
 	float closest_so_far = std::numeric_limits<float>::max();
-	for (unsigned int i = 0; i < m_Size; i++)
+	for (uint32_t i = 0; i < m_Size; i++)
 	{
 		if (m_List[i]->Hit(r, 0.001f, closest_so_far, l_hitResult))
 		{
@@ -189,7 +189,7 @@ public:
 	float lens_radius;
 };
 
-Vec4 CalcRadiance(const Ray& r, Hitable* world, int depth)
+Vec4 CalcRadiance(const Ray& r, Hitable* world, int32_t depth)
 {
 	HitResult l_result;
 	Vec4 color;
@@ -234,9 +234,9 @@ bool ExecuteRayTracing()
 
 	auto l_ScreenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
 
-	int nx = l_ScreenResolution.x / 4;
-	int ny = l_ScreenResolution.y / 4;
-	int totalWorkload = nx * ny;
+	int32_t nx = l_ScreenResolution.x / 4;
+	int32_t ny = l_ScreenResolution.y / 4;
+	int32_t totalWorkload = nx * ny;
 
 	l_ExportFile << "P3\n" << nx << " " << ny << "\n255\n";
 
@@ -282,11 +282,11 @@ bool ExecuteRayTracing()
 
 	HitableList* l_hitableList = new HitableList();
 	l_hitableList->m_List = l_hitableListVector.data();
-	l_hitableList->m_Size = (unsigned int)l_hitableListVector.size();
+	l_hitableList->m_Size = (uint32_t)l_hitableListVector.size();
 
-	int currentWorkload = 0;
-	for (int j = ny - 1; j >= 0; j--) {
-		for (int i = 0; i < nx; i++) {
+	int32_t currentWorkload = 0;
+	for (int32_t j = ny - 1; j >= 0; j--) {
+		for (int32_t i = 0; i < nx; i++) {
 			float u = float(i) / float(nx);
 			float v = float(j) / float(ny);
 			Vec4 color = CalcRadiance(l_rayTracingCamera.GetRay(u, v), l_hitableList, 0);
@@ -294,9 +294,9 @@ bool ExecuteRayTracing()
 			color.y = sqrtf(color.y);
 			color.z = sqrtf(color.z);
 
-			int ir = int(255.99*color.x);
-			int ig = int(255.99*color.y);
-			int ib = int(255.99*color.z);
+			int32_t ir = int32_t(255.99*color.x);
+			int32_t ig = int32_t(255.99*color.y);
+			int32_t ib = int32_t(255.99*color.z);
 			l_ExportFile << ir << " " << ig << " " << ib << "\n";
 
 			InnoLogger::Log(LogLevel::Verbose, "InnoRayTracer: ", float(currentWorkload) * 100.0f / float(totalWorkload), "%...");

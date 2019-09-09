@@ -80,7 +80,7 @@ TextureDataComponent* InnoFileSystemNS::AssetLoader::loadTexture(const std::stri
 
 TextureDataComponent* InnoFileSystemNS::AssetLoader::loadTextureFromDisk(const std::string & fileName)
 {
-	int width, height, nrChannels;
+	int32_t width, height, nrChannels;
 
 	// load image, flip texture
 	stbi_set_flip_vertically_on_load(true);

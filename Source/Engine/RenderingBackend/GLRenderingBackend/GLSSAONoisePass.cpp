@@ -24,7 +24,7 @@ namespace GLSSAONoisePass
 
 	ShaderFilePaths m_shaderFilePaths = { "2DImageProcess.vert/", "", "", "", "SSAONoisePass.frag/" };
 
-	unsigned int m_kernelSize = 64;
+	uint32_t m_kernelSize = 64;
 	std::vector<vec4> m_SSAOKernel;
 	std::vector<vec4> m_SSAONoise;
 
@@ -63,7 +63,7 @@ void GLSSAONoisePass::generateSSAONoiseTexture()
 
 	m_SSAOKernel.reserve(m_kernelSize);
 
-	for (unsigned int i = 0; i < m_kernelSize; ++i)
+	for (uint32_t i = 0; i < m_kernelSize; ++i)
 	{
 		auto sample = vec4(randomFloats(generator) * 2.0f - 1.0f, randomFloats(generator) * 2.0f - 1.0f, randomFloats(generator), 0.0f);
 		sample = sample.normalize();
@@ -138,7 +138,7 @@ bool GLSSAONoisePass::update()
 	return true;
 }
 
-bool GLSSAONoisePass::resize(unsigned int newSizeX, unsigned int newSizeY)
+bool GLSSAONoisePass::resize(uint32_t newSizeX, uint32_t newSizeY)
 {
 	resizeGLRenderPassComponent(m_GLRPC, newSizeX, newSizeY);
 

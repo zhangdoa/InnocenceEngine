@@ -64,7 +64,7 @@ bool GLPostTAAPass::update()
 	return true;
 }
 
-bool GLPostTAAPass::resize(unsigned int newSizeX, unsigned int newSizeY)
+bool GLPostTAAPass::resize(uint32_t newSizeX, uint32_t newSizeY)
 {
 	resizeGLRenderPassComponent(m_GLRPC, newSizeX, newSizeY);
 

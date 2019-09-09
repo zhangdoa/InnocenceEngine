@@ -144,7 +144,7 @@ void GLLightPass::update()
 	glDisable(GL_STENCIL_TEST);
 }
 
-bool GLLightPass::resize(unsigned int newSizeX, unsigned int newSizeY)
+bool GLLightPass::resize(uint32_t newSizeX, uint32_t newSizeY)
 {
 	resizeGLRenderPassComponent(m_GLRPC, newSizeX, newSizeY);
 

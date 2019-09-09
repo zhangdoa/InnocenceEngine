@@ -29,12 +29,12 @@ namespace GLEnvironmentCapturePass
 	bool generateBricks();
 
 	bool capture();
-	bool drawCubemaps(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v);
-	bool drawOpaquePass(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex);
-	bool readBackSurfelCaches(unsigned int probeIndex);
-	bool drawSkyVisibilityPass(const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex);
-	bool drawSkyPass(const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex);
-	bool drawLightPass(const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex);
+	bool drawCubemaps(uint32_t probeIndex, const mat4& p, const std::vector<mat4>& v);
+	bool drawOpaquePass(uint32_t probeIndex, const mat4& p, const std::vector<mat4>& v, uint32_t faceIndex);
+	bool readBackSurfelCaches(uint32_t probeIndex);
+	bool drawSkyVisibilityPass(const mat4& p, const std::vector<mat4>& v, uint32_t faceIndex);
+	bool drawSkyPass(const mat4& p, const std::vector<mat4>& v, uint32_t faceIndex);
+	bool drawLightPass(const mat4& p, const std::vector<mat4>& v, uint32_t faceIndex);
 
 	bool eliminateDuplicatedSurfels();
 	bool eliminateEmptyBricks();
@@ -60,10 +60,10 @@ namespace GLEnvironmentCapturePass
 	GLShaderProgramComponent* m_skyVisibilityGLSPC;
 	ShaderFilePaths m_skyVisibilityShaderFilePaths = { "skyVisibilityPass.vert/" , "", "", "", "skyVisibilityPass.frag/" };
 
-	const unsigned int m_captureResolution = 128;
-	const unsigned int m_sampleCountPerFace = m_captureResolution * m_captureResolution;
-	const unsigned int m_subDivideDimension = 2;
-	const unsigned int m_totalCaptureProbes = m_subDivideDimension * m_subDivideDimension * m_subDivideDimension;
+	const uint32_t m_captureResolution = 128;
+	const uint32_t m_sampleCountPerFace = m_captureResolution * m_captureResolution;
+	const uint32_t m_subDivideDimension = 2;
+	const uint32_t m_totalCaptureProbes = m_subDivideDimension * m_subDivideDimension * m_subDivideDimension;
 
 	std::vector<ProbeCache> m_probeCaches;
 	std::vector<Probe> m_probes;
@@ -169,7 +169,7 @@ bool GLEnvironmentCapturePass::generateProbes()
 	l_startPos.z += l_probeDistance.z;
 	auto l_currentPos = l_startPos;
 
-	unsigned int l_probeIndex = 0;
+	uint32_t l_probeIndex = 0;
 	for (size_t i = 0; i < m_subDivideDimension; i++)
 	{
 		l_currentPos.y = l_startPos.y;
@@ -209,13 +209,13 @@ bool GLEnvironmentCapturePass::generateBricks()
 	auto l_currentPos = l_startPos;
 
 	auto l_brickSize = 16.0f;
-	auto l_maxBrickCountX = (unsigned int)std::ceil(l_extendedAxisSize.x / l_brickSize);
-	auto l_maxBrickCountY = (unsigned int)std::ceil(l_extendedAxisSize.y / l_brickSize);
-	auto l_maxBrickCountZ = (unsigned int)std::ceil(l_extendedAxisSize.z / l_brickSize);
+	auto l_maxBrickCountX = (uint32_t)std::ceil(l_extendedAxisSize.x / l_brickSize);
+	auto l_maxBrickCountY = (uint32_t)std::ceil(l_extendedAxisSize.y / l_brickSize);
+	auto l_maxBrickCountZ = (uint32_t)std::ceil(l_extendedAxisSize.z / l_brickSize);
 
 	auto l_totalBricks = l_maxBrickCountX * l_maxBrickCountY * l_maxBrickCountZ;
 
-	unsigned int l_brickIndex = 0;
+	uint32_t l_brickIndex = 0;
 	for (size_t i = 0; i < l_maxBrickCountX; i++)
 	{
 		l_currentPos.y = l_startPos.y;
@@ -264,7 +264,7 @@ bool GLEnvironmentCapturePass::capture()
 		l_rPX, l_rNX, l_rPY, l_rNY, l_rPZ, l_rNZ
 	};
 
-	for (unsigned int i = 0; i < m_totalCaptureProbes; i++)
+	for (uint32_t i = 0; i < m_totalCaptureProbes; i++)
 	{
 		drawCubemaps(i, l_p, l_v);
 		readBackSurfelCaches(i);
@@ -279,11 +279,11 @@ bool GLEnvironmentCapturePass::capture()
 	return true;
 }
 
-bool GLEnvironmentCapturePass::drawCubemaps(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v)
+bool GLEnvironmentCapturePass::drawCubemaps(uint32_t probeIndex, const mat4& p, const std::vector<mat4>& v)
 {
 	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
 
-	for (unsigned int i = 0; i < 6; i++)
+	for (uint32_t i = 0; i < 6; i++)
 	{
 		drawOpaquePass(probeIndex, p, v, i);
 
@@ -306,7 +306,7 @@ bool GLEnvironmentCapturePass::drawCubemaps(unsigned int probeIndex, const mat4&
 	return true;
 }
 
-bool GLEnvironmentCapturePass::drawOpaquePass(unsigned int probeIndex, const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex)
+bool GLEnvironmentCapturePass::drawOpaquePass(uint32_t probeIndex, const mat4& p, const std::vector<mat4>& v, uint32_t faceIndex)
 {
 	bindRenderPass(m_opaquePassGLRPC);
 	cleanRenderBuffers(m_opaquePassGLRPC);
@@ -348,9 +348,9 @@ bool GLEnvironmentCapturePass::drawOpaquePass(unsigned int probeIndex, const mat
 	bindCubemapTextureForWrite(m_opaquePassGLRPC->m_GLTDCs[2], m_opaquePassGLRPC, 2, faceIndex, 0);
 	bindCubemapTextureForWrite(m_opaquePassGLRPC->m_GLTDCs[3], m_opaquePassGLRPC, 3, faceIndex, 0);
 
-	unsigned int l_offset = 0;
+	uint32_t l_offset = 0;
 
-	for (unsigned int i = 0; i < g_pModuleManager->getRenderingFrontend()->getGIPassDrawCallCount(); i++)
+	for (uint32_t i = 0; i < g_pModuleManager->getRenderingFrontend()->getGIPassDrawCallCount(); i++)
 	{
 		auto l_GIPassGPUData = g_pModuleManager->getRenderingFrontend()->getGIPassGPUData()[i];
 
@@ -396,7 +396,7 @@ bool GLEnvironmentCapturePass::drawOpaquePass(unsigned int probeIndex, const mat
 	return true;
 }
 
-bool GLEnvironmentCapturePass::readBackSurfelCaches(unsigned int probeIndex)
+bool GLEnvironmentCapturePass::readBackSurfelCaches(uint32_t probeIndex)
 {
 	auto l_posWSMetallic = readCubemapSamples(m_opaquePassGLRPC, m_opaquePassGLRPC->m_GLTDCs[0]);
 	auto l_normalRoughness = readCubemapSamples(m_opaquePassGLRPC, m_opaquePassGLRPC->m_GLTDCs[1]);
@@ -426,7 +426,7 @@ bool GLEnvironmentCapturePass::readBackSurfelCaches(unsigned int probeIndex)
 	return true;
 }
 
-bool GLEnvironmentCapturePass::drawSkyVisibilityPass(const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex)
+bool GLEnvironmentCapturePass::drawSkyVisibilityPass(const mat4& p, const std::vector<mat4>& v, uint32_t faceIndex)
 {
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
 
@@ -463,7 +463,7 @@ bool GLEnvironmentCapturePass::drawSkyVisibilityPass(const mat4& p, const std::v
 	return true;
 }
 
-bool GLEnvironmentCapturePass::drawSkyPass(const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex)
+bool GLEnvironmentCapturePass::drawSkyPass(const mat4& p, const std::vector<mat4>& v, uint32_t faceIndex)
 {
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
 
@@ -498,7 +498,7 @@ bool GLEnvironmentCapturePass::drawSkyPass(const mat4& p, const std::vector<mat4
 	return true;
 }
 
-bool GLEnvironmentCapturePass::drawLightPass(const mat4& p, const std::vector<mat4>& v, unsigned int faceIndex)
+bool GLEnvironmentCapturePass::drawLightPass(const mat4& p, const std::vector<mat4>& v, uint32_t faceIndex)
 {
 	auto l_MDC = getGLMeshDataComponent(MeshShapeType::CUBE);
 
@@ -622,14 +622,14 @@ bool GLEnvironmentCapturePass::findSurfelRangeForBrick(Brick& brick)
 	});
 
 	auto l_firstSurfelIndex = std::distance(m_surfels.begin(), l_firstSurfel);
-	brick.surfelRangeBegin = (unsigned int)l_firstSurfelIndex;
+	brick.surfelRangeBegin = (uint32_t)l_firstSurfelIndex;
 
 	auto l_lastSurfel = std::find_if(m_surfels.begin(), m_surfels.end(), [&](Surfel val) {
 		return InnoMath::isAGreaterThanBVec3(val.pos, brick.boundBox.m_boundMax);
 	});
 
 	auto l_lastSurfelIndex = std::distance(m_surfels.begin(), l_lastSurfel);
-	brick.surfelRangeEnd = (unsigned int)l_lastSurfelIndex;
+	brick.surfelRangeEnd = (uint32_t)l_lastSurfelIndex;
 
 	return true;
 }
@@ -638,7 +638,7 @@ bool GLEnvironmentCapturePass::assignBrickFactorToProbes()
 {
 	for (size_t i = 0; i < m_probes.size(); i++)
 	{
-		m_probes[i].brickFactorRangeBegin = (unsigned int)m_brickFactors.size();
+		m_probes[i].brickFactorRangeBegin = (uint32_t)m_brickFactors.size();
 
 		for (size_t j = 0; j < m_bricks.size(); j++)
 		{
@@ -646,13 +646,13 @@ bool GLEnvironmentCapturePass::assignBrickFactorToProbes()
 			{
 				BrickFactor l_brickFactor;
 				l_brickFactor.basisWeight = 1.0f;
-				l_brickFactor.brickIndex = (unsigned int)j;
+				l_brickFactor.brickIndex = (uint32_t)j;
 
 				m_brickFactors.emplace_back(l_brickFactor);
 			}
 		}
 
-		m_probes[i].brickFactorRangeEnd = (unsigned int)m_brickFactors.size() - 1;
+		m_probes[i].brickFactorRangeEnd = (uint32_t)m_brickFactors.size() - 1;
 	}
 
 	return true;

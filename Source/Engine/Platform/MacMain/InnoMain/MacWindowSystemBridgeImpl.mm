@@ -9,7 +9,7 @@
 #import <Foundation/Foundation.h>
 #import "MacWindowSystemBridgeImpl.h"
 
-bool MacWindowSystemBridgeImpl::setup(unsigned int sizeX, unsigned int sizeY) {
+bool MacWindowSystemBridgeImpl::setup(uint32_t sizeX, uint32_t sizeY) {
     NSRect frame = NSMakeRect(0, 0, sizeX, sizeY);
     
     [m_macWindowDelegate initWithContentRect:frame

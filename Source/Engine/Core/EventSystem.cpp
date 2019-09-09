@@ -8,7 +8,7 @@
 extern IModuleManager* g_pModuleManager;
 
 using ButtonEventMap = std::unordered_multimap<ButtonState, ButtonEvent, ButtonStateHasher>;
-using MouseMovementEventMap = std::unordered_map<int, std::set<std::function<void(float)>*>>;
+using MouseMovementEventMap = std::unordered_map<int32_t, std::set<std::function<void(float)>*>>;
 
 namespace InnoEventSystemNS
 {
@@ -17,14 +17,14 @@ namespace InnoEventSystemNS
 	bool update();
 	bool terminate();
 
-	bool addButtonStatusCallback(ButtonState buttonState, ButtonEvent buttonEvent);
-	bool addMouseMovementCallback(int mouseCode, std::function<void(float)>* mouseMovementCallback);
+	bool addButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent);
+	bool addMouseMovementCallback(int32_t mouseCode, std::function<void(float)>* mouseMovementCallback);
 
 	Vec4 getMousePositionInWorldSpace();
 	Vec2 getMousePositionInScreenSpace();
 
 	void buttonStatusCallback(ButtonState buttonState);
-	void framebufferSizeCallback(int width, int height);
+	void framebufferSizeCallback(int32_t width, int32_t height);
 	void mousePositionCallback(float mouseXPos, float mouseYPos);
 	void scrollCallback(float xoffset, float yoffset);
 
@@ -122,14 +122,14 @@ bool InnoEventSystemNS::terminate()
 	return true;
 }
 
-bool InnoEventSystemNS::addButtonStatusCallback(ButtonState buttonState, ButtonEvent buttonEvent)
+bool InnoEventSystemNS::addButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent)
 {
 	m_buttonEvents.emplace(buttonState, buttonEvent);
 
 	return true;
 }
 
-bool InnoEventSystemNS::addMouseMovementCallback(int mouseCode, std::function<void(float)>* mouseMovementCallback)
+bool InnoEventSystemNS::addMouseMovementCallback(int32_t mouseCode, std::function<void(float)>* mouseMovementCallback)
 {
 	auto l_result = m_mouseMovementEvents.find(mouseCode);
 	if (l_result != m_mouseMovementEvents.end())
@@ -232,9 +232,9 @@ void InnoEventSystemNS::buttonStatusCallback(ButtonState buttonState)
 	}
 }
 
-void InnoEventSystemNS::framebufferSizeCallback(int width, int height)
+void InnoEventSystemNS::framebufferSizeCallback(int32_t width, int32_t height)
 {
-	TVec2<unsigned int> l_newScreenResolution = TVec2<unsigned int>(width, height);
+	TVec2<uint32_t> l_newScreenResolution = TVec2<uint32_t>(width, height);
 	g_pModuleManager->getRenderingFrontend()->setScreenResolution(l_newScreenResolution);
 	g_pModuleManager->getRenderingServer()->Resize();
 }
@@ -277,12 +277,12 @@ InputConfig InnoEventSystem::getInputConfig()
 	return InnoEventSystemNS::m_inputConfig;
 }
 
-void InnoEventSystem::addButtonStatusCallback(ButtonState buttonState, ButtonEvent buttonEvent)
+void InnoEventSystem::addButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent)
 {
-	InnoEventSystemNS::addButtonStatusCallback(buttonState, buttonEvent);
+	InnoEventSystemNS::addButtonStateCallback(buttonState, buttonEvent);
 }
 
-void InnoEventSystem::addMouseMovementCallback(int mouseCode, std::function<void(float)>* mouseMovementCallback)
+void InnoEventSystem::addMouseMovementCallback(int32_t mouseCode, std::function<void(float)>* mouseMovementCallback)
 {
 	InnoEventSystemNS::addMouseMovementCallback(mouseCode, mouseMovementCallback);
 }
@@ -292,7 +292,7 @@ void InnoEventSystem::buttonStatusCallback(ButtonState buttonState)
 	InnoEventSystemNS::buttonStatusCallback(buttonState);
 }
 
-void InnoEventSystem::framebufferSizeCallback(int width, int height)
+void InnoEventSystem::framebufferSizeCallback(int32_t width, int32_t height)
 {
 	InnoEventSystemNS::framebufferSizeCallback(width, height);
 }

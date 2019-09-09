@@ -71,16 +71,16 @@ namespace DX11RenderingBackendNS
 		updateConstantBufferImpl(ConstantBuffer, sizeof(T) * ConstantBufferValue.size(), &ConstantBufferValue[0]);
 	}
 
-	void bindConstantBuffer(ShaderType shaderType, unsigned int startSlot, const DX11ConstantBuffer& ConstantBuffer);
-	void bindConstantBuffer(ShaderType shaderType, unsigned int startSlot, const DX11ConstantBuffer& ConstantBuffer, unsigned int offset);
+	void bindConstantBuffer(ShaderType shaderType, uint32_t startSlot, const DX11ConstantBuffer& ConstantBuffer);
+	void bindConstantBuffer(ShaderType shaderType, uint32_t startSlot, const DX11ConstantBuffer& ConstantBuffer, uint32_t offset);
 
-	void bindStructuredBufferForWrite(ShaderType shaderType, unsigned int startSlot, const DX11StructuredBuffer& StructuredBuffer);
-	void bindStructuredBufferForRead(ShaderType shaderType, unsigned int startSlot, const DX11StructuredBuffer& StructuredBuffer);
-	void unbindStructuredBufferForWrite(ShaderType shaderType, unsigned int startSlot);
-	void unbindStructuredBufferForRead(ShaderType shaderType, unsigned int startSlot);
-	void bindTextureForWrite(ShaderType shaderType, unsigned int startSlot, DX11TextureDataComponent* DXTDC);
-	void bindTextureForRead(ShaderType shaderType, unsigned int startSlot, DX11TextureDataComponent* DXTDC);
-	void unbindTextureForWrite(ShaderType shaderType, unsigned int startSlot);
-	void unbindTextureForRead(ShaderType shaderType, unsigned int startSlot);
+	void bindStructuredBufferForWrite(ShaderType shaderType, uint32_t startSlot, const DX11StructuredBuffer& StructuredBuffer);
+	void bindStructuredBufferForRead(ShaderType shaderType, uint32_t startSlot, const DX11StructuredBuffer& StructuredBuffer);
+	void unbindStructuredBufferForWrite(ShaderType shaderType, uint32_t startSlot);
+	void unbindStructuredBufferForRead(ShaderType shaderType, uint32_t startSlot);
+	void bindTextureForWrite(ShaderType shaderType, uint32_t startSlot, DX11TextureDataComponent* DXTDC);
+	void bindTextureForRead(ShaderType shaderType, uint32_t startSlot, DX11TextureDataComponent* DXTDC);
+	void unbindTextureForWrite(ShaderType shaderType, uint32_t startSlot);
+	void unbindTextureForRead(ShaderType shaderType, uint32_t startSlot);
 	void drawMesh(DX11MeshDataComponent * DXMDC);
 }

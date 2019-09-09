@@ -10,7 +10,7 @@ namespace InnoType
 		ReadWrite
 	};
 
-	using Index = unsigned int;
+	using Index = uint32_t;
 
 	enum class MeshUsageType { Static, Dynamic, Skeletal };
 	enum class MeshShapeType { Line, Quad, Cube, Sphere, Terrain, Custom };
@@ -37,9 +37,9 @@ namespace InnoType
 		TextureFilterMethod MagFilterMethod;
 		TextureWrapMethod WrapMethod;
 		bool UseMipMap = false;
-		unsigned int Width = 0;
-		unsigned int Height = 0;
-		unsigned int DepthOrArraySize = 0;
+		uint32_t Width = 0;
+		uint32_t Height = 0;
+		uint32_t DepthOrArraySize = 0;
 		float BorderColor[4];
 	};
 

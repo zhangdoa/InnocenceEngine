@@ -73,10 +73,10 @@ bool GLOpaquePass::update()
 
 	activateShaderProgram(m_GLSPC);
 
-	unsigned int l_offset = 0;
+	uint32_t l_offset = 0;
 
 	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
-	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
+	for (uint32_t i = 0; i < l_totalDrawCallCount; i++)
 	{
 		auto l_opaquePassGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassGPUData()[i];
 
@@ -117,7 +117,7 @@ bool GLOpaquePass::update()
 	return true;
 }
 
-bool GLOpaquePass::resize(unsigned int newSizeX, unsigned int newSizeY)
+bool GLOpaquePass::resize(uint32_t newSizeX, uint32_t newSizeY)
 {
 	resizeGLRenderPassComponent(m_GLRPC, newSizeX, newSizeY);
 

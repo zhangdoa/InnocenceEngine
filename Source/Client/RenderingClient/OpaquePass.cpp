@@ -124,12 +124,12 @@ bool OpaquePass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 8, 0);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MainCameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 
-	unsigned int l_offset = 0;
+	uint32_t l_offset = 0;
 
 	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
 	auto& l_opaquePassDrawCallData = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallData();
 
-	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
+	for (uint32_t i = 0; i < l_totalDrawCallCount; i++)
 	{
 		auto l_drawCallData = l_opaquePassDrawCallData[i];
 		if (l_drawCallData.mesh->m_objectStatus == ObjectStatus::Activated)

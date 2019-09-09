@@ -221,7 +221,7 @@ void InnoMemory::Deallocate(void * const ptr)
 	delete[](char*)ptr;
 }
 
-IObjectPool * InnoMemory::CreateObjectPool(std::size_t objectSize, unsigned int poolCapability)
+IObjectPool * InnoMemory::CreateObjectPool(std::size_t objectSize, uint32_t poolCapability)
 {
 	auto l_IObjectPoolAddress = reinterpret_cast<IObjectPool*>(InnoMemory::Allocate(sizeof(ObjectPool)));
 	auto l_IObjectPool = new(l_IObjectPoolAddress) ObjectPool(objectSize, poolCapability);

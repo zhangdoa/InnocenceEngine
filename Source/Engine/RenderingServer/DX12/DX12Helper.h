@@ -33,9 +33,9 @@ namespace DX12Helper
 	D3D12_RESOURCE_DIMENSION GetTextureDimension(TextureDataDesc textureDataDesc);
 	D3D12_FILTER GetFilterMode(TextureFilterMethod minFilterMethod, TextureFilterMethod magFilterMethod);
 	D3D12_TEXTURE_ADDRESS_MODE GetWrapMode(TextureWrapMethod textureWrapMethod);
-	unsigned int GetTextureMipLevels(TextureDataDesc textureDataDesc);
+	uint32_t GetTextureMipLevels(TextureDataDesc textureDataDesc);
 	D3D12_RESOURCE_FLAGS GetTextureBindFlags(TextureDataDesc textureDataDesc);
-	unsigned int GetTexturePixelDataSize(TextureDataDesc textureDataDesc);
+	uint32_t GetTexturePixelDataSize(TextureDataDesc textureDataDesc);
 	D3D12_RESOURCE_STATES GetTextureWriteState(TextureDataDesc textureDataDesc);
 	D3D12_RESOURCE_STATES GetTextureReadState(TextureDataDesc textureDataDesc);
 	D3D12_SHADER_RESOURCE_VIEW_DESC GetSRVDesc(TextureDataDesc textureDataDesc, D3D12_RESOURCE_DESC D3D12TextureDesc);

@@ -91,7 +91,7 @@ bool GLTAAPass::update(GLRenderPassComponent* prePassGLRPC)
 	return true;
 }
 
-bool GLTAAPass::resize(unsigned int newSizeX, unsigned int newSizeY)
+bool GLTAAPass::resize(uint32_t newSizeX, uint32_t newSizeY)
 {
 	resizeGLRenderPassComponent(m_PingPassGLRPC, newSizeX, newSizeY);
 	resizeGLRenderPassComponent(m_PongPassGLRPC, newSizeX, newSizeY);

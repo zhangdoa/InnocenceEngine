@@ -104,7 +104,7 @@ bool DX11LightPass::update()
 
 	DX11RenderingBackendComponent::get().m_deviceContext->RSSetState(m_DXRPC->m_rasterizerState);
 
-	DX11RenderingBackendComponent::get().m_deviceContext->OMSetRenderTargets((unsigned int)m_DXRPC->m_RTVs.size(), &m_DXRPC->m_RTVs[0], DX11OpaquePass::getDX11RPC()->m_DSV);
+	DX11RenderingBackendComponent::get().m_deviceContext->OMSetRenderTargets((uint32_t)m_DXRPC->m_RTVs.size(), &m_DXRPC->m_RTVs[0], DX11OpaquePass::getDX11RPC()->m_DSV);
 
 	DX11RenderingBackendComponent::get().m_deviceContext->RSSetViewports(1, &m_DXRPC->m_viewport);
 

@@ -64,12 +64,12 @@ struct alignas(16) MeshGPUData
 struct alignas(16) MaterialGPUData
 {
 	MeshCustomMaterial customMaterial;
-	int useNormalTexture = true;
-	int useAlbedoTexture = true;
-	int useMetallicTexture = true;
-	int useRoughnessTexture = true;
-	int useAOTexture = true;
-	int materialType = 0;
+	int32_t useNormalTexture = true;
+	int32_t useAlbedoTexture = true;
+	int32_t useMetallicTexture = true;
+	int32_t useRoughnessTexture = true;
+	int32_t useAOTexture = true;
+	int32_t materialType = 0;
 	float padding1[2];
 	Mat4 padding2;
 	Mat4 padding3;
@@ -87,8 +87,8 @@ struct alignas(16) SkyGPUData
 
 struct alignas(16) DispatchParamsGPUData
 {
-	TVec4<unsigned int> numThreadGroups;
-	TVec4<unsigned int> numThreads;
+	TVec4<uint32_t> numThreadGroups;
+	TVec4<uint32_t> numThreads;
 };
 
 struct alignas(16) GICameraGPUData
@@ -117,15 +117,15 @@ struct OpaquePassDrawCallData
 struct TransparentPassDrawCallData
 {
 	MeshDataComponent* mesh;
-	unsigned int meshGPUDataIndex;
-	unsigned int materialGPUDataIndex;
+	uint32_t meshGPUDataIndex;
+	uint32_t materialGPUDataIndex;
 };
 
 struct BillboardPassDrawCallData
 {
 	TextureDataComponent* iconTexture;
-	unsigned int meshGPUDataOffset;
-	unsigned int instanceCount;
+	uint32_t meshGPUDataOffset;
+	uint32_t instanceCount;
 };
 
 struct DebugPassDrawCallData
@@ -154,8 +154,8 @@ using SurfelGrid = Surfel;
 struct Brick
 {
 	AABB boundBox;
-	unsigned int surfelRangeBegin;
-	unsigned int surfelRangeEnd;
+	uint32_t surfelRangeBegin;
+	uint32_t surfelRangeEnd;
 
 	bool operator==(const Brick &other) const
 	{
@@ -166,7 +166,7 @@ struct Brick
 struct BrickFactor
 {
 	float basisWeight;
-	unsigned int brickIndex;
+	uint32_t brickIndex;
 
 	bool operator==(const BrickFactor &other) const
 	{
@@ -177,9 +177,9 @@ struct BrickFactor
 struct Probe
 {
 	Vec4 pos;
-	unsigned int brickFactorRange[12];
+	uint32_t brickFactorRange[12];
 	float skyVisibility[6];
-	unsigned int padding[10];
+	uint32_t padding[10];
 };
 
 struct ProbeInfo

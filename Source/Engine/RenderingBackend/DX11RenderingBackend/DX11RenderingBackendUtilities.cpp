@@ -23,8 +23,8 @@ namespace DX11RenderingBackendNS
 
 	D3D11_TEXTURE2D_DESC getDX11TextureDataDesc(TextureDataDesc textureDataDesc);
 	DXGI_FORMAT getTextureFormat(TextureDataDesc textureDataDesc);
-	unsigned int getTextureMipLevels(TextureDataDesc textureDataDesc);
-	unsigned int getTextureBindFlags(TextureDataDesc textureDataDesc);
+	uint32_t getTextureMipLevels(TextureDataDesc textureDataDesc);
+	uint32_t getTextureBindFlags(TextureDataDesc textureDataDesc);
 
 	bool submitGPUData(DX11TextureDataComponent* rhs);
 
@@ -110,7 +110,7 @@ DX11ConstantBuffer DX11RenderingBackendNS::createConstantBuffer(size_t elementSi
 	l_result.elementCount = elementCount;
 
 	l_result.m_ConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	l_result.m_ConstantBufferDesc.ByteWidth = (unsigned int)(l_result.elementSize * l_result.elementCount);
+	l_result.m_ConstantBufferDesc.ByteWidth = (uint32_t)(l_result.elementSize * l_result.elementCount);
 	l_result.m_ConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	l_result.m_ConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	l_result.m_ConstantBufferDesc.MiscFlags = 0;
@@ -125,7 +125,7 @@ DX11ConstantBuffer DX11RenderingBackendNS::createConstantBuffer(size_t elementSi
 	}
 
 	// Set name
-	l_hResult = l_result.m_ConstantBufferPtr->SetPrivateData(WKPDID_D3DDebugObjectName, (unsigned int)name.size(), name.c_str());
+	l_hResult = l_result.m_ConstantBufferPtr->SetPrivateData(WKPDID_D3DDebugObjectName, (uint32_t)name.size(), name.c_str());
 
 	if (FAILED(l_hResult))
 	{
@@ -164,7 +164,7 @@ bool DX11RenderingBackendNS::createStructuredBuffer(void* initialData, DX11Struc
 		}
 
 		// Set name
-		l_hResult = arg.m_StructuredBufferPtr->SetPrivateData(WKPDID_D3DDebugObjectName, (unsigned int)name.size(), name.c_str());
+		l_hResult = arg.m_StructuredBufferPtr->SetPrivateData(WKPDID_D3DDebugObjectName, (uint32_t)name.size(), name.c_str());
 
 		if (FAILED(l_hResult))
 		{
@@ -257,7 +257,7 @@ bool DX11RenderingBackendNS::createVertexShader(ID3D10Blob* shaderBuffer, ID3D11
 bool DX11RenderingBackendNS::createInputLayout(ID3D10Blob* shaderBuffer, ID3D11InputLayout** inputLayout)
 {
 	D3D11_INPUT_ELEMENT_DESC l_polygonLayout[5];
-	unsigned int l_numElements;
+	uint32_t l_numElements;
 
 	// Create the vertex input layout description.
 	l_polygonLayout[0].SemanticName = "POSITION";
@@ -419,7 +419,7 @@ bool DX11RenderingBackendNS::initializeDX11ShaderProgramComponent(DX11ShaderProg
 void DX11RenderingBackendNS::OutputShaderErrorMessage(ID3D10Blob * errorMessage, HWND hwnd, const std::string & shaderFilename)
 {
 	char* compileErrors;
-	unsigned long long bufferSize, i;
+	uint64_t bufferSize, i;
 	std::stringstream errorSStream;
 
 	// Get a pointer to the error message text buffer.
@@ -499,7 +499,7 @@ bool DX11RenderingBackendNS::reserveRenderTargets(DX11RenderPassComponent* DXRPC
 
 bool DX11RenderingBackendNS::createRenderTargets(DX11RenderPassComponent* DXRPC)
 {
-	for (unsigned int i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
+	for (uint32_t i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
 	{
 		auto l_TDC = DXRPC->m_DXTDCs[i];
 
@@ -540,7 +540,7 @@ bool DX11RenderingBackendNS::createRTV(DX11RenderPassComponent* DXRPC)
 	DXRPC->m_RTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 	DXRPC->m_RTVDesc.Texture2D.MipSlice = 0;
 
-	for (unsigned int i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
+	for (uint32_t i = 0; i < DXRPC->m_renderPassDesc.RTNumber; i++)
 	{
 		auto l_result = DX11RenderingBackendComponent::get().m_device->CreateRenderTargetView(DXRPC->m_DXTDCs[i]->m_texture, &DXRPC->m_RTVDesc, &DXRPC->m_RTVs[i]);
 		if (FAILED(l_result))
@@ -669,7 +669,7 @@ bool DX11RenderingBackendNS::submitGPUData(DX11MeshDataComponent * rhs)
 	D3D11_BUFFER_DESC indexBufferDesc;
 	ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
 	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	indexBufferDesc.ByteWidth = (UINT)(rhs->m_indices.size() * sizeof(unsigned int));
+	indexBufferDesc.ByteWidth = (UINT)(rhs->m_indices.size() * sizeof(uint32_t));
 	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	indexBufferDesc.CPUAccessFlags = 0;
 	indexBufferDesc.MiscFlags = 0;
@@ -892,9 +892,9 @@ DXGI_FORMAT DX11RenderingBackendNS::getTextureFormat(TextureDataDesc textureData
 	return l_internalFormat;
 }
 
-unsigned int DX11RenderingBackendNS::getTextureMipLevels(TextureDataDesc textureDataDesc)
+uint32_t DX11RenderingBackendNS::getTextureMipLevels(TextureDataDesc textureDataDesc)
 {
-	unsigned int textureMipLevels = 1;
+	uint32_t textureMipLevels = 1;
 	if (textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
 	{
 		textureMipLevels = 0;
@@ -903,9 +903,9 @@ unsigned int DX11RenderingBackendNS::getTextureMipLevels(TextureDataDesc texture
 	return textureMipLevels;
 }
 
-unsigned int DX11RenderingBackendNS::getTextureBindFlags(TextureDataDesc textureDataDesc)
+uint32_t DX11RenderingBackendNS::getTextureBindFlags(TextureDataDesc textureDataDesc)
 {
-	unsigned int textureBindFlags = 0;
+	uint32_t textureBindFlags = 0;
 	if (textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT)
 	{
 		textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
@@ -978,8 +978,8 @@ bool DX11RenderingBackendNS::submitGPUData(DX11TextureDataComponent * rhs)
 		&& rhs->m_textureDataDesc.usageType != TextureUsageType::DEPTH_STENCIL_ATTACHMENT
 		&& rhs->m_textureDataDesc.usageType != TextureUsageType::RAW_IMAGE)
 	{
-		unsigned int rowPitch;
-		rowPitch = (rhs->m_textureDataDesc.width * ((unsigned int)rhs->m_textureDataDesc.pixelDataFormat + 1)) * sizeof(unsigned char);
+		uint32_t rowPitch;
+		rowPitch = (rhs->m_textureDataDesc.width * ((uint32_t)rhs->m_textureDataDesc.pixelDataFormat + 1)) * sizeof(unsigned char);
 		DX11RenderingBackendComponent::get().m_deviceContext->UpdateSubresource(rhs->m_texture, 0, NULL, rhs->m_textureData, rowPitch, 0);
 	}
 
@@ -1098,8 +1098,8 @@ void DX11RenderingBackendNS::drawMesh(DX11MeshDataComponent * DXMDC)
 	if (DXMDC->m_vertexBuffer)
 	{
 		// Set vertex buffer stride and offset.
-		unsigned int stride = sizeof(Vertex);
-		unsigned int offset = 0;
+		uint32_t stride = sizeof(Vertex);
+		uint32_t offset = 0;
 
 		// Set the vertex buffer to active in the input assembler so it can be rendered.
 		DX11RenderingBackendComponent::get().m_deviceContext->IASetVertexBuffers(0, 1, &DXMDC->m_vertexBuffer, &stride, &offset);
@@ -1112,7 +1112,7 @@ void DX11RenderingBackendNS::drawMesh(DX11MeshDataComponent * DXMDC)
 	}
 }
 
-void DX11RenderingBackendNS::bindTextureForWrite(ShaderType shaderType, unsigned int startSlot, DX11TextureDataComponent* DXTDC)
+void DX11RenderingBackendNS::bindTextureForWrite(ShaderType shaderType, uint32_t startSlot, DX11TextureDataComponent* DXTDC)
 {
 	switch (shaderType)
 	{
@@ -1133,7 +1133,7 @@ void DX11RenderingBackendNS::bindTextureForWrite(ShaderType shaderType, unsigned
 	}
 }
 
-void DX11RenderingBackendNS::bindTextureForRead(ShaderType shaderType, unsigned int startSlot, DX11TextureDataComponent* DXTDC)
+void DX11RenderingBackendNS::bindTextureForRead(ShaderType shaderType, uint32_t startSlot, DX11TextureDataComponent* DXTDC)
 {
 	switch (shaderType)
 	{
@@ -1154,7 +1154,7 @@ void DX11RenderingBackendNS::bindTextureForRead(ShaderType shaderType, unsigned 
 	}
 }
 
-void DX11RenderingBackendNS::unbindTextureForWrite(ShaderType shaderType, unsigned int startSlot)
+void DX11RenderingBackendNS::unbindTextureForWrite(ShaderType shaderType, uint32_t startSlot)
 {
 	ID3D11UnorderedAccessView* l_UAV[] = { nullptr };
 
@@ -1177,7 +1177,7 @@ void DX11RenderingBackendNS::unbindTextureForWrite(ShaderType shaderType, unsign
 	}
 }
 
-void DX11RenderingBackendNS::unbindTextureForRead(ShaderType shaderType, unsigned int startSlot)
+void DX11RenderingBackendNS::unbindTextureForRead(ShaderType shaderType, uint32_t startSlot)
 {
 	ID3D11ShaderResourceView* l_SRV[] = { nullptr };
 
@@ -1202,7 +1202,7 @@ void DX11RenderingBackendNS::unbindTextureForRead(ShaderType shaderType, unsigne
 
 void DX11RenderingBackendNS::activateRenderPass(DX11RenderPassComponent * DXRPC)
 {
-	DX11RenderingBackendComponent::get().m_deviceContext->OMSetRenderTargets((unsigned int)DXRPC->m_RTVs.size(), &DXRPC->m_RTVs[0], DXRPC->m_DSV);
+	DX11RenderingBackendComponent::get().m_deviceContext->OMSetRenderTargets((uint32_t)DXRPC->m_RTVs.size(), &DXRPC->m_RTVs[0], DXRPC->m_DSV);
 	DX11RenderingBackendComponent::get().m_deviceContext->RSSetViewports(1, &DXRPC->m_viewport);
 	DX11RenderingBackendComponent::get().m_deviceContext->RSSetState(DXRPC->m_rasterizerState);
 
@@ -1258,7 +1258,7 @@ void DX11RenderingBackendNS::updateConstantBufferImpl(const DX11ConstantBuffer& 
 	DX11RenderingBackendComponent::get().m_deviceContext->Unmap(ConstantBuffer.m_ConstantBufferPtr, 0);
 }
 
-void DX11RenderingBackendNS::bindConstantBuffer(ShaderType shaderType, unsigned int startSlot, const DX11ConstantBuffer& ConstantBuffer)
+void DX11RenderingBackendNS::bindConstantBuffer(ShaderType shaderType, uint32_t startSlot, const DX11ConstantBuffer& ConstantBuffer)
 {
 	switch (shaderType)
 	{
@@ -1279,10 +1279,10 @@ void DX11RenderingBackendNS::bindConstantBuffer(ShaderType shaderType, unsigned 
 	}
 }
 
-void DX11RenderingBackendNS::bindConstantBuffer(ShaderType shaderType, unsigned int startSlot, const DX11ConstantBuffer& ConstantBuffer, unsigned int offset)
+void DX11RenderingBackendNS::bindConstantBuffer(ShaderType shaderType, uint32_t startSlot, const DX11ConstantBuffer& ConstantBuffer, uint32_t offset)
 {
-	unsigned int l_constantCount = (unsigned int)ConstantBuffer.elementSize / 16;
-	unsigned int l_firstConstant = offset * l_constantCount;
+	uint32_t l_constantCount = (uint32_t)ConstantBuffer.elementSize / 16;
+	uint32_t l_firstConstant = offset * l_constantCount;
 
 	switch (shaderType)
 	{
@@ -1303,7 +1303,7 @@ void DX11RenderingBackendNS::bindConstantBuffer(ShaderType shaderType, unsigned 
 	}
 }
 
-void DX11RenderingBackendNS::bindStructuredBufferForWrite(ShaderType shaderType, unsigned int startSlot, const DX11StructuredBuffer& StructuredBuffer)
+void DX11RenderingBackendNS::bindStructuredBufferForWrite(ShaderType shaderType, uint32_t startSlot, const DX11StructuredBuffer& StructuredBuffer)
 {
 	switch (shaderType)
 	{
@@ -1324,7 +1324,7 @@ void DX11RenderingBackendNS::bindStructuredBufferForWrite(ShaderType shaderType,
 	}
 }
 
-void DX11RenderingBackendNS::bindStructuredBufferForRead(ShaderType shaderType, unsigned int startSlot, const DX11StructuredBuffer& StructuredBuffer)
+void DX11RenderingBackendNS::bindStructuredBufferForRead(ShaderType shaderType, uint32_t startSlot, const DX11StructuredBuffer& StructuredBuffer)
 {
 	switch (shaderType)
 	{
@@ -1345,7 +1345,7 @@ void DX11RenderingBackendNS::bindStructuredBufferForRead(ShaderType shaderType, 
 	}
 }
 
-void DX11RenderingBackendNS::unbindStructuredBufferForWrite(ShaderType shaderType, unsigned int startSlot)
+void DX11RenderingBackendNS::unbindStructuredBufferForWrite(ShaderType shaderType, uint32_t startSlot)
 {
 	ID3D11UnorderedAccessView* l_UAV[] = { nullptr };
 
@@ -1368,7 +1368,7 @@ void DX11RenderingBackendNS::unbindStructuredBufferForWrite(ShaderType shaderTyp
 	}
 }
 
-void DX11RenderingBackendNS::unbindStructuredBufferForRead(ShaderType shaderType, unsigned int startSlot)
+void DX11RenderingBackendNS::unbindStructuredBufferForRead(ShaderType shaderType, uint32_t startSlot)
 {
 	ID3D11ShaderResourceView* l_SRV[] = { nullptr };
 

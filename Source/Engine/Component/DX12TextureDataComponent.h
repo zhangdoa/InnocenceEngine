@@ -8,7 +8,7 @@ class DX12TextureDataComponent : public TextureDataComponent
 public:
 	ID3D12Resource* m_ResourceHandle = 0;
 	D3D12_RESOURCE_DESC m_DX12TextureDataDesc = {};
-	unsigned int m_PixelDataSize = 0;
+	uint32_t m_PixelDataSize = 0;
 	D3D12_RESOURCE_STATES m_WriteState;
 	D3D12_RESOURCE_STATES m_ReadState;
 };

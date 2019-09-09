@@ -30,7 +30,7 @@ namespace InnoBakerNS
 
 	bool gatherStaticMeshData();
 	bool generateProbeCaches(std::vector<Probe>& probes);
-	ProbeInfo generateProbes(std::vector<Probe>& probes, const std::vector<Vec4>& heightMap, unsigned int probeMapSamplingInterval);
+	ProbeInfo generateProbes(std::vector<Probe>& probes, const std::vector<Vec4>& heightMap, uint32_t probeMapSamplingInterval);
 	bool serializeProbeInfos(const ProbeInfo& probeInfo);
 
 	bool captureSurfels(std::vector<Probe>& probes);
@@ -49,7 +49,7 @@ namespace InnoBakerNS
 	bool serializeBricks(const std::vector<Brick>& bricks);
 
 	bool assignBrickFactorToProbesByGPU(const std::vector<Brick>& bricks, std::vector<Probe>& probes);
-	bool drawBricks(Vec4 pos, unsigned int bricksCount, const Mat4 & p, const std::vector<Mat4>& v);
+	bool drawBricks(Vec4 pos, uint32_t bricksCount, const Mat4 & p, const std::vector<Mat4>& v);
 	bool readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& brickFactors, const std::vector<Brick>& bricks);
 
 	bool serializeBrickFactors(const std::vector<BrickFactor>& brickFactors);
@@ -57,16 +57,16 @@ namespace InnoBakerNS
 
 	std::string m_exportFileName;
 
-	unsigned int m_staticMeshDrawCallCount = 0;
+	uint32_t m_staticMeshDrawCallCount = 0;
 	std::vector<OpaquePassDrawCallData> m_staticMeshDrawCallData;
 	std::vector<MeshGPUData> m_staticMeshMeshGPUData;
 	std::vector<MaterialGPUData> m_staticMeshMaterialGPUData;
 
-	const unsigned int m_probeMapResolution = 1024;
+	const uint32_t m_probeMapResolution = 1024;
 	const float m_probeHeightOffset = 6.0f;
-	const unsigned int m_probeInterval = 32;
-	const unsigned int m_captureResolution = 32;
-	const unsigned int m_surfelSampleCountPerFace = 16;
+	const uint32_t m_probeInterval = 32;
+	const uint32_t m_captureResolution = 32;
+	const uint32_t m_surfelSampleCountPerFace = 16;
 	const Vec4 m_brickSize = Vec4(4.0f, 4.0f, 4.0f, 0.0f);
 
 	RenderPassDataComponent* m_RPDC_Probe;
@@ -96,7 +96,7 @@ bool InnoBakerNS::gatherStaticMeshData()
 {
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Gathering static meshes...");
 
-	unsigned int l_index = 0;
+	uint32_t l_index = 0;
 
 	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
 	for (auto visibleComponent : l_visibleComponents)
@@ -182,9 +182,9 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_Probe);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Probe, ShaderStage::Vertex, GetGPUBufferDataComponent(GPUBufferUsageType::GICamera)->m_ResourceBinder, 0, 10, Accessibility::ReadOnly);
 
-	unsigned int l_offset = 0;
+	uint32_t l_offset = 0;
 
-	for (unsigned int i = 0; i < m_staticMeshDrawCallCount; i++)
+	for (uint32_t i = 0; i < m_staticMeshDrawCallCount; i++)
 	{
 		auto l_staticMeshGPUData = m_staticMeshDrawCallData[i];
 
@@ -218,7 +218,7 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 	return true;
 }
 
-ProbeInfo InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<Vec4>& heightMap, unsigned int probeMapSamplingInterval)
+ProbeInfo InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<Vec4>& heightMap, uint32_t probeMapSamplingInterval)
 {
 	auto l_totalTextureSize = heightMap.size();
 
@@ -267,7 +267,7 @@ ProbeInfo InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vec
 	l_result.probeInterval.z = std::abs((heightMap[0] - heightMap[m_probeMapResolution * probeMapSamplingInterval - 1]).z);
 	l_result.probeInterval.w = 1.0f;
 
-	unsigned int l_maxVerticalProbesCount = 1;
+	uint32_t l_maxVerticalProbesCount = 1;
 
 	for (size_t i = 0; i < l_probesCount; i++)
 	{
@@ -299,7 +299,7 @@ ProbeInfo InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vec
 			{
 				auto l_verticalProbesCount = std::floor(ddx / m_probeHeightOffset);
 
-				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 1, l_maxVerticalProbesCount);
+				l_maxVerticalProbesCount = std::max((uint32_t)l_verticalProbesCount + 1, l_maxVerticalProbesCount);
 
 				for (size_t k = 0; k < l_verticalProbesCount; k++)
 				{
@@ -314,7 +314,7 @@ ProbeInfo InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vec
 			{
 				auto l_verticalProbesCount = std::floor(std::abs(ddx) / m_probeHeightOffset);
 
-				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 1, l_maxVerticalProbesCount);
+				l_maxVerticalProbesCount = std::max((uint32_t)l_verticalProbesCount + 1, l_maxVerticalProbesCount);
 
 				for (size_t k = 0; k < l_verticalProbesCount; k++)
 				{
@@ -329,7 +329,7 @@ ProbeInfo InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vec
 			{
 				auto l_verticalProbesCount = std::floor(ddy / m_probeHeightOffset);
 
-				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 1, l_maxVerticalProbesCount);
+				l_maxVerticalProbesCount = std::max((uint32_t)l_verticalProbesCount + 1, l_maxVerticalProbesCount);
 
 				for (size_t k = 0; k < l_verticalProbesCount; k++)
 				{
@@ -344,7 +344,7 @@ ProbeInfo InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vec
 			{
 				auto l_verticalProbesCount = std::floor(std::abs(ddy) / m_probeHeightOffset);
 
-				l_maxVerticalProbesCount = std::max((unsigned int)l_verticalProbesCount + 1, l_maxVerticalProbesCount);
+				l_maxVerticalProbesCount = std::max((uint32_t)l_verticalProbesCount + 1, l_maxVerticalProbesCount);
 
 				for (size_t k = 0; k < l_verticalProbesCount; k++)
 				{
@@ -409,7 +409,7 @@ bool InnoBakerNS::captureSurfels(std::vector<Probe>& probes)
 	std::vector<Surfel> l_surfelCaches;
 	l_surfelCaches.reserve(l_probeForSurfelCachesCount * m_surfelSampleCountPerFace * m_surfelSampleCountPerFace * 6);
 
-	for (unsigned int i = 0; i < l_probeForSurfelCachesCount; i++)
+	for (uint32_t i = 0; i < l_probeForSurfelCachesCount; i++)
 	{
 		drawOpaquePass(probes[i], l_p, l_v);
 
@@ -452,9 +452,9 @@ bool InnoBakerNS::drawOpaquePass(Probe& probeCache, const Mat4& p, const std::ve
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, m_SDC_Surfel->m_ResourceBinder, 8, 0);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Geometry, GetGPUBufferDataComponent(GPUBufferUsageType::GICamera)->m_ResourceBinder, 0, 10, Accessibility::ReadOnly);
 
-	unsigned int l_offset = 0;
+	uint32_t l_offset = 0;
 
-	for (unsigned int i = 0; i < m_staticMeshDrawCallCount; i++)
+	for (uint32_t i = 0; i < m_staticMeshDrawCallCount; i++)
 	{
 		auto l_staticMeshGPUData = m_staticMeshDrawCallData[i];
 
@@ -527,7 +527,7 @@ bool InnoBakerNS::readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfel
 
 	for (size_t i = 0; i < 6; i++)
 	{
-		unsigned int l_stencil = 0;
+		uint32_t l_stencil = 0;
 		for (size_t j = 0; j < l_depthStencilRTSize; j++)
 		{
 			auto& l_depthStencil = l_depthStencilRT[i * l_depthStencilRTSize + j];
@@ -809,8 +809,8 @@ bool InnoBakerNS::generateBricks(const std::vector<BrickCache>& brickCaches)
 	{
 		Brick l_brick;
 		l_brick.boundBox = InnoMath::generateAABB(brickCaches[i].pos + m_brickSize / 2.0f, brickCaches[i].pos - m_brickSize / 2.0f);
-		l_brick.surfelRangeBegin = (unsigned int)l_offset;
-		l_brick.surfelRangeEnd = (unsigned int)(l_offset + brickCaches[i].surfelCaches.size() - 1);
+		l_brick.surfelRangeBegin = (uint32_t)l_offset;
+		l_brick.surfelRangeEnd = (uint32_t)(l_offset + brickCaches[i].surfelCaches.size() - 1);
 		l_offset += brickCaches[i].surfelCaches.size();
 
 		l_surfels.insert(l_surfels.end(), std::make_move_iterator(brickCaches[i].surfelCaches.begin()), std::make_move_iterator(brickCaches[i].surfelCaches.end()));
@@ -921,7 +921,7 @@ bool InnoBakerNS::assignBrickFactorToProbesByGPU(const std::vector<Brick>& brick
 
 	for (size_t i = 0; i < l_probesCount; i++)
 	{
-		drawBricks(probes[i].pos, (unsigned int)l_bricksCount, l_p, l_v);
+		drawBricks(probes[i].pos, (uint32_t)l_bricksCount, l_p, l_v);
 		readBackBrickFactors(probes[i], l_brickFactors, bricks);
 
 		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Progress: ", (float)i * 100.0f / (float)l_probesCount, "%...");
@@ -937,7 +937,7 @@ bool InnoBakerNS::assignBrickFactorToProbesByGPU(const std::vector<Brick>& brick
 	return true;
 }
 
-bool InnoBakerNS::drawBricks(Vec4 pos, unsigned int bricksCount, const Mat4 & p, const std::vector<Mat4>& v)
+bool InnoBakerNS::drawBricks(Vec4 pos, uint32_t bricksCount, const Mat4 & p, const std::vector<Mat4>& v)
 {
 	std::vector<Mat4> l_GICameraGPUData(8);
 	l_GICameraGPUData[0] = p;
@@ -953,14 +953,14 @@ bool InnoBakerNS::drawBricks(Vec4 pos, unsigned int bricksCount, const Mat4 & p,
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Cube);
 
-	unsigned int l_offset = 0;
+	uint32_t l_offset = 0;
 
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_BrickFactor, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_BrickFactor);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_BrickFactor);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_BrickFactor, ShaderStage::Geometry, GetGPUBufferDataComponent(GPUBufferUsageType::GICamera)->m_ResourceBinder, 0, 10, Accessibility::ReadOnly);
 
-	for (unsigned int i = 0; i < bricksCount; i++)
+	for (uint32_t i = 0; i < bricksCount; i++)
 	{
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_BrickFactor, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_offset, 1);
 
@@ -1000,7 +1000,7 @@ bool InnoBakerNS::readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& b
 				BrickFactor l_BrickFactor;
 
 				// Index start from 1
-				l_BrickFactor.brickIndex = (unsigned int)(std::round(l_brickIDResult.y) - 1.0f);
+				l_BrickFactor.brickIndex = (uint32_t)(std::round(l_brickIDResult.y) - 1.0f);
 				l_brickFactors.emplace_back(l_BrickFactor);
 			}
 		}
@@ -1065,8 +1065,8 @@ bool InnoBakerNS::readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& b
 			auto l_brickFactorRangeBegin = brickFactors.size();
 			auto l_brickFactorRangeEnd = l_brickFactorRangeBegin + l_brickFactors.size() - 1;
 
-			probe.brickFactorRange[i * 2] = (unsigned int)l_brickFactorRangeBegin;
-			probe.brickFactorRange[i * 2 + 1] = (unsigned int)l_brickFactorRangeEnd;
+			probe.brickFactorRange[i * 2] = (uint32_t)l_brickFactorRangeBegin;
+			probe.brickFactorRange[i * 2 + 1] = (uint32_t)l_brickFactorRangeEnd;
 
 			brickFactors.insert(brickFactors.end(), std::make_move_iterator(l_brickFactors.begin()), std::make_move_iterator(l_brickFactors.end()));
 		}

@@ -8,7 +8,7 @@ enum class ThreadState { Idle, Busy };
 class InnoThread
 {
 public:
-	explicit InnoThread(unsigned int ThreadIndex)
+	explicit InnoThread(uint32_t ThreadIndex)
 	{
 		m_ThreadHandle = new std::thread(&InnoThread::Worker, this, ThreadIndex);
 		m_TaskReport.reserve(256);
@@ -39,12 +39,12 @@ public:
 private:
 	std::string GetThreadID();
 
-	void Worker(unsigned int ThreadIndex);
+	void Worker(uint32_t ThreadIndex);
 
 	void ExecuteTask(std::shared_ptr<IInnoTask>&& task);
 
 	std::thread* m_ThreadHandle;
-	std::pair<unsigned int, std::thread::id> m_ID;
+	std::pair<uint32_t, std::thread::id> m_ID;
 	std::atomic<ThreadState> m_ThreadState;
 	std::atomic_bool m_Done = false;
 	ThreadSafeQueue<std::shared_ptr<IInnoTask>> m_WorkQueue;
@@ -113,9 +113,9 @@ void InnoTaskScheduler::WaitSync()
 	InnoLogger::Log(LogLevel::Verbose, "InnoTaskScheduler: Reached synchronization point");
 }
 
-std::shared_ptr<IInnoTask> InnoTaskScheduler::AddTaskImpl(std::unique_ptr<IInnoTask>&& task, int threadID)
+std::shared_ptr<IInnoTask> InnoTaskScheduler::AddTaskImpl(std::unique_ptr<IInnoTask>&& task, int32_t threadID)
 {
-	int l_ThreadIndex;
+	int32_t l_ThreadIndex;
 	if (threadID != -1)
 	{
 		l_ThreadIndex = threadID;
@@ -124,7 +124,7 @@ std::shared_ptr<IInnoTask> InnoTaskScheduler::AddTaskImpl(std::unique_ptr<IInnoT
 	{
 		std::random_device RD;
 		std::mt19937 Gen(RD());
-		std::uniform_int_distribution<> Dis(0, (unsigned int)m_NumThreads - 1);
+		std::uniform_int_distribution<> Dis(0, (uint32_t)m_NumThreads - 1);
 		l_ThreadIndex = Dis(Gen);
 	}
 
@@ -136,7 +136,7 @@ size_t InnoTaskScheduler::GetTotalThreadsNumber()
 	return m_NumThreads;
 }
 
-const RingBuffer<InnoTaskReport, true>& InnoTaskScheduler::GetTaskReport(int threadID)
+const RingBuffer<InnoTaskReport, true>& InnoTaskScheduler::GetTaskReport(int32_t threadID)
 {
 	return m_Threads[threadID]->GetTaskReport();
 }
@@ -180,7 +180,7 @@ inline void InnoThread::ExecuteTask(std::shared_ptr<IInnoTask>&& task)
 #endif
 }
 
-inline void InnoThread::Worker(unsigned int ThreadIndex)
+inline void InnoThread::Worker(uint32_t ThreadIndex)
 {
 	auto l_ID = std::this_thread::get_id();
 	m_ID = std::make_pair(ThreadIndex, l_ID);

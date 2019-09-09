@@ -38,7 +38,7 @@ namespace GLDebuggerPass
 	EntityID m_entityID;
 
 	std::function<void()> f_mouseSelect;
-	unsigned int m_pickedID;
+	uint32_t m_pickedID;
 	VisibleComponent* m_pickedVisibleComponent;
 
 	GLTextureDataComponent* m_testSampleCubemap;
@@ -67,8 +67,8 @@ bool GLDebuggerPass::initializeSHTest()
 {
 	m_SH9UBO = generateUBO(sizeof(SH9) * 64, 9, "SH9UBO");
 
-	const unsigned int m_captureResolution = 128;
-	const unsigned int m_sampleCountPerFace = m_captureResolution * m_captureResolution;
+	const uint32_t m_captureResolution = 128;
+	const uint32_t m_sampleCountPerFace = m_captureResolution * m_captureResolution;
 
 	m_testSampleCubemap = addGLTextureDataComponent();
 	m_testSampleCubemap->m_textureDataDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc.RTDesc;
@@ -116,7 +116,7 @@ bool GLDebuggerPass::initialize()
 
 		auto l_pixelValue = readPixel(GLOpaquePass::getGLRPC(), 3, (GLint)l_mousePos.x, (GLint)l_mousePos.y);
 
-		m_pickedID = (unsigned int)l_pixelValue.z;
+		m_pickedID = (uint32_t)l_pixelValue.z;
 
 		auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
 		auto l_findResult =
@@ -130,7 +130,7 @@ bool GLDebuggerPass::initialize()
 		}
 	};
 
-	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::PRESSED }, &f_mouseSelect);
+	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::PRESSED }, &f_mouseSelect);
 
 	m_entityID = InnoMath::createEntityID();
 
@@ -353,7 +353,7 @@ bool GLDebuggerPass::drawWireframeForDebugObjects()
 
 	if (l_drawDebugMesh)
 	{
-		for (unsigned int i = 0; i < g_pModuleManager->getRenderingFrontend()->getDebuggerPassDrawCallCount(); i++)
+		for (uint32_t i = 0; i < g_pModuleManager->getRenderingFrontend()->getDebuggerPassDrawCallCount(); i++)
 		{
 			auto l_debuggerPassGPUData = g_pModuleManager->getRenderingFrontend()->getDebuggerPassGPUData()[i];
 			updateUniform(3, l_debuggerPassGPUData.m);
@@ -529,7 +529,7 @@ bool GLDebuggerPass::drawProbes(GLRenderPassComponent* canvas)
 	{
 		auto l_m = InnoMath::toTranslationMatrix(l_probes[i].pos);
 		updateUniform(0, l_m);
-		updateUniform(1, (unsigned int)i);
+		updateUniform(1, (uint32_t)i);
 
 		drawMesh(l_MDC);
 	}
@@ -618,7 +618,7 @@ bool GLDebuggerPass::update(GLRenderPassComponent* canvas)
 	return true;
 }
 
-bool GLDebuggerPass::resize(unsigned int newSizeX, unsigned int newSizeY)
+bool GLDebuggerPass::resize(uint32_t newSizeX, uint32_t newSizeY)
 {
 	resizeGLRenderPassComponent(m_mainCanvasGLRPC, newSizeX, newSizeY);
 
@@ -642,7 +642,7 @@ bool GLDebuggerPass::reloadShader()
 	return true;
 }
 
-GLRenderPassComponent * GLDebuggerPass::getGLRPC(unsigned int index)
+GLRenderPassComponent * GLDebuggerPass::getGLRPC(uint32_t index)
 {
 	if (index == 0)
 	{

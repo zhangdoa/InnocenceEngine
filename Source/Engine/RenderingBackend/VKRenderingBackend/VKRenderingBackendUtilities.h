@@ -60,9 +60,9 @@ namespace VKRenderingBackendNS
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 	bool isDeviceSuitable(VkPhysicalDevice device);
 
-	bool createDescriptorPool(VkDescriptorPoolSize* poolSize, unsigned int poolSizeCount, unsigned int maxSets, VkDescriptorPool& poolHandle);
+	bool createDescriptorPool(VkDescriptorPoolSize* poolSize, uint32_t poolSizeCount, uint32_t maxSets, VkDescriptorPool& poolHandle);
 	bool createDescriptorSetLayout(VkDescriptorSetLayoutBinding* setLayoutBindings, uint32_t setLayoutBindingsCount, VkDescriptorSetLayout& setLayout);
-	bool createDescriptorSets(VkDescriptorPool pool, VkDescriptorSetLayout& setLayout, VkDescriptorSet& setHandle, unsigned int count);
+	bool createDescriptorSets(VkDescriptorPool pool, VkDescriptorSetLayout& setLayout, VkDescriptorSet& setHandle, uint32_t count);
 	bool updateDescriptorSet(VkWriteDescriptorSet* writeDescriptorSets, uint32_t writeDescriptorSetsCount);
 
 	VKRenderPassComponent* addVKRenderPassComponent();
@@ -86,12 +86,12 @@ namespace VKRenderingBackendNS
 	bool createImageView(VKTextureDataComponent* VKTDC);
 	bool initializeVKMaterialDataComponent(VKMaterialDataComponent* rhs);
 
-	bool recordCommand(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex, const std::function<void()>& commands);
+	bool recordCommand(VKRenderPassComponent* VKRPC, uint32_t commandBufferIndex, const std::function<void()>& commands);
 
-	bool recordDrawCall(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex, VKMeshDataComponent * VKMDC);
+	bool recordDrawCall(VKRenderPassComponent* VKRPC, uint32_t commandBufferIndex, VKMeshDataComponent * VKMDC);
 
 	bool waitForFence(VKRenderPassComponent* VKRPC);
-	bool submitCommand(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex);
+	bool submitCommand(VKRenderPassComponent* VKRPC, uint32_t commandBufferIndex);
 
 	bool updateUBOImpl(VkDeviceMemory&  UBOMemory, size_t size, const void* UBOValue);
 

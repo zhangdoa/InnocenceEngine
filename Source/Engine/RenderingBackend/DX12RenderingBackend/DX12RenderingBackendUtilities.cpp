@@ -25,7 +25,7 @@ namespace DX12RenderingBackendNS
 
 	D3D12_RESOURCE_DESC getDX12TextureDataDesc(TextureDataDesc textureDataDesc);
 	DXGI_FORMAT getTextureFormat(TextureDataDesc textureDataDesc);
-	unsigned int getTextureMipLevels(TextureDataDesc textureDataDesc);
+	uint32_t getTextureMipLevels(TextureDataDesc textureDataDesc);
 	D3D12_RESOURCE_FLAGS getTextureBindFlags(TextureDataDesc textureDataDesc);
 
 	bool submitGPUData(DX12TextureDataComponent* rhs);
@@ -142,7 +142,7 @@ DX12CBV DX12RenderingBackendNS::createCBV(const DX12ConstantBuffer& arg, size_t 
 {
 	DX12CBV l_result = {};
 	l_result.CBVDesc.BufferLocation = arg.m_constantBuffer->GetGPUVirtualAddress() + offset * arg.elementSize;
-	l_result.CBVDesc.SizeInBytes = (unsigned int)arg.elementSize;
+	l_result.CBVDesc.SizeInBytes = (uint32_t)arg.elementSize;
 
 	l_result.CPUHandle = DX12RenderingBackendComponent::get().m_currentCSUCPUHandle;
 	l_result.GPUHandle = DX12RenderingBackendComponent::get().m_currentCSUGPUHandle;
@@ -313,7 +313,7 @@ ID3D12Resource* DX12RenderingBackendNS::createDefaultHeapBuffer(D3D12_RESOURCE_D
 void DX12RenderingBackendNS::OutputShaderErrorMessage(ID3DBlob * errorMessage, HWND hwnd, const std::string & shaderFilename)
 {
 	char* compileErrors;
-	unsigned long long bufferSize, i;
+	uint64_t bufferSize, i;
 	std::stringstream errorSStream;
 
 	// Get a pointer to the error message text buffer.
@@ -573,7 +573,7 @@ bool DX12RenderingBackendNS::createRootSignature(DX12RenderPassComponent* DXRPC)
 bool DX12RenderingBackendNS::createPSO(DX12RenderPassComponent* DXRPC, DX12ShaderProgramComponent* DXSPC)
 {
 	D3D12_INPUT_ELEMENT_DESC l_polygonLayout[5];
-	unsigned int l_numElements;
+	uint32_t l_numElements;
 
 	// Create the vertex input layout description.
 	l_polygonLayout[0].SemanticName = "POSITION";
@@ -875,7 +875,7 @@ DX12SRV DX12RenderingBackendNS::createSRV(const DX12TextureDataComponent & rhs)
 {
 	DX12SRV l_result;
 
-	unsigned int l_mipLevels = -1;
+	uint32_t l_mipLevels = -1;
 	if (rhs.m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT
 		|| rhs.m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT
 		|| rhs.m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT
@@ -947,7 +947,7 @@ bool DX12RenderingBackendNS::destroyAllGraphicPrimitiveComponents()
 bool DX12RenderingBackendNS::submitGPUData(DX12MeshDataComponent * rhs)
 {
 	// vertices
-	auto l_verticesDataSize = unsigned int(sizeof(Vertex) * rhs->m_vertices.size());
+	auto l_verticesDataSize = uint32_t(sizeof(Vertex) * rhs->m_vertices.size());
 
 	auto l_verticesResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_verticesDataSize);
 	rhs->m_vertexBuffer = createDefaultHeapBuffer(&l_verticesResourceDesc);
@@ -982,7 +982,7 @@ bool DX12RenderingBackendNS::submitGPUData(DX12MeshDataComponent * rhs)
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingBackend: VBO " + InnoUtility::pointerToString(rhs->m_vertexBuffer) + " is initialized.");
 
 	// indices
-	auto l_indicesDataSize = unsigned int(sizeof(Index) * rhs->m_indices.size());
+	auto l_indicesDataSize = uint32_t(sizeof(Index) * rhs->m_indices.size());
 
 	auto l_indicesResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_indicesDataSize);
 	rhs->m_indexBuffer = createDefaultHeapBuffer(&l_indicesResourceDesc);
@@ -1178,9 +1178,9 @@ DXGI_FORMAT DX12RenderingBackendNS::getTextureFormat(TextureDataDesc textureData
 	return l_internalFormat;
 }
 
-unsigned int DX12RenderingBackendNS::getTextureMipLevels(TextureDataDesc textureDataDesc)
+uint32_t DX12RenderingBackendNS::getTextureMipLevels(TextureDataDesc textureDataDesc)
 {
-	unsigned int textureMipLevels = 1;
+	uint32_t textureMipLevels = 1;
 	if (textureDataDesc.magFilterMethod == TextureFilterMethod::LINEAR_MIPMAP_LINEAR)
 	{
 		textureMipLevels = 0;
@@ -1281,7 +1281,7 @@ bool DX12RenderingBackendNS::submitGPUData(DX12TextureDataComponent * rhs)
 
 		D3D12_SUBRESOURCE_DATA l_textureSubResourceData = {};
 		l_textureSubResourceData.pData = rhs->m_textureData;
-		l_textureSubResourceData.RowPitch = rhs->m_textureDataDesc.width * ((unsigned int)rhs->m_textureDataDesc.pixelDataFormat + 1);
+		l_textureSubResourceData.RowPitch = rhs->m_textureDataDesc.width * ((uint32_t)rhs->m_textureDataDesc.pixelDataFormat + 1);
 		l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * rhs->m_textureDataDesc.height;
 		UpdateSubresources(l_commandList, rhs->m_texture, l_uploadHeapBuffer, 0, 0, 1, &l_textureSubResourceData);
 	}
@@ -1380,7 +1380,7 @@ bool DX12RenderingBackendNS::submitGPUData(DX12MaterialDataComponent * rhs)
 	return true;
 }
 
-bool DX12RenderingBackendNS::recordCommandBegin(DX12RenderPassComponent* DXRPC, unsigned int frameIndex)
+bool DX12RenderingBackendNS::recordCommandBegin(DX12RenderPassComponent* DXRPC, uint32_t frameIndex)
 {
 	DXRPC->m_commandAllocators[frameIndex]->Reset();
 	DXRPC->m_commandLists[frameIndex]->Reset(DXRPC->m_commandAllocators[frameIndex], DXRPC->m_PSO);
@@ -1388,7 +1388,7 @@ bool DX12RenderingBackendNS::recordCommandBegin(DX12RenderPassComponent* DXRPC, 
 	return true;
 }
 
-bool DX12RenderingBackendNS::recordActivateRenderPass(DX12RenderPassComponent* DXRPC, unsigned int frameIndex)
+bool DX12RenderingBackendNS::recordActivateRenderPass(DX12RenderPassComponent* DXRPC, uint32_t frameIndex)
 {
 	DXRPC->m_commandLists[frameIndex]->SetGraphicsRootSignature(DXRPC->m_rootSignature);
 	DXRPC->m_commandLists[frameIndex]->RSSetViewports(1, &DXRPC->m_viewport);
@@ -1416,19 +1416,19 @@ bool DX12RenderingBackendNS::recordActivateRenderPass(DX12RenderPassComponent* D
 	return true;
 }
 
-bool DX12RenderingBackendNS::recordBindDescHeaps(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int heapsCount, ID3D12DescriptorHeap** heaps)
+bool DX12RenderingBackendNS::recordBindDescHeaps(DX12RenderPassComponent* DXRPC, uint32_t frameIndex, uint32_t heapsCount, ID3D12DescriptorHeap** heaps)
 {
 	DXRPC->m_commandLists[frameIndex]->SetDescriptorHeaps(heapsCount, heaps);
 	return true;
 }
 
-bool DX12RenderingBackendNS::recordBindCBV(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int startSlot, const DX12ConstantBuffer& ConstantBuffer, size_t offset)
+bool DX12RenderingBackendNS::recordBindCBV(DX12RenderPassComponent* DXRPC, uint32_t frameIndex, uint32_t startSlot, const DX12ConstantBuffer& ConstantBuffer, size_t offset)
 {
 	DXRPC->m_commandLists[frameIndex]->SetGraphicsRootConstantBufferView(startSlot, ConstantBuffer.m_constantBuffer->GetGPUVirtualAddress() + offset * ConstantBuffer.elementSize);
 	return true;
 }
 
-bool DX12RenderingBackendNS::recordBindRTForWrite(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, DX12TextureDataComponent* DXTDC)
+bool DX12RenderingBackendNS::recordBindRTForWrite(DX12RenderPassComponent* DXRPC, uint32_t frameIndex, DX12TextureDataComponent* DXTDC)
 {
 	DXRPC->m_commandLists[frameIndex]->ResourceBarrier(1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(DXTDC->m_texture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));
@@ -1436,7 +1436,7 @@ bool DX12RenderingBackendNS::recordBindRTForWrite(DX12RenderPassComponent* DXRPC
 	return true;
 }
 
-bool DX12RenderingBackendNS::recordBindRTForRead(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, DX12TextureDataComponent* DXTDC)
+bool DX12RenderingBackendNS::recordBindRTForRead(DX12RenderPassComponent* DXRPC, uint32_t frameIndex, DX12TextureDataComponent* DXTDC)
 {
 	DXRPC->m_commandLists[frameIndex]->ResourceBarrier(1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(DXTDC->m_texture, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
@@ -1444,38 +1444,38 @@ bool DX12RenderingBackendNS::recordBindRTForRead(DX12RenderPassComponent* DXRPC,
 	return true;
 }
 
-bool DX12RenderingBackendNS::recordBindSRVDescTable(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int startSlot, const DX12SRV& SRV)
+bool DX12RenderingBackendNS::recordBindSRVDescTable(DX12RenderPassComponent* DXRPC, uint32_t frameIndex, uint32_t startSlot, const DX12SRV& SRV)
 {
 	DXRPC->m_commandLists[frameIndex]->SetGraphicsRootDescriptorTable(startSlot, SRV.GPUHandle);
 
 	return true;
 }
 
-bool DX12RenderingBackendNS::recordBindSamplerDescTable(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, unsigned int startSlot, DX12ShaderProgramComponent* DXSPC)
+bool DX12RenderingBackendNS::recordBindSamplerDescTable(DX12RenderPassComponent* DXRPC, uint32_t frameIndex, uint32_t startSlot, DX12ShaderProgramComponent* DXSPC)
 {
 	DXRPC->m_commandLists[frameIndex]->SetGraphicsRootDescriptorTable(startSlot, DXSPC->m_samplerGPUHandle);
 
 	return true;
 }
 
-bool DX12RenderingBackendNS::recordDrawCall(DX12RenderPassComponent* DXRPC, unsigned int frameIndex, DX12MeshDataComponent * DXMDC)
+bool DX12RenderingBackendNS::recordDrawCall(DX12RenderPassComponent* DXRPC, uint32_t frameIndex, DX12MeshDataComponent * DXMDC)
 {
 	DXRPC->m_commandLists[frameIndex]->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	DXRPC->m_commandLists[frameIndex]->IASetVertexBuffers(0, 1, &DXMDC->m_VBV);
 	DXRPC->m_commandLists[frameIndex]->IASetIndexBuffer(&DXMDC->m_IBV);
-	DXRPC->m_commandLists[frameIndex]->DrawIndexedInstanced((unsigned int)DXMDC->m_indicesSize, 1, 0, 0, 0);
+	DXRPC->m_commandLists[frameIndex]->DrawIndexedInstanced((uint32_t)DXMDC->m_indicesSize, 1, 0, 0, 0);
 
 	return true;
 }
 
-bool DX12RenderingBackendNS::recordCommandEnd(DX12RenderPassComponent* DXRPC, unsigned int frameIndex)
+bool DX12RenderingBackendNS::recordCommandEnd(DX12RenderPassComponent* DXRPC, uint32_t frameIndex)
 {
 	DXRPC->m_commandLists[frameIndex]->Close();
 
 	return true;
 }
 
-bool DX12RenderingBackendNS::executeCommandList(DX12RenderPassComponent* DXRPC, unsigned int frameIndex)
+bool DX12RenderingBackendNS::executeCommandList(DX12RenderPassComponent* DXRPC, uint32_t frameIndex)
 {
 	ID3D12CommandList* ppCommandLists[] = { DXRPC->m_commandLists[frameIndex] };
 	DXRPC->m_commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
@@ -1486,7 +1486,7 @@ bool DX12RenderingBackendNS::executeCommandList(DX12RenderPassComponent* DXRPC, 
 	return true;
 }
 
-bool DX12RenderingBackendNS::waitFrame(DX12RenderPassComponent* DXRPC, unsigned int frameIndex)
+bool DX12RenderingBackendNS::waitFrame(DX12RenderPassComponent* DXRPC, uint32_t frameIndex)
 {
 	const UINT64 currentFenceValue = DXRPC->m_fence->GetCompletedValue();
 	const UINT64 expectedFenceValue = DXRPC->m_fenceStatus[frameIndex] + 1;

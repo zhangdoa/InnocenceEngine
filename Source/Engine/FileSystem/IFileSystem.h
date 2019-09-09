@@ -36,8 +36,8 @@ public:
 	virtual bool saveScene(const std::string& fileName = "") = 0;
 	virtual bool isLoadingScene() = 0;
 
-	virtual bool addSceneLoadingStartCallback(std::function<void()>* functor, int priority = -1) = 0;
-	virtual bool addSceneLoadingFinishCallback(std::function<void()>* functor, int priority = -1) = 0;
+	virtual bool addSceneLoadingStartCallback(std::function<void()>* functor, int32_t priority = -1) = 0;
+	virtual bool addSceneLoadingFinishCallback(std::function<void()>* functor, int32_t priority = -1) = 0;
 
 	virtual bool convertModel(const std::string & fileName, const std::string & exportPath) = 0;
 

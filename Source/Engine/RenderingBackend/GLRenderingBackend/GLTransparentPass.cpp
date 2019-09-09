@@ -56,9 +56,9 @@ bool GLTransparentPass::update(GLRenderPassComponent* prePassGLRPC)
 
 	activateShaderProgram(m_GLSPC);
 
-	unsigned int l_offset = 0;
+	uint32_t l_offset = 0;
 
-	for (unsigned int i = 0; i < g_pModuleManager->getRenderingFrontend()->getTransparentPassDrawCallCount(); i++)
+	for (uint32_t i = 0; i < g_pModuleManager->getRenderingFrontend()->getTransparentPassDrawCallCount(); i++)
 	{
 		auto l_transparentPassGPUData = g_pModuleManager->getRenderingFrontend()->getTransparentPassGPUData()[i];
 
@@ -77,7 +77,7 @@ bool GLTransparentPass::update(GLRenderPassComponent* prePassGLRPC)
 	return true;
 }
 
-bool GLTransparentPass::resize(unsigned int newSizeX, unsigned int newSizeY)
+bool GLTransparentPass::resize(uint32_t newSizeX, uint32_t newSizeY)
 {
 	return true;
 }

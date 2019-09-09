@@ -23,7 +23,7 @@ namespace DX12FinalBlendPass
 
 	EntityID m_entityID;
 
-	unsigned int m_imageCount = 2;
+	uint32_t m_imageCount = 2;
 }
 
 bool DX12FinalBlendPass::setup()
@@ -127,8 +127,8 @@ bool DX12FinalBlendPass::initialize()
 	// Setup the scissor rect.
 	m_DXRPC->m_scissor.left = 0;
 	m_DXRPC->m_scissor.top = 0;
-	m_DXRPC->m_scissor.right = (unsigned long)m_DXRPC->m_viewport.Width;
-	m_DXRPC->m_scissor.bottom = (unsigned long)m_DXRPC->m_viewport.Height;
+	m_DXRPC->m_scissor.right = (uint64_t)m_DXRPC->m_viewport.Width;
+	m_DXRPC->m_scissor.bottom = (uint64_t)m_DXRPC->m_viewport.Height;
 
 	// Setup PSO.
 	m_DXRPC->m_PSODesc.SampleMask = UINT_MAX;

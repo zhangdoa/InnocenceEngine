@@ -145,7 +145,7 @@ QueueFamilyIndices VKRenderingBackendNS::findQueueFamilies(VkPhysicalDevice devi
 	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
-	int i = 0;
+	int32_t i = 0;
 	for (const auto& queueFamily : queueFamilies)
 	{
 		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
@@ -393,7 +393,7 @@ bool VKRenderingBackendNS::createRenderPass(VKRenderPassComponent* VKRPC)
 	else
 	{
 		VKRPC->subpassDesc.colorAttachmentCount = VKRPC->m_renderPassDesc.RTNumber;
-		VKRPC->renderPassCInfo.attachmentCount = (unsigned int)VKRPC->attachmentDescs.size();
+		VKRPC->renderPassCInfo.attachmentCount = (uint32_t)VKRPC->attachmentDescs.size();
 	}
 
 	VKRPC->subpassDesc.pColorAttachments = &VKRPC->colorAttachmentRefs[0];
@@ -476,7 +476,7 @@ bool VKRenderingBackendNS::createMultipleFramebuffers(VKRenderPassComponent* VKR
 	return true;
 }
 
-bool VKRenderingBackendNS::createDescriptorPool(VkDescriptorPoolSize* poolSize, unsigned int poolSizeCount, unsigned int maxSets, VkDescriptorPool& poolHandle)
+bool VKRenderingBackendNS::createDescriptorPool(VkDescriptorPoolSize* poolSize, uint32_t poolSizeCount, uint32_t maxSets, VkDescriptorPool& poolHandle)
 {
 	VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -511,7 +511,7 @@ bool VKRenderingBackendNS::createDescriptorSetLayout(VkDescriptorSetLayoutBindin
 	return true;
 }
 
-bool VKRenderingBackendNS::createDescriptorSets(VkDescriptorPool pool, VkDescriptorSetLayout& setLayout, VkDescriptorSet& setHandle, unsigned int count)
+bool VKRenderingBackendNS::createDescriptorSets(VkDescriptorPool pool, VkDescriptorSetLayout& setLayout, VkDescriptorSet& setHandle, uint32_t count)
 {
 	VkDescriptorSetAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -1217,7 +1217,7 @@ bool VKRenderingBackendNS::submitGPUData(VKMaterialDataComponent * rhs)
 		rhs->m_writeDescriptorSets[4] = f_createWriteDescriptorSet(getVKTextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION), rhs->m_descriptorImageInfos[4], 4);
 	}
 
-	updateDescriptorSet(&rhs->m_writeDescriptorSets[0], (unsigned int)rhs->m_writeDescriptorSets.size());
+	updateDescriptorSet(&rhs->m_writeDescriptorSets[0], (uint32_t)rhs->m_writeDescriptorSets.size());
 
 	rhs->m_objectStatus = ObjectStatus::Activated;
 
@@ -1226,7 +1226,7 @@ bool VKRenderingBackendNS::submitGPUData(VKMaterialDataComponent * rhs)
 	return true;
 }
 
-bool VKRenderingBackendNS::recordCommand(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex, const std::function<void()>& commands)
+bool VKRenderingBackendNS::recordCommand(VKRenderPassComponent* VKRPC, uint32_t commandBufferIndex, const std::function<void()>& commands)
 {
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1280,7 +1280,7 @@ bool VKRenderingBackendNS::recordCommand(VKRenderPassComponent* VKRPC, unsigned 
 	return true;
 }
 
-bool VKRenderingBackendNS::recordDrawCall(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex, VKMeshDataComponent * VKMDC)
+bool VKRenderingBackendNS::recordDrawCall(VKRenderPassComponent* VKRPC, uint32_t commandBufferIndex, VKMeshDataComponent * VKMDC)
 {
 	VkBuffer vertexBuffers[] = { VKMDC->m_VBO };
 	VkDeviceSize offsets[] = { 0 };
@@ -1304,7 +1304,7 @@ bool VKRenderingBackendNS::waitForFence(VKRenderPassComponent* VKRPC)
 	return true;
 }
 
-bool VKRenderingBackendNS::submitCommand(VKRenderPassComponent* VKRPC, unsigned int commandBufferIndex)
+bool VKRenderingBackendNS::submitCommand(VKRenderPassComponent* VKRPC, uint32_t commandBufferIndex)
 {
 	// submit the draw command buffer with a rendering finished signal semaphore
 	// command buffer
@@ -1425,7 +1425,7 @@ VkTextureDataDesc VKRenderingBackendNS::getVKTextureDataDesc(TextureDataDesc tex
 	l_result.minFilterParam = getTextureFilterParam(textureDataDesc.minFilterMethod);
 	l_result.magFilterParam = getTextureFilterParam(textureDataDesc.magFilterMethod);
 	l_result.format = getTextureFormat(textureDataDesc);
-	l_result.imageSize = textureDataDesc.width * textureDataDesc.height * ((unsigned int)textureDataDesc.pixelDataFormat + 1);
+	l_result.imageSize = textureDataDesc.width * textureDataDesc.height * ((uint32_t)textureDataDesc.pixelDataFormat + 1);
 	l_result.aspectFlags = getImageAspectFlags(textureDataDesc);
 	return l_result;
 }

@@ -99,11 +99,11 @@ void GLShadowPass::update()
 	auto sizeX = m_DirLight_GLRPC->m_renderPassDesc.RTDesc.width;
 	auto sizeY = m_DirLight_GLRPC->m_renderPassDesc.RTDesc.height;
 
-	unsigned int splitCount = 0;
+	uint32_t splitCount = 0;
 
-	for (unsigned int i = 0; i < 2; i++)
+	for (uint32_t i = 0; i < 2; i++)
 	{
-		for (unsigned int j = 0; j < 2; j++)
+		for (uint32_t j = 0; j < 2; j++)
 		{
 			glViewport(i * sizeX / 2, j * sizeY / 2, sizeX / 2, sizeY / 2);
 			// uni_p
@@ -118,7 +118,7 @@ void GLShadowPass::update()
 			splitCount++;
 
 			auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
-			for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
+			for (uint32_t i = 0; i < l_totalDrawCallCount; i++)
 			{
 				auto l_opaquePassGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassGPUData()[i];
 				auto l_meshGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassMeshGPUData()[i];
@@ -172,7 +172,7 @@ void GLShadowPass::update()
 	updateUniform(8, l_t);
 
 	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
-	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
+	for (uint32_t i = 0; i < l_totalDrawCallCount; i++)
 	{
 		auto l_opaquePassGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassGPUData()[i];
 		auto l_meshGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassMeshGPUData()[i];
@@ -198,7 +198,7 @@ bool GLShadowPass::reloadShader()
 	return true;
 }
 
-GLRenderPassComponent * GLShadowPass::getGLRPC(unsigned int index)
+GLRenderPassComponent * GLShadowPass::getGLRPC(uint32_t index)
 {
 	if (index == 0)
 	{

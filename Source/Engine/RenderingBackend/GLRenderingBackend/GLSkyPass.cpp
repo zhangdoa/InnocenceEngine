@@ -66,7 +66,7 @@ bool GLSkyPass::update()
 	return true;
 }
 
-bool GLSkyPass::resize(unsigned int newSizeX, unsigned int newSizeY)
+bool GLSkyPass::resize(uint32_t newSizeX, uint32_t newSizeY)
 {
 	resizeGLRenderPassComponent(m_GLRPC, newSizeX, newSizeY);
 

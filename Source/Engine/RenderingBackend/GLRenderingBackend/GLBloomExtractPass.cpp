@@ -91,7 +91,7 @@ bool GLBloomExtractPass::update(GLRenderPassComponent* prePassGLRPC)
 	return true;
 }
 
-bool GLBloomExtractPass::resize(unsigned int newSizeX, unsigned int newSizeY)
+bool GLBloomExtractPass::resize(uint32_t newSizeX, uint32_t newSizeY)
 {
 	auto l_newSizeX = newSizeX;
 	auto l_newSizeY = newSizeY;
@@ -125,7 +125,7 @@ bool GLBloomExtractPass::reloadShader()
 	return true;
 }
 
-GLRenderPassComponent * GLBloomExtractPass::getGLRPC(unsigned int index)
+GLRenderPassComponent * GLBloomExtractPass::getGLRPC(uint32_t index)
 {
 	if (index == 0)
 	{

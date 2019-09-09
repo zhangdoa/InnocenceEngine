@@ -53,7 +53,7 @@ void InnoTaskSystem::waitAllTasksToFinish()
 	InnoTaskScheduler::WaitSync();
 }
 
-const RingBuffer<InnoTaskReport, true>& InnoTaskSystem::GetTaskReport(int threadID)
+const RingBuffer<InnoTaskReport, true>& InnoTaskSystem::GetTaskReport(int32_t threadID)
 {
 	return InnoTaskScheduler::GetTaskReport(threadID);
 }
@@ -63,7 +63,7 @@ size_t InnoTaskSystem::GetTotalThreadsNumber()
 	return InnoTaskScheduler::GetTotalThreadsNumber();
 }
 
-std::shared_ptr<IInnoTask> InnoTaskSystem::addTaskImpl(std::unique_ptr<IInnoTask>&& task, int threadID)
+std::shared_ptr<IInnoTask> InnoTaskSystem::addTaskImpl(std::unique_ptr<IInnoTask>&& task, int32_t threadID)
 {
 	return InnoTaskScheduler::AddTaskImpl(std::move(task), threadID);
 }

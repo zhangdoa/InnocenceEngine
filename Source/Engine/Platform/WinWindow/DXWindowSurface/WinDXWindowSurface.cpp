@@ -40,8 +40,8 @@ bool WinDXWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 
 	// Determine the resolution of the clients desktop screen.
 	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
-	auto l_screenWidth = (int)l_screenResolution.x;
-	auto l_screenHeight = (int)l_screenResolution.y;
+	auto l_screenWidth = (int32_t)l_screenResolution.x;
+	auto l_screenHeight = (int32_t)l_screenResolution.y;
 
 	auto l_posX = (GetSystemMetrics(SM_CXSCREEN) - l_screenWidth) / 2;
 	auto l_posY = (GetSystemMetrics(SM_CYSCREEN) - l_screenHeight) / 2;

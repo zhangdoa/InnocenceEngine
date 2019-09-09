@@ -47,10 +47,10 @@ using namespace DefaultRenderingClientNS;
 bool DefaultRenderingClient::Setup()
 {
 	f_showProbe = [&]() { m_showProbe = !m_showProbe; };
-	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonState{ INNO_KEY_G, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showProbe });
+	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_G, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showProbe });
 
 	f_showLightHeatmap = [&]() { m_showLightHeatmap = !m_showLightHeatmap; };
-	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonState{ INNO_KEY_T, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showLightHeatmap });
+	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_T, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showLightHeatmap });
 
 	f_SetupJob = [&]()
 	{

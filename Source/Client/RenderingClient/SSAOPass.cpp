@@ -16,7 +16,7 @@ namespace SSAOPass
 	SamplerDataComponent* m_SDC;
 	SamplerDataComponent* m_SDC_RandomRot;
 
-	unsigned int m_kernelSize = 64;
+	uint32_t m_kernelSize = 64;
 	std::vector<Vec4> m_SSAOKernel;
 	std::vector<Vec4> m_SSAONoise;
 
@@ -100,7 +100,7 @@ bool SSAOPass::Setup()
 
 	m_SSAOKernel.reserve(m_kernelSize);
 
-	for (unsigned int i = 0; i < m_kernelSize; ++i)
+	for (uint32_t i = 0; i < m_kernelSize; ++i)
 	{
 		auto l_sample = Vec4(l_randomFloats(l_generator) * 2.0f - 1.0f, l_randomFloats(l_generator) * 2.0f - 1.0f, l_randomFloats(l_generator), 0.0f);
 		l_sample = l_sample.normalize();

@@ -6,8 +6,8 @@ namespace GLDebuggerPass
 {
 	bool initialize();
 	bool update(GLRenderPassComponent* canvas);
-	bool resize(unsigned int newSizeX,  unsigned int newSizeY);
+	bool resize(uint32_t newSizeX,  uint32_t newSizeY);
 	bool reloadShader();
 
-	GLRenderPassComponent* getGLRPC(unsigned int index);
+	GLRenderPassComponent* getGLRPC(uint32_t index);
 }

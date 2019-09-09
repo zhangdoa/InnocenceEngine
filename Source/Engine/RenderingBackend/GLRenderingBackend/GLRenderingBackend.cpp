@@ -52,7 +52,7 @@ bool GLRenderingBackendNS::setup()
 	f_toggleVisualizeVXGI = [&]() {
 		m_visualizeVXGI = !m_visualizeVXGI;
 	};
-	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_G, ButtonStatus::PRESSED }, &f_toggleVisualizeVXGI);
+	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonData{ INNO_KEY_G, ButtonStatus::PRESSED }, &f_toggleVisualizeVXGI);
 
 	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
@@ -409,7 +409,7 @@ bool GLRenderingBackendNS::terminate()
 
 GLMeshDataComponent* GLRenderingBackendNS::addGLMeshDataComponent()
 {
-	static std::atomic<unsigned int> meshCount = 0;
+	static std::atomic<uint32_t> meshCount = 0;
 	meshCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(GLMeshDataComponent));
 	auto l_MDC = new(l_rawPtr)GLMeshDataComponent();
@@ -420,7 +420,7 @@ GLMeshDataComponent* GLRenderingBackendNS::addGLMeshDataComponent()
 
 GLMaterialDataComponent* GLRenderingBackendNS::addGLMaterialDataComponent()
 {
-	static std::atomic<unsigned int> materialCount = 0;
+	static std::atomic<uint32_t> materialCount = 0;
 	materialCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(GLMaterialDataComponent));
 	auto l_MDC = new(l_rawPtr)GLMaterialDataComponent();
@@ -431,7 +431,7 @@ GLMaterialDataComponent* GLRenderingBackendNS::addGLMaterialDataComponent()
 
 GLTextureDataComponent* GLRenderingBackendNS::addGLTextureDataComponent()
 {
-	static std::atomic<unsigned int> textureCount = 0;
+	static std::atomic<uint32_t> textureCount = 0;
 	textureCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(GLTextureDataComponent));
 	auto l_TDC = new(l_rawPtr)GLTextureDataComponent();

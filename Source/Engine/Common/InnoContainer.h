@@ -128,7 +128,7 @@ namespace std {
 		std::size_t operator()(const FixedSizeString<S>& k) const
 		{
 			std::size_t h = 5381;
-			int c;
+			int32_t c;
 			auto l_cStr = k.c_str();
 			while ((c = *l_cStr++))
 				h = ((h << 5) + h) + c;

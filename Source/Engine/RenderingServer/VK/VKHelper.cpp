@@ -63,7 +63,7 @@ QueueFamilyIndices VKHelper::findQueueFamilies(VkPhysicalDevice device, VkSurfac
 	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
-	int i = 0;
+	int32_t i = 0;
 	for (const auto& queueFamily : queueFamilies)
 	{
 		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
@@ -296,7 +296,7 @@ VkTextureDataDesc VKHelper::getVKTextureDataDesc(TextureDataDesc textureDataDesc
 	l_result.minFilterParam = getTextureFilterParam(textureDataDesc.MinFilterMethod);
 	l_result.magFilterParam = getTextureFilterParam(textureDataDesc.MagFilterMethod);
 	l_result.format = getTextureFormat(textureDataDesc);
-	l_result.imageSize = textureDataDesc.Width * textureDataDesc.Height * textureDataDesc.DepthOrArraySize * ((unsigned int)textureDataDesc.PixelDataFormat + 1);
+	l_result.imageSize = textureDataDesc.Width * textureDataDesc.Height * textureDataDesc.DepthOrArraySize * ((uint32_t)textureDataDesc.PixelDataFormat + 1);
 	l_result.aspectFlags = getImageAspectFlags(textureDataDesc);
 	return l_result;
 }
@@ -546,7 +546,7 @@ VkImageAspectFlagBits VKHelper::getImageAspectFlags(TextureDataDesc textureDataD
 	return l_result;
 }
 
-bool VKHelper::createDescriptorPool(VkDevice device, VkDescriptorPoolSize* poolSize, unsigned int poolSizeCount, unsigned int maxSets, VkDescriptorPool& poolHandle)
+bool VKHelper::createDescriptorPool(VkDevice device, VkDescriptorPoolSize* poolSize, uint32_t poolSizeCount, uint32_t maxSets, VkDescriptorPool& poolHandle)
 {
 	VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -581,7 +581,7 @@ bool VKHelper::createDescriptorSetLayout(VkDevice device, VkDescriptorSetLayoutB
 	return true;
 }
 
-bool VKHelper::createDescriptorSets(VkDevice device, VkDescriptorPool pool, VkDescriptorSetLayout& setLayout, VkDescriptorSet& setHandle, unsigned int count)
+bool VKHelper::createDescriptorSets(VkDevice device, VkDescriptorPool pool, VkDescriptorSetLayout& setLayout, VkDescriptorSet& setHandle, uint32_t count)
 {
 	VkDescriptorSetAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -693,7 +693,7 @@ bool VKHelper::createRenderPass(VkDevice device, VKRenderPassDataComponent* VKRP
 	else
 	{
 		l_PSO->m_SubpassDesc.colorAttachmentCount = (uint32_t)VKRPDC->m_RenderPassDesc.m_RenderTargetCount;
-		l_PSO->m_RenderPassCInfo.attachmentCount = (unsigned int)l_PSO->m_AttachmentDescs.size();
+		l_PSO->m_RenderPassCInfo.attachmentCount = (uint32_t)l_PSO->m_AttachmentDescs.size();
 	}
 
 	l_PSO->m_SubpassDesc.pColorAttachments = &l_PSO->m_ColorAttachmentRefs[0];

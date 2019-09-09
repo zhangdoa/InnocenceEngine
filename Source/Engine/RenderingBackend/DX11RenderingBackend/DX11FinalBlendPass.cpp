@@ -50,7 +50,7 @@ bool DX11FinalBlendPass::initialize()
 		m_visualizeLightCulling = !m_visualizeLightCulling;
 	};
 
-	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_T, ButtonStatus::PRESSED }, &f_toggleVisualizeLightCulling);
+	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonData{ INNO_KEY_T, ButtonStatus::PRESSED }, &f_toggleVisualizeLightCulling);
 
 	auto l_imageCount = 1;
 

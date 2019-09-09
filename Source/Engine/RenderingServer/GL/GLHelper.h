@@ -32,12 +32,12 @@ namespace GLHelper
 	bool GenerateViewportState(ViewportDesc viewportDesc, GLPipelineStateObject* PSO);
 
 	bool AddShaderHandle(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderStage, const ShaderFilePath& shaderFilePath);
-	bool ActivateTexture(GLTextureDataComponent * GLTDC, int activateIndex);
-	bool BindTextureAsImage(GLTextureDataComponent * GLTDC, int bindingSlot, Accessibility accessibility);
+	bool ActivateTexture(GLTextureDataComponent * GLTDC, int32_t activateIndex);
+	bool BindTextureAsImage(GLTextureDataComponent * GLTDC, int32_t bindingSlot, Accessibility accessibility);
 
 	/*
 	attachmentIndex: GL_COLOR_ATTACHMENT0 to GL_MAX_COLOR_ATTACHMENTS
 	textureIndex : Only valid for layered texture, include texture array and cubemap; default value -1 means attach all layers to the framebuffer
 	*/
-	bool AttachTextureToFramebuffer(GLTextureDataComponent * GLTDC, GLRenderPassDataComponent * GLRPDC, unsigned int attachmentIndex, unsigned int textureIndex = -1, unsigned int mipLevel = 0, unsigned int layer = 0);
+	bool AttachTextureToFramebuffer(GLTextureDataComponent * GLTDC, GLRenderPassDataComponent * GLRPDC, uint32_t attachmentIndex, uint32_t textureIndex = -1, uint32_t mipLevel = 0, uint32_t layer = 0);
 }

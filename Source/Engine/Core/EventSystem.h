@@ -13,11 +13,11 @@ public:
 
 	InputConfig getInputConfig() override;
 
-	void addButtonStatusCallback(ButtonState buttonState, ButtonEvent buttonEvent) override;
-	void addMouseMovementCallback(int mouseCode, std::function<void(float)>* mouseMovementCallback) override;
+	void addButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent) override;
+	void addMouseMovementCallback(int32_t mouseCode, std::function<void(float)>* mouseMovementCallback) override;
 
 	void buttonStatusCallback(ButtonState buttonState) override;
-	void framebufferSizeCallback(int width, int height) override;
+	void framebufferSizeCallback(int32_t width, int32_t height) override;
 	void mousePositionCallback(float mouseXPos, float mouseYPos) override;
 	void scrollCallback(float xoffset, float yoffset) override;
 

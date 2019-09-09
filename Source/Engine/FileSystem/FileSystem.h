@@ -23,8 +23,8 @@ public:
 	bool saveScene(const std::string& fileName) override;
 	bool isLoadingScene() override;
 
-	bool addSceneLoadingStartCallback(std::function<void()>* functor, int priority) override;
-	bool addSceneLoadingFinishCallback(std::function<void()>* functor, int priority) override;
+	bool addSceneLoadingStartCallback(std::function<void()>* functor, int32_t priority) override;
+	bool addSceneLoadingFinishCallback(std::function<void()>* functor, int32_t priority) override;
 
 	bool convertModel(const std::string & fileName, const std::string & exportPath) override;
 

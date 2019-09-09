@@ -36,7 +36,7 @@ bool VKFinalBlendPass::initialize()
 	m_VKRPC = addVKRenderPassComponent();
 
 	m_VKRPC->m_renderPassDesc = VKRenderingBackendComponent::get().m_deferredRenderPassDesc;
-	m_VKRPC->m_renderPassDesc.RTNumber = (unsigned int)VKRenderingBackendComponent::get().m_swapChainImages.size();
+	m_VKRPC->m_renderPassDesc.RTNumber = (uint32_t)VKRenderingBackendComponent::get().m_swapChainImages.size();
 	m_VKRPC->m_renderPassDesc.useMultipleFramebuffers = (m_VKRPC->m_renderPassDesc.RTNumber > 1);
 
 	VkTextureDataDesc l_VkTextureDataDesc;
@@ -224,7 +224,7 @@ bool VKFinalBlendPass::update()
 
 	for (size_t i = 0; i < m_VKRPC->m_commandBuffers.size(); i++)
 	{
-		recordCommand(m_VKRPC, (unsigned int)i, [&]() {
+		recordCommand(m_VKRPC, (uint32_t)i, [&]() {
 			vkCmdBindDescriptorSets(m_VKRPC->m_commandBuffers[i],
 				VK_PIPELINE_BIND_POINT_GRAPHICS,
 				m_VKRPC->m_pipelineLayout,
@@ -232,7 +232,7 @@ bool VKFinalBlendPass::update()
 				1,
 				&m_VKRPC->descriptorSets[0], 0, nullptr);
 			auto l_Mesh = getVKMeshDataComponent(MeshShapeType::QUAD);
-			recordDrawCall(m_VKRPC, (unsigned int)i, l_Mesh);
+			recordDrawCall(m_VKRPC, (uint32_t)i, l_Mesh);
 		});
 	}
 

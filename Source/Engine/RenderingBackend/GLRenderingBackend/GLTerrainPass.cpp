@@ -126,7 +126,7 @@ bool GLTerrainPass::update()
 	return true;
 }
 
-bool GLTerrainPass::resize(unsigned int newSizeX, unsigned int newSizeY)
+bool GLTerrainPass::resize(uint32_t newSizeX, uint32_t newSizeY)
 {
 	return true;
 }
@@ -140,7 +140,7 @@ bool GLTerrainPass::reloadShader()
 	return true;
 }
 
-GLTextureDataComponent* GLTerrainPass::getHeightMap(unsigned int index)
+GLTextureDataComponent* GLTerrainPass::getHeightMap(uint32_t index)
 {
 	if (index == 0)
 	{

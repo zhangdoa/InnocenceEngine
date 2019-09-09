@@ -411,8 +411,8 @@ bool GLHelper::CreateFramebuffer(GLRenderPassDataComponent * GLRPDC)
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GLRPDC->m_renderBufferAttachmentType, GL_RENDERBUFFER, GLRPDC->m_RBO);
 		glRenderbufferStorage(GL_RENDERBUFFER, GLRPDC->m_renderBufferInternalFormat, GLRPDC->m_RenderPassDesc.m_RenderTargetDesc.Width, GLRPDC->m_RenderPassDesc.m_RenderTargetDesc.Height);
 
-		std::vector<unsigned int> l_colorAttachments;
-		for (unsigned int i = 0; i < GLRPDC->m_RenderPassDesc.m_RenderTargetCount; ++i)
+		std::vector<uint32_t> l_colorAttachments;
+		for (uint32_t i = 0; i < GLRPDC->m_RenderPassDesc.m_RenderTargetCount; ++i)
 		{
 			l_colorAttachments.emplace_back(GL_COLOR_ATTACHMENT0 + i);
 		}
@@ -437,7 +437,7 @@ bool GLHelper::ReserveRenderTargets(GLRenderPassDataComponent * GLRPDC, IRenderi
 {
 	GLRPDC->m_RenderTargets.reserve(GLRPDC->m_RenderPassDesc.m_RenderTargetCount);
 
-	for (unsigned int i = 0; i < GLRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	for (uint32_t i = 0; i < GLRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
 		GLRPDC->m_RenderTargets.emplace_back();
 		GLRPDC->m_RenderTargets[i] = renderingServer->AddTextureDataComponent((std::string(GLRPDC->m_componentName.c_str()) + "_" + std::to_string(i) + "/").c_str());
@@ -449,7 +449,7 @@ bool GLHelper::ReserveRenderTargets(GLRenderPassDataComponent * GLRPDC, IRenderi
 bool GLHelper::CreateRenderTargets(GLRenderPassDataComponent * GLRPDC, IRenderingServer* renderingServer)
 {
 	// Color RT
-	for (unsigned int i = 0; i < GLRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	for (uint32_t i = 0; i < GLRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
 		auto l_TDC = GLRPDC->m_RenderTargets[i];
 
@@ -954,7 +954,7 @@ bool GLHelper::AddShaderHandle(GLuint & shaderProgram, GLuint & shaderID, GLuint
 	return true;
 }
 
-bool GLHelper::ActivateTexture(GLTextureDataComponent * GLTDC, int activateIndex)
+bool GLHelper::ActivateTexture(GLTextureDataComponent * GLTDC, int32_t activateIndex)
 {
 	glActiveTexture(GL_TEXTURE0 + activateIndex);
 	glBindTexture(GLTDC->m_GLTextureDataDesc.TextureSamplerType, GLTDC->m_TO);
@@ -962,7 +962,7 @@ bool GLHelper::ActivateTexture(GLTextureDataComponent * GLTDC, int activateIndex
 	return true;
 }
 
-bool GLHelper::BindTextureAsImage(GLTextureDataComponent * GLTDC, int bindingSlot, Accessibility accessibility)
+bool GLHelper::BindTextureAsImage(GLTextureDataComponent * GLTDC, int32_t bindingSlot, Accessibility accessibility)
 {
 	GLenum l_accessibility;
 
@@ -988,7 +988,7 @@ bool GLHelper::BindTextureAsImage(GLTextureDataComponent * GLTDC, int bindingSlo
 	return true;
 }
 
-bool GLHelper::AttachTextureToFramebuffer(GLTextureDataComponent * GLTDC, GLRenderPassDataComponent * GLRPDC, unsigned int attachmentIndex, unsigned int textureIndex, unsigned int mipLevel, unsigned int layer)
+bool GLHelper::AttachTextureToFramebuffer(GLTextureDataComponent * GLTDC, GLRenderPassDataComponent * GLRPDC, uint32_t attachmentIndex, uint32_t textureIndex, uint32_t mipLevel, uint32_t layer)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPDC->m_FBO);
 

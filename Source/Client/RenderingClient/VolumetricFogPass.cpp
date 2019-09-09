@@ -230,12 +230,12 @@ bool VolumetricFogPass::froxelization()
 
 	//g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_froxelizationRPDC, l_mesh);
 
-	unsigned int l_offset = 0;
+	uint32_t l_offset = 0;
 
 	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
 	auto& l_opaquePassDrawCallData = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallData();
 
-	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
+	for (uint32_t i = 0; i < l_totalDrawCallCount; i++)
 	{
 		auto l_drawCallData = l_opaquePassDrawCallData[i];
 		if (l_drawCallData.mesh->m_objectStatus == ObjectStatus::Activated)
@@ -267,8 +267,8 @@ bool VolumetricFogPass::irraidanceInjection()
 	auto l_numThreadsZ = 64;
 
 	DispatchParamsGPUData l_irraidanceInjectionWorkload;
-	l_irraidanceInjectionWorkload.numThreadGroups = TVec4<unsigned int>(20, 12, 8, 0);
-	l_irraidanceInjectionWorkload.numThreads = TVec4<unsigned int>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
+	l_irraidanceInjectionWorkload.numThreadGroups = TVec4<uint32_t>(20, 12, 8, 0);
+	l_irraidanceInjectionWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_dispatchParamsGBDC, &l_irraidanceInjectionWorkload, 6, 1);
 
@@ -302,8 +302,8 @@ bool VolumetricFogPass::rayMarching()
 	auto l_numThreadsZ = 1;
 
 	DispatchParamsGPUData l_rayMarchingWorkload;
-	l_rayMarchingWorkload.numThreadGroups = TVec4<unsigned int>(160, 90, 1, 0);
-	l_rayMarchingWorkload.numThreads = TVec4<unsigned int>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
+	l_rayMarchingWorkload.numThreadGroups = TVec4<uint32_t>(160, 90, 1, 0);
+	l_rayMarchingWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_dispatchParamsGBDC, &l_rayMarchingWorkload, 7, 1);
 

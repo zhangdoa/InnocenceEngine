@@ -253,15 +253,15 @@ bool VKOpaquePass::update()
 
 	auto l_defaultMaterial = getDefaultMaterialDataComponent();
 
-	unsigned int l_sizeofMeshGPUData = sizeof(MeshGPUData);
-	unsigned int l_sizeofMaterialGPUData = sizeof(MaterialGPUData);
+	uint32_t l_sizeofMeshGPUData = sizeof(MeshGPUData);
+	uint32_t l_sizeofMaterialGPUData = sizeof(MaterialGPUData);
 
 	recordCommand(m_VKRPC, 0, [&]() {
-		unsigned int offsetCount = 0;
+		uint32_t offsetCount = 0;
 
 		auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
 
-		for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
+		for (uint32_t i = 0; i < l_totalDrawCallCount; i++)
 		{
 			auto l_opaquePassGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassGPUData()[i];
 
@@ -269,7 +269,7 @@ bool VKOpaquePass::update()
 			{
 				auto l_meshUBOOffset = l_sizeofMeshGPUData * offsetCount;
 				auto l_materialUBOOffset = l_sizeofMaterialGPUData * offsetCount;
-				unsigned int l_dynamicOffsets[] = { l_meshUBOOffset, l_materialUBOOffset };
+				uint32_t l_dynamicOffsets[] = { l_meshUBOOffset, l_materialUBOOffset };
 
 				vkCmdBindDescriptorSets(m_VKRPC->m_commandBuffers[0],
 					VK_PIPELINE_BIND_POINT_GRAPHICS,

@@ -8,6 +8,7 @@
 #endif
 
 #include <cstdio>
+#include <cstdint>
 
 class IObjectPool
 {
@@ -26,7 +27,7 @@ public:
 	static void* Reallocate(void* const ptr, const std::size_t size);
 	static void Deallocate(void* const ptr);
 
-	static IObjectPool* CreateObjectPool(std::size_t objectSize, unsigned int poolCapability);
+	static IObjectPool* CreateObjectPool(std::size_t objectSize, uint32_t poolCapability);
 	static bool ClearObjectPool(IObjectPool* objectPool);
 	static bool DestroyObjectPool(IObjectPool* objectPool);
 };

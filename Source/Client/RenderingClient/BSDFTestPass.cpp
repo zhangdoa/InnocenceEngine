@@ -146,7 +146,7 @@ bool BSDFTestPass::PrepareCommandList()
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Sphere);
 
-	unsigned int l_offset = 0;
+	uint32_t l_offset = 0;
 
 	for (size_t i = 0; i < m_shpereCount * m_shpereCount; i++)
 	{

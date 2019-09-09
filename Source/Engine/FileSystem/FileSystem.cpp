@@ -13,7 +13,7 @@ extern IModuleManager* g_pModuleManager;
 #include "AssetLoader.h"
 #include "JSONParser.h"
 
-using SceneLoadingCallback = std::pair<std::function<void()>*, int>;
+using SceneLoadingCallback = std::pair<std::function<void()>*, int32_t>;
 
 namespace InnoFileSystemNS
 {
@@ -231,13 +231,13 @@ bool InnoFileSystem::isLoadingScene()
 	return InnoFileSystemNS::m_isLoadingScene;
 }
 
-bool InnoFileSystem::addSceneLoadingStartCallback(std::function<void()>* functor, int priority)
+bool InnoFileSystem::addSceneLoadingStartCallback(std::function<void()>* functor, int32_t priority)
 {
 	InnoFileSystemNS::m_sceneLoadingStartCallbacks.emplace_back(functor, priority);
 	return true;
 }
 
-bool InnoFileSystem::addSceneLoadingFinishCallback(std::function<void()>* functor, int priority)
+bool InnoFileSystem::addSceneLoadingFinishCallback(std::function<void()>* functor, int32_t priority)
 {
 	InnoFileSystemNS::m_sceneLoadingFinishCallbacks.emplace_back(functor, priority);
 	return true;

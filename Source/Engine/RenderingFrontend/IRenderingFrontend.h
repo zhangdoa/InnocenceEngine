@@ -16,7 +16,7 @@
 struct RenderingConfig
 {
 	bool VSync = false;
-	int MSAAdepth = 4;
+	int32_t MSAAdepth = 4;
 	bool useMotionBlur = false;
 	bool useTAA = false;
 	bool useBloom = false;
@@ -30,12 +30,12 @@ struct RenderingConfig
 
 struct RenderingCapability
 {
-	unsigned int maxCSMSplits;
-	unsigned int maxPointLights;
-	unsigned int maxSphereLights;
-	unsigned int maxMeshes;
-	unsigned int maxMaterials;
-	unsigned int maxTextures;
+	uint32_t maxCSMSplits;
+	uint32_t maxPointLights;
+	uint32_t maxSphereLights;
+	uint32_t maxMeshes;
+	uint32_t maxMaterials;
+	uint32_t maxTextures;
 };
 
 class IRenderingFrontend
@@ -69,8 +69,8 @@ public:
 
 	virtual bool transferDataToGPU() = 0;
 
-	virtual TVec2<unsigned int> getScreenResolution() = 0;
-	virtual bool setScreenResolution(TVec2<unsigned int> screenResolution) = 0;
+	virtual TVec2<uint32_t> getScreenResolution() = 0;
+	virtual bool setScreenResolution(TVec2<uint32_t> screenResolution) = 0;
 
 	virtual RenderingConfig getRenderingConfig() = 0;
 	virtual bool setRenderingConfig(RenderingConfig renderingConfig) = 0;
@@ -86,16 +86,16 @@ public:
 	virtual const std::vector<SphereLightGPUData>& getSphereLightGPUData() = 0;
 	virtual const SkyGPUData& getSkyGPUData() = 0;
 
-	virtual unsigned int getSunShadowPassDrawCallCount() = 0;
+	virtual uint32_t getSunShadowPassDrawCallCount() = 0;
 	virtual const std::vector<OpaquePassDrawCallData>& getSunShadowPassDrawCallData() = 0;
 	virtual const std::vector<MeshGPUData>& getSunShadowPassMeshGPUData() = 0;
 
-	virtual unsigned int getOpaquePassDrawCallCount() = 0;
+	virtual uint32_t getOpaquePassDrawCallCount() = 0;
 	virtual const std::vector<OpaquePassDrawCallData>& getOpaquePassDrawCallData() = 0;
 	virtual const std::vector<MeshGPUData>& getOpaquePassMeshGPUData() = 0;
 	virtual const std::vector<MaterialGPUData>& getOpaquePassMaterialGPUData() = 0;
 
-	virtual unsigned int getTransparentPassDrawCallCount() = 0;
+	virtual uint32_t getTransparentPassDrawCallCount() = 0;
 	virtual const std::vector<TransparentPassDrawCallData>& getTransparentPassDrawCallData() = 0;
 	virtual const std::vector<MeshGPUData>& getTransparentPassMeshGPUData() = 0;
 	virtual const std::vector<MaterialGPUData>& getTransparentPassMaterialGPUData() = 0;
@@ -103,7 +103,7 @@ public:
 	virtual const std::vector<BillboardPassDrawCallData>& getBillboardPassDrawCallData() = 0;
 	virtual const std::vector<MeshGPUData>& getBillboardPassMeshGPUData() = 0;
 
-	virtual unsigned int getDebugPassDrawCallCount() = 0;
+	virtual uint32_t getDebugPassDrawCallCount() = 0;
 	virtual const std::vector<DebugPassDrawCallData>& getDebugPassDrawCallData() = 0;
 	virtual const std::vector<MeshGPUData>& getDebugPassMeshGPUData() = 0;
 };

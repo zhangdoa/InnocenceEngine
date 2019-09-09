@@ -1,6 +1,6 @@
 #include "../ApplicationEntry/InnoApplicationEntry.h"
 
-int main(int argc, char *argv[])
+int32_t main(int32_t argc, char *argv[])
 {
 	if (!InnoApplicationEntry::Setup(nullptr, nullptr, argv[1]))
 	{

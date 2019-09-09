@@ -54,7 +54,7 @@ namespace GIResolvePass
 	TextureDataComponent* m_probeVolume = 0;
 	TextureDataComponent* m_irradianceVolume = 0;
 
-	const unsigned int m_skyCubemapSize = 32;
+	const uint32_t m_skyCubemapSize = 32;
 	Vec4 m_minProbePos;
 	Vec4 m_irradianceVolumePosOffset;
 	Vec4 m_irradianceVolumeRange;
@@ -109,7 +109,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 			m_irradianceVolumeRange = l_max - l_min;
 			m_irradianceVolumePosOffset = l_min;
 
-			std::vector<unsigned int> l_brickGPUData;
+			std::vector<uint32_t> l_brickGPUData;
 
 			l_brickGPUData.resize(l_bricks.size() * 2);
 			for (size_t i = 0; i < l_bricks.size(); i++)
@@ -122,7 +122,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 			m_brickGBDC->m_CPUAccessibility = Accessibility::Immutable;
 			m_brickGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 			m_brickGBDC->m_ElementCount = l_bricks.size();
-			m_brickGBDC->m_ElementSize = sizeof(unsigned int) * 2;
+			m_brickGBDC->m_ElementSize = sizeof(uint32_t) * 2;
 			m_brickGBDC->m_BindingPoint = 0;
 			m_brickGBDC->m_InitialData = &l_brickGPUData[0];
 
@@ -151,7 +151,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 
 			std::vector<Probe> l_probes = GIDataLoader::GetProbes();
 
-			TVec4<unsigned int> l_probeIndex;
+			TVec4<uint32_t> l_probeIndex;
 			float l_minPos;
 
 			std::sort(l_probes.begin(), l_probes.end(), [&](Probe A, Probe B)
@@ -234,9 +234,9 @@ bool GIResolvePass::InitializeGPUBuffers()
 			m_probeVolume = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("ProbeVolume/");
 			m_probeVolume->m_textureDataDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
-			m_probeVolume->m_textureDataDesc.Width = (unsigned int)l_probeIndex.x + 1;
-			m_probeVolume->m_textureDataDesc.Height = (unsigned int)l_probeIndex.y + 1;
-			m_probeVolume->m_textureDataDesc.DepthOrArraySize = ((unsigned int)l_probeIndex.z + 1) * 6;
+			m_probeVolume->m_textureDataDesc.Width = (uint32_t)l_probeIndex.x + 1;
+			m_probeVolume->m_textureDataDesc.Height = (uint32_t)l_probeIndex.y + 1;
+			m_probeVolume->m_textureDataDesc.DepthOrArraySize = ((uint32_t)l_probeIndex.z + 1) * 6;
 			m_probeVolume->m_textureDataDesc.UsageType = TextureUsageType::RawImage;
 			m_probeVolume->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler3D;
 			m_probeVolume->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
@@ -312,7 +312,7 @@ bool GIResolvePass::DeleteGPUBuffers()
 bool GIResolvePass::Setup()
 {
 	f_reloadGIData = [&]() { m_needToReloadGIData = true; };
-	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonState{ INNO_KEY_B, true }, ButtonEvent{ EventLifeTime::OneShot, &f_reloadGIData });
+	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_B, true }, ButtonEvent{ EventLifeTime::OneShot, &f_reloadGIData });
 
 	setupSky();
 	setupSurfels();
@@ -658,15 +658,15 @@ bool GIResolvePass::litSurfels()
 
 	auto l_threadCountPerGroupPerSide = 8;
 	auto l_totalThreadGroupsCount = std::ceil((double)m_surfelGBDC->m_ElementCount / (double)(l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide));
-	auto l_averangeThreadGroupsCountPerSide = (unsigned int)std::ceil(std::pow(l_totalThreadGroupsCount, 1.0 / 3.0));
+	auto l_averangeThreadGroupsCountPerSide = (uint32_t)std::ceil(std::pow(l_totalThreadGroupsCount, 1.0 / 3.0));
 
-	auto l_numThreadsX = (unsigned int)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
-	auto l_numThreadsY = (unsigned int)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
-	auto l_numThreadsZ = (unsigned int)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
+	auto l_numThreadsX = (uint32_t)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
+	auto l_numThreadsY = (uint32_t)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
+	auto l_numThreadsZ = (uint32_t)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
 
 	DispatchParamsGPUData l_surfelLitWorkload;
-	l_surfelLitWorkload.numThreadGroups = TVec4<unsigned int>(l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, 0);
-	l_surfelLitWorkload.numThreads = TVec4<unsigned int>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
+	l_surfelLitWorkload.numThreadGroups = TVec4<uint32_t>(l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, 0);
+	l_surfelLitWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_dispatchParamsGBDC, &l_surfelLitWorkload, 2, 1);
 
@@ -701,15 +701,15 @@ bool GIResolvePass::litBricks()
 
 	auto l_threadCountPerGroupPerSide = 8;
 	auto l_totalThreadGroupsCount = (double)m_brickGBDC->m_ElementCount / (l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide);
-	auto l_averangeThreadGroupsCountPerSide = (unsigned int)std::ceil(std::pow(l_totalThreadGroupsCount, 1.0 / 3.0));
+	auto l_averangeThreadGroupsCountPerSide = (uint32_t)std::ceil(std::pow(l_totalThreadGroupsCount, 1.0 / 3.0));
 
-	auto l_numThreadsX = (unsigned int)(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
-	auto l_numThreadsY = (unsigned int)(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
-	auto l_numThreadsZ = (unsigned int)(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
+	auto l_numThreadsX = (uint32_t)(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
+	auto l_numThreadsY = (uint32_t)(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
+	auto l_numThreadsZ = (uint32_t)(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
 
 	DispatchParamsGPUData l_brickLitWorkload;
-	l_brickLitWorkload.numThreadGroups = TVec4<unsigned int>(l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, 0);
-	l_brickLitWorkload.numThreads = TVec4<unsigned int>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
+	l_brickLitWorkload.numThreadGroups = TVec4<uint32_t>(l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, 0);
+	l_brickLitWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_dispatchParamsGBDC, &l_brickLitWorkload, 3, 1);
 
@@ -742,15 +742,15 @@ bool GIResolvePass::litProbes()
 
 	auto l_threadCountPerGroupPerSide = 8;
 	auto l_totalThreadGroupsCount = (double)m_probeGBDC->m_ElementCount / (l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide);
-	auto l_averangeThreadGroupsCountPerSide = (unsigned int)std::ceil(std::pow(l_totalThreadGroupsCount, 1.0 / 3.0));
+	auto l_averangeThreadGroupsCountPerSide = (uint32_t)std::ceil(std::pow(l_totalThreadGroupsCount, 1.0 / 3.0));
 
-	auto l_numThreadsX = (unsigned int)(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
-	auto l_numThreadsY = (unsigned int)(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
-	auto l_numThreadsZ = (unsigned int)(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
+	auto l_numThreadsX = (uint32_t)(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
+	auto l_numThreadsY = (uint32_t)(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
+	auto l_numThreadsZ = (uint32_t)(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
 
 	DispatchParamsGPUData l_probeLitWorkload;
-	l_probeLitWorkload.numThreadGroups = TVec4<unsigned int>(l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, 0);
-	l_probeLitWorkload.numThreads = TVec4<unsigned int>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
+	l_probeLitWorkload.numThreadGroups = TVec4<uint32_t>(l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, 0);
+	l_probeLitWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_dispatchParamsGBDC, &l_probeLitWorkload, 4, 1);
 
@@ -789,8 +789,8 @@ bool GIResolvePass::generateIrradianceVolume()
 	auto l_numThreadsZ = 64;
 
 	DispatchParamsGPUData l_irradianceVolumeLitWorkload;
-	l_irradianceVolumeLitWorkload.numThreadGroups = TVec4<unsigned int>(8, 4, 8, 0);
-	l_irradianceVolumeLitWorkload.numThreads = TVec4<unsigned int>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
+	l_irradianceVolumeLitWorkload.numThreadGroups = TVec4<uint32_t>(8, 4, 8, 0);
+	l_irradianceVolumeLitWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_dispatchParamsGBDC, &l_irradianceVolumeLitWorkload, 5, 1);
 

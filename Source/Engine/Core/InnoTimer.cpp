@@ -2,9 +2,9 @@
 #include <chrono>
 
 using HRClock = std::chrono::high_resolution_clock;
-using Days = std::chrono::duration<int, std::ratio_multiply<std::chrono::hours::period, std::ratio<24>>::type>;
-using Months = std::chrono::duration<int, std::ratio_multiply<std::chrono::hours::period, std::ratio<744>>::type>;
-using Years = std::chrono::duration<int, std::ratio_multiply<std::chrono::hours::period, std::ratio<8760>>::type>;
+using Days = std::chrono::duration<int32_t, std::ratio_multiply<std::chrono::hours::period, std::ratio<24>>::type>;
+using Months = std::chrono::duration<int32_t, std::ratio_multiply<std::chrono::hours::period, std::ratio<744>>::type>;
+using Years = std::chrono::duration<int32_t, std::ratio_multiply<std::chrono::hours::period, std::ratio<8760>>::type>;
 
 namespace InnoTimerNS
 {
@@ -42,10 +42,10 @@ bool InnoTimer::Terminate()
 	return true;
 }
 
-const unsigned long long InnoTimer::GetCurrentTimeFromEpoch(TimeUnit time_unit)
+const uint64_t InnoTimer::GetCurrentTimeFromEpoch(TimeUnit time_unit)
 {
 	auto l_CurrentTime = HRClock::now().time_since_epoch();
-	unsigned long long l_result;
+	uint64_t l_result;
 
 	switch (time_unit)
 	{
@@ -80,7 +80,7 @@ const unsigned long long InnoTimer::GetCurrentTimeFromEpoch(TimeUnit time_unit)
 	return l_result;
 }
 
-const Timestamp InnoTimer::GetCurrentTime(unsigned int time_zone_adjustment)
+const Timestamp InnoTimer::GetCurrentTime(uint32_t time_zone_adjustment)
 {
 	auto tp = std::chrono::system_clock::now().time_since_epoch();
 
@@ -98,12 +98,12 @@ const Timestamp InnoTimer::GetCurrentTime(unsigned int time_zone_adjustment)
 	auto z = d.count();
 
 	z += 719468;
-	const int era = (z >= 0 ? z : z - 146096) / 146097;
+	const int32_t era = (z >= 0 ? z : z - 146096) / 146097;
 	// [0, 146096]
 	const unsigned doe = static_cast<unsigned>(z - era * 146097);
 	// [0, 399]
 	const unsigned yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
-	const int Year = static_cast<int>(yoe) + era * 400;
+	const int32_t Year = static_cast<int32_t>(yoe) + era * 400;
 	// [0, 365]
 	const unsigned doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
 	// [0, 11]
@@ -120,9 +120,9 @@ const Timestamp InnoTimer::GetCurrentTime(unsigned int time_zone_adjustment)
 	l_Timestamp.Day = Day;
 	l_Timestamp.Hour = h.count();
 	l_Timestamp.Minute = m.count();
-	l_Timestamp.Second = static_cast<unsigned short>(s.count());
-	l_Timestamp.Millisecond = static_cast<unsigned short>(tp / std::chrono::milliseconds(1));
-	l_Timestamp.Microsecond = static_cast<unsigned short>(tp / std::chrono::microseconds(1));
+	l_Timestamp.Second = static_cast<uint32_t>(s.count());
+	l_Timestamp.Millisecond = static_cast<uint32_t>(tp / std::chrono::milliseconds(1));
+	l_Timestamp.Microsecond = static_cast<uint32_t>(tp / std::chrono::microseconds(1));
 
 	return l_Timestamp;
 }

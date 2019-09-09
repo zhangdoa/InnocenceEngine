@@ -26,8 +26,8 @@ namespace GLVXGIPass
 	EntityID m_entityID;
 	std::vector<mat4> m_VP;
 	std::vector<mat4> m_VP_inv;
-	unsigned int m_volumeDimension = 128;
-	unsigned int m_voxelCount = m_volumeDimension * m_volumeDimension * m_volumeDimension;
+	uint32_t m_volumeDimension = 128;
+	uint32_t m_voxelCount = m_volumeDimension * m_volumeDimension * m_volumeDimension;
 	float m_volumeEdgeSize;
 
 	GLTextureDataComponent* m_voxelTestPassGLTDC;
@@ -217,10 +217,10 @@ void GLVXGIPass::updateVoxelizationPass()
 	updateUBO(GLRenderingBackendComponent::get().m_meshUBO, g_pModuleManager->getRenderingFrontend()->getGIPassMeshGPUData());
 	updateUBO(GLRenderingBackendComponent::get().m_materialUBO, g_pModuleManager->getRenderingFrontend()->getGIPassMaterialGPUData());
 
-	unsigned int l_offset = 0;
+	uint32_t l_offset = 0;
 
 	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getGIPassDrawCallCount();
-	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
+	for (uint32_t i = 0; i < l_totalDrawCallCount; i++)
 	{
 		auto l_GIPassGPUData = g_pModuleManager->getRenderingFrontend()->getGIPassGPUData()[i];
 

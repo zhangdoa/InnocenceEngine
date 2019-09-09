@@ -11,7 +11,7 @@ extern IModuleManager* g_pModuleManager;
 
 #undef Success
 
-typedef GLXContext (*glXCreateContextAttribsARBProc) (Display*, GLXFBConfig, GLXContext, Bool, const int*);
+typedef GLXContext (*glXCreateContextAttribsARBProc) (Display*, GLXFBConfig, GLXContext, Bool, const int32_t*);
 
 namespace LinuxWindowSystemNS
 {
@@ -54,7 +54,7 @@ bool LinuxWindowSystemNS::setup()
 	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
 	m_window = XCreateSimpleWindow(m_display, DefaultRootWindow(m_display),
 	0, 0,   /* x, y */
-	(unsigned int)l_screenResolution.x, (unsigned int)l_screenResolution.y, /* width, height */
+	(uint32_t)l_screenResolution.x, (uint32_t)l_screenResolution.y, /* width, height */
 	0, 0,     /* border_width, border */
 	0);       /* background */
 
@@ -73,7 +73,7 @@ bool LinuxWindowSystemNS::setup()
 
 	XMapWindow(m_display, m_window);
 
-	int num_fbc = 0;
+	int32_t num_fbc = 0;
 	GLXFBConfig *fbc = glXChooseFBConfig(m_display, DefaultScreen(m_display), m_attributes, &num_fbc);
 	if (!fbc)
 	{
@@ -102,7 +102,7 @@ bool LinuxWindowSystemNS::setup()
 	glXMakeCurrent(m_display, 0, 0);
 	glXDestroyContext(m_display, ctx_old);
 	/* Set desired minimum OpenGL version */
-	static int context_attribs[] = {
+	static int32_t context_attribs[] = {
 		GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
 		GLX_CONTEXT_MINOR_VERSION_ARB, 5,
 		None
@@ -186,7 +186,7 @@ const std::vector<ButtonState>& LinuxWindowSystem::getButtonState()
 	return LinuxWindowSystemNS::m_buttonState;
 }
 
-bool LinuxWindowSystem::sendEvent(unsigned int umsg, unsigned int WParam, int LParam)
+bool LinuxWindowSystem::sendEvent(uint32_t umsg, uint32_t WParam, int32_t LParam)
 {
 	return true;
 }

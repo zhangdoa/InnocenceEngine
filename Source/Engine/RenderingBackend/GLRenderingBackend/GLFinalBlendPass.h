@@ -6,7 +6,7 @@ namespace GLFinalBlendPass
 {
 	bool initialize();
 	bool update(GLRenderPassComponent* prePassGLRPC);
-	bool resize(unsigned int newSizeX,  unsigned int newSizeY);
+	bool resize(uint32_t newSizeX,  uint32_t newSizeY);
 	bool reloadShader();
 
 	GLRenderPassComponent* getGLRPC();

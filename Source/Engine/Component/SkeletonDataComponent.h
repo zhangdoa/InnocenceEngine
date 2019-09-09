@@ -4,7 +4,7 @@
 
 struct Bone
 {
-	unsigned int m_ID;
+	uint32_t m_ID;
 	Vec4 m_Pos;
 	Vec4 m_Rot;
 };

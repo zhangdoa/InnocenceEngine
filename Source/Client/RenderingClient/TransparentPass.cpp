@@ -95,12 +95,12 @@ bool TransparentPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MainCameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_SunGBDC->m_ResourceBinder, 3, 3, Accessibility::ReadOnly);
 
-	unsigned int l_offset = 0;
+	uint32_t l_offset = 0;
 
 	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getTransparentPassDrawCallCount();
 	auto& l_transparentPassDrawCallData = g_pModuleManager->getRenderingFrontend()->getTransparentPassDrawCallData();
 
-	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
+	for (uint32_t i = 0; i < l_totalDrawCallCount; i++)
 	{
 		auto l_drawCallData = l_transparentPassDrawCallData[i];
 		if (l_drawCallData.mesh->m_objectStatus == ObjectStatus::Activated)

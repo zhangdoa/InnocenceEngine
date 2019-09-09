@@ -32,8 +32,8 @@ public:
 
 	bool transferDataToGPU() override;
 
-	TVec2<unsigned int> getScreenResolution() override;
-	bool setScreenResolution(TVec2<unsigned int> screenResolution) override;
+	TVec2<uint32_t> getScreenResolution() override;
+	bool setScreenResolution(TVec2<uint32_t> screenResolution) override;
 
 	RenderingConfig getRenderingConfig() override;
 	bool setRenderingConfig(RenderingConfig renderingConfig) override;
@@ -49,16 +49,16 @@ public:
 	const std::vector<SphereLightGPUData>& getSphereLightGPUData() override;
 	const SkyGPUData& getSkyGPUData() override;
 
-	unsigned int getSunShadowPassDrawCallCount() override;
+	uint32_t getSunShadowPassDrawCallCount() override;
 	const std::vector<OpaquePassDrawCallData>& getSunShadowPassDrawCallData() override;
 	const std::vector<MeshGPUData>& getSunShadowPassMeshGPUData() override;
 
-	unsigned int getOpaquePassDrawCallCount() override;
+	uint32_t getOpaquePassDrawCallCount() override;
 	const std::vector<OpaquePassDrawCallData>& getOpaquePassDrawCallData() override;
 	const std::vector<MeshGPUData>& getOpaquePassMeshGPUData() override;
 	const std::vector<MaterialGPUData>& getOpaquePassMaterialGPUData() override;
 
-	unsigned int getTransparentPassDrawCallCount() override;
+	uint32_t getTransparentPassDrawCallCount() override;
 	const std::vector<TransparentPassDrawCallData>& getTransparentPassDrawCallData() override;
 	const std::vector<MeshGPUData>& getTransparentPassMeshGPUData() override;
 	const std::vector<MaterialGPUData>& getTransparentPassMaterialGPUData() override;
@@ -66,7 +66,7 @@ public:
 	const std::vector<BillboardPassDrawCallData>& getBillboardPassDrawCallData() override;
 	const std::vector<MeshGPUData>& getBillboardPassMeshGPUData() override;
 
-	unsigned int getDebugPassDrawCallCount() override;
+	uint32_t getDebugPassDrawCallCount() override;
 	const std::vector<DebugPassDrawCallData>& getDebugPassDrawCallData() override;
 	const std::vector<MeshGPUData>& getDebugPassMeshGPUData() override;
 };

@@ -19,7 +19,7 @@ public:
     explicit MacWindowSystemBridgeImpl(MacWindowDelegate* macWindowDelegate, MetalDelegate* metalDelegate);
     ~MacWindowSystemBridgeImpl();
 
-    bool setup(unsigned int sizeX, unsigned int sizeY) override;
+    bool setup(uint32_t sizeX, uint32_t sizeY) override;
     bool initialize() override;
     bool update() override;
     bool terminate() override;

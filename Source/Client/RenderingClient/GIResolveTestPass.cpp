@@ -123,7 +123,7 @@ bool GIResolveTestPass::PrepareCommandList()
 			l_probePos[i].pos = l_probes[i].pos;
 		}
 
-		TVec4<unsigned int> l_probeIndex;
+		TVec4<uint32_t> l_probeIndex;
 		float l_minPos;
 
 		std::sort(l_probePos.begin(), l_probePos.end(), [&](ProbePos A, ProbePos B)

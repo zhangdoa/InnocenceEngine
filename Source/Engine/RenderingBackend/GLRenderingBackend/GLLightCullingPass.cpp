@@ -35,12 +35,12 @@ namespace GLLightCullingPass
 	GLTextureDataComponent* m_debugGLTDC;
 
 	EntityID m_entityID;
-	const unsigned int m_tileSize = 16;
-	const unsigned int m_numThreadPerGroup = 16;
-	TVec4<unsigned int> m_tileFrustumNumThreads;
-	TVec4<unsigned int> m_tileFrustumNumThreadGroups;
-	TVec4<unsigned int> m_lightCullingNumThreads;
-	TVec4<unsigned int> m_lightCullingNumThreadGroups;
+	const uint32_t m_tileSize = 16;
+	const uint32_t m_numThreadPerGroup = 16;
+	TVec4<uint32_t> m_tileFrustumNumThreads;
+	TVec4<uint32_t> m_tileFrustumNumThreadGroups;
+	TVec4<uint32_t> m_lightCullingNumThreads;
+	TVec4<uint32_t> m_lightCullingNumThreadGroups;
 }
 
 bool GLLightCullingPass::createGridFrustumsBuffer()
@@ -53,8 +53,8 @@ bool GLLightCullingPass::createGridFrustumsBuffer()
 	auto l_numThreadGroupsX = std::ceil(l_numThreadsX / m_numThreadPerGroup);
 	auto l_numThreadGroupsY = std::ceil(l_numThreadsY / m_numThreadPerGroup);
 
-	m_tileFrustumNumThreads = TVec4<unsigned int>((unsigned int)l_numThreadsX, (unsigned int)l_numThreadsY, 1, 0);
-	m_tileFrustumNumThreadGroups = TVec4<unsigned int>((unsigned int)l_numThreadGroupsX, (unsigned int)l_numThreadGroupsY, 1, 0);
+	m_tileFrustumNumThreads = TVec4<uint32_t>((uint32_t)l_numThreadsX, (uint32_t)l_numThreadsY, 1, 0);
+	m_tileFrustumNumThreadGroups = TVec4<uint32_t>((uint32_t)l_numThreadGroupsX, (uint32_t)l_numThreadGroupsY, 1, 0);
 
 	auto l_elementCount = m_tileFrustumNumThreads.x * m_tileFrustumNumThreads.y;
 
@@ -67,7 +67,7 @@ bool GLLightCullingPass::createLightIndexCountBuffer()
 {
 	auto l_initialIndexCount = 1;
 
-	GLRenderingBackendComponent::get().m_lightListIndexCounterSSBO = generateSSBO(sizeof(unsigned int), 1, "lightListIndexCounterSSBO");
+	GLRenderingBackendComponent::get().m_lightListIndexCounterSSBO = generateSSBO(sizeof(uint32_t), 1, "lightListIndexCounterSSBO");
 
 	return true;
 }
@@ -81,12 +81,12 @@ bool GLLightCullingPass::createLightIndexListBuffer()
 	auto l_numThreadGroupsX = std::ceil(l_viewportSize.x / m_tileSize);
 	auto l_numThreadGroupsY = std::ceil(l_viewportSize.y / m_tileSize);
 
-	m_lightCullingNumThreadGroups = TVec4<unsigned int>((unsigned int)l_numThreadGroupsX, (unsigned int)l_numThreadGroupsY, 1, 0);
-	m_lightCullingNumThreads = TVec4<unsigned int>(m_tileSize, m_tileSize, 1, 0);
+	m_lightCullingNumThreadGroups = TVec4<uint32_t>((uint32_t)l_numThreadGroupsX, (uint32_t)l_numThreadGroupsY, 1, 0);
+	m_lightCullingNumThreads = TVec4<uint32_t>(m_tileSize, m_tileSize, 1, 0);
 
 	auto l_elementCount = m_lightCullingNumThreadGroups.x * m_lightCullingNumThreadGroups.y * l_averangeOverlapLight;
 
-	GLRenderingBackendComponent::get().m_lightIndexListSSBO = generateSSBO(sizeof(unsigned int) * l_elementCount, 2, "lightIndexListSSBO");
+	GLRenderingBackendComponent::get().m_lightIndexListSSBO = generateSSBO(sizeof(uint32_t) * l_elementCount, 2, "lightIndexListSSBO");
 
 	return true;
 }
@@ -203,7 +203,7 @@ bool GLLightCullingPass::update()
 	return true;
 }
 
-bool GLLightCullingPass::resize(unsigned int newSizeX, unsigned int newSizeY)
+bool GLLightCullingPass::resize(uint32_t newSizeX, uint32_t newSizeY)
 {
 	return true;
 }

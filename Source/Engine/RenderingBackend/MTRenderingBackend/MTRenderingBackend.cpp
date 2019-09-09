@@ -209,7 +209,7 @@ void MTRenderingBackendNS::loadDefaultAssets()
 
 MTMeshDataComponent* MTRenderingBackendNS::addMTMeshDataComponent()
 {
-	static std::atomic<unsigned int> meshCount = 0;
+	static std::atomic<uint32_t> meshCount = 0;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(MTMeshDataComponent));
 	auto l_MDC = new(l_rawPtr)MTMeshDataComponent();
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Mesh_" + std::to_string(meshCount) + "/").c_str());
@@ -220,7 +220,7 @@ MTMeshDataComponent* MTRenderingBackendNS::addMTMeshDataComponent()
 
 MaterialDataComponent* MTRenderingBackendNS::addMTMaterialDataComponent()
 {
-	static std::atomic<unsigned int> materialCount = 0;
+	static std::atomic<uint32_t> materialCount = 0;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MTMaterialDataComponent));
 	auto l_MDC = new(l_rawPtr)MTMaterialDataComponent();
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Material_" + std::to_string(materialCount) + "/").c_str());
@@ -231,7 +231,7 @@ MaterialDataComponent* MTRenderingBackendNS::addMTMaterialDataComponent()
 
 MTTextureDataComponent* MTRenderingBackendNS::addMTTextureDataComponent()
 {
-	static std::atomic<unsigned int> textureCount = 0;
+	static std::atomic<uint32_t> textureCount = 0;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(MTTextureDataComponent));
 	auto l_TDC = new(l_rawPtr)MTTextureDataComponent();
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Texture_" + std::to_string(textureCount) + "/").c_str());

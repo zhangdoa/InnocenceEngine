@@ -62,7 +62,7 @@ bool GLBloomMergePass::update()
 
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE, GL_ZERO);
 
-	for (unsigned int i = 0; i < 4; i++)
+	for (uint32_t i = 0; i < 4; i++)
 	{
 		activateTexture(GLBloomExtractPass::getGLRPC(i)->m_GLTDCs[0], 0);
 		drawMesh(l_MDC);
@@ -76,7 +76,7 @@ bool GLBloomMergePass::update()
 	return true;
 }
 
-bool GLBloomMergePass::resize(unsigned int newSizeX, unsigned int newSizeY)
+bool GLBloomMergePass::resize(uint32_t newSizeX, uint32_t newSizeY)
 {
 	resizeGLRenderPassComponent(m_GLRPC, newSizeX, newSizeY);
 

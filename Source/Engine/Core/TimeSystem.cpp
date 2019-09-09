@@ -44,7 +44,7 @@ bool InnoTimeSystem::terminate()
 	return InnoTimer::Terminate();
 }
 
-const TimeData InnoTimeSystem::getCurrentTime(unsigned int timezone_adjustment)
+const TimeData InnoTimeSystem::getCurrentTime(uint32_t timezone_adjustment)
 {
 	auto l_resultRaw = InnoTimer::GetCurrentTime(timezone_adjustment);
 
@@ -61,7 +61,7 @@ const TimeData InnoTimeSystem::getCurrentTime(unsigned int timezone_adjustment)
 	return  l_result;
 }
 
-const long long InnoTimeSystem::getCurrentTimeFromEpoch()
+const int64_t InnoTimeSystem::getCurrentTimeFromEpoch()
 {
 	return InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
 }

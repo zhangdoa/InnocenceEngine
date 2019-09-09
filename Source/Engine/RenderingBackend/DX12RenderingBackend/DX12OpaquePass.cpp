@@ -87,8 +87,8 @@ bool DX12OpaquePass::initialize()
 	// Setup the scissor rect.
 	m_DXRPC->m_scissor.left = 0;
 	m_DXRPC->m_scissor.top = 0;
-	m_DXRPC->m_scissor.right = (unsigned long)m_DXRPC->m_viewport.Width;
-	m_DXRPC->m_scissor.bottom = (unsigned long)m_DXRPC->m_viewport.Height;
+	m_DXRPC->m_scissor.right = (uint64_t)m_DXRPC->m_viewport.Width;
+	m_DXRPC->m_scissor.bottom = (uint64_t)m_DXRPC->m_viewport.Height;
 
 	// Setup PSO.
 	m_DXRPC->m_PSODesc.SampleMask = UINT_MAX;
@@ -140,10 +140,10 @@ bool DX12OpaquePass::update()
 	recordBindCBV(m_DXRPC, 0, 0, DX12RenderingBackendComponent::get().m_cameraConstantBuffer, 0);
 	recordBindSamplerDescTable(m_DXRPC, 0, 4, m_DXSPC);
 
-	unsigned int l_offset = 0;
+	uint32_t l_offset = 0;
 
 	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
-	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
+	for (uint32_t i = 0; i < l_totalDrawCallCount; i++)
 	{
 		auto l_opaquePassGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassGPUData()[i];
 

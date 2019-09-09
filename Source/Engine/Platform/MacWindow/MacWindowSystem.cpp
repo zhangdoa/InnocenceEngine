@@ -64,7 +64,7 @@ const std::vector<ButtonState>& MacWindowSystem::getButtonState()
 	return MacWindowSystemNS::m_buttonState;
 }
 
-bool MacWindowSystem::sendEvent(unsigned int umsg, unsigned int WParam, int LParam)
+bool MacWindowSystem::sendEvent(uint32_t umsg, uint32_t WParam, int32_t LParam)
 {
 	return true;
 }

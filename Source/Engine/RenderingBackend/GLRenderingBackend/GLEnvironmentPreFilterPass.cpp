@@ -79,12 +79,12 @@ bool GLEnvironmentPreFilterPass::update(GLTextureDataComponent* GLTDC)
 
 	activateTexture(GLTDC, 0);
 
-	unsigned int l_maxMipLevels = 5;
-	for (unsigned int mip = 0; mip < l_maxMipLevels; ++mip)
+	uint32_t l_maxMipLevels = 5;
+	for (uint32_t mip = 0; mip < l_maxMipLevels; ++mip)
 	{
 		// resize framebuffer according to mip-level size.
-		unsigned int mipWidth = (int)(128 * std::pow(0.5, mip));
-		unsigned int mipHeight = (int)(128 * std::pow(0.5, mip));
+		uint32_t mipWidth = (int32_t)(128 * std::pow(0.5, mip));
+		uint32_t mipHeight = (int32_t)(128 * std::pow(0.5, mip));
 
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, mipWidth, mipHeight);
 		glViewport(0, 0, mipWidth, mipHeight);
@@ -93,7 +93,7 @@ bool GLEnvironmentPreFilterPass::update(GLTextureDataComponent* GLTDC)
 
 		// uni_roughness
 		updateUniform(3, roughness);
-		for (unsigned int j = 0; j < 6; ++j)
+		for (uint32_t j = 0; j < 6; ++j)
 		{
 			// uni_v
 			updateUniform(1, l_v[j]);

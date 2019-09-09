@@ -13,8 +13,8 @@ using namespace DefaultGPUBuffers;
 struct DebugMeshGPUData
 {
 	Mat4 m;
-	unsigned int materialID;
-	unsigned int padding[15];
+	uint32_t materialID;
+	uint32_t padding[15];
 };
 
 struct DebugMaterialGPUData

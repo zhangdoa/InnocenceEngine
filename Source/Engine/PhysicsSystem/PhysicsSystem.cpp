@@ -273,7 +273,7 @@ bool generateBVHLeafNodes(BVHNode* parentNode)
 	}
 	// Find max axis
 	float l_maxAxisLength;
-	unsigned int l_maxAxis;
+	uint32_t l_maxAxis;
 	if (parentNode->intermediatePDC->m_AABBWS.m_extend.x > parentNode->intermediatePDC->m_AABBWS.m_extend.y)
 	{
 		if (parentNode->intermediatePDC->m_AABBWS.m_extend.x > parentNode->intermediatePDC->m_AABBWS.m_extend.z)

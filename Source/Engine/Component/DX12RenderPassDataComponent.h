@@ -52,7 +52,7 @@ class DX12Fence : public IFence
 public:
 	ID3D12Fence* m_Fence = 0;
 	HANDLE m_FenceEvent = 0;
-	unsigned long long m_FenceStatus = 0;
+	uint64_t m_FenceStatus = 0;
 };
 
 class DX12RenderPassDataComponent : public RenderPassDataComponent

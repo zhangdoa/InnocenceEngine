@@ -9,7 +9,7 @@ public:
   MacWindowSystemBridge() {};
   virtual ~MacWindowSystemBridge() {};
 
-  virtual bool setup(unsigned int sizeX, unsigned int sizeY) = 0;
+  virtual bool setup(uint32_t sizeX, uint32_t sizeY) = 0;
 	virtual bool initialize() = 0;
 	virtual bool update() = 0;
 	virtual bool terminate() = 0;

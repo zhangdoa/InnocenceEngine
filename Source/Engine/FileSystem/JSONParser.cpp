@@ -400,7 +400,7 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j, bool
 {
 	ModelPair l_result;
 
-	MeshShapeType l_meshShapeType = MeshShapeType(j["MeshShapeType"].get<int>());
+	MeshShapeType l_meshShapeType = MeshShapeType(j["MeshShapeType"].get<int32_t>());
 	if (l_meshShapeType == MeshShapeType::Custom)
 	{	// Load mesh data
 		auto l_meshFileName = j["MeshFile"].get<std::string>();

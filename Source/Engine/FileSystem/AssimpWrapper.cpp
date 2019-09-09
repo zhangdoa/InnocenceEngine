@@ -21,7 +21,7 @@ namespace InnoFileSystemNS
 	{
 		json processAssimpScene(const aiScene* aiScene, const std::string& exportName);
 		bool processAssimpNode(json& j, const aiNode * node, const aiScene * scene, const std::string& exportName);
-		json processAssimpMesh(const aiScene * scene, const std::string& exportName, unsigned int meshIndex);
+		json processAssimpMesh(const aiScene * scene, const std::string& exportName, uint32_t meshIndex);
 		size_t processMeshData(const aiMesh * aiMesh, const std::string& exportFileRelativePath);
 		void processAssimpBone(const aiMesh * aiMesh, const std::string& exportFileRelativePath);
 		void processAssimpMaterial(const aiMaterial * aiMaterial, const std::string& exportFileRelativePath);
@@ -102,7 +102,7 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpScene(const aiScene* aiScene,
 
 	if (aiScene->mNumAnimations)
 	{
-		for (unsigned int i = 0; i < aiScene->mNumAnimations; i++)
+		for (uint32_t i = 0; i < aiScene->mNumAnimations; i++)
 		{
 			auto l_animationFileName = "//Res//ConvertedAssets//" + exportName + "_" + std::to_string(i) + ".InnoAnimation";
 			processAssimpAnimation(aiScene->mAnimations[i], l_animationFileName);
@@ -130,7 +130,7 @@ bool InnoFileSystemNS::AssimpWrapper::processAssimpNode(json& j, const aiNode * 
 	// process each mesh located at the current node
 	if (node->mNumMeshes)
 	{
-		for (unsigned int i = 0; i < node->mNumMeshes; i++)
+		for (uint32_t i = 0; i < node->mNumMeshes; i++)
 		{
 			j["Meshes"].emplace_back(processAssimpMesh(scene, exportName, node->mMeshes[i]));
 		}
@@ -139,7 +139,7 @@ bool InnoFileSystemNS::AssimpWrapper::processAssimpNode(json& j, const aiNode * 
 	// process children node
 	if (node->mNumChildren)
 	{
-		for (unsigned int i = 0; i < node->mNumChildren; i++)
+		for (uint32_t i = 0; i < node->mNumChildren; i++)
 		{
 			processAssimpNode(j, node->mChildren[i], scene, exportName);
 		}
@@ -148,7 +148,7 @@ bool InnoFileSystemNS::AssimpWrapper::processAssimpNode(json& j, const aiNode * 
 	return true;
 }
 
-json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, const std::string& exportName, unsigned int meshIndex)
+json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, const std::string& exportName, uint32_t meshIndex)
 {
 	json l_meshData;
 
@@ -190,7 +190,7 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 	l_vertices.reserve(l_verticesNumber);
 	l_vertices.fulfill();
 
-	for (unsigned int i = 0; i < l_verticesNumber; i++)
+	for (uint32_t i = 0; i < l_verticesNumber; i++)
 	{
 		Vertex l_Vertex;
 
@@ -253,7 +253,7 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 			auto l_bone = aiMesh->mBones[i];
 			if (l_bone->mNumWeights)
 			{
-				for (unsigned int j = 0; j < l_bone->mNumWeights; j++)
+				for (uint32_t j = 0; j < l_bone->mNumWeights; j++)
 				{
 					aiVertexWeight l_vertexWeight = l_bone->mWeights[j];
 					auto l_Id = l_vertexWeight.mVertexId;
@@ -293,7 +293,7 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 		l_indices.reserve(l_verticesNumber);
 		l_indices.fulfill();
 
-		for (unsigned int i = 0; i < l_verticesNumber; i++)
+		for (uint32_t i = 0; i < l_verticesNumber; i++)
 		{
 			l_indices[i] = i;
 		}
@@ -305,7 +305,7 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 		if (aiMesh->mNumFaces)
 		{
 			// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
-			for (unsigned int i = 0; i < aiMesh->mNumFaces; i++)
+			for (uint32_t i = 0; i < aiMesh->mNumFaces; i++)
 			{
 				aiFace l_face = aiMesh->mFaces[i];
 				l_indiceSize += l_face.mNumIndices;
@@ -314,12 +314,12 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 			l_indices.reserve(l_indiceSize);
 			l_indices.fulfill();
 
-			unsigned int l_index = 0;
-			for (unsigned int i = 0; i < aiMesh->mNumFaces; i++)
+			uint32_t l_index = 0;
+			for (uint32_t i = 0; i < aiMesh->mNumFaces; i++)
 			{
 				aiFace l_face = aiMesh->mFaces[i];
 				// retrieve all indices of the face and store them in the indices vector
-				for (unsigned int j = 0; j < l_face.mNumIndices; j++)
+				for (uint32_t j = 0; j < l_face.mNumIndices; j++)
 				{
 					l_indices[l_index] = l_face.mIndices[j];
 					l_index++;
@@ -331,7 +331,7 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 			l_indices.reserve(l_verticesNumber);
 			l_indices.fulfill();
 
-			for (unsigned int i = 0; i < l_verticesNumber; i++)
+			for (uint32_t i = 0; i < l_verticesNumber; i++)
 			{
 				l_indices[i] = i;
 			}
@@ -353,7 +353,7 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 void InnoFileSystemNS::AssimpWrapper::processAssimpBone(const aiMesh * aiMesh, const std::string& exportFileRelativePath)
 {
 	json j;
-	for (unsigned int i = 0; i < aiMesh->mNumBones; i++)
+	for (uint32_t i = 0; i < aiMesh->mNumBones; i++)
 	{
 		json j_child;
 
@@ -394,7 +394,7 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * a
 {
 	json l_materialData;
 
-	for (unsigned int i = 0; i < aiTextureType_UNKNOWN; i++)
+	for (uint32_t i = 0; i < aiTextureType_UNKNOWN; i++)
 	{
 		if (aiMaterial->GetTextureCount(aiTextureType(i)) > 0)
 		{
@@ -511,9 +511,9 @@ json InnoFileSystemNS::AssimpWrapper::processTextureData(const std::string & fil
 /*
 Binary data type:
 Duration:double
-NumChannels:unsigned int
-ChannelIndex:unsigned int
-NumKeys:unsigned int
+NumChannels:uint32_t
+ChannelIndex:uint32_t
+NumKeys:uint32_t
 Key:Key(Vec4+Vec4+double)
 
 Binary data structure:
@@ -548,7 +548,7 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpAnimation(const aiAnimation *
 		l_textureData.reserve(l_numChannels * l_numKeys * 2);
 
 		//IOService::serialize(l_file, &l_numChannels, sizeof(decltype(l_numChannels)));
-		for (unsigned int i = 0; i < l_numChannels; i++)
+		for (uint32_t i = 0; i < l_numChannels; i++)
 		{
 			auto l_channel = aiAnimation->mChannels[i];
 			//auto l_channelIndex = i;
@@ -562,7 +562,7 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpAnimation(const aiAnimation *
 			}
 
 			//IOService::serialize(l_file, &l_channel->mNumPositionKeys, sizeof(decltype(l_channel->mNumPositionKeys)));
-			for (unsigned int j = 0; j < l_channel->mNumPositionKeys; j++)
+			for (uint32_t j = 0; j < l_channel->mNumPositionKeys; j++)
 			{
 				auto l_posKey = l_channel->mPositionKeys[j];
 				auto l_posKeyTime = l_posKey.mTime;
@@ -581,7 +581,7 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpAnimation(const aiAnimation *
 			}
 		}
 
-		stbi_write_png((IOService::getWorkingDirectory() + exportFileRelativePath).c_str(), (int)l_numKeys * 2 * 4, (int)l_numChannels, 4, l_textureData.data(), (int)l_numKeys * 2 * sizeof(Vec4));
+		stbi_write_png((IOService::getWorkingDirectory() + exportFileRelativePath).c_str(), (int32_t)l_numKeys * 2 * 4, (int32_t)l_numChannels, 4, l_textureData.data(), (int32_t)l_numKeys * 2 * sizeof(Vec4));
 	}
 
 	//l_file.close();

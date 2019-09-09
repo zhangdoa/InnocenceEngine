@@ -45,9 +45,9 @@ namespace DX11RenderingServerNS
 	std::unordered_set<TextureDataComponent*> m_initializedTextures;
 	std::unordered_set<MaterialDataComponent*> m_initializedMaterials;
 
-	TVec2<unsigned int> m_refreshRate = TVec2<unsigned int>(0, 1);
+	TVec2<uint32_t> m_refreshRate = TVec2<uint32_t>(0, 1);
 
-	int m_videoCardMemory = 0;
+	int32_t m_videoCardMemory = 0;
 	char m_videoCardDescription[128];
 
 	IDXGIFactory* m_factory = 0;
@@ -61,7 +61,7 @@ namespace DX11RenderingServerNS
 
 	DXGI_SWAP_CHAIN_DESC m_swapChainDesc = {};
 	IDXGISwapChain4* m_swapChain = 0;
-	const unsigned int m_swapChainImageCount = 3;
+	const uint32_t m_swapChainImageCount = 3;
 	std::vector<ID3D11Texture2D*> m_swapChainTextures;
 
 	ID3D10Blob* m_InputLayoutDummyShaderBuffer = 0;
@@ -103,8 +103,8 @@ bool DX11RenderingServer::Setup()
 	m_GPUBufferDataComponentPool = InnoMemory::CreateObjectPool(sizeof(DX11GPUBufferDataComponent), 256);
 
 	HRESULT l_HResult;
-	unsigned int l_numModes;
-	unsigned long long l_stringLength;
+	uint32_t l_numModes;
+	uint64_t l_stringLength;
 
 	// Create a DirectX graphics interface factory.
 	l_HResult = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&m_factory);
@@ -158,7 +158,7 @@ bool DX11RenderingServer::Setup()
 	// When a match is found store the numerator and denominator of the refresh rate for that monitor.
 	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
 
-	for (unsigned int i = 0; i < l_numModes; i++)
+	for (uint32_t i = 0; i < l_numModes; i++)
 	{
 		if (displayModeList[i].Width == l_screenResolution.x
 			&&
@@ -180,7 +180,7 @@ bool DX11RenderingServer::Setup()
 	}
 
 	// Store the dedicated video card memory in megabytes.
-	m_videoCardMemory = (int)(m_adapterDesc.DedicatedVideoMemory / 1024 / 1024);
+	m_videoCardMemory = (int32_t)(m_adapterDesc.DedicatedVideoMemory / 1024 / 1024);
 
 	// Convert the name of the video card to a character array and store it.
 	if (wcstombs_s(&l_stringLength, m_videoCardDescription, 128, m_adapterDesc.Description, 128) != 0)
@@ -246,7 +246,7 @@ bool DX11RenderingServer::Setup()
 	featureLevel = D3D_FEATURE_LEVEL_11_1;
 
 	// Create the swap chain, Direct3D device, and Direct3D device context.
-	unsigned int creationFlags = 0;
+	uint32_t creationFlags = 0;
 #ifdef _DEBUG
 	creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif // _DEBUG
@@ -274,7 +274,7 @@ bool DX11RenderingServer::Setup()
 
 	for (size_t i = 0; i < m_swapChainImageCount; i++)
 	{
-		l_HResult = m_swapChain->GetBuffer((unsigned int)i, __uuidof(ID3D11Texture2D), (LPVOID*)&m_swapChainTextures[i]);
+		l_HResult = m_swapChain->GetBuffer((uint32_t)i, __uuidof(ID3D11Texture2D), (LPVOID*)&m_swapChainTextures[i]);
 
 		if (FAILED(l_HResult))
 		{
@@ -415,7 +415,7 @@ bool DX11RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	D3D11_BUFFER_DESC l_vertexBufferDesc;
 	ZeroMemory(&l_vertexBufferDesc, sizeof(l_vertexBufferDesc));
 	l_vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	l_vertexBufferDesc.ByteWidth = sizeof(Vertex) * (unsigned int)l_rhs->m_vertices.size();
+	l_vertexBufferDesc.ByteWidth = sizeof(Vertex) * (uint32_t)l_rhs->m_vertices.size();
 	l_vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	l_vertexBufferDesc.CPUAccessFlags = 0;
 	l_vertexBufferDesc.MiscFlags = 0;
@@ -446,7 +446,7 @@ bool DX11RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	D3D11_BUFFER_DESC l_indexBufferDesc;
 	ZeroMemory(&l_indexBufferDesc, sizeof(l_indexBufferDesc));
 	l_indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	l_indexBufferDesc.ByteWidth = (unsigned int)(l_rhs->m_indices.size() * sizeof(unsigned int));
+	l_indexBufferDesc.ByteWidth = (uint32_t)(l_rhs->m_indices.size() * sizeof(uint32_t));
 	l_indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	l_indexBufferDesc.CPUAccessFlags = 0;
 	l_indexBufferDesc.MiscFlags = 0;
@@ -523,17 +523,17 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 	// Submit raw data to GPU memory
 	if (l_rhs->m_textureData)
 	{
-		unsigned int l_rowPitch = l_rhs->m_textureDataDesc.Width * l_rhs->m_DX11TextureDataDesc.PixelDataSize;
+		uint32_t l_rowPitch = l_rhs->m_textureDataDesc.Width * l_rhs->m_DX11TextureDataDesc.PixelDataSize;
 		if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
 		{
-			unsigned int l_depthPitch = l_rowPitch * l_rhs->m_textureDataDesc.Height;
+			uint32_t l_depthPitch = l_rowPitch * l_rhs->m_textureDataDesc.Height;
 			m_deviceContext->UpdateSubresource(l_rhs->m_ResourceHandle, 0, NULL, l_rhs->m_textureData, l_rowPitch, l_depthPitch);
 		}
 		else if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::SamplerCubemap)
 		{
-			for (unsigned int i = 0; i < 6; i++)
+			for (uint32_t i = 0; i < 6; i++)
 			{
-				unsigned int l_subresource = D3D11CalcSubresource(0, i, l_rhs->m_DX11TextureDataDesc.MipLevels);
+				uint32_t l_subresource = D3D11CalcSubresource(0, i, l_rhs->m_DX11TextureDataDesc.MipLevels);
 				void* l_rawData = (unsigned char*)l_rhs->m_textureData + l_rowPitch * l_rhs->m_textureDataDesc.Height * i;
 				m_deviceContext->UpdateSubresource(l_rhs->m_ResourceHandle, l_subresource, NULL, l_rawData, l_rowPitch, 0);
 			}
@@ -822,12 +822,12 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 
 	auto l_isStructuredBuffer = (l_rhs->m_GPUAccessibility == Accessibility::ReadWrite);
 
-	l_rhs->m_BufferDesc.ByteWidth = (unsigned int)(rhs->m_TotalSize);
+	l_rhs->m_BufferDesc.ByteWidth = (uint32_t)(rhs->m_TotalSize);
 	l_rhs->m_BufferDesc.Usage = l_isStructuredBuffer ? D3D11_USAGE_DEFAULT : D3D11_USAGE_DYNAMIC;
 	l_rhs->m_BufferDesc.BindFlags = l_isStructuredBuffer ? (D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS) : D3D11_BIND_CONSTANT_BUFFER;
 	l_rhs->m_BufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	l_rhs->m_BufferDesc.MiscFlags = l_isStructuredBuffer ? D3D11_RESOURCE_MISC_BUFFER_STRUCTURED : 0;
-	l_rhs->m_BufferDesc.StructureByteStride = l_isStructuredBuffer ? (unsigned int)l_rhs->m_ElementSize : 0;
+	l_rhs->m_BufferDesc.StructureByteStride = l_isStructuredBuffer ? (uint32_t)l_rhs->m_ElementSize : 0;
 
 	HRESULT l_HResult;
 
@@ -868,7 +868,7 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 		l_SRVDesc.Format = DXGI_FORMAT_UNKNOWN;
 		l_SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
 		l_SRVDesc.Buffer.FirstElement = 0;
-		l_SRVDesc.Buffer.NumElements = (unsigned int)l_rhs->m_ElementCount;
+		l_SRVDesc.Buffer.NumElements = (uint32_t)l_rhs->m_ElementCount;
 
 		l_HResult = m_device->CreateShaderResourceView(l_rhs->m_BufferPtr, &l_SRVDesc, &l_rhs->m_SRV);
 
@@ -886,7 +886,7 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 		l_UAVDesc.Format = DXGI_FORMAT_UNKNOWN;
 		l_UAVDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
 		l_UAVDesc.Buffer.FirstElement = 0;
-		l_UAVDesc.Buffer.NumElements = (unsigned int)l_rhs->m_ElementCount;
+		l_UAVDesc.Buffer.NumElements = (uint32_t)l_rhs->m_ElementCount;
 		l_UAVDesc.Buffer.Flags = 0;
 
 		l_HResult = m_device->CreateUnorderedAccessView(l_rhs->m_BufferPtr, &l_UAVDesc, &l_rhs->m_UAV);
@@ -1155,7 +1155,7 @@ bool DX11RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * 
 			}
 			else
 			{
-				m_deviceContext->OMSetRenderTargets((unsigned int)l_rhs->m_RenderPassDesc.m_RenderTargetCount, &l_rhs->m_RTVs[0], l_rhs->m_DSV);
+				m_deviceContext->OMSetRenderTargets((uint32_t)l_rhs->m_RenderPassDesc.m_RenderTargetCount, &l_rhs->m_RTVs[0], l_rhs->m_DSV);
 			}
 		}
 		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
@@ -1219,7 +1219,7 @@ bool DX11RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 	return true;
 }
 
-bool BindSampler(ShaderStage shaderStage, unsigned int slot, ID3D11SamplerState* sampler)
+bool BindSampler(ShaderStage shaderStage, uint32_t slot, ID3D11SamplerState* sampler)
 {
 	switch (shaderStage)
 	{
@@ -1247,7 +1247,7 @@ bool BindSampler(ShaderStage shaderStage, unsigned int slot, ID3D11SamplerState*
 	return true;
 }
 
-bool BindSRV(ShaderStage shaderStage, unsigned int slot, ID3D11ShaderResourceView * SRV)
+bool BindSRV(ShaderStage shaderStage, uint32_t slot, ID3D11ShaderResourceView * SRV)
 {
 	switch (shaderStage)
 	{
@@ -1275,11 +1275,11 @@ bool BindSRV(ShaderStage shaderStage, unsigned int slot, ID3D11ShaderResourceVie
 	return true;
 }
 
-bool BindUAV(ShaderStage shaderStage, unsigned int slot, ID3D11UnorderedAccessView * UAV)
+bool BindUAV(ShaderStage shaderStage, uint32_t slot, ID3D11UnorderedAccessView * UAV)
 {
 	if (shaderStage == ShaderStage::Compute)
 	{
-		m_deviceContext->CSSetUnorderedAccessViews((unsigned int)slot, 1, &UAV, nullptr);
+		m_deviceContext->CSSetUnorderedAccessViews((uint32_t)slot, 1, &UAV, nullptr);
 	}
 	else
 	{
@@ -1290,7 +1290,7 @@ bool BindUAV(ShaderStage shaderStage, unsigned int slot, ID3D11UnorderedAccessVi
 	return true;
 }
 
-bool BindConstantBuffer(unsigned int slot, ID3D11Buffer* buffer, ShaderStage shaderStage)
+bool BindConstantBuffer(uint32_t slot, ID3D11Buffer* buffer, ShaderStage shaderStage)
 {
 	switch (shaderStage)
 	{
@@ -1319,10 +1319,10 @@ bool BindConstantBuffer(unsigned int slot, ID3D11Buffer* buffer, ShaderStage sha
 	return true;
 }
 
-bool BindPartialConstantBuffer(unsigned int slot, ID3D11Buffer* buffer, ShaderStage shaderStage, size_t startOffset, size_t elementSize)
+bool BindPartialConstantBuffer(uint32_t slot, ID3D11Buffer* buffer, ShaderStage shaderStage, size_t startOffset, size_t elementSize)
 {
-	auto l_constantCount = (unsigned int)elementSize / 16;
-	auto l_firstConstant = (unsigned int)startOffset * l_constantCount;
+	auto l_constantCount = (uint32_t)elementSize / 16;
+	auto l_firstConstant = (uint32_t)startOffset * l_constantCount;
 
 	switch (shaderStage)
 	{
@@ -1360,20 +1360,20 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 		switch (l_resourceBinder->m_ResourceBinderType)
 		{
 		case ResourceBinderType::Sampler:
-			BindSampler(shaderStage, (unsigned int)(localSlot), l_resourceBinder->m_Sampler);
+			BindSampler(shaderStage, (uint32_t)(localSlot), l_resourceBinder->m_Sampler);
 			break;
 		case ResourceBinderType::Image:
 			if (accessibility != Accessibility::ReadOnly)
 			{
 				if (shaderStage == ShaderStage::Compute)
 				{
-					BindUAV(shaderStage, (unsigned int)(localSlot), l_resourceBinder->m_UAV);
+					BindUAV(shaderStage, (uint32_t)(localSlot), l_resourceBinder->m_UAV);
 				}
 				else
 				{
 					auto l_renderPass = reinterpret_cast<DX11RenderPassDataComponent*>(renderPass);
 					auto l_UAV = l_resourceBinder->m_UAV;
-					const unsigned int l_initialCounts = -1;
+					const uint32_t l_initialCounts = -1;
 
 					if (l_renderPass->m_RenderPassDesc.m_UseMultiFrames)
 					{
@@ -1381,14 +1381,14 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 					}
 					else
 					{
-						auto l_RTCount = (unsigned int)l_renderPass->m_RenderPassDesc.m_RenderTargetCount;
+						auto l_RTCount = (uint32_t)l_renderPass->m_RenderPassDesc.m_RenderTargetCount;
 						m_deviceContext->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, l_renderPass->m_DSV, 0, l_RTCount, &l_UAV, &l_initialCounts);
 					}
 				}
 			}
 			else
 			{
-				BindSRV(shaderStage, (unsigned int)(localSlot), l_resourceBinder->m_SRV);
+				BindSRV(shaderStage, (uint32_t)(localSlot), l_resourceBinder->m_SRV);
 			}
 			break;
 		case ResourceBinderType::Buffer:
@@ -1400,22 +1400,22 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 				}
 				if (elementCount != SIZE_MAX)
 				{
-					BindPartialConstantBuffer((unsigned int)localSlot, l_resourceBinder->m_Buffer, shaderStage, startOffset, l_resourceBinder->m_ElementSize);
+					BindPartialConstantBuffer((uint32_t)localSlot, l_resourceBinder->m_Buffer, shaderStage, startOffset, l_resourceBinder->m_ElementSize);
 				}
 				else
 				{
-					BindConstantBuffer((unsigned int)localSlot, l_resourceBinder->m_Buffer, shaderStage);
+					BindConstantBuffer((uint32_t)localSlot, l_resourceBinder->m_Buffer, shaderStage);
 				}
 			}
 			else
 			{
 				if (accessibility != Accessibility::ReadOnly)
 				{
-					BindUAV(shaderStage, (unsigned int)(localSlot), l_resourceBinder->m_UAV);
+					BindUAV(shaderStage, (uint32_t)(localSlot), l_resourceBinder->m_UAV);
 				}
 				else
 				{
-					BindSRV(shaderStage, (unsigned int)(localSlot), l_resourceBinder->m_SRV);
+					BindSRV(shaderStage, (uint32_t)(localSlot), l_resourceBinder->m_SRV);
 				}
 			}
 			break;
@@ -1436,14 +1436,14 @@ bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * ren
 		switch (l_resourceBinder->m_ResourceBinderType)
 		{
 		case ResourceBinderType::Sampler:
-			m_deviceContext->PSSetSamplers((unsigned int)localSlot, 1, 0);
+			m_deviceContext->PSSetSamplers((uint32_t)localSlot, 1, 0);
 			break;
 		case ResourceBinderType::Image:
 			if (accessibility != Accessibility::ReadOnly)
 			{
 				if (shaderStage == ShaderStage::Compute)
 				{
-					BindUAV(shaderStage, (unsigned int)(localSlot), 0);
+					BindUAV(shaderStage, (uint32_t)(localSlot), 0);
 				}
 				else
 				{
@@ -1452,7 +1452,7 @@ bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * ren
 			}
 			else
 			{
-				BindSRV(shaderStage, (unsigned int)(localSlot), 0);
+				BindSRV(shaderStage, (uint32_t)(localSlot), 0);
 			}
 			break;
 		case ResourceBinderType::Buffer:
@@ -1460,11 +1460,11 @@ bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * ren
 			{
 				if (accessibility != Accessibility::ReadOnly)
 				{
-					BindUAV(shaderStage, (unsigned int)(localSlot), 0);
+					BindUAV(shaderStage, (uint32_t)(localSlot), 0);
 				}
 				else
 				{
-					BindSRV(shaderStage, (unsigned int)(localSlot), 0);
+					BindSRV(shaderStage, (uint32_t)(localSlot), 0);
 				}
 			}
 			break;
@@ -1480,14 +1480,14 @@ bool DX11RenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass,
 {
 	auto l_rhs = reinterpret_cast<DX11MeshDataComponent*>(mesh);
 
-	const unsigned int l_stride = sizeof(Vertex);
-	const unsigned int l_offset = 0;
+	const uint32_t l_stride = sizeof(Vertex);
+	const uint32_t l_offset = 0;
 
 	m_deviceContext->IASetVertexBuffers(0, 1, &l_rhs->m_vertexBuffer, &l_stride, &l_offset);
 
 	m_deviceContext->IASetIndexBuffer(l_rhs->m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-	m_deviceContext->DrawIndexedInstanced((unsigned int)l_rhs->m_indicesSize, (unsigned int)instanceCount, 0, 0, 0);
+	m_deviceContext->DrawIndexedInstanced((uint32_t)l_rhs->m_indicesSize, (uint32_t)instanceCount, 0, 0, 0);
 
 	return true;
 }
@@ -1602,7 +1602,7 @@ bool DX11RenderingServer::Present()
 	return true;
 }
 
-bool DX11RenderingServer::DispatchCompute(RenderPassDataComponent * renderPass, unsigned int threadGroupX, unsigned int threadGroupY, unsigned int threadGroupZ)
+bool DX11RenderingServer::DispatchCompute(RenderPassDataComponent * renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
 {
 	m_deviceContext->Dispatch(threadGroupX, threadGroupY, threadGroupZ);
 

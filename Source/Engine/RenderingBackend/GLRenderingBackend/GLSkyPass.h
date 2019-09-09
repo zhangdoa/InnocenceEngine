@@ -7,7 +7,7 @@ namespace GLSkyPass
 {
 	bool initialize();
 	bool update();
-	bool resize(unsigned int newSizeX,  unsigned int newSizeY);
+	bool resize(uint32_t newSizeX,  uint32_t newSizeY);
 	bool reloadShader();
 
 	GLRenderPassComponent* getGLRPC();

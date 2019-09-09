@@ -48,7 +48,7 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 
 	for (size_t i = 0; i < m_buttonState.size(); i++)
 	{
-		m_buttonState[i].m_code = (unsigned int)i;
+		m_buttonState[i].m_code = (uint32_t)i;
 	}
 
 	WinWindowSystemComponent::get().m_hInstance = static_cast<HINSTANCE>(hInstance);
@@ -170,7 +170,7 @@ const std::vector<ButtonState>& WinWindowSystem::getButtonState()
 	return m_buttonState;
 }
 
-bool WinWindowSystem::sendEvent(unsigned int umsg, unsigned int WParam, int LParam)
+bool WinWindowSystem::sendEvent(uint32_t umsg, uint32_t WParam, int32_t LParam)
 {
 	WindowProc(WinWindowSystemComponent::get().m_hwnd, umsg, WParam, LParam);
 	return true;
@@ -211,7 +211,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			auto l_width = lParam & 0xffff;
 			auto l_height = (lParam & 0xffff0000) >> 16;
 
-			TVec2<unsigned int> l_newResolution = TVec2<unsigned int>((unsigned int)l_width, (unsigned int)l_height);
+			TVec2<uint32_t> l_newResolution = TVec2<uint32_t>((uint32_t)l_width, (uint32_t)l_height);
 			g_pModuleManager->getRenderingFrontend()->setScreenResolution(l_newResolution);
 			g_pModuleManager->getRenderingServer()->Resize();
 		}
@@ -227,21 +227,21 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 {
 	for (auto i : m_windowEventCallbackFunctor)
 	{
-		(*i)(hwnd, umsg, (unsigned int)wparam, (int)lparam);
+		(*i)(hwnd, umsg, (uint32_t)wparam, (int32_t)lparam);
 	}
 
 	switch (umsg)
 	{
 	case WM_KEYDOWN:
 	{
-		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ (int)wparam, true });
-		m_buttonState[(int)wparam].m_isPressed = true;
+		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ (int32_t)wparam, true });
+		m_buttonState[(int32_t)wparam].m_isPressed = true;
 		return 0;
 	}
 	case WM_KEYUP:
 	{
-		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ (int)wparam, ButtonStatus::Released });
-		m_buttonState[(int)wparam].m_isPressed = false;
+		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ (int32_t)wparam, ButtonStatus::Released });
+		m_buttonState[(int32_t)wparam].m_isPressed = false;
 		return 0;
 	}
 	case WM_LBUTTONDOWN:

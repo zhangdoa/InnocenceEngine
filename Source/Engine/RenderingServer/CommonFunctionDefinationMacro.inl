@@ -1,7 +1,7 @@
 #define AddComponent(renderingServer, component) \
 component##Component * renderingServer##RenderingServer::Add##component##Component(const char * name) \
 { \
-static std::atomic<unsigned int> l_count = 0; \
+static std::atomic<uint32_t> l_count = 0; \
 l_count++; \
 auto l_rawPtr = m_##component##ComponentPool->Spawn(); \
 auto l_result = new(l_rawPtr)renderingServer##component##Component(); \

@@ -76,7 +76,7 @@ bool GLEnvironmentConvolutionPass::update(GLTextureDataComponent* GLTDC)
 
 	activateTexture(GLTDC, 0);
 
-	for (unsigned int i = 0; i < 6; ++i)
+	for (uint32_t i = 0; i < 6; ++i)
 	{
 		// uni_v
 		updateUniform(1, l_v[i]);

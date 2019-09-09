@@ -296,9 +296,9 @@ D3D11_TEXTURE_ADDRESS_MODE DX11Helper::GetWrapMode(TextureWrapMethod textureWrap
 	return l_result;
 }
 
-unsigned int DX11Helper::GetTextureMipLevels(TextureDataDesc textureDataDesc)
+uint32_t DX11Helper::GetTextureMipLevels(TextureDataDesc textureDataDesc)
 {
-	unsigned int textureMipLevels = 1;
+	uint32_t textureMipLevels = 1;
 	if (textureDataDesc.UseMipMap)
 	{
 		textureMipLevels = 0;
@@ -307,9 +307,9 @@ unsigned int DX11Helper::GetTextureMipLevels(TextureDataDesc textureDataDesc)
 	return textureMipLevels;
 }
 
-unsigned int DX11Helper::GetTextureBindFlags(TextureDataDesc textureDataDesc)
+uint32_t DX11Helper::GetTextureBindFlags(TextureDataDesc textureDataDesc)
 {
-	unsigned int textureBindFlags = 0;
+	uint32_t textureBindFlags = 0;
 
 	if (textureDataDesc.CPUAccessibility == Accessibility::Immutable)
 	{
@@ -338,9 +338,9 @@ unsigned int DX11Helper::GetTextureBindFlags(TextureDataDesc textureDataDesc)
 	return textureBindFlags;
 }
 
-unsigned int DX11Helper::GetTexturePixelDataSize(TextureDataDesc textureDataDesc)
+uint32_t DX11Helper::GetTexturePixelDataSize(TextureDataDesc textureDataDesc)
 {
-	unsigned int l_singlePixelSize;
+	uint32_t l_singlePixelSize;
 
 	switch (textureDataDesc.PixelDataType)
 	{
@@ -359,7 +359,7 @@ unsigned int DX11Helper::GetTexturePixelDataSize(TextureDataDesc textureDataDesc
 	case TexturePixelDataType::DOUBLE:l_singlePixelSize = 8; break;
 	}
 
-	unsigned int l_channelSize;
+	uint32_t l_channelSize;
 	switch (textureDataDesc.PixelDataFormat)
 	{
 	case TexturePixelDataFormat::R:l_channelSize = 1; break;
@@ -482,7 +482,7 @@ D3D11_SHADER_RESOURCE_VIEW_DESC DX11Helper::GetSRVDesc(TextureDataDesc textureDa
 	return l_result;
 }
 
-unsigned int DX11Helper::GetSRVMipLevels(TextureDataDesc textureDataDesc)
+uint32_t DX11Helper::GetSRVMipLevels(TextureDataDesc textureDataDesc)
 {
 	if (textureDataDesc.UsageType == TextureUsageType::ColorAttachment
 		|| textureDataDesc.UsageType == TextureUsageType::DepthAttachment
@@ -724,7 +724,7 @@ bool DX11Helper::CreateViews(DX11RenderPassDataComponent * DX11RPDC, ID3D11Devic
 
 		DX11RPDC->m_RTVDesc = GetRTVDesc(DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc);
 
-		for (unsigned int i = 0; i < DX11RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+		for (uint32_t i = 0; i < DX11RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 		{
 			auto l_DX11TDC = reinterpret_cast<DX11TextureDataComponent*>(DX11RPDC->m_RenderTargets[i]);
 

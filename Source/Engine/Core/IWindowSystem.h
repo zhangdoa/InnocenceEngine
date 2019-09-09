@@ -3,7 +3,7 @@
 #include "../Common/InnoClassTemplate.h"
 #include "IWindowSurface.h"
 
-using WindowEventCallbackFunctor = std::function<void(void*, unsigned int, unsigned int, int)>;
+using WindowEventCallbackFunctor = std::function<void(void*, uint32_t, uint32_t, int32_t)>;
 
 class IWindowSystem
 {
@@ -21,6 +21,6 @@ public:
 	virtual const std::vector<ButtonState>& getButtonState() = 0;
 
 	// Editor only
-	virtual bool sendEvent(unsigned int umsg, unsigned int WParam, int LParam) = 0;
+	virtual bool sendEvent(uint32_t umsg, uint32_t WParam, int32_t LParam) = 0;
 	virtual bool addEventCallback(WindowEventCallbackFunctor* functor) = 0;
 };

@@ -39,7 +39,7 @@ bool GLFinalBlendPass::initialize()
 	f_toggleVisualizeLightCulling = [&]() {
 		m_visualizeLightCulling = !m_visualizeLightCulling;
 	};
-	g_pModuleManager->getEventSystem()->addButtonStatusCallback(ButtonData{ INNO_KEY_T, ButtonStatus::PRESSED }, &f_toggleVisualizeLightCulling);
+	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonData{ INNO_KEY_T, ButtonStatus::PRESSED }, &f_toggleVisualizeLightCulling);
 
 	return true;
 }
@@ -88,7 +88,7 @@ bool GLFinalBlendPass::update(GLRenderPassComponent* prePassGLRPC)
 	return true;
 }
 
-bool GLFinalBlendPass::resize(unsigned int newSizeX, unsigned int newSizeY)
+bool GLFinalBlendPass::resize(uint32_t newSizeX, uint32_t newSizeY)
 {
 	resizeGLRenderPassComponent(m_GLRPC, newSizeX, newSizeY);
 

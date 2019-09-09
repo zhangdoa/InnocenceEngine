@@ -14,7 +14,7 @@ struct SamplerDesc
 	float m_BorderColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	float m_MinLOD = 0.0f;
 	float m_MaxLOD = 3.402823466e+38f;
-	unsigned int m_MaxAnisotropy = 1;
+	uint32_t m_MaxAnisotropy = 1;
 };
 
 class SamplerDataComponent : public InnoComponent

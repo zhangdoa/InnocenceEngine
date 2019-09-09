@@ -12,7 +12,7 @@ namespace DX11Helper
 		auto l_Name = std::string(owner->m_componentName.c_str());
 		l_Name += "_";
 		l_Name += objectType;
-		auto l_HResult = rhs->SetPrivateData(WKPDID_D3DDebugObjectName, (unsigned int)l_Name.size(), l_Name.c_str());
+		auto l_HResult = rhs->SetPrivateData(WKPDID_D3DDebugObjectName, (uint32_t)l_Name.size(), l_Name.c_str());
 		if (FAILED(l_HResult))
 		{
 			InnoLogger::Log(LogLevel::Warning, "DX11RenderingServer: Can't name ", objectType, " with ", l_Name.c_str());
@@ -25,14 +25,14 @@ namespace DX11Helper
 	DXGI_FORMAT GetTextureFormat(TextureDataDesc textureDataDesc);
 	D3D11_FILTER GetFilterMode(TextureFilterMethod minFilterMethod, TextureFilterMethod magFilterMethod);
 	D3D11_TEXTURE_ADDRESS_MODE GetWrapMode(TextureWrapMethod textureWrapMethod);
-	unsigned int GetTextureMipLevels(TextureDataDesc textureDataDesc);
-	unsigned int GetTextureBindFlags(TextureDataDesc textureDataDesc);
-	unsigned int GetTexturePixelDataSize(TextureDataDesc textureDataDesc);
+	uint32_t GetTextureMipLevels(TextureDataDesc textureDataDesc);
+	uint32_t GetTextureBindFlags(TextureDataDesc textureDataDesc);
+	uint32_t GetTexturePixelDataSize(TextureDataDesc textureDataDesc);
 	D3D11_TEXTURE1D_DESC Get1DTextureDataDesc(D3D11_TEXTURE_DESC textureDataDesc);
 	D3D11_TEXTURE2D_DESC Get2DTextureDataDesc(D3D11_TEXTURE_DESC textureDataDesc);
 	D3D11_TEXTURE3D_DESC Get3DTextureDataDesc(D3D11_TEXTURE_DESC textureDataDesc);
 	D3D11_SHADER_RESOURCE_VIEW_DESC GetSRVDesc(TextureDataDesc textureDataDesc, D3D11_TEXTURE_DESC D3D11TextureDesc);
-	unsigned int GetSRVMipLevels(TextureDataDesc textureDataDesc);
+	uint32_t GetSRVMipLevels(TextureDataDesc textureDataDesc);
 	D3D11_UNORDERED_ACCESS_VIEW_DESC GetUAVDesc(TextureDataDesc textureDataDesc, D3D11_TEXTURE_DESC D3D11TextureDesc);
 	D3D11_RENDER_TARGET_VIEW_DESC GetRTVDesc(TextureDataDesc textureDataDesc);
 	D3D11_DEPTH_STENCIL_VIEW_DESC GetDSVDesc(TextureDataDesc textureDataDesc, DepthStencilDesc DSDesc);

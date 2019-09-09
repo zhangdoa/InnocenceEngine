@@ -417,7 +417,7 @@ bool GLRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 	{
 		if (l_rhs->m_textureData)
 		{
-			for (unsigned int i = 0; i < 6; i++)
+			for (uint32_t i = 0; i < 6; i++)
 			{
 				char* l_textureData = reinterpret_cast<char*>(const_cast<void*>(l_rhs->m_textureData));
 				auto l_offset = i * l_rhs->m_GLTextureDataDesc.Width * l_rhs->m_GLTextureDataDesc.Height * l_rhs->m_GLTextureDataDesc.PixelDataSize;
@@ -426,7 +426,7 @@ bool GLRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 		}
 		else
 		{
-			for (unsigned int i = 0; i < 6; i++)
+			for (uint32_t i = 0; i < 6; i++)
 			{
 				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, l_rhs->m_GLTextureDataDesc.InternalFormat, l_rhs->m_GLTextureDataDesc.Width, l_rhs->m_GLTextureDataDesc.Height, 0, l_rhs->m_GLTextureDataDesc.PixelDataFormat, l_rhs->m_GLTextureDataDesc.PixelDataType, l_rhs->m_textureData);
 			}
@@ -897,16 +897,16 @@ bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderP
 		switch (l_resourceBinder->m_ResourceBinderType)
 		{
 		case ResourceBinderType::Sampler:
-			//glBindSampler((unsigned int)localSlot, l_resourceBinder->m_SO);
+			//glBindSampler((uint32_t)localSlot, l_resourceBinder->m_SO);
 			break;
 		case ResourceBinderType::Image:
 			if (accessibility == Accessibility::ReadOnly)
 			{
-				ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_resourceBinder->m_TO), (unsigned int)localSlot);
+				ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_resourceBinder->m_TO), (uint32_t)localSlot);
 			}
 			else
 			{
-				BindTextureAsImage(reinterpret_cast<GLTextureDataComponent*>(l_resourceBinder->m_TO), (unsigned int)localSlot, accessibility);
+				BindTextureAsImage(reinterpret_cast<GLTextureDataComponent*>(l_resourceBinder->m_TO), (uint32_t)localSlot, accessibility);
 			}
 			break;
 		case ResourceBinderType::Buffer:
@@ -999,7 +999,7 @@ bool GLRenderingServer::Present()
 	return true;
 }
 
-bool GLRenderingServer::DispatchCompute(RenderPassDataComponent * renderPass, unsigned int threadGroupX, unsigned int threadGroupY, unsigned int threadGroupZ)
+bool GLRenderingServer::DispatchCompute(RenderPassDataComponent * renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
 {
 	glDispatchCompute(threadGroupX, threadGroupY, threadGroupZ);
 	glMemoryBarrier(GL_ALL_BARRIER_BITS);
@@ -1030,8 +1030,8 @@ bool GLRenderingServer::CopyColorBuffer(RenderPassDataComponent * src, size_t sr
 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, l_src->m_FBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, l_dest->m_FBO);
-	glReadBuffer(GL_COLOR_ATTACHMENT0 + (unsigned int)srcIndex);
-	glDrawBuffer(GL_COLOR_ATTACHMENT0 + (unsigned int)destIndex);
+	glReadBuffer(GL_COLOR_ATTACHMENT0 + (uint32_t)srcIndex);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0 + (uint32_t)destIndex);
 
 	glBlitFramebuffer(0, 0,
 		l_src->m_RenderPassDesc.m_RenderTargetDesc.Width, l_src->m_RenderPassDesc.m_RenderTargetDesc.Height,
@@ -1099,7 +1099,7 @@ std::vector<Vec4> GLRenderingServer::ReadTextureBackToCPU(RenderPassDataComponen
 	case TextureSamplerType::Sampler3D:
 		l_sampleCount = l_width * l_height;
 		l_textureSamples.resize(l_sampleCount * l_depthOrArraySize);
-		for (unsigned int i = 0; i < (unsigned int)l_depthOrArraySize; i++)
+		for (uint32_t i = 0; i < (uint32_t)l_depthOrArraySize; i++)
 		{
 			glFramebufferTextureLayer(GL_FRAMEBUFFER, l_attachmentType, GLTDC->m_TO, 0, i);
 			glReadPixels(0, 0, l_width, 0, l_pixelDataFormat, l_pixelDataType, &l_textureSamples[l_depthOrArraySize * l_sampleCount]);
@@ -1108,7 +1108,7 @@ std::vector<Vec4> GLRenderingServer::ReadTextureBackToCPU(RenderPassDataComponen
 	case TextureSamplerType::Sampler1DArray:
 		l_sampleCount = l_width;
 		l_textureSamples.resize(l_sampleCount * l_depthOrArraySize);
-		for (unsigned int i = 0; i < (unsigned int)l_depthOrArraySize; i++)
+		for (uint32_t i = 0; i < (uint32_t)l_depthOrArraySize; i++)
 		{
 			glFramebufferTextureLayer(GL_FRAMEBUFFER, l_attachmentType, GLTDC->m_TO, 0, i);
 			glReadPixels(0, 0, l_width, 0, l_pixelDataFormat, l_pixelDataType, &l_textureSamples[l_depthOrArraySize * l_sampleCount]);
@@ -1117,7 +1117,7 @@ std::vector<Vec4> GLRenderingServer::ReadTextureBackToCPU(RenderPassDataComponen
 	case TextureSamplerType::Sampler2DArray:
 		l_sampleCount = l_width * l_height;
 		l_textureSamples.resize(l_sampleCount * l_depthOrArraySize);
-		for (unsigned int i = 0; i < (unsigned int)l_depthOrArraySize; i++)
+		for (uint32_t i = 0; i < (uint32_t)l_depthOrArraySize; i++)
 		{
 			glFramebufferTextureLayer(GL_FRAMEBUFFER, l_attachmentType, GLTDC->m_TO, 0, i);
 			glReadPixels(0, 0, l_width, l_height, l_pixelDataFormat, l_pixelDataType, &l_textureSamples[l_depthOrArraySize * l_sampleCount]);
@@ -1126,7 +1126,7 @@ std::vector<Vec4> GLRenderingServer::ReadTextureBackToCPU(RenderPassDataComponen
 	case TextureSamplerType::SamplerCubemap:
 		l_sampleCount = l_width * l_height;
 		l_textureSamples.resize(l_sampleCount * 6);
-		for (unsigned int i = 0; i < 6; i++)
+		for (uint32_t i = 0; i < 6; i++)
 		{
 			glFramebufferTexture2D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, GLTDC->m_TO, 0);
 			glReadPixels(0, 0, l_width, l_height, l_pixelDataFormat, l_pixelDataType, &l_textureSamples[i * l_sampleCount]);

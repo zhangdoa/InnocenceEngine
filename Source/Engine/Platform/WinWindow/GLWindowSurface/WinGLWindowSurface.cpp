@@ -60,7 +60,7 @@ bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 	fakePFD.cAlphaBits = 8;
 	fakePFD.cDepthBits = 24;
 
-	const int fakePFDID = ChoosePixelFormat(fakeDC, &fakePFD);
+	const int32_t fakePFDID = ChoosePixelFormat(fakeDC, &fakePFD);
 
 	if (fakePFDID == 0)
 	{
@@ -114,8 +114,8 @@ bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 
 	// Determine the resolution of the clients desktop screen.
 	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
-	auto l_screenWidth = (int)l_screenResolution.x;
-	auto l_screenHeight = (int)l_screenResolution.y;
+	auto l_screenWidth = (int32_t)l_screenResolution.x;
+	auto l_screenHeight = (int32_t)l_screenResolution.y;
 
 	auto l_posX = (GetSystemMetrics(SM_CXSCREEN) - l_screenWidth) / 2;
 	auto l_posY = (GetSystemMetrics(SM_CYSCREEN) - l_screenHeight) / 2;
@@ -138,7 +138,7 @@ bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 	{
 		WinWindowSystemComponent::get().m_HDC = GetDC(WinWindowSystemComponent::get().m_hwnd);
 
-		const int pixelAttribs[] = {
+		const int32_t pixelAttribs[] = {
 			WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
 			WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
 			WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
@@ -153,7 +153,7 @@ bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 			0
 		};
 
-		int pixelFormatID;
+		int32_t pixelFormatID;
 		UINT numFormats;
 		const bool status = wglChoosePixelFormatARB(WinWindowSystemComponent::get().m_HDC, pixelAttribs, NULL, 1, &pixelFormatID, &numFormats);
 
@@ -167,8 +167,8 @@ bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 		DescribePixelFormat(WinWindowSystemComponent::get().m_HDC, pixelFormatID, sizeof(PFD), &PFD);
 		SetPixelFormat(WinWindowSystemComponent::get().m_HDC, pixelFormatID, &PFD);
 
-		const int major_min = 4, minor_min = 6;
-		std::vector<int> contextAttribs =
+		const int32_t major_min = 4, minor_min = 6;
+		std::vector<int32_t> contextAttribs =
 		{
 			WGL_CONTEXT_MAJOR_VERSION_ARB, major_min,
 			WGL_CONTEXT_MINOR_VERSION_ARB, minor_min,

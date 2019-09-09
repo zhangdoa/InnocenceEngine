@@ -123,8 +123,8 @@ bool DX12RenderingBackendNS::createPhysicalDevices()
 {
 	HRESULT l_result;
 
-	unsigned int numModes;
-	unsigned long long stringLength;
+	uint32_t numModes;
+	uint64_t stringLength;
 
 	// Create a DirectX graphics interface factory.
 	l_result = CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&g_DXRenderingBackendComponent->m_factory));
@@ -189,7 +189,7 @@ bool DX12RenderingBackendNS::createPhysicalDevices()
 	// When a match is found store the numerator and denominator of the refresh rate for that monitor.
 	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
 
-	for (unsigned int i = 0; i < numModes; i++)
+	for (uint32_t i = 0; i < numModes; i++)
 	{
 		if (displayModeList[i].Width == l_screenResolution.x
 			&&
@@ -211,7 +211,7 @@ bool DX12RenderingBackendNS::createPhysicalDevices()
 	}
 
 	// Store the dedicated video card memory in megabytes.
-	g_DXRenderingBackendComponent->m_videoCardMemory = (int)(g_DXRenderingBackendComponent->m_adapterDesc.DedicatedVideoMemory / 1024 / 1024);
+	g_DXRenderingBackendComponent->m_videoCardMemory = (int32_t)(g_DXRenderingBackendComponent->m_adapterDesc.DedicatedVideoMemory / 1024 / 1024);
 
 	// Convert the name of the video card to a character array and store it.
 	if (wcstombs_s(&stringLength, g_DXRenderingBackendComponent->m_videoCardDescription, 128, g_DXRenderingBackendComponent->m_adapterDesc.Description, 128) != 0)
@@ -403,7 +403,7 @@ bool DX12RenderingBackendNS::createSwapChain()
 	// use device created swap chain textures
 	for (size_t i = 0; i < l_imageCount; i++)
 	{
-		auto l_result = DX12RenderingBackendComponent::get().m_swapChain->GetBuffer((unsigned int)i, IID_PPV_ARGS(&DX12RenderingBackendComponent::get().m_swapChainImages[i]));
+		auto l_result = DX12RenderingBackendComponent::get().m_swapChain->GetBuffer((uint32_t)i, IID_PPV_ARGS(&DX12RenderingBackendComponent::get().m_swapChainImages[i]));
 		if (FAILED(l_result))
 		{
 			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12FinalBlendPass: Can't get pointer of swap chain render target " + std::to_string(i) + "!");
@@ -738,7 +738,7 @@ bool DX12RenderingBackendNS::generateGPUBuffers()
 
 DX12MeshDataComponent* DX12RenderingBackendNS::addDX12MeshDataComponent()
 {
-	static std::atomic<unsigned int> meshCount = 0;
+	static std::atomic<uint32_t> meshCount = 0;
 	meshCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(DX12MeshDataComponent));
 	auto l_MDC = new(l_rawPtr)DX12MeshDataComponent();
@@ -749,7 +749,7 @@ DX12MeshDataComponent* DX12RenderingBackendNS::addDX12MeshDataComponent()
 
 DX12MaterialDataComponent* DX12RenderingBackendNS::addDX12MaterialDataComponent()
 {
-	static std::atomic<unsigned int> materialCount = 0;
+	static std::atomic<uint32_t> materialCount = 0;
 	materialCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(DX12MaterialDataComponent));
 	auto l_MDC = new(l_rawPtr)DX12MaterialDataComponent();
@@ -760,7 +760,7 @@ DX12MaterialDataComponent* DX12RenderingBackendNS::addDX12MaterialDataComponent(
 
 DX12TextureDataComponent* DX12RenderingBackendNS::addDX12TextureDataComponent()
 {
-	static std::atomic<unsigned int> textureCount = 0;
+	static std::atomic<uint32_t> textureCount = 0;
 	textureCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(DX12TextureDataComponent));
 	auto l_TDC = new(l_rawPtr)DX12TextureDataComponent();

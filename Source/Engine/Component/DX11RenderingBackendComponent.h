@@ -18,9 +18,9 @@ public:
 	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
 	EntityID m_parentEntity;
 
-	TVec2<unsigned int> m_refreshRate = TVec2<unsigned int>(0, 1);
+	TVec2<uint32_t> m_refreshRate = TVec2<uint32_t>(0, 1);
 
-	int m_videoCardMemory;
+	int32_t m_videoCardMemory;
 	char m_videoCardDescription[128];
 
 	IDXGIFactory* m_factory;

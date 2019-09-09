@@ -406,9 +406,9 @@ D3D12_TEXTURE_ADDRESS_MODE DX12Helper::GetWrapMode(TextureWrapMethod textureWrap
 	return l_result;
 }
 
-unsigned int DX12Helper::GetTextureMipLevels(TextureDataDesc textureDataDesc)
+uint32_t DX12Helper::GetTextureMipLevels(TextureDataDesc textureDataDesc)
 {
-	unsigned int textureMipLevels = 1;
+	uint32_t textureMipLevels = 1;
 	if (textureDataDesc.UseMipMap)
 	{
 		textureMipLevels = 0;
@@ -441,9 +441,9 @@ D3D12_RESOURCE_FLAGS DX12Helper::GetTextureBindFlags(TextureDataDesc textureData
 	return l_result;
 }
 
-unsigned int DX12Helper::GetTexturePixelDataSize(TextureDataDesc textureDataDesc)
+uint32_t DX12Helper::GetTexturePixelDataSize(TextureDataDesc textureDataDesc)
 {
-	unsigned int l_singlePixelSize;
+	uint32_t l_singlePixelSize;
 
 	switch (textureDataDesc.PixelDataType)
 	{
@@ -462,7 +462,7 @@ unsigned int DX12Helper::GetTexturePixelDataSize(TextureDataDesc textureDataDesc
 	case TexturePixelDataType::DOUBLE:l_singlePixelSize = 8; break;
 	}
 
-	unsigned int l_channelSize;
+	uint32_t l_channelSize;
 	switch (textureDataDesc.PixelDataFormat)
 	{
 	case TexturePixelDataFormat::R:l_channelSize = 1; break;
@@ -821,7 +821,7 @@ bool DX12Helper::CreateViews(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device
 		}
 
 		// RTV Descriptor Heap
-		DX12RPDC->m_RTVDescriptorHeapDesc.NumDescriptors = (unsigned int)DX12RPDC->m_RenderPassDesc.m_RenderTargetCount;
+		DX12RPDC->m_RTVDescriptorHeapDesc.NumDescriptors = (uint32_t)DX12RPDC->m_RenderPassDesc.m_RenderTargetCount;
 		DX12RPDC->m_RTVDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 		DX12RPDC->m_RTVDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
@@ -925,12 +925,12 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D
 		{
 			switch (l_resourceBinderLayoutDesc.m_ResourceBinderType)
 			{
-			case ResourceBinderType::Sampler: l_rootDescriptorTables[l_currentTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_LocalSlot);
+			case ResourceBinderType::Sampler: l_rootDescriptorTables[l_currentTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, (uint32_t)l_resourceBinderLayoutDesc.m_ResourceCount, (uint32_t)l_resourceBinderLayoutDesc.m_LocalSlot);
 				break;
 			case ResourceBinderType::Image:
 				if (l_resourceBinderLayoutDesc.m_BinderAccessibility == Accessibility::ReadOnly)
 				{
-					l_rootDescriptorTables[l_currentTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_LocalSlot);
+					l_rootDescriptorTables[l_currentTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, (uint32_t)l_resourceBinderLayoutDesc.m_ResourceCount, (uint32_t)l_resourceBinderLayoutDesc.m_LocalSlot);
 				}
 				else
 				{
@@ -940,7 +940,7 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D
 					}
 					else
 					{
-						l_rootDescriptorTables[l_currentTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_LocalSlot);
+						l_rootDescriptorTables[l_currentTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, (uint32_t)l_resourceBinderLayoutDesc.m_ResourceCount, (uint32_t)l_resourceBinderLayoutDesc.m_LocalSlot);
 					}
 				}
 				break;
@@ -949,11 +949,11 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D
 				{
 					if (l_resourceBinderLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
 					{
-						l_rootDescriptorTables[l_currentTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_LocalSlot);
+						l_rootDescriptorTables[l_currentTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, (uint32_t)l_resourceBinderLayoutDesc.m_ResourceCount, (uint32_t)l_resourceBinderLayoutDesc.m_LocalSlot);
 					}
 					else
 					{
-						l_rootDescriptorTables[l_currentTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_LocalSlot);
+						l_rootDescriptorTables[l_currentTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, (uint32_t)l_resourceBinderLayoutDesc.m_ResourceCount, (uint32_t)l_resourceBinderLayoutDesc.m_LocalSlot);
 					}
 				}
 				else
@@ -964,7 +964,7 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D
 					}
 					else
 					{
-						l_rootDescriptorTables[l_currentTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, (unsigned int)l_resourceBinderLayoutDesc.m_ResourceCount, (unsigned int)l_resourceBinderLayoutDesc.m_LocalSlot);
+						l_rootDescriptorTables[l_currentTableIndex].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, (uint32_t)l_resourceBinderLayoutDesc.m_ResourceCount, (uint32_t)l_resourceBinderLayoutDesc.m_LocalSlot);
 					}
 				}
 				break;
@@ -982,18 +982,18 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D
 			{
 			case ResourceBinderType::Sampler: InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_componentName.c_str(), " Sampler only could be accessed through a Descriptor table!");
 				break;
-			case ResourceBinderType::Image: l_rootParameters[i].InitAsShaderResourceView((unsigned int)l_resourceBinderLayoutDesc.m_LocalSlot, 0);
+			case ResourceBinderType::Image: l_rootParameters[i].InitAsShaderResourceView((uint32_t)l_resourceBinderLayoutDesc.m_LocalSlot, 0);
 				break;
 			case ResourceBinderType::Buffer:
 				if (l_resourceBinderLayoutDesc.m_BinderAccessibility == Accessibility::ReadOnly)
 				{
 					if (l_resourceBinderLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
 					{
-						l_rootParameters[i].InitAsConstantBufferView((unsigned int)l_resourceBinderLayoutDesc.m_LocalSlot, 0);
+						l_rootParameters[i].InitAsConstantBufferView((uint32_t)l_resourceBinderLayoutDesc.m_LocalSlot, 0);
 					}
 					else
 					{
-						l_rootParameters[i].InitAsShaderResourceView((unsigned int)l_resourceBinderLayoutDesc.m_LocalSlot, 0);
+						l_rootParameters[i].InitAsShaderResourceView((uint32_t)l_resourceBinderLayoutDesc.m_LocalSlot, 0);
 					}
 				}
 				else
@@ -1004,7 +1004,7 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D
 					}
 					else
 					{
-						l_rootParameters[i].InitAsUnorderedAccessView((unsigned int)l_resourceBinderLayoutDesc.m_LocalSlot, 0);
+						l_rootParameters[i].InitAsUnorderedAccessView((uint32_t)l_resourceBinderLayoutDesc.m_LocalSlot, 0);
 					}
 				}
 				break;
@@ -1014,7 +1014,7 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D
 		}
 	}
 
-	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC l_rootSigDesc((unsigned int)l_rootParameters.size(), l_rootParameters.data());
+	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC l_rootSigDesc((uint32_t)l_rootParameters.size(), l_rootParameters.data());
 	l_rootSigDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
 	ID3DBlob* l_signature = 0;
@@ -1073,7 +1073,7 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* 
 		l_PSO->m_GraphicsPSODesc.pRootSignature = DX12RPDC->m_RootSignature;
 
 		D3D12_INPUT_ELEMENT_DESC l_polygonLayout[5];
-		unsigned int l_numElements;
+		uint32_t l_numElements;
 
 		// Create the vertex input layout description.
 		l_polygonLayout[0].SemanticName = "POSITION";
@@ -1158,7 +1158,7 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* 
 
 		if (DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc.UsageType != TextureUsageType::RawImage)
 		{
-			l_PSO->m_GraphicsPSODesc.NumRenderTargets = (unsigned int)DX12RPDC->m_RenderPassDesc.m_RenderTargetCount;
+			l_PSO->m_GraphicsPSODesc.NumRenderTargets = (uint32_t)DX12RPDC->m_RenderPassDesc.m_RenderTargetCount;
 			for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 			{
 				l_PSO->m_GraphicsPSODesc.RTVFormats[i] = DX12RPDC->m_RTVDesc.Format;
@@ -1592,8 +1592,8 @@ bool DX12Helper::GenerateViewportStateDesc(ViewportDesc viewportDesc, DX12Pipeli
 	// Setup the scissor rect.
 	PSO->m_Scissor.left = 0;
 	PSO->m_Scissor.top = 0;
-	PSO->m_Scissor.right = (unsigned long)PSO->m_Viewport.Width;
-	PSO->m_Scissor.bottom = (unsigned long)PSO->m_Viewport.Height;
+	PSO->m_Scissor.right = (uint64_t)PSO->m_Viewport.Width;
+	PSO->m_Scissor.bottom = (uint64_t)PSO->m_Viewport.Height;
 
 	return true;
 }

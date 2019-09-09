@@ -24,8 +24,8 @@ using SurfelGrid = Surfel;
 struct Brick
 {
 	AABB boundBox;
-	unsigned int surfelRangeBegin;
-	unsigned int surfelRangeEnd;
+	uint32_t surfelRangeBegin;
+	uint32_t surfelRangeEnd;
 
 	bool operator==(const Brick &other) const
 	{
@@ -36,7 +36,7 @@ struct Brick
 struct BrickFactor
 {
 	float basisWeight;
-	unsigned int brickIndex;
+	uint32_t brickIndex;
 };
 
 struct Probe
@@ -44,15 +44,15 @@ struct Probe
 	vec4 pos;
 	SH9 skyVisibility;
 	SH9 radiance;
-	unsigned int brickFactorRangeBegin;
-	unsigned int brickFactorRangeEnd;
+	uint32_t brickFactorRangeBegin;
+	uint32_t brickFactorRangeEnd;
 };
 
 namespace GLEnvironmentCapturePass
 {
 	bool initialize();
 	bool update();
-	bool resize(unsigned int newSizeX, unsigned int newSizeY);
+	bool resize(uint32_t newSizeX, uint32_t newSizeY);
 	bool reloadShader();
 
 	GLRenderPassComponent* getGLRPC();

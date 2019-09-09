@@ -69,7 +69,7 @@ bool GLPreTAAPass::update()
 	return true;
 }
 
-bool GLPreTAAPass::resize(unsigned int newSizeX, unsigned int newSizeY)
+bool GLPreTAAPass::resize(uint32_t newSizeX, uint32_t newSizeY)
 {
 	resizeGLRenderPassComponent(m_GLRPC, newSizeX, newSizeY);
 

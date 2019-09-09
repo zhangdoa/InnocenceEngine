@@ -19,9 +19,9 @@ namespace GLRenderingBackendNS
 	void generateRBO(GLRenderPassComponent* GLRPC);
 
 	void addRenderTargets(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc);
-	void attachRenderTargets(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc, unsigned int colorAttachmentIndex);
+	void attachRenderTargets(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc, uint32_t colorAttachmentIndex);
 
-	void setDrawBuffers(unsigned int RTNum);
+	void setDrawBuffers(uint32_t RTNum);
 
 	std::string loadShaderFile(const std::string & path);
 	void addShader(GLuint& shaderProgram, GLuint& shaderID, GLuint shaderType, const ShaderFilePath& shaderFilePath);
@@ -89,12 +89,12 @@ bool GLRenderingBackendNS::initializeGLRenderPassComponent(GLRenderPassComponent
 
 	GLRPC->m_GLTDCs.reserve(GLRPC->m_renderPassDesc.RTNumber);
 
-	for (unsigned int i = 0; i < GLRPC->m_renderPassDesc.RTNumber; i++)
+	for (uint32_t i = 0; i < GLRPC->m_renderPassDesc.RTNumber; i++)
 	{
 		GLRPC->m_GLTDCs.emplace_back();
 	}
 
-	for (unsigned int i = 0; i < GLRPC->m_renderPassDesc.RTNumber; i++)
+	for (uint32_t i = 0; i < GLRPC->m_renderPassDesc.RTNumber; i++)
 	{
 		auto l_TDC = addGLTextureDataComponent();
 
@@ -155,7 +155,7 @@ void GLRenderingBackendNS::generateRBO(GLRenderPassComponent* GLRPC)
 	}
 }
 
-void GLRenderingBackendNS::attachRenderTargets(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc, unsigned int colorAttachmentIndex)
+void GLRenderingBackendNS::attachRenderTargets(GLRenderPassComponent* GLRPC, TextureDataDesc RTDesc, uint32_t colorAttachmentIndex)
 {
 	if (RTDesc.samplerType == TextureSamplerType::SAMPLER_2D)
 	{
@@ -183,17 +183,17 @@ void GLRenderingBackendNS::attachRenderTargets(GLRenderPassComponent* GLRPC, Tex
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: " + std::string(GLRPC->m_name.c_str()) + " render target has been attached.");
 }
 
-void GLRenderingBackendNS::setDrawBuffers(unsigned int RTNum)
+void GLRenderingBackendNS::setDrawBuffers(uint32_t RTNum)
 {
-	std::vector<unsigned int> l_colorAttachments;
-	for (unsigned int i = 0; i < RTNum; ++i)
+	std::vector<uint32_t> l_colorAttachments;
+	for (uint32_t i = 0; i < RTNum; ++i)
 	{
 		l_colorAttachments.emplace_back(GL_COLOR_ATTACHMENT0 + i);
 	}
 	glDrawBuffers((GLsizei)l_colorAttachments.size(), &l_colorAttachments[0]);
 }
 
-bool GLRenderingBackendNS::resizeGLRenderPassComponent(GLRenderPassComponent * GLRPC, unsigned int newSizeX, unsigned int newSizeY)
+bool GLRenderingBackendNS::resizeGLRenderPassComponent(GLRenderPassComponent * GLRPC, uint32_t newSizeX, uint32_t newSizeY)
 {
 	GLRPC->m_renderPassDesc.RTDesc.width = newSizeX;
 	GLRPC->m_renderPassDesc.RTDesc.height = newSizeY;
@@ -207,7 +207,7 @@ bool GLRenderingBackendNS::resizeGLRenderPassComponent(GLRenderPassComponent * G
 		generateRBO(GLRPC);
 	}
 
-	for (unsigned int i = 0; i < GLRPC->m_GLTDCs.size(); i++)
+	for (uint32_t i = 0; i < GLRPC->m_GLTDCs.size(); i++)
 	{
 		glDeleteTextures(1, &GLRPC->m_GLTDCs[i]->m_TO);
 
@@ -223,7 +223,7 @@ bool GLRenderingBackendNS::resizeGLRenderPassComponent(GLRenderPassComponent * G
 
 	if (GLRPC->m_drawColorBuffers)
 	{
-		setDrawBuffers((unsigned int)GLRPC->m_GLTDCs.size());
+		setDrawBuffers((uint32_t)GLRPC->m_GLTDCs.size());
 	}
 	else
 	{
@@ -543,7 +543,7 @@ void GLRenderingBackendNS::generateTO(GLuint& TO, GLTextureDataDesc desc, const 
 	{
 		if (textureData)
 		{
-			for (unsigned int i = 0; i < 6; i++)
+			for (uint32_t i = 0; i < 6; i++)
 			{
 				char* l_textureData = reinterpret_cast<char*>(const_cast<void*>(textureData));
 				auto l_offset = i * desc.width * desc.height * desc.pixelDataSize;
@@ -552,7 +552,7 @@ void GLRenderingBackendNS::generateTO(GLuint& TO, GLTextureDataDesc desc, const 
 		}
 		else
 		{
-			for (unsigned int i = 0; i < 6; i++)
+			for (uint32_t i = 0; i < 6; i++)
 			{
 				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, desc.internalFormat, desc.width, desc.height, 0, desc.pixelDataFormat, desc.pixelDataType, textureData);
 			}
@@ -1031,7 +1031,7 @@ bool GLRenderingBackendNS::deleteShaderProgram(GLShaderProgramComponent* rhs)
 GLuint GLRenderingBackendNS::getUniformLocation(GLuint shaderProgram, const std::string & uniformName)
 {
 	glUseProgram(shaderProgram);
-	int uniformLocation = glGetUniformLocation(shaderProgram, uniformName.c_str());
+	int32_t uniformLocation = glGetUniformLocation(shaderProgram, uniformName.c_str());
 	if (uniformLocation == 0xFFFFFFFF)
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingBackend: Uniform lost: " + uniformName);
@@ -1059,7 +1059,7 @@ void GLRenderingBackendNS::updateUBOImpl(const GLint & UBO, size_t size, const v
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, size, UBOValue);
 }
 
-bool GLRenderingBackendNS::bindUBO(const GLint& UBO, GLuint uniformBlockBindingPoint, unsigned int offset, unsigned int size)
+bool GLRenderingBackendNS::bindUBO(const GLint& UBO, GLuint uniformBlockBindingPoint, uint32_t offset, uint32_t size)
 {
 	glBindBufferRange(GL_UNIFORM_BUFFER, uniformBlockBindingPoint, UBO, offset, size);
 	return true;
@@ -1067,15 +1067,15 @@ bool GLRenderingBackendNS::bindUBO(const GLint& UBO, GLuint uniformBlockBindingP
 
 void GLRenderingBackendNS::updateUniform(const GLint uniformLocation, bool uniformValue)
 {
-	glUniform1i(uniformLocation, (int)uniformValue);
+	glUniform1i(uniformLocation, (int32_t)uniformValue);
 }
 
-void GLRenderingBackendNS::updateUniform(const GLint uniformLocation, int uniformValue)
+void GLRenderingBackendNS::updateUniform(const GLint uniformLocation, int32_t uniformValue)
 {
 	glUniform1i(uniformLocation, uniformValue);
 }
 
-void GLRenderingBackendNS::updateUniform(const GLint uniformLocation, unsigned int uniformValue)
+void GLRenderingBackendNS::updateUniform(const GLint uniformLocation, uint32_t uniformValue)
 {
 	glUniform1ui(uniformLocation, uniformValue);
 }
@@ -1145,37 +1145,37 @@ void GLRenderingBackendNS::bind2DDepthTextureForWrite(GLTextureDataComponent * G
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GLTDC->m_TO, 0);
 }
 
-void GLRenderingBackendNS::bindCubemapDepthTextureForWrite(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int textureIndex, unsigned int mipLevel)
+void GLRenderingBackendNS::bindCubemapDepthTextureForWrite(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, uint32_t textureIndex, uint32_t mipLevel)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TO, mipLevel);
 }
 
-void GLRenderingBackendNS::bind2DColorTextureForWrite(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex)
+void GLRenderingBackendNS::bind2DColorTextureForWrite(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, uint32_t colorAttachmentIndex)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_2D, GLTDC->m_TO, 0);
 }
 
-void GLRenderingBackendNS::bind3DColorTextureForWrite(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex, unsigned int layer)
+void GLRenderingBackendNS::bind3DColorTextureForWrite(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, uint32_t colorAttachmentIndex, uint32_t layer)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
 	glFramebufferTexture3D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_3D, GLTDC->m_TO, 0, layer);
 }
 
-void GLRenderingBackendNS::bindCubemapTextureForWrite(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex, unsigned int textureIndex, unsigned int mipLevel)
+void GLRenderingBackendNS::bindCubemapTextureForWrite(GLTextureDataComponent * GLTDC, GLRenderPassComponent * GLRPC, uint32_t colorAttachmentIndex, uint32_t textureIndex, uint32_t mipLevel)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, GLTDC->m_TO, mipLevel);
 }
 
-void GLRenderingBackendNS::unbind2DColorTextureForWrite(GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex)
+void GLRenderingBackendNS::unbind2DColorTextureForWrite(GLRenderPassComponent * GLRPC, uint32_t colorAttachmentIndex)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_2D, 0, 0);
 }
 
-void GLRenderingBackendNS::unbindCubemapTextureForWrite(GLRenderPassComponent * GLRPC, unsigned int colorAttachmentIndex, unsigned int textureIndex, unsigned int mipLevel)
+void GLRenderingBackendNS::unbindCubemapTextureForWrite(GLRenderPassComponent * GLRPC, uint32_t colorAttachmentIndex, uint32_t textureIndex, uint32_t mipLevel)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPC->m_FBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentIndex, GL_TEXTURE_CUBE_MAP_POSITIVE_X + textureIndex, 0, mipLevel);
@@ -1203,7 +1203,7 @@ void GLRenderingBackendNS::drawMesh(GLMeshDataComponent* GLMDC)
 	}
 }
 
-void GLRenderingBackendNS::activateTexture(GLTextureDataComponent * GLTDC, int activateIndex)
+void GLRenderingBackendNS::activateTexture(GLTextureDataComponent * GLTDC, int32_t activateIndex)
 {
 	glActiveTexture(GL_TEXTURE0 + activateIndex);
 	glBindTexture(GLTDC->m_GLTextureDataDesc.textureSamplerType, GLTDC->m_TO);
@@ -1245,7 +1245,7 @@ void GLRenderingBackendNS::copyStencilBuffer(GLRenderPassComponent* src, GLRende
 	glBlitFramebuffer(0, 0, src->m_renderPassDesc.RTDesc.width, src->m_renderPassDesc.RTDesc.height, 0, 0, dest->m_renderPassDesc.RTDesc.width, dest->m_renderPassDesc.RTDesc.height, GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 };
 
-void GLRenderingBackendNS::copyColorBuffer(GLRenderPassComponent* src, unsigned int srcIndex, GLRenderPassComponent* dest, unsigned int destIndex)
+void GLRenderingBackendNS::copyColorBuffer(GLRenderPassComponent* src, uint32_t srcIndex, GLRenderPassComponent* dest, uint32_t destIndex)
 {
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, src->m_FBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest->m_FBO);
@@ -1254,7 +1254,7 @@ void GLRenderingBackendNS::copyColorBuffer(GLRenderPassComponent* src, unsigned 
 	glBlitFramebuffer(0, 0, src->m_renderPassDesc.RTDesc.width, src->m_renderPassDesc.RTDesc.height, 0, 0, dest->m_renderPassDesc.RTDesc.width, dest->m_renderPassDesc.RTDesc.height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 };
 
-vec4 GLRenderingBackendNS::readPixel(GLRenderPassComponent* GLRPC, unsigned int colorAttachmentIndex, GLint x, GLint y)
+vec4 GLRenderingBackendNS::readPixel(GLRenderPassComponent* GLRPC, uint32_t colorAttachmentIndex, GLint x, GLint y)
 {
 	vec4 l_result;
 	auto l_GLTDC = GLRPC->m_GLTDCs[colorAttachmentIndex];
@@ -1281,7 +1281,7 @@ std::vector<vec4> GLRenderingBackendNS::readCubemapSamples(GLRenderPassComponent
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, GLRPC->m_FBO);
 	glReadBuffer(GL_COLOR_ATTACHMENT0);
 
-	for (unsigned int i = 0; i < 6; i++)
+	for (uint32_t i = 0; i < 6; i++)
 	{
 		bindCubemapTextureForWrite(GLTDC, GLRPC, 0, i, 0);
 

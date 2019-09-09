@@ -54,9 +54,9 @@ namespace DX12RenderingServerNS
 	std::unordered_set<TextureDataComponent*> m_initializedTextures;
 	std::unordered_set<MaterialDataComponent*> m_initializedMaterials;
 
-	TVec2<unsigned int> m_refreshRate = TVec2<unsigned int>(0, 1);
+	TVec2<uint32_t> m_refreshRate = TVec2<uint32_t>(0, 1);
 
-	int m_videoCardMemory = 0;
+	int32_t m_videoCardMemory = 0;
 	char m_videoCardDescription[128];
 
 	ID3D12Debug1* m_debugInterface = 0;
@@ -75,7 +75,7 @@ namespace DX12RenderingServerNS
 
 	DXGI_SWAP_CHAIN_DESC1 m_swapChainDesc = {};
 	IDXGISwapChain4* m_swapChain = 0;
-	const unsigned int m_swapChainImageCount = 2;
+	const uint32_t m_swapChainImageCount = 2;
 	std::vector<ID3D12Resource*> m_swapChainImages(m_swapChainImageCount);
 
 	ID3D12DescriptorHeap* m_CSUHeap = 0;
@@ -191,8 +191,8 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 
 	l_HResult = l_adapterOutput->QueryInterface(IID_PPV_ARGS(&m_adapterOutput));
 
-	unsigned int l_numModes;
-	unsigned long long l_stringLength;
+	uint32_t l_numModes;
+	uint64_t l_stringLength;
 
 	// Get the number of modes that fit the DXGI_FORMAT_R8G8B8A8_UNORM display format for the adapter output (monitor).
 	l_HResult = m_adapterOutput->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &l_numModes, NULL);
@@ -219,7 +219,7 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 	// When a match is found store the numerator and denominator of the refresh rate for that monitor.
 	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
 
-	for (unsigned int i = 0; i < l_numModes; i++)
+	for (uint32_t i = 0; i < l_numModes; i++)
 	{
 		if (l_displayModeList[i].Width == l_screenResolution.x
 			&&
@@ -241,7 +241,7 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 	}
 
 	// Store the dedicated video card memory in megabytes.
-	m_videoCardMemory = (int)(m_adapterDesc.DedicatedVideoMemory / 1024 / 1024);
+	m_videoCardMemory = (int32_t)(m_adapterDesc.DedicatedVideoMemory / 1024 / 1024);
 
 	// Convert the name of the video card to a character array and store it.
 	if (wcstombs_s(&l_stringLength, m_videoCardDescription, 128, m_adapterDesc.Description, 128) != 0)
@@ -581,7 +581,7 @@ bool DX12RenderingServer::Initialize()
 		// use device created swap chain textures
 		for (size_t i = 0; i < m_swapChainImageCount; i++)
 		{
-			auto l_HResult = m_swapChain->GetBuffer((unsigned int)i, IID_PPV_ARGS(&m_swapChainImages[i]));
+			auto l_HResult = m_swapChain->GetBuffer((uint32_t)i, IID_PPV_ARGS(&m_swapChainImages[i]));
 			if (FAILED(l_HResult))
 			{
 				InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't get pointer of swap chain image ", i, "!");
@@ -665,7 +665,7 @@ bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	auto l_rhs = reinterpret_cast<DX12MeshDataComponent*>(rhs);
 
 	// vertices
-	auto l_verticesDataSize = unsigned int(sizeof(Vertex) * l_rhs->m_vertices.size());
+	auto l_verticesDataSize = uint32_t(sizeof(Vertex) * l_rhs->m_vertices.size());
 
 	auto l_verticesResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_verticesDataSize);
 	l_rhs->m_vertexBuffer = CreateDefaultHeapBuffer(&l_verticesResourceDesc, m_device);
@@ -703,7 +703,7 @@ bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: VBO ", l_rhs->m_vertexBuffer, " is initialized.");
 
 	// indices
-	auto l_indicesDataSize = unsigned int(sizeof(Index) * l_rhs->m_indices.size());
+	auto l_indicesDataSize = uint32_t(sizeof(Index) * l_rhs->m_indices.size());
 
 	auto l_indicesResourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_indicesDataSize);
 	l_rhs->m_indexBuffer = CreateDefaultHeapBuffer(&l_indicesResourceDesc, m_device);
@@ -818,7 +818,7 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 			{
 				UINT64 l_uploadHeapBufferSize = GetRequiredIntermediateSize(l_rhs->m_ResourceHandle, 0, 6);
 
-				for (unsigned int i = 0; i < 6; i++)
+				for (uint32_t i = 0; i < 6; i++)
 				{
 					D3D12_SUBRESOURCE_DATA l_textureSubResourceData = {};
 					l_textureSubResourceData.RowPitch = l_rhs->m_textureDataDesc.Width * l_rhs->m_PixelDataSize;
@@ -1365,7 +1365,7 @@ bool PreparePipeline(DX12RenderPassDataComponent* renderPass, DX12CommandList* c
 			}
 			else
 			{
-				commandList->m_GraphicsCommandList->OMSetRenderTargets((unsigned int)renderPass->m_RenderPassDesc.m_RenderTargetCount, &renderPass->m_RTVDescriptorCPUHandles[0], FALSE, l_DSVDescriptorCPUHandle);
+				commandList->m_GraphicsCommandList->OMSetRenderTargets((uint32_t)renderPass->m_RenderPassDesc.m_RenderTargetCount, &renderPass->m_RTVDescriptorCPUHandles[0], FALSE, l_DSVDescriptorCPUHandle);
 			}
 		}
 
@@ -1479,17 +1479,17 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 			switch (l_resourceBinder->m_ResourceBinderType)
 			{
 			case ResourceBinderType::Sampler:
-				l_commandList->m_GraphicsCommandList->SetComputeRootDescriptorTable((unsigned int)globalSlot, l_resourceBinder->m_Sampler.GPUHandle);
+				l_commandList->m_GraphicsCommandList->SetComputeRootDescriptorTable((uint32_t)globalSlot, l_resourceBinder->m_Sampler.GPUHandle);
 				break;
 			case ResourceBinderType::Image:
 				if (accessibility != Accessibility::ReadOnly)
 				{
 					l_commandList->m_GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_resourceBinder->m_Texture->m_ResourceHandle, l_resourceBinder->m_Texture->m_ReadState, l_resourceBinder->m_Texture->m_WriteState));
-					l_commandList->m_GraphicsCommandList->SetComputeRootDescriptorTable((unsigned int)globalSlot, l_resourceBinder->m_TextureUAV.ShaderVisibleGPUHandle);
+					l_commandList->m_GraphicsCommandList->SetComputeRootDescriptorTable((uint32_t)globalSlot, l_resourceBinder->m_TextureUAV.ShaderVisibleGPUHandle);
 				}
 				else
 				{
-					l_commandList->m_GraphicsCommandList->SetComputeRootDescriptorTable((unsigned int)globalSlot, l_resourceBinder->m_TextureSRV.GPUHandle);
+					l_commandList->m_GraphicsCommandList->SetComputeRootDescriptorTable((uint32_t)globalSlot, l_resourceBinder->m_TextureSRV.GPUHandle);
 				}
 				break;
 			case ResourceBinderType::Buffer:
@@ -1501,18 +1501,18 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 					}
 					else
 					{
-						l_commandList->m_GraphicsCommandList->SetComputeRootConstantBufferView((unsigned int)globalSlot, l_resourceBinder->m_UploadHeapBuffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+						l_commandList->m_GraphicsCommandList->SetComputeRootConstantBufferView((uint32_t)globalSlot, l_resourceBinder->m_UploadHeapBuffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 					}
 				}
 				else
 				{
 					if (accessibility != Accessibility::ReadOnly)
 					{
-						l_commandList->m_GraphicsCommandList->SetComputeRootUnorderedAccessView((unsigned int)globalSlot, l_resourceBinder->m_DefaultHeapBuffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+						l_commandList->m_GraphicsCommandList->SetComputeRootUnorderedAccessView((uint32_t)globalSlot, l_resourceBinder->m_DefaultHeapBuffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 					}
 					else
 					{
-						l_commandList->m_GraphicsCommandList->SetComputeRootShaderResourceView((unsigned int)globalSlot, l_resourceBinder->m_DefaultHeapBuffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+						l_commandList->m_GraphicsCommandList->SetComputeRootShaderResourceView((uint32_t)globalSlot, l_resourceBinder->m_DefaultHeapBuffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 					}
 				}
 
@@ -1526,17 +1526,17 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 			switch (l_resourceBinder->m_ResourceBinderType)
 			{
 			case ResourceBinderType::Sampler:
-				l_commandList->m_GraphicsCommandList->SetGraphicsRootDescriptorTable((unsigned int)globalSlot, l_resourceBinder->m_Sampler.GPUHandle);
+				l_commandList->m_GraphicsCommandList->SetGraphicsRootDescriptorTable((uint32_t)globalSlot, l_resourceBinder->m_Sampler.GPUHandle);
 				break;
 			case ResourceBinderType::Image:
 				if (accessibility != Accessibility::ReadOnly)
 				{
 					l_commandList->m_GraphicsCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_resourceBinder->m_Texture->m_ResourceHandle, l_resourceBinder->m_Texture->m_ReadState, l_resourceBinder->m_Texture->m_WriteState));
-					l_commandList->m_GraphicsCommandList->SetGraphicsRootDescriptorTable((unsigned int)globalSlot, l_resourceBinder->m_TextureUAV.ShaderVisibleGPUHandle);
+					l_commandList->m_GraphicsCommandList->SetGraphicsRootDescriptorTable((uint32_t)globalSlot, l_resourceBinder->m_TextureUAV.ShaderVisibleGPUHandle);
 				}
 				else
 				{
-					l_commandList->m_GraphicsCommandList->SetGraphicsRootDescriptorTable((unsigned int)globalSlot, l_resourceBinder->m_TextureSRV.GPUHandle);
+					l_commandList->m_GraphicsCommandList->SetGraphicsRootDescriptorTable((uint32_t)globalSlot, l_resourceBinder->m_TextureSRV.GPUHandle);
 				}
 				break;
 			case ResourceBinderType::Buffer:
@@ -1548,18 +1548,18 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 					}
 					else
 					{
-						l_commandList->m_GraphicsCommandList->SetGraphicsRootConstantBufferView((unsigned int)globalSlot, l_resourceBinder->m_UploadHeapBuffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+						l_commandList->m_GraphicsCommandList->SetGraphicsRootConstantBufferView((uint32_t)globalSlot, l_resourceBinder->m_UploadHeapBuffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 					}
 				}
 				else
 				{
 					if (accessibility != Accessibility::ReadOnly)
 					{
-						l_commandList->m_GraphicsCommandList->SetGraphicsRootUnorderedAccessView((unsigned int)globalSlot, l_resourceBinder->m_DefaultHeapBuffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+						l_commandList->m_GraphicsCommandList->SetGraphicsRootUnorderedAccessView((uint32_t)globalSlot, l_resourceBinder->m_DefaultHeapBuffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 					}
 					else
 					{
-						l_commandList->m_GraphicsCommandList->SetGraphicsRootShaderResourceView((unsigned int)globalSlot, l_resourceBinder->m_DefaultHeapBuffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
+						l_commandList->m_GraphicsCommandList->SetGraphicsRootShaderResourceView((uint32_t)globalSlot, l_resourceBinder->m_DefaultHeapBuffer->GetGPUVirtualAddress() + startOffset * l_resourceBinder->m_ElementSize);
 					}
 				}
 				break;
@@ -1582,7 +1582,7 @@ bool DX12RenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass,
 	l_commandList->m_GraphicsCommandList->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
 	l_commandList->m_GraphicsCommandList->IASetVertexBuffers(0, 1, &l_mesh->m_VBV);
 	l_commandList->m_GraphicsCommandList->IASetIndexBuffer(&l_mesh->m_IBV);
-	l_commandList->m_GraphicsCommandList->DrawIndexedInstanced((unsigned int)l_mesh->m_indicesSize, (unsigned int)instanceCount, 0, 0, 0);
+	l_commandList->m_GraphicsCommandList->DrawIndexedInstanced((uint32_t)l_mesh->m_indicesSize, (uint32_t)instanceCount, 0, 0, 0);
 
 	return true;
 }
@@ -1743,7 +1743,7 @@ bool DX12RenderingServer::Present()
 	return true;
 }
 
-bool DX12RenderingServer::DispatchCompute(RenderPassDataComponent * renderPass, unsigned int threadGroupX, unsigned int threadGroupY, unsigned int threadGroupZ)
+bool DX12RenderingServer::DispatchCompute(RenderPassDataComponent * renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
 {
 	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
@@ -1873,7 +1873,7 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 
 	if (l_srcTDC->m_textureDataDesc.SamplerType == TextureSamplerType::SamplerCubemap)
 	{
-		for (unsigned int i = 0; i < 6; i++)
+		for (uint32_t i = 0; i < 6; i++)
 		{
 			D3D12_TEXTURE_COPY_LOCATION l_srcLocation;
 			l_srcLocation.pResource = l_srcTDC->m_ResourceHandle;
@@ -1885,10 +1885,10 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 			l_destLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
 			l_destLocation.PlacedFootprint.Offset = i * l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_textureDataDesc.Height * l_srcTDC->m_PixelDataSize;
 			l_destLocation.PlacedFootprint.Footprint.Format = l_srcTDC->m_DX12TextureDataDesc.Format;
-			l_destLocation.PlacedFootprint.Footprint.Width = (unsigned int)l_srcTDC->m_DX12TextureDataDesc.Width;
-			l_destLocation.PlacedFootprint.Footprint.Height = (unsigned int)l_srcTDC->m_DX12TextureDataDesc.Height;
+			l_destLocation.PlacedFootprint.Footprint.Width = (uint32_t)l_srcTDC->m_DX12TextureDataDesc.Width;
+			l_destLocation.PlacedFootprint.Footprint.Height = (uint32_t)l_srcTDC->m_DX12TextureDataDesc.Height;
 			l_destLocation.PlacedFootprint.Footprint.Depth = 1;
-			l_destLocation.PlacedFootprint.Footprint.RowPitch = (unsigned int)l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_PixelDataSize;
+			l_destLocation.PlacedFootprint.Footprint.RowPitch = (uint32_t)l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_PixelDataSize;
 
 			auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
 
@@ -1909,10 +1909,10 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 		l_destLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
 		l_destLocation.PlacedFootprint.Offset = 0;
 		l_destLocation.PlacedFootprint.Footprint.Format = l_srcTDC->m_DX12TextureDataDesc.Format;
-		l_destLocation.PlacedFootprint.Footprint.Width = (unsigned int)l_srcTDC->m_DX12TextureDataDesc.Width;
-		l_destLocation.PlacedFootprint.Footprint.Height = (unsigned int)l_srcTDC->m_DX12TextureDataDesc.Height;
-		l_destLocation.PlacedFootprint.Footprint.Depth = (unsigned int)l_srcTDC->m_DX12TextureDataDesc.DepthOrArraySize;
-		l_destLocation.PlacedFootprint.Footprint.RowPitch = (unsigned int)l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_PixelDataSize;
+		l_destLocation.PlacedFootprint.Footprint.Width = (uint32_t)l_srcTDC->m_DX12TextureDataDesc.Width;
+		l_destLocation.PlacedFootprint.Footprint.Height = (uint32_t)l_srcTDC->m_DX12TextureDataDesc.Height;
+		l_destLocation.PlacedFootprint.Footprint.Depth = (uint32_t)l_srcTDC->m_DX12TextureDataDesc.DepthOrArraySize;
+		l_destLocation.PlacedFootprint.Footprint.RowPitch = (uint32_t)l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_PixelDataSize;
 
 		auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
 
@@ -1997,7 +1997,7 @@ DX12CBV DX12RenderingServer::CreateCBV(GPUBufferDataComponent* rhs)
 	DX12CBV l_result;
 
 	l_result.CBVDesc.BufferLocation = l_rhs->m_UploadHeapResourceHandle->GetGPUVirtualAddress();
-	l_result.CBVDesc.SizeInBytes = (unsigned int)l_rhs->m_ElementSize;
+	l_result.CBVDesc.SizeInBytes = (uint32_t)l_rhs->m_ElementSize;
 
 	l_result.CPUHandle = m_currentCSUCPUHandle;
 	l_result.GPUHandle = m_currentCSUGPUHandle;

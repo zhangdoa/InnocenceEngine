@@ -61,7 +61,7 @@ bool GLSSAOBlurPass::update()
 	return true;
 }
 
-bool GLSSAOBlurPass::resize(unsigned int newSizeX, unsigned int newSizeY)
+bool GLSSAOBlurPass::resize(uint32_t newSizeX, uint32_t newSizeY)
 {
 	resizeGLRenderPassComponent(m_GLRPC, newSizeX, newSizeY);
 

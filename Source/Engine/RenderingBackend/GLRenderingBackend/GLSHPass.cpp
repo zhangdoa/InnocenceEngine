@@ -72,7 +72,7 @@ SH9 GLSHPass::samplesToSH(const std::vector<vec4>& samples)
 {
 	auto l_totalSampleCount = samples.size();
 	auto l_sampleCountPerFace = l_totalSampleCount / 6;
-	auto l_resolution = (unsigned int)std::sqrt(l_sampleCountPerFace);
+	auto l_resolution = (uint32_t)std::sqrt(l_sampleCountPerFace);
 	auto l_texelSize = 1.0f / (float)l_resolution;
 
 	SH9 l_result;

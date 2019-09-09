@@ -101,11 +101,11 @@ bool DX11OpaquePass::update()
 
 	activateRenderPass(m_DXRPC);
 
-	unsigned int l_offset = 0;
+	uint32_t l_offset = 0;
 
 	// draw
 	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
-	for (unsigned int i = 0; i < l_totalDrawCallCount; i++)
+	for (uint32_t i = 0; i < l_totalDrawCallCount; i++)
 	{
 		auto l_opaquePassGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassGPUData()[i];
 

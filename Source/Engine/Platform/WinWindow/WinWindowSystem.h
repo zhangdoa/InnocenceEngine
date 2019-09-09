@@ -16,6 +16,6 @@ public:
 	IWindowSurface* getWindowSurface() override;
 	const std::vector<ButtonState>& getButtonState() override;
 
-	bool sendEvent(unsigned int umsg, unsigned int WParam, int LParam) override;
+	bool sendEvent(uint32_t umsg, uint32_t WParam, int32_t LParam) override;
 	bool addEventCallback(WindowEventCallbackFunctor* functor) override;
 };

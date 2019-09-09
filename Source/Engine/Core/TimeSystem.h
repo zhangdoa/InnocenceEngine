@@ -13,6 +13,6 @@ public:
 
 	ObjectStatus getStatus() override;
 
-	const TimeData getCurrentTime(unsigned int timezone_adjustment = 8) override;
-	const long long getCurrentTimeFromEpoch() override;
+	const TimeData getCurrentTime(uint32_t timezone_adjustment = 8) override;
+	const int64_t getCurrentTimeFromEpoch() override;
 };

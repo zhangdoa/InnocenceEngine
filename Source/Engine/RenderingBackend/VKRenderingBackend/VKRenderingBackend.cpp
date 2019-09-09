@@ -729,7 +729,7 @@ bool VKRenderingBackendNS::terminate()
 
 VKMeshDataComponent* VKRenderingBackendNS::addVKMeshDataComponent()
 {
-	static std::atomic<unsigned int> meshCount = 0;
+	static std::atomic<uint32_t> meshCount = 0;
 	meshCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(VKMeshDataComponent));
 	auto l_Mesh = new(l_rawPtr)VKMeshDataComponent();
@@ -740,7 +740,7 @@ VKMeshDataComponent* VKRenderingBackendNS::addVKMeshDataComponent()
 
 VKMaterialDataComponent* VKRenderingBackendNS::addVKMaterialDataComponent()
 {
-	static std::atomic<unsigned int> materialCount = 0;
+	static std::atomic<uint32_t> materialCount = 0;
 	materialCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(VKMaterialDataComponent));
 	auto l_Material = new(l_rawPtr)VKMaterialDataComponent();
@@ -751,7 +751,7 @@ VKMaterialDataComponent* VKRenderingBackendNS::addVKMaterialDataComponent()
 
 VKTextureDataComponent* VKRenderingBackendNS::addVKTextureDataComponent()
 {
-	static std::atomic<unsigned int> textureCount = 0;
+	static std::atomic<uint32_t> textureCount = 0;
 	textureCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(VKTextureDataComponent));
 	auto l_Texture = new(l_rawPtr)VKTextureDataComponent();

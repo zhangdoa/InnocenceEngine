@@ -70,7 +70,7 @@ bool GLBillboardPass::update()
 		2,
 		g_pModuleManager->getRenderingFrontend()->getCameraGPUData().t);
 
-	for (unsigned int i = 0; i < g_pModuleManager->getRenderingFrontend()->getBillboardPassDrawCallCount(); i++)
+	for (uint32_t i = 0; i < g_pModuleManager->getRenderingFrontend()->getBillboardPassDrawCallCount(); i++)
 	{
 		auto l_billboardPassGPUData = g_pModuleManager->getRenderingFrontend()->getBillboardPassGPUData()[i];
 
@@ -109,7 +109,7 @@ bool GLBillboardPass::update()
 	return true;
 }
 
-bool GLBillboardPass::resize(unsigned int newSizeX, unsigned int newSizeY)
+bool GLBillboardPass::resize(uint32_t newSizeX, uint32_t newSizeY)
 {
 	resizeGLRenderPassComponent(m_GLRPC, newSizeX, newSizeY);
 

@@ -99,7 +99,7 @@ bool BillboardPass::PrepareCommandList()
 	auto& l_billboardPassDrawCallData = g_pModuleManager->getRenderingFrontend()->getBillboardPassDrawCallData();
 	auto l_drawCallCount = l_billboardPassDrawCallData.size();
 
-	for (unsigned int i = 0; i < l_drawCallCount; i++)
+	for (uint32_t i = 0; i < l_drawCallCount; i++)
 	{
 		auto l_iconTexture = l_billboardPassDrawCallData[i].iconTexture;
 		auto l_offset = l_billboardPassDrawCallData[i].meshGPUDataOffset;

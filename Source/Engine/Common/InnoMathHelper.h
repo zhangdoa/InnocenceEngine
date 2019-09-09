@@ -1297,7 +1297,7 @@ namespace InnoMath
 	INNO_FORCEINLINE EntityID createEntityID()
 	{
 		std::stringstream ss;
-		for (unsigned int i = 0; i < 16; i++) {
+		for (uint32_t i = 0; i < 16; i++) {
 			auto rc = []() -> unsigned char {
 				std::random_device rd;
 				std::mt19937 gen(rd());
@@ -1305,7 +1305,7 @@ namespace InnoMath
 				return static_cast<unsigned char>(dis(gen));
 			};
 			std::stringstream hexstream;
-			hexstream << std::hex << int(rc());
+			hexstream << std::hex << int32_t(rc());
 			auto hex = hexstream.str();
 			ss << (hex.length() < 2 ? '0' + hex : hex);
 		}
@@ -1645,7 +1645,7 @@ namespace InnoMath
 
 		std::vector<Vertex> l_vertices(8);
 
-		for (unsigned int i = 0; i < 8; i++)
+		for (uint32_t i = 0; i < 8; i++)
 		{
 			l_vertices[i] = rhs[i];
 		}

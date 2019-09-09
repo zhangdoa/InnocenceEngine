@@ -12,6 +12,6 @@ public:
 
 	TransformMatrix m_globalTransformMatrix_prev;
 
-	unsigned int m_transformHierarchyLevel = 0;
+	uint32_t m_transformHierarchyLevel = 0;
 	TransformComponent* m_parentTransformComponent = 0;
 };

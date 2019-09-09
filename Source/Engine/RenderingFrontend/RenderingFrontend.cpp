@@ -20,7 +20,7 @@ namespace InnoRenderingFrontendNS
 	IRenderingServer* m_renderingServer;
 	IRayTracer* m_rayTracer;
 
-	TVec2<unsigned int> m_screenResolution = TVec2<unsigned int>(1280, 720);
+	TVec2<uint32_t> m_screenResolution = TVec2<uint32_t>(1280, 720);
 	std::string m_windowName;
 	bool m_fullScreen = false;
 
@@ -38,16 +38,16 @@ namespace InnoRenderingFrontendNS
 
 	DoubleBuffer<SkyGPUData, true> m_skyGPUData;
 
-	unsigned int m_sunShadowPassDrawCallCount = 0;
+	uint32_t m_sunShadowPassDrawCallCount = 0;
 	DoubleBuffer<std::vector<OpaquePassDrawCallData>, true> m_sunShadowPassDrawCallDataVector;
 	DoubleBuffer<std::vector<MeshGPUData>, true> m_sunShadowPassMeshGPUData;
 
-	unsigned int m_opaquePassDrawCallCount = 0;
+	uint32_t m_opaquePassDrawCallCount = 0;
 	DoubleBuffer<std::vector<OpaquePassDrawCallData>, true> m_opaquePassDrawCallDataVector;
 	DoubleBuffer<std::vector<MeshGPUData>, true> m_opaquePassMeshGPUData;
 	DoubleBuffer<std::vector<MaterialGPUData>, true> m_opaquePassMaterialGPUData;
 
-	unsigned int m_transparentPassDrawCallCount = 0;
+	uint32_t m_transparentPassDrawCallCount = 0;
 	DoubleBuffer<std::vector<TransparentPassDrawCallData>, true> m_transparentPassDrawCallDataVector;
 	DoubleBuffer<std::vector<MeshGPUData>, true> m_transparentPassMeshGPUData;
 	DoubleBuffer<std::vector<MaterialGPUData>, true> m_transparentPassMaterialGPUData;
@@ -59,14 +59,14 @@ namespace InnoRenderingFrontendNS
 	DoubleBuffer<std::vector<BillboardPassDrawCallData>, true> m_billboardPassDrawCallDataVector;
 	DoubleBuffer<std::vector<MeshGPUData>, true> m_billboardPassMeshGPUData;
 
-	unsigned int m_debugPassDrawCallCount = 0;
+	uint32_t m_debugPassDrawCallCount = 0;
 	DoubleBuffer<std::vector<DebugPassDrawCallData>, true> m_debugPassDrawCallDataVector;
 	DoubleBuffer<std::vector<MeshGPUData>, true> m_debugPassMeshGPUData;
 
 	std::vector<CullingData> m_cullingData;
 
 	std::vector<Vec2> m_haltonSampler;
-	int m_currentHaltonStep = 0;
+	int32_t m_currentHaltonStep = 0;
 
 	std::function<void(RenderPassType)> f_reloadShader;
 	std::function<void()> f_sceneLoadingStartCallback;
@@ -109,7 +109,7 @@ namespace InnoRenderingFrontendNS
 	bool update();
 	bool terminate();
 
-	float radicalInverse(unsigned int n, unsigned int base);
+	float radicalInverse(uint32_t n, uint32_t base);
 	void initializeHaltonSampler();
 
 	bool updateCameraData();
@@ -124,7 +124,7 @@ namespace InnoRenderingFrontendNS
 
 using namespace InnoRenderingFrontendNS;
 
-float InnoRenderingFrontendNS::radicalInverse(unsigned int n, unsigned int base)
+float InnoRenderingFrontendNS::radicalInverse(uint32_t n, uint32_t base)
 {
 	float val = 0.0f;
 	float invBase = 1.0f / base, invBi = invBase;
@@ -132,7 +132,7 @@ float InnoRenderingFrontendNS::radicalInverse(unsigned int n, unsigned int base)
 	{
 		auto d_i = (n % base);
 		val += d_i * invBi;
-		n *= (unsigned int)invBase;
+		n *= (uint32_t)invBase;
 		invBi *= invBase;
 	}
 	return val;
@@ -141,7 +141,7 @@ float InnoRenderingFrontendNS::radicalInverse(unsigned int n, unsigned int base)
 void InnoRenderingFrontendNS::initializeHaltonSampler()
 {
 	// in NDC space
-	for (unsigned int i = 0; i < 16; i++)
+	for (uint32_t i = 0; i < 16; i++)
 	{
 		m_haltonSampler.emplace_back(Vec2(radicalInverse(i, 3) * 2.0f - 1.0f, radicalInverse(i, 4) * 2.0f - 1.0f));
 	}
@@ -531,9 +531,9 @@ bool InnoRenderingFrontendNS::updateMeshData()
 	l_transparentPassMaterialGPUData.clear();
 
 	auto l_cullingDataSize = m_cullingData.size();
-	unsigned int l_sunShadowPassIndex = 0;
-	unsigned int l_opaquePassIndex = 0;
-	unsigned int l_transparentPassIndex = 0;
+	uint32_t l_sunShadowPassIndex = 0;
+	uint32_t l_opaquePassIndex = 0;
+	uint32_t l_transparentPassIndex = 0;
 
 	for (size_t i = 0; i < l_cullingDataSize; i++)
 	{
@@ -564,7 +564,7 @@ bool InnoRenderingFrontendNS::updateMeshData()
 						l_materialGPUData.useMetallicTexture = !(l_opaquePassDrawCallData.material->m_metallicTexture == nullptr);
 						l_materialGPUData.useRoughnessTexture = !(l_opaquePassDrawCallData.material->m_roughnessTexture == nullptr);
 						l_materialGPUData.useAOTexture = !(l_opaquePassDrawCallData.material->m_aoTexture == nullptr);
-						l_materialGPUData.materialType = int(l_cullingData.meshUsageType);
+						l_materialGPUData.materialType = int32_t(l_cullingData.meshUsageType);
 						l_materialGPUData.customMaterial = l_cullingData.material->m_meshCustomMaterial;
 
 						if (l_cullingData.cullingDataChannel != CullingDataChannel::Shadow)
@@ -594,7 +594,7 @@ bool InnoRenderingFrontendNS::updateMeshData()
 						l_materialGPUData.useMetallicTexture = false;
 						l_materialGPUData.useRoughnessTexture = false;
 						l_materialGPUData.useAOTexture = false;
-						l_materialGPUData.materialType = int(l_cullingData.meshUsageType);
+						l_materialGPUData.materialType = int32_t(l_cullingData.meshUsageType);
 						l_materialGPUData.customMaterial = l_cullingData.material->m_meshCustomMaterial;
 
 						l_transparentPassDrawCallDataVector.emplace_back(l_transparentPassDrawCallData);
@@ -691,8 +691,8 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 	}
 
 	l_billboardPassDrawCallDataVector[0].meshGPUDataOffset = 0;
-	l_billboardPassDrawCallDataVector[1].meshGPUDataOffset = (unsigned int)l_directionalLightMeshGPUData.size();
-	l_billboardPassDrawCallDataVector[2].meshGPUDataOffset = (unsigned int)(l_directionalLightMeshGPUData.size() + l_pointLightMeshGPUData.size());
+	l_billboardPassDrawCallDataVector[1].meshGPUDataOffset = (uint32_t)l_directionalLightMeshGPUData.size();
+	l_billboardPassDrawCallDataVector[2].meshGPUDataOffset = (uint32_t)(l_directionalLightMeshGPUData.size() + l_pointLightMeshGPUData.size());
 
 	l_billboardPassMeshGPUData.insert(l_billboardPassMeshGPUData.end(), l_directionalLightMeshGPUData.begin(), l_directionalLightMeshGPUData.end());
 	l_billboardPassMeshGPUData.insert(l_billboardPassMeshGPUData.end(), l_pointLightMeshGPUData.begin(), l_pointLightMeshGPUData.end());
@@ -703,7 +703,7 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 
 bool InnoRenderingFrontendNS::updateDebuggerPassData()
 {
-	unsigned int l_index = 0;
+	uint32_t l_index = 0;
 	// @TODO: Implementation
 	m_debugPassDrawCallCount = l_index;
 
@@ -794,7 +794,7 @@ MaterialDataComponent * InnoRenderingFrontend::addMaterialDataComponent()
 
 SkeletonDataComponent * InnoRenderingFrontend::addSkeletonDataComponent()
 {
-	static std::atomic<unsigned int> skeletonCount = 0;
+	static std::atomic<uint32_t> skeletonCount = 0;
 	auto l_rawPtr = m_SkeletonDataComponentPool->Spawn();
 	auto l_SDC = new(l_rawPtr)SkeletonDataComponent();
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Skeleton_" + std::to_string(skeletonCount) + "/").c_str());
@@ -808,7 +808,7 @@ SkeletonDataComponent * InnoRenderingFrontend::addSkeletonDataComponent()
 
 AnimationDataComponent * InnoRenderingFrontend::addAnimationDataComponent()
 {
-	static std::atomic<unsigned int> animationCount = 0;
+	static std::atomic<uint32_t> animationCount = 0;
 	auto l_rawPtr = m_AnimationDataComponentPool->Spawn();
 	auto l_ADC = new(l_rawPtr)AnimationDataComponent();
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Animation_" + std::to_string(animationCount) + "/").c_str());
@@ -961,12 +961,12 @@ bool InnoRenderingFrontend::registerMaterialDataComponent(MaterialDataComponent 
 	return true;
 }
 
-TVec2<unsigned int> InnoRenderingFrontend::getScreenResolution()
+TVec2<uint32_t> InnoRenderingFrontend::getScreenResolution()
 {
 	return m_screenResolution;
 }
 
-bool InnoRenderingFrontend::setScreenResolution(TVec2<unsigned int> screenResolution)
+bool InnoRenderingFrontend::setScreenResolution(TVec2<uint32_t> screenResolution)
 {
 	m_screenResolution = screenResolution;
 	return true;
@@ -1023,7 +1023,7 @@ const SkyGPUData& InnoRenderingFrontend::getSkyGPUData()
 	return m_skyGPUData.GetValue();
 }
 
-unsigned int InnoRenderingFrontend::getSunShadowPassDrawCallCount()
+uint32_t InnoRenderingFrontend::getSunShadowPassDrawCallCount()
 {
 	return m_sunShadowPassDrawCallCount;
 }
@@ -1038,7 +1038,7 @@ const std::vector<MeshGPUData>& InnoRenderingFrontend::getSunShadowPassMeshGPUDa
 	return m_sunShadowPassMeshGPUData.GetValue();
 }
 
-unsigned int InnoRenderingFrontend::getOpaquePassDrawCallCount()
+uint32_t InnoRenderingFrontend::getOpaquePassDrawCallCount()
 {
 	return m_opaquePassDrawCallCount;
 }
@@ -1058,7 +1058,7 @@ const std::vector<MaterialGPUData>& InnoRenderingFrontend::getOpaquePassMaterial
 	return m_opaquePassMaterialGPUData.GetValue();
 }
 
-unsigned int InnoRenderingFrontend::getTransparentPassDrawCallCount()
+uint32_t InnoRenderingFrontend::getTransparentPassDrawCallCount()
 {
 	return m_transparentPassDrawCallCount;
 }
@@ -1088,7 +1088,7 @@ const std::vector<MeshGPUData>& InnoRenderingFrontend::getBillboardPassMeshGPUDa
 	return m_billboardPassMeshGPUData.GetValue();
 }
 
-unsigned int InnoRenderingFrontend::getDebugPassDrawCallCount()
+uint32_t InnoRenderingFrontend::getDebugPassDrawCallCount()
 {
 	return m_debugPassDrawCallCount;
 }

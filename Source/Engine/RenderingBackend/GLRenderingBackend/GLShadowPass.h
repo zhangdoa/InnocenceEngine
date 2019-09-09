@@ -9,5 +9,5 @@ namespace GLShadowPass
 	void update();
 	bool reloadShader();
 
-	GLRenderPassComponent* getGLRPC(unsigned int index);
+	GLRenderPassComponent* getGLRPC(uint32_t index);
 }

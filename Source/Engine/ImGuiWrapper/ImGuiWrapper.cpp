@@ -243,7 +243,7 @@ void ImGuiWrapperNS::showApplicationProfiler()
 
 	const char* items[] = { "Shadow", "GI", "Opaque", "Light", "Transparent", "Terrain", "Post-processing", "Development" };
 
-	static int l_showRenderPassResultItem = 0;
+	static int32_t l_showRenderPassResultItem = 0;
 
 	ImGui::Combo("Choose render pass", &l_showRenderPassResultItem, items, IM_ARRAYSIZE(items));
 
@@ -320,7 +320,7 @@ void ImGuiWrapperNS::showFileExplorer()
 
 	for (size_t i = 0; i < currentDirectoryMetadata->childrenDirectories.size(); i++)
 	{
-		ImGui::PushID((int)i);
+		ImGui::PushID((int32_t)i);
 
 		auto l_currentActivateDir = &currentDirectoryMetadata->childrenDirectories[i];
 
@@ -559,7 +559,7 @@ void ImGuiWrapperNS::showVisiableComponentPropertyEditor(void * rhs)
 	auto l_rhs = reinterpret_cast<VisibleComponent*>(rhs);
 
 	const char* meshPrimitiveTopology_items[] = { "Point", "Line", "Triangle", "Triangle-strip" };
-	static int meshPrimitiveTopology_item_current = (int)l_rhs->m_meshPrimitiveTopology;
+	static int32_t meshPrimitiveTopology_item_current = (int32_t)l_rhs->m_meshPrimitiveTopology;
 	if (ImGui::Combo("Mesh primitive topology", &meshPrimitiveTopology_item_current, meshPrimitiveTopology_items, IM_ARRAYSIZE(meshPrimitiveTopology_items)))
 	{
 		l_rhs->m_meshPrimitiveTopology = MeshPrimitiveTopology(meshPrimitiveTopology_item_current);
@@ -714,7 +714,7 @@ void ImGuiWrapperNS::showConcurrencyProfiler()
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 1));
 		ImGui::Begin("ConcurrencyProfiler", 0);
 
-		for (unsigned int i = 0; i < l_maxThreads; i++)
+		for (uint32_t i = 0; i < l_maxThreads; i++)
 		{
 			auto l_taskReport = g_pModuleManager->getTaskSystem()->GetTaskReport(i);
 
@@ -731,7 +731,7 @@ void ImGuiWrapperNS::showConcurrencyProfiler()
 				auto l_relativeEndTime = l_taskReport.currentElement().m_FinishTime;
 				auto l_totalDuration = float(l_relativeEndTime - l_relativeStartTime);
 				auto l_lastTaskReportButtonPos = l_relativeStartTime;
-				unsigned long long l_workDuration = 0;
+				uint64_t l_workDuration = 0;
 
 				for (size_t j = 0; j < l_taskReportCount; j++)
 				{

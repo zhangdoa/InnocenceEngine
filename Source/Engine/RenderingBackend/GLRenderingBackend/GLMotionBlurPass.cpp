@@ -64,7 +64,7 @@ bool GLMotionBlurPass::update(GLRenderPassComponent* prePassGLRPC)
 	return true;
 }
 
-bool GLMotionBlurPass::resize(unsigned int newSizeX, unsigned int newSizeY)
+bool GLMotionBlurPass::resize(uint32_t newSizeX, uint32_t newSizeY)
 {
 	resizeGLRenderPassComponent(m_GLRPC, newSizeX, newSizeY);
 

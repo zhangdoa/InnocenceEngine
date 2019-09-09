@@ -52,13 +52,13 @@ enum class ComponentType
 
 struct TimeData
 {
-	int Year;
-	unsigned int Month;
-	unsigned int Day;
-	unsigned int Hour;
-	unsigned int Minute;
-	long long Second;
-	long long Millisecond;
+	int32_t Year;
+	uint32_t Month;
+	uint32_t Day;
+	uint32_t Hour;
+	uint32_t Minute;
+	int64_t Second;
+	int64_t Millisecond;
 };
 
 enum class FileExplorerIconType { OBJ, PNG, SHADER, UNKNOWN };
@@ -74,7 +74,7 @@ struct AssetMetadata
 
 struct DirectoryMetadata
 {
-	unsigned int depth = 0;
+	uint32_t depth = 0;
 	std::string directoryName = "root";
 	DirectoryMetadata* parentDirectory = 0;
 	std::vector<DirectoryMetadata> childrenDirectories;
@@ -126,7 +126,7 @@ struct MeshCustomMaterial
 
 struct ButtonState
 {
-	int m_code = 0;
+	int32_t m_code = 0;
 	bool m_isPressed = false;
 
 	bool operator==(const ButtonState &other) const
@@ -142,7 +142,7 @@ struct ButtonStateHasher
 {
 	std::size_t operator()(const ButtonState& k) const
 	{
-		return std::hash<int>()(k.m_code) ^ (std::hash<bool>()(k.m_isPressed) << 1);
+		return std::hash<int32_t>()(k.m_code) ^ (std::hash<bool>()(k.m_isPressed) << 1);
 	}
 };
 
