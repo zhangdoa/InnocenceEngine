@@ -2,7 +2,7 @@
 #include <qt_windows.h>
 #include <QFuture>
 #include <QtConcurrent/QtConcurrentRun>
-#include "../../Engine/Application/InnoApplication.h"
+#include "../../Engine/Platform/ApplicationEntry/InnoApplicationEntry.h"
 #include "../../Engine/ModuleManager/IModuleManager.h"
 
 INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
@@ -21,12 +21,12 @@ InnoViewport::InnoViewport(QWidget *parent)
     void* hInstance = reinterpret_cast<void*>(::GetModuleHandle(nullptr));
 	WId l_hwnd = QWidget::winId();
     auto l_args = "-renderer 0 -mode 1 -loglevel 1";
-    InnoApplication::Setup(hInstance, &l_hwnd, const_cast<char*>(l_args));
-	InnoApplication::Initialize();
+    InnoApplicationEntry::Setup(hInstance, &l_hwnd, const_cast<char*>(l_args));
+    InnoApplicationEntry::Initialize();
 
 	auto l_engine = [&]() {
-		InnoApplication::Run();
-		InnoApplication::Terminate();
+        InnoApplicationEntry::Run();
+        InnoApplicationEntry::Terminate();
 	};
 	QFuture<void> future = QtConcurrent::run(l_engine);
 }

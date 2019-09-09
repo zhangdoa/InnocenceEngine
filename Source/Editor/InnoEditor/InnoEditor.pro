@@ -70,9 +70,9 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 INCLUDEPATH += $$PWD/../../../Source/External/Include
 
-win32:CONFIG(release, debug|release):LIBS += -L$$PWD/../../../Build/Release/LibArchive/Release/ -lInnoApplication
-else:win32:CONFIG(debug, debug|release):LIBS += -L$$PWD/../../../Build/Debug/LibArchive/Debug/ -lInnoApplication
-else:unix: LIBS += -L$$PWD/../../../Build/LibArchive/ -lInnoApplication
+win32:CONFIG(release, debug|release):LIBS += -L$$PWD/../../../Build/Release/LibArchive/Release/ -lInnoApplicationEntry
+else:win32:CONFIG(debug, debug|release):LIBS += -L$$PWD/../../../Build/Debug/LibArchive/Debug/ -lInnoApplicationEntry
+else:unix: LIBS += -L$$PWD/../../../Build/LibArchive/ -lInnoApplicationEntry
 
 win32:CONFIG(release, debug|release):LIBS += -L$$PWD/../../../Build/Release/LibArchive/Release/ -lInnoEngine
 else:win32:CONFIG(debug, debug|release):LIBS += -L$$PWD/../../../Build/Debug/LibArchive/Debug/ -lInnoEngine
