@@ -21,8 +21,8 @@ public:
 		return instance;
 	}
 
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-	EntityID m_parentEntity;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+	EntityID m_ParentEntity;
 
 	VkInstance m_instance;
 	VkSurfaceKHR m_windowSurface;

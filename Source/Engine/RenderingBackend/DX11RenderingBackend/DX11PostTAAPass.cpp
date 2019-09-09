@@ -21,14 +21,14 @@ namespace DX11PostTAAPass
 
 	ShaderFilePaths m_shaderFilePaths = { "DX11//postTAAPassVertex.hlsl/", "", "", "", "DX11//postTAAPassPixel.hlsl/" };
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 }
 
 bool DX11PostTAAPass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
-	m_DXRPC = addDX11RenderPassComponent(m_entityID, "PostTAAPassDXRPC\\");
+	m_DXRPC = addDX11RenderPassComponent(m_EntityID, "PostTAAPassDXRPC\\");
 
 	m_DXRPC->m_renderPassDesc = DX11RenderingBackendComponent::get().m_deferredRenderPassDesc;
 	m_DXRPC->m_renderPassDesc.RTNumber = 1;
@@ -55,7 +55,7 @@ bool DX11PostTAAPass::initialize()
 
 bool DX11PostTAAPass::initializeShaders()
 {
-	m_DXSPC = addDX11ShaderProgramComponent(m_entityID);
+	m_DXSPC = addDX11ShaderProgramComponent(m_EntityID);
 
 	m_DXSPC->m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 	m_DXSPC->m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;

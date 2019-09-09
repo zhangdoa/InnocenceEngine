@@ -16,7 +16,7 @@ namespace GLSSAONoisePass
 
 	void generateSSAONoiseTexture();
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	GLRenderPassComponent* m_GLRPC;
 
@@ -33,9 +33,9 @@ namespace GLSSAONoisePass
 
 bool GLSSAONoisePass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "SSAONoisePassGLRPC/");
+	m_GLRPC = addGLRenderPassComponent(m_EntityID, "SSAONoisePassGLRPC/");
 	m_GLRPC->m_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	initializeGLRenderPassComponent(m_GLRPC);
 
@@ -49,7 +49,7 @@ bool GLSSAONoisePass::initialize()
 void GLSSAONoisePass::initializeShaders()
 {
 	// shader programs and shaders
-	auto rhs = addGLShaderProgramComponent(m_entityID);
+	auto rhs = addGLShaderProgramComponent(m_EntityID);
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 

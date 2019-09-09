@@ -13,7 +13,7 @@ namespace GLGaussianBlurPass
 {
 	void initializeShaders();
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	GLRenderPassComponent* m_PingPassGLRPC;
 	GLRenderPassComponent* m_PongPassGLRPC;
@@ -23,15 +23,15 @@ namespace GLGaussianBlurPass
 
 bool GLGaussianBlurPass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
 	//Ping pass
-	m_PingPassGLRPC = addGLRenderPassComponent(m_entityID, "GaussianBlurPingPassGLRPC/");
+	m_PingPassGLRPC = addGLRenderPassComponent(m_EntityID, "GaussianBlurPingPassGLRPC/");
 	m_PingPassGLRPC->m_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	initializeGLRenderPassComponent(m_PingPassGLRPC);
 
 	//Pong pass
-	m_PongPassGLRPC = addGLRenderPassComponent(m_entityID, "GaussianBlurPongPassGLRPC/");
+	m_PongPassGLRPC = addGLRenderPassComponent(m_EntityID, "GaussianBlurPongPassGLRPC/");
 	m_PongPassGLRPC->m_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	initializeGLRenderPassComponent(m_PongPassGLRPC);
 
@@ -43,7 +43,7 @@ bool GLGaussianBlurPass::initialize()
 void GLGaussianBlurPass::initializeShaders()
 {
 	// shader programs and shaders
-	auto rhs = addGLShaderProgramComponent(m_entityID);
+	auto rhs = addGLShaderProgramComponent(m_EntityID);
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 

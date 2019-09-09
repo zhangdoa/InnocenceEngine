@@ -5,12 +5,12 @@ extern IModuleManager* g_pModuleManager;
 
 namespace ImGuiWrapperVKNS
 {
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
 bool ImGuiWrapperVK::setup()
 {
-	ImGuiWrapperVKNS::m_objectStatus = ObjectStatus::Activated;
+	ImGuiWrapperVKNS::m_ObjectStatus = ObjectStatus::Activated;
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWrapperVK setup finished.");
 
 	return true;
@@ -35,7 +35,7 @@ bool ImGuiWrapperVK::render()
 
 bool ImGuiWrapperVK::terminate()
 {
-	ImGuiWrapperVKNS::m_objectStatus = ObjectStatus::Terminated;
+	ImGuiWrapperVKNS::m_ObjectStatus = ObjectStatus::Terminated;
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWrapperVK has been terminated.");
 
 	return true;
@@ -43,7 +43,7 @@ bool ImGuiWrapperVK::terminate()
 
 ObjectStatus ImGuiWrapperVK::getStatus()
 {
-	return ImGuiWrapperVKNS::m_objectStatus;
+	return ImGuiWrapperVKNS::m_ObjectStatus;
 }
 
 void ImGuiWrapperVK::showRenderResult(RenderPassType renderPassType)

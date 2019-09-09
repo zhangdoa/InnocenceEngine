@@ -21,20 +21,20 @@ namespace DX12FinalBlendPass
 
 	ShaderFilePaths m_shaderFilePaths = { "DX12//finalBlendPassVertex.hlsl/", "", "", "", "DX12//finalBlendPassPixel.hlsl/" };
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	uint32_t m_imageCount = 2;
 }
 
 bool DX12FinalBlendPass::setup()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
-	m_DXSPC = addDX12ShaderProgramComponent(m_entityID);
+	m_DXSPC = addDX12ShaderProgramComponent(m_EntityID);
 
 	initializeShaders();
 
-	m_DXRPC = addDX12RenderPassComponent(m_entityID, "SwapChainDXRPC\\");
+	m_DXRPC = addDX12RenderPassComponent(m_EntityID, "SwapChainDXRPC\\");
 
 	m_DXRPC->m_renderPassDesc = DX12RenderingBackendComponent::get().m_deferredRenderPassDesc;
 	m_DXRPC->m_renderPassDesc.RTNumber = m_imageCount;

@@ -13,7 +13,7 @@ extern IModuleManager* g_pModuleManager;
 
 namespace VKRenderingBackendNS
 {
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	VkResult createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pCallback)
 	{
@@ -70,7 +70,7 @@ namespace VKRenderingBackendNS
 
 	bool createSwapChain();
 
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
 	void* m_MeshDataComponentPool;
 	void* m_MaterialDataComponentPool;
@@ -107,7 +107,7 @@ bool VKRenderingBackendNS::createVkInstance()
 {
 	// check support for validation layer
 	if (VKRenderingBackendComponent::get().m_enableValidationLayers && !checkValidationLayerSupport()) {
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Validation layers requested, but not available!");
 		return false;
 	}
@@ -144,7 +144,7 @@ bool VKRenderingBackendNS::createVkInstance()
 	// create Vulkan instance
 	if (vkCreateInstance(&l_createInfo, nullptr, &VKRenderingBackendComponent::get().m_instance) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to create VkInstance!");
 		return false;
 	}
@@ -165,7 +165,7 @@ bool VKRenderingBackendNS::createDebugCallback()
 
 		if (createDebugUtilsMessengerEXT(VKRenderingBackendComponent::get().m_instance, &l_createInfo, nullptr, &VKRenderingBackendComponent::get().m_messengerCallback) != VK_SUCCESS)
 		{
-			m_objectStatus = ObjectStatus::Suspended;
+			m_ObjectStatus = ObjectStatus::Suspended;
 			g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to create DebugUtilsMessenger!");
 			return false;
 		}
@@ -186,7 +186,7 @@ bool VKRenderingBackendNS::createPysicalDevice()
 	vkEnumeratePhysicalDevices(VKRenderingBackendComponent::get().m_instance, &l_deviceCount, nullptr);
 
 	if (l_deviceCount == 0) {
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to find GPUs with Vulkan support!");
 		return false;
 	}
@@ -206,7 +206,7 @@ bool VKRenderingBackendNS::createPysicalDevice()
 
 	if (VKRenderingBackendComponent::get().m_physicalDevice == VK_NULL_HANDLE)
 	{
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to find a suitable GPU!");
 		return false;
 	}
@@ -259,7 +259,7 @@ bool VKRenderingBackendNS::createLogicalDevice()
 
 	if (vkCreateDevice(VKRenderingBackendComponent::get().m_physicalDevice, &l_createInfo, nullptr, &VKRenderingBackendComponent::get().m_device) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to create VkDevice!");
 		return false;
 	}
@@ -290,7 +290,7 @@ bool VKRenderingBackendNS::createTextureSamplers()
 
 	if (vkCreateSampler(VKRenderingBackendComponent::get().m_device, &samplerInfo, nullptr, &VKRenderingBackendComponent::get().m_deferredRTSampler) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to create VkSampler for deferred pass render target sampling!");
 		return false;
 	}
@@ -311,7 +311,7 @@ bool VKRenderingBackendNS::createMaterialDescriptorPool()
 
 	if (!createDescriptorPool(l_descriptorPoolSizes, 1, l_renderingCapability.maxMaterials, VKRenderingBackendComponent::get().m_materialDescriptorPool))
 	{
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to create VkDescriptorPool for material!");
 		return false;
 	}
@@ -332,7 +332,7 @@ bool VKRenderingBackendNS::createMaterialDescriptorPool()
 
 	if (!createDescriptorSetLayout(&l_textureLayoutBindings[0], (uint32_t)l_textureLayoutBindings.size(), VKRenderingBackendComponent::get().m_materialDescriptorLayout))
 	{
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to create VkDescriptorSetLayout for material!");
 		return false;
 	}
@@ -353,7 +353,7 @@ bool VKRenderingBackendNS::createCommandPool()
 
 	if (vkCreateCommandPool(VKRenderingBackendComponent::get().m_device, &poolInfo, nullptr, &VKRenderingBackendComponent::get().m_commandPool) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to create CommandPool!");
 		return false;
 	}
@@ -410,7 +410,7 @@ bool VKRenderingBackendNS::createSwapChain()
 
 	if (vkCreateSwapchainKHR(VKRenderingBackendComponent::get().m_device, &l_createInfo, nullptr, &VKRenderingBackendComponent::get().m_swapChain) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to create VkSwapChainKHR!");
 		return false;
 	}
@@ -421,7 +421,7 @@ bool VKRenderingBackendNS::createSwapChain()
 	// get count
 	if (vkGetSwapchainImagesKHR(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_swapChain, &l_imageCount, nullptr) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to query swap chain image count!");
 		return false;
 	}
@@ -437,7 +437,7 @@ bool VKRenderingBackendNS::createSwapChain()
 	// get real VkImages
 	if (vkGetSwapchainImagesKHR(VKRenderingBackendComponent::get().m_device, VKRenderingBackendComponent::get().m_swapChain, &l_imageCount, VKRenderingBackendComponent::get().m_swapChainImages.data()) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: Failed to acquire swap chain images!");
 		return false;
 	}
@@ -463,7 +463,7 @@ bool VKRenderingBackendNS::generateGPUBuffers()
 
 bool VKRenderingBackendNS::setup()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
 	initializeComponentPool();
 
@@ -485,14 +485,14 @@ bool VKRenderingBackendNS::setup()
 	result = result && createVkInstance();
 	result = result && createDebugCallback();
 
-	m_objectStatus = ObjectStatus::Created;
+	m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend setup finished.");
 	return result;
 }
 
 bool VKRenderingBackendNS::initialize()
 {
-	if (VKRenderingBackendNS::m_objectStatus == ObjectStatus::Created)
+	if (VKRenderingBackendNS::m_ObjectStatus == ObjectStatus::Created)
 	{
 		auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
@@ -520,7 +520,7 @@ bool VKRenderingBackendNS::initialize()
 
 		VKFinalBlendPass::initialize();
 
-		VKRenderingBackendNS::m_objectStatus = ObjectStatus::Activated;
+		VKRenderingBackendNS::m_ObjectStatus = ObjectStatus::Activated;
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend has been initialized.");
 		return l_result;
 	}
@@ -567,7 +567,7 @@ void VKRenderingBackendNS::loadDefaultAssets()
 	g_pModuleManager->getAssetSystem()->addUnitLine(*m_unitLineMesh);
 	m_unitLineMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	m_unitLineMesh->m_meshShapeType = MeshShapeType::LINE;
-	m_unitLineMesh->m_objectStatus = ObjectStatus::Created;
+	m_unitLineMesh->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMesh);
 
 	m_unitQuadMesh = addVKMeshDataComponent();
@@ -579,27 +579,27 @@ void VKRenderingBackendNS::loadDefaultAssets()
 	}
 	m_unitQuadMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitQuadMesh->m_meshShapeType = MeshShapeType::QUAD;
-	m_unitQuadMesh->m_objectStatus = ObjectStatus::Created;
+	m_unitQuadMesh->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMesh);
 
 	m_unitCubeMesh = addVKMeshDataComponent();
 	g_pModuleManager->getAssetSystem()->addUnitCube(*m_unitCubeMesh);
 	m_unitCubeMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitCubeMesh->m_meshShapeType = MeshShapeType::CUBE;
-	m_unitCubeMesh->m_objectStatus = ObjectStatus::Created;
+	m_unitCubeMesh->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMesh);
 
 	m_unitSphereMesh = addVKMeshDataComponent();
 	g_pModuleManager->getAssetSystem()->addUnitSphere(*m_unitSphereMesh);
 	m_unitSphereMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitSphereMesh->m_meshShapeType = MeshShapeType::SPHERE;
-	m_unitSphereMesh->m_objectStatus = ObjectStatus::Created;
+	m_unitSphereMesh->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMesh);
 
 	m_terrainMesh = addVKMeshDataComponent();
 	g_pModuleManager->getAssetSystem()->addTerrain(*m_terrainMesh);
 	m_terrainMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	m_terrainMesh->m_objectStatus = ObjectStatus::Created;
+	m_terrainMesh->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMesh);
 
 	m_basicMaterial = addVKMaterialDataComponent();
@@ -645,7 +645,7 @@ bool VKRenderingBackendNS::update()
 			auto l_result = initializeVKMeshDataComponent(l_MDC);
 			if (!l_result)
 			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: can't initialize VKMeshDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
+				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: can't initialize VKMeshDataComponent for " + std::string(l_MDC->m_ParentEntity->m_EntityName.c_str()) + "!");
 			}
 		}
 	}
@@ -659,7 +659,7 @@ bool VKRenderingBackendNS::update()
 			auto l_result = initializeVKMaterialDataComponent(l_MDC);
 			if (!l_result)
 			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: can't initialize VKTextureDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
+				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "VKRenderingBackend: can't initialize VKTextureDataComponent for " + std::string(l_MDC->m_ParentEntity->m_EntityName.c_str()) + "!");
 			}
 		}
 	}
@@ -721,7 +721,7 @@ bool VKRenderingBackendNS::terminate()
 
 	vkDestroyInstance(VKRenderingBackendComponent::get().m_instance, nullptr);
 
-	VKRenderingBackendNS::m_objectStatus = ObjectStatus::Terminated;
+	VKRenderingBackendNS::m_ObjectStatus = ObjectStatus::Terminated;
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "VKRenderingBackend has been terminated.");
 
 	return true;
@@ -733,8 +733,8 @@ VKMeshDataComponent* VKRenderingBackendNS::addVKMeshDataComponent()
 	meshCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(VKMeshDataComponent));
 	auto l_Mesh = new(l_rawPtr)VKMeshDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Mesh_" + std::to_string(meshCount) + "/").c_str());
-	l_Mesh->m_parentEntity = l_parentEntity;
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Mesh_" + std::to_string(meshCount) + "/").c_str());
+	l_Mesh->m_ParentEntity = l_parentEntity;
 	return l_Mesh;
 }
 
@@ -744,8 +744,8 @@ VKMaterialDataComponent* VKRenderingBackendNS::addVKMaterialDataComponent()
 	materialCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(VKMaterialDataComponent));
 	auto l_Material = new(l_rawPtr)VKMaterialDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Material_" + std::to_string(materialCount) + "/").c_str());
-	l_Material->m_parentEntity = l_parentEntity;
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Material_" + std::to_string(materialCount) + "/").c_str());
+	l_Material->m_ParentEntity = l_parentEntity;
 	return l_Material;
 }
 
@@ -755,8 +755,8 @@ VKTextureDataComponent* VKRenderingBackendNS::addVKTextureDataComponent()
 	textureCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(VKTextureDataComponent));
 	auto l_Texture = new(l_rawPtr)VKTextureDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Texture_" + std::to_string(textureCount) + "/").c_str());
-	l_Texture->m_parentEntity = l_parentEntity;
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Texture_" + std::to_string(textureCount) + "/").c_str());
+	l_Texture->m_ParentEntity = l_parentEntity;
 	return l_Texture;
 }
 
@@ -879,7 +879,7 @@ bool VKRenderingBackend::terminate()
 
 ObjectStatus VKRenderingBackend::getStatus()
 {
-	return VKRenderingBackendNS::m_objectStatus;
+	return VKRenderingBackendNS::m_ObjectStatus;
 }
 
 MeshDataComponent * VKRenderingBackend::addMeshDataComponent()

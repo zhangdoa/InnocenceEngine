@@ -101,7 +101,7 @@ TextureDataComponent* InnoFileSystemNS::AssetLoader::loadTextureFromDisk(const s
 	{
 		auto l_TDC = g_pModuleManager->getRenderingFrontend()->addTextureDataComponent();
 
-		l_TDC->m_componentName = (fileName + "/").c_str();
+		l_TDC->m_ComponentName = (fileName + "/").c_str();
 
 		l_TDC->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat(nrChannels - 1);
 		l_TDC->m_textureDataDesc.WrapMethod = TextureWrapMethod::Repeat;
@@ -112,7 +112,7 @@ TextureDataComponent* InnoFileSystemNS::AssetLoader::loadTextureFromDisk(const s
 		l_TDC->m_textureDataDesc.Width = width;
 		l_TDC->m_textureDataDesc.Height = height;
 		l_TDC->m_textureData = l_rawData;
-		l_TDC->m_objectStatus = ObjectStatus::Created;
+		l_TDC->m_ObjectStatus = ObjectStatus::Created;
 
 		InnoLogger::Log(LogLevel::Verbose, "FileSystem: AssetLoader: STB_Image: ", l_fullPath.c_str(), " has been loaded.");
 

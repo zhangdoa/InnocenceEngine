@@ -201,7 +201,7 @@ DX12ShaderProgramComponent* DX12RenderingBackendNS::addDX12ShaderProgramComponen
 {
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_DX12ShaderProgramComponentPool, sizeof(DX12ShaderProgramComponent));
 	auto l_DXSPC = new(l_rawPtr)DX12ShaderProgramComponent();
-	l_DXSPC->m_parentEntity = rhs;
+	l_DXSPC->m_ParentEntity = rhs;
 	return l_DXSPC;
 }
 
@@ -340,7 +340,7 @@ DX12RenderPassComponent* DX12RenderingBackendNS::addDX12RenderPassComponent(cons
 {
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_DX12RenderPassComponentPool, sizeof(DX12RenderPassComponent));
 	auto l_DXRPC = new(l_rawPtr)DX12RenderPassComponent();
-	l_DXRPC->m_parentEntity = parentEntity;
+	l_DXRPC->m_ParentEntity = parentEntity;
 	l_DXRPC->m_name = name;
 	return l_DXRPC;
 }
@@ -369,7 +369,7 @@ bool DX12RenderingBackendNS::initializeDX12RenderPassComponent(DX12RenderPassCom
 	l_result &= createCommandLists(DXRPC);
 	l_result &= createSyncPrimitives(DXRPC);
 
-	DXRPC->m_objectStatus = ObjectStatus::Activated;
+	DXRPC->m_ObjectStatus = ObjectStatus::Activated;
 
 	return l_result;
 }
@@ -816,7 +816,7 @@ bool DX12RenderingBackendNS::destroyDX12RenderPassComponent(DX12RenderPassCompon
 
 bool DX12RenderingBackendNS::initializeDX12MeshDataComponent(DX12MeshDataComponent* rhs)
 {
-	if (rhs->m_objectStatus == ObjectStatus::Activated)
+	if (rhs->m_ObjectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
@@ -830,7 +830,7 @@ bool DX12RenderingBackendNS::initializeDX12MeshDataComponent(DX12MeshDataCompone
 
 bool DX12RenderingBackendNS::initializeDX12TextureDataComponent(DX12TextureDataComponent * rhs)
 {
-	if (rhs->m_objectStatus == ObjectStatus::Activated)
+	if (rhs->m_ObjectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
@@ -917,7 +917,7 @@ DX12SRV DX12RenderingBackendNS::createSRV(const DX12TextureDataComponent & rhs)
 
 bool DX12RenderingBackendNS::initializeDX12MaterialDataComponent(DX12MaterialDataComponent * rhs)
 {
-	if (rhs->m_objectStatus == ObjectStatus::Activated)
+	if (rhs->m_ObjectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
@@ -1016,9 +1016,9 @@ bool DX12RenderingBackendNS::submitGPUData(DX12MeshDataComponent * rhs)
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingBackend: IBO " + InnoUtility::pointerToString(rhs->m_indexBuffer) + " is initialized.");
 
-	rhs->m_objectStatus = ObjectStatus::Activated;
+	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
-	m_initializedDX12Meshes.emplace(rhs->m_parentEntity, rhs);
+	m_initializedDX12Meshes.emplace(rhs->m_ParentEntity, rhs);
 
 	return true;
 }
@@ -1316,9 +1316,9 @@ bool DX12RenderingBackendNS::submitGPUData(DX12TextureDataComponent * rhs)
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX12RenderingBackend: texture " + InnoUtility::pointerToString(rhs) + " is initialized.");
 
-	rhs->m_objectStatus = ObjectStatus::Activated;
+	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
-	m_initializedDX12Textures.emplace(rhs->m_parentEntity, rhs);
+	m_initializedDX12Textures.emplace(rhs->m_ParentEntity, rhs);
 
 	return true;
 }
@@ -1373,9 +1373,9 @@ bool DX12RenderingBackendNS::submitGPUData(DX12MaterialDataComponent * rhs)
 		rhs->m_SRVs[4] = createSRV(*getDX12TextureDataComponent(TextureUsageType::AMBIENT_OCCLUSION));
 	}
 
-	rhs->m_objectStatus = ObjectStatus::Activated;
+	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
-	m_initializedDX12Materials.emplace(rhs->m_parentEntity, rhs);
+	m_initializedDX12Materials.emplace(rhs->m_ParentEntity, rhs);
 
 	return true;
 }

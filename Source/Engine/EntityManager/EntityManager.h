@@ -10,9 +10,9 @@ public:
 	bool Initialize() override;
 	bool Simulate() override;
 	bool Terminate() override;
-	InnoEntity* Spawn(ObjectSource objectSource, ObjectUsage objectUsage, const char* entityName) override;
+	InnoEntity* Spawn(ObjectSource objectSource, ObjectOwnership objectUsage, const char* entityName) override;
 	bool Destroy(InnoEntity* entity) override;
 	const std::vector<InnoEntity*>& GetEntities() override;
 	std::optional<InnoEntity*> Find(const char* entityName) override;
-	uint32_t AcquireUUID() override;
+	uint64_t AcquireUUID() override;
 };

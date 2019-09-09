@@ -456,13 +456,13 @@ void ImGuiWrapperNS::showWorldExplorer()
 
 		for (auto& i : l_sceneHierarchyMap)
 		{
-			if (i.first->m_objectSource == ObjectSource::Asset)
+			if (i.first->m_ObjectSource == ObjectSource::Asset)
 			{
-				if (ImGui::TreeNode(i.first->m_entityName.c_str()))
+				if (ImGui::TreeNode(i.first->m_EntityName.c_str()))
 				{
 					for (auto& j : i.second)
 					{
-						if (ImGui::Selectable(j->m_componentName.c_str(), selectedComponent == j))
+						if (ImGui::Selectable(j->m_ComponentName.c_str(), selectedComponent == j))
 						{
 							selectedComponent = j;
 							selectedComponentType = j->m_ComponentType;
@@ -580,7 +580,7 @@ void ImGuiWrapperNS::showVisiableComponentPropertyEditor(void * rhs)
 		{
 			for (auto& i : l_rhs->m_modelMap)
 			{
-				if (ImGui::Selectable(i.first->m_parentEntity->m_entityName.c_str(), selectedComponent == i.second))
+				if (ImGui::Selectable(i.first->m_ParentEntity->m_EntityName.c_str(), selectedComponent == i.second))
 				{
 					selectedComponent = i.second;
 				}

@@ -241,7 +241,7 @@ bool ExecuteRayTracing()
 	l_ExportFile << "P3\n" << nx << " " << ny << "\n255\n";
 
 	auto l_camera = GetComponentManager(CameraComponent)->GetAllComponents()[0];
-	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_camera->m_parentEntity);
+	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_camera->m_ParentEntity);
 	auto l_lookfrom = l_cameraTransformComponent->m_globalTransformVector.m_pos;
 	auto l_lookat = l_lookfrom + InnoMath::getDirection(Direction::Backward, l_cameraTransformComponent->m_globalTransformVector.m_rot);
 	auto l_up = InnoMath::getDirection(Direction::Up, l_cameraTransformComponent->m_globalTransformVector.m_rot);
@@ -256,7 +256,7 @@ bool ExecuteRayTracing()
 
 	for (auto l_visibleComponent : l_visibleComponents)
 	{
-		auto l_transformComponent = GetComponent(TransformComponent, l_visibleComponent->m_parentEntity);
+		auto l_transformComponent = GetComponent(TransformComponent, l_visibleComponent->m_ParentEntity);
 		if (l_visibleComponent->m_meshShapeType == MeshShapeType::Cube)
 		{
 			auto l_hitable = new HitableCube();

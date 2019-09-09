@@ -13,7 +13,7 @@ namespace PlayerComponentCollection
 	bool setup();
 	bool initialize();
 
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	InnoEntity* m_cameraParentEntity;
 
 	TransformComponent* m_cameraTransformComponent;
@@ -61,7 +61,7 @@ bool PlayerComponentCollection::setup()
 		}
 		else
 		{
-			m_cameraParentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Gameplay, "playerCharacterCamera/");
+			m_cameraParentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Client, "playerCharacterCamera/");
 		}
 		m_cameraTransformComponent = GetComponent(TransformComponent, m_cameraParentEntity);
 
@@ -194,7 +194,7 @@ namespace GameClientNS
 	std::function<void()> f_sceneLoadingFinishCallback;
 	std::function<void()> f_testFunc;
 
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
 bool GameClientNS::setupReferenceSpheres()
@@ -216,17 +216,17 @@ bool GameClientNS::setupReferenceSpheres()
 		m_referenceSphereTransformComponents.emplace_back();
 		m_referenceSphereVisibleComponents.emplace_back();
 		auto l_entityName = std::string("MaterialReferenceSphere_" + std::to_string(i) + "/");
-		m_referenceSphereEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Gameplay, l_entityName.c_str()));
+		m_referenceSphereEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Client, l_entityName.c_str()));
 	}
 
 	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
-		m_referenceSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_referenceSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
 		m_referenceSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_referenceSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_referenceSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_referenceSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
 		m_referenceSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::Opaque;
 		m_referenceSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::Sphere;
 		m_referenceSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::Dynamic;
@@ -269,16 +269,16 @@ bool GameClientNS::setupOcclusionCubes()
 		m_occlusionCubeTransformComponents.emplace_back();
 		m_occlusionCubeVisibleComponents.emplace_back();
 		auto l_entityName = std::string("OcclusionCube_" + std::to_string(i) + "/");
-		m_occlusionCubeEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Gameplay, l_entityName.c_str()));
+		m_occlusionCubeEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Client, l_entityName.c_str()));
 	}
 
 	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
-		m_occlusionCubeTransformComponents[i] = SpawnComponent(TransformComponent, m_occlusionCubeEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_occlusionCubeTransformComponents[i] = SpawnComponent(TransformComponent, m_occlusionCubeEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
 		m_occlusionCubeTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
-		m_occlusionCubeVisibleComponents[i] = SpawnComponent(VisibleComponent, m_occlusionCubeEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_occlusionCubeVisibleComponents[i] = SpawnComponent(VisibleComponent, m_occlusionCubeEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
 		m_occlusionCubeVisibleComponents[i]->m_visiblilityType = VisiblilityType::Opaque;
 		m_occlusionCubeVisibleComponents[i]->m_meshShapeType = MeshShapeType::Cube;
 		m_occlusionCubeVisibleComponents[i]->m_meshUsageType = MeshUsageType::Static;
@@ -342,17 +342,17 @@ bool GameClientNS::setupOpaqueSpheres()
 		m_opaqueSphereTransformComponents.emplace_back();
 		m_opaqueSphereVisibleComponents.emplace_back();
 		auto l_entityName = std::string("PhysicsTestOpaqueObject_" + std::to_string(i) + "/");
-		m_opaqueSphereEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Gameplay, l_entityName.c_str()));
+		m_opaqueSphereEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Client, l_entityName.c_str()));
 	}
 
 	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
-		m_opaqueSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_opaqueSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
 		m_opaqueSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_opaqueSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_opaqueSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_opaqueSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
 		m_opaqueSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::Opaque;
 		m_opaqueSphereVisibleComponents[i]->m_meshShapeType = (i & 0x00000001) ? MeshShapeType::Sphere : MeshShapeType::Cube;
 		m_opaqueSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::Dynamic;
@@ -405,17 +405,17 @@ bool GameClientNS::setupTransparentSpheres()
 		m_transparentSphereTransformComponents.emplace_back();
 		m_transparentSphereVisibleComponents.emplace_back();
 		auto l_entityName = std::string("PhysicsTestTransparentSphere_" + std::to_string(i) + "/");
-		m_transparentSphereEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Gameplay, l_entityName.c_str()));
+		m_transparentSphereEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Client, l_entityName.c_str()));
 	}
 
 	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
-		m_transparentSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_transparentSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
 		m_transparentSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_transparentSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_transparentSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_transparentSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
 		m_transparentSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::Transparent;
 		m_transparentSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::Sphere;
 		m_transparentSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::Dynamic;
@@ -465,18 +465,18 @@ bool GameClientNS::setupPointLights()
 		m_pointLightTransformComponents.emplace_back();
 		m_pointLightComponents.emplace_back();
 		auto l_entityName = std::string("TestPointLight_" + std::to_string(i) + "/");
-		m_pointLightEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Gameplay, l_entityName.c_str()));
+		m_pointLightEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Client, l_entityName.c_str()));
 	}
 
 	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
-		m_pointLightTransformComponents[i] = SpawnComponent(TransformComponent, m_pointLightEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_pointLightTransformComponents[i] = SpawnComponent(TransformComponent, m_pointLightEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
 		g_pModuleManager->getComponentManager(ComponentType::TransformComponent);
 		m_pointLightTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_pointLightTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_pointLightComponents[i] = SpawnComponent(LightComponent, m_pointLightEntites[i], ObjectSource::Runtime, ObjectUsage::Gameplay);
+		m_pointLightComponents[i] = SpawnComponent(LightComponent, m_pointLightEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
 		m_pointLightComponents[i]->m_LightType = LightType::Point;
 		m_pointLightComponents[i]->m_LuminousFlux = l_randomLuminousFlux(l_generator);
 		m_pointLightComponents[i]->m_ColorTemperature = l_randomColorTemperature(l_generator);
@@ -532,7 +532,7 @@ bool GameClientNS::setup()
 		setupTransparentSpheres();
 		//setupPointLights();
 
-		m_objectStatus = ObjectStatus::Activated;
+		m_ObjectStatus = ObjectStatus::Activated;
 	};
 
 	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback, 0);
@@ -593,13 +593,13 @@ bool DefaultLogicClient::update()
 
 bool DefaultLogicClient::terminate()
 {
-	GameClientNS::m_objectStatus = ObjectStatus::Terminated;
+	GameClientNS::m_ObjectStatus = ObjectStatus::Terminated;
 	return true;
 }
 
 ObjectStatus DefaultLogicClient::getStatus()
 {
-	return GameClientNS::m_objectStatus;
+	return GameClientNS::m_ObjectStatus;
 }
 
 std::string DefaultLogicClient::getApplicationName()
@@ -609,7 +609,7 @@ std::string DefaultLogicClient::getApplicationName()
 
 bool GameClientNS::update()
 {
-	if (m_objectStatus == ObjectStatus::Activated)
+	if (m_ObjectStatus == ObjectStatus::Activated)
 	{
 		auto l_tickTime = g_pModuleManager->getTickTime();
 		seed += (l_tickTime / 1000.0f);

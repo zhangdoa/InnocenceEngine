@@ -14,7 +14,7 @@ namespace GLSSAOBlurPass
 {
 	void initializeShaders();
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	GLRenderPassComponent* m_GLRPC;
 
@@ -25,9 +25,9 @@ namespace GLSSAOBlurPass
 
 bool GLSSAOBlurPass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "SSAOBlurPassGLRPC/");
+	m_GLRPC = addGLRenderPassComponent(m_EntityID, "SSAOBlurPassGLRPC/");
 	m_GLRPC->m_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	initializeGLRenderPassComponent(m_GLRPC);
 
@@ -39,7 +39,7 @@ bool GLSSAOBlurPass::initialize()
 void GLSSAOBlurPass::initializeShaders()
 {
 	// shader programs and shaders
-	auto rhs = addGLShaderProgramComponent(m_entityID);
+	auto rhs = addGLShaderProgramComponent(m_EntityID);
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 

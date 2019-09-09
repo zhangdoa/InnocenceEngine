@@ -12,7 +12,7 @@ namespace WinDXWindowSurfaceNS
 	bool update();
 	bool terminate();
 
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	InitConfig m_initConfig;
 }
 
@@ -64,7 +64,7 @@ bool WinDXWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 		SetFocus(WinWindowSystemComponent::get().m_hwnd);
 	}
 
-	m_objectStatus = ObjectStatus::Activated;
+	m_ObjectStatus = ObjectStatus::Activated;
 	InnoLogger::Log(LogLevel::Success, "WinDXWindowSurface setup finished.");
 
 	return true;
@@ -83,7 +83,7 @@ bool WinDXWindowSurfaceNS::update()
 
 bool WinDXWindowSurfaceNS::terminate()
 {
-	m_objectStatus = ObjectStatus::Terminated;
+	m_ObjectStatus = ObjectStatus::Terminated;
 	InnoLogger::Log(LogLevel::Success, "WinGLWindowSystemNS has been terminated.");
 
 	return true;
@@ -111,7 +111,7 @@ bool WinDXWindowSurface::terminate()
 
 ObjectStatus WinDXWindowSurface::getStatus()
 {
-	return WinDXWindowSurfaceNS::m_objectStatus;
+	return WinDXWindowSurfaceNS::m_ObjectStatus;
 }
 
 bool WinDXWindowSurface::swapBuffer()

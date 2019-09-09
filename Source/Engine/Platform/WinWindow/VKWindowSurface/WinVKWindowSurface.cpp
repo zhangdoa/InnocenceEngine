@@ -14,7 +14,7 @@ namespace WinVKWindowSurfaceNS
 	bool update();
 	bool terminate();
 
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	InitConfig m_initConfig;
 }
 
@@ -58,7 +58,7 @@ bool WinVKWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 
 	WinWindowSystemComponent::get().m_HDC = GetDC(WinWindowSystemComponent::get().m_hwnd);
 
-	m_objectStatus = ObjectStatus::Activated;
+	m_ObjectStatus = ObjectStatus::Activated;
 	InnoLogger::Log(LogLevel::Success, "WinVKWindowSurface setup finished.");
 
 	return true;
@@ -74,7 +74,7 @@ bool WinVKWindowSurfaceNS::initialize()
 
 	if (vkCreateWin32SurfaceKHR(VKRenderingBackendComponent::get().m_instance, &createInfo, NULL, &VKRenderingBackendComponent::get().m_windowSurface) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::Created;
+		m_ObjectStatus = ObjectStatus::Created;
 		InnoLogger::Log(LogLevel::Error, "WinVKWindowSurface: Failed to create window surface!");
 		return false;
 	}
@@ -98,7 +98,7 @@ bool WinVKWindowSurfaceNS::update()
 
 bool WinVKWindowSurfaceNS::terminate()
 {
-	m_objectStatus = ObjectStatus::Terminated;
+	m_ObjectStatus = ObjectStatus::Terminated;
 	InnoLogger::Log(LogLevel::Success, "WinVKWindowSurfaceNS has been terminated.");
 
 	return true;
@@ -126,7 +126,7 @@ bool WinVKWindowSurface::terminate()
 
 ObjectStatus WinVKWindowSurface::getStatus()
 {
-	return WinVKWindowSurfaceNS::m_objectStatus;
+	return WinVKWindowSurfaceNS::m_ObjectStatus;
 }
 
 bool WinVKWindowSurface::swapBuffer()

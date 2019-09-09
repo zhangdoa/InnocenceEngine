@@ -12,7 +12,7 @@ using namespace GLRenderingBackendNS;
 
 namespace GLEnvironmentConvolutionPass
 {
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	GLRenderPassComponent* m_GLRPC;
 
@@ -23,7 +23,7 @@ namespace GLEnvironmentConvolutionPass
 
 bool GLEnvironmentConvolutionPass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
 	auto l_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 
@@ -38,12 +38,12 @@ bool GLEnvironmentConvolutionPass::initialize()
 	l_renderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::FLOAT16;
 	l_renderPassDesc.useDepthAttachment = true;
 
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "EnvironmentConvolutionPassGLRPC/");
+	m_GLRPC = addGLRenderPassComponent(m_EntityID, "EnvironmentConvolutionPassGLRPC/");
 	m_GLRPC->m_renderPassDesc = l_renderPassDesc;
 	m_GLRPC->m_drawColorBuffers = true;
 	initializeGLRenderPassComponent(m_GLRPC);
 
-	m_GLSPC = addGLShaderProgramComponent(m_entityID);
+	m_GLSPC = addGLShaderProgramComponent(m_EntityID);
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
 
 	return true;

@@ -6,7 +6,7 @@ using namespace GLRenderingBackendNS;
 
 namespace GLBRDFLUTPass
 {
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	GLRenderPassComponent* m_BRDFSplitSumLUTPassGLRPC;
 	GLShaderProgramComponent* m_BRDFSplitSumLUTPassSPC;
@@ -19,25 +19,25 @@ namespace GLBRDFLUTPass
 
 bool GLBRDFLUTPass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
-	m_BRDFSplitSumLUTPassGLRPC = addGLRenderPassComponent(m_entityID, "BRDFSplitSumLUTPassGLRPC/");
+	m_BRDFSplitSumLUTPassGLRPC = addGLRenderPassComponent(m_EntityID, "BRDFSplitSumLUTPassGLRPC/");
 	m_BRDFSplitSumLUTPassGLRPC->m_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	m_BRDFSplitSumLUTPassGLRPC->m_renderPassDesc.RTDesc.width = 512;
 	m_BRDFSplitSumLUTPassGLRPC->m_renderPassDesc.RTDesc.height = 512;
 	initializeGLRenderPassComponent(m_BRDFSplitSumLUTPassGLRPC);
 
-	m_BRDFMSAverageLUTPassGLRPC = addGLRenderPassComponent(m_entityID, "BRDFMSAverageLUTPassGLRPC/");
+	m_BRDFMSAverageLUTPassGLRPC = addGLRenderPassComponent(m_EntityID, "BRDFMSAverageLUTPassGLRPC/");
 	m_BRDFMSAverageLUTPassGLRPC->m_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	m_BRDFMSAverageLUTPassGLRPC->m_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RG;
 	m_BRDFMSAverageLUTPassGLRPC->m_renderPassDesc.RTDesc.width = 512;
 	m_BRDFMSAverageLUTPassGLRPC->m_renderPassDesc.RTDesc.height = 512;
 	initializeGLRenderPassComponent(m_BRDFMSAverageLUTPassGLRPC);
 
-	m_BRDFSplitSumLUTPassSPC = addGLShaderProgramComponent(m_entityID);
+	m_BRDFSplitSumLUTPassSPC = addGLShaderProgramComponent(m_EntityID);
 	initializeGLShaderProgramComponent(m_BRDFSplitSumLUTPassSPC, m_BRDFSplitSumShaderFilePaths);
 
-	m_BRDFMSAverageLUTPassSPC = addGLShaderProgramComponent(m_entityID);
+	m_BRDFMSAverageLUTPassSPC = addGLShaderProgramComponent(m_EntityID);
 	initializeGLShaderProgramComponent(m_BRDFMSAverageLUTPassSPC, m_BRDFMSAverageShaderFilePaths);
 
 	update();

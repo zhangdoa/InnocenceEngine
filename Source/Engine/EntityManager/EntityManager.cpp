@@ -23,9 +23,9 @@ bool InnoEntityManager::Setup()
 	f_SceneLoadingStartCallback = [&]() {
 		for (auto i : m_Entities)
 		{
-			if (i->m_objectUsage == ObjectUsage::Gameplay)
+			if (i->m_ObjectOwnership == ObjectOwnership::Client)
 			{
-				i->m_objectStatus = ObjectStatus::Terminated;
+				i->m_ObjectStatus = ObjectStatus::Terminated;
 				m_EntityPool->Destroy(i);
 			}
 		}
@@ -33,7 +33,7 @@ bool InnoEntityManager::Setup()
 		m_Entities.erase(
 			std::remove_if(m_Entities.begin(), m_Entities.end(),
 				[&](auto val) {
-			return val->m_objectUsage == ObjectUsage::Gameplay;
+			return val->m_ObjectOwnership == ObjectOwnership::Client;
 		}), m_Entities.end());
 	};
 
@@ -57,31 +57,31 @@ bool InnoEntityManager::Terminate()
 	return true;
 }
 
-InnoEntity * InnoEntityManager::Spawn(ObjectSource objectSource, ObjectUsage objectUsage, const char* entityName)
+InnoEntity * InnoEntityManager::Spawn(ObjectSource objectSource, ObjectOwnership objectUsage, const char* entityName)
 {
 	auto l_Entity = reinterpret_cast<InnoEntity*>(m_EntityPool->Spawn());
 	if (l_Entity)
 	{
 		auto l_EntityID = InnoMath::createEntityID();
 
-		l_Entity->m_objectStatus = ObjectStatus::Created;
+		l_Entity->m_ObjectStatus = ObjectStatus::Created;
 		m_Entities.emplace_back(l_Entity);
 
-		l_Entity->m_entityID = l_EntityID;
-		l_Entity->m_entityName = entityName;
-		l_Entity->m_objectSource = objectSource;
-		l_Entity->m_objectUsage = objectUsage;
-		l_Entity->m_objectStatus = ObjectStatus::Activated;
+		l_Entity->m_EntityID = l_EntityID;
+		l_Entity->m_EntityName = entityName;
+		l_Entity->m_ObjectSource = objectSource;
+		l_Entity->m_ObjectOwnership = objectUsage;
+		l_Entity->m_ObjectStatus = ObjectStatus::Activated;
 	}
 
-	InnoLogger::Log(LogLevel::Verbose, "EntityManager: Entity ", l_Entity->m_entityName.c_str(), " has been created.");
+	InnoLogger::Log(LogLevel::Verbose, "EntityManager: Entity ", l_Entity->m_EntityName.c_str(), " has been created.");
 	return l_Entity;
 }
 
 bool InnoEntityManager::Destroy(InnoEntity * entity)
 {
 	m_Entities.eraseByValue(entity);
-	InnoLogger::Log(LogLevel::Verbose, "EntityManager: Entity ", entity->m_entityName.c_str(), " has been removed.");
+	InnoLogger::Log(LogLevel::Verbose, "EntityManager: Entity ", entity->m_EntityName.c_str(), " has been removed.");
 	m_EntityPool->Destroy(entity);
 	return true;
 }
@@ -92,7 +92,7 @@ std::optional<InnoEntity*> InnoEntityManager::Find(const char * entityName)
 		m_Entities.begin(),
 		m_Entities.end(),
 		[&](auto val) -> bool {
-		return val->m_entityName == entityName;
+		return val->m_EntityName == entityName;
 	});
 
 	if (l_FindResult != m_Entities.end())
@@ -111,9 +111,9 @@ const std::vector<InnoEntity*>&  InnoEntityManager::GetEntities()
 	return m_Entities.getRawData();
 }
 
-uint32_t InnoEntityManager::AcquireUUID()
+uint64_t InnoEntityManager::AcquireUUID()
 {
-	static uint32_t l_UUID = 0;
+	static uint64_t l_UUID = 0;
 	l_UUID++;
 	return l_UUID;
 }

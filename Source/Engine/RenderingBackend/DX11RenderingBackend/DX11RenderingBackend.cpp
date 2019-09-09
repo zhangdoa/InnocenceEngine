@@ -29,8 +29,8 @@ namespace DX11RenderingBackendNS
 	bool createPhysicalDevices();
 	bool createSwapChain();
 
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-	EntityID m_entityID;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+	EntityID m_EntityID;
 
 	static DX11RenderingBackendComponent* g_DXRenderingBackendComponent;
 
@@ -75,7 +75,7 @@ bool DX11RenderingBackendNS::createPhysicalDevices()
 	if (FAILED(result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingBackend: can't create DXGI factory!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -84,7 +84,7 @@ bool DX11RenderingBackendNS::createPhysicalDevices()
 	if (FAILED(result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingBackend: can't create video card adapter!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -93,7 +93,7 @@ bool DX11RenderingBackendNS::createPhysicalDevices()
 	if (FAILED(result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingBackend: can't create monitor adapter!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -102,7 +102,7 @@ bool DX11RenderingBackendNS::createPhysicalDevices()
 	if (FAILED(result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingBackend: can't get DXGI_FORMAT_R8G8B8A8_UNORM fitted monitor!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -114,7 +114,7 @@ bool DX11RenderingBackendNS::createPhysicalDevices()
 	if (FAILED(result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingBackend: can't fill the display mode list structures!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -139,7 +139,7 @@ bool DX11RenderingBackendNS::createPhysicalDevices()
 	if (FAILED(result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingBackend: can't get the video card adapter description!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -150,7 +150,7 @@ bool DX11RenderingBackendNS::createPhysicalDevices()
 	if (wcstombs_s(&stringLength, g_DXRenderingBackendComponent->m_videoCardDescription, 128, g_DXRenderingBackendComponent->m_adapterDesc.Description, 128) != 0)
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingBackend: can't convert the name of the video card to a character array!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -248,7 +248,7 @@ bool DX11RenderingBackendNS::createSwapChain()
 	if (FAILED(l_result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingBackend: can't create the swap chain/D3D device/D3D device context!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -262,7 +262,7 @@ bool DX11RenderingBackendNS::createSwapChain()
 	if (FAILED(l_result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingBackend: can't get back buffer pointer!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -271,7 +271,7 @@ bool DX11RenderingBackendNS::createSwapChain()
 
 bool DX11RenderingBackendNS::setup()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
 	g_DXRenderingBackendComponent = &DX11RenderingBackendComponent::get();
 
@@ -294,7 +294,7 @@ bool DX11RenderingBackendNS::setup()
 	l_result = l_result && createPhysicalDevices();
 	l_result = l_result && createSwapChain();
 
-	m_objectStatus = ObjectStatus::Created;
+	m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingBackend setup finished.");
 
 	return l_result;
@@ -302,7 +302,7 @@ bool DX11RenderingBackendNS::setup()
 
 bool DX11RenderingBackendNS::initialize()
 {
-	if (DX11RenderingBackendNS::m_objectStatus == ObjectStatus::Created)
+	if (DX11RenderingBackendNS::m_ObjectStatus == ObjectStatus::Created)
 	{
 		auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
@@ -326,7 +326,7 @@ bool DX11RenderingBackendNS::initialize()
 		DX11MotionBlurPass::initialize();
 		DX11FinalBlendPass::initialize();
 
-		DX11RenderingBackendNS::m_objectStatus = ObjectStatus::Activated;
+		DX11RenderingBackendNS::m_ObjectStatus = ObjectStatus::Activated;
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingBackend has been initialized.");
 		return l_result;
 	}
@@ -373,7 +373,7 @@ void DX11RenderingBackendNS::loadDefaultAssets()
 	g_pModuleManager->getAssetSystem()->addUnitLine(*m_unitLineMDC);
 	m_unitLineMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	m_unitLineMDC->m_meshShapeType = MeshShapeType::LINE;
-	m_unitLineMDC->m_objectStatus = ObjectStatus::Created;
+	m_unitLineMDC->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMDC);
 
 	m_unitQuadMDC = addDX11MeshDataComponent();
@@ -385,27 +385,27 @@ void DX11RenderingBackendNS::loadDefaultAssets()
 	}
 	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
-	m_unitQuadMDC->m_objectStatus = ObjectStatus::Created;
+	m_unitQuadMDC->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMDC);
 
 	m_unitCubeMDC = addDX11MeshDataComponent();
 	g_pModuleManager->getAssetSystem()->addUnitCube(*m_unitCubeMDC);
 	m_unitCubeMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitCubeMDC->m_meshShapeType = MeshShapeType::CUBE;
-	m_unitCubeMDC->m_objectStatus = ObjectStatus::Created;
+	m_unitCubeMDC->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMDC);
 
 	m_unitSphereMDC = addDX11MeshDataComponent();
 	g_pModuleManager->getAssetSystem()->addUnitSphere(*m_unitSphereMDC);
 	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
-	m_unitSphereMDC->m_objectStatus = ObjectStatus::Created;
+	m_unitSphereMDC->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMDC);
 
 	m_terrainMDC = addDX11MeshDataComponent();
 	g_pModuleManager->getAssetSystem()->addTerrain(*m_terrainMDC);
 	m_terrainMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	m_terrainMDC->m_objectStatus = ObjectStatus::Created;
+	m_terrainMDC->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMDC);
 
 	initializeDX11MeshDataComponent(m_unitLineMDC);
@@ -458,7 +458,7 @@ bool DX11RenderingBackendNS::update()
 			auto l_result = initializeDX11MeshDataComponent(l_MDC);
 			if (!l_result)
 			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingBackend: can't initialize DX11MeshDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
+				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingBackend: can't initialize DX11MeshDataComponent for " + std::string(l_MDC->m_ParentEntity->m_EntityName.c_str()) + "!");
 			}
 		}
 	}
@@ -472,7 +472,7 @@ bool DX11RenderingBackendNS::update()
 			auto l_result = initializeDX11MaterialDataComponent(l_MDC);
 			if (!l_result)
 			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingBackend: can't initialize DX11TextureDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
+				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX11RenderingBackend: can't initialize DX11TextureDataComponent for " + std::string(l_MDC->m_ParentEntity->m_EntityName.c_str()) + "!");
 			}
 		}
 	}
@@ -539,7 +539,7 @@ bool DX11RenderingBackendNS::terminate()
 		g_DXRenderingBackendComponent->m_swapChain = 0;
 	}
 
-	m_objectStatus = ObjectStatus::Terminated;
+	m_ObjectStatus = ObjectStatus::Terminated;
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX11RenderingBackend has been terminated.");
 	return true;
 }
@@ -550,8 +550,8 @@ DX11MeshDataComponent* DX11RenderingBackendNS::addDX11MeshDataComponent()
 	meshCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(DX11MeshDataComponent));
 	auto l_MDC = new(l_rawPtr)DX11MeshDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Mesh_" + std::to_string(meshCount) + "/").c_str());
-	l_MDC->m_parentEntity = l_parentEntity;
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Mesh_" + std::to_string(meshCount) + "/").c_str());
+	l_MDC->m_ParentEntity = l_parentEntity;
 	return l_MDC;
 }
 
@@ -561,8 +561,8 @@ DX11MaterialDataComponent* DX11RenderingBackendNS::addDX11MaterialDataComponent(
 	materialCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(DX11MaterialDataComponent));
 	auto l_MDC = new(l_rawPtr)DX11MaterialDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Material_" + std::to_string(materialCount) + "/").c_str());
-	l_MDC->m_parentEntity = l_parentEntity;
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Material_" + std::to_string(materialCount) + "/").c_str());
+	l_MDC->m_ParentEntity = l_parentEntity;
 	return l_MDC;
 }
 
@@ -572,8 +572,8 @@ DX11TextureDataComponent* DX11RenderingBackendNS::addDX11TextureDataComponent()
 	textureCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(DX11TextureDataComponent));
 	auto l_TDC = new(l_rawPtr)DX11TextureDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Texture_" + std::to_string(textureCount) + "/").c_str());
-	l_TDC->m_parentEntity = l_parentEntity;
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Texture_" + std::to_string(textureCount) + "/").c_str());
+	l_TDC->m_ParentEntity = l_parentEntity;
 	return l_TDC;
 }
 
@@ -723,7 +723,7 @@ bool DX11RenderingBackend::terminate()
 
 ObjectStatus DX11RenderingBackend::getStatus()
 {
-	return DX11RenderingBackendNS::m_objectStatus;
+	return DX11RenderingBackendNS::m_ObjectStatus;
 }
 
 MeshDataComponent * DX11RenderingBackend::addMeshDataComponent()

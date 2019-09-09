@@ -2,25 +2,25 @@
 
 namespace InnoTaskSystemNS
 {
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
 ObjectStatus InnoTaskSystem::getStatus()
 {
-	return InnoTaskSystemNS::m_objectStatus;
+	return InnoTaskSystemNS::m_ObjectStatus;
 }
 
 bool InnoTaskSystem::setup()
 {
-	InnoTaskSystemNS::m_objectStatus = ObjectStatus::Created;
+	InnoTaskSystemNS::m_ObjectStatus = ObjectStatus::Created;
 	return InnoTaskScheduler::Setup();
 }
 
 bool InnoTaskSystem::initialize()
 {
-	if (InnoTaskSystemNS::m_objectStatus == ObjectStatus::Created)
+	if (InnoTaskSystemNS::m_ObjectStatus == ObjectStatus::Created)
 	{
-		InnoTaskSystemNS::m_objectStatus = ObjectStatus::Activated;
+		InnoTaskSystemNS::m_ObjectStatus = ObjectStatus::Activated;
 		return InnoTaskScheduler::Initialize();
 	}
 	else
@@ -31,20 +31,20 @@ bool InnoTaskSystem::initialize()
 
 bool InnoTaskSystem::update()
 {
-	if (InnoTaskSystemNS::m_objectStatus == ObjectStatus::Activated)
+	if (InnoTaskSystemNS::m_ObjectStatus == ObjectStatus::Activated)
 	{
 		return 	InnoTaskScheduler::Update();
 	}
 	else
 	{
-		InnoTaskSystemNS::m_objectStatus = ObjectStatus::Suspended;
+		InnoTaskSystemNS::m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 }
 
 bool InnoTaskSystem::terminate()
 {
-	InnoTaskSystemNS::m_objectStatus = ObjectStatus::Terminated;
+	InnoTaskSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
 	return InnoTaskScheduler::Terminate();
 }
 

@@ -34,7 +34,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 namespace WinWindowSystemNS
 {
 	IWindowSurface* m_windowSurface;
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	InitConfig m_initConfig;
 	std::vector<ButtonState> m_buttonState;
 	std::set<WindowEventCallbackFunctor*> m_windowEventCallbackFunctor;
@@ -91,7 +91,7 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 
 	WinWindowSystemNS::m_windowSurface->setup(WinWindowSystemComponent::get().m_hInstance, WinWindowSystemComponent::get().m_hwnd, WindowProc);
 
-	WinWindowSystemNS::m_objectStatus = ObjectStatus::Activated;
+	WinWindowSystemNS::m_ObjectStatus = ObjectStatus::Activated;
 	InnoLogger::Log(LogLevel::Success, "WinWindowSystem setup finished.");
 
 	return true;
@@ -150,14 +150,14 @@ bool WinWindowSystem::terminate()
 
 	PostQuitMessage(0);
 
-	WinWindowSystemNS::m_objectStatus = ObjectStatus::Terminated;
+	WinWindowSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
 	InnoLogger::Log(LogLevel::Success, "WinWindowSystem has been terminated.");
 	return true;
 }
 
 ObjectStatus WinWindowSystem::getStatus()
 {
-	return WinWindowSystemNS::m_objectStatus;
+	return WinWindowSystemNS::m_ObjectStatus;
 }
 
 IWindowSurface * WinWindowSystem::getWindowSurface()
@@ -195,7 +195,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_DESTROY:
 	{
 		InnoLogger::Log(LogLevel::Warning, "WinWindowSystem: WM_DESTROY signal received.");
-		WinWindowSystemNS::m_objectStatus = ObjectStatus::Suspended;
+		WinWindowSystemNS::m_ObjectStatus = ObjectStatus::Suspended;
 	}
 	case WM_PAINT:
 	{

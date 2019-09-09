@@ -10,12 +10,12 @@ extern IModuleManager* g_pModuleManager;
 
 namespace ImGuiWrapperDX11NS
 {
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
 bool ImGuiWrapperDX11::setup()
 {
-	ImGuiWrapperDX11NS::m_objectStatus = ObjectStatus::Activated;
+	ImGuiWrapperDX11NS::m_ObjectStatus = ObjectStatus::Activated;
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWrapperDX11 setup finished.");
 
 	return true;
@@ -49,7 +49,7 @@ bool ImGuiWrapperDX11::render()
 bool ImGuiWrapperDX11::terminate()
 {
 	ImGui_ImplDX11_Shutdown();
-	ImGuiWrapperDX11NS::m_objectStatus = ObjectStatus::Terminated;
+	ImGuiWrapperDX11NS::m_ObjectStatus = ObjectStatus::Terminated;
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWrapperDX11 has been terminated.");
 
 	return true;
@@ -57,7 +57,7 @@ bool ImGuiWrapperDX11::terminate()
 
 ObjectStatus ImGuiWrapperDX11::getStatus()
 {
-	return ImGuiWrapperDX11NS::m_objectStatus;
+	return ImGuiWrapperDX11NS::m_ObjectStatus;
 }
 
 void ImGuiWrapperDX11::showRenderResult(RenderPassType renderPassType)

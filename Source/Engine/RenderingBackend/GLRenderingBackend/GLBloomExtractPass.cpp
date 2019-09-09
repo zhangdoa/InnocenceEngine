@@ -13,7 +13,7 @@ namespace GLBloomExtractPass
 {
 	void initializeShaders();
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	GLRenderPassComponent* m_baseGLRPC;
 	GLRenderPassComponent* m_downsampleGLRPC_Half;
@@ -26,34 +26,34 @@ namespace GLBloomExtractPass
 
 bool GLBloomExtractPass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
 	auto l_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	l_renderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::LINEAR;
 	l_renderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::LINEAR;
 
-	m_baseGLRPC = addGLRenderPassComponent(m_entityID, "BloomExtractBasePassGLRPC/");
+	m_baseGLRPC = addGLRenderPassComponent(m_EntityID, "BloomExtractBasePassGLRPC/");
 	m_baseGLRPC->m_renderPassDesc = l_renderPassDesc;
 	initializeGLRenderPassComponent(m_baseGLRPC);
 
 	l_renderPassDesc.RTDesc.width /= 2;
 	l_renderPassDesc.RTDesc.height /= 2;
 
-	m_downsampleGLRPC_Half = addGLRenderPassComponent(m_entityID, "BloomExtractHalfPassGLRPC/");
+	m_downsampleGLRPC_Half = addGLRenderPassComponent(m_EntityID, "BloomExtractHalfPassGLRPC/");
 	m_downsampleGLRPC_Half->m_renderPassDesc = l_renderPassDesc;
 	initializeGLRenderPassComponent(m_downsampleGLRPC_Half);
 
 	l_renderPassDesc.RTDesc.width /= 2;
 	l_renderPassDesc.RTDesc.height /= 2;
 
-	m_downsampleGLRPC_Quarter = addGLRenderPassComponent(m_entityID, "BloomExtractQuarterPassGLRPC/");
+	m_downsampleGLRPC_Quarter = addGLRenderPassComponent(m_EntityID, "BloomExtractQuarterPassGLRPC/");
 	m_downsampleGLRPC_Quarter->m_renderPassDesc = l_renderPassDesc;
 	initializeGLRenderPassComponent(m_downsampleGLRPC_Quarter);
 
 	l_renderPassDesc.RTDesc.width /= 2;
 	l_renderPassDesc.RTDesc.height /= 2;
 
-	m_downsampleGLRPC_Eighth = addGLRenderPassComponent(m_entityID, "BloomExtractEighthPassGLRPC/");
+	m_downsampleGLRPC_Eighth = addGLRenderPassComponent(m_EntityID, "BloomExtractEighthPassGLRPC/");
 	m_downsampleGLRPC_Eighth->m_renderPassDesc = l_renderPassDesc;
 	initializeGLRenderPassComponent(m_downsampleGLRPC_Eighth);
 
@@ -65,7 +65,7 @@ bool GLBloomExtractPass::initialize()
 void GLBloomExtractPass::initializeShaders()
 {
 	// shader programs and shaders
-	auto rhs = addGLShaderProgramComponent(m_entityID);
+	auto rhs = addGLShaderProgramComponent(m_EntityID);
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 

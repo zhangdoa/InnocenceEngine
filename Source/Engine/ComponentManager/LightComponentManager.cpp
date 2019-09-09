@@ -121,7 +121,7 @@ void LightComponentManagerNS::UpdateCSMData(LightComponent* rhs)
 	{
 		return;
 	}
-	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_cameraComponent->m_parentEntity);
+	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_cameraComponent->m_ParentEntity);
 	if (l_cameraTransformComponent == nullptr)
 	{
 		return;
@@ -217,7 +217,7 @@ void LightComponentManagerNS::UpdateCSMData(LightComponent* rhs)
 	m_SplitAABB = std::move(l_frustumsAABBsWS);
 
 	//4. transform frustum vertices to light space
-	auto l_lightRotMat = GetComponent(TransformComponent, rhs->m_parentEntity)->m_globalTransformMatrix.m_rotationMat.inverse();
+	auto l_lightRotMat = GetComponent(TransformComponent, rhs->m_ParentEntity)->m_globalTransformMatrix.m_rotationMat.inverse();
 	auto l_frustumVerticesLS = l_frustumVerticesWS;
 
 	for (size_t i = 0; i < l_frustumVerticesLS.size(); i++)
@@ -352,7 +352,7 @@ bool InnoLightComponentManager::Terminate()
 	return true;
 }
 
-InnoComponent * InnoLightComponentManager::Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
+InnoComponent * InnoLightComponentManager::Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectOwnership objectUsage)
 {
 	SpawnComponentImpl(LightComponent);
 }

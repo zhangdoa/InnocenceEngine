@@ -394,7 +394,7 @@ DX11ShaderProgramComponent* DX11RenderingBackendNS::addDX11ShaderProgramComponen
 {
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_DX11ShaderProgramComponentPool, sizeof(DX11ShaderProgramComponent));
 	auto l_DXSPC = new(l_rawPtr)DX11ShaderProgramComponent();
-	l_DXSPC->m_parentEntity = rhs;
+	l_DXSPC->m_ParentEntity = rhs;
 	return l_DXSPC;
 }
 
@@ -446,7 +446,7 @@ DX11RenderPassComponent* DX11RenderingBackendNS::addDX11RenderPassComponent(cons
 {
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_DX11RenderPassComponentPool, sizeof(DX11RenderPassComponent));
 	auto l_DXRPC = new(l_rawPtr)DX11RenderPassComponent();
-	l_DXRPC->m_parentEntity = parentEntity;
+	l_DXRPC->m_ParentEntity = parentEntity;
 	l_DXRPC->m_name = name;
 	return l_DXRPC;
 }
@@ -468,7 +468,7 @@ bool DX11RenderingBackendNS::initializeDX11RenderPassComponent(DX11RenderPassCom
 
 	l_result &= setupPipeline(DXRPC);
 
-	DXRPC->m_objectStatus = ObjectStatus::Activated;
+	DXRPC->m_ObjectStatus = ObjectStatus::Activated;
 
 	return l_result;
 }
@@ -623,7 +623,7 @@ bool DX11RenderingBackendNS::setupPipeline(DX11RenderPassComponent* DXRPC)
 
 bool DX11RenderingBackendNS::initializeDX11MeshDataComponent(DX11MeshDataComponent* rhs)
 {
-	if (rhs->m_objectStatus == ObjectStatus::Activated)
+	if (rhs->m_ObjectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
@@ -692,16 +692,16 @@ bool DX11RenderingBackendNS::submitGPUData(DX11MeshDataComponent * rhs)
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX11RenderingBackend: index Buffer: " + InnoUtility::pointerToString(rhs->m_indexBuffer) + " is initialized.");
 
-	rhs->m_objectStatus = ObjectStatus::Activated;
+	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
-	m_initializedDX11Meshes.emplace(rhs->m_parentEntity, rhs);
+	m_initializedDX11Meshes.emplace(rhs->m_ParentEntity, rhs);
 
 	return true;
 }
 
 bool DX11RenderingBackendNS::initializeDX11TextureDataComponent(DX11TextureDataComponent * rhs)
 {
-	if (rhs->m_objectStatus == ObjectStatus::Activated)
+	if (rhs->m_ObjectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
@@ -1040,9 +1040,9 @@ bool DX11RenderingBackendNS::submitGPUData(DX11TextureDataComponent * rhs)
 		}
 	}
 
-	rhs->m_objectStatus = ObjectStatus::Activated;
+	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
-	m_initializedDX11Textures.emplace(rhs->m_parentEntity, rhs);
+	m_initializedDX11Textures.emplace(rhs->m_ParentEntity, rhs);
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "DX11RenderingBackend: SRV: " + InnoUtility::pointerToString(rhs->m_SRV) + " is initialized.");
 
@@ -1051,7 +1051,7 @@ bool DX11RenderingBackendNS::submitGPUData(DX11TextureDataComponent * rhs)
 
 bool DX11RenderingBackendNS::initializeDX11MaterialDataComponent(DX11MaterialDataComponent* rhs)
 {
-	if (rhs->m_objectStatus == ObjectStatus::Activated)
+	if (rhs->m_ObjectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
@@ -1086,9 +1086,9 @@ bool DX11RenderingBackendNS::submitGPUData(DX11MaterialDataComponent * rhs)
 		initializeDX11TextureDataComponent(reinterpret_cast<DX11TextureDataComponent*>(rhs->m_aoTexture));
 	}
 
-	rhs->m_objectStatus = ObjectStatus::Activated;
+	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
-	m_initializedDX11Materials.emplace(rhs->m_parentEntity, rhs);
+	m_initializedDX11Materials.emplace(rhs->m_ParentEntity, rhs);
 
 	return true;
 }

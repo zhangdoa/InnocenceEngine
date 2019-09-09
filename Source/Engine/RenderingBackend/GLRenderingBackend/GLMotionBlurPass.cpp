@@ -14,7 +14,7 @@ namespace GLMotionBlurPass
 {
 	void initializeShaders();
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
@@ -23,9 +23,9 @@ namespace GLMotionBlurPass
 
 bool GLMotionBlurPass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "MotionBlurPassGLRPC/");
+	m_GLRPC = addGLRenderPassComponent(m_EntityID, "MotionBlurPassGLRPC/");
 	m_GLRPC->m_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	initializeGLRenderPassComponent(m_GLRPC);
 
@@ -37,7 +37,7 @@ bool GLMotionBlurPass::initialize()
 void GLMotionBlurPass::initializeShaders()
 {
 	// shader programs and shaders
-	auto rhs = addGLShaderProgramComponent(m_entityID);
+	auto rhs = addGLShaderProgramComponent(m_EntityID);
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 

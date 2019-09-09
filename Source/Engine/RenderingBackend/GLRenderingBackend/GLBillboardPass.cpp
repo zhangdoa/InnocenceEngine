@@ -15,7 +15,7 @@ namespace GLBillboardPass
 {
 	void initializeShaders();
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
@@ -24,9 +24,9 @@ namespace GLBillboardPass
 
 bool GLBillboardPass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "BillboardPassGLRPC/");
+	m_GLRPC = addGLRenderPassComponent(m_EntityID, "BillboardPassGLRPC/");
 	m_GLRPC->m_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	m_GLRPC->m_renderPassDesc.useDepthAttachment = true;
 	m_GLRPC->m_renderPassDesc.useStencilAttachment = true;
@@ -40,7 +40,7 @@ bool GLBillboardPass::initialize()
 void GLBillboardPass::initializeShaders()
 {
 	// shader programs and shaders
-	auto rhs = addGLShaderProgramComponent(m_entityID);
+	auto rhs = addGLShaderProgramComponent(m_EntityID);
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 

@@ -30,7 +30,7 @@ namespace InnoPhysicsSystemNS
 	void updateTotalSceneBoundary(const AABB& rhs);
 	void updateStaticSceneBoundary(const AABB& rhs);
 
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
 	Vec4 m_visibleSceneBoundMax;
 	Vec4 m_visibleSceneBoundMin;
@@ -109,7 +109,7 @@ bool InnoPhysicsSystemNS::setup()
 
 	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 
-	m_objectStatus = ObjectStatus::Created;
+	m_ObjectStatus = ObjectStatus::Created;
 	return true;
 }
 
@@ -127,9 +127,9 @@ PhysicsDataComponent * InnoPhysicsSystemNS::AddPhysicsDataComponent(InnoEntity *
 	auto l_rawPtr = m_PhysicsDataComponentPool->Spawn();
 	auto l_PDC = new(l_rawPtr)PhysicsDataComponent();
 
-	l_PDC->m_parentEntity = parentEntity;
-	l_PDC->m_objectSource = ObjectSource::Runtime;
-	l_PDC->m_objectUsage = ObjectUsage::Engine;
+	l_PDC->m_ParentEntity = parentEntity;
+	l_PDC->m_ObjectSource = ObjectSource::Runtime;
+	l_PDC->m_ObjectOwnership = ObjectOwnership::Engine;
 	l_PDC->m_ComponentType = ComponentType::PhysicsDataComponent;
 
 	return l_PDC;
@@ -138,14 +138,14 @@ PhysicsDataComponent * InnoPhysicsSystemNS::AddPhysicsDataComponent(InnoEntity *
 PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const ModelPair& modelPair)
 {
 	auto l_MDC = modelPair.first;
-	auto l_PDC = AddPhysicsDataComponent(l_MDC->m_parentEntity);
+	auto l_PDC = AddPhysicsDataComponent(l_MDC->m_ParentEntity);
 
 	l_PDC->m_AABBLS = InnoMath::generateAABB(&l_MDC->m_vertices[0], l_MDC->m_vertices.size());
 	l_PDC->m_SphereLS = InnoMath::generateBoundSphere(l_PDC->m_AABBLS);
 
 	l_PDC->m_ModelPair = modelPair;
 
-	InnoLogger::Log(LogLevel::Verbose, "PhysicsSystem: PhysicsDataComponent has been generated for MeshDataComponent:", l_MDC->m_parentEntity->m_entityName.c_str(), ".");
+	InnoLogger::Log(LogLevel::Verbose, "PhysicsSystem: PhysicsDataComponent has been generated for MeshDataComponent:", l_MDC->m_ParentEntity->m_EntityName.c_str(), ".");
 
 	m_Components.emplace_back(l_PDC);
 
@@ -177,7 +177,7 @@ bool InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent * VC)
 #if defined INNO_PLATFORM_WIN
 	if (VC->m_simulatePhysics)
 	{
-		auto l_transformComponent = GetComponent(TransformComponent, VC->m_parentEntity);
+		auto l_transformComponent = GetComponent(TransformComponent, VC->m_ParentEntity);
 		switch (VC->m_meshShapeType)
 		{
 		case MeshShapeType::Cube:
@@ -229,9 +229,9 @@ bool InnoPhysicsSystem::setup()
 
 bool InnoPhysicsSystem::initialize()
 {
-	if (InnoPhysicsSystemNS::m_objectStatus == ObjectStatus::Created)
+	if (InnoPhysicsSystemNS::m_ObjectStatus == ObjectStatus::Created)
 	{
-		InnoPhysicsSystemNS::m_objectStatus = ObjectStatus::Activated;
+		InnoPhysicsSystemNS::m_ObjectStatus = ObjectStatus::Activated;
 		InnoLogger::Log(LogLevel::Success, "PhysicsSystem has been initialized.");
 		return true;
 	}
@@ -250,14 +250,14 @@ bool InnoPhysicsSystem::update()
 
 bool InnoPhysicsSystem::terminate()
 {
-	InnoPhysicsSystemNS::m_objectStatus = ObjectStatus::Terminated;
+	InnoPhysicsSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
 	InnoLogger::Log(LogLevel::Success, "PhysicsSystem has been terminated.");
 	return true;
 }
 
 ObjectStatus InnoPhysicsSystem::getStatus()
 {
-	return InnoPhysicsSystemNS::m_objectStatus;
+	return InnoPhysicsSystemNS::m_ObjectStatus;
 }
 
 PhysicsDataComponent* InnoPhysicsSystem::generatePhysicsDataComponent(const ModelPair& modelPair)
@@ -408,7 +408,7 @@ bool generateBVHLeafNodes(BVHNode* parentNode)
 
 		if (l_leftChildrenPDCs.size() != 1)
 		{
-			auto l_leftPDC = AddPhysicsDataComponent(parentNode->intermediatePDC->m_parentEntity);
+			auto l_leftPDC = AddPhysicsDataComponent(parentNode->intermediatePDC->m_ParentEntity);
 
 			l_leftPDC->m_AABBWS = InnoMath::generateAABB(l_midMax, parentNode->intermediatePDC->m_AABBWS.m_boundMin);
 			l_leftPDC->m_SphereWS = InnoMath::generateBoundSphere(l_leftPDC->m_AABBWS);
@@ -433,7 +433,7 @@ bool generateBVHLeafNodes(BVHNode* parentNode)
 
 		if (l_rightChildrenPDCs.size() != 1)
 		{
-			auto l_rightPDC = AddPhysicsDataComponent(parentNode->intermediatePDC->m_parentEntity);
+			auto l_rightPDC = AddPhysicsDataComponent(parentNode->intermediatePDC->m_ParentEntity);
 
 			l_rightPDC->m_AABBWS = InnoMath::generateAABB(parentNode->intermediatePDC->m_AABBWS.m_boundMax, l_midMin);
 			l_rightPDC->m_SphereWS = InnoMath::generateBoundSphere(l_rightPDC->m_AABBWS);
@@ -496,9 +496,9 @@ void PlainCulling(const Frustum& frustum, std::vector<CullingData>& cullingDatas
 
 	for (auto visibleComponent : l_visibleComponents)
 	{
-		if (visibleComponent->m_visiblilityType != VisiblilityType::Invisible && visibleComponent->m_objectStatus == ObjectStatus::Activated)
+		if (visibleComponent->m_visiblilityType != VisiblilityType::Invisible && visibleComponent->m_ObjectStatus == ObjectStatus::Activated)
 		{
-			auto l_transformComponent = GetComponent(TransformComponent, visibleComponent->m_parentEntity);
+			auto l_transformComponent = GetComponent(TransformComponent, visibleComponent->m_ParentEntity);
 			auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
 			for (auto i : visibleComponent->m_PDCs)
@@ -546,7 +546,7 @@ void PlainCulling(const Frustum& frustum, std::vector<CullingData>& cullingDatas
 
 CullingData generateCullingData(const Frustum& frustum, PhysicsDataComponent* PDC)
 {
-	auto l_transformComponent = GetComponent(TransformComponent, PDC->m_VisibleComponent->m_parentEntity);
+	auto l_transformComponent = GetComponent(TransformComponent, PDC->m_VisibleComponent->m_ParentEntity);
 	auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
 	if (PDC->m_VisibleComponent->m_meshUsageType == MeshUsageType::Dynamic)
@@ -615,7 +615,7 @@ void InnoPhysicsSystem::updateCulling()
 		return;
 	}
 
-	auto l_mainCameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_parentEntity);
+	auto l_mainCameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_ParentEntity);
 
 	if (l_mainCameraTransformComponent == nullptr)
 	{

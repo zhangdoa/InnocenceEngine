@@ -14,7 +14,7 @@ namespace GLTransparentPass
 {
 	void initializeShaders();
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	GLShaderProgramComponent* m_GLSPC;
 
@@ -23,7 +23,7 @@ namespace GLTransparentPass
 
 bool GLTransparentPass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
 	initializeShaders();
 
@@ -33,7 +33,7 @@ bool GLTransparentPass::initialize()
 void GLTransparentPass::initializeShaders()
 {
 	// shader programs and shaders
-	auto rhs = addGLShaderProgramComponent(m_entityID);
+	auto rhs = addGLShaderProgramComponent(m_EntityID);
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 

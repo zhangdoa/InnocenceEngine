@@ -96,13 +96,13 @@ void VisibleComponentPropertyEditor::GetModel()
     for (auto& i : m_component->m_modelMap)
     {
         auto l_meshItem = new QTableWidgetItem();
-        l_meshItem->setText(i.first->m_componentName.c_str());
+        l_meshItem->setText(i.first->m_ComponentName.c_str());
         l_meshItem->setData(Qt::UserRole, QVariant::fromValue(static_cast<void*>(i.first)));
         l_meshItem->setFlags(l_meshItem->flags() & ~Qt::ItemIsEditable);
         m_modelList->setItem(index, 0, l_meshItem);
 
         auto l_materialItem = new QTableWidgetItem();
-        l_materialItem->setText(i.second->m_componentName.c_str());
+        l_materialItem->setText(i.second->m_ComponentName.c_str());
         l_materialItem->setData(Qt::UserRole, QVariant::fromValue(static_cast<void*>(i.second)));
         l_materialItem->setFlags(l_materialItem->flags() & ~Qt::ItemIsEditable);
         m_modelList->setItem(index, 1, l_materialItem);

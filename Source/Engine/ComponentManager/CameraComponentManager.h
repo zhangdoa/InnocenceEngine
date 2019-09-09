@@ -10,7 +10,7 @@ public:
 	bool Initialize() override;
 	bool Simulate() override;
 	bool Terminate() override;
-	InnoComponent* Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage) override;
+	InnoComponent* Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectOwnership objectUsage) override;
 	void Destroy(InnoComponent* component) override;
 	InnoComponent* Find(const InnoEntity* parentEntity) override;
 

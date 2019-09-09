@@ -65,7 +65,7 @@ GLRenderPassComponent* GLRenderingBackendNS::addGLRenderPassComponent(const Enti
 {
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_GLRenderPassComponentPool, sizeof(GLRenderPassComponent));
 	auto l_GLRPC = new(l_rawPtr)GLRenderPassComponent();
-	l_GLRPC->m_parentEntity = parentEntity;
+	l_GLRPC->m_ParentEntity = parentEntity;
 	l_GLRPC->m_name = name;
 
 	return l_GLRPC;
@@ -241,13 +241,13 @@ GLShaderProgramComponent * GLRenderingBackendNS::addGLShaderProgramComponent(con
 {
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_GLShaderProgramComponentPool, sizeof(GLShaderProgramComponent));
 	auto l_GLSPC = new(l_rawPtr)GLShaderProgramComponent();
-	l_GLSPC->m_parentEntity = rhs;
+	l_GLSPC->m_ParentEntity = rhs;
 	return l_GLSPC;
 }
 
 bool GLRenderingBackendNS::initializeGLMeshDataComponent(GLMeshDataComponent* rhs)
 {
-	if (rhs->m_objectStatus == ObjectStatus::Activated)
+	if (rhs->m_ObjectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
@@ -261,7 +261,7 @@ bool GLRenderingBackendNS::initializeGLMeshDataComponent(GLMeshDataComponent* rh
 
 bool GLRenderingBackendNS::initializeGLTextureDataComponent(GLTextureDataComponent * rhs)
 {
-	if (rhs->m_objectStatus == ObjectStatus::Activated)
+	if (rhs->m_ObjectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
@@ -508,7 +508,7 @@ bool GLRenderingBackendNS::initializeGLShaderProgramComponent(GLShaderProgramCom
 		addShader(rhs->m_program, rhs->m_CSID, GL_COMPUTE_SHADER, ShaderFilePaths.m_CSPath);
 	}
 
-	rhs->m_objectStatus = ObjectStatus::Activated;
+	rhs->m_ObjectStatus = ObjectStatus::Activated;
 	return rhs;
 }
 
@@ -609,9 +609,9 @@ bool GLRenderingBackendNS::submitGPUData(GLMeshDataComponent * rhs)
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: IBO " + std::to_string(rhs->m_IBO) + " is initialized.");
 
-	rhs->m_objectStatus = ObjectStatus::Activated;
+	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
-	m_initializedGLMeshes.emplace(rhs->m_parentEntity, rhs);
+	m_initializedGLMeshes.emplace(rhs->m_ParentEntity, rhs);
 
 	return true;
 }
@@ -622,9 +622,9 @@ bool GLRenderingBackendNS::submitGPUData(GLTextureDataComponent * rhs)
 
 	generateTO(rhs->m_TO, rhs->m_GLTextureDataDesc, rhs->m_textureData);
 
-	rhs->m_objectStatus = ObjectStatus::Activated;
+	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
-	m_initializedGLTextures.emplace(rhs->m_parentEntity, rhs);
+	m_initializedGLTextures.emplace(rhs->m_ParentEntity, rhs);
 
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_VERBOSE, "GLRenderingBackend: GLTDC " + InnoUtility::pointerToString(rhs) + " is initialized.");
 
@@ -961,7 +961,7 @@ GLTextureDataDesc GLRenderingBackendNS::getGLTextureDataDesc(TextureDataDesc tex
 
 bool GLRenderingBackendNS::initializeGLMaterialDataComponent(GLMaterialDataComponent* rhs)
 {
-	if (rhs->m_objectStatus == ObjectStatus::Activated)
+	if (rhs->m_ObjectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
@@ -996,9 +996,9 @@ bool GLRenderingBackendNS::submitGPUData(GLMaterialDataComponent * rhs)
 		initializeGLTextureDataComponent(reinterpret_cast<GLTextureDataComponent*>(rhs->m_aoTexture));
 	}
 
-	rhs->m_objectStatus = ObjectStatus::Activated;
+	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
-	m_initializedGLMaterials.emplace(rhs->m_parentEntity, rhs);
+	m_initializedGLMaterials.emplace(rhs->m_ParentEntity, rhs);
 
 	return true;
 }

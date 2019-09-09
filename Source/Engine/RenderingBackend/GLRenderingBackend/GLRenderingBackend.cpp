@@ -75,7 +75,7 @@ bool GLRenderingBackendNS::setup()
 
 bool GLRenderingBackendNS::initialize()
 {
-	if (GLRenderingBackendNS::m_objectStatus == ObjectStatus::Created)
+	if (GLRenderingBackendNS::m_ObjectStatus == ObjectStatus::Created)
 	{
 		auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
@@ -119,7 +119,7 @@ bool GLRenderingBackendNS::initialize()
 		GLDebuggerPass::initialize();
 		GLFinalBlendPass::initialize();
 
-		GLRenderingBackendNS::m_objectStatus = ObjectStatus::Activated;
+		GLRenderingBackendNS::m_ObjectStatus = ObjectStatus::Activated;
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingBackend has been initialized.");
 		return true;
 	}
@@ -166,34 +166,34 @@ void  GLRenderingBackendNS::loadDefaultAssets()
 	g_pModuleManager->getAssetSystem()->addUnitLine(*m_unitLineMDC);
 	m_unitLineMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	m_unitLineMDC->m_meshShapeType = MeshShapeType::LINE;
-	m_unitLineMDC->m_objectStatus = ObjectStatus::Created;
+	m_unitLineMDC->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMDC);
 
 	m_unitQuadMDC = addGLMeshDataComponent();
 	g_pModuleManager->getAssetSystem()->addUnitQuad(*m_unitQuadMDC);
 	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
-	m_unitQuadMDC->m_objectStatus = ObjectStatus::Created;
+	m_unitQuadMDC->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMDC);
 
 	m_unitCubeMDC = addGLMeshDataComponent();
 	g_pModuleManager->getAssetSystem()->addUnitCube(*m_unitCubeMDC);
 	m_unitCubeMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitCubeMDC->m_meshShapeType = MeshShapeType::CUBE;
-	m_unitCubeMDC->m_objectStatus = ObjectStatus::Created;
+	m_unitCubeMDC->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMDC);
 
 	m_unitSphereMDC = addGLMeshDataComponent();
 	g_pModuleManager->getAssetSystem()->addUnitSphere(*m_unitSphereMDC);
 	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
-	m_unitSphereMDC->m_objectStatus = ObjectStatus::Created;
+	m_unitSphereMDC->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMDC);
 
 	m_terrainMDC = addGLMeshDataComponent();
 	g_pModuleManager->getAssetSystem()->addTerrain(*m_terrainMDC);
 	m_terrainMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	m_terrainMDC->m_objectStatus = ObjectStatus::Created;
+	m_terrainMDC->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMDC);
 
 	initializeGLMeshDataComponent(m_unitLineMDC);
@@ -247,7 +247,7 @@ bool GLRenderingBackendNS::update()
 			auto l_result = initializeGLMeshDataComponent(l_MDC);
 			if (!l_result)
 			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingBackend: can't initialize GLMeshDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
+				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingBackend: can't initialize GLMeshDataComponent for " + std::string(l_MDC->m_ParentEntity->m_EntityName.c_str()) + "!");
 			}
 		}
 	}
@@ -261,7 +261,7 @@ bool GLRenderingBackendNS::update()
 			auto l_result = initializeGLMaterialDataComponent(l_MDC);
 			if (!l_result)
 			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingBackend: can't initialize GLTextureDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
+				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "GLRenderingBackend: can't initialize GLTextureDataComponent for " + std::string(l_MDC->m_ParentEntity->m_EntityName.c_str()) + "!");
 			}
 		}
 	}
@@ -402,7 +402,7 @@ bool GLRenderingBackendNS::render()
 
 bool GLRenderingBackendNS::terminate()
 {
-	m_objectStatus = ObjectStatus::Terminated;
+	m_ObjectStatus = ObjectStatus::Terminated;
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "GLRenderingBackend has been terminated.");
 	return true;
 }
@@ -413,8 +413,8 @@ GLMeshDataComponent* GLRenderingBackendNS::addGLMeshDataComponent()
 	meshCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(GLMeshDataComponent));
 	auto l_MDC = new(l_rawPtr)GLMeshDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Mesh_" + std::to_string(meshCount) + "/").c_str());
-	l_MDC->m_parentEntity = l_parentEntity;
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Mesh_" + std::to_string(meshCount) + "/").c_str());
+	l_MDC->m_ParentEntity = l_parentEntity;
 	return l_MDC;
 }
 
@@ -424,8 +424,8 @@ GLMaterialDataComponent* GLRenderingBackendNS::addGLMaterialDataComponent()
 	materialCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(GLMaterialDataComponent));
 	auto l_MDC = new(l_rawPtr)GLMaterialDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Material_" + std::to_string(materialCount) + "/").c_str());
-	l_MDC->m_parentEntity = l_parentEntity;
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Material_" + std::to_string(materialCount) + "/").c_str());
+	l_MDC->m_ParentEntity = l_parentEntity;
 	return l_MDC;
 }
 
@@ -435,8 +435,8 @@ GLTextureDataComponent* GLRenderingBackendNS::addGLTextureDataComponent()
 	textureCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(GLTextureDataComponent));
 	auto l_TDC = new(l_rawPtr)GLTextureDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Texture_" + std::to_string(textureCount) + "/").c_str());
-	l_TDC->m_parentEntity = l_parentEntity;
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Texture_" + std::to_string(textureCount) + "/").c_str());
+	l_TDC->m_ParentEntity = l_parentEntity;
 	return l_TDC;
 }
 
@@ -583,7 +583,7 @@ bool GLRenderingBackend::terminate()
 
 ObjectStatus GLRenderingBackend::getStatus()
 {
-	return GLRenderingBackendNS::m_objectStatus;
+	return GLRenderingBackendNS::m_ObjectStatus;
 }
 
 MeshDataComponent * GLRenderingBackend::addMeshDataComponent()

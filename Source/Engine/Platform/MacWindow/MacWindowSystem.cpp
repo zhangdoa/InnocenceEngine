@@ -7,7 +7,7 @@ extern IModuleManager* g_pModuleManager;
 namespace MacWindowSystemNS
 {
 	IWindowSurface* m_windowSurface;
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	InitConfig m_initConfig;
 	std::vector<ButtonState> m_buttonState;
 	std::set<WindowEventCallbackFunctor*> m_windowEventCallbackFunctor;
@@ -20,7 +20,7 @@ bool MacWindowSystem::setup(void* hInstance, void* hwnd)
 	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
   bool result = MacWindowSystemNS::m_bridge->setup(l_screenResolution.x, l_screenResolution.y);
 
-	MacWindowSystemNS::m_objectStatus = ObjectStatus::Created;
+	MacWindowSystemNS::m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "MacWindowSystem setup finished.");
 
 	return true;
@@ -30,7 +30,7 @@ bool MacWindowSystem::initialize()
 {
 	bool result = MacWindowSystemNS::m_bridge->initialize();
 
-	MacWindowSystemNS::m_objectStatus = ObjectStatus::Activated;
+	MacWindowSystemNS::m_ObjectStatus = ObjectStatus::Activated;
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "MacWindowSystem has been initialized.");
 	return true;
 }
@@ -44,14 +44,14 @@ bool MacWindowSystem::update()
 bool MacWindowSystem::terminate()
 {
 	bool result = MacWindowSystemNS::m_bridge->terminate();
-	MacWindowSystemNS::m_objectStatus = ObjectStatus::Terminated;
+	MacWindowSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "MacWindowSystem has been terminated.");
 	return true;
 }
 
 ObjectStatus MacWindowSystem::getStatus()
 {
-	return MacWindowSystemNS::m_objectStatus;
+	return MacWindowSystemNS::m_ObjectStatus;
 }
 
 IWindowSurface * MacWindowSystem::getWindowSurface()

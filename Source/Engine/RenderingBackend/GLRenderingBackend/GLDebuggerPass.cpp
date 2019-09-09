@@ -35,7 +35,7 @@ namespace GLDebuggerPass
 	bool drawProbes(GLRenderPassComponent* canvas);
 	bool drawBricks();
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	std::function<void()> f_mouseSelect;
 	uint32_t m_pickedID;
@@ -132,11 +132,11 @@ bool GLDebuggerPass::initialize()
 
 	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::PRESSED }, &f_mouseSelect);
 
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
 	auto l_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 
-	m_SHVisualizationGLRPC = addGLRenderPassComponent(m_entityID, "SHVisualizationPassGLRPC/");
+	m_SHVisualizationGLRPC = addGLRenderPassComponent(m_EntityID, "SHVisualizationPassGLRPC/");
 	m_SHVisualizationGLRPC->m_renderPassDesc = l_renderPassDesc;
 	m_SHVisualizationGLRPC->m_renderPassDesc.RTNumber = 1;
 	m_SHVisualizationGLRPC->m_renderPassDesc.useDepthAttachment = true;
@@ -144,7 +144,7 @@ bool GLDebuggerPass::initialize()
 
 	initializeGLRenderPassComponent(m_SHVisualizationGLRPC);
 
-	m_mainCanvasGLRPC = addGLRenderPassComponent(m_entityID, "DebugPassGLRPC/");
+	m_mainCanvasGLRPC = addGLRenderPassComponent(m_EntityID, "DebugPassGLRPC/");
 	m_mainCanvasGLRPC->m_renderPassDesc = l_renderPassDesc;
 	m_mainCanvasGLRPC->m_renderPassDesc.useDepthAttachment = true;
 	m_mainCanvasGLRPC->m_renderPassDesc.useStencilAttachment = true;
@@ -153,15 +153,15 @@ bool GLDebuggerPass::initialize()
 	l_renderPassDesc.RTDesc.width /= 2;
 	l_renderPassDesc.RTDesc.height /= 2;
 
-	m_rightViewGLRPC = addGLRenderPassComponent(m_entityID, "DebugRightViewPassGLRPC/");
+	m_rightViewGLRPC = addGLRenderPassComponent(m_EntityID, "DebugRightViewPassGLRPC/");
 	m_rightViewGLRPC->m_renderPassDesc = l_renderPassDesc;
 	initializeGLRenderPassComponent(m_rightViewGLRPC);
 
-	m_topViewGLRPC = addGLRenderPassComponent(m_entityID, "DebugTopViewPassGLRPC/");
+	m_topViewGLRPC = addGLRenderPassComponent(m_EntityID, "DebugTopViewPassGLRPC/");
 	m_topViewGLRPC->m_renderPassDesc = l_renderPassDesc;
 	initializeGLRenderPassComponent(m_topViewGLRPC);
 
-	m_frontViewGLRPC = addGLRenderPassComponent(m_entityID, "DebugFrontViewPassGLRPC/");
+	m_frontViewGLRPC = addGLRenderPassComponent(m_EntityID, "DebugFrontViewPassGLRPC/");
 	m_frontViewGLRPC->m_renderPassDesc = l_renderPassDesc;
 	initializeGLRenderPassComponent(m_frontViewGLRPC);
 
@@ -173,19 +173,19 @@ bool GLDebuggerPass::initialize()
 
 void GLDebuggerPass::initializeShaders()
 {
-	auto rhs = addGLShaderProgramComponent(m_entityID);
+	auto rhs = addGLShaderProgramComponent(m_EntityID);
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 
 	m_wireframeOverlayGLRPC = rhs;
 
-	rhs = addGLShaderProgramComponent(m_entityID);
+	rhs = addGLShaderProgramComponent(m_EntityID);
 
 	initializeGLShaderProgramComponent(rhs, m_cubemapVisualizationPassShaderFilePaths);
 
 	m_cubemapVisualizationGLSPC = rhs;
 
-	rhs = addGLShaderProgramComponent(m_entityID);
+	rhs = addGLShaderProgramComponent(m_EntityID);
 
 	initializeGLShaderProgramComponent(rhs, m_SHVisualizationPassShaderFilePaths);
 
@@ -324,7 +324,7 @@ bool GLDebuggerPass::drawWireframeForDebugObjects()
 		{
 			if (i->m_meshUsageType == MeshUsageType::SKELETAL)
 			{
-				auto l_transformComponent = GetComponent(TransformComponent, i->m_parentEntity);
+				auto l_transformComponent = GetComponent(TransformComponent, i->m_ParentEntity);
 				auto l_m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 				for (auto j : i->m_modelMap)
 				{
@@ -363,7 +363,7 @@ bool GLDebuggerPass::drawWireframeForDebugObjects()
 
 	if (m_pickedVisibleComponent)
 	{
-		auto l_transformComponent = GetComponent(TransformComponent, m_pickedVisibleComponent->m_parentEntity);
+		auto l_transformComponent = GetComponent(TransformComponent, m_pickedVisibleComponent->m_ParentEntity);
 
 		for (auto i : m_pickedVisibleComponent->m_modelMap)
 		{

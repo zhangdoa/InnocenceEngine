@@ -19,14 +19,14 @@ namespace DX11OpaquePass
 
 	ShaderFilePaths m_shaderFilePaths = { "DX11//opaquePassVertex.hlsl/", "", "", "", "DX11//opaquePassPixel.hlsl/" };
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 }
 
 bool DX11OpaquePass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
-	m_DXRPC = addDX11RenderPassComponent(m_entityID, "OpaquePassDXRPC\\");
+	m_DXRPC = addDX11RenderPassComponent(m_EntityID, "OpaquePassDXRPC\\");
 
 	m_DXRPC->m_renderPassDesc = DX11RenderingBackendComponent::get().m_deferredRenderPassDesc;
 	m_DXRPC->m_renderPassDesc.RTNumber = 4;
@@ -72,7 +72,7 @@ bool DX11OpaquePass::initialize()
 
 bool DX11OpaquePass::initializeShaders()
 {
-	m_DXSPC = addDX11ShaderProgramComponent(m_entityID);
+	m_DXSPC = addDX11ShaderProgramComponent(m_EntityID);
 
 	m_DXSPC->m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	m_DXSPC->m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;

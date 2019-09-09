@@ -238,7 +238,7 @@ bool VolumetricFogPass::froxelization()
 	for (uint32_t i = 0; i < l_totalDrawCallCount; i++)
 	{
 		auto l_drawCallData = l_opaquePassDrawCallData[i];
-		if (l_drawCallData.mesh->m_objectStatus == ObjectStatus::Activated)
+		if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 		{
 			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelizationRPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_offset, 1);
 			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelizationRPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_offset, 1);

@@ -12,7 +12,7 @@ extern IModuleManager* g_pModuleManager;
 
 namespace VKLightPass
 {
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	VKRenderPassComponent* m_VKRPC;
 
@@ -23,10 +23,10 @@ namespace VKLightPass
 
 bool VKLightPass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
 	// add shader component
-	m_VKSPC = addVKShaderProgramComponent(m_entityID);
+	m_VKSPC = addVKShaderProgramComponent(m_EntityID);
 
 	initializeVKShaderProgramComponent(m_VKSPC, m_shaderFilePaths);
 

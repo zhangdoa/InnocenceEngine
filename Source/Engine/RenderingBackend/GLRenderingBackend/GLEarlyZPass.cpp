@@ -12,7 +12,7 @@ namespace GLEarlyZPass
 {
 	void initializeShaders();
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	GLRenderPassComponent* m_GLRPC;
 
@@ -23,7 +23,7 @@ namespace GLEarlyZPass
 
 bool GLEarlyZPass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
 	auto l_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	l_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::R;
@@ -31,7 +31,7 @@ bool GLEarlyZPass::initialize()
 	l_renderPassDesc.useDepthAttachment = true;
 	l_renderPassDesc.useStencilAttachment = true;
 
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "EarlyZPassGLRPC/");
+	m_GLRPC = addGLRenderPassComponent(m_EntityID, "EarlyZPassGLRPC/");
 	m_GLRPC->m_renderPassDesc = l_renderPassDesc;
 	initializeGLRenderPassComponent(m_GLRPC);
 
@@ -43,7 +43,7 @@ bool GLEarlyZPass::initialize()
 void GLEarlyZPass::initializeShaders()
 {
 	// shader programs and shaders
-	auto rhs = addGLShaderProgramComponent(m_entityID);
+	auto rhs = addGLShaderProgramComponent(m_EntityID);
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 

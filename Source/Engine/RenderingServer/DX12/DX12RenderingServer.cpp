@@ -35,7 +35,7 @@ namespace DX12RenderingServerNS
 	bool CreateGlobalCSUHeap();
 	bool CreateGlobalSamplerHeap();
 
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
 	IObjectPool* m_MeshDataComponentPool = 0;
 	IObjectPool* m_MaterialDataComponentPool = 0;
@@ -111,7 +111,7 @@ bool DX12RenderingServerNS::CreateDebugCallback()
 	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't get DirectX 12 debug interface!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -119,7 +119,7 @@ bool DX12RenderingServerNS::CreateDebugCallback()
 	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't query DirectX 12 debug interface!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -138,7 +138,7 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create DXGI factory!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -170,7 +170,7 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 	if (l_adapter1 == nullptr)
 	{
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create a suitable video card adapter!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -185,7 +185,7 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't create monitor adapter!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -199,7 +199,7 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't get DXGI_FORMAT_R8G8B8A8_UNORM fitted monitor!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -211,7 +211,7 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't fill the display mode list structures!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -236,7 +236,7 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't get the video card adapter description!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -247,7 +247,7 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 	if (wcstombs_s(&l_stringLength, m_videoCardDescription, 128, m_adapterDesc.Description, 128) != 0)
 	{
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't convert the name of the video card to a character array!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -263,7 +263,7 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create a DirectX 12.1 device. The default video card does not support DirectX 12.1!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -293,7 +293,7 @@ bool DX12RenderingServerNS::CreateGlobalCommandQueue()
 	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create global CommandQueue!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -310,7 +310,7 @@ bool DX12RenderingServerNS::CreateGlobalCommandAllocator()
 	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create global CommandAllocator!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -333,7 +333,7 @@ bool DX12RenderingServerNS::CreateGlobalCSUHeap()
 	if (FAILED(l_result))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create shader-visible DescriptorHeap for CBV/SRV/UAV!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -357,7 +357,7 @@ bool DX12RenderingServerNS::CreateGlobalCSUHeap()
 	if (FAILED(l_result))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create shader-non-visible DescriptorHeap for CBV/SRV/UAV!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -384,7 +384,7 @@ bool DX12RenderingServerNS::CreateGlobalSamplerHeap()
 	if (FAILED(l_result))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create DescriptorHeap for Sampler!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -470,7 +470,7 @@ bool DX12RenderingServer::Setup()
 	m_SwapChainSPC = reinterpret_cast<DX12ShaderProgramComponent*>(AddShaderProgramComponent("SwapChain/"));
 	m_SwapChainSDC = reinterpret_cast<DX12SamplerDataComponent*>(AddSamplerDataComponent("SwapChain/"));
 
-	m_objectStatus = ObjectStatus::Created;
+	m_ObjectStatus = ObjectStatus::Created;
 	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer setup finished.");
 
 	return l_result;
@@ -478,7 +478,7 @@ bool DX12RenderingServer::Setup()
 
 bool DX12RenderingServer::Initialize()
 {
-	if (m_objectStatus == ObjectStatus::Created)
+	if (m_ObjectStatus == ObjectStatus::Created)
 	{
 		m_SwapChainSPC->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
 		m_SwapChainSPC->m_ShaderFilePaths.m_PSPath = "swapChain.frag/";
@@ -572,7 +572,7 @@ bool DX12RenderingServer::Initialize()
 		if (FAILED(l_hResult))
 		{
 			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create swap chain!");
-			m_objectStatus = ObjectStatus::Suspended;
+			m_ObjectStatus = ObjectStatus::Suspended;
 			return false;
 		}
 
@@ -593,7 +593,7 @@ bool DX12RenderingServer::Initialize()
 			l_DX12TDC->m_DX12TextureDataDesc = l_DX12TDC->m_ResourceHandle->GetDesc();
 			l_DX12TDC->m_WriteState = D3D12_RESOURCE_STATE_RENDER_TARGET;
 			l_DX12TDC->m_ReadState = D3D12_RESOURCE_STATE_PRESENT;
-			l_DX12TDC->m_objectStatus = ObjectStatus::Activated;
+			l_DX12TDC->m_ObjectStatus = ObjectStatus::Activated;
 		}
 
 		// Initialize manually
@@ -622,7 +622,7 @@ bool DX12RenderingServer::Initialize()
 
 		CreateSyncPrimitives(m_SwapChainRPDC, m_device);
 
-		m_SwapChainRPDC->m_objectStatus = ObjectStatus::Activated;
+		m_SwapChainRPDC->m_ObjectStatus = ObjectStatus::Activated;
 	}
 
 	return true;
@@ -630,7 +630,7 @@ bool DX12RenderingServer::Initialize()
 
 bool DX12RenderingServer::Terminate()
 {
-	m_objectStatus = ObjectStatus::Terminated;
+	m_ObjectStatus = ObjectStatus::Terminated;
 	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer has been terminated.");
 
 	return true;
@@ -638,7 +638,7 @@ bool DX12RenderingServer::Terminate()
 
 ObjectStatus DX12RenderingServer::GetStatus()
 {
-	return m_objectStatus;
+	return m_ObjectStatus;
 }
 
 AddComponent(DX12, MeshData);
@@ -743,7 +743,7 @@ bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: IBO ", l_rhs->m_indexBuffer, " is initialized.");
 
-	l_rhs->m_objectStatus = ObjectStatus::Activated;
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	m_initializedMeshes.emplace(l_rhs);
 
@@ -872,7 +872,7 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: texture ", l_rhs, " is initialized.");
 
-	l_rhs->m_objectStatus = ObjectStatus::Activated;
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	m_initializedTextures.emplace(l_rhs);
 
@@ -935,7 +935,7 @@ bool DX12RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 		l_rhs->m_ResourceBinders[4] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::AmbientOcclusion)->m_ResourceBinder;
 	}
 
-	l_rhs->m_objectStatus = ObjectStatus::Activated;
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	m_initializedMaterials.emplace(l_rhs);
 
@@ -989,7 +989,7 @@ bool DX12RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 
 	l_result &= CreateSyncPrimitives(l_rhs, m_device);
 
-	l_rhs->m_objectStatus = ObjectStatus::Activated;
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return l_result;
 }
@@ -1023,7 +1023,7 @@ bool DX12RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 		LoadShaderFile(&l_rhs->m_CSBuffer, ShaderStage::Compute, l_rhs->m_ShaderFilePaths.m_CSPath);
 	}
 
-	l_rhs->m_objectStatus = ObjectStatus::Activated;
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
@@ -1060,7 +1060,7 @@ bool DX12RenderingServer::InitializeSamplerDataComponent(SamplerDataComponent * 
 	m_currentSamplerGPUHandle.ptr += l_samplerDescSize;
 
 	l_rhs->m_ResourceBinder = l_resourceBinder;
-	l_rhs->m_objectStatus = ObjectStatus::Activated;
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
@@ -1119,7 +1119,7 @@ bool DX12RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 
 	l_rhs->m_ResourceBinder = l_resourceBinder;
 
-	l_rhs->m_objectStatus = ObjectStatus::Activated;
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }

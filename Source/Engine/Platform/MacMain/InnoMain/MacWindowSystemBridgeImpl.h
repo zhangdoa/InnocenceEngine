@@ -26,7 +26,7 @@ public:
 
     ObjectStatus getStatus() override;
 private:
-    ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+    ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
     MacWindowDelegate* m_macWindowDelegate = nullptr;
     MetalDelegate* m_metalDelegate = nullptr;
     NSApplication *app;

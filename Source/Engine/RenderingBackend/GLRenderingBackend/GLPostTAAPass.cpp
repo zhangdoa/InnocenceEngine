@@ -15,7 +15,7 @@ namespace GLPostTAAPass
 {
 	void initializeShaders();
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
@@ -24,9 +24,9 @@ namespace GLPostTAAPass
 
 bool GLPostTAAPass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "PostTAAPassGLRPC/");
+	m_GLRPC = addGLRenderPassComponent(m_EntityID, "PostTAAPassGLRPC/");
 	m_GLRPC->m_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	m_GLRPC->m_renderPassDesc.useDepthAttachment = true;
 	m_GLRPC->m_renderPassDesc.useStencilAttachment = true;
@@ -40,7 +40,7 @@ bool GLPostTAAPass::initialize()
 void GLPostTAAPass::initializeShaders()
 {
 	// shader programs and shaders
-	auto rhs = addGLShaderProgramComponent(m_entityID);
+	auto rhs = addGLShaderProgramComponent(m_EntityID);
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 

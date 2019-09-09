@@ -15,7 +15,7 @@ extern IModuleManager* g_pModuleManager;
 
 namespace InnoRenderingFrontendNS
 {
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
 	IRenderingServer* m_renderingServer;
 	IRayTracer* m_rayTracer;
@@ -235,7 +235,7 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 
 	m_rayTracer->Setup();
 
-	m_objectStatus = ObjectStatus::Created;
+	m_ObjectStatus = ObjectStatus::Created;
 	return true;
 }
 
@@ -267,30 +267,30 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 	g_pModuleManager->getAssetSystem()->addUnitLine(*m_unitLineMesh);
 	m_unitLineMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
 	m_unitLineMesh->m_meshShapeType = MeshShapeType::Line;
-	m_unitLineMesh->m_objectStatus = ObjectStatus::Created;
+	m_unitLineMesh->m_ObjectStatus = ObjectStatus::Created;
 
 	m_unitQuadMesh = m_renderingServer->AddMeshDataComponent("UnitQuadMesh/");
 	g_pModuleManager->getAssetSystem()->addUnitQuad(*m_unitQuadMesh);
 	m_unitQuadMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitQuadMesh->m_meshShapeType = MeshShapeType::Quad;
-	m_unitQuadMesh->m_objectStatus = ObjectStatus::Created;
+	m_unitQuadMesh->m_ObjectStatus = ObjectStatus::Created;
 
 	m_unitCubeMesh = m_renderingServer->AddMeshDataComponent("UnitCubeMesh/");
 	g_pModuleManager->getAssetSystem()->addUnitCube(*m_unitCubeMesh);
 	m_unitCubeMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitCubeMesh->m_meshShapeType = MeshShapeType::Cube;
-	m_unitCubeMesh->m_objectStatus = ObjectStatus::Created;
+	m_unitCubeMesh->m_ObjectStatus = ObjectStatus::Created;
 
 	m_unitSphereMesh = m_renderingServer->AddMeshDataComponent("UnitSphereMesh/");
 	g_pModuleManager->getAssetSystem()->addUnitSphere(*m_unitSphereMesh);
 	m_unitSphereMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitSphereMesh->m_meshShapeType = MeshShapeType::Sphere;
-	m_unitSphereMesh->m_objectStatus = ObjectStatus::Created;
+	m_unitSphereMesh->m_ObjectStatus = ObjectStatus::Created;
 
 	m_terrainMesh = m_renderingServer->AddMeshDataComponent("TerrainMesh/");
 	g_pModuleManager->getAssetSystem()->addTerrain(*m_terrainMesh);
 	m_terrainMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
-	m_terrainMesh->m_objectStatus = ObjectStatus::Created;
+	m_terrainMesh->m_ObjectStatus = ObjectStatus::Created;
 
 	auto l_DefaultAssetInitializeTask = g_pModuleManager->getTaskSystem()->submit("DefaultAssetInitializeTask", 2, nullptr,
 		[&]() {
@@ -325,14 +325,14 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 
 bool InnoRenderingFrontendNS::initialize()
 {
-	if (m_objectStatus == ObjectStatus::Created)
+	if (m_ObjectStatus == ObjectStatus::Created)
 	{
 		loadDefaultAssets();
 
 		initializeHaltonSampler();
 		m_rayTracer->Initialize();
 
-		m_objectStatus = ObjectStatus::Activated;
+		m_ObjectStatus = ObjectStatus::Activated;
 		InnoLogger::Log(LogLevel::Success, "RenderingFrontend has been initialized.");
 		return true;
 	}
@@ -352,7 +352,7 @@ bool InnoRenderingFrontendNS::updateCameraData()
 		return false;
 	}
 
-	auto l_mainCameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_parentEntity);
+	auto l_mainCameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_ParentEntity);
 
 	if (l_mainCameraTransformComponent == nullptr)
 	{
@@ -409,7 +409,7 @@ bool InnoRenderingFrontendNS::updateSunData()
 
 	if (l_sun)
 	{
-		auto l_sunTransformComponent = GetComponent(TransformComponent, l_sun->m_parentEntity);
+		auto l_sunTransformComponent = GetComponent(TransformComponent, l_sun->m_ParentEntity);
 
 		if (l_sunTransformComponent == nullptr)
 		{
@@ -480,7 +480,7 @@ bool InnoRenderingFrontendNS::updateLightData()
 	{
 		for (size_t i = 0; i < l_lightComponentCount; i++)
 		{
-			auto l_transformCompoent = GetComponent(TransformComponent, l_lightComponents[i]->m_parentEntity);
+			auto l_transformCompoent = GetComponent(TransformComponent, l_lightComponents[i]->m_ParentEntity);
 			if (l_transformCompoent != nullptr)
 			{
 				if (l_lightComponents[i]->m_LightType == LightType::Point)
@@ -540,7 +540,7 @@ bool InnoRenderingFrontendNS::updateMeshData()
 		auto l_cullingData = m_cullingData[i];
 		if (l_cullingData.mesh != nullptr)
 		{
-			if (l_cullingData.mesh->m_objectStatus == ObjectStatus::Activated)
+			if (l_cullingData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 			{
 				if (l_cullingData.material != nullptr)
 				{
@@ -657,7 +657,7 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 	{
 		MeshGPUData l_meshGPUData;
 
-		auto l_transformCompoent = GetComponent(TransformComponent, i->m_parentEntity);
+		auto l_transformCompoent = GetComponent(TransformComponent, i->m_ParentEntity);
 		if (l_transformCompoent != nullptr)
 		{
 			l_meshGPUData.m = InnoMath::toTranslationMatrix(l_transformCompoent->m_globalTransformVector.m_pos);
@@ -712,7 +712,7 @@ bool InnoRenderingFrontendNS::updateDebuggerPassData()
 
 bool InnoRenderingFrontendNS::update()
 {
-	if (m_objectStatus == ObjectStatus::Activated)
+	if (m_ObjectStatus == ObjectStatus::Activated)
 	{
 		updateCameraData();
 
@@ -733,7 +733,7 @@ bool InnoRenderingFrontendNS::update()
 	}
 	else
 	{
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 }
@@ -742,7 +742,7 @@ bool InnoRenderingFrontendNS::terminate()
 {
 	m_rayTracer->Terminate();
 
-	m_objectStatus = ObjectStatus::Terminated;
+	m_ObjectStatus = ObjectStatus::Terminated;
 	InnoLogger::Log(LogLevel::Success, "RenderingFrontend has been terminated.");
 	return true;
 }
@@ -769,7 +769,7 @@ bool InnoRenderingFrontend::terminate()
 
 ObjectStatus InnoRenderingFrontend::getStatus()
 {
-	return InnoRenderingFrontendNS::m_objectStatus;
+	return InnoRenderingFrontendNS::m_ObjectStatus;
 }
 
 bool InnoRenderingFrontend::runRayTrace()
@@ -797,10 +797,10 @@ SkeletonDataComponent * InnoRenderingFrontend::addSkeletonDataComponent()
 	static std::atomic<uint32_t> skeletonCount = 0;
 	auto l_rawPtr = m_SkeletonDataComponentPool->Spawn();
 	auto l_SDC = new(l_rawPtr)SkeletonDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Skeleton_" + std::to_string(skeletonCount) + "/").c_str());
-	l_SDC->m_parentEntity = l_parentEntity;
-	l_SDC->m_objectSource = ObjectSource::Runtime;
-	l_SDC->m_objectUsage = ObjectUsage::Engine;
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Skeleton_" + std::to_string(skeletonCount) + "/").c_str());
+	l_SDC->m_ParentEntity = l_parentEntity;
+	l_SDC->m_ObjectSource = ObjectSource::Runtime;
+	l_SDC->m_ObjectOwnership = ObjectOwnership::Engine;
 	l_SDC->m_ComponentType = ComponentType::SkeletonDataComponent;
 	skeletonCount++;
 	return l_SDC;
@@ -811,10 +811,10 @@ AnimationDataComponent * InnoRenderingFrontend::addAnimationDataComponent()
 	static std::atomic<uint32_t> animationCount = 0;
 	auto l_rawPtr = m_AnimationDataComponentPool->Spawn();
 	auto l_ADC = new(l_rawPtr)AnimationDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Animation_" + std::to_string(animationCount) + "/").c_str());
-	l_ADC->m_parentEntity = l_parentEntity;
-	l_ADC->m_objectSource = ObjectSource::Runtime;
-	l_ADC->m_objectUsage = ObjectUsage::Engine;
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Animation_" + std::to_string(animationCount) + "/").c_str());
+	l_ADC->m_ParentEntity = l_parentEntity;
+	l_ADC->m_ObjectSource = ObjectSource::Runtime;
+	l_ADC->m_ObjectOwnership = ObjectOwnership::Engine;
 	l_ADC->m_ComponentType = ComponentType::AnimationDataComponent;
 	animationCount++;
 	return l_ADC;

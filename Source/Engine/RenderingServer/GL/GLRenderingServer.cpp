@@ -78,7 +78,7 @@ namespace GLRenderingServerNS
 
 	bool resizeImpl();
 
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
 	IObjectPool* m_MeshDataComponentPool = 0;
 	IObjectPool* m_MaterialDataComponentPool = 0;
@@ -220,7 +220,7 @@ bool GLRenderingServer::Setup()
 	m_SwapChainSPC = reinterpret_cast<GLShaderProgramComponent*>(AddShaderProgramComponent("SwapChain/"));
 	m_SwapChainSDC = reinterpret_cast<GLSamplerDataComponent*>(AddSamplerDataComponent("SwapChain/"));
 
-	m_objectStatus = ObjectStatus::Created;
+	m_ObjectStatus = ObjectStatus::Created;
 	InnoLogger::Log(LogLevel::Success, "GLRenderingServer setup finished.");
 
 	return true;
@@ -228,7 +228,7 @@ bool GLRenderingServer::Setup()
 
 bool GLRenderingServer::Initialize()
 {
-	if (m_objectStatus == ObjectStatus::Created)
+	if (m_ObjectStatus == ObjectStatus::Created)
 	{
 		m_SwapChainSPC->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
 		m_SwapChainSPC->m_ShaderFilePaths.m_PSPath = "swapChain.frag/";
@@ -266,7 +266,7 @@ bool GLRenderingServer::Initialize()
 
 			CreateStateObjects(m_SwapChainRPDC);
 
-			m_SwapChainRPDC->m_objectStatus = ObjectStatus::Activated;
+			m_SwapChainRPDC->m_ObjectStatus = ObjectStatus::Activated;
 		});
 
 		l_GLRenderingServerInitializeTask->Wait();
@@ -277,7 +277,7 @@ bool GLRenderingServer::Initialize()
 
 bool GLRenderingServer::Terminate()
 {
-	m_objectStatus = ObjectStatus::Terminated;
+	m_ObjectStatus = ObjectStatus::Terminated;
 	InnoLogger::Log(LogLevel::Success, "GLRenderingServer has been terminated.");
 
 	return true;
@@ -285,7 +285,7 @@ bool GLRenderingServer::Terminate()
 
 ObjectStatus GLRenderingServer::GetStatus()
 {
-	return m_objectStatus;
+	return m_ObjectStatus;
 }
 
 AddComponent(GL, MeshData);
@@ -315,13 +315,13 @@ bool GLRenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, l_rhs->m_IBO);
 
 #ifdef _DEBUG
-	auto l_VAOName = std::string(l_rhs->m_componentName.c_str());
+	auto l_VAOName = std::string(l_rhs->m_ComponentName.c_str());
 	l_VAOName += "_VAO";
 	glObjectLabel(GL_VERTEX_ARRAY, l_rhs->m_VAO, (GLsizei)l_VAOName.size(), l_VAOName.c_str());
-	auto l_VBOName = std::string(l_rhs->m_componentName.c_str());
+	auto l_VBOName = std::string(l_rhs->m_ComponentName.c_str());
 	l_VBOName += "_VBO";
 	glObjectLabel(GL_BUFFER, l_rhs->m_VBO, (GLsizei)l_VBOName.size(), l_VBOName.c_str());
-	auto l_IBOName = std::string(l_rhs->m_componentName.c_str());
+	auto l_IBOName = std::string(l_rhs->m_ComponentName.c_str());
 	l_IBOName += "_IBO";
 	glObjectLabel(GL_BUFFER, l_rhs->m_IBO, (GLsizei)l_IBOName.size(), l_IBOName.c_str());
 #endif
@@ -356,7 +356,7 @@ bool GLRenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 
 	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: IBO ", l_rhs->m_IBO, " is initialized.");
 
-	l_rhs->m_objectStatus = ObjectStatus::Activated;
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	m_initializedMeshes.emplace(l_rhs);
 
@@ -379,7 +379,7 @@ bool GLRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 	glBindTexture(l_rhs->m_GLTextureDataDesc.TextureSamplerType, l_rhs->m_TO);
 
 #ifdef _DEBUG
-	auto l_TOName = std::string(l_rhs->m_componentName.c_str());
+	auto l_TOName = std::string(l_rhs->m_ComponentName.c_str());
 	l_TOName += "_TO";
 	glObjectLabel(GL_TEXTURE, l_rhs->m_TO, (GLsizei)l_TOName.size(), l_TOName.c_str());
 #endif
@@ -446,7 +446,7 @@ bool GLRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
 	l_rhs->m_ResourceBinder = l_resourceBinder;
 
-	l_rhs->m_objectStatus = ObjectStatus::Activated;
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	m_initializedTextures.emplace(l_rhs);
 
@@ -509,7 +509,7 @@ bool GLRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * 
 		l_rhs->m_ResourceBinders[4] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::AmbientOcclusion)->m_ResourceBinder;
 	}
 
-	l_rhs->m_objectStatus = ObjectStatus::Activated;
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	m_initializedMaterials.emplace(l_rhs);
 
@@ -536,7 +536,7 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 
 	m_RPDCs.emplace_back(l_rhs);
 
-	l_rhs->m_objectStatus = ObjectStatus::Activated;
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -575,7 +575,7 @@ bool GLRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent 
 		AddShaderHandle(l_rhs->m_ProgramID, l_rhs->m_CSID, GL_COMPUTE_SHADER, l_rhs->m_ShaderFilePaths.m_CSPath);
 	}
 
-	l_rhs->m_objectStatus = ObjectStatus::Activated;
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
@@ -605,7 +605,7 @@ bool GLRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent * rh
 
 	l_rhs->m_ResourceBinder = l_resourceBinder;
 
-	l_rhs->m_objectStatus = ObjectStatus::Activated;
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
@@ -638,7 +638,7 @@ bool GLRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent 
 	glBindBufferRange(l_rhs->m_BufferType, (GLuint)l_rhs->m_BindingPoint, l_rhs->m_Handle, 0, l_rhs->m_TotalSize);
 
 #ifdef _DEBUG
-	auto l_GPUBufferName = std::string(l_rhs->m_componentName.c_str());
+	auto l_GPUBufferName = std::string(l_rhs->m_ComponentName.c_str());
 	if (l_rhs->m_GPUAccessibility == Accessibility::ReadOnly)
 	{
 		l_GPUBufferName += "_UBO";
@@ -656,7 +656,7 @@ bool GLRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent 
 
 	l_rhs->m_ResourceBinder = l_resourceBinder;
 
-	l_rhs->m_objectStatus = ObjectStatus::Activated;
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }

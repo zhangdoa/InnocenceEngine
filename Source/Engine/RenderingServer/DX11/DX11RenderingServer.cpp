@@ -29,7 +29,7 @@ extern IModuleManager* g_pModuleManager;
 
 namespace DX11RenderingServerNS
 {
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
 	IObjectPool* m_MeshDataComponentPool = 0;
 	IObjectPool* m_MaterialDataComponentPool = 0;
@@ -111,7 +111,7 @@ bool DX11RenderingServer::Setup()
 	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create DXGI factory!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -120,7 +120,7 @@ bool DX11RenderingServer::Setup()
 	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create video card adapter!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -129,7 +129,7 @@ bool DX11RenderingServer::Setup()
 	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create monitor adapter!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -138,7 +138,7 @@ bool DX11RenderingServer::Setup()
 	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't get DXGI_FORMAT_R8G8B8A8_UNORM fitted monitor!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -150,7 +150,7 @@ bool DX11RenderingServer::Setup()
 	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't fill the display mode list structures!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -175,7 +175,7 @@ bool DX11RenderingServer::Setup()
 	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't get the video card adapter description!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -186,7 +186,7 @@ bool DX11RenderingServer::Setup()
 	if (wcstombs_s(&l_stringLength, m_videoCardDescription, 128, m_adapterDesc.Description, 128) != 0)
 	{
 		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't convert the name of the video card to a character array!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -260,7 +260,7 @@ bool DX11RenderingServer::Setup()
 	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the swap chain/D3D device/D3D device context!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -279,7 +279,7 @@ bool DX11RenderingServer::Setup()
 		if (FAILED(l_HResult))
 		{
 			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't get back buffer pointer!");
-			m_objectStatus = ObjectStatus::Suspended;
+			m_ObjectStatus = ObjectStatus::Suspended;
 			return false;
 		}
 	}
@@ -291,7 +291,7 @@ bool DX11RenderingServer::Setup()
 	m_SwapChainSPC = reinterpret_cast<DX11ShaderProgramComponent*>(AddShaderProgramComponent("SwapChain/"));
 	m_SwapChainSDC = reinterpret_cast<DX11SamplerDataComponent*>(AddSamplerDataComponent("SwapChain/"));
 
-	m_objectStatus = ObjectStatus::Created;
+	m_ObjectStatus = ObjectStatus::Created;
 	InnoLogger::Log(LogLevel::Success, "DX11RenderingServer setup finished.");
 
 	return true;
@@ -299,7 +299,7 @@ bool DX11RenderingServer::Setup()
 
 bool DX11RenderingServer::Initialize()
 {
-	if (m_objectStatus == ObjectStatus::Created)
+	if (m_ObjectStatus == ObjectStatus::Created)
 	{
 		m_SwapChainSPC->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
 		m_SwapChainSPC->m_ShaderFilePaths.m_PSPath = "swapChain.frag/";
@@ -337,7 +337,7 @@ bool DX11RenderingServer::Initialize()
 		auto l_DX11TDC = reinterpret_cast<DX11TextureDataComponent*>(m_SwapChainRPDC->m_RenderTargets[0]);
 
 		l_DX11TDC->m_ResourceHandle = m_swapChainTextures[0];
-		l_DX11TDC->m_objectStatus = ObjectStatus::Activated;
+		l_DX11TDC->m_ObjectStatus = ObjectStatus::Activated;
 		m_SwapChainRPDC->m_RenderTargetsResourceBinders[0] = addResourcesBinder();
 
 		CreateViews(m_SwapChainRPDC, m_device);
@@ -348,7 +348,7 @@ bool DX11RenderingServer::Initialize()
 
 		CreateStateObjects(m_SwapChainRPDC, m_InputLayoutDummyShaderBuffer, m_device);
 
-		m_SwapChainRPDC->m_objectStatus = ObjectStatus::Activated;
+		m_SwapChainRPDC->m_ObjectStatus = ObjectStatus::Activated;
 	}
 
 	return true;
@@ -377,7 +377,7 @@ bool DX11RenderingServer::Terminate()
 	m_factory->Release();
 	m_factory = 0;
 
-	m_objectStatus = ObjectStatus::Terminated;
+	m_ObjectStatus = ObjectStatus::Terminated;
 	InnoLogger::Log(LogLevel::Success, "DX11RenderingServer has been terminated.");
 
 	return true;
@@ -385,7 +385,7 @@ bool DX11RenderingServer::Terminate()
 
 ObjectStatus DX11RenderingServer::GetStatus()
 {
-	return m_objectStatus;
+	return m_ObjectStatus;
 }
 
 AddComponent(DX11, MeshData);
@@ -472,7 +472,7 @@ bool DX11RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 
 	InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: Index Buffer: ", l_rhs->m_indexBuffer, " is initialized.");
 
-	l_rhs->m_objectStatus = ObjectStatus::Activated;
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	m_initializedMeshes.emplace(l_rhs);
 
@@ -598,7 +598,7 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 		l_rhs->m_ResourceBinder = l_resourceBinder;
 	}
 
-	l_rhs->m_objectStatus = ObjectStatus::Activated;
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	m_initializedTextures.emplace(l_rhs);
 
@@ -661,7 +661,7 @@ bool DX11RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 		l_rhs->m_ResourceBinders[4] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::AmbientOcclusion)->m_ResourceBinder;
 	}
 
-	l_rhs->m_objectStatus = ObjectStatus::Activated;
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	m_initializedMaterials.emplace(l_rhs);
 
@@ -690,7 +690,7 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 
 	CreateStateObjects(l_rhs, m_InputLayoutDummyShaderBuffer, m_device);
 
-	l_rhs->m_objectStatus = ObjectStatus::Activated;
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
@@ -766,7 +766,7 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 		};
 	}
 
-	l_rhs->m_objectStatus = ObjectStatus::Activated;
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
@@ -792,7 +792,7 @@ bool DX11RenderingServer::InitializeSamplerDataComponent(SamplerDataComponent * 
 	auto l_HResult = m_device->CreateSamplerState(&l_rhs->m_DX11SamplerDesc, &l_rhs->m_SamplerState);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create sampler state object for ", rhs->m_componentName.c_str(), "!");
+		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create sampler state object for ", rhs->m_ComponentName.c_str(), "!");
 		return false;
 	}
 
@@ -802,7 +802,7 @@ bool DX11RenderingServer::InitializeSamplerDataComponent(SamplerDataComponent * 
 
 	l_rhs->m_ResourceBinder = l_resourceBinder;
 
-	l_rhs->m_objectStatus = ObjectStatus::Activated;
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
@@ -904,7 +904,7 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 
 	l_rhs->m_ResourceBinder = l_resourceBinder;
 
-	l_rhs->m_objectStatus = ObjectStatus::Activated;
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }

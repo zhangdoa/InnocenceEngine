@@ -3,12 +3,12 @@
 
 namespace InnoLogSystemNS
 {
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
 ObjectStatus InnoLogSystem::getStatus()
 {
-	return InnoLogSystemNS::m_objectStatus;
+	return InnoLogSystemNS::m_ObjectStatus;
 }
 
 void InnoLogSystem::SetDefaultLogLevel(LogLevel logLevel)
@@ -113,15 +113,15 @@ void InnoLogSystem::LogImpl(const char * logMessage)
 
 bool InnoLogSystem::setup()
 {
-	InnoLogSystemNS::m_objectStatus = ObjectStatus::Created;
+	InnoLogSystemNS::m_ObjectStatus = ObjectStatus::Created;
 	return InnoLogger::Setup();
 }
 
 bool InnoLogSystem::initialize()
 {
-	if (InnoLogSystemNS::m_objectStatus == ObjectStatus::Created)
+	if (InnoLogSystemNS::m_ObjectStatus == ObjectStatus::Created)
 	{
-		InnoLogSystemNS::m_objectStatus = ObjectStatus::Activated;
+		InnoLogSystemNS::m_ObjectStatus = ObjectStatus::Activated;
 		return InnoLogger::Initialize();
 	}
 	else
@@ -132,19 +132,19 @@ bool InnoLogSystem::initialize()
 
 bool InnoLogSystem::update()
 {
-	if (InnoLogSystemNS::m_objectStatus == ObjectStatus::Activated)
+	if (InnoLogSystemNS::m_ObjectStatus == ObjectStatus::Activated)
 	{
 		return 	InnoLogger::Update();
 	}
 	else
 	{
-		InnoLogSystemNS::m_objectStatus = ObjectStatus::Suspended;
+		InnoLogSystemNS::m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 }
 
 bool InnoLogSystem::terminate()
 {
-	InnoLogSystemNS::m_objectStatus = ObjectStatus::Terminated;
+	InnoLogSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
 	return InnoLogger::Terminate();
 }

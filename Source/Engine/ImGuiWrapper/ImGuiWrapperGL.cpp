@@ -7,12 +7,12 @@ extern IModuleManager* g_pModuleManager;
 
 namespace ImGuiWrapperGLNS
 {
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
 bool ImGuiWrapperGL::setup()
 {
-	ImGuiWrapperGLNS::m_objectStatus = ObjectStatus::Activated;
+	ImGuiWrapperGLNS::m_ObjectStatus = ObjectStatus::Activated;
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWrapperGL setup finished.");
 
 	return true;
@@ -45,7 +45,7 @@ bool ImGuiWrapperGL::render()
 bool ImGuiWrapperGL::terminate()
 {
 	ImGui_ImplOpenGL3_Shutdown();
-	ImGuiWrapperGLNS::m_objectStatus = ObjectStatus::Terminated;
+	ImGuiWrapperGLNS::m_ObjectStatus = ObjectStatus::Terminated;
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWrapperGL has been terminated.");
 
 	return true;
@@ -53,7 +53,7 @@ bool ImGuiWrapperGL::terminate()
 
 ObjectStatus ImGuiWrapperGL::getStatus()
 {
-	return ImGuiWrapperGLNS::m_objectStatus;
+	return ImGuiWrapperGLNS::m_ObjectStatus;
 }
 
 void ImGuiWrapperGL::showRenderResult(RenderPassType renderPassType)

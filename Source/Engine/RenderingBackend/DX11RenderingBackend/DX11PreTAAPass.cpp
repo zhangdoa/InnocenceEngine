@@ -22,14 +22,14 @@ namespace DX11PreTAAPass
 
 	ShaderFilePaths m_shaderFilePaths = { "DX11//preTAAPassVertex.hlsl/", "", "", "", "DX11//preTAAPassPixel.hlsl/" };
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 }
 
 bool DX11PreTAAPass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
-	m_DXRPC = addDX11RenderPassComponent(m_entityID, "PreTAAPassDXRPC\\");
+	m_DXRPC = addDX11RenderPassComponent(m_EntityID, "PreTAAPassDXRPC\\");
 
 	m_DXRPC->m_renderPassDesc = DX11RenderingBackendComponent::get().m_deferredRenderPassDesc;
 	m_DXRPC->m_renderPassDesc.RTNumber = 1;
@@ -56,7 +56,7 @@ bool DX11PreTAAPass::initialize()
 
 bool DX11PreTAAPass::initializeShaders()
 {
-	m_DXSPC = addDX11ShaderProgramComponent(m_entityID);
+	m_DXSPC = addDX11ShaderProgramComponent(m_EntityID);
 
 	m_DXSPC->m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 	m_DXSPC->m_samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;

@@ -91,7 +91,7 @@ bool SunShadowPass::PrepareCommandList()
 	{
 		auto l_drawCallData = l_sunShadowPassDrawCallData[i];
 
-		if (l_drawCallData.mesh->m_objectStatus == ObjectStatus::Activated)
+		if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 		{
 			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 0, 1, Accessibility::ReadOnly, l_offset, 1);
 

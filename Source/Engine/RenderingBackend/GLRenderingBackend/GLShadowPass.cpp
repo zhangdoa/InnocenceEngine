@@ -10,7 +10,7 @@ using namespace GLRenderingBackendNS;
 
 namespace GLShadowPass
 {
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	GLRenderPassComponent* m_DirLight_GLRPC;
 	GLRenderPassComponent* m_PointLight_GLRPC;
@@ -25,7 +25,7 @@ namespace GLShadowPass
 
 void GLShadowPass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
 	auto l_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	l_renderPassDesc.RTDesc.samplerType = TextureSamplerType::SAMPLER_2D;
@@ -42,7 +42,7 @@ void GLShadowPass::initialize()
 	l_renderPassDesc.RTDesc.borderColor[2] = 1.0f;
 	l_renderPassDesc.RTDesc.borderColor[3] = 1.0f;
 
-	m_DirLight_GLRPC = addGLRenderPassComponent(m_entityID, "DirectionalLightShadowPassGLRPC/");
+	m_DirLight_GLRPC = addGLRenderPassComponent(m_EntityID, "DirectionalLightShadowPassGLRPC/");
 	m_DirLight_GLRPC->m_renderPassDesc = l_renderPassDesc;
 	m_DirLight_GLRPC->m_renderPassDesc.useDepthAttachment = true;
 	m_DirLight_GLRPC->m_drawColorBuffers = true;
@@ -62,7 +62,7 @@ void GLShadowPass::initialize()
 	l_renderPassDesc.RTDesc.borderColor[2] = 1.0f;
 	l_renderPassDesc.RTDesc.borderColor[3] = 1.0f;
 
-	m_PointLight_GLRPC = addGLRenderPassComponent(m_entityID, "PointLightShadowPassGLRPC/");
+	m_PointLight_GLRPC = addGLRenderPassComponent(m_EntityID, "PointLightShadowPassGLRPC/");
 	m_PointLight_GLRPC->m_renderPassDesc = l_renderPassDesc;
 	m_PointLight_GLRPC->m_renderPassDesc.useDepthAttachment = true;
 	m_PointLight_GLRPC->m_drawColorBuffers = true;
@@ -75,10 +75,10 @@ void GLShadowPass::initialize()
 	m_PointLightDepth_GLTDC->m_textureData = nullptr;
 	initializeGLTextureDataComponent(m_PointLightDepth_GLTDC);
 
-	m_DirLight_GLSPC = addGLShaderProgramComponent(m_entityID);
+	m_DirLight_GLSPC = addGLShaderProgramComponent(m_EntityID);
 	initializeGLShaderProgramComponent(m_DirLight_GLSPC, m_DirLightShaderFilePaths);
 
-	m_PointLight_GLSPC = addGLShaderProgramComponent(m_entityID);
+	m_PointLight_GLSPC = addGLShaderProgramComponent(m_EntityID);
 	initializeGLShaderProgramComponent(m_PointLight_GLSPC, m_PointLightShaderFilePaths);
 }
 

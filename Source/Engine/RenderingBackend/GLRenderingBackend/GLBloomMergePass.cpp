@@ -15,7 +15,7 @@ namespace GLBloomMergePass
 {
 	void initializeShaders();
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
@@ -24,13 +24,13 @@ namespace GLBloomMergePass
 
 bool GLBloomMergePass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
 	auto l_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	l_renderPassDesc.RTDesc.magFilterMethod = TextureFilterMethod::LINEAR;
 	l_renderPassDesc.RTDesc.minFilterMethod = TextureFilterMethod::LINEAR_MIPMAP_LINEAR;
 
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "BloomMergePassGLRPC/");
+	m_GLRPC = addGLRenderPassComponent(m_EntityID, "BloomMergePassGLRPC/");
 	m_GLRPC->m_renderPassDesc = l_renderPassDesc;
 	initializeGLRenderPassComponent(m_GLRPC);
 
@@ -42,7 +42,7 @@ bool GLBloomMergePass::initialize()
 void GLBloomMergePass::initializeShaders()
 {
 	// shader programs and shaders
-	auto rhs = addGLShaderProgramComponent(m_entityID);
+	auto rhs = addGLShaderProgramComponent(m_EntityID);
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 

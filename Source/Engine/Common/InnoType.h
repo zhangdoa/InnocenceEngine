@@ -22,9 +22,9 @@ enum class ObjectSource
 	Asset,
 };
 
-enum class ObjectUsage
+enum class ObjectOwnership
 {
-	Gameplay,
+	Client,
 	Engine,
 };
 

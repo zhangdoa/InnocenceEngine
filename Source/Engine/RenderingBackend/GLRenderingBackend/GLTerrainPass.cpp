@@ -14,7 +14,7 @@ namespace GLTerrainPass
 {
 	void initializeShaders();
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	GLShaderProgramComponent* m_GLSPC;
 
@@ -33,7 +33,7 @@ namespace GLTerrainPass
 
 bool GLTerrainPass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
 	initializeShaders();
 
@@ -43,7 +43,7 @@ bool GLTerrainPass::initialize()
 
 	initializeGLTextureDataComponent(m_terrainGLTDC);
 
-	m_h2nGLRPC = addGLRenderPassComponent(m_entityID, "HeightToNormalGLRPC/");
+	m_h2nGLRPC = addGLRenderPassComponent(m_EntityID, "HeightToNormalGLRPC/");
 	m_h2nGLRPC->m_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	m_h2nGLRPC->m_renderPassDesc.RTDesc.wrapMethod = TextureWrapMethod::REPEAT;
 	m_h2nGLRPC->m_renderPassDesc.RTDesc.width = m_terrainGLTDC->m_textureDataDesc.width;
@@ -58,11 +58,11 @@ bool GLTerrainPass::initialize()
 void GLTerrainPass::initializeShaders()
 {
 	// shader programs and shaders
-	m_GLSPC = addGLShaderProgramComponent(m_entityID);
+	m_GLSPC = addGLShaderProgramComponent(m_EntityID);
 
 	initializeGLShaderProgramComponent(m_GLSPC, m_shaderFilePaths);
 
-	m_h2nGLSPC = addGLShaderProgramComponent(m_entityID);
+	m_h2nGLSPC = addGLShaderProgramComponent(m_EntityID);
 
 	initializeGLShaderProgramComponent(m_h2nGLSPC, m_h2nShaderFilePaths);
 }

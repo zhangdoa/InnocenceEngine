@@ -44,7 +44,7 @@ namespace VKRenderingServerNS
 
 	bool createSwapChain();
 
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
 	IObjectPool* m_MeshDataComponentPool = 0;
 	IObjectPool* m_MaterialDataComponentPool = 0;
@@ -149,7 +149,7 @@ bool VKRenderingServerNS::createVkInstance()
 	// check support for validation layer
 	if (m_enableValidationLayers && !checkValidationLayerSupport(m_validationLayers))
 	{
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Validation layers requested, but not available!");
 		return false;
 	}
@@ -186,7 +186,7 @@ bool VKRenderingServerNS::createVkInstance()
 	// create Vulkan instance
 	if (vkCreateInstance(&l_createInfo, nullptr, &m_instance) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkInstance!");
 		return false;
 	}
@@ -207,7 +207,7 @@ bool VKRenderingServerNS::createDebugCallback()
 
 		if (createDebugUtilsMessengerEXT(m_instance, &l_createInfo, nullptr, &m_messengerCallback) != VK_SUCCESS)
 		{
-			m_objectStatus = ObjectStatus::Suspended;
+			m_ObjectStatus = ObjectStatus::Suspended;
 			InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create DebugUtilsMessenger!");
 			return false;
 		}
@@ -228,7 +228,7 @@ bool VKRenderingServerNS::createPysicalDevice()
 	vkEnumeratePhysicalDevices(m_instance, &l_deviceCount, nullptr);
 
 	if (l_deviceCount == 0) {
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to find GPUs with Vulkan support!");
 		return false;
 	}
@@ -248,7 +248,7 @@ bool VKRenderingServerNS::createPysicalDevice()
 
 	if (m_physicalDevice == VK_NULL_HANDLE)
 	{
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to find a suitable GPU!");
 		return false;
 	}
@@ -301,7 +301,7 @@ bool VKRenderingServerNS::createLogicalDevice()
 
 	if (vkCreateDevice(m_physicalDevice, &l_createInfo, nullptr, &m_device) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkDevice!");
 		return false;
 	}
@@ -332,7 +332,7 @@ bool VKRenderingServerNS::createTextureSamplers()
 
 	//if (vkCreateSampler(m_device, &samplerInfo, nullptr, &m_deferredRTSampler) != VK_SUCCESS)
 	//{
-	//	m_objectStatus = ObjectStatus::Suspended;
+	//	m_ObjectStatus = ObjectStatus::Suspended;
 	//	InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkSampler for deferred pass render target sampling!");
 	//	return false;
 	//}
@@ -353,7 +353,7 @@ bool VKRenderingServerNS::createMaterialDescriptorPool()
 
 	if (!createDescriptorPool(m_device, l_descriptorPoolSizes, 1, l_renderingCapability.maxMaterials, m_materialDescriptorPool))
 	{
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkDescriptorPool for material!");
 		return false;
 	}
@@ -374,7 +374,7 @@ bool VKRenderingServerNS::createMaterialDescriptorPool()
 
 	if (!createDescriptorSetLayout(m_device, &l_textureLayoutBindings[0], (uint32_t)l_textureLayoutBindings.size(), m_materialDescriptorLayout))
 	{
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkDescriptorSetLayout for material!");
 		return false;
 	}
@@ -395,7 +395,7 @@ bool VKRenderingServerNS::createCommandPool()
 
 	if (vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_commandPool) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create CommandPool!");
 		return false;
 	}
@@ -452,7 +452,7 @@ bool VKRenderingServerNS::createSwapChain()
 
 	if (vkCreateSwapchainKHR(m_device, &l_createInfo, nullptr, &m_swapChain) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkSwapChainKHR!");
 		return false;
 	}
@@ -463,7 +463,7 @@ bool VKRenderingServerNS::createSwapChain()
 	// get count
 	if (vkGetSwapchainImagesKHR(m_device, m_swapChain, &l_imageCount, nullptr) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to query swap chain image count!");
 		return false;
 	}
@@ -479,7 +479,7 @@ bool VKRenderingServerNS::createSwapChain()
 	// get real VkImages
 	if (vkGetSwapchainImagesKHR(m_device, m_swapChain, &l_imageCount, m_swapChainImages.data()) != VK_SUCCESS)
 	{
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to acquire swap chain images!");
 		return false;
 	}
@@ -547,7 +547,7 @@ bool VKRenderingServer::Setup()
 	m_SwapChainSPC = reinterpret_cast<VKShaderProgramComponent*>(AddShaderProgramComponent("SwapChain/"));
 	m_SwapChainSDC = reinterpret_cast<VKSamplerDataComponent*>(AddSamplerDataComponent("SwapChain/"));
 
-	m_objectStatus = ObjectStatus::Created;
+	m_ObjectStatus = ObjectStatus::Created;
 	InnoLogger::Log(LogLevel::Success, "VKRenderingServer setup finished.");
 
 	return true;
@@ -560,7 +560,7 @@ bool VKRenderingServer::Initialize()
 
 bool VKRenderingServer::Terminate()
 {
-	m_objectStatus = ObjectStatus::Terminated;
+	m_ObjectStatus = ObjectStatus::Terminated;
 	InnoLogger::Log(LogLevel::Success, "VKRenderingServer has been terminated.");
 
 	return true;
@@ -568,7 +568,7 @@ bool VKRenderingServer::Terminate()
 
 ObjectStatus VKRenderingServer::GetStatus()
 {
-	return m_objectStatus;
+	return m_ObjectStatus;
 }
 
 AddComponent(VK, MeshData);
@@ -620,7 +620,7 @@ bool VKRenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "VKRenderingServer: IBO ", l_rhs->m_IBO, " is initialized.");
 
-	l_rhs->m_objectStatus = ObjectStatus::Activated;
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	m_initializedMeshes.emplace(l_rhs);
 

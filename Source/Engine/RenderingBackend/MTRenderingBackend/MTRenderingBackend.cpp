@@ -28,8 +28,8 @@ INNO_PRIVATE_SCOPE MTRenderingBackendNS
 	MTTextureDataComponent* getMTTextureDataComponent(FileExplorerIconType iconType);
 	MTTextureDataComponent* getMTTextureDataComponent(WorldEditorIconType iconType);
 
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-	EntityID m_entityID;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+	EntityID m_EntityID;
 
 	MTRenderingBackendBridge* m_bridge;
 
@@ -64,11 +64,11 @@ INNO_PRIVATE_SCOPE MTRenderingBackendNS
 
 bool MTRenderingBackendNS::setup()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
 	bool result = MTRenderingBackendNS::m_bridge->setup();
 
-	m_objectStatus = ObjectStatus::Created;
+	m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingBackend setup finished.");
 	return result;
 }
@@ -83,7 +83,7 @@ bool MTRenderingBackendNS::initialize()
 
 	loadDefaultAssets();
 
-	m_objectStatus = ObjectStatus::Activated;
+	m_ObjectStatus = ObjectStatus::Activated;
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingBackend has been initialized.");
 	return result;
 }
@@ -113,7 +113,7 @@ bool MTRenderingBackendNS::terminate()
 {
 	bool result = m_bridge->terminate();
 
-	m_objectStatus = ObjectStatus::Terminated;
+	m_ObjectStatus = ObjectStatus::Terminated;
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "MTRenderingBackend has been terminated.");
 
 	return result;
@@ -155,34 +155,34 @@ void MTRenderingBackendNS::loadDefaultAssets()
 	g_pModuleManager->getAssetSystem()->addUnitLine(*m_unitLineMDC);
 	m_unitLineMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	m_unitLineMDC->m_meshShapeType = MeshShapeType::LINE;
-	m_unitLineMDC->m_objectStatus = ObjectStatus::Created;
+	m_unitLineMDC->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMDC);
 
 	m_unitQuadMDC = addMTMeshDataComponent();
 	g_pModuleManager->getAssetSystem()->addUnitQuad(*m_unitQuadMDC);
 	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
-	m_unitQuadMDC->m_objectStatus = ObjectStatus::Created;
+	m_unitQuadMDC->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMDC);
 
 	m_unitCubeMDC = addMTMeshDataComponent();
 	g_pModuleManager->getAssetSystem()->addUnitCube(*m_unitCubeMDC);
 	m_unitCubeMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitCubeMDC->m_meshShapeType = MeshShapeType::CUBE;
-	m_unitCubeMDC->m_objectStatus = ObjectStatus::Created;
+	m_unitCubeMDC->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMDC);
 
 	m_unitSphereMDC = addMTMeshDataComponent();
 	g_pModuleManager->getAssetSystem()->addUnitSphere(*m_unitSphereMDC);
 	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
-	m_unitSphereMDC->m_objectStatus = ObjectStatus::Created;
+	m_unitSphereMDC->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMDC);
 
 	m_terrainMDC = addMTMeshDataComponent();
 	g_pModuleManager->getAssetSystem()->addTerrain(*m_terrainMDC);
 	m_terrainMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	m_terrainMDC->m_objectStatus = ObjectStatus::Created;
+	m_terrainMDC->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMDC);
 
 	m_bridge->initializeMTMeshDataComponent(m_unitLineMDC);
@@ -212,8 +212,8 @@ MTMeshDataComponent* MTRenderingBackendNS::addMTMeshDataComponent()
 	static std::atomic<uint32_t> meshCount = 0;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(MTMeshDataComponent));
 	auto l_MDC = new(l_rawPtr)MTMeshDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Mesh_" + std::to_string(meshCount) + "/").c_str());
-	l_MDC->m_parentEntity = l_parentEntity;
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Mesh_" + std::to_string(meshCount) + "/").c_str());
+	l_MDC->m_ParentEntity = l_parentEntity;
 	meshCount++;
 	return l_MDC;
 }
@@ -223,8 +223,8 @@ MaterialDataComponent* MTRenderingBackendNS::addMTMaterialDataComponent()
 	static std::atomic<uint32_t> materialCount = 0;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(MTMaterialDataComponent));
 	auto l_MDC = new(l_rawPtr)MTMaterialDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Material_" + std::to_string(materialCount) + "/").c_str());
-	l_MDC->m_parentEntity = l_parentEntity;
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Material_" + std::to_string(materialCount) + "/").c_str());
+	l_MDC->m_ParentEntity = l_parentEntity;
 	materialCount++;
 	return l_MDC;
 }
@@ -234,8 +234,8 @@ MTTextureDataComponent* MTRenderingBackendNS::addMTTextureDataComponent()
 	static std::atomic<uint32_t> textureCount = 0;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(MTTextureDataComponent));
 	auto l_TDC = new(l_rawPtr)MTTextureDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Texture_" + std::to_string(textureCount) + "/").c_str());
-	l_TDC->m_parentEntity = l_parentEntity;
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Texture_" + std::to_string(textureCount) + "/").c_str());
+	l_TDC->m_ParentEntity = l_parentEntity;
 	textureCount++;
 	return l_TDC;
 }
@@ -354,7 +354,7 @@ bool MTRenderingBackend::terminate()
 
 ObjectStatus MTRenderingBackend::getStatus()
 {
-	return MTRenderingBackendNS::m_objectStatus;
+	return MTRenderingBackendNS::m_ObjectStatus;
 }
 
 MeshDataComponent * MTRenderingBackend::addMeshDataComponent()

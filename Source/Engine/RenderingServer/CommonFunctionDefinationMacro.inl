@@ -14,11 +14,11 @@ else \
 { \
 	l_name = (std::string(#component) + "_" + std::to_string(l_count) + "/"); \
 } \
-auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, l_name.c_str()); \
-l_result->m_parentEntity = l_parentEntity; \
-l_result->m_componentName = l_name.c_str(); \
-l_result->m_objectSource = ObjectSource::Runtime; \
-l_result->m_objectUsage = ObjectUsage::Engine; \
+auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, l_name.c_str()); \
+l_result->m_ParentEntity = l_parentEntity; \
+l_result->m_ComponentName = l_name.c_str(); \
+l_result->m_ObjectSource = ObjectSource::Runtime; \
+l_result->m_ObjectOwnership = ObjectOwnership::Engine; \
 l_result->m_ComponentType = ComponentType::component##Component; \
  \
 return l_result; \

@@ -3,20 +3,20 @@
 
 namespace InnoTimeSystemNS
 {
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 };
 
 bool InnoTimeSystem::setup()
 {
-	InnoTimeSystemNS::m_objectStatus = ObjectStatus::Created;
+	InnoTimeSystemNS::m_ObjectStatus = ObjectStatus::Created;
 	return InnoTimer::Setup();
 }
 
 bool InnoTimeSystem::initialize()
 {
-	if (InnoTimeSystemNS::m_objectStatus == ObjectStatus::Created)
+	if (InnoTimeSystemNS::m_ObjectStatus == ObjectStatus::Created)
 	{
-		InnoTimeSystemNS::m_objectStatus = ObjectStatus::Activated;
+		InnoTimeSystemNS::m_ObjectStatus = ObjectStatus::Activated;
 		return InnoTimer::Initialize();
 	}
 	else
@@ -27,20 +27,20 @@ bool InnoTimeSystem::initialize()
 
 bool InnoTimeSystem::update()
 {
-	if (InnoTimeSystemNS::m_objectStatus == ObjectStatus::Activated)
+	if (InnoTimeSystemNS::m_ObjectStatus == ObjectStatus::Activated)
 	{
 		return InnoTimer::Tick();
 	}
 	else
 	{
-		InnoTimeSystemNS::m_objectStatus = ObjectStatus::Suspended;
+		InnoTimeSystemNS::m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 }
 
 bool InnoTimeSystem::terminate()
 {
-	InnoTimeSystemNS::m_objectStatus = ObjectStatus::Terminated;
+	InnoTimeSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
 	return InnoTimer::Terminate();
 }
 
@@ -68,5 +68,5 @@ const int64_t InnoTimeSystem::getCurrentTimeFromEpoch()
 
 ObjectStatus InnoTimeSystem::getStatus()
 {
-	return InnoTimeSystemNS::m_objectStatus;
+	return InnoTimeSystemNS::m_ObjectStatus;
 }

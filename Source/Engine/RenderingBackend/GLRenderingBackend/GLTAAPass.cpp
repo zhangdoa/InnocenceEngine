@@ -15,7 +15,7 @@ namespace GLTAAPass
 {
 	void initializeShaders();
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	bool m_isTAAPingPass = true;
 
@@ -27,15 +27,15 @@ namespace GLTAAPass
 
 bool GLTAAPass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
 	// Ping pass
-	m_PingPassGLRPC = addGLRenderPassComponent(m_entityID, "TAAPingPassGLRPC/");
+	m_PingPassGLRPC = addGLRenderPassComponent(m_EntityID, "TAAPingPassGLRPC/");
 	m_PingPassGLRPC->m_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	initializeGLRenderPassComponent(m_PingPassGLRPC);
 
 	// Pong pass
-	m_PongPassGLRPC = addGLRenderPassComponent(m_entityID, "TAAPongPassGLRPC/");
+	m_PongPassGLRPC = addGLRenderPassComponent(m_EntityID, "TAAPongPassGLRPC/");
 	m_PongPassGLRPC->m_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	initializeGLRenderPassComponent(m_PongPassGLRPC);
 
@@ -47,7 +47,7 @@ bool GLTAAPass::initialize()
 void GLTAAPass::initializeShaders()
 {
 	// shader programs and shaders
-	auto rhs = addGLShaderProgramComponent(m_entityID);
+	auto rhs = addGLShaderProgramComponent(m_EntityID);
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 

@@ -161,7 +161,7 @@ extern IModuleManager* g_pModuleManager;
     
     l_MDC->m_VBO = (__bridge_retained void*)l_vertexBuffer;
     l_MDC->m_IBO = (__bridge_retained void*)l_indexBuffer;
-    l_MDC->m_objectStatus = ObjectStatus::Activated;
+    l_MDC->m_ObjectStatus = ObjectStatus::Activated;
 }
 
 @end

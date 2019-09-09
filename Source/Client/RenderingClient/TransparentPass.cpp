@@ -103,7 +103,7 @@ bool TransparentPass::PrepareCommandList()
 	for (uint32_t i = 0; i < l_totalDrawCallCount; i++)
 	{
 		auto l_drawCallData = l_transparentPassDrawCallData[i];
-		if (l_drawCallData.mesh->m_objectStatus == ObjectStatus::Activated)
+		if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 		{
 			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_drawCallData.meshGPUDataIndex, 1);
 			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_drawCallData.materialGPUDataIndex, 1);

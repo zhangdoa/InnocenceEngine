@@ -55,8 +55,8 @@ namespace DX12RenderingBackendNS
 	bool createGlobalSamplerHeap();
 	bool createSwapChain();
 
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-	EntityID m_entityID;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+	EntityID m_EntityID;
 
 	static DX12RenderingBackendComponent* g_DXRenderingBackendComponent;
 
@@ -99,7 +99,7 @@ bool DX12RenderingBackendNS::createDebugCallback()
 	if (FAILED(l_result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: Can't get DirectX 12 debug interface!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -107,7 +107,7 @@ bool DX12RenderingBackendNS::createDebugCallback()
 	if (FAILED(l_result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: Can't query DirectX 12 debug interface!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -131,7 +131,7 @@ bool DX12RenderingBackendNS::createPhysicalDevices()
 	if (FAILED(l_result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: Can't create DXGI factory!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -143,7 +143,7 @@ bool DX12RenderingBackendNS::createPhysicalDevices()
 	if (l_adapter1 == nullptr)
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: Can't create a suitable video card adapter!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -158,7 +158,7 @@ bool DX12RenderingBackendNS::createPhysicalDevices()
 	if (FAILED(l_result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't create monitor adapter!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -169,7 +169,7 @@ bool DX12RenderingBackendNS::createPhysicalDevices()
 	if (FAILED(l_result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't get DXGI_FORMAT_R8G8B8A8_UNORM fitted monitor!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -181,7 +181,7 @@ bool DX12RenderingBackendNS::createPhysicalDevices()
 	if (FAILED(l_result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't fill the display mode list structures!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -206,7 +206,7 @@ bool DX12RenderingBackendNS::createPhysicalDevices()
 	if (FAILED(l_result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't get the video card adapter description!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -217,7 +217,7 @@ bool DX12RenderingBackendNS::createPhysicalDevices()
 	if (wcstombs_s(&stringLength, g_DXRenderingBackendComponent->m_videoCardDescription, 128, g_DXRenderingBackendComponent->m_adapterDesc.Description, 128) != 0)
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't convert the name of the video card to a character array!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -233,7 +233,7 @@ bool DX12RenderingBackendNS::createPhysicalDevices()
 	if (FAILED(l_result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: Can't create a DirectX 12.1 device. The default video card does not support DirectX 12.1!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -263,7 +263,7 @@ bool DX12RenderingBackendNS::createGlobalCommandQueue()
 	if (FAILED(l_result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: Can't create global CommandQueue!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -280,7 +280,7 @@ bool DX12RenderingBackendNS::createGlobalCommandAllocator()
 	if (FAILED(l_result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: Can't create global CommandAllocator!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -301,7 +301,7 @@ bool DX12RenderingBackendNS::createGlobalCSUHeap()
 	if (FAILED(l_result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: Can't create DescriptorHeap for CBV/SRV/UAV!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -328,7 +328,7 @@ bool DX12RenderingBackendNS::createGlobalSamplerHeap()
 	if (FAILED(l_result))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: Can't create DescriptorHeap for Sampler!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -392,7 +392,7 @@ bool DX12RenderingBackendNS::createSwapChain()
 	if (FAILED(l_hResult))
 	{
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: Can't create swap chain!");
-		m_objectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -416,7 +416,7 @@ bool DX12RenderingBackendNS::createSwapChain()
 
 bool DX12RenderingBackendNS::setup()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
 	g_DXRenderingBackendComponent = &DX12RenderingBackendComponent::get();
 
@@ -440,7 +440,7 @@ bool DX12RenderingBackendNS::setup()
 	l_result &= createDebugCallback();
 	l_result &= createPhysicalDevices();
 
-	m_objectStatus = ObjectStatus::Created;
+	m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingBackend setup finished.");
 
 	return l_result;
@@ -448,7 +448,7 @@ bool DX12RenderingBackendNS::setup()
 
 bool DX12RenderingBackendNS::initialize()
 {
-	if (DX12RenderingBackendNS::m_objectStatus == ObjectStatus::Created)
+	if (DX12RenderingBackendNS::m_ObjectStatus == ObjectStatus::Created)
 	{
 		auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
@@ -475,7 +475,7 @@ bool DX12RenderingBackendNS::initialize()
 		DX12OpaquePass::initialize();
 		DX12LightPass::initialize();
 
-		DX12RenderingBackendNS::m_objectStatus = ObjectStatus::Activated;
+		DX12RenderingBackendNS::m_ObjectStatus = ObjectStatus::Activated;
 		g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingBackend has been initialized.");
 		return l_result;
 	}
@@ -498,7 +498,7 @@ bool DX12RenderingBackendNS::update()
 			auto l_result = initializeDX12MeshDataComponent(l_MDC);
 			if (!l_result)
 			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't initialize DX12MeshDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
+				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't initialize DX12MeshDataComponent for " + std::string(l_MDC->m_ParentEntity->m_EntityName.c_str()) + "!");
 			}
 		}
 	}
@@ -512,7 +512,7 @@ bool DX12RenderingBackendNS::update()
 			auto l_result = initializeDX12MaterialDataComponent(l_MDC);
 			if (!l_result)
 			{
-				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't initialize DX12TextureDataComponent for " + std::string(l_MDC->m_parentEntity->m_entityName.c_str()) + "!");
+				g_pModuleManager->getLogSystem()->printLog(LogType::INNO_ERROR, "DX12RenderingBackend: can't initialize DX12TextureDataComponent for " + std::string(l_MDC->m_ParentEntity->m_EntityName.c_str()) + "!");
 			}
 		}
 	}
@@ -619,7 +619,7 @@ bool DX12RenderingBackendNS::terminate()
 		g_DXRenderingBackendComponent->m_factory = 0;
 	}
 
-	m_objectStatus = ObjectStatus::Terminated;
+	m_ObjectStatus = ObjectStatus::Terminated;
 	g_pModuleManager->getLogSystem()->printLog(LogType::INNO_DEV_SUCCESS, "DX12RenderingBackend has been terminated.");
 	return true;
 }
@@ -660,34 +660,34 @@ void DX12RenderingBackendNS::loadDefaultAssets()
 	g_pModuleManager->getAssetSystem()->addUnitLine(*m_unitLineMDC);
 	m_unitLineMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE_STRIP;
 	m_unitLineMDC->m_meshShapeType = MeshShapeType::LINE;
-	m_unitLineMDC->m_objectStatus = ObjectStatus::Created;
+	m_unitLineMDC->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitLineMDC);
 
 	m_unitQuadMDC = addDX12MeshDataComponent();
 	g_pModuleManager->getAssetSystem()->addUnitQuad(*m_unitQuadMDC);
 	m_unitQuadMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitQuadMDC->m_meshShapeType = MeshShapeType::QUAD;
-	m_unitQuadMDC->m_objectStatus = ObjectStatus::Created;
+	m_unitQuadMDC->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitQuadMDC);
 
 	m_unitCubeMDC = addDX12MeshDataComponent();
 	g_pModuleManager->getAssetSystem()->addUnitCube(*m_unitCubeMDC);
 	m_unitCubeMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitCubeMDC->m_meshShapeType = MeshShapeType::CUBE;
-	m_unitCubeMDC->m_objectStatus = ObjectStatus::Created;
+	m_unitCubeMDC->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitCubeMDC);
 
 	m_unitSphereMDC = addDX12MeshDataComponent();
 	g_pModuleManager->getAssetSystem()->addUnitSphere(*m_unitSphereMDC);
 	m_unitSphereMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
 	m_unitSphereMDC->m_meshShapeType = MeshShapeType::SPHERE;
-	m_unitSphereMDC->m_objectStatus = ObjectStatus::Created;
+	m_unitSphereMDC->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_unitSphereMDC);
 
 	m_terrainMDC = addDX12MeshDataComponent();
 	g_pModuleManager->getAssetSystem()->addTerrain(*m_terrainMDC);
 	m_terrainMDC->m_meshPrimitiveTopology = MeshPrimitiveTopology::TRIANGLE;
-	m_terrainMDC->m_objectStatus = ObjectStatus::Created;
+	m_terrainMDC->m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(m_terrainMDC);
 
 	m_basicMaterial = addDX12MaterialDataComponent();
@@ -742,8 +742,8 @@ DX12MeshDataComponent* DX12RenderingBackendNS::addDX12MeshDataComponent()
 	meshCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MeshDataComponentPool, sizeof(DX12MeshDataComponent));
 	auto l_MDC = new(l_rawPtr)DX12MeshDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Mesh_" + std::to_string(meshCount) + "/").c_str());
-	l_MDC->m_parentEntity = l_parentEntity;
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Mesh_" + std::to_string(meshCount) + "/").c_str());
+	l_MDC->m_ParentEntity = l_parentEntity;
 	return l_MDC;
 }
 
@@ -753,8 +753,8 @@ DX12MaterialDataComponent* DX12RenderingBackendNS::addDX12MaterialDataComponent(
 	materialCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_MaterialDataComponentPool, sizeof(DX12MaterialDataComponent));
 	auto l_MDC = new(l_rawPtr)DX12MaterialDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Material_" + std::to_string(materialCount) + "/").c_str());
-	l_MDC->m_parentEntity = l_parentEntity;
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Material_" + std::to_string(materialCount) + "/").c_str());
+	l_MDC->m_ParentEntity = l_parentEntity;
 	return l_MDC;
 }
 
@@ -764,8 +764,8 @@ DX12TextureDataComponent* DX12RenderingBackendNS::addDX12TextureDataComponent()
 	textureCount++;
 	auto l_rawPtr = g_pModuleManager->getMemorySystem()->spawnObject(m_TextureDataComponentPool, sizeof(DX12TextureDataComponent));
 	auto l_TDC = new(l_rawPtr)DX12TextureDataComponent();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, ("Texture_" + std::to_string(textureCount) + "/").c_str());
-	l_TDC->m_parentEntity = l_parentEntity;
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Texture_" + std::to_string(textureCount) + "/").c_str());
+	l_TDC->m_ParentEntity = l_parentEntity;
 	return l_TDC;
 }
 
@@ -888,7 +888,7 @@ bool DX12RenderingBackend::terminate()
 
 ObjectStatus DX12RenderingBackend::getStatus()
 {
-	return DX12RenderingBackendNS::m_objectStatus;
+	return DX12RenderingBackendNS::m_ObjectStatus;
 }
 
 MeshDataComponent * DX12RenderingBackend::addMeshDataComponent()

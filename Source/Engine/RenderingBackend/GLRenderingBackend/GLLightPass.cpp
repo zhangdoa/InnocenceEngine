@@ -22,7 +22,7 @@ namespace GLLightPass
 {
 	void initializeLightPassShaders();
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	GLRenderPassComponent* m_GLRPC;
 
@@ -33,9 +33,9 @@ namespace GLLightPass
 
 void GLLightPass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "LightPassGLRPC/");
+	m_GLRPC = addGLRenderPassComponent(m_EntityID, "LightPassGLRPC/");
 	m_GLRPC->m_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	m_GLRPC->m_renderPassDesc.useDepthAttachment = true;
 	m_GLRPC->m_renderPassDesc.useStencilAttachment = true;
@@ -48,7 +48,7 @@ void GLLightPass::initialize()
 void GLLightPass::initializeLightPassShaders()
 {
 	// shader programs and shaders
-	auto l_GLSPC = addGLShaderProgramComponent(m_entityID);
+	auto l_GLSPC = addGLShaderProgramComponent(m_EntityID);
 
 	initializeGLShaderProgramComponent(l_GLSPC, m_shaderFilePaths);
 

@@ -9,7 +9,7 @@ namespace DX12Helper
 	template <typename U, typename T>
 	bool SetObjectName(U* owner, T* rhs, const char* objectType)
 	{
-		auto l_Name = std::string(owner->m_componentName.c_str());
+		auto l_Name = std::string(owner->m_ComponentName.c_str());
 		l_Name += "_";
 		l_Name += objectType;
 		auto l_NameW = std::wstring(l_Name.begin(), l_Name.end());

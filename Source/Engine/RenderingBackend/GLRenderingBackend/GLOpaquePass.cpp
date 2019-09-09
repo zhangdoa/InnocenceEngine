@@ -13,7 +13,7 @@ namespace GLOpaquePass
 {
 	void initializeShaders();
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	GLRenderPassComponent* m_GLRPC;
 
@@ -24,9 +24,9 @@ namespace GLOpaquePass
 
 bool GLOpaquePass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "OpaquePassGLRPC/");
+	m_GLRPC = addGLRenderPassComponent(m_EntityID, "OpaquePassGLRPC/");
 	m_GLRPC->m_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	m_GLRPC->m_renderPassDesc.RTNumber = 4;
 	m_GLRPC->m_renderPassDesc.useDepthAttachment = true;
@@ -42,7 +42,7 @@ bool GLOpaquePass::initialize()
 void GLOpaquePass::initializeShaders()
 {
 	// shader programs and shaders
-	auto rhs = addGLShaderProgramComponent(m_entityID);
+	auto rhs = addGLShaderProgramComponent(m_EntityID);
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 

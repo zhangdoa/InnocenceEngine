@@ -14,18 +14,18 @@ namespace GLSHPass
 	SH9 samplesToSH(const std::vector<vec4>& samples);
 	std::vector<vec4> readbackCubemapSamples(GLRenderPassComponent* GLRPC, GLTextureDataComponent* GLTDC);
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	GLRenderPassComponent* m_readbackCanvasGLRPC;
 }
 
 bool GLSHPass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
 	auto l_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	l_renderPassDesc.RTNumber = 0;
-	m_readbackCanvasGLRPC = addGLRenderPassComponent(m_entityID, "SHPassCanvasGLRPC/");
+	m_readbackCanvasGLRPC = addGLRenderPassComponent(m_EntityID, "SHPassCanvasGLRPC/");
 	m_readbackCanvasGLRPC->m_renderPassDesc = l_renderPassDesc;
 	m_readbackCanvasGLRPC->m_drawColorBuffers = false;
 

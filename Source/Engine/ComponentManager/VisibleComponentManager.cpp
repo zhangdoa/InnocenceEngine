@@ -28,7 +28,7 @@ namespace VisibleComponentManagerNS
 	{
 		auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(meshShapeType);
 		auto l_material = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
-		l_material->m_objectStatus = ObjectStatus::Created;
+		l_material->m_ObjectStatus = ObjectStatus::Created;
 		visibleComponent->m_modelMap.emplace(l_mesh, l_material);
 	}
 }
@@ -65,7 +65,7 @@ bool InnoVisibleComponentManager::Setup()
 	{
 		i->m_PDCs.reserve(i->m_modelMap.size());
 
-		auto l_transformComponent = GetComponent(TransformComponent, i->m_parentEntity);
+		auto l_transformComponent = GetComponent(TransformComponent, i->m_ParentEntity);
 		auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
 		for (auto& j : i->m_modelMap)
@@ -77,7 +77,7 @@ bool InnoVisibleComponentManager::Setup()
 			g_pModuleManager->getPhysicsSystem()->generatePhysicsProxy(i);
 		}
 
-		i->m_objectStatus = ObjectStatus::Activated;
+		i->m_ObjectStatus = ObjectStatus::Activated;
 	};
 
 	return true;
@@ -98,7 +98,7 @@ bool InnoVisibleComponentManager::Terminate()
 	return true;
 }
 
-InnoComponent * InnoVisibleComponentManager::Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
+InnoComponent * InnoVisibleComponentManager::Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectOwnership objectUsage)
 {
 	SpawnComponentImpl(VisibleComponent);
 }

@@ -19,14 +19,14 @@ namespace DX12OpaquePass
 
 	ShaderFilePaths m_shaderFilePaths = { "DX12//opaquePassVertex.hlsl/", "", "", "", "DX12//opaquePassPixel.hlsl/" };
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 }
 
 bool DX12OpaquePass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
-	m_DXRPC = addDX12RenderPassComponent(m_entityID, "OpaquePassDXRPC\\");
+	m_DXRPC = addDX12RenderPassComponent(m_EntityID, "OpaquePassDXRPC\\");
 
 	m_DXRPC->m_renderPassDesc = DX12RenderingBackendComponent::get().m_deferredRenderPassDesc;
 	m_DXRPC->m_renderPassDesc.RTNumber = 4;
@@ -104,7 +104,7 @@ bool DX12OpaquePass::initialize()
 
 bool DX12OpaquePass::initializeShaders()
 {
-	m_DXSPC = addDX12ShaderProgramComponent(m_entityID);
+	m_DXSPC = addDX12ShaderProgramComponent(m_EntityID);
 
 	m_DXSPC->m_samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 	m_DXSPC->m_samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -147,12 +147,12 @@ bool DX12OpaquePass::update()
 	{
 		auto l_opaquePassGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassGPUData()[i];
 
-		if (l_opaquePassGPUData.mesh->m_objectStatus == ObjectStatus::Activated)
+		if (l_opaquePassGPUData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 		{
 			recordBindCBV(m_DXRPC, 0, 1, DX12RenderingBackendComponent::get().m_meshConstantBuffer, l_offset);
 			recordBindCBV(m_DXRPC, 0, 2, DX12RenderingBackendComponent::get().m_materialConstantBuffer, l_offset);
 
-			if (l_opaquePassGPUData.material->m_objectStatus == ObjectStatus::Activated)
+			if (l_opaquePassGPUData.material->m_ObjectStatus == ObjectStatus::Activated)
 			{
 				recordBindSRVDescTable(m_DXRPC, 0, 3, reinterpret_cast<DX12MaterialDataComponent*>(l_opaquePassGPUData.material)->m_SRVs[0]);
 			}

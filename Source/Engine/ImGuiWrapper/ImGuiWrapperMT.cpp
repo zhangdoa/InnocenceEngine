@@ -5,12 +5,12 @@ extern IModuleManager* g_pModuleManager;
 
 namespace ImGuiWrapperMTNS
 {
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
 bool ImGuiWrapperMT::setup()
 {
-	ImGuiWrapperMTNS::m_objectStatus = ObjectStatus::Activated;
+	ImGuiWrapperMTNS::m_ObjectStatus = ObjectStatus::Activated;
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWrapperMT setup finished.");
 
 	return true;
@@ -37,7 +37,7 @@ bool ImGuiWrapperMT::render()
 
 bool ImGuiWrapperMT::terminate()
 {
-	ImGuiWrapperMTNS::m_objectStatus = ObjectStatus::Terminated;
+	ImGuiWrapperMTNS::m_ObjectStatus = ObjectStatus::Terminated;
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWrapperMT has been terminated.");
 
 	return true;
@@ -45,7 +45,7 @@ bool ImGuiWrapperMT::terminate()
 
 ObjectStatus ImGuiWrapperMT::getStatus()
 {
-	return ImGuiWrapperMTNS::m_objectStatus;
+	return ImGuiWrapperMTNS::m_ObjectStatus;
 }
 
 void ImGuiWrapperMT::showRenderResult(RenderPassType renderPassType)

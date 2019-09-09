@@ -48,7 +48,7 @@ namespace GLEnvironmentCapturePass
 	bool serializeBricks();
 	bool serializeBrickFactors();
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	GLRenderPassComponent* m_opaquePassGLRPC;
 	GLRenderPassComponent* m_capturePassGLRPC;
@@ -75,7 +75,7 @@ namespace GLEnvironmentCapturePass
 
 bool GLEnvironmentCapturePass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
 	auto l_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 
@@ -92,20 +92,20 @@ bool GLEnvironmentCapturePass::initialize()
 	l_renderPassDesc.useDepthAttachment = true;
 	l_renderPassDesc.useStencilAttachment = true;
 
-	m_opaquePassGLRPC = addGLRenderPassComponent(m_entityID, "EnvironmentCaptureOpaquePassGLRPC/");
+	m_opaquePassGLRPC = addGLRenderPassComponent(m_EntityID, "EnvironmentCaptureOpaquePassGLRPC/");
 	m_opaquePassGLRPC->m_renderPassDesc = l_renderPassDesc;
 	m_opaquePassGLRPC->m_drawColorBuffers = true;
 
 	initializeGLRenderPassComponent(m_opaquePassGLRPC);
 
-	m_capturePassGLRPC = addGLRenderPassComponent(m_entityID, "EnvironmentCaptureLightPassGLRPC/");
+	m_capturePassGLRPC = addGLRenderPassComponent(m_EntityID, "EnvironmentCaptureLightPassGLRPC/");
 	l_renderPassDesc.RTNumber = 1;
 	m_capturePassGLRPC->m_renderPassDesc = l_renderPassDesc;
 	m_capturePassGLRPC->m_drawColorBuffers = true;
 
 	initializeGLRenderPassComponent(m_capturePassGLRPC);
 
-	m_skyVisibilityPassGLRPC = addGLRenderPassComponent(m_entityID, "EnvironmentCaptureSkyVisibilityPassGLRPC/");
+	m_skyVisibilityPassGLRPC = addGLRenderPassComponent(m_EntityID, "EnvironmentCaptureSkyVisibilityPassGLRPC/");
 	l_renderPassDesc.RTNumber = 1;
 	l_renderPassDesc.RTDesc.pixelDataFormat = TexturePixelDataFormat::RGBA;
 	l_renderPassDesc.RTDesc.pixelDataType = TexturePixelDataType::FLOAT32;
@@ -114,10 +114,10 @@ bool GLEnvironmentCapturePass::initialize()
 
 	initializeGLRenderPassComponent(m_skyVisibilityPassGLRPC);
 
-	m_capturePassGLSPC = addGLShaderProgramComponent(m_entityID);
+	m_capturePassGLSPC = addGLShaderProgramComponent(m_EntityID);
 	initializeGLShaderProgramComponent(m_capturePassGLSPC, m_capturePassShaderFilePaths);
 
-	m_skyVisibilityGLSPC = addGLShaderProgramComponent(m_entityID);
+	m_skyVisibilityGLSPC = addGLShaderProgramComponent(m_EntityID);
 	initializeGLShaderProgramComponent(m_skyVisibilityGLSPC, m_skyVisibilityShaderFilePaths);
 
 	return true;

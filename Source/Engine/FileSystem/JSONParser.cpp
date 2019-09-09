@@ -15,7 +15,7 @@ extern IModuleManager* g_pModuleManager;
 namespace InnoFileSystemNS::JSONParser
 {
 #define LoadComponentData(className, j, entity) \
-	{ auto l_result = SpawnComponent(className, entity, ObjectSource::Asset, ObjectUsage::Gameplay); \
+	{ auto l_result = SpawnComponent(className, entity, ObjectSource::Asset, ObjectOwnership::Client); \
 	from_json(j, *l_result); }
 
 	template<typename T>
@@ -28,7 +28,7 @@ namespace InnoFileSystemNS::JSONParser
 			topLevel["SceneEntities"].begin(),
 			topLevel["SceneEntities"].end(),
 			[&](auto val) -> bool {
-			return val["EntityID"] == rhs->m_parentEntity->m_entityID.c_str();
+			return val["EntityID"] == rhs->m_ParentEntity->m_EntityID.c_str();
 		});
 
 		if (l_result != topLevel["SceneEntities"].end())
@@ -38,7 +38,7 @@ namespace InnoFileSystemNS::JSONParser
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Warning, "FileSystem: saveComponentData<T>: Entity ID ", rhs->m_parentEntity->m_entityID.c_str(), " is invalid.");
+			InnoLogger::Log(LogLevel::Warning, "FileSystem: saveComponentData<T>: Entity ID ", rhs->m_ParentEntity->m_EntityID.c_str(), " is invalid.");
 			return false;
 		}
 	}
@@ -88,8 +88,8 @@ bool InnoFileSystemNS::JSONParser::saveJsonDataToDisk(const std::string & fileNa
 void InnoFileSystemNS::JSONParser::to_json(json& j, const InnoEntity& p)
 {
 	j = json{
-		{"EntityID", p.m_entityID.c_str()},
-		{"EntityName", p.m_entityName.c_str()},
+		{"EntityID", p.m_EntityID.c_str()},
+		{"EntityName", p.m_EntityName.c_str()},
 	};
 }
 
@@ -170,7 +170,7 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const TransformComponent& p)
 
 	to_json(localTransformVector, p.m_localTransformVector);
 
-	auto parentTransformComponentEntityName = p.m_parentTransformComponent->m_parentEntity->m_entityName;
+	auto parentTransformComponentEntityName = p.m_parentTransformComponent->m_ParentEntity->m_EntityName;
 
 	j = json
 	{
@@ -438,7 +438,7 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j, bool
 
 			l_MeshDC->m_indicesSize = l_MeshDC->m_indices.size();
 			l_MeshDC->m_meshShapeType = MeshShapeType::Custom;
-			l_MeshDC->m_objectStatus = ObjectStatus::Created;
+			l_MeshDC->m_ObjectStatus = ObjectStatus::Created;
 
 			l_result.first = l_MeshDC;
 
@@ -456,7 +456,7 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j, bool
 			else
 			{
 				l_result.second = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
-				l_result.second->m_objectStatus = ObjectStatus::Created;
+				l_result.second->m_ObjectStatus = ObjectStatus::Created;
 			}
 
 			m_loadedModelPair.emplace(l_meshFileName, l_result);
@@ -476,7 +476,7 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j, bool
 		else
 		{
 			l_result.second = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
-			l_result.second->m_objectStatus = ObjectStatus::Created;
+			l_result.second->m_ObjectStatus = ObjectStatus::Created;
 		}
 	}
 
@@ -566,7 +566,7 @@ MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(co
 	l_MDC->m_meshCustomMaterial.Roughness = j["Roughness"];
 	l_MDC->m_meshCustomMaterial.AO = j["AO"];
 	l_MDC->m_meshCustomMaterial.Thickness = j["Thickness"];
-	l_MDC->m_objectStatus = ObjectStatus::Created;
+	l_MDC->m_ObjectStatus = ObjectStatus::Created;
 
 	g_pModuleManager->getRenderingFrontend()->registerMaterialDataComponent(l_MDC, AsyncUploadGPUResource);
 
@@ -581,7 +581,7 @@ bool InnoFileSystemNS::JSONParser::saveScene(const std::string& fileName)
 	// save entities name and ID
 	for (auto i : g_pModuleManager->getEntityManager()->GetEntities())
 	{
-		if (i->m_objectSource == ObjectSource::Asset)
+		if (i->m_ObjectSource == ObjectSource::Asset)
 		{
 			json j;
 			to_json(j, *i);
@@ -592,28 +592,28 @@ bool InnoFileSystemNS::JSONParser::saveScene(const std::string& fileName)
 	// save children components
 	for (auto i : GetComponentManager(TransformComponent)->GetAllComponents())
 	{
-		if (i->m_objectSource == ObjectSource::Asset)
+		if (i->m_ObjectSource == ObjectSource::Asset)
 		{
 			saveComponentData(topLevel, i);
 		}
 	}
 	for (auto i : GetComponentManager(VisibleComponent)->GetAllComponents())
 	{
-		if (i->m_objectSource == ObjectSource::Asset)
+		if (i->m_ObjectSource == ObjectSource::Asset)
 		{
 			saveComponentData(topLevel, i);
 		}
 	}
 	for (auto i : GetComponentManager(LightComponent)->GetAllComponents())
 	{
-		if (i->m_objectSource == ObjectSource::Asset)
+		if (i->m_ObjectSource == ObjectSource::Asset)
 		{
 			saveComponentData(topLevel, i);
 		}
 	}
 	for (auto i : GetComponentManager(CameraComponent)->GetAllComponents())
 	{
-		if (i->m_objectSource == ObjectSource::Asset)
+		if (i->m_ObjectSource == ObjectSource::Asset)
 		{
 			saveComponentData(topLevel, i);
 		}
@@ -640,7 +640,7 @@ bool InnoFileSystemNS::JSONParser::loadScene(const std::string & fileName)
 	{
 		std::string l_entityName = i["EntityName"];
 		l_entityName += "/";
-		auto l_entity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Asset, ObjectUsage::Gameplay, l_entityName.c_str());
+		auto l_entity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Asset, ObjectOwnership::Client, l_entityName.c_str());
 
 		for (auto k : i["ChildrenComponents"])
 		{

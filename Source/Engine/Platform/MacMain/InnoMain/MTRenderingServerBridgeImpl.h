@@ -36,7 +36,7 @@ public:
     bool initializeMTTextureDataComponent(MTTextureDataComponent* rhs) override;
 
 private:
-    ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+    ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
     MacWindowDelegate* m_macWindowDelegate = nullptr;
     MetalDelegate* m_metalDelegate = nullptr;
 };

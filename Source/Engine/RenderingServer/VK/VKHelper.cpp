@@ -645,7 +645,7 @@ bool VKHelper::createRenderTargets(VKRenderPassDataComponent* VKRPDC, IRendering
 {
 	for (size_t i = 0; i < VKRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
-		VKRPDC->m_RenderTargets[i] = renderingServer->AddTextureDataComponent((std::string(VKRPDC->m_componentName.c_str()) + "_" + std::to_string(i) + "/").c_str());
+		VKRPDC->m_RenderTargets[i] = renderingServer->AddTextureDataComponent((std::string(VKRPDC->m_ComponentName.c_str()) + "_" + std::to_string(i) + "/").c_str());
 
 		VKRPDC->m_RenderTargets[i]->m_textureDataDesc = VKRPDC->m_RenderPassDesc.m_RenderTargetDesc;
 
@@ -656,7 +656,7 @@ bool VKHelper::createRenderTargets(VKRenderPassDataComponent* VKRPDC, IRendering
 
 	if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
 	{
-		VKRPDC->m_DepthStencilRenderTarget = renderingServer->AddTextureDataComponent((std::string(VKRPDC->m_componentName.c_str()) + "_DS/").c_str());
+		VKRPDC->m_DepthStencilRenderTarget = renderingServer->AddTextureDataComponent((std::string(VKRPDC->m_ComponentName.c_str()) + "_DS/").c_str());
 		VKRPDC->m_DepthStencilRenderTarget->m_textureDataDesc = VKRPDC->m_RenderPassDesc.m_RenderTargetDesc;
 		VKRPDC->m_DepthStencilRenderTarget->m_textureDataDesc.UsageType = TextureUsageType::DepthAttachment;
 		if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)

@@ -37,7 +37,7 @@ void CameraComponentManagerNS::generateProjectionMatrix(CameraComponent * camera
 
 void CameraComponentManagerNS::generateFrustum(CameraComponent * cameraComponent)
 {
-	auto l_transformComponent = GetComponent(TransformComponent, cameraComponent->m_parentEntity);
+	auto l_transformComponent = GetComponent(TransformComponent, cameraComponent->m_ParentEntity);
 
 	if (l_transformComponent != nullptr)
 	{
@@ -52,7 +52,7 @@ void CameraComponentManagerNS::generateFrustum(CameraComponent * cameraComponent
 
 void CameraComponentManagerNS::generateRayOfEye(CameraComponent * cameraComponent)
 {
-	auto l_transformComponent = GetComponent(TransformComponent, cameraComponent->m_parentEntity);
+	auto l_transformComponent = GetComponent(TransformComponent, cameraComponent->m_ParentEntity);
 
 	if (l_transformComponent != nullptr)
 	{
@@ -104,7 +104,7 @@ bool InnoCameraComponentManager::Terminate()
 	return true;
 }
 
-InnoComponent * InnoCameraComponentManager::Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
+InnoComponent * InnoCameraComponentManager::Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectOwnership objectUsage)
 {
 	SpawnComponentImpl(CameraComponent);
 }

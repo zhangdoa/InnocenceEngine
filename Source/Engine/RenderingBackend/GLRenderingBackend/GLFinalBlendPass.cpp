@@ -16,7 +16,7 @@ namespace GLFinalBlendPass
 {
 	void initializeShaders();
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	GLRenderPassComponent* m_GLRPC;
 	GLShaderProgramComponent* m_GLSPC;
@@ -28,9 +28,9 @@ namespace GLFinalBlendPass
 
 bool GLFinalBlendPass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "FinalBlendPassGLRPC/");
+	m_GLRPC = addGLRenderPassComponent(m_EntityID, "FinalBlendPassGLRPC/");
 	m_GLRPC->m_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	initializeGLRenderPassComponent(m_GLRPC);
 
@@ -47,7 +47,7 @@ bool GLFinalBlendPass::initialize()
 void GLFinalBlendPass::initializeShaders()
 {
 	// shader programs and shaders
-	auto rhs = addGLShaderProgramComponent(m_entityID);
+	auto rhs = addGLShaderProgramComponent(m_EntityID);
 
 	initializeGLShaderProgramComponent(rhs, m_shaderFilePaths);
 

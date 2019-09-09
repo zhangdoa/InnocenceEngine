@@ -28,7 +28,7 @@ namespace InnoEventSystemNS
 	void mousePositionCallback(float mouseXPos, float mouseYPos);
 	void scrollCallback(float xoffset, float yoffset);
 
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
 	const InputConfig m_inputConfig = { 256, 5 };
 
@@ -47,15 +47,15 @@ namespace InnoEventSystemNS
 
 bool InnoEventSystemNS::setup()
 {
-	InnoEventSystemNS::m_objectStatus = ObjectStatus::Created;
+	InnoEventSystemNS::m_ObjectStatus = ObjectStatus::Created;
 	return true;
 }
 
 bool InnoEventSystemNS::initialize()
 {
-	if (InnoEventSystemNS::m_objectStatus == ObjectStatus::Created)
+	if (InnoEventSystemNS::m_ObjectStatus == ObjectStatus::Created)
 	{
-		m_objectStatus = ObjectStatus::Activated;
+		m_ObjectStatus = ObjectStatus::Activated;
 		InnoLogger::Log(LogLevel::Success, "EventSystem has been initialized.");
 
 		return true;
@@ -69,7 +69,7 @@ bool InnoEventSystemNS::initialize()
 
 bool InnoEventSystemNS::update()
 {
-	if (InnoEventSystemNS::m_objectStatus == ObjectStatus::Activated)
+	if (InnoEventSystemNS::m_ObjectStatus == ObjectStatus::Activated)
 	{
 		auto l_buttonStates = g_pModuleManager->getWindowSystem()->getButtonState();
 
@@ -107,7 +107,7 @@ bool InnoEventSystemNS::update()
 	}
 	else
 	{
-		InnoEventSystemNS::m_objectStatus = ObjectStatus::Suspended;
+		InnoEventSystemNS::m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -116,7 +116,7 @@ bool InnoEventSystemNS::update()
 
 bool InnoEventSystemNS::terminate()
 {
-	m_objectStatus = ObjectStatus::Terminated;
+	m_ObjectStatus = ObjectStatus::Terminated;
 	InnoLogger::Log(LogLevel::Success, "EventSystem has been terminated.");
 
 	return true;
@@ -159,7 +159,7 @@ Vec4 InnoEventSystemNS::getMousePositionInWorldSpace()
 	{
 		return Vec4();
 	}
-	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_parentEntity);
+	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_ParentEntity);
 	if (l_cameraTransformComponent == nullptr)
 	{
 		return Vec4();
@@ -318,5 +318,5 @@ Vec2 InnoEventSystem::getMousePositionInScreenSpace()
 
 ObjectStatus InnoEventSystem::getStatus()
 {
-	return InnoEventSystemNS::m_objectStatus;
+	return InnoEventSystemNS::m_ObjectStatus;
 }

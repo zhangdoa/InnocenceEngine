@@ -8,11 +8,11 @@ public:
 	InnoComponent() = default;
 	~InnoComponent() = default;
 
-	InnoEntity* m_parentEntity;
-	ComponentName m_componentName;
-	uint32_t m_UUID = 0;
+	InnoEntity* m_ParentEntity = 0;
+	ComponentName m_ComponentName;
+	uint64_t m_UUID = 0;
 	ComponentType m_ComponentType;
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-	ObjectSource m_objectSource = ObjectSource::Runtime;
-	ObjectUsage m_objectUsage = ObjectUsage::Gameplay;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+	ObjectSource m_ObjectSource = ObjectSource::Runtime;
+	ObjectOwnership m_ObjectOwnership = ObjectOwnership::Client;
 };

@@ -22,13 +22,13 @@ bool MacWindowSystemBridgeImpl::setup(uint32_t sizeX, uint32_t sizeY) {
     NSClassFromString([infoDictionary objectForKey:@"NSPrincipalClass"]);
     app = [principalClass sharedApplication];
     
-    m_objectStatus = ObjectStatus::Created;
+    m_ObjectStatus = ObjectStatus::Created;
     return true;
 }
 
 bool MacWindowSystemBridgeImpl::initialize() {
     [m_macWindowDelegate setView:[m_metalDelegate getView]];
-        m_objectStatus = ObjectStatus::Activated;
+        m_ObjectStatus = ObjectStatus::Activated;
     return true;
 }
 
@@ -52,9 +52,9 @@ bool MacWindowSystemBridgeImpl::terminate() {
 ObjectStatus MacWindowSystemBridgeImpl::getStatus() {
     if(![m_macWindowDelegate isAlive])
     {
-        m_objectStatus = ObjectStatus::Suspended;
+        m_ObjectStatus = ObjectStatus::Suspended;
     }
-    return m_objectStatus;
+    return m_ObjectStatus;
 }
 
 MacWindowSystemBridgeImpl::MacWindowSystemBridgeImpl(MacWindowDelegate* macWindowDelegate, MetalDelegate *metalDelegate) {

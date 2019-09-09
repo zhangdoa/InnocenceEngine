@@ -790,7 +790,7 @@ bool VKRenderingBackendNS::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, Vk
 
 bool VKRenderingBackendNS::initializeVKMeshDataComponent(VKMeshDataComponent* rhs)
 {
-	if (rhs->m_objectStatus == ObjectStatus::Activated)
+	if (rhs->m_ObjectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
@@ -807,9 +807,9 @@ bool VKRenderingBackendNS::submitGPUData(VKMeshDataComponent * rhs)
 	createVBO(rhs->m_vertices, rhs->m_VBO);
 	createIBO(rhs->m_indices, rhs->m_IBO);
 
-	rhs->m_objectStatus = ObjectStatus::Activated;
+	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
-	m_initializedVKMeshes.emplace(rhs->m_parentEntity, rhs);
+	m_initializedVKMeshes.emplace(rhs->m_ParentEntity, rhs);
 
 	return true;
 }
@@ -866,7 +866,7 @@ bool  VKRenderingBackendNS::createIBO(const InnoArray<Index>& indices, VkBuffer&
 
 bool VKRenderingBackendNS::initializeVKTextureDataComponent(VKTextureDataComponent * rhs)
 {
-	if (rhs->m_objectStatus == ObjectStatus::Activated)
+	if (rhs->m_ObjectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
@@ -1006,9 +1006,9 @@ bool VKRenderingBackendNS::submitGPUData(VKTextureDataComponent * rhs)
 
 	createImageView(rhs);
 
-	rhs->m_objectStatus = ObjectStatus::Activated;
+	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
-	m_initializedVKTextures.emplace(rhs->m_parentEntity, rhs);
+	m_initializedVKTextures.emplace(rhs->m_ParentEntity, rhs);
 
 	return true;
 }
@@ -1131,7 +1131,7 @@ bool VKRenderingBackendNS::createImageView(VKTextureDataComponent* VKTDC)
 
 bool VKRenderingBackendNS::initializeVKMaterialDataComponent(VKMaterialDataComponent* rhs)
 {
-	if (rhs->m_objectStatus == ObjectStatus::Activated)
+	if (rhs->m_ObjectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
@@ -1219,9 +1219,9 @@ bool VKRenderingBackendNS::submitGPUData(VKMaterialDataComponent * rhs)
 
 	updateDescriptorSet(&rhs->m_writeDescriptorSets[0], (uint32_t)rhs->m_writeDescriptorSets.size());
 
-	rhs->m_objectStatus = ObjectStatus::Activated;
+	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
-	m_initializedVKMaterials.emplace(rhs->m_parentEntity, rhs);
+	m_initializedVKMaterials.emplace(rhs->m_ParentEntity, rhs);
 
 	return true;
 }

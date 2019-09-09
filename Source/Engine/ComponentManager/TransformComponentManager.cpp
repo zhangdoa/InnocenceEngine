@@ -102,9 +102,9 @@ bool InnoTransformComponentManager::Setup()
 	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_SceneLoadingStartCallback);
 	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_SceneLoadingFinishCallback);
 
-	m_RootTransformEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Engine, "RootTransform/");
+	m_RootTransformEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, "RootTransform/");
 
-	m_RootTransformComponent = SpawnComponent(TransformComponent, m_RootTransformEntity, ObjectSource::Runtime, ObjectUsage::Engine);
+	m_RootTransformComponent = SpawnComponent(TransformComponent, m_RootTransformEntity, ObjectSource::Runtime, ObjectOwnership::Engine);
 
 	m_RootTransformComponent->m_localTransformVector_target = m_RootTransformComponent->m_localTransformVector;
 	m_RootTransformComponent->m_globalTransformVector = m_RootTransformComponent->m_localTransformVector;
@@ -133,7 +133,7 @@ bool InnoTransformComponentManager::Terminate()
 	return true;
 }
 
-InnoComponent * InnoTransformComponentManager::Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectUsage objectUsage)
+InnoComponent * InnoTransformComponentManager::Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectOwnership objectUsage)
 {
 	SpawnComponentImpl(TransformComponent);
 }

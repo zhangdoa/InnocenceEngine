@@ -8,22 +8,22 @@ extern IModuleManager* g_pModuleManager;
 
 namespace InnoAssetSystemNS
 {
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
 	DirectoryMetadata m_rootDirectoryMetadata;
 }
 
 bool InnoAssetSystem::setup()
 {
-	InnoAssetSystemNS::m_objectStatus = ObjectStatus::Created;
+	InnoAssetSystemNS::m_ObjectStatus = ObjectStatus::Created;
 	return true;
 }
 
 bool InnoAssetSystem::initialize()
 {
-	if (InnoAssetSystemNS::m_objectStatus == ObjectStatus::Created)
+	if (InnoAssetSystemNS::m_ObjectStatus == ObjectStatus::Created)
 	{
-		InnoAssetSystemNS::m_objectStatus = ObjectStatus::Activated;
+		InnoAssetSystemNS::m_ObjectStatus = ObjectStatus::Activated;
 		InnoLogger::Log(LogLevel::Success, "AssetSystem has been initialized.");
 		return true;
 	}
@@ -36,27 +36,27 @@ bool InnoAssetSystem::initialize()
 
 bool InnoAssetSystem::update()
 {
-	if (InnoAssetSystemNS::m_objectStatus == ObjectStatus::Activated)
+	if (InnoAssetSystemNS::m_ObjectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
 	else
 	{
-		InnoAssetSystemNS::m_objectStatus = ObjectStatus::Suspended;
+		InnoAssetSystemNS::m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 }
 
 bool InnoAssetSystem::terminate()
 {
-	InnoAssetSystemNS::m_objectStatus = ObjectStatus::Terminated;
+	InnoAssetSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
 	InnoLogger::Log(LogLevel::Success, "AssetSystem has been terminated.");
 	return true;
 }
 
 ObjectStatus InnoAssetSystem::getStatus()
 {
-	return InnoAssetSystemNS::m_objectStatus;
+	return InnoAssetSystemNS::m_ObjectStatus;
 }
 
 DirectoryMetadata* InnoAssetSystem::getRootDirectoryMetadata()

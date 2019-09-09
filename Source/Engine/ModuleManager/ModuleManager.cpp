@@ -61,7 +61,7 @@ if (!g_pModuleManager->get##className()->initialize()) \
 #define subSystemUpdate( className ) \
 if (!g_pModuleManager->get##className()->update()) \
 { \
-m_objectStatus = ObjectStatus::Suspended; \
+m_ObjectStatus = ObjectStatus::Suspended; \
 return false; \
 }
 
@@ -93,7 +93,7 @@ if (!g_pModuleManager->getComponentManager(ComponentType::className)->Initialize
 #define ComponentManagerUpdate( className ) \
 if (!g_pModuleManager->getComponentManager(ComponentType::className)->Simulate()) \
 { \
-m_objectStatus = ObjectStatus::Suspended; \
+m_ObjectStatus = ObjectStatus::Suspended; \
 return false; \
 }
 
@@ -142,7 +142,7 @@ namespace InnoModuleManagerNS
 
 	FixedSizeString<128> m_applicationName;
 
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
 	std::atomic<bool> m_isRendering = false;
 	std::atomic<bool> m_allowRender = false;
@@ -497,7 +497,7 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	f_PhysicsSystemCullingJob = [&]() {m_PhysicsSystem->updateCulling(); };
 	f_RenderingFrontendUpdateJob = [&]() {m_RenderingFrontend->update(); };
 
-	m_objectStatus = ObjectStatus::Created;
+	m_ObjectStatus = ObjectStatus::Created;
 	InnoLogger::Log(LogLevel::Success, "Engine setup finished.");
 
 	return true;
@@ -552,7 +552,7 @@ bool InnoModuleManagerNS::initialize()
 	f_PhysicsSystemCullingJob();
 	f_RenderingFrontendUpdateJob();
 
-	m_objectStatus = ObjectStatus::Activated;
+	m_ObjectStatus = ObjectStatus::Activated;
 	InnoLogger::Log(LogLevel::Success, "Engine has been initialized.");
 	return true;
 }
@@ -627,7 +627,7 @@ bool InnoModuleManagerNS::update()
 			}
 			else
 			{
-				m_objectStatus = ObjectStatus::Suspended;
+				m_ObjectStatus = ObjectStatus::Suspended;
 				InnoLogger::Log(LogLevel::Warning, "Engine is stand-by.");
 				return true;
 			}
@@ -689,7 +689,7 @@ bool InnoModuleManagerNS::terminate()
 	subSystemTerm(LogSystem);
 	subSystemTerm(TimeSystem);
 
-	m_objectStatus = ObjectStatus::Terminated;
+	m_ObjectStatus = ObjectStatus::Terminated;
 	InnoLogger::Log(LogLevel::Success, "Engine has been terminated.");
 
 	return true;
@@ -719,7 +719,7 @@ bool InnoModuleManager::terminate()
 
 ObjectStatus InnoModuleManager::getStatus()
 {
-	return m_objectStatus;
+	return m_ObjectStatus;
 }
 
 subSystemGetDefi(TimeSystem);

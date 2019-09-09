@@ -102,11 +102,11 @@ bool InnoBakerNS::gatherStaticMeshData()
 	for (auto visibleComponent : l_visibleComponents)
 	{
 		if (visibleComponent->m_visiblilityType == VisiblilityType::Opaque
-			&& visibleComponent->m_objectStatus == ObjectStatus::Activated
+			&& visibleComponent->m_ObjectStatus == ObjectStatus::Activated
 			&& visibleComponent->m_meshUsageType == MeshUsageType::Static
 			)
 		{
-			auto l_transformComponent = GetComponent(TransformComponent, visibleComponent->m_parentEntity);
+			auto l_transformComponent = GetComponent(TransformComponent, visibleComponent->m_ParentEntity);
 			auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
 			for (auto& l_modelPair : visibleComponent->m_modelMap)
@@ -188,7 +188,7 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 	{
 		auto l_staticMeshGPUData = m_staticMeshDrawCallData[i];
 
-		if (l_staticMeshGPUData.mesh->m_objectStatus == ObjectStatus::Activated)
+		if (l_staticMeshGPUData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 		{
 			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Probe, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_offset, 1);
 
@@ -458,12 +458,12 @@ bool InnoBakerNS::drawOpaquePass(Probe& probeCache, const Mat4& p, const std::ve
 	{
 		auto l_staticMeshGPUData = m_staticMeshDrawCallData[i];
 
-		if (l_staticMeshGPUData.mesh->m_objectStatus == ObjectStatus::Activated)
+		if (l_staticMeshGPUData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 		{
 			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_offset, 1);
 			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_offset, 1);
 
-			if (l_staticMeshGPUData.material->m_objectStatus == ObjectStatus::Activated)
+			if (l_staticMeshGPUData.material->m_ObjectStatus == ObjectStatus::Activated)
 			{
 				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticMeshGPUData.material->m_ResourceBinders[0], 3, 0);
 				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticMeshGPUData.material->m_ResourceBinders[1], 4, 1);
@@ -474,7 +474,7 @@ bool InnoBakerNS::drawOpaquePass(Probe& probeCache, const Mat4& p, const std::ve
 
 			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC_Surfel, l_staticMeshGPUData.mesh);
 
-			if (l_staticMeshGPUData.material->m_objectStatus == ObjectStatus::Activated)
+			if (l_staticMeshGPUData.material->m_ObjectStatus == ObjectStatus::Activated)
 			{
 				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticMeshGPUData.material->m_ResourceBinders[0], 3, 0);
 				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticMeshGPUData.material->m_ResourceBinders[1], 4, 1);

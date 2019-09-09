@@ -14,7 +14,7 @@ using namespace DX11RenderingBackendNS;
 
 namespace DX11FinalBlendPass
 {
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	DX11RenderPassComponent* m_DXRPC;
 	DX11ShaderProgramComponent* m_DXSPC;
@@ -27,7 +27,7 @@ namespace DX11FinalBlendPass
 
 bool DX11FinalBlendPass::initialize()
 {
-	m_DXSPC = addDX11ShaderProgramComponent(m_entityID);
+	m_DXSPC = addDX11ShaderProgramComponent(m_EntityID);
 
 	// Create a texture sampler state description.
 	m_DXSPC->m_samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
@@ -54,7 +54,7 @@ bool DX11FinalBlendPass::initialize()
 
 	auto l_imageCount = 1;
 
-	m_DXRPC = addDX11RenderPassComponent(m_entityID, "FinalBlendPassDXRPC\\");
+	m_DXRPC = addDX11RenderPassComponent(m_EntityID, "FinalBlendPassDXRPC\\");
 
 	m_DXRPC->m_renderPassDesc = DX11RenderingBackendComponent::get().m_deferredRenderPassDesc;
 	m_DXRPC->m_renderPassDesc.RTNumber = l_imageCount;

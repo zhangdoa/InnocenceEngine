@@ -33,7 +33,7 @@ namespace DX11LightCullingPass
 	DX11TextureDataComponent* m_lightGridDXTDC;
 	DX11TextureDataComponent* m_debugDXTDC;
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 	const uint32_t m_tileSize = 16;
 	const uint32_t m_numThreadPerGroup = 16;
 	TVec4<uint32_t> m_tileFrustumNumThreads;
@@ -127,9 +127,9 @@ bool DX11LightCullingPass::createLightGridDXTDC()
 
 bool DX11LightCullingPass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
-	m_DXRPC = addDX11RenderPassComponent(m_entityID, "LightCullingPassDXRPC\\");
+	m_DXRPC = addDX11RenderPassComponent(m_EntityID, "LightCullingPassDXRPC\\");
 
 	m_DXRPC->m_renderPassDesc = DX11RenderingBackendComponent::get().m_deferredRenderPassDesc;
 	m_DXRPC->m_renderPassDesc.RTNumber = 1;
@@ -168,8 +168,8 @@ bool DX11LightCullingPass::initialize()
 
 bool DX11LightCullingPass::initializeShaders()
 {
-	m_tileFrustumDXSPC = addDX11ShaderProgramComponent(m_entityID);
-	m_lightCullingDXSPC = addDX11ShaderProgramComponent(m_entityID);
+	m_tileFrustumDXSPC = addDX11ShaderProgramComponent(m_EntityID);
+	m_lightCullingDXSPC = addDX11ShaderProgramComponent(m_EntityID);
 
 	initializeDX11ShaderProgramComponent(m_tileFrustumDXSPC, m_tileFrustumShaderFilePaths);
 	initializeDX11ShaderProgramComponent(m_lightCullingDXSPC, m_lightCullingShaderFilePaths);

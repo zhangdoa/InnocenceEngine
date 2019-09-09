@@ -10,7 +10,7 @@ extern IModuleManager* g_pModuleManager;
 
 namespace VKOpaquePass
 {
-	EntityID m_entityID;
+	EntityID m_EntityID;
 
 	VKRenderPassComponent* m_VKRPC;
 
@@ -21,10 +21,10 @@ namespace VKOpaquePass
 
 bool VKOpaquePass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
 	// add shader component
-	m_VKSPC = addVKShaderProgramComponent(m_entityID);
+	m_VKSPC = addVKShaderProgramComponent(m_EntityID);
 
 	initializeVKShaderProgramComponent(m_VKSPC, m_shaderFilePaths);
 
@@ -265,7 +265,7 @@ bool VKOpaquePass::update()
 		{
 			auto l_opaquePassGPUData = g_pModuleManager->getRenderingFrontend()->getOpaquePassGPUData()[i];
 
-			if (l_opaquePassGPUData.mesh->m_objectStatus == ObjectStatus::Activated)
+			if (l_opaquePassGPUData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 			{
 				auto l_meshUBOOffset = l_sizeofMeshGPUData * offsetCount;
 				auto l_materialUBOOffset = l_sizeofMaterialGPUData * offsetCount;
@@ -278,7 +278,7 @@ bool VKOpaquePass::update()
 					1,
 					&m_VKRPC->descriptorSets[0], 2, l_dynamicOffsets);
 
-				if (l_opaquePassGPUData.material->m_objectStatus == ObjectStatus::Activated)
+				if (l_opaquePassGPUData.material->m_ObjectStatus == ObjectStatus::Activated)
 				{
 					vkCmdBindDescriptorSets(m_VKRPC->m_commandBuffers[0],
 						VK_PIPELINE_BIND_POINT_GRAPHICS,

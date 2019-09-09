@@ -9,20 +9,20 @@ namespace InnoTestSystemNS
 	bool update();
 	bool terminate();
 
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
 bool InnoTestSystemNS::setup()
 {
-	InnoTestSystemNS::m_objectStatus = ObjectStatus::Created;
+	InnoTestSystemNS::m_ObjectStatus = ObjectStatus::Created;
 	return true;
 }
 
 bool InnoTestSystemNS::initialize()
 {
-	if (InnoTestSystemNS::m_objectStatus == ObjectStatus::Created)
+	if (InnoTestSystemNS::m_ObjectStatus == ObjectStatus::Created)
 	{
-		InnoTestSystemNS::m_objectStatus = ObjectStatus::Activated;
+		InnoTestSystemNS::m_ObjectStatus = ObjectStatus::Activated;
 		InnoLogger::Log(LogLevel::Success, "TestSystem has been initialized.");
 		return true;
 	}
@@ -35,20 +35,20 @@ bool InnoTestSystemNS::initialize()
 
 bool InnoTestSystemNS::update()
 {
-	if (InnoTestSystemNS::m_objectStatus == ObjectStatus::Activated)
+	if (InnoTestSystemNS::m_ObjectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
 	else
 	{
-		InnoTestSystemNS::m_objectStatus = ObjectStatus::Suspended;
+		InnoTestSystemNS::m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 }
 
 bool InnoTestSystemNS::terminate()
 {
-	m_objectStatus = ObjectStatus::Terminated;
+	m_ObjectStatus = ObjectStatus::Terminated;
 	InnoLogger::Log(LogLevel::Success, "TestSystem has been terminated.");
 
 	return true;
@@ -76,7 +76,7 @@ bool InnoTestSystem::terminate()
 
 ObjectStatus InnoTestSystem::getStatus()
 {
-	return InnoTestSystemNS::m_objectStatus;
+	return InnoTestSystemNS::m_ObjectStatus;
 }
 
 bool InnoTestSystem::measure(const std::string& functorName, const std::function<void()>& functor)

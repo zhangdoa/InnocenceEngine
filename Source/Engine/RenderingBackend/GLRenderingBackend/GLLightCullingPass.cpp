@@ -34,7 +34,7 @@ namespace GLLightCullingPass
 	GLTextureDataComponent* m_lightGridGLTDC;
 	GLTextureDataComponent* m_debugGLTDC;
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 	const uint32_t m_tileSize = 16;
 	const uint32_t m_numThreadPerGroup = 16;
 	TVec4<uint32_t> m_tileFrustumNumThreads;
@@ -121,9 +121,9 @@ bool GLLightCullingPass::createDebugGLTDC()
 
 bool GLLightCullingPass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
-	m_GLRPC = addGLRenderPassComponent(m_entityID, "LightCullingGLRPC/");
+	m_GLRPC = addGLRenderPassComponent(m_EntityID, "LightCullingGLRPC/");
 	m_GLRPC->m_renderPassDesc = GLRenderingBackendComponent::get().m_deferredRenderPassDesc;
 	m_GLRPC->m_renderPassDesc.useDepthAttachment = true;
 	m_GLRPC->m_renderPassDesc.useStencilAttachment = true;
@@ -142,8 +142,8 @@ bool GLLightCullingPass::initialize()
 
 bool GLLightCullingPass::initializeShaders()
 {
-	m_tileFrustumGLSPC = addGLShaderProgramComponent(m_entityID);
-	m_lightCullingGLSPC = addGLShaderProgramComponent(m_entityID);
+	m_tileFrustumGLSPC = addGLShaderProgramComponent(m_EntityID);
+	m_lightCullingGLSPC = addGLShaderProgramComponent(m_EntityID);
 
 	initializeGLShaderProgramComponent(m_tileFrustumGLSPC, m_tileFrustumShaderFilePaths);
 	initializeGLShaderProgramComponent(m_lightCullingGLSPC, m_lightCullingShaderFilePaths);

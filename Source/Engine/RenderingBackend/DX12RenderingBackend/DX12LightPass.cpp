@@ -21,14 +21,14 @@ namespace DX12LightPass
 
 	ShaderFilePaths m_shaderFilePaths = { "DX12//lightPassVertex.hlsl/", "", "", "", "DX12//lightPassPixel.hlsl/" };
 
-	EntityID m_entityID;
+	EntityID m_EntityID;
 }
 
 bool DX12LightPass::initialize()
 {
-	m_entityID = InnoMath::createEntityID();
+	m_EntityID = InnoMath::createEntityID();
 
-	m_DXRPC = addDX12RenderPassComponent(m_entityID, "LightPassDXRPC\\");
+	m_DXRPC = addDX12RenderPassComponent(m_EntityID, "LightPassDXRPC\\");
 
 	m_DXRPC->m_renderPassDesc = DX12RenderingBackendComponent::get().m_deferredRenderPassDesc;
 	m_DXRPC->m_renderPassDesc.RTNumber = 1;
@@ -108,7 +108,7 @@ bool DX12LightPass::initialize()
 
 bool DX12LightPass::initializeShaders()
 {
-	m_DXSPC = addDX12ShaderProgramComponent(m_entityID);
+	m_DXSPC = addDX12ShaderProgramComponent(m_EntityID);
 
 	m_DXSPC->m_samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 	m_DXSPC->m_samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;

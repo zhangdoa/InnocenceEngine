@@ -23,7 +23,7 @@ namespace InnoFileSystemNS
 	bool prepareForLoadingScene(const std::string& fileName);
 	bool loadScene(const std::string& fileName);
 
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
 	std::vector<SceneLoadingCallback> m_sceneLoadingStartCallbacks;
 	std::vector<SceneLoadingCallback> m_sceneLoadingFinishCallbacks;
@@ -122,15 +122,15 @@ bool InnoFileSystem::setup()
 {
 	IOService::setupWorkingDirectory();
 
-	InnoFileSystemNS::m_objectStatus = ObjectStatus::Created;
+	InnoFileSystemNS::m_ObjectStatus = ObjectStatus::Created;
 	return true;
 }
 
 bool InnoFileSystem::initialize()
 {
-	if (InnoFileSystemNS::m_objectStatus == ObjectStatus::Created)
+	if (InnoFileSystemNS::m_ObjectStatus == ObjectStatus::Created)
 	{
-		InnoFileSystemNS::m_objectStatus = ObjectStatus::Activated;
+		InnoFileSystemNS::m_ObjectStatus = ObjectStatus::Activated;
 		InnoLogger::Log(LogLevel::Success, "FileSystem has been initialized.");
 		return true;
 	}
@@ -143,7 +143,7 @@ bool InnoFileSystem::initialize()
 
 bool InnoFileSystem::update()
 {
-	if (InnoFileSystemNS::m_objectStatus == ObjectStatus::Activated)
+	if (InnoFileSystemNS::m_ObjectStatus == ObjectStatus::Activated)
 	{
 		if (InnoFileSystemNS::m_prepareForLoadingScene)
 		{
@@ -157,7 +157,7 @@ bool InnoFileSystem::update()
 	}
 	else
 	{
-		InnoFileSystemNS::m_objectStatus = ObjectStatus::Suspended;
+		InnoFileSystemNS::m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -166,14 +166,14 @@ bool InnoFileSystem::update()
 
 bool InnoFileSystem::terminate()
 {
-	InnoFileSystemNS::m_objectStatus = ObjectStatus::Terminated;
+	InnoFileSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
 
 	return true;
 }
 
 ObjectStatus InnoFileSystem::getStatus()
 {
-	return InnoFileSystemNS::m_objectStatus;
+	return InnoFileSystemNS::m_ObjectStatus;
 }
 
 std::string InnoFileSystem::getWorkingDirectory()
@@ -349,7 +349,7 @@ bool InnoFileSystem::addCPPClassFiles(const CPPClassDesc & desc)
 
 	l_headerFile << std::endl;
 	l_headerFile << "private:" << std::endl;
-	l_headerFile << "  ObjectStatus m_objectStatus = ObjectStatus::Terminated;" << std::endl;
+	l_headerFile << "  ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;" << std::endl;
 	l_headerFile << "};" << std::endl;
 
 	l_headerFile.close();

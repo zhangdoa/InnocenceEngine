@@ -15,8 +15,8 @@ public:
 		return instance;
 	}
 
-	ObjectStatus m_objectStatus = ObjectStatus::Terminated;
-	EntityID m_parentEntity;
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+	EntityID m_ParentEntity;
 
 	TVec2<uint32_t> m_refreshRate = TVec2<uint32_t>(0, 1);
 

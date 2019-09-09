@@ -44,7 +44,7 @@ bool MTRenderingServerBridgeImpl::terminate() {
 }
 
 ObjectStatus MTRenderingServerBridgeImpl::getStatus() {
-    return m_objectStatus;
+    return m_ObjectStatus;
 }
 
 bool MTRenderingServerBridgeImpl::resize() {
@@ -69,7 +69,7 @@ MTRenderingServerBridgeImpl::~MTRenderingServerBridgeImpl() {
 }
 
 bool MTRenderingServerBridgeImpl::initializeMTMeshDataComponent(MTMeshDataComponent *rhs) {
-    if (rhs->m_objectStatus == ObjectStatus::Activated)
+    if (rhs->m_ObjectStatus == ObjectStatus::Activated)
     {
         return true;
     }

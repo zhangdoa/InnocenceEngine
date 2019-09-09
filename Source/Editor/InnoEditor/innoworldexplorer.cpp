@@ -28,11 +28,11 @@ void InnoWorldExplorer::buildTree()
 
 	for (auto& i : l_sceneHierarchyMap)
 	{
-		if (i.first->m_objectSource == ObjectSource::Asset)
+		if (i.first->m_ObjectSource == ObjectSource::Asset)
 		{
 			QTreeWidgetItem* l_entityItem = new QTreeWidgetItem();
 
-			l_entityItem->setText(0, i.first->m_entityName.c_str());
+			l_entityItem->setText(0, i.first->m_EntityName.c_str());
 			// Data slot 0 is ComponentType (-1 as the entity), slot 1 is the component ptr
 			l_entityItem->setData(0, Qt::UserRole, QVariant(-1));
 			l_entityItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)i.first));
@@ -42,7 +42,7 @@ void InnoWorldExplorer::buildTree()
 			for (auto& j : i.second)
 			{
 				QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
-				l_componentItem->setText(0, j->m_componentName.c_str());
+				l_componentItem->setText(0, j->m_ComponentName.c_str());
 
 				l_componentItem->setData(0, Qt::UserRole, QVariant((int)j->m_ComponentType));
 				l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)j));
@@ -121,12 +121,12 @@ void InnoWorldExplorer::endRename()
 	if (l_componentType != -1)
 	{
 		auto l_componentPtr = reinterpret_cast<InnoComponent*>(m_currentEditingItem->data(1, Qt::UserRole).value<void*>());
-		l_componentPtr->m_componentName = (m_currentEditingItem->text(0).toStdString() + "/").c_str();
+		l_componentPtr->m_ComponentName = (m_currentEditingItem->text(0).toStdString() + "/").c_str();
 	}
 	else
 	{
 		auto l_entityPtr = reinterpret_cast<InnoEntity*>(m_currentEditingItem->data(1, Qt::UserRole).value<void*>());
-		l_entityPtr->m_entityName = (m_currentEditingItem->text(0).toStdString() + "/").c_str();
+		l_entityPtr->m_EntityName = (m_currentEditingItem->text(0).toStdString() + "/").c_str();
 	}
 
 	m_currentEditingItem->setFlags(m_currentEditingItem->flags() & ~Qt::ItemIsEditable);
@@ -135,11 +135,11 @@ void InnoWorldExplorer::endRename()
 
 void InnoWorldExplorer::addEntity()
 {
-	auto l_entity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Asset, ObjectUsage::Gameplay, "newEntity/");
+	auto l_entity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Asset, ObjectOwnership::Client, "newEntity/");
 
 	QTreeWidgetItem* l_entityItem = new QTreeWidgetItem();
 
-	l_entityItem->setText(0, l_entity->m_entityName.c_str());
+	l_entityItem->setText(0, l_entity->m_EntityName.c_str());
 	l_entityItem->setData(0, Qt::UserRole, QVariant(-1));
 	l_entityItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_entity));
 
@@ -180,13 +180,13 @@ void InnoWorldExplorer::addTransformComponent()
 		item = l_items[0];
 		auto l_entityPtr = reinterpret_cast<InnoEntity*>(item->data(1, Qt::UserRole).value<void*>());
 
-		auto l_componentPtr = SpawnComponent(TransformComponent, l_entityPtr, ObjectSource::Asset, ObjectUsage::Gameplay);
+		auto l_componentPtr = SpawnComponent(TransformComponent, l_entityPtr, ObjectSource::Asset, ObjectOwnership::Client);
 		auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
 		l_componentPtr->m_parentTransformComponent = l_rootTranformComponent;
 
 		QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
 
-		l_componentItem->setText(0, l_componentPtr->m_componentName.c_str());
+		l_componentItem->setText(0, l_componentPtr->m_ComponentName.c_str());
 		l_componentItem->setData(0, Qt::UserRole, QVariant((int)ComponentType::TransformComponent));
 		l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_componentPtr));
 
@@ -205,11 +205,11 @@ void InnoWorldExplorer::addVisibleComponent()
         item = l_items[0];
         auto l_entityPtr = reinterpret_cast<InnoEntity*>(item->data(1, Qt::UserRole).value<void*>());
 
-        auto l_componentPtr = SpawnComponent(VisibleComponent, l_entityPtr, ObjectSource::Asset, ObjectUsage::Gameplay);
+        auto l_componentPtr = SpawnComponent(VisibleComponent, l_entityPtr, ObjectSource::Asset, ObjectOwnership::Client);
 
         QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
 
-        l_componentItem->setText(0, l_componentPtr->m_componentName.c_str());
+        l_componentItem->setText(0, l_componentPtr->m_ComponentName.c_str());
         l_componentItem->setData(0, Qt::UserRole, QVariant((int)ComponentType::VisibleComponent));
         l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_componentPtr));
 
@@ -228,11 +228,11 @@ void InnoWorldExplorer::addLightComponent()
         item = l_items[0];
         auto l_entityPtr = reinterpret_cast<InnoEntity*>(item->data(1, Qt::UserRole).value<void*>());
 
-        auto l_componentPtr = SpawnComponent(LightComponent, l_entityPtr, ObjectSource::Asset, ObjectUsage::Gameplay);
+        auto l_componentPtr = SpawnComponent(LightComponent, l_entityPtr, ObjectSource::Asset, ObjectOwnership::Client);
 
         QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
 
-        l_componentItem->setText(0, l_componentPtr->m_componentName.c_str());
+        l_componentItem->setText(0, l_componentPtr->m_ComponentName.c_str());
         l_componentItem->setData(0, Qt::UserRole, QVariant((int)ComponentType::LightComponent));
         l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_componentPtr));
 
@@ -251,11 +251,11 @@ void InnoWorldExplorer::addCameraComponent()
         item = l_items[0];
         auto l_entityPtr = reinterpret_cast<InnoEntity*>(item->data(1, Qt::UserRole).value<void*>());
 
-        auto l_componentPtr = SpawnComponent(CameraComponent, l_entityPtr, ObjectSource::Asset, ObjectUsage::Gameplay);
+        auto l_componentPtr = SpawnComponent(CameraComponent, l_entityPtr, ObjectSource::Asset, ObjectOwnership::Client);
 
         QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
 
-        l_componentItem->setText(0, l_componentPtr->m_componentName.c_str());
+        l_componentItem->setText(0, l_componentPtr->m_ComponentName.c_str());
         l_componentItem->setData(0, Qt::UserRole, QVariant((int)ComponentType::CameraComponent));
         l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_componentPtr));
 
