@@ -533,10 +533,10 @@ bool InnoModuleManagerNS::initialize()
 	subSystemInit(EventSystem);
 	subSystemInit(WindowSystem);
 
+	m_RenderingServer->Initialize();
+
 	subSystemInit(RenderingFrontend);
 	subSystemInit(GUISystem);
-
-	m_RenderingServer->Initialize();
 
 	if (!m_RenderingClient->Initialize())
 	{
