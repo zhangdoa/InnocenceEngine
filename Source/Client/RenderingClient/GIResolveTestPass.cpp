@@ -30,6 +30,7 @@ namespace GIResolveTestPass
 
 	RenderPassDataComponent* m_probeRPDC = 0;
 	ShaderProgramComponent* m_probeSPC = 0;
+	SamplerDataComponent* m_SDC = 0;
 
 	std::vector<ProbeMeshData> m_probeSphereMeshData;
 }
@@ -72,7 +73,7 @@ bool GIResolveTestPass::Setup()
 
 	m_probeRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_probeRPDC->m_ResourceBinderLayoutDescs.resize(4);
+	m_probeRPDC->m_ResourceBinderLayoutDescs.resize(6);
 	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 0;
@@ -90,11 +91,24 @@ bool GIResolveTestPass::Setup()
 
 	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_GlobalSlot = 3;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_LocalSlot = 11;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_LocalSlot = 7;
+
+	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_GlobalSlot = 4;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_LocalSlot = 11;
+
+	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Sampler;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_GlobalSlot = 5;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_LocalSlot = 0;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_IsRanged = true;
 
 	m_probeRPDC->m_ShaderProgram = m_probeSPC;
 
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_probeRPDC);
+
+	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("GIResolveTestProbePass/");
+
+	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
 
 	return true;
 }
@@ -111,6 +125,7 @@ bool GIResolveTestPass::PrepareCommandList()
 	if (l_probes.size() > 0)
 	{
 		auto l_MainCameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::MainCamera);
+		auto l_SkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sky);
 		auto l_GISkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GISky);
 
 		m_probeSphereMeshData.clear();
@@ -209,12 +224,13 @@ bool GIResolveTestPass::PrepareCommandList()
 
 		//g_pModuleManager->getRenderingServer()->CopyDepthStencilBuffer(OpaquePass::GetRPDC(), m_probeRPDC);
 
+		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 5, 0);
+
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Vertex, l_MainCameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, l_GISkyGBDC->m_ResourceBinder, 3, 11, Accessibility::ReadOnly);
-
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 2, 1, Accessibility::ReadOnly);
-
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Vertex, m_probeSphereMeshGBDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
+		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 2, 1, Accessibility::ReadOnly);
+		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, l_SkyGBDC->m_ResourceBinder, 3, 7, Accessibility::ReadOnly);
+		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, l_GISkyGBDC->m_ResourceBinder, 4, 11, Accessibility::ReadOnly);
 
 		g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_probeRPDC, l_sphere, m_probeSphereMeshData.size());
 

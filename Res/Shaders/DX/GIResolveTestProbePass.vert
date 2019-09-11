@@ -23,6 +23,7 @@ struct VertexInputType
 struct PixelInputType
 {
 	float4 posCS : SV_POSITION;
+	float4 posWS : POSITION_WS;
 	float4 probeIndex : PROBE_INDEX;
 	float4 normal : NORMAL;
 };
@@ -34,8 +35,8 @@ PixelInputType main(VertexInputType input)
 	output.probeIndex = probeMeshSBuffer[input.instanceId].index;
 	output.normal = input.normal;
 
-	output.posCS = mul(input.position, probeMeshSBuffer[input.instanceId].m);
-	output.posCS = mul(output.posCS, cameraCBuffer.t);
+	output.posWS = mul(input.position, probeMeshSBuffer[input.instanceId].m);
+	output.posCS = mul(output.posWS, cameraCBuffer.t);
 	output.posCS = mul(output.posCS, cameraCBuffer.r);
 	output.posCS = mul(output.posCS, cameraCBuffer.p_original);
 
