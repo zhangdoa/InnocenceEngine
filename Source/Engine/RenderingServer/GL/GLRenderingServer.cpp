@@ -852,11 +852,14 @@ bool GLRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * rh
 
 bool GLRenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 {
-	auto l_cleanColor = rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor;
-	glClearColor(l_cleanColor[0], l_cleanColor[1], l_cleanColor[2], l_cleanColor[3]);
-	glClear(GL_COLOR_BUFFER_BIT);
-	glClear(GL_DEPTH_BUFFER_BIT);
-	glClear(GL_STENCIL_BUFFER_BIT);
+	if (rhs->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
+	{
+		auto l_cleanColor = rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor;
+		glClearColor(l_cleanColor[0], l_cleanColor[1], l_cleanColor[2], l_cleanColor[3]);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		glClear(GL_STENCIL_BUFFER_BIT);
+	}
 
 	return true;
 }
