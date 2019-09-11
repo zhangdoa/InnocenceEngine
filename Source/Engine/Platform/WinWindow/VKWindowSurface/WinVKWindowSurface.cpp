@@ -1,8 +1,10 @@
 #include "WinVKWindowSurface.h"
 #include "../../../Component/WinWindowSystemComponent.h"
-#include "../../../Component/VKRenderingBackendComponent.h"
 #include "../../Engine/Core/InnoLogger.h"
 
+#define VK_USE_PLATFORM_WIN32_KHR
+#include "vulkan/vulkan.h"
+#include "../../../RenderingServer/VK/VKRenderingServer.h"
 #include "../../../ModuleManager/IModuleManager.h"
 
 extern IModuleManager* g_pModuleManager;
@@ -66,13 +68,17 @@ bool WinVKWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 
 bool WinVKWindowSurfaceNS::initialize()
 {
-	VkWin32SurfaceCreateInfoKHR createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-	createInfo.pNext = NULL;
-	createInfo.hinstance = WinWindowSystemComponent::get().m_hInstance;
-	createInfo.hwnd = WinWindowSystemComponent::get().m_hwnd;
+	VkWin32SurfaceCreateInfoKHR l_createInfo = {};
+	l_createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+	l_createInfo.pNext = NULL;
+	l_createInfo.hinstance = WinWindowSystemComponent::get().m_hInstance;
+	l_createInfo.hwnd = WinWindowSystemComponent::get().m_hwnd;
 
-	if (vkCreateWin32SurfaceKHR(VKRenderingBackendComponent::get().m_instance, &createInfo, NULL, &VKRenderingBackendComponent::get().m_windowSurface) != VK_SUCCESS)
+	auto l_renderingServer = reinterpret_cast<VKRenderingServer*>(g_pModuleManager->getRenderingServer());
+	auto l_VkInstance = reinterpret_cast<VkInstance>(l_renderingServer->GetVkInstance());
+	auto l_VkSurface = reinterpret_cast<VkSurfaceKHR*>(l_renderingServer->GetVkSurface());
+
+	if (vkCreateWin32SurfaceKHR(l_VkInstance, &l_createInfo, NULL, l_VkSurface) != VK_SUCCESS)
 	{
 		m_ObjectStatus = ObjectStatus::Created;
 		InnoLogger::Log(LogLevel::Error, "WinVKWindowSurface: Failed to create window surface!");

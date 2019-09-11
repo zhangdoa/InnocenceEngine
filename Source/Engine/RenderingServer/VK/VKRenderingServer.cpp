@@ -547,6 +547,9 @@ bool VKRenderingServer::Setup()
 	m_SwapChainSPC = reinterpret_cast<VKShaderProgramComponent*>(AddShaderProgramComponent("SwapChain/"));
 	m_SwapChainSDC = reinterpret_cast<VKSamplerDataComponent*>(AddSamplerDataComponent("SwapChain/"));
 
+	createVkInstance();
+	createDebugCallback();
+
 	m_ObjectStatus = ObjectStatus::Created;
 	InnoLogger::Log(LogLevel::Success, "VKRenderingServer setup finished.");
 
@@ -555,6 +558,15 @@ bool VKRenderingServer::Setup()
 
 bool VKRenderingServer::Initialize()
 {
+	createPysicalDevice();
+	createLogicalDevice();
+
+	createTextureSamplers();
+	createMaterialDescriptorPool();
+	createCommandPool();
+
+	createSwapChain();
+
 	return true;
 }
 
@@ -780,4 +792,14 @@ std::vector<Vec4> VKRenderingServer::ReadTextureBackToCPU(RenderPassDataComponen
 bool VKRenderingServer::Resize()
 {
 	return true;
+}
+
+void * VKRenderingServer::GetVkInstance()
+{
+	return m_instance;
+}
+
+void * VKRenderingServer::GetVkSurface()
+{
+	return &m_windowSurface;
 }

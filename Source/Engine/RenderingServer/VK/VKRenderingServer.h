@@ -57,4 +57,7 @@ public:
 	std::vector<Vec4> ReadTextureBackToCPU(RenderPassDataComponent * canvas, TextureDataComponent * TDC) override;
 
 	bool Resize() override;
+
+	void* GetVkInstance();
+	void* GetVkSurface();
 };
