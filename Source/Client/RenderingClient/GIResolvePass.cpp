@@ -357,7 +357,7 @@ bool GIResolvePass::setupSky()
 
 	m_skyRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
 	m_skyRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
-	m_skyRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::Always;
+	m_skyRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
 	m_skyRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = m_skyCubemapSize;
 	m_skyRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = m_skyCubemapSize;
 
@@ -925,6 +925,7 @@ bool GIResolvePass::Terminate()
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_surfelRPDC);
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_brickRPDC);
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_probeRPDC);
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_irradianceVolumeRPDC);
 
 	return true;
 }

@@ -15,7 +15,7 @@ struct PixelInputType
 [maxvertexcount(18)]
 void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputType> outStream)
 {
-	[unroll(NR_CSM_SPLITS)]
+	[unroll(6)]
 	for (int face = 0; face < 6; face++)
 	{
 		PixelInputType output = (PixelInputType)0;

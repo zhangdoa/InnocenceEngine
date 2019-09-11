@@ -4,7 +4,7 @@
 
 struct PixelInputType
 {
-	float4 frag_ClipSpacePos : SV_POSITION;
+	float4 posCS : SV_POSITION;
 	uint rtvId : SV_RenderTargetArrayIndex;
 };
 
@@ -19,7 +19,7 @@ PixelOutputType main(PixelInputType input)
 
 	float3 color = float3(0.0, 0.0, 0.0);
 
-	float3 eyedir = get_world_normal(input.frag_ClipSpacePos.xy, sky_viewportSize.zw, GISky_p_inv, GISky_v_inv[input.rtvId]);
+	float3 eyedir = get_world_normal(input.posCS.xy, sky_viewportSize.zw, GISky_p_inv, GISky_v_inv[input.rtvId]);
 
 	if (eyedir.y > -0.1)
 	{

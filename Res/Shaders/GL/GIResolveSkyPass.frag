@@ -22,7 +22,7 @@ layout(binding = 11, std140) uniform GISkyCBuffer
 layout(binding = 3, std140) uniform sunCBuffer
 {
     vec4 sun_dir;
-    vec4 sun_luminance;
+    vec4 sun_illuminance;
     layout(row_major) mat4 sun_r;
     vec4 sun_padding[2];
 } _447;
