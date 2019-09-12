@@ -1,16 +1,16 @@
 cbuffer cameraCBuffer : register(b0)
 {
-	cameraData cameraCBuffer;
+	CameraData cameraCBuffer;
 };
 
 cbuffer meshCBuffer : register(b1)
 {
-	meshData meshCBuffer;
+	MeshData meshCBuffer;
 };
 
 cbuffer materialCBuffer : register(b2)
 {
-	materialData materialCBuffer;
+	MaterialData materialCBuffer;
 };
 
 cbuffer sunCBuffer : register(b3)
@@ -70,4 +70,9 @@ cbuffer GISkyCBuffer : register(b11)
 	float4 GISky_probeInterval;
 	float4 GISky_workload;
 	float4 GISky_irradianceVolumeOffset;
+};
+
+cbuffer volumetricPassCBuffer : register(b12)
+{
+	VolumetricPassData volumetricPassCBuffer;
 };

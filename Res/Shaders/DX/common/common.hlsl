@@ -9,7 +9,7 @@ static const int NR_CSM_SPLITS = 4;
 
 #define BLOCK_SIZE 16
 
-struct cameraData
+struct CameraData
 {
 	matrix p_original; // 0 - 3
 	matrix p_jittered; // 4 - 7
@@ -24,7 +24,7 @@ struct cameraData
 	float padding[6]; // 26 - 31
 };
 
-struct meshData
+struct MeshData
 {
 	matrix m;
 	matrix m_prev;
@@ -33,7 +33,7 @@ struct meshData
 	float padding[3];
 };
 
-struct materialData
+struct MaterialData
 {
 	float4 albedo; // 0
 	float4 MRAT; // 1
@@ -87,6 +87,16 @@ struct DispatchParam
 {
 	uint4 numThreadGroups;
 	uint4 numThreads;
+};
+
+struct VolumetricPassData
+{
+	matrix VP[3];
+	matrix VP_inv[3];
+	float4 posWSOffset;
+	float4 volumeDim;
+	float4 voxelSize;
+	float4 padding[5];
 };
 
 struct Plane

@@ -10,11 +10,23 @@ INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 
 using namespace DefaultGPUBuffers;
 
+struct VolumetricPassGPUData
+{
+	Mat4 VP[3];
+	Mat4 VP_inv[3];
+	Vec4 posWSOffset;
+	Vec4 volumeDim;
+	Vec4 voxelSize;
+	Vec4 padding[5];
+};
+
 namespace VolumetricFogPass
 {
 	bool froxelization();
 	bool irraidanceInjection();
 	bool rayMarching();
+
+	GPUBufferDataComponent* m_volumetricPassGBDC;
 
 	RenderPassDataComponent* m_froxelizationRPDC;
 	ShaderProgramComponent* m_froxelizationSPC;
@@ -28,10 +40,21 @@ namespace VolumetricFogPass
 
 	TextureDataComponent* m_irraidanceInjectionResult;
 	TextureDataComponent* m_rayMarchingResult;
+
+	const uint32_t m_volumeDimension = 128;
+	const uint32_t m_voxelCount = m_volumeDimension * m_volumeDimension * m_volumeDimension;
 }
 
 bool VolumetricFogPass::Setup()
 {
+	m_volumetricPassGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("VolumetricPassGPUBuffer/");
+	m_volumetricPassGBDC->m_ElementCount = 1;
+	m_volumetricPassGBDC->m_ElementSize = sizeof(VolumetricPassGPUData);
+	m_volumetricPassGBDC->m_BindingPoint = 12;
+
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_volumetricPassGBDC);
+
+	////
 	m_froxelizationSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("VolumetricFogFroxelizationPass/");
 
 	m_froxelizationSPC->m_ShaderFilePaths.m_VSPath = "volumetricFogFroxelizationPass.vert/";
@@ -60,7 +83,7 @@ bool VolumetricFogPass::Setup()
 
 	m_froxelizationRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_froxelizationRPDC->m_ResourceBinderLayoutDescs.resize(4);
+	m_froxelizationRPDC->m_ResourceBinderLayoutDescs.resize(5);
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 0;
@@ -73,12 +96,16 @@ bool VolumetricFogPass::Setup()
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[2].m_GlobalSlot = 2;
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[2].m_LocalSlot = 2;
 
-	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Image;
-	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[3].m_BinderAccessibility = Accessibility::ReadWrite;
-	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[3].m_GlobalSlot = 3;
-	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[3].m_LocalSlot = 0;
-	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[3].m_IsRanged = true;
+	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[3].m_LocalSlot = 12;
+
+	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Image;
+	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_GlobalSlot = 4;
+	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_LocalSlot = 0;
+	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_IsRanged = true;
 
 	m_froxelizationRPDC->m_ShaderProgram = m_froxelizationSPC;
 
@@ -221,7 +248,8 @@ bool VolumetricFogPass::froxelization()
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_froxelizationRPDC);
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelizationRPDC, ShaderStage::Vertex, l_MainCameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelizationRPDC, ShaderStage::Pixel, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 3, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelizationRPDC, ShaderStage::Geometry, m_volumetricPassGBDC->m_ResourceBinder, 3, 12, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelizationRPDC, ShaderStage::Pixel, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 4, 0, Accessibility::ReadWrite);
 
 	//g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelizationRPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_drawCallData.meshGPUDataIndex, 1);
 	//g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelizationRPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_drawCallData.materialGPUDataIndex, 1);
@@ -255,6 +283,7 @@ bool VolumetricFogPass::froxelization()
 
 	return true;
 }
+
 bool VolumetricFogPass::irraidanceInjection()
 {
 	auto l_MainCameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::MainCamera);
@@ -329,6 +358,26 @@ bool VolumetricFogPass::rayMarching()
 
 bool VolumetricFogPass::PrepareCommandList()
 {
+	auto l_p = InnoMath::generateOrthographicMatrix(-1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 2.0f);
+	auto l_center = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+	VolumetricPassGPUData l_volumetricPassGPUData;
+
+	l_volumetricPassGPUData.VP[0] = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(1.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
+	auto l_rNX = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(-1.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
+	l_volumetricPassGPUData.VP[1] = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, 1.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 0.0f));
+	auto l_rNY = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 0.0f));
+	l_volumetricPassGPUData.VP[2] = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
+	auto l_rNZ = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, -1.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
+
+	for (size_t i = 0; i < 3; i++)
+	{
+		l_volumetricPassGPUData.VP[i] = l_p * l_volumetricPassGPUData.VP[i];
+		l_volumetricPassGPUData.VP_inv[i] = l_volumetricPassGPUData.VP[i].inverse();
+	}
+
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_volumetricPassGBDC, &l_volumetricPassGPUData);
+
 	froxelization();
 	irraidanceInjection();
 	rayMarching();
