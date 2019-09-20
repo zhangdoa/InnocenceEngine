@@ -909,30 +909,30 @@ bool VKRenderingBackendNS::initializeVKTextureDataComponent(VKTextureDataCompone
 
 bool VKRenderingBackendNS::submitGPUData(VKTextureDataComponent * rhs)
 {
-	rhs->m_VkTextureDataDesc = getVKTextureDataDesc(rhs->m_textureDataDesc);
+	rhs->m_VKTextureDataDesc = getVKTextureDataDesc(rhs->m_textureDataDesc);
 
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
-	createBuffer(rhs->m_VkTextureDataDesc.imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+	createBuffer(rhs->m_VKTextureDataDesc.imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
 	auto l_srcData = rhs->m_textureData;
 	if (l_srcData != nullptr)
 	{
 		void* l_dstData;
-		vkMapMemory(VKRenderingBackendComponent::get().m_device, stagingBufferMemory, 0, rhs->m_VkTextureDataDesc.imageSize, 0, &l_dstData);
-		memcpy(l_dstData, rhs->m_textureData, static_cast<size_t>(rhs->m_VkTextureDataDesc.imageSize));
+		vkMapMemory(VKRenderingBackendComponent::get().m_device, stagingBufferMemory, 0, rhs->m_VKTextureDataDesc.imageSize, 0, &l_dstData);
+		memcpy(l_dstData, rhs->m_textureData, static_cast<size_t>(rhs->m_VKTextureDataDesc.imageSize));
 		vkUnmapMemory(VKRenderingBackendComponent::get().m_device, stagingBufferMemory);
 	}
 
 	VkImageCreateInfo imageInfo = {};
 	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	imageInfo.imageType = rhs->m_VkTextureDataDesc.imageType;
+	imageInfo.imageType = rhs->m_VKTextureDataDesc.imageType;
 	imageInfo.extent.width = rhs->m_textureDataDesc.width;
 	imageInfo.extent.height = rhs->m_textureDataDesc.height;
 	imageInfo.extent.depth = 1;
 	imageInfo.mipLevels = 1;
 	imageInfo.arrayLayers = 1;
-	imageInfo.format = rhs->m_VkTextureDataDesc.format;
+	imageInfo.format = rhs->m_VKTextureDataDesc.format;
 	imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -979,24 +979,24 @@ bool VKRenderingBackendNS::submitGPUData(VKTextureDataComponent * rhs)
 
 	if (rhs->m_textureDataDesc.usageType == TextureUsageType::COLOR_ATTACHMENT)
 	{
-		transitionImageLayout(rhs->m_image, imageInfo.format, rhs->m_VkTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		transitionImageLayout(rhs->m_image, imageInfo.format, rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	}
 	else if (rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_ATTACHMENT)
 	{
-		transitionImageLayout(rhs->m_image, imageInfo.format, rhs->m_VkTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+		transitionImageLayout(rhs->m_image, imageInfo.format, rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 	}
 	else if (rhs->m_textureDataDesc.usageType == TextureUsageType::DEPTH_STENCIL_ATTACHMENT)
 	{
-		transitionImageLayout(rhs->m_image, imageInfo.format, rhs->m_VkTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+		transitionImageLayout(rhs->m_image, imageInfo.format, rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 	}
 	else
 	{
-		transitionImageLayout(rhs->m_image, imageInfo.format, rhs->m_VkTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		transitionImageLayout(rhs->m_image, imageInfo.format, rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 		if (l_srcData != nullptr)
 		{
-			copyBufferToImage(stagingBuffer, rhs->m_image, rhs->m_VkTextureDataDesc.aspectFlags, static_cast<uint32_t>(imageInfo.extent.width), static_cast<uint32_t>(imageInfo.extent.height));
+			copyBufferToImage(stagingBuffer, rhs->m_image, rhs->m_VKTextureDataDesc.aspectFlags, static_cast<uint32_t>(imageInfo.extent.width), static_cast<uint32_t>(imageInfo.extent.height));
 		}
-		transitionImageLayout(rhs->m_image, imageInfo.format, rhs->m_VkTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		transitionImageLayout(rhs->m_image, imageInfo.format, rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	}
 
 	vkDestroyBuffer(VKRenderingBackendComponent::get().m_device, stagingBuffer, nullptr);
@@ -1112,8 +1112,8 @@ bool VKRenderingBackendNS::createImageView(VKTextureDataComponent* VKTDC)
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	viewInfo.image = VKTDC->m_image;
 	viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-	viewInfo.format = VKTDC->m_VkTextureDataDesc.format;
-	viewInfo.subresourceRange.aspectMask = VKTDC->m_VkTextureDataDesc.aspectFlags;
+	viewInfo.format = VKTDC->m_VKTextureDataDesc.format;
+	viewInfo.subresourceRange.aspectMask = VKTDC->m_VKTextureDataDesc.aspectFlags;
 	viewInfo.subresourceRange.baseMipLevel = 0;
 	viewInfo.subresourceRange.levelCount = 1;
 	viewInfo.subresourceRange.baseArrayLayer = 0;
@@ -1417,9 +1417,9 @@ bool VKRenderingBackendNS::generateUBO(VkBuffer& UBO, VkDeviceSize UBOSize, VkDe
 	return true;
 }
 
-VkTextureDataDesc VKRenderingBackendNS::getVKTextureDataDesc(TextureDataDesc textureDataDesc)
+VKTextureDataDesc VKRenderingBackendNS::getVKTextureDataDesc(TextureDataDesc textureDataDesc)
 {
-	VkTextureDataDesc l_result;
+	VKTextureDataDesc l_result;
 	l_result.imageType = getImageType(textureDataDesc.samplerType);
 	l_result.samplerAddressMode = getSamplerAddressMode(textureDataDesc.wrapMethod);
 	l_result.minFilterParam = getTextureFilterParam(textureDataDesc.minFilterMethod);

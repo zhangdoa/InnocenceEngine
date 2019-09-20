@@ -288,24 +288,28 @@ bool VKHelper::copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue co
 	return true;
 }
 
-VkTextureDataDesc VKHelper::getVKTextureDataDesc(TextureDataDesc textureDataDesc)
+VKTextureDataDesc VKHelper::getVKTextureDataDesc(TextureDataDesc textureDataDesc)
 {
-	VkTextureDataDesc l_result;
+	VKTextureDataDesc l_result;
+
 	l_result.imageType = getImageType(textureDataDesc.SamplerType);
+	l_result.imageViewType = getImageViewType(textureDataDesc.SamplerType);
+	l_result.imageUsageFlags = getImageUsageFlags(textureDataDesc.UsageType);
 	l_result.samplerAddressMode = getSamplerAddressMode(textureDataDesc.WrapMethod);
 	l_result.minFilterParam = getTextureFilterParam(textureDataDesc.MinFilterMethod);
 	l_result.magFilterParam = getTextureFilterParam(textureDataDesc.MagFilterMethod);
 	l_result.format = getTextureFormat(textureDataDesc);
-	l_result.imageSize = textureDataDesc.Width * textureDataDesc.Height * textureDataDesc.DepthOrArraySize * ((uint32_t)textureDataDesc.PixelDataFormat + 1);
-	l_result.aspectFlags = getImageAspectFlags(textureDataDesc);
+	l_result.imageSize = getImageSize(textureDataDesc);
+	l_result.aspectFlags = getImageAspectFlags(textureDataDesc.UsageType);
+
 	return l_result;
 }
 
-VkImageType VKHelper::getImageType(TextureSamplerType rhs)
+VkImageType VKHelper::getImageType(TextureSamplerType textureSamplerType)
 {
 	VkImageType l_result;
 
-	switch (rhs)
+	switch (textureSamplerType)
 	{
 	case TextureSamplerType::Sampler1D:
 		l_result = VkImageType::VK_IMAGE_TYPE_1D;
@@ -316,8 +320,14 @@ VkImageType VKHelper::getImageType(TextureSamplerType rhs)
 	case TextureSamplerType::Sampler3D:
 		l_result = VkImageType::VK_IMAGE_TYPE_3D;
 		break;
+	case TextureSamplerType::Sampler1DArray:
+		l_result = VkImageType::VK_IMAGE_TYPE_1D;
+		break;
+	case TextureSamplerType::Sampler2DArray:
+		l_result = VkImageType::VK_IMAGE_TYPE_2D;
+		break;
 	case TextureSamplerType::SamplerCubemap:
-		// @TODO: Add cubemap support
+		l_result = VkImageType::VK_IMAGE_TYPE_2D;
 		break;
 	default:
 		break;
@@ -326,11 +336,66 @@ VkImageType VKHelper::getImageType(TextureSamplerType rhs)
 	return l_result;
 }
 
-VkSamplerAddressMode VKHelper::getSamplerAddressMode(TextureWrapMethod rhs)
+VkImageViewType VKHelper::getImageViewType(TextureSamplerType textureSamplerType)
+{
+	VkImageViewType l_result;
+
+	switch (textureSamplerType)
+	{
+	case TextureSamplerType::Sampler1D:
+		l_result = VkImageViewType::VK_IMAGE_VIEW_TYPE_1D;
+		break;
+	case TextureSamplerType::Sampler2D:
+		l_result = VkImageViewType::VK_IMAGE_VIEW_TYPE_2D;
+		break;
+	case TextureSamplerType::Sampler3D:
+		l_result = VkImageViewType::VK_IMAGE_VIEW_TYPE_3D;
+		break;
+	case TextureSamplerType::Sampler1DArray:
+		l_result = VkImageViewType::VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+		break;
+	case TextureSamplerType::Sampler2DArray:
+		l_result = VkImageViewType::VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+		break;
+	case TextureSamplerType::SamplerCubemap:
+		l_result = VkImageViewType::VK_IMAGE_VIEW_TYPE_CUBE;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+VkImageUsageFlags VKHelper::getImageUsageFlags(TextureUsageType textureUsageType)
+{
+	VkImageUsageFlags l_result;
+
+	if (textureUsageType == TextureUsageType::ColorAttachment)
+	{
+		l_result = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	}
+	else if (textureUsageType == TextureUsageType::DepthAttachment)
+	{
+		l_result = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	}
+	else if (textureUsageType == TextureUsageType::DepthStencilAttachment)
+	{
+		l_result = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	}
+	else
+	{
+		l_result = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	}
+
+	return l_result;
+}
+
+VkSamplerAddressMode VKHelper::getSamplerAddressMode(TextureWrapMethod textureWrapMethod)
 {
 	VkSamplerAddressMode l_result;
 
-	switch (rhs)
+	switch (textureWrapMethod)
 	{
 	case TextureWrapMethod::Edge:
 		l_result = VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
@@ -348,11 +413,11 @@ VkSamplerAddressMode VKHelper::getSamplerAddressMode(TextureWrapMethod rhs)
 	return l_result;
 }
 
-VkSamplerMipmapMode VKHelper::getTextureFilterParam(TextureFilterMethod rhs)
+VkSamplerMipmapMode VKHelper::getTextureFilterParam(TextureFilterMethod textureFilterMethod)
 {
 	VkSamplerMipmapMode l_result;
 
-	switch (rhs)
+	switch (textureFilterMethod)
 	{
 	case TextureFilterMethod::Nearest:
 		l_result = VkSamplerMipmapMode::VK_SAMPLER_MIPMAP_MODE_NEAREST;
@@ -526,15 +591,46 @@ VkFormat VKHelper::getTextureFormat(TextureDataDesc textureDataDesc)
 	return l_internalFormat;
 }
 
-VkImageAspectFlagBits VKHelper::getImageAspectFlags(TextureDataDesc textureDataDesc)
+VkDeviceSize VKHelper::getImageSize(TextureDataDesc textureDataDesc)
+{
+	VkDeviceSize l_result;
+
+	switch (textureDataDesc.SamplerType)
+	{
+	case TextureSamplerType::Sampler1D:
+		l_result = textureDataDesc.Width * ((uint32_t)textureDataDesc.PixelDataFormat + 1);
+		break;
+	case TextureSamplerType::Sampler2D:
+		l_result = textureDataDesc.Width * textureDataDesc.Height * ((uint32_t)textureDataDesc.PixelDataFormat + 1);
+		break;
+	case TextureSamplerType::Sampler3D:
+		l_result = textureDataDesc.Width * textureDataDesc.Height * textureDataDesc.DepthOrArraySize * ((uint32_t)textureDataDesc.PixelDataFormat + 1);
+		break;
+	case TextureSamplerType::Sampler1DArray:
+		l_result = textureDataDesc.Width * textureDataDesc.DepthOrArraySize * ((uint32_t)textureDataDesc.PixelDataFormat + 1);
+		break;
+	case TextureSamplerType::Sampler2DArray:
+		l_result = textureDataDesc.Width * textureDataDesc.Height * textureDataDesc.DepthOrArraySize * ((uint32_t)textureDataDesc.PixelDataFormat + 1);
+		break;
+	case TextureSamplerType::SamplerCubemap:
+		l_result = textureDataDesc.Width * textureDataDesc.Height * 6 * ((uint32_t)textureDataDesc.PixelDataFormat + 1);
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+VkImageAspectFlagBits VKHelper::getImageAspectFlags(TextureUsageType textureUsageType)
 {
 	VkImageAspectFlagBits l_result;
 
-	if (textureDataDesc.UsageType == TextureUsageType::DepthAttachment)
+	if (textureUsageType == TextureUsageType::DepthAttachment)
 	{
 		l_result = VkImageAspectFlagBits::VK_IMAGE_ASPECT_DEPTH_BIT;
 	}
-	else if (textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+	else if (textureUsageType == TextureUsageType::DepthStencilAttachment)
 	{
 		l_result = VkImageAspectFlagBits(VkImageAspectFlagBits::VK_IMAGE_ASPECT_STENCIL_BIT | VkImageAspectFlagBits::VK_IMAGE_ASPECT_DEPTH_BIT);
 	}
@@ -544,6 +640,128 @@ VkImageAspectFlagBits VKHelper::getImageAspectFlags(TextureDataDesc textureDataD
 	}
 
 	return l_result;
+}
+
+bool VKHelper::transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout)
+{
+	VkImageMemoryBarrier barrier = {};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.oldLayout = oldLayout;
+	barrier.newLayout = newLayout;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = image;
+	barrier.subresourceRange.aspectMask = aspectFlags;
+	barrier.subresourceRange.baseMipLevel = 0;
+	barrier.subresourceRange.levelCount = 1;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = 1;
+
+	VkPipelineStageFlags sourceStage;
+	VkPipelineStageFlags destinationStage;
+
+	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+	{
+		barrier.srcAccessMask = 0;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+	{
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+	{
+		barrier.srcAccessMask = 0;
+		barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+	{
+		barrier.srcAccessMask = 0;
+		barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+	}
+	else
+	{
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "VKRenderingServer: Unsupported transition!");
+		return false;
+	}
+
+	vkCmdPipelineBarrier(
+		commandBuffer,
+		sourceStage, destinationStage,
+		0,
+		0, nullptr,
+		0, nullptr,
+		1, &barrier
+	);
+
+	return true;
+}
+
+bool VKHelper::copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, VkImageAspectFlags aspectFlags, uint32_t width, uint32_t height)
+{
+	VkBufferImageCopy region = {};
+	region.bufferOffset = 0;
+	region.bufferRowLength = 0;
+	region.bufferImageHeight = 0;
+	region.imageSubresource.aspectMask = aspectFlags;
+	region.imageSubresource.mipLevel = 0;
+	region.imageSubresource.baseArrayLayer = 0;
+	region.imageSubresource.layerCount = 1;
+	region.imageOffset = { 0, 0, 0 };
+	region.imageExtent = {
+		width,
+		height,
+		1
+	};
+
+	vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+	return true;
+}
+
+bool VKHelper::createImageView(VkDevice device, VKTextureDataComponent* VKTDC)
+{
+	VkImageViewCreateInfo viewInfo = {};
+	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	viewInfo.image = VKTDC->m_image;
+	viewInfo.viewType = VKTDC->m_VKTextureDataDesc.imageViewType;
+	viewInfo.format = VKTDC->m_VKTextureDataDesc.format;
+	viewInfo.subresourceRange.aspectMask = VKTDC->m_VKTextureDataDesc.aspectFlags;
+	viewInfo.subresourceRange.baseMipLevel = 0;
+	viewInfo.subresourceRange.levelCount = 1;
+	viewInfo.subresourceRange.baseArrayLayer = 0;
+	if (VKTDC->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler1DArray ||
+		VKTDC->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler2DArray)
+	{
+		viewInfo.subresourceRange.layerCount = VKTDC->m_textureDataDesc.DepthOrArraySize;
+	}
+	else
+	{
+		viewInfo.subresourceRange.layerCount = 1;
+	}
+
+	if (vkCreateImageView(device, &viewInfo, nullptr, &VKTDC->m_imageView) != VK_SUCCESS)
+	{
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "VKRenderingServer: Failed to create VkImageView!");
+		return false;
+	}
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "VKRenderingServer: VkImageView ", VKTDC->m_imageView, " is initialized.");
+
+	return true;
 }
 
 bool VKHelper::createDescriptorPool(VkDevice device, VkDescriptorPoolSize* poolSize, uint32_t poolSizeCount, uint32_t maxSets, VkDescriptorPool& poolHandle)

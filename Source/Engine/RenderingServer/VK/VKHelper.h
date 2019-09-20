@@ -42,12 +42,19 @@ namespace VKHelper
 	bool createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	bool copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue commandQueue, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
-	VkTextureDataDesc getVKTextureDataDesc(TextureDataDesc textureDataDesc);
-	VkImageType getImageType(TextureSamplerType textureDataDesc);
-	VkSamplerAddressMode getSamplerAddressMode(TextureWrapMethod textureDataDesc);
-	VkSamplerMipmapMode getTextureFilterParam(TextureFilterMethod textureDataDesc);
+	VKTextureDataDesc getVKTextureDataDesc(TextureDataDesc textureDataDesc);
+	VkImageType getImageType(TextureSamplerType textureSamplerType);
+	VkImageViewType getImageViewType(TextureSamplerType textureSamplerType);
+	VkImageUsageFlags getImageUsageFlags(TextureUsageType textureUsageType);
+	VkSamplerAddressMode getSamplerAddressMode(TextureWrapMethod textureWrapMethod);
+	VkSamplerMipmapMode getTextureFilterParam(TextureFilterMethod textureFilterMethod);
 	VkFormat getTextureFormat(TextureDataDesc textureDataDesc);
-	VkImageAspectFlagBits getImageAspectFlags(TextureDataDesc textureDataDesc);
+	VkDeviceSize getImageSize(TextureDataDesc textureDataDesc);
+	VkImageAspectFlagBits getImageAspectFlags(TextureUsageType textureUsageType);
+
+	bool transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout);
+	bool copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, VkImageAspectFlags aspectFlags, uint32_t width, uint32_t height);
+	bool createImageView(VkDevice device, VKTextureDataComponent* VKTDC);
 
 	bool createDescriptorPool(VkDevice device, VkDescriptorPoolSize* poolSize, uint32_t poolSizeCount, uint32_t maxSets, VkDescriptorPool& poolHandle);
 	bool createDescriptorSetLayout(VkDevice device, VkDescriptorSetLayoutBinding* setLayoutBindings, uint32_t setLayoutBindingsCount, VkDescriptorSetLayout& setLayout);

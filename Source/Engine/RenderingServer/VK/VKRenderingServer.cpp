@@ -641,6 +641,104 @@ bool VKRenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 
 bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rhs)
 {
+	auto l_rhs = reinterpret_cast<VKTextureDataComponent*>(rhs);
+	l_rhs->m_VKTextureDataDesc = getVKTextureDataDesc(rhs->m_textureDataDesc);
+
+	VkBuffer l_stagingBuffer;
+	VkDeviceMemory l_stagingBufferMemory;
+	createBuffer(m_physicalDevice, m_device, l_rhs->m_VKTextureDataDesc.imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, l_stagingBuffer, l_stagingBufferMemory);
+
+	if (l_rhs->m_textureData != nullptr)
+	{
+		void* l_dstData;
+		vkMapMemory(m_device, l_stagingBufferMemory, 0, l_rhs->m_VKTextureDataDesc.imageSize, 0, &l_dstData);
+		std::memcpy(l_dstData, l_rhs->m_textureData, static_cast<size_t>(l_rhs->m_VKTextureDataDesc.imageSize));
+		vkUnmapMemory(m_device, l_stagingBufferMemory);
+	}
+
+	VkImageCreateInfo imageInfo = {};
+	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageInfo.imageType = l_rhs->m_VKTextureDataDesc.imageType;
+	imageInfo.extent.width = l_rhs->m_textureDataDesc.Width;
+	imageInfo.extent.height = l_rhs->m_textureDataDesc.Height;
+	if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
+	{
+		imageInfo.extent.depth = l_rhs->m_textureDataDesc.DepthOrArraySize;
+	}
+	else
+	{
+		imageInfo.extent.depth = 1;
+	}
+	imageInfo.mipLevels = 1;
+	if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler1DArray ||
+		l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler2DArray)
+	{
+		imageInfo.arrayLayers = l_rhs->m_textureDataDesc.DepthOrArraySize;
+	}
+	else
+	{
+		imageInfo.arrayLayers = 1;
+	}
+	imageInfo.format = l_rhs->m_VKTextureDataDesc.format;
+	imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageInfo.usage = l_rhs->m_VKTextureDataDesc.imageUsageFlags;
+
+	if (vkCreateImage(m_device, &imageInfo, nullptr, &l_rhs->m_image) != VK_SUCCESS)
+	{
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "VKRenderingServer: Failed to create VkImage!");
+		return false;
+	}
+
+	VkMemoryRequirements memRequirements;
+	vkGetImageMemoryRequirements(m_device, l_rhs->m_image, &memRequirements);
+
+	VkMemoryAllocateInfo allocInfo = {};
+	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize = memRequirements.size;
+	allocInfo.memoryTypeIndex = findMemoryType(m_physicalDevice, memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+	if (vkAllocateMemory(m_device, &allocInfo, nullptr, &m_textureImageMemory) != VK_SUCCESS)
+	{
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "VKRenderingServer: Failed to allocate VkDeviceMemory for VkImage!");
+		return false;
+	}
+
+	vkBindImageMemory(m_device, l_rhs->m_image, m_textureImageMemory, 0);
+
+	VkCommandBuffer l_commandBuffer = beginSingleTimeCommands(m_device, m_commandPool);
+
+	if (rhs->m_textureDataDesc.UsageType == TextureUsageType::ColorAttachment)
+	{
+		transitionImageLayout(l_commandBuffer, l_rhs->m_image, imageInfo.format, l_rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+	}
+	else if (rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthAttachment)
+	{
+		transitionImageLayout(l_commandBuffer, l_rhs->m_image, imageInfo.format, l_rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+	}
+	else if (rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+	{
+		transitionImageLayout(l_commandBuffer, l_rhs->m_image, imageInfo.format, l_rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+	}
+	else
+	{
+		transitionImageLayout(l_commandBuffer, l_rhs->m_image, imageInfo.format, l_rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		if (l_rhs->m_textureData != nullptr)
+		{
+			copyBufferToImage(l_commandBuffer, l_stagingBuffer, l_rhs->m_image, l_rhs->m_VKTextureDataDesc.aspectFlags, static_cast<uint32_t>(imageInfo.extent.width), static_cast<uint32_t>(imageInfo.extent.height));
+		}
+		transitionImageLayout(l_commandBuffer, l_rhs->m_image, imageInfo.format, l_rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	}
+
+	endSingleTimeCommands(m_device, m_commandPool, m_graphicsQueue, l_commandBuffer);
+
+	vkDestroyBuffer(m_device, l_stagingBuffer, nullptr);
+	vkFreeMemory(m_device, l_stagingBufferMemory, nullptr);
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "VKRenderingServer: VkImage ", l_rhs->m_image, " is initialized.");
+
 	return true;
 }
 

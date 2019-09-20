@@ -3,9 +3,11 @@
 #include "vulkan/vulkan.h"
 #include "TextureDataComponent.h"
 
-struct VkTextureDataDesc
+struct VKTextureDataDesc
 {
 	VkImageType imageType;
+	VkImageViewType imageViewType;
+	VkImageUsageFlags imageUsageFlags;
 	VkSamplerAddressMode samplerAddressMode;
 	VkSamplerMipmapMode minFilterParam;
 	VkSamplerMipmapMode magFilterParam;
@@ -21,5 +23,5 @@ public:
 	VkImage m_image;
 	VkImageView m_imageView;
 
-	VkTextureDataDesc m_VkTextureDataDesc = VkTextureDataDesc();
+	VKTextureDataDesc m_VKTextureDataDesc = {};
 };

@@ -107,7 +107,7 @@ namespace VKRenderingBackendNS
 		return updateUBOImpl(UBOMemory, sizeof(T) * UBOValue.size(), &UBOValue[0]);
 	}
 
-	VkTextureDataDesc getVKTextureDataDesc(TextureDataDesc textureDataDesc);
+	VKTextureDataDesc getVKTextureDataDesc(TextureDataDesc textureDataDesc);
 
 	VKShaderProgramComponent* addVKShaderProgramComponent(const EntityID& rhs);
 
