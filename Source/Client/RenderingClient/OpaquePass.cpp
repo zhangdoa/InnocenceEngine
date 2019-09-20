@@ -21,8 +21,6 @@ bool OpaquePass::Setup()
 	m_SPC->m_ShaderFilePaths.m_VSPath = "opaquePass.vert/";
 	m_SPC->m_ShaderFilePaths.m_PSPath = "opaquePass.frag/";
 
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
-
 	m_RPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("OpaquePass/");
 
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
@@ -95,20 +93,20 @@ bool OpaquePass::Setup()
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
-
 	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("OpaquePass/");
 
 	m_SDC->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SDC->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
-
-	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
 
 	return true;
 }
 
 bool OpaquePass::Initialize()
 {
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
+	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
+
 	return true;
 }
 

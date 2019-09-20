@@ -49,15 +49,11 @@ bool DebugPass::Setup()
 	m_debugSphereMeshGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_debugSphereMeshGBDC->m_BindingPoint = 0;
 
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_debugSphereMeshGBDC);
-
 	m_debugCubeMeshGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("DebugCubeMeshGPUBuffer/");
 	m_debugCubeMeshGBDC->m_ElementCount = m_maxDebugMeshes;
 	m_debugCubeMeshGBDC->m_ElementSize = sizeof(DebugMeshGPUData);
 	m_debugCubeMeshGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_debugCubeMeshGBDC->m_BindingPoint = 0;
-
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_debugCubeMeshGBDC);
 
 	m_debugMaterialGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("DebugMaterialGPUBuffer/");
 	m_debugMaterialGBDC->m_ElementCount = m_maxDebugMaterial;
@@ -65,16 +61,11 @@ bool DebugPass::Setup()
 	m_debugMaterialGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_debugMaterialGBDC->m_BindingPoint = 1;
 
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_debugMaterialGBDC);
-
 	////
 	m_SPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("DebugPass/");
 
 	m_SPC->m_ShaderFilePaths.m_VSPath = "debugPass.vert/";
 	m_SPC->m_ShaderFilePaths.m_PSPath = "debugPass.frag/";
-
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
-
 	m_RPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("DebugPass/");
 
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
@@ -114,8 +105,6 @@ bool DebugPass::Setup()
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
-
 	m_debugSphereGPUData.reserve(m_maxDebugMeshes);
 	m_debugCubeGPUData.reserve(m_maxDebugMeshes);
 	m_debugMaterialGPUData.reserve(m_maxDebugMaterial);
@@ -125,6 +114,12 @@ bool DebugPass::Setup()
 
 bool DebugPass::Initialize()
 {
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_debugSphereMeshGBDC);
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_debugCubeMeshGBDC);
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_debugMaterialGBDC);
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
+
 	return true;
 }
 

@@ -58,8 +58,6 @@ bool LightCullingPass::createGridFrustumsBuffer()
 	m_tileFrustumGBDC->m_ElementSize = 64;
 	m_tileFrustumGBDC->m_BindingPoint = 0;
 
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_tileFrustumGBDC);
-
 	return true;
 }
 
@@ -73,8 +71,6 @@ bool LightCullingPass::createLightIndexCounterBuffer()
 	m_lightListIndexCounterGBDC->m_ElementSize = sizeof(uint32_t);
 	m_lightListIndexCounterGBDC->m_BindingPoint = 1;
 	m_lightListIndexCounterGBDC->m_InitialData = &l_initialIndexCount;
-
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_lightListIndexCounterGBDC);
 
 	return true;
 }
@@ -99,8 +95,6 @@ bool LightCullingPass::createLightIndexListBuffer()
 	m_lightIndexListGBDC->m_ElementSize = sizeof(uint32_t);
 	m_lightIndexListGBDC->m_BindingPoint = 1;
 
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_lightIndexListGBDC);
-
 	return true;
 }
 
@@ -119,8 +113,6 @@ bool LightCullingPass::createLightGridTDC()
 	m_lightGridTDC->m_textureDataDesc.MinFilterMethod = TextureFilterMethod::Nearest;
 	m_lightGridTDC->m_textureDataDesc.MagFilterMethod = TextureFilterMethod::Nearest;
 
-	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_lightGridTDC);
-
 	return true;
 }
 
@@ -132,8 +124,6 @@ bool LightCullingPass::createDebugTDC()
 	m_debugTDC->m_textureDataDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_debugTDC->m_textureDataDesc.UsageType = TextureUsageType::RawImage;
 
-	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_debugTDC);
-
 	return true;
 }
 
@@ -141,11 +131,9 @@ bool LightCullingPass::Setup()
 {
 	m_SPC_TileFrustum = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("TileFrustum/");
 	m_SPC_TileFrustum->m_ShaderFilePaths.m_CSPath = "tileFrustum.comp/";
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_TileFrustum);
 
 	m_SPC_LightCulling = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("LightCulling/");
 	m_SPC_LightCulling->m_ShaderFilePaths.m_CSPath = "lightCulling.comp/";
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_LightCulling);
 
 	////
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
@@ -171,8 +159,6 @@ bool LightCullingPass::Setup()
 	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[2].m_LocalSlot = 0;
 
 	m_RPDC_Frustum->m_ShaderProgram = m_SPC_TileFrustum;
-
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_Frustum);
 
 	////
 	m_RPDC_LightCulling = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("ComputePass_LightCulling/");
@@ -234,8 +220,6 @@ bool LightCullingPass::Setup()
 
 	m_RPDC_LightCulling->m_ShaderProgram = m_SPC_LightCulling;
 
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_LightCulling);
-
 	////
 	createGridFrustumsBuffer();
 	createLightIndexCounterBuffer();
@@ -248,6 +232,18 @@ bool LightCullingPass::Setup()
 
 bool LightCullingPass::Initialize()
 {
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_tileFrustumGBDC);
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_lightListIndexCounterGBDC);
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_lightIndexListGBDC);
+	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_lightGridTDC);
+	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_debugTDC);
+
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_TileFrustum);
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_LightCulling);
+
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_Frustum);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_LightCulling);
+
 	return true;
 }
 

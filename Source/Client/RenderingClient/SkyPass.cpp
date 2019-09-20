@@ -20,8 +20,6 @@ bool SkyPass::Setup()
 	m_SPC->m_ShaderFilePaths.m_VSPath = "skyPass.vert/";
 	m_SPC->m_ShaderFilePaths.m_PSPath = "skyPass.frag/";
 
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
-
 	m_RPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("SkyPass/");
 
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
@@ -51,13 +49,14 @@ bool SkyPass::Setup()
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
-
 	return true;
 }
 
 bool SkyPass::Initialize()
 {
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
+
 	return true;
 }
 

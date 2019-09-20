@@ -5,6 +5,7 @@
 namespace GIDataLoader
 {
 	bool Setup();
+	bool Initialize();
 	bool ReloadGIData();
 	bool Terminate();
 

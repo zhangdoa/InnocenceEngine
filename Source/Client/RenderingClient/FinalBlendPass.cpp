@@ -24,8 +24,6 @@ bool FinalBlendPass::Setup()
 	m_SPC->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
 	m_SPC->m_ShaderFilePaths.m_PSPath = "finalBlendPass.frag/";
 
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
-
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	m_RPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("FinalBlendPass/");
@@ -59,19 +57,18 @@ bool FinalBlendPass::Setup()
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
-
 	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("FinalBlendPass/");
-
-	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
-
-	g_pModuleManager->getRenderingServer()->SetUserPipelineOutput(m_RPDC);
 
 	return true;
 }
 
 bool FinalBlendPass::Initialize()
 {
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
+	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
+	g_pModuleManager->getRenderingServer()->SetUserPipelineOutput(m_RPDC);
+
 	return true;
 }
 

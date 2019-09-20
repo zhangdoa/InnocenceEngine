@@ -52,16 +52,12 @@ bool VolumetricFogPass::Setup()
 	m_volumetricPassGBDC->m_ElementSize = sizeof(VolumetricPassGPUData);
 	m_volumetricPassGBDC->m_BindingPoint = 12;
 
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_volumetricPassGBDC);
-
 	////
 	m_froxelizationSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("VolumetricFogFroxelizationPass/");
 
 	m_froxelizationSPC->m_ShaderFilePaths.m_VSPath = "volumetricFogFroxelizationPass.vert/";
 	m_froxelizationSPC->m_ShaderFilePaths.m_GSPath = "volumetricFogFroxelizationPass.geom/";
 	m_froxelizationSPC->m_ShaderFilePaths.m_PSPath = "volumetricFogFroxelizationPass.frag/";
-
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_froxelizationSPC);
 
 	m_froxelizationRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("VolumetricFogFroxelizationPass/");
 
@@ -108,8 +104,6 @@ bool VolumetricFogPass::Setup()
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_IsRanged = true;
 
 	m_froxelizationRPDC->m_ShaderProgram = m_froxelizationSPC;
-
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_froxelizationRPDC);
 
 	////
 	m_irraidanceInjectionSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("VolumetricFogIrraidanceInjectionPass/");
@@ -160,8 +154,6 @@ bool VolumetricFogPass::Setup()
 
 	m_irraidanceInjectionRPDC->m_ShaderProgram = m_irraidanceInjectionSPC;
 
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_irraidanceInjectionRPDC);
-
 	////
 	m_rayMarchingSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("VolumetricFogRayMarchingPass/");
 
@@ -199,11 +191,8 @@ bool VolumetricFogPass::Setup()
 
 	m_rayMarchingRPDC->m_ShaderProgram = m_rayMarchingSPC;
 
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_rayMarchingRPDC);
-
 	m_rayMarchingSDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("VolumetricFogRayMarchingPass/");
 
-	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_rayMarchingSDC);
 	////
 	m_irraidanceInjectionResult = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("VolumetricFogIrraidanceInjectionResult/");
 	m_irraidanceInjectionResult->m_textureDataDesc = l_RenderPassDesc.m_RenderTargetDesc;
@@ -217,21 +206,28 @@ bool VolumetricFogPass::Setup()
 	m_irraidanceInjectionResult->m_textureDataDesc.Height = 90;
 	m_irraidanceInjectionResult->m_textureDataDesc.DepthOrArraySize = 64;
 
-	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_irraidanceInjectionResult);
-
 	m_rayMarchingResult = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("VolumetricFogRayMarchingResult/");
 	m_rayMarchingResult->m_textureDataDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
 	m_rayMarchingResult->m_textureDataDesc.UsageType = TextureUsageType::RawImage;
 	m_rayMarchingResult->m_textureDataDesc.GPUAccessibility = Accessibility::ReadWrite;
 
-	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_rayMarchingResult);
-
 	return true;
 }
 
 bool VolumetricFogPass::Initialize()
 {
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_volumetricPassGBDC);
+
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_froxelizationSPC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_froxelizationRPDC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_irraidanceInjectionRPDC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_rayMarchingRPDC);
+	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_rayMarchingSDC);
+
+	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_irraidanceInjectionResult);
+	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_rayMarchingResult);
+
 	return true;
 }
 

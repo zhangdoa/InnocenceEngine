@@ -23,8 +23,6 @@ bool MotionBlurPass::Setup()
 	m_SPC->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
 	m_SPC->m_ShaderFilePaths.m_PSPath = "motionBlurPass.frag/";
 
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
-
 	m_RPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("MotionBlurPass/");
 
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
@@ -55,17 +53,17 @@ bool MotionBlurPass::Setup()
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
-
 	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("MotionBlurPass/");
-
-	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
 
 	return true;
 }
 
 bool MotionBlurPass::Initialize()
 {
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
+	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
+
 	return true;
 }
 

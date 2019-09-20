@@ -29,6 +29,12 @@ namespace GIDataLoader
 	bool m_IsProbeLoaded = false;
 
 	std::function<void()> f_sceneLoadingFinishCallback;
+
+	auto m_testCubemapResolution = 128;
+	auto m_sampleCountPerFace = m_testCubemapResolution * m_testCubemapResolution;
+
+	std::vector<Vec4> m_cubemapTextureSamples(m_sampleCountPerFace * 6);
+	std::vector<Vec4> m_3DTextureSamples(m_testCubemapResolution * m_testCubemapResolution * m_testCubemapResolution);
 }
 
 bool GIDataLoader::loadGIData()
@@ -104,10 +110,6 @@ bool GIDataLoader::Setup()
 	////
 	m_testSampleCubemap = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("TestSampleCubemap/");
 
-	auto l_testCubemapResolution = 128;
-	auto l_sampleCountPerFace = l_testCubemapResolution * l_testCubemapResolution;
-
-	std::vector<Vec4> l_cubemapTextureSamples(l_sampleCountPerFace * 6);
 	std::vector<Vec4> l_faceColors = {
 	Vec4(1.0f, 0.0f, 0.0f, 1.0f),
 	Vec4(1.0f, 1.0f, 0.0f, 1.0f),
@@ -118,11 +120,11 @@ bool GIDataLoader::Setup()
 	};
 	for (size_t i = 0; i < 6; i++)
 	{
-		for (size_t j = 0; j < l_sampleCountPerFace; j++)
+		for (size_t j = 0; j < m_sampleCountPerFace; j++)
 		{
-			auto l_color = l_faceColors[i] * 2.0f * (float)j / (float)l_sampleCountPerFace;
+			auto l_color = l_faceColors[i] * 2.0f * (float)j / (float)m_sampleCountPerFace;
 			l_color.w = 1.0f;
-			l_cubemapTextureSamples[i * l_sampleCountPerFace + j] = l_color;
+			m_cubemapTextureSamples[i * m_sampleCountPerFace + j] = l_color;
 		}
 	}
 
@@ -135,23 +137,20 @@ bool GIDataLoader::Setup()
 	m_testSampleCubemap->m_textureDataDesc.MinFilterMethod = TextureFilterMethod::Linear;
 	m_testSampleCubemap->m_textureDataDesc.MagFilterMethod = TextureFilterMethod::Linear;
 	m_testSampleCubemap->m_textureDataDesc.WrapMethod = TextureWrapMethod::Repeat;
-	m_testSampleCubemap->m_textureDataDesc.Width = l_testCubemapResolution;
-	m_testSampleCubemap->m_textureDataDesc.Height = l_testCubemapResolution;
+	m_testSampleCubemap->m_textureDataDesc.Width = m_testCubemapResolution;
+	m_testSampleCubemap->m_textureDataDesc.Height = m_testCubemapResolution;
 	m_testSampleCubemap->m_textureDataDesc.PixelDataType = TexturePixelDataType::FLOAT32;
-	m_testSampleCubemap->m_textureData = &l_cubemapTextureSamples[0];
-
-	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_testSampleCubemap);
+	m_testSampleCubemap->m_textureData = &m_cubemapTextureSamples[0];
 
 	////
-	std::vector<Vec4> l_3DTextureSamples(l_testCubemapResolution * l_testCubemapResolution * l_testCubemapResolution);
 	size_t l_pixelIndex = 0;
-	for (size_t i = 0; i < l_testCubemapResolution; i++)
+	for (size_t i = 0; i < m_testCubemapResolution; i++)
 	{
-		for (size_t j = 0; j < l_testCubemapResolution; j++)
+		for (size_t j = 0; j < m_testCubemapResolution; j++)
 		{
-			for (size_t k = 0; k < l_testCubemapResolution; k++)
+			for (size_t k = 0; k < m_testCubemapResolution; k++)
 			{
-				l_3DTextureSamples[l_pixelIndex] = Vec4((float)i / (float)l_testCubemapResolution, (float)j / (float)l_testCubemapResolution, (float)k / (float)l_testCubemapResolution, 1.0f);
+				m_3DTextureSamples[l_pixelIndex] = Vec4((float)i / (float)m_testCubemapResolution, (float)j / (float)m_testCubemapResolution, (float)k / (float)m_testCubemapResolution, 1.0f);
 				l_pixelIndex++;
 			}
 		}
@@ -166,12 +165,18 @@ bool GIDataLoader::Setup()
 	m_testSample3DTexture->m_textureDataDesc.MinFilterMethod = TextureFilterMethod::Linear;
 	m_testSample3DTexture->m_textureDataDesc.MagFilterMethod = TextureFilterMethod::Linear;
 	m_testSample3DTexture->m_textureDataDesc.WrapMethod = TextureWrapMethod::Repeat;
-	m_testSample3DTexture->m_textureDataDesc.Width = l_testCubemapResolution;
-	m_testSample3DTexture->m_textureDataDesc.Height = l_testCubemapResolution;
-	m_testSample3DTexture->m_textureDataDesc.DepthOrArraySize = l_testCubemapResolution;
+	m_testSample3DTexture->m_textureDataDesc.Width = m_testCubemapResolution;
+	m_testSample3DTexture->m_textureDataDesc.Height = m_testCubemapResolution;
+	m_testSample3DTexture->m_textureDataDesc.DepthOrArraySize = m_testCubemapResolution;
 	m_testSample3DTexture->m_textureDataDesc.PixelDataType = TexturePixelDataType::FLOAT32;
-	m_testSample3DTexture->m_textureData = &l_3DTextureSamples[0];
+	m_testSample3DTexture->m_textureData = &m_3DTextureSamples[0];
 
+	return true;
+}
+
+bool GIDataLoader::Initialize()
+{
+	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_testSampleCubemap);
 	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_testSample3DTexture);
 
 	return true;

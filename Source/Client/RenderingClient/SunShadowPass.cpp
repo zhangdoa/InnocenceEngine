@@ -21,8 +21,6 @@ bool SunShadowPass::Setup()
 	m_SPC->m_ShaderFilePaths.m_GSPath = "sunShadowPass.geom/";
 	m_SPC->m_ShaderFilePaths.m_PSPath = "sunShadowPass.frag/";
 
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
-
 	m_RPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("SunShadowPass/");
 
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
@@ -62,13 +60,14 @@ bool SunShadowPass::Setup()
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
-
 	return true;
 }
 
 bool SunShadowPass::Initialize()
 {
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
+
 	return true;
 }
 

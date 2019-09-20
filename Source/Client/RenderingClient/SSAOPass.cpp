@@ -31,8 +31,6 @@ bool SSAOPass::Setup()
 	m_SPC->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
 	m_SPC->m_ShaderFilePaths.m_PSPath = "SSAONoisePass.frag/";
 
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
-
 	m_RPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("SSAONoisePass/");
 
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
@@ -79,8 +77,6 @@ bool SSAOPass::Setup()
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
-
 	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("SSAONoisePass/");
 
 	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
@@ -91,8 +87,6 @@ bool SSAOPass::Setup()
 	m_SDC_RandomRot->m_SamplerDesc.m_MagFilterMethod = TextureFilterMethod::Nearest;
 	m_SDC_RandomRot->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SDC_RandomRot->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
-
-	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC_RandomRot);
 
 	// Kernel
 	std::uniform_real_distribution<float> l_randomFloats(0.0f, 1.0f);
@@ -120,8 +114,6 @@ bool SSAOPass::Setup()
 	m_SSAOKernelGPUBuffer->m_ElementCount = m_kernelSize;
 	m_SSAOKernelGPUBuffer->m_InitialData = &m_SSAOKernel[0];
 	m_SSAOKernelGPUBuffer->m_BindingPoint = 9;
-
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_SSAOKernelGPUBuffer);
 
 	// Noise
 	auto l_textureSize = 4;
@@ -162,13 +154,17 @@ bool SSAOPass::Setup()
 
 	m_SSAONoiseTDC->m_textureData = &l_pixelBuffer[0];
 
-	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_SSAONoiseTDC);
-
 	return true;
 }
 
 bool SSAOPass::Initialize()
 {
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
+	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC_RandomRot);
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_SSAOKernelGPUBuffer);
+	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_SSAONoiseTDC);
+
 	return true;
 }
 

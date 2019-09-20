@@ -23,8 +23,6 @@ bool BillboardPass::Setup()
 	m_SPC->m_ShaderFilePaths.m_VSPath = "billboardPass.vert/";
 	m_SPC->m_ShaderFilePaths.m_PSPath = "billboardPass.frag/";
 
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
-
 	m_RPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("BillboardPass/");
 
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
@@ -67,17 +65,17 @@ bool BillboardPass::Setup()
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
-
 	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("BillboardPass/");
-
-	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
 
 	return true;
 }
 
 bool BillboardPass::Initialize()
 {
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
+	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
+
 	return true;
 }
 

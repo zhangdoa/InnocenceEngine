@@ -331,6 +331,22 @@ bool GIResolvePass::Setup()
 
 bool GIResolvePass::Initialize()
 {
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_skySPC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_skyRPDC);
+
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_surfelSPC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_surfelRPDC);
+
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_brickSPC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_brickRPDC);
+
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_probeSPC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_probeRPDC);
+
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_irradianceVolumeSPC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_irradianceVolumeRPDC);
+	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_irradianceVolumeSDC);
+
 	return true;
 }
 
@@ -341,8 +357,6 @@ bool GIResolvePass::setupSky()
 	m_skySPC->m_ShaderFilePaths.m_VSPath = "GIResolveSkyPass.vert/";
 	m_skySPC->m_ShaderFilePaths.m_GSPath = "GIResolveSkyPass.geom/";
 	m_skySPC->m_ShaderFilePaths.m_PSPath = "GIResolveSkyPass.frag/";
-
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_skySPC);
 
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 	l_RenderPassDesc.m_IsOffScreen = true;
@@ -380,8 +394,6 @@ bool GIResolvePass::setupSky()
 
 	m_skyRPDC->m_ShaderProgram = m_skySPC;
 
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_skyRPDC);
-
 	////
 	m_skyConvGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("SkyConvGPUBuffer/");
 	m_skyConvGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
@@ -396,7 +408,6 @@ bool GIResolvePass::setupSurfels()
 {
 	m_surfelSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIResolveSurfelPass/");
 	m_surfelSPC->m_ShaderFilePaths.m_CSPath = "GIResolveSurfelPass.comp/";
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_surfelSPC);
 
 	m_surfelRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIResolveSurfelPass/");
 
@@ -447,8 +458,6 @@ bool GIResolvePass::setupSurfels()
 
 	m_surfelRPDC->m_ShaderProgram = m_surfelSPC;
 
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_surfelRPDC);
-
 	return true;
 }
 
@@ -456,7 +465,6 @@ bool GIResolvePass::setupBricks()
 {
 	m_brickSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIResolveBrickPass/");
 	m_brickSPC->m_ShaderFilePaths.m_CSPath = "GIResolveBrickPass.comp/";
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_brickSPC);
 
 	m_brickRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIResolveBrickPass/");
 
@@ -496,8 +504,6 @@ bool GIResolvePass::setupBricks()
 
 	m_brickRPDC->m_ShaderProgram = m_brickSPC;
 
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_brickRPDC);
-
 	return true;
 }
 
@@ -505,7 +511,6 @@ bool GIResolvePass::setupProbes()
 {
 	m_probeSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIResolveProbePass/");
 	m_probeSPC->m_ShaderFilePaths.m_CSPath = "GIResolveProbePass.comp/";
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_probeSPC);
 
 	m_probeRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIResolveProbePass/");
 
@@ -556,8 +561,6 @@ bool GIResolvePass::setupProbes()
 
 	m_probeRPDC->m_ShaderProgram = m_probeSPC;
 
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_probeRPDC);
-
 	return true;
 }
 
@@ -565,7 +568,6 @@ bool GIResolvePass::setupIrradianceVolume()
 {
 	m_irradianceVolumeSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIResolveIrradianceVolumePass/");
 	m_irradianceVolumeSPC->m_ShaderFilePaths.m_CSPath = "GIResolveIrradianceVolumePass.comp/";
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_irradianceVolumeSPC);
 
 	m_irradianceVolumeRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIResolveIrradianceVolumePass/");
 
@@ -609,16 +611,11 @@ bool GIResolvePass::setupIrradianceVolume()
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[5].m_IsRanged = true;
 
 	m_irradianceVolumeRPDC->m_ShaderProgram = m_irradianceVolumeSPC;
-
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_irradianceVolumeRPDC);
-
 	m_irradianceVolumeSDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("GIResolveIrradianceVolumePass/");
 	m_irradianceVolumeSDC->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Border;
 	m_irradianceVolumeSDC->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Border;
 	m_irradianceVolumeSDC->m_SamplerDesc.m_WrapMethodW = TextureWrapMethod::Border;
 	m_irradianceVolumeSDC->m_SamplerDesc.m_BorderColor[3] = 1.0f;
-
-	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_irradianceVolumeSDC);
 
 	return true;
 }

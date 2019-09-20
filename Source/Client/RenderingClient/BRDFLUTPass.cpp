@@ -26,14 +26,10 @@ bool BRDFLUTPass::Setup()
 	m_SPC->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
 	m_SPC->m_ShaderFilePaths.m_PSPath = "BRDFLUTPass.frag/";
 
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
-
 	m_SPC_MS = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("BRDFLUTMSPass/");
 
 	m_SPC_MS->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
 	m_SPC_MS->m_ShaderFilePaths.m_PSPath = "BRDFLUTMSPass.frag/";
-
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_MS);
 
 	m_RPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("BRDFLUTPass/");
 	m_RPDC_MS = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("BRDFLUTMSPass/");
@@ -64,18 +60,19 @@ bool BRDFLUTPass::Setup()
 	m_RPDC->m_ShaderProgram = m_SPC;
 	m_RPDC_MS->m_ShaderProgram = m_SPC_MS;
 
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_MS);
-
 	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("BRDFLUTMSPass/");
-
-	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
 
 	return true;
 }
 
 bool BRDFLUTPass::Initialize()
 {
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_MS);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_MS);
+	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
+
 	return true;
 }
 

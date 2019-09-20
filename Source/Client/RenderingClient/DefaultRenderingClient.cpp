@@ -82,6 +82,7 @@ bool DefaultRenderingClient::Setup()
 	f_InitializeJob = [&]()
 	{
 		DefaultGPUBuffers::Initialize();
+		GIDataLoader::Initialize();
 		LightCullingPass::Initialize();
 		GIResolvePass::Initialize();
 		GIResolveTestPass::Initialize();

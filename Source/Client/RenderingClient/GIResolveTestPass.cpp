@@ -44,15 +44,12 @@ bool GIResolveTestPass::Setup()
 	m_probeSphereMeshGBDC->m_BindingPoint = 0;
 
 	m_probeSphereMeshData.reserve(4096);
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_probeSphereMeshGBDC);
 
 	////
 	m_probeSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIResolveTestProbePass/");
 
 	m_probeSPC->m_ShaderFilePaths.m_VSPath = "GIResolveTestProbePass.vert/";
 	m_probeSPC->m_ShaderFilePaths.m_PSPath = "GIResolveTestProbePass.frag/";
-
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_probeSPC);
 
 	m_probeRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIResolveTestProbePass/");
 
@@ -104,17 +101,18 @@ bool GIResolveTestPass::Setup()
 
 	m_probeRPDC->m_ShaderProgram = m_probeSPC;
 
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_probeRPDC);
-
 	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("GIResolveTestProbePass/");
-
-	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
 
 	return true;
 }
 
 bool GIResolveTestPass::Initialize()
 {
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_probeSphereMeshGBDC);
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_probeSPC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_probeRPDC);
+	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
+
 	return true;
 }
 

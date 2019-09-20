@@ -26,8 +26,6 @@ bool TAAPass::Setup()
 	m_SPC->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
 	m_SPC->m_ShaderFilePaths.m_PSPath = "TAAPass.frag/";
 
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
-
 	m_RPDC_A = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("TAAPassA/");
 	m_RPDC_B = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("TAAPassB/");
 
@@ -67,18 +65,18 @@ bool TAAPass::Setup()
 	m_RPDC_A->m_ShaderProgram = m_SPC;
 	m_RPDC_B->m_ShaderProgram = m_SPC;
 
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_A);
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_B);
-
 	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("TAAPass/");
-
-	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
 
 	return true;
 }
 
 bool TAAPass::Initialize()
 {
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_A);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_B);
+	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
+
 	return true;
 }
 

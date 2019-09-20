@@ -23,8 +23,6 @@ bool TransparentPass::Setup()
 	m_SPC->m_ShaderFilePaths.m_VSPath = "transparentPass.vert/";
 	m_SPC->m_ShaderFilePaths.m_PSPath = "transparentPass.frag/";
 
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
-
 	m_RPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("TransparentPass/");
 
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
@@ -69,13 +67,14 @@ bool TransparentPass::Setup()
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
-
 	return true;
 }
 
 bool TransparentPass::Initialize()
 {
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
+
 	return true;
 }
 
