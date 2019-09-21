@@ -51,6 +51,7 @@ namespace VKHelper
 	VkFormat getTextureFormat(TextureDataDesc textureDataDesc);
 	VkDeviceSize getImageSize(TextureDataDesc textureDataDesc);
 	VkImageAspectFlagBits getImageAspectFlags(TextureUsageType textureUsageType);
+	VkImageCreateInfo getImageCreateInfo(TextureDataDesc textureDataDesc, VKTextureDataDesc vKTextureDataDesc);
 
 	bool transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout);
 	bool copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, VkImageAspectFlags aspectFlags, uint32_t width, uint32_t height);

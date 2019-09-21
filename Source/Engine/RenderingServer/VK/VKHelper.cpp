@@ -642,6 +642,56 @@ VkImageAspectFlagBits VKHelper::getImageAspectFlags(TextureUsageType textureUsag
 	return l_result;
 }
 
+VkImageCreateInfo VKHelper::getImageCreateInfo(TextureDataDesc textureDataDesc, VKTextureDataDesc vKTextureDataDesc)
+{
+	VkImageCreateInfo l_result = {};
+
+	l_result.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+
+	if (textureDataDesc.SamplerType == TextureSamplerType::Sampler2DArray)
+	{
+		l_result.flags |= VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+	}
+	else if (textureDataDesc.SamplerType == TextureSamplerType::SamplerCubemap)
+	{
+		l_result.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+	}
+
+	l_result.imageType = vKTextureDataDesc.imageType;
+	l_result.extent.width = textureDataDesc.Width;
+	l_result.extent.height = textureDataDesc.Height;
+	if (textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
+	{
+		l_result.extent.depth = textureDataDesc.DepthOrArraySize;
+	}
+	else
+	{
+		l_result.extent.depth = 1;
+	}
+	l_result.mipLevels = 1;
+	if (textureDataDesc.SamplerType == TextureSamplerType::Sampler1DArray ||
+		textureDataDesc.SamplerType == TextureSamplerType::Sampler2DArray)
+	{
+		l_result.arrayLayers = textureDataDesc.DepthOrArraySize;
+	}
+	else if (textureDataDesc.SamplerType == TextureSamplerType::SamplerCubemap)
+	{
+		l_result.arrayLayers = 6;
+	}
+	else
+	{
+		l_result.arrayLayers = 1;
+	}
+	l_result.format = vKTextureDataDesc.format;
+	l_result.tiling = VK_IMAGE_TILING_OPTIMAL;
+	l_result.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	l_result.samples = VK_SAMPLE_COUNT_1_BIT;
+	l_result.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	l_result.usage = vKTextureDataDesc.imageUsageFlags;
+
+	return l_result;
+}
+
 bool VKHelper::transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout)
 {
 	VkImageMemoryBarrier barrier = {};

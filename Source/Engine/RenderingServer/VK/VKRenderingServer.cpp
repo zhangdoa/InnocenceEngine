@@ -346,7 +346,7 @@ bool VKRenderingServerNS::createMaterialDescriptorPool()
 	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
 	VkDescriptorPoolSize l_descriptorPoolSize = {};
-	l_descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	l_descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 	l_descriptorPoolSize.descriptorCount = l_renderingCapability.maxMaterials * 5;
 
 	VkDescriptorPoolSize l_descriptorPoolSizes[] = { l_descriptorPoolSize };
@@ -366,9 +366,9 @@ bool VKRenderingServerNS::createMaterialDescriptorPool()
 		VkDescriptorSetLayoutBinding l_textureLayoutBinding = {};
 		l_textureLayoutBinding.binding = (uint32_t)i;
 		l_textureLayoutBinding.descriptorCount = 1;
-		l_textureLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		l_textureLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 		l_textureLayoutBinding.pImmutableSamplers = nullptr;
-		l_textureLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		l_textureLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
 		l_textureLayoutBindings[i] = l_textureLayoutBinding;
 	}
 
@@ -593,6 +593,11 @@ AddComponent(VK, GPUBufferData);
 
 bool VKRenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 {
+	if (m_initializedMeshes.find(rhs) != m_initializedMeshes.end())
+	{
+		return true;
+	}
+
 	auto l_rhs = reinterpret_cast<VKMeshDataComponent*>(rhs);
 	VkDeviceSize l_bufferSize = sizeof(Vertex) * l_rhs->m_vertices.size();
 
@@ -641,8 +646,14 @@ bool VKRenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 
 bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rhs)
 {
+	if (m_initializedTextures.find(rhs) != m_initializedTextures.end())
+	{
+		return true;
+	}
+
 	auto l_rhs = reinterpret_cast<VKTextureDataComponent*>(rhs);
 	l_rhs->m_VKTextureDataDesc = getVKTextureDataDesc(rhs->m_textureDataDesc);
+	l_rhs->m_ImageCreateInfo = getImageCreateInfo(rhs->m_textureDataDesc, l_rhs->m_VKTextureDataDesc);
 
 	VkBuffer l_stagingBuffer;
 	VkDeviceMemory l_stagingBufferMemory;
@@ -656,37 +667,7 @@ bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 		vkUnmapMemory(m_device, l_stagingBufferMemory);
 	}
 
-	VkImageCreateInfo imageInfo = {};
-	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	imageInfo.imageType = l_rhs->m_VKTextureDataDesc.imageType;
-	imageInfo.extent.width = l_rhs->m_textureDataDesc.Width;
-	imageInfo.extent.height = l_rhs->m_textureDataDesc.Height;
-	if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
-	{
-		imageInfo.extent.depth = l_rhs->m_textureDataDesc.DepthOrArraySize;
-	}
-	else
-	{
-		imageInfo.extent.depth = 1;
-	}
-	imageInfo.mipLevels = 1;
-	if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler1DArray ||
-		l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler2DArray)
-	{
-		imageInfo.arrayLayers = l_rhs->m_textureDataDesc.DepthOrArraySize;
-	}
-	else
-	{
-		imageInfo.arrayLayers = 1;
-	}
-	imageInfo.format = l_rhs->m_VKTextureDataDesc.format;
-	imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	imageInfo.usage = l_rhs->m_VKTextureDataDesc.imageUsageFlags;
-
-	if (vkCreateImage(m_device, &imageInfo, nullptr, &l_rhs->m_image) != VK_SUCCESS)
+	if (vkCreateImage(m_device, &l_rhs->m_ImageCreateInfo, nullptr, &l_rhs->m_image) != VK_SUCCESS)
 	{
 		g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "VKRenderingServer: Failed to create VkImage!");
 		return false;
@@ -712,24 +693,24 @@ bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 
 	if (rhs->m_textureDataDesc.UsageType == TextureUsageType::ColorAttachment)
 	{
-		transitionImageLayout(l_commandBuffer, l_rhs->m_image, imageInfo.format, l_rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		transitionImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	}
 	else if (rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthAttachment)
 	{
-		transitionImageLayout(l_commandBuffer, l_rhs->m_image, imageInfo.format, l_rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+		transitionImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 	}
 	else if (rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
 	{
-		transitionImageLayout(l_commandBuffer, l_rhs->m_image, imageInfo.format, l_rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+		transitionImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 	}
 	else
 	{
-		transitionImageLayout(l_commandBuffer, l_rhs->m_image, imageInfo.format, l_rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		transitionImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 		if (l_rhs->m_textureData != nullptr)
 		{
-			copyBufferToImage(l_commandBuffer, l_stagingBuffer, l_rhs->m_image, l_rhs->m_VKTextureDataDesc.aspectFlags, static_cast<uint32_t>(imageInfo.extent.width), static_cast<uint32_t>(imageInfo.extent.height));
+			copyBufferToImage(l_commandBuffer, l_stagingBuffer, l_rhs->m_image, l_rhs->m_VKTextureDataDesc.aspectFlags, static_cast<uint32_t>(l_rhs->m_ImageCreateInfo.extent.width), static_cast<uint32_t>(l_rhs->m_ImageCreateInfo.extent.height));
 		}
-		transitionImageLayout(l_commandBuffer, l_rhs->m_image, imageInfo.format, l_rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		transitionImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	}
 
 	endSingleTimeCommands(m_device, m_commandPool, m_graphicsQueue, l_commandBuffer);
@@ -737,13 +718,116 @@ bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 	vkDestroyBuffer(m_device, l_stagingBuffer, nullptr);
 	vkFreeMemory(m_device, l_stagingBufferMemory, nullptr);
 
+	createImageView(m_device, l_rhs);
+
+	auto l_resourceBinder = addResourcesBinder();
+	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
+	l_rhs->m_ResourceBinder = l_resourceBinder;
+
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "VKRenderingServer: VkImage ", l_rhs->m_image, " is initialized.");
+
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
+
+	m_initializedTextures.emplace(l_rhs);
 
 	return true;
 }
 
 bool VKRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * rhs)
 {
+	if (m_initializedMaterials.find(rhs) != m_initializedMaterials.end())
+	{
+		return true;
+	}
+
+	auto l_rhs = reinterpret_cast<VKMaterialDataComponent*>(rhs);
+	l_rhs->m_ResourceBinders.resize(5);
+
+	auto f_createWriteDescriptorSet = [&](TextureDataComponent* texture, VkDescriptorImageInfo& imageInfo, uint32_t dstBinding)
+	{
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageInfo.imageView = reinterpret_cast<VKTextureDataComponent*>(texture)->m_imageView;
+
+		VkWriteDescriptorSet writeDescriptorSet = {};
+		writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSet.dstBinding = dstBinding;
+		writeDescriptorSet.dstArrayElement = 0;
+		writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+		writeDescriptorSet.descriptorCount = 1;
+		writeDescriptorSet.pImageInfo = &imageInfo;
+		writeDescriptorSet.dstSet = l_rhs->m_descriptorSet;
+
+		return writeDescriptorSet;
+	};
+
+	createDescriptorSets(
+		m_device,
+		m_materialDescriptorPool,
+		m_materialDescriptorLayout,
+		l_rhs->m_descriptorSet,
+		1);
+
+	l_rhs->m_descriptorImageInfos.resize(5);
+	l_rhs->m_writeDescriptorSets.resize(5);
+
+	if (l_rhs->m_normalTexture)
+	{
+		InitializeTextureDataComponent(reinterpret_cast<VKTextureDataComponent*>(l_rhs->m_normalTexture));
+		l_rhs->m_writeDescriptorSets[0] = f_createWriteDescriptorSet(l_rhs->m_normalTexture, l_rhs->m_descriptorImageInfos[0], 0);
+	}
+	else
+	{
+		auto l_defaultTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Normal);
+		l_rhs->m_writeDescriptorSets[0] = f_createWriteDescriptorSet(l_defaultTexture, l_rhs->m_descriptorImageInfos[0], 0);
+	}
+	if (l_rhs->m_albedoTexture)
+	{
+		InitializeTextureDataComponent(reinterpret_cast<VKTextureDataComponent*>(l_rhs->m_albedoTexture));
+		l_rhs->m_writeDescriptorSets[1] = f_createWriteDescriptorSet(l_rhs->m_albedoTexture, l_rhs->m_descriptorImageInfos[1], 1);
+	}
+	else
+	{
+		auto l_defaultTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Albedo);
+		l_rhs->m_writeDescriptorSets[1] = f_createWriteDescriptorSet(l_defaultTexture, l_rhs->m_descriptorImageInfos[1], 1);
+	}
+	if (l_rhs->m_metallicTexture)
+	{
+		InitializeTextureDataComponent(reinterpret_cast<VKTextureDataComponent*>(l_rhs->m_metallicTexture));
+		l_rhs->m_writeDescriptorSets[2] = f_createWriteDescriptorSet(l_rhs->m_metallicTexture, l_rhs->m_descriptorImageInfos[2], 2);
+	}
+	else
+	{
+		auto l_defaultTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Metallic);
+		l_rhs->m_writeDescriptorSets[2] = f_createWriteDescriptorSet(l_defaultTexture, l_rhs->m_descriptorImageInfos[2], 2);
+	}
+	if (l_rhs->m_roughnessTexture)
+	{
+		InitializeTextureDataComponent(reinterpret_cast<VKTextureDataComponent*>(l_rhs->m_roughnessTexture));
+		l_rhs->m_writeDescriptorSets[3] = f_createWriteDescriptorSet(l_rhs->m_roughnessTexture, l_rhs->m_descriptorImageInfos[3], 3);
+	}
+	else
+	{
+		auto l_defaultTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Roughness);
+
+		l_rhs->m_writeDescriptorSets[3] = f_createWriteDescriptorSet(l_defaultTexture, l_rhs->m_descriptorImageInfos[3], 3);
+	}
+	if (l_rhs->m_aoTexture)
+	{
+		InitializeTextureDataComponent(reinterpret_cast<VKTextureDataComponent*>(l_rhs->m_aoTexture));
+		l_rhs->m_writeDescriptorSets[4] = f_createWriteDescriptorSet(l_rhs->m_aoTexture, l_rhs->m_descriptorImageInfos[4], 4);
+	}
+	else
+	{
+		auto l_defaultTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::AmbientOcclusion);
+		l_rhs->m_writeDescriptorSets[4] = f_createWriteDescriptorSet(l_defaultTexture, l_rhs->m_descriptorImageInfos[4], 4);
+	}
+
+	updateDescriptorSet(m_device, &l_rhs->m_writeDescriptorSets[0], (uint32_t)l_rhs->m_writeDescriptorSets.size());
+
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
+
+	m_initializedMaterials.emplace(l_rhs);
+
 	return true;
 }
 
