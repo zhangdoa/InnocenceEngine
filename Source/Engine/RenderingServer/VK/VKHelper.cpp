@@ -5,6 +5,11 @@
 
 extern IModuleManager* g_pModuleManager;
 
+namespace VKHelper
+{
+	const char* m_shaderRelativePath = "Res//Shaders//SPIRV//";
+}
+
 bool VKHelper::checkValidationLayerSupport(const std::vector<const char*>& validationLayers)
 {
 	uint32_t l_layerCount;
@@ -1094,7 +1099,7 @@ bool VKHelper::createGraphicsPipelines(VkDevice device, VKRenderPassDataComponen
 
 	// attach shader module and create pipeline
 	auto l_VKSPC = reinterpret_cast<VKShaderProgramComponent*>(VKRPDC->m_ShaderProgram);
-	std::vector<VkPipelineShaderStageCreateInfo> l_shaderStages = { l_VKSPC->m_vertexShaderStageCInfo, l_VKSPC->m_fragmentShaderStageCInfo };
+	std::vector<VkPipelineShaderStageCreateInfo> l_shaderStages = { l_VKSPC->m_VSCInfo, l_VKSPC->m_PSCInfo };
 
 	l_PSO->m_PipelineCInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	l_PSO->m_PipelineCInfo.stageCount = (uint32_t)l_shaderStages.size();
@@ -1173,5 +1178,24 @@ bool VKHelper::createSyncPrimitives(VkDevice device, VKRenderPassDataComponent* 
 
 	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: Synchronization primitives has been created.");
 
+	return true;
+}
+
+bool VKHelper::createShaderModule(VkDevice device, VkShaderModule & vkShaderModule, const ShaderFilePath & shaderFilePath)
+{
+	auto l_rawData = g_pModuleManager->getFileSystem()->loadFile(m_shaderRelativePath + std::string(shaderFilePath.c_str()) + ".spv", IOMode::Binary);
+
+	VkShaderModuleCreateInfo l_createInfo = {};
+	l_createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	l_createInfo.codeSize = l_rawData.size();
+	l_createInfo.pCode = reinterpret_cast<const uint32_t*>(l_rawData.data());
+
+	if (vkCreateShaderModule(device, &l_createInfo, nullptr, &vkShaderModule) != VK_SUCCESS)
+	{
+		g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "VKRenderingServer: Failed to create VkShaderModule for: ", shaderFilePath.c_str(), "!");
+		return false;
+	}
+
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "VKRenderingServer: innoShader: ", shaderFilePath.c_str(), " has been loaded.");
 	return true;
 }

@@ -581,7 +581,7 @@ bool VKRenderingBackendNS::createGraphicsPipelines(VKRenderPassComponent* VKRPC,
 	VKRPC->colorBlendStateCInfo.pAttachments = &VKRPC->colorBlendAttachmentStates[0];
 
 	// attach shader module and create pipeline
-	std::vector<VkPipelineShaderStageCreateInfo> l_shaderStages = { VKSPC->m_vertexShaderStageCInfo, VKSPC->m_fragmentShaderStageCInfo };
+	std::vector<VkPipelineShaderStageCreateInfo> l_shaderStages = { VKSPC->m_VSCInfo, VKSPC->m_PSCInfo };
 
 	VKRPC->pipelineCInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	VKRPC->pipelineCInfo.stageCount = (uint32_t)l_shaderStages.size();
@@ -1349,11 +1349,11 @@ bool VKRenderingBackendNS::initializeVKShaderProgramComponent(VKShaderProgramCom
 	bool l_result = true;
 	if (shaderFilePaths.m_VSPath != "")
 	{
-		l_result &= createShaderModule(rhs->m_vertexShaderModule, shaderFilePaths.m_VSPath);
-		rhs->m_vertexShaderStageCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		rhs->m_vertexShaderStageCInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-		rhs->m_vertexShaderStageCInfo.module = rhs->m_vertexShaderModule;
-		rhs->m_vertexShaderStageCInfo.pName = "main";
+		l_result &= createShaderModule(rhs->m_VSHandle, shaderFilePaths.m_VSPath);
+		rhs->m_VSCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		rhs->m_VSCInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+		rhs->m_VSCInfo.module = rhs->m_VSHandle;
+		rhs->m_VSCInfo.pName = "main";
 
 		rhs->m_vertexInputStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 		rhs->m_vertexInputStateCInfo.vertexBindingDescriptionCount = 1;
@@ -1363,11 +1363,11 @@ bool VKRenderingBackendNS::initializeVKShaderProgramComponent(VKShaderProgramCom
 	}
 	if (shaderFilePaths.m_FSPath != "")
 	{
-		l_result &= createShaderModule(rhs->m_fragmentShaderModule, shaderFilePaths.m_FSPath);
-		rhs->m_fragmentShaderStageCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		rhs->m_fragmentShaderStageCInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-		rhs->m_fragmentShaderStageCInfo.module = rhs->m_fragmentShaderModule;
-		rhs->m_fragmentShaderStageCInfo.pName = "main";
+		l_result &= createShaderModule(rhs->m_PSHandle, shaderFilePaths.m_FSPath);
+		rhs->m_PSCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		rhs->m_PSCInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		rhs->m_PSCInfo.module = rhs->m_PSHandle;
+		rhs->m_PSCInfo.pName = "main";
 	}
 
 	return l_result;
@@ -1394,8 +1394,8 @@ bool VKRenderingBackendNS::createShaderModule(VkShaderModule& vkShaderModule, co
 
 bool VKRenderingBackendNS::destroyVKShaderProgramComponent(VKShaderProgramComponent* VKSPC)
 {
-	vkDestroyShaderModule(VKRenderingBackendComponent::get().m_device, VKSPC->m_fragmentShaderModule, nullptr);
-	vkDestroyShaderModule(VKRenderingBackendComponent::get().m_device, VKSPC->m_vertexShaderModule, nullptr);
+	vkDestroyShaderModule(VKRenderingBackendComponent::get().m_device, VKSPC->m_PSHandle, nullptr);
+	vkDestroyShaderModule(VKRenderingBackendComponent::get().m_device, VKSPC->m_VSHandle, nullptr);
 
 	return true;
 }

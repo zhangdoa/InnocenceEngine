@@ -39,6 +39,7 @@ namespace VKRenderingServerNS
 	bool createLogicalDevice();
 
 	bool createTextureSamplers();
+	bool createVertexInputAttributions();
 	bool createMaterialDescriptorPool();
 	bool createCommandPool();
 
@@ -93,6 +94,9 @@ namespace VKRenderingServerNS
 	};
 
 	VkDebugUtilsMessengerEXT m_messengerCallback;
+
+	VkVertexInputBindingDescription m_vertexBindingDescription;
+	std::array<VkVertexInputAttributeDescription, 5> m_vertexAttributeDescriptions;
 
 	VkDescriptorPool m_materialDescriptorPool;
 	VkDescriptorSetLayout m_materialDescriptorLayout;
@@ -341,6 +345,43 @@ bool VKRenderingServerNS::createTextureSamplers()
 	return true;
 }
 
+bool VKRenderingServerNS::createVertexInputAttributions()
+{
+	m_vertexBindingDescription = {};
+	m_vertexBindingDescription.binding = 0;
+	m_vertexBindingDescription.stride = sizeof(Vertex);
+	m_vertexBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+	m_vertexAttributeDescriptions = {};
+
+	m_vertexAttributeDescriptions[0].binding = 0;
+	m_vertexAttributeDescriptions[0].location = 0;
+	m_vertexAttributeDescriptions[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	m_vertexAttributeDescriptions[0].offset = offsetof(Vertex, m_pos);
+
+	m_vertexAttributeDescriptions[1].binding = 0;
+	m_vertexAttributeDescriptions[1].location = 1;
+	m_vertexAttributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
+	m_vertexAttributeDescriptions[1].offset = offsetof(Vertex, m_texCoord);
+
+	m_vertexAttributeDescriptions[2].binding = 0;
+	m_vertexAttributeDescriptions[2].location = 2;
+	m_vertexAttributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+	m_vertexAttributeDescriptions[2].offset = offsetof(Vertex, m_pad1);
+
+	m_vertexAttributeDescriptions[3].binding = 0;
+	m_vertexAttributeDescriptions[3].location = 3;
+	m_vertexAttributeDescriptions[3].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	m_vertexAttributeDescriptions[3].offset = offsetof(Vertex, m_normal);
+
+	m_vertexAttributeDescriptions[4].binding = 0;
+	m_vertexAttributeDescriptions[4].location = 4;
+	m_vertexAttributeDescriptions[4].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	m_vertexAttributeDescriptions[4].offset = offsetof(Vertex, m_pad2);
+
+	return true;
+}
+
 bool VKRenderingServerNS::createMaterialDescriptorPool()
 {
 	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
@@ -561,6 +602,7 @@ bool VKRenderingServer::Initialize()
 	createPysicalDevice();
 	createLogicalDevice();
 
+	createVertexInputAttributions();
 	createTextureSamplers();
 	createMaterialDescriptorPool();
 	createCommandPool();
@@ -833,12 +875,94 @@ bool VKRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * 
 
 bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponent * rhs)
 {
-	return true;
+	auto l_rhs = reinterpret_cast<VKRenderPassDataComponent*>(rhs);
+
+	bool l_result = true;
+
+	l_result &= reserveRenderTargets(l_rhs, this);
+
+	l_result &= createRenderTargets(l_rhs, this);
+
+	l_rhs->m_PipelineStateObject = addPSO();
+
+	l_result &= createRenderPass(m_device, l_rhs);
+
+	if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+	{
+		l_result &= createMultipleFramebuffers(m_device, l_rhs);
+	}
+	else
+	{
+		l_result &= createSingleFramebuffer(m_device, l_rhs);
+	}
+
+	l_result &= createDescriptorSetLayout(m_device, l_rhs->m_DescriptorSetLayoutBindings.data(), static_cast<uint32_t>(l_rhs->m_DescriptorSetLayoutBindings.size()), l_rhs->m_DescriptorSetLayouts[0]);
+
+	l_result &= createPipelineLayout(m_device, l_rhs);
+
+	l_result &= createGraphicsPipelines(m_device, l_rhs);
+
+	l_result &= createCommandBuffers(m_device, l_rhs);
+
+	l_result &= createSyncPrimitives(m_device, l_rhs);
+
+	return l_result;
 }
 
 bool VKRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent * rhs)
 {
-	return true;
+	auto l_rhs = reinterpret_cast<VKShaderProgramComponent*>(rhs);
+
+	bool l_result = true;
+
+	l_rhs->m_vertexInputStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+	l_rhs->m_vertexInputStateCInfo.vertexBindingDescriptionCount = 1;
+	l_rhs->m_vertexInputStateCInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(m_vertexAttributeDescriptions.size());
+	l_rhs->m_vertexInputStateCInfo.pVertexBindingDescriptions = &m_vertexBindingDescription;
+	l_rhs->m_vertexInputStateCInfo.pVertexAttributeDescriptions = m_vertexAttributeDescriptions.data();
+
+	if (l_rhs->m_ShaderFilePaths.m_VSPath != "")
+	{
+		l_result &= createShaderModule(m_device, l_rhs->m_VSHandle, l_rhs->m_ShaderFilePaths.m_VSPath);
+		l_rhs->m_VSCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		l_rhs->m_VSCInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+		l_rhs->m_VSCInfo.module = l_rhs->m_VSHandle;
+		l_rhs->m_VSCInfo.pName = "main";
+	}
+	if (l_rhs->m_ShaderFilePaths.m_HSPath != "")
+	{
+		l_result &= createShaderModule(m_device, l_rhs->m_HSHandle, l_rhs->m_ShaderFilePaths.m_HSPath);
+		l_rhs->m_VSCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		l_rhs->m_VSCInfo.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+		l_rhs->m_VSCInfo.module = l_rhs->m_HSHandle;
+		l_rhs->m_VSCInfo.pName = "main";
+	}
+	if (l_rhs->m_ShaderFilePaths.m_DSPath != "")
+	{
+		l_result &= createShaderModule(m_device, l_rhs->m_DSHandle, l_rhs->m_ShaderFilePaths.m_DSPath);
+		l_rhs->m_VSCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		l_rhs->m_VSCInfo.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+		l_rhs->m_VSCInfo.module = l_rhs->m_DSHandle;
+		l_rhs->m_VSCInfo.pName = "main";
+	}
+	if (l_rhs->m_ShaderFilePaths.m_PSPath != "")
+	{
+		l_result &= createShaderModule(m_device, l_rhs->m_PSHandle, l_rhs->m_ShaderFilePaths.m_PSPath);
+		l_rhs->m_PSCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		l_rhs->m_PSCInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		l_rhs->m_PSCInfo.module = l_rhs->m_PSHandle;
+		l_rhs->m_PSCInfo.pName = "main";
+	}
+	if (l_rhs->m_ShaderFilePaths.m_CSPath != "")
+	{
+		l_result &= createShaderModule(m_device, l_rhs->m_CSHandle, l_rhs->m_ShaderFilePaths.m_CSPath);
+		l_rhs->m_PSCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		l_rhs->m_PSCInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+		l_rhs->m_PSCInfo.module = l_rhs->m_CSHandle;
+		l_rhs->m_PSCInfo.pName = "main";
+	}
+
+	return l_result;
 }
 
 bool VKRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent * rhs)

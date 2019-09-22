@@ -73,5 +73,5 @@ namespace VKHelper
 	bool createCommandBuffers(VkDevice device, VKRenderPassDataComponent* VKRPDC);
 	bool createSyncPrimitives(VkDevice device, VKRenderPassDataComponent* VKRPDC);
 
-	bool createShaderModule(VkShaderModule& vkShaderModule, const ShaderFilePath& shaderFilePath);
+	bool createShaderModule(VkDevice device, VkShaderModule& vkShaderModule, const ShaderFilePath& shaderFilePath);
 }
