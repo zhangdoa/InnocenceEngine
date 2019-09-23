@@ -956,6 +956,60 @@ bool VKHelper::createRenderPass(VkDevice device, VKRenderPassDataComponent* VKRP
 
 	l_PSO->m_RenderPassCInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 
+	l_PSO->m_ColorAttachmentRefs.reserve(VKRPDC->m_RenderPassDesc.m_RenderTargetCount);
+
+	for (size_t i = 0; i < VKRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		VkAttachmentReference l_colorAttachmentRef = {};
+		l_colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		l_colorAttachmentRef.attachment = (uint32_t)i;
+
+		l_PSO->m_ColorAttachmentRefs.emplace_back(l_colorAttachmentRef);
+	}
+
+	VkAttachmentDescription l_colorAttachmentDesc = {};
+	l_colorAttachmentDesc.format = getTextureFormat(VKRPDC->m_RenderPassDesc.m_RenderTargetDesc);
+	l_colorAttachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
+	l_colorAttachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	l_colorAttachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	l_colorAttachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	l_colorAttachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	l_colorAttachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	l_colorAttachmentDesc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	for (size_t i = 0; i < VKRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		l_PSO->m_AttachmentDescs.emplace_back(l_colorAttachmentDesc);
+	}
+
+	// last attachment is depth attachment
+	if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	{
+		l_PSO->m_DepthAttachmentRef.attachment = (uint32_t)VKRPDC->m_RenderPassDesc.m_RenderTargetCount;
+		l_PSO->m_DepthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+		VkAttachmentDescription l_depthAttachmentDesc = {};
+
+		if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
+		{
+			l_depthAttachmentDesc.format = VK_FORMAT_D24_UNORM_S8_UINT;
+		}
+		else
+		{
+			l_depthAttachmentDesc.format = VK_FORMAT_D32_SFLOAT;
+		}
+		l_depthAttachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
+		l_depthAttachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		l_depthAttachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		l_depthAttachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		l_depthAttachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		l_depthAttachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		l_depthAttachmentDesc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+		l_PSO->m_AttachmentDescs.emplace_back(l_depthAttachmentDesc);
+	}
+
+	l_PSO->m_RenderPassCInfo.subpassCount = 1;
 	l_PSO->m_SubpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
 	if (VKRPDC->m_RenderPassDesc.m_UseMultiFrames)
@@ -969,15 +1023,22 @@ bool VKHelper::createRenderPass(VkDevice device, VKRenderPassDataComponent* VKRP
 		l_PSO->m_RenderPassCInfo.attachmentCount = (uint32_t)l_PSO->m_AttachmentDescs.size();
 	}
 
-	l_PSO->m_SubpassDesc.pColorAttachments = &l_PSO->m_ColorAttachmentRefs[0];
+	if (l_PSO->m_SubpassDesc.colorAttachmentCount)
+	{
+		l_PSO->m_SubpassDesc.pColorAttachments = &l_PSO->m_ColorAttachmentRefs[0];
+	}
+
 	if (l_PSO->m_DepthAttachmentRef.attachment)
 	{
 		l_PSO->m_SubpassDesc.pDepthStencilAttachment = &l_PSO->m_DepthAttachmentRef;
 	}
 
-	l_PSO->m_RenderPassCInfo.pSubpasses = &l_PSO->m_SubpassDesc;
+	if (l_PSO->m_RenderPassCInfo.attachmentCount)
+	{
+		l_PSO->m_RenderPassCInfo.pAttachments = &l_PSO->m_AttachmentDescs[0];
+	}
 
-	l_PSO->m_RenderPassCInfo.pAttachments = &l_PSO->m_AttachmentDescs[0];
+	l_PSO->m_RenderPassCInfo.pSubpasses = &l_PSO->m_SubpassDesc;
 
 	if (vkCreateRenderPass(device, &l_PSO->m_RenderPassCInfo, nullptr, &l_PSO->m_RenderPass) != VK_SUCCESS)
 	{

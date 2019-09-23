@@ -885,22 +885,31 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 
 	l_rhs->m_PipelineStateObject = addPSO();
 
-	l_result &= createRenderPass(m_device, l_rhs);
+	if (l_rhs->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
+	{
+		l_result &= createRenderPass(m_device, l_rhs);
 
-	if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
-	{
-		l_result &= createMultipleFramebuffers(m_device, l_rhs);
-	}
-	else
-	{
-		l_result &= createSingleFramebuffer(m_device, l_rhs);
+		if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+		{
+			l_result &= createMultipleFramebuffers(m_device, l_rhs);
+		}
+		else
+		{
+			l_result &= createSingleFramebuffer(m_device, l_rhs);
+		}
 	}
 
 	l_result &= createDescriptorSetLayout(m_device, l_rhs->m_DescriptorSetLayoutBindings.data(), static_cast<uint32_t>(l_rhs->m_DescriptorSetLayoutBindings.size()), l_rhs->m_DescriptorSetLayouts[0]);
 
 	l_result &= createPipelineLayout(m_device, l_rhs);
 
-	l_result &= createGraphicsPipelines(m_device, l_rhs);
+	if (l_rhs->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
+	{
+		l_result &= createGraphicsPipelines(m_device, l_rhs);
+	}
+	else
+	{
+	}
 
 	l_result &= createCommandBuffers(m_device, l_rhs);
 
