@@ -819,6 +819,75 @@ bool VKHelper::createImageView(VkDevice device, VKTextureDataComponent* VKTDC)
 	return true;
 }
 
+bool VKHelper::createDescriptorSetLayoutBindings(VKRenderPassDataComponent * VKRPDC)
+{
+	VKRPDC->m_DescriptorSetLayoutBindings.reserve(VKRPDC->m_ResourceBinderLayoutDescs.size());
+
+	for (size_t i = 0; i < VKRPDC->m_ResourceBinderLayoutDescs.size(); i++)
+	{
+		auto l_resourceBinderLayoutDesc = VKRPDC->m_ResourceBinderLayoutDescs[i];
+		VkDescriptorSetLayoutBinding l_descriptorLayoutBinding = {};
+		l_descriptorLayoutBinding.binding = (uint32_t)l_resourceBinderLayoutDesc.m_LocalSlot;
+		l_descriptorLayoutBinding.descriptorCount = 1;
+		l_descriptorLayoutBinding.pImmutableSamplers = nullptr;
+		l_descriptorLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
+
+		switch (l_resourceBinderLayoutDesc.m_ResourceBinderType)
+		{
+		case ResourceBinderType::Sampler:
+			l_descriptorLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+			break;
+		case ResourceBinderType::Image:
+			if (l_resourceBinderLayoutDesc.m_BinderAccessibility == Accessibility::ReadOnly)
+			{
+				l_descriptorLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+			}
+			else
+			{
+				if (l_resourceBinderLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
+				{
+					InnoLogger::Log(LogLevel::Warning, "VKRenderingServer: Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer!");
+				}
+				else
+				{
+					l_descriptorLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+				}
+			}
+			break;
+		case ResourceBinderType::Buffer:
+			if (l_resourceBinderLayoutDesc.m_BinderAccessibility == Accessibility::ReadOnly)
+			{
+				if (l_resourceBinderLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
+				{
+					l_descriptorLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+				}
+				else
+				{
+					l_descriptorLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+				}
+			}
+			else
+			{
+				if (l_resourceBinderLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
+				{
+					InnoLogger::Log(LogLevel::Warning, "VKRenderingServer: Not allow to create write-only or read-write ResourceBinderLayout to read-only buffer!");
+				}
+				else
+				{
+					l_descriptorLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+				}
+			}
+			break;
+		default:
+			break;
+		}
+
+		VKRPDC->m_DescriptorSetLayoutBindings.emplace_back(l_descriptorLayoutBinding);
+	}
+
+	return true;
+}
+
 bool VKHelper::createDescriptorPool(VkDevice device, VkDescriptorPoolSize* poolSize, uint32_t poolSizeCount, uint32_t maxSets, VkDescriptorPool& poolHandle)
 {
 	VkDescriptorPoolCreateInfo poolInfo = {};
@@ -1123,8 +1192,8 @@ bool VKHelper::createPipelineLayout(VkDevice device, VKRenderPassDataComponent* 
 	l_PSO->m_InputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 
 	l_PSO->m_PipelineLayoutCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	l_PSO->m_PipelineLayoutCInfo.setLayoutCount = static_cast<uint32_t>(VKRPDC->m_DescriptorSetLayouts.size());
-	l_PSO->m_PipelineLayoutCInfo.pSetLayouts = VKRPDC->m_DescriptorSetLayouts.data();
+	l_PSO->m_PipelineLayoutCInfo.setLayoutCount = 1;
+	l_PSO->m_PipelineLayoutCInfo.pSetLayouts = &VKRPDC->m_DescriptorSetLayout;
 
 	if (VKRPDC->m_PushConstantRanges.size() > 0)
 	{
@@ -1160,29 +1229,73 @@ bool VKHelper::createGraphicsPipelines(VkDevice device, VKRenderPassDataComponen
 
 	// attach shader module and create pipeline
 	auto l_VKSPC = reinterpret_cast<VKShaderProgramComponent*>(VKRPDC->m_ShaderProgram);
-	std::vector<VkPipelineShaderStageCreateInfo> l_shaderStages = { l_VKSPC->m_VSCInfo, l_VKSPC->m_PSCInfo };
+	std::vector<VkPipelineShaderStageCreateInfo> l_shaderStageCInfos;
+	l_shaderStageCInfos.reserve(6);
 
-	l_PSO->m_PipelineCInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	l_PSO->m_PipelineCInfo.stageCount = (uint32_t)l_shaderStages.size();
-	l_PSO->m_PipelineCInfo.pStages = &l_shaderStages[0];
-	l_PSO->m_PipelineCInfo.pVertexInputState = &l_VKSPC->m_vertexInputStateCInfo;
-	l_PSO->m_PipelineCInfo.pInputAssemblyState = &l_PSO->m_InputAssemblyStateCInfo;
-	l_PSO->m_PipelineCInfo.pViewportState = &l_PSO->m_ViewportStateCInfo;
-	l_PSO->m_PipelineCInfo.pRasterizationState = &l_PSO->m_RasterizationStateCInfo;
-	l_PSO->m_PipelineCInfo.pMultisampleState = &l_PSO->m_MultisampleStateCInfo;
-	l_PSO->m_PipelineCInfo.pColorBlendState = &l_PSO->m_ColorBlendStateCInfo;
-	l_PSO->m_PipelineCInfo.layout = l_PSO->m_PipelineLayout;
-	l_PSO->m_PipelineCInfo.renderPass = l_PSO->m_RenderPass;
-	l_PSO->m_PipelineCInfo.subpass = 0;
-	l_PSO->m_PipelineCInfo.basePipelineHandle = VK_NULL_HANDLE;
-
-	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &l_PSO->m_PipelineCInfo, nullptr, &l_PSO->m_Pipeline) != VK_SUCCESS)
+	if (l_VKSPC->m_ShaderFilePaths.m_VSPath != "")
 	{
-		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to to create VkPipeline!");
+		l_shaderStageCInfos.emplace_back(l_VKSPC->m_VSCInfo);
+	}
+	if (l_VKSPC->m_ShaderFilePaths.m_HSPath != "")
+	{
+		l_shaderStageCInfos.emplace_back(l_VKSPC->m_HSCInfo);
+	}
+	if (l_VKSPC->m_ShaderFilePaths.m_DSPath != "")
+	{
+		l_shaderStageCInfos.emplace_back(l_VKSPC->m_DSCInfo);
+	}
+	if (l_VKSPC->m_ShaderFilePaths.m_GSPath != "")
+	{
+		l_shaderStageCInfos.emplace_back(l_VKSPC->m_GSCInfo);
+	}
+	if (l_VKSPC->m_ShaderFilePaths.m_PSPath != "")
+	{
+		l_shaderStageCInfos.emplace_back(l_VKSPC->m_PSCInfo);
+	}
+
+	l_PSO->m_GraphicsPipelineCInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	l_PSO->m_GraphicsPipelineCInfo.stageCount = (uint32_t)l_shaderStageCInfos.size();
+	l_PSO->m_GraphicsPipelineCInfo.pStages = &l_shaderStageCInfos[0];
+	l_PSO->m_GraphicsPipelineCInfo.pVertexInputState = &l_VKSPC->m_vertexInputStateCInfo;
+	l_PSO->m_GraphicsPipelineCInfo.pInputAssemblyState = &l_PSO->m_InputAssemblyStateCInfo;
+	l_PSO->m_GraphicsPipelineCInfo.pViewportState = &l_PSO->m_ViewportStateCInfo;
+	l_PSO->m_GraphicsPipelineCInfo.pRasterizationState = &l_PSO->m_RasterizationStateCInfo;
+	l_PSO->m_GraphicsPipelineCInfo.pMultisampleState = &l_PSO->m_MultisampleStateCInfo;
+	l_PSO->m_GraphicsPipelineCInfo.pColorBlendState = &l_PSO->m_ColorBlendStateCInfo;
+	l_PSO->m_GraphicsPipelineCInfo.layout = l_PSO->m_PipelineLayout;
+	l_PSO->m_GraphicsPipelineCInfo.renderPass = l_PSO->m_RenderPass;
+	l_PSO->m_GraphicsPipelineCInfo.subpass = 0;
+	l_PSO->m_GraphicsPipelineCInfo.basePipelineHandle = VK_NULL_HANDLE;
+
+	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &l_PSO->m_GraphicsPipelineCInfo, nullptr, &l_PSO->m_Pipeline) != VK_SUCCESS)
+	{
+		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to to create VkPipeline for GraphicsPipeline!");
 		return false;
 	}
 
-	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkPipeline has been created.");
+	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkPipeline for GraphicsPipeline has been created.");
+	return true;
+}
+
+bool VKHelper::createComputePipelines(VkDevice device, VKRenderPassDataComponent * VKRPDC)
+{
+	auto l_PSO = reinterpret_cast<VKPipelineStateObject*>(VKRPDC->m_PipelineStateObject);
+
+	// attach shader module and create pipeline
+	auto l_VKSPC = reinterpret_cast<VKShaderProgramComponent*>(VKRPDC->m_ShaderProgram);
+
+	l_PSO->m_ComputePipelineCInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+	l_PSO->m_ComputePipelineCInfo.stage = l_VKSPC->m_CSCInfo;
+	l_PSO->m_ComputePipelineCInfo.layout = l_PSO->m_PipelineLayout;
+	l_PSO->m_ComputePipelineCInfo.basePipelineHandle = VK_NULL_HANDLE;
+
+	if (vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &l_PSO->m_ComputePipelineCInfo, nullptr, &l_PSO->m_Pipeline) != VK_SUCCESS)
+	{
+		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to to create VkPipeline for ComputePipeline!");
+		return false;
+	}
+
+	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkPipeline for ComputePipeline has been created.");
 	return true;
 }
 

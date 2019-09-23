@@ -57,6 +57,7 @@ namespace VKHelper
 	bool copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, VkImageAspectFlags aspectFlags, uint32_t width, uint32_t height);
 	bool createImageView(VkDevice device, VKTextureDataComponent* VKTDC);
 
+	bool createDescriptorSetLayoutBindings(VKRenderPassDataComponent* VKRPDC);
 	bool createDescriptorPool(VkDevice device, VkDescriptorPoolSize* poolSize, uint32_t poolSizeCount, uint32_t maxSets, VkDescriptorPool& poolHandle);
 	bool createDescriptorSetLayout(VkDevice device, VkDescriptorSetLayoutBinding* setLayoutBindings, uint32_t setLayoutBindingsCount, VkDescriptorSetLayout& setLayout);
 	bool createDescriptorSets(VkDevice device, VkDescriptorPool pool, VkDescriptorSetLayout& setLayout, VkDescriptorSet& setHandle, uint32_t count);
@@ -70,6 +71,7 @@ namespace VKHelper
 
 	bool createPipelineLayout(VkDevice device, VKRenderPassDataComponent* VKRPDC);
 	bool createGraphicsPipelines(VkDevice device, VKRenderPassDataComponent* VKRPDC);
+	bool createComputePipelines(VkDevice device, VKRenderPassDataComponent* VKRPDC);
 	bool createCommandBuffers(VkDevice device, VKRenderPassDataComponent* VKRPDC);
 	bool createSyncPrimitives(VkDevice device, VKRenderPassDataComponent* VKRPDC);
 

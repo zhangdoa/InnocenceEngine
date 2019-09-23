@@ -899,7 +899,9 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 		}
 	}
 
-	l_result &= createDescriptorSetLayout(m_device, l_rhs->m_DescriptorSetLayoutBindings.data(), static_cast<uint32_t>(l_rhs->m_DescriptorSetLayoutBindings.size()), l_rhs->m_DescriptorSetLayouts[0]);
+	l_result &= createDescriptorSetLayoutBindings(l_rhs);
+
+	l_result &= createDescriptorSetLayout(m_device, l_rhs->m_DescriptorSetLayoutBindings.data(), static_cast<uint32_t>(l_rhs->m_DescriptorSetLayoutBindings.size()), l_rhs->m_DescriptorSetLayout);
 
 	l_result &= createPipelineLayout(m_device, l_rhs);
 
@@ -909,6 +911,7 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 	}
 	else
 	{
+		l_result &= createComputePipelines(m_device, l_rhs);
 	}
 
 	l_result &= createCommandBuffers(m_device, l_rhs);
@@ -941,18 +944,26 @@ bool VKRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent 
 	if (l_rhs->m_ShaderFilePaths.m_HSPath != "")
 	{
 		l_result &= createShaderModule(m_device, l_rhs->m_HSHandle, l_rhs->m_ShaderFilePaths.m_HSPath);
-		l_rhs->m_VSCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		l_rhs->m_VSCInfo.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-		l_rhs->m_VSCInfo.module = l_rhs->m_HSHandle;
-		l_rhs->m_VSCInfo.pName = "main";
+		l_rhs->m_HSCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		l_rhs->m_HSCInfo.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+		l_rhs->m_HSCInfo.module = l_rhs->m_HSHandle;
+		l_rhs->m_HSCInfo.pName = "main";
 	}
 	if (l_rhs->m_ShaderFilePaths.m_DSPath != "")
 	{
 		l_result &= createShaderModule(m_device, l_rhs->m_DSHandle, l_rhs->m_ShaderFilePaths.m_DSPath);
-		l_rhs->m_VSCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		l_rhs->m_VSCInfo.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-		l_rhs->m_VSCInfo.module = l_rhs->m_DSHandle;
-		l_rhs->m_VSCInfo.pName = "main";
+		l_rhs->m_DSCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		l_rhs->m_DSCInfo.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+		l_rhs->m_DSCInfo.module = l_rhs->m_DSHandle;
+		l_rhs->m_DSCInfo.pName = "main";
+	}
+	if (l_rhs->m_ShaderFilePaths.m_GSPath != "")
+	{
+		l_result &= createShaderModule(m_device, l_rhs->m_GSHandle, l_rhs->m_ShaderFilePaths.m_GSPath);
+		l_rhs->m_GSCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		l_rhs->m_GSCInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+		l_rhs->m_GSCInfo.module = l_rhs->m_GSHandle;
+		l_rhs->m_GSCInfo.pName = "main";
 	}
 	if (l_rhs->m_ShaderFilePaths.m_PSPath != "")
 	{
@@ -965,10 +976,10 @@ bool VKRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent 
 	if (l_rhs->m_ShaderFilePaths.m_CSPath != "")
 	{
 		l_result &= createShaderModule(m_device, l_rhs->m_CSHandle, l_rhs->m_ShaderFilePaths.m_CSPath);
-		l_rhs->m_PSCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		l_rhs->m_PSCInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-		l_rhs->m_PSCInfo.module = l_rhs->m_CSHandle;
-		l_rhs->m_PSCInfo.pName = "main";
+		l_rhs->m_CSCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		l_rhs->m_CSCInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+		l_rhs->m_CSCInfo.module = l_rhs->m_CSHandle;
+		l_rhs->m_CSCInfo.pName = "main";
 	}
 
 	return l_result;

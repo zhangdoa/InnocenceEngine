@@ -31,7 +31,8 @@ public:
 	std::vector<VkPipelineColorBlendAttachmentState> m_ColorBlendAttachmentStates = {};
 	VkPipelineColorBlendStateCreateInfo m_ColorBlendStateCInfo = {};
 	VkPipelineLayoutCreateInfo m_PipelineLayoutCInfo = {};
-	VkGraphicsPipelineCreateInfo m_PipelineCInfo = {};
+	VkGraphicsPipelineCreateInfo m_GraphicsPipelineCInfo = {};
+	VkComputePipelineCreateInfo m_ComputePipelineCInfo = {};
 	VkViewport m_Viewport = {};
 	VkRect2D m_Scissor = {};
 };
@@ -67,7 +68,7 @@ public:
 
 	VkDescriptorPool m_DescriptorPool;
 	std::vector<VkDescriptorSetLayoutBinding> m_DescriptorSetLayoutBindings;
-	std::vector<VkDescriptorSetLayout> m_DescriptorSetLayouts;
+	VkDescriptorSetLayout m_DescriptorSetLayout;
 	std::vector<VkDescriptorSet> m_DescriptorSets;
 	std::vector<VkWriteDescriptorSet> m_WriteDescriptorSets;
 	std::vector<VkPushConstantRange> m_PushConstantRanges;
