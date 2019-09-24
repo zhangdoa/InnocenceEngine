@@ -41,7 +41,7 @@ namespace VKRenderingServerNS
 	bool createTextureSamplers();
 	bool createVertexInputAttributions();
 	bool createMaterialDescriptorPool();
-	bool createCommandPool();
+	bool createGlobalCommandPool();
 
 	bool createSwapChain();
 
@@ -55,6 +55,7 @@ namespace VKRenderingServerNS
 	IObjectPool* m_PSOPool = 0;
 	IObjectPool* m_CommandQueuePool = 0;
 	IObjectPool* m_CommandListPool = 0;
+	IObjectPool* m_SemaphorePool = 0;
 	IObjectPool* m_FencePool = 0;
 	IObjectPool* m_ShaderProgramComponentPool = 0;
 	IObjectPool* m_SamplerDataComponentPool = 0;
@@ -425,24 +426,9 @@ bool VKRenderingServerNS::createMaterialDescriptorPool()
 	return true;
 }
 
-bool VKRenderingServerNS::createCommandPool()
+bool VKRenderingServerNS::createGlobalCommandPool()
 {
-	QueueFamilyIndices queueFamilyIndices = findQueueFamilies(m_physicalDevice, m_windowSurface);
-
-	VkCommandPoolCreateInfo poolInfo = {};
-	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	poolInfo.queueFamilyIndex = queueFamilyIndices.m_graphicsFamily.value();
-	poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-
-	if (vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_commandPool) != VK_SUCCESS)
-	{
-		m_ObjectStatus = ObjectStatus::Suspended;
-		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create CommandPool!");
-		return false;
-	}
-
-	InnoLogger::Log(LogLevel::Success, "VKRenderingServer: CommandPool has been created.");
-	return true;
+	return createCommandPool(m_physicalDevice, m_windowSurface, m_device, m_commandPool);
 }
 
 bool VKRenderingServerNS::createSwapChain()
@@ -560,6 +546,13 @@ VKCommandList* addCommandList()
 	return l_commandList;
 }
 
+VKSemaphore* addSemaphore()
+{
+	auto l_semaphoreRawPtr = m_SemaphorePool->Spawn();
+	auto l_semaphore = new(l_semaphoreRawPtr)VKSemaphore();
+	return l_semaphore;
+}
+
 VKFence* addFence()
 {
 	auto l_fenceRawPtr = m_FencePool->Spawn();
@@ -579,6 +572,7 @@ bool VKRenderingServer::Setup()
 	m_PSOPool = InnoMemory::CreateObjectPool(sizeof(VKPipelineStateObject), 128);
 	m_CommandQueuePool = InnoMemory::CreateObjectPool(sizeof(VKCommandQueue), 128);
 	m_CommandListPool = InnoMemory::CreateObjectPool(sizeof(VKCommandList), 256);
+	m_SemaphorePool = InnoMemory::CreateObjectPool(sizeof(VKSemaphore), 512);
 	m_FencePool = InnoMemory::CreateObjectPool(sizeof(VKFence), 256);
 	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool(sizeof(VKShaderProgramComponent), 256);
 	m_SamplerDataComponentPool = InnoMemory::CreateObjectPool(sizeof(VKSamplerDataComponent), 256);
@@ -605,7 +599,7 @@ bool VKRenderingServer::Initialize()
 	createVertexInputAttributions();
 	createTextureSamplers();
 	createMaterialDescriptorPool();
-	createCommandPool();
+	createGlobalCommandPool();
 
 	createSwapChain();
 
@@ -914,7 +908,26 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 		l_result &= createComputePipelines(m_device, l_rhs);
 	}
 
+	l_result &= createCommandPool(m_physicalDevice, m_windowSurface, m_device, l_rhs->m_CommandPool);
+
+	l_rhs->m_CommandLists.resize(l_rhs->m_Framebuffers.size());
+	for (size_t i = 0; i < l_rhs->m_CommandLists.size(); i++)
+	{
+		l_rhs->m_CommandLists[i] = addCommandList();
+	}
+
 	l_result &= createCommandBuffers(m_device, l_rhs);
+
+	l_rhs->m_SignalSemaphores.resize(l_rhs->m_Framebuffers.size());
+	l_rhs->m_WaitSemaphores.resize(l_rhs->m_Framebuffers.size());
+	l_rhs->m_Fences.resize(l_rhs->m_Framebuffers.size());
+
+	for (size_t i = 0; i < l_rhs->m_SignalSemaphores.size(); i++)
+	{
+		l_rhs->m_SignalSemaphores[i] = addSemaphore();
+		l_rhs->m_WaitSemaphores[i] = addSemaphore();
+		l_rhs->m_Fences[i] = addFence();
+	}
 
 	l_result &= createSyncPrimitives(m_device, l_rhs);
 

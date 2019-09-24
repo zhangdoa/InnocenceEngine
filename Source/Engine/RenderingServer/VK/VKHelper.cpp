@@ -247,6 +247,25 @@ uint32_t VKHelper::findMemoryType(VkPhysicalDevice physicalDevice, uint32_t type
 	return 0;
 }
 
+bool VKHelper::createCommandPool(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface, VkDevice device, VkCommandPool & commandPool)
+{
+	QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice, windowSurface);
+
+	VkCommandPoolCreateInfo poolInfo = {};
+	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	poolInfo.queueFamilyIndex = queueFamilyIndices.m_graphicsFamily.value();
+	poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+	if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS)
+	{
+		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create CommandPool!");
+		return false;
+	}
+
+	InnoLogger::Log(LogLevel::Success, "VKRenderingServer: CommandPool has been created.");
+	return true;
+}
+
 bool VKHelper::createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 {
 	VkBufferCreateInfo bufferInfo = {};
