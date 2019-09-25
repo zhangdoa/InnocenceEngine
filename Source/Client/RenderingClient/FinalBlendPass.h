@@ -9,5 +9,6 @@ namespace FinalBlendPass
 	bool ExecuteCommandList();
 	bool Terminate();
 
+	RenderPassDataComponent* GetRPDC();
 	ShaderProgramComponent* getSPC();
 };

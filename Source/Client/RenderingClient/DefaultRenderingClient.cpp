@@ -30,6 +30,7 @@ namespace DefaultRenderingClientNS
 {
 	std::function<void()> f_showLightHeatmap;
 	std::function<void()> f_showProbe;
+	std::function<void()> f_saveScreenCapture;
 
 	std::function<void()> f_SetupJob;
 	std::function<void()> f_InitializeJob;
@@ -39,7 +40,8 @@ namespace DefaultRenderingClientNS
 
 	bool m_showProbe = false;
 	bool m_showLightHeatmap = false;
-	static bool l_drawBRDFTest = false;
+	bool m_saveScreenCapture = false;
+	static bool m_drawBRDFTest = false;
 }
 
 using namespace DefaultRenderingClientNS;
@@ -51,6 +53,9 @@ bool DefaultRenderingClient::Setup()
 
 	f_showLightHeatmap = [&]() { m_showLightHeatmap = !m_showLightHeatmap; };
 	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_T, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showLightHeatmap });
+
+	f_saveScreenCapture = [&]() { m_saveScreenCapture = !m_saveScreenCapture; };
+	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_C, true }, ButtonEvent{ EventLifeTime::OneShot, &f_saveScreenCapture });
 
 	f_SetupJob = [&]()
 	{
@@ -145,7 +150,7 @@ bool DefaultRenderingClient::Setup()
 			l_canvas = MotionBlurPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
 		}
 
-		if (l_drawBRDFTest)
+		if (m_drawBRDFTest)
 		{
 			BSDFTestPass::PrepareCommandList();
 			l_canvas = BSDFTestPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
@@ -200,7 +205,7 @@ bool DefaultRenderingClient::Setup()
 			MotionBlurPass::ExecuteCommandList();
 		}
 
-		if (l_drawBRDFTest)
+		if (m_drawBRDFTest)
 		{
 			BSDFTestPass::ExecuteCommandList();
 		}
@@ -214,6 +219,17 @@ bool DefaultRenderingClient::Setup()
 		DebugPass::ExecuteCommandList();
 
 		FinalBlendPass::ExecuteCommandList();
+
+		if (m_saveScreenCapture)
+		{
+			//auto l_textureData = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(FinalBlendPass::GetRPDC(), FinalBlendPass::GetRPDC()->m_RenderTargets[0]);
+			//auto l_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
+			//l_TDC->m_textureDataDesc = FinalBlendPass::GetRPDC()->m_RenderTargets[0]->m_textureDataDesc;
+			//l_TDC->m_textureData = l_textureData.data();
+			//g_pModuleManager->getFileSystem()->saveTexture("Res//ScreenCapture.png", l_TDC);
+			//g_pModuleManager->getRenderingServer()->DeleteTextureDataComponent(l_TDC);
+			m_saveScreenCapture = false;
+		}
 	};
 
 	f_TerminateJob = [&]()

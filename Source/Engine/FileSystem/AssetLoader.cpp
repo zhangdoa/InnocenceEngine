@@ -1,7 +1,5 @@
 #include "AssetLoader.h"
 
-#include "stb/stb_image.h"
-
 #include "../../Engine/Core/InnoLogger.h"
 
 #include "../ModuleManager/IModuleManager.h"
@@ -9,6 +7,7 @@ extern IModuleManager* g_pModuleManager;
 
 #include "../Core/IOService.h"
 #include "JSONParser.h"
+#include "TextureIO.h"
 
 namespace InnoFileSystemNS::AssetLoader
 {
@@ -16,7 +15,6 @@ namespace InnoFileSystemNS::AssetLoader
 	std::unordered_map<std::string, TextureDataComponent*> m_loadedTexture;
 
 	ModelMap loadModelFromDisk(const std::string & fileName, bool AsyncUploadGPUResource = true);
-	TextureDataComponent* loadTextureFromDisk(const std::string & fileName);
 }
 
 ModelMap InnoFileSystemNS::AssetLoader::loadModel(const std::string & fileName, bool AsyncUploadGPUResource)
@@ -72,58 +70,12 @@ TextureDataComponent* InnoFileSystemNS::AssetLoader::loadTexture(const std::stri
 	}
 	else
 	{
-		l_TDC = loadTextureFromDisk(fileName);
+		l_TDC = TextureIO::loadTexture(fileName);
+		if (l_TDC)
+		{
+			m_loadedTexture.emplace(fileName, l_TDC);
+		}
 	}
 
 	return l_TDC;
-}
-
-TextureDataComponent* InnoFileSystemNS::AssetLoader::loadTextureFromDisk(const std::string & fileName)
-{
-	int32_t width, height, nrChannels;
-
-	// load image, flip texture
-	stbi_set_flip_vertically_on_load(true);
-
-	void* l_rawData;
-	auto l_fullPath = IOService::getWorkingDirectory() + fileName;
-	auto l_isHDR = stbi_is_hdr(l_fullPath.c_str());
-
-	if (l_isHDR)
-	{
-		l_rawData = stbi_loadf(l_fullPath.c_str(), &width, &height, &nrChannels, 0);
-	}
-	else
-	{
-		l_rawData = stbi_load(l_fullPath.c_str(), &width, &height, &nrChannels, 0);
-	}
-	if (l_rawData)
-	{
-		auto l_TDC = g_pModuleManager->getRenderingFrontend()->addTextureDataComponent();
-
-		l_TDC->m_ComponentName = (fileName + "/").c_str();
-
-		l_TDC->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat(nrChannels - 1);
-		l_TDC->m_textureDataDesc.WrapMethod = TextureWrapMethod::Repeat;
-		l_TDC->m_textureDataDesc.MinFilterMethod = TextureFilterMethod::Linear;
-		l_TDC->m_textureDataDesc.MagFilterMethod = TextureFilterMethod::Linear;
-		l_TDC->m_textureDataDesc.PixelDataType = l_isHDR ? TexturePixelDataType::FLOAT16 : TexturePixelDataType::UBYTE;
-		l_TDC->m_textureDataDesc.UseMipMap = true;
-		l_TDC->m_textureDataDesc.Width = width;
-		l_TDC->m_textureDataDesc.Height = height;
-		l_TDC->m_textureData = l_rawData;
-		l_TDC->m_ObjectStatus = ObjectStatus::Created;
-
-		InnoLogger::Log(LogLevel::Verbose, "FileSystem: AssetLoader: STB_Image: ", l_fullPath.c_str(), " has been loaded.");
-
-		m_loadedTexture.emplace(fileName, l_TDC);
-
-		return l_TDC;
-	}
-	else
-	{
-		InnoLogger::Log(LogLevel::Error, "FileSystem: AssetLoader: STB_Image: Failed to load texture: ", l_fullPath.c_str());
-
-		return nullptr;
-	}
 }

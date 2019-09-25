@@ -30,6 +30,7 @@ public:
 
 	ModelMap loadModel(const std::string & fileName, bool AsyncUploadGPUResource) override;
 	TextureDataComponent* loadTexture(const std::string & fileName) override;
+	virtual bool saveTexture(const std::string & fileName, TextureDataComponent* TDC) override;
 
 	bool addCPPClassFiles(const CPPClassDesc& desc) override;
 };

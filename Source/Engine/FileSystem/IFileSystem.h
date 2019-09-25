@@ -43,6 +43,7 @@ public:
 
 	virtual ModelMap loadModel(const std::string & fileName, bool AsyncUploadGPUResource = true) = 0;
 	virtual TextureDataComponent* loadTexture(const std::string & fileName) = 0;
+	virtual bool saveTexture(const std::string & fileName, TextureDataComponent* TDC) = 0;
 
 	virtual bool addCPPClassFiles(const CPPClassDesc& desc) = 0;
 };

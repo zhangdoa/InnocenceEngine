@@ -112,6 +112,11 @@ bool FinalBlendPass::Terminate()
 	return true;
 }
 
+RenderPassDataComponent * FinalBlendPass::GetRPDC()
+{
+	return m_RPDC;
+}
+
 ShaderProgramComponent * FinalBlendPass::getSPC()
 {
 	return m_SPC;

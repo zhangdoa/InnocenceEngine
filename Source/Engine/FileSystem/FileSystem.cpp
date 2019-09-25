@@ -10,6 +10,7 @@ extern IModuleManager* g_pModuleManager;
 
 #include "../Core/IOService.h"
 #include "AssimpWrapper.h"
+#include "TextureIO.h"
 #include "AssetLoader.h"
 #include "JSONParser.h"
 
@@ -256,6 +257,11 @@ ModelMap InnoFileSystem::loadModel(const std::string & fileName, bool AsyncUploa
 TextureDataComponent* InnoFileSystem::loadTexture(const std::string & fileName)
 {
 	return InnoFileSystemNS::AssetLoader::loadTexture(fileName);
+}
+
+bool InnoFileSystem::saveTexture(const std::string & fileName, TextureDataComponent * TDC)
+{
+	return InnoFileSystemNS::TextureIO::saveTexture(fileName, TDC);
 }
 
 bool InnoFileSystem::addCPPClassFiles(const CPPClassDesc & desc)
