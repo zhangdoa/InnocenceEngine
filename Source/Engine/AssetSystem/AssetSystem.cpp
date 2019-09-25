@@ -9,8 +9,6 @@ extern IModuleManager* g_pModuleManager;
 namespace InnoAssetSystemNS
 {
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
-
-	DirectoryMetadata m_rootDirectoryMetadata;
 }
 
 bool InnoAssetSystem::setup()
@@ -57,11 +55,6 @@ bool InnoAssetSystem::terminate()
 ObjectStatus InnoAssetSystem::getStatus()
 {
 	return InnoAssetSystemNS::m_ObjectStatus;
-}
-
-DirectoryMetadata* InnoAssetSystem::getRootDirectoryMetadata()
-{
-	return &InnoAssetSystemNS::m_rootDirectoryMetadata;
 }
 
 void InnoAssetSystem::addUnitCube(MeshDataComponent& meshDataComponent)
@@ -275,12 +268,4 @@ void InnoAssetSystem::addTerrain(MeshDataComponent& meshDataComponent)
 		}
 	}
 	meshDataComponent.m_indicesSize = meshDataComponent.m_indices.size();
-}
-
-TextureDataComponent* InnoAssetSystem::loadTexture(const std::string& fileName, TextureSamplerType samplerType, TextureUsageType usageType)
-{
-	auto l_TDC = g_pModuleManager->getFileSystem()->loadTexture(fileName);
-	l_TDC->m_textureDataDesc.SamplerType = samplerType;
-	l_TDC->m_textureDataDesc.UsageType = usageType;
-	return l_TDC;
 }

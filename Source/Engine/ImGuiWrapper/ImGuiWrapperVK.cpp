@@ -49,8 +49,3 @@ ObjectStatus ImGuiWrapperVK::getStatus()
 void ImGuiWrapperVK::showRenderResult(RenderPassType renderPassType)
 {
 }
-
-ImTextureID ImGuiWrapperVK::getFileExplorerIconTextureID(const FileExplorerIconType iconType)
-{
-	return nullptr;
-}

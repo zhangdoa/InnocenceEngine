@@ -13,13 +13,9 @@ public:
 
 	ObjectStatus getStatus() override;
 
-	TextureDataComponent* loadTexture(const std::string& fileName, TextureSamplerType samplerType, TextureUsageType usageType) override;
-
 	void addUnitCube(MeshDataComponent& meshDataComponent) override;
 	void addUnitSphere(MeshDataComponent& meshDataComponent) override;
 	void addUnitQuad(MeshDataComponent& meshDataComponent) override;
 	void addUnitLine(MeshDataComponent& meshDataComponent) override;
 	void addTerrain(MeshDataComponent& meshDataComponent) override;
-
-	DirectoryMetadata* getRootDirectoryMetadata() override;
 };

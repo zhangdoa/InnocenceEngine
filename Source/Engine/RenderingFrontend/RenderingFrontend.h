@@ -26,7 +26,6 @@ public:
 
 	MeshDataComponent* getMeshDataComponent(MeshShapeType meshShapeType) override;
 	TextureDataComponent* getTextureDataComponent(TextureUsageType textureUsageType) override;
-	TextureDataComponent* getTextureDataComponent(FileExplorerIconType iconType) override;
 	TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) override;
 	MaterialDataComponent* getDefaultMaterialDataComponent() override;
 

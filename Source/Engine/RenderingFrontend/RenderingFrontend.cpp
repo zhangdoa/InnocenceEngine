@@ -68,7 +68,6 @@ namespace InnoRenderingFrontendNS
 	std::vector<Vec2> m_haltonSampler;
 	int32_t m_currentHaltonStep = 0;
 
-	std::function<void(RenderPassType)> f_reloadShader;
 	std::function<void()> f_sceneLoadingStartCallback;
 	std::function<void()> f_sceneLoadingFinishCallback;
 
@@ -79,11 +78,6 @@ namespace InnoRenderingFrontendNS
 
 	ThreadSafeQueue<MeshDataComponent*> m_uninitializedMeshes;
 	ThreadSafeQueue<MaterialDataComponent*> m_uninitializedMaterials;
-
-	TextureDataComponent* m_iconTemplate_OBJ;
-	TextureDataComponent* m_iconTemplate_PNG;
-	TextureDataComponent* m_iconTemplate_SHADER;
-	TextureDataComponent* m_iconTemplate_UNKNOWN;
 
 	TextureDataComponent* m_iconTemplate_DirectionalLight;
 	TextureDataComponent* m_iconTemplate_PointLight;
@@ -241,11 +235,25 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 
 bool InnoRenderingFrontendNS::loadDefaultAssets()
 {
-	m_basicNormalTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_normal.png", TextureSamplerType::Sampler2D, TextureUsageType::Normal);
-	m_basicAlbedoTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_albedo.png", TextureSamplerType::Sampler2D, TextureUsageType::Albedo);
-	m_basicMetallicTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_metallic.png", TextureSamplerType::Sampler2D, TextureUsageType::Metallic);
-	m_basicRoughnessTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_roughness.png", TextureSamplerType::Sampler2D, TextureUsageType::Roughness);
-	m_basicAOTexture = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//basic_ao.png", TextureSamplerType::Sampler2D, TextureUsageType::AmbientOcclusion);
+	m_basicNormalTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_normal.png");
+	m_basicNormalTexture->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_basicNormalTexture->m_textureDataDesc.UsageType = TextureUsageType::Normal;
+
+	m_basicAlbedoTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_albedo.png");
+	m_basicAlbedoTexture->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_basicAlbedoTexture->m_textureDataDesc.UsageType = TextureUsageType::Albedo;
+
+	m_basicMetallicTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_metallic.png");
+	m_basicMetallicTexture->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_basicMetallicTexture->m_textureDataDesc.UsageType = TextureUsageType::Metallic;
+
+	m_basicRoughnessTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_roughness.png");
+	m_basicRoughnessTexture->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_basicRoughnessTexture->m_textureDataDesc.UsageType = TextureUsageType::Roughness;
+
+	m_basicAOTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_ao.png");
+	m_basicAOTexture->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_basicAOTexture->m_textureDataDesc.UsageType = TextureUsageType::AmbientOcclusion;
 
 	m_basicMaterial = m_renderingServer->AddMaterialDataComponent("BasicMaterial/");
 	m_basicMaterial->m_normalTexture = m_basicNormalTexture;
@@ -254,14 +262,17 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 	m_basicMaterial->m_roughnessTexture = m_basicRoughnessTexture;
 	m_basicMaterial->m_aoTexture = m_basicAOTexture;
 
-	m_iconTemplate_OBJ = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_OBJ.png", TextureSamplerType::Sampler2D, TextureUsageType::Normal);
-	m_iconTemplate_PNG = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_PNG.png", TextureSamplerType::Sampler2D, TextureUsageType::Normal);
-	m_iconTemplate_SHADER = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_SHADER.png", TextureSamplerType::Sampler2D, TextureUsageType::Normal);
-	m_iconTemplate_UNKNOWN = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoFileTypeIcons_UNKNOWN.png", TextureSamplerType::Sampler2D, TextureUsageType::Normal);
+	m_iconTemplate_DirectionalLight = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_DirectionalLight.png");
+	m_iconTemplate_DirectionalLight->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_iconTemplate_DirectionalLight->m_textureDataDesc.UsageType = TextureUsageType::Normal;
 
-	m_iconTemplate_DirectionalLight = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_DirectionalLight.png", TextureSamplerType::Sampler2D, TextureUsageType::Normal);
-	m_iconTemplate_PointLight = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_PointLight.png", TextureSamplerType::Sampler2D, TextureUsageType::Normal);
-	m_iconTemplate_SphereLight = g_pModuleManager->getAssetSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_SphereLight.png", TextureSamplerType::Sampler2D, TextureUsageType::Normal);
+	m_iconTemplate_PointLight = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_PointLight.png");
+	m_iconTemplate_PointLight->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_iconTemplate_PointLight->m_textureDataDesc.UsageType = TextureUsageType::Normal;
+
+	m_iconTemplate_SphereLight = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_SphereLight.png");
+	m_iconTemplate_SphereLight->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_iconTemplate_SphereLight->m_textureDataDesc.UsageType = TextureUsageType::Normal;
 
 	m_unitLineMesh = m_renderingServer->AddMeshDataComponent("UnitLineMesh/");
 	g_pModuleManager->getAssetSystem()->addUnitLine(*m_unitLineMesh);
@@ -305,11 +316,6 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 		m_renderingServer->InitializeTextureDataComponent(m_basicMetallicTexture);
 		m_renderingServer->InitializeTextureDataComponent(m_basicRoughnessTexture);
 		m_renderingServer->InitializeTextureDataComponent(m_basicAOTexture);
-
-		m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_OBJ);
-		m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_PNG);
-		m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_SHADER);
-		m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_UNKNOWN);
 
 		m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_DirectionalLight);
 		m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_PointLight);
@@ -860,23 +866,6 @@ TextureDataComponent * InnoRenderingFrontend::getTextureDataComponent(TextureUsa
 		return m_basicAOTexture; break;
 	case TextureUsageType::ColorAttachment:
 		return nullptr; break;
-	default:
-		return nullptr; break;
-	}
-}
-
-TextureDataComponent * InnoRenderingFrontend::getTextureDataComponent(FileExplorerIconType iconType)
-{
-	switch (iconType)
-	{
-	case FileExplorerIconType::OBJ:
-		return m_iconTemplate_OBJ; break;
-	case FileExplorerIconType::PNG:
-		return m_iconTemplate_PNG; break;
-	case FileExplorerIconType::SHADER:
-		return m_iconTemplate_SHADER; break;
-	case FileExplorerIconType::UNKNOWN:
-		return m_iconTemplate_UNKNOWN; break;
 	default:
 		return nullptr; break;
 	}

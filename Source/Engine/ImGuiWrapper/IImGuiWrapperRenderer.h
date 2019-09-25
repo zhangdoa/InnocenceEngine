@@ -3,6 +3,8 @@
 #include "../Common/InnoClassTemplate.h"
 #include "../ThirdParty/ImGui/imgui.h"
 
+enum class RenderPassType { Shadow, GI, Opaque, Light, Transparent, Terrain, PostProcessing, Development };
+
 class IImGuiWrapperRenderer
 {
 public:
@@ -17,5 +19,4 @@ public:
 	virtual ObjectStatus getStatus() = 0;
 
 	virtual void showRenderResult(RenderPassType renderPassType) = 0;
-	virtual ImTextureID getFileExplorerIconTextureID(const FileExplorerIconType iconType) = 0;
 };

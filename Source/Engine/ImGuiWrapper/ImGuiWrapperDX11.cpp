@@ -65,8 +65,3 @@ void ImGuiWrapperDX11::showRenderResult(RenderPassType renderPassType)
 	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
 	auto l_renderTargetSize = ImVec2((float)l_screenResolution.x / 4.0f, (float)l_screenResolution.y / 4.0f);
 }
-
-ImTextureID ImGuiWrapperDX11::getFileExplorerIconTextureID(const FileExplorerIconType iconType)
-{
-	return ImTextureID();
-}

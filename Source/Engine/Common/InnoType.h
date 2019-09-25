@@ -61,33 +61,13 @@ struct TimeData
 	int64_t Millisecond;
 };
 
-enum class FileExplorerIconType { OBJ, PNG, SHADER, UNKNOWN };
 enum class WorldEditorIconType { DIRECTIONAL_LIGHT, POINT_LIGHT, SPHERE_LIGHT, UNKNOWN };
-
-struct AssetMetadata
-{
-	std::string fullPath;
-	std::string fileName;
-	std::string extension;
-	FileExplorerIconType iconType;
-};
-
-struct DirectoryMetadata
-{
-	uint32_t depth = 0;
-	std::string directoryName = "root";
-	DirectoryMetadata* parentDirectory = 0;
-	std::vector<DirectoryMetadata> childrenDirectories;
-	std::vector<AssetMetadata> childrenAssets;
-};
 
 enum class LogLevel { Verbose, Success, Warning, Error };
 
 enum class IOMode { Text, Binary };
 
 enum class VisiblilityType { Invisible, BillBoard, Opaque, Transparent, Emissive, Debug };
-
-enum class RenderPassType { Shadow, GI, Opaque, Light, Transparent, Terrain, PostProcessing, Development };
 
 // shader custom types
 enum class ShaderStage

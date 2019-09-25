@@ -64,8 +64,3 @@ void ImGuiWrapperGL::showRenderResult(RenderPassType renderPassType)
 	auto l_shadowRTSize = ImVec2(512.0, 512.0);
 	auto l_BRDFLUTSize = ImVec2(128.0, 128.0);
 }
-
-ImTextureID ImGuiWrapperGL::getFileExplorerIconTextureID(const FileExplorerIconType iconType)
-{
-	return ImTextureID();
-};

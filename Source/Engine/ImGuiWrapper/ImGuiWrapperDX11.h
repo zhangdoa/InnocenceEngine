@@ -15,5 +15,4 @@ public:
 	ObjectStatus getStatus() override;
 
 	void showRenderResult(RenderPassType renderPassType) override;
-	ImTextureID getFileExplorerIconTextureID(const FileExplorerIconType iconType) override;
 };

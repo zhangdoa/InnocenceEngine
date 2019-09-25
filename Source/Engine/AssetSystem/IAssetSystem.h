@@ -19,13 +19,9 @@ public:
 
 	virtual ObjectStatus getStatus() = 0;
 
-	virtual TextureDataComponent* loadTexture(const std::string& fileName, TextureSamplerType samplerType, TextureUsageType usageType) = 0;
-
 	virtual void addUnitCube(MeshDataComponent& meshDataComponent) = 0;
 	virtual void addUnitSphere(MeshDataComponent& meshDataComponent) = 0;
 	virtual void addUnitQuad(MeshDataComponent& meshDataComponent) = 0;
 	virtual void addUnitLine(MeshDataComponent& meshDataComponent) = 0;
 	virtual void addTerrain(MeshDataComponent& meshDataComponent) = 0;
-
-	virtual DirectoryMetadata* getRootDirectoryMetadata() = 0;
 };

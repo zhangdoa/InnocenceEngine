@@ -63,7 +63,6 @@ public:
 
 	virtual MeshDataComponent* getMeshDataComponent(MeshShapeType meshShapeType) = 0;
 	virtual TextureDataComponent* getTextureDataComponent(TextureUsageType textureUsageType) = 0;
-	virtual TextureDataComponent* getTextureDataComponent(FileExplorerIconType iconType) = 0;
 	virtual TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) = 0;
 	virtual MaterialDataComponent* getDefaultMaterialDataComponent() = 0;
 
