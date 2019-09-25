@@ -132,7 +132,7 @@ bool GIDataLoader::Setup()
 
 	m_testSampleCubemap->m_textureDataDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_testSampleCubemap->m_textureDataDesc.SamplerType = TextureSamplerType::SamplerCubemap;
-	m_testSampleCubemap->m_textureDataDesc.UsageType = TextureUsageType::Normal;
+	m_testSampleCubemap->m_textureDataDesc.UsageType = TextureUsageType::Sample;
 	m_testSampleCubemap->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 	m_testSampleCubemap->m_textureDataDesc.MinFilterMethod = TextureFilterMethod::Linear;
 	m_testSampleCubemap->m_textureDataDesc.MagFilterMethod = TextureFilterMethod::Linear;
@@ -160,7 +160,7 @@ bool GIDataLoader::Setup()
 
 	m_testSample3DTexture->m_textureDataDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_testSample3DTexture->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler3D;
-	m_testSample3DTexture->m_textureDataDesc.UsageType = TextureUsageType::Normal;
+	m_testSample3DTexture->m_textureDataDesc.UsageType = TextureUsageType::Sample;
 	m_testSample3DTexture->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 	m_testSample3DTexture->m_textureDataDesc.MinFilterMethod = TextureFilterMethod::Linear;
 	m_testSample3DTexture->m_textureDataDesc.MagFilterMethod = TextureFilterMethod::Linear;

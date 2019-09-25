@@ -96,7 +96,7 @@ DXGI_FORMAT DX11Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 {
 	DXGI_FORMAT l_internalFormat = DXGI_FORMAT_UNKNOWN;
 
-	if (textureDataDesc.UsageType == TextureUsageType::Albedo)
+	if (textureDataDesc.IsSRGB)
 	{
 		l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	}

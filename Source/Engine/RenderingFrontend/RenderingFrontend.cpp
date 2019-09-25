@@ -237,23 +237,23 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 {
 	m_basicNormalTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_normal.png");
 	m_basicNormalTexture->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_basicNormalTexture->m_textureDataDesc.UsageType = TextureUsageType::Normal;
+	m_basicNormalTexture->m_textureDataDesc.UsageType = TextureUsageType::Sample;
 
 	m_basicAlbedoTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_albedo.png");
 	m_basicAlbedoTexture->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_basicAlbedoTexture->m_textureDataDesc.UsageType = TextureUsageType::Albedo;
+	m_basicAlbedoTexture->m_textureDataDesc.UsageType = TextureUsageType::Sample;
 
 	m_basicMetallicTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_metallic.png");
 	m_basicMetallicTexture->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_basicMetallicTexture->m_textureDataDesc.UsageType = TextureUsageType::Metallic;
+	m_basicMetallicTexture->m_textureDataDesc.UsageType = TextureUsageType::Sample;
 
 	m_basicRoughnessTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_roughness.png");
 	m_basicRoughnessTexture->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_basicRoughnessTexture->m_textureDataDesc.UsageType = TextureUsageType::Roughness;
+	m_basicRoughnessTexture->m_textureDataDesc.UsageType = TextureUsageType::Sample;
 
 	m_basicAOTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_ao.png");
 	m_basicAOTexture->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_basicAOTexture->m_textureDataDesc.UsageType = TextureUsageType::AmbientOcclusion;
+	m_basicAOTexture->m_textureDataDesc.UsageType = TextureUsageType::Sample;
 
 	m_basicMaterial = m_renderingServer->AddMaterialDataComponent("BasicMaterial/");
 	m_basicMaterial->m_normalTexture = m_basicNormalTexture;
@@ -264,15 +264,15 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 
 	m_iconTemplate_DirectionalLight = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_DirectionalLight.png");
 	m_iconTemplate_DirectionalLight->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_iconTemplate_DirectionalLight->m_textureDataDesc.UsageType = TextureUsageType::Normal;
+	m_iconTemplate_DirectionalLight->m_textureDataDesc.UsageType = TextureUsageType::Sample;
 
 	m_iconTemplate_PointLight = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_PointLight.png");
 	m_iconTemplate_PointLight->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_iconTemplate_PointLight->m_textureDataDesc.UsageType = TextureUsageType::Normal;
+	m_iconTemplate_PointLight->m_textureDataDesc.UsageType = TextureUsageType::Sample;
 
 	m_iconTemplate_SphereLight = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_SphereLight.png");
 	m_iconTemplate_SphereLight->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_iconTemplate_SphereLight->m_textureDataDesc.UsageType = TextureUsageType::Normal;
+	m_iconTemplate_SphereLight->m_textureDataDesc.UsageType = TextureUsageType::Sample;
 
 	m_unitLineMesh = m_renderingServer->AddMeshDataComponent("UnitLineMesh/");
 	g_pModuleManager->getAssetSystem()->addUnitLine(*m_unitLineMesh);
@@ -841,31 +841,27 @@ MeshDataComponent * InnoRenderingFrontend::getMeshDataComponent(MeshShapeType me
 	case MeshShapeType::Terrain:
 		return m_terrainMesh; break;
 	case MeshShapeType::Custom:
-		InnoLogger::Log(LogLevel::Error, "RenderingFrontend: wrong MeshShapeType!");
+		InnoLogger::Log(LogLevel::Error, "RenderingFrontend: Wrong MeshShapeType!");
 		return nullptr; break;
 	default:
 		return nullptr; break;
 	}
 }
 
-TextureDataComponent * InnoRenderingFrontend::getTextureDataComponent(TextureUsageType textureUsageType)
+TextureDataComponent * InnoRenderingFrontend::getTextureDataComponent(TextureAttributeType textureAttributeType)
 {
-	switch (textureUsageType)
+	switch (textureAttributeType)
 	{
-	case TextureUsageType::Invisible:
-		return nullptr; break;
-	case TextureUsageType::Normal:
+	case TextureAttributeType::Normal:
 		return m_basicNormalTexture; break;
-	case TextureUsageType::Albedo:
+	case TextureAttributeType::Albedo:
 		return m_basicAlbedoTexture; break;
-	case TextureUsageType::Metallic:
+	case TextureAttributeType::Metallic:
 		return m_basicMetallicTexture; break;
-	case TextureUsageType::Roughness:
+	case TextureAttributeType::Roughness:
 		return m_basicRoughnessTexture; break;
-	case TextureUsageType::AmbientOcclusion:
+	case TextureAttributeType::AmbientOcclusion:
 		return m_basicAOTexture; break;
-	case TextureUsageType::ColorAttachment:
-		return nullptr; break;
 	default:
 		return nullptr; break;
 	}

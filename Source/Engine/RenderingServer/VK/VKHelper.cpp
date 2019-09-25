@@ -460,7 +460,7 @@ VkFormat VKHelper::getTextureFormat(TextureDataDesc textureDataDesc)
 {
 	VkFormat l_internalFormat = VK_FORMAT_R8_UNORM;
 
-	if (textureDataDesc.UsageType == TextureUsageType::Albedo)
+	if (textureDataDesc.IsSRGB)
 	{
 		l_internalFormat = VK_FORMAT_R8G8B8A8_SRGB;
 	}
@@ -1310,7 +1310,7 @@ bool VKHelper::createComputePipelines(VkDevice device, VKRenderPassDataComponent
 
 	if (vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &l_PSO->m_ComputePipelineCInfo, nullptr, &l_PSO->m_Pipeline) != VK_SUCCESS)
 	{
-		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to to create VkPipeline for ComputePipeline!");
+		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkPipeline for ComputePipeline!");
 		return false;
 	}
 

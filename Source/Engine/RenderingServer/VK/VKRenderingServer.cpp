@@ -813,7 +813,7 @@ bool VKRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * 
 	}
 	else
 	{
-		auto l_defaultTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Normal);
+		auto l_defaultTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Normal);
 		l_rhs->m_writeDescriptorSets[0] = f_createWriteDescriptorSet(l_defaultTexture, l_rhs->m_descriptorImageInfos[0], 0);
 	}
 	if (l_rhs->m_albedoTexture)
@@ -823,7 +823,7 @@ bool VKRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * 
 	}
 	else
 	{
-		auto l_defaultTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Albedo);
+		auto l_defaultTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Albedo);
 		l_rhs->m_writeDescriptorSets[1] = f_createWriteDescriptorSet(l_defaultTexture, l_rhs->m_descriptorImageInfos[1], 1);
 	}
 	if (l_rhs->m_metallicTexture)
@@ -833,7 +833,7 @@ bool VKRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * 
 	}
 	else
 	{
-		auto l_defaultTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Metallic);
+		auto l_defaultTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Metallic);
 		l_rhs->m_writeDescriptorSets[2] = f_createWriteDescriptorSet(l_defaultTexture, l_rhs->m_descriptorImageInfos[2], 2);
 	}
 	if (l_rhs->m_roughnessTexture)
@@ -843,7 +843,7 @@ bool VKRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * 
 	}
 	else
 	{
-		auto l_defaultTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Roughness);
+		auto l_defaultTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Roughness);
 
 		l_rhs->m_writeDescriptorSets[3] = f_createWriteDescriptorSet(l_defaultTexture, l_rhs->m_descriptorImageInfos[3], 3);
 	}
@@ -854,7 +854,7 @@ bool VKRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * 
 	}
 	else
 	{
-		auto l_defaultTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::AmbientOcclusion);
+		auto l_defaultTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::AmbientOcclusion);
 		l_rhs->m_writeDescriptorSets[4] = f_createWriteDescriptorSet(l_defaultTexture, l_rhs->m_descriptorImageInfos[4], 4);
 	}
 

@@ -100,7 +100,7 @@ GLenum GLHelper::GetTextureInternalFormat(TextureDataDesc textureDataDesc)
 {
 	GLenum l_internalFormat;
 
-	if (textureDataDesc.UsageType == TextureUsageType::Albedo)
+	if (textureDataDesc.IsSRGB)
 	{
 		if (textureDataDesc.PixelDataFormat == TexturePixelDataFormat::RGB)
 		{

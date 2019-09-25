@@ -18,7 +18,7 @@ namespace InnoType
 
 	enum class TextureSamplerType { Sampler1D, Sampler2D, Sampler3D, Sampler1DArray, Sampler2DArray, SamplerCubemap };
 
-	enum class TextureUsageType { Invisible, Normal, Albedo, Metallic, Roughness, AmbientOcclusion, ColorAttachment, DepthAttachment, DepthStencilAttachment, RawImage };
+	enum class TextureUsageType { Sample, ColorAttachment, DepthAttachment, DepthStencilAttachment, RawImage };
 
 	enum class TexturePixelDataFormat { R, RG, RGB, RGBA, BGRA, Depth, DepthStencil };
 	enum class TexturePixelDataType { UBYTE, SBYTE, USHORT, SSHORT, UINT8, SINT8, UINT16, SINT16, UINT32, SINT32, FLOAT16, FLOAT32, DOUBLE };
@@ -31,6 +31,7 @@ namespace InnoType
 		Accessibility GPUAccessibility = Accessibility::ReadWrite;
 		TextureSamplerType SamplerType;
 		TextureUsageType UsageType;
+		bool IsSRGB = false;
 		TexturePixelDataFormat PixelDataFormat;
 		TexturePixelDataType PixelDataType;
 		TextureFilterMethod MinFilterMethod;

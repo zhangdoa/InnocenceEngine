@@ -62,7 +62,7 @@ public:
 	virtual bool registerMaterialDataComponent(MaterialDataComponent * rhs, bool AsyncUploadToGPU = true) = 0;
 
 	virtual MeshDataComponent* getMeshDataComponent(MeshShapeType meshShapeType) = 0;
-	virtual TextureDataComponent* getTextureDataComponent(TextureUsageType textureUsageType) = 0;
+	virtual TextureDataComponent* getTextureDataComponent(TextureAttributeType textureAttributeType) = 0;
 	virtual TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) = 0;
 	virtual MaterialDataComponent* getDefaultMaterialDataComponent() = 0;
 

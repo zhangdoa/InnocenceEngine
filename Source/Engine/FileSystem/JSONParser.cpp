@@ -384,7 +384,7 @@ std::vector<AnimationDataComponent*> InnoFileSystemNS::JSONParser::processAnimat
 
 		l_ADC->m_animationTexture = AssetLoader::loadTexture(l_animationFileName);
 		l_ADC->m_animationTexture->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
-		l_ADC->m_animationTexture->m_textureDataDesc.UsageType = TextureUsageType::Normal;
+		l_ADC->m_animationTexture->m_textureDataDesc.UsageType = TextureUsageType::Sample;
 
 		auto l_AnimationTextureInitializeTask = g_pModuleManager->getTaskSystem()->submit("AnimationTextureInitializeTask", 2, nullptr,
 			[=]() { g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(l_ADC->m_animationTexture); });
@@ -536,22 +536,24 @@ MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(co
 		for (auto i : j["Textures"])
 		{
 			auto l_TDC = AssetLoader::loadTexture(i["File"]);
+			auto l_textureAttributeType = TextureAttributeType(i["AttributeType"]);
 			if (l_TDC)
 			{
 				l_TDC->m_textureDataDesc.SamplerType = TextureSamplerType(i["SamplerType"]);
 				l_TDC->m_textureDataDesc.UsageType = TextureUsageType(i["UsageType"]);
+				l_TDC->m_textureDataDesc.IsSRGB = i["IsSRGB"];
 			}
 			else
 			{
-				l_TDC = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType(i["UsageType"]));
+				l_TDC = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(l_textureAttributeType);
 			}
-			switch (l_TDC->m_textureDataDesc.UsageType)
+			switch (l_textureAttributeType)
 			{
-			case TextureUsageType::Normal: l_MDC->m_normalTexture = l_TDC; break;
-			case TextureUsageType::Albedo: l_MDC->m_albedoTexture = l_TDC; break;
-			case TextureUsageType::Metallic: l_MDC->m_metallicTexture = l_TDC; break;
-			case TextureUsageType::Roughness: l_MDC->m_roughnessTexture = l_TDC; break;
-			case TextureUsageType::AmbientOcclusion: l_MDC->m_aoTexture = l_TDC; break;
+			case TextureAttributeType::Normal: l_MDC->m_normalTexture = l_TDC; break;
+			case TextureAttributeType::Albedo: l_MDC->m_albedoTexture = l_TDC; break;
+			case TextureAttributeType::Metallic: l_MDC->m_metallicTexture = l_TDC; break;
+			case TextureAttributeType::Roughness: l_MDC->m_roughnessTexture = l_TDC; break;
+			case TextureAttributeType::AmbientOcclusion: l_MDC->m_aoTexture = l_TDC; break;
 			default:
 				break;
 			}

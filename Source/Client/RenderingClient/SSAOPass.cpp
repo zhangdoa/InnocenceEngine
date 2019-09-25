@@ -131,7 +131,7 @@ bool SSAOPass::Setup()
 	m_SSAONoiseTDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("SSAONoise/");
 
 	m_SSAONoiseTDC->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_SSAONoiseTDC->m_textureDataDesc.UsageType = TextureUsageType::Normal;
+	m_SSAONoiseTDC->m_textureDataDesc.UsageType = TextureUsageType::Sample;
 	m_SSAONoiseTDC->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 	m_SSAONoiseTDC->m_textureDataDesc.MinFilterMethod = TextureFilterMethod::Nearest;
 	m_SSAONoiseTDC->m_textureDataDesc.MagFilterMethod = TextureFilterMethod::Nearest;

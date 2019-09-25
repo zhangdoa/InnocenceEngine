@@ -5,7 +5,7 @@
 class TextureDataComponent : public InnoComponent
 {
 public:
-	TextureDataDesc m_textureDataDesc = TextureDataDesc();
+	TextureDataDesc m_textureDataDesc = {};
 	void* m_textureData = 0;
 	IResourceBinder* m_ResourceBinder = 0;
 };

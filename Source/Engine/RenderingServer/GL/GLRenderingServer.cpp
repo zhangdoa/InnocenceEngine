@@ -470,7 +470,7 @@ bool GLRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * 
 	}
 	else
 	{
-		l_rhs->m_ResourceBinders[0] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Normal)->m_ResourceBinder;
+		l_rhs->m_ResourceBinders[0] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Normal)->m_ResourceBinder;
 	}
 	if (l_rhs->m_albedoTexture)
 	{
@@ -479,7 +479,7 @@ bool GLRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * 
 	}
 	else
 	{
-		l_rhs->m_ResourceBinders[1] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Albedo)->m_ResourceBinder;
+		l_rhs->m_ResourceBinders[1] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Albedo)->m_ResourceBinder;
 	}
 	if (l_rhs->m_metallicTexture)
 	{
@@ -488,7 +488,7 @@ bool GLRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * 
 	}
 	else
 	{
-		l_rhs->m_ResourceBinders[2] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Metallic)->m_ResourceBinder;
+		l_rhs->m_ResourceBinders[2] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Metallic)->m_ResourceBinder;
 	}
 	if (l_rhs->m_roughnessTexture)
 	{
@@ -497,7 +497,7 @@ bool GLRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * 
 	}
 	else
 	{
-		l_rhs->m_ResourceBinders[3] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::Roughness)->m_ResourceBinder;
+		l_rhs->m_ResourceBinders[3] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Roughness)->m_ResourceBinder;
 	}
 	if (l_rhs->m_aoTexture)
 	{
@@ -506,7 +506,7 @@ bool GLRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * 
 	}
 	else
 	{
-		l_rhs->m_ResourceBinders[4] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureUsageType::AmbientOcclusion)->m_ResourceBinder;
+		l_rhs->m_ResourceBinders[4] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::AmbientOcclusion)->m_ResourceBinder;
 	}
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
