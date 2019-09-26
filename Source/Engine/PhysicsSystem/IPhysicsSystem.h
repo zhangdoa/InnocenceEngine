@@ -19,7 +19,7 @@ struct CullingData
 	VisiblilityType visiblilityType;
 	MeshUsageType meshUsageType;
 	CullingDataChannel cullingDataChannel;
-	uint32_t UUID;
+	uint64_t UUID;
 };
 
 struct BVHNode
