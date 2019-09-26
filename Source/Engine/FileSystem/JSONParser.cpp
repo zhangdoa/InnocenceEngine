@@ -451,7 +451,7 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j, bool
 			// Load material data
 			if (j.find("MaterialFile") != j.end())
 			{
-				l_result.second = processMaterialJsonData(j["MaterialFile"]);
+				l_result.second = processMaterialJsonData(j["MaterialFile"], AsyncUploadGPUResource);
 			}
 			else
 			{
@@ -471,7 +471,7 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j, bool
 		// Load material data
 		if (j.find("MaterialFile") != j.end())
 		{
-			l_result.second = processMaterialJsonData(j["MaterialFile"]);
+			l_result.second = processMaterialJsonData(j["MaterialFile"], AsyncUploadGPUResource);
 		}
 		else
 		{
