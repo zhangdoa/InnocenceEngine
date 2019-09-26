@@ -1132,28 +1132,52 @@ namespace InnoMath
 	}
 
 	template<class T, class U>
+	auto precisionConvert(const TVec2<T>& rhs) ->TVec2<U>
+	{
+		TVec2<U> l_result;
+
+		l_result.x = static_cast<U>(rhs.x);
+		l_result.y = static_cast<U>(rhs.y);
+
+		return l_result;
+	}
+
+	template<class T, class U>
+	auto precisionConvert(const TVec4<T>& rhs) ->TVec4<U>
+	{
+		TVec4<U> l_result;
+
+		l_result.x = static_cast<U>(rhs.x);
+		l_result.y = static_cast<U>(rhs.y);
+		l_result.z = static_cast<U>(rhs.z);
+		l_result.w = static_cast<U>(rhs.y);
+
+		return l_result;
+	}
+
+	template<class T, class U>
 	auto precisionConvert(const TMat4<T>& rhs) ->TMat4<U>
 	{
-		TMat4<U> l_m;
+		TMat4<U> l_result;
 
-		l_m.m00 = static_cast<U>(rhs.m00);
-		l_m.m01 = static_cast<U>(rhs.m01);
-		l_m.m02 = static_cast<U>(rhs.m02);
-		l_m.m03 = static_cast<U>(rhs.m03);
-		l_m.m10 = static_cast<U>(rhs.m10);
-		l_m.m11 = static_cast<U>(rhs.m11);
-		l_m.m12 = static_cast<U>(rhs.m12);
-		l_m.m13 = static_cast<U>(rhs.m13);
-		l_m.m20 = static_cast<U>(rhs.m20);
-		l_m.m21 = static_cast<U>(rhs.m21);
-		l_m.m22 = static_cast<U>(rhs.m22);
-		l_m.m23 = static_cast<U>(rhs.m23);
-		l_m.m30 = static_cast<U>(rhs.m30);
-		l_m.m31 = static_cast<U>(rhs.m31);
-		l_m.m32 = static_cast<U>(rhs.m32);
-		l_m.m33 = static_cast<U>(rhs.m33);
+		l_result.m00 = static_cast<U>(rhs.m00);
+		l_result.m01 = static_cast<U>(rhs.m01);
+		l_result.m02 = static_cast<U>(rhs.m02);
+		l_result.m03 = static_cast<U>(rhs.m03);
+		l_result.m10 = static_cast<U>(rhs.m10);
+		l_result.m11 = static_cast<U>(rhs.m11);
+		l_result.m12 = static_cast<U>(rhs.m12);
+		l_result.m13 = static_cast<U>(rhs.m13);
+		l_result.m20 = static_cast<U>(rhs.m20);
+		l_result.m21 = static_cast<U>(rhs.m21);
+		l_result.m22 = static_cast<U>(rhs.m22);
+		l_result.m23 = static_cast<U>(rhs.m23);
+		l_result.m30 = static_cast<U>(rhs.m30);
+		l_result.m31 = static_cast<U>(rhs.m31);
+		l_result.m32 = static_cast<U>(rhs.m32);
+		l_result.m33 = static_cast<U>(rhs.m33);
 
-		return l_m;
+		return l_result;
 	}
 
 	template<class T>
