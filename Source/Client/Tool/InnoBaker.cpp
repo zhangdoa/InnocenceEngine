@@ -67,7 +67,8 @@ namespace InnoBakerNS
 	const uint32_t m_probeInterval = 32;
 	const uint32_t m_captureResolution = 32;
 	const uint32_t m_surfelSampleCountPerFace = 16;
-	const Vec4 m_brickSize = Vec4(4.0f, 4.0f, 4.0f, 0.0f);
+	const TVec4<double> m_brickSize = TVec4<double>(4.0, 4.0, 4.0, 0.0);
+	const TVec4<double> m_halfBrickSize = m_brickSize / 2.0;
 
 	RenderPassDataComponent* m_RPDC_Probe;
 	ShaderProgramComponent* m_SPC_Probe;
@@ -208,6 +209,13 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 
 	// Read back results and generate probes
 	auto l_probePosTextureResults = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Probe, m_RPDC_Probe->m_RenderTargets[0]);
+
+	//#ifdef DEBUG_
+	auto l_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
+	l_TDC->m_textureDataDesc = m_RPDC_Probe->m_RenderTargets[0]->m_textureDataDesc;
+	l_TDC->m_textureData = l_probePosTextureResults.data();
+	g_pModuleManager->getFileSystem()->saveTexture("Res//Intermediate//ProbePosTexture", l_TDC);
+	//#endif // DEBUG_
 
 	auto l_probesCount = generateProbes(probes, l_probePosTextureResults, m_probeInterval);
 
@@ -498,10 +506,19 @@ bool InnoBakerNS::drawOpaquePass(Probe& probeCache, const Mat4& p, const std::ve
 
 bool InnoBakerNS::readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfelCaches)
 {
+	static uint32_t l_index = 0;
+
 	auto l_posWSMetallic = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_RenderTargets[0]);
 	auto l_normalRoughness = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_RenderTargets[1]);
 	auto l_albedoAO = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_RenderTargets[2]);
 	auto l_depthStencilRT = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_DepthStencilRenderTarget);
+
+	auto l_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
+	l_TDC->m_textureDataDesc = m_RPDC_Surfel->m_RenderTargets[0]->m_textureDataDesc;
+	l_TDC->m_textureData = l_posWSMetallic.data();
+	g_pModuleManager->getFileSystem()->saveTexture(("Res//Intermediate//SurfelTexture_" + std::to_string(l_index)).c_str(), l_TDC);
+
+	l_index++;
 
 	auto l_surfelsCount = m_surfelSampleCountPerFace * m_surfelSampleCountPerFace * 6;
 	auto l_sampleStep = m_captureResolution / m_surfelSampleCountPerFace;
@@ -590,21 +607,23 @@ bool InnoBakerNS::generateBrickCaches(std::vector<Surfel>& surfelCaches)
 	// Find bound corner position
 	auto l_surfelsCount = surfelCaches.size();
 
-	auto l_startPos = InnoMath::maxVec4<float>;
-	l_startPos.w = 1.0f;
+	auto l_startPos = InnoMath::maxVec4<double>;
+	l_startPos.w = 1.0;
 
-	auto l_endPos = InnoMath::minVec4<float>;
-	l_endPos.w = 1.0f;
+	auto l_endPos = InnoMath::minVec4<double>;
+	l_endPos.w = 1.0;
 
 	for (size_t i = 0; i < l_surfelsCount; i++)
 	{
-		l_startPos = InnoMath::elementWiseMin(surfelCaches[i].pos, l_startPos);
-		l_endPos = InnoMath::elementWiseMax(surfelCaches[i].pos, l_endPos);
+		auto l_surfelPos = precisionConvert<float, double>(surfelCaches[i].pos);
+
+		l_startPos = InnoMath::elementWiseMin(l_surfelPos, l_startPos);
+		l_endPos = InnoMath::elementWiseMax(l_surfelPos, l_endPos);
 	}
 
 	// Fit the end corner to contain at least one brick in each axis
 	auto l_extends = l_endPos - l_startPos;
-	l_extends.w = 1.0f;
+	l_extends.w = 1.0;
 
 	if (l_extends.x < m_brickSize.x)
 	{
@@ -629,10 +648,11 @@ bool InnoBakerNS::generateBrickCaches(std::vector<Surfel>& surfelCaches)
 	auto l_brickCount = TVec4<size_t>(l_bricksCountX, l_bricksCountY, l_bricksCountZ, 1);
 
 	// Adjusted end
-	auto l_adjustedEndPos = l_startPos;
-	l_adjustedEndPos.x += l_bricksCountX * m_brickSize.x;
-	l_adjustedEndPos.y += l_bricksCountY * m_brickSize.y;
-	l_adjustedEndPos.z += l_bricksCountZ * m_brickSize.z;
+	TVec4<double> l_adjustedEndPos = TVec4<double>();
+	l_adjustedEndPos.x = l_startPos.x + l_bricksCountX * m_brickSize.x;
+	l_adjustedEndPos.y = l_startPos.y + l_bricksCountY * m_brickSize.y;
+	l_adjustedEndPos.z = l_startPos.z + l_bricksCountZ * m_brickSize.z;
+	l_adjustedEndPos.w = 1.0;
 
 	// generate all possible brick position
 	auto l_totalBricksWorkCount = l_bricksCountX * l_bricksCountY * l_bricksCountZ;
@@ -658,7 +678,7 @@ bool InnoBakerNS::generateBrickCaches(std::vector<Surfel>& surfelCaches)
 			while (l_currentMaxPos.x <= l_adjustedEndPos.x)
 			{
 				BrickCache l_brickCache;
-				l_brickCache.pos = l_currentMinPos + m_brickSize / 2.0f;
+				l_brickCache.pos = precisionConvert<double, float>(l_currentMinPos + m_halfBrickSize);
 				l_brickCache.surfelCaches.reserve(l_averangeSurfelInABrick);
 
 				l_brickCaches.emplace_back(std::move(l_brickCache));
@@ -678,8 +698,8 @@ bool InnoBakerNS::generateBrickCaches(std::vector<Surfel>& surfelCaches)
 	// Assign surfels to brick cache
 	for (size_t i = 0; i < l_surfelsCount; i++)
 	{
-		auto l_posVS = surfelCaches[i].pos - l_startPos;
-		auto l_normalizedPos = l_posVS.scale(l_extends.reciprocal());
+		auto l_posVS = surfelCaches[i].pos - precisionConvert<double, float>(l_startPos);
+		auto l_normalizedPos = l_posVS.scale(precisionConvert<double, float>(l_extends.reciprocal()));
 		auto l_brickIndexX = (size_t)std::floor((float)(l_brickCount.x - 1) * l_normalizedPos.x);
 		auto l_brickIndexY = (size_t)std::floor((float)(l_brickCount.y - 1) * l_normalizedPos.y);
 		auto l_brickIndexZ = (size_t)std::floor((float)(l_brickCount.z - 1) * l_normalizedPos.z);
@@ -808,7 +828,8 @@ bool InnoBakerNS::generateBricks(const std::vector<BrickCache>& brickCaches)
 	for (size_t i = 0; i < l_bricksCount; i++)
 	{
 		Brick l_brick;
-		l_brick.boundBox = InnoMath::generateAABB(brickCaches[i].pos + m_brickSize / 2.0f, brickCaches[i].pos - m_brickSize / 2.0f);
+		auto l_halfBrickSizeFloat = precisionConvert<double, float>(m_halfBrickSize);
+		l_brick.boundBox = InnoMath::generateAABB(brickCaches[i].pos + l_halfBrickSizeFloat, brickCaches[i].pos - l_halfBrickSizeFloat);
 		l_brick.surfelRangeBegin = (uint32_t)l_offset;
 		l_brick.surfelRangeEnd = (uint32_t)(l_offset + brickCaches[i].surfelCaches.size() - 1);
 		l_offset += brickCaches[i].surfelCaches.size();
