@@ -60,13 +60,13 @@ TextureDataComponent* InnoFileSystemNS::TextureIO::loadTexture(const std::string
 
 bool InnoFileSystemNS::TextureIO::saveTexture(const std::string & fileName, TextureDataComponent * TDC)
 {
-	//if (TDC->m_textureDataDesc.PixelDataType == TexturePixelDataType::FLOAT16 || TDC->m_textureDataDesc.PixelDataType == TexturePixelDataType::FLOAT32)
-	//{
-	//	stbi_write_hdr((IOService::getWorkingDirectory() + fileName).c_str(), (int32_t)TDC->m_textureDataDesc.Width, TDC->m_textureDataDesc.Height, (int32_t)TDC->m_textureDataDesc.PixelDataFormat + 1, (float*)TDC->m_textureData);
-	//}
-	//else
+	if (TDC->m_textureDataDesc.PixelDataType == TexturePixelDataType::FLOAT16 || TDC->m_textureDataDesc.PixelDataType == TexturePixelDataType::FLOAT32)
 	{
-		stbi_write_png((IOService::getWorkingDirectory() + fileName).c_str(), (int32_t)TDC->m_textureDataDesc.Width, TDC->m_textureDataDesc.Height, (int32_t)TDC->m_textureDataDesc.PixelDataFormat, TDC->m_textureData, (int32_t)TDC->m_textureDataDesc.Width * sizeof(int32_t));
+		stbi_write_hdr((IOService::getWorkingDirectory() + fileName + ".hdr").c_str(), (int32_t)TDC->m_textureDataDesc.Width, (int32_t)TDC->m_textureDataDesc.Height, (int32_t)TDC->m_textureDataDesc.PixelDataFormat + 1, (float*)TDC->m_textureData);
+	}
+	else
+	{
+		stbi_write_png((IOService::getWorkingDirectory() + fileName + ".png").c_str(), (int32_t)TDC->m_textureDataDesc.Width, (int32_t)TDC->m_textureDataDesc.Height, (int32_t)TDC->m_textureDataDesc.PixelDataFormat + 1, TDC->m_textureData, (int32_t)TDC->m_textureDataDesc.Width * sizeof(int32_t));
 	}
 
 	return true;
