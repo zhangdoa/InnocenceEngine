@@ -48,14 +48,14 @@ bool BRDFLUTPass::Setup()
 
 	m_RPDC_MS->m_ResourceBinderLayoutDescs.resize(2);
 	m_RPDC_MS->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
-	m_RPDC_MS->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
-	m_RPDC_MS->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 0;
-	m_RPDC_MS->m_ResourceBinderLayoutDescs[0].m_IsRanged = true;
+	m_RPDC_MS->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_RPDC_MS->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
+	m_RPDC_MS->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
 
 	m_RPDC_MS->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Sampler;
-	m_RPDC_MS->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 1;
-	m_RPDC_MS->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 0;
-	m_RPDC_MS->m_ResourceBinderLayoutDescs[1].m_IsRanged = true;
+	m_RPDC_MS->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_RPDC_MS->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 0;
+	m_RPDC_MS->m_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 	m_RPDC_MS->m_ShaderProgram = m_SPC_MS;

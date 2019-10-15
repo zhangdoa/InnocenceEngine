@@ -249,14 +249,14 @@ bool GLRenderingServer::Initialize()
 
 			m_SwapChainRPDC->m_ResourceBinderLayoutDescs.resize(2);
 			m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
-			m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
-			m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 0;
-			m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_IsRanged = true;
+			m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
+			m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
+			m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
 
 			m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Sampler;
-			m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 1;
-			m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 0;
-			m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_IsRanged = true;
+			m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+			m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 0;
+			m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
 
 			m_SwapChainRPDC->m_ShaderProgram = m_SwapChainSPC;
 			m_SwapChainRPDC->m_FBO = 0;

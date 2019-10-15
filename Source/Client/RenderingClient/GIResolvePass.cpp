@@ -377,20 +377,20 @@ bool GIResolvePass::setupSky()
 
 	m_skyRPDC->m_ResourceBinderLayoutDescs.resize(4);
 	m_skyRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_skyRPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
-	m_skyRPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 10;
+	m_skyRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_skyRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 10;
 
 	m_skyRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_skyRPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 1;
-	m_skyRPDC->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 3;
+	m_skyRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_skyRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 3;
 
 	m_skyRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_skyRPDC->m_ResourceBinderLayoutDescs[2].m_GlobalSlot = 2;
-	m_skyRPDC->m_ResourceBinderLayoutDescs[2].m_LocalSlot = 7;
+	m_skyRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
+	m_skyRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 7;
 
 	m_skyRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_skyRPDC->m_ResourceBinderLayoutDescs[3].m_GlobalSlot = 3;
-	m_skyRPDC->m_ResourceBinderLayoutDescs[3].m_LocalSlot = 11;
+	m_skyRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
+	m_skyRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 11;
 
 	m_skyRPDC->m_ShaderProgram = m_skySPC;
 
@@ -420,41 +420,41 @@ bool GIResolvePass::setupSurfels()
 
 	m_surfelRPDC->m_ResourceBinderLayoutDescs.resize(8);
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 0;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 1;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 3;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 3;
 
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[2].m_GlobalSlot = 2;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[2].m_LocalSlot = 8;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 8;
 
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[3].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[3].m_GlobalSlot = 3;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[3].m_LocalSlot = 0;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
 
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_GlobalSlot = 4;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_LocalSlot = 1;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 4;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 1;
 
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_GlobalSlot = 5;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_LocalSlot = 6;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 5;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 6;
 
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Image;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_GlobalSlot = 6;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_LocalSlot = 0;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_IsRanged = true;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 6;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 0;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_IndirectBinding = true;
 
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[7].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[7].m_GlobalSlot = 7;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[7].m_LocalSlot = 11;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[7].m_DescriptorSetIndex = 7;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[7].m_DescriptorIndex = 11;
 
 	m_surfelRPDC->m_ShaderProgram = m_surfelSPC;
 
@@ -477,30 +477,30 @@ bool GIResolvePass::setupBricks()
 
 	m_brickRPDC->m_ResourceBinderLayoutDescs.resize(5);
 	m_brickRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 8;
+	m_brickRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_brickRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 8;
 
 	m_brickRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_brickRPDC->m_ResourceBinderLayoutDescs[1].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_brickRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 1;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 0;
+	m_brickRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_brickRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 0;
 
 	m_brickRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_brickRPDC->m_ResourceBinderLayoutDescs[2].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_brickRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[2].m_GlobalSlot = 2;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[2].m_LocalSlot = 1;
+	m_brickRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
+	m_brickRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 1;
 
 	m_brickRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_brickRPDC->m_ResourceBinderLayoutDescs[3].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_brickRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[3].m_GlobalSlot = 3;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[3].m_LocalSlot = 2;
+	m_brickRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
+	m_brickRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 2;
 
 	m_brickRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[4].m_GlobalSlot = 4;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[4].m_LocalSlot = 11;
+	m_brickRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 4;
+	m_brickRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 11;
 
 	m_brickRPDC->m_ShaderProgram = m_brickSPC;
 
@@ -523,41 +523,41 @@ bool GIResolvePass::setupProbes()
 
 	m_probeRPDC->m_ResourceBinderLayoutDescs.resize(7);
 	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 8;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 8;
 
 	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 1;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 7;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 7;
 
 	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_GlobalSlot = 2;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_LocalSlot = 0;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 0;
 
 	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_GlobalSlot = 3;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_LocalSlot = 1;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 1;
 
 	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_GlobalSlot = 4;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_LocalSlot = 2;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 4;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 2;
 
 	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Image;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_GlobalSlot = 5;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_LocalSlot = 3;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_IsRanged = true;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 5;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 3;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_IndirectBinding = true;
 
 	m_probeRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[6].m_GlobalSlot = 6;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[6].m_LocalSlot = 11;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 6;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 11;
 
 	m_probeRPDC->m_ShaderProgram = m_probeSPC;
 
@@ -580,35 +580,35 @@ bool GIResolvePass::setupIrradianceVolume()
 
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs.resize(6);
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 8;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 8;
 
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 1;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 7;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 7;
 
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[2].m_GlobalSlot = 2;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[2].m_LocalSlot = 11;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 11;
 
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Image;
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_BinderAccessibility = Accessibility::ReadOnly;
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_GlobalSlot = 3;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_LocalSlot = 0;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_IsRanged = true;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_IndirectBinding = true;
 
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Image;
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[4].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[4].m_GlobalSlot = 4;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[4].m_LocalSlot = 0;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[4].m_IsRanged = true;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 4;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 0;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[4].m_IndirectBinding = true;
 
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Sampler;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[5].m_GlobalSlot = 5;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[5].m_LocalSlot = 0;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[5].m_IsRanged = true;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 5;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 0;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[5].m_IndirectBinding = true;
 
 	m_irradianceVolumeRPDC->m_ShaderProgram = m_irradianceVolumeSPC;
 	m_irradianceVolumeSDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("GIResolveIrradianceVolumePass/");

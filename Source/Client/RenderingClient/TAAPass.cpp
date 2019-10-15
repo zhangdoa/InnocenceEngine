@@ -40,24 +40,24 @@ bool TAAPass::Setup()
 
 	std::vector<ResourceBinderLayoutDesc> l_ResourceBinderLayoutDescs(4);
 	l_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
-	l_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
-	l_ResourceBinderLayoutDescs[0].m_LocalSlot = 0;
-	l_ResourceBinderLayoutDescs[0].m_IsRanged = true;
+	l_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
+	l_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
+	l_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
 
 	l_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Image;
-	l_ResourceBinderLayoutDescs[1].m_GlobalSlot = 1;
-	l_ResourceBinderLayoutDescs[1].m_LocalSlot = 1;
-	l_ResourceBinderLayoutDescs[1].m_IsRanged = true;
+	l_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+	l_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
+	l_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
 
 	l_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Image;
-	l_ResourceBinderLayoutDescs[2].m_GlobalSlot = 2;
-	l_ResourceBinderLayoutDescs[2].m_LocalSlot = 2;
-	l_ResourceBinderLayoutDescs[2].m_IsRanged = true;
+	l_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
+	l_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 2;
+	l_ResourceBinderLayoutDescs[2].m_IndirectBinding = true;
 
 	l_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Sampler;
-	l_ResourceBinderLayoutDescs[3].m_GlobalSlot = 3;
-	l_ResourceBinderLayoutDescs[3].m_LocalSlot = 0;
-	l_ResourceBinderLayoutDescs[3].m_IsRanged = true;
+	l_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
+	l_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
+	l_ResourceBinderLayoutDescs[3].m_IndirectBinding = true;
 
 	m_RPDC_A->m_ResourceBinderLayoutDescs = l_ResourceBinderLayoutDescs;
 	m_RPDC_B->m_ResourceBinderLayoutDescs = l_ResourceBinderLayoutDescs;

@@ -846,7 +846,7 @@ bool VKHelper::createDescriptorSetLayoutBindings(VKRenderPassDataComponent * VKR
 	{
 		auto l_resourceBinderLayoutDesc = VKRPDC->m_ResourceBinderLayoutDescs[i];
 		VkDescriptorSetLayoutBinding l_descriptorLayoutBinding = {};
-		l_descriptorLayoutBinding.binding = (uint32_t)l_resourceBinderLayoutDesc.m_LocalSlot;
+		l_descriptorLayoutBinding.binding = (uint32_t)l_resourceBinderLayoutDesc.m_DescriptorSetIndex;
 		l_descriptorLayoutBinding.descriptorCount = 1;
 		l_descriptorLayoutBinding.pImmutableSamplers = nullptr;
 		l_descriptorLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL;

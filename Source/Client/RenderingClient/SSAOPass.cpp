@@ -43,37 +43,37 @@ bool SSAOPass::Setup()
 
 	m_RPDC->m_ResourceBinderLayoutDescs.resize(7);
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_RPDC->m_ResourceBinderLayoutDescs[0].m_GlobalSlot = 0;
-	m_RPDC->m_ResourceBinderLayoutDescs[0].m_LocalSlot = 0;
+	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_GlobalSlot = 1;
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_LocalSlot = 9;
+	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 9;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Image;
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_GlobalSlot = 2;
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_LocalSlot = 0;
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_IsRanged = true;
+	m_RPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
+	m_RPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 0;
+	m_RPDC->m_ResourceBinderLayoutDescs[2].m_IndirectBinding = true;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Image;
-	m_RPDC->m_ResourceBinderLayoutDescs[3].m_GlobalSlot = 3;
-	m_RPDC->m_ResourceBinderLayoutDescs[3].m_LocalSlot = 1;
-	m_RPDC->m_ResourceBinderLayoutDescs[3].m_IsRanged = true;
+	m_RPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
+	m_RPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 1;
+	m_RPDC->m_ResourceBinderLayoutDescs[3].m_IndirectBinding = true;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Image;
-	m_RPDC->m_ResourceBinderLayoutDescs[4].m_GlobalSlot = 4;
-	m_RPDC->m_ResourceBinderLayoutDescs[4].m_LocalSlot = 2;
-	m_RPDC->m_ResourceBinderLayoutDescs[4].m_IsRanged = true;
+	m_RPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 4;
+	m_RPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 2;
+	m_RPDC->m_ResourceBinderLayoutDescs[4].m_IndirectBinding = true;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Sampler;
-	m_RPDC->m_ResourceBinderLayoutDescs[5].m_GlobalSlot = 5;
-	m_RPDC->m_ResourceBinderLayoutDescs[5].m_LocalSlot = 0;
-	m_RPDC->m_ResourceBinderLayoutDescs[5].m_IsRanged = true;
+	m_RPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 5;
+	m_RPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 0;
+	m_RPDC->m_ResourceBinderLayoutDescs[5].m_IndirectBinding = true;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Sampler;
-	m_RPDC->m_ResourceBinderLayoutDescs[6].m_GlobalSlot = 6;
-	m_RPDC->m_ResourceBinderLayoutDescs[6].m_LocalSlot = 1;
-	m_RPDC->m_ResourceBinderLayoutDescs[6].m_IsRanged = true;
+	m_RPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 6;
+	m_RPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 1;
+	m_RPDC->m_ResourceBinderLayoutDescs[6].m_IndirectBinding = true;
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 

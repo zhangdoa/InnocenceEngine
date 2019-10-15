@@ -219,12 +219,10 @@ namespace InnoType
 		ResourceBinderType m_ResourceBinderType = ResourceBinderType::Sampler;
 		Accessibility m_BinderAccessibility = Accessibility::ReadOnly;
 		Accessibility m_ResourceAccessibility = Accessibility::ReadOnly;
-		// The global shader root register slot index, useless for OpenGL and DirectX 11
-		size_t m_GlobalSlot = 0;
-		// The local type related register slot index, like "binding = 5" in GLSL or  "t(4)"/"c(3)" in HLSL
-		size_t m_LocalSlot = 0;
+		size_t m_DescriptorSetIndex = 0;
+		size_t m_DescriptorIndex = 0;
 		size_t m_ResourceCount = 1;
-		bool m_IsRanged = false;
+		bool m_IndirectBinding = false;
 	};
 }
 
