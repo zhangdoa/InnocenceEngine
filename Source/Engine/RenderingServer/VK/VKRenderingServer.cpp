@@ -895,7 +895,16 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 
 	l_result &= createDescriptorSetLayoutBindings(l_rhs);
 
-	l_result &= createDescriptorSetLayout(m_device, l_rhs->m_DescriptorSetLayoutBindings.data(), static_cast<uint32_t>(l_rhs->m_DescriptorSetLayoutBindings.size()), l_rhs->m_DescriptorSetLayout);
+	l_rhs->m_DescriptorSetLayouts.resize(l_rhs->m_DescriptorSetLayoutBindingIndices.size());
+
+	for (size_t i = 0; i < l_rhs->m_DescriptorSetLayoutBindingIndices.size(); i++)
+	{
+		auto l_descriptorSetLayoutBindingIndex = l_rhs->m_DescriptorSetLayoutBindingIndices[i];
+		l_result &= createDescriptorSetLayout(m_device,
+			&l_rhs->m_DescriptorSetLayoutBindings[l_descriptorSetLayoutBindingIndex.m_LayoutBindingOffset],
+			static_cast<uint32_t>(l_descriptorSetLayoutBindingIndex.m_BindingCount),
+			l_rhs->m_DescriptorSetLayouts[i]);
+	}
 
 	l_result &= createPipelineLayout(m_device, l_rhs);
 

@@ -840,13 +840,40 @@ bool VKHelper::createImageView(VkDevice device, VKTextureDataComponent* VKTDC)
 
 bool VKHelper::createDescriptorSetLayoutBindings(VKRenderPassDataComponent * VKRPDC)
 {
-	VKRPDC->m_DescriptorSetLayoutBindings.reserve(VKRPDC->m_ResourceBinderLayoutDescs.size());
+	std::sort(VKRPDC->m_ResourceBinderLayoutDescs.begin(), VKRPDC->m_ResourceBinderLayoutDescs.end(), [&](ResourceBinderLayoutDesc A, ResourceBinderLayoutDesc B)
+	{
+		return A.m_DescriptorSetIndex < B.m_DescriptorSetIndex;
+	});
 
-	for (size_t i = 0; i < VKRPDC->m_ResourceBinderLayoutDescs.size(); i++)
+	auto l_resourceBinderLayoutDescsSize = VKRPDC->m_ResourceBinderLayoutDescs.size();
+
+	size_t l_currentSetAbsoluteIndex = 0;
+	size_t l_currentSetRelativeIndex = 0;
+
+	for (size_t i = 0; i < l_resourceBinderLayoutDescsSize; i++)
 	{
 		auto l_resourceBinderLayoutDesc = VKRPDC->m_ResourceBinderLayoutDescs[i];
+
+		if (l_currentSetAbsoluteIndex != l_resourceBinderLayoutDesc.m_DescriptorSetIndex)
+		{
+			l_currentSetAbsoluteIndex = l_resourceBinderLayoutDesc.m_DescriptorSetIndex;
+			l_currentSetRelativeIndex++;
+		}
+	}
+
+	VKRPDC->m_DescriptorSetLayoutBindings.reserve(l_resourceBinderLayoutDescsSize);
+	VKRPDC->m_DescriptorSetLayoutBindingIndices.resize(l_currentSetRelativeIndex + 1);
+
+	l_currentSetAbsoluteIndex = 0;
+	l_currentSetRelativeIndex = 0;
+	size_t l_currentBindingOffset = 0;
+
+	for (size_t i = 0; i < l_resourceBinderLayoutDescsSize; i++)
+	{
+		auto l_resourceBinderLayoutDesc = VKRPDC->m_ResourceBinderLayoutDescs[i];
+
 		VkDescriptorSetLayoutBinding l_descriptorLayoutBinding = {};
-		l_descriptorLayoutBinding.binding = (uint32_t)l_resourceBinderLayoutDesc.m_DescriptorSetIndex;
+		l_descriptorLayoutBinding.binding = (uint32_t)l_resourceBinderLayoutDesc.m_DescriptorIndex;
 		l_descriptorLayoutBinding.descriptorCount = 1;
 		l_descriptorLayoutBinding.pImmutableSamplers = nullptr;
 		l_descriptorLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
@@ -902,6 +929,16 @@ bool VKHelper::createDescriptorSetLayoutBindings(VKRenderPassDataComponent * VKR
 		}
 
 		VKRPDC->m_DescriptorSetLayoutBindings.emplace_back(l_descriptorLayoutBinding);
+
+		if (l_currentSetAbsoluteIndex != l_resourceBinderLayoutDesc.m_DescriptorSetIndex)
+		{
+			l_currentSetAbsoluteIndex = l_resourceBinderLayoutDesc.m_DescriptorSetIndex;
+			l_currentSetRelativeIndex++;
+			VKRPDC->m_DescriptorSetLayoutBindingIndices[l_currentSetRelativeIndex].m_LayoutBindingOffset = i;
+		}
+
+		VKRPDC->m_DescriptorSetLayoutBindingIndices[l_currentSetRelativeIndex].m_SetIndex = l_currentSetAbsoluteIndex;
+		VKRPDC->m_DescriptorSetLayoutBindingIndices[l_currentSetRelativeIndex].m_BindingCount++;
 	}
 
 	return true;
@@ -1211,8 +1248,8 @@ bool VKHelper::createPipelineLayout(VkDevice device, VKRenderPassDataComponent* 
 	l_PSO->m_InputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 
 	l_PSO->m_PipelineLayoutCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	l_PSO->m_PipelineLayoutCInfo.setLayoutCount = 1;
-	l_PSO->m_PipelineLayoutCInfo.pSetLayouts = &VKRPDC->m_DescriptorSetLayout;
+	l_PSO->m_PipelineLayoutCInfo.setLayoutCount = static_cast<uint32_t>(VKRPDC->m_DescriptorSetLayouts.size());
+	l_PSO->m_PipelineLayoutCInfo.pSetLayouts = VKRPDC->m_DescriptorSetLayouts.data();
 
 	if (VKRPDC->m_PushConstantRanges.size() > 0)
 	{

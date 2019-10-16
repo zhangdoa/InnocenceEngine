@@ -61,6 +61,13 @@ public:
 	VkFence m_Fence;
 };
 
+struct VKDescriptorSetLayoutBindingIndex
+{
+	size_t m_SetIndex = 0;
+	size_t m_LayoutBindingOffset = 0;
+	size_t m_BindingCount = 0;
+};
+
 class VKRenderPassDataComponent : public RenderPassDataComponent
 {
 public:
@@ -68,7 +75,8 @@ public:
 
 	VkDescriptorPool m_DescriptorPool;
 	std::vector<VkDescriptorSetLayoutBinding> m_DescriptorSetLayoutBindings;
-	VkDescriptorSetLayout m_DescriptorSetLayout;
+	std::vector<VKDescriptorSetLayoutBindingIndex> m_DescriptorSetLayoutBindingIndices;
+	std::vector<VkDescriptorSetLayout> m_DescriptorSetLayouts;
 	std::vector<VkDescriptorSet> m_DescriptorSets;
 	std::vector<VkWriteDescriptorSet> m_WriteDescriptorSets;
 	std::vector<VkPushConstantRange> m_PushConstantRanges;
