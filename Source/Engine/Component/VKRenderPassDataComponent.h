@@ -28,6 +28,7 @@ public:
 	VkPipelineViewportStateCreateInfo m_ViewportStateCInfo = {};
 	VkPipelineRasterizationStateCreateInfo m_RasterizationStateCInfo = {};
 	VkPipelineMultisampleStateCreateInfo m_MultisampleStateCInfo = {};
+	VkPipelineDepthStencilStateCreateInfo m_DepthStencilStateCInfo = {};
 	std::vector<VkPipelineColorBlendAttachmentState> m_ColorBlendAttachmentStates = {};
 	VkPipelineColorBlendStateCreateInfo m_ColorBlendStateCInfo = {};
 	VkPipelineLayoutCreateInfo m_PipelineLayoutCInfo = {};

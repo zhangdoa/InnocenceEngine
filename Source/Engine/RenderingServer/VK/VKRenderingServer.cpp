@@ -882,6 +882,7 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 	if (l_rhs->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
 	{
 		l_result &= createRenderPass(m_device, l_rhs);
+		l_result &= createViewportAndScissor(l_rhs);
 
 		if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 		{

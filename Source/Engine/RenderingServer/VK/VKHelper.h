@@ -68,10 +68,20 @@ namespace VKHelper
 	bool reserveRenderTargets(VKRenderPassDataComponent* VKRPDC, IRenderingServer* renderingServer);
 	bool createRenderTargets(VKRenderPassDataComponent* VKRPDC, IRenderingServer* renderingServer);
 	bool createRenderPass(VkDevice device, VKRenderPassDataComponent* VKRPDC);
+	bool createViewportAndScissor(VKRenderPassDataComponent* VKRPDC);
 	bool createSingleFramebuffer(VkDevice device, VKRenderPassDataComponent* VKRPDC);
 	bool createMultipleFramebuffers(VkDevice device, VKRenderPassDataComponent* VKRPDC);
 
+	VkCompareOp GetComparisionFunctionEnum(ComparisionFunction comparisionFunction);
+	VkStencilOp GetStencilOperationEnum(StencilOperation stencilOperation);
+	VkBlendFactor GetBlendFactorEnum(BlendFactor blendFactor);
+	VkBlendOp GetBlendOperation(BlendOperation blendOperation);
+
 	bool createPipelineLayout(VkDevice device, VKRenderPassDataComponent* VKRPDC);
+	bool GenerateViewportState(ViewportDesc viewportDesc, VKPipelineStateObject* PSO);
+	bool GenerateRasterizerState(RasterizerDesc rasterizerDesc, VKPipelineStateObject* PSO);
+	bool GenerateDepthStencilState(DepthStencilDesc depthStencilDesc, VKPipelineStateObject* PSO);
+	bool GenerateBlendState(BlendDesc blendDesc, size_t RTCount, VKPipelineStateObject* PSO);
 	bool createGraphicsPipelines(VkDevice device, VKRenderPassDataComponent* VKRPDC);
 	bool createComputePipelines(VkDevice device, VKRenderPassDataComponent* VKRPDC);
 	bool createCommandBuffers(VkDevice device, VKRenderPassDataComponent* VKRPDC);

@@ -842,6 +842,11 @@ bool VKHelper::createDescriptorSetLayoutBindings(VKRenderPassDataComponent * VKR
 {
 	std::sort(VKRPDC->m_ResourceBinderLayoutDescs.begin(), VKRPDC->m_ResourceBinderLayoutDescs.end(), [&](ResourceBinderLayoutDesc A, ResourceBinderLayoutDesc B)
 	{
+		return A.m_DescriptorIndex < B.m_DescriptorIndex;
+	});
+
+	std::sort(VKRPDC->m_ResourceBinderLayoutDescs.begin(), VKRPDC->m_ResourceBinderLayoutDescs.end(), [&](ResourceBinderLayoutDesc A, ResourceBinderLayoutDesc B)
+	{
 		return A.m_DescriptorSetIndex < B.m_DescriptorSetIndex;
 	});
 
@@ -1056,13 +1061,14 @@ bool VKHelper::createRenderTargets(VKRenderPassDataComponent* VKRPDC, IRendering
 	{
 		VKRPDC->m_DepthStencilRenderTarget = renderingServer->AddTextureDataComponent((std::string(VKRPDC->m_ComponentName.c_str()) + "_DS/").c_str());
 		VKRPDC->m_DepthStencilRenderTarget->m_textureDataDesc = VKRPDC->m_RenderPassDesc.m_RenderTargetDesc;
-		VKRPDC->m_DepthStencilRenderTarget->m_textureDataDesc.UsageType = TextureUsageType::DepthAttachment;
 		if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
 		{
+			VKRPDC->m_DepthStencilRenderTarget->m_textureDataDesc.UsageType = TextureUsageType::DepthStencilAttachment;
 			VKRPDC->m_DepthStencilRenderTarget->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
 		}
 		else
 		{
+			VKRPDC->m_DepthStencilRenderTarget->m_textureDataDesc.UsageType = TextureUsageType::DepthAttachment;
 			VKRPDC->m_DepthStencilRenderTarget->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
 		}
 		VKRPDC->m_DepthStencilRenderTarget->m_textureData = { nullptr };
@@ -1175,6 +1181,24 @@ bool VKHelper::createRenderPass(VkDevice device, VKRenderPassDataComponent* VKRP
 	return true;
 }
 
+bool VKHelper::createViewportAndScissor(VKRenderPassDataComponent * VKRPDC)
+{
+	auto l_PSO = reinterpret_cast<VKPipelineStateObject*>(VKRPDC->m_PipelineStateObject);
+
+	l_PSO->m_Viewport.width = VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width;
+	l_PSO->m_Viewport.height = VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height;
+	l_PSO->m_Viewport.maxDepth = VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_MaxDepth;
+	l_PSO->m_Viewport.minDepth = VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_MinDepth;
+	l_PSO->m_Viewport.x = VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_OriginX;
+	l_PSO->m_Viewport.y = VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_OriginY;
+
+	l_PSO->m_Scissor.offset = { 0, 0 };
+	l_PSO->m_Scissor.extent.width = (uint32_t)l_PSO->m_Viewport.width;
+	l_PSO->m_Scissor.extent.height = (uint32_t)l_PSO->m_Viewport.height;
+
+	return true;
+}
+
 bool VKHelper::createSingleFramebuffer(VkDevice device, VKRenderPassDataComponent* VKRPDC)
 {
 	// create frame buffer and attach image view
@@ -1241,15 +1265,129 @@ bool VKHelper::createMultipleFramebuffers(VkDevice device, VKRenderPassDataCompo
 	return true;
 }
 
+VkCompareOp VKHelper::GetComparisionFunctionEnum(ComparisionFunction comparisionFunction)
+{
+	VkCompareOp l_result;
+
+	switch (comparisionFunction)
+	{
+	case ComparisionFunction::Never: l_result = VkCompareOp::VK_COMPARE_OP_NEVER;
+		break;
+	case ComparisionFunction::Less: l_result = VkCompareOp::VK_COMPARE_OP_LESS;
+		break;
+	case ComparisionFunction::Equal: l_result = VkCompareOp::VK_COMPARE_OP_EQUAL;
+		break;
+	case ComparisionFunction::LessEqual: l_result = VkCompareOp::VK_COMPARE_OP_LESS_OR_EQUAL;
+		break;
+	case ComparisionFunction::Greater: l_result = VkCompareOp::VK_COMPARE_OP_GREATER;
+		break;
+	case ComparisionFunction::NotEqual: l_result = VkCompareOp::VK_COMPARE_OP_NOT_EQUAL;
+		break;
+	case ComparisionFunction::GreaterEqual: l_result = VkCompareOp::VK_COMPARE_OP_GREATER_OR_EQUAL;
+		break;
+	case ComparisionFunction::Always: l_result = VkCompareOp::VK_COMPARE_OP_ALWAYS;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+VkStencilOp VKHelper::GetStencilOperationEnum(StencilOperation stencilOperation)
+{
+	VkStencilOp l_result;
+
+	switch (stencilOperation)
+	{
+	case StencilOperation::Keep: l_result = VkStencilOp::VK_STENCIL_OP_KEEP;
+		break;
+	case StencilOperation::Zero: l_result = VkStencilOp::VK_STENCIL_OP_ZERO;
+		break;
+	case StencilOperation::Replace: l_result = VkStencilOp::VK_STENCIL_OP_REPLACE;
+		break;
+	case StencilOperation::IncreaseSat: l_result = VkStencilOp::VK_STENCIL_OP_INCREMENT_AND_WRAP;
+		break;
+	case StencilOperation::DecreaseSat: l_result = VkStencilOp::VK_STENCIL_OP_DECREMENT_AND_WRAP;
+		break;
+	case StencilOperation::Invert: l_result = VkStencilOp::VK_STENCIL_OP_INVERT;
+		break;
+	case StencilOperation::Increase: l_result = VkStencilOp::VK_STENCIL_OP_INCREMENT_AND_CLAMP;
+		break;
+	case StencilOperation::Decrease: l_result = VkStencilOp::VK_STENCIL_OP_DECREMENT_AND_CLAMP;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+VkBlendFactor VKHelper::GetBlendFactorEnum(BlendFactor blendFactor)
+{
+	VkBlendFactor l_result;
+
+	switch (blendFactor)
+	{
+	case BlendFactor::Zero: l_result = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
+		break;
+	case BlendFactor::One: l_result = VkBlendFactor::VK_BLEND_FACTOR_ONE;
+		break;
+	case BlendFactor::SrcColor: l_result = VkBlendFactor::VK_BLEND_FACTOR_SRC_COLOR;
+		break;
+	case BlendFactor::OneMinusSrcColor: l_result = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+		break;
+	case BlendFactor::SrcAlpha: l_result = VkBlendFactor::VK_BLEND_FACTOR_SRC_ALPHA;
+		break;
+	case BlendFactor::OneMinusSrcAlpha: l_result = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		break;
+	case BlendFactor::DestColor: l_result = VkBlendFactor::VK_BLEND_FACTOR_DST_COLOR;
+		break;
+	case BlendFactor::OneMinusDestColor: l_result = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+		break;
+	case BlendFactor::DestAlpha: l_result = VkBlendFactor::VK_BLEND_FACTOR_DST_ALPHA;
+		break;
+	case BlendFactor::OneMinusDestAlpha: l_result = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+		break;
+	case BlendFactor::Src1Color: l_result = VkBlendFactor::VK_BLEND_FACTOR_SRC1_COLOR;
+		break;
+	case BlendFactor::OneMinusSrc1Color: l_result = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
+		break;
+	case BlendFactor::Src1Alpha: l_result = VkBlendFactor::VK_BLEND_FACTOR_SRC1_ALPHA;
+		break;
+	case BlendFactor::OneMinusSrc1Alpha: l_result = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+VkBlendOp VKHelper::GetBlendOperation(BlendOperation blendOperation)
+{
+	VkBlendOp l_result;
+
+	switch (blendOperation)
+	{
+	case BlendOperation::Add: l_result = VkBlendOp::VK_BLEND_OP_ADD;
+		break;
+	case BlendOperation::Substruct: l_result = VkBlendOp::VK_BLEND_OP_SUBTRACT;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
 bool VKHelper::createPipelineLayout(VkDevice device, VKRenderPassDataComponent* VKRPDC)
 {
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject*>(VKRPDC->m_PipelineStateObject);
 
-	l_PSO->m_InputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-
 	l_PSO->m_PipelineLayoutCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	l_PSO->m_PipelineLayoutCInfo.setLayoutCount = static_cast<uint32_t>(VKRPDC->m_DescriptorSetLayouts.size());
-	l_PSO->m_PipelineLayoutCInfo.pSetLayouts = VKRPDC->m_DescriptorSetLayouts.data();
+	l_PSO->m_PipelineLayoutCInfo.pSetLayouts = &VKRPDC->m_DescriptorSetLayouts[0];
 
 	if (VKRPDC->m_PushConstantRanges.size() > 0)
 	{
@@ -1267,21 +1405,163 @@ bool VKHelper::createPipelineLayout(VkDevice device, VKRenderPassDataComponent* 
 	return true;
 }
 
+bool VKHelper::GenerateViewportState(ViewportDesc viewportDesc, VKPipelineStateObject * PSO)
+{
+	PSO->m_ViewportStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	PSO->m_ViewportStateCInfo.viewportCount = 1;
+	PSO->m_ViewportStateCInfo.pViewports = &PSO->m_Viewport;
+	PSO->m_ViewportStateCInfo.scissorCount = 1;
+	PSO->m_ViewportStateCInfo.pScissors = &PSO->m_Scissor;
+
+	return true;
+}
+
+bool VKHelper::GenerateRasterizerState(RasterizerDesc rasterizerDesc, VKPipelineStateObject * PSO)
+{
+	PSO->m_InputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+
+	switch (rasterizerDesc.m_PrimitiveTopology)
+	{
+	case PrimitiveTopology::Point:
+		PSO->m_InputAssemblyStateCInfo.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+		break;
+	case PrimitiveTopology::Line:
+		PSO->m_InputAssemblyStateCInfo.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+		break;
+	case PrimitiveTopology::TriangleList:
+		PSO->m_InputAssemblyStateCInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		break;
+	case PrimitiveTopology::TriangleStrip:
+		PSO->m_InputAssemblyStateCInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+		break;
+	case PrimitiveTopology::Patch:
+		PSO->m_InputAssemblyStateCInfo.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+		break;
+	default:
+		break;
+	}
+	PSO->m_InputAssemblyStateCInfo.primitiveRestartEnable = false;
+
+	PSO->m_RasterizationStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+
+	if (rasterizerDesc.m_UseCulling)
+	{
+		switch (rasterizerDesc.m_RasterizerCullMode)
+		{
+		case RasterizerCullMode::Back:
+			PSO->m_RasterizationStateCInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+			break;
+		case RasterizerCullMode::Front:
+			PSO->m_RasterizationStateCInfo.cullMode = VK_CULL_MODE_FRONT_BIT;
+			break;
+		default:
+			break;
+		}
+	}
+	else
+	{
+		PSO->m_RasterizationStateCInfo.cullMode = VK_CULL_MODE_NONE;
+	}
+
+	switch (rasterizerDesc.m_RasterizerFillMode)
+	{
+	case InnoType::RasterizerFillMode::Point:
+		PSO->m_RasterizationStateCInfo.polygonMode = VK_POLYGON_MODE_POINT;
+		break;
+	case InnoType::RasterizerFillMode::Wireframe:
+		PSO->m_RasterizationStateCInfo.polygonMode = VK_POLYGON_MODE_LINE;
+		break;
+	case InnoType::RasterizerFillMode::Solid:
+		PSO->m_RasterizationStateCInfo.polygonMode = VK_POLYGON_MODE_FILL;
+		break;
+	default:
+		break;
+	}
+
+	PSO->m_RasterizationStateCInfo.frontFace = (rasterizerDesc.m_RasterizerFaceWinding == RasterizerFaceWinding::CCW) ? VK_FRONT_FACE_COUNTER_CLOCKWISE : VK_FRONT_FACE_CLOCKWISE;
+	PSO->m_RasterizationStateCInfo.lineWidth = 1.0f;
+
+	PSO->m_MultisampleStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+	PSO->m_MultisampleStateCInfo.sampleShadingEnable = rasterizerDesc.m_AllowMultisample;
+	PSO->m_MultisampleStateCInfo.rasterizationSamples = rasterizerDesc.m_AllowMultisample ? VK_SAMPLE_COUNT_4_BIT : VK_SAMPLE_COUNT_1_BIT;
+
+	return true;
+}
+
+bool VKHelper::GenerateDepthStencilState(DepthStencilDesc depthStencilDesc, VKPipelineStateObject * PSO)
+{
+	PSO->m_DepthStencilStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+	PSO->m_DepthStencilStateCInfo.depthTestEnable = depthStencilDesc.m_UseDepthBuffer;
+	PSO->m_DepthStencilStateCInfo.depthWriteEnable = depthStencilDesc.m_AllowDepthWrite;
+	PSO->m_DepthStencilStateCInfo.depthCompareOp = GetComparisionFunctionEnum(depthStencilDesc.m_DepthComparisionFunction);
+	PSO->m_DepthStencilStateCInfo.depthBoundsTestEnable = VK_FALSE;
+	PSO->m_DepthStencilStateCInfo.minDepthBounds = 0.0f; // Optional
+	PSO->m_DepthStencilStateCInfo.maxDepthBounds = 1.0f; // Optional
+
+	PSO->m_DepthStencilStateCInfo.stencilTestEnable = depthStencilDesc.m_UseStencilBuffer;
+
+	PSO->m_DepthStencilStateCInfo.front.failOp = GetStencilOperationEnum(depthStencilDesc.m_FrontFaceStencilFailOperation);
+	PSO->m_DepthStencilStateCInfo.front.passOp = GetStencilOperationEnum(depthStencilDesc.m_FrontFaceStencilPassOperation);
+	PSO->m_DepthStencilStateCInfo.front.depthFailOp = GetStencilOperationEnum(depthStencilDesc.m_FrontFaceStencilPassDepthFailOperation);
+	PSO->m_DepthStencilStateCInfo.front.compareOp = GetComparisionFunctionEnum(depthStencilDesc.m_FrontFaceStencilComparisionFunction);
+	PSO->m_DepthStencilStateCInfo.front.compareMask = 0xFF;
+	PSO->m_DepthStencilStateCInfo.front.writeMask = depthStencilDesc.m_StencilWriteMask;
+	PSO->m_DepthStencilStateCInfo.front.reference = depthStencilDesc.m_StencilReference;
+
+	PSO->m_DepthStencilStateCInfo.back.failOp = GetStencilOperationEnum(depthStencilDesc.m_BackFaceStencilFailOperation);
+	PSO->m_DepthStencilStateCInfo.back.passOp = GetStencilOperationEnum(depthStencilDesc.m_BackFaceStencilPassOperation);
+	PSO->m_DepthStencilStateCInfo.back.depthFailOp = GetStencilOperationEnum(depthStencilDesc.m_BackFaceStencilPassDepthFailOperation);
+	PSO->m_DepthStencilStateCInfo.back.compareOp = GetComparisionFunctionEnum(depthStencilDesc.m_BackFaceStencilComparisionFunction);
+	PSO->m_DepthStencilStateCInfo.back.compareMask = 0xFF;
+	PSO->m_DepthStencilStateCInfo.back.writeMask = depthStencilDesc.m_StencilWriteMask;
+	PSO->m_DepthStencilStateCInfo.back.reference = depthStencilDesc.m_StencilReference;
+
+	return true;
+}
+
+bool VKHelper::GenerateBlendState(BlendDesc blendDesc, size_t RTCount, VKPipelineStateObject * PSO)
+{
+	PSO->m_ColorBlendStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+
+	VkPipelineColorBlendAttachmentState l_colorBlendAttachmentState = {};
+	l_colorBlendAttachmentState.blendEnable = blendDesc.m_UseBlend;
+	l_colorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+	l_colorBlendAttachmentState.srcColorBlendFactor = GetBlendFactorEnum(blendDesc.m_SourceRGBFactor);
+	l_colorBlendAttachmentState.srcAlphaBlendFactor = GetBlendFactorEnum(blendDesc.m_SourceAlphaFactor);
+	l_colorBlendAttachmentState.dstColorBlendFactor = GetBlendFactorEnum(blendDesc.m_DestinationRGBFactor);
+	l_colorBlendAttachmentState.dstAlphaBlendFactor = GetBlendFactorEnum(blendDesc.m_DestinationAlphaFactor);
+	l_colorBlendAttachmentState.colorBlendOp = GetBlendOperation(blendDesc.m_BlendOperation);
+	l_colorBlendAttachmentState.alphaBlendOp = GetBlendOperation(blendDesc.m_BlendOperation);
+
+	PSO->m_ColorBlendAttachmentStates.reserve(RTCount);
+
+	for (size_t i = 0; i < RTCount; i++)
+	{
+		PSO->m_ColorBlendAttachmentStates.emplace_back(l_colorBlendAttachmentState);
+	}
+
+	PSO->m_ColorBlendStateCInfo.logicOpEnable = VK_FALSE;
+	PSO->m_ColorBlendStateCInfo.logicOp = VK_LOGIC_OP_COPY;
+
+	PSO->m_ColorBlendStateCInfo.blendConstants[0] = 0.0f;
+	PSO->m_ColorBlendStateCInfo.blendConstants[1] = 0.0f;
+	PSO->m_ColorBlendStateCInfo.blendConstants[2] = 0.0f;
+	PSO->m_ColorBlendStateCInfo.blendConstants[3] = 0.0f;
+
+	PSO->m_ColorBlendStateCInfo.attachmentCount = (uint32_t)PSO->m_ColorBlendAttachmentStates.size();
+	PSO->m_ColorBlendStateCInfo.pAttachments = &PSO->m_ColorBlendAttachmentStates[0];
+
+	return true;
+}
+
 bool VKHelper::createGraphicsPipelines(VkDevice device, VKRenderPassDataComponent* VKRPDC)
 {
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject*>(VKRPDC->m_PipelineStateObject);
 
-	l_PSO->m_ViewportStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	l_PSO->m_ViewportStateCInfo.pViewports = &l_PSO->m_Viewport;
-	l_PSO->m_ViewportStateCInfo.pScissors = &l_PSO->m_Scissor;
-
-	l_PSO->m_RasterizationStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-
-	l_PSO->m_MultisampleStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-
-	l_PSO->m_ColorBlendStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-	l_PSO->m_ColorBlendStateCInfo.attachmentCount = (uint32_t)l_PSO->m_ColorBlendAttachmentStates.size();
-	l_PSO->m_ColorBlendStateCInfo.pAttachments = &l_PSO->m_ColorBlendAttachmentStates[0];
+	GenerateViewportState(VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
+	GenerateRasterizerState(VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
+	GenerateDepthStencilState(VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
+	GenerateBlendState(VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, VKRPDC->m_RenderPassDesc.m_RenderTargetCount, l_PSO);
 
 	// attach shader module and create pipeline
 	auto l_VKSPC = reinterpret_cast<VKShaderProgramComponent*>(VKRPDC->m_ShaderProgram);
@@ -1317,6 +1597,7 @@ bool VKHelper::createGraphicsPipelines(VkDevice device, VKRenderPassDataComponen
 	l_PSO->m_GraphicsPipelineCInfo.pViewportState = &l_PSO->m_ViewportStateCInfo;
 	l_PSO->m_GraphicsPipelineCInfo.pRasterizationState = &l_PSO->m_RasterizationStateCInfo;
 	l_PSO->m_GraphicsPipelineCInfo.pMultisampleState = &l_PSO->m_MultisampleStateCInfo;
+	l_PSO->m_GraphicsPipelineCInfo.pDepthStencilState = &l_PSO->m_DepthStencilStateCInfo;
 	l_PSO->m_GraphicsPipelineCInfo.pColorBlendState = &l_PSO->m_ColorBlendStateCInfo;
 	l_PSO->m_GraphicsPipelineCInfo.layout = l_PSO->m_PipelineLayout;
 	l_PSO->m_GraphicsPipelineCInfo.renderPass = l_PSO->m_RenderPass;
@@ -1325,7 +1606,7 @@ bool VKHelper::createGraphicsPipelines(VkDevice device, VKRenderPassDataComponen
 
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &l_PSO->m_GraphicsPipelineCInfo, nullptr, &l_PSO->m_Pipeline) != VK_SUCCESS)
 	{
-		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to to create VkPipeline for GraphicsPipeline!");
+		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkPipeline for GraphicsPipeline!");
 		return false;
 	}
 
