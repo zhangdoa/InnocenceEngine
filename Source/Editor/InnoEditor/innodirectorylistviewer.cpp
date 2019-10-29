@@ -1,65 +1,51 @@
-#include "innofileexplorer.h"
+#include "innodirectorylistviewer.h"
 #include <QMessageBox>
 
 #include "../../Engine/ModuleManager/IModuleManager.h"
 
 INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 
-InnoFileExplorer::InnoFileExplorer(QWidget* parent) : QListView(parent)
+InnoDirectoryListViewer::InnoDirectoryListViewer(QWidget* parent) : QListView(parent)
+{
+    this->setAcceptDrops(true);
+    this->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    m_fileModel = new QFileSystemModel(this);
+    m_fileModel->setFilter(QDir::Files | QDir::AllDirs | QDir::NoDotAndDotDot);
+
+    this->setModel(m_fileModel);
+
+    connect(this, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(InteractiveWithFile(QModelIndex)));
+    connect(this, SIGNAL(clicked(QModelIndex)), this, SLOT(OpenFileMenu(QModelIndex)));
+}
+
+void InnoDirectoryListViewer::Initialize()
 {
 }
 
-void InnoFileExplorer::initialize()
+QString InnoDirectoryListViewer::GetRootPath()
 {
-	this->setAcceptDrops(true);
-	this->setEditTriggers(QAbstractItemView::NoEditTriggers);
-
-	m_fileModel = new QFileSystemModel(this);
-
-	m_fileModel->setFilter(QDir::Files | QDir::AllDirs | QDir::NoDotAndDotDot);
-
-	this->setModel(m_fileModel);
-
-	connect(this, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(DoubleClick(QModelIndex)));
-
-	auto l_workingDir = g_pModuleManager->getFileSystem()->getWorkingDirectory();
-	l_workingDir += "Res//";
-	m_rootDir = l_workingDir.c_str();
-
-	SetRootDirectory(m_rootDir.toStdString());
+    return m_fileModel->filePath(rootIndex());
 }
 
-void InnoFileExplorer::SetRootPath(QString path)
+void InnoDirectoryListViewer::SetRootPath(QString path)
 {
 	this->setRootIndex(m_fileModel->setRootPath(path));
+    m_rootDir = path;
 }
 
-QString InnoFileExplorer::GetFilePath(QModelIndex index)
+QString InnoDirectoryListViewer::GetFilePath(QModelIndex index)
 {
 	return m_fileModel->filePath(index);
 }
 
-void InnoFileExplorer::SetRootDirectory(const std::string &directory)
-{
-	QString root = QString::fromStdString(directory);
-	m_fileModel->setRootPath(root);
-	this->setModel(m_fileModel);
-	QModelIndex index = m_fileModel->index(root);
-	this->setRootIndex(index);
-}
-
-QString InnoFileExplorer::GetRootPath()
-{
-	return m_fileModel->filePath(rootIndex());
-}
-
-QString InnoFileExplorer::GetSelectionPath()
+QString InnoDirectoryListViewer::GetSelectionPath()
 {
 	auto indices = this->selectedIndexes();
 	return indices.size() != 0 ? m_fileModel->filePath(indices[0]) : "";
 }
 
-void InnoFileExplorer::DoubleClick(QModelIndex index)
+void InnoDirectoryListViewer::InteractiveWithFile(QModelIndex index)
 {
 	auto l_fileInfo = m_fileModel->fileInfo(index);
 
@@ -123,10 +109,14 @@ void InnoFileExplorer::DoubleClick(QModelIndex index)
 		default:
 			break;
 		}
-	}
+    }
 }
 
-void InnoFileExplorer::SaveScene()
+void InnoDirectoryListViewer::OpenFileMenu(QModelIndex index)
 {
-	g_pModuleManager->getFileSystem()->saveScene();
+}
+
+void InnoDirectoryListViewer::SaveScene()
+{
+    g_pModuleManager->getFileSystem()->saveScene();
 }

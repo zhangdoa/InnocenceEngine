@@ -24,13 +24,14 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++17
 
 SOURCES += \
+    innodirectorylistviewer.cpp \
+    innodirectorytreeviewer.cpp \
+    innodirectoryviewer.cpp \
     lightcomponentpropertyeditor.cpp \
         main.cpp \
         mainwindow.cpp \
     innoviewport.cpp \
     innoconsole.cpp \
-    innodirectoryexplorer.cpp \
-    innofileexplorer.cpp \
     innoworldexplorer.cpp \
     innorenderconfigurator.cpp \
     innopropertyeditor.cpp \
@@ -42,12 +43,13 @@ SOURCES += \
 
 
 HEADERS += \
+    innodirectorylistviewer.h \
+    innodirectorytreeviewer.h \
+    innodirectoryviewer.h \
     lightcomponentpropertyeditor.h \
         mainwindow.h \
     innoviewport.h \
     innoconsole.h \
-    innodirectoryexplorer.h \
-    innofileexplorer.h \
     innoworldexplorer.h \
     innorenderconfigurator.h \
     innopropertyeditor.h \

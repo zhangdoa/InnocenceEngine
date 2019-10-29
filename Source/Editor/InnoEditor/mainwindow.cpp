@@ -21,6 +21,5 @@ void MainWindow::initializeEngine()
 	ui->widgetPropertyEditor->initialize();
 
 	ui->treeWidgetInnoWorldExplorer->initialize(ui->widgetPropertyEditor);
-	ui->listViewInnoFileExplorer->initialize();
-	ui->treeViewInnoDirExplorer->initialize(ui->listViewInnoFileExplorer);
+    ui->directoryViewer->Initialize();
 }

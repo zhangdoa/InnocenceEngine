@@ -10,6 +10,10 @@ void VisibleComponentPropertyEditor::initialize()
     m_MDCEditor = new MaterialDataComponentPropertyEditor();
     m_MDCEditor->initialize();
 
+    m_dirViewer = new InnoDirectoryViewer();
+    m_dirViewer->Initialize();
+    m_dirViewer->hide();
+
     m_gridLayout = new QGridLayout();
     m_gridLayout->setMargin(4);
 
@@ -18,6 +22,12 @@ void VisibleComponentPropertyEditor::initialize()
                 "background-repeat: no-repeat;"
                 "background-position: left;"
                 );
+
+    m_modelNameLabel = new QLabel("ModelName");
+
+    m_chooseModelButton = new QPushButton();
+    m_chooseModelButton->setText("Choose model");
+    connect(m_chooseModelButton, SIGNAL(clicked(bool)), this, SLOT(ChooseModel()));
 
     m_modelListLabel = new QLabel("ModelList");
 
@@ -45,6 +55,12 @@ void VisibleComponentPropertyEditor::initialize()
     m_gridLayout->addWidget(m_title, row, 0, 1, 7);
     row++;
 
+    m_gridLayout->addWidget(m_modelNameLabel, row, 0, 1, 7);
+    row++;
+
+    m_gridLayout->addWidget(m_chooseModelButton, row, 0, 1, 7);
+    row++;
+
     m_gridLayout->addWidget(m_modelListLabel, row, 0, 1, 7);
     row++;
 
@@ -65,7 +81,9 @@ void VisibleComponentPropertyEditor::edit(void *component)
 {
     m_component = reinterpret_cast<VisibleComponent*>(component);
 
-    GetModel();
+    m_modelNameLabel->setText(m_component->m_modelFileName.c_str());
+
+    GetModelMap();
 
     this->show();
 }
@@ -84,7 +102,12 @@ void VisibleComponentPropertyEditor::tableItemClicked(int row, int column)
     }
 }
 
-void VisibleComponentPropertyEditor::GetModel()
+void VisibleComponentPropertyEditor::ChooseModel()
+{
+    m_dirViewer->show();
+}
+
+void VisibleComponentPropertyEditor::GetModelMap()
 {
     if (!m_component)
         return;

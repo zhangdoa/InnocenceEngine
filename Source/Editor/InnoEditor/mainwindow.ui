@@ -279,9 +279,6 @@
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
-          <property name="handleWidth">
-           <number>5</number>
-          </property>
           <widget class="QWidget" name="widgetUpperLeft" native="true">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
@@ -1447,189 +1444,27 @@
                <attribute name="title">
                 <string>Assets</string>
                </attribute>
-               <layout class="QHBoxLayout" name="horizontalLayout_4">
-                <property name="spacing">
-                 <number>0</number>
+               <widget class="QWidget" name="horizontalLayoutWidget">
+                <property name="geometry">
+                 <rect>
+                  <x>10</x>
+                  <y>5</y>
+                  <width>1621</width>
+                  <height>211</height>
+                 </rect>
                 </property>
-                <property name="leftMargin">
-                 <number>0</number>
-                </property>
-                <property name="topMargin">
-                 <number>0</number>
-                </property>
-                <property name="rightMargin">
-                 <number>0</number>
-                </property>
-                <property name="bottomMargin">
-                 <number>0</number>
-                </property>
-                <item>
-                 <layout class="QHBoxLayout" name="layoutTabProject">
-                  <property name="spacing">
-                   <number>0</number>
-                  </property>
-                  <item>
-                   <layout class="QGridLayout" name="tabProjectGridLayout">
-                    <property name="spacing">
-                     <number>0</number>
-                    </property>
-                    <item row="1" column="0">
-                     <layout class="QHBoxLayout" name="tabProjectLayout">
-                      <property name="spacing">
-                       <number>0</number>
-                      </property>
-                      <property name="topMargin">
-                       <number>0</number>
-                      </property>
-                      <item>
-                       <widget class="QSplitter" name="splitterLevel4">
-                        <property name="sizePolicy">
-                         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                          <horstretch>1</horstretch>
-                          <verstretch>0</verstretch>
-                         </sizepolicy>
-                        </property>
-                        <property name="contextMenuPolicy">
-                         <enum>Qt::DefaultContextMenu</enum>
-                        </property>
-                        <property name="frameShape">
-                         <enum>QFrame::NoFrame</enum>
-                        </property>
-                        <property name="orientation">
-                         <enum>Qt::Horizontal</enum>
-                        </property>
-                        <property name="handleWidth">
-                         <number>5</number>
-                        </property>
-                        <property name="dragEnabled" stdset="0">
-                         <bool>true</bool>
-                        </property>
-                        <property name="isWrapping" stdset="0">
-                         <bool>true</bool>
-                        </property>
-                        <property name="uniformItemSizes" stdset="0">
-                         <bool>true</bool>
-                        </property>
-                        <property name="batchSize" stdset="0">
-                         <number>100</number>
-                        </property>
-                        <property name="selectionRectVisible" stdset="0">
-                         <bool>false</bool>
-                        </property>
-                        <widget class="InnoDirectoryExplorer" name="treeViewInnoDirExplorer">
-                         <property name="sizePolicy">
-                          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                           <horstretch>0</horstretch>
-                           <verstretch>0</verstretch>
-                          </sizepolicy>
-                         </property>
-                         <property name="maximumSize">
-                          <size>
-                           <width>200</width>
-                           <height>16777215</height>
-                          </size>
-                         </property>
-                         <property name="editTriggers">
-                          <set>QAbstractItemView::NoEditTriggers</set>
-                         </property>
-                         <property name="animated">
-                          <bool>true</bool>
-                         </property>
-                         <property name="headerHidden">
-                          <bool>true</bool>
-                         </property>
-                         <attribute name="headerDefaultSectionSize">
-                          <number>300</number>
-                         </attribute>
-                        </widget>
-                        <widget class="InnoFileExplorer" name="listViewInnoFileExplorer">
-                         <property name="sizePolicy">
-                          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-                           <horstretch>0</horstretch>
-                           <verstretch>0</verstretch>
-                          </sizepolicy>
-                         </property>
-                         <property name="editTriggers">
-                          <set>QAbstractItemView::DoubleClicked</set>
-                         </property>
-                         <property name="isWrapping" stdset="0">
-                          <bool>true</bool>
-                         </property>
-                         <property name="resizeMode">
-                          <enum>QListView::Adjust</enum>
-                         </property>
-                         <property name="viewMode">
-                          <enum>QListView::IconMode</enum>
-                         </property>
-                         <property name="uniformItemSizes">
-                          <bool>true</bool>
-                         </property>
-                         <property name="selectionRectVisible">
-                          <bool>false</bool>
-                         </property>
-                        </widget>
-                       </widget>
-                      </item>
-                     </layout>
-                    </item>
-                    <item row="0" column="0">
-                     <widget class="QWidget" name="tabProjectToolbar" native="true">
-                      <property name="sizePolicy">
-                       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                        <horstretch>0</horstretch>
-                        <verstretch>0</verstretch>
-                       </sizepolicy>
-                      </property>
-                      <layout class="QHBoxLayout" name="horizontalLayout_8">
-                       <property name="spacing">
-                        <number>0</number>
-                       </property>
-                       <property name="leftMargin">
-                        <number>0</number>
-                       </property>
-                       <property name="topMargin">
-                        <number>0</number>
-                       </property>
-                       <property name="rightMargin">
-                        <number>0</number>
-                       </property>
-                       <property name="bottomMargin">
-                        <number>0</number>
-                       </property>
-                       <item>
-                        <widget class="QPushButton" name="buttonProjectImport">
-                         <property name="sizePolicy">
-                          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                           <horstretch>0</horstretch>
-                           <verstretch>0</verstretch>
-                          </sizepolicy>
-                         </property>
-                         <property name="text">
-                          <string>Import</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item>
-                        <spacer name="horizontalSpacer_6">
-                         <property name="orientation">
-                          <enum>Qt::Horizontal</enum>
-                         </property>
-                         <property name="sizeHint" stdset="0">
-                          <size>
-                           <width>37</width>
-                           <height>25</height>
-                          </size>
-                         </property>
-                        </spacer>
-                       </item>
-                      </layout>
-                     </widget>
-                    </item>
-                   </layout>
-                  </item>
-                 </layout>
-                </item>
-               </layout>
+                <layout class="QHBoxLayout" name="horizontalLayout">
+                 <property name="spacing">
+                  <number>0</number>
+                 </property>
+                 <property name="sizeConstraint">
+                  <enum>QLayout::SetMaximumSize</enum>
+                 </property>
+                 <item>
+                  <widget class="InnoDirectoryViewer" name="directoryViewer" native="true"/>
+                 </item>
+                </layout>
+               </widget>
               </widget>
               <widget class="QWidget" name="tabConsole">
                <property name="minimumSize">
@@ -2305,22 +2140,6 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>InnoDirectoryExplorer</class>
-   <extends>QTreeView</extends>
-   <header>innodirectoryexplorer.h</header>
-   <slots>
-    <slot>UpdateFileExplorer(QModelIndex)</slot>
-   </slots>
-  </customwidget>
-  <customwidget>
-   <class>InnoFileExplorer</class>
-   <extends>QListView</extends>
-   <header>innofileexplorer.h</header>
-   <slots>
-    <slot>SaveScene()</slot>
-   </slots>
-  </customwidget>
-  <customwidget>
    <class>InnoRenderConfigurator</class>
    <extends>QComboBox</extends>
    <header>innorenderconfigurator.h</header>
@@ -2331,40 +2150,13 @@
    <header>innopropertyeditor.h</header>
    <container>1</container>
   </customwidget>
+  <customwidget>
+   <class>InnoDirectoryViewer</class>
+   <extends>QWidget</extends>
+   <header>innodirectoryviewer.h</header>
+   <container>1</container>
+  </customwidget>
  </customwidgets>
  <resources/>
- <connections>
-  <connection>
-   <sender>treeViewInnoDirExplorer</sender>
-   <signal>clicked(QModelIndex)</signal>
-   <receiver>treeViewInnoDirExplorer</receiver>
-   <slot>UpdateFileExplorer(QModelIndex)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>205</x>
-     <y>742</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>205</x>
-     <y>742</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>actionSave_Scene</sender>
-   <signal>triggered()</signal>
-   <receiver>listViewInnoFileExplorer</receiver>
-   <slot>SaveScene()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>647</x>
-     <y>646</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>
