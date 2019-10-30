@@ -101,6 +101,7 @@ namespace VKRenderingServerNS
 
 	VkDescriptorPool m_materialDescriptorPool;
 	VkDescriptorSetLayout m_materialDescriptorLayout;
+	VkDescriptorSetLayout m_dummyEmptyDescriptorLayout;
 
 	VkDeviceMemory m_vertexBufferMemory;
 	VkDeviceMemory m_indexBufferMemory;
@@ -144,6 +145,7 @@ std::vector<const char*> VKRenderingServerNS::getRequiredExtensions()
 	if (m_enableValidationLayers)
 	{
 		extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+		extensions.emplace_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 	}
 
 	return extensions;
@@ -422,6 +424,13 @@ bool VKRenderingServerNS::createMaterialDescriptorPool()
 	}
 
 	InnoLogger::Log(LogLevel::Success, "VKRenderingServer: VkDescriptorSetLayout for material has been created.");
+
+	if (!createDescriptorSetLayout(m_device, nullptr, 0, m_dummyEmptyDescriptorLayout))
+	{
+		m_ObjectStatus = ObjectStatus::Suspended;
+		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create DummyEmptyDescriptorLayout!");
+		return false;
+	}
 
 	return true;
 }
@@ -896,15 +905,23 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 
 	l_result &= createDescriptorSetLayoutBindings(l_rhs);
 
-	l_rhs->m_DescriptorSetLayouts.resize(l_rhs->m_DescriptorSetLayoutBindingIndices.size());
+	auto l_descriptorLayoutsSize = l_rhs->m_DescriptorSetLayoutBindingIndices.size();
+	auto l_maximumSetIndex = l_rhs->m_DescriptorSetLayoutBindingIndices[l_descriptorLayoutsSize - 1].m_SetIndex;
 
-	for (size_t i = 0; i < l_rhs->m_DescriptorSetLayoutBindingIndices.size(); i++)
+	l_rhs->m_DescriptorSetLayouts.resize(l_maximumSetIndex + 1);
+
+	for (size_t i = 0; i < l_maximumSetIndex; i++)
+	{
+		l_rhs->m_DescriptorSetLayouts[i] = m_dummyEmptyDescriptorLayout;
+	}
+
+	for (size_t i = 0; i < l_descriptorLayoutsSize; i++)
 	{
 		auto l_descriptorSetLayoutBindingIndex = l_rhs->m_DescriptorSetLayoutBindingIndices[i];
 		l_result &= createDescriptorSetLayout(m_device,
 			&l_rhs->m_DescriptorSetLayoutBindings[l_descriptorSetLayoutBindingIndex.m_LayoutBindingOffset],
 			static_cast<uint32_t>(l_descriptorSetLayoutBindingIndex.m_BindingCount),
-			l_rhs->m_DescriptorSetLayouts[i]);
+			l_rhs->m_DescriptorSetLayouts[l_descriptorSetLayoutBindingIndex.m_SetIndex]);
 	}
 
 	l_result &= createPipelineLayout(m_device, l_rhs);
