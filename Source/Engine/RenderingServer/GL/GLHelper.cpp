@@ -5,9 +5,10 @@
 
 extern IModuleManager* g_pModuleManager;
 
+//#define INNO_COMPILE_GLSL_ONTHEFLY
 namespace GLHelper
 {
-#ifdef _DEBUG
+#ifdef INNO_COMPILE_GLSL_ONTHEFLY
 	const char* m_shaderRelativePath = "Res//Shaders//GL//";
 #else
 	const char* m_shaderRelativePath = "Res//Shaders//SPIRV//";
@@ -780,7 +781,7 @@ bool GLHelper::GenerateViewportState(ViewportDesc viewportDesc, GLPipelineStateO
 	return true;
 }
 
-bool GLHelper::AddShaderHandle(GLuint & shaderProgram, GLuint & shaderID, GLuint shaderStage, const ShaderFilePath & shaderFilePath)
+bool GLHelper::AddShaderObject(GLuint & shaderID, GLuint shaderStage, const ShaderFilePath & shaderFilePath)
 {
 	// Create shader object
 	shaderID = glCreateShader(shaderStage);
@@ -793,7 +794,7 @@ bool GLHelper::AddShaderHandle(GLuint & shaderProgram, GLuint & shaderID, GLuint
 		return false;
 	}
 
-#ifdef _DEBUG
+#ifdef INNO_COMPILE_GLSL_ONTHEFLY
 	std::function<std::string(const std::string&)> l_loadShaderFile = [&](const std::string & path) -> std::string
 	{
 		auto f_findIncludeFilePath = [](const std::string & content) {
@@ -874,6 +875,11 @@ bool GLHelper::AddShaderHandle(GLuint & shaderProgram, GLuint & shaderID, GLuint
 		return false;
 	}
 
+	const char* l_glslVerChar = "#version 460\n";
+	auto l_glslVerPos = l_shaderCodeContent.find(l_glslVerChar);
+
+	l_shaderCodeContent.insert(l_glslVerPos + strlen(l_glslVerChar), "#extension GL_KHR_vulkan_glsl : enable\n");
+
 	const char* l_sourcePointer = l_shaderCodeContent.c_str();
 
 	glShaderSource(shaderID, 1, &l_sourcePointer, NULL);
@@ -925,31 +931,38 @@ bool GLHelper::AddShaderHandle(GLuint & shaderProgram, GLuint & shaderID, GLuint
 
 	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: ", shaderFilePath.c_str(), " has been compiled.");
 
+	return true;
+}
+
+bool GLHelper::LinkProgramObject(GLuint & shaderProgram)
+{
+	GLint l_validationResult = GL_FALSE;
+	GLint l_infoLogLength = 0;
+
 	// Link shader to program
-	glAttachShader(shaderProgram, shaderID);
 	glLinkProgram(shaderProgram);
 	glValidateProgram(shaderProgram);
 
 	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &l_validationResult);
 	if (!l_validationResult)
 	{
-		InnoLogger::Log(LogLevel::Error, "GLRenderingServer: ", shaderFilePath.c_str(), " link failed!");
+		InnoLogger::Log(LogLevel::Error, "GLRenderingServer: ", shaderProgram, " link failed!");
 		glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &l_infoLogLength);
 
 		if (l_infoLogLength > 0) {
 			std::vector<char> l_shaderErrorMessage(l_infoLogLength + 1);
 			glGetProgramInfoLog(shaderProgram, l_infoLogLength, NULL, &l_shaderErrorMessage[0]);
-			InnoLogger::Log(LogLevel::Error, "GLRenderingServer: ", shaderFilePath.c_str(), " link error: ", &l_shaderErrorMessage[0], "\n -- --------------------------------------------------- -- ");
+			InnoLogger::Log(LogLevel::Error, "GLRenderingServer: ", shaderProgram, " link error: ", &l_shaderErrorMessage[0], "\n -- --------------------------------------------------- -- ");
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Error, "GLRenderingServer: ", shaderFilePath.c_str(), " link error: no info log provided!");
+			InnoLogger::Log(LogLevel::Error, "GLRenderingServer: ", shaderProgram, " link error: no info log provided!");
 		}
 
 		return false;
 	}
 
-	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: ", shaderFilePath.c_str(), " has been linked.");
+	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: ", shaderProgram, " has been linked.");
 
 	return true;
 }

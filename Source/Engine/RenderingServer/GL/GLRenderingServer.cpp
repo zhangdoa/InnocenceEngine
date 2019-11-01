@@ -552,28 +552,36 @@ bool GLRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent 
 
 	if (l_rhs->m_ShaderFilePaths.m_VSPath != "")
 	{
-		AddShaderHandle(l_rhs->m_ProgramID, l_rhs->m_VSID, GL_VERTEX_SHADER, l_rhs->m_ShaderFilePaths.m_VSPath);
+		AddShaderObject(l_rhs->m_VSID, GL_VERTEX_SHADER, l_rhs->m_ShaderFilePaths.m_VSPath);
+		glAttachShader(l_rhs->m_ProgramID, l_rhs->m_VSID);
 	}
 	if (l_rhs->m_ShaderFilePaths.m_HSPath != "")
 	{
-		AddShaderHandle(l_rhs->m_ProgramID, l_rhs->m_TCSID, GL_TESS_CONTROL_SHADER, l_rhs->m_ShaderFilePaths.m_HSPath);
+		AddShaderObject(l_rhs->m_TCSID, GL_TESS_CONTROL_SHADER, l_rhs->m_ShaderFilePaths.m_HSPath);
+		glAttachShader(l_rhs->m_ProgramID, l_rhs->m_TCSID);
 	}
 	if (l_rhs->m_ShaderFilePaths.m_DSPath != "")
 	{
-		AddShaderHandle(l_rhs->m_ProgramID, l_rhs->m_TESID, GL_TESS_EVALUATION_SHADER, l_rhs->m_ShaderFilePaths.m_DSPath);
+		AddShaderObject(l_rhs->m_TESID, GL_TESS_EVALUATION_SHADER, l_rhs->m_ShaderFilePaths.m_DSPath);
+		glAttachShader(l_rhs->m_ProgramID, l_rhs->m_TESID);
 	}
 	if (l_rhs->m_ShaderFilePaths.m_GSPath != "")
 	{
-		AddShaderHandle(l_rhs->m_ProgramID, l_rhs->m_GSID, GL_GEOMETRY_SHADER, l_rhs->m_ShaderFilePaths.m_GSPath);
+		AddShaderObject(l_rhs->m_GSID, GL_GEOMETRY_SHADER, l_rhs->m_ShaderFilePaths.m_GSPath);
+		glAttachShader(l_rhs->m_ProgramID, l_rhs->m_GSID);
 	}
 	if (l_rhs->m_ShaderFilePaths.m_PSPath != "")
 	{
-		AddShaderHandle(l_rhs->m_ProgramID, l_rhs->m_FSID, GL_FRAGMENT_SHADER, l_rhs->m_ShaderFilePaths.m_PSPath);
+		AddShaderObject(l_rhs->m_FSID, GL_FRAGMENT_SHADER, l_rhs->m_ShaderFilePaths.m_PSPath);
+		glAttachShader(l_rhs->m_ProgramID, l_rhs->m_FSID);
 	}
 	if (l_rhs->m_ShaderFilePaths.m_CSPath != "")
 	{
-		AddShaderHandle(l_rhs->m_ProgramID, l_rhs->m_CSID, GL_COMPUTE_SHADER, l_rhs->m_ShaderFilePaths.m_CSPath);
+		AddShaderObject(l_rhs->m_CSID, GL_COMPUTE_SHADER, l_rhs->m_ShaderFilePaths.m_CSPath);
+		glAttachShader(l_rhs->m_ProgramID, l_rhs->m_CSID);
 	}
+
+	LinkProgramObject(l_rhs->m_ProgramID);
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
@@ -900,7 +908,10 @@ bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderP
 		switch (l_resourceBinder->m_ResourceBinderType)
 		{
 		case ResourceBinderType::Sampler:
-			//glBindSampler((uint32_t)localSlot, l_resourceBinder->m_SO);
+			for (size_t i = 0; i < 16; i++)
+			{
+				glBindSampler((GLuint)i, l_resourceBinder->m_SO);
+			}
 			break;
 		case ResourceBinderType::Image:
 			if (accessibility == Accessibility::ReadOnly)
