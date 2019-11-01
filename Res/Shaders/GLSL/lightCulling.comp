@@ -4,25 +4,26 @@
 
 layout(local_size_x = BLOCK_SIZE, local_size_y = BLOCK_SIZE, local_size_z = 1) in;
 
-layout(std430, binding = 0) coherent buffer gridFrustumsSSBOBlock
+layout(std430, set = 2, binding = 0) coherent buffer gridFrustumsSSBOBlock
 {
 	Frustum data[];
 } gridFrustumsSSBO;
 
-layout(std430, binding = 1) buffer lightListIndexCounterSSBOBlock
+layout(std430, set = 2, binding = 1) buffer lightListIndexCounterSSBOBlock
 {
 	uint data;
 } lightListIndexCounterSSBO;
 
-layout(std430, binding = 2) coherent buffer lightIndexListSSBOBlock
+layout(std430, set = 2, binding = 2) coherent buffer lightIndexListSSBOBlock
 {
 	uint data[];
 } lightIndexListSSBO;
 
-layout(binding = 3, rg32ui) uniform writeonly uimage2D uni_lightGrid;
-layout(binding = 4, rgba16f) uniform writeonly image2D uni_debugTexture;
+layout(set = 3, binding = 3, rg32ui) uniform writeonly uimage2D uni_lightGrid;
+layout(set = 3, binding = 4, rgba16f) uniform writeonly image2D uni_debugTexture;
 
-layout(binding = 0) uniform sampler2D depthTexture;
+layout(set = 3, binding = 0) uniform texture2D depthTexture;
+layout(set = 4, binding = 0) uniform sampler samplerLinear;
 
 shared uint l_uMinDepth;
 shared uint l_uMaxDepth;
@@ -49,7 +50,6 @@ void AppendLight(uint lightIndex)
 	{
 		l_LightList[index] = lightIndex;
 	}
-	
 }
 
 void main()
@@ -57,7 +57,7 @@ void main()
 	// Calculate min & max depth in threadgroup / tile.
 	vec2 readTextureCoord = vec2(gl_GlobalInvocationID.xy) / skyUBO.viewportSize.xy;
 
-	float fDepth = texture(depthTexture, readTextureCoord).r;
+	float fDepth = texture(sampler2D(depthTexture, samplerLinear), readTextureCoord).r;
 	fDepth = fDepth * 2.0 - 1.0;
 	uint uDepth = floatBitsToUint(fDepth);
 

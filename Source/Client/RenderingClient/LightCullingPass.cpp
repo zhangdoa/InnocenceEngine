@@ -149,7 +149,7 @@ bool LightCullingPass::Setup()
 	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 7;
 
 	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
 	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 8;
 
 	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
@@ -170,19 +170,19 @@ bool LightCullingPass::Setup()
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 4;
 
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 7;
 
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 0;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 8;
 
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 4;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 2;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[4].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 0;
@@ -190,31 +190,31 @@ bool LightCullingPass::Setup()
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[5].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[5].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 5;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 2;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 1;
 
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 6;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 2;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 2;
 
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_ResourceBinderType = ResourceBinderType::Image;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_DescriptorSetIndex = 7;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_DescriptorSetIndex = 3;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_DescriptorIndex = 3;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_IndirectBinding = true;
 
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[8].m_ResourceBinderType = ResourceBinderType::Image;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[8].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[8].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[8].m_DescriptorSetIndex = 8;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[8].m_DescriptorSetIndex = 3;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[8].m_DescriptorIndex = 4;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[8].m_IndirectBinding = true;
 
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_ResourceBinderType = ResourceBinderType::Image;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_DescriptorSetIndex = 9;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_DescriptorSetIndex = 3;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_DescriptorIndex = 0;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_IndirectBinding = true;
 
@@ -296,6 +296,7 @@ bool LightCullingPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_debugTDC->m_ResourceBinder, 8, 4, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, OpaquePass::GetRPDC()->m_DepthStencilRenderTarget->m_ResourceBinder, 9, 0, Accessibility::ReadOnly);
 
+	// @TODO: Buggy on OpenGL + Nvidia
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_RPDC_LightCulling, m_lightCullingNumThreadGroups.x, m_lightCullingNumThreadGroups.y, m_lightCullingNumThreadGroups.z);
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_tileFrustumGBDC->m_ResourceBinder, 4, 0, Accessibility::ReadWrite, 0);

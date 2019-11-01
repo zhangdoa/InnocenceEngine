@@ -803,6 +803,7 @@ bool GIResolvePass::generateIrradianceVolume()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, m_probeVolume->m_ResourceBinder, 3, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, m_irradianceVolume->m_ResourceBinder, 4, 0, Accessibility::ReadWrite);
 
+	// @TODO: Buggy on OpenGL + Nvidia
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_irradianceVolumeRPDC, 8, 4, 8);
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, m_probeVolume->m_ResourceBinder, 3, 0, Accessibility::ReadOnly);

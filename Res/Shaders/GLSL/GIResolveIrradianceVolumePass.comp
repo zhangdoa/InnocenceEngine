@@ -1,0 +1,57 @@
+#version 450
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+
+struct DispatchParam
+{
+    uvec4 numThreadGroups;
+    uvec4 numThreads;
+};
+
+layout(set = 0, binding = 8, std140) uniform dispatchParamsCBuffer
+{
+    DispatchParam dispatchParams[8];
+} _26;
+
+layout(set = 0, binding = 7, std140) uniform skyCBuffer
+{
+    layout(row_major) mat4 sky_p_inv;
+    layout(row_major) mat4 sky_v_inv;
+    vec4 sky_viewportSize;
+    vec4 sky_posWSNormalizer;
+    vec4 sky_padding[6];
+} _71;
+
+layout(set = 0, binding = 11, std140) uniform GISkyCBuffer
+{
+    layout(row_major) mat4 GISky_p_inv;
+    layout(row_major) mat4 GISky_v_inv[6];
+    vec4 GISky_probeCount;
+    vec4 GISky_probeInterval;
+    vec4 GISky_workload;
+    vec4 GISky_irradianceVolumeOffset;
+} _97;
+
+layout(set = 0, binding = 0) uniform texture3D in_probeVolume;
+layout(set = 0, binding = 0) uniform sampler SampleTypePoint;
+layout(set = 0, binding = 0, rgba32f) uniform writeonly image3D out_irradianceVolume;
+
+void main()
+{
+    if (((gl_GlobalInvocationID.x < _26.dispatchParams[5].numThreads.x) && (gl_GlobalInvocationID.y < _26.dispatchParams[5].numThreads.y)) && (gl_GlobalInvocationID.z < _26.dispatchParams[5].numThreads.z))
+    {
+        vec3 _374 = (((((vec3(gl_GlobalInvocationID) / vec3(_26.dispatchParams[5].numThreads.xyz)) * _71.sky_posWSNormalizer.xyz) + ((_71.sky_posWSNormalizer.xyz / vec3(_26.dispatchParams[5].numThreads.xyz)) * vec3(0.5))) + _97.GISky_irradianceVolumeOffset.xyz) - vec3(_97.GISky_probeCount.w, _97.GISky_probeInterval.w, _97.GISky_irradianceVolumeOffset.w)) / (_97.GISky_probeInterval.xyz * (_97.GISky_probeCount.xyz - vec3(1.0)));
+        vec4 _298[6];
+        for (uint _458 = 0u; _458 < 6u; )
+        {
+            vec3 _452 = _374;
+            _452.z = (_374.z + float(_458)) * 0.16666667163372039794921875;
+            vec4 _410 = textureLod(sampler3D(in_probeVolume, SampleTypePoint), _452, 0.0);
+            _298[_458] = vec4(_410.x, _410.y, _410.z, _298[_458].w);
+            _298[_458].w = 1.0;
+            imageStore(out_irradianceVolume, ivec3(uvec3(vec3(gl_GlobalInvocationID) + vec3(0.0, 0.0, float(_458) * float(_26.dispatchParams[5].numThreads.z)))), _298[_458]);
+            _458++;
+            continue;
+        }
+    }
+}
+

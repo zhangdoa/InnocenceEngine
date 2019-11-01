@@ -10,7 +10,7 @@ layout(location = 0) out vec2 thefrag_TexCoord;
 
 void main()
 {
-	vec4 posWS = vec4(billboardUBO.data[gl_InstanceID].m[3][0], billboardUBO.data[gl_InstanceID].m[3][1], billboardUBO.data[gl_InstanceID].m[3][2], 1.0f);
+	vec4 posWS = vec4(billboardUBO.data[gl_InstanceIndex].m[3][0], billboardUBO.data[gl_InstanceIndex].m[3][1], billboardUBO.data[gl_InstanceIndex].m[3][2], 1.0f);
 	float distance = length(posWS - cameraUBO.globalPos);
 	gl_Position = cameraUBO.p_original * cameraUBO.r * cameraUBO.t *  posWS;
 	gl_Position /= gl_Position.w;

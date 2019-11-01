@@ -26,6 +26,6 @@ layout(location = 0) out VS_OUT
 
 void main()
 {
-	vs_out.materialID = debugMeshSSBO.data[gl_InstanceID].materialID;
-	gl_Position = cameraUBO.p_original * cameraUBO.r * cameraUBO.t * debugMeshSSBO.data[gl_InstanceID].m * inPosition;
+	vs_out.materialID = debugMeshSSBO.data[gl_InstanceIndex].materialID;
+	gl_Position = cameraUBO.p_original * cameraUBO.r * cameraUBO.t * debugMeshSSBO.data[gl_InstanceIndex].m * inPosition;
 }

@@ -9,7 +9,7 @@ extern IModuleManager* g_pModuleManager;
 namespace GLHelper
 {
 #ifdef INNO_COMPILE_GLSL_ONTHEFLY
-	const char* m_shaderRelativePath = "Res//Shaders//GL//";
+	const char* m_shaderRelativePath = "Res//Shaders//GLSL//";
 #else
 	const char* m_shaderRelativePath = "Res//Shaders//SPIRV//";
 #endif

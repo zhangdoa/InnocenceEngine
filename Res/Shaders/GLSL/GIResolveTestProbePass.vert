@@ -7,7 +7,7 @@ struct ProbeMeshData
     vec4 padding[3];
 };
 
-struct cameraData
+struct CameraData
 {
     mat4 p_original;
     mat4 p_jittered;
@@ -22,14 +22,14 @@ struct cameraData
     float padding[6];
 };
 
-layout(binding = 0, std430) readonly buffer probeMeshSBuffer
+layout(set = 0, binding = 0, std430) readonly buffer probeMeshSBuffer
 {
     layout(row_major) ProbeMeshData _data[];
 } probeMeshSBuffer_1;
 
-layout(binding = 0, std140) uniform cameraCBuffer
+layout(set = 0, binding = 0, std140) uniform cameraCBuffer
 {
-    layout(row_major) cameraData cameraCBuffer;
+    layout(row_major) CameraData cameraCBuffer;
 } _58;
 
 layout(location = 0) in vec4 input_position;
@@ -37,17 +37,16 @@ layout(location = 1) in vec2 input_texcoord;
 layout(location = 2) in vec2 input_pada;
 layout(location = 3) in vec4 input_normal;
 layout(location = 4) in vec4 input_padb;
-uniform int SPIRV_Cross_BaseInstance;
 layout(location = 0) out vec4 _entryPointOutput_posWS;
 layout(location = 1) out vec4 _entryPointOutput_probeIndex;
 layout(location = 2) out vec4 _entryPointOutput_normal;
 
 void main()
 {
-    vec4 _200 = probeMeshSBuffer_1._data[uint((gl_InstanceID + SPIRV_Cross_BaseInstance))].m * input_position;
-    gl_Position = _58.cameraCBuffer.p_original * (_58.cameraCBuffer.r * (_58.cameraCBuffer.t * _200));
-    _entryPointOutput_posWS = _200;
-    _entryPointOutput_probeIndex = probeMeshSBuffer_1._data[uint((gl_InstanceID + SPIRV_Cross_BaseInstance))].index;
+    vec4 _208 = probeMeshSBuffer_1._data[uint(gl_InstanceIndex)].m * input_position;
+    gl_Position = _58.cameraCBuffer.p_original * (_58.cameraCBuffer.r * (_58.cameraCBuffer.t * _208));
+    _entryPointOutput_posWS = _208;
+    _entryPointOutput_probeIndex = probeMeshSBuffer_1._data[uint(gl_InstanceIndex)].index;
     _entryPointOutput_normal = input_normal;
 }
 
