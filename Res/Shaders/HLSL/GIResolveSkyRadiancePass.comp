@@ -2,27 +2,25 @@
 #include "common/common.hlsl"
 #include "common/skyResolver.hlsl"
 
-struct PixelInputType
+struct ComputeInputType
 {
-	float4 posCS : SV_POSITION;
-	uint rtvId : SV_RenderTargetArrayIndex;
+	uint3 groupID : SV_GroupID;           // 3D index of the thread group in the dispatch.
+	uint3 groupThreadID : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
+	uint3 dispatchThreadID : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
+	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
-struct PixelOutputType
+RWTexture3D<float4> out_skyRadiance : register(u0);
+
+[numthreads(8, 8, 8)]
+void main(ComputeInputType input)
 {
-	float4 skyPassRT0 : SV_Target0;
-};
-
-PixelOutputType main(PixelInputType input)
-{
-	PixelOutputType output;
-
-	float3 color = float3(0.0, 0.0, 0.0);
-
-	float3 eyedir = get_world_normal(input.posCS.xy, sky_viewportSize.zw, GISky_p_inv, GISky_v_inv[input.rtvId]);
-
-	if (eyedir.y > -0.1)
+	if (input.dispatchThreadID.z < 6)
 	{
+		float3 eyedir = float3(input.dispatchThreadID + float3(1.0, 1.0, 1.0)) / float3(8.0, 8.0, 6.0);
+
+		float3 color = float3(0.0, 0.0, 0.0);
+
 		float3 lightdir = -sun_dir.xyz;
 		float planetRadius = 6371e3;
 		float atmosphereHeight = 100e3;
@@ -41,9 +39,7 @@ PixelOutputType main(PixelInputType input)
 			1.3e3,                          // Mie scale height
 			0.758                           // Mie preferred scattering direction
 		);
+
+		out_skyRadiance[input.dispatchThreadID] = float4(color, 1.0);
 	}
-
-	output.skyPassRT0 = float4(color, 1.0);
-
-	return output;
 }

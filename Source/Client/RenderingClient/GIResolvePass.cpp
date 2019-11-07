@@ -19,16 +19,17 @@ namespace GIResolvePass
 	bool setupIrradianceVolume();
 
 	bool generateSkyRadiance();
+	bool generateSkyIrradiance();
 	bool litSurfels();
 	bool litBricks();
 	bool litProbes();
 	bool generateIrradianceVolume();
 
-	RenderPassDataComponent* m_skyRPDC;
-	ShaderProgramComponent* m_skySPC;
+	RenderPassDataComponent* m_skyRadianceRPDC;
+	ShaderProgramComponent* m_skyRadianceSPC;
 
-	RenderPassDataComponent* m_skyConvRPDC;
-	ShaderProgramComponent* m_skyConvSPC;
+	RenderPassDataComponent* m_skyIrradianceRPDC;
+	ShaderProgramComponent* m_skyIrradianceSPC;
 
 	RenderPassDataComponent* m_surfelRPDC = 0;
 	ShaderProgramComponent* m_surfelSPC = 0;
@@ -43,7 +44,8 @@ namespace GIResolvePass
 	ShaderProgramComponent* m_irradianceVolumeSPC = 0;
 	SamplerDataComponent* m_irradianceVolumeSDC = 0;
 
-	GPUBufferDataComponent* m_skyConvGBDC = 0;
+	TextureDataComponent* m_skyRadianceVolume = 0;
+	GPUBufferDataComponent* m_skyIrradianceGBDC = 0;
 
 	GPUBufferDataComponent* m_surfelGBDC = 0;
 	GPUBufferDataComponent* m_surfelIrradianceGBDC = 0;
@@ -54,7 +56,6 @@ namespace GIResolvePass
 	TextureDataComponent* m_probeVolume = 0;
 	TextureDataComponent* m_irradianceVolume = 0;
 
-	const uint32_t m_skyCubemapSize = 32;
 	Vec4 m_minProbePos;
 	Vec4 m_irradianceVolumePosOffset;
 	Vec4 m_irradianceVolumeRange;
@@ -331,8 +332,11 @@ bool GIResolvePass::Setup()
 
 bool GIResolvePass::Initialize()
 {
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_skySPC);
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_skyRPDC);
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_skyRadianceSPC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_skyRadianceRPDC);
+
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_skyIrradianceSPC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_skyIrradianceRPDC);
 
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_surfelSPC);
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_surfelRPDC);
@@ -352,54 +356,78 @@ bool GIResolvePass::Initialize()
 
 bool GIResolvePass::setupSky()
 {
-	m_skySPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIResolveSkyPass/");
-
-	m_skySPC->m_ShaderFilePaths.m_VSPath = "GIResolveSkyPass.vert/";
-	m_skySPC->m_ShaderFilePaths.m_GSPath = "GIResolveSkyPass.geom/";
-	m_skySPC->m_ShaderFilePaths.m_PSPath = "GIResolveSkyPass.frag/";
-
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+	l_RenderPassDesc.m_RenderTargetCount = 0;
+	l_RenderPassDesc.m_RenderPassUsageType = RenderPassUsageType::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
 
-	m_skyRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIResolveSkyPass/");
+	m_skyRadianceSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIResolveSkyRadiancePass/");
+	m_skyRadianceSPC->m_ShaderFilePaths.m_CSPath = "GIResolveSkyRadiancePass.comp/";
 
-	m_skyRPDC->m_RenderPassDesc = l_RenderPassDesc;
+	m_skyRadianceRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIResolveSkyRadiancePass/");
 
-	m_skyRPDC->m_RenderPassDesc.m_RenderTargetDesc.SamplerType = TextureSamplerType::SamplerCubemap;
-	m_skyRPDC->m_RenderPassDesc.m_RenderTargetDesc.Width = m_skyCubemapSize;
-	m_skyRPDC->m_RenderPassDesc.m_RenderTargetDesc.Height = m_skyCubemapSize;
+	m_skyRadianceRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_skyRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
-	m_skyRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
-	m_skyRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
-	m_skyRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = m_skyCubemapSize;
-	m_skyRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = m_skyCubemapSize;
+	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs.resize(2);
+	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 3;
 
-	m_skyRPDC->m_ResourceBinderLayoutDescs.resize(4);
-	m_skyRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_skyRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_skyRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 10;
+	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Image;
+	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 0;
+	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[1].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
 
-	m_skyRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_skyRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
-	m_skyRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 3;
-
-	m_skyRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_skyRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
-	m_skyRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 7;
-
-	m_skyRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_skyRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
-	m_skyRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 11;
-
-	m_skyRPDC->m_ShaderProgram = m_skySPC;
+	m_skyRadianceRPDC->m_ShaderProgram = m_skyRadianceSPC;
 
 	////
-	m_skyConvGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("SkyConvGPUBuffer/");
-	m_skyConvGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
-	m_skyConvGBDC->m_ElementCount = 6;
-	m_skyConvGBDC->m_ElementSize = sizeof(Vec4);
-	m_skyConvGBDC->m_BindingPoint = 4;
+	m_skyIrradianceSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIResolveSkyIrradiancePass/");
+	m_skyIrradianceSPC->m_ShaderFilePaths.m_CSPath = "GIResolveSkyIrradiancePass.comp/";
+
+	m_skyIrradianceRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIResolveSkyIrradiancePass/");
+
+	m_skyIrradianceRPDC->m_RenderPassDesc = l_RenderPassDesc;
+
+	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs.resize(2);
+	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
+	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
+	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
+
+	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
+	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[1].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
+
+	m_skyIrradianceRPDC->m_ShaderProgram = m_skyIrradianceSPC;
+
+	////
+	m_skyRadianceVolume = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("SkyRadianceVolume/");
+	m_skyRadianceVolume->m_textureDataDesc = l_RenderPassDesc.m_RenderTargetDesc;
+
+	m_skyRadianceVolume->m_textureDataDesc.Width = 8;
+	m_skyRadianceVolume->m_textureDataDesc.Height = 8;
+	m_skyRadianceVolume->m_textureDataDesc.DepthOrArraySize = 6;
+	m_skyRadianceVolume->m_textureDataDesc.UsageType = TextureUsageType::RawImage;
+	m_skyRadianceVolume->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler3D;
+	m_skyRadianceVolume->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
+	m_skyRadianceVolume->m_textureDataDesc.MinFilterMethod = TextureFilterMethod::Linear;
+	m_skyRadianceVolume->m_textureDataDesc.MagFilterMethod = TextureFilterMethod::Linear;
+
+	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_skyRadianceVolume);
+
+	m_skyIrradianceGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("SkyIrradianceGPUBuffer/");
+	m_skyIrradianceGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
+	m_skyIrradianceGBDC->m_ElementCount = 6;
+	m_skyIrradianceGBDC->m_ElementSize = sizeof(Vec4);
+	m_skyIrradianceGBDC->m_BindingPoint = 4;
+
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_skyIrradianceGBDC);
 
 	return true;
 }
@@ -623,24 +651,38 @@ bool GIResolvePass::setupIrradianceVolume()
 bool GIResolvePass::generateSkyRadiance()
 {
 	auto l_SunGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sun);
-	auto l_SkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sky);
-	auto l_GICameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GICamera);
-	auto l_GISkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GISky);
 
-	g_pModuleManager->getRenderingServer()->CommandListBegin(m_skyRPDC, 0);
-	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_skyRPDC);
-	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_skyRPDC);
+	g_pModuleManager->getRenderingServer()->CommandListBegin(m_skyRadianceRPDC, 0);
+	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_skyRadianceRPDC);
+	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_skyRadianceRPDC);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyRPDC, ShaderStage::Geometry, l_GICameraGBDC->m_ResourceBinder, 0, 10, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyRPDC, ShaderStage::Pixel, l_SunGBDC->m_ResourceBinder, 1, 3, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyRPDC, ShaderStage::Pixel, l_SkyGBDC->m_ResourceBinder, 2, 7, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyRPDC, ShaderStage::Pixel, l_GISkyGBDC->m_ResourceBinder, 3, 11, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyRadianceRPDC, ShaderStage::Compute, l_SunGBDC->m_ResourceBinder, 0, 3, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyRadianceRPDC, ShaderStage::Compute, m_skyRadianceVolume->m_ResourceBinder, 1, 0, Accessibility::ReadWrite);
 
-	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Cube);
+	g_pModuleManager->getRenderingServer()->DispatchCompute(m_skyRadianceRPDC, 1, 1, 1);
 
-	g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_skyRPDC, l_mesh);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_skyRadianceRPDC, ShaderStage::Compute, m_skyRadianceVolume->m_ResourceBinder, 1, 0, Accessibility::ReadWrite);
 
-	g_pModuleManager->getRenderingServer()->CommandListEnd(m_skyRPDC);
+	g_pModuleManager->getRenderingServer()->CommandListEnd(m_skyRadianceRPDC);
+
+	return true;
+}
+
+bool GIResolvePass::generateSkyIrradiance()
+{
+	g_pModuleManager->getRenderingServer()->CommandListBegin(m_skyIrradianceRPDC, 0);
+	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_skyIrradianceRPDC);
+	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_skyIrradianceRPDC);
+
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyIrradianceRPDC, ShaderStage::Compute, m_skyRadianceVolume->m_ResourceBinder, 0, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyIrradianceRPDC, ShaderStage::Compute, m_skyIrradianceGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
+
+	g_pModuleManager->getRenderingServer()->DispatchCompute(m_skyIrradianceRPDC, 1, 1, 1);
+
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_skyIrradianceRPDC, ShaderStage::Compute, m_skyRadianceVolume->m_ResourceBinder, 0, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_skyIrradianceRPDC, ShaderStage::Compute, m_skyIrradianceGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
+
+	g_pModuleManager->getRenderingServer()->CommandListEnd(m_skyIrradianceRPDC);
 
 	return true;
 }
@@ -827,42 +869,13 @@ bool GIResolvePass::PrepareCommandList()
 	if (m_GIDataLoaded)
 	{
 		auto l_SkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sky);
-		auto l_GICameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GICamera);
 		auto l_GISkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GISky);
 		auto l_cameraGPUData = g_pModuleManager->getRenderingFrontend()->getCameraGPUData();
 
 		SkyGPUData l_SkyGPUData = g_pModuleManager->getRenderingFrontend()->getSkyGPUData();
-
-		// GI sky small cubemap
-		l_SkyGPUData.viewportSize.z = (float)m_skyCubemapSize;
-		l_SkyGPUData.viewportSize.w = (float)m_skyCubemapSize;
 		l_SkyGPUData.posWSNormalizer = m_irradianceVolumeRange;
 
-		GICameraGPUData l_GICameraGPUData;
 		GISkyGPUData l_GISkyGPUData;
-
-		l_GICameraGPUData.p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, l_cameraGPUData.zNear, l_cameraGPUData.zFar);
-		l_GISkyGPUData.p_inv = l_GICameraGPUData.p.inverse();
-
-		auto l_rPX = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(1.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
-		auto l_rNX = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(-1.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
-		auto l_rPY = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, 1.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 0.0f));
-		auto l_rNY = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 0.0f));
-		auto l_rPZ = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
-		auto l_rNZ = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, -1.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
-
-		std::vector<Mat4> l_v =
-		{
-			l_rPX, l_rNX, l_rPY, l_rNY, l_rPZ, l_rNZ
-		};
-
-		for (size_t i = 0; i < 6; i++)
-		{
-			l_GICameraGPUData.r[i] = l_v[i];
-			l_GISkyGPUData.v_inv[i] = l_v[i].inverse();
-		}
-
-		l_GICameraGPUData.t = InnoMath::generateIdentityMatrix<float>();
 
 		auto l_probeInfo = GIDataLoader::GetProbeInfo();
 		l_GISkyGPUData.probeCount = l_probeInfo.probeCount;
@@ -876,10 +889,10 @@ bool GIResolvePass::PrepareCommandList()
 		l_GISkyGPUData.irradianceVolumeOffset.w = m_minProbePos.z;
 
 		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_SkyGBDC, &l_SkyGPUData);
-		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GICameraGBDC, &l_GICameraGPUData);
 		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GISkyGBDC, &l_GISkyGPUData);
 
 		generateSkyRadiance();
+		generateSkyIrradiance();
 		litSurfels();
 		litBricks();
 		litProbes();
@@ -893,9 +906,13 @@ bool GIResolvePass::ExecuteCommandList()
 {
 	if (m_GIDataLoaded)
 	{
-		g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_skyRPDC);
+		g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_skyRadianceRPDC);
 
-		g_pModuleManager->getRenderingServer()->WaitForFrame(m_skyRPDC);
+		g_pModuleManager->getRenderingServer()->WaitForFrame(m_skyRadianceRPDC);
+
+		g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_skyIrradianceRPDC);
+
+		g_pModuleManager->getRenderingServer()->WaitForFrame(m_skyIrradianceRPDC);
 
 		g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_surfelRPDC);
 
@@ -919,7 +936,8 @@ bool GIResolvePass::ExecuteCommandList()
 
 bool GIResolvePass::Terminate()
 {
-	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_skyRPDC);
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_skyRadianceRPDC);
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_skyIrradianceRPDC);
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_surfelRPDC);
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_brickRPDC);
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_probeRPDC);
