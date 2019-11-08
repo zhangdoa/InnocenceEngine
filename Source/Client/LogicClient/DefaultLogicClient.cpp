@@ -92,8 +92,8 @@ bool PlayerComponentCollection::setup()
 
 		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_MOUSE_BUTTON_RIGHT, true }, ButtonEvent{ EventLifeTime::Continuous, &f_allowMove });
 		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_MOUSE_BUTTON_RIGHT, false }, ButtonEvent{ EventLifeTime::Continuous, &f_forbidMove });
-		g_pModuleManager->getEventSystem()->addMouseMovementCallback(0, &f_rotateAroundPositiveYAxis);
-		g_pModuleManager->getEventSystem()->addMouseMovementCallback(1, &f_rotateAroundRightAxis);
+		g_pModuleManager->getEventSystem()->addMouseMovementCallback(MouseMovementAxis::Horizontal, MouseMovementEvent{ EventLifeTime::OneShot, &f_rotateAroundPositiveYAxis });
+		g_pModuleManager->getEventSystem()->addMouseMovementCallback(MouseMovementAxis::Vertical, MouseMovementEvent{ EventLifeTime::OneShot,&f_rotateAroundRightAxis });
 
 		m_initialMoveSpeed = 0.5f;
 		m_moveSpeed = m_initialMoveSpeed;
@@ -190,6 +190,8 @@ namespace GameClientNS
 	void updateSpheres();
 
 	void runTest(uint32_t testTime, std::function<bool()> testCase);
+
+	Vec4 getMousePositionInWorldSpace();
 
 	std::function<void()> f_sceneLoadingFinishCallback;
 	std::function<void()> f_testFunc;
@@ -637,6 +639,57 @@ void GameClientNS::runTest(uint32_t testTime, std::function<bool()> testCase)
 		}
 	}
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "Finished test for ", testTime, " times.");
+}
+
+Vec4 GameClientNS::getMousePositionInWorldSpace()
+{
+	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+	auto l_mousePositionSS = g_pModuleManager->getEventSystem()->getMousePosition();
+
+	auto l_x = 2.0f * l_mousePositionSS.x / l_screenResolution.x - 1.0f;
+	auto l_y = 1.0f - 2.0f * l_mousePositionSS.y / l_screenResolution.y;
+	auto l_z = -1.0f;
+	auto l_w = 1.0f;
+	Vec4 l_ndcSpace = Vec4(l_x, l_y, l_z, l_w);
+
+	auto l_mainCamera = GetComponentManager(CameraComponent)->GetMainCamera();
+	if (l_mainCamera == nullptr)
+	{
+		return Vec4();
+	}
+	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_ParentEntity);
+	if (l_cameraTransformComponent == nullptr)
+	{
+		return Vec4();
+	}
+	auto pCamera = l_mainCamera->m_projectionMatrix;
+	auto rCamera =
+		InnoMath::getInvertRotationMatrix(
+			l_cameraTransformComponent->m_globalTransformVector.m_rot
+		);
+	auto tCamera =
+		InnoMath::getInvertTranslationMatrix(
+			l_cameraTransformComponent->m_globalTransformVector.m_pos
+		);
+	//Column-Major memory layout
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+	l_ndcSpace = InnoMath::mul(l_ndcSpace, pCamera.inverse());
+	l_ndcSpace.z = -1.0f;
+	l_ndcSpace.w = 0.0f;
+	l_ndcSpace = InnoMath::mul(l_ndcSpace, rCamera.inverse());
+	l_ndcSpace = InnoMath::mul(l_ndcSpace, tCamera.inverse());
+#endif
+	//Row-Major memory layout
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+
+	l_ndcSpace = InnoMath::mul(pCamera.inverse(), l_ndcSpace);
+	l_ndcSpace.z = -1.0f;
+	l_ndcSpace.w = 0.0f;
+	l_ndcSpace = InnoMath::mul(tCamera.inverse(), l_ndcSpace);
+	l_ndcSpace = InnoMath::mul(rCamera.inverse(), l_ndcSpace);
+#endif
+	l_ndcSpace = l_ndcSpace.normalize();
+	return l_ndcSpace;
 }
 
 void PlayerComponentCollection::update(float seed)

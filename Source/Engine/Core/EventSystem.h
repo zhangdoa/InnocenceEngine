@@ -14,15 +14,14 @@ public:
 	InputConfig getInputConfig() override;
 
 	void addButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent) override;
-	void addMouseMovementCallback(int32_t mouseCode, std::function<void(float)>* mouseMovementCallback) override;
+	void addMouseMovementCallback(MouseMovementAxis mouseMovementAxis, MouseMovementEvent mouseMovementEvent) override;
 
-	void buttonStatusCallback(ButtonState buttonState) override;
-	void framebufferSizeCallback(int32_t width, int32_t height) override;
-	void mousePositionCallback(float mouseXPos, float mouseYPos) override;
+	void buttonStateCallback(ButtonState buttonState) override;
+	void windowSizeCallback(int32_t width, int32_t height) override;
+	void mouseMovementCallback(float mouseXPos, float mouseYPos) override;
 	void scrollCallback(float xoffset, float yoffset) override;
 
-	Vec4 getMousePositionInWorldSpace() override;
-	Vec2 getMousePositionInScreenSpace() override;
+	Vec2 getMousePosition() override;
 
 	ObjectStatus getStatus() override;
 };

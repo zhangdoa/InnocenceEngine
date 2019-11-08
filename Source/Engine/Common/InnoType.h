@@ -126,21 +126,6 @@ struct ButtonStateHasher
 	}
 };
 
-enum class EventLifeTime { OneShot, Continuous };
-
-struct ButtonEvent
-{
-	EventLifeTime m_eventLifeTime = EventLifeTime::OneShot;
-	void* m_eventHandle = 0;
-
-	bool operator==(const ButtonEvent &other) const
-	{
-		return (m_eventLifeTime == other.m_eventLifeTime
-			&& m_eventHandle == other.m_eventHandle
-			);
-	}
-};
-
 #define INNO_KEY_SPACE              32
 #define INNO_KEY_APOSTROPHE         39  /* ' */
 #define INNO_KEY_COMMA              44  /* , */

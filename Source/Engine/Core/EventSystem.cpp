@@ -1,14 +1,12 @@
 #include "EventSystem.h"
 #include "../Common/CommonMacro.inl"
-#include "../ComponentManager/ITransformComponentManager.h"
-#include "../ComponentManager/ICameraComponentManager.h"
-#include "../Core/InnoLogger.h"
+#include "InnoLogger.h"
 
 #include "../ModuleManager/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
 
 using ButtonEventMap = std::unordered_multimap<ButtonState, ButtonEvent, ButtonStateHasher>;
-using MouseMovementEventMap = std::unordered_map<int32_t, std::set<std::function<void(float)>*>>;
+using MouseMovementEventMap = std::unordered_map<MouseMovementAxis, std::set<MouseMovementEvent>>;
 
 namespace InnoEventSystemNS
 {
@@ -18,14 +16,13 @@ namespace InnoEventSystemNS
 	bool terminate();
 
 	bool addButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent);
-	bool addMouseMovementCallback(int32_t mouseCode, std::function<void(float)>* mouseMovementCallback);
+	bool addMouseMovementCallback(MouseMovementAxis mouseMovementAxis, MouseMovementEvent mouseMovementEvent);
 
-	Vec4 getMousePositionInWorldSpace();
-	Vec2 getMousePositionInScreenSpace();
+	Vec2 getMousePosition();
 
-	void buttonStatusCallback(ButtonState buttonState);
-	void framebufferSizeCallback(int32_t width, int32_t height);
-	void mousePositionCallback(float mouseXPos, float mouseYPos);
+	void buttonStateCallback(ButtonState buttonState);
+	void windowSizeCallback(int32_t width, int32_t height);
+	void mouseMovementCallback(float mouseXPos, float mouseYPos);
 	void scrollCallback(float xoffset, float yoffset);
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
@@ -75,23 +72,23 @@ bool InnoEventSystemNS::update()
 
 		for (auto& i : l_buttonStates)
 		{
-			buttonStatusCallback(i);
+			buttonStateCallback(i);
 		}
 
 		if (m_mouseMovementEvents.size() != 0)
 		{
 			if (m_mouseXOffset != 0)
 			{
-				for (auto& j : m_mouseMovementEvents.find(0)->second)
+				for (auto& j : m_mouseMovementEvents.find(MouseMovementAxis::Horizontal)->second)
 				{
-					(*j)(m_mouseXOffset);
+					(*j.m_eventHandle)(m_mouseXOffset);
 				};
 			}
 			if (m_mouseYOffset != 0)
 			{
-				for (auto& j : m_mouseMovementEvents.find(1)->second)
+				for (auto& j : m_mouseMovementEvents.find(MouseMovementAxis::Vertical)->second)
 				{
-					(*j)(m_mouseYOffset);
+					(*j.m_eventHandle)(m_mouseYOffset);
 				};
 			}
 			if (m_mouseXOffset != 0 || m_mouseYOffset != 0)
@@ -129,77 +126,27 @@ bool InnoEventSystemNS::addButtonStateCallback(ButtonState buttonState, ButtonEv
 	return true;
 }
 
-bool InnoEventSystemNS::addMouseMovementCallback(int32_t mouseCode, std::function<void(float)>* mouseMovementCallback)
+bool InnoEventSystemNS::addMouseMovementCallback(MouseMovementAxis mouseMovementAxis, MouseMovementEvent mouseMovementEvent)
 {
-	auto l_result = m_mouseMovementEvents.find(mouseCode);
+	auto l_result = m_mouseMovementEvents.find(mouseMovementAxis);
 	if (l_result != m_mouseMovementEvents.end())
 	{
-		l_result->second.emplace(mouseMovementCallback);
+		l_result->second.emplace(mouseMovementEvent);
 	}
 	else
 	{
-		m_mouseMovementEvents.emplace(mouseCode, std::set<std::function<void(float)>*>{mouseMovementCallback});
+		m_mouseMovementEvents.emplace(mouseMovementAxis, std::set<MouseMovementEvent>{ mouseMovementEvent });
 	}
 
 	return true;
 }
 
-Vec4 InnoEventSystemNS::getMousePositionInWorldSpace()
-{
-	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
-
-	auto l_x = 2.0f * m_mouseLastX / l_screenResolution.x - 1.0f;
-	auto l_y = 1.0f - 2.0f * m_mouseLastY / l_screenResolution.y;
-	auto l_z = -1.0f;
-	auto l_w = 1.0f;
-	Vec4 l_ndcSpace = Vec4(l_x, l_y, l_z, l_w);
-
-	auto l_mainCamera = GetComponentManager(CameraComponent)->GetMainCamera();
-	if (l_mainCamera == nullptr)
-	{
-		return Vec4();
-	}
-	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_ParentEntity);
-	if (l_cameraTransformComponent == nullptr)
-	{
-		return Vec4();
-	}
-	auto pCamera = l_mainCamera->m_projectionMatrix;
-	auto rCamera =
-		InnoMath::getInvertRotationMatrix(
-			l_cameraTransformComponent->m_globalTransformVector.m_rot
-		);
-	auto tCamera =
-		InnoMath::getInvertTranslationMatrix(
-			l_cameraTransformComponent->m_globalTransformVector.m_pos
-		);
-	//Column-Major memory layout
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-	l_ndcSpace = InnoMath::mul(l_ndcSpace, pCamera.inverse());
-	l_ndcSpace.z = -1.0f;
-	l_ndcSpace.w = 0.0f;
-	l_ndcSpace = InnoMath::mul(l_ndcSpace, rCamera.inverse());
-	l_ndcSpace = InnoMath::mul(l_ndcSpace, tCamera.inverse());
-#endif
-	//Row-Major memory layout
-#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-
-	l_ndcSpace = InnoMath::mul(pCamera.inverse(), l_ndcSpace);
-	l_ndcSpace.z = -1.0f;
-	l_ndcSpace.w = 0.0f;
-	l_ndcSpace = InnoMath::mul(tCamera.inverse(), l_ndcSpace);
-	l_ndcSpace = InnoMath::mul(rCamera.inverse(), l_ndcSpace);
-#endif
-	l_ndcSpace = l_ndcSpace.normalize();
-	return l_ndcSpace;
-}
-
-Vec2 InnoEventSystemNS::getMousePositionInScreenSpace()
+Vec2 InnoEventSystemNS::getMousePosition()
 {
 	return Vec2(m_mouseLastX, m_mouseLastY);
 }
 
-void InnoEventSystemNS::buttonStatusCallback(ButtonState buttonState)
+void InnoEventSystemNS::buttonStateCallback(ButtonState buttonState)
 {
 	auto l_buttonEvents = m_buttonEvents.equal_range(buttonState);
 	auto l_resultCount = std::distance(l_buttonEvents.first, l_buttonEvents.second);
@@ -232,14 +179,14 @@ void InnoEventSystemNS::buttonStatusCallback(ButtonState buttonState)
 	}
 }
 
-void InnoEventSystemNS::framebufferSizeCallback(int32_t width, int32_t height)
+void InnoEventSystemNS::windowSizeCallback(int32_t width, int32_t height)
 {
 	TVec2<uint32_t> l_newScreenResolution = TVec2<uint32_t>(width, height);
 	g_pModuleManager->getRenderingFrontend()->setScreenResolution(l_newScreenResolution);
 	g_pModuleManager->getRenderingServer()->Resize();
 }
 
-void InnoEventSystemNS::mousePositionCallback(float mouseXPos, float mouseYPos)
+void InnoEventSystemNS::mouseMovementCallback(float mouseXPos, float mouseYPos)
 {
 	m_mouseXOffset = mouseXPos - m_mouseLastX;
 	m_mouseYOffset = m_mouseLastY - mouseYPos;
@@ -282,38 +229,34 @@ void InnoEventSystem::addButtonStateCallback(ButtonState buttonState, ButtonEven
 	InnoEventSystemNS::addButtonStateCallback(buttonState, buttonEvent);
 }
 
-void InnoEventSystem::addMouseMovementCallback(int32_t mouseCode, std::function<void(float)>* mouseMovementCallback)
+void InnoEventSystem::addMouseMovementCallback(MouseMovementAxis mouseMovementAxis, MouseMovementEvent mouseMovementEvent)
 {
-	InnoEventSystemNS::addMouseMovementCallback(mouseCode, mouseMovementCallback);
+	InnoEventSystemNS::addMouseMovementCallback(mouseMovementAxis, mouseMovementEvent);
 }
 
-void InnoEventSystem::buttonStatusCallback(ButtonState buttonState)
+void InnoEventSystem::buttonStateCallback(ButtonState buttonState)
 {
-	InnoEventSystemNS::buttonStatusCallback(buttonState);
+	InnoEventSystemNS::buttonStateCallback(buttonState);
 }
 
-void InnoEventSystem::framebufferSizeCallback(int32_t width, int32_t height)
+void InnoEventSystem::windowSizeCallback(int32_t width, int32_t height)
 {
-	InnoEventSystemNS::framebufferSizeCallback(width, height);
+	InnoEventSystemNS::windowSizeCallback(width, height);
 }
 
-void InnoEventSystem::mousePositionCallback(float mouseXPos, float mouseYPos)
+void InnoEventSystem::mouseMovementCallback(float mouseXPos, float mouseYPos)
 {
-	InnoEventSystemNS::mousePositionCallback(mouseXPos, mouseYPos);
+	InnoEventSystemNS::mouseMovementCallback(mouseXPos, mouseYPos);
 }
 
 void InnoEventSystem::scrollCallback(float xoffset, float yoffset)
 {
+	InnoEventSystemNS::scrollCallback(xoffset, yoffset);
 }
 
-Vec4 InnoEventSystem::getMousePositionInWorldSpace()
+Vec2 InnoEventSystem::getMousePosition()
 {
-	return InnoEventSystemNS::getMousePositionInWorldSpace();
-}
-
-Vec2 InnoEventSystem::getMousePositionInScreenSpace()
-{
-	return InnoEventSystemNS::getMousePositionInScreenSpace();
+	return InnoEventSystemNS::getMousePosition();
 }
 
 ObjectStatus InnoEventSystem::getStatus()

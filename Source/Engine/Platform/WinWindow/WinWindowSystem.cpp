@@ -274,7 +274,7 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	{
 		auto l_mouseCurrentX = GET_X_LPARAM(lparam);
 		auto l_mouseCurrentY = GET_Y_LPARAM(lparam);
-		g_pModuleManager->getEventSystem()->mousePositionCallback((float)l_mouseCurrentX, (float)l_mouseCurrentY);
+		g_pModuleManager->getEventSystem()->mouseMovementCallback((float)l_mouseCurrentX, (float)l_mouseCurrentY);
 		return 0;
 	}
 	// Any other messages send to the default message handler as our application won't make use of them.
