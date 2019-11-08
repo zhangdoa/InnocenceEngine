@@ -61,8 +61,6 @@ struct TimeData
 	int64_t Millisecond;
 };
 
-enum class WorldEditorIconType { DIRECTIONAL_LIGHT, POINT_LIGHT, SPHERE_LIGHT, UNKNOWN };
-
 enum class LogLevel { Verbose, Success, Warning, Error };
 
 enum class IOMode { Text, Binary };

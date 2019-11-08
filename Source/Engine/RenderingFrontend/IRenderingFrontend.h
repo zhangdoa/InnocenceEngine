@@ -38,6 +38,8 @@ struct RenderingCapability
 	uint32_t maxTextures;
 };
 
+enum class WorldEditorIconType { DIRECTIONAL_LIGHT, POINT_LIGHT, SPHERE_LIGHT, UNKNOWN };
+
 class IRenderingFrontend
 {
 public:
