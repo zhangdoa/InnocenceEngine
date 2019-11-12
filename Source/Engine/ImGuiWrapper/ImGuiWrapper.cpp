@@ -182,10 +182,6 @@ bool ImGuiWrapper::initialize()
 
 bool ImGuiWrapper::update()
 {
-	if (ImGuiWrapperNS::m_isParity)
-	{
-		ImGuiWrapperNS::m_windowImpl->newFrame();
-	}
 	return true;
 }
 
@@ -194,6 +190,7 @@ bool ImGuiWrapper::render()
 	if (ImGuiWrapperNS::m_isParity)
 	{
 		ImGuiWrapperNS::m_rendererImpl->newFrame();
+		ImGuiWrapperNS::m_windowImpl->newFrame();
 
 		ImGui::NewFrame();
 		{
