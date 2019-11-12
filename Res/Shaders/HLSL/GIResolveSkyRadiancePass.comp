@@ -17,7 +17,35 @@ void main(ComputeInputType input)
 {
 	if (input.dispatchThreadID.z < 6)
 	{
-		float3 eyedir = float3(input.dispatchThreadID + float3(1.0, 1.0, 1.0)) / float3(8.0, 8.0, 6.0);
+		float2 coordOnPlane = float2(input.dispatchThreadID.xy + float2(1.0, 1.0)) / float2(8.0, 8.0);
+		coordOnPlane = coordOnPlane * 2.0 - 1.0;
+
+		float3 eyedir;
+
+		if (input.dispatchThreadID.z == 0)
+		{
+			eyedir = normalize(float3(1.0, coordOnPlane.y, coordOnPlane.x));
+		}
+		else if (input.dispatchThreadID.z == 1)
+		{
+			eyedir = normalize(float3(-1.0, coordOnPlane.y, coordOnPlane.x));
+		}
+		else if (input.dispatchThreadID.z == 2)
+		{
+			eyedir = normalize(float3(coordOnPlane.x, 1.0, coordOnPlane.y));
+		}
+		else if (input.dispatchThreadID.z == 3)
+		{
+			eyedir = normalize(float3(coordOnPlane.x, -1.0, coordOnPlane.y));
+		}
+		else if (input.dispatchThreadID.z == 4)
+		{
+			eyedir = normalize(float3(coordOnPlane, 1.0));
+		}
+		else if (input.dispatchThreadID.z == 5)
+		{
+			eyedir = normalize(float3(coordOnPlane, -1.0));
+		}
 
 		float3 color = float3(0.0, 0.0, 0.0);
 
