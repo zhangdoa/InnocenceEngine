@@ -11,6 +11,7 @@ struct ComputeInputType
 
 Texture3D<float4> in_probeVolume : register(t0);
 RWTexture3D<float4> out_irradianceVolume : register(u0);
+RWStructuredBuffer<float4> in_skyIrradiance : register(u1);
 
 SamplerState SampleTypePoint : register(s0);
 

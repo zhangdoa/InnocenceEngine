@@ -8,7 +8,7 @@ struct DebugMaterialData
 	vec4 color;
 };
 
-layout(std430, row_major, binding = 1) buffer debugMaterialSSBOBlock
+layout(std430, row_major, set = 1, binding = 1) buffer debugMaterialSSBOBlock
 {
 	DebugMaterialData data[];
 } debugMaterialSSBO;

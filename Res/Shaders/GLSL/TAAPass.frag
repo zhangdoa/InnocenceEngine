@@ -4,9 +4,11 @@ layout(location = 0) out vec4 uni_TAAPassRT0;
 
 layout(location = 0) in vec2 TexCoords;
 
-layout(location = 0, binding = 0) uniform sampler2D uni_preTAAPassRT0;
-layout(location = 1, binding = 1) uniform sampler2D uni_history;
-layout(location = 2, binding = 2) uniform sampler2D uni_motionVectorTexture;
+layout(location = 0, set = 1, binding = 0) uniform texture2D uni_preTAAPassRT0;
+layout(location = 1, set = 1, binding = 1) uniform texture2D uni_history;
+layout(location = 2, set = 1, binding = 2) uniform texture2D uni_motionVectorTexture;
+
+layout(set = 2, binding = 0) uniform sampler samplerLinear;
 
 #define Use_YCoCg 0
 
@@ -46,15 +48,15 @@ void main()
 	vec2 texelSize = 1.0 / skyUBO.viewportSize.xy;
 	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
 
-	vec2 MotionVector = texture(uni_motionVectorTexture, screenTexCoords).xy;
-	vec3 currentColor = texture(uni_preTAAPassRT0, screenTexCoords).rgb;
+	vec2 MotionVector = texture(sampler2D(uni_motionVectorTexture, samplerLinear), screenTexCoords).xy;
+	vec3 currentColor = texture(sampler2D(uni_preTAAPassRT0, samplerLinear), screenTexCoords).rgb;
 
 	// Tone mapping
 	float lumaCurrentColor = luma(currentColor);
 	currentColor = currentColor / (1.0f + lumaCurrentColor);
 
 	vec2 historyTexCoords = screenTexCoords - MotionVector;
-	vec3 historyColor = texture(uni_history, historyTexCoords).rgb;
+	vec3 historyColor = texture(sampler2D(uni_history, samplerLinear), historyTexCoords).rgb;
 	float lumaHistoryColor = luma(historyColor);
 
 	vec3 maxNeighbor = vec3(0.0);
@@ -66,7 +68,7 @@ void main()
 		for (int y = -1; y <= 1; y++)
 		{
 			vec2 neighborTexCoords = screenTexCoords + vec2(float(x) / skyUBO.viewportSize.x, float(y) / skyUBO.viewportSize.y);
-			vec3 neighborColor = texture(uni_preTAAPassRT0, neighborTexCoords).rgb;
+			vec3 neighborColor = texture(sampler2D(uni_preTAAPassRT0, samplerLinear), neighborTexCoords).rgb;
 			maxNeighbor = max(maxNeighbor, neighborColor);
 			minNeighbor = min(minNeighbor, neighborColor);
 			neighborSum += neighborColor;

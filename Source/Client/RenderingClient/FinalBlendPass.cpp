@@ -37,7 +37,7 @@ bool FinalBlendPass::Setup()
 
 	m_RPDC->m_ResourceBinderLayoutDescs.resize(4);
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
-	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 1;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
 
@@ -47,12 +47,12 @@ bool FinalBlendPass::Setup()
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Image;
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
+	m_RPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 1;
 	m_RPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 2;
 	m_RPDC->m_ResourceBinderLayoutDescs[2].m_IndirectBinding = true;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Sampler;
-	m_RPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
+	m_RPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 2;
 	m_RPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
 	m_RPDC->m_ResourceBinderLayoutDescs[3].m_IndirectBinding = true;
 

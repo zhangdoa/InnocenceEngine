@@ -55,7 +55,7 @@ bool SunShadowPass::Setup()
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 1;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 6;
 
 	m_RPDC->m_ShaderProgram = m_SPC;

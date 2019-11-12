@@ -3,12 +3,12 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
-layout(std430, binding = 0) buffer surfelsSSBOBlock
+layout(std430, set = 1, binding = 0) buffer surfelsSSBOBlock
 {
 	Surfel data[];
 } surfelsSSBO;
 
-layout(std430, binding = 1) buffer irradianceSSBOBlock
+layout(std430, set = 1, binding = 1) buffer irradianceSSBOBlock
 {
 	vec4 data[];
 } irradianceSSBO;

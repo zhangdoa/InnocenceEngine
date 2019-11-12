@@ -124,14 +124,14 @@ vec3 AverangeFresnel(vec3 F0)
 {
 	return 20.0 * F0 / 21.0 + 1.0 / 21.0;
 }
-vec3 getFrMS(sampler2D BRDFLUT, sampler2D BRDFMSLUT, float NdotL, float NdotV, vec3 F0, float roughness)
+vec3 getFrMS(texture2D BRDFLUT, texture2D BRDFMSLUT, sampler LUTSampler, float NdotL, float NdotV, vec3 F0, float roughness)
 {
 	vec3 f_averange = AverangeFresnel(F0);
 
-	float rsF1_averange = texture(BRDFMSLUT, vec2(0.0, roughness)).r;
+	float rsF1_averange = texture(sampler2D(BRDFMSLUT, LUTSampler), vec2(0.0, roughness)).r;
 
-	float rsF1_l = texture(BRDFLUT, vec2(NdotL, roughness)).b;
-	float rsF1_v = texture(BRDFLUT, vec2(NdotV, roughness)).b;
+	float rsF1_l = texture(sampler2D(BRDFLUT, LUTSampler), vec2(NdotL, roughness)).b;
+	float rsF1_v = texture(sampler2D(BRDFLUT, LUTSampler), vec2(NdotV, roughness)).b;
 
 	float beta1 = 1.0 - rsF1_averange;
 	float beta2 = 1.0 - rsF1_l;
@@ -152,14 +152,14 @@ vec3 F_SchlickRoughness(float cosTheta, vec3 F0, float roughness)
 }
 // BRDF
 // ----------------------------------------------------------------------------
-vec3 getBRDF(sampler2D BRDFLUT, sampler2D BRDFMSLUT, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, vec3 F0, vec3 FresnelFactor)
+vec3 getBRDF(texture2D BRDFLUT, texture2D BRDFMSLUT, sampler LUTSampler, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, vec3 F0, vec3 FresnelFactor)
 {
 	float G = V_SmithGGXCorrelated(NdotV, NdotL, roughness);
 	float D = D_GGX(NdotH, roughness);
 	vec3 Frss = FresnelFactor * G * D;
 
 	// Real-Time Rendering", 4th edition, pg. 341, "9.8 BRDF Models for Surface Reflection, the 4 * NdV * NdL has already been cancelled by G function
-	vec3 Frms = getFrMS(BRDFLUT, BRDFMSLUT, NdotL, NdotV, F0, roughness);
+	vec3 Frms = getFrMS(BRDFLUT, BRDFMSLUT, LUTSampler, NdotL, NdotV, F0, roughness);
 
 	vec3 Fr = Frss + Frms;
 
@@ -175,19 +175,23 @@ vec3 getBTDF(float NdotV, float NdotL, float LdotH, float roughness, float metal
 
 	return kD * Ft;
 }
-vec3 getBSDF(sampler2D BRDFLUT, sampler2D BRDFMSLUT, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float metallic, vec3 F0, vec3 FresnelFactor, vec3 albedo)
+vec3 getBSDF(texture2D BRDFLUT, texture2D BRDFMSLUT, sampler LUTSampler, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float metallic, vec3 F0, vec3 FresnelFactor, vec3 albedo)
 {
 	vec3 Ft = getBTDF(NdotV, NdotL, LdotH, roughness, metallic, FresnelFactor, albedo);
-	vec3 Fr = getBRDF(BRDFLUT, BRDFMSLUT, NdotV, NdotL, NdotH, LdotH, roughness, F0, FresnelFactor);
+	vec3 Fr = getBRDF(BRDFLUT, BRDFMSLUT, LUTSampler, NdotV, NdotL, NdotH, LdotH, roughness, F0, FresnelFactor);
 	return (Ft + Fr);
 }
 // ----------------------------------------------------------------------------
-vec3 getOutLuminance(sampler2D BRDFLUT, sampler2D BRDFMSLUT, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float metallic, vec3 F0, vec3 albedo, vec3 luminousFlux)
+vec3 getOutLuminance(texture2D BRDFLUT, texture2D BRDFMSLUT, sampler LUTSampler, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float metallic, vec3 F0, vec3 albedo, vec3 luminousFlux)
 {
 	float F90 = 1.0;
 	vec3 FresnelFactor = F_Schlick(F0, F90, LdotH);
-
-	vec3 BRDF = getBSDF(BRDFLUT, BRDFMSLUT, NdotV, NdotL, NdotH, LdotH, roughness, metallic, F0, FresnelFactor, albedo);
+	
+	vec3 BRDF = getBSDF(BRDFLUT, BRDFMSLUT, LUTSampler, NdotV, NdotL, NdotH, LdotH, roughness, metallic, F0, FresnelFactor, albedo);
 
 	return BRDF * luminousFlux * NdotL;
 }
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------

@@ -2,6 +2,7 @@
 #define BLOCK_SIZE 16
 #extension GL_ARB_shader_image_load_store : require
 #extension GL_ARB_separate_shader_objects : enable
+#extension GL_EXT_samplerless_texture_functions : require
 //#define uni_drawCSMSplitedArea
 //#define uni_drawPointLightShadow
 

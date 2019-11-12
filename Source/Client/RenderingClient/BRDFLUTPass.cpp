@@ -42,6 +42,8 @@ bool BRDFLUTPass::Setup()
 	l_RenderPassDesc.m_RenderTargetDesc.Height = 512;
 
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = 512;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = 512;
 
 	m_RPDC->m_RenderPassDesc = l_RenderPassDesc;
 	m_RPDC_MS->m_RenderPassDesc = l_RenderPassDesc;

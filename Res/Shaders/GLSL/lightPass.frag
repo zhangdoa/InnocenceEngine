@@ -5,23 +5,23 @@ layout(location = 0) in vec2 TexCoords;
 
 layout(location = 0) out vec4 uni_lightPassRT0;
 
-layout(location = 0, binding = 0) uniform sampler2D uni_opaquePassRT0;
-layout(location = 1, binding = 1) uniform sampler2D uni_opaquePassRT1;
-layout(location = 2, binding = 2) uniform sampler2D uni_opaquePassRT2;
-layout(location = 3, binding = 3) uniform sampler2D uni_opaquePassRT3;
-layout(location = 4, binding = 4) uniform sampler2D uni_BRDFLUT;
-layout(location = 5, binding = 5) uniform sampler2D uni_BRDFMSLUT;
-layout(location = 6, binding = 6) uniform sampler2D uni_SSAOBlurPassRT0;
-layout(location = 7, binding = 7) uniform sampler2DArray uni_sunShadow;
-
-layout(std430, binding = 8) coherent buffer lightIndexListSSBOBlock
+layout(location = 0, set = 1, binding = 0) uniform texture2D uni_opaquePassRT0;
+layout(location = 1, set = 1, binding = 1) uniform texture2D uni_opaquePassRT1;
+layout(location = 2, set = 1, binding = 2) uniform texture2D uni_opaquePassRT2;
+layout(location = 3, set = 1, binding = 3) uniform texture2D uni_opaquePassRT3;
+layout(location = 4, set = 1, binding = 4) uniform texture2D uni_BRDFLUT;
+layout(location = 5, set = 1, binding = 5) uniform texture2D uni_BRDFMSLUT;
+layout(location = 6, set = 1, binding = 6) uniform texture2D uni_SSAOBlurPassRT0;
+layout(location = 7, set = 1, binding = 7) uniform texture2DArray uni_sunShadow;
+layout(location = 9, set = 1, binding = 8) uniform utexture2D uni_lightGrid;
+layout(location = 10, set = 1, binding = 9) uniform texture3D uni_IrradianceVolume;
+layout(location = 11, set = 1, binding = 10) uniform texture3D uni_VolumetricFog;
+layout(std430, set = 1, binding = 11) coherent buffer lightIndexListSSBOBlock
 {
 	uint data[];
 } lightIndexListSSBO;
 
-layout(location = 9, binding = 9) uniform usampler2D uni_lightGrid;
-
-layout(location = 10, binding = 10) uniform sampler3D uni_IrradianceVolume;
+layout(set = 1, binding = 0) uniform sampler samplerLinear;
 
 #include "common/BSDF.glsl"
 #include "common/shadowResolver.glsl"
@@ -35,10 +35,10 @@ void main()
 	vec2 texelSize = 1.0 / renderTargetSize;
 	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
 
-	vec4 GPassRT0 = texture(uni_opaquePassRT0, screenTexCoords);
-	vec4 GPassRT1 = texture(uni_opaquePassRT1, screenTexCoords);
-	vec4 GPassRT2 = texture(uni_opaquePassRT2, screenTexCoords);
-	vec4 GPassRT3 = texture(uni_opaquePassRT3, screenTexCoords);
+	vec4 GPassRT0 = texture(sampler2D(uni_opaquePassRT0, samplerLinear), screenTexCoords);
+	vec4 GPassRT1 = texture(sampler2D(uni_opaquePassRT1, samplerLinear), screenTexCoords);
+	vec4 GPassRT2 = texture(sampler2D(uni_opaquePassRT2, samplerLinear), screenTexCoords);
+	vec4 GPassRT3 = texture(sampler2D(uni_opaquePassRT3, samplerLinear), screenTexCoords);
 
 	//vec2 textureSize = textureSize(uni_depth, 0);
 	//vec2 screenTexCoord = gl_FragCoord.xy / textureSize;
@@ -57,7 +57,7 @@ void main()
 	float roughness = GPassRT1.a;
 	float safe_roughness = (roughness + eps) / (1.0 + eps);
 	float AO = GPassRT2.a;
-	float SSAO = texture(uni_SSAOBlurPassRT0, screenTexCoords).x;
+	float SSAO = texture(sampler2D(uni_SSAOBlurPassRT0, samplerLinear), screenTexCoords).x;
 	AO *= SSAO;
 
 	vec3 Lo = vec3(0.0);
@@ -160,7 +160,7 @@ void main()
 	float F90 = 1.0;
 	vec3 FresnelFactor = F_Schlick(F0, F90, LdotHL);
 	vec3 Ft = getBTDF(NdotV, NdotD, DdotHD, roughness, metallic, FresnelFactor, albedo);
-	vec3 Fr = getBRDF(uni_BRDFLUT, uni_BRDFMSLUT, NdotV, NdotL, NdotHL, LdotHL, roughness, F0, FresnelFactor);
+	vec3 Fr = getBRDF(uni_BRDFLUT, uni_BRDFMSLUT, samplerLinear, NdotV, NdotL, NdotHL, LdotHL, roughness, F0, FresnelFactor);
 
 	vec3 illuminance = sunUBO.data.illuminance.xyz * NdotD;
 	Lo += illuminance * (Ft + Fr);
@@ -171,7 +171,7 @@ void main()
 	vec2 tileIndex = vec2(gl_FragCoord.xy / skyUBO.viewportSize.xy);
 
 	// Get the start position and offset of the light in the light index list.
-	uvec4 lightGrid = texture(uni_lightGrid, tileIndex);
+	uvec4 lightGrid = texture(usampler2D(uni_lightGrid, samplerLinear), tileIndex);
 	uint startOffset = lightGrid.x;
 	uint lightCount = lightGrid.y;
 
@@ -200,7 +200,7 @@ void main()
 
 				vec3 luminousFlux = light.luminousFlux.xyz * attenuation;
 
-				Lo += getOutLuminance(uni_BRDFLUT, uni_BRDFMSLUT, NdotV, NdotL, NdotH, LdotH, safe_roughness, metallic, F0, albedo, luminousFlux);
+				Lo += getOutLuminance(uni_BRDFLUT, uni_BRDFMSLUT, samplerLinear, NdotV, NdotL, NdotH, LdotH, safe_roughness, metallic, F0, albedo, luminousFlux);
 			}
 		}
 	}
@@ -243,7 +243,7 @@ void main()
 			}
 			illuminance *= PI;
 
-			Lo += getOutLuminance(uni_BRDFLUT, uni_BRDFMSLUT, NdotV, NdotL, NdotH, LdotH, safe_roughness, metallic, F0, albedo, illuminance * sphereLightUBO.data[i].luminousFlux.xyz);
+			Lo += getOutLuminance(uni_BRDFLUT, uni_BRDFMSLUT, samplerLinear, NdotV, NdotL, NdotH, LdotH, safe_roughness, metallic, F0, albedo, illuminance * sphereLightUBO.data[i].luminousFlux.xyz);
 		}
 	}
 
@@ -268,27 +268,27 @@ void main()
 		vec4 indirectLight = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 		if ((isNegative.x == 1))
 		{
-			indirectLight.xyz += nSquared.x * texture(uni_IrradianceVolume, GISampleCoordNX).xyz;
+			indirectLight.xyz += nSquared.x * texture(sampler3D(uni_IrradianceVolume, samplerLinear), GISampleCoordNX).xyz;
 		}
 		else
 		{
-			indirectLight.xyz += nSquared.x * texture(uni_IrradianceVolume, GISampleCoordPX).xyz;
+			indirectLight.xyz += nSquared.x * texture(sampler3D(uni_IrradianceVolume, samplerLinear), GISampleCoordPX).xyz;
 		}
 		if ((isNegative.y == 1))
 		{
-			indirectLight.xyz += nSquared.y * texture(uni_IrradianceVolume, GISampleCoordNY).xyz;
+			indirectLight.xyz += nSquared.y * texture(sampler3D(uni_IrradianceVolume, samplerLinear), GISampleCoordNY).xyz;
 		}
 		else
 		{
-			indirectLight.xyz += nSquared.y * texture(uni_IrradianceVolume, GISampleCoordPY).xyz;
+			indirectLight.xyz += nSquared.y * texture(sampler3D(uni_IrradianceVolume, samplerLinear), GISampleCoordPY).xyz;
 		}
 		if ((isNegative.z == 1))
 		{
-			indirectLight.xyz += nSquared.z * texture(uni_IrradianceVolume, GISampleCoordNZ).xyz;
+			indirectLight.xyz += nSquared.z * texture(sampler3D(uni_IrradianceVolume, samplerLinear), GISampleCoordNZ).xyz;
 		}
 		else
 		{
-			indirectLight.xyz += nSquared.z * texture(uni_IrradianceVolume, GISampleCoordPZ).xyz;
+			indirectLight.xyz += nSquared.z * texture(sampler3D(uni_IrradianceVolume, samplerLinear), GISampleCoordPZ).xyz;
 		}
 
 		Lo += indirectLight.xyz;

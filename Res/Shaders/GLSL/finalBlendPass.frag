@@ -4,9 +4,11 @@
 layout(location = 0) in vec2 TexCoords;
 layout(location = 0) out vec4 FragColor;
 
-layout(location = 0, binding = 0) uniform sampler2D uni_basePassRT0;
-layout(location = 1, binding = 1) uniform sampler2D uni_billboardPassRT0;
-layout(location = 2, binding = 2) uniform sampler2D uni_debuggerPassRT0;
+layout(location = 0, set = 1, binding = 0) uniform texture2D uni_basePassRT0;
+layout(location = 1, set = 1, binding = 1) uniform texture2D uni_billboardPassRT0;
+layout(location = 2, set = 1, binding = 2) uniform texture2D uni_debugPassRT0;
+
+layout(set = 2, binding = 0) uniform sampler samplerLinear;
 
 // Academy Color Encoding System [http://www.oscars.org/science-technology/sci-tech-projects/aces]
 vec3 acesFilm(const vec3 x) {
@@ -31,13 +33,13 @@ vec3 accurateLinearToSRGB(in vec3 linearCol)
 
 void main()
 {
-	vec2 texelSize = 1.0 / skyUBO.viewportSize.xy;
+	vec2 texelSize = 1.0 / textureSize(uni_basePassRT0, 0);
 	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
 
 	vec3 finalColor;
-	vec4 basePassResult = texture(uni_basePassRT0, screenTexCoords);
-	vec4 billboardPassResult = texture(uni_billboardPassRT0, screenTexCoords);
-	vec4 debuggerPassResult = texture(uni_debuggerPassRT0, screenTexCoords);
+	vec4 basePassResult = texture(sampler2D(uni_basePassRT0, samplerLinear), screenTexCoords);
+	vec4 billboardPassResult = texture(sampler2D(uni_billboardPassRT0, samplerLinear), screenTexCoords);
+	vec4 debugPassResult = texture(sampler2D(uni_debugPassRT0, samplerLinear), screenTexCoords);
 
 	finalColor = basePassResult.rgb;
 
@@ -50,10 +52,10 @@ void main()
 	// billboard overlay
 	finalColor += billboardPassResult.rgb;
 
-	// debugger overlay
-	if (debuggerPassResult.a == 1.0)
+	// debug overlay
+	if (debugPassResult.a == 1.0)
 	{
-		finalColor = debuggerPassResult.rgb;
+		finalColor = debugPassResult.rgb;
 	}
 
 	FragColor = vec4(finalColor, 1.0);

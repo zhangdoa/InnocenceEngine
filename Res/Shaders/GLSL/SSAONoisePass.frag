@@ -4,9 +4,12 @@ layout(location = 0) out vec4 uni_SSAOPassRT0;
 
 layout(location = 0) in vec2 TexCoords;
 
-layout(location = 0, binding = 0) uniform sampler2D uni_Position;
-layout(location = 1, binding = 1) uniform sampler2D uni_Normal;
-layout(location = 2, binding = 2) uniform sampler2D uni_randomRot;
+layout(location = 0, set = 1, binding = 0) uniform texture2D uni_Position;
+layout(location = 1, set = 1, binding = 1) uniform texture2D uni_Normal;
+layout(location = 2, set = 1, binding = 2) uniform texture2D uni_randomRot;
+
+layout(set = 2, binding = 0) uniform sampler samplerLinear;
+layout(set = 2, binding = 1) uniform sampler samplerWrap;
 
 const float radius = 0.5f;
 const float bias = 0.05f;
@@ -17,15 +20,15 @@ void main()
 	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
 
 	vec2 noiseScale = vec2(textureSize(uni_Position, 0)) / vec2(textureSize(uni_randomRot, 0));
-	vec3 randomRot = texture(uni_randomRot, screenTexCoords * noiseScale).xyz;
+	vec3 randomRot = texture(sampler2D(uni_randomRot, samplerWrap), screenTexCoords * noiseScale).xyz;
 
 	// alpha channel is used previously, remove its unwanted influence
 	// world space position to view space
-	vec3 fragPos = texture(uni_Position, screenTexCoords).xyz;
+	vec3 fragPos = texture(sampler2D(uni_Position, samplerLinear), screenTexCoords).xyz;
 	fragPos = (cameraUBO.r * cameraUBO.t * vec4(fragPos, 1.0f)).xyz;
 
 	// world space normal to view space
-	vec3 normal = texture(uni_Normal, screenTexCoords).xyz;
+	vec3 normal = texture(sampler2D(uni_Normal, samplerLinear), screenTexCoords).xyz;
 	normal = (cameraUBO.r * vec4(normal, 0.0f)).xyz;
 	normal = normalize(normal);
 
@@ -51,7 +54,7 @@ void main()
 		randomFragSampleCoord = clamp(randomFragSampleCoord, 0.0f, 1.0f);
 
 		// get sample depth
-		vec4 randomFragSamplePos = texture(uni_Position, randomFragSampleCoord.xy);
+		vec4 randomFragSamplePos = texture(sampler2D(uni_Position, samplerLinear), randomFragSampleCoord.xy);
 
 		// alpha channel is used previously, remove its unwanted influence
 		randomFragSamplePos.w = 1.0f;

@@ -16,6 +16,7 @@ RWTexture2D<uint2> g_LightGrid : register(u3);
 RWTexture2D<float4> g_DebugTexture : register(u4);
 
 Texture2D DepthTextureVS : register(t0);
+SamplerState SampleTypePoint : register(s0);
 
 groupshared uint l_uMinDepth;
 groupshared uint l_uMaxDepth;

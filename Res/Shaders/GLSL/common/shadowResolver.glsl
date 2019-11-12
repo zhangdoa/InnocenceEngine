@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-float PCFResolver(vec3 projCoords, sampler2DArray shadowMap, int index, float currentDepth, vec2 texelSize)
+float PCFResolver(vec3 projCoords, texture2DArray shadowMap, sampler shadowMapSampler, int index, float currentDepth, vec2 texelSize)
 {
 	// PCF
 	float shadow = 0.0;
@@ -8,7 +8,7 @@ float PCFResolver(vec3 projCoords, sampler2DArray shadowMap, int index, float cu
 	{
 		for (int y = -1; y <= 1; ++y)
 		{
-			float pcfDepth = texture(shadowMap, vec3(projCoords.xy + vec2(x, y) * texelSize, index)).r;
+			float pcfDepth = texture(sampler2DArray(shadowMap, shadowMapSampler), vec3(projCoords.xy + vec2(x, y) * texelSize, index)).r;
 			shadow += currentDepth > pcfDepth ? 1.0 : 0.0;
 		}
 	}
@@ -31,10 +31,10 @@ float VSMKernel(vec4 shadowMapValue, float currentDepth)
 	return shadow;
 }
 // ----------------------------------------------------------------------------
-float VSMResolver(vec3 projCoords, sampler2DArray shadowMap, int index, float currentDepth)
+float VSMResolver(vec3 projCoords, texture2DArray shadowMap, sampler shadowMapSampler, int index, float currentDepth)
 {
 	// VSM
-	vec4 shadowMapValue = texture(shadowMap, vec3(projCoords.xy, index));
+	vec4 shadowMapValue = texture(sampler2DArray(shadowMap, shadowMapSampler), vec3(projCoords.xy, index));
 
 	float shadow = VSMKernel(shadowMapValue, currentDepth);
 	return shadow;
@@ -78,7 +78,7 @@ float SunShadowResolver(vec3 fragPos)
 		// get depth of current fragment from light's perspective
 		float currentDepth = projCoords.z;
 
-		shadow = PCFResolver(projCoords, uni_sunShadow, splitIndex, currentDepth, texelSize);
+		shadow = PCFResolver(projCoords, uni_sunShadow, samplerLinear, splitIndex, currentDepth, texelSize);
 	}
 
 	return shadow;

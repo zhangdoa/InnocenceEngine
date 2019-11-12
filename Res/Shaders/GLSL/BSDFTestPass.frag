@@ -1,8 +1,10 @@
 // shadertype=glsl
 #include "common/common.glsl"
 
-layout(location = 0, binding = 0) uniform sampler2D uni_brdfLUT;
-layout(location = 1, binding = 1) uniform sampler2D uni_brdfMSLUT;
+layout(location = 0, set = 1, binding = 0) uniform texture2D uni_brdfLUT;
+layout(location = 1, set = 1, binding = 1) uniform texture2D uni_brdfMSLUT;
+
+layout(set = 2, binding = 0) uniform sampler samplerLinear;
 
 layout(location = 0) out vec4 uni_BRDFTestPassRT0;
 
@@ -41,7 +43,7 @@ void main()
 	float D = D_GGX(NdotH, out_roughness);
 	vec3 Frss = F * G * D;
 
-	vec3 Frms = getFrMS(uni_brdfLUT, uni_brdfMSLUT, NdotL, NdotV, F0, out_roughness);
+	vec3 Frms = getFrMS(uni_brdfLUT, uni_brdfMSLUT, samplerLinear, NdotL, NdotV, F0, out_roughness);
 
 	vec3 Fr = Frss + Frms;
 

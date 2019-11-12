@@ -4,7 +4,9 @@ layout(location = 0) out vec4 uni_postTAAPassRT0;
 
 layout(location = 0) in vec2 TexCoords;
 
-layout(location = 0, binding = 0) uniform sampler2D uni_lastTAAPassRT0;
+layout(location = 0, set = 1, binding = 0) uniform texture2D uni_lastTAAPassRT0;
+
+layout(set = 2, binding = 0) uniform sampler samplerLinear;
 
 float luma(vec3 color) {
 	return dot(color, vec3(0.299, 0.587, 0.114));
@@ -16,7 +18,7 @@ void main()
 	vec2 texelSize = 1.0 / skyUBO.viewportSize.xy;
 	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
 
-	vec4 TAAResult = texture(uni_lastTAAPassRT0, screenTexCoords);
+	vec4 TAAResult = texture(sampler2D(uni_lastTAAPassRT0, samplerLinear), screenTexCoords);
 	vec3 currentColor = TAAResult.rgb;
 	float luma = TAAResult.a;
 
@@ -29,16 +31,16 @@ void main()
 	vec2 TexCoordsLeft = screenTexCoords + vec2(texelSize.x, 0.0f);
 	vec2 TexCoordsRight = screenTexCoords + vec2(-texelSize.x, 0.0f);
 
-	vec4 ColorUp = texture(uni_lastTAAPassRT0, TexCoordsUp);
+	vec4 ColorUp = texture(sampler2D(uni_lastTAAPassRT0, samplerLinear), TexCoordsUp);
 	average -= ColorUp.rgb;
 
-	vec4 ColorDown = texture(uni_lastTAAPassRT0, TexCoordsDown);
+	vec4 ColorDown = texture(sampler2D(uni_lastTAAPassRT0, samplerLinear), TexCoordsDown);
 	average -= ColorDown.rgb;
 
-	vec4 ColorLeft = texture(uni_lastTAAPassRT0, TexCoordsLeft);
+	vec4 ColorLeft = texture(sampler2D(uni_lastTAAPassRT0, samplerLinear), TexCoordsLeft);
 	average -= ColorLeft.rgb;
 
-	vec4 ColorRight = texture(uni_lastTAAPassRT0, TexCoordsRight);
+	vec4 ColorRight = texture(sampler2D(uni_lastTAAPassRT0, samplerLinear), TexCoordsRight);
 	average -= ColorRight.rgb;
 
 	finalColor = currentColor + average + currentColor * 4.0;

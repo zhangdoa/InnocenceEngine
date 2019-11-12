@@ -12,11 +12,13 @@ layout(location = 3) in vec2 thefrag_TexCoord;
 layout(location = 4) in vec3 thefrag_Normal;
 layout(location = 5) in float thefrag_UUID;
 
-layout(location = 0, set = 1, binding = 0) uniform sampler2D uni_normalTexture;
-layout(location = 1, set = 1, binding = 1) uniform sampler2D uni_albedoTexture;
-layout(location = 2, set = 1, binding = 2) uniform sampler2D uni_metallicTexture;
-layout(location = 3, set = 1, binding = 3) uniform sampler2D uni_roughnessTexture;
-layout(location = 4, set = 1, binding = 4) uniform sampler2D uni_aoTexture;
+layout(location = 0, set = 1, binding = 0) uniform texture2D uni_normalTexture;
+layout(location = 1, set = 1, binding = 1) uniform texture2D uni_albedoTexture;
+layout(location = 2, set = 1, binding = 2) uniform texture2D uni_metallicTexture;
+layout(location = 3, set = 1, binding = 3) uniform texture2D uni_roughnessTexture;
+layout(location = 4, set = 1, binding = 4) uniform texture2D uni_aoTexture;
+
+layout(set = 2, binding = 0) uniform sampler samplerLinear;
 
 void main()
 {
@@ -42,7 +44,7 @@ void main()
 
 		mat3 TBN = mat3(T, B, N);
 
-		vec3 TangentSpaceNormal = texture(uni_normalTexture, thefrag_TexCoord).rgb * 2.0 - 1.0;
+		vec3 TangentSpaceNormal = texture(sampler2D(uni_normalTexture, samplerLinear), thefrag_TexCoord).rgb * 2.0 - 1.0;
 		WorldSpaceNormal = normalize(TBN * TangentSpaceNormal);
 	}
 	else
@@ -52,7 +54,7 @@ void main()
 
 	if (materialUBO.useAlbedoTexture)
 	{
-		vec4 albedoTexture = texture(uni_albedoTexture, thefrag_TexCoord);
+		vec4 albedoTexture = texture(sampler2D(uni_albedoTexture, samplerLinear), thefrag_TexCoord);
 		transparency = albedoTexture.a;
 		if (transparency < 0.1)
 		{
@@ -67,7 +69,7 @@ void main()
 
 	if (materialUBO.useMetallicTexture)
 	{
-		MRA.r = texture(uni_metallicTexture, thefrag_TexCoord).r;
+		MRA.r = texture(sampler2D(uni_metallicTexture, samplerLinear), thefrag_TexCoord).r;
 	}
 	else
 	{
@@ -76,7 +78,7 @@ void main()
 
 	if (materialUBO.useRoughnessTexture)
 	{
-		MRA.g = texture(uni_roughnessTexture, thefrag_TexCoord).r;
+		MRA.g = texture(sampler2D(uni_roughnessTexture, samplerLinear), thefrag_TexCoord).r;
 	}
 	else
 	{
@@ -85,7 +87,7 @@ void main()
 
 	if (materialUBO.useAOTexture)
 	{
-		MRA.b = texture(uni_aoTexture, thefrag_TexCoord).r;
+		MRA.b = texture(sampler2D(uni_aoTexture, samplerLinear), thefrag_TexCoord).r;
 	}
 	else
 	{

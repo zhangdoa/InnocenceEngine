@@ -76,26 +76,26 @@ bool GIResolveTestPass::Setup()
 	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 
 	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 0;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_BinderAccessibility = Accessibility::ReadOnly;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 7;
 
-	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Image;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 1;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_IndirectBinding = true;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 11;
 
 	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 7;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 1;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_BinderAccessibility = Accessibility::ReadOnly;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
 
-	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 4;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 11;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Image;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 1;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 1;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_IndirectBinding = true;
 
 	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Sampler;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 5;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 2;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 0;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_IndirectBinding = true;
 
@@ -225,14 +225,14 @@ bool GIResolveTestPass::PrepareCommandList()
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 5, 0);
 
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Vertex, l_MainCameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Vertex, m_probeSphereMeshGBDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 2, 1, Accessibility::ReadOnly);
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, l_SkyGBDC->m_ResourceBinder, 3, 7, Accessibility::ReadOnly);
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, l_GISkyGBDC->m_ResourceBinder, 4, 11, Accessibility::ReadOnly);
+		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, l_SkyGBDC->m_ResourceBinder, 1, 7, Accessibility::ReadOnly);
+		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, l_GISkyGBDC->m_ResourceBinder, 2, 11, Accessibility::ReadOnly);
+		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Vertex, m_probeSphereMeshGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadOnly);
+		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 4, 1, Accessibility::ReadOnly);
 
 		g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_probeRPDC, l_sphere, m_probeSphereMeshData.size());
 
-		g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 2, 1, Accessibility::ReadOnly);
+		g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 4, 1, Accessibility::ReadOnly);
 
 		g_pModuleManager->getRenderingServer()->CommandListEnd(m_probeRPDC);
 	}

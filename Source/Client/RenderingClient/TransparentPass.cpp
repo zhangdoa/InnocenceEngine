@@ -54,15 +54,15 @@ bool TransparentPass::Setup()
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
+	m_RPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
 	m_RPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 2;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_RPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
+	m_RPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 0;
 	m_RPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 3;
 
 	m_RPDC->m_ShaderProgram = m_SPC;

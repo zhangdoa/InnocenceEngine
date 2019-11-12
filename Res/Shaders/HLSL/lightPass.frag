@@ -9,9 +9,10 @@ Texture2D in_BRDFLUT : register(t4);
 Texture2D in_BRDFMSLUT : register(t5);
 Texture2D in_SSAO : register(t6);
 Texture2DArray in_SunShadow : register(t7);
-StructuredBuffer<uint> in_LightIndexList : register(t8);
-Texture2D<uint2> in_LightGrid : register(t9);
-Texture3D<float4> in_IrradianceVolume : register(t10);
+Texture2D<uint2> in_LightGrid : register(t8);
+Texture3D<float4> in_IrradianceVolume : register(t9);
+Texture3D<float4> in_VolumetricFog : register(t10);
+StructuredBuffer<uint> in_LightIndexList : register(t11);
 
 SamplerState SampleTypePoint : register(s0);
 

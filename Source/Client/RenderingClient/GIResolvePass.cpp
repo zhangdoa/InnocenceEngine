@@ -338,6 +338,9 @@ bool GIResolvePass::Initialize()
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_skyIrradianceSPC);
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_skyIrradianceRPDC);
 
+	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_skyRadianceVolume);
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_skyIrradianceGBDC);
+
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_surfelSPC);
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_surfelRPDC);
 
@@ -392,7 +395,7 @@ bool GIResolvePass::setupSky()
 
 	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs.resize(2);
 	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
-	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 1;
 	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadWrite;
@@ -419,15 +422,11 @@ bool GIResolvePass::setupSky()
 	m_skyRadianceVolume->m_textureDataDesc.MinFilterMethod = TextureFilterMethod::Linear;
 	m_skyRadianceVolume->m_textureDataDesc.MagFilterMethod = TextureFilterMethod::Linear;
 
-	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_skyRadianceVolume);
-
 	m_skyIrradianceGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("SkyIrradianceGPUBuffer/");
 	m_skyIrradianceGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_skyIrradianceGBDC->m_ElementCount = 6;
 	m_skyIrradianceGBDC->m_ElementSize = sizeof(Vec4);
 	m_skyIrradianceGBDC->m_BindingPoint = 4;
-
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_skyIrradianceGBDC);
 
 	return true;
 }
@@ -452,37 +451,37 @@ bool GIResolvePass::setupSurfels()
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 3;
 
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 8;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 6;
 
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[3].m_BinderAccessibility = Accessibility::ReadWrite;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 0;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 8;
 
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_BinderAccessibility = Accessibility::ReadWrite;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 4;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 1;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 0;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 11;
 
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 5;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 6;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 1;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 0;
 
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Image;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 6;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 0;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_IndirectBinding = true;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 1;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 1;
 
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[7].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[7].m_DescriptorSetIndex = 7;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[7].m_DescriptorIndex = 11;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[7].m_ResourceBinderType = ResourceBinderType::Image;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[7].m_DescriptorSetIndex = 2;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[7].m_DescriptorIndex = 0;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[7].m_IndirectBinding = true;
 
 	m_surfelRPDC->m_ShaderProgram = m_surfelSPC;
 
@@ -509,26 +508,26 @@ bool GIResolvePass::setupBricks()
 	m_brickRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 8;
 
 	m_brickRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[1].m_BinderAccessibility = Accessibility::ReadWrite;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 0;
+	m_brickRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_brickRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 11;
 
 	m_brickRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_brickRPDC->m_ResourceBinderLayoutDescs[2].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_brickRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 1;
+	m_brickRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 1;
+	m_brickRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 0;
 
 	m_brickRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_brickRPDC->m_ResourceBinderLayoutDescs[3].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_brickRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 2;
+	m_brickRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 1;
+	m_brickRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 1;
 
 	m_brickRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 4;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 11;
+	m_brickRPDC->m_ResourceBinderLayoutDescs[4].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_brickRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_brickRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 1;
+	m_brickRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 2;
 
 	m_brickRPDC->m_ShaderProgram = m_brickSPC;
 
@@ -552,40 +551,40 @@ bool GIResolvePass::setupProbes()
 	m_probeRPDC->m_ResourceBinderLayoutDescs.resize(7);
 	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 8;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 7;
 
 	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 7;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 8;
 
 	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_BinderAccessibility = Accessibility::ReadWrite;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 0;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 11;
 
 	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 1;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 1;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
 
 	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 4;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 2;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 1;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 1;
 
-	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Image;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 5;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 3;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_IndirectBinding = true;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 1;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 2;
 
-	m_probeRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 6;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 11;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Image;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[6].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 1;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 3;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[6].m_IndirectBinding = true;
 
 	m_probeRPDC->m_ShaderProgram = m_probeSPC;
 
@@ -606,37 +605,43 @@ bool GIResolvePass::setupIrradianceVolume()
 
 	m_irradianceVolumeRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs.resize(6);
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs.resize(7);
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 8;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 7;
 
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 7;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 8;
 
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 11;
 
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Image;
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_BinderAccessibility = Accessibility::ReadOnly;
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 1;
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_IndirectBinding = true;
 
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Image;
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[4].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 4;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 2;
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 0;
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[4].m_IndirectBinding = true;
 
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Sampler;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 5;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 0;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[5].m_IndirectBinding = true;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[5].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 2;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 1;
+
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Sampler;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 3;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 0;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[6].m_IndirectBinding = true;
 
 	m_irradianceVolumeRPDC->m_ShaderProgram = m_irradianceVolumeSPC;
 	m_irradianceVolumeSDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("GIResolveIrradianceVolumePass/");
@@ -715,18 +720,18 @@ bool GIResolvePass::litSurfels()
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_MainCameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_SunGBDC->m_ResourceBinder, 1, 3, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 2, 8, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 4, 1, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_CSMGBDC->m_ResourceBinder, 5, 6, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, SunShadowPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 6, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_GISkyGBDC->m_ResourceBinder, 7, 11, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_CSMGBDC->m_ResourceBinder, 2, 6, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 3, 8, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_GISkyGBDC->m_ResourceBinder, 4, 11, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC->m_ResourceBinder, 5, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 6, 1, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, SunShadowPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 7, 0);
 
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_surfelRPDC, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 4, 1, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, SunShadowPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 6, 0);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC->m_ResourceBinder, 5, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 6, 1, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, SunShadowPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 7, 0);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_surfelRPDC);
 
@@ -757,16 +762,16 @@ bool GIResolvePass::litBricks()
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_brickRPDC);
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 0, 8, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_brickGBDC->m_ResourceBinder, 1, 0, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 2, 1, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_brickIrradianceGBDC->m_ResourceBinder, 3, 2, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, l_GISkyGBDC->m_ResourceBinder, 4, 11, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, l_GISkyGBDC->m_ResourceBinder, 1, 11, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_brickGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 3, 1, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_brickIrradianceGBDC->m_ResourceBinder, 4, 2, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_brickRPDC, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_brickGBDC->m_ResourceBinder, 1, 0, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 2, 1, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_brickIrradianceGBDC->m_ResourceBinder, 3, 2, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_brickGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 3, 1, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_brickIrradianceGBDC->m_ResourceBinder, 4, 2, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_brickRPDC);
 
@@ -797,20 +802,20 @@ bool GIResolvePass::litProbes()
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_probeRPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_probeRPDC);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 0, 8, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, l_SkyGBDC->m_ResourceBinder, 1, 7, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_probeGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_brickFactorGBDC->m_ResourceBinder, 3, 1, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_brickIrradianceGBDC->m_ResourceBinder, 4, 2, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_probeVolume->m_ResourceBinder, 5, 3, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, l_GISkyGBDC->m_ResourceBinder, 6, 11, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, l_SkyGBDC->m_ResourceBinder, 0, 7, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 1, 8, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, l_GISkyGBDC->m_ResourceBinder, 2, 11, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_probeGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_brickFactorGBDC->m_ResourceBinder, 4, 1, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_brickIrradianceGBDC->m_ResourceBinder, 5, 2, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_probeVolume->m_ResourceBinder, 6, 3, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_probeRPDC, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_probeGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_brickFactorGBDC->m_ResourceBinder, 3, 1, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_brickIrradianceGBDC->m_ResourceBinder, 4, 2, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_probeVolume->m_ResourceBinder, 5, 3, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_probeGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_brickFactorGBDC->m_ResourceBinder, 4, 1, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_brickIrradianceGBDC->m_ResourceBinder, 5, 2, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_probeVolume->m_ResourceBinder, 6, 3, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_probeRPDC);
 
@@ -837,19 +842,21 @@ bool GIResolvePass::generateIrradianceVolume()
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_irradianceVolumeRPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_irradianceVolumeRPDC);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, m_irradianceVolumeSDC->m_ResourceBinder, 5, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, m_irradianceVolumeSDC->m_ResourceBinder, 6, 0);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 0, 8, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, l_SkyGBDC->m_ResourceBinder, 1, 7, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, l_SkyGBDC->m_ResourceBinder, 0, 7, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 1, 8, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, l_GISkyGBDC->m_ResourceBinder, 2, 11, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, m_probeVolume->m_ResourceBinder, 3, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, m_irradianceVolume->m_ResourceBinder, 4, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, m_skyIrradianceGBDC->m_ResourceBinder, 5, 1, Accessibility::ReadWrite);
 
 	// @TODO: Buggy on OpenGL + Nvidia
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_irradianceVolumeRPDC, 8, 4, 8);
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, m_probeVolume->m_ResourceBinder, 3, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, m_irradianceVolume->m_ResourceBinder, 4, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, m_skyIrradianceGBDC->m_ResourceBinder, 5, 1, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_irradianceVolumeRPDC);
 

@@ -14,7 +14,7 @@ struct DebugMeshData
 	uint padding[12];
 };
 
-layout(std430, row_major, binding = 0) buffer debugMeshSSBOBlock
+layout(std430, row_major, set = 1, binding = 0) buffer debugMeshSSBOBlock
 {
 	DebugMeshData data[];
 } debugMeshSSBO;

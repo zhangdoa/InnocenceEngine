@@ -98,7 +98,7 @@ bool DebugPass::Setup()
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
+	m_RPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 1;
 	m_RPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 1;
 	m_RPDC->m_ResourceBinderLayoutDescs[2].m_BinderAccessibility = Accessibility::ReadOnly;
 	m_RPDC->m_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;

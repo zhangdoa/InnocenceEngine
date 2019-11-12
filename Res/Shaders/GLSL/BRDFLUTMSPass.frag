@@ -3,7 +3,9 @@
 layout(location = 0) out vec2 uni_brdfMSLUT;
 layout(location = 0) in vec2 TexCoords;
 
-layout(location = 0, binding = 0) uniform sampler2D uni_brdfLUT;
+layout(set = 0, binding = 0) uniform texture2D uni_brdfLUT;
+
+layout(set = 1, binding = 0) uniform sampler samplerLinear;
 
 // ----------------------------------------------------------------------------
 void main()
@@ -15,7 +17,7 @@ void main()
 	for (uint i = 0u; i < textureSize; ++i)
 	{
 		float mu = float(i) / float(textureSize);
-		currentRsF1 = texture(uni_brdfLUT, vec2(mu, TexCoords.y)).b;
+		currentRsF1 = texture(sampler2D(uni_brdfLUT, samplerLinear), vec2(mu, TexCoords.y)).b;
 		// cos-weighted
 		currentRsF1 *= mu;
 		averangeRsF1 += currentRsF1;

@@ -15,6 +15,7 @@ namespace LightCullingPass
 	RenderPassDataComponent* m_RPDC_LightCulling;
 	ShaderProgramComponent* m_SPC_TileFrustum;
 	ShaderProgramComponent* m_SPC_LightCulling;
+	SamplerDataComponent* m_SDC_LightCulling;
 
 	GPUBufferDataComponent* m_tileFrustumGBDC;
 	GPUBufferDataComponent* m_lightListIndexCounterGBDC;
@@ -164,7 +165,7 @@ bool LightCullingPass::Setup()
 	m_RPDC_LightCulling = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("ComputePass_LightCulling/");
 	m_RPDC_LightCulling->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs.resize(10);
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs.resize(11);
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
@@ -218,7 +219,19 @@ bool LightCullingPass::Setup()
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_DescriptorIndex = 0;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_IndirectBinding = true;
 
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_ResourceBinderType = ResourceBinderType::Image;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_DescriptorSetIndex = 3;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_DescriptorIndex = 0;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_IndirectBinding = true;
+
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[10].m_ResourceBinderType = ResourceBinderType::Sampler;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[10].m_DescriptorSetIndex = 4;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[10].m_DescriptorIndex = 0;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[10].m_IndirectBinding = true;
+
 	m_RPDC_LightCulling->m_ShaderProgram = m_SPC_LightCulling;
+
+	m_SDC_LightCulling = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("ComputePass_LightCulling/");
 
 	////
 	createGridFrustumsBuffer();
@@ -240,6 +253,8 @@ bool LightCullingPass::Initialize()
 
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_TileFrustum);
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_LightCulling);
+
+	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC_LightCulling);
 
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_Frustum);
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_LightCulling);
@@ -285,6 +300,9 @@ bool LightCullingPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_LightCulling, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_LightCulling);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_LightCulling);
+
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_SDC_LightCulling->m_ResourceBinder, 10, 0);
+
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, l_MainCameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, l_PointLightGBDC->m_ResourceBinder, 1, 4, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, l_SkyGBDC->m_ResourceBinder, 2, 7, Accessibility::ReadOnly);

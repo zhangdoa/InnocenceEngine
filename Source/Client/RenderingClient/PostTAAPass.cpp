@@ -35,12 +35,12 @@ bool PostTAAPass::Setup()
 
 	m_RPDC->m_ResourceBinderLayoutDescs.resize(2);
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
-	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 1;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Sampler;
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 2;
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 0;
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
 
