@@ -140,19 +140,7 @@ bool SSAOPass::Setup()
 	m_SSAONoiseTDC->m_textureDataDesc.Height = l_textureSize;
 	m_SSAONoiseTDC->m_textureDataDesc.PixelDataType = TexturePixelDataType::FLOAT32;
 
-	std::vector<float> l_pixelBuffer;
-	auto l_containerSize = m_SSAONoise.size() * 4;
-	l_pixelBuffer.reserve(l_containerSize);
-
-	std::for_each(m_SSAONoise.begin(), m_SSAONoise.end(), [&](Vec4 val)
-	{
-		l_pixelBuffer.emplace_back(val.x);
-		l_pixelBuffer.emplace_back(val.y);
-		l_pixelBuffer.emplace_back(val.z);
-		l_pixelBuffer.emplace_back(val.w);
-	});
-
-	m_SSAONoiseTDC->m_textureData = &l_pixelBuffer[0];
+	m_SSAONoiseTDC->m_textureData = &m_SSAONoise[0];
 
 	return true;
 }
