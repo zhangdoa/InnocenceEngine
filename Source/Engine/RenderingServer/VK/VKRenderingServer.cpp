@@ -283,8 +283,16 @@ bool VKRenderingServerNS::createLogicalDevice()
 	}
 
 	VkPhysicalDeviceFeatures l_deviceFeatures = {};
+	l_deviceFeatures.depthBiasClamp = VK_TRUE;
+	l_deviceFeatures.depthClamp = VK_TRUE;
+	l_deviceFeatures.dualSrcBlend = VK_TRUE;
+	l_deviceFeatures.fillModeNonSolid = VK_TRUE;
+	l_deviceFeatures.fragmentStoresAndAtomics = VK_TRUE;
+	l_deviceFeatures.geometryShader = VK_TRUE;
 	l_deviceFeatures.samplerAnisotropy = VK_TRUE;
-
+	l_deviceFeatures.tessellationShader = VK_TRUE;
+	l_deviceFeatures.vertexPipelineStoresAndAtomics = VK_TRUE;
+	
 	VkDeviceCreateInfo l_createInfo = {};
 	l_createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
@@ -903,25 +911,33 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 		}
 	}
 
-	l_result &= createDescriptorSetLayoutBindings(l_rhs);
-
-	auto l_descriptorLayoutsSize = l_rhs->m_DescriptorSetLayoutBindingIndices.size();
-	auto l_maximumSetIndex = l_rhs->m_DescriptorSetLayoutBindingIndices[l_descriptorLayoutsSize - 1].m_SetIndex;
-
-	l_rhs->m_DescriptorSetLayouts.resize(l_maximumSetIndex + 1);
-
-	for (size_t i = 0; i < l_maximumSetIndex; i++)
+	if (l_rhs->m_ResourceBinderLayoutDescs.size())
 	{
-		l_rhs->m_DescriptorSetLayouts[i] = m_dummyEmptyDescriptorLayout;
+		l_result &= createDescriptorSetLayoutBindings(l_rhs);
+
+		auto l_descriptorLayoutsSize = l_rhs->m_DescriptorSetLayoutBindingIndices.size();
+		auto l_maximumSetIndex = l_rhs->m_DescriptorSetLayoutBindingIndices[l_descriptorLayoutsSize - 1].m_SetIndex;
+
+		l_rhs->m_DescriptorSetLayouts.resize(l_maximumSetIndex + 1);
+
+		for (size_t i = 0; i < l_maximumSetIndex; i++)
+		{
+			l_rhs->m_DescriptorSetLayouts[i] = m_dummyEmptyDescriptorLayout;
+		}
+
+		for (size_t i = 0; i < l_descriptorLayoutsSize; i++)
+		{
+			auto l_descriptorSetLayoutBindingIndex = l_rhs->m_DescriptorSetLayoutBindingIndices[i];
+			l_result &= createDescriptorSetLayout(m_device,
+				&l_rhs->m_DescriptorSetLayoutBindings[l_descriptorSetLayoutBindingIndex.m_LayoutBindingOffset],
+				static_cast<uint32_t>(l_descriptorSetLayoutBindingIndex.m_BindingCount),
+				l_rhs->m_DescriptorSetLayouts[l_descriptorSetLayoutBindingIndex.m_SetIndex]);
+		}
 	}
-
-	for (size_t i = 0; i < l_descriptorLayoutsSize; i++)
+	else
 	{
-		auto l_descriptorSetLayoutBindingIndex = l_rhs->m_DescriptorSetLayoutBindingIndices[i];
-		l_result &= createDescriptorSetLayout(m_device,
-			&l_rhs->m_DescriptorSetLayoutBindings[l_descriptorSetLayoutBindingIndex.m_LayoutBindingOffset],
-			static_cast<uint32_t>(l_descriptorSetLayoutBindingIndex.m_BindingCount),
-			l_rhs->m_DescriptorSetLayouts[l_descriptorSetLayoutBindingIndex.m_SetIndex]);
+		l_rhs->m_DescriptorSetLayouts.resize(1);
+		l_rhs->m_DescriptorSetLayouts[0] = m_dummyEmptyDescriptorLayout;
 	}
 
 	l_result &= createPipelineLayout(m_device, l_rhs);

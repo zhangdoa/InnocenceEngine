@@ -619,25 +619,56 @@ VkDeviceSize VKHelper::getImageSize(TextureDataDesc textureDataDesc)
 {
 	VkDeviceSize l_result;
 
+	VkDeviceSize l_singlePixelSize;
+
+	switch (textureDataDesc.PixelDataType)
+	{
+	case TexturePixelDataType::UBYTE:l_singlePixelSize = 1; break;
+	case TexturePixelDataType::SBYTE:l_singlePixelSize = 1; break;
+	case TexturePixelDataType::USHORT:l_singlePixelSize = 2; break;
+	case TexturePixelDataType::SSHORT:l_singlePixelSize = 2; break;
+	case TexturePixelDataType::UINT8:l_singlePixelSize = 1; break;
+	case TexturePixelDataType::SINT8:l_singlePixelSize = 1; break;
+	case TexturePixelDataType::UINT16:l_singlePixelSize = 2; break;
+	case TexturePixelDataType::SINT16:l_singlePixelSize = 2; break;
+	case TexturePixelDataType::UINT32:l_singlePixelSize = 4; break;
+	case TexturePixelDataType::SINT32:l_singlePixelSize = 4; break;
+	case TexturePixelDataType::FLOAT16:l_singlePixelSize = 2; break;
+	case TexturePixelDataType::FLOAT32:l_singlePixelSize = 4; break;
+	case TexturePixelDataType::DOUBLE:l_singlePixelSize = 8; break;
+	}
+
+	VkDeviceSize l_channelSize;
+
+	switch (textureDataDesc.PixelDataFormat)
+	{
+	case TexturePixelDataFormat::R:l_channelSize = 1; break;
+	case TexturePixelDataFormat::RG:l_channelSize = 2; break;
+	case TexturePixelDataFormat::RGB:l_channelSize = 3; break;
+	case TexturePixelDataFormat::RGBA:l_channelSize = 4; break;
+	case TexturePixelDataFormat::Depth:l_channelSize = 1; break;
+	case TexturePixelDataFormat::DepthStencil:l_channelSize = 1; break;
+	}
+
 	switch (textureDataDesc.SamplerType)
 	{
 	case TextureSamplerType::Sampler1D:
-		l_result = textureDataDesc.Width * ((uint32_t)textureDataDesc.PixelDataFormat + 1);
+		l_result = textureDataDesc.Width * l_singlePixelSize * l_channelSize;
 		break;
 	case TextureSamplerType::Sampler2D:
-		l_result = textureDataDesc.Width * textureDataDesc.Height * ((uint32_t)textureDataDesc.PixelDataFormat + 1);
+		l_result = textureDataDesc.Width * textureDataDesc.Height * l_singlePixelSize * l_channelSize;
 		break;
 	case TextureSamplerType::Sampler3D:
-		l_result = textureDataDesc.Width * textureDataDesc.Height * textureDataDesc.DepthOrArraySize * ((uint32_t)textureDataDesc.PixelDataFormat + 1);
+		l_result = textureDataDesc.Width * textureDataDesc.Height * textureDataDesc.DepthOrArraySize * l_singlePixelSize * l_channelSize;
 		break;
 	case TextureSamplerType::Sampler1DArray:
-		l_result = textureDataDesc.Width * textureDataDesc.DepthOrArraySize * ((uint32_t)textureDataDesc.PixelDataFormat + 1);
+		l_result = textureDataDesc.Width * textureDataDesc.DepthOrArraySize * l_singlePixelSize * l_channelSize;
 		break;
 	case TextureSamplerType::Sampler2DArray:
-		l_result = textureDataDesc.Width * textureDataDesc.Height * textureDataDesc.DepthOrArraySize * ((uint32_t)textureDataDesc.PixelDataFormat + 1);
+		l_result = textureDataDesc.Width * textureDataDesc.Height * textureDataDesc.DepthOrArraySize * l_singlePixelSize * l_channelSize;
 		break;
 	case TextureSamplerType::SamplerCubemap:
-		l_result = textureDataDesc.Width * textureDataDesc.Height * 6 * ((uint32_t)textureDataDesc.PixelDataFormat + 1);
+		l_result = textureDataDesc.Width * textureDataDesc.Height * 6 * l_singlePixelSize * l_channelSize;
 		break;
 	default:
 		break;
@@ -674,7 +705,7 @@ VkImageCreateInfo VKHelper::getImageCreateInfo(TextureDataDesc textureDataDesc, 
 
 	if (textureDataDesc.SamplerType == TextureSamplerType::Sampler2DArray)
 	{
-		l_result.flags |= VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+		//l_result.flags |= VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
 	}
 	else if (textureDataDesc.SamplerType == TextureSamplerType::SamplerCubemap)
 	{
