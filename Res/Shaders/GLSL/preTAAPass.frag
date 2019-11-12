@@ -11,7 +11,8 @@ layout(set = 2, binding = 0) uniform sampler samplerLinear;
 
 void main()
 {
-	vec2 texelSize = 1.0 / skyUBO.viewportSize.xy;
+	vec2 screenTextureSize = textureSize(uni_lightPassRT0, 0);
+	vec2 texelSize = 1.0 / screenTextureSize;
 	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
 
 	vec4 lightPassResult = texture(sampler2D(uni_lightPassRT0, samplerLinear), screenTexCoords);

@@ -12,7 +12,8 @@ const int MAX_SAMPLES = 16;
 
 void main()
 {
-	vec2 texelSize = 1.0 / skyUBO.viewportSize.xy;
+	vec2 screenTextureSize = textureSize(uni_TAAPassRT0, 0);
+	vec2 texelSize = 1.0 / screenTextureSize;
 	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
 
 	vec2 MotionVector = texture(sampler2D(uni_motionVectorTexture, samplerLinear), screenTexCoords).xy;

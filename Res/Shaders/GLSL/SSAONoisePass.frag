@@ -16,10 +16,11 @@ const float bias = 0.05f;
 
 void main()
 {
-	vec2 texelSize = 1.0 / skyUBO.viewportSize.xy;
+	vec2 screenTextureSize = textureSize(uni_Position, 0);
+	vec2 texelSize = 1.0 / screenTextureSize;
 	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
 
-	vec2 noiseScale = vec2(textureSize(uni_Position, 0)) / vec2(textureSize(uni_randomRot, 0));
+	vec2 noiseScale = screenTextureSize / vec2(textureSize(uni_randomRot, 0));
 	vec3 randomRot = texture(sampler2D(uni_randomRot, samplerWrap), screenTexCoords * noiseScale).xyz;
 
 	// alpha channel is used previously, remove its unwanted influence

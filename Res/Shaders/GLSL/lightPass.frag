@@ -21,7 +21,7 @@ layout(std430, set = 1, binding = 11) coherent buffer lightIndexListSSBOBlock
 	uint data[];
 } lightIndexListSSBO;
 
-layout(set = 1, binding = 0) uniform sampler samplerLinear;
+layout(set = 2, binding = 0) uniform sampler samplerLinear;
 
 #include "common/BSDF.glsl"
 #include "common/shadowResolver.glsl"

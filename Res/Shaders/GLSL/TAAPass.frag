@@ -45,7 +45,8 @@ float luma(vec3 color)
 
 void main()
 {
-	vec2 texelSize = 1.0 / skyUBO.viewportSize.xy;
+	vec2 screenTextureSize = textureSize(uni_preTAAPassRT0, 0);
+	vec2 texelSize = 1.0 / screenTextureSize;
 	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
 
 	vec2 MotionVector = texture(sampler2D(uni_motionVectorTexture, samplerLinear), screenTexCoords).xy;
@@ -67,7 +68,7 @@ void main()
 	{
 		for (int y = -1; y <= 1; y++)
 		{
-			vec2 neighborTexCoords = screenTexCoords + vec2(float(x) / skyUBO.viewportSize.x, float(y) / skyUBO.viewportSize.y);
+			vec2 neighborTexCoords = screenTexCoords + vec2(float(x) / screenTextureSize.x, float(y) / screenTextureSize.y);
 			vec3 neighborColor = texture(sampler2D(uni_preTAAPassRT0, samplerLinear), neighborTexCoords).rgb;
 			maxNeighbor = max(maxNeighbor, neighborColor);
 			minNeighbor = min(minNeighbor, neighborColor);

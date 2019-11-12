@@ -15,7 +15,8 @@ float luma(vec3 color) {
 void main()
 {
 	// sharpen the TAA result [Siggraph 2016 "Temporal Antialiasing in Uncharted 4"]
-	vec2 texelSize = 1.0 / skyUBO.viewportSize.xy;
+	vec2 screenTextureSize = textureSize(uni_lastTAAPassRT0, 0);
+	vec2 texelSize = 1.0 / screenTextureSize;
 	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
 
 	vec4 TAAResult = texture(sampler2D(uni_lastTAAPassRT0, samplerLinear), screenTexCoords);
