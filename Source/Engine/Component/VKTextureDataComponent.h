@@ -24,4 +24,5 @@ public:
 	VkImageView m_imageView;
 	VKTextureDataDesc m_VKTextureDataDesc = {};
 	VkImageCreateInfo m_ImageCreateInfo = {};
+	VkDescriptorImageInfo m_DescriptorImageInfo = {};
 };

@@ -88,4 +88,6 @@ namespace VKHelper
 	bool createSyncPrimitives(VkDevice device, VKRenderPassDataComponent* VKRPDC);
 
 	bool createShaderModule(VkDevice device, VkShaderModule& vkShaderModule, const ShaderFilePath& shaderFilePath);
+
+	VkWriteDescriptorSet createWriteDescriptorSet(const VkDescriptorImageInfo& imageInfo, uint32_t dstBinding, VkDescriptorSet descriptorSet);
 }

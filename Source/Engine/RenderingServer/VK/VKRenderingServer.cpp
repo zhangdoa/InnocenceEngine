@@ -292,7 +292,7 @@ bool VKRenderingServerNS::createLogicalDevice()
 	l_deviceFeatures.samplerAnisotropy = VK_TRUE;
 	l_deviceFeatures.tessellationShader = VK_TRUE;
 	l_deviceFeatures.vertexPipelineStoresAndAtomics = VK_TRUE;
-	
+
 	VkDeviceCreateInfo l_createInfo = {};
 	l_createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
@@ -773,6 +773,9 @@ bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 
 	createImageView(m_device, l_rhs);
 
+	l_rhs->m_DescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	l_rhs->m_DescriptorImageInfo.imageView = l_rhs->m_imageView;
+
 	auto l_resourceBinder = addResourcesBinder();
 	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
 	l_rhs->m_ResourceBinder = l_resourceBinder;
@@ -796,23 +799,6 @@ bool VKRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * 
 	auto l_rhs = reinterpret_cast<VKMaterialDataComponent*>(rhs);
 	l_rhs->m_ResourceBinders.resize(5);
 
-	auto f_createWriteDescriptorSet = [&](TextureDataComponent* texture, VkDescriptorImageInfo& imageInfo, uint32_t dstBinding)
-	{
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageInfo.imageView = reinterpret_cast<VKTextureDataComponent*>(texture)->m_imageView;
-
-		VkWriteDescriptorSet writeDescriptorSet = {};
-		writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSet.dstBinding = dstBinding;
-		writeDescriptorSet.dstArrayElement = 0;
-		writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		writeDescriptorSet.descriptorCount = 1;
-		writeDescriptorSet.pImageInfo = &imageInfo;
-		writeDescriptorSet.dstSet = l_rhs->m_descriptorSet;
-
-		return writeDescriptorSet;
-	};
-
 	createDescriptorSets(
 		m_device,
 		m_materialDescriptorPool,
@@ -820,59 +806,62 @@ bool VKRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * 
 		l_rhs->m_descriptorSet,
 		1);
 
-	l_rhs->m_descriptorImageInfos.resize(5);
 	l_rhs->m_writeDescriptorSets.resize(5);
 
 	if (l_rhs->m_normalTexture)
 	{
-		InitializeTextureDataComponent(reinterpret_cast<VKTextureDataComponent*>(l_rhs->m_normalTexture));
-		l_rhs->m_writeDescriptorSets[0] = f_createWriteDescriptorSet(l_rhs->m_normalTexture, l_rhs->m_descriptorImageInfos[0], 0);
+		auto l_texture = reinterpret_cast<VKTextureDataComponent*>(l_rhs->m_normalTexture);
+		InitializeTextureDataComponent(l_texture);
+		l_rhs->m_writeDescriptorSets[0] = createWriteDescriptorSet(l_texture->m_DescriptorImageInfo, 0, l_rhs->m_descriptorSet);
 	}
 	else
 	{
-		auto l_defaultTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Normal);
-		l_rhs->m_writeDescriptorSets[0] = f_createWriteDescriptorSet(l_defaultTexture, l_rhs->m_descriptorImageInfos[0], 0);
+		auto l_texture = reinterpret_cast<VKTextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Normal));
+		l_rhs->m_writeDescriptorSets[0] = createWriteDescriptorSet(l_texture->m_DescriptorImageInfo, 0, l_rhs->m_descriptorSet);
 	}
 	if (l_rhs->m_albedoTexture)
 	{
-		InitializeTextureDataComponent(reinterpret_cast<VKTextureDataComponent*>(l_rhs->m_albedoTexture));
-		l_rhs->m_writeDescriptorSets[1] = f_createWriteDescriptorSet(l_rhs->m_albedoTexture, l_rhs->m_descriptorImageInfos[1], 1);
+		auto l_texture = reinterpret_cast<VKTextureDataComponent*>(l_rhs->m_albedoTexture);
+		InitializeTextureDataComponent(l_texture);
+		l_rhs->m_writeDescriptorSets[1] = createWriteDescriptorSet(l_texture->m_DescriptorImageInfo, 1, l_rhs->m_descriptorSet);
 	}
 	else
 	{
-		auto l_defaultTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Albedo);
-		l_rhs->m_writeDescriptorSets[1] = f_createWriteDescriptorSet(l_defaultTexture, l_rhs->m_descriptorImageInfos[1], 1);
+		auto l_texture = reinterpret_cast<VKTextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Albedo));
+		l_rhs->m_writeDescriptorSets[1] = createWriteDescriptorSet(l_texture->m_DescriptorImageInfo, 1, l_rhs->m_descriptorSet);
 	}
 	if (l_rhs->m_metallicTexture)
 	{
-		InitializeTextureDataComponent(reinterpret_cast<VKTextureDataComponent*>(l_rhs->m_metallicTexture));
-		l_rhs->m_writeDescriptorSets[2] = f_createWriteDescriptorSet(l_rhs->m_metallicTexture, l_rhs->m_descriptorImageInfos[2], 2);
+		auto l_texture = reinterpret_cast<VKTextureDataComponent*>(l_rhs->m_metallicTexture);
+		InitializeTextureDataComponent(l_texture);
+		l_rhs->m_writeDescriptorSets[2] = createWriteDescriptorSet(l_texture->m_DescriptorImageInfo, 2, l_rhs->m_descriptorSet);
 	}
 	else
 	{
-		auto l_defaultTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Metallic);
-		l_rhs->m_writeDescriptorSets[2] = f_createWriteDescriptorSet(l_defaultTexture, l_rhs->m_descriptorImageInfos[2], 2);
+		auto l_texture = reinterpret_cast<VKTextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Metallic));
+		l_rhs->m_writeDescriptorSets[2] = createWriteDescriptorSet(l_texture->m_DescriptorImageInfo, 2, l_rhs->m_descriptorSet);
 	}
 	if (l_rhs->m_roughnessTexture)
 	{
-		InitializeTextureDataComponent(reinterpret_cast<VKTextureDataComponent*>(l_rhs->m_roughnessTexture));
-		l_rhs->m_writeDescriptorSets[3] = f_createWriteDescriptorSet(l_rhs->m_roughnessTexture, l_rhs->m_descriptorImageInfos[3], 3);
+		auto l_texture = reinterpret_cast<VKTextureDataComponent*>(l_rhs->m_roughnessTexture);
+		InitializeTextureDataComponent(l_texture);
+		l_rhs->m_writeDescriptorSets[3] = createWriteDescriptorSet(l_texture->m_DescriptorImageInfo, 3, l_rhs->m_descriptorSet);
 	}
 	else
 	{
-		auto l_defaultTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Roughness);
-
-		l_rhs->m_writeDescriptorSets[3] = f_createWriteDescriptorSet(l_defaultTexture, l_rhs->m_descriptorImageInfos[3], 3);
+		auto l_texture = reinterpret_cast<VKTextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Roughness));
+		l_rhs->m_writeDescriptorSets[3] = createWriteDescriptorSet(l_texture->m_DescriptorImageInfo, 3, l_rhs->m_descriptorSet);
 	}
 	if (l_rhs->m_aoTexture)
 	{
-		InitializeTextureDataComponent(reinterpret_cast<VKTextureDataComponent*>(l_rhs->m_aoTexture));
-		l_rhs->m_writeDescriptorSets[4] = f_createWriteDescriptorSet(l_rhs->m_aoTexture, l_rhs->m_descriptorImageInfos[4], 4);
+		auto l_texture = reinterpret_cast<VKTextureDataComponent*>(l_rhs->m_aoTexture);
+		InitializeTextureDataComponent(l_texture);
+		l_rhs->m_writeDescriptorSets[4] = createWriteDescriptorSet(l_texture->m_DescriptorImageInfo, 4, l_rhs->m_descriptorSet);
 	}
 	else
 	{
-		auto l_defaultTexture = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::AmbientOcclusion);
-		l_rhs->m_writeDescriptorSets[4] = f_createWriteDescriptorSet(l_defaultTexture, l_rhs->m_descriptorImageInfos[4], 4);
+		auto l_texture = reinterpret_cast<VKTextureDataComponent*>(g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::AmbientOcclusion));
+		l_rhs->m_writeDescriptorSets[4] = createWriteDescriptorSet(l_texture->m_DescriptorImageInfo, 4, l_rhs->m_descriptorSet);
 	}
 
 	updateDescriptorSet(m_device, &l_rhs->m_writeDescriptorSets[0], (uint32_t)l_rhs->m_writeDescriptorSets.size());

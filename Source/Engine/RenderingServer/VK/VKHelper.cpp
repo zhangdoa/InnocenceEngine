@@ -1741,3 +1741,17 @@ bool VKHelper::createShaderModule(VkDevice device, VkShaderModule & vkShaderModu
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "VKRenderingServer: innoShader: ", shaderFilePath.c_str(), " has been loaded.");
 	return true;
 }
+
+VkWriteDescriptorSet VKHelper::createWriteDescriptorSet(const VkDescriptorImageInfo & imageInfo, uint32_t dstBinding, VkDescriptorSet descriptorSet)
+{
+	VkWriteDescriptorSet l_result = {};
+	l_result.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	l_result.dstBinding = dstBinding;
+	l_result.dstArrayElement = 0;
+	l_result.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+	l_result.descriptorCount = 1;
+	l_result.pImageInfo = &imageInfo;
+	l_result.dstSet = descriptorSet;
+
+	return l_result;
+}
