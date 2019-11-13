@@ -12,12 +12,17 @@ namespace InnoRayTracerNS
 {
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	std::atomic<bool> m_isWorking;
+	const int m_maxDepth = 4;
+	TextureDataComponent* m_TDC;
 }
+
+using namespace InnoRayTracerNS;
 
 struct HitResult
 {
 	Vec4 HitPoint;
 	Vec4 HitNormal;
+	Vec4 Albedo;
 	float t;
 };
 
@@ -55,6 +60,14 @@ bool HitableCube::Hit(const Ray & r, float tMin, float tMax, HitResult & hitResu
 		return false;
 	}
 
+	for (auto& j : m_VisibleComponent->m_modelMap)
+	{
+		hitResult.Albedo.x = j.second->m_meshCustomMaterial.AlbedoR;
+		hitResult.Albedo.y = j.second->m_meshCustomMaterial.AlbedoG;
+		hitResult.Albedo.z = j.second->m_meshCustomMaterial.AlbedoB;
+		break;
+	}
+
 	if (tmin < 0.0f)
 	{
 		hitResult.HitPoint = r.m_origin + r.m_direction * tmax;
@@ -83,6 +96,14 @@ bool HitableSphere::Hit(const Ray & r, float tMin, float tMax, HitResult & hitRe
 
 	if (dis > 0)
 	{
+		for (auto& j : m_VisibleComponent->m_modelMap)
+		{
+			hitResult.Albedo.x = j.second->m_meshCustomMaterial.AlbedoR;
+			hitResult.Albedo.y = j.second->m_meshCustomMaterial.AlbedoG;
+			hitResult.Albedo.z = j.second->m_meshCustomMaterial.AlbedoB;
+			break;
+		}
+
 		float temp = (-b - sqrt(dis)) / a;
 		if (temp < tMax && temp > tMin)
 		{
@@ -117,10 +138,10 @@ bool HitableList::Hit(const Ray & r, float tMin, float tMax, HitResult & hitResu
 {
 	HitResult l_hitResult;
 	bool hit_anything = false;
-	float closest_so_far = std::numeric_limits<float>::max();
+	float closest_so_far = tMax;
 	for (uint32_t i = 0; i < m_Size; i++)
 	{
-		if (m_List[i]->Hit(r, 0.001f, closest_so_far, l_hitResult))
+		if (m_List[i]->Hit(r, tMin, closest_so_far, l_hitResult))
 		{
 			hit_anything = true;
 			closest_so_far = l_hitResult.t;
@@ -168,16 +189,18 @@ public:
 		u = (vup.cross(w)).normalize();
 		v = (w.cross(u)).normalize();
 		lower_left_corner = origin - u * half_width * focus_dist - v * half_height * focus_dist - w * focus_dist;
-		horizontal = u * 2 * half_width*focus_dist;
-		vertical = v * 2 * half_height*focus_dist;
+		horizontal = u * 2 * half_width * focus_dist;
+		vertical = v * 2 * half_height * focus_dist;
 	}
 
-	Ray GetRay(float s, float t) {
+	Ray GetRay(float s, float t)
+	{
 		Vec4 rd = RandomDirectionInUnitDisk() * lens_radius;
 		Vec4 offset = u * rd.x + v * rd.y;
 		Ray l_result;
 		l_result.m_origin = origin + offset;
 		l_result.m_direction = lower_left_corner + horizontal * s + vertical * t - origin - offset;
+		l_result.m_direction = l_result.m_direction.normalize();
 		return l_result;
 	}
 
@@ -194,34 +217,27 @@ Vec4 CalcRadiance(const Ray& r, Hitable* world, int32_t depth)
 	HitResult l_result;
 	Vec4 color;
 
-	if (world->Hit(r, 0.0f, std::numeric_limits<float>::max(), l_result) && depth < 16)
+	if (depth < m_maxDepth)
 	{
-		if (world->m_VisibleComponent)
+		if (world->Hit(r, 0.0f, std::numeric_limits<float>::max(), l_result))
 		{
-			for (auto& j : world->m_VisibleComponent->m_modelMap)
-			{
-				color.x = j.second->m_meshCustomMaterial.AlbedoR;
-				color.y = j.second->m_meshCustomMaterial.AlbedoG;
-				color.z = j.second->m_meshCustomMaterial.AlbedoB;
-				color.w = 1.0f;
-				break;
-			}
+			Ray l_ray;
+			l_ray.m_origin = l_result.HitPoint;
+			l_ray.m_direction = l_result.HitNormal + RandomDirectionInUnitSphere();
+			color = l_result.Albedo;
+
+			auto l_incoming_color = CalcRadiance(l_ray, world, depth + 1) * 0.5f;
+			color = color + l_incoming_color;
 		}
 		else
 		{
-			Vec4 target = l_result.HitPoint + l_result.HitNormal + RandomDirectionInUnitSphere();
-			Ray l_ray;
-			l_ray.m_origin = l_result.HitPoint;
-			l_ray.m_direction = target - l_result.HitPoint;
-			color = CalcRadiance(l_ray, world, depth + 1) * 0.5f;
+			Vec4 unitDir = r.m_direction.normalize();
+			float t = unitDir.y * 0.5f + 0.5f;
+			color = InnoMath::lerp(Vec4(0.5f, 0.7f, 1.0f, 1.0f), Vec4(1.0f, 1.0f, 1.0f, 1.0f), t);
 		}
 	}
-	else
-	{
-		Vec4 unitDir = r.m_direction.normalize();
-		float t = unitDir.y * 0.5f + 0.5f;
-		color = InnoMath::lerp(Vec4(0.5f, 0.7f, 1.0f, 1.0f), Vec4(1.0f, 1.0f, 1.0f, 1.0f), t);
-	}
+
+	color.w = 1.0f;
 
 	return color;
 }
@@ -230,16 +246,6 @@ bool ExecuteRayTracing()
 {
 	InnoLogger::Log(LogLevel::Verbose, "InnoRayTracer: Start ray tracing...");
 
-	std::ofstream l_ExportFile(g_pModuleManager->getFileSystem()->getWorkingDirectory() + "//Res//test.ppm", std::ios::out | std::ios::trunc);
-
-	auto l_ScreenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
-
-	int32_t nx = l_ScreenResolution.x / 4;
-	int32_t ny = l_ScreenResolution.y / 4;
-	int32_t totalWorkload = nx * ny;
-
-	l_ExportFile << "P3\n" << nx << " " << ny << "\n255\n";
-
 	auto l_camera = GetComponentManager(CameraComponent)->GetAllComponents()[0];
 	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_camera->m_ParentEntity);
 	auto l_lookfrom = l_cameraTransformComponent->m_globalTransformVector.m_pos;
@@ -247,7 +253,7 @@ bool ExecuteRayTracing()
 	auto l_up = InnoMath::getDirection(Direction::Up, l_cameraTransformComponent->m_globalTransformVector.m_rot);
 	auto l_vfov = l_camera->m_FOVX / l_camera->m_WHRatio;
 
-	RayTracingCamera l_rayTracingCamera(l_lookfrom, l_lookat, l_up, l_vfov, l_camera->m_WHRatio, 0.1f, 10.0f);
+	RayTracingCamera l_rayTracingCamera(l_lookfrom, l_lookat, l_up, l_vfov, l_camera->m_WHRatio, 0.1f, 1000.0f);
 
 	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
 
@@ -284,9 +290,17 @@ bool ExecuteRayTracing()
 	l_hitableList->m_List = l_hitableListVector.data();
 	l_hitableList->m_Size = (uint32_t)l_hitableListVector.size();
 
-	int32_t currentWorkload = 0;
-	for (int32_t j = ny - 1; j >= 0; j--) {
-		for (int32_t i = 0; i < nx; i++) {
+	int32_t nx = m_TDC->m_textureDataDesc.Width;
+	int32_t ny = m_TDC->m_textureDataDesc.Height;
+	int32_t totalWorkload = nx * ny;
+
+	std::vector<TVec4<uint8_t>> l_result;
+	l_result.reserve(totalWorkload);
+
+	for (int32_t j = ny - 1; j >= 0; j--)
+	{
+		for (int32_t i = 0; i < nx; i++)
+		{
 			float u = float(i) / float(nx);
 			float v = float(j) / float(ny);
 			Vec4 color = CalcRadiance(l_rayTracingCamera.GetRay(u, v), l_hitableList, 0);
@@ -294,20 +308,21 @@ bool ExecuteRayTracing()
 			color.y = sqrtf(color.y);
 			color.z = sqrtf(color.z);
 
-			int32_t ir = int32_t(255.99*color.x);
-			int32_t ig = int32_t(255.99*color.y);
-			int32_t ib = int32_t(255.99*color.z);
-			l_ExportFile << ir << " " << ig << " " << ib << "\n";
+			TVec4<uint8_t> l_colorUint8;
+			l_colorUint8.x = uint8_t(255.99*color.x);
+			l_colorUint8.y = uint8_t(255.99*color.y);
+			l_colorUint8.z = uint8_t(255.99*color.z);
+			l_colorUint8.w = uint8_t(255);
 
-			InnoLogger::Log(LogLevel::Verbose, "InnoRayTracer: ", float(currentWorkload) * 100.0f / float(totalWorkload), "%...");
-
-			currentWorkload++;
+			l_result.emplace_back(l_colorUint8);
 		}
 	}
 
-	l_ExportFile.close();
+	m_TDC->m_textureData = &l_result[0];
 
-	InnoLogger::Log(LogLevel::Success, "InnoRayTracer: Finished ray tracing.");
+	g_pModuleManager->getFileSystem()->saveTexture("//Res//Intermediate//RayTracingResult_" + std::to_string(g_pModuleManager->getTimeSystem()->getCurrentTimeFromEpoch()), m_TDC);
+
+	InnoLogger::Log(LogLevel::Success, "InnoRayTracer: Ray tracing finished.");
 
 	return true;
 }
@@ -320,6 +335,22 @@ bool InnoRayTracer::Setup()
 
 bool InnoRayTracer::Initialize()
 {
+	const int l_denom = 2;
+
+	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+
+	m_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("RayTracingResult/");
+
+	m_TDC->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_TDC->m_textureDataDesc.UsageType = TextureUsageType::Sample;
+	m_TDC->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
+	m_TDC->m_textureDataDesc.MinFilterMethod = TextureFilterMethod::Nearest;
+	m_TDC->m_textureDataDesc.MagFilterMethod = TextureFilterMethod::Nearest;
+	m_TDC->m_textureDataDesc.WrapMethod = TextureWrapMethod::Edge;
+	m_TDC->m_textureDataDesc.Width = l_screenResolution.x / l_denom;
+	m_TDC->m_textureDataDesc.Height = l_screenResolution.y / l_denom;
+	m_TDC->m_textureDataDesc.PixelDataType = TexturePixelDataType::UBYTE;
+
 	InnoRayTracerNS::m_ObjectStatus = ObjectStatus::Activated;
 	return true;
 }
