@@ -1,0 +1,56 @@
+// shadertype=hlsl
+#include "common/common.hlsl"
+
+struct ComputeInputType
+{
+	uint3 groupID : SV_GroupID;           // 3D index of the thread group in the dispatch.
+	uint3 groupThreadID : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
+	uint3 dispatchThreadID : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
+	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
+};
+
+#define RGB_TO_LUM float3(0.2125, 0.7154, 0.0721)
+
+Texture2D<float4> in_luminance : register(t0);
+RWStructuredBuffer<uint> out_histogram : register(u1);
+
+groupshared uint histogramShared[256];
+
+uint colorToBin(float3 hdrColor, float minLogLum, float inverseLogLumRange)
+{
+	float lum = dot(hdrColor, RGB_TO_LUM);
+
+	if (lum < eps)
+	{
+		return 0;
+	}
+
+	float logLum = saturate((log2(lum) - minLogLum) * inverseLogLumRange);
+
+	return uint(logLum * 254.0 + 1.0);
+}
+
+[numthreads(16, 16, 1)]
+void main(ComputeInputType input)
+{
+	histogramShared[input.groupIndex] = 0;
+	GroupMemoryBarrierWithGroupSync();
+
+	float2 dimF;
+	float level;
+	in_luminance.GetDimensions(0, dimF.x, dimF.y, level);
+
+	uint2 dim = uint2(dimF);
+
+	if (input.dispatchThreadID.x < dim.x && input.dispatchThreadID.y < dim.y)
+	{
+		float3 hdrColor = in_luminance[int2(input.dispatchThreadID.xy)].xyz;
+		uint binIndex = colorToBin(hdrColor, -10.0, 1.0 / 26.0);
+
+		InterlockedAdd(histogramShared[binIndex], 1);
+	}
+
+	GroupMemoryBarrierWithGroupSync();
+
+	InterlockedAdd(out_histogram[input.groupIndex], histogramShared[input.groupIndex]);
+}

@@ -4,6 +4,7 @@
 #include "GIDataLoader.h"
 #include "GIResolvePass.h"
 #include "GIResolveTestPass.h"
+#include "LuminanceHistogramPass.h"
 #include "BRDFLUTPass.h"
 #include "SunShadowPass.h"
 #include "OpaquePass.h"
@@ -65,6 +66,7 @@ bool DefaultRenderingClient::Setup()
 		LightCullingPass::Setup();
 		GIResolvePass::Setup();
 		GIResolveTestPass::Setup();
+		LuminanceHistogramPass::Setup();
 		BRDFLUTPass::Setup();
 		SunShadowPass::Setup();
 		OpaquePass::Setup();
@@ -89,6 +91,7 @@ bool DefaultRenderingClient::Setup()
 		DefaultGPUBuffers::Initialize();
 		GIDataLoader::Initialize();
 		LightCullingPass::Initialize();
+		LuminanceHistogramPass::Initialize();
 		GIResolvePass::Initialize();
 		GIResolveTestPass::Initialize();
 		BRDFLUTPass::Initialize();
@@ -136,6 +139,8 @@ bool DefaultRenderingClient::Setup()
 		//VolumetricFogPass::PrepareCommandList();
 
 		l_canvas = TransparentPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
+
+		LuminanceHistogramPass::PrepareCommandList(l_canvas);
 
 		if (l_renderingConfig.useTAA)
 		{
@@ -193,6 +198,7 @@ bool DefaultRenderingClient::Setup()
 		PreTAAPass::ExecuteCommandList();
 		TransparentPass::ExecuteCommandList();
 		//VolumetricFogPass::ExecuteCommandList();
+		LuminanceHistogramPass::ExecuteCommandList();
 
 		if (l_renderingConfig.useTAA)
 		{
@@ -238,6 +244,7 @@ bool DefaultRenderingClient::Setup()
 		LightCullingPass::Terminate();
 		GIResolvePass::Terminate();
 		GIResolveTestPass::Terminate();
+		LuminanceHistogramPass::Terminate();
 		GIDataLoader::Terminate();
 		BRDFLUTPass::Terminate();
 		SunShadowPass::Terminate();
