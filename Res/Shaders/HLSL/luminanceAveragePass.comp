@@ -1,0 +1,45 @@
+// shadertype=hlsl
+#include "common/common.hlsl"
+
+struct ComputeInputType
+{
+	uint3 groupID : SV_GroupID;           // 3D index of the thread group in the dispatch.
+	uint3 groupThreadID : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
+	uint3 dispatchThreadID : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
+	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
+};
+
+RWStructuredBuffer<uint> in_histogram : register(u0);
+RWStructuredBuffer<float> out_average : register(u1);
+
+groupshared float histogramShared[256];
+
+[numthreads(16, 16, 1)]
+void main(ComputeInputType input)
+{
+	float countForThisBin = (float)in_histogram.Load(input.groupIndex);
+	histogramShared[input.groupIndex] = countForThisBin * (float)input.groupIndex;
+
+	GroupMemoryBarrierWithGroupSync();
+
+	[unroll]
+	for (uint histogramSampleIndex = (256 >> 1); histogramSampleIndex > 0; histogramSampleIndex >>= 1)
+	{
+		if (input.groupIndex < histogramSampleIndex)
+		{
+			histogramShared[input.groupIndex] += histogramShared[input.groupIndex + histogramSampleIndex];
+		}
+
+		GroupMemoryBarrierWithGroupSync();
+	}
+
+	if (input.groupIndex == 0)
+	{
+		float weightedLogAverage = (histogramShared[0] / max((float)1280.0 * 720.0 - countForThisBin, 1.0)) - 1.0;
+		float weightedAverageLuminance = exp2(((weightedLogAverage / 254.0) * 26.0) - 10.0);
+		float luminanceLastFrame = out_average[0];
+		float adaptedLuminance = luminanceLastFrame + (weightedAverageLuminance - luminanceLastFrame);
+
+		out_average[0] = adaptedLuminance;
+	}
+}
