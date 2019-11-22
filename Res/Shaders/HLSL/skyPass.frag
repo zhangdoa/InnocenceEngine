@@ -28,7 +28,7 @@ PixelOutputType main(PixelInputType input)
 		eyedir,           // normalized ray direction
 		eye_position,               // ray origin
 		lightdir,                        // position of the sun
-		22.0,                           // intensity of the sun
+		sun_illuminance * 4 * PI,                           // intensity of the sun
 		planetRadius,                   // radius of the planet in meters
 		planetRadius + atmosphereHeight, // radius of the atmosphere in meters
 		float3(5.8e-6, 13.5e-6, 33.1e-6), // Rayleigh scattering coefficient

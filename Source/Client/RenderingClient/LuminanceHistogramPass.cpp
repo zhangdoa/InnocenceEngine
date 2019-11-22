@@ -191,3 +191,8 @@ ShaderProgramComponent * LuminanceHistogramPass::GetSPC()
 {
 	return m_SPC_LuminanceHistogram;
 }
+
+GPUBufferDataComponent * LuminanceHistogramPass::GetAverageLuminance()
+{
+	return m_LuminanceAverageGBDC;
+}

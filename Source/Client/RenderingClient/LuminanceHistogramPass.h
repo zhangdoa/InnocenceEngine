@@ -11,4 +11,6 @@ namespace LuminanceHistogramPass
 
 	RenderPassDataComponent* GetRPDC();
 	ShaderProgramComponent* GetSPC();
+
+	GPUBufferDataComponent* GetAverageLuminance();
 };
