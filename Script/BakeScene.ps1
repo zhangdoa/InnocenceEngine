@@ -7,7 +7,7 @@ Write-Output "Start to bake scene..."
 Set-Location ../Bin/
 
 Write-Output "Generate probe cache and surfel cache for $sceneName scene..."
-Start-Process Debug/InnoBaker.exe -ArgumentList "-renderer 0 -mode 0 -loglevel 1 -bakestage probe Res//Scenes//$sceneName.InnoScene" -Wait
+Start-Process Debug/InnoBaker.exe -ArgumentList "-renderer 1 -mode 0 -loglevel 1 -bakestage probe Res//Scenes//$sceneName.InnoScene" -Wait
 
 Write-Output "Generate brick cache for $sceneName scene..."
 Start-Process Debug/InnoBaker.exe -ArgumentList "-renderer 0 -mode 0 -loglevel 1 -bakestage brickcache Res//Intermediate//$sceneName.InnoSurfelCache" -Wait
