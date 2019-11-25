@@ -70,7 +70,7 @@
             "Y": 0.0,
             "X": 0.0
           },
-          "LuminousFlux": 1.0,
+          "LuminousFlux": 100000.0,
           "RGBColor": {
             "W": 1.0,
             "X": 1.0,
