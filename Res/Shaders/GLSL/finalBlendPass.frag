@@ -101,12 +101,10 @@ void main()
 	bassPassxyY.z /= averageSSBO.data[0] * 9.6;
 	basePass = xyY2rgb(bassPassxyY);
 
-	vec3 finalColor = basePass / (1.0 + basePass);
+	// Tone Mapping
+	vec3 finalColor = acesFilm(basePass);
 
-	//color filter
-	finalColor = acesFilm(finalColor);
-
-	// gamma correction
+	// Gamma correction
 	finalColor = accurateLinearToSRGB(finalColor);
 
 	// billboard overlay

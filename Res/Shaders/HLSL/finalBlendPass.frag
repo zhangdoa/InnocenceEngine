@@ -92,17 +92,15 @@ float4 main(PixelInputType input) : SV_TARGET
 	float4 billboardPass = billboardPassRT0.Sample(SampleTypePoint, input.texcoord);
 	float4 debugPass = debugPassRT0.Sample(SampleTypePoint, input.texcoord);
 
-	//HDR to LDR
+	// HDR to LDR
 	float3 bassPassxyY = rgb2xyY(basePass);
 	bassPassxyY.z /= in_luminanceAverage[0] * 9.6;
 	basePass = xyY2rgb(bassPassxyY);
 
-	float3 finalColor = basePass / (1.0 + basePass);
+	// Tone Mapping
+	float3 finalColor = acesFilm(basePass);
 
-	//color filter
-	finalColor = acesFilm(finalColor);
-
-	//gamma correction
+	// Gamma Correction
 	finalColor = accurateLinearToSRGB(finalColor);
 
 	// billboard overlay
