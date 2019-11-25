@@ -1,0 +1,44 @@
+// shadertype=glsl
+#include "common/common.glsl"
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(std430, set = 1, binding = 0) coherent buffer histogramSSBOBlock
+{
+	uint data[];
+} histogramSSBO;
+
+layout(std430, set = 1, binding = 1) coherent buffer averageSSBOBlock
+{
+	float data[];
+} averageSSBO;
+
+shared float histogramShared[256];
+
+void main()
+{
+	float countForThisBin = float(histogramSSBO.data[gl_LocalInvocationIndex]);
+	histogramShared[gl_LocalInvocationIndex] = countForThisBin * float(gl_LocalInvocationIndex);
+
+	groupMemoryBarrier();
+
+	for (uint histogramSampleIndex = (256 >> 1); histogramSampleIndex > 0; histogramSampleIndex >>= 1)
+	{
+		if (gl_LocalInvocationIndex < histogramSampleIndex)
+		{
+			histogramShared[gl_LocalInvocationIndex] += histogramShared[gl_LocalInvocationIndex + histogramSampleIndex];
+		}
+
+		groupMemoryBarrier();
+	}
+
+	if (gl_LocalInvocationIndex == 0)
+	{
+		float weightedLogAverage = (histogramShared[0] / max(1280.0 * 720.0 - countForThisBin, 1.0)) - 1.0;
+		float weightedAverageLuminance = exp2(((weightedLogAverage / 254.0) * 26.0) - 10.0);
+		float luminanceLastFrame = averageSSBO.data[0];
+		float adaptedLuminance = luminanceLastFrame + (weightedAverageLuminance - luminanceLastFrame) * 0.05;
+
+		averageSSBO.data[0] = adaptedLuminance;
+	}
+}

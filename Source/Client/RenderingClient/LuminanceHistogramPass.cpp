@@ -16,6 +16,7 @@ namespace LuminanceHistogramPass
 	ShaderProgramComponent* m_SPC_LuminanceHistogram = 0;
 	RenderPassDataComponent* m_RPDC_LuminanceAverage = 0;
 	ShaderProgramComponent* m_SPC_LuminanceAverage = 0;
+	SamplerDataComponent* m_SDC = 0;
 
 	GPUBufferDataComponent* m_LuminanceHistogramGBDC = 0;
 	GPUBufferDataComponent* m_LuminanceAverageGBDC = 0;
@@ -41,7 +42,7 @@ bool LuminanceHistogramPass::Setup()
 
 	m_RPDC_LuminanceHistogram->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs.resize(2);
+	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs.resize(3);
 	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
 	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 1;
 	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
@@ -54,6 +55,11 @@ bool LuminanceHistogramPass::Setup()
 	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
 	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[1].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
+
+	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Sampler;
+	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
+	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 0;
+	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[2].m_IndirectBinding = true;
 
 	m_RPDC_LuminanceHistogram->m_ShaderProgram = m_SPC_LuminanceHistogram;
 
@@ -80,6 +86,9 @@ bool LuminanceHistogramPass::Setup()
 	m_RPDC_LuminanceAverage->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
 
 	m_RPDC_LuminanceAverage->m_ShaderProgram = m_SPC_LuminanceAverage;
+
+	////
+	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("LuminanceHistogramPass/");
 
 	////
 	m_LuminanceHistogramGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("LuminanceHistogramGPUBuffer/");
@@ -118,6 +127,7 @@ bool LuminanceHistogramPass::CalculateHistogram(IResourceBinder* input)
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_LuminanceHistogram, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_LuminanceHistogram);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_LuminanceHistogram);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, m_SDC->m_ResourceBinder, 2, 0);
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, input, 0, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, m_LuminanceHistogramGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);

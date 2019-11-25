@@ -64,7 +64,7 @@ float3 xyY2rgb(float3 xyY)
 }
 
 //Academy Color Encoding System
-//http://www.oscars.org/science-technology/sci-tech-projects/aces
+//[http://www.oscars.org/science-technology/sci-tech-projects/aces]
 float3 acesFilm(const float3 x)
 {
 	const float a = 2.51;
@@ -73,6 +73,17 @@ float3 acesFilm(const float3 x)
 	const float d = 0.59;
 	const float e = 0.14;
 	return saturate((x * (a * x + b)) / (x * (c * x + d) + e));
+}
+
+//gamma correction with respect to human eyes non-linearity
+//[https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf]
+float3 accurateLinearToSRGB(float3 linearCol)
+{
+	float3 sRGBLo = linearCol * 12.92;
+	float3 sRGBHi = (pow(abs(linearCol), 1.0 / 2.4) * 1.055) - 0.055;
+	float3 sRGB = (linearCol <= 0.0031308) ? sRGBLo : sRGBHi;
+
+	return sRGB;
 }
 
 float4 main(PixelInputType input) : SV_TARGET
@@ -92,8 +103,7 @@ float4 main(PixelInputType input) : SV_TARGET
 	finalColor = acesFilm(finalColor);
 
 	//gamma correction
-	float gammaRatio = 1.0 / 2.2;
-	finalColor = pow(finalColor, gammaRatio);
+	finalColor = accurateLinearToSRGB(finalColor);
 
 	// billboard overlay
 	finalColor += billboardPass.rgb;

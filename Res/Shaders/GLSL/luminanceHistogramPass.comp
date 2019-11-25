@@ -5,11 +5,12 @@ layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 #define RGB_TO_LUM vec3(0.2125, 0.7154, 0.0721)
 
-layout(set = 1, binding = 0) uniform sampler2D in_luminance;
+layout(set = 1, binding = 0) uniform texture2D in_luminance;
 layout(std430, set = 1, binding = 1) coherent buffer histogramSSBOBlock
 {
 	uint data[];
 } histogramSSBO;
+layout(set = 2, binding = 0) uniform sampler samplerLinear;
 
 shared uint histogramShared[256];
 
@@ -32,11 +33,11 @@ void main()
 	histogramShared[gl_LocalInvocationIndex] = 0;
 	groupMemoryBarrier();
 
-	uvec2 dim = textureSize(in_luminance, 0).xy;
+	uvec2 dim = textureSize(sampler2D(in_luminance, samplerLinear), 0).xy;
 
 	if (gl_GlobalInvocationID.x < dim.x && gl_GlobalInvocationID.y < dim.y)
 	{
-		vec3 hdrColor = texelFetch(in_luminance, ivec2(gl_GlobalInvocationID.xy), 0).xyz;
+		vec3 hdrColor = texelFetch(sampler2D(in_luminance, samplerLinear), ivec2(gl_GlobalInvocationID.xy), 0).xyz;
 		uint binIndex = colorToBin(hdrColor, -10.0, 1.0 / 26.0);
 
 		atomicAdd(histogramShared[binIndex], 1);
