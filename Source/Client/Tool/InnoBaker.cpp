@@ -64,9 +64,9 @@ namespace InnoBakerNS
 
 	const uint32_t m_probeMapResolution = 1024;
 	const float m_probeHeightOffset = 6.0f;
-	const uint32_t m_probeInterval = 32;
+	const uint32_t m_probeInterval = 64;
 	const uint32_t m_captureResolution = 32;
-	const uint32_t m_surfelSampleCountPerFace = 16;
+	const uint32_t m_surfelSampleCountPerFace = 32;
 	const TVec4<double> m_brickSize = TVec4<double>(4.0, 4.0, 4.0, 0.0);
 	const TVec4<double> m_halfBrickSize = m_brickSize / 2.0;
 
@@ -134,9 +134,9 @@ bool InnoBakerNS::gatherStaticMeshData()
 
 				l_materialGPUData.customMaterial = l_modelPair.second->m_meshCustomMaterial;
 
-				m_staticMeshDrawCallData[l_index] = l_staticMeshGPUData;
-				m_staticMeshMeshGPUData[l_index] = l_meshGPUData;
-				m_staticMeshMaterialGPUData[l_index] = l_materialGPUData;
+				m_staticMeshDrawCallData.emplace_back(l_staticMeshGPUData);
+				m_staticMeshMeshGPUData.emplace_back(l_meshGPUData);
+				m_staticMeshMaterialGPUData.emplace_back(l_materialGPUData);
 				l_index++;
 			}
 		}
@@ -515,10 +515,8 @@ bool InnoBakerNS::readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfel
 
 	auto l_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
 	l_TDC->m_textureDataDesc = m_RPDC_Surfel->m_RenderTargets[0]->m_textureDataDesc;
-	l_TDC->m_textureData = l_posWSMetallic.data();
-	g_pModuleManager->getFileSystem()->saveTexture(("Res//Intermediate//SurfelTexture_" + std::to_string(l_index)).c_str(), l_TDC);
-
-	l_index++;
+	l_TDC->m_textureData = l_albedoAO.data();
+	g_pModuleManager->getFileSystem()->saveTexture(("Res//Intermediate//SurfelTextureAlbedo_" + std::to_string(l_index)).c_str(), l_TDC);
 
 	auto l_surfelsCount = m_surfelSampleCountPerFace * m_surfelSampleCountPerFace * 6;
 	auto l_sampleStep = m_captureResolution / m_surfelSampleCountPerFace;
@@ -540,6 +538,8 @@ bool InnoBakerNS::readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfel
 
 	auto l_depthStencilRTSize = l_depthStencilRT.size();
 
+	std::vector<Vec4> l_DSTDCData(l_depthStencilRTSize);
+
 	l_depthStencilRTSize /= 6;
 
 	for (size_t i = 0; i < 6; i++)
@@ -552,13 +552,21 @@ bool InnoBakerNS::readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfel
 			if (l_depthStencil.y == 1.0f)
 			{
 				l_stencil++;
+				l_DSTDCData[i * l_depthStencilRTSize + j] = Vec4(1.0f, 1.0f, 1.0f, 0.0f);
 			}
 		}
 
 		probe.skyVisibility[i] = 1.0f - ((float)l_stencil / (float)l_depthStencilRTSize);
 	}
 
+	auto l_DSTDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
+	l_DSTDC->m_textureDataDesc = m_RPDC_Surfel->m_RenderTargets[0]->m_textureDataDesc;
+	l_DSTDC->m_textureData = l_DSTDCData.data();
+	g_pModuleManager->getFileSystem()->saveTexture(("Res//Intermediate//SurfelTextureDS_" + std::to_string(l_index)).c_str(), l_DSTDC);
+
 	surfelCaches.insert(surfelCaches.end(), l_surfels.begin(), l_surfels.end());
+
+	l_index++;
 
 	return true;
 }
@@ -898,21 +906,6 @@ bool InnoBakerNS::assignBrickFactorToProbesByGPU(const std::vector<Brick>& brick
 
 	auto l_bricksCount = bricks.size();
 
-	auto l_startPos = InnoMath::maxVec4<float>;
-	l_startPos.w = 1.0f;
-
-	auto l_endPos = InnoMath::minVec4<float>;
-	l_endPos.w = 1.0f;
-
-	for (size_t i = 0; i < l_bricksCount; i++)
-	{
-		l_startPos = InnoMath::elementWiseMin(bricks[i].boundBox.m_boundMin, l_startPos);
-		l_endPos = InnoMath::elementWiseMax(bricks[i].boundBox.m_boundMax, l_endPos);
-	}
-
-	auto l_brickTotalExtend = l_endPos - l_startPos;
-	l_brickTotalExtend.w = 1.0f;
-
 	std::vector<MeshGPUData> l_bricksCubeMeshGPUData;
 	l_bricksCubeMeshGPUData.resize(l_bricksCount);
 
@@ -1001,7 +994,15 @@ bool InnoBakerNS::drawBricks(Vec4 pos, uint32_t bricksCount, const Mat4 & p, con
 
 bool InnoBakerNS::readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& brickFactors, const std::vector<Brick>& bricks)
 {
+	static int l_index = 0;
+
 	auto l_brickIDResults = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_BrickFactor, m_RPDC_BrickFactor->m_RenderTargets[0]);
+
+	auto l_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
+	l_TDC->m_textureDataDesc = m_RPDC_BrickFactor->m_RenderTargets[0]->m_textureDataDesc;
+	l_TDC->m_textureData = l_brickIDResults.data();
+	g_pModuleManager->getFileSystem()->saveTexture(("Res//Intermediate//BrickTexture_" + std::to_string(l_index)).c_str(), l_TDC);
+	l_index++;
 
 	auto l_brickIDResultSize = l_brickIDResults.size();
 
@@ -1134,9 +1135,9 @@ void InnoBaker::Setup()
 	////
 	auto l_RenderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
-	m_staticMeshDrawCallData.resize(l_RenderingCapability.maxMeshes);
-	m_staticMeshMeshGPUData.resize(l_RenderingCapability.maxMeshes);
-	m_staticMeshMaterialGPUData.resize(l_RenderingCapability.maxMaterials);
+	m_staticMeshDrawCallData.reserve(l_RenderingCapability.maxMeshes);
+	m_staticMeshMeshGPUData.reserve(l_RenderingCapability.maxMeshes);
+	m_staticMeshMaterialGPUData.reserve(l_RenderingCapability.maxMaterials);
 
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
