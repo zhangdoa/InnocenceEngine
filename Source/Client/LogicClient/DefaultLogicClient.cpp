@@ -154,6 +154,7 @@ void PlayerComponentCollection::rotateAroundRightAxis(float offset)
 namespace GameClientNS
 {
 	float seed = 0.0f;
+	bool allowUpdate = true;
 
 	std::vector<InnoEntity*> m_referenceSphereEntites;
 	std::vector<TransformComponent*> m_referenceSphereTransformComponents;
@@ -194,7 +195,10 @@ namespace GameClientNS
 	Vec4 getMousePositionInWorldSpace();
 
 	std::function<void()> f_sceneLoadingFinishCallback;
-	std::function<void()> f_testFunc;
+	std::function<void()> f_loadTestScene;
+
+	std::function<void()> f_runRayTracing;
+	std::function<void()> f_pauseGame;
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
@@ -527,6 +531,12 @@ bool GameClientNS::setup()
 
 	runTest(512, l_testQuatToMat);
 
+	f_runRayTracing = [&]() { g_pModuleManager->getRenderingFrontend()->runRayTrace(); };
+	f_pauseGame = [&]() { allowUpdate = !allowUpdate;	};
+
+	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_N, true }, ButtonEvent{ EventLifeTime::OneShot, &f_runRayTracing });
+	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_F, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseGame });
+
 	f_sceneLoadingFinishCallback = [&]() {
 		setupReferenceSpheres();
 		//setupOcclusionCubes();
@@ -544,9 +554,9 @@ bool GameClientNS::setup()
 
 bool GameClientNS::initialize()
 {
-	f_testFunc = []() {	g_pModuleManager->getFileSystem()->loadScene("Res//Scenes//GITest.InnoScene");
+	f_loadTestScene = []() {	g_pModuleManager->getFileSystem()->loadScene("Res//Scenes//GITest.InnoScene");
 	};
-	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_testFunc });
+	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadTestScene });
 
 	return true;
 }
@@ -613,15 +623,18 @@ bool GameClientNS::update()
 {
 	if (m_ObjectStatus == ObjectStatus::Activated)
 	{
-		auto l_tickTime = g_pModuleManager->getTickTime();
-		seed += (l_tickTime / 1000.0f);
+		if (allowUpdate)
+		{
+			auto l_tickTime = g_pModuleManager->getTickTime();
+			seed += (l_tickTime / 1000.0f);
 
-		auto l_seed = (1.0f - l_tickTime / 100.0f);
-		l_seed = l_seed > 0.0f ? l_seed : 0.01f;
-		l_seed = l_seed > 0.85f ? 0.85f : l_seed;
-		PlayerComponentCollection::update(l_seed);
+			auto l_seed = (1.0f - l_tickTime / 100.0f);
+			l_seed = l_seed > 0.0f ? l_seed : 0.01f;
+			l_seed = l_seed > 0.85f ? 0.85f : l_seed;
+			PlayerComponentCollection::update(l_seed);
 
-		updateSpheres();
+			updateSpheres();
+		}
 	}
 
 	return true;
