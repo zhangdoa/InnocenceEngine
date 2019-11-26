@@ -103,7 +103,7 @@ struct alignas(16) GISkyGPUData
 	Mat4 p_inv;
 	Mat4 v_inv[6];
 	Vec4 probeCount;
-	Vec4 probeInterval;
+	Vec4 probeRange;
 	Vec4 workload;
 	Vec4 irradianceVolumeOffset;
 };
@@ -185,5 +185,5 @@ struct Probe
 struct ProbeInfo
 {
 	Vec4 probeCount;
-	Vec4 probeInterval;
+	Vec4 probeRange;
 };

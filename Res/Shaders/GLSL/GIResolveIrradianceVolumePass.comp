@@ -26,7 +26,7 @@ layout(set = 0, binding = 11, std140) uniform GISkyCBuffer
 	layout(row_major) mat4 GISky_p_inv;
 	layout(row_major) mat4 GISky_v_inv[6];
 	vec4 GISky_probeCount;
-	vec4 GISky_probeInterval;
+	vec4 GISky_probeRange;
 	vec4 GISky_workload;
 	vec4 GISky_irradianceVolumeOffset;
 } _97;
@@ -39,7 +39,7 @@ void main()
 {
 	if (((gl_GlobalInvocationID.x < _26.dispatchParams[5].numThreads.x) && (gl_GlobalInvocationID.y < _26.dispatchParams[5].numThreads.y)) && (gl_GlobalInvocationID.z < _26.dispatchParams[5].numThreads.z))
 	{
-		vec3 _374 = (((((vec3(gl_GlobalInvocationID) / vec3(_26.dispatchParams[5].numThreads.xyz)) * _71.sky_posWSNormalizer.xyz) + ((_71.sky_posWSNormalizer.xyz / vec3(_26.dispatchParams[5].numThreads.xyz)) * vec3(0.5))) + _97.GISky_irradianceVolumeOffset.xyz) - vec3(_97.GISky_probeCount.w, _97.GISky_probeInterval.w, _97.GISky_irradianceVolumeOffset.w)) / (_97.GISky_probeInterval.xyz * (_97.GISky_probeCount.xyz - vec3(1.0)));
+		vec3 _374 = (((((vec3(gl_GlobalInvocationID) / vec3(_26.dispatchParams[5].numThreads.xyz)) * _71.sky_posWSNormalizer.xyz) + ((_71.sky_posWSNormalizer.xyz / vec3(_26.dispatchParams[5].numThreads.xyz)) * vec3(0.5))) + _97.GISky_irradianceVolumeOffset.xyz) - vec3(_97.GISky_probeCount.w, _97.GISky_probeRange.w, _97.GISky_irradianceVolumeOffset.w)) / _97.GISky_probeRange.xyz;
 		vec4 _298[6];
 		for (uint _458 = 0u; _458 < 6u; )
 		{

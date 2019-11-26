@@ -886,13 +886,13 @@ bool GIResolvePass::PrepareCommandList()
 
 		auto l_probeInfo = GIDataLoader::GetProbeInfo();
 		l_GISkyGPUData.probeCount = l_probeInfo.probeCount;
-		l_GISkyGPUData.probeInterval = l_probeInfo.probeInterval;
+		l_GISkyGPUData.probeRange = l_probeInfo.probeRange;
 		l_GISkyGPUData.workload.x = (float)m_surfelGBDC->m_ElementCount;
 		l_GISkyGPUData.workload.y = (float)m_brickGBDC->m_ElementCount;
 		l_GISkyGPUData.workload.z = (float)m_probeGBDC->m_ElementCount;
 		l_GISkyGPUData.irradianceVolumeOffset = m_irradianceVolumePosOffset;
 		l_GISkyGPUData.probeCount.w = m_minProbePos.x;
-		l_GISkyGPUData.probeInterval.w = m_minProbePos.y;
+		l_GISkyGPUData.probeRange.w = m_minProbePos.y;
 		l_GISkyGPUData.irradianceVolumeOffset.w = m_minProbePos.z;
 
 		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_SkyGBDC, &l_SkyGPUData);

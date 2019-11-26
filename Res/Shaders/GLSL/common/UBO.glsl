@@ -82,7 +82,7 @@ layout(std140, row_major, set = 0, binding = 11) uniform GISkyUBOUBOBlock
 	mat4 p_inv;
 	mat4 v_inv[6];
 	vec4 probeCount;
-	vec4 probeInterval;
+	vec4 probeRange;
 	vec4 workload;
 	vec4 irradianceVolumeOffset;
 } GISkyUBO;

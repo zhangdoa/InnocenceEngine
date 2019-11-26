@@ -33,8 +33,8 @@ void main(ComputeInputType input)
 		l_readCoord += GISky_irradianceVolumeOffset.xyz;
 
 		// To the world space where probe minimum position as the origin
-		float3 l_probeRange = GISky_probeInterval.xyz * (GISky_probeCount.xyz - 1.0);
-		float3 l_minProbePos = float3(GISky_probeCount.w, GISky_probeInterval.w, GISky_irradianceVolumeOffset.w);
+		float3 l_probeRange = GISky_probeRange.xyz;
+		float3 l_minProbePos = float3(GISky_probeCount.w, GISky_probeRange.w, GISky_irradianceVolumeOffset.w);
 		float3 l_maxProbePos = l_minProbePos + l_probeRange;
 
 		l_readCoord -= l_minProbePos;

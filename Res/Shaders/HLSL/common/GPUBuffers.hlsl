@@ -67,7 +67,7 @@ cbuffer GISkyCBuffer : register(b11)
 	matrix GISky_p_inv;
 	matrix GISky_v_inv[6];
 	float4 GISky_probeCount;
-	float4 GISky_probeInterval;
+	float4 GISky_probeRange;
 	float4 GISky_workload;
 	float4 GISky_irradianceVolumeOffset;
 };

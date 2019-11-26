@@ -31,6 +31,8 @@ namespace InnoBakerNS
 	bool gatherStaticMeshData();
 	bool generateProbeCaches(std::vector<Probe>& probes);
 	ProbeInfo generateProbes(std::vector<Probe>& probes, const std::vector<Vec4>& heightMap, uint32_t probeMapSamplingInterval);
+	bool generateProbesAlongTheSurface(std::vector<Probe>& probes, const std::vector<Vec4>& heightMap, uint32_t probeMapSamplingInterval);
+	uint32_t generateProbesAlongTheWall(std::vector<Probe>& probes, const std::vector<Vec4>& heightMap, uint32_t probeMapSamplingInterval);
 	bool serializeProbeInfos(const ProbeInfo& probeInfo);
 
 	bool captureSurfels(std::vector<Probe>& probes);
@@ -161,16 +163,16 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 
 	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getStaticSceneAABB();
 
-	auto l_startPos = l_sceneAABB.m_boundMin;
-	auto l_sceneCenter = l_sceneAABB.m_center;
+	auto l_eyePos = l_sceneAABB.m_center;
 	auto l_extendedAxisSize = l_sceneAABB.m_extend;
+	l_eyePos.y += l_extendedAxisSize.y / 2.0f;
 
 	auto l_p = InnoMath::generateOrthographicMatrix(-l_extendedAxisSize.x / 2.0f, l_extendedAxisSize.x / 2.0f, -l_extendedAxisSize.z / 2.0f, l_extendedAxisSize.z / 2.0f, -l_extendedAxisSize.y / 2.0f, l_extendedAxisSize.y / 2.0f);
 
 	std::vector<Mat4> l_GICameraGPUData(8);
 	l_GICameraGPUData[0] = l_p;
 	l_GICameraGPUData[1] = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 0.0f));
-	l_GICameraGPUData[7] = InnoMath::generateIdentityMatrix<float>();
+	l_GICameraGPUData[7] = InnoMath::getInvertTranslationMatrix(l_eyePos);
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(GetGPUBufferDataComponent(GPUBufferUsageType::GICamera), l_GICameraGPUData);
 
@@ -217,9 +219,9 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 	g_pModuleManager->getFileSystem()->saveTexture("Res//Intermediate//ProbePosTexture", l_TDC);
 	//#endif // DEBUG_
 
-	auto l_probesCount = generateProbes(probes, l_probePosTextureResults, m_probeInterval);
+	auto l_probeInfos = generateProbes(probes, l_probePosTextureResults, m_probeInterval);
 
-	serializeProbeInfos(l_probesCount);
+	serializeProbeInfos(l_probeInfos);
 
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", probes.size(), " probes generated.");
 
@@ -228,10 +230,63 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 
 ProbeInfo InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vector<Vec4>& heightMap, uint32_t probeMapSamplingInterval)
 {
-	auto l_totalTextureSize = heightMap.size();
+	probes.reserve(heightMap.size());
 
-	probes.reserve(l_totalTextureSize);
+	generateProbesAlongTheSurface(probes, heightMap, probeMapSamplingInterval);
+	auto l_maxVerticalProbesCount = generateProbesAlongTheWall(probes, heightMap, probeMapSamplingInterval);
 
+	ProbeInfo l_result;
+
+	auto l_minProbePos = InnoMath::maxVec4<float>;
+	auto l_maxProbePos = InnoMath::minVec4<float>;
+
+	auto l_probesCount = probes.size();
+
+	for (size_t i = 0; i < l_probesCount; i++)
+	{
+		if (probes[i].pos.x < l_minProbePos.x)
+		{
+			l_minProbePos.x = probes[i].pos.x;
+		}
+		if (probes[i].pos.x > l_maxProbePos.x)
+		{
+			l_maxProbePos.x = probes[i].pos.x;
+		}
+		if (probes[i].pos.y < l_minProbePos.y)
+		{
+			l_minProbePos.y = probes[i].pos.y;
+		}
+		if (probes[i].pos.y > l_maxProbePos.y)
+		{
+			l_maxProbePos.y = probes[i].pos.y;
+		}
+		if (probes[i].pos.z < l_minProbePos.z)
+		{
+			l_minProbePos.z = probes[i].pos.z;
+		}
+		if (probes[i].pos.z > l_maxProbePos.z)
+		{
+			l_maxProbePos.z = probes[i].pos.z;
+		}
+	}
+
+	l_result.probeRange.x = l_maxProbePos.x - l_minProbePos.x;
+	l_result.probeRange.y = l_maxProbePos.y - l_minProbePos.y;
+	l_result.probeRange.z = l_maxProbePos.z - l_minProbePos.z;
+	l_result.probeRange.w = 1.0f;
+
+	auto l_probesCountPerLine = m_probeMapResolution / probeMapSamplingInterval;
+
+	l_result.probeCount.x = (float)l_probesCountPerLine;
+	l_result.probeCount.y = (float)l_maxVerticalProbesCount;
+	l_result.probeCount.z = (float)l_probesCountPerLine;
+	l_result.probeCount.w = 1.0f;
+
+	return l_result;
+}
+
+bool InnoBakerNS::generateProbesAlongTheSurface(std::vector<Probe>& probes, const std::vector<Vec4>& heightMap, uint32_t probeMapSamplingInterval)
+{
 	auto l_probesCountPerLine = m_probeMapResolution / probeMapSamplingInterval;
 
 	for (size_t i = 1; i < l_probesCountPerLine; i++)
@@ -244,6 +299,7 @@ ProbeInfo InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vec
 			Probe l_Probe;
 			l_Probe.pos = l_textureResult;
 
+			// Align the probe height over the surface
 			auto l_adjustedHeight = std::ceil(l_textureResult.y / m_probeHeightOffset);
 
 			// Edge case
@@ -261,21 +317,21 @@ ProbeInfo InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vec
 			probes.emplace_back(l_Probe);
 		}
 	}
-	auto l_probesCount = probes.size();
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_probesCount, " probe location generated over the surface.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", probes.size(), " probe location generated over the surface.");
 
-	// Generate probes along the wall
+	return true;
+}
+
+uint32_t InnoBakerNS::generateProbesAlongTheWall(std::vector<Probe>& probes, const std::vector<Vec4>& heightMap, uint32_t probeMapSamplingInterval)
+{
 	std::vector<Probe> l_wallProbes;
-	l_wallProbes.reserve(l_totalTextureSize);
-
-	ProbeInfo l_result;
-	l_result.probeInterval.x = std::abs((heightMap[0] - heightMap[probeMapSamplingInterval - 1]).x);
-	l_result.probeInterval.y = m_probeHeightOffset;
-	l_result.probeInterval.z = std::abs((heightMap[0] - heightMap[m_probeMapResolution * probeMapSamplingInterval - 1]).z);
-	l_result.probeInterval.w = 1.0f;
+	l_wallProbes.reserve(heightMap.size());
 
 	uint32_t l_maxVerticalProbesCount = 1;
+
+	auto l_probesCount = probes.size();
+	auto l_probesCountPerLine = m_probeMapResolution / probeMapSamplingInterval;
 
 	for (size_t i = 0; i < l_probesCount; i++)
 	{
@@ -372,12 +428,7 @@ ProbeInfo InnoBakerNS::generateProbes(std::vector<Probe>& probes, const std::vec
 
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", probes.size() - l_probesCount, " probe location generated along the wall.");
 
-	l_result.probeCount.x = (float)l_probesCountPerLine;
-	l_result.probeCount.y = (float)l_maxVerticalProbesCount;
-	l_result.probeCount.z = (float)l_probesCountPerLine;
-	l_result.probeCount.w = 1.0f;
-
-	return l_result;
+	return l_maxVerticalProbesCount;
 }
 
 bool InnoBakerNS::serializeProbeInfos(const ProbeInfo& probeInfo)

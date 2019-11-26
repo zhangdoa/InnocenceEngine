@@ -5,7 +5,7 @@ layout(set = 0, binding = 11, std140) uniform GISkyCBuffer
 	layout(row_major) mat4 GISky_p_inv;
 	layout(row_major) mat4 GISky_v_inv[6];
 	vec4 GISky_probeCount;
-	vec4 GISky_probeInterval;
+	vec4 GISky_probeRange;
 	vec4 GISky_workload;
 	vec4 GISky_irradianceVolumeOffset;
 } _53;
