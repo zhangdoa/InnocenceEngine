@@ -1725,12 +1725,13 @@ bool VKHelper::createSyncPrimitives(VkDevice device, VKRenderPassDataComponent* 
 
 bool VKHelper::createShaderModule(VkDevice device, VkShaderModule & vkShaderModule, const ShaderFilePath & shaderFilePath)
 {
-	auto l_rawData = g_pModuleManager->getFileSystem()->loadFile(m_shaderRelativePath + std::string(shaderFilePath.c_str()) + ".spv", IOMode::Binary);
+	auto l_shaderFileName = m_shaderRelativePath + std::string(shaderFilePath.c_str()) + ".spv";
+	auto l_shaderContent = g_pModuleManager->getFileSystem()->loadFile(l_shaderFileName.c_str(), IOMode::Binary);
 
 	VkShaderModuleCreateInfo l_createInfo = {};
 	l_createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	l_createInfo.codeSize = l_rawData.size();
-	l_createInfo.pCode = reinterpret_cast<const uint32_t*>(l_rawData.data());
+	l_createInfo.codeSize = l_shaderContent.size();
+	l_createInfo.pCode = reinterpret_cast<const uint32_t*>(l_shaderContent.data());
 
 	if (vkCreateShaderModule(device, &l_createInfo, nullptr, &vkShaderModule) != VK_SUCCESS)
 	{

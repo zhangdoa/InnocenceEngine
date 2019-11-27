@@ -6,7 +6,7 @@ namespace InnoFileSystemNS
 {
 	namespace AssetLoader
 	{
-		ModelMap loadModel(const std::string & fileName, bool AsyncUploadGPUResource = true);
-		TextureDataComponent* loadTexture(const std::string& fileName);
+		ModelMap loadModel(const char* fileName, bool AsyncUploadGPUResource = true);
+		TextureDataComponent* loadTexture(const char* fileName);
 	};
 }

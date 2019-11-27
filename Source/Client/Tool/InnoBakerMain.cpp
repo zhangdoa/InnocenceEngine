@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 			std::string l_sceneFileName = l_windowArguments.substr(l_probeArgPos + 5);
 			l_sceneFileName = l_sceneFileName.substr(1, l_sceneFileName.size() - 1);
 
-			InnoBaker::BakeProbeCache(l_sceneFileName);
+			InnoBaker::BakeProbeCache(l_sceneFileName.c_str());
 		}
 
 		auto l_brickcacheStageArgPos = l_windowArguments.find("brickcache ");
@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
 			std::string l_surfelCacheFileName = l_windowArguments.substr(l_brickcacheStageArgPos + 10);
 			l_surfelCacheFileName = l_surfelCacheFileName.substr(1, l_surfelCacheFileName.size() - 1);
 
-			InnoBaker::BakeBrickCache(l_surfelCacheFileName);
+			InnoBaker::BakeBrickCache(l_surfelCacheFileName.c_str());
 		}
 
 		auto l_brickStageArgPos = l_windowArguments.find("brick ");
@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 			std::string l_brickCacheFileName = l_windowArguments.substr(l_brickStageArgPos + 5);
 			l_brickCacheFileName = l_brickCacheFileName.substr(1, l_brickCacheFileName.size() - 1);
 
-			InnoBaker::BakeBrick(l_brickCacheFileName);
+			InnoBaker::BakeBrick(l_brickCacheFileName.c_str());
 		}
 
 		auto l_brickFactorStageArgPos = l_windowArguments.find("brickfactor ");
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
 			std::string l_brickFileName = l_windowArguments.substr(l_brickFactorStageArgPos + 11);
 			l_brickFileName = l_brickFileName.substr(1, l_brickFileName.size() - 1);
 
-			InnoBaker::BakeBrickFactor(l_brickFileName);
+			InnoBaker::BakeBrickFactor(l_brickFileName.c_str());
 		}
 	}
 

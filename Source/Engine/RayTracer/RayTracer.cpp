@@ -320,7 +320,8 @@ bool ExecuteRayTracing()
 
 	m_TDC->m_textureData = &l_result[0];
 
-	g_pModuleManager->getFileSystem()->saveTexture("//Res//Intermediate//RayTracingResult_" + std::to_string(g_pModuleManager->getTimeSystem()->getCurrentTimeFromEpoch()), m_TDC);
+	auto l_textureFileName = "//Res//Intermediate//RayTracingResult_" + std::to_string(g_pModuleManager->getTimeSystem()->getCurrentTimeFromEpoch());
+	g_pModuleManager->getFileSystem()->saveTexture(l_textureFileName.c_str(), m_TDC);
 
 	InnoLogger::Log(LogLevel::Success, "InnoRayTracer: Ray tracing finished.");
 

@@ -46,8 +46,8 @@ namespace InnoFileSystemNS::JSONParser
 	ModelMap processSceneJsonData(const json & j, bool AsyncUploadGPUResource = true);
 	std::vector<AnimationDataComponent*> processAnimationJsonData(const json & j);
 	ModelPair processMeshJsonData(const json& j, bool AsyncUploadGPUResource = true);
-	SkeletonDataComponent* processSkeletonJsonData(const std::string& skeletonFileName);
-	MaterialDataComponent* processMaterialJsonData(const std::string& materialFileName, bool AsyncUploadGPUResource = true);
+	SkeletonDataComponent* processSkeletonJsonData(const char* skeletonFileName);
+	MaterialDataComponent* processMaterialJsonData(const char* materialFileName, bool AsyncUploadGPUResource = true);
 
 	bool assignComponentRuntimeData();
 
@@ -57,13 +57,15 @@ namespace InnoFileSystemNS::JSONParser
 	ThreadSafeQueue<std::pair<TransformComponent*, EntityName>> m_orphanTransformComponents;
 }
 
-bool InnoFileSystemNS::JSONParser::loadJsonDataFromDisk(const std::string & fileName, json & data)
+bool InnoFileSystemNS::JSONParser::loadJsonDataFromDisk(const char* fileName, json & data)
 {
-	std::ifstream i(IOService::getWorkingDirectory() + fileName);
+	std::ifstream i;
+
+	i.open(IOService::getWorkingDirectory() + fileName);
 
 	if (!i.is_open())
 	{
-		InnoLogger::Log(LogLevel::Error, "FileSystem: can't open JSON file : ", fileName.c_str(), "!");
+		InnoLogger::Log(LogLevel::Error, "FileSystem: Can't open JSON file : ", fileName, "!");
 		return false;
 	}
 
@@ -73,23 +75,43 @@ bool InnoFileSystemNS::JSONParser::loadJsonDataFromDisk(const std::string & file
 	return true;
 }
 
-bool InnoFileSystemNS::JSONParser::saveJsonDataToDisk(const std::string & fileName, const json & data)
+bool InnoFileSystemNS::JSONParser::saveJsonDataToDisk(const char* fileName, const json & data)
 {
 	std::ofstream o;
 	o.open(IOService::getWorkingDirectory() + fileName, std::ios::out | std::ios::trunc);
 	o << std::setw(4) << data << std::endl;
 	o.close();
 
-	InnoLogger::Log(LogLevel::Verbose, "FileSystem: JSON file : ", fileName.c_str(), " has been saved.");
+	InnoLogger::Log(LogLevel::Verbose, "FileSystem: JSON file : ", fileName, " has been saved.");
 
 	return true;
 }
 
 void InnoFileSystemNS::JSONParser::to_json(json& j, const InnoEntity& p)
 {
-	j = json{
+	j = json
+	{
 		{"EntityID", p.m_EntityID.c_str()},
 		{"EntityName", p.m_EntityName.c_str()},
+	};
+}
+
+void InnoFileSystemNS::JSONParser::to_json(json& j, const Vec4& p)
+{
+	j = json
+	{
+		{
+			"X", p.x
+		},
+		{
+			"Y", p.y
+		},
+		{
+			"Z", p.z
+		},
+		{
+			"W", p.w
+		}
 	};
 }
 
@@ -141,25 +163,6 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const TransformVector& p)
 					"Z", p.m_scale.z
 				},
 			}
-		}
-	};
-}
-
-void InnoFileSystemNS::JSONParser::to_json(json& j, const Vec4& p)
-{
-	j = json
-	{
-		{
-			"X", p.x
-		},
-		{
-			"Y", p.y
-		},
-		{
-			"Z", p.z
-		},
-		{
-			"W", p.w
 		}
 	};
 }
@@ -230,6 +233,14 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const CameraComponent& p)
 	};
 }
 
+void InnoFileSystemNS::JSONParser::from_json(const json & j, Vec4 & p)
+{
+	p.x = j["X"];
+	p.y = j["Y"];
+	p.z = j["Z"];
+	p.w = j["W"];
+}
+
 void InnoFileSystemNS::JSONParser::from_json(const json & j, TransformComponent & p)
 {
 	from_json(j["LocalTransformVector"], p.m_localTransformVector);
@@ -277,14 +288,6 @@ void InnoFileSystemNS::JSONParser::from_json(const json & j, VisibleComponent & 
 	p.m_simulatePhysics = j["SimulatePhysics"];
 }
 
-void InnoFileSystemNS::JSONParser::from_json(const json & j, Vec4 & p)
-{
-	p.x = j["X"];
-	p.y = j["Y"];
-	p.z = j["Z"];
-	p.w = j["W"];
-}
-
 void InnoFileSystemNS::JSONParser::from_json(const json & j, LightComponent & p)
 {
 	from_json(j["RGBColor"], p.m_RGBColor);
@@ -304,7 +307,7 @@ void InnoFileSystemNS::JSONParser::from_json(const json& j, CameraComponent& p)
 	p.m_zFar = j["zFar"];
 }
 
-ModelMap InnoFileSystemNS::JSONParser::loadModelFromDisk(const std::string & fileName, bool AsyncUploadGPUResource)
+ModelMap InnoFileSystemNS::JSONParser::loadModelFromDisk(const char* fileName, bool AsyncUploadGPUResource)
 {
 	json j;
 
@@ -382,7 +385,7 @@ std::vector<AnimationDataComponent*> InnoFileSystemNS::JSONParser::processAnimat
 
 		auto l_ADC = g_pModuleManager->getRenderingFrontend()->addAnimationDataComponent();
 
-		l_ADC->m_animationTexture = AssetLoader::loadTexture(l_animationFileName);
+		l_ADC->m_animationTexture = AssetLoader::loadTexture(l_animationFileName.c_str());
 		l_ADC->m_animationTexture->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
 		l_ADC->m_animationTexture->m_textureDataDesc.UsageType = TextureUsageType::Sample;
 
@@ -445,13 +448,15 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j, bool
 			// Load skeleton data
 			if (j.find("SkeletonFile") != j.end())
 			{
-				l_result.first->m_SDC = processSkeletonJsonData(j["SkeletonFile"]);
+				std::string l_skeletonFile = j["SkeletonFile"];
+				l_result.first->m_SDC = processSkeletonJsonData(l_skeletonFile.c_str());
 			}
 
 			// Load material data
 			if (j.find("MaterialFile") != j.end())
 			{
-				l_result.second = processMaterialJsonData(j["MaterialFile"], AsyncUploadGPUResource);
+				std::string l_materialFile = j["MaterialFile"];
+				l_result.second = processMaterialJsonData(l_materialFile.c_str(), AsyncUploadGPUResource);
 			}
 			else
 			{
@@ -471,7 +476,8 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j, bool
 		// Load material data
 		if (j.find("MaterialFile") != j.end())
 		{
-			l_result.second = processMaterialJsonData(j["MaterialFile"], AsyncUploadGPUResource);
+			std::string l_materialFile = j["MaterialFile"];
+			l_result.second = processMaterialJsonData(l_materialFile.c_str(), AsyncUploadGPUResource);
 		}
 		else
 		{
@@ -483,12 +489,12 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j, bool
 	return l_result;
 }
 
-SkeletonDataComponent * InnoFileSystemNS::JSONParser::processSkeletonJsonData(const std::string& skeletonFileName)
+SkeletonDataComponent * InnoFileSystemNS::JSONParser::processSkeletonJsonData(const char* skeletonFileName)
 {
 	auto l_loadedSDC = m_loadedSDC.find(skeletonFileName);
 	if (l_loadedSDC != m_loadedSDC.end())
 	{
-		InnoLogger::Log(LogLevel::Verbose, "FileSystem: JSONParser: ", skeletonFileName.c_str(), " has been already loaded.");
+		InnoLogger::Log(LogLevel::Verbose, "FileSystem: JSONParser: ", skeletonFileName, " has been already loaded.");
 		return l_loadedSDC->second;
 	}
 	else
@@ -523,7 +529,7 @@ SkeletonDataComponent * InnoFileSystemNS::JSONParser::processSkeletonJsonData(co
 	}
 }
 
-MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(const std::string& materialFileName, bool AsyncUploadGPUResource)
+MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(const char* materialFileName, bool AsyncUploadGPUResource)
 {
 	json j;
 
@@ -535,7 +541,8 @@ MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(co
 	{
 		for (auto i : j["Textures"])
 		{
-			auto l_TDC = AssetLoader::loadTexture(i["File"]);
+			std::string l_textureFile = i["File"];
+			auto l_TDC = AssetLoader::loadTexture(l_textureFile.c_str());
 			auto l_textureAttributeType = TextureAttributeType(i["AttributeType"]);
 			if (l_TDC)
 			{
@@ -575,7 +582,7 @@ MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(co
 	return l_MDC;
 }
 
-bool InnoFileSystemNS::JSONParser::saveScene(const std::string& fileName)
+bool InnoFileSystemNS::JSONParser::saveScene(const char* fileName)
 {
 	json topLevel;
 	topLevel["SceneName"] = fileName;
@@ -623,12 +630,12 @@ bool InnoFileSystemNS::JSONParser::saveScene(const std::string& fileName)
 
 	saveJsonDataToDisk(fileName, topLevel);
 
-	InnoLogger::Log(LogLevel::Success, "FileSystem: scene ", fileName.c_str(), " has been saved.");
+	InnoLogger::Log(LogLevel::Success, "FileSystem: Scene ", fileName, " has been saved.");
 
 	return true;
 }
 
-bool InnoFileSystemNS::JSONParser::loadScene(const std::string & fileName)
+bool InnoFileSystemNS::JSONParser::loadScene(const char* fileName)
 {
 	json j;
 	if (!loadJsonDataFromDisk(fileName, j))
@@ -670,7 +677,7 @@ bool InnoFileSystemNS::JSONParser::loadScene(const std::string & fileName)
 		}
 	}
 
-	InnoLogger::Log(LogLevel::Success, "FileSystem: scene loading finished.");
+	InnoLogger::Log(LogLevel::Success, "FileSystem: Scene loading finished.");
 
 	assignComponentRuntimeData();
 
@@ -692,7 +699,7 @@ bool InnoFileSystemNS::JSONParser::assignComponentRuntimeData()
 			}
 			else
 			{
-				InnoLogger::Log(LogLevel::Error, "FileSystem: can't find TransformComponent with entity name", l_orphan.second.c_str(), "!");
+				InnoLogger::Log(LogLevel::Error, "FileSystem: Can't find TransformComponent with entity name", l_orphan.second.c_str(), "!");
 			}
 		}
 	}

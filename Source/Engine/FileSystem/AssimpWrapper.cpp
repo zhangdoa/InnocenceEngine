@@ -19,26 +19,26 @@ namespace InnoFileSystemNS
 {
 	namespace AssimpWrapper
 	{
-		json processAssimpScene(const aiScene* aiScene, const std::string& exportName);
-		bool processAssimpNode(json& j, const aiNode * node, const aiScene * scene, const std::string& exportName);
-		json processAssimpMesh(const aiScene * scene, const std::string& exportName, uint32_t meshIndex);
-		size_t processMeshData(const aiMesh * aiMesh, const std::string& exportFileRelativePath);
-		void processAssimpBone(const aiMesh * aiMesh, const std::string& exportFileRelativePath);
-		void processAssimpMaterial(const aiMaterial * aiMaterial, const std::string& exportFileRelativePath);
-		json processTextureData(const std::string & fileName, TextureSamplerType samplerType, TextureUsageType usageType, TextureAttributeType attributeType);
-		void processAssimpAnimation(const aiAnimation * aiAnimation, const std::string& exportFileRelativePath);
+		json processAssimpScene(const aiScene* aiScene, const char* exportName);
+		bool processAssimpNode(json& j, const aiNode * node, const aiScene * scene, const char* exportName);
+		json processAssimpMesh(const aiScene * scene, const char* exportName, uint32_t meshIndex);
+		size_t processMeshData(const aiMesh * aiMesh, const char* exportFileRelativePath);
+		void processAssimpBone(const aiMesh * aiMesh, const char* exportFileRelativePath);
+		void processAssimpMaterial(const aiMaterial * aiMaterial, const char* exportFileRelativePath);
+		json processTextureData(const char* fileName, TextureSamplerType samplerType, TextureUsageType usageType, TextureAttributeType attributeType);
+		void processAssimpAnimation(const aiAnimation * aiAnimation, const char* exportFileRelativePath);
 	};
 }
 
-bool InnoFileSystemNS::AssimpWrapper::convertModel(const std::string & fileName, const std::string & exportPath)
+bool InnoFileSystemNS::AssimpWrapper::convertModel(const char* fileName, const char* exportPath)
 {
 	auto l_exportFileName = IOService::getFileName(fileName);
 	auto l_exportFileRelativePath = exportPath + l_exportFileName + ".InnoModel";
 
 	// Check if the file was converted already
-	if (IOService::isFileExist(l_exportFileRelativePath))
+	if (IOService::isFileExist(l_exportFileRelativePath.c_str()))
 	{
-		InnoLogger::Log(LogLevel::Warning, "FileSystem: AssimpWrapper: ", fileName.c_str(), " has already been converted!");
+		InnoLogger::Log(LogLevel::Warning, "FileSystem: AssimpWrapper: ", fileName, " has already been converted!");
 		return true;
 	}
 
@@ -49,16 +49,16 @@ bool InnoFileSystemNS::AssimpWrapper::convertModel(const std::string & fileName,
 	// Check if the file was exist
 	if (IOService::isFileExist(fileName))
 	{
-		InnoLogger::Log(LogLevel::Verbose, "FileSystem: AssimpWrapper: converting ", fileName.c_str(), "...");
+		InnoLogger::Log(LogLevel::Verbose, "FileSystem: AssimpWrapper: converting ", fileName, "...");
 #if defined _DEBUG
-		std::string l_logFilePath = IOService::getWorkingDirectory() + "res/log/AssimpLog" + fileName + ".txt";
+		std::string l_logFilePath = IOService::getWorkingDirectory() + "Res//Log//AssimpLog_" + fileName + ".txt";
 		Assimp::DefaultLogger::create(l_logFilePath.c_str(), Assimp::Logger::VERBOSE);
 #endif
 		l_assScene = l_assImporter.ReadFile(IOService::getWorkingDirectory() + fileName, aiProcess_Triangulate | aiProcess_FlipUVs);
 	}
 	else
 	{
-		InnoLogger::Log(LogLevel::Error, "FileSystem: AssimpWrapper: ", fileName.c_str(), " doesn't exist!");
+		InnoLogger::Log(LogLevel::Error, "FileSystem: AssimpWrapper: ", fileName, " doesn't exist!");
 		return false;
 	}
 	if (l_assScene)
@@ -68,21 +68,21 @@ bool InnoFileSystemNS::AssimpWrapper::convertModel(const std::string & fileName,
 			InnoLogger::Log(LogLevel::Error, "FileSystem: AssimpWrapper: ", l_assImporter.GetErrorString());
 			return false;
 		}
-		auto l_result = processAssimpScene(l_assScene, l_exportFileName);
-		JSONParser::saveJsonDataToDisk(l_exportFileRelativePath, l_result);
+		auto l_result = processAssimpScene(l_assScene, l_exportFileName.c_str());
+		JSONParser::saveJsonDataToDisk(l_exportFileRelativePath.c_str(), l_result);
 
-		InnoLogger::Log(LogLevel::Success, "FileSystem: AssimpWrapper: ", fileName.c_str(), " has been converted.");
+		InnoLogger::Log(LogLevel::Success, "FileSystem: AssimpWrapper: ", fileName, " has been converted.");
 	}
 	else
 	{
-		InnoLogger::Log(LogLevel::Error, "FileSystem: AssimpWrapper: can't load file ", fileName.c_str(), "!");
+		InnoLogger::Log(LogLevel::Error, "FileSystem: AssimpWrapper: can't load file ", fileName, "!");
 		return false;
 	}
 
 	return true;
 }
 
-json InnoFileSystemNS::AssimpWrapper::processAssimpScene(const aiScene* aiScene, const std::string& exportName)
+json InnoFileSystemNS::AssimpWrapper::processAssimpScene(const aiScene* aiScene, const char* exportName)
 {
 	auto l_timeData = g_pModuleManager->getTimeSystem()->getCurrentTime();
 	auto l_timeDataStr =
@@ -104,8 +104,8 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpScene(const aiScene* aiScene,
 	{
 		for (uint32_t i = 0; i < aiScene->mNumAnimations; i++)
 		{
-			auto l_animationFileName = "//Res//ConvertedAssets//" + exportName + "_" + std::to_string(i) + ".InnoAnimation";
-			processAssimpAnimation(aiScene->mAnimations[i], l_animationFileName);
+			auto l_animationFileName = "//Res//ConvertedAssets//" + std::string(exportName) + "_" + std::to_string(i) + ".InnoAnimation";
+			processAssimpAnimation(aiScene->mAnimations[i], l_animationFileName.c_str());
 			j["AnimationFiles"].emplace_back(l_animationFileName);
 		}
 
@@ -125,7 +125,7 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpScene(const aiScene* aiScene,
 	return j;
 }
 
-bool InnoFileSystemNS::AssimpWrapper::processAssimpNode(json& j, const aiNode * node, const aiScene * scene, const std::string& exportName)
+bool InnoFileSystemNS::AssimpWrapper::processAssimpNode(json& j, const aiNode * node, const aiScene * scene, const char* exportName)
 {
 	// process each mesh located at the current node
 	if (node->mNumMeshes)
@@ -148,7 +148,7 @@ bool InnoFileSystemNS::AssimpWrapper::processAssimpNode(json& j, const aiNode * 
 	return true;
 }
 
-json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, const std::string& exportName, uint32_t meshIndex)
+json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, const char* exportName, uint32_t meshIndex)
 {
 	json l_meshData;
 
@@ -157,31 +157,31 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, c
 	// process vertices and indices
 	l_meshData["MeshName"] = *l_aiMesh->mName.C_Str();
 	l_meshData["VerticesNumber"] = l_aiMesh->mNumVertices;
-	auto l_meshFileName = "//Res//ConvertedAssets//" + exportName + "_" + std::to_string(meshIndex) + ".InnoMesh";
-	l_meshData["IndicesNumber"] = processMeshData(l_aiMesh, l_meshFileName);
+	auto l_meshFileName = "//Res//ConvertedAssets//" + std::string(exportName) + "_" + std::to_string(meshIndex) + ".InnoMesh";
+	l_meshData["IndicesNumber"] = processMeshData(l_aiMesh, l_meshFileName.c_str());
 	l_meshData["MeshFile"] = l_meshFileName;
 	l_meshData["MeshShapeType"] = MeshShapeType::Custom;
 
 	// process bones
 	if (l_aiMesh->mNumBones)
 	{
-		auto l_skeletonFileName = "//Res//ConvertedAssets//" + exportName + "_" + std::to_string(meshIndex) + ".InnoSkeleton";
-		processAssimpBone(l_aiMesh, l_skeletonFileName);
+		auto l_skeletonFileName = "//Res//ConvertedAssets//" + std::string(exportName) + "_" + std::to_string(meshIndex) + ".InnoSkeleton";
+		processAssimpBone(l_aiMesh, l_skeletonFileName.c_str());
 		l_meshData["SkeletonFile"] = l_skeletonFileName;
 	}
 
 	// process material
 	if (l_aiMesh->mMaterialIndex)
 	{
-		auto l_materialFileName = "//Res//ConvertedAssets//" + exportName + "_" + std::to_string(meshIndex) + ".InnoMaterial";
-		processAssimpMaterial(scene->mMaterials[l_aiMesh->mMaterialIndex], l_materialFileName);
+		auto l_materialFileName = "//Res//ConvertedAssets//" + std::string(exportName) + "_" + std::to_string(meshIndex) + ".InnoMaterial";
+		processAssimpMaterial(scene->mMaterials[l_aiMesh->mMaterialIndex], l_materialFileName.c_str());
 		l_meshData["MaterialFile"] = l_materialFileName;
 	}
 
 	return l_meshData;
 }
 
-size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, const std::string& exportFileRelativePath)
+size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, const char* exportFileRelativePath)
 {
 	auto l_verticesNumber = aiMesh->mNumVertices;
 
@@ -350,7 +350,7 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 	return l_indiceSize;
 }
 
-void InnoFileSystemNS::AssimpWrapper::processAssimpBone(const aiMesh * aiMesh, const std::string& exportFileRelativePath)
+void InnoFileSystemNS::AssimpWrapper::processAssimpBone(const aiMesh * aiMesh, const char* exportFileRelativePath)
 {
 	json j;
 	for (uint32_t i = 0; i < aiMesh->mNumBones; i++)
@@ -390,7 +390,7 @@ aiTextureType::AI_MATKEY_COLOR_EMISSIVE Ke AO
 aiTextureType::AI_MATKEY_COLOR_REFLECTIVE Thickness
 */
 
-void InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * aiMaterial, const std::string& exportFileRelativePath)
+void InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * aiMaterial, const char* exportFileRelativePath)
 {
 	json l_materialData;
 
@@ -400,7 +400,7 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * a
 		{
 			aiString l_AssString;
 			aiMaterial->GetTexture(aiTextureType(i), 0, &l_AssString);
-			std::string l_localPath = std::string(l_AssString.C_Str());
+			auto l_localPath = l_AssString.C_Str();
 
 			if (aiTextureType(i) == aiTextureType::aiTextureType_NONE)
 			{
@@ -497,7 +497,7 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * a
 	JSONParser::saveJsonDataToDisk(exportFileRelativePath, l_materialData);
 }
 
-json InnoFileSystemNS::AssimpWrapper::processTextureData(const std::string & fileName, TextureSamplerType samplerType, TextureUsageType usageType, TextureAttributeType attributeType)
+json InnoFileSystemNS::AssimpWrapper::processTextureData(const char* fileName, TextureSamplerType samplerType, TextureUsageType usageType, TextureAttributeType attributeType)
 {
 	json j;
 
@@ -532,7 +532,7 @@ Binary data structure:
 |ChannelIndexN
 */
 
-void InnoFileSystemNS::AssimpWrapper::processAssimpAnimation(const aiAnimation * aiAnimation, const std::string& exportFileRelativePath)
+void InnoFileSystemNS::AssimpWrapper::processAssimpAnimation(const aiAnimation * aiAnimation, const char* exportFileRelativePath)
 {
 	//std::ofstream l_file(IOService::getWorkingDirectory() + exportFileRelativePath, std::ios::binary);
 

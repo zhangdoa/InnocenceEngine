@@ -850,7 +850,7 @@ bool GLHelper::AddShaderObject(GLuint & shaderID, GLuint shaderStage, const Shad
 			return l_glslExtensionPos;
 		};
 
-		auto l_rawContent = g_pModuleManager->getFileSystem()->loadFile((m_shaderRelativePath + path), IOMode::Text);
+		auto l_rawContent = g_pModuleManager->getFileSystem()->loadFile((m_shaderRelativePath + path).c_str(), IOMode::Text);
 
 		std::string l_content = &l_rawContent[0];
 		auto l_includePos = f_findIncludeFilePath(l_content);
@@ -887,7 +887,8 @@ bool GLHelper::AddShaderObject(GLuint & shaderID, GLuint shaderStage, const Shad
 	glCompileShader(shaderID);
 #else
 	// load shader
-	auto l_shaderCodeContent = g_pModuleManager->getFileSystem()->loadFile(m_shaderRelativePath + std::string(shaderFilePath.c_str()) + ".spv", IOMode::Binary);
+	auto l_shaderFileName = m_shaderRelativePath + std::string(shaderFilePath.c_str()) + ".spv";
+	auto l_shaderCodeContent = g_pModuleManager->getFileSystem()->loadFile(l_shaderFileName.c_str(), IOMode::Binary);
 
 	if (l_shaderCodeContent.empty())
 	{

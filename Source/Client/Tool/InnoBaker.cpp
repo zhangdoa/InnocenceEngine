@@ -26,7 +26,7 @@ struct BrickCacheSummary
 
 namespace InnoBakerNS
 {
-	std::string parseFileName(const std::string & fileName);
+	std::string parseFileName(const char* fileName);
 
 	bool gatherStaticMeshData();
 	bool generateProbeCaches(std::vector<Probe>& probes);
@@ -86,11 +86,12 @@ namespace InnoBakerNS
 using namespace InnoBakerNS;
 using namespace DefaultGPUBuffers;
 
-std::string InnoBakerNS::parseFileName(const std::string & fileName)
+std::string InnoBakerNS::parseFileName(const char* fileName)
 {
-	auto l_startOffset = fileName.find_last_of("/");
-	auto l_endOffset = fileName.find_last_of(".");
-	auto l_result = fileName.substr(l_startOffset + 1, l_endOffset - l_startOffset - 1);
+	auto l_fileName = std::string(fileName);
+	auto l_startOffset = l_fileName.find_last_of("/");
+	auto l_endOffset = l_fileName.find_last_of(".");
+	auto l_result = l_fileName.substr(l_startOffset + 1, l_endOffset - l_startOffset - 1);
 
 	return l_result;
 }
@@ -1359,7 +1360,7 @@ void InnoBaker::Setup()
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_BrickFactor);
 }
 
-void InnoBaker::BakeProbeCache(const std::string & sceneName)
+void InnoBaker::BakeProbeCache(const char* sceneName)
 {
 	g_pModuleManager->getFileSystem()->loadScene(sceneName, false);
 	g_pModuleManager->getPhysicsSystem()->updateCulling();
@@ -1378,7 +1379,7 @@ void InnoBaker::BakeProbeCache(const std::string & sceneName)
 	l_InnoBakerProbeCacheTask->Wait();
 }
 
-void InnoBaker::BakeBrickCache(const std::string & surfelCacheFileName)
+void InnoBaker::BakeBrickCache(const char* surfelCacheFileName)
 {
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 	m_exportFileName = parseFileName(surfelCacheFileName);
@@ -1400,7 +1401,7 @@ void InnoBaker::BakeBrickCache(const std::string & surfelCacheFileName)
 	}
 }
 
-void InnoBaker::BakeBrick(const std::string & brickCacheFileName)
+void InnoBaker::BakeBrick(const char* brickCacheFileName)
 {
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 	m_exportFileName = parseFileName(brickCacheFileName);
@@ -1425,7 +1426,7 @@ void InnoBaker::BakeBrick(const std::string & brickCacheFileName)
 	}
 }
 
-void InnoBaker::BakeBrickFactor(const std::string & brickFileName)
+void InnoBaker::BakeBrickFactor(const char* brickFileName)
 {
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 	m_exportFileName = parseFileName(brickFileName);

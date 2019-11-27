@@ -18,11 +18,11 @@ using SceneLoadingCallback = std::pair<std::function<void()>*, int32_t>;
 
 namespace InnoFileSystemNS
 {
-	bool convertModel(const std::string & fileName, const std::string & exportPath);
+	bool convertModel(const char* fileName, const char* exportPath);
 
-	bool saveScene(const std::string& fileName);
-	bool prepareForLoadingScene(const std::string& fileName);
-	bool loadScene(const std::string& fileName);
+	bool saveScene(const char* fileName);
+	bool prepareForLoadingScene(const char* fileName);
+	bool loadScene(const char* fileName);
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -36,7 +36,7 @@ namespace InnoFileSystemNS
 	std::string m_currentScene;
 }
 
-bool InnoFileSystemNS::convertModel(const std::string & fileName, const std::string & exportPath)
+bool InnoFileSystemNS::convertModel(const char* fileName, const char* exportPath)
 {
 	auto l_extension = IOService::getFileExtension(fileName);
 
@@ -50,7 +50,7 @@ bool InnoFileSystemNS::convertModel(const std::string & fileName, const std::str
 	}
 	else
 	{
-		InnoLogger::Log(LogLevel::Warning, "FileSystem: ", fileName.c_str(), " is not supported!");
+		InnoLogger::Log(LogLevel::Warning, "FileSystem: ", fileName, " is not supported!");
 
 		return false;
 	}
@@ -58,11 +58,11 @@ bool InnoFileSystemNS::convertModel(const std::string & fileName, const std::str
 	return true;
 }
 
-bool InnoFileSystemNS::saveScene(const std::string& fileName)
+bool InnoFileSystemNS::saveScene(const char* fileName)
 {
-	if (fileName.empty())
+	if (fileName == "")
 	{
-		return JSONParser::saveScene(m_currentScene);
+		return JSONParser::saveScene(m_currentScene.c_str());
 	}
 	else
 	{
@@ -70,13 +70,13 @@ bool InnoFileSystemNS::saveScene(const std::string& fileName)
 	}
 }
 
-bool InnoFileSystemNS::prepareForLoadingScene(const std::string& fileName)
+bool InnoFileSystemNS::prepareForLoadingScene(const char* fileName)
 {
 	if (!InnoFileSystemNS::m_isLoadingScene)
 	{
 		if (m_currentScene == fileName)
 		{
-			InnoLogger::Log(LogLevel::Warning, "FileSystem: scene ", fileName.c_str(), " has already loaded now.");
+			InnoLogger::Log(LogLevel::Warning, "FileSystem: scene ", fileName, " has already loaded now.");
 			return true;
 		}
 		m_nextLoadingScene = fileName;
@@ -86,7 +86,7 @@ bool InnoFileSystemNS::prepareForLoadingScene(const std::string& fileName)
 	return true;
 }
 
-bool InnoFileSystemNS::loadScene(const std::string& fileName)
+bool InnoFileSystemNS::loadScene(const char* fileName)
 {
 	m_currentScene = fileName;
 
@@ -114,7 +114,7 @@ bool InnoFileSystemNS::loadScene(const std::string& fileName)
 
 	InnoFileSystemNS::m_isLoadingScene = false;
 
-	InnoLogger::Log(LogLevel::Success, "FileSystem: scene ", fileName.c_str(), " has been loaded.");
+	InnoLogger::Log(LogLevel::Success, "FileSystem: scene ", fileName, " has been loaded.");
 
 	return true;
 }
@@ -151,7 +151,7 @@ bool InnoFileSystem::update()
 			InnoFileSystemNS::m_prepareForLoadingScene = false;
 			InnoFileSystemNS::m_isLoadingScene = true;
 			g_pModuleManager->getTaskSystem()->waitAllTasksToFinish();
-			InnoFileSystemNS::loadScene(InnoFileSystemNS::m_nextLoadingScene);
+			InnoFileSystemNS::loadScene(InnoFileSystemNS::m_nextLoadingScene.c_str());
 			GetComponentManager(VisibleComponent)->LoadAssetsForComponents();
 		}
 		return true;
@@ -182,12 +182,12 @@ std::string InnoFileSystem::getWorkingDirectory()
 	return IOService::getWorkingDirectory();
 }
 
-std::vector<char> InnoFileSystem::loadFile(const std::string& filePath, IOMode openMode)
+std::vector<char> InnoFileSystem::loadFile(const char* filePath, IOMode openMode)
 {
 	return IOService::loadFile(filePath, openMode);
 }
 
-bool InnoFileSystem::saveFile(const std::string& filePath, const std::vector<char>& content, IOMode saveMode)
+bool InnoFileSystem::saveFile(const char* filePath, const std::vector<char>& content, IOMode saveMode)
 {
 	return IOService::saveFile(filePath, content, saveMode);
 }
@@ -199,11 +199,11 @@ std::string InnoFileSystem::getCurrentSceneName()
 	return l_currentSceneName;
 }
 
-bool InnoFileSystem::loadScene(const std::string & fileName, bool AsyncLoad)
+bool InnoFileSystem::loadScene(const char* fileName, bool AsyncLoad)
 {
 	if (InnoFileSystemNS::m_currentScene == fileName)
 	{
-		InnoLogger::Log(LogLevel::Warning, "FileSystem: scene ", fileName.c_str(), " has already loaded now.");
+		InnoLogger::Log(LogLevel::Warning, "FileSystem: scene ", fileName, " has already loaded now.");
 		return true;
 	}
 
@@ -216,13 +216,13 @@ bool InnoFileSystem::loadScene(const std::string & fileName, bool AsyncLoad)
 		InnoFileSystemNS::m_nextLoadingScene = fileName;
 		InnoFileSystemNS::m_isLoadingScene = true;
 		g_pModuleManager->getTaskSystem()->waitAllTasksToFinish();
-		InnoFileSystemNS::loadScene(InnoFileSystemNS::m_nextLoadingScene);
+		InnoFileSystemNS::loadScene(InnoFileSystemNS::m_nextLoadingScene.c_str());
 		GetComponentManager(VisibleComponent)->LoadAssetsForComponents(AsyncLoad);
 		return true;
 	}
 }
 
-bool InnoFileSystem::saveScene(const std::string & fileName)
+bool InnoFileSystem::saveScene(const char* fileName)
 {
 	return InnoFileSystemNS::saveScene(fileName);
 }
@@ -244,22 +244,22 @@ bool InnoFileSystem::addSceneLoadingFinishCallback(std::function<void()>* functo
 	return true;
 }
 
-bool InnoFileSystem::convertModel(const std::string & fileName, const std::string & exportPath)
+bool InnoFileSystem::convertModel(const char* fileName, const char* exportPath)
 {
 	return InnoFileSystemNS::convertModel(fileName, exportPath);
 }
 
-ModelMap InnoFileSystem::loadModel(const std::string & fileName, bool AsyncUploadGPUResource)
+ModelMap InnoFileSystem::loadModel(const char* fileName, bool AsyncUploadGPUResource)
 {
 	return InnoFileSystemNS::AssetLoader::loadModel(fileName, AsyncUploadGPUResource);
 }
 
-TextureDataComponent* InnoFileSystem::loadTexture(const std::string & fileName)
+TextureDataComponent* InnoFileSystem::loadTexture(const char* fileName)
 {
 	return InnoFileSystemNS::AssetLoader::loadTexture(fileName);
 }
 
-bool InnoFileSystem::saveTexture(const std::string & fileName, TextureDataComponent * TDC)
+bool InnoFileSystem::saveTexture(const char* fileName, TextureDataComponent * TDC)
 {
 	return InnoFileSystemNS::TextureIO::saveTexture(fileName, TDC);
 }

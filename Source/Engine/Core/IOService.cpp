@@ -30,7 +30,7 @@ bool IOService::setupWorkingDirectory()
 	return true;
 }
 
-std::vector<char> IOService::loadFile(const std::string & filePath, IOMode openMode)
+std::vector<char> IOService::loadFile(const char* filePath, IOMode openMode)
 {
 	std::ios_base::openmode l_mode = std::ios::in;
 	switch (openMode)
@@ -51,7 +51,7 @@ std::vector<char> IOService::loadFile(const std::string & filePath, IOMode openM
 
 	if (!l_file.is_open())
 	{
-		InnoLogger::Log(LogLevel::Error, "IOService: can't open file : ", filePath.c_str(), "!");
+		InnoLogger::Log(LogLevel::Error, "IOService: can't open file : ", filePath, "!");
 		return std::vector<char>();
 	}
 
@@ -67,7 +67,7 @@ std::vector<char> IOService::loadFile(const std::string & filePath, IOMode openM
 	return buffer;
 }
 
-bool IOService::saveFile(const std::string & filePath, const std::vector<char>& content, IOMode saveMode)
+bool IOService::saveFile(const char* filePath, const std::vector<char>& content, IOMode saveMode)
 {
 	std::ios_base::openmode l_mode = std::ios::out;
 	switch (saveMode)
@@ -88,7 +88,7 @@ bool IOService::saveFile(const std::string & filePath, const std::vector<char>& 
 
 	if (!l_file.is_open())
 	{
-		InnoLogger::Log(LogLevel::Error, "IOService: can't open file : ", filePath.c_str(), "!");
+		InnoLogger::Log(LogLevel::Error, "IOService: can't open file : ", filePath, "!");
 		return false;
 	}
 
@@ -99,7 +99,7 @@ bool IOService::saveFile(const std::string & filePath, const std::vector<char>& 
 	return l_result;
 }
 
-bool IOService::isFileExist(const std::string & filePath)
+bool IOService::isFileExist(const char* filePath)
 {
 	if (fs::exists(fs::path(m_workingDir + filePath)))
 	{
@@ -111,17 +111,17 @@ bool IOService::isFileExist(const std::string & filePath)
 	}
 }
 
-std::string IOService::getFilePath(const std::string & filePath)
+std::string IOService::getFilePath(const char* filePath)
 {
 	return fs::path(filePath).remove_filename().generic_string();
 }
 
-std::string IOService::getFileExtension(const std::string & filePath)
+std::string IOService::getFileExtension(const char* filePath)
 {
 	return fs::path(filePath).extension().generic_string();
 }
 
-std::string IOService::getFileName(const std::string & filePath)
+std::string IOService::getFileName(const char* filePath)
 {
 	return fs::path(filePath).stem().generic_string();
 }

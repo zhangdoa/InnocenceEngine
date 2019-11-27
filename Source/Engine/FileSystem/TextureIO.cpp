@@ -10,7 +10,7 @@ extern IModuleManager* g_pModuleManager;
 #include "stb/stb_image.h"
 #include "stb/stb_image_write.h"
 
-TextureDataComponent* InnoFileSystemNS::TextureIO::loadTexture(const std::string & fileName)
+TextureDataComponent* InnoFileSystemNS::TextureIO::loadTexture(const char* fileName)
 {
 	int32_t width, height, nrChannels;
 
@@ -33,7 +33,7 @@ TextureDataComponent* InnoFileSystemNS::TextureIO::loadTexture(const std::string
 	{
 		auto l_TDC = g_pModuleManager->getRenderingFrontend()->addTextureDataComponent();
 
-		l_TDC->m_ComponentName = (fileName + "/").c_str();
+		l_TDC->m_ComponentName = (std::string(fileName) + "/").c_str();
 
 		l_TDC->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat(nrChannels - 1);
 		l_TDC->m_textureDataDesc.WrapMethod = TextureWrapMethod::Repeat;
@@ -58,7 +58,7 @@ TextureDataComponent* InnoFileSystemNS::TextureIO::loadTexture(const std::string
 	}
 }
 
-bool InnoFileSystemNS::TextureIO::saveTexture(const std::string & fileName, TextureDataComponent * TDC)
+bool InnoFileSystemNS::TextureIO::saveTexture(const char* fileName, TextureDataComponent * TDC)
 {
 	if (TDC->m_textureDataDesc.PixelDataType == TexturePixelDataType::FLOAT16 || TDC->m_textureDataDesc.PixelDataType == TexturePixelDataType::FLOAT32)
 	{

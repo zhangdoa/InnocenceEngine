@@ -5,6 +5,6 @@ namespace InnoFileSystemNS
 {
 	namespace AssimpWrapper
 	{
-		bool convertModel(const std::string & fileName, const std::string & exportPath);
+		bool convertModel(const char* fileName, const char* exportPath);
 	};
 }

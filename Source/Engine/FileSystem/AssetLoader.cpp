@@ -14,10 +14,10 @@ namespace InnoFileSystemNS::AssetLoader
 	std::unordered_map<std::string, ModelMap> m_loadedModelMap;
 	std::unordered_map<std::string, TextureDataComponent*> m_loadedTexture;
 
-	ModelMap loadModelFromDisk(const std::string & fileName, bool AsyncUploadGPUResource = true);
+	ModelMap loadModelFromDisk(const char* fileName, bool AsyncUploadGPUResource = true);
 }
 
-ModelMap InnoFileSystemNS::AssetLoader::loadModel(const std::string & fileName, bool AsyncUploadGPUResource)
+ModelMap InnoFileSystemNS::AssetLoader::loadModel(const char* fileName, bool AsyncUploadGPUResource)
 {
 	auto l_extension = IOService::getFileExtension(fileName);
 	if (l_extension == ".InnoModel")
@@ -28,7 +28,7 @@ ModelMap InnoFileSystemNS::AssetLoader::loadModel(const std::string & fileName, 
 		auto l_loadedModelMap = m_loadedModelMap.find(fileName);
 		if (l_loadedModelMap != m_loadedModelMap.end())
 		{
-			InnoLogger::Log(LogLevel::Verbose, "FileSystem: AssetLoader: ", fileName.c_str(), " has been already loaded.");
+			InnoLogger::Log(LogLevel::Verbose, "FileSystem: AssetLoader: ", fileName, " has been already loaded.");
 			// Just copy new materials
 			for (auto& i : l_loadedModelMap->second)
 			{
@@ -45,12 +45,12 @@ ModelMap InnoFileSystemNS::AssetLoader::loadModel(const std::string & fileName, 
 	}
 	else
 	{
-		InnoLogger::Log(LogLevel::Warning, "FileSystem: AssimpWrapper: ", fileName.c_str(), " is not supported!");
+		InnoLogger::Log(LogLevel::Warning, "FileSystem: AssimpWrapper: ", fileName, " is not supported!");
 		return ModelMap();
 	}
 }
 
-ModelMap InnoFileSystemNS::AssetLoader::loadModelFromDisk(const std::string & fileName, bool AsyncUploadGPUResource)
+ModelMap InnoFileSystemNS::AssetLoader::loadModelFromDisk(const char* fileName, bool AsyncUploadGPUResource)
 {
 	auto l_result = JSONParser::loadModelFromDisk(fileName, AsyncUploadGPUResource);
 	m_loadedModelMap.emplace(fileName, l_result);
@@ -58,14 +58,14 @@ ModelMap InnoFileSystemNS::AssetLoader::loadModelFromDisk(const std::string & fi
 	return l_result;
 }
 
-TextureDataComponent* InnoFileSystemNS::AssetLoader::loadTexture(const std::string& fileName)
+TextureDataComponent* InnoFileSystemNS::AssetLoader::loadTexture(const char* fileName)
 {
 	TextureDataComponent* l_TDC;
 
 	auto l_loadedTDC = m_loadedTexture.find(fileName);
 	if (l_loadedTDC != m_loadedTexture.end())
 	{
-		InnoLogger::Log(LogLevel::Verbose, "FileSystem: AssetLoader: ", fileName.c_str(), " has been already loaded.");
+		InnoLogger::Log(LogLevel::Verbose, "FileSystem: AssetLoader: ", fileName, " has been already loaded.");
 		l_TDC = l_loadedTDC->second;
 	}
 	else

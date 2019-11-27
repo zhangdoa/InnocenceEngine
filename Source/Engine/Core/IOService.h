@@ -6,13 +6,13 @@ namespace IOService
 {
 	bool setupWorkingDirectory();
 
-	std::vector<char> loadFile(const std::string & filePath, IOMode openMode);
-	bool saveFile(const std::string & filePath, const std::vector<char>& content, IOMode saveMode);
+	std::vector<char> loadFile(const char* filePath, IOMode openMode);
+	bool saveFile(const char* filePath, const std::vector<char>& content, IOMode saveMode);
 
-	bool isFileExist(const std::string & filePath);
-	std::string getFilePath(const std::string & filePath);
-	std::string getFileExtension(const std::string & filePath);
-	std::string getFileName(const std::string & filePath);
+	bool isFileExist(const char* filePath);
+	std::string getFilePath(const char* filePath);
+	std::string getFileExtension(const char* filePath);
+	std::string getFileName(const char* filePath);
 	std::string getWorkingDirectory();
 
 	inline bool serialize(std::ostream& os, void* ptr, size_t size)

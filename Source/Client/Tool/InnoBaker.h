@@ -4,10 +4,10 @@
 namespace InnoBaker
 {
 	void Setup();
-	void BakeProbeCache(const std::string & sceneName);
-	void BakeBrickCache(const std::string& surfelCacheFileName);
-	void BakeBrick(const std::string& brickCacheFileName);
-	void BakeBrickFactor(const std::string& brickFileName);
+	void BakeProbeCache(const char* sceneName);
+	void BakeBrickCache(const char* surfelCacheFileName);
+	void BakeBrick(const char* brickCacheFileName);
+	void BakeBrickFactor(const char* brickFileName);
 }
 
 class InnoBakerRenderingClient : public IRenderingClient

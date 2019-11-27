@@ -53,7 +53,7 @@ bool InnoVisibleComponentManager::Setup()
 
 	f_LoadAssetTask = [=](VisibleComponent* i, bool AsyncLoad)
 	{
-		i->m_modelMap = g_pModuleManager->getFileSystem()->loadModel(i->m_modelFileName, AsyncLoad);
+		i->m_modelMap = g_pModuleManager->getFileSystem()->loadModel(i->m_modelFileName.c_str(), AsyncLoad);
 	};
 
 	f_AssignUnitMeshTask = [=](VisibleComponent* i)
