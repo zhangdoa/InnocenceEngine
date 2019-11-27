@@ -51,7 +51,7 @@ bool InnoFileSystemNS::AssimpWrapper::convertModel(const char* fileName, const c
 	{
 		InnoLogger::Log(LogLevel::Verbose, "FileSystem: AssimpWrapper: converting ", fileName, "...");
 #if defined _DEBUG
-		std::string l_logFilePath = IOService::getWorkingDirectory() + "Res//Log//AssimpLog_" + fileName + ".txt";
+		std::string l_logFilePath = IOService::getWorkingDirectory() + "Res//Logs//AssimpLog_" + l_exportFileName + ".txt";
 		Assimp::DefaultLogger::create(l_logFilePath.c_str(), Assimp::Logger::VERBOSE);
 #endif
 		l_assScene = l_assImporter.ReadFile(IOService::getWorkingDirectory() + fileName, aiProcess_Triangulate | aiProcess_FlipUVs);
@@ -512,58 +512,56 @@ json InnoFileSystemNS::AssimpWrapper::processTextureData(const char* fileName, T
 
 /*
 Binary data type:
-Duration:double
+Duration:float
 NumChannels:uint32_t
-ChannelIndex:uint32_t
 NumKeys:uint32_t
-Key:Key(Vec4+Vec4+double)
+Key:Key(Vec4+Vec4)
 
 Binary data structure:
 |Duration
 |NumChannels
-|ChannelIndex1
-	|NumKeys
-		|Key1
-		|Key2
-		|...
-		|KeyN
-|ChannelIndex2
+|NumKeys
+|Channel1
+	|Key1
+	|Key2
+	|...
+	|KeyN
+|Channel2
 |...
-|ChannelIndexN
+|ChannelN
 */
 
 void InnoFileSystemNS::AssimpWrapper::processAssimpAnimation(const aiAnimation * aiAnimation, const char* exportFileRelativePath)
 {
-	//std::ofstream l_file(IOService::getWorkingDirectory() + exportFileRelativePath, std::ios::binary);
+	std::ofstream l_file(IOService::getWorkingDirectory() + exportFileRelativePath, std::ios::binary);
+	std::vector<Vec4> l_keyData;
 
-	auto l_duration = aiAnimation->mDuration;
-	//IOService::serialize(l_file, &l_duration, sizeof(decltype(l_duration)));
+	float l_duration = (float)aiAnimation->mDuration;
+	IOService::serialize(l_file, &l_duration);
 
 	auto l_numChannels = aiAnimation->mNumChannels;
+
 	if (l_numChannels)
 	{
-		auto l_numKeys = aiAnimation->mChannels[0]->mNumPositionKeys;
+		IOService::serialize(l_file, &l_numChannels);
 
-		std::vector<Vec4> l_textureData;
+		auto l_numKeys = aiAnimation->mChannels[0]->mNumPositionKeys;
+		IOService::serialize(l_file, &l_numKeys);
 
 		// Position-xyz, time-w, rotation-xyzw
-		l_textureData.reserve(l_numChannels * l_numKeys * 2);
+		l_keyData.reserve(l_numChannels * l_numKeys * 2);
 
-		//IOService::serialize(l_file, &l_numChannels, sizeof(decltype(l_numChannels)));
 		for (uint32_t i = 0; i < l_numChannels; i++)
 		{
 			auto l_channel = aiAnimation->mChannels[i];
-			//auto l_channelIndex = i;
-			//IOService::serialize(l_file, &l_channelIndex, sizeof(decltype(l_channelIndex)));
 
 			if (l_channel->mNumPositionKeys != l_channel->mNumRotationKeys)
 			{
 				InnoLogger::Log(LogLevel::Error, "FileSystem: AssimpWrapper: Position key number is different than rotation key number in node: ", l_channel->mNodeName.C_Str(), "!");
-				//l_file.close();
+				l_file.close();
 				return;
 			}
 
-			//IOService::serialize(l_file, &l_channel->mNumPositionKeys, sizeof(decltype(l_channel->mNumPositionKeys)));
 			for (uint32_t j = 0; j < l_channel->mNumPositionKeys; j++)
 			{
 				auto l_posKey = l_channel->mPositionKeys[j];
@@ -571,20 +569,18 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpAnimation(const aiAnimation *
 				auto l_posKeyValue = l_posKey.mValue;
 				auto l_pos = Vec4(l_posKeyValue.x, l_posKeyValue.y, l_posKeyValue.z, (float)l_posKeyTime);
 
-				l_textureData.emplace_back(l_pos);
+				l_keyData.emplace_back(l_pos);
 
 				auto l_rotKey = l_channel->mRotationKeys[j];
 				auto l_rotKeyValue = l_rotKey.mValue;
 				auto l_rot = Vec4(l_rotKeyValue.x, l_rotKeyValue.y, l_rotKeyValue.z, l_rotKeyValue.w);
 
-				l_textureData.emplace_back(l_rot);
-
-				//IOService::serialize(l_file, &l_key, sizeof(decltype(l_key)));
+				l_keyData.emplace_back(l_rot);
 			}
 		}
-
-		stbi_write_png((IOService::getWorkingDirectory() + exportFileRelativePath).c_str(), (int32_t)l_numKeys * 2 * 4, (int32_t)l_numChannels, 4, l_textureData.data(), (int32_t)l_numKeys * 2 * sizeof(Vec4));
 	}
 
-	//l_file.close();
+	IOService::serializeVector(l_file, l_keyData);
+
+	l_file.close();
 }

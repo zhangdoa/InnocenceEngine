@@ -6,5 +6,8 @@
 class AnimationDataComponent : public InnoComponent
 {
 public:
-	TextureDataComponent* m_animationTexture = 0;
+	float m_Duration = 0.0f;
+	uint32_t m_NumChannels = 0;
+	uint32_t m_NumKeys = 0;
+	Array<Vec4> m_KeyData;
 };

@@ -383,15 +383,25 @@ std::vector<AnimationDataComponent*> InnoFileSystemNS::JSONParser::processAnimat
 	{
 		auto l_animationFileName = i.get<std::string>();
 
+		std::ifstream l_animationFile(IOService::getWorkingDirectory() + l_animationFileName, std::ios::binary);
+
+		if (!l_animationFile.is_open())
+		{
+			InnoLogger::Log(LogLevel::Error, "FileSystem: std::ifstream: can't open file ", l_animationFileName.c_str(), "!");
+			return l_result;
+		}
+
 		auto l_ADC = g_pModuleManager->getRenderingFrontend()->addAnimationDataComponent();
 
-		l_ADC->m_animationTexture = AssetLoader::loadTexture(l_animationFileName.c_str());
-		l_ADC->m_animationTexture->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
-		l_ADC->m_animationTexture->m_textureDataDesc.UsageType = TextureUsageType::Sample;
+		std::streamoff l_offset = 0;
 
-		auto l_AnimationTextureInitializeTask = g_pModuleManager->getTaskSystem()->submit("AnimationTextureInitializeTask", 2, nullptr,
-			[=]() { g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(l_ADC->m_animationTexture); });
-		l_AnimationTextureInitializeTask->Wait();
+		IOService::deserialize(l_animationFile, l_offset, &l_ADC->m_Duration);
+		l_offset += sizeof(l_ADC->m_Duration);
+		IOService::deserialize(l_animationFile, l_offset, &l_ADC->m_NumChannels);
+		l_offset += sizeof(l_ADC->m_NumChannels);
+		IOService::deserialize(l_animationFile, l_offset, &l_ADC->m_NumKeys);
+		l_offset += sizeof(l_ADC->m_NumKeys);
+		IOService::deserializeVector(l_animationFile, l_offset, IOService::getFileSize(l_animationFile) - l_offset, l_ADC->m_KeyData);
 
 		l_result.emplace_back(l_ADC);
 	}
