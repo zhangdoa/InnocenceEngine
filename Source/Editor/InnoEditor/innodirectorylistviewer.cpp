@@ -62,7 +62,7 @@ QString InnoDirectoryListViewer::GetSelectionPath()
              )
     {
         QDir l_RootDir(l_relativeRoot.c_str());
-        auto l_relativePath = l_RootDir.relativeFilePath(l_fileInfo.filePath());
+        auto l_relativePath = "Res//" + l_RootDir.relativeFilePath(l_fileInfo.filePath());
         switch (QMessageBox::question(
                     this,
                     tr(""),
@@ -75,7 +75,7 @@ QString InnoDirectoryListViewer::GetSelectionPath()
                     QMessageBox::Cancel))
         {
         case QMessageBox::Yes:
-            g_pModuleManager->getFileSystem()->convertModel("Res//" + l_relativePath.toStdString(), "Res//convertedAssets//");
+            g_pModuleManager->getFileSystem()->convertModel(l_relativePath.toStdString().c_str(), "Res//convertedAssets//");
             break;
         case QMessageBox::No:
             g_pModuleManager->getLogSystem()->Log(LogLevel::Success, l_relativePath.toStdString().c_str());
@@ -90,7 +90,7 @@ QString InnoDirectoryListViewer::GetSelectionPath()
     else if (l_fileInfo.suffix().toStdString() == "InnoScene")
     {
         QDir l_RootDir(l_relativeRoot.c_str());
-        auto l_relativePath = l_RootDir.relativeFilePath(l_fileInfo.filePath());
+        auto l_relativePath = "Res//" + l_RootDir.relativeFilePath(l_fileInfo.filePath());
 
         switch (QMessageBox::question(
                     this,
@@ -104,7 +104,7 @@ QString InnoDirectoryListViewer::GetSelectionPath()
                     QMessageBox::Cancel))
         {
         case QMessageBox::Yes:
-            g_pModuleManager->getFileSystem()->loadScene("Res//" + l_relativePath.toStdString());
+            g_pModuleManager->getFileSystem()->loadScene(l_relativePath.toStdString().c_str());
             break;
         case QMessageBox::No:
             break;
