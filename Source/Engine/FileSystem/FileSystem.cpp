@@ -39,12 +39,13 @@ namespace InnoFileSystemNS
 bool InnoFileSystemNS::convertModel(const char* fileName, const char* exportPath)
 {
 	auto l_extension = IOService::getFileExtension(fileName);
+	std::string l_fileName = fileName;
 
 	if (l_extension == ".obj" || l_extension == ".OBJ" || l_extension == ".fbx" || l_extension == ".FBX")
 	{
 		auto tempTask = g_pModuleManager->getTaskSystem()->submit("ConvertModelTask", -1, nullptr, [=]()
 		{
-			AssimpWrapper::convertModel(fileName, exportPath);
+			AssimpWrapper::convertModel(l_fileName.c_str(), exportPath);
 		});
 		return true;
 	}
