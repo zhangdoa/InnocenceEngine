@@ -8,9 +8,6 @@ struct VKTextureDataDesc
 	VkImageType imageType;
 	VkImageViewType imageViewType;
 	VkImageUsageFlags imageUsageFlags;
-	VkSamplerAddressMode samplerAddressMode;
-	VkSamplerMipmapMode minFilterParam;
-	VkSamplerMipmapMode magFilterParam;
 	VkFormat format;
 	VkDeviceSize imageSize;
 	VkBorderColor boarderColor;

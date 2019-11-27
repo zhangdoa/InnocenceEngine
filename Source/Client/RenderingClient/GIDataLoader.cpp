@@ -134,9 +134,6 @@ bool GIDataLoader::Setup()
 	m_testSampleCubemap->m_textureDataDesc.SamplerType = TextureSamplerType::SamplerCubemap;
 	m_testSampleCubemap->m_textureDataDesc.UsageType = TextureUsageType::Sample;
 	m_testSampleCubemap->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_testSampleCubemap->m_textureDataDesc.MinFilterMethod = TextureFilterMethod::Linear;
-	m_testSampleCubemap->m_textureDataDesc.MagFilterMethod = TextureFilterMethod::Linear;
-	m_testSampleCubemap->m_textureDataDesc.WrapMethod = TextureWrapMethod::Repeat;
 	m_testSampleCubemap->m_textureDataDesc.Width = m_testCubemapResolution;
 	m_testSampleCubemap->m_textureDataDesc.Height = m_testCubemapResolution;
 	m_testSampleCubemap->m_textureDataDesc.PixelDataType = TexturePixelDataType::FLOAT32;
@@ -162,9 +159,6 @@ bool GIDataLoader::Setup()
 	m_testSample3DTexture->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler3D;
 	m_testSample3DTexture->m_textureDataDesc.UsageType = TextureUsageType::Sample;
 	m_testSample3DTexture->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_testSample3DTexture->m_textureDataDesc.MinFilterMethod = TextureFilterMethod::Linear;
-	m_testSample3DTexture->m_textureDataDesc.MagFilterMethod = TextureFilterMethod::Linear;
-	m_testSample3DTexture->m_textureDataDesc.WrapMethod = TextureWrapMethod::Repeat;
 	m_testSample3DTexture->m_textureDataDesc.Width = m_testCubemapResolution;
 	m_testSample3DTexture->m_textureDataDesc.Height = m_testCubemapResolution;
 	m_testSample3DTexture->m_textureDataDesc.DepthOrArraySize = m_testCubemapResolution;

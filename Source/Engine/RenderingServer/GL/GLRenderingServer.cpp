@@ -384,14 +384,7 @@ bool GLRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 	glObjectLabel(GL_TEXTURE, l_rhs->m_TO, (GLsizei)l_TOName.size(), l_TOName.c_str());
 #endif
 
-	glTexParameteri(l_rhs->m_GLTextureDataDesc.TextureSamplerType, GL_TEXTURE_WRAP_R, l_rhs->m_GLTextureDataDesc.TextureWrapMethod);
-	glTexParameteri(l_rhs->m_GLTextureDataDesc.TextureSamplerType, GL_TEXTURE_WRAP_S, l_rhs->m_GLTextureDataDesc.TextureWrapMethod);
-	glTexParameteri(l_rhs->m_GLTextureDataDesc.TextureSamplerType, GL_TEXTURE_WRAP_T, l_rhs->m_GLTextureDataDesc.TextureWrapMethod);
-
 	glTexParameterfv(l_rhs->m_GLTextureDataDesc.TextureSamplerType, GL_TEXTURE_BORDER_COLOR, l_rhs->m_GLTextureDataDesc.BorderColor);
-
-	glTexParameteri(l_rhs->m_GLTextureDataDesc.TextureSamplerType, GL_TEXTURE_MIN_FILTER, l_rhs->m_GLTextureDataDesc.MinFilterParam);
-	glTexParameteri(l_rhs->m_GLTextureDataDesc.TextureSamplerType, GL_TEXTURE_MAG_FILTER, l_rhs->m_GLTextureDataDesc.MagFilterParam);
 
 	if (l_rhs->m_GLTextureDataDesc.TextureSamplerType == GL_TEXTURE_1D)
 	{
@@ -598,7 +591,7 @@ bool GLRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent * rh
 	auto l_textureWrapMethodV = GetTextureWrapMethod(l_rhs->m_SamplerDesc.m_WrapMethodV);
 	auto l_textureWrapMethodW = GetTextureWrapMethod(l_rhs->m_SamplerDesc.m_WrapMethodW);
 	auto l_minFilterParam = GetTextureFilterParam(l_rhs->m_SamplerDesc.m_MinFilterMethod, l_rhs->m_SamplerDesc.m_UseMipMap);
-	auto l_magFilterParam = GetTextureFilterParam(l_rhs->m_SamplerDesc.m_MagFilterMethod, l_rhs->m_SamplerDesc.m_UseMipMap);
+	auto l_magFilterParam = GetTextureFilterParam(l_rhs->m_SamplerDesc.m_MagFilterMethod, false);
 
 	glSamplerParameteri(l_rhs->m_SO, GL_TEXTURE_WRAP_R, l_textureWrapMethodU);
 	glSamplerParameteri(l_rhs->m_SO, GL_TEXTURE_WRAP_S, l_textureWrapMethodV);

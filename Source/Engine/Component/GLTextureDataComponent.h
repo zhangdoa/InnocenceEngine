@@ -6,9 +6,6 @@
 struct GLTextureDataDesc
 {
 	GLenum TextureSamplerType;
-	GLenum TextureWrapMethod;
-	GLenum MinFilterParam;
-	GLenum MagFilterParam;
 	GLenum InternalFormat;
 	GLenum PixelDataFormat;
 	GLenum PixelDataType;

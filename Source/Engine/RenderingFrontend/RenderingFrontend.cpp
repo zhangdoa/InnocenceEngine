@@ -168,9 +168,6 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 	m_DefaultRenderPassDesc.m_RenderTargetDesc.SamplerType = TextureSamplerType::Sampler2D;
 	m_DefaultRenderPassDesc.m_RenderTargetDesc.UsageType = TextureUsageType::ColorAttachment;
 	m_DefaultRenderPassDesc.m_RenderTargetDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_DefaultRenderPassDesc.m_RenderTargetDesc.MinFilterMethod = TextureFilterMethod::Nearest;
-	m_DefaultRenderPassDesc.m_RenderTargetDesc.MagFilterMethod = TextureFilterMethod::Nearest;
-	m_DefaultRenderPassDesc.m_RenderTargetDesc.WrapMethod = TextureWrapMethod::Edge;
 	m_DefaultRenderPassDesc.m_RenderTargetDesc.Width = m_screenResolution.x;
 	m_DefaultRenderPassDesc.m_RenderTargetDesc.Height = m_screenResolution.y;
 	m_DefaultRenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::FLOAT16;

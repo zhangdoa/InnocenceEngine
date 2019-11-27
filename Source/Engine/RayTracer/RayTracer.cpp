@@ -345,9 +345,6 @@ bool InnoRayTracer::Initialize()
 	m_TDC->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
 	m_TDC->m_textureDataDesc.UsageType = TextureUsageType::Sample;
 	m_TDC->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_TDC->m_textureDataDesc.MinFilterMethod = TextureFilterMethod::Nearest;
-	m_TDC->m_textureDataDesc.MagFilterMethod = TextureFilterMethod::Nearest;
-	m_TDC->m_textureDataDesc.WrapMethod = TextureWrapMethod::Edge;
 	m_TDC->m_textureDataDesc.Width = l_screenResolution.x / l_denom;
 	m_TDC->m_textureDataDesc.Height = l_screenResolution.y / l_denom;
 	m_TDC->m_textureDataDesc.PixelDataType = TexturePixelDataType::UBYTE;

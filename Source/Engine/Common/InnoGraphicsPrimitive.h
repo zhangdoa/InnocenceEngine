@@ -34,9 +34,6 @@ namespace InnoType
 		bool IsSRGB = false;
 		TexturePixelDataFormat PixelDataFormat;
 		TexturePixelDataType PixelDataType;
-		TextureFilterMethod MinFilterMethod;
-		TextureFilterMethod MagFilterMethod;
-		TextureWrapMethod WrapMethod;
 		bool UseMipMap = false;
 		uint32_t Width = 0;
 		uint32_t Height = 0;

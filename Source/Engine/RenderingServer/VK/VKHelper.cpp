@@ -319,9 +319,6 @@ VKTextureDataDesc VKHelper::getVKTextureDataDesc(TextureDataDesc textureDataDesc
 	l_result.imageType = getImageType(textureDataDesc.SamplerType);
 	l_result.imageViewType = getImageViewType(textureDataDesc.SamplerType);
 	l_result.imageUsageFlags = getImageUsageFlags(textureDataDesc.UsageType);
-	l_result.samplerAddressMode = getSamplerAddressMode(textureDataDesc.WrapMethod);
-	l_result.minFilterParam = getTextureFilterParam(textureDataDesc.MinFilterMethod);
-	l_result.magFilterParam = getTextureFilterParam(textureDataDesc.MagFilterMethod);
 	l_result.format = getTextureFormat(textureDataDesc);
 	l_result.imageSize = getImageSize(textureDataDesc);
 	l_result.aspectFlags = getImageAspectFlags(textureDataDesc.UsageType);

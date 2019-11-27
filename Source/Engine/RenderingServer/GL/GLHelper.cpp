@@ -20,9 +20,6 @@ GLTextureDataDesc GLHelper::GetGLTextureDataDesc(TextureDataDesc textureDataDesc
 	GLTextureDataDesc l_result;
 
 	l_result.TextureSamplerType = GetTextureSamplerType(textureDataDesc.SamplerType);
-	l_result.TextureWrapMethod = GetTextureWrapMethod(textureDataDesc.WrapMethod);
-	l_result.MinFilterParam = GetTextureFilterParam(textureDataDesc.MinFilterMethod, textureDataDesc.UseMipMap);
-	l_result.MagFilterParam = GetTextureFilterParam(textureDataDesc.MagFilterMethod, false);
 	l_result.InternalFormat = GetTextureInternalFormat(textureDataDesc);
 	l_result.PixelDataFormat = GetTexturePixelDataFormat(textureDataDesc);
 	l_result.PixelDataType = GetTexturePixelDataType(textureDataDesc);

@@ -30,7 +30,6 @@ bool SunShadowPass::Setup()
 	l_RenderPassDesc.m_RenderTargetDesc.Width = 2048;
 	l_RenderPassDesc.m_RenderTargetDesc.Height = 2048;
 	l_RenderPassDesc.m_RenderTargetDesc.DepthOrArraySize = 4;
-	l_RenderPassDesc.m_RenderTargetDesc.WrapMethod = TextureWrapMethod::Border;
 	l_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::FLOAT32;
 	l_RenderPassDesc.m_RenderTargetDesc.BorderColor[0] = 1.0f;
 	l_RenderPassDesc.m_RenderTargetDesc.BorderColor[1] = 1.0f;

@@ -213,8 +213,6 @@ bool VolumetricFogPass::Setup()
 	l_RenderPassDesc.m_RenderTargetDesc.SamplerType = TextureSamplerType::Sampler3D;
 	l_RenderPassDesc.m_RenderTargetDesc.UsageType = TextureUsageType::RawImage;
 	l_RenderPassDesc.m_RenderTargetDesc.GPUAccessibility = Accessibility::ReadWrite;
-	l_RenderPassDesc.m_RenderTargetDesc.MinFilterMethod = TextureFilterMethod::Linear;
-	l_RenderPassDesc.m_RenderTargetDesc.MagFilterMethod = TextureFilterMethod::Linear;
 	l_RenderPassDesc.m_RenderTargetDesc.Width = 160;
 	l_RenderPassDesc.m_RenderTargetDesc.Height = 90;
 	l_RenderPassDesc.m_RenderTargetDesc.DepthOrArraySize = 64;

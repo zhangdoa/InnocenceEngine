@@ -111,8 +111,6 @@ bool LightCullingPass::createLightGridTDC()
 	m_lightGridTDC->m_textureDataDesc.UsageType = TextureUsageType::RawImage;
 	m_lightGridTDC->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::RG;
 	m_lightGridTDC->m_textureDataDesc.PixelDataType = TexturePixelDataType::UINT32;
-	m_lightGridTDC->m_textureDataDesc.MinFilterMethod = TextureFilterMethod::Nearest;
-	m_lightGridTDC->m_textureDataDesc.MagFilterMethod = TextureFilterMethod::Nearest;
 
 	return true;
 }
