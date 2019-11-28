@@ -21,4 +21,14 @@ xcopy /s/e/y include\assimp\config.h ..\..\..\..\Include\assimp\
 
 xcopy /s/e/y code\$buildType\*.dll ..\..\..\..\DLL\Win\$buildType\
 xcopy /s/e/y code\$buildType\*.lib ..\..\..\..\Lib\Win\$buildType\
-Rename-Item ..\..\..\..\Lib\Win\$buildType\assimp-vc140-mt.Lib assimp.Lib
+
+$libName = 'assimp-vc141'
+
+Switch ($buildType)
+{
+   {$_ -match 'Debug'} {$libName += '-mtd.lib'}
+   {$_ -match 'Release'} {$libName += '-mt.lib'}
+}
+
+Remove-Item ..\..\..\..\Lib\Win\$buildType\assimp.lib
+Rename-Item ..\..\..\..\Lib\Win\$buildType\$libName assimp.lib
