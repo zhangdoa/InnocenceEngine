@@ -340,7 +340,7 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 		}
 	}
 
-	std::ofstream l_file(IOService::getWorkingDirectory() + exportFileRelativePath, std::ios::binary);
+	std::ofstream l_file(IOService::getWorkingDirectory() + exportFileRelativePath, std::ios::out | std::ios::trunc | std::ios::binary);
 
 	IOService::serializeVector(l_file, l_vertices);
 	IOService::serializeVector(l_file, l_indices);
@@ -533,19 +533,20 @@ Binary data structure:
 
 void InnoFileSystemNS::AssimpWrapper::processAssimpAnimation(const aiAnimation * aiAnimation, const char* exportFileRelativePath)
 {
-	std::ofstream l_file(IOService::getWorkingDirectory() + exportFileRelativePath, std::ios::binary);
+	std::ofstream l_file(IOService::getWorkingDirectory() + exportFileRelativePath, std::ios::out | std::ios::trunc | std::ios::binary);
+
 	std::vector<Vec4> l_keyData;
 
 	float l_duration = (float)aiAnimation->mDuration;
 	IOService::serialize(l_file, &l_duration);
 
-	auto l_numChannels = aiAnimation->mNumChannels;
+	uint32_t l_numChannels = aiAnimation->mNumChannels;
 
 	if (l_numChannels)
 	{
 		IOService::serialize(l_file, &l_numChannels);
 
-		auto l_numKeys = aiAnimation->mChannels[0]->mNumPositionKeys;
+		uint32_t l_numKeys = aiAnimation->mChannels[0]->mNumPositionKeys;
 		IOService::serialize(l_file, &l_numKeys);
 
 		// Position-xyz, time-w, rotation-xyzw

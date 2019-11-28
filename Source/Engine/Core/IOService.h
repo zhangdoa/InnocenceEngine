@@ -24,7 +24,7 @@ namespace IOService
 	template<typename T>
 	inline bool serialize(std::ostream& os, const T* ptr)
 	{
-		return serialize(os, (void*)ptr, sizeof(decltype(ptr)));
+		return serialize(os, (void*)ptr, sizeof(T));
 	}
 
 	template<typename T>
@@ -43,6 +43,7 @@ namespace IOService
 	{
 		auto pbuf = is.rdbuf();
 		std::size_t l_size = pbuf->pubseekoff(0, is.end, is.in);
+		pbuf->pubseekpos(0, is.in);
 		return l_size;
 	}
 
@@ -69,7 +70,7 @@ namespace IOService
 	template<typename T>
 	inline bool deserialize(std::istream& is, std::streamoff startPos, T* ptr)
 	{
-		return deserialize(is, startPos, sizeof(decltype(ptr)), (void*)ptr);
+		return deserialize(is, startPos, sizeof(T), (void*)ptr);
 	}
 
 	template<typename T>
