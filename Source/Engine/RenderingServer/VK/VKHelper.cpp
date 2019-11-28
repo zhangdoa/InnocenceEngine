@@ -312,16 +312,16 @@ bool VKHelper::copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue co
 	return true;
 }
 
-VKTextureDataDesc VKHelper::getVKTextureDataDesc(TextureDataDesc textureDataDesc)
+VKTextureDesc VKHelper::getVKTextureDesc(TextureDesc textureDesc)
 {
-	VKTextureDataDesc l_result;
+	VKTextureDesc l_result;
 
-	l_result.imageType = getImageType(textureDataDesc.SamplerType);
-	l_result.imageViewType = getImageViewType(textureDataDesc.SamplerType);
-	l_result.imageUsageFlags = getImageUsageFlags(textureDataDesc.UsageType);
-	l_result.format = getTextureFormat(textureDataDesc);
-	l_result.imageSize = getImageSize(textureDataDesc);
-	l_result.aspectFlags = getImageAspectFlags(textureDataDesc.UsageType);
+	l_result.imageType = getImageType(textureDesc.SamplerType);
+	l_result.imageViewType = getImageViewType(textureDesc.SamplerType);
+	l_result.imageUsageFlags = getImageUsageFlags(textureDesc.UsageType);
+	l_result.format = getTextureFormat(textureDesc);
+	l_result.imageSize = getImageSize(textureDesc);
+	l_result.aspectFlags = getImageAspectFlags(textureDesc.UsageType);
 
 	return l_result;
 }
@@ -453,27 +453,27 @@ VkSamplerMipmapMode VKHelper::getTextureFilterParam(TextureFilterMethod textureF
 	return l_result;
 }
 
-VkFormat VKHelper::getTextureFormat(TextureDataDesc textureDataDesc)
+VkFormat VKHelper::getTextureFormat(TextureDesc textureDesc)
 {
 	VkFormat l_internalFormat = VK_FORMAT_R8_UNORM;
 
-	if (textureDataDesc.IsSRGB)
+	if (textureDesc.IsSRGB)
 	{
 		l_internalFormat = VK_FORMAT_R8G8B8A8_SRGB;
 	}
-	else if (textureDataDesc.UsageType == TextureUsageType::DepthAttachment)
+	else if (textureDesc.UsageType == TextureUsageType::DepthAttachment)
 	{
 		l_internalFormat = VkFormat::VK_FORMAT_D32_SFLOAT;
 	}
-	else if (textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+	else if (textureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
 	{
 		l_internalFormat = VkFormat::VK_FORMAT_D24_UNORM_S8_UINT;
 	}
 	else
 	{
-		if (textureDataDesc.PixelDataType == TexturePixelDataType::UBYTE)
+		if (textureDesc.PixelDataType == TexturePixelDataType::UBYTE)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R8_UNORM; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R8G8_UNORM; break;
@@ -483,9 +483,9 @@ VkFormat VKHelper::getTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.PixelDataType == TexturePixelDataType::SBYTE)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::SBYTE)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R8_SNORM; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R8G8_SNORM; break;
@@ -495,9 +495,9 @@ VkFormat VKHelper::getTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.PixelDataType == TexturePixelDataType::USHORT)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::USHORT)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R16_UNORM; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R16G16_UNORM; break;
@@ -506,9 +506,9 @@ VkFormat VKHelper::getTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.PixelDataType == TexturePixelDataType::SSHORT)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::SSHORT)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R16_SNORM; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R16G16_SNORM; break;
@@ -517,9 +517,9 @@ VkFormat VKHelper::getTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.PixelDataType == TexturePixelDataType::UINT8)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::UINT8)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R8_UINT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R8G8_UINT; break;
@@ -529,9 +529,9 @@ VkFormat VKHelper::getTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.PixelDataType == TexturePixelDataType::SINT8)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::SINT8)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R8_SINT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R8G8_SINT; break;
@@ -541,9 +541,9 @@ VkFormat VKHelper::getTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.PixelDataType == TexturePixelDataType::UINT16)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::UINT16)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R16_UINT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R16G16_UINT; break;
@@ -552,9 +552,9 @@ VkFormat VKHelper::getTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.PixelDataType == TexturePixelDataType::SINT16)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::SINT16)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R16_SINT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R16G16_SINT; break;
@@ -563,9 +563,9 @@ VkFormat VKHelper::getTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.PixelDataType == TexturePixelDataType::UINT32)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::UINT32)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R32_UINT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R32G32_UINT; break;
@@ -574,9 +574,9 @@ VkFormat VKHelper::getTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.PixelDataType == TexturePixelDataType::SINT32)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::SINT32)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R32_SINT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R32G32_SINT; break;
@@ -585,9 +585,9 @@ VkFormat VKHelper::getTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.PixelDataType == TexturePixelDataType::FLOAT16)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::FLOAT16)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R16_SFLOAT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R16G16_SFLOAT; break;
@@ -596,9 +596,9 @@ VkFormat VKHelper::getTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.PixelDataType == TexturePixelDataType::FLOAT32)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::FLOAT32)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R32_SFLOAT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R32G32_SFLOAT; break;
@@ -612,13 +612,13 @@ VkFormat VKHelper::getTextureFormat(TextureDataDesc textureDataDesc)
 	return l_internalFormat;
 }
 
-VkDeviceSize VKHelper::getImageSize(TextureDataDesc textureDataDesc)
+VkDeviceSize VKHelper::getImageSize(TextureDesc textureDesc)
 {
 	VkDeviceSize l_result;
 
 	VkDeviceSize l_singlePixelSize;
 
-	switch (textureDataDesc.PixelDataType)
+	switch (textureDesc.PixelDataType)
 	{
 	case TexturePixelDataType::UBYTE:l_singlePixelSize = 1; break;
 	case TexturePixelDataType::SBYTE:l_singlePixelSize = 1; break;
@@ -637,7 +637,7 @@ VkDeviceSize VKHelper::getImageSize(TextureDataDesc textureDataDesc)
 
 	VkDeviceSize l_channelSize;
 
-	switch (textureDataDesc.PixelDataFormat)
+	switch (textureDesc.PixelDataFormat)
 	{
 	case TexturePixelDataFormat::R:l_channelSize = 1; break;
 	case TexturePixelDataFormat::RG:l_channelSize = 2; break;
@@ -647,25 +647,25 @@ VkDeviceSize VKHelper::getImageSize(TextureDataDesc textureDataDesc)
 	case TexturePixelDataFormat::DepthStencil:l_channelSize = 1; break;
 	}
 
-	switch (textureDataDesc.SamplerType)
+	switch (textureDesc.SamplerType)
 	{
 	case TextureSamplerType::Sampler1D:
-		l_result = textureDataDesc.Width * l_singlePixelSize * l_channelSize;
+		l_result = textureDesc.Width * l_singlePixelSize * l_channelSize;
 		break;
 	case TextureSamplerType::Sampler2D:
-		l_result = textureDataDesc.Width * textureDataDesc.Height * l_singlePixelSize * l_channelSize;
+		l_result = textureDesc.Width * textureDesc.Height * l_singlePixelSize * l_channelSize;
 		break;
 	case TextureSamplerType::Sampler3D:
-		l_result = textureDataDesc.Width * textureDataDesc.Height * textureDataDesc.DepthOrArraySize * l_singlePixelSize * l_channelSize;
+		l_result = textureDesc.Width * textureDesc.Height * textureDesc.DepthOrArraySize * l_singlePixelSize * l_channelSize;
 		break;
 	case TextureSamplerType::Sampler1DArray:
-		l_result = textureDataDesc.Width * textureDataDesc.DepthOrArraySize * l_singlePixelSize * l_channelSize;
+		l_result = textureDesc.Width * textureDesc.DepthOrArraySize * l_singlePixelSize * l_channelSize;
 		break;
 	case TextureSamplerType::Sampler2DArray:
-		l_result = textureDataDesc.Width * textureDataDesc.Height * textureDataDesc.DepthOrArraySize * l_singlePixelSize * l_channelSize;
+		l_result = textureDesc.Width * textureDesc.Height * textureDesc.DepthOrArraySize * l_singlePixelSize * l_channelSize;
 		break;
 	case TextureSamplerType::SamplerCubemap:
-		l_result = textureDataDesc.Width * textureDataDesc.Height * 6 * l_singlePixelSize * l_channelSize;
+		l_result = textureDesc.Width * textureDesc.Height * 6 * l_singlePixelSize * l_channelSize;
 		break;
 	default:
 		break;
@@ -694,39 +694,39 @@ VkImageAspectFlagBits VKHelper::getImageAspectFlags(TextureUsageType textureUsag
 	return l_result;
 }
 
-VkImageCreateInfo VKHelper::getImageCreateInfo(TextureDataDesc textureDataDesc, VKTextureDataDesc vKTextureDataDesc)
+VkImageCreateInfo VKHelper::getImageCreateInfo(TextureDesc textureDesc, VKTextureDesc vKTextureDesc)
 {
 	VkImageCreateInfo l_result = {};
 
 	l_result.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 
-	if (textureDataDesc.SamplerType == TextureSamplerType::Sampler2DArray)
+	if (textureDesc.SamplerType == TextureSamplerType::Sampler2DArray)
 	{
 		//l_result.flags |= VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
 	}
-	else if (textureDataDesc.SamplerType == TextureSamplerType::SamplerCubemap)
+	else if (textureDesc.SamplerType == TextureSamplerType::SamplerCubemap)
 	{
 		l_result.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 	}
 
-	l_result.imageType = vKTextureDataDesc.imageType;
-	l_result.extent.width = textureDataDesc.Width;
-	l_result.extent.height = textureDataDesc.Height;
-	if (textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
+	l_result.imageType = vKTextureDesc.imageType;
+	l_result.extent.width = textureDesc.Width;
+	l_result.extent.height = textureDesc.Height;
+	if (textureDesc.SamplerType == TextureSamplerType::Sampler3D)
 	{
-		l_result.extent.depth = textureDataDesc.DepthOrArraySize;
+		l_result.extent.depth = textureDesc.DepthOrArraySize;
 	}
 	else
 	{
 		l_result.extent.depth = 1;
 	}
 	l_result.mipLevels = 1;
-	if (textureDataDesc.SamplerType == TextureSamplerType::Sampler1DArray ||
-		textureDataDesc.SamplerType == TextureSamplerType::Sampler2DArray)
+	if (textureDesc.SamplerType == TextureSamplerType::Sampler1DArray ||
+		textureDesc.SamplerType == TextureSamplerType::Sampler2DArray)
 	{
-		l_result.arrayLayers = textureDataDesc.DepthOrArraySize;
+		l_result.arrayLayers = textureDesc.DepthOrArraySize;
 	}
-	else if (textureDataDesc.SamplerType == TextureSamplerType::SamplerCubemap)
+	else if (textureDesc.SamplerType == TextureSamplerType::SamplerCubemap)
 	{
 		l_result.arrayLayers = 6;
 	}
@@ -734,12 +734,12 @@ VkImageCreateInfo VKHelper::getImageCreateInfo(TextureDataDesc textureDataDesc, 
 	{
 		l_result.arrayLayers = 1;
 	}
-	l_result.format = vKTextureDataDesc.format;
+	l_result.format = vKTextureDesc.format;
 	l_result.tiling = VK_IMAGE_TILING_OPTIMAL;
 	l_result.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	l_result.samples = VK_SAMPLE_COUNT_1_BIT;
 	l_result.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	l_result.usage = vKTextureDataDesc.imageUsageFlags;
+	l_result.usage = vKTextureDesc.imageUsageFlags;
 
 	return l_result;
 }
@@ -839,16 +839,16 @@ bool VKHelper::createImageView(VkDevice device, VKTextureDataComponent* VKTDC)
 	VkImageViewCreateInfo viewInfo = {};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	viewInfo.image = VKTDC->m_image;
-	viewInfo.viewType = VKTDC->m_VKTextureDataDesc.imageViewType;
-	viewInfo.format = VKTDC->m_VKTextureDataDesc.format;
-	viewInfo.subresourceRange.aspectMask = VKTDC->m_VKTextureDataDesc.aspectFlags;
+	viewInfo.viewType = VKTDC->m_VKTextureDesc.imageViewType;
+	viewInfo.format = VKTDC->m_VKTextureDesc.format;
+	viewInfo.subresourceRange.aspectMask = VKTDC->m_VKTextureDesc.aspectFlags;
 	viewInfo.subresourceRange.baseMipLevel = 0;
 	viewInfo.subresourceRange.levelCount = 1;
 	viewInfo.subresourceRange.baseArrayLayer = 0;
-	if (VKTDC->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler1DArray ||
-		VKTDC->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler2DArray)
+	if (VKTDC->m_textureDesc.SamplerType == TextureSamplerType::Sampler1DArray ||
+		VKTDC->m_textureDesc.SamplerType == TextureSamplerType::Sampler2DArray)
 	{
-		viewInfo.subresourceRange.layerCount = VKTDC->m_textureDataDesc.DepthOrArraySize;
+		viewInfo.subresourceRange.layerCount = VKTDC->m_textureDesc.DepthOrArraySize;
 	}
 	else
 	{
@@ -1078,7 +1078,7 @@ bool VKHelper::createRenderTargets(VKRenderPassDataComponent* VKRPDC, IRendering
 	{
 		VKRPDC->m_RenderTargets[i] = renderingServer->AddTextureDataComponent((std::string(VKRPDC->m_ComponentName.c_str()) + "_" + std::to_string(i) + "/").c_str());
 
-		VKRPDC->m_RenderTargets[i]->m_textureDataDesc = VKRPDC->m_RenderPassDesc.m_RenderTargetDesc;
+		VKRPDC->m_RenderTargets[i]->m_textureDesc = VKRPDC->m_RenderPassDesc.m_RenderTargetDesc;
 
 		VKRPDC->m_RenderTargets[i]->m_textureData = nullptr;
 
@@ -1088,16 +1088,16 @@ bool VKHelper::createRenderTargets(VKRenderPassDataComponent* VKRPDC, IRendering
 	if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
 	{
 		VKRPDC->m_DepthStencilRenderTarget = renderingServer->AddTextureDataComponent((std::string(VKRPDC->m_ComponentName.c_str()) + "_DS/").c_str());
-		VKRPDC->m_DepthStencilRenderTarget->m_textureDataDesc = VKRPDC->m_RenderPassDesc.m_RenderTargetDesc;
+		VKRPDC->m_DepthStencilRenderTarget->m_textureDesc = VKRPDC->m_RenderPassDesc.m_RenderTargetDesc;
 		if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
 		{
-			VKRPDC->m_DepthStencilRenderTarget->m_textureDataDesc.UsageType = TextureUsageType::DepthStencilAttachment;
-			VKRPDC->m_DepthStencilRenderTarget->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
+			VKRPDC->m_DepthStencilRenderTarget->m_textureDesc.UsageType = TextureUsageType::DepthStencilAttachment;
+			VKRPDC->m_DepthStencilRenderTarget->m_textureDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
 		}
 		else
 		{
-			VKRPDC->m_DepthStencilRenderTarget->m_textureDataDesc.UsageType = TextureUsageType::DepthAttachment;
-			VKRPDC->m_DepthStencilRenderTarget->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
+			VKRPDC->m_DepthStencilRenderTarget->m_textureDesc.UsageType = TextureUsageType::DepthAttachment;
+			VKRPDC->m_DepthStencilRenderTarget->m_textureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
 		}
 		VKRPDC->m_DepthStencilRenderTarget->m_textureData = { nullptr };
 

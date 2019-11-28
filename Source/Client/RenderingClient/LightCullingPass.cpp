@@ -104,13 +104,13 @@ bool LightCullingPass::createLightGridTDC()
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	m_lightGridTDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("LightGrid/");
-	m_lightGridTDC->m_textureDataDesc = l_RenderPassDesc.m_RenderTargetDesc;
+	m_lightGridTDC->m_textureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
-	m_lightGridTDC->m_textureDataDesc.Width = m_lightCullingNumThreadGroups.x;
-	m_lightGridTDC->m_textureDataDesc.Height = m_lightCullingNumThreadGroups.y;
-	m_lightGridTDC->m_textureDataDesc.UsageType = TextureUsageType::RawImage;
-	m_lightGridTDC->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::RG;
-	m_lightGridTDC->m_textureDataDesc.PixelDataType = TexturePixelDataType::UINT32;
+	m_lightGridTDC->m_textureDesc.Width = m_lightCullingNumThreadGroups.x;
+	m_lightGridTDC->m_textureDesc.Height = m_lightCullingNumThreadGroups.y;
+	m_lightGridTDC->m_textureDesc.UsageType = TextureUsageType::RawImage;
+	m_lightGridTDC->m_textureDesc.PixelDataFormat = TexturePixelDataFormat::RG;
+	m_lightGridTDC->m_textureDesc.PixelDataType = TexturePixelDataType::UINT32;
 
 	return true;
 }
@@ -120,8 +120,8 @@ bool LightCullingPass::createDebugTDC()
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	m_debugTDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("LightCullingDebug/");
-	m_debugTDC->m_textureDataDesc = l_RenderPassDesc.m_RenderTargetDesc;
-	m_debugTDC->m_textureDataDesc.UsageType = TextureUsageType::RawImage;
+	m_debugTDC->m_textureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+	m_debugTDC->m_textureDesc.UsageType = TextureUsageType::RawImage;
 
 	return true;
 }

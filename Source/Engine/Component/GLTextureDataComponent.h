@@ -3,7 +3,7 @@
 #include "../RenderingBackend/GLRenderingBackend/GLHeaders.h"
 #include "TextureDataComponent.h"
 
-struct GLTextureDataDesc
+struct GLTextureDesc
 {
 	GLenum TextureSamplerType;
 	GLenum InternalFormat;
@@ -20,5 +20,5 @@ class GLTextureDataComponent : public TextureDataComponent
 {
 public:
 	GLuint m_TO = 0;
-	GLTextureDataDesc m_GLTextureDataDesc = GLTextureDataDesc();
+	GLTextureDesc m_GLTextureDesc = GLTextureDesc();
 };

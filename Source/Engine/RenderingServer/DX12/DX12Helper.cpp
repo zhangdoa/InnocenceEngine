@@ -8,7 +8,7 @@ extern IModuleManager* g_pModuleManager;
 
 namespace DX12Helper
 {
-	UINT GetMipLevels(TextureDataDesc textureDataDesc);
+	UINT GetMipLevels(TextureDesc textureDesc);
 
 	const wchar_t* m_shaderRelativePath = L"Res//Shaders//HLSL//";
 }
@@ -124,13 +124,13 @@ ID3D12Resource * DX12Helper::CreateReadBackHeapBuffer(UINT64 size, ID3D12Device 
 	return l_readBackHeapBuffer;
 }
 
-D3D12_RESOURCE_DESC DX12Helper::GetDX12TextureDataDesc(TextureDataDesc textureDataDesc)
+D3D12_RESOURCE_DESC DX12Helper::GetDX12TextureDesc(TextureDesc textureDesc)
 {
 	D3D12_RESOURCE_DESC l_result = {};
 
-	l_result.Width = textureDataDesc.Width;
-	l_result.Height = textureDataDesc.Height;
-	switch (textureDataDesc.SamplerType)
+	l_result.Width = textureDesc.Width;
+	l_result.Height = textureDesc.Height;
+	switch (textureDesc.SamplerType)
 	{
 	case TextureSamplerType::Sampler1D:
 		l_result.DepthOrArraySize = 1;
@@ -139,13 +139,13 @@ D3D12_RESOURCE_DESC DX12Helper::GetDX12TextureDataDesc(TextureDataDesc textureDa
 		l_result.DepthOrArraySize = 1;
 		break;
 	case TextureSamplerType::Sampler3D:
-		l_result.DepthOrArraySize = textureDataDesc.DepthOrArraySize;
+		l_result.DepthOrArraySize = textureDesc.DepthOrArraySize;
 		break;
 	case TextureSamplerType::Sampler1DArray:
-		l_result.DepthOrArraySize = textureDataDesc.DepthOrArraySize;
+		l_result.DepthOrArraySize = textureDesc.DepthOrArraySize;
 		break;
 	case TextureSamplerType::Sampler2DArray:
-		l_result.DepthOrArraySize = textureDataDesc.DepthOrArraySize;
+		l_result.DepthOrArraySize = textureDesc.DepthOrArraySize;
 		break;
 	case TextureSamplerType::SamplerCubemap:
 		l_result.DepthOrArraySize = 6;
@@ -154,7 +154,7 @@ D3D12_RESOURCE_DESC DX12Helper::GetDX12TextureDataDesc(TextureDataDesc textureDa
 		break;
 	}
 
-	if (textureDataDesc.CPUAccessibility != Accessibility::Immutable)
+	if (textureDesc.CPUAccessibility != Accessibility::Immutable)
 	{
 		l_result.MipLevels = 1;
 		l_result.Format = DXGI_FORMAT_UNKNOWN;
@@ -166,38 +166,38 @@ D3D12_RESOURCE_DESC DX12Helper::GetDX12TextureDataDesc(TextureDataDesc textureDa
 	}
 	else
 	{
-		l_result.MipLevels = GetTextureMipLevels(textureDataDesc);
-		l_result.Format = GetTextureFormat(textureDataDesc);
+		l_result.MipLevels = GetTextureMipLevels(textureDesc);
+		l_result.Format = GetTextureFormat(textureDesc);
 		l_result.SampleDesc.Count = 1;
 		l_result.SampleDesc.Quality = 0;
-		l_result.Dimension = GetTextureDimension(textureDataDesc);
-		l_result.Flags = GetTextureBindFlags(textureDataDesc);
+		l_result.Dimension = GetTextureDimension(textureDesc);
+		l_result.Flags = GetTextureBindFlags(textureDesc);
 	}
 
 	return l_result;
 }
 
-DXGI_FORMAT DX12Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
+DXGI_FORMAT DX12Helper::GetTextureFormat(TextureDesc textureDesc)
 {
 	DXGI_FORMAT l_internalFormat = DXGI_FORMAT_UNKNOWN;
 
-	if (textureDataDesc.IsSRGB)
+	if (textureDesc.IsSRGB)
 	{
 		l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	}
-	else if (textureDataDesc.UsageType == TextureUsageType::DepthAttachment)
+	else if (textureDesc.UsageType == TextureUsageType::DepthAttachment)
 	{
 		l_internalFormat = DXGI_FORMAT_R32_TYPELESS;
 	}
-	else if (textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+	else if (textureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
 	{
 		l_internalFormat = DXGI_FORMAT_R24G8_TYPELESS;
 	}
 	else
 	{
-		if (textureDataDesc.PixelDataType == TexturePixelDataType::UBYTE)
+		if (textureDesc.PixelDataType == TexturePixelDataType::UBYTE)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R8_UNORM; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_UNORM; break;
@@ -206,9 +206,9 @@ DXGI_FORMAT DX12Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.PixelDataType == TexturePixelDataType::SBYTE)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::SBYTE)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R8_SNORM; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_SNORM; break;
@@ -217,9 +217,9 @@ DXGI_FORMAT DX12Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.PixelDataType == TexturePixelDataType::USHORT)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::USHORT)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_UNORM; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_UNORM; break;
@@ -228,9 +228,9 @@ DXGI_FORMAT DX12Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.PixelDataType == TexturePixelDataType::SSHORT)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::SSHORT)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_SNORM; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_SNORM; break;
@@ -239,9 +239,9 @@ DXGI_FORMAT DX12Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		if (textureDataDesc.PixelDataType == TexturePixelDataType::UINT8)
+		if (textureDesc.PixelDataType == TexturePixelDataType::UINT8)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R8_UINT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_UINT; break;
@@ -250,9 +250,9 @@ DXGI_FORMAT DX12Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.PixelDataType == TexturePixelDataType::SINT8)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::SINT8)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R8_SINT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R8G8_SINT; break;
@@ -261,9 +261,9 @@ DXGI_FORMAT DX12Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.PixelDataType == TexturePixelDataType::UINT16)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::UINT16)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_UINT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_UINT; break;
@@ -272,9 +272,9 @@ DXGI_FORMAT DX12Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.PixelDataType == TexturePixelDataType::SINT16)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::SINT16)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_SINT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_SINT; break;
@@ -283,9 +283,9 @@ DXGI_FORMAT DX12Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.PixelDataType == TexturePixelDataType::UINT32)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::UINT32)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R32_UINT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R32G32_UINT; break;
@@ -294,9 +294,9 @@ DXGI_FORMAT DX12Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.PixelDataType == TexturePixelDataType::SINT32)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::SINT32)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R32_SINT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R32G32_SINT; break;
@@ -305,9 +305,9 @@ DXGI_FORMAT DX12Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.PixelDataType == TexturePixelDataType::FLOAT16)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::FLOAT16)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R16_FLOAT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R16G16_FLOAT; break;
@@ -316,9 +316,9 @@ DXGI_FORMAT DX12Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 			default: break;
 			}
 		}
-		else if (textureDataDesc.PixelDataType == TexturePixelDataType::FLOAT32)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::FLOAT32)
 		{
-			switch (textureDataDesc.PixelDataFormat)
+			switch (textureDesc.PixelDataFormat)
 			{
 			case TexturePixelDataFormat::R: l_internalFormat = DXGI_FORMAT_R32_FLOAT; break;
 			case TexturePixelDataFormat::RG: l_internalFormat = DXGI_FORMAT_R32G32_FLOAT; break;
@@ -332,11 +332,11 @@ DXGI_FORMAT DX12Helper::GetTextureFormat(TextureDataDesc textureDataDesc)
 	return l_internalFormat;
 }
 
-D3D12_RESOURCE_DIMENSION DX12Helper::GetTextureDimension(TextureDataDesc textureDataDesc)
+D3D12_RESOURCE_DIMENSION DX12Helper::GetTextureDimension(TextureDesc textureDesc)
 {
 	D3D12_RESOURCE_DIMENSION l_result;
 
-	switch (textureDataDesc.SamplerType)
+	switch (textureDesc.SamplerType)
 	{
 	case TextureSamplerType::Sampler1D: l_result = D3D12_RESOURCE_DIMENSION_TEXTURE1D;
 		break;
@@ -406,10 +406,10 @@ D3D12_TEXTURE_ADDRESS_MODE DX12Helper::GetWrapMode(TextureWrapMethod textureWrap
 	return l_result;
 }
 
-uint32_t DX12Helper::GetTextureMipLevels(TextureDataDesc textureDataDesc)
+uint32_t DX12Helper::GetTextureMipLevels(TextureDesc textureDesc)
 {
 	uint32_t textureMipLevels = 1;
-	if (textureDataDesc.UseMipMap)
+	if (textureDesc.UseMipMap)
 	{
 		textureMipLevels = 0;
 	}
@@ -417,23 +417,23 @@ uint32_t DX12Helper::GetTextureMipLevels(TextureDataDesc textureDataDesc)
 	return textureMipLevels;
 }
 
-D3D12_RESOURCE_FLAGS DX12Helper::GetTextureBindFlags(TextureDataDesc textureDataDesc)
+D3D12_RESOURCE_FLAGS DX12Helper::GetTextureBindFlags(TextureDesc textureDesc)
 {
 	D3D12_RESOURCE_FLAGS l_result = {};
 
-	if (textureDataDesc.UsageType == TextureUsageType::ColorAttachment)
+	if (textureDesc.UsageType == TextureUsageType::ColorAttachment)
 	{
 		l_result = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 	}
-	else if (textureDataDesc.UsageType == TextureUsageType::DepthAttachment)
+	else if (textureDesc.UsageType == TextureUsageType::DepthAttachment)
 	{
 		l_result = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 	}
-	else if (textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+	else if (textureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
 	{
 		l_result = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 	}
-	else if (textureDataDesc.UsageType == TextureUsageType::RawImage)
+	else if (textureDesc.UsageType == TextureUsageType::RawImage)
 	{
 		l_result = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 	}
@@ -441,11 +441,11 @@ D3D12_RESOURCE_FLAGS DX12Helper::GetTextureBindFlags(TextureDataDesc textureData
 	return l_result;
 }
 
-uint32_t DX12Helper::GetTexturePixelDataSize(TextureDataDesc textureDataDesc)
+uint32_t DX12Helper::GetTexturePixelDataSize(TextureDesc textureDesc)
 {
 	uint32_t l_singlePixelSize;
 
-	switch (textureDataDesc.PixelDataType)
+	switch (textureDesc.PixelDataType)
 	{
 	case TexturePixelDataType::UBYTE:l_singlePixelSize = 1; break;
 	case TexturePixelDataType::SBYTE:l_singlePixelSize = 1; break;
@@ -463,7 +463,7 @@ uint32_t DX12Helper::GetTexturePixelDataSize(TextureDataDesc textureDataDesc)
 	}
 
 	uint32_t l_channelSize;
-	switch (textureDataDesc.PixelDataFormat)
+	switch (textureDesc.PixelDataFormat)
 	{
 	case TexturePixelDataFormat::R:l_channelSize = 1; break;
 	case TexturePixelDataFormat::RG:l_channelSize = 2; break;
@@ -476,20 +476,20 @@ uint32_t DX12Helper::GetTexturePixelDataSize(TextureDataDesc textureDataDesc)
 	return l_singlePixelSize * l_channelSize;
 }
 
-D3D12_RESOURCE_STATES DX12Helper::GetTextureWriteState(TextureDataDesc textureDataDesc)
+D3D12_RESOURCE_STATES DX12Helper::GetTextureWriteState(TextureDesc textureDesc)
 {
 	D3D12_RESOURCE_STATES l_result;
 
-	if (textureDataDesc.UsageType == TextureUsageType::ColorAttachment)
+	if (textureDesc.UsageType == TextureUsageType::ColorAttachment)
 	{
 		l_result = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	}
-	else if (textureDataDesc.UsageType == TextureUsageType::DepthAttachment
-		|| textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+	else if (textureDesc.UsageType == TextureUsageType::DepthAttachment
+		|| textureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
 	{
 		l_result = D3D12_RESOURCE_STATE_DEPTH_WRITE;
 	}
-	else if (textureDataDesc.UsageType == TextureUsageType::RawImage)
+	else if (textureDesc.UsageType == TextureUsageType::RawImage)
 	{
 		l_result = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 	}
@@ -501,20 +501,20 @@ D3D12_RESOURCE_STATES DX12Helper::GetTextureWriteState(TextureDataDesc textureDa
 	return l_result;
 }
 
-D3D12_RESOURCE_STATES DX12Helper::GetTextureReadState(TextureDataDesc textureDataDesc)
+D3D12_RESOURCE_STATES DX12Helper::GetTextureReadState(TextureDesc textureDesc)
 {
 	D3D12_RESOURCE_STATES l_result;
 
-	if (textureDataDesc.UsageType == TextureUsageType::ColorAttachment)
+	if (textureDesc.UsageType == TextureUsageType::ColorAttachment)
 	{
 		l_result = D3D12_RESOURCE_STATE_GENERIC_READ;
 	}
-	else if (textureDataDesc.UsageType == TextureUsageType::DepthAttachment
-		|| textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+	else if (textureDesc.UsageType == TextureUsageType::DepthAttachment
+		|| textureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
 	{
 		l_result = D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 	}
-	else if (textureDataDesc.UsageType == TextureUsageType::RawImage)
+	else if (textureDesc.UsageType == TextureUsageType::RawImage)
 	{
 		l_result = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 	}
@@ -526,12 +526,12 @@ D3D12_RESOURCE_STATES DX12Helper::GetTextureReadState(TextureDataDesc textureDat
 	return l_result;
 }
 
-UINT DX12Helper::GetMipLevels(TextureDataDesc textureDataDesc)
+UINT DX12Helper::GetMipLevels(TextureDesc textureDesc)
 {
-	if (textureDataDesc.UsageType == TextureUsageType::ColorAttachment
-		|| textureDataDesc.UsageType == TextureUsageType::DepthAttachment
-		|| textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment
-		|| textureDataDesc.UsageType == TextureUsageType::RawImage)
+	if (textureDesc.UsageType == TextureUsageType::ColorAttachment
+		|| textureDesc.UsageType == TextureUsageType::DepthAttachment
+		|| textureDesc.UsageType == TextureUsageType::DepthStencilAttachment
+		|| textureDesc.UsageType == TextureUsageType::RawImage)
 	{
 		return 1;
 	}
@@ -541,16 +541,16 @@ UINT DX12Helper::GetMipLevels(TextureDataDesc textureDataDesc)
 	}
 }
 
-D3D12_SHADER_RESOURCE_VIEW_DESC DX12Helper::GetSRVDesc(TextureDataDesc textureDataDesc, D3D12_RESOURCE_DESC D3D12TextureDesc)
+D3D12_SHADER_RESOURCE_VIEW_DESC DX12Helper::GetSRVDesc(TextureDesc textureDesc, D3D12_RESOURCE_DESC D3D12TextureDesc)
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC l_result = {};
 	l_result.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
-	if (textureDataDesc.UsageType == TextureUsageType::DepthAttachment)
+	if (textureDesc.UsageType == TextureUsageType::DepthAttachment)
 	{
 		l_result.Format = DXGI_FORMAT_R32_FLOAT;
 	}
-	else if (textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+	else if (textureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
 	{
 		l_result.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 	}
@@ -559,39 +559,39 @@ D3D12_SHADER_RESOURCE_VIEW_DESC DX12Helper::GetSRVDesc(TextureDataDesc textureDa
 		l_result.Format = D3D12TextureDesc.Format;
 	}
 
-	switch (textureDataDesc.SamplerType)
+	switch (textureDesc.SamplerType)
 	{
 	case TextureSamplerType::Sampler1D:
 		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
 		l_result.Texture1D.MostDetailedMip = 0;
-		l_result.Texture1D.MipLevels = GetMipLevels(textureDataDesc);
+		l_result.Texture1D.MipLevels = GetMipLevels(textureDesc);
 		break;
 	case TextureSamplerType::Sampler2D:
 		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		l_result.Texture2D.MostDetailedMip = 0;
-		l_result.Texture2D.MipLevels = GetMipLevels(textureDataDesc);
+		l_result.Texture2D.MipLevels = GetMipLevels(textureDesc);
 		break;
 	case TextureSamplerType::Sampler3D:
 		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
 		l_result.Texture3D.MostDetailedMip = 0;
-		l_result.Texture3D.MipLevels = GetMipLevels(textureDataDesc);
+		l_result.Texture3D.MipLevels = GetMipLevels(textureDesc);
 		break;
 	case TextureSamplerType::Sampler1DArray:
 		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1DARRAY;
 		l_result.Texture1DArray.MostDetailedMip = 0;
-		l_result.Texture1DArray.MipLevels = GetMipLevels(textureDataDesc);
-		l_result.Texture1DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		l_result.Texture1DArray.MipLevels = GetMipLevels(textureDesc);
+		l_result.Texture1DArray.ArraySize = textureDesc.DepthOrArraySize;
 		break;
 	case TextureSamplerType::Sampler2DArray:
 		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MostDetailedMip = 0;
-		l_result.Texture2DArray.MipLevels = GetMipLevels(textureDataDesc);
-		l_result.Texture2DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		l_result.Texture2DArray.MipLevels = GetMipLevels(textureDesc);
+		l_result.Texture2DArray.ArraySize = textureDesc.DepthOrArraySize;
 		break;
 	case TextureSamplerType::SamplerCubemap:
 		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
 		l_result.TextureCube.MostDetailedMip = 0;
-		l_result.TextureCube.MipLevels = GetMipLevels(textureDataDesc);
+		l_result.TextureCube.MipLevels = GetMipLevels(textureDesc);
 		break;
 	default:
 		break;
@@ -600,11 +600,11 @@ D3D12_SHADER_RESOURCE_VIEW_DESC DX12Helper::GetSRVDesc(TextureDataDesc textureDa
 	return l_result;
 }
 
-D3D12_UNORDERED_ACCESS_VIEW_DESC DX12Helper::GetUAVDesc(TextureDataDesc textureDataDesc, D3D12_RESOURCE_DESC D3D12TextureDesc)
+D3D12_UNORDERED_ACCESS_VIEW_DESC DX12Helper::GetUAVDesc(TextureDesc textureDesc, D3D12_RESOURCE_DESC D3D12TextureDesc)
 {
 	D3D12_UNORDERED_ACCESS_VIEW_DESC l_result = {};
 
-	switch (textureDataDesc.SamplerType)
+	switch (textureDesc.SamplerType)
 	{
 	case TextureSamplerType::Sampler1D:
 		l_result.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE1D;
@@ -617,22 +617,22 @@ D3D12_UNORDERED_ACCESS_VIEW_DESC DX12Helper::GetUAVDesc(TextureDataDesc textureD
 	case TextureSamplerType::Sampler3D:
 		l_result.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
 		l_result.Texture3D.MipSlice = 0;
-		l_result.Texture3D.WSize = textureDataDesc.DepthOrArraySize;
+		l_result.Texture3D.WSize = textureDesc.DepthOrArraySize;
 		break;
 	case TextureSamplerType::Sampler1DArray:
 		l_result.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE1DARRAY;
 		l_result.Texture1DArray.MipSlice = 0;
-		l_result.Texture1DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		l_result.Texture1DArray.ArraySize = textureDesc.DepthOrArraySize;
 		break;
 	case TextureSamplerType::Sampler2DArray:
 		l_result.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
-		l_result.Texture2DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		l_result.Texture2DArray.ArraySize = textureDesc.DepthOrArraySize;
 		break;
 	case TextureSamplerType::SamplerCubemap:
 		l_result.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
-		l_result.Texture2DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		l_result.Texture2DArray.ArraySize = textureDesc.DepthOrArraySize;
 		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: Use 2D texture array for UAV of cubemap.");
 		break;
 	default:
@@ -642,42 +642,42 @@ D3D12_UNORDERED_ACCESS_VIEW_DESC DX12Helper::GetUAVDesc(TextureDataDesc textureD
 	return l_result;
 }
 
-D3D12_RENDER_TARGET_VIEW_DESC DX12Helper::GetRTVDesc(TextureDataDesc textureDataDesc)
+D3D12_RENDER_TARGET_VIEW_DESC DX12Helper::GetRTVDesc(TextureDesc textureDesc)
 {
 	D3D12_RENDER_TARGET_VIEW_DESC l_result = {};
 
-	switch (textureDataDesc.SamplerType)
+	switch (textureDesc.SamplerType)
 	{
 	case TextureSamplerType::Sampler1D:
-		l_result.Format = GetTextureFormat(textureDataDesc);
+		l_result.Format = GetTextureFormat(textureDesc);
 		l_result.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1D;
 		l_result.Texture1D.MipSlice = 0;
 		break;
 	case TextureSamplerType::Sampler2D:
-		l_result.Format = GetTextureFormat(textureDataDesc);
+		l_result.Format = GetTextureFormat(textureDesc);
 		l_result.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 		l_result.Texture2D.MipSlice = 0;
 		break;
 	case TextureSamplerType::Sampler3D:
-		l_result.Format = GetTextureFormat(textureDataDesc);
+		l_result.Format = GetTextureFormat(textureDesc);
 		l_result.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE3D;
 		l_result.Texture3D.MipSlice = 0;
-		l_result.Texture3D.WSize = textureDataDesc.DepthOrArraySize;
+		l_result.Texture3D.WSize = textureDesc.DepthOrArraySize;
 		break;
 	case TextureSamplerType::Sampler1DArray:
-		l_result.Format = GetTextureFormat(textureDataDesc);
+		l_result.Format = GetTextureFormat(textureDesc);
 		l_result.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1DARRAY;
 		l_result.Texture1DArray.MipSlice = 0;
-		l_result.Texture1DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		l_result.Texture1DArray.ArraySize = textureDesc.DepthOrArraySize;
 		break;
 	case TextureSamplerType::Sampler2DArray:
-		l_result.Format = GetTextureFormat(textureDataDesc);
+		l_result.Format = GetTextureFormat(textureDesc);
 		l_result.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
-		l_result.Texture2DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		l_result.Texture2DArray.ArraySize = textureDesc.DepthOrArraySize;
 		break;
 	case TextureSamplerType::SamplerCubemap:
-		l_result.Format = GetTextureFormat(textureDataDesc);
+		l_result.Format = GetTextureFormat(textureDesc);
 		l_result.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
 		l_result.Texture2DArray.ArraySize = 6;
@@ -690,7 +690,7 @@ D3D12_RENDER_TARGET_VIEW_DESC DX12Helper::GetRTVDesc(TextureDataDesc textureData
 	return l_result;
 }
 
-D3D12_DEPTH_STENCIL_VIEW_DESC DX12Helper::GetDSVDesc(TextureDataDesc textureDataDesc, DepthStencilDesc DSDesc)
+D3D12_DEPTH_STENCIL_VIEW_DESC DX12Helper::GetDSVDesc(TextureDesc textureDesc, DepthStencilDesc DSDesc)
 {
 	D3D12_DEPTH_STENCIL_VIEW_DESC l_result = {};
 
@@ -703,7 +703,7 @@ D3D12_DEPTH_STENCIL_VIEW_DESC DX12Helper::GetDSVDesc(TextureDataDesc textureData
 		l_result.Format = DXGI_FORMAT_D32_FLOAT;
 	}
 
-	switch (textureDataDesc.SamplerType)
+	switch (textureDesc.SamplerType)
 	{
 	case TextureSamplerType::Sampler1D:
 		l_result.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE1D;
@@ -716,18 +716,18 @@ D3D12_DEPTH_STENCIL_VIEW_DESC DX12Helper::GetDSVDesc(TextureDataDesc textureData
 	case TextureSamplerType::Sampler3D:
 		l_result.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
-		l_result.Texture2DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		l_result.Texture2DArray.ArraySize = textureDesc.DepthOrArraySize;
 		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: Use 2D texture array for DSV of 3D texture.");
 		break;
 	case TextureSamplerType::Sampler1DArray:
 		l_result.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE1DARRAY;
 		l_result.Texture1DArray.MipSlice = 0;
-		l_result.Texture1DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		l_result.Texture1DArray.ArraySize = textureDesc.DepthOrArraySize;
 		break;
 	case TextureSamplerType::Sampler2DArray:
 		l_result.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
-		l_result.Texture2DArray.ArraySize = textureDataDesc.DepthOrArraySize;
+		l_result.Texture2DArray.ArraySize = textureDesc.DepthOrArraySize;
 		break;
 	case TextureSamplerType::SamplerCubemap:
 		l_result.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
@@ -764,7 +764,7 @@ bool DX12Helper::CreateRenderTargets(DX12RenderPassDataComponent* DX12RPDC, IRen
 	{
 		auto l_TDC = DX12RPDC->m_RenderTargets[i];
 
-		l_TDC->m_textureDataDesc = DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc;
+		l_TDC->m_textureDesc = DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc;
 
 		l_TDC->m_textureData = nullptr;
 
@@ -774,17 +774,17 @@ bool DX12Helper::CreateRenderTargets(DX12RenderPassDataComponent* DX12RPDC, IRen
 	if (DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
 	{
 		DX12RPDC->m_DepthStencilRenderTarget = renderingServer->AddTextureDataComponent((std::string(DX12RPDC->m_ComponentName.c_str()) + "_DS/").c_str());
-		DX12RPDC->m_DepthStencilRenderTarget->m_textureDataDesc = DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc;
+		DX12RPDC->m_DepthStencilRenderTarget->m_textureDesc = DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc;
 
 		if (DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
 		{
-			DX12RPDC->m_DepthStencilRenderTarget->m_textureDataDesc.UsageType = TextureUsageType::DepthStencilAttachment;
-			DX12RPDC->m_DepthStencilRenderTarget->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
+			DX12RPDC->m_DepthStencilRenderTarget->m_textureDesc.UsageType = TextureUsageType::DepthStencilAttachment;
+			DX12RPDC->m_DepthStencilRenderTarget->m_textureDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
 		}
 		else
 		{
-			DX12RPDC->m_DepthStencilRenderTarget->m_textureDataDesc.UsageType = TextureUsageType::DepthAttachment;
-			DX12RPDC->m_DepthStencilRenderTarget->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
+			DX12RPDC->m_DepthStencilRenderTarget->m_textureDesc.UsageType = TextureUsageType::DepthAttachment;
+			DX12RPDC->m_DepthStencilRenderTarget->m_textureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
 		}
 
 		DX12RPDC->m_DepthStencilRenderTarget->m_textureData = { nullptr };

@@ -28,20 +28,20 @@ namespace DX12Helper
 	ID3D12Resource* CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, ID3D12Device* device, D3D12_CLEAR_VALUE* clearValue = nullptr, const char* name = "");
 	ID3D12Resource* CreateReadBackHeapBuffer(UINT64 size, ID3D12Device* device, const char* name = "");
 
-	D3D12_RESOURCE_DESC GetDX12TextureDataDesc(TextureDataDesc textureDataDesc);
-	DXGI_FORMAT GetTextureFormat(TextureDataDesc textureDataDesc);
-	D3D12_RESOURCE_DIMENSION GetTextureDimension(TextureDataDesc textureDataDesc);
+	D3D12_RESOURCE_DESC GetDX12TextureDesc(TextureDesc textureDesc);
+	DXGI_FORMAT GetTextureFormat(TextureDesc textureDesc);
+	D3D12_RESOURCE_DIMENSION GetTextureDimension(TextureDesc textureDesc);
 	D3D12_FILTER GetFilterMode(TextureFilterMethod minFilterMethod, TextureFilterMethod magFilterMethod);
 	D3D12_TEXTURE_ADDRESS_MODE GetWrapMode(TextureWrapMethod textureWrapMethod);
-	uint32_t GetTextureMipLevels(TextureDataDesc textureDataDesc);
-	D3D12_RESOURCE_FLAGS GetTextureBindFlags(TextureDataDesc textureDataDesc);
-	uint32_t GetTexturePixelDataSize(TextureDataDesc textureDataDesc);
-	D3D12_RESOURCE_STATES GetTextureWriteState(TextureDataDesc textureDataDesc);
-	D3D12_RESOURCE_STATES GetTextureReadState(TextureDataDesc textureDataDesc);
-	D3D12_SHADER_RESOURCE_VIEW_DESC GetSRVDesc(TextureDataDesc textureDataDesc, D3D12_RESOURCE_DESC D3D12TextureDesc);
-	D3D12_UNORDERED_ACCESS_VIEW_DESC GetUAVDesc(TextureDataDesc textureDataDesc, D3D12_RESOURCE_DESC D3D12TextureDesc);
-	D3D12_RENDER_TARGET_VIEW_DESC GetRTVDesc(TextureDataDesc textureDataDesc);
-	D3D12_DEPTH_STENCIL_VIEW_DESC GetDSVDesc(TextureDataDesc textureDataDesc, DepthStencilDesc DSDesc);
+	uint32_t GetTextureMipLevels(TextureDesc textureDesc);
+	D3D12_RESOURCE_FLAGS GetTextureBindFlags(TextureDesc textureDesc);
+	uint32_t GetTexturePixelDataSize(TextureDesc textureDesc);
+	D3D12_RESOURCE_STATES GetTextureWriteState(TextureDesc textureDesc);
+	D3D12_RESOURCE_STATES GetTextureReadState(TextureDesc textureDesc);
+	D3D12_SHADER_RESOURCE_VIEW_DESC GetSRVDesc(TextureDesc textureDesc, D3D12_RESOURCE_DESC D3D12TextureDesc);
+	D3D12_UNORDERED_ACCESS_VIEW_DESC GetUAVDesc(TextureDesc textureDesc, D3D12_RESOURCE_DESC D3D12TextureDesc);
+	D3D12_RENDER_TARGET_VIEW_DESC GetRTVDesc(TextureDesc textureDesc);
+	D3D12_DEPTH_STENCIL_VIEW_DESC GetDSVDesc(TextureDesc textureDesc, DepthStencilDesc DSDesc);
 
 	bool ReserveRenderTargets(DX12RenderPassDataComponent* DX12RPDC, IRenderingServer* renderingServer);
 	bool CreateRenderTargets(DX12RenderPassDataComponent* DX12RPDC, IRenderingServer* renderingServer);

@@ -130,13 +130,13 @@ bool GIDataLoader::Setup()
 
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
-	m_testSampleCubemap->m_textureDataDesc = l_RenderPassDesc.m_RenderTargetDesc;
-	m_testSampleCubemap->m_textureDataDesc.SamplerType = TextureSamplerType::SamplerCubemap;
-	m_testSampleCubemap->m_textureDataDesc.UsageType = TextureUsageType::Sample;
-	m_testSampleCubemap->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_testSampleCubemap->m_textureDataDesc.Width = m_testCubemapResolution;
-	m_testSampleCubemap->m_textureDataDesc.Height = m_testCubemapResolution;
-	m_testSampleCubemap->m_textureDataDesc.PixelDataType = TexturePixelDataType::FLOAT32;
+	m_testSampleCubemap->m_textureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+	m_testSampleCubemap->m_textureDesc.SamplerType = TextureSamplerType::SamplerCubemap;
+	m_testSampleCubemap->m_textureDesc.UsageType = TextureUsageType::Sample;
+	m_testSampleCubemap->m_textureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
+	m_testSampleCubemap->m_textureDesc.Width = m_testCubemapResolution;
+	m_testSampleCubemap->m_textureDesc.Height = m_testCubemapResolution;
+	m_testSampleCubemap->m_textureDesc.PixelDataType = TexturePixelDataType::FLOAT32;
 	m_testSampleCubemap->m_textureData = &m_cubemapTextureSamples[0];
 
 	////
@@ -155,14 +155,14 @@ bool GIDataLoader::Setup()
 
 	m_testSample3DTexture = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("TestSample3D/");
 
-	m_testSample3DTexture->m_textureDataDesc = l_RenderPassDesc.m_RenderTargetDesc;
-	m_testSample3DTexture->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler3D;
-	m_testSample3DTexture->m_textureDataDesc.UsageType = TextureUsageType::Sample;
-	m_testSample3DTexture->m_textureDataDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_testSample3DTexture->m_textureDataDesc.Width = m_testCubemapResolution;
-	m_testSample3DTexture->m_textureDataDesc.Height = m_testCubemapResolution;
-	m_testSample3DTexture->m_textureDataDesc.DepthOrArraySize = m_testCubemapResolution;
-	m_testSample3DTexture->m_textureDataDesc.PixelDataType = TexturePixelDataType::FLOAT32;
+	m_testSample3DTexture->m_textureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+	m_testSample3DTexture->m_textureDesc.SamplerType = TextureSamplerType::Sampler3D;
+	m_testSample3DTexture->m_textureDesc.UsageType = TextureUsageType::Sample;
+	m_testSample3DTexture->m_textureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
+	m_testSample3DTexture->m_textureDesc.Width = m_testCubemapResolution;
+	m_testSample3DTexture->m_textureDesc.Height = m_testCubemapResolution;
+	m_testSample3DTexture->m_textureDesc.DepthOrArraySize = m_testCubemapResolution;
+	m_testSample3DTexture->m_textureDesc.PixelDataType = TexturePixelDataType::FLOAT32;
 	m_testSample3DTexture->m_textureData = &m_3DTextureSamples[0];
 
 	return true;

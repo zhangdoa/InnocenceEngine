@@ -705,18 +705,18 @@ bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 	}
 
 	auto l_rhs = reinterpret_cast<VKTextureDataComponent*>(rhs);
-	l_rhs->m_VKTextureDataDesc = getVKTextureDataDesc(rhs->m_textureDataDesc);
-	l_rhs->m_ImageCreateInfo = getImageCreateInfo(rhs->m_textureDataDesc, l_rhs->m_VKTextureDataDesc);
+	l_rhs->m_VKTextureDesc = getVKTextureDesc(rhs->m_textureDesc);
+	l_rhs->m_ImageCreateInfo = getImageCreateInfo(rhs->m_textureDesc, l_rhs->m_VKTextureDesc);
 
 	VkBuffer l_stagingBuffer;
 	VkDeviceMemory l_stagingBufferMemory;
-	createBuffer(m_physicalDevice, m_device, l_rhs->m_VKTextureDataDesc.imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, l_stagingBuffer, l_stagingBufferMemory);
+	createBuffer(m_physicalDevice, m_device, l_rhs->m_VKTextureDesc.imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, l_stagingBuffer, l_stagingBufferMemory);
 
 	if (l_rhs->m_textureData != nullptr)
 	{
 		void* l_dstData;
-		vkMapMemory(m_device, l_stagingBufferMemory, 0, l_rhs->m_VKTextureDataDesc.imageSize, 0, &l_dstData);
-		std::memcpy(l_dstData, l_rhs->m_textureData, static_cast<size_t>(l_rhs->m_VKTextureDataDesc.imageSize));
+		vkMapMemory(m_device, l_stagingBufferMemory, 0, l_rhs->m_VKTextureDesc.imageSize, 0, &l_dstData);
+		std::memcpy(l_dstData, l_rhs->m_textureData, static_cast<size_t>(l_rhs->m_VKTextureDesc.imageSize));
 		vkUnmapMemory(m_device, l_stagingBufferMemory);
 	}
 
@@ -744,26 +744,26 @@ bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 
 	VkCommandBuffer l_commandBuffer = beginSingleTimeCommands(m_device, m_commandPool);
 
-	if (rhs->m_textureDataDesc.UsageType == TextureUsageType::ColorAttachment)
+	if (rhs->m_textureDesc.UsageType == TextureUsageType::ColorAttachment)
 	{
-		transitionImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		transitionImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	}
-	else if (rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthAttachment)
+	else if (rhs->m_textureDesc.UsageType == TextureUsageType::DepthAttachment)
 	{
-		transitionImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+		transitionImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 	}
-	else if (rhs->m_textureDataDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+	else if (rhs->m_textureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
 	{
-		transitionImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+		transitionImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 	}
 	else
 	{
-		transitionImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		transitionImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 		if (l_rhs->m_textureData != nullptr)
 		{
-			copyBufferToImage(l_commandBuffer, l_stagingBuffer, l_rhs->m_image, l_rhs->m_VKTextureDataDesc.aspectFlags, static_cast<uint32_t>(l_rhs->m_ImageCreateInfo.extent.width), static_cast<uint32_t>(l_rhs->m_ImageCreateInfo.extent.height));
+			copyBufferToImage(l_commandBuffer, l_stagingBuffer, l_rhs->m_image, l_rhs->m_VKTextureDesc.aspectFlags, static_cast<uint32_t>(l_rhs->m_ImageCreateInfo.extent.width), static_cast<uint32_t>(l_rhs->m_ImageCreateInfo.extent.height));
 		}
-		transitionImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDataDesc.aspectFlags, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		transitionImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	}
 
 	endSingleTimeCommands(m_device, m_commandPool, m_graphicsQueue, l_commandBuffer);

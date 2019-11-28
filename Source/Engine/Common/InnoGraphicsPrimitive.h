@@ -25,7 +25,7 @@ namespace InnoType
 	enum class TextureWrapMethod { Edge, Repeat, Border };
 	enum class TextureFilterMethod { Nearest, Linear };
 
-	struct TextureDataDesc
+	struct TextureDesc
 	{
 		Accessibility CPUAccessibility = Accessibility::Immutable;
 		Accessibility GPUAccessibility = Accessibility::ReadWrite;
@@ -189,7 +189,7 @@ namespace InnoType
 		bool m_IsOffScreen = false;
 		RenderPassUsageType m_RenderPassUsageType = RenderPassUsageType::Graphics;
 		size_t m_RenderTargetCount = 0;
-		TextureDataDesc m_RenderTargetDesc = {};
+		TextureDesc m_RenderTargetDesc = {};
 		GraphicsPipelineDesc m_GraphicsPipelineDesc = {};
 	};
 

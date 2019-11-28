@@ -5,14 +5,14 @@
 
 namespace GLHelper
 {
-	GLTextureDataDesc GetGLTextureDataDesc(TextureDataDesc textureDataDesc);
+	GLTextureDesc GetGLTextureDesc(TextureDesc textureDesc);
 	GLenum GetTextureSamplerType(TextureSamplerType rhs);
 	GLenum GetTextureWrapMethod(TextureWrapMethod rhs);
 	GLenum GetTextureFilterParam(TextureFilterMethod rhs, bool useMipMap);
-	GLenum GetTextureInternalFormat(TextureDataDesc textureDataDesc);
-	GLenum GetTexturePixelDataFormat(TextureDataDesc textureDataDesc);
-	GLenum GetTexturePixelDataType(TextureDataDesc textureDataDesc);
-	GLsizei GetTexturePixelDataSize(TextureDataDesc textureDataDesc);
+	GLenum GetTextureInternalFormat(TextureDesc textureDesc);
+	GLenum GetTexturePixelDataFormat(TextureDesc textureDesc);
+	GLenum GetTexturePixelDataType(TextureDesc textureDesc);
+	GLsizei GetTexturePixelDataSize(TextureDesc textureDesc);
 
 	bool CreateFramebuffer(GLRenderPassDataComponent * GLRPDC);
 	bool ReserveRenderTargets(GLRenderPassDataComponent * GLRPDC, IRenderingServer * renderingServer);

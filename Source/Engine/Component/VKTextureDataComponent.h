@@ -3,7 +3,7 @@
 #include "vulkan/vulkan.h"
 #include "TextureDataComponent.h"
 
-struct VKTextureDataDesc
+struct VKTextureDesc
 {
 	VkImageType imageType;
 	VkImageViewType imageViewType;
@@ -19,7 +19,7 @@ class VKTextureDataComponent : public TextureDataComponent
 public:
 	VkImage m_image;
 	VkImageView m_imageView;
-	VKTextureDataDesc m_VKTextureDataDesc = {};
+	VKTextureDesc m_VKTextureDesc = {};
 	VkImageCreateInfo m_ImageCreateInfo = {};
 	VkDescriptorImageInfo m_DescriptorImageInfo = {};
 };

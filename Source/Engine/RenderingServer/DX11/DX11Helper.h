@@ -21,21 +21,21 @@ namespace DX11Helper
 		return true;
 	}
 
-	D3D11_TEXTURE_DESC GetDX11TextureDataDesc(TextureDataDesc textureDataDesc);
-	DXGI_FORMAT GetTextureFormat(TextureDataDesc textureDataDesc);
+	D3D11_TEXTURE_DESC GetDX11TextureDesc(TextureDesc textureDesc);
+	DXGI_FORMAT GetTextureFormat(TextureDesc textureDesc);
 	D3D11_FILTER GetFilterMode(TextureFilterMethod minFilterMethod, TextureFilterMethod magFilterMethod);
 	D3D11_TEXTURE_ADDRESS_MODE GetWrapMode(TextureWrapMethod textureWrapMethod);
-	uint32_t GetTextureMipLevels(TextureDataDesc textureDataDesc);
-	uint32_t GetTextureBindFlags(TextureDataDesc textureDataDesc);
-	uint32_t GetTexturePixelDataSize(TextureDataDesc textureDataDesc);
-	D3D11_TEXTURE1D_DESC Get1DTextureDataDesc(D3D11_TEXTURE_DESC textureDataDesc);
-	D3D11_TEXTURE2D_DESC Get2DTextureDataDesc(D3D11_TEXTURE_DESC textureDataDesc);
-	D3D11_TEXTURE3D_DESC Get3DTextureDataDesc(D3D11_TEXTURE_DESC textureDataDesc);
-	D3D11_SHADER_RESOURCE_VIEW_DESC GetSRVDesc(TextureDataDesc textureDataDesc, D3D11_TEXTURE_DESC D3D11TextureDesc);
-	uint32_t GetSRVMipLevels(TextureDataDesc textureDataDesc);
-	D3D11_UNORDERED_ACCESS_VIEW_DESC GetUAVDesc(TextureDataDesc textureDataDesc, D3D11_TEXTURE_DESC D3D11TextureDesc);
-	D3D11_RENDER_TARGET_VIEW_DESC GetRTVDesc(TextureDataDesc textureDataDesc);
-	D3D11_DEPTH_STENCIL_VIEW_DESC GetDSVDesc(TextureDataDesc textureDataDesc, DepthStencilDesc DSDesc);
+	uint32_t GetTextureMipLevels(TextureDesc textureDesc);
+	uint32_t GetTextureBindFlags(TextureDesc textureDesc);
+	uint32_t GetTexturePixelDataSize(TextureDesc textureDesc);
+	D3D11_TEXTURE1D_DESC Get1DTextureDesc(D3D11_TEXTURE_DESC textureDesc);
+	D3D11_TEXTURE2D_DESC Get2DTextureDesc(D3D11_TEXTURE_DESC textureDesc);
+	D3D11_TEXTURE3D_DESC Get3DTextureDesc(D3D11_TEXTURE_DESC textureDesc);
+	D3D11_SHADER_RESOURCE_VIEW_DESC GetSRVDesc(TextureDesc textureDesc, D3D11_TEXTURE_DESC D3D11TextureDesc);
+	uint32_t GetSRVMipLevels(TextureDesc textureDesc);
+	D3D11_UNORDERED_ACCESS_VIEW_DESC GetUAVDesc(TextureDesc textureDesc, D3D11_TEXTURE_DESC D3D11TextureDesc);
+	D3D11_RENDER_TARGET_VIEW_DESC GetRTVDesc(TextureDesc textureDesc);
+	D3D11_DEPTH_STENCIL_VIEW_DESC GetDSVDesc(TextureDesc textureDesc, DepthStencilDesc DSDesc);
 
 	bool ReserveRenderTargets(DX11RenderPassDataComponent * DX11RPDC, IRenderingServer * renderingServer);
 	bool CreateRenderTargets(DX11RenderPassDataComponent * DX11RPDC, IRenderingServer* renderingServer);

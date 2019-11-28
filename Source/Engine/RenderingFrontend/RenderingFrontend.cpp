@@ -233,24 +233,24 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 bool InnoRenderingFrontendNS::loadDefaultAssets()
 {
 	m_basicNormalTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_normal.png");
-	m_basicNormalTexture->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_basicNormalTexture->m_textureDataDesc.UsageType = TextureUsageType::Sample;
+	m_basicNormalTexture->m_textureDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_basicNormalTexture->m_textureDesc.UsageType = TextureUsageType::Sample;
 
 	m_basicAlbedoTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_albedo.png");
-	m_basicAlbedoTexture->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_basicAlbedoTexture->m_textureDataDesc.UsageType = TextureUsageType::Sample;
+	m_basicAlbedoTexture->m_textureDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_basicAlbedoTexture->m_textureDesc.UsageType = TextureUsageType::Sample;
 
 	m_basicMetallicTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_metallic.png");
-	m_basicMetallicTexture->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_basicMetallicTexture->m_textureDataDesc.UsageType = TextureUsageType::Sample;
+	m_basicMetallicTexture->m_textureDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_basicMetallicTexture->m_textureDesc.UsageType = TextureUsageType::Sample;
 
 	m_basicRoughnessTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_roughness.png");
-	m_basicRoughnessTexture->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_basicRoughnessTexture->m_textureDataDesc.UsageType = TextureUsageType::Sample;
+	m_basicRoughnessTexture->m_textureDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_basicRoughnessTexture->m_textureDesc.UsageType = TextureUsageType::Sample;
 
 	m_basicAOTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_ao.png");
-	m_basicAOTexture->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_basicAOTexture->m_textureDataDesc.UsageType = TextureUsageType::Sample;
+	m_basicAOTexture->m_textureDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_basicAOTexture->m_textureDesc.UsageType = TextureUsageType::Sample;
 
 	m_basicMaterial = m_renderingServer->AddMaterialDataComponent("BasicMaterial/");
 	m_basicMaterial->m_normalTexture = m_basicNormalTexture;
@@ -260,16 +260,16 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 	m_basicMaterial->m_aoTexture = m_basicAOTexture;
 
 	m_iconTemplate_DirectionalLight = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_DirectionalLight.png");
-	m_iconTemplate_DirectionalLight->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_iconTemplate_DirectionalLight->m_textureDataDesc.UsageType = TextureUsageType::Sample;
+	m_iconTemplate_DirectionalLight->m_textureDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_iconTemplate_DirectionalLight->m_textureDesc.UsageType = TextureUsageType::Sample;
 
 	m_iconTemplate_PointLight = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_PointLight.png");
-	m_iconTemplate_PointLight->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_iconTemplate_PointLight->m_textureDataDesc.UsageType = TextureUsageType::Sample;
+	m_iconTemplate_PointLight->m_textureDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_iconTemplate_PointLight->m_textureDesc.UsageType = TextureUsageType::Sample;
 
 	m_iconTemplate_SphereLight = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_SphereLight.png");
-	m_iconTemplate_SphereLight->m_textureDataDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_iconTemplate_SphereLight->m_textureDataDesc.UsageType = TextureUsageType::Sample;
+	m_iconTemplate_SphereLight->m_textureDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_iconTemplate_SphereLight->m_textureDesc.UsageType = TextureUsageType::Sample;
 
 	m_unitLineMesh = m_renderingServer->AddMeshDataComponent("UnitLineMesh/");
 	g_pModuleManager->getAssetSystem()->addUnitLine(*m_unitLineMesh);

@@ -488,29 +488,29 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 
 	auto l_rhs = reinterpret_cast<DX11TextureDataComponent*>(rhs);
 
-	l_rhs->m_DX11TextureDataDesc = GetDX11TextureDataDesc(l_rhs->m_textureDataDesc);
+	l_rhs->m_DX11TextureDesc = GetDX11TextureDesc(l_rhs->m_textureDesc);
 
 	// Create the empty texture.
 	HRESULT l_HResult;
 
-	if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler1D)
+	if (l_rhs->m_textureDesc.SamplerType == TextureSamplerType::Sampler1D)
 	{
-		auto l_desc = Get1DTextureDataDesc(l_rhs->m_DX11TextureDataDesc);
+		auto l_desc = Get1DTextureDesc(l_rhs->m_DX11TextureDesc);
 		l_HResult = m_device->CreateTexture1D(&l_desc, NULL, (ID3D11Texture1D**)&l_rhs->m_ResourceHandle);
 	}
-	else if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler2D)
+	else if (l_rhs->m_textureDesc.SamplerType == TextureSamplerType::Sampler2D)
 	{
-		auto l_desc = Get2DTextureDataDesc(l_rhs->m_DX11TextureDataDesc);
+		auto l_desc = Get2DTextureDesc(l_rhs->m_DX11TextureDesc);
 		l_HResult = m_device->CreateTexture2D(&l_desc, NULL, (ID3D11Texture2D**)&l_rhs->m_ResourceHandle);
 	}
-	else if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
+	else if (l_rhs->m_textureDesc.SamplerType == TextureSamplerType::Sampler3D)
 	{
-		auto l_desc = Get3DTextureDataDesc(l_rhs->m_DX11TextureDataDesc);
+		auto l_desc = Get3DTextureDesc(l_rhs->m_DX11TextureDesc);
 		l_HResult = m_device->CreateTexture3D(&l_desc, NULL, (ID3D11Texture3D**)&l_rhs->m_ResourceHandle);
 	}
 	else
 	{
-		auto l_desc = Get2DTextureDataDesc(l_rhs->m_DX11TextureDataDesc);
+		auto l_desc = Get2DTextureDesc(l_rhs->m_DX11TextureDesc);
 		l_HResult = m_device->CreateTexture2D(&l_desc, NULL, (ID3D11Texture2D**)&l_rhs->m_ResourceHandle);
 	}
 
@@ -523,18 +523,18 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 	// Submit raw data to GPU memory
 	if (l_rhs->m_textureData)
 	{
-		uint32_t l_rowPitch = l_rhs->m_textureDataDesc.Width * l_rhs->m_DX11TextureDataDesc.PixelDataSize;
-		if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::Sampler3D)
+		uint32_t l_rowPitch = l_rhs->m_textureDesc.Width * l_rhs->m_DX11TextureDesc.PixelDataSize;
+		if (l_rhs->m_textureDesc.SamplerType == TextureSamplerType::Sampler3D)
 		{
-			uint32_t l_depthPitch = l_rowPitch * l_rhs->m_textureDataDesc.Height;
+			uint32_t l_depthPitch = l_rowPitch * l_rhs->m_textureDesc.Height;
 			m_deviceContext->UpdateSubresource(l_rhs->m_ResourceHandle, 0, NULL, l_rhs->m_textureData, l_rowPitch, l_depthPitch);
 		}
-		else if (l_rhs->m_textureDataDesc.SamplerType == TextureSamplerType::SamplerCubemap)
+		else if (l_rhs->m_textureDesc.SamplerType == TextureSamplerType::SamplerCubemap)
 		{
 			for (uint32_t i = 0; i < 6; i++)
 			{
-				uint32_t l_subresource = D3D11CalcSubresource(0, i, l_rhs->m_DX11TextureDataDesc.MipLevels);
-				void* l_rawData = (unsigned char*)l_rhs->m_textureData + l_rowPitch * l_rhs->m_textureDataDesc.Height * i;
+				uint32_t l_subresource = D3D11CalcSubresource(0, i, l_rhs->m_DX11TextureDesc.MipLevels);
+				void* l_rawData = (unsigned char*)l_rhs->m_textureData + l_rowPitch * l_rhs->m_textureDesc.Height * i;
 				m_deviceContext->UpdateSubresource(l_rhs->m_ResourceHandle, l_subresource, NULL, l_rawData, l_rowPitch, 0);
 			}
 		}
@@ -549,10 +549,10 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 
 	InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: Texture: ", l_rhs->m_ResourceHandle, " is initialized.");
 
-	if (l_rhs->m_textureDataDesc.CPUAccessibility == Accessibility::Immutable)
+	if (l_rhs->m_textureDesc.CPUAccessibility == Accessibility::Immutable)
 	{
 		// Create SRV
-		l_rhs->m_SRVDesc = GetSRVDesc(l_rhs->m_textureDataDesc, l_rhs->m_DX11TextureDataDesc);
+		l_rhs->m_SRVDesc = GetSRVDesc(l_rhs->m_textureDesc, l_rhs->m_DX11TextureDesc);
 
 		l_HResult = m_device->CreateShaderResourceView(l_rhs->m_ResourceHandle, &l_rhs->m_SRVDesc, &l_rhs->m_SRV);
 		if (FAILED(l_HResult))
@@ -567,15 +567,15 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 		InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: SRV: ", l_rhs->m_SRV, " is initialized.");
 
 		// Generate mipmaps for this texture.
-		if (l_rhs->m_textureDataDesc.UseMipMap)
+		if (l_rhs->m_textureDesc.UseMipMap)
 		{
 			m_deviceContext->GenerateMips(l_rhs->m_SRV);
 		}
 
 		// Create UAV
-		if (l_rhs->m_textureDataDesc.UsageType == TextureUsageType::RawImage)
+		if (l_rhs->m_textureDesc.UsageType == TextureUsageType::RawImage)
 		{
-			l_rhs->m_UAVDesc = GetUAVDesc(l_rhs->m_textureDataDesc, l_rhs->m_DX11TextureDataDesc);
+			l_rhs->m_UAVDesc = GetUAVDesc(l_rhs->m_textureDesc, l_rhs->m_DX11TextureDesc);
 
 			l_HResult = m_device->CreateUnorderedAccessView(l_rhs->m_ResourceHandle, &l_rhs->m_UAVDesc, &l_rhs->m_UAV);
 			if (FAILED(l_HResult))
@@ -591,7 +591,7 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 		}
 
 		auto l_resourceBinder = addResourcesBinder();
-		l_resourceBinder->m_GPUAccessibility = l_rhs->m_textureDataDesc.GPUAccessibility;
+		l_resourceBinder->m_GPUAccessibility = l_rhs->m_textureDesc.GPUAccessibility;
 		l_resourceBinder->m_SRV = l_rhs->m_SRV;
 		l_resourceBinder->m_UAV = l_rhs->m_UAV;
 		l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
@@ -1643,8 +1643,8 @@ std::vector<Vec4> DX11RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 	std::vector<Vec4> l_result;
 
 	auto l_destTDC = reinterpret_cast<DX11TextureDataComponent*>(AddTextureDataComponent("ReadBackTemp/"));
-	l_destTDC->m_textureDataDesc = TDC->m_textureDataDesc;
-	l_destTDC->m_textureDataDesc.CPUAccessibility = Accessibility::ReadOnly;
+	l_destTDC->m_textureDesc = TDC->m_textureDesc;
+	l_destTDC->m_textureDesc.CPUAccessibility = Accessibility::ReadOnly;
 
 	InitializeTextureDataComponent(l_destTDC);
 
@@ -1662,28 +1662,28 @@ std::vector<Vec4> DX11RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 		size_t l_sampleCount = 0;
 		size_t l_sliceCount = 1;
 
-		switch (l_srcTDC->m_textureDataDesc.SamplerType)
+		switch (l_srcTDC->m_textureDesc.SamplerType)
 		{
 		case TextureSamplerType::Sampler1D:
-			l_sampleCount = l_srcTDC->m_textureDataDesc.Width;
+			l_sampleCount = l_srcTDC->m_textureDesc.Width;
 			break;
 		case TextureSamplerType::Sampler2D:
-			l_sampleCount = l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_textureDataDesc.Height;
+			l_sampleCount = l_srcTDC->m_textureDesc.Width * l_srcTDC->m_textureDesc.Height;
 			break;
 		case TextureSamplerType::Sampler3D:
-			l_sampleCount = l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_textureDataDesc.Height * l_srcTDC->m_textureDataDesc.DepthOrArraySize;
-			l_sliceCount = l_srcTDC->m_textureDataDesc.DepthOrArraySize;
+			l_sampleCount = l_srcTDC->m_textureDesc.Width * l_srcTDC->m_textureDesc.Height * l_srcTDC->m_textureDesc.DepthOrArraySize;
+			l_sliceCount = l_srcTDC->m_textureDesc.DepthOrArraySize;
 			break;
 		case TextureSamplerType::Sampler1DArray:
-			l_sampleCount = l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_textureDataDesc.DepthOrArraySize;
-			l_sliceCount = l_srcTDC->m_textureDataDesc.DepthOrArraySize;
+			l_sampleCount = l_srcTDC->m_textureDesc.Width * l_srcTDC->m_textureDesc.DepthOrArraySize;
+			l_sliceCount = l_srcTDC->m_textureDesc.DepthOrArraySize;
 			break;
 		case TextureSamplerType::Sampler2DArray:
-			l_sampleCount = l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_textureDataDesc.Height * l_srcTDC->m_textureDataDesc.DepthOrArraySize;
-			l_sliceCount = l_srcTDC->m_textureDataDesc.DepthOrArraySize;
+			l_sampleCount = l_srcTDC->m_textureDesc.Width * l_srcTDC->m_textureDesc.Height * l_srcTDC->m_textureDesc.DepthOrArraySize;
+			l_sliceCount = l_srcTDC->m_textureDesc.DepthOrArraySize;
 			break;
 		case TextureSamplerType::SamplerCubemap:
-			l_sampleCount = l_srcTDC->m_textureDataDesc.Width * l_srcTDC->m_textureDataDesc.Height * 6;
+			l_sampleCount = l_srcTDC->m_textureDesc.Width * l_srcTDC->m_textureDesc.Height * 6;
 			l_sliceCount = 6;
 			break;
 		default:
@@ -1694,7 +1694,7 @@ std::vector<Vec4> DX11RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 
 		if (l_mappedResource.DepthPitch)
 		{
-			if (l_srcTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::Depth)
+			if (l_srcTDC->m_textureDesc.PixelDataFormat == TexturePixelDataFormat::Depth)
 			{
 				std::memcpy(l_DSResult.data(), l_mappedResource.pData, l_mappedResource.DepthPitch * l_sliceCount);
 				for (size_t i = 0; i < l_sampleCount; i++)
@@ -1703,7 +1703,7 @@ std::vector<Vec4> DX11RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 					l_result[i].x = l_depth;
 				}
 			}
-			else if (l_srcTDC->m_textureDataDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
+			else if (l_srcTDC->m_textureDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
 			{
 				std::memcpy(l_DSResult.data(), l_mappedResource.pData, l_mappedResource.DepthPitch * l_sliceCount);
 				for (size_t i = 0; i < l_sampleCount; i++)

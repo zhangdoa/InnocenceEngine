@@ -215,7 +215,7 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 
 	//#ifdef DEBUG_
 	auto l_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
-	l_TDC->m_textureDataDesc = m_RPDC_Probe->m_RenderTargets[0]->m_textureDataDesc;
+	l_TDC->m_textureDesc = m_RPDC_Probe->m_RenderTargets[0]->m_textureDesc;
 	l_TDC->m_textureData = l_probePosTextureResults.data();
 	g_pModuleManager->getFileSystem()->saveTexture("Res//Intermediate//ProbePosTexture", l_TDC);
 	//#endif // DEBUG_
@@ -566,7 +566,7 @@ bool InnoBakerNS::readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfel
 	auto l_depthStencilRT = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_DepthStencilRenderTarget);
 
 	auto l_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
-	l_TDC->m_textureDataDesc = m_RPDC_Surfel->m_RenderTargets[0]->m_textureDataDesc;
+	l_TDC->m_textureDesc = m_RPDC_Surfel->m_RenderTargets[0]->m_textureDesc;
 	l_TDC->m_textureData = l_albedoAO.data();
 	g_pModuleManager->getFileSystem()->saveTexture(("Res//Intermediate//SurfelTextureAlbedo_" + std::to_string(l_index)).c_str(), l_TDC);
 
@@ -612,7 +612,7 @@ bool InnoBakerNS::readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfel
 	}
 
 	auto l_DSTDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
-	l_DSTDC->m_textureDataDesc = m_RPDC_Surfel->m_RenderTargets[0]->m_textureDataDesc;
+	l_DSTDC->m_textureDesc = m_RPDC_Surfel->m_RenderTargets[0]->m_textureDesc;
 	l_DSTDC->m_textureData = l_DSTDCData.data();
 	g_pModuleManager->getFileSystem()->saveTexture(("Res//Intermediate//SurfelTextureDS_" + std::to_string(l_index)).c_str(), l_DSTDC);
 
@@ -1051,7 +1051,7 @@ bool InnoBakerNS::readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& b
 	auto l_brickIDResults = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_BrickFactor, m_RPDC_BrickFactor->m_RenderTargets[0]);
 
 	auto l_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
-	l_TDC->m_textureDataDesc = m_RPDC_BrickFactor->m_RenderTargets[0]->m_textureDataDesc;
+	l_TDC->m_textureDesc = m_RPDC_BrickFactor->m_RenderTargets[0]->m_textureDesc;
 	l_TDC->m_textureData = l_brickIDResults.data();
 	g_pModuleManager->getFileSystem()->saveTexture(("Res//Intermediate//BrickTexture_" + std::to_string(l_index)).c_str(), l_TDC);
 	l_index++;

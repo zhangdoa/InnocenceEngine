@@ -558,9 +558,9 @@ MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(co
 			auto l_textureAttributeType = TextureAttributeType(i["AttributeType"]);
 			if (l_TDC)
 			{
-				l_TDC->m_textureDataDesc.SamplerType = TextureSamplerType(i["SamplerType"]);
-				l_TDC->m_textureDataDesc.UsageType = TextureUsageType(i["UsageType"]);
-				l_TDC->m_textureDataDesc.IsSRGB = i["IsSRGB"];
+				l_TDC->m_textureDesc.SamplerType = TextureSamplerType(i["SamplerType"]);
+				l_TDC->m_textureDesc.UsageType = TextureUsageType(i["UsageType"]);
+				l_TDC->m_textureDesc.IsSRGB = i["IsSRGB"];
 			}
 			else
 			{
