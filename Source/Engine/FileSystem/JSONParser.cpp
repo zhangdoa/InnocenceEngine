@@ -401,7 +401,9 @@ std::vector<AnimationDataComponent*> InnoFileSystemNS::JSONParser::processAnimat
 		l_offset += sizeof(l_ADC->m_NumChannels);
 		IOService::deserialize(l_animationFile, l_offset, &l_ADC->m_NumKeys);
 		l_offset += sizeof(l_ADC->m_NumKeys);
-		IOService::deserializeVector(l_animationFile, l_offset, IOService::getFileSize(l_animationFile) - l_offset, l_ADC->m_KeyData);
+		auto l_keyDataSize = IOService::getFileSize(l_animationFile) - l_offset;
+		l_ADC->m_KeyData.reserve(l_keyDataSize);
+		IOService::deserializeVector(l_animationFile, l_offset, l_keyDataSize, l_ADC->m_KeyData);
 
 		l_result.emplace_back(l_ADC);
 	}
