@@ -5,27 +5,27 @@
 class InnoBakerLogicClient : public ILogicClient
 {
 	// Inherited via ILogicClient
-	virtual bool setup() override
+	bool setup() override
 	{
 		return true;
 	}
-	virtual bool initialize() override
+	bool initialize() override
 	{
 		return true;
 	}
-	virtual bool update() override
+	bool update() override
 	{
 		return true;
 	}
-	virtual bool terminate() override
+	bool terminate() override
 	{
 		return true;
 	}
-	virtual ObjectStatus getStatus() override
+	ObjectStatus getStatus() override
 	{
 		return ObjectStatus();
 	}
-	virtual std::string getApplicationName() override
+	std::string getApplicationName() override
 	{
 		return "InnoBaker/";
 	}
