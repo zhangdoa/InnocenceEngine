@@ -80,6 +80,7 @@ bool VolumetricFogPass::setupFroxelizationPass()
 	l_RenderPassDesc.m_RenderTargetDesc.DepthOrArraySize = 64;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = 160;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = 90;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_MaxDepth = 64;
 
 	m_froxelizationRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -230,8 +231,8 @@ bool VolumetricFogPass::Initialize()
 {
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_volumetricPassGBDC);
 
-	//g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_froxelizationSPC);
-	//g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_froxelizationRPDC);
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_froxelizationSPC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_froxelizationRPDC);
 
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_irraidanceInjectionSPC);
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_irraidanceInjectionRPDC);
@@ -387,7 +388,7 @@ bool VolumetricFogPass::PrepareCommandList()
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_volumetricPassGBDC, &l_volumetricPassGPUData);
 
-	//froxelization();
+	froxelization();
 	irraidanceInjection();
 	rayMarching();
 
@@ -396,9 +397,9 @@ bool VolumetricFogPass::PrepareCommandList()
 
 bool VolumetricFogPass::ExecuteCommandList()
 {
-	//g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_froxelizationRPDC);
+	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_froxelizationRPDC);
 
-	//g_pModuleManager->getRenderingServer()->WaitForFrame(m_froxelizationRPDC);
+	g_pModuleManager->getRenderingServer()->WaitForFrame(m_froxelizationRPDC);
 
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_irraidanceInjectionRPDC);
 
@@ -413,7 +414,7 @@ bool VolumetricFogPass::ExecuteCommandList()
 
 bool VolumetricFogPass::Terminate()
 {
-	//g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_froxelizationRPDC);
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_froxelizationRPDC);
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_irraidanceInjectionRPDC);
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_rayMarchingRPDC);
 

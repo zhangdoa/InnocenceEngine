@@ -11,8 +11,11 @@ RWTexture3D<float4> out_volumetricPassRT0 : register(u0);
 
 void main(PixelInputType input)
 {
+	float3 pos = input.posCS.xyz;
+	if (((pos.x < input.AABB.x) && (pos.y < input.AABB.y)) || ((pos.x > input.AABB.z) && (pos.y > input.AABB.w)))
+	{
+		discard;
+	}
 	float4 writeCoord = input.posCS;
-	writeCoord.xyz = writeCoord.xyz * 0.5 + 0.5;
-	writeCoord.xyz = writeCoord.xyz * float3(160.0, 90.0, 64.0);
-	out_volumetricPassRT0[writeCoord.xyz] = float4(writeCoord);
+	out_volumetricPassRT0[writeCoord.xyz] = float4(writeCoord.xyz, 1.0);
 }
