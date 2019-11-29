@@ -78,9 +78,9 @@ void main(ComputeInputType input)
 	float fMaxDepth = asfloat(l_uMaxDepth);
 
 	// Convert depth values to view space.
-	float minDepthVS = ClipToView(float4(0, 0, fMinDepth, 1), sky_p_inv).z;
-	float maxDepthVS = ClipToView(float4(0, 0, fMaxDepth, 1), sky_p_inv).z;
-	float nearClipVS = ClipToView(float4(0, 0, 0, 1), sky_p_inv).z;
+	float minDepthVS = ClipToView(float4(0, 0, fMinDepth, 1), perFrameCBuffer.p_inv).z;
+	float maxDepthVS = ClipToView(float4(0, 0, fMaxDepth, 1), perFrameCBuffer.p_inv).z;
+	float nearClipVS = ClipToView(float4(0, 0, 0, 1), perFrameCBuffer.p_inv).z;
 
 	// Clipping plane for minimum depth value
 	Plane minPlane = { float3(0, 0, -1), -minDepthVS };
@@ -88,12 +88,11 @@ void main(ComputeInputType input)
 	// Cull point light
 	for (uint i = input.groupIndex; i < NR_POINT_LIGHTS; i += BLOCK_SIZE * BLOCK_SIZE)
 	{
-		pointLight light = pointLights[i];
+		PointLight_CB light = pointLights[i];
 		// w component of luminousFlux is the attenuation radius
 		if (light.luminousFlux.w > 0.0f)
 		{
-			float4 lightPos_VS = mul(light.position, cameraCBuffer.t);
-			lightPos_VS = mul(lightPos_VS, cameraCBuffer.r);
+			float4 lightPos_VS = mul(light.position, perFrameCBuffer.v);
 			Sphere sphere = { lightPos_VS.xyz, light.luminousFlux.w };
 			if (SphereInsideFrustum(sphere, l_TileFrustum, nearClipVS, maxDepthVS))
 			{

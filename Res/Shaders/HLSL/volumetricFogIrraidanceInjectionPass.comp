@@ -90,11 +90,11 @@ void main(ComputeInputType input)
 		float2 frag_coord = l_readCoord.xy;
 		frag_coord = (frag_coord - 0.5) * 2.0;
 		float4 device_normal = float4(frag_coord, 0.0, 1.0);
-		float4 eye_normal = mul(device_normal, sky_p_inv);
+		float4 eye_normal = mul(device_normal, perFrameCBuffer.p_inv);
 		eye_normal = eye_normal / eye_normal.w;
 		float3 eyedir = normalize(eye_normal.xyz);
 
-		float3 lightdir = -sun_dir.xyz;
+		float3 lightdir = -perFrameCBuffer.sun_direction.xyz;
 		float3 eye_position = float3(0.0, 0.0, 0.0);
 
 		float3 color = float3(0.0, 0.0, 0.0);

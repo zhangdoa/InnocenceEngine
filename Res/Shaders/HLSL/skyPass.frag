@@ -18,17 +18,17 @@ PixelOutputType main(PixelInputType input)
 
 	float3 color = float3(0.0, 0.0, 0.0);
 
-	float3 eyedir = get_world_normal(input.frag_ClipSpacePos.xy, sky_viewportSize.xy, sky_p_inv, sky_v_inv);
-	float3 lightdir = -sun_dir.xyz;
+	float3 eyedir = get_world_normal(input.frag_ClipSpacePos.xy, perFrameCBuffer.viewportSize.xy, perFrameCBuffer.p_inv, perFrameCBuffer.v_inv);
+	float3 lightdir = -perFrameCBuffer.sun_direction.xyz;
 	float planetRadius = 6371e3;
 	float atmosphereHeight = 100e3;
-	float3 eye_position = cameraCBuffer.globalPos.xyz + float3(0.0, planetRadius, 0.0);
+	float3 eye_position = perFrameCBuffer.camera_posWS + float3(0.0, planetRadius, 0.0);
 
 	color = atmosphere(
 		eyedir,           // normalized ray direction
 		eye_position,               // ray origin
 		lightdir,                        // position of the sun
-		sun_illuminance * 4 * PI,                           // intensity of the sun
+		perFrameCBuffer.sun_illuminance * 4 * PI,                           // intensity of the sun
 		planetRadius,                   // radius of the planet in meters
 		planetRadius + atmosphereHeight, // radius of the atmosphere in meters
 		float3(5.8e-6, 13.5e-6, 33.1e-6), // Rayleigh scattering coefficient

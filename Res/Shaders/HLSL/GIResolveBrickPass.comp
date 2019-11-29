@@ -22,7 +22,7 @@ void main(ComputeInputType input)
 	{
 		uint l_brickIndex = input.dispatchThreadID.x + (input.dispatchThreadID.y * dispatchParams[3].numThreads.x) + (input.dispatchThreadID.z * dispatchParams[3].numThreads.x * dispatchParams[3].numThreads.y);
 
-		if (l_brickIndex < GISky_workload.y)
+		if (l_brickIndex < GICBuffer.workload.y)
 		{
 			Brick l_brick = in_bricks[l_brickIndex];
 

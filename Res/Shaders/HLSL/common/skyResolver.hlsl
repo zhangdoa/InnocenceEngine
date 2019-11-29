@@ -5,6 +5,7 @@ float3 get_world_normal(float2 xy, float2 viewportSize, matrix p_inv, matrix v_i
 	float4 device_normal = float4(frag_coord, 0.0, 1.0);
 	float4 eye_normal = mul(device_normal, p_inv);
 	eye_normal = eye_normal / eye_normal.w;
+	eye_normal.w = 0.0;
 	eye_normal = mul(eye_normal, v_inv);
 	float3 world_normal = normalize(eye_normal.xyz);
 	return world_normal;

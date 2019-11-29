@@ -23,8 +23,8 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 
 float3 N = normalize(input.Normal);
 
-float3 V = normalize(cameraCBuffer.globalPos.xyz - input.posWS.xyz);
-float3 L = normalize(-sun_dir.xyz);
+float3 V = normalize(perFrameCBuffer.camera_posWS - input.posWS.xyz);
+float3 L = normalize(-perFrameCBuffer.sun_direction.xyz);
 float3 H = normalize(V + L);
 float NdotV = max(dot(N, V), 0.0);
 float NdotH = max(dot(N, H), 0.0);
@@ -50,7 +50,7 @@ float3 sigma = -(log(F0));
 float3 Tr = exp(-sigma * d);
 
 // surface radiance
-float3 Cs = Frss * sun_illuminance.xyz * materialCBuffer.albedo.rgb;
+float3 Cs = Frss * perFrameCBuffer.sun_illuminance.xyz * materialCBuffer.albedo.rgb;
 
 output.transparentPassRT0 = float4(Cs, materialCBuffer.albedo.a);
 // alpha channel as the mask

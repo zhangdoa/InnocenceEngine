@@ -49,7 +49,7 @@ void main(ComputeInputType input)
 
 		float3 color = float3(0.0, 0.0, 0.0);
 
-		float3 lightdir = -sun_dir.xyz;
+		float3 lightdir = -perFrameCBuffer.sun_direction.xyz;
 		float planetRadius = 6371e3;
 		float atmosphereHeight = 100e3;
 		float3 eye_position = float3(0.0, planetRadius, 0.0);
@@ -58,7 +58,7 @@ void main(ComputeInputType input)
 			eyedir,           // normalized ray direction
 			eye_position,               // ray origin
 			lightdir,                        // position of the sun
-			22.0,                           // intensity of the sun
+			perFrameCBuffer.sun_illuminance,                           // intensity of the sun
 			planetRadius,                   // radius of the planet in meters
 			planetRadius + atmosphereHeight, // radius of the atmosphere in meters
 			float3(5.8e-6, 13.5e-6, 33.1e-6), // Rayleigh scattering coefficient

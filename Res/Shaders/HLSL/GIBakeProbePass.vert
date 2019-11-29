@@ -20,7 +20,7 @@ PixelInputType main(VertexInputType input)
 {
 	PixelInputType output;
 
-	output.posWS = mul(input.position, meshCBuffer.m);
+	output.posWS = mul(input.position, perObjectCBuffer.m);
 	output.posCS = mul(output.posWS, GICamera_t);
 	output.posCS = mul(output.posCS, GICamera_r[0]);
 	output.posCS = mul(output.posCS, GICamera_p);

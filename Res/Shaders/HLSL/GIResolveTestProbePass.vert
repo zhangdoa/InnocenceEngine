@@ -36,9 +36,8 @@ PixelInputType main(VertexInputType input)
 	output.normal = input.normal;
 
 	output.posWS = mul(input.position, probeMeshSBuffer[input.instanceId].m);
-	output.posCS = mul(output.posWS, cameraCBuffer.t);
-	output.posCS = mul(output.posCS, cameraCBuffer.r);
-	output.posCS = mul(output.posCS, cameraCBuffer.p_original);
+	output.posCS = mul(output.posWS, perFrameCBuffer.v);
+	output.posCS = mul(output.posCS, perFrameCBuffer.p_original);
 
 	return output;
 }

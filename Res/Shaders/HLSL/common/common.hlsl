@@ -9,22 +9,27 @@ static const int NR_CSM_SPLITS = 4;
 
 #define BLOCK_SIZE 16
 
-struct CameraData
+struct PerFrame_CB
 {
 	matrix p_original; // 0 - 3
 	matrix p_jittered; // 4 - 7
-	matrix r; // 8 - 11
-	matrix t; // 12 - 15
-	matrix r_prev; // 16 - 19
-	matrix t_prev; // 20 - 23
-	float4 globalPos; // 24
-	float WHRatio; // Tight packing 25
-	float zNear; // Tight packing 25
-	float zFar; // Tight packing 25
-	float padding[6]; // 26 - 31
+	matrix v; // 8 - 11
+	matrix v_prev; // 12 - 15
+	matrix p_inv; // 16 - 19
+	matrix v_inv; // 20 - 23
+	float zNear; // Tight packing 24
+	float zFar; // Tight packing 24
+	float minLogLuminance; // Tight packing 24
+	float maxLogLuminance; // Tight packing 24
+	float4 sun_direction; // 25
+	float4 sun_illuminance; // 26
+	float4 viewportSize; // 27
+	float4 posWSNormalizer; // 28
+	float4 camera_posWS; // 29
+	float4 padding[2]; // 30 - 31
 };
 
-struct MeshData
+struct PerObject_CB
 {
 	matrix m;
 	matrix m_prev;
@@ -33,7 +38,7 @@ struct MeshData
 	float padding[3];
 };
 
-struct MaterialData
+struct Material_CB
 {
 	float4 albedo; // 0
 	float4 MRAT; // 1
@@ -46,7 +51,7 @@ struct MaterialData
 };
 
 // w component of luminousFlux is attenuationRadius
-struct pointLight
+struct PointLight_CB
 {
 	float4 position;
 	float4 luminousFlux;
@@ -54,7 +59,7 @@ struct pointLight
 };
 
 // w component of luminousFlux is sphereRadius
-struct sphereLight
+struct SphereLight_CB
 {
 	float4 position;
 	float4 luminousFlux;
@@ -74,7 +79,7 @@ struct SH9
 	float4 L22;
 };
 
-struct CSM
+struct CSM_CB
 {
 	matrix p;
 	matrix v;
@@ -83,10 +88,23 @@ struct CSM
 	float4 padding[6];
 };
 
-struct DispatchParam
+struct DispatchParam_CB
 {
 	uint4 numThreadGroups;
 	uint4 numThreads;
+};
+
+struct GI_CB
+{
+	matrix p;
+	matrix r[6];
+	matrix t;
+	matrix p_inv;
+	matrix v_inv[6];
+	float4 probeCount;
+	float4 probeRange;
+	float4 workload;
+	float4 irradianceVolumeOffset;
 };
 
 struct VolumetricPassData
@@ -203,4 +221,4 @@ struct Probe
 	uint padding[10];
 };
 
-#include "common/GPUBuffers.hlsl"
+#include "common/CBuffers.hlsl"

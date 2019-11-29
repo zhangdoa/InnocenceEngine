@@ -19,9 +19,9 @@ PixelInputType main(VertexInputType input)
 {
 	PixelInputType output;
 
-	float4 pos = float4(-1.0 * input.position.xyz, 1.0);
-	pos = mul(pos, cameraCBuffer.r);
-	pos = mul(pos, cameraCBuffer.p_original);
+	float4 pos = float4(-1.0 * input.position.xyz, 0.0);
+	pos = mul(pos, perFrameCBuffer.v);
+	pos = mul(pos, perFrameCBuffer.p_original);
 	pos.z = pos.w;
 	output.frag_ClipSpacePos = pos;
 

@@ -71,7 +71,7 @@ void main(ComputeInputType input)
 	{
 		uint l_surfelIndex = input.dispatchThreadID.x + (input.dispatchThreadID.y * dispatchParams[2].numThreads.x) + (input.dispatchThreadID.z * dispatchParams[2].numThreads.x * dispatchParams[2].numThreads.y);
 
-		if (l_surfelIndex < GISky_workload.x)
+		if (l_surfelIndex < GICBuffer.workload.x)
 		{
 			Surfel l_surfel = in_surfels[l_surfelIndex];
 
@@ -80,8 +80,8 @@ void main(ComputeInputType input)
 			float3 albedo = l_surfel.albedo.xyz;
 
 			float3 N = normalize(normalWS);
-			float3 V = normalize(cameraCBuffer.globalPos.xyz - posWS);
-			float3 L = normalize(-sun_dir.xyz);
+			float3 V = normalize(perFrameCBuffer.camera_posWS - posWS);
+			float3 L = normalize(-perFrameCBuffer.sun_direction.xyz);
 
 			float NdotL = max(dot(N, L), 0.0);
 
@@ -120,7 +120,7 @@ void main(ComputeInputType input)
 			// Diffuse BRDF
 			BRDF = albedo / PI;
 #endif
-			float3 Lo = BRDF * sun_illuminance.xyz * NdotL;
+			float3 Lo = BRDF * perFrameCBuffer.sun_illuminance.xyz * NdotL;
 
 			//Lo *= 1 - SunShadowResolver(posWS);
 

@@ -32,9 +32,8 @@ PixelInputType main(VertexInputType input)
 
 	output.materialID = debugMeshSBuffer[input.instanceId].materialID;
 	output.posCS = mul(input.position, debugMeshSBuffer[input.instanceId].m);
-	output.posCS = mul(output.posCS, cameraCBuffer.t);
-	output.posCS = mul(output.posCS, cameraCBuffer.r);
-	output.posCS = mul(output.posCS, cameraCBuffer.p_jittered);
+	output.posCS = mul(output.posCS, perFrameCBuffer.v);
+	output.posCS = mul(output.posCS, perFrameCBuffer.p_jittered);
 
 	return output;
 }

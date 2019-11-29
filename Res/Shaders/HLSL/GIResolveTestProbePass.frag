@@ -25,7 +25,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float3 N = normalize(input.normal.xyz);
 	float3 nSquared = N * N;
 	int3 isNegative = (N < 0.0);
-	float3 GISampleCoord = (input.posWS.xyz - GISky_irradianceVolumeOffset.xyz) / sky_posWSNormalizer.xyz;
+	float3 GISampleCoord = (input.posWS.xyz - GICBuffer.irradianceVolumeOffset.xyz) / perFrameCBuffer.posWSNormalizer.xyz;
 
 	float3 indirectLight = float3(0.0f, 0.0f, 0.0f);
 

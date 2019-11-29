@@ -22,14 +22,13 @@ PixelInputType main(VertexInputType input)
 {
 	PixelInputType output;
 
-	float4 posWS = mul(input.position, meshCBuffer.m);
-	float4 posVS = mul(posWS, cameraCBuffer.t);
-	posVS = mul(posVS, cameraCBuffer.r);
-	output.posCS = mul(posVS, cameraCBuffer.p_original);
+	float4 posWS = mul(input.position, perObjectCBuffer.m);
+	float4 posVS = mul(posWS, perFrameCBuffer.v);
+	output.posCS = mul(posVS, perFrameCBuffer.p_original);
 
 	output.posWS = posWS.xyz;
 	output.TexCoord = input.texcoord;
-	output.Normal = mul(input.normal, meshCBuffer.normalMat).xyz;
+	output.Normal = mul(input.normal, perObjectCBuffer.normalMat).xyz;
 
 	return output;
 }

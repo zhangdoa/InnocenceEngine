@@ -25,16 +25,16 @@ void main(ComputeInputType input)
 		// Normalized texture space
 		float3 l_readCoord = float3(input.dispatchThreadID) / float3(dispatchParams[5].numThreads.xyz);
 		// Brick world space
-		l_readCoord *= sky_posWSNormalizer.xyz;
-		float3 l_irradianceBlockSize = sky_posWSNormalizer.xyz / dispatchParams[5].numThreads.xyz;
+		l_readCoord *= perFrameCBuffer.posWSNormalizer.xyz;
+		float3 l_irradianceBlockSize = perFrameCBuffer.posWSNormalizer.xyz / dispatchParams[5].numThreads.xyz;
 		// To brick center
 		l_readCoord += l_irradianceBlockSize / 2.0f;
 		// Real world space
-		l_readCoord += GISky_irradianceVolumeOffset.xyz;
+		l_readCoord += GICBuffer.irradianceVolumeOffset.xyz;
 
 		// To the world space where probe minimum position as the origin
-		float3 l_probeRange = GISky_probeRange.xyz;
-		float3 l_minProbePos = float3(GISky_probeCount.w, GISky_probeRange.w, GISky_irradianceVolumeOffset.w);
+		float3 l_probeRange = GICBuffer.probeRange.xyz;
+		float3 l_minProbePos = float3(GICBuffer.probeCount.w, GICBuffer.probeRange.w, GICBuffer.irradianceVolumeOffset.w);
 		float3 l_maxProbePos = l_minProbePos + l_probeRange;
 
 		l_readCoord -= l_minProbePos;

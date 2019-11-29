@@ -53,13 +53,13 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	F0 = lerp(F0, albedo, metallic);
 
 	float3 N = normalize(normalWS);
-	float3 V = normalize(cameraCBuffer.globalPos.xyz - posWS);
+	float3 V = normalize(perFrameCBuffer.camera_posWS - posWS);
 	float NdotV = max(dot(N, V), 0.0);
 
 	float3 Lo = float3(0, 0, 0);
 
 	// direction light, sun light
-	float3 D = normalize(-sun_dir.xyz);
+	float3 D = normalize(-perFrameCBuffer.sun_direction.xyz);
 	float r = sin(sunAngularRadius);
 	float d = cos(sunAngularRadius);
 	float DdotV = dot(D, V);
@@ -82,7 +82,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float3 Ft = getBTDF(NdotV, NdotD, DdotHD, roughness, metallic, FresnelFactor, albedo);
 	float3 Fr = getBRDF(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotV, NdotL, NdotHL, LdotHL, roughness, F0, FresnelFactor);
 
-	float3 illuminance = sun_illuminance.xyz * NdotD;
+	float3 illuminance = perFrameCBuffer.sun_illuminance.xyz * NdotD;
 	Lo += illuminance * (Ft + Fr);
 	Lo *= 1.0 - SunShadowResolver(posWS);
 
@@ -98,7 +98,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	for (uint i = 0; i < lightCount; ++i)
 	{
 		uint lightIndex = in_LightIndexList[startOffset + i];
-		pointLight light = pointLights[lightIndex];
+		PointLight_CB light = pointLights[lightIndex];
 
 		float3 unormalizedL = light.position.xyz - posWS;
 		float lightAttRadius = light.luminousFlux.w;
@@ -160,7 +160,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	// [https://steamcdn-a.akamaihd.net/apps/valve/2006/SIGGRAPH06_Course_ShadingInValvesSourceEngine.pdf]
 	float3 nSquared = N * N;
 	int3 isNegative = (N < 0.0);
-	float3 GISampleCoord = (posWS - GISky_irradianceVolumeOffset.xyz) / sky_posWSNormalizer.xyz;
+	float3 GISampleCoord = (posWS - GICBuffer.irradianceVolumeOffset.xyz) / perFrameCBuffer.posWSNormalizer.xyz;
 	int3 isOutside = ((GISampleCoord > 1.0) || (GISampleCoord < 0.0));
 
 	GISampleCoord.z /= 6.0;

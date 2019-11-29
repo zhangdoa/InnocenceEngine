@@ -28,7 +28,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	PixelOutputType output;
 
 	float3 N = input.frag_Normal;
-	float3 V = normalize(cameraCBuffer.globalPos - input.frag_WorldSpacePos);
+	float3 V = normalize(perFrameCBuffer.camera_posWS - input.frag_WorldSpacePos);
 	float3 L = N;
 	float3 H = normalize(V + L);
 

@@ -20,8 +20,8 @@ GeometryInputType main(VertexInputType input)
 {
 	GeometryInputType output;
 
-	output.posWS = mul(input.position, meshCBuffer.m);
-	output.UUID = meshCBuffer.UUID;
+	output.posWS = mul(input.position, perObjectCBuffer.m);
+	output.UUID = perObjectCBuffer.UUID;
 
 	return output;
 }
