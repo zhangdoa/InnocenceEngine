@@ -81,7 +81,7 @@ bool BillboardPass::Initialize()
 
 bool BillboardPass::PrepareCommandList()
 {
-	auto l_MainCameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::MainCamera);
+	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 	auto l_BillboardGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Billboard);
 
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
@@ -90,18 +90,18 @@ bool BillboardPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CopyDepthStencilBuffer(OpaquePass::GetRPDC(), m_RPDC);
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 3, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MainCameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Quad);
 
-	auto& l_billboardPassDrawCallData = g_pModuleManager->getRenderingFrontend()->getBillboardPassDrawCallData();
-	auto l_drawCallCount = l_billboardPassDrawCallData.size();
+	auto& l_billboardPassDrawCallInfo = g_pModuleManager->getRenderingFrontend()->getBillboardPassDrawCallInfo();
+	auto l_drawCallCount = l_billboardPassDrawCallInfo.size();
 
 	for (uint32_t i = 0; i < l_drawCallCount; i++)
 	{
-		auto l_iconTexture = l_billboardPassDrawCallData[i].iconTexture;
-		auto l_offset = l_billboardPassDrawCallData[i].meshGPUDataOffset;
-		auto l_instanceCount = l_billboardPassDrawCallData[i].instanceCount;
+		auto l_iconTexture = l_billboardPassDrawCallInfo[i].iconTexture;
+		auto l_offset = l_billboardPassDrawCallInfo[i].meshConstantBufferOffset;
+		auto l_instanceCount = l_billboardPassDrawCallInfo[i].instanceCount;
 
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_BillboardGBDC->m_ResourceBinder, 1, 12, Accessibility::ReadOnly, l_offset, l_instanceCount);
 

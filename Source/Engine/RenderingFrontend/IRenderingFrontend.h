@@ -80,31 +80,29 @@ public:
 
 	virtual RenderPassDesc getDefaultRenderPassDesc() = 0;
 
-	virtual const CameraGPUData& getCameraGPUData() = 0;
-	virtual const SunGPUData& getSunGPUData() = 0;
-	virtual const std::vector<CSMGPUData>& getCSMGPUData() = 0;
-	virtual const std::vector<PointLightGPUData>& getPointLightGPUData() = 0;
-	virtual const std::vector<SphereLightGPUData>& getSphereLightGPUData() = 0;
-	virtual const SkyGPUData& getSkyGPUData() = 0;
+	virtual const PerFrameConstantBuffer& getPerFrameConstantBuffer() = 0;
+	virtual const std::vector<CSMConstantBuffer>& getCSMConstantBuffer() = 0;
+	virtual const std::vector<PointLightConstantBuffer>& getPointLightConstantBuffer() = 0;
+	virtual const std::vector<SphereLightConstantBuffer>& getSphereLightConstantBuffer() = 0;
 
 	virtual uint32_t getSunShadowPassDrawCallCount() = 0;
-	virtual const std::vector<OpaquePassDrawCallData>& getSunShadowPassDrawCallData() = 0;
-	virtual const std::vector<MeshGPUData>& getSunShadowPassMeshGPUData() = 0;
+	virtual const std::vector<OpaquePassDrawCallInfo>& getSunShadowPassDrawCallInfo() = 0;
+	virtual const std::vector<PerObjectConstantBuffer>& getSunShadowPassPerObjectConstantBuffer() = 0;
 
 	virtual uint32_t getOpaquePassDrawCallCount() = 0;
-	virtual const std::vector<OpaquePassDrawCallData>& getOpaquePassDrawCallData() = 0;
-	virtual const std::vector<MeshGPUData>& getOpaquePassMeshGPUData() = 0;
-	virtual const std::vector<MaterialGPUData>& getOpaquePassMaterialGPUData() = 0;
+	virtual const std::vector<OpaquePassDrawCallInfo>& getOpaquePassDrawCallInfo() = 0;
+	virtual const std::vector<PerObjectConstantBuffer>& getOpaquePassPerObjectConstantBuffer() = 0;
+	virtual const std::vector<MaterialConstantBuffer>& getOpaquePassMaterialConstantBuffer() = 0;
 
 	virtual uint32_t getTransparentPassDrawCallCount() = 0;
-	virtual const std::vector<TransparentPassDrawCallData>& getTransparentPassDrawCallData() = 0;
-	virtual const std::vector<MeshGPUData>& getTransparentPassMeshGPUData() = 0;
-	virtual const std::vector<MaterialGPUData>& getTransparentPassMaterialGPUData() = 0;
+	virtual const std::vector<TransparentPassDrawCallInfo>& getTransparentPassDrawCallInfo() = 0;
+	virtual const std::vector<PerObjectConstantBuffer>& getTransparentPassPerObjectConstantBuffer() = 0;
+	virtual const std::vector<MaterialConstantBuffer>& getTransparentPassMaterialConstantBuffer() = 0;
 
-	virtual const std::vector<BillboardPassDrawCallData>& getBillboardPassDrawCallData() = 0;
-	virtual const std::vector<MeshGPUData>& getBillboardPassMeshGPUData() = 0;
+	virtual const std::vector<BillboardPassDrawCallInfo>& getBillboardPassDrawCallInfo() = 0;
+	virtual const std::vector<PerObjectConstantBuffer>& getBillboardPassPerObjectConstantBuffer() = 0;
 
 	virtual uint32_t getDebugPassDrawCallCount() = 0;
-	virtual const std::vector<DebugPassDrawCallData>& getDebugPassDrawCallData() = 0;
-	virtual const std::vector<MeshGPUData>& getDebugPassMeshGPUData() = 0;
+	virtual const std::vector<DebugPassDrawCallInfo>& getDebugPassDrawCallInfo() = 0;
+	virtual const std::vector<PerObjectConstantBuffer>& getDebugPassPerObjectConstantBuffer() = 0;
 };

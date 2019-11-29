@@ -15,8 +15,8 @@ namespace BSDFTestPass
 	ShaderProgramComponent* m_SPC;
 	SamplerDataComponent* m_SDC;
 
-	std::vector<MeshGPUData> m_meshGPUData;
-	std::vector<MaterialGPUData> m_materialGPUData;
+	std::vector<PerObjectConstantBuffer> m_meshConstantBuffer;
+	std::vector<MaterialConstantBuffer> m_materialConstantBuffer;
 
 	const size_t m_shpereCount = 10;
 }
@@ -82,8 +82,8 @@ bool BSDFTestPass::Setup()
 	//
 	auto l_RenderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
-	m_meshGPUData.resize(l_RenderingCapability.maxMeshes);
-	m_materialGPUData.resize(l_RenderingCapability.maxMaterials);
+	m_meshConstantBuffer.resize(l_RenderingCapability.maxMeshes);
+	m_materialConstantBuffer.resize(l_RenderingCapability.maxMaterials);
 
 	size_t l_index = 0;
 
@@ -93,18 +93,18 @@ bool BSDFTestPass::Setup()
 	{
 		for (size_t j = 0; j < m_shpereCount; j++)
 		{
-			MeshGPUData l_meshGPUData;
-			l_meshGPUData.m = InnoMath::toTranslationMatrix(Vec4((float)i * l_interval, 0.0f, (float)j * l_interval, 1.0f));
-			l_meshGPUData.normalMat = InnoMath::generateIdentityMatrix<float>();
+			PerObjectConstantBuffer l_meshConstantBuffer;
+			l_meshConstantBuffer.m = InnoMath::toTranslationMatrix(Vec4((float)i * l_interval, 0.0f, (float)j * l_interval, 1.0f));
+			l_meshConstantBuffer.normalMat = InnoMath::generateIdentityMatrix<float>();
 
-			m_meshGPUData[l_index] = l_meshGPUData;
+			m_meshConstantBuffer[l_index] = l_meshConstantBuffer;
 
-			MaterialGPUData l_materialGPUData;
+			MaterialConstantBuffer l_materialConstantBuffer;
 
-			l_materialGPUData.customMaterial.Metallic = (float)i / (float)m_shpereCount;
-			l_materialGPUData.customMaterial.Roughness = (float)j / (float)m_shpereCount;
+			l_materialConstantBuffer.customMaterial.Metallic = (float)i / (float)m_shpereCount;
+			l_materialConstantBuffer.customMaterial.Roughness = (float)j / (float)m_shpereCount;
 
-			m_materialGPUData[l_index] = l_materialGPUData;
+			m_materialConstantBuffer[l_index] = l_materialConstantBuffer;
 
 			l_index++;
 		}
@@ -124,20 +124,20 @@ bool BSDFTestPass::Initialize()
 
 bool BSDFTestPass::PrepareCommandList()
 {
-	auto l_MainCameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::MainCamera);
+	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::OpaquePassMesh);
 	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::OpaquePassMaterial);
 
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MeshGBDC, m_meshGPUData);
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MaterialGBDC, m_materialGPUData);
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MeshGBDC, m_meshConstantBuffer);
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MaterialGBDC, m_materialConstantBuffer);
 
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 5, 0);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MainCameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_MainCameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, BRDFLUTPass::GetBRDFLUT(), 3, 0);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, BRDFLUTPass::GetBRDFMSLUT(), 4, 1);

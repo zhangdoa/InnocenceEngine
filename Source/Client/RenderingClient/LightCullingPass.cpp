@@ -145,16 +145,16 @@ bool LightCullingPass::Setup()
 	m_RPDC_Frustum->m_ResourceBinderLayoutDescs.resize(3);
 	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 7;
+	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 
 	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 8;
+	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 6;
 
 	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[2].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
+	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 1;
 	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 0;
 
 	m_RPDC_Frustum->m_ShaderProgram = m_SPC_TileFrustum;
@@ -163,69 +163,60 @@ bool LightCullingPass::Setup()
 	m_RPDC_LightCulling = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("ComputePass_LightCulling/");
 	m_RPDC_LightCulling->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs.resize(11);
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs.resize(10);
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 4;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 3;
 
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 7;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 6;
 
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 0;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 8;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 2;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[3].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
 
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 2;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[4].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 0;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 2;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 1;
 
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[5].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[5].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 2;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 1;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 2;
 
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Image;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 2;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 2;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 3;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 3;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_IndirectBinding = true;
 
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_ResourceBinderType = ResourceBinderType::Image;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_DescriptorSetIndex = 3;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_DescriptorIndex = 3;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_DescriptorIndex = 4;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_IndirectBinding = true;
 
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[8].m_ResourceBinderType = ResourceBinderType::Image;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[8].m_BinderAccessibility = Accessibility::ReadWrite;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[8].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[8].m_DescriptorSetIndex = 3;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[8].m_DescriptorIndex = 4;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[8].m_DescriptorIndex = 0;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[8].m_IndirectBinding = true;
 
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_ResourceBinderType = ResourceBinderType::Image;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_DescriptorSetIndex = 3;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_ResourceBinderType = ResourceBinderType::Sampler;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_DescriptorSetIndex = 4;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_DescriptorIndex = 0;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_IndirectBinding = true;
-
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_ResourceBinderType = ResourceBinderType::Image;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_DescriptorSetIndex = 3;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_DescriptorIndex = 0;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_IndirectBinding = true;
-
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[10].m_ResourceBinderType = ResourceBinderType::Sampler;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[10].m_DescriptorSetIndex = 4;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[10].m_DescriptorIndex = 0;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[10].m_IndirectBinding = true;
 
 	m_RPDC_LightCulling->m_ShaderProgram = m_SPC_LightCulling;
 
@@ -262,19 +253,18 @@ bool LightCullingPass::Initialize()
 
 bool LightCullingPass::PrepareCommandList()
 {
-	auto l_MainCameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::MainCamera);
+	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 	auto l_PointLightGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PointLight);
-	auto l_SkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sky);
-	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Compute);
+	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::ComputeDispatchParam);
 
 	auto l_lightListIndexCounter = 1;
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_lightListIndexCounterGBDC, &l_lightListIndexCounter);
 
-	DispatchParamsGPUData l_tileFrustumWorkload;
+	DispatchParamsConstantBuffer l_tileFrustumWorkload;
 	l_tileFrustumWorkload.numThreadGroups = m_tileFrustumNumThreadGroups;
 	l_tileFrustumWorkload.numThreads = m_tileFrustumNumThreads;
 
-	DispatchParamsGPUData lightCullingWorkload;
+	DispatchParamsConstantBuffer lightCullingWorkload;
 	lightCullingWorkload.numThreadGroups = m_lightCullingNumThreadGroups;
 	lightCullingWorkload.numThreads = m_lightCullingNumThreads;
 
@@ -284,8 +274,8 @@ bool LightCullingPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_Frustum, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_Frustum);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_Frustum);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Frustum, ShaderStage::Compute, l_SkyGBDC->m_ResourceBinder, 0, 7, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Frustum, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 1, 8, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Frustum, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Frustum, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 1, 6, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Frustum, ShaderStage::Compute, m_tileFrustumGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite, 0);
 
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_RPDC_Frustum, m_tileFrustumNumThreadGroups.x, m_tileFrustumNumThreadGroups.y, m_tileFrustumNumThreadGroups.z);
@@ -299,28 +289,27 @@ bool LightCullingPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_LightCulling);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_LightCulling);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_SDC_LightCulling->m_ResourceBinder, 10, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_SDC_LightCulling->m_ResourceBinder, 9, 0);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, l_MainCameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, l_PointLightGBDC->m_ResourceBinder, 1, 4, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, l_SkyGBDC->m_ResourceBinder, 2, 7, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 3, 8, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_tileFrustumGBDC->m_ResourceBinder, 4, 0, Accessibility::ReadWrite, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightListIndexCounterGBDC->m_ResourceBinder, 5, 1, Accessibility::ReadWrite, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightIndexListGBDC->m_ResourceBinder, 6, 2, Accessibility::ReadWrite, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightGridTDC->m_ResourceBinder, 7, 3, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_debugTDC->m_ResourceBinder, 8, 4, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, OpaquePass::GetRPDC()->m_DepthStencilRenderTarget->m_ResourceBinder, 9, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, l_PointLightGBDC->m_ResourceBinder, 1, 3, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 2, 6, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_tileFrustumGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadWrite, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightListIndexCounterGBDC->m_ResourceBinder, 4, 1, Accessibility::ReadWrite, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightIndexListGBDC->m_ResourceBinder, 5, 2, Accessibility::ReadWrite, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightGridTDC->m_ResourceBinder, 6, 3, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_debugTDC->m_ResourceBinder, 7, 4, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, OpaquePass::GetRPDC()->m_DepthStencilRenderTarget->m_ResourceBinder, 8, 0, Accessibility::ReadOnly);
 
 	// @TODO: Buggy on OpenGL + Nvidia
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_RPDC_LightCulling, m_lightCullingNumThreadGroups.x, m_lightCullingNumThreadGroups.y, m_lightCullingNumThreadGroups.z);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_tileFrustumGBDC->m_ResourceBinder, 4, 0, Accessibility::ReadWrite, 0);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightListIndexCounterGBDC->m_ResourceBinder, 5, 1, Accessibility::ReadWrite, 0);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightIndexListGBDC->m_ResourceBinder, 6, 2, Accessibility::ReadWrite, 0);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightGridTDC->m_ResourceBinder, 7, 3, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_debugTDC->m_ResourceBinder, 8, 4, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, OpaquePass::GetRPDC()->m_DepthStencilRenderTarget->m_ResourceBinder, 9, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_tileFrustumGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadWrite, 0);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightListIndexCounterGBDC->m_ResourceBinder, 4, 1, Accessibility::ReadWrite, 0);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightIndexListGBDC->m_ResourceBinder, 5, 2, Accessibility::ReadWrite, 0);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightGridTDC->m_ResourceBinder, 6, 3, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_debugTDC->m_ResourceBinder, 7, 4, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, OpaquePass::GetRPDC()->m_DepthStencilRenderTarget->m_ResourceBinder, 8, 0, Accessibility::ReadOnly);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC_LightCulling);
 

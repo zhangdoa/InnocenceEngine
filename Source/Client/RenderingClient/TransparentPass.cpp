@@ -48,7 +48,7 @@ bool TransparentPass::Setup()
 
 	m_RPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC->m_ResourceBinderLayoutDescs.resize(4);
+	m_RPDC->m_ResourceBinderLayoutDescs.resize(3);
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
@@ -60,10 +60,6 @@ bool TransparentPass::Setup()
 	m_RPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
 	m_RPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 2;
-
-	m_RPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_RPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 0;
-	m_RPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 3;
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 
@@ -80,10 +76,9 @@ bool TransparentPass::Initialize()
 
 bool TransparentPass::PrepareCommandList()
 {
-	auto l_MainCameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::MainCamera);
+	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::TransparentPassMesh);
 	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::TransparentPassMaterial);
-	auto l_SunGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sun);
 
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
@@ -91,21 +86,21 @@ bool TransparentPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CopyDepthStencilBuffer(OpaquePass::GetRPDC(), m_RPDC);
 	g_pModuleManager->getRenderingServer()->CopyColorBuffer(PreTAAPass::GetRPDC(), 0, m_RPDC, 0);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MainCameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_SunGBDC->m_ResourceBinder, 3, 3, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 
 	uint32_t l_offset = 0;
 
 	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getTransparentPassDrawCallCount();
-	auto& l_transparentPassDrawCallData = g_pModuleManager->getRenderingFrontend()->getTransparentPassDrawCallData();
+	auto& l_transparentPassDrawCallInfo = g_pModuleManager->getRenderingFrontend()->getTransparentPassDrawCallInfo();
 
 	for (uint32_t i = 0; i < l_totalDrawCallCount; i++)
 	{
-		auto l_drawCallData = l_transparentPassDrawCallData[i];
+		auto l_drawCallData = l_transparentPassDrawCallInfo[i];
 		if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 		{
-			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_drawCallData.meshGPUDataIndex, 1);
-			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_drawCallData.materialGPUDataIndex, 1);
+			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
+			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_drawCallData.materialConstantBufferIndex, 1);
 
 			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_drawCallData.mesh);
 		}

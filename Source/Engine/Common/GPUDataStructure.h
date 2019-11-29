@@ -4,30 +4,26 @@
 #include "../Component/MaterialDataComponent.h"
 #include "../Component/TextureDataComponent.h"
 
-struct alignas(16) CameraGPUData
+struct alignas(16) PerFrameConstantBuffer
 {
 	Mat4 p_original;
 	Mat4 p_jittered;
-	Mat4 r;
-	Mat4 t;
-	Mat4 r_prev;
-	Mat4 t_prev;
-	Vec4 globalPos;
-	float WHRatio;
+	Mat4 v;
+	Mat4 v_prev;
+	Mat4 p_inv;
+	Mat4 v_inv;
 	float zNear;
 	float zFar;
-	float padding[25];
+	float minLogLuminance;
+	float maxLogLuminance;
+	Vec4 sun_direction;
+	Vec4 sun_illuminance;
+	Vec4 viewportSize;
+	Vec4 posWSNormalizer;
+	float padding[12];
 };
 
-struct alignas(16) SunGPUData
-{
-	Vec4 dir;
-	Vec4 luminance;
-	Mat4 r;
-	float padding[8];
-};
-
-struct alignas(16) CSMGPUData
+struct alignas(16) CSMConstantBuffer
 {
 	Mat4 p;
 	Mat4 v;
@@ -37,7 +33,7 @@ struct alignas(16) CSMGPUData
 };
 
 // w component of luminance is attenuationRadius
-struct alignas(16) PointLightGPUData
+struct alignas(16) PointLightConstantBuffer
 {
 	Vec4 pos;
 	Vec4 luminance;
@@ -45,14 +41,14 @@ struct alignas(16) PointLightGPUData
 };
 
 // w component of luminance is sphereRadius
-struct alignas(16) SphereLightGPUData
+struct alignas(16) SphereLightConstantBuffer
 {
 	Vec4 pos;
 	Vec4 luminance;
 	//float sphereRadius;
 };
 
-struct alignas(16) MeshGPUData
+struct alignas(16) PerObjectConstantBuffer
 {
 	Mat4 m;
 	Mat4 m_prev;
@@ -61,7 +57,7 @@ struct alignas(16) MeshGPUData
 	float padding[15];
 };
 
-struct alignas(16) MaterialGPUData
+struct alignas(16) MaterialConstantBuffer
 {
 	MeshCustomMaterial customMaterial;
 	int32_t useNormalTexture = true;
@@ -76,30 +72,17 @@ struct alignas(16) MaterialGPUData
 	Mat4 padding4;
 };
 
-struct alignas(16) SkyGPUData
-{
-	Mat4 p_inv;
-	Mat4 r_inv;
-	Vec4 viewportSize;
-	Vec4 posWSNormalizer;
-	float padding[24];
-};
-
-struct alignas(16) DispatchParamsGPUData
+struct alignas(16) DispatchParamsConstantBuffer
 {
 	TVec4<uint32_t> numThreadGroups;
 	TVec4<uint32_t> numThreads;
 };
 
-struct alignas(16) GICameraGPUData
+struct alignas(16) GIConstantBuffer
 {
 	Mat4 p;
 	Mat4 r[6];
 	Mat4 t;
-};
-
-struct alignas(16) GISkyGPUData
-{
 	Mat4 p_inv;
 	Mat4 v_inv[6];
 	Vec4 probeCount;
@@ -108,27 +91,27 @@ struct alignas(16) GISkyGPUData
 	Vec4 irradianceVolumeOffset;
 };
 
-struct OpaquePassDrawCallData
+struct OpaquePassDrawCallInfo
 {
 	MeshDataComponent* mesh;
 	MaterialDataComponent* material;
 };
 
-struct TransparentPassDrawCallData
+struct TransparentPassDrawCallInfo
 {
 	MeshDataComponent* mesh;
-	uint32_t meshGPUDataIndex;
-	uint32_t materialGPUDataIndex;
+	uint32_t meshConstantBufferIndex;
+	uint32_t materialConstantBufferIndex;
 };
 
-struct BillboardPassDrawCallData
+struct BillboardPassDrawCallInfo
 {
 	TextureDataComponent* iconTexture;
-	uint32_t meshGPUDataOffset;
+	uint32_t meshConstantBufferOffset;
 	uint32_t instanceCount;
 };
 
-struct DebugPassDrawCallData
+struct DebugPassDrawCallInfo
 {
 	MeshDataComponent* mesh;
 };

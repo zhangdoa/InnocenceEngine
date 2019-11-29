@@ -55,7 +55,7 @@ bool SunShadowPass::Setup()
 
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 6;
+	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 5;
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 
@@ -78,16 +78,16 @@ bool SunShadowPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Geometry, l_CSMGBDC->m_ResourceBinder, 1, 6, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Geometry, l_CSMGBDC->m_ResourceBinder, 1, 5, Accessibility::ReadOnly);
 
 	uint32_t l_offset = 0;
 
 	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getSunShadowPassDrawCallCount();
-	auto l_sunShadowPassDrawCallData = g_pModuleManager->getRenderingFrontend()->getSunShadowPassDrawCallData();
+	auto l_sunShadowPassDrawCallInfo = g_pModuleManager->getRenderingFrontend()->getSunShadowPassDrawCallInfo();
 
 	for (uint32_t i = 0; i < l_totalDrawCallCount; i++)
 	{
-		auto l_drawCallData = l_sunShadowPassDrawCallData[i];
+		auto l_drawCallData = l_sunShadowPassDrawCallInfo[i];
 
 		if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 		{

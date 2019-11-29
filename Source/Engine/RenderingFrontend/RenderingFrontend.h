@@ -41,31 +41,29 @@ public:
 
 	RenderPassDesc getDefaultRenderPassDesc() override;
 
-	const CameraGPUData& getCameraGPUData() override;
-	const SunGPUData& getSunGPUData() override;
-	const std::vector<CSMGPUData>& getCSMGPUData() override;
-	const std::vector<PointLightGPUData>& getPointLightGPUData() override;
-	const std::vector<SphereLightGPUData>& getSphereLightGPUData() override;
-	const SkyGPUData& getSkyGPUData() override;
+	const PerFrameConstantBuffer& getPerFrameConstantBuffer() override;
+	const std::vector<CSMConstantBuffer>& getCSMConstantBuffer() override;
+	const std::vector<PointLightConstantBuffer>& getPointLightConstantBuffer() override;
+	const std::vector<SphereLightConstantBuffer>& getSphereLightConstantBuffer() override;
 
 	uint32_t getSunShadowPassDrawCallCount() override;
-	const std::vector<OpaquePassDrawCallData>& getSunShadowPassDrawCallData() override;
-	const std::vector<MeshGPUData>& getSunShadowPassMeshGPUData() override;
+	const std::vector<OpaquePassDrawCallInfo>& getSunShadowPassDrawCallInfo() override;
+	const std::vector<PerObjectConstantBuffer>& getSunShadowPassPerObjectConstantBuffer() override;
 
 	uint32_t getOpaquePassDrawCallCount() override;
-	const std::vector<OpaquePassDrawCallData>& getOpaquePassDrawCallData() override;
-	const std::vector<MeshGPUData>& getOpaquePassMeshGPUData() override;
-	const std::vector<MaterialGPUData>& getOpaquePassMaterialGPUData() override;
+	const std::vector<OpaquePassDrawCallInfo>& getOpaquePassDrawCallInfo() override;
+	const std::vector<PerObjectConstantBuffer>& getOpaquePassPerObjectConstantBuffer() override;
+	const std::vector<MaterialConstantBuffer>& getOpaquePassMaterialConstantBuffer() override;
 
 	uint32_t getTransparentPassDrawCallCount() override;
-	const std::vector<TransparentPassDrawCallData>& getTransparentPassDrawCallData() override;
-	const std::vector<MeshGPUData>& getTransparentPassMeshGPUData() override;
-	const std::vector<MaterialGPUData>& getTransparentPassMaterialGPUData() override;
+	const std::vector<TransparentPassDrawCallInfo>& getTransparentPassDrawCallInfo() override;
+	const std::vector<PerObjectConstantBuffer>& getTransparentPassPerObjectConstantBuffer() override;
+	const std::vector<MaterialConstantBuffer>& getTransparentPassMaterialConstantBuffer() override;
 
-	const std::vector<BillboardPassDrawCallData>& getBillboardPassDrawCallData() override;
-	const std::vector<MeshGPUData>& getBillboardPassMeshGPUData() override;
+	const std::vector<BillboardPassDrawCallInfo>& getBillboardPassDrawCallInfo() override;
+	const std::vector<PerObjectConstantBuffer>& getBillboardPassPerObjectConstantBuffer() override;
 
 	uint32_t getDebugPassDrawCallCount() override;
-	const std::vector<DebugPassDrawCallData>& getDebugPassDrawCallData() override;
-	const std::vector<MeshGPUData>& getDebugPassMeshGPUData() override;
+	const std::vector<DebugPassDrawCallInfo>& getDebugPassDrawCallInfo() override;
+	const std::vector<PerObjectConstantBuffer>& getDebugPassPerObjectConstantBuffer() override;
 };

@@ -5,7 +5,7 @@ namespace DefaultGPUBuffers
 {
 	enum class GPUBufferUsageType
 	{
-		MainCamera,
+		PerFrame,
 		SunShadowPassMesh,
 		OpaquePassMesh,
 		OpaquePassMaterial,
@@ -13,14 +13,11 @@ namespace DefaultGPUBuffers
 		TransparentPassMaterial,
 		VolumetricFogPassMesh,
 		VolumetricFogPassMaterial,
-		Sun,
 		PointLight,
 		SphereLight,
 		CSM,
-		Sky,
-		Compute,
-		GICamera,
-		GISky,
+		ComputeDispatchParam,
+		GI,
 		Billboard
 	};
 

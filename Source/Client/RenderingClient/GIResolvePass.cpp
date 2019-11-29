@@ -110,13 +110,13 @@ bool GIResolvePass::InitializeGPUBuffers()
 			m_irradianceVolumeRange = l_max - l_min;
 			m_irradianceVolumePosOffset = l_min;
 
-			std::vector<uint32_t> l_brickGPUData;
+			std::vector<uint32_t> l_brickConstantBuffer;
 
-			l_brickGPUData.resize(l_bricks.size() * 2);
+			l_brickConstantBuffer.resize(l_bricks.size() * 2);
 			for (size_t i = 0; i < l_bricks.size(); i++)
 			{
-				l_brickGPUData[2 * i] = l_bricks[i].surfelRangeBegin;
-				l_brickGPUData[2 * i + 1] = l_bricks[i].surfelRangeEnd;
+				l_brickConstantBuffer[2 * i] = l_bricks[i].surfelRangeBegin;
+				l_brickConstantBuffer[2 * i + 1] = l_bricks[i].surfelRangeEnd;
 			}
 
 			m_brickGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("BrickGPUBuffer/");
@@ -125,7 +125,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 			m_brickGBDC->m_ElementCount = l_bricks.size();
 			m_brickGBDC->m_ElementSize = sizeof(uint32_t) * 2;
 			m_brickGBDC->m_BindingPoint = 0;
-			m_brickGBDC->m_InitialData = &l_brickGPUData[0];
+			m_brickGBDC->m_InitialData = &l_brickConstantBuffer[0];
 
 			g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_brickGBDC);
 
@@ -370,7 +370,7 @@ bool GIResolvePass::setupSky()
 	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs.resize(2);
 	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 3;
+	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 
 	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Image;
 	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
@@ -439,14 +439,14 @@ bool GIResolvePass::setupSurfels()
 
 	m_surfelRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_surfelRPDC->m_ResourceBinderLayoutDescs.resize(8);
+	m_surfelRPDC->m_ResourceBinderLayoutDescs.resize(7);
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 3;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 5;
 
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
@@ -457,25 +457,21 @@ bool GIResolvePass::setupSurfels()
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 8;
 
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 0;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 11;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 1;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 0;
 
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 1;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 0;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 1;
 
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_BinderAccessibility = Accessibility::ReadWrite;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 1;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 1;
-
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[7].m_ResourceBinderType = ResourceBinderType::Image;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[7].m_DescriptorSetIndex = 2;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[7].m_DescriptorIndex = 0;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[7].m_IndirectBinding = true;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Image;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 2;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 0;
+	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_IndirectBinding = true;
 
 	m_surfelRPDC->m_ShaderProgram = m_surfelSPC;
 
@@ -499,11 +495,11 @@ bool GIResolvePass::setupBricks()
 	m_brickRPDC->m_ResourceBinderLayoutDescs.resize(5);
 	m_brickRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_brickRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 8;
+	m_brickRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 6;
 
 	m_brickRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_brickRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 11;
+	m_brickRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 8;
 
 	m_brickRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_brickRPDC->m_ResourceBinderLayoutDescs[2].m_BinderAccessibility = Accessibility::ReadWrite;
@@ -545,15 +541,15 @@ bool GIResolvePass::setupProbes()
 	m_probeRPDC->m_ResourceBinderLayoutDescs.resize(7);
 	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 7;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 
 	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 8;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 6;
 
 	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 11;
+	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 8;
 
 	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_BinderAccessibility = Accessibility::ReadWrite;
@@ -602,15 +598,15 @@ bool GIResolvePass::setupIrradianceVolume()
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs.resize(7);
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 7;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 8;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 6;
 
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 11;
+	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 8;
 
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Image;
 	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_BinderAccessibility = Accessibility::ReadOnly;
@@ -649,13 +645,13 @@ bool GIResolvePass::setupIrradianceVolume()
 
 bool GIResolvePass::generateSkyRadiance()
 {
-	auto l_SunGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sun);
+	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_skyRadianceRPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_skyRadianceRPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_skyRadianceRPDC);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyRadianceRPDC, ShaderStage::Compute, l_SunGBDC->m_ResourceBinder, 0, 3, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyRadianceRPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_skyRadianceRPDC, ShaderStage::Compute, m_skyRadianceVolume->m_ResourceBinder, 1, 0, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_skyRadianceRPDC, 1, 1, 1);
@@ -688,11 +684,10 @@ bool GIResolvePass::generateSkyIrradiance()
 
 bool GIResolvePass::litSurfels()
 {
-	auto l_MainCameraGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::MainCamera);
-	auto l_SunGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sun);
-	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Compute);
+	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
+	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::ComputeDispatchParam);
 	auto l_CSMGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::CSM);
-	auto l_GISkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GISky);
+	auto l_GIGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GI);
 
 	auto l_threadCountPerGroupPerSide = 8;
 	auto l_totalThreadGroupsCount = std::ceil((double)m_surfelGBDC->m_ElementCount / (double)(l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide));
@@ -702,7 +697,7 @@ bool GIResolvePass::litSurfels()
 	auto l_numThreadsY = (uint32_t)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
 	auto l_numThreadsZ = (uint32_t)std::ceil(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
 
-	DispatchParamsGPUData l_surfelLitWorkload;
+	DispatchParamsConstantBuffer l_surfelLitWorkload;
 	l_surfelLitWorkload.numThreadGroups = TVec4<uint32_t>(l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, 0);
 	l_surfelLitWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
@@ -712,20 +707,19 @@ bool GIResolvePass::litSurfels()
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_surfelRPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_surfelRPDC);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_MainCameraGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_SunGBDC->m_ResourceBinder, 1, 3, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_CSMGBDC->m_ResourceBinder, 2, 6, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 3, 8, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_GISkyGBDC->m_ResourceBinder, 4, 11, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC->m_ResourceBinder, 5, 0, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 6, 1, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, SunShadowPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 7, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_CSMGBDC->m_ResourceBinder, 1, 5, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 2, 6, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_GIGBDC->m_ResourceBinder, 3, 8, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC->m_ResourceBinder, 4, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 5, 1, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, SunShadowPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 6, 0);
 
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_surfelRPDC, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC->m_ResourceBinder, 5, 0, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 6, 1, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, SunShadowPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 7, 0);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC->m_ResourceBinder, 4, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 5, 1, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, SunShadowPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 6, 0);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_surfelRPDC);
 
@@ -734,8 +728,8 @@ bool GIResolvePass::litSurfels()
 
 bool GIResolvePass::litBricks()
 {
-	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Compute);
-	auto l_GISkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GISky);
+	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::ComputeDispatchParam);
+	auto l_GIGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GI);
 
 	auto l_threadCountPerGroupPerSide = 8;
 	auto l_totalThreadGroupsCount = (double)m_brickGBDC->m_ElementCount / (l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide);
@@ -745,7 +739,7 @@ bool GIResolvePass::litBricks()
 	auto l_numThreadsY = (uint32_t)(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
 	auto l_numThreadsZ = (uint32_t)(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
 
-	DispatchParamsGPUData l_brickLitWorkload;
+	DispatchParamsConstantBuffer l_brickLitWorkload;
 	l_brickLitWorkload.numThreadGroups = TVec4<uint32_t>(l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, 0);
 	l_brickLitWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
@@ -755,8 +749,8 @@ bool GIResolvePass::litBricks()
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_brickRPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_brickRPDC);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 0, 8, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, l_GISkyGBDC->m_ResourceBinder, 1, 11, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 0, 6, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, l_GIGBDC->m_ResourceBinder, 1, 8, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_brickGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 3, 1, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_brickIrradianceGBDC->m_ResourceBinder, 4, 2, Accessibility::ReadWrite);
@@ -774,9 +768,9 @@ bool GIResolvePass::litBricks()
 
 bool GIResolvePass::litProbes()
 {
-	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Compute);
-	auto l_SkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sky);
-	auto l_GISkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GISky);
+	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
+	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::ComputeDispatchParam);
+	auto l_GIGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GI);
 
 	auto l_threadCountPerGroupPerSide = 8;
 	auto l_totalThreadGroupsCount = (double)m_probeGBDC->m_ElementCount / (l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide * l_threadCountPerGroupPerSide);
@@ -786,7 +780,7 @@ bool GIResolvePass::litProbes()
 	auto l_numThreadsY = (uint32_t)(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
 	auto l_numThreadsZ = (uint32_t)(l_averangeThreadGroupsCountPerSide * l_threadCountPerGroupPerSide);
 
-	DispatchParamsGPUData l_probeLitWorkload;
+	DispatchParamsConstantBuffer l_probeLitWorkload;
 	l_probeLitWorkload.numThreadGroups = TVec4<uint32_t>(l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, 0);
 	l_probeLitWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
@@ -796,9 +790,9 @@ bool GIResolvePass::litProbes()
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_probeRPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_probeRPDC);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, l_SkyGBDC->m_ResourceBinder, 0, 7, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 1, 8, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, l_GISkyGBDC->m_ResourceBinder, 2, 11, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 1, 6, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, l_GIGBDC->m_ResourceBinder, 2, 8, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_probeGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_brickFactorGBDC->m_ResourceBinder, 4, 1, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_brickIrradianceGBDC->m_ResourceBinder, 5, 2, Accessibility::ReadWrite);
@@ -818,15 +812,15 @@ bool GIResolvePass::litProbes()
 
 bool GIResolvePass::generateIrradianceVolume()
 {
-	auto l_SkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sky);
-	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Compute);
-	auto l_GISkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GISky);
+	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
+	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::ComputeDispatchParam);
+	auto l_GIGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GI);
 
 	auto l_numThreadsX = 64;
 	auto l_numThreadsY = 32;
 	auto l_numThreadsZ = 64;
 
-	DispatchParamsGPUData l_irradianceVolumeLitWorkload;
+	DispatchParamsConstantBuffer l_irradianceVolumeLitWorkload;
 	l_irradianceVolumeLitWorkload.numThreadGroups = TVec4<uint32_t>(8, 4, 8, 0);
 	l_irradianceVolumeLitWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
@@ -838,9 +832,9 @@ bool GIResolvePass::generateIrradianceVolume()
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, m_irradianceVolumeSDC->m_ResourceBinder, 6, 0);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, l_SkyGBDC->m_ResourceBinder, 0, 7, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 1, 8, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, l_GISkyGBDC->m_ResourceBinder, 2, 11, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 1, 6, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, l_GIGBDC->m_ResourceBinder, 2, 8, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, m_probeVolume->m_ResourceBinder, 3, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, m_irradianceVolume->m_ResourceBinder, 4, 0, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, m_skyIrradianceGBDC->m_ResourceBinder, 5, 1, Accessibility::ReadWrite);
@@ -869,28 +863,28 @@ bool GIResolvePass::PrepareCommandList()
 
 	if (m_GIDataLoaded)
 	{
-		auto l_SkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Sky);
-		auto l_GISkyGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GISky);
-		auto l_cameraGPUData = g_pModuleManager->getRenderingFrontend()->getCameraGPUData();
+		auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
+		auto l_GIGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::GI);
+		auto l_cameraConstantBuffer = g_pModuleManager->getRenderingFrontend()->getPerFrameConstantBuffer();
 
-		SkyGPUData l_SkyGPUData = g_pModuleManager->getRenderingFrontend()->getSkyGPUData();
-		l_SkyGPUData.posWSNormalizer = m_irradianceVolumeRange;
+		PerFrameConstantBuffer l_PerFrameConstantBuffer = g_pModuleManager->getRenderingFrontend()->getPerFrameConstantBuffer();
+		l_PerFrameConstantBuffer.posWSNormalizer = m_irradianceVolumeRange;
 
-		GISkyGPUData l_GISkyGPUData;
+		GIConstantBuffer l_GIConstantBuffer;
 
 		auto l_probeInfo = GIDataLoader::GetProbeInfo();
-		l_GISkyGPUData.probeCount = l_probeInfo.probeCount;
-		l_GISkyGPUData.probeRange = l_probeInfo.probeRange;
-		l_GISkyGPUData.workload.x = (float)m_surfelGBDC->m_ElementCount;
-		l_GISkyGPUData.workload.y = (float)m_brickGBDC->m_ElementCount;
-		l_GISkyGPUData.workload.z = (float)m_probeGBDC->m_ElementCount;
-		l_GISkyGPUData.irradianceVolumeOffset = m_irradianceVolumePosOffset;
-		l_GISkyGPUData.probeCount.w = m_minProbePos.x;
-		l_GISkyGPUData.probeRange.w = m_minProbePos.y;
-		l_GISkyGPUData.irradianceVolumeOffset.w = m_minProbePos.z;
+		l_GIConstantBuffer.probeCount = l_probeInfo.probeCount;
+		l_GIConstantBuffer.probeRange = l_probeInfo.probeRange;
+		l_GIConstantBuffer.workload.x = (float)m_surfelGBDC->m_ElementCount;
+		l_GIConstantBuffer.workload.y = (float)m_brickGBDC->m_ElementCount;
+		l_GIConstantBuffer.workload.z = (float)m_probeGBDC->m_ElementCount;
+		l_GIConstantBuffer.irradianceVolumeOffset = m_irradianceVolumePosOffset;
+		l_GIConstantBuffer.probeCount.w = m_minProbePos.x;
+		l_GIConstantBuffer.probeRange.w = m_minProbePos.y;
+		l_GIConstantBuffer.irradianceVolumeOffset.w = m_minProbePos.z;
 
-		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_SkyGBDC, &l_SkyGPUData);
-		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GISkyGBDC, &l_GISkyGPUData);
+		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_PerFrameCBufferGBDC, &l_PerFrameConstantBuffer);
+		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GIGBDC, &l_GIConstantBuffer);
 
 		generateSkyRadiance();
 		generateSkyIrradiance();
