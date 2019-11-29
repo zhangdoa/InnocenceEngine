@@ -20,7 +20,8 @@ struct alignas(16) PerFrameConstantBuffer
 	Vec4 sun_illuminance;
 	Vec4 viewportSize;
 	Vec4 posWSNormalizer;
-	float padding[12];
+	Vec4 camera_posWS;
+	float padding[8];
 };
 
 struct alignas(16) CSMConstantBuffer

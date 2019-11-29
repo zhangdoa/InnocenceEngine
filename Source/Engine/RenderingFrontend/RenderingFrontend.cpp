@@ -387,6 +387,8 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 			l_mainCameraTransformComponent->m_globalTransformVector.m_pos
 		);
 
+	l_PerFrameConstantBuffer.camera_posWS = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
+
 	l_PerFrameConstantBuffer.v = r * t;
 
 	auto r_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_rotationMat.inverse();
