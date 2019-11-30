@@ -7,28 +7,47 @@ struct DispatchParam
 	uvec4 numThreads;
 };
 
-layout(set = 0, binding = 8, std140) uniform dispatchParamsCBuffer
+struct PerFrame_CB
+{
+	mat4 p_original; // 0 - 3
+	mat4 p_jittered; // 4 - 7
+	mat4 v; // 8 - 11
+	mat4 v_prev; // 12 - 15
+	mat4 p_inv; // 16 - 19
+	mat4 v_inv; // 20 - 23
+	float zNear; // Tight packing 24
+	float zFar; // Tight packing 24
+	float minLogLuminance; // Tight packing 24
+	float maxLogLuminance; // Tight packing 24
+	vec4 sun_direction; // 25
+	vec4 sun_illuminance; // 26
+	vec4 viewportSize; // 27
+	vec4 posWSNormalizer; // 28
+	vec4 camera_posWS; // 29
+	vec4 padding[2]; // 30 - 31
+};
+
+layout(set = 0, binding = 6, std140) uniform dispatchParamsCBuffer
 {
 	DispatchParam dispatchParams[8];
 } _26;
 
-layout(set = 0, binding = 7, std140) uniform skyCBuffer
+layout(std140, row_major, set = 0, binding = 0) uniform perFrameCBufferBlock
 {
-	layout(row_major) mat4 sky_p_inv;
-	layout(row_major) mat4 sky_v_inv;
-	vec4 sky_viewportSize;
-	vec4 sky_posWSNormalizer;
-	vec4 sky_padding[6];
+	PerFrame_CB data;
 } _71;
 
-layout(set = 0, binding = 11, std140) uniform GISkyCBuffer
+layout(std140, row_major, set = 0, binding = 8) uniform GICBufferBlock
 {
-	layout(row_major) mat4 GISky_p_inv;
-	layout(row_major) mat4 GISky_v_inv[6];
-	vec4 GISky_probeCount;
-	vec4 GISky_probeRange;
-	vec4 GISky_workload;
-	vec4 GISky_irradianceVolumeOffset;
+	mat4 p;
+	mat4 r[6];
+	mat4 t;
+	mat4 p_inv;
+	mat4 v_inv[6];
+	vec4 probeCount;
+	vec4 probeRange;
+	vec4 workload;
+	vec4 irradianceVolumeOffset;
 } _97;
 
 layout(set = 1, binding = 0) uniform texture3D in_probeVolume;
@@ -39,7 +58,7 @@ void main()
 {
 	if (((gl_GlobalInvocationID.x < _26.dispatchParams[5].numThreads.x) && (gl_GlobalInvocationID.y < _26.dispatchParams[5].numThreads.y)) && (gl_GlobalInvocationID.z < _26.dispatchParams[5].numThreads.z))
 	{
-		vec3 _374 = (((((vec3(gl_GlobalInvocationID) / vec3(_26.dispatchParams[5].numThreads.xyz)) * _71.sky_posWSNormalizer.xyz) + ((_71.sky_posWSNormalizer.xyz / vec3(_26.dispatchParams[5].numThreads.xyz)) * vec3(0.5))) + _97.GISky_irradianceVolumeOffset.xyz) - vec3(_97.GISky_probeCount.w, _97.GISky_probeRange.w, _97.GISky_irradianceVolumeOffset.w)) / _97.GISky_probeRange.xyz;
+		vec3 _374 = (((((vec3(gl_GlobalInvocationID) / vec3(_26.dispatchParams[5].numThreads.xyz)) * _71.data.posWSNormalizer.xyz) + ((_71.data.posWSNormalizer.xyz / vec3(_26.dispatchParams[5].numThreads.xyz)) * vec3(0.5))) + _97.irradianceVolumeOffset.xyz) - vec3(_97.probeCount.w, _97.probeRange.w, _97.irradianceVolumeOffset.w)) / _97.probeRange.xyz;
 		vec4 _298[6];
 		for (uint _458 = 0u; _458 < 6u; )
 		{

@@ -15,14 +15,14 @@ layout(std430, set = 1, binding = 1) buffer irradianceSSBOBlock
 
 void main()
 {
-	if ((gl_GlobalInvocationID.x < dispatchParamsUBO.data[2].numThreads.x)
-		&& (gl_GlobalInvocationID.y < dispatchParamsUBO.data[2].numThreads.y)
-		&& (gl_GlobalInvocationID.z < dispatchParamsUBO.data[2].numThreads.z)
+	if ((gl_GlobalInvocationID.x < dispatchParamsCBuffer.data[2].numThreads.x)
+		&& (gl_GlobalInvocationID.y < dispatchParamsCBuffer.data[2].numThreads.y)
+		&& (gl_GlobalInvocationID.z < dispatchParamsCBuffer.data[2].numThreads.z)
 		)
 	{
-		uint l_surfelIndex = (gl_GlobalInvocationID.x + (gl_GlobalInvocationID.y * dispatchParamsUBO.data[2].numThreads.x)) + (gl_GlobalInvocationID.z * dispatchParamsUBO.data[2].numThreads.x * dispatchParamsUBO.data[2].numThreads.y);
+		uint l_surfelIndex = (gl_GlobalInvocationID.x + (gl_GlobalInvocationID.y * dispatchParamsCBuffer.data[2].numThreads.x)) + (gl_GlobalInvocationID.z * dispatchParamsCBuffer.data[2].numThreads.x * dispatchParamsCBuffer.data[2].numThreads.y);
 
-		if (l_surfelIndex < GISkyUBO.workload.x)
+		if (l_surfelIndex < GICBuffer.workload.x)
 		{
 			Surfel l_surfel = surfelsSSBO.data[l_surfelIndex];
 
@@ -32,8 +32,8 @@ void main()
 			vec3 albedo = l_surfel.albedo.xyz;
 
 			vec3 N = normalize(normalWS);
-			vec3 V = normalize(cameraUBO.globalPos.xyz - posWS);
-			vec3 L = normalize(-sunUBO.data.direction.xyz);
+			vec3 V = normalize(perFrameCBuffer.data.camera_posWS.xyz - posWS);
+			vec3 L = normalize(-perFrameCBuffer.data.sun_direction.xyz);
 			float NdotV = max(dot(N, V), 0.0);
 			float NdotL = max(dot(N, L), 0.0);
 
@@ -42,7 +42,7 @@ void main()
 			// Diffuse BRDF
 			vec3 BRDF = kD * albedo / PI;
 
-			vec3 Lo = BRDF * sunUBO.data.illuminance.xyz * NdotL;
+			vec3 Lo = BRDF * perFrameCBuffer.data.sun_illuminance.xyz * NdotL;
 
 			irradianceSSBO.data[l_surfelIndex] = vec4(Lo, 1.0);
 		}

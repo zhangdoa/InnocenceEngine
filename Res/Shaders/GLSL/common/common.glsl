@@ -6,6 +6,79 @@
 //#define uni_drawCSMSplitedArea
 //#define uni_drawPointLightShadow
 
+struct PerFrame_CB
+{
+	mat4 p_original; // 0 - 3
+	mat4 p_jittered; // 4 - 7
+	mat4 v; // 8 - 11
+	mat4 v_prev; // 12 - 15
+	mat4 p_inv; // 16 - 19
+	mat4 v_inv; // 20 - 23
+	float zNear; // Tight packing 24
+	float zFar; // Tight packing 24
+	float minLogLuminance; // Tight packing 24
+	float maxLogLuminance; // Tight packing 24
+	vec4 sun_direction; // 25
+	vec4 sun_illuminance; // 26
+	vec4 viewportSize; // 27
+	vec4 posWSNormalizer; // 28
+	vec4 camera_posWS; // 29
+	vec4 padding[2]; // 30 - 31
+};
+
+struct PerObject_CB
+{
+	mat4 m;
+	mat4 m_prev;
+	mat4 normalMat;
+	float UUID;
+	float padding[3];
+};
+
+struct Material_CB
+{
+	vec4 albedo; // 0
+	vec4 MRAT; // 1
+	bool useNormalTexture;  // Tight packing 2
+	bool useAlbedoTexture;  // Tight packing 2
+	bool useMetallicTexture;  // Tight packing 2
+	bool useRoughnessTexture;  // Tight packing 2
+	bool useAOTexture; // Tight packing 3
+	bool materialType; // Tight packing 3
+	float padding[12]; // 4 - 15
+};
+
+// w component of luminousFlux is attenuationRadius
+struct PointLight_CB
+{
+	vec4 position;
+	vec4 luminousFlux;
+	//float attenuationRadius;
+};
+
+// w component of luminousFlux is sphereRadius
+struct SphereLight_CB
+{
+	vec4 position;
+	vec4 luminousFlux;
+	//float sphereRadius;
+};
+
+struct CSM_CB
+{
+	mat4 p;
+	mat4 v;
+	vec4 AABBMax;
+	vec4 AABBMin;
+	float padding[6];
+};
+
+struct DispatchParam_CB
+{
+	uvec4 numThreadGroups;
+	uvec4 numThreads;
+};
+
 struct Plane
 {
 	vec3 N;
@@ -21,51 +94,6 @@ struct Sphere
 {
 	vec3 c;
 	float r;
-};
-
-struct meshData
-{
-	mat4 m;
-	mat4 m_prev;
-	mat4 normalMat;
-	float UUID;
-};
-
-struct dirLight
-{
-	vec4 direction;
-	vec4 illuminance;
-	mat4 r;
-};
-
-// w component of luminousFlux is attenuationRadius
-struct pointLight
-{
-	vec4 position;
-	vec4 luminousFlux;
-	//float attenuationRadius;
-};
-
-// w component of luminousFlux is sphereRadius
-struct sphereLight
-{
-	vec4 position;
-	vec4 luminousFlux;
-	//float sphereRadius;
-};
-
-struct CSM {
-	mat4 p;
-	mat4 v;
-	vec4 AABBMax;
-	vec4 AABBMin;
-	float padding[6];
-};
-
-struct DispatchParam
-{
-	uvec4 numThreadGroups;
-	uvec4 numThreads;
 };
 
 struct SH9
@@ -116,4 +144,4 @@ const int NR_POINT_LIGHTS = 1024;
 const int NR_SPHERE_LIGHTS = 128;
 const int NR_CSM_SPLITS = 4;
 
-#include "common/UBO.glsl"
+#include "common/CBuffers.glsl"

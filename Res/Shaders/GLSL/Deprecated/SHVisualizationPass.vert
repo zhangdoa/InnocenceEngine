@@ -14,9 +14,9 @@ void main()
 {
 	// output the fragment position in world space
 	vec4 posWS = uni_m_local * inPosition;
-	vec4 posVS = cameraUBO.r * cameraUBO.t * posWS;
+	vec4 posVS = perFrameCBuffer.data.v * posWS;
 
 	thefrag_Normal = mat3(transpose(inverse(uni_m_local))) * inNormal.xyz;
 
-	gl_Position = cameraUBO.p_original * posVS;
+	gl_Position = perFrameCBuffer.data.p_original * posVS;
 }

@@ -1,12 +1,29 @@
 #version 450
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
-layout(set = 0, binding = 3, std140) uniform sunCBuffer
+struct PerFrame_CB
 {
-	vec4 sun_dir;
-	vec4 sun_illuminance;
-	layout(row_major) mat4 sun_r;
-	vec4 sun_padding[2];
+	mat4 p_original; // 0 - 3
+	mat4 p_jittered; // 4 - 7
+	mat4 v; // 8 - 11
+	mat4 v_prev; // 12 - 15
+	mat4 p_inv; // 16 - 19
+	mat4 v_inv; // 20 - 23
+	float zNear; // Tight packing 24
+	float zFar; // Tight packing 24
+	float minLogLuminance; // Tight packing 24
+	float maxLogLuminance; // Tight packing 24
+	vec4 sun_direction; // 25
+	vec4 sun_illuminance; // 26
+	vec4 viewportSize; // 27
+	vec4 posWSNormalizer; // 28
+	vec4 camera_posWS; // 29
+	vec4 padding[2]; // 30 - 31
+};
+
+layout(std140, row_major, set = 0, binding = 0) uniform perFrameCBufferBlock
+{
+	PerFrame_CB data;
 } _386;
 
 layout(set = 1, binding = 0, rgba32f) uniform writeonly image3D out_skyRadiance;
@@ -24,7 +41,7 @@ void main()
 		vec3 _1040;
 		vec3 _1041;
 		_1041 = (vec3(gl_GlobalInvocationID) + vec3(1.0)) * vec3(0.125, 0.125, 0.16666667163372039794921875);
-		_1040 = -_386.sun_dir.xyz;
+		_1040 = -_386.data.sun_direction.xyz;
 		vec3 _1044;
 		vec3 _1053;
 		vec3 _1088;

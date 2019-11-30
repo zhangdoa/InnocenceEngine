@@ -4,7 +4,7 @@
 
 layout(local_size_x = BLOCK_SIZE, local_size_y = BLOCK_SIZE, local_size_z = 1) in;
 
-layout(std430, set = 2, binding = 0) coherent buffer gridFrustumsSSBOBlock
+layout(std430, set = 1, binding = 0) coherent buffer gridFrustumsSSBOBlock
 {
 	Frustum data[];
 } gridFrustumsSSBO;
@@ -31,7 +31,7 @@ void main()
 	// Now convert the screen space points to view space
 	for (int i = 0; i < 4; i++)
 	{
-		viewSpace[i] = ScreenToView(screenSpace[i], skyUBO.viewportSize.xy, skyUBO.p_inv);
+		viewSpace[i] = ScreenToView(screenSpace[i], perFrameCBuffer.data.viewportSize.xy, perFrameCBuffer.data.p_inv);
 	}
 
 	// Now build the frustum planes from the view space points
@@ -47,9 +47,9 @@ void main()
 	frustum.planes[3] = ComputePlane(eyePos, viewSpace[3].xyz, viewSpace[2].xyz);
 
 	// Store the computed frustum in global memory (if our thread ID is in bounds of the grid).
-	if (gl_GlobalInvocationID.x < dispatchParamsUBO.data[0].numThreads.x && gl_GlobalInvocationID.y < dispatchParamsUBO.data[0].numThreads.y)
+	if (gl_GlobalInvocationID.x < dispatchParamsCBuffer.data[0].numThreads.x && gl_GlobalInvocationID.y < dispatchParamsCBuffer.data[0].numThreads.y)
 	{
-		uint index = gl_GlobalInvocationID.x + (gl_GlobalInvocationID.y * dispatchParamsUBO.data[0].numThreads.x);
+		uint index = gl_GlobalInvocationID.x + (gl_GlobalInvocationID.y * dispatchParamsCBuffer.data[0].numThreads.x);
 		gridFrustumsSSBO.data[index] = frustum;
 	}
 

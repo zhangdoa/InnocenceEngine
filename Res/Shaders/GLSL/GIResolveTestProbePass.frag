@@ -1,22 +1,41 @@
 #version 450
 
-layout(set = 0, binding = 11, std140) uniform GISkyCBuffer
+struct PerFrame_CB
 {
-	layout(row_major) mat4 GISky_p_inv;
-	layout(row_major) mat4 GISky_v_inv[6];
-	vec4 GISky_probeCount;
-	vec4 GISky_probeRange;
-	vec4 GISky_workload;
-	vec4 GISky_irradianceVolumeOffset;
+	mat4 p_original; // 0 - 3
+	mat4 p_jittered; // 4 - 7
+	mat4 v; // 8 - 11
+	mat4 v_prev; // 12 - 15
+	mat4 p_inv; // 16 - 19
+	mat4 v_inv; // 20 - 23
+	float zNear; // Tight packing 24
+	float zFar; // Tight packing 24
+	float minLogLuminance; // Tight packing 24
+	float maxLogLuminance; // Tight packing 24
+	vec4 sun_direction; // 25
+	vec4 sun_illuminance; // 26
+	vec4 viewportSize; // 27
+	vec4 posWSNormalizer; // 28
+	vec4 camera_posWS; // 29
+	vec4 padding[2]; // 30 - 31
+};
+
+layout(std140, row_major, set = 0, binding = 8) uniform GICBufferBlock
+{
+	mat4 p;
+	mat4 r[6];
+	mat4 t;
+	mat4 p_inv;
+	mat4 v_inv[6];
+	vec4 probeCount;
+	vec4 probeRange;
+	vec4 workload;
+	vec4 irradianceVolumeOffset;
 } _53;
 
-layout(set = 0, binding = 7, std140) uniform skyCBuffer
+layout(std140, row_major, set = 0, binding = 0) uniform perFrameCBufferBlock
 {
-	layout(row_major) mat4 sky_p_inv;
-	layout(row_major) mat4 sky_v_inv;
-	vec4 sky_viewportSize;
-	vec4 sky_posWSNormalizer;
-	vec4 sky_padding[6];
+	PerFrame_CB data;
 } _63;
 
 layout(set = 1, binding = 1) uniform texture3D probeVolume;
@@ -32,7 +51,7 @@ void main()
 	vec3 _333 = normalize(input_normal.xyz);
 	vec3 _336 = _333 * _333;
 	ivec3 _339 = mix(ivec3(0), ivec3(1), lessThan(_333, vec3(0.0)));
-	vec3 _350 = (input_posWS.xyz - _53.GISky_irradianceVolumeOffset.xyz) / _63.sky_posWSNormalizer.xyz;
+	vec3 _350 = (input_posWS.xyz - _53.irradianceVolumeOffset.xyz) / _63.data.posWSNormalizer.xyz;
 	vec3 _498 = _350;
 	_498.z = _350.z * 0.16666667163372039794921875;
 	vec3 _508;

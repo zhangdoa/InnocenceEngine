@@ -4,26 +4,26 @@
 
 layout(local_size_x = BLOCK_SIZE, local_size_y = BLOCK_SIZE, local_size_z = 1) in;
 
-layout(std430, set = 2, binding = 0) coherent buffer gridFrustumsSSBOBlock
+layout(std430, set = 1, binding = 0) coherent buffer gridFrustumsSSBOBlock
 {
 	Frustum data[];
 } gridFrustumsSSBO;
 
-layout(std430, set = 2, binding = 1) buffer lightListIndexCounterSSBOBlock
+layout(std430, set = 1, binding = 1) buffer lightListIndexCounterSSBOBlock
 {
 	uint data;
 } lightListIndexCounterSSBO;
 
-layout(std430, set = 2, binding = 2) coherent buffer lightIndexListSSBOBlock
+layout(std430, set = 1, binding = 2) coherent buffer lightIndexListSSBOBlock
 {
 	uint data[];
 } lightIndexListSSBO;
 
-layout(set = 3, binding = 3, rg32ui) uniform writeonly uimage2D uni_lightGrid;
-layout(set = 3, binding = 4, rgba16f) uniform writeonly image2D uni_debugTexture;
+layout(set = 2, binding = 3, rg32ui) uniform writeonly uimage2D uni_lightGrid;
+layout(set = 2, binding = 4, rgba16f) uniform writeonly image2D uni_debugTexture;
 
-layout(set = 3, binding = 0) uniform texture2D depthTexture;
-layout(set = 4, binding = 0) uniform sampler samplerLinear;
+layout(set = 2, binding = 0) uniform texture2D depthTexture;
+layout(set = 3, binding = 0) uniform sampler samplerLinear;
 
 shared uint l_uMinDepth;
 shared uint l_uMaxDepth;
@@ -55,7 +55,7 @@ void AppendLight(uint lightIndex)
 void main()
 {
 	// Calculate min & max depth in threadgroup / tile.
-	vec2 readTextureCoord = vec2(gl_GlobalInvocationID.xy) / skyUBO.viewportSize.xy;
+	vec2 readTextureCoord = vec2(gl_GlobalInvocationID.xy) / perFrameCBuffer.data.viewportSize.xy;
 
 	float fDepth = texture(sampler2D(depthTexture, samplerLinear), readTextureCoord).r;
 	fDepth = fDepth * 2.0 - 1.0;
@@ -71,7 +71,7 @@ void main()
 		l_uMaxDepth = 0;
 		l_LightCount = 0;
 		l_LightIndexStartOffset = 0;
-		l_TileFrustum = gridFrustumsSSBO.data[gl_WorkGroupID.x + (gl_WorkGroupID.y * dispatchParamsUBO.data[1].numThreadGroups.x)];
+		l_TileFrustum = gridFrustumsSSBO.data[gl_WorkGroupID.x + (gl_WorkGroupID.y * dispatchParamsCBuffer.data[1].numThreadGroups.x)];
 	}
 
 	memoryBarrierShared();
@@ -88,9 +88,9 @@ void main()
 	float fMaxDepth = uintBitsToFloat(l_uMaxDepth);
 
 	// Convert depth values to view space.
-	float minDepthVS = ClipToView(vec4(0, 0, fMinDepth, 1), skyUBO.p_inv).z;
-	float maxDepthVS = ClipToView(vec4(0, 0, fMaxDepth, 1), skyUBO.p_inv).z;
-	float nearClipVS = ClipToView(vec4(0, 0, -1, 1), skyUBO.p_inv).z;
+	float minDepthVS = ClipToView(vec4(0, 0, fMinDepth, 1), perFrameCBuffer.data.p_inv).z;
+	float maxDepthVS = ClipToView(vec4(0, 0, fMaxDepth, 1), perFrameCBuffer.data.p_inv).z;
+	float nearClipVS = ClipToView(vec4(0, 0, -1, 1), perFrameCBuffer.data.p_inv).z;
 
 	// Clipping plane for minimum depth value
 	Plane minPlane = { vec3(0, 0, -1), -minDepthVS };
@@ -98,12 +98,11 @@ void main()
 	// Cull point light
 	for (uint i = gl_LocalInvocationIndex; i < NR_POINT_LIGHTS; i += BLOCK_SIZE * BLOCK_SIZE)
 	{
-		pointLight light = pointLightUBO.data[i];
+		PointLight_CB light = pointLightCBuffer.data[i];
 		// w component of luminousFlux is the attenuation radius
 		if (light.luminousFlux.w > 0.0f)
 		{
-			vec4 lightPos_VS = cameraUBO.t * light.position;
-			lightPos_VS = cameraUBO.r * lightPos_VS;
+			vec4 lightPos_VS = perFrameCBuffer.data.v * light.position;
 			Sphere sphere = { lightPos_VS.xyz, light.luminousFlux.w };
 			if (SphereInsideFrustum(sphere, l_TileFrustum, nearClipVS, maxDepthVS))
 			{

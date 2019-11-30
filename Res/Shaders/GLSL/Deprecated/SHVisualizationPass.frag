@@ -22,9 +22,9 @@ void main()
 	float Y20 = 0.946176 * thefrag_Normal.z * thefrag_Normal.z - 0.315392;
 	float Y22 = 0.546274 * (thefrag_Normal.x*thefrag_Normal.x - thefrag_Normal.y*thefrag_Normal.y);
 
-	vec4 color = A0 * Y00 * SH9UBO.data[uni_SH9Index].L00
-		+ A1 * Y1_1 * SH9UBO.data[uni_SH9Index].L1_1 + A1 * Y10 * SH9UBO.data[uni_SH9Index].L10 + A1 * Y11 * SH9UBO.data[uni_SH9Index].L11
-		+ A2 * Y2_2 * SH9UBO.data[uni_SH9Index].L2_2 + A2 * Y2_1 * SH9UBO.data[uni_SH9Index].L2_1 + A2 * Y20 * SH9UBO.data[uni_SH9Index].L20 + A2 * Y21 * SH9UBO.data[uni_SH9Index].L21 + A2 * Y22 * SH9UBO.data[uni_SH9Index].L22;
+	vec4 color = A0 * Y00 * SH9CBuffer.data[uni_SH9Index].L00
+		+ A1 * Y1_1 * SH9CBuffer.data[uni_SH9Index].L1_1 + A1 * Y10 * SH9CBuffer.data[uni_SH9Index].L10 + A1 * Y11 * SH9CBuffer.data[uni_SH9Index].L11
+		+ A2 * Y2_2 * SH9CBuffer.data[uni_SH9Index].L2_2 + A2 * Y2_1 * SH9CBuffer.data[uni_SH9Index].L2_1 + A2 * Y20 * SH9CBuffer.data[uni_SH9Index].L20 + A2 * Y21 * SH9CBuffer.data[uni_SH9Index].L21 + A2 * Y22 * SH9CBuffer.data[uni_SH9Index].L22;
 
 	uni_SHVisualization = vec4(color.rgb, 1.0f);
 }

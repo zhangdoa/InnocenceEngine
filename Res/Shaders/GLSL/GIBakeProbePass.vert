@@ -15,6 +15,6 @@ layout(location = 0) out VS_OUT
 void main()
 {
 	// output the fragment position in world space
-	vs_out.posWS = meshUBO.m * inPosition;
-	gl_Position = GICameraUBO.p * GICameraUBO.r[0] * GICameraUBO.t * vs_out.posWS;
+	vs_out.posWS = perObjectCBuffer.data.m * inPosition;
+	gl_Position = GICBuffer.p * GICBuffer.r[0] * GICBuffer.t * vs_out.posWS;
 }

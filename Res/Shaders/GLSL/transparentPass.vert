@@ -13,16 +13,16 @@ layout(location = 2) out vec3 Normal;
 void main()
 {
 	// output the fragment position in world space
-	posWS = meshUBO.m * inPosition;
+	posWS = perObjectCBuffer.data.m * inPosition;
 
 	// output the current and previous fragment position in clip space
-	vec4 posVS = cameraUBO.r * cameraUBO.t * posWS;
+	vec4 posVS = perFrameCBuffer.data.v * posWS;
 
 	// output the texture coordinate
 	TexCoord = inTexCoord;
 
 	// output the normal
-	Normal = mat3(transpose(inverse(meshUBO.m))) * inNormal.xyz;
+	Normal = mat3(transpose(inverse(perObjectCBuffer.data.m))) * inNormal.xyz;
 
-	gl_Position = cameraUBO.p_jittered * posVS;
+	gl_Position = perFrameCBuffer.data.p_jittered * posVS;
 }

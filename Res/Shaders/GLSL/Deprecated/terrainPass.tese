@@ -47,11 +47,11 @@ void main()
 
 	tes_out.positionWS = localSpacePos.xyz;
 
-	vec4 thefrag_CameraSpacePos_current = cameraUBO.r * cameraUBO.t * localSpacePos;
-	vec4 thefrag_CameraSpacePos_previous = cameraUBO.r_prev * cameraUBO.t_prev * localSpacePos;
+	vec4 thefrag_CameraSpacePos_current = perFrameCBuffer.data.v * localSpacePos;
+	vec4 thefrag_CameraSpacePos_previous = perFrameCBuffer.data.r_prev * perFrameCBuffer.data.t_prev * localSpacePos;
 	
-	tes_out.positionCS = cameraUBO.p_original * thefrag_CameraSpacePos_current;
-	tes_out.positionCS_prev = cameraUBO.p_original * thefrag_CameraSpacePos_previous;
+	tes_out.positionCS = perFrameCBuffer.data.p_original * thefrag_CameraSpacePos_current;
+	tes_out.positionCS_prev = perFrameCBuffer.data.p_original * thefrag_CameraSpacePos_previous;
 
-	gl_Position = cameraUBO.p_jittered * thefrag_CameraSpacePos_current;
+	gl_Position = perFrameCBuffer.data.p_jittered * thefrag_CameraSpacePos_current;
 }

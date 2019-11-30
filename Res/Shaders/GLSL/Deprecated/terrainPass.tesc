@@ -20,19 +20,19 @@ void main()
 	vec4 distanceB;
 	if(gl_InvocationID == gl_PatchVerticesIn * 4)
 	{
-		distanceA = gl_in[gl_InvocationID].gl_Position - cameraUBO.globalPos;
-		distanceB = gl_in[gl_InvocationID - 1].gl_Position - cameraUBO.globalPos;
+		distanceA = gl_in[gl_InvocationID].gl_Position - perFrameCBuffer.data.camera_posWS;
+		distanceB = gl_in[gl_InvocationID - 1].gl_Position - perFrameCBuffer.data.camera_posWS;
 	}
 	else
 	{
-		distanceA = gl_in[gl_InvocationID].gl_Position - cameraUBO.globalPos;
-		distanceB = gl_in[gl_InvocationID + 1].gl_Position - cameraUBO.globalPos;
+		distanceA = gl_in[gl_InvocationID].gl_Position - perFrameCBuffer.data.camera_posWS;
+		distanceB = gl_in[gl_InvocationID + 1].gl_Position - perFrameCBuffer.data.camera_posWS;
 	}
 	vec4 distanceAverange  = distanceA + distanceB;
 	distanceAverange /= 2;
 
 	float distance = length(distanceAverange);
-	float drawDistance = cameraUBO.zFar - cameraUBO.zNear;
+	float drawDistance = perFrameCBuffer.data.zFar - perFrameCBuffer.data.zNear;
 	float distanceRatio = distance / drawDistance;
 
 	int distanceRatioI = int(distanceRatio * 5);

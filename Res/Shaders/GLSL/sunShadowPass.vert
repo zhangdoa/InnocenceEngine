@@ -8,5 +8,5 @@ layout(location = 4) in vec4 inPad2;
 
 void main()
 {
-	gl_Position = meshUBO.m * inPosition;
+	gl_Position = perObjectCBuffer.data.m * inPosition;
 }

@@ -50,12 +50,12 @@ float SunShadowResolver(vec3 fragPos)
 	int splitIndex = NR_CSM_SPLITS;
 	for (int i = 0; i < NR_CSM_SPLITS; i++)
 	{
-		if (fragPos.x >= CSMUBO.data[i].AABBMin.x &&
-			fragPos.y >= CSMUBO.data[i].AABBMin.y &&
-			fragPos.z >= CSMUBO.data[i].AABBMin.z &&
-			fragPos.x <= CSMUBO.data[i].AABBMax.x &&
-			fragPos.y <= CSMUBO.data[i].AABBMax.y &&
-			fragPos.z <= CSMUBO.data[i].AABBMax.z)
+		if (fragPos.x >= CSMCBuffer.data[i].AABBMin.x &&
+			fragPos.y >= CSMCBuffer.data[i].AABBMin.y &&
+			fragPos.z >= CSMCBuffer.data[i].AABBMin.z &&
+			fragPos.x <= CSMCBuffer.data[i].AABBMax.x &&
+			fragPos.y <= CSMCBuffer.data[i].AABBMax.y &&
+			fragPos.z <= CSMCBuffer.data[i].AABBMax.z)
 		{
 			splitIndex = i;
 			break;
@@ -68,7 +68,7 @@ float SunShadowResolver(vec3 fragPos)
 	}
 	else
 	{
-		vec4 lightSpacePos = CSMUBO.data[splitIndex].p * CSMUBO.data[splitIndex].v * vec4(fragPos, 1.0f);
+		vec4 lightSpacePos = CSMCBuffer.data[splitIndex].p * CSMCBuffer.data[splitIndex].v * vec4(fragPos, 1.0f);
 		lightSpacePos = lightSpacePos / lightSpacePos.w;
 		projCoords = lightSpacePos.xyz;
 
@@ -86,6 +86,6 @@ float SunShadowResolver(vec3 fragPos)
 // ----------------------------------------------------------------------------
 float linearDepth(float depthSample)
 {
-	float zLinear = cameraUBO.zNear * cameraUBO.zFar / (cameraUBO.zFar + cameraUBO.zNear - depthSample * (cameraUBO.zFar - cameraUBO.zNear));
+	float zLinear = perFrameCBuffer.data.zNear * perFrameCBuffer.data.zFar / (perFrameCBuffer.data.zFar + perFrameCBuffer.data.zNear - depthSample * (perFrameCBuffer.data.zFar - perFrameCBuffer.data.zNear));
 	return zLinear;
 }

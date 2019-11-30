@@ -5,6 +5,7 @@ vec3 get_world_normal(vec2 xy, vec2 viewportSize, mat4 p_inv, mat4 v_inv)
 	vec4 device_normal = vec4(frag_coord, 0.0, 1.0);
 	vec4 eye_normal = p_inv * device_normal;
 	eye_normal = eye_normal / eye_normal.w;
+	eye_normal.w = 0.0;
 	vec3 world_normal = normalize(v_inv * eye_normal).xyz;
 	return world_normal;
 }

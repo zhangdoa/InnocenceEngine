@@ -13,19 +13,22 @@ struct Brick
 	uint surfelRangeEnd;
 };
 
-layout(binding = 8, set = 0, std140) uniform dispatchParamsCBuffer
+layout(binding = 6, set = 0, std140) uniform dispatchParamsCBuffer
 {
 	DispatchParam dispatchParams[8];
 } _26;
 
-layout(binding = 11, set = 0, std140) uniform GISkyCBuffer
+layout(std140, row_major, set = 0, binding = 8) uniform GICBufferBlock
 {
-	layout(row_major) mat4 GISky_p_inv;
-	layout(row_major) mat4 GISky_v_inv[6];
-	vec4 GISky_probeCount;
-	vec4 GISky_probeRange;
-	vec4 GISky_workload;
-	vec4 GISky_irradianceVolumeOffset;
+	mat4 p;
+	mat4 r[6];
+	mat4 t;
+	mat4 p_inv;
+	mat4 v_inv[6];
+	vec4 probeCount;
+	vec4 probeRange;
+	vec4 workload;
+	vec4 irradianceVolumeOffset;
 } _78;
 
 layout(binding = 0, set = 1, std430) buffer in_bricks
@@ -48,7 +51,7 @@ void main()
 	if (((gl_GlobalInvocationID.x < _26.dispatchParams[3].numThreads.x) && (gl_GlobalInvocationID.y < _26.dispatchParams[3].numThreads.y)) && (gl_GlobalInvocationID.z < _26.dispatchParams[3].numThreads.z))
 	{
 		uint _271 = (gl_GlobalInvocationID.x + (gl_GlobalInvocationID.y * _26.dispatchParams[3].numThreads.x)) + ((gl_GlobalInvocationID.z * _26.dispatchParams[3].numThreads.x) * _26.dispatchParams[3].numThreads.y);
-		if (float(_271) < _78.GISky_workload.y)
+		if (float(_271) < _78.workload.y)
 		{
 			vec4 _358;
 			if (in_bricks_1._data[_271].surfelRangeBegin != in_bricks_1._data[_271].surfelRangeEnd)

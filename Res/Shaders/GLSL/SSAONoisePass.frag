@@ -26,11 +26,11 @@ void main()
 	// alpha channel is used previously, remove its unwanted influence
 	// world space position to view space
 	vec3 fragPos = texture(sampler2D(uni_Position, samplerLinear), screenTexCoords).xyz;
-	fragPos = (cameraUBO.r * cameraUBO.t * vec4(fragPos, 1.0f)).xyz;
+	fragPos = (perFrameCBuffer.data.v * vec4(fragPos, 1.0f)).xyz;
 
 	// world space normal to view space
 	vec3 normal = texture(sampler2D(uni_Normal, samplerLinear), screenTexCoords).xyz;
-	normal = (cameraUBO.r * vec4(normal, 0.0f)).xyz;
+	normal = (perFrameCBuffer.data.v * vec4(normal, 0.0f)).xyz;
 	normal = normalize(normal);
 
 	// create TBN change-of-basis matrix: from tangent-space to view-space
@@ -43,12 +43,12 @@ void main()
 	for (int i = 0; i < 64; ++i)
 	{
 		// get sample position
-		vec3 randomHemisphereSampleDir = TBN * SSAOKernelUBO.data[i].xyz; // from tangent to view-space
+		vec3 randomHemisphereSampleDir = TBN * SSAOKernelCBuffer.data[i].xyz; // from tangent to view-space
 		vec3 randomHemisphereSamplePos = fragPos + randomHemisphereSampleDir * radius;
 
 		// project sample position (to sample texture) (to get position on screen/texture)
 		vec4 randomFragSampleCoord = vec4(randomHemisphereSamplePos, 1.0f);
-		randomFragSampleCoord = cameraUBO.p_jittered * randomFragSampleCoord; // from view to clip-space
+		randomFragSampleCoord = perFrameCBuffer.data.p_jittered * randomFragSampleCoord; // from view to clip-space
 		randomFragSampleCoord.xyz /= randomFragSampleCoord.w; // perspective divide
 		randomFragSampleCoord.xyz = randomFragSampleCoord.xyz * 0.5f + 0.5f; // transform to range 0.0 - 1.0
 
@@ -59,7 +59,7 @@ void main()
 
 		// alpha channel is used previously, remove its unwanted influence
 		randomFragSamplePos.w = 1.0f;
-		randomFragSamplePos = cameraUBO.r * cameraUBO.t * randomFragSamplePos;
+		randomFragSamplePos = perFrameCBuffer.data.v * randomFragSamplePos;
 
 		// range check & accumulate
 		float rangeCheck = smoothstep(0.0, 1.0, radius / max(abs(fragPos.z - randomFragSamplePos.z), 0.0001f));

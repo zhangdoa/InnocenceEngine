@@ -8,7 +8,7 @@ layout(location = 0, binding = 0) uniform sampler2D uni_TAAPassRT0;
 
 void main()
 {
-	vec2 texelSize = 1.0 / skyUBO.viewportSize.xy;
+	vec2 texelSize = 1.0 / perFrameCBuffer.data.viewportSize.xy;
 	vec2 screenTexCoords = gl_FragCoord.xy * texelSize;
 
 	vec4 currentColor = texture(uni_TAAPassRT0, screenTexCoords);

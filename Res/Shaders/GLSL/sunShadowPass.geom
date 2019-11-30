@@ -10,7 +10,7 @@ void main()
 		gl_Layer = CSMSplitIndex;
 		for (int i = 0; i < 3; ++i)
 		{
-			gl_Position = CSMUBO.data[CSMSplitIndex].p * CSMUBO.data[CSMSplitIndex].v * gl_in[i].gl_Position;
+			gl_Position = CSMCBuffer.data[CSMSplitIndex].p * CSMCBuffer.data[CSMSplitIndex].v * gl_in[i].gl_Position;
 			EmitVertex();
 		}
 		EndPrimitive();

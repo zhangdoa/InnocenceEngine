@@ -22,10 +22,10 @@ void main()
 		gl_Layer = face;
 		for (int i = 0; i < 3; ++i)
 		{
-			vec4 posVS = GICameraUBO.r[face] * GICameraUBO.t * vec4(gs_in[i].posWS, 1.0f);
+			vec4 posVS = GICBuffer.r[face] * GICBuffer.t * vec4(gs_in[i].posWS, 1.0f);
 			gs_out.distanceVS = length(posVS.xyz);
 			gs_out.UUID = gs_in[i].UUID;
-			gl_Position = GICameraUBO.p * posVS;
+			gl_Position = GICBuffer.p * posVS;
 			EmitVertex();
 		}
 		EndPrimitive();

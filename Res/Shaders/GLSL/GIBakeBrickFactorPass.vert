@@ -16,8 +16,8 @@ layout(location = 0) out VS_OUT
 void main()
 {
 	// output the fragment position in world space
-	vec4 posWS = meshUBO.m * inPosition;
-	vs_out.UUID = meshUBO.UUID;
+	vec4 posWS = perObjectCBuffer.data.m * inPosition;
+	vs_out.UUID = perObjectCBuffer.data.UUID;
 	vs_out.posWS = posWS.xyz;
 
 	gl_Position = posWS;

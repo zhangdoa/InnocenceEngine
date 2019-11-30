@@ -27,7 +27,7 @@ void main()
 			gs_out.posWS = gs_in[i].posWS;
 			gs_out.texcoord = gs_in[i].texcoord;
 			gs_out.normal = gs_in[i].normal;
-			gl_Position = GICameraUBO.p * GICameraUBO.r[face] * GICameraUBO.t * gs_out.posWS;
+			gl_Position = GICBuffer.p * GICBuffer.r[face] * GICBuffer.t * gs_out.posWS;
 			EmitVertex();
 		}
 		EndPrimitive();

@@ -20,7 +20,7 @@ layout(location = 5) in float thefrag_UUID;
 // ----------------------------------------------------------------------------
 void main()
 {
-	vec3 V = normalize(cameraUBO.globalPos.xyz - thefrag_WorldSpacePos.xyz);
+	vec3 V = normalize(perFrameCBuffer.data.camera_posWS.xyz - thefrag_WorldSpacePos.xyz);
 	vec3 L = V;
 	vec3 H = normalize(V + L);
 	vec3 N = thefrag_Normal;
@@ -30,10 +30,10 @@ void main()
 	float NdotL = max(dot(N, L), 0.0);
 	float NdotV = max(dot(N, V), 0.0);
 
-	float out_roughness = materialUBO.MRAT.g;
-	float out_metallic = materialUBO.MRAT.r;
+	float out_roughness = materialCBuffer.data.MRAT.g;
+	float out_metallic = materialCBuffer.data.MRAT.r;
 	vec3 F0 = vec3(0.04, 0.04, 0.04);
-	vec3 out_albedo = materialUBO.Albedo.rgb;
+	vec3 out_albedo = materialCBuffer.data.albedo.rgb;
 	vec3 luminance = vec3(1.0, 1.0, 1.0);
 	F0 = mix(F0, out_albedo, out_metallic);
 

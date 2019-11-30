@@ -17,13 +17,13 @@ layout(location = 0) out VS_OUT
 void main()
 {
 	// output the fragment position in world space
-	vs_out.posWS = meshUBO.m * inPosition;
+	vs_out.posWS = perObjectCBuffer.data.m * inPosition;
 
 	// output the texture coordinate
 	vs_out.texcoord = inTexCoord;
 
 	// output the normal
-	vs_out.normal = vec4(mat3(transpose(inverse(meshUBO.m))) * inNormal.xyz, 0.0f);
+	vs_out.normal = vec4(mat3(transpose(inverse(perObjectCBuffer.data.m))) * inNormal.xyz, 0.0f);
 
 	gl_Position = vs_out.posWS;
 }

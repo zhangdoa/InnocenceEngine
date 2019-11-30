@@ -24,7 +24,7 @@ void main()
 	float transparency = 1.0;
 	vec3 MRA;
 
-	if (materialUBO.useNormalTexture)
+	if (materialCBuffer.data.useNormalTexture)
 	{
 		// get edge vectors of the pixel triangle
 		vec3 dp1 = dFdx(fs_in.posWS.xyz);
@@ -49,7 +49,7 @@ void main()
 		WorldSpaceNormal = normalize(fs_in.normal.xyz);
 	}
 
-	if (materialUBO.useAlbedoTexture)
+	if (materialCBuffer.data.useAlbedoTexture)
 	{
 		vec4 albedoTexture = texture(uni_albedoTexture, fs_in.texcoord);
 		transparency = albedoTexture.a;
@@ -61,34 +61,34 @@ void main()
 	}
 	else
 	{
-		albedo = materialUBO.Albedo.rgb;
+		albedo = materialCBuffer.data.albedo.rgb;
 	}
 
-	if (materialUBO.useMetallicTexture)
+	if (materialCBuffer.data.useMetallicTexture)
 	{
 		MRA.r = texture(uni_metallicTexture, fs_in.texcoord).r;
 	}
 	else
 	{
-		MRA.r = materialUBO.MRAT.r;
+		MRA.r = materialCBuffer.data.MRAT.r;
 	}
 
-	if (materialUBO.useRoughnessTexture)
+	if (materialCBuffer.data.useRoughnessTexture)
 	{
 		MRA.g = texture(uni_roughnessTexture, fs_in.texcoord).r;
 	}
 	else
 	{
-		MRA.g = materialUBO.MRAT.g;
+		MRA.g = materialCBuffer.data.MRAT.g;
 	}
 
-	if (materialUBO.useAOTexture)
+	if (materialCBuffer.data.useAOTexture)
 	{
 		MRA.b = texture(uni_aoTexture, fs_in.texcoord).r;
 	}
 	else
 	{
-		MRA.b = materialUBO.MRAT.b;
+		MRA.b = materialCBuffer.data.MRAT.b;
 	}
 
 	uni_opaquePassRT0 = vec4(fs_in.posWS.xyz, MRA.r);

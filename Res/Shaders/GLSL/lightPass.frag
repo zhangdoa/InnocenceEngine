@@ -44,9 +44,9 @@ void main()
 	//vec2 screenTexCoord = gl_FragCoord.xy / textureSize;
 	//float depth = texture(uni_depth, screenTexCoord).r;
 	//vec4 posCS = vec4(screenTexCoord.x * 2.0f - 1.0f, screenTexCoord.y * 2.0f - 1.0f, depth * 2.0f - 1.0f, 1.0f);
-	//vec4 posVS = skyUBO.p_inv * posCS;
+	//vec4 posVS = perFrameCBuffer.data.p_inv * posCS;
 	//posVS /= posVS.w;
-	//vec4 posWS = skyUBO.v_inv * posVS;
+	//vec4 posWS = perFrameCBuffer.data.v_inv * posVS;
 	//vec3 posWS = posWS.rgb;
 
 	vec3 posWS = GPassRT0.rgb;
@@ -64,7 +64,7 @@ void main()
 	vec3 N = normalize(normal);
 
 #ifdef uni_drawCSMSplitedArea
-	vec3 L = normalize(-sunUBO.data.direction.xyz);
+	vec3 L = normalize(-perFrameCBuffer.data.sun_direction.xyz);
 	float NdotL = max(dot(N, L), 0.0);
 
 	Lo = vec3(NdotL);
@@ -73,12 +73,12 @@ void main()
 	int splitIndex = NR_CSM_SPLITS;
 	for (int i = 0; i < NR_CSM_SPLITS; i++)
 	{
-		if (posWS.x >= CSMUBO.data[i].AABBMin.x &&
-			posWS.y >= CSMUBO.data[i].AABBMin.y &&
-			posWS.z >= CSMUBO.data[i].AABBMin.z &&
-			posWS.x <= CSMUBO.data[i].AABBMax.x &&
-			posWS.y <= CSMUBO.data[i].AABBMax.y &&
-			posWS.z <= CSMUBO.data[i].AABBMax.z)
+		if (posWS.x >= CSMCBuffer.data[i].AABBMin.x &&
+			posWS.y >= CSMCBuffer.data[i].AABBMin.y &&
+			posWS.z >= CSMCBuffer.data[i].AABBMin.z &&
+			posWS.x <= CSMCBuffer.data[i].AABBMax.x &&
+			posWS.y <= CSMCBuffer.data[i].AABBMax.y &&
+			posWS.z <= CSMCBuffer.data[i].AABBMax.z)
 		{
 			splitIndex = i;
 			break;
@@ -107,7 +107,7 @@ void main()
 #endif
 
 #ifdef uni_drawPointLightShadow
-	pointLight light = pointLightUBO.data[0];
+	PointLight_CB light = pointLightCBuffer.data[0];
 
 	float lightRadius = light.luminousFlux.w;
 	if (lightRadius > 0)
@@ -134,12 +134,12 @@ void main()
 	vec3 F0 = vec3(0.04);
 	F0 = mix(F0, albedo, metallic);
 
-	vec3 V = normalize(cameraUBO.globalPos.xyz - posWS);
+	vec3 V = normalize(perFrameCBuffer.data.camera_posWS.xyz - posWS);
 
 	float NdotV = max(dot(N, V), 0.0);
 
 	// direction light, sun light
-	vec3 D = normalize(-sunUBO.data.direction.xyz);
+	vec3 D = normalize(-perFrameCBuffer.data.sun_direction.xyz);
 	float r = sin(sunAngularRadius);
 	float d = cos(sunAngularRadius);
 	float DdotV = dot(D, V);
@@ -162,13 +162,13 @@ void main()
 	vec3 Ft = getBTDF(NdotV, NdotD, DdotHD, roughness, metallic, FresnelFactor, albedo);
 	vec3 Fr = getBRDF(uni_BRDFLUT, uni_BRDFMSLUT, samplerLinear, NdotV, NdotL, NdotHL, LdotHL, roughness, F0, FresnelFactor);
 
-	vec3 illuminance = sunUBO.data.illuminance.xyz * NdotD;
+	vec3 illuminance = perFrameCBuffer.data.sun_illuminance.xyz * NdotD;
 	Lo += illuminance * (Ft + Fr);
 	Lo *= 1.0 - SunShadowResolver(posWS);
 
 	// point punctual light
 	// Get the index of the current pixel in the light grid.
-	vec2 tileIndex = vec2(gl_FragCoord.xy / skyUBO.viewportSize.xy);
+	vec2 tileIndex = vec2(gl_FragCoord.xy / perFrameCBuffer.data.viewportSize.xy);
 
 	// Get the start position and offset of the light in the light index list.
 	uvec4 lightGrid = texture(usampler2D(uni_lightGrid, samplerLinear), tileIndex);
@@ -178,7 +178,7 @@ void main()
 	for (int i = 0; i < lightCount; ++i)
 	{
 		uint lightIndex = lightIndexListSSBO.data[startOffset + i];
-		pointLight light = pointLightUBO.data[lightIndex];
+		PointLight_CB light = pointLightCBuffer.data[lightIndex];
 
 		float lightRadius = light.luminousFlux.w;
 		if (lightRadius > 0)
@@ -210,10 +210,10 @@ void main()
 	// sphere area light
 	for (int i = 0; i < NR_SPHERE_LIGHTS; ++i)
 	{
-		float lightRadius = sphereLightUBO.data[i].luminousFlux.w;
+		float lightRadius = sphereLightCBuffer.data[i].luminousFlux.w;
 		if (lightRadius > 0)
 		{
-			vec3 unormalizedL = sphereLightUBO.data[i].position.xyz - posWS;
+			vec3 unormalizedL = sphereLightCBuffer.data[i].position.xyz - posWS;
 			vec3 L = normalize(unormalizedL);
 			vec3 H = normalize(V + L);
 
@@ -243,7 +243,7 @@ void main()
 			}
 			illuminance *= PI;
 
-			Lo += getOutLuminance(uni_BRDFLUT, uni_BRDFMSLUT, samplerLinear, NdotV, NdotL, NdotH, LdotH, safe_roughness, metallic, F0, albedo, illuminance * sphereLightUBO.data[i].luminousFlux.xyz);
+			Lo += getOutLuminance(uni_BRDFLUT, uni_BRDFMSLUT, samplerLinear, NdotV, NdotL, NdotH, LdotH, safe_roughness, metallic, F0, albedo, illuminance * sphereLightCBuffer.data[i].luminousFlux.xyz);
 		}
 	}
 
@@ -251,7 +251,7 @@ void main()
 	// [https://steamcdn-a.akamaihd.net/apps/valve/2006/SIGGRAPH06_Course_ShadingInValvesSourceEngine.pdf]
 	vec3 nSquared = N * N;
 	ivec3 isNegative = ivec3(int(N.x < 0.0), int(N.y < 0.0), int(N.z < 0.0));
-	vec3 GISampleCoord = (posWS - GISkyUBO.irradianceVolumeOffset.xyz) / skyUBO.posWSNormalizer.xyz;
+	vec3 GISampleCoord = (posWS - GICBuffer.irradianceVolumeOffset.xyz) / perFrameCBuffer.data.posWSNormalizer.xyz;
 	ivec3 isOutside = ivec3(int((GISampleCoord.x > 1.0) || (GISampleCoord.x < 0.0)), int((GISampleCoord.y > 1.0) || (GISampleCoord.y < 0.0)), int((GISampleCoord.z > 1.0) || (GISampleCoord.z < 0.0)));
 
 	GISampleCoord.z /= 6.0;
