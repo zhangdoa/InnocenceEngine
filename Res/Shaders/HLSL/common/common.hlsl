@@ -42,12 +42,9 @@ struct Material_CB
 {
 	float4 albedo; // 0
 	float4 MRAT; // 1
-	bool useNormalTexture;  // Tight packing 2
-	bool useAlbedoTexture;  // Tight packing 2
-	bool useMetallicTexture;  // Tight packing 2
-	bool useRoughnessTexture;  // Tight packing 2
-	bool useAOTexture; // 3
-	float padding[12]; // 4 - 15
+	uint textureSlotMask; // 2
+	uint materialType; // 2
+	float padding3[13]; // 3 - 15
 };
 
 // w component of luminousFlux is attenuationRadius

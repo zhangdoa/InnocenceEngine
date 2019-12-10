@@ -11,12 +11,12 @@ SamplerState SampleTypeWrap : register(s0);
 
 struct PixelInputType
 {
-	float4 frag_ClipSpacePos : SV_POSITION;
-	float4 frag_ClipSpacePos_orig : POSITION_ORIG;
-	float4 frag_ClipSpacePos_prev : POSITION_PREV;
-	float3 frag_WorldSpacePos : POSITION;
-	float2 frag_TexCoord : TEXCOORD;
-	float3 frag_Normal : NORMAL;
+	float4 posCS : SV_POSITION;
+	float4 posCS_orig : POSITION_ORIG;
+	float4 posCS_prev : POSITION_PREV;
+	float3 posWS : POSITION;
+	float2 texCoord : TEXCOORD;
+	float3 normal : NORMAL;
 };
 
 struct PixelOutputType
@@ -32,16 +32,16 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	PixelOutputType output;
 
 	float3 normalInWorldSpace;
-	if (materialCBuffer.useNormalTexture)
+	if (materialCBuffer.textureSlotMask & 0x00000001)
 	{
 		// get edge vectors of the pixel triangle
-		float3 dp1 = ddx_fine(input.frag_WorldSpacePos);
-		float3 dp2 = ddy_fine(input.frag_WorldSpacePos);
-		float2 duv1 = ddx_fine(input.frag_TexCoord);
-		float2 duv2 = ddy_fine(input.frag_TexCoord);
+		float3 dp1 = ddx_fine(input.posWS);
+		float3 dp2 = ddy_fine(input.posWS);
+		float2 duv1 = ddx_fine(input.texCoord);
+		float2 duv2 = ddy_fine(input.texCoord);
 
 		// solve the linear system
-		float3 N = normalize(input.frag_Normal);
+		float3 N = normalize(input.normal);
 
 		float3 dp2perp = cross(dp2, N);
 		float3 dp1perp = cross(N, dp1);
@@ -50,19 +50,19 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 
 		float3x3 TBN = float3x3(T, B, N);
 
-		float3 normalInTangentSpace = normalize(t2d_normal.Sample(SampleTypeWrap, input.frag_TexCoord).rgb * 2.0f - 1.0f);
+		float3 normalInTangentSpace = normalize(t2d_normal.Sample(SampleTypeWrap, input.texCoord).rgb * 2.0f - 1.0f);
 		normalInWorldSpace = normalize(mul(normalInTangentSpace, TBN));
 	}
 	else
 	{
-		normalInWorldSpace = normalize(input.frag_Normal);
+		normalInWorldSpace = normalize(input.normal);
 	}
 
 	float transparency = 1.0;
 	float3 out_Albedo;
-	if (materialCBuffer.useAlbedoTexture)
+	if (materialCBuffer.textureSlotMask & 0x00000002)
 	{
-		float4 l_albedo = t2d_albedo.Sample(SampleTypeWrap, input.frag_TexCoord);
+		float4 l_albedo = t2d_albedo.Sample(SampleTypeWrap, input.texCoord);
 		transparency = l_albedo.a;
 		if (transparency < 0.1)
 		{
@@ -79,9 +79,9 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	}
 
 	float out_Metallic;
-	if (materialCBuffer.useMetallicTexture)
+	if (materialCBuffer.textureSlotMask & 0x00000004)
 	{
-		out_Metallic = t2d_metallic.Sample(SampleTypeWrap, input.frag_TexCoord).r;
+		out_Metallic = t2d_metallic.Sample(SampleTypeWrap, input.texCoord).r;
 	}
 	else
 	{
@@ -89,9 +89,9 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	}
 
 	float out_Roughness;
-	if (materialCBuffer.useRoughnessTexture)
+	if (materialCBuffer.textureSlotMask & 0x00000008)
 	{
-		out_Roughness = t2d_roughness.Sample(SampleTypeWrap, input.frag_TexCoord).r;
+		out_Roughness = t2d_roughness.Sample(SampleTypeWrap, input.texCoord).r;
 	}
 	else
 	{
@@ -99,20 +99,20 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	}
 
 	float out_AO;
-	if (materialCBuffer.useAOTexture)
+	if (materialCBuffer.textureSlotMask & 0x00000010)
 	{
-		out_AO = t2d_ao.Sample(SampleTypeWrap, input.frag_TexCoord).r;
+		out_AO = t2d_ao.Sample(SampleTypeWrap, input.texCoord).r;
 	}
 	else
 	{
 		out_AO = materialCBuffer.MRAT.b;
 	}
 
-	output.opaquePassRT0 = float4(input.frag_WorldSpacePos, out_Metallic);
+	output.opaquePassRT0 = float4(input.posWS, out_Metallic);
 	output.opaquePassRT1 = float4(normalInWorldSpace, out_Roughness);
 	output.opaquePassRT2 = float4(out_Albedo, out_AO);
 
-	float4 motionVec = (input.frag_ClipSpacePos_orig / input.frag_ClipSpacePos_orig.w - input.frag_ClipSpacePos_prev / input.frag_ClipSpacePos_prev.w);
+	float4 motionVec = (input.posCS_orig / input.posCS_orig.w - input.posCS_prev / input.posCS_prev.w);
 
 	output.opaquePassRT3 = float4(motionVec.xyz * 0.5, transparency);
 

@@ -372,7 +372,7 @@ bool GLRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 
 	auto l_rhs = reinterpret_cast<GLTextureDataComponent*>(rhs);
 
-	l_rhs->m_GLTextureDesc = GetGLTextureDesc(l_rhs->m_textureDesc);
+	l_rhs->m_GLTextureDesc = GetGLTextureDesc(l_rhs->m_TextureDesc);
 
 	glGenTextures(1, &l_rhs->m_TO);
 
@@ -388,31 +388,31 @@ bool GLRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 
 	if (l_rhs->m_GLTextureDesc.TextureSamplerType == GL_TEXTURE_1D)
 	{
-		glTexImage1D(GL_TEXTURE_1D, 0, l_rhs->m_GLTextureDesc.InternalFormat, l_rhs->m_GLTextureDesc.Width, 0, l_rhs->m_GLTextureDesc.PixelDataFormat, l_rhs->m_GLTextureDesc.PixelDataType, l_rhs->m_textureData);
+		glTexImage1D(GL_TEXTURE_1D, 0, l_rhs->m_GLTextureDesc.InternalFormat, l_rhs->m_GLTextureDesc.Width, 0, l_rhs->m_GLTextureDesc.PixelDataFormat, l_rhs->m_GLTextureDesc.PixelDataType, l_rhs->m_TextureData);
 	}
 	else if (l_rhs->m_GLTextureDesc.TextureSamplerType == GL_TEXTURE_2D)
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, l_rhs->m_GLTextureDesc.InternalFormat, l_rhs->m_GLTextureDesc.Width, l_rhs->m_GLTextureDesc.Height, 0, l_rhs->m_GLTextureDesc.PixelDataFormat, l_rhs->m_GLTextureDesc.PixelDataType, l_rhs->m_textureData);
+		glTexImage2D(GL_TEXTURE_2D, 0, l_rhs->m_GLTextureDesc.InternalFormat, l_rhs->m_GLTextureDesc.Width, l_rhs->m_GLTextureDesc.Height, 0, l_rhs->m_GLTextureDesc.PixelDataFormat, l_rhs->m_GLTextureDesc.PixelDataType, l_rhs->m_TextureData);
 	}
 	else if (l_rhs->m_GLTextureDesc.TextureSamplerType == GL_TEXTURE_3D)
 	{
-		glTexImage3D(GL_TEXTURE_3D, 0, l_rhs->m_GLTextureDesc.InternalFormat, l_rhs->m_GLTextureDesc.Width, l_rhs->m_GLTextureDesc.Height, l_rhs->m_GLTextureDesc.DepthOrArraySize, 0, l_rhs->m_GLTextureDesc.PixelDataFormat, l_rhs->m_GLTextureDesc.PixelDataType, l_rhs->m_textureData);
+		glTexImage3D(GL_TEXTURE_3D, 0, l_rhs->m_GLTextureDesc.InternalFormat, l_rhs->m_GLTextureDesc.Width, l_rhs->m_GLTextureDesc.Height, l_rhs->m_GLTextureDesc.DepthOrArraySize, 0, l_rhs->m_GLTextureDesc.PixelDataFormat, l_rhs->m_GLTextureDesc.PixelDataType, l_rhs->m_TextureData);
 	}
 	else if (l_rhs->m_GLTextureDesc.TextureSamplerType == GL_TEXTURE_1D_ARRAY)
 	{
-		glTexImage2D(GL_TEXTURE_1D_ARRAY, 0, l_rhs->m_GLTextureDesc.InternalFormat, l_rhs->m_GLTextureDesc.Width, l_rhs->m_GLTextureDesc.Height, 0, l_rhs->m_GLTextureDesc.PixelDataFormat, l_rhs->m_GLTextureDesc.PixelDataType, l_rhs->m_textureData);
+		glTexImage2D(GL_TEXTURE_1D_ARRAY, 0, l_rhs->m_GLTextureDesc.InternalFormat, l_rhs->m_GLTextureDesc.Width, l_rhs->m_GLTextureDesc.Height, 0, l_rhs->m_GLTextureDesc.PixelDataFormat, l_rhs->m_GLTextureDesc.PixelDataType, l_rhs->m_TextureData);
 	}
 	else if (l_rhs->m_GLTextureDesc.TextureSamplerType == GL_TEXTURE_2D_ARRAY)
 	{
-		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, l_rhs->m_GLTextureDesc.InternalFormat, l_rhs->m_GLTextureDesc.Width, l_rhs->m_GLTextureDesc.Height, l_rhs->m_GLTextureDesc.DepthOrArraySize, 0, l_rhs->m_GLTextureDesc.PixelDataFormat, l_rhs->m_GLTextureDesc.PixelDataType, l_rhs->m_textureData);
+		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, l_rhs->m_GLTextureDesc.InternalFormat, l_rhs->m_GLTextureDesc.Width, l_rhs->m_GLTextureDesc.Height, l_rhs->m_GLTextureDesc.DepthOrArraySize, 0, l_rhs->m_GLTextureDesc.PixelDataFormat, l_rhs->m_GLTextureDesc.PixelDataType, l_rhs->m_TextureData);
 	}
 	else if (l_rhs->m_GLTextureDesc.TextureSamplerType == GL_TEXTURE_CUBE_MAP)
 	{
-		if (l_rhs->m_textureData)
+		if (l_rhs->m_TextureData)
 		{
 			for (uint32_t i = 0; i < 6; i++)
 			{
-				char* l_textureData = reinterpret_cast<char*>(const_cast<void*>(l_rhs->m_textureData));
+				char* l_textureData = reinterpret_cast<char*>(const_cast<void*>(l_rhs->m_TextureData));
 				auto l_offset = i * l_rhs->m_GLTextureDesc.Width * l_rhs->m_GLTextureDesc.Height * l_rhs->m_GLTextureDesc.PixelDataSize;
 				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, l_rhs->m_GLTextureDesc.InternalFormat, l_rhs->m_GLTextureDesc.Width, l_rhs->m_GLTextureDesc.Height, 0, l_rhs->m_GLTextureDesc.PixelDataFormat, l_rhs->m_GLTextureDesc.PixelDataType, l_textureData + l_offset);
 			}
@@ -421,13 +421,13 @@ bool GLRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 		{
 			for (uint32_t i = 0; i < 6; i++)
 			{
-				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, l_rhs->m_GLTextureDesc.InternalFormat, l_rhs->m_GLTextureDesc.Width, l_rhs->m_GLTextureDesc.Height, 0, l_rhs->m_GLTextureDesc.PixelDataFormat, l_rhs->m_GLTextureDesc.PixelDataType, l_rhs->m_textureData);
+				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, l_rhs->m_GLTextureDesc.InternalFormat, l_rhs->m_GLTextureDesc.Width, l_rhs->m_GLTextureDesc.Height, 0, l_rhs->m_GLTextureDesc.PixelDataFormat, l_rhs->m_GLTextureDesc.PixelDataType, l_rhs->m_TextureData);
 			}
 		}
 	}
 
 	// should generate mipmap or not
-	if (l_rhs->m_textureDesc.UseMipMap)
+	if (l_rhs->m_TextureDesc.UseMipMap)
 	{
 		glGenerateMipmap(l_rhs->m_GLTextureDesc.TextureSamplerType);
 	}
@@ -454,52 +454,23 @@ bool GLRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * 
 	}
 
 	auto l_rhs = reinterpret_cast<GLMaterialDataComponent*>(rhs);
-	l_rhs->m_ResourceBinders.resize(5);
 
-	if (l_rhs->m_normalTexture)
+	auto l_defaultMaterial = g_pModuleManager->getRenderingFrontend()->getDefaultMaterialDataComponent();
+
+	for (size_t i = 0; i < 8; i++)
 	{
-		InitializeTextureDataComponent(l_rhs->m_normalTexture);
-		l_rhs->m_ResourceBinders[0] = l_rhs->m_normalTexture->m_ResourceBinder;
-	}
-	else
-	{
-		l_rhs->m_ResourceBinders[0] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Normal)->m_ResourceBinder;
-	}
-	if (l_rhs->m_albedoTexture)
-	{
-		InitializeTextureDataComponent(l_rhs->m_albedoTexture);
-		l_rhs->m_ResourceBinders[1] = l_rhs->m_albedoTexture->m_ResourceBinder;
-	}
-	else
-	{
-		l_rhs->m_ResourceBinders[1] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Albedo)->m_ResourceBinder;
-	}
-	if (l_rhs->m_metallicTexture)
-	{
-		InitializeTextureDataComponent(l_rhs->m_metallicTexture);
-		l_rhs->m_ResourceBinders[2] = l_rhs->m_metallicTexture->m_ResourceBinder;
-	}
-	else
-	{
-		l_rhs->m_ResourceBinders[2] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Metallic)->m_ResourceBinder;
-	}
-	if (l_rhs->m_roughnessTexture)
-	{
-		InitializeTextureDataComponent(l_rhs->m_roughnessTexture);
-		l_rhs->m_ResourceBinders[3] = l_rhs->m_roughnessTexture->m_ResourceBinder;
-	}
-	else
-	{
-		l_rhs->m_ResourceBinders[3] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Roughness)->m_ResourceBinder;
-	}
-	if (l_rhs->m_aoTexture)
-	{
-		InitializeTextureDataComponent(l_rhs->m_aoTexture);
-		l_rhs->m_ResourceBinders[4] = l_rhs->m_aoTexture->m_ResourceBinder;
-	}
-	else
-	{
-		l_rhs->m_ResourceBinders[4] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::AmbientOcclusion)->m_ResourceBinder;
+		auto l_texture = reinterpret_cast<GLTextureDataComponent*>(l_rhs->m_TextureSlots[i].m_Texture);
+
+		if (l_texture)
+		{
+			InitializeTextureDataComponent(l_texture);
+			l_rhs->m_TextureSlots[i].m_Texture = l_texture;
+			l_rhs->m_TextureSlots[i].m_Activate = true;
+		}
+		else
+		{
+			l_rhs->m_TextureSlots[i].m_Texture = l_defaultMaterial->m_TextureSlots[i].m_Texture;
+		}
 	}
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
@@ -1071,11 +1042,11 @@ std::vector<Vec4> GLRenderingServer::ReadTextureBackToCPU(RenderPassDataComponen
 
 	GLenum l_attachmentType;
 
-	if (GLTDC->m_textureDesc.PixelDataFormat == TexturePixelDataFormat::Depth)
+	if (GLTDC->m_TextureDesc.PixelDataFormat == TexturePixelDataFormat::Depth)
 	{
 		l_attachmentType = GL_DEPTH_ATTACHMENT;
 	}
-	else if (GLTDC->m_textureDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
+	else if (GLTDC->m_TextureDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
 	{
 		l_attachmentType = GL_DEPTH_STENCIL_ATTACHMENT;
 	}
@@ -1089,7 +1060,7 @@ std::vector<Vec4> GLRenderingServer::ReadTextureBackToCPU(RenderPassDataComponen
 	glBindFramebuffer(GL_FRAMEBUFFER, l_tempFramebuffer);
 	glReadBuffer(GL_COLOR_ATTACHMENT0);
 
-	switch (GLTDC->m_textureDesc.SamplerType)
+	switch (GLTDC->m_TextureDesc.SamplerType)
 	{
 	case TextureSamplerType::Sampler1D:
 		l_sampleCount = l_width;

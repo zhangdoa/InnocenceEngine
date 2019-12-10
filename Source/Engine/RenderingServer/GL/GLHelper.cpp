@@ -451,9 +451,9 @@ bool GLHelper::CreateRenderTargets(GLRenderPassDataComponent * GLRPDC, IRenderin
 	{
 		auto l_TDC = GLRPDC->m_RenderTargets[i];
 
-		l_TDC->m_textureDesc = GLRPDC->m_RenderPassDesc.m_RenderTargetDesc;
+		l_TDC->m_TextureDesc = GLRPDC->m_RenderPassDesc.m_RenderTargetDesc;
 
-		l_TDC->m_textureData = nullptr;
+		l_TDC->m_TextureData = nullptr;
 
 		renderingServer->InitializeTextureDataComponent(l_TDC);
 
@@ -465,20 +465,20 @@ bool GLHelper::CreateRenderTargets(GLRenderPassDataComponent * GLRPDC, IRenderin
 	{
 		auto l_TDC = renderingServer->AddTextureDataComponent((std::string(GLRPDC->m_ComponentName.c_str()) + "_DS/").c_str());
 
-		l_TDC->m_textureDesc = GLRPDC->m_RenderPassDesc.m_RenderTargetDesc;
+		l_TDC->m_TextureDesc = GLRPDC->m_RenderPassDesc.m_RenderTargetDesc;
 
 		if (GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
 		{
-			l_TDC->m_textureDesc.UsageType = TextureUsageType::DepthStencilAttachment;
-			l_TDC->m_textureDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
+			l_TDC->m_TextureDesc.UsageType = TextureUsageType::DepthStencilAttachment;
+			l_TDC->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
 		}
 		else
 		{
-			l_TDC->m_textureDesc.UsageType = TextureUsageType::DepthAttachment;
-			l_TDC->m_textureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
+			l_TDC->m_TextureDesc.UsageType = TextureUsageType::DepthAttachment;
+			l_TDC->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
 		}
 
-		l_TDC->m_textureData = nullptr;
+		l_TDC->m_TextureData = nullptr;
 
 		renderingServer->InitializeTextureDataComponent(l_TDC);
 
@@ -1005,11 +1005,11 @@ bool GLHelper::AttachTextureToFramebuffer(GLTextureDataComponent * GLTDC, GLRend
 
 	GLenum l_attachmentType;
 
-	if (GLTDC->m_textureDesc.PixelDataFormat == TexturePixelDataFormat::Depth)
+	if (GLTDC->m_TextureDesc.PixelDataFormat == TexturePixelDataFormat::Depth)
 	{
 		l_attachmentType = GL_DEPTH_ATTACHMENT;
 	}
-	else if (GLTDC->m_textureDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
+	else if (GLTDC->m_TextureDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
 	{
 		l_attachmentType = GL_DEPTH_STENCIL_ATTACHMENT;
 	}
@@ -1018,7 +1018,7 @@ bool GLHelper::AttachTextureToFramebuffer(GLTextureDataComponent * GLTDC, GLRend
 		l_attachmentType = GL_COLOR_ATTACHMENT0 + attachmentIndex;
 	}
 
-	switch (GLTDC->m_textureDesc.SamplerType)
+	switch (GLTDC->m_TextureDesc.SamplerType)
 	{
 	case TextureSamplerType::Sampler1D:
 		glFramebufferTexture1D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_1D, GLTDC->m_TO, mipLevel);

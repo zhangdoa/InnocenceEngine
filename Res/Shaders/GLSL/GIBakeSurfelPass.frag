@@ -24,7 +24,7 @@ void main()
 	float transparency = 1.0;
 	vec3 MRA;
 
-	if (materialCBuffer.data.useNormalTexture)
+	if ((materialCBuffer.data.textureSlotMask & 0x00000001) == 0x00000001)
 	{
 		// get edge vectors of the pixel triangle
 		vec3 dp1 = dFdx(fs_in.posWS.xyz);
@@ -49,7 +49,7 @@ void main()
 		WorldSpaceNormal = normalize(fs_in.normal.xyz);
 	}
 
-	if (materialCBuffer.data.useAlbedoTexture)
+	if ((materialCBuffer.data.textureSlotMask & 0x00000002) == 0x00000001)
 	{
 		vec4 albedoTexture = texture(uni_albedoTexture, fs_in.texcoord);
 		transparency = albedoTexture.a;
@@ -64,7 +64,7 @@ void main()
 		albedo = materialCBuffer.data.albedo.rgb;
 	}
 
-	if (materialCBuffer.data.useMetallicTexture)
+	if ((materialCBuffer.data.textureSlotMask & 0x00000004) == 0x00000001)
 	{
 		MRA.r = texture(uni_metallicTexture, fs_in.texcoord).r;
 	}
@@ -73,7 +73,7 @@ void main()
 		MRA.r = materialCBuffer.data.MRAT.r;
 	}
 
-	if (materialCBuffer.data.useRoughnessTexture)
+	if ((materialCBuffer.data.textureSlotMask & 0x00000008) == 0x00000001)
 	{
 		MRA.g = texture(uni_roughnessTexture, fs_in.texcoord).r;
 	}
@@ -82,7 +82,7 @@ void main()
 		MRA.g = materialCBuffer.data.MRAT.g;
 	}
 
-	if (materialCBuffer.data.useAOTexture)
+	if ((materialCBuffer.data.textureSlotMask & 0x00000010) == 0x00000001)
 	{
 		MRA.b = texture(uni_aoTexture, fs_in.texcoord).r;
 	}

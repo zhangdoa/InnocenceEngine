@@ -290,8 +290,8 @@ bool ExecuteRayTracing()
 	l_hitableList->m_List = l_hitableListVector.data();
 	l_hitableList->m_Size = (uint32_t)l_hitableListVector.size();
 
-	int32_t nx = m_TDC->m_textureDesc.Width;
-	int32_t ny = m_TDC->m_textureDesc.Height;
+	int32_t nx = m_TDC->m_TextureDesc.Width;
+	int32_t ny = m_TDC->m_TextureDesc.Height;
 	int32_t totalWorkload = nx * ny;
 
 	std::vector<TVec4<uint8_t>> l_result;
@@ -318,7 +318,7 @@ bool ExecuteRayTracing()
 		}
 	}
 
-	m_TDC->m_textureData = &l_result[0];
+	m_TDC->m_TextureData = &l_result[0];
 
 	auto l_textureFileName = "//Res//Intermediate//RayTracingResult_" + std::to_string(g_pModuleManager->getTimeSystem()->getCurrentTimeFromEpoch());
 	g_pModuleManager->getFileSystem()->saveTexture(l_textureFileName.c_str(), m_TDC);
@@ -342,12 +342,12 @@ bool InnoRayTracer::Initialize()
 
 	m_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("RayTracingResult/");
 
-	m_TDC->m_textureDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_TDC->m_textureDesc.UsageType = TextureUsageType::Sample;
-	m_TDC->m_textureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
-	m_TDC->m_textureDesc.Width = l_screenResolution.x / l_denom;
-	m_TDC->m_textureDesc.Height = l_screenResolution.y / l_denom;
-	m_TDC->m_textureDesc.PixelDataType = TexturePixelDataType::UBYTE;
+	m_TDC->m_TextureDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_TDC->m_TextureDesc.UsageType = TextureUsageType::Sample;
+	m_TDC->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
+	m_TDC->m_TextureDesc.Width = l_screenResolution.x / l_denom;
+	m_TDC->m_TextureDesc.Height = l_screenResolution.y / l_denom;
+	m_TDC->m_TextureDesc.PixelDataType = TexturePixelDataType::UBYTE;
 
 	InnoRayTracerNS::m_ObjectStatus = ObjectStatus::Activated;
 	return true;

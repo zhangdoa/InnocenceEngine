@@ -548,33 +548,27 @@ MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(co
 	loadJsonDataFromDisk(materialFileName, j);
 
 	auto l_MDC = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
+	auto l_defaultMaterial = g_pModuleManager->getRenderingFrontend()->getDefaultMaterialDataComponent();
 
 	if (j.find("Textures") != j.end())
 	{
 		for (auto i : j["Textures"])
 		{
 			std::string l_textureFile = i["File"];
+			auto l_textureSlotIndex = i["TextureSlotIndex"];
+
 			auto l_TDC = AssetLoader::loadTexture(l_textureFile.c_str());
-			auto l_textureAttributeType = TextureAttributeType(i["AttributeType"]);
 			if (l_TDC)
 			{
-				l_TDC->m_textureDesc.SamplerType = TextureSamplerType(i["SamplerType"]);
-				l_TDC->m_textureDesc.UsageType = TextureUsageType(i["UsageType"]);
-				l_TDC->m_textureDesc.IsSRGB = i["IsSRGB"];
+				l_TDC->m_TextureDesc.SamplerType = TextureSamplerType(i["SamplerType"]);
+				l_TDC->m_TextureDesc.UsageType = TextureUsageType(i["UsageType"]);
+				l_TDC->m_TextureDesc.IsSRGB = i["IsSRGB"];
+
+				l_MDC->m_TextureSlots[l_textureSlotIndex].m_Texture = l_TDC;
 			}
 			else
 			{
-				l_TDC = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(l_textureAttributeType);
-			}
-			switch (l_textureAttributeType)
-			{
-			case TextureAttributeType::Normal: l_MDC->m_normalTexture = l_TDC; break;
-			case TextureAttributeType::Albedo: l_MDC->m_albedoTexture = l_TDC; break;
-			case TextureAttributeType::Metallic: l_MDC->m_metallicTexture = l_TDC; break;
-			case TextureAttributeType::Roughness: l_MDC->m_roughnessTexture = l_TDC; break;
-			case TextureAttributeType::AmbientOcclusion: l_MDC->m_aoTexture = l_TDC; break;
-			default:
-				break;
+				l_MDC->m_TextureSlots[l_textureSlotIndex] = l_defaultMaterial->m_TextureSlots[l_textureSlotIndex];
 			}
 		}
 	}

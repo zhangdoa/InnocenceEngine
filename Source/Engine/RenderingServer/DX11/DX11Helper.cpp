@@ -670,9 +670,9 @@ bool DX11Helper::CreateRenderTargets(DX11RenderPassDataComponent * DX11RPDC, IRe
 	{
 		auto l_TDC = DX11RPDC->m_RenderTargets[i];
 
-		l_TDC->m_textureDesc = DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc;
+		l_TDC->m_TextureDesc = DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc;
 
-		l_TDC->m_textureData = nullptr;
+		l_TDC->m_TextureData = nullptr;
 
 		renderingServer->InitializeTextureDataComponent(l_TDC);
 	}
@@ -680,20 +680,20 @@ bool DX11Helper::CreateRenderTargets(DX11RenderPassDataComponent * DX11RPDC, IRe
 	if (DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
 	{
 		DX11RPDC->m_DepthStencilRenderTarget = renderingServer->AddTextureDataComponent((std::string(DX11RPDC->m_ComponentName.c_str()) + "_DS/").c_str());
-		DX11RPDC->m_DepthStencilRenderTarget->m_textureDesc = DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc;
+		DX11RPDC->m_DepthStencilRenderTarget->m_TextureDesc = DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc;
 
 		if (DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
 		{
-			DX11RPDC->m_DepthStencilRenderTarget->m_textureDesc.UsageType = TextureUsageType::DepthStencilAttachment;
-			DX11RPDC->m_DepthStencilRenderTarget->m_textureDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
+			DX11RPDC->m_DepthStencilRenderTarget->m_TextureDesc.UsageType = TextureUsageType::DepthStencilAttachment;
+			DX11RPDC->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
 		}
 		else
 		{
-			DX11RPDC->m_DepthStencilRenderTarget->m_textureDesc.UsageType = TextureUsageType::DepthAttachment;
-			DX11RPDC->m_DepthStencilRenderTarget->m_textureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
+			DX11RPDC->m_DepthStencilRenderTarget->m_TextureDesc.UsageType = TextureUsageType::DepthAttachment;
+			DX11RPDC->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
 		}
 
-		DX11RPDC->m_DepthStencilRenderTarget->m_textureData = nullptr;
+		DX11RPDC->m_DepthStencilRenderTarget->m_TextureData = nullptr;
 
 		renderingServer->InitializeTextureDataComponent(DX11RPDC->m_DepthStencilRenderTarget);
 	}

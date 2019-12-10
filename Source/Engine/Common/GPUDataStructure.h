@@ -61,13 +61,9 @@ struct alignas(16) PerObjectConstantBuffer
 struct alignas(16) MaterialConstantBuffer
 {
 	MeshCustomMaterial customMaterial;
-	int32_t useNormalTexture = true;
-	int32_t useAlbedoTexture = true;
-	int32_t useMetallicTexture = true;
-	int32_t useRoughnessTexture = true;
-	int32_t useAOTexture = true;
-	int32_t materialType = 0;
-	float padding1[2];
+	uint32_t textureSlotMask = 0x00000000;
+	uint32_t materialType = 0;
+	float padding1[6];
 	Mat4 padding2;
 	Mat4 padding3;
 	Mat4 padding4;

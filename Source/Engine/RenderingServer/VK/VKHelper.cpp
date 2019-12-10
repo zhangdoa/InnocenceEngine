@@ -845,10 +845,10 @@ bool VKHelper::createImageView(VkDevice device, VKTextureDataComponent* VKTDC)
 	viewInfo.subresourceRange.baseMipLevel = 0;
 	viewInfo.subresourceRange.levelCount = 1;
 	viewInfo.subresourceRange.baseArrayLayer = 0;
-	if (VKTDC->m_textureDesc.SamplerType == TextureSamplerType::Sampler1DArray ||
-		VKTDC->m_textureDesc.SamplerType == TextureSamplerType::Sampler2DArray)
+	if (VKTDC->m_TextureDesc.SamplerType == TextureSamplerType::Sampler1DArray ||
+		VKTDC->m_TextureDesc.SamplerType == TextureSamplerType::Sampler2DArray)
 	{
-		viewInfo.subresourceRange.layerCount = VKTDC->m_textureDesc.DepthOrArraySize;
+		viewInfo.subresourceRange.layerCount = VKTDC->m_TextureDesc.DepthOrArraySize;
 	}
 	else
 	{
@@ -1078,9 +1078,9 @@ bool VKHelper::createRenderTargets(VKRenderPassDataComponent* VKRPDC, IRendering
 	{
 		VKRPDC->m_RenderTargets[i] = renderingServer->AddTextureDataComponent((std::string(VKRPDC->m_ComponentName.c_str()) + "_" + std::to_string(i) + "/").c_str());
 
-		VKRPDC->m_RenderTargets[i]->m_textureDesc = VKRPDC->m_RenderPassDesc.m_RenderTargetDesc;
+		VKRPDC->m_RenderTargets[i]->m_TextureDesc = VKRPDC->m_RenderPassDesc.m_RenderTargetDesc;
 
-		VKRPDC->m_RenderTargets[i]->m_textureData = nullptr;
+		VKRPDC->m_RenderTargets[i]->m_TextureData = nullptr;
 
 		renderingServer->InitializeTextureDataComponent(VKRPDC->m_RenderTargets[i]);
 	}
@@ -1088,18 +1088,18 @@ bool VKHelper::createRenderTargets(VKRenderPassDataComponent* VKRPDC, IRendering
 	if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
 	{
 		VKRPDC->m_DepthStencilRenderTarget = renderingServer->AddTextureDataComponent((std::string(VKRPDC->m_ComponentName.c_str()) + "_DS/").c_str());
-		VKRPDC->m_DepthStencilRenderTarget->m_textureDesc = VKRPDC->m_RenderPassDesc.m_RenderTargetDesc;
+		VKRPDC->m_DepthStencilRenderTarget->m_TextureDesc = VKRPDC->m_RenderPassDesc.m_RenderTargetDesc;
 		if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
 		{
-			VKRPDC->m_DepthStencilRenderTarget->m_textureDesc.UsageType = TextureUsageType::DepthStencilAttachment;
-			VKRPDC->m_DepthStencilRenderTarget->m_textureDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
+			VKRPDC->m_DepthStencilRenderTarget->m_TextureDesc.UsageType = TextureUsageType::DepthStencilAttachment;
+			VKRPDC->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
 		}
 		else
 		{
-			VKRPDC->m_DepthStencilRenderTarget->m_textureDesc.UsageType = TextureUsageType::DepthAttachment;
-			VKRPDC->m_DepthStencilRenderTarget->m_textureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
+			VKRPDC->m_DepthStencilRenderTarget->m_TextureDesc.UsageType = TextureUsageType::DepthAttachment;
+			VKRPDC->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
 		}
-		VKRPDC->m_DepthStencilRenderTarget->m_textureData = { nullptr };
+		VKRPDC->m_DepthStencilRenderTarget->m_TextureData = { nullptr };
 
 		renderingServer->InitializeTextureDataComponent(VKRPDC->m_DepthStencilRenderTarget);
 	}

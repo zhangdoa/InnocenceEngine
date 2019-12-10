@@ -211,10 +211,10 @@ bool VolumetricFogPass::Setup()
 	l_RenderPassDesc.m_RenderTargetDesc.DepthOrArraySize = 64;
 
 	m_irraidanceInjectionResult = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("VolumetricFogIrraidanceInjectionResult/");
-	m_irraidanceInjectionResult->m_textureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+	m_irraidanceInjectionResult->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
 	m_rayMarchingResult = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("VolumetricFogRayMarchingResult/");
-	m_rayMarchingResult->m_textureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+	m_rayMarchingResult->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
 	return true;
 }

@@ -39,12 +39,8 @@ struct Material_CB
 {
 	vec4 albedo; // 0
 	vec4 MRAT; // 1
-	bool useNormalTexture;  // Tight packing 2
-	bool useAlbedoTexture;  // Tight packing 2
-	bool useMetallicTexture;  // Tight packing 2
-	bool useRoughnessTexture;  // Tight packing 2
-	bool useAOTexture; // Tight packing 3
-	bool materialType; // Tight packing 3
+	uint textureSlotMask; // 2
+	uint materialType; // 3
 	float padding[12]; // 4 - 15
 };
 

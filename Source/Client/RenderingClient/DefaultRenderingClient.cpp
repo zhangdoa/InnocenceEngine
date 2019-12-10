@@ -230,8 +230,8 @@ bool DefaultRenderingClient::Setup()
 		{
 			auto l_textureData = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(FinalBlendPass::GetRPDC(), FinalBlendPass::GetRPDC()->m_RenderTargets[0]);
 			auto l_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
-			l_TDC->m_textureDesc = FinalBlendPass::GetRPDC()->m_RenderTargets[0]->m_textureDesc;
-			l_TDC->m_textureData = l_textureData.data();
+			l_TDC->m_TextureDesc = FinalBlendPass::GetRPDC()->m_RenderTargets[0]->m_TextureDesc;
+			l_TDC->m_TextureData = l_textureData.data();
 			g_pModuleManager->getFileSystem()->saveTexture("ScreenCapture", l_TDC);
 			//g_pModuleManager->getRenderingServer()->DeleteTextureDataComponent(l_TDC);
 			m_saveScreenCapture = false;

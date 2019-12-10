@@ -86,13 +86,7 @@ namespace InnoRenderingFrontendNS
 	MeshDataComponent* m_unitSphereMesh;
 	MeshDataComponent* m_terrainMesh;
 
-	TextureDataComponent* m_basicNormalTexture;
-	TextureDataComponent* m_basicAlbedoTexture;
-	TextureDataComponent* m_basicMetallicTexture;
-	TextureDataComponent* m_basicRoughnessTexture;
-	TextureDataComponent* m_basicAOTexture;
-
-	MaterialDataComponent* m_basicMaterial;
+	MaterialDataComponent* m_defaultMaterial;
 
 	bool setup(IRenderingServer* renderingServer);
 	bool loadDefaultAssets();
@@ -227,44 +221,47 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 
 bool InnoRenderingFrontendNS::loadDefaultAssets()
 {
-	m_basicNormalTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_normal.png");
-	m_basicNormalTexture->m_textureDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_basicNormalTexture->m_textureDesc.UsageType = TextureUsageType::Sample;
+	auto m_basicNormalTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_normal.png");
+	m_basicNormalTexture->m_TextureDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_basicNormalTexture->m_TextureDesc.UsageType = TextureUsageType::Sample;
 
-	m_basicAlbedoTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_albedo.png");
-	m_basicAlbedoTexture->m_textureDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_basicAlbedoTexture->m_textureDesc.UsageType = TextureUsageType::Sample;
+	auto m_basicAlbedoTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_albedo.png");
+	m_basicAlbedoTexture->m_TextureDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_basicAlbedoTexture->m_TextureDesc.UsageType = TextureUsageType::Sample;
 
-	m_basicMetallicTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_metallic.png");
-	m_basicMetallicTexture->m_textureDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_basicMetallicTexture->m_textureDesc.UsageType = TextureUsageType::Sample;
+	auto m_basicMetallicTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_metallic.png");
+	m_basicMetallicTexture->m_TextureDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_basicMetallicTexture->m_TextureDesc.UsageType = TextureUsageType::Sample;
 
-	m_basicRoughnessTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_roughness.png");
-	m_basicRoughnessTexture->m_textureDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_basicRoughnessTexture->m_textureDesc.UsageType = TextureUsageType::Sample;
+	auto m_basicRoughnessTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_roughness.png");
+	m_basicRoughnessTexture->m_TextureDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_basicRoughnessTexture->m_TextureDesc.UsageType = TextureUsageType::Sample;
 
-	m_basicAOTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_ao.png");
-	m_basicAOTexture->m_textureDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_basicAOTexture->m_textureDesc.UsageType = TextureUsageType::Sample;
+	auto m_basicAOTexture = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//basic_ao.png");
+	m_basicAOTexture->m_TextureDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_basicAOTexture->m_TextureDesc.UsageType = TextureUsageType::Sample;
 
-	m_basicMaterial = m_renderingServer->AddMaterialDataComponent("BasicMaterial/");
-	m_basicMaterial->m_normalTexture = m_basicNormalTexture;
-	m_basicMaterial->m_albedoTexture = m_basicAlbedoTexture;
-	m_basicMaterial->m_metallicTexture = m_basicMetallicTexture;
-	m_basicMaterial->m_roughnessTexture = m_basicRoughnessTexture;
-	m_basicMaterial->m_aoTexture = m_basicAOTexture;
+	m_defaultMaterial = m_renderingServer->AddMaterialDataComponent("BasicMaterial/");
+	m_defaultMaterial->m_TextureSlots[0].m_Texture = m_basicNormalTexture;
+	m_defaultMaterial->m_TextureSlots[1].m_Texture = m_basicAlbedoTexture;
+	m_defaultMaterial->m_TextureSlots[2].m_Texture = m_basicMetallicTexture;
+	m_defaultMaterial->m_TextureSlots[3].m_Texture = m_basicRoughnessTexture;
+	m_defaultMaterial->m_TextureSlots[4].m_Texture = m_basicAOTexture;
+	m_defaultMaterial->m_TextureSlots[5].m_Texture = m_basicAOTexture;
+	m_defaultMaterial->m_TextureSlots[6].m_Texture = m_basicAOTexture;
+	m_defaultMaterial->m_TextureSlots[7].m_Texture = m_basicAOTexture;
 
 	m_iconTemplate_DirectionalLight = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_DirectionalLight.png");
-	m_iconTemplate_DirectionalLight->m_textureDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_iconTemplate_DirectionalLight->m_textureDesc.UsageType = TextureUsageType::Sample;
+	m_iconTemplate_DirectionalLight->m_TextureDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_iconTemplate_DirectionalLight->m_TextureDesc.UsageType = TextureUsageType::Sample;
 
 	m_iconTemplate_PointLight = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_PointLight.png");
-	m_iconTemplate_PointLight->m_textureDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_iconTemplate_PointLight->m_textureDesc.UsageType = TextureUsageType::Sample;
+	m_iconTemplate_PointLight->m_TextureDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_iconTemplate_PointLight->m_TextureDesc.UsageType = TextureUsageType::Sample;
 
 	m_iconTemplate_SphereLight = g_pModuleManager->getFileSystem()->loadTexture("Res//Textures//InnoWorldEditorIcons_SphereLight.png");
-	m_iconTemplate_SphereLight->m_textureDesc.SamplerType = TextureSamplerType::Sampler2D;
-	m_iconTemplate_SphereLight->m_textureDesc.UsageType = TextureUsageType::Sample;
+	m_iconTemplate_SphereLight->m_TextureDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_iconTemplate_SphereLight->m_TextureDesc.UsageType = TextureUsageType::Sample;
 
 	m_unitLineMesh = m_renderingServer->AddMeshDataComponent("UnitLineMesh/");
 	g_pModuleManager->getAssetSystem()->addUnitLine(*m_unitLineMesh);
@@ -313,7 +310,7 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 		m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_PointLight);
 		m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_SphereLight);
 
-		m_renderingServer->InitializeMaterialDataComponent(m_basicMaterial);
+		m_renderingServer->InitializeMaterialDataComponent(m_defaultMaterial);
 	});
 
 	l_DefaultAssetInitializeTask->Wait();
@@ -545,11 +542,12 @@ bool InnoRenderingFrontendNS::updateMeshData()
 
 						MaterialConstantBuffer l_materialConstantBuffer;
 
-						l_materialConstantBuffer.useNormalTexture = !(l_opaquePassDrawCallInfo.material->m_normalTexture == nullptr);
-						l_materialConstantBuffer.useAlbedoTexture = !(l_opaquePassDrawCallInfo.material->m_albedoTexture == nullptr);
-						l_materialConstantBuffer.useMetallicTexture = !(l_opaquePassDrawCallInfo.material->m_metallicTexture == nullptr);
-						l_materialConstantBuffer.useRoughnessTexture = !(l_opaquePassDrawCallInfo.material->m_roughnessTexture == nullptr);
-						l_materialConstantBuffer.useAOTexture = !(l_opaquePassDrawCallInfo.material->m_aoTexture == nullptr);
+						for (size_t i = 0; i < 8; i++)
+						{
+							uint32_t l_writeMask = l_opaquePassDrawCallInfo.material->m_TextureSlots[i].m_Activate ? 0x00000001 : 0x00000000;
+							l_writeMask = l_writeMask << i;
+							l_materialConstantBuffer.textureSlotMask |= l_writeMask;
+						}
 						l_materialConstantBuffer.materialType = int32_t(l_cullingData.meshUsageType);
 						l_materialConstantBuffer.customMaterial = l_cullingData.material->m_meshCustomMaterial;
 
@@ -575,11 +573,6 @@ bool InnoRenderingFrontendNS::updateMeshData()
 
 						MaterialConstantBuffer l_materialConstantBuffer;
 
-						l_materialConstantBuffer.useNormalTexture = false;
-						l_materialConstantBuffer.useAlbedoTexture = false;
-						l_materialConstantBuffer.useMetallicTexture = false;
-						l_materialConstantBuffer.useRoughnessTexture = false;
-						l_materialConstantBuffer.useAOTexture = false;
 						l_materialConstantBuffer.materialType = int32_t(l_cullingData.meshUsageType);
 						l_materialConstantBuffer.customMaterial = l_cullingData.material->m_meshCustomMaterial;
 
@@ -825,25 +818,6 @@ MeshDataComponent * InnoRenderingFrontend::getMeshDataComponent(MeshShapeType me
 	}
 }
 
-TextureDataComponent * InnoRenderingFrontend::getTextureDataComponent(TextureAttributeType textureAttributeType)
-{
-	switch (textureAttributeType)
-	{
-	case TextureAttributeType::Normal:
-		return m_basicNormalTexture; break;
-	case TextureAttributeType::Albedo:
-		return m_basicAlbedoTexture; break;
-	case TextureAttributeType::Metallic:
-		return m_basicMetallicTexture; break;
-	case TextureAttributeType::Roughness:
-		return m_basicRoughnessTexture; break;
-	case TextureAttributeType::AmbientOcclusion:
-		return m_basicAOTexture; break;
-	default:
-		return nullptr; break;
-	}
-}
-
 TextureDataComponent * InnoRenderingFrontend::getTextureDataComponent(WorldEditorIconType iconType)
 {
 	switch (iconType)
@@ -861,7 +835,7 @@ TextureDataComponent * InnoRenderingFrontend::getTextureDataComponent(WorldEdito
 
 MaterialDataComponent * InnoRenderingFrontend::getDefaultMaterialDataComponent()
 {
-	return m_basicMaterial;
+	return m_defaultMaterial;
 }
 
 bool InnoRenderingFrontend::transferDataToGPU()

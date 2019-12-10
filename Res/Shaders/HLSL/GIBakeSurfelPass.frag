@@ -30,13 +30,13 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	PixelOutputType output;
 
 	float3 normalInWorldSpace;
-	if (materialCBuffer.useNormalTexture)
+	if (materialCBuffer.textureSlotMask & 0x00000001)
 	{
 		// get edge vectors of the pixel triangle
 		float3 dp1 = ddx_fine(input.posWS.xyz);
 		float3 dp2 = ddy_fine(input.posWS.xyz);
-		float2 duv1 = ddx_fine(input.texcoord);
-		float2 duv2 = ddy_fine(input.texcoord);
+		float2 duv1 = ddx_fine(input.texCoord);
+		float2 duv2 = ddy_fine(input.texCoord);
 
 		// solve the linear system
 		float3 N = normalize(input.normal.xyz);
@@ -48,7 +48,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 
 		float3x3 TBN = float3x3(T, B, N);
 
-		float3 normalInTangentSpace = normalize(t2d_normal.Sample(SampleTypeWrap, input.texcoord).rgb * 2.0f - 1.0f);
+		float3 normalInTangentSpace = normalize(t2d_normal.Sample(SampleTypeWrap, input.texCoord).rgb * 2.0f - 1.0f);
 		normalInWorldSpace = normalize(mul(normalInTangentSpace, TBN));
 	}
 	else
@@ -58,9 +58,9 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 
 	float transparency = 1.0;
 	float3 out_Albedo;
-	if (materialCBuffer.useAlbedoTexture)
+	if (materialCBuffer.textureSlotMask & 0x00000002)
 	{
-		float4 l_albedo = t2d_albedo.Sample(SampleTypeWrap, input.texcoord);
+		float4 l_albedo = t2d_albedo.Sample(SampleTypeWrap, input.texCoord);
 		transparency = l_albedo.a;
 		if (transparency < 0.1)
 		{
@@ -77,9 +77,9 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	}
 
 	float out_Metallic;
-	if (materialCBuffer.useMetallicTexture)
+	if (materialCBuffer.textureSlotMask & 0x00000004)
 	{
-		out_Metallic = t2d_metallic.Sample(SampleTypeWrap, input.texcoord).r;
+		out_Metallic = t2d_metallic.Sample(SampleTypeWrap, input.texCoord).r;
 	}
 	else
 	{
@@ -87,9 +87,9 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	}
 
 	float out_Roughness;
-	if (materialCBuffer.useRoughnessTexture)
+	if (materialCBuffer.textureSlotMask & 0x00000008)
 	{
-		out_Roughness = t2d_roughness.Sample(SampleTypeWrap, input.texcoord).r;
+		out_Roughness = t2d_roughness.Sample(SampleTypeWrap, input.texCoord).r;
 	}
 	else
 	{
@@ -97,9 +97,9 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	}
 
 	float out_AO;
-	if (materialCBuffer.useAOTexture)
+	if (materialCBuffer.textureSlotMask & 0x00000010)
 	{
-		out_AO = t2d_ao.Sample(SampleTypeWrap, input.texcoord).r;
+		out_AO = t2d_ao.Sample(SampleTypeWrap, input.texCoord).r;
 	}
 	else
 	{

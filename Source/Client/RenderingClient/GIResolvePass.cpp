@@ -233,26 +233,26 @@ bool GIResolvePass::InitializeGPUBuffers()
 			auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 			m_probeVolume = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("ProbeVolume/");
-			m_probeVolume->m_textureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+			m_probeVolume->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
-			m_probeVolume->m_textureDesc.Width = (uint32_t)l_probeIndex.x + 1;
-			m_probeVolume->m_textureDesc.Height = (uint32_t)l_probeIndex.y + 1;
-			m_probeVolume->m_textureDesc.DepthOrArraySize = ((uint32_t)l_probeIndex.z + 1) * 6;
-			m_probeVolume->m_textureDesc.UsageType = TextureUsageType::RawImage;
-			m_probeVolume->m_textureDesc.SamplerType = TextureSamplerType::Sampler3D;
-			m_probeVolume->m_textureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
+			m_probeVolume->m_TextureDesc.Width = (uint32_t)l_probeIndex.x + 1;
+			m_probeVolume->m_TextureDesc.Height = (uint32_t)l_probeIndex.y + 1;
+			m_probeVolume->m_TextureDesc.DepthOrArraySize = ((uint32_t)l_probeIndex.z + 1) * 6;
+			m_probeVolume->m_TextureDesc.UsageType = TextureUsageType::RawImage;
+			m_probeVolume->m_TextureDesc.SamplerType = TextureSamplerType::Sampler3D;
+			m_probeVolume->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 
 			g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_probeVolume);
 
 			m_irradianceVolume = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("IrradianceVolume/");
-			m_irradianceVolume->m_textureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+			m_irradianceVolume->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
-			m_irradianceVolume->m_textureDesc.Width = 64;
-			m_irradianceVolume->m_textureDesc.Height = 32;
-			m_irradianceVolume->m_textureDesc.DepthOrArraySize = 64 * 6;
-			m_irradianceVolume->m_textureDesc.UsageType = TextureUsageType::RawImage;
-			m_irradianceVolume->m_textureDesc.SamplerType = TextureSamplerType::Sampler3D;
-			m_irradianceVolume->m_textureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
+			m_irradianceVolume->m_TextureDesc.Width = 64;
+			m_irradianceVolume->m_TextureDesc.Height = 32;
+			m_irradianceVolume->m_TextureDesc.DepthOrArraySize = 64 * 6;
+			m_irradianceVolume->m_TextureDesc.UsageType = TextureUsageType::RawImage;
+			m_irradianceVolume->m_TextureDesc.SamplerType = TextureSamplerType::Sampler3D;
+			m_irradianceVolume->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 
 			g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_irradianceVolume);
 
@@ -407,14 +407,14 @@ bool GIResolvePass::setupSky()
 
 	////
 	m_skyRadianceVolume = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("SkyRadianceVolume/");
-	m_skyRadianceVolume->m_textureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+	m_skyRadianceVolume->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
-	m_skyRadianceVolume->m_textureDesc.Width = 8;
-	m_skyRadianceVolume->m_textureDesc.Height = 8;
-	m_skyRadianceVolume->m_textureDesc.DepthOrArraySize = 6;
-	m_skyRadianceVolume->m_textureDesc.UsageType = TextureUsageType::RawImage;
-	m_skyRadianceVolume->m_textureDesc.SamplerType = TextureSamplerType::Sampler3D;
-	m_skyRadianceVolume->m_textureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
+	m_skyRadianceVolume->m_TextureDesc.Width = 8;
+	m_skyRadianceVolume->m_TextureDesc.Height = 8;
+	m_skyRadianceVolume->m_TextureDesc.DepthOrArraySize = 6;
+	m_skyRadianceVolume->m_TextureDesc.UsageType = TextureUsageType::RawImage;
+	m_skyRadianceVolume->m_TextureDesc.SamplerType = TextureSamplerType::Sampler3D;
+	m_skyRadianceVolume->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 
 	m_skyIrradianceGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("SkyIrradianceGPUBuffer/");
 	m_skyIrradianceGBDC->m_GPUAccessibility = Accessibility::ReadWrite;

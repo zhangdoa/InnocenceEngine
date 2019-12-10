@@ -129,11 +129,12 @@ bool InnoBakerNS::gatherStaticMeshData()
 
 				MaterialConstantBuffer l_materialConstantBuffer;
 
-				l_materialConstantBuffer.useNormalTexture = !(l_staticPerObjectConstantBuffer.material->m_normalTexture == nullptr);
-				l_materialConstantBuffer.useAlbedoTexture = !(l_staticPerObjectConstantBuffer.material->m_albedoTexture == nullptr);
-				l_materialConstantBuffer.useMetallicTexture = !(l_staticPerObjectConstantBuffer.material->m_metallicTexture == nullptr);
-				l_materialConstantBuffer.useRoughnessTexture = !(l_staticPerObjectConstantBuffer.material->m_roughnessTexture == nullptr);
-				l_materialConstantBuffer.useAOTexture = !(l_staticPerObjectConstantBuffer.material->m_aoTexture == nullptr);
+				for (size_t i = 0; i < 8; i++)
+				{
+					uint32_t l_writeMask = l_modelPair.second->m_TextureSlots[i].m_Activate ? 0x00000001 : 0x00000000;
+					l_writeMask = l_writeMask << i;
+					l_materialConstantBuffer.textureSlotMask |= l_writeMask;
+				}
 
 				l_materialConstantBuffer.customMaterial = l_modelPair.second->m_meshCustomMaterial;
 
@@ -215,8 +216,8 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 
 	//#ifdef DEBUG_
 	auto l_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
-	l_TDC->m_textureDesc = m_RPDC_Probe->m_RenderTargets[0]->m_textureDesc;
-	l_TDC->m_textureData = l_probePosTextureResults.data();
+	l_TDC->m_TextureDesc = m_RPDC_Probe->m_RenderTargets[0]->m_TextureDesc;
+	l_TDC->m_TextureData = l_probePosTextureResults.data();
 	g_pModuleManager->getFileSystem()->saveTexture("Res//Intermediate//ProbePosTexture", l_TDC);
 	//#endif // DEBUG_
 
@@ -525,22 +526,22 @@ bool InnoBakerNS::drawOpaquePass(Probe& probeCache, const Mat4& p, const std::ve
 
 			if (l_staticPerObjectConstantBuffer.material->m_ObjectStatus == ObjectStatus::Activated)
 			{
-				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_ResourceBinders[0], 3, 0);
-				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_ResourceBinders[1], 4, 1);
-				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_ResourceBinders[2], 5, 2);
-				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_ResourceBinders[3], 6, 3);
-				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_ResourceBinders[4], 7, 4);
+				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[0].m_Texture->m_ResourceBinder, 3, 0);
+				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[1].m_Texture->m_ResourceBinder, 4, 1);
+				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[2].m_Texture->m_ResourceBinder, 5, 2);
+				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[3].m_Texture->m_ResourceBinder, 6, 3);
+				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[4].m_Texture->m_ResourceBinder, 7, 4);
 			}
 
 			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC_Surfel, l_staticPerObjectConstantBuffer.mesh);
 
 			if (l_staticPerObjectConstantBuffer.material->m_ObjectStatus == ObjectStatus::Activated)
 			{
-				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_ResourceBinders[0], 3, 0);
-				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_ResourceBinders[1], 4, 1);
-				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_ResourceBinders[2], 5, 2);
-				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_ResourceBinders[3], 6, 3);
-				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_ResourceBinders[4], 7, 4);
+				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[0].m_Texture->m_ResourceBinder, 3, 0);
+				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[1].m_Texture->m_ResourceBinder, 4, 1);
+				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[2].m_Texture->m_ResourceBinder, 5, 2);
+				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[3].m_Texture->m_ResourceBinder, 6, 3);
+				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[4].m_Texture->m_ResourceBinder, 7, 4);
 			}
 		}
 
@@ -566,8 +567,8 @@ bool InnoBakerNS::readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfel
 	auto l_depthStencilRT = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_DepthStencilRenderTarget);
 
 	auto l_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
-	l_TDC->m_textureDesc = m_RPDC_Surfel->m_RenderTargets[0]->m_textureDesc;
-	l_TDC->m_textureData = l_albedoAO.data();
+	l_TDC->m_TextureDesc = m_RPDC_Surfel->m_RenderTargets[0]->m_TextureDesc;
+	l_TDC->m_TextureData = l_albedoAO.data();
 	g_pModuleManager->getFileSystem()->saveTexture(("Res//Intermediate//SurfelTextureAlbedo_" + std::to_string(l_index)).c_str(), l_TDC);
 
 	auto l_surfelsCount = m_surfelSampleCountPerFace * m_surfelSampleCountPerFace * 6;
@@ -612,8 +613,8 @@ bool InnoBakerNS::readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfel
 	}
 
 	auto l_DSTDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
-	l_DSTDC->m_textureDesc = m_RPDC_Surfel->m_RenderTargets[0]->m_textureDesc;
-	l_DSTDC->m_textureData = l_DSTDCData.data();
+	l_DSTDC->m_TextureDesc = m_RPDC_Surfel->m_RenderTargets[0]->m_TextureDesc;
+	l_DSTDC->m_TextureData = l_DSTDCData.data();
 	g_pModuleManager->getFileSystem()->saveTexture(("Res//Intermediate//SurfelTextureDS_" + std::to_string(l_index)).c_str(), l_DSTDC);
 
 	surfelCaches.insert(surfelCaches.end(), l_surfels.begin(), l_surfels.end());
@@ -1051,8 +1052,8 @@ bool InnoBakerNS::readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& b
 	auto l_brickIDResults = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_BrickFactor, m_RPDC_BrickFactor->m_RenderTargets[0]);
 
 	auto l_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
-	l_TDC->m_textureDesc = m_RPDC_BrickFactor->m_RenderTargets[0]->m_textureDesc;
-	l_TDC->m_textureData = l_brickIDResults.data();
+	l_TDC->m_TextureDesc = m_RPDC_BrickFactor->m_RenderTargets[0]->m_TextureDesc;
+	l_TDC->m_TextureData = l_brickIDResults.data();
 	g_pModuleManager->getFileSystem()->saveTexture(("Res//Intermediate//BrickTexture_" + std::to_string(l_index)).c_str(), l_TDC);
 	l_index++;
 

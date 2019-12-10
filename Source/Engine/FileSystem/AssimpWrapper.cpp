@@ -25,7 +25,7 @@ namespace InnoFileSystemNS
 		size_t processMeshData(const aiMesh * aiMesh, const char* exportFileRelativePath);
 		void processAssimpBone(const aiMesh * aiMesh, const char* exportFileRelativePath);
 		void processAssimpMaterial(const aiMaterial * aiMaterial, const char* exportFileRelativePath);
-		json processTextureData(const char* fileName, TextureSamplerType samplerType, TextureUsageType usageType, TextureAttributeType attributeType);
+		json processTextureData(const char* fileName, TextureSamplerType samplerType, TextureUsageType usageType, bool IsSRGB, uint32_t textureSlotIndex);
 		void processAssimpAnimation(const aiAnimation * aiAnimation, const char* exportFileRelativePath);
 	};
 }
@@ -408,23 +408,23 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * a
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_NORMALS)
 			{
-				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::Sampler2D, TextureUsageType::Sample, TextureAttributeType::Normal));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::Sampler2D, TextureUsageType::Sample, false, 0));
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_DIFFUSE)
 			{
-				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::Sampler2D, TextureUsageType::Sample, TextureAttributeType::Albedo));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::Sampler2D, TextureUsageType::Sample, true, 1));
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_SPECULAR)
 			{
-				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::Sampler2D, TextureUsageType::Sample, TextureAttributeType::Metallic));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::Sampler2D, TextureUsageType::Sample, false, 2));
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_AMBIENT)
 			{
-				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::Sampler2D, TextureUsageType::Sample, TextureAttributeType::Roughness));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::Sampler2D, TextureUsageType::Sample, false, 3));
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_EMISSIVE)
 			{
-				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::Sampler2D, TextureUsageType::Sample, TextureAttributeType::AmbientOcclusion));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSamplerType::Sampler2D, TextureUsageType::Sample, false, 4));
 			}
 			else
 			{
@@ -497,14 +497,14 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * a
 	JSONParser::saveJsonDataToDisk(exportFileRelativePath, l_materialData);
 }
 
-json InnoFileSystemNS::AssimpWrapper::processTextureData(const char* fileName, TextureSamplerType samplerType, TextureUsageType usageType, TextureAttributeType attributeType)
+json InnoFileSystemNS::AssimpWrapper::processTextureData(const char* fileName, TextureSamplerType samplerType, TextureUsageType usageType, bool IsSRGB, uint32_t textureSlotIndex)
 {
 	json j;
 
 	j["SamplerType"] = samplerType;
 	j["UsageType"] = usageType;
-	j["IsSRGB"] = (attributeType == TextureAttributeType::Albedo);
-	j["AttributeType"] = attributeType;
+	j["IsSRGB"] = IsSRGB;
+	j["TextureSlotIndex"] = textureSlotIndex;
 	j["File"] = fileName;
 
 	return j;

@@ -759,12 +759,12 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 
 	auto l_rhs = reinterpret_cast<DX12TextureDataComponent*>(rhs);
 
-	l_rhs->m_DX12TextureDesc = GetDX12TextureDesc(l_rhs->m_textureDesc);
-	l_rhs->m_PixelDataSize = GetTexturePixelDataSize(l_rhs->m_textureDesc);
-	l_rhs->m_WriteState = GetTextureWriteState(l_rhs->m_textureDesc);
-	l_rhs->m_ReadState = GetTextureReadState(l_rhs->m_textureDesc);
+	l_rhs->m_DX12TextureDesc = GetDX12TextureDesc(l_rhs->m_TextureDesc);
+	l_rhs->m_PixelDataSize = GetTexturePixelDataSize(l_rhs->m_TextureDesc);
+	l_rhs->m_WriteState = GetTextureWriteState(l_rhs->m_TextureDesc);
+	l_rhs->m_ReadState = GetTextureReadState(l_rhs->m_TextureDesc);
 
-	if (l_rhs->m_textureDesc.CPUAccessibility != Accessibility::Immutable)
+	if (l_rhs->m_TextureDesc.CPUAccessibility != Accessibility::Immutable)
 	{
 		auto l_bufferSize = l_rhs->m_DX12TextureDesc.Width * l_rhs->m_DX12TextureDesc.Height * l_rhs->m_DX12TextureDesc.DepthOrArraySize * l_rhs->m_PixelDataSize;
 		l_rhs->m_ResourceHandle = CreateReadBackHeapBuffer(l_bufferSize, m_device);
@@ -772,21 +772,21 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 	else
 	{
 		// Create the empty texture.
-		if (l_rhs->m_textureDesc.UsageType == TextureUsageType::ColorAttachment
-			|| l_rhs->m_textureDesc.UsageType == TextureUsageType::DepthAttachment
-			|| l_rhs->m_textureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+		if (l_rhs->m_TextureDesc.UsageType == TextureUsageType::ColorAttachment
+			|| l_rhs->m_TextureDesc.UsageType == TextureUsageType::DepthAttachment
+			|| l_rhs->m_TextureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
 		{
 			D3D12_CLEAR_VALUE l_clearValue;
-			if (l_rhs->m_textureDesc.UsageType == TextureUsageType::ColorAttachment)
+			if (l_rhs->m_TextureDesc.UsageType == TextureUsageType::ColorAttachment)
 			{
 				l_clearValue = D3D12_CLEAR_VALUE{ l_rhs->m_DX12TextureDesc.Format, { 0.0f, 0.0f, 0.0f, 0.0f } };
 			}
-			else if (l_rhs->m_textureDesc.UsageType == TextureUsageType::DepthAttachment)
+			else if (l_rhs->m_TextureDesc.UsageType == TextureUsageType::DepthAttachment)
 			{
 				l_clearValue.Format = DXGI_FORMAT_D32_FLOAT;
 				l_clearValue.DepthStencil = D3D12_DEPTH_STENCIL_VALUE{ 1.0f, 0x00 };
 			}
-			else if (l_rhs->m_textureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+			else if (l_rhs->m_TextureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
 			{
 				l_clearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 				l_clearValue.DepthStencil = D3D12_DEPTH_STENCIL_VALUE{ 1.0f, 0x00 };
@@ -812,20 +812,20 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 		auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
 
 		// main memory ----> upload heap
-		if (l_rhs->m_textureData)
+		if (l_rhs->m_TextureData)
 		{
-			if (l_rhs->m_textureDesc.SamplerType == TextureSamplerType::SamplerCubemap)
+			if (l_rhs->m_TextureDesc.SamplerType == TextureSamplerType::SamplerCubemap)
 			{
 				UINT64 l_uploadHeapBufferSize = GetRequiredIntermediateSize(l_rhs->m_ResourceHandle, 0, 6);
 
 				for (uint32_t i = 0; i < 6; i++)
 				{
 					D3D12_SUBRESOURCE_DATA l_textureSubResourceData = {};
-					l_textureSubResourceData.RowPitch = l_rhs->m_textureDesc.Width * l_rhs->m_PixelDataSize;
-					void* l_rawData = (unsigned char*)l_rhs->m_textureData + l_textureSubResourceData.RowPitch * l_rhs->m_textureDesc.Height * i;
+					l_textureSubResourceData.RowPitch = l_rhs->m_TextureDesc.Width * l_rhs->m_PixelDataSize;
+					void* l_rawData = (unsigned char*)l_rhs->m_TextureData + l_textureSubResourceData.RowPitch * l_rhs->m_TextureDesc.Height * i;
 
 					l_textureSubResourceData.pData = l_rawData;
-					l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * l_rhs->m_textureDesc.Height;
+					l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * l_rhs->m_TextureDesc.Height;
 
 					auto l_resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_uploadHeapBufferSize);
 					auto l_uploadHeapBuffer = CreateUploadHeapBuffer(&l_resourceDesc, m_device);
@@ -837,9 +837,9 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 			{
 				UINT64 l_uploadHeapBufferSize = GetRequiredIntermediateSize(l_rhs->m_ResourceHandle, 0, 1);
 				D3D12_SUBRESOURCE_DATA l_textureSubResourceData = {};
-				l_textureSubResourceData.pData = l_rhs->m_textureData;
-				l_textureSubResourceData.RowPitch = l_rhs->m_textureDesc.Width * l_rhs->m_PixelDataSize;
-				l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * l_rhs->m_textureDesc.Height;
+				l_textureSubResourceData.pData = l_rhs->m_TextureData;
+				l_textureSubResourceData.RowPitch = l_rhs->m_TextureDesc.Width * l_rhs->m_PixelDataSize;
+				l_textureSubResourceData.SlicePitch = l_textureSubResourceData.RowPitch * l_rhs->m_TextureDesc.Height;
 
 				auto l_resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_uploadHeapBufferSize);
 				auto l_uploadHeapBuffer = CreateUploadHeapBuffer(&l_resourceDesc, m_device);
@@ -859,7 +859,7 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 
 		auto l_resourceBinder = addResourcesBinder();
 		l_resourceBinder->m_TextureSRV = CreateSRV(l_rhs);
-		if (l_rhs->m_textureDesc.UsageType == TextureUsageType::RawImage)
+		if (l_rhs->m_TextureDesc.UsageType == TextureUsageType::RawImage)
 		{
 			l_resourceBinder->m_TextureUAV = CreateUAV(l_rhs);
 		}
@@ -887,52 +887,23 @@ bool DX12RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 	}
 
 	auto l_rhs = reinterpret_cast<DX12MaterialDataComponent*>(rhs);
-	l_rhs->m_ResourceBinders.resize(5);
 
-	if (l_rhs->m_normalTexture)
+	auto l_defaultMaterial = g_pModuleManager->getRenderingFrontend()->getDefaultMaterialDataComponent();
+
+	for (size_t i = 0; i < 8; i++)
 	{
-		InitializeTextureDataComponent(l_rhs->m_normalTexture);
-		l_rhs->m_ResourceBinders[0] = l_rhs->m_normalTexture->m_ResourceBinder;
-	}
-	else
-	{
-		l_rhs->m_ResourceBinders[0] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Normal)->m_ResourceBinder;
-	}
-	if (l_rhs->m_albedoTexture)
-	{
-		InitializeTextureDataComponent(l_rhs->m_albedoTexture);
-		l_rhs->m_ResourceBinders[1] = l_rhs->m_albedoTexture->m_ResourceBinder;
-	}
-	else
-	{
-		l_rhs->m_ResourceBinders[1] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Albedo)->m_ResourceBinder;
-	}
-	if (l_rhs->m_metallicTexture)
-	{
-		InitializeTextureDataComponent(l_rhs->m_metallicTexture);
-		l_rhs->m_ResourceBinders[2] = l_rhs->m_metallicTexture->m_ResourceBinder;
-	}
-	else
-	{
-		l_rhs->m_ResourceBinders[2] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Metallic)->m_ResourceBinder;
-	}
-	if (l_rhs->m_roughnessTexture)
-	{
-		InitializeTextureDataComponent(l_rhs->m_roughnessTexture);
-		l_rhs->m_ResourceBinders[3] = l_rhs->m_roughnessTexture->m_ResourceBinder;
-	}
-	else
-	{
-		l_rhs->m_ResourceBinders[3] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::Roughness)->m_ResourceBinder;
-	}
-	if (l_rhs->m_aoTexture)
-	{
-		InitializeTextureDataComponent(l_rhs->m_aoTexture);
-		l_rhs->m_ResourceBinders[4] = l_rhs->m_aoTexture->m_ResourceBinder;
-	}
-	else
-	{
-		l_rhs->m_ResourceBinders[4] = g_pModuleManager->getRenderingFrontend()->getTextureDataComponent(TextureAttributeType::AmbientOcclusion)->m_ResourceBinder;
+		auto l_texture = reinterpret_cast<DX12TextureDataComponent*>(l_rhs->m_TextureSlots[i].m_Texture);
+
+		if (l_texture)
+		{
+			InitializeTextureDataComponent(l_texture);
+			l_rhs->m_TextureSlots[i].m_Texture = l_texture;
+			l_rhs->m_TextureSlots[i].m_Activate = true;
+		}
+		else
+		{
+			l_rhs->m_TextureSlots[i].m_Texture = l_defaultMaterial->m_TextureSlots[i].m_Texture;
+		}
 	}
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
@@ -1838,25 +1809,25 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 
 	size_t l_sampleCount;
 
-	switch (l_srcTDC->m_textureDesc.SamplerType)
+	switch (l_srcTDC->m_TextureDesc.SamplerType)
 	{
 	case TextureSamplerType::Sampler1D:
-		l_sampleCount = l_srcTDC->m_textureDesc.Width;
+		l_sampleCount = l_srcTDC->m_TextureDesc.Width;
 		break;
 	case TextureSamplerType::Sampler2D:
-		l_sampleCount = l_srcTDC->m_textureDesc.Width * l_srcTDC->m_textureDesc.Height;
+		l_sampleCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height;
 		break;
 	case TextureSamplerType::Sampler3D:
-		l_sampleCount = l_srcTDC->m_textureDesc.Width * l_srcTDC->m_textureDesc.Height * l_srcTDC->m_textureDesc.DepthOrArraySize;
+		l_sampleCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height * l_srcTDC->m_TextureDesc.DepthOrArraySize;
 		break;
 	case TextureSamplerType::Sampler1DArray:
-		l_sampleCount = l_srcTDC->m_textureDesc.Width * l_srcTDC->m_textureDesc.DepthOrArraySize;
+		l_sampleCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.DepthOrArraySize;
 		break;
 	case TextureSamplerType::Sampler2DArray:
-		l_sampleCount = l_srcTDC->m_textureDesc.Width * l_srcTDC->m_textureDesc.Height * l_srcTDC->m_textureDesc.DepthOrArraySize;
+		l_sampleCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height * l_srcTDC->m_TextureDesc.DepthOrArraySize;
 		break;
 	case TextureSamplerType::SamplerCubemap:
-		l_sampleCount = l_srcTDC->m_textureDesc.Width * l_srcTDC->m_textureDesc.Height * 6;
+		l_sampleCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height * 6;
 		break;
 	default:
 		break;
@@ -1866,12 +1837,12 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 	l_result.resize(l_sampleCount);
 
 	auto l_destTDC = reinterpret_cast<DX12TextureDataComponent*>(AddTextureDataComponent("ReadBackTemp/"));
-	l_destTDC->m_textureDesc = TDC->m_textureDesc;
-	l_destTDC->m_textureDesc.CPUAccessibility = Accessibility::ReadOnly;
+	l_destTDC->m_TextureDesc = TDC->m_TextureDesc;
+	l_destTDC->m_TextureDesc.CPUAccessibility = Accessibility::ReadOnly;
 
 	InitializeTextureDataComponent(l_destTDC);
 
-	if (l_srcTDC->m_textureDesc.SamplerType == TextureSamplerType::SamplerCubemap)
+	if (l_srcTDC->m_TextureDesc.SamplerType == TextureSamplerType::SamplerCubemap)
 	{
 		for (uint32_t i = 0; i < 6; i++)
 		{
@@ -1883,12 +1854,12 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 			D3D12_TEXTURE_COPY_LOCATION l_destLocation;
 			l_destLocation.pResource = l_destTDC->m_ResourceHandle;
 			l_destLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-			l_destLocation.PlacedFootprint.Offset = i * l_srcTDC->m_textureDesc.Width * l_srcTDC->m_textureDesc.Height * l_srcTDC->m_PixelDataSize;
+			l_destLocation.PlacedFootprint.Offset = i * l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height * l_srcTDC->m_PixelDataSize;
 			l_destLocation.PlacedFootprint.Footprint.Format = l_srcTDC->m_DX12TextureDesc.Format;
 			l_destLocation.PlacedFootprint.Footprint.Width = (uint32_t)l_srcTDC->m_DX12TextureDesc.Width;
 			l_destLocation.PlacedFootprint.Footprint.Height = (uint32_t)l_srcTDC->m_DX12TextureDesc.Height;
 			l_destLocation.PlacedFootprint.Footprint.Depth = 1;
-			l_destLocation.PlacedFootprint.Footprint.RowPitch = (uint32_t)l_srcTDC->m_textureDesc.Width * l_srcTDC->m_PixelDataSize;
+			l_destLocation.PlacedFootprint.Footprint.RowPitch = (uint32_t)l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_PixelDataSize;
 
 			auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
 
@@ -1912,7 +1883,7 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 		l_destLocation.PlacedFootprint.Footprint.Width = (uint32_t)l_srcTDC->m_DX12TextureDesc.Width;
 		l_destLocation.PlacedFootprint.Footprint.Height = (uint32_t)l_srcTDC->m_DX12TextureDesc.Height;
 		l_destLocation.PlacedFootprint.Footprint.Depth = (uint32_t)l_srcTDC->m_DX12TextureDesc.DepthOrArraySize;
-		l_destLocation.PlacedFootprint.Footprint.RowPitch = (uint32_t)l_srcTDC->m_textureDesc.Width * l_srcTDC->m_PixelDataSize;
+		l_destLocation.PlacedFootprint.Footprint.RowPitch = (uint32_t)l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_PixelDataSize;
 
 		auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
 
@@ -1949,7 +1920,7 @@ DX12SRV DX12RenderingServer::CreateSRV(TextureDataComponent * rhs)
 
 	DX12SRV l_result = {};
 
-	l_result.SRVDesc = GetSRVDesc(l_rhs->m_textureDesc, l_rhs->m_DX12TextureDesc);
+	l_result.SRVDesc = GetSRVDesc(l_rhs->m_TextureDesc, l_rhs->m_DX12TextureDesc);
 
 	l_result.CPUHandle = m_currentCSUCPUHandle;
 	l_result.GPUHandle = m_currentCSUGPUHandle;
@@ -1970,7 +1941,7 @@ DX12UAV DX12RenderingServer::CreateUAV(TextureDataComponent * rhs)
 
 	DX12UAV l_result = {};
 
-	l_result.UAVDesc = GetUAVDesc(l_rhs->m_textureDesc, l_rhs->m_DX12TextureDesc);
+	l_result.UAVDesc = GetUAVDesc(l_rhs->m_TextureDesc, l_rhs->m_DX12TextureDesc);
 
 	l_result.ShaderNonVisibleCPUHandle = m_currentShaderNonVisibleCSUCPUHandle;
 	l_result.ShaderNonVisibleGPUHandle = m_currentShaderNonVisibleCSUGPUHandle;
