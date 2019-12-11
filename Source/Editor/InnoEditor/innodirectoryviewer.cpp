@@ -28,7 +28,7 @@ InnoDirectoryViewer::InnoDirectoryViewer(QWidget *parent) : QSplitter(parent)
 void InnoDirectoryViewer::Initialize()
 {
     auto l_workingDir = g_pModuleManager->getFileSystem()->getWorkingDirectory();
-    l_workingDir += "Res//";
+    l_workingDir += "..//Res//";
 
     m_listViewer->SetRootPath(l_workingDir.c_str());
     m_treeViewer->SetRootPath(l_workingDir.c_str());

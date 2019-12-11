@@ -77,7 +77,7 @@ bool InnoFileSystemNS::prepareForLoadingScene(const char* fileName)
 	{
 		if (m_currentScene == fileName)
 		{
-			InnoLogger::Log(LogLevel::Warning, "FileSystem: scene ", fileName, " has already loaded now.");
+			InnoLogger::Log(LogLevel::Warning, "FileSystem: Scene ", fileName, " has already loaded now.");
 			return true;
 		}
 		m_nextLoadingScene = fileName;
@@ -115,7 +115,7 @@ bool InnoFileSystemNS::loadScene(const char* fileName)
 
 	InnoFileSystemNS::m_isLoadingScene = false;
 
-	InnoLogger::Log(LogLevel::Success, "FileSystem: scene ", fileName, " has been loaded.");
+	InnoLogger::Log(LogLevel::Success, "FileSystem: Scene ", fileName, " has been loaded.");
 
 	return true;
 }
@@ -195,7 +195,7 @@ bool InnoFileSystem::saveFile(const char* filePath, const std::vector<char>& con
 
 std::string InnoFileSystem::getCurrentSceneName()
 {
-	auto l_currentSceneName = InnoFileSystemNS::m_currentScene.substr(0, InnoFileSystemNS::m_currentScene.find("."));
+	auto l_currentSceneName = InnoFileSystemNS::m_currentScene.substr(0, InnoFileSystemNS::m_currentScene.find(".InnoScene"));
 	l_currentSceneName = l_currentSceneName.substr(l_currentSceneName.rfind("//") + 2);
 	return l_currentSceneName;
 }
@@ -204,7 +204,7 @@ bool InnoFileSystem::loadScene(const char* fileName, bool AsyncLoad)
 {
 	if (InnoFileSystemNS::m_currentScene == fileName)
 	{
-		InnoLogger::Log(LogLevel::Warning, "FileSystem: scene ", fileName, " has already loaded now.");
+		InnoLogger::Log(LogLevel::Warning, "FileSystem: Scene ", fileName, " has already loaded now.");
 		return true;
 	}
 

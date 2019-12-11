@@ -112,7 +112,7 @@
           "MeshPrimitiveTopology": 2,
           "MeshShapeType": 5,
           "MeshUsageType": 0,
-          "ModelFileName": "Res//ConvertedAssets//sponza.InnoModel",
+          "ModelFileName": "..//Res//ConvertedAssets//sponza.InnoModel",
           "SimulatePhysics": true,
           "TextureWrapMethod": 1,
           "VisiblilityType": 2
@@ -150,7 +150,7 @@
           "MeshPrimitiveTopology": 2,
           "MeshShapeType": 5,
           "MeshUsageType": 1,
-          "ModelFileName": "Res//ConvertedAssets//Orb.InnoModel",
+          "ModelFileName": "..//Res//ConvertedAssets//Orb.InnoModel",
           "SimulatePhysics": true,
           "TextureWrapMethod": 1,
           "VisiblilityType": 2
@@ -188,7 +188,7 @@
           "MeshPrimitiveTopology": 2,
           "MeshShapeType": 5,
           "MeshUsageType": 1,
-          "ModelFileName": "Res//ConvertedAssets//bunny.InnoModel",
+          "ModelFileName": "..//Res//ConvertedAssets//bunny.InnoModel",
           "SimulatePhysics": true,
           "TextureWrapMethod": 1,
           "VisiblilityType": 2

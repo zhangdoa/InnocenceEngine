@@ -218,7 +218,7 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 	auto l_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
 	l_TDC->m_TextureDesc = m_RPDC_Probe->m_RenderTargets[0]->m_TextureDesc;
 	l_TDC->m_TextureData = l_probePosTextureResults.data();
-	g_pModuleManager->getFileSystem()->saveTexture("Res//Intermediate//ProbePosTexture", l_TDC);
+	g_pModuleManager->getFileSystem()->saveTexture("..//Res//Intermediate//ProbePosTexture", l_TDC);
 	//#endif // DEBUG_
 
 	auto l_probeInfos = generateProbes(probes, l_probePosTextureResults, m_probeInterval);
@@ -438,7 +438,7 @@ bool InnoBakerNS::serializeProbeInfos(const ProbeInfo& probeInfo)
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 
 	std::ofstream l_file;
-	l_file.open(l_filePath + "Res//Scenes//" + m_exportFileName + ".InnoProbeInfo", std::ios::out | std::ios::trunc | std::ios::binary);
+	l_file.open(l_filePath + "..//Res//Scenes//" + m_exportFileName + ".InnoProbeInfo", std::ios::out | std::ios::trunc | std::ios::binary);
 	l_file.write((char*)&probeInfo, sizeof(probeInfo));
 	l_file.close();
 
@@ -569,7 +569,7 @@ bool InnoBakerNS::readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfel
 	auto l_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
 	l_TDC->m_TextureDesc = m_RPDC_Surfel->m_RenderTargets[0]->m_TextureDesc;
 	l_TDC->m_TextureData = l_albedoAO.data();
-	g_pModuleManager->getFileSystem()->saveTexture(("Res//Intermediate//SurfelTextureAlbedo_" + std::to_string(l_index)).c_str(), l_TDC);
+	g_pModuleManager->getFileSystem()->saveTexture(("..//Res//Intermediate//SurfelTextureAlbedo_" + std::to_string(l_index)).c_str(), l_TDC);
 
 	auto l_surfelsCount = m_surfelSampleCountPerFace * m_surfelSampleCountPerFace * 6;
 	auto l_sampleStep = m_captureResolution / m_surfelSampleCountPerFace;
@@ -615,7 +615,7 @@ bool InnoBakerNS::readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfel
 	auto l_DSTDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
 	l_DSTDC->m_TextureDesc = m_RPDC_Surfel->m_RenderTargets[0]->m_TextureDesc;
 	l_DSTDC->m_TextureData = l_DSTDCData.data();
-	g_pModuleManager->getFileSystem()->saveTexture(("Res//Intermediate//SurfelTextureDS_" + std::to_string(l_index)).c_str(), l_DSTDC);
+	g_pModuleManager->getFileSystem()->saveTexture(("..//Res//Intermediate//SurfelTextureDS_" + std::to_string(l_index)).c_str(), l_DSTDC);
 
 	surfelCaches.insert(surfelCaches.end(), l_surfels.begin(), l_surfels.end());
 
@@ -652,11 +652,11 @@ bool InnoBakerNS::serializeSurfelCaches(const std::vector<Surfel>& surfelCaches)
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 
 	std::ofstream l_file;
-	l_file.open(l_filePath + "Res//Intermediate//" + m_exportFileName + ".InnoSurfelCache", std::ios::out | std::ios::trunc | std::ios::binary);
+	l_file.open(l_filePath + "..//Res//Intermediate//" + m_exportFileName + ".InnoSurfelCache", std::ios::out | std::ios::trunc | std::ios::binary);
 	IOService::serializeVector(l_file, surfelCaches);
 	l_file.close();
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "Res//Intermediate//", m_exportFileName.c_str(), ".InnoSurfelCache has been saved.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "..//Res//Intermediate//", m_exportFileName.c_str(), ".InnoSurfelCache has been saved.");
 
 	return true;
 }
@@ -801,7 +801,7 @@ bool InnoBakerNS::serializeBrickCaches(const std::vector<BrickCache>& brickCache
 	// Serialize metadata
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 	std::ofstream l_summaryFile;
-	l_summaryFile.open(l_filePath + "Res//Intermediate//" + m_exportFileName + ".InnoBrickCacheSummary", std::ios::out | std::ios::trunc | std::ios::binary);
+	l_summaryFile.open(l_filePath + "..//Res//Intermediate//" + m_exportFileName + ".InnoBrickCacheSummary", std::ios::out | std::ios::trunc | std::ios::binary);
 
 	std::vector<BrickCacheSummary> l_brickCacheSummaries;
 	l_brickCacheSummaries.reserve(l_brickCacheCount);
@@ -823,7 +823,7 @@ bool InnoBakerNS::serializeBrickCaches(const std::vector<BrickCache>& brickCache
 
 	// Serialize surfels cache for each brick
 	std::ofstream l_surfelCacheFile;
-	l_surfelCacheFile.open(l_filePath + "Res//Intermediate//" + m_exportFileName + ".InnoBrickCache", std::ios::out | std::ios::trunc | std::ios::binary);
+	l_surfelCacheFile.open(l_filePath + "..//Res//Intermediate//" + m_exportFileName + ".InnoBrickCache", std::ios::out | std::ios::trunc | std::ios::binary);
 
 	for (size_t i = 0; i < l_brickCacheCount; i++)
 	{
@@ -831,7 +831,7 @@ bool InnoBakerNS::serializeBrickCaches(const std::vector<BrickCache>& brickCache
 	}
 	l_surfelCacheFile.close();
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "Res//Intermediate//", m_exportFileName.c_str(), ".InnoBrickCacheSummary has been saved.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "..//Res//Intermediate//", m_exportFileName.c_str(), ".InnoBrickCacheSummary has been saved.");
 
 	return true;
 }
@@ -844,7 +844,7 @@ bool InnoBakerNS::deserializeBrickCaches(const std::vector<BrickCacheSummary>& b
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 
 	std::ifstream l_file;
-	l_file.open(l_filePath + "Res//Intermediate//" + m_exportFileName + ".InnoBrickCache", std::ios::binary);
+	l_file.open(l_filePath + "..//Res//Intermediate//" + m_exportFileName + ".InnoBrickCache", std::ios::binary);
 
 	size_t l_startOffset = 0;
 
@@ -915,11 +915,11 @@ bool InnoBakerNS::serializeSurfels(const std::vector<Surfel>& surfels)
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 
 	std::ofstream l_file;
-	l_file.open(l_filePath + "Res//Scenes//" + m_exportFileName + ".InnoSurfel", std::ios::out | std::ios::trunc | std::ios::binary);
+	l_file.open(l_filePath + "..//Res//Scenes//" + m_exportFileName + ".InnoSurfel", std::ios::out | std::ios::trunc | std::ios::binary);
 	IOService::serializeVector(l_file, surfels);
 	l_file.close();
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "Res//Scenes//", m_exportFileName.c_str(), ".InnoSurfel has been saved.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "..//Res//Scenes//", m_exportFileName.c_str(), ".InnoSurfel has been saved.");
 
 	return true;
 }
@@ -929,11 +929,11 @@ bool InnoBakerNS::serializeBricks(const std::vector<Brick>& bricks)
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 
 	std::ofstream l_file;
-	l_file.open(l_filePath + "Res//Scenes//" + m_exportFileName + ".InnoBrick", std::ios::out | std::ios::trunc | std::ios::binary);
+	l_file.open(l_filePath + "..//Res//Scenes//" + m_exportFileName + ".InnoBrick", std::ios::out | std::ios::trunc | std::ios::binary);
 	IOService::serializeVector(l_file, bricks);
 	l_file.close();
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "Res//Scenes//", m_exportFileName.c_str(), ".InnoBrick has been saved.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "..//Res//Scenes//", m_exportFileName.c_str(), ".InnoBrick has been saved.");
 
 	return true;
 }
@@ -1054,7 +1054,7 @@ bool InnoBakerNS::readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& b
 	auto l_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
 	l_TDC->m_TextureDesc = m_RPDC_BrickFactor->m_RenderTargets[0]->m_TextureDesc;
 	l_TDC->m_TextureData = l_brickIDResults.data();
-	g_pModuleManager->getFileSystem()->saveTexture(("Res//Intermediate//BrickTexture_" + std::to_string(l_index)).c_str(), l_TDC);
+	g_pModuleManager->getFileSystem()->saveTexture(("..//Res//Intermediate//BrickTexture_" + std::to_string(l_index)).c_str(), l_TDC);
 	l_index++;
 
 	auto l_brickIDResultSize = l_brickIDResults.size();
@@ -1160,11 +1160,11 @@ bool InnoBakerNS::serializeBrickFactors(const std::vector<BrickFactor>& brickFac
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 
 	std::ofstream l_file;
-	l_file.open(l_filePath + "Res//Scenes//" + m_exportFileName + ".InnoBrickFactor", std::ios::out | std::ios::trunc | std::ios::binary);
+	l_file.open(l_filePath + "..//Res//Scenes//" + m_exportFileName + ".InnoBrickFactor", std::ios::out | std::ios::trunc | std::ios::binary);
 	IOService::serializeVector(l_file, brickFactors);
 	l_file.close();
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "Res//Scenes//", m_exportFileName.c_str(), ".InnoBrickFactor has been saved.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "..//Res//Scenes//", m_exportFileName.c_str(), ".InnoBrickFactor has been saved.");
 
 	return true;
 }
@@ -1174,11 +1174,11 @@ bool InnoBakerNS::serializeProbes(const std::vector<Probe>& probes)
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 
 	std::ofstream l_file;
-	l_file.open(l_filePath + "Res//Scenes//" + m_exportFileName + ".InnoProbe", std::ios::out | std::ios::trunc | std::ios::binary);
+	l_file.open(l_filePath + "..//Res//Scenes//" + m_exportFileName + ".InnoProbe", std::ios::out | std::ios::trunc | std::ios::binary);
 	IOService::serializeVector(l_file, probes);
 	l_file.close();
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "Res//Scenes//", m_exportFileName.c_str(), ".InnoProbe has been saved.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "..//Res//Scenes//", m_exportFileName.c_str(), ".InnoProbe has been saved.");
 
 	return true;
 }
@@ -1446,7 +1446,7 @@ void InnoBaker::BakeBrickFactor(const char* brickFileName)
 
 		std::ifstream l_probeFile;
 
-		l_probeFile.open(l_filePath + "Res//Scenes//" + m_exportFileName + ".InnoProbe", std::ios::binary);
+		l_probeFile.open(l_filePath + "..//Res//Scenes//" + m_exportFileName + ".InnoProbe", std::ios::binary);
 
 		if (l_probeFile.is_open())
 		{

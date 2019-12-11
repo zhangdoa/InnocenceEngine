@@ -51,7 +51,7 @@ bool InnoFileSystemNS::AssimpWrapper::convertModel(const char* fileName, const c
 	{
 		InnoLogger::Log(LogLevel::Verbose, "FileSystem: AssimpWrapper: converting ", fileName, "...");
 #if defined _DEBUG
-		std::string l_logFilePath = IOService::getWorkingDirectory() + "Res//Logs//AssimpLog_" + l_exportFileName + ".txt";
+		std::string l_logFilePath = IOService::getWorkingDirectory() + "..//Res//Logs//AssimpLog_" + l_exportFileName + ".txt";
 		Assimp::DefaultLogger::create(l_logFilePath.c_str(), Assimp::Logger::VERBOSE);
 #endif
 		l_assScene = l_assImporter.ReadFile(IOService::getWorkingDirectory() + fileName, aiProcess_Triangulate | aiProcess_FlipUVs);
@@ -104,7 +104,7 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpScene(const aiScene* aiScene,
 	{
 		for (uint32_t i = 0; i < aiScene->mNumAnimations; i++)
 		{
-			auto l_animationFileName = "//Res//ConvertedAssets//" + std::string(exportName) + "_" + std::to_string(i) + ".InnoAnimation";
+			auto l_animationFileName = "..//Res//ConvertedAssets//" + std::string(exportName) + "_" + std::to_string(i) + ".InnoAnimation";
 			processAssimpAnimation(aiScene->mAnimations[i], l_animationFileName.c_str());
 			j["AnimationFiles"].emplace_back(l_animationFileName);
 		}
@@ -157,7 +157,7 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, c
 	// process vertices and indices
 	l_meshData["MeshName"] = *l_aiMesh->mName.C_Str();
 	l_meshData["VerticesNumber"] = l_aiMesh->mNumVertices;
-	auto l_meshFileName = "//Res//ConvertedAssets//" + std::string(exportName) + "_" + std::to_string(meshIndex) + ".InnoMesh";
+	auto l_meshFileName = "..//Res//ConvertedAssets//" + std::string(exportName) + "_" + std::to_string(meshIndex) + ".InnoMesh";
 	l_meshData["IndicesNumber"] = processMeshData(l_aiMesh, l_meshFileName.c_str());
 	l_meshData["MeshFile"] = l_meshFileName;
 	l_meshData["MeshShapeType"] = MeshShapeType::Custom;
@@ -165,7 +165,7 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, c
 	// process bones
 	if (l_aiMesh->mNumBones)
 	{
-		auto l_skeletonFileName = "//Res//ConvertedAssets//" + std::string(exportName) + "_" + std::to_string(meshIndex) + ".InnoSkeleton";
+		auto l_skeletonFileName = "..//Res//ConvertedAssets//" + std::string(exportName) + "_" + std::to_string(meshIndex) + ".InnoSkeleton";
 		processAssimpBone(l_aiMesh, l_skeletonFileName.c_str());
 		l_meshData["SkeletonFile"] = l_skeletonFileName;
 	}
@@ -173,7 +173,7 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, c
 	// process material
 	if (l_aiMesh->mMaterialIndex)
 	{
-		auto l_materialFileName = "//Res//ConvertedAssets//" + std::string(exportName) + "_" + std::to_string(meshIndex) + ".InnoMaterial";
+		auto l_materialFileName = "..//Res//ConvertedAssets//" + std::string(exportName) + "_" + std::to_string(meshIndex) + ".InnoMaterial";
 		processAssimpMaterial(scene->mMaterials[l_aiMesh->mMaterialIndex], l_materialFileName.c_str());
 		l_meshData["MaterialFile"] = l_materialFileName;
 	}

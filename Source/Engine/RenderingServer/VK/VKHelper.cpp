@@ -7,7 +7,7 @@ extern IModuleManager* g_pModuleManager;
 
 namespace VKHelper
 {
-	const char* m_shaderRelativePath = "Res//Shaders//SPIRV//";
+	const char* m_shaderRelativePath = "..//Res//Shaders//SPIRV//";
 }
 
 bool VKHelper::checkValidationLayerSupport(const std::vector<const char*>& validationLayers)

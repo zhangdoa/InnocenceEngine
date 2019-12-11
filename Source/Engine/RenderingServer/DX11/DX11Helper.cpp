@@ -7,7 +7,7 @@ extern IModuleManager* g_pModuleManager;
 
 namespace DX11Helper
 {
-	const wchar_t* m_shaderRelativePath = L"Res//Shaders//HLSL//";
+	const wchar_t* m_shaderRelativePath = L"..//Res//Shaders//HLSL//";
 }
 
 D3D11_TEXTURE_DESC DX11Helper::GetDX11TextureDesc(TextureDesc textureDesc)

@@ -2,7 +2,7 @@
   "Meshes": [
     {
       "IndicesNumber": 0,
-      "MaterialFile": "//Res//ModelPresets//Building4.InnoMaterial",
+      "MaterialFile": "..//Res//ModelPresets//Building4.InnoMaterial",
       "MeshFile": "",
       "MeshName": 0,
       "MeshShapeType": 2,

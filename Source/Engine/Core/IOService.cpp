@@ -18,11 +18,7 @@ namespace IOService
 
 bool IOService::setupWorkingDirectory()
 {
-#if defined INNO_PLATFORM_WIN || defined INNO_PLATFORM_LINUX
-	m_workingDir = fs::current_path().parent_path().generic_string();
-#else
 	m_workingDir = fs::current_path().generic_string();
-#endif
 	m_workingDir = m_workingDir + "//";
 
 	InnoLogger::Log(LogLevel::Verbose, "IOService: current working directory is ", m_workingDir.c_str());
@@ -51,7 +47,7 @@ std::vector<char> IOService::loadFile(const char* filePath, IOMode openMode)
 
 	if (!l_file.is_open())
 	{
-		InnoLogger::Log(LogLevel::Error, "IOService: can't open file : ", filePath, "!");
+		InnoLogger::Log(LogLevel::Error, "IOService: Can't open file : ", filePath, "!");
 		return std::vector<char>();
 	}
 
@@ -88,7 +84,7 @@ bool IOService::saveFile(const char* filePath, const std::vector<char>& content,
 
 	if (!l_file.is_open())
 	{
-		InnoLogger::Log(LogLevel::Error, "IOService: can't open file : ", filePath, "!");
+		InnoLogger::Log(LogLevel::Error, "IOService: Can't open file : ", filePath, "!");
 		return false;
 	}
 

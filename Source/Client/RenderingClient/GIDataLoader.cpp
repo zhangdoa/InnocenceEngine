@@ -43,7 +43,7 @@ bool GIDataLoader::loadGIData()
 	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
 
 	std::ifstream l_surfelFile;
-	l_surfelFile.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoSurfel", std::ios::binary);
+	l_surfelFile.open(l_filePath + "..//Res//Scenes//" + l_currentSceneName + ".InnoSurfel", std::ios::binary);
 
 	if (l_surfelFile.is_open())
 	{
@@ -52,7 +52,7 @@ bool GIDataLoader::loadGIData()
 	}
 
 	std::ifstream l_brickFile;
-	l_brickFile.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoBrick", std::ios::binary);
+	l_brickFile.open(l_filePath + "..//Res//Scenes//" + l_currentSceneName + ".InnoBrick", std::ios::binary);
 
 	if (l_brickFile.is_open())
 	{
@@ -61,7 +61,7 @@ bool GIDataLoader::loadGIData()
 	}
 
 	std::ifstream l_brickFactorFile;
-	l_brickFactorFile.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoBrickFactor", std::ios::binary);
+	l_brickFactorFile.open(l_filePath + "..//Res//Scenes//" + l_currentSceneName + ".InnoBrickFactor", std::ios::binary);
 
 	if (l_brickFactorFile.is_open())
 	{
@@ -70,7 +70,7 @@ bool GIDataLoader::loadGIData()
 	}
 
 	std::ifstream l_probeFile;
-	l_probeFile.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoProbe", std::ios::binary);
+	l_probeFile.open(l_filePath + "..//Res//Scenes//" + l_currentSceneName + ".InnoProbe", std::ios::binary);
 
 	if (l_probeFile.is_open())
 	{
@@ -80,7 +80,7 @@ bool GIDataLoader::loadGIData()
 	}
 
 	std::ifstream l_probeInfoFile;
-	l_probeInfoFile.open(l_filePath + "//Res//Scenes//" + l_currentSceneName + ".InnoProbeInfo", std::ios::binary);
+	l_probeInfoFile.open(l_filePath + "..//Res//Scenes//" + l_currentSceneName + ".InnoProbeInfo", std::ios::binary);
 
 	if (l_probeInfoFile.is_open())
 	{

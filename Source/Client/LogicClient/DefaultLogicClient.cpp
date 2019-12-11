@@ -554,7 +554,7 @@ bool GameClientNS::setup()
 
 bool GameClientNS::initialize()
 {
-	f_loadTestScene = []() {	g_pModuleManager->getFileSystem()->loadScene("Res//Scenes//GITest.InnoScene");
+	f_loadTestScene = []() {	g_pModuleManager->getFileSystem()->loadScene("..//Res//Scenes//GITest.InnoScene");
 	};
 	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadTestScene });
 
@@ -590,7 +590,7 @@ bool DefaultLogicClient::setup()
 bool DefaultLogicClient::initialize()
 {
 	bool l_result = true;
-	g_pModuleManager->getFileSystem()->loadScene("Res//Scenes//default.InnoScene");
+	g_pModuleManager->getFileSystem()->loadScene("..//Res//Scenes//default.InnoScene");
 
 	l_result = l_result && PlayerComponentCollection::initialize();
 	l_result = l_result && GameClientNS::initialize();

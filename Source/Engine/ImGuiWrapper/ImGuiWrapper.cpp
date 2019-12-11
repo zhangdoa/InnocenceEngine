@@ -171,7 +171,7 @@ bool ImGuiWrapper::initialize()
 
 		// Load Fonts
 		auto l_workingDir = g_pModuleManager->getFileSystem()->getWorkingDirectory();
-		l_workingDir += "Res//Fonts//FreeSans.otf";
+		l_workingDir += "..//Res//Fonts//FreeSans.otf";
 		io.Fonts->AddFontFromFileTTF(l_workingDir.c_str(), 16.0f);
 
 		ImGuiWrapperNS::m_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();

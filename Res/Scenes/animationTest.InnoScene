@@ -103,7 +103,7 @@
           "MeshPrimitiveTopology": 2,
           "MeshShapeType": 5,
           "MeshUsageType": 2,
-          "ModelFileName": "Res//ConvertedAssets//Wolf.InnoModel",
+          "ModelFileName": "..//Res//ConvertedAssets//Wolf.InnoModel",
           "TextureWrapMethod": 0,
           "VisiblilityType": 2,
           "SimulatePhysics": false

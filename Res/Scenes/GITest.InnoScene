@@ -150,7 +150,7 @@
           "MeshPrimitiveTopology": 2,
           "MeshShapeType": 2,
           "MeshUsageType": 0,
-          "ModelFileName": "Res//ModelPresets//Building1.InnoModel",
+          "ModelFileName": "..//Res//ModelPresets//Building1.InnoModel",
           "SimulatePhysics": true,
           "TextureWrapMethod": 1,
           "VisiblilityType": 2
@@ -188,7 +188,7 @@
           "MeshPrimitiveTopology": 2,
           "MeshShapeType": 2,
           "MeshUsageType": 0,
-          "ModelFileName": "Res//ModelPresets//Building2.InnoModel",
+          "ModelFileName": "..//Res//ModelPresets//Building2.InnoModel",
           "SimulatePhysics": true,
           "TextureWrapMethod": 1,
           "VisiblilityType": 2
@@ -226,7 +226,7 @@
           "MeshPrimitiveTopology": 2,
           "MeshShapeType": 2,
           "MeshUsageType": 0,
-          "ModelFileName": "Res//ModelPresets//Building3.InnoModel",
+          "ModelFileName": "..//Res//ModelPresets//Building3.InnoModel",
           "SimulatePhysics": true,
           "TextureWrapMethod": 1,
           "VisiblilityType": 2
@@ -264,7 +264,7 @@
           "MeshPrimitiveTopology": 2,
           "MeshShapeType": 2,
           "MeshUsageType": 0,
-          "ModelFileName": "Res//ModelPresets//Building4.InnoModel",
+          "ModelFileName": "..//Res//ModelPresets//Building4.InnoModel",
           "SimulatePhysics": true,
           "TextureWrapMethod": 1,
           "VisiblilityType": 2
