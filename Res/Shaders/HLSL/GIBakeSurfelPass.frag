@@ -13,7 +13,7 @@ struct PixelInputType
 {
 	float4 posCS : SV_POSITION;
 	float4 posWS : POSITION;
-	float2 texcoord : TEXCOORD;
+	float2 texCoord : TEXCOORD;
 	float4 normal : NORMAL;
 	uint rtvId : SV_RenderTargetArrayIndex;
 };

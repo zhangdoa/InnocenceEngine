@@ -27,10 +27,10 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 		[unroll(3)]
 		for (int i = 0; i < 3; ++i)
 		{
-			output.posCS = mul(input[i].posWS, GICamera_t);
-			output.posCS = mul(output.posCS, GICamera_r[face]);
+			output.posCS = mul(input[i].posWS, GICBuffer.t);
+			output.posCS = mul(output.posCS, GICBuffer.r[face]);
 			output.distanceVS = length(output.posCS.xyz);
-			output.posCS = mul(output.posCS, GICamera_p);
+			output.posCS = mul(output.posCS, GICBuffer.p);
 			output.UUID = input[i].UUID;
 			outStream.Append(output);
 		}
