@@ -142,51 +142,44 @@ public:
 	AtomicDoubleBuffer() = default;
 	~AtomicDoubleBuffer() = default;
 
-	Atomic<T>& Read()
+	Atomic<T>& Get()
 	{
 		std::shared_lock<std::shared_mutex> lock{ m_Mutex };
 
 		if (m_isBNewer)
 		{
+			InnoLogger::Log(LogLevel::Success, "Read B");
 			return m_B;
 		}
 		else
 		{
+			InnoLogger::Log(LogLevel::Success, "Read A");
 			return m_A;
 		}
 	}
 
-	void Write(T&& value)
+	void Set(T&& rhs)
 	{
 		std::unique_lock<std::shared_mutex> lock{ m_Mutex };
 
 		if (m_isBNewer)
 		{
+			InnoLogger::Log(LogLevel::Success, "Write A");
+
 			auto l_writer = AtomicWriter(m_A);
 			auto l_lhs = l_writer.Get();
-			l_lhs = std::move(value);
+			*l_lhs = rhs;
 			m_isBNewer = false;
 		}
 		else
 		{
+			InnoLogger::Log(LogLevel::Success, "Write B");
+
 			auto l_writer = AtomicWriter(m_B);
 			auto l_lhs = l_writer.Get();
-			l_lhs = std::move(value);
+			*l_lhs = rhs;
 			m_isBNewer = true;
 		}
-	}
-
-	void Reserve(size_t elementCount)
-	{
-		std::unique_lock<std::shared_mutex> lock{ m_Mutex };
-
-		auto l_writerA = AtomicWriter(m_A);
-		auto l_lhsA = l_writerA.Get();
-		auto l_writerB = AtomicWriter(m_B);
-		auto l_lhsB = l_writerB.Get();
-
-		l_lhsA->reserve(elementCount);
-		l_lhsB->reserve(elementCount);
 	}
 
 private:
@@ -198,8 +191,6 @@ private:
 
 Atomic<uint32_t> l_atomicBuffer;
 std::atomic<uint32_t> l_finishedTaskCount;
-std::default_random_engine l_generator;
-std::uniform_int_distribution<uint32_t> l_randomDelta(5, 10);
 
 bool CheckCyclic(std::vector<std::shared_ptr<IInnoTask>> tasks, size_t initialIndex, size_t targetIndex)
 {
@@ -241,7 +232,7 @@ std::shared_ptr<IInnoTask> submit(const char* name, int32_t threadID, const std:
 	return InnoTaskScheduler::AddTaskImpl(std::move(l_task), threadID);
 }
 
-void TestTaskScheduler(size_t testCaseCount, const std::function<void()>& job)
+void DispatchTestTasks(size_t testCaseCount, const std::function<void()>& job)
 {
 	InnoLogger::Log(LogLevel::Verbose, "Generate test async tasks...");
 
@@ -311,17 +302,13 @@ void TestInnoRingBuffer(size_t testCaseCount)
 	}
 }
 
-int main(int argc, char *argv[])
+void TestAtomic(size_t testCaseCount)
 {
-	InnoTaskScheduler::Setup();
-	InnoTaskScheduler::Initialize();
-
-	TestIToA(8192);
-	TestArray(8192);
-	TestInnoMemory(65536);
-
 	std::function<void()> ExampleJob_Atomic = [&]()
 	{
+		std::default_random_engine l_generator;
+		std::uniform_int_distribution<uint32_t> l_randomDelta(5, 10);
+
 		auto l_executionTime = l_randomDelta(l_generator);
 
 		{
@@ -350,22 +337,72 @@ int main(int argc, char *argv[])
 		l_finishedTaskCount++;
 	};
 
+	l_finishedTaskCount = 0;
+	DispatchTestTasks(testCaseCount, ExampleJob_Atomic);
+}
+
+void TestAtomicDoubleBuffer(size_t testCaseCount)
+{
+	const size_t l_testAtomicDoubleBufferSize = 256;
+	std::array<float, 256> l_initData;
+	l_initData.fill(0);
+
+	AtomicDoubleBuffer<std::array<float, l_testAtomicDoubleBufferSize>> l_testAtomicDoubleBuffer;
+	l_testAtomicDoubleBuffer.Set(std::move(l_initData));
+
 	std::function<void()> ExampleJob_AtomicDoubleBuffer = [&]()
 	{
-		AtomicDoubleBuffer<std::vector<float>> l_test;
+		std::default_random_engine l_generator;
+		std::uniform_int_distribution<uint32_t> l_randomDelta(0, 100);
 
-		l_test.Reserve(1024);
+		std::array<float, 256> l_writeData;
 
-		auto l_testData = l_test.Read();
+		{
+			auto l_testAtomicDoubleBufferReader = AtomicReader(l_testAtomicDoubleBuffer.Get());
+			l_writeData = *l_testAtomicDoubleBufferReader.Get();
+
+			InnoLogger::Log(LogLevel::Success, "Read l_testAtomicDoubleBuffer...");
+		}
+
+		auto l_executionTime = l_randomDelta(l_generator);
+		std::this_thread::sleep_for(std::chrono::milliseconds(l_executionTime));
+
+		if (l_executionTime > 50)
+		{
+			for (size_t i = 0; i < l_testAtomicDoubleBufferSize; i++)
+			{
+				l_writeData[i]++;
+			}
+			l_testAtomicDoubleBuffer.Set(std::move(l_writeData));
+
+			InnoLogger::Log(LogLevel::Warning, "Write l_testAtomicDoubleBuffer...");
+		}
 
 		l_finishedTaskCount++;
 	};
 
 	l_finishedTaskCount = 0;
-	TestTaskScheduler(128, ExampleJob_Atomic);
-	l_finishedTaskCount = 0;
-	TestTaskScheduler(128, ExampleJob_AtomicDoubleBuffer);
+	DispatchTestTasks(testCaseCount, ExampleJob_AtomicDoubleBuffer);
 
+	auto l_testAtomicDoubleBufferReader = AtomicReader(l_testAtomicDoubleBuffer.Get());
+	auto l_testAtomicDoubleBufferFinal = *l_testAtomicDoubleBufferReader.Get();
+
+	for (size_t i = 0; i < l_testAtomicDoubleBufferSize; i++)
+	{
+		InnoLogger::Log(LogLevel::Success, l_testAtomicDoubleBufferFinal[i]);
+	}
+}
+
+int main(int argc, char *argv[])
+{
+	InnoTaskScheduler::Setup();
+	InnoTaskScheduler::Initialize();
+
+	TestIToA(8192);
+	TestArray(8192);
+	TestInnoMemory(65536);
+	TestAtomic(128);
+	TestAtomicDoubleBuffer(128);
 	TestInnoRingBuffer(128);
 	InnoTaskScheduler::Terminate();
 
