@@ -496,7 +496,7 @@ void PlainCulling(const Frustum& frustum, std::vector<CullingData>& cullingDatas
 
 	for (auto visibleComponent : l_visibleComponents)
 	{
-		if (visibleComponent->m_visiblilityType != VisiblilityType::Invisible && visibleComponent->m_ObjectStatus == ObjectStatus::Activated)
+		if (visibleComponent->m_visibilityType != VisibilityType::Invisible && visibleComponent->m_ObjectStatus == ObjectStatus::Activated)
 		{
 			auto l_transformComponent = GetComponent(TransformComponent, visibleComponent->m_ParentEntity);
 			auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
@@ -514,7 +514,7 @@ void PlainCulling(const Frustum& frustum, std::vector<CullingData>& cullingDatas
 					l_cullingData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
 					l_cullingData.mesh = l_PDC->m_ModelPair.first;
 					l_cullingData.material = l_PDC->m_ModelPair.second;
-					l_cullingData.visiblilityType = visibleComponent->m_visiblilityType;
+					l_cullingData.visibilityType = visibleComponent->m_visibilityType;
 					l_cullingData.meshUsageType = visibleComponent->m_meshUsageType;
 					l_cullingData.UUID = visibleComponent->m_UUID;
 
@@ -562,7 +562,7 @@ CullingData generateCullingData(const Frustum& frustum, PhysicsDataComponent* PD
 	l_cullingData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
 	l_cullingData.mesh = PDC->m_ModelPair.first;
 	l_cullingData.material = PDC->m_ModelPair.second;
-	l_cullingData.visiblilityType = PDC->m_VisibleComponent->m_visiblilityType;
+	l_cullingData.visibilityType = PDC->m_VisibleComponent->m_visibilityType;
 	l_cullingData.meshUsageType = PDC->m_VisibleComponent->m_meshUsageType;
 	l_cullingData.UUID = PDC->m_VisibleComponent->m_UUID;
 

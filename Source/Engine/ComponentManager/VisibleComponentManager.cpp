@@ -122,7 +122,7 @@ void InnoVisibleComponentManager::LoadAssetsForComponents(bool AsyncLoad)
 {
 	for (auto i : m_Components)
 	{
-		if (i->m_visiblilityType != VisiblilityType::Invisible)
+		if (i->m_visibilityType != VisibilityType::Invisible)
 		{
 			if (!i->m_modelFileName.empty())
 			{

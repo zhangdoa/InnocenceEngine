@@ -31,7 +31,7 @@
           "MeshUsageType": 0,
           "ModelFileName": "",
           "TextureWrapMethod": 1,
-          "VisiblilityType": 2,
+          "VisibilityType": 2,
           "SimulatePhysics": true
         }
       ],

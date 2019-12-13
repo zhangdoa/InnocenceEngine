@@ -233,7 +233,7 @@ bool GameClientNS::setupReferenceSpheres()
 		m_referenceSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_referenceSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_referenceSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
-		m_referenceSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::Opaque;
+		m_referenceSphereVisibleComponents[i]->m_visibilityType = VisibilityType::Opaque;
 		m_referenceSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::Sphere;
 		m_referenceSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::Dynamic;
 		m_referenceSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
@@ -285,7 +285,7 @@ bool GameClientNS::setupOcclusionCubes()
 		m_occlusionCubeTransformComponents[i] = SpawnComponent(TransformComponent, m_occlusionCubeEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
 		m_occlusionCubeTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_occlusionCubeVisibleComponents[i] = SpawnComponent(VisibleComponent, m_occlusionCubeEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
-		m_occlusionCubeVisibleComponents[i]->m_visiblilityType = VisiblilityType::Opaque;
+		m_occlusionCubeVisibleComponents[i]->m_visibilityType = VisibilityType::Opaque;
 		m_occlusionCubeVisibleComponents[i]->m_meshShapeType = MeshShapeType::Cube;
 		m_occlusionCubeVisibleComponents[i]->m_meshUsageType = MeshUsageType::Static;
 		m_occlusionCubeVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
@@ -359,7 +359,7 @@ bool GameClientNS::setupOpaqueSpheres()
 		m_opaqueSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_opaqueSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_opaqueSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
-		m_opaqueSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::Opaque;
+		m_opaqueSphereVisibleComponents[i]->m_visibilityType = VisibilityType::Opaque;
 		m_opaqueSphereVisibleComponents[i]->m_meshShapeType = (i & 0x00000001) ? MeshShapeType::Sphere : MeshShapeType::Cube;
 		m_opaqueSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::Dynamic;
 		m_opaqueSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
@@ -422,7 +422,7 @@ bool GameClientNS::setupTransparentSpheres()
 		m_transparentSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_transparentSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_transparentSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
-		m_transparentSphereVisibleComponents[i]->m_visiblilityType = VisiblilityType::Transparent;
+		m_transparentSphereVisibleComponents[i]->m_visibilityType = VisibilityType::Transparent;
 		m_transparentSphereVisibleComponents[i]->m_meshShapeType = MeshShapeType::Sphere;
 		m_transparentSphereVisibleComponents[i]->m_meshUsageType = MeshUsageType::Dynamic;
 		m_transparentSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;

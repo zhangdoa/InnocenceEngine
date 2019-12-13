@@ -10,7 +10,7 @@ class PhysicsDataComponent;
 class VisibleComponent : public InnoComponent
 {
 public:
-	VisiblilityType m_visiblilityType = VisiblilityType::Invisible;
+	VisibilityType m_visibilityType = VisibilityType::Invisible;
 	MeshUsageType m_meshUsageType = MeshUsageType::Static;
 	MeshShapeType m_meshShapeType = MeshShapeType::Line;
 	MeshPrimitiveTopology m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;

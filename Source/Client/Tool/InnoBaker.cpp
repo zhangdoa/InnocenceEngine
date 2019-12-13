@@ -105,7 +105,7 @@ bool InnoBakerNS::gatherStaticMeshData()
 	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
 	for (auto visibleComponent : l_visibleComponents)
 	{
-		if (visibleComponent->m_visiblilityType == VisiblilityType::Opaque
+		if (visibleComponent->m_visibilityType == VisibilityType::Opaque
 			&& visibleComponent->m_ObjectStatus == ObjectStatus::Activated
 			&& visibleComponent->m_meshUsageType == MeshUsageType::Static
 			)

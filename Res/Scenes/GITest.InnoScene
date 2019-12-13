@@ -115,7 +115,7 @@
           "ModelFileName": "",
           "SimulatePhysics": true,
           "TextureWrapMethod": 1,
-          "VisiblilityType": 2
+          "VisibilityType": 2
         }
       ],
       "EntityID": "59ef9e5be5118fdebe80690d6a14c3d",
@@ -153,7 +153,7 @@
           "ModelFileName": "..//Res//ModelPresets//Building1.InnoModel",
           "SimulatePhysics": true,
           "TextureWrapMethod": 1,
-          "VisiblilityType": 2
+          "VisibilityType": 2
         }
       ],
       "EntityID": "ca263b7a067127724c45cbb4368646b",
@@ -191,7 +191,7 @@
           "ModelFileName": "..//Res//ModelPresets//Building2.InnoModel",
           "SimulatePhysics": true,
           "TextureWrapMethod": 1,
-          "VisiblilityType": 2
+          "VisibilityType": 2
         }
       ],
       "EntityID": "5c79034afd6e2d2072970225a6d5bb0",
@@ -229,7 +229,7 @@
           "ModelFileName": "..//Res//ModelPresets//Building3.InnoModel",
           "SimulatePhysics": true,
           "TextureWrapMethod": 1,
-          "VisiblilityType": 2
+          "VisibilityType": 2
         }
       ],
       "EntityID": "313bd8a7093abc377b8272e8ffb8ba6",
@@ -267,7 +267,7 @@
           "ModelFileName": "..//Res//ModelPresets//Building4.InnoModel",
           "SimulatePhysics": true,
           "TextureWrapMethod": 1,
-          "VisiblilityType": 2
+          "VisibilityType": 2
         }
       ],
       "EntityID": "a47d3dccf353d4044d807012515109a",

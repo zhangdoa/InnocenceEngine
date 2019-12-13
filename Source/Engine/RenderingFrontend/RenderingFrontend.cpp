@@ -533,7 +533,7 @@ bool InnoRenderingFrontendNS::updateMeshData()
 					l_meshConstantBuffer.normalMat = l_cullingData.normalMat;
 					l_meshConstantBuffer.UUID = (float)l_cullingData.UUID;
 
-					if (l_cullingData.visiblilityType == VisiblilityType::Opaque)
+					if (l_cullingData.visibilityType == VisibilityType::Opaque)
 					{
 						OpaquePassDrawCallInfo l_opaquePassDrawCallInfo;
 
@@ -563,7 +563,7 @@ bool InnoRenderingFrontendNS::updateMeshData()
 						l_sunShadowPassPerObjectConstantBuffer.emplace_back(l_meshConstantBuffer);
 						l_sunShadowPassIndex++;
 					}
-					else if (l_cullingData.visiblilityType == VisiblilityType::Transparent)
+					else if (l_cullingData.visibilityType == VisibilityType::Transparent)
 					{
 						TransparentPassDrawCallInfo l_transparentPassDrawCallInfo;
 
