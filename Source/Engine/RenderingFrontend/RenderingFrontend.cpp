@@ -28,37 +28,27 @@ namespace InnoRenderingFrontendNS
 
 	RenderPassDesc m_DefaultRenderPassDesc;
 
-	DoubleBuffer<PerFrameConstantBuffer, true> m_perFrameCBuffer;
+	DoubleBuffer<PerFrameConstantBuffer, true> m_perFrameCB;
 
-	DoubleBuffer<std::vector<CSMConstantBuffer>, true> m_CSMConstantBufferVector;
+	DoubleBuffer<std::vector<CSMConstantBuffer>, true> m_CSMCBVector;
 
-	DoubleBuffer<std::vector<PointLightConstantBuffer>, true> m_pointLightConstantBuffer;
-	DoubleBuffer<std::vector<SphereLightConstantBuffer>, true> m_sphereLightConstantBuffer;
+	DoubleBuffer<std::vector<PointLightConstantBuffer>, true> m_pointLightCBVector;
+	DoubleBuffer<std::vector<SphereLightConstantBuffer>, true> m_sphereLightCBVector;
 
-	uint32_t m_sunShadowPassDrawCallCount = 0;
-	DoubleBuffer<std::vector<OpaquePassDrawCallInfo>, true> m_sunShadowPassDrawCallInfoVector;
-	DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_sunShadowPassPerObjectConstantBuffer;
+	uint32_t m_drawCallCount = 0;
+	DoubleBuffer<std::vector<DrawCallInfo>, true> m_drawCallInfoVector;
+	DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_perObjectCBVector;
+	DoubleBuffer<std::vector<MaterialConstantBuffer>, true> m_materialCBVector;
 
-	uint32_t m_opaquePassDrawCallCount = 0;
-	DoubleBuffer<std::vector<OpaquePassDrawCallInfo>, true> m_opaquePassDrawCallInfoVector;
-	DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_opaquePassPerObjectConstantBuffer;
-	DoubleBuffer<std::vector<MaterialConstantBuffer>, true> m_opaquePassMaterialConstantBuffer;
-
-	uint32_t m_transparentPassDrawCallCount = 0;
-	DoubleBuffer<std::vector<TransparentPassDrawCallInfo>, true> m_transparentPassDrawCallInfoVector;
-	DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_transparentPassPerObjectConstantBuffer;
-	DoubleBuffer<std::vector<MaterialConstantBuffer>, true> m_transparentPassMaterialConstantBuffer;
-
-	DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_directionalLightPerObjectConstantBuffer;
-	DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_pointLightPerObjectConstantBuffer;
-	DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_sphereLightPerObjectConstantBuffer;
+	DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_directionalLightPerObjectCB;
+	DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_pointLightPerObjectCB;
+	DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_sphereLightPerObjectCB;
 
 	DoubleBuffer<std::vector<BillboardPassDrawCallInfo>, true> m_billboardPassDrawCallInfoVector;
-	DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_billboardPassPerObjectConstantBuffer;
+	DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_billboardPassPerObjectCB;
 
-	uint32_t m_debugPassDrawCallCount = 0;
 	DoubleBuffer<std::vector<DebugPassDrawCallInfo>, true> m_debugPassDrawCallInfoVector;
-	DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_debugPassPerObjectConstantBuffer;
+	DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_debugPassPerObjectCB;
 
 	std::vector<CullingData> m_cullingData;
 
@@ -164,34 +154,24 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 	m_DefaultRenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)m_screenResolution.x;
 	m_DefaultRenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)m_screenResolution.y;
 
-	m_CSMConstantBufferVector.Reserve(m_renderingCapability.maxCSMSplits);
+	m_CSMCBVector.Reserve(m_renderingCapability.maxCSMSplits);
 
-	m_transparentPassDrawCallInfoVector.Reserve(m_renderingCapability.maxMeshes);
-	m_transparentPassPerObjectConstantBuffer.Reserve(m_renderingCapability.maxMeshes);
-	m_transparentPassMaterialConstantBuffer.Reserve(m_renderingCapability.maxMaterials);
+	m_drawCallInfoVector.Reserve(m_renderingCapability.maxMeshes);
+	m_perObjectCBVector.Reserve(m_renderingCapability.maxMeshes);
+	m_materialCBVector.Reserve(m_renderingCapability.maxMaterials);
 
-	m_opaquePassDrawCallInfoVector.Reserve(m_renderingCapability.maxMeshes);
-	m_opaquePassPerObjectConstantBuffer.Reserve(m_renderingCapability.maxMeshes);
-	m_opaquePassMaterialConstantBuffer.Reserve(m_renderingCapability.maxMaterials);
+	m_pointLightCBVector.Reserve(m_renderingCapability.maxPointLights);
+	m_sphereLightCBVector.Reserve(m_renderingCapability.maxSphereLights);
 
-	m_sunShadowPassDrawCallInfoVector.Reserve(m_renderingCapability.maxMeshes);
-	m_sunShadowPassPerObjectConstantBuffer.Reserve(m_renderingCapability.maxMeshes);
-
-	m_pointLightConstantBuffer.Reserve(m_renderingCapability.maxPointLights);
-	m_sphereLightConstantBuffer.Reserve(m_renderingCapability.maxSphereLights);
-
-	m_directionalLightPerObjectConstantBuffer.Reserve(8192);
-	m_pointLightPerObjectConstantBuffer.Reserve(8192);
-	m_sphereLightPerObjectConstantBuffer.Reserve(8192);
-	m_billboardPassPerObjectConstantBuffer.Reserve(8192);
+	m_directionalLightPerObjectCB.Reserve(8192);
+	m_pointLightPerObjectCB.Reserve(8192);
+	m_sphereLightPerObjectCB.Reserve(8192);
+	m_billboardPassPerObjectCB.Reserve(8192);
 
 	f_sceneLoadingStartCallback = [&]() {
 		m_cullingData.clear();
 
-		m_sunShadowPassDrawCallCount = 0;
-		m_opaquePassDrawCallCount = 0;
-		m_transparentPassDrawCallCount = 0;
-		m_debugPassDrawCallCount = 0;
+		m_drawCallCount = 0;
 	};
 
 	f_sceneLoadingFinishCallback = [&]()
@@ -354,12 +334,12 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 		return false;
 	}
 
-	PerFrameConstantBuffer l_PerFrameConstantBuffer;
+	PerFrameConstantBuffer l_PerFrameCB;
 
 	auto l_p = l_mainCamera->m_projectionMatrix;
 
-	l_PerFrameConstantBuffer.p_original = l_p;
-	l_PerFrameConstantBuffer.p_jittered = l_p;
+	l_PerFrameCB.p_original = l_p;
+	l_PerFrameCB.p_jittered = l_p;
 
 	if (m_renderingConfig.useTAA)
 	{
@@ -369,8 +349,8 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 		{
 			l_currentHaltonStep = 0;
 		}
-		l_PerFrameConstantBuffer.p_jittered.m02 = m_haltonSampler[l_currentHaltonStep].x / m_screenResolution.x;
-		l_PerFrameConstantBuffer.p_jittered.m12 = m_haltonSampler[l_currentHaltonStep].y / m_screenResolution.y;
+		l_PerFrameCB.p_jittered.m02 = m_haltonSampler[l_currentHaltonStep].x / m_screenResolution.x;
+		l_PerFrameCB.p_jittered.m12 = m_haltonSampler[l_currentHaltonStep].y / m_screenResolution.y;
 		l_currentHaltonStep += 1;
 	}
 
@@ -384,24 +364,24 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 			l_mainCameraTransformComponent->m_globalTransformVector.m_pos
 		);
 
-	l_PerFrameConstantBuffer.camera_posWS = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
+	l_PerFrameCB.camera_posWS = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
 
-	l_PerFrameConstantBuffer.v = r * t;
+	l_PerFrameCB.v = r * t;
 
 	auto r_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_rotationMat.inverse();
 	auto t_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_translationMat.inverse();
 
-	l_PerFrameConstantBuffer.v_prev = r_prev * t_prev;
+	l_PerFrameCB.v_prev = r_prev * t_prev;
 
-	l_PerFrameConstantBuffer.zNear = l_mainCamera->m_zNear;
-	l_PerFrameConstantBuffer.zFar = l_mainCamera->m_zFar;
+	l_PerFrameCB.zNear = l_mainCamera->m_zNear;
+	l_PerFrameCB.zFar = l_mainCamera->m_zFar;
 
-	l_PerFrameConstantBuffer.p_inv = l_p.inverse();
-	l_PerFrameConstantBuffer.v_inv = l_PerFrameConstantBuffer.v.inverse();
-	l_PerFrameConstantBuffer.viewportSize.x = (float)m_screenResolution.x;
-	l_PerFrameConstantBuffer.viewportSize.y = (float)m_screenResolution.y;
-	l_PerFrameConstantBuffer.minLogLuminance = -10.0f;
-	l_PerFrameConstantBuffer.maxLogLuminance = 16.0f;
+	l_PerFrameCB.p_inv = l_p.inverse();
+	l_PerFrameCB.v_inv = l_PerFrameCB.v.inverse();
+	l_PerFrameCB.viewportSize.x = (float)m_screenResolution.x;
+	l_PerFrameCB.viewportSize.y = (float)m_screenResolution.y;
+	l_PerFrameCB.minLogLuminance = -10.0f;
+	l_PerFrameCB.maxLogLuminance = 16.0f;
 
 	auto l_sun = GetComponentManager(LightComponent)->GetSun();
 
@@ -419,29 +399,29 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 
 	auto l_lightRotMat = l_sunTransformComponent->m_globalTransformMatrix.m_rotationMat.inverse();
 
-	l_PerFrameConstantBuffer.sun_direction = InnoMath::getDirection(Direction::Backward, l_sunTransformComponent->m_globalTransformVector.m_rot);
-	l_PerFrameConstantBuffer.sun_illuminance = l_sun->m_RGBColor * l_sun->m_LuminousFlux;
+	l_PerFrameCB.sun_direction = InnoMath::getDirection(Direction::Backward, l_sunTransformComponent->m_globalTransformVector.m_rot);
+	l_PerFrameCB.sun_illuminance = l_sun->m_RGBColor * l_sun->m_LuminousFlux;
 
-	m_perFrameCBuffer.SetValue(std::move(l_PerFrameConstantBuffer));
+	m_perFrameCB.SetValue(std::move(l_PerFrameCB));
 
 	auto l_SplitAABB = GetComponentManager(LightComponent)->GetSunSplitAABB();
 	auto l_ProjectionMatrices = GetComponentManager(LightComponent)->GetSunProjectionMatrices();
 
-	auto& l_CSMConstantBufferVector = m_CSMConstantBufferVector.GetValue();
-	l_CSMConstantBufferVector.clear();
+	auto& l_CSMCBVector = m_CSMCBVector.GetValue();
+	l_CSMCBVector.clear();
 
 	if (l_SplitAABB.size() > 0 && l_ProjectionMatrices.size() > 0)
 	{
 		for (size_t j = 0; j < m_renderingCapability.maxCSMSplits; j++)
 		{
-			CSMConstantBuffer l_CSMConstantBuffer;
+			CSMConstantBuffer l_CSMCB;
 
-			l_CSMConstantBuffer.p = l_ProjectionMatrices[j];
-			l_CSMConstantBuffer.AABBMax = l_SplitAABB[j].m_boundMax;
-			l_CSMConstantBuffer.AABBMin = l_SplitAABB[j].m_boundMin;
-			l_CSMConstantBuffer.v = l_lightRotMat;
+			l_CSMCB.p = l_ProjectionMatrices[j];
+			l_CSMCB.AABBMax = l_SplitAABB[j].m_boundMax;
+			l_CSMCB.AABBMin = l_SplitAABB[j].m_boundMin;
+			l_CSMCB.v = l_lightRotMat;
 
-			l_CSMConstantBufferVector.emplace_back(l_CSMConstantBuffer);
+			l_CSMCBVector.emplace_back(l_CSMCB);
 		}
 	}
 
@@ -450,11 +430,11 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 
 bool InnoRenderingFrontendNS::updateLightData()
 {
-	auto& l_PointLightConstantBuffer = m_pointLightConstantBuffer.GetValue();
-	auto& l_SphereLightConstantBuffer = m_sphereLightConstantBuffer.GetValue();
+	auto& l_PointLightCB = m_pointLightCBVector.GetValue();
+	auto& l_SphereLightCB = m_sphereLightCBVector.GetValue();
 
-	l_PointLightConstantBuffer.clear();
-	l_SphereLightConstantBuffer.clear();
+	l_PointLightCB.clear();
+	l_SphereLightCB.clear();
 
 	auto& l_lightComponents = GetComponentManager(LightComponent)->GetAllComponents();
 	auto l_lightComponentCount = l_lightComponents.size();
@@ -472,7 +452,7 @@ bool InnoRenderingFrontendNS::updateLightData()
 					l_data.pos = l_transformCompoent->m_globalTransformVector.m_pos;
 					l_data.luminance = l_lightComponents[i]->m_RGBColor * l_lightComponents[i]->m_LuminousFlux;
 					l_data.luminance.w = l_lightComponents[i]->m_Shape.x;
-					l_PointLightConstantBuffer.emplace_back(l_data);
+					l_PointLightCB.emplace_back(l_data);
 				}
 				else if (l_lightComponents[i]->m_LightType == LightType::Sphere)
 				{
@@ -480,7 +460,7 @@ bool InnoRenderingFrontendNS::updateLightData()
 					l_data.pos = l_transformCompoent->m_globalTransformVector.m_pos;
 					l_data.luminance = l_lightComponents[i]->m_RGBColor * l_lightComponents[i]->m_LuminousFlux;
 					l_data.luminance.w = l_lightComponents[i]->m_Shape.x;
-					l_SphereLightConstantBuffer.emplace_back(l_data);
+					l_SphereLightCB.emplace_back(l_data);
 				}
 			}
 		}
@@ -491,32 +471,15 @@ bool InnoRenderingFrontendNS::updateLightData()
 
 bool InnoRenderingFrontendNS::updateMeshData()
 {
-	auto& l_opaquePassDrawCallInfoVector = m_opaquePassDrawCallInfoVector.GetValue();
-	auto& l_opaquePassPerObjectConstantBuffer = m_opaquePassPerObjectConstantBuffer.GetValue();
-	auto& l_opaquePassMaterialConstantBuffer = m_opaquePassMaterialConstantBuffer.GetValue();
+	auto& l_drawCallInfoVector = m_drawCallInfoVector.GetValue();
+	auto& l_perObjectCBVector = m_perObjectCBVector.GetValue();
+	auto& l_materialCBVector = m_materialCBVector.GetValue();
 
-	auto& l_sunShadowPassDrawCallInfoVector = m_sunShadowPassDrawCallInfoVector.GetValue();
-	auto& l_sunShadowPassPerObjectConstantBuffer = m_sunShadowPassPerObjectConstantBuffer.GetValue();
-
-	auto& l_transparentPassDrawCallInfoVector = m_transparentPassDrawCallInfoVector.GetValue();
-	auto& l_transparentPassPerObjectConstantBuffer = m_transparentPassPerObjectConstantBuffer.GetValue();
-	auto& l_transparentPassMaterialConstantBuffer = m_transparentPassMaterialConstantBuffer.GetValue();
-
-	l_opaquePassDrawCallInfoVector.clear();
-	l_opaquePassPerObjectConstantBuffer.clear();
-	l_opaquePassMaterialConstantBuffer.clear();
-
-	l_sunShadowPassDrawCallInfoVector.clear();
-	l_sunShadowPassPerObjectConstantBuffer.clear();
-
-	l_transparentPassDrawCallInfoVector.clear();
-	l_transparentPassPerObjectConstantBuffer.clear();
-	l_transparentPassMaterialConstantBuffer.clear();
+	l_drawCallInfoVector.clear();
+	l_perObjectCBVector.clear();
+	l_materialCBVector.clear();
 
 	auto l_cullingDataSize = m_cullingData.size();
-	uint32_t l_sunShadowPassIndex = 0;
-	uint32_t l_opaquePassIndex = 0;
-	uint32_t l_transparentPassIndex = 0;
 
 	for (size_t i = 0; i < l_cullingDataSize; i++)
 	{
@@ -527,77 +490,42 @@ bool InnoRenderingFrontendNS::updateMeshData()
 			{
 				if (l_cullingData.material != nullptr)
 				{
-					PerObjectConstantBuffer l_meshConstantBuffer;
-					l_meshConstantBuffer.m = l_cullingData.m;
-					l_meshConstantBuffer.m_prev = l_cullingData.m_prev;
-					l_meshConstantBuffer.normalMat = l_cullingData.normalMat;
-					l_meshConstantBuffer.UUID = (float)l_cullingData.UUID;
+					DrawCallInfo l_drawCallInfo;
 
-					if (l_cullingData.visibilityType == VisibilityType::Opaque)
+					l_drawCallInfo.mesh = l_cullingData.mesh;
+					l_drawCallInfo.material = l_cullingData.material;
+					// @TODO: use culled info
+					l_drawCallInfo.castSunShadow = true;
+					l_drawCallInfo.visibilityType = l_cullingData.visibilityType;
+					l_drawCallInfo.meshConstantBufferIndex = (uint32_t)i;
+					l_drawCallInfo.materialConstantBufferIndex = (uint32_t)i;
+
+					PerObjectConstantBuffer l_perObjectCB;
+					l_perObjectCB.m = l_cullingData.m;
+					l_perObjectCB.m_prev = l_cullingData.m_prev;
+					l_perObjectCB.normalMat = l_cullingData.normalMat;
+					l_perObjectCB.UUID = (float)l_cullingData.UUID;
+
+					MaterialConstantBuffer l_materialCB;
+
+					for (size_t i = 0; i < 8; i++)
 					{
-						OpaquePassDrawCallInfo l_opaquePassDrawCallInfo;
-
-						l_opaquePassDrawCallInfo.mesh = l_cullingData.mesh;
-						l_opaquePassDrawCallInfo.material = l_cullingData.material;
-
-						MaterialConstantBuffer l_materialConstantBuffer;
-
-						for (size_t i = 0; i < 8; i++)
-						{
-							uint32_t l_writeMask = l_opaquePassDrawCallInfo.material->m_TextureSlots[i].m_Activate ? 0x00000001 : 0x00000000;
-							l_writeMask = l_writeMask << i;
-							l_materialConstantBuffer.textureSlotMask |= l_writeMask;
-						}
-						l_materialConstantBuffer.materialType = int32_t(l_cullingData.meshUsageType);
-						l_materialConstantBuffer.customMaterial = l_cullingData.material->m_meshCustomMaterial;
-
-						if (l_cullingData.cullingDataChannel != CullingDataChannel::Shadow)
-						{
-							l_opaquePassDrawCallInfoVector.emplace_back(l_opaquePassDrawCallInfo);
-							l_opaquePassPerObjectConstantBuffer.emplace_back(l_meshConstantBuffer);
-							l_opaquePassMaterialConstantBuffer.emplace_back(l_materialConstantBuffer);
-							l_opaquePassIndex++;
-						}
-
-						l_sunShadowPassDrawCallInfoVector.emplace_back(l_opaquePassDrawCallInfo);
-						l_sunShadowPassPerObjectConstantBuffer.emplace_back(l_meshConstantBuffer);
-						l_sunShadowPassIndex++;
+						uint32_t l_writeMask = l_drawCallInfo.material->m_TextureSlots[i].m_Activate ? 0x00000001 : 0x00000000;
+						l_writeMask = l_writeMask << i;
+						l_materialCB.textureSlotMask |= l_writeMask;
 					}
-					else if (l_cullingData.visibilityType == VisibilityType::Transparent)
-					{
-						TransparentPassDrawCallInfo l_transparentPassDrawCallInfo;
+					l_materialCB.materialType = int32_t(l_cullingData.meshUsageType);
+					l_materialCB.customMaterial = l_cullingData.material->m_meshCustomMaterial;
 
-						l_transparentPassDrawCallInfo.mesh = l_cullingData.mesh;
-						l_transparentPassDrawCallInfo.meshConstantBufferIndex = l_transparentPassIndex;
-						l_transparentPassDrawCallInfo.materialConstantBufferIndex = l_transparentPassIndex;
-
-						MaterialConstantBuffer l_materialConstantBuffer;
-
-						l_materialConstantBuffer.materialType = int32_t(l_cullingData.meshUsageType);
-						l_materialConstantBuffer.customMaterial = l_cullingData.material->m_meshCustomMaterial;
-
-						l_transparentPassDrawCallInfoVector.emplace_back(l_transparentPassDrawCallInfo);
-						l_transparentPassPerObjectConstantBuffer.emplace_back(l_meshConstantBuffer);
-						l_transparentPassMaterialConstantBuffer.emplace_back(l_materialConstantBuffer);
-						l_transparentPassIndex++;
-					}
+					l_drawCallInfoVector.emplace_back(l_drawCallInfo);
+					l_perObjectCBVector.emplace_back(l_perObjectCB);
+					l_materialCBVector.emplace_back(l_materialCB);
 				}
 			}
 		}
 	}
 
-	m_sunShadowPassDrawCallCount = l_sunShadowPassIndex;
-	m_opaquePassDrawCallCount = l_opaquePassIndex;
-	m_transparentPassDrawCallCount = l_transparentPassIndex;
-
 	// @TODO: use GPU to do OIT
-	auto l_v = m_perFrameCBuffer.GetValue().v;
-
-	std::sort(l_transparentPassDrawCallInfoVector.begin(), l_transparentPassDrawCallInfoVector.end(), [&](TransparentPassDrawCallInfo a, TransparentPassDrawCallInfo b) {
-		auto m_a_InViewSpace = l_v * l_transparentPassPerObjectConstantBuffer[a.meshConstantBufferIndex].m;
-		auto m_b_InViewSpace = l_v * l_transparentPassPerObjectConstantBuffer[b.meshConstantBufferIndex].m;
-		return m_a_InViewSpace.m23 < m_b_InViewSpace.m23;
-	});
 
 	return true;
 }
@@ -614,10 +542,10 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 	}
 
 	auto& l_billboardPassDrawCallInfoVector = m_billboardPassDrawCallInfoVector.GetValue();
-	auto& l_billboardPassPerObjectConstantBuffer = m_billboardPassPerObjectConstantBuffer.GetValue();
-	auto& l_directionalLightPerObjectConstantBuffer = m_directionalLightPerObjectConstantBuffer.GetValue();
-	auto& l_pointLightPerObjectConstantBuffer = m_pointLightPerObjectConstantBuffer.GetValue();
-	auto& l_sphereLightPerObjectConstantBuffer = m_sphereLightPerObjectConstantBuffer.GetValue();
+	auto& l_billboardPassPerObjectCB = m_billboardPassPerObjectCB.GetValue();
+	auto& l_directionalLightPerObjectCB = m_directionalLightPerObjectCB.GetValue();
+	auto& l_pointLightPerObjectCB = m_pointLightPerObjectCB.GetValue();
+	auto& l_sphereLightPerObjectCB = m_sphereLightPerObjectCB.GetValue();
 
 	auto l_billboardPassDrawCallInfoCount = l_billboardPassDrawCallInfoVector.size();
 	for (size_t i = 0; i < l_billboardPassDrawCallInfoCount; i++)
@@ -625,36 +553,36 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 		l_billboardPassDrawCallInfoVector[i].instanceCount = 0;
 	}
 
-	l_billboardPassPerObjectConstantBuffer.clear();
+	l_billboardPassPerObjectCB.clear();
 
-	l_directionalLightPerObjectConstantBuffer.clear();
-	l_pointLightPerObjectConstantBuffer.clear();
-	l_sphereLightPerObjectConstantBuffer.clear();
+	l_directionalLightPerObjectCB.clear();
+	l_pointLightPerObjectCB.clear();
+	l_sphereLightPerObjectCB.clear();
 
 	for (auto i : l_lightComponents)
 	{
-		PerObjectConstantBuffer l_meshConstantBuffer;
+		PerObjectConstantBuffer l_meshCB;
 
 		auto l_transformCompoent = GetComponent(TransformComponent, i->m_ParentEntity);
 		if (l_transformCompoent != nullptr)
 		{
-			l_meshConstantBuffer.m = InnoMath::toTranslationMatrix(l_transformCompoent->m_globalTransformVector.m_pos);
+			l_meshCB.m = InnoMath::toTranslationMatrix(l_transformCompoent->m_globalTransformVector.m_pos);
 		}
 
 		switch (i->m_LightType)
 		{
 		case LightType::Directional:
-			l_directionalLightPerObjectConstantBuffer.emplace_back(l_meshConstantBuffer);
+			l_directionalLightPerObjectCB.emplace_back(l_meshCB);
 			l_billboardPassDrawCallInfoVector[0].instanceCount++;
 			break;
 		case LightType::Point:
-			l_pointLightPerObjectConstantBuffer.emplace_back(l_meshConstantBuffer);
+			l_pointLightPerObjectCB.emplace_back(l_meshCB);
 			l_billboardPassDrawCallInfoVector[1].instanceCount++;
 			break;
 		case LightType::Spot:
 			break;
 		case LightType::Sphere:
-			l_sphereLightPerObjectConstantBuffer.emplace_back(l_meshConstantBuffer);
+			l_sphereLightPerObjectCB.emplace_back(l_meshCB);
 			l_billboardPassDrawCallInfoVector[2].instanceCount++;
 			break;
 		case LightType::Disk:
@@ -669,21 +597,19 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 	}
 
 	l_billboardPassDrawCallInfoVector[0].meshConstantBufferOffset = 0;
-	l_billboardPassDrawCallInfoVector[1].meshConstantBufferOffset = (uint32_t)l_directionalLightPerObjectConstantBuffer.size();
-	l_billboardPassDrawCallInfoVector[2].meshConstantBufferOffset = (uint32_t)(l_directionalLightPerObjectConstantBuffer.size() + l_pointLightPerObjectConstantBuffer.size());
+	l_billboardPassDrawCallInfoVector[1].meshConstantBufferOffset = (uint32_t)l_directionalLightPerObjectCB.size();
+	l_billboardPassDrawCallInfoVector[2].meshConstantBufferOffset = (uint32_t)(l_directionalLightPerObjectCB.size() + l_pointLightPerObjectCB.size());
 
-	l_billboardPassPerObjectConstantBuffer.insert(l_billboardPassPerObjectConstantBuffer.end(), l_directionalLightPerObjectConstantBuffer.begin(), l_directionalLightPerObjectConstantBuffer.end());
-	l_billboardPassPerObjectConstantBuffer.insert(l_billboardPassPerObjectConstantBuffer.end(), l_pointLightPerObjectConstantBuffer.begin(), l_pointLightPerObjectConstantBuffer.end());
-	l_billboardPassPerObjectConstantBuffer.insert(l_billboardPassPerObjectConstantBuffer.end(), l_sphereLightPerObjectConstantBuffer.begin(), l_sphereLightPerObjectConstantBuffer.end());
+	l_billboardPassPerObjectCB.insert(l_billboardPassPerObjectCB.end(), l_directionalLightPerObjectCB.begin(), l_directionalLightPerObjectCB.end());
+	l_billboardPassPerObjectCB.insert(l_billboardPassPerObjectCB.end(), l_pointLightPerObjectCB.begin(), l_pointLightPerObjectCB.end());
+	l_billboardPassPerObjectCB.insert(l_billboardPassPerObjectCB.end(), l_sphereLightPerObjectCB.begin(), l_sphereLightPerObjectCB.end());
 
 	return true;
 }
 
 bool InnoRenderingFrontendNS::updateDebuggerPassData()
 {
-	uint32_t l_index = 0;
 	// @TODO: Implementation
-	m_debugPassDrawCallCount = l_index;
 
 	return true;
 }
@@ -931,77 +857,37 @@ RenderPassDesc InnoRenderingFrontend::getDefaultRenderPassDesc()
 
 const PerFrameConstantBuffer& InnoRenderingFrontend::getPerFrameConstantBuffer()
 {
-	return m_perFrameCBuffer.GetValue();
+	return m_perFrameCB.GetValue();
 }
 
 const std::vector<CSMConstantBuffer>& InnoRenderingFrontend::getCSMConstantBuffer()
 {
-	return m_CSMConstantBufferVector.GetValue();
+	return m_CSMCBVector.GetValue();
 }
 
 const std::vector<PointLightConstantBuffer>& InnoRenderingFrontend::getPointLightConstantBuffer()
 {
-	return m_pointLightConstantBuffer.GetValue();
+	return m_pointLightCBVector.GetValue();
 }
 
 const std::vector<SphereLightConstantBuffer>& InnoRenderingFrontend::getSphereLightConstantBuffer()
 {
-	return m_sphereLightConstantBuffer.GetValue();
+	return m_sphereLightCBVector.GetValue();
 }
 
-uint32_t InnoRenderingFrontend::getSunShadowPassDrawCallCount()
+const std::vector<DrawCallInfo>& InnoRenderingFrontend::getDrawCallInfo()
 {
-	return m_sunShadowPassDrawCallCount;
+	return m_drawCallInfoVector.GetValue();
 }
 
-const std::vector<OpaquePassDrawCallInfo>& InnoRenderingFrontend::getSunShadowPassDrawCallInfo()
+const std::vector<PerObjectConstantBuffer>& InnoRenderingFrontend::getPerObjectConstantBuffer()
 {
-	return m_sunShadowPassDrawCallInfoVector.GetValue();
+	return m_perObjectCBVector.GetValue();
 }
 
-const std::vector<PerObjectConstantBuffer>& InnoRenderingFrontend::getSunShadowPassPerObjectConstantBuffer()
+const std::vector<MaterialConstantBuffer>& InnoRenderingFrontend::getMaterialConstantBuffer()
 {
-	return m_sunShadowPassPerObjectConstantBuffer.GetValue();
-}
-
-uint32_t InnoRenderingFrontend::getOpaquePassDrawCallCount()
-{
-	return m_opaquePassDrawCallCount;
-}
-
-const std::vector<OpaquePassDrawCallInfo>& InnoRenderingFrontend::getOpaquePassDrawCallInfo()
-{
-	return m_opaquePassDrawCallInfoVector.GetValue();
-}
-
-const std::vector<PerObjectConstantBuffer>& InnoRenderingFrontend::getOpaquePassPerObjectConstantBuffer()
-{
-	return m_opaquePassPerObjectConstantBuffer.GetValue();
-}
-
-const std::vector<MaterialConstantBuffer>& InnoRenderingFrontend::getOpaquePassMaterialConstantBuffer()
-{
-	return m_opaquePassMaterialConstantBuffer.GetValue();
-}
-
-uint32_t InnoRenderingFrontend::getTransparentPassDrawCallCount()
-{
-	return m_transparentPassDrawCallCount;
-}
-
-const std::vector<TransparentPassDrawCallInfo>& InnoRenderingFrontend::getTransparentPassDrawCallInfo()
-{
-	return m_transparentPassDrawCallInfoVector.GetValue();
-}
-
-const std::vector<PerObjectConstantBuffer>& InnoRenderingFrontend::getTransparentPassPerObjectConstantBuffer()
-{
-	return m_transparentPassPerObjectConstantBuffer.GetValue();
-}
-
-const std::vector<MaterialConstantBuffer>& InnoRenderingFrontend::getTransparentPassMaterialConstantBuffer()
-{
-	return m_transparentPassMaterialConstantBuffer.GetValue();
+	return m_materialCBVector.GetValue();
 }
 
 const std::vector<BillboardPassDrawCallInfo>& InnoRenderingFrontend::getBillboardPassDrawCallInfo()
@@ -1011,12 +897,7 @@ const std::vector<BillboardPassDrawCallInfo>& InnoRenderingFrontend::getBillboar
 
 const std::vector<PerObjectConstantBuffer>& InnoRenderingFrontend::getBillboardPassPerObjectConstantBuffer()
 {
-	return m_billboardPassPerObjectConstantBuffer.GetValue();
-}
-
-uint32_t InnoRenderingFrontend::getDebugPassDrawCallCount()
-{
-	return m_debugPassDrawCallCount;
+	return m_billboardPassPerObjectCB.GetValue();
 }
 
 const std::vector<DebugPassDrawCallInfo>& InnoRenderingFrontend::getDebugPassDrawCallInfo()
@@ -1026,5 +907,5 @@ const std::vector<DebugPassDrawCallInfo>& InnoRenderingFrontend::getDebugPassDra
 
 const std::vector<PerObjectConstantBuffer>& InnoRenderingFrontend::getDebugPassPerObjectConstantBuffer()
 {
-	return m_debugPassPerObjectConstantBuffer.GetValue();
+	return m_debugPassPerObjectCB.GetValue();
 }

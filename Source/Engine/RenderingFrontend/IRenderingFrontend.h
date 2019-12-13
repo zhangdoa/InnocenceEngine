@@ -84,24 +84,13 @@ public:
 	virtual const std::vector<PointLightConstantBuffer>& getPointLightConstantBuffer() = 0;
 	virtual const std::vector<SphereLightConstantBuffer>& getSphereLightConstantBuffer() = 0;
 
-	virtual uint32_t getSunShadowPassDrawCallCount() = 0;
-	virtual const std::vector<OpaquePassDrawCallInfo>& getSunShadowPassDrawCallInfo() = 0;
-	virtual const std::vector<PerObjectConstantBuffer>& getSunShadowPassPerObjectConstantBuffer() = 0;
-
-	virtual uint32_t getOpaquePassDrawCallCount() = 0;
-	virtual const std::vector<OpaquePassDrawCallInfo>& getOpaquePassDrawCallInfo() = 0;
-	virtual const std::vector<PerObjectConstantBuffer>& getOpaquePassPerObjectConstantBuffer() = 0;
-	virtual const std::vector<MaterialConstantBuffer>& getOpaquePassMaterialConstantBuffer() = 0;
-
-	virtual uint32_t getTransparentPassDrawCallCount() = 0;
-	virtual const std::vector<TransparentPassDrawCallInfo>& getTransparentPassDrawCallInfo() = 0;
-	virtual const std::vector<PerObjectConstantBuffer>& getTransparentPassPerObjectConstantBuffer() = 0;
-	virtual const std::vector<MaterialConstantBuffer>& getTransparentPassMaterialConstantBuffer() = 0;
+	virtual const std::vector<DrawCallInfo>& getDrawCallInfo() = 0;
+	virtual const std::vector<PerObjectConstantBuffer>& getPerObjectConstantBuffer() = 0;
+	virtual const std::vector<MaterialConstantBuffer>& getMaterialConstantBuffer() = 0;
 
 	virtual const std::vector<BillboardPassDrawCallInfo>& getBillboardPassDrawCallInfo() = 0;
 	virtual const std::vector<PerObjectConstantBuffer>& getBillboardPassPerObjectConstantBuffer() = 0;
 
-	virtual uint32_t getDebugPassDrawCallCount() = 0;
 	virtual const std::vector<DebugPassDrawCallInfo>& getDebugPassDrawCallInfo() = 0;
 	virtual const std::vector<PerObjectConstantBuffer>& getDebugPassPerObjectConstantBuffer() = 0;
 };

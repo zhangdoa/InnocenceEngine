@@ -77,8 +77,8 @@ bool TransparentPass::Initialize()
 bool TransparentPass::PrepareCommandList()
 {
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
-	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::TransparentPassMesh);
-	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::TransparentPassMaterial);
+	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
+	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
 
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
@@ -89,23 +89,22 @@ bool TransparentPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 
-	uint32_t l_offset = 0;
+	auto& l_drawCallInfo = g_pModuleManager->getRenderingFrontend()->getDrawCallInfo();
+	auto l_drawCallCount = l_drawCallInfo.size();
 
-	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getTransparentPassDrawCallCount();
-	auto& l_transparentPassDrawCallInfo = g_pModuleManager->getRenderingFrontend()->getTransparentPassDrawCallInfo();
-
-	for (uint32_t i = 0; i < l_totalDrawCallCount; i++)
+	for (uint32_t i = 0; i < l_drawCallCount; i++)
 	{
-		auto l_drawCallData = l_transparentPassDrawCallInfo[i];
-		if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
+		auto l_drawCallData = l_drawCallInfo[i];
+		if (l_drawCallData.visibilityType == VisibilityType::Transparent)
 		{
-			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
-			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_drawCallData.materialConstantBufferIndex, 1);
+			if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
+			{
+				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
+				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_drawCallData.materialConstantBufferIndex, 1);
 
-			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_drawCallData.mesh);
+				g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_drawCallData.mesh);
+			}
 		}
-
-		l_offset++;
 	}
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);

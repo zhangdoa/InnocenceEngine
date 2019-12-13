@@ -125,8 +125,8 @@ bool BSDFTestPass::Initialize()
 bool BSDFTestPass::PrepareCommandList()
 {
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
-	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::OpaquePassMesh);
-	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::OpaquePassMaterial);
+	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
+	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MeshGBDC, m_meshConstantBuffer);
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MaterialGBDC, m_materialConstantBuffer);

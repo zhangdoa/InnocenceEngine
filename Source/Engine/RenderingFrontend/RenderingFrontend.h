@@ -45,24 +45,13 @@ public:
 	const std::vector<PointLightConstantBuffer>& getPointLightConstantBuffer() override;
 	const std::vector<SphereLightConstantBuffer>& getSphereLightConstantBuffer() override;
 
-	uint32_t getSunShadowPassDrawCallCount() override;
-	const std::vector<OpaquePassDrawCallInfo>& getSunShadowPassDrawCallInfo() override;
-	const std::vector<PerObjectConstantBuffer>& getSunShadowPassPerObjectConstantBuffer() override;
-
-	uint32_t getOpaquePassDrawCallCount() override;
-	const std::vector<OpaquePassDrawCallInfo>& getOpaquePassDrawCallInfo() override;
-	const std::vector<PerObjectConstantBuffer>& getOpaquePassPerObjectConstantBuffer() override;
-	const std::vector<MaterialConstantBuffer>& getOpaquePassMaterialConstantBuffer() override;
-
-	uint32_t getTransparentPassDrawCallCount() override;
-	const std::vector<TransparentPassDrawCallInfo>& getTransparentPassDrawCallInfo() override;
-	const std::vector<PerObjectConstantBuffer>& getTransparentPassPerObjectConstantBuffer() override;
-	const std::vector<MaterialConstantBuffer>& getTransparentPassMaterialConstantBuffer() override;
+	const std::vector<DrawCallInfo>& getDrawCallInfo() override;
+	const std::vector<PerObjectConstantBuffer>& getPerObjectConstantBuffer() override;
+	const std::vector<MaterialConstantBuffer>& getMaterialConstantBuffer() override;
 
 	const std::vector<BillboardPassDrawCallInfo>& getBillboardPassDrawCallInfo() override;
 	const std::vector<PerObjectConstantBuffer>& getBillboardPassPerObjectConstantBuffer() override;
 
-	uint32_t getDebugPassDrawCallCount() override;
 	const std::vector<DebugPassDrawCallInfo>& getDebugPassDrawCallInfo() override;
 	const std::vector<PerObjectConstantBuffer>& getDebugPassPerObjectConstantBuffer() override;
 };

@@ -244,8 +244,8 @@ bool VolumetricFogPass::froxelization()
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 	//auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::VolumetricFogPassMesh);
 	//auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::VolumetricFogPassMaterial);
-	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::OpaquePassMesh);
-	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::OpaquePassMaterial);
+	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
+	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
 
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_froxelizationRPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_froxelizationRPDC);
@@ -262,23 +262,22 @@ bool VolumetricFogPass::froxelization()
 
 	//g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_froxelizationRPDC, l_mesh);
 
-	uint32_t l_offset = 0;
+	auto& l_drawCallInfo = g_pModuleManager->getRenderingFrontend()->getDrawCallInfo();
+	auto l_drawCallCount = l_drawCallInfo.size();
 
-	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallCount();
-	auto& l_opaquePassDrawCallInfo = g_pModuleManager->getRenderingFrontend()->getOpaquePassDrawCallInfo();
-
-	for (uint32_t i = 0; i < l_totalDrawCallCount; i++)
+	for (uint32_t i = 0; i < l_drawCallCount; i++)
 	{
-		auto l_drawCallData = l_opaquePassDrawCallInfo[i];
-		if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
+		auto l_drawCallData = l_drawCallInfo[i];
+		if (l_drawCallData.visibilityType == VisibilityType::Opaque)
 		{
-			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelizationRPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_offset, 1);
-			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelizationRPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_offset, 1);
+			if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
+			{
+				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelizationRPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
+				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelizationRPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_drawCallData.materialConstantBufferIndex, 1);
 
-			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_froxelizationRPDC, l_drawCallData.mesh);
+				g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_froxelizationRPDC, l_drawCallData.mesh);
+			}
 		}
-
-		l_offset++;
 	}
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_froxelizationRPDC, ShaderStage::Pixel, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 4, 0, Accessibility::ReadWrite);

@@ -88,17 +88,14 @@ struct alignas(16) GIConstantBuffer
 	Vec4 irradianceVolumeOffset;
 };
 
-struct OpaquePassDrawCallInfo
+struct DrawCallInfo
 {
 	MeshDataComponent* mesh;
 	MaterialDataComponent* material;
-};
-
-struct TransparentPassDrawCallInfo
-{
-	MeshDataComponent* mesh;
 	uint32_t meshConstantBufferIndex;
 	uint32_t materialConstantBufferIndex;
+	bool castSunShadow;
+	VisibilityType visibilityType;
 };
 
 struct BillboardPassDrawCallInfo

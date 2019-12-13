@@ -36,7 +36,7 @@ namespace InnoBakerNS
 	bool serializeProbeInfos(const ProbeInfo& probeInfo);
 
 	bool captureSurfels(std::vector<Probe>& probes);
-	bool drawOpaquePass(Probe& probe, const Mat4& p, const std::vector<Mat4>& v);
+	bool drawObjects(Probe& probe, const Mat4& p, const std::vector<Mat4>& v);
 	bool readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfelCaches);
 	bool eliminateDuplicatedSurfels(std::vector<Surfel>& surfelCaches);
 
@@ -60,7 +60,7 @@ namespace InnoBakerNS
 	std::string m_exportFileName;
 
 	uint32_t m_staticMeshDrawCallCount = 0;
-	std::vector<OpaquePassDrawCallInfo> m_staticMeshDrawCallInfo;
+	std::vector<DrawCallInfo> m_staticMeshDrawCallInfo;
 	std::vector<PerObjectConstantBuffer> m_staticMeshPerObjectConstantBuffer;
 	std::vector<MaterialConstantBuffer> m_staticMeshMaterialConstantBuffer;
 
@@ -115,7 +115,7 @@ bool InnoBakerNS::gatherStaticMeshData()
 
 			for (auto& l_modelPair : visibleComponent->m_modelMap)
 			{
-				OpaquePassDrawCallInfo l_staticPerObjectConstantBuffer;
+				DrawCallInfo l_staticPerObjectConstantBuffer;
 
 				l_staticPerObjectConstantBuffer.mesh = l_modelPair.first;
 				l_staticPerObjectConstantBuffer.material = l_modelPair.second;
@@ -150,8 +150,8 @@ bool InnoBakerNS::gatherStaticMeshData()
 
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: There are ", m_staticMeshDrawCallCount, " static meshes in current scene.");
 
-	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::OpaquePassMesh);
-	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::OpaquePassMaterial);
+	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
+	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MeshGBDC, m_staticMeshPerObjectConstantBuffer, 0, m_staticMeshPerObjectConstantBuffer.size());
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MaterialGBDC, m_staticMeshMaterialConstantBuffer, 0, m_staticMeshMaterialConstantBuffer.size());
@@ -180,7 +180,7 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to draw probe height map...");
 
-	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::OpaquePassMesh);
+	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
 
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_Probe, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_Probe);
@@ -472,7 +472,7 @@ bool InnoBakerNS::captureSurfels(std::vector<Probe>& probes)
 
 	for (uint32_t i = 0; i < l_probeForSurfelCachesCount; i++)
 	{
-		drawOpaquePass(probes[i], l_p, l_v);
+		drawObjects(probes[i], l_p, l_v);
 
 		readBackSurfelCaches(probes[i], l_surfelCaches);
 
@@ -490,7 +490,7 @@ bool InnoBakerNS::captureSurfels(std::vector<Probe>& probes)
 	return true;
 }
 
-bool InnoBakerNS::drawOpaquePass(Probe& probeCache, const Mat4& p, const std::vector<Mat4>& v)
+bool InnoBakerNS::drawObjects(Probe& probeCache, const Mat4& p, const std::vector<Mat4>& v)
 {
 	auto l_t = InnoMath::getInvertTranslationMatrix(probeCache.pos);
 
@@ -504,8 +504,8 @@ bool InnoBakerNS::drawOpaquePass(Probe& probeCache, const Mat4& p, const std::ve
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(GetGPUBufferDataComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
 
-	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::OpaquePassMesh);
-	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::OpaquePassMaterial);
+	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
+	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
 
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_Surfel, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_Surfel);
@@ -977,7 +977,7 @@ bool InnoBakerNS::assignBrickFactorToProbesByGPU(const std::vector<Brick>& brick
 		l_bricksCubePerObjectConstantBuffer[i].UUID = (float)i + 1.0f;
 	}
 
-	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::OpaquePassMesh);
+	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MeshGBDC, l_bricksCubePerObjectConstantBuffer, 0, l_bricksCubePerObjectConstantBuffer.size());
 
 	// assign bricks to probe by the depth test result
@@ -1016,7 +1016,7 @@ bool InnoBakerNS::drawBricks(Vec4 pos, uint32_t bricksCount, const Mat4 & p, con
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(GetGPUBufferDataComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
 
-	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::OpaquePassMesh);
+	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Cube);
 

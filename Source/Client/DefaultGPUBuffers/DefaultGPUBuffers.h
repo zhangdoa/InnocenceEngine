@@ -6,11 +6,8 @@ namespace DefaultGPUBuffers
 	enum class GPUBufferUsageType
 	{
 		PerFrame,
-		SunShadowPassMesh,
-		OpaquePassMesh,
-		OpaquePassMaterial,
-		TransparentPassMesh,
-		TransparentPassMaterial,
+		Mesh,
+		Material,
 		VolumetricFogPassMesh,
 		VolumetricFogPassMaterial,
 		PointLight,

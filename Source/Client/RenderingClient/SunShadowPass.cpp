@@ -72,7 +72,7 @@ bool SunShadowPass::Initialize()
 
 bool SunShadowPass::PrepareCommandList()
 {
-	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::SunShadowPassMesh);
+	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
 	auto l_CSMGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::CSM);
 
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
@@ -80,23 +80,21 @@ bool SunShadowPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Geometry, l_CSMGBDC->m_ResourceBinder, 1, 5, Accessibility::ReadOnly);
 
-	uint32_t l_offset = 0;
+	auto& l_drawCallInfo = g_pModuleManager->getRenderingFrontend()->getDrawCallInfo();
+	auto l_drawCallCount = l_drawCallInfo.size();
 
-	auto l_totalDrawCallCount = g_pModuleManager->getRenderingFrontend()->getSunShadowPassDrawCallCount();
-	auto l_sunShadowPassDrawCallInfo = g_pModuleManager->getRenderingFrontend()->getSunShadowPassDrawCallInfo();
-
-	for (uint32_t i = 0; i < l_totalDrawCallCount; i++)
+	for (uint32_t i = 0; i < l_drawCallCount; i++)
 	{
-		auto l_drawCallData = l_sunShadowPassDrawCallInfo[i];
-
-		if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
+		auto l_drawCallData = l_drawCallInfo[i];
+		if (l_drawCallData.castSunShadow && l_drawCallData.visibilityType == VisibilityType::Opaque)
 		{
-			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 0, 1, Accessibility::ReadOnly, l_offset, 1);
+			if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
+			{
+				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 0, 1, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
 
-			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_drawCallData.mesh);
+				g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_drawCallData.mesh);
+			}
 		}
-
-		l_offset++;
 	}
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
