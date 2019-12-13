@@ -31,7 +31,7 @@ public:
 	InnoThread& operator=(InnoThread&& other) = default;
 
 	ThreadState GetState() const;
-
+	size_t GetUnfinishedWorkCount();
 	const RingBuffer<InnoTaskReport, true>& GetTaskReport();
 
 	std::shared_ptr<IInnoTask> AddTask(std::shared_ptr<IInnoTask>&& task);
@@ -55,7 +55,6 @@ namespace InnoTaskSchedulerNS
 {
 	std::atomic_size_t m_NumThreads = 0;
 	std::vector<std::unique_ptr<InnoThread>> m_Threads;
-	std::atomic_bool m_isAllThreadsIdle = true;
 }
 
 using namespace InnoTaskSchedulerNS;
@@ -103,13 +102,16 @@ bool InnoTaskScheduler::Terminate()
 
 void InnoTaskScheduler::WaitSync()
 {
-	while (!m_isAllThreadsIdle)
+	std::atomic_bool l_isAllThreadsIdle = false;
+
+	while (!l_isAllThreadsIdle)
 	{
 		for (size_t i = 0; i < m_Threads.size(); i++)
 		{
-			m_isAllThreadsIdle = (m_Threads[i]->GetState() == ThreadState::Idle);
+			l_isAllThreadsIdle = (m_Threads[i]->GetUnfinishedWorkCount() == 0);
 		}
 	}
+
 	InnoLogger::Log(LogLevel::Verbose, "InnoTaskScheduler: Reached synchronization point");
 }
 
@@ -144,6 +146,11 @@ const RingBuffer<InnoTaskReport, true>& InnoTaskScheduler::GetTaskReport(int32_t
 inline ThreadState InnoThread::GetState() const
 {
 	return m_ThreadState;
+}
+
+size_t InnoThread::GetUnfinishedWorkCount()
+{
+	return m_WorkQueue.size();
 }
 
 inline const RingBuffer<InnoTaskReport, true>& InnoThread::GetTaskReport()
