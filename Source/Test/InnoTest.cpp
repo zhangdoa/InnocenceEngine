@@ -142,49 +142,40 @@ public:
 	AtomicDoubleBuffer() = default;
 	~AtomicDoubleBuffer() = default;
 
+	void Initialize(const T& rhs)
+	{
+		{
+			auto l_atomicWriter = AtomicWriter(m_A);
+			*l_atomicWriter.Get() = rhs;
+		}
+		{
+			auto l_atomicWriter = AtomicWriter(m_B);
+			*l_atomicWriter.Get() = rhs;
+		}
+	}
+
 	Atomic<T>& Get()
 	{
 		std::shared_lock<std::shared_mutex> lock{ m_Mutex };
 
-		if (m_isBNewer)
+		if (m_isANewer)
 		{
-			InnoLogger::Log(LogLevel::Success, "Read B");
-			return m_B;
+			return m_A;
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Success, "Read A");
-			return m_A;
+			return m_B;
 		}
 	}
 
-	void Set(T&& rhs)
+	void Flip()
 	{
-		std::unique_lock<std::shared_mutex> lock{ m_Mutex };
-
-		if (m_isBNewer)
-		{
-			InnoLogger::Log(LogLevel::Success, "Write A");
-
-			auto l_writer = AtomicWriter(m_A);
-			auto l_lhs = l_writer.Get();
-			*l_lhs = rhs;
-			m_isBNewer = false;
-		}
-		else
-		{
-			InnoLogger::Log(LogLevel::Success, "Write B");
-
-			auto l_writer = AtomicWriter(m_B);
-			auto l_lhs = l_writer.Get();
-			*l_lhs = rhs;
-			m_isBNewer = true;
-		}
+		m_isANewer = !m_isANewer;
 	}
 
 private:
 	mutable std::shared_mutex m_Mutex;
-	std::atomic_bool m_isBNewer = false;
+	std::atomic_bool m_isANewer = true;
 	Atomic<T> m_A;
 	Atomic<T> m_B;
 };
@@ -348,7 +339,7 @@ void TestAtomicDoubleBuffer(size_t testCaseCount)
 	l_initData.fill(0);
 
 	AtomicDoubleBuffer<std::array<float, l_testAtomicDoubleBufferSize>> l_testAtomicDoubleBuffer;
-	l_testAtomicDoubleBuffer.Set(std::move(l_initData));
+	l_testAtomicDoubleBuffer.Initialize(l_initData);
 
 	std::function<void()> ExampleJob_AtomicDoubleBuffer = [&]()
 	{
@@ -373,7 +364,13 @@ void TestAtomicDoubleBuffer(size_t testCaseCount)
 			{
 				l_writeData[i]++;
 			}
-			l_testAtomicDoubleBuffer.Set(std::move(l_writeData));
+
+			{
+				auto l_testAtomicDoubleBufferWriter = AtomicWriter(l_testAtomicDoubleBuffer.Get());
+				auto l_testAtomicDoubleBufferValue = l_testAtomicDoubleBufferWriter.Get();
+				*l_testAtomicDoubleBufferValue = l_writeData;
+				l_testAtomicDoubleBuffer.Flip();
+			}
 
 			InnoLogger::Log(LogLevel::Warning, "Write l_testAtomicDoubleBuffer...");
 		}
