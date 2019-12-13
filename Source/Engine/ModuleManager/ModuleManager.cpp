@@ -151,6 +151,7 @@ namespace InnoModuleManagerNS
 	std::function<void()> f_PhysicsSystemUpdateBVHJob;
 	std::function<void()> f_PhysicsSystemCullingJob;
 	std::function<void()> f_RenderingFrontendUpdateJob;
+	std::function<void()> f_RenderingServerUpdateJob;
 
 	float m_tickTime = 0;
 }
@@ -496,6 +497,25 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	f_PhysicsSystemUpdateBVHJob = [&]() {m_PhysicsSystem->updateBVH(); };
 	f_PhysicsSystemCullingJob = [&]() {m_PhysicsSystem->updateCulling(); };
 	f_RenderingFrontendUpdateJob = [&]() {m_RenderingFrontend->update(); };
+	f_RenderingServerUpdateJob = [&]() {
+		auto l_tickStartTime = m_TimeSystem->getCurrentTimeFromEpoch();
+
+		m_RenderingFrontend->transferDataToGPU();
+
+		m_RenderingClient->PrepareCommandList();
+
+		m_RenderingClient->ExecuteCommandList();
+
+		m_GUISystem->render();
+
+		m_RenderingServer->Present();
+
+		g_pModuleManager->getWindowSystem()->getWindowSurface()->swapBuffer();
+
+		auto l_tickEndTime = m_TimeSystem->getCurrentTimeFromEpoch();
+
+		m_tickTime = float(l_tickEndTime - l_tickStartTime) / 1000.0f;
+	};
 
 	m_ObjectStatus = ObjectStatus::Created;
 	InnoLogger::Log(LogLevel::Success, "Engine setup finished.");
@@ -601,26 +621,7 @@ bool InnoModuleManagerNS::update()
 
 				m_GUISystem->update();
 
-				auto l_RenderingServerTask = g_pModuleManager->getTaskSystem()->submit("RenderingServerTask", 2, l_RenderingFrontendUpdateTask,
-					[&]() {
-					auto l_tickStartTime = m_TimeSystem->getCurrentTimeFromEpoch();
-
-					m_RenderingFrontend->transferDataToGPU();
-
-					m_RenderingClient->PrepareCommandList();
-
-					m_RenderingClient->ExecuteCommandList();
-
-					m_GUISystem->render();
-
-					m_RenderingServer->Present();
-
-					g_pModuleManager->getWindowSystem()->getWindowSurface()->swapBuffer();
-
-					auto l_tickEndTime = m_TimeSystem->getCurrentTimeFromEpoch();
-
-					m_tickTime = float(l_tickEndTime - l_tickStartTime) / 1000.0f;
-				});
+				auto l_RenderingServerTask = g_pModuleManager->getTaskSystem()->submit("RenderingServerTask", 2, l_RenderingFrontendUpdateTask, f_RenderingServerUpdateJob);
 				l_RenderingServerTask->Wait();
 
 				m_TransformComponentManager->SaveCurrentFrameTransform();
@@ -632,11 +633,15 @@ bool InnoModuleManagerNS::update()
 				return true;
 			}
 		}
+
+		m_TaskSystem->waitAllTasksToFinish();
 	}
 }
 
 bool InnoModuleManagerNS::terminate()
 {
+	m_TaskSystem->waitAllTasksToFinish();
+
 	if (!m_RenderingClient->Terminate())
 	{
 		InnoLogger::Log(LogLevel::Error, "Rendering client can't be terminated!");
