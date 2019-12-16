@@ -10,9 +10,14 @@ namespace fs = std::experimental::filesystem;
 namespace fs = std::filesystem;
 #endif
 
-void getAccessSpecifier(CXCursor cursor)
+struct FileWriter
 {
-	std::cout << "----AccessSpecifier: ";
+	std::ofstream os;
+};
+
+void getAccessSpecifier(CXCursor cursor, FileWriter* fileWriter)
+{
+	fileWriter->os << "----AccessSpecifier: ";
 
 	auto accessSpecifier = clang_getCXXAccessSpecifier(cursor);
 
@@ -21,70 +26,85 @@ void getAccessSpecifier(CXCursor cursor)
 	case CX_CXXInvalidAccessSpecifier:
 		break;
 	case CX_CXXPublic:
-		std::cout << "Public";
+		fileWriter->os << "Public";
 		break;
 	case CX_CXXProtected:
-		std::cout << "Protected";
+		fileWriter->os << "Protected";
 		break;
 	case CX_CXXPrivate:
-		std::cout << "Private";
+		fileWriter->os << "Private";
 		break;
 	default:
 		break;
 	}
 
-	std::cout << std::endl;
+	fileWriter->os << std::endl;
 }
 
-void getType(CXCursor cursor)
+void getType(CXCursor cursor, FileWriter* fileWriter)
 {
-	std::cout << "----Type: ";
+	fileWriter->os << "----Type: ";
 
 	auto type = clang_getCursorType(cursor);
 	auto typeNameCStr = clang_getCString(clang_getTypeSpelling(type));
-	std::cout << typeNameCStr;
+	fileWriter->os << typeNameCStr;
 
-	std::cout << std::endl;
+	fileWriter->os << std::endl;
 }
 
-CXChildVisitResult visitor(CXCursor cursor, CXCursor, CXClientData)
+CXChildVisitResult visitor(CXCursor cursor, CXCursor, CXClientData clientData)
 {
-	auto kind = clang_getCursorKind(cursor);
+	CXSourceRange range = clang_getCursorExtent(cursor);
+	CXSourceLocation location = clang_getRangeStart(range);
 
-	auto cursorName = clang_getCursorDisplayName(cursor);
-	auto cursorNameCStr = clang_getCString(cursorName);
-
-	if (kind == CXCursorKind::CXCursor_StructDecl)
+	if (clang_Location_isFromMainFile(location))
 	{
-		std::cout << "Structure: " << cursorNameCStr << std::endl;
+		auto fileWriter = static_cast<FileWriter*>(clientData);
+
+		auto kind = clang_getCursorKind(cursor);
+
+		auto cursorName = clang_getCursorDisplayName(cursor);
+		auto cursorNameCStr = clang_getCString(cursorName);
+
+		if (kind == CXCursorKind::CXCursor_StructDecl)
+		{
+			fileWriter->os << "Structure: " << cursorNameCStr << std::endl;
+		}
+
+		if (kind == CXCursorKind::CXCursor_ClassDecl)
+		{
+			fileWriter->os << "Class: " << cursorNameCStr << std::endl;
+		}
+
+		if (kind == CXCursorKind::CXCursor_EnumDecl)
+		{
+			fileWriter->os << "Enum: " << cursorNameCStr << std::endl;
+		}
+
+		if (kind == CXCursorKind::CXCursor_FieldDecl)
+		{
+			fileWriter->os << "--Field: " << cursorNameCStr << std::endl;
+
+			getAccessSpecifier(cursor, fileWriter);
+			getType(cursor, fileWriter);
+		}
+
+		if (kind == CXCursorKind::CXCursor_FunctionDecl)
+		{
+			getAccessSpecifier(cursor, fileWriter);
+			auto l_returnType = clang_getCursorResultType(cursor);
+			auto l_returnTypeNameCStr = clang_getCString(clang_getTypeSpelling(l_returnType));
+
+			fileWriter->os << "--Function: " << l_returnTypeNameCStr << " " << cursorNameCStr << std::endl;
+		}
+
+		if (kind == CXCursorKind::CXCursor_Namespace)
+		{
+			fileWriter->os << "Namespace: " << cursorNameCStr << std::endl;
+		}
+
+		clang_disposeString(cursorName);
 	}
-
-	if (kind == CXCursorKind::CXCursor_ClassDecl)
-	{
-		std::cout << "Class: " << cursorNameCStr << std::endl;
-	}
-
-	if (kind == CXCursorKind::CXCursor_EnumDecl)
-	{
-		std::cout << "Enum: " << cursorNameCStr << std::endl;
-	}
-
-	if (kind == CXCursorKind::CXCursor_FieldDecl)
-	{
-		std::cout << "--Field: " << cursorNameCStr << std::endl;
-
-		getAccessSpecifier(cursor);
-		getType(cursor);
-	}
-
-	if (kind == CXCursorKind::CXCursor_FunctionDecl)
-	{
-		getAccessSpecifier(cursor);
-
-		std::cout << "--Function: " << cursorNameCStr << std::endl;
-	}
-
-	clang_disposeString(cursorName);
 
 	return CXChildVisit_Recurse;
 }
@@ -93,7 +113,7 @@ void inclusionVisitor(CXFile included_file, CXSourceLocation* inclusion_stack, u
 {
 }
 
-bool ParseContent(const std::string& fileName)
+bool ParseContent(const std::string& fileName, FileWriter& fileWriter)
 {
 	char* args[] = { "--language=c++" };
 
@@ -105,7 +125,7 @@ bool ParseContent(const std::string& fileName)
 
 	auto cursor = clang_getTranslationUnitCursor(translationUnit);
 
-	clang_visitChildren(cursor, visitor, nullptr);
+	clang_visitChildren(cursor, visitor, &fileWriter);
 
 	clang_disposeTranslationUnit(translationUnit);
 
@@ -116,23 +136,26 @@ bool ParseContent(const std::string& fileName)
 
 int main(int argc, char *argv[])
 {
-	if (argc != 3)
+	if (argc != 2)
 	{
-		std::cerr << "Usage: " << argv[0] << " INPUT" << " OUTPUT" << std::endl;
+		std::cerr << "Usage: " << argv[0] << " INPUT" << std::endl;
 		return 0;
 	}
 
 	auto l_workingDirectory = fs::current_path().generic_string();
 	l_workingDirectory += "//";
-	auto l_fileName = fs::path(argv[1]).generic_string();
-	l_workingDirectory += l_fileName;
+	auto l_filePath = fs::path(argv[1]).generic_string();
+	auto l_fileName = fs::path(argv[1]).filename().generic_string();
 
-	auto l_content = ParseContent(l_workingDirectory);
+	l_filePath = l_workingDirectory + l_filePath;
 
-	std::ofstream l_output;
-	l_output.open(l_workingDirectory + argv[2]);
-	l_output << l_content;
-	l_output.close();
+	FileWriter l_output;
+
+	l_output.os.open(l_workingDirectory + "..//Res//Intermediate//" + l_fileName + ".refl");
+
+	ParseContent(l_filePath, l_output);
+
+	l_output.os.close();
 
 	return 0;
 }
