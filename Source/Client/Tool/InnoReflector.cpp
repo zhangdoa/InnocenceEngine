@@ -1,5 +1,6 @@
 #include "../../Engine/Common/STL14.h"
 #include "../../Engine/Common/STL17.h"
+#include <clang-c/Index.h>
 
 #ifdef __GNUC__
 #include <experimental/filesystem>
@@ -9,147 +10,108 @@ namespace fs = std::experimental::filesystem;
 namespace fs = std::filesystem;
 #endif
 
-enum class ReflTypeInfo
+void getAccessSpecifier(CXCursor cursor)
 {
-	refl_none,
-	refl_struct,
-	refl_class,
-	refl_union,
-	refl_enum,
-	refl_char,
-	refl_bool,
-	refl_int,
-	refl_uint,
-	refl_float,
-	refl_double,
-};
+	std::cout << "----AccessSpecifier: ";
 
-struct ReflInfo
-{
-	const char* m_name = 0;
-	bool isPtr = false;
-	ReflTypeInfo m_type = ReflTypeInfo::refl_none;
-};
+	auto accessSpecifier = clang_getCXXAccessSpecifier(cursor);
 
-std::string GetName(std::string& content, const char* keyword, const char* endChar)
-{
-	auto l_keywordPosBegin = content.find(keyword);
-	auto l_keywordPosEnd = content.find(endChar);
-	auto l_splitPosBegin = l_keywordPosBegin + strlen(keyword) + 1;
-	auto l_splitOffset = l_keywordPosEnd - l_splitPosBegin;
+	switch (accessSpecifier)
+	{
+	case CX_CXXInvalidAccessSpecifier:
+		break;
+	case CX_CXXPublic:
+		std::cout << "Public";
+		break;
+	case CX_CXXProtected:
+		std::cout << "Protected";
+		break;
+	case CX_CXXPrivate:
+		std::cout << "Private";
+		break;
+	default:
+		break;
+	}
 
-	auto l_name = content.substr(l_splitPosBegin, l_splitOffset);
-
-	return l_name;
+	std::cout << std::endl;
 }
 
-void ParseMemberDecl(std::stringstream& ss, std::string& line, const char* keyword, const char* endChar)
+void getType(CXCursor cursor)
 {
-	auto l_keywordPosBegin = line.find(keyword);
-	if (l_keywordPosBegin != std::string::npos)
-	{
-		const char* l_isPtr;
-		auto l_name = GetName(line, keyword, endChar);
+	std::cout << "----Type: ";
 
-		auto l_derefChar = line.substr(l_keywordPosBegin + strlen(keyword), 1);
+	auto type = clang_getCursorType(cursor);
+	auto typeNameCStr = clang_getCString(clang_getTypeSpelling(type));
+	std::cout << typeNameCStr;
 
-		if (l_derefChar == "*")
-		{
-			l_isPtr = "true";
-			l_name = l_name.substr(1, std::string::npos);
-		}
-		else
-		{
-			l_isPtr = "false";
-		}
-
-		ss << "\tstatic ReflInfo refl_";
-		ss << l_name;
-		ss << " = { \"";
-		ss << l_name;
-		ss << "\", ";
-		ss << l_isPtr;
-		ss << ", ReflTypeInfo::refl_";
-		ss << keyword;
-		ss << " };";
-		ss << std::endl;
-	}
+	std::cout << std::endl;
 }
 
-void ParseDecl(std::stringstream& ss, std::string& line, const char* keyword, const char* endChar)
+CXChildVisitResult visitor(CXCursor cursor, CXCursor, CXClientData)
 {
-	auto l_keywordPosBegin = line.find(keyword);
-	if (l_keywordPosBegin != std::string::npos)
+	auto kind = clang_getCursorKind(cursor);
+
+	auto cursorName = clang_getCursorDisplayName(cursor);
+	auto cursorNameCStr = clang_getCString(cursorName);
+
+	if (kind == CXCursorKind::CXCursor_StructDecl)
 	{
-		auto l_name = GetName(line, keyword, endChar);
-
-		auto l_hasParent = l_name.find(" : ");
-
-		if (l_hasParent != std::string::npos)
-		{
-			l_name = l_name.substr(0, l_hasParent);
-		}
-
-		ss << "struct " << "Refl_" << l_name << std::endl;
-		ss << "{" << std::endl;
-
-		ss << "\tstatic ReflInfo refl_";
-		ss << l_name;
-		ss << " = { \"";
-		ss << l_name;
-		ss << "\", ";
-		ss << "false";
-		ss << ", ReflTypeInfo::refl_";
-		ss << keyword;
-		ss << " };";
-		ss << std::endl;
+		std::cout << "Structure: " << cursorNameCStr << std::endl;
 	}
+
+	if (kind == CXCursorKind::CXCursor_ClassDecl)
+	{
+		std::cout << "Class: " << cursorNameCStr << std::endl;
+	}
+
+	if (kind == CXCursorKind::CXCursor_EnumDecl)
+	{
+		std::cout << "Enum: " << cursorNameCStr << std::endl;
+	}
+
+	if (kind == CXCursorKind::CXCursor_FieldDecl)
+	{
+		std::cout << "--Field: " << cursorNameCStr << std::endl;
+
+		getAccessSpecifier(cursor);
+		getType(cursor);
+	}
+
+	if (kind == CXCursorKind::CXCursor_FunctionDecl)
+	{
+		getAccessSpecifier(cursor);
+
+		std::cout << "--Function: " << cursorNameCStr << std::endl;
+	}
+
+	clang_disposeString(cursorName);
+
+	return CXChildVisit_Recurse;
 }
 
-std::string ParseContent(const std::string& fileName)
+void inclusionVisitor(CXFile included_file, CXSourceLocation* inclusion_stack, unsigned include_len, CXClientData client_data)
 {
-	std::ifstream l_file;
+}
 
-	auto l_workingDirectory = fs::current_path().generic_string();
-	l_workingDirectory += "//";
-	l_workingDirectory += fileName;
+bool ParseContent(const std::string& fileName)
+{
+	char* args[] = { "--language=c++" };
 
-	auto l_filePath = fs::path(l_workingDirectory).generic_string();
+	auto index = clang_createIndex(0, 0);
 
-	l_file.open(l_filePath.c_str(), std::ios::in);
+	auto translationUnit = clang_parseTranslationUnit(index, fileName.c_str(), args, 1, nullptr, 0, CXTranslationUnit_SkipFunctionBodies);
 
-	if (!l_file.is_open())
-	{
-		std::cerr << "File: " << fileName << " is not exist!" << std::endl;
-		return std::string();
-	}
+	clang_getInclusions(translationUnit, inclusionVisitor, nullptr);
 
-	std::stringstream ss;
+	auto cursor = clang_getTranslationUnitCursor(translationUnit);
 
-	std::string l_line;
-	while (std::getline(l_file, l_line))
-	{
-		if (l_line == "};")
-		{
-			ss << "};" << std::endl;
-			ss << std::endl;
-		}
-		else
-		{
-			l_line.append("\n");
-			ParseDecl(ss, l_line, "struct", "\n");
-			ParseDecl(ss, l_line, "class", "\n");
-			ParseDecl(ss, l_line, "union", "\n");
+	clang_visitChildren(cursor, visitor, nullptr);
 
-			ParseMemberDecl(ss, l_line, "char", " = ");
-			ParseMemberDecl(ss, l_line, "bool", " = ");
-			ParseMemberDecl(ss, l_line, "int", " = ");
-			ParseMemberDecl(ss, l_line, "float", " = ");
-			ParseMemberDecl(ss, l_line, "double", " = ");
-		}
-	}
+	clang_disposeTranslationUnit(translationUnit);
 
-	return ss.str();
+	clang_disposeIndex(index);
+
+	return "";
 }
 
 int main(int argc, char *argv[])
@@ -162,10 +124,10 @@ int main(int argc, char *argv[])
 
 	auto l_workingDirectory = fs::current_path().generic_string();
 	l_workingDirectory += "//";
+	auto l_fileName = fs::path(argv[1]).generic_string();
+	l_workingDirectory += l_fileName;
 
-	auto l_fileName = fs::path(argv[1]).filename().generic_string();
-
-	auto l_content = ParseContent(l_fileName);
+	auto l_content = ParseContent(l_workingDirectory);
 
 	std::ofstream l_output;
 	l_output.open(l_workingDirectory + argv[2]);
