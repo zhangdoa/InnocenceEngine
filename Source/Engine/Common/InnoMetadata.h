@@ -1,4 +1,7 @@
 #pragma once
+#include "json/json.hpp"
+using json = nlohmann::json;
+
 namespace InnoMetadata
 {
 	enum class DeclType
@@ -56,8 +59,18 @@ namespace InnoMetadata
 		AccessType accessType;
 		TypeKind typeKind;
 		const char* typeName;
+		bool isPtr;
 	};
 
 	template<typename T>
 	Metadata GetMetadata() {};
+}
+
+namespace InnoSerializer
+{
+	template<typename T>
+	void to_json(json& j, const T& rhs) {};
+
+	template<typename T>
+	void from_json(const json& j, T& rhs) {};
 }

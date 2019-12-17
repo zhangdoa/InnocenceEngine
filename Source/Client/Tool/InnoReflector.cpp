@@ -258,31 +258,84 @@ namespace InnoReflector
 		}
 	}
 
-	void writeMember(const ClangMetadata& i, FileWriter * fileWriter)
+	void writeMember(const ClangMetadata& clangMetadata, FileWriter * fileWriter)
 	{
-		fileWriter->os << "\"" << i.name << "\", ";
+		fileWriter->os << "\"" << clangMetadata.name << "\", ";
 
-		writeCursorKind(i.cursorKind, fileWriter);
-
-		fileWriter->os << ", ";
-
-		writeAccessSpecifier(i.accessSpecifier, fileWriter);
+		writeCursorKind(clangMetadata.cursorKind, fileWriter);
 
 		fileWriter->os << ", ";
 
-		writeTypeKind(i.typeKind, fileWriter);
+		writeAccessSpecifier(clangMetadata.accessSpecifier, fileWriter);
 
-		fileWriter->os << ", " << "\"" << i.typeName << "\"";
+		fileWriter->os << ", ";
+
+		writeTypeKind(clangMetadata.typeKind, fileWriter);
+
+		fileWriter->os << ", " << "\"" << clangMetadata.typeName << "\"";
 	}
 
-	void writeMetadataDefi(const ClangMetadata& i, FileWriter * fileWriter)
+	void writeMetadataDefi(const ClangMetadata& clangMetadata, FileWriter * fileWriter)
 	{
 		fileWriter->os << "Metadata ";
-		fileWriter->os << "refl_" << i.name << " = { ";
+		fileWriter->os << "refl_" << clangMetadata.name << " = { ";
 
-		writeMember(i, fileWriter);
+		writeMember(clangMetadata, fileWriter);
 
 		fileWriter->os << " }";
+	}
+
+	void writeMetadataGetter(const ClangMetadata& clangMetadata, FileWriter * fileWriter)
+	{
+		fileWriter->os << "template<>" << std::endl;
+		fileWriter->os << "inline Metadata InnoMetadata::GetMetadata<" << clangMetadata.typeName << ">()" << std::endl;
+		fileWriter->os << "{" << std::endl;
+		fileWriter->os << "    return refl_" << clangMetadata.name << ";" << std::endl;
+		fileWriter->os << "}" << std::endl;
+		fileWriter->os << std::endl;
+	}
+
+	void writeSerializerDefi(size_t index, const ClangMetadata& clangMetadata, FileWriter * fileWriter)
+	{
+		fileWriter->os << "template<>" << std::endl;
+		fileWriter->os << "inline void InnoSerializer::to_json<" << clangMetadata.typeName << ">(json& j, const " << clangMetadata.typeName << "& rhs)" << std::endl;
+		fileWriter->os << "{" << std::endl;
+		fileWriter->os << "  j = json" << std::endl;
+		fileWriter->os << "  {";
+		for (size_t j = 0; j < clangMetadata.totalChildrenCount; j++)
+		{
+			auto l_childClangMetaData = m_clangMetadata[index + j + 1];
+			if (l_childClangMetaData.cursorKind == CXCursorKind::CXCursor_FieldDecl && l_childClangMetaData.accessSpecifier == CX_CXXAccessSpecifier::CX_CXXPublic)
+			{
+				fileWriter->os << std::endl;
+				fileWriter->os << "   { \"" << l_childClangMetaData.name << "\", rhs." << l_childClangMetaData.name << " },";
+			}
+		}
+		fileWriter->os << std::endl;
+		fileWriter->os << "  };" << std::endl;
+		fileWriter->os << "}" << std::endl;
+		fileWriter->os << std::endl;
+	}
+
+	void writeDeserializerDefi(size_t index, const ClangMetadata& clangMetadata, FileWriter * fileWriter)
+	{
+		fileWriter->os << "template<>" << std::endl;
+		fileWriter->os << "inline void InnoSerializer::from_json<" << clangMetadata.typeName << ">(const json& j, " << clangMetadata.typeName << "& rhs)" << std::endl;
+		fileWriter->os << "{" << std::endl;
+		for (size_t j = 0; j < clangMetadata.totalChildrenCount; j++)
+		{
+			auto l_childClangMetaData = m_clangMetadata[index + j + 1];
+			if (l_childClangMetaData.cursorKind == CXCursorKind::CXCursor_FieldDecl && l_childClangMetaData.accessSpecifier == CX_CXXAccessSpecifier::CX_CXXPublic)
+			{
+				fileWriter->os << "  rhs." << l_childClangMetaData.name;
+				//@TODO: Deal with pointer
+				fileWriter->os << " = j[\"" << l_childClangMetaData.name << "\"];";
+
+				fileWriter->os << std::endl;
+			}
+		}
+		fileWriter->os << "}" << std::endl;
+		fileWriter->os << std::endl;
 	}
 
 	void writeFile(FileWriter* fileWriter)
@@ -335,12 +388,9 @@ namespace InnoReflector
 					fileWriter->os << "};" << std::endl;
 				}
 
-				fileWriter->os << "template<>" << std::endl;
-				fileWriter->os << "Metadata InnoMetadata::GetMetadata<" << l_clangMetadata.typeName << ">()" << std::endl;
-				fileWriter->os << "{" << std::endl;
-				fileWriter->os << "    return refl_" << l_clangMetadata.name << ";" << std::endl;
-				fileWriter->os << "}" << std::endl;
-				fileWriter->os << std::endl;
+				//writeSerializerDefi(i, l_clangMetadata, fileWriter);
+				//writeDeserializerDefi(i, l_clangMetadata, fileWriter);
+				writeMetadataGetter(l_clangMetadata, fileWriter);
 			}
 		}
 	}
