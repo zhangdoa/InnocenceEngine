@@ -24,13 +24,17 @@ namespace InnoReflector
 		CXCursorKind cursorKind;
 		CX_CXXAccessSpecifier accessSpecifier;
 		CXTypeKind typeKind;
+		const char* typeName;
 		CXTypeKind returnTypeKind;
+		const char* returnTypeName;
 		size_t arraySize = 0;
+		size_t totalChildrenCount = 0;
+		size_t validChildrenCount = 0;
 	};
 
 	std::vector<ClangMetadata> m_clangMetadata;
 
-	CXChildVisitResult visitor(CXCursor cursor, CXCursor, CXClientData clientData)
+	CXChildVisitResult visitor(CXCursor cursor, CXCursor parent, CXClientData clientData)
 	{
 		CXSourceRange range = clang_getCursorExtent(cursor);
 		CXSourceLocation location = clang_getRangeStart(range);
@@ -40,28 +44,55 @@ namespace InnoReflector
 		{
 			auto kind = clang_getCursorKind(cursor);
 
-			if (clang_isDeclaration(kind))
+			if (clang_isDeclaration(kind) && kind != CXCursorKind::CXCursor_CXXAccessSpecifier)
 			{
 				auto cursorName = clang_getCursorDisplayName(cursor);
 				auto cursorNameCStr = clang_getCString(cursorName);
-
 				l_metadata.name = cursorNameCStr;
+
 				l_metadata.cursorKind = kind;
 				l_metadata.accessSpecifier = clang_getCXXAccessSpecifier(cursor);
+
 				auto l_type = clang_getCursorType(cursor);
 
 				if (l_type.kind == CXTypeKind::CXType_ConstantArray)
 				{
 					l_metadata.arraySize = clang_getArraySize(l_type);
 					l_type = clang_getArrayElementType(l_type);
-					l_metadata.typeKind = l_type.kind;
 				}
 
 				l_metadata.typeKind = l_type.kind;
 
+				auto typeName = clang_getTypeSpelling(l_type);
+				auto typeNameCStr = clang_getCString(typeName);
+				l_metadata.typeName = typeNameCStr;
+
 				auto l_returnType = clang_getCursorResultType(cursor);
 
 				l_metadata.returnTypeKind = l_returnType.kind;
+				auto returnTypeName = clang_getTypeSpelling(l_returnType);
+				auto returnTypeNameCStr = clang_getCString(returnTypeName);
+				l_metadata.returnTypeName = returnTypeNameCStr;
+
+				//auto l_semanticParent = clang_getCursorSemanticParent(cursor);
+				auto l_semanticParent = parent;
+				auto l_semanticParentName = clang_getCursorDisplayName(l_semanticParent);
+				auto l_semanticParentNameCStr = clang_getCString(l_semanticParentName);
+
+				auto l_parent = std::find_if(m_clangMetadata.begin(), m_clangMetadata.end(),
+					[&](ClangMetadata& parent)
+				{
+					return !strcmp(parent.typeName, l_semanticParentNameCStr);
+				});
+
+				if (l_parent != m_clangMetadata.end())
+				{
+					l_parent->totalChildrenCount++;
+					if (kind == CXCursorKind::CXCursor_FieldDecl)
+					{
+						l_parent->validChildrenCount++;
+					}
+				}
 
 				m_clangMetadata.emplace_back(l_metadata);
 
@@ -97,6 +128,9 @@ namespace InnoReflector
 			break;
 		case CXCursor_FieldDecl:
 			fileWriter->os << "DeclType::Var";
+			break;
+		case CXCursor_EnumConstantDecl:
+			fileWriter->os << "DeclType::EnumConstant";
 			break;
 		case CXCursor_ParmDecl:
 			fileWriter->os << "DeclType::Parm";
@@ -147,50 +181,166 @@ namespace InnoReflector
 
 	void writeTypeKind(CXTypeKind typeKind, FileWriter* fileWriter)
 	{
-		auto typeKindNameCStr = clang_getCString(clang_getTypeKindSpelling(typeKind));
-		fileWriter->os << typeKindNameCStr;
+		switch (typeKind)
+		{
+		case CXType_Invalid:
+			fileWriter->os << "TypeKind::Invalid";
+			break;
+		case CXType_Void:
+			fileWriter->os << "TypeKind::Void";
+			break;
+		case CXType_Bool:
+			fileWriter->os << "TypeKind::Bool";
+			break;
+		case CXType_Char_U:
+			fileWriter->os << "TypeKind::UChar";
+			break;
+		case CXType_UChar:
+			fileWriter->os << "TypeKind::UChar";
+			break;
+		case CXType_Char16:
+			fileWriter->os << "TypeKind::Char16";
+			break;
+		case CXType_Char32:
+			fileWriter->os << "TypeKind::Char32";
+			break;
+		case CXType_UShort:
+			fileWriter->os << "TypeKind::UShort";
+			break;
+		case CXType_UInt:
+			fileWriter->os << "TypeKind::UInt";
+			break;
+		case CXType_ULong:
+			fileWriter->os << "TypeKind::ULong";
+			break;
+		case CXType_ULongLong:
+			fileWriter->os << "TypeKind::ULongLong";
+			break;
+		case CXType_Char_S:
+			fileWriter->os << "TypeKind::SChar";
+			break;
+		case CXType_SChar:
+			fileWriter->os << "TypeKind::SChar";
+			break;
+		case CXType_WChar:
+			fileWriter->os << "TypeKind::WChar";
+			break;
+		case CXType_Short:
+			fileWriter->os << "TypeKind::SShort";
+			break;
+		case CXType_Int:
+			fileWriter->os << "TypeKind::SInt";
+			break;
+		case CXType_Long:
+			fileWriter->os << "TypeKind::SLong";
+			break;
+		case CXType_LongLong:
+			fileWriter->os << "TypeKind::SLongLong";
+			break;
+		case CXType_Float:
+			fileWriter->os << "TypeKind::Float";
+			break;
+		case CXType_Double:
+			fileWriter->os << "TypeKind::Double";
+			break;
+		case CXType_Pointer:
+			fileWriter->os << "TypeKind::Pointer";
+			break;
+		case CXType_Enum:
+			fileWriter->os << "TypeKind::Custom";
+			break;
+		case CXType_Typedef:
+			fileWriter->os << "TypeKind::Custom";
+			break;
+		default:
+			fileWriter->os << "TypeKind::Invalid";
+			break;
+		}
+	}
+
+	void writeMember(const ClangMetadata& i, FileWriter * fileWriter)
+	{
+		fileWriter->os << "\"" << i.name << "\", ";
+
+		writeCursorKind(i.cursorKind, fileWriter);
+
+		fileWriter->os << ", ";
+
+		writeAccessSpecifier(i.accessSpecifier, fileWriter);
+
+		fileWriter->os << ", ";
+
+		writeTypeKind(i.typeKind, fileWriter);
+
+		fileWriter->os << ", " << "\"" << i.typeName << "\"";
+	}
+
+	void writeMetadataDefi(const ClangMetadata& i, FileWriter * fileWriter)
+	{
+		fileWriter->os << "Metadata ";
+		fileWriter->os << "refl_" << i.name << " = { ";
+
+		writeMember(i, fileWriter);
+
+		fileWriter->os << " }";
 	}
 
 	void writeFile(FileWriter* fileWriter)
 	{
+		auto l_clangMetadataCount = m_clangMetadata.size();
+
 		fileWriter->os << "#pragma once" << std::endl;
 		fileWriter->os << "#include \"../../Source/Engine/Common/InnoMetadata.h\"" << std::endl;
 		fileWriter->os << "using namespace InnoMetadata;" << std::endl;
 		fileWriter->os << std::endl;
 
-		for (auto i : m_clangMetadata)
+		for (size_t i = 0; i < l_clangMetadataCount; i++)
 		{
-			if (i.cursorKind != CXCursorKind::CXCursor_CXXMethod && i.cursorKind != CXCursorKind::CXCursor_ParmDecl)
+			auto l_clangMetadata = m_clangMetadata[i];
+
+			if (l_clangMetadata.cursorKind == CXCursorKind::CXCursor_CXXMethod || l_clangMetadata.cursorKind == CXCursorKind::CXCursor_ParmDecl)
 			{
-				fileWriter->os << "Metadata ";
-				fileWriter->os << "refl_" << i.name << " = { \"" << i.name << "\", ";
-				writeCursorKind(i.cursorKind, fileWriter);
-				fileWriter->os << ", ";
-				writeAccessSpecifier(i.accessSpecifier, fileWriter);
 				//fileWriter->os << ", ";
-				//writeTypeKind(i.typeKind, fileWriter);
-				//fileWriter->os << ", ";
-				//fileWriter->os << i.arraySize << ", ";
-				//if (i.cursorKind == CXCursorKind::CXCursor_CXXMethod || i.cursorKind == CXCursorKind::CXCursor_ParmDecl)
+				//fileWriter->os << l_clangMetadata.arraySize << ", ";
+				//if (l_clangMetadata.cursorKind == CXCursorKind::CXCursor_CXXMethod || l_clangMetadata.cursorKind == CXCursorKind::CXCursor_ParmDecl)
 				//{
-				//	writeTypeKind(i.returnTypeKind, fileWriter);
+				//	writeTypeKind(l_clangMetadata.returnTypeKind, fileWriter);
 				//}
 				//else
 				//{
 				//	fileWriter->os << "Invalid";
 				//}
+			}
+			if (l_clangMetadata.cursorKind == CXCursorKind::CXCursor_StructDecl || l_clangMetadata.cursorKind == CXCursorKind::CXCursor_ClassDecl)
+			{
+				writeMetadataDefi(l_clangMetadata, fileWriter);
+				fileWriter->os << ";" << std::endl;
 
-				fileWriter->os << " };" << std::endl;
+				if (l_clangMetadata.validChildrenCount)
+				{
+					fileWriter->os << "Metadata ";
+					fileWriter->os << "refl_" << l_clangMetadata.name << "_member" << "[" << l_clangMetadata.validChildrenCount << "]" << " = " << std::endl << "{";
+					for (size_t j = 0; j < l_clangMetadata.totalChildrenCount; j++)
+					{
+						auto l_childClangMetaData = m_clangMetadata[i + j + 1];
+						if (l_childClangMetaData.cursorKind == CXCursorKind::CXCursor_FieldDecl)
+						{
+							fileWriter->os << std::endl;
+							fileWriter->os << " {";
+							writeMember(l_childClangMetaData, fileWriter);
+							fileWriter->os << " }, ";
+						}
+					}
+					fileWriter->os << std::endl;
+					fileWriter->os << "};" << std::endl;
+				}
 
+				fileWriter->os << "template<>" << std::endl;
+				fileWriter->os << "Metadata InnoMetadata::GetMetadata<" << l_clangMetadata.typeName << ">()" << std::endl;
+				fileWriter->os << "{" << std::endl;
+				fileWriter->os << "    return refl_" << l_clangMetadata.name << ";" << std::endl;
+				fileWriter->os << "}" << std::endl;
 				fileWriter->os << std::endl;
-
-				//fileWriter->os << "template<>" << std::endl;
-				//fileWriter->os << "Metadata GetMetadata(const " << i.name << "& rhs)" << std::endl;
-				//fileWriter->os << "{" << std::endl;
-				//fileWriter->os << "  return refl_" << i.name << ";" << std::endl;
-				//fileWriter->os << "}" << std::endl;
-
-				//fileWriter->os << std::endl;
 			}
 		}
 	}
@@ -202,7 +352,6 @@ namespace InnoReflector
 		auto index = clang_createIndex(0, 0);
 
 		auto translationUnit = clang_parseTranslationUnit(index, fileName.c_str(), args, 1, nullptr, 0, CXTranslationUnit_SkipFunctionBodies);
-		//auto l_resUsages = clang_getCXTUResourceUsage(translationUnit);
 
 		// @TODO: Reserve with a meaningful size
 		m_clangMetadata.reserve(8192);
