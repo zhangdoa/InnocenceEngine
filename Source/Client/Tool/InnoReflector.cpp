@@ -348,7 +348,7 @@ namespace InnoReflector
 			if (l_childClangMetaData.cursorKind == CXCursorKind::CXCursor_FieldDecl)
 			{
 				fileWriter->os << std::endl;
-				fileWriter->os << " {";
+				fileWriter->os << "\t{ ";
 				writeMember(l_childClangMetaData, fileWriter);
 				fileWriter->os << " }, ";
 			}
@@ -362,7 +362,7 @@ namespace InnoReflector
 		fileWriter->os << "template<>" << std::endl;
 		fileWriter->os << "inline Metadata InnoMetadata::GetMetadata<" << clang_getCString(clangMetadata.typeName) << ">()" << std::endl;
 		fileWriter->os << "{" << std::endl;
-		fileWriter->os << "    return refl_" << clang_getCString(clangMetadata.name) << ";" << std::endl;
+		fileWriter->os << "\treturn refl_" << clang_getCString(clangMetadata.name) << ";" << std::endl;
 		fileWriter->os << "}" << std::endl;
 		fileWriter->os << std::endl;
 	}
@@ -372,19 +372,48 @@ namespace InnoReflector
 		fileWriter->os << "template<>" << std::endl;
 		fileWriter->os << "inline void InnoSerializer::to_json<" << clang_getCString(clangMetadata.typeName) << ">(json& j, const " << clang_getCString(clangMetadata.typeName) << "& rhs)" << std::endl;
 		fileWriter->os << "{" << std::endl;
-		fileWriter->os << "  j = json" << std::endl;
-		fileWriter->os << "  {";
+		fileWriter->os << "\tj = json" << std::endl;
+		fileWriter->os << "\t{";
 		for (size_t j = 0; j < clangMetadata.totalChildrenCount; j++)
 		{
 			auto l_childClangMetaData = m_clangMetadata[index + j + 1];
+
+			if (l_childClangMetaData.arraySize > 0)
+			{
+				auto lss = l_childClangMetaData;
+			}
+
 			if (l_childClangMetaData.cursorKind == CXCursorKind::CXCursor_FieldDecl && l_childClangMetaData.accessSpecifier == CX_CXXAccessSpecifier::CX_CXXPublic)
 			{
+				auto l_name = clang_getCString(l_childClangMetaData.name);
+
 				fileWriter->os << std::endl;
-				fileWriter->os << "   { \"" << clang_getCString(l_childClangMetaData.name) << "\", rhs." << clang_getCString(l_childClangMetaData.name) << " },";
+				fileWriter->os << "\t\t{ \"" << l_name << "\", ";
+
+				if (l_childClangMetaData.arraySize > 0)
+				{
+					fileWriter->os << std::endl;
+					fileWriter->os << "\t\t\t{ " << std::endl;
+					for (size_t i = 0; i < l_childClangMetaData.arraySize; i++)
+					{
+						fileWriter->os << "\t\t\t\trhs." << l_name << "[" << i << "]";
+						if (i + 1 != l_childClangMetaData.arraySize)
+						{
+							fileWriter->os << ",";
+						}
+						fileWriter->os << std::endl;
+					}
+					fileWriter->os << "\t\t\t}," << std::endl;
+					fileWriter->os << "\t\t},";
+				}
+				else
+				{
+					fileWriter->os << "rhs." << l_name << " },";
+				}
 			}
 		}
 		fileWriter->os << std::endl;
-		fileWriter->os << "  };" << std::endl;
+		fileWriter->os << "\t};" << std::endl;
 		fileWriter->os << "}" << std::endl;
 		fileWriter->os << std::endl;
 	}
@@ -399,11 +428,20 @@ namespace InnoReflector
 			auto l_childClangMetaData = m_clangMetadata[index + j + 1];
 			if (l_childClangMetaData.cursorKind == CXCursorKind::CXCursor_FieldDecl && l_childClangMetaData.accessSpecifier == CX_CXXAccessSpecifier::CX_CXXPublic)
 			{
-				fileWriter->os << "  rhs." << clang_getCString(l_childClangMetaData.name);
 				//@TODO: Deal with pointer
-				fileWriter->os << " = j[\"" << clang_getCString(l_childClangMetaData.name) << "\"];";
+				auto l_name = clang_getCString(l_childClangMetaData.name);
 
-				fileWriter->os << std::endl;
+				if (l_childClangMetaData.arraySize > 0)
+				{
+					for (size_t i = 0; i < l_childClangMetaData.arraySize; i++)
+					{
+						fileWriter->os << "\trhs." << l_name << "[" << i << "] = j[\"" << l_name << "\"][" << i << "];" << std::endl;
+					}
+				}
+				else
+				{
+					fileWriter->os << "\trhs." << l_name << " = j[\"" << l_name << "\"];" << std::endl;
+				}
 			}
 		}
 		fileWriter->os << "}" << std::endl;
@@ -458,10 +496,10 @@ namespace InnoReflector
 				if (l_clangMetadata.validChildrenCount)
 				{
 					writeChildrenMetadata(fileWriter, l_clangMetadata, i);
+					//writeSerializerDefi(i, l_clangMetadata, fileWriter);
+					//writeDeserializerDefi(i, l_clangMetadata, fileWriter);
 				}
 
-				//writeSerializerDefi(i, l_clangMetadata, fileWriter);
-				//writeDeserializerDefi(i, l_clangMetadata, fileWriter);
 				writeMetadataGetter(l_clangMetadata, fileWriter);
 			}
 		}
