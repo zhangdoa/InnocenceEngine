@@ -99,7 +99,7 @@ namespace InnoReflector
 				auto l_parent = std::find_if(m_clangMetadata.begin(), m_clangMetadata.end(),
 					[&](ClangMetadata& parent)
 				{
-					return !strcmp(clang_getCString(parent.typeName), clang_getCString(l_semanticParentName));
+					return !strcmp(clang_getCString(parent.name), clang_getCString(l_semanticParentName));
 				});
 
 				if (l_parent != m_clangMetadata.end())
