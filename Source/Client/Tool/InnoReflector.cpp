@@ -25,26 +25,45 @@ namespace InnoReflector
 		CX_CXXAccessSpecifier accessSpecifier;
 		CXTypeKind typeKind;
 		CXString typeName;
+		bool isPtr = false;
 		CXTypeKind returnTypeKind;
 		CXString returnTypeName;
 		size_t arraySize = 0;
+		ClangMetadata* base = nullptr;
 		size_t totalChildrenCount = 0;
 		size_t validChildrenCount = 0;
 	};
 
+	std::vector<CXString> m_includedFileName;
 	std::vector<ClangMetadata> m_clangMetadata;
+
+	void inclusionVisitor(CXFile included_file, CXSourceLocation* inclusion_stack, unsigned include_len, CXClientData client_data)
+	{
+		if (include_len > 0)
+		{
+			if (clang_Location_isFromMainFile(*inclusion_stack))
+			{
+				auto l_fileName = clang_getFileName(included_file);
+				m_includedFileName.emplace_back(l_fileName);
+			}
+		}
+	}
 
 	CXChildVisitResult visitor(CXCursor cursor, CXCursor parent, CXClientData clientData)
 	{
 		CXSourceRange range = clang_getCursorExtent(cursor);
 		CXSourceLocation location = clang_getRangeStart(range);
-		ClangMetadata l_metadata;
 
 		if (clang_Location_isFromMainFile(location))
 		{
+			ClangMetadata l_metadata;
+
 			auto kind = clang_getCursorKind(cursor);
 
-			if (clang_isDeclaration(kind) && kind != CXCursorKind::CXCursor_CXXAccessSpecifier)
+			if ((clang_isDeclaration(kind)
+				&& kind != CXCursorKind::CXCursor_CXXAccessSpecifier)
+				|| kind == CXCursorKind::CXCursor_CXXBaseSpecifier
+				|| kind == CXCursorKind::CXCursor_TypeRef)
 			{
 				l_metadata.name = clang_getCursorDisplayName(cursor);
 
@@ -53,6 +72,12 @@ namespace InnoReflector
 
 				auto l_type = clang_getCursorType(cursor);
 
+				if (l_type.kind == CXTypeKind::CXType_Pointer)
+				{
+					l_metadata.isPtr = true;
+					l_type = clang_getPointeeType(l_type);
+				}
+
 				if (l_type.kind == CXTypeKind::CXType_ConstantArray)
 				{
 					l_metadata.arraySize = clang_getArraySize(l_type);
@@ -60,7 +85,6 @@ namespace InnoReflector
 				}
 
 				l_metadata.typeKind = l_type.kind;
-
 				l_metadata.typeName = clang_getTypeSpelling(l_type);
 
 				auto l_returnType = clang_getCursorResultType(cursor);
@@ -68,7 +92,6 @@ namespace InnoReflector
 				l_metadata.returnTypeKind = l_returnType.kind;
 				l_metadata.returnTypeName = clang_getTypeSpelling(l_returnType);
 
-				//auto l_semanticParent = clang_getCursorSemanticParent(cursor);
 				auto l_semanticParent = parent;
 				auto l_semanticParentName = clang_getCursorDisplayName(l_semanticParent);
 
@@ -86,16 +109,11 @@ namespace InnoReflector
 						l_parent->validChildrenCount++;
 					}
 				}
-
 				m_clangMetadata.emplace_back(l_metadata);
 			}
 		}
 
 		return CXChildVisit_Recurse;
-	}
-
-	void inclusionVisitor(CXFile included_file, CXSourceLocation* inclusion_stack, unsigned include_len, CXClientData client_data)
-	{
 	}
 
 	void writeCursorKind(CXCursorKind typeKind, FileWriter* fileWriter)
@@ -237,6 +255,9 @@ namespace InnoReflector
 		case CXType_Pointer:
 			fileWriter->os << "TypeKind::Pointer";
 			break;
+		case CXType_Record:
+			fileWriter->os << "TypeKind::Custom";
+			break;
 		case CXType_Enum:
 			fileWriter->os << "TypeKind::Custom";
 			break;
@@ -246,6 +267,21 @@ namespace InnoReflector
 		default:
 			fileWriter->os << "TypeKind::Invalid";
 			break;
+		}
+	}
+
+	void assignBase()
+	{
+		auto l_clangMetadataCount = m_clangMetadata.size();
+
+		for (size_t i = 0; i < l_clangMetadataCount; i++)
+		{
+			auto& l_clangMetadata = m_clangMetadata[i];
+
+			if (l_clangMetadata.cursorKind == CXCursorKind::CXCursor_CXXBaseSpecifier)
+			{
+				m_clangMetadata[i - 1].base = &m_clangMetadata[i + 1];
+			}
 		}
 	}
 
@@ -264,6 +300,24 @@ namespace InnoReflector
 		writeTypeKind(clangMetadata.typeKind, fileWriter);
 
 		fileWriter->os << ", " << "\"" << clang_getCString(clangMetadata.typeName) << "\"";
+
+		if (clangMetadata.isPtr)
+		{
+			fileWriter->os << ", true";
+		}
+		else
+		{
+			fileWriter->os << ", false";
+		}
+
+		if (clangMetadata.base != nullptr)
+		{
+			fileWriter->os << ", &refl_" << clang_getCString(clangMetadata.base->typeName);
+		}
+		else
+		{
+			fileWriter->os << ", nullptr";
+		}
 	}
 
 	void writeMetadataDefi(const ClangMetadata& clangMetadata, FileWriter * fileWriter)
@@ -348,6 +402,18 @@ namespace InnoReflector
 		fileWriter->os << std::endl;
 	}
 
+	void writeIncludedHeaders(FileWriter* fileWriter)
+	{
+		auto l_includedFileNameCount = m_includedFileName.size();
+
+		for (size_t i = 0; i < l_includedFileNameCount; i++)
+		{
+			auto l_name = clang_getCString(m_includedFileName[i]);
+			fileWriter->os << "#include \"" << l_name << "\"" << std::endl;
+		}
+		fileWriter->os << std::endl;
+	}
+
 	void writeFile(FileWriter* fileWriter)
 	{
 		auto l_clangMetadataCount = m_clangMetadata.size();
@@ -357,9 +423,11 @@ namespace InnoReflector
 		fileWriter->os << "using namespace InnoMetadata;" << std::endl;
 		fileWriter->os << std::endl;
 
+		//writeIncludedHeaders(fileWriter);
+
 		for (size_t i = 0; i < l_clangMetadataCount; i++)
 		{
-			auto l_clangMetadata = m_clangMetadata[i];
+			auto& l_clangMetadata = m_clangMetadata[i];
 
 			if (l_clangMetadata.cursorKind == CXCursorKind::CXCursor_CXXMethod || l_clangMetadata.cursorKind == CXCursorKind::CXCursor_ParmDecl)
 			{
@@ -407,13 +475,20 @@ namespace InnoReflector
 		auto translationUnit = clang_parseTranslationUnit(index, fileName.c_str(), args, 1, nullptr, 0, CXTranslationUnit_SkipFunctionBodies);
 
 		// @TODO: Reserve with a meaningful size
+		m_includedFileName.reserve(128);
 		m_clangMetadata.reserve(8192);
 
 		auto cursor = clang_getTranslationUnitCursor(translationUnit);
 
+		clang_getInclusions(translationUnit, inclusionVisitor, nullptr);
+
+		m_includedFileName.shrink_to_fit();
+
 		clang_visitChildren(cursor, visitor, nullptr);
 
 		m_clangMetadata.shrink_to_fit();
+
+		assignBase();
 
 		writeFile(&fileWriter);
 
