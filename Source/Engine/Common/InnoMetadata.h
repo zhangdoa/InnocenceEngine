@@ -60,6 +60,7 @@ namespace InnoMetadata
 		TypeKind typeKind;
 		const char* typeName;
 		bool isPtr;
+		Metadata* base;
 	};
 
 	template<typename T>

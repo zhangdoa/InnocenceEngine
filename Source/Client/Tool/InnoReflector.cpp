@@ -60,10 +60,11 @@ namespace InnoReflector
 
 			auto kind = clang_getCursorKind(cursor);
 
+			// We want a declaration, but not an access specifier, and we want the inheritance specifier, and only want the type reference of the base class, which coming after the CXCursor_CXXBaseSpecifier
 			if ((clang_isDeclaration(kind)
 				&& kind != CXCursorKind::CXCursor_CXXAccessSpecifier)
 				|| kind == CXCursorKind::CXCursor_CXXBaseSpecifier
-				|| kind == CXCursorKind::CXCursor_TypeRef)
+				|| (kind == CXCursorKind::CXCursor_TypeRef && m_clangMetadata[m_clangMetadata.size() - 1].cursorKind == CXCursorKind::CXCursor_CXXBaseSpecifier))
 			{
 				l_metadata.name = clang_getCursorDisplayName(cursor);
 
@@ -334,9 +335,16 @@ namespace InnoReflector
 	{
 		fileWriter->os << "Metadata ";
 		fileWriter->os << "refl_" << clang_getCString(l_clangMetadata.name) << "_member" << "[" << l_clangMetadata.validChildrenCount << "]" << " = " << std::endl << "{";
+
+		auto l_startOffset = 1;
+		if (l_clangMetadata.base != nullptr)
+		{
+			l_startOffset = 2;
+		}
+
 		for (size_t j = 0; j < l_clangMetadata.totalChildrenCount; j++)
 		{
-			auto l_childClangMetaData = m_clangMetadata[i + j + 1];
+			auto l_childClangMetaData = m_clangMetadata[i + j + l_startOffset];
 			if (l_childClangMetaData.cursorKind == CXCursorKind::CXCursor_FieldDecl)
 			{
 				fileWriter->os << std::endl;
@@ -502,27 +510,25 @@ using namespace InnoReflector;
 
 int main(int argc, char *argv[])
 {
-	if (argc != 2)
+	if (argc != 3)
 	{
-		std::cerr << "Usage: " << argv[0] << " INPUT" << std::endl;
+		std::cerr << "Usage: " << argv[0] << " Input" << argv[1] << " Output" << argv[2] << std::endl;
 		return 0;
 	}
 
-	auto l_workingDirectory = fs::current_path().generic_string();
-	l_workingDirectory += "//";
-	auto l_filePath = fs::path(argv[1]);
-	auto l_filePathStr = l_filePath.generic_string();
-	auto l_fileName = l_filePath.stem().generic_string();
+	auto l_inputFilePath = fs::path(argv[1]);
+	auto l_inputFileName = l_inputFilePath.generic_string();
 
-	l_filePathStr = l_workingDirectory + l_filePathStr;
+	auto l_outputFilePath = fs::path(argv[2]);
+	auto l_outputFileName = l_outputFilePath.generic_string();
 
-	FileWriter l_output;
+	FileWriter l_fileWriter;
 
-	l_output.os.open(l_workingDirectory + "..//Res//Intermediate//" + l_fileName + ".refl.h");
+	l_fileWriter.os.open(l_outputFileName);
 
-	parseContent(l_filePathStr, l_output);
+	parseContent(l_inputFileName, l_fileWriter);
 
-	l_output.os.close();
+	l_fileWriter.os.close();
 
 	return 0;
 }
