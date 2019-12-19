@@ -26,6 +26,7 @@ namespace InnoReflector
 		CXTypeKind typeKind;
 		CXString typeName;
 		bool isPtr = false;
+		bool isPOD = false;
 		CXTypeKind returnTypeKind;
 		CXString returnTypeName;
 		size_t arraySize = 0;
@@ -84,6 +85,8 @@ namespace InnoReflector
 					l_metadata.arraySize = clang_getArraySize(l_type);
 					l_type = clang_getArrayElementType(l_type);
 				}
+
+				l_metadata.isPOD = clang_isPODType(l_type);
 
 				l_metadata.typeKind = l_type.kind;
 				l_metadata.typeName = clang_getTypeSpelling(l_type);
@@ -286,7 +289,7 @@ namespace InnoReflector
 		}
 	}
 
-	void writeMember(const ClangMetadata& clangMetadata, FileWriter * fileWriter)
+	void writeMetadataMember(const ClangMetadata& clangMetadata, FileWriter * fileWriter)
 	{
 		fileWriter->os << "\"" << clang_getCString(clangMetadata.name) << "\", ";
 
@@ -323,60 +326,55 @@ namespace InnoReflector
 
 	void writeMetadataDefi(const ClangMetadata& clangMetadata, FileWriter * fileWriter)
 	{
-		fileWriter->os << "Metadata ";
-		fileWriter->os << "refl_" << clang_getCString(clangMetadata.name) << " = { ";
+		fileWriter->os << "Metadata refl_" << clang_getCString(clangMetadata.name) << " = { ";
 
-		writeMember(clangMetadata, fileWriter);
+		writeMetadataMember(clangMetadata, fileWriter);
 
 		fileWriter->os << " }";
 	}
 
-	void writeChildrenMetadata(InnoReflector::FileWriter * fileWriter, InnoReflector::ClangMetadata &l_clangMetadata, const size_t &i)
+	void writeChildrenMetadataDefi(size_t index, const ClangMetadata& clangMetadata, FileWriter * fileWriter)
 	{
-		fileWriter->os << "Metadata ";
-		fileWriter->os << "refl_" << clang_getCString(l_clangMetadata.name) << "_member" << "[" << l_clangMetadata.validChildrenCount << "]" << " = " << std::endl << "{";
+		fileWriter->os << "Metadata refl_" << clang_getCString(clangMetadata.name) << "_member[" << clangMetadata.validChildrenCount << "] = \n{";
 
 		auto l_startOffset = 1;
-		if (l_clangMetadata.base != nullptr)
+		if (clangMetadata.base != nullptr)
 		{
 			l_startOffset = 2;
 		}
 
-		for (size_t j = 0; j < l_clangMetadata.totalChildrenCount; j++)
+		for (size_t j = 0; j < clangMetadata.totalChildrenCount; j++)
 		{
-			auto l_childClangMetaData = m_clangMetadata[i + j + l_startOffset];
+			auto l_childClangMetaData = m_clangMetadata[index + j + l_startOffset];
 			if (l_childClangMetaData.cursorKind == CXCursorKind::CXCursor_FieldDecl || l_childClangMetaData.cursorKind == CXCursorKind::CXCursor_EnumConstantDecl)
 			{
-				fileWriter->os << std::endl;
-				fileWriter->os << "\t{ ";
-				writeMember(l_childClangMetaData, fileWriter);
+				fileWriter->os << "\n\t{ ";
+				writeMetadataMember(l_childClangMetaData, fileWriter);
 				fileWriter->os << " }, ";
 			}
 		}
-		fileWriter->os << std::endl;
-		fileWriter->os << "};" << std::endl;
+		fileWriter->os << "\n};\n";
 	}
 
 	void writeMetadataGetter(const ClangMetadata& clangMetadata, FileWriter * fileWriter)
 	{
-		fileWriter->os << "template<>" << std::endl;
-		fileWriter->os << "inline Metadata InnoMetadata::GetMetadata<" << clang_getCString(clangMetadata.typeName) << ">()" << std::endl;
-		fileWriter->os << "{" << std::endl;
-		fileWriter->os << "\treturn refl_" << clang_getCString(clangMetadata.name) << ";" << std::endl;
-		fileWriter->os << "}" << std::endl;
-		fileWriter->os << std::endl;
+		fileWriter->os << "template<>\ninline Metadata InnoMetadata::GetMetadata<" << clang_getCString(clangMetadata.typeName) << ">()\n";
+		fileWriter->os << "{\n\treturn refl_" << clang_getCString(clangMetadata.name) << ";\n}\n\n";
 	}
 
 	void writeSerializerDefi(size_t index, const ClangMetadata& clangMetadata, FileWriter * fileWriter)
 	{
-		fileWriter->os << "template<>" << std::endl;
-		fileWriter->os << "inline void InnoSerializer::to_json<" << clang_getCString(clangMetadata.typeName) << ">(json& j, const " << clang_getCString(clangMetadata.typeName) << "& rhs)" << std::endl;
-		fileWriter->os << "{" << std::endl;
-		fileWriter->os << "\tj = json" << std::endl;
-		fileWriter->os << "\t{";
+		fileWriter->os << "template<>\ninline void InnoSerializer::to_json<" << clang_getCString(clangMetadata.typeName) << ">(json& j, const " << clang_getCString(clangMetadata.typeName) << "& rhs)\n{\n\tj = json\n\t{";
+
+		auto l_startOffset = 1;
+		if (clangMetadata.base != nullptr)
+		{
+			l_startOffset = 2;
+		}
+
 		for (size_t j = 0; j < clangMetadata.totalChildrenCount; j++)
 		{
-			auto l_childClangMetaData = m_clangMetadata[index + j + 1];
+			auto l_childClangMetaData = m_clangMetadata[index + j + l_startOffset];
 
 			if (l_childClangMetaData.arraySize > 0)
 			{
@@ -387,13 +385,11 @@ namespace InnoReflector
 			{
 				auto l_name = clang_getCString(l_childClangMetaData.name);
 
-				fileWriter->os << std::endl;
-				fileWriter->os << "\t\t{ \"" << l_name << "\", ";
+				fileWriter->os << "\n\t\t{ \"" << l_name << "\", ";
 
 				if (l_childClangMetaData.arraySize > 0)
 				{
-					fileWriter->os << std::endl;
-					fileWriter->os << "\t\t\t{ " << std::endl;
+					fileWriter->os << "\n\t\t\t{ \n";
 					for (size_t i = 0; i < l_childClangMetaData.arraySize; i++)
 					{
 						fileWriter->os << "\t\t\t\trhs." << l_name << "[" << i << "]";
@@ -401,51 +397,75 @@ namespace InnoReflector
 						{
 							fileWriter->os << ",";
 						}
-						fileWriter->os << std::endl;
+						fileWriter->os << "\n";
 					}
-					fileWriter->os << "\t\t\t}," << std::endl;
-					fileWriter->os << "\t\t},";
+					fileWriter->os << "\t\t\t},\n\t\t},";
 				}
 				else
 				{
-					fileWriter->os << "rhs." << l_name << " },";
+					//@TODO: Deal with custom type pointer
+					if (l_childClangMetaData.isPtr)
+					{
+						if (l_childClangMetaData.isPOD)
+						{
+							fileWriter->os << "*rhs." << l_name << " },";
+						}
+						else
+						{
+							fileWriter->os << "nullptr },";
+						}
+					}
+					else
+					{
+						fileWriter->os << "rhs." << l_name << " },";
+					}
 				}
 			}
 		}
-		fileWriter->os << std::endl;
-		fileWriter->os << "\t};" << std::endl;
-		fileWriter->os << "}" << std::endl;
-		fileWriter->os << std::endl;
+		fileWriter->os << "\n\t};\n}\n\n";
 	}
 
 	void writeDeserializerDefi(size_t index, const ClangMetadata& clangMetadata, FileWriter * fileWriter)
 	{
-		fileWriter->os << "template<>" << std::endl;
-		fileWriter->os << "inline void InnoSerializer::from_json<" << clang_getCString(clangMetadata.typeName) << ">(const json& j, " << clang_getCString(clangMetadata.typeName) << "& rhs)" << std::endl;
-		fileWriter->os << "{" << std::endl;
+		fileWriter->os << "template<>\ninline void InnoSerializer::from_json<" << clang_getCString(clangMetadata.typeName) << ">(const json& j, " << clang_getCString(clangMetadata.typeName) << "& rhs)\n{\n";
+
+		auto l_startOffset = 1;
+		if (clangMetadata.base != nullptr)
+		{
+			l_startOffset = 2;
+		}
+
 		for (size_t j = 0; j < clangMetadata.totalChildrenCount; j++)
 		{
-			auto l_childClangMetaData = m_clangMetadata[index + j + 1];
+			auto l_childClangMetaData = m_clangMetadata[index + j + l_startOffset];
 			if (l_childClangMetaData.cursorKind == CXCursorKind::CXCursor_FieldDecl && l_childClangMetaData.accessSpecifier == CX_CXXAccessSpecifier::CX_CXXPublic)
 			{
-				//@TODO: Deal with pointer
 				auto l_name = clang_getCString(l_childClangMetaData.name);
 
 				if (l_childClangMetaData.arraySize > 0)
 				{
 					for (size_t i = 0; i < l_childClangMetaData.arraySize; i++)
 					{
-						fileWriter->os << "\trhs." << l_name << "[" << i << "] = j[\"" << l_name << "\"][" << i << "];" << std::endl;
+						fileWriter->os << "\trhs." << l_name << "[" << i << "] = j[\"" << l_name << "\"][" << i << "];\n";
 					}
 				}
 				else
 				{
-					fileWriter->os << "\trhs." << l_name << " = j[\"" << l_name << "\"];" << std::endl;
+					//@TODO: Deal with custom type pointer
+					if (l_childClangMetaData.isPtr)
+					{
+						if (l_childClangMetaData.isPOD)
+						{
+							fileWriter->os << "\t*rhs." << l_name << " = j[\"" << l_name << "\"];\n";
+						}
+					}
+					else
+					{
+						fileWriter->os << "\trhs." << l_name << " = j[\"" << l_name << "\"];\n";
+					}
 				}
 			}
 		}
-		fileWriter->os << "}" << std::endl;
-		fileWriter->os << std::endl;
 	}
 
 	void writeIncludedHeaders(FileWriter* fileWriter)
@@ -455,19 +475,30 @@ namespace InnoReflector
 		for (size_t i = 0; i < l_includedFileNameCount; i++)
 		{
 			auto l_name = clang_getCString(m_includedFileName[i]);
-			fileWriter->os << "#include \"" << l_name << "\"" << std::endl;
+			fileWriter->os << "#include \"" << l_name << "\"\n";
 		}
-		fileWriter->os << std::endl;
+		fileWriter->os << "\n";
+	}
+
+	void writeSector(size_t index, const ClangMetadata& clangMetadata, FileWriter * fileWriter)
+	{
+		writeMetadataDefi(clangMetadata, fileWriter);
+		fileWriter->os << ";\n";
+
+		if (clangMetadata.validChildrenCount)
+		{
+			writeChildrenMetadataDefi(index, clangMetadata, fileWriter);
+		}
 	}
 
 	void writeFile(FileWriter* fileWriter)
 	{
 		auto l_clangMetadataCount = m_clangMetadata.size();
 
-		fileWriter->os << "#pragma once" << std::endl;
-		fileWriter->os << "#include \"../../Source/Engine/Common/InnoMetadata.h\"" << std::endl;
-		fileWriter->os << "using namespace InnoMetadata;" << std::endl;
-		fileWriter->os << std::endl;
+		fileWriter->os << "#pragma once\n";
+		fileWriter->os << "#include \"../../Source/Engine/Common/InnoMetadata.h\"\n";
+		fileWriter->os << "using namespace InnoMetadata;\n";
+		fileWriter->os << "\n";
 
 		//writeIncludedHeaders(fileWriter);
 
@@ -477,32 +508,18 @@ namespace InnoReflector
 
 			if (l_clangMetadata.cursorKind == CXCursorKind::CXCursor_EnumDecl)
 			{
-				writeMetadataDefi(l_clangMetadata, fileWriter);
-				fileWriter->os << ";" << std::endl;
-
-				writeChildrenMetadata(fileWriter, l_clangMetadata, i);
+				writeSector(i, l_clangMetadata, fileWriter);
 			}
-			if (l_clangMetadata.cursorKind == CXCursorKind::CXCursor_CXXMethod || l_clangMetadata.cursorKind == CXCursorKind::CXCursor_ParmDecl)
+			if (l_clangMetadata.cursorKind == CXCursorKind::CXCursor_CXXMethod)
 			{
-				//fileWriter->os << ", ";
-				//fileWriter->os << l_clangMetadata.arraySize << ", ";
-				//if (l_clangMetadata.cursorKind == CXCursorKind::CXCursor_CXXMethod || l_clangMetadata.cursorKind == CXCursorKind::CXCursor_ParmDecl)
-				//{
-				//	writeTypeKind(l_clangMetadata.returnTypeKind, fileWriter);
-				//}
-				//else
-				//{
-				//	fileWriter->os << "Invalid";
-				//}
+				//writeSector(i, l_clangMetadata, fileWriter);
 			}
 			if (l_clangMetadata.cursorKind == CXCursorKind::CXCursor_StructDecl || l_clangMetadata.cursorKind == CXCursorKind::CXCursor_ClassDecl)
 			{
-				writeMetadataDefi(l_clangMetadata, fileWriter);
-				fileWriter->os << ";" << std::endl;
+				writeSector(i, l_clangMetadata, fileWriter);
 
 				if (l_clangMetadata.validChildrenCount)
 				{
-					writeChildrenMetadata(fileWriter, l_clangMetadata, i);
 					//writeSerializerDefi(i, l_clangMetadata, fileWriter);
 					//writeDeserializerDefi(i, l_clangMetadata, fileWriter);
 				}
@@ -510,6 +527,8 @@ namespace InnoReflector
 				writeMetadataGetter(l_clangMetadata, fileWriter);
 			}
 		}
+
+		fileWriter->os << std::endl;
 
 		for (size_t i = 0; i < l_clangMetadataCount; i++)
 		{
