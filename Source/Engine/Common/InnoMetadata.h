@@ -6,50 +6,53 @@ namespace InnoMetadata
 {
 	enum class DeclType
 	{
-		Invalid = 0,
-		Namespace = 1,
-		Struct = 2,
-		Union = 3,
-		Class = 4,
-		Enum = 5,
-		EnumConstant = 6,
-		Var = 7,
-		Function = 8,
-		Parm = 9,
-		Ctor = 10,
-		Dtor = 11
+		Invalid,
+		Namespace,
+		Struct,
+		Union,
+		Class,
+		Enum,
+		EnumConstant,
+		Var,
+		Function,
+		Parm,
+		Ctor,
+		Dtor
 	};
 
 	enum class AccessType
 	{
-		Invalid = 0,
-		Public = 1,
-		Protected = 2,
-		Private = 3
+		Invalid,
+		Public,
+		Protected,
+		Private
 	};
 
 	enum class TypeKind
 	{
-		Invalid = 0,
-		Custom = 1,
-		Void = 2,
-		Bool = 3,
-		UChar = 4,
-		SChar = 5,
-		WChar = 6,
-		Char16 = 7,
-		Char32 = 8,
-		UShort = 9,
-		UInt = 10,
-		ULong = 11,
-		ULongLong = 12,
-		SShort = 13,
-		SInt = 14,
-		SLong = 15,
-		SLongLong = 16,
-		Float = 17,
-		Double = 18,
-		Pointer = 19
+		Invalid,
+		Custom,
+		Void,
+		Bool,
+		UChar,
+		SChar,
+		WChar,
+		Char16,
+		Char32,
+		UShort,
+		UInt,
+		ULong,
+		ULongLong,
+		SShort,
+		SInt,
+		SLong,
+		SLongLong,
+		Float,
+		Double,
+
+		Pointer,
+		Enum,
+		EnumConstant
 	};
 
 	struct Metadata

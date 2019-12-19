@@ -105,7 +105,7 @@ namespace InnoReflector
 				if (l_parent != m_clangMetadata.end())
 				{
 					l_parent->totalChildrenCount++;
-					if (kind == CXCursorKind::CXCursor_FieldDecl)
+					if (kind == CXCursorKind::CXCursor_FieldDecl || kind == CXCursorKind::CXCursor_EnumConstantDecl)
 					{
 						l_parent->validChildrenCount++;
 					}
@@ -260,7 +260,7 @@ namespace InnoReflector
 			fileWriter->os << "TypeKind::Custom";
 			break;
 		case CXType_Enum:
-			fileWriter->os << "TypeKind::Custom";
+			fileWriter->os << "TypeKind::Enum";
 			break;
 		case CXType_Typedef:
 			fileWriter->os << "TypeKind::Custom";
@@ -345,7 +345,7 @@ namespace InnoReflector
 		for (size_t j = 0; j < l_clangMetadata.totalChildrenCount; j++)
 		{
 			auto l_childClangMetaData = m_clangMetadata[i + j + l_startOffset];
-			if (l_childClangMetaData.cursorKind == CXCursorKind::CXCursor_FieldDecl)
+			if (l_childClangMetaData.cursorKind == CXCursorKind::CXCursor_FieldDecl || l_childClangMetaData.cursorKind == CXCursorKind::CXCursor_EnumConstantDecl)
 			{
 				fileWriter->os << std::endl;
 				fileWriter->os << "\t{ ";
@@ -475,6 +475,13 @@ namespace InnoReflector
 		{
 			auto& l_clangMetadata = m_clangMetadata[i];
 
+			if (l_clangMetadata.cursorKind == CXCursorKind::CXCursor_EnumDecl)
+			{
+				writeMetadataDefi(l_clangMetadata, fileWriter);
+				fileWriter->os << ";" << std::endl;
+
+				writeChildrenMetadata(fileWriter, l_clangMetadata, i);
+			}
 			if (l_clangMetadata.cursorKind == CXCursorKind::CXCursor_CXXMethod || l_clangMetadata.cursorKind == CXCursorKind::CXCursor_ParmDecl)
 			{
 				//fileWriter->os << ", ";
