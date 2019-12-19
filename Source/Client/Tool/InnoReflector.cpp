@@ -30,7 +30,8 @@ namespace InnoReflector
 		CXTypeKind returnTypeKind;
 		CXString returnTypeName;
 		size_t arraySize = 0;
-		ClangMetadata* base = nullptr;
+		ClangMetadata* inheritanceBase = nullptr;
+		ClangMetadata* semanticParent = nullptr;
 		size_t totalChildrenCount = 0;
 		size_t validChildrenCount = 0;
 	};
@@ -99,7 +100,7 @@ namespace InnoReflector
 				auto l_semanticParent = parent;
 				auto l_semanticParentName = clang_getCursorDisplayName(l_semanticParent);
 
-				auto l_parent = std::find_if(m_clangMetadata.begin(), m_clangMetadata.end(),
+				auto& l_parent = std::find_if(m_clangMetadata.begin(), m_clangMetadata.end(),
 					[&](ClangMetadata& parent)
 				{
 					return !strcmp(clang_getCString(parent.name), clang_getCString(l_semanticParentName));
@@ -108,9 +109,11 @@ namespace InnoReflector
 				if (l_parent != m_clangMetadata.end())
 				{
 					l_parent->totalChildrenCount++;
-					if (kind == CXCursorKind::CXCursor_FieldDecl || kind == CXCursorKind::CXCursor_EnumConstantDecl)
+					if (kind == CXCursorKind::CXCursor_FieldDecl || kind == CXCursorKind::CXCursor_CXXMethod || kind == CXCursorKind::CXCursor_EnumConstantDecl)
 					{
 						l_parent->validChildrenCount++;
+						auto l_parentIndex = l_parent - m_clangMetadata.begin();
+						l_metadata.semanticParent = &m_clangMetadata[l_parentIndex];
 					}
 				}
 				m_clangMetadata.emplace_back(l_metadata);
@@ -284,14 +287,30 @@ namespace InnoReflector
 
 			if (l_clangMetadata.cursorKind == CXCursorKind::CXCursor_CXXBaseSpecifier)
 			{
-				m_clangMetadata[i - 1].base = &m_clangMetadata[i + 1];
+				m_clangMetadata[i - 1].inheritanceBase = &m_clangMetadata[i + 1];
 			}
 		}
 	}
 
 	void writeMetadataMember(const ClangMetadata& clangMetadata, FileWriter * fileWriter)
 	{
-		fileWriter->os << "\"" << clang_getCString(clangMetadata.name) << "\", ";
+		if (clangMetadata.cursorKind == CXCursorKind::CXCursor_CXXMethod)
+		{
+			std::string l_funcSign = clang_getCString(clangMetadata.name);
+			auto l_parentName = clang_getCString(clangMetadata.semanticParent->name);
+
+			auto l_funcName = l_funcSign.substr(0, l_funcSign.find("("));
+			l_funcSign = l_parentName + l_funcSign;
+
+			std::hash<std::string> l_hasher;
+			auto l_nameHash = l_hasher(l_funcSign);
+
+			fileWriter->os << "\"" << l_parentName << "_" << l_funcName << "_" << l_nameHash << "\", ";
+		}
+		else
+		{
+			fileWriter->os << "\"" << clang_getCString(clangMetadata.name) << "\", ";
+		}
 
 		writeCursorKind(clangMetadata.cursorKind, fileWriter);
 
@@ -314,9 +333,9 @@ namespace InnoReflector
 			fileWriter->os << ", false";
 		}
 
-		if (clangMetadata.base != nullptr)
+		if (clangMetadata.inheritanceBase != nullptr)
 		{
-			fileWriter->os << ", &refl_" << clang_getCString(clangMetadata.base->typeName);
+			fileWriter->os << ", &refl_" << clang_getCString(clangMetadata.inheritanceBase->typeName);
 		}
 		else
 		{
@@ -326,7 +345,9 @@ namespace InnoReflector
 
 	void writeMetadataDefi(const ClangMetadata& clangMetadata, FileWriter * fileWriter)
 	{
-		fileWriter->os << "Metadata refl_" << clang_getCString(clangMetadata.name) << " = { ";
+		fileWriter->os << "Metadata refl_";
+
+		fileWriter->os << clang_getCString(clangMetadata.name) << " = { ";
 
 		writeMetadataMember(clangMetadata, fileWriter);
 
@@ -338,7 +359,7 @@ namespace InnoReflector
 		fileWriter->os << "Metadata refl_" << clang_getCString(clangMetadata.name) << "_member[" << clangMetadata.validChildrenCount << "] = \n{";
 
 		auto l_startOffset = 1;
-		if (clangMetadata.base != nullptr)
+		if (clangMetadata.inheritanceBase != nullptr)
 		{
 			l_startOffset = 2;
 		}
@@ -346,7 +367,10 @@ namespace InnoReflector
 		for (size_t j = 0; j < clangMetadata.totalChildrenCount; j++)
 		{
 			auto l_childClangMetaData = m_clangMetadata[index + j + l_startOffset];
-			if (l_childClangMetaData.cursorKind == CXCursorKind::CXCursor_FieldDecl || l_childClangMetaData.cursorKind == CXCursorKind::CXCursor_EnumConstantDecl)
+			if (l_childClangMetaData.cursorKind == CXCursorKind::CXCursor_FieldDecl
+				|| l_childClangMetaData.cursorKind == CXCursorKind::CXCursor_EnumConstantDecl
+				|| l_childClangMetaData.cursorKind == CXCursorKind::CXCursor_CXXMethod
+				)
 			{
 				fileWriter->os << "\n\t{ ";
 				writeMetadataMember(l_childClangMetaData, fileWriter);
@@ -367,7 +391,7 @@ namespace InnoReflector
 		fileWriter->os << "template<>\ninline void InnoSerializer::to_json<" << clang_getCString(clangMetadata.typeName) << ">(json& j, const " << clang_getCString(clangMetadata.typeName) << "& rhs)\n{\n\tj = json\n\t{";
 
 		auto l_startOffset = 1;
-		if (clangMetadata.base != nullptr)
+		if (clangMetadata.inheritanceBase != nullptr)
 		{
 			l_startOffset = 2;
 		}
@@ -430,7 +454,7 @@ namespace InnoReflector
 		fileWriter->os << "template<>\ninline void InnoSerializer::from_json<" << clang_getCString(clangMetadata.typeName) << ">(const json& j, " << clang_getCString(clangMetadata.typeName) << "& rhs)\n{\n";
 
 		auto l_startOffset = 1;
-		if (clangMetadata.base != nullptr)
+		if (clangMetadata.inheritanceBase != nullptr)
 		{
 			l_startOffset = 2;
 		}
@@ -510,10 +534,6 @@ namespace InnoReflector
 			{
 				writeSector(i, l_clangMetadata, fileWriter);
 			}
-			if (l_clangMetadata.cursorKind == CXCursorKind::CXCursor_CXXMethod)
-			{
-				//writeSector(i, l_clangMetadata, fileWriter);
-			}
 			if (l_clangMetadata.cursorKind == CXCursorKind::CXCursor_StructDecl || l_clangMetadata.cursorKind == CXCursorKind::CXCursor_ClassDecl)
 			{
 				writeSector(i, l_clangMetadata, fileWriter);
@@ -557,8 +577,6 @@ namespace InnoReflector
 		m_includedFileName.shrink_to_fit();
 
 		clang_visitChildren(cursor, visitor, nullptr);
-
-		m_clangMetadata.shrink_to_fit();
 
 		assignBase();
 
