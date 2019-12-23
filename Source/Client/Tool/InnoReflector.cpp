@@ -20,7 +20,8 @@ namespace InnoReflector
 
 	struct ClangMetadata
 	{
-		CXString name;
+		CXString displayName;
+		CXString entityName;
 		CXCursorKind cursorKind;
 		CX_CXXAccessSpecifier accessSpecifier;
 		CXTypeKind typeKind;
@@ -68,7 +69,8 @@ namespace InnoReflector
 				|| kind == CXCursorKind::CXCursor_CXXBaseSpecifier
 				|| (kind == CXCursorKind::CXCursor_TypeRef && m_clangMetadata[m_clangMetadata.size() - 1].cursorKind == CXCursorKind::CXCursor_CXXBaseSpecifier))
 			{
-				l_metadata.name = clang_getCursorDisplayName(cursor);
+				l_metadata.displayName = clang_getCursorDisplayName(cursor);
+				l_metadata.entityName = clang_getCursorSpelling(cursor);
 
 				l_metadata.cursorKind = kind;
 				l_metadata.accessSpecifier = clang_getCXXAccessSpecifier(cursor);
@@ -103,7 +105,7 @@ namespace InnoReflector
 				auto& l_parent = std::find_if(m_clangMetadata.begin(), m_clangMetadata.end(),
 					[&](ClangMetadata& parent)
 				{
-					return !strcmp(clang_getCString(parent.name), clang_getCString(l_semanticParentName));
+					return !strcmp(clang_getCString(parent.displayName), clang_getCString(l_semanticParentName));
 				});
 
 				if (l_parent != m_clangMetadata.end())
@@ -296,20 +298,20 @@ namespace InnoReflector
 	{
 		if (clangMetadata.cursorKind == CXCursorKind::CXCursor_CXXMethod)
 		{
-			std::string l_funcSign = clang_getCString(clangMetadata.name);
-			auto l_parentName = clang_getCString(clangMetadata.semanticParent->name);
+			std::string l_funcSign = clang_getCString(clangMetadata.displayName);
+			auto l_parentName = clang_getCString(clangMetadata.semanticParent->displayName);
 
-			auto l_funcName = l_funcSign.substr(0, l_funcSign.find("("));
 			l_funcSign = l_parentName + l_funcSign;
 
 			std::hash<std::string> l_hasher;
 			auto l_nameHash = l_hasher(l_funcSign);
 
+			auto l_funcName = clang_getCString(clangMetadata.entityName);
 			fileWriter->os << "\"" << l_parentName << "_" << l_funcName << "_" << l_nameHash << "\", ";
 		}
 		else
 		{
-			fileWriter->os << "\"" << clang_getCString(clangMetadata.name) << "\", ";
+			fileWriter->os << "\"" << clang_getCString(clangMetadata.displayName) << "\", ";
 		}
 
 		writeCursorKind(clangMetadata.cursorKind, fileWriter);
@@ -347,7 +349,7 @@ namespace InnoReflector
 	{
 		fileWriter->os << "Metadata refl_";
 
-		fileWriter->os << clang_getCString(clangMetadata.name) << " = { ";
+		fileWriter->os << clang_getCString(clangMetadata.displayName) << " = { ";
 
 		writeMetadataMember(clangMetadata, fileWriter);
 
@@ -356,7 +358,7 @@ namespace InnoReflector
 
 	void writeChildrenMetadataDefi(size_t index, const ClangMetadata& clangMetadata, FileWriter * fileWriter)
 	{
-		fileWriter->os << "Metadata refl_" << clang_getCString(clangMetadata.name) << "_member[" << clangMetadata.validChildrenCount << "] = \n{";
+		fileWriter->os << "Metadata refl_" << clang_getCString(clangMetadata.displayName) << "_member[" << clangMetadata.validChildrenCount << "] = \n{";
 
 		auto l_startOffset = 1;
 		if (clangMetadata.inheritanceBase != nullptr)
@@ -383,7 +385,7 @@ namespace InnoReflector
 	void writeMetadataGetter(const ClangMetadata& clangMetadata, FileWriter * fileWriter)
 	{
 		fileWriter->os << "template<>\ninline Metadata InnoMetadata::GetMetadata<" << clang_getCString(clangMetadata.typeName) << ">()\n";
-		fileWriter->os << "{\n\treturn refl_" << clang_getCString(clangMetadata.name) << ";\n}\n\n";
+		fileWriter->os << "{\n\treturn refl_" << clang_getCString(clangMetadata.displayName) << ";\n}\n\n";
 	}
 
 	void writeSerializerDefi(size_t index, const ClangMetadata& clangMetadata, FileWriter * fileWriter)
@@ -407,7 +409,7 @@ namespace InnoReflector
 
 			if (l_childClangMetaData.cursorKind == CXCursorKind::CXCursor_FieldDecl && l_childClangMetaData.accessSpecifier == CX_CXXAccessSpecifier::CX_CXXPublic)
 			{
-				auto l_name = clang_getCString(l_childClangMetaData.name);
+				auto l_name = clang_getCString(l_childClangMetaData.displayName);
 
 				fileWriter->os << "\n\t\t{ \"" << l_name << "\", ";
 
@@ -464,7 +466,7 @@ namespace InnoReflector
 			auto l_childClangMetaData = m_clangMetadata[index + j + l_startOffset];
 			if (l_childClangMetaData.cursorKind == CXCursorKind::CXCursor_FieldDecl && l_childClangMetaData.accessSpecifier == CX_CXXAccessSpecifier::CX_CXXPublic)
 			{
-				auto l_name = clang_getCString(l_childClangMetaData.name);
+				auto l_name = clang_getCString(l_childClangMetaData.displayName);
 
 				if (l_childClangMetaData.arraySize > 0)
 				{
@@ -552,7 +554,8 @@ namespace InnoReflector
 
 		for (size_t i = 0; i < l_clangMetadataCount; i++)
 		{
-			clang_disposeString(m_clangMetadata[i].name);
+			clang_disposeString(m_clangMetadata[i].displayName);
+			clang_disposeString(m_clangMetadata[i].entityName);
 			clang_disposeString(m_clangMetadata[i].typeName);
 			clang_disposeString(m_clangMetadata[i].returnTypeName);
 		}
