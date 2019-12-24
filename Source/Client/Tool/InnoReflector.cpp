@@ -37,6 +37,7 @@ namespace InnoReflector
 		size_t validChildrenCount = 0;
 	};
 
+	std::vector<CXSourceLocation> m_includedFileSourceLocation;
 	std::vector<CXString> m_includedFileName;
 	std::vector<ClangMetadata> m_clangMetadata;
 
@@ -46,8 +47,7 @@ namespace InnoReflector
 		{
 			if (clang_Location_isFromMainFile(*inclusion_stack))
 			{
-				auto l_fileName = clang_getFileName(included_file);
-				m_includedFileName.emplace_back(l_fileName);
+				m_includedFileSourceLocation.emplace_back(*inclusion_stack);
 			}
 		}
 	}
@@ -92,7 +92,18 @@ namespace InnoReflector
 				l_metadata.isPOD = clang_isPODType(l_type);
 
 				l_metadata.typeKind = l_type.kind;
-				l_metadata.typeName = clang_getTypeSpelling(l_type);
+
+				if (kind == CXCursorKind::CXCursor_FieldDecl
+					&& (l_type.kind == CXTypeKind::CXType_Record
+						|| l_type.kind == CXTypeKind::CXType_Enum))
+				{
+					auto l_declCursor = clang_getTypeDeclaration(l_type);
+					l_metadata.typeName = clang_getCursorSpelling(l_declCursor);
+				}
+				else
+				{
+					l_metadata.typeName = clang_getTypeSpelling(l_type);
+				}
 
 				auto l_returnType = clang_getCursorResultType(cursor);
 
@@ -341,6 +352,17 @@ namespace InnoReflector
 
 		fileWriter->os << ", " << "\"" << clang_getCString(clangMetadata.typeName) << "\"";
 
+		if (clangMetadata.cursorKind == CXCursorKind::CXCursor_FieldDecl
+			&& (clangMetadata.typeKind == CXTypeKind::CXType_Record
+				|| clangMetadata.typeKind == CXTypeKind::CXType_Enum))
+		{
+			fileWriter->os << ", &refl_" << clang_getCString(clangMetadata.typeName);
+		}
+		else
+		{
+			fileWriter->os << ", nullptr";
+		}
+
 		if (clangMetadata.isPtr)
 		{
 			fileWriter->os << ", true";
@@ -513,12 +535,15 @@ namespace InnoReflector
 
 	void writeIncludedHeaders(FileWriter* fileWriter)
 	{
-		auto l_includedFileNameCount = m_includedFileName.size();
+		auto l_includedFileNameCount = m_includedFileSourceLocation.size();
 
 		for (size_t i = 0; i < l_includedFileNameCount; i++)
 		{
-			auto l_name = clang_getCString(m_includedFileName[i]);
-			fileWriter->os << "#include \"" << l_name << "\"\n";
+			std::string l_name = clang_getCString(m_includedFileName[i]);
+			size_t start_pos = l_name.find(".h");
+			l_name.replace(start_pos, 2, ".refl.h");
+
+			fileWriter->os << "#include " << l_name << "\n";
 		}
 		fileWriter->os << "\n";
 	}
@@ -543,7 +568,7 @@ namespace InnoReflector
 		fileWriter->os << "using namespace InnoMetadata;\n";
 		fileWriter->os << "\n";
 
-		//writeIncludedHeaders(fileWriter);
+		writeIncludedHeaders(fileWriter);
 
 		for (size_t i = 0; i < l_clangMetadataCount; i++)
 		{
@@ -587,6 +612,7 @@ namespace InnoReflector
 		auto translationUnit = clang_parseTranslationUnit(index, fileName.c_str(), args, 1, nullptr, 0, CXTranslationUnit_SkipFunctionBodies);
 
 		// @TODO: Reserve with a meaningful size
+		m_includedFileSourceLocation.reserve(128);
 		m_includedFileName.reserve(128);
 		m_clangMetadata.reserve(8192);
 
@@ -594,7 +620,12 @@ namespace InnoReflector
 
 		clang_getInclusions(translationUnit, inclusionVisitor, nullptr);
 
-		m_includedFileName.shrink_to_fit();
+		auto l_includedFileSourceLocationSize = m_includedFileSourceLocation.size();
+		for (size_t i = 0; i < l_includedFileSourceLocationSize; i++)
+		{
+			auto l_token = clang_getToken(translationUnit, m_includedFileSourceLocation[i]);
+			m_includedFileName.emplace_back(clang_getTokenSpelling(translationUnit, *l_token));
+		}
 
 		clang_visitChildren(cursor, visitor, nullptr);
 

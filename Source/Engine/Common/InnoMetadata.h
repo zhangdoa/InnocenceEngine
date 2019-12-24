@@ -65,6 +65,7 @@ namespace InnoMetadata
 		AccessType accessType;
 		TypeKind typeKind;
 		const char* typeName;
+		Metadata* typeRef;
 		bool isPtr;
 		Metadata* base;
 	};
