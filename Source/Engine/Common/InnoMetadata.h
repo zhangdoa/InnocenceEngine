@@ -17,7 +17,9 @@ namespace InnoMetadata
 		Function,
 		Parm,
 		Ctor,
-		Dtor
+		Dtor,
+		ClassTemplate,
+		FunctionTemplate
 	};
 
 	enum class AccessType
@@ -52,7 +54,8 @@ namespace InnoMetadata
 
 		Pointer,
 		Enum,
-		EnumConstant
+		EnumConstant,
+		TemplateParm
 	};
 
 	struct Metadata
@@ -68,6 +71,13 @@ namespace InnoMetadata
 
 	template<typename T>
 	Metadata GetMetadata() {};
+
+	template<typename T>
+	Metadata GetMetadata(const T& rhs)
+	{
+		using orig_type = std::remove_const_t<std::remove_reference_t<decltype(rhs)>>;
+		return GetMetadata<orig_type>();
+	};
 }
 
 namespace InnoSerializer
