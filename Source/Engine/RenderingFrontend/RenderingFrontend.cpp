@@ -697,8 +697,7 @@ MaterialDataComponent * InnoRenderingFrontend::addMaterialDataComponent()
 SkeletonDataComponent * InnoRenderingFrontend::addSkeletonDataComponent()
 {
 	static std::atomic<uint32_t> skeletonCount = 0;
-	auto l_rawPtr = m_SkeletonDataComponentPool->Spawn();
-	auto l_SDC = new(l_rawPtr)SkeletonDataComponent();
+	auto l_SDC = InnoMemory::Spawn<SkeletonDataComponent>(m_SkeletonDataComponentPool);
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Skeleton_" + std::to_string(skeletonCount) + "/").c_str());
 	l_SDC->m_ParentEntity = l_parentEntity;
 	l_SDC->m_ObjectSource = ObjectSource::Runtime;
@@ -711,8 +710,7 @@ SkeletonDataComponent * InnoRenderingFrontend::addSkeletonDataComponent()
 AnimationDataComponent * InnoRenderingFrontend::addAnimationDataComponent()
 {
 	static std::atomic<uint32_t> animationCount = 0;
-	auto l_rawPtr = m_AnimationDataComponentPool->Spawn();
-	auto l_ADC = new(l_rawPtr)AnimationDataComponent();
+	auto l_ADC = InnoMemory::Spawn<AnimationDataComponent>(m_AnimationDataComponentPool);
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Animation_" + std::to_string(animationCount) + "/").c_str());
 	l_ADC->m_ParentEntity = l_parentEntity;
 	l_ADC->m_ObjectSource = ObjectSource::Runtime;

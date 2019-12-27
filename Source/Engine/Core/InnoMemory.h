@@ -30,13 +30,13 @@ public:
 	template <typename T>
 	static T* Spawn(IObjectPool* objectPool)
 	{
-		return reinterpret_cast<T*>(objectPool->Spawn());
+		return new(objectPool->Spawn()) T();
 	};
 
 	template <typename T>
 	static void Destroy(IObjectPool* objectPool, T* const ptr)
 	{
-		return objectPool->Destroy();
+		return objectPool->Destroy(ptr);
 	}
 
 private:

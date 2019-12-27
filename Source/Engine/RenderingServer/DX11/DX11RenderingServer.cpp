@@ -76,16 +76,12 @@ using namespace DX11RenderingServerNS;
 
 DX11ResourceBinder* addResourcesBinder()
 {
-	auto l_BinderRawPtr = m_ResourcesBinderPool->Spawn();
-	auto l_Binder = new(l_BinderRawPtr)DX11ResourceBinder();
-	return l_Binder;
+	return InnoMemory::Spawn<DX11ResourceBinder>(m_ResourcesBinderPool);
 }
 
 DX11PipelineStateObject* addPSO()
 {
-	auto l_PSORawPtr = m_PSOPool->Spawn();
-	auto l_PSO = new(l_PSORawPtr)DX11PipelineStateObject();
-	return l_PSO;
+	return InnoMemory::Spawn<DX11PipelineStateObject>(m_PSOPool);
 }
 
 bool DX11RenderingServer::Setup()

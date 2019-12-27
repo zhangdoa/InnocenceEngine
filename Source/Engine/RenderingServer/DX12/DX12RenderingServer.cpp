@@ -405,37 +405,27 @@ using namespace DX12RenderingServerNS;
 
 DX12ResourceBinder* addResourcesBinder()
 {
-	auto l_BinderRawPtr = m_ResourcesBinderPool->Spawn();
-	auto l_Binder = new(l_BinderRawPtr)DX12ResourceBinder();
-	return l_Binder;
+	return InnoMemory::Spawn<DX12ResourceBinder>(m_ResourcesBinderPool);
 }
 
 DX12PipelineStateObject* addPSO()
 {
-	auto l_PSORawPtr = m_PSOPool->Spawn();
-	auto l_PSO = new(l_PSORawPtr)DX12PipelineStateObject();
-	return l_PSO;
+	return InnoMemory::Spawn<DX12PipelineStateObject>(m_PSOPool);
 }
 
 DX12CommandQueue* addCommandQueue()
 {
-	auto l_commandQueueRawPtr = m_CommandQueuePool->Spawn();
-	auto l_commandQueue = new(l_commandQueueRawPtr)DX12CommandQueue();
-	return l_commandQueue;
+	return InnoMemory::Spawn<DX12CommandQueue>(m_CommandQueuePool);
 }
 
 DX12CommandList* addCommandList()
 {
-	auto l_commandListRawPtr = m_CommandListPool->Spawn();
-	auto l_commandList = new(l_commandListRawPtr)DX12CommandList();
-	return l_commandList;
+	return InnoMemory::Spawn<DX12CommandList>(m_CommandListPool);
 }
 
 DX12Fence* addFence()
 {
-	auto l_fenceRawPtr = m_FencePool->Spawn();
-	auto l_fence = new(l_fenceRawPtr)DX12Fence();
-	return l_fence;
+	return InnoMemory::Spawn<DX12Fence>(m_FencePool);
 }
 
 bool DX12RenderingServer::Setup()

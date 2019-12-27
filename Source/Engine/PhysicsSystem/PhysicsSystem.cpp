@@ -124,8 +124,7 @@ bool InnoPhysicsSystemNS::update()
 
 PhysicsDataComponent * InnoPhysicsSystemNS::AddPhysicsDataComponent(InnoEntity * parentEntity)
 {
-	auto l_rawPtr = m_PhysicsDataComponentPool->Spawn();
-	auto l_PDC = new(l_rawPtr)PhysicsDataComponent();
+	auto l_PDC = InnoMemory::Spawn<PhysicsDataComponent>(m_PhysicsDataComponentPool);
 
 	l_PDC->m_ParentEntity = parentEntity;
 	l_PDC->m_ObjectSource = ObjectSource::Runtime;

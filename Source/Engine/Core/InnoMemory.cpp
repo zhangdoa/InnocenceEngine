@@ -25,7 +25,7 @@ public:
 
 	~MemoryPool()
 	{
-		::delete[] m_HeapAddress;
+		InnoMemory::Deallocate(m_HeapAddress);
 	};
 
 	unsigned char* GetHeapAddress() const

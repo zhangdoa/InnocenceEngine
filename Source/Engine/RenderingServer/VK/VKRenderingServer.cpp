@@ -537,44 +537,32 @@ using namespace VKRenderingServerNS;
 
 VKResourceBinder* addResourcesBinder()
 {
-	auto l_BinderRawPtr = m_ResourcesBinderPool->Spawn();
-	auto l_Binder = new(l_BinderRawPtr)VKResourceBinder();
-	return l_Binder;
+	return InnoMemory::Spawn<VKResourceBinder>(m_ResourcesBinderPool);
 }
 
 VKPipelineStateObject* addPSO()
 {
-	auto l_PSORawPtr = m_PSOPool->Spawn();
-	auto l_PSO = new(l_PSORawPtr)VKPipelineStateObject();
-	return l_PSO;
+	return InnoMemory::Spawn<VKPipelineStateObject>(m_PSOPool);
 }
 
 VKCommandQueue* addCommandQueue()
 {
-	auto l_commandQueueRawPtr = m_CommandQueuePool->Spawn();
-	auto l_commandQueue = new(l_commandQueueRawPtr)VKCommandQueue();
-	return l_commandQueue;
+	return InnoMemory::Spawn<VKCommandQueue>(m_CommandQueuePool);
 }
 
 VKCommandList* addCommandList()
 {
-	auto l_commandListRawPtr = m_CommandListPool->Spawn();
-	auto l_commandList = new(l_commandListRawPtr)VKCommandList();
-	return l_commandList;
+	return InnoMemory::Spawn<VKCommandList>(m_CommandListPool);
 }
 
 VKSemaphore* addSemaphore()
 {
-	auto l_semaphoreRawPtr = m_SemaphorePool->Spawn();
-	auto l_semaphore = new(l_semaphoreRawPtr)VKSemaphore();
-	return l_semaphore;
+	return InnoMemory::Spawn<VKSemaphore>(m_SemaphorePool);
 }
 
 VKFence* addFence()
 {
-	auto l_fenceRawPtr = m_FencePool->Spawn();
-	auto l_fence = new(l_fenceRawPtr)VKFence();
-	return l_fence;
+	return InnoMemory::Spawn<VKFence>(m_FencePool);
 }
 
 bool VKRenderingServer::Setup()

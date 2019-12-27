@@ -73,9 +73,6 @@ namespace GLRenderingServerNS
 		}
 	}
 
-	GLResourceBinder* addResourcesBinder();
-	GLPipelineStateObject* addPSO();
-
 	bool resizeImpl();
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
@@ -103,18 +100,14 @@ namespace GLRenderingServerNS
 	std::atomic_bool m_needResize = false;
 }
 
-GLResourceBinder* GLRenderingServerNS::addResourcesBinder()
+GLResourceBinder* addResourcesBinder()
 {
-	auto l_BinderRawPtr = m_ResourcesBinderPool->Spawn();
-	auto l_Binder = new(l_BinderRawPtr)GLResourceBinder();
-	return l_Binder;
+	return InnoMemory::Spawn<GLResourceBinder>(GLRenderingServerNS::m_ResourcesBinderPool);
 }
 
-GLPipelineStateObject* GLRenderingServerNS::addPSO()
+GLPipelineStateObject* addPSO()
 {
-	auto l_PSORawPtr = m_PSOPool->Spawn();
-	auto l_PSO = new(l_PSORawPtr)GLPipelineStateObject();
-	return l_PSO;
+	return InnoMemory::Spawn<GLPipelineStateObject>(GLRenderingServerNS::m_PSOPool);
 }
 
 bool GLRenderingServerNS::resizeImpl()
