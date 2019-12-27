@@ -77,17 +77,16 @@ void TestArray(size_t testCaseCount)
 	InnoLogger::Log(LogLevel::Success, "Custom VS STL array container speed ratio is ", l_SpeedRatio);
 }
 
+struct TestStruct
+{
+	uint32_t a[256];
+};
 void TestInnoMemory(size_t testCaseCount)
 {
-	static std::vector<uint32_t> l_objectSizes = { 64, 128, 256, 512, 1024, 2048, 4096, 8192 };
-	std::default_random_engine l_generator;
-	std::uniform_int_distribution<uint32_t> l_randomDelta(0, 7);
-	auto l_objectSize = l_objectSizes[l_randomDelta(l_generator)];
-
 	std::vector<void*> l_objectInCustomPool(testCaseCount);
 	std::vector<void*> l_objectRaw(testCaseCount);
 
-	auto l_objectPool = InnoMemory::CreateObjectPool(l_objectSize, (uint32_t)testCaseCount);
+	auto l_objectPool = InnoMemory::CreateObjectPool<TestStruct>((uint32_t)testCaseCount);
 
 	auto l_StartTime1 = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
 
@@ -101,7 +100,7 @@ void TestInnoMemory(size_t testCaseCount)
 
 	for (size_t i = 0; i < testCaseCount; i++)
 	{
-		auto l_ptr = malloc(l_objectSize);
+		auto l_ptr = malloc(sizeof(TestStruct));
 		l_objectRaw[i] = l_ptr;
 	}
 

@@ -65,7 +65,7 @@ using namespace CameraComponentManagerNS;
 
 bool InnoCameraComponentManager::Setup()
 {
-	m_ComponentPool = InnoMemory::CreateObjectPool(sizeof(CameraComponent), m_MaxComponentCount);
+	m_ComponentPool = InnoMemory::CreateObjectPool<CameraComponent>(m_MaxComponentCount);
 	m_Components.reserve(m_MaxComponentCount);
 	m_ComponentsMap.reserve(m_MaxComponentCount);
 

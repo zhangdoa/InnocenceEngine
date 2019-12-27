@@ -27,7 +27,28 @@ public:
 	static void* Reallocate(void* const ptr, const std::size_t size);
 	static void Deallocate(void* const ptr);
 
+	template <typename T>
+	static T* Spawn(IObjectPool* objectPool)
+	{
+		return reinterpret_cast<T*>(objectPool->Spawn());
+	};
+
+	template <typename T>
+	static void Destroy(IObjectPool* objectPool, T* const ptr)
+	{
+		return objectPool->Destroy();
+	}
+
+private:
 	static IObjectPool* CreateObjectPool(std::size_t objectSize, uint32_t poolCapability);
+
+public:
+	template <typename T>
+	static IObjectPool* CreateObjectPool(uint32_t poolCapability)
+	{
+		return CreateObjectPool(sizeof(T), poolCapability);
+	}
+
 	static bool ClearObjectPool(IObjectPool* objectPool);
 	static bool DestroyObjectPool(IObjectPool* objectPool);
 };

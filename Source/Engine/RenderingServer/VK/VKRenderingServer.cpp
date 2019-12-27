@@ -581,19 +581,19 @@ bool VKRenderingServer::Setup()
 {
 	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
-	m_MeshDataComponentPool = InnoMemory::CreateObjectPool(sizeof(VKMeshDataComponent), l_renderingCapability.maxMeshes);
-	m_TextureDataComponentPool = InnoMemory::CreateObjectPool(sizeof(VKTextureDataComponent), l_renderingCapability.maxTextures);
-	m_MaterialDataComponentPool = InnoMemory::CreateObjectPool(sizeof(VKMaterialDataComponent), l_renderingCapability.maxMaterials);
-	m_RenderPassDataComponentPool = InnoMemory::CreateObjectPool(sizeof(VKRenderPassDataComponent), 128);
-	m_ResourcesBinderPool = InnoMemory::CreateObjectPool(sizeof(VKResourceBinder), 16384);
-	m_PSOPool = InnoMemory::CreateObjectPool(sizeof(VKPipelineStateObject), 128);
-	m_CommandQueuePool = InnoMemory::CreateObjectPool(sizeof(VKCommandQueue), 128);
-	m_CommandListPool = InnoMemory::CreateObjectPool(sizeof(VKCommandList), 256);
-	m_SemaphorePool = InnoMemory::CreateObjectPool(sizeof(VKSemaphore), 512);
-	m_FencePool = InnoMemory::CreateObjectPool(sizeof(VKFence), 256);
-	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool(sizeof(VKShaderProgramComponent), 256);
-	m_SamplerDataComponentPool = InnoMemory::CreateObjectPool(sizeof(VKSamplerDataComponent), 256);
-	m_GPUBufferDataComponentPool = InnoMemory::CreateObjectPool(sizeof(VKGPUBufferDataComponent), 256);
+	m_MeshDataComponentPool = InnoMemory::CreateObjectPool<VKMeshDataComponent>(l_renderingCapability.maxMeshes);
+	m_TextureDataComponentPool = InnoMemory::CreateObjectPool<VKTextureDataComponent>(l_renderingCapability.maxTextures);
+	m_MaterialDataComponentPool = InnoMemory::CreateObjectPool<VKMaterialDataComponent>(l_renderingCapability.maxMaterials);
+	m_RenderPassDataComponentPool = InnoMemory::CreateObjectPool<VKRenderPassDataComponent>(128);
+	m_ResourcesBinderPool = InnoMemory::CreateObjectPool<VKResourceBinder>(16384);
+	m_PSOPool = InnoMemory::CreateObjectPool<VKPipelineStateObject>(128);
+	m_CommandQueuePool = InnoMemory::CreateObjectPool<VKCommandQueue>(128);
+	m_CommandListPool = InnoMemory::CreateObjectPool<VKCommandList>(256);
+	m_SemaphorePool = InnoMemory::CreateObjectPool<VKSemaphore>(512);
+	m_FencePool = InnoMemory::CreateObjectPool<VKFence>(256);
+	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool<VKShaderProgramComponent>(256);
+	m_SamplerDataComponentPool = InnoMemory::CreateObjectPool<VKSamplerDataComponent>(256);
+	m_GPUBufferDataComponentPool = InnoMemory::CreateObjectPool<VKGPUBufferDataComponent>(256);
 
 	m_SwapChainRPDC = reinterpret_cast<VKRenderPassDataComponent*>(AddRenderPassDataComponent("SwapChain/"));
 	m_SwapChainSPC = reinterpret_cast<VKShaderProgramComponent*>(AddShaderProgramComponent("SwapChain/"));

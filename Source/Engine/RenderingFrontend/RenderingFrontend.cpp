@@ -190,8 +190,8 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
-	m_SkeletonDataComponentPool = InnoMemory::CreateObjectPool(sizeof(SkeletonDataComponent), 2048);
-	m_AnimationDataComponentPool = InnoMemory::CreateObjectPool(sizeof(AnimationDataComponent), 16384);
+	m_SkeletonDataComponentPool = InnoMemory::CreateObjectPool<SkeletonDataComponent>(2048);
+	m_AnimationDataComponentPool = InnoMemory::CreateObjectPool<AnimationDataComponent>(16384);
 
 	m_rayTracer->Setup();
 

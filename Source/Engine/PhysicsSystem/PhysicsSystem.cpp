@@ -63,7 +63,7 @@ using namespace InnoPhysicsSystemNS;
 
 bool InnoPhysicsSystemNS::setup()
 {
-	m_PhysicsDataComponentPool = InnoMemory::CreateObjectPool(sizeof(PhysicsDataComponent), 32678);
+	m_PhysicsDataComponentPool = InnoMemory::CreateObjectPool<PhysicsDataComponent>(32678);
 
 	m_Components.reserve(16384);
 	m_IntermediateComponents.reserve(16384);

@@ -37,7 +37,7 @@ using namespace VisibleComponentManagerNS;
 
 bool InnoVisibleComponentManager::Setup()
 {
-	m_ComponentPool = InnoMemory::CreateObjectPool(sizeof(VisibleComponent), m_MaxComponentCount);
+	m_ComponentPool = InnoMemory::CreateObjectPool<VisibleComponent>(m_MaxComponentCount);
 	m_Components.reserve(m_MaxComponentCount);
 	m_ComponentsMap.reserve(m_MaxComponentCount);
 

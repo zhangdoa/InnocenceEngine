@@ -238,6 +238,7 @@ bool InnoMemory::ClearObjectPool(IObjectPool * objectPool)
 
 bool InnoMemory::DestroyObjectPool(IObjectPool * objectPool)
 {
+	ClearObjectPool(objectPool);
 	InnoMemory::Deallocate(objectPool);
 	return true;
 }

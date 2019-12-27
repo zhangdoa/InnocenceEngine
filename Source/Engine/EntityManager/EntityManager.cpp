@@ -18,7 +18,7 @@ using namespace EntityManagerNS;
 
 bool InnoEntityManager::Setup()
 {
-	m_EntityPool = InnoMemory::CreateObjectPool(sizeof(InnoEntity), m_MaxEntity);
+	m_EntityPool = InnoMemory::CreateObjectPool<InnoEntity>(m_MaxEntity);
 
 	f_SceneLoadingStartCallback = [&]() {
 		for (auto i : m_Entities)

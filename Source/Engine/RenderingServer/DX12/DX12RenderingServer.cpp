@@ -442,18 +442,18 @@ bool DX12RenderingServer::Setup()
 {
 	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
-	m_MeshDataComponentPool = InnoMemory::CreateObjectPool(sizeof(DX12MeshDataComponent), l_renderingCapability.maxMeshes);
-	m_TextureDataComponentPool = InnoMemory::CreateObjectPool(sizeof(DX12TextureDataComponent), l_renderingCapability.maxTextures);
-	m_MaterialDataComponentPool = InnoMemory::CreateObjectPool(sizeof(DX12MaterialDataComponent), l_renderingCapability.maxMaterials);
-	m_RenderPassDataComponentPool = InnoMemory::CreateObjectPool(sizeof(DX12RenderPassDataComponent), 128);
-	m_ResourcesBinderPool = InnoMemory::CreateObjectPool(sizeof(DX12ResourceBinder), 16384);
-	m_PSOPool = InnoMemory::CreateObjectPool(sizeof(DX12PipelineStateObject), 128);
-	m_CommandQueuePool = InnoMemory::CreateObjectPool(sizeof(DX12CommandQueue), 128);
-	m_CommandListPool = InnoMemory::CreateObjectPool(sizeof(DX12CommandList), 256);
-	m_FencePool = InnoMemory::CreateObjectPool(sizeof(DX12Fence), 256);
-	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool(sizeof(DX12ShaderProgramComponent), 256);
-	m_SamplerDataComponentPool = InnoMemory::CreateObjectPool(sizeof(DX12SamplerDataComponent), 256);
-	m_GPUBufferDataComponentPool = InnoMemory::CreateObjectPool(sizeof(DX12GPUBufferDataComponent), 256);
+	m_MeshDataComponentPool = InnoMemory::CreateObjectPool<DX12MeshDataComponent>(l_renderingCapability.maxMeshes);
+	m_TextureDataComponentPool = InnoMemory::CreateObjectPool<DX12TextureDataComponent>(l_renderingCapability.maxTextures);
+	m_MaterialDataComponentPool = InnoMemory::CreateObjectPool<DX12MaterialDataComponent>(l_renderingCapability.maxMaterials);
+	m_RenderPassDataComponentPool = InnoMemory::CreateObjectPool<DX12RenderPassDataComponent>(128);
+	m_ResourcesBinderPool = InnoMemory::CreateObjectPool<DX12ResourceBinder>(16384);
+	m_PSOPool = InnoMemory::CreateObjectPool<DX12PipelineStateObject>(128);
+	m_CommandQueuePool = InnoMemory::CreateObjectPool<DX12CommandQueue>(128);
+	m_CommandListPool = InnoMemory::CreateObjectPool<DX12CommandList>(256);
+	m_FencePool = InnoMemory::CreateObjectPool<DX12Fence>(256);
+	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool<DX12ShaderProgramComponent>(256);
+	m_SamplerDataComponentPool = InnoMemory::CreateObjectPool<DX12SamplerDataComponent>(256);
+	m_GPUBufferDataComponentPool = InnoMemory::CreateObjectPool<DX12GPUBufferDataComponent>(256);
 
 	bool l_result = true;
 

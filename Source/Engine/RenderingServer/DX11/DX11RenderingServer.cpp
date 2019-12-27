@@ -92,15 +92,15 @@ bool DX11RenderingServer::Setup()
 {
 	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
-	m_MeshDataComponentPool = InnoMemory::CreateObjectPool(sizeof(DX11MeshDataComponent), l_renderingCapability.maxMeshes);
-	m_TextureDataComponentPool = InnoMemory::CreateObjectPool(sizeof(DX11TextureDataComponent), l_renderingCapability.maxTextures);
-	m_MaterialDataComponentPool = InnoMemory::CreateObjectPool(sizeof(DX11MaterialDataComponent), l_renderingCapability.maxMaterials);
-	m_RenderPassDataComponentPool = InnoMemory::CreateObjectPool(sizeof(DX11RenderPassDataComponent), 128);
-	m_ResourcesBinderPool = InnoMemory::CreateObjectPool(sizeof(DX11ResourceBinder), 16384);
-	m_PSOPool = InnoMemory::CreateObjectPool(sizeof(DX11PipelineStateObject), 128);
-	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool(sizeof(DX11ShaderProgramComponent), 256);
-	m_SamplerDataComponentPool = InnoMemory::CreateObjectPool(sizeof(DX11SamplerDataComponent), 256);
-	m_GPUBufferDataComponentPool = InnoMemory::CreateObjectPool(sizeof(DX11GPUBufferDataComponent), 256);
+	m_MeshDataComponentPool = InnoMemory::CreateObjectPool<DX11MeshDataComponent>(l_renderingCapability.maxMeshes);
+	m_TextureDataComponentPool = InnoMemory::CreateObjectPool<DX11TextureDataComponent>(l_renderingCapability.maxTextures);
+	m_MaterialDataComponentPool = InnoMemory::CreateObjectPool<DX11MaterialDataComponent>(l_renderingCapability.maxMaterials);
+	m_RenderPassDataComponentPool = InnoMemory::CreateObjectPool<DX11RenderPassDataComponent>(128);
+	m_ResourcesBinderPool = InnoMemory::CreateObjectPool<DX11ResourceBinder>(16384);
+	m_PSOPool = InnoMemory::CreateObjectPool<DX11PipelineStateObject>(128);
+	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool<DX11ShaderProgramComponent>(256);
+	m_SamplerDataComponentPool = InnoMemory::CreateObjectPool<DX11SamplerDataComponent>(256);
+	m_GPUBufferDataComponentPool = InnoMemory::CreateObjectPool<DX11GPUBufferDataComponent>(256);
 
 	HRESULT l_HResult;
 	uint32_t l_numModes;

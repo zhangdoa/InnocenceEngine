@@ -191,15 +191,15 @@ bool GLRenderingServer::Setup()
 {
 	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
-	m_MeshDataComponentPool = InnoMemory::CreateObjectPool(sizeof(GLMeshDataComponent), l_renderingCapability.maxMeshes);
-	m_TextureDataComponentPool = InnoMemory::CreateObjectPool(sizeof(GLTextureDataComponent), l_renderingCapability.maxTextures);
-	m_MaterialDataComponentPool = InnoMemory::CreateObjectPool(sizeof(GLMaterialDataComponent), l_renderingCapability.maxMaterials);
-	m_RenderPassDataComponentPool = InnoMemory::CreateObjectPool(sizeof(GLRenderPassDataComponent), 128);
-	m_ResourcesBinderPool = InnoMemory::CreateObjectPool(sizeof(GLResourceBinder), 16384);
-	m_PSOPool = InnoMemory::CreateObjectPool(sizeof(GLPipelineStateObject), 128);
-	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool(sizeof(GLShaderProgramComponent), 256);
-	m_SamplerDataComponentPool = InnoMemory::CreateObjectPool(sizeof(GLSamplerDataComponent), 256);
-	m_GPUBufferDataComponentPool = InnoMemory::CreateObjectPool(sizeof(GLGPUBufferDataComponent), 256);
+	m_MeshDataComponentPool = InnoMemory::CreateObjectPool<GLMeshDataComponent>(l_renderingCapability.maxMeshes);
+	m_TextureDataComponentPool = InnoMemory::CreateObjectPool<GLTextureDataComponent>(l_renderingCapability.maxTextures);
+	m_MaterialDataComponentPool = InnoMemory::CreateObjectPool<GLMaterialDataComponent>(l_renderingCapability.maxMaterials);
+	m_RenderPassDataComponentPool = InnoMemory::CreateObjectPool<GLRenderPassDataComponent>(128);
+	m_ResourcesBinderPool = InnoMemory::CreateObjectPool<GLResourceBinder>(16384);
+	m_PSOPool = InnoMemory::CreateObjectPool<GLPipelineStateObject>(128);
+	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool<GLShaderProgramComponent>(256);
+	m_SamplerDataComponentPool = InnoMemory::CreateObjectPool<GLSamplerDataComponent>(256);
+	m_GPUBufferDataComponentPool = InnoMemory::CreateObjectPool<GLGPUBufferDataComponent>(256);
 
 	m_RPDCs.reserve(128);
 
