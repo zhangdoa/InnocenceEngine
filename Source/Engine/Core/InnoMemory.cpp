@@ -3,12 +3,11 @@
 #include <memory>
 #include <unordered_map>
 
-//Double-linked-list
+//Single-linked-list
 struct Chunk
 {
 	void* m_Target = nullptr;
 	Chunk* m_Next = nullptr;
-	Chunk* m_Prev = nullptr;
 };
 
 class MemoryPool
@@ -47,11 +46,10 @@ public:
 
 	explicit ObjectPool(std::size_t objectSize, std::size_t poolCapability)
 	{
+		m_ObjectSize = objectSize + sizeof(Chunk);
 		m_PoolCapability = poolCapability;
-		m_Pool = std::make_unique<MemoryPool>(objectSize, poolCapability);
-		m_ChunkPool = std::make_unique<MemoryPool>(sizeof(Chunk), poolCapability);
-		m_CurrentFreeChunk = reinterpret_cast<Chunk*>(m_ChunkPool->GetHeapAddress());
-		m_ObjectSize = objectSize;
+		m_Pool = std::make_unique<MemoryPool>(m_ObjectSize, m_PoolCapability);
+		m_CurrentFreeChunk = reinterpret_cast<Chunk*>(m_Pool->GetHeapAddress());
 
 		ConstructPool();
 
@@ -76,7 +74,6 @@ public:
 			auto l_Next = m_CurrentFreeChunk->m_Next;
 			if (l_Next)
 			{
-				l_Next->m_Prev = nullptr;
 				m_CurrentFreeChunk = l_Next;
 			}
 			else
@@ -95,13 +92,8 @@ public:
 
 	void Destroy(void* const ptr) override
 	{
-		//Get pointer distance between this object and the head of the pool
-		auto l_Offset = reinterpret_cast<unsigned char*>(ptr) - m_Pool->GetHeapAddress();
-
-		auto l_Index = l_Offset / m_ObjectSize;
-
 		//Allocate in-place a Chunk at the corresponding position
-		auto l_NewFreeChunk = new(m_ChunkPool->GetHeapAddress() + l_Index * sizeof(Chunk)) Chunk();
+		auto l_NewFreeChunk = new(reinterpret_cast<unsigned char*>(ptr) - sizeof(Chunk)) Chunk();
 
 		l_NewFreeChunk->m_Target = ptr;
 
@@ -109,13 +101,11 @@ public:
 		if (!m_CurrentFreeChunk)
 		{
 			// Edge case, last Chunk
-			l_NewFreeChunk->m_Prev = nullptr;
 			l_NewFreeChunk->m_Next = nullptr;
 			m_CurrentFreeChunk = l_NewFreeChunk;
 		}
 		else
 		{
-			l_NewFreeChunk->m_Prev = m_CurrentFreeChunk;
 			l_NewFreeChunk->m_Next = m_CurrentFreeChunk->m_Next;
 			m_CurrentFreeChunk->m_Next = l_NewFreeChunk;
 		}
@@ -130,35 +120,31 @@ private:
 
 	void ConstructPool()
 	{
-		auto l_ChuckUC = m_ChunkPool->GetHeapAddress();
 		auto l_ObjectUC = m_Pool->GetHeapAddress();
 		Chunk* l_PrevFreeChunk = nullptr;
 
 		for (auto i = 0; i < m_PoolCapability; i++)
 		{
-			auto l_NewFreeChunk = new(l_ChuckUC) Chunk();
+			auto l_NewFreeChunk = new(l_ObjectUC) Chunk();
 
-			l_NewFreeChunk->m_Target = l_ObjectUC;
-			l_NewFreeChunk->m_Prev = l_PrevFreeChunk;
+			l_NewFreeChunk->m_Target = l_ObjectUC + sizeof(Chunk);
 
 			// Link from front to end
 			if (l_PrevFreeChunk)
 			{
-				l_NewFreeChunk->m_Prev->m_Next = l_NewFreeChunk;
+				l_PrevFreeChunk->m_Next = l_NewFreeChunk;
 			}
 
 			l_NewFreeChunk->m_Next = nullptr;
 			l_PrevFreeChunk = l_NewFreeChunk;
 
-			l_ChuckUC += sizeof(Chunk);
 			l_ObjectUC += m_ObjectSize;
 		}
 	}
 
-	std::unique_ptr<MemoryPool> m_Pool;
-	std::unique_ptr<MemoryPool> m_ChunkPool;
-	std::size_t m_PoolCapability;
 	std::size_t m_ObjectSize;
+	std::size_t m_PoolCapability;
+	std::unique_ptr<MemoryPool> m_Pool;
 	Chunk* m_CurrentFreeChunk;
 };
 
