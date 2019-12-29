@@ -10,35 +10,6 @@ struct Chunk
 	Chunk* m_Next = nullptr;
 };
 
-class MemoryPool
-{
-public:
-	MemoryPool() = delete;
-	explicit MemoryPool(std::size_t objectSize, std::size_t capability) noexcept
-	{
-		m_ObjectSize = objectSize;
-		m_Capability = capability;
-		m_PoolSize = capability * objectSize;
-		m_HeapAddress = reinterpret_cast<unsigned char*>(InnoMemory::Allocate(m_PoolSize));
-	};
-
-	~MemoryPool()
-	{
-		InnoMemory::Deallocate(m_HeapAddress);
-	};
-
-	unsigned char* GetHeapAddress() const
-	{
-		return m_HeapAddress;
-	}
-
-private:
-	std::size_t m_ObjectSize = 0;
-	std::size_t m_Capability = 0;
-	std::size_t m_PoolSize = 0;
-	unsigned char* m_HeapAddress = nullptr;
-};
-
 class ObjectPool : public IObjectPool
 {
 public:
@@ -48,8 +19,8 @@ public:
 	{
 		m_ObjectSize = objectSize + sizeof(Chunk);
 		m_PoolCapability = poolCapability;
-		m_Pool = std::make_unique<MemoryPool>(m_ObjectSize, m_PoolCapability);
-		m_CurrentFreeChunk = reinterpret_cast<Chunk*>(m_Pool->GetHeapAddress());
+		m_HeapAddress = reinterpret_cast<unsigned char*>(InnoMemory::Allocate(m_PoolCapability * m_ObjectSize));
+		m_CurrentFreeChunk = reinterpret_cast<Chunk*>(m_HeapAddress);
 
 		ConstructPool();
 
@@ -120,7 +91,7 @@ private:
 
 	void ConstructPool()
 	{
-		auto l_ObjectUC = m_Pool->GetHeapAddress();
+		auto l_ObjectUC = m_HeapAddress;
 		Chunk* l_PrevFreeChunk = nullptr;
 
 		for (auto i = 0; i < m_PoolCapability; i++)
@@ -144,7 +115,7 @@ private:
 
 	std::size_t m_ObjectSize;
 	std::size_t m_PoolCapability;
-	std::unique_ptr<MemoryPool> m_Pool;
+	unsigned char* m_HeapAddress;
 	Chunk* m_CurrentFreeChunk;
 };
 

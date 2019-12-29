@@ -389,6 +389,56 @@ void TestAtomicDoubleBuffer(size_t testCaseCount)
 	}
 }
 
+class StackAllocator
+{
+public:
+	StackAllocator() = delete;
+	explicit StackAllocator(std::size_t size) noexcept
+	{
+		m_HeapAddress = reinterpret_cast<unsigned char*>(InnoMemory::Allocate(size));
+		m_CurrentFreeChunk = m_HeapAddress;
+	};
+
+	~StackAllocator()
+	{
+		InnoMemory::Deallocate(m_HeapAddress);
+	};
+
+	void* Allocate(const std::size_t size);
+	void Deallocate(void* const ptr);
+
+private:
+	unsigned char* m_HeapAddress;
+	unsigned char* m_CurrentFreeChunk;
+};
+
+void * StackAllocator::Allocate(const std::size_t size)
+{
+	auto l_result = m_CurrentFreeChunk;
+	m_CurrentFreeChunk += size;
+
+	return l_result;
+}
+
+void StackAllocator::Deallocate(void * const ptr)
+{
+	m_CurrentFreeChunk = static_cast<unsigned char*>(ptr);
+}
+
+void TestStackAllocator(size_t testCaseCount)
+{
+	std::function<void()> ExampleJob_StackAllocator = [&]()
+	{
+		static thread_local StackAllocator l_stackAllocator(1024 * 1024);
+
+		auto l_value = l_stackAllocator.Allocate(512);
+		l_finishedTaskCount++;
+	};
+
+	l_finishedTaskCount = 0;
+	DispatchTestTasks(testCaseCount, ExampleJob_StackAllocator);
+}
+
 int main(int argc, char *argv[])
 {
 	InnoTaskScheduler::Setup();
@@ -400,6 +450,7 @@ int main(int argc, char *argv[])
 	TestAtomic(128);
 	TestAtomicDoubleBuffer(128);
 	TestInnoRingBuffer(128);
+	TestStackAllocator(128);
 	InnoTaskScheduler::Terminate();
 
 	return 0;
