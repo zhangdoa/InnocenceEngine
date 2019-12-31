@@ -1,7 +1,7 @@
 #include "EntityManager.h"
 #include "../Core/InnoLogger.h"
 
-#include "../ModuleManager/IModuleManager.h"
+#include "../Interface/IModuleManager.h"
 
 extern IModuleManager* g_pModuleManager;
 
@@ -59,7 +59,7 @@ bool InnoEntityManager::Terminate()
 
 InnoEntity * InnoEntityManager::Spawn(ObjectSource objectSource, ObjectOwnership objectUsage, const char* entityName)
 {
-	auto l_Entity = reinterpret_cast<InnoEntity*>(m_EntityPool->Spawn());
+	auto l_Entity = InnoMemory::Spawn<InnoEntity>(m_EntityPool);
 	if (l_Entity)
 	{
 		auto l_EntityID = InnoMath::createEntityID();

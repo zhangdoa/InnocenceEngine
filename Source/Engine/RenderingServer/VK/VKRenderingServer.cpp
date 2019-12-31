@@ -13,7 +13,7 @@ using namespace VKHelper;
 
 #include "../CommonFunctionDefinationMacro.inl"
 
-#include "../../ModuleManager/IModuleManager.h"
+#include "../../Interface/IModuleManager.h"
 
 extern IModuleManager* g_pModuleManager;
 
@@ -658,7 +658,7 @@ bool VKRenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	vkDestroyBuffer(m_device, l_stagingBuffer, nullptr);
 	vkFreeMemory(m_device, l_stagingBufferMemory, nullptr);
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "VKRenderingServer: VBO ", l_rhs->m_VBO, " is initialized.");
+	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VBO ", l_rhs->m_VBO, " is initialized.");
 
 	l_bufferSize = sizeof(Index) * l_rhs->m_indices.size();
 
@@ -676,7 +676,7 @@ bool VKRenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	vkDestroyBuffer(m_device, l_stagingBuffer, nullptr);
 	vkFreeMemory(m_device, l_stagingBufferMemory, nullptr);
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "VKRenderingServer: IBO ", l_rhs->m_IBO, " is initialized.");
+	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: IBO ", l_rhs->m_IBO, " is initialized.");
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
@@ -710,7 +710,7 @@ bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 
 	if (vkCreateImage(m_device, &l_rhs->m_ImageCreateInfo, nullptr, &l_rhs->m_image) != VK_SUCCESS)
 	{
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "VKRenderingServer: Failed to create VkImage!");
+		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkImage!");
 		return false;
 	}
 
@@ -724,7 +724,7 @@ bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 
 	if (vkAllocateMemory(m_device, &allocInfo, nullptr, &m_textureImageMemory) != VK_SUCCESS)
 	{
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "VKRenderingServer: Failed to allocate VkDeviceMemory for VkImage!");
+		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to allocate VkDeviceMemory for VkImage!");
 		return false;
 	}
 
@@ -768,7 +768,7 @@ bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
 	l_rhs->m_ResourceBinder = l_resourceBinder;
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "VKRenderingServer: VkImage ", l_rhs->m_image, " is initialized.");
+	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkImage ", l_rhs->m_image, " is initialized.");
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 

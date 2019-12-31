@@ -4,7 +4,7 @@
 #include "GIDataLoader.h"
 #include "SunShadowPass.h"
 
-#include "../../Engine/ModuleManager/IModuleManager.h"
+#include "../../Engine/Interface/IModuleManager.h"
 
 INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 

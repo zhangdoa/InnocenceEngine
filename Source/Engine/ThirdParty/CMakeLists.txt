@@ -1,2 +1,6 @@
-add_subdirectory("STB")
+add_subdirectory("STBWrapper")
 add_subdirectory("ImGui")
+add_subdirectory("ImGuiWrapper")
+if (INNO_PLATFORM_WIN)
+add_subdirectory("PhysXWrapper")
+endif (INNO_PLATFORM_WIN)

@@ -5,7 +5,7 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #include "vulkan/vulkan.h"
 #include "../../../RenderingServer/VK/VKRenderingServer.h"
-#include "../../../ModuleManager/IModuleManager.h"
+#include "../../../Interface/IModuleManager.h"
 
 extern IModuleManager* g_pModuleManager;
 

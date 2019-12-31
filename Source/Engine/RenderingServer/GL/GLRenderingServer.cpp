@@ -13,7 +13,7 @@ using namespace GLHelper;
 
 #include "../CommonFunctionDefinationMacro.inl"
 
-#include "../../ModuleManager/IModuleManager.h"
+#include "../../Interface/IModuleManager.h"
 
 extern IModuleManager* g_pModuleManager;
 

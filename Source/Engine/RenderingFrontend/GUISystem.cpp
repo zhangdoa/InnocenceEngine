@@ -1,7 +1,7 @@
 #include "GUISystem.h"
-#include "../ImGuiWrapper/ImGuiWrapper.h"
+#include "../ThirdParty/ImGuiWrapper/ImGuiWrapper.h"
 
-#include "../ModuleManager/IModuleManager.h"
+#include "../Interface/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
 
 namespace GUISystemNS

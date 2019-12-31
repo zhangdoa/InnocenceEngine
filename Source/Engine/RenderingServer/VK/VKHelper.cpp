@@ -1,7 +1,7 @@
 #include "VKHelper.h"
 #include "../../Core/InnoLogger.h"
 
-#include "../../ModuleManager/IModuleManager.h"
+#include "../../Interface/IModuleManager.h"
 
 extern IModuleManager* g_pModuleManager;
 
@@ -796,7 +796,7 @@ bool VKHelper::transitionImageLayout(VkCommandBuffer commandBuffer, VkImage imag
 	}
 	else
 	{
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "VKRenderingServer: Unsupported transition!");
+		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Unsupported transition!");
 		return false;
 	}
 
@@ -857,11 +857,11 @@ bool VKHelper::createImageView(VkDevice device, VKTextureDataComponent* VKTDC)
 
 	if (vkCreateImageView(device, &viewInfo, nullptr, &VKTDC->m_imageView) != VK_SUCCESS)
 	{
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "VKRenderingServer: Failed to create VkImageView!");
+		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkImageView!");
 		return false;
 	}
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "VKRenderingServer: VkImageView ", VKTDC->m_imageView, " is initialized.");
+	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkImageView ", VKTDC->m_imageView, " is initialized.");
 
 	return true;
 }
@@ -1732,11 +1732,11 @@ bool VKHelper::createShaderModule(VkDevice device, VkShaderModule & vkShaderModu
 
 	if (vkCreateShaderModule(device, &l_createInfo, nullptr, &vkShaderModule) != VK_SUCCESS)
 	{
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "VKRenderingServer: Failed to create VkShaderModule for: ", shaderFilePath.c_str(), "!");
+		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkShaderModule for: ", shaderFilePath.c_str(), "!");
 		return false;
 	}
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "VKRenderingServer: innoShader: ", shaderFilePath.c_str(), " has been loaded.");
+	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: innoShader: ", shaderFilePath.c_str(), " has been loaded.");
 	return true;
 }
 

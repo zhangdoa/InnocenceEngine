@@ -6,7 +6,7 @@
 #include "GLWindowSurface/WinGLWindowSurface.h"
 #include "VKWindowSurface/WinVKWindowSurface.h"
 
-#include "../../ModuleManager/IModuleManager.h"
+#include "../../Interface/IModuleManager.h"
 
 extern IModuleManager* g_pModuleManager;
 

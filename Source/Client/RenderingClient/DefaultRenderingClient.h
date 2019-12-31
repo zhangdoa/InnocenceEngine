@@ -1,5 +1,5 @@
 #pragma once
-#include "../../Engine/Core/IRenderingClient.h"
+#include "../../Engine/Interface/IRenderingClient.h"
 
 class DefaultRenderingClient : public IRenderingClient
 {

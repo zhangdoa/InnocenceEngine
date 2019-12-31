@@ -1,5 +1,5 @@
 #include "../../Engine/Common/InnoType.h"
-#include "../../Engine/Core/IRenderingClient.h"
+#include "../../Engine/Interface/IRenderingClient.h"
 
 namespace InnoBaker
 {

@@ -1,5 +1,5 @@
 #include "../../Engine/ModuleManager/ModuleManager.h"
-#include "../../Engine/Core/ILogicClient.h"
+#include "../../Engine/Interface/ILogicClient.h"
 #include "InnoBaker.h"
 
 class InnoBakerLogicClient : public ILogicClient

@@ -1,5 +1,5 @@
 #pragma once
-#include "../../Engine/Core/ILogicClient.h"
+#include "../../Engine/Interface/ILogicClient.h"
 
 class DefaultLogicClient : public ILogicClient
 {

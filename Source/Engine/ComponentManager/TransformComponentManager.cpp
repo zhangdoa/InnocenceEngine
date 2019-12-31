@@ -5,7 +5,7 @@
 #include "../Common/CommonMacro.inl"
 #include "CommonFunctionDefinitionMacro.inl"
 
-#include "../ModuleManager/IModuleManager.h"
+#include "../Interface/IModuleManager.h"
 
 extern IModuleManager* g_pModuleManager;
 

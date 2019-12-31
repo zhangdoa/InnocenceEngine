@@ -6,7 +6,7 @@
 
 #include "../../Engine/Common/InnoMathHelper.h"
 
-#include "../../Engine/ModuleManager/IModuleManager.h"
+#include "../../Engine/Interface/IModuleManager.h"
 INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 
 #include "../../Engine/Core/IOService.h"

@@ -6,7 +6,7 @@
 #include "CommonFunctionDefinitionMacro.inl"
 #include "../ComponentManager/ITransformComponentManager.h"
 
-#include "../ModuleManager/IModuleManager.h"
+#include "../Interface/IModuleManager.h"
 
 extern IModuleManager* g_pModuleManager;
 

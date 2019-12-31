@@ -2,7 +2,7 @@
 #include "../../../Component/WinWindowSystemComponent.h"
 #include "../../Engine/Core/InnoLogger.h"
 
-#include "../../../ModuleManager/IModuleManager.h"
+#include "../../../Interface/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
 
 namespace WinDXWindowSurfaceNS

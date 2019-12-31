@@ -1,5 +1,5 @@
 #pragma once
-#include "../../../Core/IWindowSurface.h"
+#include "../../../Interface/IWindowSurface.h"
 
 class WinDXWindowSurface : public IWindowSurface
 {
