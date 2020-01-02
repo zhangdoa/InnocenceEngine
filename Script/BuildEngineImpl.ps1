@@ -7,7 +7,7 @@ Set-Location ../Build
 mkdir $buildType
 Set-Location $buildType
 
-$genArgs = @('-DINNO_PLATFORM_WIN=ON -DBUILD_GAME=ON ../../Source')
+$genArgs = @('-DBUILD_GAME=ON ../../Source')
 
 Switch ($toolchain)
 {
@@ -17,7 +17,7 @@ Switch ($toolchain)
 
 $genArgs += ('-DCMAKE_BUILD_TYPE={0}' -f $buildType)
 $genCall = ('cmake {0}' -f ($genArgs -Join ' '))
-Write-Host $genCall 
+Write-Host $genCall
 Invoke-Expression $genCall
 Invoke-Expression $genCall
 

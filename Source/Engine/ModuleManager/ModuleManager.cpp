@@ -17,23 +17,34 @@
 #include "../SubSystem/EventSystem.h"
 #include "../RenderingFrontend/RenderingFrontend.h"
 #include "../RenderingFrontend/GUISystem.h"
+
 #if defined INNO_PLATFORM_WIN
 #include "../Platform/WinWindow/WinWindowSystem.h"
-#include "../RenderingServer/DX11/DX11RenderingServer.h"
-#include "../RenderingServer/DX12/DX12RenderingServer.h"
 #endif
-#if !defined INNO_PLATFORM_MAC && defined INNO_RENDERER_OPENGL
-#include "../RenderingServer/GL/GLRenderingServer.h"
-#endif
+
 #if defined INNO_PLATFORM_MAC
 #include "../Platform/MacWindow/MacWindowSystem.h"
-#include "../RenderingServer/MT/MTRenderingServer.h"
 #endif
+
 #if defined INNO_PLATFORM_LINUX
 #include "../Platform/LinuxWindow/LinuxWindowSystem.h"
 #endif
+
+#if defined INNO_RENDERER_DIRECTX
+#include "../RenderingServer/DX11/DX11RenderingServer.h"
+#include "../RenderingServer/DX12/DX12RenderingServer.h"
+#endif
+
+#if defined INNO_RENDERER_OPENGL
+#include "../RenderingServer/GL/GLRenderingServer.h"
+#endif
+
 #if defined INNO_RENDERER_VULKAN
 #include "../RenderingServer/VK/VKRenderingServer.h"
+#endif
+
+#if defined INNO_RENDERER_METAL
+#include "../RenderingServer/MT/MTRenderingServer.h"
 #endif
 
 INNO_ENGINE_API IModuleManager* g_pModuleManager;
@@ -208,7 +219,7 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 
 		if (l_rendererArguments == "0")
 		{
-#if !defined INNO_PLATFORM_MAC && defined INNO_RENDERER_OPENGL
+#if defined INNO_RENDERER_OPENGL
 			l_result.renderingServer = RenderingServer::GL;
 #else
 			InnoLogger::Log(LogLevel::Warning, "ModuleManager: OpenGL is not supported on current platform, no rendering backend will be launched.");
@@ -216,7 +227,7 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 		}
 		else if (l_rendererArguments == "1")
 		{
-#if defined INNO_PLATFORM_WIN
+#if defined INNO_RENDERER_DIRECTX
 			l_result.renderingServer = RenderingServer::DX11;
 #else
 			InnoLogger::Log(LogLevel::Warning, "ModuleManager: DirectX 11 is not supported on current platform, use default OpenGL rendering backend.");
@@ -224,7 +235,7 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 		}
 		else if (l_rendererArguments == "2")
 		{
-#if defined INNO_PLATFORM_WIN
+#if defined INNO_RENDERER_DIRECTX
 			l_result.renderingServer = RenderingServer::DX12;
 #else
 			InnoLogger::Log(LogLevel::Warning, "ModuleManager: DirectX 12 is not supported on current platform, use default OpenGL rendering backend.");
@@ -240,7 +251,7 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 		}
 		else if (l_rendererArguments == "4")
 		{
-#if defined INNO_PLATFORM_MAC
+#if defined INNO_RENDERER_METAL
 			l_result.renderingServer = RenderingServer::MT;
 #else
 			InnoLogger::Log(LogLevel::Warning, "ModuleManager: Metal is not supported on current platform, use default OpenGL rendering backend.");
@@ -348,7 +359,7 @@ bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook
 	switch (m_initConfig.renderingServer)
 	{
 	case RenderingServer::GL:
-#if !defined INNO_PLATFORM_MAC && defined INNO_RENDERER_OPENGL
+#if defined INNO_RENDERER_OPENGL
 		m_RenderingServer = std::make_unique<GLRenderingServer>();
 		if (!m_RenderingServer.get())
 		{
@@ -357,7 +368,7 @@ bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook
 #endif
 		break;
 	case RenderingServer::DX11:
-#if defined INNO_PLATFORM_WIN
+#if defined INNO_RENDERER_DIRECTX
 		m_RenderingServer = std::make_unique<DX11RenderingServer>();
 		if (!m_RenderingServer.get())
 		{
@@ -366,7 +377,7 @@ bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook
 #endif
 		break;
 	case RenderingServer::DX12:
-#if defined INNO_PLATFORM_WIN
+#if defined INNO_RENDERER_DIRECTX
 		m_RenderingServer = std::make_unique<DX12RenderingServer>();
 		if (!m_RenderingServer.get())
 		{
@@ -389,7 +400,7 @@ bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook
 #endif
 		break;
 	case RenderingServer::MT:
-#if defined INNO_PLATFORM_MAC
+#if defined INNO_RENDERER_METAL
 		m_RenderingServer = std::make_unique<MTRenderingServer>();
 		if (!m_RenderingServer.get())
 		{

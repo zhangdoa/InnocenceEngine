@@ -1,10 +1,10 @@
 #pragma once
-#include "IImGuiWrapperRenderer.h"
+#include "IImGuiRenderer.h"
 
-class ImGuiWrapperMT : public IImGuiWrapperRenderer
+class ImGuiRendererGL : public IImGuiRenderer
 {
 public:
-	INNO_CLASS_CONCRETE_NON_COPYABLE(ImGuiWrapperMT);
+	INNO_CLASS_CONCRETE_NON_COPYABLE(ImGuiRendererGL);
 
 	bool setup() override;
 	bool initialize() override;
@@ -15,5 +15,4 @@ public:
 	ObjectStatus getStatus() override;
 
 	void showRenderResult(RenderPassType renderPassType) override;
-	ImTextureID getFileExplorerIconTextureID(const FileExplorerIconType iconType) override;
 };

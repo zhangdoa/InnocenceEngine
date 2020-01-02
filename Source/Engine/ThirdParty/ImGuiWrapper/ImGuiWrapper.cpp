@@ -2,25 +2,31 @@
 #include "../ImGui/imgui.h"
 
 #if defined INNO_PLATFORM_WIN
-#include "ImGuiWrapperWindowWin.h"
-#include "ImGuiWrapperDX11.h"
-#endif
-
-#if !defined INNO_PLATFORM_MAC && defined INNO_RENDERER_OPENGL
-#include "ImGuiWrapperGL.h"
+#include "ImGuiWindowWin.h"
 #endif
 
 #if defined INNO_PLATFORM_MAC
-#include "ImGuiWrapperWindowMac.h"
-#include "ImGuiWrapperMT.h"
+#include "ImGuiWindowMac.h"
 #endif
 
 #if defined INNO_PLATFORM_LINUX
-#include "ImGuiWrapperWindowLinux.h"
+#include "ImGuiWindowLinux.h"
+#endif
+
+#if defined INNO_RENDERER_DIRECTX
+#include "ImGuiRendererDX11.h"
+#endif
+
+#if defined INNO_RENDERER_OPENGL
+#include "ImGuiRendererGL.h"
 #endif
 
 #if defined INNO_RENDERER_VULKAN
-#include "ImGuiWrapperVK.h"
+#include "ImGuiRendererVK.h"
+#endif
+
+#if defined INNO_RENDERER_METAL
+#include "ImGuiRendererMT.h"
 #endif
 
 #include "../../Interface/IModuleManager.h"
@@ -46,8 +52,8 @@ namespace ImGuiWrapperNS
 	static bool m_showConcurrencyProfiler = false;
 	std::vector<RingBuffer<InnoTaskReport, true>> m_taskReports;
 
-	IImGuiWrapperWindow* m_windowImpl;
-	IImGuiWrapperRenderer* m_rendererImpl;
+	IImGuiWindow* m_windowImpl;
+	IImGuiRenderer* m_rendererImpl;
 }
 
 using namespace ImGuiWrapperNS;
@@ -57,43 +63,45 @@ bool ImGuiWrapper::setup()
 	auto l_initConfig = g_pModuleManager->getInitConfig();
 
 #if defined INNO_PLATFORM_WIN
-	m_windowImpl = new ImGuiWrapperWindowWin();
+	m_windowImpl = new ImGuiWindowWin();
+#endif
+#if defined INNO_PLATFORM_MAC
+	ImGuiWrapperNS::m_isParity = false;
+#endif
+#if defined INNO_PLATFORM_LINUX
+	ImGuiWrapperNS::m_isParity = false;
 #endif
 
 	switch (l_initConfig.renderingServer)
 	{
 	case RenderingServer::GL:
-#if !defined INNO_PLATFORM_MAC && defined INNO_RENDERER_OPENGL
-		m_rendererImpl = new ImGuiWrapperGL();
+#if defined INNO_RENDERER_OPENGL
+		m_rendererImpl = new ImGuiRendererGL();
 #endif
 		break;
 	case RenderingServer::DX11:
-#if defined INNO_PLATFORM_WIN
-		m_rendererImpl = new ImGuiWrapperDX11();
+#if defined INNO_RENDERER_DIRECTX
+		m_rendererImpl = new ImGuiRendererDX11();
 #endif
 		break;
 	case RenderingServer::DX12:
-#if defined INNO_PLATFORM_WIN
+#if defined INNO_RENDERER_DIRECTX
 		ImGuiWrapperNS::m_isParity = false;
 #endif
 		break;
 	case RenderingServer::VK:
 #if defined INNO_RENDERER_VULKAN
-		m_rendererImpl = new ImGuiWrapperVK();
+		m_rendererImpl = new ImGuiRendererVK();
 #endif
 		break;
 	case RenderingServer::MT:
-#if defined INNO_PLATFORM_MAC
+#if defined INNO_RENDERER_METAL
 		ImGuiWrapperNS::m_isParity = false;
 #endif
 		break;
 	default:
 		break;
 	}
-
-#if defined INNO_PLATFORM_LINUX
-	ImGuiWrapperNS::m_isParity = false;
-#endif
 
 	if (ImGuiWrapperNS::m_isParity)
 	{

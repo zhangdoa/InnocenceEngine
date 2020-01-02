@@ -5,10 +5,10 @@
 
 enum class RenderPassType { Shadow, GI, Opaque, Light, Transparent, Terrain, PostProcessing, Development };
 
-class IImGuiWrapperRenderer
+class IImGuiRenderer
 {
 public:
-	INNO_CLASS_INTERFACE_NON_COPYABLE(IImGuiWrapperRenderer);
+	INNO_CLASS_INTERFACE_NON_COPYABLE(IImGuiRenderer);
 
 	virtual bool setup() = 0;
 	virtual bool initialize() = 0;

@@ -1,10 +1,10 @@
 #pragma once
 #include "../../Common/InnoClassTemplate.h"
 
-class IImGuiWrapperWindow
+class IImGuiWindow
 {
 public:
-	INNO_CLASS_INTERFACE_NON_COPYABLE(IImGuiWrapperWindow);
+	INNO_CLASS_INTERFACE_NON_COPYABLE(IImGuiWindow);
 
 	virtual bool setup() = 0;
 	virtual bool initialize() = 0;

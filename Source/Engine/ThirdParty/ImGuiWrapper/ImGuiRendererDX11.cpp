@@ -1,4 +1,4 @@
-#include "ImGuiWrapperDX11.h"
+#include "ImGuiRendererDX11.h"
 #include "../../Component/WinWindowSystemComponent.h"
 
 #include "../ImGui/imgui_impl_dx11.cpp"
@@ -8,59 +8,59 @@
 #include "../../Interface/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
 
-namespace ImGuiWrapperDX11NS
+namespace ImGuiRendererDX11NS
 {
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
-bool ImGuiWrapperDX11::setup()
+bool ImGuiRendererDX11::setup()
 {
-	ImGuiWrapperDX11NS::m_ObjectStatus = ObjectStatus::Activated;
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWrapperDX11 setup finished.");
+	ImGuiRendererDX11NS::m_ObjectStatus = ObjectStatus::Activated;
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererDX11 setup finished.");
 
 	return true;
 }
 
-bool ImGuiWrapperDX11::initialize()
+bool ImGuiRendererDX11::initialize()
 {
 	auto l_renderingServer = reinterpret_cast<DX11RenderingServer*>(g_pModuleManager->getRenderingServer());
 	auto l_device = reinterpret_cast<ID3D11Device*>(l_renderingServer->GetDevice());
 	auto l_deviceContext = reinterpret_cast<ID3D11DeviceContext*>(l_renderingServer->GetDeviceContext());
 
 	ImGui_ImplDX11_Init(l_device, l_deviceContext);
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWrapperDX11 has been initialized.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererDX11 has been initialized.");
 
 	return true;
 }
 
-bool ImGuiWrapperDX11::newFrame()
+bool ImGuiRendererDX11::newFrame()
 {
 	ImGui_ImplDX11_NewFrame();
 	return true;
 }
 
-bool ImGuiWrapperDX11::render()
+bool ImGuiRendererDX11::render()
 {
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
 	return true;
 }
 
-bool ImGuiWrapperDX11::terminate()
+bool ImGuiRendererDX11::terminate()
 {
 	ImGui_ImplDX11_Shutdown();
-	ImGuiWrapperDX11NS::m_ObjectStatus = ObjectStatus::Terminated;
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWrapperDX11 has been terminated.");
+	ImGuiRendererDX11NS::m_ObjectStatus = ObjectStatus::Terminated;
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererDX11 has been terminated.");
 
 	return true;
 }
 
-ObjectStatus ImGuiWrapperDX11::getStatus()
+ObjectStatus ImGuiRendererDX11::getStatus()
 {
-	return ImGuiWrapperDX11NS::m_ObjectStatus;
+	return ImGuiRendererDX11NS::m_ObjectStatus;
 }
 
-void ImGuiWrapperDX11::showRenderResult(RenderPassType renderPassType)
+void ImGuiRendererDX11::showRenderResult(RenderPassType renderPassType)
 {
 	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
 	auto l_renderTargetSize = ImVec2((float)l_screenResolution.x / 4.0f, (float)l_screenResolution.y / 4.0f);

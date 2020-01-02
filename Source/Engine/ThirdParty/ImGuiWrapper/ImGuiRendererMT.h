@@ -1,10 +1,10 @@
 #pragma once
-#include "IImGuiWrapperRenderer.h"
+#include "IImGuiRenderer.h"
 
-class ImGuiWrapperGL : public IImGuiWrapperRenderer
+class ImGuiRendererMT : public IImGuiRenderer
 {
 public:
-	INNO_CLASS_CONCRETE_NON_COPYABLE(ImGuiWrapperGL);
+	INNO_CLASS_CONCRETE_NON_COPYABLE(ImGuiRendererMT);
 
 	bool setup() override;
 	bool initialize() override;

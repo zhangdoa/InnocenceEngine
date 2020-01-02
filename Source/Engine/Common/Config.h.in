@@ -8,3 +8,4 @@
 #cmakedefine INNO_RENDERER_DIRECTX
 #cmakedefine INNO_RENDERER_OPENGL
 #cmakedefine INNO_RENDERER_VULKAN
+#cmakedefine INNO_RENDERER_METAL

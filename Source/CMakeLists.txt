@@ -14,53 +14,52 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../Bin)
 
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
-# compiler config file
-configure_file ("${CMAKE_SOURCE_DIR}/Engine/Common/Config.h.in" "${CMAKE_SOURCE_DIR}/Engine/Common/Config.h" @ONLY)
-
 include_directories("External/Include" "External/GitSubmodules/PhysX/physx/include" "External/GitSubmodules/PhysX/pxshared/include")
 
 set(INNO_LOGIC_CLIENT DefaultLogicClient)
 set(INNO_RENDERING_CLIENT DefaultRenderingClient)
 
-option (USE_ROW_MAJOR_MEMORY_LAYOUT "Use Row-Major memory layout" ON)
-option (USE_COLUMN_MAJOR_MEMORY_LAYOUT "Use Column-Major memory layout" OFF)
+set(USE_ROW_MAJOR_MEMORY_LAYOUT ON)
+set(USE_COLUMN_MAJOR_MEMORY_LAYOUT OFF)
 
-option (INNO_PLATFORM_WIN "Windows x86-64" OFF)
-option (INNO_PLATFORM_LINUX "Linux x86-64" OFF)
-option (INNO_PLATFORM_MAC "Mac OS X x86-64" OFF)
+option(INNO_PLATFORM_WIN OFF)
+option(INNO_PLATFORM_LINUX OFF)
+option(INNO_PLATFORM_MAC OFF)
+option(INNO_RENDERER_DIRECTX OFF)
+option(INNO_RENDERER_OPENGL OFF)
+option(INNO_RENDERER_VULKAN OFF)
+option(INNO_RENDERER_METAL OFF)
 
-if (INNO_PLATFORM_WIN)
+if (WIN32)
 set(PLATFORM_NAME Win)
-option (INNO_RENDERER_DIRECTX "DirectX renderer" ON)
-else ()
-option (INNO_RENDERER_DIRECTX "DirectX renderer" OFF)
-endif (INNO_PLATFORM_WIN)
+set(INNO_PLATFORM_WIN ON)
+set(INNO_RENDERER_DIRECTX ON)
+endif (WIN32)
 
-if (INNO_PLATFORM_LINUX)
+if (UNIX AND NOT APPLE)
 set(PLATFORM_NAME Linux)
-endif (INNO_PLATFORM_LINUX)
+set(INNO_PLATFORM_LINUX ON)
+endif (UNIX AND NOT APPLE)
 
-if (INNO_PLATFORM_MAC)
+if (APPLE)
 set(PLATFORM_NAME Mac)
-endif (INNO_PLATFORM_MAC)
+set(INNO_PLATFORM_MAC ON)
+set(INNO_RENDERER_METAL ON)
+endif (APPLE)
 
-set(CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR}/External/Lib/${PLATFORM_NAME}/${CMAKE_BUILD_TYPE})
-
-find_library(VULKAN vulkan)
-if (VULKAN)
-option (INNO_RENDERER_VULKAN "Vulkan renderer" ON)
-else ()
-message("No Vulkan pre-compiled library found! Won't compile Vulkan rendering backend.")
-option (INNO_RENDERER_VULKAN "Vulkan renderer" OFF)
-endif (VULKAN)
-
+find_package(Vulkan REQUIRED)
 find_package(OpenGL REQUIRED)
-if (OPENGL_FOUND)
-option (INNO_RENDERER_OPENGL "OpenGL renderer" ON)
-else (OPENGL_FOUND)
-message("No OpenGL library found! Won't compile OpenGL rendering backend.")
-option (INNO_RENDERER_OPENGL "OpenGL renderer" OFF)
-endif()
+
+if (VULKAN_FOUND)
+set(INNO_RENDERER_VULKAN ON)
+endif (VULKAN_FOUND)
+
+if (OPENGL_FOUND AND NOT INNO_PLATFORM_MAC)
+set(INNO_RENDERER_OPENGL ON)
+endif (OPENGL_FOUND AND NOT INNO_PLATFORM_MAC)
+
+configure_file ("${CMAKE_SOURCE_DIR}/Engine/Common/Config.h.in" "${CMAKE_SOURCE_DIR}/Engine/Common/Config.h" @ONLY)
+set(CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR}/External/Lib/${PLATFORM_NAME}/${CMAKE_BUILD_TYPE})
 
 add_subdirectory("Test")
 add_subdirectory("Engine")

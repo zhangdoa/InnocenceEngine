@@ -1,38 +1,38 @@
-#include "ImGuiWrapperGL.h"
+#include "ImGuiRendererGL.h"
 
 #include "../ImGui/imgui_impl_opengl3.cpp"
 
 #include "../../Interface/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
 
-namespace ImGuiWrapperGLNS
+namespace ImGuiRendererGLNS
 {
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
-bool ImGuiWrapperGL::setup()
+bool ImGuiRendererGL::setup()
 {
-	ImGuiWrapperGLNS::m_ObjectStatus = ObjectStatus::Activated;
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWrapperGL setup finished.");
+	ImGuiRendererGLNS::m_ObjectStatus = ObjectStatus::Activated;
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererGL setup finished.");
 
 	return true;
 }
 
-bool ImGuiWrapperGL::initialize()
+bool ImGuiRendererGL::initialize()
 {
 	ImGui_ImplOpenGL3_Init(NULL);
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWrapperGL has been initialized.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererGL has been initialized.");
 
 	return true;
 }
 
-bool ImGuiWrapperGL::newFrame()
+bool ImGuiRendererGL::newFrame()
 {
 	ImGui_ImplOpenGL3_NewFrame();
 	return true;
 }
 
-bool ImGuiWrapperGL::render()
+bool ImGuiRendererGL::render()
 {
 	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
 	//glViewport(0, 0, (GLsizei)l_screenResolution.x, (GLsizei)l_screenResolution.y);
@@ -42,21 +42,21 @@ bool ImGuiWrapperGL::render()
 	return true;
 }
 
-bool ImGuiWrapperGL::terminate()
+bool ImGuiRendererGL::terminate()
 {
 	ImGui_ImplOpenGL3_Shutdown();
-	ImGuiWrapperGLNS::m_ObjectStatus = ObjectStatus::Terminated;
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWrapperGL has been terminated.");
+	ImGuiRendererGLNS::m_ObjectStatus = ObjectStatus::Terminated;
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererGL has been terminated.");
 
 	return true;
 }
 
-ObjectStatus ImGuiWrapperGL::getStatus()
+ObjectStatus ImGuiRendererGL::getStatus()
 {
-	return ImGuiWrapperGLNS::m_ObjectStatus;
+	return ImGuiRendererGLNS::m_ObjectStatus;
 }
 
-void ImGuiWrapperGL::showRenderResult(RenderPassType renderPassType)
+void ImGuiRendererGL::showRenderResult(RenderPassType renderPassType)
 {
 	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
 	auto l_RTSize = ImVec2((float)l_screenResolution.x / 4.0f, (float)l_screenResolution.y / 4.0f);

@@ -485,7 +485,7 @@ namespace InnoMath
 
 		return l_m;
 	}
-#elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
+#elif defined (USE_ROW_MAJOR_MEMORY_LAYOUT)
 	template<class T>
 	auto toRotationMatrix(const TVec4<T>& rhs) -> TMat4<T>
 	{
@@ -605,7 +605,7 @@ namespace InnoMath
 
 		return l_result;
 	}
-#elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
+#elif defined (USE_ROW_MAJOR_MEMORY_LAYOUT)
 	template<class T>
 	auto toQuatRotator(const TMat4<T>& rhs) -> TVec4<T>
 	{
@@ -696,7 +696,7 @@ namespace InnoMath
 
 		return l_m;
 	}
-#elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
+#elif defined (USE_ROW_MAJOR_MEMORY_LAYOUT)
 	/*
 	Assume symmetric view frustum
 
@@ -746,7 +746,7 @@ namespace InnoMath
 
 		return l_m;
 	}
-#elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
+#elif defined (USE_ROW_MAJOR_MEMORY_LAYOUT)
 	template<class T>
 	auto generateOrthographicMatrix(T left, T right, T bottom, T up, T zNear, T zFar) ->TMat4<T>
 	{
@@ -798,7 +798,7 @@ namespace InnoMath
 
 		return l_m;
 	}
-#elif defined ( USE_ROW_MAJOR_MEMORY_LAYOUT)
+#elif defined (USE_ROW_MAJOR_MEMORY_LAYOUT)
 	template<class T>
 	auto lookAt(const TVec4<T>& eyePos, const TVec4<T>& centerPos, const TVec4<T>& upDir) -> TMat4<T>
 	{
