@@ -56,13 +56,13 @@ auto l_testAABB = InnoMath::generateAABB(l_maxPoint, l_minPoint);
 ```cpp
 std::function<void()> f_JobA;
 f_JobA = []()
-{ 	
+{
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Warning, "I'm worried that C++ would be quite a mess for me.");
 };
 
 auto f_JobB = [=](int val)
-{ 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "There are always some user-friendly programming languages waiting for you, just search for more than ", val, " seconds you'll find them."); 
+{
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "There are always some user-friendly programming languages waiting for you, just search for more than ", val, " seconds you'll find them.");
 };
 
 // Job A will be executed on thread 5 as soon as possible
@@ -83,12 +83,13 @@ struct POD
 	float m_Float;
 	int m_Int;
 	void* m_Ptr;
-}
+};
 
-auto l_objectPoolInstance =  g_pModuleManager->getMemorySystem()->createObjectPool(sizeof(POD), 65536);
-auto l_PODInstance = reinterpret_cast<POD*>(l_objectPoolInstance->Spawn());
+auto l_objectPoolInstance = InnoMemory::CreateObjectPool<POD>(65536);
+auto l_PODInstance = InnoMemory::Spawn<POD>(l_objectPoolInstance);
 l_PODInstance->m_Float = 42.0f;
-l_objectPoolInstance->Destroy(l_PODInstance);
+InnoMemory::Destroy(l_objectPoolInstance, l_PODInstance);
+InnoMemory::DestroyObjectPool(l_objectPoolInstance);
 ```
 
 - Logic Client as the plugin, the only coding rule is using the engine's interface to write your logic code and write whatever you want.
@@ -123,7 +124,7 @@ l_renderingServer->WaitForFrame(m_RPDC);
   - CSM with VSM/PCF filters
   - Procedural sky
   - Large scale terrain rendering with cascaded tessellation
-  - Motion Blur 
+  - Motion Blur
   - TAA
   - ACES tone mapping
 
@@ -147,8 +148,7 @@ Tested OS version: Windows 10 version 1903
 ##### Prerequisites
 
 - MSVC 19.00 or higher
-- CMake 3.10 or higher 
-- Vulkan pre-compiled library (Optional)
+- CMake 3.10 or higher
 - Qt Creator 5.13 or higher
 
 #### Build Engine
@@ -179,8 +179,8 @@ Tested OS version: Ubuntu 18.04 LTS
 
 ##### Prerequisites
 
-- GCC 8.0 or Clang 7.0 or higher 
-- CMake 3.10 or higher 
+- GCC 8.0 or Clang 7.0 or higher
+- CMake 3.10 or higher
 - OpenGL library(lGL)
 
 #### Build Engine
@@ -201,7 +201,7 @@ Tested OS version : macOS 10.13.6
 
 ##### Prerequisites
 
-- CMake 3.10 or higher 
+- CMake 3.10 or higher
 - Apple Clang 10.0 or LLVM Clang 8.0 or higher
 
 #### Build Engine
@@ -290,7 +290,7 @@ BakeScene.ps1 -sceneName [scene file name without extension]
 
 - Vulkan rendering server requires SPIR-V binary format shader file,  please use `CompileVKShaderToSPIR-V.bat` to generate them.
 
-- Use `ConvertSPIR-VToGLSL.bat` and `ConvertSPIR-VToHLSL.bat` to generate human readable GLSL and HLSL files from SPIR-V binary shader file. 
+- Use `ConvertSPIR-VToGLSL.bat` and `ConvertSPIR-VToHLSL.bat` to generate human readable GLSL and HLSL files from SPIR-V binary shader file.
 
 ## License
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine?ref=badge_large)
