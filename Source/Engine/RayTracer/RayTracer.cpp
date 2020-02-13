@@ -60,11 +60,12 @@ bool HitableCube::Hit(const Ray & r, float tMin, float tMax, HitResult & hitResu
 		return false;
 	}
 
-	for (auto& j : m_VisibleComponent->m_modelMap)
+	for (uint64_t j = 0; j < m_VisibleComponent->m_modelIndex.m_count; j++)
 	{
-		hitResult.Albedo.x = j.second->m_meshCustomMaterial.AlbedoR;
-		hitResult.Albedo.y = j.second->m_meshCustomMaterial.AlbedoG;
-		hitResult.Albedo.z = j.second->m_meshCustomMaterial.AlbedoB;
+		auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(m_VisibleComponent->m_modelIndex.m_startOffset + j);
+		hitResult.Albedo.x = l_pair.material->m_meshCustomMaterial.AlbedoR;
+		hitResult.Albedo.y = l_pair.material->m_meshCustomMaterial.AlbedoG;
+		hitResult.Albedo.z = l_pair.material->m_meshCustomMaterial.AlbedoB;
 		break;
 	}
 
@@ -96,11 +97,12 @@ bool HitableSphere::Hit(const Ray & r, float tMin, float tMax, HitResult & hitRe
 
 	if (dis > 0)
 	{
-		for (auto& j : m_VisibleComponent->m_modelMap)
+		for (uint64_t j = 0; j < m_VisibleComponent->m_modelIndex.m_count; j++)
 		{
-			hitResult.Albedo.x = j.second->m_meshCustomMaterial.AlbedoR;
-			hitResult.Albedo.y = j.second->m_meshCustomMaterial.AlbedoG;
-			hitResult.Albedo.z = j.second->m_meshCustomMaterial.AlbedoB;
+			auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(m_VisibleComponent->m_modelIndex.m_startOffset + j);
+			hitResult.Albedo.x = l_pair.material->m_meshCustomMaterial.AlbedoR;
+			hitResult.Albedo.y = l_pair.material->m_meshCustomMaterial.AlbedoG;
+			hitResult.Albedo.z = l_pair.material->m_meshCustomMaterial.AlbedoB;
 			break;
 		}
 

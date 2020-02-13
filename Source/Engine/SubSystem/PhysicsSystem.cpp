@@ -22,7 +22,7 @@ namespace InnoPhysicsSystemNS
 
 	PhysicsDataComponent* AddPhysicsDataComponent(InnoEntity* parentEntity);
 
-	PhysicsDataComponent* generatePhysicsDataComponent(const ModelPair& modelPair);
+	PhysicsDataComponent* generatePhysicsDataComponent(const MeshMaterialPair& meshMaterialPair);
 	bool generateAABBInWorldSpace(PhysicsDataComponent* PDC, const Mat4& m);
 	bool generatePhysicsProxy(VisibleComponent * VC);
 
@@ -134,15 +134,15 @@ PhysicsDataComponent * InnoPhysicsSystemNS::AddPhysicsDataComponent(InnoEntity *
 	return l_PDC;
 }
 
-PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const ModelPair& modelPair)
+PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(const MeshMaterialPair& meshMaterialPair)
 {
-	auto l_MDC = modelPair.first;
+	auto l_MDC = meshMaterialPair.mesh;
 	auto l_PDC = AddPhysicsDataComponent(l_MDC->m_ParentEntity);
 
 	l_PDC->m_AABBLS = InnoMath::generateAABB(&l_MDC->m_vertices[0], l_MDC->m_vertices.size());
 	l_PDC->m_SphereLS = InnoMath::generateBoundSphere(l_PDC->m_AABBLS);
 
-	l_PDC->m_ModelPair = modelPair;
+	l_PDC->m_MeshMaterialPair = meshMaterialPair;
 
 	InnoLogger::Log(LogLevel::Verbose, "PhysicsSystem: PhysicsDataComponent has been generated for MeshDataComponent:", l_MDC->m_ParentEntity->m_EntityName.c_str(), ".");
 
@@ -259,9 +259,9 @@ ObjectStatus InnoPhysicsSystem::getStatus()
 	return InnoPhysicsSystemNS::m_ObjectStatus;
 }
 
-PhysicsDataComponent* InnoPhysicsSystem::generatePhysicsDataComponent(const ModelPair& modelPair)
+PhysicsDataComponent* InnoPhysicsSystem::generatePhysicsDataComponent(const MeshMaterialPair& meshMaterialPair)
 {
-	return InnoPhysicsSystemNS::generatePhysicsDataComponent(modelPair);
+	return InnoPhysicsSystemNS::generatePhysicsDataComponent(meshMaterialPair);
 }
 
 bool generateBVHLeafNodes(BVHNode* parentNode)
@@ -511,8 +511,8 @@ void PlainCulling(const Frustum& frustum, std::vector<CullingData>& cullingDatas
 					l_cullingData.m = l_globalTm;
 					l_cullingData.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
 					l_cullingData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-					l_cullingData.mesh = l_PDC->m_ModelPair.first;
-					l_cullingData.material = l_PDC->m_ModelPair.second;
+					l_cullingData.mesh = l_PDC->m_MeshMaterialPair.mesh;
+					l_cullingData.material = l_PDC->m_MeshMaterialPair.material;
 					l_cullingData.visibilityType = visibleComponent->m_visibilityType;
 					l_cullingData.meshUsageType = visibleComponent->m_meshUsageType;
 					l_cullingData.UUID = visibleComponent->m_UUID;
@@ -559,8 +559,8 @@ CullingData generateCullingData(const Frustum& frustum, PhysicsDataComponent* PD
 	l_cullingData.m = l_globalTm;
 	l_cullingData.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
 	l_cullingData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-	l_cullingData.mesh = PDC->m_ModelPair.first;
-	l_cullingData.material = PDC->m_ModelPair.second;
+	l_cullingData.mesh = PDC->m_MeshMaterialPair.mesh;
+	l_cullingData.material = PDC->m_MeshMaterialPair.material;
 	l_cullingData.visibilityType = PDC->m_VisibleComponent->m_visibilityType;
 	l_cullingData.meshUsageType = PDC->m_VisibleComponent->m_meshUsageType;
 	l_cullingData.UUID = PDC->m_VisibleComponent->m_UUID;

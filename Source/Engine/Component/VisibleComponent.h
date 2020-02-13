@@ -3,8 +3,17 @@
 #include "MeshDataComponent.h"
 #include "MaterialDataComponent.h"
 
-using ModelPair = std::pair<MeshDataComponent*, MaterialDataComponent*>;
-using ModelMap = std::unordered_map<MeshDataComponent*, MaterialDataComponent*>;
+struct MeshMaterialPair
+{
+	MeshDataComponent* mesh;
+	MaterialDataComponent* material;
+};
+
+struct ModelIndex
+{
+	uint64_t m_startOffset;
+	uint64_t m_count;
+};
 
 class PhysicsDataComponent;
 class VisibleComponent : public InnoComponent
@@ -19,6 +28,6 @@ public:
 	std::string m_modelFileName;
 	bool m_simulatePhysics = false;
 
-	ModelMap m_modelMap;
+	ModelIndex m_modelIndex;
 	std::vector<PhysicsDataComponent*> m_PDCs;
 };

@@ -1,5 +1,8 @@
 #include "visiblecomponentpropertyeditor.h"
 
+#include "../../Engine/Interface/IModuleManager.h"
+
+INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 
 VisibleComponentPropertyEditor::VisibleComponentPropertyEditor()
 {
@@ -112,21 +115,22 @@ void VisibleComponentPropertyEditor::GetModelMap()
     if (!m_component)
         return;
 
-    m_modelList->setRowCount((int)m_component->m_modelMap.size());
+    m_modelList->setRowCount((int)m_component->m_modelIndex.m_count);
 
     int index = 0;
 
-    for (auto& i : m_component->m_modelMap)
+    for (uint64_t j = 0; j < m_component->m_modelIndex.m_count; j++)
     {
+        auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(m_component->m_modelIndex.m_startOffset + j);
         auto l_meshItem = new QTableWidgetItem();
-        l_meshItem->setText(i.first->m_ComponentName.c_str());
-        l_meshItem->setData(Qt::UserRole, QVariant::fromValue(static_cast<void*>(i.first)));
+        l_meshItem->setText(l_pair.mesh->m_ComponentName.c_str());
+        l_meshItem->setData(Qt::UserRole, QVariant::fromValue(static_cast<void*>(l_pair.mesh)));
         l_meshItem->setFlags(l_meshItem->flags() & ~Qt::ItemIsEditable);
         m_modelList->setItem(index, 0, l_meshItem);
 
         auto l_materialItem = new QTableWidgetItem();
-        l_materialItem->setText(i.second->m_ComponentName.c_str());
-        l_materialItem->setData(Qt::UserRole, QVariant::fromValue(static_cast<void*>(i.second)));
+        l_materialItem->setText(l_pair.material->m_ComponentName.c_str());
+        l_materialItem->setData(Qt::UserRole, QVariant::fromValue(static_cast<void*>(l_pair.material)));
         l_materialItem->setFlags(l_materialItem->flags() & ~Qt::ItemIsEditable);
         m_modelList->setItem(index, 1, l_materialItem);
 

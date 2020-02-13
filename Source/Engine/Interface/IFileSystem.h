@@ -41,7 +41,7 @@ public:
 
 	virtual bool convertModel(const char* fileName, const char* exportPath) = 0;
 
-	virtual ModelMap loadModel(const char* fileName, bool AsyncUploadGPUResource = true) = 0;
+	virtual ModelIndex loadModel(const char* fileName, bool AsyncUploadGPUResource = true) = 0;
 	virtual TextureDataComponent* loadTexture(const char* fileName) = 0;
 	virtual bool saveTexture(const char* fileName, TextureDataComponent* TDC) = 0;
 

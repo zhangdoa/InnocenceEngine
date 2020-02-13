@@ -11,31 +11,33 @@ extern IModuleManager* g_pModuleManager;
 
 namespace InnoFileSystemNS::AssetLoader
 {
-	std::unordered_map<std::string, ModelMap> m_loadedModelMap;
-	std::unordered_map<std::string, TextureDataComponent*> m_loadedTexture;
-
-	ModelMap loadModelFromDisk(const char* fileName, bool AsyncUploadGPUResource = true);
+	ModelIndex loadModelFromDisk(const char* fileName, bool AsyncUploadGPUResource = true);
 }
 
-ModelMap InnoFileSystemNS::AssetLoader::loadModel(const char* fileName, bool AsyncUploadGPUResource)
+ModelIndex InnoFileSystemNS::AssetLoader::loadModel(const char* fileName, bool AsyncUploadGPUResource)
 {
 	auto l_extension = IOService::getFileExtension(fileName);
 	if (l_extension == ".InnoModel")
 	{
-		ModelMap l_result;
+		ModelIndex l_loadedModelIndex;
 
 		// check if this file has already been loaded once
-		auto l_loadedModelMap = m_loadedModelMap.find(fileName);
-		if (l_loadedModelMap != m_loadedModelMap.end())
+		if (g_pModuleManager->getAssetSystem()->getModel(fileName, l_loadedModelIndex))
 		{
-			InnoLogger::Log(LogLevel::Verbose, "FileSystem: AssetLoader: ", fileName, " has been already loaded.");
 			// Just copy new materials
-			for (auto& i : l_loadedModelMap->second)
+			ModelIndex l_result;
+
+			l_result.m_startOffset = g_pModuleManager->getAssetSystem()->getCurrentMeshMaterialPairOffset();
+
+			for (uint64_t i = 0; i < l_loadedModelIndex.m_count; i++)
 			{
-				auto l_material = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
-				*l_material = *i.second;
-				l_result.emplace(i.first, l_material);
+				auto l_newPair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(l_loadedModelIndex.m_startOffset + i);
+				l_newPair.material = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
+				g_pModuleManager->getAssetSystem()->addMeshMaterialPair(l_newPair);
 			}
+
+			l_result.m_count = g_pModuleManager->getAssetSystem()->getCurrentMeshMaterialPairOffset() - l_result.m_startOffset;
+
 			return l_result;
 		}
 		else
@@ -46,14 +48,14 @@ ModelMap InnoFileSystemNS::AssetLoader::loadModel(const char* fileName, bool Asy
 	else
 	{
 		InnoLogger::Log(LogLevel::Warning, "FileSystem: AssimpWrapper: ", fileName, " is not supported!");
-		return ModelMap();
+		return ModelIndex();
 	}
 }
 
-ModelMap InnoFileSystemNS::AssetLoader::loadModelFromDisk(const char* fileName, bool AsyncUploadGPUResource)
+ModelIndex InnoFileSystemNS::AssetLoader::loadModelFromDisk(const char* fileName, bool AsyncUploadGPUResource)
 {
 	auto l_result = JSONParser::loadModelFromDisk(fileName, AsyncUploadGPUResource);
-	m_loadedModelMap.emplace(fileName, l_result);
+	g_pModuleManager->getAssetSystem()->addModel(fileName, l_result);
 
 	return l_result;
 }
@@ -62,20 +64,17 @@ TextureDataComponent* InnoFileSystemNS::AssetLoader::loadTexture(const char* fil
 {
 	TextureDataComponent* l_TDC;
 
-	auto l_loadedTDC = m_loadedTexture.find(fileName);
-	if (l_loadedTDC != m_loadedTexture.end())
+	if (g_pModuleManager->getAssetSystem()->getTexture(fileName, l_TDC))
 	{
-		InnoLogger::Log(LogLevel::Verbose, "FileSystem: AssetLoader: ", fileName, " has been already loaded.");
-		l_TDC = l_loadedTDC->second;
+		return l_TDC;
 	}
 	else
 	{
 		l_TDC = TextureIO::loadTexture(fileName);
 		if (l_TDC)
 		{
-			m_loadedTexture.emplace(fileName, l_TDC);
+			g_pModuleManager->getAssetSystem()->addTexture(fileName, l_TDC);
 		}
+		return l_TDC;
 	}
-
-	return l_TDC;
 }

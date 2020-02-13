@@ -43,15 +43,15 @@ namespace InnoFileSystemNS::JSONParser
 		}
 	}
 
-	ModelMap processSceneJsonData(const json & j, bool AsyncUploadGPUResource = true);
+	ModelIndex processSceneJsonData(const json & j, bool AsyncUploadGPUResource = true);
 	std::vector<AnimationDataComponent*> processAnimationJsonData(const json & j);
-	ModelPair processMeshJsonData(const json& j, bool AsyncUploadGPUResource = true);
+	MeshMaterialPair processMeshJsonData(const json& j, bool AsyncUploadGPUResource = true);
 	SkeletonDataComponent* processSkeletonJsonData(const char* skeletonFileName);
 	MaterialDataComponent* processMaterialJsonData(const char* materialFileName, bool AsyncUploadGPUResource = true);
 
 	bool assignComponentRuntimeData();
 
-	std::unordered_map<std::string, ModelPair> m_loadedModelPair;
+	std::unordered_map<std::string, MeshMaterialPair> m_loadedMeshMaterialPair;
 	std::unordered_map<std::string, SkeletonDataComponent*> m_loadedSDC;
 
 	ThreadSafeQueue<std::pair<TransformComponent*, EntityName>> m_orphanTransformComponents;
@@ -307,16 +307,16 @@ void InnoFileSystemNS::JSONParser::from_json(const json& j, CameraComponent& p)
 	p.m_zFar = j["zFar"];
 }
 
-ModelMap InnoFileSystemNS::JSONParser::loadModelFromDisk(const char* fileName, bool AsyncUploadGPUResource)
+ModelIndex InnoFileSystemNS::JSONParser::loadModelFromDisk(const char* fileName, bool AsyncUploadGPUResource)
 {
 	json j;
 
 	loadJsonDataFromDisk(fileName, j);
 
-	return std::move(processSceneJsonData(j, AsyncUploadGPUResource));
+	return processSceneJsonData(j, AsyncUploadGPUResource);
 }
 
-ModelMap InnoFileSystemNS::JSONParser::processSceneJsonData(const json & j, bool AsyncUploadGPUResource)
+ModelIndex InnoFileSystemNS::JSONParser::processSceneJsonData(const json & j, bool AsyncUploadGPUResource)
 {
 	// @TODO: Optimize
 	if (j.find("AnimationFiles") != j.end())
@@ -324,14 +324,18 @@ ModelMap InnoFileSystemNS::JSONParser::processSceneJsonData(const json & j, bool
 		processAnimationJsonData(j["AnimationFiles"]);
 	}
 
-	ModelMap l_result;
+	ModelIndex l_result;
 
 	if (j.find("Meshes") != j.end())
 	{
+		l_result.m_startOffset = g_pModuleManager->getAssetSystem()->getCurrentMeshMaterialPairOffset();
+
 		for (auto i : j["Meshes"])
 		{
-			l_result.emplace(processMeshJsonData(i, AsyncUploadGPUResource));
+			g_pModuleManager->getAssetSystem()->addMeshMaterialPair(processMeshJsonData(i, AsyncUploadGPUResource));
 		}
+
+		l_result.m_count = g_pModuleManager->getAssetSystem()->getCurrentMeshMaterialPairOffset() - l_result.m_startOffset;
 	}
 
 	auto l_m = InnoMath::generateIdentityMatrix<float>();
@@ -362,16 +366,17 @@ ModelMap InnoFileSystemNS::JSONParser::processSceneJsonData(const json & j, bool
 		l_m = l_m * l_t;
 	}
 
-	for (auto j : l_result)
+	for (uint64_t i = 0; i < l_result.m_count; i++)
 	{
-		auto l_SDC = j.first->m_SDC;
+		auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(l_result.m_startOffset + i);
+		auto l_SDC = l_pair.mesh->m_SDC;
 		if (l_SDC)
 		{
 			l_SDC->m_RootOffsetMatrix = l_m;
 		}
 	}
 
-	return std::move(l_result);
+	return l_result;
 }
 
 std::vector<AnimationDataComponent*> InnoFileSystemNS::JSONParser::processAnimationJsonData(const json & j)
@@ -411,17 +416,17 @@ std::vector<AnimationDataComponent*> InnoFileSystemNS::JSONParser::processAnimat
 	return l_result;
 }
 
-ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j, bool AsyncUploadGPUResource)
+MeshMaterialPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j, bool AsyncUploadGPUResource)
 {
-	ModelPair l_result;
+	MeshMaterialPair l_result;
 
 	MeshShapeType l_meshShapeType = MeshShapeType(j["MeshShapeType"].get<int32_t>());
 	if (l_meshShapeType == MeshShapeType::Custom)
 	{	// Load mesh data
 		auto l_meshFileName = j["MeshFile"].get<std::string>();
 
-		auto l_loadedModelPair = m_loadedModelPair.find(l_meshFileName);
-		if (l_loadedModelPair != m_loadedModelPair.end())
+		auto l_loadedModelPair = m_loadedMeshMaterialPair.find(l_meshFileName);
+		if (l_loadedModelPair != m_loadedMeshMaterialPair.end())
 		{
 			InnoLogger::Log(LogLevel::Verbose, "FileSystem: JSONParser: ", l_meshFileName.c_str(), " has been already loaded.");
 			l_result = l_loadedModelPair->second;
@@ -433,68 +438,68 @@ ModelPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j, bool
 			if (!l_meshFile.is_open())
 			{
 				InnoLogger::Log(LogLevel::Error, "FileSystem: std::ifstream: can't open file ", l_meshFileName.c_str(), "!");
-				return ModelPair();
+				return l_result;
 			}
 
-			auto l_MeshDC = g_pModuleManager->getRenderingFrontend()->addMeshDataComponent();
+			auto l_mesh = g_pModuleManager->getRenderingFrontend()->addMeshDataComponent();
 
 			size_t l_verticesNumber = j["VerticesNumber"];
 			size_t l_indicesNumber = j["IndicesNumber"];
 
-			l_MeshDC->m_vertices.reserve(l_verticesNumber);
-			l_MeshDC->m_vertices.fulfill();
-			l_MeshDC->m_indices.reserve(l_indicesNumber);
-			l_MeshDC->m_indices.fulfill();
+			l_mesh->m_vertices.reserve(l_verticesNumber);
+			l_mesh->m_vertices.fulfill();
+			l_mesh->m_indices.reserve(l_indicesNumber);
+			l_mesh->m_indices.fulfill();
 
-			IOService::deserializeVector(l_meshFile, 0, l_verticesNumber * sizeof(Vertex), l_MeshDC->m_vertices);
-			IOService::deserializeVector(l_meshFile, l_verticesNumber * sizeof(Vertex), l_indicesNumber * sizeof(Index), l_MeshDC->m_indices);
+			IOService::deserializeVector(l_meshFile, 0, l_verticesNumber * sizeof(Vertex), l_mesh->m_vertices);
+			IOService::deserializeVector(l_meshFile, l_verticesNumber * sizeof(Vertex), l_indicesNumber * sizeof(Index), l_mesh->m_indices);
 
 			l_meshFile.close();
 
-			l_MeshDC->m_indicesSize = l_MeshDC->m_indices.size();
-			l_MeshDC->m_meshShapeType = MeshShapeType::Custom;
-			l_MeshDC->m_ObjectStatus = ObjectStatus::Created;
+			l_mesh->m_indicesSize = l_mesh->m_indices.size();
+			l_mesh->m_meshShapeType = MeshShapeType::Custom;
+			l_mesh->m_ObjectStatus = ObjectStatus::Created;
 
-			l_result.first = l_MeshDC;
+			l_result.mesh = l_mesh;
 
 			// Load skeleton data
 			if (j.find("SkeletonFile") != j.end())
 			{
 				std::string l_skeletonFile = j["SkeletonFile"];
-				l_result.first->m_SDC = processSkeletonJsonData(l_skeletonFile.c_str());
+				l_result.mesh->m_SDC = processSkeletonJsonData(l_skeletonFile.c_str());
 			}
 
 			// Load material data
 			if (j.find("MaterialFile") != j.end())
 			{
 				std::string l_materialFile = j["MaterialFile"];
-				l_result.second = processMaterialJsonData(l_materialFile.c_str(), AsyncUploadGPUResource);
+				l_result.material = processMaterialJsonData(l_materialFile.c_str(), AsyncUploadGPUResource);
 			}
 			else
 			{
-				l_result.second = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
-				l_result.second->m_ObjectStatus = ObjectStatus::Created;
+				l_result.material = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
+				l_result.material->m_ObjectStatus = ObjectStatus::Created;
 			}
 
-			m_loadedModelPair.emplace(l_meshFileName, l_result);
+			m_loadedMeshMaterialPair.emplace(l_meshFileName, l_result);
 
-			g_pModuleManager->getRenderingFrontend()->registerMeshDataComponent(l_MeshDC, AsyncUploadGPUResource);
+			g_pModuleManager->getRenderingFrontend()->registerMeshDataComponent(l_mesh, AsyncUploadGPUResource);
 		}
 	}
 	else
 	{
-		l_result.first = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(l_meshShapeType);
+		l_result.mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(l_meshShapeType);
 
 		// Load material data
 		if (j.find("MaterialFile") != j.end())
 		{
 			std::string l_materialFile = j["MaterialFile"];
-			l_result.second = processMaterialJsonData(l_materialFile.c_str(), AsyncUploadGPUResource);
+			l_result.material = processMaterialJsonData(l_materialFile.c_str(), AsyncUploadGPUResource);
 		}
 		else
 		{
-			l_result.second = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
-			l_result.second->m_ObjectStatus = ObjectStatus::Created;
+			l_result.material = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
+			l_result.material->m_ObjectStatus = ObjectStatus::Created;
 		}
 	}
 

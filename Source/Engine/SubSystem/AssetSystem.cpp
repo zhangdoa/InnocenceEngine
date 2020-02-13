@@ -8,20 +8,29 @@ extern IModuleManager* g_pModuleManager;
 
 namespace InnoAssetSystemNS
 {
+	std::vector<MeshMaterialPair> m_meshMaterialPairPool;
+	std::unordered_map<std::string, ModelIndex> m_loadedModel;
+	std::unordered_map<std::string, TextureDataComponent*> m_loadedTexture;
+
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
+using namespace InnoAssetSystemNS;
+
 bool InnoAssetSystem::setup()
 {
-	InnoAssetSystemNS::m_ObjectStatus = ObjectStatus::Created;
+	//@TODO:
+	m_meshMaterialPairPool.reserve(65536);
+
+	m_ObjectStatus = ObjectStatus::Created;
 	return true;
 }
 
 bool InnoAssetSystem::initialize()
 {
-	if (InnoAssetSystemNS::m_ObjectStatus == ObjectStatus::Created)
+	if (m_ObjectStatus == ObjectStatus::Created)
 	{
-		InnoAssetSystemNS::m_ObjectStatus = ObjectStatus::Activated;
+		m_ObjectStatus = ObjectStatus::Activated;
 		InnoLogger::Log(LogLevel::Success, "AssetSystem has been initialized.");
 		return true;
 	}
@@ -34,27 +43,110 @@ bool InnoAssetSystem::initialize()
 
 bool InnoAssetSystem::update()
 {
-	if (InnoAssetSystemNS::m_ObjectStatus == ObjectStatus::Activated)
+	if (m_ObjectStatus == ObjectStatus::Activated)
 	{
 		return true;
 	}
 	else
 	{
-		InnoAssetSystemNS::m_ObjectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 }
 
 bool InnoAssetSystem::terminate()
 {
-	InnoAssetSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
+	m_ObjectStatus = ObjectStatus::Terminated;
 	InnoLogger::Log(LogLevel::Success, "AssetSystem has been terminated.");
 	return true;
 }
 
 ObjectStatus InnoAssetSystem::getStatus()
 {
-	return InnoAssetSystemNS::m_ObjectStatus;
+	return m_ObjectStatus;
+}
+
+bool InnoAssetSystem::addModel(const char * fileName, const ModelIndex & modelIndex)
+{
+	m_loadedModel.emplace(fileName, modelIndex);
+
+	return true;
+}
+
+bool InnoAssetSystem::getModel(const char * fileName, ModelIndex & modelIndex)
+{
+	auto l_loadedModel = m_loadedModel.find(fileName);
+	if (l_loadedModel != m_loadedModel.end())
+	{
+		modelIndex = l_loadedModel->second;
+
+		return true;
+	}
+	else
+	{
+		InnoLogger::Log(LogLevel::Verbose, "AssetSystem: ", fileName, " has not been loaded.");
+
+		return false;
+	}
+}
+
+bool InnoAssetSystem::addTexture(const char * fileName, TextureDataComponent * texture)
+{
+	m_loadedTexture.emplace(fileName, texture);
+
+	return true;
+}
+
+bool InnoAssetSystem::getTexture(const char * fileName, TextureDataComponent *& texture)
+{
+	auto l_loadedTexture = m_loadedTexture.find(fileName);
+	if (l_loadedTexture != m_loadedTexture.end())
+	{
+		texture = l_loadedTexture->second;
+
+		return true;
+	}
+	else
+	{
+		InnoLogger::Log(LogLevel::Verbose, "AssetSystem: ", fileName, " has not been loaded.");
+
+		return false;
+	}
+}
+
+uint64_t InnoAssetSystem::getCurrentMeshMaterialPairOffset()
+{
+	return m_meshMaterialPairPool.size();
+}
+
+uint64_t InnoAssetSystem::addMeshMaterialPair(const MeshMaterialPair & pair)
+{
+	m_meshMaterialPairPool.emplace_back(pair);
+	return m_meshMaterialPairPool.size();
+}
+
+const MeshMaterialPair & InnoAssetSystem::getMeshMaterialPair(uint64_t index)
+{
+	return m_meshMaterialPairPool[index];
+}
+
+ModelIndex InnoAssetSystem::addUnitModel(MeshShapeType meshShapeType)
+{
+	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(meshShapeType);
+	auto l_material = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
+	l_material->m_ObjectStatus = ObjectStatus::Created;
+
+	MeshMaterialPair l_pair;
+	l_pair.mesh = l_mesh;
+	l_pair.material = l_material;
+
+	ModelIndex l_result;
+	l_result.m_startOffset = getCurrentMeshMaterialPairOffset();
+	l_result.m_count = 1;
+
+	addMeshMaterialPair(l_pair);
+
+	return l_result;
 }
 
 void InnoAssetSystem::addUnitCube(MeshDataComponent& meshDataComponent)

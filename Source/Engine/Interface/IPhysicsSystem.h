@@ -5,7 +5,8 @@
 #include "../Component/VisibleComponent.h"
 #include "../Component/MeshDataComponent.h"
 
-enum class CullingDataChannel {
+enum class CullingDataChannel
+{
 	Shadow = 1, MainCamera = 2, All = Shadow | MainCamera
 };
 
@@ -46,7 +47,7 @@ public:
 
 	virtual ObjectStatus getStatus() = 0;
 
-	virtual PhysicsDataComponent* generatePhysicsDataComponent(const ModelPair& modelPair) = 0;
+	virtual PhysicsDataComponent* generatePhysicsDataComponent(const MeshMaterialPair& meshMaterialPair) = 0;
 	virtual bool generateAABBInWorldSpace(PhysicsDataComponent* PDC, const Mat4& m) = 0;
 	virtual bool generatePhysicsProxy(VisibleComponent* VC) = 0;
 	virtual void updateBVH() = 0;

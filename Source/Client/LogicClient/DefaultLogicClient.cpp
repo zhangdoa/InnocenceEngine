@@ -187,7 +187,7 @@ namespace GameClientNS
 	bool initialize();
 
 	bool update();
-	bool updateMaterial(const ModelMap& modelMap, Vec4 albedo, Vec4 MRAT);
+	bool updateMaterial(const ModelIndex& modelIndex, Vec4 albedo, Vec4 MRAT);
 	void updateSpheres();
 
 	void runTest(uint32_t testTime, std::function<bool()> testCase);
@@ -561,18 +561,19 @@ bool GameClientNS::initialize()
 	return true;
 }
 
-bool GameClientNS::updateMaterial(const ModelMap& modelMap, Vec4 albedo, Vec4 MRAT)
+bool GameClientNS::updateMaterial(const ModelIndex& modelIndex, Vec4 albedo, Vec4 MRAT)
 {
-	for (auto& j : modelMap)
+	for (uint64_t j = 0; j < modelIndex.m_count; j++)
 	{
-		j.second->m_meshCustomMaterial.AlbedoR = albedo.x;
-		j.second->m_meshCustomMaterial.AlbedoG = albedo.y;
-		j.second->m_meshCustomMaterial.AlbedoB = albedo.z;
-		j.second->m_meshCustomMaterial.Metallic = MRAT.x;
-		j.second->m_meshCustomMaterial.Roughness = MRAT.y;
-		j.second->m_meshCustomMaterial.AO = MRAT.z;
-		j.second->m_meshCustomMaterial.Alpha = albedo.w;
-		j.second->m_meshCustomMaterial.Thickness = MRAT.w;
+		auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(modelIndex.m_startOffset + j);
+		l_pair.material->m_meshCustomMaterial.AlbedoR = albedo.x;
+		l_pair.material->m_meshCustomMaterial.AlbedoG = albedo.y;
+		l_pair.material->m_meshCustomMaterial.AlbedoB = albedo.z;
+		l_pair.material->m_meshCustomMaterial.Metallic = MRAT.x;
+		l_pair.material->m_meshCustomMaterial.Roughness = MRAT.y;
+		l_pair.material->m_meshCustomMaterial.AO = MRAT.z;
+		l_pair.material->m_meshCustomMaterial.Alpha = albedo.w;
+		l_pair.material->m_meshCustomMaterial.Thickness = MRAT.w;
 	}
 
 	return true;
@@ -726,10 +727,10 @@ void GameClientNS::updateSpheres()
 		auto l_MRATFactor2 = ((sin(seed / 5.0f + i) + 1.0f) / 2.001f);
 		auto l_MRATFactor3 = ((sin(seed / 6.0f + i) + 1.0f) / 2.001f);
 
-		updateMaterial(m_opaqueSphereVisibleComponents[i]->m_modelMap, l_albedo1, Vec4(l_MRATFactor1, l_MRATFactor2, 1.0f, 0.0f));
-		updateMaterial(m_opaqueSphereVisibleComponents[i + 1]->m_modelMap, l_albedo2, Vec4(l_MRATFactor2, l_MRATFactor1, 1.0f, 0.0f));
-		updateMaterial(m_opaqueSphereVisibleComponents[i + 2]->m_modelMap, l_albedo3, Vec4(l_MRATFactor3, l_MRATFactor2, 1.0f, 0.0f));
-		updateMaterial(m_opaqueSphereVisibleComponents[i + 3]->m_modelMap, l_albedo4, Vec4(l_MRATFactor3, l_MRATFactor1, 1.0f, 0.0f));
+		updateMaterial(m_opaqueSphereVisibleComponents[i]->m_modelIndex, l_albedo1, Vec4(l_MRATFactor1, l_MRATFactor2, 1.0f, 0.0f));
+		updateMaterial(m_opaqueSphereVisibleComponents[i + 1]->m_modelIndex, l_albedo2, Vec4(l_MRATFactor2, l_MRATFactor1, 1.0f, 0.0f));
+		updateMaterial(m_opaqueSphereVisibleComponents[i + 2]->m_modelIndex, l_albedo3, Vec4(l_MRATFactor3, l_MRATFactor2, 1.0f, 0.0f));
+		updateMaterial(m_opaqueSphereVisibleComponents[i + 3]->m_modelIndex, l_albedo4, Vec4(l_MRATFactor3, l_MRATFactor1, 1.0f, 0.0f));
 	}
 
 	for (uint32_t i = 0; i < m_transparentSphereVisibleComponents.size(); i++)
@@ -737,7 +738,7 @@ void GameClientNS::updateSpheres()
 		auto l_albedo = InnoMath::HSVtoRGB(Vec4((sin(seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
 		l_albedo.w = sin(seed / 6.0f + i) * 0.5f + 0.5f;
 		auto l_MRAT = Vec4(0.0f, sin(seed / 4.0f + i) * 0.5f + 0.5f, 1.0f, clamp((float)sin(seed / 5.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f));
-		updateMaterial(m_transparentSphereVisibleComponents[i]->m_modelMap, l_albedo, l_MRAT);
+		updateMaterial(m_transparentSphereVisibleComponents[i]->m_modelIndex, l_albedo, l_MRAT);
 	}
 
 	uint32_t l_matrixDim = 8;
@@ -746,7 +747,7 @@ void GameClientNS::updateSpheres()
 		for (uint32_t j = 0; j < l_matrixDim; j++)
 		{
 			auto l_MRAT = Vec4((float)i / (float)(l_matrixDim - 1), (float)j / (float)(l_matrixDim - 1), 1.0f, 1.0f);
-			updateMaterial(m_referenceSphereVisibleComponents[i * l_matrixDim + j]->m_modelMap, Vec4(1.0f, 1.0f, 1.0f, 1.0f), l_MRAT);
+			updateMaterial(m_referenceSphereVisibleComponents[i * l_matrixDim + j]->m_modelIndex, Vec4(1.0f, 1.0f, 1.0f, 1.0f), l_MRAT);
 		}
 	}
 }

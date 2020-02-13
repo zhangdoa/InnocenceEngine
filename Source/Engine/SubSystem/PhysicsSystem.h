@@ -13,7 +13,7 @@ public:
 
 	ObjectStatus getStatus() override;
 
-	PhysicsDataComponent* generatePhysicsDataComponent(const ModelPair& modelPair) override;
+	PhysicsDataComponent* generatePhysicsDataComponent(const MeshMaterialPair& meshMaterialPair) override;
 	bool generateAABBInWorldSpace(PhysicsDataComponent* PDC, const Mat4& m) override;
 	bool generatePhysicsProxy(VisibleComponent* VC) override;
 	void updateBVH() override;

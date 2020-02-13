@@ -12,5 +12,5 @@ public:
 	Sphere m_SphereWS = {};
 	bool m_IsIntermediate = false;
 	VisibleComponent* m_VisibleComponent;
-	ModelPair m_ModelPair;
+	MeshMaterialPair m_MeshMaterialPair;
 };

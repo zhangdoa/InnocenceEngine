@@ -250,7 +250,7 @@ bool InnoFileSystem::convertModel(const char* fileName, const char* exportPath)
 	return InnoFileSystemNS::convertModel(fileName, exportPath);
 }
 
-ModelMap InnoFileSystem::loadModel(const char* fileName, bool AsyncUploadGPUResource)
+ModelIndex InnoFileSystem::loadModel(const char* fileName, bool AsyncUploadGPUResource)
 {
 	return InnoFileSystemNS::AssetLoader::loadModel(fileName, AsyncUploadGPUResource);
 }
