@@ -163,14 +163,16 @@ bool InnoPhysicsSystemNS::generateAABBInWorldSpace(PhysicsDataComponent* PDC, co
 
 bool InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent * VC)
 {
-	for (auto i : VC->m_PDCs)
+	for (uint64_t i = 0; i < VC->m_PDCIndex.m_count; i++)
 	{
-		i->m_VisibleComponent = VC;
+		auto l_PDC = m_Components[VC->m_PDCIndex.m_startOffset + i];
+
+		l_PDC->m_VisibleComponent = VC;
 		if (VC->m_meshUsageType == MeshUsageType::Static)
 		{
-			updateStaticSceneBoundary(i->m_AABBWS);
+			updateStaticSceneBoundary(l_PDC->m_AABBWS);
 		}
-		updateTotalSceneBoundary(i->m_AABBWS);
+		updateTotalSceneBoundary(l_PDC->m_AABBWS);
 	}
 
 #if defined INNO_PLATFORM_WIN
@@ -186,9 +188,11 @@ bool InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent * VC)
 			PhysXWrapper::get().createPxSphere(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_scale.x, (VC->m_meshUsageType == MeshUsageType::Dynamic));
 			break;
 		case MeshShapeType::Custom:
-			for (auto i : VC->m_PDCs)
+			for (uint64_t i = 0; i < VC->m_PDCIndex.m_count; i++)
 			{
-				PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_rot, i->m_AABBWS.m_boundMax - i->m_AABBWS.m_boundMin, (VC->m_meshUsageType == MeshUsageType::Dynamic));
+				auto l_PDC = m_Components[VC->m_PDCIndex.m_startOffset + i];
+
+				PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_rot, l_PDC->m_AABBWS.m_boundMax - l_PDC->m_AABBWS.m_boundMin, (VC->m_meshUsageType == MeshUsageType::Dynamic));
 			}
 			break;
 		default:
@@ -257,6 +261,11 @@ bool InnoPhysicsSystem::terminate()
 ObjectStatus InnoPhysicsSystem::getStatus()
 {
 	return InnoPhysicsSystemNS::m_ObjectStatus;
+}
+
+uint64_t InnoPhysicsSystem::getCurrentPhysicsDataComponentOffset()
+{
+	return m_Components.size();
 }
 
 PhysicsDataComponent* InnoPhysicsSystem::generatePhysicsDataComponent(const MeshMaterialPair& meshMaterialPair)
@@ -493,16 +502,16 @@ void PlainCulling(const Frustum& frustum, std::vector<CullingData>& cullingDatas
 {
 	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
 
-	for (auto visibleComponent : l_visibleComponents)
+	for (auto VC : l_visibleComponents)
 	{
-		if (visibleComponent->m_visibilityType != VisibilityType::Invisible && visibleComponent->m_ObjectStatus == ObjectStatus::Activated)
+		if (VC->m_visibilityType != VisibilityType::Invisible && VC->m_ObjectStatus == ObjectStatus::Activated)
 		{
-			auto l_transformComponent = GetComponent(TransformComponent, visibleComponent->m_ParentEntity);
+			auto l_transformComponent = GetComponent(TransformComponent, VC->m_ParentEntity);
 			auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
-			for (auto i : visibleComponent->m_PDCs)
+			for (uint64_t i = 0; i < VC->m_PDCIndex.m_count; i++)
 			{
-				auto l_PDC = i;
+				auto l_PDC = m_Components[VC->m_PDCIndex.m_startOffset + i];
 
 				if (l_PDC)
 				{
@@ -513,11 +522,11 @@ void PlainCulling(const Frustum& frustum, std::vector<CullingData>& cullingDatas
 					l_cullingData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
 					l_cullingData.mesh = l_PDC->m_MeshMaterialPair.mesh;
 					l_cullingData.material = l_PDC->m_MeshMaterialPair.material;
-					l_cullingData.visibilityType = visibleComponent->m_visibilityType;
-					l_cullingData.meshUsageType = visibleComponent->m_meshUsageType;
-					l_cullingData.UUID = visibleComponent->m_UUID;
+					l_cullingData.visibilityType = VC->m_visibilityType;
+					l_cullingData.meshUsageType = VC->m_meshUsageType;
+					l_cullingData.UUID = VC->m_UUID;
 
-					if (visibleComponent->m_meshUsageType == MeshUsageType::Dynamic)
+					if (VC->m_meshUsageType == MeshUsageType::Dynamic)
 					{
 						l_PDC->m_AABBWS = InnoMath::transformAABBSpace(l_PDC->m_AABBLS, l_globalTm);
 						l_PDC->m_SphereWS = generateBoundSphere(l_PDC->m_AABBWS);

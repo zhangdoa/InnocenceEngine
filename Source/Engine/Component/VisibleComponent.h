@@ -11,7 +11,6 @@ struct MeshMaterialPair
 
 using ModelIndex = ArrayRangeInfo;
 
-class PhysicsDataComponent;
 class VisibleComponent : public InnoComponent
 {
 public:
@@ -25,5 +24,5 @@ public:
 	bool m_simulatePhysics = false;
 
 	ModelIndex m_modelIndex;
-	std::vector<PhysicsDataComponent*> m_PDCs;
+	ArrayRangeInfo m_PDCIndex;
 };

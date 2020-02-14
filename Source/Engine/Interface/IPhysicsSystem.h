@@ -2,8 +2,9 @@
 #include "../Common/InnoType.h"
 
 #include "../Common/InnoClassTemplate.h"
+
+#include "../Component/PhysicsDataComponent.h"
 #include "../Component/VisibleComponent.h"
-#include "../Component/MeshDataComponent.h"
 
 enum class CullingDataChannel
 {
@@ -47,6 +48,7 @@ public:
 
 	virtual ObjectStatus getStatus() = 0;
 
+	virtual uint64_t getCurrentPhysicsDataComponentOffset() = 0;
 	virtual PhysicsDataComponent* generatePhysicsDataComponent(const MeshMaterialPair& meshMaterialPair) = 0;
 	virtual bool generateAABBInWorldSpace(PhysicsDataComponent* PDC, const Mat4& m) = 0;
 	virtual bool generatePhysicsProxy(VisibleComponent* VC) = 0;
