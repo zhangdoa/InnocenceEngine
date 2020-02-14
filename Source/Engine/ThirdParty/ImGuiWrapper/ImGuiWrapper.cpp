@@ -453,7 +453,7 @@ void ImGuiWrapperNS::showVisiableComponentPropertyEditor(void * rhs)
 		{
 			ImGui::BeginChild("MaterialDataComponent Property", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.7f, 400.0f), true, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			{
-				auto l_material = &selectedComponent->m_meshCustomMaterial;
+				auto l_material = &selectedComponent->m_materialAttributes;
 
 				static float float_min = 0.0f;
 				static float float_max = 1.0f;

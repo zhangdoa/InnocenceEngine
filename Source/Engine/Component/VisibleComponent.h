@@ -9,11 +9,7 @@ struct MeshMaterialPair
 	MaterialDataComponent* material;
 };
 
-struct ModelIndex
-{
-	uint64_t m_startOffset;
-	uint64_t m_count;
-};
+using ModelIndex = ArrayRangeInfo;
 
 class PhysicsDataComponent;
 class VisibleComponent : public InnoComponent

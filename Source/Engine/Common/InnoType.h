@@ -28,6 +28,12 @@ enum class ObjectOwnership
 	Engine,
 };
 
+struct ArrayRangeInfo
+{
+	uint64_t m_startOffset;
+	uint64_t m_count;
+};
+
 using EntityID = FixedSizeString<32>;
 using ComponentName = FixedSizeString<128>;
 using EntityName = FixedSizeString<128>;
@@ -90,7 +96,7 @@ struct ShaderFilePaths
 	ShaderFilePath m_CSPath = "";
 };
 
-struct MeshCustomMaterial
+struct MaterialAttributes
 {
 	float AlbedoR = 1.0f;
 	float AlbedoG = 1.0f;

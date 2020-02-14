@@ -101,8 +101,8 @@ bool BSDFTestPass::Setup()
 
 			MaterialConstantBuffer l_materialConstantBuffer;
 
-			l_materialConstantBuffer.customMaterial.Metallic = (float)i / (float)m_shpereCount;
-			l_materialConstantBuffer.customMaterial.Roughness = (float)j / (float)m_shpereCount;
+			l_materialConstantBuffer.materialAttributes.Metallic = (float)i / (float)m_shpereCount;
+			l_materialConstantBuffer.materialAttributes.Roughness = (float)j / (float)m_shpereCount;
 
 			m_materialConstantBuffer[l_index] = l_materialConstantBuffer;
 

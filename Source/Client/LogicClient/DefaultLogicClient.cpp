@@ -566,14 +566,14 @@ bool GameClientNS::updateMaterial(const ModelIndex& modelIndex, Vec4 albedo, Vec
 	for (uint64_t j = 0; j < modelIndex.m_count; j++)
 	{
 		auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(modelIndex.m_startOffset + j);
-		l_pair.material->m_meshCustomMaterial.AlbedoR = albedo.x;
-		l_pair.material->m_meshCustomMaterial.AlbedoG = albedo.y;
-		l_pair.material->m_meshCustomMaterial.AlbedoB = albedo.z;
-		l_pair.material->m_meshCustomMaterial.Metallic = MRAT.x;
-		l_pair.material->m_meshCustomMaterial.Roughness = MRAT.y;
-		l_pair.material->m_meshCustomMaterial.AO = MRAT.z;
-		l_pair.material->m_meshCustomMaterial.Alpha = albedo.w;
-		l_pair.material->m_meshCustomMaterial.Thickness = MRAT.w;
+		l_pair.material->m_materialAttributes.AlbedoR = albedo.x;
+		l_pair.material->m_materialAttributes.AlbedoG = albedo.y;
+		l_pair.material->m_materialAttributes.AlbedoB = albedo.z;
+		l_pair.material->m_materialAttributes.Metallic = MRAT.x;
+		l_pair.material->m_materialAttributes.Roughness = MRAT.y;
+		l_pair.material->m_materialAttributes.AO = MRAT.z;
+		l_pair.material->m_materialAttributes.Alpha = albedo.w;
+		l_pair.material->m_materialAttributes.Thickness = MRAT.w;
 	}
 
 	return true;

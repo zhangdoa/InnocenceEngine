@@ -578,14 +578,14 @@ MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(co
 		}
 	}
 
-	l_MDC->m_meshCustomMaterial.AlbedoR = j["Albedo"]["R"];
-	l_MDC->m_meshCustomMaterial.AlbedoG = j["Albedo"]["G"];
-	l_MDC->m_meshCustomMaterial.AlbedoB = j["Albedo"]["B"];
-	l_MDC->m_meshCustomMaterial.Alpha = j["Albedo"]["A"];
-	l_MDC->m_meshCustomMaterial.Metallic = j["Metallic"];
-	l_MDC->m_meshCustomMaterial.Roughness = j["Roughness"];
-	l_MDC->m_meshCustomMaterial.AO = j["AO"];
-	l_MDC->m_meshCustomMaterial.Thickness = j["Thickness"];
+	l_MDC->m_materialAttributes.AlbedoR = j["Albedo"]["R"];
+	l_MDC->m_materialAttributes.AlbedoG = j["Albedo"]["G"];
+	l_MDC->m_materialAttributes.AlbedoB = j["Albedo"]["B"];
+	l_MDC->m_materialAttributes.Alpha = j["Albedo"]["A"];
+	l_MDC->m_materialAttributes.Metallic = j["Metallic"];
+	l_MDC->m_materialAttributes.Roughness = j["Roughness"];
+	l_MDC->m_materialAttributes.AO = j["AO"];
+	l_MDC->m_materialAttributes.Thickness = j["Thickness"];
 	l_MDC->m_ObjectStatus = ObjectStatus::Created;
 
 	g_pModuleManager->getRenderingFrontend()->registerMaterialDataComponent(l_MDC, AsyncUploadGPUResource);

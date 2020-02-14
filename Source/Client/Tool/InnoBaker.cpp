@@ -138,7 +138,7 @@ bool InnoBakerNS::gatherStaticMeshData()
 					l_materialConstantBuffer.textureSlotMask |= l_writeMask;
 				}
 
-				l_materialConstantBuffer.customMaterial = l_meshMaterialPair.material->m_meshCustomMaterial;
+				l_materialConstantBuffer.materialAttributes = l_meshMaterialPair.material->m_materialAttributes;
 
 				m_staticMeshDrawCallInfo.emplace_back(l_staticPerObjectConstantBuffer);
 				m_staticMeshPerObjectConstantBuffer.emplace_back(l_meshConstantBuffer);

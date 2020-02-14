@@ -515,7 +515,7 @@ bool InnoRenderingFrontendNS::updateMeshData()
 						l_materialCB.textureSlotMask |= l_writeMask;
 					}
 					l_materialCB.materialType = int32_t(l_cullingData.meshUsageType);
-					l_materialCB.customMaterial = l_cullingData.material->m_meshCustomMaterial;
+					l_materialCB.materialAttributes = l_cullingData.material->m_materialAttributes;
 
 					l_drawCallInfoVector.emplace_back(l_drawCallInfo);
 					l_perObjectCBVector.emplace_back(l_perObjectCB);

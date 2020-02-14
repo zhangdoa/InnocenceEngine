@@ -12,7 +12,7 @@ struct TextureSlot
 class MaterialDataComponent : public InnoComponent
 {
 public:
-	MeshCustomMaterial m_meshCustomMaterial = {};
+	MaterialAttributes m_materialAttributes = {};
 	TextureSlot m_TextureSlots[8];
 	IResourceBinder* m_ResourceBinder = 0;
 };

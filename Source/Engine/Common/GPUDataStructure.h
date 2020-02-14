@@ -60,7 +60,7 @@ struct alignas(16) PerObjectConstantBuffer
 
 struct alignas(16) MaterialConstantBuffer
 {
-	MeshCustomMaterial customMaterial;
+	MaterialAttributes materialAttributes;
 	uint32_t textureSlotMask = 0x00000000;
 	uint32_t materialType = 0;
 	float padding1[6];
