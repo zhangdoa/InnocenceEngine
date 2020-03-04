@@ -20,14 +20,9 @@ namespace VisibleComponentManagerNS
 
 	std::function<void()> f_SceneLoadingStartCallback;
 	std::function<void()> f_SceneLoadingFinishCallback;
-	std::function<void(VisibleComponent*, bool)> f_LoadAssetTask;
-	std::function<void(VisibleComponent*)> f_AssignUnitMeshTask;
+	std::function<void(VisibleComponent*, bool)> f_LoadModelTask;
+	std::function<void(VisibleComponent*)> f_AssignUnitModelTask;
 	std::function<void(VisibleComponent*)> f_PDCTask;
-
-	void assignUnitMesh(MeshShapeType meshShapeType, VisibleComponent* visibleComponent)
-	{
-		visibleComponent->m_modelIndex = g_pModuleManager->getAssetSystem()->addUnitModel(meshShapeType);
-	}
 }
 
 using namespace VisibleComponentManagerNS;
@@ -48,14 +43,14 @@ bool InnoVisibleComponentManager::Setup()
 	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_SceneLoadingStartCallback);
 	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_SceneLoadingFinishCallback);
 
-	f_LoadAssetTask = [=](VisibleComponent* i, bool AsyncLoad)
+	f_LoadModelTask = [=](VisibleComponent* i, bool AsyncLoad)
 	{
 		i->m_modelIndex = g_pModuleManager->getFileSystem()->loadModel(i->m_modelFileName.c_str(), AsyncLoad);
 	};
 
-	f_AssignUnitMeshTask = [=](VisibleComponent* i)
+	f_AssignUnitModelTask = [=](VisibleComponent* i)
 	{
-		assignUnitMesh(i->m_meshShapeType, i);
+		i->m_modelIndex = g_pModuleManager->getAssetSystem()->addUnitModel(i->m_meshShapeType);
 	};
 
 	f_PDCTask = [=](VisibleComponent* i)
@@ -118,35 +113,41 @@ const std::vector<VisibleComponent*>& InnoVisibleComponentManager::GetAllCompone
 
 void InnoVisibleComponentManager::LoadAssetsForComponents(bool AsyncLoad)
 {
+	// @TODO: Load unit model first
+
 	for (auto i : m_Components)
 	{
 		if (i->m_visibilityType != VisibilityType::Invisible)
 		{
-			if (!i->m_modelFileName.empty())
+			if (i->m_meshShapeType != MeshShapeType::Custom)
 			{
-				if (AsyncLoad)
-				{
-					auto l_loadAssetTask = g_pModuleManager->getTaskSystem()->submit("LoadAssetTask", 4, nullptr, f_LoadAssetTask, i, true);
-					g_pModuleManager->getTaskSystem()->submit("PDCTask", 4, l_loadAssetTask, f_PDCTask, i);
-				}
-				else
-				{
-					f_LoadAssetTask(i, false);
-					f_PDCTask(i);
-				}
+				f_AssignUnitModelTask(i);
+				f_PDCTask(i);
 			}
 			else
 			{
-				if (i->m_meshShapeType != MeshShapeType::Custom)
+				if (!i->m_modelFileName.empty())
 				{
-					f_AssignUnitMeshTask(i);
-					f_PDCTask(i);
+					if (AsyncLoad)
+					{
+						auto l_loadModelTask = g_pModuleManager->getTaskSystem()->submit("LoadModelTask", 4, nullptr, f_LoadModelTask, i, true);
+						g_pModuleManager->getTaskSystem()->submit("PDCTask", 4, l_loadModelTask, f_PDCTask, i);
+					}
+					else
+					{
+						f_LoadModelTask(i, false);
+						f_PDCTask(i);
+					}
 				}
 				else
 				{
 					InnoLogger::Log(LogLevel::Warning, "VisibleComponentManager: Custom shape mesh specified without a model preset file.");
 				}
 			}
+		}
+		else
+		{
+			InnoLogger::Log(LogLevel::Warning, "VisibleComponentManager: Visibility is invisible for ", i);
 		}
 	}
 }

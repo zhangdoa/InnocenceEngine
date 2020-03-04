@@ -6,11 +6,40 @@
 #include "../Interface/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
 
+#define recordLoaded( funcName, type, value ) \
+bool InnoAssetSystem::recordLoaded##funcName(const char * fileName, type value) \
+{ \
+	m_loaded##funcName.emplace(fileName, value); \
+\
+	return true; \
+}
+
+#define findLoaded( funcName, type, value ) \
+bool InnoAssetSystem::findLoaded##funcName(const char * fileName, type value) \
+{ \
+	auto l_loaded##funcName = m_loaded##funcName.find(fileName); \
+	if (l_loaded##funcName != m_loaded##funcName.end()) \
+	{ \
+		value = l_loaded##funcName->second; \
+	\
+		return true; \
+	} \
+	else \
+	{ \
+	InnoLogger::Log(LogLevel::Verbose, "AssetSystem: ", fileName, " has not been loaded."); \
+	\
+	return false; \
+	} \
+}
+
 namespace InnoAssetSystemNS
 {
 	std::vector<MeshMaterialPair> m_meshMaterialPairPool;
+	std::unordered_map<std::string, MeshMaterialPair> m_loadedMeshMaterialPair;
 	std::unordered_map<std::string, ModelIndex> m_loadedModel;
 	std::unordered_map<std::string, TextureDataComponent*> m_loadedTexture;
+	std::unordered_map<std::string, AnimationDataComponent*> m_loadedAnimation;
+	std::unordered_map<std::string, SkeletonDataComponent*> m_loadedSkeleton;
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
@@ -66,53 +95,20 @@ ObjectStatus InnoAssetSystem::getStatus()
 	return m_ObjectStatus;
 }
 
-bool InnoAssetSystem::addModel(const char * fileName, const ModelIndex & modelIndex)
-{
-	m_loadedModel.emplace(fileName, modelIndex);
+recordLoaded(MeshMaterialPair, const MeshMaterialPair&, pair)
+findLoaded(MeshMaterialPair, MeshMaterialPair&, pair)
 
-	return true;
-}
+recordLoaded(Model, const ModelIndex&, modelIndex)
+findLoaded(Model, ModelIndex&, modelIndex)
 
-bool InnoAssetSystem::getModel(const char * fileName, ModelIndex & modelIndex)
-{
-	auto l_loadedModel = m_loadedModel.find(fileName);
-	if (l_loadedModel != m_loadedModel.end())
-	{
-		modelIndex = l_loadedModel->second;
+recordLoaded(Texture, TextureDataComponent*, texture)
+findLoaded(Texture, TextureDataComponent*&, texture)
 
-		return true;
-	}
-	else
-	{
-		InnoLogger::Log(LogLevel::Verbose, "AssetSystem: ", fileName, " has not been loaded.");
+recordLoaded(Skeleton, SkeletonDataComponent*, skeleton)
+findLoaded(Skeleton, SkeletonDataComponent*&, skeleton)
 
-		return false;
-	}
-}
-
-bool InnoAssetSystem::addTexture(const char * fileName, TextureDataComponent * texture)
-{
-	m_loadedTexture.emplace(fileName, texture);
-
-	return true;
-}
-
-bool InnoAssetSystem::getTexture(const char * fileName, TextureDataComponent *& texture)
-{
-	auto l_loadedTexture = m_loadedTexture.find(fileName);
-	if (l_loadedTexture != m_loadedTexture.end())
-	{
-		texture = l_loadedTexture->second;
-
-		return true;
-	}
-	else
-	{
-		InnoLogger::Log(LogLevel::Verbose, "AssetSystem: ", fileName, " has not been loaded.");
-
-		return false;
-	}
-}
+recordLoaded(Animation, AnimationDataComponent*, animation)
+findLoaded(Animation, AnimationDataComponent*&, animation)
 
 uint64_t InnoAssetSystem::getCurrentMeshMaterialPairOffset()
 {

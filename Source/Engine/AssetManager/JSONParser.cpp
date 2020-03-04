@@ -51,9 +51,6 @@ namespace InnoFileSystemNS::JSONParser
 
 	bool assignComponentRuntimeData();
 
-	std::unordered_map<std::string, MeshMaterialPair> m_loadedMeshMaterialPair;
-	std::unordered_map<std::string, SkeletonDataComponent*> m_loadedSDC;
-
 	ThreadSafeQueue<std::pair<TransformComponent*, EntityName>> m_orphanTransformComponents;
 }
 
@@ -328,14 +325,14 @@ ModelIndex InnoFileSystemNS::JSONParser::processSceneJsonData(const json & j, bo
 
 	if (j.find("Meshes") != j.end())
 	{
+		// @TODO: Need a Critical Region
 		l_result.m_startOffset = g_pModuleManager->getAssetSystem()->getCurrentMeshMaterialPairOffset();
+		l_result.m_count = j["Meshes"].size();
 
 		for (auto i : j["Meshes"])
 		{
-			g_pModuleManager->getAssetSystem()->addMeshMaterialPair(processMeshJsonData(i, AsyncUploadGPUResource));
+			auto l_ = g_pModuleManager->getAssetSystem()->addMeshMaterialPair(processMeshJsonData(i, AsyncUploadGPUResource));
 		}
-
-		l_result.m_count = g_pModuleManager->getAssetSystem()->getCurrentMeshMaterialPairOffset() - l_result.m_startOffset;
 	}
 
 	auto l_m = InnoMath::generateIdentityMatrix<float>();
@@ -421,15 +418,16 @@ MeshMaterialPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & 
 	MeshMaterialPair l_result;
 
 	MeshShapeType l_meshShapeType = MeshShapeType(j["MeshShapeType"].get<int32_t>());
+
+	// Load custom mesh data
 	if (l_meshShapeType == MeshShapeType::Custom)
-	{	// Load mesh data
+	{
 		auto l_meshFileName = j["MeshFile"].get<std::string>();
 
-		auto l_loadedModelPair = m_loadedMeshMaterialPair.find(l_meshFileName);
-		if (l_loadedModelPair != m_loadedMeshMaterialPair.end())
+		// check if this file has already been loaded once
+		if (g_pModuleManager->getAssetSystem()->findLoadedMeshMaterialPair(l_meshFileName.c_str(), l_result))
 		{
-			InnoLogger::Log(LogLevel::Verbose, "FileSystem: JSONParser: ", l_meshFileName.c_str(), " has been already loaded.");
-			l_result = l_loadedModelPair->second;
+			return l_result;
 		}
 		else
 		{
@@ -469,6 +467,8 @@ MeshMaterialPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & 
 				l_result.mesh->m_SDC = processSkeletonJsonData(l_skeletonFile.c_str());
 			}
 
+			g_pModuleManager->getRenderingFrontend()->registerMeshDataComponent(l_mesh, AsyncUploadGPUResource);
+
 			// Load material data
 			if (j.find("MaterialFile") != j.end())
 			{
@@ -481,9 +481,7 @@ MeshMaterialPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & 
 				l_result.material->m_ObjectStatus = ObjectStatus::Created;
 			}
 
-			m_loadedMeshMaterialPair.emplace(l_meshFileName, l_result);
-
-			g_pModuleManager->getRenderingFrontend()->registerMeshDataComponent(l_mesh, AsyncUploadGPUResource);
+			g_pModuleManager->getAssetSystem()->recordLoadedMeshMaterialPair(l_meshFileName.c_str(), l_result);
 		}
 	}
 	else
@@ -508,11 +506,12 @@ MeshMaterialPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & 
 
 SkeletonDataComponent * InnoFileSystemNS::JSONParser::processSkeletonJsonData(const char* skeletonFileName)
 {
-	auto l_loadedSDC = m_loadedSDC.find(skeletonFileName);
-	if (l_loadedSDC != m_loadedSDC.end())
+	SkeletonDataComponent* l_result;
+
+	// check if this file has already been loaded once
+	if (g_pModuleManager->getAssetSystem()->findLoadedSkeleton(skeletonFileName, l_result))
 	{
-		InnoLogger::Log(LogLevel::Verbose, "FileSystem: JSONParser: ", skeletonFileName, " has been already loaded.");
-		return l_loadedSDC->second;
+		return l_result;
 	}
 	else
 	{
@@ -520,9 +519,10 @@ SkeletonDataComponent * InnoFileSystemNS::JSONParser::processSkeletonJsonData(co
 
 		loadJsonDataFromDisk(skeletonFileName, j);
 
-		auto l_SDC = g_pModuleManager->getRenderingFrontend()->addSkeletonDataComponent();
+		l_result = g_pModuleManager->getRenderingFrontend()->addSkeletonDataComponent();
+
 		auto l_size = j["Bones"].size();
-		l_SDC->m_Bones.reserve(l_size);
+		l_result->m_Bones.reserve(l_size);
 
 		for (auto i : j["Bones"])
 		{
@@ -537,12 +537,12 @@ SkeletonDataComponent * InnoFileSystemNS::JSONParser::processSkeletonJsonData(co
 			l_bone.m_Rot.z = i["OffsetRotation"]["Z"];
 			l_bone.m_Rot.w = i["OffsetRotation"]["W"];
 
-			l_SDC->m_Bones.emplace_back(l_bone);
+			l_result->m_Bones.emplace_back(l_bone);
 		}
 
-		m_loadedSDC.emplace(skeletonFileName, l_SDC);
+		g_pModuleManager->getAssetSystem()->recordLoadedSkeleton(skeletonFileName, l_result);
 
-		return l_SDC;
+		return l_result;
 	}
 }
 

@@ -27,7 +27,7 @@
         {
           "ComponentType": 1,
           "MeshPrimitiveTopology": 2,
-          "MeshShapeType": 2,
+          "MeshShapeType": 3,
           "MeshUsageType": 0,
           "ModelFileName": "",
           "TextureWrapMethod": 1,
@@ -101,7 +101,7 @@
         {
           "ComponentType": 1,
           "MeshPrimitiveTopology": 2,
-          "MeshShapeType": 5,
+          "MeshShapeType": 0,
           "MeshUsageType": 2,
           "ModelFileName": "..//Res//ConvertedAssets//Wolf.InnoModel",
           "TextureWrapMethod": 0,

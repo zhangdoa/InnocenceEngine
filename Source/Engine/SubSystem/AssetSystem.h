@@ -13,11 +13,20 @@ public:
 
 	ObjectStatus getStatus() override;
 
-	bool addModel(const char* fileName, const ModelIndex& modelIndex) override;
-	bool getModel(const char* fileName, ModelIndex& modelIndex) override;
+	bool recordLoadedMeshMaterialPair(const char* fileName, const MeshMaterialPair& pair) override;
+	bool findLoadedMeshMaterialPair(const char* fileName, MeshMaterialPair& pair) override;
 
-	bool addTexture(const char* fileName, TextureDataComponent* texture) override;
-	bool getTexture(const char* fileName, TextureDataComponent*& texture) override;
+	bool recordLoadedModel(const char* fileName, const ModelIndex& modelIndex) override;
+	bool findLoadedModel(const char* fileName, ModelIndex& modelIndex) override;
+
+	bool recordLoadedTexture(const char* fileName, TextureDataComponent* texture) override;
+	bool findLoadedTexture(const char* fileName, TextureDataComponent*& texture) override;
+
+	bool recordLoadedSkeleton(const char* fileName, SkeletonDataComponent* skeleton) override;
+	bool findLoadedSkeleton(const char* fileName, SkeletonDataComponent*& skeleton) override;
+
+	bool recordLoadedAnimation(const char* fileName, AnimationDataComponent* animation) override;
+	bool findLoadedAnimation(const char* fileName, AnimationDataComponent*& animation) override;
 
 	uint64_t getCurrentMeshMaterialPairOffset() override;
 	uint64_t addMeshMaterialPair(const MeshMaterialPair& pair) override;

@@ -22,7 +22,7 @@ ModelIndex InnoFileSystemNS::AssetLoader::loadModel(const char* fileName, bool A
 		ModelIndex l_loadedModelIndex;
 
 		// check if this file has already been loaded once
-		if (g_pModuleManager->getAssetSystem()->getModel(fileName, l_loadedModelIndex))
+		if (g_pModuleManager->getAssetSystem()->findLoadedModel(fileName, l_loadedModelIndex))
 		{
 			// Just copy new materials
 			ModelIndex l_result;
@@ -36,7 +36,7 @@ ModelIndex InnoFileSystemNS::AssetLoader::loadModel(const char* fileName, bool A
 				g_pModuleManager->getAssetSystem()->addMeshMaterialPair(l_newPair);
 			}
 
-			l_result.m_count = g_pModuleManager->getAssetSystem()->getCurrentMeshMaterialPairOffset() - l_result.m_startOffset;
+			l_result.m_count = l_loadedModelIndex.m_count;
 
 			return l_result;
 		}
@@ -55,7 +55,7 @@ ModelIndex InnoFileSystemNS::AssetLoader::loadModel(const char* fileName, bool A
 ModelIndex InnoFileSystemNS::AssetLoader::loadModelFromDisk(const char* fileName, bool AsyncUploadGPUResource)
 {
 	auto l_result = JSONParser::loadModelFromDisk(fileName, AsyncUploadGPUResource);
-	g_pModuleManager->getAssetSystem()->addModel(fileName, l_result);
+	g_pModuleManager->getAssetSystem()->recordLoadedModel(fileName, l_result);
 
 	return l_result;
 }
@@ -64,7 +64,7 @@ TextureDataComponent* InnoFileSystemNS::AssetLoader::loadTexture(const char* fil
 {
 	TextureDataComponent* l_TDC;
 
-	if (g_pModuleManager->getAssetSystem()->getTexture(fileName, l_TDC))
+	if (g_pModuleManager->getAssetSystem()->findLoadedTexture(fileName, l_TDC))
 	{
 		return l_TDC;
 	}
@@ -73,7 +73,7 @@ TextureDataComponent* InnoFileSystemNS::AssetLoader::loadTexture(const char* fil
 		l_TDC = TextureIO::loadTexture(fileName);
 		if (l_TDC)
 		{
-			g_pModuleManager->getAssetSystem()->addTexture(fileName, l_TDC);
+			g_pModuleManager->getAssetSystem()->recordLoadedTexture(fileName, l_TDC);
 		}
 		return l_TDC;
 	}

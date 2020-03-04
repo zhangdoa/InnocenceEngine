@@ -5,6 +5,9 @@
 #include "../Component/MeshDataComponent.h"
 #include "../Component/MaterialDataComponent.h"
 #include "../Component/TextureDataComponent.h"
+#include "../Component/SkeletonDataComponent.h"
+#include "../Component/AnimationDataComponent.h"
+
 #include "../Component/VisibleComponent.h"
 
 class IAssetSystem
@@ -19,11 +22,20 @@ public:
 
 	virtual ObjectStatus getStatus() = 0;
 
-	virtual bool addModel(const char* fileName, const ModelIndex& modelIndex) = 0;
-	virtual bool getModel(const char* fileName, ModelIndex& modelIndex) = 0;
+	virtual bool recordLoadedMeshMaterialPair(const char* fileName, const MeshMaterialPair& pair) = 0;
+	virtual bool findLoadedMeshMaterialPair(const char* fileName, MeshMaterialPair& pair) = 0;
 
-	virtual bool addTexture(const char* fileName, TextureDataComponent* texture) = 0;
-	virtual bool getTexture(const char* fileName, TextureDataComponent*& texture) = 0;
+	virtual bool recordLoadedModel(const char* fileName, const ModelIndex& modelIndex) = 0;
+	virtual bool findLoadedModel(const char* fileName, ModelIndex& modelIndex) = 0;
+
+	virtual bool recordLoadedTexture(const char* fileName, TextureDataComponent* texture) = 0;
+	virtual bool findLoadedTexture(const char* fileName, TextureDataComponent*& texture) = 0;
+
+	virtual bool recordLoadedSkeleton(const char* fileName, SkeletonDataComponent* skeleton) = 0;
+	virtual bool findLoadedSkeleton(const char* fileName, SkeletonDataComponent*& skeleton) = 0;
+
+	virtual bool recordLoadedAnimation(const char* fileName, AnimationDataComponent* animation) = 0;
+	virtual bool findLoadedAnimation(const char* fileName, AnimationDataComponent*& animation) = 0;
 
 	virtual uint64_t getCurrentMeshMaterialPairOffset() = 0;
 	virtual uint64_t addMeshMaterialPair(const MeshMaterialPair& pair) = 0;
