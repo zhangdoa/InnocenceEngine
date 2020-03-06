@@ -33,7 +33,7 @@ namespace InnoFileSystemNS
 		void from_json(const json& j, CameraComponent& p);
 		void from_json(const json& j, RenderPassDataComponent& p);
 
-		ModelIndex loadModelFromDisk(const char* fileName, bool AsyncUploadGPUResource = true);
+		Model* loadModelFromDisk(const char* fileName, bool AsyncUploadGPUResource = true);
 
 		bool saveScene(const char* fileName);
 		bool loadScene(const char* fileName);

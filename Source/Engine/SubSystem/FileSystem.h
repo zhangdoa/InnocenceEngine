@@ -28,7 +28,7 @@ public:
 
 	bool convertModel(const char* fileName, const char* exportPath) override;
 
-	ModelIndex loadModel(const char* fileName, bool AsyncUploadGPUResource) override;
+	Model* loadModel(const char* fileName, bool AsyncUploadGPUResource) override;
 	TextureDataComponent* loadTexture(const char* fileName) override;
 	bool saveTexture(const char* fileName, TextureDataComponent* TDC) override;
 

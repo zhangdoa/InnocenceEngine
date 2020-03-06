@@ -14,7 +14,7 @@ public:
 	ObjectStatus getStatus() override;
 
 	uint64_t getCurrentPhysicsDataComponentOffset() override;
-	PhysicsDataComponent* generatePhysicsDataComponent(const MeshMaterialPair& meshMaterialPair) override;
+	PhysicsDataComponent* generatePhysicsDataComponent(MeshMaterialPair* meshMaterialPair) override;
 	bool generateAABBInWorldSpace(PhysicsDataComponent* PDC, const Mat4& m) override;
 	bool generatePhysicsProxy(VisibleComponent* VC) override;
 	void updateBVH() override;

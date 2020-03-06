@@ -9,7 +9,10 @@ struct MeshMaterialPair
 	MaterialDataComponent* material;
 };
 
-using ModelIndex = ArrayRangeInfo;
+struct Model
+{
+	ArrayRangeInfo meshMaterialPairs;
+};
 
 class VisibleComponent : public InnoComponent
 {
@@ -23,6 +26,6 @@ public:
 	std::string m_modelFileName;
 	bool m_simulatePhysics = false;
 
-	ModelIndex m_modelIndex;
+	Model* m_model;
 	ArrayRangeInfo m_PDCIndex;
 };

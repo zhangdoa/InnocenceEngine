@@ -43,9 +43,9 @@ namespace InnoFileSystemNS::JSONParser
 		}
 	}
 
-	ModelIndex processSceneJsonData(const json & j, bool AsyncUploadGPUResource = true);
+	Model* processSceneJsonData(const json & j, bool AsyncUploadGPUResource = true);
 	std::vector<AnimationDataComponent*> processAnimationJsonData(const json & j);
-	MeshMaterialPair processMeshJsonData(const json& j, bool AsyncUploadGPUResource = true);
+	ArrayRangeInfo processMeshJsonData(const json& j, bool AsyncUploadGPUResource = true);
 	SkeletonDataComponent* processSkeletonJsonData(const char* skeletonFileName);
 	MaterialDataComponent* processMaterialJsonData(const char* materialFileName, bool AsyncUploadGPUResource = true);
 
@@ -304,7 +304,7 @@ void InnoFileSystemNS::JSONParser::from_json(const json& j, CameraComponent& p)
 	p.m_zFar = j["zFar"];
 }
 
-ModelIndex InnoFileSystemNS::JSONParser::loadModelFromDisk(const char* fileName, bool AsyncUploadGPUResource)
+Model* InnoFileSystemNS::JSONParser::loadModelFromDisk(const char* fileName, bool AsyncUploadGPUResource)
 {
 	json j;
 
@@ -313,7 +313,7 @@ ModelIndex InnoFileSystemNS::JSONParser::loadModelFromDisk(const char* fileName,
 	return processSceneJsonData(j, AsyncUploadGPUResource);
 }
 
-ModelIndex InnoFileSystemNS::JSONParser::processSceneJsonData(const json & j, bool AsyncUploadGPUResource)
+Model* InnoFileSystemNS::JSONParser::processSceneJsonData(const json & j, bool AsyncUploadGPUResource)
 {
 	// @TODO: Optimize
 	if (j.find("AnimationFiles") != j.end())
@@ -321,18 +321,12 @@ ModelIndex InnoFileSystemNS::JSONParser::processSceneJsonData(const json & j, bo
 		processAnimationJsonData(j["AnimationFiles"]);
 	}
 
-	ModelIndex l_result;
+	Model* l_result;
 
 	if (j.find("Meshes") != j.end())
 	{
-		// @TODO: Need a Critical Region
-		l_result.m_startOffset = g_pModuleManager->getAssetSystem()->getCurrentMeshMaterialPairOffset();
-		l_result.m_count = j["Meshes"].size();
-
-		for (auto i : j["Meshes"])
-		{
-			auto l_ = g_pModuleManager->getAssetSystem()->addMeshMaterialPair(processMeshJsonData(i, AsyncUploadGPUResource));
-		}
+		l_result = g_pModuleManager->getAssetSystem()->addModel();
+		l_result->meshMaterialPairs = processMeshJsonData(j["Meshes"], AsyncUploadGPUResource);
 	}
 
 	auto l_m = InnoMath::generateIdentityMatrix<float>();
@@ -363,13 +357,16 @@ ModelIndex InnoFileSystemNS::JSONParser::processSceneJsonData(const json & j, bo
 		l_m = l_m * l_t;
 	}
 
-	for (uint64_t i = 0; i < l_result.m_count; i++)
+	if (l_result != nullptr)
 	{
-		auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(l_result.m_startOffset + i);
-		auto l_SDC = l_pair.mesh->m_SDC;
-		if (l_SDC)
+		for (uint64_t i = 0; i < l_result->meshMaterialPairs.m_count; i++)
 		{
-			l_SDC->m_RootOffsetMatrix = l_m;
+			auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(l_result->meshMaterialPairs.m_startOffset + i);
+			auto l_SDC = l_pair->mesh->m_SDC;
+			if (l_SDC)
+			{
+				l_SDC->m_RootOffsetMatrix = l_m;
+			}
 		}
 	}
 
@@ -413,92 +410,91 @@ std::vector<AnimationDataComponent*> InnoFileSystemNS::JSONParser::processAnimat
 	return l_result;
 }
 
-MeshMaterialPair InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j, bool AsyncUploadGPUResource)
+ArrayRangeInfo InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j, bool AsyncUploadGPUResource)
 {
-	MeshMaterialPair l_result;
+	auto l_result = g_pModuleManager->getAssetSystem()->addMeshMaterialPairs(j.size());
 
-	MeshShapeType l_meshShapeType = MeshShapeType(j["MeshShapeType"].get<int32_t>());
+	uint64_t l_currentIndex = 0;
 
-	// Load custom mesh data
-	if (l_meshShapeType == MeshShapeType::Custom)
+	for (auto i : j)
 	{
-		auto l_meshFileName = j["MeshFile"].get<std::string>();
+		auto l_currentMeshMaterialPair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(l_result.m_startOffset + l_currentIndex);
 
-		// check if this file has already been loaded once
-		if (g_pModuleManager->getAssetSystem()->findLoadedMeshMaterialPair(l_meshFileName.c_str(), l_result))
+		// Load material data
+		if (i.find("MaterialFile") != i.end())
 		{
-			return l_result;
+			std::string l_materialFile = i["MaterialFile"];
+			l_currentMeshMaterialPair->material = processMaterialJsonData(l_materialFile.c_str(), AsyncUploadGPUResource);
 		}
 		else
 		{
-			std::ifstream l_meshFile(IOService::getWorkingDirectory() + l_meshFileName, std::ios::binary);
+			l_currentMeshMaterialPair->material = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
+			l_currentMeshMaterialPair->material->m_ObjectStatus = ObjectStatus::Created;
+		}
 
-			if (!l_meshFile.is_open())
+		MeshShapeType l_meshShapeType = MeshShapeType(i["MeshShapeType"].get<int32_t>());
+
+		// Load custom mesh data
+		if (l_meshShapeType == MeshShapeType::Custom)
+		{
+			auto l_meshFileName = i["MeshFile"].get<std::string>();
+
+			MeshMaterialPair* l_loadedMeshMaterialPair;
+
+			// check if this file has already been loaded once
+			if (g_pModuleManager->getAssetSystem()->findLoadedMeshMaterialPair(l_meshFileName.c_str(), l_loadedMeshMaterialPair))
 			{
-				InnoLogger::Log(LogLevel::Error, "FileSystem: std::ifstream: can't open file ", l_meshFileName.c_str(), "!");
-				return l_result;
-			}
-
-			auto l_mesh = g_pModuleManager->getRenderingFrontend()->addMeshDataComponent();
-
-			size_t l_verticesNumber = j["VerticesNumber"];
-			size_t l_indicesNumber = j["IndicesNumber"];
-
-			l_mesh->m_vertices.reserve(l_verticesNumber);
-			l_mesh->m_vertices.fulfill();
-			l_mesh->m_indices.reserve(l_indicesNumber);
-			l_mesh->m_indices.fulfill();
-
-			IOService::deserializeVector(l_meshFile, 0, l_verticesNumber * sizeof(Vertex), l_mesh->m_vertices);
-			IOService::deserializeVector(l_meshFile, l_verticesNumber * sizeof(Vertex), l_indicesNumber * sizeof(Index), l_mesh->m_indices);
-
-			l_meshFile.close();
-
-			l_mesh->m_indicesSize = l_mesh->m_indices.size();
-			l_mesh->m_meshShapeType = MeshShapeType::Custom;
-			l_mesh->m_ObjectStatus = ObjectStatus::Created;
-
-			l_result.mesh = l_mesh;
-
-			// Load skeleton data
-			if (j.find("SkeletonFile") != j.end())
-			{
-				std::string l_skeletonFile = j["SkeletonFile"];
-				l_result.mesh->m_SDC = processSkeletonJsonData(l_skeletonFile.c_str());
-			}
-
-			g_pModuleManager->getRenderingFrontend()->registerMeshDataComponent(l_mesh, AsyncUploadGPUResource);
-
-			// Load material data
-			if (j.find("MaterialFile") != j.end())
-			{
-				std::string l_materialFile = j["MaterialFile"];
-				l_result.material = processMaterialJsonData(l_materialFile.c_str(), AsyncUploadGPUResource);
+				l_currentMeshMaterialPair = l_loadedMeshMaterialPair;
 			}
 			else
 			{
-				l_result.material = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
-				l_result.material->m_ObjectStatus = ObjectStatus::Created;
+				std::ifstream l_meshFile(IOService::getWorkingDirectory() + l_meshFileName, std::ios::binary);
+
+				if (!l_meshFile.is_open())
+				{
+					InnoLogger::Log(LogLevel::Error, "FileSystem: std::ifstream: can't open file ", l_meshFileName.c_str(), "!");
+				}
+
+				auto l_mesh = g_pModuleManager->getRenderingFrontend()->addMeshDataComponent();
+
+				size_t l_verticesNumber = i["VerticesNumber"];
+				size_t l_indicesNumber = i["IndicesNumber"];
+
+				l_mesh->m_vertices.reserve(l_verticesNumber);
+				l_mesh->m_vertices.fulfill();
+				l_mesh->m_indices.reserve(l_indicesNumber);
+				l_mesh->m_indices.fulfill();
+
+				IOService::deserializeVector(l_meshFile, 0, l_verticesNumber * sizeof(Vertex), l_mesh->m_vertices);
+				IOService::deserializeVector(l_meshFile, l_verticesNumber * sizeof(Vertex), l_indicesNumber * sizeof(Index), l_mesh->m_indices);
+
+				l_meshFile.close();
+
+				l_mesh->m_indicesSize = l_mesh->m_indices.size();
+
+				l_currentMeshMaterialPair->mesh = l_mesh;
+
+				// Load skeleton data
+				if (i.find("SkeletonFile") != i.end())
+				{
+					std::string l_skeletonFile = i["SkeletonFile"];
+					l_currentMeshMaterialPair->mesh->m_SDC = processSkeletonJsonData(l_skeletonFile.c_str());
+				}
+
+				l_currentMeshMaterialPair->mesh->m_meshShapeType = MeshShapeType::Custom;
+				l_currentMeshMaterialPair->mesh->m_ObjectStatus = ObjectStatus::Created;
+
+				g_pModuleManager->getRenderingFrontend()->registerMeshDataComponent(l_mesh, AsyncUploadGPUResource);
+
+				g_pModuleManager->getAssetSystem()->recordLoadedMeshMaterialPair(l_meshFileName.c_str(), l_currentMeshMaterialPair);
 			}
-
-			g_pModuleManager->getAssetSystem()->recordLoadedMeshMaterialPair(l_meshFileName.c_str(), l_result);
-		}
-	}
-	else
-	{
-		l_result.mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(l_meshShapeType);
-
-		// Load material data
-		if (j.find("MaterialFile") != j.end())
-		{
-			std::string l_materialFile = j["MaterialFile"];
-			l_result.material = processMaterialJsonData(l_materialFile.c_str(), AsyncUploadGPUResource);
 		}
 		else
 		{
-			l_result.material = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
-			l_result.material->m_ObjectStatus = ObjectStatus::Created;
+			l_currentMeshMaterialPair->mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(l_meshShapeType);
 		}
+
+		l_currentIndex++;
 	}
 
 	return l_result;

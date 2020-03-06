@@ -113,14 +113,14 @@ bool InnoBakerNS::gatherStaticMeshData()
 			auto l_transformComponent = GetComponent(TransformComponent, visibleComponent->m_ParentEntity);
 			auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
-			for (uint64_t j = 0; j < visibleComponent->m_modelIndex.m_count; j++)
+			for (uint64_t j = 0; j < visibleComponent->m_model->meshMaterialPairs.m_count; j++)
 			{
-				auto l_meshMaterialPair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(visibleComponent->m_modelIndex.m_startOffset + j);
+				auto l_meshMaterialPair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(visibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
 
 				DrawCallInfo l_staticPerObjectConstantBuffer;
 
-				l_staticPerObjectConstantBuffer.mesh = l_meshMaterialPair.mesh;
-				l_staticPerObjectConstantBuffer.material = l_meshMaterialPair.material;
+				l_staticPerObjectConstantBuffer.mesh = l_meshMaterialPair->mesh;
+				l_staticPerObjectConstantBuffer.material = l_meshMaterialPair->material;
 
 				PerObjectConstantBuffer l_meshConstantBuffer;
 
@@ -133,12 +133,12 @@ bool InnoBakerNS::gatherStaticMeshData()
 
 				for (size_t i = 0; i < 8; i++)
 				{
-					uint32_t l_writeMask = l_meshMaterialPair.material->m_TextureSlots[i].m_Activate ? 0x00000001 : 0x00000000;
+					uint32_t l_writeMask = l_meshMaterialPair->material->m_TextureSlots[i].m_Activate ? 0x00000001 : 0x00000000;
 					l_writeMask = l_writeMask << i;
 					l_materialConstantBuffer.textureSlotMask |= l_writeMask;
 				}
 
-				l_materialConstantBuffer.materialAttributes = l_meshMaterialPair.material->m_materialAttributes;
+				l_materialConstantBuffer.materialAttributes = l_meshMaterialPair->material->m_materialAttributes;
 
 				m_staticMeshDrawCallInfo.emplace_back(l_staticPerObjectConstantBuffer);
 				m_staticMeshPerObjectConstantBuffer.emplace_back(l_meshConstantBuffer);

@@ -13,11 +13,11 @@ public:
 
 	ObjectStatus getStatus() override;
 
-	bool recordLoadedMeshMaterialPair(const char* fileName, const MeshMaterialPair& pair) override;
-	bool findLoadedMeshMaterialPair(const char* fileName, MeshMaterialPair& pair) override;
+	bool recordLoadedMeshMaterialPair(const char* fileName, MeshMaterialPair* pair) override;
+	bool findLoadedMeshMaterialPair(const char* fileName, MeshMaterialPair*& pair) override;
 
-	bool recordLoadedModel(const char* fileName, const ModelIndex& modelIndex) override;
-	bool findLoadedModel(const char* fileName, ModelIndex& modelIndex) override;
+	bool recordLoadedModel(const char* fileName, Model* model) override;
+	bool findLoadedModel(const char* fileName, Model*& model) override;
 
 	bool recordLoadedTexture(const char* fileName, TextureDataComponent* texture) override;
 	bool findLoadedTexture(const char* fileName, TextureDataComponent*& texture) override;
@@ -28,11 +28,12 @@ public:
 	bool recordLoadedAnimation(const char* fileName, AnimationDataComponent* animation) override;
 	bool findLoadedAnimation(const char* fileName, AnimationDataComponent*& animation) override;
 
-	uint64_t getCurrentMeshMaterialPairOffset() override;
-	uint64_t addMeshMaterialPair(const MeshMaterialPair& pair) override;
-	const MeshMaterialPair& getMeshMaterialPair(uint64_t index) override;
+	ArrayRangeInfo addMeshMaterialPairs(uint64_t count) override;
+	MeshMaterialPair* getMeshMaterialPair(uint64_t index) override;
 
-	ModelIndex addUnitModel(MeshShapeType meshShapeType) override;
+	Model* addModel() override;
+
+	Model* addUnitModel(MeshShapeType meshShapeType) override;
 	void addUnitCube(MeshDataComponent& meshDataComponent) override;
 	void addUnitSphere(MeshDataComponent& meshDataComponent) override;
 	void addUnitQuad(MeshDataComponent& meshDataComponent) override;

@@ -60,12 +60,12 @@ bool HitableCube::Hit(const Ray & r, float tMin, float tMax, HitResult & hitResu
 		return false;
 	}
 
-	for (uint64_t j = 0; j < m_VisibleComponent->m_modelIndex.m_count; j++)
+	for (uint64_t j = 0; j < m_VisibleComponent->m_model->meshMaterialPairs.m_count; j++)
 	{
-		auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(m_VisibleComponent->m_modelIndex.m_startOffset + j);
-		hitResult.Albedo.x = l_pair.material->m_materialAttributes.AlbedoR;
-		hitResult.Albedo.y = l_pair.material->m_materialAttributes.AlbedoG;
-		hitResult.Albedo.z = l_pair.material->m_materialAttributes.AlbedoB;
+		auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(m_VisibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
+		hitResult.Albedo.x = l_pair->material->m_materialAttributes.AlbedoR;
+		hitResult.Albedo.y = l_pair->material->m_materialAttributes.AlbedoG;
+		hitResult.Albedo.z = l_pair->material->m_materialAttributes.AlbedoB;
 		break;
 	}
 
@@ -97,12 +97,12 @@ bool HitableSphere::Hit(const Ray & r, float tMin, float tMax, HitResult & hitRe
 
 	if (dis > 0)
 	{
-		for (uint64_t j = 0; j < m_VisibleComponent->m_modelIndex.m_count; j++)
+		for (uint64_t j = 0; j < m_VisibleComponent->m_model->meshMaterialPairs.m_count; j++)
 		{
-			auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(m_VisibleComponent->m_modelIndex.m_startOffset + j);
-			hitResult.Albedo.x = l_pair.material->m_materialAttributes.AlbedoR;
-			hitResult.Albedo.y = l_pair.material->m_materialAttributes.AlbedoG;
-			hitResult.Albedo.z = l_pair.material->m_materialAttributes.AlbedoB;
+			auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(m_VisibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
+			hitResult.Albedo.x = l_pair->material->m_materialAttributes.AlbedoR;
+			hitResult.Albedo.y = l_pair->material->m_materialAttributes.AlbedoG;
+			hitResult.Albedo.z = l_pair->material->m_materialAttributes.AlbedoB;
 			break;
 		}
 

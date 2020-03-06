@@ -34,12 +34,19 @@ bool InnoAssetSystem::findLoaded##funcName(const char * fileName, type value) \
 
 namespace InnoAssetSystemNS
 {
-	std::vector<MeshMaterialPair> m_meshMaterialPairPool;
-	std::unordered_map<std::string, MeshMaterialPair> m_loadedMeshMaterialPair;
-	std::unordered_map<std::string, ModelIndex> m_loadedModel;
+	IObjectPool* m_meshMaterialPairPool;
+	IObjectPool* m_modelPool;
+	std::vector<MeshMaterialPair*> m_meshMaterialPairList;
+
+	std::unordered_map<std::string, MeshMaterialPair*> m_loadedMeshMaterialPair;
+	std::unordered_map<std::string, Model*> m_loadedModel;
 	std::unordered_map<std::string, TextureDataComponent*> m_loadedTexture;
 	std::unordered_map<std::string, AnimationDataComponent*> m_loadedAnimation;
 	std::unordered_map<std::string, SkeletonDataComponent*> m_loadedSkeleton;
+
+	std::atomic<uint64_t> m_currentMeshMaterialPairIndex = 0;
+	std::shared_mutex m_mutexMeshMaterialPair;
+	std::shared_mutex m_mutexModel;
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
@@ -48,8 +55,9 @@ using namespace InnoAssetSystemNS;
 
 bool InnoAssetSystem::setup()
 {
-	//@TODO:
-	m_meshMaterialPairPool.reserve(65536);
+	m_meshMaterialPairPool = InnoMemory::CreateObjectPool<MeshMaterialPair>(65536);
+	m_meshMaterialPairList.reserve(65536);
+	m_modelPool = InnoMemory::CreateObjectPool<Model>(4096);
 
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
@@ -95,11 +103,11 @@ ObjectStatus InnoAssetSystem::getStatus()
 	return m_ObjectStatus;
 }
 
-recordLoaded(MeshMaterialPair, const MeshMaterialPair&, pair)
-findLoaded(MeshMaterialPair, MeshMaterialPair&, pair)
+recordLoaded(MeshMaterialPair, MeshMaterialPair*, pair)
+findLoaded(MeshMaterialPair, MeshMaterialPair*&, pair)
 
-recordLoaded(Model, const ModelIndex&, modelIndex)
-findLoaded(Model, ModelIndex&, modelIndex)
+recordLoaded(Model, Model*, model)
+findLoaded(Model, Model*&, model)
 
 recordLoaded(Texture, TextureDataComponent*, texture)
 findLoaded(Texture, TextureDataComponent*&, texture)
@@ -110,37 +118,48 @@ findLoaded(Skeleton, SkeletonDataComponent*&, skeleton)
 recordLoaded(Animation, AnimationDataComponent*, animation)
 findLoaded(Animation, AnimationDataComponent*&, animation)
 
-uint64_t InnoAssetSystem::getCurrentMeshMaterialPairOffset()
+ArrayRangeInfo InnoAssetSystem::addMeshMaterialPairs(uint64_t count)
 {
-	return m_meshMaterialPairPool.size();
+	std::unique_lock<std::shared_mutex> lock{ m_mutexMeshMaterialPair };
+
+	ArrayRangeInfo l_result;
+	l_result.m_startOffset = m_currentMeshMaterialPairIndex;
+	l_result.m_count = count;
+
+	m_currentMeshMaterialPairIndex += count;
+
+	for (size_t i = 0; i < count; i++)
+	{
+		m_meshMaterialPairList.emplace_back(InnoMemory::Spawn<MeshMaterialPair>(m_meshMaterialPairPool));
+	}
+
+	return l_result;
 }
 
-uint64_t InnoAssetSystem::addMeshMaterialPair(const MeshMaterialPair & pair)
+MeshMaterialPair* InnoAssetSystem::getMeshMaterialPair(uint64_t index)
 {
-	m_meshMaterialPairPool.emplace_back(pair);
-	return m_meshMaterialPairPool.size();
+	return m_meshMaterialPairList[index];
 }
 
-const MeshMaterialPair & InnoAssetSystem::getMeshMaterialPair(uint64_t index)
+Model * InnoAssetSystem::addModel()
 {
-	return m_meshMaterialPairPool[index];
+	std::unique_lock<std::shared_mutex> lock{ m_mutexModel };
+
+	return InnoMemory::Spawn<Model>(m_modelPool);
 }
 
-ModelIndex InnoAssetSystem::addUnitModel(MeshShapeType meshShapeType)
+Model* InnoAssetSystem::addUnitModel(MeshShapeType meshShapeType)
 {
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(meshShapeType);
 	auto l_material = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
 	l_material->m_ObjectStatus = ObjectStatus::Created;
 
-	MeshMaterialPair l_pair;
-	l_pair.mesh = l_mesh;
-	l_pair.material = l_material;
+	auto l_result = addModel();
+	l_result->meshMaterialPairs = addMeshMaterialPairs(1);
 
-	ModelIndex l_result;
-	l_result.m_startOffset = getCurrentMeshMaterialPairOffset();
-	l_result.m_count = 1;
-
-	addMeshMaterialPair(l_pair);
+	auto l_pair = getMeshMaterialPair(l_result->meshMaterialPairs.m_startOffset);
+	l_pair->mesh = l_mesh;
+	l_pair->material = l_material;
 
 	return l_result;
 }

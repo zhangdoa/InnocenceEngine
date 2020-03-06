@@ -45,25 +45,26 @@ bool InnoVisibleComponentManager::Setup()
 
 	f_LoadModelTask = [=](VisibleComponent* i, bool AsyncLoad)
 	{
-		i->m_modelIndex = g_pModuleManager->getFileSystem()->loadModel(i->m_modelFileName.c_str(), AsyncLoad);
+		i->m_model = g_pModuleManager->getFileSystem()->loadModel(i->m_modelFileName.c_str(), AsyncLoad);
 	};
 
 	f_AssignUnitModelTask = [=](VisibleComponent* i)
 	{
-		i->m_modelIndex = g_pModuleManager->getAssetSystem()->addUnitModel(i->m_meshShapeType);
+		i->m_model = g_pModuleManager->getAssetSystem()->addUnitModel(i->m_meshShapeType);
 	};
 
+	// @TODO: Concurrency
 	f_PDCTask = [=](VisibleComponent* i)
 	{
 		i->m_PDCIndex.m_startOffset = g_pModuleManager->getPhysicsSystem()->getCurrentPhysicsDataComponentOffset();
-		i->m_PDCIndex.m_count = i->m_modelIndex.m_count;
+		i->m_PDCIndex.m_count = i->m_model->meshMaterialPairs.m_count;
 
 		auto l_transformComponent = GetComponent(TransformComponent, i->m_ParentEntity);
 		auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
-		for (uint64_t j = 0; j < i->m_modelIndex.m_count; j++)
+		for (uint64_t j = 0; j < i->m_model->meshMaterialPairs.m_count; j++)
 		{
-			auto l_meshMaterialPair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(i->m_modelIndex.m_startOffset + j);
+			auto l_meshMaterialPair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(i->m_model->meshMaterialPairs.m_startOffset + j);
 
 			auto l_PDC = g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(l_meshMaterialPair);
 			g_pModuleManager->getPhysicsSystem()->generateAABBInWorldSpace(l_PDC, l_globalTm);

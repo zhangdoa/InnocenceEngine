@@ -433,13 +433,13 @@ void ImGuiWrapperNS::showVisiableComponentPropertyEditor(void * rhs)
 	{
 		ImGui::BeginChild("Children MaterialDataComponents", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.3f, 400.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
 		{
-			for (uint64_t j = 0; j < l_rhs->m_modelIndex.m_count; j++)
+			for (uint64_t j = 0; j < l_rhs->m_model->meshMaterialPairs.m_count; j++)
 			{
-				auto l_meshMaterialPair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(l_rhs->m_modelIndex.m_startOffset + j);
+				auto l_meshMaterialPair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(l_rhs->m_model->meshMaterialPairs.m_startOffset + j);
 
-				if (ImGui::Selectable(l_meshMaterialPair.mesh->m_ParentEntity->m_EntityName.c_str(), selectedComponent == l_meshMaterialPair.material))
+				if (ImGui::Selectable(l_meshMaterialPair->mesh->m_ParentEntity->m_EntityName.c_str(), selectedComponent == l_meshMaterialPair->material))
 				{
-					selectedComponent = l_meshMaterialPair.material;
+					selectedComponent = l_meshMaterialPair->material;
 				}
 			}
 		}
