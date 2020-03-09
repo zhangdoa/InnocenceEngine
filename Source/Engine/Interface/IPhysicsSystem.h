@@ -48,9 +48,6 @@ public:
 
 	virtual ObjectStatus getStatus() = 0;
 
-	virtual uint64_t getCurrentPhysicsDataComponentOffset() = 0;
-	virtual PhysicsDataComponent* generatePhysicsDataComponent(MeshMaterialPair* meshMaterialPair) = 0;
-	virtual bool generateAABBInWorldSpace(PhysicsDataComponent* PDC, const Mat4& m) = 0;
 	virtual bool generatePhysicsProxy(VisibleComponent* VC) = 0;
 	virtual void updateBVH() = 0;
 	virtual void updateCulling() = 0;

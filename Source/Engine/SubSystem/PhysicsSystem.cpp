@@ -166,43 +166,47 @@ bool InnoPhysicsSystemNS::generateAABBInWorldSpace(PhysicsDataComponent* PDC, co
 
 bool InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent * VC)
 {
-	for (uint64_t i = 0; i < VC->m_PDCIndex.m_count; i++)
-	{
-		auto l_PDC = m_Components[VC->m_PDCIndex.m_startOffset + i];
+	auto l_transformComponent = GetComponent(TransformComponent, VC->m_ParentEntity);
+	auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
+	for (uint64_t j = 0; j < VC->m_model->meshMaterialPairs.m_count; j++)
+	{
+		auto l_meshMaterialPair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(VC->m_model->meshMaterialPairs.m_startOffset + j);
+
+		auto l_PDC = generatePhysicsDataComponent(l_meshMaterialPair);
+		l_PDC->m_TransformComponent = l_transformComponent;
 		l_PDC->m_VisibleComponent = VC;
-		if (VC->m_meshUsageType == MeshUsageType::Static)
+		l_PDC->m_MeshUsageType = VC->m_meshUsageType;
+
+		generateAABBInWorldSpace(l_PDC, l_globalTm);
+		if (l_PDC->m_MeshUsageType == MeshUsageType::Static)
 		{
 			updateStaticSceneBoundary(l_PDC->m_AABBWS);
 		}
 		updateTotalSceneBoundary(l_PDC->m_AABBWS);
-	}
 
 #if defined INNO_PLATFORM_WIN
-	if (VC->m_simulatePhysics)
-	{
-		auto l_transformComponent = GetComponent(TransformComponent, VC->m_ParentEntity);
-		switch (VC->m_meshShapeType)
+		if (VC->m_simulatePhysics)
 		{
-		case MeshShapeType::Cube:
-			PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_rot, l_transformComponent->m_localTransformVector_target.m_scale, (VC->m_meshUsageType == MeshUsageType::Dynamic));
-			break;
-		case MeshShapeType::Sphere:
-			PhysXWrapper::get().createPxSphere(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_scale.x, (VC->m_meshUsageType == MeshUsageType::Dynamic));
-			break;
-		case MeshShapeType::Custom:
-			for (uint64_t i = 0; i < VC->m_PDCIndex.m_count; i++)
+			switch (l_meshMaterialPair->mesh->m_meshShapeType)
 			{
-				auto l_PDC = m_Components[VC->m_PDCIndex.m_startOffset + i];
-
-				PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_rot, l_PDC->m_AABBWS.m_boundMax - l_PDC->m_AABBWS.m_boundMin, (VC->m_meshUsageType == MeshUsageType::Dynamic));
+			case MeshShapeType::Cube:
+				PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_rot, l_transformComponent->m_localTransformVector_target.m_scale, (VC->m_meshUsageType == MeshUsageType::Dynamic));
+				break;
+			case MeshShapeType::Sphere:
+				PhysXWrapper::get().createPxSphere(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_scale.x, (VC->m_meshUsageType == MeshUsageType::Dynamic));
+				break;
+			case MeshShapeType::Custom:
+				PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_rot, l_PDC->m_AABBWS.m_extend, (VC->m_meshUsageType == MeshUsageType::Dynamic));
+				break;
+			default:
+				break;
 			}
-			break;
-		default:
-			break;
 		}
-	}
 #endif
+
+		l_PDC->m_ObjectStatus = ObjectStatus::Activated;
+	}
 
 	return true;
 }
@@ -264,16 +268,6 @@ bool InnoPhysicsSystem::terminate()
 ObjectStatus InnoPhysicsSystem::getStatus()
 {
 	return InnoPhysicsSystemNS::m_ObjectStatus;
-}
-
-uint64_t InnoPhysicsSystem::getCurrentPhysicsDataComponentOffset()
-{
-	return m_Components.size();
-}
-
-PhysicsDataComponent* InnoPhysicsSystem::generatePhysicsDataComponent(MeshMaterialPair* meshMaterialPair)
-{
-	return InnoPhysicsSystemNS::generatePhysicsDataComponent(meshMaterialPair);
 }
 
 bool generateBVHLeafNodes(BVHNode* parentNode)
@@ -503,54 +497,44 @@ void InnoPhysicsSystem::updateBVH()
 
 void PlainCulling(const Frustum& frustum, std::vector<CullingData>& cullingDatas)
 {
-	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
-
-	for (auto VC : l_visibleComponents)
+	for (auto PDC : m_Components)
 	{
-		if (VC->m_visibilityType != VisibilityType::Invisible && VC->m_ObjectStatus == ObjectStatus::Activated)
+		if (PDC->m_ObjectStatus == ObjectStatus::Activated)
 		{
-			auto l_transformComponent = GetComponent(TransformComponent, VC->m_ParentEntity);
+			auto l_transformComponent = PDC->m_TransformComponent;
 			auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
-			for (uint64_t i = 0; i < VC->m_PDCIndex.m_count; i++)
+			CullingData l_cullingData;
+
+			l_cullingData.m = l_globalTm;
+			l_cullingData.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
+			l_cullingData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
+			l_cullingData.mesh = PDC->m_MeshMaterialPair->mesh;
+			l_cullingData.material = PDC->m_MeshMaterialPair->material;
+			l_cullingData.visibilityType = PDC->m_VisibleComponent->m_visibilityType;
+			l_cullingData.meshUsageType = PDC->m_VisibleComponent->m_meshUsageType;
+			l_cullingData.UUID = PDC->m_VisibleComponent->m_UUID;
+
+			if (PDC->m_MeshUsageType == MeshUsageType::Dynamic)
 			{
-				auto l_PDC = m_Components[VC->m_PDCIndex.m_startOffset + i];
-
-				if (l_PDC)
-				{
-					CullingData l_cullingData;
-
-					l_cullingData.m = l_globalTm;
-					l_cullingData.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
-					l_cullingData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-					l_cullingData.mesh = l_PDC->m_MeshMaterialPair->mesh;
-					l_cullingData.material = l_PDC->m_MeshMaterialPair->material;
-					l_cullingData.visibilityType = VC->m_visibilityType;
-					l_cullingData.meshUsageType = VC->m_meshUsageType;
-					l_cullingData.UUID = VC->m_UUID;
-
-					if (VC->m_meshUsageType == MeshUsageType::Dynamic)
-					{
-						l_PDC->m_AABBWS = InnoMath::transformAABBSpace(l_PDC->m_AABBLS, l_globalTm);
-						l_PDC->m_SphereWS = generateBoundSphere(l_PDC->m_AABBWS);
-					}
-
-					if (InnoMath::intersectCheck(frustum, l_PDC->m_SphereWS))
-					{
-						updateVisibleSceneBoundary(l_PDC->m_AABBWS);
-						l_cullingData.cullingDataChannel = CullingDataChannel::MainCamera;
-					}
-					else
-					{
-						//@TODO: Culling from sun
-						l_cullingData.cullingDataChannel = CullingDataChannel::Shadow;
-					}
-
-					cullingDatas.emplace_back(l_cullingData);
-
-					updateTotalSceneBoundary(l_PDC->m_AABBWS);
-				}
+				PDC->m_AABBWS = InnoMath::transformAABBSpace(PDC->m_AABBLS, l_globalTm);
+				PDC->m_SphereWS = generateBoundSphere(PDC->m_AABBWS);
 			}
+
+			if (InnoMath::intersectCheck(frustum, PDC->m_SphereWS))
+			{
+				updateVisibleSceneBoundary(PDC->m_AABBWS);
+				l_cullingData.cullingDataChannel = CullingDataChannel::MainCamera;
+			}
+			else
+			{
+				//@TODO: Culling from sun
+				l_cullingData.cullingDataChannel = CullingDataChannel::Shadow;
+			}
+
+			cullingDatas.emplace_back(l_cullingData);
+
+			updateTotalSceneBoundary(PDC->m_AABBWS);
 		}
 	}
 }
@@ -678,11 +662,6 @@ AABB InnoPhysicsSystem::getTotalSceneAABB()
 BVHNode * InnoPhysicsSystem::getRootBVHNode()
 {
 	return InnoPhysicsSystemNS::m_RootBVHNode;
-}
-
-bool InnoPhysicsSystem::generateAABBInWorldSpace(PhysicsDataComponent* PDC, const Mat4& m)
-{
-	return InnoPhysicsSystemNS::generateAABBInWorldSpace(PDC, m);
 }
 
 bool InnoPhysicsSystem::generatePhysicsProxy(VisibleComponent * VC)

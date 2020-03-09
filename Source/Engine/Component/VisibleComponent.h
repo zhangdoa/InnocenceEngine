@@ -27,5 +27,4 @@ public:
 	bool m_simulatePhysics = false;
 
 	Model* m_model;
-	ArrayRangeInfo m_PDCIndex;
 };

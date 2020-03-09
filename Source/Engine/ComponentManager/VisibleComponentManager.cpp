@@ -56,20 +56,7 @@ bool InnoVisibleComponentManager::Setup()
 	// @TODO: Concurrency
 	f_PDCTask = [=](VisibleComponent* i)
 	{
-		i->m_PDCIndex.m_startOffset = g_pModuleManager->getPhysicsSystem()->getCurrentPhysicsDataComponentOffset();
-		i->m_PDCIndex.m_count = i->m_model->meshMaterialPairs.m_count;
-
-		auto l_transformComponent = GetComponent(TransformComponent, i->m_ParentEntity);
-		auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
-
-		for (uint64_t j = 0; j < i->m_model->meshMaterialPairs.m_count; j++)
-		{
-			auto l_meshMaterialPair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(i->m_model->meshMaterialPairs.m_startOffset + j);
-
-			auto l_PDC = g_pModuleManager->getPhysicsSystem()->generatePhysicsDataComponent(l_meshMaterialPair);
-			g_pModuleManager->getPhysicsSystem()->generateAABBInWorldSpace(l_PDC, l_globalTm);
-			g_pModuleManager->getPhysicsSystem()->generatePhysicsProxy(i);
-		}
+		g_pModuleManager->getPhysicsSystem()->generatePhysicsProxy(i);
 
 		i->m_ObjectStatus = ObjectStatus::Activated;
 	};
