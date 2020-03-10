@@ -29,8 +29,6 @@ public:
     ObjectStatus getStatus() override;
 
     bool resize() override;
-    bool reloadShader(RenderPassType renderPassType) override;
-    bool bakeGI() override;
 
     bool initializeMTMeshDataComponent(MTMeshDataComponent* rhs) override;
     bool initializeMTTextureDataComponent(MTTextureDataComponent* rhs) override;

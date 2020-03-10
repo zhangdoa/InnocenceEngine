@@ -21,8 +21,6 @@ public:
 	virtual ObjectStatus getStatus() = 0;
 
 	virtual bool resize() = 0;
-	virtual bool reloadShader(RenderPassType renderPassType) = 0;
-	virtual bool bakeGI() = 0;
 
   virtual bool initializeMTMeshDataComponent(MTMeshDataComponent* rhs) = 0;
   virtual bool initializeMTTextureDataComponent(MTTextureDataComponent* rhs) = 0;

@@ -35,5 +35,7 @@ cp QDarkStyleSheet/qdarkstyle/style.qrc ../../Editor/InnoEditor/qdarkstyle/
 
 cd ../
 
-mkdir -p DLL/Mac
-mkdir -p Lib/Mac
+mkdir -p DLL/Mac/Debug
+mkdir -p Lib/Mac/Debug
+mkdir -p DLL/Mac/Release
+mkdir -p Lib/Mac/Release

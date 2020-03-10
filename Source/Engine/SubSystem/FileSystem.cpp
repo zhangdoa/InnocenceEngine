@@ -61,7 +61,7 @@ bool InnoFileSystemNS::convertModel(const char* fileName, const char* exportPath
 
 bool InnoFileSystemNS::saveScene(const char* fileName)
 {
-	if (fileName == "")
+	if (!strcmp(fileName, ""))
 	{
 		return JSONParser::saveScene(m_currentScene.c_str());
 	}

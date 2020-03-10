@@ -45,7 +45,7 @@ target_link_libraries(InnoEngine MacWindow)
 find_library(COCOA Cocoa)
 find_library(IOKIT IOKit)
 find_library(COREVIDEO CoreVideo)
-target_link_libraries(InnoEngine "${COCOA}" "${IOKIT}" "${COREVIDEO}" -lz -lc++fs)
+target_link_libraries(InnoEngine "${COCOA}" "${IOKIT}" "${COREVIDEO}" -lz)
 endif (INNO_PLATFORM_MAC)
 
 if (INNO_PLATFORM_LINUX)

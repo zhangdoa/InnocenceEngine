@@ -47,8 +47,8 @@ set(INNO_PLATFORM_MAC ON)
 set(INNO_RENDERER_METAL ON)
 endif (APPLE)
 
-find_package(Vulkan REQUIRED)
-find_package(OpenGL REQUIRED)
+find_package(Vulkan)
+find_package(OpenGL)
 
 if (VULKAN_FOUND)
 set(INNO_RENDERER_VULKAN ON)

@@ -1,5 +1,5 @@
 #pragma once
-#include "../../Core/IWindowSystem.h"
+#include "../../Interface/IWindowSystem.h"
 #include "MacWindowSystemBridge.h"
 
 class MacWindowSystem : public IWindowSystem

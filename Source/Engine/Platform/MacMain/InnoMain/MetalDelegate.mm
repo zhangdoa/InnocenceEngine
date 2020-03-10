@@ -12,7 +12,7 @@
 #include "../../../Common/GPUDataStructure.h"
 #include "../../../Component/MTMeshDataComponent.h"
 
-#include "../../../ModuleManager/IModuleManager.h"
+#include "../../../Interface/IModuleManager.h"
 
 extern IModuleManager* g_pModuleManager;
 
@@ -22,7 +22,7 @@ extern IModuleManager* g_pModuleManager;
     MTKView* _view;
     id<MTLLibrary> _library;
     id<MTLRenderPipelineState> _pipelineState;
-    id<MTLBuffer> _cameraUBO;
+    id<MTLBuffer> _perFrameUBO;
     id<MTLBuffer> _meshUBO;
     id<MTLCommandQueue> _commandQueue;
 
@@ -98,7 +98,7 @@ extern IModuleManager* g_pModuleManager;
         /*
          * Metal setup: Uniforms
          */
-        _cameraUBO = createUBO(sizeof(CameraGPUData));
+        _perFrameUBO = createUBO(sizeof(PerFrameConstantBuffer));
         
         /*
          * Metal setup: Command queue
@@ -119,8 +119,8 @@ extern IModuleManager* g_pModuleManager;
     
 - (void)render
 {
-        auto l_cameraGPUData = g_pModuleManager->getRenderingFrontend()->getCameraGPUData();
-        updateUBO(_cameraUBO, &l_cameraGPUData, sizeof(l_cameraGPUData));
+        auto l_perFrameGPUData = g_pModuleManager->getRenderingFrontend()->getPerFrameConstantBuffer();
+        updateUBO(_perFrameUBO, &l_perFrameGPUData, sizeof(l_perFrameGPUData));
     
         MTLRenderPassDescriptor* passDescriptor = [_view currentRenderPassDescriptor];
         id<CAMetalDrawable> drawable = [_view currentDrawable];

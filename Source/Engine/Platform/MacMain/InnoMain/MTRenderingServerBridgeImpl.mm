@@ -51,14 +51,6 @@ bool MTRenderingServerBridgeImpl::resize() {
     return true;
 }
 
-bool MTRenderingServerBridgeImpl::reloadShader(RenderPassType renderPassType) {
-    return true;
-}
-
-bool MTRenderingServerBridgeImpl::bakeGI() {
-    return true;
-}
-
 MTRenderingServerBridgeImpl::MTRenderingServerBridgeImpl(MacWindowDelegate* macWindowDelegate, MetalDelegate *metalDelegate) {
     m_macWindowDelegate = macWindowDelegate;
     m_metalDelegate = metalDelegate;
