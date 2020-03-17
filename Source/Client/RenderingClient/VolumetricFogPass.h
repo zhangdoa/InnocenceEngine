@@ -10,4 +10,5 @@ namespace VolumetricFogPass
 	bool Terminate();
 
 	IResourceBinder* GetRayMarchingResult();
+	IResourceBinder* GetFroxelVisualizationResult();
 };

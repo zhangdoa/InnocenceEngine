@@ -23,10 +23,12 @@ struct VolumetricPassConstantBuffer
 namespace VolumetricFogPass
 {
 	bool setupFroxelizationPass();
+	bool setupFroxelVisualizationPass();
 	bool setupIrradianceInjectionPass();
 	bool setupRayMarchingPass();
 
 	bool froxelization();
+	bool froxelVisualization();
 	bool irraidanceInjection();
 	bool rayMarching();
 
@@ -34,6 +36,9 @@ namespace VolumetricFogPass
 
 	RenderPassDataComponent* m_froxelizationRPDC;
 	ShaderProgramComponent* m_froxelizationSPC;
+
+	RenderPassDataComponent* m_froxelVisualizationRPDC;
+	ShaderProgramComponent* m_froxelVisualizationSPC;
 
 	RenderPassDataComponent* m_irraidanceInjectionRPDC;
 	ShaderProgramComponent* m_irraidanceInjectionSPC;
@@ -44,9 +49,6 @@ namespace VolumetricFogPass
 
 	TextureDataComponent* m_irraidanceInjectionResult;
 	TextureDataComponent* m_rayMarchingResult;
-
-	const uint32_t m_volumeDimension = 128;
-	const uint32_t m_voxelCount = m_volumeDimension * m_volumeDimension * m_volumeDimension;
 }
 
 bool VolumetricFogPass::setupFroxelizationPass()
@@ -73,18 +75,18 @@ bool VolumetricFogPass::setupFroxelizationPass()
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 
 	l_RenderPassDesc.m_RenderTargetDesc.SamplerType = TextureSamplerType::Sampler3D;
-	l_RenderPassDesc.m_RenderTargetDesc.UsageType = TextureUsageType::RawImage;
+	l_RenderPassDesc.m_RenderTargetDesc.UsageType = TextureUsageType::ColorAttachment;
 	l_RenderPassDesc.m_RenderTargetDesc.GPUAccessibility = Accessibility::ReadWrite;
-	l_RenderPassDesc.m_RenderTargetDesc.Width = 160;
-	l_RenderPassDesc.m_RenderTargetDesc.Height = 90;
+	l_RenderPassDesc.m_RenderTargetDesc.Width = 64;
+	l_RenderPassDesc.m_RenderTargetDesc.Height = 64;
 	l_RenderPassDesc.m_RenderTargetDesc.DepthOrArraySize = 64;
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = 160;
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = 90;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = 64;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = 64;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_MaxDepth = 64;
 
 	m_froxelizationRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_froxelizationRPDC->m_ResourceBinderLayoutDescs.resize(5);
+	m_froxelizationRPDC->m_ResourceBinderLayoutDescs.resize(4);
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
@@ -101,14 +103,54 @@ bool VolumetricFogPass::setupFroxelizationPass()
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 9;
 
-	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Image;
-	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_BinderAccessibility = Accessibility::ReadWrite;
-	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 4;
-	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 0;
-	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_IndirectBinding = true;
+	//m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Image;
+	//m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_BinderAccessibility = Accessibility::ReadWrite;
+	//m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
+	//m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 4;
+	//m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 0;
+	//m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_IndirectBinding = true;
 
 	m_froxelizationRPDC->m_ShaderProgram = m_froxelizationSPC;
+
+	return true;
+}
+
+bool VolumetricFogPass::setupFroxelVisualizationPass()
+{
+	m_froxelVisualizationSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("VolumetricFroxelVisualizationPass/");
+
+	m_froxelVisualizationSPC->m_ShaderFilePaths.m_VSPath = "volumetricFogFroxelVisualizationPass.vert/";
+	m_froxelVisualizationSPC->m_ShaderFilePaths.m_GSPath = "volumetricFogFroxelVisualizationPass.geom/";
+	m_froxelVisualizationSPC->m_ShaderFilePaths.m_PSPath = "volumetricFogFroxelVisualizationPass.frag/";
+
+	m_froxelVisualizationRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("VolumetricFogFroxelVisualizationPass/");
+
+	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+
+	l_RenderPassDesc.m_RenderTargetCount = 1;
+	l_RenderPassDesc.m_IsOffScreen = true;
+
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
+
+	l_RenderPassDesc.m_RenderTargetDesc.SamplerType = TextureSamplerType::Sampler2D;
+	l_RenderPassDesc.m_RenderTargetDesc.UsageType = TextureUsageType::ColorAttachment;
+	l_RenderPassDesc.m_RenderTargetDesc.Width = 64;
+	l_RenderPassDesc.m_RenderTargetDesc.Height = 64;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = 64;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = 64;
+
+	m_froxelVisualizationRPDC->m_RenderPassDesc = l_RenderPassDesc;
+
+	m_froxelVisualizationRPDC->m_ResourceBinderLayoutDescs.resize(1);
+
+	m_froxelVisualizationRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
+	m_froxelVisualizationRPDC->m_ResourceBinderLayoutDescs[0].m_BinderAccessibility = Accessibility::ReadOnly;
+	m_froxelVisualizationRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_froxelVisualizationRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_froxelVisualizationRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
+	m_froxelVisualizationRPDC->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
+
+	m_froxelVisualizationRPDC->m_ShaderProgram = m_froxelVisualizationSPC;
 
 	return true;
 }
@@ -198,6 +240,7 @@ bool VolumetricFogPass::setupRayMarchingPass()
 bool VolumetricFogPass::Setup()
 {
 	setupFroxelizationPass();
+	setupFroxelVisualizationPass();
 	setupIrradianceInjectionPass();
 	setupRayMarchingPass();
 
@@ -206,8 +249,8 @@ bool VolumetricFogPass::Setup()
 	l_RenderPassDesc.m_RenderTargetDesc.SamplerType = TextureSamplerType::Sampler3D;
 	l_RenderPassDesc.m_RenderTargetDesc.UsageType = TextureUsageType::RawImage;
 	l_RenderPassDesc.m_RenderTargetDesc.GPUAccessibility = Accessibility::ReadWrite;
-	l_RenderPassDesc.m_RenderTargetDesc.Width = 160;
-	l_RenderPassDesc.m_RenderTargetDesc.Height = 90;
+	l_RenderPassDesc.m_RenderTargetDesc.Width = 64;
+	l_RenderPassDesc.m_RenderTargetDesc.Height = 64;
 	l_RenderPassDesc.m_RenderTargetDesc.DepthOrArraySize = 64;
 
 	m_irraidanceInjectionResult = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("VolumetricFogIrraidanceInjectionResult/");
@@ -225,6 +268,9 @@ bool VolumetricFogPass::Initialize()
 
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_froxelizationSPC);
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_froxelizationRPDC);
+
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_froxelVisualizationSPC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_froxelVisualizationRPDC);
 
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_irraidanceInjectionSPC);
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_irraidanceInjectionRPDC);
@@ -253,7 +299,7 @@ bool VolumetricFogPass::froxelization()
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelizationRPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelizationRPDC, ShaderStage::Geometry, m_volumetricPassGBDC->m_ResourceBinder, 3, 9, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelizationRPDC, ShaderStage::Pixel, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 4, 0, Accessibility::ReadWrite);
+	//g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelizationRPDC, ShaderStage::Pixel, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 4, 0, Accessibility::ReadWrite);
 
 	//g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelizationRPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
 	//g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelizationRPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_drawCallData.materialConstantBufferIndex, 1);
@@ -280,9 +326,28 @@ bool VolumetricFogPass::froxelization()
 		}
 	}
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_froxelizationRPDC, ShaderStage::Pixel, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 4, 0, Accessibility::ReadWrite);
+	//g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_froxelizationRPDC, ShaderStage::Pixel, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 4, 0, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_froxelizationRPDC);
+
+	return true;
+}
+
+bool VolumetricFogPass::froxelVisualization()
+{
+	g_pModuleManager->getRenderingServer()->CommandListBegin(m_froxelVisualizationRPDC, 0);
+	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_froxelVisualizationRPDC);
+	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_froxelVisualizationRPDC);
+
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelVisualizationRPDC, ShaderStage::Vertex, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadOnly);
+
+	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Cube);
+
+	g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_froxelVisualizationRPDC, l_mesh);
+
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_froxelVisualizationRPDC, ShaderStage::Vertex, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadOnly);
+
+	g_pModuleManager->getRenderingServer()->CommandListEnd(m_froxelVisualizationRPDC);
 
 	return true;
 }
@@ -292,12 +357,12 @@ bool VolumetricFogPass::irraidanceInjection()
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::ComputeDispatchParam);
 
-	auto l_numThreadsX = 160;
-	auto l_numThreadsY = 90;
+	auto l_numThreadsX = 64;
+	auto l_numThreadsY = 64;
 	auto l_numThreadsZ = 64;
 
 	DispatchParamsConstantBuffer l_irraidanceInjectionWorkload;
-	l_irraidanceInjectionWorkload.numThreadGroups = TVec4<uint32_t>(20, 12, 8, 0);
+	l_irraidanceInjectionWorkload.numThreadGroups = TVec4<uint32_t>(8, 8, 8, 0);
 	l_irraidanceInjectionWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_dispatchParamsGBDC, &l_irraidanceInjectionWorkload, 6, 1);
@@ -310,7 +375,7 @@ bool VolumetricFogPass::irraidanceInjection()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irraidanceInjectionRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 1, 6, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irraidanceInjectionRPDC, ShaderStage::Compute, m_irraidanceInjectionResult->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
 
-	g_pModuleManager->getRenderingServer()->DispatchCompute(m_irraidanceInjectionRPDC, 20, 12, 8);
+	g_pModuleManager->getRenderingServer()->DispatchCompute(m_irraidanceInjectionRPDC, 8, 8, 8);
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_irraidanceInjectionRPDC, ShaderStage::Compute, m_irraidanceInjectionResult->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
 
@@ -323,12 +388,12 @@ bool VolumetricFogPass::rayMarching()
 {
 	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::ComputeDispatchParam);
 
-	auto l_numThreadsX = 160;
-	auto l_numThreadsY = 90;
+	auto l_numThreadsX = 64;
+	auto l_numThreadsY = 64;
 	auto l_numThreadsZ = 64;
 
 	DispatchParamsConstantBuffer l_rayMarchingWorkload;
-	l_rayMarchingWorkload.numThreadGroups = TVec4<uint32_t>(20, 12, 8, 0);
+	l_rayMarchingWorkload.numThreadGroups = TVec4<uint32_t>(8, 8, 8, 0);
 	l_rayMarchingWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_dispatchParamsGBDC, &l_rayMarchingWorkload, 7, 1);
@@ -343,7 +408,7 @@ bool VolumetricFogPass::rayMarching()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_irraidanceInjectionResult->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_rayMarchingResult->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
 
-	g_pModuleManager->getRenderingServer()->DispatchCompute(m_rayMarchingRPDC, 20, 12, 8);
+	g_pModuleManager->getRenderingServer()->DispatchCompute(m_rayMarchingRPDC, 8, 8, 8);
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_irraidanceInjectionResult->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_rayMarchingResult->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
@@ -376,6 +441,7 @@ bool VolumetricFogPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_volumetricPassGBDC, &l_volumetricPassConstantBuffer);
 
 	froxelization();
+	froxelVisualization();
 	irraidanceInjection();
 	rayMarching();
 
@@ -385,15 +451,15 @@ bool VolumetricFogPass::PrepareCommandList()
 bool VolumetricFogPass::ExecuteCommandList()
 {
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_froxelizationRPDC);
-
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_froxelizationRPDC);
 
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_irraidanceInjectionRPDC);
+	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_froxelVisualizationRPDC);
+	g_pModuleManager->getRenderingServer()->WaitForFrame(m_froxelVisualizationRPDC);
 
+	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_irraidanceInjectionRPDC);
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_irraidanceInjectionRPDC);
 
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_rayMarchingRPDC);
-
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_rayMarchingRPDC);
 
 	return true;
@@ -402,6 +468,7 @@ bool VolumetricFogPass::ExecuteCommandList()
 bool VolumetricFogPass::Terminate()
 {
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_froxelizationRPDC);
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_froxelVisualizationRPDC);
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_irraidanceInjectionRPDC);
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_rayMarchingRPDC);
 
@@ -411,4 +478,9 @@ bool VolumetricFogPass::Terminate()
 IResourceBinder * VolumetricFogPass::GetRayMarchingResult()
 {
 	return m_rayMarchingResult->m_ResourceBinder;
+}
+
+IResourceBinder * VolumetricFogPass::GetFroxelVisualizationResult()
+{
+	return m_froxelVisualizationRPDC->m_RenderTargets[0]->m_ResourceBinder;
 }
