@@ -12,7 +12,7 @@ struct PixelInputType
 };
 
 [maxvertexcount(36)]
-void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputType> outStream)
+void main(point GeometryInputType input[1], inout TriangleStream<PixelInputType> outStream)
 {
 	PixelInputType output = (PixelInputType)0;
 
@@ -42,7 +42,12 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 
 	for (int i = 0; i < 8; ++i)
 	{
-		projectedVertices[i] = input[0].posCS + cubeVertices[i] / 64.0;
+		projectedVertices[i] = input[0].posCS + cubeVertices[i];
+		projectedVertices[i].xyz *= voxelizationPassCBuffer.volumeSize.xyz;
+		projectedVertices[i].xyz += voxelizationPassCBuffer.posWSOffset.xyz;
+
+		projectedVertices[i] = mul(projectedVertices[i], perFrameCBuffer.v);
+		projectedVertices[i] = mul(projectedVertices[i], perFrameCBuffer.p_original);
 	}
 
 	for (int t = 0; t < 12; ++t)

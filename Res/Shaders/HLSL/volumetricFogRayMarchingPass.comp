@@ -25,7 +25,7 @@ void main(ComputeInputType input)
 
 		int l_stepCount = input.dispatchThreadID.z;
 		float3 l_readCoord = l_writeCoord;
-		l_readCoord.xy /= float2(160.0, 90.0);
+		l_readCoord.xy /= float2(64.0, 64.0);
 
 		float3 l_irradiance = float3(0.0, 0.0, 0.0);
 

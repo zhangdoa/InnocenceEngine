@@ -3,10 +3,8 @@
 
 struct GeometryInputType
 {
-	float4 posCS : SV_POSITION;
-	float3 posWS : POSITION;
-	float2 TexCoord : TEXCOORD;
-	float3 Normal : NORMAL;
+	float4 posWS : SV_POSITION;
+	float4 Normal : NORMAL;
 };
 
 struct PixelInputType
@@ -61,38 +59,38 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 
 	float4 pos[3];
 
-	pos[0] = input[0].posCS;
-	pos[1] = input[1].posCS;
-	pos[2] = input[2].posCS;
+	pos[0] = input[0].posWS;
+	pos[1] = input[1].posWS;
+	pos[2] = input[2].posWS;
 
 	int selectedIndex = CalculateAxis(pos);
 
-	// project along the dominant axis
 	[unroll(3)]
 	for (int i = 0; i < 3; i++)
 	{
-		pos[i] /= pos[i].w;
+		// to voxel volume space
+		pos[i] = pos[i] - voxelizationPassCBuffer.posWSOffset;
+		pos[i].w = 1;
 
+		// project along the dominant axis
 		[flatten]
 		if (selectedIndex == 0)
 		{
-			pos[i] = float4(pos[i].y, pos[i].z, pos[i].x, 1);
+			pos[i].xyz = pos[i].zyx;
 		}
 		else if (selectedIndex == 1)
 		{
-			pos[i] = float4(pos[i].z, pos[i].x, pos[i].y, 1);
+			pos[i].xyz = pos[i].xzy;
 		}
-		else
-		{
-			pos[i] = float4(pos[i].x, pos[i].y, pos[i].z, 1);
-		}
-	}
 
-	[unroll(3)]
-	for (int j = 0; j < 3; ++j)
-	{
-		output.posCS = pos[j];
-		output.posCS_orig = input[j].posCS;
+		// normalize
+		pos[i].xyz /= voxelizationPassCBuffer.volumeSize.xyz;
+		output.posCS_orig = pos[i];
+
+		// for rasterization set z to 1
+		pos[i].z = 1;
+		output.posCS = pos[i];
+
 		output.AABB = getAABB(pos, float2(1.0 / 64.0, 1.0 / 64.0));
 
 		outStream.Append(output);

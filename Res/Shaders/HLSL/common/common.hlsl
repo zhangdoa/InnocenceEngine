@@ -104,12 +104,12 @@ struct GI_CB
 	float4 irradianceVolumeOffset;
 };
 
-struct VolumetricPassData
+struct VoxelizationPass_CB
 {
 	matrix VP[3];
 	matrix VP_inv[3];
 	float4 posWSOffset;
-	float4 volumeDim;
+	float4 volumeSize;
 	float4 voxelSize;
 	float4 padding[5];
 };

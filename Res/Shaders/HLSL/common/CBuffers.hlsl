@@ -43,7 +43,7 @@ cbuffer GICBuffer : register(b8)
 	GI_CB GICBuffer;
 };
 
-cbuffer volumetricPassCBuffer : register(b9)
+cbuffer voxelizationPassCBuffer : register(b9)
 {
-	VolumetricPassData volumetricPassCBuffer;
+	VoxelizationPass_CB voxelizationPassCBuffer;
 };

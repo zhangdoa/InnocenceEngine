@@ -8,7 +8,7 @@ struct PixelInputType
 
 struct PixelOutputType
 {
-	float4 froxelVisualizationPassRT0 : SV_Target0;
+	float4 voxelVisualizationPassRT0 : SV_Target0;
 };
 
 PixelOutputType main(PixelInputType input)
@@ -20,7 +20,7 @@ PixelOutputType main(PixelInputType input)
 		discard;
 	}
 
-	output.froxelVisualizationPassRT0 = input.posCS;
+	output.voxelVisualizationPassRT0 = float4(1.0, 1.0, 1.0, 1.0);
 
 	return output;
 }
