@@ -316,8 +316,8 @@ VKTextureDesc VKHelper::getVKTextureDesc(TextureDesc textureDesc)
 {
 	VKTextureDesc l_result;
 
-	l_result.imageType = getImageType(textureDesc.SamplerType);
-	l_result.imageViewType = getImageViewType(textureDesc.SamplerType);
+	l_result.imageType = getImageType(textureDesc.Sampler);
+	l_result.imageViewType = getImageViewType(textureDesc.Sampler);
 	l_result.imageUsageFlags = getImageUsageFlags(textureDesc.UsageType);
 	l_result.format = getTextureFormat(textureDesc);
 	l_result.imageSize = getImageSize(textureDesc);
@@ -326,28 +326,28 @@ VKTextureDesc VKHelper::getVKTextureDesc(TextureDesc textureDesc)
 	return l_result;
 }
 
-VkImageType VKHelper::getImageType(TextureSamplerType textureSamplerType)
+VkImageType VKHelper::getImageType(TextureSampler textureSampler)
 {
 	VkImageType l_result;
 
-	switch (textureSamplerType)
+	switch (textureSampler)
 	{
-	case TextureSamplerType::Sampler1D:
+	case TextureSampler::Sampler1D:
 		l_result = VkImageType::VK_IMAGE_TYPE_1D;
 		break;
-	case TextureSamplerType::Sampler2D:
+	case TextureSampler::Sampler2D:
 		l_result = VkImageType::VK_IMAGE_TYPE_2D;
 		break;
-	case TextureSamplerType::Sampler3D:
+	case TextureSampler::Sampler3D:
 		l_result = VkImageType::VK_IMAGE_TYPE_3D;
 		break;
-	case TextureSamplerType::Sampler1DArray:
+	case TextureSampler::Sampler1DArray:
 		l_result = VkImageType::VK_IMAGE_TYPE_1D;
 		break;
-	case TextureSamplerType::Sampler2DArray:
+	case TextureSampler::Sampler2DArray:
 		l_result = VkImageType::VK_IMAGE_TYPE_2D;
 		break;
-	case TextureSamplerType::SamplerCubemap:
+	case TextureSampler::SamplerCubemap:
 		l_result = VkImageType::VK_IMAGE_TYPE_2D;
 		break;
 	default:
@@ -357,28 +357,28 @@ VkImageType VKHelper::getImageType(TextureSamplerType textureSamplerType)
 	return l_result;
 }
 
-VkImageViewType VKHelper::getImageViewType(TextureSamplerType textureSamplerType)
+VkImageViewType VKHelper::getImageViewType(TextureSampler textureSampler)
 {
 	VkImageViewType l_result;
 
-	switch (textureSamplerType)
+	switch (textureSampler)
 	{
-	case TextureSamplerType::Sampler1D:
+	case TextureSampler::Sampler1D:
 		l_result = VkImageViewType::VK_IMAGE_VIEW_TYPE_1D;
 		break;
-	case TextureSamplerType::Sampler2D:
+	case TextureSampler::Sampler2D:
 		l_result = VkImageViewType::VK_IMAGE_VIEW_TYPE_2D;
 		break;
-	case TextureSamplerType::Sampler3D:
+	case TextureSampler::Sampler3D:
 		l_result = VkImageViewType::VK_IMAGE_VIEW_TYPE_3D;
 		break;
-	case TextureSamplerType::Sampler1DArray:
+	case TextureSampler::Sampler1DArray:
 		l_result = VkImageViewType::VK_IMAGE_VIEW_TYPE_1D_ARRAY;
 		break;
-	case TextureSamplerType::Sampler2DArray:
+	case TextureSampler::Sampler2DArray:
 		l_result = VkImageViewType::VK_IMAGE_VIEW_TYPE_2D_ARRAY;
 		break;
-	case TextureSamplerType::SamplerCubemap:
+	case TextureSampler::SamplerCubemap:
 		l_result = VkImageViewType::VK_IMAGE_VIEW_TYPE_CUBE;
 		break;
 	default:
@@ -647,24 +647,24 @@ VkDeviceSize VKHelper::getImageSize(TextureDesc textureDesc)
 	case TexturePixelDataFormat::DepthStencil:l_channelSize = 1; break;
 	}
 
-	switch (textureDesc.SamplerType)
+	switch (textureDesc.Sampler)
 	{
-	case TextureSamplerType::Sampler1D:
+	case TextureSampler::Sampler1D:
 		l_result = textureDesc.Width * l_singlePixelSize * l_channelSize;
 		break;
-	case TextureSamplerType::Sampler2D:
+	case TextureSampler::Sampler2D:
 		l_result = textureDesc.Width * textureDesc.Height * l_singlePixelSize * l_channelSize;
 		break;
-	case TextureSamplerType::Sampler3D:
+	case TextureSampler::Sampler3D:
 		l_result = textureDesc.Width * textureDesc.Height * textureDesc.DepthOrArraySize * l_singlePixelSize * l_channelSize;
 		break;
-	case TextureSamplerType::Sampler1DArray:
+	case TextureSampler::Sampler1DArray:
 		l_result = textureDesc.Width * textureDesc.DepthOrArraySize * l_singlePixelSize * l_channelSize;
 		break;
-	case TextureSamplerType::Sampler2DArray:
+	case TextureSampler::Sampler2DArray:
 		l_result = textureDesc.Width * textureDesc.Height * textureDesc.DepthOrArraySize * l_singlePixelSize * l_channelSize;
 		break;
-	case TextureSamplerType::SamplerCubemap:
+	case TextureSampler::SamplerCubemap:
 		l_result = textureDesc.Width * textureDesc.Height * 6 * l_singlePixelSize * l_channelSize;
 		break;
 	default:
@@ -700,11 +700,11 @@ VkImageCreateInfo VKHelper::getImageCreateInfo(TextureDesc textureDesc, VKTextur
 
 	l_result.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 
-	if (textureDesc.SamplerType == TextureSamplerType::Sampler2DArray)
+	if (textureDesc.Sampler == TextureSampler::Sampler2DArray)
 	{
 		//l_result.flags |= VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
 	}
-	else if (textureDesc.SamplerType == TextureSamplerType::SamplerCubemap)
+	else if (textureDesc.Sampler == TextureSampler::SamplerCubemap)
 	{
 		l_result.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 	}
@@ -712,7 +712,7 @@ VkImageCreateInfo VKHelper::getImageCreateInfo(TextureDesc textureDesc, VKTextur
 	l_result.imageType = vKTextureDesc.imageType;
 	l_result.extent.width = textureDesc.Width;
 	l_result.extent.height = textureDesc.Height;
-	if (textureDesc.SamplerType == TextureSamplerType::Sampler3D)
+	if (textureDesc.Sampler == TextureSampler::Sampler3D)
 	{
 		l_result.extent.depth = textureDesc.DepthOrArraySize;
 	}
@@ -721,12 +721,12 @@ VkImageCreateInfo VKHelper::getImageCreateInfo(TextureDesc textureDesc, VKTextur
 		l_result.extent.depth = 1;
 	}
 	l_result.mipLevels = 1;
-	if (textureDesc.SamplerType == TextureSamplerType::Sampler1DArray ||
-		textureDesc.SamplerType == TextureSamplerType::Sampler2DArray)
+	if (textureDesc.Sampler == TextureSampler::Sampler1DArray ||
+		textureDesc.Sampler == TextureSampler::Sampler2DArray)
 	{
 		l_result.arrayLayers = textureDesc.DepthOrArraySize;
 	}
-	else if (textureDesc.SamplerType == TextureSamplerType::SamplerCubemap)
+	else if (textureDesc.Sampler == TextureSampler::SamplerCubemap)
 	{
 		l_result.arrayLayers = 6;
 	}
@@ -845,8 +845,8 @@ bool VKHelper::createImageView(VkDevice device, VKTextureDataComponent* VKTDC)
 	viewInfo.subresourceRange.baseMipLevel = 0;
 	viewInfo.subresourceRange.levelCount = 1;
 	viewInfo.subresourceRange.baseArrayLayer = 0;
-	if (VKTDC->m_TextureDesc.SamplerType == TextureSamplerType::Sampler1DArray ||
-		VKTDC->m_TextureDesc.SamplerType == TextureSamplerType::Sampler2DArray)
+	if (VKTDC->m_TextureDesc.Sampler == TextureSampler::Sampler1DArray ||
+		VKTDC->m_TextureDesc.Sampler == TextureSampler::Sampler2DArray)
 	{
 		viewInfo.subresourceRange.layerCount = VKTDC->m_TextureDesc.DepthOrArraySize;
 	}

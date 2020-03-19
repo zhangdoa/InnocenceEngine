@@ -344,7 +344,7 @@ bool InnoRayTracer::Initialize()
 
 	m_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("RayTracingResult/");
 
-	m_TDC->m_TextureDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_TDC->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_TDC->m_TextureDesc.UsageType = TextureUsageType::Sample;
 	m_TDC->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 	m_TDC->m_TextureDesc.Width = l_screenResolution.x / l_denom;

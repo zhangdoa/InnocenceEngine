@@ -489,17 +489,17 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 	// Create the empty texture.
 	HRESULT l_HResult;
 
-	if (l_rhs->m_TextureDesc.SamplerType == TextureSamplerType::Sampler1D)
+	if (l_rhs->m_TextureDesc.Sampler == TextureSampler::Sampler1D)
 	{
 		auto l_desc = Get1DTextureDesc(l_rhs->m_DX11TextureDesc);
 		l_HResult = m_device->CreateTexture1D(&l_desc, NULL, (ID3D11Texture1D**)&l_rhs->m_ResourceHandle);
 	}
-	else if (l_rhs->m_TextureDesc.SamplerType == TextureSamplerType::Sampler2D)
+	else if (l_rhs->m_TextureDesc.Sampler == TextureSampler::Sampler2D)
 	{
 		auto l_desc = Get2DTextureDesc(l_rhs->m_DX11TextureDesc);
 		l_HResult = m_device->CreateTexture2D(&l_desc, NULL, (ID3D11Texture2D**)&l_rhs->m_ResourceHandle);
 	}
-	else if (l_rhs->m_TextureDesc.SamplerType == TextureSamplerType::Sampler3D)
+	else if (l_rhs->m_TextureDesc.Sampler == TextureSampler::Sampler3D)
 	{
 		auto l_desc = Get3DTextureDesc(l_rhs->m_DX11TextureDesc);
 		l_HResult = m_device->CreateTexture3D(&l_desc, NULL, (ID3D11Texture3D**)&l_rhs->m_ResourceHandle);
@@ -520,12 +520,12 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 	if (l_rhs->m_TextureData)
 	{
 		uint32_t l_rowPitch = l_rhs->m_TextureDesc.Width * l_rhs->m_DX11TextureDesc.PixelDataSize;
-		if (l_rhs->m_TextureDesc.SamplerType == TextureSamplerType::Sampler3D)
+		if (l_rhs->m_TextureDesc.Sampler == TextureSampler::Sampler3D)
 		{
 			uint32_t l_depthPitch = l_rowPitch * l_rhs->m_TextureDesc.Height;
 			m_deviceContext->UpdateSubresource(l_rhs->m_ResourceHandle, 0, NULL, l_rhs->m_TextureData, l_rowPitch, l_depthPitch);
 		}
-		else if (l_rhs->m_TextureDesc.SamplerType == TextureSamplerType::SamplerCubemap)
+		else if (l_rhs->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap)
 		{
 			for (uint32_t i = 0; i < 6; i++)
 			{
@@ -1629,27 +1629,27 @@ std::vector<Vec4> DX11RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 		size_t l_sampleCount = 0;
 		size_t l_sliceCount = 1;
 
-		switch (l_srcTDC->m_TextureDesc.SamplerType)
+		switch (l_srcTDC->m_TextureDesc.Sampler)
 		{
-		case TextureSamplerType::Sampler1D:
+		case TextureSampler::Sampler1D:
 			l_sampleCount = l_srcTDC->m_TextureDesc.Width;
 			break;
-		case TextureSamplerType::Sampler2D:
+		case TextureSampler::Sampler2D:
 			l_sampleCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height;
 			break;
-		case TextureSamplerType::Sampler3D:
+		case TextureSampler::Sampler3D:
 			l_sampleCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height * l_srcTDC->m_TextureDesc.DepthOrArraySize;
 			l_sliceCount = l_srcTDC->m_TextureDesc.DepthOrArraySize;
 			break;
-		case TextureSamplerType::Sampler1DArray:
+		case TextureSampler::Sampler1DArray:
 			l_sampleCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.DepthOrArraySize;
 			l_sliceCount = l_srcTDC->m_TextureDesc.DepthOrArraySize;
 			break;
-		case TextureSamplerType::Sampler2DArray:
+		case TextureSampler::Sampler2DArray:
 			l_sampleCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height * l_srcTDC->m_TextureDesc.DepthOrArraySize;
 			l_sliceCount = l_srcTDC->m_TextureDesc.DepthOrArraySize;
 			break;
-		case TextureSamplerType::SamplerCubemap:
+		case TextureSampler::SamplerCubemap:
 			l_sampleCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height * 6;
 			l_sliceCount = 6;
 			break;

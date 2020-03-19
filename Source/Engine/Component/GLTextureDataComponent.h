@@ -5,7 +5,7 @@
 
 struct GLTextureDesc
 {
-	GLenum TextureSamplerType;
+	GLenum TextureSampler;
 	GLenum InternalFormat;
 	GLenum PixelDataFormat;
 	GLenum PixelDataType;

@@ -19,7 +19,7 @@ GLTextureDesc GLHelper::GetGLTextureDesc(TextureDesc textureDesc)
 {
 	GLTextureDesc l_result;
 
-	l_result.TextureSamplerType = GetTextureSamplerType(textureDesc.SamplerType);
+	l_result.TextureSampler = GetTextureSampler(textureDesc.Sampler);
 	l_result.InternalFormat = GetTextureInternalFormat(textureDesc);
 	l_result.PixelDataFormat = GetTexturePixelDataFormat(textureDesc);
 	l_result.PixelDataType = GetTexturePixelDataType(textureDesc);
@@ -35,21 +35,21 @@ GLTextureDesc GLHelper::GetGLTextureDesc(TextureDesc textureDesc)
 	return l_result;
 }
 
-GLenum GLHelper::GetTextureSamplerType(TextureSamplerType rhs)
+GLenum GLHelper::GetTextureSampler(TextureSampler rhs)
 {
 	switch (rhs)
 	{
-	case TextureSamplerType::Sampler1D:
+	case TextureSampler::Sampler1D:
 		return GL_TEXTURE_1D;
-	case TextureSamplerType::Sampler2D:
+	case TextureSampler::Sampler2D:
 		return GL_TEXTURE_2D;
-	case TextureSamplerType::Sampler3D:
+	case TextureSampler::Sampler3D:
 		return GL_TEXTURE_3D;
-	case TextureSamplerType::Sampler1DArray:
+	case TextureSampler::Sampler1DArray:
 		return GL_TEXTURE_1D_ARRAY;
-	case TextureSamplerType::Sampler2DArray:
+	case TextureSampler::Sampler2DArray:
 		return GL_TEXTURE_2D_ARRAY;
-	case TextureSamplerType::SamplerCubemap:
+	case TextureSampler::SamplerCubemap:
 		return GL_TEXTURE_CUBE_MAP;
 	default:
 		return 0;
@@ -968,7 +968,7 @@ bool GLHelper::LinkProgramObject(GLuint & shaderProgram)
 bool GLHelper::ActivateTexture(GLTextureDataComponent * GLTDC, int32_t activateIndex)
 {
 	glActiveTexture(GL_TEXTURE0 + activateIndex);
-	glBindTexture(GLTDC->m_GLTextureDesc.TextureSamplerType, GLTDC->m_TO);
+	glBindTexture(GLTDC->m_GLTextureDesc.TextureSampler, GLTDC->m_TO);
 
 	return true;
 }
@@ -1018,24 +1018,24 @@ bool GLHelper::AttachTextureToFramebuffer(GLTextureDataComponent * GLTDC, GLRend
 		l_attachmentType = GL_COLOR_ATTACHMENT0 + attachmentIndex;
 	}
 
-	switch (GLTDC->m_TextureDesc.SamplerType)
+	switch (GLTDC->m_TextureDesc.Sampler)
 	{
-	case TextureSamplerType::Sampler1D:
+	case TextureSampler::Sampler1D:
 		glFramebufferTexture1D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_1D, GLTDC->m_TO, mipLevel);
 		break;
-	case TextureSamplerType::Sampler2D:
+	case TextureSampler::Sampler2D:
 		glFramebufferTexture2D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_2D, GLTDC->m_TO, mipLevel);
 		break;
-	case TextureSamplerType::Sampler3D:
+	case TextureSampler::Sampler3D:
 		glFramebufferTexture3D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_3D, GLTDC->m_TO, mipLevel, layer);
 		break;
-	case TextureSamplerType::Sampler1DArray:
+	case TextureSampler::Sampler1DArray:
 		glFramebufferTexture(GL_FRAMEBUFFER, l_attachmentType, GLTDC->m_TO, mipLevel);
 		break;
-	case TextureSamplerType::Sampler2DArray:
+	case TextureSampler::Sampler2DArray:
 		glFramebufferTexture(GL_FRAMEBUFFER, l_attachmentType, GLTDC->m_TO, mipLevel);
 		break;
-	case TextureSamplerType::SamplerCubemap:
+	case TextureSampler::SamplerCubemap:
 		if (textureIndex == -1)
 		{
 			glFramebufferTexture(GL_FRAMEBUFFER, l_attachmentType, GLTDC->m_TO, mipLevel);

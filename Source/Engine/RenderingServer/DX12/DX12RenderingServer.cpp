@@ -804,7 +804,7 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 		// main memory ----> upload heap
 		if (l_rhs->m_TextureData)
 		{
-			if (l_rhs->m_TextureDesc.SamplerType == TextureSamplerType::SamplerCubemap)
+			if (l_rhs->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap)
 			{
 				UINT64 l_uploadHeapBufferSize = GetRequiredIntermediateSize(l_rhs->m_ResourceHandle, 0, 6);
 
@@ -1799,24 +1799,24 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 
 	size_t l_sampleCount;
 
-	switch (l_srcTDC->m_TextureDesc.SamplerType)
+	switch (l_srcTDC->m_TextureDesc.Sampler)
 	{
-	case TextureSamplerType::Sampler1D:
+	case TextureSampler::Sampler1D:
 		l_sampleCount = l_srcTDC->m_TextureDesc.Width;
 		break;
-	case TextureSamplerType::Sampler2D:
+	case TextureSampler::Sampler2D:
 		l_sampleCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height;
 		break;
-	case TextureSamplerType::Sampler3D:
+	case TextureSampler::Sampler3D:
 		l_sampleCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height * l_srcTDC->m_TextureDesc.DepthOrArraySize;
 		break;
-	case TextureSamplerType::Sampler1DArray:
+	case TextureSampler::Sampler1DArray:
 		l_sampleCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.DepthOrArraySize;
 		break;
-	case TextureSamplerType::Sampler2DArray:
+	case TextureSampler::Sampler2DArray:
 		l_sampleCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height * l_srcTDC->m_TextureDesc.DepthOrArraySize;
 		break;
-	case TextureSamplerType::SamplerCubemap:
+	case TextureSampler::SamplerCubemap:
 		l_sampleCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height * 6;
 		break;
 	default:
@@ -1832,7 +1832,7 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 
 	InitializeTextureDataComponent(l_destTDC);
 
-	if (l_srcTDC->m_TextureDesc.SamplerType == TextureSamplerType::SamplerCubemap)
+	if (l_srcTDC->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap)
 	{
 		for (uint32_t i = 0; i < 6; i++)
 		{

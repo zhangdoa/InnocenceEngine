@@ -561,7 +561,7 @@ MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(co
 			auto l_TDC = AssetLoader::loadTexture(l_textureFile.c_str());
 			if (l_TDC)
 			{
-				l_TDC->m_TextureDesc.SamplerType = TextureSamplerType(i["SamplerType"]);
+				l_TDC->m_TextureDesc.Sampler = TextureSampler(i["Sampler"]);
 				l_TDC->m_TextureDesc.UsageType = TextureUsageType(i["UsageType"]);
 				l_TDC->m_TextureDesc.IsSRGB = i["IsSRGB"];
 

@@ -16,7 +16,7 @@ namespace InnoType
 	enum class MeshShapeType { Custom, Line, Quad, Cube, Sphere, Terrain };
 	enum class MeshPrimitiveTopology { Point, Line, Triangle, TriangleStrip };
 
-	enum class TextureSamplerType { Sampler1D, Sampler2D, Sampler3D, Sampler1DArray, Sampler2DArray, SamplerCubemap };
+	enum class TextureSampler { Invalid, Sampler1D, Sampler2D, Sampler3D, Sampler1DArray, Sampler2DArray, SamplerCubemap };
 
 	enum class TextureUsageType { Sample, ColorAttachment, DepthAttachment, DepthStencilAttachment, RawImage };
 
@@ -29,7 +29,7 @@ namespace InnoType
 	{
 		Accessibility CPUAccessibility = Accessibility::Immutable;
 		Accessibility GPUAccessibility = Accessibility::ReadWrite;
-		TextureSamplerType SamplerType;
+		TextureSampler Sampler;
 		TextureUsageType UsageType;
 		bool IsSRGB = false;
 		TexturePixelDataFormat PixelDataFormat;

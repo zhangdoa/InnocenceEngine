@@ -130,24 +130,24 @@ D3D12_RESOURCE_DESC DX12Helper::GetDX12TextureDesc(TextureDesc textureDesc)
 
 	l_result.Width = textureDesc.Width;
 	l_result.Height = textureDesc.Height;
-	switch (textureDesc.SamplerType)
+	switch (textureDesc.Sampler)
 	{
-	case TextureSamplerType::Sampler1D:
+	case TextureSampler::Sampler1D:
 		l_result.DepthOrArraySize = 1;
 		break;
-	case TextureSamplerType::Sampler2D:
+	case TextureSampler::Sampler2D:
 		l_result.DepthOrArraySize = 1;
 		break;
-	case TextureSamplerType::Sampler3D:
+	case TextureSampler::Sampler3D:
 		l_result.DepthOrArraySize = textureDesc.DepthOrArraySize;
 		break;
-	case TextureSamplerType::Sampler1DArray:
+	case TextureSampler::Sampler1DArray:
 		l_result.DepthOrArraySize = textureDesc.DepthOrArraySize;
 		break;
-	case TextureSamplerType::Sampler2DArray:
+	case TextureSampler::Sampler2DArray:
 		l_result.DepthOrArraySize = textureDesc.DepthOrArraySize;
 		break;
-	case TextureSamplerType::SamplerCubemap:
+	case TextureSampler::SamplerCubemap:
 		l_result.DepthOrArraySize = 6;
 		break;
 	default:
@@ -336,19 +336,19 @@ D3D12_RESOURCE_DIMENSION DX12Helper::GetTextureDimension(TextureDesc textureDesc
 {
 	D3D12_RESOURCE_DIMENSION l_result;
 
-	switch (textureDesc.SamplerType)
+	switch (textureDesc.Sampler)
 	{
-	case TextureSamplerType::Sampler1D: l_result = D3D12_RESOURCE_DIMENSION_TEXTURE1D;
+	case TextureSampler::Sampler1D: l_result = D3D12_RESOURCE_DIMENSION_TEXTURE1D;
 		break;
-	case TextureSamplerType::Sampler2D: l_result = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	case TextureSampler::Sampler2D: l_result = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		break;
-	case TextureSamplerType::Sampler3D: l_result = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
+	case TextureSampler::Sampler3D: l_result = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
 		break;
-	case TextureSamplerType::Sampler1DArray: l_result = D3D12_RESOURCE_DIMENSION_TEXTURE1D;
+	case TextureSampler::Sampler1DArray: l_result = D3D12_RESOURCE_DIMENSION_TEXTURE1D;
 		break;
-	case TextureSamplerType::Sampler2DArray: l_result = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	case TextureSampler::Sampler2DArray: l_result = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		break;
-	case TextureSamplerType::SamplerCubemap: l_result = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	case TextureSampler::SamplerCubemap: l_result = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		break;
 	default:
 		break;
@@ -559,36 +559,36 @@ D3D12_SHADER_RESOURCE_VIEW_DESC DX12Helper::GetSRVDesc(TextureDesc textureDesc, 
 		l_result.Format = D3D12TextureDesc.Format;
 	}
 
-	switch (textureDesc.SamplerType)
+	switch (textureDesc.Sampler)
 	{
-	case TextureSamplerType::Sampler1D:
+	case TextureSampler::Sampler1D:
 		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1D;
 		l_result.Texture1D.MostDetailedMip = 0;
 		l_result.Texture1D.MipLevels = GetMipLevels(textureDesc);
 		break;
-	case TextureSamplerType::Sampler2D:
+	case TextureSampler::Sampler2D:
 		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		l_result.Texture2D.MostDetailedMip = 0;
 		l_result.Texture2D.MipLevels = GetMipLevels(textureDesc);
 		break;
-	case TextureSamplerType::Sampler3D:
+	case TextureSampler::Sampler3D:
 		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
 		l_result.Texture3D.MostDetailedMip = 0;
 		l_result.Texture3D.MipLevels = GetMipLevels(textureDesc);
 		break;
-	case TextureSamplerType::Sampler1DArray:
+	case TextureSampler::Sampler1DArray:
 		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE1DARRAY;
 		l_result.Texture1DArray.MostDetailedMip = 0;
 		l_result.Texture1DArray.MipLevels = GetMipLevels(textureDesc);
 		l_result.Texture1DArray.ArraySize = textureDesc.DepthOrArraySize;
 		break;
-	case TextureSamplerType::Sampler2DArray:
+	case TextureSampler::Sampler2DArray:
 		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MostDetailedMip = 0;
 		l_result.Texture2DArray.MipLevels = GetMipLevels(textureDesc);
 		l_result.Texture2DArray.ArraySize = textureDesc.DepthOrArraySize;
 		break;
-	case TextureSamplerType::SamplerCubemap:
+	case TextureSampler::SamplerCubemap:
 		l_result.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
 		l_result.TextureCube.MostDetailedMip = 0;
 		l_result.TextureCube.MipLevels = GetMipLevels(textureDesc);
@@ -604,32 +604,32 @@ D3D12_UNORDERED_ACCESS_VIEW_DESC DX12Helper::GetUAVDesc(TextureDesc textureDesc,
 {
 	D3D12_UNORDERED_ACCESS_VIEW_DESC l_result = {};
 
-	switch (textureDesc.SamplerType)
+	switch (textureDesc.Sampler)
 	{
-	case TextureSamplerType::Sampler1D:
+	case TextureSampler::Sampler1D:
 		l_result.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE1D;
 		l_result.Texture1D.MipSlice = 0;
 		break;
-	case TextureSamplerType::Sampler2D:
+	case TextureSampler::Sampler2D:
 		l_result.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
 		l_result.Texture2D.MipSlice = 0;
 		break;
-	case TextureSamplerType::Sampler3D:
+	case TextureSampler::Sampler3D:
 		l_result.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
 		l_result.Texture3D.MipSlice = 0;
 		l_result.Texture3D.WSize = textureDesc.DepthOrArraySize;
 		break;
-	case TextureSamplerType::Sampler1DArray:
+	case TextureSampler::Sampler1DArray:
 		l_result.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE1DARRAY;
 		l_result.Texture1DArray.MipSlice = 0;
 		l_result.Texture1DArray.ArraySize = textureDesc.DepthOrArraySize;
 		break;
-	case TextureSamplerType::Sampler2DArray:
+	case TextureSampler::Sampler2DArray:
 		l_result.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
 		l_result.Texture2DArray.ArraySize = textureDesc.DepthOrArraySize;
 		break;
-	case TextureSamplerType::SamplerCubemap:
+	case TextureSampler::SamplerCubemap:
 		l_result.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
 		l_result.Texture2DArray.ArraySize = textureDesc.DepthOrArraySize;
@@ -646,37 +646,37 @@ D3D12_RENDER_TARGET_VIEW_DESC DX12Helper::GetRTVDesc(TextureDesc textureDesc)
 {
 	D3D12_RENDER_TARGET_VIEW_DESC l_result = {};
 
-	switch (textureDesc.SamplerType)
+	switch (textureDesc.Sampler)
 	{
-	case TextureSamplerType::Sampler1D:
+	case TextureSampler::Sampler1D:
 		l_result.Format = GetTextureFormat(textureDesc);
 		l_result.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1D;
 		l_result.Texture1D.MipSlice = 0;
 		break;
-	case TextureSamplerType::Sampler2D:
+	case TextureSampler::Sampler2D:
 		l_result.Format = GetTextureFormat(textureDesc);
 		l_result.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 		l_result.Texture2D.MipSlice = 0;
 		break;
-	case TextureSamplerType::Sampler3D:
+	case TextureSampler::Sampler3D:
 		l_result.Format = GetTextureFormat(textureDesc);
 		l_result.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE3D;
 		l_result.Texture3D.MipSlice = 0;
 		l_result.Texture3D.WSize = textureDesc.DepthOrArraySize;
 		break;
-	case TextureSamplerType::Sampler1DArray:
+	case TextureSampler::Sampler1DArray:
 		l_result.Format = GetTextureFormat(textureDesc);
 		l_result.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1DARRAY;
 		l_result.Texture1DArray.MipSlice = 0;
 		l_result.Texture1DArray.ArraySize = textureDesc.DepthOrArraySize;
 		break;
-	case TextureSamplerType::Sampler2DArray:
+	case TextureSampler::Sampler2DArray:
 		l_result.Format = GetTextureFormat(textureDesc);
 		l_result.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
 		l_result.Texture2DArray.ArraySize = textureDesc.DepthOrArraySize;
 		break;
-	case TextureSamplerType::SamplerCubemap:
+	case TextureSampler::SamplerCubemap:
 		l_result.Format = GetTextureFormat(textureDesc);
 		l_result.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
@@ -703,33 +703,33 @@ D3D12_DEPTH_STENCIL_VIEW_DESC DX12Helper::GetDSVDesc(TextureDesc textureDesc, De
 		l_result.Format = DXGI_FORMAT_D32_FLOAT;
 	}
 
-	switch (textureDesc.SamplerType)
+	switch (textureDesc.Sampler)
 	{
-	case TextureSamplerType::Sampler1D:
+	case TextureSampler::Sampler1D:
 		l_result.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE1D;
 		l_result.Texture1D.MipSlice = 0;
 		break;
-	case TextureSamplerType::Sampler2D:
+	case TextureSampler::Sampler2D:
 		l_result.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 		l_result.Texture2D.MipSlice = 0;
 		break;
-	case TextureSamplerType::Sampler3D:
+	case TextureSampler::Sampler3D:
 		l_result.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
 		l_result.Texture2DArray.ArraySize = textureDesc.DepthOrArraySize;
 		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: Use 2D texture array for DSV of 3D texture.");
 		break;
-	case TextureSamplerType::Sampler1DArray:
+	case TextureSampler::Sampler1DArray:
 		l_result.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE1DARRAY;
 		l_result.Texture1DArray.MipSlice = 0;
 		l_result.Texture1DArray.ArraySize = textureDesc.DepthOrArraySize;
 		break;
-	case TextureSamplerType::Sampler2DArray:
+	case TextureSampler::Sampler2DArray:
 		l_result.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
 		l_result.Texture2DArray.ArraySize = textureDesc.DepthOrArraySize;
 		break;
-	case TextureSamplerType::SamplerCubemap:
+	case TextureSampler::SamplerCubemap:
 		l_result.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
 		l_result.Texture2DArray.ArraySize = 6;

@@ -239,7 +239,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 			m_probeVolume->m_TextureDesc.Height = (uint32_t)l_probeIndex.y + 1;
 			m_probeVolume->m_TextureDesc.DepthOrArraySize = ((uint32_t)l_probeIndex.z + 1) * 6;
 			m_probeVolume->m_TextureDesc.UsageType = TextureUsageType::RawImage;
-			m_probeVolume->m_TextureDesc.SamplerType = TextureSamplerType::Sampler3D;
+			m_probeVolume->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
 			m_probeVolume->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 
 			g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_probeVolume);
@@ -251,7 +251,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 			m_irradianceVolume->m_TextureDesc.Height = 32;
 			m_irradianceVolume->m_TextureDesc.DepthOrArraySize = 64 * 6;
 			m_irradianceVolume->m_TextureDesc.UsageType = TextureUsageType::RawImage;
-			m_irradianceVolume->m_TextureDesc.SamplerType = TextureSamplerType::Sampler3D;
+			m_irradianceVolume->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
 			m_irradianceVolume->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 
 			g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_irradianceVolume);
@@ -413,7 +413,7 @@ bool GIResolvePass::setupSky()
 	m_skyRadianceVolume->m_TextureDesc.Height = 8;
 	m_skyRadianceVolume->m_TextureDesc.DepthOrArraySize = 6;
 	m_skyRadianceVolume->m_TextureDesc.UsageType = TextureUsageType::RawImage;
-	m_skyRadianceVolume->m_TextureDesc.SamplerType = TextureSamplerType::Sampler3D;
+	m_skyRadianceVolume->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
 	m_skyRadianceVolume->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 
 	m_skyIrradianceGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("SkyIrradianceGPUBuffer/");

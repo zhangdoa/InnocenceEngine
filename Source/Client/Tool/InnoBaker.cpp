@@ -1207,7 +1207,7 @@ void InnoBaker::Setup()
 	m_RPDC_Probe = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIBakeProbePass/");
 
 	m_RPDC_Probe->m_RenderPassDesc = l_RenderPassDesc;
-	m_RPDC_Probe->m_RenderPassDesc.m_RenderTargetDesc.SamplerType = TextureSamplerType::Sampler2D;
+	m_RPDC_Probe->m_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler2D;
 	m_RPDC_Probe->m_RenderPassDesc.m_RenderTargetDesc.Width = m_probeMapResolution;
 	m_RPDC_Probe->m_RenderPassDesc.m_RenderTargetDesc.Height = m_probeMapResolution;
 	m_RPDC_Probe->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::FLOAT32;
@@ -1248,7 +1248,7 @@ void InnoBaker::Setup()
 
 	m_RPDC_Surfel->m_RenderPassDesc.m_RenderTargetCount = 3;
 
-	m_RPDC_Surfel->m_RenderPassDesc.m_RenderTargetDesc.SamplerType = TextureSamplerType::SamplerCubemap;
+	m_RPDC_Surfel->m_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::SamplerCubemap;
 	m_RPDC_Surfel->m_RenderPassDesc.m_RenderTargetDesc.Width = m_captureResolution;
 	m_RPDC_Surfel->m_RenderPassDesc.m_RenderTargetDesc.Height = m_captureResolution;
 	m_RPDC_Surfel->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::FLOAT32;
@@ -1336,7 +1336,7 @@ void InnoBaker::Setup()
 	m_RPDC_BrickFactor = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIBakeBrickFactorPass/");
 
 	m_RPDC_BrickFactor->m_RenderPassDesc = l_RenderPassDesc;
-	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.SamplerType = TextureSamplerType::SamplerCubemap;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::SamplerCubemap;
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Width = 64;
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Height = 64;
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::FLOAT32;

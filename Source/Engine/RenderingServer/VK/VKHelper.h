@@ -45,8 +45,8 @@ namespace VKHelper
 	bool copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue commandQueue, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
 	VKTextureDesc getVKTextureDesc(TextureDesc textureDesc);
-	VkImageType getImageType(TextureSamplerType textureSamplerType);
-	VkImageViewType getImageViewType(TextureSamplerType textureSamplerType);
+	VkImageType getImageType(TextureSampler textureSampler);
+	VkImageViewType getImageViewType(TextureSampler textureSampler);
 	VkImageUsageFlags getImageUsageFlags(TextureUsageType textureUsageType);
 	VkSamplerAddressMode getSamplerAddressMode(TextureWrapMethod textureWrapMethod);
 	VkSamplerMipmapMode getTextureFilterParam(TextureFilterMethod textureFilterMethod);

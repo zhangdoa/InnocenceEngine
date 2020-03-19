@@ -26,7 +26,7 @@ bool SunShadowPass::Setup()
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
-	l_RenderPassDesc.m_RenderTargetDesc.SamplerType = TextureSamplerType::Sampler2DArray;
+	l_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler2DArray;
 	l_RenderPassDesc.m_RenderTargetDesc.Width = 2048;
 	l_RenderPassDesc.m_RenderTargetDesc.Height = 2048;
 	l_RenderPassDesc.m_RenderTargetDesc.DepthOrArraySize = 4;

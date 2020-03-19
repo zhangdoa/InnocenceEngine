@@ -369,7 +369,7 @@ bool GLRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 
 	glGenTextures(1, &l_rhs->m_TO);
 
-	glBindTexture(l_rhs->m_GLTextureDesc.TextureSamplerType, l_rhs->m_TO);
+	glBindTexture(l_rhs->m_GLTextureDesc.TextureSampler, l_rhs->m_TO);
 
 #ifdef _DEBUG
 	auto l_TOName = std::string(l_rhs->m_ComponentName.c_str());
@@ -377,29 +377,29 @@ bool GLRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 	glObjectLabel(GL_TEXTURE, l_rhs->m_TO, (GLsizei)l_TOName.size(), l_TOName.c_str());
 #endif
 
-	glTexParameterfv(l_rhs->m_GLTextureDesc.TextureSamplerType, GL_TEXTURE_BORDER_COLOR, l_rhs->m_GLTextureDesc.BorderColor);
+	glTexParameterfv(l_rhs->m_GLTextureDesc.TextureSampler, GL_TEXTURE_BORDER_COLOR, l_rhs->m_GLTextureDesc.BorderColor);
 
-	if (l_rhs->m_GLTextureDesc.TextureSamplerType == GL_TEXTURE_1D)
+	if (l_rhs->m_GLTextureDesc.TextureSampler == GL_TEXTURE_1D)
 	{
 		glTexImage1D(GL_TEXTURE_1D, 0, l_rhs->m_GLTextureDesc.InternalFormat, l_rhs->m_GLTextureDesc.Width, 0, l_rhs->m_GLTextureDesc.PixelDataFormat, l_rhs->m_GLTextureDesc.PixelDataType, l_rhs->m_TextureData);
 	}
-	else if (l_rhs->m_GLTextureDesc.TextureSamplerType == GL_TEXTURE_2D)
+	else if (l_rhs->m_GLTextureDesc.TextureSampler == GL_TEXTURE_2D)
 	{
 		glTexImage2D(GL_TEXTURE_2D, 0, l_rhs->m_GLTextureDesc.InternalFormat, l_rhs->m_GLTextureDesc.Width, l_rhs->m_GLTextureDesc.Height, 0, l_rhs->m_GLTextureDesc.PixelDataFormat, l_rhs->m_GLTextureDesc.PixelDataType, l_rhs->m_TextureData);
 	}
-	else if (l_rhs->m_GLTextureDesc.TextureSamplerType == GL_TEXTURE_3D)
+	else if (l_rhs->m_GLTextureDesc.TextureSampler == GL_TEXTURE_3D)
 	{
 		glTexImage3D(GL_TEXTURE_3D, 0, l_rhs->m_GLTextureDesc.InternalFormat, l_rhs->m_GLTextureDesc.Width, l_rhs->m_GLTextureDesc.Height, l_rhs->m_GLTextureDesc.DepthOrArraySize, 0, l_rhs->m_GLTextureDesc.PixelDataFormat, l_rhs->m_GLTextureDesc.PixelDataType, l_rhs->m_TextureData);
 	}
-	else if (l_rhs->m_GLTextureDesc.TextureSamplerType == GL_TEXTURE_1D_ARRAY)
+	else if (l_rhs->m_GLTextureDesc.TextureSampler == GL_TEXTURE_1D_ARRAY)
 	{
 		glTexImage2D(GL_TEXTURE_1D_ARRAY, 0, l_rhs->m_GLTextureDesc.InternalFormat, l_rhs->m_GLTextureDesc.Width, l_rhs->m_GLTextureDesc.Height, 0, l_rhs->m_GLTextureDesc.PixelDataFormat, l_rhs->m_GLTextureDesc.PixelDataType, l_rhs->m_TextureData);
 	}
-	else if (l_rhs->m_GLTextureDesc.TextureSamplerType == GL_TEXTURE_2D_ARRAY)
+	else if (l_rhs->m_GLTextureDesc.TextureSampler == GL_TEXTURE_2D_ARRAY)
 	{
 		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, l_rhs->m_GLTextureDesc.InternalFormat, l_rhs->m_GLTextureDesc.Width, l_rhs->m_GLTextureDesc.Height, l_rhs->m_GLTextureDesc.DepthOrArraySize, 0, l_rhs->m_GLTextureDesc.PixelDataFormat, l_rhs->m_GLTextureDesc.PixelDataType, l_rhs->m_TextureData);
 	}
-	else if (l_rhs->m_GLTextureDesc.TextureSamplerType == GL_TEXTURE_CUBE_MAP)
+	else if (l_rhs->m_GLTextureDesc.TextureSampler == GL_TEXTURE_CUBE_MAP)
 	{
 		if (l_rhs->m_TextureData)
 		{
@@ -422,7 +422,7 @@ bool GLRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 	// should generate mipmap or not
 	if (l_rhs->m_TextureDesc.UseMipMap)
 	{
-		glGenerateMipmap(l_rhs->m_GLTextureDesc.TextureSamplerType);
+		glGenerateMipmap(l_rhs->m_GLTextureDesc.TextureSampler);
 	}
 
 	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: TO ", l_rhs->m_TO, " is initialized.");
@@ -1053,21 +1053,21 @@ std::vector<Vec4> GLRenderingServer::ReadTextureBackToCPU(RenderPassDataComponen
 	glBindFramebuffer(GL_FRAMEBUFFER, l_tempFramebuffer);
 	glReadBuffer(GL_COLOR_ATTACHMENT0);
 
-	switch (GLTDC->m_TextureDesc.SamplerType)
+	switch (GLTDC->m_TextureDesc.Sampler)
 	{
-	case TextureSamplerType::Sampler1D:
+	case TextureSampler::Sampler1D:
 		l_sampleCount = l_width;
 		l_textureSamples.resize(l_sampleCount);
 		glFramebufferTexture1D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_1D, GLTDC->m_TO, 0);
 		glReadPixels(0, 0, l_width, 0, l_pixelDataFormat, l_pixelDataType, &l_textureSamples[0]);
 		break;
-	case TextureSamplerType::Sampler2D:
+	case TextureSampler::Sampler2D:
 		l_sampleCount = l_width * l_height;
 		l_textureSamples.resize(l_sampleCount);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, l_attachmentType, GL_TEXTURE_2D, GLTDC->m_TO, 0);
 		glReadPixels(0, 0, l_width, l_height, l_pixelDataFormat, l_pixelDataType, &l_textureSamples[0]);
 		break;
-	case TextureSamplerType::Sampler3D:
+	case TextureSampler::Sampler3D:
 		l_sampleCount = l_width * l_height;
 		l_textureSamples.resize(l_sampleCount * l_depthOrArraySize);
 		for (uint32_t i = 0; i < (uint32_t)l_depthOrArraySize; i++)
@@ -1076,7 +1076,7 @@ std::vector<Vec4> GLRenderingServer::ReadTextureBackToCPU(RenderPassDataComponen
 			glReadPixels(0, 0, l_width, 0, l_pixelDataFormat, l_pixelDataType, &l_textureSamples[l_depthOrArraySize * l_sampleCount]);
 		}
 		break;
-	case TextureSamplerType::Sampler1DArray:
+	case TextureSampler::Sampler1DArray:
 		l_sampleCount = l_width;
 		l_textureSamples.resize(l_sampleCount * l_depthOrArraySize);
 		for (uint32_t i = 0; i < (uint32_t)l_depthOrArraySize; i++)
@@ -1085,7 +1085,7 @@ std::vector<Vec4> GLRenderingServer::ReadTextureBackToCPU(RenderPassDataComponen
 			glReadPixels(0, 0, l_width, 0, l_pixelDataFormat, l_pixelDataType, &l_textureSamples[l_depthOrArraySize * l_sampleCount]);
 		}
 		break;
-	case TextureSamplerType::Sampler2DArray:
+	case TextureSampler::Sampler2DArray:
 		l_sampleCount = l_width * l_height;
 		l_textureSamples.resize(l_sampleCount * l_depthOrArraySize);
 		for (uint32_t i = 0; i < (uint32_t)l_depthOrArraySize; i++)
@@ -1094,7 +1094,7 @@ std::vector<Vec4> GLRenderingServer::ReadTextureBackToCPU(RenderPassDataComponen
 			glReadPixels(0, 0, l_width, l_height, l_pixelDataFormat, l_pixelDataType, &l_textureSamples[l_depthOrArraySize * l_sampleCount]);
 		}
 		break;
-	case TextureSamplerType::SamplerCubemap:
+	case TextureSampler::SamplerCubemap:
 		l_sampleCount = l_width * l_height;
 		l_textureSamples.resize(l_sampleCount * 6);
 		for (uint32_t i = 0; i < 6; i++)

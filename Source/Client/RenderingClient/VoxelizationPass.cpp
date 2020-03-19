@@ -59,7 +59,7 @@ bool VoxelizationPass::setupVoxelizationPass()
 
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 
-	l_RenderPassDesc.m_RenderTargetDesc.SamplerType = TextureSamplerType::Sampler3D;
+	l_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler3D;
 	l_RenderPassDesc.m_RenderTargetDesc.UsageType = TextureUsageType::RawImage;
 	l_RenderPassDesc.m_RenderTargetDesc.GPUAccessibility = Accessibility::ReadWrite;
 	l_RenderPassDesc.m_RenderTargetDesc.Width = voxelizationResolution;
@@ -117,7 +117,7 @@ bool VoxelizationPass::setupVisualizationPass()
 
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 
-	l_RenderPassDesc.m_RenderTargetDesc.SamplerType = TextureSamplerType::Sampler2D;
+	l_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler2D;
 	l_RenderPassDesc.m_RenderTargetDesc.UsageType = TextureUsageType::ColorAttachment;
 	l_RenderPassDesc.m_RenderTargetDesc.Width = l_viewportSize.x;
 	l_RenderPassDesc.m_RenderTargetDesc.Height = l_viewportSize.y;
