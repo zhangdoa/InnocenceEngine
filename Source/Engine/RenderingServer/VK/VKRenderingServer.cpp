@@ -832,7 +832,7 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 
 	l_rhs->m_PipelineStateObject = addPSO();
 
-	if (l_rhs->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
+	if (l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
 	{
 		l_result &= createRenderPass(m_device, l_rhs);
 		l_result &= createViewportAndScissor(l_rhs);
@@ -878,7 +878,7 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 
 	l_result &= createPipelineLayout(m_device, l_rhs);
 
-	if (l_rhs->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
+	if (l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
 	{
 		l_result &= createGraphicsPipelines(m_device, l_rhs);
 	}

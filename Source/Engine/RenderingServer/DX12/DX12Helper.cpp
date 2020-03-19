@@ -1063,7 +1063,7 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* 
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(DX12RPDC->m_PipelineStateObject);
 	auto l_DX12SPC = reinterpret_cast<DX12ShaderProgramComponent*>(DX12RPDC->m_ShaderProgram);
 
-	if (DX12RPDC->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
+	if (DX12RPDC->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
 	{
 		GenerateDepthStencilStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
 		GenerateBlendStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);

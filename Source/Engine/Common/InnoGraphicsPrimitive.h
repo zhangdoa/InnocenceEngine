@@ -175,8 +175,9 @@ namespace InnoType
 		float CleanColor[4] = { 0.0f , 0.0f, 0.0f, 0.0f };
 	};
 
-	enum class RenderPassUsageType
+	enum class RenderPassUsage
 	{
+		Invalid,
 		Graphics,
 		Compute
 	};
@@ -185,7 +186,7 @@ namespace InnoType
 	{
 		bool m_UseMultiFrames = false;
 		bool m_IsOffScreen = false;
-		RenderPassUsageType m_RenderPassUsageType = RenderPassUsageType::Graphics;
+		RenderPassUsage m_RenderPassUsage = RenderPassUsage::Graphics;
 		size_t m_RenderTargetCount = 0;
 		TextureDesc m_RenderTargetDesc = {};
 		GraphicsPipelineDesc m_GraphicsPipelineDesc = {};

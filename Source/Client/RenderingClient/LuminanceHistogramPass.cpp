@@ -32,7 +32,7 @@ bool LuminanceHistogramPass::Setup()
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;
-	l_RenderPassDesc.m_RenderPassUsageType = RenderPassUsageType::Compute;
+	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
 
 	m_SPC_LuminanceHistogram = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("LuminanceHistogramPass/");
 

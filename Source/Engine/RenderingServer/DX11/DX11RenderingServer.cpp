@@ -1106,7 +1106,7 @@ bool DX11RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * 
 		m_deviceContext->CSSetShader(l_shaderProgram->m_CSHandle, NULL, 0);
 	}
 
-	if (l_rhs->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
+	if (l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
 	{
 		m_deviceContext->IASetInputLayout(l_PSO->m_InputLayout);
 		m_deviceContext->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
@@ -1142,7 +1142,7 @@ bool DX11RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 {
 	auto l_rhs = reinterpret_cast<DX11RenderPassDataComponent*>(rhs);
 
-	if (l_rhs->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
+	if (l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
 	{
 		if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
 		{
@@ -1491,7 +1491,7 @@ bool DX11RenderingServer::CommandListEnd(RenderPassDataComponent * rhs)
 		m_deviceContext->CSSetShader(0, NULL, 0);
 	}
 
-	if (l_rhs->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
+	if (l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
 	{
 		m_deviceContext->IASetInputLayout(NULL);
 		m_deviceContext->RSSetState(NULL);

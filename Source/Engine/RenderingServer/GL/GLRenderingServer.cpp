@@ -796,7 +796,7 @@ bool GLRenderingServer::CommandListBegin(RenderPassDataComponent * rhs, size_t f
 bool GLRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * rhs)
 {
 	auto l_rhs = reinterpret_cast<GLRenderPassDataComponent*>(rhs);
-	if (l_rhs->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
+	if (l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
 	{
 		auto l_GLPSO = reinterpret_cast<GLPipelineStateObject*>(l_rhs->m_PipelineStateObject);
 
@@ -817,7 +817,7 @@ bool GLRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * rh
 
 bool GLRenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 {
-	if (rhs->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
+	if (rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
 	{
 		auto l_cleanColor = rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor;
 		glClearColor(l_cleanColor[0], l_cleanColor[1], l_cleanColor[2], l_cleanColor[3]);

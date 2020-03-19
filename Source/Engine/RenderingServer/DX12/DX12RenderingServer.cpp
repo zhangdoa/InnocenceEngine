@@ -1269,7 +1269,7 @@ bool DX12RenderingServer::CommandListBegin(RenderPassDataComponent * rhs, size_t
 
 bool PrepareRenderTargets(DX12RenderPassDataComponent* renderPass, DX12CommandList* commandList)
 {
-	if (renderPass->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
+	if (renderPass->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
 	{
 		if (renderPass->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
 		{
@@ -1305,7 +1305,7 @@ bool PreparePipeline(DX12RenderPassDataComponent* renderPass, DX12CommandList* c
 	commandList->m_GraphicsCommandList->SetDescriptorHeaps(2, l_heaps);
 	commandList->m_GraphicsCommandList->SetPipelineState(PSO->m_PSO);
 
-	if (renderPass->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
+	if (renderPass->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
 	{
 		commandList->m_GraphicsCommandList->SetGraphicsRootSignature(renderPass->m_RootSignature);
 		commandList->m_GraphicsCommandList->RSSetViewports(1, &PSO->m_Viewport);
@@ -1357,7 +1357,7 @@ bool DX12RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * 
 
 bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 {
-	if (rhs->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
+	if (rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
 	{
 		auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
 		auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
@@ -1573,7 +1573,7 @@ bool DX12RenderingServer::CommandListEnd(RenderPassDataComponent * rhs)
 	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 
-	if (l_rhs->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
+	if (l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
 	{
 		if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
 		{

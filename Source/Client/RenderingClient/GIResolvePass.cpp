@@ -357,7 +357,7 @@ bool GIResolvePass::setupSky()
 {
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
-	l_RenderPassDesc.m_RenderPassUsageType = RenderPassUsageType::Compute;
+	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
 
 	m_skyRadianceSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIResolveSkyRadiancePass/");
@@ -434,7 +434,7 @@ bool GIResolvePass::setupSurfels()
 
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
-	l_RenderPassDesc.m_RenderPassUsageType = RenderPassUsageType::Compute;
+	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
 
 	m_surfelRPDC->m_RenderPassDesc = l_RenderPassDesc;
@@ -487,7 +487,7 @@ bool GIResolvePass::setupBricks()
 
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
-	l_RenderPassDesc.m_RenderPassUsageType = RenderPassUsageType::Compute;
+	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
 
 	m_brickRPDC->m_RenderPassDesc = l_RenderPassDesc;
@@ -533,7 +533,7 @@ bool GIResolvePass::setupProbes()
 
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
-	l_RenderPassDesc.m_RenderPassUsageType = RenderPassUsageType::Compute;
+	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
 
 	m_probeRPDC->m_RenderPassDesc = l_RenderPassDesc;
@@ -590,7 +590,7 @@ bool GIResolvePass::setupIrradianceVolume()
 
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
-	l_RenderPassDesc.m_RenderPassUsageType = RenderPassUsageType::Compute;
+	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
 
 	m_irradianceVolumeRPDC->m_RenderPassDesc = l_RenderPassDesc;
