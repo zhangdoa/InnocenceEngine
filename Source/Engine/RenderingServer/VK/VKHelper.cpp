@@ -471,7 +471,7 @@ VkFormat VKHelper::getTextureFormat(TextureDesc textureDesc)
 	}
 	else
 	{
-		if (textureDesc.PixelDataType == TexturePixelDataType::UBYTE)
+		if (textureDesc.PixelDataType == TexturePixelDataType::UByte)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
@@ -483,7 +483,7 @@ VkFormat VKHelper::getTextureFormat(TextureDesc textureDesc)
 			default: break;
 			}
 		}
-		else if (textureDesc.PixelDataType == TexturePixelDataType::SBYTE)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::SByte)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
@@ -495,7 +495,7 @@ VkFormat VKHelper::getTextureFormat(TextureDesc textureDesc)
 			default: break;
 			}
 		}
-		else if (textureDesc.PixelDataType == TexturePixelDataType::USHORT)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::UShort)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
@@ -506,7 +506,7 @@ VkFormat VKHelper::getTextureFormat(TextureDesc textureDesc)
 			default: break;
 			}
 		}
-		else if (textureDesc.PixelDataType == TexturePixelDataType::SSHORT)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::SShort)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
@@ -517,7 +517,7 @@ VkFormat VKHelper::getTextureFormat(TextureDesc textureDesc)
 			default: break;
 			}
 		}
-		else if (textureDesc.PixelDataType == TexturePixelDataType::UINT8)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::UInt8)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
@@ -529,7 +529,7 @@ VkFormat VKHelper::getTextureFormat(TextureDesc textureDesc)
 			default: break;
 			}
 		}
-		else if (textureDesc.PixelDataType == TexturePixelDataType::SINT8)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::SInt8)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
@@ -541,7 +541,7 @@ VkFormat VKHelper::getTextureFormat(TextureDesc textureDesc)
 			default: break;
 			}
 		}
-		else if (textureDesc.PixelDataType == TexturePixelDataType::UINT16)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::UInt16)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
@@ -552,7 +552,7 @@ VkFormat VKHelper::getTextureFormat(TextureDesc textureDesc)
 			default: break;
 			}
 		}
-		else if (textureDesc.PixelDataType == TexturePixelDataType::SINT16)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::SInt16)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
@@ -563,7 +563,7 @@ VkFormat VKHelper::getTextureFormat(TextureDesc textureDesc)
 			default: break;
 			}
 		}
-		else if (textureDesc.PixelDataType == TexturePixelDataType::UINT32)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::UInt32)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
@@ -574,7 +574,7 @@ VkFormat VKHelper::getTextureFormat(TextureDesc textureDesc)
 			default: break;
 			}
 		}
-		else if (textureDesc.PixelDataType == TexturePixelDataType::SINT32)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::SInt32)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
@@ -585,7 +585,7 @@ VkFormat VKHelper::getTextureFormat(TextureDesc textureDesc)
 			default: break;
 			}
 		}
-		else if (textureDesc.PixelDataType == TexturePixelDataType::FLOAT16)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::Float16)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
@@ -596,7 +596,7 @@ VkFormat VKHelper::getTextureFormat(TextureDesc textureDesc)
 			default: break;
 			}
 		}
-		else if (textureDesc.PixelDataType == TexturePixelDataType::FLOAT32)
+		else if (textureDesc.PixelDataType == TexturePixelDataType::Float32)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
@@ -620,19 +620,19 @@ VkDeviceSize VKHelper::getImageSize(TextureDesc textureDesc)
 
 	switch (textureDesc.PixelDataType)
 	{
-	case TexturePixelDataType::UBYTE:l_singlePixelSize = 1; break;
-	case TexturePixelDataType::SBYTE:l_singlePixelSize = 1; break;
-	case TexturePixelDataType::USHORT:l_singlePixelSize = 2; break;
-	case TexturePixelDataType::SSHORT:l_singlePixelSize = 2; break;
-	case TexturePixelDataType::UINT8:l_singlePixelSize = 1; break;
-	case TexturePixelDataType::SINT8:l_singlePixelSize = 1; break;
-	case TexturePixelDataType::UINT16:l_singlePixelSize = 2; break;
-	case TexturePixelDataType::SINT16:l_singlePixelSize = 2; break;
-	case TexturePixelDataType::UINT32:l_singlePixelSize = 4; break;
-	case TexturePixelDataType::SINT32:l_singlePixelSize = 4; break;
-	case TexturePixelDataType::FLOAT16:l_singlePixelSize = 2; break;
-	case TexturePixelDataType::FLOAT32:l_singlePixelSize = 4; break;
-	case TexturePixelDataType::DOUBLE:l_singlePixelSize = 8; break;
+	case TexturePixelDataType::UByte:l_singlePixelSize = 1; break;
+	case TexturePixelDataType::SByte:l_singlePixelSize = 1; break;
+	case TexturePixelDataType::UShort:l_singlePixelSize = 2; break;
+	case TexturePixelDataType::SShort:l_singlePixelSize = 2; break;
+	case TexturePixelDataType::UInt8:l_singlePixelSize = 1; break;
+	case TexturePixelDataType::SInt8:l_singlePixelSize = 1; break;
+	case TexturePixelDataType::UInt16:l_singlePixelSize = 2; break;
+	case TexturePixelDataType::SInt16:l_singlePixelSize = 2; break;
+	case TexturePixelDataType::UInt32:l_singlePixelSize = 4; break;
+	case TexturePixelDataType::SInt32:l_singlePixelSize = 4; break;
+	case TexturePixelDataType::Float16:l_singlePixelSize = 2; break;
+	case TexturePixelDataType::Float32:l_singlePixelSize = 4; break;
+	case TexturePixelDataType::Double:l_singlePixelSize = 8; break;
 	}
 
 	VkDeviceSize l_channelSize;

@@ -136,7 +136,7 @@ bool SSAOPass::Setup()
 
 	m_SSAONoiseTDC->m_TextureDesc.Width = l_textureSize;
 	m_SSAONoiseTDC->m_TextureDesc.Height = l_textureSize;
-	m_SSAONoiseTDC->m_TextureDesc.PixelDataType = TexturePixelDataType::FLOAT32;
+	m_SSAONoiseTDC->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
 
 	m_SSAONoiseTDC->m_TextureData = &m_SSAONoise[0];
 

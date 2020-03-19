@@ -19,7 +19,7 @@ namespace InnoType
 	enum class TextureSampler { Invalid, Sampler1D, Sampler2D, Sampler3D, Sampler1DArray, Sampler2DArray, SamplerCubemap };
 	enum class TextureUsage { Invalid, Sample, ColorAttachment, DepthAttachment, DepthStencilAttachment, RawImage };
 	enum class TexturePixelDataFormat { R, RG, RGB, RGBA, BGRA, Depth, DepthStencil };
-	enum class TexturePixelDataType { UBYTE, SBYTE, USHORT, SSHORT, UINT8, SINT8, UINT16, SINT16, UINT32, SINT32, FLOAT16, FLOAT32, DOUBLE };
+	enum class TexturePixelDataType { Invalid, UByte, SByte, UShort, SShort, UInt8, SInt8, UInt16, SInt16, UInt32, SInt32, Float16, Float32, Double };
 	enum class TextureWrapMethod { Edge, Repeat, Border };
 	enum class TextureFilterMethod { Nearest, Linear };
 

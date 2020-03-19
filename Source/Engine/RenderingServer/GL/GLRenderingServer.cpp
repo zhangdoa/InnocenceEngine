@@ -237,7 +237,7 @@ bool GLRenderingServer::Initialize()
 			l_RenderPassDesc.m_RenderTargetCount = 1;
 
 			m_SwapChainRPDC->m_RenderPassDesc = l_RenderPassDesc;
-			m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UBYTE;
+			m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UByte;
 			m_SwapChainRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 
 			m_SwapChainRPDC->m_ResourceBinderLayoutDescs.resize(2);

@@ -36,7 +36,7 @@ TextureDataComponent* InnoFileSystemNS::TextureIO::loadTexture(const char* fileN
 		l_TDC->m_ComponentName = (std::string(fileName) + "/").c_str();
 
 		l_TDC->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat(nrChannels - 1);
-		l_TDC->m_TextureDesc.PixelDataType = l_isHDR ? TexturePixelDataType::FLOAT16 : TexturePixelDataType::UBYTE;
+		l_TDC->m_TextureDesc.PixelDataType = l_isHDR ? TexturePixelDataType::Float16 : TexturePixelDataType::UByte;
 		l_TDC->m_TextureDesc.UseMipMap = true;
 		l_TDC->m_TextureDesc.Width = width;
 		l_TDC->m_TextureDesc.Height = height;
@@ -57,7 +57,7 @@ TextureDataComponent* InnoFileSystemNS::TextureIO::loadTexture(const char* fileN
 
 bool InnoFileSystemNS::TextureIO::saveTexture(const char* fileName, TextureDataComponent * TDC)
 {
-	if (TDC->m_TextureDesc.PixelDataType == TexturePixelDataType::FLOAT16 || TDC->m_TextureDesc.PixelDataType == TexturePixelDataType::FLOAT32)
+	if (TDC->m_TextureDesc.PixelDataType == TexturePixelDataType::Float16 || TDC->m_TextureDesc.PixelDataType == TexturePixelDataType::Float32)
 	{
 		if (TDC->m_TextureDesc.Sampler == TextureSampler::Sampler1DArray)
 		{

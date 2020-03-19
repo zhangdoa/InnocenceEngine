@@ -349,7 +349,7 @@ bool InnoRayTracer::Initialize()
 	m_TDC->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 	m_TDC->m_TextureDesc.Width = l_screenResolution.x / l_denom;
 	m_TDC->m_TextureDesc.Height = l_screenResolution.y / l_denom;
-	m_TDC->m_TextureDesc.PixelDataType = TexturePixelDataType::UBYTE;
+	m_TDC->m_TextureDesc.PixelDataType = TexturePixelDataType::UByte;
 
 	InnoRayTracerNS::m_ObjectStatus = ObjectStatus::Activated;
 	return true;

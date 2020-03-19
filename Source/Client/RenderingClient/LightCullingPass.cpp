@@ -110,7 +110,7 @@ bool LightCullingPass::createLightGridTDC()
 	m_lightGridTDC->m_TextureDesc.Height = m_lightCullingNumThreadGroups.y;
 	m_lightGridTDC->m_TextureDesc.Usage = TextureUsage::RawImage;
 	m_lightGridTDC->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RG;
-	m_lightGridTDC->m_TextureDesc.PixelDataType = TexturePixelDataType::UINT32;
+	m_lightGridTDC->m_TextureDesc.PixelDataType = TexturePixelDataType::UInt32;
 
 	return true;
 }
