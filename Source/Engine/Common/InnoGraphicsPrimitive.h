@@ -17,9 +17,7 @@ namespace InnoType
 	enum class MeshPrimitiveTopology { Point, Line, Triangle, TriangleStrip };
 
 	enum class TextureSampler { Invalid, Sampler1D, Sampler2D, Sampler3D, Sampler1DArray, Sampler2DArray, SamplerCubemap };
-
-	enum class TextureUsageType { Sample, ColorAttachment, DepthAttachment, DepthStencilAttachment, RawImage };
-
+	enum class TextureUsage { Invalid, Sample, ColorAttachment, DepthAttachment, DepthStencilAttachment, RawImage };
 	enum class TexturePixelDataFormat { R, RG, RGB, RGBA, BGRA, Depth, DepthStencil };
 	enum class TexturePixelDataType { UBYTE, SBYTE, USHORT, SSHORT, UINT8, SINT8, UINT16, SINT16, UINT32, SINT32, FLOAT16, FLOAT32, DOUBLE };
 	enum class TextureWrapMethod { Edge, Repeat, Border };
@@ -30,7 +28,7 @@ namespace InnoType
 		Accessibility CPUAccessibility = Accessibility::Immutable;
 		Accessibility GPUAccessibility = Accessibility::ReadWrite;
 		TextureSampler Sampler;
-		TextureUsageType UsageType;
+		TextureUsage Usage;
 		bool IsSRGB = false;
 		TexturePixelDataFormat PixelDataFormat;
 		TexturePixelDataType PixelDataType;

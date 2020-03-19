@@ -100,11 +100,11 @@ DXGI_FORMAT DX11Helper::GetTextureFormat(TextureDesc textureDesc)
 	{
 		l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	}
-	else if (textureDesc.UsageType == TextureUsageType::DepthAttachment)
+	else if (textureDesc.Usage == TextureUsage::DepthAttachment)
 	{
 		l_internalFormat = DXGI_FORMAT_R32_TYPELESS;
 	}
-	else if (textureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+	else if (textureDesc.Usage == TextureUsage::DepthStencilAttachment)
 	{
 		l_internalFormat = DXGI_FORMAT_R24G8_TYPELESS;
 	}
@@ -313,19 +313,19 @@ uint32_t DX11Helper::GetTextureBindFlags(TextureDesc textureDesc)
 
 	if (textureDesc.CPUAccessibility == Accessibility::Immutable)
 	{
-		if (textureDesc.UsageType == TextureUsageType::ColorAttachment)
+		if (textureDesc.Usage == TextureUsage::ColorAttachment)
 		{
 			textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET | D3D11_BIND_UNORDERED_ACCESS;
 		}
-		else if (textureDesc.UsageType == TextureUsageType::DepthAttachment)
+		else if (textureDesc.Usage == TextureUsage::DepthAttachment)
 		{
 			textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_DEPTH_STENCIL;
 		}
-		else if (textureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+		else if (textureDesc.Usage == TextureUsage::DepthStencilAttachment)
 		{
 			textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_DEPTH_STENCIL;
 		}
-		else if (textureDesc.UsageType == TextureUsageType::RawImage)
+		else if (textureDesc.Usage == TextureUsage::RawImage)
 		{
 			textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
 		}
@@ -428,11 +428,11 @@ D3D11_SHADER_RESOURCE_VIEW_DESC DX11Helper::GetSRVDesc(TextureDesc textureDesc, 
 {
 	D3D11_SHADER_RESOURCE_VIEW_DESC l_result = {};
 
-	if (textureDesc.UsageType == TextureUsageType::DepthAttachment)
+	if (textureDesc.Usage == TextureUsage::DepthAttachment)
 	{
 		l_result.Format = DXGI_FORMAT_R32_FLOAT;
 	}
-	else if (textureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+	else if (textureDesc.Usage == TextureUsage::DepthStencilAttachment)
 	{
 		l_result.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 	}
@@ -484,10 +484,10 @@ D3D11_SHADER_RESOURCE_VIEW_DESC DX11Helper::GetSRVDesc(TextureDesc textureDesc, 
 
 uint32_t DX11Helper::GetSRVMipLevels(TextureDesc textureDesc)
 {
-	if (textureDesc.UsageType == TextureUsageType::ColorAttachment
-		|| textureDesc.UsageType == TextureUsageType::DepthAttachment
-		|| textureDesc.UsageType == TextureUsageType::DepthStencilAttachment
-		|| textureDesc.UsageType == TextureUsageType::RawImage)
+	if (textureDesc.Usage == TextureUsage::ColorAttachment
+		|| textureDesc.Usage == TextureUsage::DepthAttachment
+		|| textureDesc.Usage == TextureUsage::DepthStencilAttachment
+		|| textureDesc.Usage == TextureUsage::RawImage)
 	{
 		return 1;
 	}
@@ -501,11 +501,11 @@ D3D11_UNORDERED_ACCESS_VIEW_DESC DX11Helper::GetUAVDesc(TextureDesc textureDesc,
 {
 	D3D11_UNORDERED_ACCESS_VIEW_DESC l_result = {};
 
-	if (textureDesc.UsageType == TextureUsageType::DepthAttachment)
+	if (textureDesc.Usage == TextureUsage::DepthAttachment)
 	{
 		l_result.Format = DXGI_FORMAT_R32_FLOAT;
 	}
-	else if (textureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+	else if (textureDesc.Usage == TextureUsage::DepthStencilAttachment)
 	{
 		l_result.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 	}
@@ -684,12 +684,12 @@ bool DX11Helper::CreateRenderTargets(DX11RenderPassDataComponent * DX11RPDC, IRe
 
 		if (DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
 		{
-			DX11RPDC->m_DepthStencilRenderTarget->m_TextureDesc.UsageType = TextureUsageType::DepthStencilAttachment;
+			DX11RPDC->m_DepthStencilRenderTarget->m_TextureDesc.Usage = TextureUsage::DepthStencilAttachment;
 			DX11RPDC->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
 		}
 		else
 		{
-			DX11RPDC->m_DepthStencilRenderTarget->m_TextureDesc.UsageType = TextureUsageType::DepthAttachment;
+			DX11RPDC->m_DepthStencilRenderTarget->m_TextureDesc.Usage = TextureUsage::DepthAttachment;
 			DX11RPDC->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
 		}
 
@@ -713,7 +713,7 @@ bool DX11Helper::CreateResourcesBinder(DX11RenderPassDataComponent * DX11RPDC)
 
 bool DX11Helper::CreateViews(DX11RenderPassDataComponent * DX11RPDC, ID3D11Device * device)
 {
-	if (DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc.UsageType != TextureUsageType::RawImage)
+	if (DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
 	{
 		// RTV
 		DX11RPDC->m_RTVs.reserve(DX11RPDC->m_RenderPassDesc.m_RenderTargetCount);

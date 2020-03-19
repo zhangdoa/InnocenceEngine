@@ -25,7 +25,7 @@ namespace InnoFileSystemNS
 		size_t processMeshData(const aiMesh * aiMesh, const char* exportFileRelativePath);
 		void processAssimpBone(const aiMesh * aiMesh, const char* exportFileRelativePath);
 		void processAssimpMaterial(const aiMaterial * aiMaterial, const char* exportFileRelativePath);
-		json processTextureData(const char* fileName, TextureSampler sampler, TextureUsageType usageType, bool IsSRGB, uint32_t textureSlotIndex);
+		json processTextureData(const char* fileName, TextureSampler sampler, TextureUsage usage, bool IsSRGB, uint32_t textureSlotIndex);
 		void processAssimpAnimation(const aiAnimation * aiAnimation, const char* exportFileRelativePath);
 	};
 }
@@ -377,11 +377,11 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpBone(const aiMesh * aiMesh, c
 }
 
 /*
-aiTextureType::aiTextureType_NORMALS TextureUsageType::NORMAL map_Kn normal map texture
-aiTextureType::aiTextureType_DIFFUSE TextureUsageType::ALBEDO map_Kd albedo texture
-aiTextureType::aiTextureType_SPECULAR TextureUsageType::METALLIC map_Ks metallic texture
-aiTextureType::aiTextureType_AMBIENT TextureUsageType::ROUGHNESS map_Ka roughness texture
-aiTextureType::aiTextureType_EMISSIVE TextureUsageType::AMBIENT_OCCLUSION map_emissive AO texture
+aiTextureType::aiTextureType_NORMALS TextureUsage::NORMAL map_Kn normal map texture
+aiTextureType::aiTextureType_DIFFUSE TextureUsage::ALBEDO map_Kd albedo texture
+aiTextureType::aiTextureType_SPECULAR TextureUsage::METALLIC map_Ks metallic texture
+aiTextureType::aiTextureType_AMBIENT TextureUsage::ROUGHNESS map_Ka roughness texture
+aiTextureType::aiTextureType_EMISSIVE TextureUsage::AMBIENT_OCCLUSION map_emissive AO texture
 aiTextureType::AI_MATKEY_COLOR_DIFFUSE Kd Albedo RGB
 aiTextureType::AI_MATKEY_COLOR_TRANSPARENT Tf Alpha A
 aiTextureType::AI_MATKEY_COLOR_SPECULAR Ks Metallic
@@ -408,23 +408,23 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * a
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_NORMALS)
 			{
-				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSampler::Sampler2D, TextureUsageType::Sample, false, 0));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSampler::Sampler2D, TextureUsage::Sample, false, 0));
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_DIFFUSE)
 			{
-				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSampler::Sampler2D, TextureUsageType::Sample, true, 1));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSampler::Sampler2D, TextureUsage::Sample, true, 1));
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_SPECULAR)
 			{
-				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSampler::Sampler2D, TextureUsageType::Sample, false, 2));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSampler::Sampler2D, TextureUsage::Sample, false, 2));
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_AMBIENT)
 			{
-				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSampler::Sampler2D, TextureUsageType::Sample, false, 3));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSampler::Sampler2D, TextureUsage::Sample, false, 3));
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_EMISSIVE)
 			{
-				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSampler::Sampler2D, TextureUsageType::Sample, false, 4));
+				l_materialData["Textures"].emplace_back(processTextureData(l_localPath, TextureSampler::Sampler2D, TextureUsage::Sample, false, 4));
 			}
 			else
 			{
@@ -497,12 +497,12 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * a
 	JSONParser::saveJsonDataToDisk(exportFileRelativePath, l_materialData);
 }
 
-json InnoFileSystemNS::AssimpWrapper::processTextureData(const char* fileName, TextureSampler sampler, TextureUsageType usageType, bool IsSRGB, uint32_t textureSlotIndex)
+json InnoFileSystemNS::AssimpWrapper::processTextureData(const char* fileName, TextureSampler sampler, TextureUsage usage, bool IsSRGB, uint32_t textureSlotIndex)
 {
 	json j;
 
 	j["Sampler"] = sampler;
-	j["UsageType"] = usageType;
+	j["Usage"] = usage;
 	j["IsSRGB"] = IsSRGB;
 	j["TextureSlotIndex"] = textureSlotIndex;
 	j["File"] = fileName;

@@ -318,10 +318,10 @@ VKTextureDesc VKHelper::getVKTextureDesc(TextureDesc textureDesc)
 
 	l_result.imageType = getImageType(textureDesc.Sampler);
 	l_result.imageViewType = getImageViewType(textureDesc.Sampler);
-	l_result.imageUsageFlags = getImageUsageFlags(textureDesc.UsageType);
+	l_result.imageUsageFlags = getImageUsageFlags(textureDesc.Usage);
 	l_result.format = getTextureFormat(textureDesc);
 	l_result.imageSize = getImageSize(textureDesc);
-	l_result.aspectFlags = getImageAspectFlags(textureDesc.UsageType);
+	l_result.aspectFlags = getImageAspectFlags(textureDesc.Usage);
 
 	return l_result;
 }
@@ -388,19 +388,19 @@ VkImageViewType VKHelper::getImageViewType(TextureSampler textureSampler)
 	return l_result;
 }
 
-VkImageUsageFlags VKHelper::getImageUsageFlags(TextureUsageType textureUsageType)
+VkImageUsageFlags VKHelper::getImageUsageFlags(TextureUsage textureUsage)
 {
 	VkImageUsageFlags l_result;
 
-	if (textureUsageType == TextureUsageType::ColorAttachment)
+	if (textureUsage == TextureUsage::ColorAttachment)
 	{
 		l_result = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 	}
-	else if (textureUsageType == TextureUsageType::DepthAttachment)
+	else if (textureUsage == TextureUsage::DepthAttachment)
 	{
 		l_result = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 	}
-	else if (textureUsageType == TextureUsageType::DepthStencilAttachment)
+	else if (textureUsage == TextureUsage::DepthStencilAttachment)
 	{
 		l_result = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 	}
@@ -461,11 +461,11 @@ VkFormat VKHelper::getTextureFormat(TextureDesc textureDesc)
 	{
 		l_internalFormat = VK_FORMAT_R8G8B8A8_SRGB;
 	}
-	else if (textureDesc.UsageType == TextureUsageType::DepthAttachment)
+	else if (textureDesc.Usage == TextureUsage::DepthAttachment)
 	{
 		l_internalFormat = VkFormat::VK_FORMAT_D32_SFLOAT;
 	}
-	else if (textureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+	else if (textureDesc.Usage == TextureUsage::DepthStencilAttachment)
 	{
 		l_internalFormat = VkFormat::VK_FORMAT_D24_UNORM_S8_UINT;
 	}
@@ -674,15 +674,15 @@ VkDeviceSize VKHelper::getImageSize(TextureDesc textureDesc)
 	return l_result;
 }
 
-VkImageAspectFlagBits VKHelper::getImageAspectFlags(TextureUsageType textureUsageType)
+VkImageAspectFlagBits VKHelper::getImageAspectFlags(TextureUsage textureUsage)
 {
 	VkImageAspectFlagBits l_result;
 
-	if (textureUsageType == TextureUsageType::DepthAttachment)
+	if (textureUsage == TextureUsage::DepthAttachment)
 	{
 		l_result = VkImageAspectFlagBits::VK_IMAGE_ASPECT_DEPTH_BIT;
 	}
-	else if (textureUsageType == TextureUsageType::DepthStencilAttachment)
+	else if (textureUsage == TextureUsage::DepthStencilAttachment)
 	{
 		l_result = VkImageAspectFlagBits(VkImageAspectFlagBits::VK_IMAGE_ASPECT_STENCIL_BIT | VkImageAspectFlagBits::VK_IMAGE_ASPECT_DEPTH_BIT);
 	}
@@ -1091,12 +1091,12 @@ bool VKHelper::createRenderTargets(VKRenderPassDataComponent* VKRPDC, IRendering
 		VKRPDC->m_DepthStencilRenderTarget->m_TextureDesc = VKRPDC->m_RenderPassDesc.m_RenderTargetDesc;
 		if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
 		{
-			VKRPDC->m_DepthStencilRenderTarget->m_TextureDesc.UsageType = TextureUsageType::DepthStencilAttachment;
+			VKRPDC->m_DepthStencilRenderTarget->m_TextureDesc.Usage = TextureUsage::DepthStencilAttachment;
 			VKRPDC->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
 		}
 		else
 		{
-			VKRPDC->m_DepthStencilRenderTarget->m_TextureDesc.UsageType = TextureUsageType::DepthAttachment;
+			VKRPDC->m_DepthStencilRenderTarget->m_TextureDesc.Usage = TextureUsage::DepthAttachment;
 			VKRPDC->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
 		}
 		VKRPDC->m_DepthStencilRenderTarget->m_TextureData = { nullptr };

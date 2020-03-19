@@ -132,7 +132,7 @@ bool GIDataLoader::Setup()
 
 	m_testSampleCubemap->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_testSampleCubemap->m_TextureDesc.Sampler = TextureSampler::SamplerCubemap;
-	m_testSampleCubemap->m_TextureDesc.UsageType = TextureUsageType::Sample;
+	m_testSampleCubemap->m_TextureDesc.Usage = TextureUsage::Sample;
 	m_testSampleCubemap->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 	m_testSampleCubemap->m_TextureDesc.Width = m_testCubemapResolution;
 	m_testSampleCubemap->m_TextureDesc.Height = m_testCubemapResolution;
@@ -157,7 +157,7 @@ bool GIDataLoader::Setup()
 
 	m_testSample3DTexture->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_testSample3DTexture->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
-	m_testSample3DTexture->m_TextureDesc.UsageType = TextureUsageType::Sample;
+	m_testSample3DTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 	m_testSample3DTexture->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 	m_testSample3DTexture->m_TextureDesc.Width = m_testCubemapResolution;
 	m_testSample3DTexture->m_TextureDesc.Height = m_testCubemapResolution;

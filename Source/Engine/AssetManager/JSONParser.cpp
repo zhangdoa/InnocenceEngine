@@ -562,7 +562,7 @@ MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(co
 			if (l_TDC)
 			{
 				l_TDC->m_TextureDesc.Sampler = TextureSampler(i["Sampler"]);
-				l_TDC->m_TextureDesc.UsageType = TextureUsageType(i["UsageType"]);
+				l_TDC->m_TextureDesc.Usage = TextureUsage(i["Usage"]);
 				l_TDC->m_TextureDesc.IsSRGB = i["IsSRGB"];
 
 				l_MDC->m_TextureSlots[l_textureSlotIndex].m_Texture = l_TDC;

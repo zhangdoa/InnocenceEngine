@@ -762,21 +762,21 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 	else
 	{
 		// Create the empty texture.
-		if (l_rhs->m_TextureDesc.UsageType == TextureUsageType::ColorAttachment
-			|| l_rhs->m_TextureDesc.UsageType == TextureUsageType::DepthAttachment
-			|| l_rhs->m_TextureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+		if (l_rhs->m_TextureDesc.Usage == TextureUsage::ColorAttachment
+			|| l_rhs->m_TextureDesc.Usage == TextureUsage::DepthAttachment
+			|| l_rhs->m_TextureDesc.Usage == TextureUsage::DepthStencilAttachment)
 		{
 			D3D12_CLEAR_VALUE l_clearValue;
-			if (l_rhs->m_TextureDesc.UsageType == TextureUsageType::ColorAttachment)
+			if (l_rhs->m_TextureDesc.Usage == TextureUsage::ColorAttachment)
 			{
 				l_clearValue = D3D12_CLEAR_VALUE{ l_rhs->m_DX12TextureDesc.Format, { 0.0f, 0.0f, 0.0f, 0.0f } };
 			}
-			else if (l_rhs->m_TextureDesc.UsageType == TextureUsageType::DepthAttachment)
+			else if (l_rhs->m_TextureDesc.Usage == TextureUsage::DepthAttachment)
 			{
 				l_clearValue.Format = DXGI_FORMAT_D32_FLOAT;
 				l_clearValue.DepthStencil = D3D12_DEPTH_STENCIL_VALUE{ 1.0f, 0x00 };
 			}
-			else if (l_rhs->m_TextureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+			else if (l_rhs->m_TextureDesc.Usage == TextureUsage::DepthStencilAttachment)
 			{
 				l_clearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 				l_clearValue.DepthStencil = D3D12_DEPTH_STENCIL_VALUE{ 1.0f, 0x00 };
@@ -849,7 +849,7 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 
 		auto l_resourceBinder = addResourcesBinder();
 		l_resourceBinder->m_TextureSRV = CreateSRV(l_rhs);
-		if (l_rhs->m_TextureDesc.UsageType == TextureUsageType::RawImage)
+		if (l_rhs->m_TextureDesc.Usage == TextureUsage::RawImage)
 		{
 			l_resourceBinder->m_TextureUAV = CreateUAV(l_rhs);
 		}
@@ -1271,7 +1271,7 @@ bool PrepareRenderTargets(DX12RenderPassDataComponent* renderPass, DX12CommandLi
 {
 	if (renderPass->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
 	{
-		if (renderPass->m_RenderPassDesc.m_RenderTargetDesc.UsageType != TextureUsageType::RawImage)
+		if (renderPass->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
 		{
 			if (renderPass->m_RenderPassDesc.m_UseMultiFrames)
 			{
@@ -1318,7 +1318,7 @@ bool PreparePipeline(DX12RenderPassDataComponent* renderPass, DX12CommandList* c
 			l_DSVDescriptorCPUHandle = &renderPass->m_DSVDescriptorCPUHandle;
 		}
 
-		if (renderPass->m_RenderPassDesc.m_RenderTargetDesc.UsageType != TextureUsageType::RawImage)
+		if (renderPass->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
 		{
 			if (renderPass->m_RenderPassDesc.m_UseMultiFrames)
 			{
@@ -1362,7 +1362,7 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 		auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
 		auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 
-		if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.UsageType != TextureUsageType::RawImage)
+		if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
 		{
 			if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 			{
@@ -1575,7 +1575,7 @@ bool DX12RenderingServer::CommandListEnd(RenderPassDataComponent * rhs)
 
 	if (l_rhs->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
 	{
-		if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.UsageType != TextureUsageType::RawImage)
+		if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
 		{
 			if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 			{

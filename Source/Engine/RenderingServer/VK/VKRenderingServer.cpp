@@ -732,15 +732,15 @@ bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 
 	VkCommandBuffer l_commandBuffer = beginSingleTimeCommands(m_device, m_commandPool);
 
-	if (rhs->m_TextureDesc.UsageType == TextureUsageType::ColorAttachment)
+	if (rhs->m_TextureDesc.Usage == TextureUsage::ColorAttachment)
 	{
 		transitionImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	}
-	else if (rhs->m_TextureDesc.UsageType == TextureUsageType::DepthAttachment)
+	else if (rhs->m_TextureDesc.Usage == TextureUsage::DepthAttachment)
 	{
 		transitionImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 	}
-	else if (rhs->m_TextureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+	else if (rhs->m_TextureDesc.Usage == TextureUsage::DepthStencilAttachment)
 	{
 		transitionImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 	}

@@ -57,7 +57,7 @@ bool VolumetricFogPass::setupFroxelizationPass()
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 
 	l_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler3D;
-	l_RenderPassDesc.m_RenderTargetDesc.UsageType = TextureUsageType::RawImage;
+	l_RenderPassDesc.m_RenderTargetDesc.Usage = TextureUsage::RawImage;
 	l_RenderPassDesc.m_RenderTargetDesc.GPUAccessibility = Accessibility::ReadWrite;
 	l_RenderPassDesc.m_RenderTargetDesc.Width = 64;
 	l_RenderPassDesc.m_RenderTargetDesc.Height = 64;
@@ -112,7 +112,7 @@ bool VolumetricFogPass::setupFroxelVisualizationPass()
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 
 	l_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler2D;
-	l_RenderPassDesc.m_RenderTargetDesc.UsageType = TextureUsageType::ColorAttachment;
+	l_RenderPassDesc.m_RenderTargetDesc.Usage = TextureUsage::ColorAttachment;
 	l_RenderPassDesc.m_RenderTargetDesc.Width = l_viewportSize.x;
 	l_RenderPassDesc.m_RenderTargetDesc.Height = l_viewportSize.y;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = l_viewportSize.x;
@@ -226,7 +226,7 @@ bool VolumetricFogPass::Setup()
 	////
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler3D;
-	l_RenderPassDesc.m_RenderTargetDesc.UsageType = TextureUsageType::RawImage;
+	l_RenderPassDesc.m_RenderTargetDesc.Usage = TextureUsage::RawImage;
 	l_RenderPassDesc.m_RenderTargetDesc.GPUAccessibility = Accessibility::ReadWrite;
 	l_RenderPassDesc.m_RenderTargetDesc.Width = 64;
 	l_RenderPassDesc.m_RenderTargetDesc.Height = 64;

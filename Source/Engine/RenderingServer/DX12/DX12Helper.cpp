@@ -185,11 +185,11 @@ DXGI_FORMAT DX12Helper::GetTextureFormat(TextureDesc textureDesc)
 	{
 		l_internalFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	}
-	else if (textureDesc.UsageType == TextureUsageType::DepthAttachment)
+	else if (textureDesc.Usage == TextureUsage::DepthAttachment)
 	{
 		l_internalFormat = DXGI_FORMAT_R32_TYPELESS;
 	}
-	else if (textureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+	else if (textureDesc.Usage == TextureUsage::DepthStencilAttachment)
 	{
 		l_internalFormat = DXGI_FORMAT_R24G8_TYPELESS;
 	}
@@ -421,19 +421,19 @@ D3D12_RESOURCE_FLAGS DX12Helper::GetTextureBindFlags(TextureDesc textureDesc)
 {
 	D3D12_RESOURCE_FLAGS l_result = {};
 
-	if (textureDesc.UsageType == TextureUsageType::ColorAttachment)
+	if (textureDesc.Usage == TextureUsage::ColorAttachment)
 	{
 		l_result = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 	}
-	else if (textureDesc.UsageType == TextureUsageType::DepthAttachment)
+	else if (textureDesc.Usage == TextureUsage::DepthAttachment)
 	{
 		l_result = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 	}
-	else if (textureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+	else if (textureDesc.Usage == TextureUsage::DepthStencilAttachment)
 	{
 		l_result = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 	}
-	else if (textureDesc.UsageType == TextureUsageType::RawImage)
+	else if (textureDesc.Usage == TextureUsage::RawImage)
 	{
 		l_result = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 	}
@@ -480,16 +480,16 @@ D3D12_RESOURCE_STATES DX12Helper::GetTextureWriteState(TextureDesc textureDesc)
 {
 	D3D12_RESOURCE_STATES l_result;
 
-	if (textureDesc.UsageType == TextureUsageType::ColorAttachment)
+	if (textureDesc.Usage == TextureUsage::ColorAttachment)
 	{
 		l_result = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	}
-	else if (textureDesc.UsageType == TextureUsageType::DepthAttachment
-		|| textureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+	else if (textureDesc.Usage == TextureUsage::DepthAttachment
+		|| textureDesc.Usage == TextureUsage::DepthStencilAttachment)
 	{
 		l_result = D3D12_RESOURCE_STATE_DEPTH_WRITE;
 	}
-	else if (textureDesc.UsageType == TextureUsageType::RawImage)
+	else if (textureDesc.Usage == TextureUsage::RawImage)
 	{
 		l_result = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 	}
@@ -505,16 +505,16 @@ D3D12_RESOURCE_STATES DX12Helper::GetTextureReadState(TextureDesc textureDesc)
 {
 	D3D12_RESOURCE_STATES l_result;
 
-	if (textureDesc.UsageType == TextureUsageType::ColorAttachment)
+	if (textureDesc.Usage == TextureUsage::ColorAttachment)
 	{
 		l_result = D3D12_RESOURCE_STATE_GENERIC_READ;
 	}
-	else if (textureDesc.UsageType == TextureUsageType::DepthAttachment
-		|| textureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+	else if (textureDesc.Usage == TextureUsage::DepthAttachment
+		|| textureDesc.Usage == TextureUsage::DepthStencilAttachment)
 	{
 		l_result = D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 	}
-	else if (textureDesc.UsageType == TextureUsageType::RawImage)
+	else if (textureDesc.Usage == TextureUsage::RawImage)
 	{
 		l_result = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 	}
@@ -528,10 +528,10 @@ D3D12_RESOURCE_STATES DX12Helper::GetTextureReadState(TextureDesc textureDesc)
 
 UINT DX12Helper::GetMipLevels(TextureDesc textureDesc)
 {
-	if (textureDesc.UsageType == TextureUsageType::ColorAttachment
-		|| textureDesc.UsageType == TextureUsageType::DepthAttachment
-		|| textureDesc.UsageType == TextureUsageType::DepthStencilAttachment
-		|| textureDesc.UsageType == TextureUsageType::RawImage)
+	if (textureDesc.Usage == TextureUsage::ColorAttachment
+		|| textureDesc.Usage == TextureUsage::DepthAttachment
+		|| textureDesc.Usage == TextureUsage::DepthStencilAttachment
+		|| textureDesc.Usage == TextureUsage::RawImage)
 	{
 		return 1;
 	}
@@ -546,11 +546,11 @@ D3D12_SHADER_RESOURCE_VIEW_DESC DX12Helper::GetSRVDesc(TextureDesc textureDesc, 
 	D3D12_SHADER_RESOURCE_VIEW_DESC l_result = {};
 	l_result.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
-	if (textureDesc.UsageType == TextureUsageType::DepthAttachment)
+	if (textureDesc.Usage == TextureUsage::DepthAttachment)
 	{
 		l_result.Format = DXGI_FORMAT_R32_FLOAT;
 	}
-	else if (textureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+	else if (textureDesc.Usage == TextureUsage::DepthStencilAttachment)
 	{
 		l_result.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 	}
@@ -778,12 +778,12 @@ bool DX12Helper::CreateRenderTargets(DX12RenderPassDataComponent* DX12RPDC, IRen
 
 		if (DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
 		{
-			DX12RPDC->m_DepthStencilRenderTarget->m_TextureDesc.UsageType = TextureUsageType::DepthStencilAttachment;
+			DX12RPDC->m_DepthStencilRenderTarget->m_TextureDesc.Usage = TextureUsage::DepthStencilAttachment;
 			DX12RPDC->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
 		}
 		else
 		{
-			DX12RPDC->m_DepthStencilRenderTarget->m_TextureDesc.UsageType = TextureUsageType::DepthAttachment;
+			DX12RPDC->m_DepthStencilRenderTarget->m_TextureDesc.Usage = TextureUsage::DepthAttachment;
 			DX12RPDC->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
 		}
 
@@ -811,7 +811,7 @@ bool DX12Helper::CreateResourcesBinder(DX12RenderPassDataComponent * DX12RPDC, I
 
 bool DX12Helper::CreateViews(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device)
 {
-	if (DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc.UsageType != TextureUsageType::RawImage)
+	if (DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
 	{
 		// Reserve for RTV
 		DX12RPDC->m_RTVDescriptorCPUHandles.reserve(DX12RPDC->m_RenderPassDesc.m_RenderTargetCount);
@@ -1156,7 +1156,7 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* 
 			l_PSO->m_GraphicsPSODesc.PS = l_PSBytecode;
 		}
 
-		if (DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc.UsageType != TextureUsageType::RawImage)
+		if (DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
 		{
 			l_PSO->m_GraphicsPSODesc.NumRenderTargets = (uint32_t)DX12RPDC->m_RenderPassDesc.m_RenderTargetCount;
 			for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)

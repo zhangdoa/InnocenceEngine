@@ -47,12 +47,12 @@ namespace VKHelper
 	VKTextureDesc getVKTextureDesc(TextureDesc textureDesc);
 	VkImageType getImageType(TextureSampler textureSampler);
 	VkImageViewType getImageViewType(TextureSampler textureSampler);
-	VkImageUsageFlags getImageUsageFlags(TextureUsageType textureUsageType);
+	VkImageUsageFlags getImageUsageFlags(TextureUsage textureUsage);
 	VkSamplerAddressMode getSamplerAddressMode(TextureWrapMethod textureWrapMethod);
 	VkSamplerMipmapMode getTextureFilterParam(TextureFilterMethod textureFilterMethod);
 	VkFormat getTextureFormat(TextureDesc textureDesc);
 	VkDeviceSize getImageSize(TextureDesc textureDesc);
-	VkImageAspectFlagBits getImageAspectFlags(TextureUsageType textureUsageType);
+	VkImageAspectFlagBits getImageAspectFlags(TextureUsage textureUsage);
 	VkImageCreateInfo getImageCreateInfo(TextureDesc textureDesc, VKTextureDesc vKTextureDesc);
 
 	bool transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout);

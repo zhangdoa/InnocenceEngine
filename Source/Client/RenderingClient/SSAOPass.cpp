@@ -131,7 +131,7 @@ bool SSAOPass::Setup()
 	m_SSAONoiseTDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("SSAONoise/");
 
 	m_SSAONoiseTDC->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
-	m_SSAONoiseTDC->m_TextureDesc.UsageType = TextureUsageType::Sample;
+	m_SSAONoiseTDC->m_TextureDesc.Usage = TextureUsage::Sample;
 	m_SSAONoiseTDC->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 
 	m_SSAONoiseTDC->m_TextureDesc.Width = l_textureSize;

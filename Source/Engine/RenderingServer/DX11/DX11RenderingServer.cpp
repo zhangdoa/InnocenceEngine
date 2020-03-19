@@ -569,7 +569,7 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 		}
 
 		// Create UAV
-		if (l_rhs->m_TextureDesc.UsageType == TextureUsageType::RawImage)
+		if (l_rhs->m_TextureDesc.Usage == TextureUsage::RawImage)
 		{
 			l_rhs->m_UAVDesc = GetUAVDesc(l_rhs->m_TextureDesc, l_rhs->m_DX11TextureDesc);
 
@@ -1114,7 +1114,7 @@ bool DX11RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * 
 		m_deviceContext->RSSetViewports(1, &l_PSO->m_Viewport);
 		m_deviceContext->RSSetState(l_PSO->m_RasterizerState);
 
-		if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.UsageType != TextureUsageType::RawImage)
+		if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
 		{
 			if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 			{
@@ -1144,7 +1144,7 @@ bool DX11RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 
 	if (l_rhs->m_RenderPassDesc.m_RenderPassUsageType == RenderPassUsageType::Graphics)
 	{
-		if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.UsageType != TextureUsageType::RawImage)
+		if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
 		{
 			if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 			{
@@ -1496,7 +1496,7 @@ bool DX11RenderingServer::CommandListEnd(RenderPassDataComponent * rhs)
 		m_deviceContext->IASetInputLayout(NULL);
 		m_deviceContext->RSSetState(NULL);
 
-		if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.UsageType != TextureUsageType::RawImage)
+		if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
 		{
 			m_deviceContext->OMSetRenderTargets(0, NULL, NULL);
 		}

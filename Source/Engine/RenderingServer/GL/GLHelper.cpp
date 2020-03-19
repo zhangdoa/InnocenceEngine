@@ -109,11 +109,11 @@ GLenum GLHelper::GetTextureInternalFormat(TextureDesc textureDesc)
 			l_internalFormat = GL_SRGB_ALPHA;
 		}
 	}
-	else if (textureDesc.UsageType == TextureUsageType::DepthAttachment)
+	else if (textureDesc.Usage == TextureUsage::DepthAttachment)
 	{
 		l_internalFormat = GL_DEPTH_COMPONENT32F;
 	}
-	else if (textureDesc.UsageType == TextureUsageType::DepthStencilAttachment)
+	else if (textureDesc.Usage == TextureUsage::DepthStencilAttachment)
 	{
 		l_internalFormat = GL_DEPTH24_STENCIL8;
 	}
@@ -469,12 +469,12 @@ bool GLHelper::CreateRenderTargets(GLRenderPassDataComponent * GLRPDC, IRenderin
 
 		if (GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
 		{
-			l_TDC->m_TextureDesc.UsageType = TextureUsageType::DepthStencilAttachment;
+			l_TDC->m_TextureDesc.Usage = TextureUsage::DepthStencilAttachment;
 			l_TDC->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
 		}
 		else
 		{
-			l_TDC->m_TextureDesc.UsageType = TextureUsageType::DepthAttachment;
+			l_TDC->m_TextureDesc.Usage = TextureUsage::DepthAttachment;
 			l_TDC->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
 		}
 
