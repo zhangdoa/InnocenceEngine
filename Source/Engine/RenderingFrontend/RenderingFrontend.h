@@ -24,7 +24,7 @@ public:
 	bool registerMeshDataComponent(MeshDataComponent * rhs, bool AsyncUploadToGPU) override;
 	bool registerMaterialDataComponent(MaterialDataComponent * rhs, bool AsyncUploadToGPU) override;
 
-	MeshDataComponent* getMeshDataComponent(MeshShapeType meshShapeType) override;
+	MeshDataComponent* getMeshDataComponent(ProceduralMeshShape shape) override;
 	TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) override;
 	MaterialDataComponent* getDefaultMaterialDataComponent() override;
 

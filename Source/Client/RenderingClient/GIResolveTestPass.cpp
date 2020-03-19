@@ -207,7 +207,7 @@ bool GIResolveTestPass::PrepareCommandList()
 			m_probeSphereMeshData.emplace_back(l_probeMeshData);
 		}
 
-		auto l_sphere = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Sphere);
+		auto l_sphere = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Sphere);
 
 		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_probeSphereMeshGBDC, m_probeSphereMeshData, 0, m_probeSphereMeshData.size());
 

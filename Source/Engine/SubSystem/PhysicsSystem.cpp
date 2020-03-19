@@ -188,19 +188,40 @@ bool InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent * VC)
 #if defined INNO_PLATFORM_WIN
 		if (VC->m_simulatePhysics)
 		{
-			switch (l_meshMaterialPair->mesh->m_meshShapeType)
+			if (l_meshMaterialPair->mesh->m_meshSource == MeshSource::Customized)
 			{
-			case MeshShapeType::Cube:
-				PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_rot, l_transformComponent->m_localTransformVector_target.m_scale, (VC->m_meshUsage == MeshUsage::Dynamic));
-				break;
-			case MeshShapeType::Sphere:
-				PhysXWrapper::get().createPxSphere(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_scale.x, (VC->m_meshUsage == MeshUsage::Dynamic));
-				break;
-			case MeshShapeType::Custom:
 				PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_rot, l_PDC->m_AABBWS.m_extend, (VC->m_meshUsage == MeshUsage::Dynamic));
-				break;
-			default:
-				break;
+			}
+			else
+			{
+				switch (l_meshMaterialPair->mesh->m_proceduralMeshShape)
+				{
+				case InnoType::ProceduralMeshShape::Triangle:
+					break;
+				case InnoType::ProceduralMeshShape::Square:
+					break;
+				case InnoType::ProceduralMeshShape::Pentagon:
+					break;
+				case InnoType::ProceduralMeshShape::Hexagon:
+					break;
+				case InnoType::ProceduralMeshShape::Tetrahedron:
+					break;
+				case InnoType::ProceduralMeshShape::Cube:
+					PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_rot, l_transformComponent->m_localTransformVector_target.m_scale, (VC->m_meshUsage == MeshUsage::Dynamic));
+					break;
+				case InnoType::ProceduralMeshShape::Octahedron:
+					break;
+				case InnoType::ProceduralMeshShape::Dodecahedron:
+					break;
+				case InnoType::ProceduralMeshShape::Icosahedron:
+					break;
+				case InnoType::ProceduralMeshShape::Sphere:
+					PhysXWrapper::get().createPxSphere(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_scale.x, (VC->m_meshUsage == MeshUsage::Dynamic));
+					break;
+				default:
+					InnoLogger::Log(LogLevel::Error, "PhysicsSystem: Invalid ProceduralMeshShape!");
+					break;
+				}
 			}
 		}
 #endif

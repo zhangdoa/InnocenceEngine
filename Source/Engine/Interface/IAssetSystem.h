@@ -42,10 +42,6 @@ public:
 
 	virtual Model* addModel() = 0;
 
-	virtual Model* addUnitModel(MeshShapeType meshShapeType) = 0;
-	virtual void addUnitCube(MeshDataComponent& meshDataComponent) = 0;
-	virtual void addUnitSphere(MeshDataComponent& meshDataComponent) = 0;
-	virtual void addUnitQuad(MeshDataComponent& meshDataComponent) = 0;
-	virtual void addUnitLine(MeshDataComponent& meshDataComponent) = 0;
-	virtual void addTerrain(MeshDataComponent& meshDataComponent) = 0;
+	virtual Model* addProceduralModel(ProceduralMeshShape shape) = 0;
+	virtual bool generateProceduralMesh(ProceduralMeshShape shape, MeshDataComponent* meshDataComponent) = 0;
 };

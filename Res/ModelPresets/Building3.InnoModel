@@ -5,7 +5,8 @@
       "MaterialFile": "..//Res//ModelPresets//Building3.InnoMaterial",
       "MeshFile": "",
       "MeshName": 0,
-      "MeshShapeType": 3,
+      "MeshSource": 1,
+      "ProceduralMeshShape": 6,
       "VerticesNumber": 0
     }
   ],

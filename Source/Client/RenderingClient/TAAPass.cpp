@@ -107,7 +107,7 @@ bool TAAPass::PrepareCommandList(IResourceBinder* input)
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(l_WriteRPDC, ShaderStage::Pixel, l_ReadRPDC->m_RenderTargetsResourceBinders[0], 1, 1);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(l_WriteRPDC, ShaderStage::Pixel, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[3], 2, 2);
 
-	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(MeshShapeType::Quad);
+	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
 
 	g_pModuleManager->getRenderingServer()->DispatchDrawCall(l_WriteRPDC, l_mesh);
 

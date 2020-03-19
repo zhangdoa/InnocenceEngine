@@ -27,7 +27,8 @@
         {
           "ComponentType": 1,
           "MeshPrimitiveTopology": 2,
-          "MeshShapeType": 3,
+          "MeshSource": 1,
+          "ProceduralMeshShape": 6,
           "MeshUsage": 1,
           "ModelFileName": "",
           "TextureWrapMethod": 1,

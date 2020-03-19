@@ -115,22 +115,22 @@ void VisibleComponentPropertyEditor::GetModelMap()
     if (!m_component)
         return;
 
-    m_modelList->setRowCount((int)m_component->m_modelIndex.m_count);
+    m_modelList->setRowCount((int)m_component->m_model->meshMaterialPairs.m_count);
 
     int index = 0;
 
-    for (uint64_t j = 0; j < m_component->m_modelIndex.m_count; j++)
+    for (uint64_t j = 0; j < m_component->m_model->meshMaterialPairs.m_count; j++)
     {
-        auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(m_component->m_modelIndex.m_startOffset + j);
+        auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(m_component->m_model->meshMaterialPairs.m_startOffset + j);
         auto l_meshItem = new QTableWidgetItem();
-        l_meshItem->setText(l_pair.mesh->m_ComponentName.c_str());
-        l_meshItem->setData(Qt::UserRole, QVariant::fromValue(static_cast<void*>(l_pair.mesh)));
+        l_meshItem->setText(l_pair->mesh->m_ComponentName.c_str());
+        l_meshItem->setData(Qt::UserRole, QVariant::fromValue(static_cast<void*>(l_pair->mesh)));
         l_meshItem->setFlags(l_meshItem->flags() & ~Qt::ItemIsEditable);
         m_modelList->setItem(index, 0, l_meshItem);
 
         auto l_materialItem = new QTableWidgetItem();
-        l_materialItem->setText(l_pair.material->m_ComponentName.c_str());
-        l_materialItem->setData(Qt::UserRole, QVariant::fromValue(static_cast<void*>(l_pair.material)));
+        l_materialItem->setText(l_pair->material->m_ComponentName.c_str());
+        l_materialItem->setData(Qt::UserRole, QVariant::fromValue(static_cast<void*>(l_pair->material)));
         l_materialItem->setFlags(l_materialItem->flags() & ~Qt::ItemIsEditable);
         m_modelList->setItem(index, 1, l_materialItem);
 

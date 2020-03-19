@@ -118,14 +118,14 @@ void MaterialDataComponentPropertyEditor::GetCustomMaterial()
     if (!m_component)
         return;
 
-    m_albedoR->SetFromFloat(m_component->m_meshCustomMaterial.AlbedoR);
-    m_albedoG->SetFromFloat(m_component->m_meshCustomMaterial.AlbedoG);
-    m_albedoB->SetFromFloat(m_component->m_meshCustomMaterial.AlbedoB);
-    m_alpha->SetFromFloat(m_component->m_meshCustomMaterial.Alpha);
-    m_metallic->SetFromFloat(m_component->m_meshCustomMaterial.Metallic);
-    m_roughness->SetFromFloat(m_component->m_meshCustomMaterial.Roughness);
-    m_AO->SetFromFloat(m_component->m_meshCustomMaterial.AO);
-    m_thickness->SetFromFloat(m_component->m_meshCustomMaterial.Thickness);
+    m_albedoR->SetFromFloat(m_component->m_materialAttributes.AlbedoR);
+    m_albedoG->SetFromFloat(m_component->m_materialAttributes.AlbedoG);
+    m_albedoB->SetFromFloat(m_component->m_materialAttributes.AlbedoB);
+    m_alpha->SetFromFloat(m_component->m_materialAttributes.Alpha);
+    m_metallic->SetFromFloat(m_component->m_materialAttributes.Metallic);
+    m_roughness->SetFromFloat(m_component->m_materialAttributes.Roughness);
+    m_AO->SetFromFloat(m_component->m_materialAttributes.AO);
+    m_thickness->SetFromFloat(m_component->m_materialAttributes.Thickness);
 }
 
 void MaterialDataComponentPropertyEditor::SetCustomMaterial()
@@ -133,14 +133,14 @@ void MaterialDataComponentPropertyEditor::SetCustomMaterial()
     if (!m_component)
         return;
 
-    m_component->m_meshCustomMaterial.AlbedoR = m_albedoR->GetAsFloat();
-    m_component->m_meshCustomMaterial.AlbedoG = m_albedoG->GetAsFloat();
-    m_component->m_meshCustomMaterial.AlbedoB = m_albedoB->GetAsFloat();
-    m_component->m_meshCustomMaterial.Alpha = m_alpha->GetAsFloat();
-    m_component->m_meshCustomMaterial.Metallic = m_metallic->GetAsFloat();
-    m_component->m_meshCustomMaterial.Roughness = m_roughness->GetAsFloat();
-    m_component->m_meshCustomMaterial.AO = m_AO->GetAsFloat();
-    m_component->m_meshCustomMaterial.Thickness = m_thickness->GetAsFloat();
+    m_component->m_materialAttributes.AlbedoR = m_albedoR->GetAsFloat();
+    m_component->m_materialAttributes.AlbedoG = m_albedoG->GetAsFloat();
+    m_component->m_materialAttributes.AlbedoB = m_albedoB->GetAsFloat();
+    m_component->m_materialAttributes.Alpha = m_alpha->GetAsFloat();
+    m_component->m_materialAttributes.Metallic = m_metallic->GetAsFloat();
+    m_component->m_materialAttributes.Roughness = m_roughness->GetAsFloat();
+    m_component->m_materialAttributes.AO = m_AO->GetAsFloat();
+    m_component->m_materialAttributes.Thickness = m_thickness->GetAsFloat();
 }
 
 void MaterialDataComponentPropertyEditor::remove()

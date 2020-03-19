@@ -70,8 +70,7 @@ namespace InnoRenderingFrontendNS
 	TextureDataComponent* m_iconTemplate_PointLight;
 	TextureDataComponent* m_iconTemplate_SphereLight;
 
-	MeshDataComponent* m_unitLineMesh;
-	MeshDataComponent* m_unitQuadMesh;
+	MeshDataComponent* m_unitSquareMesh;
 	MeshDataComponent* m_unitCubeMesh;
 	MeshDataComponent* m_unitSphereMesh;
 	MeshDataComponent* m_terrainMesh;
@@ -243,42 +242,29 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 	m_iconTemplate_SphereLight->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_iconTemplate_SphereLight->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	m_unitLineMesh = m_renderingServer->AddMeshDataComponent("UnitLineMesh/");
-	g_pModuleManager->getAssetSystem()->addUnitLine(*m_unitLineMesh);
-	m_unitLineMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
-	m_unitLineMesh->m_meshShapeType = MeshShapeType::Line;
-	m_unitLineMesh->m_ObjectStatus = ObjectStatus::Created;
-
-	m_unitQuadMesh = m_renderingServer->AddMeshDataComponent("UnitQuadMesh/");
-	g_pModuleManager->getAssetSystem()->addUnitQuad(*m_unitQuadMesh);
-	m_unitQuadMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
-	m_unitQuadMesh->m_meshShapeType = MeshShapeType::Quad;
-	m_unitQuadMesh->m_ObjectStatus = ObjectStatus::Created;
+	m_unitSquareMesh = m_renderingServer->AddMeshDataComponent("UnitSquareMesh/");
+	g_pModuleManager->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Square, m_unitSquareMesh);
+	m_unitSquareMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
+	m_unitSquareMesh->m_proceduralMeshShape = ProceduralMeshShape::Square;
+	m_unitSquareMesh->m_ObjectStatus = ObjectStatus::Created;
 
 	m_unitCubeMesh = m_renderingServer->AddMeshDataComponent("UnitCubeMesh/");
-	g_pModuleManager->getAssetSystem()->addUnitCube(*m_unitCubeMesh);
+	g_pModuleManager->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Cube, m_unitCubeMesh);
 	m_unitCubeMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
-	m_unitCubeMesh->m_meshShapeType = MeshShapeType::Cube;
+	m_unitCubeMesh->m_proceduralMeshShape = ProceduralMeshShape::Cube;
 	m_unitCubeMesh->m_ObjectStatus = ObjectStatus::Created;
 
 	m_unitSphereMesh = m_renderingServer->AddMeshDataComponent("UnitSphereMesh/");
-	g_pModuleManager->getAssetSystem()->addUnitSphere(*m_unitSphereMesh);
+	g_pModuleManager->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Sphere, m_unitSphereMesh);
 	m_unitSphereMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
-	m_unitSphereMesh->m_meshShapeType = MeshShapeType::Sphere;
+	m_unitSphereMesh->m_proceduralMeshShape = ProceduralMeshShape::Sphere;
 	m_unitSphereMesh->m_ObjectStatus = ObjectStatus::Created;
-
-	m_terrainMesh = m_renderingServer->AddMeshDataComponent("TerrainMesh/");
-	g_pModuleManager->getAssetSystem()->addTerrain(*m_terrainMesh);
-	m_terrainMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
-	m_terrainMesh->m_ObjectStatus = ObjectStatus::Created;
 
 	auto l_DefaultAssetInitializeTask = g_pModuleManager->getTaskSystem()->submit("DefaultAssetInitializeTask", 2, nullptr,
 		[&]() {
-		m_renderingServer->InitializeMeshDataComponent(m_unitLineMesh);
-		m_renderingServer->InitializeMeshDataComponent(m_unitQuadMesh);
+		m_renderingServer->InitializeMeshDataComponent(m_unitSquareMesh);
 		m_renderingServer->InitializeMeshDataComponent(m_unitCubeMesh);
 		m_renderingServer->InitializeMeshDataComponent(m_unitSphereMesh);
-		m_renderingServer->InitializeMeshDataComponent(m_terrainMesh);
 
 		m_renderingServer->InitializeTextureDataComponent(m_basicNormalTexture);
 		m_renderingServer->InitializeTextureDataComponent(m_basicAlbedoTexture);
@@ -720,25 +706,36 @@ AnimationDataComponent * InnoRenderingFrontend::addAnimationDataComponent()
 	return l_ADC;
 }
 
-MeshDataComponent * InnoRenderingFrontend::getMeshDataComponent(MeshShapeType meshShapeType)
+MeshDataComponent * InnoRenderingFrontend::getMeshDataComponent(ProceduralMeshShape shape)
 {
-	switch (meshShapeType)
+	switch (shape)
 	{
-	case MeshShapeType::Line:
-		return m_unitLineMesh; break;
-	case MeshShapeType::Quad:
-		return m_unitQuadMesh; break;
-	case MeshShapeType::Cube:
-		return m_unitCubeMesh; break;
-	case MeshShapeType::Sphere:
-		return m_unitSphereMesh; break;
-	case MeshShapeType::Terrain:
-		return m_terrainMesh; break;
-	case MeshShapeType::Custom:
-		InnoLogger::Log(LogLevel::Error, "RenderingFrontend: Wrong MeshShapeType!");
-		return nullptr; break;
+	case InnoType::ProceduralMeshShape::Triangle:
+		break;
+	case InnoType::ProceduralMeshShape::Square:
+		return m_unitSquareMesh;
+		break;
+	case InnoType::ProceduralMeshShape::Pentagon:
+		break;
+	case InnoType::ProceduralMeshShape::Hexagon:
+		break;
+	case InnoType::ProceduralMeshShape::Tetrahedron:
+		break;
+	case InnoType::ProceduralMeshShape::Cube:
+		return m_unitCubeMesh;
+		break;
+	case InnoType::ProceduralMeshShape::Octahedron:
+		break;
+	case InnoType::ProceduralMeshShape::Dodecahedron:
+		break;
+	case InnoType::ProceduralMeshShape::Icosahedron:
+		break;
+	case InnoType::ProceduralMeshShape::Sphere:
+		return m_unitSphereMesh;
+		break;
 	default:
-		return nullptr; break;
+		InnoLogger::Log(LogLevel::Error, "RenderingFrontend: Invalid ProceduralMeshShape!");
+		break;
 	}
 }
 

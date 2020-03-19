@@ -33,10 +33,6 @@ public:
 
 	Model* addModel() override;
 
-	Model* addUnitModel(MeshShapeType meshShapeType) override;
-	void addUnitCube(MeshDataComponent& meshDataComponent) override;
-	void addUnitSphere(MeshDataComponent& meshDataComponent) override;
-	void addUnitQuad(MeshDataComponent& meshDataComponent) override;
-	void addUnitLine(MeshDataComponent& meshDataComponent) override;
-	void addTerrain(MeshDataComponent& meshDataComponent) override;
+	Model* addProceduralModel(ProceduralMeshShape shape) override;
+	bool generateProceduralMesh(ProceduralMeshShape shape, MeshDataComponent* meshDataComponent) override;
 };

@@ -110,7 +110,8 @@
         {
           "ComponentType": 1,
           "MeshPrimitiveTopology": 2,
-          "MeshShapeType": 0,
+          "MeshSource": 2,
+          "ProceduralMeshShape": 0,
           "MeshUsage": 1,
           "ModelFileName": "..//Res//ConvertedAssets//sponza.InnoModel",
           "SimulatePhysics": true,
@@ -148,7 +149,8 @@
         {
           "ComponentType": 1,
           "MeshPrimitiveTopology": 2,
-          "MeshShapeType": 0,
+          "MeshSource": 2,
+          "ProceduralMeshShape": 0,
           "MeshUsage": 2,
           "ModelFileName": "..//Res//ConvertedAssets//Orb.InnoModel",
           "SimulatePhysics": true,
@@ -186,7 +188,8 @@
         {
           "ComponentType": 1,
           "MeshPrimitiveTopology": 2,
-          "MeshShapeType": 0,
+          "MeshSource": 2,
+          "ProceduralMeshShape": 0,
           "MeshUsage": 2,
           "ModelFileName": "..//Res//ConvertedAssets//bunny.InnoModel",
           "SimulatePhysics": true,

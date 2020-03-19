@@ -18,10 +18,12 @@ class VisibleComponent : public InnoComponent
 {
 public:
 	VisibilityType m_visibilityType = VisibilityType::Invisible;
-	MeshUsage m_meshUsage = MeshUsage::Static;
-	MeshShapeType m_meshShapeType = MeshShapeType::Line;
 	MeshPrimitiveTopology m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	TextureWrapMethod m_textureWrapMethod = TextureWrapMethod::Repeat;
+
+	MeshUsage m_meshUsage = MeshUsage::Static;
+	MeshSource m_meshSource = MeshSource::Procedural;
+	ProceduralMeshShape m_proceduralMeshShape = ProceduralMeshShape::Triangle;
 
 	std::string m_modelFileName;
 	bool m_simulatePhysics = false;

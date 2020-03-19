@@ -35,7 +35,7 @@ TextureDataComponent* InnoFileSystemNS::TextureIO::loadTexture(const char* fileN
 
 		l_TDC->m_ComponentName = (std::string(fileName) + "/").c_str();
 
-		l_TDC->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat(nrChannels - 1);
+		l_TDC->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat(nrChannels);
 		l_TDC->m_TextureDesc.PixelDataType = l_isHDR ? TexturePixelDataType::Float16 : TexturePixelDataType::UByte;
 		l_TDC->m_TextureDesc.UseMipMap = true;
 		l_TDC->m_TextureDesc.Width = width;

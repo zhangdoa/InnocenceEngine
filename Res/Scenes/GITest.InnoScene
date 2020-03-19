@@ -110,7 +110,8 @@
         {
           "ComponentType": 1,
           "MeshPrimitiveTopology": 2,
-          "MeshShapeType": 3,
+          "MeshSource": 1,
+          "ProceduralMeshShape": 6,
           "MeshUsage": 1,
           "ModelFileName": "",
           "SimulatePhysics": true,
@@ -148,7 +149,8 @@
         {
           "ComponentType": 1,
           "MeshPrimitiveTopology": 2,
-          "MeshShapeType": 0,
+          "MeshSource": 2,
+          "ProceduralMeshShape": 0,
           "MeshUsage": 1,
           "ModelFileName": "..//Res//ModelPresets//Building1.InnoModel",
           "SimulatePhysics": true,
@@ -186,7 +188,8 @@
         {
           "ComponentType": 1,
           "MeshPrimitiveTopology": 2,
-          "MeshShapeType": 0,
+          "MeshSource": 2,
+          "ProceduralMeshShape": 0,
           "MeshUsage": 1,
           "ModelFileName": "..//Res//ModelPresets//Building2.InnoModel",
           "SimulatePhysics": true,
@@ -224,7 +227,8 @@
         {
           "ComponentType": 1,
           "MeshPrimitiveTopology": 2,
-          "MeshShapeType": 0,
+          "MeshSource": 2,
+          "ProceduralMeshShape": 0,
           "MeshUsage": 1,
           "ModelFileName": "..//Res//ModelPresets//Building3.InnoModel",
           "SimulatePhysics": true,
@@ -262,7 +266,8 @@
         {
           "ComponentType": 1,
           "MeshPrimitiveTopology": 2,
-          "MeshShapeType": 0,
+          "MeshSource": 2,
+          "ProceduralMeshShape": 0,
           "MeshUsage": 1,
           "ModelFileName": "..//Res//ModelPresets//Building4.InnoModel",
           "SimulatePhysics": true,

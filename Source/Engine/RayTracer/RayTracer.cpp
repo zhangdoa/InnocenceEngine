@@ -265,7 +265,7 @@ bool ExecuteRayTracing()
 	for (auto l_visibleComponent : l_visibleComponents)
 	{
 		auto l_transformComponent = GetComponent(TransformComponent, l_visibleComponent->m_ParentEntity);
-		if (l_visibleComponent->m_meshShapeType == MeshShapeType::Cube)
+		if (l_visibleComponent->m_proceduralMeshShape == ProceduralMeshShape::Cube)
 		{
 			auto l_hitable = new HitableCube();
 			l_hitable->m_VisibleComponent = l_visibleComponent;
@@ -277,7 +277,7 @@ bool ExecuteRayTracing()
 
 			l_hitableListVector.emplace_back(l_hitable);
 		}
-		else if (l_visibleComponent->m_meshShapeType == MeshShapeType::Sphere)
+		else if (l_visibleComponent->m_proceduralMeshShape == ProceduralMeshShape::Sphere)
 		{
 			auto l_hitable = new HitableSphere();
 			l_hitable->m_VisibleComponent = l_visibleComponent;

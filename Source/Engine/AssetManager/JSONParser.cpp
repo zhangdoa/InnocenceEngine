@@ -188,10 +188,11 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const VisibleComponent& p)
 	{
 		{"ComponentType", InnoUtility::getComponentType<VisibleComponent>()},
 		{"VisibilityType", p.m_visibilityType},
-		{"MeshShapeType", p.m_meshShapeType},
-		{"MeshUsage", p.m_meshUsage},
 		{"MeshPrimitiveTopology", p.m_meshPrimitiveTopology},
 		{"TextureWrapMethod", p.m_textureWrapMethod},
+		{"MeshUsage", p.m_meshUsage},
+		{"MeshSource", p.m_meshSource},
+		{"ProceduralMeshShape", p.m_proceduralMeshShape},
 		{"ModelFileName", p.m_modelFileName},
 		{"SimulatePhysics", p.m_simulatePhysics},
 	};
@@ -277,10 +278,11 @@ void InnoFileSystemNS::JSONParser::from_json(const json & j, TransformVector & p
 void InnoFileSystemNS::JSONParser::from_json(const json & j, VisibleComponent & p)
 {
 	p.m_visibilityType = j["VisibilityType"];
-	p.m_meshShapeType = j["MeshShapeType"];
-	p.m_meshUsage = j["MeshUsage"];
 	p.m_meshPrimitiveTopology = j["MeshPrimitiveTopology"];
 	p.m_textureWrapMethod = j["TextureWrapMethod"];
+	p.m_meshUsage = j["MeshUsage"];
+	p.m_meshSource = j["MeshSource"];
+	p.m_proceduralMeshShape = j["ProceduralMeshShape"];
 	p.m_modelFileName = j["ModelFileName"];
 	p.m_simulatePhysics = j["SimulatePhysics"];
 }
@@ -432,10 +434,10 @@ ArrayRangeInfo InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j,
 			l_currentMeshMaterialPair->material->m_ObjectStatus = ObjectStatus::Created;
 		}
 
-		MeshShapeType l_meshShapeType = MeshShapeType(i["MeshShapeType"].get<int32_t>());
+		MeshSource l_meshSource = MeshSource(i["MeshSource"].get<int32_t>());
 
 		// Load custom mesh data
-		if (l_meshShapeType == MeshShapeType::Custom)
+		if (l_meshSource == MeshSource::Customized)
 		{
 			auto l_meshFileName = i["MeshFile"].get<std::string>();
 
@@ -481,7 +483,7 @@ ArrayRangeInfo InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j,
 					l_currentMeshMaterialPair->mesh->m_SDC = processSkeletonJsonData(l_skeletonFile.c_str());
 				}
 
-				l_currentMeshMaterialPair->mesh->m_meshShapeType = MeshShapeType::Custom;
+				l_currentMeshMaterialPair->mesh->m_meshSource = MeshSource::Customized;
 				l_currentMeshMaterialPair->mesh->m_ObjectStatus = ObjectStatus::Created;
 
 				g_pModuleManager->getRenderingFrontend()->registerMeshDataComponent(l_mesh, AsyncUploadGPUResource);
@@ -491,7 +493,9 @@ ArrayRangeInfo InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j,
 		}
 		else
 		{
-			l_currentMeshMaterialPair->mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(l_meshShapeType);
+			ProceduralMeshShape l_proceduralMeshShape = ProceduralMeshShape(i["ProceduralMeshShape"].get<int32_t>());
+
+			l_currentMeshMaterialPair->mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(l_proceduralMeshShape);
 		}
 
 		l_currentIndex++;
