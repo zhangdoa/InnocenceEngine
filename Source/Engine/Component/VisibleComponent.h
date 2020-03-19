@@ -18,7 +18,7 @@ class VisibleComponent : public InnoComponent
 {
 public:
 	VisibilityType m_visibilityType = VisibilityType::Invisible;
-	MeshUsageType m_meshUsageType = MeshUsageType::Static;
+	MeshUsage m_meshUsage = MeshUsage::Static;
 	MeshShapeType m_meshShapeType = MeshShapeType::Line;
 	MeshPrimitiveTopology m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	TextureWrapMethod m_textureWrapMethod = TextureWrapMethod::Repeat;

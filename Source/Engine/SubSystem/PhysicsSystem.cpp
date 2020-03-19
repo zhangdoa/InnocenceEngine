@@ -176,10 +176,10 @@ bool InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent * VC)
 		auto l_PDC = generatePhysicsDataComponent(l_meshMaterialPair);
 		l_PDC->m_TransformComponent = l_transformComponent;
 		l_PDC->m_VisibleComponent = VC;
-		l_PDC->m_MeshUsageType = VC->m_meshUsageType;
+		l_PDC->m_MeshUsage = VC->m_meshUsage;
 
 		generateAABBInWorldSpace(l_PDC, l_globalTm);
-		if (l_PDC->m_MeshUsageType == MeshUsageType::Static)
+		if (l_PDC->m_MeshUsage == MeshUsage::Static)
 		{
 			updateStaticSceneBoundary(l_PDC->m_AABBWS);
 		}
@@ -191,13 +191,13 @@ bool InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent * VC)
 			switch (l_meshMaterialPair->mesh->m_meshShapeType)
 			{
 			case MeshShapeType::Cube:
-				PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_rot, l_transformComponent->m_localTransformVector_target.m_scale, (VC->m_meshUsageType == MeshUsageType::Dynamic));
+				PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_rot, l_transformComponent->m_localTransformVector_target.m_scale, (VC->m_meshUsage == MeshUsage::Dynamic));
 				break;
 			case MeshShapeType::Sphere:
-				PhysXWrapper::get().createPxSphere(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_scale.x, (VC->m_meshUsageType == MeshUsageType::Dynamic));
+				PhysXWrapper::get().createPxSphere(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_scale.x, (VC->m_meshUsage == MeshUsage::Dynamic));
 				break;
 			case MeshShapeType::Custom:
-				PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_rot, l_PDC->m_AABBWS.m_extend, (VC->m_meshUsageType == MeshUsageType::Dynamic));
+				PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_rot, l_PDC->m_AABBWS.m_extend, (VC->m_meshUsage == MeshUsage::Dynamic));
 				break;
 			default:
 				break;
@@ -512,10 +512,10 @@ void PlainCulling(const Frustum& frustum, std::vector<CullingData>& cullingDatas
 			l_cullingData.mesh = PDC->m_MeshMaterialPair->mesh;
 			l_cullingData.material = PDC->m_MeshMaterialPair->material;
 			l_cullingData.visibilityType = PDC->m_VisibleComponent->m_visibilityType;
-			l_cullingData.meshUsageType = PDC->m_VisibleComponent->m_meshUsageType;
+			l_cullingData.meshUsage = PDC->m_VisibleComponent->m_meshUsage;
 			l_cullingData.UUID = PDC->m_VisibleComponent->m_UUID;
 
-			if (PDC->m_MeshUsageType == MeshUsageType::Dynamic)
+			if (PDC->m_MeshUsage == MeshUsage::Dynamic)
 			{
 				PDC->m_AABBWS = InnoMath::transformAABBSpace(PDC->m_AABBLS, l_globalTm);
 				PDC->m_SphereWS = generateBoundSphere(PDC->m_AABBWS);
@@ -544,7 +544,7 @@ CullingData generateCullingData(const Frustum& frustum, PhysicsDataComponent* PD
 	auto l_transformComponent = GetComponent(TransformComponent, PDC->m_VisibleComponent->m_ParentEntity);
 	auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
-	if (PDC->m_VisibleComponent->m_meshUsageType == MeshUsageType::Dynamic)
+	if (PDC->m_VisibleComponent->m_meshUsage == MeshUsage::Dynamic)
 	{
 		PDC->m_AABBWS = InnoMath::transformAABBSpace(PDC->m_AABBLS, l_globalTm);
 		PDC->m_SphereWS = generateBoundSphere(PDC->m_AABBWS);
@@ -558,7 +558,7 @@ CullingData generateCullingData(const Frustum& frustum, PhysicsDataComponent* PD
 	l_cullingData.mesh = PDC->m_MeshMaterialPair->mesh;
 	l_cullingData.material = PDC->m_MeshMaterialPair->material;
 	l_cullingData.visibilityType = PDC->m_VisibleComponent->m_visibilityType;
-	l_cullingData.meshUsageType = PDC->m_VisibleComponent->m_meshUsageType;
+	l_cullingData.meshUsage = PDC->m_VisibleComponent->m_meshUsage;
 	l_cullingData.UUID = PDC->m_VisibleComponent->m_UUID;
 
 	if (InnoMath::intersectCheck(frustum, PDC->m_SphereWS))

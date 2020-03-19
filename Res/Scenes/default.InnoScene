@@ -28,7 +28,7 @@
           "ComponentType": 1,
           "MeshPrimitiveTopology": 2,
           "MeshShapeType": 3,
-          "MeshUsageType": 0,
+          "MeshUsage": 1,
           "ModelFileName": "",
           "TextureWrapMethod": 1,
           "VisibilityType": 2,

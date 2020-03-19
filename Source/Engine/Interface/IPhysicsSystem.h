@@ -19,7 +19,7 @@ struct CullingData
 	MeshDataComponent* mesh;
 	MaterialDataComponent* material;
 	VisibilityType visibilityType;
-	MeshUsageType meshUsageType;
+	MeshUsage meshUsage;
 	CullingDataChannel cullingDataChannel;
 	uint64_t UUID;
 };

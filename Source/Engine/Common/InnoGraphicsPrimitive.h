@@ -12,7 +12,7 @@ namespace InnoType
 
 	using Index = uint32_t;
 
-	enum class MeshUsageType { Static, Dynamic, Skeletal };
+	enum class MeshUsage { Invalid, Static, Dynamic, Skeletal };
 	enum class MeshShapeType { Custom, Line, Quad, Cube, Sphere, Terrain };
 	enum class MeshPrimitiveTopology { Point, Line, Triangle, TriangleStrip };
 

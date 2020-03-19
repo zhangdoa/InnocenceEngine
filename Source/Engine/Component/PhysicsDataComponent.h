@@ -12,7 +12,7 @@ public:
 	Sphere m_SphereLS = {};
 	Sphere m_SphereWS = {};
 	bool m_IsIntermediate = false;
-	MeshUsageType m_MeshUsageType;
+	MeshUsage m_MeshUsage;
 	TransformComponent* m_TransformComponent;
 	VisibleComponent* m_VisibleComponent;
 	MeshMaterialPair* m_MeshMaterialPair;

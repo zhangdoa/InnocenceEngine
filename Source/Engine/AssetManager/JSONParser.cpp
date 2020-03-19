@@ -189,7 +189,7 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const VisibleComponent& p)
 		{"ComponentType", InnoUtility::getComponentType<VisibleComponent>()},
 		{"VisibilityType", p.m_visibilityType},
 		{"MeshShapeType", p.m_meshShapeType},
-		{"MeshUsageType", p.m_meshUsageType},
+		{"MeshUsage", p.m_meshUsage},
 		{"MeshPrimitiveTopology", p.m_meshPrimitiveTopology},
 		{"TextureWrapMethod", p.m_textureWrapMethod},
 		{"ModelFileName", p.m_modelFileName},
@@ -278,7 +278,7 @@ void InnoFileSystemNS::JSONParser::from_json(const json & j, VisibleComponent & 
 {
 	p.m_visibilityType = j["VisibilityType"];
 	p.m_meshShapeType = j["MeshShapeType"];
-	p.m_meshUsageType = j["MeshUsageType"];
+	p.m_meshUsage = j["MeshUsage"];
 	p.m_meshPrimitiveTopology = j["MeshPrimitiveTopology"];
 	p.m_textureWrapMethod = j["TextureWrapMethod"];
 	p.m_modelFileName = j["ModelFileName"];
