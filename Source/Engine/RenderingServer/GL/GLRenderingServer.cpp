@@ -902,6 +902,16 @@ bool GLRenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass, M
 	return true;
 }
 
+bool GLRenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass, size_t instanceCount)
+{
+	auto l_GLPSO = reinterpret_cast<GLPipelineStateObject*>(renderPass->m_PipelineStateObject);
+
+	glBindVertexArray(0);
+	glDrawArrays(l_GLPSO->m_GLPrimitiveTopology, 0, (GLsizei)instanceCount);
+
+	return true;
+}
+
 bool GLRenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	return true;

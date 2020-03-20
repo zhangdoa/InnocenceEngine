@@ -1548,6 +1548,20 @@ bool DX12RenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass,
 	return true;
 }
 
+bool DX12RenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass, size_t instanceCount)
+{
+	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
+	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
+	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(l_renderPass->m_PipelineStateObject);
+
+	l_commandList->m_GraphicsCommandList->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
+	l_commandList->m_GraphicsCommandList->IASetVertexBuffers(0, 1, nullptr);
+	l_commandList->m_GraphicsCommandList->IASetIndexBuffer(nullptr);
+	l_commandList->m_GraphicsCommandList->DrawInstanced(1, (uint32_t)instanceCount, 0, 0);
+
+	return true;
+}
+
 bool DX12RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	auto l_resourceBinder = reinterpret_cast<DX12ResourceBinder*>(binder);

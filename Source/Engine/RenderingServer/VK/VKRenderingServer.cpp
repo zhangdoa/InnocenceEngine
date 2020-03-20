@@ -1052,6 +1052,11 @@ bool VKRenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass, M
 	return true;
 }
 
+bool VKRenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass, size_t instanceCount)
+{
+	return true;
+}
+
 bool VKRenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	return true;

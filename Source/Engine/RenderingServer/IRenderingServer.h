@@ -66,6 +66,7 @@ public:
 	// localSlot: The local type-related register slot index, like "binding = 5" in GLSL or  "t(4)"/"c(3)" in HLSL
 	virtual bool ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility = Accessibility::ReadOnly, size_t startOffset = 0, size_t elementCount = SIZE_MAX) = 0;
 	virtual bool DispatchDrawCall(RenderPassDataComponent * renderPass, MeshDataComponent* mesh, size_t instanceCount = 1) = 0;
+	virtual bool DispatchDrawCall(RenderPassDataComponent * renderPass, size_t instanceCount = 1) = 0;
 	virtual bool DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility = Accessibility::ReadOnly, size_t startOffset = 0, size_t elementCount = SIZE_MAX) = 0;
 	virtual bool CommandListEnd(RenderPassDataComponent * rhs) = 0;
 	virtual bool ExecuteCommandList(RenderPassDataComponent * rhs) = 0;

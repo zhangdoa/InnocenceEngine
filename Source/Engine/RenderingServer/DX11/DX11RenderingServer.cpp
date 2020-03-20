@@ -1459,6 +1459,17 @@ bool DX11RenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass,
 	return true;
 }
 
+bool DX11RenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass, size_t instanceCount)
+{
+	m_deviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+
+	m_deviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_R32_UINT, 0);
+
+	m_deviceContext->DrawInstanced(1, (uint32_t)instanceCount, 0, 0);
+
+	return true;
+}
+
 bool DX11RenderingServer::CommandListEnd(RenderPassDataComponent * rhs)
 {
 	auto l_rhs = reinterpret_cast<DX11RenderPassDataComponent*>(rhs);
