@@ -12,7 +12,7 @@ $genArgs = @('-DBUILD_GAME=ON ../../Source')
 Switch ($toolchain)
 {
    {$_ -match 'VS15'} {$genArgs += '-G "Visual Studio 15 Win64"'}
-   {$_ -match 'Clang'} {$genArgs += '-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -G "Unix Makefiles"'}
+   {$_ -match 'VS16'} {$genArgs += '-G "Visual Studio 16"'}
 }
 
 $genArgs += ('-DCMAKE_BUILD_TYPE={0}' -f $buildType)
@@ -21,6 +21,16 @@ Write-Host $genCall
 Invoke-Expression $genCall
 Invoke-Expression $genCall
 
-msbuild InnocenceEngine.sln /property:Configuration=$buildType /m
+$msbuildArgs= "InnocenceEngine.sln /property:Configuration=" + $buildType + " /m"
+$msbuildPath
+
+Switch ($toolchain)
+{
+   {$_ -match 'VS15'} {$msbuildPath = $Env:VS2017INSTALLDIR + "\MSBuild\15.0\Bin\msbuild.exe"}
+   {$_ -match 'VS16'} {$msbuildPath = $Env:VS2019INSTALLDIR + "\MSBuild\Current\Bin\msbuild.exe"}
+}
+
+Start-Process $msbuildPath -ArgumentList $msbuildArgs -Wait
+
 
 pause
