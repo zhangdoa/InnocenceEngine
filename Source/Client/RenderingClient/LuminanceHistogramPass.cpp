@@ -21,13 +21,12 @@ namespace LuminanceHistogramPass
 	GPUBufferDataComponent* m_LuminanceHistogramGBDC = 0;
 	GPUBufferDataComponent* m_LuminanceAverageGBDC = 0;
 
-	Array<uint32_t> m_initialLuminanceHistogram;
+	std::vector<uint32_t> m_initialLuminanceHistogram;
 }
 
 bool LuminanceHistogramPass::Setup()
 {
-	m_initialLuminanceHistogram.reserve(256);
-	m_initialLuminanceHistogram.fulfill();
+	m_initialLuminanceHistogram.resize(256);
 
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
@@ -134,6 +133,7 @@ bool LuminanceHistogramPass::CalculateHistogram(IResourceBinder* input)
 
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_RPDC_LuminanceHistogram, 80, 45, 1);
 
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, input, 0, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, m_LuminanceHistogramGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC_LuminanceHistogram);
@@ -162,7 +162,7 @@ bool LuminanceHistogramPass::CalculateAverage()
 
 bool LuminanceHistogramPass::PrepareCommandList(IResourceBinder* input)
 {
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_LuminanceHistogramGBDC, &m_initialLuminanceHistogram[0]);
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_LuminanceHistogramGBDC, m_initialLuminanceHistogram);
 
 	CalculateHistogram(input);
 	CalculateAverage();
@@ -192,17 +192,17 @@ bool LuminanceHistogramPass::Terminate()
 	return true;
 }
 
-RenderPassDataComponent * LuminanceHistogramPass::GetRPDC()
+RenderPassDataComponent* LuminanceHistogramPass::GetRPDC()
 {
 	return m_RPDC_LuminanceHistogram;
 }
 
-ShaderProgramComponent * LuminanceHistogramPass::GetSPC()
+ShaderProgramComponent* LuminanceHistogramPass::GetSPC()
 {
 	return m_SPC_LuminanceHistogram;
 }
 
-GPUBufferDataComponent * LuminanceHistogramPass::GetAverageLuminance()
+GPUBufferDataComponent* LuminanceHistogramPass::GetAverageLuminance()
 {
 	return m_LuminanceAverageGBDC;
 }
