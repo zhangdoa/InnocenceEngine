@@ -14,6 +14,7 @@
 #include "PreTAAPass.h"
 #include "TransparentPass.h"
 #include "VolumetricFogPass.h"
+#include "VoxelizationPass.h"
 #include "TAAPass.h"
 #include "PostTAAPass.h"
 #include "MotionBlurPass.h"
@@ -31,6 +32,7 @@ namespace DefaultRenderingClientNS
 {
 	std::function<void()> f_showLightHeatmap;
 	std::function<void()> f_showProbe;
+	std::function<void()> f_showVoxel;
 	std::function<void()> f_saveScreenCapture;
 
 	std::function<void()> f_SetupJob;
@@ -39,8 +41,9 @@ namespace DefaultRenderingClientNS
 	std::function<void()> f_ExecuteCommandListJob;
 	std::function<void()> f_TerminateJob;
 
-	bool m_showProbe = false;
 	bool m_showLightHeatmap = false;
+	bool m_showProbe = false;
+	bool m_showVoxel = false;
 	bool m_saveScreenCapture = false;
 	static bool m_drawBRDFTest = false;
 }
@@ -49,11 +52,14 @@ using namespace DefaultRenderingClientNS;
 
 bool DefaultRenderingClient::Setup()
 {
+	f_showLightHeatmap = [&]() { m_showLightHeatmap = !m_showLightHeatmap; };
+	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_H, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showLightHeatmap });
+
 	f_showProbe = [&]() { m_showProbe = !m_showProbe; };
 	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_G, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showProbe });
 
-	f_showLightHeatmap = [&]() { m_showLightHeatmap = !m_showLightHeatmap; };
-	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_T, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showLightHeatmap });
+	f_showVoxel = [&]() { m_showVoxel = !m_showVoxel; };
+	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_V, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showVoxel });
 
 	f_saveScreenCapture = [&]() { m_saveScreenCapture = !m_saveScreenCapture; };
 	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_C, true }, ButtonEvent{ EventLifeTime::OneShot, &f_saveScreenCapture });
@@ -75,7 +81,8 @@ bool DefaultRenderingClient::Setup()
 		SkyPass::Setup();
 		PreTAAPass::Setup();
 		TransparentPass::Setup();
-		//VolumetricFogPass::Setup();
+		VolumetricFogPass::Setup();
+		VoxelizationPass::Setup();
 		TAAPass::Setup();
 		PostTAAPass::Setup();
 		MotionBlurPass::Setup();
@@ -104,7 +111,8 @@ bool DefaultRenderingClient::Setup()
 		SkyPass::Initialize();
 		PreTAAPass::Initialize();
 		TransparentPass::Initialize();
-		//VolumetricFogPass::Initialize();
+		VolumetricFogPass::Initialize();
+		VoxelizationPass::Initialize();
 		TAAPass::Initialize();
 		PostTAAPass::Initialize();
 		MotionBlurPass::Initialize();
@@ -122,23 +130,48 @@ bool DefaultRenderingClient::Setup()
 
 		DefaultGPUBuffers::Upload();
 		LightCullingPass::PrepareCommandList();
-		GIResolvePass::PrepareCommandList();
 
-		SunShadowPass::PrepareCommandList();
-		OpaquePass::PrepareCommandList();
-		SSAOPass::PrepareCommandList();
-		LightPass::PrepareCommandList();
-
-		if (l_renderingConfig.drawSky)
+		if (m_showVoxel)
 		{
-			SkyPass::PrepareCommandList();
+			VoxelizationPass::PrepareCommandList();
+			l_canvas = VoxelizationPass::GetVisualizationResult();
 		}
+		else if (m_drawBRDFTest)
+		{
+			BSDFTestPass::PrepareCommandList();
+			l_canvas = BSDFTestPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
+		}
+		else if (m_showLightHeatmap)
+		{
+			l_canvas = LightCullingPass::GetHeatMap();
+		}
+		else if (m_showProbe)
+		{
+			GIResolveTestPass::PrepareCommandList();
+			l_canvas = GIResolveTestPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
+		}
+		else
+		{
+			GIResolvePass::PrepareCommandList();
 
-		PreTAAPass::PrepareCommandList();
-		TransparentPass::PrepareCommandList();
-		//VolumetricFogPass::PrepareCommandList();
+			SunShadowPass::PrepareCommandList();
+			OpaquePass::PrepareCommandList();
+			SSAOPass::PrepareCommandList();
+			LightPass::PrepareCommandList();
 
-		l_canvas = TransparentPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
+			if (l_renderingConfig.drawSky)
+			{
+				SkyPass::PrepareCommandList();
+			}
+
+			PreTAAPass::PrepareCommandList();
+			//TransparentPass::PrepareCommandList();
+			//VolumetricFogPass::PrepareCommandList();
+
+			l_canvas = PreTAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
+			//l_canvas = TransparentPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
+			//l_canvas = VolumetricFogPass::GetFroxelVisualizationResult();
+		}
 
 		LuminanceHistogramPass::PrepareCommandList(l_canvas);
 
@@ -155,23 +188,6 @@ bool DefaultRenderingClient::Setup()
 			l_canvas = MotionBlurPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
 		}
 
-		if (m_drawBRDFTest)
-		{
-			BSDFTestPass::PrepareCommandList();
-			l_canvas = BSDFTestPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
-		}
-
-		if (m_showLightHeatmap)
-		{
-			l_canvas = LightCullingPass::GetHeatMap();
-		}
-
-		if (m_showProbe)
-		{
-			GIResolveTestPass::PrepareCommandList();
-			l_canvas = GIResolveTestPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
-		}
-
 		BillboardPass::PrepareCommandList();
 		DebugPass::PrepareCommandList();
 
@@ -183,21 +199,38 @@ bool DefaultRenderingClient::Setup()
 		auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
 
 		LightCullingPass::ExecuteCommandList();
-		GIResolvePass::ExecuteCommandList();
 
-		SunShadowPass::ExecuteCommandList();
-		OpaquePass::ExecuteCommandList();
-		SSAOPass::ExecuteCommandList();
-		LightPass::ExecuteCommandList();
-
-		if (l_renderingConfig.drawSky)
+		if (m_showVoxel)
 		{
-			SkyPass::ExecuteCommandList();
+			VoxelizationPass::ExecuteCommandList();
+		}
+		else if (m_drawBRDFTest)
+		{
+			BSDFTestPass::ExecuteCommandList();
+		}
+		else if (m_showProbe)
+		{
+			GIResolveTestPass::ExecuteCommandList();
+		}
+		else
+		{
+			GIResolvePass::ExecuteCommandList();
+
+			SunShadowPass::ExecuteCommandList();
+			OpaquePass::ExecuteCommandList();
+			SSAOPass::ExecuteCommandList();
+			LightPass::ExecuteCommandList();
+
+			if (l_renderingConfig.drawSky)
+			{
+				SkyPass::ExecuteCommandList();
+			}
+
+			PreTAAPass::ExecuteCommandList();
+			//TransparentPass::ExecuteCommandList();
+			//VolumetricFogPass::ExecuteCommandList();
 		}
 
-		PreTAAPass::ExecuteCommandList();
-		TransparentPass::ExecuteCommandList();
-		//VolumetricFogPass::ExecuteCommandList();
 		LuminanceHistogramPass::ExecuteCommandList();
 
 		if (l_renderingConfig.useTAA)
@@ -209,16 +242,6 @@ bool DefaultRenderingClient::Setup()
 		if (l_renderingConfig.useMotionBlur)
 		{
 			MotionBlurPass::ExecuteCommandList();
-		}
-
-		if (m_drawBRDFTest)
-		{
-			BSDFTestPass::ExecuteCommandList();
-		}
-
-		if (m_showProbe)
-		{
-			GIResolveTestPass::ExecuteCommandList();
 		}
 
 		BillboardPass::ExecuteCommandList();
@@ -254,7 +277,8 @@ bool DefaultRenderingClient::Setup()
 		SkyPass::Terminate();
 		PreTAAPass::Terminate();
 		TransparentPass::Terminate();
-		//VolumetricFogPass::Terminate();
+		VolumetricFogPass::Terminate();
+		VoxelizationPass::Terminate();
 		TAAPass::Terminate();
 		PostTAAPass::Terminate();
 		MotionBlurPass::Terminate();
