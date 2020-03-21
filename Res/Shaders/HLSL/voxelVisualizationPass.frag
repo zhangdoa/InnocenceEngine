@@ -20,7 +20,7 @@ PixelOutputType main(PixelInputType input)
 		discard;
 	}
 
-	output.voxelVisualizationPassRT0 = float4(1.0, 1.0, 1.0, 1.0);
+	output.voxelVisualizationPassRT0 = input.posCS;
 
 	return output;
 }

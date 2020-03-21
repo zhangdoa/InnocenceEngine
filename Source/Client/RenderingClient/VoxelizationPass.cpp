@@ -221,9 +221,7 @@ bool VoxelizationPass::visualization()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_visualizationRPDC, ShaderStage::Geometry, l_PerFrameCBufferGBDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_visualizationRPDC, ShaderStage::Geometry, m_voxelizationGBDC->m_ResourceBinder, 2, 9, Accessibility::ReadOnly);
 
-	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
-
-	g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_visualizationRPDC, l_mesh, 8 * 8 * 8);
+	g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_visualizationRPDC, 64 * 64 * 64);
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_visualizationRPDC, ShaderStage::Vertex, m_voxelizationRPDC->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadOnly);
 
@@ -283,7 +281,7 @@ bool VoxelizationPass::Terminate()
 	return true;
 }
 
-IResourceBinder * VoxelizationPass::GetVisualizationResult()
+IResourceBinder* VoxelizationPass::GetVisualizationResult()
 {
 	return m_visualizationRPDC->m_RenderTargets[0]->m_ResourceBinder;
 }

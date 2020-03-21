@@ -42,7 +42,7 @@ void main(point GeometryInputType input[1], inout TriangleStream<PixelInputType>
 
 	for (int i = 0; i < 8; ++i)
 	{
-		projectedVertices[i] = input[0].posCS + cubeVertices[i];
+		projectedVertices[i] = input[0].posCS + cubeVertices[i] / 64.0;
 		projectedVertices[i].xyz *= voxelizationPassCBuffer.volumeSize.xyz;
 		projectedVertices[i].xyz += voxelizationPassCBuffer.posWSOffset.xyz;
 
