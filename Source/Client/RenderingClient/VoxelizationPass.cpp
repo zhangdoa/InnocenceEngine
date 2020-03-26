@@ -9,12 +9,10 @@ using namespace DefaultGPUBuffers;
 
 struct VoxelizationConstantBuffer
 {
-	Mat4 VP[3];
-	Mat4 VP_inv[3];
-	Vec4 posWSOffset;
-	Vec4 volumeSize;
-	Vec4 voxelSize;
-	Vec4 padding[5];
+	Vec4 volumeCenter;
+	Vec4 volumeExtend;
+	Vec4 voxelResolution;
+	Vec4 padding;
 };
 
 namespace VoxelizationPass
@@ -33,7 +31,7 @@ namespace VoxelizationPass
 	RenderPassDataComponent* m_visualizationRPDC;
 	ShaderProgramComponent* m_visualizationSPC;
 
-	uint32_t voxelizationResolution = 64;
+	uint32_t voxelizationResolution = 128;
 }
 
 bool VoxelizationPass::setupVoxelizationPass()
@@ -57,14 +55,13 @@ bool VoxelizationPass::setupVoxelizationPass()
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_IsOffScreen = true;
 
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
-
 	l_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler3D;
 	l_RenderPassDesc.m_RenderTargetDesc.Usage = TextureUsage::RawImage;
 	l_RenderPassDesc.m_RenderTargetDesc.GPUAccessibility = Accessibility::ReadWrite;
 	l_RenderPassDesc.m_RenderTargetDesc.Width = voxelizationResolution;
 	l_RenderPassDesc.m_RenderTargetDesc.Height = voxelizationResolution;
 	l_RenderPassDesc.m_RenderTargetDesc.DepthOrArraySize = voxelizationResolution;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)voxelizationResolution;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)voxelizationResolution;
 
@@ -113,17 +110,18 @@ bool VoxelizationPass::setupVisualizationPass()
 	auto l_viewportSize = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
-	l_RenderPassDesc.m_IsOffScreen = true;
-
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 
 	l_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler2D;
 	l_RenderPassDesc.m_RenderTargetDesc.Usage = TextureUsage::ColorAttachment;
 	l_RenderPassDesc.m_RenderTargetDesc.Width = l_viewportSize.x;
 	l_RenderPassDesc.m_RenderTargetDesc.Height = l_viewportSize.y;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_PrimitiveTopology = PrimitiveTopology::Point;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)l_viewportSize.x;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)l_viewportSize.y;
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_PrimitiveTopology = PrimitiveTopology::Point;
 
 	m_visualizationRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -221,7 +219,7 @@ bool VoxelizationPass::visualization()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_visualizationRPDC, ShaderStage::Geometry, l_PerFrameCBufferGBDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_visualizationRPDC, ShaderStage::Geometry, m_voxelizationGBDC->m_ResourceBinder, 2, 9, Accessibility::ReadOnly);
 
-	g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_visualizationRPDC, 64 * 64 * 64);
+	g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_visualizationRPDC, voxelizationResolution * voxelizationResolution * voxelizationResolution);
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_visualizationRPDC, ShaderStage::Vertex, m_voxelizationRPDC->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadOnly);
 
@@ -236,23 +234,9 @@ bool VoxelizationPass::PrepareCommandList()
 	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getTotalSceneAABB();
 
 	VoxelizationConstantBuffer l_voxelPassCB;
-	l_voxelPassCB.posWSOffset = l_sceneAABB.m_boundMin;
-	l_voxelPassCB.volumeSize = l_sceneAABB.m_extend;
-	auto l_recp = 1.0f / (float)voxelizationResolution;
-	l_voxelPassCB.voxelSize = l_sceneAABB.m_extend.scale(Vec4(l_recp, l_recp, l_recp, 1.0f));
-
-	l_voxelPassCB.VP[0] = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(1.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
-	auto l_rNX = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(-1.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
-	l_voxelPassCB.VP[1] = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, 1.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 0.0f));
-	auto l_rNY = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 0.0f));
-	l_voxelPassCB.VP[2] = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
-	auto l_rNZ = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, -1.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
-
-	for (size_t i = 0; i < 3; i++)
-	{
-		l_voxelPassCB.VP[i] = l_p * l_voxelPassCB.VP[i];
-		l_voxelPassCB.VP_inv[i] = l_voxelPassCB.VP[i].inverse();
-	}
+	l_voxelPassCB.volumeCenter = l_sceneAABB.m_center;
+	l_voxelPassCB.volumeExtend = l_sceneAABB.m_extend;
+	l_voxelPassCB.voxelResolution = Vec4((float)voxelizationResolution, (float)voxelizationResolution, (float)voxelizationResolution, 1.0f);
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_voxelizationGBDC, &l_voxelPassCB);
 

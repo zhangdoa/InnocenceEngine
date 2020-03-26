@@ -14,6 +14,7 @@ struct VertexInputType
 struct GeometryInputType
 {
 	float4 posCS : SV_POSITION;
+	float4 color : COLOR;
 };
 
 Texture3D<float4> in_voxelizationPassRT0 : register(t0);
@@ -24,13 +25,15 @@ GeometryInputType main(VertexInputType input)
 
 	float3 position = float3
 	(
-		input.instanceId % 64,
-		(input.instanceId / 64) % 64,
-		input.instanceId / (64 * 64)
-	);
+		input.instanceId % (int)voxelizationPassCBuffer.voxelResolution.x,
+		(input.instanceId / (int)voxelizationPassCBuffer.voxelResolution.x) % (int)voxelizationPassCBuffer.voxelResolution.y,
+		input.instanceId / ((int)voxelizationPassCBuffer.voxelResolution.x * (int)voxelizationPassCBuffer.voxelResolution.y)
+		);
 
 	int3 texPos = int3(position);
-	output.posCS = in_voxelizationPassRT0[texPos];
+	output.posCS = float4(position / voxelizationPassCBuffer.voxelResolution, 1.0f);
+	output.posCS.xyz = output.posCS.xyz * 2.0 - 1.0;
+	output.color = in_voxelizationPassRT0[texPos];
 
 	return output;
 }

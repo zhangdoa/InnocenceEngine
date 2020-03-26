@@ -106,12 +106,10 @@ struct GI_CB
 
 struct VoxelizationPass_CB
 {
-	matrix VP[3];
-	matrix VP_inv[3];
-	float4 posWSOffset;
-	float4 volumeSize;
-	float4 voxelSize;
-	float4 padding[5];
+	float4 volumeCenter;
+	float4 volumeExtend;
+	float4 voxelResolution;
+	float4 padding;
 };
 
 struct Plane

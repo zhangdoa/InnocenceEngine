@@ -55,7 +55,7 @@ float4 getAABB(float4 pos[3], float2 pixelDiagonal)
 [maxvertexcount(3)]
 void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputType> outStream)
 {
-	PixelInputType output = (PixelInputType)0;
+	PixelInputType output[3];
 
 	float4 pos[3];
 
@@ -69,8 +69,13 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 	for (int i = 0; i < 3; i++)
 	{
 		// to voxel volume space
-		pos[i] = pos[i] - voxelizationPassCBuffer.posWSOffset;
+		pos[i] = pos[i] - voxelizationPassCBuffer.volumeCenter;
 		pos[i].w = 1;
+
+		// normalize
+		pos[i].xyz /= (voxelizationPassCBuffer.volumeExtend.xyz * 0.5);
+
+		output[i].posCS_orig = pos[i];
 
 		// project along the dominant axis
 		[flatten]
@@ -83,17 +88,27 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 			pos[i].xyz = pos[i].xzy;
 		}
 
-		// normalize
-		pos[i].xyz /= voxelizationPassCBuffer.volumeSize.xyz;
-		output.posCS_orig = pos[i];
-
 		// for rasterization set z to 1
 		pos[i].z = 1;
-		output.posCS = pos[i];
+	}
 
-		output.AABB = getAABB(pos, float2(1.0 / 64.0, 1.0 / 64.0));
+	// Conservative Rasterization setup:
+	float2 side0N = normalize(pos[1].xy - pos[0].xy);
+	float2 side1N = normalize(pos[2].xy - pos[1].xy);
+	float2 side2N = normalize(pos[0].xy - pos[2].xy);
+	const float texelSize = 1.0f / voxelizationPassCBuffer.voxelResolution.x;
+	pos[0].xy += normalize(-side0N + side2N) * texelSize;
+	pos[1].xy += normalize(side0N - side1N) * texelSize;
+	pos[2].xy += normalize(side1N - side2N) * texelSize;
 
-		outStream.Append(output);
+	[unroll(3)]
+	for (int i = 0; i < 3; i++)
+	{
+		output[i].posCS = pos[i];
+
+		output[i].AABB = getAABB(pos, float2(texelSize, texelSize));
+
+		outStream.Append(output[i]);
 	}
 
 	outStream.RestartStrip();
