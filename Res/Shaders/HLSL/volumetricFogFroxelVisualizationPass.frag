@@ -4,6 +4,7 @@
 struct PixelInputType
 {
 	float4 posCS : SV_POSITION;
+	float4 color : COLOR;
 };
 
 struct PixelOutputType
@@ -15,12 +16,12 @@ PixelOutputType main(PixelInputType input)
 {
 	PixelOutputType output;
 
-	if (input.posCS.a == 0.0)
+	if (input.color.a == 0.0)
 	{
 		discard;
 	}
 
-	output.froxelVisualizationPassRT0 = input.posCS;
+	output.froxelVisualizationPassRT0 = input.color;
 
 	return output;
 }

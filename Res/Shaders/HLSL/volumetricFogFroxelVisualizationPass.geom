@@ -4,18 +4,18 @@
 struct GeometryInputType
 {
 	float4 posCS : SV_POSITION;
+	float4 color : COLOR;
 };
 
 struct PixelInputType
 {
 	float4 posCS : SV_POSITION;
+	float4 color : COLOR;
 };
 
 [maxvertexcount(36)]
-void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputType> outStream)
+void main(point GeometryInputType input[1], inout TriangleStream<PixelInputType> outStream)
 {
-	PixelInputType output = (PixelInputType)0;
-
 	const float4 cubeVertices[8] =
 	{
 		float4(0.5f, 0.5f, 0.5f, 0.0f),
@@ -42,14 +42,19 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 
 	for (int i = 0; i < 8; ++i)
 	{
-		projectedVertices[i] = input[0].posCS + cubeVertices[i] / 64.0;
+		projectedVertices[i] = projectedVertices[i] + cubeVertices[i] * 2.0;
+		projectedVertices[i] = mul(projectedVertices[i], perFrameCBuffer.v);
+		projectedVertices[i] = mul(projectedVertices[i], perFrameCBuffer.p_original);
 	}
 
 	for (int t = 0; t < 12; ++t)
 	{
 		for (int v = 0; v < 3; ++v)
 		{
+			PixelInputType output = (PixelInputType)0;
+
 			output.posCS = projectedVertices[cubeIndices[t * 3 + v]];
+			output.color = input[0].color;
 
 			outStream.Append(output);
 		}

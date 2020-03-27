@@ -12,12 +12,9 @@ RWTexture3D<float4> out_froxelizationPassRT0 : register(u0);
 
 void main(PixelInputType input)
 {
-	float3 pos = input.posCS.xyz;
+	float4 posCS_orig = input.posCS_orig;
+	posCS_orig.z = (2 * perFrameCBuffer.zNear) / (perFrameCBuffer.zFar + perFrameCBuffer.zNear - posCS_orig.z * (perFrameCBuffer.zFar - perFrameCBuffer.zNear));
+	int3 writeCoord = int3((posCS_orig.xyz * 0.5 + 0.5) * 64);
 
-	if (((pos.x < input.AABB.x) && (pos.y < input.AABB.y)) || ((pos.x > input.AABB.z) && (pos.y > input.AABB.w)))
-	{
-		discard;
-	}
-
-	out_froxelizationPassRT0[input.posCS.xyz] = input.posCS;
+	out_froxelizationPassRT0[writeCoord] = float4(1.0f, 1.0f, 1.0f, 1.0f);
 }
