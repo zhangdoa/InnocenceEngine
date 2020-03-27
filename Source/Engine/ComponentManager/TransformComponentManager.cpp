@@ -1,6 +1,7 @@
 #include "TransformComponentManager.h"
 #include "../Component/TransformComponent.h"
 #include "../Core/InnoMemory.h"
+#include "../Core/InnoRandomizer.h"
 #include "../Core/InnoLogger.h"
 #include "../Common/CommonMacro.inl"
 #include "CommonFunctionDefinitionMacro.inl"
@@ -35,9 +36,9 @@ namespace TransformComponentManagerNS
 
 		//from top to bottom
 		std::sort(m_Components.begin(), m_Components.end(), [&](TransformComponent* a, TransformComponent* b)
-		{
-			return a->m_transformHierarchyLevel < b->m_transformHierarchyLevel;
-		});
+			{
+				return a->m_transformHierarchyLevel < b->m_transformHierarchyLevel;
+			});
 	}
 
 	void SimulateTransformComponents()
@@ -47,28 +48,28 @@ namespace TransformComponentManagerNS
 		l_ratio = InnoMath::clamp(l_ratio, 0.01f, 0.99f);
 
 		std::for_each(m_Components.begin(), m_Components.end(), [&](TransformComponent* val)
-		{
-			if (!InnoMath::isCloseEnough<float, 4>(val->m_localTransformVector.m_pos, val->m_localTransformVector_target.m_pos))
 			{
-				val->m_localTransformVector.m_pos = InnoMath::lerp(val->m_localTransformVector.m_pos, val->m_localTransformVector_target.m_pos, l_ratio);
-			}
+				if (!InnoMath::isCloseEnough<float, 4>(val->m_localTransformVector.m_pos, val->m_localTransformVector_target.m_pos))
+				{
+					val->m_localTransformVector.m_pos = InnoMath::lerp(val->m_localTransformVector.m_pos, val->m_localTransformVector_target.m_pos, l_ratio);
+				}
 
-			if (!InnoMath::isCloseEnough<float, 4>(val->m_localTransformVector.m_rot, val->m_localTransformVector_target.m_rot))
-			{
-				val->m_localTransformVector.m_rot = InnoMath::slerp(val->m_localTransformVector.m_rot, val->m_localTransformVector_target.m_rot, l_ratio);
-			}
+				if (!InnoMath::isCloseEnough<float, 4>(val->m_localTransformVector.m_rot, val->m_localTransformVector_target.m_rot))
+				{
+					val->m_localTransformVector.m_rot = InnoMath::slerp(val->m_localTransformVector.m_rot, val->m_localTransformVector_target.m_rot, l_ratio);
+				}
 
-			if (!InnoMath::isCloseEnough<float, 4>(val->m_localTransformVector.m_scale, val->m_localTransformVector_target.m_scale))
-			{
-				val->m_localTransformVector.m_scale = InnoMath::lerp(val->m_localTransformVector.m_scale, val->m_localTransformVector_target.m_scale, l_ratio);
-			}
+				if (!InnoMath::isCloseEnough<float, 4>(val->m_localTransformVector.m_scale, val->m_localTransformVector_target.m_scale))
+				{
+					val->m_localTransformVector.m_scale = InnoMath::lerp(val->m_localTransformVector.m_scale, val->m_localTransformVector_target.m_scale, l_ratio);
+				}
 
-			if (val->m_parentTransformComponent)
-			{
-				val->m_globalTransformVector = InnoMath::LocalTransformVectorToGlobal(val->m_localTransformVector, val->m_parentTransformComponent->m_globalTransformVector, val->m_parentTransformComponent->m_globalTransformMatrix);
-				val->m_globalTransformMatrix = InnoMath::TransformVectorToTransformMatrix(val->m_globalTransformVector);
-			}
-		});
+				if (val->m_parentTransformComponent)
+				{
+					val->m_globalTransformVector = InnoMath::LocalTransformVectorToGlobal(val->m_localTransformVector, val->m_parentTransformComponent->m_globalTransformVector, val->m_parentTransformComponent->m_globalTransformMatrix);
+					val->m_globalTransformMatrix = InnoMath::TransformVectorToTransformMatrix(val->m_globalTransformVector);
+				}
+			});
 	}
 }
 
@@ -121,9 +122,9 @@ bool InnoTransformComponentManager::Initialize()
 bool InnoTransformComponentManager::Simulate()
 {
 	auto l_SimulateTask = g_pModuleManager->getTaskSystem()->submit("TransformComponentsSimulateTask", 0, nullptr, [&]()
-	{
-		SimulateTransformComponents();
-	});
+		{
+			SimulateTransformComponents();
+		});
 
 	return true;
 }
@@ -133,17 +134,17 @@ bool InnoTransformComponentManager::Terminate()
 	return true;
 }
 
-InnoComponent * InnoTransformComponentManager::Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectOwnership objectUsage)
+InnoComponent* InnoTransformComponentManager::Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectOwnership objectUsage)
 {
 	SpawnComponentImpl(TransformComponent);
 }
 
-void InnoTransformComponentManager::Destroy(InnoComponent * component)
+void InnoTransformComponentManager::Destroy(InnoComponent* component)
 {
 	DestroyComponentImpl(TransformComponent);
 }
 
-InnoComponent* InnoTransformComponentManager::Find(const InnoEntity * parentEntity)
+InnoComponent* InnoTransformComponentManager::Find(const InnoEntity* parentEntity)
 {
 	GetComponentImpl(TransformComponent, parentEntity);
 }
@@ -151,12 +152,12 @@ InnoComponent* InnoTransformComponentManager::Find(const InnoEntity * parentEnti
 void InnoTransformComponentManager::SaveCurrentFrameTransform()
 {
 	std::for_each(m_Components.begin(), m_Components.end(), [&](TransformComponent* val)
-	{
-		val->m_globalTransformMatrix_prev = val->m_globalTransformMatrix;
-	});
+		{
+			val->m_globalTransformMatrix_prev = val->m_globalTransformMatrix;
+		});
 }
 
-const TransformComponent * InnoTransformComponentManager::GetRootTransformComponent() const
+const TransformComponent* InnoTransformComponentManager::GetRootTransformComponent() const
 {
 	return m_RootTransformComponent;
 }

@@ -28,8 +28,8 @@ namespace InnoFileSystemNS::JSONParser
 			topLevel["SceneEntities"].begin(),
 			topLevel["SceneEntities"].end(),
 			[&](auto val) -> bool {
-			return val["EntityID"] == rhs->m_ParentEntity->m_EntityID.c_str();
-		});
+				return val["UUID"] == rhs->m_ParentEntity->m_UUID;
+			});
 
 		if (l_result != topLevel["SceneEntities"].end())
 		{
@@ -38,23 +38,23 @@ namespace InnoFileSystemNS::JSONParser
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Warning, "FileSystem: saveComponentData<T>: Entity ID ", rhs->m_ParentEntity->m_EntityID.c_str(), " is invalid.");
+			InnoLogger::Log(LogLevel::Warning, "FileSystem: saveComponentData<T>: UUID ", rhs->m_ParentEntity->m_UUID, " is invalid.");
 			return false;
 		}
 	}
 
-	Model* processSceneJsonData(const json & j, bool AsyncUploadGPUResource = true);
-	std::vector<AnimationDataComponent*> processAnimationJsonData(const json & j);
+	Model* processSceneJsonData(const json& j, bool AsyncUploadGPUResource = true);
+	std::vector<AnimationDataComponent*> processAnimationJsonData(const json& j);
 	ArrayRangeInfo processMeshJsonData(const json& j, bool AsyncUploadGPUResource = true);
 	SkeletonDataComponent* processSkeletonJsonData(const char* skeletonFileName);
 	MaterialDataComponent* processMaterialJsonData(const char* materialFileName, bool AsyncUploadGPUResource = true);
 
 	bool assignComponentRuntimeData();
 
-	ThreadSafeQueue<std::pair<TransformComponent*, EntityName>> m_orphanTransformComponents;
+	ThreadSafeQueue<std::pair<TransformComponent*, ObjectName>> m_orphanTransformComponents;
 }
 
-bool InnoFileSystemNS::JSONParser::loadJsonDataFromDisk(const char* fileName, json & data)
+bool InnoFileSystemNS::JSONParser::loadJsonDataFromDisk(const char* fileName, json& data)
 {
 	std::ifstream i;
 
@@ -72,7 +72,7 @@ bool InnoFileSystemNS::JSONParser::loadJsonDataFromDisk(const char* fileName, js
 	return true;
 }
 
-bool InnoFileSystemNS::JSONParser::saveJsonDataToDisk(const char* fileName, const json & data)
+bool InnoFileSystemNS::JSONParser::saveJsonDataToDisk(const char* fileName, const json& data)
 {
 	std::ofstream o;
 	o.open(IOService::getWorkingDirectory() + fileName, std::ios::out | std::ios::trunc);
@@ -88,8 +88,8 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const InnoEntity& p)
 {
 	j = json
 	{
-		{"EntityID", p.m_EntityID.c_str()},
-		{"EntityName", p.m_EntityName.c_str()},
+		{"UUID", p.m_UUID},
+		{"ObjectName", p.m_Name.c_str()},
 	};
 }
 
@@ -170,7 +170,7 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const TransformComponent& p)
 
 	to_json(localTransformVector, p.m_localTransformVector);
 
-	auto parentTransformComponentEntityName = p.m_parentTransformComponent->m_ParentEntity->m_EntityName;
+	auto parentTransformComponentEntityName = p.m_parentTransformComponent->m_ParentEntity->m_Name;
 
 	j = json
 	{
@@ -231,7 +231,7 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const CameraComponent& p)
 	};
 }
 
-void InnoFileSystemNS::JSONParser::from_json(const json & j, Vec4 & p)
+void InnoFileSystemNS::JSONParser::from_json(const json& j, Vec4& p)
 {
 	p.x = j["X"];
 	p.y = j["Y"];
@@ -239,7 +239,7 @@ void InnoFileSystemNS::JSONParser::from_json(const json & j, Vec4 & p)
 	p.w = j["W"];
 }
 
-void InnoFileSystemNS::JSONParser::from_json(const json & j, TransformComponent & p)
+void InnoFileSystemNS::JSONParser::from_json(const json& j, TransformComponent& p)
 {
 	from_json(j["LocalTransformVector"], p.m_localTransformVector);
 	auto l_parentTransformComponentEntityName = j["ParentTransformComponentEntityName"];
@@ -253,11 +253,11 @@ void InnoFileSystemNS::JSONParser::from_json(const json & j, TransformComponent 
 		// JSON is an order-irrelevant format, so the parent transform component would always be instanciated in random point, then it's necessary to assign it later
 		std::string l_parentName = l_parentTransformComponentEntityName;
 		l_parentName += "/";
-		m_orphanTransformComponents.push({ &p, EntityName(l_parentName.c_str()) });
+		m_orphanTransformComponents.push({ &p, ObjectName(l_parentName.c_str()) });
 	}
 }
 
-void InnoFileSystemNS::JSONParser::from_json(const json & j, TransformVector & p)
+void InnoFileSystemNS::JSONParser::from_json(const json& j, TransformVector& p)
 {
 	p.m_pos.x = j["Position"]["X"];
 	p.m_pos.y = j["Position"]["Y"];
@@ -275,7 +275,7 @@ void InnoFileSystemNS::JSONParser::from_json(const json & j, TransformVector & p
 	p.m_scale.w = 1.0f;
 }
 
-void InnoFileSystemNS::JSONParser::from_json(const json & j, VisibleComponent & p)
+void InnoFileSystemNS::JSONParser::from_json(const json& j, VisibleComponent& p)
 {
 	p.m_visibilityType = j["VisibilityType"];
 	p.m_meshPrimitiveTopology = j["MeshPrimitiveTopology"];
@@ -287,7 +287,7 @@ void InnoFileSystemNS::JSONParser::from_json(const json & j, VisibleComponent & 
 	p.m_simulatePhysics = j["SimulatePhysics"];
 }
 
-void InnoFileSystemNS::JSONParser::from_json(const json & j, LightComponent & p)
+void InnoFileSystemNS::JSONParser::from_json(const json& j, LightComponent& p)
 {
 	from_json(j["RGBColor"], p.m_RGBColor);
 	from_json(j["Shape"], p.m_Shape);
@@ -315,7 +315,7 @@ Model* InnoFileSystemNS::JSONParser::loadModelFromDisk(const char* fileName, boo
 	return processSceneJsonData(j, AsyncUploadGPUResource);
 }
 
-Model* InnoFileSystemNS::JSONParser::processSceneJsonData(const json & j, bool AsyncUploadGPUResource)
+Model* InnoFileSystemNS::JSONParser::processSceneJsonData(const json& j, bool AsyncUploadGPUResource)
 {
 	// @TODO: Optimize
 	if (j.find("AnimationFiles") != j.end())
@@ -375,7 +375,7 @@ Model* InnoFileSystemNS::JSONParser::processSceneJsonData(const json & j, bool A
 	return l_result;
 }
 
-std::vector<AnimationDataComponent*> InnoFileSystemNS::JSONParser::processAnimationJsonData(const json & j)
+std::vector<AnimationDataComponent*> InnoFileSystemNS::JSONParser::processAnimationJsonData(const json& j)
 {
 	std::vector<AnimationDataComponent*> l_result;
 	l_result.reserve(j.size());
@@ -412,7 +412,7 @@ std::vector<AnimationDataComponent*> InnoFileSystemNS::JSONParser::processAnimat
 	return l_result;
 }
 
-ArrayRangeInfo InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j, bool AsyncUploadGPUResource)
+ArrayRangeInfo InnoFileSystemNS::JSONParser::processMeshJsonData(const json& j, bool AsyncUploadGPUResource)
 {
 	auto l_result = g_pModuleManager->getAssetSystem()->addMeshMaterialPairs(j.size());
 
@@ -504,7 +504,7 @@ ArrayRangeInfo InnoFileSystemNS::JSONParser::processMeshJsonData(const json & j,
 	return l_result;
 }
 
-SkeletonDataComponent * InnoFileSystemNS::JSONParser::processSkeletonJsonData(const char* skeletonFileName)
+SkeletonDataComponent* InnoFileSystemNS::JSONParser::processSkeletonJsonData(const char* skeletonFileName)
 {
 	SkeletonDataComponent* l_result;
 
@@ -546,7 +546,7 @@ SkeletonDataComponent * InnoFileSystemNS::JSONParser::processSkeletonJsonData(co
 	}
 }
 
-MaterialDataComponent * InnoFileSystemNS::JSONParser::processMaterialJsonData(const char* materialFileName, bool AsyncUploadGPUResource)
+MaterialDataComponent* InnoFileSystemNS::JSONParser::processMaterialJsonData(const char* materialFileName, bool AsyncUploadGPUResource)
 {
 	json j;
 
@@ -658,7 +658,7 @@ bool InnoFileSystemNS::JSONParser::loadScene(const char* fileName)
 
 	for (auto i : j["SceneEntities"])
 	{
-		std::string l_entityName = i["EntityName"];
+		std::string l_entityName = i["ObjectName"];
 		l_entityName += "/";
 		auto l_entity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Asset, ObjectOwnership::Client, l_entityName.c_str());
 
@@ -699,7 +699,7 @@ bool InnoFileSystemNS::JSONParser::assignComponentRuntimeData()
 {
 	while (m_orphanTransformComponents.size() > 0)
 	{
-		std::pair<TransformComponent*, EntityName> l_orphan;
+		std::pair<TransformComponent*, ObjectName> l_orphan;
 		if (m_orphanTransformComponents.tryPop(l_orphan))
 		{
 			auto l_entity = g_pModuleManager->getEntityManager()->Find(l_orphan.second.c_str());

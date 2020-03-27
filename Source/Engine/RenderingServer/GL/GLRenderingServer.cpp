@@ -19,6 +19,7 @@ extern IModuleManager* g_pModuleManager;
 
 #include "../../Core/InnoLogger.h"
 #include "../../Core/InnoMemory.h"
+#include "../../Core/InnoRandomizer.h"
 
 namespace GLRenderingServerNS
 {
@@ -198,13 +199,13 @@ bool GLRenderingServer::Setup()
 
 	auto l_GLRenderingServerSetupTask = g_pModuleManager->getTaskSystem()->submit("GLRenderingServerSetupTask", 2, nullptr,
 		[&]() {
-		glEnable(GL_DEBUG_OUTPUT);
-		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-		glDebugMessageCallback(MessageCallback, 0);
+			glEnable(GL_DEBUG_OUTPUT);
+			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+			glDebugMessageCallback(MessageCallback, 0);
 
-		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-		glEnable(GL_PROGRAM_POINT_SIZE);
-	}
+			glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+			glEnable(GL_PROGRAM_POINT_SIZE);
+		}
 	);
 
 	l_GLRenderingServerSetupTask->Wait();
@@ -228,39 +229,39 @@ bool GLRenderingServer::Initialize()
 
 		auto l_GLRenderingServerInitializeTask = g_pModuleManager->getTaskSystem()->submit("GLRenderingServerInitializeTask", 2, nullptr,
 			[&]() {
-			InitializeShaderProgramComponent(m_SwapChainSPC);
+				InitializeShaderProgramComponent(m_SwapChainSPC);
 
-			InitializeSamplerDataComponent(m_SwapChainSDC);
+				InitializeSamplerDataComponent(m_SwapChainSDC);
 
-			auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+				auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
-			l_RenderPassDesc.m_RenderTargetCount = 1;
+				l_RenderPassDesc.m_RenderTargetCount = 1;
 
-			m_SwapChainRPDC->m_RenderPassDesc = l_RenderPassDesc;
-			m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UByte;
-			m_SwapChainRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
+				m_SwapChainRPDC->m_RenderPassDesc = l_RenderPassDesc;
+				m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UByte;
+				m_SwapChainRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 
-			m_SwapChainRPDC->m_ResourceBinderLayoutDescs.resize(2);
-			m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
-			m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-			m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
-			m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
+				m_SwapChainRPDC->m_ResourceBinderLayoutDescs.resize(2);
+				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
+				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
+				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
+				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
 
-			m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Sampler;
-			m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
-			m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 0;
-			m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
+				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Sampler;
+				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 0;
+				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
 
-			m_SwapChainRPDC->m_ShaderProgram = m_SwapChainSPC;
-			m_SwapChainRPDC->m_FBO = 0;
-			m_SwapChainRPDC->m_RBO = 0;
+				m_SwapChainRPDC->m_ShaderProgram = m_SwapChainSPC;
+				m_SwapChainRPDC->m_FBO = 0;
+				m_SwapChainRPDC->m_RBO = 0;
 
-			m_SwapChainRPDC->m_PipelineStateObject = addPSO();
+				m_SwapChainRPDC->m_PipelineStateObject = addPSO();
 
-			CreateStateObjects(m_SwapChainRPDC);
+				CreateStateObjects(m_SwapChainRPDC);
 
-			m_SwapChainRPDC->m_ObjectStatus = ObjectStatus::Activated;
-		});
+				m_SwapChainRPDC->m_ObjectStatus = ObjectStatus::Activated;
+			});
 
 		l_GLRenderingServerInitializeTask->Wait();
 	}
@@ -289,7 +290,7 @@ AddComponent(GL, ShaderProgram);
 AddComponent(GL, SamplerData);
 AddComponent(GL, GPUBufferData);
 
-bool GLRenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
+bool GLRenderingServer::InitializeMeshDataComponent(MeshDataComponent* rhs)
 {
 	if (m_initializedMeshes.find(rhs) != m_initializedMeshes.end())
 	{
@@ -308,13 +309,13 @@ bool GLRenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, l_rhs->m_IBO);
 
 #ifdef _DEBUG
-	auto l_VAOName = std::string(l_rhs->m_ComponentName.c_str());
+	auto l_VAOName = std::string(l_rhs->m_Name.c_str());
 	l_VAOName += "_VAO";
 	glObjectLabel(GL_VERTEX_ARRAY, l_rhs->m_VAO, (GLsizei)l_VAOName.size(), l_VAOName.c_str());
-	auto l_VBOName = std::string(l_rhs->m_ComponentName.c_str());
+	auto l_VBOName = std::string(l_rhs->m_Name.c_str());
 	l_VBOName += "_VBO";
 	glObjectLabel(GL_BUFFER, l_rhs->m_VBO, (GLsizei)l_VBOName.size(), l_VBOName.c_str());
-	auto l_IBOName = std::string(l_rhs->m_ComponentName.c_str());
+	auto l_IBOName = std::string(l_rhs->m_Name.c_str());
 	l_IBOName += "_IBO";
 	glObjectLabel(GL_BUFFER, l_rhs->m_IBO, (GLsizei)l_IBOName.size(), l_IBOName.c_str());
 #endif
@@ -356,7 +357,7 @@ bool GLRenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	return true;
 }
 
-bool GLRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rhs)
+bool GLRenderingServer::InitializeTextureDataComponent(TextureDataComponent* rhs)
 {
 	if (m_initializedTextures.find(rhs) != m_initializedTextures.end())
 	{
@@ -372,7 +373,7 @@ bool GLRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 	glBindTexture(l_rhs->m_GLTextureDesc.TextureSampler, l_rhs->m_TO);
 
 #ifdef _DEBUG
-	auto l_TOName = std::string(l_rhs->m_ComponentName.c_str());
+	auto l_TOName = std::string(l_rhs->m_Name.c_str());
 	l_TOName += "_TO";
 	glObjectLabel(GL_TEXTURE, l_rhs->m_TO, (GLsizei)l_TOName.size(), l_TOName.c_str());
 #endif
@@ -439,7 +440,7 @@ bool GLRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 	return true;
 }
 
-bool GLRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * rhs)
+bool GLRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent* rhs)
 {
 	if (m_initializedMaterials.find(rhs) != m_initializedMaterials.end())
 	{
@@ -473,7 +474,7 @@ bool GLRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * 
 	return true;
 }
 
-bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponent * rhs)
+bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<GLRenderPassDataComponent*>(rhs);
 
@@ -501,7 +502,7 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 	return true;
 }
 
-bool GLRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent * rhs)
+bool GLRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<GLShaderProgramComponent*>(rhs);
 
@@ -545,7 +546,7 @@ bool GLRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent 
 	return true;
 }
 
-bool GLRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent * rhs)
+bool GLRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<GLSamplerDataComponent*>(rhs);
 
@@ -575,7 +576,7 @@ bool GLRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent * rh
 	return true;
 }
 
-bool GLRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent * rhs)
+bool GLRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<GLGPUBufferDataComponent*>(rhs);
 
@@ -603,7 +604,7 @@ bool GLRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent 
 	glBindBufferRange(l_rhs->m_BufferType, (GLuint)l_rhs->m_BindingPoint, l_rhs->m_Handle, 0, l_rhs->m_TotalSize);
 
 #ifdef _DEBUG
-	auto l_GPUBufferName = std::string(l_rhs->m_ComponentName.c_str());
+	auto l_GPUBufferName = std::string(l_rhs->m_Name.c_str());
 	if (l_rhs->m_GPUAccessibility == Accessibility::ReadOnly)
 	{
 		l_GPUBufferName += "_UBO";
@@ -626,7 +627,7 @@ bool GLRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent 
 	return true;
 }
 
-bool GLRenderingServer::DeleteMeshDataComponent(MeshDataComponent * rhs)
+bool GLRenderingServer::DeleteMeshDataComponent(MeshDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<GLMeshDataComponent*>(rhs);
 
@@ -641,7 +642,7 @@ bool GLRenderingServer::DeleteMeshDataComponent(MeshDataComponent * rhs)
 	return true;
 }
 
-bool GLRenderingServer::DeleteTextureDataComponent(TextureDataComponent * rhs)
+bool GLRenderingServer::DeleteTextureDataComponent(TextureDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<GLTextureDataComponent*>(rhs);
 
@@ -659,7 +660,7 @@ bool GLRenderingServer::DeleteTextureDataComponent(TextureDataComponent * rhs)
 	return true;
 }
 
-bool GLRenderingServer::DeleteMaterialDataComponent(MaterialDataComponent * rhs)
+bool GLRenderingServer::DeleteMaterialDataComponent(MaterialDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<GLMaterialDataComponent*>(rhs);
 
@@ -670,7 +671,7 @@ bool GLRenderingServer::DeleteMaterialDataComponent(MaterialDataComponent * rhs)
 	return true;
 }
 
-bool GLRenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent * rhs)
+bool GLRenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<GLRenderPassDataComponent*>(rhs);
 	auto l_PSO = reinterpret_cast<GLPipelineStateObject*>(l_rhs->m_PipelineStateObject);
@@ -697,7 +698,7 @@ bool GLRenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent * 
 	return true;
 }
 
-bool GLRenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent * rhs)
+bool GLRenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<GLShaderProgramComponent*>(rhs);
 
@@ -733,7 +734,7 @@ bool GLRenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent * rh
 	return true;
 }
 
-bool GLRenderingServer::DeleteSamplerDataComponent(SamplerDataComponent * rhs)
+bool GLRenderingServer::DeleteSamplerDataComponent(SamplerDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<GLSamplerDataComponent*>(rhs);
 
@@ -749,7 +750,7 @@ bool GLRenderingServer::DeleteSamplerDataComponent(SamplerDataComponent * rhs)
 	return true;
 }
 
-bool GLRenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * rhs)
+bool GLRenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<GLGPUBufferDataComponent*>(rhs);
 
@@ -765,7 +766,7 @@ bool GLRenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * rh
 	return true;
 }
 
-bool GLRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue, size_t startOffset, size_t range)
+bool GLRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range)
 {
 	auto l_rhs = reinterpret_cast<GLGPUBufferDataComponent*>(rhs);
 
@@ -780,7 +781,7 @@ bool GLRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent 
 	return true;
 }
 
-bool GLRenderingServer::CommandListBegin(RenderPassDataComponent * rhs, size_t frameIndex)
+bool GLRenderingServer::CommandListBegin(RenderPassDataComponent* rhs, size_t frameIndex)
 {
 	auto l_rhs = reinterpret_cast<GLRenderPassDataComponent*>(rhs);
 	auto l_GLPSO = reinterpret_cast<GLPipelineStateObject*>(l_rhs->m_PipelineStateObject);
@@ -793,7 +794,7 @@ bool GLRenderingServer::CommandListBegin(RenderPassDataComponent * rhs, size_t f
 	return true;
 }
 
-bool GLRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * rhs)
+bool GLRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<GLRenderPassDataComponent*>(rhs);
 	if (l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
@@ -815,7 +816,7 @@ bool GLRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * rh
 	return true;
 }
 
-bool GLRenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
+bool GLRenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 {
 	if (rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
 	{
@@ -856,7 +857,7 @@ bool BindGPUBuffer(Accessibility accessibility, GLuint BO, size_t localSlot, siz
 	return true;
 }
 
-bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	auto l_resourceBinder = reinterpret_cast<GLResourceBinder*>(binder);
 
@@ -891,7 +892,7 @@ bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderP
 	return true;
 }
 
-bool GLRenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass, MeshDataComponent* mesh, size_t instanceCount)
+bool GLRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh, size_t instanceCount)
 {
 	auto l_GLPSO = reinterpret_cast<GLPipelineStateObject*>(renderPass->m_PipelineStateObject);
 	auto l_mesh = reinterpret_cast<GLMeshDataComponent*>(mesh);
@@ -902,7 +903,7 @@ bool GLRenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass, M
 	return true;
 }
 
-bool GLRenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass, size_t instanceCount)
+bool GLRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, size_t instanceCount)
 {
 	auto l_GLPSO = reinterpret_cast<GLPipelineStateObject*>(renderPass->m_PipelineStateObject);
 
@@ -912,12 +913,12 @@ bool GLRenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass, s
 	return true;
 }
 
-bool GLRenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool GLRenderingServer::DeactivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	return true;
 }
 
-bool GLRenderingServer::CommandListEnd(RenderPassDataComponent * rhs)
+bool GLRenderingServer::CommandListEnd(RenderPassDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<GLRenderPassDataComponent*>(rhs);
 	auto l_GLPSO = reinterpret_cast<GLPipelineStateObject*>(l_rhs->m_PipelineStateObject);
@@ -930,17 +931,17 @@ bool GLRenderingServer::CommandListEnd(RenderPassDataComponent * rhs)
 	return true;
 }
 
-bool GLRenderingServer::ExecuteCommandList(RenderPassDataComponent * rhs)
+bool GLRenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs)
 {
 	return true;
 }
 
-bool GLRenderingServer::WaitForFrame(RenderPassDataComponent * rhs)
+bool GLRenderingServer::WaitForFrame(RenderPassDataComponent* rhs)
 {
 	return true;
 }
 
-bool GLRenderingServer::SetUserPipelineOutput(RenderPassDataComponent * rhs)
+bool GLRenderingServer::SetUserPipelineOutput(RenderPassDataComponent* rhs)
 {
 	m_userPipelineOutput = reinterpret_cast<GLRenderPassDataComponent*>(rhs);
 
@@ -980,7 +981,7 @@ bool GLRenderingServer::Present()
 	return true;
 }
 
-bool GLRenderingServer::DispatchCompute(RenderPassDataComponent * renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
+bool GLRenderingServer::DispatchCompute(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
 {
 	glDispatchCompute(threadGroupX, threadGroupY, threadGroupZ);
 	glMemoryBarrier(GL_ALL_BARRIER_BITS);
@@ -988,7 +989,7 @@ bool GLRenderingServer::DispatchCompute(RenderPassDataComponent * renderPass, ui
 	return true;
 }
 
-bool GLRenderingServer::CopyDepthStencilBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
+bool GLRenderingServer::CopyDepthStencilBuffer(RenderPassDataComponent* src, RenderPassDataComponent* dest)
 {
 	auto l_src = reinterpret_cast<GLRenderPassDataComponent*>(src);
 	auto l_dest = reinterpret_cast<GLRenderPassDataComponent*>(dest);
@@ -1004,7 +1005,7 @@ bool GLRenderingServer::CopyDepthStencilBuffer(RenderPassDataComponent * src, Re
 	return true;
 }
 
-bool GLRenderingServer::CopyColorBuffer(RenderPassDataComponent * src, size_t srcIndex, RenderPassDataComponent * dest, size_t destIndex)
+bool GLRenderingServer::CopyColorBuffer(RenderPassDataComponent* src, size_t srcIndex, RenderPassDataComponent* dest, size_t destIndex)
 {
 	auto l_src = reinterpret_cast<GLRenderPassDataComponent*>(src);
 	auto l_dest = reinterpret_cast<GLRenderPassDataComponent*>(dest);
@@ -1023,12 +1024,12 @@ bool GLRenderingServer::CopyColorBuffer(RenderPassDataComponent * src, size_t sr
 	return true;
 }
 
-Vec4 GLRenderingServer::ReadRenderTargetSample(RenderPassDataComponent * rhs, size_t renderTargetIndex, size_t x, size_t y)
+Vec4 GLRenderingServer::ReadRenderTargetSample(RenderPassDataComponent* rhs, size_t renderTargetIndex, size_t x, size_t y)
 {
 	return Vec4();
 }
 
-std::vector<Vec4> GLRenderingServer::ReadTextureBackToCPU(RenderPassDataComponent * canvas, TextureDataComponent * TDC)
+std::vector<Vec4> GLRenderingServer::ReadTextureBackToCPU(RenderPassDataComponent* canvas, TextureDataComponent* TDC)
 {
 	auto GLTDC = reinterpret_cast<GLTextureDataComponent*>(TDC);
 

@@ -1,6 +1,7 @@
 #include "LightComponentManager.h"
 #include "../Component/LightComponent.h"
 #include "../Core/InnoMemory.h"
+#include "../Core/InnoRandomizer.h"
 #include "../Core/InnoLogger.h"
 #include "../Common/CommonMacro.inl"
 #include "CommonFunctionDefinitionMacro.inl"
@@ -209,7 +210,7 @@ void LightComponentManagerNS::UpdateCSMData(LightComponent* rhs)
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
 		l_frustumVerticesLS[i].m_pos = InnoMath::mul(l_lightRotMat, l_frustumVerticesLS[i].m_pos);
 #endif
-	}
+}
 
 	//5.calculate AABBs in light space
 	splitVerticesToAABBs(l_frustumVerticesLS, m_CSMSplitFactors, m_SplitAABBLS);
@@ -236,7 +237,7 @@ void LightComponentManagerNS::UpdateCSMData(LightComponent* rhs)
 	}
 }
 
-void LightComponentManagerNS::UpdateColorTemperature(LightComponent * rhs)
+void LightComponentManagerNS::UpdateColorTemperature(LightComponent* rhs)
 {
 	if (rhs->m_UseColorTemperature)
 	{
@@ -334,17 +335,17 @@ bool InnoLightComponentManager::Terminate()
 	return true;
 }
 
-InnoComponent * InnoLightComponentManager::Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectOwnership objectUsage)
+InnoComponent* InnoLightComponentManager::Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectOwnership objectUsage)
 {
 	SpawnComponentImpl(LightComponent);
 }
 
-void InnoLightComponentManager::Destroy(InnoComponent * component)
+void InnoLightComponentManager::Destroy(InnoComponent* component)
 {
 	DestroyComponentImpl(LightComponent);
 }
 
-InnoComponent* InnoLightComponentManager::Find(const InnoEntity * parentEntity)
+InnoComponent* InnoLightComponentManager::Find(const InnoEntity* parentEntity)
 {
 	GetComponentImpl(LightComponent, parentEntity);
 }
@@ -354,7 +355,7 @@ const std::vector<LightComponent*>& InnoLightComponentManager::GetAllComponents(
 	return m_Components.getRawData();
 }
 
-const LightComponent * InnoLightComponentManager::GetSun()
+const LightComponent* InnoLightComponentManager::GetSun()
 {
 	return m_Sun;
 }

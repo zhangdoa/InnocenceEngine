@@ -33,8 +33,8 @@
           "zNear": 0.10000000149011612
         }
       ],
-      "EntityID": "f57dce5edc2ef35fdf5dea305789e66",
-      "EntityName": "playerCharacterCamera"
+      "UUID": "f57dce5edc2ef35fdf5dea305789e66",
+      "ObjectName": "playerCharacterCamera"
     },
     {
       "ChildrenComponents": [
@@ -80,8 +80,8 @@
           "UseColorTemperature": true
         }
       ],
-      "EntityID": "f80b683f74efc628bed6db88e430e25",
-      "EntityName": "sun"
+      "UUID": "f80b683f74efc628bed6db88e430e25",
+      "ObjectName": "sun"
     },
     {
       "ChildrenComponents": [
@@ -119,8 +119,8 @@
           "VisibilityType": 2
         }
       ],
-      "EntityID": "59ef9e5be5118fdebe80690d6a14c3d",
-      "EntityName": "landscape"
+      "UUID": "59ef9e5be5118fdebe80690d6a14c3d",
+      "ObjectName": "landscape"
     },
     {
       "ChildrenComponents": [
@@ -158,8 +158,8 @@
           "VisibilityType": 2
         }
       ],
-      "EntityID": "ca263b7a067127724c45cbb4368646b",
-      "EntityName": "building1"
+      "UUID": "ca263b7a067127724c45cbb4368646b",
+      "ObjectName": "building1"
     },
     {
       "ChildrenComponents": [
@@ -197,8 +197,8 @@
           "VisibilityType": 2
         }
       ],
-      "EntityID": "5c79034afd6e2d2072970225a6d5bb0",
-      "EntityName": "building2"
+      "UUID": "5c79034afd6e2d2072970225a6d5bb0",
+      "ObjectName": "building2"
     },
     {
       "ChildrenComponents": [
@@ -236,8 +236,8 @@
           "VisibilityType": 2
         }
       ],
-      "EntityID": "313bd8a7093abc377b8272e8ffb8ba6",
-      "EntityName": "building3"
+      "UUID": "313bd8a7093abc377b8272e8ffb8ba6",
+      "ObjectName": "building3"
     },
     {
       "ChildrenComponents": [
@@ -275,8 +275,8 @@
           "VisibilityType": 2
         }
       ],
-      "EntityID": "a47d3dccf353d4044d807012515109a",
-      "EntityName": "building4"
+      "UUID": "a47d3dccf353d4044d807012515109a",
+      "ObjectName": "building4"
     },
     {
       "ChildrenComponents": [
@@ -322,8 +322,8 @@
           "UseColorTemperature": false
         }
       ],
-      "EntityID": "96acf661f248ac621a77d6e6d9b0778",
-      "EntityName": "pointLight"
+      "UUID": "96acf661f248ac621a77d6e6d9b0778",
+      "ObjectName": "pointLight"
     },
     {
       "ChildrenComponents": [
@@ -369,8 +369,8 @@
           "UseColorTemperature": false
         }
       ],
-      "EntityID": "1320f1cfdcfb12301ac378cc91f5dcd",
-      "EntityName": "sphereLight"
+      "UUID": "1320f1cfdcfb12301ac378cc91f5dcd",
+      "ObjectName": "sphereLight"
     }
   ],
   "SceneName": "Res/Scenes/GITest.InnoScene"

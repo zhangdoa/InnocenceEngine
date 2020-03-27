@@ -21,16 +21,16 @@ m_ComponentsMap.erase_if([&](auto val) { return val.second->m_ObjectOwnership ==
 	auto l_Component = new(l_rawPtr)className(); \
 	if (l_Component) \
 	{ \
-		auto l_parentEntity = const_cast<InnoEntity*>(parentEntity); \
-		l_Component->m_ParentEntity = l_parentEntity; \
-		l_Component->m_ComponentType = ComponentType::className; \
+		l_Component->m_UUID = InnoRandomizer::GenerateUUID(); \
 		l_Component->m_ObjectStatus = ObjectStatus::Created; \
 		l_Component->m_ObjectSource = objectSource; \
 		l_Component->m_ObjectOwnership = objectUsage; \
+		auto l_parentEntity = const_cast<InnoEntity*>(parentEntity); \
+		l_Component->m_ParentEntity = l_parentEntity; \
+		l_Component->m_ComponentType = ComponentType::className; \
 		auto l_componentIndex = m_CurrentComponentIndex; \
-		auto l_componentName = ComponentName((std::string(parentEntity->m_EntityName.c_str()) + "." + std::string(#className) + "_" + std::to_string(l_componentIndex) + "/").c_str()); \
-		l_Component->m_ComponentName = l_componentName; \
-		l_Component->m_UUID = g_pModuleManager->getEntityManager()->AcquireUUID(); \
+		auto l_componentName = ObjectName((std::string(parentEntity->m_Name.c_str()) + "." + std::string(#className) + "_" + std::to_string(l_componentIndex) + "/").c_str()); \
+		l_Component->m_Name = l_componentName; \
 		m_Components.emplace_back(l_Component); \
 		m_ComponentsMap.emplace(l_parentEntity, l_Component); \
 		l_Component->m_ObjectStatus = ObjectStatus::Activated; \
@@ -58,6 +58,6 @@ m_ComponentsMap.erase_if([&](auto val) { return val.second->m_ObjectOwnership ==
 	} \
 	else \
 	{ \
-		InnoLogger::Log(LogLevel::Error, #className, "Manager: Can't find ", #className," by Entity: " ,l_parentEntity->m_EntityName.c_str(), "!"); \
+		InnoLogger::Log(LogLevel::Error, #className, "Manager: Can't find ", #className," by Entity: " ,l_parentEntity->m_Name.c_str(), "!"); \
 		return nullptr; \
 	}

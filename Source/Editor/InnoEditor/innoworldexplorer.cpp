@@ -32,7 +32,7 @@ void InnoWorldExplorer::buildTree()
 		{
 			QTreeWidgetItem* l_entityItem = new QTreeWidgetItem();
 
-			l_entityItem->setText(0, i.first->m_EntityName.c_str());
+            l_entityItem->setText(0, i.first->m_Name.c_str());
 			// Data slot 0 is ComponentType (-1 as the entity), slot 1 is the component ptr
 			l_entityItem->setData(0, Qt::UserRole, QVariant(-1));
 			l_entityItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)i.first));
@@ -42,7 +42,7 @@ void InnoWorldExplorer::buildTree()
 			for (auto& j : i.second)
 			{
 				QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
-				l_componentItem->setText(0, j->m_ComponentName.c_str());
+				l_componentItem->setText(0, j->m_Name.c_str());
 
 				l_componentItem->setData(0, Qt::UserRole, QVariant((int)j->m_ComponentType));
 				l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)j));
@@ -121,12 +121,12 @@ void InnoWorldExplorer::endRename()
 	if (l_componentType != -1)
 	{
 		auto l_componentPtr = reinterpret_cast<InnoComponent*>(m_currentEditingItem->data(1, Qt::UserRole).value<void*>());
-		l_componentPtr->m_ComponentName = (m_currentEditingItem->text(0).toStdString() + "/").c_str();
+		l_componentPtr->m_Name = (m_currentEditingItem->text(0).toStdString() + "/").c_str();
 	}
 	else
 	{
 		auto l_entityPtr = reinterpret_cast<InnoEntity*>(m_currentEditingItem->data(1, Qt::UserRole).value<void*>());
-		l_entityPtr->m_EntityName = (m_currentEditingItem->text(0).toStdString() + "/").c_str();
+        l_entityPtr->m_Name = (m_currentEditingItem->text(0).toStdString() + "/").c_str();
 	}
 
 	m_currentEditingItem->setFlags(m_currentEditingItem->flags() & ~Qt::ItemIsEditable);
@@ -139,7 +139,7 @@ void InnoWorldExplorer::addEntity()
 
 	QTreeWidgetItem* l_entityItem = new QTreeWidgetItem();
 
-	l_entityItem->setText(0, l_entity->m_EntityName.c_str());
+    l_entityItem->setText(0, l_entity->m_Name.c_str());
 	l_entityItem->setData(0, Qt::UserRole, QVariant(-1));
 	l_entityItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_entity));
 
@@ -186,7 +186,7 @@ void InnoWorldExplorer::addTransformComponent()
 
 		QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
 
-		l_componentItem->setText(0, l_componentPtr->m_ComponentName.c_str());
+		l_componentItem->setText(0, l_componentPtr->m_Name.c_str());
 		l_componentItem->setData(0, Qt::UserRole, QVariant((int)ComponentType::TransformComponent));
 		l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_componentPtr));
 
@@ -209,7 +209,7 @@ void InnoWorldExplorer::addVisibleComponent()
 
         QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
 
-        l_componentItem->setText(0, l_componentPtr->m_ComponentName.c_str());
+        l_componentItem->setText(0, l_componentPtr->m_Name.c_str());
         l_componentItem->setData(0, Qt::UserRole, QVariant((int)ComponentType::VisibleComponent));
         l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_componentPtr));
 
@@ -232,7 +232,7 @@ void InnoWorldExplorer::addLightComponent()
 
         QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
 
-        l_componentItem->setText(0, l_componentPtr->m_ComponentName.c_str());
+        l_componentItem->setText(0, l_componentPtr->m_Name.c_str());
         l_componentItem->setData(0, Qt::UserRole, QVariant((int)ComponentType::LightComponent));
         l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_componentPtr));
 
@@ -255,7 +255,7 @@ void InnoWorldExplorer::addCameraComponent()
 
         QTreeWidgetItem* l_componentItem = new QTreeWidgetItem();
 
-        l_componentItem->setText(0, l_componentPtr->m_ComponentName.c_str());
+        l_componentItem->setText(0, l_componentPtr->m_Name.c_str());
         l_componentItem->setData(0, Qt::UserRole, QVariant((int)ComponentType::CameraComponent));
         l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_componentPtr));
 

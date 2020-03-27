@@ -1,6 +1,7 @@
 #include "CameraComponentManager.h"
 #include "../Component/CameraComponent.h"
 #include "../Core/InnoMemory.h"
+#include "../Core/InnoRandomizer.h"
 #include "../Core/InnoLogger.h"
 #include "../Common/CommonMacro.inl"
 #include "CommonFunctionDefinitionMacro.inl"
@@ -23,19 +24,19 @@ namespace CameraComponentManagerNS
 	std::function<void()> f_SceneLoadingStartCallback;
 	std::function<void()> f_SceneLoadingFinishCallback;
 
-	void generateProjectionMatrix(CameraComponent * cameraComponent);
-	void generateFrustum(CameraComponent * cameraComponent);
-	void generateRayOfEye(CameraComponent * cameraComponent);
+	void generateProjectionMatrix(CameraComponent* cameraComponent);
+	void generateFrustum(CameraComponent* cameraComponent);
+	void generateRayOfEye(CameraComponent* cameraComponent);
 }
 
-void CameraComponentManagerNS::generateProjectionMatrix(CameraComponent * cameraComponent)
+void CameraComponentManagerNS::generateProjectionMatrix(CameraComponent* cameraComponent)
 {
 	auto l_resolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
 	cameraComponent->m_WHRatio = (float)l_resolution.x / (float)l_resolution.y;
 	cameraComponent->m_projectionMatrix = InnoMath::generatePerspectiveMatrix((cameraComponent->m_FOVX / 180.0f) * PI<float>, cameraComponent->m_WHRatio, cameraComponent->m_zNear, cameraComponent->m_zFar);
 }
 
-void CameraComponentManagerNS::generateFrustum(CameraComponent * cameraComponent)
+void CameraComponentManagerNS::generateFrustum(CameraComponent* cameraComponent)
 {
 	auto l_transformComponent = GetComponent(TransformComponent, cameraComponent->m_ParentEntity);
 
@@ -50,7 +51,7 @@ void CameraComponentManagerNS::generateFrustum(CameraComponent * cameraComponent
 	}
 }
 
-void CameraComponentManagerNS::generateRayOfEye(CameraComponent * cameraComponent)
+void CameraComponentManagerNS::generateRayOfEye(CameraComponent* cameraComponent)
 {
 	auto l_transformComponent = GetComponent(TransformComponent, cameraComponent->m_ParentEntity);
 
@@ -104,17 +105,17 @@ bool InnoCameraComponentManager::Terminate()
 	return true;
 }
 
-InnoComponent * InnoCameraComponentManager::Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectOwnership objectUsage)
+InnoComponent* InnoCameraComponentManager::Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectOwnership objectUsage)
 {
 	SpawnComponentImpl(CameraComponent);
 }
 
-void InnoCameraComponentManager::Destroy(InnoComponent * component)
+void InnoCameraComponentManager::Destroy(InnoComponent* component)
 {
 	DestroyComponentImpl(CameraComponent);
 }
 
-InnoComponent* InnoCameraComponentManager::Find(const InnoEntity * parentEntity)
+InnoComponent* InnoCameraComponentManager::Find(const InnoEntity* parentEntity)
 {
 	GetComponentImpl(CameraComponent, parentEntity);
 }
@@ -124,7 +125,7 @@ const std::vector<CameraComponent*>& InnoCameraComponentManager::GetAllComponent
 	return m_Components.getRawData();
 }
 
-CameraComponent * InnoCameraComponentManager::GetMainCamera()
+CameraComponent* InnoCameraComponentManager::GetMainCamera()
 {
 	if (m_Components.size() > 0)
 	{

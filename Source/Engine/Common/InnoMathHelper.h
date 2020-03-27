@@ -281,7 +281,7 @@ namespace InnoMath
 
 #if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
 	template<class T>
-	auto mul(const TVec4<T> & lhs, const TMat4<T> & rhs) -> TVec4<T>
+	auto mul(const TVec4<T>& lhs, const TMat4<T>& rhs) -> TVec4<T>
 	{
 		// @TODO: replace with SIMD impl
 		TVec4<T> l_TVec4;
@@ -295,7 +295,7 @@ namespace InnoMath
 	}
 #elif defined (USE_ROW_MAJOR_MEMORY_LAYOUT)
 	template<class T>
-	auto mul(const TMat4<T> & lhs, const TVec4<T> & rhs) -> TVec4<T>
+	auto mul(const TMat4<T>& lhs, const TVec4<T>& rhs) -> TVec4<T>
 	{
 		// @TODO: replace with SIMD impl
 		TVec4<T> l_TVec4;
@@ -492,19 +492,19 @@ namespace InnoMath
 		// @TODO: replace with SIMD impl
 		TMat4<T> l_m;
 
-		l_m.m00 = (one<T> -two<T> *  rhs.y *  rhs.y - two<T> *  rhs.z *  rhs.z);
-		l_m.m01 = (two<T> *  rhs.x *  rhs.y - two<T> *  rhs.z *  rhs.w);
-		l_m.m02 = (two<T> *  rhs.x *  rhs.z + two<T> *  rhs.y *  rhs.w);
+		l_m.m00 = (one<T> -two<T> * rhs.y * rhs.y - two<T> * rhs.z * rhs.z);
+		l_m.m01 = (two<T> * rhs.x * rhs.y - two<T> * rhs.z * rhs.w);
+		l_m.m02 = (two<T> * rhs.x * rhs.z + two<T> * rhs.y * rhs.w);
 		l_m.m03 = (T());
 
-		l_m.m10 = (two<T> *  rhs.x *  rhs.y + two<T> *  rhs.z *  rhs.w);
-		l_m.m11 = (one<T> -two<T> *  rhs.x *  rhs.x - two<T> *  rhs.z *  rhs.z);
-		l_m.m12 = (two<T> *  rhs.y *  rhs.z - two<T> *  rhs.x *  rhs.w);
+		l_m.m10 = (two<T> * rhs.x * rhs.y + two<T> * rhs.z * rhs.w);
+		l_m.m11 = (one<T> -two<T> * rhs.x * rhs.x - two<T> * rhs.z * rhs.z);
+		l_m.m12 = (two<T> * rhs.y * rhs.z - two<T> * rhs.x * rhs.w);
 		l_m.m13 = (T());
 
-		l_m.m20 = (two<T> *  rhs.x *  rhs.z - two<T> *  rhs.y *  rhs.w);
-		l_m.m21 = (two<T> *  rhs.y *  rhs.z + two<T> *  rhs.x *  rhs.w);
-		l_m.m22 = (one<T> -two<T> *  rhs.x *  rhs.x - two<T> *  rhs.y *  rhs.y);
+		l_m.m20 = (two<T> * rhs.x * rhs.z - two<T> * rhs.y * rhs.w);
+		l_m.m21 = (two<T> * rhs.y * rhs.z + two<T> * rhs.x * rhs.w);
+		l_m.m22 = (one<T> -two<T> * rhs.x * rhs.x - two<T> * rhs.y * rhs.y);
 		l_m.m23 = (T());
 
 		l_m.m30 = (T());
@@ -766,7 +766,7 @@ namespace InnoMath
 
 #if defined (USE_COLUMN_MAJOR_MEMORY_LAYOUT)
 	template<class T>
-	auto lookAt(const TVec4<T> & eyePos, const TVec4<T> & centerPos, const TVec4<T> & upDir) -> TMat4<T>
+	auto lookAt(const TVec4<T>& eyePos, const TVec4<T>& centerPos, const TVec4<T>& upDir) -> TMat4<T>
 	{
 		// @TODO: replace with SIMD impl
 		TMat4<T> l_m;
@@ -897,21 +897,21 @@ namespace InnoMath
 	}
 
 	template<class T>
-	T distanceToSphere(const TVec4<T> & lhs, const TSphere<T> & rhs)
+	T distanceToSphere(const TVec4<T>& lhs, const TSphere<T>& rhs)
 	{
 		auto l_dir = lhs - rhs.m_center;
 		return l_dir.length() - rhs.m_radius;
 	}
 
 	template<class T>
-	T distanceToPlane(const TVec4<T> & lhs, const TPlane<T> & rhs)
+	T distanceToPlane(const TVec4<T>& lhs, const TPlane<T>& rhs)
 	{
 		auto l_dot = lhs * rhs.m_normal;
 		return l_dot - rhs.m_distance;
 	}
 
 	template<class T>
-	T closestPoint(const TVec4<T> & lhs, const TSphere<T> & rhs)
+	T closestPoint(const TVec4<T>& lhs, const TSphere<T>& rhs)
 	{
 		auto l_dir = lhs - rhs.m_center;
 		l_dir = l_dir.normalize();
@@ -919,7 +919,7 @@ namespace InnoMath
 	}
 
 	template<class T>
-	T closestPoint(const TVec4<T> & lhs, const TPlane<T> & rhs)
+	T closestPoint(const TVec4<T>& lhs, const TPlane<T>& rhs)
 	{
 		auto l_dot = lhs * rhs.m_normal;
 		auto l_distance = l_dot - rhs.m_distance;
@@ -927,7 +927,7 @@ namespace InnoMath
 	}
 
 	template<class T>
-	bool isPointOnSphere(const TVec4<T> & lhs, const TSphere<T> & rhs)
+	bool isPointOnSphere(const TVec4<T>& lhs, const TSphere<T>& rhs)
 	{
 		auto l_distance = (lhs - rhs.m_center).length();
 		if (std::abs(l_distance - rhs.m_radius) > epsilon<T, 4>)
@@ -938,7 +938,7 @@ namespace InnoMath
 	}
 
 	template<class T>
-	bool isPointOnPlane(const TVec4<T> & lhs, const TPlane<T> & rhs)
+	bool isPointOnPlane(const TVec4<T>& lhs, const TPlane<T>& rhs)
 	{
 		auto l_distance = lhs * rhs.m_normal;
 		if (std::abs(l_distance - rhs.m_distance) > epsilon<T, 4>)
@@ -949,7 +949,7 @@ namespace InnoMath
 	}
 
 	template<class T>
-	bool isPointInAABB(const TVec4<T> & lhs, const TAABB<T> & rhs)
+	bool isPointInAABB(const TVec4<T>& lhs, const TAABB<T>& rhs)
 	{
 		if (std::abs(rhs.m_center.x - lhs.x) > (rhs.m_extend.x) / two<T>)
 		{
@@ -970,7 +970,7 @@ namespace InnoMath
 	}
 
 	template<class T>
-	bool isPointInFrustum(const TVec4<T> & lhs, const TFrustum<T> & rhs)
+	bool isPointInFrustum(const TVec4<T>& lhs, const TFrustum<T>& rhs)
 	{
 		if (distanceToPlane(lhs, rhs.m_px) > zero<T>)
 		{
@@ -1000,7 +1000,7 @@ namespace InnoMath
 	}
 
 	template<class T>
-	bool intersectCheck(const TAABB<T> & lhs, const TAABB<T> & rhs)
+	bool intersectCheck(const TAABB<T>& lhs, const TAABB<T>& rhs)
 	{
 		if (std::abs(rhs.m_center.x - lhs.m_center.x) > (rhs.m_extend.x + lhs.m_extend.x) / two<T>)
 		{
@@ -1021,7 +1021,7 @@ namespace InnoMath
 	}
 
 	template<class T>
-	bool intersectCheck(const TAABB<T> & lhs, const TRay<T> & rhs)
+	bool intersectCheck(const TAABB<T>& lhs, const TRay<T>& rhs)
 	{
 		T txmin, txmax, tymin, tymax, tzmin, tzmax;
 		T l_invDirectionX = std::isinf(one<T> / rhs.m_direction.x) ? zero<T> : one<T> / rhs.m_direction.x;
@@ -1078,7 +1078,7 @@ namespace InnoMath
 	}
 
 	template<class T>
-	bool intersectCheck(const TFrustum<T> & lhs, const TSphere<T> & rhs)
+	bool intersectCheck(const TFrustum<T>& lhs, const TSphere<T>& rhs)
 	{
 		if (distanceToPlane(rhs.m_center, lhs.m_px) > rhs.m_radius)
 		{
@@ -1108,7 +1108,7 @@ namespace InnoMath
 	}
 
 	template<class T>
-	bool intersectCheck(const TFrustum<T> & lhs, const TAABB<T> & rhs)
+	bool intersectCheck(const TFrustum<T>& lhs, const TAABB<T>& rhs)
 	{
 		auto l_isCenterInside = isPointInFrustum(rhs.m_center, lhs);
 		if (l_isCenterInside)
@@ -1181,13 +1181,13 @@ namespace InnoMath
 	}
 
 	template<class T>
-	auto moveTo(const TVec4<T> & pos, const TVec4<T> & direction, T length)->TVec4<T>
+	auto moveTo(const TVec4<T>& pos, const TVec4<T>& direction, T length)->TVec4<T>
 	{
 		return pos + direction * length;
 	}
 
 	template<class T>
-	auto getQuatRotator(const TVec4<T> & axis, T angle)->TVec4<T>
+	auto getQuatRotator(const TVec4<T>& axis, T angle)->TVec4<T>
 	{
 		TVec4<T> normalizedAxis = axis;
 		normalizedAxis = normalizedAxis.normalize();
@@ -1198,13 +1198,13 @@ namespace InnoMath
 	}
 
 	template<class T>
-	auto calcRotatedLocalRotator(const TVec4<T> & localRot, const TVec4<T> & axis, T angle)->TVec4<T>
+	auto calcRotatedLocalRotator(const TVec4<T>& localRot, const TVec4<T>& axis, T angle)->TVec4<T>
 	{
 		return getQuatRotator(axis, angle).quatMul(localRot);
 	}
 
 	template<class T>
-	auto calcRotatedGlobalPositions(const TVec4<T> & localPos, const TVec4<T> & globalPos, const TVec4<T> & axis, T angle)->std::tuple<TVec4<T>, TVec4<T>>
+	auto calcRotatedGlobalPositions(const TVec4<T>& localPos, const TVec4<T>& globalPos, const TVec4<T>& axis, T angle)->std::tuple<TVec4<T>, TVec4<T>>
 	{
 		auto l_rotator = getQuatRotator(axis, angle);
 
@@ -1221,7 +1221,7 @@ namespace InnoMath
 	}
 
 	template<class T>
-	auto calcGlobalPos(const TMat4<T> & parentTransformationMatrix, const TVec4<T> & localPos) -> TVec4<T>
+	auto calcGlobalPos(const TMat4<T>& parentTransformationMatrix, const TVec4<T>& localPos) -> TVec4<T>
 	{
 #if defined USE_COLUMN_MAJOR_MEMORY_LAYOUT
 		auto result = TVec4<T>();
@@ -1237,19 +1237,19 @@ namespace InnoMath
 	}
 
 	template<class T>
-	auto calcGlobalRot(const TVec4<T> & parentRot, const TVec4<T> & localRot) -> TVec4<T>
+	auto calcGlobalRot(const TVec4<T>& parentRot, const TVec4<T>& localRot) -> TVec4<T>
 	{
 		return parentRot.quatMul(localRot);
 	}
 
 	template<class T>
-	auto calcGlobalScale(const TVec4<T> & parentScale, const TVec4<T> & localScale) -> TVec4<T>
+	auto calcGlobalScale(const TVec4<T>& parentScale, const TVec4<T>& localScale) -> TVec4<T>
 	{
 		return parentScale.scale(localScale);
 	}
 
 	template<class T>
-	auto LocalTransformVectorToGlobal(const TTransformVector<T> & localTransformVector, const TTransformVector<T> & parentTransformVector, const TTransformMatrix<T> & parentTransformMatrix)->TTransformVector<T>
+	auto LocalTransformVectorToGlobal(const TTransformVector<T>& localTransformVector, const TTransformVector<T>& parentTransformVector, const TTransformMatrix<T>& parentTransformMatrix)->TTransformVector<T>
 	{
 		TTransformVector<T> m;
 		m.m_pos = InnoMath::calcGlobalPos(parentTransformMatrix.m_transformationMat, localTransformVector.m_pos);
@@ -1259,14 +1259,14 @@ namespace InnoMath
 	}
 
 	template<class T>
-	auto calcTransformationMatrix(const TTransformMatrix<T> & transform) -> TMat4<T>
+	auto calcTransformationMatrix(const TTransformMatrix<T>& transform) -> TMat4<T>
 	{
 		// @TODO: calculate by hand
 		return transform.m_translationMat * transform.m_rotationMat * transform.m_scaleMat;
 	}
 
 	template<class T>
-	auto TransformVectorToTransformMatrix(const TTransformVector<T> & transformVector)->TTransformMatrix<T>
+	auto TransformVectorToTransformMatrix(const TTransformVector<T>& transformVector)->TTransformMatrix<T>
 	{
 		TTransformMatrix<T> m;
 		m.m_translationMat = InnoMath::toTranslationMatrix(transformVector.m_pos);
@@ -1277,25 +1277,25 @@ namespace InnoMath
 	}
 
 	template<class T>
-	auto calcLookAtMatrix(const TVec4<T> & globalPos, const TVec4<T> & localRot) -> TMat4<T>
+	auto calcLookAtMatrix(const TVec4<T>& globalPos, const TVec4<T>& localRot) -> TMat4<T>
 	{
 		return TMat4<T>().lookAt(globalPos, globalPos + getDirection(Direction::Forward, localRot), getDirection(Direction::Up, localRot));
 	}
 
 	template<class T>
-	auto getInvertTranslationMatrix(const TVec4<T> & pos) -> TMat4<T>
+	auto getInvertTranslationMatrix(const TVec4<T>& pos) -> TMat4<T>
 	{
 		return InnoMath::toTranslationMatrix(pos * -one<T>);
 	}
 
 	template<class T>
-	auto getInvertRotationMatrix(const TVec4<T> & rot) -> TMat4<T>
+	auto getInvertRotationMatrix(const TVec4<T>& rot) -> TMat4<T>
 	{
 		return InnoMath::toRotationMatrix(rot.quatConjugate());
 	}
 
 	template<class T>
-	auto getInvertScaleMatrix(const TVec4<T> & scale) -> TMat4<T>
+	auto getInvertScaleMatrix(const TVec4<T>& scale) -> TMat4<T>
 	{
 		return InnoMath::toScaleMatrix(scale.reciprocal());
 	}
@@ -1316,27 +1316,6 @@ namespace InnoMath
 		}
 
 		return l_directionTVec4.rotateDirectionByQuat(localRot);
-	}
-
-	INNO_FORCEINLINE EntityID createEntityID()
-	{
-		std::stringstream ss;
-		for (uint32_t i = 0; i < 16; i++) {
-			auto rc = []() -> unsigned char {
-				std::random_device rd;
-				std::mt19937 gen(rd());
-				std::uniform_int_distribution<> dis(0, 255);
-				return static_cast<unsigned char>(dis(gen));
-			};
-			std::stringstream hexstream;
-			hexstream << std::hex << int32_t(rc());
-			auto hex = hexstream.str();
-			ss << (hex.length() < 2 ? '0' + hex : hex);
-		}
-
-		auto l_str = ss.str();
-		EntityID result = l_str.c_str();
-		return result;
 	}
 
 	template<class T>

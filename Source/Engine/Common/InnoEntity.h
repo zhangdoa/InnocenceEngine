@@ -1,16 +1,11 @@
 #pragma once
-#include "InnoType.h"
+#include "InnoObject.h"
 
-class InnoEntity
+class InnoEntity : public InnoObject
 {
 public:
 	InnoEntity() = default;
 	~InnoEntity() = default;
 
-	EntityID m_EntityID;
-	EntityName m_EntityName;
-
-	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
-	ObjectSource m_ObjectSource = ObjectSource::Runtime;
-	ObjectOwnership m_ObjectOwnership = ObjectOwnership::Client;
+	ObjectName m_Name;
 };

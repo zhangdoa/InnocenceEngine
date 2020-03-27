@@ -36,8 +36,8 @@
           "SimulatePhysics": true
         }
       ],
-      "EntityID": "d4229e4616eb07cc6e5e044ffe0fd77b",
-      "EntityName": "landscape"
+      "UUID": "d4229e4616eb07cc6e5e044ffe0fd77b",
+      "ObjectName": "landscape"
     },
     {
       "ChildrenComponents": [
@@ -72,8 +72,8 @@
           "zFar": 2000.0
         }
       ],
-      "EntityID": "1e6af8f1c63c5165990ba1aca26a72ab",
-      "EntityName": "playerCharacterCamera"
+      "UUID": "1e6af8f1c63c5165990ba1aca26a72ab",
+      "ObjectName": "playerCharacterCamera"
     },
     {
       "ChildrenComponents": [
@@ -111,8 +111,8 @@
           "SimulatePhysics": false
         }
       ],
-      "EntityID": "5372b91cf296630c0784256e52f89db1",
-      "EntityName": "Wolf"
+      "UUID": "5372b91cf296630c0784256e52f89db1",
+      "ObjectName": "Wolf"
     },
     {
       "ChildrenComponents": [
@@ -158,8 +158,8 @@
           "UseColorTemperature": true
         }
       ],
-      "EntityID": "3a467d719bce3caa3337c860e378b19e",
-      "EntityName": "sun"
+      "UUID": "3a467d719bce3caa3337c860e378b19e",
+      "ObjectName": "sun"
     }
   ],
   "SceneName": "..//res//scenes//animationTest.InnoScene"

@@ -33,8 +33,8 @@
           "zNear": 0.10000000149011612
         }
       ],
-      "EntityID": "20ba9f22aaee28db3abe9206d4332aa",
-      "EntityName": "playerCharacterCamera"
+      "UUID": "20ba9f22aaee28db3abe9206d4332aa",
+      "ObjectName": "playerCharacterCamera"
     },
     {
       "ChildrenComponents": [
@@ -80,8 +80,8 @@
           "UseColorTemperature": true
         }
       ],
-      "EntityID": "8bce26bcdcc0fb1083a043688b31a4d",
-      "EntityName": "sun"
+      "UUID": "8bce26bcdcc0fb1083a043688b31a4d",
+      "ObjectName": "sun"
     },
     {
       "ChildrenComponents": [
@@ -119,8 +119,8 @@
           "VisibilityType": 2
         }
       ],
-      "EntityID": "111b60411d20f80f60d5abaa4d22a23",
-      "EntityName": "Sponza"
+      "UUID": "111b60411d20f80f60d5abaa4d22a23",
+      "ObjectName": "Sponza"
     },
     {
       "ChildrenComponents": [
@@ -158,8 +158,8 @@
           "VisibilityType": 2
         }
       ],
-      "EntityID": "bb1ad14fc4a3b16e3cbd13379e1318d",
-      "EntityName": "orb"
+      "UUID": "bb1ad14fc4a3b16e3cbd13379e1318d",
+      "ObjectName": "orb"
     },
     {
       "ChildrenComponents": [
@@ -197,8 +197,8 @@
           "VisibilityType": 2
         }
       ],
-      "EntityID": "fb7770964e70a19dc7388de05fbec18",
-      "EntityName": "bunny"
+      "UUID": "fb7770964e70a19dc7388de05fbec18",
+      "ObjectName": "bunny"
     },
     {
       "ChildrenComponents": [
@@ -244,8 +244,8 @@
           "UseColorTemperature": true
         }
       ],
-      "EntityID": "6df24ec36d4fca6541fcc53b85608e0",
-      "EntityName": "pointLight"
+      "UUID": "6df24ec36d4fca6541fcc53b85608e0",
+      "ObjectName": "pointLight"
     },
     {
       "ChildrenComponents": [
@@ -291,8 +291,8 @@
           "UseColorTemperature": true
         }
       ],
-      "EntityID": "7f55e07a8d7edfaf1bffac1211352d0",
-      "EntityName": "sphereLight"
+      "UUID": "7f55e07a8d7edfaf1bffac1211352d0",
+      "ObjectName": "sphereLight"
     },
     {
       "ChildrenComponents": [
@@ -338,8 +338,8 @@
           "UseColorTemperature": true
         }
       ],
-      "EntityID": "9abf05505d99aefe01827bcea491acd",
-      "EntityName": "pointLight2"
+      "UUID": "9abf05505d99aefe01827bcea491acd",
+      "ObjectName": "pointLight2"
     }
   ],
   "SceneName": "Res/Scenes/Intro.InnoScene"

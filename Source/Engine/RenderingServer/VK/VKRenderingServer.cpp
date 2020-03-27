@@ -19,11 +19,12 @@ extern IModuleManager* g_pModuleManager;
 
 #include "../../Core/InnoLogger.h"
 #include "../../Core/InnoMemory.h"
+#include "../../Core/InnoRandomizer.h"
 
 namespace VKRenderingServerNS
 {
-	VkResult createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT * pCreateInfo, const VkAllocationCallbacks * pAllocator, VkDebugUtilsMessengerEXT * pCallback);
-	void destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT callback, const VkAllocationCallbacks * pAllocator);
+	VkResult createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pCallback);
+	void destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT callback, const VkAllocationCallbacks* pAllocator);
 	std::vector<const char*> getRequiredExtensions();
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
@@ -632,7 +633,7 @@ AddComponent(VK, ShaderProgram);
 AddComponent(VK, SamplerData);
 AddComponent(VK, GPUBufferData);
 
-bool VKRenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
+bool VKRenderingServer::InitializeMeshDataComponent(MeshDataComponent* rhs)
 {
 	if (m_initializedMeshes.find(rhs) != m_initializedMeshes.end())
 	{
@@ -685,7 +686,7 @@ bool VKRenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	return true;
 }
 
-bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rhs)
+bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent* rhs)
 {
 	if (m_initializedTextures.find(rhs) != m_initializedTextures.end())
 	{
@@ -777,7 +778,7 @@ bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent * rh
 	return true;
 }
 
-bool VKRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * rhs)
+bool VKRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent* rhs)
 {
 	if (m_initializedMaterials.find(rhs) != m_initializedMaterials.end())
 	{
@@ -820,7 +821,7 @@ bool VKRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * 
 	return true;
 }
 
-bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponent * rhs)
+bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<VKRenderPassDataComponent*>(rhs);
 
@@ -913,7 +914,7 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 	return l_result;
 }
 
-bool VKRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent * rhs)
+bool VKRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<VKShaderProgramComponent*>(rhs);
 
@@ -977,107 +978,107 @@ bool VKRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent 
 	return l_result;
 }
 
-bool VKRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent * rhs)
+bool VKRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent* rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent * rhs)
+bool VKRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent* rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeleteMeshDataComponent(MeshDataComponent * rhs)
+bool VKRenderingServer::DeleteMeshDataComponent(MeshDataComponent* rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeleteTextureDataComponent(TextureDataComponent * rhs)
+bool VKRenderingServer::DeleteTextureDataComponent(TextureDataComponent* rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeleteMaterialDataComponent(MaterialDataComponent * rhs)
+bool VKRenderingServer::DeleteMaterialDataComponent(MaterialDataComponent* rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent * rhs)
+bool VKRenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent* rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent * rhs)
+bool VKRenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent* rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeleteSamplerDataComponent(SamplerDataComponent * rhs)
+bool VKRenderingServer::DeleteSamplerDataComponent(SamplerDataComponent* rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * rhs)
+bool VKRenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent* rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue, size_t startOffset, size_t range)
+bool VKRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range)
 {
 	return true;
 }
 
-bool VKRenderingServer::CommandListBegin(RenderPassDataComponent * rhs, size_t frameIndex)
+bool VKRenderingServer::CommandListBegin(RenderPassDataComponent* rhs, size_t frameIndex)
 {
 	return true;
 }
 
-bool VKRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * rhs)
+bool VKRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent* rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
+bool VKRenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool VKRenderingServer::ActivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	return true;
 }
 
-bool VKRenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass, MeshDataComponent* mesh, size_t instanceCount)
+bool VKRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh, size_t instanceCount)
 {
 	return true;
 }
 
-bool VKRenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass, size_t instanceCount)
+bool VKRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, size_t instanceCount)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool VKRenderingServer::DeactivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	return true;
 }
 
-bool VKRenderingServer::CommandListEnd(RenderPassDataComponent * rhs)
+bool VKRenderingServer::CommandListEnd(RenderPassDataComponent* rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::ExecuteCommandList(RenderPassDataComponent * rhs)
+bool VKRenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::WaitForFrame(RenderPassDataComponent * rhs)
+bool VKRenderingServer::WaitForFrame(RenderPassDataComponent* rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::SetUserPipelineOutput(RenderPassDataComponent * rhs)
+bool VKRenderingServer::SetUserPipelineOutput(RenderPassDataComponent* rhs)
 {
 	return true;
 }
@@ -1087,27 +1088,27 @@ bool VKRenderingServer::Present()
 	return true;
 }
 
-bool VKRenderingServer::DispatchCompute(RenderPassDataComponent * renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
+bool VKRenderingServer::DispatchCompute(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
 {
 	return true;
 }
 
-bool VKRenderingServer::CopyDepthStencilBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
+bool VKRenderingServer::CopyDepthStencilBuffer(RenderPassDataComponent* src, RenderPassDataComponent* dest)
 {
 	return true;
 }
 
-bool VKRenderingServer::CopyColorBuffer(RenderPassDataComponent * src, size_t srcIndex, RenderPassDataComponent * dest, size_t destIndex)
+bool VKRenderingServer::CopyColorBuffer(RenderPassDataComponent* src, size_t srcIndex, RenderPassDataComponent* dest, size_t destIndex)
 {
 	return true;
 }
 
-Vec4 VKRenderingServer::ReadRenderTargetSample(RenderPassDataComponent * rhs, size_t renderTargetIndex, size_t x, size_t y)
+Vec4 VKRenderingServer::ReadRenderTargetSample(RenderPassDataComponent* rhs, size_t renderTargetIndex, size_t x, size_t y)
 {
 	return Vec4();
 }
 
-std::vector<Vec4> VKRenderingServer::ReadTextureBackToCPU(RenderPassDataComponent * canvas, TextureDataComponent * TDC)
+std::vector<Vec4> VKRenderingServer::ReadTextureBackToCPU(RenderPassDataComponent* canvas, TextureDataComponent* TDC)
 {
 	return std::vector<Vec4>();
 }
@@ -1117,12 +1118,12 @@ bool VKRenderingServer::Resize()
 	return true;
 }
 
-void * VKRenderingServer::GetVkInstance()
+void* VKRenderingServer::GetVkInstance()
 {
 	return m_instance;
 }
 
-void * VKRenderingServer::GetVkSurface()
+void* VKRenderingServer::GetVkSurface()
 {
 	return &m_windowSurface;
 }

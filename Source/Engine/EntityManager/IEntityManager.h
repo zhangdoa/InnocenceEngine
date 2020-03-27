@@ -17,5 +17,4 @@ public:
 	virtual bool Destroy(InnoEntity* entity) = 0;
 	virtual std::optional<InnoEntity*> Find(const char* entityName) = 0;
 	virtual const std::vector<InnoEntity*>& GetEntities() = 0;
-	virtual uint64_t AcquireUUID() = 0;
 };

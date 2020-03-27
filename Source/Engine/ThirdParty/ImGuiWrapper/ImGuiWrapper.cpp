@@ -313,11 +313,11 @@ void ImGuiWrapperNS::showWorldExplorer()
 		{
 			if (i.first->m_ObjectSource == ObjectSource::Asset)
 			{
-				if (ImGui::TreeNode(i.first->m_EntityName.c_str()))
+				if (ImGui::TreeNode(i.first->m_Name.c_str()))
 				{
 					for (auto& j : i.second)
 					{
-						if (ImGui::Selectable(j->m_ComponentName.c_str(), selectedComponent == j))
+						if (ImGui::Selectable(j->m_Name.c_str(), selectedComponent == j))
 						{
 							selectedComponent = j;
 							selectedComponentType = j->m_ComponentType;
@@ -350,7 +350,7 @@ void ImGuiWrapperNS::showWorldExplorer()
 	ImGui::End();
 }
 
-void ImGuiWrapperNS::showTransformComponentPropertyEditor(void * rhs)
+void ImGuiWrapperNS::showTransformComponentPropertyEditor(void* rhs)
 {
 	auto l_rhs = reinterpret_cast<TransformComponent*>(rhs);
 
@@ -409,7 +409,7 @@ void ImGuiWrapperNS::showTransformComponentPropertyEditor(void * rhs)
 	l_rhs->m_localTransformVector = l_rhs->m_localTransformVector_target;
 }
 
-void ImGuiWrapperNS::showVisiableComponentPropertyEditor(void * rhs)
+void ImGuiWrapperNS::showVisiableComponentPropertyEditor(void* rhs)
 {
 	auto l_rhs = reinterpret_cast<VisibleComponent*>(rhs);
 
@@ -437,7 +437,7 @@ void ImGuiWrapperNS::showVisiableComponentPropertyEditor(void * rhs)
 			{
 				auto l_meshMaterialPair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(l_rhs->m_model->meshMaterialPairs.m_startOffset + j);
 
-				if (ImGui::Selectable(l_meshMaterialPair->mesh->m_ParentEntity->m_EntityName.c_str(), selectedComponent == l_meshMaterialPair->material))
+				if (ImGui::Selectable(l_meshMaterialPair->mesh->m_ParentEntity->m_Name.c_str(), selectedComponent == l_meshMaterialPair->material))
 				{
 					selectedComponent = l_meshMaterialPair->material;
 				}
@@ -503,7 +503,7 @@ void ImGuiWrapperNS::showVisiableComponentPropertyEditor(void * rhs)
 	}
 }
 
-void ImGuiWrapperNS::showLightComponentPropertyEditor(void * rhs)
+void ImGuiWrapperNS::showLightComponentPropertyEditor(void* rhs)
 {
 	auto l_rhs = reinterpret_cast<LightComponent*>(rhs);
 
@@ -610,7 +610,7 @@ void ImGuiWrapperNS::showConcurrencyProfiler()
 							(float)l_startTime / 1000.0f,
 							(float)l_finishTime / 1000.0f,
 							((float)l_finishTime - (float)l_startTime) / 1000.0f
-						);
+							);
 					}
 					ImGui::PopStyleColor(1);
 					ImGui::SameLine();

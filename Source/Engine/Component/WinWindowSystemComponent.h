@@ -17,7 +17,7 @@ public:
 	}
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
-	EntityID m_ParentEntity;
+	uint64_t m_ParentEntity;
 
 	HINSTANCE m_hInstance;
 	LPCSTR m_applicationName;

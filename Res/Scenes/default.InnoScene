@@ -36,8 +36,8 @@
           "SimulatePhysics": true
         }
       ],
-      "EntityID": "d4229e4616eb07cc6e5e044ffe0fd77b",
-      "EntityName": "landscape"
+      "UUID": "d4229e4616eb07cc6e5e044ffe0fd77b",
+      "ObjectName": "landscape"
     },
     {
       "ChildrenComponents": [
@@ -72,8 +72,8 @@
           "zFar": 2000.0
         }
       ],
-      "EntityID": "1e6af8f1c63c5165990ba1aca26a72ab",
-      "EntityName": "playerCharacterCamera"
+      "UUID": "1e6af8f1c63c5165990ba1aca26a72ab",
+      "ObjectName": "playerCharacterCamera"
     },
     {
       "ChildrenComponents": [
@@ -119,8 +119,8 @@
           "UseColorTemperature": true
         }
       ],
-      "EntityID": "3a467d719bce3caa3337c860e378b19e",
-      "EntityName": "sun"
+      "UUID": "3a467d719bce3caa3337c860e378b19e",
+      "ObjectName": "sun"
     },
     {
       "ChildrenComponents": [
@@ -166,8 +166,8 @@
           "UseColorTemperature": false
         }
       ],
-      "EntityID": "a529a6be8035585968e330d4893b1a44",
-      "EntityName": "pointLight"
+      "UUID": "a529a6be8035585968e330d4893b1a44",
+      "ObjectName": "pointLight"
     },
     {
       "ChildrenComponents": [
@@ -213,8 +213,8 @@
           "UseColorTemperature": false
         }
       ],
-      "EntityID": "b31712f4ef9af94e99f36b796c81ed5b",
-      "EntityName": "sphereLight"
+      "UUID": "b31712f4ef9af94e99f36b796c81ed5b",
+      "ObjectName": "sphereLight"
     }
   ],
   "SceneName": "..//res//scenes//default.InnoScene"

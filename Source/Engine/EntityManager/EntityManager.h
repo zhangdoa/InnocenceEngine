@@ -14,5 +14,4 @@ public:
 	bool Destroy(InnoEntity* entity) override;
 	const std::vector<InnoEntity*>& GetEntities() override;
 	std::optional<InnoEntity*> Find(const char* entityName) override;
-	uint64_t AcquireUUID() override;
 };

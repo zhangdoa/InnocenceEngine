@@ -1,6 +1,7 @@
 #include "VisibleComponentManager.h"
 #include "../Component/VisibleComponent.h"
 #include "../Core/InnoMemory.h"
+#include "../Core/InnoRandomizer.h"
 #include "../Core/InnoLogger.h"
 #include "../Common/CommonMacro.inl"
 #include "CommonFunctionDefinitionMacro.inl"
@@ -79,17 +80,17 @@ bool InnoVisibleComponentManager::Terminate()
 	return true;
 }
 
-InnoComponent * InnoVisibleComponentManager::Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectOwnership objectUsage)
+InnoComponent* InnoVisibleComponentManager::Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectOwnership objectUsage)
 {
 	SpawnComponentImpl(VisibleComponent);
 }
 
-void InnoVisibleComponentManager::Destroy(InnoComponent * component)
+void InnoVisibleComponentManager::Destroy(InnoComponent* component)
 {
 	DestroyComponentImpl(VisibleComponent);
 }
 
-InnoComponent* InnoVisibleComponentManager::Find(const InnoEntity * parentEntity)
+InnoComponent* InnoVisibleComponentManager::Find(const InnoEntity* parentEntity)
 {
 	GetComponentImpl(VisibleComponent, parentEntity);
 }

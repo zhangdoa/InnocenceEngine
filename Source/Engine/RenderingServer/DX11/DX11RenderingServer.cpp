@@ -21,6 +21,7 @@ extern IModuleManager* g_pModuleManager;
 
 #include "../../Core/InnoLogger.h"
 #include "../../Core/InnoMemory.h"
+#include "../../Core/InnoRandomizer.h"
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -392,7 +393,7 @@ AddComponent(DX11, ShaderProgram);
 AddComponent(DX11, SamplerData);
 AddComponent(DX11, GPUBufferData);
 
-bool DX11RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
+bool DX11RenderingServer::InitializeMeshDataComponent(MeshDataComponent* rhs)
 {
 	if (m_initializedMeshes.find(rhs) != m_initializedMeshes.end())
 	{
@@ -475,7 +476,7 @@ bool DX11RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	return true;
 }
 
-bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * rhs)
+bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent* rhs)
 {
 	if (m_initializedTextures.find(rhs) != m_initializedTextures.end())
 	{
@@ -601,7 +602,7 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 	return true;
 }
 
-bool DX11RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * rhs)
+bool DX11RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent* rhs)
 {
 	if (m_initializedMaterials.find(rhs) != m_initializedMaterials.end())
 	{
@@ -635,7 +636,7 @@ bool DX11RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 	return true;
 }
 
-bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponent * rhs)
+bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX11RenderPassDataComponent*>(rhs);
 
@@ -662,7 +663,7 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 	return true;
 }
 
-bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent * rhs)
+bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX11ShaderProgramComponent*>(rhs);
 
@@ -738,7 +739,7 @@ bool DX11RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 	return true;
 }
 
-bool DX11RenderingServer::InitializeSamplerDataComponent(SamplerDataComponent * rhs)
+bool DX11RenderingServer::InitializeSamplerDataComponent(SamplerDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX11SamplerDataComponent*>(rhs);
 
@@ -759,7 +760,7 @@ bool DX11RenderingServer::InitializeSamplerDataComponent(SamplerDataComponent * 
 	auto l_HResult = m_device->CreateSamplerState(&l_rhs->m_DX11SamplerDesc, &l_rhs->m_SamplerState);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create sampler state object for ", rhs->m_ComponentName.c_str(), "!");
+		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create sampler state object for ", rhs->m_Name.c_str(), "!");
 		return false;
 	}
 
@@ -774,7 +775,7 @@ bool DX11RenderingServer::InitializeSamplerDataComponent(SamplerDataComponent * 
 	return true;
 }
 
-bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent * rhs)
+bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX11GPUBufferDataComponent*>(rhs);
 
@@ -876,7 +877,7 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 	return true;
 }
 
-bool DX11RenderingServer::DeleteMeshDataComponent(MeshDataComponent * rhs)
+bool DX11RenderingServer::DeleteMeshDataComponent(MeshDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX11MeshDataComponent*>(rhs);
 
@@ -890,7 +891,7 @@ bool DX11RenderingServer::DeleteMeshDataComponent(MeshDataComponent * rhs)
 	return true;
 }
 
-bool DX11RenderingServer::DeleteTextureDataComponent(TextureDataComponent * rhs)
+bool DX11RenderingServer::DeleteTextureDataComponent(TextureDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX11TextureDataComponent*>(rhs);
 
@@ -918,7 +919,7 @@ bool DX11RenderingServer::DeleteTextureDataComponent(TextureDataComponent * rhs)
 	return true;
 }
 
-bool DX11RenderingServer::DeleteMaterialDataComponent(MaterialDataComponent * rhs)
+bool DX11RenderingServer::DeleteMaterialDataComponent(MaterialDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX11MaterialDataComponent*>(rhs);
 
@@ -929,7 +930,7 @@ bool DX11RenderingServer::DeleteMaterialDataComponent(MaterialDataComponent * rh
 	return true;
 }
 
-bool DX11RenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent * rhs)
+bool DX11RenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX11RenderPassDataComponent*>(rhs);
 	auto l_PSO = reinterpret_cast<DX11PipelineStateObject*>(l_rhs->m_PipelineStateObject);
@@ -964,7 +965,7 @@ bool DX11RenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent 
 	return true;
 }
 
-bool DX11RenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent * rhs)
+bool DX11RenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX11ShaderProgramComponent*>(rhs);
 
@@ -998,7 +999,7 @@ bool DX11RenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent * 
 	return true;
 }
 
-bool DX11RenderingServer::DeleteSamplerDataComponent(SamplerDataComponent * rhs)
+bool DX11RenderingServer::DeleteSamplerDataComponent(SamplerDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX11SamplerDataComponent*>(rhs);
 
@@ -1014,7 +1015,7 @@ bool DX11RenderingServer::DeleteSamplerDataComponent(SamplerDataComponent * rhs)
 	return true;
 }
 
-bool DX11RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * rhs)
+bool DX11RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX11GPUBufferDataComponent*>(rhs);
 
@@ -1030,7 +1031,7 @@ bool DX11RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * 
 	return true;
 }
 
-bool DX11RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue, size_t startOffset, size_t range)
+bool DX11RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range)
 {
 	auto l_rhs = reinterpret_cast<DX11GPUBufferDataComponent*>(rhs);
 
@@ -1069,12 +1070,12 @@ bool DX11RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponen
 	return true;
 }
 
-bool DX11RenderingServer::CommandListBegin(RenderPassDataComponent * rhs, size_t frameIndex)
+bool DX11RenderingServer::CommandListBegin(RenderPassDataComponent* rhs, size_t frameIndex)
 {
 	return true;
 }
 
-bool DX11RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * rhs)
+bool DX11RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX11RenderPassDataComponent*>(rhs);
 	auto l_PSO = reinterpret_cast<DX11PipelineStateObject*>(l_rhs->m_PipelineStateObject);
@@ -1138,7 +1139,7 @@ bool DX11RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * 
 	return true;
 }
 
-bool DX11RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
+bool DX11RenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX11RenderPassDataComponent*>(rhs);
 
@@ -1214,7 +1215,7 @@ bool BindSampler(ShaderStage shaderStage, uint32_t slot, ID3D11SamplerState* sam
 	return true;
 }
 
-bool BindSRV(ShaderStage shaderStage, uint32_t slot, ID3D11ShaderResourceView * SRV)
+bool BindSRV(ShaderStage shaderStage, uint32_t slot, ID3D11ShaderResourceView* SRV)
 {
 	switch (shaderStage)
 	{
@@ -1242,7 +1243,7 @@ bool BindSRV(ShaderStage shaderStage, uint32_t slot, ID3D11ShaderResourceView * 
 	return true;
 }
 
-bool BindUAV(ShaderStage shaderStage, uint32_t slot, ID3D11UnorderedAccessView * UAV)
+bool BindUAV(ShaderStage shaderStage, uint32_t slot, ID3D11UnorderedAccessView* UAV)
 {
 	if (shaderStage == ShaderStage::Compute)
 	{
@@ -1318,7 +1319,7 @@ bool BindPartialConstantBuffer(uint32_t slot, ID3D11Buffer* buffer, ShaderStage 
 	return true;
 }
 
-bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	auto l_resourceBinder = reinterpret_cast<DX11ResourceBinder*>(binder);
 
@@ -1394,7 +1395,7 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 	return true;
 }
 
-bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	auto l_resourceBinder = reinterpret_cast<DX11ResourceBinder*>(binder);
 
@@ -1443,7 +1444,7 @@ bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * ren
 	return true;
 }
 
-bool DX11RenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass, MeshDataComponent* mesh, size_t instanceCount)
+bool DX11RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh, size_t instanceCount)
 {
 	auto l_rhs = reinterpret_cast<DX11MeshDataComponent*>(mesh);
 
@@ -1459,7 +1460,7 @@ bool DX11RenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass,
 	return true;
 }
 
-bool DX11RenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass, size_t instanceCount)
+bool DX11RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, size_t instanceCount)
 {
 	m_deviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
 
@@ -1470,7 +1471,7 @@ bool DX11RenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass,
 	return true;
 }
 
-bool DX11RenderingServer::CommandListEnd(RenderPassDataComponent * rhs)
+bool DX11RenderingServer::CommandListEnd(RenderPassDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX11RenderPassDataComponent*>(rhs);
 	auto l_PSO = reinterpret_cast<DX11PipelineStateObject*>(l_rhs->m_PipelineStateObject);
@@ -1525,17 +1526,17 @@ bool DX11RenderingServer::CommandListEnd(RenderPassDataComponent * rhs)
 	return true;
 }
 
-bool DX11RenderingServer::ExecuteCommandList(RenderPassDataComponent * rhs)
+bool DX11RenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs)
 {
 	return true;
 }
 
-bool DX11RenderingServer::WaitForFrame(RenderPassDataComponent * rhs)
+bool DX11RenderingServer::WaitForFrame(RenderPassDataComponent* rhs)
 {
 	return true;
 }
 
-bool DX11RenderingServer::SetUserPipelineOutput(RenderPassDataComponent * rhs)
+bool DX11RenderingServer::SetUserPipelineOutput(RenderPassDataComponent* rhs)
 {
 	m_userPipelineOutput = reinterpret_cast<DX11RenderPassDataComponent*>(rhs);
 
@@ -1580,14 +1581,14 @@ bool DX11RenderingServer::Present()
 	return true;
 }
 
-bool DX11RenderingServer::DispatchCompute(RenderPassDataComponent * renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
+bool DX11RenderingServer::DispatchCompute(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
 {
 	m_deviceContext->Dispatch(threadGroupX, threadGroupY, threadGroupZ);
 
 	return true;
 }
 
-bool DX11RenderingServer::CopyDepthStencilBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
+bool DX11RenderingServer::CopyDepthStencilBuffer(RenderPassDataComponent* src, RenderPassDataComponent* dest)
 {
 	auto l_src = reinterpret_cast<DX11TextureDataComponent*>(src->m_DepthStencilRenderTarget);
 	auto l_dest = reinterpret_cast<DX11TextureDataComponent*>(dest->m_DepthStencilRenderTarget);
@@ -1597,7 +1598,7 @@ bool DX11RenderingServer::CopyDepthStencilBuffer(RenderPassDataComponent * src, 
 	return true;
 }
 
-bool DX11RenderingServer::CopyColorBuffer(RenderPassDataComponent * src, size_t srcIndex, RenderPassDataComponent * dest, size_t destIndex)
+bool DX11RenderingServer::CopyColorBuffer(RenderPassDataComponent* src, size_t srcIndex, RenderPassDataComponent* dest, size_t destIndex)
 {
 	auto l_src = reinterpret_cast<DX11TextureDataComponent*>(src->m_RenderTargets[srcIndex]);
 	auto l_dest = reinterpret_cast<DX11TextureDataComponent*>(dest->m_RenderTargets[srcIndex]);
@@ -1607,12 +1608,12 @@ bool DX11RenderingServer::CopyColorBuffer(RenderPassDataComponent * src, size_t 
 	return true;
 }
 
-Vec4 DX11RenderingServer::ReadRenderTargetSample(RenderPassDataComponent * rhs, size_t renderTargetIndex, size_t x, size_t y)
+Vec4 DX11RenderingServer::ReadRenderTargetSample(RenderPassDataComponent* rhs, size_t renderTargetIndex, size_t x, size_t y)
 {
 	return Vec4();
 }
 
-std::vector<Vec4> DX11RenderingServer::ReadTextureBackToCPU(RenderPassDataComponent * canvas, TextureDataComponent * TDC)
+std::vector<Vec4> DX11RenderingServer::ReadTextureBackToCPU(RenderPassDataComponent* canvas, TextureDataComponent* TDC)
 {
 	// @TODO: Support different pixel data type
 	auto l_srcTDC = reinterpret_cast<DX11TextureDataComponent*>(TDC);
@@ -1715,12 +1716,12 @@ bool DX11RenderingServer::Resize()
 	return true;
 }
 
-void * DX11RenderingServer::GetDevice()
+void* DX11RenderingServer::GetDevice()
 {
 	return m_device;
 }
 
-void * DX11RenderingServer::GetDeviceContext()
+void* DX11RenderingServer::GetDeviceContext()
 {
 	return m_deviceContext;
 }

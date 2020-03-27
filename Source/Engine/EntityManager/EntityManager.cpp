@@ -1,5 +1,6 @@
 #include "EntityManager.h"
 #include "../Core/InnoLogger.h"
+#include "../Core/InnoRandomizer.h"
 
 #include "../Interface/IModuleManager.h"
 
@@ -33,8 +34,8 @@ bool InnoEntityManager::Setup()
 		m_Entities.erase(
 			std::remove_if(m_Entities.begin(), m_Entities.end(),
 				[&](auto val) {
-			return val->m_ObjectOwnership == ObjectOwnership::Client;
-		}), m_Entities.end());
+					return val->m_ObjectOwnership == ObjectOwnership::Client;
+				}), m_Entities.end());
 	};
 
 	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_SceneLoadingStartCallback);
@@ -57,43 +58,48 @@ bool InnoEntityManager::Terminate()
 	return true;
 }
 
-InnoEntity * InnoEntityManager::Spawn(ObjectSource objectSource, ObjectOwnership objectUsage, const char* entityName)
+InnoEntity* InnoEntityManager::Spawn(ObjectSource objectSource, ObjectOwnership objectUsage, const char* entityName)
 {
 	auto l_Entity = InnoMemory::Spawn<InnoEntity>(m_EntityPool);
+
 	if (l_Entity)
 	{
-		auto l_EntityID = InnoMath::createEntityID();
-
 		l_Entity->m_ObjectStatus = ObjectStatus::Created;
 		m_Entities.emplace_back(l_Entity);
+		auto l_UUID = InnoRandomizer::GenerateUUID();
 
-		l_Entity->m_EntityID = l_EntityID;
-		l_Entity->m_EntityName = entityName;
+		l_Entity->m_UUID = l_UUID;
+		l_Entity->m_Name = entityName;
 		l_Entity->m_ObjectSource = objectSource;
 		l_Entity->m_ObjectOwnership = objectUsage;
 		l_Entity->m_ObjectStatus = ObjectStatus::Activated;
+
+		InnoLogger::Log(LogLevel::Verbose, "EntityManager: Entity ", l_Entity->m_Name.c_str(), " has been created.");
+	}
+	else
+	{
+		InnoLogger::Log(LogLevel::Warning, "EntityManager: Can not creat Entity ", entityName, ".");
 	}
 
-	InnoLogger::Log(LogLevel::Verbose, "EntityManager: Entity ", l_Entity->m_EntityName.c_str(), " has been created.");
 	return l_Entity;
 }
 
-bool InnoEntityManager::Destroy(InnoEntity * entity)
+bool InnoEntityManager::Destroy(InnoEntity* entity)
 {
 	m_Entities.eraseByValue(entity);
-	InnoLogger::Log(LogLevel::Verbose, "EntityManager: Entity ", entity->m_EntityName.c_str(), " has been removed.");
+	InnoLogger::Log(LogLevel::Verbose, "EntityManager: Entity ", entity->m_Name.c_str(), " has been removed.");
 	m_EntityPool->Destroy(entity);
 	return true;
 }
 
-std::optional<InnoEntity*> InnoEntityManager::Find(const char * entityName)
+std::optional<InnoEntity*> InnoEntityManager::Find(const char* entityName)
 {
 	auto l_FindResult = std::find_if(
 		m_Entities.begin(),
 		m_Entities.end(),
 		[&](auto val) -> bool {
-		return val->m_EntityName == entityName;
-	});
+			return val->m_Name == entityName;
+		});
 
 	if (l_FindResult != m_Entities.end())
 	{
@@ -106,14 +112,7 @@ std::optional<InnoEntity*> InnoEntityManager::Find(const char * entityName)
 	}
 }
 
-const std::vector<InnoEntity*>&  InnoEntityManager::GetEntities()
+const std::vector<InnoEntity*>& InnoEntityManager::GetEntities()
 {
 	return m_Entities.getRawData();
-}
-
-uint64_t InnoEntityManager::AcquireUUID()
-{
-	static uint64_t l_UUID = 0;
-	l_UUID++;
-	return l_UUID;
 }

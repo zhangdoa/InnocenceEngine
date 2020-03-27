@@ -8,25 +8,33 @@
 #define INNO_FORCEINLINE __attribute__((always_inline)) inline
 #endif
 
-enum class ObjectStatus
+namespace Inno
 {
-	Created,
-	Activated,
-	Suspended,
-	Terminated,
-};
+	enum class ObjectStatus
+	{
+		Invalid,
+		Created,
+		Activated,
+		Suspended,
+		Terminated,
+	};
 
-enum class ObjectSource
-{
-	Runtime,
-	Asset,
-};
+	enum class ObjectSource
+	{
+		Invalid,
+		Runtime,
+		Asset,
+	};
 
-enum class ObjectOwnership
-{
-	Client,
-	Engine,
-};
+	enum class ObjectOwnership
+	{
+		Invalid,
+		Engine,
+		Client,
+	};
+}
+
+using namespace Inno;
 
 struct ArrayRangeInfo
 {
@@ -34,9 +42,7 @@ struct ArrayRangeInfo
 	uint64_t m_count;
 };
 
-using EntityID = FixedSizeString<32>;
-using ComponentName = FixedSizeString<128>;
-using EntityName = FixedSizeString<128>;
+using ObjectName = FixedSizeString<128>;
 
 enum class ComponentType
 {
@@ -113,7 +119,7 @@ struct ButtonState
 	int32_t m_code = 0;
 	bool m_isPressed = false;
 
-	bool operator==(const ButtonState &other) const
+	bool operator==(const ButtonState& other) const
 	{
 		return (
 			m_code == other.m_code

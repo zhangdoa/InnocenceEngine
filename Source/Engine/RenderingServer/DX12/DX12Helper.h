@@ -9,7 +9,7 @@ namespace DX12Helper
 	template <typename U, typename T>
 	bool SetObjectName(U* owner, T* rhs, const char* objectType)
 	{
-		auto l_Name = std::string(owner->m_ComponentName.c_str());
+		auto l_Name = std::string(owner->m_Name.c_str());
 		l_Name += "_";
 		l_Name += objectType;
 		auto l_NameW = std::wstring(l_Name.begin(), l_Name.end());
@@ -45,7 +45,7 @@ namespace DX12Helper
 
 	bool ReserveRenderTargets(DX12RenderPassDataComponent* DX12RPDC, IRenderingServer* renderingServer);
 	bool CreateRenderTargets(DX12RenderPassDataComponent* DX12RPDC, IRenderingServer* renderingServer);
-	bool CreateResourcesBinder(DX12RenderPassDataComponent * DX12RPDC, IRenderingServer* renderingServer);
+	bool CreateResourcesBinder(DX12RenderPassDataComponent* DX12RPDC, IRenderingServer* renderingServer);
 	bool CreateViews(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device);
 	bool CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device);
 	bool CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device);

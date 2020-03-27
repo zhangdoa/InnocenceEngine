@@ -21,6 +21,7 @@ extern IModuleManager* g_pModuleManager;
 
 #include "../../Core/InnoLogger.h"
 #include "../../Core/InnoMemory.h"
+#include "../../Core/InnoRandomizer.h"
 
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -639,7 +640,7 @@ AddComponent(DX12, ShaderProgram);
 AddComponent(DX12, SamplerData);
 AddComponent(DX12, GPUBufferData);
 
-bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
+bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent* rhs)
 {
 	if (m_initializedMeshes.find(rhs) != m_initializedMeshes.end())
 	{
@@ -740,7 +741,7 @@ bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent * rhs)
 	return true;
 }
 
-bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * rhs)
+bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent* rhs)
 {
 	if (m_initializedTextures.find(rhs) != m_initializedTextures.end())
 	{
@@ -869,7 +870,7 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent * 
 	return true;
 }
 
-bool DX12RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent * rhs)
+bool DX12RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent* rhs)
 {
 	if (m_initializedMaterials.find(rhs) != m_initializedMaterials.end())
 	{
@@ -903,7 +904,7 @@ bool DX12RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent 
 	return true;
 }
 
-bool DX12RenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponent * rhs)
+bool DX12RenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
 
@@ -955,7 +956,7 @@ bool DX12RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 	return l_result;
 }
 
-bool DX12RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent * rhs)
+bool DX12RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12ShaderProgramComponent*>(rhs);
 
@@ -989,7 +990,7 @@ bool DX12RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 	return true;
 }
 
-bool DX12RenderingServer::InitializeSamplerDataComponent(SamplerDataComponent * rhs)
+bool DX12RenderingServer::InitializeSamplerDataComponent(SamplerDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12SamplerDataComponent*>(rhs);
 	auto l_resourceBinder = addResourcesBinder();
@@ -1026,7 +1027,7 @@ bool DX12RenderingServer::InitializeSamplerDataComponent(SamplerDataComponent * 
 	return true;
 }
 
-bool DX12RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent * rhs)
+bool DX12RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12GPUBufferDataComponent*>(rhs);
 
@@ -1085,7 +1086,7 @@ bool DX12RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 	return true;
 }
 
-bool DX12RenderingServer::DeleteMeshDataComponent(MeshDataComponent * rhs)
+bool DX12RenderingServer::DeleteMeshDataComponent(MeshDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12MeshDataComponent*>(rhs);
 
@@ -1099,7 +1100,7 @@ bool DX12RenderingServer::DeleteMeshDataComponent(MeshDataComponent * rhs)
 	return true;
 }
 
-bool DX12RenderingServer::DeleteTextureDataComponent(TextureDataComponent * rhs)
+bool DX12RenderingServer::DeleteTextureDataComponent(TextureDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12TextureDataComponent*>(rhs);
 
@@ -1117,7 +1118,7 @@ bool DX12RenderingServer::DeleteTextureDataComponent(TextureDataComponent * rhs)
 	return true;
 }
 
-bool DX12RenderingServer::DeleteMaterialDataComponent(MaterialDataComponent * rhs)
+bool DX12RenderingServer::DeleteMaterialDataComponent(MaterialDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12MaterialDataComponent*>(rhs);
 
@@ -1128,7 +1129,7 @@ bool DX12RenderingServer::DeleteMaterialDataComponent(MaterialDataComponent * rh
 	return true;
 }
 
-bool DX12RenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent * rhs)
+bool DX12RenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(l_rhs->m_PipelineStateObject);
@@ -1153,7 +1154,7 @@ bool DX12RenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent 
 	return true;
 }
 
-bool DX12RenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent * rhs)
+bool DX12RenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12ShaderProgramComponent*>(rhs);
 
@@ -1187,7 +1188,7 @@ bool DX12RenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent * 
 	return true;
 }
 
-bool DX12RenderingServer::DeleteSamplerDataComponent(SamplerDataComponent * rhs)
+bool DX12RenderingServer::DeleteSamplerDataComponent(SamplerDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12SamplerDataComponent*>(rhs);
 
@@ -1201,7 +1202,7 @@ bool DX12RenderingServer::DeleteSamplerDataComponent(SamplerDataComponent * rhs)
 	return false;
 }
 
-bool DX12RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * rhs)
+bool DX12RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12GPUBufferDataComponent*>(rhs);
 
@@ -1225,7 +1226,7 @@ bool DX12RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * 
 	return true;
 }
 
-bool DX12RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue, size_t startOffset, size_t range)
+bool DX12RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range)
 {
 	auto l_rhs = reinterpret_cast<DX12GPUBufferDataComponent*>(rhs);
 
@@ -1253,7 +1254,7 @@ bool DX12RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponen
 	return true;
 }
 
-bool DX12RenderingServer::CommandListBegin(RenderPassDataComponent * rhs, size_t frameIndex)
+bool DX12RenderingServer::CommandListBegin(RenderPassDataComponent* rhs, size_t frameIndex)
 {
 	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[frameIndex]);
@@ -1343,7 +1344,7 @@ bool PreparePipeline(DX12RenderPassDataComponent* renderPass, DX12CommandList* c
 	return true;
 }
 
-bool DX12RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * rhs)
+bool DX12RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
@@ -1355,7 +1356,7 @@ bool DX12RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent * 
 	return true;
 }
 
-bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
+bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 {
 	if (rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
 	{
@@ -1427,7 +1428,7 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent * rhs)
 	return true;
 }
 
-bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	auto l_resourceBinder = reinterpret_cast<DX12ResourceBinder*>(binder);
 	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
@@ -1533,7 +1534,7 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent * rende
 	return true;
 }
 
-bool DX12RenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass, MeshDataComponent* mesh, size_t instanceCount)
+bool DX12RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh, size_t instanceCount)
 {
 	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
@@ -1548,7 +1549,7 @@ bool DX12RenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass,
 	return true;
 }
 
-bool DX12RenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass, size_t instanceCount)
+bool DX12RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, size_t instanceCount)
 {
 	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
@@ -1562,7 +1563,7 @@ bool DX12RenderingServer::DispatchDrawCall(RenderPassDataComponent * renderPass,
 	return true;
 }
 
-bool DX12RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * renderPass, ShaderStage shaderStage, IResourceBinder * binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool DX12RenderingServer::DeactivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	auto l_resourceBinder = reinterpret_cast<DX12ResourceBinder*>(binder);
 	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
@@ -1582,7 +1583,7 @@ bool DX12RenderingServer::DeactivateResourceBinder(RenderPassDataComponent * ren
 	return true;
 }
 
-bool DX12RenderingServer::CommandListEnd(RenderPassDataComponent * rhs)
+bool DX12RenderingServer::CommandListEnd(RenderPassDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
@@ -1618,7 +1619,7 @@ bool DX12RenderingServer::CommandListEnd(RenderPassDataComponent * rhs)
 	return true;
 }
 
-bool DX12RenderingServer::ExecuteCommandList(RenderPassDataComponent * rhs)
+bool DX12RenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
 	auto l_commandQueue = reinterpret_cast<DX12CommandQueue*>(l_rhs->m_CommandQueue);
@@ -1635,7 +1636,7 @@ bool DX12RenderingServer::ExecuteCommandList(RenderPassDataComponent * rhs)
 	return true;
 }
 
-bool DX12RenderingServer::WaitForFrame(RenderPassDataComponent * rhs)
+bool DX12RenderingServer::WaitForFrame(RenderPassDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
 	auto l_fence = reinterpret_cast<DX12Fence*>(l_rhs->m_Fences[l_rhs->m_CurrentFrame]);
@@ -1653,7 +1654,7 @@ bool DX12RenderingServer::WaitForFrame(RenderPassDataComponent * rhs)
 	return true;
 }
 
-bool DX12RenderingServer::SetUserPipelineOutput(RenderPassDataComponent * rhs)
+bool DX12RenderingServer::SetUserPipelineOutput(RenderPassDataComponent* rhs)
 {
 	m_userPipelineOutput = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
 
@@ -1718,7 +1719,7 @@ bool DX12RenderingServer::Present()
 	return true;
 }
 
-bool DX12RenderingServer::DispatchCompute(RenderPassDataComponent * renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
+bool DX12RenderingServer::DispatchCompute(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
 {
 	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
@@ -1728,7 +1729,7 @@ bool DX12RenderingServer::DispatchCompute(RenderPassDataComponent * renderPass, 
 	return true;
 }
 
-bool DX12RenderingServer::CopyDepthStencilBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
+bool DX12RenderingServer::CopyDepthStencilBuffer(RenderPassDataComponent* src, RenderPassDataComponent* dest)
 {
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(dest->m_CommandLists[dest->m_CurrentFrame]);
 
@@ -1764,7 +1765,7 @@ bool DX12RenderingServer::CopyDepthStencilBuffer(RenderPassDataComponent * src, 
 	return true;
 }
 
-bool DX12RenderingServer::CopyColorBuffer(RenderPassDataComponent * src, size_t srcIndex, RenderPassDataComponent * dest, size_t destIndex)
+bool DX12RenderingServer::CopyColorBuffer(RenderPassDataComponent* src, size_t srcIndex, RenderPassDataComponent* dest, size_t destIndex)
 {
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(dest->m_CommandLists[dest->m_CurrentFrame]);
 
@@ -1800,12 +1801,12 @@ bool DX12RenderingServer::CopyColorBuffer(RenderPassDataComponent * src, size_t 
 	return true;
 }
 
-Vec4 DX12RenderingServer::ReadRenderTargetSample(RenderPassDataComponent * rhs, size_t renderTargetIndex, size_t x, size_t y)
+Vec4 DX12RenderingServer::ReadRenderTargetSample(RenderPassDataComponent* rhs, size_t renderTargetIndex, size_t x, size_t y)
 {
 	return Vec4();
 }
 
-std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataComponent * canvas, TextureDataComponent * TDC)
+std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataComponent* canvas, TextureDataComponent* TDC)
 {
 	// @TODO: Support different pixel data type
 
@@ -1918,7 +1919,7 @@ bool DX12RenderingServer::Resize()
 	return true;
 }
 
-DX12SRV DX12RenderingServer::CreateSRV(TextureDataComponent * rhs)
+DX12SRV DX12RenderingServer::CreateSRV(TextureDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12TextureDataComponent*>(rhs);
 
@@ -1939,7 +1940,7 @@ DX12SRV DX12RenderingServer::CreateSRV(TextureDataComponent * rhs)
 	return l_result;
 }
 
-DX12UAV DX12RenderingServer::CreateUAV(TextureDataComponent * rhs)
+DX12UAV DX12RenderingServer::CreateUAV(TextureDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12TextureDataComponent*>(rhs);
 

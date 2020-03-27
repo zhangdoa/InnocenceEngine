@@ -247,7 +247,7 @@ uint32_t VKHelper::findMemoryType(VkPhysicalDevice physicalDevice, uint32_t type
 	return 0;
 }
 
-bool VKHelper::createCommandPool(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface, VkDevice device, VkCommandPool & commandPool)
+bool VKHelper::createCommandPool(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface, VkDevice device, VkCommandPool& commandPool)
 {
 	QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice, windowSurface);
 
@@ -807,7 +807,7 @@ bool VKHelper::transitionImageLayout(VkCommandBuffer commandBuffer, VkImage imag
 		0, nullptr,
 		0, nullptr,
 		1, &barrier
-	);
+		);
 
 	return true;
 }
@@ -866,17 +866,17 @@ bool VKHelper::createImageView(VkDevice device, VKTextureDataComponent* VKTDC)
 	return true;
 }
 
-bool VKHelper::createDescriptorSetLayoutBindings(VKRenderPassDataComponent * VKRPDC)
+bool VKHelper::createDescriptorSetLayoutBindings(VKRenderPassDataComponent* VKRPDC)
 {
 	std::sort(VKRPDC->m_ResourceBinderLayoutDescs.begin(), VKRPDC->m_ResourceBinderLayoutDescs.end(), [&](ResourceBinderLayoutDesc A, ResourceBinderLayoutDesc B)
-	{
-		return A.m_DescriptorIndex < B.m_DescriptorIndex;
-	});
+		{
+			return A.m_DescriptorIndex < B.m_DescriptorIndex;
+		});
 
 	std::sort(VKRPDC->m_ResourceBinderLayoutDescs.begin(), VKRPDC->m_ResourceBinderLayoutDescs.end(), [&](ResourceBinderLayoutDesc A, ResourceBinderLayoutDesc B)
-	{
-		return A.m_DescriptorSetIndex < B.m_DescriptorSetIndex;
-	});
+		{
+			return A.m_DescriptorSetIndex < B.m_DescriptorSetIndex;
+		});
 
 	auto l_resourceBinderLayoutDescsSize = VKRPDC->m_ResourceBinderLayoutDescs.size();
 
@@ -1076,7 +1076,7 @@ bool VKHelper::createRenderTargets(VKRenderPassDataComponent* VKRPDC, IRendering
 {
 	for (size_t i = 0; i < VKRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
-		VKRPDC->m_RenderTargets[i] = renderingServer->AddTextureDataComponent((std::string(VKRPDC->m_ComponentName.c_str()) + "_" + std::to_string(i) + "/").c_str());
+		VKRPDC->m_RenderTargets[i] = renderingServer->AddTextureDataComponent((std::string(VKRPDC->m_Name.c_str()) + "_" + std::to_string(i) + "/").c_str());
 
 		VKRPDC->m_RenderTargets[i]->m_TextureDesc = VKRPDC->m_RenderPassDesc.m_RenderTargetDesc;
 
@@ -1087,7 +1087,7 @@ bool VKHelper::createRenderTargets(VKRenderPassDataComponent* VKRPDC, IRendering
 
 	if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
 	{
-		VKRPDC->m_DepthStencilRenderTarget = renderingServer->AddTextureDataComponent((std::string(VKRPDC->m_ComponentName.c_str()) + "_DS/").c_str());
+		VKRPDC->m_DepthStencilRenderTarget = renderingServer->AddTextureDataComponent((std::string(VKRPDC->m_Name.c_str()) + "_DS/").c_str());
 		VKRPDC->m_DepthStencilRenderTarget->m_TextureDesc = VKRPDC->m_RenderPassDesc.m_RenderTargetDesc;
 		if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
 		{
@@ -1209,7 +1209,7 @@ bool VKHelper::createRenderPass(VkDevice device, VKRenderPassDataComponent* VKRP
 	return true;
 }
 
-bool VKHelper::createViewportAndScissor(VKRenderPassDataComponent * VKRPDC)
+bool VKHelper::createViewportAndScissor(VKRenderPassDataComponent* VKRPDC)
 {
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject*>(VKRPDC->m_PipelineStateObject);
 
@@ -1433,7 +1433,7 @@ bool VKHelper::createPipelineLayout(VkDevice device, VKRenderPassDataComponent* 
 	return true;
 }
 
-bool VKHelper::GenerateViewportState(ViewportDesc viewportDesc, VKPipelineStateObject * PSO)
+bool VKHelper::GenerateViewportState(ViewportDesc viewportDesc, VKPipelineStateObject* PSO)
 {
 	PSO->m_ViewportStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 	PSO->m_ViewportStateCInfo.viewportCount = 1;
@@ -1444,7 +1444,7 @@ bool VKHelper::GenerateViewportState(ViewportDesc viewportDesc, VKPipelineStateO
 	return true;
 }
 
-bool VKHelper::GenerateRasterizerState(RasterizerDesc rasterizerDesc, VKPipelineStateObject * PSO)
+bool VKHelper::GenerateRasterizerState(RasterizerDesc rasterizerDesc, VKPipelineStateObject* PSO)
 {
 	PSO->m_InputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 
@@ -1516,7 +1516,7 @@ bool VKHelper::GenerateRasterizerState(RasterizerDesc rasterizerDesc, VKPipeline
 	return true;
 }
 
-bool VKHelper::GenerateDepthStencilState(DepthStencilDesc depthStencilDesc, VKPipelineStateObject * PSO)
+bool VKHelper::GenerateDepthStencilState(DepthStencilDesc depthStencilDesc, VKPipelineStateObject* PSO)
 {
 	PSO->m_DepthStencilStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 	PSO->m_DepthStencilStateCInfo.depthTestEnable = depthStencilDesc.m_UseDepthBuffer;
@@ -1547,7 +1547,7 @@ bool VKHelper::GenerateDepthStencilState(DepthStencilDesc depthStencilDesc, VKPi
 	return true;
 }
 
-bool VKHelper::GenerateBlendState(BlendDesc blendDesc, size_t RTCount, VKPipelineStateObject * PSO)
+bool VKHelper::GenerateBlendState(BlendDesc blendDesc, size_t RTCount, VKPipelineStateObject* PSO)
 {
 	PSO->m_ColorBlendStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 
@@ -1642,7 +1642,7 @@ bool VKHelper::createGraphicsPipelines(VkDevice device, VKRenderPassDataComponen
 	return true;
 }
 
-bool VKHelper::createComputePipelines(VkDevice device, VKRenderPassDataComponent * VKRPDC)
+bool VKHelper::createComputePipelines(VkDevice device, VKRenderPassDataComponent* VKRPDC)
 {
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject*>(VKRPDC->m_PipelineStateObject);
 
@@ -1720,7 +1720,7 @@ bool VKHelper::createSyncPrimitives(VkDevice device, VKRenderPassDataComponent* 
 	return true;
 }
 
-bool VKHelper::createShaderModule(VkDevice device, VkShaderModule & vkShaderModule, const ShaderFilePath & shaderFilePath)
+bool VKHelper::createShaderModule(VkDevice device, VkShaderModule& vkShaderModule, const ShaderFilePath& shaderFilePath)
 {
 	auto l_shaderFileName = m_shaderRelativePath + std::string(shaderFilePath.c_str()) + ".spv";
 	auto l_shaderContent = g_pModuleManager->getFileSystem()->loadFile(l_shaderFileName.c_str(), IOMode::Binary);
@@ -1740,7 +1740,7 @@ bool VKHelper::createShaderModule(VkDevice device, VkShaderModule & vkShaderModu
 	return true;
 }
 
-VkWriteDescriptorSet VKHelper::createWriteDescriptorSet(const VkDescriptorImageInfo & imageInfo, uint32_t dstBinding, VkDescriptorSet descriptorSet)
+VkWriteDescriptorSet VKHelper::createWriteDescriptorSet(const VkDescriptorImageInfo& imageInfo, uint32_t dstBinding, VkDescriptorSet descriptorSet)
 {
 	VkWriteDescriptorSet l_result = {};
 	l_result.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

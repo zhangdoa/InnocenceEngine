@@ -652,19 +652,19 @@ D3D11_DEPTH_STENCIL_VIEW_DESC DX11Helper::GetDSVDesc(TextureDesc textureDesc, De
 	return l_result;
 }
 
-bool DX11Helper::ReserveRenderTargets(DX11RenderPassDataComponent * DX11RPDC, IRenderingServer * renderingServer)
+bool DX11Helper::ReserveRenderTargets(DX11RenderPassDataComponent* DX11RPDC, IRenderingServer* renderingServer)
 {
 	DX11RPDC->m_RenderTargets.reserve(DX11RPDC->m_RenderPassDesc.m_RenderTargetCount);
 	for (size_t i = 0; i < DX11RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
 		DX11RPDC->m_RenderTargets.emplace_back();
-		DX11RPDC->m_RenderTargets[i] = renderingServer->AddTextureDataComponent((std::string(DX11RPDC->m_ComponentName.c_str()) + "_" + std::to_string(i) + "/").c_str());
+		DX11RPDC->m_RenderTargets[i] = renderingServer->AddTextureDataComponent((std::string(DX11RPDC->m_Name.c_str()) + "_" + std::to_string(i) + "/").c_str());
 	}
 
 	return true;
 }
 
-bool DX11Helper::CreateRenderTargets(DX11RenderPassDataComponent * DX11RPDC, IRenderingServer * renderingServer)
+bool DX11Helper::CreateRenderTargets(DX11RenderPassDataComponent* DX11RPDC, IRenderingServer* renderingServer)
 {
 	for (size_t i = 0; i < DX11RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
@@ -679,7 +679,7 @@ bool DX11Helper::CreateRenderTargets(DX11RenderPassDataComponent * DX11RPDC, IRe
 
 	if (DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
 	{
-		DX11RPDC->m_DepthStencilRenderTarget = renderingServer->AddTextureDataComponent((std::string(DX11RPDC->m_ComponentName.c_str()) + "_DS/").c_str());
+		DX11RPDC->m_DepthStencilRenderTarget = renderingServer->AddTextureDataComponent((std::string(DX11RPDC->m_Name.c_str()) + "_DS/").c_str());
 		DX11RPDC->m_DepthStencilRenderTarget->m_TextureDesc = DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc;
 
 		if (DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
@@ -701,7 +701,7 @@ bool DX11Helper::CreateRenderTargets(DX11RenderPassDataComponent * DX11RPDC, IRe
 	return true;
 }
 
-bool DX11Helper::CreateResourcesBinder(DX11RenderPassDataComponent * DX11RPDC)
+bool DX11Helper::CreateResourcesBinder(DX11RenderPassDataComponent* DX11RPDC)
 {
 	for (size_t i = 0; i < DX11RPDC->m_RenderTargetsResourceBinders.size(); i++)
 	{
@@ -711,7 +711,7 @@ bool DX11Helper::CreateResourcesBinder(DX11RenderPassDataComponent * DX11RPDC)
 	return true;
 }
 
-bool DX11Helper::CreateViews(DX11RenderPassDataComponent * DX11RPDC, ID3D11Device * device)
+bool DX11Helper::CreateViews(DX11RenderPassDataComponent* DX11RPDC, ID3D11Device* device)
 {
 	if (DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
 	{
@@ -731,7 +731,7 @@ bool DX11Helper::CreateViews(DX11RenderPassDataComponent * DX11RPDC, ID3D11Devic
 			auto l_HResult = device->CreateRenderTargetView(l_DX11TDC->m_ResourceHandle, &DX11RPDC->m_RTVDesc, &DX11RPDC->m_RTVs[i]);
 			if (FAILED(l_HResult))
 			{
-				InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create RTV for ", DX11RPDC->m_ComponentName.c_str(), "!");
+				InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create RTV for ", DX11RPDC->m_Name.c_str(), "!");
 				return false;
 			}
 #ifdef  _DEBUG
@@ -751,7 +751,7 @@ bool DX11Helper::CreateViews(DX11RenderPassDataComponent * DX11RPDC, ID3D11Devic
 		auto l_HResult = device->CreateDepthStencilView(l_DX11TDC->m_ResourceHandle, &DX11RPDC->m_DSVDesc, &DX11RPDC->m_DSV);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the DSV for ", DX11RPDC->m_ComponentName.c_str(), "!");
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the DSV for ", DX11RPDC->m_Name.c_str(), "!");
 			return false;
 		}
 #ifdef  _DEBUG
@@ -762,7 +762,7 @@ bool DX11Helper::CreateViews(DX11RenderPassDataComponent * DX11RPDC, ID3D11Devic
 	return true;
 }
 
-bool DX11Helper::CreateStateObjects(DX11RenderPassDataComponent * DX11RPDC, ID3D10Blob* dummyILShaderBuffer, ID3D11Device * device)
+bool DX11Helper::CreateStateObjects(DX11RenderPassDataComponent* DX11RPDC, ID3D10Blob* dummyILShaderBuffer, ID3D11Device* device)
 {
 	auto l_PSO = reinterpret_cast<DX11PipelineStateObject*>(DX11RPDC->m_PipelineStateObject);
 
@@ -830,7 +830,7 @@ bool DX11Helper::CreateStateObjects(DX11RenderPassDataComponent * DX11RPDC, ID3D
 		auto l_HResult = device->CreateDepthStencilState(&l_PSO->m_DepthStencilDesc, &l_PSO->m_DepthStencilState);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the depth stencil state object for ", DX11RPDC->m_ComponentName.c_str(), "!");
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the depth stencil state object for ", DX11RPDC->m_Name.c_str(), "!");
 			return false;
 		}
 	}
@@ -841,7 +841,7 @@ bool DX11Helper::CreateStateObjects(DX11RenderPassDataComponent * DX11RPDC, ID3D
 		auto l_HResult = device->CreateBlendState(&l_PSO->m_BlendDesc, &l_PSO->m_BlendState);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the blend state object for ", DX11RPDC->m_ComponentName.c_str(), "!");
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the blend state object for ", DX11RPDC->m_Name.c_str(), "!");
 			return false;
 		}
 	}
@@ -850,7 +850,7 @@ bool DX11Helper::CreateStateObjects(DX11RenderPassDataComponent * DX11RPDC, ID3D
 	l_HResult = device->CreateRasterizerState(&l_PSO->m_RasterizerDesc, &l_PSO->m_RasterizerState);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the rasterizer state object for ", DX11RPDC->m_ComponentName.c_str(), "!");
+		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the rasterizer state object for ", DX11RPDC->m_Name.c_str(), "!");
 		return false;
 	}
 
@@ -1015,7 +1015,7 @@ D3D11_FILL_MODE DX11Helper::GetRasterizerFillMode(RasterizerFillMode rasterizerF
 	return l_result;
 }
 
-bool DX11Helper::GenerateDepthStencilStateDesc(DepthStencilDesc DSDesc, DX11PipelineStateObject * PSO)
+bool DX11Helper::GenerateDepthStencilStateDesc(DepthStencilDesc DSDesc, DX11PipelineStateObject* PSO)
 {
 	PSO->m_DepthStencilDesc.DepthEnable = DSDesc.m_UseDepthBuffer;
 
@@ -1047,7 +1047,7 @@ bool DX11Helper::GenerateDepthStencilStateDesc(DepthStencilDesc DSDesc, DX11Pipe
 	return true;
 }
 
-bool DX11Helper::GenerateBlendStateDesc(BlendDesc blendDesc, DX11PipelineStateObject * PSO)
+bool DX11Helper::GenerateBlendStateDesc(BlendDesc blendDesc, DX11PipelineStateObject* PSO)
 {
 	// @TODO: Separate alpha and RGB blend operation
 	for (size_t i = 0; i < 8; i++)
@@ -1065,7 +1065,7 @@ bool DX11Helper::GenerateBlendStateDesc(BlendDesc blendDesc, DX11PipelineStateOb
 	return true;
 }
 
-bool DX11Helper::GenerateRasterizerStateDesc(RasterizerDesc rasterizerDesc, DX11PipelineStateObject * PSO)
+bool DX11Helper::GenerateRasterizerStateDesc(RasterizerDesc rasterizerDesc, DX11PipelineStateObject* PSO)
 {
 	PSO->m_PrimitiveTopology = GetPrimitiveTopology(rasterizerDesc.m_PrimitiveTopology);
 	PSO->m_RasterizerDesc.AntialiasedLineEnable = false;
@@ -1089,7 +1089,7 @@ bool DX11Helper::GenerateRasterizerStateDesc(RasterizerDesc rasterizerDesc, DX11
 	return true;
 }
 
-bool DX11Helper::GenerateViewportStateDesc(ViewportDesc viewportDesc, DX11PipelineStateObject * PSO)
+bool DX11Helper::GenerateViewportStateDesc(ViewportDesc viewportDesc, DX11PipelineStateObject* PSO)
 {
 	PSO->m_Viewport.Width = viewportDesc.m_Width;
 	PSO->m_Viewport.Height = viewportDesc.m_Height;
@@ -1101,7 +1101,7 @@ bool DX11Helper::GenerateViewportStateDesc(ViewportDesc viewportDesc, DX11Pipeli
 	return true;
 }
 
-bool DX11Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderStage shaderStage, const ShaderFilePath & shaderFilePath)
+bool DX11Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderStage shaderStage, const ShaderFilePath& shaderFilePath)
 {
 	const char* l_shaderTypeName;
 
