@@ -121,7 +121,7 @@ namespace InnoType
 		bool m_UseDepthBuffer = false;
 		bool m_AllowDepthWrite = false;
 		ComparisionFunction m_DepthComparisionFunction = ComparisionFunction::Never;
-		bool m_AllowDepthClamp = true;
+		bool m_AllowDepthClamp = false;
 
 		bool m_UseStencilBuffer = false;
 		bool m_AllowStencilWrite = false;
