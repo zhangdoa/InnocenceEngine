@@ -30,6 +30,7 @@ bool OpaquePass::Setup()
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthClamp = true;
 
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowStencilWrite = true;
@@ -179,12 +180,12 @@ bool OpaquePass::Terminate()
 	return true;
 }
 
-RenderPassDataComponent * OpaquePass::GetRPDC()
+RenderPassDataComponent* OpaquePass::GetRPDC()
 {
 	return m_RPDC;
 }
 
-ShaderProgramComponent * OpaquePass::GetSPC()
+ShaderProgramComponent* OpaquePass::GetSPC()
 {
 	return m_SPC;
 }
