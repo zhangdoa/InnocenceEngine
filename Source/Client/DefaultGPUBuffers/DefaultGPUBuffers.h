@@ -8,8 +8,6 @@ namespace DefaultGPUBuffers
 		PerFrame,
 		Mesh,
 		Material,
-		VolumetricFogPassMesh,
-		VolumetricFogPassMaterial,
 		PointLight,
 		SphereLight,
 		CSM,

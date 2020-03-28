@@ -34,6 +34,12 @@ float mie_Schlick(float cosTheta, float g)
 	return nom / denom;
 }
 
+//[https://www.alanzucconi.com/2017/10/10/atmospheric-scattering-3/]
+float3 rayleigh_coeff(float3 rgb)
+{
+	return rgb * float3(0.00000519673, 0.0000121427, 0.0000296453);
+}
+
 #define iSteps 16
 #define jSteps 8
 
@@ -45,11 +51,11 @@ float2 raySphereIntersection(float3 eyePos, float3 rayDir, float shpereRadius)
 	float a = dot(rayDir, rayDir);
 	float b = 2.0 * dot(rayDir, eyePos);
 	float c = dot(eyePos, eyePos) - (shpereRadius * shpereRadius);
-	float d = (b*b) - 4.0*a*c;
+	float d = (b * b) - 4.0 * a * c;
 	if (d < 0.0) return float2(1e5, -1e5);
 	return float2(
-		(-b - sqrt(d)) / (2.0*a),
-		(-b + sqrt(d)) / (2.0*a)
+		(-b - sqrt(d)) / (2.0 * a),
+		(-b + sqrt(d)) / (2.0 * a)
 		);
 }
 

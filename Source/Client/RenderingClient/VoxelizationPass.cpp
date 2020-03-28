@@ -7,14 +7,6 @@ INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 
 using namespace DefaultGPUBuffers;
 
-struct VoxelizationConstantBuffer
-{
-	Vec4 volumeCenter;
-	Vec4 volumeExtend;
-	Vec4 voxelResolution;
-	Vec4 padding;
-};
-
 namespace VoxelizationPass
 {
 	bool setupVoxelizationPass();
@@ -23,7 +15,7 @@ namespace VoxelizationPass
 	bool voxelization();
 	bool visualization();
 
-	GPUBufferDataComponent* m_voxelizationGBDC;
+	GPUBufferDataComponent* m_voxelizationCBufferGBDC;
 
 	RenderPassDataComponent* m_voxelizationRPDC;
 	ShaderProgramComponent* m_voxelizationSPC;
@@ -36,10 +28,12 @@ namespace VoxelizationPass
 
 bool VoxelizationPass::setupVoxelizationPass()
 {
-	m_voxelizationGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("VoxelizationPassGPUBuffer/");
-	m_voxelizationGBDC->m_ElementCount = 1;
-	m_voxelizationGBDC->m_ElementSize = sizeof(VoxelizationConstantBuffer);
-	m_voxelizationGBDC->m_BindingPoint = 12;
+	m_voxelizationCBufferGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("VoxelizationPassGPUBuffer/");
+	m_voxelizationCBufferGBDC->m_ElementCount = 1;
+	m_voxelizationCBufferGBDC->m_ElementSize = sizeof(VoxelizationConstantBuffer);
+	m_voxelizationCBufferGBDC->m_BindingPoint = 11;
+
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_voxelizationCBufferGBDC);
 
 	////
 	m_voxelizationSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("VoxelizationPass/");
@@ -157,8 +151,6 @@ bool VoxelizationPass::Setup()
 
 bool VoxelizationPass::Initialize()
 {
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_voxelizationGBDC);
-
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_voxelizationSPC);
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_voxelizationRPDC);
 
@@ -179,7 +171,7 @@ bool VoxelizationPass::voxelization()
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_voxelizationRPDC);
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_voxelizationRPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_voxelizationRPDC, ShaderStage::Geometry, m_voxelizationGBDC->m_ResourceBinder, 3, 9, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_voxelizationRPDC, ShaderStage::Geometry, m_voxelizationCBufferGBDC->m_ResourceBinder, 3, 9, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_voxelizationRPDC, ShaderStage::Pixel, m_voxelizationRPDC->m_RenderTargetsResourceBinders[0], 4, 0, Accessibility::ReadWrite);
 
 	auto& l_drawCallInfo = g_pModuleManager->getRenderingFrontend()->getDrawCallInfo();
@@ -217,7 +209,7 @@ bool VoxelizationPass::visualization()
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_visualizationRPDC, ShaderStage::Vertex, m_voxelizationRPDC->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_visualizationRPDC, ShaderStage::Geometry, l_PerFrameCBufferGBDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_visualizationRPDC, ShaderStage::Geometry, m_voxelizationGBDC->m_ResourceBinder, 2, 9, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_visualizationRPDC, ShaderStage::Geometry, m_voxelizationCBufferGBDC->m_ResourceBinder, 2, 9, Accessibility::ReadOnly);
 
 	g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_visualizationRPDC, voxelizationResolution * voxelizationResolution * voxelizationResolution);
 
@@ -230,7 +222,6 @@ bool VoxelizationPass::visualization()
 
 bool VoxelizationPass::PrepareCommandList()
 {
-	auto l_p = InnoMath::generateOrthographicMatrix(-1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 2.0f);
 	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getTotalSceneAABB();
 
 	VoxelizationConstantBuffer l_voxelPassCB;
@@ -238,7 +229,7 @@ bool VoxelizationPass::PrepareCommandList()
 	l_voxelPassCB.volumeExtend = l_sceneAABB.m_extend;
 	l_voxelPassCB.voxelResolution = Vec4((float)voxelizationResolution, (float)voxelizationResolution, (float)voxelizationResolution, 1.0f);
 
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_voxelizationGBDC, &l_voxelPassCB);
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_voxelizationCBufferGBDC, &l_voxelPassCB);
 
 	voxelization();
 	visualization();

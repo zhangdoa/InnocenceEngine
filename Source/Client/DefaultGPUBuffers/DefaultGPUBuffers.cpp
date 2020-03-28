@@ -8,8 +8,6 @@ namespace DefaultGPUBuffers
 	GPUBufferDataComponent* m_PerFrameCBufferGBDC;
 	GPUBufferDataComponent* m_MeshGBDC;
 	GPUBufferDataComponent* m_MaterialGBDC;
-	GPUBufferDataComponent* m_VolumetricFogPassMeshGBDC;
-	GPUBufferDataComponent* m_VolumetricFogPassMaterialGBDC;
 	GPUBufferDataComponent* m_PointLightGBDC;
 	GPUBufferDataComponent* m_SphereLightGBDC;
 	GPUBufferDataComponent* m_CSMGBDC;
@@ -49,20 +47,6 @@ bool DefaultGPUBuffers::Initialize()
 	m_MaterialGBDC->m_BindingPoint = 2;
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_MaterialGBDC);
-
-	m_VolumetricFogPassMeshGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("VolumetricFogPassPerObjectCBuffer/");
-	m_VolumetricFogPassMeshGBDC->m_ElementCount = 512;
-	m_VolumetricFogPassMeshGBDC->m_ElementSize = sizeof(PerObjectConstantBuffer);
-	m_VolumetricFogPassMeshGBDC->m_BindingPoint = 1;
-
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_VolumetricFogPassMeshGBDC);
-
-	m_VolumetricFogPassMaterialGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("VolumetricFogPassMaterialCBuffer/");
-	m_VolumetricFogPassMaterialGBDC->m_ElementCount = 512;
-	m_VolumetricFogPassMaterialGBDC->m_ElementSize = sizeof(MaterialConstantBuffer);
-	m_VolumetricFogPassMaterialGBDC->m_BindingPoint = 2;
-
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_VolumetricFogPassMaterialGBDC);
 
 	m_PointLightGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("PointLightCBuffer/");
 	m_PointLightGBDC->m_ElementCount = l_RenderingCapability.maxPointLights;
@@ -167,7 +151,7 @@ bool DefaultGPUBuffers::Terminate()
 	return true;
 }
 
-GPUBufferDataComponent * DefaultGPUBuffers::GetGPUBufferDataComponent(GPUBufferUsageType usageType)
+GPUBufferDataComponent* DefaultGPUBuffers::GetGPUBufferDataComponent(GPUBufferUsageType usageType)
 {
 	GPUBufferDataComponent* l_result;
 
@@ -178,10 +162,6 @@ GPUBufferDataComponent * DefaultGPUBuffers::GetGPUBufferDataComponent(GPUBufferU
 	case GPUBufferUsageType::Mesh: l_result = m_MeshGBDC;
 		break;
 	case GPUBufferUsageType::Material: l_result = m_MaterialGBDC;
-		break;
-	case GPUBufferUsageType::VolumetricFogPassMesh: l_result = m_VolumetricFogPassMeshGBDC;
-		break;
-	case GPUBufferUsageType::VolumetricFogPassMaterial: l_result = m_VolumetricFogPassMaterialGBDC;
 		break;
 	case GPUBufferUsageType::PointLight: l_result = m_PointLightGBDC;
 		break;

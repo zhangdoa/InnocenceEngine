@@ -88,6 +88,14 @@ struct alignas(16) GIConstantBuffer
 	Vec4 irradianceVolumeOffset;
 };
 
+struct alignas(16) VoxelizationConstantBuffer
+{
+	Vec4 volumeCenter;
+	Vec4 volumeExtend;
+	Vec4 voxelResolution;
+	Vec4 padding;
+};
+
 struct DrawCallInfo
 {
 	MeshDataComponent* mesh;
@@ -118,7 +126,7 @@ struct Surfel
 	Vec4 albedo;
 	Vec4 MRAT;
 
-	bool operator==(const Surfel &other) const
+	bool operator==(const Surfel& other) const
 	{
 		return (pos == other.pos);
 	}
@@ -134,7 +142,7 @@ struct Brick
 	uint32_t surfelRangeBegin;
 	uint32_t surfelRangeEnd;
 
-	bool operator==(const Brick &other) const
+	bool operator==(const Brick& other) const
 	{
 		return (boundBox.m_center == other.boundBox.m_center);
 	}
@@ -145,7 +153,7 @@ struct BrickFactor
 	float basisWeight;
 	uint32_t brickIndex;
 
-	bool operator==(const BrickFactor &other) const
+	bool operator==(const BrickFactor& other) const
 	{
 		return (brickIndex == other.brickIndex);
 	}

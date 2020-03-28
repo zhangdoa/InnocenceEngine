@@ -8,7 +8,9 @@ float PCFResolver(float3 projCoords, Texture2DArray shadowMap, int index, float 
 	{
 		for (int y = -1; y <= 1; ++y)
 		{
-			float pcfDepth = shadowMap.Sample(SampleTypePoint, float3(projCoords.xy + float2(x, y) * texelSize, index)).r;
+			float3 coord = float3(projCoords.xy + float2(x, y) * texelSize, (float)index);
+			float4 shadowSample = shadowMap.SampleLevel(SampleTypePoint, coord, 0);
+			float pcfDepth = shadowSample.r;
 			shadow += currentDepth > pcfDepth ? 1.0 : 0.0;
 		}
 	}
@@ -34,7 +36,7 @@ float VSMKernel(float4 shadowMapValue, float currentDepth)
 float VSMResolver(float3 projCoords, Texture2DArray shadowMap, int index, float currentDepth)
 {
 	// VSM
-	float4 shadowMapValue = shadowMap.Sample(SampleTypePoint, float3(projCoords.xy, index));
+	float4 shadowMapValue = shadowMap.SampleLevel(SampleTypePoint, float3(projCoords.xy, index), 0);
 
 	float shadow = VSMKernel(shadowMapValue, currentDepth);
 	return shadow;
