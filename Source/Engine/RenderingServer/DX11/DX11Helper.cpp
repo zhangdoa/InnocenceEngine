@@ -1044,6 +1044,8 @@ bool DX11Helper::GenerateDepthStencilStateDesc(DepthStencilDesc DSDesc, DX11Pipe
 	PSO->m_DepthStencilDesc.BackFace.StencilPassOp = GetStencilOperation(DSDesc.m_BackFaceStencilPassOperation);
 	PSO->m_DepthStencilDesc.BackFace.StencilFunc = GetComparisionFunction(DSDesc.m_BackFaceStencilComparisionFunction);
 
+	PSO->m_RasterizerDesc.DepthClipEnable = DSDesc.m_AllowDepthClamp;
+
 	return true;
 }
 
@@ -1079,7 +1081,6 @@ bool DX11Helper::GenerateRasterizerStateDesc(RasterizerDesc rasterizerDesc, DX11
 	}
 	PSO->m_RasterizerDesc.DepthBias = 0;
 	PSO->m_RasterizerDesc.DepthBiasClamp = 0; // @TODO: Depth Clamp
-	PSO->m_RasterizerDesc.DepthClipEnable = false;
 	PSO->m_RasterizerDesc.FillMode = GetRasterizerFillMode(rasterizerDesc.m_RasterizerFillMode);
 	PSO->m_RasterizerDesc.FrontCounterClockwise = (rasterizerDesc.m_RasterizerFaceWinding == RasterizerFaceWinding::CCW);
 	PSO->m_RasterizerDesc.MultisampleEnable = rasterizerDesc.m_AllowMultisample;
