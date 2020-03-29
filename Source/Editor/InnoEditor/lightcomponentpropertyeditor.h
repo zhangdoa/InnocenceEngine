@@ -27,9 +27,9 @@ public:
 
 private:
 	QLabel* m_colorLabel;
-	ComboLabelText* m_colorR;
-	ComboLabelText* m_colorG;
-	ComboLabelText* m_colorB;
+    ComboLabelText* m_colorR;
+    ComboLabelText* m_colorG;
+    ComboLabelText* m_colorB;
 
     QLabel* m_shapeLabel;
     ComboLabelText* m_shapeX;
@@ -38,15 +38,13 @@ private:
     ComboLabelText* m_shapeW;
 
 	QLabel* m_luminousFluxLabel;
-	ComboLabelText* m_LuminousFlux;
+    ComboLabelText* m_LuminousFlux;
 
 	QLabel* m_colorTemperatureLabel;
-	ComboLabelText* m_colorTemperature;
+    ComboLabelText* m_colorTemperature;
 
     QLabel* m_useColorTemperatureLabel;
 	QCheckBox* m_useColorTemperature;
-
-	QValidator* m_validator;
 
 	LightComponent* m_component;
 

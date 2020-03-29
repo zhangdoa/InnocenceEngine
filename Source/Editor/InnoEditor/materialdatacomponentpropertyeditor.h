@@ -33,8 +33,6 @@ private:
     ComboLabelText* m_AO;
     ComboLabelText* m_thickness;
 
-    QValidator* m_validator;
-
     MaterialDataComponent* m_component;
 
 public slots:

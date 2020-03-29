@@ -9,9 +9,6 @@ void LightComponentPropertyEditor::initialize()
 	m_gridLayout = new QGridLayout();
 	m_gridLayout->setMargin(4);
 
-	m_validator = new QDoubleValidator(-2147483647, 2147483647, 4);
-	m_validator->setProperty("notation", QDoubleValidator::StandardNotation);
-
 	m_title = new QLabel("LightComponent");
 	m_title->setStyleSheet(
 		"background-repeat: no-repeat;"

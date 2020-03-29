@@ -38,8 +38,6 @@ private:
 	ComboLabelText* m_scaleY;
 	ComboLabelText* m_scaleZ;
 
-	QValidator* m_validator;
-
 	TransformComponent* m_component;
 
 public slots:

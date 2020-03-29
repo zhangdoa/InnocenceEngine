@@ -26,6 +26,24 @@ void VisibleComponentPropertyEditor::initialize()
                 "background-position: left;"
                 );
 
+    m_visibilityType = new ComboLabelText();
+    m_visibilityType->Initialize("VisibilityType");
+
+    m_meshPrimitiveTopology = new ComboLabelText();
+    m_meshPrimitiveTopology->Initialize("MeshPrimitiveTopology");
+
+    m_textureWrapMethod = new ComboLabelText();
+    m_textureWrapMethod->Initialize("TextureWrapMethod");
+
+    m_meshUsage = new ComboLabelText();
+    m_meshUsage->Initialize("MeshUsage");
+
+    m_meshSource = new ComboLabelText();
+    m_meshSource->Initialize("MeshSource");
+
+    m_proceduralMeshShape = new ComboLabelText();
+    m_proceduralMeshShape->Initialize("ProceduralMeshShape");
+
     m_modelNameLabel = new QLabel("ModelName");
 
     m_chooseModelButton = new QPushButton();
@@ -58,6 +76,30 @@ void VisibleComponentPropertyEditor::initialize()
     m_gridLayout->addWidget(m_title, row, 0, 1, 7);
     row++;
 
+    m_gridLayout->addWidget(m_visibilityType->GetLabelWidget(), row, 0, 1, 1);
+    m_gridLayout->addWidget(m_visibilityType->GetTextWidget(), row, 1, 1, 1);
+    row++;
+
+    m_gridLayout->addWidget(m_meshPrimitiveTopology->GetLabelWidget(), row, 0, 1, 1);
+    m_gridLayout->addWidget(m_meshPrimitiveTopology->GetTextWidget(), row, 1, 1, 1);
+    row++;
+
+    m_gridLayout->addWidget(m_textureWrapMethod->GetLabelWidget(), row, 0, 1, 1);
+    m_gridLayout->addWidget(m_textureWrapMethod->GetTextWidget(), row, 1, 1, 1);
+    row++;
+
+    m_gridLayout->addWidget(m_meshUsage->GetLabelWidget(), row, 0, 1, 1);
+    m_gridLayout->addWidget(m_meshUsage->GetTextWidget(), row, 1, 1, 1);
+    row++;
+
+    m_gridLayout->addWidget(m_meshSource->GetLabelWidget(), row, 0, 1, 1);
+    m_gridLayout->addWidget(m_meshSource->GetTextWidget(), row, 1, 1, 1);
+    row++;
+
+    m_gridLayout->addWidget(m_proceduralMeshShape->GetLabelWidget(), row, 0, 1, 1);
+    m_gridLayout->addWidget(m_proceduralMeshShape->GetTextWidget(), row, 1, 1, 1);
+    row++;
+
     m_gridLayout->addWidget(m_modelNameLabel, row, 0, 1, 7);
     row++;
 
@@ -67,10 +109,17 @@ void VisibleComponentPropertyEditor::initialize()
     m_gridLayout->addWidget(m_modelListLabel, row, 0, 1, 7);
     row++;
 
-    m_gridLayout->addWidget(m_modelList, row, 1, 1, 1);
+    m_gridLayout->addWidget(m_modelList, row, 1, 1, 7);
     row++;
 
     m_gridLayout->addWidget(m_line, row, 0, 1, 7);
+
+    connect(m_visibilityType, SIGNAL(ValueChanged()), this, SLOT(SetVisibilityType()));
+    connect(m_meshPrimitiveTopology, SIGNAL(ValueChanged()), this, SLOT(SetMeshPrimitiveTopology()));
+    connect(m_textureWrapMethod, SIGNAL(ValueChanged()), this, SLOT(SetTextureWrapMethod()));
+    connect(m_meshUsage, SIGNAL(ValueChanged()), this, SLOT(SetMeshUsage()));
+    connect(m_meshSource, SIGNAL(ValueChanged()), this, SLOT(SetMeshSource()));
+    connect(m_proceduralMeshShape, SIGNAL(ValueChanged()), this, SLOT(SetProceduralMeshShape()));
 
     m_gridLayout->setHorizontalSpacing(m_horizontalSpacing);
     m_gridLayout->setVerticalSpacing(m_verticalSpacing);
@@ -86,9 +135,45 @@ void VisibleComponentPropertyEditor::edit(void *component)
 
     m_modelNameLabel->setText(m_component->m_modelFileName.c_str());
 
+    GetVisibilityType();
+    GetMeshPrimitiveTopology();
+    GetTextureWrapMethod();
+    GetMeshUsage();
+    GetMeshSource();
+    GetProceduralMeshShape();
     GetModelMap();
 
     this->show();
+}
+
+void VisibleComponentPropertyEditor::GetVisibilityType()
+{
+    m_visibilityType->SetFromInt((int)m_component->m_visibilityType);
+}
+
+void VisibleComponentPropertyEditor::GetMeshPrimitiveTopology()
+{
+    m_meshPrimitiveTopology->SetFromInt((int)m_component->m_meshPrimitiveTopology);
+}
+
+void VisibleComponentPropertyEditor::GetTextureWrapMethod()
+{
+    m_textureWrapMethod->SetFromInt((int)m_component->m_textureWrapMethod);
+}
+
+void VisibleComponentPropertyEditor::GetMeshUsage()
+{
+    m_meshUsage->SetFromInt((int)m_component->m_meshUsage);
+}
+
+void VisibleComponentPropertyEditor::GetMeshSource()
+{
+    m_meshSource->SetFromInt((int)m_component->m_meshSource);
+}
+
+void VisibleComponentPropertyEditor::GetProceduralMeshShape()
+{
+    m_proceduralMeshShape->SetFromInt((int)m_component->m_proceduralMeshShape);
 }
 
 void VisibleComponentPropertyEditor::tableItemClicked(int row, int column)
@@ -114,6 +199,8 @@ void VisibleComponentPropertyEditor::GetModelMap()
 {
     if (!m_component)
         return;
+    if (!m_component->m_model)
+        return;
 
     m_modelList->setRowCount((int)m_component->m_model->meshMaterialPairs.m_count);
 
@@ -136,6 +223,36 @@ void VisibleComponentPropertyEditor::GetModelMap()
 
         index++;
     }
+}
+
+void VisibleComponentPropertyEditor::SetVisibilityType()
+{
+    m_component->m_visibilityType = VisibilityType(m_visibilityType->GetAsInt());
+}
+
+void VisibleComponentPropertyEditor::SetMeshPrimitiveTopology()
+{
+    m_component->m_meshPrimitiveTopology = MeshPrimitiveTopology(m_meshPrimitiveTopology->GetAsInt());
+}
+
+void VisibleComponentPropertyEditor::SetTextureWrapMethod()
+{
+    m_component->m_textureWrapMethod = TextureWrapMethod(m_textureWrapMethod->GetAsInt());
+}
+
+void VisibleComponentPropertyEditor::SetMeshUsage()
+{
+    m_component->m_meshUsage = MeshUsage(m_meshUsage->GetAsInt());
+}
+
+void VisibleComponentPropertyEditor::SetMeshSource()
+{
+    m_component->m_meshSource = MeshSource(m_meshSource->GetAsInt());
+}
+
+void VisibleComponentPropertyEditor::SetProceduralMeshShape()
+{
+    m_component->m_proceduralMeshShape = ProceduralMeshShape(m_proceduralMeshShape->GetAsInt());
 }
 
 void VisibleComponentPropertyEditor::remove()

@@ -21,27 +21,47 @@ public:
 	void initialize() override;
 	void edit(void* component) override;
 
-    void GetModelMap();
+	void GetVisibilityType();
+	void GetMeshPrimitiveTopology();
+	void GetTextureWrapMethod();
+	void GetMeshUsage();
+	void GetMeshSource();
+	void GetProceduralMeshShape();
+	void GetModelMap();
 
 private:
-    QLabel* m_modelNameLabel;
-    QPushButton* m_chooseModelButton;
-    QLabel* m_modelListLabel;
-    QTableWidget* m_modelList;
-    MaterialDataComponentPropertyEditor* m_MDCEditor;
-    InnoDirectoryViewer* m_dirViewer;
+	ComboLabelText* m_visibilityType;
+	ComboLabelText* m_meshPrimitiveTopology;
+	ComboLabelText* m_textureWrapMethod;
+	ComboLabelText* m_meshUsage;
+	ComboLabelText* m_meshSource;
+	ComboLabelText* m_proceduralMeshShape;
+
+	QLabel* m_modelNameLabel;
+	QPushButton* m_chooseModelButton;
+	QLabel* m_modelListLabel;
+	QTableWidget* m_modelList;
+
+	MaterialDataComponentPropertyEditor* m_MDCEditor;
+	InnoDirectoryViewer* m_dirViewer;
 
 	VisibleComponent* m_component;
 
 public slots:
+	void SetVisibilityType();
+	void SetMeshPrimitiveTopology();
+	void SetTextureWrapMethod();
+	void SetMeshUsage();
+	void SetMeshSource();
+	void SetProceduralMeshShape();
 
-    void remove() override;
+	void remove() override;
 
 private slots:
-    void onCustomContextMenuRequested(const QPoint& pos);
-    void showContextMenu(const QPoint& globalPos);
-    void tableItemClicked(int row, int column);
-    void ChooseModel();
+	void onCustomContextMenuRequested(const QPoint& pos);
+	void showContextMenu(const QPoint& globalPos);
+	void tableItemClicked(int row, int column);
+	void ChooseModel();
 };
 
 #endif // VISIBLECOMPONENTPROPERTYEDITOR_H
