@@ -46,8 +46,8 @@
           "LocalTransformVector": {
             "Position": {
               "X": 0.0,
-              "Y": 4.0,
-              "Z": 6.0
+              "Y": 6.0,
+              "Z": 8.0
             },
             "Rotation": {
               "W": 0.9600498676300049,
@@ -61,7 +61,7 @@
               "Z": 1.0
             }
           },
-          "ParentTransformComponentEntityName": "playerCharacter"
+          "ParentTransformComponentEntityName": "RootTransform"
         },
         {
           "ComponentType": 3,
@@ -223,7 +223,7 @@
           "LocalTransformVector": {
             "Position": {
               "X": 0.0,
-              "Y": 0.0,
+              "Y": 2.0,
               "Z": 0.0
             },
             "Rotation": {
@@ -246,8 +246,8 @@
           "MeshSource": 1,
           "MeshUsage": 2,
           "ModelFileName": "",
-          "ProceduralMeshShape": 10,
-          "SimulatePhysics": false,
+          "ProceduralMeshShape": 6,
+          "SimulatePhysics": true,
           "TextureWrapMethod": 2,
           "VisibilityType": 2
         }
