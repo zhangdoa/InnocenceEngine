@@ -7,7 +7,7 @@
           "LocalTransformVector": {
             "Position": {
               "X": 0.0,
-              "Y": 0.1,
+              "Y": 0.10000000149011612,
               "Z": 0.0
             },
             "Rotation": {
@@ -18,7 +18,7 @@
             },
             "Scale": {
               "X": 200.0,
-              "Y": 0.1,
+              "Y": 0.10000000149011612,
               "Z": 200.0
             }
           },
@@ -28,16 +28,16 @@
           "ComponentType": 1,
           "MeshPrimitiveTopology": 2,
           "MeshSource": 1,
-          "ProceduralMeshShape": 6,
           "MeshUsage": 1,
           "ModelFileName": "",
+          "ProceduralMeshShape": 6,
+          "SimulatePhysics": true,
           "TextureWrapMethod": 1,
-          "VisibilityType": 2,
-          "SimulatePhysics": true
+          "VisibilityType": 2
         }
       ],
-      "UUID": "d4229e4616eb07cc6e5e044ffe0fd77b",
-      "ObjectName": "landscape"
+      "ObjectName": "landscape",
+      "UUID": 4428283062483006586
     },
     {
       "ChildrenComponents": [
@@ -46,12 +46,12 @@
           "LocalTransformVector": {
             "Position": {
               "X": 0.0,
-              "Y": 3.0,
-              "Z": 2.0
+              "Y": 4.0,
+              "Z": 6.0
             },
             "Rotation": {
-              "W": 0.9238795042037964,
-              "X": -0.3826834559440613,
+              "W": 0.9600498676300049,
+              "X": -0.2798290252685547,
               "Y": 0.0,
               "Z": 0.0
             },
@@ -61,19 +61,19 @@
               "Z": 1.0
             }
           },
-          "ParentTransformComponentEntityName": "RootTransform"
+          "ParentTransformComponentEntityName": "playerCharacter"
         },
         {
           "ComponentType": 3,
           "FOVX": 90.0,
-          "WidthScale": 16.0,
           "HeightScale": 9.0,
-          "zNear": 0.1,
-          "zFar": 2000.0
+          "WidthScale": 16.0,
+          "zFar": 2000.0,
+          "zNear": 0.10000000149011612
         }
       ],
-      "UUID": "1e6af8f1c63c5165990ba1aca26a72ab",
-      "ObjectName": "playerCharacterCamera"
+      "ObjectName": "playerCharacterCamera",
+      "UUID": 2575707556763736293
     },
     {
       "ChildrenComponents": [
@@ -100,27 +100,27 @@
           "ParentTransformComponentEntityName": "RootTransform"
         },
         {
-          "RGBColor": {
-            "W": 1.0,
-            "Z": 1.0,
-            "Y": 1.0,
-            "X": 1.0
-          },
+          "ColorTemperature": 5780.0,
           "ComponentType": 2,
           "LightType": 0,
+          "LuminousFlux": 100000.0,
+          "RGBColor": {
+            "W": 1.0,
+            "X": 1.0,
+            "Y": 0.9507150650024414,
+            "Z": 0.9043404459953308
+          },
           "Shape": {
             "W": 1.0,
-            "Z": 0.0,
+            "X": 0.0,
             "Y": 0.0,
-            "X": 0.0
+            "Z": 0.0
           },
-          "ColorTemperature": 5780.0,
-          "LuminousFlux": 100000.0,
           "UseColorTemperature": true
         }
       ],
-      "UUID": "3a467d719bce3caa3337c860e378b19e",
-      "ObjectName": "sun"
+      "ObjectName": "sun",
+      "UUID": 2524122071882590098
     },
     {
       "ChildrenComponents": [
@@ -147,27 +147,27 @@
           "ParentTransformComponentEntityName": "RootTransform"
         },
         {
-          "RGBColor": {
-            "W": 1.0,
-            "Z": 1.0,
-            "Y": 1.0,
-            "X": 1.0
-          },
+          "ColorTemperature": 5780.0,
           "ComponentType": 2,
           "LightType": 1,
+          "LuminousFlux": 100.0,
+          "RGBColor": {
+            "W": 1.0,
+            "X": 1.0,
+            "Y": 1.0,
+            "Z": 1.0
+          },
           "Shape": {
             "W": 1.0,
-            "Z": 0.0,
+            "X": 11.516471862792969,
             "Y": 0.0,
-            "X": 0.0
+            "Z": 0.0
           },
-          "ColorTemperature": 5780.0,
-          "LuminousFlux": 100.0,
           "UseColorTemperature": false
         }
       ],
-      "UUID": "a529a6be8035585968e330d4893b1a44",
-      "ObjectName": "pointLight"
+      "ObjectName": "pointLight",
+      "UUID": 2410544002913243985
     },
     {
       "ChildrenComponents": [
@@ -194,28 +194,67 @@
           "ParentTransformComponentEntityName": "RootTransform"
         },
         {
-          "RGBColor": {
-            "W": 1.0,
-            "Z": 1.0,
-            "Y": 1.0,
-            "X": 1.0
-          },
+          "ColorTemperature": 5780.0,
           "ComponentType": 2,
           "LightType": 3,
+          "LuminousFlux": 40.0,
+          "RGBColor": {
+            "W": 1.0,
+            "X": 1.0,
+            "Y": 1.0,
+            "Z": 1.0
+          },
           "Shape": {
             "W": 1.0,
-            "Z": 0.0,
+            "X": 4.0,
             "Y": 0.0,
-            "X": 4.0
+            "Z": 0.0
           },
-          "ColorTemperature": 5780.0,
-          "LuminousFlux": 40.0,
           "UseColorTemperature": false
         }
       ],
-      "UUID": "b31712f4ef9af94e99f36b796c81ed5b",
-      "ObjectName": "sphereLight"
+      "ObjectName": "sphereLight",
+      "UUID": 3589155863073056913
+    },
+    {
+      "ChildrenComponents": [
+        {
+          "ComponentType": 0,
+          "LocalTransformVector": {
+            "Position": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Rotation": {
+              "W": 1.0,
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "ParentTransformComponentEntityName": "RootTransform"
+        },
+        {
+          "ComponentType": 1,
+          "MeshPrimitiveTopology": 2,
+          "MeshSource": 1,
+          "MeshUsage": 2,
+          "ModelFileName": "",
+          "ProceduralMeshShape": 10,
+          "SimulatePhysics": false,
+          "TextureWrapMethod": 2,
+          "VisibilityType": 2
+        }
+      ],
+      "ObjectName": "playerCharacter",
+      "UUID": 2454715245036513906
     }
   ],
-  "SceneName": "..//res//scenes//default.InnoScene"
+  "SceneName": "..//Res//Scenes//default.InnoScene"
 }

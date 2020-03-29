@@ -34,7 +34,7 @@
         }
       ],
       "UUID": "f57dce5edc2ef35fdf5dea305789e66",
-      "ObjectName": "playerCharacterCamera"
+      "ObjectName": "playerCharacter"
     },
     {
       "ChildrenComponents": [
