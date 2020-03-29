@@ -21,4 +21,6 @@ public:
 	AABB getStaticSceneAABB() override;
 	AABB getTotalSceneAABB() override;
 	BVHNode* getRootBVHNode() override;
+
+	bool addForce(VisibleComponent* VC, Vec4 force) override;
 };

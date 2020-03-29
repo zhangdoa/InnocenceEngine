@@ -56,4 +56,6 @@ public:
 	virtual AABB getStaticSceneAABB() = 0;
 	virtual AABB getTotalSceneAABB() = 0;
 	virtual BVHNode* getRootBVHNode() = 0;
+
+	virtual bool addForce(VisibleComponent* VC, Vec4 force) = 0;
 };

@@ -26,8 +26,8 @@ namespace PhysXWrapperNS
 	bool update();
 	bool terminate();
 
-	bool createPxSphere(void* component, Vec4 globalPos, float radius, bool isDynamic);
-	bool createPxBox(void* component, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic);
+	bool createPxSphere(PhysicsDataComponent* rhs, Vec4 globalPos, float radius, bool isDynamic);
+	bool createPxBox(PhysicsDataComponent* rhs, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic);
 
 	std::vector<PhysXActor> PhysXActors;
 
@@ -138,31 +138,32 @@ bool PhysXWrapperNS::update()
 			m_allowUpdate = false;
 
 			m_currentTask = g_pModuleManager->getTaskSystem()->submit("PhysXUpdateTask", 3, nullptr, [&]()
-			{
-				gScene->simulate(g_pModuleManager->getTickTime() / 1000.0f);
-				gScene->fetchResults(true);
-
-				for (auto i : PhysXActors)
 				{
-					if (i.isDynamic)
+					gScene->simulate(g_pModuleManager->getTickTime() / 1000.0f);
+					gScene->fetchResults(true);
+
+					for (auto i : PhysXActors)
 					{
-						PxTransform t = i.m_PxRigidActor->getGlobalPose();
-						PxVec3 p = t.p;
-						PxQuat q = t.q;
-
-						auto l_rigidBody = reinterpret_cast<PxRigidDynamic*>(i.m_PxRigidActor);
-
-						if (l_rigidBody->userData)
+						if (i.isDynamic)
 						{
-							auto l_transformComponent = reinterpret_cast<TransformComponent*>(l_rigidBody->userData);
-							l_transformComponent->m_localTransformVector_target.m_pos = Vec4(p.x, p.y, p.z, 1.0f);
-							l_transformComponent->m_localTransformVector_target.m_rot = Vec4(q.x, q.y, q.z, q.w);
-							l_transformComponent->m_localTransformVector = l_transformComponent->m_localTransformVector_target;
+							PxTransform t = i.m_PxRigidActor->getGlobalPose();
+							PxVec3 p = t.p;
+							PxQuat q = t.q;
+
+							auto l_rigidBody = reinterpret_cast<PxRigidDynamic*>(i.m_PxRigidActor);
+
+							if (l_rigidBody->userData)
+							{
+								auto l_PDC = reinterpret_cast<PhysicsDataComponent*>(l_rigidBody->userData);
+								auto l_transformComponent = l_PDC->m_TransformComponent;
+								l_transformComponent->m_localTransformVector_target.m_pos = Vec4(p.x, p.y, p.z, 1.0f);
+								l_transformComponent->m_localTransformVector_target.m_rot = Vec4(q.x, q.y, q.z, q.w);
+								l_transformComponent->m_localTransformVector = l_transformComponent->m_localTransformVector_target;
+							}
 						}
 					}
-				}
-				m_allowUpdate = true;
-			});
+					m_allowUpdate = true;
+				});
 		}
 	}
 
@@ -189,18 +190,18 @@ bool PhysXWrapperNS::terminate()
 	return true;
 }
 
-bool PhysXWrapperNS::createPxSphere(void* component, Vec4 globalPos, float radius, bool isDynamic)
+bool PhysXWrapperNS::createPxSphere(PhysicsDataComponent* rhs, Vec4 globalPos, float radius, bool isDynamic)
 {
 	std::lock_guard<std::mutex> lock{ PhysXWrapperNS::m_mutex };
+	PxRigidActor* l_actor;
 
 	PxShape* shape = gPhysics->createShape(PxSphereGeometry(radius), *gMaterial);
 	PxTransform globalTm(PxVec3(globalPos.x, globalPos.y, globalPos.z));
 
-	PxRigidActor* l_actor;
 	if (isDynamic)
 	{
 		PxRigidDynamic* body = gPhysics->createRigidDynamic(globalTm);
-		body->userData = component;
+		body->userData = rhs;
 		body->attachShape(*shape);
 		PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
 		l_actor = body;
@@ -208,35 +209,36 @@ bool PhysXWrapperNS::createPxSphere(void* component, Vec4 globalPos, float radiu
 	else
 	{
 		PxRigidStatic* body = gPhysics->createRigidStatic(globalTm);
-		body->userData = component;
+		body->userData = rhs;
 		body->attachShape(*shape);
 		l_actor = body;
 	}
 
+	rhs->m_Proxy = l_actor;
 	gScene->addActor(*l_actor);
 	shape->release();
 	PhysXActors.emplace_back(PhysXActor{ isDynamic, l_actor });
-	InnoLogger::Log(LogLevel::Verbose, "PhysXWrapper: PxRigidActor has been created for ", component, ".");
+	InnoLogger::Log(LogLevel::Verbose, "PhysXWrapper: PxRigidActor has been created for ", rhs, ".");
 
 	return true;
 }
 
-bool PhysXWrapperNS::createPxBox(void* component, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic)
+bool PhysXWrapperNS::createPxBox(PhysicsDataComponent* rhs, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic)
 {
 	std::lock_guard<std::mutex> lock{ PhysXWrapperNS::m_mutex };
 
 	if (size.x > 0 && size.y > 0 && size.z > 0)
 	{
+		PxRigidActor* l_actor;
+
 		PxShape* shape = gPhysics->createShape(PxBoxGeometry(size.x, size.y, size.z), *gMaterial);
 
 		PxTransform globalTm(PxVec3(globalPos.x, globalPos.y, globalPos.z), PxQuat(rot.x, rot.y, rot.z, rot.w));
 
-		PxRigidActor* l_actor;
-
 		if (isDynamic)
 		{
 			PxRigidDynamic* body = gPhysics->createRigidDynamic(globalTm);
-			body->userData = component;
+			body->userData = rhs;
 			body->attachShape(*shape);
 			PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
 			l_actor = body;
@@ -244,16 +246,17 @@ bool PhysXWrapperNS::createPxBox(void* component, Vec4 globalPos, Vec4 rot, Vec4
 		else
 		{
 			PxRigidStatic* body = gPhysics->createRigidStatic(globalTm);
-			body->userData = component;
+			body->userData = rhs;
 			body->attachShape(*shape);
 
 			l_actor = body;
 		}
 
+		rhs->m_Proxy = l_actor;
 		gScene->addActor(*l_actor);
 		shape->release();
 		PhysXActors.emplace_back(PhysXActor{ isDynamic, l_actor });
-		InnoLogger::Log(LogLevel::Verbose, "PhysXWrapper: PxRigidActor has been created for ", component, ".");
+		InnoLogger::Log(LogLevel::Verbose, "PhysXWrapper: PxRigidActor has been created for ", rhs, ".");
 	}
 
 	return true;
@@ -279,12 +282,19 @@ bool PhysXWrapper::terminate()
 	return PhysXWrapperNS::terminate();
 }
 
-bool PhysXWrapper::createPxSphere(void* component, Vec4 globalPos, float radius, bool isDynamic)
+bool PhysXWrapper::createPxSphere(PhysicsDataComponent* rhs, Vec4 globalPos, float radius, bool isDynamic)
 {
-	return PhysXWrapperNS::createPxSphere(component, globalPos, radius, isDynamic);
+	return PhysXWrapperNS::createPxSphere(rhs, globalPos, radius, isDynamic);
 }
 
-bool PhysXWrapper::createPxBox(void* component, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic)
+bool PhysXWrapper::createPxBox(PhysicsDataComponent* rhs, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic)
 {
-	return PhysXWrapperNS::createPxBox(component, globalPos, rot, size, isDynamic);
+	return PhysXWrapperNS::createPxBox(rhs, globalPos, rot, size, isDynamic);
+}
+
+bool PhysXWrapper::addForce(PhysicsDataComponent* rhs, Vec4 force)
+{
+	auto l_rigidBody = reinterpret_cast<PxRigidDynamic*>(rhs->m_Proxy);
+	l_rigidBody->addForce(PxVec3(force.x, force.y, force.z), PxForceMode::eVELOCITY_CHANGE);
+	return true;
 }

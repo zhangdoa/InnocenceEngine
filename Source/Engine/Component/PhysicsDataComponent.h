@@ -16,4 +16,5 @@ public:
 	TransformComponent* m_TransformComponent;
 	VisibleComponent* m_VisibleComponent;
 	MeshMaterialPair* m_MeshMaterialPair;
+	void* m_Proxy;
 };

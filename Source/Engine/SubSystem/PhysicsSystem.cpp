@@ -24,7 +24,7 @@ namespace InnoPhysicsSystemNS
 
 	PhysicsDataComponent* generatePhysicsDataComponent(MeshMaterialPair* meshMaterialPair);
 	bool generateAABBInWorldSpace(PhysicsDataComponent* PDC, const Mat4& m);
-	bool generatePhysicsProxy(VisibleComponent* VC);
+	ArrayRangeInfo generatePhysicsProxy(VisibleComponent* VC);
 
 	void updateVisibleSceneBoundary(const AABB& rhs);
 	void updateTotalSceneBoundary(const AABB& rhs);
@@ -51,6 +51,7 @@ namespace InnoPhysicsSystemNS
 	std::vector<PhysicsDataComponent*> m_Components;
 	std::vector<PhysicsDataComponent*> m_IntermediateComponents;
 	std::vector<BVHNode> m_BVHNodes;
+	std::unordered_map<VisibleComponent*, ArrayRangeInfo> m_ComponentOwnerLUT;
 
 	DoubleBuffer<std::vector<CullingData>, true> m_cullingData;
 
@@ -164,8 +165,12 @@ bool InnoPhysicsSystemNS::generateAABBInWorldSpace(PhysicsDataComponent* PDC, co
 	return true;
 }
 
-bool InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent* VC)
+ArrayRangeInfo InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent* VC)
 {
+	ArrayRangeInfo l_result;
+	l_result.m_startOffset = m_Components.size();
+	l_result.m_count = VC->m_model->meshMaterialPairs.m_count;
+
 	auto l_transformComponent = GetComponent(TransformComponent, VC->m_ParentEntity);
 	auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
@@ -190,7 +195,7 @@ bool InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent* VC)
 		{
 			if (l_meshMaterialPair->mesh->m_meshSource == MeshSource::Customized)
 			{
-				PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_rot, l_PDC->m_AABBWS.m_extend, (VC->m_meshUsage == MeshUsage::Dynamic));
+				PhysXWrapper::get().createPxBox(l_PDC, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_rot, l_PDC->m_AABBWS.m_extend, (VC->m_meshUsage == MeshUsage::Dynamic));
 			}
 			else
 			{
@@ -207,7 +212,7 @@ bool InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent* VC)
 				case InnoType::ProceduralMeshShape::Tetrahedron:
 					break;
 				case InnoType::ProceduralMeshShape::Cube:
-					PhysXWrapper::get().createPxBox(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_rot, l_transformComponent->m_localTransformVector_target.m_scale, (VC->m_meshUsage == MeshUsage::Dynamic));
+					PhysXWrapper::get().createPxBox(l_PDC, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_rot, l_transformComponent->m_localTransformVector_target.m_scale, (VC->m_meshUsage == MeshUsage::Dynamic));
 					break;
 				case InnoType::ProceduralMeshShape::Octahedron:
 					break;
@@ -216,7 +221,7 @@ bool InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent* VC)
 				case InnoType::ProceduralMeshShape::Icosahedron:
 					break;
 				case InnoType::ProceduralMeshShape::Sphere:
-					PhysXWrapper::get().createPxSphere(l_transformComponent, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_scale.x, (VC->m_meshUsage == MeshUsage::Dynamic));
+					PhysXWrapper::get().createPxSphere(l_PDC, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_scale.x, (VC->m_meshUsage == MeshUsage::Dynamic));
 					break;
 				default:
 					InnoLogger::Log(LogLevel::Error, "PhysicsSystem: Invalid ProceduralMeshShape!");
@@ -229,7 +234,7 @@ bool InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent* VC)
 		l_PDC->m_ObjectStatus = ObjectStatus::Activated;
 	}
 
-	return true;
+	return l_result;
 }
 
 void InnoPhysicsSystemNS::updateVisibleSceneBoundary(const AABB& rhs)
@@ -685,7 +690,26 @@ BVHNode* InnoPhysicsSystem::getRootBVHNode()
 	return InnoPhysicsSystemNS::m_RootBVHNode;
 }
 
+bool InnoPhysicsSystem::addForce(VisibleComponent* VC, Vec4 force)
+{
+	auto l_result = m_ComponentOwnerLUT.find(VC);
+	if (l_result != m_ComponentOwnerLUT.end())
+	{
+		auto l_rangeInfo = l_result->second;
+
+		for (size_t i = 0; i < l_rangeInfo.m_count; i++)
+		{
+			auto l_PDC = m_Components[l_rangeInfo.m_startOffset + i];
+			PhysXWrapper::get().addForce(l_PDC, force);
+		}
+	}
+	return true;
+}
+
 bool InnoPhysicsSystem::generatePhysicsProxy(VisibleComponent* VC)
 {
-	return InnoPhysicsSystemNS::generatePhysicsProxy(VC);
+	auto l_result = InnoPhysicsSystemNS::generatePhysicsProxy(VC);
+	m_ComponentOwnerLUT.emplace(VC, l_result);
+
+	return true;
 }
