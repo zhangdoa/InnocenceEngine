@@ -27,6 +27,7 @@ SOURCES += \
     innodirectorylistviewer.cpp \
     innodirectorytreeviewer.cpp \
     innodirectoryviewer.cpp \
+    innomenubar.cpp \
     lightcomponentpropertyeditor.cpp \
         main.cpp \
         mainwindow.cpp \
@@ -46,6 +47,7 @@ HEADERS += \
     innodirectorylistviewer.h \
     innodirectorytreeviewer.h \
     innodirectoryviewer.h \
+    innomenubar.h \
     lightcomponentpropertyeditor.h \
         mainwindow.h \
     innoviewport.h \
