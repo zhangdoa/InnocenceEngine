@@ -6,33 +6,30 @@
 
 class AdjustLabel : public QLabel
 {
-	Q_OBJECT
+    Q_OBJECT
 public:
-	explicit AdjustLabel(QWidget* parent = nullptr);
-	void Initialize(QLineEdit* lineEdit);
+    explicit AdjustLabel(QWidget* parent = nullptr);
+    void Initialize(QLineEdit* lineEdit, bool isInt = false);
 protected:
-	virtual void mouseMoveEvent(QMouseEvent* event);
-	virtual void leaveEvent(QEvent* event);
+    virtual void mouseMoveEvent(QMouseEvent* event);
+    virtual void leaveEvent(QEvent* event);
 
 private:
-	void MouseEntered();
-	QPoint GetMousePosLocal();
-	float GetTextBoxValue();
-	void SetTextBoxValue(float value);
-	void RepositionMouseOnScreenEdge();
-	float CalculateDelta();
-	void Adjust();
+    void MouseEntered();
+    QPoint GetMousePosLocal();
+    void RepositionMouseOnScreenEdge();
+    void Adjust();
 
-	QLineEdit* m_lineEdit;
-	bool m_isMouseHovering;
-	bool m_isMouseDragged;
-	float m_lastMousePos;
-	float m_mouseDelta;
-	float m_currentTexBoxValue;
-	float m_sensitivity = 0.05f;
+    QLineEdit* m_lineEdit;
+    bool m_isMouseHovering;
+    bool m_isMouseDragged;
+    float m_lastMousePos;
+    float m_mouseDelta;
+    float m_currentTexBoxValue;
+    bool m_isInt;
 
 signals:
-	void Adjusted();
+    void Adjusted();
 
 public slots:
 };

@@ -14,7 +14,7 @@ void ComboLabelText::Initialize(QString labelText)
 	m_text = new QLineEdit();
 	m_text->setValidator(m_validator);
 
-	m_label = new AdjustLabel();
+    m_label = new AdjustLabel();
 	m_label->setText(labelText);
 	m_label->setAlignment(Qt::AlignRight);
 	m_label->Initialize(m_text);
@@ -33,7 +33,7 @@ void ComboLabelText::AlignLabelToTheRight()
 	m_label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 }
 
-AdjustLabel*ComboLabelText::GetLabelWidget()
+AdjustLabel* ComboLabelText::GetLabelWidget()
 {
 	return m_label;
 }
@@ -51,6 +51,16 @@ float ComboLabelText::GetAsFloat()
 void ComboLabelText::SetFromFloat(float value)
 {
 	m_text->setText(QString::number((double)value));
+}
+
+int ComboLabelText::GetAsInt()
+{
+    return m_text->text().toInt();
+}
+
+void ComboLabelText::SetFromInt(int value)
+{
+    m_text->setText(QString::number((double)value));
 }
 
 void ComboLabelText::TextGotEdited()

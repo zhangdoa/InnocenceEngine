@@ -9,30 +9,33 @@
 
 class ComboLabelText : public QWidget
 {
-	Q_OBJECT
+    Q_OBJECT
 public:
-	explicit ComboLabelText(QWidget *parent = nullptr);
+    explicit ComboLabelText(QWidget *parent = nullptr);
 
-	void Initialize(QString labelText);
-	void AlignLabelToTheLeft();
-	void AlignLabelToTheRight();
+    void Initialize(QString labelText);
+    void AlignLabelToTheLeft();
+    void AlignLabelToTheRight();
 
-	AdjustLabel* GetLabelWidget();
-	QLineEdit* GetTextWidget();
+    AdjustLabel* GetLabelWidget();
+    QLineEdit* GetTextWidget();
 
-	float GetAsFloat();
-	void SetFromFloat(float value);
+    float GetAsFloat();
+    void SetFromFloat(float value);
+
+    int GetAsInt();
+    void SetFromInt(int value);
 
 private:
-	AdjustLabel* m_label;
-	QLineEdit* m_text;
-	QValidator* m_validator;
+    AdjustLabel* m_label;
+    QLineEdit* m_text;
+    QValidator* m_validator;
 
 signals:
-	void ValueChanged();
+    void ValueChanged();
 
 public slots:
-	void TextGotEdited();
+    void TextGotEdited();
 };
 
 #endif // COMBOLABELTEXT_H

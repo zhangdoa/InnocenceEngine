@@ -5,115 +5,112 @@
 
 AdjustLabel::AdjustLabel(QWidget *parent) : QLabel(parent)
 {
-	this->setMouseTracking(true);
+    this->setMouseTracking(true);
 
-	m_isMouseHovering = false;
-	m_isMouseDragged = false;
+    m_isMouseHovering = false;
+    m_isMouseDragged = false;
 
-	this->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    this->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 }
 
-void AdjustLabel::Initialize(QLineEdit* lineEdit)
+void AdjustLabel::Initialize(QLineEdit* lineEdit, bool isInt)
 {
-	m_lineEdit = lineEdit;
+    m_lineEdit = lineEdit;
+    m_isInt = isInt;
 }
 
 void AdjustLabel::mouseMoveEvent(QMouseEvent* event)
 {
-	if (!m_isMouseHovering)
-		MouseEntered();
+    if (!m_isMouseHovering)
+        MouseEntered();
 
-	m_isMouseHovering = true;
+    m_isMouseHovering = true;
 
-	this->setCursor(Qt::SizeHorCursor);
+    this->setCursor(Qt::SizeHorCursor);
 
-	QLabel::mouseMoveEvent(event);
+    QLabel::mouseMoveEvent(event);
 
-	if (event->buttons() == Qt::LeftButton)
-		m_isMouseDragged = true;
-	else
-		m_isMouseDragged = false;
+    if (event->buttons() == Qt::LeftButton)
+        m_isMouseDragged = true;
+    else
+        m_isMouseDragged = false;
 
-	Adjust();
+    Adjust();
 }
 
 void AdjustLabel::leaveEvent(QEvent* event)
 {
-	m_isMouseHovering = false;
+    m_isMouseHovering = false;
 
-	this->setCursor(Qt::ArrowCursor);
+    this->setCursor(Qt::ArrowCursor);
 
-	QLabel::leaveEvent(event);
+    QLabel::leaveEvent(event);
 }
 
 void AdjustLabel::MouseEntered()
 {
-	m_currentTexBoxValue = GetTextBoxValue();
-	m_lastMousePos = GetMousePosLocal().x();
+    if (!m_lineEdit)
+    {
+        m_currentTexBoxValue = 0;
+    }
+    else
+    {
+        if(m_isInt)
+        {
+            m_currentTexBoxValue = m_lineEdit->text().toInt();
+        }
+        else
+        {
+            m_currentTexBoxValue = m_lineEdit->text().toFloat();
+        }
+    }
+
+    m_lastMousePos = GetMousePosLocal().x();
 }
 
 QPoint AdjustLabel::GetMousePosLocal()
 {
-	QPoint mousePos = this->mapFromGlobal(QCursor::pos());
-	return mousePos;
-}
-
-float AdjustLabel::GetTextBoxValue()
-{
-	if (!m_lineEdit)
-		return 0;
-
-	return m_lineEdit->text().toFloat();
-}
-
-void AdjustLabel::SetTextBoxValue(float value)
-{
-	if (!m_lineEdit)
-		return;
-
-	m_lineEdit->setText(QString::number(value));
-
-	emit Adjusted();
+    QPoint mousePos = this->mapFromGlobal(QCursor::pos());
+    return mousePos;
 }
 
 void AdjustLabel::RepositionMouseOnScreenEdge()
 {
-	QPoint mousePos = QCursor::pos();
-	QRect screen = QApplication::desktop()->screenGeometry();
+    QPoint mousePos = QCursor::pos();
+    QRect screen = QApplication::desktop()->screenGeometry();
 
-	if (mousePos.x() == 0)
-	{
-		QPoint newMousePos = QPoint(screen.width(), mousePos.y());
-		QCursor::setPos(newMousePos);
-		m_lastMousePos = GetMousePosLocal().x();
-	}
+    if (mousePos.x() == 0)
+    {
+        QPoint newMousePos = QPoint(screen.width(), mousePos.y());
+        QCursor::setPos(newMousePos);
+        m_lastMousePos = GetMousePosLocal().x();
+    }
 
-	if (mousePos.x() == screen.width() - 1)
-	{
-		QPoint newMousePos = QPoint(0, mousePos.y());
-		QCursor::setPos(newMousePos);
-		m_lastMousePos = GetMousePosLocal().x();
-	}
-}
-
-float AdjustLabel::CalculateDelta()
-{
-	float mousePosX = GetMousePosLocal().x();
-	float mouseDelta = mousePosX - m_lastMousePos;
-	m_lastMousePos = mousePosX;
-
-	return mouseDelta;
+    if (mousePos.x() == screen.width() - 1)
+    {
+        QPoint newMousePos = QPoint(0, mousePos.y());
+        QCursor::setPos(newMousePos);
+        m_lastMousePos = GetMousePosLocal().x();
+    }
 }
 
 void AdjustLabel::Adjust()
 {
-	if (!m_isMouseDragged)
-		return;
+    if (!m_isMouseDragged)
+        return;
 
-	m_mouseDelta = CalculateDelta();
-	RepositionMouseOnScreenEdge();
+    float mousePosX = GetMousePosLocal().x();
+    float m_mouseDelta = mousePosX - m_lastMousePos;
+    m_lastMousePos = mousePosX;
 
-	m_currentTexBoxValue += m_mouseDelta * m_sensitivity;
+    RepositionMouseOnScreenEdge();
 
-	SetTextBoxValue(m_currentTexBoxValue);
+    m_currentTexBoxValue += m_mouseDelta;
+
+    if (!m_lineEdit)
+        return;
+
+    m_lineEdit->setText(QString::number(m_currentTexBoxValue));
+
+    emit Adjusted();
 }
