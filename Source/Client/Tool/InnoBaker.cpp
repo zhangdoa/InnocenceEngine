@@ -3,6 +3,7 @@
 #include "../../Engine/Common/CommonMacro.inl"
 #include "../../Engine/ComponentManager/ITransformComponentManager.h"
 #include "../../Engine/ComponentManager/IVisibleComponentManager.h"
+#include "../../Engine/ComponentManager/ILightComponentManager.h"
 
 #include "../../Engine/Common/InnoMathHelper.h"
 
@@ -187,7 +188,7 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_Probe, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_Probe);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_Probe);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Probe, ShaderStage::Vertex, GetGPUBufferDataComponent(GPUBufferUsageType::GI)->m_ResourceBinder, 0, 10, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Probe, ShaderStage::Vertex, GetGPUBufferDataComponent(GPUBufferUsageType::GI)->m_ResourceBinder, 0, 8, Accessibility::ReadOnly);
 
 	uint32_t l_offset = 0;
 
@@ -513,7 +514,7 @@ bool InnoBakerNS::drawObjects(Probe& probeCache, const Mat4& p, const std::vecto
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_Surfel);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_Surfel);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, m_SDC_Surfel->m_ResourceBinder, 8, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Geometry, GetGPUBufferDataComponent(GPUBufferUsageType::GI)->m_ResourceBinder, 0, 10, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Geometry, GetGPUBufferDataComponent(GPUBufferUsageType::GI)->m_ResourceBinder, 0, 8, Accessibility::ReadOnly);
 
 	uint32_t l_offset = 0;
 
@@ -1027,7 +1028,7 @@ bool InnoBakerNS::drawBricks(Vec4 pos, uint32_t bricksCount, const Mat4& p, cons
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_BrickFactor, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_BrickFactor);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_BrickFactor);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_BrickFactor, ShaderStage::Geometry, GetGPUBufferDataComponent(GPUBufferUsageType::GI)->m_ResourceBinder, 0, 10, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_BrickFactor, ShaderStage::Geometry, GetGPUBufferDataComponent(GPUBufferUsageType::GI)->m_ResourceBinder, 0, 8, Accessibility::ReadOnly);
 
 	for (uint32_t i = 0; i < bricksCount; i++)
 	{
@@ -1223,7 +1224,7 @@ void InnoBaker::Setup()
 	m_RPDC_Probe->m_ResourceBinderLayoutDescs.resize(2);
 	m_RPDC_Probe->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC_Probe->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_RPDC_Probe->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 10;
+	m_RPDC_Probe->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 8;
 
 	m_RPDC_Probe->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC_Probe->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
@@ -1255,6 +1256,7 @@ void InnoBaker::Setup()
 
 	m_RPDC_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
 	m_RPDC_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
+	m_RPDC_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthClamp = true;
 	m_RPDC_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
 
 	m_RPDC_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer = true;
@@ -1272,7 +1274,7 @@ void InnoBaker::Setup()
 	m_RPDC_Surfel->m_ResourceBinderLayoutDescs.resize(9);
 	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 10;
+	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 8;
 
 	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
@@ -1343,6 +1345,7 @@ void InnoBaker::Setup()
 
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
+	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthClamp = true;
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
 
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = true;
@@ -1352,7 +1355,7 @@ void InnoBaker::Setup()
 	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs.resize(2);
 	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 10;
+	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 8;
 
 	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
@@ -1366,6 +1369,8 @@ void InnoBaker::Setup()
 void InnoBaker::BakeProbeCache(const char* sceneName)
 {
 	g_pModuleManager->getFileSystem()->loadScene(sceneName, false);
+	GetComponentManager(LightComponent)->Simulate();
+
 	g_pModuleManager->getPhysicsSystem()->updateCulling();
 	g_pModuleManager->getRenderingFrontend()->update();
 	m_exportFileName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
