@@ -13,7 +13,7 @@ struct VertexInputType
 struct GeometryInputType
 {
 	float4 posCS : SV_POSITION;
-	float3 posWS : POSITION;
+	float3 posVS : POS_VS;
 	float2 TexCoord : TEXCOORD;
 	float3 Normal : NORMAL;
 };
@@ -24,8 +24,9 @@ GeometryInputType main(VertexInputType input)
 
 	float4 posWS = mul(input.position, perObjectCBuffer.m);
 	float4 posVS = mul(posWS, perFrameCBuffer.v);
+	output.posVS = posVS.xyz;
+	output.posVS.z = log(output.posVS.z) / log(perFrameCBuffer.zFar - perFrameCBuffer.zNear);
 	output.posCS = mul(posVS, perFrameCBuffer.p_original);
-	output.posWS = posWS.xyz;
 	output.TexCoord = input.texcoord;
 	output.Normal = mul(input.normal, perObjectCBuffer.normalMat).xyz;
 

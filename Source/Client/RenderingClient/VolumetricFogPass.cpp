@@ -127,7 +127,7 @@ bool VolumetricFogPass::setupFroxelVisualizationPass()
 
 	m_froxelVisualizationRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_froxelVisualizationRPDC->m_ResourceBinderLayoutDescs.resize(2);
+	m_froxelVisualizationRPDC->m_ResourceBinderLayoutDescs.resize(3);
 
 	m_froxelVisualizationRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
 	m_froxelVisualizationRPDC->m_ResourceBinderLayoutDescs[0].m_BinderAccessibility = Accessibility::ReadOnly;
@@ -139,6 +139,10 @@ bool VolumetricFogPass::setupFroxelVisualizationPass()
 	m_froxelVisualizationRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_froxelVisualizationRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
 	m_froxelVisualizationRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 0;
+
+	m_froxelVisualizationRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_froxelVisualizationRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 1;
+	m_froxelVisualizationRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 9;
 
 	m_froxelVisualizationRPDC->m_ShaderProgram = m_froxelVisualizationSPC;
 
@@ -358,6 +362,7 @@ bool VolumetricFogPass::froxelVisualization()
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelVisualizationRPDC, ShaderStage::Vertex, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelVisualizationRPDC, ShaderStage::Geometry, l_PerFrameCBufferGBDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelVisualizationRPDC, ShaderStage::Vertex, m_froxelizationCBufferGBDC->m_ResourceBinder, 2, 9);
 
 	g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_froxelVisualizationRPDC, voxelizationResolution * voxelizationResolution * voxelizationResolution);
 

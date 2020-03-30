@@ -4,7 +4,7 @@
 struct GeometryInputType
 {
 	float4 posCS : SV_POSITION;
-	float3 posWS : POSITION;
+	float3 posVS : POS_VS;
 	float2 TexCoord : TEXCOORD;
 	float3 Normal : NORMAL;
 };
@@ -73,6 +73,7 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 		pos[i] /= pos[i].w;
 
 		output[i].posCS_orig = pos[i];
+		output[i].posCS_orig.z = input[i].posVS.z;
 
 		// project along the dominant axis
 		[flatten]

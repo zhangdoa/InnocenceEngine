@@ -40,15 +40,17 @@ void main(point GeometryInputType input[1], inout TriangleStream<PixelInputType>
 
 	float4 projectedVertices[8];
 
+	[unroll(8)]
 	for (int i = 0; i < 8; ++i)
 	{
-		projectedVertices[i] = projectedVertices[i] + cubeVertices[i] * 2.0;
-		projectedVertices[i] = mul(projectedVertices[i], perFrameCBuffer.v);
-		projectedVertices[i] = mul(projectedVertices[i], perFrameCBuffer.p_original);
+		projectedVertices[i] = input[0].posCS;
+		projectedVertices[i] = projectedVertices[i] + cubeVertices[i] * 32.0f;
 	}
 
+	[unroll(12)]
 	for (int t = 0; t < 12; ++t)
 	{
+		[unroll(3)]
 		for (int v = 0; v < 3; ++v)
 		{
 			PixelInputType output = (PixelInputType)0;

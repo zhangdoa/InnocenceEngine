@@ -25,18 +25,14 @@ GeometryInputType main(VertexInputType input)
 
 	float3 position = float3
 	(
-		input.instanceId % 64,
-		input.instanceId / 64 % 64,
-		input.instanceId / (64 * 64)
+		input.instanceId % (int)voxelizationPassCBuffer.voxelResolution.x,
+		(input.instanceId / (int)voxelizationPassCBuffer.voxelResolution.x) % (int)voxelizationPassCBuffer.voxelResolution.y,
+		input.instanceId / ((int)voxelizationPassCBuffer.voxelResolution.x * (int)voxelizationPassCBuffer.voxelResolution.y)
 		);
 
 	int3 texPos = int3(position);
-	output.posCS = float4(position / 64.0, 1.0f);
+	output.posCS = float4(position / voxelizationPassCBuffer.voxelResolution, 1.0f);
 	output.posCS.xyz = output.posCS.xyz * 2.0 - 1.0;
-	output.posCS = mul(output.posCS, perFrameCBuffer.p_inv);
-	output.posCS /= output.posCS.w;
-	output.posCS = mul(output.posCS, perFrameCBuffer.v_inv);
-
 	output.color = in_voxelizationPassRT0[texPos];
 
 	return output;
