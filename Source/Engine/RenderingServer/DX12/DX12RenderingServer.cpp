@@ -1809,105 +1809,177 @@ Vec4 DX12RenderingServer::ReadRenderTargetSample(RenderPassDataComponent* rhs, s
 std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataComponent* canvas, TextureDataComponent* TDC)
 {
 	// @TODO: Support different pixel data type
-
 	auto l_srcTDC = reinterpret_cast<DX12TextureDataComponent*>(TDC);
 
-	size_t l_sampleCount;
+	size_t l_pixelCount = 0;
 
 	switch (l_srcTDC->m_TextureDesc.Sampler)
 	{
 	case TextureSampler::Sampler1D:
-		l_sampleCount = l_srcTDC->m_TextureDesc.Width;
+		l_pixelCount = l_srcTDC->m_TextureDesc.Width;
 		break;
 	case TextureSampler::Sampler2D:
-		l_sampleCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height;
+		l_pixelCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height;
 		break;
 	case TextureSampler::Sampler3D:
-		l_sampleCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height * l_srcTDC->m_TextureDesc.DepthOrArraySize;
+		l_pixelCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height * l_srcTDC->m_TextureDesc.DepthOrArraySize;
 		break;
 	case TextureSampler::Sampler1DArray:
-		l_sampleCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.DepthOrArraySize;
+		l_pixelCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.DepthOrArraySize;
 		break;
 	case TextureSampler::Sampler2DArray:
-		l_sampleCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height * l_srcTDC->m_TextureDesc.DepthOrArraySize;
+		l_pixelCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height * l_srcTDC->m_TextureDesc.DepthOrArraySize;
 		break;
 	case TextureSampler::SamplerCubemap:
-		l_sampleCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height * 6;
+		l_pixelCount = l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height * 6;
 		break;
 	default:
 		break;
 	}
 
-	std::vector<Vec4> l_result;
-	l_result.resize(l_sampleCount);
+	auto f_readBackCommand = [](DX12TextureDataComponent* l_srcTDC, DX12TextureDataComponent* l_destTDC, DXGI_FORMAT l_format, uint32_t l_pixelDataSize, uint32_t srcIndex, uint32_t destIndex)
+	{
+		D3D12_TEXTURE_COPY_LOCATION l_srcLocation;
+		l_srcLocation.pResource = l_srcTDC->m_ResourceHandle;
+		l_srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+		l_srcLocation.SubresourceIndex = srcIndex;
 
+		// @TODO: It seems invalid to read back texture array which has RowPitch < D3D12_TEXTURE_DATA_PITCH_ALIGNMENT, for example a R8 32*32 2D array/cubemap texture
+		auto l_rowWidth = (uint32_t)l_srcTDC->m_TextureDesc.Width * l_pixelDataSize;
+		l_rowWidth = l_rowWidth < D3D12_TEXTURE_DATA_PITCH_ALIGNMENT ? D3D12_TEXTURE_DATA_PITCH_ALIGNMENT : l_rowWidth;
+
+		D3D12_TEXTURE_COPY_LOCATION l_destLocation;
+		l_destLocation.pResource = l_destTDC->m_ResourceHandle;
+		l_destLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+		l_destLocation.PlacedFootprint.Offset = destIndex * l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height * l_pixelDataSize;
+		l_destLocation.PlacedFootprint.Footprint.Format = l_format;
+		l_destLocation.PlacedFootprint.Footprint.Width = (uint32_t)l_srcTDC->m_DX12TextureDesc.Width;
+		l_destLocation.PlacedFootprint.Footprint.Height = (uint32_t)l_srcTDC->m_DX12TextureDesc.Height;
+		l_destLocation.PlacedFootprint.Footprint.Depth = l_srcTDC->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap ? 1 : (uint32_t)l_srcTDC->m_DX12TextureDesc.DepthOrArraySize;
+		l_destLocation.PlacedFootprint.Footprint.RowPitch = l_rowWidth;
+
+		auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
+
+		l_commandList->ResourceBarrier(
+			1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(l_srcTDC->m_ResourceHandle,
+				l_srcTDC->m_ReadState,
+				D3D12_RESOURCE_STATE_COPY_SOURCE));
+
+		l_commandList->CopyTextureRegion(&l_destLocation, 0, 0, 0, &l_srcLocation, NULL);
+
+		l_commandList->ResourceBarrier(
+			1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(l_srcTDC->m_ResourceHandle,
+				D3D12_RESOURCE_STATE_COPY_SOURCE,
+				l_srcTDC->m_ReadState));
+
+		EndSingleTimeCommands(l_commandList, m_device, m_globalCommandQueue);
+	};
+
+	auto f_copyCommand = [](DX12TextureDataComponent* l_srcTDC, DX12TextureDataComponent* l_destTDC, size_t l_pixelCount)->std::vector<unsigned char>
+	{
+		std::vector<unsigned char> l_result;
+
+		l_result.resize(l_pixelCount * l_srcTDC->m_PixelDataSize);
+
+		CD3DX12_RANGE m_ReadRange(0, l_result.size());
+		void* l_pData;
+		auto l_HResult = l_destTDC->m_ResourceHandle->Map(0, &m_ReadRange, &l_pData);
+
+		if (FAILED(l_HResult))
+		{
+			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't map texture for CPU to read!");
+		}
+
+		std::memcpy(l_result.data(), l_pData, l_result.size());
+		l_destTDC->m_ResourceHandle->Unmap(0, 0);
+
+		return l_result;
+	};
+
+	// Copy from default heap to readback heap, then copy from readback heap to application's heap region
 	auto l_destTDC = reinterpret_cast<DX12TextureDataComponent*>(AddTextureDataComponent("ReadBackTemp/"));
 	l_destTDC->m_TextureDesc = TDC->m_TextureDesc;
 	l_destTDC->m_TextureDesc.CPUAccessibility = Accessibility::ReadOnly;
 
 	InitializeTextureDataComponent(l_destTDC);
 
-	if (l_srcTDC->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap)
+	DXGI_FORMAT l_format;
+	std::vector<Vec4> l_result;
+
+	if (l_srcTDC->m_TextureDesc.PixelDataFormat == TexturePixelDataFormat::DepthStencil)
 	{
-		for (uint32_t i = 0; i < 6; i++)
+		std::vector<uint32_t> l_depthResult;
+		std::vector<uint8_t> l_stencilResult;
+
+		l_format = DXGI_FORMAT_R32_TYPELESS;
+		if (l_srcTDC->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap)
 		{
-			D3D12_TEXTURE_COPY_LOCATION l_srcLocation;
-			l_srcLocation.pResource = l_srcTDC->m_ResourceHandle;
-			l_srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-			l_srcLocation.SubresourceIndex = i;
+			for (uint32_t i = 0; i < 6; i++)
+			{
+				f_readBackCommand(l_srcTDC, l_destTDC, l_format, 4, i, i);
+			}
+		}
+		else
+		{
+			f_readBackCommand(l_srcTDC, l_destTDC, l_format, 4, 0, 0);
+		}
 
-			D3D12_TEXTURE_COPY_LOCATION l_destLocation;
-			l_destLocation.pResource = l_destTDC->m_ResourceHandle;
-			l_destLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-			l_destLocation.PlacedFootprint.Offset = i * l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height * l_srcTDC->m_PixelDataSize;
-			l_destLocation.PlacedFootprint.Footprint.Format = l_srcTDC->m_DX12TextureDesc.Format;
-			l_destLocation.PlacedFootprint.Footprint.Width = (uint32_t)l_srcTDC->m_DX12TextureDesc.Width;
-			l_destLocation.PlacedFootprint.Footprint.Height = (uint32_t)l_srcTDC->m_DX12TextureDesc.Height;
-			l_destLocation.PlacedFootprint.Footprint.Depth = 1;
-			l_destLocation.PlacedFootprint.Footprint.RowPitch = (uint32_t)l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_PixelDataSize;
+		auto l_rawResult = f_copyCommand(l_srcTDC, l_destTDC, l_pixelCount);
+		auto l_validSampleCount = l_rawResult.size() / 4;
+		l_depthResult.resize(l_validSampleCount);
+		l_result.resize(l_validSampleCount);
 
-			auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
+		std::memcpy(l_depthResult.data(), l_rawResult.data(), l_rawResult.size());
+		for (size_t i = 0; i < l_validSampleCount; i++)
+		{
+			auto l_depth = l_depthResult[i];
+			l_result[i].x = float(l_depth) / float(0x00FFFFFF);
+		}
 
-			l_commandList->CopyTextureRegion(&l_destLocation, 0, 0, 0, &l_srcLocation, NULL);
+		l_format = DXGI_FORMAT_R8_TYPELESS;
+		if (l_srcTDC->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap)
+		{
+			for (uint32_t i = 0; i < 6; i++)
+			{
+				f_readBackCommand(l_srcTDC, l_destTDC, l_format, sizeof(uint8_t), i + 6, i);
+			}
+		}
+		else
+		{
+			f_readBackCommand(l_srcTDC, l_destTDC, l_format, sizeof(uint8_t), 1, 0);
+		}
 
-			EndSingleTimeCommands(l_commandList, m_device, m_globalCommandQueue);
+		l_rawResult = f_copyCommand(l_srcTDC, l_destTDC, l_pixelCount);
+		l_stencilResult.resize(l_validSampleCount);
+		std::memcpy(l_stencilResult.data(), l_rawResult.data(), l_stencilResult.size());
+
+		for (size_t i = 0; i < l_validSampleCount; i++)
+		{
+			l_result[i].y = float(l_stencilResult[i]);
 		}
 	}
 	else
 	{
-		D3D12_TEXTURE_COPY_LOCATION l_srcLocation;
-		l_srcLocation.pResource = l_srcTDC->m_ResourceHandle;
-		l_srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-		l_srcLocation.SubresourceIndex = 0;
+		l_format = l_srcTDC->m_DX12TextureDesc.Format;
 
-		D3D12_TEXTURE_COPY_LOCATION l_destLocation;
-		l_destLocation.pResource = l_destTDC->m_ResourceHandle;
-		l_destLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-		l_destLocation.PlacedFootprint.Offset = 0;
-		l_destLocation.PlacedFootprint.Footprint.Format = l_srcTDC->m_DX12TextureDesc.Format;
-		l_destLocation.PlacedFootprint.Footprint.Width = (uint32_t)l_srcTDC->m_DX12TextureDesc.Width;
-		l_destLocation.PlacedFootprint.Footprint.Height = (uint32_t)l_srcTDC->m_DX12TextureDesc.Height;
-		l_destLocation.PlacedFootprint.Footprint.Depth = (uint32_t)l_srcTDC->m_DX12TextureDesc.DepthOrArraySize;
-		l_destLocation.PlacedFootprint.Footprint.RowPitch = (uint32_t)l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_PixelDataSize;
+		if (l_srcTDC->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap)
+		{
+			for (uint32_t i = 0; i < 6; i++)
+			{
+				f_readBackCommand(l_srcTDC, l_destTDC, l_format, l_srcTDC->m_PixelDataSize, i, i);
+			}
+		}
+		else
+		{
+			f_readBackCommand(l_srcTDC, l_destTDC, l_format, l_srcTDC->m_PixelDataSize, 0, 0);
+		}
 
-		auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
-
-		l_commandList->CopyTextureRegion(&l_destLocation, 0, 0, 0, &l_srcLocation, NULL);
-
-		EndSingleTimeCommands(l_commandList, m_device, m_globalCommandQueue);
+		l_result.resize(l_pixelCount);
+		auto l_rawResult = f_copyCommand(l_srcTDC, l_destTDC, l_pixelCount);
+		std::memcpy(l_result.data(), l_rawResult.data(), l_rawResult.size());
 	}
-
-	CD3DX12_RANGE m_ReadRange(0, l_sampleCount * l_srcTDC->m_PixelDataSize);
-	void* l_pData;
-	auto l_HResult = l_destTDC->m_ResourceHandle->Map(0, &m_ReadRange, &l_pData);
-
-	if (FAILED(l_HResult))
-	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't map texture for CPU to read!");
-	}
-
-	std::memcpy(l_result.data(), l_pData, l_sampleCount * l_srcTDC->m_PixelDataSize);
-	l_destTDC->m_ResourceHandle->Unmap(0, 0);
 
 	DeleteTextureDataComponent(l_destTDC);
 
