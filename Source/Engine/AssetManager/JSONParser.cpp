@@ -432,6 +432,7 @@ ArrayRangeInfo InnoFileSystemNS::JSONParser::processMeshJsonData(const json& j, 
 		{
 			l_currentMeshMaterialPair->material = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
 			l_currentMeshMaterialPair->material->m_ObjectStatus = ObjectStatus::Created;
+			g_pModuleManager->getRenderingFrontend()->registerMaterialDataComponent(l_currentMeshMaterialPair->material, AsyncUploadGPUResource);
 		}
 
 		MeshSource l_meshSource = MeshSource(i["MeshSource"].get<int32_t>());

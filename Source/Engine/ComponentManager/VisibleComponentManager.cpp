@@ -22,7 +22,7 @@ namespace VisibleComponentManagerNS
 	std::function<void()> f_SceneLoadingStartCallback;
 	std::function<void()> f_SceneLoadingFinishCallback;
 	std::function<void(VisibleComponent*, bool)> f_LoadModelTask;
-	std::function<void(VisibleComponent*)> f_AssignProceduralModelTask;
+	std::function<void(VisibleComponent*, bool)> f_AssignProceduralModelTask;
 	std::function<void(VisibleComponent*)> f_PDCTask;
 }
 
@@ -49,9 +49,11 @@ bool InnoVisibleComponentManager::Setup()
 		i->m_model = g_pModuleManager->getFileSystem()->loadModel(i->m_modelFileName.c_str(), AsyncLoad);
 	};
 
-	f_AssignProceduralModelTask = [=](VisibleComponent* i)
+	f_AssignProceduralModelTask = [=](VisibleComponent* i, bool AsyncLoad)
 	{
 		i->m_model = g_pModuleManager->getAssetSystem()->addProceduralModel(i->m_proceduralMeshShape);
+		auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(i->m_model->meshMaterialPairs.m_startOffset);
+		g_pModuleManager->getRenderingFrontend()->registerMaterialDataComponent(l_pair->material, AsyncLoad);
 	};
 
 	// @TODO: Concurrency
@@ -110,8 +112,16 @@ void InnoVisibleComponentManager::LoadAssetsForComponents(bool AsyncLoad)
 		{
 			if (i->m_meshSource != MeshSource::Customized)
 			{
-				f_AssignProceduralModelTask(i);
-				f_PDCTask(i);
+				if (AsyncLoad)
+				{
+					auto l_loadModelTask = g_pModuleManager->getTaskSystem()->submit("AssignProceduralModelTask", 4, nullptr, f_AssignProceduralModelTask, i, true);
+					g_pModuleManager->getTaskSystem()->submit("PDCTask", 4, l_loadModelTask, f_PDCTask, i);
+				}
+				else
+				{
+					f_AssignProceduralModelTask(i, false);
+					f_PDCTask(i);
+				}
 			}
 			else
 			{
