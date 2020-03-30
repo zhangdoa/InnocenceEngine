@@ -95,7 +95,7 @@ bool TransparentPass::PrepareCommandList()
 	for (uint32_t i = 0; i < l_drawCallCount; i++)
 	{
 		auto l_drawCallData = l_drawCallInfo[i];
-		if (l_drawCallData.visibilityType == VisibilityType::Transparent)
+		if (l_drawCallData.visibility == Visibility::Transparent)
 		{
 			if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 			{
@@ -128,12 +128,12 @@ bool TransparentPass::Terminate()
 	return true;
 }
 
-RenderPassDataComponent * TransparentPass::GetRPDC()
+RenderPassDataComponent* TransparentPass::GetRPDC()
 {
 	return m_RPDC;
 }
 
-ShaderProgramComponent * TransparentPass::GetSPC()
+ShaderProgramComponent* TransparentPass::GetSPC()
 {
 	return m_SPC;
 }

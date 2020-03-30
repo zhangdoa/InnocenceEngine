@@ -3,6 +3,7 @@
 #include "../Component/MeshDataComponent.h"
 #include "../Component/MaterialDataComponent.h"
 #include "../Component/TextureDataComponent.h"
+#include "../Component/VisibleComponent.h"
 
 struct alignas(16) PerFrameConstantBuffer
 {
@@ -103,7 +104,7 @@ struct DrawCallInfo
 	uint32_t meshConstantBufferIndex;
 	uint32_t materialConstantBufferIndex;
 	bool castSunShadow;
-	VisibilityType visibilityType;
+	Visibility visibility;
 };
 
 struct BillboardPassDrawCallInfo

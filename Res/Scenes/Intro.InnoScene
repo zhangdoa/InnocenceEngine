@@ -116,7 +116,7 @@
           "ModelFileName": "..//Res//ConvertedAssets//sponza.InnoModel",
           "SimulatePhysics": true,
           "TextureWrapMethod": 1,
-          "VisibilityType": 2
+          "Visibility": 1
         }
       ],
       "UUID": "111b60411d20f80f60d5abaa4d22a23",
@@ -155,7 +155,7 @@
           "ModelFileName": "..//Res//ConvertedAssets//Orb.InnoModel",
           "SimulatePhysics": true,
           "TextureWrapMethod": 1,
-          "VisibilityType": 2
+          "Visibility": 1
         }
       ],
       "UUID": "bb1ad14fc4a3b16e3cbd13379e1318d",
@@ -194,7 +194,7 @@
           "ModelFileName": "..//Res//ConvertedAssets//bunny.InnoModel",
           "SimulatePhysics": true,
           "TextureWrapMethod": 1,
-          "VisibilityType": 2
+          "Visibility": 1
         }
       ],
       "UUID": "fb7770964e70a19dc7388de05fbec18",

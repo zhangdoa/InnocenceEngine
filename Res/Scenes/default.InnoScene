@@ -33,7 +33,7 @@
           "ProceduralMeshShape": 6,
           "SimulatePhysics": true,
           "TextureWrapMethod": 1,
-          "VisibilityType": 2
+          "Visibility": 1
         }
       ],
       "ObjectName": "landscape",
@@ -249,7 +249,7 @@
           "ProceduralMeshShape": 6,
           "SimulatePhysics": true,
           "TextureWrapMethod": 2,
-          "VisibilityType": 2
+          "Visibility": 1
         }
       ],
       "ObjectName": "playerCharacter",

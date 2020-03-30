@@ -18,7 +18,7 @@ struct CullingData
 	Mat4 normalMat;
 	MeshDataComponent* mesh;
 	MaterialDataComponent* material;
-	VisibilityType visibilityType;
+	Visibility visibility;
 	MeshUsage meshUsage;
 	CullingDataChannel cullingDataChannel;
 	uint64_t UUID;

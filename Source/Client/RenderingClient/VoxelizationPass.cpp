@@ -180,7 +180,7 @@ bool VoxelizationPass::voxelization()
 	for (uint32_t i = 0; i < l_drawCallCount; i++)
 	{
 		auto l_drawCallData = l_drawCallInfo[i];
-		if (l_drawCallData.visibilityType == VisibilityType::Opaque)
+		if (l_drawCallData.visibility == Visibility::Opaque)
 		{
 			if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 			{

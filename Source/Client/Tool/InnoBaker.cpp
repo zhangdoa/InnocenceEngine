@@ -51,7 +51,7 @@ namespace InnoBakerNS
 	bool serializeBricks(const std::vector<Brick>& bricks);
 
 	bool assignBrickFactorToProbesByGPU(const std::vector<Brick>& bricks, std::vector<Probe>& probes);
-	bool drawBricks(Vec4 pos, uint32_t bricksCount, const Mat4 & p, const std::vector<Mat4>& v);
+	bool drawBricks(Vec4 pos, uint32_t bricksCount, const Mat4& p, const std::vector<Mat4>& v);
 	bool readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& brickFactors, const std::vector<Brick>& bricks);
 
 	bool serializeBrickFactors(const std::vector<BrickFactor>& brickFactors);
@@ -105,7 +105,7 @@ bool InnoBakerNS::gatherStaticMeshData()
 	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
 	for (auto visibleComponent : l_visibleComponents)
 	{
-		if (visibleComponent->m_visibilityType == VisibilityType::Opaque
+		if (visibleComponent->m_visibility == Visibility::Opaque
 			&& visibleComponent->m_ObjectStatus == ObjectStatus::Activated
 			&& visibleComponent->m_meshUsage == MeshUsage::Static
 			)
@@ -631,15 +631,15 @@ bool InnoBakerNS::eliminateDuplicatedSurfels(std::vector<Surfel>& surfelCaches)
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to eliminate duplicated surfels...");
 
 	std::sort(surfelCaches.begin(), surfelCaches.end(), [&](Surfel A, Surfel B)
-	{
-		if (A.pos.x != B.pos.x) {
-			return A.pos.x < B.pos.x;
-		}
-		if (A.pos.y != B.pos.y) {
-			return A.pos.y < B.pos.y;
-		}
-		return A.pos.z < B.pos.z;
-	});
+		{
+			if (A.pos.x != B.pos.x) {
+				return A.pos.x < B.pos.x;
+			}
+			if (A.pos.y != B.pos.y) {
+				return A.pos.y < B.pos.y;
+			}
+			return A.pos.z < B.pos.z;
+		});
 
 	surfelCaches.erase(std::unique(surfelCaches.begin(), surfelCaches.end()), surfelCaches.end());
 	surfelCaches.shrink_to_fit();
@@ -777,8 +777,8 @@ bool InnoBakerNS::generateBrickCaches(std::vector<Surfel>& surfelCaches)
 	l_brickCaches.erase(
 		std::remove_if(l_brickCaches.begin(), l_brickCaches.end(),
 			[&](auto val) {
-		return val.surfelCaches.size() == 0;
-	}), l_brickCaches.end());
+				return val.surfelCaches.size() == 0;
+			}), l_brickCaches.end());
 
 	l_brickCaches.shrink_to_fit();
 
@@ -1006,7 +1006,7 @@ bool InnoBakerNS::assignBrickFactorToProbesByGPU(const std::vector<Brick>& brick
 	return true;
 }
 
-bool InnoBakerNS::drawBricks(Vec4 pos, uint32_t bricksCount, const Mat4 & p, const std::vector<Mat4>& v)
+bool InnoBakerNS::drawBricks(Vec4 pos, uint32_t bricksCount, const Mat4& p, const std::vector<Mat4>& v)
 {
 	std::vector<Mat4> l_GICameraConstantBuffer(8);
 	l_GICameraConstantBuffer[0] = p;
@@ -1086,9 +1086,9 @@ bool InnoBakerNS::readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& b
 		if (l_brickFactors.size() > 0)
 		{
 			std::sort(l_brickFactors.begin(), l_brickFactors.end(), [&](BrickFactor A, BrickFactor B)
-			{
-				return A.brickIndex < B.brickIndex;
-			});
+				{
+					return A.brickIndex < B.brickIndex;
+				});
 
 			l_brickFactors.erase(std::unique(l_brickFactors.begin(), l_brickFactors.end()), l_brickFactors.end());
 			l_brickFactors.shrink_to_fit();
@@ -1374,10 +1374,10 @@ void InnoBaker::BakeProbeCache(const char* sceneName)
 
 	auto l_InnoBakerProbeCacheTask = g_pModuleManager->getTaskSystem()->submit("InnoBakerProbeCacheTask", 2, nullptr,
 		[&]() {
-		gatherStaticMeshData();
-		generateProbeCaches(l_probes);
-		captureSurfels(l_probes);
-	});
+			gatherStaticMeshData();
+			generateProbeCaches(l_probes);
+			captureSurfels(l_probes);
+		});
 
 	l_InnoBakerProbeCacheTask->Wait();
 }
@@ -1460,8 +1460,8 @@ void InnoBaker::BakeBrickFactor(const char* brickFileName)
 
 			auto l_InnoBakerBrickFactorTask = g_pModuleManager->getTaskSystem()->submit("InnoBakerBrickFactorTask", 2, nullptr,
 				[&]() {
-				assignBrickFactorToProbesByGPU(l_bricks, l_probes);
-			});
+					assignBrickFactorToProbesByGPU(l_bricks, l_probes);
+				});
 
 			l_InnoBakerBrickFactorTask->Wait();
 		}
@@ -1480,9 +1480,9 @@ bool InnoBakerRenderingClient::Setup()
 {
 	auto l_InnoBakerRenderingClientSetupTask = g_pModuleManager->getTaskSystem()->submit("InnoBakerRenderingClientSetupTask", 2, nullptr,
 		[]() {
-		DefaultGPUBuffers::Setup();
-		InnoBaker::Setup();
-	});
+			DefaultGPUBuffers::Setup();
+			InnoBaker::Setup();
+		});
 	l_InnoBakerRenderingClientSetupTask->Wait();
 
 	return true;
@@ -1492,8 +1492,8 @@ bool InnoBakerRenderingClient::Initialize()
 {
 	auto l_InnoBakerRenderingClientInitializeTask = g_pModuleManager->getTaskSystem()->submit("InnoBakerRenderingClientInitializeTask", 2, nullptr,
 		[]() {
-		DefaultGPUBuffers::Initialize();
-	});
+			DefaultGPUBuffers::Initialize();
+		});
 	l_InnoBakerRenderingClientInitializeTask->Wait();
 
 	return true;

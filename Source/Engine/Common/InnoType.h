@@ -77,8 +77,6 @@ enum class LogLevel { Verbose, Success, Warning, Error };
 
 enum class IOMode { Text, Binary };
 
-enum class VisibilityType { Invisible, BillBoard, Opaque, Transparent, Emissive, Debug };
-
 // shader custom types
 enum class ShaderStage
 {

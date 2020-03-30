@@ -489,7 +489,7 @@ void ImGuiWrapperNS::showVisiableComponentPropertyEditor(void* rhs)
 					l_material->AO = ao;
 				}
 
-				if (l_rhs->m_visibilityType == VisibilityType::Transparent)
+				if (l_rhs->m_visibility == Visibility::Transparent)
 				{
 					static float thickness = l_material->Thickness;
 					if (ImGui::DragFloat("Thickness", &thickness, 0.01f, float_min, float_max))
@@ -597,8 +597,8 @@ void ImGuiWrapperNS::showConcurrencyProfiler()
 
 					l_workDuration += (l_finishTime - l_startTime);
 
-					auto l_invisibleButtonWidth = ((float)(l_startTime - l_lastTaskReportButtonPos) + 1.0f) * 10.0f / l_totalDuration;
-					l_invisibleButtonWidth = InnoMath::clamp(l_invisibleButtonWidth, 0.005f, 20.0f);
+					auto l_InvalidButtonWidth = ((float)(l_startTime - l_lastTaskReportButtonPos) + 1.0f) * 10.0f / l_totalDuration;
+					l_InvalidButtonWidth = InnoMath::clamp(l_InvalidButtonWidth, 0.005f, 20.0f);
 					auto l_visibleButtonWidth = ((float)(l_finishTime - l_startTime) + 1.0f) * 10.0f / l_totalDuration;
 					l_visibleButtonWidth = InnoMath::clamp(l_visibleButtonWidth, 0.005f, 20.0f);
 					ImGui::PushStyleColor(ImGuiCol_Button, generateButtonColor(l_taskReport[j].m_TaskName));
@@ -614,7 +614,7 @@ void ImGuiWrapperNS::showConcurrencyProfiler()
 					}
 					ImGui::PopStyleColor(1);
 					ImGui::SameLine();
-					ImGui::Button("", ImVec2(l_invisibleButtonWidth * l_windowWidth, 20));
+					ImGui::Button("", ImVec2(l_InvalidButtonWidth * l_windowWidth, 20));
 					ImGui::SameLine();
 
 					l_lastTaskReportButtonPos = l_finishTime;

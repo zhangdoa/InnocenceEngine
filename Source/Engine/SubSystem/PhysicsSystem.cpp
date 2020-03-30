@@ -537,7 +537,7 @@ void PlainCulling(const Frustum& frustum, std::vector<CullingData>& cullingDatas
 			l_cullingData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
 			l_cullingData.mesh = PDC->m_MeshMaterialPair->mesh;
 			l_cullingData.material = PDC->m_MeshMaterialPair->material;
-			l_cullingData.visibilityType = PDC->m_VisibleComponent->m_visibilityType;
+			l_cullingData.visibility = PDC->m_VisibleComponent->m_visibility;
 			l_cullingData.meshUsage = PDC->m_VisibleComponent->m_meshUsage;
 			l_cullingData.UUID = PDC->m_VisibleComponent->m_UUID;
 
@@ -583,7 +583,7 @@ CullingData generateCullingData(const Frustum& frustum, PhysicsDataComponent* PD
 	l_cullingData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
 	l_cullingData.mesh = PDC->m_MeshMaterialPair->mesh;
 	l_cullingData.material = PDC->m_MeshMaterialPair->material;
-	l_cullingData.visibilityType = PDC->m_VisibleComponent->m_visibilityType;
+	l_cullingData.visibility = PDC->m_VisibleComponent->m_visibility;
 	l_cullingData.meshUsage = PDC->m_VisibleComponent->m_meshUsage;
 	l_cullingData.UUID = PDC->m_VisibleComponent->m_UUID;
 

@@ -262,22 +262,22 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 
 	auto l_DefaultAssetInitializeTask = g_pModuleManager->getTaskSystem()->submit("DefaultAssetInitializeTask", 2, nullptr,
 		[&]() {
-		m_renderingServer->InitializeMeshDataComponent(m_unitSquareMesh);
-		m_renderingServer->InitializeMeshDataComponent(m_unitCubeMesh);
-		m_renderingServer->InitializeMeshDataComponent(m_unitSphereMesh);
+			m_renderingServer->InitializeMeshDataComponent(m_unitSquareMesh);
+			m_renderingServer->InitializeMeshDataComponent(m_unitCubeMesh);
+			m_renderingServer->InitializeMeshDataComponent(m_unitSphereMesh);
 
-		m_renderingServer->InitializeTextureDataComponent(m_basicNormalTexture);
-		m_renderingServer->InitializeTextureDataComponent(m_basicAlbedoTexture);
-		m_renderingServer->InitializeTextureDataComponent(m_basicMetallicTexture);
-		m_renderingServer->InitializeTextureDataComponent(m_basicRoughnessTexture);
-		m_renderingServer->InitializeTextureDataComponent(m_basicAOTexture);
+			m_renderingServer->InitializeTextureDataComponent(m_basicNormalTexture);
+			m_renderingServer->InitializeTextureDataComponent(m_basicAlbedoTexture);
+			m_renderingServer->InitializeTextureDataComponent(m_basicMetallicTexture);
+			m_renderingServer->InitializeTextureDataComponent(m_basicRoughnessTexture);
+			m_renderingServer->InitializeTextureDataComponent(m_basicAOTexture);
 
-		m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_DirectionalLight);
-		m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_PointLight);
-		m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_SphereLight);
+			m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_DirectionalLight);
+			m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_PointLight);
+			m_renderingServer->InitializeTextureDataComponent(m_iconTemplate_SphereLight);
 
-		m_renderingServer->InitializeMaterialDataComponent(m_defaultMaterial);
-	});
+			m_renderingServer->InitializeMaterialDataComponent(m_defaultMaterial);
+		});
 
 	l_DefaultAssetInitializeTask->Wait();
 
@@ -343,12 +343,12 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 	auto r =
 		InnoMath::getInvertRotationMatrix(
 			l_mainCameraTransformComponent->m_globalTransformVector.m_rot
-		);
+			);
 
 	auto t =
 		InnoMath::getInvertTranslationMatrix(
 			l_mainCameraTransformComponent->m_globalTransformVector.m_pos
-		);
+			);
 
 	l_PerFrameCB.camera_posWS = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
 
@@ -482,7 +482,7 @@ bool InnoRenderingFrontendNS::updateMeshData()
 					l_drawCallInfo.material = l_cullingData.material;
 					// @TODO: use culled info
 					l_drawCallInfo.castSunShadow = true;
-					l_drawCallInfo.visibilityType = l_cullingData.visibilityType;
+					l_drawCallInfo.visibility = l_cullingData.visibility;
 					l_drawCallInfo.meshConstantBufferIndex = (uint32_t)i;
 					l_drawCallInfo.materialConstantBufferIndex = (uint32_t)i;
 
@@ -665,22 +665,22 @@ bool InnoRenderingFrontend::runRayTrace()
 	return InnoRenderingFrontendNS::m_rayTracer->Execute();
 }
 
-MeshDataComponent * InnoRenderingFrontend::addMeshDataComponent()
+MeshDataComponent* InnoRenderingFrontend::addMeshDataComponent()
 {
 	return InnoRenderingFrontendNS::m_renderingServer->AddMeshDataComponent();
 }
 
-TextureDataComponent * InnoRenderingFrontend::addTextureDataComponent()
+TextureDataComponent* InnoRenderingFrontend::addTextureDataComponent()
 {
 	return InnoRenderingFrontendNS::m_renderingServer->AddTextureDataComponent();
 }
 
-MaterialDataComponent * InnoRenderingFrontend::addMaterialDataComponent()
+MaterialDataComponent* InnoRenderingFrontend::addMaterialDataComponent()
 {
 	return InnoRenderingFrontendNS::m_renderingServer->AddMaterialDataComponent();
 }
 
-SkeletonDataComponent * InnoRenderingFrontend::addSkeletonDataComponent()
+SkeletonDataComponent* InnoRenderingFrontend::addSkeletonDataComponent()
 {
 	static std::atomic<uint32_t> skeletonCount = 0;
 	auto l_SDC = InnoMemory::Spawn<SkeletonDataComponent>(m_SkeletonDataComponentPool);
@@ -693,7 +693,7 @@ SkeletonDataComponent * InnoRenderingFrontend::addSkeletonDataComponent()
 	return l_SDC;
 }
 
-AnimationDataComponent * InnoRenderingFrontend::addAnimationDataComponent()
+AnimationDataComponent* InnoRenderingFrontend::addAnimationDataComponent()
 {
 	static std::atomic<uint32_t> animationCount = 0;
 	auto l_ADC = InnoMemory::Spawn<AnimationDataComponent>(m_AnimationDataComponentPool);
@@ -706,7 +706,7 @@ AnimationDataComponent * InnoRenderingFrontend::addAnimationDataComponent()
 	return l_ADC;
 }
 
-MeshDataComponent * InnoRenderingFrontend::getMeshDataComponent(ProceduralMeshShape shape)
+MeshDataComponent* InnoRenderingFrontend::getMeshDataComponent(ProceduralMeshShape shape)
 {
 	switch (shape)
 	{
@@ -739,7 +739,7 @@ MeshDataComponent * InnoRenderingFrontend::getMeshDataComponent(ProceduralMeshSh
 	}
 }
 
-TextureDataComponent * InnoRenderingFrontend::getTextureDataComponent(WorldEditorIconType iconType)
+TextureDataComponent* InnoRenderingFrontend::getTextureDataComponent(WorldEditorIconType iconType)
 {
 	switch (iconType)
 	{
@@ -754,7 +754,7 @@ TextureDataComponent * InnoRenderingFrontend::getTextureDataComponent(WorldEdito
 	}
 }
 
-MaterialDataComponent * InnoRenderingFrontend::getDefaultMaterialDataComponent()
+MaterialDataComponent* InnoRenderingFrontend::getDefaultMaterialDataComponent()
 {
 	return m_defaultMaterial;
 }
@@ -786,7 +786,7 @@ bool InnoRenderingFrontend::transferDataToGPU()
 	return true;
 }
 
-bool InnoRenderingFrontend::registerMeshDataComponent(MeshDataComponent * rhs, bool AsyncUploadToGPU)
+bool InnoRenderingFrontend::registerMeshDataComponent(MeshDataComponent* rhs, bool AsyncUploadToGPU)
 {
 	if (AsyncUploadToGPU)
 	{
@@ -802,7 +802,7 @@ bool InnoRenderingFrontend::registerMeshDataComponent(MeshDataComponent * rhs, b
 	return true;
 }
 
-bool InnoRenderingFrontend::registerMaterialDataComponent(MaterialDataComponent * rhs, bool AsyncUploadToGPU)
+bool InnoRenderingFrontend::registerMaterialDataComponent(MaterialDataComponent* rhs, bool AsyncUploadToGPU)
 {
 	if (AsyncUploadToGPU)
 	{

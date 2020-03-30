@@ -106,7 +106,7 @@ void InnoVisibleComponentManager::LoadAssetsForComponents(bool AsyncLoad)
 
 	for (auto i : m_Components)
 	{
-		if (i->m_visibilityType != VisibilityType::Invisible)
+		if (i->m_visibility != Visibility::Invalid)
 		{
 			if (i->m_meshSource != MeshSource::Customized)
 			{
@@ -136,7 +136,7 @@ void InnoVisibleComponentManager::LoadAssetsForComponents(bool AsyncLoad)
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Warning, "VisibleComponentManager: Visibility is invisible for ", i);
+			InnoLogger::Log(LogLevel::Warning, "VisibleComponentManager: Visibility is Invalid for ", i);
 		}
 	}
 }
