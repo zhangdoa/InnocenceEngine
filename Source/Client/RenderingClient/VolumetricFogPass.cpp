@@ -70,7 +70,6 @@ bool VolumetricFogPass::setupFroxelizationPass()
 	l_RenderPassDesc.m_RenderTargetDesc.DepthOrArraySize = voxelizationResolution;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)voxelizationResolution;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)voxelizationResolution;
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_MaxDepth = (float)voxelizationResolution;
 
 	m_froxelizationRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
