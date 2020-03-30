@@ -470,11 +470,13 @@ bool GLHelper::CreateRenderTargets(GLRenderPassDataComponent* GLRPDC, IRendering
 		if (GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
 		{
 			l_TDC->m_TextureDesc.Usage = TextureUsage::DepthStencilAttachment;
+			l_TDC->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
 			l_TDC->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::DepthStencil;
 		}
 		else
 		{
 			l_TDC->m_TextureDesc.Usage = TextureUsage::DepthAttachment;
+			l_TDC->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
 			l_TDC->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
 		}
 
@@ -930,7 +932,7 @@ bool GLHelper::AddShaderObject(GLuint& shaderID, GLuint shaderStage, const Shade
 	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: ", shaderFilePath.c_str(), " has been compiled.");
 
 	return true;
-}
+	}
 
 bool GLHelper::LinkProgramObject(GLuint& shaderProgram)
 {
