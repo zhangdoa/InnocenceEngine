@@ -7,30 +7,27 @@
 #include "assimp/DefaultLogger.hpp"
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
-#include "../Core/InnoLogger.h"
+#include "../../Core/InnoLogger.h"
 
-#include "../Interface/IModuleManager.h"
+#include "../../Interface/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
 
-#include "../Core/IOService.h"
-#include "JSONParser.h"
+#include "../../Core/IOService.h"
+#include "../JSONWrapper/JSONWrapper.h"
 
-namespace InnoFileSystemNS
+namespace AssimpWrapper
 {
-	namespace AssimpWrapper
-	{
-		json processAssimpScene(const aiScene* aiScene, const char* exportName);
-		bool processAssimpNode(json& j, const aiNode * node, const aiScene * scene, const char* exportName);
-		json processAssimpMesh(const aiScene * scene, const char* exportName, uint32_t meshIndex);
-		size_t processMeshData(const aiMesh * aiMesh, const char* exportFileRelativePath);
-		void processAssimpBone(const aiMesh * aiMesh, const char* exportFileRelativePath);
-		void processAssimpMaterial(const aiMaterial * aiMaterial, const char* exportFileRelativePath);
-		json processTextureData(const char* fileName, TextureSampler sampler, TextureUsage usage, bool IsSRGB, uint32_t textureSlotIndex);
-		void processAssimpAnimation(const aiAnimation * aiAnimation, const char* exportFileRelativePath);
-	};
-}
+	json processAssimpScene(const aiScene* aiScene, const char* exportName);
+	bool processAssimpNode(json& j, const aiNode* node, const aiScene* scene, const char* exportName);
+	json processAssimpMesh(const aiScene* scene, const char* exportName, uint32_t meshIndex);
+	size_t processMeshData(const aiMesh* aiMesh, const char* exportFileRelativePath);
+	void processAssimpBone(const aiMesh* aiMesh, const char* exportFileRelativePath);
+	void processAssimpMaterial(const aiMaterial* aiMaterial, const char* exportFileRelativePath);
+	json processTextureData(const char* fileName, TextureSampler sampler, TextureUsage usage, bool IsSRGB, uint32_t textureSlotIndex);
+	void processAssimpAnimation(const aiAnimation* aiAnimation, const char* exportFileRelativePath);
+};
 
-bool InnoFileSystemNS::AssimpWrapper::convertModel(const char* fileName, const char* exportPath)
+bool AssimpWrapper::convertModel(const char* fileName, const char* exportPath)
 {
 	auto l_exportFileName = IOService::getFileName(fileName);
 	auto l_exportFileRelativePath = exportPath + l_exportFileName + ".InnoModel";
@@ -69,7 +66,7 @@ bool InnoFileSystemNS::AssimpWrapper::convertModel(const char* fileName, const c
 			return false;
 		}
 		auto l_result = processAssimpScene(l_assScene, l_exportFileName.c_str());
-		JSONParser::saveJsonDataToDisk(l_exportFileRelativePath.c_str(), l_result);
+		JSONWrapper::saveJsonDataToDisk(l_exportFileRelativePath.c_str(), l_result);
 
 		InnoLogger::Log(LogLevel::Success, "FileSystem: AssimpWrapper: ", fileName, " has been converted.");
 	}
@@ -82,7 +79,7 @@ bool InnoFileSystemNS::AssimpWrapper::convertModel(const char* fileName, const c
 	return true;
 }
 
-json InnoFileSystemNS::AssimpWrapper::processAssimpScene(const aiScene* aiScene, const char* exportName)
+json AssimpWrapper::processAssimpScene(const aiScene* aiScene, const char* exportName)
 {
 	auto l_timeData = g_pModuleManager->getTimeSystem()->getCurrentTime();
 	auto l_timeDataStr =
@@ -116,8 +113,8 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpScene(const aiScene* aiScene,
 		auto l_rot = Vec4(l_aiRot.x, l_aiRot.y, l_aiRot.z, l_aiRot.w);
 		auto l_pos = Vec4(l_aiPos.x, l_aiPos.y, l_aiPos.z, 1.0f);
 
-		JSONParser::to_json(j["RootOffsetRotation"], l_rot);
-		JSONParser::to_json(j["RootOffsetPosition"], l_pos);
+		JSONWrapper::to_json(j["RootOffsetRotation"], l_rot);
+		JSONWrapper::to_json(j["RootOffsetPosition"], l_pos);
 	}
 
 	processAssimpNode(j, aiScene->mRootNode, aiScene, exportName);
@@ -125,7 +122,7 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpScene(const aiScene* aiScene,
 	return j;
 }
 
-bool InnoFileSystemNS::AssimpWrapper::processAssimpNode(json& j, const aiNode * node, const aiScene * scene, const char* exportName)
+bool AssimpWrapper::processAssimpNode(json& j, const aiNode* node, const aiScene* scene, const char* exportName)
 {
 	// process each mesh located at the current node
 	if (node->mNumMeshes)
@@ -148,7 +145,7 @@ bool InnoFileSystemNS::AssimpWrapper::processAssimpNode(json& j, const aiNode * 
 	return true;
 }
 
-json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, const char* exportName, uint32_t meshIndex)
+json AssimpWrapper::processAssimpMesh(const aiScene* scene, const char* exportName, uint32_t meshIndex)
 {
 	json l_meshData;
 
@@ -181,7 +178,7 @@ json InnoFileSystemNS::AssimpWrapper::processAssimpMesh(const aiScene * scene, c
 	return l_meshData;
 }
 
-size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, const char* exportFileRelativePath)
+size_t AssimpWrapper::processMeshData(const aiMesh* aiMesh, const char* exportFileRelativePath)
 {
 	auto l_verticesNumber = aiMesh->mNumVertices;
 
@@ -350,7 +347,7 @@ size_t InnoFileSystemNS::AssimpWrapper::processMeshData(const aiMesh * aiMesh, c
 	return l_indiceSize;
 }
 
-void InnoFileSystemNS::AssimpWrapper::processAssimpBone(const aiMesh * aiMesh, const char* exportFileRelativePath)
+void AssimpWrapper::processAssimpBone(const aiMesh* aiMesh, const char* exportFileRelativePath)
 {
 	json j;
 	for (uint32_t i = 0; i < aiMesh->mNumBones; i++)
@@ -367,13 +364,13 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpBone(const aiMesh * aiMesh, c
 		auto l_rot = Vec4(l_aiRot.x, l_aiRot.y, l_aiRot.z, l_aiRot.w);
 		auto l_pos = Vec4(l_aiPos.x, l_aiPos.y, l_aiPos.z, 1.0f);
 
-		JSONParser::to_json(j_child["OffsetRotation"], l_rot);
-		JSONParser::to_json(j_child["OffsetPosition"], l_pos);
+		JSONWrapper::to_json(j_child["OffsetRotation"], l_rot);
+		JSONWrapper::to_json(j_child["OffsetPosition"], l_pos);
 
 		j["Bones"].emplace_back(j_child);
 	}
 
-	JSONParser::saveJsonDataToDisk(exportFileRelativePath, j);
+	JSONWrapper::saveJsonDataToDisk(exportFileRelativePath, j);
 }
 
 /*
@@ -390,7 +387,7 @@ aiTextureType::AI_MATKEY_COLOR_EMISSIVE Ke AO
 aiTextureType::AI_MATKEY_COLOR_REFLECTIVE Thickness
 */
 
-void InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * aiMaterial, const char* exportFileRelativePath)
+void AssimpWrapper::processAssimpMaterial(const aiMaterial* aiMaterial, const char* exportFileRelativePath)
 {
 	json l_materialData;
 
@@ -494,10 +491,10 @@ void InnoFileSystemNS::AssimpWrapper::processAssimpMaterial(const aiMaterial * a
 		l_materialData["Thickness"] = 1.0f;
 	}
 
-	JSONParser::saveJsonDataToDisk(exportFileRelativePath, l_materialData);
+	JSONWrapper::saveJsonDataToDisk(exportFileRelativePath, l_materialData);
 }
 
-json InnoFileSystemNS::AssimpWrapper::processTextureData(const char* fileName, TextureSampler sampler, TextureUsage usage, bool IsSRGB, uint32_t textureSlotIndex)
+json AssimpWrapper::processTextureData(const char* fileName, TextureSampler sampler, TextureUsage usage, bool IsSRGB, uint32_t textureSlotIndex)
 {
 	json j;
 
@@ -531,7 +528,7 @@ Binary data structure:
 |ChannelN
 */
 
-void InnoFileSystemNS::AssimpWrapper::processAssimpAnimation(const aiAnimation * aiAnimation, const char* exportFileRelativePath)
+void AssimpWrapper::processAssimpAnimation(const aiAnimation* aiAnimation, const char* exportFileRelativePath)
 {
 	std::ofstream l_file(IOService::getWorkingDirectory() + exportFileRelativePath, std::ios::out | std::ios::trunc | std::ios::binary);
 

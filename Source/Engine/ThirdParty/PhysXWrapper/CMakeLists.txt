@@ -1,5 +1,7 @@
 add_library(PhysXWrapper PhysXWrapper.h PhysXWrapper.cpp)
 set_property(TARGET PhysXWrapper PROPERTY POSITION_INDEPENDENT_CODE ON)
+set_target_properties(PhysXWrapper PROPERTIES FOLDER ThirdParty)
+
 find_library(PHYSX PhysX_64)
 target_link_libraries(PhysXWrapper "${PHYSX}")
 find_library(PHYSX_FND PhysXFoundation_64)

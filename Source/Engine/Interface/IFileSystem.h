@@ -39,11 +39,5 @@ public:
 	virtual bool addSceneLoadingStartCallback(std::function<void()>* functor, int32_t priority = -1) = 0;
 	virtual bool addSceneLoadingFinishCallback(std::function<void()>* functor, int32_t priority = -1) = 0;
 
-	virtual bool convertModel(const char* fileName, const char* exportPath) = 0;
-
-	virtual Model* loadModel(const char* fileName, bool AsyncUploadGPUResource = true) = 0;
-	virtual TextureDataComponent* loadTexture(const char* fileName) = 0;
-	virtual bool saveTexture(const char* fileName, TextureDataComponent* TDC) = 0;
-
 	virtual bool addCPPClassFiles(const CPPClassDesc& desc) = 0;
 };

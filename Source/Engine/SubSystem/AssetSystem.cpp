@@ -2,6 +2,10 @@
 #include "../Common/ComponentHeaders.h"
 #include "../Common/InnoMathHelper.h"
 #include "../Core/InnoLogger.h"
+#include "../Core/IOService.h"
+#include "../ThirdParty/JSONWrapper/JSONWrapper.h"
+#include "../ThirdParty/STBWrapper/STBWrapper.h"
+#include "../ThirdParty/AssimpWrapper/AssimpWrapper.h"
 
 #include "../Interface/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
@@ -301,6 +305,77 @@ ObjectStatus InnoAssetSystem::getStatus()
 	return m_ObjectStatus;
 }
 
+bool InnoAssetSystem::convertModel(const char* fileName, const char* exportPath)
+{
+	auto l_extension = IOService::getFileExtension(fileName);
+	std::string l_fileName = fileName;
+
+	if (l_extension == ".obj" || l_extension == ".OBJ" || l_extension == ".fbx" || l_extension == ".FBX")
+	{
+		auto tempTask = g_pModuleManager->getTaskSystem()->submit("ConvertModelTask", -1, nullptr, [=]()
+			{
+				AssimpWrapper::convertModel(l_fileName.c_str(), exportPath);
+			});
+		return true;
+	}
+	else
+	{
+		InnoLogger::Log(LogLevel::Warning, "FileSystem: ", fileName, " is not supported!");
+
+		return false;
+	}
+}
+
+Model* InnoAssetSystem::loadModel(const char* fileName, bool AsyncUploadGPUResource)
+{
+	auto l_extension = IOService::getFileExtension(fileName);
+	if (l_extension == ".InnoModel")
+	{
+		Model* l_loadedModel;
+
+		if (findLoadedModel(fileName, l_loadedModel))
+		{
+			return l_loadedModel;
+		}
+		else
+		{
+			auto l_result = JSONWrapper::loadModelFromDisk(fileName, AsyncUploadGPUResource);
+			recordLoadedModel(fileName, l_result);
+
+			return l_result;
+		}
+	}
+	else
+	{
+		InnoLogger::Log(LogLevel::Warning, "AssetSystem: ", fileName, " is not supported!");
+		return nullptr;
+	}
+}
+
+TextureDataComponent* InnoAssetSystem::loadTexture(const char* fileName)
+{
+	TextureDataComponent* l_TDC;
+
+	if (findLoadedTexture(fileName, l_TDC))
+	{
+		return l_TDC;
+	}
+	else
+	{
+		l_TDC = STBWrapper::loadTexture(fileName);
+		if (l_TDC)
+		{
+			recordLoadedTexture(fileName, l_TDC);
+		}
+		return l_TDC;
+	}
+}
+
+bool InnoAssetSystem::saveTexture(const char* fileName, TextureDataComponent* TDC)
+{
+	return STBWrapper::saveTexture(fileName, TDC);
+}
+
 recordLoaded(MeshMaterialPair, MeshMaterialPair*, pair)
 findLoaded(MeshMaterialPair, MeshMaterialPair*&, pair)
 
@@ -339,7 +414,7 @@ MeshMaterialPair* InnoAssetSystem::getMeshMaterialPair(uint64_t index)
 	return m_meshMaterialPairList[index];
 }
 
-Model * InnoAssetSystem::addModel()
+Model* InnoAssetSystem::addModel()
 {
 	std::unique_lock<std::shared_mutex> lock{ m_mutexModel };
 

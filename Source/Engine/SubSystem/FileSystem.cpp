@@ -9,17 +9,13 @@
 extern IModuleManager* g_pModuleManager;
 
 #include "../Core/IOService.h"
-#include "../AssetManager/AssimpWrapper.h"
-#include "../AssetManager/TextureIO.h"
-#include "../AssetManager/AssetLoader.h"
-#include "../AssetManager/JSONParser.h"
+#include "../ThirdParty/AssimpWrapper/AssimpWrapper.h"
+#include "../ThirdParty/JSONWrapper/JSONWrapper.h"
 
 using SceneLoadingCallback = std::pair<std::function<void()>*, int32_t>;
 
 namespace InnoFileSystemNS
 {
-	bool convertModel(const char* fileName, const char* exportPath);
-
 	bool saveScene(const char* fileName);
 	bool prepareForLoadingScene(const char* fileName);
 	bool loadScene(const char* fileName);
@@ -36,38 +32,15 @@ namespace InnoFileSystemNS
 	std::string m_currentScene;
 }
 
-bool InnoFileSystemNS::convertModel(const char* fileName, const char* exportPath)
-{
-	auto l_extension = IOService::getFileExtension(fileName);
-	std::string l_fileName = fileName;
-
-	if (l_extension == ".obj" || l_extension == ".OBJ" || l_extension == ".fbx" || l_extension == ".FBX")
-	{
-		auto tempTask = g_pModuleManager->getTaskSystem()->submit("ConvertModelTask", -1, nullptr, [=]()
-		{
-			AssimpWrapper::convertModel(l_fileName.c_str(), exportPath);
-		});
-		return true;
-	}
-	else
-	{
-		InnoLogger::Log(LogLevel::Warning, "FileSystem: ", fileName, " is not supported!");
-
-		return false;
-	}
-
-	return true;
-}
-
 bool InnoFileSystemNS::saveScene(const char* fileName)
 {
 	if (!strcmp(fileName, ""))
 	{
-		return JSONParser::saveScene(m_currentScene.c_str());
+		return JSONWrapper::saveScene(m_currentScene.c_str());
 	}
 	else
 	{
-		return JSONParser::saveScene(fileName);
+		return JSONWrapper::saveScene(fileName);
 	}
 }
 
@@ -93,20 +66,20 @@ bool InnoFileSystemNS::loadScene(const char* fileName)
 
 	std::sort(m_sceneLoadingStartCallbacks.begin(), m_sceneLoadingStartCallbacks.end(),
 		[&](SceneLoadingCallback A, SceneLoadingCallback B) {
-		return A.second > B.second;
-	});
+			return A.second > B.second;
+		});
 
 	std::sort(m_sceneLoadingFinishCallbacks.begin(), m_sceneLoadingFinishCallbacks.end(),
 		[&](SceneLoadingCallback A, SceneLoadingCallback B) {
-		return A.second > B.second;
-	});
+			return A.second > B.second;
+		});
 
 	for (auto& i : m_sceneLoadingStartCallbacks)
 	{
 		(*i.first)();
 	}
 
-	JSONParser::loadScene(fileName);
+	JSONWrapper::loadScene(fileName);
 
 	for (auto& i : m_sceneLoadingFinishCallbacks)
 	{
@@ -245,27 +218,7 @@ bool InnoFileSystem::addSceneLoadingFinishCallback(std::function<void()>* functo
 	return true;
 }
 
-bool InnoFileSystem::convertModel(const char* fileName, const char* exportPath)
-{
-	return InnoFileSystemNS::convertModel(fileName, exportPath);
-}
-
-Model* InnoFileSystem::loadModel(const char* fileName, bool AsyncUploadGPUResource)
-{
-	return InnoFileSystemNS::AssetLoader::loadModel(fileName, AsyncUploadGPUResource);
-}
-
-TextureDataComponent* InnoFileSystem::loadTexture(const char* fileName)
-{
-	return InnoFileSystemNS::AssetLoader::loadTexture(fileName);
-}
-
-bool InnoFileSystem::saveTexture(const char* fileName, TextureDataComponent * TDC)
-{
-	return InnoFileSystemNS::TextureIO::saveTexture(fileName, TDC);
-}
-
-bool InnoFileSystem::addCPPClassFiles(const CPPClassDesc & desc)
+bool InnoFileSystem::addCPPClassFiles(const CPPClassDesc& desc)
 {
 	// Build header file
 	auto l_headerFileName = desc.filePath + desc.className + ".h";

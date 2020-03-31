@@ -1,6 +1,5 @@
 add_subdirectory("ThirdParty")
 add_subdirectory("Core")
-add_subdirectory("AssetManager")
 add_subdirectory("SubSystem")
 add_subdirectory("RenderingFrontend")
 add_subdirectory("RenderingServer")

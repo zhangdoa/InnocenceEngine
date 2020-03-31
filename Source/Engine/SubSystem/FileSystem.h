@@ -26,11 +26,5 @@ public:
 	bool addSceneLoadingStartCallback(std::function<void()>* functor, int32_t priority) override;
 	bool addSceneLoadingFinishCallback(std::function<void()>* functor, int32_t priority) override;
 
-	bool convertModel(const char* fileName, const char* exportPath) override;
-
-	Model* loadModel(const char* fileName, bool AsyncUploadGPUResource) override;
-	TextureDataComponent* loadTexture(const char* fileName) override;
-	bool saveTexture(const char* fileName, TextureDataComponent* TDC) override;
-
 	bool addCPPClassFiles(const CPPClassDesc& desc) override;
 };

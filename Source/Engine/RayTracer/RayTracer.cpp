@@ -38,7 +38,7 @@ struct HitableCube : public Hitable
 	virtual bool Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult);
 };
 
-bool HitableCube::Hit(const Ray & r, float tMin, float tMax, HitResult & hitResult)
+bool HitableCube::Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult)
 {
 	float t1 = (m_AABB.m_boundMin.x - r.m_origin.x) / r.m_direction.x;
 	float t2 = (m_AABB.m_boundMax.x - r.m_origin.x) / r.m_direction.x;
@@ -87,7 +87,7 @@ struct HitableSphere : public Hitable
 	virtual bool Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult);
 };
 
-bool HitableSphere::Hit(const Ray & r, float tMin, float tMax, HitResult & hitResult)
+bool HitableSphere::Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult)
 {
 	auto oc = r.m_origin - m_Sphere.m_center;
 	auto a = r.m_direction * r.m_direction;
@@ -136,7 +136,7 @@ struct HitableList : public Hitable
 	virtual bool Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult);
 };
 
-bool HitableList::Hit(const Ray & r, float tMin, float tMax, HitResult & hitResult)
+bool HitableList::Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult)
 {
 	HitResult l_hitResult;
 	bool hit_anything = false;
@@ -311,9 +311,9 @@ bool ExecuteRayTracing()
 			color.z = sqrtf(color.z);
 
 			TVec4<uint8_t> l_colorUint8;
-			l_colorUint8.x = uint8_t(255.99*color.x);
-			l_colorUint8.y = uint8_t(255.99*color.y);
-			l_colorUint8.z = uint8_t(255.99*color.z);
+			l_colorUint8.x = uint8_t(255.99 * color.x);
+			l_colorUint8.y = uint8_t(255.99 * color.y);
+			l_colorUint8.z = uint8_t(255.99 * color.z);
 			l_colorUint8.w = uint8_t(255);
 
 			l_result.emplace_back(l_colorUint8);
@@ -323,7 +323,7 @@ bool ExecuteRayTracing()
 	m_TDC->m_TextureData = &l_result[0];
 
 	auto l_textureFileName = "..//Res//Intermediate//RayTracingResult_" + std::to_string(g_pModuleManager->getTimeSystem()->getCurrentTimeFromEpoch());
-	g_pModuleManager->getFileSystem()->saveTexture(l_textureFileName.c_str(), m_TDC);
+	g_pModuleManager->getAssetSystem()->saveTexture(l_textureFileName.c_str(), m_TDC);
 
 	InnoLogger::Log(LogLevel::Success, "InnoRayTracer: Ray tracing finished.");
 

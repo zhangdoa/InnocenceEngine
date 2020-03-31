@@ -200,23 +200,23 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 
 bool InnoRenderingFrontendNS::loadDefaultAssets()
 {
-	auto m_basicNormalTexture = g_pModuleManager->getFileSystem()->loadTexture("..//Res//Textures//basic_normal.png");
+	auto m_basicNormalTexture = g_pModuleManager->getAssetSystem()->loadTexture("..//Res//Textures//basic_normal.png");
 	m_basicNormalTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_basicNormalTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	auto m_basicAlbedoTexture = g_pModuleManager->getFileSystem()->loadTexture("..//Res//Textures//basic_albedo.png");
+	auto m_basicAlbedoTexture = g_pModuleManager->getAssetSystem()->loadTexture("..//Res//Textures//basic_albedo.png");
 	m_basicAlbedoTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_basicAlbedoTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	auto m_basicMetallicTexture = g_pModuleManager->getFileSystem()->loadTexture("..//Res//Textures//basic_metallic.png");
+	auto m_basicMetallicTexture = g_pModuleManager->getAssetSystem()->loadTexture("..//Res//Textures//basic_metallic.png");
 	m_basicMetallicTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_basicMetallicTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	auto m_basicRoughnessTexture = g_pModuleManager->getFileSystem()->loadTexture("..//Res//Textures//basic_roughness.png");
+	auto m_basicRoughnessTexture = g_pModuleManager->getAssetSystem()->loadTexture("..//Res//Textures//basic_roughness.png");
 	m_basicRoughnessTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_basicRoughnessTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	auto m_basicAOTexture = g_pModuleManager->getFileSystem()->loadTexture("..//Res//Textures//basic_ao.png");
+	auto m_basicAOTexture = g_pModuleManager->getAssetSystem()->loadTexture("..//Res//Textures//basic_ao.png");
 	m_basicAOTexture->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_basicAOTexture->m_TextureDesc.Usage = TextureUsage::Sample;
 
@@ -230,15 +230,15 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 	m_defaultMaterial->m_TextureSlots[6].m_Texture = m_basicAOTexture;
 	m_defaultMaterial->m_TextureSlots[7].m_Texture = m_basicAOTexture;
 
-	m_iconTemplate_DirectionalLight = g_pModuleManager->getFileSystem()->loadTexture("..//Res//Textures//InnoWorldEditorIcons_DirectionalLight.png");
+	m_iconTemplate_DirectionalLight = g_pModuleManager->getAssetSystem()->loadTexture("..//Res//Textures//InnoWorldEditorIcons_DirectionalLight.png");
 	m_iconTemplate_DirectionalLight->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_iconTemplate_DirectionalLight->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	m_iconTemplate_PointLight = g_pModuleManager->getFileSystem()->loadTexture("..//Res//Textures//InnoWorldEditorIcons_PointLight.png");
+	m_iconTemplate_PointLight = g_pModuleManager->getAssetSystem()->loadTexture("..//Res//Textures//InnoWorldEditorIcons_PointLight.png");
 	m_iconTemplate_PointLight->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_iconTemplate_PointLight->m_TextureDesc.Usage = TextureUsage::Sample;
 
-	m_iconTemplate_SphereLight = g_pModuleManager->getFileSystem()->loadTexture("..//Res//Textures//InnoWorldEditorIcons_SphereLight.png");
+	m_iconTemplate_SphereLight = g_pModuleManager->getAssetSystem()->loadTexture("..//Res//Textures//InnoWorldEditorIcons_SphereLight.png");
 	m_iconTemplate_SphereLight->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_iconTemplate_SphereLight->m_TextureDesc.Usage = TextureUsage::Sample;
 

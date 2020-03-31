@@ -1,6 +1,7 @@
 file(GLOB HEADERS "*.h")
 file(GLOB SOURCES "*.cpp")
 add_library(InnoWinWindowSystem ${HEADERS} ${SOURCES})
+set_target_properties(InnoWinWindowSystem PROPERTIES FOLDER Engine/Window)
 
 if (INNO_RENDERER_DIRECTX)
 add_subdirectory("DXWindowSurface")

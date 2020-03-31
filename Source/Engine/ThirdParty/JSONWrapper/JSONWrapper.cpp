@@ -1,18 +1,17 @@
-#include "JSONParser.h"
-#include "../Common/CommonMacro.inl"
-#include "../ComponentManager/ITransformComponentManager.h"
-#include "../ComponentManager/IVisibleComponentManager.h"
-#include "../ComponentManager/ILightComponentManager.h"
-#include "../ComponentManager/ICameraComponentManager.h"
-#include "../Core/InnoLogger.h"
+#include "JSONWrapper.h"
+#include "../../Common/CommonMacro.inl"
+#include "../../ComponentManager/ITransformComponentManager.h"
+#include "../../ComponentManager/IVisibleComponentManager.h"
+#include "../../ComponentManager/ILightComponentManager.h"
+#include "../../ComponentManager/ICameraComponentManager.h"
+#include "../../Core/InnoLogger.h"
 
-#include "../Interface/IModuleManager.h"
+#include "../../Interface/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
 
-#include "../Core/IOService.h"
-#include "AssetLoader.h"
+#include "../../Core/IOService.h"
 
-namespace InnoFileSystemNS::JSONParser
+namespace JSONWrapper
 {
 #define LoadComponentData(className, j, entity) \
 	{ auto l_result = SpawnComponent(className, entity, ObjectSource::Asset, ObjectOwnership::Client); \
@@ -54,7 +53,7 @@ namespace InnoFileSystemNS::JSONParser
 	ThreadSafeQueue<std::pair<TransformComponent*, ObjectName>> m_orphanTransformComponents;
 }
 
-bool InnoFileSystemNS::JSONParser::loadJsonDataFromDisk(const char* fileName, json& data)
+bool JSONWrapper::loadJsonDataFromDisk(const char* fileName, json& data)
 {
 	std::ifstream i;
 
@@ -72,7 +71,7 @@ bool InnoFileSystemNS::JSONParser::loadJsonDataFromDisk(const char* fileName, js
 	return true;
 }
 
-bool InnoFileSystemNS::JSONParser::saveJsonDataToDisk(const char* fileName, const json& data)
+bool JSONWrapper::saveJsonDataToDisk(const char* fileName, const json& data)
 {
 	std::ofstream o;
 	o.open(IOService::getWorkingDirectory() + fileName, std::ios::out | std::ios::trunc);
@@ -84,7 +83,7 @@ bool InnoFileSystemNS::JSONParser::saveJsonDataToDisk(const char* fileName, cons
 	return true;
 }
 
-void InnoFileSystemNS::JSONParser::to_json(json& j, const InnoEntity& p)
+void JSONWrapper::to_json(json& j, const InnoEntity& p)
 {
 	j = json
 	{
@@ -93,7 +92,7 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const InnoEntity& p)
 	};
 }
 
-void InnoFileSystemNS::JSONParser::to_json(json& j, const Vec4& p)
+void JSONWrapper::to_json(json& j, const Vec4& p)
 {
 	j = json
 	{
@@ -112,7 +111,7 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const Vec4& p)
 	};
 }
 
-void InnoFileSystemNS::JSONParser::to_json(json& j, const TransformVector& p)
+void JSONWrapper::to_json(json& j, const TransformVector& p)
 {
 	j = json
 	{
@@ -164,7 +163,7 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const TransformVector& p)
 	};
 }
 
-void InnoFileSystemNS::JSONParser::to_json(json& j, const TransformComponent& p)
+void JSONWrapper::to_json(json& j, const TransformComponent& p)
 {
 	json localTransformVector;
 
@@ -182,7 +181,7 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const TransformComponent& p)
 	};
 }
 
-void InnoFileSystemNS::JSONParser::to_json(json& j, const VisibleComponent& p)
+void JSONWrapper::to_json(json& j, const VisibleComponent& p)
 {
 	j = json
 	{
@@ -198,7 +197,7 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const VisibleComponent& p)
 	};
 }
 
-void InnoFileSystemNS::JSONParser::to_json(json& j, const LightComponent& p)
+void JSONWrapper::to_json(json& j, const LightComponent& p)
 {
 	json color;
 	to_json(color, p.m_RGBColor);
@@ -218,7 +217,7 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const LightComponent& p)
 	};
 }
 
-void InnoFileSystemNS::JSONParser::to_json(json& j, const CameraComponent& p)
+void JSONWrapper::to_json(json& j, const CameraComponent& p)
 {
 	j = json
 	{
@@ -231,7 +230,7 @@ void InnoFileSystemNS::JSONParser::to_json(json& j, const CameraComponent& p)
 	};
 }
 
-void InnoFileSystemNS::JSONParser::from_json(const json& j, Vec4& p)
+void JSONWrapper::from_json(const json& j, Vec4& p)
 {
 	p.x = j["X"];
 	p.y = j["Y"];
@@ -239,7 +238,7 @@ void InnoFileSystemNS::JSONParser::from_json(const json& j, Vec4& p)
 	p.w = j["W"];
 }
 
-void InnoFileSystemNS::JSONParser::from_json(const json& j, TransformComponent& p)
+void JSONWrapper::from_json(const json& j, TransformComponent& p)
 {
 	from_json(j["LocalTransformVector"], p.m_localTransformVector);
 	auto l_parentTransformComponentEntityName = j["ParentTransformComponentEntityName"];
@@ -257,7 +256,7 @@ void InnoFileSystemNS::JSONParser::from_json(const json& j, TransformComponent& 
 	}
 }
 
-void InnoFileSystemNS::JSONParser::from_json(const json& j, TransformVector& p)
+void JSONWrapper::from_json(const json& j, TransformVector& p)
 {
 	p.m_pos.x = j["Position"]["X"];
 	p.m_pos.y = j["Position"]["Y"];
@@ -275,7 +274,7 @@ void InnoFileSystemNS::JSONParser::from_json(const json& j, TransformVector& p)
 	p.m_scale.w = 1.0f;
 }
 
-void InnoFileSystemNS::JSONParser::from_json(const json& j, VisibleComponent& p)
+void JSONWrapper::from_json(const json& j, VisibleComponent& p)
 {
 	p.m_visibility = j["Visibility"];
 	p.m_meshPrimitiveTopology = j["MeshPrimitiveTopology"];
@@ -287,7 +286,7 @@ void InnoFileSystemNS::JSONParser::from_json(const json& j, VisibleComponent& p)
 	p.m_simulatePhysics = j["SimulatePhysics"];
 }
 
-void InnoFileSystemNS::JSONParser::from_json(const json& j, LightComponent& p)
+void JSONWrapper::from_json(const json& j, LightComponent& p)
 {
 	from_json(j["RGBColor"], p.m_RGBColor);
 	from_json(j["Shape"], p.m_Shape);
@@ -297,7 +296,7 @@ void InnoFileSystemNS::JSONParser::from_json(const json& j, LightComponent& p)
 	p.m_UseColorTemperature = j["UseColorTemperature"];
 }
 
-void InnoFileSystemNS::JSONParser::from_json(const json& j, CameraComponent& p)
+void JSONWrapper::from_json(const json& j, CameraComponent& p)
 {
 	p.m_FOVX = j["FOVX"];
 	p.m_widthScale = j["WidthScale"];
@@ -306,7 +305,7 @@ void InnoFileSystemNS::JSONParser::from_json(const json& j, CameraComponent& p)
 	p.m_zFar = j["zFar"];
 }
 
-Model* InnoFileSystemNS::JSONParser::loadModelFromDisk(const char* fileName, bool AsyncUploadGPUResource)
+Model* JSONWrapper::loadModelFromDisk(const char* fileName, bool AsyncUploadGPUResource)
 {
 	json j;
 
@@ -315,7 +314,7 @@ Model* InnoFileSystemNS::JSONParser::loadModelFromDisk(const char* fileName, boo
 	return processSceneJsonData(j, AsyncUploadGPUResource);
 }
 
-Model* InnoFileSystemNS::JSONParser::processSceneJsonData(const json& j, bool AsyncUploadGPUResource)
+Model* JSONWrapper::processSceneJsonData(const json& j, bool AsyncUploadGPUResource)
 {
 	// @TODO: Optimize
 	if (j.find("AnimationFiles") != j.end())
@@ -375,7 +374,7 @@ Model* InnoFileSystemNS::JSONParser::processSceneJsonData(const json& j, bool As
 	return l_result;
 }
 
-std::vector<AnimationDataComponent*> InnoFileSystemNS::JSONParser::processAnimationJsonData(const json& j)
+std::vector<AnimationDataComponent*> JSONWrapper::processAnimationJsonData(const json& j)
 {
 	std::vector<AnimationDataComponent*> l_result;
 	l_result.reserve(j.size());
@@ -412,7 +411,7 @@ std::vector<AnimationDataComponent*> InnoFileSystemNS::JSONParser::processAnimat
 	return l_result;
 }
 
-ArrayRangeInfo InnoFileSystemNS::JSONParser::processMeshJsonData(const json& j, bool AsyncUploadGPUResource)
+ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadGPUResource)
 {
 	auto l_result = g_pModuleManager->getAssetSystem()->addMeshMaterialPairs(j.size());
 
@@ -505,7 +504,7 @@ ArrayRangeInfo InnoFileSystemNS::JSONParser::processMeshJsonData(const json& j, 
 	return l_result;
 }
 
-SkeletonDataComponent* InnoFileSystemNS::JSONParser::processSkeletonJsonData(const char* skeletonFileName)
+SkeletonDataComponent* JSONWrapper::processSkeletonJsonData(const char* skeletonFileName)
 {
 	SkeletonDataComponent* l_result;
 
@@ -547,7 +546,7 @@ SkeletonDataComponent* InnoFileSystemNS::JSONParser::processSkeletonJsonData(con
 	}
 }
 
-MaterialDataComponent* InnoFileSystemNS::JSONParser::processMaterialJsonData(const char* materialFileName, bool AsyncUploadGPUResource)
+MaterialDataComponent* JSONWrapper::processMaterialJsonData(const char* materialFileName, bool AsyncUploadGPUResource)
 {
 	json j;
 
@@ -563,7 +562,7 @@ MaterialDataComponent* InnoFileSystemNS::JSONParser::processMaterialJsonData(con
 			std::string l_textureFile = i["File"];
 			auto l_textureSlotIndex = i["TextureSlotIndex"];
 
-			auto l_TDC = AssetLoader::loadTexture(l_textureFile.c_str());
+			auto l_TDC = g_pModuleManager->getAssetSystem()->loadTexture(l_textureFile.c_str());
 			if (l_TDC)
 			{
 				l_TDC->m_TextureDesc.Sampler = TextureSampler(i["Sampler"]);
@@ -594,7 +593,7 @@ MaterialDataComponent* InnoFileSystemNS::JSONParser::processMaterialJsonData(con
 	return l_MDC;
 }
 
-bool InnoFileSystemNS::JSONParser::saveScene(const char* fileName)
+bool JSONWrapper::saveScene(const char* fileName)
 {
 	json topLevel;
 	topLevel["SceneName"] = fileName;
@@ -647,7 +646,7 @@ bool InnoFileSystemNS::JSONParser::saveScene(const char* fileName)
 	return true;
 }
 
-bool InnoFileSystemNS::JSONParser::loadScene(const char* fileName)
+bool JSONWrapper::loadScene(const char* fileName)
 {
 	json j;
 	if (!loadJsonDataFromDisk(fileName, j))
@@ -696,7 +695,7 @@ bool InnoFileSystemNS::JSONParser::loadScene(const char* fileName)
 	return true;
 }
 
-bool InnoFileSystemNS::JSONParser::assignComponentRuntimeData()
+bool JSONWrapper::assignComponentRuntimeData()
 {
 	while (m_orphanTransformComponents.size() > 0)
 	{

@@ -13,6 +13,11 @@ public:
 
 	ObjectStatus getStatus() override;
 
+	bool convertModel(const char* fileName, const char* exportPath) override;
+	Model* loadModel(const char* fileName, bool AsyncUploadGPUResource = true) override;
+	TextureDataComponent* loadTexture(const char* fileName) override;
+	bool saveTexture(const char* fileName, TextureDataComponent* TDC) override;
+
 	bool recordLoadedMeshMaterialPair(const char* fileName, MeshMaterialPair* pair) override;
 	bool findLoadedMeshMaterialPair(const char* fileName, MeshMaterialPair*& pair) override;
 

@@ -1,16 +1,16 @@
-#include "TextureIO.h"
+#include "STBWrapper.h"
 
-#include "../Core/InnoLogger.h"
+#include "../../Core/InnoLogger.h"
 
-#include "../Core/IOService.h"
+#include "../../Core/IOService.h"
 
-#include "../Interface/IModuleManager.h"
+#include "../../Interface/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
 
 #include "stb/stb_image.h"
 #include "stb/stb_image_write.h"
 
-TextureDataComponent* InnoFileSystemNS::TextureIO::loadTexture(const char* fileName)
+TextureDataComponent* STBWrapper::loadTexture(const char* fileName)
 {
 	int32_t width, height, nrChannels;
 
@@ -43,19 +43,19 @@ TextureDataComponent* InnoFileSystemNS::TextureIO::loadTexture(const char* fileN
 		l_TDC->m_TextureData = l_rawData;
 		l_TDC->m_ObjectStatus = ObjectStatus::Created;
 
-		InnoLogger::Log(LogLevel::Verbose, "FileSystem: TextureIO: STB_Image: ", l_fullPath.c_str(), " has been loaded.");
+		InnoLogger::Log(LogLevel::Verbose, "FileSystem: STBWrapper: STB_Image: ", l_fullPath.c_str(), " has been loaded.");
 
 		return l_TDC;
 	}
 	else
 	{
-		InnoLogger::Log(LogLevel::Error, "FileSystem: TextureIO: STB_Image: Failed to load texture: ", l_fullPath.c_str());
+		InnoLogger::Log(LogLevel::Error, "FileSystem: STBWrapper: STB_Image: Failed to load texture: ", l_fullPath.c_str());
 
 		return nullptr;
 	}
 }
 
-bool InnoFileSystemNS::TextureIO::saveTexture(const char* fileName, TextureDataComponent* TDC)
+bool STBWrapper::saveTexture(const char* fileName, TextureDataComponent* TDC)
 {
 	if (TDC->m_TextureDesc.PixelDataType == TexturePixelDataType::Float16 || TDC->m_TextureDesc.PixelDataType == TexturePixelDataType::Float32)
 	{

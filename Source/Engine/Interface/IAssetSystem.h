@@ -22,6 +22,11 @@ public:
 
 	virtual ObjectStatus getStatus() = 0;
 
+	virtual bool convertModel(const char* fileName, const char* exportPath) = 0;
+	virtual Model* loadModel(const char* fileName, bool AsyncUploadGPUResource = true) = 0;
+	virtual TextureDataComponent* loadTexture(const char* fileName) = 0;
+	virtual bool saveTexture(const char* fileName, TextureDataComponent* TDC) = 0;
+
 	virtual bool recordLoadedMeshMaterialPair(const char* fileName, MeshMaterialPair* pair) = 0;
 	virtual bool findLoadedMeshMaterialPair(const char* fileName, MeshMaterialPair*& pair) = 0;
 

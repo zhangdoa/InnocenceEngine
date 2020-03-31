@@ -46,7 +46,7 @@ bool InnoVisibleComponentManager::Setup()
 
 	f_LoadModelTask = [=](VisibleComponent* i, bool AsyncLoad)
 	{
-		i->m_model = g_pModuleManager->getFileSystem()->loadModel(i->m_modelFileName.c_str(), AsyncLoad);
+		i->m_model = g_pModuleManager->getAssetSystem()->loadModel(i->m_modelFileName.c_str(), AsyncLoad);
 	};
 
 	f_AssignProceduralModelTask = [=](VisibleComponent* i, bool AsyncLoad)

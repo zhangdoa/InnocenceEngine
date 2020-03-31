@@ -1,6 +1,7 @@
 file(GLOB HEADERS "*.h")
 file(GLOB SOURCES "*.cpp")
 add_library(InnoEngine SHARED ${HEADERS} ${SOURCES})
+set_target_properties(InnoEngine PROPERTIES FOLDER Engine)
 
 include (GenerateExportHeader)
 GENERATE_EXPORT_HEADER (InnoEngine
@@ -11,7 +12,6 @@ GENERATE_EXPORT_HEADER (InnoEngine
 )
 
 target_link_libraries(InnoEngine InnoCore)
-target_link_libraries(InnoEngine InnoAssetManger)
 target_link_libraries(InnoEngine InnoEntityManager)
 target_link_libraries(InnoEngine InnoComponentManager)
 target_link_libraries(InnoEngine InnoSceneHierarchyManager)

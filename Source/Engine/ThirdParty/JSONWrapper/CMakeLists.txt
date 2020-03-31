@@ -1,0 +1,4 @@
+aux_source_directory(. DIR_SRCS)
+add_library(JSONWrapper ${DIR_SRCS})
+set_property(TARGET JSONWrapper PROPERTY POSITION_INDEPENDENT_CODE ON)
+set_target_properties(JSONWrapper PROPERTIES FOLDER ThirdParty)

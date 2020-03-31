@@ -1,3 +1,5 @@
+add_subdirectory("JSONWrapper")
+add_subdirectory("AssimpWrapper")
 add_subdirectory("STBWrapper")
 add_subdirectory("ImGui")
 add_subdirectory("ImGuiWrapper")
