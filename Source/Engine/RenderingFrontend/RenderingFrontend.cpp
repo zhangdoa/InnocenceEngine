@@ -65,6 +65,8 @@ namespace InnoRenderingFrontendNS
 
 	ThreadSafeQueue<MeshDataComponent*> m_uninitializedMeshes;
 	ThreadSafeQueue<MaterialDataComponent*> m_uninitializedMaterials;
+	ThreadSafeQueue<SkeletonDataComponent*> m_uninitializedSkeletons;
+	ThreadSafeUnorderedMap<SkeletonDataComponent*, GPUBufferDataComponent*> m_skeletonsLUT;
 
 	TextureDataComponent* m_iconTemplate_DirectionalLight;
 	TextureDataComponent* m_iconTemplate_PointLight;
@@ -85,6 +87,7 @@ namespace InnoRenderingFrontendNS
 
 	float radicalInverse(uint32_t n, uint32_t base);
 	void initializeHaltonSampler();
+	void initializeSkeleton(SkeletonDataComponent* rhs);
 
 	bool updatePerFrameConstantBuffer();
 	bool updateLightData();
@@ -117,6 +120,22 @@ void InnoRenderingFrontendNS::initializeHaltonSampler()
 	{
 		m_haltonSampler.emplace_back(Vec2(radicalInverse(i, 3) * 2.0f - 1.0f, radicalInverse(i, 4) * 2.0f - 1.0f));
 	}
+}
+
+void InnoRenderingFrontendNS::initializeSkeleton(SkeletonDataComponent* rhs)
+{
+	auto l_GBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent(rhs->m_Name.c_str());
+	l_GBDC->m_ParentEntity = rhs->m_ParentEntity;
+	l_GBDC->m_ElementCount = rhs->m_Bones.size();
+	l_GBDC->m_ElementSize = sizeof(Bone);
+	l_GBDC->m_BindingPoint = 0;
+
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(l_GBDC);
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GBDC, &rhs->m_Bones[0]);
+
+	rhs->m_ObjectStatus = ObjectStatus::Activated;
+
+	m_skeletonsLUT.emplace(rhs, l_GBDC);
 }
 
 bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
@@ -686,6 +705,7 @@ SkeletonDataComponent* InnoRenderingFrontend::addSkeletonDataComponent()
 	auto l_SDC = InnoMemory::Spawn<SkeletonDataComponent>(m_SkeletonDataComponentPool);
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Skeleton_" + std::to_string(skeletonCount) + "/").c_str());
 	l_SDC->m_ParentEntity = l_parentEntity;
+	l_SDC->m_ObjectStatus = ObjectStatus::Created;
 	l_SDC->m_ObjectSource = ObjectSource::Runtime;
 	l_SDC->m_ObjectOwnership = ObjectOwnership::Engine;
 	l_SDC->m_ComponentType = ComponentType::SkeletonDataComponent;
@@ -699,6 +719,7 @@ AnimationDataComponent* InnoRenderingFrontend::addAnimationDataComponent()
 	auto l_ADC = InnoMemory::Spawn<AnimationDataComponent>(m_AnimationDataComponentPool);
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Animation_" + std::to_string(animationCount) + "/").c_str());
 	l_ADC->m_ParentEntity = l_parentEntity;
+	l_ADC->m_ObjectStatus = ObjectStatus::Created;
 	l_ADC->m_ObjectSource = ObjectSource::Runtime;
 	l_ADC->m_ObjectOwnership = ObjectOwnership::Engine;
 	l_ADC->m_ComponentType = ComponentType::AnimationDataComponent;
@@ -774,12 +795,23 @@ bool InnoRenderingFrontend::transferDataToGPU()
 
 	while (m_uninitializedMaterials.size() > 0)
 	{
-		MaterialDataComponent* l_Mesh;
-		m_uninitializedMaterials.tryPop(l_Mesh);
+		MaterialDataComponent* l_Material;
+		m_uninitializedMaterials.tryPop(l_Material);
 
-		if (l_Mesh)
+		if (l_Material)
 		{
-			auto l_result = m_renderingServer->InitializeMaterialDataComponent(l_Mesh);
+			auto l_result = m_renderingServer->InitializeMaterialDataComponent(l_Material);
+		}
+	}
+
+	while (m_uninitializedSkeletons.size() > 0)
+	{
+		SkeletonDataComponent* l_Skeletons;
+		m_uninitializedSkeletons.tryPop(l_Skeletons);
+
+		if (l_Skeletons)
+		{
+			initializeSkeleton(l_Skeletons);
 		}
 	}
 
@@ -795,7 +827,7 @@ bool InnoRenderingFrontend::registerMeshDataComponent(MeshDataComponent* rhs, bo
 	else
 	{
 		auto l_MeshDataComponentInitializeTask = g_pModuleManager->getTaskSystem()->submit("MeshDataComponentInitializeTask", 2, nullptr,
-			[=]() {m_renderingServer->InitializeMeshDataComponent(rhs); });
+			[=]() { m_renderingServer->InitializeMeshDataComponent(rhs); });
 		l_MeshDataComponentInitializeTask->Wait();
 	}
 
@@ -811,8 +843,24 @@ bool InnoRenderingFrontend::registerMaterialDataComponent(MaterialDataComponent*
 	else
 	{
 		auto l_MaterialDataComponentInitializeTask = g_pModuleManager->getTaskSystem()->submit("MaterialDataComponentInitializeTask", 2, nullptr,
-			[=]() {m_renderingServer->InitializeMaterialDataComponent(rhs); });
+			[=]() { m_renderingServer->InitializeMaterialDataComponent(rhs); });
 		l_MaterialDataComponentInitializeTask->Wait();
+	}
+
+	return true;
+}
+
+bool InnoRenderingFrontend::registerSkeletonDataComponent(SkeletonDataComponent* rhs, bool AsyncUploadToGPU)
+{
+	if (AsyncUploadToGPU)
+	{
+		m_uninitializedSkeletons.push(rhs);
+	}
+	else
+	{
+		auto l_SkeletonDataComponentInitializeTask = g_pModuleManager->getTaskSystem()->submit("SkeletonDataComponentInitializeTask", 2, nullptr,
+			[=]() { initializeSkeleton(rhs); });
+		l_SkeletonDataComponentInitializeTask->Wait();
 	}
 
 	return true;

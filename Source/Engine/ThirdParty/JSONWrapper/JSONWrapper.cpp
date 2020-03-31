@@ -43,9 +43,9 @@ namespace JSONWrapper
 	}
 
 	Model* processSceneJsonData(const json& j, bool AsyncUploadGPUResource = true);
-	std::vector<AnimationDataComponent*> processAnimationJsonData(const json& j);
+	bool processAnimationJsonData(const json& j, bool AsyncUploadGPUResource = true);
 	ArrayRangeInfo processMeshJsonData(const json& j, bool AsyncUploadGPUResource = true);
-	SkeletonDataComponent* processSkeletonJsonData(const char* skeletonFileName);
+	SkeletonDataComponent* processSkeletonJsonData(const char* skeletonFileName, bool AsyncUploadGPUResource = true);
 	MaterialDataComponent* processMaterialJsonData(const char* materialFileName, bool AsyncUploadGPUResource = true);
 
 	bool assignComponentRuntimeData();
@@ -316,10 +316,9 @@ Model* JSONWrapper::loadModelFromDisk(const char* fileName, bool AsyncUploadGPUR
 
 Model* JSONWrapper::processSceneJsonData(const json& j, bool AsyncUploadGPUResource)
 {
-	// @TODO: Optimize
 	if (j.find("AnimationFiles") != j.end())
 	{
-		processAnimationJsonData(j["AnimationFiles"]);
+		processAnimationJsonData(j["AnimationFiles"], AsyncUploadGPUResource);
 	}
 
 	Model* l_result;
@@ -374,11 +373,8 @@ Model* JSONWrapper::processSceneJsonData(const json& j, bool AsyncUploadGPUResou
 	return l_result;
 }
 
-std::vector<AnimationDataComponent*> JSONWrapper::processAnimationJsonData(const json& j)
+bool JSONWrapper::processAnimationJsonData(const json& j, bool AsyncUploadGPUResource)
 {
-	std::vector<AnimationDataComponent*> l_result;
-	l_result.reserve(j.size());
-
 	for (auto i : j)
 	{
 		auto l_animationFileName = i.get<std::string>();
@@ -388,7 +384,7 @@ std::vector<AnimationDataComponent*> JSONWrapper::processAnimationJsonData(const
 		if (!l_animationFile.is_open())
 		{
 			InnoLogger::Log(LogLevel::Error, "FileSystem: std::ifstream: can't open file ", l_animationFileName.c_str(), "!");
-			return l_result;
+			return false;
 		}
 
 		auto l_ADC = g_pModuleManager->getRenderingFrontend()->addAnimationDataComponent();
@@ -405,10 +401,10 @@ std::vector<AnimationDataComponent*> JSONWrapper::processAnimationJsonData(const
 		l_ADC->m_KeyData.reserve(l_keyDataSize);
 		IOService::deserializeVector(l_animationFile, l_offset, l_keyDataSize, l_ADC->m_KeyData);
 
-		l_result.emplace_back(l_ADC);
+		g_pModuleManager->getAssetSystem()->recordLoadedAnimation(l_animationFileName.c_str(), l_ADC);
 	}
 
-	return l_result;
+	return true;
 }
 
 ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadGPUResource)
@@ -504,7 +500,7 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadG
 	return l_result;
 }
 
-SkeletonDataComponent* JSONWrapper::processSkeletonJsonData(const char* skeletonFileName)
+SkeletonDataComponent* JSONWrapper::processSkeletonJsonData(const char* skeletonFileName, bool AsyncUploadGPUResource)
 {
 	SkeletonDataComponent* l_result;
 
@@ -527,11 +523,10 @@ SkeletonDataComponent* JSONWrapper::processSkeletonJsonData(const char* skeleton
 		for (auto i : j["Bones"])
 		{
 			Bone l_bone;
-			l_bone.m_ID = i["BoneID"];
 			l_bone.m_Pos.x = i["OffsetPosition"]["X"];
 			l_bone.m_Pos.y = i["OffsetPosition"]["Y"];
 			l_bone.m_Pos.z = i["OffsetPosition"]["Z"];
-			l_bone.m_Pos.w = i["OffsetPosition"]["W"];
+			l_bone.m_Pos.w = (float)i["BoneID"];
 			l_bone.m_Rot.x = i["OffsetRotation"]["X"];
 			l_bone.m_Rot.y = i["OffsetRotation"]["Y"];
 			l_bone.m_Rot.z = i["OffsetRotation"]["Z"];
@@ -541,6 +536,7 @@ SkeletonDataComponent* JSONWrapper::processSkeletonJsonData(const char* skeleton
 		}
 
 		g_pModuleManager->getAssetSystem()->recordLoadedSkeleton(skeletonFileName, l_result);
+		g_pModuleManager->getRenderingFrontend()->registerSkeletonDataComponent(l_result, AsyncUploadGPUResource);
 
 		return l_result;
 	}

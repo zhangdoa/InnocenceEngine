@@ -2,9 +2,9 @@
 #include "../Common/InnoComponent.h"
 #include "../Common/InnoMathHelper.h"
 
+// w component of position is the bone ID
 struct Bone
 {
-	uint32_t m_ID;
 	Vec4 m_Pos;
 	Vec4 m_Rot;
 };
@@ -13,5 +13,5 @@ class SkeletonDataComponent : public InnoComponent
 {
 public:
 	Mat4 m_RootOffsetMatrix;
-	std::vector<Bone> m_Bones;
+	Array<Bone> m_Bones;
 };
