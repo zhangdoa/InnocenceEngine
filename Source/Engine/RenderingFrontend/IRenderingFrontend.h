@@ -63,6 +63,7 @@ public:
 	virtual bool registerMeshDataComponent(MeshDataComponent* rhs, bool AsyncUploadToGPU = true) = 0;
 	virtual bool registerMaterialDataComponent(MaterialDataComponent* rhs, bool AsyncUploadToGPU = true) = 0;
 	virtual bool registerSkeletonDataComponent(SkeletonDataComponent* rhs, bool AsyncUploadToGPU = true) = 0;
+	virtual bool registerAnimationDataComponent(AnimationDataComponent* rhs, bool AsyncUploadToGPU = true) = 0;
 
 	virtual MeshDataComponent* getMeshDataComponent(ProceduralMeshShape shape) = 0;
 	virtual TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) = 0;

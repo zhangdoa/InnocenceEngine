@@ -66,7 +66,10 @@ namespace InnoRenderingFrontendNS
 	ThreadSafeQueue<MeshDataComponent*> m_uninitializedMeshes;
 	ThreadSafeQueue<MaterialDataComponent*> m_uninitializedMaterials;
 	ThreadSafeQueue<SkeletonDataComponent*> m_uninitializedSkeletons;
+	ThreadSafeQueue<AnimationDataComponent*> m_uninitializedAnimations;
+
 	ThreadSafeUnorderedMap<SkeletonDataComponent*, GPUBufferDataComponent*> m_skeletonsLUT;
+	ThreadSafeUnorderedMap<AnimationDataComponent*, GPUBufferDataComponent*> m_animationsLUT;
 
 	TextureDataComponent* m_iconTemplate_DirectionalLight;
 	TextureDataComponent* m_iconTemplate_PointLight;
@@ -88,6 +91,7 @@ namespace InnoRenderingFrontendNS
 	float radicalInverse(uint32_t n, uint32_t base);
 	void initializeHaltonSampler();
 	void initializeSkeleton(SkeletonDataComponent* rhs);
+	void initializeAnimation(AnimationDataComponent* rhs);
 
 	bool updatePerFrameConstantBuffer();
 	bool updateLightData();
@@ -126,7 +130,7 @@ void InnoRenderingFrontendNS::initializeSkeleton(SkeletonDataComponent* rhs)
 {
 	auto l_GBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent(rhs->m_Name.c_str());
 	l_GBDC->m_ParentEntity = rhs->m_ParentEntity;
-	l_GBDC->m_ElementCount = rhs->m_Bones.size();
+	l_GBDC->m_ElementCount = rhs->m_Bones.capacity();
 	l_GBDC->m_ElementSize = sizeof(Bone);
 	l_GBDC->m_BindingPoint = 0;
 
@@ -136,6 +140,22 @@ void InnoRenderingFrontendNS::initializeSkeleton(SkeletonDataComponent* rhs)
 	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	m_skeletonsLUT.emplace(rhs, l_GBDC);
+}
+
+void InnoRenderingFrontendNS::initializeAnimation(AnimationDataComponent* rhs)
+{
+	auto l_GBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent(rhs->m_Name.c_str());
+	l_GBDC->m_ParentEntity = rhs->m_ParentEntity;
+	l_GBDC->m_ElementCount = rhs->m_KeyData.capacity();
+	l_GBDC->m_ElementSize = sizeof(Vec4);
+	l_GBDC->m_BindingPoint = 0;
+
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(l_GBDC);
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GBDC, &rhs->m_KeyData[0]);
+
+	rhs->m_ObjectStatus = ObjectStatus::Activated;
+
+	m_animationsLUT.emplace(rhs, l_GBDC);
 }
 
 bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
@@ -362,12 +382,12 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 	auto r =
 		InnoMath::getInvertRotationMatrix(
 			l_mainCameraTransformComponent->m_globalTransformVector.m_rot
-			);
+		);
 
 	auto t =
 		InnoMath::getInvertTranslationMatrix(
 			l_mainCameraTransformComponent->m_globalTransformVector.m_pos
-			);
+		);
 
 	l_PerFrameCB.camera_posWS = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
 
@@ -815,6 +835,17 @@ bool InnoRenderingFrontend::transferDataToGPU()
 		}
 	}
 
+	while (m_uninitializedAnimations.size() > 0)
+	{
+		AnimationDataComponent* l_Animations;
+		m_uninitializedAnimations.tryPop(l_Animations);
+
+		if (l_Animations)
+		{
+			initializeAnimation(l_Animations);
+		}
+	}
+
 	return true;
 }
 
@@ -861,6 +892,22 @@ bool InnoRenderingFrontend::registerSkeletonDataComponent(SkeletonDataComponent*
 		auto l_SkeletonDataComponentInitializeTask = g_pModuleManager->getTaskSystem()->submit("SkeletonDataComponentInitializeTask", 2, nullptr,
 			[=]() { initializeSkeleton(rhs); });
 		l_SkeletonDataComponentInitializeTask->Wait();
+	}
+
+	return true;
+}
+
+bool InnoRenderingFrontend::registerAnimationDataComponent(AnimationDataComponent* rhs, bool AsyncUploadToGPU)
+{
+	if (AsyncUploadToGPU)
+	{
+		m_uninitializedAnimations.push(rhs);
+	}
+	else
+	{
+		auto l_AnimationDataComponentInitializeTask = g_pModuleManager->getTaskSystem()->submit("AnimationDataComponentInitializeTask", 2, nullptr,
+			[=]() { initializeAnimation(rhs); });
+		l_AnimationDataComponentInitializeTask->Wait();
 	}
 
 	return true;

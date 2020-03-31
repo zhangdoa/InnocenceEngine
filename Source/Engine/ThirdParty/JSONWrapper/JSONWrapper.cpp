@@ -388,6 +388,7 @@ bool JSONWrapper::processAnimationJsonData(const json& j, bool AsyncUploadGPURes
 		}
 
 		auto l_ADC = g_pModuleManager->getRenderingFrontend()->addAnimationDataComponent();
+		l_ADC->m_Name = (l_animationFileName + "//").c_str();
 
 		std::streamoff l_offset = 0;
 
@@ -402,6 +403,7 @@ bool JSONWrapper::processAnimationJsonData(const json& j, bool AsyncUploadGPURes
 		IOService::deserializeVector(l_animationFile, l_offset, l_keyDataSize, l_ADC->m_KeyData);
 
 		g_pModuleManager->getAssetSystem()->recordLoadedAnimation(l_animationFileName.c_str(), l_ADC);
+		g_pModuleManager->getRenderingFrontend()->registerAnimationDataComponent(l_ADC, AsyncUploadGPUResource);
 	}
 
 	return true;
@@ -454,6 +456,7 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadG
 				}
 
 				auto l_mesh = g_pModuleManager->getRenderingFrontend()->addMeshDataComponent();
+				l_mesh->m_Name = (l_meshFileName + "//").c_str();
 
 				size_t l_verticesNumber = i["VerticesNumber"];
 				size_t l_indicesNumber = i["IndicesNumber"];
@@ -502,12 +505,12 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadG
 
 SkeletonDataComponent* JSONWrapper::processSkeletonJsonData(const char* skeletonFileName, bool AsyncUploadGPUResource)
 {
-	SkeletonDataComponent* l_result;
+	SkeletonDataComponent* l_SDC;
 
 	// check if this file has already been loaded once
-	if (g_pModuleManager->getAssetSystem()->findLoadedSkeleton(skeletonFileName, l_result))
+	if (g_pModuleManager->getAssetSystem()->findLoadedSkeleton(skeletonFileName, l_SDC))
 	{
-		return l_result;
+		return l_SDC;
 	}
 	else
 	{
@@ -515,10 +518,11 @@ SkeletonDataComponent* JSONWrapper::processSkeletonJsonData(const char* skeleton
 
 		loadJsonDataFromDisk(skeletonFileName, j);
 
-		l_result = g_pModuleManager->getRenderingFrontend()->addSkeletonDataComponent();
+		l_SDC = g_pModuleManager->getRenderingFrontend()->addSkeletonDataComponent();
+		l_SDC->m_Name = (std::string(skeletonFileName) + ("//")).c_str();
 
 		auto l_size = j["Bones"].size();
-		l_result->m_Bones.reserve(l_size);
+		l_SDC->m_Bones.reserve(l_size);
 
 		for (auto i : j["Bones"])
 		{
@@ -532,13 +536,13 @@ SkeletonDataComponent* JSONWrapper::processSkeletonJsonData(const char* skeleton
 			l_bone.m_Rot.z = i["OffsetRotation"]["Z"];
 			l_bone.m_Rot.w = i["OffsetRotation"]["W"];
 
-			l_result->m_Bones.emplace_back(l_bone);
+			l_SDC->m_Bones.emplace_back(l_bone);
 		}
 
-		g_pModuleManager->getAssetSystem()->recordLoadedSkeleton(skeletonFileName, l_result);
-		g_pModuleManager->getRenderingFrontend()->registerSkeletonDataComponent(l_result, AsyncUploadGPUResource);
+		g_pModuleManager->getAssetSystem()->recordLoadedSkeleton(skeletonFileName, l_SDC);
+		g_pModuleManager->getRenderingFrontend()->registerSkeletonDataComponent(l_SDC, AsyncUploadGPUResource);
 
-		return l_result;
+		return l_SDC;
 	}
 }
 
@@ -549,6 +553,7 @@ MaterialDataComponent* JSONWrapper::processMaterialJsonData(const char* material
 	loadJsonDataFromDisk(materialFileName, j);
 
 	auto l_MDC = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
+	l_MDC->m_Name = (std::string(materialFileName) + ("//")).c_str();
 	auto l_defaultMaterial = g_pModuleManager->getRenderingFrontend()->getDefaultMaterialDataComponent();
 
 	if (j.find("Textures") != j.end())
