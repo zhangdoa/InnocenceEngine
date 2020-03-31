@@ -161,7 +161,7 @@ void PlayerComponentCollection::rotateAroundPositiveYAxis(float offset)
 		m_targetCameraRotY = InnoMath::getQuatRotator(
 			Vec4(0.0f, 1.0f, 0.0f, 0.0f),
 			((-offset * m_rotateSpeed) / 180.0f) * PI<float>
-			);
+		);
 		m_playerTransformComponent->m_localTransformVector_target.m_rot = m_targetCameraRotY.quatMul(m_playerTransformComponent->m_localTransformVector_target.m_rot);
 		m_playerCameraTransformComponent->m_localTransformVector_target.m_rot = m_targetCameraRotY.quatMul(m_playerCameraTransformComponent->m_localTransformVector_target.m_rot);
 
@@ -179,7 +179,7 @@ void PlayerComponentCollection::rotateAroundRightAxis(float offset)
 		m_targetCameraRotX = InnoMath::getQuatRotator(
 			l_right,
 			((offset * m_rotateSpeed) / 180.0f) * PI<float>
-			);
+		);
 		m_playerCameraTransformComponent->m_localTransformVector_target.m_rot = m_targetCameraRotX.quatMul(m_playerCameraTransformComponent->m_localTransformVector_target.m_rot);
 
 		m_canSlerp = true;
@@ -281,7 +281,7 @@ bool GameClientNS::setupReferenceSpheres()
 		{
 			m_referenceSphereTransformComponents[i * l_matrixDim + j]->m_localTransformVector.m_pos =
 				Vec4(
-				(-(l_matrixDim - 1.0f) * l_breadthInterval / 2.0f) + (i * l_breadthInterval) + 100.0f,
+					(-(l_matrixDim - 1.0f) * l_breadthInterval / 2.0f) + (i * l_breadthInterval) + 100.0f,
 					2.0f,
 					(j * l_breadthInterval) - 2.0f * (l_matrixDim - 1),
 					1.0f);
@@ -349,7 +349,7 @@ bool GameClientNS::setupOcclusionCubes()
 
 			l_currentComponent->m_localTransformVector.m_pos =
 				Vec4(
-				(i * l_breadthInterval) - l_offset,
+					(i * l_breadthInterval) - l_offset,
 					l_currentComponent->m_localTransformVector.m_scale.y / 2.0f,
 					(j * l_breadthInterval) - l_offset,
 					1.0f);
@@ -412,7 +412,7 @@ bool GameClientNS::setupOpaqueSpheres()
 			auto l_currentComponent = m_opaqueSphereTransformComponents[i * l_matrixDim + j];
 			l_currentComponent->m_localTransformVector.m_pos =
 				Vec4(
-				(-(l_matrixDim - 1.0f) * l_breadthInterval / 2.0f) + (i * l_breadthInterval),
+					(-(l_matrixDim - 1.0f) * l_breadthInterval / 2.0f) + (i * l_breadthInterval),
 					l_randomPosDelta(l_generator) * 50.0f,
 					(j * l_breadthInterval) - 2.0f * (l_matrixDim - 1),
 					1.0f);
@@ -470,7 +470,7 @@ bool GameClientNS::setupTransparentSpheres()
 		{
 			m_transparentSphereTransformComponents[i * l_matrixDim + j]->m_localTransformVector.m_pos =
 				Vec4(
-				(-(l_matrixDim - 1.0f) * l_breadthInterval / 2.0f)
+					(-(l_matrixDim - 1.0f) * l_breadthInterval / 2.0f)
 					+ (i * l_breadthInterval),
 					5.0f,
 					(j * l_breadthInterval) - 2.0f * (l_matrixDim - 1),
@@ -514,7 +514,6 @@ bool GameClientNS::setupPointLights()
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
 		m_pointLightTransformComponents[i] = SpawnComponent(TransformComponent, m_pointLightEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
-		g_pModuleManager->getComponentManager(ComponentType::TransformComponent);
 		m_pointLightTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_pointLightTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_pointLightComponents[i] = SpawnComponent(LightComponent, m_pointLightEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
@@ -529,7 +528,7 @@ bool GameClientNS::setupPointLights()
 		{
 			m_pointLightTransformComponents[i * l_matrixDim + j]->m_localTransformVector.m_pos =
 				Vec4(
-				(-(l_matrixDim - 1.0f) * l_breadthInterval * l_randomPosDelta(l_generator) / 2.0f)
+					(-(l_matrixDim - 1.0f) * l_breadthInterval * l_randomPosDelta(l_generator) / 2.0f)
 					+ (i * l_breadthInterval), l_randomPosDelta(l_generator) * 32.0f,
 					(j * l_breadthInterval) - 2.0f * (l_matrixDim - 1),
 					1.0f);
@@ -600,19 +599,21 @@ bool GameClientNS::initialize()
 
 bool GameClientNS::updateMaterial(Model* model, Vec4 albedo, Vec4 MRAT)
 {
-	for (uint64_t j = 0; j < model->meshMaterialPairs.m_count; j++)
+	if (model)
 	{
-		auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(model->meshMaterialPairs.m_startOffset + j);
-		l_pair->material->m_materialAttributes.AlbedoR = albedo.x;
-		l_pair->material->m_materialAttributes.AlbedoG = albedo.y;
-		l_pair->material->m_materialAttributes.AlbedoB = albedo.z;
-		l_pair->material->m_materialAttributes.Metallic = MRAT.x;
-		l_pair->material->m_materialAttributes.Roughness = MRAT.y;
-		l_pair->material->m_materialAttributes.AO = MRAT.z;
-		l_pair->material->m_materialAttributes.Alpha = albedo.w;
-		l_pair->material->m_materialAttributes.Thickness = MRAT.w;
+		for (uint64_t j = 0; j < model->meshMaterialPairs.m_count; j++)
+		{
+			auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(model->meshMaterialPairs.m_startOffset + j);
+			l_pair->material->m_materialAttributes.AlbedoR = albedo.x;
+			l_pair->material->m_materialAttributes.AlbedoG = albedo.y;
+			l_pair->material->m_materialAttributes.AlbedoB = albedo.z;
+			l_pair->material->m_materialAttributes.Metallic = MRAT.x;
+			l_pair->material->m_materialAttributes.Roughness = MRAT.y;
+			l_pair->material->m_materialAttributes.AO = MRAT.z;
+			l_pair->material->m_materialAttributes.Alpha = albedo.w;
+			l_pair->material->m_materialAttributes.Thickness = MRAT.w;
+		}
 	}
-
 	return true;
 };
 
@@ -717,11 +718,11 @@ Vec4 GameClientNS::getMousePositionInWorldSpace()
 	auto rCamera =
 		InnoMath::getInvertRotationMatrix(
 			l_cameraTransformComponent->m_globalTransformVector.m_rot
-			);
+		);
 	auto tCamera =
 		InnoMath::getInvertTranslationMatrix(
 			l_cameraTransformComponent->m_globalTransformVector.m_pos
-			);
+		);
 	//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 	l_ndcSpace = InnoMath::mul(l_ndcSpace, pCamera.inverse());
@@ -761,37 +762,31 @@ void GameClientNS::updateSpheres()
 {
 	for (uint32_t i = 0; i < m_opaqueSphereVisibleComponents.size(); i += 4)
 	{
-		if (m_opaqueSphereVisibleComponents[i]->m_model)
-		{
-			auto l_albedoFactor1 = (sin(seed / 2.0f + i) + 1.0f) / 2.0f;
-			auto l_albedoFactor2 = (sin(seed / 3.0f + i) + 1.0f) / 2.0f;
-			auto l_albedoFactor3 = (sin(seed / 5.0f + i) + 1.0f) / 2.0f;
+		auto l_albedoFactor1 = (sin(seed / 2.0f + i) + 1.0f) / 2.0f;
+		auto l_albedoFactor2 = (sin(seed / 3.0f + i) + 1.0f) / 2.0f;
+		auto l_albedoFactor3 = (sin(seed / 5.0f + i) + 1.0f) / 2.0f;
 
-			auto l_albedo1 = Vec4(l_albedoFactor1, l_albedoFactor2, l_albedoFactor3, 1.0f);
-			auto l_albedo2 = Vec4(l_albedoFactor3, l_albedoFactor2, l_albedoFactor1, 1.0f);
-			auto l_albedo3 = Vec4(l_albedoFactor2, l_albedoFactor3, l_albedoFactor1, 1.0f);
-			auto l_albedo4 = Vec4(l_albedoFactor2, l_albedoFactor1, l_albedoFactor3, 1.0f);
+		auto l_albedo1 = Vec4(l_albedoFactor1, l_albedoFactor2, l_albedoFactor3, 1.0f);
+		auto l_albedo2 = Vec4(l_albedoFactor3, l_albedoFactor2, l_albedoFactor1, 1.0f);
+		auto l_albedo3 = Vec4(l_albedoFactor2, l_albedoFactor3, l_albedoFactor1, 1.0f);
+		auto l_albedo4 = Vec4(l_albedoFactor2, l_albedoFactor1, l_albedoFactor3, 1.0f);
 
-			auto l_MRATFactor1 = ((sin(seed / 4.0f + i) + 1.0f) / 2.001f);
-			auto l_MRATFactor2 = ((sin(seed / 5.0f + i) + 1.0f) / 2.001f);
-			auto l_MRATFactor3 = ((sin(seed / 6.0f + i) + 1.0f) / 2.001f);
+		auto l_MRATFactor1 = ((sin(seed / 4.0f + i) + 1.0f) / 2.001f);
+		auto l_MRATFactor2 = ((sin(seed / 5.0f + i) + 1.0f) / 2.001f);
+		auto l_MRATFactor3 = ((sin(seed / 6.0f + i) + 1.0f) / 2.001f);
 
-			updateMaterial(m_opaqueSphereVisibleComponents[i]->m_model, l_albedo1, Vec4(l_MRATFactor1, l_MRATFactor2, 1.0f, 0.0f));
-			updateMaterial(m_opaqueSphereVisibleComponents[i + 1]->m_model, l_albedo2, Vec4(l_MRATFactor2, l_MRATFactor1, 1.0f, 0.0f));
-			updateMaterial(m_opaqueSphereVisibleComponents[i + 2]->m_model, l_albedo3, Vec4(l_MRATFactor3, l_MRATFactor2, 1.0f, 0.0f));
-			updateMaterial(m_opaqueSphereVisibleComponents[i + 3]->m_model, l_albedo4, Vec4(l_MRATFactor3, l_MRATFactor1, 1.0f, 0.0f));
-		}
+		updateMaterial(m_opaqueSphereVisibleComponents[i]->m_model, l_albedo1, Vec4(l_MRATFactor1, l_MRATFactor2, 1.0f, 0.0f));
+		updateMaterial(m_opaqueSphereVisibleComponents[i + 1]->m_model, l_albedo2, Vec4(l_MRATFactor2, l_MRATFactor1, 1.0f, 0.0f));
+		updateMaterial(m_opaqueSphereVisibleComponents[i + 2]->m_model, l_albedo3, Vec4(l_MRATFactor3, l_MRATFactor2, 1.0f, 0.0f));
+		updateMaterial(m_opaqueSphereVisibleComponents[i + 3]->m_model, l_albedo4, Vec4(l_MRATFactor3, l_MRATFactor1, 1.0f, 0.0f));
 	}
 
 	for (uint32_t i = 0; i < m_transparentSphereVisibleComponents.size(); i++)
 	{
-		if (m_transparentSphereVisibleComponents[i]->m_model)
-		{
-			auto l_albedo = InnoMath::HSVtoRGB(Vec4((sin(seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
-			l_albedo.w = sin(seed / 6.0f + i) * 0.5f + 0.5f;
-			auto l_MRAT = Vec4(0.0f, sin(seed / 4.0f + i) * 0.5f + 0.5f, 1.0f, clamp((float)sin(seed / 5.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f));
-			updateMaterial(m_transparentSphereVisibleComponents[i]->m_model, l_albedo, l_MRAT);
-		}
+		auto l_albedo = InnoMath::HSVtoRGB(Vec4((sin(seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
+		l_albedo.w = sin(seed / 6.0f + i) * 0.5f + 0.5f;
+		auto l_MRAT = Vec4(0.0f, sin(seed / 4.0f + i) * 0.5f + 0.5f, 1.0f, clamp((float)sin(seed / 5.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f));
+		updateMaterial(m_transparentSphereVisibleComponents[i]->m_model, l_albedo, l_MRAT);
 	}
 
 	uint32_t l_matrixDim = 8;
@@ -799,11 +794,8 @@ void GameClientNS::updateSpheres()
 	{
 		for (uint32_t j = 0; j < l_matrixDim; j++)
 		{
-			if (m_referenceSphereVisibleComponents[i * l_matrixDim + j]->m_model)
-			{
-				auto l_MRAT = Vec4((float)i / (float)(l_matrixDim - 1), (float)j / (float)(l_matrixDim - 1), 1.0f, 1.0f);
-				updateMaterial(m_referenceSphereVisibleComponents[i * l_matrixDim + j]->m_model, Vec4(1.0f, 1.0f, 1.0f, 1.0f), l_MRAT);
-			}
+			auto l_MRAT = Vec4((float)i / (float)(l_matrixDim - 1), (float)j / (float)(l_matrixDim - 1), 1.0f, 1.0f);
+			updateMaterial(m_referenceSphereVisibleComponents[i * l_matrixDim + j]->m_model, Vec4(1.0f, 1.0f, 1.0f, 1.0f), l_MRAT);
 		}
 	}
 }

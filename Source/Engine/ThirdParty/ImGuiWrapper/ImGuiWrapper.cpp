@@ -303,7 +303,7 @@ void ImGuiWrapperNS::zoom(bool zoom, ImTextureID textureID, ImVec2 renderTargetS
 void ImGuiWrapperNS::showWorldExplorer()
 {
 	static void* selectedComponent = nullptr;
-	static ComponentType selectedComponentType;
+	static uint32_t selectedComponentType;
 
 	ImGui::Begin("World Explorer", 0);
 	{
@@ -334,16 +334,17 @@ void ImGuiWrapperNS::showWorldExplorer()
 	{
 		if (selectedComponent)
 		{
-			switch (selectedComponentType)
+			if (selectedComponentType == 1)
 			{
-			case ComponentType::TransformComponent:
-				showTransformComponentPropertyEditor(selectedComponent); break;
-			case ComponentType::VisibleComponent:
-				showVisiableComponentPropertyEditor(selectedComponent); break;
-			case ComponentType::LightComponent:
-				showLightComponentPropertyEditor(selectedComponent); break;
-			default:
-				break;
+				showTransformComponentPropertyEditor(selectedComponent);
+			}
+			else if (selectedComponentType == 2)
+			{
+				showVisiableComponentPropertyEditor(selectedComponent);
+			}
+			else if (selectedComponentType == 3)
+			{
+				showLightComponentPropertyEditor(selectedComponent);
 			}
 		}
 	}
@@ -610,7 +611,7 @@ void ImGuiWrapperNS::showConcurrencyProfiler()
 							(float)l_startTime / 1000.0f,
 							(float)l_finishTime / 1000.0f,
 							((float)l_finishTime - (float)l_startTime) / 1000.0f
-							);
+						);
 					}
 					ImGui::PopStyleColor(1);
 					ImGui::SameLine();

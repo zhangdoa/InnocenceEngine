@@ -1,0 +1,59 @@
+[
+  {
+    "Name": "TransformComponent",
+    "ID": 1
+  },
+  {
+    "Name": "VisibleComponent",
+    "ID": 2
+  },
+  {
+    "Name": "LightComponent",
+    "ID": 3
+  },
+  {
+    "Name": "CameraComponent",
+    "ID": 4
+  },
+  {
+    "Name": "PhysicsDataComponent",
+    "ID": 5
+  },
+  {
+    "Name": "MeshDataComponent",
+    "ID": 6
+  },
+  {
+    "Name": "MaterialDataComponent",
+    "ID": 7
+  },
+
+  {
+    "Name": "TextureDataComponent",
+    "ID": 8
+  },
+  {
+    "Name": "SkeletonDataComponent",
+    "ID": 9
+  },
+  {
+    "Name": "AnimationDataComponent",
+    "ID": 10
+  },
+  {
+    "Name": "RenderPassDataComponent",
+    "ID": 11
+  },
+  {
+    "Name": "ShaderProgramComponent",
+    "ID": 12
+  },
+  {
+    "Name": "SamplerDataComponent",
+    "ID": 13
+  },
+  {
+    "Name": "GPUBufferDataComponent",
+    "ID": 14
+  }
+]

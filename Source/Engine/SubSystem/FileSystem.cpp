@@ -22,6 +22,9 @@ namespace InnoFileSystemNS
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
+	std::unordered_map<uint32_t, std::string> m_componentIDToNameLUT;
+	std::unordered_map<std::string, uint32_t> m_componentNameToIDLUT;
+
 	std::vector<SceneLoadingCallback> m_sceneLoadingStartCallbacks;
 	std::vector<SceneLoadingCallback> m_sceneLoadingFinishCallbacks;
 
@@ -31,6 +34,8 @@ namespace InnoFileSystemNS
 	std::string m_nextLoadingScene;
 	std::string m_currentScene;
 }
+
+using namespace InnoFileSystemNS;
 
 bool InnoFileSystemNS::saveScene(const char* fileName)
 {
@@ -46,7 +51,7 @@ bool InnoFileSystemNS::saveScene(const char* fileName)
 
 bool InnoFileSystemNS::prepareForLoadingScene(const char* fileName)
 {
-	if (!InnoFileSystemNS::m_isLoadingScene)
+	if (!m_isLoadingScene)
 	{
 		if (m_currentScene == fileName)
 		{
@@ -86,7 +91,7 @@ bool InnoFileSystemNS::loadScene(const char* fileName)
 		(*i.first)();
 	}
 
-	InnoFileSystemNS::m_isLoadingScene = false;
+	m_isLoadingScene = false;
 
 	InnoLogger::Log(LogLevel::Success, "FileSystem: Scene ", fileName, " has been loaded.");
 
@@ -97,15 +102,25 @@ bool InnoFileSystem::setup()
 {
 	IOService::setupWorkingDirectory();
 
-	InnoFileSystemNS::m_ObjectStatus = ObjectStatus::Created;
+	json j;
+
+	JSONWrapper::loadJsonDataFromDisk("..//Source//Engine//Common//ComponentType.json", j);
+
+	for (auto i : j)
+	{
+		m_componentIDToNameLUT.emplace(i["ID"], i["Name"]);
+		m_componentNameToIDLUT.emplace(i["Name"], i["ID"]);
+	}
+
+	m_ObjectStatus = ObjectStatus::Created;
 	return true;
 }
 
 bool InnoFileSystem::initialize()
 {
-	if (InnoFileSystemNS::m_ObjectStatus == ObjectStatus::Created)
+	if (m_ObjectStatus == ObjectStatus::Created)
 	{
-		InnoFileSystemNS::m_ObjectStatus = ObjectStatus::Activated;
+		m_ObjectStatus = ObjectStatus::Activated;
 		InnoLogger::Log(LogLevel::Success, "FileSystem has been initialized.");
 		return true;
 	}
@@ -118,21 +133,21 @@ bool InnoFileSystem::initialize()
 
 bool InnoFileSystem::update()
 {
-	if (InnoFileSystemNS::m_ObjectStatus == ObjectStatus::Activated)
+	if (m_ObjectStatus == ObjectStatus::Activated)
 	{
-		if (InnoFileSystemNS::m_prepareForLoadingScene)
+		if (m_prepareForLoadingScene)
 		{
-			InnoFileSystemNS::m_prepareForLoadingScene = false;
-			InnoFileSystemNS::m_isLoadingScene = true;
+			m_prepareForLoadingScene = false;
+			m_isLoadingScene = true;
 			g_pModuleManager->getTaskSystem()->waitAllTasksToFinish();
-			InnoFileSystemNS::loadScene(InnoFileSystemNS::m_nextLoadingScene.c_str());
+			InnoFileSystemNS::loadScene(m_nextLoadingScene.c_str());
 			GetComponentManager(VisibleComponent)->LoadAssetsForComponents();
 		}
 		return true;
 	}
 	else
 	{
-		InnoFileSystemNS::m_ObjectStatus = ObjectStatus::Suspended;
+		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
@@ -141,14 +156,14 @@ bool InnoFileSystem::update()
 
 bool InnoFileSystem::terminate()
 {
-	InnoFileSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
+	m_ObjectStatus = ObjectStatus::Terminated;
 
 	return true;
 }
 
 ObjectStatus InnoFileSystem::getStatus()
 {
-	return InnoFileSystemNS::m_ObjectStatus;
+	return m_ObjectStatus;
 }
 
 std::string InnoFileSystem::getWorkingDirectory()
@@ -166,16 +181,44 @@ bool InnoFileSystem::saveFile(const char* filePath, const std::vector<char>& con
 	return IOService::saveFile(filePath, content, saveMode);
 }
 
+const char* InnoFileSystem::getComponentTypeName(uint32_t typeID)
+{
+	auto l_result = m_componentIDToNameLUT.find(typeID);
+	if (l_result != m_componentIDToNameLUT.end())
+	{
+		return l_result->second.c_str();
+	}
+	else
+	{
+		InnoLogger::Log(LogLevel::Error, "FileSystem: Unknown ComponentTypeID: ", typeID);
+		return nullptr;
+	}
+}
+
+uint32_t InnoFileSystem::getComponentTypeID(const char* typeName)
+{
+	auto l_result = m_componentNameToIDLUT.find(typeName);
+	if (l_result != m_componentNameToIDLUT.end())
+	{
+		return l_result->second;
+	}
+	else
+	{
+		InnoLogger::Log(LogLevel::Error, "FileSystem: Unknown ComponentTypeName: ", typeName);
+		return 0;
+	}
+}
+
 std::string InnoFileSystem::getCurrentSceneName()
 {
-	auto l_currentSceneName = InnoFileSystemNS::m_currentScene.substr(0, InnoFileSystemNS::m_currentScene.find(".InnoScene"));
+	auto l_currentSceneName = m_currentScene.substr(0, m_currentScene.find(".InnoScene"));
 	l_currentSceneName = l_currentSceneName.substr(l_currentSceneName.rfind("//") + 2);
 	return l_currentSceneName;
 }
 
 bool InnoFileSystem::loadScene(const char* fileName, bool AsyncLoad)
 {
-	if (InnoFileSystemNS::m_currentScene == fileName)
+	if (m_currentScene == fileName)
 	{
 		InnoLogger::Log(LogLevel::Warning, "FileSystem: Scene ", fileName, " has already loaded now.");
 		return true;
@@ -183,14 +226,14 @@ bool InnoFileSystem::loadScene(const char* fileName, bool AsyncLoad)
 
 	if (AsyncLoad)
 	{
-		return InnoFileSystemNS::prepareForLoadingScene(fileName);
+		return prepareForLoadingScene(fileName);
 	}
 	else
 	{
-		InnoFileSystemNS::m_nextLoadingScene = fileName;
-		InnoFileSystemNS::m_isLoadingScene = true;
+		m_nextLoadingScene = fileName;
+		m_isLoadingScene = true;
 		g_pModuleManager->getTaskSystem()->waitAllTasksToFinish();
-		InnoFileSystemNS::loadScene(InnoFileSystemNS::m_nextLoadingScene.c_str());
+		InnoFileSystemNS::loadScene(m_nextLoadingScene.c_str());
 		GetComponentManager(VisibleComponent)->LoadAssetsForComponents(AsyncLoad);
 		return true;
 	}
@@ -203,18 +246,18 @@ bool InnoFileSystem::saveScene(const char* fileName)
 
 bool InnoFileSystem::isLoadingScene()
 {
-	return InnoFileSystemNS::m_isLoadingScene;
+	return m_isLoadingScene;
 }
 
 bool InnoFileSystem::addSceneLoadingStartCallback(std::function<void()>* functor, int32_t priority)
 {
-	InnoFileSystemNS::m_sceneLoadingStartCallbacks.emplace_back(functor, priority);
+	m_sceneLoadingStartCallbacks.emplace_back(functor, priority);
 	return true;
 }
 
 bool InnoFileSystem::addSceneLoadingFinishCallback(std::function<void()>* functor, int32_t priority)
 {
-	InnoFileSystemNS::m_sceneLoadingFinishCallbacks.emplace_back(functor, priority);
+	m_sceneLoadingFinishCallbacks.emplace_back(functor, priority);
 	return true;
 }
 

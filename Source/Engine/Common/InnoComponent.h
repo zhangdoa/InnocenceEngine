@@ -9,6 +9,6 @@ public:
 	~InnoComponent() = default;
 
 	InnoEntity* m_ParentEntity = 0;
-	ComponentType m_ComponentType;
+	uint32_t m_ComponentType = 0;
 	ObjectName m_Name;
 };

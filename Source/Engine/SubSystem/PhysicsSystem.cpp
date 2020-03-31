@@ -133,7 +133,7 @@ PhysicsDataComponent* InnoPhysicsSystemNS::AddPhysicsDataComponent(InnoEntity* p
 	l_PDC->m_ParentEntity = parentEntity;
 	l_PDC->m_ObjectSource = ObjectSource::Runtime;
 	l_PDC->m_ObjectOwnership = ObjectOwnership::Engine;
-	l_PDC->m_ComponentType = ComponentType::PhysicsDataComponent;
+	l_PDC->m_ComponentType = g_pModuleManager->getFileSystem()->getComponentTypeID("PhysicsDataComponent");
 
 	return l_PDC;
 }

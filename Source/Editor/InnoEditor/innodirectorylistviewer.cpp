@@ -75,7 +75,7 @@ QString InnoDirectoryListViewer::GetSelectionPath()
                     QMessageBox::Cancel))
         {
         case QMessageBox::Yes:
-            g_pModuleManager->getFileSystem()->convertModel(l_relativePath.toStdString().c_str(), "..//Res//convertedAssets//");
+            g_pModuleManager->getAssetSystem()->convertModel(l_relativePath.toStdString().c_str(), "..//Res//convertedAssets//");
             break;
         case QMessageBox::No:
             g_pModuleManager->getLogSystem()->Log(LogLevel::Success, l_relativePath.toStdString().c_str());

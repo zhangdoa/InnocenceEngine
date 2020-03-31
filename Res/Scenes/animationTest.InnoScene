@@ -3,7 +3,7 @@
     {
       "ChildrenComponents": [
         {
-          "ComponentType": 0,
+          "ComponentType": 1,
           "LocalTransformVector": {
             "Position": {
               "X": 0.0,
@@ -25,7 +25,7 @@
           "ParentTransformComponentEntityName": "RootTransform"
         },
         {
-          "ComponentType": 1,
+          "ComponentType": 2,
           "MeshPrimitiveTopology": 2,
           "MeshSource": 1,
           "ProceduralMeshShape": 6,
@@ -42,7 +42,7 @@
     {
       "ChildrenComponents": [
         {
-          "ComponentType": 0,
+          "ComponentType": 1,
           "LocalTransformVector": {
             "Position": {
               "X": 0.0,
@@ -64,7 +64,7 @@
           "ParentTransformComponentEntityName": "RootTransform"
         },
         {
-          "ComponentType": 3,
+          "ComponentType": 4,
           "FOVX": 90.0,
           "WidthScale": 16.0,
           "HeightScale": 9.0,
@@ -78,7 +78,7 @@
     {
       "ChildrenComponents": [
         {
-          "ComponentType": 0,
+          "ComponentType": 1,
           "LocalTransformVector": {
             "Position": {
               "X": 0.0,
@@ -100,7 +100,7 @@
           "ParentTransformComponentEntityName": "RootTransform"
         },
         {
-          "ComponentType": 1,
+          "ComponentType": 2,
           "MeshPrimitiveTopology": 2,
           "MeshSource": 2,
           "ProceduralMeshShape": 0,
@@ -117,7 +117,7 @@
     {
       "ChildrenComponents": [
         {
-          "ComponentType": 0,
+          "ComponentType": 1,
           "LocalTransformVector": {
             "Position": {
               "X": 0.0,
@@ -145,7 +145,7 @@
             "Y": 1.0,
             "X": 1.0
           },
-          "ComponentType": 2,
+          "ComponentType": 3,
           "LightType": 0,
           "Shape": {
             "W": 1.0,

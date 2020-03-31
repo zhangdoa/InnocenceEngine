@@ -728,7 +728,7 @@ SkeletonDataComponent* InnoRenderingFrontend::addSkeletonDataComponent()
 	l_SDC->m_ObjectStatus = ObjectStatus::Created;
 	l_SDC->m_ObjectSource = ObjectSource::Runtime;
 	l_SDC->m_ObjectOwnership = ObjectOwnership::Engine;
-	l_SDC->m_ComponentType = ComponentType::SkeletonDataComponent;
+	l_SDC->m_ComponentType = g_pModuleManager->getFileSystem()->getComponentTypeID("SkeletonDataComponent");
 	skeletonCount++;
 	return l_SDC;
 }
@@ -742,7 +742,7 @@ AnimationDataComponent* InnoRenderingFrontend::addAnimationDataComponent()
 	l_ADC->m_ObjectStatus = ObjectStatus::Created;
 	l_ADC->m_ObjectSource = ObjectSource::Runtime;
 	l_ADC->m_ObjectOwnership = ObjectOwnership::Engine;
-	l_ADC->m_ComponentType = ComponentType::AnimationDataComponent;
+	l_ADC->m_ComponentType = g_pModuleManager->getFileSystem()->getComponentTypeID("AnimationDataComponent");
 	animationCount++;
 	return l_ADC;
 }

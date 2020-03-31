@@ -173,11 +173,9 @@ void JSONWrapper::to_json(json& j, const TransformComponent& p)
 
 	j = json
 	{
-		{"ComponentType", InnoUtility::getComponentType<TransformComponent>()},
+		{"ComponentType", p.m_ComponentType},
 		{"ParentTransformComponentEntityName", parentTransformComponentEntityName.c_str()},
-		{"LocalTransformVector",
-		localTransformVector
-	},
+		{"LocalTransformVector", localTransformVector },
 	};
 }
 
@@ -185,7 +183,7 @@ void JSONWrapper::to_json(json& j, const VisibleComponent& p)
 {
 	j = json
 	{
-		{"ComponentType", InnoUtility::getComponentType<VisibleComponent>()},
+		{"ComponentType", p.m_ComponentType},
 		{"Visibility", p.m_visibility},
 		{"MeshPrimitiveTopology", p.m_meshPrimitiveTopology},
 		{"TextureWrapMethod", p.m_textureWrapMethod},
@@ -207,7 +205,7 @@ void JSONWrapper::to_json(json& j, const LightComponent& p)
 
 	j = json
 	{
-		{"ComponentType", InnoUtility::getComponentType<LightComponent>()},
+		{"ComponentType", p.m_ComponentType},
 		{"RGBColor", color},
 		{"Shape", shape},
 		{"LightType", p.m_LightType},
@@ -221,7 +219,7 @@ void JSONWrapper::to_json(json& j, const CameraComponent& p)
 {
 	j = json
 	{
-		{"ComponentType", InnoUtility::getComponentType<CameraComponent>()},
+		{"ComponentType", p.m_ComponentType},
 		{"FOVX", p.m_FOVX},
 		{"WidthScale", p.m_widthScale},
 		{"HeightScale", p.m_heightScale},
@@ -665,26 +663,27 @@ bool JSONWrapper::loadScene(const char* fileName)
 
 		for (auto k : i["ChildrenComponents"])
 		{
-			switch (ComponentType(k["ComponentType"]))
+			uint32_t componentTypeID = k["ComponentType"];
+
+			if (componentTypeID == 1)
 			{
-			case ComponentType::TransformComponent: LoadComponentData(TransformComponent, k, l_entity);
-				break;
-			case ComponentType::VisibleComponent: LoadComponentData(VisibleComponent, k, l_entity);
-				break;
-			case ComponentType::LightComponent: LoadComponentData(LightComponent, k, l_entity);
-				break;
-			case ComponentType::CameraComponent: LoadComponentData(CameraComponent, k, l_entity);
-				break;
-			case ComponentType::PhysicsDataComponent:
-				break;
-			case ComponentType::MeshDataComponent:
-				break;
-			case ComponentType::MaterialDataComponent:
-				break;
-			case ComponentType::TextureDataComponent:
-				break;
-			default:
-				break;
+				LoadComponentData(TransformComponent, k, l_entity)
+			}
+			else if (componentTypeID == 2)
+			{
+				LoadComponentData(VisibleComponent, k, l_entity)
+			}
+			else if (componentTypeID == 3)
+			{
+				LoadComponentData(LightComponent, k, l_entity)
+			}
+			else if (componentTypeID == 4)
+			{
+				LoadComponentData(CameraComponent, k, l_entity)
+			}
+			else
+			{
+				InnoLogger::Log(LogLevel::Error, "JSONWrapper: Unknown ComponentTypeID: ", componentTypeID);
 			}
 		}
 	}

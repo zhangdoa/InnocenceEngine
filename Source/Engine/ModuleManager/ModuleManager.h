@@ -20,7 +20,7 @@ public:
 	ITestSystem* getTestSystem() override;
 	IFileSystem* getFileSystem() override;
 	IEntityManager* getEntityManager() override;
-	IComponentManager* getComponentManager(ComponentType componentType) override;
+	IComponentManager* getComponentManager(uint32_t componentTypeID) override;
 	ISceneHierarchyManager* getSceneHierarchyManager() override;
 	IAssetSystem* getAssetSystem() override;
 	IPhysicsSystem* getPhysicsSystem() override;

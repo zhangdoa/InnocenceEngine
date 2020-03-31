@@ -52,7 +52,7 @@ public:
 	INNO_ENGINE_API virtual ITestSystem* getTestSystem() = 0;
 	INNO_ENGINE_API virtual IFileSystem* getFileSystem() = 0;
 	INNO_ENGINE_API virtual IEntityManager* getEntityManager() = 0;
-	INNO_ENGINE_API virtual IComponentManager* getComponentManager(ComponentType componentType) = 0;
+	INNO_ENGINE_API virtual IComponentManager* getComponentManager(uint32_t componentTypeID) = 0;
 	INNO_ENGINE_API virtual ISceneHierarchyManager* getSceneHierarchyManager() = 0;
 	INNO_ENGINE_API virtual IAssetSystem* getAssetSystem() = 0;
 	INNO_ENGINE_API virtual IPhysicsSystem* getPhysicsSystem() = 0;

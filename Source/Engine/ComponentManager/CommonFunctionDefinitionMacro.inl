@@ -27,7 +27,7 @@ m_ComponentsMap.erase_if([&](auto val) { return val.second->m_ObjectOwnership ==
 		l_Component->m_ObjectOwnership = objectUsage; \
 		auto l_parentEntity = const_cast<InnoEntity*>(parentEntity); \
 		l_Component->m_ParentEntity = l_parentEntity; \
-		l_Component->m_ComponentType = ComponentType::className; \
+		l_Component->m_ComponentType = g_pModuleManager->getFileSystem()->getComponentTypeID(#className); \
 		auto l_componentIndex = m_CurrentComponentIndex; \
 		auto l_componentName = ObjectName((std::string(parentEntity->m_Name.c_str()) + "." + std::string(#className) + "_" + std::to_string(l_componentIndex) + "/").c_str()); \
 		l_Component->m_Name = l_componentName; \

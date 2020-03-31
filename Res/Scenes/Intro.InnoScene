@@ -3,7 +3,7 @@
     {
       "ChildrenComponents": [
         {
-          "ComponentType": 0,
+          "ComponentType": 1,
           "LocalTransformVector": {
             "Position": {
               "X": -60.0,
@@ -25,7 +25,7 @@
           "ParentTransformComponentEntityName": "RootTransform"
         },
         {
-          "ComponentType": 3,
+          "ComponentType": 4,
           "FOVX": 90.0,
           "HeightScale": 9.0,
           "WidthScale": 16.0,
@@ -39,7 +39,7 @@
     {
       "ChildrenComponents": [
         {
-          "ComponentType": 0,
+          "ComponentType": 1,
           "LocalTransformVector": {
             "Position": {
               "X": 0.0,
@@ -62,7 +62,7 @@
         },
         {
           "ColorTemperature": 5780.0,
-          "ComponentType": 2,
+          "ComponentType": 3,
           "LightType": 0,
           "LuminousFlux": 100000.0,
           "RGBColor": {
@@ -86,7 +86,7 @@
     {
       "ChildrenComponents": [
         {
-          "ComponentType": 0,
+          "ComponentType": 1,
           "LocalTransformVector": {
             "Position": {
               "X": 0.0,
@@ -108,7 +108,7 @@
           "ParentTransformComponentEntityName": "RootTransform"
         },
         {
-          "ComponentType": 1,
+          "ComponentType": 2,
           "MeshPrimitiveTopology": 2,
           "MeshSource": 2,
           "ProceduralMeshShape": 0,
@@ -125,7 +125,7 @@
     {
       "ChildrenComponents": [
         {
-          "ComponentType": 0,
+          "ComponentType": 1,
           "LocalTransformVector": {
             "Position": {
               "X": -6.0,
@@ -147,7 +147,7 @@
           "ParentTransformComponentEntityName": "RootTransform"
         },
         {
-          "ComponentType": 1,
+          "ComponentType": 2,
           "MeshPrimitiveTopology": 2,
           "MeshSource": 2,
           "ProceduralMeshShape": 0,
@@ -164,7 +164,7 @@
     {
       "ChildrenComponents": [
         {
-          "ComponentType": 0,
+          "ComponentType": 1,
           "LocalTransformVector": {
             "Position": {
               "X": -18.0,
@@ -186,7 +186,7 @@
           "ParentTransformComponentEntityName": "RootTransform"
         },
         {
-          "ComponentType": 1,
+          "ComponentType": 2,
           "MeshPrimitiveTopology": 2,
           "MeshSource": 2,
           "ProceduralMeshShape": 0,
@@ -203,7 +203,7 @@
     {
       "ChildrenComponents": [
         {
-          "ComponentType": 0,
+          "ComponentType": 1,
           "LocalTransformVector": {
             "Position": {
               "X": -16.0,
@@ -226,7 +226,7 @@
         },
         {
           "ColorTemperature": 2000.0,
-          "ComponentType": 2,
+          "ComponentType": 3,
           "LightType": 1,
           "LuminousFlux": 2000.0,
           "RGBColor": {
@@ -250,7 +250,7 @@
     {
       "ChildrenComponents": [
         {
-          "ComponentType": 0,
+          "ComponentType": 1,
           "LocalTransformVector": {
             "Position": {
               "X": -10.0,
@@ -273,7 +273,7 @@
         },
         {
           "ColorTemperature": 12000.0,
-          "ComponentType": 2,
+          "ComponentType": 3,
           "LightType": 3,
           "LuminousFlux": 60.0,
           "RGBColor": {
@@ -297,7 +297,7 @@
     {
       "ChildrenComponents": [
         {
-          "ComponentType": 0,
+          "ComponentType": 1,
           "LocalTransformVector": {
             "Position": {
               "X": 110.0,
@@ -320,7 +320,7 @@
         },
         {
           "ColorTemperature": 1200.0,
-          "ComponentType": 2,
+          "ComponentType": 3,
           "LightType": 1,
           "LuminousFlux": 1000.0,
           "RGBColor": {

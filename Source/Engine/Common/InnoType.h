@@ -44,24 +44,6 @@ struct ArrayRangeInfo
 
 using ObjectName = FixedSizeString<128>;
 
-enum class ComponentType
-{
-	TransformComponent,
-	VisibleComponent,
-	LightComponent,
-	CameraComponent,
-	PhysicsDataComponent,
-	MeshDataComponent,
-	MaterialDataComponent,
-	TextureDataComponent,
-	SkeletonDataComponent,
-	AnimationDataComponent,
-	RenderPassDataComponent,
-	ShaderProgramComponent,
-	SamplerDataComponent,
-	GPUBufferDataComponent
-};
-
 struct TimeData
 {
 	int32_t Year;

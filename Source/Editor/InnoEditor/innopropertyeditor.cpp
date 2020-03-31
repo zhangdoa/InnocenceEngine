@@ -34,20 +34,18 @@ void InnoPropertyEditor::editComponent(int componentType, void *componentPtr)
 {
 	remove();
 
-	enum ComponentType l_type;
-	l_type = ComponentType(componentType);
-	switch (l_type)
-	{
-	case ComponentType::TransformComponent:
-		m_transformComponentPropertyEditor->edit(componentPtr);
-		break;
-    case ComponentType::VisibleComponent:
+    if (componentType == 1)
+    {
+        m_transformComponentPropertyEditor->edit(componentPtr);
+    }
+    else if (componentType == 2)
+    {
         m_visibleComponentPropertyEditor->edit(componentPtr);
-        break;
-    case ComponentType::LightComponent:
-		m_lightComponentPropertyEditor->edit(componentPtr);
-		break;
-	}
+    }
+    else if (componentType == 3)
+    {
+        m_lightComponentPropertyEditor->edit(componentPtr);
+    }
 }
 
 void InnoPropertyEditor::remove()

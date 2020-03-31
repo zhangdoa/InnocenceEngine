@@ -61,7 +61,7 @@ if (!g_pModuleManager->get##className()->setup()) \
 { \
 	return false; \
 } \
-InnoLogger::Log(LogLevel::Success, #className, " setup finished."); \
+InnoLogger::Log(LogLevel::Success, "ModuleManager: ", #className, " setup finished."); \
 
 #define subSystemInit( className ) \
 if (!g_pModuleManager->get##className()->initialize()) \
@@ -89,27 +89,27 @@ I##className * InnoModuleManager::get##className() \
 } \
 
 #define ComponentManagerSetup( className ) \
-if (!g_pModuleManager->getComponentManager(ComponentType::className)->Setup()) \
+if (!m_##className##Manager->Setup()) \
 { \
 	return false; \
 } \
-InnoLogger::Log(LogLevel::Success, #className, " setup finished."); \
+InnoLogger::Log(LogLevel::Success, "ModuleManager: ", #className, " setup finished."); \
 
 #define ComponentManagerInit( className ) \
-if (!g_pModuleManager->getComponentManager(ComponentType::className)->Initialize()) \
+if (!m_##className##Manager->Initialize()) \
 { \
 	return false; \
 } \
 
 #define ComponentManagerUpdate( className ) \
-if (!g_pModuleManager->getComponentManager(ComponentType::className)->Simulate()) \
+if (!m_##className##Manager->Simulate()) \
 { \
 m_ObjectStatus = ObjectStatus::Suspended; \
 return false; \
 }
 
 #define ComponentManagerTerm( className ) \
-if (!g_pModuleManager->getComponentManager(ComponentType::className)->Terminate()) \
+if (!m_##className##Manager->Terminate()) \
 { \
 	return false; \
 } \
@@ -451,7 +451,7 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	{
 		return false;
 	}
-	InnoLogger::Log(LogLevel::Success, "WindowSystem setup finished.");
+	InnoLogger::Log(LogLevel::Success, "ModuleManager: WindowSystem setup finished.");
 
 	subSystemSetup(AssetSystem);
 	subSystemSetup(FileSystem);
@@ -460,7 +460,7 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	{
 		return false;
 	}
-	InnoLogger::Log(LogLevel::Success, "EntityManager setup finished.");
+	InnoLogger::Log(LogLevel::Success, "ModuleManager: EntityManager setup finished.");
 
 	ComponentManagerSetup(TransformComponent);
 	ComponentManagerSetup(VisibleComponent);
@@ -471,7 +471,7 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	{
 		return false;
 	}
-	InnoLogger::Log(LogLevel::Success, "SceneHierarchyManager setup finished.");
+	InnoLogger::Log(LogLevel::Success, "ModuleManager: SceneHierarchyManager setup finished.");
 
 	subSystemSetup(PhysicsSystem);
 	subSystemSetup(EventSystem);
@@ -480,19 +480,19 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	{
 		return false;
 	}
-	InnoLogger::Log(LogLevel::Success, "RenderingFrontend setup finished.");
+	InnoLogger::Log(LogLevel::Success, "ModuleManager: RenderingFrontend setup finished.");
 
 	if (!m_GUISystem->setup())
 	{
 		return false;
 	}
-	InnoLogger::Log(LogLevel::Success, "GUISystem setup finished.");
+	InnoLogger::Log(LogLevel::Success, "ModuleManager: GUISystem setup finished.");
 
 	if (!m_RenderingServer->Setup())
 	{
 		return false;
 	}
-	InnoLogger::Log(LogLevel::Success, "RenderingServer setup finished.");
+	InnoLogger::Log(LogLevel::Success, "ModuleManager: RenderingServer setup finished.");
 
 	if (!m_RenderingClient->Setup())
 	{
@@ -529,7 +529,7 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	};
 
 	m_ObjectStatus = ObjectStatus::Created;
-	InnoLogger::Log(LogLevel::Success, "Engine setup finished.");
+	InnoLogger::Log(LogLevel::Success, "ModuleManager: Engine setup finished.");
 
 	return true;
 }
@@ -584,7 +584,7 @@ bool InnoModuleManagerNS::initialize()
 	f_RenderingFrontendUpdateJob();
 
 	m_ObjectStatus = ObjectStatus::Activated;
-	InnoLogger::Log(LogLevel::Success, "Engine has been initialized.");
+	InnoLogger::Log(LogLevel::Success, "ModuleManager: Engine has been initialized.");
 	return true;
 }
 
@@ -640,7 +640,7 @@ bool InnoModuleManagerNS::update()
 			else
 			{
 				m_ObjectStatus = ObjectStatus::Suspended;
-				InnoLogger::Log(LogLevel::Warning, "Engine is stand-by.");
+				InnoLogger::Log(LogLevel::Warning, "ModuleManager: Engine is stand-by.");
 				return true;
 			}
 		}
@@ -655,19 +655,19 @@ bool InnoModuleManagerNS::terminate()
 
 	if (!m_RenderingClient->Terminate())
 	{
-		InnoLogger::Log(LogLevel::Error, "Rendering client can't be terminated!");
+		InnoLogger::Log(LogLevel::Error, "ModuleManager: Rendering client can't be terminated!");
 		return false;
 	}
 
 	if (!m_LogicClient->terminate())
 	{
-		InnoLogger::Log(LogLevel::Error, "Logic client can't be terminated!");
+		InnoLogger::Log(LogLevel::Error, "ModuleManager: Logic client can't be terminated!");
 		return false;
 	}
 
 	if (!m_RenderingServer->Terminate())
 	{
-		InnoLogger::Log(LogLevel::Error, "RenderingServer can't be terminated!");
+		InnoLogger::Log(LogLevel::Error, "ModuleManager: RenderingServer can't be terminated!");
 		return false;
 	}
 
@@ -682,7 +682,7 @@ bool InnoModuleManagerNS::terminate()
 
 	if (!m_SceneHierarchyManager->Terminate())
 	{
-		InnoLogger::Log(LogLevel::Error, "SceneHierarchyManager can't be terminated!");
+		InnoLogger::Log(LogLevel::Error, "ModuleManager: SceneHierarchyManager can't be terminated!");
 		return false;
 	}
 
@@ -693,7 +693,7 @@ bool InnoModuleManagerNS::terminate()
 
 	if (!m_EntityManager->Terminate())
 	{
-		InnoLogger::Log(LogLevel::Error, "EntityManager can't be terminated!");
+		InnoLogger::Log(LogLevel::Error, "ModuleManager: EntityManager can't be terminated!");
 		return false;
 	}
 
@@ -756,34 +756,31 @@ subSystemGetDefi(RenderingFrontend);
 subSystemGetDefi(GUISystem);
 subSystemGetDefi(RenderingServer);
 
-IComponentManager * InnoModuleManager::getComponentManager(ComponentType componentType)
+IComponentManager* InnoModuleManager::getComponentManager(uint32_t componentTypeID)
 {
 	IComponentManager* l_result = nullptr;
-	switch (componentType)
+
+	if (componentTypeID == 1)
 	{
-	case ComponentType::TransformComponent:
 		l_result = m_TransformComponentManager.get();
-		break;
-	case ComponentType::VisibleComponent:
-		l_result = m_VisibleComponentManager.get();
-		break;
-	case ComponentType::LightComponent:
-		l_result = m_LightComponentManager.get();
-		break;
-	case ComponentType::CameraComponent:
-		l_result = m_CameraComponentManager.get();
-		break;
-	case ComponentType::PhysicsDataComponent:
-		break;
-	case ComponentType::MeshDataComponent:
-		break;
-	case ComponentType::MaterialDataComponent:
-		break;
-	case ComponentType::TextureDataComponent:
-		break;
-	default:
-		break;
 	}
+	else if (componentTypeID == 2)
+	{
+		l_result = m_VisibleComponentManager.get();
+	}
+	else if (componentTypeID == 3)
+	{
+		l_result = m_LightComponentManager.get();
+	}
+	else if (componentTypeID == 4)
+	{
+		l_result = m_CameraComponentManager.get();
+	}
+	else
+	{
+		InnoLogger::Log(LogLevel::Error, "ModuleManager: Unknown component manager, ComponentTypeID: ", componentTypeID);
+	}
+
 	return l_result;
 }
 
