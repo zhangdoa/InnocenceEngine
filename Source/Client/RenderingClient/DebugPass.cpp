@@ -1,5 +1,8 @@
 #include "DebugPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+#include "../../Engine/Common/CommonMacro.inl"
+#include "../../Engine/ComponentManager/ITransformComponentManager.h"
+#include "../../Engine/ComponentManager/IVisibleComponentManager.h"
 
 #include "GIDataLoader.h"
 #include "OpaquePass.h"
@@ -205,8 +208,8 @@ bool DebugPass::PrepareCommandList()
 		m_debugMaterialConstantBuffer[3].color = Vec4(0.8f, 0.1f, 0.1f, 1.0f);
 		m_debugMaterialConstantBuffer[4].color = Vec4(0.1f, 0.6f, 0.2f, 1.0f);
 
-		static bool l_drawProbesAndBricks = false;
-		if (l_drawProbesAndBricks)
+		static bool l_drawProbes = false;
+		if (l_drawProbes)
 		{
 			auto l_probes = GIDataLoader::GetProbes();
 
@@ -225,29 +228,11 @@ bool DebugPass::PrepareCommandList()
 					m_debugSphereConstantBuffer.emplace_back(l_meshData);
 				}
 
-				auto l_bricks = GIDataLoader::GetBricks();
-
-				if (l_bricks.size() > 0)
-				{
-					for (size_t i = 0; i < l_bricks.size(); i++)
-					{
-						DebugPerObjectConstantBuffer l_meshData;
-
-						l_meshData.m = InnoMath::toTranslationMatrix(l_bricks[i].boundBox.m_center);
-						l_meshData.m.m00 *= l_bricks[i].boundBox.m_extend.x / 2.0f;
-						l_meshData.m.m11 *= l_bricks[i].boundBox.m_extend.y / 2.0f;
-						l_meshData.m.m22 *= l_bricks[i].boundBox.m_extend.z / 2.0f;
-						l_meshData.materialID = 1;
-
-						m_debugCubeConstantBuffer.emplace_back(l_meshData);
-					}
-				}
-
 				auto l_brickFactor = GIDataLoader::GetBrickFactors();
 
 				// @TODO:
-				auto l_probeIndexBegin = 15;
-				auto l_probeIndexEnd = 16;
+				auto l_probeIndexBegin = 0;
+				auto l_probeIndexEnd = 0;
 
 				for (size_t probeIndex = l_probeIndexBegin; probeIndex < l_probeIndexEnd; probeIndex++)
 				{
@@ -270,13 +255,89 @@ bool DebugPass::PrepareCommandList()
 			}
 		}
 
-		auto l_rootBVHNode = g_pModuleManager->getPhysicsSystem()->getRootBVHNode();
+		static bool l_drawBricks = false;
+		if (l_drawBricks)
+		{
+			auto l_bricks = GIDataLoader::GetBricks();
 
-		AddBVHNode(l_rootBVHNode);
+			if (l_bricks.size() > 0)
+			{
+				for (size_t i = 0; i < l_bricks.size(); i++)
+				{
+					DebugPerObjectConstantBuffer l_meshData;
+
+					l_meshData.m = InnoMath::toTranslationMatrix(l_bricks[i].boundBox.m_center);
+					l_meshData.m.m00 *= l_bricks[i].boundBox.m_extend.x / 2.0f;
+					l_meshData.m.m11 *= l_bricks[i].boundBox.m_extend.y / 2.0f;
+					l_meshData.m.m22 *= l_bricks[i].boundBox.m_extend.z / 2.0f;
+					l_meshData.materialID = 1;
+
+					m_debugCubeConstantBuffer.emplace_back(l_meshData);
+				}
+			}
+		}
+
+		static bool l_drawBVHNodes = false;
+		if (l_drawBVHNodes)
+		{
+			auto l_rootBVHNode = g_pModuleManager->getPhysicsSystem()->getRootBVHNode();
+
+			AddBVHNode(l_rootBVHNode);
+		}
+
+		static bool l_drawSkeletons = true;
+		if (l_drawSkeletons)
+		{
+			auto& l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
+
+			for (auto i : l_visibleComponents)
+			{
+				if (i->m_meshUsage == MeshUsage::Skeletal && i->m_model)
+				{
+					auto l_transformCompoent = GetComponent(TransformComponent, i->m_ParentEntity);
+					auto l_m = l_transformCompoent->m_globalTransformMatrix.m_transformationMat;
+
+					for (size_t j = 0; j < i->m_model->meshMaterialPairs.m_count; j++)
+					{
+						auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(i->m_model->meshMaterialPairs.m_startOffset + j);
+						auto l_skeleton = l_pair->mesh->m_SDC;
+
+						for (auto k : l_skeleton->m_Bones)
+						{
+							DebugPerObjectConstantBuffer l_meshData;
+
+							auto l_pos = k.m_Pos;
+							l_pos.w = 1.0f;
+
+							auto l_t = InnoMath::toTranslationMatrix(l_pos);
+							auto l_r = InnoMath::toRotationMatrix(k.m_Rot);
+							auto l_bm = l_t * l_r;
+							// Inverse-Joint-Matrix
+							l_bm = l_bm.inverse();
+							auto l_s = InnoMath::toScaleMatrix(Vec4(0.01f, 0.01f, 0.01f, 1.0f));
+							l_bm = l_bm * l_s;
+							l_bm = l_m * l_bm;
+
+							l_meshData.m = l_bm;
+
+							l_meshData.materialID = 2;
+
+							m_debugCubeConstantBuffer.emplace_back(l_meshData);
+						}
+					}
+				}
+			}
+		}
 
 		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_debugMaterialGBDC, m_debugMaterialConstantBuffer, 0, m_debugMaterialConstantBuffer.size());
-		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_debugSphereMeshGBDC, m_debugSphereConstantBuffer, 0, m_debugSphereConstantBuffer.size());
-		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_debugCubeMeshGBDC, m_debugCubeConstantBuffer, 0, m_debugCubeConstantBuffer.size());
+		if (m_debugSphereConstantBuffer.size())
+		{
+			g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_debugSphereMeshGBDC, m_debugSphereConstantBuffer, 0, m_debugSphereConstantBuffer.size());
+		}
+		if (m_debugCubeConstantBuffer.size())
+		{
+			g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_debugCubeMeshGBDC, m_debugCubeConstantBuffer, 0, m_debugCubeConstantBuffer.size());
+		}
 
 		g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 		g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
@@ -289,10 +350,16 @@ bool DebugPass::PrepareCommandList()
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_debugMaterialGBDC->m_ResourceBinder, 2, 1, Accessibility::ReadOnly);
 
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, m_debugSphereMeshGBDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
-		g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_sphere, m_debugSphereConstantBuffer.size());
+		if (m_debugSphereConstantBuffer.size())
+		{
+			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_sphere, m_debugSphereConstantBuffer.size());
+		}
 
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, m_debugCubeMeshGBDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
-		g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_cube, m_debugCubeConstantBuffer.size());
+		if (m_debugCubeConstantBuffer.size())
+		{
+			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_cube, m_debugCubeConstantBuffer.size());
+		}
 
 		g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
 	}
@@ -324,12 +391,12 @@ bool DebugPass::Terminate()
 	return true;
 }
 
-RenderPassDataComponent * DebugPass::GetRPDC()
+RenderPassDataComponent* DebugPass::GetRPDC()
 {
 	return m_RPDC;
 }
 
-ShaderProgramComponent * DebugPass::GetSPC()
+ShaderProgramComponent* DebugPass::GetSPC()
 {
 	return m_SPC;
 }
