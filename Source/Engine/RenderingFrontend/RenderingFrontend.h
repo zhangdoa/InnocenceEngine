@@ -29,6 +29,7 @@ public:
 	MeshDataComponent* getMeshDataComponent(ProceduralMeshShape shape) override;
 	TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) override;
 	MaterialDataComponent* getDefaultMaterialDataComponent() override;
+	AnimationInfo getAnimationInfo(const char* animationName) override;
 
 	bool transferDataToGPU() override;
 

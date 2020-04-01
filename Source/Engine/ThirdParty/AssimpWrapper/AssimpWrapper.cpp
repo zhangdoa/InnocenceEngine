@@ -511,13 +511,18 @@ json AssimpWrapper::processTextureData(const char* fileName, TextureSampler samp
 Binary data type:
 Duration:float
 NumChannels:uint32_t
+KeyOffsets:uint32_t
 NumKeys:uint32_t
 Key:Key(Vec4+Vec4)
 
 Binary data structure:
 |Duration
 |NumChannels
-|NumKeys
+|KeyOffsets and NumKeys
+	|Channel1
+	|Channel2
+	|...
+	|ChannelN
 |Channel1
 	|Key1
 	|Key2
@@ -538,16 +543,11 @@ void AssimpWrapper::processAssimpAnimation(const aiAnimation* aiAnimation, const
 	IOService::serialize(l_file, &l_duration);
 
 	uint32_t l_numChannels = aiAnimation->mNumChannels;
-
 	if (l_numChannels)
 	{
 		IOService::serialize(l_file, &l_numChannels);
 
-		uint32_t l_numKeys = aiAnimation->mChannels[0]->mNumPositionKeys;
-		IOService::serialize(l_file, &l_numKeys);
-
-		// Position-xyz, time-w, rotation-xyzw
-		l_keyData.reserve(l_numChannels * l_numKeys * 2);
+		uint32_t l_keyOffset = 0;
 
 		for (uint32_t i = 0; i < l_numChannels; i++)
 		{
@@ -560,6 +560,12 @@ void AssimpWrapper::processAssimpAnimation(const aiAnimation* aiAnimation, const
 				return;
 			}
 
+			uint32_t l_numKeys = l_channel->mNumPositionKeys;
+			IOService::serialize(l_file, &l_keyOffset);
+			IOService::serialize(l_file, &l_numKeys);
+			l_keyOffset += l_numKeys;
+
+			// Position-xyz, time-w, rotation-xyzw
 			for (uint32_t j = 0; j < l_channel->mNumPositionKeys; j++)
 			{
 				auto l_posKey = l_channel->mPositionKeys[j];

@@ -394,10 +394,14 @@ bool JSONWrapper::processAnimationJsonData(const json& j, bool AsyncUploadGPURes
 		l_offset += sizeof(l_ADC->m_Duration);
 		IOService::deserialize(l_animationFile, l_offset, &l_ADC->m_NumChannels);
 		l_offset += sizeof(l_ADC->m_NumChannels);
-		IOService::deserialize(l_animationFile, l_offset, &l_ADC->m_NumKeys);
-		l_offset += sizeof(l_ADC->m_NumKeys);
+
+		auto l_channelInfoSize = l_ADC->m_NumChannels * sizeof(ChannelInfo);
+		l_ADC->m_ChannelInfo.reserve(l_ADC->m_NumChannels);
+		IOService::deserializeVector(l_animationFile, l_offset, l_channelInfoSize, l_ADC->m_ChannelInfo);
+		l_offset += l_channelInfoSize;
+
 		auto l_keyDataSize = IOService::getFileSize(l_animationFile) - l_offset;
-		l_ADC->m_KeyData.reserve(l_keyDataSize);
+		l_ADC->m_KeyData.reserve(l_keyDataSize / sizeof(KeyData));
 		IOService::deserializeVector(l_animationFile, l_offset, l_keyDataSize, l_ADC->m_KeyData);
 
 		g_pModuleManager->getAssetSystem()->recordLoadedAnimation(l_animationFileName.c_str(), l_ADC);

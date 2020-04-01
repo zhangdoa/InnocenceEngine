@@ -69,7 +69,7 @@ namespace InnoRenderingFrontendNS
 	ThreadSafeQueue<AnimationDataComponent*> m_uninitializedAnimations;
 
 	ThreadSafeUnorderedMap<SkeletonDataComponent*, GPUBufferDataComponent*> m_skeletonsLUT;
-	ThreadSafeUnorderedMap<AnimationDataComponent*, GPUBufferDataComponent*> m_animationsLUT;
+	ThreadSafeUnorderedMap<std::string, AnimationInfo> m_animationInfosLUT;
 
 	TextureDataComponent* m_iconTemplate_DirectionalLight;
 	TextureDataComponent* m_iconTemplate_PointLight;
@@ -144,18 +144,36 @@ void InnoRenderingFrontendNS::initializeSkeleton(SkeletonDataComponent* rhs)
 
 void InnoRenderingFrontendNS::initializeAnimation(AnimationDataComponent* rhs)
 {
-	auto l_GBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent(rhs->m_Name.c_str());
-	l_GBDC->m_ParentEntity = rhs->m_ParentEntity;
-	l_GBDC->m_ElementCount = rhs->m_KeyData.capacity();
-	l_GBDC->m_ElementSize = sizeof(Vec4);
-	l_GBDC->m_BindingPoint = 0;
+	std::string l_name = rhs->m_Name.c_str();
 
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(l_GBDC);
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GBDC, &rhs->m_KeyData[0]);
+	auto l_channelInfo = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent((l_name + "_ChannelInfo").c_str());
+	l_channelInfo->m_ParentEntity = rhs->m_ParentEntity;
+	l_channelInfo->m_ElementCount = rhs->m_ChannelInfo.capacity();
+	l_channelInfo->m_ElementSize = sizeof(ChannelInfo);
+	l_channelInfo->m_GPUAccessibility = Accessibility::ReadWrite;
+	l_channelInfo->m_BindingPoint = 0;
+
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(l_channelInfo);
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_channelInfo, &rhs->m_ChannelInfo[0]);
+
+	auto l_keyData = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent((l_name + "_KeyData").c_str());
+	l_keyData->m_ParentEntity = rhs->m_ParentEntity;
+	l_keyData->m_ElementCount = rhs->m_KeyData.capacity();
+	l_keyData->m_ElementSize = sizeof(KeyData);
+	l_keyData->m_GPUAccessibility = Accessibility::ReadWrite;
+	l_keyData->m_BindingPoint = 0;
+
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(l_keyData);
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_keyData, &rhs->m_KeyData[0]);
 
 	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
-	m_animationsLUT.emplace(rhs, l_GBDC);
+	AnimationInfo l_info;
+	l_info.ADC = rhs;
+	l_info.ChannelInfo = l_channelInfo;
+	l_info.KeyData = l_keyData;
+
+	m_animationInfosLUT.emplace(rhs->m_Name.c_str(), l_info);
 }
 
 bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
@@ -799,6 +817,20 @@ TextureDataComponent* InnoRenderingFrontend::getTextureDataComponent(WorldEditor
 MaterialDataComponent* InnoRenderingFrontend::getDefaultMaterialDataComponent()
 {
 	return m_defaultMaterial;
+}
+
+AnimationInfo InnoRenderingFrontend::getAnimationInfo(const char* animationName)
+{
+	auto l_result = m_animationInfosLUT.find(animationName);
+	if (l_result != m_animationInfosLUT.end())
+	{
+		return l_result->second;
+	}
+	else
+	{
+		InnoLogger::Log(LogLevel::Error, "RenderingFrontend: Can not find AnimationInfo by name:", animationName);
+		return AnimationInfo();
+	}
 }
 
 bool InnoRenderingFrontend::transferDataToGPU()

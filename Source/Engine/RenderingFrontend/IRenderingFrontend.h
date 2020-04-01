@@ -38,6 +38,13 @@ struct RenderingCapability
 	uint32_t maxTextures;
 };
 
+struct AnimationInfo
+{
+	AnimationDataComponent* ADC;
+	GPUBufferDataComponent* ChannelInfo;
+	GPUBufferDataComponent* KeyData;
+};
+
 enum class WorldEditorIconType { DIRECTIONAL_LIGHT, POINT_LIGHT, SPHERE_LIGHT, UNKNOWN };
 
 class IRenderingFrontend
@@ -68,6 +75,7 @@ public:
 	virtual MeshDataComponent* getMeshDataComponent(ProceduralMeshShape shape) = 0;
 	virtual TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) = 0;
 	virtual MaterialDataComponent* getDefaultMaterialDataComponent() = 0;
+	virtual AnimationInfo getAnimationInfo(const char* animationName) = 0;
 
 	virtual bool transferDataToGPU() = 0;
 
