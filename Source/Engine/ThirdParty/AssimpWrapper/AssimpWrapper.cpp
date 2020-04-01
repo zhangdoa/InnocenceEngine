@@ -25,6 +25,7 @@ namespace AssimpWrapper
 	void processAssimpMaterial(const aiMaterial* aiMaterial, const char* exportFileRelativePath);
 	json processTextureData(const char* fileName, TextureSampler sampler, TextureUsage usage, bool IsSRGB, uint32_t textureSlotIndex);
 	void processAssimpAnimation(const aiAnimation* aiAnimation, const char* exportFileRelativePath);
+	void decomposeTransformation(json& j, const aiMatrix4x4& t);
 };
 
 bool AssimpWrapper::convertModel(const char* fileName, const char* exportPath)
@@ -97,24 +98,17 @@ json AssimpWrapper::processAssimpScene(const aiScene* aiScene, const char* expor
 
 	j["Timestamp"] = l_timeDataStr;
 
+	decomposeTransformation(j, aiScene->mRootNode->mTransformation);
+
 	if (aiScene->mNumAnimations)
 	{
 		for (uint32_t i = 0; i < aiScene->mNumAnimations; i++)
 		{
-			auto l_animationFileName = "..//Res//ConvertedAssets//" + std::string(exportName) + "_" + std::to_string(i) + ".InnoAnimation";
+			auto l_validateFileName = IOService::validateFileName(aiScene->mAnimations[i]->mName.C_Str());
+			auto l_animationFileName = "..//Res//ConvertedAssets//" + std::string(exportName) + "_" + l_validateFileName + ".InnoAnimation";
 			processAssimpAnimation(aiScene->mAnimations[i], l_animationFileName.c_str());
 			j["AnimationFiles"].emplace_back(l_animationFileName);
 		}
-
-		auto l_rootTransformationMat = aiScene->mRootNode->mTransformation;
-		aiQuaternion l_aiRot;
-		aiVector3D l_aiPos;
-		l_rootTransformationMat.DecomposeNoScaling(l_aiRot, l_aiPos);
-		auto l_rot = Vec4(l_aiRot.x, l_aiRot.y, l_aiRot.z, l_aiRot.w);
-		auto l_pos = Vec4(l_aiPos.x, l_aiPos.y, l_aiPos.z, 1.0f);
-
-		JSONWrapper::to_json(j["RootOffsetRotation"], l_rot);
-		JSONWrapper::to_json(j["RootOffsetPosition"], l_pos);
 	}
 
 	processAssimpNode(j, aiScene->mRootNode, aiScene, exportName);
@@ -124,6 +118,8 @@ json AssimpWrapper::processAssimpScene(const aiScene* aiScene, const char* expor
 
 bool AssimpWrapper::processAssimpNode(json& j, const aiNode* node, const aiScene* scene, const char* exportName)
 {
+	decomposeTransformation(j, node->mTransformation);
+
 	// process each mesh located at the current node
 	if (node->mNumMeshes)
 	{
@@ -152,7 +148,7 @@ json AssimpWrapper::processAssimpMesh(const aiScene* scene, const char* exportNa
 	auto l_aiMesh = scene->mMeshes[meshIndex];
 
 	// process vertices and indices
-	l_meshData["MeshName"] = *l_aiMesh->mName.C_Str();
+	l_meshData["MeshName"] = l_aiMesh->mName.C_Str();
 	l_meshData["VerticesNumber"] = l_aiMesh->mNumVertices;
 	auto l_meshFileName = "..//Res//ConvertedAssets//" + std::string(exportName) + "_" + std::to_string(meshIndex) + ".InnoMesh";
 	l_meshData["IndicesNumber"] = processMeshData(l_aiMesh, l_meshFileName.c_str());
@@ -587,4 +583,16 @@ void AssimpWrapper::processAssimpAnimation(const aiAnimation* aiAnimation, const
 	IOService::serializeVector(l_file, l_keyData);
 
 	l_file.close();
+}
+
+void AssimpWrapper::decomposeTransformation(json& j, const aiMatrix4x4& t)
+{
+	aiQuaternion l_aiRot;
+	aiVector3D l_aiPos;
+	t.DecomposeNoScaling(l_aiRot, l_aiPos);
+	auto l_rot = Vec4(l_aiRot.x, l_aiRot.y, l_aiRot.z, l_aiRot.w);
+	auto l_pos = Vec4(l_aiPos.x, l_aiPos.y, l_aiPos.z, 1.0f);
+
+	JSONWrapper::to_json(j["Rotation"], l_rot);
+	JSONWrapper::to_json(j["Position"], l_pos);
 }
