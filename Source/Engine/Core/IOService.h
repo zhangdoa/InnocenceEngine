@@ -14,6 +14,7 @@ namespace IOService
 	std::string getFileExtension(const char* filePath);
 	std::string getFileName(const char* filePath);
 	std::string getWorkingDirectory();
+	std::string validateFileName(const char* filePath);
 
 	inline bool serialize(std::ostream& os, void* ptr, size_t size)
 	{
