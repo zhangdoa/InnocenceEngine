@@ -522,6 +522,7 @@ bool InnoRenderingFrontendNS::updateMeshData()
 					// @TODO: use culled info
 					l_drawCallInfo.castSunShadow = true;
 					l_drawCallInfo.visibility = l_cullingData.visibility;
+					l_drawCallInfo.meshUsage = l_cullingData.meshUsage;
 					l_drawCallInfo.meshConstantBufferIndex = (uint32_t)i;
 					l_drawCallInfo.materialConstantBufferIndex = (uint32_t)i;
 

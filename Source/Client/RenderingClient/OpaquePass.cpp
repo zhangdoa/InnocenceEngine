@@ -131,7 +131,7 @@ bool OpaquePass::PrepareCommandList()
 		auto l_drawCallData = l_drawCallInfo[i];
 		if (l_drawCallData.visibility == Visibility::Opaque)
 		{
-			if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
+			if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated && l_drawCallData.meshUsage != MeshUsage::Skeletal)
 			{
 				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
 				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_drawCallData.materialConstantBufferIndex, 1);
