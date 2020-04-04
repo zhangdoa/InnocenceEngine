@@ -45,8 +45,8 @@ namespace JSONWrapper
 	Model* processSceneJsonData(const json& j, bool AsyncUploadGPUResource = true);
 	bool processAnimationJsonData(const json& j, bool AsyncUploadGPUResource = true);
 	ArrayRangeInfo processMeshJsonData(const json& j, bool AsyncUploadGPUResource = true);
-	SkeletonDataComponent* processSkeletonJsonData(const char* skeletonFileName, bool AsyncUploadGPUResource = true);
-	MaterialDataComponent* processMaterialJsonData(const char* materialFileName, bool AsyncUploadGPUResource = true);
+	SkeletonDataComponent* processSkeletonJsonData(const json& j, const char* name, bool AsyncUploadGPUResource = true);
+	MaterialDataComponent* processMaterialJsonData(const json& j, const char* name, bool AsyncUploadGPUResource = true);
 
 	bool assignComponentRuntimeData();
 
@@ -314,9 +314,9 @@ Model* JSONWrapper::loadModelFromDisk(const char* fileName, bool AsyncUploadGPUR
 
 Model* JSONWrapper::processSceneJsonData(const json& j, bool AsyncUploadGPUResource)
 {
-	if (j.find("AnimationFiles") != j.end())
+	if (j.find("Animations") != j.end())
 	{
-		processAnimationJsonData(j["AnimationFiles"], AsyncUploadGPUResource);
+		processAnimationJsonData(j["Animations"], AsyncUploadGPUResource);
 	}
 
 	Model* l_result;
@@ -422,10 +422,11 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadG
 		auto l_currentMeshMaterialPair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(l_result.m_startOffset + l_currentIndex);
 
 		// Load material data
-		if (i.find("MaterialFile") != i.end())
+		if (i.find("Material") != i.end())
 		{
-			std::string l_materialFile = i["MaterialFile"];
-			l_currentMeshMaterialPair->material = processMaterialJsonData(l_materialFile.c_str(), AsyncUploadGPUResource);
+			std::string l_materialName = i["Name"];
+			l_materialName += "_Material";
+			l_currentMeshMaterialPair->material = processMaterialJsonData(i["Material"], l_materialName.c_str(), AsyncUploadGPUResource);
 		}
 		else
 		{
@@ -439,7 +440,7 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadG
 		// Load custom mesh data
 		if (l_meshSource == MeshSource::Customized)
 		{
-			auto l_meshFileName = i["MeshFile"].get<std::string>();
+			auto l_meshFileName = i["File"].get<std::string>();
 
 			MeshMaterialPair* l_loadedMeshMaterialPair;
 
@@ -477,11 +478,12 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadG
 
 				l_currentMeshMaterialPair->mesh = l_mesh;
 
-				// Load skeleton data
-				if (i.find("SkeletonFile") != i.end())
+				// Load bones data
+				if (i.find("Bones") != i.end())
 				{
-					std::string l_skeletonFile = i["SkeletonFile"];
-					l_currentMeshMaterialPair->mesh->m_SDC = processSkeletonJsonData(l_skeletonFile.c_str());
+					std::string l_skeletonName = i["Name"];
+					l_skeletonName += "_Skeleton";
+					l_currentMeshMaterialPair->mesh->m_SDC = processSkeletonJsonData(i, l_skeletonName.c_str(), AsyncUploadGPUResource);
 				}
 
 				l_currentMeshMaterialPair->mesh->m_meshSource = MeshSource::Customized;
@@ -505,23 +507,19 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadG
 	return l_result;
 }
 
-SkeletonDataComponent* JSONWrapper::processSkeletonJsonData(const char* skeletonFileName, bool AsyncUploadGPUResource)
+SkeletonDataComponent* JSONWrapper::processSkeletonJsonData(const json& j, const char* name, bool AsyncUploadGPUResource)
 {
 	SkeletonDataComponent* l_SDC;
 
 	// check if this file has already been loaded once
-	if (g_pModuleManager->getAssetSystem()->findLoadedSkeleton(skeletonFileName, l_SDC))
+	if (g_pModuleManager->getAssetSystem()->findLoadedSkeleton(name, l_SDC))
 	{
 		return l_SDC;
 	}
 	else
 	{
-		json j;
-
-		loadJsonDataFromDisk(skeletonFileName, j);
-
 		l_SDC = g_pModuleManager->getRenderingFrontend()->addSkeletonDataComponent();
-		l_SDC->m_Name = (std::string(skeletonFileName) + ("//")).c_str();
+		l_SDC->m_Name = (std::string(name) + ("//")).c_str();
 
 		auto l_size = j["Bones"].size();
 		l_SDC->m_Bones.reserve(l_size);
@@ -541,21 +539,17 @@ SkeletonDataComponent* JSONWrapper::processSkeletonJsonData(const char* skeleton
 			l_SDC->m_Bones.emplace_back(l_bone);
 		}
 
-		g_pModuleManager->getAssetSystem()->recordLoadedSkeleton(skeletonFileName, l_SDC);
+		g_pModuleManager->getAssetSystem()->recordLoadedSkeleton(name, l_SDC);
 		g_pModuleManager->getRenderingFrontend()->registerSkeletonDataComponent(l_SDC, AsyncUploadGPUResource);
 
 		return l_SDC;
 	}
 }
 
-MaterialDataComponent* JSONWrapper::processMaterialJsonData(const char* materialFileName, bool AsyncUploadGPUResource)
+MaterialDataComponent* JSONWrapper::processMaterialJsonData(const json& j, const char* name, bool AsyncUploadGPUResource)
 {
-	json j;
-
-	loadJsonDataFromDisk(materialFileName, j);
-
 	auto l_MDC = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
-	l_MDC->m_Name = (std::string(materialFileName) + ("//")).c_str();
+	l_MDC->m_Name = (std::string(name) + ("//")).c_str();
 	auto l_defaultMaterial = g_pModuleManager->getRenderingFrontend()->getDefaultMaterialDataComponent();
 
 	if (j.find("Textures") != j.end())

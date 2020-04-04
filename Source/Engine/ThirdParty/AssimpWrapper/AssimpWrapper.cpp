@@ -21,8 +21,8 @@ namespace AssimpWrapper
 	void processAssimpNode(const std::function<void(json&, const aiNode*, const aiScene*, const char*)>& nodeFunctor, json& j, const aiNode* node, const aiScene* scene, const char* exportName);
 	void processAssimpMesh(json& j, const aiScene* scene, const char* exportName, uint32_t meshIndex);
 	size_t processMeshData(const aiMesh* mesh, const char* exportFileRelativePath);
-	void processAssimpBone(json& j, const aiMesh* mesh, const char* exportFileRelativePath);
-	void processAssimpMaterial(json& j, const aiMaterial* material, const char* exportFileRelativePath);
+	void processAssimpBone(json& j, const aiMesh* mesh);
+	void processAssimpMaterial(json& j, const aiMaterial* material);
 	void processTextureData(json& j, const char* fileName, TextureSampler sampler, TextureUsage usage, bool IsSRGB, uint32_t textureSlotIndex);
 	void processAssimpAnimation(json& j, const aiAnimation* animation, const char* exportFileRelativePath);
 	void decomposeTransformation(json& j, const aiNode* node);
@@ -108,7 +108,7 @@ void AssimpWrapper::processAssimpScene(json& j, const aiScene* scene, const char
 			auto l_validateFileName = IOService::validateFileName(scene->mAnimations[i]->mName.C_Str());
 			auto l_animationFileName = "..//Res//ConvertedAssets//" + std::string(exportName) + "_" + l_validateFileName + ".InnoAnimation";
 			processAssimpAnimation(j_child, scene->mAnimations[i], l_animationFileName.c_str());
-			j["AnimationFiles"].emplace_back(l_animationFileName);
+			j["Animations"].emplace_back(l_animationFileName);
 		}
 	}
 
@@ -165,31 +165,23 @@ void AssimpWrapper::processAssimpMesh(json& j, const aiScene* scene, const char*
 	auto l_mesh = scene->mMeshes[meshIndex];
 
 	// process vertices and indices
-	j["MeshName"] = l_mesh->mName.C_Str();
+	j["Name"] = l_mesh->mName.C_Str();
 	j["VerticesNumber"] = l_mesh->mNumVertices;
 	auto l_meshFileName = "..//Res//ConvertedAssets//" + std::string(exportName) + "_" + std::to_string(meshIndex) + ".InnoMesh";
 	j["IndicesNumber"] = processMeshData(l_mesh, l_meshFileName.c_str());
-	j["MeshFile"] = l_meshFileName;
+	j["File"] = l_meshFileName;
 	j["MeshSource"] = MeshSource::Customized;
 
 	// process bones
 	if (l_mesh->mNumBones)
 	{
-		json j_child;
-		auto l_skeletonFileName = "..//Res//ConvertedAssets//" + std::string(exportName) + "_" + std::to_string(meshIndex) + ".InnoSkeleton";
-		processAssimpBone(j_child, l_mesh, l_skeletonFileName.c_str());
-		j["SkeletonFile"] = l_skeletonFileName;
-		JSONWrapper::saveJsonDataToDisk(l_skeletonFileName.c_str(), j_child);
+		processAssimpBone(j, l_mesh);
 	}
 
 	// process material
 	if (l_mesh->mMaterialIndex)
 	{
-		json j_child;
-		auto l_materialFileName = "..//Res//ConvertedAssets//" + std::string(exportName) + "_" + std::to_string(meshIndex) + ".InnoMaterial";
-		processAssimpMaterial(j_child, scene->mMaterials[l_mesh->mMaterialIndex], l_materialFileName.c_str());
-		j["MaterialFile"] = l_materialFileName;
-		JSONWrapper::saveJsonDataToDisk(l_materialFileName.c_str(), j_child);
+		processAssimpMaterial(j["Material"], scene->mMaterials[l_mesh->mMaterialIndex]);
 	}
 }
 
@@ -362,7 +354,7 @@ size_t AssimpWrapper::processMeshData(const aiMesh* mesh, const char* exportFile
 	return l_indiceSize;
 }
 
-void AssimpWrapper::processAssimpBone(json& j, const aiMesh* mesh, const char* exportFileRelativePath)
+void AssimpWrapper::processAssimpBone(json& j, const aiMesh* mesh)
 {
 	for (uint32_t i = 0; i < mesh->mNumBones; i++)
 	{
@@ -400,7 +392,7 @@ aiTextureType::AI_MATKEY_COLOR_EMISSIVE Ke AO
 aiTextureType::AI_MATKEY_COLOR_REFLECTIVE Thickness
 */
 
-void AssimpWrapper::processAssimpMaterial(json& j, const aiMaterial* material, const char* exportFileRelativePath)
+void AssimpWrapper::processAssimpMaterial(json& j, const aiMaterial* material)
 {
 	for (uint32_t i = 0; i < aiTextureType_UNKNOWN; i++)
 	{
