@@ -327,32 +327,32 @@ Model* JSONWrapper::processSceneJsonData(const json& j, bool AsyncUploadGPUResou
 		l_result->meshMaterialPairs = processMeshJsonData(j["Meshes"], AsyncUploadGPUResource);
 	}
 
-	auto l_m = InnoMath::generateIdentityMatrix<float>();
-
-	if (j.find("RootOffsetRotation") != j.end())
+	if (j.find("Nodes") != j.end())
 	{
-		Vec4 l_rot;
-		l_rot.x = j["RootOffsetRotation"]["X"];
-		l_rot.y = j["RootOffsetRotation"]["Y"];
-		l_rot.z = j["RootOffsetRotation"]["Z"];
-		l_rot.w = j["RootOffsetRotation"]["W"];
+		for (auto i : j["Nodes"])
+		{
+			auto l_m = InnoMath::generateIdentityMatrix<float>();
+			Vec4 l_rot;
+			l_rot.x = i["Rotation"]["X"];
+			l_rot.y = i["Rotation"]["Y"];
+			l_rot.z = i["Rotation"]["Z"];
+			l_rot.w = i["Rotation"]["W"];
 
-		auto l_r = InnoMath::toRotationMatrix(l_rot);
+			l_rot = l_rot.normalize();
+			auto l_r = InnoMath::toRotationMatrix(l_rot);
 
-		l_m = l_m * l_r;
-	}
+			l_m = l_m * l_r;
 
-	if (j.find("RootOffsetPosition") != j.end())
-	{
-		Vec4 l_pos;
-		l_pos.x = j["RootOffsetPosition"]["X"];
-		l_pos.y = j["RootOffsetPosition"]["Y"];
-		l_pos.z = j["RootOffsetPosition"]["Z"];
-		l_pos.w = j["RootOffsetPosition"]["W"];
+			Vec4 l_pos;
+			l_pos.x = i["Position"]["X"];
+			l_pos.y = i["Position"]["Y"];
+			l_pos.z = i["Position"]["Z"];
+			l_pos.w = 1.0f;
 
-		auto l_t = InnoMath::toTranslationMatrix(l_pos);
+			auto l_t = InnoMath::toTranslationMatrix(l_pos);
 
-		l_m = l_m * l_t;
+			l_m = l_m * l_t;
+		}
 	}
 
 	if (l_result != nullptr)
@@ -529,14 +529,14 @@ SkeletonDataComponent* JSONWrapper::processSkeletonJsonData(const char* skeleton
 		for (auto i : j["Bones"])
 		{
 			Bone l_bone;
-			l_bone.m_Pos.x = i["OffsetPosition"]["X"];
-			l_bone.m_Pos.y = i["OffsetPosition"]["Y"];
-			l_bone.m_Pos.z = i["OffsetPosition"]["Z"];
-			l_bone.m_Pos.w = (float)i["BoneID"];
-			l_bone.m_Rot.x = i["OffsetRotation"]["X"];
-			l_bone.m_Rot.y = i["OffsetRotation"]["Y"];
-			l_bone.m_Rot.z = i["OffsetRotation"]["Z"];
-			l_bone.m_Rot.w = i["OffsetRotation"]["W"];
+			l_bone.m_Pos.x = i["Position"]["X"];
+			l_bone.m_Pos.y = i["Position"]["Y"];
+			l_bone.m_Pos.z = i["Position"]["Z"];
+			l_bone.m_Pos.w = (float)i["ID"];
+			l_bone.m_Rot.x = i["Rotation"]["X"];
+			l_bone.m_Rot.y = i["Rotation"]["Y"];
+			l_bone.m_Rot.z = i["Rotation"]["Z"];
+			l_bone.m_Rot.w = i["Rotation"]["W"];
 
 			l_SDC->m_Bones.emplace_back(l_bone);
 		}
