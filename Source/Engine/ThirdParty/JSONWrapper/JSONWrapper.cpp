@@ -363,7 +363,6 @@ Model* JSONWrapper::processSceneJsonData(const json& j, bool AsyncUploadGPUResou
 			auto l_SDC = l_pair->mesh->m_SDC;
 			if (l_SDC)
 			{
-				l_SDC->m_RootOffsetMatrix = l_m;
 			}
 		}
 	}
@@ -375,7 +374,7 @@ bool JSONWrapper::processAnimationJsonData(const json& j, bool AsyncUploadGPURes
 {
 	for (auto i : j)
 	{
-		auto l_animationFileName = i.get<std::string>();
+		std::string l_animationFileName = i["File"];
 
 		std::ifstream l_animationFile(IOService::getWorkingDirectory() + l_animationFileName, std::ios::binary);
 
@@ -396,12 +395,12 @@ bool JSONWrapper::processAnimationJsonData(const json& j, bool AsyncUploadGPURes
 		l_offset += sizeof(l_ADC->m_NumChannels);
 
 		auto l_channelInfoSize = l_ADC->m_NumChannels * sizeof(ChannelInfo);
-		l_ADC->m_ChannelInfo.reserve(l_ADC->m_NumChannels);
+		l_ADC->m_ChannelInfo.resize(l_ADC->m_NumChannels);
 		IOService::deserializeVector(l_animationFile, l_offset, l_channelInfoSize, l_ADC->m_ChannelInfo);
 		l_offset += l_channelInfoSize;
 
 		auto l_keyDataSize = IOService::getFileSize(l_animationFile) - l_offset;
-		l_ADC->m_KeyData.reserve(l_keyDataSize / sizeof(KeyData));
+		l_ADC->m_KeyData.resize(l_keyDataSize / sizeof(KeyData));
 		IOService::deserializeVector(l_animationFile, l_offset, l_keyDataSize, l_ADC->m_KeyData);
 
 		g_pModuleManager->getAssetSystem()->recordLoadedAnimation(l_animationFileName.c_str(), l_ADC);
@@ -527,14 +526,12 @@ SkeletonDataComponent* JSONWrapper::processSkeletonJsonData(const json& j, const
 		for (auto i : j["Bones"])
 		{
 			Bone l_bone;
-			l_bone.m_Pos.x = i["Position"]["X"];
-			l_bone.m_Pos.y = i["Position"]["Y"];
-			l_bone.m_Pos.z = i["Position"]["Z"];
-			l_bone.m_Pos.w = (float)i["ID"];
-			l_bone.m_Rot.x = i["Rotation"]["X"];
-			l_bone.m_Rot.y = i["Rotation"]["Y"];
-			l_bone.m_Rot.z = i["Rotation"]["Z"];
-			l_bone.m_Rot.w = i["Rotation"]["W"];
+			from_json(i["L2B"]["Position"], l_bone.m_L2BPos);
+			from_json(i["L2B"]["Rotation"], l_bone.m_L2BRot);
+			from_json(i["B2P"]["Position"], l_bone.m_B2PPos);
+			from_json(i["B2P"]["Rotation"], l_bone.m_B2PRot);
+
+			l_bone.m_L2BPos.w = (float)i["ID"];
 
 			l_SDC->m_Bones.emplace_back(l_bone);
 		}

@@ -17,6 +17,9 @@ extern IModuleManager* g_pModuleManager;
 
 namespace AssimpWrapper
 {
+	void to_json(json& j, const aiMatrix4x4& m);
+	void from_json(const json& j, aiMatrix4x4& m);
+
 	void processAssimpScene(json& j, const aiScene* scene, const char* exportName);
 	void processAssimpNode(const std::function<void(json&, const aiNode*, const aiScene*, const char*)>& nodeFunctor, json& j, const aiNode* node, const aiScene* scene, const char* exportName);
 	void processAssimpMesh(json& j, const aiScene* scene, const char* exportName, uint32_t meshIndex);
@@ -25,8 +28,49 @@ namespace AssimpWrapper
 	void processAssimpMaterial(json& j, const aiMaterial* material);
 	void processTextureData(json& j, const char* fileName, TextureSampler sampler, TextureUsage usage, bool IsSRGB, uint32_t textureSlotIndex);
 	void processAssimpAnimation(json& j, const aiAnimation* animation, const char* exportFileRelativePath);
-	void decomposeTransformation(json& j, const aiNode* node);
+	void mergeTransformation(json& j, const aiNode* node);
+	void decomposeTransformation(json& j, const aiMatrix4x4& m);
 };
+
+void AssimpWrapper::to_json(json& j, const aiMatrix4x4& m)
+{
+	j["00"] = m.a1;
+	j["01"] = m.a2;
+	j["02"] = m.a3;
+	j["03"] = m.a4;
+	j["10"] = m.b1;
+	j["11"] = m.b2;
+	j["12"] = m.b3;
+	j["13"] = m.b4;
+	j["20"] = m.c1;
+	j["21"] = m.c2;
+	j["22"] = m.c3;
+	j["23"] = m.c4;
+	j["30"] = m.d1;
+	j["31"] = m.d2;
+	j["32"] = m.d3;
+	j["33"] = m.d4;
+}
+
+void AssimpWrapper::from_json(const json& j, aiMatrix4x4& m)
+{
+	m.a1 = j["00"];
+	m.a2 = j["01"];
+	m.a3 = j["02"];
+	m.a4 = j["03"];
+	m.b1 = j["10"];
+	m.b2 = j["11"];
+	m.b3 = j["12"];
+	m.b4 = j["13"];
+	m.c1 = j["20"];
+	m.c2 = j["21"];
+	m.c3 = j["22"];
+	m.c4 = j["23"];
+	m.d1 = j["30"];
+	m.d2 = j["31"];
+	m.d3 = j["32"];
+	m.d4 = j["33"];
+}
 
 bool AssimpWrapper::convertModel(const char* fileName, const char* exportPath)
 {
@@ -108,21 +152,18 @@ void AssimpWrapper::processAssimpScene(json& j, const aiScene* scene, const char
 			auto l_validateFileName = IOService::validateFileName(scene->mAnimations[i]->mName.C_Str());
 			auto l_animationFileName = "..//Res//ConvertedAssets//" + std::string(exportName) + "_" + l_validateFileName + ".InnoAnimation";
 			processAssimpAnimation(j_child, scene->mAnimations[i], l_animationFileName.c_str());
-			j["Animations"].emplace_back(l_animationFileName);
+			j["Animations"].emplace_back(j_child);
 		}
 	}
 
 	auto f_getNodeTransform = [](json& j, const aiNode* node, const aiScene* scene, const char* exportName)
 	{
-		if (node->mName.C_Str())
-		{
-			json j_node;
+		json j_node;
 
-			j_node["Name"] = node->mName.C_Str();
-			decomposeTransformation(j_node, node);
+		j_node["Name"] = node->mName.C_Str();
+		mergeTransformation(j_node["Transformation"], node);
 
-			j["Nodes"].emplace_back(j_node);
-		}
+		j["Nodes"].emplace_back(j_node);
 	};
 
 	auto f_getMesh = [](json& j, const aiNode* node, const aiScene* scene, const char* exportName)
@@ -144,6 +185,30 @@ void AssimpWrapper::processAssimpScene(json& j, const aiScene* scene, const char
 	processAssimpNode(f_getMesh, j, scene->mRootNode, scene, exportName);
 
 	// Assign bone ID to nodes transformation
+	for (auto& i : j["Meshes"])
+	{
+		for (auto& b : i["Bones"])
+		{
+			for (auto& k : j["Nodes"])
+			{
+				if (b["Name"] == k["Name"])
+				{
+					aiMatrix4x4 l_B2P;
+					aiMatrix4x4 l_L2B;
+
+					from_json(k["Transformation"], l_B2P);
+					from_json(b["Transformation"], l_L2B);
+
+					decomposeTransformation(b["B2P"], l_B2P);
+					decomposeTransformation(b["L2B"], l_L2B);
+
+					b.erase("Transformation");
+				}
+			}
+		}
+	}
+
+	j.erase("Nodes");
 }
 
 void AssimpWrapper::processAssimpNode(const std::function<void(json&, const aiNode*, const aiScene*, const char*)>& nodeFunctor, json& j, const aiNode* node, const aiScene* scene, const char* exportName)
@@ -365,14 +430,7 @@ void AssimpWrapper::processAssimpBone(json& j, const aiMesh* mesh)
 		j_child["Name"] = l_bone->mName.C_Str();
 		j_child["ID"] = i;
 
-		aiQuaternion l_aiRot;
-		aiVector3D l_aiPos;
-		l_bone->mOffsetMatrix.DecomposeNoScaling(l_aiRot, l_aiPos);
-		auto l_rot = Vec4(l_aiRot.x, l_aiRot.y, l_aiRot.z, l_aiRot.w);
-		auto l_pos = Vec4(l_aiPos.x, l_aiPos.y, l_aiPos.z, 1.0f);
-
-		JSONWrapper::to_json(j_child["Rotation"], l_rot);
-		JSONWrapper::to_json(j_child["Position"], l_pos);
+		to_json(j_child["Transformation"], l_bone->mOffsetMatrix);
 
 		j["Bones"].emplace_back(j_child);
 	}
@@ -537,22 +595,29 @@ Binary data structure:
 void AssimpWrapper::processAssimpAnimation(json& j, const aiAnimation* aiAnimation, const char* exportFileRelativePath)
 {
 	std::ofstream l_file(IOService::getWorkingDirectory() + exportFileRelativePath, std::ios::out | std::ios::trunc | std::ios::binary);
+	j["File"] = exportFileRelativePath;
 
 	std::vector<Vec4> l_keyData;
+	j["Name"] = aiAnimation->mName.C_Str();
 
 	float l_duration = (float)aiAnimation->mDuration;
 	IOService::serialize(l_file, &l_duration);
+	j["Duration"] = l_duration;
 
 	uint32_t l_numChannels = aiAnimation->mNumChannels;
 	if (l_numChannels)
 	{
 		IOService::serialize(l_file, &l_numChannels);
+		j["NumChannels"] = l_numChannels;
 
 		uint32_t l_keyOffset = 0;
 
 		for (uint32_t i = 0; i < l_numChannels; i++)
 		{
+			json j_child;
 			auto l_channel = aiAnimation->mChannels[i];
+			j_child["Name"] = l_channel->mNodeName.C_Str();
+			j_child["Offset"] = i;
 
 			if (l_channel->mNumPositionKeys != l_channel->mNumRotationKeys)
 			{
@@ -570,9 +635,8 @@ void AssimpWrapper::processAssimpAnimation(json& j, const aiAnimation* aiAnimati
 			for (uint32_t j = 0; j < l_channel->mNumPositionKeys; j++)
 			{
 				auto l_posKey = l_channel->mPositionKeys[j];
-				auto l_posKeyTime = l_posKey.mTime;
 				auto l_posKeyValue = l_posKey.mValue;
-				auto l_pos = Vec4(l_posKeyValue.x, l_posKeyValue.y, l_posKeyValue.z, (float)l_posKeyTime);
+				auto l_pos = Vec4(l_posKeyValue.x, l_posKeyValue.y, l_posKeyValue.z, (float)l_posKey.mTime);
 
 				l_keyData.emplace_back(l_pos);
 
@@ -582,6 +646,8 @@ void AssimpWrapper::processAssimpAnimation(json& j, const aiAnimation* aiAnimati
 
 				l_keyData.emplace_back(l_rot);
 			}
+
+			j["Channels"].emplace_back(j_child);
 		}
 	}
 
@@ -590,7 +656,7 @@ void AssimpWrapper::processAssimpAnimation(json& j, const aiAnimation* aiAnimati
 	l_file.close();
 }
 
-void AssimpWrapper::decomposeTransformation(json& j, const aiNode* node)
+void AssimpWrapper::mergeTransformation(json& j, const aiNode* node)
 {
 	// @TODO: optimize
 	aiMatrix4x4 t = node->mTransformation;
@@ -601,10 +667,16 @@ void AssimpWrapper::decomposeTransformation(json& j, const aiNode* node)
 		t *= l_parent->mTransformation;
 		l_parent = l_parent->mParent;
 	}
+	to_json(j, t);
+}
 
+void AssimpWrapper::decomposeTransformation(json& j, const aiMatrix4x4& m)
+{
 	aiQuaternion l_aiRot;
 	aiVector3D l_aiPos;
-	t.DecomposeNoScaling(l_aiRot, l_aiPos);
+
+	m.DecomposeNoScaling(l_aiRot, l_aiPos);
+
 	auto l_rot = Vec4(l_aiRot.x, l_aiRot.y, l_aiRot.z, l_aiRot.w);
 	auto l_pos = Vec4(l_aiPos.x, l_aiPos.y, l_aiPos.z, 1.0f);
 
