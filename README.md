@@ -11,16 +11,19 @@
 > "A poet once said, 'The whole universe is in a glass of wine.'"
 > -- Richard Feynman, 1963
 
+## Simplified Architecture
+![Architecture](https://github.com/zhangdoa/InnocenceEngine/blob/master/Innocence%20Engine's%20Belly.svg)
+
 ## Features
 
 - Strict **E**ntity–**C**omponent–**S**ystem architecture, No OOP overhead/console-like programming experience/allow unlimited feature module extension.
 
 ```cpp
 // the "E"
-auto l_testEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectUsage::Gameplay, "testEntity/");
+auto l_testEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Client, "testEntity/");
 
 // the "C"
-auto l_testTransformComponent = SpawnComponent(TransformComponent, l_testEntity, ObjectSource::Runtime, ObjectUsage::Gameplay);
+auto l_testTransformComponent = SpawnComponent(TransformComponent, l_testEntity, ObjectSource::Runtime, ObjectOwnership::Client);
 
 l_testTransformComponent->m_localTransformVector.m_pos = Vec4(42.0f, 1.0f, PI<float>, 1.0f);
 
@@ -143,7 +146,7 @@ All scripts are in /Script folder
 
 ### Windows
 
-Tested OS version: Windows 10 version 1903
+Tested OS version: Windows 10 version 1903, 1909
 
 ##### Prerequisites
 
@@ -197,7 +200,7 @@ echo | PostBuildLinux.sh
 
 ### macOS
 
-Tested OS version : macOS 10.13.6
+Tested OS version : macOS 10.13.6, 10.15.4
 
 ##### Prerequisites
 
