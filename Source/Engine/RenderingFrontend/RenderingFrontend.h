@@ -30,6 +30,7 @@ public:
 	TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) override;
 	MaterialDataComponent* getDefaultMaterialDataComponent() override;
 	AnimationInfo getAnimationInfo(const char* animationName) override;
+	GPUBufferDataComponent* getSkeletonGPUBuffer(SkeletonDataComponent* rhs) override;
 
 	bool transferDataToGPU() override;
 

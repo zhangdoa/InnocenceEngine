@@ -130,12 +130,13 @@ void InnoRenderingFrontendNS::initializeSkeleton(SkeletonDataComponent* rhs)
 {
 	auto l_GBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent(rhs->m_Name.c_str());
 	l_GBDC->m_ParentEntity = rhs->m_ParentEntity;
-	l_GBDC->m_ElementCount = rhs->m_Bones.capacity();
-	l_GBDC->m_ElementSize = sizeof(Bone);
+	l_GBDC->m_ElementCount = rhs->m_BoneData.capacity();
+	l_GBDC->m_ElementSize = sizeof(BoneData);
+	l_GBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 	l_GBDC->m_BindingPoint = 0;
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(l_GBDC);
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GBDC, &rhs->m_Bones[0]);
+	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GBDC, &rhs->m_BoneData[0]);
 
 	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
@@ -828,8 +829,22 @@ AnimationInfo InnoRenderingFrontend::getAnimationInfo(const char* animationName)
 	}
 	else
 	{
-		InnoLogger::Log(LogLevel::Error, "RenderingFrontend: Can not find AnimationInfo by name:", animationName);
+		InnoLogger::Log(LogLevel::Error, "RenderingFrontend: Can not find AnimationInfo by name: ", animationName);
 		return AnimationInfo();
+	}
+}
+
+GPUBufferDataComponent* InnoRenderingFrontend::getSkeletonGPUBuffer(SkeletonDataComponent* rhs)
+{
+	auto l_result = m_skeletonsLUT.find(rhs);
+	if (l_result != m_skeletonsLUT.end())
+	{
+		return l_result->second;
+	}
+	else
+	{
+		InnoLogger::Log(LogLevel::Error, "RenderingFrontend: Can not find GPUBufferDataComponent by: ", rhs);
+		return nullptr;
 	}
 }
 

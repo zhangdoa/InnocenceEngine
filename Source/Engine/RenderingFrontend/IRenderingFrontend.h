@@ -76,6 +76,7 @@ public:
 	virtual TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) = 0;
 	virtual MaterialDataComponent* getDefaultMaterialDataComponent() = 0;
 	virtual AnimationInfo getAnimationInfo(const char* animationName) = 0;
+	virtual GPUBufferDataComponent* getSkeletonGPUBuffer(SkeletonDataComponent* rhs) = 0;
 
 	virtual bool transferDataToGPU() = 0;
 
