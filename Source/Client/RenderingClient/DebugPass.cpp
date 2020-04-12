@@ -302,15 +302,15 @@ bool DebugPass::PrepareCommandList()
 						auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(i->m_model->meshMaterialPairs.m_startOffset + j);
 						auto l_skeleton = l_pair->mesh->m_SDC;
 
-						for (auto k : l_skeleton->m_Bones)
+						for (auto k : l_skeleton->m_BoneData)
 						{
 							DebugPerObjectConstantBuffer l_meshData;
 
-							auto l_pos = k.m_Pos;
+							auto l_pos = k.m_L2BPos;
 							l_pos.w = 1.0f;
 
 							auto l_t = InnoMath::toTranslationMatrix(l_pos);
-							auto l_r = InnoMath::toRotationMatrix(k.m_Rot);
+							auto l_r = InnoMath::toRotationMatrix(k.m_L2BRot);
 							auto l_bm = l_t * l_r;
 							// Inverse-Joint-Matrix
 							l_bm = l_bm.inverse();

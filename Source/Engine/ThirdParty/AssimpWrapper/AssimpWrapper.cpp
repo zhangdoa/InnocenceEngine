@@ -27,7 +27,7 @@ namespace AssimpWrapper
 	void processAssimpBone(json& j, const aiMesh* mesh);
 	void processAssimpMaterial(json& j, const aiMaterial* material);
 	void processTextureData(json& j, const char* fileName, TextureSampler sampler, TextureUsage usage, bool IsSRGB, uint32_t textureSlotIndex);
-	void processAssimpAnimation(json& j, const aiAnimation* animation, const char* exportFileRelativePath);
+	void processAssimpAnimation(json& j, const aiAnimation* animation, std::unordered_map<std::string, std::string>& parentNameMap, std::unordered_map<std::string, aiMatrix4x4>& L2BMap, const char* exportFileRelativePath);
 	void mergeTransformation(json& j, const aiNode* node);
 	void decomposeTransformation(json& j, const aiMatrix4x4& m);
 };
@@ -80,7 +80,7 @@ bool AssimpWrapper::convertModel(const char* fileName, const char* exportPath)
 	// Check if the file was converted already
 	if (IOService::isFileExist(l_exportFileRelativePath.c_str()))
 	{
-		InnoLogger::Log(LogLevel::Warning, "FileSystem: AssimpWrapper: ", fileName, " has already been converted!");
+		InnoLogger::Log(LogLevel::Warning, "AssimpWrapper: ", fileName, " has already been converted!");
 		return true;
 	}
 
@@ -91,7 +91,7 @@ bool AssimpWrapper::convertModel(const char* fileName, const char* exportPath)
 	// Check if the file was exist
 	if (IOService::isFileExist(fileName))
 	{
-		InnoLogger::Log(LogLevel::Verbose, "FileSystem: AssimpWrapper: converting ", fileName, "...");
+		InnoLogger::Log(LogLevel::Verbose, "AssimpWrapper: Converting ", fileName, "...");
 #if defined _DEBUG
 		std::string l_logFilePath = IOService::getWorkingDirectory() + "..//Res//Logs//AssimpLog_" + l_exportFileName + ".txt";
 		Assimp::DefaultLogger::create(l_logFilePath.c_str(), Assimp::Logger::VERBOSE);
@@ -100,14 +100,14 @@ bool AssimpWrapper::convertModel(const char* fileName, const char* exportPath)
 	}
 	else
 	{
-		InnoLogger::Log(LogLevel::Error, "FileSystem: AssimpWrapper: ", fileName, " doesn't exist!");
+		InnoLogger::Log(LogLevel::Error, "AssimpWrapper: ", fileName, " doesn't exist!");
 		return false;
 	}
 	if (l_scene)
 	{
 		if (l_scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !l_scene->mRootNode)
 		{
-			InnoLogger::Log(LogLevel::Error, "FileSystem: AssimpWrapper: ", l_importer.GetErrorString());
+			InnoLogger::Log(LogLevel::Error, "AssimpWrapper: ", l_importer.GetErrorString());
 			return false;
 		}
 
@@ -116,11 +116,11 @@ bool AssimpWrapper::convertModel(const char* fileName, const char* exportPath)
 		processAssimpScene(j, l_scene, l_exportFileName.c_str());
 		JSONWrapper::saveJsonDataToDisk(l_exportFileRelativePath.c_str(), j);
 
-		InnoLogger::Log(LogLevel::Success, "FileSystem: AssimpWrapper: ", fileName, " has been converted.");
+		InnoLogger::Log(LogLevel::Success, "AssimpWrapper: ", fileName, " has been converted.");
 	}
 	else
 	{
-		InnoLogger::Log(LogLevel::Error, "FileSystem: AssimpWrapper: can't load file ", fileName, "!");
+		InnoLogger::Log(LogLevel::Error, "AssimpWrapper: Can't load file ", fileName, "!");
 		return false;
 	}
 
@@ -143,24 +143,19 @@ void AssimpWrapper::processAssimpScene(json& j, const aiScene* scene, const char
 
 	j["Timestamp"] = l_timeDataStr;
 
-	if (scene->mNumAnimations)
-	{
-		for (uint32_t i = 0; i < scene->mNumAnimations; i++)
-		{
-			json j_child;
-
-			auto l_validateFileName = IOService::validateFileName(scene->mAnimations[i]->mName.C_Str());
-			auto l_animationFileName = "..//Res//ConvertedAssets//" + std::string(exportName) + "_" + l_validateFileName + ".InnoAnimation";
-			processAssimpAnimation(j_child, scene->mAnimations[i], l_animationFileName.c_str());
-			j["Animations"].emplace_back(j_child);
-		}
-	}
-
 	auto f_getNodeTransform = [](json& j, const aiNode* node, const aiScene* scene, const char* exportName)
 	{
 		json j_node;
 
 		j_node["Name"] = node->mName.C_Str();
+		if (node->mParent)
+		{
+			j_node["Parent"] = node->mParent->mName.C_Str();
+		}
+		else
+		{
+			j_node["Parent"] = "";
+		}
 		mergeTransformation(j_node["Transformation"], node);
 
 		j["Nodes"].emplace_back(j_node);
@@ -181,10 +176,15 @@ void AssimpWrapper::processAssimpScene(json& j, const aiScene* scene, const char
 		}
 	};
 
+	InnoLogger::Log(LogLevel::Verbose, "AssimpWrapper: Extracting node informations...");
 	processAssimpNode(f_getNodeTransform, j, scene->mRootNode, scene, exportName);
+
+	InnoLogger::Log(LogLevel::Verbose, "AssimpWrapper: Converting meshes...");
 	processAssimpNode(f_getMesh, j, scene->mRootNode, scene, exportName);
 
-	// Assign bone ID to nodes transformation
+	InnoLogger::Log(LogLevel::Verbose, "AssimpWrapper: Assign transformation matrices to bones...");
+	std::unordered_map<std::string, aiMatrix4x4> l_L2BMap;
+
 	for (auto& i : j["Meshes"])
 	{
 		for (auto& b : i["Bones"])
@@ -199,6 +199,8 @@ void AssimpWrapper::processAssimpScene(json& j, const aiScene* scene, const char
 					from_json(k["Transformation"], l_B2P);
 					from_json(b["Transformation"], l_L2B);
 
+					l_L2BMap.emplace(b["Name"], l_L2B);
+
 					decomposeTransformation(b["B2P"], l_B2P);
 					decomposeTransformation(b["L2B"], l_L2B);
 
@@ -208,7 +210,29 @@ void AssimpWrapper::processAssimpScene(json& j, const aiScene* scene, const char
 		}
 	}
 
+	std::unordered_map<std::string, std::string> l_nodeParentNameMap;
+
+	for (auto& k : j["Nodes"])
+	{
+		l_nodeParentNameMap.emplace(k["Name"], k["Parent"]);
+	}
+
 	j.erase("Nodes");
+
+	if (scene->mNumAnimations)
+	{
+		InnoLogger::Log(LogLevel::Verbose, "AssimpWrapper: Converting animations...");
+
+		for (uint32_t i = 0; i < scene->mNumAnimations; i++)
+		{
+			json j_child;
+
+			auto l_validateFileName = IOService::validateFileName(scene->mAnimations[i]->mName.C_Str());
+			auto l_animationFileName = "..//Res//ConvertedAssets//" + std::string(exportName) + "_" + l_validateFileName + ".InnoAnimation";
+			processAssimpAnimation(j_child, scene->mAnimations[i], l_nodeParentNameMap, l_L2BMap, l_animationFileName.c_str());
+			j["Animations"].emplace_back(j_child);
+		}
+	}
 }
 
 void AssimpWrapper::processAssimpNode(const std::function<void(json&, const aiNode*, const aiScene*, const char*)>& nodeFunctor, json& j, const aiNode* node, const aiScene* scene, const char* exportName)
@@ -463,7 +487,7 @@ void AssimpWrapper::processAssimpMaterial(json& j, const aiMaterial* material)
 
 			if (aiTextureType(i) == aiTextureType::aiTextureType_NONE)
 			{
-				InnoLogger::Log(LogLevel::Warning, "FileSystem: AssimpWrapper: ", l_AssString.C_Str(), " is unknown texture type!");
+				InnoLogger::Log(LogLevel::Warning, "AssimpWrapper: ", l_AssString.C_Str(), " is unknown texture type!");
 				break;
 			}
 			else if (aiTextureType(i) == aiTextureType::aiTextureType_NORMALS)
@@ -488,7 +512,7 @@ void AssimpWrapper::processAssimpMaterial(json& j, const aiMaterial* material)
 			}
 			else
 			{
-				InnoLogger::Log(LogLevel::Warning, "FileSystem: AssimpWrapper: ", l_AssString.C_Str(), " is unsupported texture type!");
+				InnoLogger::Log(LogLevel::Warning, "AssimpWrapper: ", l_AssString.C_Str(), " is unsupported texture type!");
 				break;
 			}
 			j["Textures"].emplace_back(j_child);
@@ -566,6 +590,98 @@ void AssimpWrapper::processTextureData(json& j, const char* fileName, TextureSam
 	j["File"] = fileName;
 }
 
+template<typename T>
+auto getValue(std::unordered_map<std::string, T>& map, const std::string& name)
+{
+	auto l_result = map.find(name);
+	return &l_result->second;
+}
+
+void bake(std::vector<KeyData>& keyData, const ChannelInfo& channelInfo, const ChannelInfo& parentChannelInfo)
+{
+	auto f_cacheTransform = [&](size_t index, size_t parentIndex)
+	{
+		auto l_key = keyData[index];
+		auto l_pos = l_key.pos;
+		auto l_rot = l_key.rot;
+
+		auto l_parentKey = keyData[parentIndex];
+
+		auto l_parentPos = l_parentKey.pos;
+		auto l_parentRot = l_parentKey.rot;
+
+		l_pos = l_pos + l_parentPos;
+		l_rot = l_rot.quatMul(l_parentRot);
+
+		l_key.rot = l_rot;
+		l_key.pos = l_pos;
+
+		keyData[index] = l_key;
+	};
+
+	if (channelInfo.numKeys == 2)
+	{
+		if (parentChannelInfo.numKeys == 2)
+		{
+			f_cacheTransform(channelInfo.keyOffsets, parentChannelInfo.keyOffsets);
+			f_cacheTransform(channelInfo.keyOffsets + 1, parentChannelInfo.keyOffsets + 1);
+		}
+		else
+		{
+			f_cacheTransform(channelInfo.keyOffsets, parentChannelInfo.keyOffsets);
+			f_cacheTransform(channelInfo.keyOffsets + 1, parentChannelInfo.keyOffsets + parentChannelInfo.numKeys - 1);
+		}
+	}
+	else
+	{
+		if (parentChannelInfo.numKeys == 2)
+		{
+			for (size_t i = 0; i < channelInfo.numKeys; i++)
+			{
+				f_cacheTransform(channelInfo.keyOffsets + i, parentChannelInfo.keyOffsets);
+			}
+		}
+		else
+		{
+			for (size_t i = 0; i < channelInfo.numKeys; i++)
+			{
+				f_cacheTransform(channelInfo.keyOffsets + i, parentChannelInfo.keyOffsets + i);
+			}
+		}
+	}
+}
+
+void recursiveBake(
+	std::unordered_map<std::string, std::string>& parentNameMap,
+	std::unordered_map<std::string, ChannelInfo>& channelInfoMap,
+	std::unordered_map<std::string, bool>& isCachedMap,
+	std::vector<KeyData>& keyData, const std::string& name)
+{
+	auto l_isCached = getValue(isCachedMap, name);
+	if (*l_isCached)
+	{
+		return;
+	}
+
+	auto l_parentName = getValue(parentNameMap, name);
+	if (*l_parentName == "RootNode")
+	{
+		*l_isCached = true;
+		return;
+	}
+
+	auto l_isParentCached = getValue(isCachedMap, *l_parentName);
+
+	if (!*l_isParentCached)
+	{
+		recursiveBake(parentNameMap, channelInfoMap, isCachedMap, keyData, *l_parentName);
+	}
+	auto l_channelInfo = getValue(channelInfoMap, name);
+	auto l_parentChannelInfo = getValue(channelInfoMap, *l_parentName);
+	bake(keyData, *l_channelInfo, *l_parentChannelInfo);
+	*l_isCached = true;
+}
+
 /*
 Binary data type:
 Duration:float
@@ -592,12 +708,16 @@ Binary data structure:
 |ChannelN
 */
 
-void AssimpWrapper::processAssimpAnimation(json& j, const aiAnimation* aiAnimation, const char* exportFileRelativePath)
+void AssimpWrapper::processAssimpAnimation(json& j, const aiAnimation* aiAnimation,
+	std::unordered_map<std::string, std::string>& parentNameMap,
+	std::unordered_map<std::string, aiMatrix4x4>& L2BMap, const char* exportFileRelativePath)
 {
+	std::unordered_map<std::string, ChannelInfo> l_channelInfoMap;
+	std::vector<KeyData> l_keyData;
+
 	std::ofstream l_file(IOService::getWorkingDirectory() + exportFileRelativePath, std::ios::out | std::ios::trunc | std::ios::binary);
 	j["File"] = exportFileRelativePath;
 
-	std::vector<Vec4> l_keyData;
 	j["Name"] = aiAnimation->mName.C_Str();
 
 	float l_duration = (float)aiAnimation->mDuration;
@@ -614,14 +734,11 @@ void AssimpWrapper::processAssimpAnimation(json& j, const aiAnimation* aiAnimati
 
 		for (uint32_t i = 0; i < l_numChannels; i++)
 		{
-			json j_child;
 			auto l_channel = aiAnimation->mChannels[i];
-			j_child["Name"] = l_channel->mNodeName.C_Str();
-			j_child["Offset"] = i;
 
 			if (l_channel->mNumPositionKeys != l_channel->mNumRotationKeys)
 			{
-				InnoLogger::Log(LogLevel::Error, "FileSystem: AssimpWrapper: Position key number is different than rotation key number in node: ", l_channel->mNodeName.C_Str(), "!");
+				InnoLogger::Log(LogLevel::Error, "AssimpWrapper: Position key number is different than rotation key number in node: ", l_channel->mNodeName.C_Str(), "!");
 				l_file.close();
 				return;
 			}
@@ -629,26 +746,50 @@ void AssimpWrapper::processAssimpAnimation(json& j, const aiAnimation* aiAnimati
 			uint32_t l_numKeys = l_channel->mNumPositionKeys;
 			IOService::serialize(l_file, &l_keyOffset);
 			IOService::serialize(l_file, &l_numKeys);
+
+			ChannelInfo l_channelInfo;
+			l_channelInfo.keyOffsets = l_keyOffset;
+			l_channelInfo.numKeys = l_numKeys;
+			l_channelInfoMap.emplace(l_channel->mNodeName.C_Str(), l_channelInfo);
+
 			l_keyOffset += l_numKeys;
 
 			// Position-xyz, time-w, rotation-xyzw
 			for (uint32_t j = 0; j < l_channel->mNumPositionKeys; j++)
 			{
+				KeyData l_key;
+
 				auto l_posKey = l_channel->mPositionKeys[j];
 				auto l_posKeyValue = l_posKey.mValue;
-				auto l_pos = Vec4(l_posKeyValue.x, l_posKeyValue.y, l_posKeyValue.z, (float)l_posKey.mTime);
-
-				l_keyData.emplace_back(l_pos);
+				l_key.pos = Vec4(l_posKeyValue.x, l_posKeyValue.y, l_posKeyValue.z, 1.0f);
 
 				auto l_rotKey = l_channel->mRotationKeys[j];
 				auto l_rotKeyValue = l_rotKey.mValue;
-				auto l_rot = Vec4(l_rotKeyValue.x, l_rotKeyValue.y, l_rotKeyValue.z, l_rotKeyValue.w);
+				l_key.rot = Vec4(l_rotKeyValue.x, l_rotKeyValue.y, l_rotKeyValue.z, l_rotKeyValue.w);
 
-				l_keyData.emplace_back(l_rot);
+				l_keyData.emplace_back(l_key);
 			}
-
-			j["Channels"].emplace_back(j_child);
 		}
+	}
+
+	// Cache absolute transformation
+	// Remove invalid nodes
+	std::unordered_map<std::string, std::string> l_parentNameMap;
+	for (auto& k : l_channelInfoMap)
+	{
+		auto l_result = getValue(parentNameMap, k.first);
+		l_parentNameMap.emplace(k.first, *l_result);
+	}
+
+	std::unordered_map<std::string, bool> l_isCachedMap;
+	for (auto& k : l_channelInfoMap)
+	{
+		l_isCachedMap.emplace(k.first, false);
+	}
+
+	for (auto& k : l_channelInfoMap)
+	{
+		recursiveBake(l_parentNameMap, l_channelInfoMap, l_isCachedMap, l_keyData, k.first);
 	}
 
 	IOService::serializeVector(l_file, l_keyData);

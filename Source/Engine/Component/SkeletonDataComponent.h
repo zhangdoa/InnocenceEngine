@@ -3,7 +3,7 @@
 #include "../Common/InnoMathHelper.h"
 
 // w component of m_L2BPos is the bone ID
-struct Bone
+struct BoneData
 {
 	Vec4 m_L2BPos;
 	Vec4 m_L2BRot;
@@ -14,5 +14,5 @@ struct Bone
 class SkeletonDataComponent : public InnoComponent
 {
 public:
-	Array<Bone> m_Bones;
+	Array<BoneData> m_BoneData;
 };
