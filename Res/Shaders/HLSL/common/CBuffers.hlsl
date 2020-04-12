@@ -47,3 +47,8 @@ cbuffer voxelizationPassCBuffer : register(b9)
 {
 	VoxelizationPass_CB voxelizationPassCBuffer;
 };
+
+cbuffer animationPassCBuffer : register(b10)
+{
+	AnimationPass_CB animationPassCBuffer;
+};

@@ -112,6 +112,15 @@ struct VoxelizationPass_CB
 	float4 padding;
 };
 
+struct AnimationPass_CB
+{
+	matrix rootOffsetMatrix; // 0-3
+	float duration; // 4
+	int numChannels; // 4
+	float currentTime; // 4
+	float padding[11];  // 5 - 15
+};
+
 struct Plane
 {
 	float3 N;

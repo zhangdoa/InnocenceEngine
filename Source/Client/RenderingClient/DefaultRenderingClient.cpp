@@ -8,6 +8,7 @@
 #include "BRDFLUTPass.h"
 #include "SunShadowPass.h"
 #include "OpaquePass.h"
+#include "AnimationPass.h"
 #include "SSAOPass.h"
 #include "LightPass.h"
 #include "SkyPass.h"
@@ -76,6 +77,7 @@ bool DefaultRenderingClient::Setup()
 		BRDFLUTPass::Setup();
 		SunShadowPass::Setup();
 		OpaquePass::Setup();
+		AnimationPass::Setup();
 		SSAOPass::Setup();
 		LightPass::Setup();
 		SkyPass::Setup();
@@ -106,6 +108,7 @@ bool DefaultRenderingClient::Setup()
 		BRDFLUTPass::ExecuteCommandList();
 		SunShadowPass::Initialize();
 		OpaquePass::Initialize();
+		AnimationPass::Initialize();
 		SSAOPass::Initialize();
 		LightPass::Initialize();
 		SkyPass::Initialize();
@@ -156,6 +159,7 @@ bool DefaultRenderingClient::Setup()
 
 			SunShadowPass::PrepareCommandList();
 			OpaquePass::PrepareCommandList();
+			AnimationPass::PrepareCommandList();
 			SSAOPass::PrepareCommandList();
 			LightPass::PrepareCommandList();
 
@@ -218,6 +222,7 @@ bool DefaultRenderingClient::Setup()
 
 			SunShadowPass::ExecuteCommandList();
 			OpaquePass::ExecuteCommandList();
+			AnimationPass::ExecuteCommandList();
 			SSAOPass::ExecuteCommandList();
 			LightPass::ExecuteCommandList();
 
@@ -272,6 +277,7 @@ bool DefaultRenderingClient::Setup()
 		BRDFLUTPass::Terminate();
 		SunShadowPass::Terminate();
 		OpaquePass::Terminate();
+		AnimationPass::Terminate();
 		SSAOPass::Terminate();
 		LightPass::Terminate();
 		SkyPass::Terminate();
