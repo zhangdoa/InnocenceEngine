@@ -310,7 +310,7 @@ bool InnoAssetSystem::convertModel(const char* fileName, const char* exportPath)
 	auto l_extension = IOService::getFileExtension(fileName);
 	std::string l_fileName = fileName;
 
-	if (l_extension == ".obj" || l_extension == ".OBJ" || l_extension == ".fbx" || l_extension == ".FBX")
+	if (l_extension == ".obj" || l_extension == ".OBJ" || l_extension == ".fbx" || l_extension == ".FBX" || l_extension == ".gltf" || l_extension == ".GLTF" || l_extension == ".md5mesh")
 	{
 		auto tempTask = g_pModuleManager->getTaskSystem()->submit("ConvertModelTask", -1, nullptr, [=]()
 			{
