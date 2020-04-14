@@ -12,8 +12,9 @@ struct AnimationPassConstantBuffer
 	Mat4 rootOffsetMatrix;
 	float duration;
 	uint32_t numChannels;
+	uint32_t numTicks;
 	float currentTime;
-	float padding[45];
+	float padding[44];
 };
 
 namespace AnimationPass
@@ -61,7 +62,7 @@ bool AnimationPass::Setup()
 
 	m_RPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC->m_ResourceBinderLayoutDescs.resize(13);
+	m_RPDC->m_ResourceBinderLayoutDescs.resize(12);
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
@@ -125,12 +126,6 @@ bool AnimationPass::Setup()
 	m_RPDC->m_ResourceBinderLayoutDescs[11].m_BinderAccessibility = Accessibility::ReadOnly;
 	m_RPDC->m_ResourceBinderLayoutDescs[11].m_ResourceAccessibility = Accessibility::ReadWrite;
 
-	m_RPDC->m_ResourceBinderLayoutDescs[12].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_RPDC->m_ResourceBinderLayoutDescs[12].m_DescriptorSetIndex = 6;
-	m_RPDC->m_ResourceBinderLayoutDescs[12].m_DescriptorIndex = 7;
-	m_RPDC->m_ResourceBinderLayoutDescs[12].m_BinderAccessibility = Accessibility::ReadOnly;
-	m_RPDC->m_ResourceBinderLayoutDescs[12].m_ResourceAccessibility = Accessibility::ReadWrite;
-
 	m_RPDC->m_ShaderProgram = m_SPC;
 
 	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("AnimationPass/");
@@ -163,7 +158,7 @@ bool AnimationPass::PrepareCommandList()
 		static float l_currentTime = 0;
 		if (l_currentTime < l_AnimationInfo.ADC->m_Duration)
 		{
-			l_currentTime += 1.0f;
+			l_currentTime += 0.5f;
 		}
 		else
 		{
@@ -173,7 +168,10 @@ bool AnimationPass::PrepareCommandList()
 		AnimationPassConstantBuffer cb;
 		cb.duration = l_AnimationInfo.ADC->m_Duration;
 		cb.numChannels = l_AnimationInfo.ADC->m_NumChannels;
+		cb.numTicks = l_AnimationInfo.ADC->m_NumTicks;
 		cb.currentTime = l_currentTime / cb.duration;
+		cb.rootOffsetMatrix = InnoMath::generateIdentityMatrix<float>();
+		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_GBDC, &cb, 0, 1);
 
 		g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 		g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
@@ -181,8 +179,7 @@ bool AnimationPass::PrepareCommandList()
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 8, 0);
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, m_GBDC->m_ResourceBinder, 9, 10, Accessibility::ReadOnly, 0, 1);
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_AnimationInfo.ChannelInfo->m_ResourceBinder, 10, 5, Accessibility::ReadOnly);
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_AnimationInfo.KeyData->m_ResourceBinder, 11, 6, Accessibility::ReadOnly);
+		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_AnimationInfo.KeyData->m_ResourceBinder, 10, 5, Accessibility::ReadOnly);
 
 		auto& l_drawCallInfo = g_pModuleManager->getRenderingFrontend()->getDrawCallInfo();
 		auto l_drawCallCount = l_drawCallInfo.size();
@@ -206,10 +203,8 @@ bool AnimationPass::PrepareCommandList()
 						g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[4].m_Texture->m_ResourceBinder, 7, 4);
 					}
 
-					cb.rootOffsetMatrix = InnoMath::generateIdentityMatrix<float>();
-					g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_GBDC, &cb, 0, 1);
 					auto l_Skeleton = g_pModuleManager->getRenderingFrontend()->getSkeletonGPUBuffer(l_drawCallData.mesh->m_SDC);
-					g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_Skeleton->m_ResourceBinder, 12, 7, Accessibility::ReadOnly);
+					g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_Skeleton->m_ResourceBinder, 11, 6, Accessibility::ReadOnly);
 
 					g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_drawCallData.mesh);
 

@@ -305,17 +305,14 @@ bool DebugPass::PrepareCommandList()
 						for (auto k : l_skeleton->m_BoneData)
 						{
 							DebugPerObjectConstantBuffer l_meshData;
-
-							auto l_pos = k.m_L2BPos;
-							l_pos.w = 1.0f;
-
-							auto l_t = InnoMath::toTranslationMatrix(l_pos);
-							auto l_r = InnoMath::toRotationMatrix(k.m_L2BRot);
-							auto l_bm = l_t * l_r;
+							auto l_bm = k.m_L2B;
 							// Inverse-Joint-Matrix
 							l_bm = l_bm.inverse();
 							auto l_s = InnoMath::toScaleMatrix(Vec4(0.01f, 0.01f, 0.01f, 1.0f));
 							l_bm = l_bm * l_s;
+							l_m.m00 = 1.0f;
+							l_m.m11 = 1.0f;
+							l_m.m22 = 1.0f;
 							l_bm = l_m * l_bm;
 
 							l_meshData.m = l_bm;

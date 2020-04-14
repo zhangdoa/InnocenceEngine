@@ -86,7 +86,7 @@ bool SunShadowPass::PrepareCommandList()
 	for (uint32_t i = 0; i < l_drawCallCount; i++)
 	{
 		auto l_drawCallData = l_drawCallInfo[i];
-		if (l_drawCallData.castSunShadow && l_drawCallData.visibility == Visibility::Opaque)
+		if (l_drawCallData.castSunShadow && l_drawCallData.visibility == Visibility::Opaque && l_drawCallData.meshUsage != MeshUsage::Skeletal)
 		{
 			if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 			{
