@@ -14,6 +14,7 @@ namespace JSONWrapper
 
 	void to_json(json& j, const InnoEntity& p);
 	void to_json(json& j, const Vec4& p);
+	void to_json(json& j, const Mat4& p);
 
 	void to_json(json& j, const TransformComponent& p);
 	void to_json(json& j, const TransformVector& p);
@@ -23,6 +24,7 @@ namespace JSONWrapper
 	void to_json(json& j, const RenderPassDataComponent& p);
 
 	void from_json(const json& j, Vec4& p);
+	void from_json(const json& j, Mat4& p);
 
 	void from_json(const json& j, TransformComponent& p);
 	void from_json(const json& j, TransformVector& p);

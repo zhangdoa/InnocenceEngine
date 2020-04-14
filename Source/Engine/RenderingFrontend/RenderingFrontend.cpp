@@ -147,16 +147,6 @@ void InnoRenderingFrontendNS::initializeAnimation(AnimationDataComponent* rhs)
 {
 	std::string l_name = rhs->m_Name.c_str();
 
-	auto l_channelInfo = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent((l_name + "_ChannelInfo").c_str());
-	l_channelInfo->m_ParentEntity = rhs->m_ParentEntity;
-	l_channelInfo->m_ElementCount = rhs->m_ChannelInfo.capacity();
-	l_channelInfo->m_ElementSize = sizeof(ChannelInfo);
-	l_channelInfo->m_GPUAccessibility = Accessibility::ReadWrite;
-	l_channelInfo->m_BindingPoint = 0;
-
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(l_channelInfo);
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_channelInfo, &rhs->m_ChannelInfo[0]);
-
 	auto l_keyData = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent((l_name + "_KeyData").c_str());
 	l_keyData->m_ParentEntity = rhs->m_ParentEntity;
 	l_keyData->m_ElementCount = rhs->m_KeyData.capacity();
@@ -171,7 +161,6 @@ void InnoRenderingFrontendNS::initializeAnimation(AnimationDataComponent* rhs)
 
 	AnimationInfo l_info;
 	l_info.ADC = rhs;
-	l_info.ChannelInfo = l_channelInfo;
 	l_info.KeyData = l_keyData;
 
 	m_animationInfosLUT.emplace(rhs->m_Name.c_str(), l_info);

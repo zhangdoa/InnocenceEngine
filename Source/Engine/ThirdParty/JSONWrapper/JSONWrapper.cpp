@@ -111,6 +111,46 @@ void JSONWrapper::to_json(json& j, const Vec4& p)
 	};
 }
 
+void JSONWrapper::to_json(json& j, const Mat4& p)
+{
+	j["00"] = p.m00;
+	j["01"] = p.m01;
+	j["02"] = p.m02;
+	j["03"] = p.m03;
+	j["10"] = p.m10;
+	j["11"] = p.m11;
+	j["12"] = p.m12;
+	j["13"] = p.m13;
+	j["20"] = p.m20;
+	j["21"] = p.m21;
+	j["22"] = p.m22;
+	j["23"] = p.m23;
+	j["30"] = p.m30;
+	j["31"] = p.m31;
+	j["32"] = p.m32;
+	j["33"] = p.m33;
+}
+
+void JSONWrapper::from_json(const json& j, Mat4& p)
+{
+	p.m00 = j["00"];
+	p.m01 = j["01"];
+	p.m02 = j["02"];
+	p.m03 = j["03"];
+	p.m10 = j["10"];
+	p.m11 = j["11"];
+	p.m12 = j["12"];
+	p.m13 = j["13"];
+	p.m20 = j["20"];
+	p.m21 = j["21"];
+	p.m22 = j["22"];
+	p.m23 = j["23"];
+	p.m30 = j["30"];
+	p.m31 = j["31"];
+	p.m32 = j["32"];
+	p.m33 = j["33"];
+}
+
 void JSONWrapper::to_json(json& j, const TransformVector& p)
 {
 	j = json
@@ -327,18 +367,6 @@ Model* JSONWrapper::processSceneJsonData(const json& j, bool AsyncUploadGPUResou
 		processAnimationJsonData(j["Animations"], AsyncUploadGPUResource);
 	}
 
-	if (l_result != nullptr)
-	{
-		for (uint64_t i = 0; i < l_result->meshMaterialPairs.m_count; i++)
-		{
-			auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(l_result->meshMaterialPairs.m_startOffset + i);
-			auto l_SDC = l_pair->mesh->m_SDC;
-			if (l_SDC)
-			{
-			}
-		}
-	}
-
 	return l_result;
 }
 
@@ -365,11 +393,8 @@ bool JSONWrapper::processAnimationJsonData(const json& j, bool AsyncUploadGPURes
 		l_offset += sizeof(l_ADC->m_Duration);
 		IOService::deserialize(l_animationFile, l_offset, &l_ADC->m_NumChannels);
 		l_offset += sizeof(l_ADC->m_NumChannels);
-
-		auto l_channelInfoSize = l_ADC->m_NumChannels * sizeof(ChannelInfo);
-		l_ADC->m_ChannelInfo.resize(l_ADC->m_NumChannels);
-		IOService::deserializeVector(l_animationFile, l_offset, l_channelInfoSize, l_ADC->m_ChannelInfo);
-		l_offset += l_channelInfoSize;
+		IOService::deserialize(l_animationFile, l_offset, &l_ADC->m_NumTicks);
+		l_offset += sizeof(l_ADC->m_NumTicks);
 
 		auto l_keyDataSize = IOService::getFileSize(l_animationFile) - l_offset;
 		l_ADC->m_KeyData.resize(l_keyDataSize / sizeof(KeyData));
@@ -494,18 +519,13 @@ SkeletonDataComponent* JSONWrapper::processSkeletonJsonData(const json& j, const
 
 		auto l_size = j["Bones"].size();
 		l_SDC->m_BoneData.reserve(l_size);
+		l_SDC->m_BoneData.fulfill();
 
 		for (auto i : j["Bones"])
 		{
 			BoneData l_boneData;
-			from_json(i["L2B"]["Position"], l_boneData.m_L2BPos);
-			from_json(i["L2B"]["Rotation"], l_boneData.m_L2BRot);
-			from_json(i["B2P"]["Position"], l_boneData.m_B2PPos);
-			from_json(i["B2P"]["Rotation"], l_boneData.m_B2PRot);
-
-			l_boneData.m_L2BPos.w = (float)i["ID"];
-
-			l_SDC->m_BoneData.emplace_back(l_boneData);
+			from_json(i["Transformation"], l_boneData.m_L2B);
+			l_SDC->m_BoneData[i["ID"]] = l_boneData;
 		}
 
 		g_pModuleManager->getAssetSystem()->recordLoadedSkeleton(name, l_SDC);

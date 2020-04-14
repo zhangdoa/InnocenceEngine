@@ -41,7 +41,6 @@ struct RenderingCapability
 struct AnimationInfo
 {
 	AnimationDataComponent* ADC;
-	GPUBufferDataComponent* ChannelInfo;
 	GPUBufferDataComponent* KeyData;
 };
 

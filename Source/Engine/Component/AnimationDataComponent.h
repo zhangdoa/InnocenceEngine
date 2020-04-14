@@ -2,16 +2,9 @@
 #include "../Common/InnoComponent.h"
 #include "../Common/InnoMathHelper.h"
 
-struct ChannelInfo
-{
-	uint32_t keyOffsets;
-	uint32_t numKeys;
-};
-
 struct KeyData
 {
-	Vec4 pos;
-	Vec4 rot;
+	Mat4 m;
 };
 
 class AnimationDataComponent : public InnoComponent
@@ -19,8 +12,7 @@ class AnimationDataComponent : public InnoComponent
 public:
 	float m_Duration = 0.0f;
 	uint32_t m_NumChannels = 0;
-	// The offset and range in m_KeyData
-	std::vector<ChannelInfo> m_ChannelInfo;
-	// for each channel first, then for each key
+	uint32_t m_NumTicks = 0;
+	// for each tick first, then for each channel
 	std::vector<KeyData> m_KeyData;
 };

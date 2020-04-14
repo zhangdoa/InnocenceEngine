@@ -27,7 +27,7 @@ namespace AssimpWrapper
 	void processAssimpBone(json& j, const aiMesh* mesh);
 	void processAssimpMaterial(json& j, const aiMaterial* material);
 	void processTextureData(json& j, const char* fileName, TextureSampler sampler, TextureUsage usage, bool IsSRGB, uint32_t textureSlotIndex);
-	void processAssimpAnimation(json& j, const aiAnimation* animation, std::unordered_map<std::string, std::string>& parentNameMap, std::unordered_map<std::string, aiMatrix4x4>& L2BMap, const char* exportFileRelativePath);
+	void processAssimpAnimation(json& j, const aiScene* scene, const aiAnimation* animation, const std::unordered_map<std::string, uint32_t>& boneNameIDMap, const std::unordered_map<std::string, Mat4>& boneNameOffsetMap, const char* exportFileRelativePath);
 	void mergeTransformation(json& j, const aiNode* node);
 	void decomposeTransformation(json& j, const aiMatrix4x4& m);
 };
@@ -96,7 +96,7 @@ bool AssimpWrapper::convertModel(const char* fileName, const char* exportPath)
 		std::string l_logFilePath = IOService::getWorkingDirectory() + "..//Res//Logs//AssimpLog_" + l_exportFileName + ".txt";
 		Assimp::DefaultLogger::create(l_logFilePath.c_str(), Assimp::Logger::VERBOSE);
 #endif
-		l_scene = l_importer.ReadFile(IOService::getWorkingDirectory() + fileName, aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph | aiProcess_SplitLargeMeshes);
+		l_scene = l_importer.ReadFile(IOService::getWorkingDirectory() + fileName, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph);
 	}
 	else
 	{
@@ -143,24 +143,6 @@ void AssimpWrapper::processAssimpScene(json& j, const aiScene* scene, const char
 
 	j["Timestamp"] = l_timeDataStr;
 
-	auto f_getNodeTransform = [](json& j, const aiNode* node, const aiScene* scene, const char* exportName)
-	{
-		json j_node;
-
-		j_node["Name"] = node->mName.C_Str();
-		if (node->mParent)
-		{
-			j_node["Parent"] = node->mParent->mName.C_Str();
-		}
-		else
-		{
-			j_node["Parent"] = "";
-		}
-		mergeTransformation(j_node["Transformation"], node);
-
-		j["Nodes"].emplace_back(j_node);
-	};
-
 	auto f_getMesh = [](json& j, const aiNode* node, const aiScene* scene, const char* exportName)
 	{
 		// process each mesh located at the current node
@@ -176,48 +158,23 @@ void AssimpWrapper::processAssimpScene(json& j, const aiScene* scene, const char
 		}
 	};
 
-	InnoLogger::Log(LogLevel::Verbose, "AssimpWrapper: Extracting node informations...");
-	processAssimpNode(f_getNodeTransform, j, scene->mRootNode, scene, exportName);
-
 	InnoLogger::Log(LogLevel::Verbose, "AssimpWrapper: Converting meshes...");
 	processAssimpNode(f_getMesh, j, scene->mRootNode, scene, exportName);
 
 	InnoLogger::Log(LogLevel::Verbose, "AssimpWrapper: Assign transformation matrices to bones...");
-	std::unordered_map<std::string, aiMatrix4x4> l_L2BMap;
+	std::unordered_map<std::string, uint32_t> l_boneNameIDMap;
+	std::unordered_map<std::string, Mat4> l_boneNameOffsetMap;
 
 	for (auto& i : j["Meshes"])
 	{
 		for (auto& b : i["Bones"])
 		{
-			for (auto& k : j["Nodes"])
-			{
-				if (b["Name"] == k["Name"])
-				{
-					aiMatrix4x4 l_B2P;
-					aiMatrix4x4 l_L2B;
-
-					from_json(k["Transformation"], l_B2P);
-					from_json(b["Transformation"], l_L2B);
-
-					l_L2BMap.emplace(b["Name"], l_L2B);
-
-					decomposeTransformation(b["B2P"], l_B2P);
-					decomposeTransformation(b["L2B"], l_L2B);
-
-					b.erase("Transformation");
-				}
-			}
+			l_boneNameIDMap.emplace(b["Name"], b["ID"]);
+			Mat4 l_m;
+			JSONWrapper::from_json(b["Transformation"], l_m);
+			l_boneNameOffsetMap.emplace(b["Name"], l_m);
 		}
 	}
-
-	std::unordered_map<std::string, std::string> l_nodeParentNameMap;
-
-	for (auto& k : j["Nodes"])
-	{
-		l_nodeParentNameMap.emplace(k["Name"], k["Parent"]);
-	}
-
-	j.erase("Nodes");
 
 	if (scene->mNumAnimations)
 	{
@@ -229,7 +186,7 @@ void AssimpWrapper::processAssimpScene(json& j, const aiScene* scene, const char
 
 			auto l_validateFileName = IOService::validateFileName(scene->mAnimations[i]->mName.C_Str());
 			auto l_animationFileName = "..//Res//ConvertedAssets//" + std::string(exportName) + "_" + l_validateFileName + ".InnoAnimation";
-			processAssimpAnimation(j_child, scene->mAnimations[i], l_nodeParentNameMap, l_L2BMap, l_animationFileName.c_str());
+			processAssimpAnimation(j_child, scene, scene->mAnimations[i], l_boneNameIDMap, l_boneNameOffsetMap, l_animationFileName.c_str());
 			j["Animations"].emplace_back(j_child);
 		}
 	}
@@ -276,160 +233,143 @@ void AssimpWrapper::processAssimpMesh(json& j, const aiScene* scene, const char*
 
 size_t AssimpWrapper::processMeshData(const aiMesh* mesh, const char* exportFileRelativePath)
 {
-	auto l_verticesNumber = mesh->mNumVertices;
+	auto l_numVertices = mesh->mNumVertices;
 
 	Array<Vertex> l_vertices;
 
-	l_vertices.reserve(l_verticesNumber);
+	l_vertices.reserve(l_numVertices);
 	l_vertices.fulfill();
 
-	for (uint32_t i = 0; i < l_verticesNumber; i++)
+	// positions
+	for (uint32_t i = 0; i < l_numVertices; i++)
 	{
 		Vertex l_Vertex;
 
-		// positions
-		if (&mesh->mVertices[i] != nullptr)
-		{
-			l_Vertex.m_pos.x = mesh->mVertices[i].x;
-			l_Vertex.m_pos.y = mesh->mVertices[i].y;
-			l_Vertex.m_pos.z = mesh->mVertices[i].z;
-		}
-		else
-		{
-			l_Vertex.m_pos.x = 0.0f;
-			l_Vertex.m_pos.y = 0.0f;
-			l_Vertex.m_pos.z = 0.0f;
-		}
+		l_vertices[i].m_pos.x = mesh->mVertices[i].x;
+		l_vertices[i].m_pos.y = mesh->mVertices[i].y;
+		l_vertices[i].m_pos.z = mesh->mVertices[i].z;
+		l_vertices[i].m_pos.w = 1.0f;
+		l_vertices[i].m_normal.x = 0.0f;
+		l_vertices[i].m_normal.y = 0.0f;
+		l_vertices[i].m_normal.z = 1.0f;
+	}
 
-		// texture coordinates
-		if (mesh->mTextureCoords[0])
+	// texture coordinates
+	if (mesh->mTextureCoords[0])
+	{
+		for (uint32_t i = 0; i < l_numVertices; i++)
 		{
-			// a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't
-			// use models where a vertex can have multiple texture coordinates so we always take the first set (0).
-			l_Vertex.m_texCoord.x = mesh->mTextureCoords[0][i].x;
-			l_Vertex.m_texCoord.y = mesh->mTextureCoords[0][i].y;
+			l_vertices[i].m_texCoord.x = mesh->mTextureCoords[0][i].x;
+			l_vertices[i].m_texCoord.y = mesh->mTextureCoords[0][i].y;
 		}
-		else
-		{
-			l_Vertex.m_texCoord.x = 0.0f;
-			l_Vertex.m_texCoord.y = 0.0f;
-		}
+	}
 
-		// normals
-		if (mesh->mNormals)
+	// normals
+	if (mesh->mNormals)
+	{
+		for (uint32_t i = 0; i < l_numVertices; i++)
 		{
-			l_Vertex.m_normal.x = mesh->mNormals[i].x;
-			l_Vertex.m_normal.y = mesh->mNormals[i].y;
-			l_Vertex.m_normal.z = mesh->mNormals[i].z;
+			l_vertices[i].m_normal.x = mesh->mNormals[i].x;
+			l_vertices[i].m_normal.y = mesh->mNormals[i].y;
+			l_vertices[i].m_normal.z = mesh->mNormals[i].z;
 		}
-		else
-		{
-			l_Vertex.m_normal.x = 0.0f;
-			l_Vertex.m_normal.y = 0.0f;
-			l_Vertex.m_normal.z = 1.0f;
-		}
-
-		l_Vertex.m_pad1 = InnoMath::minVec2<float>;
-		l_Vertex.m_pad2 = InnoMath::minVec4<float>;
-
-		l_vertices[i] = l_Vertex;
 	}
 
 	Array<Index> l_indices;
 	size_t l_indiceSize = 0;
 
-	// bones weight
-	if (mesh->mNumBones)
+	if (mesh->mNumFaces)
 	{
-		for (size_t i = 0; i < mesh->mNumBones; i++)
+		// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
+		for (uint32_t i = 0; i < mesh->mNumFaces; i++)
 		{
-			auto l_bone = mesh->mBones[i];
-			if (l_bone->mNumWeights)
-			{
-				for (uint32_t j = 0; j < l_bone->mNumWeights; j++)
-				{
-					aiVertexWeight l_vertexWeight = l_bone->mWeights[j];
-					auto l_Id = l_vertexWeight.mVertexId;
-					auto l_weight = l_vertexWeight.mWeight;
-					// Only the first 3 most weighted bones will be stored
-					if (l_weight > l_vertices[l_Id].m_pad1.y)
-					{
-						// Old 2nd to 3rd
-						l_vertices[l_Id].m_pad2.z = l_vertices[l_Id].m_pad2.x;
-						l_vertices[l_Id].m_pad2.w = l_vertices[l_Id].m_pad2.y;
-						// Old 1st to 2nd
-						l_vertices[l_Id].m_pad2.x = l_vertices[l_Id].m_pad1.x;
-						l_vertices[l_Id].m_pad2.y = l_vertices[l_Id].m_pad1.y;
-						// New as 1st
-						l_vertices[l_Id].m_pad1.x = (float)i;
-						l_vertices[l_Id].m_pad1.y = l_weight;
-					}
-					else if (l_weight > l_vertices[l_Id].m_pad2.y)
-					{
-						// Old 2nd to 3rd
-						l_vertices[l_Id].m_pad2.z = l_vertices[l_Id].m_pad2.x;
-						l_vertices[l_Id].m_pad2.w = l_vertices[l_Id].m_pad2.y;
-						// New as 2nd
-						l_vertices[l_Id].m_pad2.x = (float)i;
-						l_vertices[l_Id].m_pad2.y = l_weight;
-					}
-					else if (l_weight > l_vertices[l_Id].m_pad2.w)
-					{
-						// New as 3rd
-						l_vertices[l_Id].m_pad2.z = (float)i;
-						l_vertices[l_Id].m_pad2.w = l_weight;
-					}
-				}
-			}
+			aiFace l_face = mesh->mFaces[i];
+			l_indiceSize += l_face.mNumIndices;
 		}
 
-		l_indices.reserve(l_verticesNumber);
+		l_indices.reserve(l_indiceSize);
 		l_indices.fulfill();
 
-		for (uint32_t i = 0; i < l_verticesNumber; i++)
+		uint32_t l_index = 0;
+		for (uint32_t i = 0; i < mesh->mNumFaces; i++)
+		{
+			aiFace l_face = mesh->mFaces[i];
+			// retrieve all indices of the face and store them in the indices vector
+			for (uint32_t j = 0; j < l_face.mNumIndices; j++)
+			{
+				l_indices[l_index] = l_face.mIndices[j];
+				l_index++;
+			}
+		}
+	}
+	else
+	{
+		l_indices.reserve(l_numVertices);
+		l_indices.fulfill();
+
+		for (uint32_t i = 0; i < l_numVertices; i++)
 		{
 			l_indices[i] = i;
 		}
 
-		l_indiceSize = l_verticesNumber;
+		l_indiceSize = l_numVertices;
 	}
-	else
+
+	// bones weight
+
+	for (uint32_t i = 0; i < mesh->mNumBones; i++)
 	{
-		if (mesh->mNumFaces)
+		auto l_bone = mesh->mBones[i];
+
+		for (uint32_t j = 0; j < l_bone->mNumWeights; j++)
 		{
-			// now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
-			for (uint32_t i = 0; i < mesh->mNumFaces; i++)
+			auto l_vertexWeight = l_bone->mWeights[j];
+			auto l_Id = l_vertexWeight.mVertexId;
+			auto l_weight = l_vertexWeight.mWeight;
+
+			// Only the first 4 most weighted bones will be stored
+			if (l_weight > l_vertices[l_Id].m_pad1.y)
 			{
-				aiFace l_face = mesh->mFaces[i];
-				l_indiceSize += l_face.mNumIndices;
+				// Old 3rd to 4th
+				l_vertices[l_Id].m_pos.w = l_vertices[l_Id].m_pad2.z;
+				l_vertices[l_Id].m_normal.w = l_vertices[l_Id].m_pad2.w;
+				// Old 2nd to 3rd
+				l_vertices[l_Id].m_pad2.z = l_vertices[l_Id].m_pad2.x;
+				l_vertices[l_Id].m_pad2.w = l_vertices[l_Id].m_pad2.y;
+				// Old 1st to 2nd
+				l_vertices[l_Id].m_pad2.x = l_vertices[l_Id].m_pad1.x;
+				l_vertices[l_Id].m_pad2.y = l_vertices[l_Id].m_pad1.y;
+				// New as 1st
+				l_vertices[l_Id].m_pad1.x = (float)i;
+				l_vertices[l_Id].m_pad1.y = l_weight;
 			}
-
-			l_indices.reserve(l_indiceSize);
-			l_indices.fulfill();
-
-			uint32_t l_index = 0;
-			for (uint32_t i = 0; i < mesh->mNumFaces; i++)
+			else if (l_weight > l_vertices[l_Id].m_pad2.y)
 			{
-				aiFace l_face = mesh->mFaces[i];
-				// retrieve all indices of the face and store them in the indices vector
-				for (uint32_t j = 0; j < l_face.mNumIndices; j++)
-				{
-					l_indices[l_index] = l_face.mIndices[j];
-					l_index++;
-				}
+				// Old 3rd to 4th
+				l_vertices[l_Id].m_pos.w = l_vertices[l_Id].m_pad2.z;
+				l_vertices[l_Id].m_normal.w = l_vertices[l_Id].m_pad2.w;
+				// Old 2nd to 3rd
+				l_vertices[l_Id].m_pad2.z = l_vertices[l_Id].m_pad2.x;
+				l_vertices[l_Id].m_pad2.w = l_vertices[l_Id].m_pad2.y;
+				// New as 2nd
+				l_vertices[l_Id].m_pad2.x = (float)i;
+				l_vertices[l_Id].m_pad2.y = l_weight;
 			}
-		}
-		else
-		{
-			l_indices.reserve(l_verticesNumber);
-			l_indices.fulfill();
-
-			for (uint32_t i = 0; i < l_verticesNumber; i++)
+			else if (l_weight > l_vertices[l_Id].m_pad2.w)
 			{
-				l_indices[i] = i;
+				// Old 3rd to 4th
+				l_vertices[l_Id].m_pos.w = l_vertices[l_Id].m_pad2.z;
+				l_vertices[l_Id].m_normal.w = l_vertices[l_Id].m_pad2.w;
+				// New as 3rd
+				l_vertices[l_Id].m_pad2.z = (float)i;
+				l_vertices[l_Id].m_pad2.w = l_weight;
 			}
-
-			l_indiceSize = l_verticesNumber;
+			else if (l_weight > l_vertices[l_Id].m_normal.w)
+			{
+				// New as 4th
+				l_vertices[l_Id].m_pos.w = (float)i;
+				l_vertices[l_Id].m_normal.w = l_weight;
+			}
 		}
 	}
 
@@ -590,237 +530,250 @@ void AssimpWrapper::processTextureData(json& j, const char* fileName, TextureSam
 	j["File"] = fileName;
 }
 
-template<typename T>
-auto getValue(std::unordered_map<std::string, T>& map, const std::string& name)
+aiNodeAnim* FindNodeAnim(const aiAnimation* pAnimation, const char* name)
 {
-	auto l_result = map.find(name);
-	return &l_result->second;
+	for (uint32_t i = 0; i < pAnimation->mNumChannels; i++)
+	{
+		auto pNodeAnim = pAnimation->mChannels[i];
+
+		if (!strcmp(pNodeAnim->mNodeName.C_Str(), name))
+		{
+			return pNodeAnim;
+		}
+	}
+
+	return nullptr;
 }
 
-void bake(std::vector<KeyData>& keyData, const ChannelInfo& channelInfo, const ChannelInfo& parentChannelInfo)
+uint32_t FindScaling(float AnimationTime, const aiNodeAnim* pNodeAnim)
 {
-	auto f_cacheTransform = [&](size_t index, size_t parentIndex)
+	assert(pNodeAnim->mNumScalingKeys > 0);
+
+	for (uint32_t i = 0; i < pNodeAnim->mNumScalingKeys - 1; i++)
 	{
-		auto l_key = keyData[index];
-		auto l_pos = l_key.pos;
-		auto l_rot = l_key.rot;
-
-		auto l_parentKey = keyData[parentIndex];
-
-		auto l_parentPos = l_parentKey.pos;
-		auto l_parentRot = l_parentKey.rot;
-
-		l_pos = l_pos + l_parentPos;
-		l_rot = l_rot.quatMul(l_parentRot);
-
-		l_key.rot = l_rot;
-		l_key.pos = l_pos;
-
-		keyData[index] = l_key;
-	};
-
-	if (channelInfo.numKeys == 2)
-	{
-		if (parentChannelInfo.numKeys == 2)
+		if (AnimationTime < (float)pNodeAnim->mScalingKeys[i + 1].mTime)
 		{
-			f_cacheTransform(channelInfo.keyOffsets, parentChannelInfo.keyOffsets);
-			f_cacheTransform(channelInfo.keyOffsets + 1, parentChannelInfo.keyOffsets + 1);
-		}
-		else
-		{
-			f_cacheTransform(channelInfo.keyOffsets, parentChannelInfo.keyOffsets);
-			f_cacheTransform(channelInfo.keyOffsets + 1, parentChannelInfo.keyOffsets + parentChannelInfo.numKeys - 1);
+			return i;
 		}
 	}
-	else
-	{
-		if (parentChannelInfo.numKeys == 2)
-		{
-			for (size_t i = 0; i < channelInfo.numKeys; i++)
-			{
-				f_cacheTransform(channelInfo.keyOffsets + i, parentChannelInfo.keyOffsets);
-			}
-		}
-		else
-		{
-			for (size_t i = 0; i < channelInfo.numKeys; i++)
-			{
-				f_cacheTransform(channelInfo.keyOffsets + i, parentChannelInfo.keyOffsets + i);
-			}
-		}
-	}
+
+	assert(0);
 }
 
-void recursiveBake(
-	std::unordered_map<std::string, std::string>& parentNameMap,
-	std::unordered_map<std::string, ChannelInfo>& channelInfoMap,
-	std::unordered_map<std::string, bool>& isCachedMap,
-	std::vector<KeyData>& keyData, const std::string& name)
+uint32_t FindRotation(float AnimationTime, const aiNodeAnim* pNodeAnim)
 {
-	auto l_isCached = getValue(isCachedMap, name);
-	if (*l_isCached)
+	assert(pNodeAnim->mNumRotationKeys > 0);
+
+	for (uint32_t i = 0; i < pNodeAnim->mNumRotationKeys - 1; i++)
 	{
-		return;
+		if (AnimationTime < (float)pNodeAnim->mRotationKeys[i + 1].mTime)
+		{
+			return i;
+		}
 	}
 
-	auto l_parentName = getValue(parentNameMap, name);
-	if (*l_parentName == "RootNode")
+	assert(0);
+}
+
+uint32_t FindTranslation(float AnimationTime, const aiNodeAnim* pNodeAnim)
+{
+	assert(pNodeAnim->mNumPositionKeys > 0);
+
+	for (uint32_t i = 0; i < pNodeAnim->mNumPositionKeys - 1; i++)
 	{
-		*l_isCached = true;
-		return;
+		if (AnimationTime < (float)pNodeAnim->mPositionKeys[i + 1].mTime)
+		{
+			return i;
+		}
 	}
 
-	auto l_isParentCached = getValue(isCachedMap, *l_parentName);
+	assert(0);
+}
 
-	if (!*l_isParentCached)
+aiVector3D CalcInterpolatedScaling(float AnimationTime, const aiNodeAnim* pNodeAnim)
+{
+	if (pNodeAnim->mNumScalingKeys == 1)
 	{
-		recursiveBake(parentNameMap, channelInfoMap, isCachedMap, keyData, *l_parentName);
+		return pNodeAnim->mScalingKeys[0].mValue;
 	}
-	auto l_channelInfo = getValue(channelInfoMap, name);
-	auto l_parentChannelInfo = getValue(channelInfoMap, *l_parentName);
-	bake(keyData, *l_channelInfo, *l_parentChannelInfo);
-	*l_isCached = true;
+
+	auto ScalingIndex = FindScaling(AnimationTime, pNodeAnim);
+	auto NextScalingIndex = (ScalingIndex + 1);
+
+	assert(NextScalingIndex < pNodeAnim->mNumScalingKeys);
+
+	float DeltaTime = (float)pNodeAnim->mScalingKeys[NextScalingIndex].mTime - (float)pNodeAnim->mScalingKeys[ScalingIndex].mTime;
+	float Factor = (AnimationTime - (float)pNodeAnim->mScalingKeys[ScalingIndex].mTime) / DeltaTime;
+	assert(Factor >= 0.0f && Factor <= 1.0f);
+
+	const aiVector3D& StartScalingQ = pNodeAnim->mScalingKeys[ScalingIndex].mValue;
+	const aiVector3D& EndScalingQ = pNodeAnim->mScalingKeys[NextScalingIndex].mValue;
+
+	aiVector3D l_result;
+	Assimp::Interpolator<aiVector3D> l_lerp;
+	l_lerp(l_result, StartScalingQ, EndScalingQ, Factor);
+
+	return l_result;
+}
+
+aiQuaternion CalcInterpolatedRotation(float AnimationTime, const aiNodeAnim* pNodeAnim)
+{
+	if (pNodeAnim->mNumRotationKeys == 1)
+	{
+		return pNodeAnim->mRotationKeys[0].mValue;
+	}
+
+	auto RotationIndex = FindRotation(AnimationTime, pNodeAnim);
+	auto NextRotationIndex = (RotationIndex + 1);
+
+	assert(NextRotationIndex < pNodeAnim->mNumRotationKeys);
+
+	float DeltaTime = (float)pNodeAnim->mRotationKeys[NextRotationIndex].mTime - (float)pNodeAnim->mRotationKeys[RotationIndex].mTime;
+	float Factor = (AnimationTime - (float)pNodeAnim->mRotationKeys[RotationIndex].mTime) / DeltaTime;
+	assert(Factor >= 0.0f && Factor <= 1.0f);
+
+	const aiQuaternion& StartRotationQ = pNodeAnim->mRotationKeys[RotationIndex].mValue;
+	const aiQuaternion& EndRotationQ = pNodeAnim->mRotationKeys[NextRotationIndex].mValue;
+
+	aiQuaternion l_result;
+	aiQuaternion::Interpolate(l_result, StartRotationQ, EndRotationQ, Factor);
+	l_result = l_result.Normalize();
+
+	return l_result;
+}
+
+aiVector3D CalcInterpolatedTranslation(float AnimationTime, const aiNodeAnim* pNodeAnim)
+{
+	if (pNodeAnim->mNumPositionKeys == 1)
+	{
+		return pNodeAnim->mPositionKeys[0].mValue;
+	}
+
+	auto TranslationIndex = FindTranslation(AnimationTime, pNodeAnim);
+	auto NextTranslationIndex = (TranslationIndex + 1);
+
+	assert(NextTranslationIndex < pNodeAnim->mNumPositionKeys);
+
+	float DeltaTime = (float)pNodeAnim->mPositionKeys[NextTranslationIndex].mTime - (float)pNodeAnim->mPositionKeys[TranslationIndex].mTime;
+	float Factor = (AnimationTime - (float)pNodeAnim->mPositionKeys[TranslationIndex].mTime) / DeltaTime;
+	assert(Factor >= 0.0f && Factor <= 1.0f);
+
+	const aiVector3D& StartTranslationQ = pNodeAnim->mPositionKeys[TranslationIndex].mValue;
+	const aiVector3D& EndTranslationQ = pNodeAnim->mPositionKeys[NextTranslationIndex].mValue;
+
+	aiVector3D l_result;
+	Assimp::Interpolator<aiVector3D> l_lerp;
+	l_lerp(l_result, StartTranslationQ, EndTranslationQ, Factor);
+
+	return l_result;
+}
+
+void ReadNodeHeirarchy(float AnimationTime, const aiAnimation* pAnimation, const aiNode* pNode, const Mat4& ParentTransform, std::vector<Mat4>& transforms, const std::unordered_map<std::string, uint32_t>& boneNameIDMap, const std::unordered_map<std::string, Mat4>& boneNameOffsetMap)
+{
+	Mat4 l_lm;
+
+	std::memcpy(&l_lm, &pNode->mTransformation, sizeof(Mat4));
+
+	auto pNodeAnim = FindNodeAnim(pAnimation, pNode->mName.C_Str());
+
+	if (pNodeAnim)
+	{
+		auto l_aiS = CalcInterpolatedScaling(AnimationTime, pNodeAnim);
+		auto l_s = Vec4(l_aiS.x, l_aiS.y, l_aiS.z, 1.0f);
+		auto l_sM = InnoMath::toScaleMatrix(l_s);
+
+		auto l_aiR = CalcInterpolatedRotation(AnimationTime, pNodeAnim);
+		auto l_r = Vec4(l_aiR.x, l_aiR.y, l_aiR.z, l_aiR.w);
+		auto l_rM = InnoMath::toRotationMatrix(l_r);
+
+		auto l_aiT = CalcInterpolatedTranslation(AnimationTime, pNodeAnim);
+		auto l_t = Vec4(l_aiT.x, l_aiT.y, l_aiT.z, 1.0f);
+		auto l_tM = InnoMath::toTranslationMatrix(l_t);
+
+		l_lm = l_tM * l_rM * l_sM;
+	}
+
+	auto l_gm = ParentTransform * l_lm;
+
+	auto l_boneOffset = boneNameOffsetMap.find(pNode->mName.C_Str());
+	if (l_boneOffset != boneNameOffsetMap.end())
+	{
+		auto l_final = l_gm * l_boneOffset->second;
+		auto l_ID = boneNameIDMap.find(pNode->mName.C_Str());
+		if (l_ID != boneNameIDMap.end())
+		{
+			transforms[l_ID->second] = l_final;
+		}
+	}
+
+	for (uint32_t i = 0; i < pNode->mNumChildren; i++)
+	{
+		ReadNodeHeirarchy(AnimationTime, pAnimation, pNode->mChildren[i], l_gm, transforms, boneNameIDMap, boneNameOffsetMap);
+	}
 }
 
 /*
 Binary data type:
 Duration:float
 NumChannels:uint32_t
-KeyOffsets:uint32_t
-NumKeys:uint32_t
-Key:Key(Vec4+Vec4)
+NumTicks:uint32_t
+Key:Key(Mat4)
 
 Binary data structure:
 |Duration
 |NumChannels
-|KeyOffsets and NumKeys
+|NumTicks
+|Tick1
 	|Channel1
 	|Channel2
 	|...
 	|ChannelN
-|Channel1
-	|Key1
-	|Key2
-	|...
-	|KeyN
-|Channel2
+|Tick2
 |...
-|ChannelN
+|TickN
 */
-
-void AssimpWrapper::processAssimpAnimation(json& j, const aiAnimation* aiAnimation,
-	std::unordered_map<std::string, std::string>& parentNameMap,
-	std::unordered_map<std::string, aiMatrix4x4>& L2BMap, const char* exportFileRelativePath)
+void AssimpWrapper::processAssimpAnimation(json& j, const aiScene* scene, const aiAnimation* animation, const std::unordered_map<std::string, uint32_t>& boneNameIDMap, const std::unordered_map<std::string, Mat4>& boneNameOffsetMap, const char* exportFileRelativePath)
 {
-	std::unordered_map<std::string, ChannelInfo> l_channelInfoMap;
-	std::vector<KeyData> l_keyData;
+	uint32_t l_numChannels = animation->mNumChannels;
+	if (l_numChannels == 0)
+	{
+		return;
+	}
 
 	std::ofstream l_file(IOService::getWorkingDirectory() + exportFileRelativePath, std::ios::out | std::ios::trunc | std::ios::binary);
 	j["File"] = exportFileRelativePath;
 
-	j["Name"] = aiAnimation->mName.C_Str();
-
-	float l_duration = (float)aiAnimation->mDuration;
+	auto l_duration = (float)animation->mDuration;
 	IOService::serialize(l_file, &l_duration);
-	j["Duration"] = l_duration;
 
-	uint32_t l_numChannels = aiAnimation->mNumChannels;
-	if (l_numChannels)
+	auto l_validNumChannels = (uint32_t)boneNameIDMap.size();
+	IOService::serialize(l_file, &l_validNumChannels);
+
+	float l_ticksPerSecond = (float)animation->mTicksPerSecond != 0.0f ? (float)animation->mTicksPerSecond : 30.0f;
+	auto l_timeInTicks = 1.0f / l_ticksPerSecond;
+	auto l_numTicks = l_duration / l_timeInTicks;
+	auto l_numTicksInt = (uint32_t)std::ceil(l_numTicks);
+
+	IOService::serialize(l_file, &l_numTicksInt);
+
+	std::vector<Mat4> l_transforms;
+	auto l_numTransforms = (size_t)l_numTicksInt * l_validNumChannels;
+	l_transforms.reserve(l_numTransforms);
+
+	for (uint32_t i = 0; i < l_numTicksInt; i++)
 	{
-		IOService::serialize(l_file, &l_numChannels);
-		j["NumChannels"] = l_numChannels;
+		auto l_m = InnoMath::generateIdentityMatrix<float>();
+		float l_animationTime = (float)i * l_timeInTicks;
 
-		uint32_t l_keyOffset = 0;
+		std::vector<Mat4> l_transformsInCurrentTick;
+		l_transformsInCurrentTick.resize(l_validNumChannels);
 
-		for (uint32_t i = 0; i < l_numChannels; i++)
-		{
-			auto l_channel = aiAnimation->mChannels[i];
+		ReadNodeHeirarchy(l_animationTime, animation, scene->mRootNode, l_m, l_transformsInCurrentTick, boneNameIDMap, boneNameOffsetMap);
 
-			if (l_channel->mNumPositionKeys != l_channel->mNumRotationKeys)
-			{
-				InnoLogger::Log(LogLevel::Error, "AssimpWrapper: Position key number is different than rotation key number in node: ", l_channel->mNodeName.C_Str(), "!");
-				l_file.close();
-				return;
-			}
-
-			uint32_t l_numKeys = l_channel->mNumPositionKeys;
-			IOService::serialize(l_file, &l_keyOffset);
-			IOService::serialize(l_file, &l_numKeys);
-
-			ChannelInfo l_channelInfo;
-			l_channelInfo.keyOffsets = l_keyOffset;
-			l_channelInfo.numKeys = l_numKeys;
-			l_channelInfoMap.emplace(l_channel->mNodeName.C_Str(), l_channelInfo);
-
-			l_keyOffset += l_numKeys;
-
-			// Position-xyz, time-w, rotation-xyzw
-			for (uint32_t j = 0; j < l_channel->mNumPositionKeys; j++)
-			{
-				KeyData l_key;
-
-				auto l_posKey = l_channel->mPositionKeys[j];
-				auto l_posKeyValue = l_posKey.mValue;
-				l_key.pos = Vec4(l_posKeyValue.x, l_posKeyValue.y, l_posKeyValue.z, 1.0f);
-
-				auto l_rotKey = l_channel->mRotationKeys[j];
-				auto l_rotKeyValue = l_rotKey.mValue;
-				l_key.rot = Vec4(l_rotKeyValue.x, l_rotKeyValue.y, l_rotKeyValue.z, l_rotKeyValue.w);
-
-				l_keyData.emplace_back(l_key);
-			}
-		}
+		l_transforms.insert(l_transforms.end(), l_transformsInCurrentTick.begin(), l_transformsInCurrentTick.end());
 	}
 
-	// Cache absolute transformation
-	// Remove invalid nodes
-	std::unordered_map<std::string, std::string> l_parentNameMap;
-	for (auto& k : l_channelInfoMap)
-	{
-		auto l_result = getValue(parentNameMap, k.first);
-		l_parentNameMap.emplace(k.first, *l_result);
-	}
-
-	std::unordered_map<std::string, bool> l_isCachedMap;
-	for (auto& k : l_channelInfoMap)
-	{
-		l_isCachedMap.emplace(k.first, false);
-	}
-
-	for (auto& k : l_channelInfoMap)
-	{
-		recursiveBake(l_parentNameMap, l_channelInfoMap, l_isCachedMap, l_keyData, k.first);
-	}
-
-	IOService::serializeVector(l_file, l_keyData);
+	IOService::serializeVector(l_file, l_transforms);
 
 	l_file.close();
-}
-
-void AssimpWrapper::mergeTransformation(json& j, const aiNode* node)
-{
-	// @TODO: optimize
-	aiMatrix4x4 t = node->mTransformation;
-
-	aiNode* l_parent = node->mParent;
-	while (l_parent != nullptr)
-	{
-		t *= l_parent->mTransformation;
-		l_parent = l_parent->mParent;
-	}
-	to_json(j, t);
-}
-
-void AssimpWrapper::decomposeTransformation(json& j, const aiMatrix4x4& m)
-{
-	aiQuaternion l_aiRot;
-	aiVector3D l_aiPos;
-
-	m.DecomposeNoScaling(l_aiRot, l_aiPos);
-
-	auto l_rot = Vec4(l_aiRot.x, l_aiRot.y, l_aiRot.z, l_aiRot.w);
-	auto l_pos = Vec4(l_aiPos.x, l_aiPos.y, l_aiPos.z, 1.0f);
-
-	JSONWrapper::to_json(j["Rotation"], l_rot);
-	JSONWrapper::to_json(j["Position"], l_pos);
 }
