@@ -86,15 +86,15 @@
               "Z": 0.0
             },
             "Rotation": {
-              "W": 0.7071315050125122,
-              "X": -0.7070821523666382,
+              "W": 1.0,
+              "X": 0.0,
               "Y": 0.0,
               "Z": 0.0
             },
             "Scale": {
-              "X": 10,
-              "Y": 10,
-              "Z": 10
+              "X": 0.01,
+              "Y": 0.01,
+              "Z": 0.01
             }
           },
           "ParentTransformComponentEntityName": "RootTransform"
