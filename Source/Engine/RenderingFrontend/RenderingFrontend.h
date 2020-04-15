@@ -42,7 +42,8 @@ public:
 
 	RenderPassDesc getDefaultRenderPassDesc() override;
 
-	bool playAnimation(VisibleComponent* rhs, const char* animationName) override;
+	bool playAnimation(VisibleComponent* rhs, const char* animationName, bool isLooping) override;
+	bool stopAnimation(VisibleComponent* rhs, const char* animationName) override;
 
 	const PerFrameConstantBuffer& getPerFrameConstantBuffer() override;
 	const std::vector<CSMConstantBuffer>& getCSMConstantBuffer() override;

@@ -59,6 +59,8 @@ namespace InnoRenderingFrontendNS
 
 	std::vector<Vec2> m_haltonSampler;
 	int32_t m_currentHaltonStep = 0;
+	int64_t m_previousTime = 0;
+	int64_t m_currentTime = 0;
 
 	std::function<void()> f_sceneLoadingStartCallback;
 	std::function<void()> f_sceneLoadingFinishCallback;
@@ -199,6 +201,9 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 
 	m_DefaultRenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)m_screenResolution.x;
 	m_DefaultRenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)m_screenResolution.y;
+
+	m_previousTime = g_pModuleManager->getTimeSystem()->getCurrentTimeFromEpoch();
+	m_currentTime = g_pModuleManager->getTimeSystem()->getCurrentTimeFromEpoch();
 
 	m_CSMCBVector.Reserve(m_renderingCapability.maxCSMSplits);
 
@@ -598,17 +603,38 @@ bool InnoRenderingFrontendNS::updateMeshData()
 
 bool InnoRenderingFrontendNS::simulateAnimation()
 {
-	for (auto& i : m_animationInstanceMap)
+	m_currentTime = g_pModuleManager->getTimeSystem()->getCurrentTimeFromEpoch();
+
+	float l_tickTime = float(m_currentTime - m_previousTime) / 1000.0f;
+
+	if (m_animationInstanceMap.size())
 	{
-		if (i.second.currentTime < i.second.animationData.ADC->m_Duration)
+		for (auto& i : m_animationInstanceMap)
 		{
-			i.second.currentTime += 0.1f;
+			if (!i.second.isFinished)
+			{
+				if (i.second.currentTime < i.second.animationData.ADC->m_Duration)
+				{
+					i.second.currentTime += l_tickTime / 60.0f;
+				}
+				else
+				{
+					if (i.second.isLooping)
+					{
+						i.second.currentTime -= i.second.animationData.ADC->m_Duration;
+					}
+					else
+					{
+						i.second.isFinished = true;
+					}
+				}
+			}
 		}
-		else
-		{
-			i.second.currentTime -= i.second.animationData.ADC->m_Duration;
-		}
+
+		m_animationInstanceMap.erase_if([](auto it) { return it.second.isFinished; });
 	}
+
+	m_previousTime = m_currentTime;
 
 	return true;
 }
@@ -985,15 +1011,38 @@ RenderPassDesc InnoRenderingFrontend::getDefaultRenderPassDesc()
 	return m_DefaultRenderPassDesc;
 }
 
-bool InnoRenderingFrontend::playAnimation(VisibleComponent* rhs, const char* animationName)
+bool InnoRenderingFrontend::playAnimation(VisibleComponent* rhs, const char* animationName, bool isLooping)
 {
-	AnimationInstance l_instance;
-	l_instance.animationData = getAnimationData(animationName);
-	l_instance.currentTime = 0.0f;
+	auto l_animationData = getAnimationData(animationName);
 
-	m_animationInstanceMap.emplace(rhs->m_UUID, l_instance);
+	if (l_animationData.ADC != nullptr)
+	{
+		AnimationInstance l_instance;
 
-	return true;
+		l_instance.animationData = l_animationData;
+		l_instance.currentTime = 0.0f;
+		l_instance.isLooping = isLooping;
+		l_instance.isFinished = false;
+
+		m_animationInstanceMap.emplace(rhs->m_UUID, l_instance);
+
+		return true;
+	}
+
+	return false;
+}
+
+bool InnoRenderingFrontend::stopAnimation(VisibleComponent* rhs, const char* animationName)
+{
+	auto l_result = m_animationInstanceMap.find(rhs->m_UUID);
+	if (l_result != m_animationInstanceMap.end())
+	{
+		m_animationInstanceMap.erase(l_result->first);
+
+		return true;
+	}
+
+	return false;
 }
 
 const PerFrameConstantBuffer& InnoRenderingFrontend::getPerFrameConstantBuffer()

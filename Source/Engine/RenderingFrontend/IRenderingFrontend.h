@@ -48,6 +48,8 @@ struct AnimationInstance
 {
 	AnimationData animationData;
 	float currentTime;
+	bool isLooping;
+	bool isFinished;
 };
 
 struct AnimationDrawCallInfo
@@ -100,7 +102,8 @@ public:
 
 	virtual RenderPassDesc getDefaultRenderPassDesc() = 0;
 
-	virtual bool playAnimation(VisibleComponent* rhs, const char* animationName) = 0;
+	virtual bool playAnimation(VisibleComponent* rhs, const char* animationName, bool isLooping = false) = 0;
+	virtual bool stopAnimation(VisibleComponent* rhs, const char* animationName) = 0;
 
 	virtual const PerFrameConstantBuffer& getPerFrameConstantBuffer() = 0;
 	virtual const std::vector<CSMConstantBuffer>& getCSMConstantBuffer() = 0;
