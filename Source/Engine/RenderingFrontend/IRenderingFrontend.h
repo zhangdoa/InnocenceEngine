@@ -38,10 +38,23 @@ struct RenderingCapability
 	uint32_t maxTextures;
 };
 
-struct AnimationInfo
+struct AnimationData
 {
 	AnimationDataComponent* ADC;
-	GPUBufferDataComponent* KeyData;
+	GPUBufferDataComponent* keyData;
+};
+
+struct AnimationInstance
+{
+	AnimationData animationData;
+	float currentTime;
+};
+
+struct AnimationDrawCallInfo
+{
+	AnimationInstance animationInstance;
+	DrawCallInfo drawCallInfo;
+	uint32_t animationConstantBufferIndex;
 };
 
 enum class WorldEditorIconType { DIRECTIONAL_LIGHT, POINT_LIGHT, SPHERE_LIGHT, UNKNOWN };
@@ -74,8 +87,6 @@ public:
 	virtual MeshDataComponent* getMeshDataComponent(ProceduralMeshShape shape) = 0;
 	virtual TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) = 0;
 	virtual MaterialDataComponent* getDefaultMaterialDataComponent() = 0;
-	virtual AnimationInfo getAnimationInfo(const char* animationName) = 0;
-	virtual GPUBufferDataComponent* getSkeletonGPUBuffer(SkeletonDataComponent* rhs) = 0;
 
 	virtual bool transferDataToGPU() = 0;
 
@@ -89,6 +100,8 @@ public:
 
 	virtual RenderPassDesc getDefaultRenderPassDesc() = 0;
 
+	virtual bool playAnimation(VisibleComponent* rhs, const char* animationName) = 0;
+
 	virtual const PerFrameConstantBuffer& getPerFrameConstantBuffer() = 0;
 	virtual const std::vector<CSMConstantBuffer>& getCSMConstantBuffer() = 0;
 	virtual const std::vector<PointLightConstantBuffer>& getPointLightConstantBuffer() = 0;
@@ -97,6 +110,9 @@ public:
 	virtual const std::vector<DrawCallInfo>& getDrawCallInfo() = 0;
 	virtual const std::vector<PerObjectConstantBuffer>& getPerObjectConstantBuffer() = 0;
 	virtual const std::vector<MaterialConstantBuffer>& getMaterialConstantBuffer() = 0;
+
+	virtual const std::vector<AnimationDrawCallInfo>& getAnimationDrawCallInfo() = 0;
+	virtual const std::vector<AnimationConstantBuffer>& getAnimationConstantBuffer() = 0;
 
 	virtual const std::vector<BillboardPassDrawCallInfo>& getBillboardPassDrawCallInfo() = 0;
 	virtual const std::vector<PerObjectConstantBuffer>& getBillboardPassPerObjectConstantBuffer() = 0;

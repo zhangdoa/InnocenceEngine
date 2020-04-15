@@ -13,6 +13,7 @@ namespace DefaultGPUBuffers
 		CSM,
 		ComputeDispatchParam,
 		GI,
+		Animation,
 		Billboard
 	};
 

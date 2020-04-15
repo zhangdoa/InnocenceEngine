@@ -40,6 +40,9 @@ namespace InnoRenderingFrontendNS
 	DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_perObjectCBVector;
 	DoubleBuffer<std::vector<MaterialConstantBuffer>, true> m_materialCBVector;
 
+	DoubleBuffer<std::vector<AnimationDrawCallInfo>, true> m_animationDrawCallInfoVector;
+	DoubleBuffer<std::vector<AnimationConstantBuffer>, true> m_animationCBVector;
+
 	DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_directionalLightPerObjectCB;
 	DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_pointLightPerObjectCB;
 	DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_sphereLightPerObjectCB;
@@ -49,6 +52,8 @@ namespace InnoRenderingFrontendNS
 
 	DoubleBuffer<std::vector<DebugPassDrawCallInfo>, true> m_debugPassDrawCallInfoVector;
 	DoubleBuffer<std::vector<PerObjectConstantBuffer>, true> m_debugPassPerObjectCB;
+
+	ThreadSafeUnorderedMap<uint64_t, AnimationInstance> m_animationInstanceMap;
 
 	std::vector<CullingData> m_cullingData;
 
@@ -65,11 +70,9 @@ namespace InnoRenderingFrontendNS
 
 	ThreadSafeQueue<MeshDataComponent*> m_uninitializedMeshes;
 	ThreadSafeQueue<MaterialDataComponent*> m_uninitializedMaterials;
-	ThreadSafeQueue<SkeletonDataComponent*> m_uninitializedSkeletons;
 	ThreadSafeQueue<AnimationDataComponent*> m_uninitializedAnimations;
 
-	ThreadSafeUnorderedMap<SkeletonDataComponent*, GPUBufferDataComponent*> m_skeletonsLUT;
-	ThreadSafeUnorderedMap<std::string, AnimationInfo> m_animationInfosLUT;
+	ThreadSafeUnorderedMap<std::string, AnimationData> m_animationDataInfosLUT;
 
 	TextureDataComponent* m_iconTemplate_DirectionalLight;
 	TextureDataComponent* m_iconTemplate_PointLight;
@@ -90,13 +93,14 @@ namespace InnoRenderingFrontendNS
 
 	float radicalInverse(uint32_t n, uint32_t base);
 	void initializeHaltonSampler();
-	void initializeSkeleton(SkeletonDataComponent* rhs);
 	void initializeAnimation(AnimationDataComponent* rhs);
+	AnimationData getAnimationData(const char* animationName);
 
 	bool updatePerFrameConstantBuffer();
 	bool updateLightData();
 
 	bool updateMeshData();
+	bool simulateAnimation();
 	bool updateBillboardPassData();
 	bool updateDebuggerPassData();
 }
@@ -126,23 +130,6 @@ void InnoRenderingFrontendNS::initializeHaltonSampler()
 	}
 }
 
-void InnoRenderingFrontendNS::initializeSkeleton(SkeletonDataComponent* rhs)
-{
-	auto l_GBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent(rhs->m_Name.c_str());
-	l_GBDC->m_ParentEntity = rhs->m_ParentEntity;
-	l_GBDC->m_ElementCount = rhs->m_BoneData.capacity();
-	l_GBDC->m_ElementSize = sizeof(BoneData);
-	l_GBDC->m_GPUAccessibility = Accessibility::ReadWrite;
-	l_GBDC->m_BindingPoint = 0;
-
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(l_GBDC);
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_GBDC, &rhs->m_BoneData[0]);
-
-	rhs->m_ObjectStatus = ObjectStatus::Activated;
-
-	m_skeletonsLUT.emplace(rhs, l_GBDC);
-}
-
 void InnoRenderingFrontendNS::initializeAnimation(AnimationDataComponent* rhs)
 {
 	std::string l_name = rhs->m_Name.c_str();
@@ -159,11 +146,24 @@ void InnoRenderingFrontendNS::initializeAnimation(AnimationDataComponent* rhs)
 
 	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
-	AnimationInfo l_info;
+	AnimationData l_info;
 	l_info.ADC = rhs;
-	l_info.KeyData = l_keyData;
+	l_info.keyData = l_keyData;
 
-	m_animationInfosLUT.emplace(rhs->m_Name.c_str(), l_info);
+	m_animationDataInfosLUT.emplace(rhs->m_Name.c_str(), l_info);
+}
+
+AnimationData InnoRenderingFrontendNS::getAnimationData(const char* animationName)
+{
+	auto l_result = m_animationDataInfosLUT.find(animationName);
+	if (l_result != m_animationDataInfosLUT.end())
+	{
+		return l_result->second;
+	}
+	else
+	{
+		return AnimationData();
+	}
 }
 
 bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
@@ -184,9 +184,9 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 	m_renderingCapability.maxCSMSplits = 4;
 	m_renderingCapability.maxPointLights = 1024;
 	m_renderingCapability.maxSphereLights = 128;
-	m_renderingCapability.maxMeshes = 32768;
-	m_renderingCapability.maxMaterials = 32768;
-	m_renderingCapability.maxTextures = 32768;
+	m_renderingCapability.maxMeshes = 4096;
+	m_renderingCapability.maxMaterials = 4096;
+	m_renderingCapability.maxTextures = 4096;
 
 	m_DefaultRenderPassDesc.m_UseMultiFrames = false;
 	m_DefaultRenderPassDesc.m_RenderTargetCount = 1;
@@ -205,14 +205,16 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 	m_drawCallInfoVector.Reserve(m_renderingCapability.maxMeshes);
 	m_perObjectCBVector.Reserve(m_renderingCapability.maxMeshes);
 	m_materialCBVector.Reserve(m_renderingCapability.maxMaterials);
+	m_animationDrawCallInfoVector.Reserve(512);
+	m_animationCBVector.Reserve(512);
 
 	m_pointLightCBVector.Reserve(m_renderingCapability.maxPointLights);
 	m_sphereLightCBVector.Reserve(m_renderingCapability.maxSphereLights);
 
-	m_directionalLightPerObjectCB.Reserve(8192);
-	m_pointLightPerObjectCB.Reserve(8192);
-	m_sphereLightPerObjectCB.Reserve(8192);
-	m_billboardPassPerObjectCB.Reserve(8192);
+	m_directionalLightPerObjectCB.Reserve(4096);
+	m_pointLightPerObjectCB.Reserve(4096);
+	m_sphereLightPerObjectCB.Reserve(4096);
+	m_billboardPassPerObjectCB.Reserve(4096);
 
 	f_sceneLoadingStartCallback = [&]() {
 		m_cullingData.clear();
@@ -507,10 +509,14 @@ bool InnoRenderingFrontendNS::updateMeshData()
 	auto& l_drawCallInfoVector = m_drawCallInfoVector.GetValue();
 	auto& l_perObjectCBVector = m_perObjectCBVector.GetValue();
 	auto& l_materialCBVector = m_materialCBVector.GetValue();
+	auto& l_animationDrawCallInfoVector = m_animationDrawCallInfoVector.GetValue();
+	auto& l_animationCBVector = m_animationCBVector.GetValue();
 
 	l_drawCallInfoVector.clear();
 	l_perObjectCBVector.clear();
 	l_materialCBVector.clear();
+	l_animationDrawCallInfoVector.clear();
+	l_animationCBVector.clear();
 
 	auto l_cullingDataSize = m_cullingData.size();
 
@@ -527,6 +533,7 @@ bool InnoRenderingFrontendNS::updateMeshData()
 
 					l_drawCallInfo.mesh = l_cullingData.mesh;
 					l_drawCallInfo.material = l_cullingData.material;
+
 					// @TODO: use culled info
 					l_drawCallInfo.castSunShadow = true;
 					l_drawCallInfo.visibility = l_cullingData.visibility;
@@ -551,7 +558,32 @@ bool InnoRenderingFrontendNS::updateMeshData()
 					l_materialCB.materialType = int32_t(l_cullingData.meshUsage);
 					l_materialCB.materialAttributes = l_cullingData.material->m_materialAttributes;
 
-					l_drawCallInfoVector.emplace_back(l_drawCallInfo);
+					if (l_cullingData.meshUsage == MeshUsage::Skeletal)
+					{
+						auto l_result = m_animationInstanceMap.find(l_cullingData.UUID);
+						if (l_result != m_animationInstanceMap.end())
+						{
+							AnimationDrawCallInfo animationDrawCallInfo;
+							animationDrawCallInfo.animationInstance = l_result->second;
+							animationDrawCallInfo.drawCallInfo = l_drawCallInfo;
+
+							AnimationConstantBuffer l_animationCB;
+							l_animationCB.duration = animationDrawCallInfo.animationInstance.animationData.ADC->m_Duration;
+							l_animationCB.numChannels = animationDrawCallInfo.animationInstance.animationData.ADC->m_NumChannels;
+							l_animationCB.numTicks = animationDrawCallInfo.animationInstance.animationData.ADC->m_NumTicks;
+							l_animationCB.currentTime = animationDrawCallInfo.animationInstance.currentTime / l_animationCB.duration;
+							l_animationCB.rootOffsetMatrix = InnoMath::generateIdentityMatrix<float>();
+
+							l_animationCBVector.emplace_back(l_animationCB);
+
+							animationDrawCallInfo.animationConstantBufferIndex = (uint32_t)l_animationCBVector.size();
+							l_animationDrawCallInfoVector.emplace_back(animationDrawCallInfo);
+						}
+					}
+					else
+					{
+						l_drawCallInfoVector.emplace_back(l_drawCallInfo);
+					}
 					l_perObjectCBVector.emplace_back(l_perObjectCB);
 					l_materialCBVector.emplace_back(l_materialCB);
 				}
@@ -560,6 +592,23 @@ bool InnoRenderingFrontendNS::updateMeshData()
 	}
 
 	// @TODO: use GPU to do OIT
+
+	return true;
+}
+
+bool InnoRenderingFrontendNS::simulateAnimation()
+{
+	for (auto& i : m_animationInstanceMap)
+	{
+		if (i.second.currentTime < i.second.animationData.ADC->m_Duration)
+		{
+			i.second.currentTime += 0.1f;
+		}
+		else
+		{
+			i.second.currentTime -= i.second.animationData.ADC->m_Duration;
+		}
+	}
 
 	return true;
 }
@@ -652,6 +701,8 @@ bool InnoRenderingFrontendNS::update()
 {
 	if (m_ObjectStatus == ObjectStatus::Activated)
 	{
+		simulateAnimation();
+
 		updatePerFrameConstantBuffer();
 
 		updateLightData();
@@ -809,34 +860,6 @@ MaterialDataComponent* InnoRenderingFrontend::getDefaultMaterialDataComponent()
 	return m_defaultMaterial;
 }
 
-AnimationInfo InnoRenderingFrontend::getAnimationInfo(const char* animationName)
-{
-	auto l_result = m_animationInfosLUT.find(animationName);
-	if (l_result != m_animationInfosLUT.end())
-	{
-		return l_result->second;
-	}
-	else
-	{
-		InnoLogger::Log(LogLevel::Error, "RenderingFrontend: Can not find AnimationInfo by name: ", animationName);
-		return AnimationInfo();
-	}
-}
-
-GPUBufferDataComponent* InnoRenderingFrontend::getSkeletonGPUBuffer(SkeletonDataComponent* rhs)
-{
-	auto l_result = m_skeletonsLUT.find(rhs);
-	if (l_result != m_skeletonsLUT.end())
-	{
-		return l_result->second;
-	}
-	else
-	{
-		InnoLogger::Log(LogLevel::Error, "RenderingFrontend: Can not find GPUBufferDataComponent by: ", rhs);
-		return nullptr;
-	}
-}
-
 bool InnoRenderingFrontend::transferDataToGPU()
 {
 	while (m_uninitializedMeshes.size() > 0)
@@ -858,17 +881,6 @@ bool InnoRenderingFrontend::transferDataToGPU()
 		if (l_Material)
 		{
 			auto l_result = m_renderingServer->InitializeMaterialDataComponent(l_Material);
-		}
-	}
-
-	while (m_uninitializedSkeletons.size() > 0)
-	{
-		SkeletonDataComponent* l_Skeletons;
-		m_uninitializedSkeletons.tryPop(l_Skeletons);
-
-		if (l_Skeletons)
-		{
-			initializeSkeleton(l_Skeletons);
 		}
 	}
 
@@ -920,16 +932,7 @@ bool InnoRenderingFrontend::registerMaterialDataComponent(MaterialDataComponent*
 
 bool InnoRenderingFrontend::registerSkeletonDataComponent(SkeletonDataComponent* rhs, bool AsyncUploadToGPU)
 {
-	if (AsyncUploadToGPU)
-	{
-		m_uninitializedSkeletons.push(rhs);
-	}
-	else
-	{
-		auto l_SkeletonDataComponentInitializeTask = g_pModuleManager->getTaskSystem()->submit("SkeletonDataComponentInitializeTask", 2, nullptr,
-			[=]() { initializeSkeleton(rhs); });
-		l_SkeletonDataComponentInitializeTask->Wait();
-	}
+	rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
@@ -982,6 +985,17 @@ RenderPassDesc InnoRenderingFrontend::getDefaultRenderPassDesc()
 	return m_DefaultRenderPassDesc;
 }
 
+bool InnoRenderingFrontend::playAnimation(VisibleComponent* rhs, const char* animationName)
+{
+	AnimationInstance l_instance;
+	l_instance.animationData = getAnimationData(animationName);
+	l_instance.currentTime = 0.0f;
+
+	m_animationInstanceMap.emplace(rhs->m_UUID, l_instance);
+
+	return true;
+}
+
 const PerFrameConstantBuffer& InnoRenderingFrontend::getPerFrameConstantBuffer()
 {
 	return m_perFrameCB.GetValue();
@@ -1015,6 +1029,16 @@ const std::vector<PerObjectConstantBuffer>& InnoRenderingFrontend::getPerObjectC
 const std::vector<MaterialConstantBuffer>& InnoRenderingFrontend::getMaterialConstantBuffer()
 {
 	return m_materialCBVector.GetValue();
+}
+
+const std::vector<AnimationDrawCallInfo>& InnoRenderingFrontend::getAnimationDrawCallInfo()
+{
+	return m_animationDrawCallInfoVector.GetValue();
+}
+
+const std::vector<AnimationConstantBuffer>& InnoRenderingFrontend::getAnimationConstantBuffer()
+{
+	return m_animationCBVector.GetValue();
 }
 
 const std::vector<BillboardPassDrawCallInfo>& InnoRenderingFrontend::getBillboardPassDrawCallInfo()

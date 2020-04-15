@@ -92,9 +92,9 @@
               "Z": 0.0
             },
             "Scale": {
-              "X": 0.01,
-              "Y": 0.01,
-              "Z": 0.01
+              "X": 0.1,
+              "Y": 0.1,
+              "Z": 0.1
             }
           },
           "ParentTransformComponentEntityName": "RootTransform"

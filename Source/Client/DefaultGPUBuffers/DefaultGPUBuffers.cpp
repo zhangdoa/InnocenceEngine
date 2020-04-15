@@ -13,6 +13,7 @@ namespace DefaultGPUBuffers
 	GPUBufferDataComponent* m_CSMGBDC;
 	GPUBufferDataComponent* m_dispatchParamsGBDC;
 	GPUBufferDataComponent* m_GICBufferGBDC;
+	GPUBufferDataComponent* m_animationGBDC;
 	GPUBufferDataComponent* m_billboardGBDC;
 
 	std::vector<DispatchParamsConstantBuffer> m_DispatchParamsConstantBuffer;
@@ -84,6 +85,13 @@ bool DefaultGPUBuffers::Initialize()
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_GICBufferGBDC);
 
+	m_animationGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("AnimationCBuffer/");
+	m_animationGBDC->m_ElementCount = 512;
+	m_animationGBDC->m_ElementSize = sizeof(AnimationConstantBuffer);
+	m_animationGBDC->m_BindingPoint = 0;
+
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_animationGBDC);
+
 	m_billboardGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("BillboardCBuffer/");
 	m_billboardGBDC->m_ElementCount = l_RenderingCapability.maxMeshes;
 	m_billboardGBDC->m_ElementSize = sizeof(PerObjectConstantBuffer);
@@ -104,6 +112,7 @@ bool DefaultGPUBuffers::Upload()
 	auto& l_PointLightConstantBuffer = g_pModuleManager->getRenderingFrontend()->getPointLightConstantBuffer();
 	auto& l_SphereLightConstantBuffer = g_pModuleManager->getRenderingFrontend()->getSphereLightConstantBuffer();
 	auto& l_CSMConstantBuffer = g_pModuleManager->getRenderingFrontend()->getCSMConstantBuffer();
+	auto& l_animationConstantBuffer = g_pModuleManager->getRenderingFrontend()->getAnimationConstantBuffer();
 	auto& l_billboardPassPerObjectConstantBuffer = g_pModuleManager->getRenderingFrontend()->getBillboardPassPerObjectConstantBuffer();
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_PerFrameCBufferGBDC, &l_PerFrameConstantBuffer);
@@ -127,6 +136,10 @@ bool DefaultGPUBuffers::Upload()
 	if (l_CSMConstantBuffer.size() > 0)
 	{
 		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_CSMGBDC, l_CSMConstantBuffer);
+	}
+	if (l_animationConstantBuffer.size() > 0)
+	{
+		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_animationGBDC, l_animationConstantBuffer);
 	}
 	if (l_billboardPassPerObjectConstantBuffer.size() > 0)
 	{
@@ -172,6 +185,8 @@ GPUBufferDataComponent* DefaultGPUBuffers::GetGPUBufferDataComponent(GPUBufferUs
 	case GPUBufferUsageType::ComputeDispatchParam: l_result = m_dispatchParamsGBDC;
 		break;
 	case GPUBufferUsageType::GI:l_result = m_GICBufferGBDC;
+		break;
+	case GPUBufferUsageType::Animation: l_result = m_animationGBDC;
 		break;
 	case GPUBufferUsageType::Billboard: l_result = m_billboardGBDC;
 		break;

@@ -7,13 +7,7 @@ struct AnimationKeyData_SB
 	float4x4 m;
 };
 
-struct BoneData_SB
-{
-	float4x4 L2B;
-};
-
 StructuredBuffer<AnimationKeyData_SB> animationKeyDataSBuffer : register(t5);
-StructuredBuffer<BoneData_SB> skeletonKeyDataSBuffer : register(t6);
 
 struct VertexInputType
 {

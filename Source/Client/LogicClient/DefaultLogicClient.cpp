@@ -37,6 +37,7 @@ namespace PlayerComponentCollection
 	std::function<void(float)> f_rotateAroundRightAxis;
 
 	std::function<void()> f_addForce;
+	std::function<void()> f_playAnimation;
 
 	float m_initialMoveSpeed = 0;
 	float m_moveSpeed = 0;
@@ -106,11 +107,21 @@ bool PlayerComponentCollection::setup()
 			g_pModuleManager->getPhysicsSystem()->addForce(m_playerVisibleComponent, l_force);
 		};
 
+		f_playAnimation = [&]() {
+			auto l_entity = g_pModuleManager->getEntityManager()->Find("Wolf");
+			if (l_entity.has_value())
+			{
+				auto visibleComponent = GetComponent(VisibleComponent, *l_entity);
+				g_pModuleManager->getRenderingFrontend()->playAnimation(visibleComponent, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_creep_cycle.InnoAnimation/");
+			}
+		};
+
 		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_S, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveForward });
 		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_W, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveBackward });
 		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_A, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveLeft });
 		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_D, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveRight });
 		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_E, true }, ButtonEvent{ EventLifeTime::OneShot, &f_addForce });
+		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_Q, true }, ButtonEvent{ EventLifeTime::OneShot, &f_playAnimation });
 
 		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_SPACE, true }, ButtonEvent{ EventLifeTime::Continuous, &f_speedUp });
 		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_SPACE, false }, ButtonEvent{ EventLifeTime::Continuous, &f_speedDown });
@@ -231,6 +242,7 @@ namespace GameClientNS
 
 	std::function<void()> f_sceneLoadingFinishCallback;
 	std::function<void()> f_loadTestScene;
+	std::function<void()> f_convertModel;
 
 	std::function<void()> f_runRayTracing;
 	std::function<void()> f_pauseGame;
@@ -590,9 +602,15 @@ bool GameClientNS::initialize()
 {
 	f_loadTestScene = []()
 	{
-		g_pModuleManager->getFileSystem()->loadScene("..//Res//Scenes//GITest.InnoScene");
+		g_pModuleManager->getFileSystem()->loadScene("..//Res//Scenes//animationTest.InnoScene");
+	};
+
+	f_convertModel = []()
+	{
+		g_pModuleManager->getAssetSystem()->convertModel("..//Res//Models//Wolf//Wolf.fbx", "..//Res//ConvertedAssets//");
 	};
 	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadTestScene });
+	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_Y, true }, ButtonEvent{ EventLifeTime::OneShot, &f_convertModel });
 
 	return true;
 }

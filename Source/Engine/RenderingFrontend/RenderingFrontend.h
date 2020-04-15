@@ -29,8 +29,6 @@ public:
 	MeshDataComponent* getMeshDataComponent(ProceduralMeshShape shape) override;
 	TextureDataComponent* getTextureDataComponent(WorldEditorIconType iconType) override;
 	MaterialDataComponent* getDefaultMaterialDataComponent() override;
-	AnimationInfo getAnimationInfo(const char* animationName) override;
-	GPUBufferDataComponent* getSkeletonGPUBuffer(SkeletonDataComponent* rhs) override;
 
 	bool transferDataToGPU() override;
 
@@ -44,6 +42,8 @@ public:
 
 	RenderPassDesc getDefaultRenderPassDesc() override;
 
+	bool playAnimation(VisibleComponent* rhs, const char* animationName) override;
+
 	const PerFrameConstantBuffer& getPerFrameConstantBuffer() override;
 	const std::vector<CSMConstantBuffer>& getCSMConstantBuffer() override;
 	const std::vector<PointLightConstantBuffer>& getPointLightConstantBuffer() override;
@@ -52,6 +52,9 @@ public:
 	const std::vector<DrawCallInfo>& getDrawCallInfo() override;
 	const std::vector<PerObjectConstantBuffer>& getPerObjectConstantBuffer() override;
 	const std::vector<MaterialConstantBuffer>& getMaterialConstantBuffer() override;
+
+	const std::vector<AnimationDrawCallInfo>& getAnimationDrawCallInfo() override;
+	const std::vector<AnimationConstantBuffer>& getAnimationConstantBuffer() override;
 
 	const std::vector<BillboardPassDrawCallInfo>& getBillboardPassDrawCallInfo() override;
 	const std::vector<PerObjectConstantBuffer>& getBillboardPassPerObjectConstantBuffer() override;

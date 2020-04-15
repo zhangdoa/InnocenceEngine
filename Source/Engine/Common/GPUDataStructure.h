@@ -97,6 +97,16 @@ struct alignas(16) VoxelizationConstantBuffer
 	Vec4 padding;
 };
 
+struct alignas(16) AnimationConstantBuffer
+{
+	Mat4 rootOffsetMatrix;
+	float duration;
+	uint32_t numChannels;
+	uint32_t numTicks;
+	float currentTime;
+	float padding[44];
+};
+
 struct DrawCallInfo
 {
 	MeshDataComponent* mesh;
