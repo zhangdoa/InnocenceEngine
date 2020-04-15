@@ -46,8 +46,8 @@
           "LocalTransformVector": {
             "Position": {
               "X": 0.0,
-              "Y": 3.0,
-              "Z": 2.0
+              "Y": 10.0,
+              "Z": 10.0
             },
             "Rotation": {
               "W": 0.9238795042037964,
@@ -112,7 +112,7 @@
         }
       ],
       "UUID": "5372b91cf296630c0784256e52f89db1",
-      "ObjectName": "Wolf"
+      "ObjectName": "playerCharacter"
     },
     {
       "ChildrenComponents": [
@@ -160,34 +160,6 @@
       ],
       "UUID": "3a467d719bce3caa3337c860e378b19e",
       "ObjectName": "sun"
-    },
-    {
-      "ChildrenComponents": [
-        {
-          "ComponentType": 1,
-          "LocalTransformVector": {
-            "Position": {
-              "X": 0.0,
-              "Y": 2.0,
-              "Z": 0.0
-            },
-            "Rotation": {
-              "W": 1.0,
-              "X": 0.0,
-              "Y": 0.0,
-              "Z": 0.0
-            },
-            "Scale": {
-              "X": 1.0,
-              "Y": 1.0,
-              "Z": 1.0
-            }
-          },
-          "ParentTransformComponentEntityName": "RootTransform"
-        }
-      ],
-      "ObjectName": "playerCharacter",
-      "UUID": 2454715245036513906
     }
   ],
   "SceneName": "..//res//scenes//animationTest.InnoScene"

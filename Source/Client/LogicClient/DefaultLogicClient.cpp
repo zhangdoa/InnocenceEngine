@@ -8,6 +8,79 @@
 #include "../../Engine/Interface/IModuleManager.h"
 INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
 
+namespace AnimationStateMachine
+{
+	bool setup();
+	bool simulate();
+	bool changeState(const std::string& state);
+
+	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+
+	InnoEntity* m_entity;
+	VisibleComponent* m_visibleComponent;
+	std::string m_currentState;
+	bool isStateChanged;
+
+	std::unordered_map<std::string, std::function<void()>> m_states;
+
+	bool setup()
+	{
+		auto l_entity = g_pModuleManager->getEntityManager()->Find("playerCharacter");
+		if (l_entity.has_value())
+		{
+			m_entity = *l_entity;
+			m_visibleComponent = GetComponent(VisibleComponent, *l_entity);
+
+			std::function<void()> f_idle = [&]() {
+				g_pModuleManager->getRenderingFrontend()->playAnimation(m_visibleComponent, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Idle_.InnoAnimation/", true);
+			};
+
+			std::function<void()> f_run = [&]() {
+				g_pModuleManager->getRenderingFrontend()->playAnimation(m_visibleComponent, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Run_Cycle_.InnoAnimation/", true);
+			};
+
+			m_states.emplace("Idle", f_idle);
+			m_states.emplace("Run", f_run);
+
+			m_currentState = "Idle";
+			isStateChanged = false;
+
+			m_ObjectStatus = ObjectStatus::Activated;
+			return true;
+		}
+
+		return false;
+	}
+
+	bool simulate()
+	{
+		if (isStateChanged)
+		{
+			auto l_func = m_states.find(m_currentState);
+			if (l_func != m_states.end())
+			{
+				g_pModuleManager->getRenderingFrontend()->stopAnimation(m_visibleComponent, "");
+				l_func->second();
+				isStateChanged = false;
+
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool changeState(const std::string& state)
+	{
+		if (state != m_currentState)
+		{
+			m_currentState = state;
+			isStateChanged = true;
+			return true;
+		}
+		return false;
+	}
+}
+
 namespace PlayerComponentCollection
 {
 	bool setup();
@@ -26,6 +99,8 @@ namespace PlayerComponentCollection
 	std::function<void()> f_moveBackward;
 	std::function<void()> f_moveLeft;
 	std::function<void()> f_moveRight;
+	std::function<void()> f_move;
+	std::function<void()> f_stop;
 
 	std::function<void()> f_allowMove;
 	std::function<void()> f_forbidMove;
@@ -37,7 +112,6 @@ namespace PlayerComponentCollection
 	std::function<void(float)> f_rotateAroundRightAxis;
 
 	std::function<void()> f_addForce;
-	std::function<void()> f_playAnimation;
 
 	float m_initialMoveSpeed = 0;
 	float m_moveSpeed = 0;
@@ -45,7 +119,7 @@ namespace PlayerComponentCollection
 	bool m_canMove = false;
 	bool m_canSlerp = false;
 	bool m_smoothInterp = true;
-	bool m_isTP = false;
+	bool m_isTP = true;
 
 	void move(Direction direction, float length);
 	Vec4 m_targetCameraRotX;
@@ -91,6 +165,8 @@ bool PlayerComponentCollection::setup()
 		f_moveBackward = [&]() { move(Direction::Backward, m_moveSpeed); };
 		f_moveLeft = [&]() { move(Direction::Left, m_moveSpeed); };
 		f_moveRight = [&]() { move(Direction::Right, m_moveSpeed); };
+		f_move = [&]() { AnimationStateMachine::changeState("Run"); };
+		f_stop = [&]() { AnimationStateMachine::changeState("Idle"); };
 
 		f_speedUp = [&]() { m_moveSpeed = m_initialMoveSpeed * 10.0f; };
 		f_speedDown = [&]() { m_moveSpeed = m_initialMoveSpeed; };
@@ -107,21 +183,22 @@ bool PlayerComponentCollection::setup()
 			g_pModuleManager->getPhysicsSystem()->addForce(m_playerVisibleComponent, l_force);
 		};
 
-		f_playAnimation = [&]() {
-			auto l_entity = g_pModuleManager->getEntityManager()->Find("Wolf");
-			if (l_entity.has_value())
-			{
-				auto visibleComponent = GetComponent(VisibleComponent, *l_entity);
-				g_pModuleManager->getRenderingFrontend()->playAnimation(visibleComponent, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_creep_cycle.InnoAnimation/");
-			}
-		};
-
 		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_S, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveForward });
 		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_W, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveBackward });
 		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_A, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveLeft });
 		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_D, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveRight });
+
+		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_S, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
+		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_W, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
+		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_A, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
+		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_D, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
+
+		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_S, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
+		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_W, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
+		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_A, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
+		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_D, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
+
 		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_E, true }, ButtonEvent{ EventLifeTime::OneShot, &f_addForce });
-		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_Q, true }, ButtonEvent{ EventLifeTime::OneShot, &f_playAnimation });
 
 		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_SPACE, true }, ButtonEvent{ EventLifeTime::Continuous, &f_speedUp });
 		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_SPACE, false }, ButtonEvent{ EventLifeTime::Continuous, &f_speedDown });
@@ -134,6 +211,8 @@ bool PlayerComponentCollection::setup()
 		m_initialMoveSpeed = 0.5f;
 		m_moveSpeed = m_initialMoveSpeed;
 		m_rotateSpeed = 10.0f;
+
+		AnimationStateMachine::setup();
 	};
 	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback, 0);
 
@@ -578,7 +657,7 @@ bool GameClientNS::setup()
 	runTest(512, l_testQuatToMat);
 
 	f_runRayTracing = [&]() { g_pModuleManager->getRenderingFrontend()->runRayTrace(); };
-	f_pauseGame = [&]() { allowUpdate = !allowUpdate;	};
+	f_pauseGame = [&]() { allowUpdate = !allowUpdate; };
 
 	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_N, true }, ButtonEvent{ EventLifeTime::OneShot, &f_runRayTracing });
 	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_F, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseGame });
@@ -688,7 +767,13 @@ bool GameClientNS::update()
 			auto l_seed = (1.0f - l_tickTime / 100.0f);
 			l_seed = l_seed > 0.0f ? l_seed : 0.01f;
 			l_seed = l_seed > 0.85f ? 0.85f : l_seed;
+
 			PlayerComponentCollection::update(l_seed);
+
+			if (AnimationStateMachine::m_ObjectStatus == ObjectStatus::Activated)
+			{
+				AnimationStateMachine::simulate();
+			}
 
 			updateSpheres();
 		}
@@ -766,7 +851,10 @@ void PlayerComponentCollection::update(float seed)
 {
 	if (m_isTP)
 	{
-		auto l_m = m_playerTransformComponent->m_globalTransformMatrix.m_transformationMat;
+		auto l_t = m_playerTransformComponent->m_globalTransformMatrix.m_translationMat;
+		auto l_r = m_playerTransformComponent->m_globalTransformMatrix.m_rotationMat;
+		auto l_m = l_t * l_r;
+
 		auto l_lp = m_cameraPlayerDistance;
 		m_cameraPlayerDistance.w = 1.0f;
 		auto l_gp = InnoMath::mul(l_m, m_cameraPlayerDistance);
