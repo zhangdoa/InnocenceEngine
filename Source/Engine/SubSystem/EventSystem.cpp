@@ -165,13 +165,16 @@ void InnoEventSystemNS::buttonStateCallback(ButtonState buttonState)
 			}
 			else
 			{
-				auto l_previousFrameButtonState = m_previousFrameButtonStates[it->first.m_code];
-				if (l_previousFrameButtonState.m_isPressed != it->first.m_isPressed)
+				if (m_previousFrameButtonStates.size())
 				{
-					if (it->second.m_eventHandle)
+					auto l_previousFrameButtonState = m_previousFrameButtonStates[it->first.m_code];
+					if (l_previousFrameButtonState.m_isPressed != it->first.m_isPressed)
 					{
-						auto l_event = reinterpret_cast<std::function<void()>*>(it->second.m_eventHandle);
-						(*l_event)();
+						if (it->second.m_eventHandle)
+						{
+							auto l_event = reinterpret_cast<std::function<void()>*>(it->second.m_eventHandle);
+							(*l_event)();
+						}
 					}
 				}
 			}
