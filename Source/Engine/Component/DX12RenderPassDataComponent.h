@@ -69,6 +69,4 @@ public:
 	D3D12_CPU_DESCRIPTOR_HANDLE m_DSVDescriptorCPUHandle;
 
 	ID3D12RootSignature* m_RootSignature = 0;
-
-	std::vector<ID3D12CommandAllocator*> m_CommandAllocators;
 };

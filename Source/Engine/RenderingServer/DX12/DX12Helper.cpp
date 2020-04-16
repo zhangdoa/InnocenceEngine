@@ -1239,43 +1239,13 @@ bool DX12Helper::CreateCommandQueue(DX12RenderPassDataComponent* DX12RPDC, ID3D1
 	return true;
 }
 
-bool DX12Helper::CreateCommandAllocators(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device)
-{
-	if (DX12RPDC->m_RenderPassDesc.m_UseMultiFrames)
-	{
-		DX12RPDC->m_CommandAllocators.resize(DX12RPDC->m_RenderPassDesc.m_RenderTargetCount);
-	}
-	else
-	{
-		DX12RPDC->m_CommandAllocators.resize(1);
-	}
-
-	for (size_t i = 0; i < DX12RPDC->m_CommandAllocators.size(); i++)
-	{
-		// Create a command allocator.
-		auto l_HResult = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&DX12RPDC->m_CommandAllocators[i]));
-		if (FAILED(l_HResult))
-		{
-			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_Name.c_str(), " Can't create CommandAllocator!");
-			return false;
-		}
-#ifdef _DEBUG
-		SetObjectName(DX12RPDC, DX12RPDC->m_CommandAllocators[i], ("CommandAllocator_" + std::to_string(i)).c_str());
-#endif // _DEBUG
-
-		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_Name.c_str(), " CommandAllocator has been created.");
-	}
-
-	return true;
-}
-
-bool DX12Helper::CreateCommandLists(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device)
+bool DX12Helper::CreateCommandLists(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device, const std::vector<ID3D12CommandAllocator*>& commandAllocators)
 {
 	for (size_t i = 0; i < DX12RPDC->m_CommandLists.size(); i++)
 	{
 		auto l_CommandList = reinterpret_cast<DX12CommandList*>(DX12RPDC->m_CommandLists[i]);
 
-		auto l_HResult = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, DX12RPDC->m_CommandAllocators[i], NULL, IID_PPV_ARGS(&l_CommandList->m_GraphicsCommandList));
+		auto l_HResult = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocators[i], NULL, IID_PPV_ARGS(&l_CommandList->m_GraphicsCommandList));
 		if (FAILED(l_HResult))
 		{
 			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_Name.c_str(), " Can't create CommandList!");

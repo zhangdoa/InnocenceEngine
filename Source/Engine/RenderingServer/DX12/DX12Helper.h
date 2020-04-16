@@ -50,8 +50,7 @@ namespace DX12Helper
 	bool CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device);
 	bool CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device);
 	bool CreateCommandQueue(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device);
-	bool CreateCommandAllocators(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device);
-	bool CreateCommandLists(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device);
+	bool CreateCommandLists(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device, const std::vector<ID3D12CommandAllocator*>& commandAllocators);
 	bool CreateSyncPrimitives(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device);
 
 	D3D12_COMPARISON_FUNC GetComparisionFunction(ComparisionFunction comparisionFunction);

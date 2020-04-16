@@ -11,4 +11,5 @@ public:
 	uint32_t m_PixelDataSize = 0;
 	D3D12_RESOURCE_STATES m_WriteState;
 	D3D12_RESOURCE_STATES m_ReadState;
+	D3D12_RESOURCE_STATES m_CurrentState;
 };
