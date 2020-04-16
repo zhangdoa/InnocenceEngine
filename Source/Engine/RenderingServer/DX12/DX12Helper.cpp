@@ -13,12 +13,12 @@ namespace DX12Helper
 	const wchar_t* m_shaderRelativePath = L"..//Res//Shaders//HLSL//";
 }
 
-ID3D12GraphicsCommandList* DX12Helper::BeginSingleTimeCommands(ID3D12Device* device, ID3D12CommandAllocator* globalCommandAllocator)
+ComPtr<ID3D12GraphicsCommandList> DX12Helper::BeginSingleTimeCommands(ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandAllocator> globalCommandAllocator)
 {
-	ID3D12GraphicsCommandList* l_commandList;
+	ComPtr<ID3D12GraphicsCommandList> l_commandList;
 
 	// Create a basic command list.
-	auto l_HResult = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, globalCommandAllocator, NULL, IID_PPV_ARGS(&l_commandList));
+	auto l_HResult = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, globalCommandAllocator.Get(), NULL, IID_PPV_ARGS(&l_commandList));
 	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create command list!");
@@ -28,7 +28,7 @@ ID3D12GraphicsCommandList* DX12Helper::BeginSingleTimeCommands(ID3D12Device* dev
 	return l_commandList;
 }
 
-bool DX12Helper::EndSingleTimeCommands(ID3D12GraphicsCommandList* commandList, ID3D12Device* device, ID3D12CommandQueue* globalCommandQueue)
+bool DX12Helper::EndSingleTimeCommands(ComPtr<ID3D12GraphicsCommandList> commandList, ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandQueue> globalCommandQueue)
 {
 	auto l_HResult = commandList->Close();
 	if (FAILED(l_HResult))
@@ -36,7 +36,7 @@ bool DX12Helper::EndSingleTimeCommands(ID3D12GraphicsCommandList* commandList, I
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't close the command list for single command!");
 	}
 
-	ID3D12Fence1* l_uploadFinishFence;
+	ComPtr<ID3D12Fence1> l_uploadFinishFence;
 	l_HResult = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&l_uploadFinishFence));
 	if (FAILED(l_HResult))
 	{
@@ -49,21 +49,19 @@ bool DX12Helper::EndSingleTimeCommands(ID3D12GraphicsCommandList* commandList, I
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create fence event for single command!");
 	}
 
-	ID3D12CommandList* ppCommandLists[] = { commandList };
+	ID3D12CommandList* ppCommandLists[] = { commandList.Get() };
 	globalCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-	globalCommandQueue->Signal(l_uploadFinishFence, 1);
+	globalCommandQueue->Signal(l_uploadFinishFence.Get(), 1);
 	l_uploadFinishFence->SetEventOnCompletion(1, l_fenceEvent);
 	WaitForSingleObject(l_fenceEvent, INFINITE);
 	CloseHandle(l_fenceEvent);
 
-	commandList->Release();
-
 	return true;
 }
 
-ID3D12Resource* DX12Helper::CreateUploadHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, ID3D12Device* device, const char* name)
+ComPtr<ID3D12Resource> DX12Helper::CreateUploadHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, ComPtr<ID3D12Device> device, const char* name)
 {
-	ID3D12Resource* l_uploadHeapBuffer;
+	ComPtr<ID3D12Resource> l_uploadHeapBuffer;
 
 	auto l_HResult = device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
@@ -82,9 +80,9 @@ ID3D12Resource* DX12Helper::CreateUploadHeapBuffer(D3D12_RESOURCE_DESC* resource
 	return l_uploadHeapBuffer;
 }
 
-ID3D12Resource* DX12Helper::CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, ID3D12Device* device, D3D12_CLEAR_VALUE* clearValue, const char* name)
+ComPtr<ID3D12Resource> DX12Helper::CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, ComPtr<ID3D12Device> device, D3D12_CLEAR_VALUE* clearValue, const char* name)
 {
-	ID3D12Resource* l_defaultHeapBuffer;
+	ComPtr<ID3D12Resource> l_defaultHeapBuffer;
 
 	auto l_HResult = device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
@@ -103,9 +101,9 @@ ID3D12Resource* DX12Helper::CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourc
 	return l_defaultHeapBuffer;
 }
 
-ID3D12Resource* DX12Helper::CreateReadBackHeapBuffer(UINT64 size, ID3D12Device* device, const char* name)
+ComPtr<ID3D12Resource> DX12Helper::CreateReadBackHeapBuffer(UINT64 size, ComPtr<ID3D12Device> device, const char* name)
 {
-	ID3D12Resource* l_readBackHeapBuffer;
+	ComPtr<ID3D12Resource> l_readBackHeapBuffer;
 
 	auto l_HResult = device->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
@@ -811,7 +809,7 @@ bool DX12Helper::CreateResourcesBinder(DX12RenderPassDataComponent* DX12RPDC, IR
 	return true;
 }
 
-bool DX12Helper::CreateViews(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device)
+bool DX12Helper::CreateViews(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12Device> device)
 {
 	if (DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
 	{
@@ -857,7 +855,7 @@ bool DX12Helper::CreateViews(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device
 		for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 		{
 			auto l_ResourceHandle = reinterpret_cast<DX12TextureDataComponent*>(DX12RPDC->m_RenderTargets[i])->m_ResourceHandle;
-			device->CreateRenderTargetView(l_ResourceHandle, &DX12RPDC->m_RTVDesc, DX12RPDC->m_RTVDescriptorCPUHandles[i]);
+			device->CreateRenderTargetView(l_ResourceHandle.Get(), &DX12RPDC->m_RTVDesc, DX12RPDC->m_RTVDescriptorCPUHandles[i]);
 		}
 
 		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_Name.c_str(), " RTV has been created.");
@@ -891,7 +889,7 @@ bool DX12Helper::CreateViews(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device
 		DX12RPDC->m_DSVDesc = GetDSVDesc(DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc, DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc);
 
 		auto l_ResourceHandle = reinterpret_cast<DX12TextureDataComponent*>(DX12RPDC->m_DepthStencilRenderTarget)->m_ResourceHandle;
-		device->CreateDepthStencilView(l_ResourceHandle, &DX12RPDC->m_DSVDesc, DX12RPDC->m_DSVDescriptorCPUHandle);
+		device->CreateDepthStencilView(l_ResourceHandle.Get(), &DX12RPDC->m_DSVDesc, DX12RPDC->m_DSVDescriptorCPUHandle);
 
 		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_Name.c_str(), " DSV has been created.");
 	}
@@ -899,7 +897,7 @@ bool DX12Helper::CreateViews(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device
 	return true;
 }
 
-bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device)
+bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12Device> device)
 {
 	std::vector<CD3DX12_ROOT_PARAMETER1> l_rootParameters(DX12RPDC->m_ResourceBinderLayoutDescs.size());
 
@@ -1019,8 +1017,8 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D
 	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC l_rootSigDesc((uint32_t)l_rootParameters.size(), l_rootParameters.data());
 	l_rootSigDesc.Desc_1_1.Flags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
-	ID3DBlob* l_signature = 0;
-	ID3DBlob* l_error = 0;
+	ComPtr<ID3DBlob> l_signature = 0;
+	ComPtr<ID3DBlob> l_error = 0;
 
 	auto l_HResult = D3D12SerializeVersionedRootSignature(&l_rootSigDesc, &l_signature, &l_error);
 
@@ -1044,7 +1042,6 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D
 	}
 
 	l_HResult = device->CreateRootSignature(0, l_signature->GetBufferPointer(), l_signature->GetBufferSize(), IID_PPV_ARGS(&DX12RPDC->m_RootSignature));
-	l_signature->Release();
 
 	if (FAILED(l_HResult))
 	{
@@ -1060,7 +1057,7 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D
 	return true;
 }
 
-bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device)
+bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12Device> device)
 {
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(DX12RPDC->m_PipelineStateObject);
 	auto l_DX12SPC = reinterpret_cast<DX12ShaderProgramComponent*>(DX12RPDC->m_ShaderProgram);
@@ -1072,7 +1069,7 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* 
 		GenerateRasterizerStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
 		GenerateViewportStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
 
-		l_PSO->m_GraphicsPSODesc.pRootSignature = DX12RPDC->m_RootSignature;
+		l_PSO->m_GraphicsPSODesc.pRootSignature = DX12RPDC->m_RootSignature.Get();
 
 		D3D12_INPUT_ELEMENT_DESC l_polygonLayout[5];
 		uint32_t l_numElements;
@@ -1185,7 +1182,7 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* 
 	}
 	else
 	{
-		l_PSO->m_ComputePSODesc.pRootSignature = DX12RPDC->m_RootSignature;
+		l_PSO->m_ComputePSODesc.pRootSignature = DX12RPDC->m_RootSignature.Get();
 
 		if (l_DX12SPC->m_CSBuffer)
 		{
@@ -1213,7 +1210,7 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* 
 	return true;
 }
 
-bool DX12Helper::CreateCommandQueue(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device)
+bool DX12Helper::CreateCommandQueue(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12Device> device)
 {
 	auto l_CommandQueue = reinterpret_cast<DX12CommandQueue*>(DX12RPDC->m_CommandQueue);
 
@@ -1239,13 +1236,13 @@ bool DX12Helper::CreateCommandQueue(DX12RenderPassDataComponent* DX12RPDC, ID3D1
 	return true;
 }
 
-bool DX12Helper::CreateCommandLists(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device, const std::vector<ID3D12CommandAllocator*>& commandAllocators)
+bool DX12Helper::CreateCommandLists(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12Device> device, const std::vector<ComPtr<ID3D12CommandAllocator>>& commandAllocators)
 {
 	for (size_t i = 0; i < DX12RPDC->m_CommandLists.size(); i++)
 	{
 		auto l_CommandList = reinterpret_cast<DX12CommandList*>(DX12RPDC->m_CommandLists[i]);
 
-		auto l_HResult = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocators[i], NULL, IID_PPV_ARGS(&l_CommandList->m_GraphicsCommandList));
+		auto l_HResult = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocators[i].Get(), NULL, IID_PPV_ARGS(&l_CommandList->m_GraphicsCommandList));
 		if (FAILED(l_HResult))
 		{
 			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_Name.c_str(), " Can't create CommandList!");
@@ -1263,7 +1260,7 @@ bool DX12Helper::CreateCommandLists(DX12RenderPassDataComponent* DX12RPDC, ID3D1
 	return true;
 }
 
-bool DX12Helper::CreateSyncPrimitives(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device)
+bool DX12Helper::CreateSyncPrimitives(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12Device> device)
 {
 	for (size_t i = 0; i < DX12RPDC->m_Fences.size(); i++)
 	{
@@ -1600,12 +1597,11 @@ bool DX12Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderStage shaderStage, const
 	UINT l_compileFlags = 0;
 #endif
 
-	ID3D10Blob* l_errorMessage = 0;
+	ComPtr<ID3D10Blob> l_errorMessage = 0;
 	auto l_workingDir = g_pModuleManager->getFileSystem()->getWorkingDirectory();
 	auto l_workingDirW = std::wstring(l_workingDir.begin(), l_workingDir.end());
 	auto l_shadeFilePathW = std::wstring(shaderFilePath.begin(), shaderFilePath.end());
-	auto l_HResult = D3DCompileFromFile((l_workingDirW + m_shaderRelativePath + l_shadeFilePathW).c_str(), NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", l_shaderTypeName, l_compileFlags, 0,
-		rhs, &l_errorMessage);
+	auto l_HResult = D3DCompileFromFile((l_workingDirW + m_shaderRelativePath + l_shadeFilePathW).c_str(), NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", l_shaderTypeName, l_compileFlags, 0, rhs, &l_errorMessage);
 
 	if (FAILED(l_HResult))
 	{
@@ -1623,11 +1619,6 @@ bool DX12Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderStage shaderStage, const
 			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't find ", shaderFilePath.c_str(), "!");
 		}
 		return false;
-	}
-
-	if (l_errorMessage)
-	{
-		l_errorMessage->Release();
 	}
 
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", shaderFilePath.c_str(), " has been compiled.");

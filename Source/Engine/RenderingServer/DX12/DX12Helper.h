@@ -7,7 +7,7 @@
 namespace DX12Helper
 {
 	template <typename U, typename T>
-	bool SetObjectName(U* owner, T* rhs, const char* objectType)
+	bool SetObjectName(U* owner, ComPtr<T> rhs, const char* objectType)
 	{
 		auto l_Name = std::string(owner->m_Name.c_str());
 		l_Name += "_";
@@ -22,11 +22,11 @@ namespace DX12Helper
 		return true;
 	}
 
-	ID3D12GraphicsCommandList* BeginSingleTimeCommands(ID3D12Device* device, ID3D12CommandAllocator* globalCommandAllocator);
-	bool EndSingleTimeCommands(ID3D12GraphicsCommandList* commandList, ID3D12Device* device, ID3D12CommandQueue* globalCommandQueue);
-	ID3D12Resource* CreateUploadHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, ID3D12Device* device, const char* name = "");
-	ID3D12Resource* CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, ID3D12Device* device, D3D12_CLEAR_VALUE* clearValue = nullptr, const char* name = "");
-	ID3D12Resource* CreateReadBackHeapBuffer(UINT64 size, ID3D12Device* device, const char* name = "");
+	ComPtr<ID3D12GraphicsCommandList> BeginSingleTimeCommands(ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandAllocator> globalCommandAllocator);
+	bool EndSingleTimeCommands(ComPtr<ID3D12GraphicsCommandList> commandList, ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandQueue> globalCommandQueue);
+	ComPtr<ID3D12Resource> CreateUploadHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, ComPtr<ID3D12Device> device, const char* name = "");
+	ComPtr<ID3D12Resource> CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC* resourceDesc, ComPtr<ID3D12Device> device, D3D12_CLEAR_VALUE* clearValue = nullptr, const char* name = "");
+	ComPtr<ID3D12Resource> CreateReadBackHeapBuffer(UINT64 size, ComPtr<ID3D12Device> device, const char* name = "");
 
 	D3D12_RESOURCE_DESC GetDX12TextureDesc(TextureDesc textureDesc);
 	DXGI_FORMAT GetTextureFormat(TextureDesc textureDesc);
@@ -46,12 +46,12 @@ namespace DX12Helper
 	bool ReserveRenderTargets(DX12RenderPassDataComponent* DX12RPDC, IRenderingServer* renderingServer);
 	bool CreateRenderTargets(DX12RenderPassDataComponent* DX12RPDC, IRenderingServer* renderingServer);
 	bool CreateResourcesBinder(DX12RenderPassDataComponent* DX12RPDC, IRenderingServer* renderingServer);
-	bool CreateViews(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device);
-	bool CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device);
-	bool CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device);
-	bool CreateCommandQueue(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device);
-	bool CreateCommandLists(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device, const std::vector<ID3D12CommandAllocator*>& commandAllocators);
-	bool CreateSyncPrimitives(DX12RenderPassDataComponent* DX12RPDC, ID3D12Device* device);
+	bool CreateViews(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12Device> device);
+	bool CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12Device> device);
+	bool CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12Device> device);
+	bool CreateCommandQueue(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12Device> device);
+	bool CreateCommandLists(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12Device> device, const std::vector<ComPtr<ID3D12CommandAllocator>>& commandAllocators);
+	bool CreateSyncPrimitives(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12Device> device);
 
 	D3D12_COMPARISON_FUNC GetComparisionFunction(ComparisionFunction comparisionFunction);
 	D3D12_STENCIL_OP GetStencilOperation(StencilOperation stencilOperation);

@@ -11,6 +11,7 @@
 
 #include "DX12Helper.h"
 #include <DXProgrammableCapture.h>
+#include <DXGIDebug.h>
 
 using namespace DX12Helper;
 
@@ -61,40 +62,40 @@ namespace DX12RenderingServerNS
 	int32_t m_videoCardMemory = 0;
 	char m_videoCardDescription[128];
 
-	ID3D12Debug1* m_debugInterface = 0;
-	IDXGraphicsAnalysis* m_graphicsAnalysis = 0;
+	ComPtr<ID3D12Debug1> m_debugInterface = 0;
+	ComPtr<IDXGraphicsAnalysis> m_graphicsAnalysis = 0;
 
-	IDXGIFactory4* m_factory = 0;
+	ComPtr<IDXGIFactory4> m_factory = 0;
 
 	DXGI_ADAPTER_DESC m_adapterDesc = {};
-	IDXGIAdapter4* m_adapter = 0;
-	IDXGIOutput1* m_adapterOutput = 0;
+	ComPtr<IDXGIAdapter4> m_adapter = 0;
+	ComPtr<IDXGIOutput1> m_adapterOutput = 0;
 
-	ID3D12Device2* m_device = 0;
+	ComPtr<ID3D12Device2> m_device = 0;
 
-	ID3D12CommandAllocator* m_globalCommandAllocator = 0;
+	ComPtr<ID3D12CommandAllocator> m_globalCommandAllocator = 0;
 	D3D12_COMMAND_QUEUE_DESC m_globalCommandQueueDesc = {};
-	ID3D12CommandQueue* m_globalCommandQueue = 0;
+	ComPtr<ID3D12CommandQueue> m_globalCommandQueue = 0;
 
 	DXGI_SWAP_CHAIN_DESC1 m_swapChainDesc = {};
-	IDXGISwapChain4* m_swapChain = 0;
+	ComPtr<IDXGISwapChain4> m_swapChain = 0;
 	const uint32_t m_swapChainImageCount = 2;
-	std::vector<ID3D12Resource*> m_swapChainImages(m_swapChainImageCount);
-	std::vector<ID3D12CommandAllocator*> m_graphicsCommandAllocators(m_swapChainImageCount);
+	std::vector<ComPtr<ID3D12Resource>> m_swapChainImages(m_swapChainImageCount);
+	std::vector<ComPtr<ID3D12CommandAllocator>> m_graphicsCommandAllocators(m_swapChainImageCount);
 
-	ID3D12DescriptorHeap* m_CSUHeap = 0;
+	ComPtr<ID3D12DescriptorHeap> m_CSUHeap = 0;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_initialCSUCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_initialCSUGPUHandle;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_currentCSUCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_currentCSUGPUHandle;
 
-	ID3D12DescriptorHeap* m_ShaderNonVisibleCSUHeap = 0;
+	ComPtr<ID3D12DescriptorHeap> m_ShaderNonVisibleCSUHeap = 0;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_initialShaderNonVisibleCSUCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_initialShaderNonVisibleCSUGPUHandle;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_currentShaderNonVisibleCSUCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_currentShaderNonVisibleCSUGPUHandle;
 
-	ID3D12DescriptorHeap* m_samplerHeap = 0;
+	ComPtr<ID3D12DescriptorHeap> m_samplerHeap = 0;
 	D3D12_DESCRIPTOR_HEAP_DESC m_samplerHeapDesc = {};
 	D3D12_CPU_DESCRIPTOR_HANDLE m_initialSamplerCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_initialSamplerGPUHandle;
@@ -113,7 +114,7 @@ bool CheckWriteState(DX12TextureDataComponent* rhs, DX12CommandList* commandList
 	{
 		commandList->m_GraphicsCommandList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(
-				rhs->m_ResourceHandle, rhs->m_CurrentState, rhs->m_WriteState));
+				rhs->m_ResourceHandle.Get(), rhs->m_CurrentState, rhs->m_WriteState));
 		rhs->m_CurrentState = rhs->m_WriteState;
 		return true;
 	}
@@ -127,7 +128,7 @@ bool CheckReadState(DX12TextureDataComponent* rhs, DX12CommandList* commandList)
 	{
 		commandList->m_GraphicsCommandList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(
-				rhs->m_ResourceHandle, rhs->m_CurrentState, rhs->m_ReadState));
+				rhs->m_ResourceHandle.Get(), rhs->m_CurrentState, rhs->m_ReadState));
 		rhs->m_CurrentState = rhs->m_ReadState;
 		return true;
 	}
@@ -172,7 +173,12 @@ bool DX12RenderingServerNS::CreateDebugCallback()
 bool DX12RenderingServerNS::CreatePhysicalDevices()
 {
 	// Create a DirectX graphics interface factory.
-	auto l_HResult = CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&m_factory));
+	UINT l_DXGIFlag = 0;
+#ifdef _DEBUG
+	l_DXGIFlag |= DXGI_CREATE_FACTORY_DEBUG;
+#endif // _DEBUG
+
+	auto l_HResult = CreateDXGIFactory2(l_DXGIFlag, IID_PPV_ARGS(&m_factory));
 	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create DXGI factory!");
@@ -297,7 +303,7 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 	auto featureLevel = D3D_FEATURE_LEVEL_12_1;
 
 	// Create the Direct3D 12 device.
-	l_HResult = D3D12CreateDevice(m_adapter, featureLevel, IID_PPV_ARGS(&m_device));
+	l_HResult = D3D12CreateDevice(m_adapter.Get(), featureLevel, IID_PPV_ARGS(&m_device));
 	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create a DirectX 12.1 device. The default video card does not support DirectX 12.1!");
@@ -308,7 +314,7 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: D3D device has been created.");
 
 	// Set debug report severity
-	ID3D12InfoQueue* l_pInfoQueue;
+	ComPtr<ID3D12InfoQueue> l_pInfoQueue;
 	l_HResult = m_device->QueryInterface(IID_PPV_ARGS(&l_pInfoQueue));
 
 	l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
@@ -607,7 +613,7 @@ bool DX12RenderingServer::Initialize()
 
 		IDXGISwapChain1* l_swapChain1;
 		auto l_hResult = m_factory->CreateSwapChainForHwnd(
-			l_commandQueue->m_CommandQueue,
+			l_commandQueue->m_CommandQueue.Get(),
 			WinWindowSystemComponent::get().m_hwnd,
 			&m_swapChainDesc,
 			nullptr,
@@ -682,6 +688,19 @@ bool DX12RenderingServer::Initialize()
 
 bool DX12RenderingServer::Terminate()
 {
+	DeleteSamplerDataComponent(m_SwapChainSDC);
+	DeleteShaderProgramComponent(m_SwapChainSPC);
+	//DeleteRenderPassDataComponent(m_SwapChainRPDC);
+
+#ifdef _DEBUG
+	IDXGIDebug1* pDebug = nullptr;
+	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&pDebug))))
+	{
+		pDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+		pDebug->Release();
+	}
+#endif
+
 	m_ObjectStatus = ObjectStatus::Terminated;
 	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer has been terminated.");
 
@@ -740,12 +759,12 @@ bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent* rhs)
 	l_verticesSubResourceData.pData = &l_rhs->m_vertices[0];
 	l_verticesSubResourceData.RowPitch = l_verticesDataSize;
 	l_verticesSubResourceData.SlicePitch = 1;
-	UpdateSubresources(l_commandList, l_rhs->m_vertexBuffer, l_vertexUploadHeapBuffer, 0, 0, 1, &l_verticesSubResourceData);
+	UpdateSubresources(l_commandList.Get(), l_rhs->m_vertexBuffer.Get(), l_vertexUploadHeapBuffer.Get(), 0, 0, 1, &l_verticesSubResourceData);
 
 	//  upload heap ----> default heap
 	l_commandList->ResourceBarrier(
 		1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_vertexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+		&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_vertexBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 
 	// Initialize the vertex buffer view.
 	l_rhs->m_VBV.BufferLocation = l_rhs->m_vertexBuffer->GetGPUVirtualAddress();
@@ -776,17 +795,14 @@ bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent* rhs)
 	l_indicesSubResourceData.pData = &l_rhs->m_indices[0];
 	l_indicesSubResourceData.RowPitch = l_indicesDataSize;
 	l_indicesSubResourceData.SlicePitch = 1;
-	UpdateSubresources(l_commandList, l_rhs->m_indexBuffer, l_indexUploadHeapBuffer, 0, 0, 1, &l_indicesSubResourceData);
+	UpdateSubresources(l_commandList.Get(), l_rhs->m_indexBuffer.Get(), l_indexUploadHeapBuffer.Get(), 0, 0, 1, &l_indicesSubResourceData);
 
 	//  upload heap ----> default heap
 	l_commandList->ResourceBarrier(
 		1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_indexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER));
+		&CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_indexBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER));
 
 	EndSingleTimeCommands(l_commandList, m_device, m_globalCommandQueue);
-
-	l_vertexUploadHeapBuffer->Release();
-	l_indexUploadHeapBuffer->Release();
 
 	// Initialize the index buffer view.
 	l_rhs->m_IBV.Format = DXGI_FORMAT_R32_UINT;
@@ -870,7 +886,7 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent* r
 		SetObjectName(l_rhs, l_rhs->m_ResourceHandle, "Texture");
 #endif // _DEBUG
 
-		std::vector<ID3D12Resource*> l_uploadBuffers;
+		std::vector<ComPtr<ID3D12Resource>> l_uploadBuffers;
 
 		auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
 
@@ -879,7 +895,7 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent* r
 		{
 			if (l_rhs->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap)
 			{
-				UINT64 l_uploadHeapBufferSize = GetRequiredIntermediateSize(l_rhs->m_ResourceHandle, 0, 6);
+				UINT64 l_uploadHeapBufferSize = GetRequiredIntermediateSize(l_rhs->m_ResourceHandle.Get(), 0, 6);
 
 				for (uint32_t i = 0; i < 6; i++)
 				{
@@ -892,13 +908,13 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent* r
 
 					auto l_resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_uploadHeapBufferSize);
 					auto l_uploadHeapBuffer = CreateUploadHeapBuffer(&l_resourceDesc, m_device);
-					UpdateSubresources(l_commandList, l_rhs->m_ResourceHandle, l_uploadHeapBuffer, 0, i, 1, &l_textureSubResourceData);
+					UpdateSubresources(l_commandList.Get(), l_rhs->m_ResourceHandle.Get(), l_uploadHeapBuffer.Get(), 0, i, 1, &l_textureSubResourceData);
 					l_uploadBuffers.emplace_back(l_uploadHeapBuffer);
 				}
 			}
 			else
 			{
-				UINT64 l_uploadHeapBufferSize = GetRequiredIntermediateSize(l_rhs->m_ResourceHandle, 0, 1);
+				UINT64 l_uploadHeapBufferSize = GetRequiredIntermediateSize(l_rhs->m_ResourceHandle.Get(), 0, 1);
 				D3D12_SUBRESOURCE_DATA l_textureSubResourceData = {};
 				l_textureSubResourceData.pData = l_rhs->m_TextureData;
 				l_textureSubResourceData.RowPitch = l_rhs->m_TextureDesc.Width * l_rhs->m_PixelDataSize;
@@ -906,20 +922,15 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent* r
 
 				auto l_resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_uploadHeapBufferSize);
 				auto l_uploadHeapBuffer = CreateUploadHeapBuffer(&l_resourceDesc, m_device);
-				UpdateSubresources(l_commandList, l_rhs->m_ResourceHandle, l_uploadHeapBuffer, 0, 0, 1, &l_textureSubResourceData);
+				UpdateSubresources(l_commandList.Get(), l_rhs->m_ResourceHandle.Get(), l_uploadHeapBuffer.Get(), 0, 0, 1, &l_textureSubResourceData);
 				l_uploadBuffers.emplace_back(l_uploadHeapBuffer);
 			}
 		}
 
 		//  upload heap ----> default heap
-		l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_ResourceHandle, D3D12_RESOURCE_STATE_COPY_DEST, l_rhs->m_CurrentState));
+		l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_ResourceHandle.Get(), D3D12_RESOURCE_STATE_COPY_DEST, l_rhs->m_CurrentState));
 
 		EndSingleTimeCommands(l_commandList, m_device, m_globalCommandQueue);
-
-		for (auto i : l_uploadBuffers)
-		{
-			i->Release();
-		}
 
 		auto l_resourceBinder = addResourcesBinder();
 		l_resourceBinder->m_TextureSRV = CreateSRV(l_rhs);
@@ -1135,7 +1146,7 @@ bool DX12RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 			l_rhs->m_DefaultHeapResourceHandle = CreateDefaultHeapBuffer(&l_defaultHeapResourceDesc, m_device);
 
 			auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
-			l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapResourceHandle, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+			l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapResourceHandle.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 			EndSingleTimeCommands(l_commandList, m_device, m_globalCommandQueue);
 
 #ifdef _DEBUG
@@ -1170,10 +1181,7 @@ bool DX12RenderingServer::DeleteMeshDataComponent(MeshDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12MeshDataComponent*>(rhs);
 
-	l_rhs->m_vertexBuffer->Release();
-	l_rhs->m_indexBuffer->Release();
-
-	m_MeshDataComponentPool->Destroy(l_rhs);
+	InnoMemory::Destroy(m_MeshDataComponentPool, l_rhs);
 
 	m_initializedMeshes.erase(l_rhs);
 
@@ -1184,14 +1192,12 @@ bool DX12RenderingServer::DeleteTextureDataComponent(TextureDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12TextureDataComponent*>(rhs);
 
-	l_rhs->m_ResourceHandle->Release();
-
 	if (l_rhs->m_ResourceBinder)
 	{
-		m_ResourcesBinderPool->Destroy(l_rhs->m_ResourceBinder);
+		InnoMemory::Destroy(m_ResourcesBinderPool, l_rhs->m_ResourceBinder);
 	}
 
-	m_TextureDataComponentPool->Destroy(l_rhs);
+	InnoMemory::Destroy(m_TextureDataComponentPool, l_rhs);
 
 	m_initializedTextures.erase(l_rhs);
 
@@ -1202,7 +1208,7 @@ bool DX12RenderingServer::DeleteMaterialDataComponent(MaterialDataComponent* rhs
 {
 	auto l_rhs = reinterpret_cast<DX12MaterialDataComponent*>(rhs);
 
-	m_MaterialDataComponentPool->Destroy(l_rhs);
+	InnoMemory::Destroy(m_MaterialDataComponentPool, l_rhs);
 
 	m_initializedMaterials.erase(l_rhs);
 
@@ -1214,9 +1220,7 @@ bool DX12RenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent*
 	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(l_rhs->m_PipelineStateObject);
 
-	l_PSO->m_PSO->Release();
-
-	m_PSOPool->Destroy(l_PSO);
+	InnoMemory::Destroy(m_PSOPool, l_PSO);
 
 	if (l_rhs->m_DepthStencilRenderTarget)
 	{
@@ -1226,10 +1230,10 @@ bool DX12RenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent*
 	for (size_t i = 0; i < l_rhs->m_RenderTargets.size(); i++)
 	{
 		DeleteTextureDataComponent(l_rhs->m_RenderTargets[i]);
-		m_ResourcesBinderPool->Destroy(l_rhs->m_RenderTargetsResourceBinders[i]);
+		InnoMemory::Destroy(m_ResourcesBinderPool, l_rhs->m_RenderTargetsResourceBinders[i]);
 	}
 
-	m_RenderPassDataComponentPool->Destroy(l_rhs);
+	InnoMemory::Destroy(m_RenderPassDataComponentPool, l_rhs);
 
 	return true;
 }
@@ -1238,32 +1242,7 @@ bool DX12RenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent* r
 {
 	auto l_rhs = reinterpret_cast<DX12ShaderProgramComponent*>(rhs);
 
-	if (l_rhs->m_VSBuffer)
-	{
-		l_rhs->m_VSBuffer->Release();
-	}
-	if (l_rhs->m_HSBuffer)
-	{
-		l_rhs->m_HSBuffer->Release();
-	}
-	if (l_rhs->m_DSBuffer)
-	{
-		l_rhs->m_DSBuffer->Release();
-	}
-	if (l_rhs->m_GSBuffer)
-	{
-		l_rhs->m_GSBuffer->Release();
-	}
-	if (l_rhs->m_PSBuffer)
-	{
-		l_rhs->m_PSBuffer->Release();
-	}
-	if (l_rhs->m_CSBuffer)
-	{
-		l_rhs->m_CSBuffer->Release();
-	}
-
-	m_ShaderProgramComponentPool->Destroy(l_rhs);
+	InnoMemory::Destroy(m_ShaderProgramComponentPool, l_rhs);
 
 	return true;
 }
@@ -1274,10 +1253,10 @@ bool DX12RenderingServer::DeleteSamplerDataComponent(SamplerDataComponent* rhs)
 
 	if (l_rhs->m_ResourceBinder)
 	{
-		m_ResourcesBinderPool->Destroy(l_rhs->m_ResourceBinder);
+		InnoMemory::Destroy(m_ResourcesBinderPool, l_rhs->m_ResourceBinder);
 	}
 
-	m_SamplerDataComponentPool->Destroy(l_rhs);
+	InnoMemory::Destroy(m_SamplerDataComponentPool, l_rhs);
 
 	return false;
 }
@@ -1286,22 +1265,12 @@ bool DX12RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent* r
 {
 	auto l_rhs = reinterpret_cast<DX12GPUBufferDataComponent*>(rhs);
 
-	if (l_rhs->m_DefaultHeapResourceHandle)
-	{
-		l_rhs->m_DefaultHeapResourceHandle->Release();
-	}
-
-	if (l_rhs->m_UploadHeapResourceHandle)
-	{
-		l_rhs->m_UploadHeapResourceHandle->Release();
-	}
-
 	if (l_rhs->m_ResourceBinder)
 	{
-		m_ResourcesBinderPool->Destroy(l_rhs->m_ResourceBinder);
+		InnoMemory::Destroy(m_ResourcesBinderPool, l_rhs->m_ResourceBinder);
 	}
 
-	m_GPUBufferDataComponentPool->Destroy(l_rhs);
+	InnoMemory::Destroy(m_GPUBufferDataComponentPool, l_rhs);
 
 	return true;
 }
@@ -1322,13 +1291,11 @@ bool DX12RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponen
 	{
 		auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
 
-		l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapResourceHandle, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_DEST));
-		l_commandList->CopyResource(l_rhs->m_DefaultHeapResourceHandle, l_rhs->m_UploadHeapResourceHandle);
-		l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapResourceHandle, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+		l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapResourceHandle.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_DEST));
+		l_commandList->CopyResource(l_rhs->m_DefaultHeapResourceHandle.Get(), l_rhs->m_UploadHeapResourceHandle.Get());
+		l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapResourceHandle.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 		EndSingleTimeCommands(l_commandList, m_device, m_globalCommandQueue);
-
-		m_globalCommandAllocator->Reset();
 	}
 
 	return true;
@@ -1342,7 +1309,7 @@ bool DX12RenderingServer::CommandListBegin(RenderPassDataComponent* rhs, size_t 
 
 	l_rhs->m_CurrentFrame = frameIndex;
 
-	l_commandList->m_GraphicsCommandList->Reset(m_graphicsCommandAllocators[frameIndex], l_PSO->m_PSO);
+	l_commandList->m_GraphicsCommandList->Reset(m_graphicsCommandAllocators[frameIndex].Get(), l_PSO->m_PSO.Get());
 
 	return true;
 }
@@ -1383,14 +1350,14 @@ bool PrepareRenderTargets(DX12RenderPassDataComponent* renderPass, DX12CommandLi
 
 bool PreparePipeline(DX12RenderPassDataComponent* renderPass, DX12CommandList* commandList, DX12PipelineStateObject* PSO)
 {
-	ID3D12DescriptorHeap* l_heaps[] = { m_CSUHeap, m_samplerHeap };
+	ID3D12DescriptorHeap* l_heaps[] = { m_CSUHeap.Get(), m_samplerHeap.Get() };
 
 	commandList->m_GraphicsCommandList->SetDescriptorHeaps(2, l_heaps);
-	commandList->m_GraphicsCommandList->SetPipelineState(PSO->m_PSO);
+	commandList->m_GraphicsCommandList->SetPipelineState(PSO->m_PSO.Get());
 
 	if (renderPass->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
 	{
-		commandList->m_GraphicsCommandList->SetGraphicsRootSignature(renderPass->m_RootSignature);
+		commandList->m_GraphicsCommandList->SetGraphicsRootSignature(renderPass->m_RootSignature.Get());
 		commandList->m_GraphicsCommandList->RSSetViewports(1, &PSO->m_Viewport);
 		commandList->m_GraphicsCommandList->RSSetScissorRects(1, &PSO->m_Scissor);
 
@@ -1420,7 +1387,7 @@ bool PreparePipeline(DX12RenderPassDataComponent* renderPass, DX12CommandList* c
 	}
 	else
 	{
-		commandList->m_GraphicsCommandList->SetComputeRootSignature(renderPass->m_RootSignature);
+		commandList->m_GraphicsCommandList->SetComputeRootSignature(renderPass->m_RootSignature.Get());
 	}
 
 	return true;
@@ -1470,7 +1437,7 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 				l_commandList->m_GraphicsCommandList->ClearUnorderedAccessViewFloat(
 					l_resourceBinder->m_TextureUAV.ShaderNonVisibleGPUHandle,
 					l_resourceBinder->m_TextureUAV.ShaderNonVisibleCPUHandle,
-					l_RT->m_ResourceHandle,
+					l_RT->m_ResourceHandle.Get(),
 					l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor,
 					0,
 					NULL);
@@ -1485,7 +1452,7 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 					l_commandList->m_GraphicsCommandList->ClearUnorderedAccessViewFloat(
 						l_resourceBinder->m_TextureUAV.ShaderNonVisibleGPUHandle,
 						l_resourceBinder->m_TextureUAV.ShaderNonVisibleCPUHandle,
-						l_RT->m_ResourceHandle,
+						l_RT->m_ResourceHandle.Get(),
 						l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor,
 						0,
 						NULL);
@@ -1664,12 +1631,12 @@ bool DX12RenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs)
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 	auto l_fence = reinterpret_cast<DX12Fence*>(l_rhs->m_Fences[l_rhs->m_CurrentFrame]);
 
-	ID3D12CommandList* l_commandLists[] = { l_commandList->m_GraphicsCommandList };
+	ID3D12CommandList* l_commandLists[] = { l_commandList->m_GraphicsCommandList.Get() };
 
 	l_commandQueue->m_CommandQueue->ExecuteCommandLists(1, l_commandLists);
 
 	const UINT64 l_finishedFenceValue = l_fence->m_FenceStatus + 1;
-	l_commandQueue->m_CommandQueue->Signal(l_fence->m_Fence, l_finishedFenceValue);
+	l_commandQueue->m_CommandQueue->Signal(l_fence->m_Fence.Get(), l_finishedFenceValue);
 
 	return true;
 }
@@ -1736,6 +1703,7 @@ bool DX12RenderingServer::Present()
 	WaitForFrame(m_SwapChainRPDC);
 
 	m_graphicsCommandAllocators[m_SwapChainRPDC->m_CurrentFrame]->Reset();
+	m_globalCommandAllocator->Reset();
 
 	m_SwapChainRPDC->m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
 
@@ -1761,27 +1729,27 @@ bool DX12RenderingServer::CopyDepthStencilBuffer(RenderPassDataComponent* src, R
 
 	l_commandList->m_GraphicsCommandList->ResourceBarrier(
 		1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(l_src->m_ResourceHandle,
+		&CD3DX12_RESOURCE_BARRIER::Transition(l_src->m_ResourceHandle.Get(),
 			l_src->m_CurrentState,
 			D3D12_RESOURCE_STATE_COPY_SOURCE));
 
 	l_commandList->m_GraphicsCommandList->ResourceBarrier(
 		1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(l_dest->m_ResourceHandle,
+		&CD3DX12_RESOURCE_BARRIER::Transition(l_dest->m_ResourceHandle.Get(),
 			l_dest->m_CurrentState,
 			D3D12_RESOURCE_STATE_COPY_DEST));
 
-	l_commandList->m_GraphicsCommandList->CopyResource(l_dest->m_ResourceHandle, l_src->m_ResourceHandle);
+	l_commandList->m_GraphicsCommandList->CopyResource(l_dest->m_ResourceHandle.Get(), l_src->m_ResourceHandle.Get());
 
 	l_commandList->m_GraphicsCommandList->ResourceBarrier(
 		1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(l_src->m_ResourceHandle,
+		&CD3DX12_RESOURCE_BARRIER::Transition(l_src->m_ResourceHandle.Get(),
 			D3D12_RESOURCE_STATE_COPY_SOURCE,
 			l_src->m_CurrentState));
 
 	l_commandList->m_GraphicsCommandList->ResourceBarrier(
 		1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(l_dest->m_ResourceHandle,
+		&CD3DX12_RESOURCE_BARRIER::Transition(l_dest->m_ResourceHandle.Get(),
 			D3D12_RESOURCE_STATE_COPY_DEST,
 			l_dest->m_CurrentState));
 
@@ -1797,27 +1765,27 @@ bool DX12RenderingServer::CopyColorBuffer(RenderPassDataComponent* src, size_t s
 
 	l_commandList->m_GraphicsCommandList->ResourceBarrier(
 		1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(l_src->m_ResourceHandle,
+		&CD3DX12_RESOURCE_BARRIER::Transition(l_src->m_ResourceHandle.Get(),
 			l_src->m_CurrentState,
 			D3D12_RESOURCE_STATE_COPY_SOURCE));
 
 	l_commandList->m_GraphicsCommandList->ResourceBarrier(
 		1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(l_dest->m_ResourceHandle,
+		&CD3DX12_RESOURCE_BARRIER::Transition(l_dest->m_ResourceHandle.Get(),
 			l_dest->m_CurrentState,
 			D3D12_RESOURCE_STATE_COPY_DEST));
 
-	l_commandList->m_GraphicsCommandList->CopyResource(l_dest->m_ResourceHandle, l_src->m_ResourceHandle);
+	l_commandList->m_GraphicsCommandList->CopyResource(l_dest->m_ResourceHandle.Get(), l_src->m_ResourceHandle.Get());
 
 	l_commandList->m_GraphicsCommandList->ResourceBarrier(
 		1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(l_src->m_ResourceHandle,
+		&CD3DX12_RESOURCE_BARRIER::Transition(l_src->m_ResourceHandle.Get(),
 			D3D12_RESOURCE_STATE_COPY_SOURCE,
 			l_src->m_CurrentState));
 
 	l_commandList->m_GraphicsCommandList->ResourceBarrier(
 		1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(l_dest->m_ResourceHandle,
+		&CD3DX12_RESOURCE_BARRIER::Transition(l_dest->m_ResourceHandle.Get(),
 			D3D12_RESOURCE_STATE_COPY_DEST,
 			l_dest->m_CurrentState));
 
@@ -1863,7 +1831,7 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 	auto f_readBackCommand = [](DX12TextureDataComponent* l_srcTDC, DX12TextureDataComponent* l_destTDC, DXGI_FORMAT l_format, uint32_t l_pixelDataSize, uint32_t srcIndex, uint32_t destIndex)
 	{
 		D3D12_TEXTURE_COPY_LOCATION l_srcLocation;
-		l_srcLocation.pResource = l_srcTDC->m_ResourceHandle;
+		l_srcLocation.pResource = l_srcTDC->m_ResourceHandle.Get();
 		l_srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 		l_srcLocation.SubresourceIndex = srcIndex;
 
@@ -1872,7 +1840,7 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 		l_rowWidth = l_rowWidth < D3D12_TEXTURE_DATA_PITCH_ALIGNMENT ? D3D12_TEXTURE_DATA_PITCH_ALIGNMENT : l_rowWidth;
 
 		D3D12_TEXTURE_COPY_LOCATION l_destLocation;
-		l_destLocation.pResource = l_destTDC->m_ResourceHandle;
+		l_destLocation.pResource = l_destTDC->m_ResourceHandle.Get();
 		l_destLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
 		l_destLocation.PlacedFootprint.Offset = destIndex * l_srcTDC->m_TextureDesc.Width * l_srcTDC->m_TextureDesc.Height * l_pixelDataSize;
 		l_destLocation.PlacedFootprint.Footprint.Format = l_format;
@@ -1885,7 +1853,7 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 
 		l_commandList->ResourceBarrier(
 			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(l_srcTDC->m_ResourceHandle,
+			&CD3DX12_RESOURCE_BARRIER::Transition(l_srcTDC->m_ResourceHandle.Get(),
 				l_srcTDC->m_CurrentState,
 				D3D12_RESOURCE_STATE_COPY_SOURCE));
 
@@ -1893,7 +1861,7 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 
 		l_commandList->ResourceBarrier(
 			1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(l_srcTDC->m_ResourceHandle,
+			&CD3DX12_RESOURCE_BARRIER::Transition(l_srcTDC->m_ResourceHandle.Get(),
 				D3D12_RESOURCE_STATE_COPY_SOURCE,
 				l_srcTDC->m_CurrentState));
 
@@ -2030,7 +1998,7 @@ DX12SRV DX12RenderingServer::CreateSRV(TextureDataComponent* rhs)
 	m_currentCSUCPUHandle.ptr += l_CSUDescSize;
 	m_currentCSUGPUHandle.ptr += l_CSUDescSize;
 
-	m_device->CreateShaderResourceView(l_rhs->m_ResourceHandle, &l_result.SRVDesc, l_result.CPUHandle);
+	m_device->CreateShaderResourceView(l_rhs->m_ResourceHandle.Get(), &l_result.SRVDesc, l_result.CPUHandle);
 
 	return l_result;
 }
@@ -2055,8 +2023,8 @@ DX12UAV DX12RenderingServer::CreateUAV(TextureDataComponent* rhs)
 	m_currentShaderNonVisibleCSUCPUHandle.ptr += l_CSUDescSize;
 	m_currentShaderNonVisibleCSUGPUHandle.ptr += l_CSUDescSize;
 
-	m_device->CreateUnorderedAccessView(l_rhs->m_ResourceHandle, 0, &l_result.UAVDesc, l_result.ShaderNonVisibleCPUHandle);
-	m_device->CreateUnorderedAccessView(l_rhs->m_ResourceHandle, 0, &l_result.UAVDesc, l_result.ShaderVisibleCPUHandle);
+	m_device->CreateUnorderedAccessView(l_rhs->m_ResourceHandle.Get(), 0, &l_result.UAVDesc, l_result.ShaderNonVisibleCPUHandle);
+	m_device->CreateUnorderedAccessView(l_rhs->m_ResourceHandle.Get(), 0, &l_result.UAVDesc, l_result.ShaderVisibleCPUHandle);
 
 	return l_result;
 }
