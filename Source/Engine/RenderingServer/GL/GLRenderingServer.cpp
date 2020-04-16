@@ -1130,3 +1130,13 @@ bool GLRenderingServer::Resize()
 	m_needResize = true;
 	return true;
 }
+
+bool GLRenderingServer::BeginCapture()
+{
+	return false;
+}
+
+bool GLRenderingServer::EndCapture()
+{
+	return false;
+}

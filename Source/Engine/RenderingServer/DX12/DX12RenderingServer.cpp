@@ -10,6 +10,7 @@
 #include "../../Component/WinWindowSystemComponent.h"
 
 #include "DX12Helper.h"
+#include <DXProgrammableCapture.h>
 
 using namespace DX12Helper;
 
@@ -61,6 +62,7 @@ namespace DX12RenderingServerNS
 	char m_videoCardDescription[128];
 
 	ID3D12Debug1* m_debugInterface = 0;
+	IDXGraphicsAnalysis* m_graphicsAnalysis = 0;
 
 	IDXGIFactory4* m_factory = 0;
 
@@ -128,6 +130,12 @@ bool DX12RenderingServerNS::CreateDebugCallback()
 	//m_debugInterface->SetEnableGPUBasedValidation(true);
 
 	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Debug layer and GPU based validation has been enabled.");
+
+	l_HResult = DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_graphicsAnalysis));
+	if (SUCCEEDED(l_HResult))
+	{
+		InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: PIX attached.");
+	}
 
 	return true;
 }
@@ -2058,4 +2066,26 @@ DX12CBV DX12RenderingServer::CreateCBV(GPUBufferDataComponent* rhs)
 	m_device->CreateConstantBufferView(&l_result.CBVDesc, l_result.CPUHandle);
 
 	return l_result;
+}
+
+bool DX12RenderingServer::BeginCapture()
+{
+	if (m_graphicsAnalysis != nullptr)
+	{
+		m_graphicsAnalysis->BeginCapture();
+		return true;
+	}
+
+	return false;
+}
+
+bool DX12RenderingServer::EndCapture()
+{
+	if (m_graphicsAnalysis != nullptr)
+	{
+		m_graphicsAnalysis->EndCapture();
+		return true;
+	}
+
+	return false;
 }

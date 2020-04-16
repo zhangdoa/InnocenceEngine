@@ -1716,6 +1716,16 @@ bool DX11RenderingServer::Resize()
 	return true;
 }
 
+bool DX11RenderingServer::BeginCapture()
+{
+	return false;
+}
+
+bool DX11RenderingServer::EndCapture()
+{
+	return false;
+}
+
 void* DX11RenderingServer::GetDevice()
 {
 	return m_device;

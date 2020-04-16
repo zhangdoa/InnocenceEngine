@@ -1118,6 +1118,16 @@ bool VKRenderingServer::Resize()
 	return true;
 }
 
+bool VKRenderingServer::BeginCapture()
+{
+	return false;
+}
+
+bool VKRenderingServer::EndCapture()
+{
+	return false;
+}
+
 void* VKRenderingServer::GetVkInstance()
 {
 	return m_instance;
