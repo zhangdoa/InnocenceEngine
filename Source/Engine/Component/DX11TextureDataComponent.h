@@ -1,6 +1,6 @@
 #pragma once
 #include "../Common/InnoType.h"
-#include "../RenderingBackend/DX11RenderingBackend/DX11Headers.h"
+#include "../RenderingServer/DX11/DX11Headers.h"
 #include "TextureDataComponent.h"
 
 typedef struct D3D11_TEXTURE_DESC

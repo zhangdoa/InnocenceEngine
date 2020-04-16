@@ -1,6 +1,6 @@
 #pragma once
 #include "RenderPassDataComponent.h"
-#include "../RenderingBackend/GLRenderingBackend/GLHeaders.h"
+#include "../RenderingServer/GL/GLHeaders.h"
 
 class GLPipelineStateObject : public IPipelineStateObject
 {

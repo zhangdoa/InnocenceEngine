@@ -1,6 +1,6 @@
 #pragma once
 #include "SamplerDataComponent.h"
-#include "../RenderingBackend/GLRenderingBackend/GLHeaders.h"
+#include "../RenderingServer/GL/GLHeaders.h"
 
 class GLSamplerDataComponent : public SamplerDataComponent
 {

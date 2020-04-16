@@ -1,6 +1,6 @@
 #pragma once
 #include "MaterialDataComponent.h"
-#include "../RenderingBackend/GLRenderingBackend/GLHeaders.h"
+#include "../RenderingServer/GL/GLHeaders.h"
 
 class GLMaterialDataComponent : public MaterialDataComponent
 {

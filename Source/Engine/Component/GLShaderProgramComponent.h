@@ -1,6 +1,6 @@
 #pragma once
 #include "ShaderProgramComponent.h"
-#include "../RenderingBackend/GLRenderingBackend/GLHeaders.h"
+#include "../RenderingServer/GL/GLHeaders.h"
 
 class GLShaderProgramComponent : public ShaderProgramComponent
 {

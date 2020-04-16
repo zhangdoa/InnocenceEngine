@@ -1,6 +1,6 @@
 #pragma once
 #include "../IRenderingServer.h"
-#include "../../RenderingBackend/DX12RenderingBackend/DX12Headers.h"
+#include "DX12Headers.h"
 
 class DX12RenderingServer : public IRenderingServer
 {

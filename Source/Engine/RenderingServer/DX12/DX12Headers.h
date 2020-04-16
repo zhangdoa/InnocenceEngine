@@ -1,8 +1,11 @@
 #pragma once
+#include <wrl/client.h>
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <d3dcompiler.h>
 #include "DX12/d3dx12.h"
+
+using namespace Microsoft::WRL;
 
 struct DX12CBV
 {
@@ -25,7 +28,7 @@ struct DX12UAV
 	D3D12_GPU_DESCRIPTOR_HANDLE ShaderVisibleGPUHandle;
 	D3D12_CPU_DESCRIPTOR_HANDLE ShaderNonVisibleCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE ShaderNonVisibleGPUHandle;
-	ID3D12Resource* m_Counter = 0;
+	ComPtr<ID3D12Resource> m_Counter = 0;
 };
 
 struct DX12Sampler

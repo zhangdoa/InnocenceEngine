@@ -1,6 +1,6 @@
 #pragma once
 #include "GPUBufferDataComponent.h"
-#include "../RenderingBackend/DX12RenderingBackend/DX12Headers.h"
+#include "../RenderingServer/DX12/DX12Headers.h"
 
 class DX12GPUBufferDataComponent : public GPUBufferDataComponent
 {

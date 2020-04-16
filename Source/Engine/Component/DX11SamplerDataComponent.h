@@ -1,6 +1,6 @@
 #pragma once
 #include "SamplerDataComponent.h"
-#include "../RenderingBackend/DX11RenderingBackend/DX11Headers.h"
+#include "../RenderingServer/DX11/DX11Headers.h"
 
 class DX11SamplerDataComponent : public SamplerDataComponent
 {

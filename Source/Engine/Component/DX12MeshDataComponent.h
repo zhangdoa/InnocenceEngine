@@ -1,6 +1,6 @@
 #pragma once
 #include "../Common/InnoType.h"
-#include "../RenderingBackend/DX12RenderingBackend/DX12Headers.h"
+#include "../RenderingServer/DX12/DX12Headers.h"
 #include "MeshDataComponent.h"
 
 class DX12MeshDataComponent : public MeshDataComponent

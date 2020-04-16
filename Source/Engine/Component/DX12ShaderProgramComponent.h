@@ -1,6 +1,6 @@
 #pragma once
 #include "ShaderProgramComponent.h"
-#include "../RenderingBackend/DX12RenderingBackend/DX12Headers.h"
+#include "../RenderingServer/DX12/DX12Headers.h"
 
 class DX12ShaderProgramComponent : public ShaderProgramComponent
 {
