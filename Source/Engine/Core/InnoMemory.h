@@ -36,6 +36,7 @@ public:
 	template <typename T>
 	static void Destroy(IObjectPool* objectPool, T* const ptr)
 	{
+		ptr->~T();
 		return objectPool->Destroy(ptr);
 	}
 
