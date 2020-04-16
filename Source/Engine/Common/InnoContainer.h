@@ -25,6 +25,12 @@ public:
 	FixedSizeString(const char* content)
 	{
 		auto l_sizeOfContent = strlen(content);
+
+		if (l_sizeOfContent > S)
+		{
+			l_sizeOfContent = S;
+		}
+
 		std::memcpy(m_content, content, l_sizeOfContent);
 		m_content[l_sizeOfContent - 1] = '\0';
 	};
@@ -53,7 +59,7 @@ public:
 		}
 	}
 
-	bool operator==(const FixedSizeString<S> &rhs) const
+	bool operator==(const FixedSizeString<S>& rhs) const
 	{
 		auto l_rhsCStr = rhs.c_str();
 
@@ -65,7 +71,7 @@ public:
 		return !(*this == rhs);
 	}
 
-	bool operator!=(const FixedSizeString<S> &rhs) const
+	bool operator!=(const FixedSizeString<S>& rhs) const
 	{
 		return !(*this == rhs);
 	}
@@ -171,7 +177,7 @@ public:
 		*l_lhs = *l_rhs;
 	};
 
-	Atomic<T>& operator=(const Atomic<T> & rhs)
+	Atomic<T>& operator=(const Atomic<T>& rhs)
 	{
 		auto l_reader = AtomicReader(rhs);
 		auto l_writer = AtomicWriter(*this);
@@ -189,9 +195,9 @@ public:
 		std::unique_lock<std::shared_mutex> lock{ m_Mutex };
 
 		m_condition.wait(lock, [this]()
-		{
-			return IsWritable() && IsReadable();
-		});
+			{
+				return IsWritable() && IsReadable();
+			});
 	};
 
 	bool IsReadable()
@@ -210,9 +216,9 @@ protected:
 		std::shared_lock<std::shared_mutex> lock{ m_Mutex };
 
 		m_condition.wait(lock, [this]()
-		{
-			return IsReadable();
-		});
+			{
+				return IsReadable();
+			});
 
 		m_ReaderCount++;
 
@@ -224,9 +230,9 @@ protected:
 		std::unique_lock<std::shared_mutex> lock{ m_Mutex };
 
 		m_condition.wait(lock, [this]()
-		{
-			return IsWritable() && IsReadable();
-		});
+			{
+				return IsWritable() && IsReadable();
+			});
 
 		m_IsWriting = true;
 
@@ -329,9 +335,9 @@ public:
 	{
 		std::unique_lock<std::shared_mutex> lock{ m_mutex };
 		m_condition.wait(lock, [this]()
-		{
-			return !m_queue.empty() || !m_valid;
-		});
+			{
+				return !m_queue.empty() || !m_valid;
+			});
 
 		if (!m_valid)
 		{
@@ -411,23 +417,23 @@ public:
 	{
 	}
 
-	ThreadSafeVector(const ThreadSafeVector & rhs)
+	ThreadSafeVector(const ThreadSafeVector& rhs)
 	{
 		std::unique_lock<std::shared_mutex> lock{ m_mutex };
 		m_vector = rhs.m_vector;
 	}
-	ThreadSafeVector& operator=(const ThreadSafeVector & rhs)
+	ThreadSafeVector& operator=(const ThreadSafeVector& rhs)
 	{
 		std::unique_lock<std::shared_mutex> lock{ m_mutex };
 		m_vector = rhs.m_vector;
 		return this;
 	}
-	ThreadSafeVector(ThreadSafeVector && rhs)
+	ThreadSafeVector(ThreadSafeVector&& rhs)
 	{
 		std::unique_lock<std::shared_mutex> lock{ m_mutex };
 		m_vector = std::move(rhs.m_vector);
 	}
-	ThreadSafeVector& operator=(ThreadSafeVector && rhs)
+	ThreadSafeVector& operator=(ThreadSafeVector&& rhs)
 	{
 		std::unique_lock<std::shared_mutex> lock{ m_mutex };
 		m_vector = std::move(rhs.m_vector);
@@ -717,7 +723,7 @@ namespace InnoContainer
 			}
 		}
 
-		Array(const Array<T, ThreadSafe> & rhs)
+		Array(const Array<T, ThreadSafe>& rhs)
 		{
 			m_ElementSize = rhs.m_ElementSize;
 			m_ElementCount = rhs.m_ElementCount;
@@ -726,7 +732,7 @@ namespace InnoContainer
 			m_CurrentFreeIndex = rhs.m_CurrentFreeIndex;
 		}
 
-		Array<T, ThreadSafe>& operator=(const Array<T, ThreadSafe> & rhs)
+		Array<T, ThreadSafe>& operator=(const Array<T, ThreadSafe>& rhs)
 		{
 			m_ElementSize = rhs.m_ElementSize;
 			m_ElementCount = rhs.m_ElementCount;
@@ -736,7 +742,7 @@ namespace InnoContainer
 			return *this;
 		}
 
-		Array(Array<T, ThreadSafe> && rhs)
+		Array(Array<T, ThreadSafe>&& rhs)
 		{
 			m_ElementSize = rhs.m_ElementSize;
 			m_ElementCount = rhs.m_ElementCount;
@@ -745,7 +751,7 @@ namespace InnoContainer
 			m_CurrentFreeIndex = rhs.m_CurrentFreeIndex;
 		}
 
-		Array<T, ThreadSafe>& operator=(Array<T, ThreadSafe> && rhs)
+		Array<T, ThreadSafe>& operator=(Array<T, ThreadSafe>&& rhs)
 		{
 			m_ElementSize = rhs.m_ElementSize;
 			m_ElementCount = rhs.m_ElementCount;
@@ -764,7 +770,7 @@ namespace InnoContainer
 			m_CurrentFreeIndex = m_ElementCount;
 		}
 
-		template<typename U = T & >
+		template<typename U = T& >
 		EnableType<U, ThreadSafe> operator[](size_t pos)
 		{
 			std::shared_lock<std::shared_mutex> lock{ m_Mutex };
@@ -775,7 +781,7 @@ namespace InnoContainer
 			return *(m_HeapAddress + pos);
 		}
 
-		template<typename U = T & >
+		template<typename U = T& >
 		DisableType<U, ThreadSafe> operator[](size_t pos)
 		{
 			assert(pos < m_ElementCount && "Trying to access out-of-boundary address.");
@@ -784,7 +790,7 @@ namespace InnoContainer
 			return *(m_HeapAddress + pos);
 		}
 
-		template<typename U = const T & >
+		template<typename U = const T& >
 		EnableType<U, ThreadSafe> operator[](size_t pos) const
 		{
 			std::shared_lock<std::shared_mutex> lock{ m_Mutex };
@@ -795,7 +801,7 @@ namespace InnoContainer
 			return *(m_HeapAddress + pos);
 		}
 
-		template<typename U = const T & >
+		template<typename U = const T& >
 		DisableType<U, ThreadSafe> operator[](size_t pos) const
 		{
 			assert(pos < m_ElementCount && "Trying to access out-of-boundary address.");
@@ -896,7 +902,7 @@ namespace InnoContainer
 
 		~RingBuffer() = default;
 
-		RingBuffer(const RingBuffer<T, ThreadSafe> & rhs)
+		RingBuffer(const RingBuffer<T, ThreadSafe>& rhs)
 		{
 			m_CurrentElementIndex = rhs.m_CurrentElementIndex;
 			m_ElementCount = rhs.m_ElementCount;
@@ -904,7 +910,7 @@ namespace InnoContainer
 			m_Array = rhs.m_Array;
 		}
 
-		RingBuffer<T, ThreadSafe>& operator=(const RingBuffer<T, ThreadSafe> & rhs)
+		RingBuffer<T, ThreadSafe>& operator=(const RingBuffer<T, ThreadSafe>& rhs)
 		{
 			m_CurrentElementIndex = rhs.m_CurrentElementIndex;
 			m_ElementCount = rhs.m_ElementCount;
@@ -913,7 +919,7 @@ namespace InnoContainer
 			return *this;
 		}
 
-		RingBuffer(RingBuffer<T, ThreadSafe> && rhs)
+		RingBuffer(RingBuffer<T, ThreadSafe>&& rhs)
 		{
 			m_CurrentElementIndex = rhs.m_CurrentElementIndex;
 			m_ElementCount = rhs.m_ElementCount;
@@ -921,7 +927,7 @@ namespace InnoContainer
 			m_Array = std::move(rhs.m_Array);
 		}
 
-		RingBuffer<T, ThreadSafe>& operator=(RingBuffer<T, ThreadSafe> && rhs)
+		RingBuffer<T, ThreadSafe>& operator=(RingBuffer<T, ThreadSafe>&& rhs)
 		{
 			m_CurrentElementIndex = rhs.m_CurrentElementIndex;
 			m_ElementCount = rhs.m_ElementCount;
@@ -930,7 +936,7 @@ namespace InnoContainer
 			return *this;
 		}
 
-		template<typename U = T & >
+		template<typename U = T& >
 		EnableType<U, ThreadSafe> operator[](size_t pos)
 		{
 			std::shared_lock<std::shared_mutex> lock{ m_Mutex };
@@ -938,13 +944,13 @@ namespace InnoContainer
 			return m_Array[pos % m_ElementCount];
 		}
 
-		template<typename U = T & >
+		template<typename U = T& >
 		DisableType<U, ThreadSafe> operator[](size_t pos)
 		{
 			return m_Array[pos % m_ElementCount];
 		}
 
-		template<typename U = const T & >
+		template<typename U = const T& >
 		EnableType<U, ThreadSafe> operator[](size_t pos) const
 		{
 			std::shared_lock<std::shared_mutex> lock{ m_Mutex };
@@ -952,7 +958,7 @@ namespace InnoContainer
 			return m_Array[pos % m_ElementCount];
 		}
 
-		template<typename U = const T & >
+		template<typename U = const T& >
 		DisableType<U, ThreadSafe> operator[](size_t pos) const
 		{
 			return m_Array[pos % m_ElementCount];
@@ -987,7 +993,7 @@ namespace InnoContainer
 			return m_CurrentElementIndex == 0 ? 0 : m_CurrentElementIndex - 1;
 		}
 
-		template<typename U = T & >
+		template<typename U = T& >
 		EnableType<U, ThreadSafe> currentElement()
 		{
 			std::shared_lock<std::shared_mutex> lock{ m_Mutex };
@@ -995,13 +1001,13 @@ namespace InnoContainer
 			return m_Array[m_CurrentElementIndex == 0 ? 0 : m_CurrentElementIndex - 1];
 		}
 
-		template<typename U = T & >
+		template<typename U = T& >
 		DisableType<U, ThreadSafe> currentElement()
 		{
 			return m_Array[m_CurrentElementIndex == 0 ? 0 : m_CurrentElementIndex - 1];
 		}
 
-		template<typename U = const T & >
+		template<typename U = const T& >
 		EnableType<U, ThreadSafe> currentElement() const
 		{
 			std::shared_lock<std::shared_mutex> lock{ m_Mutex };
@@ -1009,7 +1015,7 @@ namespace InnoContainer
 			return m_Array[m_CurrentElementIndex == 0 ? 0 : m_CurrentElementIndex - 1];
 		}
 
-		template<typename U = const T & >
+		template<typename U = const T& >
 		DisableType<U, ThreadSafe> currentElement() const
 		{
 			return m_Array[m_CurrentElementIndex == 0 ? 0 : m_CurrentElementIndex - 1];
@@ -1060,7 +1066,7 @@ namespace InnoContainer
 		DoubleBuffer() = default;
 		~DoubleBuffer() = default;
 
-		template<typename U = T & >
+		template<typename U = T& >
 		EnableType<U, ThreadSafe> GetValue()
 		{
 			std::shared_lock<std::shared_mutex> lock{ m_Mutex };
@@ -1075,7 +1081,7 @@ namespace InnoContainer
 			}
 		}
 
-		template<typename U = T & >
+		template<typename U = T& >
 		DisableType<U, ThreadSafe> GetValue()
 		{
 			if (m_IsAReady)
