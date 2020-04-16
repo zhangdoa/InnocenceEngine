@@ -652,17 +652,19 @@ void InnoPhysicsSystem::updateCulling()
 	m_visibleSceneBoundMin.w = 1.0f;
 
 	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
+	auto& l_cullingDataVector = m_cullingData.GetValue();
+	l_cullingDataVector.clear();
 
-	std::vector<CullingData> l_cullingDataVector;
-	l_cullingDataVector.reserve(l_visibleComponents.size());
+	if (l_cullingDataVector.capacity() < l_visibleComponents.size())
+	{
+		m_cullingData.Reserve(l_visibleComponents.size());
+	}
 
 	PlainCulling(l_cameraFrustum, l_cullingDataVector);
 	//BVHCulling(m_RootBVHNode, l_cameraFrustum, l_cullingDataVector);
 
 	m_visibleSceneAABB = InnoMath::generateAABB(InnoPhysicsSystemNS::m_visibleSceneBoundMax, InnoPhysicsSystemNS::m_visibleSceneBoundMin);
 	m_totalSceneAABB = InnoMath::generateAABB(InnoPhysicsSystemNS::m_totalSceneBoundMax, InnoPhysicsSystemNS::m_totalSceneBoundMin);
-
-	m_cullingData.SetValue(std::move(l_cullingDataVector));
 }
 
 const std::vector<CullingData>& InnoPhysicsSystem::getCullingData()
