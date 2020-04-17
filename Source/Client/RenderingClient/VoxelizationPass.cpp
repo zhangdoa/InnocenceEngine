@@ -104,12 +104,13 @@ bool VoxelizationPass::setupVisualizationPass()
 	auto l_viewportSize = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
+	l_RenderPassDesc.m_UseDepthBuffer = true;
 
 	l_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler2D;
 	l_RenderPassDesc.m_RenderTargetDesc.Usage = TextureUsage::ColorAttachment;
 	l_RenderPassDesc.m_RenderTargetDesc.Width = l_viewportSize.x;
 	l_RenderPassDesc.m_RenderTargetDesc.Height = l_viewportSize.y;
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_PrimitiveTopology = PrimitiveTopology::Point;

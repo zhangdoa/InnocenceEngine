@@ -29,11 +29,11 @@ bool BillboardPass::Setup()
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = false;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
 
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer = true;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowStencilWrite = false;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_FrontFaceStencilComparisionFunction = ComparisionFunction::Always;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_BackFaceStencilComparisionFunction = ComparisionFunction::Always;
@@ -72,6 +72,8 @@ bool BillboardPass::Setup()
 
 bool BillboardPass::Initialize()
 {
+	m_RPDC->m_DepthStencilRenderTarget = OpaquePass::GetRPDC()->m_DepthStencilRenderTarget;
+
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
 	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
@@ -87,7 +89,6 @@ bool BillboardPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
-	g_pModuleManager->getRenderingServer()->CopyDepthStencilBuffer(OpaquePass::GetRPDC(), m_RPDC);
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 3, 0);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
@@ -133,12 +134,12 @@ bool BillboardPass::Terminate()
 	return true;
 }
 
-RenderPassDataComponent * BillboardPass::GetRPDC()
+RenderPassDataComponent* BillboardPass::GetRPDC()
 {
 	return m_RPDC;
 }
 
-ShaderProgramComponent * BillboardPass::GetSPC()
+ShaderProgramComponent* BillboardPass::GetSPC()
 {
 	return m_SPC;
 }

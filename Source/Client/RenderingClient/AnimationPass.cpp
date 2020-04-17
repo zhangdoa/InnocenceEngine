@@ -1,5 +1,6 @@
 #include "AnimationPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+#include "OpaquePass.h"
 
 #include "../../Engine/Interface/IModuleManager.h"
 
@@ -26,13 +27,14 @@ bool AnimationPass::Setup()
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 4;
+	l_RenderPassDesc.m_UseColorBuffer = false;
 
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthClamp = true;
 
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer = true;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowStencilWrite = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilReference = 0x01;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_FrontFaceStencilPassOperation = StencilOperation::Replace;
@@ -114,6 +116,15 @@ bool AnimationPass::Setup()
 
 bool AnimationPass::Initialize()
 {
+	m_RPDC->m_RenderTargets.resize(m_RPDC->m_RenderPassDesc.m_RenderTargetCount);
+
+	for (size_t i = 0; i < m_RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		m_RPDC->m_RenderTargets[i] = OpaquePass::GetRPDC()->m_RenderTargets[i];
+	}
+
+	m_RPDC->m_DepthStencilRenderTarget = OpaquePass::GetRPDC()->m_DepthStencilRenderTarget;
+
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
 	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
@@ -132,9 +143,11 @@ bool AnimationPass::PrepareCommandList()
 
 	if (l_AnimationDrawCallInfo.size())
 	{
+		g_pModuleManager->getRenderingServer()->BeginCapture();
+
 		g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 		g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
-		g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
+		// Don't clean render targets since they are from previous pass
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 8, 0);
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 
@@ -176,7 +189,6 @@ bool AnimationPass::PrepareCommandList()
 	{
 		g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 		g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
-		g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
 		g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
 	}
 
@@ -185,9 +197,16 @@ bool AnimationPass::PrepareCommandList()
 
 bool AnimationPass::ExecuteCommandList()
 {
+	auto& l_AnimationDrawCallInfo = g_pModuleManager->getRenderingFrontend()->getAnimationDrawCallInfo();
+
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
 
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);
+
+	if (l_AnimationDrawCallInfo.size())
+	{
+		g_pModuleManager->getRenderingServer()->EndCapture();
+	}
 
 	return true;
 }

@@ -25,8 +25,9 @@ bool SkyPass::Setup()
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
+	l_RenderPassDesc.m_UseDepthBuffer = true;
 
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
 
@@ -87,12 +88,12 @@ bool SkyPass::Terminate()
 	return true;
 }
 
-RenderPassDataComponent * SkyPass::GetRPDC()
+RenderPassDataComponent* SkyPass::GetRPDC()
 {
 	return m_RPDC;
 }
 
-ShaderProgramComponent * SkyPass::GetSPC()
+ShaderProgramComponent* SkyPass::GetSPC()
 {
 	return m_SPC;
 }

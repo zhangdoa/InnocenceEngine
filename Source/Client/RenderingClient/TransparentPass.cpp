@@ -29,11 +29,11 @@ bool TransparentPass::Setup()
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
 
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer = true;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowStencilWrite = false;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_FrontFaceStencilComparisionFunction = ComparisionFunction::Always;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_BackFaceStencilComparisionFunction = ComparisionFunction::Always;
@@ -68,6 +68,8 @@ bool TransparentPass::Setup()
 
 bool TransparentPass::Initialize()
 {
+	m_RPDC->m_DepthStencilRenderTarget = OpaquePass::GetRPDC()->m_DepthStencilRenderTarget;
+
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
 
@@ -83,7 +85,6 @@ bool TransparentPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
-	g_pModuleManager->getRenderingServer()->CopyDepthStencilBuffer(OpaquePass::GetRPDC(), m_RPDC);
 	g_pModuleManager->getRenderingServer()->CopyColorBuffer(PreTAAPass::GetRPDC(), 0, m_RPDC, 0);
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);

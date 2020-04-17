@@ -33,8 +33,9 @@ bool BSDFTestPass::Setup()
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
+	l_RenderPassDesc.m_UseDepthBuffer = true;
 
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
 
@@ -179,12 +180,12 @@ bool BSDFTestPass::Terminate()
 	return true;
 }
 
-RenderPassDataComponent * BSDFTestPass::GetRPDC()
+RenderPassDataComponent* BSDFTestPass::GetRPDC()
 {
 	return m_RPDC;
 }
 
-ShaderProgramComponent * BSDFTestPass::GetSPC()
+ShaderProgramComponent* BSDFTestPass::GetSPC()
 {
 	return m_SPC;
 }

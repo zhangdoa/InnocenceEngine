@@ -56,12 +56,14 @@ bool GIResolveTestPass::Setup()
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
+	l_RenderPassDesc.m_UseDepthBuffer = true;
+	l_RenderPassDesc.m_UseStencilBuffer = true;
 
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
 
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer = true;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowStencilWrite = false;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_FrontFaceStencilComparisionFunction = ComparisionFunction::Always;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_BackFaceStencilComparisionFunction = ComparisionFunction::Always;
@@ -104,6 +106,8 @@ bool GIResolveTestPass::Setup()
 
 bool GIResolveTestPass::Initialize()
 {
+	m_probeRPDC->m_DepthStencilRenderTarget = OpaquePass::GetRPDC()->m_DepthStencilRenderTarget;
+
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_probeSphereMeshGBDC);
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_probeSPC);
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_probeRPDC);
@@ -135,9 +139,9 @@ bool GIResolveTestPass::PrepareCommandList()
 		float l_minPos;
 
 		std::sort(l_probePos.begin(), l_probePos.end(), [&](ProbePos A, ProbePos B)
-		{
-			return A.pos.x < B.pos.x;
-		});
+			{
+				return A.pos.x < B.pos.x;
+			});
 
 		l_minPos = l_probePos[0].pos.x;
 
@@ -155,9 +159,9 @@ bool GIResolveTestPass::PrepareCommandList()
 		}
 
 		std::sort(l_probePos.begin(), l_probePos.end(), [&](ProbePos A, ProbePos B)
-		{
-			return A.pos.y < B.pos.y;
-		});
+			{
+				return A.pos.y < B.pos.y;
+			});
 
 		l_minPos = l_probePos[0].pos.y;
 
@@ -175,9 +179,9 @@ bool GIResolveTestPass::PrepareCommandList()
 		}
 
 		std::sort(l_probePos.begin(), l_probePos.end(), [&](ProbePos A, ProbePos B)
-		{
-			return A.pos.z < B.pos.z;
-		});
+			{
+				return A.pos.z < B.pos.z;
+			});
 
 		l_minPos = l_probePos[0].pos.z;
 
@@ -215,8 +219,6 @@ bool GIResolveTestPass::PrepareCommandList()
 		g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_probeRPDC);
 		g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_probeRPDC);
 
-		//g_pModuleManager->getRenderingServer()->CopyDepthStencilBuffer(OpaquePass::GetRPDC(), m_probeRPDC);
-
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 4, 0);
 
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
@@ -250,12 +252,12 @@ bool GIResolveTestPass::Terminate()
 	return true;
 }
 
-RenderPassDataComponent * GIResolveTestPass::GetRPDC()
+RenderPassDataComponent* GIResolveTestPass::GetRPDC()
 {
 	return m_probeRPDC;
 }
 
-ShaderProgramComponent * GIResolveTestPass::GetSPC()
+ShaderProgramComponent* GIResolveTestPass::GetSPC()
 {
 	return m_probeSPC;
 }

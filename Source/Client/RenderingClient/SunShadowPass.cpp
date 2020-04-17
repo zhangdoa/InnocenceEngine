@@ -26,6 +26,8 @@ bool SunShadowPass::Setup()
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
+	l_RenderPassDesc.m_UseDepthBuffer = true;
+
 	l_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler2DArray;
 	l_RenderPassDesc.m_RenderTargetDesc.Width = 2048;
 	l_RenderPassDesc.m_RenderTargetDesc.Height = 2048;
@@ -39,7 +41,7 @@ bool SunShadowPass::Setup()
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = 2048;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = 2048;
 
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
 

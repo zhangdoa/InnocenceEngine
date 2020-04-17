@@ -35,11 +35,11 @@ bool LightPass::Setup()
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer = true;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = false;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::Always;
 
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer = true;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowStencilWrite = false;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilReference = 0x01;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_FrontFaceStencilComparisionFunction = ComparisionFunction::Equal;
@@ -151,6 +151,8 @@ bool LightPass::Setup()
 
 bool LightPass::Initialize()
 {
+	m_RPDC->m_DepthStencilRenderTarget = OpaquePass::GetRPDC()->m_DepthStencilRenderTarget;
+
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
 	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
@@ -169,14 +171,13 @@ bool LightPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
+
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 17, 0);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_PointLightGBDC->m_ResourceBinder, 1, 3, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_SphereLightGBDC->m_ResourceBinder, 2, 4, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_CSMGBDC->m_ResourceBinder, 3, 5, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_GIGBDC->m_ResourceBinder, 4, 8, Accessibility::ReadOnly);
-
-	g_pModuleManager->getRenderingServer()->CopyDepthStencilBuffer(OpaquePass::GetRPDC(), m_RPDC);
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[0], 5, 0);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[1], 6, 1);
@@ -229,12 +230,12 @@ bool LightPass::Terminate()
 	return true;
 }
 
-RenderPassDataComponent * LightPass::GetRPDC()
+RenderPassDataComponent* LightPass::GetRPDC()
 {
 	return m_RPDC;
 }
 
-ShaderProgramComponent * LightPass::GetSPC()
+ShaderProgramComponent* LightPass::GetSPC()
 {
 	return m_SPC;
 }
