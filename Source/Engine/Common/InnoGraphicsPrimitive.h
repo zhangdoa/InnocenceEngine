@@ -118,12 +118,12 @@ namespace InnoType
 
 	struct DepthStencilDesc
 	{
-		bool m_UseDepthBuffer = false;
+		bool m_DepthEnable = false;
 		bool m_AllowDepthWrite = false;
 		ComparisionFunction m_DepthComparisionFunction = ComparisionFunction::Never;
 		bool m_AllowDepthClamp = false;
 
-		bool m_UseStencilBuffer = false;
+		bool m_StencilEnable = false;
 		bool m_AllowStencilWrite = false;
 		uint8_t m_StencilReference = 0x00;
 		uint8_t m_StencilWriteMask = 0xFF;
@@ -189,6 +189,9 @@ namespace InnoType
 		bool m_IsOffScreen = false;
 		RenderPassUsage m_RenderPassUsage = RenderPassUsage::Graphics;
 		size_t m_RenderTargetCount = 0;
+		bool m_UseColorBuffer = true;
+		bool m_UseDepthBuffer = false;
+		bool m_UseStencilBuffer = false;
 		TextureDesc m_RenderTargetDesc = {};
 		GraphicsPipelineDesc m_GraphicsPipelineDesc = {};
 	};

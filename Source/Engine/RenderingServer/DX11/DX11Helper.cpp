@@ -600,11 +600,11 @@ D3D11_RENDER_TARGET_VIEW_DESC DX11Helper::GetRTVDesc(TextureDesc textureDesc)
 	return l_result;
 }
 
-D3D11_DEPTH_STENCIL_VIEW_DESC DX11Helper::GetDSVDesc(TextureDesc textureDesc, DepthStencilDesc DSDesc)
+D3D11_DEPTH_STENCIL_VIEW_DESC DX11Helper::GetDSVDesc(TextureDesc textureDesc, bool stencilEnable)
 {
 	D3D11_DEPTH_STENCIL_VIEW_DESC l_result = {};
 
-	if (DSDesc.m_UseStencilBuffer)
+	if (stencilEnable)
 	{
 		l_result.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	}
@@ -654,11 +654,14 @@ D3D11_DEPTH_STENCIL_VIEW_DESC DX11Helper::GetDSVDesc(TextureDesc textureDesc, De
 
 bool DX11Helper::ReserveRenderTargets(DX11RenderPassDataComponent* DX11RPDC, IRenderingServer* renderingServer)
 {
-	DX11RPDC->m_RenderTargets.reserve(DX11RPDC->m_RenderPassDesc.m_RenderTargetCount);
-	for (size_t i = 0; i < DX11RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	if (DX11RPDC->m_RenderPassDesc.m_UseColorBuffer)
 	{
-		DX11RPDC->m_RenderTargets.emplace_back();
-		DX11RPDC->m_RenderTargets[i] = renderingServer->AddTextureDataComponent((std::string(DX11RPDC->m_Name.c_str()) + "_" + std::to_string(i) + "/").c_str());
+		DX11RPDC->m_RenderTargets.reserve(DX11RPDC->m_RenderPassDesc.m_RenderTargetCount);
+		for (size_t i = 0; i < DX11RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+		{
+			DX11RPDC->m_RenderTargets.emplace_back();
+			DX11RPDC->m_RenderTargets[i] = renderingServer->AddTextureDataComponent((std::string(DX11RPDC->m_Name.c_str()) + "_" + std::to_string(i) + "/").c_str());
+		}
 	}
 
 	return true;
@@ -666,23 +669,26 @@ bool DX11Helper::ReserveRenderTargets(DX11RenderPassDataComponent* DX11RPDC, IRe
 
 bool DX11Helper::CreateRenderTargets(DX11RenderPassDataComponent* DX11RPDC, IRenderingServer* renderingServer)
 {
-	for (size_t i = 0; i < DX11RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	if (DX11RPDC->m_RenderPassDesc.m_UseColorBuffer)
 	{
-		auto l_TDC = DX11RPDC->m_RenderTargets[i];
+		for (size_t i = 0; i < DX11RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+		{
+			auto l_TDC = DX11RPDC->m_RenderTargets[i];
 
-		l_TDC->m_TextureDesc = DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc;
+			l_TDC->m_TextureDesc = DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc;
 
-		l_TDC->m_TextureData = nullptr;
+			l_TDC->m_TextureData = nullptr;
 
-		renderingServer->InitializeTextureDataComponent(l_TDC);
+			renderingServer->InitializeTextureDataComponent(l_TDC);
+		}
 	}
 
-	if (DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	if (DX11RPDC->m_RenderPassDesc.m_UseDepthBuffer)
 	{
 		DX11RPDC->m_DepthStencilRenderTarget = renderingServer->AddTextureDataComponent((std::string(DX11RPDC->m_Name.c_str()) + "_DS/").c_str());
 		DX11RPDC->m_DepthStencilRenderTarget->m_TextureDesc = DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc;
 
-		if (DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
+		if (DX11RPDC->m_RenderPassDesc.m_UseStencilBuffer)
 		{
 			DX11RPDC->m_DepthStencilRenderTarget->m_TextureDesc.Usage = TextureUsage::DepthStencilAttachment;
 			DX11RPDC->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
@@ -744,21 +750,28 @@ bool DX11Helper::CreateViews(DX11RenderPassDataComponent* DX11RPDC, ID3D11Device
 	}
 
 	// DSV
-	if (DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	if (DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 	{
-		DX11RPDC->m_DSVDesc = GetDSVDesc(DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc, DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc);
-
-		auto l_DX11TDC = reinterpret_cast<DX11TextureDataComponent*>(DX11RPDC->m_DepthStencilRenderTarget);
-
-		auto l_HResult = device->CreateDepthStencilView(l_DX11TDC->m_ResourceHandle, &DX11RPDC->m_DSVDesc, &DX11RPDC->m_DSV);
-		if (FAILED(l_HResult))
+		if (DX11RPDC->m_DepthStencilRenderTarget != nullptr)
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the DSV for ", DX11RPDC->m_Name.c_str(), "!");
-			return false;
-		}
+			DX11RPDC->m_DSVDesc = GetDSVDesc(DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc, DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable);
+
+			auto l_DX11TDC = reinterpret_cast<DX11TextureDataComponent*>(DX11RPDC->m_DepthStencilRenderTarget);
+
+			auto l_HResult = device->CreateDepthStencilView(l_DX11TDC->m_ResourceHandle, &DX11RPDC->m_DSVDesc, &DX11RPDC->m_DSV);
+			if (FAILED(l_HResult))
+			{
+				InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the DSV for ", DX11RPDC->m_Name.c_str(), "!");
+				return false;
+			}
 #ifdef  _DEBUG
-		SetObjectName(DX11RPDC, DX11RPDC->m_DSV, "DSV");
+			SetObjectName(DX11RPDC, DX11RPDC->m_DSV, "DSV");
 #endif //  _DEBUG
+		}
+		else
+		{
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: ", DX11RPDC->m_Name.c_str(), " depth (and stencil) test is enable, but no depth-stencil render target is bound!");
+		}
 	}
 
 	return true;
@@ -827,7 +840,7 @@ bool DX11Helper::CreateStateObjects(DX11RenderPassDataComponent* DX11RPDC, ID3D1
 #endif //  _DEBUG
 
 	// Depth stencil state object
-	if (DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	if (DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 	{
 		auto l_HResult = device->CreateDepthStencilState(&l_PSO->m_DepthStencilDesc, &l_PSO->m_DepthStencilState);
 		if (FAILED(l_HResult))
@@ -1019,12 +1032,12 @@ D3D11_FILL_MODE DX11Helper::GetRasterizerFillMode(RasterizerFillMode rasterizerF
 
 bool DX11Helper::GenerateDepthStencilStateDesc(DepthStencilDesc DSDesc, DX11PipelineStateObject* PSO)
 {
-	PSO->m_DepthStencilDesc.DepthEnable = DSDesc.m_UseDepthBuffer;
+	PSO->m_DepthStencilDesc.DepthEnable = DSDesc.m_DepthEnable;
 
 	PSO->m_DepthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK(DSDesc.m_AllowDepthWrite);
 	PSO->m_DepthStencilDesc.DepthFunc = GetComparisionFunction(DSDesc.m_DepthComparisionFunction);
 
-	PSO->m_DepthStencilDesc.StencilEnable = DSDesc.m_UseStencilBuffer;
+	PSO->m_DepthStencilDesc.StencilEnable = DSDesc.m_StencilEnable;
 
 	PSO->m_DepthStencilDesc.StencilReadMask = 0xFF;
 	if (DSDesc.m_AllowStencilWrite)

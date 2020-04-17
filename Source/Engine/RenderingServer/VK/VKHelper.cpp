@@ -807,7 +807,7 @@ bool VKHelper::transitionImageLayout(VkCommandBuffer commandBuffer, VkImage imag
 		0, nullptr,
 		0, nullptr,
 		1, &barrier
-		);
+	);
 
 	return true;
 }
@@ -1085,11 +1085,11 @@ bool VKHelper::createRenderTargets(VKRenderPassDataComponent* VKRPDC, IRendering
 		renderingServer->InitializeTextureDataComponent(VKRPDC->m_RenderTargets[i]);
 	}
 
-	if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 	{
 		VKRPDC->m_DepthStencilRenderTarget = renderingServer->AddTextureDataComponent((std::string(VKRPDC->m_Name.c_str()) + "_DS/").c_str());
 		VKRPDC->m_DepthStencilRenderTarget->m_TextureDesc = VKRPDC->m_RenderPassDesc.m_RenderTargetDesc;
-		if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
+		if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable)
 		{
 			VKRPDC->m_DepthStencilRenderTarget->m_TextureDesc.Usage = TextureUsage::DepthStencilAttachment;
 			VKRPDC->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
@@ -1144,14 +1144,14 @@ bool VKHelper::createRenderPass(VkDevice device, VKRenderPassDataComponent* VKRP
 	}
 
 	// last attachment is depth attachment
-	if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 	{
 		l_PSO->m_DepthAttachmentRef.attachment = (uint32_t)VKRPDC->m_RenderPassDesc.m_RenderTargetCount;
 		l_PSO->m_DepthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 		VkAttachmentDescription l_depthAttachmentDesc = {};
 
-		if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
+		if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable)
 		{
 			l_depthAttachmentDesc.format = VK_FORMAT_D24_UNORM_S8_UINT;
 		}
@@ -1242,7 +1242,7 @@ bool VKHelper::createSingleFramebuffer(VkDevice device, VKRenderPassDataComponen
 		attachments[i] = l_VKTDC->m_imageView;
 	}
 
-	if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 	{
 		auto l_VKTDC = reinterpret_cast<VKTextureDataComponent*>(VKRPDC->m_DepthStencilRenderTarget);
 		attachments[l_PSO->m_AttachmentDescs.size() - 1] = l_VKTDC->m_imageView;
@@ -1521,14 +1521,14 @@ bool VKHelper::GenerateRasterizerState(RasterizerDesc rasterizerDesc, VKPipeline
 bool VKHelper::GenerateDepthStencilState(DepthStencilDesc depthStencilDesc, VKPipelineStateObject* PSO)
 {
 	PSO->m_DepthStencilStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-	PSO->m_DepthStencilStateCInfo.depthTestEnable = depthStencilDesc.m_UseDepthBuffer;
+	PSO->m_DepthStencilStateCInfo.depthTestEnable = depthStencilDesc.m_DepthEnable;
 	PSO->m_DepthStencilStateCInfo.depthWriteEnable = depthStencilDesc.m_AllowDepthWrite;
 	PSO->m_DepthStencilStateCInfo.depthCompareOp = GetComparisionFunctionEnum(depthStencilDesc.m_DepthComparisionFunction);
 	PSO->m_DepthStencilStateCInfo.depthBoundsTestEnable = VK_FALSE;
 	PSO->m_DepthStencilStateCInfo.minDepthBounds = 0.0f; // Optional
 	PSO->m_DepthStencilStateCInfo.maxDepthBounds = 1.0f; // Optional
 
-	PSO->m_DepthStencilStateCInfo.stencilTestEnable = depthStencilDesc.m_UseStencilBuffer;
+	PSO->m_DepthStencilStateCInfo.stencilTestEnable = depthStencilDesc.m_StencilEnable;
 
 	PSO->m_DepthStencilStateCInfo.front.failOp = GetStencilOperationEnum(depthStencilDesc.m_FrontFaceStencilFailOperation);
 	PSO->m_DepthStencilStateCInfo.front.passOp = GetStencilOperationEnum(depthStencilDesc.m_FrontFaceStencilPassOperation);

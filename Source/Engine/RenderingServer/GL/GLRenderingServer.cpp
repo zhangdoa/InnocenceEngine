@@ -802,7 +802,7 @@ bool GLRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent* rhs
 		auto l_GLPSO = reinterpret_cast<GLPipelineStateObject*>(l_rhs->m_PipelineStateObject);
 
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, l_rhs->m_FBO);
-		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 		{
 			glBindRenderbuffer(GL_RENDERBUFFER, l_rhs->m_RBO);
 			glRenderbufferStorage(GL_RENDERBUFFER, l_rhs->m_renderBufferInternalFormat, (GLsizei)l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width, (GLsizei)l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height);

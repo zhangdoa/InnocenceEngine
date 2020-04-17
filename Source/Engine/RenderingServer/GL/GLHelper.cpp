@@ -386,12 +386,12 @@ bool GLHelper::CreateFramebuffer(GLRenderPassDataComponent* GLRPDC)
 	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: ", GLRPDC->m_Name.c_str(), " FBO has been generated.");
 
 	// RBO
-	if (GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	if (GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 	{
 		GLRPDC->m_renderBufferAttachmentType = GL_DEPTH_ATTACHMENT;
 		GLRPDC->m_renderBufferInternalFormat = GL_DEPTH_COMPONENT32F;
 
-		if (GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
+		if (GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable)
 		{
 			GLRPDC->m_renderBufferAttachmentType = GL_DEPTH_STENCIL_ATTACHMENT;
 			GLRPDC->m_renderBufferInternalFormat = GL_DEPTH24_STENCIL8;
@@ -461,13 +461,13 @@ bool GLHelper::CreateRenderTargets(GLRenderPassDataComponent* GLRPDC, IRendering
 	}
 
 	// DS RT
-	if (GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	if (GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 	{
 		auto l_TDC = renderingServer->AddTextureDataComponent((std::string(GLRPDC->m_Name.c_str()) + "_DS/").c_str());
 
 		l_TDC->m_TextureDesc = GLRPDC->m_RenderPassDesc.m_RenderTargetDesc;
 
-		if (GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
+		if (GLRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable)
 		{
 			l_TDC->m_TextureDesc.Usage = TextureUsage::DepthStencilAttachment;
 			l_TDC->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
@@ -657,7 +657,7 @@ GLenum GLHelper::GetRasterizerFillModeEnum(RasterizerFillMode rasterizerFillMode
 
 bool GLHelper::GenerateDepthStencilState(DepthStencilDesc DSDesc, GLPipelineStateObject* PSO)
 {
-	if (DSDesc.m_UseDepthBuffer)
+	if (DSDesc.m_DepthEnable)
 	{
 		PSO->m_Activate.emplace_back([]() { glEnable(GL_DEPTH_TEST); });
 		PSO->m_Deactivate.emplace_front([]() { glDisable(GL_DEPTH_TEST); });
@@ -681,7 +681,7 @@ bool GLHelper::GenerateDepthStencilState(DepthStencilDesc DSDesc, GLPipelineStat
 		}
 	}
 
-	if (DSDesc.m_UseStencilBuffer)
+	if (DSDesc.m_StencilEnable)
 	{
 		PSO->m_Activate.emplace_back([]() { glEnable(GL_STENCIL_TEST); });
 		PSO->m_Deactivate.emplace_front([]() { glDisable(GL_STENCIL_TEST); });
@@ -932,7 +932,7 @@ bool GLHelper::AddShaderObject(GLuint& shaderID, GLuint shaderStage, const Shade
 	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: ", shaderFilePath.c_str(), " has been compiled.");
 
 	return true;
-	}
+}
 
 bool GLHelper::LinkProgramObject(GLuint& shaderProgram)
 {

@@ -688,11 +688,11 @@ D3D12_RENDER_TARGET_VIEW_DESC DX12Helper::GetRTVDesc(TextureDesc textureDesc)
 	return l_result;
 }
 
-D3D12_DEPTH_STENCIL_VIEW_DESC DX12Helper::GetDSVDesc(TextureDesc textureDesc, DepthStencilDesc DSDesc)
+D3D12_DEPTH_STENCIL_VIEW_DESC DX12Helper::GetDSVDesc(TextureDesc textureDesc, bool stencilEnable)
 {
 	D3D12_DEPTH_STENCIL_VIEW_DESC l_result = {};
 
-	if (DSDesc.m_UseStencilBuffer)
+	if (stencilEnable)
 	{
 		l_result.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	}
@@ -742,14 +742,17 @@ D3D12_DEPTH_STENCIL_VIEW_DESC DX12Helper::GetDSVDesc(TextureDesc textureDesc, De
 
 bool DX12Helper::ReserveRenderTargets(DX12RenderPassDataComponent* DX12RPDC, IRenderingServer* renderingServer)
 {
-	DX12RPDC->m_RenderTargets.reserve(DX12RPDC->m_RenderPassDesc.m_RenderTargetCount);
-	for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	if (DX12RPDC->m_RenderPassDesc.m_UseColorBuffer)
 	{
-		DX12RPDC->m_RenderTargets.emplace_back();
-		DX12RPDC->m_RenderTargets[i] = renderingServer->AddTextureDataComponent((std::string(DX12RPDC->m_Name.c_str()) + "_" + std::to_string(i) + "/").c_str());
-	}
+		DX12RPDC->m_RenderTargets.reserve(DX12RPDC->m_RenderPassDesc.m_RenderTargetCount);
+		for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+		{
+			DX12RPDC->m_RenderTargets.emplace_back();
+			DX12RPDC->m_RenderTargets[i] = renderingServer->AddTextureDataComponent((std::string(DX12RPDC->m_Name.c_str()) + "_" + std::to_string(i) + "/").c_str());
+		}
 
-	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_Name.c_str(), " render targets have been allocated.");
+		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_Name.c_str(), " render targets have been allocated.");
+	}
 
 	return true;
 }
@@ -758,23 +761,26 @@ bool DX12Helper::CreateRenderTargets(DX12RenderPassDataComponent* DX12RPDC, IRen
 {
 	auto l_DX12RenderingServer = reinterpret_cast<DX12RenderingServer*>(renderingServer);
 
-	for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	if (DX12RPDC->m_RenderPassDesc.m_UseColorBuffer)
 	{
-		auto l_TDC = DX12RPDC->m_RenderTargets[i];
+		for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+		{
+			auto l_TDC = DX12RPDC->m_RenderTargets[i];
 
-		l_TDC->m_TextureDesc = DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc;
+			l_TDC->m_TextureDesc = DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc;
 
-		l_TDC->m_TextureData = nullptr;
+			l_TDC->m_TextureData = nullptr;
 
-		renderingServer->InitializeTextureDataComponent(l_TDC);
+			renderingServer->InitializeTextureDataComponent(l_TDC);
+		}
 	}
 
-	if (DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	if (DX12RPDC->m_RenderPassDesc.m_UseDepthBuffer)
 	{
 		DX12RPDC->m_DepthStencilRenderTarget = renderingServer->AddTextureDataComponent((std::string(DX12RPDC->m_Name.c_str()) + "_DS/").c_str());
 		DX12RPDC->m_DepthStencilRenderTarget->m_TextureDesc = DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc;
 
-		if (DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseStencilBuffer)
+		if (DX12RPDC->m_RenderPassDesc.m_UseStencilBuffer)
 		{
 			DX12RPDC->m_DepthStencilRenderTarget->m_TextureDesc.Usage = TextureUsage::DepthStencilAttachment;
 			DX12RPDC->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
@@ -787,7 +793,7 @@ bool DX12Helper::CreateRenderTargets(DX12RenderPassDataComponent* DX12RPDC, IRen
 			DX12RPDC->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
 		}
 
-		DX12RPDC->m_DepthStencilRenderTarget->m_TextureData = { nullptr };
+		DX12RPDC->m_DepthStencilRenderTarget->m_TextureData = nullptr;
 
 		renderingServer->InitializeTextureDataComponent(DX12RPDC->m_DepthStencilRenderTarget);
 	}
@@ -861,37 +867,44 @@ bool DX12Helper::CreateViews(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D1
 		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_Name.c_str(), " RTV has been created.");
 	}
 
-	if (DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_UseDepthBuffer)
+	if (DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 	{
-		// DSV Descriptor Heap
-		DX12RPDC->m_DSVDescriptorHeapDesc.NumDescriptors = 1;
-		DX12RPDC->m_DSVDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-		DX12RPDC->m_DSVDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-
-		auto l_HResult = device->CreateDescriptorHeap(&DX12RPDC->m_DSVDescriptorHeapDesc, IID_PPV_ARGS(&DX12RPDC->m_DSVDescriptorHeap));
-
-		if (FAILED(l_HResult))
+		if (DX12RPDC->m_DepthStencilRenderTarget != nullptr)
 		{
-			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_Name.c_str(), " Can't create DescriptorHeap for DSV!");
-			return false;
-		}
+			// DSV Descriptor Heap
+			DX12RPDC->m_DSVDescriptorHeapDesc.NumDescriptors = 1;
+			DX12RPDC->m_DSVDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+			DX12RPDC->m_DSVDescriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+			auto l_HResult = device->CreateDescriptorHeap(&DX12RPDC->m_DSVDescriptorHeapDesc, IID_PPV_ARGS(&DX12RPDC->m_DSVDescriptorHeap));
+
+			if (FAILED(l_HResult))
+			{
+				InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_Name.c_str(), " Can't create DescriptorHeap for DSV!");
+				return false;
+			}
 #ifdef _DEBUG
-		SetObjectName(DX12RPDC, DX12RPDC->m_DSVDescriptorHeap, "DSVDescriptorHeap");
+			SetObjectName(DX12RPDC, DX12RPDC->m_DSVDescriptorHeap, "DSVDescriptorHeap");
 #endif // _DEBUG
 
-		DX12RPDC->m_DSVDescriptorCPUHandle = DX12RPDC->m_DSVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+			DX12RPDC->m_DSVDescriptorCPUHandle = DX12RPDC->m_DSVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 
-		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_Name.c_str(), " DSV DescriptorHeap has been created.");
+			InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_Name.c_str(), " DSV DescriptorHeap has been created.");
 
-		// DSV
-		auto l_DSVDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+			// DSV
+			auto l_DSVDescSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
-		DX12RPDC->m_DSVDesc = GetDSVDesc(DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc, DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc);
+			DX12RPDC->m_DSVDesc = GetDSVDesc(DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc, DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable);
 
-		auto l_ResourceHandle = reinterpret_cast<DX12TextureDataComponent*>(DX12RPDC->m_DepthStencilRenderTarget)->m_ResourceHandle;
-		device->CreateDepthStencilView(l_ResourceHandle.Get(), &DX12RPDC->m_DSVDesc, DX12RPDC->m_DSVDescriptorCPUHandle);
+			auto l_ResourceHandle = reinterpret_cast<DX12TextureDataComponent*>(DX12RPDC->m_DepthStencilRenderTarget)->m_ResourceHandle;
+			device->CreateDepthStencilView(l_ResourceHandle.Get(), &DX12RPDC->m_DSVDesc, DX12RPDC->m_DSVDescriptorCPUHandle);
 
-		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_Name.c_str(), " DSV has been created.");
+			InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_Name.c_str(), " DSV has been created.");
+		}
+		else
+		{
+			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_Name.c_str(), " depth (and stencil) test is enable, but no depth-stencil render target is bound!");
+		}
 	}
 
 	return true;
@@ -1476,12 +1489,12 @@ D3D12_FILL_MODE DX12Helper::GetRasterizerFillMode(RasterizerFillMode rasterizerF
 
 bool DX12Helper::GenerateDepthStencilStateDesc(DepthStencilDesc DSDesc, DX12PipelineStateObject* PSO)
 {
-	PSO->m_DepthStencilDesc.DepthEnable = DSDesc.m_UseDepthBuffer;
+	PSO->m_DepthStencilDesc.DepthEnable = DSDesc.m_DepthEnable;
 
 	PSO->m_DepthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK(DSDesc.m_AllowDepthWrite);
 	PSO->m_DepthStencilDesc.DepthFunc = GetComparisionFunction(DSDesc.m_DepthComparisionFunction);
 
-	PSO->m_DepthStencilDesc.StencilEnable = DSDesc.m_UseStencilBuffer;
+	PSO->m_DepthStencilDesc.StencilEnable = DSDesc.m_StencilEnable;
 
 	PSO->m_DepthStencilDesc.StencilReadMask = 0xFF;
 	if (DSDesc.m_AllowStencilWrite)

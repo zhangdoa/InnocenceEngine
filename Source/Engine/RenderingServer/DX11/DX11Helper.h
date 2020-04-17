@@ -35,7 +35,7 @@ namespace DX11Helper
 	uint32_t GetSRVMipLevels(TextureDesc textureDesc);
 	D3D11_UNORDERED_ACCESS_VIEW_DESC GetUAVDesc(TextureDesc textureDesc, D3D11_TEXTURE_DESC D3D11TextureDesc);
 	D3D11_RENDER_TARGET_VIEW_DESC GetRTVDesc(TextureDesc textureDesc);
-	D3D11_DEPTH_STENCIL_VIEW_DESC GetDSVDesc(TextureDesc textureDesc, DepthStencilDesc DSDesc);
+	D3D11_DEPTH_STENCIL_VIEW_DESC GetDSVDesc(TextureDesc textureDesc, bool stencilEnable);
 
 	bool ReserveRenderTargets(DX11RenderPassDataComponent* DX11RPDC, IRenderingServer* renderingServer);
 	bool CreateRenderTargets(DX11RenderPassDataComponent* DX11RPDC, IRenderingServer* renderingServer);
