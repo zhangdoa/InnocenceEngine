@@ -834,7 +834,8 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent* r
 
 	if (l_rhs->m_TextureDesc.Usage == TextureUsage::ColorAttachment
 		|| l_rhs->m_TextureDesc.Usage == TextureUsage::DepthAttachment
-		|| l_rhs->m_TextureDesc.Usage == TextureUsage::DepthStencilAttachment)
+		|| l_rhs->m_TextureDesc.Usage == TextureUsage::DepthStencilAttachment
+		|| l_rhs->m_TextureDesc.Usage == TextureUsage::RawImage)
 	{
 		l_rhs->m_CurrentState = l_rhs->m_WriteState;
 	}
@@ -1318,22 +1319,19 @@ bool PrepareRenderTargets(DX12RenderPassDataComponent* renderPass, DX12CommandLi
 {
 	if (renderPass->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
 	{
-		if (renderPass->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
+		if (renderPass->m_RenderPassDesc.m_UseMultiFrames)
 		{
-			if (renderPass->m_RenderPassDesc.m_UseMultiFrames)
+			auto l_resourceBinder = reinterpret_cast<DX12ResourceBinder*>(renderPass->m_RenderTargets[renderPass->m_CurrentFrame]->m_ResourceBinder);
+
+			CheckWriteState(l_resourceBinder->m_Texture, commandList);
+		}
+		else
+		{
+			for (size_t i = 0; i < renderPass->m_RenderPassDesc.m_RenderTargetCount; i++)
 			{
-				auto l_resourceBinder = reinterpret_cast<DX12ResourceBinder*>(renderPass->m_RenderTargets[renderPass->m_CurrentFrame]->m_ResourceBinder);
+				auto l_resourceBinder = reinterpret_cast<DX12ResourceBinder*>(renderPass->m_RenderTargets[i]->m_ResourceBinder);
 
 				CheckWriteState(l_resourceBinder->m_Texture, commandList);
-			}
-			else
-			{
-				for (size_t i = 0; i < renderPass->m_RenderPassDesc.m_RenderTargetCount; i++)
-				{
-					auto l_resourceBinder = reinterpret_cast<DX12ResourceBinder*>(renderPass->m_RenderTargets[i]->m_ResourceBinder);
-
-					CheckWriteState(l_resourceBinder->m_Texture, commandList);
-				}
 			}
 		}
 
