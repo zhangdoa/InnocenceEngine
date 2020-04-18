@@ -2,12 +2,23 @@
   "Meshes": [
     {
       "IndicesNumber": 0,
-      "MaterialFile": "..//Res//ModelPresets//Building4.InnoMaterial",
-      "MeshFile": "",
-      "MeshName": 0,
+      "File": "",
+      "Name": "Building4",
       "MeshSource": 1,
       "ProceduralMeshShape": 6,
-      "VerticesNumber": 0
+      "VerticesNumber": 0,
+      "Material": {
+        "AO": 1.0,
+        "Albedo": {
+          "A": 1.0,
+          "B": 0.8,
+          "G": 0.8,
+          "R": 0.2
+        },
+        "Metallic": 0.0,
+        "Roughness": 0.8,
+        "Thickness": 1.0
+      }
     }
   ],
   "Timestamp": "[2019-8-20-10-18-36-342]"
