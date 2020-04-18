@@ -19,6 +19,7 @@ namespace VoxelizationPass
 
 	RenderPassDataComponent* m_voxelizationRPDC;
 	ShaderProgramComponent* m_voxelizationSPC;
+	SamplerDataComponent* m_voxelizationSDC;
 
 	RenderPassDataComponent* m_visualizationRPDC;
 	ShaderProgramComponent* m_visualizationSPC;
@@ -61,7 +62,7 @@ bool VoxelizationPass::setupVoxelizationPass()
 
 	m_voxelizationRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_voxelizationRPDC->m_ResourceBinderLayoutDescs.resize(5);
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs.resize(11);
 	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
@@ -85,7 +86,47 @@ bool VoxelizationPass::setupVoxelizationPass()
 	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 0;
 	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_IndirectBinding = true;
 
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Image;
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 5;
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 1;
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceCount = 1;
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[5].m_IndirectBinding = true;
+
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Image;
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 6;
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 2;
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceCount = 1;
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[6].m_IndirectBinding = true;
+
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[7].m_ResourceBinderType = ResourceBinderType::Image;
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[7].m_DescriptorSetIndex = 7;
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[7].m_DescriptorIndex = 3;
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[7].m_ResourceCount = 1;
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[7].m_IndirectBinding = true;
+
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[8].m_ResourceBinderType = ResourceBinderType::Image;
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[8].m_DescriptorSetIndex = 8;
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[8].m_DescriptorIndex = 4;
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[8].m_ResourceCount = 1;
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[8].m_IndirectBinding = true;
+
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[9].m_ResourceBinderType = ResourceBinderType::Image;
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[9].m_DescriptorSetIndex = 9;
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[9].m_DescriptorIndex = 5;
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[9].m_ResourceCount = 1;
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[9].m_IndirectBinding = true;
+
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[10].m_ResourceBinderType = ResourceBinderType::Sampler;
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[10].m_DescriptorSetIndex = 10;
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[10].m_DescriptorIndex = 0;
+	m_voxelizationRPDC->m_ResourceBinderLayoutDescs[10].m_IndirectBinding = true;
+
 	m_voxelizationRPDC->m_ShaderProgram = m_voxelizationSPC;
+
+	m_voxelizationSDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("VoxelizationPass/");
+
+	m_voxelizationSDC->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
+	m_voxelizationSDC->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
 	return true;
 }
@@ -171,6 +212,7 @@ bool VoxelizationPass::voxelization()
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_voxelizationRPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_voxelizationRPDC);
 
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_voxelizationRPDC, ShaderStage::Pixel, m_voxelizationSDC->m_ResourceBinder, 10, 0);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_voxelizationRPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_voxelizationRPDC, ShaderStage::Geometry, m_voxelizationCBufferGBDC->m_ResourceBinder, 3, 9, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_voxelizationRPDC, ShaderStage::Pixel, m_voxelizationRPDC->m_RenderTargetsResourceBinders[0], 4, 0, Accessibility::ReadWrite);
@@ -188,7 +230,25 @@ bool VoxelizationPass::voxelization()
 				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_voxelizationRPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
 				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_voxelizationRPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_drawCallData.materialConstantBufferIndex, 1);
 
+				if (l_drawCallData.material->m_ObjectStatus == ObjectStatus::Activated)
+				{
+					g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_voxelizationRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[0].m_Texture->m_ResourceBinder, 5, 0);
+					g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_voxelizationRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1].m_Texture->m_ResourceBinder, 6, 1);
+					g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_voxelizationRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[2].m_Texture->m_ResourceBinder, 7, 2);
+					g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_voxelizationRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[3].m_Texture->m_ResourceBinder, 8, 3);
+					g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_voxelizationRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[4].m_Texture->m_ResourceBinder, 9, 4);
+				}
+
 				g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_voxelizationRPDC, l_drawCallData.mesh);
+
+				if (l_drawCallData.material->m_ObjectStatus == ObjectStatus::Activated)
+				{
+					g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_voxelizationRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[0].m_Texture->m_ResourceBinder, 5, 0);
+					g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_voxelizationRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1].m_Texture->m_ResourceBinder, 6, 1);
+					g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_voxelizationRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[2].m_Texture->m_ResourceBinder, 7, 2);
+					g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_voxelizationRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[3].m_Texture->m_ResourceBinder, 8, 3);
+					g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_voxelizationRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[4].m_Texture->m_ResourceBinder, 9, 4);
+				}
 			}
 		}
 	}

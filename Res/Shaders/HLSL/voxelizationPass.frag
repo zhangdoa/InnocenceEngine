@@ -1,14 +1,34 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
 
+Texture2D t2d_normal : register(t0);
+Texture2D t2d_albedo : register(t1);
+Texture2D t2d_metallic : register(t2);
+Texture2D t2d_roughness : register(t3);
+Texture2D t2d_ao : register(t4);
+
+SamplerState SampleTypeWrap : register(s0);
+
+#include "common/BSDF.hlsl"
+
 struct PixelInputType
 {
 	float4 posCS : SV_POSITION;
 	float4 posCS_orig : POSITION;
+	float4 posWS : POS_WS;
 	float4 AABB : AABB;
+	float4 normal : NORMAL;
+	float2 texcoord : TEXCOORD;
 };
 
 RWTexture3D<float4> out_voxelizationPassRT0 : register(u0);
+
+float4 convRGBA8ToFloat4(uint val) {
+	return float4(float((val & 0x000000FF)), float((val & 0x0000FF00) >> 8U), float((val & 0x00FF0000) >> 16U), float((val & 0xFF000000) >> 24U));
+}
+uint convFloat4ToRGBA8(float4 val) {
+	return (uint(val.w) & 0x000000FF) << 24U | (uint(val.z) & 0x000000FF) << 16U | (uint(val.y) & 0x000000FF) << 8U | (uint(val.x) & 0x000000FF);
+}
 
 void main(PixelInputType input)
 {
@@ -23,5 +43,81 @@ void main(PixelInputType input)
 
 	int3 writeCoord = int3((input.posCS_orig.xyz * 0.5 + 0.5) * voxelizationPassCBuffer.voxelResolution.xyz);
 
-	out_voxelizationPassRT0[writeCoord] = materialCBuffer.albedo;
+	float transparency = 1.0;
+	float3 out_Albedo;
+	if (materialCBuffer.textureSlotMask & 0x00000002)
+	{
+		float4 l_albedo = t2d_albedo.Sample(SampleTypeWrap, input.texcoord);
+		transparency = l_albedo.a;
+		if (transparency < 0.1)
+		{
+			discard;
+		}
+		else
+		{
+			out_Albedo = l_albedo.rgb;
+		}
+	}
+	else
+	{
+		out_Albedo = materialCBuffer.albedo.rgb;
+	}
+
+	float out_Metallic;
+	if (materialCBuffer.textureSlotMask & 0x00000004)
+	{
+		out_Metallic = t2d_metallic.Sample(SampleTypeWrap, input.texcoord).r;
+	}
+	else
+	{
+		out_Metallic = materialCBuffer.MRAT.r;
+	}
+
+	float out_Roughness;
+	if (materialCBuffer.textureSlotMask & 0x00000008)
+	{
+		out_Roughness = t2d_roughness.Sample(SampleTypeWrap, input.texcoord).r;
+	}
+	else
+	{
+		out_Roughness = materialCBuffer.MRAT.g;
+	}
+
+	float out_AO;
+	if (materialCBuffer.textureSlotMask & 0x00000010)
+	{
+		out_AO = t2d_ao.Sample(SampleTypeWrap, input.texcoord).r;
+	}
+	else
+	{
+		out_AO = materialCBuffer.MRAT.b;
+	}
+
+	float3 F0 = float3(0.04, 0.04, 0.04);
+	F0 = lerp(F0, out_Albedo, out_Metallic);
+
+	float3 N = normalize(input.normal.xyz);
+	float3 V = normalize(perFrameCBuffer.camera_posWS.xyz - input.posWS.xyz);
+	float NdotV = max(dot(N, V), 0.0);
+
+	float3 L = normalize(-perFrameCBuffer.sun_direction.xyz);
+	float NdotL = max(dot(N, L), 0.0);
+
+	float3 H = normalize(V + L);
+	float LdotH = max(dot(L, H), 0.0);
+
+	float F90 = 1.0;
+	float3 FresnelFactor = fresnelSchlick(F0, F90, LdotH);
+	float3 Ft = getBTDF(NdotV, NdotL, LdotH, out_Roughness, out_Metallic, FresnelFactor, out_Albedo);
+
+	float3 illuminance = perFrameCBuffer.sun_illuminance.xyz * NdotL;
+	float4 Lo = float4(illuminance * Ft, 1.0f);
+	uint LoUint = convFloat4ToRGBA8(Lo);
+
+	float4 valueF4 = out_voxelizationPassRT0[writeCoord];
+	uint valueUint = convFloat4ToRGBA8(valueF4);
+
+	//InterlockedMax(valueUint, LoUint);
+
+	out_voxelizationPassRT0[writeCoord] = Lo;
 }

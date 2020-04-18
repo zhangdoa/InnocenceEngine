@@ -4,14 +4,18 @@
 struct GeometryInputType
 {
 	float4 posWS : SV_POSITION;
-	float4 Normal : NORMAL;
+	float4 normal : NORMAL;
+	float2 texcoord : TEXCOORD;
 };
 
 struct PixelInputType
 {
 	float4 posCS : SV_POSITION;
 	float4 posCS_orig : POSITION;
+	float4 posWS : POS_WS;
 	float4 AABB : AABB;
+	float4 normal : NORMAL;
+	float2 texcoord : TEXCOORD;
 };
 
 int CalculateAxis(float4 pos[3])
@@ -105,7 +109,9 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 	for (int i = 0; i < 3; i++)
 	{
 		output[i].posCS = pos[i];
-
+		output[i].posWS = input[i].posWS;
+		output[i].texcoord = input[0].texcoord;
+		output[i].normal = input[0].normal;
 		output[i].AABB = getAABB(pos, float2(texelSize, texelSize));
 
 		outStream.Append(output[i]);
