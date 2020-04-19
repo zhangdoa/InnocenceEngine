@@ -108,7 +108,7 @@ bool LightCullingPass::createLightGridTDC()
 
 	m_lightGridTDC->m_TextureDesc.Width = m_lightCullingNumThreadGroups.x;
 	m_lightGridTDC->m_TextureDesc.Height = m_lightCullingNumThreadGroups.y;
-	m_lightGridTDC->m_TextureDesc.Usage = TextureUsage::RawImage;
+	m_lightGridTDC->m_TextureDesc.Usage = TextureUsage::Sample;
 	m_lightGridTDC->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RG;
 	m_lightGridTDC->m_TextureDesc.PixelDataType = TexturePixelDataType::UInt32;
 
@@ -121,7 +121,7 @@ bool LightCullingPass::createDebugTDC()
 
 	m_debugTDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("LightCullingDebug/");
 	m_debugTDC->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
-	m_debugTDC->m_TextureDesc.Usage = TextureUsage::RawImage;
+	m_debugTDC->m_TextureDesc.Usage = TextureUsage::Sample;
 
 	return true;
 }
@@ -336,17 +336,17 @@ bool LightCullingPass::Terminate()
 	return true;
 }
 
-IResourceBinder * LightCullingPass::GetLightGrid()
+IResourceBinder* LightCullingPass::GetLightGrid()
 {
 	return m_lightGridTDC->m_ResourceBinder;
 }
 
-GPUBufferDataComponent * LightCullingPass::GetLightIndexList()
+GPUBufferDataComponent* LightCullingPass::GetLightIndexList()
 {
 	return m_lightIndexListGBDC;
 }
 
-IResourceBinder * LightCullingPass::GetHeatMap()
+IResourceBinder* LightCullingPass::GetHeatMap()
 {
 	return m_debugTDC->m_ResourceBinder;
 }

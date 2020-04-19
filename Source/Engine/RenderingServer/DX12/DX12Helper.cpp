@@ -494,16 +494,12 @@ D3D12_RESOURCE_STATES DX12Helper::GetTextureWriteState(TextureDesc textureDesc)
 
 D3D12_RESOURCE_STATES DX12Helper::GetTextureReadState(TextureDesc textureDesc)
 {
-	D3D12_RESOURCE_STATES l_result = D3D12_RESOURCE_STATE_GENERIC_READ;
+	D3D12_RESOURCE_STATES l_result = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_COPY_SOURCE;
 
 	if (textureDesc.Usage == TextureUsage::DepthAttachment
 		|| textureDesc.Usage == TextureUsage::DepthStencilAttachment)
 	{
-		l_result = D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-	}
-	else if (textureDesc.Usage == TextureUsage::RawImage)
-	{
-		l_result = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+		l_result |= D3D12_RESOURCE_STATE_DEPTH_READ;
 	}
 
 	return l_result;
@@ -799,7 +795,7 @@ bool DX12Helper::CreateResourcesBinder(DX12RenderPassDataComponent* DX12RPDC, IR
 
 bool DX12Helper::CreateViews(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12Device> device)
 {
-	if (DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
+	if (DX12RPDC->m_RenderPassDesc.m_UseOutputMerger)
 	{
 		// Reserve for RTV
 		DX12RPDC->m_RTVDescriptorCPUHandles.reserve(DX12RPDC->m_RenderPassDesc.m_RenderTargetCount);
@@ -1150,7 +1146,7 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12D
 			l_PSO->m_GraphicsPSODesc.PS = l_PSBytecode;
 		}
 
-		if (DX12RPDC->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
+		if (DX12RPDC->m_RenderPassDesc.m_UseOutputMerger)
 		{
 			l_PSO->m_GraphicsPSODesc.NumRenderTargets = (uint32_t)DX12RPDC->m_RenderPassDesc.m_RenderTargetCount;
 			for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)

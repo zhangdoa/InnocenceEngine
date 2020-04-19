@@ -313,25 +313,32 @@ uint32_t DX11Helper::GetTextureBindFlags(TextureDesc textureDesc)
 
 	if (textureDesc.CPUAccessibility == Accessibility::Immutable)
 	{
+		textureBindFlags = D3D11_BIND_SHADER_RESOURCE;
+
 		if (textureDesc.Usage == TextureUsage::ColorAttachment)
 		{
-			textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET | D3D11_BIND_UNORDERED_ACCESS;
+			textureBindFlags |= D3D11_BIND_RENDER_TARGET;
 		}
 		else if (textureDesc.Usage == TextureUsage::DepthAttachment)
 		{
-			textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_DEPTH_STENCIL;
+			textureBindFlags |= D3D11_BIND_DEPTH_STENCIL;
 		}
 		else if (textureDesc.Usage == TextureUsage::DepthStencilAttachment)
 		{
-			textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_DEPTH_STENCIL;
+			textureBindFlags |= D3D11_BIND_DEPTH_STENCIL;
 		}
-		else if (textureDesc.Usage == TextureUsage::RawImage)
+
+		if (textureDesc.GPUAccessibility == Accessibility::ReadWrite)
 		{
-			textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET | D3D11_BIND_UNORDERED_ACCESS;
+			if (textureDesc.Usage != TextureUsage::DepthAttachment && textureDesc.Usage != TextureUsage::DepthStencilAttachment)
+			{
+				textureBindFlags |= D3D11_BIND_UNORDERED_ACCESS;
+			}
 		}
-		else
+
+		if (textureDesc.UseMipMap)
 		{
-			textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+			textureBindFlags |= D3D11_BIND_RENDER_TARGET;
 		}
 	}
 
@@ -446,34 +453,34 @@ D3D11_SHADER_RESOURCE_VIEW_DESC DX11Helper::GetSRVDesc(TextureDesc textureDesc, 
 	case TextureSampler::Sampler1D:
 		l_result.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE1D;
 		l_result.Texture1D.MostDetailedMip = 0;
-		l_result.Texture1D.MipLevels = GetSRVMipLevels(textureDesc);
+		l_result.Texture1D.MipLevels = GetMipLevels(textureDesc);
 		break;
 	case TextureSampler::Sampler2D:
 		l_result.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 		l_result.Texture2D.MostDetailedMip = 0;
-		l_result.Texture2D.MipLevels = GetSRVMipLevels(textureDesc);
+		l_result.Texture2D.MipLevels = GetMipLevels(textureDesc);
 		break;
 	case TextureSampler::Sampler3D:
 		l_result.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
 		l_result.Texture3D.MostDetailedMip = 0;
-		l_result.Texture3D.MipLevels = GetSRVMipLevels(textureDesc);
+		l_result.Texture3D.MipLevels = GetMipLevels(textureDesc);
 		break;
 	case TextureSampler::Sampler1DArray:
 		l_result.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE1DARRAY;
 		l_result.Texture1DArray.MostDetailedMip = 0;
-		l_result.Texture1DArray.MipLevels = GetSRVMipLevels(textureDesc);
+		l_result.Texture1DArray.MipLevels = GetMipLevels(textureDesc);
 		l_result.Texture1DArray.ArraySize = textureDesc.DepthOrArraySize;
 		break;
 	case TextureSampler::Sampler2DArray:
 		l_result.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MostDetailedMip = 0;
-		l_result.Texture2DArray.MipLevels = GetSRVMipLevels(textureDesc);
+		l_result.Texture2DArray.MipLevels = GetMipLevels(textureDesc);
 		l_result.Texture2DArray.ArraySize = textureDesc.DepthOrArraySize;
 		break;
 	case TextureSampler::SamplerCubemap:
 		l_result.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
 		l_result.TextureCube.MostDetailedMip = 0;
-		l_result.TextureCube.MipLevels = GetSRVMipLevels(textureDesc);
+		l_result.TextureCube.MipLevels = GetMipLevels(textureDesc);
 		break;
 	default:
 		break;
@@ -482,18 +489,15 @@ D3D11_SHADER_RESOURCE_VIEW_DESC DX11Helper::GetSRVDesc(TextureDesc textureDesc, 
 	return l_result;
 }
 
-uint32_t DX11Helper::GetSRVMipLevels(TextureDesc textureDesc)
+uint32_t DX11Helper::GetMipLevels(TextureDesc textureDesc)
 {
-	if (textureDesc.Usage == TextureUsage::ColorAttachment
-		|| textureDesc.Usage == TextureUsage::DepthAttachment
-		|| textureDesc.Usage == TextureUsage::DepthStencilAttachment
-		|| textureDesc.Usage == TextureUsage::RawImage)
+	if (textureDesc.UseMipMap)
 	{
-		return 1;
+		return 4;
 	}
 	else
 	{
-		return -1;
+		return 1;
 	}
 }
 
@@ -542,7 +546,7 @@ D3D11_UNORDERED_ACCESS_VIEW_DESC DX11Helper::GetUAVDesc(TextureDesc textureDesc,
 	case TextureSampler::SamplerCubemap:
 		l_result.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
 		l_result.Texture2DArray.MipSlice = 0;
-		l_result.Texture2DArray.ArraySize = textureDesc.DepthOrArraySize;
+		l_result.Texture2DArray.ArraySize = 6;
 		InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: Use 2D texture array for UAV of cubemap.");
 		break;
 	default:
@@ -721,7 +725,7 @@ bool DX11Helper::CreateResourcesBinder(DX11RenderPassDataComponent* DX11RPDC)
 
 bool DX11Helper::CreateViews(DX11RenderPassDataComponent* DX11RPDC, ID3D11Device* device)
 {
-	if (DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
+	if (DX11RPDC->m_RenderPassDesc.m_UseOutputMerger)
 	{
 		// RTV
 		DX11RPDC->m_RTVs.reserve(DX11RPDC->m_RenderPassDesc.m_RenderTargetCount);

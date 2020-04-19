@@ -32,7 +32,7 @@ namespace DX11Helper
 	D3D11_TEXTURE2D_DESC Get2DTextureDesc(D3D11_TEXTURE_DESC textureDesc);
 	D3D11_TEXTURE3D_DESC Get3DTextureDesc(D3D11_TEXTURE_DESC textureDesc);
 	D3D11_SHADER_RESOURCE_VIEW_DESC GetSRVDesc(TextureDesc textureDesc, D3D11_TEXTURE_DESC D3D11TextureDesc);
-	uint32_t GetSRVMipLevels(TextureDesc textureDesc);
+	uint32_t GetMipLevels(TextureDesc textureDesc);
 	D3D11_UNORDERED_ACCESS_VIEW_DESC GetUAVDesc(TextureDesc textureDesc, D3D11_TEXTURE_DESC D3D11TextureDesc);
 	D3D11_RENDER_TARGET_VIEW_DESC GetRTVDesc(TextureDesc textureDesc);
 	D3D11_DEPTH_STENCIL_VIEW_DESC GetDSVDesc(TextureDesc textureDesc, bool stencilEnable);

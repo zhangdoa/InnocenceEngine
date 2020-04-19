@@ -570,7 +570,8 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent* r
 		}
 
 		// Create UAV
-		if (l_rhs->m_TextureDesc.Usage == TextureUsage::RawImage)
+		if (l_rhs->m_TextureDesc.Usage != TextureUsage::DepthAttachment
+			&& l_rhs->m_TextureDesc.Usage != TextureUsage::DepthStencilAttachment)
 		{
 			l_rhs->m_UAVDesc = GetUAVDesc(l_rhs->m_TextureDesc, l_rhs->m_DX11TextureDesc);
 
@@ -1124,7 +1125,7 @@ bool DX11RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent* r
 
 		if (l_rhs->m_RenderPassDesc.m_RenderTargetCount)
 		{
-			if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
+			if (l_rhs->m_RenderPassDesc.m_UseOutputMerger)
 			{
 				if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 				{
@@ -1160,7 +1161,7 @@ bool DX11RenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 		{
 			if (l_rhs->m_RenderPassDesc.m_UseColorBuffer)
 			{
-				if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
+				if (l_rhs->m_RenderPassDesc.m_UseOutputMerger)
 				{
 					if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 					{
@@ -1545,7 +1546,7 @@ bool DX11RenderingServer::CommandListEnd(RenderPassDataComponent* rhs)
 		m_deviceContext->IASetInputLayout(NULL);
 		m_deviceContext->RSSetState(NULL);
 
-		if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
+		if (l_rhs->m_RenderPassDesc.m_UseOutputMerger)
 		{
 			m_deviceContext->OMSetRenderTargets(0, NULL, NULL);
 		}

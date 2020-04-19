@@ -49,9 +49,10 @@ bool VoxelizationPass::setupVoxelizationPass()
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_IsOffScreen = true;
+	l_RenderPassDesc.m_UseOutputMerger = false;
 
 	l_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler3D;
-	l_RenderPassDesc.m_RenderTargetDesc.Usage = TextureUsage::RawImage;
+	l_RenderPassDesc.m_RenderTargetDesc.Usage = TextureUsage::Sample;
 	l_RenderPassDesc.m_RenderTargetDesc.GPUAccessibility = Accessibility::ReadWrite;
 	l_RenderPassDesc.m_RenderTargetDesc.PixelDataFormat = TexturePixelDataFormat::R;
 	l_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UInt32;

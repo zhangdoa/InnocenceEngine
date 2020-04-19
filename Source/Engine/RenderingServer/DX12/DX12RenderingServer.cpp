@@ -966,7 +966,7 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent* r
 	if (l_rhs->m_TextureDesc.Usage == TextureUsage::ColorAttachment
 		|| l_rhs->m_TextureDesc.Usage == TextureUsage::DepthAttachment
 		|| l_rhs->m_TextureDesc.Usage == TextureUsage::DepthStencilAttachment
-		|| l_rhs->m_TextureDesc.Usage == TextureUsage::RawImage)
+		)
 	{
 		l_rhs->m_CurrentState = l_rhs->m_WriteState;
 	}
@@ -1524,7 +1524,7 @@ bool PreparePipeline(DX12RenderPassDataComponent* renderPass, DX12CommandList* c
 				l_DSVDescriptorCPUHandle = &renderPass->m_DSVDescriptorCPUHandle;
 			}
 
-			if (renderPass->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
+			if (renderPass->m_RenderPassDesc.m_UseOutputMerger)
 			{
 				if (renderPass->m_RenderPassDesc.m_UseMultiFrames)
 				{
@@ -1571,7 +1571,7 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 
 		if (l_rhs->m_RenderPassDesc.m_UseColorBuffer)
 		{
-			if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
+			if (l_rhs->m_RenderPassDesc.m_UseOutputMerger)
 			{
 				if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 				{

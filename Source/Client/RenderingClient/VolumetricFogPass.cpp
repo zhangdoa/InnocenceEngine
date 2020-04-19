@@ -59,11 +59,12 @@ bool VolumetricFogPass::setupFroxelizationPass()
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_IsOffScreen = true;
+	l_RenderPassDesc.m_UseOutputMerger = false;
 
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 
 	l_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler3D;
-	l_RenderPassDesc.m_RenderTargetDesc.Usage = TextureUsage::RawImage;
+	l_RenderPassDesc.m_RenderTargetDesc.Usage = TextureUsage::Sample;
 	l_RenderPassDesc.m_RenderTargetDesc.GPUAccessibility = Accessibility::ReadWrite;
 	l_RenderPassDesc.m_RenderTargetDesc.Width = voxelizationResolution;
 	l_RenderPassDesc.m_RenderTargetDesc.Height = voxelizationResolution;
@@ -272,19 +273,19 @@ bool VolumetricFogPass::Setup()
 	setupRayMarchingPass();
 
 	////
-	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
-	l_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler3D;
-	l_RenderPassDesc.m_RenderTargetDesc.Usage = TextureUsage::RawImage;
-	l_RenderPassDesc.m_RenderTargetDesc.GPUAccessibility = Accessibility::ReadWrite;
-	l_RenderPassDesc.m_RenderTargetDesc.Width = voxelizationResolution;
-	l_RenderPassDesc.m_RenderTargetDesc.Height = voxelizationResolution;
-	l_RenderPassDesc.m_RenderTargetDesc.DepthOrArraySize = voxelizationResolution;
+	auto l_textureDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc().m_RenderTargetDesc;
+	l_textureDesc.Sampler = TextureSampler::Sampler3D;
+	l_textureDesc.Usage = TextureUsage::Sample;
+	l_textureDesc.GPUAccessibility = Accessibility::ReadWrite;
+	l_textureDesc.Width = voxelizationResolution;
+	l_textureDesc.Height = voxelizationResolution;
+	l_textureDesc.DepthOrArraySize = voxelizationResolution;
 
 	m_irraidanceInjectionResult = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("VolumetricFogIrraidanceInjectionResult/");
-	m_irraidanceInjectionResult->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+	m_irraidanceInjectionResult->m_TextureDesc = l_textureDesc;
 
 	m_rayMarchingResult = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("VolumetricFogRayMarchingResult/");
-	m_rayMarchingResult->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+	m_rayMarchingResult->m_TextureDesc = l_textureDesc;
 
 	return true;
 }

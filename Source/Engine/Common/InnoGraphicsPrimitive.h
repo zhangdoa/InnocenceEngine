@@ -18,7 +18,7 @@ namespace InnoType
 	enum class ProceduralMeshShape { Invalid, Triangle, Square, Pentagon, Hexagon, Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron, Sphere };
 
 	enum class TextureSampler { Invalid, Sampler1D, Sampler2D, Sampler3D, Sampler1DArray, Sampler2DArray, SamplerCubemap };
-	enum class TextureUsage { Invalid, Sample, ColorAttachment, DepthAttachment, DepthStencilAttachment, RawImage };
+	enum class TextureUsage { Invalid, Sample, ColorAttachment, DepthAttachment, DepthStencilAttachment };
 	enum class TexturePixelDataFormat { Invalid, R, RG, RGB, RGBA, BGRA, Depth, DepthStencil };
 	enum class TexturePixelDataType { Invalid, UByte, SByte, UShort, SShort, UInt8, SInt8, UInt16, SInt16, UInt32, SInt32, Float16, Float32, Double };
 	enum class TextureWrapMethod { Invalid, Edge, Repeat, Border };
@@ -192,6 +192,7 @@ namespace InnoType
 		bool m_UseColorBuffer = true;
 		bool m_UseDepthBuffer = false;
 		bool m_UseStencilBuffer = false;
+		bool m_UseOutputMerger = true;
 		TextureDesc m_RenderTargetDesc = {};
 		GraphicsPipelineDesc m_GraphicsPipelineDesc = {};
 	};

@@ -76,188 +76,188 @@ bool GIResolvePass::InitializeGPUBuffers()
 	{
 		auto l_GIResolvePassInitializeGPUBuffersTask = g_pModuleManager->getTaskSystem()->submit("GIResolvePassInitializeGPUBuffersTask", 2, nullptr,
 			[&]() {
-			m_surfelGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("SurfelGPUBuffer/");
-			m_surfelGBDC->m_CPUAccessibility = Accessibility::Immutable;
-			m_surfelGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
-			m_surfelGBDC->m_ElementCount = l_surfels.size();
-			m_surfelGBDC->m_ElementSize = sizeof(Surfel);
-			m_surfelGBDC->m_BindingPoint = 0;
-			m_surfelGBDC->m_InitialData = &l_surfels[0];
+				m_surfelGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("SurfelGPUBuffer/");
+				m_surfelGBDC->m_CPUAccessibility = Accessibility::Immutable;
+				m_surfelGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
+				m_surfelGBDC->m_ElementCount = l_surfels.size();
+				m_surfelGBDC->m_ElementSize = sizeof(Surfel);
+				m_surfelGBDC->m_BindingPoint = 0;
+				m_surfelGBDC->m_InitialData = &l_surfels[0];
 
-			g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_surfelGBDC);
+				g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_surfelGBDC);
 
-			m_surfelIrradianceGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("SurfelIrradianceGPUBuffer/");
-			m_surfelIrradianceGBDC->m_CPUAccessibility = Accessibility::Immutable;
-			m_surfelIrradianceGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
-			m_surfelIrradianceGBDC->m_ElementCount = l_surfels.size();
-			m_surfelIrradianceGBDC->m_ElementSize = sizeof(Vec4);
-			m_surfelIrradianceGBDC->m_BindingPoint = 1;
+				m_surfelIrradianceGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("SurfelIrradianceGPUBuffer/");
+				m_surfelIrradianceGBDC->m_CPUAccessibility = Accessibility::Immutable;
+				m_surfelIrradianceGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
+				m_surfelIrradianceGBDC->m_ElementCount = l_surfels.size();
+				m_surfelIrradianceGBDC->m_ElementSize = sizeof(Vec4);
+				m_surfelIrradianceGBDC->m_BindingPoint = 1;
 
-			g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_surfelIrradianceGBDC);
+				g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_surfelIrradianceGBDC);
 
-			auto l_bricks = GIDataLoader::GetBricks();
+				auto l_bricks = GIDataLoader::GetBricks();
 
-			auto l_bricksCount = l_bricks.size();
+				auto l_bricksCount = l_bricks.size();
 
-			auto l_min = InnoMath::maxVec4<float>;
-			auto l_max = InnoMath::minVec4<float>;
+				auto l_min = InnoMath::maxVec4<float>;
+				auto l_max = InnoMath::minVec4<float>;
 
-			for (size_t i = 0; i < l_bricksCount; i++)
-			{
-				l_min = InnoMath::elementWiseMin(l_min, l_bricks[i].boundBox.m_boundMin);
-				l_max = InnoMath::elementWiseMax(l_max, l_bricks[i].boundBox.m_boundMax);
-			}
-			m_irradianceVolumeRange = l_max - l_min;
-			m_irradianceVolumePosOffset = l_min;
-
-			std::vector<uint32_t> l_brickConstantBuffer;
-
-			l_brickConstantBuffer.resize(l_bricks.size() * 2);
-			for (size_t i = 0; i < l_bricks.size(); i++)
-			{
-				l_brickConstantBuffer[2 * i] = l_bricks[i].surfelRangeBegin;
-				l_brickConstantBuffer[2 * i + 1] = l_bricks[i].surfelRangeEnd;
-			}
-
-			m_brickGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("BrickGPUBuffer/");
-			m_brickGBDC->m_CPUAccessibility = Accessibility::Immutable;
-			m_brickGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
-			m_brickGBDC->m_ElementCount = l_bricks.size();
-			m_brickGBDC->m_ElementSize = sizeof(uint32_t) * 2;
-			m_brickGBDC->m_BindingPoint = 0;
-			m_brickGBDC->m_InitialData = &l_brickConstantBuffer[0];
-
-			g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_brickGBDC);
-
-			m_brickIrradianceGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("BrickIrradianceGPUBuffer/");
-			m_brickIrradianceGBDC->m_CPUAccessibility = Accessibility::Immutable;
-			m_brickIrradianceGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
-			m_brickIrradianceGBDC->m_ElementCount = l_bricks.size();
-			m_brickIrradianceGBDC->m_ElementSize = sizeof(Vec4);
-			m_brickIrradianceGBDC->m_BindingPoint = 1;
-
-			g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_brickIrradianceGBDC);
-
-			auto l_brickFactors = GIDataLoader::GetBrickFactors();
-
-			m_brickFactorGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("BrickFactorGPUBuffer/");
-			m_brickFactorGBDC->m_CPUAccessibility = Accessibility::Immutable;
-			m_brickFactorGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
-			m_brickFactorGBDC->m_ElementCount = l_brickFactors.size();
-			m_brickFactorGBDC->m_ElementSize = sizeof(BrickFactor);
-			m_brickFactorGBDC->m_BindingPoint = 2;
-			m_brickFactorGBDC->m_InitialData = &l_brickFactors[0];
-
-			g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_brickFactorGBDC);
-
-			std::vector<Probe> l_probes = GIDataLoader::GetProbes();
-
-			TVec4<uint32_t> l_probeIndex;
-			float l_minPos;
-
-			std::sort(l_probes.begin(), l_probes.end(), [&](Probe A, Probe B)
-			{
-				return A.pos.x < B.pos.x;
-			});
-
-			l_minPos = l_probes[0].pos.x;
-			m_minProbePos.x = l_minPos;
-
-			for (size_t i = 0; i < l_probes.size(); i++)
-			{
-				auto l_probePosWS = l_probes[i].pos;
-
-				if ((l_probePosWS.x - l_minPos) > epsilon<float, 2>)
+				for (size_t i = 0; i < l_bricksCount; i++)
 				{
-					l_minPos = l_probePosWS.x;
-					l_probeIndex.x++;
+					l_min = InnoMath::elementWiseMin(l_min, l_bricks[i].boundBox.m_boundMin);
+					l_max = InnoMath::elementWiseMax(l_max, l_bricks[i].boundBox.m_boundMax);
+				}
+				m_irradianceVolumeRange = l_max - l_min;
+				m_irradianceVolumePosOffset = l_min;
+
+				std::vector<uint32_t> l_brickConstantBuffer;
+
+				l_brickConstantBuffer.resize(l_bricks.size() * 2);
+				for (size_t i = 0; i < l_bricks.size(); i++)
+				{
+					l_brickConstantBuffer[2 * i] = l_bricks[i].surfelRangeBegin;
+					l_brickConstantBuffer[2 * i + 1] = l_bricks[i].surfelRangeEnd;
 				}
 
-				l_probes[i].pos.x = (float)l_probeIndex.x;
-			}
+				m_brickGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("BrickGPUBuffer/");
+				m_brickGBDC->m_CPUAccessibility = Accessibility::Immutable;
+				m_brickGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
+				m_brickGBDC->m_ElementCount = l_bricks.size();
+				m_brickGBDC->m_ElementSize = sizeof(uint32_t) * 2;
+				m_brickGBDC->m_BindingPoint = 0;
+				m_brickGBDC->m_InitialData = &l_brickConstantBuffer[0];
 
-			std::sort(l_probes.begin(), l_probes.end(), [&](Probe A, Probe B)
-			{
-				return A.pos.y < B.pos.y;
-			});
+				g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_brickGBDC);
 
-			l_minPos = l_probes[0].pos.y;
-			m_minProbePos.y = l_minPos;
+				m_brickIrradianceGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("BrickIrradianceGPUBuffer/");
+				m_brickIrradianceGBDC->m_CPUAccessibility = Accessibility::Immutable;
+				m_brickIrradianceGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
+				m_brickIrradianceGBDC->m_ElementCount = l_bricks.size();
+				m_brickIrradianceGBDC->m_ElementSize = sizeof(Vec4);
+				m_brickIrradianceGBDC->m_BindingPoint = 1;
 
-			for (size_t i = 0; i < l_probes.size(); i++)
-			{
-				auto l_probePosWS = l_probes[i].pos;
+				g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_brickIrradianceGBDC);
 
-				if ((l_probePosWS.y - l_minPos) > epsilon<float, 2>)
+				auto l_brickFactors = GIDataLoader::GetBrickFactors();
+
+				m_brickFactorGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("BrickFactorGPUBuffer/");
+				m_brickFactorGBDC->m_CPUAccessibility = Accessibility::Immutable;
+				m_brickFactorGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
+				m_brickFactorGBDC->m_ElementCount = l_brickFactors.size();
+				m_brickFactorGBDC->m_ElementSize = sizeof(BrickFactor);
+				m_brickFactorGBDC->m_BindingPoint = 2;
+				m_brickFactorGBDC->m_InitialData = &l_brickFactors[0];
+
+				g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_brickFactorGBDC);
+
+				std::vector<Probe> l_probes = GIDataLoader::GetProbes();
+
+				TVec4<uint32_t> l_probeIndex;
+				float l_minPos;
+
+				std::sort(l_probes.begin(), l_probes.end(), [&](Probe A, Probe B)
+					{
+						return A.pos.x < B.pos.x;
+					});
+
+				l_minPos = l_probes[0].pos.x;
+				m_minProbePos.x = l_minPos;
+
+				for (size_t i = 0; i < l_probes.size(); i++)
 				{
-					l_minPos = l_probePosWS.y;
-					l_probeIndex.y++;
+					auto l_probePosWS = l_probes[i].pos;
+
+					if ((l_probePosWS.x - l_minPos) > epsilon<float, 2>)
+					{
+						l_minPos = l_probePosWS.x;
+						l_probeIndex.x++;
+					}
+
+					l_probes[i].pos.x = (float)l_probeIndex.x;
 				}
 
-				l_probes[i].pos.y = (float)l_probeIndex.y;
-			}
+				std::sort(l_probes.begin(), l_probes.end(), [&](Probe A, Probe B)
+					{
+						return A.pos.y < B.pos.y;
+					});
 
-			std::sort(l_probes.begin(), l_probes.end(), [&](Probe A, Probe B)
-			{
-				return A.pos.z < B.pos.z;
-			});
+				l_minPos = l_probes[0].pos.y;
+				m_minProbePos.y = l_minPos;
 
-			l_minPos = l_probes[0].pos.z;
-			m_minProbePos.z = l_minPos;
-
-			for (size_t i = 0; i < l_probes.size(); i++)
-			{
-				auto l_probePosWS = l_probes[i].pos;
-
-				if ((l_probePosWS.z - l_minPos) > epsilon<float, 2>)
+				for (size_t i = 0; i < l_probes.size(); i++)
 				{
-					l_minPos = l_probePosWS.z;
-					l_probeIndex.z++;
+					auto l_probePosWS = l_probes[i].pos;
+
+					if ((l_probePosWS.y - l_minPos) > epsilon<float, 2>)
+					{
+						l_minPos = l_probePosWS.y;
+						l_probeIndex.y++;
+					}
+
+					l_probes[i].pos.y = (float)l_probeIndex.y;
 				}
 
-				l_probes[i].pos.z = (float)l_probeIndex.z;
-			}
+				std::sort(l_probes.begin(), l_probes.end(), [&](Probe A, Probe B)
+					{
+						return A.pos.z < B.pos.z;
+					});
 
-			m_minProbePos.w = 1.0f;
+				l_minPos = l_probes[0].pos.z;
+				m_minProbePos.z = l_minPos;
 
-			m_probeGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("ProbeGPUBuffer/");
-			m_probeGBDC->m_CPUAccessibility = Accessibility::Immutable;
-			m_probeGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
-			m_probeGBDC->m_ElementCount = l_probes.size();
-			m_probeGBDC->m_ElementSize = sizeof(Probe);
-			m_probeGBDC->m_BindingPoint = 3;
-			m_probeGBDC->m_InitialData = &l_probes[0];
+				for (size_t i = 0; i < l_probes.size(); i++)
+				{
+					auto l_probePosWS = l_probes[i].pos;
 
-			g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_probeGBDC);
+					if ((l_probePosWS.z - l_minPos) > epsilon<float, 2>)
+					{
+						l_minPos = l_probePosWS.z;
+						l_probeIndex.z++;
+					}
 
-			auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+					l_probes[i].pos.z = (float)l_probeIndex.z;
+				}
 
-			m_probeVolume = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("ProbeVolume/");
-			m_probeVolume->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+				m_minProbePos.w = 1.0f;
 
-			m_probeVolume->m_TextureDesc.Width = (uint32_t)l_probeIndex.x + 1;
-			m_probeVolume->m_TextureDesc.Height = (uint32_t)l_probeIndex.y + 1;
-			m_probeVolume->m_TextureDesc.DepthOrArraySize = ((uint32_t)l_probeIndex.z + 1) * 6;
-			m_probeVolume->m_TextureDesc.Usage = TextureUsage::RawImage;
-			m_probeVolume->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
-			m_probeVolume->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
+				m_probeGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("ProbeGPUBuffer/");
+				m_probeGBDC->m_CPUAccessibility = Accessibility::Immutable;
+				m_probeGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
+				m_probeGBDC->m_ElementCount = l_probes.size();
+				m_probeGBDC->m_ElementSize = sizeof(Probe);
+				m_probeGBDC->m_BindingPoint = 3;
+				m_probeGBDC->m_InitialData = &l_probes[0];
 
-			g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_probeVolume);
+				g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_probeGBDC);
 
-			m_irradianceVolume = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("IrradianceVolume/");
-			m_irradianceVolume->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+				auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
-			m_irradianceVolume->m_TextureDesc.Width = 64;
-			m_irradianceVolume->m_TextureDesc.Height = 32;
-			m_irradianceVolume->m_TextureDesc.DepthOrArraySize = 64 * 6;
-			m_irradianceVolume->m_TextureDesc.Usage = TextureUsage::RawImage;
-			m_irradianceVolume->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
-			m_irradianceVolume->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
+				m_probeVolume = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("ProbeVolume/");
+				m_probeVolume->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
-			g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_irradianceVolume);
+				m_probeVolume->m_TextureDesc.Width = (uint32_t)l_probeIndex.x + 1;
+				m_probeVolume->m_TextureDesc.Height = (uint32_t)l_probeIndex.y + 1;
+				m_probeVolume->m_TextureDesc.DepthOrArraySize = ((uint32_t)l_probeIndex.z + 1) * 6;
+				m_probeVolume->m_TextureDesc.Usage = TextureUsage::Sample;
+				m_probeVolume->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
+				m_probeVolume->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 
-			m_GIDataLoaded = true;
-		});
+				g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_probeVolume);
+
+				m_irradianceVolume = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("IrradianceVolume/");
+				m_irradianceVolume->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+
+				m_irradianceVolume->m_TextureDesc.Width = 64;
+				m_irradianceVolume->m_TextureDesc.Height = 32;
+				m_irradianceVolume->m_TextureDesc.DepthOrArraySize = 64 * 6;
+				m_irradianceVolume->m_TextureDesc.Usage = TextureUsage::Sample;
+				m_irradianceVolume->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
+				m_irradianceVolume->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
+
+				g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_irradianceVolume);
+
+				m_GIDataLoaded = true;
+			});
 
 		l_GIResolvePassInitializeGPUBuffersTask->Wait();
 	}
@@ -269,37 +269,37 @@ bool GIResolvePass::DeleteGPUBuffers()
 {
 	auto l_GIResolvePassDeleteGPUBuffersTask = g_pModuleManager->getTaskSystem()->submit("GIResolvePassDeleteGPUBuffersTask", 2, nullptr,
 		[&]() {
-		if (m_surfelGBDC)
-		{
-			g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_surfelGBDC);
-		}
-		if (m_surfelIrradianceGBDC)
-		{
-			g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_surfelIrradianceGBDC);
-		}
-		if (m_brickGBDC)
-		{
-			g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_brickGBDC);
-		}
-		if (m_brickIrradianceGBDC)
-		{
-			g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_brickIrradianceGBDC);
-		}
-		if (m_brickFactorGBDC)
-		{
-			g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_brickFactorGBDC);
-		}
-		if (m_probeGBDC)
-		{
-			g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_probeGBDC);
-		}
-		if (m_probeVolume)
-		{
-			g_pModuleManager->getRenderingServer()->DeleteTextureDataComponent(m_probeVolume);
-		}
+			if (m_surfelGBDC)
+			{
+				g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_surfelGBDC);
+			}
+			if (m_surfelIrradianceGBDC)
+			{
+				g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_surfelIrradianceGBDC);
+			}
+			if (m_brickGBDC)
+			{
+				g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_brickGBDC);
+			}
+			if (m_brickIrradianceGBDC)
+			{
+				g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_brickIrradianceGBDC);
+			}
+			if (m_brickFactorGBDC)
+			{
+				g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_brickFactorGBDC);
+			}
+			if (m_probeGBDC)
+			{
+				g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_probeGBDC);
+			}
+			if (m_probeVolume)
+			{
+				g_pModuleManager->getRenderingServer()->DeleteTextureDataComponent(m_probeVolume);
+			}
 
-		m_GIDataLoaded = false;
-	});
+			m_GIDataLoaded = false;
+		});
 
 	l_GIResolvePassDeleteGPUBuffersTask->Wait();
 
@@ -412,7 +412,7 @@ bool GIResolvePass::setupSky()
 	m_skyRadianceVolume->m_TextureDesc.Width = 8;
 	m_skyRadianceVolume->m_TextureDesc.Height = 8;
 	m_skyRadianceVolume->m_TextureDesc.DepthOrArraySize = 6;
-	m_skyRadianceVolume->m_TextureDesc.Usage = TextureUsage::RawImage;
+	m_skyRadianceVolume->m_TextureDesc.Usage = TextureUsage::Sample;
 	m_skyRadianceVolume->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
 	m_skyRadianceVolume->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::RGBA;
 
@@ -941,17 +941,17 @@ bool GIResolvePass::Terminate()
 	return true;
 }
 
-RenderPassDataComponent * GIResolvePass::GetRPDC()
+RenderPassDataComponent* GIResolvePass::GetRPDC()
 {
 	return m_surfelRPDC;
 }
 
-ShaderProgramComponent * GIResolvePass::GetSPC()
+ShaderProgramComponent* GIResolvePass::GetSPC()
 {
 	return m_surfelSPC;
 }
 
-IResourceBinder * GIResolvePass::GetProbeVolume()
+IResourceBinder* GIResolvePass::GetProbeVolume()
 {
 	if (m_probeVolume)
 	{
@@ -963,7 +963,7 @@ IResourceBinder * GIResolvePass::GetProbeVolume()
 	}
 }
 
-IResourceBinder * GIResolvePass::GetIrradianceVolume()
+IResourceBinder* GIResolvePass::GetIrradianceVolume()
 {
 	if (m_irradianceVolume)
 	{
