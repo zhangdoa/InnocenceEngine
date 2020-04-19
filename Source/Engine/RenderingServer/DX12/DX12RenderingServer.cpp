@@ -577,8 +577,6 @@ bool DX12RenderingServerNS::GenerateMipmap(DX12TextureDataComponent* DX12TDC)
 
 		commandList->Dispatch(std::max(dstWidth / 8, 1u), std::max(dstHeight / 8, 1u), 1);
 
-		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(DX12TDC->m_ResourceHandle.Get()));
-
 		l_SRV.ptr += l_CSUDescSize;
 		l_UAV.ptr += l_CSUDescSize;
 	}
@@ -2166,6 +2164,13 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 	DeleteTextureDataComponent(l_destTDC);
 
 	return l_result;
+}
+
+bool DX12RenderingServer::GenerateMipmap(TextureDataComponent* rhs)
+{
+	auto l_rhs = reinterpret_cast<DX12TextureDataComponent*>(rhs);
+
+	return DX12RenderingServerNS::GenerateMipmap(l_rhs);
 }
 
 bool DX12RenderingServer::Resize()

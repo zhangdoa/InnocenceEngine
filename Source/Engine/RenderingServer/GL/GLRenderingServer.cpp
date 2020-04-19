@@ -1125,6 +1125,14 @@ std::vector<Vec4> GLRenderingServer::ReadTextureBackToCPU(RenderPassDataComponen
 	return l_textureSamples;
 }
 
+bool GLRenderingServer::GenerateMipmap(TextureDataComponent* rhs)
+{
+	auto l_rhs = reinterpret_cast<GLTextureDataComponent*>(rhs);
+	glGenerateMipmap(l_rhs->m_GLTextureDesc.TextureSampler);
+
+	return true;
+}
+
 bool GLRenderingServer::Resize()
 {
 	m_needResize = true;

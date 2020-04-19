@@ -1113,6 +1113,11 @@ std::vector<Vec4> VKRenderingServer::ReadTextureBackToCPU(RenderPassDataComponen
 	return std::vector<Vec4>();
 }
 
+bool VKRenderingServer::GenerateMipmap(TextureDataComponent* rhs)
+{
+	return true;
+}
+
 bool VKRenderingServer::Resize()
 {
 	return true;

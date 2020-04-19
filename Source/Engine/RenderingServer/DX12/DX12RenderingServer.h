@@ -58,6 +58,7 @@ public:
 
 	Vec4 ReadRenderTargetSample(RenderPassDataComponent* rhs, size_t renderTargetIndex, size_t x, size_t y) override;
 	std::vector<Vec4> ReadTextureBackToCPU(RenderPassDataComponent* canvas, TextureDataComponent* TDC) override;
+	bool GenerateMipmap(TextureDataComponent* rhs) override;
 
 	bool Resize() override;
 

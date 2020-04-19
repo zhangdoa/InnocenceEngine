@@ -1749,6 +1749,14 @@ std::vector<Vec4> DX11RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 	return l_result;
 }
 
+bool DX11RenderingServer::GenerateMipmap(TextureDataComponent* rhs)
+{
+	auto l_rhs = reinterpret_cast<DX11TextureDataComponent*>(rhs);
+	m_deviceContext->GenerateMips(l_rhs->m_SRV);
+
+	return true;
+}
+
 bool DX11RenderingServer::Resize()
 {
 	return true;

@@ -81,6 +81,7 @@ public:
 
 	virtual Vec4 ReadRenderTargetSample(RenderPassDataComponent* rhs, size_t renderTargetIndex, size_t x, size_t y) = 0;
 	virtual std::vector<Vec4> ReadTextureBackToCPU(RenderPassDataComponent* canvas, TextureDataComponent* TDC) = 0;
+	virtual bool GenerateMipmap(TextureDataComponent* rhs) = 0;
 
 	virtual bool Resize() = 0;
 
