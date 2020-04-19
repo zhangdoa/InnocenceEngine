@@ -76,6 +76,7 @@ bool DefaultRenderingClient::Setup()
 		LuminanceHistogramPass::Setup();
 		BRDFLUTPass::Setup();
 		SunShadowPass::Setup();
+		VoxelizationPass::Setup();
 		OpaquePass::Setup();
 		AnimationPass::Setup();
 		SSAOPass::Setup();
@@ -84,7 +85,6 @@ bool DefaultRenderingClient::Setup()
 		PreTAAPass::Setup();
 		TransparentPass::Setup();
 		VolumetricFogPass::Setup();
-		VoxelizationPass::Setup();
 		TAAPass::Setup();
 		PostTAAPass::Setup();
 		MotionBlurPass::Setup();
@@ -107,6 +107,7 @@ bool DefaultRenderingClient::Setup()
 		BRDFLUTPass::PrepareCommandList();
 		BRDFLUTPass::ExecuteCommandList();
 		SunShadowPass::Initialize();
+		VoxelizationPass::Initialize();
 		OpaquePass::Initialize();
 		AnimationPass::Initialize();
 		SSAOPass::Initialize();
@@ -115,7 +116,6 @@ bool DefaultRenderingClient::Setup()
 		PreTAAPass::Initialize();
 		TransparentPass::Initialize();
 		VolumetricFogPass::Initialize();
-		VoxelizationPass::Initialize();
 		TAAPass::Initialize();
 		PostTAAPass::Initialize();
 		MotionBlurPass::Initialize();
@@ -133,10 +133,10 @@ bool DefaultRenderingClient::Setup()
 
 		DefaultGPUBuffers::Upload();
 		LightCullingPass::PrepareCommandList();
+		VoxelizationPass::PrepareCommandList(m_showVoxel);
 
 		if (m_showVoxel)
 		{
-			VoxelizationPass::PrepareCommandList();
 			l_canvas = VoxelizationPass::GetVisualizationResult();
 		}
 		else if (m_drawBRDFTest)
@@ -155,7 +155,7 @@ bool DefaultRenderingClient::Setup()
 		}
 		else
 		{
-			GIResolvePass::PrepareCommandList();
+			//GIResolvePass::PrepareCommandList();
 
 			SunShadowPass::PrepareCommandList();
 			OpaquePass::PrepareCommandList();
@@ -203,10 +203,10 @@ bool DefaultRenderingClient::Setup()
 		auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
 
 		LightCullingPass::ExecuteCommandList();
+		VoxelizationPass::ExecuteCommandList(m_showVoxel);
 
 		if (m_showVoxel)
 		{
-			VoxelizationPass::ExecuteCommandList();
 		}
 		else if (m_drawBRDFTest)
 		{
@@ -216,9 +216,12 @@ bool DefaultRenderingClient::Setup()
 		{
 			GIResolveTestPass::ExecuteCommandList();
 		}
+		else if (m_showLightHeatmap)
+		{
+		}
 		else
 		{
-			GIResolvePass::ExecuteCommandList();
+			//GIResolvePass::ExecuteCommandList();
 
 			SunShadowPass::ExecuteCommandList();
 			OpaquePass::ExecuteCommandList();
@@ -276,6 +279,7 @@ bool DefaultRenderingClient::Setup()
 		GIDataLoader::Terminate();
 		BRDFLUTPass::Terminate();
 		SunShadowPass::Terminate();
+		VoxelizationPass::Terminate();
 		OpaquePass::Terminate();
 		AnimationPass::Terminate();
 		SSAOPass::Terminate();
@@ -284,7 +288,6 @@ bool DefaultRenderingClient::Setup()
 		PreTAAPass::Terminate();
 		TransparentPass::Terminate();
 		VolumetricFogPass::Terminate();
-		VoxelizationPass::Terminate();
 		TAAPass::Terminate();
 		PostTAAPass::Terminate();
 		MotionBlurPass::Terminate();

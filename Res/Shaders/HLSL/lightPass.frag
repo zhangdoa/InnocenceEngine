@@ -18,6 +18,7 @@ SamplerState SampleTypePoint : register(s0);
 
 #include "common/BSDF.hlsl"
 #include "common/shadowResolver.hlsl"
+//#define uni_drawCSMSplitedArea
 
 struct PixelInputType
 {
@@ -31,6 +32,75 @@ struct PixelOutputType
 };
 
 static const float sunAngularRadius = 0.000071;
+
+static const float3 CONES[] =
+{
+	float3(0.57735, 0.57735, 0.57735),
+	float3(0.57735, -0.57735, -0.57735),
+	float3(-0.57735, 0.57735, -0.57735),
+	float3(-0.57735, -0.57735, 0.57735),
+	float3(-0.903007, -0.182696, -0.388844),
+	float3(-0.903007, 0.182696, 0.388844),
+	float3(0.903007, -0.182696, 0.388844),
+	float3(0.903007, 0.182696, -0.388844),
+	float3(-0.388844, -0.903007, -0.182696),
+	float3(0.388844, -0.903007, 0.182696),
+	float3(0.388844, 0.903007, -0.182696),
+	float3(-0.388844, 0.903007, 0.182696),
+	float3(-0.182696, -0.388844, -0.903007),
+	float3(0.182696, 0.388844, -0.903007),
+	float3(-0.182696, 0.388844, 0.903007),
+	float3(0.182696, -0.388844, 0.903007)
+};
+
+inline float4 ConeTrace(in float3 P, in float3 N, in float3 coneDirection, in float coneAperture)
+{
+	float3 color = 0;
+
+	float dist = 1.0;
+	float3 startPos = P + N;
+
+	while (dist < 512)
+	{
+		float diameter = max(1.0, 2 * coneAperture * dist);
+		float mip = log2(diameter);
+
+		float3 tc = startPos + coneDirection * dist;
+		tc = tc - voxelizationPassCBuffer.volumeCenter.xyz;
+		tc /= (voxelizationPassCBuffer.volumeExtend.xyz * 0.5);
+		tc = tc * float3(0.5f, 0.5f, 0.5f) + 0.5f;
+
+		if (mip >= 4)
+			break;
+
+		float4 sam = in_IrradianceVolume.SampleLevel(SampleTypePoint, tc, mip);
+
+		color += sam.rgb;
+
+		dist += diameter * 16;
+	}
+
+	return float4(color, 1.0f);
+}
+
+inline float4 ConeTraceRadiance(in float3 P, in float3 N)
+{
+	float4 radiance = 0;
+
+	for (uint cone = 0; cone < 16; ++cone)
+	{
+		float3 coneDirection = normalize(CONES[cone] + N);
+
+		coneDirection *= dot(coneDirection, N) < 0 ? -1 : 1;
+
+		radiance += ConeTrace(P, N, coneDirection, tan(PI * 0.5f * 0.33f));
+	}
+
+	radiance *= 0.0625;
+	radiance.a = saturate(radiance.a);
+
+	return max(0, radiance);
+}
 
 PixelOutputType main(PixelInputType input) : SV_TARGET
 {
@@ -48,15 +118,58 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float3 albedo = GPassRT2.xyz;
 	float ao = GPassRT2.w;
 	ao *= SSAO;
+	float3 Lo = float3(0, 0, 0);
+	float3 N = normalize(normalWS);
 
+#ifdef uni_drawCSMSplitedArea
+	float3 L = normalize(-perFrameCBuffer.sun_direction.xyz);
+	float NdotL = max(dot(N, L), 0.0);
+
+	Lo = float3(NdotL, NdotL, NdotL);
+	Lo *= 1.0 - SunShadowResolver(posWS);
+
+	int splitIndex = NR_CSM_SPLITS;
+	for (int i = 0; i < NR_CSM_SPLITS; i++)
+	{
+		if (posWS.x >= CSMs[i].AABBMin.x &&
+			posWS.y >= CSMs[i].AABBMin.y &&
+			posWS.z >= CSMs[i].AABBMin.z &&
+			posWS.x <= CSMs[i].AABBMax.x &&
+			posWS.y <= CSMs[i].AABBMax.y &&
+			posWS.z <= CSMs[i].AABBMax.z)
+		{
+			splitIndex = i;
+			break;
+		}
+	}
+
+	if (splitIndex == 0)
+	{
+		Lo.g = 0;
+		Lo.b = 0;
+	}
+	else if (splitIndex == 1)
+	{
+		Lo.b = 0;
+	}
+	else if (splitIndex == 2)
+	{
+		Lo.r = 0;
+		Lo.b = 0;
+	}
+	else if (splitIndex == 3)
+	{
+		Lo.r = 0;
+		Lo.g = 0;
+	}
+#endif
+
+#if !defined (uni_drawCSMSplitedArea)
 	float3 F0 = float3(0.04, 0.04, 0.04);
 	F0 = lerp(F0, albedo, metallic);
 
-	float3 N = normalize(normalWS);
 	float3 V = normalize(perFrameCBuffer.camera_posWS - posWS);
 	float NdotV = max(dot(N, V), 0.0);
-
-	float3 Lo = float3(0, 0, 0);
 
 	// direction light, sun light
 	float3 D = normalize(-perFrameCBuffer.sun_direction.xyz);
@@ -156,54 +269,62 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	//	Lo += getOutLuminance(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, F0, albedo, illuminance * sphereLights[i].luminousFlux.xyz);
 	//}
 
-	// GI
-	// [https://steamcdn-a.akamaihd.net/apps/valve/2006/SIGGRAPH06_Course_ShadingInValvesSourceEngine.pdf]
-	float3 nSquared = N * N;
-	int3 isNegative = (N < 0.0);
-	float3 GISampleCoord = (posWS - GICBuffer.irradianceVolumeOffset.xyz) / perFrameCBuffer.posWSNormalizer.xyz;
-	int3 isOutside = ((GISampleCoord > 1.0) || (GISampleCoord < 0.0));
+	//// GI
+	//// [https://steamcdn-a.akamaihd.net/apps/valve/2006/SIGGRAPH06_Course_ShadingInValvesSourceEngine.pdf]
+	//float3 nSquared = N * N;
+	//int3 isNegative = (N < 0.0);
+	//float3 GISampleCoord = (posWS - GICBuffer.irradianceVolumeOffset.xyz) / perFrameCBuffer.posWSNormalizer.xyz;
+	//int3 isOutside = ((GISampleCoord > 1.0) || (GISampleCoord < 0.0));
 
-	GISampleCoord.z /= 6.0;
+	//// Volumetric Fog
+	//float4 fog = in_VolumetricFog.Sample(SampleTypePoint, GISampleCoord.xyz);
+	//Lo += fog.xyz;
 
-	if ((!isOutside.x) && (!isOutside.y) && (!isOutside.z))
-	{
-		float3 GISampleCoordPX = GISampleCoord;
-		float3 GISampleCoordNX = GISampleCoord + float3(0, 0, 1.0 / 6.0);
-		float3 GISampleCoordPY = GISampleCoord + float3(0, 0, 2.0 / 6.0);
-		float3 GISampleCoordNY = GISampleCoord + float3(0, 0, 3.0 / 6.0);
-		float3 GISampleCoordPZ = GISampleCoord + float3(0, 0, 4.0 / 6.0);
-		float3 GISampleCoordNZ = GISampleCoord + float3(0, 0, 5.0 / 6.0);
+	//GISampleCoord.z /= 6.0;
 
-		float4 indirectLight = float4(0.0f, 0.0f, 0.0f, 0.0f);
-		if (isNegative.x)
-		{
-			indirectLight += nSquared.x * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordNX);
-		}
-		else
-		{
-			indirectLight += nSquared.x * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordPX);
-		}
-		if (isNegative.y)
-		{
-			indirectLight += nSquared.y * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordNY);
-		}
-		else
-		{
-			indirectLight += nSquared.y * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordPY);
-		}
-		if (isNegative.z)
-		{
-			indirectLight += nSquared.z * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordNZ);
-		}
-		else
-		{
-			indirectLight += nSquared.z * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordPZ);
-		}
+	//if ((!isOutside.x) && (!isOutside.y) && (!isOutside.z))
+	//{
+	//	float3 GISampleCoordPX = GISampleCoord;
+	//	float3 GISampleCoordNX = GISampleCoord + float3(0, 0, 1.0 / 6.0);
+	//	float3 GISampleCoordPY = GISampleCoord + float3(0, 0, 2.0 / 6.0);
+	//	float3 GISampleCoordNY = GISampleCoord + float3(0, 0, 3.0 / 6.0);
+	//	float3 GISampleCoordPZ = GISampleCoord + float3(0, 0, 4.0 / 6.0);
+	//	float3 GISampleCoordNZ = GISampleCoord + float3(0, 0, 5.0 / 6.0);
 
-		Lo += indirectLight.xyz;
-	}
+	//	float4 indirectLight = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	//	if (isNegative.x)
+	//	{
+	//		indirectLight += nSquared.x * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordNX);
+	//	}
+	//	else
+	//	{
+	//		indirectLight += nSquared.x * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordPX);
+	//	}
+	//	if (isNegative.y)
+	//	{
+	//		indirectLight += nSquared.y * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordNY);
+	//	}
+	//	else
+	//	{
+	//		indirectLight += nSquared.y * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordPY);
+	//	}
+	//	if (isNegative.z)
+	//	{
+	//		indirectLight += nSquared.z * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordNZ);
+	//	}
+	//	else
+	//	{
+	//		indirectLight += nSquared.z * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordPZ);
+	//	}
+
+	//	Lo += indirectLight.xyz;
+	//}
+
+	Lo += ConeTraceRadiance(posWS, normalWS).xyz;
+
 	// ambient occlusion
 	Lo *= ao;
+#endif
 
 	output.lightPassRT0 = float4(Lo, 1.0);
 	return output;

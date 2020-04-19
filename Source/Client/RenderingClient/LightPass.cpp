@@ -1,6 +1,7 @@
 #include "LightPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
+#include "VoxelizationPass.h"
 #include "OpaquePass.h"
 #include "BRDFLUTPass.h"
 #include "SSAOPass.h"
@@ -49,7 +50,7 @@ bool LightPass::Setup()
 
 	m_RPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC->m_ResourceBinderLayoutDescs.resize(18);
+	m_RPDC->m_ResourceBinderLayoutDescs.resize(19);
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
@@ -142,6 +143,10 @@ bool LightPass::Setup()
 	m_RPDC->m_ResourceBinderLayoutDescs[17].m_DescriptorIndex = 0;
 	m_RPDC->m_ResourceBinderLayoutDescs[17].m_IndirectBinding = true;
 
+	m_RPDC->m_ResourceBinderLayoutDescs[18].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_RPDC->m_ResourceBinderLayoutDescs[18].m_DescriptorSetIndex = 0;
+	m_RPDC->m_ResourceBinderLayoutDescs[18].m_DescriptorIndex = 9;
+
 	m_RPDC->m_ShaderProgram = m_SPC;
 
 	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("LightPass/");
@@ -178,6 +183,7 @@ bool LightPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_SphereLightGBDC->m_ResourceBinder, 2, 4, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_CSMGBDC->m_ResourceBinder, 3, 5, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_GIGBDC->m_ResourceBinder, 4, 8, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, VoxelizationPass::GetVoxelizationCBuffer(), 18, 9, Accessibility::ReadOnly);
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[0], 5, 0);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[1], 6, 1);
@@ -188,8 +194,9 @@ bool LightPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, SSAOPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 11, 6);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, SunShadowPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 12, 7);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, LightCullingPass::GetLightGrid(), 13, 8, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, GIResolvePass::GetIrradianceVolume(), 14, 9, Accessibility::ReadOnly);
-	//g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, VolumetricFogPass::GetRayMarchingResult(), 15, 10, Accessibility::ReadOnly);
+	//g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, GIResolvePass::GetIrradianceVolume(), 14, 9, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, VoxelizationPass::GetVoxelizationLuminanceVolume(), 14, 9, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, VolumetricFogPass::GetRayMarchingResult(), 15, 10, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, LightCullingPass::GetLightIndexList()->m_ResourceBinder, 16, 11, Accessibility::ReadOnly, 0);
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
@@ -205,8 +212,9 @@ bool LightPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, SSAOPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 11, 6);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, SunShadowPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 12, 7);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, LightCullingPass::GetLightGrid(), 13, 8, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, GIResolvePass::GetIrradianceVolume(), 14, 9, Accessibility::ReadOnly);
-	//g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, VolumetricFogPass::GetRayMarchingResult(), 15, 10, Accessibility::ReadOnly);
+	//g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, GIResolvePass::GetIrradianceVolume(), 14, 9, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, VoxelizationPass::GetVoxelizationLuminanceVolume(), 14, 9, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, VolumetricFogPass::GetRayMarchingResult(), 15, 10, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, LightCullingPass::GetLightIndexList()->m_ResourceBinder, 16, 11, Accessibility::ReadOnly, 0);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);

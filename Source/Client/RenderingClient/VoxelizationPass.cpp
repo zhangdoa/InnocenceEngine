@@ -368,7 +368,7 @@ bool VoxelizationPass::visualization()
 	return true;
 }
 
-bool VoxelizationPass::PrepareCommandList()
+bool VoxelizationPass::PrepareCommandList(bool visualize)
 {
 	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getTotalSceneAABB();
 
@@ -381,12 +381,16 @@ bool VoxelizationPass::PrepareCommandList()
 
 	voxelization();
 	convertTexture();
-	visualization();
+
+	if (visualize)
+	{
+		visualization();
+	}
 
 	return true;
 }
 
-bool VoxelizationPass::ExecuteCommandList()
+bool VoxelizationPass::ExecuteCommandList(bool visualize)
 {
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_voxelizationRPDC);
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_voxelizationRPDC);
@@ -394,8 +398,11 @@ bool VoxelizationPass::ExecuteCommandList()
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_convertRPDC);
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_convertRPDC);
 
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_visualizationRPDC);
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_visualizationRPDC);
+	if (visualize)
+	{
+		g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_visualizationRPDC);
+		g_pModuleManager->getRenderingServer()->WaitForFrame(m_visualizationRPDC);
+	}
 
 	return true;
 }
@@ -409,7 +416,17 @@ bool VoxelizationPass::Terminate()
 	return true;
 }
 
+IResourceBinder* VoxelizationPass::GetVoxelizationLuminanceVolume()
+{
+	return m_luminanceVolume->m_ResourceBinder;
+}
+
 IResourceBinder* VoxelizationPass::GetVisualizationResult()
 {
 	return m_visualizationRPDC->m_RenderTargets[0]->m_ResourceBinder;
+}
+
+IResourceBinder* VoxelizationPass::GetVoxelizationCBuffer()
+{
+	return m_voxelizationCBufferGBDC->m_ResourceBinder;
 }
