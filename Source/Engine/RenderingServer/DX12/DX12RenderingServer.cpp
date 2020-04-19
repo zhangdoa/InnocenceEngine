@@ -13,6 +13,10 @@
 #include <DXProgrammableCapture.h>
 #include <DXGIDebug.h>
 
+#ifdef max
+#undef max
+#endif
+
 using namespace DX12Helper;
 
 #include "../CommonFunctionDefinationMacro.inl"
@@ -37,6 +41,9 @@ namespace DX12RenderingServerNS
 	bool CreateGlobalCommandAllocator();
 	bool CreateGlobalCSUHeap();
 	bool CreateGlobalSamplerHeap();
+	bool CreateMipmapGenerator();
+
+	bool GenerateMipmap(DX12TextureDataComponent* DX12TDC);
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -106,6 +113,9 @@ namespace DX12RenderingServerNS
 	DX12RenderPassDataComponent* m_SwapChainRPDC = 0;
 	DX12ShaderProgramComponent* m_SwapChainSPC = 0;
 	DX12SamplerDataComponent* m_SwapChainSDC = 0;
+
+	ID3D12RootSignature* mipMapRootSignature = 0;
+	ID3D12PipelineState* psoMipMaps = 0;
 }
 
 bool CheckWriteState(DX12TextureDataComponent* rhs, DX12CommandList* commandList)
@@ -463,6 +473,126 @@ bool DX12RenderingServerNS::CreateGlobalSamplerHeap()
 	return true;
 }
 
+bool DX12RenderingServerNS::CreateMipmapGenerator()
+{
+	CD3DX12_DESCRIPTOR_RANGE srvCbvRanges[2];
+	CD3DX12_ROOT_PARAMETER rootParameters[3];
+	srvCbvRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0);
+	srvCbvRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0);
+	rootParameters[0].InitAsConstants(2, 0);
+	rootParameters[1].InitAsDescriptorTable(1, &srvCbvRanges[0]);
+	rootParameters[2].InitAsDescriptorTable(1, &srvCbvRanges[1]);
+
+	D3D12_STATIC_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+	samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	samplerDesc.MipLODBias = 0.0f;
+	samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+	samplerDesc.MinLOD = 0.0f;
+	samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
+	samplerDesc.MaxAnisotropy = 0;
+	samplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
+	samplerDesc.ShaderRegister = 0;
+	samplerDesc.RegisterSpace = 0;
+	samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+	ID3DBlob* signature;
+	ID3DBlob* error;
+	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
+	rootSignatureDesc.Init(_countof(rootParameters), rootParameters, 1, &samplerDesc, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+	D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
+	m_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&mipMapRootSignature));
+
+	ShaderFilePath l_path = "mipmapGenerator.comp/";
+	ID3DBlob* l_mipMapComputeShader;
+
+	LoadShaderFile(&l_mipMapComputeShader, ShaderStage::Compute, l_path);
+
+	D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
+	psoDesc.pRootSignature = mipMapRootSignature;
+	psoDesc.CS = { reinterpret_cast<UINT8*>(l_mipMapComputeShader->GetBufferPointer()), l_mipMapComputeShader->GetBufferSize() };
+	m_device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&psoMipMaps));
+
+	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Mipmap generator has been created.");
+
+	return true;
+}
+
+bool DX12RenderingServerNS::GenerateMipmap(DX12TextureDataComponent* DX12TDC)
+{
+	struct DWParam
+	{
+		DWParam(FLOAT f) : Float(f) {}
+		DWParam(UINT u) : Uint(u) {}
+
+		void operator= (FLOAT f) { Float = f; }
+		void operator= (UINT u) { Uint = u; }
+
+		union
+		{
+			FLOAT Float;
+			UINT Uint;
+		};
+	};
+
+	if (!DX12TDC->m_TextureDesc.UseMipMap)
+	{
+		InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Attempt to generate mipmaps for texture without mipmaps.");
+
+		return false;
+	}
+
+	auto l_CSUDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	ID3D12DescriptorHeap* l_heaps[] = { m_CSUHeap.Get() };
+
+	auto commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
+
+	commandList->SetComputeRootSignature(mipMapRootSignature);
+	commandList->SetPipelineState(psoMipMaps);
+	commandList->SetDescriptorHeaps(1, l_heaps);
+
+	if (DX12TDC->m_CurrentState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+	{
+		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(DX12TDC->m_ResourceHandle.Get(), DX12TDC->m_CurrentState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+	}
+
+	auto l_resourceBinder = reinterpret_cast<DX12ResourceBinder*>(DX12TDC->m_ResourceBinder);
+	D3D12_GPU_DESCRIPTOR_HANDLE l_SRV = l_resourceBinder->m_TextureSRV.GPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE l_UAV;
+	l_UAV.ptr = l_resourceBinder->m_TextureUAV.ShaderVisibleGPUHandle.ptr + l_CSUDescSize;
+
+	for (uint32_t TopMip = 0; TopMip < 4; TopMip++)
+	{
+		uint32_t dstWidth = std::max(DX12TDC->m_TextureDesc.Width >> (TopMip + 1), (uint32_t)1);
+		uint32_t dstHeight = std::max(DX12TDC->m_TextureDesc.Height >> (TopMip + 1), (uint32_t)1);
+
+		commandList->SetComputeRoot32BitConstant(0, DWParam(1.0f / dstWidth).Uint, 0);
+		commandList->SetComputeRoot32BitConstant(0, DWParam(1.0f / dstHeight).Uint, 1);
+
+		commandList->SetComputeRootDescriptorTable(1, l_SRV);
+		commandList->SetComputeRootDescriptorTable(2, l_UAV);
+
+		commandList->Dispatch(std::max(dstWidth / 8, 1u), std::max(dstHeight / 8, 1u), 1);
+
+		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(DX12TDC->m_ResourceHandle.Get()));
+
+		l_SRV.ptr += l_CSUDescSize;
+		l_UAV.ptr += l_CSUDescSize;
+	}
+
+	if (DX12TDC->m_CurrentState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+	{
+		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(DX12TDC->m_ResourceHandle.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, DX12TDC->m_CurrentState));
+	}
+
+	EndSingleTimeCommands(commandList, m_device, m_globalCommandQueue);
+
+	return true;
+}
+
 using namespace DX12RenderingServerNS;
 
 DX12ResourceBinder* addResourcesBinder()
@@ -517,6 +647,7 @@ bool DX12RenderingServer::Setup()
 	l_result &= CreateGlobalCommandAllocator();
 	l_result &= CreateGlobalCSUHeap();
 	l_result &= CreateGlobalSamplerHeap();
+	l_result &= CreateMipmapGenerator();
 
 	m_SwapChainRPDC = reinterpret_cast<DX12RenderPassDataComponent*>(AddRenderPassDataComponent("SwapChain/"));
 	m_SwapChainSPC = reinterpret_cast<DX12ShaderProgramComponent*>(AddShaderProgramComponent("SwapChain/"));
@@ -933,17 +1064,42 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent* r
 
 		EndSingleTimeCommands(l_commandList, m_device, m_globalCommandQueue);
 
+		// Create SRV and UAV
 		auto l_resourceBinder = addResourcesBinder();
-		l_resourceBinder->m_TextureSRV = CreateSRV(l_rhs);
-		if (l_rhs->m_TextureDesc.Usage == TextureUsage::RawImage)
+
+		l_resourceBinder->m_TextureSRV = CreateSRV(l_rhs, 0);
+
+		if (l_rhs->m_TextureDesc.UseMipMap)
 		{
-			l_resourceBinder->m_TextureUAV = CreateUAV(l_rhs);
+			for (uint32_t TopMip = 1; TopMip < 4; TopMip++)
+			{
+				auto l_SRV = CreateSRV(l_rhs, TopMip);
+			}
+		}
+
+		if (l_rhs->m_TextureDesc.Usage != TextureUsage::DepthAttachment
+			&& l_rhs->m_TextureDesc.Usage != TextureUsage::DepthStencilAttachment)
+		{
+			l_resourceBinder->m_TextureUAV = CreateUAV(l_rhs, 0);
+
+			if (l_rhs->m_TextureDesc.UseMipMap)
+			{
+				for (uint32_t TopMip = 0; TopMip < 4; TopMip++)
+				{
+					auto l_UAV = CreateUAV(l_rhs, TopMip + 1);
+				}
+			}
 		}
 
 		l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
 		l_resourceBinder->m_Texture = l_rhs;
 
 		l_rhs->m_ResourceBinder = l_resourceBinder;
+
+		if (l_rhs->m_TextureDesc.UseMipMap)
+		{
+			GenerateMipmap(l_rhs);
+		}
 	}
 
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: texture ", l_rhs, " is initialized.");
@@ -2017,18 +2173,17 @@ bool DX12RenderingServer::Resize()
 	return true;
 }
 
-DX12SRV DX12RenderingServer::CreateSRV(TextureDataComponent* rhs)
+DX12SRV DX12RenderingServer::CreateSRV(TextureDataComponent* rhs, uint32_t mostDetailedMip)
 {
 	auto l_rhs = reinterpret_cast<DX12TextureDataComponent*>(rhs);
+	auto l_CSUDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	DX12SRV l_result = {};
 
-	l_result.SRVDesc = GetSRVDesc(l_rhs->m_TextureDesc, l_rhs->m_DX12TextureDesc);
+	l_result.SRVDesc = GetSRVDesc(l_rhs->m_TextureDesc, l_rhs->m_DX12TextureDesc, mostDetailedMip);
 
 	l_result.CPUHandle = m_currentCSUCPUHandle;
 	l_result.GPUHandle = m_currentCSUGPUHandle;
-
-	auto l_CSUDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	m_currentCSUCPUHandle.ptr += l_CSUDescSize;
 	m_currentCSUGPUHandle.ptr += l_CSUDescSize;
@@ -2038,13 +2193,13 @@ DX12SRV DX12RenderingServer::CreateSRV(TextureDataComponent* rhs)
 	return l_result;
 }
 
-DX12UAV DX12RenderingServer::CreateUAV(TextureDataComponent* rhs)
+DX12UAV DX12RenderingServer::CreateUAV(TextureDataComponent* rhs, uint32_t mipSlice)
 {
 	auto l_rhs = reinterpret_cast<DX12TextureDataComponent*>(rhs);
 
 	DX12UAV l_result = {};
 
-	l_result.UAVDesc = GetUAVDesc(l_rhs->m_TextureDesc, l_rhs->m_DX12TextureDesc);
+	l_result.UAVDesc = GetUAVDesc(l_rhs->m_TextureDesc, l_rhs->m_DX12TextureDesc, mipSlice);
 
 	l_result.ShaderNonVisibleCPUHandle = m_currentShaderNonVisibleCSUCPUHandle;
 	l_result.ShaderNonVisibleGPUHandle = m_currentShaderNonVisibleCSUGPUHandle;

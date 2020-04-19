@@ -64,7 +64,7 @@ public:
 	bool BeginCapture() override;
 	bool EndCapture() override;
 
-	DX12SRV CreateSRV(TextureDataComponent* rhs);
-	DX12UAV CreateUAV(TextureDataComponent* rhs);
+	DX12SRV CreateSRV(TextureDataComponent* rhs, uint32_t mostDetailedMip);
+	DX12UAV CreateUAV(TextureDataComponent* rhs, uint32_t mipSlice);
 	DX12CBV CreateCBV(GPUBufferDataComponent* rhs);
 };
