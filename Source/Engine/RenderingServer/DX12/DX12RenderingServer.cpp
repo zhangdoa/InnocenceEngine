@@ -1359,28 +1359,31 @@ bool PreparePipeline(DX12RenderPassDataComponent* renderPass, DX12CommandList* c
 		commandList->m_GraphicsCommandList->RSSetViewports(1, &PSO->m_Viewport);
 		commandList->m_GraphicsCommandList->RSSetScissorRects(1, &PSO->m_Scissor);
 
-		D3D12_CPU_DESCRIPTOR_HANDLE* l_DSVDescriptorCPUHandle = NULL;
-
-		if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
+		if (renderPass->m_RenderPassDesc.m_RenderTargetCount)
 		{
-			l_DSVDescriptorCPUHandle = &renderPass->m_DSVDescriptorCPUHandle;
-		}
+			D3D12_CPU_DESCRIPTOR_HANDLE* l_DSVDescriptorCPUHandle = NULL;
 
-		if (renderPass->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
-		{
-			if (renderPass->m_RenderPassDesc.m_UseMultiFrames)
+			if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 			{
-				commandList->m_GraphicsCommandList->OMSetRenderTargets(1, &renderPass->m_RTVDescriptorCPUHandles[renderPass->m_CurrentFrame], FALSE, l_DSVDescriptorCPUHandle);
+				l_DSVDescriptorCPUHandle = &renderPass->m_DSVDescriptorCPUHandle;
 			}
-			else
-			{
-				commandList->m_GraphicsCommandList->OMSetRenderTargets((uint32_t)renderPass->m_RenderPassDesc.m_RenderTargetCount, &renderPass->m_RTVDescriptorCPUHandles[0], FALSE, l_DSVDescriptorCPUHandle);
-			}
-		}
 
-		if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable)
-		{
-			commandList->m_GraphicsCommandList->OMSetStencilRef(renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilReference);
+			if (renderPass->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
+			{
+				if (renderPass->m_RenderPassDesc.m_UseMultiFrames)
+				{
+					commandList->m_GraphicsCommandList->OMSetRenderTargets(1, &renderPass->m_RTVDescriptorCPUHandles[renderPass->m_CurrentFrame], FALSE, l_DSVDescriptorCPUHandle);
+				}
+				else
+				{
+					commandList->m_GraphicsCommandList->OMSetRenderTargets((uint32_t)renderPass->m_RenderPassDesc.m_RenderTargetCount, &renderPass->m_RTVDescriptorCPUHandles[0], FALSE, l_DSVDescriptorCPUHandle);
+				}
+			}
+
+			if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable)
+			{
+				commandList->m_GraphicsCommandList->OMSetStencilRef(renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilReference);
+			}
 		}
 	}
 	else
@@ -1405,7 +1408,7 @@ bool DX12RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent* r
 
 bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 {
-	if (rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
+	if (rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics && rhs->m_RenderPassDesc.m_RenderTargetCount)
 	{
 		auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
 		auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
@@ -1434,13 +1437,26 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 					auto l_RT = reinterpret_cast<DX12TextureDataComponent*>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame]);
 					auto l_resourceBinder = reinterpret_cast<DX12ResourceBinder*>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame]->m_ResourceBinder);
 
-					l_commandList->m_GraphicsCommandList->ClearUnorderedAccessViewFloat(
-						l_resourceBinder->m_TextureUAV.ShaderNonVisibleGPUHandle,
-						l_resourceBinder->m_TextureUAV.ShaderNonVisibleCPUHandle,
-						l_RT->m_ResourceHandle.Get(),
-						l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor,
-						0,
-						NULL);
+					if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
+					{
+						l_commandList->m_GraphicsCommandList->ClearUnorderedAccessViewUint(
+							l_resourceBinder->m_TextureUAV.ShaderNonVisibleGPUHandle,
+							l_resourceBinder->m_TextureUAV.ShaderNonVisibleCPUHandle,
+							l_RT->m_ResourceHandle.Get(),
+							(UINT*)l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor,
+							0,
+							NULL);
+					}
+					else
+					{
+						l_commandList->m_GraphicsCommandList->ClearUnorderedAccessViewFloat(
+							l_resourceBinder->m_TextureUAV.ShaderNonVisibleGPUHandle,
+							l_resourceBinder->m_TextureUAV.ShaderNonVisibleCPUHandle,
+							l_RT->m_ResourceHandle.Get(),
+							l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor,
+							0,
+							NULL);
+					}
 				}
 				else
 				{
@@ -1449,13 +1465,26 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 						auto l_RT = reinterpret_cast<DX12TextureDataComponent*>(i);
 						auto l_resourceBinder = reinterpret_cast<DX12ResourceBinder*>(l_RT->m_ResourceBinder);
 
-						l_commandList->m_GraphicsCommandList->ClearUnorderedAccessViewFloat(
-							l_resourceBinder->m_TextureUAV.ShaderNonVisibleGPUHandle,
-							l_resourceBinder->m_TextureUAV.ShaderNonVisibleCPUHandle,
-							l_RT->m_ResourceHandle.Get(),
-							l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor,
-							0,
-							NULL);
+						if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
+						{
+							l_commandList->m_GraphicsCommandList->ClearUnorderedAccessViewUint(
+								l_resourceBinder->m_TextureUAV.ShaderNonVisibleGPUHandle,
+								l_resourceBinder->m_TextureUAV.ShaderNonVisibleCPUHandle,
+								l_RT->m_ResourceHandle.Get(),
+								(UINT*)l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor,
+								0,
+								NULL);
+						}
+						else
+						{
+							l_commandList->m_GraphicsCommandList->ClearUnorderedAccessViewFloat(
+								l_resourceBinder->m_TextureUAV.ShaderNonVisibleGPUHandle,
+								l_resourceBinder->m_TextureUAV.ShaderNonVisibleCPUHandle,
+								l_RT->m_ResourceHandle.Get(),
+								l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor,
+								0,
+								NULL);
+						}
 					}
 				}
 			}

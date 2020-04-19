@@ -1122,17 +1122,21 @@ bool DX11RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent* r
 		m_deviceContext->RSSetViewports(1, &l_PSO->m_Viewport);
 		m_deviceContext->RSSetState(l_PSO->m_RasterizerState);
 
-		if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
+		if (l_rhs->m_RenderPassDesc.m_RenderTargetCount)
 		{
-			if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+			if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
 			{
-				m_deviceContext->OMSetRenderTargets(1, &l_rhs->m_RTVs[l_rhs->m_CurrentFrame], l_rhs->m_DSV);
-			}
-			else
-			{
-				m_deviceContext->OMSetRenderTargets((uint32_t)l_rhs->m_RenderPassDesc.m_RenderTargetCount, &l_rhs->m_RTVs[0], l_rhs->m_DSV);
+				if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+				{
+					m_deviceContext->OMSetRenderTargets(1, &l_rhs->m_RTVs[l_rhs->m_CurrentFrame], l_rhs->m_DSV);
+				}
+				else
+				{
+					m_deviceContext->OMSetRenderTargets((uint32_t)l_rhs->m_RenderPassDesc.m_RenderTargetCount, &l_rhs->m_RTVs[0], l_rhs->m_DSV);
+				}
 			}
 		}
+
 		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 		{
 			m_deviceContext->OMSetDepthStencilState(l_PSO->m_DepthStencilState, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilReference);
@@ -1152,51 +1156,68 @@ bool DX11RenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 
 	if (l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
 	{
-		if (l_rhs->m_RenderPassDesc.m_UseColorBuffer)
+		if (l_rhs->m_RenderPassDesc.m_RenderTargetCount)
 		{
-			if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
+			if (l_rhs->m_RenderPassDesc.m_UseColorBuffer)
 			{
-				if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+				if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.Usage != TextureUsage::RawImage)
 				{
-					m_deviceContext->ClearRenderTargetView(l_rhs->m_RTVs[l_rhs->m_CurrentFrame], l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
+					if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+					{
+						m_deviceContext->ClearRenderTargetView(l_rhs->m_RTVs[l_rhs->m_CurrentFrame], l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
+					}
+					else
+					{
+						for (auto i : l_rhs->m_RTVs)
+						{
+							m_deviceContext->ClearRenderTargetView(i, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
+						}
+					}
 				}
 				else
 				{
-					for (auto i : l_rhs->m_RTVs)
+					if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 					{
-						m_deviceContext->ClearRenderTargetView(i, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
+						auto l_RT = reinterpret_cast<DX11TextureDataComponent*>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame]);
+
+						if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
+						{
+							m_deviceContext->ClearUnorderedAccessViewUint(l_RT->m_UAV, (UINT*)l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
+						}
+						else
+						{
+							m_deviceContext->ClearUnorderedAccessViewFloat(l_RT->m_UAV, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
+						}
+					}
+					else
+					{
+						for (auto i : l_rhs->m_RenderTargets)
+						{
+							auto l_RT = reinterpret_cast<DX11TextureDataComponent*>(i);
+
+							if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
+							{
+								m_deviceContext->ClearUnorderedAccessViewUint(l_RT->m_UAV, (UINT*)l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
+							}
+							else
+							{
+								m_deviceContext->ClearUnorderedAccessViewFloat(l_RT->m_UAV, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
+							}
+						}
 					}
 				}
 			}
-			else
+
+			if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite)
 			{
-				if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+				uint32_t l_flag = D3D11_CLEAR_DEPTH;
+				if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowStencilWrite)
 				{
-					auto l_RT = reinterpret_cast<DX11TextureDataComponent*>(l_rhs->m_RenderTargets[l_rhs->m_CurrentFrame]);
-
-					m_deviceContext->ClearUnorderedAccessViewFloat(l_RT->m_UAV, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
+					l_flag = D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL;
 				}
-				else
-				{
-					for (auto i : l_rhs->m_RenderTargets)
-					{
-						auto l_RT = reinterpret_cast<DX11TextureDataComponent*>(i);
 
-						m_deviceContext->ClearUnorderedAccessViewFloat(l_RT->m_UAV, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
-					}
-				}
+				m_deviceContext->ClearDepthStencilView(l_rhs->m_DSV, l_flag, 1.0f, 0x00);
 			}
-		}
-
-		if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite)
-		{
-			uint32_t l_flag = D3D11_CLEAR_DEPTH;
-			if (l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowStencilWrite)
-			{
-				l_flag = D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL;
-			}
-
-			m_deviceContext->ClearDepthStencilView(l_rhs->m_DSV, l_flag, 1.0f, 0x00);
 		}
 	}
 
