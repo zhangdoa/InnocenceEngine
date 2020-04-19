@@ -837,14 +837,13 @@ namespace InnoMath
 	template<class T>
 	auto worldToViewSpace(const TVec4<T>& rhs, const TMat4<T>& cameraT, const TMat4<T>& cameraR) ->TVec4<T>
 	{
-		TVec4<T> l_result;
-		l_result = rhs;
+		auto l_result = rhs;
+		auto l_m = cameraT * cameraR;
+		l_m = l_m.inverse();
 #if defined USE_COLUMN_MAJOR_MEMORY_LAYOUT
-		l_mulPos = mul(l_result, cameraT.inverse());
-		l_mulPos = mul(l_result, cameraR.inverse());
+		l_result = mul(l_result, l_m);
 #elif defined USE_ROW_MAJOR_MEMORY_LAYOUT
-		l_result = mul(cameraT.inverse(), l_result);
-		l_result = mul(cameraR.inverse(), l_result);
+		l_result = mul(l_m, l_result);
 #endif
 		return l_result;
 	}
@@ -852,14 +851,12 @@ namespace InnoMath
 	template<class T>
 	auto viewToWorldSpace(const TVec4<T>& rhs, const TMat4<T>& cameraT, const TMat4<T>& cameraR) ->TVec4<T>
 	{
-		TVec4<T> l_result;
-		l_result = rhs;
+		auto l_result = rhs;
+		auto l_m = cameraT * cameraR;
 #if defined USE_COLUMN_MAJOR_MEMORY_LAYOUT
-		l_mulPos = mul(l_result, cameraR);
-		l_mulPos = mul(l_result, cameraT);
+		l_result = mul(l_result, l_m);
 #elif defined USE_ROW_MAJOR_MEMORY_LAYOUT
-		l_result = mul(cameraR, l_result);
-		l_result = mul(cameraT, l_result);
+		l_result = mul(l_m, l_result);
 #endif
 		return l_result;
 	}
@@ -867,8 +864,7 @@ namespace InnoMath
 	template<class T>
 	auto viewToClipSpace(const TVec4<T>& rhs, const TMat4<T>& cameraP) ->TVec4<T>
 	{
-		TVec4<T> l_result;
-		l_result = rhs;
+		auto l_result = rhs;
 #if defined USE_COLUMN_MAJOR_MEMORY_LAYOUT
 		l_result = InnoMath::mul(l_result, cameraP);
 #elif defined USE_ROW_MAJOR_MEMORY_LAYOUT
@@ -883,8 +879,7 @@ namespace InnoMath
 	template<class T>
 	auto clipToViewSpace(const TVec4<T>& rhs, const TMat4<T>& cameraP) ->TVec4<T>
 	{
-		TVec4<T> l_result;
-		l_result = rhs;
+		auto l_result = rhs;
 #if defined USE_COLUMN_MAJOR_MEMORY_LAYOUT
 		l_result = InnoMath::mul(l_result, cameraP.inverse());
 #elif defined USE_ROW_MAJOR_MEMORY_LAYOUT
