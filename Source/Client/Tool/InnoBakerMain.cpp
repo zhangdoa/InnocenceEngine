@@ -48,14 +48,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	AllocConsole();
 
 	errno_t err;
-	FILE *stream;
+	FILE* stream;
 	err = freopen_s(&stream, "CONOUT$", "w", stdout);
 	SetConsoleTitle("Innocence Engine Debug Console");
 
 	auto appHook = hInstance;
 	auto extraHook = nullptr;
 #else
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
 	auto appHook = nullptr;
 	auto extraHook = nullptr;
@@ -135,6 +135,13 @@ int main(int argc, char *argv[])
 			InnoBaker::BakeBrickFactor(l_brickFileName.c_str());
 		}
 	}
+
+#ifdef TEST
+	InnoBaker::BakeProbeCache("..//Res//Scenes//GITest.InnoScene");
+	InnoBaker::BakeBrickCache("..//Res//Intermediate//GITest.InnoSurfelCache");
+	InnoBaker::BakeBrick("..//Res//Intermediate//GITest.InnoBrickCacheSummary");
+	InnoBaker::BakeBrickFactor("..//Res//Scenes//GITest.InnoBrick");
+#endif
 
 	m_pModuleManager->terminate();
 
