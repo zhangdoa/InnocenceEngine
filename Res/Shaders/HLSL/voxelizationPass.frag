@@ -21,14 +21,7 @@ struct PixelInputType
 	float2 texcoord : TEXCOORD;
 };
 
-RWTexture3D<float4> out_voxelizationPassRT0 : register(u0);
-
-float4 convRGBA8ToFloat4(uint val) {
-	return float4(float((val & 0x000000FF)), float((val & 0x0000FF00) >> 8U), float((val & 0x00FF0000) >> 16U), float((val & 0xFF000000) >> 24U));
-}
-uint convFloat4ToRGBA8(float4 val) {
-	return (uint(val.w) & 0x000000FF) << 24U | (uint(val.z) & 0x000000FF) << 16U | (uint(val.y) & 0x000000FF) << 8U | (uint(val.x) & 0x000000FF);
-}
+RWTexture3D<uint> out_voxelizationPassRT0 : register(u0);
 
 void main(PixelInputType input)
 {
@@ -40,8 +33,6 @@ void main(PixelInputType input)
 	//{
 	//	discard;
 	//}
-
-	int3 writeCoord = int3((input.posCS_orig.xyz * 0.5 + 0.5) * voxelizationPassCBuffer.voxelResolution.xyz);
 
 	float transparency = 1.0;
 	float3 out_Albedo;
@@ -112,12 +103,8 @@ void main(PixelInputType input)
 
 	float3 illuminance = perFrameCBuffer.sun_illuminance.xyz * NdotL;
 	float4 Lo = float4(illuminance * Ft, 1.0f);
-	uint LoUint = convFloat4ToRGBA8(Lo);
+	uint LoUint = EncodeColor(Lo);
 
-	float4 valueF4 = out_voxelizationPassRT0[writeCoord];
-	uint valueUint = convFloat4ToRGBA8(valueF4);
-
-	//InterlockedMax(valueUint, LoUint);
-
-	out_voxelizationPassRT0[writeCoord] = Lo;
+	float3 writeCoord = (input.posCS_orig.xyz * 0.5 + 0.5) * voxelizationPassCBuffer.voxelResolution.xyz;
+	InterlockedMax(out_voxelizationPassRT0[writeCoord], LoUint);
 }

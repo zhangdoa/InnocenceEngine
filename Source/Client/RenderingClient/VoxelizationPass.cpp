@@ -29,7 +29,7 @@ namespace VoxelizationPass
 
 bool VoxelizationPass::setupVoxelizationPass()
 {
-	m_voxelizationCBufferGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("VoxelizationPassGPUBuffer/");
+	m_voxelizationCBufferGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("VoxelizationPassCBuffer/");
 	m_voxelizationCBufferGBDC->m_ElementCount = 1;
 	m_voxelizationCBufferGBDC->m_ElementSize = sizeof(VoxelizationConstantBuffer);
 	m_voxelizationCBufferGBDC->m_BindingPoint = 11;
@@ -53,6 +53,8 @@ bool VoxelizationPass::setupVoxelizationPass()
 	l_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler3D;
 	l_RenderPassDesc.m_RenderTargetDesc.Usage = TextureUsage::RawImage;
 	l_RenderPassDesc.m_RenderTargetDesc.GPUAccessibility = Accessibility::ReadWrite;
+	l_RenderPassDesc.m_RenderTargetDesc.PixelDataFormat = TexturePixelDataFormat::R;
+	l_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UInt32;
 	l_RenderPassDesc.m_RenderTargetDesc.Width = voxelizationResolution;
 	l_RenderPassDesc.m_RenderTargetDesc.Height = voxelizationResolution;
 	l_RenderPassDesc.m_RenderTargetDesc.DepthOrArraySize = voxelizationResolution;

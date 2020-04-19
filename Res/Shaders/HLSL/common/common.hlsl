@@ -198,6 +198,41 @@ float4 ScreenToView(float4 screen, float2 in_viewportSize, matrix in_p_inv)
 	return ClipToView(clip, in_p_inv);
 }
 
+uint EncodeColor(in float4 color)
+{
+	float HDR = length(color.rgb);
+	color.rgb /= HDR;
+
+	uint3 colorUInt = uint3(color.rgb * 255.0f);
+	uint HDRUint = (uint)(saturate(HDR) * 127.0f);
+	uint colorMask = (HDRUint << 24u) | (colorUInt.r << 16u) | (colorUInt.g << 8u) | colorUInt.b;
+
+	uint alpha = (color.a > 0 ? 1u : 0u);
+	colorMask |= alpha << 31u;
+
+	return colorMask;
+}
+
+float4 DecodeColor(in uint colorMask)
+{
+	float HDR;
+	float4 color;
+
+	HDR = (colorMask >> 24u) & 0x0000007f;
+	color.r = (colorMask >> 16u) & 0x000000ff;
+	color.g = (colorMask >> 8u) & 0x000000ff;
+	color.b = colorMask & 0x000000ff;
+
+	HDR /= 127.0f;
+	color.rgb /= 255.0f;
+
+	color.rgb *= HDR;
+
+	color.a = (colorMask >> 31u) & 0x00000001;
+
+	return color;
+}
+
 struct Surfel
 {
 	float4 pos;
