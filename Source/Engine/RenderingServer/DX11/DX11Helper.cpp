@@ -327,7 +327,7 @@ uint32_t DX11Helper::GetTextureBindFlags(TextureDesc textureDesc)
 		}
 		else if (textureDesc.Usage == TextureUsage::RawImage)
 		{
-			textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+			textureBindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET | D3D11_BIND_UNORDERED_ACCESS;
 		}
 		else
 		{
