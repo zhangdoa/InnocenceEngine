@@ -10,9 +10,11 @@ using namespace DefaultGPUBuffers;
 namespace VoxelizationPass
 {
 	bool setupVoxelizationPass();
+	bool setupConvertPass();
 	bool setupVisualizationPass();
 
 	bool voxelization();
+	bool convertTexture();
 	bool visualization();
 
 	GPUBufferDataComponent* m_voxelizationCBufferGBDC;
@@ -21,8 +23,13 @@ namespace VoxelizationPass
 	ShaderProgramComponent* m_voxelizationSPC;
 	SamplerDataComponent* m_voxelizationSDC;
 
+	RenderPassDataComponent* m_convertRPDC;
+	ShaderProgramComponent* m_convertSPC;
+
 	RenderPassDataComponent* m_visualizationRPDC;
 	ShaderProgramComponent* m_visualizationSPC;
+
+	TextureDataComponent* m_luminanceVolume;
 
 	uint32_t voxelizationResolution = 128;
 }
@@ -135,6 +142,55 @@ bool VoxelizationPass::setupVoxelizationPass()
 	return true;
 }
 
+bool VoxelizationPass::setupConvertPass()
+{
+	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+
+	m_luminanceVolume = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("VoxelizationLuminanceVolume/");
+	m_luminanceVolume->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+
+	m_luminanceVolume->m_TextureDesc.Width = voxelizationResolution;
+	m_luminanceVolume->m_TextureDesc.Height = voxelizationResolution;
+	m_luminanceVolume->m_TextureDesc.DepthOrArraySize = voxelizationResolution;
+	m_luminanceVolume->m_TextureDesc.Usage = TextureUsage::Sample;
+	m_luminanceVolume->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
+	m_luminanceVolume->m_TextureDesc.UseMipMap = true;
+
+	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_luminanceVolume);
+
+	m_convertSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("VoxelizationConvertPass/");
+
+	m_convertSPC->m_ShaderFilePaths.m_CSPath = "voxelConvertPass.comp/";
+
+	m_convertRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("VoxelizationConvertPass/");
+
+	l_RenderPassDesc.m_RenderTargetCount = 0;
+	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
+	l_RenderPassDesc.m_IsOffScreen = true;
+
+	m_convertRPDC->m_RenderPassDesc = l_RenderPassDesc;
+
+	m_convertRPDC->m_ResourceBinderLayoutDescs.resize(2);
+
+	m_convertRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
+	m_convertRPDC->m_ResourceBinderLayoutDescs[0].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_convertRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_convertRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 1;
+	m_convertRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
+	m_convertRPDC->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
+
+	m_convertRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Image;
+	m_convertRPDC->m_ResourceBinderLayoutDescs[1].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_convertRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_convertRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 2;
+	m_convertRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
+	m_convertRPDC->m_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
+
+	m_convertRPDC->m_ShaderProgram = m_convertSPC;
+
+	return true;
+}
+
 bool VoxelizationPass::setupVisualizationPass()
 {
 	m_visualizationSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("VoxelVisualizationPass/");
@@ -190,6 +246,7 @@ bool VoxelizationPass::setupVisualizationPass()
 bool VoxelizationPass::Setup()
 {
 	setupVoxelizationPass();
+	setupConvertPass();
 	setupVisualizationPass();
 
 	return true;
@@ -199,6 +256,9 @@ bool VoxelizationPass::Initialize()
 {
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_voxelizationSPC);
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_voxelizationRPDC);
+
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_convertSPC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_convertRPDC);
 
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_visualizationSPC);
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_visualizationRPDC);
@@ -265,6 +325,27 @@ bool VoxelizationPass::voxelization()
 	return true;
 }
 
+bool VoxelizationPass::convertTexture()
+{
+	g_pModuleManager->getRenderingServer()->CommandListBegin(m_convertRPDC, 0);
+	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_convertRPDC);
+	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_convertRPDC);
+
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_convertRPDC, ShaderStage::Compute, m_voxelizationRPDC->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_convertRPDC, ShaderStage::Compute, m_luminanceVolume->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
+
+	g_pModuleManager->getRenderingServer()->DispatchCompute(m_convertRPDC, voxelizationResolution / 8, voxelizationResolution / 8, voxelizationResolution / 8);
+
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_convertRPDC, ShaderStage::Compute, m_voxelizationRPDC->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_convertRPDC, ShaderStage::Compute, m_luminanceVolume->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
+
+	g_pModuleManager->getRenderingServer()->CommandListEnd(m_convertRPDC);
+
+	g_pModuleManager->getRenderingServer()->GenerateMipmap(m_luminanceVolume);
+
+	return true;
+}
+
 bool VoxelizationPass::visualization()
 {
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
@@ -299,6 +380,7 @@ bool VoxelizationPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_voxelizationCBufferGBDC, &l_voxelPassCB);
 
 	voxelization();
+	convertTexture();
 	visualization();
 
 	return true;
@@ -309,6 +391,9 @@ bool VoxelizationPass::ExecuteCommandList()
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_voxelizationRPDC);
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_voxelizationRPDC);
 
+	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_convertRPDC);
+	g_pModuleManager->getRenderingServer()->WaitForFrame(m_convertRPDC);
+
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_visualizationRPDC);
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_visualizationRPDC);
 
@@ -318,6 +403,7 @@ bool VoxelizationPass::ExecuteCommandList()
 bool VoxelizationPass::Terminate()
 {
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_voxelizationRPDC);
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_convertRPDC);
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_visualizationRPDC);
 
 	return true;

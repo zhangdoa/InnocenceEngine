@@ -1,0 +1,19 @@
+// shadertype=hlsl
+#include "common/common.hlsl"
+
+struct ComputeInputType
+{
+	uint3 groupID : SV_GroupID;           // 3D index of the thread group in the dispatch.
+	uint3 groupThreadID : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
+	uint3 dispatchThreadID : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
+	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
+};
+
+RWTexture3D<uint> in_luminanceVolume : register(u0);
+RWTexture3D<float4> out_luminanceVolume : register(u1);
+
+[numthreads(8, 8, 8)]
+void main(ComputeInputType input)
+{
+	out_luminanceVolume[input.dispatchThreadID] = DecodeColor(in_luminanceVolume[input.dispatchThreadID]);
+}
