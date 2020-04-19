@@ -1078,13 +1078,16 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent* r
 		if (l_rhs->m_TextureDesc.Usage != TextureUsage::DepthAttachment
 			&& l_rhs->m_TextureDesc.Usage != TextureUsage::DepthStencilAttachment)
 		{
-			l_resourceBinder->m_TextureUAV = CreateUAV(l_rhs, 0);
-
-			if (l_rhs->m_TextureDesc.UseMipMap)
+			if (!l_rhs->m_TextureDesc.IsSRGB)
 			{
-				for (uint32_t TopMip = 0; TopMip < 4; TopMip++)
+				l_resourceBinder->m_TextureUAV = CreateUAV(l_rhs, 0);
+
+				if (l_rhs->m_TextureDesc.UseMipMap)
 				{
-					auto l_UAV = CreateUAV(l_rhs, TopMip + 1);
+					for (uint32_t TopMip = 0; TopMip < 4; TopMip++)
+					{
+						auto l_UAV = CreateUAV(l_rhs, TopMip + 1);
+					}
 				}
 			}
 		}
@@ -2170,7 +2173,13 @@ bool DX12RenderingServer::GenerateMipmap(TextureDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12TextureDataComponent*>(rhs);
 
-	return DX12RenderingServerNS::GenerateMipmap(l_rhs);
+	// @TODO: support sRGB
+	if (!l_rhs->m_TextureDesc.IsSRGB)
+	{
+		return DX12RenderingServerNS::GenerateMipmap(l_rhs);
+	}
+
+	return false;
 }
 
 bool DX12RenderingServer::Resize()

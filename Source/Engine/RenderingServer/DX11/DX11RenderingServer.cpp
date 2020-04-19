@@ -573,19 +573,22 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent* r
 		if (l_rhs->m_TextureDesc.Usage != TextureUsage::DepthAttachment
 			&& l_rhs->m_TextureDesc.Usage != TextureUsage::DepthStencilAttachment)
 		{
-			l_rhs->m_UAVDesc = GetUAVDesc(l_rhs->m_TextureDesc, l_rhs->m_DX11TextureDesc);
-
-			l_HResult = m_device->CreateUnorderedAccessView(l_rhs->m_ResourceHandle, &l_rhs->m_UAVDesc, &l_rhs->m_UAV);
-			if (FAILED(l_HResult))
+			if (!l_rhs->m_TextureDesc.IsSRGB)
 			{
-				InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create UAV for texture!");
-				return false;
-			}
+				l_rhs->m_UAVDesc = GetUAVDesc(l_rhs->m_TextureDesc, l_rhs->m_DX11TextureDesc);
+
+				l_HResult = m_device->CreateUnorderedAccessView(l_rhs->m_ResourceHandle, &l_rhs->m_UAVDesc, &l_rhs->m_UAV);
+				if (FAILED(l_HResult))
+				{
+					InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create UAV for texture!");
+					return false;
+				}
 #ifdef  _DEBUG
-			SetObjectName(l_rhs, l_rhs->m_UAV, "UAV");
+				SetObjectName(l_rhs, l_rhs->m_UAV, "UAV");
 #endif //  _DEBUG
 
-			InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: UAV: ", l_rhs->m_SRV, " is initialized.");
+				InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: UAV: ", l_rhs->m_SRV, " is initialized.");
+			}
 		}
 
 		auto l_resourceBinder = addResourcesBinder();
