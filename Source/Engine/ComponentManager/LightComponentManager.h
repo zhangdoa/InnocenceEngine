@@ -17,5 +17,6 @@ public:
 	const std::vector<LightComponent*>& GetAllComponents() override;
 	const LightComponent* GetSun() override;
 	const std::vector<AABB>& GetSunSplitAABB() override;
+	const std::vector<Mat4>& GetSunViewMatrices() override;
 	const std::vector<Mat4>& GetSunProjectionMatrices() override;
 };

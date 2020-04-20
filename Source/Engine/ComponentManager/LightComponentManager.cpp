@@ -17,6 +17,7 @@ extern IModuleManager* g_pModuleManager;
 namespace LightComponentManagerNS
 {
 	void splitVerticesToAABBs(const std::vector<Vertex>& frustumsVertices, const std::vector<float>& splitFactors, std::vector<AABB>& splitAABB);
+	void UpdateSingleSMData(LightComponent* rhs);
 	void UpdateCSMData(LightComponent* rhs);
 	void UpdateColorTemperature(LightComponent* rhs);
 	void UpdateAttenuationRadius(LightComponent* rhs);
@@ -36,6 +37,7 @@ namespace LightComponentManagerNS
 	std::vector<Vertex> m_frustumsCornerVertices;
 	std::vector<AABB> m_SplitAABBWS;
 	std::vector<AABB> m_SplitAABBLS;
+	std::vector<Mat4> m_viewMatrices;
 	std::vector<Mat4> m_projectionMatrices;
 }
 
@@ -98,8 +100,67 @@ void LightComponentManagerNS::splitVerticesToAABBs(const std::vector<Vertex>& fr
 	}
 }
 
+void LightComponentManagerNS::UpdateSingleSMData(LightComponent* rhs)
+{
+	m_viewMatrices.clear();
+	m_projectionMatrices.clear();
+	m_SplitAABBWS.clear();
+
+	auto l_totalSceneAABB = g_pModuleManager->getPhysicsSystem()->getVisibleSceneAABB();
+
+	auto l_sphereRadius = (l_totalSceneAABB.m_boundMax - l_totalSceneAABB.m_center).length();
+	auto l_boundMax = l_totalSceneAABB.m_center + l_sphereRadius;
+	l_boundMax.w = 1.0f;
+	auto l_boundMin = l_totalSceneAABB.m_center - l_sphereRadius;
+	l_boundMin.w = 1.0f;
+
+	m_SplitAABBWS.emplace_back(l_totalSceneAABB);
+
+	auto l_sceneAABBVerticesWS = InnoMath::generateAABBVertices(l_boundMax, l_boundMin);
+
+	auto l_r = GetComponent(TransformComponent, rhs->m_ParentEntity)->m_globalTransformMatrix.m_rotationMat;
+	auto l_rInv = l_r.inverse();
+
+	auto l_sceneAABBVerticesLS = l_sceneAABBVerticesWS;
+
+	for (size_t i = 0; i < l_sceneAABBVerticesLS.size(); i++)
+	{
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+		l_sceneAABBVerticesLS[i].m_pos = InnoMath::mul(l_sceneAABBVerticesLS[i].m_pos, l_rInv);
+#endif
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+		l_sceneAABBVerticesLS[i].m_pos = InnoMath::mul(l_rInv, l_sceneAABBVerticesLS[i].m_pos);
+#endif
+	}
+
+	auto l_sceneAABBLS = InnoMath::generateAABB(&l_sceneAABBVerticesLS[0], l_sceneAABBVerticesLS.size());
+
+	// The light camera position in light space
+	auto l_sunShadowPos = l_sceneAABBLS.m_center;
+	l_sunShadowPos.z = l_sceneAABBLS.m_boundMax.z;
+
+	// To world space
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+	l_sunShadowPos = InnoMath::mul(l_sunShadowPos, l_r);
+#endif
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+	l_sunShadowPos = InnoMath::mul(l_r, l_sunShadowPos);
+#endif
+
+	auto l_t = InnoMath::toTranslationMatrix(l_sunShadowPos);
+	auto l_m = l_t * l_r;
+	m_viewMatrices.emplace_back(l_m.inverse());
+
+	Vec4 l_maxExtents = l_sceneAABBLS.m_boundMax;
+	Vec4 l_minExtents = l_sceneAABBLS.m_boundMin;
+
+	Mat4 l_p = InnoMath::generateOrthographicMatrix(l_minExtents.x, l_maxExtents.x, l_minExtents.y, l_maxExtents.y, l_minExtents.z, l_maxExtents.z);
+	m_projectionMatrices.emplace_back(l_p);
+}
+
 void LightComponentManagerNS::UpdateCSMData(LightComponent* rhs)
 {
+	m_viewMatrices.clear();
 	m_projectionMatrices.clear();
 
 	//1. get frustum vertices in view space
@@ -119,14 +180,14 @@ void LightComponentManagerNS::UpdateCSMData(LightComponent* rhs)
 
 	// extend scene AABB to include the bound sphere, for to eliminate rotation conflict
 	auto l_totalSceneAABB = g_pModuleManager->getPhysicsSystem()->getVisibleSceneAABB();
-	auto l_sphereRadius = (l_totalSceneAABB.m_boundMax - l_totalSceneAABB.m_center).length();
-	auto l_boundMax = l_totalSceneAABB.m_center + l_sphereRadius;
-	l_boundMax.w = 1.0f;
-	auto l_boundMin = l_totalSceneAABB.m_center - l_sphereRadius;
-	l_boundMin.w = 1.0f;
+	//auto l_sphereRadius = (l_totalSceneAABB.m_boundMax - l_totalSceneAABB.m_center).length();
+	//auto l_boundMax = l_totalSceneAABB.m_center + l_sphereRadius;
+	//l_boundMax.w = 1.0f;
+	//auto l_boundMin = l_totalSceneAABB.m_center - l_sphereRadius;
+	//l_boundMin.w = 1.0f;
 
 	// transform scene AABB vertices to view space
-	auto l_sceneAABBVerticesWS = InnoMath::generateAABBVertices(l_boundMax, l_boundMin);
+	auto l_sceneAABBVerticesWS = InnoMath::generateAABBVertices(l_totalSceneAABB.m_boundMax, l_totalSceneAABB.m_boundMin);
 	auto l_sceneAABBVerticesVS = InnoMath::worldToViewSpace(l_sceneAABBVerticesWS, l_tCamera, l_rCamera);
 	auto l_sceneAABBVS = InnoMath::generateAABB(&l_sceneAABBVerticesVS[0], l_sceneAABBVerticesVS.size());
 
@@ -136,7 +197,7 @@ void LightComponentManagerNS::UpdateCSMData(LightComponent* rhs)
 	{
 		// compare draw distance and z component of the farest scene AABB vertex in view space
 		auto l_distance_original = std::abs(l_frustumVerticesVS[4].m_pos.z - l_frustumVerticesVS[0].m_pos.z);
-		auto l_distance_adjusted = l_frustumVerticesVS[0].m_pos.z - l_sceneAABBVS.m_boundMin.z;
+		auto l_distance_adjusted = l_sceneAABBVS.m_boundMin.z - l_frustumVerticesVS[4].m_pos.z;
 
 		// scene is inside the view frustum
 		if (l_distance_adjusted > 0)
@@ -144,52 +205,55 @@ void LightComponentManagerNS::UpdateCSMData(LightComponent* rhs)
 			// adjust draw distance and frustum vertices
 			if (l_distance_adjusted < l_distance_original)
 			{
+				auto l_scale = 1.0f - (l_distance_adjusted / l_distance_original);
 				// move the far plane closer to the new far point
 				for (size_t i = 4; i < l_frustumVerticesVS.size(); i++)
 				{
-					l_frustumVerticesVS[i].m_pos.x = l_frustumVerticesVS[i].m_pos.x * l_distance_adjusted / l_distance_original;
-					l_frustumVerticesVS[i].m_pos.y = l_frustumVerticesVS[i].m_pos.y * l_distance_adjusted / l_distance_original;
+					l_frustumVerticesVS[i].m_pos.x = l_frustumVerticesVS[i].m_pos.x * l_scale;
+					l_frustumVerticesVS[i].m_pos.y = l_frustumVerticesVS[i].m_pos.y * l_scale;
 					l_frustumVerticesVS[i].m_pos.z = l_sceneAABBVS.m_boundMin.z;
 				}
 			}
 		}
 	}
 
-	// @TODO: eliminate false positive off the side plane
 	if (l_renderingConfig.CSMAdjustSidePlane)
 	{
-		// Adjust x and y to include the scene
 		// +x axis
 		if (l_sceneAABBVS.m_boundMax.x > l_frustumVerticesVS[2].m_pos.x)
 		{
-			l_frustumVerticesVS[2].m_pos.x = l_sceneAABBVS.m_boundMax.x;
-			l_frustumVerticesVS[3].m_pos.x = l_sceneAABBVS.m_boundMax.x;
-			l_frustumVerticesVS[6].m_pos.x = l_sceneAABBVS.m_boundMax.x;
-			l_frustumVerticesVS[7].m_pos.x = l_sceneAABBVS.m_boundMax.x;
+			auto l_diff = l_sceneAABBVS.m_boundMax.x - l_frustumVerticesVS[2].m_pos.x;
+			l_frustumVerticesVS[2].m_pos.x += l_diff;
+			l_frustumVerticesVS[3].m_pos.x += l_diff;
+			l_frustumVerticesVS[6].m_pos.x += l_diff;
+			l_frustumVerticesVS[7].m_pos.x += l_diff;
 		}
 		// -x axis
 		if (l_sceneAABBVS.m_boundMin.x < l_frustumVerticesVS[0].m_pos.x)
 		{
-			l_frustumVerticesVS[0].m_pos.x = l_sceneAABBVS.m_boundMin.x;
-			l_frustumVerticesVS[1].m_pos.x = l_sceneAABBVS.m_boundMin.x;
-			l_frustumVerticesVS[4].m_pos.x = l_sceneAABBVS.m_boundMin.x;
-			l_frustumVerticesVS[5].m_pos.x = l_sceneAABBVS.m_boundMin.x;
+			auto l_diff = l_frustumVerticesVS[0].m_pos.x - l_sceneAABBVS.m_boundMin.x;
+			l_frustumVerticesVS[0].m_pos.x -= l_diff;
+			l_frustumVerticesVS[1].m_pos.x -= l_diff;
+			l_frustumVerticesVS[4].m_pos.x -= l_diff;
+			l_frustumVerticesVS[5].m_pos.x -= l_diff;
 		}
 		// +y axis
 		if (l_sceneAABBVS.m_boundMax.y > l_frustumVerticesVS[0].m_pos.y)
 		{
-			l_frustumVerticesVS[0].m_pos.y = l_sceneAABBVS.m_boundMax.y;
-			l_frustumVerticesVS[3].m_pos.y = l_sceneAABBVS.m_boundMax.y;
-			l_frustumVerticesVS[4].m_pos.y = l_sceneAABBVS.m_boundMax.y;
-			l_frustumVerticesVS[7].m_pos.y = l_sceneAABBVS.m_boundMax.y;
+			auto l_diff = l_sceneAABBVS.m_boundMax.y - l_frustumVerticesVS[0].m_pos.y;
+			l_frustumVerticesVS[0].m_pos.y += l_diff;
+			l_frustumVerticesVS[3].m_pos.y += l_diff;
+			l_frustumVerticesVS[4].m_pos.y += l_diff;
+			l_frustumVerticesVS[7].m_pos.y += l_diff;
 		}
 		// -y axis
-		if (l_sceneAABBVS.m_boundMin.y < l_frustumVerticesVS[1].m_pos.y)
+		if (l_sceneAABBVS.m_boundMin.y < l_frustumVerticesVS[2].m_pos.y)
 		{
-			l_frustumVerticesVS[1].m_pos.y = l_sceneAABBVS.m_boundMin.y;
-			l_frustumVerticesVS[2].m_pos.y = l_sceneAABBVS.m_boundMin.y;
-			l_frustumVerticesVS[5].m_pos.y = l_sceneAABBVS.m_boundMin.y;
-			l_frustumVerticesVS[6].m_pos.y = l_sceneAABBVS.m_boundMin.y;
+			auto l_diff = l_frustumVerticesVS[2].m_pos.y - l_sceneAABBVS.m_boundMin.y;
+			l_frustumVerticesVS[1].m_pos.y -= l_diff;
+			l_frustumVerticesVS[2].m_pos.y -= l_diff;
+			l_frustumVerticesVS[5].m_pos.y -= l_diff;
+			l_frustumVerticesVS[6].m_pos.y -= l_diff;
 		}
 	}
 
@@ -199,18 +263,18 @@ void LightComponentManagerNS::UpdateCSMData(LightComponent* rhs)
 	splitVerticesToAABBs(l_frustumVerticesWS, m_CSMSplitFactors, m_SplitAABBWS);
 
 	//4. transform frustum vertices to light space
-	auto l_lightRotMat = GetComponent(TransformComponent, rhs->m_ParentEntity)->m_globalTransformMatrix.m_rotationMat.inverse();
+	auto l_r = GetComponent(TransformComponent, rhs->m_ParentEntity)->m_globalTransformMatrix.m_rotationMat;
 	auto l_frustumVerticesLS = l_frustumVerticesWS;
 
 	for (size_t i = 0; i < l_frustumVerticesLS.size(); i++)
 	{
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-		l_frustumVerticesLS[i].m_pos = InnoMath::mul(l_frustumVerticesLS[i].m_pos, l_lightRotMat);
+		l_frustumVerticesLS[i].m_pos = InnoMath::mul(l_frustumVerticesLS[i].m_pos, l_r.inverse());
 #endif
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-		l_frustumVerticesLS[i].m_pos = InnoMath::mul(l_lightRotMat, l_frustumVerticesLS[i].m_pos);
+		l_frustumVerticesLS[i].m_pos = InnoMath::mul(l_r.inverse(), l_frustumVerticesLS[i].m_pos);
 #endif
-}
+	}
 
 	//5.calculate AABBs in light space
 	splitVerticesToAABBs(l_frustumVerticesLS, m_CSMSplitFactors, m_SplitAABBLS);
@@ -224,6 +288,23 @@ void LightComponentManagerNS::UpdateCSMData(LightComponent* rhs)
 		auto l_boundMin = m_SplitAABBLS[i].m_center - sphereRadius;
 		l_boundMin.w = 1.0f;
 		m_SplitAABBLS[i] = InnoMath::generateAABB(l_boundMax, l_boundMin);
+
+		// The light camera position in light space
+		auto l_sunShadowPos = m_SplitAABBLS[i].m_center;
+		l_sunShadowPos.z = m_SplitAABBLS[i].m_boundMax.z;
+
+		// To world space
+#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
+		l_sunShadowPos = InnoMath::mul(l_sunShadowPos, l_r);
+#endif
+#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
+		l_sunShadowPos = InnoMath::mul(l_r, l_sunShadowPos);
+#endif
+
+		auto l_t = InnoMath::toTranslationMatrix(l_sunShadowPos);
+		auto l_m = l_t * l_r;
+
+		m_viewMatrices.emplace_back(l_m.inverse());
 	}
 
 	//7. generate projection matrices
@@ -300,6 +381,8 @@ bool InnoLightComponentManager::Initialize()
 
 bool InnoLightComponentManager::Simulate()
 {
+	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
+
 	for (auto i : m_Components)
 	{
 		UpdateColorTemperature(i);
@@ -308,7 +391,14 @@ bool InnoLightComponentManager::Simulate()
 		case LightType::Directional:
 			// @TODO: Better to limit the directional light count
 			m_Sun = i;
-			UpdateCSMData(i);
+			if (l_renderingConfig.useCSM)
+			{
+				UpdateCSMData(i);
+			}
+			else
+			{
+				UpdateSingleSMData(i);
+			}
 			break;
 		case LightType::Point:
 			UpdateAttenuationRadius(i);
@@ -363,6 +453,11 @@ const LightComponent* InnoLightComponentManager::GetSun()
 const std::vector<AABB>& InnoLightComponentManager::GetSunSplitAABB()
 {
 	return m_SplitAABBWS;
+}
+
+const std::vector<Mat4>& InnoLightComponentManager::GetSunViewMatrices()
+{
+	return m_viewMatrices;
 }
 
 const std::vector<Mat4>& InnoLightComponentManager::GetSunProjectionMatrices()

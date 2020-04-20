@@ -173,13 +173,14 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 	m_renderingServer = renderingServer;
 	m_rayTracer = new InnoRayTracer();
 
+	m_renderingConfig.useCSM = true;
 	m_renderingConfig.useMotionBlur = true;
 	//m_renderingConfig.useTAA = true;
 	//m_renderingConfig.useBloom = true;
 	m_renderingConfig.drawSky = true;
 	//m_renderingConfig.drawTerrain = true;
 	//m_renderingConfig.drawDebugObject = true;
-	m_renderingConfig.CSMFitToScene = false;
+	m_renderingConfig.CSMFitToScene = true;
 	m_renderingConfig.CSMAdjustDrawDistance = true;
 	m_renderingConfig.CSMAdjustSidePlane = false;
 
@@ -445,21 +446,22 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 	m_perFrameCB.SetValue(std::move(l_PerFrameCB));
 
 	auto l_SplitAABB = GetComponentManager(LightComponent)->GetSunSplitAABB();
+	auto l_ViewMatrices = GetComponentManager(LightComponent)->GetSunViewMatrices();
 	auto l_ProjectionMatrices = GetComponentManager(LightComponent)->GetSunProjectionMatrices();
 
 	auto& l_CSMCBVector = m_CSMCBVector.GetValue();
 	l_CSMCBVector.clear();
 
-	if (l_SplitAABB.size() > 0 && l_ProjectionMatrices.size() > 0)
+	if (l_SplitAABB.size() > 0 && l_ViewMatrices.size() > 0 && l_ProjectionMatrices.size() > 0)
 	{
-		for (size_t j = 0; j < m_renderingCapability.maxCSMSplits; j++)
+		for (size_t j = 0; j < l_SplitAABB.size(); j++)
 		{
 			CSMConstantBuffer l_CSMCB;
 
 			l_CSMCB.p = l_ProjectionMatrices[j];
+			l_CSMCB.v = l_ViewMatrices[j];
 			l_CSMCB.AABBMax = l_SplitAABB[j].m_boundMax;
 			l_CSMCB.AABBMin = l_SplitAABB[j].m_boundMin;
-			l_CSMCB.v = l_lightRotMat;
 
 			l_CSMCBVector.emplace_back(l_CSMCB);
 		}

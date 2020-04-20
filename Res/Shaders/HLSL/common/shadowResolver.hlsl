@@ -1,3 +1,5 @@
+#define useCSM
+
 // ----------------------------------------------------------------------------
 float PCFResolver(float3 projCoords, Texture2DArray shadowMap, int index, float currentDepth, float2 texelSize)
 {
@@ -41,6 +43,8 @@ float VSMResolver(float3 projCoords, Texture2DArray shadowMap, int index, float 
 	float shadow = VSMKernel(shadowMapValue, currentDepth);
 	return shadow;
 }
+
+#ifdef useCSM
 // ----------------------------------------------------------------------------
 float SunShadowResolver(float3 fragPos)
 {
@@ -89,6 +93,33 @@ float SunShadowResolver(float3 fragPos)
 
 	return shadow;
 }
+#else
+float SunShadowResolver(float3 fragPos)
+{
+	float shadow = 0.0;
+
+	float2 renderTargetSize;
+	float level;
+	float elements;
+	in_SunShadow.GetDimensions(0, renderTargetSize.x, renderTargetSize.y, elements, level);
+	float2 texelSize = 1.0 / renderTargetSize;
+
+	float4 lightSpacePos = mul(float4(fragPos, 1.0f), CSMs[0].v);
+	lightSpacePos = mul(lightSpacePos, CSMs[0].p);
+	lightSpacePos = lightSpacePos / lightSpacePos.w;
+	float3 projCoords = lightSpacePos.xyz;
+
+	// transform to [0,1] range
+	projCoords = projCoords * 0.5 + 0.5;
+	projCoords.y = 1.0 - projCoords.y;
+	// get depth of current fragment from light's perspective
+	float currentDepth = projCoords.z;
+
+	shadow = PCFResolver(projCoords, in_SunShadow, 0, currentDepth, texelSize);
+
+	return shadow;
+}
+#endif
 // ----------------------------------------------------------------------------
 float linearDepth(float depthSample)
 {
