@@ -47,10 +47,10 @@
               "Z": 0.0
             },
             "Rotation": {
-              "W": 0.7071315050125122,
-              "X": -0.7070821523666382,
-              "Y": 0.0,
-              "Z": 0.0
+              "W": 0.8803348541259766,
+              "X": -0.4105069041252136,
+              "Y": 0.2154165655374527,
+              "Z": 0.10045039653778076
             },
             "Scale": {
               "X": 1.0,
@@ -100,9 +100,9 @@
               "Z": 0.0
             },
             "Scale": {
-              "X": 0.10000000149011612,
-              "Y": 0.10000000149011612,
-              "Z": 0.10000000149011612
+              "X": 0.1,
+              "Y": 0.1,
+              "Z": 0.1
             }
           },
           "ParentTransformComponentEntityName": "RootTransform"
@@ -342,5 +342,5 @@
       "ObjectName": "pointLight2"
     }
   ],
-  "SceneName": "Res/Scenes/Intro.InnoScene"
+  "SceneName": "Res/Scenes/GITestSponza.InnoScene"
 }
