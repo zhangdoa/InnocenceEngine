@@ -1284,11 +1284,30 @@ bool BindSRV(ShaderStage shaderStage, uint32_t slot, ID3D11ShaderResourceView* S
 	return true;
 }
 
-bool BindUAV(ShaderStage shaderStage, uint32_t slot, ID3D11UnorderedAccessView* UAV)
+bool BindUAV(ShaderStage shaderStage, uint32_t slot, ID3D11UnorderedAccessView* UAV, DX11RenderPassDataComponent* renderPass)
 {
 	if (shaderStage == ShaderStage::Compute)
 	{
 		m_deviceContext->CSSetUnorderedAccessViews((uint32_t)slot, 1, &UAV, nullptr);
+	}
+	else if (shaderStage == ShaderStage::Pixel)
+	{
+		auto l_DSV = renderPass->m_DSV;
+
+		if (UAV)
+		{
+			l_DSV = 0;
+		}
+
+		if (renderPass->m_RenderPassDesc.m_UseMultiFrames)
+		{
+			m_deviceContext->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, l_DSV, 0, 1, &UAV, nullptr);
+		}
+		else
+		{
+			auto l_RTCount = (uint32_t)renderPass->m_RenderPassDesc.m_RenderTargetCount;
+			m_deviceContext->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, l_DSV, 0, l_RTCount, &UAV, nullptr);
+		}
 	}
 	else
 	{
@@ -1362,6 +1381,7 @@ bool BindPartialConstantBuffer(uint32_t slot, ID3D11Buffer* buffer, ShaderStage 
 
 bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
+	auto l_renderPass = reinterpret_cast<DX11RenderPassDataComponent*>(renderPass);
 	auto l_resourceBinder = reinterpret_cast<DX11ResourceBinder*>(binder);
 
 	if (l_resourceBinder)
@@ -1374,26 +1394,7 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent* render
 		case ResourceBinderType::Image:
 			if (accessibility != Accessibility::ReadOnly)
 			{
-				if (shaderStage == ShaderStage::Compute)
-				{
-					BindUAV(shaderStage, (uint32_t)(localSlot), l_resourceBinder->m_UAV);
-				}
-				else
-				{
-					auto l_renderPass = reinterpret_cast<DX11RenderPassDataComponent*>(renderPass);
-					auto l_UAV = l_resourceBinder->m_UAV;
-					const uint32_t l_initialCounts = -1;
-
-					if (l_renderPass->m_RenderPassDesc.m_UseMultiFrames)
-					{
-						m_deviceContext->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, l_renderPass->m_DSV, 0, 1, &l_UAV, &l_initialCounts);
-					}
-					else
-					{
-						auto l_RTCount = (uint32_t)l_renderPass->m_RenderPassDesc.m_RenderTargetCount;
-						m_deviceContext->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, l_renderPass->m_DSV, 0, l_RTCount, &l_UAV, &l_initialCounts);
-					}
-				}
+				BindUAV(shaderStage, (uint32_t)(localSlot), l_resourceBinder->m_UAV, l_renderPass);
 			}
 			else
 			{
@@ -1420,7 +1421,7 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent* render
 			{
 				if (accessibility != Accessibility::ReadOnly)
 				{
-					BindUAV(shaderStage, (uint32_t)(localSlot), l_resourceBinder->m_UAV);
+					BindUAV(shaderStage, (uint32_t)(localSlot), l_resourceBinder->m_UAV, l_renderPass);
 				}
 				else
 				{
@@ -1438,6 +1439,7 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent* render
 
 bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
+	auto l_renderPass = reinterpret_cast<DX11RenderPassDataComponent*>(renderPass);
 	auto l_resourceBinder = reinterpret_cast<DX11ResourceBinder*>(binder);
 
 	if (l_resourceBinder)
@@ -1450,14 +1452,7 @@ bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent* rend
 		case ResourceBinderType::Image:
 			if (accessibility != Accessibility::ReadOnly)
 			{
-				if (shaderStage == ShaderStage::Compute)
-				{
-					BindUAV(shaderStage, (uint32_t)(localSlot), 0);
-				}
-				else
-				{
-					m_deviceContext->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, NULL, 0, 0, NULL, NULL);
-				}
+				BindUAV(shaderStage, (uint32_t)(localSlot), 0, l_renderPass);
 			}
 			else
 			{
@@ -1469,7 +1464,7 @@ bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent* rend
 			{
 				if (accessibility != Accessibility::ReadOnly)
 				{
-					BindUAV(shaderStage, (uint32_t)(localSlot), 0);
+					BindUAV(shaderStage, (uint32_t)(localSlot), 0, l_renderPass);
 				}
 				else
 				{
