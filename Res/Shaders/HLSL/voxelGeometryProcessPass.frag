@@ -23,8 +23,7 @@ struct PixelInputType
 	float2 texcoord : TEXCOORD;
 };
 
-RWTexture3D<uint> out_voxelizationPassRT0 : register(u0);
-RWTexture3D<uint> out_voxelizationPassRT1 : register(u1);
+RWStructuredBuffer<uint> out_geometryProcessResult : register(u0);
 
 void main(PixelInputType input)
 {
@@ -112,6 +111,12 @@ void main(PixelInputType input)
 	uint normalUint = EncodeNormal(input.normal);
 
 	float3 writeCoord = (input.posCS_orig.xyz * 0.5 + 0.5) * voxelizationPassCBuffer.voxelResolution.xyz;
-	InterlockedMax(out_voxelizationPassRT0[writeCoord], LoUint);
-	InterlockedMax(out_voxelizationPassRT1[writeCoord], normalUint);
+	int3 writeCoordInt = int3(writeCoord);
+	int index = writeCoordInt.x + writeCoordInt.y * voxelizationPassCBuffer.voxelResolution.x + writeCoordInt.z * voxelizationPassCBuffer.voxelResolution.x * voxelizationPassCBuffer.voxelResolution.y;
+
+	// @TODO: optimize
+	int offset = voxelizationPassCBuffer.voxelResolution.x * voxelizationPassCBuffer.voxelResolution.y * voxelizationPassCBuffer.voxelResolution.z;
+
+	InterlockedMax(out_geometryProcessResult[index], LoUint);
+	InterlockedMax(out_geometryProcessResult[index + offset], normalUint);
 }
