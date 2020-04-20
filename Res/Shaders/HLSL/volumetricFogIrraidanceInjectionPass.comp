@@ -121,7 +121,7 @@ void main(ComputeInputType input)
 			0.758                           // Mie preferred scattering direction
 			);
 
-		color *= 1.0 - SunShadowResolver(posWS);
+		color *= 1.0 - SunShadowResolver(posWS, SamplerTypePoint);
 
 		float4 l_result = float4(color, 1.0);
 

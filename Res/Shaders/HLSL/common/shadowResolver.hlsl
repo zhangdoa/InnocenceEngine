@@ -1,7 +1,7 @@
 #define useCSM
 
 // ----------------------------------------------------------------------------
-float PCFResolver(float3 projCoords, Texture2DArray shadowMap, int index, float currentDepth, float2 texelSize)
+float PCFResolver(float3 projCoords, Texture2DArray shadowMap, SamplerState Sampler, int index, float currentDepth, float2 texelSize)
 {
 	// PCF
 	float shadow = 0.0;
@@ -11,7 +11,7 @@ float PCFResolver(float3 projCoords, Texture2DArray shadowMap, int index, float 
 		for (int y = -1; y <= 1; ++y)
 		{
 			float3 coord = float3(projCoords.xy + float2(x, y) * texelSize, (float)index);
-			float4 shadowSample = shadowMap.SampleLevel(SampleTypePoint, coord, 0);
+			float4 shadowSample = shadowMap.SampleLevel(Sampler, coord, 0);
 			float pcfDepth = shadowSample.r;
 			shadow += currentDepth > pcfDepth ? 1.0 : 0.0;
 		}
@@ -35,10 +35,10 @@ float VSMKernel(float4 shadowMapValue, float currentDepth)
 	return shadow;
 }
 // ----------------------------------------------------------------------------
-float VSMResolver(float3 projCoords, Texture2DArray shadowMap, int index, float currentDepth)
+float VSMResolver(float3 projCoords, Texture2DArray shadowMap, SamplerState Sampler, int index, float currentDepth)
 {
 	// VSM
-	float4 shadowMapValue = shadowMap.SampleLevel(SampleTypePoint, float3(projCoords.xy, index), 0);
+	float4 shadowMapValue = shadowMap.SampleLevel(Sampler, float3(projCoords.xy, index), 0);
 
 	float shadow = VSMKernel(shadowMapValue, currentDepth);
 	return shadow;
@@ -46,7 +46,7 @@ float VSMResolver(float3 projCoords, Texture2DArray shadowMap, int index, float 
 
 #ifdef useCSM
 // ----------------------------------------------------------------------------
-float SunShadowResolver(float3 fragPos)
+float SunShadowResolver(float3 fragPos, SamplerState Sampler)
 {
 	float shadow = 0.0;
 
@@ -88,13 +88,13 @@ float SunShadowResolver(float3 fragPos)
 		// get depth of current fragment from light's perspective
 		float currentDepth = projCoords.z;
 
-		shadow = PCFResolver(projCoords, in_SunShadow, splitIndex, currentDepth, texelSize);
+		shadow = PCFResolver(projCoords, in_SunShadow, Sampler, splitIndex, currentDepth, texelSize);
 	}
 
 	return shadow;
 }
 #else
-float SunShadowResolver(float3 fragPos)
+float SunShadowResolver(float3 fragPos, SamplerState Sampler)
 {
 	float shadow = 0.0;
 
@@ -115,7 +115,7 @@ float SunShadowResolver(float3 fragPos)
 	// get depth of current fragment from light's perspective
 	float currentDepth = projCoords.z;
 
-	shadow = PCFResolver(projCoords, in_SunShadow, 0, currentDepth, texelSize);
+	shadow = PCFResolver(projCoords, in_SunShadow, Sampler, 0, currentDepth, texelSize);
 
 	return shadow;
 }

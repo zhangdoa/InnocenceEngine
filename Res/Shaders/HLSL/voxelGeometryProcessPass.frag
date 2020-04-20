@@ -106,7 +106,7 @@ void main(PixelInputType input)
 
 	float3 illuminance = perFrameCBuffer.sun_illuminance.xyz * NdotL;
 	float4 Lo = float4(illuminance * Ft, 1.0f);
-	//Lo *= 1.0 - SunShadowResolver(input.posWS.xyz);
+	//Lo *= 1.0 - SunShadowResolver(input.posWS.xyz, SamplerTypePoint);
 
 	uint LoUint = EncodeColor(Lo);
 	uint normalUint = EncodeNormal(input.normal);

@@ -130,7 +130,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 
 	float3 illuminance = perFrameCBuffer.sun_illuminance.xyz * NdotD;
 	Lo += illuminance * (Ft + Fr);
-	Lo *= 1.0 - SunShadowResolver(posWS);
+	Lo *= 1.0 - SunShadowResolver(posWS, SamplerTypePoint);
 
 	// point punctual light
 	// Get the index of the current pixel in the light grid.
