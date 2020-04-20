@@ -1081,6 +1081,15 @@ bool DX11RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponen
 	return true;
 }
 
+bool DX11RenderingServer::ClearGPUBufferDataComponent(GPUBufferDataComponent* rhs)
+{
+	const uint32_t zero = 0;
+	auto l_rhs = reinterpret_cast<DX11GPUBufferDataComponent*>(rhs);
+	m_deviceContext->ClearUnorderedAccessViewUint(l_rhs->m_UAV, &zero);
+
+	return true;
+}
+
 bool DX11RenderingServer::CommandListBegin(RenderPassDataComponent* rhs, size_t frameIndex)
 {
 	return true;

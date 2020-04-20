@@ -781,6 +781,16 @@ bool GLRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent*
 	return true;
 }
 
+bool GLRenderingServer::ClearGPUBufferDataComponent(GPUBufferDataComponent* rhs)
+{
+	const GLuint zero = 0;
+	auto l_rhs = reinterpret_cast<GLGPUBufferDataComponent*>(rhs);
+	glBindBuffer(l_rhs->m_BufferType, l_rhs->m_Handle);
+	glClearBufferData(l_rhs->m_BufferType, GL_R32UI, GL_RED, GL_UNSIGNED_INT, &zero);
+
+	return true;
+}
+
 bool GLRenderingServer::CommandListBegin(RenderPassDataComponent* rhs, size_t frameIndex)
 {
 	auto l_rhs = reinterpret_cast<GLRenderPassDataComponent*>(rhs);

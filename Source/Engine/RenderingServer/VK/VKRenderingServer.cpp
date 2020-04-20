@@ -1028,6 +1028,11 @@ bool VKRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent*
 	return true;
 }
 
+bool VKRenderingServer::ClearGPUBufferDataComponent(GPUBufferDataComponent* rhs)
+{
+	return true;
+}
+
 bool VKRenderingServer::CommandListBegin(RenderPassDataComponent* rhs, size_t frameIndex)
 {
 	return true;

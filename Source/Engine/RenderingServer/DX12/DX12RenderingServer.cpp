@@ -560,9 +560,9 @@ bool DX12RenderingServerNS::GenerateMipmap(DX12TextureDataComponent* DX12TDC)
 	}
 
 	auto l_resourceBinder = reinterpret_cast<DX12ResourceBinder*>(DX12TDC->m_ResourceBinder);
-	D3D12_GPU_DESCRIPTOR_HANDLE l_SRV = l_resourceBinder->m_TextureSRV.GPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE l_SRV = l_resourceBinder->m_SRV.GPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE l_UAV;
-	l_UAV.ptr = l_resourceBinder->m_TextureUAV.ShaderVisibleGPUHandle.ptr + l_CSUDescSize;
+	l_UAV.ptr = l_resourceBinder->m_UAV.ShaderVisibleGPUHandle.ptr + l_CSUDescSize;
 
 	for (uint32_t TopMip = 0; TopMip < 4; TopMip++)
 	{
@@ -1065,7 +1065,7 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent* r
 		// Create SRV and UAV
 		auto l_resourceBinder = addResourcesBinder();
 
-		l_resourceBinder->m_TextureSRV = CreateSRV(l_rhs, 0);
+		l_resourceBinder->m_SRV = CreateSRV(l_rhs, 0);
 
 		if (l_rhs->m_TextureDesc.UseMipMap)
 		{
@@ -1080,7 +1080,7 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent* r
 		{
 			if (!l_rhs->m_TextureDesc.IsSRGB)
 			{
-				l_resourceBinder->m_TextureUAV = CreateUAV(l_rhs, 0);
+				l_resourceBinder->m_UAV = CreateUAV(l_rhs, 0);
 
 				if (l_rhs->m_TextureDesc.UseMipMap)
 				{
@@ -1310,10 +1310,12 @@ bool DX12RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 #ifdef _DEBUG
 			SetObjectName(rhs, l_rhs->m_DefaultHeapResourceHandle, "DefaultHeapGPUBuffer");
 #endif // _DEBUG
+
+			l_resourceBinder->m_UAV = CreateUAV(l_rhs);
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Not support CPU-readable GPU buffer currently.");
+			InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Not support CPU-readable default heap GPU buffer currently.");
 		}
 	}
 
@@ -1459,6 +1461,27 @@ bool DX12RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponen
 	return true;
 }
 
+bool DX12RenderingServer::ClearGPUBufferDataComponent(GPUBufferDataComponent* rhs)
+{
+	const uint32_t zero = 0;
+	auto l_rhs = reinterpret_cast<DX12GPUBufferDataComponent*>(rhs);
+	auto l_resourceBinder = reinterpret_cast<DX12ResourceBinder*>(l_rhs->m_ResourceBinder);
+
+	auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
+
+	l_commandList->ClearUnorderedAccessViewUint(
+		l_resourceBinder->m_UAV.ShaderNonVisibleGPUHandle,
+		l_resourceBinder->m_UAV.ShaderNonVisibleCPUHandle,
+		l_rhs->m_DefaultHeapResourceHandle.Get(),
+		&zero,
+		0,
+		NULL);
+
+	EndSingleTimeCommands(l_commandList, m_device, m_globalCommandQueue);
+
+	return true;
+}
+
 bool DX12RenderingServer::CommandListBegin(RenderPassDataComponent* rhs, size_t frameIndex)
 {
 	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
@@ -1597,8 +1620,8 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 					if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
 					{
 						l_commandList->m_GraphicsCommandList->ClearUnorderedAccessViewUint(
-							l_resourceBinder->m_TextureUAV.ShaderNonVisibleGPUHandle,
-							l_resourceBinder->m_TextureUAV.ShaderNonVisibleCPUHandle,
+							l_resourceBinder->m_UAV.ShaderNonVisibleGPUHandle,
+							l_resourceBinder->m_UAV.ShaderNonVisibleCPUHandle,
 							l_RT->m_ResourceHandle.Get(),
 							(UINT*)l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor,
 							0,
@@ -1607,8 +1630,8 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 					else
 					{
 						l_commandList->m_GraphicsCommandList->ClearUnorderedAccessViewFloat(
-							l_resourceBinder->m_TextureUAV.ShaderNonVisibleGPUHandle,
-							l_resourceBinder->m_TextureUAV.ShaderNonVisibleCPUHandle,
+							l_resourceBinder->m_UAV.ShaderNonVisibleGPUHandle,
+							l_resourceBinder->m_UAV.ShaderNonVisibleCPUHandle,
 							l_RT->m_ResourceHandle.Get(),
 							l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor,
 							0,
@@ -1625,8 +1648,8 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 						if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
 						{
 							l_commandList->m_GraphicsCommandList->ClearUnorderedAccessViewUint(
-								l_resourceBinder->m_TextureUAV.ShaderNonVisibleGPUHandle,
-								l_resourceBinder->m_TextureUAV.ShaderNonVisibleCPUHandle,
+								l_resourceBinder->m_UAV.ShaderNonVisibleGPUHandle,
+								l_resourceBinder->m_UAV.ShaderNonVisibleCPUHandle,
 								l_RT->m_ResourceHandle.Get(),
 								(UINT*)l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor,
 								0,
@@ -1635,8 +1658,8 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 						else
 						{
 							l_commandList->m_GraphicsCommandList->ClearUnorderedAccessViewFloat(
-								l_resourceBinder->m_TextureUAV.ShaderNonVisibleGPUHandle,
-								l_resourceBinder->m_TextureUAV.ShaderNonVisibleCPUHandle,
+								l_resourceBinder->m_UAV.ShaderNonVisibleGPUHandle,
+								l_resourceBinder->m_UAV.ShaderNonVisibleCPUHandle,
 								l_RT->m_ResourceHandle.Get(),
 								l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor,
 								0,
@@ -1683,12 +1706,12 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent* render
 				if (accessibility != Accessibility::ReadOnly)
 				{
 					CheckWriteState(l_resourceBinder->m_Texture, l_commandList);
-					l_commandList->m_GraphicsCommandList->SetComputeRootDescriptorTable((uint32_t)globalSlot, l_resourceBinder->m_TextureUAV.ShaderVisibleGPUHandle);
+					l_commandList->m_GraphicsCommandList->SetComputeRootDescriptorTable((uint32_t)globalSlot, l_resourceBinder->m_UAV.ShaderVisibleGPUHandle);
 				}
 				else
 				{
 					CheckReadState(l_resourceBinder->m_Texture, l_commandList);
-					l_commandList->m_GraphicsCommandList->SetComputeRootDescriptorTable((uint32_t)globalSlot, l_resourceBinder->m_TextureSRV.GPUHandle);
+					l_commandList->m_GraphicsCommandList->SetComputeRootDescriptorTable((uint32_t)globalSlot, l_resourceBinder->m_SRV.GPUHandle);
 				}
 				break;
 			case ResourceBinderType::Buffer:
@@ -1731,12 +1754,12 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent* render
 				if (accessibility != Accessibility::ReadOnly)
 				{
 					CheckWriteState(l_resourceBinder->m_Texture, l_commandList);
-					l_commandList->m_GraphicsCommandList->SetGraphicsRootDescriptorTable((uint32_t)globalSlot, l_resourceBinder->m_TextureUAV.ShaderVisibleGPUHandle);
+					l_commandList->m_GraphicsCommandList->SetGraphicsRootDescriptorTable((uint32_t)globalSlot, l_resourceBinder->m_UAV.ShaderVisibleGPUHandle);
 				}
 				else
 				{
 					CheckReadState(l_resourceBinder->m_Texture, l_commandList);
-					l_commandList->m_GraphicsCommandList->SetGraphicsRootDescriptorTable((uint32_t)globalSlot, l_resourceBinder->m_TextureSRV.GPUHandle);
+					l_commandList->m_GraphicsCommandList->SetGraphicsRootDescriptorTable((uint32_t)globalSlot, l_resourceBinder->m_SRV.GPUHandle);
 				}
 				break;
 			case ResourceBinderType::Buffer:
@@ -2207,14 +2230,10 @@ DX12SRV DX12RenderingServer::CreateSRV(TextureDataComponent* rhs, uint32_t mostD
 	return l_result;
 }
 
-DX12UAV DX12RenderingServer::CreateUAV(TextureDataComponent* rhs, uint32_t mipSlice)
+DX12UAV createUAVImpl(D3D12_UNORDERED_ACCESS_VIEW_DESC desc, ComPtr<ID3D12Resource> resourceHandle)
 {
-	auto l_rhs = reinterpret_cast<DX12TextureDataComponent*>(rhs);
-
 	DX12UAV l_result = {};
-
-	l_result.UAVDesc = GetUAVDesc(l_rhs->m_TextureDesc, l_rhs->m_DX12TextureDesc, mipSlice);
-
+	l_result.UAVDesc = desc;
 	l_result.ShaderNonVisibleCPUHandle = m_currentShaderNonVisibleCSUCPUHandle;
 	l_result.ShaderNonVisibleGPUHandle = m_currentShaderNonVisibleCSUGPUHandle;
 	l_result.ShaderVisibleCPUHandle = m_currentCSUCPUHandle;
@@ -2227,10 +2246,30 @@ DX12UAV DX12RenderingServer::CreateUAV(TextureDataComponent* rhs, uint32_t mipSl
 	m_currentShaderNonVisibleCSUCPUHandle.ptr += l_CSUDescSize;
 	m_currentShaderNonVisibleCSUGPUHandle.ptr += l_CSUDescSize;
 
-	m_device->CreateUnorderedAccessView(l_rhs->m_ResourceHandle.Get(), 0, &l_result.UAVDesc, l_result.ShaderNonVisibleCPUHandle);
-	m_device->CreateUnorderedAccessView(l_rhs->m_ResourceHandle.Get(), 0, &l_result.UAVDesc, l_result.ShaderVisibleCPUHandle);
+	m_device->CreateUnorderedAccessView(resourceHandle.Get(), 0, &l_result.UAVDesc, l_result.ShaderNonVisibleCPUHandle);
+	m_device->CreateUnorderedAccessView(resourceHandle.Get(), 0, &l_result.UAVDesc, l_result.ShaderVisibleCPUHandle);
 
 	return l_result;
+}
+
+DX12UAV DX12RenderingServer::CreateUAV(TextureDataComponent* rhs, uint32_t mipSlice)
+{
+	auto l_rhs = reinterpret_cast<DX12TextureDataComponent*>(rhs);
+
+	auto l_desc = GetUAVDesc(l_rhs->m_TextureDesc, l_rhs->m_DX12TextureDesc, mipSlice);
+
+	return createUAVImpl(l_desc, l_rhs->m_ResourceHandle);
+}
+
+DX12UAV DX12RenderingServer::CreateUAV(GPUBufferDataComponent* rhs)
+{
+	auto l_rhs = reinterpret_cast<DX12GPUBufferDataComponent*>(rhs);
+	D3D12_UNORDERED_ACCESS_VIEW_DESC l_desc = {};
+	l_desc.Format = DXGI_FORMAT_R32_UINT;
+	l_desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+	l_desc.Buffer.NumElements = (uint32_t)l_rhs->m_ElementCount;
+
+	return createUAVImpl(l_desc, l_rhs->m_DefaultHeapResourceHandle);
 }
 
 DX12CBV DX12RenderingServer::CreateCBV(GPUBufferDataComponent* rhs)
