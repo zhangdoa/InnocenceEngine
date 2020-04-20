@@ -204,7 +204,7 @@ uint EncodeColor(in float4 color)
 	color.rgb /= HDR;
 
 	uint3 colorUInt = uint3(color.rgb * 255.0f);
-	uint HDRUint = (uint)(saturate(HDR) * 127.0f);
+	uint HDRUint = (uint)(saturate(HDR / 100000.0f) * 127.0f);
 	uint colorMask = (HDRUint << 24u) | (colorUInt.r << 16u) | (colorUInt.g << 8u) | colorUInt.b;
 
 	uint alpha = (color.a > 0 ? 1u : 0u);
@@ -226,7 +226,7 @@ float4 DecodeColor(in uint colorMask)
 	HDR /= 127.0f;
 	color.rgb /= 255.0f;
 
-	color.rgb *= HDR;
+	color.rgb *= HDR * 100000.0f;
 
 	color.a = (colorMask >> 31u) & 0x00000001;
 

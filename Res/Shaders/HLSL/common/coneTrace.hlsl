@@ -25,7 +25,7 @@ inline float4 ConeTrace(in Texture3D<float4> voxelTexture, in SamplerState Sampl
 	float dist = 1.0;
 	float3 startPos = P + N;
 
-	while (dist < 512)
+	while (dist < 128)
 	{
 		float diameter = max(1.0, 2 * coneAperture * dist);
 		float mip = log2(diameter);
@@ -34,15 +34,16 @@ inline float4 ConeTrace(in Texture3D<float4> voxelTexture, in SamplerState Sampl
 		tc = tc - voxelizationPassCBuffer.volumeCenter.xyz;
 		tc /= (voxelizationPassCBuffer.volumeExtend.xyz * 0.5);
 		tc = tc * float3(0.5f, 0.5f, 0.5f) + 0.5f;
+		int is_saturated = (tc.x == saturate(tc.x)) && (tc.y == saturate(tc.y)) && (tc.z == saturate(tc.z));
 
-		if (mip >= 4)
+		if (!is_saturated || (mip > 4))
 			break;
 
 		float4 sam = voxelTexture.SampleLevel(SamplerTypePoint, tc, mip);
 
-		color += sam.rgb;
+		color += sam.rgb / dist;
 
-		dist += diameter * 16;
+		dist += diameter * 4;
 	}
 
 	return float4(color, 1.0f);
