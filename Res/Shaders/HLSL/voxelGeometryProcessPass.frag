@@ -6,8 +6,10 @@ Texture2D t2d_albedo : register(t1);
 Texture2D t2d_metallic : register(t2);
 Texture2D t2d_roughness : register(t3);
 Texture2D t2d_ao : register(t4);
+Texture2DArray in_SunShadow : register(t5);
+SamplerState SamplerTypePoint : register(s0);
 
-SamplerState SampleTypeWrap : register(s0);
+#include "common/shadowResolver.hlsl"
 
 #include "common/BSDF.hlsl"
 
@@ -22,6 +24,7 @@ struct PixelInputType
 };
 
 RWTexture3D<uint> out_voxelizationPassRT0 : register(u0);
+RWTexture3D<uint> out_voxelizationPassRT1 : register(u1);
 
 void main(PixelInputType input)
 {
@@ -38,7 +41,7 @@ void main(PixelInputType input)
 	float3 out_Albedo;
 	if (materialCBuffer.textureSlotMask & 0x00000002)
 	{
-		float4 l_albedo = t2d_albedo.Sample(SampleTypeWrap, input.texcoord);
+		float4 l_albedo = t2d_albedo.Sample(SamplerTypePoint, input.texcoord);
 		transparency = l_albedo.a;
 		if (transparency < 0.1)
 		{
@@ -57,7 +60,7 @@ void main(PixelInputType input)
 	float out_Metallic;
 	if (materialCBuffer.textureSlotMask & 0x00000004)
 	{
-		out_Metallic = t2d_metallic.Sample(SampleTypeWrap, input.texcoord).r;
+		out_Metallic = t2d_metallic.Sample(SamplerTypePoint, input.texcoord).r;
 	}
 	else
 	{
@@ -67,7 +70,7 @@ void main(PixelInputType input)
 	float out_Roughness;
 	if (materialCBuffer.textureSlotMask & 0x00000008)
 	{
-		out_Roughness = t2d_roughness.Sample(SampleTypeWrap, input.texcoord).r;
+		out_Roughness = t2d_roughness.Sample(SamplerTypePoint, input.texcoord).r;
 	}
 	else
 	{
@@ -77,7 +80,7 @@ void main(PixelInputType input)
 	float out_AO;
 	if (materialCBuffer.textureSlotMask & 0x00000010)
 	{
-		out_AO = t2d_ao.Sample(SampleTypeWrap, input.texcoord).r;
+		out_AO = t2d_ao.Sample(SamplerTypePoint, input.texcoord).r;
 	}
 	else
 	{
@@ -103,8 +106,12 @@ void main(PixelInputType input)
 
 	float3 illuminance = perFrameCBuffer.sun_illuminance.xyz * NdotL;
 	float4 Lo = float4(illuminance * Ft, 1.0f);
+	//Lo *= 1.0 - SunShadowResolver(input.posWS.xyz);
+
 	uint LoUint = EncodeColor(Lo);
+	uint normalUint = EncodeNormal(input.normal);
 
 	float3 writeCoord = (input.posCS_orig.xyz * 0.5 + 0.5) * voxelizationPassCBuffer.voxelResolution.xyz;
 	InterlockedMax(out_voxelizationPassRT0[writeCoord], LoUint);
+	InterlockedMax(out_voxelizationPassRT1[writeCoord], normalUint);
 }

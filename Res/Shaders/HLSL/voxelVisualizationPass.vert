@@ -17,7 +17,7 @@ struct GeometryInputType
 	float4 color : COLOR;
 };
 
-Texture3D<uint> in_voxelizationPassRT0 : register(t0);
+Texture3D<float4> in_volume : register(t0);
 
 GeometryInputType main(VertexInputType input)
 {
@@ -33,9 +33,7 @@ GeometryInputType main(VertexInputType input)
 	int3 texPos = int3(position);
 	output.posCS = float4(position / voxelizationPassCBuffer.voxelResolution, 1.0f);
 	output.posCS.xyz = output.posCS.xyz * 2.0 - 1.0;
-	uint colorMask = in_voxelizationPassRT0[texPos];
-	float4 color = DecodeColor(colorMask);
-	output.color = color;
+	output.color = in_volume[texPos];
 
 	return output;
 }

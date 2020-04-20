@@ -1,0 +1,37 @@
+// shadertype=hlsl
+#include "common/common.hlsl"
+#include "common/coneTrace.hlsl"
+
+struct ComputeInputType
+{
+	uint3 groupID : SV_GroupID;           // 3D index of the thread group in the dispatch.
+	uint3 groupThreadID : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
+	uint3 dispatchThreadID : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
+	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
+};
+
+Texture3D<float4> in_luminanceVolume : register(t0);
+Texture3D<float4> in_normalVolume : register(t1);
+RWTexture3D<float4> out_luminanceVolume : register(u0);
+
+SamplerState SamplerTypePoint : register(s0);
+
+[numthreads(8, 8, 8)]
+void main(ComputeInputType input)
+{
+	float3 voxelSize = voxelizationPassCBuffer.volumeExtend.xyz / voxelizationPassCBuffer.voxelResolution.xyz;
+
+	float3 posWS = float3(input.dispatchThreadID);
+	posWS /= voxelizationPassCBuffer.voxelResolution.xyz;
+	posWS = posWS * 2.0 - 1.0;
+
+	posWS *= (voxelizationPassCBuffer.volumeExtend.xyz / 2.0);
+	posWS += voxelSize / 2.0;
+	posWS += voxelizationPassCBuffer.volumeCenter.xyz;
+
+	float4 normalWS = in_normalVolume[input.dispatchThreadID];
+	if (normalWS.a)
+	{
+		out_luminanceVolume[input.dispatchThreadID] = ConeTraceRadiance(in_luminanceVolume, SamplerTypePoint, posWS, normalWS);
+	}
+}

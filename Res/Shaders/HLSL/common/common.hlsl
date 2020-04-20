@@ -233,6 +233,34 @@ float4 DecodeColor(in uint colorMask)
 	return color;
 }
 
+uint EncodeNormal(in float4 normal)
+{
+	int3 iNormal = int3(normal.xyz * 255.0f);
+	uint3 iNormalSigns;
+	iNormalSigns.x = (iNormal.x >> 5) & 0x04000000;
+	iNormalSigns.y = (iNormal.y >> 14) & 0x00020000;
+	iNormalSigns.z = (iNormal.z >> 23) & 0x00000100;
+	iNormal = abs(iNormal);
+	uint normalMask = iNormalSigns.x | (iNormal.x << 18) | iNormalSigns.y | (iNormal.y << 9) | iNormalSigns.z | iNormal.z;
+	return normalMask;
+}
+
+float4 DecodeNormal(in uint normalMask)
+{
+	int3 iNormal;
+	iNormal.x = (normalMask >> 18) & 0x000000ff;
+	iNormal.y = (normalMask >> 9) & 0x000000ff;
+	iNormal.z = normalMask & 0x000000ff;
+	int3 iNormalSigns;
+	iNormalSigns.x = (normalMask >> 25) & 0x00000002;
+	iNormalSigns.y = (normalMask >> 16) & 0x00000002;
+	iNormalSigns.z = (normalMask >> 7) & 0x00000002;
+	iNormalSigns = 1 - iNormalSigns;
+	float3 normal = float3(iNormal) / 255.0f;
+	normal *= iNormalSigns;
+	return float4(normal, 1.0f);
+}
+
 struct Surfel
 {
 	float4 pos;

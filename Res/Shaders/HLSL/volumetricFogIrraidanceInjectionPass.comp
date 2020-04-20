@@ -13,7 +13,7 @@ RWTexture3D<float4> out_result : register(u0);
 RWTexture3D<float4> in_froxelVolume : register(u1);
 Texture2DArray in_SunShadow : register(t0);
 
-SamplerState SampleTypePoint : register(s0);
+SamplerState SamplerTypePoint : register(s0);
 
 #include "common/skyResolver.hlsl"
 #include "common/shadowResolver.hlsl"

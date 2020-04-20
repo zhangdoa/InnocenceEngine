@@ -10,10 +10,13 @@ struct ComputeInputType
 };
 
 RWTexture3D<uint> in_luminanceVolume : register(u0);
-RWTexture3D<float4> out_luminanceVolume : register(u1);
+RWTexture3D<uint> in_normalVolume : register(u1);
+RWTexture3D<float4> out_luminanceVolume : register(u2);
+RWTexture3D<float4> out_normalVolume : register(u3);
 
 [numthreads(8, 8, 8)]
 void main(ComputeInputType input)
 {
 	out_luminanceVolume[input.dispatchThreadID] = DecodeColor(in_luminanceVolume[input.dispatchThreadID]);
+	out_normalVolume[input.dispatchThreadID] = DecodeNormal(in_normalVolume[input.dispatchThreadID]);
 }

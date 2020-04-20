@@ -14,10 +14,12 @@ Texture3D<float4> in_IrradianceVolume : register(t9);
 Texture3D<float4> in_VolumetricFog : register(t10);
 StructuredBuffer<uint> in_LightIndexList : register(t11);
 
-SamplerState SampleTypePoint : register(s0);
+SamplerState SamplerTypePoint : register(s0);
 
 #include "common/BSDF.hlsl"
 #include "common/shadowResolver.hlsl"
+#include "common/coneTrace.hlsl"
+
 //#define uni_drawCSMSplitedArea
 
 struct PixelInputType
@@ -33,83 +35,14 @@ struct PixelOutputType
 
 static const float sunAngularRadius = 0.000071;
 
-static const float3 CONES[] =
-{
-	float3(0.57735, 0.57735, 0.57735),
-	float3(0.57735, -0.57735, -0.57735),
-	float3(-0.57735, 0.57735, -0.57735),
-	float3(-0.57735, -0.57735, 0.57735),
-	float3(-0.903007, -0.182696, -0.388844),
-	float3(-0.903007, 0.182696, 0.388844),
-	float3(0.903007, -0.182696, 0.388844),
-	float3(0.903007, 0.182696, -0.388844),
-	float3(-0.388844, -0.903007, -0.182696),
-	float3(0.388844, -0.903007, 0.182696),
-	float3(0.388844, 0.903007, -0.182696),
-	float3(-0.388844, 0.903007, 0.182696),
-	float3(-0.182696, -0.388844, -0.903007),
-	float3(0.182696, 0.388844, -0.903007),
-	float3(-0.182696, 0.388844, 0.903007),
-	float3(0.182696, -0.388844, 0.903007)
-};
-
-inline float4 ConeTrace(in float3 P, in float3 N, in float3 coneDirection, in float coneAperture)
-{
-	float3 color = 0;
-
-	float dist = 1.0;
-	float3 startPos = P + N;
-
-	while (dist < 512)
-	{
-		float diameter = max(1.0, 2 * coneAperture * dist);
-		float mip = log2(diameter);
-
-		float3 tc = startPos + coneDirection * dist;
-		tc = tc - voxelizationPassCBuffer.volumeCenter.xyz;
-		tc /= (voxelizationPassCBuffer.volumeExtend.xyz * 0.5);
-		tc = tc * float3(0.5f, 0.5f, 0.5f) + 0.5f;
-
-		if (mip >= 4)
-			break;
-
-		float4 sam = in_IrradianceVolume.SampleLevel(SampleTypePoint, tc, mip);
-
-		color += sam.rgb;
-
-		dist += diameter * 16;
-	}
-
-	return float4(color, 1.0f);
-}
-
-inline float4 ConeTraceRadiance(in float3 P, in float3 N)
-{
-	float4 radiance = 0;
-
-	for (uint cone = 0; cone < 16; ++cone)
-	{
-		float3 coneDirection = normalize(CONES[cone] + N);
-
-		coneDirection *= dot(coneDirection, N) < 0 ? -1 : 1;
-
-		radiance += ConeTrace(P, N, coneDirection, tan(PI * 0.5f * 0.33f));
-	}
-
-	radiance *= 0.0625;
-	radiance.a = saturate(radiance.a);
-
-	return max(0, radiance);
-}
-
 PixelOutputType main(PixelInputType input) : SV_TARGET
 {
 	PixelOutputType output;
 
-	float4 GPassRT0 = in_opaquePassRT0.Sample(SampleTypePoint, input.texcoord);
-	float4 GPassRT1 = in_opaquePassRT1.Sample(SampleTypePoint, input.texcoord);
-	float4 GPassRT2 = in_opaquePassRT2.Sample(SampleTypePoint, input.texcoord);
-	float SSAO = in_SSAO.Sample(SampleTypePoint, input.texcoord).x;
+	float4 GPassRT0 = in_opaquePassRT0.Sample(SamplerTypePoint, input.texcoord);
+	float4 GPassRT1 = in_opaquePassRT1.Sample(SamplerTypePoint, input.texcoord);
+	float4 GPassRT2 = in_opaquePassRT2.Sample(SamplerTypePoint, input.texcoord);
+	float SSAO = in_SSAO.Sample(SamplerTypePoint, input.texcoord).x;
 
 	float3 posWS = GPassRT0.xyz;
 	float metallic = GPassRT0.w;
@@ -193,7 +126,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float F90 = 1.0;
 	float3 FresnelFactor = fresnelSchlick(F0, F90, LdotHL);
 	float3 Ft = getBTDF(NdotV, NdotD, DdotHD, roughness, metallic, FresnelFactor, albedo);
-	float3 Fr = getBRDF(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotV, NdotL, NdotHL, LdotHL, roughness, F0, FresnelFactor);
+	float3 Fr = getBRDF(in_BRDFLUT, in_BRDFMSLUT, SamplerTypePoint, NdotV, NdotL, NdotHL, LdotHL, roughness, F0, FresnelFactor);
 
 	float3 illuminance = perFrameCBuffer.sun_illuminance.xyz * NdotD;
 	Lo += illuminance * (Ft + Fr);
@@ -228,7 +161,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 		attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
 
 		float3 luminousFlux = light.luminousFlux.xyz * attenuation;
-		Lo += getOutLuminance(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, metallic, F0, albedo, luminousFlux);
+		Lo += getOutLuminance(in_BRDFLUT, in_BRDFMSLUT, SamplerTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, metallic, F0, albedo, luminousFlux);
 	}
 
 	//// sphere area light
@@ -266,7 +199,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	//	}
 	//	illuminance *= PI;
 
-	//	Lo += getOutLuminance(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, F0, albedo, illuminance * sphereLights[i].luminousFlux.xyz);
+	//	Lo += getOutLuminance(in_BRDFLUT, in_BRDFMSLUT, SamplerTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, F0, albedo, illuminance * sphereLights[i].luminousFlux.xyz);
 	//}
 
 	//// GI
@@ -277,7 +210,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	//int3 isOutside = ((GISampleCoord > 1.0) || (GISampleCoord < 0.0));
 
 	//// Volumetric Fog
-	//float4 fog = in_VolumetricFog.Sample(SampleTypePoint, GISampleCoord.xyz);
+	//float4 fog = in_VolumetricFog.Sample(SamplerTypePoint, GISampleCoord.xyz);
 	//Lo += fog.xyz;
 
 	//GISampleCoord.z /= 6.0;
@@ -294,33 +227,33 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	//	float4 indirectLight = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	//	if (isNegative.x)
 	//	{
-	//		indirectLight += nSquared.x * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordNX);
+	//		indirectLight += nSquared.x * in_IrradianceVolume.Sample(SamplerTypePoint, GISampleCoordNX);
 	//	}
 	//	else
 	//	{
-	//		indirectLight += nSquared.x * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordPX);
+	//		indirectLight += nSquared.x * in_IrradianceVolume.Sample(SamplerTypePoint, GISampleCoordPX);
 	//	}
 	//	if (isNegative.y)
 	//	{
-	//		indirectLight += nSquared.y * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordNY);
+	//		indirectLight += nSquared.y * in_IrradianceVolume.Sample(SamplerTypePoint, GISampleCoordNY);
 	//	}
 	//	else
 	//	{
-	//		indirectLight += nSquared.y * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordPY);
+	//		indirectLight += nSquared.y * in_IrradianceVolume.Sample(SamplerTypePoint, GISampleCoordPY);
 	//	}
 	//	if (isNegative.z)
 	//	{
-	//		indirectLight += nSquared.z * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordNZ);
+	//		indirectLight += nSquared.z * in_IrradianceVolume.Sample(SamplerTypePoint, GISampleCoordNZ);
 	//	}
 	//	else
 	//	{
-	//		indirectLight += nSquared.z * in_IrradianceVolume.Sample(SampleTypePoint, GISampleCoordPZ);
+	//		indirectLight += nSquared.z * in_IrradianceVolume.Sample(SamplerTypePoint, GISampleCoordPZ);
 	//	}
 
 	//	Lo += indirectLight.xyz;
 	//}
 
-	Lo += ConeTraceRadiance(posWS, normalWS).xyz;
+	Lo += ConeTraceRadiance(in_IrradianceVolume, SamplerTypePoint, posWS, normalWS).xyz;
 
 	// ambient occlusion
 	Lo *= ao;
