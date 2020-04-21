@@ -2,6 +2,7 @@
 
 static const float eps = 0.00001;
 static const float PI = 3.14159265359;
+static const float SQRT2 = 1.41421356237;
 
 static const int NR_POINT_LIGHTS = 1024;
 static const int NR_SPHERE_LIGHTS = 128;
@@ -106,10 +107,17 @@ struct GI_CB
 
 struct VoxelizationPass_CB
 {
-	float4 volumeCenter;
-	float4 volumeExtend;
-	float4 voxelResolution;
-	float4 padding;
+	float4 volumeCenter; // 0
+	float volumeExtend; // Tight packing 1
+	float volumeExtendRcp; // Tight packing 1
+	float volumeResolution; // Tight packing 1
+	float volumeResolutionRcp; // Tight packing 1
+	float voxelSize; // Tight packing 2
+	float voxelSizeRcp; // Tight packing 2
+	float numCones; // Tight packing 2
+	float numConesRcp; // Tight packing 2
+	float coneTracingStep; // Tight packing 3
+	float coneTracingMaxDistance; // Tight packing 3
 };
 
 struct AnimationPass_CB

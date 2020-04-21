@@ -18,7 +18,7 @@ struct PixelInputType
 	float4 posCS : SV_POSITION;
 	float4 posCS_orig : POSITION;
 	float4 posWS : POS_WS;
-	float4 AABB : AABB;
+	nointerpolation float4 AABB : AABB;
 	float4 normal : NORMAL;
 	float2 texcoord : TEXCOORD;
 };
@@ -29,12 +29,19 @@ void main(PixelInputType input)
 {
 	//float3 pos = input.posCS.xyz;
 
-	//pos /= voxelizationPassCBuffer.voxelResolution.xyz;
+	//pos *= voxelizationPassCBuffer.volumeResolutionRcp;
 
 	//if (((pos.x < input.AABB.x) && (pos.y < input.AABB.y)) || ((pos.x > input.AABB.z) && (pos.y > input.AABB.w)))
 	//{
 	//	discard;
 	//}
+
+	float3 powWS = input.posCS_orig.xyz;
+
+	if ((powWS.x < -1.0) || (powWS.y < -1.0) || (powWS.z < -1.0) || (powWS.x > 1.0) || (powWS.y > 1.0) || (powWS.z > 1.0))
+	{
+		discard;
+	}
 
 	float transparency = 1.0;
 	float3 out_Albedo;
@@ -105,17 +112,17 @@ void main(PixelInputType input)
 
 	float3 illuminance = perFrameCBuffer.sun_illuminance.xyz * NdotL;
 	float4 Lo = float4(illuminance * Ft, 1.0f);
-	//Lo *= 1.0 - SunShadowResolver(input.posWS.xyz, SamplerTypePoint);
+	Lo *= 1.0 - SunShadowResolver(input.posWS.xyz, SamplerTypePoint);
 
 	uint LoUint = EncodeColor(Lo);
 	uint normalUint = EncodeNormal(input.normal);
 
-	float3 writeCoord = (input.posCS_orig.xyz * 0.5 + 0.5) * voxelizationPassCBuffer.voxelResolution.xyz;
+	float3 writeCoord = (input.posCS_orig.xyz * 0.5 + 0.5) * voxelizationPassCBuffer.volumeResolution;
 	int3 writeCoordInt = int3(writeCoord);
-	int index = writeCoordInt.x + writeCoordInt.y * voxelizationPassCBuffer.voxelResolution.x + writeCoordInt.z * voxelizationPassCBuffer.voxelResolution.x * voxelizationPassCBuffer.voxelResolution.y;
+	int index = writeCoordInt.x + writeCoordInt.y * voxelizationPassCBuffer.volumeResolution + writeCoordInt.z * voxelizationPassCBuffer.volumeResolution * voxelizationPassCBuffer.volumeResolution;
 
 	// @TODO: optimize
-	int offset = voxelizationPassCBuffer.voxelResolution.x * voxelizationPassCBuffer.voxelResolution.y * voxelizationPassCBuffer.voxelResolution.z;
+	int offset = voxelizationPassCBuffer.volumeResolution * voxelizationPassCBuffer.volumeResolution * voxelizationPassCBuffer.volumeResolution;
 
 	InterlockedMax(out_geometryProcessResult[index], LoUint);
 	InterlockedMax(out_geometryProcessResult[index + offset], normalUint);

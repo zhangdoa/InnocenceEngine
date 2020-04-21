@@ -92,9 +92,17 @@ struct alignas(16) GIConstantBuffer
 struct alignas(16) VoxelizationConstantBuffer
 {
 	Vec4 volumeCenter;
-	Vec4 volumeExtend;
-	Vec4 voxelResolution;
-	Vec4 padding;
+	float volumeExtend;
+	float volumeExtendRcp;
+	float volumeResolution;
+	float volumeResolutionRcp;
+	float voxelSize;
+	float voxelSizeRcp;
+	float numCones;
+	float numConesRcp;
+	float coneTracingStep;
+	float coneTracingMaxDistance;
+	float padding[2];
 };
 
 struct alignas(16) AnimationConstantBuffer

@@ -13,7 +13,7 @@ struct PixelInputType
 	float4 posCS : SV_POSITION;
 	float4 posCS_orig : POSITION;
 	float4 posWS : POS_WS;
-	float4 AABB : AABB;
+	nointerpolation float4 AABB : AABB;
 	float4 normal : NORMAL;
 	float2 texcoord : TEXCOORD;
 };
@@ -62,10 +62,16 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 	PixelInputType output[3];
 
 	float4 pos[3];
+	float4 normal[3];
+	float2 texcoord[3];
 
-	pos[0] = input[0].posWS;
-	pos[1] = input[1].posWS;
-	pos[2] = input[2].posWS;
+	[unroll(3)]
+	for (int j = 0; j < 3; j++)
+	{
+		pos[j] = input[j].posWS;
+		normal[j] = input[j].normal;
+		texcoord[j] = input[j].texcoord;
+	}
 
 	int selectedIndex = CalculateAxis(pos);
 
@@ -77,7 +83,7 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 		pos[i].w = 1;
 
 		// normalize
-		pos[i].xyz /= (voxelizationPassCBuffer.volumeExtend.xyz * 0.5);
+		pos[i].xyz /= (voxelizationPassCBuffer.volumeExtend * 0.5);
 
 		output[i].posCS_orig = pos[i];
 
@@ -91,8 +97,34 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 		{
 			pos[i].xyz = pos[i].xzy;
 		}
+	}
 
-		// for rasterization set z to 1
+	// xyz is normal, w is distance
+	float4 trianglePlane;
+	trianglePlane.xyz = cross(pos[1].xyz - pos[0].xyz, pos[2].xyz - pos[0].xyz);
+	trianglePlane.xyz = normalize(trianglePlane.xyz);
+	trianglePlane.w = -dot(pos[0].xyz, trianglePlane.xyz);
+
+	// change winding, otherwise there are artifacts for the back faces.
+	if (dot(trianglePlane.xyz, float3(0.0, 0.0, 1.0)) < 0.0)
+	{
+		float4 vertexTemp = pos[2];
+		float4 normalTemp = normal[2];
+		float2 texcoordTemp = texcoord[2];
+
+		pos[2] = pos[1];
+		normal[2] = normal[1];
+		texcoord[2] = texcoord[1];
+
+		pos[1] = vertexTemp;
+		normal[1] = normalTemp;
+		texcoord[1] = texcoordTemp;
+	}
+
+	// for rasterization set z to 1
+	[unroll(3)]
+	for (int i = 0; i < 3; i++)
+	{
 		pos[i].z = 1;
 	}
 
@@ -100,7 +132,7 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 	float2 side0N = normalize(pos[1].xy - pos[0].xy);
 	float2 side1N = normalize(pos[2].xy - pos[1].xy);
 	float2 side2N = normalize(pos[0].xy - pos[2].xy);
-	const float texelSize = 1.0f / voxelizationPassCBuffer.voxelResolution.x;
+	const float texelSize = voxelizationPassCBuffer.volumeResolutionRcp;
 	pos[0].xy += normalize(-side0N + side2N) * texelSize;
 	pos[1].xy += normalize(side0N - side1N) * texelSize;
 	pos[2].xy += normalize(side1N - side2N) * texelSize;
@@ -110,8 +142,8 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 	{
 		output[i].posCS = pos[i];
 		output[i].posWS = input[i].posWS;
-		output[i].texcoord = input[0].texcoord;
-		output[i].normal = input[0].normal;
+		output[i].texcoord = texcoord[i];
+		output[i].normal = normal[i];
 		output[i].AABB = getAABB(pos, float2(texelSize, texelSize));
 
 		outStream.Append(output[i]);

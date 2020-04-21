@@ -42,8 +42,8 @@ void main(point GeometryInputType input[1], inout TriangleStream<PixelInputType>
 
 	for (int i = 0; i < 8; ++i)
 	{
-		projectedVertices[i] = input[0].posCS + cubeVertices[i] / voxelizationPassCBuffer.voxelResolution * 2.0;
-		projectedVertices[i].xyz *= (voxelizationPassCBuffer.volumeExtend.xyz * 0.5);
+		projectedVertices[i] = input[0].posCS + cubeVertices[i] / voxelizationPassCBuffer.volumeResolution * 2.0;
+		projectedVertices[i].xyz *= (voxelizationPassCBuffer.volumeExtend * 0.5);
 		projectedVertices[i].xyz += voxelizationPassCBuffer.volumeCenter.xyz;
 
 		projectedVertices[i] = mul(projectedVertices[i], perFrameCBuffer.v);

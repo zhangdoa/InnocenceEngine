@@ -1,5 +1,4 @@
 // shadertype=hlsl
-#include "common/common.hlsl"
 
 Texture2D in_opaquePassRT0 : register(t0);
 Texture2D in_opaquePassRT1 : register(t1);
@@ -16,9 +15,9 @@ StructuredBuffer<uint> in_LightIndexList : register(t11);
 
 SamplerState SamplerTypePoint : register(s0);
 
+#include "common/coneTrace.hlsl"
 #include "common/BSDF.hlsl"
 #include "common/shadowResolver.hlsl"
-#include "common/coneTrace.hlsl"
 
 //#define uni_drawCSMSplitedArea
 
@@ -253,7 +252,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	//	Lo += indirectLight.xyz;
 	//}
 
-	Lo += ConeTraceRadiance(in_IrradianceVolume, SamplerTypePoint, posWS, normalWS).xyz;
+	Lo += ConeTraceRadiance(in_IrradianceVolume, SamplerTypePoint, posWS, normalWS, voxelizationPassCBuffer).xyz;
 
 	// ambient occlusion
 	Lo *= ao;

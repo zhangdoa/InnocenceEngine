@@ -1,5 +1,4 @@
 // shadertype=hlsl
-#include "common/common.hlsl"
 #include "common/coneTrace.hlsl"
 
 struct ComputeInputType
@@ -19,19 +18,19 @@ SamplerState SamplerTypePoint : register(s0);
 [numthreads(8, 8, 8)]
 void main(ComputeInputType input)
 {
-	float3 voxelSize = voxelizationPassCBuffer.volumeExtend.xyz / voxelizationPassCBuffer.voxelResolution.xyz;
+	out_luminanceVolume[input.dispatchThreadID] = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
 	float3 posWS = float3(input.dispatchThreadID);
-	posWS /= voxelizationPassCBuffer.voxelResolution.xyz;
+	posWS *= voxelizationPassCBuffer.volumeResolutionRcp;
 	posWS = posWS * 2.0 - 1.0;
 
-	posWS *= (voxelizationPassCBuffer.volumeExtend.xyz / 2.0);
-	posWS += voxelSize / 2.0;
+	posWS *= (voxelizationPassCBuffer.volumeExtend / 2.0);
+	posWS += voxelizationPassCBuffer.voxelSize / 2.0;
 	posWS += voxelizationPassCBuffer.volumeCenter.xyz;
 
 	float4 normalWS = in_normalVolume[input.dispatchThreadID];
 	if (normalWS.a)
 	{
-		out_luminanceVolume[input.dispatchThreadID] = ConeTraceRadiance(in_luminanceVolume, SamplerTypePoint, posWS, normalWS);
+		out_luminanceVolume[input.dispatchThreadID] = ConeTraceRadiance(in_luminanceVolume, SamplerTypePoint, posWS, normalWS, voxelizationPassCBuffer);
 	}
 }

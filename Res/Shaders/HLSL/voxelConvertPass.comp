@@ -16,11 +16,17 @@ RWTexture3D<float4> out_normalVolume : register(u2);
 [numthreads(8, 8, 8)]
 void main(ComputeInputType input)
 {
-	int index = input.dispatchThreadID.x + input.dispatchThreadID.y * voxelizationPassCBuffer.voxelResolution.x + input.dispatchThreadID.z * voxelizationPassCBuffer.voxelResolution.x * voxelizationPassCBuffer.voxelResolution.y;
+	out_luminanceVolume[input.dispatchThreadID] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	out_normalVolume[input.dispatchThreadID] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+
+	int index = input.dispatchThreadID.x + input.dispatchThreadID.y * voxelizationPassCBuffer.volumeResolution + input.dispatchThreadID.z * voxelizationPassCBuffer.volumeResolution * voxelizationPassCBuffer.volumeResolution;
 
 	// @TODO: optimize
-	int offset = voxelizationPassCBuffer.voxelResolution.x * voxelizationPassCBuffer.voxelResolution.y * voxelizationPassCBuffer.voxelResolution.z;
+	int offset = voxelizationPassCBuffer.volumeResolution * voxelizationPassCBuffer.volumeResolution * voxelizationPassCBuffer.volumeResolution;
 
-	out_luminanceVolume[input.dispatchThreadID] = DecodeColor(in_geometryProcessResult[index]);
-	out_normalVolume[input.dispatchThreadID] = DecodeNormal(in_geometryProcessResult[index + offset]);
+	if (in_geometryProcessResult[index])
+	{
+		out_luminanceVolume[input.dispatchThreadID] = DecodeColor(in_geometryProcessResult[index]);
+		out_normalVolume[input.dispatchThreadID] = DecodeNormal(in_geometryProcessResult[index + offset]);
+	}
 }

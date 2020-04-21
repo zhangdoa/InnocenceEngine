@@ -42,7 +42,7 @@ namespace VolumetricFogPass
 	TextureDataComponent* m_irraidanceInjectionResult;
 	TextureDataComponent* m_rayMarchingResult;
 
-	uint32_t voxelizationResolution = 64;
+	uint32_t m_voxelizationResolution = 64;
 }
 
 bool VolumetricFogPass::setupFroxelizationPass()
@@ -66,11 +66,11 @@ bool VolumetricFogPass::setupFroxelizationPass()
 	l_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler3D;
 	l_RenderPassDesc.m_RenderTargetDesc.Usage = TextureUsage::Sample;
 	l_RenderPassDesc.m_RenderTargetDesc.GPUAccessibility = Accessibility::ReadWrite;
-	l_RenderPassDesc.m_RenderTargetDesc.Width = voxelizationResolution;
-	l_RenderPassDesc.m_RenderTargetDesc.Height = voxelizationResolution;
-	l_RenderPassDesc.m_RenderTargetDesc.DepthOrArraySize = voxelizationResolution;
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)voxelizationResolution;
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)voxelizationResolution;
+	l_RenderPassDesc.m_RenderTargetDesc.Width = m_voxelizationResolution;
+	l_RenderPassDesc.m_RenderTargetDesc.Height = m_voxelizationResolution;
+	l_RenderPassDesc.m_RenderTargetDesc.DepthOrArraySize = m_voxelizationResolution;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)m_voxelizationResolution;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)m_voxelizationResolution;
 
 	m_froxelizationRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -277,9 +277,9 @@ bool VolumetricFogPass::Setup()
 	l_textureDesc.Sampler = TextureSampler::Sampler3D;
 	l_textureDesc.Usage = TextureUsage::Sample;
 	l_textureDesc.GPUAccessibility = Accessibility::ReadWrite;
-	l_textureDesc.Width = voxelizationResolution;
-	l_textureDesc.Height = voxelizationResolution;
-	l_textureDesc.DepthOrArraySize = voxelizationResolution;
+	l_textureDesc.Width = m_voxelizationResolution;
+	l_textureDesc.Height = m_voxelizationResolution;
+	l_textureDesc.DepthOrArraySize = m_voxelizationResolution;
 
 	m_irraidanceInjectionResult = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("VolumetricFogIrraidanceInjectionResult/");
 	m_irraidanceInjectionResult->m_TextureDesc = l_textureDesc;
@@ -364,7 +364,7 @@ bool VolumetricFogPass::froxelVisualization()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelVisualizationRPDC, ShaderStage::Geometry, l_PerFrameCBufferGBDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelVisualizationRPDC, ShaderStage::Vertex, m_froxelizationCBufferGBDC->m_ResourceBinder, 2, 9);
 
-	g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_froxelVisualizationRPDC, voxelizationResolution * voxelizationResolution * voxelizationResolution);
+	g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_froxelVisualizationRPDC, m_voxelizationResolution * m_voxelizationResolution * m_voxelizationResolution);
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_froxelVisualizationRPDC, ShaderStage::Vertex, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadOnly);
 
@@ -379,9 +379,9 @@ bool VolumetricFogPass::irraidanceInjection()
 	auto l_CSMGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::CSM);
 	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::ComputeDispatchParam);
 
-	auto l_numThreadsX = voxelizationResolution;
-	auto l_numThreadsY = voxelizationResolution;
-	auto l_numThreadsZ = voxelizationResolution;
+	auto l_numThreadsX = m_voxelizationResolution;
+	auto l_numThreadsY = m_voxelizationResolution;
+	auto l_numThreadsZ = m_voxelizationResolution;
 
 	DispatchParamsConstantBuffer l_irraidanceInjectionWorkload;
 	l_irraidanceInjectionWorkload.numThreadGroups = TVec4<uint32_t>(8, 8, 8, 0);
@@ -418,9 +418,9 @@ bool VolumetricFogPass::rayMarching()
 {
 	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::ComputeDispatchParam);
 
-	auto l_numThreadsX = voxelizationResolution;
-	auto l_numThreadsY = voxelizationResolution;
-	auto l_numThreadsZ = voxelizationResolution;
+	auto l_numThreadsX = m_voxelizationResolution;
+	auto l_numThreadsY = m_voxelizationResolution;
+	auto l_numThreadsZ = m_voxelizationResolution;
 
 	DispatchParamsConstantBuffer l_rayMarchingWorkload;
 	l_rayMarchingWorkload.numThreadGroups = TVec4<uint32_t>(8, 8, 8, 0);
@@ -450,12 +450,20 @@ bool VolumetricFogPass::rayMarching()
 
 bool VolumetricFogPass::PrepareCommandList()
 {
-	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getTotalSceneAABB();
+	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getStaticSceneAABB();
+	auto l_maxExtend = std::max(std::max(l_sceneAABB.m_extend.x, l_sceneAABB.m_extend.y), l_sceneAABB.m_extend.z);
+	auto l_adjustedBoundMax = l_sceneAABB.m_boundMin + Vec4(l_maxExtend, l_maxExtend, l_maxExtend, 0.0f);
+	auto l_adjustedCenter = l_sceneAABB.m_boundMin + Vec4(l_maxExtend, l_maxExtend, l_maxExtend, 0.0f) / 2.0f;
 
 	VoxelizationConstantBuffer l_voxelPassCB;
-	l_voxelPassCB.volumeCenter = l_sceneAABB.m_center;
-	l_voxelPassCB.volumeExtend = l_sceneAABB.m_extend;
-	l_voxelPassCB.voxelResolution = Vec4((float)voxelizationResolution, (float)voxelizationResolution, (float)voxelizationResolution, 1.0f);
+
+	l_voxelPassCB.volumeCenter = l_adjustedCenter;
+	l_voxelPassCB.volumeExtend = l_maxExtend;
+	l_voxelPassCB.volumeExtendRcp = 1.0f / l_voxelPassCB.volumeExtend;
+	l_voxelPassCB.volumeResolution = (float)m_voxelizationResolution;
+	l_voxelPassCB.volumeResolutionRcp = 1.0f / l_voxelPassCB.volumeResolution;
+	l_voxelPassCB.voxelSize = l_voxelPassCB.volumeExtend / l_voxelPassCB.volumeResolution;
+	l_voxelPassCB.voxelSizeRcp = 1.0f / l_voxelPassCB.voxelSize;
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_froxelizationCBufferGBDC, &l_voxelPassCB);
 
