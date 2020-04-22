@@ -527,6 +527,45 @@
       ],
       "ObjectName": "ceiling",
       "UUID": 4580208903297106022
+    },
+    {
+      "ChildrenComponents": [
+        {
+          "ComponentType": 1,
+          "LocalTransformVector": {
+            "Position": {
+              "X": 0.0,
+              "Y": 2.0,
+              "Z": 0.0
+            },
+            "Rotation": {
+              "W": 1.0,
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "ParentTransformComponentEntityName": "RootTransform"
+        },
+        {
+          "ComponentType": 2,
+          "MeshPrimitiveTopology": 2,
+          "MeshSource": 1,
+          "MeshUsage": 2,
+          "ModelFileName": "",
+          "ProceduralMeshShape": 6,
+          "SimulatePhysics": true,
+          "TextureWrapMethod": 2,
+          "Visibility": 1
+        }
+      ],
+      "ObjectName": "playerCharacter",
+      "UUID": 2454715245036513906
     }
   ],
   "SceneName": "..//Res//Scenes/GITestBox.InnoScene"

@@ -6,15 +6,15 @@
           "ComponentType": 1,
           "LocalTransformVector": {
             "Position": {
-              "X": -60.0,
-              "Y": 40.0,
-              "Z": 0.0
+              "X": 50.0,
+              "Y": 20.0,
+              "Z": -20.0
             },
             "Rotation": {
               "W": 0.6935198903083801,
               "X": -0.13794969022274017,
-              "Y": -0.6935198903083801,
-              "Z": -0.13794969022274017
+              "Y": 0.6935198903083801,
+              "Z": 0.13794969022274017
             },
             "Scale": {
               "X": 1.0,
@@ -34,7 +34,7 @@
         }
       ],
       "ObjectName": "playerCharacterCamera",
-      "UUID": 3680845227614717511
+      "UUID": 2792617984816692613
     },
     {
       "ChildrenComponents": [
@@ -47,10 +47,10 @@
               "Z": 0.0
             },
             "Rotation": {
-              "W": 0.7571288347244263,
-              "X": -0.6353065967559814,
-              "Y": 0.11653328686952591,
-              "Z": 0.09778304398059845
+              "W": 0.6408563256263733,
+              "X": -0.6408563256263733,
+              "Y": -0.29883623123168945,
+              "Z": 0.29883623123168945
             },
             "Scale": {
               "X": 1.0,
@@ -81,7 +81,7 @@
         }
       ],
       "ObjectName": "sun",
-      "UUID": 3858412295940457712
+      "UUID": 2975974398327867775
     },
     {
       "ChildrenComponents": [
@@ -100,9 +100,9 @@
               "Z": 0.0
             },
             "Scale": {
-              "X": 0.10000000149011612,
-              "Y": 0.10000000149011612,
-              "Z": 0.10000000149011612
+              "X": 10.0,
+              "Y": 10.0,
+              "Z": 10.0
             }
           },
           "ParentTransformComponentEntityName": "RootTransform"
@@ -112,15 +112,15 @@
           "MeshPrimitiveTopology": 2,
           "MeshSource": 2,
           "MeshUsage": 1,
-          "ModelFileName": "..//Res//ConvertedAssets//sponza.InnoModel",
+          "ModelFileName": "..//Res//ConvertedAssets//fireplace_room.InnoModel",
           "ProceduralMeshShape": 0,
           "SimulatePhysics": true,
           "TextureWrapMethod": 1,
           "Visibility": 1
         }
       ],
-      "ObjectName": "Sponza",
-      "UUID": 3827875161729527969
+      "ObjectName": "FireplaceRoom",
+      "UUID": 2945015503978018683
     },
     {
       "ChildrenComponents": [
@@ -128,20 +128,20 @@
           "ComponentType": 1,
           "LocalTransformVector": {
             "Position": {
-              "X": -6.0,
+              "X": 5.0,
               "Y": 0.0,
-              "Z": -2.0
+              "Z": -25.0
             },
             "Rotation": {
-              "W": 0.9238795042037964,
+              "W": 0.9469301104545593,
               "X": 0.0,
-              "Y": 0.3826834559440613,
+              "Y": -0.3214394748210907,
               "Z": 0.0
             },
             "Scale": {
-              "X": 2.0,
-              "Y": 2.0,
-              "Z": 2.0
+              "X": 3.0,
+              "Y": 3.0,
+              "Z": 3.0
             }
           },
           "ParentTransformComponentEntityName": "RootTransform"
@@ -159,7 +159,7 @@
         }
       ],
       "ObjectName": "orb",
-      "UUID": 2764924600343316468
+      "UUID": 3154895349084749568
     },
     {
       "ChildrenComponents": [
@@ -167,14 +167,14 @@
           "ComponentType": 1,
           "LocalTransformVector": {
             "Position": {
-              "X": -18.0,
-              "Y": 1.5,
-              "Z": -15.0
+              "X": 25.0,
+              "Y": 0.0,
+              "Z": -10.0
             },
             "Rotation": {
-              "W": 0.9238795042037964,
+              "W": 0.9914448857307434,
               "X": 0.0,
-              "Y": 0.3826834559440613,
+              "Y": 0.13052619993686676,
               "Z": 0.0
             },
             "Scale": {
@@ -198,7 +198,7 @@
         }
       ],
       "ObjectName": "bunny",
-      "UUID": 4096259697304368260
+      "UUID": 2523973169608757683
     },
     {
       "ChildrenComponents": [
@@ -245,7 +245,7 @@
         }
       ],
       "ObjectName": "pointLight",
-      "UUID": 4479624926745638842
+      "UUID": 3490255775049657248
     },
     {
       "ChildrenComponents": [
@@ -292,7 +292,7 @@
         }
       ],
       "ObjectName": "sphereLight",
-      "UUID": 3225714689006214788
+      "UUID": 4306193610158405571
     },
     {
       "ChildrenComponents": [
@@ -339,7 +339,7 @@
         }
       ],
       "ObjectName": "pointLight2",
-      "UUID": 2850148069243244106
+      "UUID": 4443671199644805672
     },
     {
       "ChildrenComponents": [
@@ -352,9 +352,9 @@
               "Z": 0.0
             },
             "Rotation": {
-              "W": 1.0,
+              "W": 0.1760820746421814,
               "X": 0.0,
-              "Y": 0.0,
+              "Y": -0.984375536441803,
               "Z": 0.0
             },
             "Scale": {
@@ -378,8 +378,8 @@
         }
       ],
       "ObjectName": "playerCharacter",
-      "UUID": 2788718647741242166
+      "UUID": 2960883928030507952
     }
   ],
-  "SceneName": "..//Res//Scenes//GITestSponza.InnoScene"
+  "SceneName": "..//Res//Scenes//GITestFireplaceRoom.InnoScene"
 }

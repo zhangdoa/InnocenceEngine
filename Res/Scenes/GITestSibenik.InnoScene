@@ -6,15 +6,15 @@
           "ComponentType": 1,
           "LocalTransformVector": {
             "Position": {
-              "X": -60.0,
-              "Y": 40.0,
+              "X": -80.0,
+              "Y": 35.0,
               "Z": 0.0
             },
             "Rotation": {
-              "W": 0.6935198903083801,
-              "X": -0.13794969022274017,
-              "Y": -0.6935198903083801,
-              "Z": -0.13794969022274017
+              "W": 0.704416036605835,
+              "X": -0.06162841618061066,
+              "Y": -0.704416036605835,
+              "Z": -0.06162841618061066
             },
             "Scale": {
               "X": 1.0,
@@ -33,8 +33,8 @@
           "zNear": 0.10000000149011612
         }
       ],
-      "UUID": "20ba9f22aaee28db3abe9206d4332aa",
-      "ObjectName": "playerCharacterCamera"
+      "ObjectName": "playerCharacterCamera",
+      "UUID": 4592394977472014231
     },
     {
       "ChildrenComponents": [
@@ -47,10 +47,10 @@
               "Z": 0.0
             },
             "Rotation": {
-              "W": 0.8803348541259766,
-              "X": -0.4105069041252136,
-              "Y": 0.2154165655374527,
-              "Z": 0.10045039653778076
+              "W": 0.6123723983764648,
+              "X": -0.6123723983764648,
+              "Y": 0.3535533845424652,
+              "Z": -0.3535533845424652
             },
             "Scale": {
               "X": 1.0,
@@ -80,8 +80,8 @@
           "UseColorTemperature": true
         }
       ],
-      "UUID": "8bce26bcdcc0fb1083a043688b31a4d",
-      "ObjectName": "sun"
+      "ObjectName": "sun",
+      "UUID": 3872115240145226246
     },
     {
       "ChildrenComponents": [
@@ -111,16 +111,16 @@
           "ComponentType": 2,
           "MeshPrimitiveTopology": 2,
           "MeshSource": 2,
-          "ProceduralMeshShape": 0,
           "MeshUsage": 1,
           "ModelFileName": "..//Res//ConvertedAssets//sibenik.InnoModel",
+          "ProceduralMeshShape": 0,
           "SimulatePhysics": true,
           "TextureWrapMethod": 1,
           "Visibility": 1
         }
       ],
-      "UUID": "111b60411d20f80f60d5abaa4d22a23",
-      "ObjectName": "Sibenik"
+      "ObjectName": "Sibenik",
+      "UUID": 4337495243504066602
     },
     {
       "ChildrenComponents": [
@@ -139,9 +139,9 @@
               "Z": 0.0
             },
             "Scale": {
-              "X": 5.0,
-              "Y": 5.0,
-              "Z": 5.0
+              "X": 2.0,
+              "Y": 2.0,
+              "Z": 2.0
             }
           },
           "ParentTransformComponentEntityName": "RootTransform"
@@ -150,16 +150,16 @@
           "ComponentType": 2,
           "MeshPrimitiveTopology": 2,
           "MeshSource": 2,
-          "ProceduralMeshShape": 0,
           "MeshUsage": 2,
           "ModelFileName": "..//Res//ConvertedAssets//Orb.InnoModel",
+          "ProceduralMeshShape": 0,
           "SimulatePhysics": true,
           "TextureWrapMethod": 1,
           "Visibility": 1
         }
       ],
-      "UUID": "bb1ad14fc4a3b16e3cbd13379e1318d",
-      "ObjectName": "orb"
+      "ObjectName": "orb",
+      "UUID": 4497330790151266869
     },
     {
       "ChildrenComponents": [
@@ -178,9 +178,9 @@
               "Z": 0.0
             },
             "Scale": {
-              "X": 5.0,
-              "Y": 5.0,
-              "Z": 5.0
+              "X": 2.0,
+              "Y": 2.0,
+              "Z": 2.0
             }
           },
           "ParentTransformComponentEntityName": "RootTransform"
@@ -189,16 +189,16 @@
           "ComponentType": 2,
           "MeshPrimitiveTopology": 2,
           "MeshSource": 2,
-          "ProceduralMeshShape": 0,
           "MeshUsage": 2,
           "ModelFileName": "..//Res//ConvertedAssets//bunny.InnoModel",
+          "ProceduralMeshShape": 0,
           "SimulatePhysics": true,
           "TextureWrapMethod": 1,
           "Visibility": 1
         }
       ],
-      "UUID": "fb7770964e70a19dc7388de05fbec18",
-      "ObjectName": "bunny"
+      "ObjectName": "bunny",
+      "UUID": 3306520106915530564
     },
     {
       "ChildrenComponents": [
@@ -244,8 +244,8 @@
           "UseColorTemperature": true
         }
       ],
-      "UUID": "6df24ec36d4fca6541fcc53b85608e0",
-      "ObjectName": "pointLight"
+      "ObjectName": "pointLight",
+      "UUID": 4610224898787800534
     },
     {
       "ChildrenComponents": [
@@ -291,8 +291,8 @@
           "UseColorTemperature": true
         }
       ],
-      "UUID": "7f55e07a8d7edfaf1bffac1211352d0",
-      "ObjectName": "sphereLight"
+      "ObjectName": "sphereLight",
+      "UUID": 2840512292082313981
     },
     {
       "ChildrenComponents": [
@@ -338,9 +338,48 @@
           "UseColorTemperature": true
         }
       ],
-      "UUID": "9abf05505d99aefe01827bcea491acd",
-      "ObjectName": "pointLight2"
+      "ObjectName": "pointLight2",
+      "UUID": 2948001716833703820
+    },
+    {
+      "ChildrenComponents": [
+        {
+          "ComponentType": 1,
+          "LocalTransformVector": {
+            "Position": {
+              "X": 0.0,
+              "Y": 2.0,
+              "Z": 0.0
+            },
+            "Rotation": {
+              "W": 0.25938373804092407,
+              "X": 0.0,
+              "Y": -0.9657743573188782,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "ParentTransformComponentEntityName": "RootTransform"
+        },
+        {
+          "ComponentType": 2,
+          "MeshPrimitiveTopology": 2,
+          "MeshSource": 1,
+          "MeshUsage": 2,
+          "ModelFileName": "",
+          "ProceduralMeshShape": 6,
+          "SimulatePhysics": true,
+          "TextureWrapMethod": 2,
+          "Visibility": 1
+        }
+      ],
+      "ObjectName": "playerCharacter",
+      "UUID": 3090950138854238790
     }
   ],
-  "SceneName": "Res/Scenes/GITestSibenik.InnoScene"
+  "SceneName": "..//Res//Scenes//GITestSibenik.InnoScene"
 }

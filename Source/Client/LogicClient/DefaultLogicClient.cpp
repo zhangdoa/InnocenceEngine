@@ -681,7 +681,10 @@ bool GameClientNS::initialize()
 {
 	f_loadTestScene = []()
 	{
-		g_pModuleManager->getFileSystem()->loadScene("..//Res//Scenes//animationTest.InnoScene");
+		//g_pModuleManager->getFileSystem()->loadScene("..//Res//Scenes//GITestBox.InnoScene");
+		//g_pModuleManager->getFileSystem()->loadScene("..//Res//Scenes//GITestSibenik.InnoScene");
+		//g_pModuleManager->getFileSystem()->loadScene("..//Res//Scenes//GITestSponza.InnoScene");
+		g_pModuleManager->getFileSystem()->loadScene("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
 	};
 
 	f_convertModel = []()
