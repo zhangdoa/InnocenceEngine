@@ -30,6 +30,7 @@ struct PixelInputType
 struct PixelOutputType
 {
 	float4 lightPassRT0 : SV_Target0;
+	float4 lightPassRT1 : SV_Target1;
 };
 
 static const float sunAngularRadius = 0.000071;
@@ -129,7 +130,10 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 
 	float3 illuminance = perFrameCBuffer.sun_illuminance.xyz * NdotD;
 	Lo += illuminance * (Ft + Fr);
+
 	Lo *= 1.0 - SunShadowResolver(posWS, SamplerTypePoint);
+
+	output.lightPassRT1 = float4(indirect + illuminance * Ft, 1.0);
 
 	// point punctual light
 	// Get the index of the current pixel in the light grid.
@@ -252,10 +256,11 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	//	Lo += indirectLight.xyz;
 	//}
 
-	Lo += ConeTraceRadiance(in_IrradianceVolume, SamplerTypePoint, posWS, normalWS, voxelizationPassCBuffer).xyz;
-
 	// ambient occlusion
 	Lo *= ao;
+
+	float3 indirect = ConeTraceRadiance(in_IrradianceVolume, SamplerTypePoint, posWS, normalWS, voxelizationPassCBuffer).xyz;
+	Lo += indirect;
 #endif
 
 	output.lightPassRT0 = float4(Lo, 1.0);
