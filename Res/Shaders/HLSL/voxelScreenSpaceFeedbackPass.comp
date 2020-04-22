@@ -19,19 +19,23 @@ SamplerState SamplerTypePoint : register(s0);
 void main(ComputeInputType input)
 {
 	float2 texcoord = input.dispatchThreadID.xy;
-	float3 posWS = in_pos[texcoord].xyz;
+	texcoord /= perFrameCBuffer.viewportSize.xy;
+
+	float3 posWS = in_pos.SampleLevel(SamplerTypePoint, texcoord, 0);
 	posWS -= voxelizationPassCBuffer.volumeCenter.xyz;
 	posWS -= voxelizationPassCBuffer.voxelSize / 2.0;
 	posWS /= (voxelizationPassCBuffer.volumeExtend / 2.0);
 	posWS = posWS * 0.5 + 0.5;
 
-	int is_saturated = (posWS.x == saturate(posWS.x)) && (posWS.y == saturate(posWS.y)) && (posWS.z == saturate(posWS.z));
+	int is_saturated = (posWS.x > 1.0) || (posWS.y > 1.0) || (posWS.z > 1.0);
 
 	if (!is_saturated)
 	{
+		posWS *= voxelizationPassCBuffer.volumeResolution;
 		int3 writeCoord = int3(posWS);
-		writeCoord *= voxelizationPassCBuffer.volumeResolution;
-
-		out_luminanceVolume[writeCoord] += in_lightPassResult[texcoord];
+		float4 lightPassResult = in_lightPassResult.SampleLevel(SamplerTypePoint, texcoord, 0);
+		float4 lastFrameResult = out_luminanceVolume[writeCoord];
+		float4 ma = (lightPassResult + lastFrameResult) / 2.0;
+		out_luminanceVolume[writeCoord] = ma;
 	}
 }
