@@ -31,6 +31,6 @@ void main(ComputeInputType input)
 	float4 normalWS = in_normalVolume[input.dispatchThreadID];
 	if (normalWS.a)
 	{
-		out_luminanceVolume[input.dispatchThreadID] = ConeTraceRadiance(in_luminanceVolume, SamplerTypePoint, posWS, normalWS, voxelizationPassCBuffer);
+		out_luminanceVolume[input.dispatchThreadID] = ConeTraceRadiance(in_luminanceVolume, SamplerTypePoint, posWS, normalWS, voxelizationPassCBuffer) + in_luminanceVolume[input.dispatchThreadID];
 	}
 }

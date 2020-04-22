@@ -34,7 +34,7 @@ void main(point GeometryInputType input[1], inout TriangleStream<PixelInputType>
 		4, 0, 5, 5, 0, 1,
 		7, 4, 6, 6, 4, 5,
 		3, 7, 2, 2, 7, 6,
-		7, 0, 4, 0, 7, 3,
+		4, 7, 0, 0, 7, 3,
 		1, 2, 5, 5, 2, 6
 	};
 

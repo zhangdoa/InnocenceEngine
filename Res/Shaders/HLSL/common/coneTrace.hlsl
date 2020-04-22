@@ -51,7 +51,9 @@ inline float4 ConeTrace(
 
 		float4 sam = voxelTexture.SampleLevel(SamplerTypePoint, tc, mip);
 
-		color += sam.rgb / dist;
+		color += sam.rgb;
+		if (sam.a == 1.0)
+			break;
 
 		dist += diameter * voxelizationPassCBuffer.coneTracingStep;
 	}
