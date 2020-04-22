@@ -1,6 +1,8 @@
 #include "VoxelizationPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 #include "SunShadowPass.h"
+#include "OpaquePass.h"
+#include "LightPass.h"
 
 #include "../../Engine/Interface/IModuleManager.h"
 
@@ -13,11 +15,13 @@ namespace VoxelizationPass
 	bool setupGeometryProcessPass();
 	bool setupConvertPass();
 	bool setupMultiBouncePass();
+	bool setupScreenSpaceFeedbackPass();
 	bool setupVisualizationPass();
 
 	bool geometryProcess();
 	bool convert();
 	bool multiBounce();
+	bool screenSpaceFeedback();
 	bool visualization();
 
 	GPUBufferDataComponent* m_voxelizationPassCBufferGBDC;
@@ -34,6 +38,10 @@ namespace VoxelizationPass
 	ShaderProgramComponent* m_multiBounceSPC;
 	SamplerDataComponent* m_multiBounceSDC;
 
+	RenderPassDataComponent* m_SSFeedBackRPDC;
+	ShaderProgramComponent* m_SSFeedBackSPC;
+	SamplerDataComponent* m_SSFeedBackSDC;
+
 	RenderPassDataComponent* m_visualizationRPDC;
 	ShaderProgramComponent* m_visualizationSPC;
 
@@ -46,6 +54,9 @@ namespace VoxelizationPass
 	uint32_t m_numCones = 16;
 	uint32_t m_coneTracingStep = 4;
 	float m_coneTracingMaxDistance = 128.0f;
+	bool m_isInitialLoadScene = true;
+
+	std::function<void()> f_sceneLoadingFinishCallback;
 }
 
 bool VoxelizationPass::setupGeometryProcessPass()
@@ -236,11 +247,11 @@ bool VoxelizationPass::setupMultiBouncePass()
 
 	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_multiBounceVolume);
 
-	m_multiBounceSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("VoxelizationMultiBouncePass/");
+	m_multiBounceSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("VoxelMultiBouncePass/");
 
 	m_multiBounceSPC->m_ShaderFilePaths.m_CSPath = "voxelMultiBouncePass.comp/";
 
-	m_multiBounceRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("VoxelizationMultiBouncePass/");
+	m_multiBounceRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("VoxelMultiBouncePass/");
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
@@ -282,10 +293,68 @@ bool VoxelizationPass::setupMultiBouncePass()
 
 	m_multiBounceRPDC->m_ShaderProgram = m_multiBounceSPC;
 
-	m_multiBounceSDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("VoxelizationMultiBouncePass/");
+	m_multiBounceSDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("VoxelMultiBouncePass/");
 
 	m_multiBounceSDC->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_multiBounceSDC->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
+
+	return true;
+}
+
+bool VoxelizationPass::setupScreenSpaceFeedbackPass()
+{
+	m_SSFeedBackSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("VoxelScreenSpaceFeedbackPass/");
+
+	m_SSFeedBackSPC->m_ShaderFilePaths.m_CSPath = "voxelScreenSpaceFeedBackPass.comp/";
+
+	m_SSFeedBackRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("VoxelScreenSpaceFeedbackPass/");
+
+	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+
+	l_RenderPassDesc.m_RenderTargetCount = 0;
+	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
+	l_RenderPassDesc.m_IsOffScreen = true;
+
+	m_SSFeedBackRPDC->m_RenderPassDesc = l_RenderPassDesc;
+
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs.resize(5);
+
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[0].m_BinderAccessibility = Accessibility::ReadOnly;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadOnly;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 1;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
+
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Image;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[1].m_BinderAccessibility = Accessibility::ReadOnly;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadOnly;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
+
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Image;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[2].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 0;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[2].m_IndirectBinding = true;
+
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Sampler;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[3].m_IndirectBinding = true;
+
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 0;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 9;
+
+	m_SSFeedBackRPDC->m_ShaderProgram = m_SSFeedBackSPC;
+
+	m_SSFeedBackSDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("VoxelScreenSpaceFeedbackPass/");
+
+	m_SSFeedBackSDC->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
+	m_SSFeedBackSDC->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
 	return true;
 }
@@ -343,6 +412,13 @@ bool VoxelizationPass::setupVisualizationPass()
 
 bool VoxelizationPass::Setup()
 {
+	f_sceneLoadingFinishCallback = []()
+	{
+		m_isInitialLoadScene = true;
+	};
+
+	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
+
 	m_voxelizationPassCBufferGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("VoxelizationPassCBuffer/");
 	m_voxelizationPassCBufferGBDC->m_ElementCount = 1;
 	m_voxelizationPassCBufferGBDC->m_ElementSize = sizeof(VoxelizationConstantBuffer);
@@ -361,6 +437,7 @@ bool VoxelizationPass::Setup()
 	setupGeometryProcessPass();
 	setupConvertPass();
 	setupMultiBouncePass();
+	setupScreenSpaceFeedbackPass();
 	setupVisualizationPass();
 
 	return true;
@@ -378,6 +455,10 @@ bool VoxelizationPass::Initialize()
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_multiBounceSPC);
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_multiBounceRPDC);
 	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_multiBounceSDC);
+
+	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SSFeedBackSPC);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_SSFeedBackRPDC);
+	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SSFeedBackSDC);
 
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_visualizationSPC);
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_visualizationRPDC);
@@ -486,7 +567,7 @@ bool VoxelizationPass::multiBounce()
 	auto l_input = m_initialBounceVolume;
 	auto l_output = m_multiBounceVolume;
 
-	for (size_t i = 0; i < 3; i++)
+	for (size_t i = 0; i < 1; i++)
 	{
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_multiBounceRPDC, ShaderStage::Compute, l_input->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_multiBounceRPDC, ShaderStage::Compute, l_output->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
@@ -508,6 +589,33 @@ bool VoxelizationPass::multiBounce()
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_multiBounceRPDC, ShaderStage::Compute, m_normalVolume->m_ResourceBinder, 1, 1, Accessibility::ReadOnly);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_multiBounceRPDC);
+
+	return true;
+}
+
+bool VoxelizationPass::screenSpaceFeedback()
+{
+	//m_finalBounceVolume = m_initialBounceVolume;
+
+	g_pModuleManager->getRenderingServer()->CommandListBegin(m_SSFeedBackRPDC, 0);
+	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_SSFeedBackRPDC);
+	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_SSFeedBackRPDC);
+
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, m_voxelizationPassCBufferGBDC->m_ResourceBinder, 4, 9, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, LightPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 1, 1, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, m_finalBounceVolume->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, m_SSFeedBackSDC->m_ResourceBinder, 3, 0);
+
+	g_pModuleManager->getRenderingServer()->DispatchCompute(m_SSFeedBackRPDC, 160, 90, 1);
+
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, LightPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 1, 1, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, m_finalBounceVolume->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
+
+	g_pModuleManager->getRenderingServer()->GenerateMipmap(m_finalBounceVolume);
+
+	g_pModuleManager->getRenderingServer()->CommandListEnd(m_SSFeedBackRPDC);
 
 	return true;
 }
@@ -561,6 +669,7 @@ bool VoxelizationPass::PrepareCommandList(bool visualize)
 	geometryProcess();
 	convert();
 	multiBounce();
+	screenSpaceFeedback();
 
 	if (visualize)
 	{
@@ -581,6 +690,9 @@ bool VoxelizationPass::ExecuteCommandList(bool visualize)
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_multiBounceRPDC);
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_multiBounceRPDC);
 
+	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_SSFeedBackRPDC);
+	g_pModuleManager->getRenderingServer()->WaitForFrame(m_SSFeedBackRPDC);
+
 	if (visualize)
 	{
 		g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_visualizationRPDC);
@@ -595,6 +707,7 @@ bool VoxelizationPass::Terminate()
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_geometryProcessRPDC);
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_convertRPDC);
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_multiBounceRPDC);
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_SSFeedBackRPDC);
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_visualizationRPDC);
 
 	return true;

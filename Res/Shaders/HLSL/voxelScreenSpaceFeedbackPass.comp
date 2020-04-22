@@ -1,0 +1,37 @@
+// shadertype=hlsl
+#include "common/common.hlsl"
+
+struct ComputeInputType
+{
+	uint3 groupID : SV_GroupID;           // 3D index of the thread group in the dispatch.
+	uint3 groupThreadID : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
+	uint3 dispatchThreadID : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
+	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
+};
+
+Texture2D<float4> in_pos : register(t0);
+Texture2D<float4> in_lightPassResult : register(t1);
+RWTexture3D<float4> out_luminanceVolume : register(u0);
+
+SamplerState SamplerTypePoint : register(s0);
+
+[numthreads(8, 8, 8)]
+void main(ComputeInputType input)
+{
+	float2 texcoord = input.dispatchThreadID.xy;
+	float3 posWS = in_pos[texcoord].xyz;
+	posWS -= voxelizationPassCBuffer.volumeCenter.xyz;
+	posWS -= voxelizationPassCBuffer.voxelSize / 2.0;
+	posWS /= (voxelizationPassCBuffer.volumeExtend / 2.0);
+	posWS = posWS * 0.5 + 0.5;
+
+	int is_saturated = (posWS.x == saturate(posWS.x)) && (posWS.y == saturate(posWS.y)) && (posWS.z == saturate(posWS.z));
+
+	if (!is_saturated)
+	{
+		int3 writeCoord = int3(posWS);
+		writeCoord *= voxelizationPassCBuffer.volumeResolution;
+
+		out_luminanceVolume[writeCoord] += in_lightPassResult[texcoord];
+	}
+}
