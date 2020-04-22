@@ -133,8 +133,6 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 
 	Lo *= 1.0 - SunShadowResolver(posWS, SamplerTypePoint);
 
-	output.lightPassRT1 = float4(indirect + illuminance * Ft, 1.0);
-
 	// point punctual light
 	// Get the index of the current pixel in the light grid.
 	uint2 tileIndex = uint2(floor(input.position.xy / BLOCK_SIZE));
@@ -264,5 +262,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 #endif
 
 	output.lightPassRT0 = float4(Lo, 1.0);
+	output.lightPassRT1 = float4(indirect + illuminance * Ft, 1.0);
+
 	return output;
 }

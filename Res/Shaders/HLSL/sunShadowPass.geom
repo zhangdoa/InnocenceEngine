@@ -4,11 +4,13 @@
 struct GeometryInputType
 {
 	float4 posWS : SV_POSITION;
+	float2 texcoord : TEXCOORD;
 };
 
 struct PixelInputType
 {
 	float4 posCS : SV_POSITION;
+	float2 texcoord : TEXCOORD;
 	uint rtvId : SV_RenderTargetArrayIndex;
 };
 
@@ -26,6 +28,7 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 		{
 			output.posCS = mul(input[i].posWS, CSMs[CSMSplitIndex].v);
 			output.posCS = mul(output.posCS, CSMs[CSMSplitIndex].p);
+			output.texcoord = input[i].texcoord;
 			outStream.Append(output);
 		}
 
