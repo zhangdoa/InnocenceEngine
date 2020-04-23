@@ -90,7 +90,7 @@ struct MaterialAttributes
 	float Alpha = 1.0f;
 	float Metallic = 0.0f;
 	float Roughness = 1.0f;
-	float AO = 1.0f;
+	float AO = 0.0f;
 	float Thickness = 1.0f;
 };
 

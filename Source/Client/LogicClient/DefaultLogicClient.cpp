@@ -731,6 +731,11 @@ bool DefaultLogicClient::initialize()
 	bool l_result = true;
 	g_pModuleManager->getFileSystem()->loadScene("..//Res//Scenes//default.InnoScene");
 
+	//g_pModuleManager->getFileSystem()->loadScene("..//Res//Scenes//GITestBox.InnoScene");
+	//g_pModuleManager->getFileSystem()->loadScene("..//Res//Scenes//GITestSibenik.InnoScene");
+	//g_pModuleManager->getFileSystem()->loadScene("..//Res//Scenes//GITestSponza.InnoScene");
+	//g_pModuleManager->getFileSystem()->loadScene("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
+
 	l_result = l_result && PlayerComponentCollection::initialize();
 	l_result = l_result && GameClientNS::initialize();
 
@@ -884,10 +889,10 @@ void GameClientNS::updateSpheres()
 		auto l_MRATFactor2 = ((sin(seed / 5.0f + i) + 1.0f) / 2.001f);
 		auto l_MRATFactor3 = ((sin(seed / 6.0f + i) + 1.0f) / 2.001f);
 
-		updateMaterial(m_opaqueSphereVisibleComponents[i]->m_model, l_albedo1, Vec4(l_MRATFactor1, l_MRATFactor2, 1.0f, 0.0f));
-		updateMaterial(m_opaqueSphereVisibleComponents[i + 1]->m_model, l_albedo2, Vec4(l_MRATFactor2, l_MRATFactor1, 1.0f, 0.0f));
-		updateMaterial(m_opaqueSphereVisibleComponents[i + 2]->m_model, l_albedo3, Vec4(l_MRATFactor3, l_MRATFactor2, 1.0f, 0.0f));
-		updateMaterial(m_opaqueSphereVisibleComponents[i + 3]->m_model, l_albedo4, Vec4(l_MRATFactor3, l_MRATFactor1, 1.0f, 0.0f));
+		updateMaterial(m_opaqueSphereVisibleComponents[i]->m_model, l_albedo1, Vec4(l_MRATFactor1, l_MRATFactor2, 0.0f, 0.0f));
+		updateMaterial(m_opaqueSphereVisibleComponents[i + 1]->m_model, l_albedo2, Vec4(l_MRATFactor2, l_MRATFactor1, 0.0f, 0.0f));
+		updateMaterial(m_opaqueSphereVisibleComponents[i + 2]->m_model, l_albedo3, Vec4(l_MRATFactor3, l_MRATFactor2, 0.0f, 0.0f));
+		updateMaterial(m_opaqueSphereVisibleComponents[i + 3]->m_model, l_albedo4, Vec4(l_MRATFactor3, l_MRATFactor1, 0.0f, 0.0f));
 	}
 
 	for (uint32_t i = 0; i < m_transparentSphereVisibleComponents.size(); i++)
@@ -903,7 +908,7 @@ void GameClientNS::updateSpheres()
 	{
 		for (uint32_t j = 0; j < l_matrixDim; j++)
 		{
-			auto l_MRAT = Vec4((float)i / (float)(l_matrixDim - 1), (float)j / (float)(l_matrixDim - 1), 1.0f, 1.0f);
+			auto l_MRAT = Vec4((float)i / (float)(l_matrixDim - 1), (float)j / (float)(l_matrixDim - 1), 0.0f, 1.0f);
 			updateMaterial(m_referenceSphereVisibleComponents[i * l_matrixDim + j]->m_model, Vec4(1.0f, 1.0f, 1.0f, 1.0f), l_MRAT);
 		}
 	}

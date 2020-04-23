@@ -49,7 +49,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float3 normalWS = GPassRT1.xyz;
 	float roughness = GPassRT1.w;
 	float3 albedo = GPassRT2.xyz;
-	float ao = GPassRT2.w;
+	float ao = 1.0 - GPassRT2.w;
 	ao *= SSAO;
 	float3 Lo = float3(0, 0, 0);
 	float3 N = normalize(normalWS);
@@ -130,8 +130,9 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 
 	float3 illuminance = perFrameCBuffer.sun_illuminance.xyz * NdotD;
 	Lo += illuminance * (Ft + Fr);
+	float shadowFactor = 1.0 - SunShadowResolver(posWS, SamplerTypePoint);
 
-	Lo *= 1.0 - SunShadowResolver(posWS, SamplerTypePoint);
+	Lo *= shadowFactor;
 
 	// point punctual light
 	// Get the index of the current pixel in the light grid.
@@ -262,7 +263,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 #endif
 
 	output.lightPassRT0 = float4(Lo, 1.0);
-	output.lightPassRT1 = float4(indirect + illuminance * Ft, 1.0);
+	output.lightPassRT1 = float4(indirect + illuminance * Ft * shadowFactor, 1.0);
 
 	return output;
 }
