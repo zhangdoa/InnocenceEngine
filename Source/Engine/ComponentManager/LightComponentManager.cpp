@@ -118,43 +118,19 @@ void LightComponentManagerNS::UpdateSingleSMData(LightComponent* rhs)
 
 	auto l_sceneAABBVerticesWS = InnoMath::generateAABBVertices(l_boundMax, l_boundMin);
 
-	auto l_r = GetComponent(TransformComponent, rhs->m_ParentEntity)->m_globalTransformMatrix.m_rotationMat;
-	auto l_rInv = l_r.inverse();
-
-	auto l_sceneAABBVerticesLS = l_sceneAABBVerticesWS;
-
-	for (size_t i = 0; i < l_sceneAABBVerticesLS.size(); i++)
-	{
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-		l_sceneAABBVerticesLS[i].m_pos = InnoMath::mul(l_sceneAABBVerticesLS[i].m_pos, l_rInv);
-#endif
-#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-		l_sceneAABBVerticesLS[i].m_pos = InnoMath::mul(l_rInv, l_sceneAABBVerticesLS[i].m_pos);
-#endif
-	}
-
-	auto l_sceneAABBLS = InnoMath::generateAABB(&l_sceneAABBVerticesLS[0], l_sceneAABBVerticesLS.size());
+	auto l_transformComponent = GetComponent(TransformComponent, rhs->m_ParentEntity);
+	auto l_r = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
+	auto l_sunDir = InnoMath::getDirection(Direction::Forward, l_transformComponent->m_globalTransformVector.m_rot);
 
 	// The light camera position in light space
-	auto l_sunShadowPos = l_sceneAABBLS.m_center;
-	l_sunShadowPos.z = l_sceneAABBLS.m_boundMax.z;
-
-	// To world space
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-	l_sunShadowPos = InnoMath::mul(l_sunShadowPos, l_r);
-#endif
-#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-	l_sunShadowPos = InnoMath::mul(l_r, l_sunShadowPos);
-#endif
+	auto l_sunShadowPos = l_totalSceneAABB.m_center + l_sunDir * l_sphereRadius;
+	l_sunShadowPos.w = 1.0f;
 
 	auto l_t = InnoMath::toTranslationMatrix(l_sunShadowPos);
 	auto l_m = l_t * l_r;
 	m_viewMatrices.emplace_back(l_m.inverse());
 
-	Vec4 l_maxExtents = l_sceneAABBLS.m_boundMax;
-	Vec4 l_minExtents = l_sceneAABBLS.m_boundMin;
-
-	Mat4 l_p = InnoMath::generateOrthographicMatrix(l_minExtents.x, l_maxExtents.x, l_minExtents.y, l_maxExtents.y, l_minExtents.z, l_maxExtents.z);
+	Mat4 l_p = InnoMath::generateOrthographicMatrix(-l_sphereRadius, l_sphereRadius, -l_sphereRadius, l_sphereRadius, 0.0f, l_sphereRadius * 2.0f);
 	m_projectionMatrices.emplace_back(l_p);
 }
 
@@ -168,12 +144,17 @@ void LightComponentManagerNS::UpdateCSMData(LightComponent* rhs)
 	if (l_cameraComponent == nullptr)
 	{
 		return;
-	}
+}
 	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_cameraComponent->m_ParentEntity);
 	if (l_cameraTransformComponent == nullptr)
 	{
 		return;
 	}
+
+	auto l_transformComponent = GetComponent(TransformComponent, rhs->m_ParentEntity);
+	auto l_r = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
+	auto l_sunDir = InnoMath::getDirection(Direction::Forward, l_transformComponent->m_globalTransformVector.m_rot);
+
 	auto l_rCamera = InnoMath::toRotationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_rot);
 	auto l_tCamera = InnoMath::toTranslationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_pos);
 	auto l_frustumVerticesVS = InnoMath::generateFrustumVerticesVS(l_cameraComponent->m_projectionMatrix);
@@ -263,7 +244,6 @@ void LightComponentManagerNS::UpdateCSMData(LightComponent* rhs)
 	splitVerticesToAABBs(l_frustumVerticesWS, m_CSMSplitFactors, m_SplitAABBWS);
 
 	//4. transform frustum vertices to light space
-	auto l_r = GetComponent(TransformComponent, rhs->m_ParentEntity)->m_globalTransformMatrix.m_rotationMat;
 	auto l_frustumVerticesLS = l_frustumVerticesWS;
 
 	for (size_t i = 0; i < l_frustumVerticesLS.size(); i++)
@@ -280,6 +260,7 @@ void LightComponentManagerNS::UpdateCSMData(LightComponent* rhs)
 	splitVerticesToAABBs(l_frustumVerticesLS, m_CSMSplitFactors, m_SplitAABBLS);
 
 	//6. extend AABB to include the bound sphere, for to eliminate rotation conflict
+	//7. generate projection matrices
 	for (size_t i = 0; i < 4; i++)
 	{
 		auto sphereRadius = (m_SplitAABBLS[i].m_boundMax - m_SplitAABBLS[i].m_center).length();
@@ -290,30 +271,14 @@ void LightComponentManagerNS::UpdateCSMData(LightComponent* rhs)
 		m_SplitAABBLS[i] = InnoMath::generateAABB(l_boundMax, l_boundMin);
 
 		// The light camera position in light space
-		auto l_sunShadowPos = m_SplitAABBLS[i].m_center;
-		l_sunShadowPos.z = m_SplitAABBLS[i].m_boundMax.z;
-
-		// To world space
-#ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
-		l_sunShadowPos = InnoMath::mul(l_sunShadowPos, l_r);
-#endif
-#ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-		l_sunShadowPos = InnoMath::mul(l_r, l_sunShadowPos);
-#endif
+		auto l_sunShadowPos = m_SplitAABBLS[i].m_center + l_sunDir * sphereRadius;
 
 		auto l_t = InnoMath::toTranslationMatrix(l_sunShadowPos);
 		auto l_m = l_t * l_r;
 
 		m_viewMatrices.emplace_back(l_m.inverse());
-	}
 
-	//7. generate projection matrices
-	for (size_t i = 0; i < 4; i++)
-	{
-		Vec4 l_maxExtents = m_SplitAABBLS[i].m_boundMax;
-		Vec4 l_minExtents = m_SplitAABBLS[i].m_boundMin;
-
-		Mat4 p = InnoMath::generateOrthographicMatrix(l_minExtents.x, l_maxExtents.x, l_minExtents.y, l_maxExtents.y, l_minExtents.z, l_maxExtents.z);
+		Mat4 p = InnoMath::generateOrthographicMatrix(-sphereRadius, sphereRadius, -sphereRadius, sphereRadius, 0.0f, sphereRadius * 2.0f);
 		m_projectionMatrices.emplace_back(p);
 	}
 }
