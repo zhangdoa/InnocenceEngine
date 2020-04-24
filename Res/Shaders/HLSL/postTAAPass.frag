@@ -16,6 +16,12 @@ struct PixelOutputType
 	float4 postTAAPassRT0 : SV_Target0;
 };
 
+float3 tonemapInvert(float3 color)
+{
+	float maxValue = max(max(color.x, color.y), color.z);
+	return color / (1.0f - maxValue);
+}
+
 PixelOutputType main(PixelInputType input) : SV_TARGET
 {
 	PixelOutputType output;
@@ -27,12 +33,11 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float2 screenTexCoords = input.position.xy * texelSize;
 	float4 TAAResult = in_TAAPassRT0.Sample(SampleTypePoint, screenTexCoords);
 	float3 currentColor = TAAResult.rgb;
-	float luma = TAAResult.a;
 
 	// Undo tone mapping
-	float3 finalColor = currentColor * (1.0f + luma);
+	float3 finalColor = tonemapInvert(currentColor);
 
-	output.postTAAPassRT0 = float4(finalColor, 1.0);
+	output.postTAAPassRT0 = float4(currentColor, 1.0);
 
 	return output;
 }

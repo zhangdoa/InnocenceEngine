@@ -45,6 +45,18 @@ float3 YCoCg_RGB(float3 c)
 	);
 }
 
+float3 tonemap(float3 color)
+{
+	float maxValue = max(max(color.x, color.y), color.z);
+	return color / (1.0f + maxValue);
+}
+
+float3 tonemapInvert(float3 color)
+{
+	float maxValue = max(max(color.x, color.y), color.z);
+	return color / (1.0f - maxValue);
+}
+
 float luma(float3 color)
 {
 	return dot(color, float3(0.2126, 0.7152, 0.0722));
@@ -59,21 +71,16 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	in_preTAAPassRT0.GetDimensions(0, renderTargetSize.x, renderTargetSize.y, level);
 	float2 texelSize = 1.0 / renderTargetSize;
 	float2 screenTexCoords = input.position.xy * texelSize;
-	float2 MotionVector = in_opaquePassRT3.Sample(SampleTypePoint, screenTexCoords).xy;
 	float3 currentColor = in_preTAAPassRT0.Sample(SampleTypePoint, screenTexCoords).rgb;
 
-	// Tone mapping
-	float lumaCurrentColor = luma(currentColor);
-	currentColor = currentColor / (1.0f + lumaCurrentColor);
-
+	float2 MotionVector = in_opaquePassRT3.Sample(SampleTypePoint, screenTexCoords).xy;
 	float2 historyTexCoords = screenTexCoords - MotionVector;
 	historyTexCoords = saturate(historyTexCoords);
 
 	float3 historyColor = in_history.Sample(SampleTypePoint, historyTexCoords).rgb;
-	float lumaHistoryColor = luma(historyColor);
 
-	float3 maxNeighbor = float3(0.0, 0.0, 0.0);
-	float3 minNeighbor = float3(1.0, 1.0, 1.0);
+	float3 maxNeighbor = float3(FLT_MIN, FLT_MIN, FLT_MIN);
+	float3 minNeighbor = float3(FLT_MAX, FLT_MAX, FLT_MAX);
 
 	float3 neighborSum = float3(0.0, 0.0, 0.0);
 
@@ -84,6 +91,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 			neighborTexCoords = saturate(neighborTexCoords);
 
 			float3 neighborColor = in_preTAAPassRT0.Sample(SampleTypePoint, neighborTexCoords).rgb;
+
 			maxNeighbor = max(maxNeighbor, neighborColor);
 			minNeighbor = min(minNeighbor, neighborColor);
 			neighborSum += neighborColor.rgb;
@@ -98,6 +106,7 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	historyColor = RGB_YCoCg(historyColor);
 	maxNeighbor = RGB_YCoCg(maxNeighbor);
 	minNeighbor = RGB_YCoCg(minNeighbor);
+	neighborAverage = RGB_YCoCg(neighborAverage);
 
 	float chroma_extent_element = 0.25 * 0.5 * (maxNeighbor.x - minNeighbor.x);
 	float2 chroma_extent = float2(chroma_extent_element, chroma_extent_element);
@@ -105,6 +114,12 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	minNeighbor.yz = chroma_center - chroma_extent;
 	maxNeighbor.yz = chroma_center + chroma_extent;
 	neighborAverage.yz = chroma_center;
+
+	float lumaCurrentColor = currentColor.x;
+	float lumaHistoryColor = historyColor.x;
+#else
+	float lumaCurrentColor = luma(currentColor);
+	float lumaHistoryColor = luma(historyColor);
 #endif
 
 	historyColor = clamp(historyColor, minNeighbor, maxNeighbor);

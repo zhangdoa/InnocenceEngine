@@ -259,11 +259,12 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	Lo *= ao;
 
 	float3 indirect = ConeTraceRadiance(in_IrradianceVolume, SamplerTypePoint, posWS, normalWS, voxelizationPassCBuffer).xyz;
-	Lo += indirect;
+
+	Lo += indirect * (Ft);
 #endif
 
 	output.lightPassRT0 = float4(Lo, 1.0);
-	output.lightPassRT1 = float4(indirect + illuminance * Ft * shadowFactor, 1.0);
+	output.lightPassRT1 = float4(indirect * Ft + illuminance * Ft * shadowFactor, 1.0);
 
 	return output;
 }

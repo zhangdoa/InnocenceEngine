@@ -115,6 +115,11 @@ float SunShadowResolver(float3 fragPos, SamplerState Sampler)
 	// get depth of current fragment from light's perspective
 	float currentDepth = projCoords.z;
 
+	if (currentDepth > 1.0)
+	{
+		return 0.0;
+	}
+
 	shadow = PCFResolver(projCoords, in_SunShadow, Sampler, 0, currentDepth, texelSize);
 
 	return shadow;

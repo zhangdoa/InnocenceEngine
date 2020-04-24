@@ -89,13 +89,11 @@ bool TAAPass::PrepareCommandList(IResourceBinder* input)
 	{
 		l_WriteRPDC = m_RPDC_A;
 		l_ReadRPDC = m_RPDC_B;
-		l_isPassA = false;
 	}
 	else
 	{
 		l_WriteRPDC = m_RPDC_B;
 		l_ReadRPDC = m_RPDC_A;
-		l_isPassA = true;
 	}
 
 	g_pModuleManager->getRenderingServer()->CommandListBegin(l_WriteRPDC, 0);
@@ -127,10 +125,12 @@ bool TAAPass::ExecuteCommandList()
 	if (l_isPassA)
 	{
 		l_WriteRPDC = m_RPDC_A;
+		l_isPassA = false;
 	}
 	else
 	{
 		l_WriteRPDC = m_RPDC_B;
+		l_isPassA = true;
 	}
 
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(l_WriteRPDC);
@@ -148,7 +148,7 @@ bool TAAPass::Terminate()
 	return true;
 }
 
-RenderPassDataComponent * TAAPass::GetRPDC()
+RenderPassDataComponent* TAAPass::GetRPDC()
 {
 	if (l_isPassA)
 	{
@@ -160,7 +160,7 @@ RenderPassDataComponent * TAAPass::GetRPDC()
 	}
 }
 
-ShaderProgramComponent * TAAPass::GetSPC()
+ShaderProgramComponent* TAAPass::GetSPC()
 {
 	return m_SPC;
 }
