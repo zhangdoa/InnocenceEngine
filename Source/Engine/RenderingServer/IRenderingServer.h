@@ -76,6 +76,7 @@ public:
 	virtual bool ExecuteCommandList(RenderPassDataComponent* rhs) = 0;
 	virtual bool WaitForFrame(RenderPassDataComponent* rhs) = 0;
 	virtual bool SetUserPipelineOutput(RenderPassDataComponent* rhs) = 0;
+	virtual RenderPassDataComponent* GetUserPipelineOutput() = 0;
 	virtual bool Present() = 0;
 
 	virtual bool DispatchCompute(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) = 0;

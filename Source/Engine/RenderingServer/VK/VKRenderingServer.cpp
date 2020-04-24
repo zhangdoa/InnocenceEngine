@@ -108,7 +108,7 @@ namespace VKRenderingServerNS
 	VkDeviceMemory m_indexBufferMemory;
 	VkDeviceMemory m_textureImageMemory;
 
-	IResourceBinder* m_userPipelineOutput = 0;
+	VKRenderPassDataComponent* m_userPipelineOutput = 0;
 	VKRenderPassDataComponent* m_SwapChainRPDC = 0;
 	VKShaderProgramComponent* m_SwapChainSPC = 0;
 	VKSamplerDataComponent* m_SwapChainSDC = 0;
@@ -1085,7 +1085,13 @@ bool VKRenderingServer::WaitForFrame(RenderPassDataComponent* rhs)
 
 bool VKRenderingServer::SetUserPipelineOutput(RenderPassDataComponent* rhs)
 {
+	m_userPipelineOutput = reinterpret_cast<VKRenderPassDataComponent*>(rhs);
 	return true;
+}
+
+RenderPassDataComponent* VKRenderingServer::GetUserPipelineOutput()
+{
+	return m_userPipelineOutput;
 }
 
 bool VKRenderingServer::Present()

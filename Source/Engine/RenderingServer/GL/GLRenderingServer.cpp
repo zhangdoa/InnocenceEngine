@@ -958,6 +958,11 @@ bool GLRenderingServer::SetUserPipelineOutput(RenderPassDataComponent* rhs)
 	return true;
 }
 
+RenderPassDataComponent* GLRenderingServer::GetUserPipelineOutput()
+{
+	return m_userPipelineOutput;
+}
+
 bool GLRenderingServer::Present()
 {
 	CommandListBegin(m_SwapChainRPDC, m_SwapChainRPDC->m_CurrentFrame);

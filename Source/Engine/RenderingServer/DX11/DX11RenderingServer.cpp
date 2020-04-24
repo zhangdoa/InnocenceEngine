@@ -1588,6 +1588,11 @@ bool DX11RenderingServer::SetUserPipelineOutput(RenderPassDataComponent* rhs)
 	return true;
 }
 
+RenderPassDataComponent* DX11RenderingServer::GetUserPipelineOutput()
+{
+	return m_userPipelineOutput;
+}
+
 bool DX11RenderingServer::Present()
 {
 	CommandListBegin(m_SwapChainRPDC, m_SwapChainRPDC->m_CurrentFrame);
