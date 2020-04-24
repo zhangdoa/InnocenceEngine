@@ -4,6 +4,7 @@
 #include "../ImGui/imgui_impl_dx11.cpp"
 
 #include "../../RenderingServer/DX11/DX11RenderingServer.h"
+#include "../../Component/DX11RenderPassDataComponent.h"
 
 #include "../../Interface/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
@@ -41,6 +42,11 @@ bool ImGuiRendererDX11::newFrame()
 
 bool ImGuiRendererDX11::render()
 {
+	auto l_userPipelineOutputRPDC = reinterpret_cast<DX11RenderPassDataComponent*>(g_pModuleManager->getRenderingServer()->GetUserPipelineOutput());
+	auto l_renderingServer = reinterpret_cast<DX11RenderingServer*>(g_pModuleManager->getRenderingServer());
+	auto l_deviceContext = reinterpret_cast<ID3D11DeviceContext*>(l_renderingServer->GetDeviceContext());
+
+	l_deviceContext->OMSetRenderTargets(1, &l_userPipelineOutputRPDC->m_RTVs[l_userPipelineOutputRPDC->m_CurrentFrame], NULL);
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
 	return true;

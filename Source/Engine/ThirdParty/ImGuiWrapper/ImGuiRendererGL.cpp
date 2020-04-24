@@ -1,6 +1,7 @@
 #include "ImGuiRendererGL.h"
 
 #include "../ImGui/imgui_impl_opengl3.cpp"
+#include "../../Component/GLRenderPassDataComponent.h"
 
 #include "../../Interface/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
@@ -35,7 +36,10 @@ bool ImGuiRendererGL::newFrame()
 bool ImGuiRendererGL::render()
 {
 	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
-	//glViewport(0, 0, (GLsizei)l_screenResolution.x, (GLsizei)l_screenResolution.y);
+	auto l_userPipelineOutputRPDC = reinterpret_cast<GLRenderPassDataComponent*>(g_pModuleManager->getRenderingServer()->GetUserPipelineOutput());
+
+	glViewport(0, 0, (GLsizei)l_screenResolution.x, (GLsizei)l_screenResolution.y);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, l_userPipelineOutputRPDC->m_FBO);
 
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
