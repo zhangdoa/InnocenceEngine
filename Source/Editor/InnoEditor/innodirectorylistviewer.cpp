@@ -57,8 +57,11 @@ QString InnoDirectoryListViewer::GetSelectionPath()
     }
     else if (l_fileInfo.suffix().toStdString() == "obj"
              || l_fileInfo.suffix().toStdString() == "fbx"
-             || l_fileInfo.suffix().toStdString() == "OBJ"
+             || l_fileInfo.suffix().toStdString() == "gltf"
+             || l_fileInfo.suffix().toStdString() == "fbx"
+             || l_fileInfo.suffix().toStdString() == "md5mesh"
              || l_fileInfo.suffix().toStdString() == "FBX"
+             || l_fileInfo.suffix().toStdString() == "GLTF"
              )
     {
         QDir l_RootDir(l_relativeRoot.c_str());
