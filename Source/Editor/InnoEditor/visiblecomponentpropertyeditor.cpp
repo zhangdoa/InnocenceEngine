@@ -26,9 +26,6 @@ void VisibleComponentPropertyEditor::initialize()
                 "background-position: left;"
                 );
 
-    m_visibility = new ComboLabelText();
-    m_visibility->Initialize("Visibility");
-
     m_meshPrimitiveTopology = new ComboLabelText();
     m_meshPrimitiveTopology->Initialize("MeshPrimitiveTopology");
 
@@ -76,10 +73,6 @@ void VisibleComponentPropertyEditor::initialize()
     m_gridLayout->addWidget(m_title, row, 0, 1, 7);
     row++;
 
-    m_gridLayout->addWidget(m_visibility->GetLabelWidget(), row, 0, 1, 1);
-    m_gridLayout->addWidget(m_visibility->GetTextWidget(), row, 1, 1, 1);
-    row++;
-
     m_gridLayout->addWidget(m_meshPrimitiveTopology->GetLabelWidget(), row, 0, 1, 1);
     m_gridLayout->addWidget(m_meshPrimitiveTopology->GetTextWidget(), row, 1, 1, 1);
     row++;
@@ -114,7 +107,6 @@ void VisibleComponentPropertyEditor::initialize()
 
     m_gridLayout->addWidget(m_line, row, 0, 1, 7);
 
-    connect(m_visibility, SIGNAL(ValueChanged()), this, SLOT(SetVisibility()));
     connect(m_meshPrimitiveTopology, SIGNAL(ValueChanged()), this, SLOT(SetMeshPrimitiveTopology()));
     connect(m_textureWrapMethod, SIGNAL(ValueChanged()), this, SLOT(SetTextureWrapMethod()));
     connect(m_meshUsage, SIGNAL(ValueChanged()), this, SLOT(SetMeshUsage()));
@@ -135,7 +127,6 @@ void VisibleComponentPropertyEditor::edit(void *component)
 
     m_modelNameLabel->setText(m_component->m_modelFileName.c_str());
 
-    GetVisibility();
     GetMeshPrimitiveTopology();
     GetTextureWrapMethod();
     GetMeshUsage();
@@ -144,11 +135,6 @@ void VisibleComponentPropertyEditor::edit(void *component)
     GetModelMap();
 
     this->show();
-}
-
-void VisibleComponentPropertyEditor::GetVisibility()
-{
-    m_visibility->SetFromInt((int)m_component->m_visibility);
 }
 
 void VisibleComponentPropertyEditor::GetMeshPrimitiveTopology()
@@ -223,11 +209,6 @@ void VisibleComponentPropertyEditor::GetModelMap()
 
         index++;
     }
-}
-
-void VisibleComponentPropertyEditor::SetVisibility()
-{
-    m_component->m_visibility = Visibility(m_visibility->GetAsInt());
 }
 
 void VisibleComponentPropertyEditor::SetMeshPrimitiveTopology()

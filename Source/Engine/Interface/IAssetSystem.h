@@ -47,6 +47,6 @@ public:
 
 	virtual Model* addModel() = 0;
 
-	virtual Model* addProceduralModel(ProceduralMeshShape shape) = 0;
+	virtual Model* addProceduralModel(ProceduralMeshShape shape, ShaderModel shaderModel = ShaderModel::Opaque) = 0;
 	virtual bool generateProceduralMesh(ProceduralMeshShape shape, MeshDataComponent* meshDataComponent) = 0;
 };

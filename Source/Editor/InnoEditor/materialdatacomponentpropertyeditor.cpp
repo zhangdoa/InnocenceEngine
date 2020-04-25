@@ -49,6 +49,10 @@ void MaterialDataComponentPropertyEditor::initialize()
     m_thickness = new ComboLabelText();
     m_thickness->Initialize("Thickness");
 
+
+    m_shaderModel = new ComboLabelText();
+    m_shaderModel->Initialize("ShaderModel");
+
     m_line = new QWidget();
     m_line->setFixedHeight(1);
     m_line->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -82,18 +86,25 @@ void MaterialDataComponentPropertyEditor::initialize()
     m_gridLayout->addWidget(m_AO->GetTextWidget(), row, 6, 1, 1);
     m_gridLayout->addWidget(m_thickness->GetLabelWidget(), row, 7, 1, 1);
     m_gridLayout->addWidget(m_thickness->GetTextWidget(), row, 8, 1, 1);
+
     row++;
+
+    m_gridLayout->addWidget(m_shaderModel->GetLabelWidget(), row, 1, 1, 1);
+    m_gridLayout->addWidget(m_shaderModel->GetTextWidget(), row, 2, 1, 1);
+    row++;
+
 
     m_gridLayout->addWidget(m_line, row, 0, 1, 7);
 
-    connect(m_albedoR, SIGNAL(ValueChanged()), this, SLOT(SetCustomMaterial()));
-    connect(m_albedoG, SIGNAL(ValueChanged()), this, SLOT(SetCustomMaterial()));
-    connect(m_albedoB, SIGNAL(ValueChanged()), this, SLOT(SetCustomMaterial()));
-    connect(m_alpha, SIGNAL(ValueChanged()), this, SLOT(SetCustomMaterial()));
-    connect(m_metallic, SIGNAL(ValueChanged()), this, SLOT(SetCustomMaterial()));
-    connect(m_roughness, SIGNAL(ValueChanged()), this, SLOT(SetCustomMaterial()));
-    connect(m_AO, SIGNAL(ValueChanged()), this, SLOT(SetCustomMaterial()));
-    connect(m_thickness, SIGNAL(ValueChanged()), this, SLOT(SetCustomMaterial()));
+    connect(m_albedoR, SIGNAL(ValueChanged()), this, SLOT(SetMaterialAttributes()));
+    connect(m_albedoG, SIGNAL(ValueChanged()), this, SLOT(SetMaterialAttributes()));
+    connect(m_albedoB, SIGNAL(ValueChanged()), this, SLOT(SetMaterialAttributes()));
+    connect(m_alpha, SIGNAL(ValueChanged()), this, SLOT(SetMaterialAttributes()));
+    connect(m_metallic, SIGNAL(ValueChanged()), this, SLOT(SetMaterialAttributes()));
+    connect(m_roughness, SIGNAL(ValueChanged()), this, SLOT(SetMaterialAttributes()));
+    connect(m_AO, SIGNAL(ValueChanged()), this, SLOT(SetMaterialAttributes()));
+    connect(m_thickness, SIGNAL(ValueChanged()), this, SLOT(SetMaterialAttributes()));
+    connect(m_shaderModel, SIGNAL(ValueChanged()), this, SLOT(SetMaterialAttributes()));
 
     m_gridLayout->setHorizontalSpacing(m_horizontalSpacing);
     m_gridLayout->setVerticalSpacing(m_verticalSpacing);
@@ -106,11 +117,11 @@ void MaterialDataComponentPropertyEditor::edit(void *component)
 {
     m_component = reinterpret_cast<MaterialDataComponent*>(component);
 
-    GetCustomMaterial();
+    GetMaterialAttributes();
     this->show();
 }
 
-void MaterialDataComponentPropertyEditor::GetCustomMaterial()
+void MaterialDataComponentPropertyEditor::GetMaterialAttributes()
 {
     if (!m_component)
         return;
@@ -123,9 +134,10 @@ void MaterialDataComponentPropertyEditor::GetCustomMaterial()
     m_roughness->SetFromFloat(m_component->m_materialAttributes.Roughness);
     m_AO->SetFromFloat(m_component->m_materialAttributes.AO);
     m_thickness->SetFromFloat(m_component->m_materialAttributes.Thickness);
+    m_shaderModel->SetFromInt((int)m_component->m_ShaderModel);
 }
 
-void MaterialDataComponentPropertyEditor::SetCustomMaterial()
+void MaterialDataComponentPropertyEditor::SetMaterialAttributes()
 {
     if (!m_component)
         return;
@@ -138,6 +150,7 @@ void MaterialDataComponentPropertyEditor::SetCustomMaterial()
     m_component->m_materialAttributes.Roughness = m_roughness->GetAsFloat();
     m_component->m_materialAttributes.AO = m_AO->GetAsFloat();
     m_component->m_materialAttributes.Thickness = m_thickness->GetAsFloat();
+    m_component->m_ShaderModel = ShaderModel(m_shaderModel->GetAsInt());
 }
 
 void MaterialDataComponentPropertyEditor::remove()

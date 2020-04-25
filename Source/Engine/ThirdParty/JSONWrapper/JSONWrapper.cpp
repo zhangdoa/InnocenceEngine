@@ -224,7 +224,6 @@ void JSONWrapper::to_json(json& j, const VisibleComponent& p)
 	j = json
 	{
 		{"ComponentType", p.m_ComponentType},
-		{"Visibility", p.m_visibility},
 		{"MeshPrimitiveTopology", p.m_meshPrimitiveTopology},
 		{"TextureWrapMethod", p.m_textureWrapMethod},
 		{"MeshUsage", p.m_meshUsage},
@@ -314,7 +313,6 @@ void JSONWrapper::from_json(const json& j, TransformVector& p)
 
 void JSONWrapper::from_json(const json& j, VisibleComponent& p)
 {
-	p.m_visibility = j["Visibility"];
 	p.m_meshPrimitiveTopology = j["MeshPrimitiveTopology"];
 	p.m_textureWrapMethod = j["TextureWrapMethod"];
 	p.m_meshUsage = j["MeshUsage"];
@@ -572,6 +570,8 @@ MaterialDataComponent* JSONWrapper::processMaterialJsonData(const json& j, const
 	l_MDC->m_materialAttributes.Roughness = j["Roughness"];
 	l_MDC->m_materialAttributes.AO = j["AO"];
 	l_MDC->m_materialAttributes.Thickness = j["Thickness"];
+	l_MDC->m_ShaderModel = ShaderModel(j["ShaderModel"]);
+
 	l_MDC->m_ObjectStatus = ObjectStatus::Created;
 
 	g_pModuleManager->getRenderingFrontend()->registerMaterialDataComponent(l_MDC, AsyncUploadGPUResource);

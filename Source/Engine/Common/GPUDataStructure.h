@@ -122,7 +122,6 @@ struct DrawCallInfo
 	uint32_t meshConstantBufferIndex;
 	uint32_t materialConstantBufferIndex;
 	bool castSunShadow;
-	Visibility visibility;
 	MeshUsage meshUsage;
 };
 

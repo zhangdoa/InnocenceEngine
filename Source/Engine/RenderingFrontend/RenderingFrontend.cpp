@@ -284,6 +284,7 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 	m_defaultMaterial->m_TextureSlots[5].m_Texture = m_basicAOTexture;
 	m_defaultMaterial->m_TextureSlots[6].m_Texture = m_basicAOTexture;
 	m_defaultMaterial->m_TextureSlots[7].m_Texture = m_basicAOTexture;
+	m_defaultMaterial->m_ShaderModel = ShaderModel::Opaque;
 
 	m_iconTemplate_DirectionalLight = g_pModuleManager->getAssetSystem()->loadTexture("..//Res//Textures//InnoWorldEditorIcons_DirectionalLight.png");
 	m_iconTemplate_DirectionalLight->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
@@ -541,7 +542,6 @@ bool InnoRenderingFrontendNS::updateMeshData()
 
 					// @TODO: use culled info
 					l_drawCallInfo.castSunShadow = true;
-					l_drawCallInfo.visibility = l_cullingData.visibility;
 					l_drawCallInfo.meshUsage = l_cullingData.meshUsage;
 					l_drawCallInfo.meshConstantBufferIndex = (uint32_t)i;
 					l_drawCallInfo.materialConstantBufferIndex = (uint32_t)i;

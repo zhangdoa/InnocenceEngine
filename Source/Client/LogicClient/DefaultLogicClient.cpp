@@ -312,7 +312,7 @@ namespace GameClientNS
 	bool initialize();
 
 	bool update();
-	bool updateMaterial(Model* model, Vec4 albedo, Vec4 MRAT);
+	bool updateMaterial(Model* model, Vec4 albedo, Vec4 MRAT, ShaderModel shaderModel = ShaderModel::Opaque);
 	void updateSpheres();
 
 	void runTest(uint32_t testTime, std::function<bool()> testCase);
@@ -359,7 +359,6 @@ bool GameClientNS::setupReferenceSpheres()
 		m_referenceSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_referenceSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_referenceSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
-		m_referenceSphereVisibleComponents[i]->m_visibility = Visibility::Opaque;
 		m_referenceSphereVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Sphere;
 		m_referenceSphereVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
 		m_referenceSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
@@ -411,7 +410,6 @@ bool GameClientNS::setupOcclusionCubes()
 		m_occlusionCubeTransformComponents[i] = SpawnComponent(TransformComponent, m_occlusionCubeEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
 		m_occlusionCubeTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_occlusionCubeVisibleComponents[i] = SpawnComponent(VisibleComponent, m_occlusionCubeEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
-		m_occlusionCubeVisibleComponents[i]->m_visibility = Visibility::Opaque;
 		m_occlusionCubeVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Cube;
 		m_occlusionCubeVisibleComponents[i]->m_meshUsage = MeshUsage::Static;
 		m_occlusionCubeVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
@@ -485,7 +483,6 @@ bool GameClientNS::setupOpaqueSpheres()
 		m_opaqueSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_opaqueSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_opaqueSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
-		m_opaqueSphereVisibleComponents[i]->m_visibility = Visibility::Opaque;
 		m_opaqueSphereVisibleComponents[i]->m_proceduralMeshShape = (i & 0x00000001) ? ProceduralMeshShape::Sphere : ProceduralMeshShape::Cube;
 		m_opaqueSphereVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
 		m_opaqueSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
@@ -548,7 +545,6 @@ bool GameClientNS::setupTransparentSpheres()
 		m_transparentSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_transparentSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_transparentSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
-		m_transparentSphereVisibleComponents[i]->m_visibility = Visibility::Transparent;
 		m_transparentSphereVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Sphere;
 		m_transparentSphereVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
 		m_transparentSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
@@ -697,7 +693,7 @@ bool GameClientNS::initialize()
 	return true;
 }
 
-bool GameClientNS::updateMaterial(Model* model, Vec4 albedo, Vec4 MRAT)
+bool GameClientNS::updateMaterial(Model* model, Vec4 albedo, Vec4 MRAT, ShaderModel shaderModel)
 {
 	if (model)
 	{
@@ -712,6 +708,7 @@ bool GameClientNS::updateMaterial(Model* model, Vec4 albedo, Vec4 MRAT)
 			l_pair->material->m_materialAttributes.AO = MRAT.z;
 			l_pair->material->m_materialAttributes.Alpha = albedo.w;
 			l_pair->material->m_materialAttributes.Thickness = MRAT.w;
+			l_pair->material->m_ShaderModel = shaderModel;
 		}
 	}
 	return true;
@@ -900,7 +897,7 @@ void GameClientNS::updateSpheres()
 		auto l_albedo = InnoMath::HSVtoRGB(Vec4((sin(seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
 		l_albedo.w = sin(seed / 6.0f + i) * 0.5f + 0.5f;
 		auto l_MRAT = Vec4(0.0f, sin(seed / 4.0f + i) * 0.5f + 0.5f, 1.0f, clamp((float)sin(seed / 5.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f));
-		updateMaterial(m_transparentSphereVisibleComponents[i]->m_model, l_albedo, l_MRAT);
+		updateMaterial(m_transparentSphereVisibleComponents[i]->m_model, l_albedo, l_MRAT, ShaderModel::Transparent);
 	}
 
 	uint32_t l_matrixDim = 8;

@@ -3,8 +3,6 @@
 #include "MeshDataComponent.h"
 #include "MaterialDataComponent.h"
 
-enum class Visibility { Invalid, Opaque, Transparent, Emissive, Debug };
-
 struct MeshMaterialPair
 {
 	MeshDataComponent* mesh;
@@ -19,7 +17,6 @@ struct Model
 class VisibleComponent : public InnoComponent
 {
 public:
-	Visibility m_visibility = Visibility::Invalid;
 	MeshPrimitiveTopology m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	TextureWrapMethod m_textureWrapMethod = TextureWrapMethod::Repeat;
 

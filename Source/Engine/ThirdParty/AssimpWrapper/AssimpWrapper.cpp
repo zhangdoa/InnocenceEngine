@@ -482,10 +482,19 @@ void AssimpWrapper::processAssimpMaterial(json& j, const aiMaterial* material)
 	if (material->Get(AI_MATKEY_COLOR_TRANSPARENT, l_result) == aiReturn::aiReturn_SUCCESS)
 	{
 		j["Albedo"]["A"] = l_result.r;
+		if (l_result.r == 1.0f)
+		{
+			j["ShaderModel"] = ShaderModel::Opaque;
+		}
+		else
+		{
+			j["ShaderModel"] = ShaderModel::Transparent;
+		}
 	}
 	else
 	{
 		j["Albedo"]["A"] = 1.0f;
+		j["ShaderModel"] = ShaderModel::Opaque;
 	}
 	if (material->Get(AI_MATKEY_COLOR_SPECULAR, l_result) == aiReturn::aiReturn_SUCCESS)
 	{

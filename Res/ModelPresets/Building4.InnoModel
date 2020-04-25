@@ -17,7 +17,8 @@
         },
         "Metallic": 0.0,
         "Roughness": 0.8,
-        "Thickness": 1.0
+        "Thickness": 1.0,
+        "ShaderModel": 1
       }
     }
   ],

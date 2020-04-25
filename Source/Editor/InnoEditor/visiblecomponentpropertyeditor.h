@@ -21,8 +21,7 @@ public:
 	void initialize() override;
 	void edit(void* component) override;
 
-    void GetVisibility();
-	void GetMeshPrimitiveTopology();
+    void GetMeshPrimitiveTopology();
 	void GetTextureWrapMethod();
 	void GetMeshUsage();
 	void GetMeshSource();
@@ -30,7 +29,6 @@ public:
 	void GetModelMap();
 
 private:
-    ComboLabelText* m_visibility;
 	ComboLabelText* m_meshPrimitiveTopology;
 	ComboLabelText* m_textureWrapMethod;
 	ComboLabelText* m_meshUsage;
@@ -48,7 +46,6 @@ private:
 	VisibleComponent* m_component;
 
 public slots:
-    void SetVisibility();
 	void SetMeshPrimitiveTopology();
 	void SetTextureWrapMethod();
 	void SetMeshUsage();

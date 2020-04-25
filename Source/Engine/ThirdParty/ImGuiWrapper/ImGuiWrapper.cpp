@@ -490,7 +490,7 @@ void ImGuiWrapperNS::showVisiableComponentPropertyEditor(void* rhs)
 					l_material->AO = ao;
 				}
 
-				if (l_rhs->m_visibility == Visibility::Transparent)
+				if (selectedComponent->m_ShaderModel == ShaderModel::Transparent)
 				{
 					static float thickness = l_material->Thickness;
 					if (ImGui::DragFloat("Thickness", &thickness, 0.01f, float_min, float_max))

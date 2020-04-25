@@ -18,7 +18,7 @@ public:
     void initialize() override;
     void edit(void* component) override;
 
-    void GetCustomMaterial();
+    void GetMaterialAttributes();
 
 private:
     QLabel* m_albedoLabel;
@@ -33,10 +33,12 @@ private:
     ComboLabelText* m_AO;
     ComboLabelText* m_thickness;
 
+    ComboLabelText* m_shaderModel;
+
     MaterialDataComponent* m_component;
 
 public slots:
-    void SetCustomMaterial();
+    void SetMaterialAttributes();
 
     void remove() override;
 };

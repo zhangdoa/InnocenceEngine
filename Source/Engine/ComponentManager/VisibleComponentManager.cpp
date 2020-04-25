@@ -108,45 +108,38 @@ void InnoVisibleComponentManager::LoadAssetsForComponents(bool AsyncLoad)
 
 	for (auto i : m_Components)
 	{
-		if (i->m_visibility != Visibility::Invalid)
+		if (i->m_meshSource != MeshSource::Customized)
 		{
-			if (i->m_meshSource != MeshSource::Customized)
+			if (AsyncLoad)
+			{
+				auto l_loadModelTask = g_pModuleManager->getTaskSystem()->submit("AssignProceduralModelTask", 4, nullptr, f_AssignProceduralModelTask, i, true);
+				g_pModuleManager->getTaskSystem()->submit("PDCTask", 4, l_loadModelTask, f_PDCTask, i);
+			}
+			else
+			{
+				f_AssignProceduralModelTask(i, false);
+				f_PDCTask(i);
+			}
+		}
+		else
+		{
+			if (!i->m_modelFileName.empty())
 			{
 				if (AsyncLoad)
 				{
-					auto l_loadModelTask = g_pModuleManager->getTaskSystem()->submit("AssignProceduralModelTask", 4, nullptr, f_AssignProceduralModelTask, i, true);
+					auto l_loadModelTask = g_pModuleManager->getTaskSystem()->submit("LoadModelTask", 4, nullptr, f_LoadModelTask, i, true);
 					g_pModuleManager->getTaskSystem()->submit("PDCTask", 4, l_loadModelTask, f_PDCTask, i);
 				}
 				else
 				{
-					f_AssignProceduralModelTask(i, false);
+					f_LoadModelTask(i, false);
 					f_PDCTask(i);
 				}
 			}
 			else
 			{
-				if (!i->m_modelFileName.empty())
-				{
-					if (AsyncLoad)
-					{
-						auto l_loadModelTask = g_pModuleManager->getTaskSystem()->submit("LoadModelTask", 4, nullptr, f_LoadModelTask, i, true);
-						g_pModuleManager->getTaskSystem()->submit("PDCTask", 4, l_loadModelTask, f_PDCTask, i);
-					}
-					else
-					{
-						f_LoadModelTask(i, false);
-						f_PDCTask(i);
-					}
-				}
-				else
-				{
-					InnoLogger::Log(LogLevel::Warning, "VisibleComponentManager: Custom shape mesh specified without a model preset file.");
-				}
+				InnoLogger::Log(LogLevel::Warning, "VisibleComponentManager: Custom shape mesh specified without a model preset file.");
 			}
-		}
-		else
-		{
-			InnoLogger::Log(LogLevel::Warning, "VisibleComponentManager: Visibility is Invalid for ", i);
 		}
 	}
 }

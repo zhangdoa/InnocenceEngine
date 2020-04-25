@@ -106,10 +106,7 @@ bool InnoBakerNS::gatherStaticMeshData()
 	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
 	for (auto visibleComponent : l_visibleComponents)
 	{
-		if (visibleComponent->m_visibility == Visibility::Opaque
-			&& visibleComponent->m_ObjectStatus == ObjectStatus::Activated
-			&& visibleComponent->m_meshUsage == MeshUsage::Static
-			)
+		if (visibleComponent->m_ObjectStatus == ObjectStatus::Activated && visibleComponent->m_meshUsage == MeshUsage::Static)
 		{
 			auto l_transformComponent = GetComponent(TransformComponent, visibleComponent->m_ParentEntity);
 			auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
@@ -118,33 +115,36 @@ bool InnoBakerNS::gatherStaticMeshData()
 			{
 				auto l_meshMaterialPair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(visibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
 
-				DrawCallInfo l_staticPerObjectConstantBuffer;
-
-				l_staticPerObjectConstantBuffer.mesh = l_meshMaterialPair->mesh;
-				l_staticPerObjectConstantBuffer.material = l_meshMaterialPair->material;
-
-				PerObjectConstantBuffer l_meshConstantBuffer;
-
-				l_meshConstantBuffer.m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
-				l_meshConstantBuffer.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
-				l_meshConstantBuffer.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-				l_meshConstantBuffer.UUID = (float)visibleComponent->m_UUID;
-
-				MaterialConstantBuffer l_materialConstantBuffer;
-
-				for (size_t i = 0; i < 8; i++)
+				if (l_meshMaterialPair->material->m_ShaderModel == ShaderModel::Opaque)
 				{
-					uint32_t l_writeMask = l_meshMaterialPair->material->m_TextureSlots[i].m_Activate ? 0x00000001 : 0x00000000;
-					l_writeMask = l_writeMask << i;
-					l_materialConstantBuffer.textureSlotMask |= l_writeMask;
+					DrawCallInfo l_staticPerObjectConstantBuffer;
+
+					l_staticPerObjectConstantBuffer.mesh = l_meshMaterialPair->mesh;
+					l_staticPerObjectConstantBuffer.material = l_meshMaterialPair->material;
+
+					PerObjectConstantBuffer l_meshConstantBuffer;
+
+					l_meshConstantBuffer.m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
+					l_meshConstantBuffer.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
+					l_meshConstantBuffer.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
+					l_meshConstantBuffer.UUID = (float)visibleComponent->m_UUID;
+
+					MaterialConstantBuffer l_materialConstantBuffer;
+
+					for (size_t i = 0; i < 8; i++)
+					{
+						uint32_t l_writeMask = l_meshMaterialPair->material->m_TextureSlots[i].m_Activate ? 0x00000001 : 0x00000000;
+						l_writeMask = l_writeMask << i;
+						l_materialConstantBuffer.textureSlotMask |= l_writeMask;
+					}
+
+					l_materialConstantBuffer.materialAttributes = l_meshMaterialPair->material->m_materialAttributes;
+
+					m_staticMeshDrawCallInfo.emplace_back(l_staticPerObjectConstantBuffer);
+					m_staticMeshPerObjectConstantBuffer.emplace_back(l_meshConstantBuffer);
+					m_staticMeshMaterialConstantBuffer.emplace_back(l_materialConstantBuffer);
+					l_index++;
 				}
-
-				l_materialConstantBuffer.materialAttributes = l_meshMaterialPair->material->m_materialAttributes;
-
-				m_staticMeshDrawCallInfo.emplace_back(l_staticPerObjectConstantBuffer);
-				m_staticMeshPerObjectConstantBuffer.emplace_back(l_meshConstantBuffer);
-				m_staticMeshMaterialConstantBuffer.emplace_back(l_materialConstantBuffer);
-				l_index++;
 			}
 		}
 	}

@@ -421,10 +421,11 @@ Model* InnoAssetSystem::addModel()
 	return InnoMemory::Spawn<Model>(m_modelPool);
 }
 
-Model* InnoAssetSystem::addProceduralModel(ProceduralMeshShape shape)
+Model* InnoAssetSystem::addProceduralModel(ProceduralMeshShape shape, ShaderModel shaderModel)
 {
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(shape);
 	auto l_material = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
+	l_material->m_ShaderModel = shaderModel;
 	l_material->m_ObjectStatus = ObjectStatus::Created;
 
 	auto l_result = addModel();

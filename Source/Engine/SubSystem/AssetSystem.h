@@ -38,6 +38,6 @@ public:
 
 	Model* addModel() override;
 
-	Model* addProceduralModel(ProceduralMeshShape shape) override;
+	Model* addProceduralModel(ProceduralMeshShape shape, ShaderModel shaderModel) override;
 	bool generateProceduralMesh(ProceduralMeshShape shape, MeshDataComponent* meshDataComponent) override;
 };
