@@ -401,16 +401,16 @@ void AssimpWrapper::processAssimpBone(json& j, const aiMesh* mesh)
 }
 
 /*
-aiTextureType::aiTextureType_NORMALS TextureUsage::NORMAL map_Kn normal map texture
+aiTextureType::aiTextureType_HEIGHT TextureUsage::NORMAL map_Bump normal map texture
 aiTextureType::aiTextureType_DIFFUSE TextureUsage::ALBEDO map_Kd albedo texture
 aiTextureType::aiTextureType_SPECULAR TextureUsage::METALLIC map_Ks metallic texture
-aiTextureType::aiTextureType_AMBIENT TextureUsage::ROUGHNESS map_Ka roughness texture
-aiTextureType::aiTextureType_EMISSIVE TextureUsage::AMBIENT_OCCLUSION map_emissive AO texture
+aiTextureType::aiTextureType_SHININESS TextureUsage::ROUGHNESS map_Ns roughness texture
+aiTextureType::aiTextureType_AMBIENT TextureUsage::AMBIENT_OCCLUSION map_Ka AO texture
 aiTextureType::AI_MATKEY_COLOR_DIFFUSE Kd Albedo RGB
 aiTextureType::AI_MATKEY_COLOR_TRANSPARENT Tf Alpha A
 aiTextureType::AI_MATKEY_COLOR_SPECULAR Ks Metallic
-aiTextureType::AI_MATKEY_COLOR_AMBIENT Ka Roughness
-aiTextureType::AI_MATKEY_COLOR_EMISSIVE Ke AO
+aiTextureType::AI_MATKEY_SHININESS Ns Roughness
+aiTextureType::AI_MATKEY_COLOR_AMBIENT Ka AO
 aiTextureType::AI_MATKEY_COLOR_REFLECTIVE Thickness
 */
 
@@ -430,7 +430,7 @@ void AssimpWrapper::processAssimpMaterial(json& j, const aiMaterial* material)
 				InnoLogger::Log(LogLevel::Warning, "AssimpWrapper: ", l_AssString.C_Str(), " is unknown texture type!");
 				break;
 			}
-			else if (aiTextureType(i) == aiTextureType::aiTextureType_NORMALS)
+			else if (aiTextureType(i) == aiTextureType::aiTextureType_HEIGHT)
 			{
 				processTextureData(j_child, l_localPath, TextureSampler::Sampler2D, TextureUsage::Sample, false, 0);
 			}
@@ -442,11 +442,11 @@ void AssimpWrapper::processAssimpMaterial(json& j, const aiMaterial* material)
 			{
 				processTextureData(j_child, l_localPath, TextureSampler::Sampler2D, TextureUsage::Sample, false, 2);
 			}
-			else if (aiTextureType(i) == aiTextureType::aiTextureType_AMBIENT)
+			else if (aiTextureType(i) == aiTextureType::aiTextureType_SHININESS)
 			{
 				processTextureData(j_child, l_localPath, TextureSampler::Sampler2D, TextureUsage::Sample, false, 3);
 			}
-			else if (aiTextureType(i) == aiTextureType::aiTextureType_EMISSIVE)
+			else if (aiTextureType(i) == aiTextureType::aiTextureType_AMBIENT)
 			{
 				processTextureData(j_child, l_localPath, TextureSampler::Sampler2D, TextureUsage::Sample, false, 4);
 			}
@@ -504,7 +504,7 @@ void AssimpWrapper::processAssimpMaterial(json& j, const aiMaterial* material)
 	{
 		j["Metallic"] = 0.5f;
 	}
-	if (material->Get(AI_MATKEY_COLOR_AMBIENT, l_result) == aiReturn::aiReturn_SUCCESS)
+	if (material->Get(AI_MATKEY_SHININESS, l_result) == aiReturn::aiReturn_SUCCESS)
 	{
 		j["Roughness"] = l_result.r;
 	}
@@ -512,7 +512,7 @@ void AssimpWrapper::processAssimpMaterial(json& j, const aiMaterial* material)
 	{
 		j["Roughness"] = 0.5f;
 	}
-	if (material->Get(AI_MATKEY_COLOR_EMISSIVE, l_result) == aiReturn::aiReturn_SUCCESS)
+	if (material->Get(AI_MATKEY_COLOR_AMBIENT, l_result) == aiReturn::aiReturn_SUCCESS)
 	{
 		j["AO"] = l_result.r;
 	}
