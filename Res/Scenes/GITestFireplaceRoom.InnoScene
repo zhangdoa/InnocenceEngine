@@ -6,15 +6,15 @@
                     "ComponentType": 1,
                     "LocalTransformVector": {
                         "Position": {
-                            "X": 50.0,
+                            "X": 20.0,
                             "Y": 20.0,
-                            "Z": -20.0
+                            "Z": 80.0
                         },
                         "Rotation": {
-                            "W": 0.6935198903083801,
-                            "X": -0.13794969022274017,
-                            "Y": 0.6935198903083801,
-                            "Z": 0.13794969022274017
+                            "W": 0.9914448857307434,
+                            "X": -0.13052619993686676,
+                            "Y": 0.0,
+                            "Z": 0.0
                         },
                         "Scale": {
                             "X": 1.0,
@@ -34,7 +34,7 @@
                 }
             ],
             "ObjectName": "playerCharacterCamera",
-            "UUID": 3554726102073834131
+            "UUID": 2638849013853739648
         },
         {
             "ChildrenComponents": [
@@ -43,14 +43,14 @@
                     "LocalTransformVector": {
                         "Position": {
                             "X": 0.0,
-                            "Y": 4.0,
+                            "Y": 0.0,
                             "Z": 0.0
                         },
                         "Rotation": {
-                            "W": 0.8217925429344177,
-                            "X": -0.12648598849773407,
-                            "Y": -0.5491042733192444,
-                            "Z": -0.08451523631811142
+                            "W": 0.38333773612976074,
+                            "X": 0.07691609114408493,
+                            "Y": -0.8874096870422363,
+                            "Z": -0.24421317875385284
                         },
                         "Scale": {
                             "X": 1.0,
@@ -81,7 +81,7 @@
                 }
             ],
             "ObjectName": "sun",
-            "UUID": 3033926526957656423
+            "UUID": 4271627058601405175
         },
         {
             "ChildrenComponents": [
@@ -91,12 +91,12 @@
                         "Position": {
                             "X": 0.0,
                             "Y": 0.0,
-                            "Z": 0.0
+                            "Z": 20.0
                         },
                         "Rotation": {
-                            "W": 1.0,
+                            "W": 0.7071067690849304,
                             "X": 0.0,
-                            "Y": 0.0,
+                            "Y": -0.7071067690849304,
                             "Z": 0.0
                         },
                         "Scale": {
@@ -115,12 +115,11 @@
                     "ModelFileName": "..//Res//ConvertedAssets//fireplace_room.InnoModel",
                     "ProceduralMeshShape": 0,
                     "SimulatePhysics": true,
-                    "TextureWrapMethod": 1,
-                    "Visibility": 1
+                    "TextureWrapMethod": 1
                 }
             ],
             "ObjectName": "FireplaceRoom",
-            "UUID": 2551801834722579499
+            "UUID": 4253940780986425527
         },
         {
             "ChildrenComponents": [
@@ -128,14 +127,14 @@
                     "ComponentType": 1,
                     "LocalTransformVector": {
                         "Position": {
-                            "X": 5.0,
+                            "X": 20.0,
                             "Y": 0.0,
-                            "Z": -25.0
+                            "Z": 30.0
                         },
                         "Rotation": {
-                            "W": 0.40274667739868164,
+                            "W": 0.5913096070289612,
                             "X": 0.0,
-                            "Y": -0.9153114557266235,
+                            "Y": 0.8064446449279785,
                             "Z": 0.0
                         },
                         "Scale": {
@@ -154,12 +153,11 @@
                     "ModelFileName": "..//Res//ConvertedAssets//Orb.InnoModel",
                     "ProceduralMeshShape": 0,
                     "SimulatePhysics": true,
-                    "TextureWrapMethod": 1,
-                    "Visibility": 1
+                    "TextureWrapMethod": 1
                 }
             ],
             "ObjectName": "orb",
-            "UUID": 4182989787075048662
+            "UUID": 2389767630455936763
         },
         {
             "ChildrenComponents": [
@@ -167,14 +165,14 @@
                     "ComponentType": 1,
                     "LocalTransformVector": {
                         "Position": {
-                            "X": 15.0,
+                            "X": 10.0,
                             "Y": 0.0,
-                            "Z": -10.0
+                            "Z": 40.0
                         },
                         "Rotation": {
-                            "W": 0.9914448857307434,
+                            "W": 0.8968727588653564,
                             "X": 0.0,
-                            "Y": 0.13052619993686676,
+                            "Y": 0.44228872656822205,
                             "Z": 0.0
                         },
                         "Scale": {
@@ -193,12 +191,11 @@
                     "ModelFileName": "..//Res//ConvertedAssets//bunny.InnoModel",
                     "ProceduralMeshShape": 0,
                     "SimulatePhysics": true,
-                    "TextureWrapMethod": 1,
-                    "Visibility": 1
+                    "TextureWrapMethod": 1
                 }
             ],
             "ObjectName": "bunny",
-            "UUID": 4139713145552905662
+            "UUID": 4265325898148445300
         },
         {
             "ChildrenComponents": [
@@ -206,9 +203,9 @@
                     "ComponentType": 1,
                     "LocalTransformVector": {
                         "Position": {
-                            "X": -16.0,
+                            "X": 20.0,
                             "Y": 20.0,
-                            "Z": -20.0
+                            "Z": 20.0
                         },
                         "Rotation": {
                             "W": 1.0,
@@ -245,7 +242,7 @@
                 }
             ],
             "ObjectName": "pointLight",
-            "UUID": 3058430734679788135
+            "UUID": 3406874369604239326
         },
         {
             "ChildrenComponents": [
@@ -253,9 +250,9 @@
                     "ComponentType": 1,
                     "LocalTransformVector": {
                         "Position": {
-                            "X": -10.0,
-                            "Y": 15.850000381469727,
-                            "Z": 8.0
+                            "X": 25.0,
+                            "Y": 20.0,
+                            "Z": 65.0
                         },
                         "Rotation": {
                             "W": 1.0,
@@ -292,7 +289,7 @@
                 }
             ],
             "ObjectName": "sphereLight",
-            "UUID": 2827929152565437151
+            "UUID": 3520592740025334827
         },
         {
             "ChildrenComponents": [
@@ -300,9 +297,9 @@
                     "ComponentType": 1,
                     "LocalTransformVector": {
                         "Position": {
-                            "X": 110.0,
-                            "Y": 15.0,
-                            "Z": 0.0
+                            "X": 5.0,
+                            "Y": 10.0,
+                            "Z": 55.0
                         },
                         "Rotation": {
                             "W": 1.0,
@@ -325,21 +322,21 @@
                     "LuminousFlux": 1000.0,
                     "RGBColor": {
                         "W": 1.0,
-                        "X": 1.0,
-                        "Y": 0.33747488260269165,
-                        "Z": 0.0
+                        "X": 0.0,
+                        "Y": 0.20000000298023224,
+                        "Z": 1.0
                     },
                     "Shape": {
                         "W": 1.0,
-                        "X": 28.77886390686035,
+                        "X": 19.993478775024414,
                         "Y": 1.0,
                         "Z": 1.0
                     },
-                    "UseColorTemperature": true
+                    "UseColorTemperature": false
                 }
             ],
             "ObjectName": "pointLight2",
-            "UUID": 4238986887192685222
+            "UUID": 3463212751012139819
         },
         {
             "ChildrenComponents": [
@@ -348,13 +345,13 @@
                     "LocalTransformVector": {
                         "Position": {
                             "X": 0.0,
-                            "Y": 2.0,
+                            "Y": 0.0,
                             "Z": 0.0
                         },
                         "Rotation": {
-                            "W": 0.1760820746421814,
+                            "W": 1.0,
                             "X": 0.0,
-                            "Y": -0.984375536441803,
+                            "Y": 0.0,
                             "Z": 0.0
                         },
                         "Scale": {
@@ -373,12 +370,11 @@
                     "ModelFileName": "",
                     "ProceduralMeshShape": 6,
                     "SimulatePhysics": true,
-                    "TextureWrapMethod": 2,
-                    "Visibility": 1
+                    "TextureWrapMethod": 2
                 }
             ],
             "ObjectName": "playerCharacter",
-            "UUID": 4333035985058856506
+            "UUID": 4429067550859017127
         }
     ],
     "SceneName": "..//Res//Scenes//GITestFireplaceRoom.InnoScene"
