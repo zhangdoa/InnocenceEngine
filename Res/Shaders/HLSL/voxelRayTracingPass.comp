@@ -12,25 +12,72 @@ struct ComputeInputType
 Texture3D<float4> in_luminanceVolume : register(t0);
 Texture3D<float4> in_normalVolume : register(t1);
 RWTexture3D<float4> out_luminanceVolume : register(u0);
+RWStructuredBuffer<float4> in_ray : register(u1);
+RWStructuredBuffer<uint4> in_index : register(u2);
 
 SamplerState SamplerTypePoint : register(s0);
 
 [numthreads(8, 8, 8)]
 void main(ComputeInputType input)
 {
-	out_luminanceVolume[input.dispatchThreadID] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	int flattenIndex = input.dispatchThreadID.x + input.dispatchThreadID.y * 8 + input.dispatchThreadID.z * 8 * 8;
+	//uint3 writeCoord = in_index[flattenIndex].xyz;
 
-	float3 posWS = float3(input.dispatchThreadID);
-	float3 normal = in_normalVolume[input.dispatchThreadID].xyz;
+	uint3 writeCoord = input.dispatchThreadID;
+	out_luminanceVolume[writeCoord] = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
-	posWS *= voxelizationPassCBuffer.volumeResolutionRcp;
-	posWS = posWS * 2.0 - 1.0;
+	float3 posWS = float3(writeCoord) / 128.0f;
+	//posWS = posWS * 2.0 - 1.0;
 
-	posWS *= (voxelizationPassCBuffer.volumeExtend / 2.0);
-	posWS += voxelizationPassCBuffer.volumeCenter.xyz;
-	posWS += normal * voxelizationPassCBuffer.voxelSize * SQRT2;
+	//posWS *= (voxelizationPassCBuffer.volumeExtend / 2.0);
+	//posWS += voxelizationPassCBuffer.volumeCenter.xyz;
+	//posWS += normal * voxelizationPassCBuffer.voxelSize * SQRT2;
 
-	for (int i = 0; i < 64; i++)
+	float4 totalResult = float4(0.0f, 0.0f, 0.0f, 1.0f);
+	float maxDist = 32.0f;
+	int maxRay = 32;
+	int rayCount = 0;
+
+	for (int i = 0; i < maxRay; i++)
 	{
+		float4 rayResult = float4(0.0f, 0.0f, 0.0f, 1.0f);
+		bool sampled = false;
+		float dist = 1.0f;
+		float4 ray = in_ray[i];
+		ray *= voxelizationPassCBuffer.volumeResolutionRcp;
+
+		while (!sampled && (dist < maxDist))
+		{
+			float3 tc = posWS + ray.xyz * dist;
+
+			int is_saturated = (tc.x > 1.0) || (tc.y > 1.0) || (tc.z > 1.0);
+
+			if (!is_saturated)
+			{
+				float4 sam = in_luminanceVolume.SampleLevel(SamplerTypePoint, tc, 0);
+
+				if (sam.a)
+				{
+					rayResult.xyz += sam.xyz;
+					sampled = true;
+				}
+			}
+			else
+			{
+				break;
+			}
+
+			dist += 1.0f;
+		}
+
+		if (sampled)
+		{
+			rayCount++;
+		}
+		rayResult /= dist;
+		totalResult += rayResult;
 	}
+
+	totalResult.xyz /= maxRay;
+	out_luminanceVolume[writeCoord] = totalResult;
 }
