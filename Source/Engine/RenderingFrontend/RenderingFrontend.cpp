@@ -459,6 +459,7 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 
 			l_CSMCB.p = l_ProjectionMatrices[j];
 			l_CSMCB.v = l_ViewMatrices[j];
+
 			l_CSMCB.AABBMax = l_SplitAABB[j].m_boundMax;
 			l_CSMCB.AABBMin = l_SplitAABB[j].m_boundMin;
 
@@ -540,8 +541,7 @@ bool InnoRenderingFrontendNS::updateMeshData()
 					l_drawCallInfo.mesh = l_cullingData.mesh;
 					l_drawCallInfo.material = l_cullingData.material;
 
-					// @TODO: use culled info
-					l_drawCallInfo.castSunShadow = true;
+					l_drawCallInfo.visibilityMask = l_cullingData.visibilityMask;
 					l_drawCallInfo.meshUsage = l_cullingData.meshUsage;
 					l_drawCallInfo.meshConstantBufferIndex = (uint32_t)i;
 					l_drawCallInfo.materialConstantBufferIndex = (uint32_t)i;

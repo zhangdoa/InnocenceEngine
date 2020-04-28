@@ -3,6 +3,7 @@
 #include "../ComponentManager/ITransformComponentManager.h"
 #include "../ComponentManager/IVisibleComponentManager.h"
 #include "../ComponentManager/ICameraComponentManager.h"
+#include "../ComponentManager/ILightComponentManager.h"
 
 #include "../Common/InnoMathHelper.h"
 #include "../Core/InnoLogger.h"
@@ -521,8 +522,10 @@ void InnoPhysicsSystem::updateBVH()
 	}
 }
 
-void PlainCulling(const Frustum& frustum, std::vector<CullingData>& cullingDatas)
+void PlainCulling(const CameraComponent* camera, std::vector<CullingData>& cullingDatas)
 {
+	auto l_cameraFrustum = camera->m_frustum;
+
 	for (auto PDC : m_Components)
 	{
 		if (PDC->m_ObjectStatus == ObjectStatus::Activated)
@@ -530,36 +533,71 @@ void PlainCulling(const Frustum& frustum, std::vector<CullingData>& cullingDatas
 			auto l_transformComponent = PDC->m_TransformComponent;
 			auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
-			CullingData l_cullingData;
-
-			l_cullingData.m = l_globalTm;
-			l_cullingData.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
-			l_cullingData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-			l_cullingData.mesh = PDC->m_MeshMaterialPair->mesh;
-			l_cullingData.material = PDC->m_MeshMaterialPair->material;
-			l_cullingData.meshUsage = PDC->m_VisibleComponent->m_meshUsage;
-			l_cullingData.UUID = PDC->m_VisibleComponent->m_UUID;
-
 			if (PDC->m_MeshUsage == MeshUsage::Dynamic)
 			{
 				PDC->m_AABBWS = InnoMath::transformAABBSpace(PDC->m_AABBLS, l_globalTm);
 				PDC->m_SphereWS = generateBoundSphere(PDC->m_AABBWS);
 			}
-
-			if (InnoMath::intersectCheck(frustum, PDC->m_SphereWS))
+			if (InnoMath::intersectCheck(l_cameraFrustum, PDC->m_SphereWS))
 			{
+				CullingData l_cullingData;
+
+				l_cullingData.m = l_globalTm;
+				l_cullingData.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
+				l_cullingData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
+				l_cullingData.mesh = PDC->m_MeshMaterialPair->mesh;
+				l_cullingData.material = PDC->m_MeshMaterialPair->material;
+				l_cullingData.meshUsage = PDC->m_VisibleComponent->m_meshUsage;
+				l_cullingData.UUID = PDC->m_VisibleComponent->m_UUID;
+
+				l_cullingData.visibilityMask |= VisibilityMask::MainCamera;
+
+				cullingDatas.emplace_back(l_cullingData);
+
 				updateVisibleSceneBoundary(PDC->m_AABBWS);
-				l_cullingData.cullingDataChannel = CullingDataChannel::MainCamera;
 			}
-			else
-			{
-				//@TODO: Culling from sun
-				l_cullingData.cullingDataChannel = CullingDataChannel::Shadow;
-			}
-
-			cullingDatas.emplace_back(l_cullingData);
 
 			updateTotalSceneBoundary(PDC->m_AABBWS);
+		}
+	}
+}
+
+void SunShadowCulling(const LightComponent* sun, std::vector<CullingData>& cullingDatas)
+{
+	auto l_sunTransformComponent = GetComponent(TransformComponent, sun->m_ParentEntity);
+
+	if (l_sunTransformComponent == nullptr)
+	{
+		return;
+	}
+
+	auto l_sunRotationInv = l_sunTransformComponent->m_globalTransformMatrix.m_rotationMat.inverse();
+	auto l_sphereRadius = (m_visibleSceneAABB.m_boundMax - m_visibleSceneAABB.m_center).length();
+
+	for (auto PDC : m_Components)
+	{
+		if (PDC->m_ObjectStatus == ObjectStatus::Activated)
+		{
+			auto l_spherePosLS = InnoMath::mul(l_sunRotationInv, PDC->m_SphereWS.m_center);
+			auto l_distance = Vec2(l_spherePosLS.x, l_spherePosLS.y).length();
+
+			if (l_distance < PDC->m_SphereWS.m_radius + l_sphereRadius)
+			{
+				CullingData l_cullingData;
+
+				auto l_transformComponent = PDC->m_TransformComponent;
+
+				l_cullingData.m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
+				l_cullingData.m_prev = l_transformComponent->m_globalTransformMatrix_prev.m_transformationMat;
+				l_cullingData.normalMat = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
+				l_cullingData.mesh = PDC->m_MeshMaterialPair->mesh;
+				l_cullingData.material = PDC->m_MeshMaterialPair->material;
+				l_cullingData.meshUsage = PDC->m_VisibleComponent->m_meshUsage;
+				l_cullingData.UUID = PDC->m_VisibleComponent->m_UUID;
+				l_cullingData.visibilityMask |= VisibilityMask::Sun;
+
+				cullingDatas.emplace_back(l_cullingData);
+			}
 		}
 	}
 }
@@ -588,12 +626,12 @@ CullingData generateCullingData(const Frustum& frustum, PhysicsDataComponent* PD
 	if (InnoMath::intersectCheck(frustum, PDC->m_SphereWS))
 	{
 		updateVisibleSceneBoundary(PDC->m_AABBWS);
-		l_cullingData.cullingDataChannel = CullingDataChannel::MainCamera;
+		l_cullingData.visibilityMask = VisibilityMask::MainCamera;
 	}
 	else
 	{
 		//@TODO: Culling from sun
-		l_cullingData.cullingDataChannel = CullingDataChannel::Shadow;
+		l_cullingData.visibilityMask = VisibilityMask::Sun;
 	}
 
 	return l_cullingData;
@@ -634,14 +672,12 @@ void InnoPhysicsSystem::updateCulling()
 		return;
 	}
 
-	auto l_mainCameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_ParentEntity);
+	auto l_sun = GetComponentManager(LightComponent)->GetSun();
 
-	if (l_mainCameraTransformComponent == nullptr)
+	if (l_sun == nullptr)
 	{
 		return;
 	}
-
-	auto l_cameraFrustum = l_mainCamera->m_frustum;
 
 	m_visibleSceneBoundMax = InnoMath::minVec4<float>;
 	m_visibleSceneBoundMax.w = 1.0f;
@@ -658,7 +694,8 @@ void InnoPhysicsSystem::updateCulling()
 		m_cullingData.Reserve(l_visibleComponents.size());
 	}
 
-	PlainCulling(l_cameraFrustum, l_cullingDataVector);
+	PlainCulling(l_mainCamera, l_cullingDataVector);
+	SunShadowCulling(l_sun, l_cullingDataVector);
 	//BVHCulling(m_RootBVHNode, l_cameraFrustum, l_cullingDataVector);
 
 	m_visibleSceneAABB = InnoMath::generateAABB(InnoPhysicsSystemNS::m_visibleSceneBoundMax, InnoPhysicsSystemNS::m_visibleSceneBoundMin);

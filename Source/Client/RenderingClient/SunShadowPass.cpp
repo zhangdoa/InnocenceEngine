@@ -44,6 +44,7 @@ bool SunShadowPass::Setup()
 
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
+
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
 
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = true;
@@ -112,7 +113,8 @@ bool SunShadowPass::PrepareCommandList()
 	for (uint32_t i = 0; i < l_drawCallCount; i++)
 	{
 		auto l_drawCallData = l_drawCallInfo[i];
-		if (l_drawCallData.castSunShadow && l_drawCallData.meshUsage != MeshUsage::Skeletal)
+		auto l_visible = static_cast<uint32_t>(l_drawCallData.visibilityMask & VisibilityMask::Sun);
+		if (l_visible && l_drawCallData.meshUsage != MeshUsage::Skeletal)
 		{
 			if (l_drawCallData.material->m_ObjectStatus == ObjectStatus::Activated)
 			{

@@ -114,23 +114,15 @@ void LightComponentManagerNS::UpdateSingleSMData(LightComponent* rhs)
 	auto l_boundMin = l_totalSceneAABB.m_center - l_sphereRadius;
 	l_boundMin.w = 1.0f;
 
-	m_SplitAABBWS.emplace_back(l_totalSceneAABB);
+	l_totalSceneAABB = InnoMath::generateAABB(l_boundMax, l_boundMin);
 
-	auto l_sceneAABBVerticesWS = InnoMath::generateAABBVertices(l_boundMax, l_boundMin);
+	m_SplitAABBWS.emplace_back(l_totalSceneAABB);
 
 	auto l_transformComponent = GetComponent(TransformComponent, rhs->m_ParentEntity);
 	auto l_r = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-	auto l_sunDir = InnoMath::getDirection(Direction::Forward, l_transformComponent->m_globalTransformVector.m_rot);
+	m_viewMatrices.emplace_back(l_r.inverse());
 
-	// The light camera position in light space
-	auto l_sunShadowPos = l_totalSceneAABB.m_center + l_sunDir * l_sphereRadius;
-	l_sunShadowPos.w = 1.0f;
-
-	auto l_t = InnoMath::toTranslationMatrix(l_sunShadowPos);
-	auto l_m = l_t * l_r;
-	m_viewMatrices.emplace_back(l_m.inverse());
-
-	Mat4 l_p = InnoMath::generateOrthographicMatrix(-l_sphereRadius, l_sphereRadius, -l_sphereRadius, l_sphereRadius, 0.0f, l_sphereRadius * 2.0f);
+	Mat4 l_p = InnoMath::generateOrthographicMatrix(-l_sphereRadius, l_sphereRadius, -l_sphereRadius, l_sphereRadius, -l_sphereRadius, l_sphereRadius);
 	m_projectionMatrices.emplace_back(l_p);
 }
 
@@ -144,7 +136,7 @@ void LightComponentManagerNS::UpdateCSMData(LightComponent* rhs)
 	if (l_cameraComponent == nullptr)
 	{
 		return;
-}
+	}
 	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_cameraComponent->m_ParentEntity);
 	if (l_cameraTransformComponent == nullptr)
 	{

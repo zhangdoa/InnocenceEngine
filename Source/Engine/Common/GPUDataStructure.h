@@ -5,6 +5,33 @@
 #include "../Component/TextureDataComponent.h"
 #include "../Component/VisibleComponent.h"
 
+enum class VisibilityMask
+{
+	Invalid = 0, MainCamera = 1, Sun = 2
+};
+
+inline VisibilityMask operator&(VisibilityMask a, VisibilityMask b)
+{
+	return static_cast<VisibilityMask>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+}
+
+inline VisibilityMask& operator&=(VisibilityMask& a, VisibilityMask b)
+{
+	a = static_cast<VisibilityMask>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+	return a;
+}
+
+inline VisibilityMask operator|(VisibilityMask a, VisibilityMask b)
+{
+	return static_cast<VisibilityMask>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+}
+
+inline VisibilityMask& operator|=(VisibilityMask& a, VisibilityMask b)
+{
+	a = static_cast<VisibilityMask>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+	return a;
+}
+
 struct alignas(16) PerFrameConstantBuffer
 {
 	Mat4 p_original;
@@ -117,12 +144,12 @@ struct alignas(16) AnimationConstantBuffer
 
 struct DrawCallInfo
 {
-	MeshDataComponent* mesh;
-	MaterialDataComponent* material;
-	uint32_t meshConstantBufferIndex;
-	uint32_t materialConstantBufferIndex;
-	bool castSunShadow;
-	MeshUsage meshUsage;
+	MeshDataComponent* mesh = 0;
+	MaterialDataComponent* material = 0;
+	uint32_t meshConstantBufferIndex = 0;
+	uint32_t materialConstantBufferIndex = 0;
+	VisibilityMask visibilityMask = VisibilityMask::Invalid;
+	MeshUsage meshUsage = MeshUsage::Invalid;
 };
 
 struct BillboardPassDrawCallInfo
