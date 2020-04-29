@@ -483,7 +483,7 @@ bool GameClientNS::setupOpaqueSpheres()
 		m_opaqueSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_opaqueSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_opaqueSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
-		m_opaqueSphereVisibleComponents[i]->m_proceduralMeshShape = (i & 0x00000001) ? ProceduralMeshShape::Sphere : ProceduralMeshShape::Cube;
+		m_opaqueSphereVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape(i % 6 + 5);
 		m_opaqueSphereVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
 		m_opaqueSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
 		m_opaqueSphereVisibleComponents[i]->m_simulatePhysics = true;

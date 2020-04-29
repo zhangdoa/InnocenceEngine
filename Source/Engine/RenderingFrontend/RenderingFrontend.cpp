@@ -80,8 +80,16 @@ namespace InnoRenderingFrontendNS
 	TextureDataComponent* m_iconTemplate_PointLight;
 	TextureDataComponent* m_iconTemplate_SphereLight;
 
+	MeshDataComponent* m_unitTriangleMesh;
 	MeshDataComponent* m_unitSquareMesh;
+	MeshDataComponent* m_unitPentagonMesh;
+	MeshDataComponent* m_unitHexagonMesh;
+
+	MeshDataComponent* m_unitTetrahedronMesh;
 	MeshDataComponent* m_unitCubeMesh;
+	MeshDataComponent* m_unitOctahedronMesh;
+	MeshDataComponent* m_unitDodecahedronMesh;
+	MeshDataComponent* m_unitIcosahedronMesh;
 	MeshDataComponent* m_unitSphereMesh;
 	MeshDataComponent* m_terrainMesh;
 
@@ -298,17 +306,59 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 	m_iconTemplate_SphereLight->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_iconTemplate_SphereLight->m_TextureDesc.Usage = TextureUsage::Sample;
 
+	m_unitTriangleMesh = m_renderingServer->AddMeshDataComponent("UnitTriangleMesh/");
+	g_pModuleManager->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Triangle, m_unitTriangleMesh);
+	m_unitTriangleMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
+	m_unitTriangleMesh->m_proceduralMeshShape = ProceduralMeshShape::Triangle;
+	m_unitTriangleMesh->m_ObjectStatus = ObjectStatus::Created;
+
 	m_unitSquareMesh = m_renderingServer->AddMeshDataComponent("UnitSquareMesh/");
 	g_pModuleManager->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Square, m_unitSquareMesh);
 	m_unitSquareMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitSquareMesh->m_proceduralMeshShape = ProceduralMeshShape::Square;
 	m_unitSquareMesh->m_ObjectStatus = ObjectStatus::Created;
 
+	m_unitPentagonMesh = m_renderingServer->AddMeshDataComponent("UnitPentagonMesh/");
+	g_pModuleManager->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Pentagon, m_unitPentagonMesh);
+	m_unitPentagonMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
+	m_unitPentagonMesh->m_proceduralMeshShape = ProceduralMeshShape::Pentagon;
+	m_unitPentagonMesh->m_ObjectStatus = ObjectStatus::Created;
+
+	m_unitHexagonMesh = m_renderingServer->AddMeshDataComponent("UnitHexagonMesh/");
+	g_pModuleManager->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Hexagon, m_unitHexagonMesh);
+	m_unitHexagonMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
+	m_unitHexagonMesh->m_proceduralMeshShape = ProceduralMeshShape::Hexagon;
+	m_unitHexagonMesh->m_ObjectStatus = ObjectStatus::Created;
+
+	m_unitTetrahedronMesh = m_renderingServer->AddMeshDataComponent("UnitTetrahedronMesh/");
+	g_pModuleManager->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Tetrahedron, m_unitTetrahedronMesh);
+	m_unitTetrahedronMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
+	m_unitTetrahedronMesh->m_proceduralMeshShape = ProceduralMeshShape::Tetrahedron;
+	m_unitTetrahedronMesh->m_ObjectStatus = ObjectStatus::Created;
+
 	m_unitCubeMesh = m_renderingServer->AddMeshDataComponent("UnitCubeMesh/");
 	g_pModuleManager->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Cube, m_unitCubeMesh);
 	m_unitCubeMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	m_unitCubeMesh->m_proceduralMeshShape = ProceduralMeshShape::Cube;
 	m_unitCubeMesh->m_ObjectStatus = ObjectStatus::Created;
+
+	m_unitOctahedronMesh = m_renderingServer->AddMeshDataComponent("UnitOctahedronMesh/");
+	g_pModuleManager->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Octahedron, m_unitOctahedronMesh);
+	m_unitOctahedronMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
+	m_unitOctahedronMesh->m_proceduralMeshShape = ProceduralMeshShape::Octahedron;
+	m_unitOctahedronMesh->m_ObjectStatus = ObjectStatus::Created;
+
+	m_unitDodecahedronMesh = m_renderingServer->AddMeshDataComponent("UnitDodecahedronMesh/");
+	g_pModuleManager->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Dodecahedron, m_unitDodecahedronMesh);
+	m_unitDodecahedronMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
+	m_unitDodecahedronMesh->m_proceduralMeshShape = ProceduralMeshShape::Dodecahedron;
+	m_unitDodecahedronMesh->m_ObjectStatus = ObjectStatus::Created;
+
+	m_unitIcosahedronMesh = m_renderingServer->AddMeshDataComponent("UnitIcosahedronMesh/");
+	g_pModuleManager->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Icosahedron, m_unitIcosahedronMesh);
+	m_unitIcosahedronMesh->m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
+	m_unitIcosahedronMesh->m_proceduralMeshShape = ProceduralMeshShape::Icosahedron;
+	m_unitIcosahedronMesh->m_ObjectStatus = ObjectStatus::Created;
 
 	m_unitSphereMesh = m_renderingServer->AddMeshDataComponent("UnitSphereMesh/");
 	g_pModuleManager->getAssetSystem()->generateProceduralMesh(ProceduralMeshShape::Sphere, m_unitSphereMesh);
@@ -318,8 +368,16 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 
 	auto l_DefaultAssetInitializeTask = g_pModuleManager->getTaskSystem()->submit("DefaultAssetInitializeTask", 2, nullptr,
 		[&]() {
+			m_renderingServer->InitializeMeshDataComponent(m_unitTriangleMesh);
 			m_renderingServer->InitializeMeshDataComponent(m_unitSquareMesh);
+			m_renderingServer->InitializeMeshDataComponent(m_unitPentagonMesh);
+			m_renderingServer->InitializeMeshDataComponent(m_unitHexagonMesh);
+
+			m_renderingServer->InitializeMeshDataComponent(m_unitTetrahedronMesh);
 			m_renderingServer->InitializeMeshDataComponent(m_unitCubeMesh);
+			m_renderingServer->InitializeMeshDataComponent(m_unitOctahedronMesh);
+			m_renderingServer->InitializeMeshDataComponent(m_unitDodecahedronMesh);
+			m_renderingServer->InitializeMeshDataComponent(m_unitIcosahedronMesh);
 			m_renderingServer->InitializeMeshDataComponent(m_unitSphereMesh);
 
 			m_renderingServer->InitializeTextureDataComponent(m_basicNormalTexture);
@@ -396,15 +454,9 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 		l_currentHaltonStep += 1;
 	}
 
-	auto r =
-		InnoMath::getInvertRotationMatrix(
-			l_mainCameraTransformComponent->m_globalTransformVector.m_rot
-		);
+	auto r = InnoMath::getInvertRotationMatrix(l_mainCameraTransformComponent->m_globalTransformVector.m_rot);
 
-	auto t =
-		InnoMath::getInvertTranslationMatrix(
-			l_mainCameraTransformComponent->m_globalTransformVector.m_pos
-		);
+	auto t = InnoMath::getInvertTranslationMatrix(l_mainCameraTransformComponent->m_globalTransformVector.m_pos);
 
 	l_PerFrameCB.camera_posWS = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
 
@@ -838,30 +890,38 @@ MeshDataComponent* InnoRenderingFrontend::getMeshDataComponent(ProceduralMeshSha
 	switch (shape)
 	{
 	case InnoType::ProceduralMeshShape::Triangle:
+		return m_unitTriangleMesh;
 		break;
 	case InnoType::ProceduralMeshShape::Square:
 		return m_unitSquareMesh;
 		break;
 	case InnoType::ProceduralMeshShape::Pentagon:
+		return m_unitPentagonMesh;
 		break;
 	case InnoType::ProceduralMeshShape::Hexagon:
+		return m_unitHexagonMesh;
 		break;
 	case InnoType::ProceduralMeshShape::Tetrahedron:
+		return m_unitTetrahedronMesh;
 		break;
 	case InnoType::ProceduralMeshShape::Cube:
 		return m_unitCubeMesh;
 		break;
 	case InnoType::ProceduralMeshShape::Octahedron:
+		return m_unitOctahedronMesh;
 		break;
 	case InnoType::ProceduralMeshShape::Dodecahedron:
+		return m_unitDodecahedronMesh;
 		break;
 	case InnoType::ProceduralMeshShape::Icosahedron:
+		return m_unitIcosahedronMesh;
 		break;
 	case InnoType::ProceduralMeshShape::Sphere:
 		return m_unitSphereMesh;
 		break;
 	default:
 		InnoLogger::Log(LogLevel::Error, "RenderingFrontend: Invalid ProceduralMeshShape!");
+		return nullptr;
 		break;
 	}
 }

@@ -211,15 +211,19 @@ ArrayRangeInfo InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent* VC)
 				case InnoType::ProceduralMeshShape::Hexagon:
 					break;
 				case InnoType::ProceduralMeshShape::Tetrahedron:
+					PhysXWrapper::get().createPxBox(l_PDC, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_rot, l_transformComponent->m_localTransformVector_target.m_scale, (VC->m_meshUsage == MeshUsage::Dynamic));
 					break;
 				case InnoType::ProceduralMeshShape::Cube:
 					PhysXWrapper::get().createPxBox(l_PDC, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_rot, l_transformComponent->m_localTransformVector_target.m_scale, (VC->m_meshUsage == MeshUsage::Dynamic));
 					break;
 				case InnoType::ProceduralMeshShape::Octahedron:
+					PhysXWrapper::get().createPxBox(l_PDC, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_rot, l_transformComponent->m_localTransformVector_target.m_scale, (VC->m_meshUsage == MeshUsage::Dynamic));
 					break;
 				case InnoType::ProceduralMeshShape::Dodecahedron:
+					PhysXWrapper::get().createPxSphere(l_PDC, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_scale.x, (VC->m_meshUsage == MeshUsage::Dynamic));
 					break;
 				case InnoType::ProceduralMeshShape::Icosahedron:
+					PhysXWrapper::get().createPxSphere(l_PDC, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_scale.x, (VC->m_meshUsage == MeshUsage::Dynamic));
 					break;
 				case InnoType::ProceduralMeshShape::Sphere:
 					PhysXWrapper::get().createPxSphere(l_PDC, l_transformComponent->m_localTransformVector_target.m_pos, l_transformComponent->m_localTransformVector_target.m_scale.x, (VC->m_meshUsage == MeshUsage::Dynamic));
