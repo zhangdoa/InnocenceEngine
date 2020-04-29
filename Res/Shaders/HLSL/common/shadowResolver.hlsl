@@ -12,7 +12,7 @@ float PCFResolver(float3 projCoords, Texture2DArray shadowMap, SamplerState Samp
 		{
 			float3 coord = float3(projCoords.xy + float2(x, y) * texelSize, (float)index);
 			float4 shadowSample = shadowMap.SampleLevel(Sampler, coord, 0);
-			float pcfDepth = shadowSample.r;
+			float pcfDepth = shadowSample.r + 0.0005;
 			shadow += currentDepth > pcfDepth ? 1.0 : 0.0;
 		}
 	}
@@ -27,6 +27,7 @@ float VSMKernel(float4 shadowMapValue, float currentDepth)
 	float Ex = shadowMapValue.r;
 	float E_x2 = shadowMapValue.g;
 	float variance = E_x2 - (Ex * Ex);
+	variance = max(variance, eps);
 	float mD = Ex - currentDepth;
 	float p = variance / (variance + mD * mD);
 
@@ -112,6 +113,7 @@ float SunShadowResolver(float3 fragPos, SamplerState Sampler)
 	// transform to [0,1] range
 	projCoords = projCoords * 0.5 + 0.5;
 	projCoords.y = 1.0 - projCoords.y;
+
 	// get depth of current fragment from light's perspective
 	float currentDepth = projCoords.z;
 

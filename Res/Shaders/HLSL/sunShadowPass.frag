@@ -21,6 +21,10 @@ PixelOutputType main(PixelInputType input)
 {
 	PixelOutputType output;
 
+	float depth = input.posCS.z;
+	depth = depth * 0.5 + 0.5;
+	depth = saturate(depth);
+
 	float transparency;
 	if (materialCBuffer.textureSlotMask & 0x00000002)
 	{
@@ -32,13 +36,10 @@ PixelOutputType main(PixelInputType input)
 		transparency = materialCBuffer.albedo.a;
 	}
 
-	if (transparency != 1.0)
+	if (transparency == 0.0)
 	{
 		discard;
 	}
-
-	float depth = input.posCS.z;
-	depth = depth * 0.5 + 0.5;
 
 	output.sunShadowPass = float4(depth, depth * depth, 0.0, 1.0);
 

@@ -11,4 +11,5 @@ namespace SunShadowPass
 
 	RenderPassDataComponent* GetRPDC();
 	ShaderProgramComponent* GetSPC();
+	IResourceBinder* GetShadowMap();
 };
