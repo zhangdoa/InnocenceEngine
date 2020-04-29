@@ -17,8 +17,9 @@ public:
 	bool update();
 	bool terminate();
 
-	bool createPxSphere(PhysicsDataComponent* rhs, Vec4 globalPos, float radius, bool isDynamic);
-	bool createPxBox(PhysicsDataComponent* rhs, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic);
+	bool createPxSphere(PhysicsDataComponent* rhs, float radius, bool isDynamic);
+	bool createPxBox(PhysicsDataComponent* rhs, bool isDynamic);
+	bool createPxMesh(PhysicsDataComponent* rhs, bool isDynamic, bool isConvex);
 
 	bool addForce(PhysicsDataComponent* rhs, Vec4 force);
 
