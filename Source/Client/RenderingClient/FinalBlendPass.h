@@ -5,8 +5,7 @@ namespace FinalBlendPass
 {
 	bool Setup();
 	bool Initialize();
-	bool PrepareCommandList(IResourceBinder* input);
-	bool ExecuteCommandList();
+	bool Render(IResourceBinder* input);
 	bool Terminate();
 
 	RenderPassDataComponent* GetRPDC();

@@ -251,23 +251,6 @@ bool SunShadowPass::PrepareCommandList()
 	return true;
 }
 
-bool SunShadowPass::ExecuteCommandList()
-{
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_sunShadowRPDC);
-
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_sunShadowRPDC);
-
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_blurRPDC_Odd);
-
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_blurRPDC_Odd);
-
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_blurRPDC_Even);
-
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_blurRPDC_Even);
-
-	return true;
-}
-
 bool SunShadowPass::Terminate()
 {
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_sunShadowRPDC);
@@ -277,9 +260,19 @@ bool SunShadowPass::Terminate()
 	return true;
 }
 
-RenderPassDataComponent* SunShadowPass::GetRPDC()
+RenderPassDataComponent* SunShadowPass::GetSunShadowRPDC()
 {
 	return m_sunShadowRPDC;
+}
+
+RenderPassDataComponent* SunShadowPass::GetBlurRPDCOdd()
+{
+	return m_blurRPDC_Odd;
+}
+
+RenderPassDataComponent* SunShadowPass::GetBlurRPDCEven()
+{
+	return m_blurRPDC_Even;
 }
 
 ShaderProgramComponent* SunShadowPass::GetSPC()

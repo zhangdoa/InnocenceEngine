@@ -5,8 +5,7 @@ namespace VoxelizationPass
 {
 	bool Setup();
 	bool Initialize();
-	bool PrepareCommandList(bool visualize);
-	bool ExecuteCommandList(bool visualize);
+	bool Render(bool visualize);
 	bool Terminate();
 
 	IResourceBinder* GetVoxelizationLuminanceVolume();

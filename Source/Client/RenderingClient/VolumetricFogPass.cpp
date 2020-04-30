@@ -404,13 +404,13 @@ bool VolumetricFogPass::irraidanceInjection()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irraidanceInjectionRPDC, ShaderStage::Compute, m_froxelizationCBufferGBDC->m_ResourceBinder, 3, 9, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irraidanceInjectionRPDC, ShaderStage::Compute, m_irraidanceInjectionResult->m_ResourceBinder, 4, 0, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irraidanceInjectionRPDC, ShaderStage::Compute, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 5, 1, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irraidanceInjectionRPDC, ShaderStage::Compute, SunShadowPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 6, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irraidanceInjectionRPDC, ShaderStage::Compute, SunShadowPass::GetShadowMap(), 6, 0, Accessibility::ReadOnly);
 
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_irraidanceInjectionRPDC, 8, 8, 8);
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_irraidanceInjectionRPDC, ShaderStage::Compute, m_irraidanceInjectionResult->m_ResourceBinder, 4, 0, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_irraidanceInjectionRPDC, ShaderStage::Compute, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 5, 1, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_irraidanceInjectionRPDC, ShaderStage::Compute, SunShadowPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 6, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_irraidanceInjectionRPDC, ShaderStage::Compute, SunShadowPass::GetShadowMap(), 6, 0, Accessibility::ReadOnly);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_irraidanceInjectionRPDC);
 
@@ -451,7 +451,7 @@ bool VolumetricFogPass::rayMarching()
 	return true;
 }
 
-bool VolumetricFogPass::PrepareCommandList()
+bool VolumetricFogPass::Render(bool visualize)
 {
 	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getStaticSceneAABB();
 	auto l_maxExtend = std::max(std::max(l_sceneAABB.m_extend.x, l_sceneAABB.m_extend.y), l_sceneAABB.m_extend.z);
@@ -470,21 +470,24 @@ bool VolumetricFogPass::PrepareCommandList()
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_froxelizationCBufferGBDC, &l_voxelPassCB);
 
-	//froxelization();
-	//froxelVisualization();
+	froxelization();
+
+	if (visualize)
+	{
+		froxelVisualization();
+	}
+
 	irraidanceInjection();
 	rayMarching();
 
-	return true;
-}
+	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_froxelizationRPDC);
+	g_pModuleManager->getRenderingServer()->WaitForFrame(m_froxelizationRPDC);
 
-bool VolumetricFogPass::ExecuteCommandList()
-{
-	//g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_froxelizationRPDC);
-	//g_pModuleManager->getRenderingServer()->WaitForFrame(m_froxelizationRPDC);
-
-	//g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_froxelVisualizationRPDC);
-	//g_pModuleManager->getRenderingServer()->WaitForFrame(m_froxelVisualizationRPDC);
+	if (visualize)
+	{
+		g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_froxelVisualizationRPDC);
+		g_pModuleManager->getRenderingServer()->WaitForFrame(m_froxelVisualizationRPDC);
+	}
 
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_irraidanceInjectionRPDC);
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_irraidanceInjectionRPDC);

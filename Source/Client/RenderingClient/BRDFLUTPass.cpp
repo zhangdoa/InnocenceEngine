@@ -106,19 +106,6 @@ bool BRDFLUTPass::PrepareCommandList()
 	return true;
 }
 
-bool BRDFLUTPass::ExecuteCommandList()
-{
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
-
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);
-
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC_MS);
-
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC_MS);
-
-	return true;
-}
-
 bool BRDFLUTPass::Terminate()
 {
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
@@ -127,12 +114,22 @@ bool BRDFLUTPass::Terminate()
 	return true;
 }
 
-IResourceBinder * BRDFLUTPass::GetBRDFLUT()
+RenderPassDataComponent* BRDFLUTPass::GetBRDFLUTRPDC()
+{
+	return m_RPDC;
+}
+
+RenderPassDataComponent* BRDFLUTPass::GetBRDFMSLUTRPDC()
+{
+	return m_RPDC_MS;
+}
+
+IResourceBinder* BRDFLUTPass::GetBRDFLUT()
 {
 	return m_RPDC->m_RenderTargetsResourceBinders[0];
 }
 
-IResourceBinder * BRDFLUTPass::GetBRDFMSLUT()
+IResourceBinder* BRDFLUTPass::GetBRDFMSLUT()
 {
 	return m_RPDC_MS->m_RenderTargetsResourceBinders[0];
 }

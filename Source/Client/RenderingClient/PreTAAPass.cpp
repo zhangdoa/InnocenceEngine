@@ -90,15 +90,6 @@ bool PreTAAPass::PrepareCommandList()
 	return true;
 }
 
-bool PreTAAPass::ExecuteCommandList()
-{
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
-
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);
-
-	return true;
-}
-
 bool PreTAAPass::Terminate()
 {
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
@@ -106,12 +97,12 @@ bool PreTAAPass::Terminate()
 	return true;
 }
 
-RenderPassDataComponent * PreTAAPass::GetRPDC()
+RenderPassDataComponent* PreTAAPass::GetRPDC()
 {
 	return m_RPDC;
 }
 
-ShaderProgramComponent * PreTAAPass::GetSPC()
+ShaderProgramComponent* PreTAAPass::GetSPC()
 {
 	return m_SPC;
 }

@@ -154,7 +154,7 @@ bool SSAOPass::Initialize()
 	return true;
 }
 
-bool SSAOPass::PrepareCommandList()
+bool SSAOPass::Render()
 {
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 
@@ -180,13 +180,7 @@ bool SSAOPass::PrepareCommandList()
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
 
-	return true;
-}
-
-bool SSAOPass::ExecuteCommandList()
-{
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
-
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);
 
 	return true;
@@ -199,12 +193,12 @@ bool SSAOPass::Terminate()
 	return true;
 }
 
-RenderPassDataComponent * SSAOPass::GetRPDC()
+RenderPassDataComponent* SSAOPass::GetRPDC()
 {
 	return m_RPDC;
 }
 
-ShaderProgramComponent * SSAOPass::GetSPC()
+ShaderProgramComponent* SSAOPass::GetSPC()
 {
 	return m_SPC;
 }

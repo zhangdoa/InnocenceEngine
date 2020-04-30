@@ -6,7 +6,6 @@ namespace GIResolvePass
 	bool Setup();
 	bool Initialize();
 	bool PrepareCommandList();
-	bool ExecuteCommandList();
 	bool Terminate();
 	bool InitializeGPUBuffers();
 	bool DeleteGPUBuffers();

@@ -1515,12 +1515,7 @@ bool InnoBakerRenderingClient::Initialize()
 	return true;
 }
 
-bool InnoBakerRenderingClient::PrepareCommandList()
-{
-	return true;
-}
-
-bool InnoBakerRenderingClient::ExecuteCommandList()
+bool InnoBakerRenderingClient::Render()
 {
 	return true;
 }

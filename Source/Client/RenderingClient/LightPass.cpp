@@ -197,7 +197,7 @@ bool LightPass::PrepareCommandList()
 	//g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, GIResolvePass::GetIrradianceVolume(), 14, 9, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, VoxelizationPass::GetVoxelizationLuminanceVolume(), 14, 9, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, VolumetricFogPass::GetRayMarchingResult(), 15, 10, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, LightCullingPass::GetLightIndexList()->m_ResourceBinder, 16, 11, Accessibility::ReadOnly, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, LightCullingPass::GetLightIndexList(), 16, 11, Accessibility::ReadOnly, 0);
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
 
@@ -215,18 +215,9 @@ bool LightPass::PrepareCommandList()
 	//g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, GIResolvePass::GetIrradianceVolume(), 14, 9, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, VoxelizationPass::GetVoxelizationLuminanceVolume(), 14, 9, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, VolumetricFogPass::GetRayMarchingResult(), 15, 10, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, LightCullingPass::GetLightIndexList()->m_ResourceBinder, 16, 11, Accessibility::ReadOnly, 0);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, LightCullingPass::GetLightIndexList(), 16, 11, Accessibility::ReadOnly, 0);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
-
-	return true;
-}
-
-bool LightPass::ExecuteCommandList()
-{
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
-
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);
 
 	return true;
 }

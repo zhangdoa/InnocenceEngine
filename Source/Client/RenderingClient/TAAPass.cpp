@@ -16,7 +16,7 @@ namespace TAAPass
 	ShaderProgramComponent* m_SPC;
 	SamplerDataComponent* m_SDC;
 
-	bool l_isPassA = true;
+	bool m_isPassA = true;
 }
 
 bool TAAPass::Setup()
@@ -80,20 +80,22 @@ bool TAAPass::Initialize()
 	return true;
 }
 
-bool TAAPass::PrepareCommandList(IResourceBinder* input)
+bool TAAPass::Render(IResourceBinder* input)
 {
 	RenderPassDataComponent* l_WriteRPDC;
 	RenderPassDataComponent* l_ReadRPDC;
 
-	if (l_isPassA)
+	if (m_isPassA)
 	{
 		l_WriteRPDC = m_RPDC_A;
 		l_ReadRPDC = m_RPDC_B;
+		m_isPassA = false;
 	}
 	else
 	{
 		l_WriteRPDC = m_RPDC_B;
 		l_ReadRPDC = m_RPDC_A;
+		m_isPassA = true;
 	}
 
 	g_pModuleManager->getRenderingServer()->CommandListBegin(l_WriteRPDC, 0);
@@ -115,26 +117,7 @@ bool TAAPass::PrepareCommandList(IResourceBinder* input)
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(l_WriteRPDC);
 
-	return true;
-}
-
-bool TAAPass::ExecuteCommandList()
-{
-	RenderPassDataComponent* l_WriteRPDC;
-
-	if (l_isPassA)
-	{
-		l_WriteRPDC = m_RPDC_A;
-		l_isPassA = false;
-	}
-	else
-	{
-		l_WriteRPDC = m_RPDC_B;
-		l_isPassA = true;
-	}
-
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(l_WriteRPDC);
-
 	g_pModuleManager->getRenderingServer()->WaitForFrame(l_WriteRPDC);
 
 	return true;
@@ -150,7 +133,7 @@ bool TAAPass::Terminate()
 
 RenderPassDataComponent* TAAPass::GetRPDC()
 {
-	if (l_isPassA)
+	if (m_isPassA)
 	{
 		return m_RPDC_A;
 	}

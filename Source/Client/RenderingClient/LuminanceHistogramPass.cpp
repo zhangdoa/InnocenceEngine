@@ -160,18 +160,13 @@ bool LuminanceHistogramPass::CalculateAverage()
 	return true;
 }
 
-bool LuminanceHistogramPass::PrepareCommandList(IResourceBinder* input)
+bool LuminanceHistogramPass::Render(IResourceBinder* input)
 {
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_LuminanceHistogramGBDC, m_initialLuminanceHistogram);
 
 	CalculateHistogram(input);
 	CalculateAverage();
 
-	return true;
-}
-
-bool LuminanceHistogramPass::ExecuteCommandList()
-{
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC_LuminanceHistogram);
 
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC_LuminanceHistogram);

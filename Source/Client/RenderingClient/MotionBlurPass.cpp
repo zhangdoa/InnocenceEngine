@@ -67,7 +67,7 @@ bool MotionBlurPass::Initialize()
 	return true;
 }
 
-bool MotionBlurPass::PrepareCommandList(IResourceBinder* input)
+bool MotionBlurPass::Render(IResourceBinder* input)
 {
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
@@ -86,11 +86,6 @@ bool MotionBlurPass::PrepareCommandList(IResourceBinder* input)
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
 
-	return true;
-}
-
-bool MotionBlurPass::ExecuteCommandList()
-{
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
 
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);
@@ -105,12 +100,12 @@ bool MotionBlurPass::Terminate()
 	return true;
 }
 
-RenderPassDataComponent * MotionBlurPass::GetRPDC()
+RenderPassDataComponent* MotionBlurPass::GetRPDC()
 {
 	return m_RPDC;
 }
 
-ShaderProgramComponent * MotionBlurPass::GetSPC()
+ShaderProgramComponent* MotionBlurPass::GetSPC()
 {
 	return m_SPC;
 }

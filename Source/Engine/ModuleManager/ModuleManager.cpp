@@ -513,9 +513,7 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 
 		m_RenderingFrontend->transferDataToGPU();
 
-		m_RenderingClient->PrepareCommandList();
-
-		m_RenderingClient->ExecuteCommandList();
+		m_RenderingClient->Render();
 
 		m_GUISystem->render();
 

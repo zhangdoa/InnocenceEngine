@@ -72,15 +72,6 @@ bool SkyPass::PrepareCommandList()
 	return true;
 }
 
-bool SkyPass::ExecuteCommandList()
-{
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
-
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);
-
-	return true;
-}
-
 bool SkyPass::Terminate()
 {
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);

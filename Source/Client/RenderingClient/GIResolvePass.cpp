@@ -713,13 +713,13 @@ bool GIResolvePass::litSurfels()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, l_GIGBDC->m_ResourceBinder, 3, 8, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC->m_ResourceBinder, 4, 0, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 5, 1, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, SunShadowPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 6, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, SunShadowPass::GetShadowMap(), 6, 0);
 
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_surfelRPDC, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide);
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC->m_ResourceBinder, 4, 0, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 5, 1, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, SunShadowPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 6, 0);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, SunShadowPass::GetShadowMap(), 6, 0);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_surfelRPDC);
 
@@ -892,15 +892,7 @@ bool GIResolvePass::PrepareCommandList()
 		litBricks();
 		litProbes();
 		generateIrradianceVolume();
-	}
 
-	return true;
-}
-
-bool GIResolvePass::ExecuteCommandList()
-{
-	if (m_GIDataLoaded)
-	{
 		g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_skyRadianceRPDC);
 
 		g_pModuleManager->getRenderingServer()->WaitForFrame(m_skyRadianceRPDC);

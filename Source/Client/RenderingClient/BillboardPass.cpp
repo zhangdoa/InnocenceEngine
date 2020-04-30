@@ -81,7 +81,7 @@ bool BillboardPass::Initialize()
 	return true;
 }
 
-bool BillboardPass::PrepareCommandList()
+bool BillboardPass::Render()
 {
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 	auto l_BillboardGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Billboard);
@@ -115,11 +115,6 @@ bool BillboardPass::PrepareCommandList()
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
 
-	return true;
-}
-
-bool BillboardPass::ExecuteCommandList()
-{
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
 
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);

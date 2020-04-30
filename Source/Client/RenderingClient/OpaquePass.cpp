@@ -167,15 +167,6 @@ bool OpaquePass::PrepareCommandList()
 	return true;
 }
 
-bool OpaquePass::ExecuteCommandList()
-{
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
-
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);
-
-	return true;
-}
-
 bool OpaquePass::Terminate()
 {
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);

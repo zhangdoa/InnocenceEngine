@@ -60,7 +60,7 @@ bool PostTAAPass::Initialize()
 	return true;
 }
 
-bool PostTAAPass::PrepareCommandList()
+bool PostTAAPass::Render()
 {
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
@@ -77,11 +77,6 @@ bool PostTAAPass::PrepareCommandList()
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
 
-	return true;
-}
-
-bool PostTAAPass::ExecuteCommandList()
-{
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
 
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);
@@ -96,12 +91,12 @@ bool PostTAAPass::Terminate()
 	return true;
 }
 
-RenderPassDataComponent * PostTAAPass::GetRPDC()
+RenderPassDataComponent* PostTAAPass::GetRPDC()
 {
 	return m_RPDC;
 }
 
-ShaderProgramComponent * PostTAAPass::GetSPC()
+ShaderProgramComponent* PostTAAPass::GetSPC()
 {
 	return m_SPC;
 }

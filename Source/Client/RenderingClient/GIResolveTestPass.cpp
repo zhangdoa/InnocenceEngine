@@ -116,7 +116,7 @@ bool GIResolveTestPass::Initialize()
 	return true;
 }
 
-bool GIResolveTestPass::PrepareCommandList()
+bool GIResolveTestPass::Render()
 {
 	auto l_probes = GIDataLoader::GetProbes();
 
@@ -231,16 +231,11 @@ bool GIResolveTestPass::PrepareCommandList()
 		g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3, 1, Accessibility::ReadOnly);
 
 		g_pModuleManager->getRenderingServer()->CommandListEnd(m_probeRPDC);
+
+		g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_probeRPDC);
+
+		g_pModuleManager->getRenderingServer()->WaitForFrame(m_probeRPDC);
 	}
-
-	return true;
-}
-
-bool GIResolveTestPass::ExecuteCommandList()
-{
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_probeRPDC);
-
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_probeRPDC);
 
 	return true;
 }

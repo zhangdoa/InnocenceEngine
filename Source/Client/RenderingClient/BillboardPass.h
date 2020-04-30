@@ -5,8 +5,7 @@ namespace BillboardPass
 {
 	bool Setup();
 	bool Initialize();
-	bool PrepareCommandList();
-	bool ExecuteCommandList();
+	bool Render();
 	bool Terminate();
 
 	RenderPassDataComponent* GetRPDC();

@@ -6,10 +6,13 @@ namespace LightCullingPass
 	bool Setup();
 	bool Initialize();
 	bool PrepareCommandList();
-	bool ExecuteCommandList();
+
 	bool Terminate();
 
+	RenderPassDataComponent* GetTileFrustumRPDC();
+	RenderPassDataComponent* GetLightCullingRPDC();
+
 	IResourceBinder* GetLightGrid();
-	GPUBufferDataComponent* GetLightIndexList();
+	IResourceBinder* GetLightIndexList();
 	IResourceBinder* GetHeatMap();
 };

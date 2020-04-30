@@ -80,7 +80,7 @@ bool FinalBlendPass::Initialize()
 	return true;
 }
 
-bool FinalBlendPass::PrepareCommandList(IResourceBinder* input)
+bool FinalBlendPass::Render(IResourceBinder* input)
 {
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
@@ -103,11 +103,6 @@ bool FinalBlendPass::PrepareCommandList(IResourceBinder* input)
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
 
-	return true;
-}
-
-bool FinalBlendPass::ExecuteCommandList()
-{
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
 
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);

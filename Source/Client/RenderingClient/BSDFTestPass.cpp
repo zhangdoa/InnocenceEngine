@@ -123,7 +123,7 @@ bool BSDFTestPass::Initialize()
 	return true;
 }
 
-bool BSDFTestPass::PrepareCommandList()
+bool BSDFTestPass::Render()
 {
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
@@ -161,11 +161,6 @@ bool BSDFTestPass::PrepareCommandList()
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
 
-	return true;
-}
-
-bool BSDFTestPass::ExecuteCommandList()
-{
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
 
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);

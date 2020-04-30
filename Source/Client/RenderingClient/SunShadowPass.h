@@ -6,10 +6,11 @@ namespace SunShadowPass
 	bool Setup();
 	bool Initialize();
 	bool PrepareCommandList();
-	bool ExecuteCommandList();
 	bool Terminate();
 
-	RenderPassDataComponent* GetRPDC();
+	RenderPassDataComponent* GetSunShadowRPDC();
+	RenderPassDataComponent* GetBlurRPDCOdd();
+	RenderPassDataComponent* GetBlurRPDCEven();
 	ShaderProgramComponent* GetSPC();
 	IResourceBinder* GetShadowMap();
 };

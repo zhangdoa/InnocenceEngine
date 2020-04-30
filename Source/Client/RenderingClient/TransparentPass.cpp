@@ -116,15 +116,6 @@ bool TransparentPass::PrepareCommandList()
 	return true;
 }
 
-bool TransparentPass::ExecuteCommandList()
-{
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
-
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);
-
-	return true;
-}
-
 bool TransparentPass::Terminate()
 {
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);

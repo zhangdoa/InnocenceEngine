@@ -6,7 +6,6 @@ namespace SkyPass
 	bool Setup();
 	bool Initialize();
 	bool PrepareCommandList();
-	bool ExecuteCommandList();
 	bool Terminate();
 
 	RenderPassDataComponent* GetRPDC();

@@ -184,6 +184,8 @@ bool AnimationPass::PrepareCommandList()
 		}
 
 		g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
+
+		g_pModuleManager->getRenderingServer()->EndCapture();
 	}
 	else
 	{
@@ -192,21 +194,9 @@ bool AnimationPass::PrepareCommandList()
 		g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
 	}
 
-	return true;
-}
-
-bool AnimationPass::ExecuteCommandList()
-{
-	auto& l_AnimationDrawCallInfo = g_pModuleManager->getRenderingFrontend()->getAnimationDrawCallInfo();
-
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
 
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);
-
-	if (l_AnimationDrawCallInfo.size())
-	{
-		g_pModuleManager->getRenderingServer()->EndCapture();
-	}
 
 	return true;
 }

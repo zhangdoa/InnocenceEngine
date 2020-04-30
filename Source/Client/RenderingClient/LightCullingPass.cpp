@@ -11,7 +11,7 @@ using namespace DefaultGPUBuffers;
 
 namespace LightCullingPass
 {
-	RenderPassDataComponent* m_RPDC_Frustum;
+	RenderPassDataComponent* m_RPDC_TileFrustum;
 	RenderPassDataComponent* m_RPDC_LightCulling;
 	ShaderProgramComponent* m_SPC_TileFrustum;
 	ShaderProgramComponent* m_SPC_LightCulling;
@@ -22,7 +22,7 @@ namespace LightCullingPass
 	GPUBufferDataComponent* m_lightIndexListGBDC;
 
 	TextureDataComponent* m_lightGridTDC;
-	TextureDataComponent* m_debugTDC;
+	TextureDataComponent* m_heatMapTDC;
 
 	const uint32_t m_tileSize = 16;
 	const uint32_t m_numThreadPerGroup = 16;
@@ -35,7 +35,7 @@ namespace LightCullingPass
 	bool createLightIndexCounterBuffer();
 	bool createLightIndexListBuffer();
 	bool createLightGridTDC();
-	bool createDebugTDC();
+	bool createHeatMapTDC();
 }
 
 bool LightCullingPass::createGridFrustumsBuffer()
@@ -115,13 +115,13 @@ bool LightCullingPass::createLightGridTDC()
 	return true;
 }
 
-bool LightCullingPass::createDebugTDC()
+bool LightCullingPass::createHeatMapTDC()
 {
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
-	m_debugTDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("LightCullingDebug/");
-	m_debugTDC->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
-	m_debugTDC->m_TextureDesc.Usage = TextureUsage::Sample;
+	m_heatMapTDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("LightCullingDebug/");
+	m_heatMapTDC->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
+	m_heatMapTDC->m_TextureDesc.Usage = TextureUsage::Sample;
 
 	return true;
 }
@@ -139,25 +139,25 @@ bool LightCullingPass::Setup()
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
 
-	m_RPDC_Frustum = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("ComputePass_TileFrustum/");
-	m_RPDC_Frustum->m_RenderPassDesc = l_RenderPassDesc;
+	m_RPDC_TileFrustum = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("ComputePass_TileFrustum/");
+	m_RPDC_TileFrustum->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC_Frustum->m_ResourceBinderLayoutDescs.resize(3);
-	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
+	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs.resize(3);
+	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 
-	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 6;
+	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 6;
 
-	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[2].m_BinderAccessibility = Accessibility::ReadWrite;
-	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 1;
-	m_RPDC_Frustum->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 0;
+	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs[2].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 1;
+	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 0;
 
-	m_RPDC_Frustum->m_ShaderProgram = m_SPC_TileFrustum;
+	m_RPDC_TileFrustum->m_ShaderProgram = m_SPC_TileFrustum;
 
 	////
 	m_RPDC_LightCulling = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("ComputePass_LightCulling/");
@@ -227,7 +227,7 @@ bool LightCullingPass::Setup()
 	createLightIndexCounterBuffer();
 	createLightIndexListBuffer();
 	createLightGridTDC();
-	createDebugTDC();
+	createHeatMapTDC();
 
 	return true;
 }
@@ -238,14 +238,14 @@ bool LightCullingPass::Initialize()
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_lightListIndexCounterGBDC);
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_lightIndexListGBDC);
 	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_lightGridTDC);
-	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_debugTDC);
+	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_heatMapTDC);
 
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_TileFrustum);
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_LightCulling);
 
 	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC_LightCulling);
 
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_Frustum);
+	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_TileFrustum);
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_LightCulling);
 
 	return true;
@@ -271,18 +271,18 @@ bool LightCullingPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_dispatchParamsGBDC, &l_tileFrustumWorkload, 0, 1);
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_dispatchParamsGBDC, &lightCullingWorkload, 1, 1);
 
-	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_Frustum, 0);
-	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_Frustum);
-	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_Frustum);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Frustum, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Frustum, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 1, 6, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Frustum, ShaderStage::Compute, m_tileFrustumGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite, 0);
+	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_TileFrustum, 0);
+	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_TileFrustum);
+	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_TileFrustum);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_TileFrustum, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_TileFrustum, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 1, 6, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_TileFrustum, ShaderStage::Compute, m_tileFrustumGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite, 0);
 
-	g_pModuleManager->getRenderingServer()->DispatchCompute(m_RPDC_Frustum, m_tileFrustumNumThreadGroups.x, m_tileFrustumNumThreadGroups.y, m_tileFrustumNumThreadGroups.z);
+	g_pModuleManager->getRenderingServer()->DispatchCompute(m_RPDC_TileFrustum, m_tileFrustumNumThreadGroups.x, m_tileFrustumNumThreadGroups.y, m_tileFrustumNumThreadGroups.z);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Frustum, ShaderStage::Compute, m_tileFrustumGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite, 0);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_TileFrustum, ShaderStage::Compute, m_tileFrustumGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite, 0);
 
-	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC_Frustum);
+	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC_TileFrustum);
 
 	////
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_LightCulling, 0);
@@ -298,7 +298,7 @@ bool LightCullingPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightListIndexCounterGBDC->m_ResourceBinder, 4, 1, Accessibility::ReadWrite, 0);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightIndexListGBDC->m_ResourceBinder, 5, 2, Accessibility::ReadWrite, 0);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightGridTDC->m_ResourceBinder, 6, 3, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_debugTDC->m_ResourceBinder, 7, 4, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_heatMapTDC->m_ResourceBinder, 7, 4, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, OpaquePass::GetRPDC()->m_DepthStencilRenderTarget->m_ResourceBinder, 8, 0, Accessibility::ReadOnly);
 
 	// @TODO: Buggy on OpenGL + Nvidia
@@ -308,7 +308,7 @@ bool LightCullingPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightListIndexCounterGBDC->m_ResourceBinder, 4, 1, Accessibility::ReadWrite, 0);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightIndexListGBDC->m_ResourceBinder, 5, 2, Accessibility::ReadWrite, 0);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightGridTDC->m_ResourceBinder, 6, 3, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_debugTDC->m_ResourceBinder, 7, 4, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_heatMapTDC->m_ResourceBinder, 7, 4, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, OpaquePass::GetRPDC()->m_DepthStencilRenderTarget->m_ResourceBinder, 8, 0, Accessibility::ReadOnly);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC_LightCulling);
@@ -316,24 +316,22 @@ bool LightCullingPass::PrepareCommandList()
 	return true;
 }
 
-bool LightCullingPass::ExecuteCommandList()
+bool LightCullingPass::Terminate()
 {
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC_Frustum);
-
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC_Frustum);
-
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC_LightCulling);
-
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC_LightCulling);
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC_TileFrustum);
+	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC_LightCulling);
 
 	return true;
 }
 
-bool LightCullingPass::Terminate()
+RenderPassDataComponent* LightCullingPass::GetTileFrustumRPDC()
 {
-	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC_Frustum);
+	return m_RPDC_TileFrustum;
+}
 
-	return true;
+RenderPassDataComponent* LightCullingPass::GetLightCullingRPDC()
+{
+	return m_RPDC_LightCulling;
 }
 
 IResourceBinder* LightCullingPass::GetLightGrid()
@@ -341,12 +339,12 @@ IResourceBinder* LightCullingPass::GetLightGrid()
 	return m_lightGridTDC->m_ResourceBinder;
 }
 
-GPUBufferDataComponent* LightCullingPass::GetLightIndexList()
+IResourceBinder* LightCullingPass::GetLightIndexList()
 {
-	return m_lightIndexListGBDC;
+	return m_lightIndexListGBDC->m_ResourceBinder;
 }
 
 IResourceBinder* LightCullingPass::GetHeatMap()
 {
-	return m_debugTDC->m_ResourceBinder;
+	return m_heatMapTDC->m_ResourceBinder;
 }

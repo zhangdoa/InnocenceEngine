@@ -38,7 +38,7 @@ namespace DefaultRenderingClientNS
 
 	std::function<void()> f_SetupJob;
 	std::function<void()> f_InitializeJob;
-	std::function<void()> f_PrepareCommandListJob;
+	std::function<void()> f_RenderJob;
 	std::function<void()> f_ExecuteCommandListJob;
 	std::function<void()> f_TerminateJob;
 
@@ -69,16 +69,18 @@ bool DefaultRenderingClient::Setup()
 	{
 		DefaultGPUBuffers::Setup();
 		GIDataLoader::Setup();
+		BRDFLUTPass::Setup();
 
 		LightCullingPass::Setup();
 		GIResolvePass::Setup();
 		GIResolveTestPass::Setup();
 		LuminanceHistogramPass::Setup();
-		BRDFLUTPass::Setup();
+
 		SunShadowPass::Setup();
 		VoxelizationPass::Setup();
 		OpaquePass::Setup();
 		AnimationPass::Setup();
+
 		SSAOPass::Setup();
 		LightPass::Setup();
 		SkyPass::Setup();
@@ -99,17 +101,23 @@ bool DefaultRenderingClient::Setup()
 	{
 		DefaultGPUBuffers::Initialize();
 		GIDataLoader::Initialize();
+		BRDFLUTPass::Initialize();
+		BRDFLUTPass::PrepareCommandList();
+		g_pModuleManager->getRenderingServer()->ExecuteCommandList(BRDFLUTPass::GetBRDFLUTRPDC());
+		g_pModuleManager->getRenderingServer()->WaitForFrame(BRDFLUTPass::GetBRDFLUTRPDC());
+		g_pModuleManager->getRenderingServer()->ExecuteCommandList(BRDFLUTPass::GetBRDFMSLUTRPDC());
+		g_pModuleManager->getRenderingServer()->WaitForFrame(BRDFLUTPass::GetBRDFMSLUTRPDC());
+
 		LightCullingPass::Initialize();
 		LuminanceHistogramPass::Initialize();
 		GIResolvePass::Initialize();
 		GIResolveTestPass::Initialize();
-		BRDFLUTPass::Initialize();
-		BRDFLUTPass::PrepareCommandList();
-		BRDFLUTPass::ExecuteCommandList();
+
 		SunShadowPass::Initialize();
 		VoxelizationPass::Initialize();
 		OpaquePass::Initialize();
 		AnimationPass::Initialize();
+
 		SSAOPass::Initialize();
 		LightPass::Initialize();
 		SkyPass::Initialize();
@@ -126,14 +134,28 @@ bool DefaultRenderingClient::Setup()
 		BSDFTestPass::Initialize();
 	};
 
-	f_PrepareCommandListJob = [&]()
+	f_RenderJob = [&]()
 	{
 		auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
 		IResourceBinder* l_canvas;
 
 		DefaultGPUBuffers::Upload();
+
 		LightCullingPass::PrepareCommandList();
-		VoxelizationPass::PrepareCommandList(m_showVoxel);
+		g_pModuleManager->getRenderingServer()->ExecuteCommandList(LightCullingPass::GetTileFrustumRPDC());
+		g_pModuleManager->getRenderingServer()->WaitForFrame(LightCullingPass::GetTileFrustumRPDC());
+		g_pModuleManager->getRenderingServer()->ExecuteCommandList(LightCullingPass::GetLightCullingRPDC());
+		g_pModuleManager->getRenderingServer()->WaitForFrame(LightCullingPass::GetLightCullingRPDC());
+
+		SunShadowPass::PrepareCommandList();
+		g_pModuleManager->getRenderingServer()->ExecuteCommandList(SunShadowPass::GetSunShadowRPDC());
+		g_pModuleManager->getRenderingServer()->WaitForFrame(SunShadowPass::GetSunShadowRPDC());
+		g_pModuleManager->getRenderingServer()->ExecuteCommandList(SunShadowPass::GetBlurRPDCOdd());
+		g_pModuleManager->getRenderingServer()->WaitForFrame(SunShadowPass::GetBlurRPDCOdd());
+		g_pModuleManager->getRenderingServer()->ExecuteCommandList(SunShadowPass::GetBlurRPDCEven());
+		g_pModuleManager->getRenderingServer()->WaitForFrame(SunShadowPass::GetBlurRPDCEven());
+
+		VoxelizationPass::Render(m_showVoxel);
 
 		if (m_showVoxel)
 		{
@@ -141,7 +163,7 @@ bool DefaultRenderingClient::Setup()
 		}
 		else if (m_drawBRDFTest)
 		{
-			BSDFTestPass::PrepareCommandList();
+			BSDFTestPass::Render();
 			l_canvas = BSDFTestPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
 		}
 		else if (m_showLightHeatmap)
@@ -150,112 +172,70 @@ bool DefaultRenderingClient::Setup()
 		}
 		else if (m_showProbe)
 		{
-			GIResolveTestPass::PrepareCommandList();
+			GIResolveTestPass::Render();
 			l_canvas = GIResolveTestPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
 		}
 		else
 		{
 			//GIResolvePass::PrepareCommandList();
 
-			SunShadowPass::PrepareCommandList();
 			OpaquePass::PrepareCommandList();
 			AnimationPass::PrepareCommandList();
-			SSAOPass::PrepareCommandList();
-			LightPass::PrepareCommandList();
 
+			g_pModuleManager->getRenderingServer()->ExecuteCommandList(OpaquePass::GetRPDC());
+			g_pModuleManager->getRenderingServer()->WaitForFrame(OpaquePass::GetRPDC());
+			g_pModuleManager->getRenderingServer()->ExecuteCommandList(AnimationPass::GetRPDC());
+			g_pModuleManager->getRenderingServer()->WaitForFrame(AnimationPass::GetRPDC());
+
+			SSAOPass::Render();
+
+			LightPass::PrepareCommandList();
 			if (l_renderingConfig.drawSky)
 			{
 				SkyPass::PrepareCommandList();
 			}
-
 			PreTAAPass::PrepareCommandList();
-			//TransparentPass::PrepareCommandList();
+			TransparentPass::PrepareCommandList();
 			//VolumetricFogPass::PrepareCommandList();
 
+			g_pModuleManager->getRenderingServer()->ExecuteCommandList(LightPass::GetRPDC());
+			g_pModuleManager->getRenderingServer()->ExecuteCommandList(SkyPass::GetRPDC());
+
+			g_pModuleManager->getRenderingServer()->WaitForFrame(LightPass::GetRPDC());
+			g_pModuleManager->getRenderingServer()->WaitForFrame(SkyPass::GetRPDC());
+
+			g_pModuleManager->getRenderingServer()->ExecuteCommandList(PreTAAPass::GetRPDC());
+			g_pModuleManager->getRenderingServer()->WaitForFrame(PreTAAPass::GetRPDC());
+
+			g_pModuleManager->getRenderingServer()->ExecuteCommandList(TransparentPass::GetRPDC());
+			g_pModuleManager->getRenderingServer()->WaitForFrame(TransparentPass::GetRPDC());
+
+			VolumetricFogPass::Render(false);
+
 			l_canvas = PreTAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
-			//l_canvas = TransparentPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
+			l_canvas = TransparentPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
 			//l_canvas = VolumetricFogPass::GetFroxelVisualizationResult();
 		}
 
-		LuminanceHistogramPass::PrepareCommandList(l_canvas);
+		LuminanceHistogramPass::Render(l_canvas);
 
 		if (l_renderingConfig.useTAA)
 		{
-			TAAPass::PrepareCommandList(l_canvas);
-			PostTAAPass::PrepareCommandList();
+			TAAPass::Render(l_canvas);
+			PostTAAPass::Render();
 			l_canvas = PostTAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
 		}
 
 		if (l_renderingConfig.useMotionBlur)
 		{
-			MotionBlurPass::PrepareCommandList(l_canvas);
+			MotionBlurPass::Render(l_canvas);
 			l_canvas = MotionBlurPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
 		}
 
-		BillboardPass::PrepareCommandList();
-		DebugPass::PrepareCommandList();
+		BillboardPass::Render();
+		DebugPass::Render();
 
-		FinalBlendPass::PrepareCommandList(l_canvas);
-	};
-
-	f_ExecuteCommandListJob = [&]()
-	{
-		auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
-
-		LightCullingPass::ExecuteCommandList();
-		VoxelizationPass::ExecuteCommandList(m_showVoxel);
-
-		if (m_showVoxel)
-		{
-		}
-		else if (m_drawBRDFTest)
-		{
-			BSDFTestPass::ExecuteCommandList();
-		}
-		else if (m_showProbe)
-		{
-			GIResolveTestPass::ExecuteCommandList();
-		}
-		else if (m_showLightHeatmap)
-		{
-		}
-		else
-		{
-			//GIResolvePass::ExecuteCommandList();
-
-			SunShadowPass::ExecuteCommandList();
-			OpaquePass::ExecuteCommandList();
-			AnimationPass::ExecuteCommandList();
-			SSAOPass::ExecuteCommandList();
-			LightPass::ExecuteCommandList();
-
-			if (l_renderingConfig.drawSky)
-			{
-				SkyPass::ExecuteCommandList();
-			}
-
-			PreTAAPass::ExecuteCommandList();
-			//TransparentPass::ExecuteCommandList();
-			//VolumetricFogPass::ExecuteCommandList();
-		}
-
-		LuminanceHistogramPass::ExecuteCommandList();
-
-		if (l_renderingConfig.useTAA)
-		{
-			TAAPass::ExecuteCommandList();
-			PostTAAPass::ExecuteCommandList();
-		}
-
-		if (l_renderingConfig.useMotionBlur)
-		{
-			MotionBlurPass::ExecuteCommandList();
-		}
-
-		BillboardPass::ExecuteCommandList();
-		DebugPass::ExecuteCommandList();
-
-		FinalBlendPass::ExecuteCommandList();
+		FinalBlendPass::Render(l_canvas);
 
 		if (m_saveScreenCapture)
 		{
@@ -267,6 +247,11 @@ bool DefaultRenderingClient::Setup()
 			//g_pModuleManager->getRenderingServer()->DeleteTextureDataComponent(l_TDC);
 			m_saveScreenCapture = false;
 		}
+	};
+
+	f_ExecuteCommandListJob = [&]()
+	{
+		//GIResolvePass::ExecuteCommandList();
 	};
 
 	f_TerminateJob = [&]()
@@ -312,16 +297,9 @@ bool DefaultRenderingClient::Initialize()
 	return true;
 }
 
-bool DefaultRenderingClient::PrepareCommandList()
+bool DefaultRenderingClient::Render()
 {
-	f_PrepareCommandListJob();
-
-	return true;
-}
-
-bool DefaultRenderingClient::ExecuteCommandList()
-{
-	f_ExecuteCommandListJob();
+	f_RenderJob();
 
 	return true;
 }

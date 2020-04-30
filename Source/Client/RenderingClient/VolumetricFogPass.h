@@ -5,8 +5,7 @@ namespace VolumetricFogPass
 {
 	bool Setup();
 	bool Initialize();
-	bool PrepareCommandList();
-	bool ExecuteCommandList();
+	bool Render(bool visualize);
 	bool Terminate();
 
 	IResourceBinder* GetRayMarchingResult();

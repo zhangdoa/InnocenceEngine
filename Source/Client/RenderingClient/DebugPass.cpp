@@ -179,7 +179,7 @@ bool DebugPass::AddBVHNode(BVHNode* node)
 	return true;
 }
 
-bool DebugPass::PrepareCommandList()
+bool DebugPass::Render()
 {
 	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
 
@@ -363,11 +363,6 @@ bool DebugPass::PrepareCommandList()
 		g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
 	}
 
-	return true;
-}
-
-bool DebugPass::ExecuteCommandList()
-{
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
 
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);
