@@ -36,7 +36,7 @@ bool FinalBlendPass::Setup()
 
 	m_RPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC->m_ResourceBinderLayoutDescs.resize(5);
+	m_RPDC->m_ResourceBinderLayoutDescs.resize(6);
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 1;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
@@ -63,6 +63,10 @@ bool FinalBlendPass::Setup()
 	m_RPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 0;
 	m_RPDC->m_ResourceBinderLayoutDescs[4].m_IndirectBinding = true;
 
+	m_RPDC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_RPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 0;
+	m_RPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 0;
+
 	m_RPDC->m_ShaderProgram = m_SPC;
 
 	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("FinalBlendPass/");
@@ -87,10 +91,13 @@ bool FinalBlendPass::Render(IResourceBinder* input)
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 4, 0);
 
+	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
+
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, input, 0, 0);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, BillboardPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 1, 1);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, DebugPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 2, 2);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, LuminanceHistogramPass::GetAverageLuminance()->m_ResourceBinder, 3, 3, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_PerFrameCBufferGBDC->m_ResourceBinder, 5, 0, Accessibility::ReadOnly);
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
 

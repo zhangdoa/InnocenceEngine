@@ -30,7 +30,10 @@ struct PerFrame_CB
 	float4 viewportSize; // 27
 	float4 posWSNormalizer; // 28
 	float4 camera_posWS; // 29
-	float4 padding[2]; // 30 - 31
+	float aperture; // Tight packing 30
+	float shutterTime; // Tight packing 30
+	float ISO; // Tight packing 30
+	float4 padding; // 31
 };
 
 struct PerObject_CB

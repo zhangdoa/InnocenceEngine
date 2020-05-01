@@ -12,22 +12,24 @@ struct ComputeInputType
 RWStructuredBuffer<uint> in_histogram : register(u0);
 RWStructuredBuffer<float> out_average : register(u1);
 
-groupshared float histogramShared[256];
+groupshared uint histogramShared[256];
 
 [numthreads(16, 16, 1)]
 void main(ComputeInputType input)
 {
-	float countForThisBin = (float)in_histogram.Load(input.groupIndex);
-	histogramShared[input.groupIndex] = countForThisBin * (float)input.groupIndex;
+	uint countForThisBin = in_histogram.Load(input.groupIndex);
+	histogramShared[input.groupIndex] = countForThisBin * input.groupIndex;
 
 	GroupMemoryBarrierWithGroupSync();
+
+	in_histogram[input.groupIndex] = 0;
 
 	[unroll]
 	for (uint histogramSampleIndex = (256 >> 1); histogramSampleIndex > 0; histogramSampleIndex >>= 1)
 	{
 		if (input.groupIndex < histogramSampleIndex)
 		{
-			histogramShared[input.groupIndex] += histogramShared[input.groupIndex + histogramSampleIndex];
+			InterlockedAdd(histogramShared[input.groupIndex], histogramShared[input.groupIndex + histogramSampleIndex]);
 		}
 
 		GroupMemoryBarrierWithGroupSync();
@@ -35,10 +37,11 @@ void main(ComputeInputType input)
 
 	if (input.groupIndex == 0)
 	{
-		float weightedLogAverage = (histogramShared[0] / max((float)1280.0 * 720.0 - countForThisBin, 1.0)) - 1.0;
-		float weightedAverageLuminance = exp2(((weightedLogAverage / 254.0) * 26.0) - 10.0);
+		float weightedLogAverage = (histogramShared[0] / max(perFrameCBuffer.viewportSize.x * perFrameCBuffer.viewportSize.y - (float)countForThisBin, 1.0)) - 1.0;
+		float range = perFrameCBuffer.maxLogLuminance - perFrameCBuffer.minLogLuminance;
+		float weightedAverageLuminance = exp2(weightedLogAverage / 254.0 * range + perFrameCBuffer.minLogLuminance);
 		float luminanceLastFrame = out_average[0];
-		float adaptedLuminance = luminanceLastFrame + (weightedAverageLuminance - luminanceLastFrame) * 0.05;
+		float adaptedLuminance = luminanceLastFrame + (weightedAverageLuminance - luminanceLastFrame) * 0.5;
 
 		out_average[0] = adaptedLuminance;
 	}

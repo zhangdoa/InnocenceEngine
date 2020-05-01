@@ -1,4 +1,6 @@
 // shadertype=hlsl
+#include "common/common.hlsl"
+//#define AUTO_EXPOSURE
 
 Texture2D basePassRT0 : register(t0);
 Texture2D billboardPassRT0 : register(t1);
@@ -63,6 +65,21 @@ float3 xyY2rgb(float3 xyY)
 	return xyz2rgb(xyz);
 }
 
+float computeEV100(float aperture, float shutterTime, float ISO)
+{
+	return log2(aperture * aperture / shutterTime * 100 / ISO);
+}
+
+float computeEV100FromAvgLuminance(float avgLuminance)
+{
+	return log2(avgLuminance * 100.0f / 12.5f);
+}
+float convertEV100ToExposure(float EV100)
+{
+	float maxLuminance = 1.2f * pow(2.0f, EV100);
+	return 1.0f / maxLuminance;
+}
+
 //Academy Color Encoding System
 //[http://www.oscars.org/science-technology/sci-tech-projects/aces]
 float3 acesFilm(const float3 x)
@@ -88,13 +105,21 @@ float3 accurateLinearToSRGB(float3 linearCol)
 
 float4 main(PixelInputType input) : SV_TARGET
 {
-	float3 basePass = basePassRT0.Sample(SampleTypePoint, input.texcoord);
+	float3 basePass = basePassRT0.Sample(SampleTypePoint, input.texcoord).xyz;
 	float4 billboardPass = billboardPassRT0.Sample(SampleTypePoint, input.texcoord);
 	float4 debugPass = debugPassRT0.Sample(SampleTypePoint, input.texcoord);
 
 	// HDR to LDR
+#ifdef AUTO_EXPOSURE
+	float EV100 = computeEV100FromAvgLuminance(in_luminanceAverage[0]);
+#else
+	float EV100 = computeEV100(perFrameCBuffer.aperture, perFrameCBuffer.shutterTime, perFrameCBuffer.ISO);
+#endif
+	float exposure = convertEV100ToExposure(EV100);
+
 	float3 bassPassxyY = rgb2xyY(basePass);
-	bassPassxyY.z /= in_luminanceAverage[0] * 9.6;
+	bassPassxyY.z *= exposure;
+
 	basePass = xyY2rgb(bassPassxyY);
 
 	// Tone Mapping

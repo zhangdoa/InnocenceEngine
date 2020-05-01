@@ -45,7 +45,7 @@ void main(ComputeInputType input)
 	if (input.dispatchThreadID.x < dim.x && input.dispatchThreadID.y < dim.y)
 	{
 		float3 hdrColor = in_luminance[int2(input.dispatchThreadID.xy)].xyz;
-		uint binIndex = colorToBin(hdrColor, -10.0, 1.0 / 26.0);
+		uint binIndex = colorToBin(hdrColor, perFrameCBuffer.minLogLuminance, 1.0 / (perFrameCBuffer.maxLogLuminance - perFrameCBuffer.minLogLuminance));
 
 		InterlockedAdd(histogramShared[binIndex], 1);
 	}
