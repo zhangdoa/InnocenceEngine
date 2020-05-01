@@ -58,8 +58,7 @@ void InnoWorldExplorer::initialize(InnoPropertyEditor* propertyEditor)
 
     buildTree();
 
-    f_sceneLoadingFinishCallback
-            = [&]()
+    f_sceneLoadingFinishCallback = [&]()
     {
         clear();
         buildTree();
@@ -188,7 +187,7 @@ void InnoWorldExplorer::addTransformComponent()
 
         l_componentItem->setText(0, l_componentPtr->m_Name.c_str());
         l_componentItem->setData(0, Qt::UserRole, QVariant(1));
-                l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_componentPtr));
+        l_componentItem->setData(1, Qt::UserRole, QVariant::fromValue((void*)l_componentPtr));
 
         addChild(item, l_componentItem);
         this->setCurrentItem(l_componentItem);
