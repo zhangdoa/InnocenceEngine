@@ -128,10 +128,10 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float3 Ft = getBTDF(NdotV, NdotD, DdotHD, roughness, metallic, FresnelFactor, albedo);
 	float3 Fr = getBRDF(in_BRDFLUT, in_BRDFMSLUT, SamplerTypePoint, NdotV, NdotL, NdotHL, LdotHL, roughness, F0, FresnelFactor);
 
-	float3 illuminance = perFrameCBuffer.sun_illuminance.xyz * NdotD;
-	Lo += illuminance * (Ft + Fr);
-	float shadowFactor = 1.0 - SunShadowResolver(posWS, SamplerTypePoint);
+	float3 sunLo = perFrameCBuffer.sun_illuminance.xyz * NdotD * Ft + perFrameCBuffer.sun_illuminance.xyz * NdotL * Fr;
+	Lo += sunLo;
 
+	float shadowFactor = 1.0 - SunShadowResolver(posWS, SamplerTypePoint);
 	Lo *= shadowFactor;
 
 	// point punctual light
@@ -166,43 +166,43 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 		Lo += getOutLuminance(in_BRDFLUT, in_BRDFMSLUT, SamplerTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, metallic, F0, albedo, luminousFlux);
 	}
 
-	//// sphere area light
-	//for (int i = 0; i < NR_SPHERE_LIGHTS; ++i)
-	//{
-	//	float3 unormalizedL = sphereLights[i].position.xyz - posWS;
-	//	float lightSphereRadius = sphereLights[i].luminousFlux.w;
+	// sphere area light
+	for (int i = 0; i < NR_SPHERE_LIGHTS; ++i)
+	{
+		float3 unormalizedL = sphereLights[i].position.xyz - posWS;
+		float lightSphereRadius = sphereLights[i].luminousFlux.w;
 
-	//	float3 L = normalize(unormalizedL);
-	//	float3 H = normalize(V + L);
+		float3 L = normalize(unormalizedL);
+		float3 H = normalize(V + L);
 
-	//	float LdotH = max(dot(L, H), 0.0);
-	//	float NdotH = max(dot(N, H), 0.0);
-	//	float NdotL = max(dot(N, L), 0.0);
+		float LdotH = max(dot(L, H), 0.0);
+		float NdotH = max(dot(N, H), 0.0);
+		float NdotL = max(dot(N, L), 0.0);
 
-	//	float sqrDist = dot(unormalizedL, unormalizedL);
+		float sqrDist = dot(unormalizedL, unormalizedL);
 
-	//	float Beta = acos(NdotL);
-	//	float H2 = sqrt(sqrDist);
-	//	float h = H2 / lightSphereRadius;
-	//	float x = sqrt(max(h * h - 1, eps));
-	//	float y = -x * (1 / tan(Beta));
-	//	//y = clamp(y, -1.0, 1.0);
-	//	float illuminance = 0;
+		float Beta = acos(NdotL);
+		float H2 = sqrt(sqrDist);
+		float h = H2 / lightSphereRadius;
+		float x = sqrt(max(h * h - 1, eps));
+		float y = -x * (1 / tan(Beta));
+		//y = clamp(y, -1.0, 1.0);
+		float illuminance = 0;
 
-	//	if (h * cos(Beta) > 1)
-	//	{
-	//		illuminance = cos(Beta) / (h * h);
-	//	}
-	//	else
-	//	{
-	//		illuminance = (1 / max(PI * h * h, eps))
-	//			* (cos(Beta) * acos(y) - x * sin(Beta) * sqrt(max(1 - y * y, eps)))
-	//			+ (1 / PI) * atan((sin(Beta) * sqrt(max(1 - y * y, eps)) / x));
-	//	}
-	//	illuminance *= PI;
+		if (h * cos(Beta) > 1)
+		{
+			illuminance = cos(Beta) / (h * h);
+		}
+		else
+		{
+			illuminance = (1 / max(PI * h * h, eps))
+				* (cos(Beta) * acos(y) - x * sin(Beta) * sqrt(max(1 - y * y, eps)))
+				+ (1 / PI) * atan((sin(Beta) * sqrt(max(1 - y * y, eps)) / x));
+		}
+		illuminance *= PI;
 
-	//	Lo += getOutLuminance(in_BRDFLUT, in_BRDFMSLUT, SamplerTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, F0, albedo, illuminance * sphereLights[i].luminousFlux.xyz);
-	//}
+		Lo += getOutLuminance(in_BRDFLUT, in_BRDFMSLUT, SamplerTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, metallic, F0, albedo, illuminance * sphereLights[i].luminousFlux.xyz);
+	}
 
 	//// GI
 	//// [https://steamcdn-a.akamaihd.net/apps/valve/2006/SIGGRAPH06_Course_ShadingInValvesSourceEngine.pdf]
@@ -255,16 +255,28 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	//	Lo += indirectLight.xyz;
 	//}
 
+	float3 R = -reflect(V, N);
+
+	float3 indirectDiffuse = ConeTraceRadianceDiffuse(in_IrradianceVolume, SamplerTypePoint, posWS, normalWS, voxelizationPassCBuffer).xyz;
+	float3 indirectSpecular = ConeTraceRadianceSpecular(in_IrradianceVolume, SamplerTypePoint, posWS, normalWS, R, voxelizationPassCBuffer).xyz;
+
+	float NDotR = max(dot(N, R), eps);
+	float NDotHR = 1.0;
+	float RdotHR = max(dot(R, N), eps);
+	float3 indirectFresnelFactor = fresnelSchlick(F0, F90, RdotHR);
+	float3 indirectFt = getBTDF(NdotV, NDotR, RdotHR, roughness, metallic, indirectFresnelFactor, albedo);
+	float3 indirectFr = getBRDF_Indirect(in_BRDFLUT, in_BRDFMSLUT, SamplerTypePoint, NdotV, NDotR, NDotHR, RdotHR, roughness, F0, indirectFresnelFactor);
+
+	Lo += indirectDiffuse * indirectFt;
+	Lo += indirectSpecular * indirectFr;
+
 	// ambient occlusion
 	Lo *= ao;
 
-	float3 indirect = ConeTraceRadiance(in_IrradianceVolume, SamplerTypePoint, posWS, normalWS, voxelizationPassCBuffer).xyz;
-
-	Lo += indirect * (Ft);
 #endif
 
 	output.lightPassRT0 = float4(Lo, 1.0);
-	output.lightPassRT1 = float4(indirect * Ft + illuminance * Ft * shadowFactor, 1.0);
+	output.lightPassRT1 = float4(indirectDiffuse + sunLo * shadowFactor, 1.0);
 
 	return output;
 }

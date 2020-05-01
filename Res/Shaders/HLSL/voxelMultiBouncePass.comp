@@ -33,5 +33,9 @@ void main(ComputeInputType input)
 	{
 		normalWS.xyz = float3(0.0, 1.0, 0.0);
 	}
-	out_luminanceVolume[input.dispatchThreadID] = ConeTraceRadiance(in_luminanceVolume, SamplerTypePoint, posWS, normalWS, voxelizationPassCBuffer) + in_luminanceVolume[input.dispatchThreadID];
+
+	float4 indirectDiffuse = ConeTraceRadianceDiffuse(in_luminanceVolume, SamplerTypePoint, posWS, normalWS, voxelizationPassCBuffer);
+	//float4 indirectSpecular = ConeTraceRadianceSpecular(in_IrradianceVolume, SamplerTypePoint, posWS, normalWS, V, voxelizationPassCBuffer);
+
+	out_luminanceVolume[input.dispatchThreadID] = indirectDiffuse + in_luminanceVolume[input.dispatchThreadID];
 }

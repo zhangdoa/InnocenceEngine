@@ -890,6 +890,8 @@ bool VoxelizationPass::Render(bool visualize)
 	//g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_rayTracingRPDC);
 	//g_pModuleManager->getRenderingServer()->WaitForFrame(m_rayTracingRPDC);
 
+	//m_finalBounceVolume = m_initialBounceVolume;
+
 	screenSpaceFeedback();
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_SSFeedBackRPDC);
 	g_pModuleManager->getRenderingServer()->WaitForFrame(m_SSFeedBackRPDC);

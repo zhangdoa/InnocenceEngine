@@ -86,7 +86,7 @@ float Unreal_DistributionGGX(float NdotH, float roughness)
 float Unreal_GeometrySchlickGGX(float NdotV, float roughness)
 {
 	float r = (roughness + 1.0);
-	float k = (r*r) / 8.0;
+	float k = (r * r) / 8.0;
 
 	float nom = NdotV;
 	float denom = NdotV * (1.0 - k) + k;
@@ -129,6 +129,20 @@ float3 getFrMS(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePo
 float3 getBRDF(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePoint, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float3 F0, float3 FresnelFactor)
 {
 	float G = V_SmithGGXCorrelated(NdotV, NdotL, roughness);
+	float D = D_GGX(NdotH, roughness);
+	float3 Frss = FresnelFactor * G * D;
+
+	// Real-Time Rendering", 4th edition, pg. 341, "9.8 BRDF Models for Surface Reflection, the 4 * NdV * NdL has already been cancelled by G function
+	float3 Frms = getFrMS(BRDFLUT, BRDFMSLUT, SampleTypePoint, NdotL, NdotV, F0, roughness);
+
+	float3 Fr = Frss + Frms;
+
+	return Fr;
+}
+// ----------------------------------------------------------------------------
+float3 getBRDF_Indirect(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePoint, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float3 F0, float3 FresnelFactor)
+{
+	float G = Unreal_GeometrySmith(NdotV, NdotL, roughness);
 	float D = D_GGX(NdotH, roughness);
 	float3 Frss = FresnelFactor * G * D;
 
