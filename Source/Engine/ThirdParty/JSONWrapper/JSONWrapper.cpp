@@ -264,6 +264,9 @@ void JSONWrapper::to_json(json& j, const CameraComponent& p)
 		{"HeightScale", p.m_heightScale},
 		{"zNear", p.m_zNear},
 		{"zFar", p.m_zFar},
+		{"Aperture", p.m_aperture},
+		{"ShutterTime", p.m_shutterTime},
+		{"ISO", p.m_ISO},
 	};
 }
 
@@ -339,6 +342,9 @@ void JSONWrapper::from_json(const json& j, CameraComponent& p)
 	p.m_heightScale = j["HeightScale"];
 	p.m_zNear = j["zNear"];
 	p.m_zFar = j["zFar"];
+	p.m_aperture = j["Aperture"];
+	p.m_shutterTime = j["ShutterTime"];
+	p.m_ISO = j["ISO"];
 }
 
 Model* JSONWrapper::loadModelFromDisk(const char* fileName, bool AsyncUploadGPUResource)
