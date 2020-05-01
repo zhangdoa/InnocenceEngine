@@ -5,6 +5,7 @@
 #include "transformcomponentpropertyeditor.h"
 #include "visiblecomponentpropertyeditor.h"
 #include "lightcomponentpropertyeditor.h"
+#include "cameracomponentpropertyeditor.h"
 
 class InnoPropertyEditor : public QWidget
 {
@@ -21,7 +22,7 @@ private:
 	TransformComponentPropertyEditor* m_transformComponentPropertyEditor;
     VisibleComponentPropertyEditor* m_visibleComponentPropertyEditor;
 	LightComponentPropertyEditor* m_lightComponentPropertyEditor;
-
+    CameraComponentPropertyEditor* m_cameraComponentPropertyEditor;
 signals:
 
 public slots:

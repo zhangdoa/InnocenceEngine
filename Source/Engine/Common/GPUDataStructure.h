@@ -49,7 +49,10 @@ struct alignas(16) PerFrameConstantBuffer
 	Vec4 viewportSize;
 	Vec4 posWSNormalizer;
 	Vec4 camera_posWS;
-	float padding[8];
+	float aperture;
+	float shutterTime;
+	float ISO;
+	float padding[5];
 };
 
 struct alignas(16) CSMConstantBuffer

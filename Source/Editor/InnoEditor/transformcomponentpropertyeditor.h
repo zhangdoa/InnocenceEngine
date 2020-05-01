@@ -4,8 +4,7 @@
 #include <QLabel>
 #include <QWidget>
 #include <QGridLayout>
-#include <QDoubleValidator>
-#include "IComponentPropertyEditor.h"
+#include "icomponentpropertyeditor.h"
 #include "combolabeltext.h"
 #include "../../Engine/Component/TransformComponent.h"
 

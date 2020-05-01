@@ -476,6 +476,9 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 	l_PerFrameCB.viewportSize.y = (float)m_screenResolution.y;
 	l_PerFrameCB.minLogLuminance = -10.0f;
 	l_PerFrameCB.maxLogLuminance = 16.0f;
+	l_PerFrameCB.aperture = l_mainCamera->m_aperture;
+	l_PerFrameCB.shutterTime = l_mainCamera->m_shutterTime;
+	l_PerFrameCB.ISO = l_mainCamera->m_ISO;
 
 	auto l_sun = GetComponentManager(LightComponent)->GetSun();
 

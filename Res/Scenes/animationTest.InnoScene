@@ -69,7 +69,10 @@
           "WidthScale": 16.0,
           "HeightScale": 9.0,
           "zNear": 0.1,
-          "zFar": 2000.0
+          "zFar": 2000.0,
+          "Aperture": 2.2,
+          "ShutterTime": 0.0005,
+          "ISO": 100.0
         }
       ],
       "UUID": "1e6af8f1c63c5165990ba1aca26a72ab",

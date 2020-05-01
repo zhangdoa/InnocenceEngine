@@ -1,381 +1,384 @@
 {
-    "SceneEntities": [
+  "SceneEntities": [
+    {
+      "ChildrenComponents": [
         {
-            "ChildrenComponents": [
-                {
-                    "ComponentType": 1,
-                    "LocalTransformVector": {
-                        "Position": {
-                            "X": -80.0,
-                            "Y": 35.0,
-                            "Z": 0.0
-                        },
-                        "Rotation": {
-                            "W": 0.9990482330322266,
-                            "X": -0.043619390577077866,
-                            "Y": 0.0,
-                            "Z": 0.0
-                        },
-                        "Scale": {
-                            "X": 1.0,
-                            "Y": 1.0,
-                            "Z": 1.0
-                        }
-                    },
-                    "ParentTransformComponentEntityName": "RootTransform"
-                },
-                {
-                    "ComponentType": 4,
-                    "FOVX": 90.0,
-                    "HeightScale": 9.0,
-                    "WidthScale": 16.0,
-                    "zFar": 2000.0,
-                    "zNear": 0.10000000149011612
-                }
-            ],
-            "ObjectName": "playerCharacterCamera",
-            "UUID": 3923182475004370441
+          "ComponentType": 1,
+          "LocalTransformVector": {
+            "Position": {
+              "X": -80.0,
+              "Y": 35.0,
+              "Z": 0.0
+            },
+            "Rotation": {
+              "W": 0.9990482330322266,
+              "X": -0.043619390577077866,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "ParentTransformComponentEntityName": "RootTransform"
         },
         {
-            "ChildrenComponents": [
-                {
-                    "ComponentType": 1,
-                    "LocalTransformVector": {
-                        "Position": {
-                            "X": 0.0,
-                            "Y": 0.0,
-                            "Z": 0.0
-                        },
-                        "Rotation": {
-                            "W": 0.3407185673713684,
-                            "X": -0.9361168742179871,
-                            "Y": 0.0298090111464262,
-                            "Z": 0.08189961314201355
-                        },
-                        "Scale": {
-                            "X": 1.0,
-                            "Y": 1.0,
-                            "Z": 1.0
-                        }
-                    },
-                    "ParentTransformComponentEntityName": "RootTransform"
-                },
-                {
-                    "ColorTemperature": 5780.0,
-                    "ComponentType": 3,
-                    "LightType": 0,
-                    "LuminousFlux": 100000.0,
-                    "RGBColor": {
-                        "W": 1.0,
-                        "X": 1.0,
-                        "Y": 0.9507150650024414,
-                        "Z": 0.9043404459953308
-                    },
-                    "Shape": {
-                        "W": 1.0,
-                        "X": 0.0,
-                        "Y": 0.0,
-                        "Z": 0.0
-                    },
-                    "UseColorTemperature": true
-                }
-            ],
-            "ObjectName": "sun",
-            "UUID": 2918096800655879221
-        },
-        {
-            "ChildrenComponents": [
-                {
-                    "ComponentType": 1,
-                    "LocalTransformVector": {
-                        "Position": {
-                            "X": -80.0,
-                            "Y": 150.0,
-                            "Z": -120.0
-                        },
-                        "Rotation": {
-                            "W": 0.7071067690849304,
-                            "X": 0.0,
-                            "Y": 0.7071067690849304,
-                            "Z": 0.0
-                        },
-                        "Scale": {
-                            "X": 10.0,
-                            "Y": 10.0,
-                            "Z": 10.0
-                        }
-                    },
-                    "ParentTransformComponentEntityName": "RootTransform"
-                },
-                {
-                    "ComponentType": 2,
-                    "MeshPrimitiveTopology": 2,
-                    "MeshSource": 2,
-                    "MeshUsage": 1,
-                    "ModelFileName": "..//Res//ConvertedAssets//sibenik.InnoModel",
-                    "ProceduralMeshShape": 0,
-                    "SimulatePhysics": true,
-                    "TextureWrapMethod": 1
-                }
-            ],
-            "ObjectName": "Sibenik",
-            "UUID": 4558299410344432917
-        },
-        {
-            "ChildrenComponents": [
-                {
-                    "ComponentType": 1,
-                    "LocalTransformVector": {
-                        "Position": {
-                            "X": -80.0,
-                            "Y": 0.0,
-                            "Z": -95.0
-                        },
-                        "Rotation": {
-                            "W": 0.30070582032203674,
-                            "X": 0.0,
-                            "Y": -0.9537169337272644,
-                            "Z": 0.0
-                        },
-                        "Scale": {
-                            "X": 2.0,
-                            "Y": 2.0,
-                            "Z": 2.0
-                        }
-                    },
-                    "ParentTransformComponentEntityName": "RootTransform"
-                },
-                {
-                    "ComponentType": 2,
-                    "MeshPrimitiveTopology": 2,
-                    "MeshSource": 2,
-                    "MeshUsage": 2,
-                    "ModelFileName": "..//Res//ConvertedAssets//Orb.InnoModel",
-                    "ProceduralMeshShape": 0,
-                    "SimulatePhysics": true,
-                    "TextureWrapMethod": 1
-                }
-            ],
-            "ObjectName": "orb",
-            "UUID": 4262995648767452588
-        },
-        {
-            "ChildrenComponents": [
-                {
-                    "ComponentType": 1,
-                    "LocalTransformVector": {
-                        "Position": {
-                            "X": -85.0,
-                            "Y": 1.5,
-                            "Z": -80.0
-                        },
-                        "Rotation": {
-                            "W": 0.8767267465591431,
-                            "X": 0.0,
-                            "Y": 0.4809887707233429,
-                            "Z": 0.0
-                        },
-                        "Scale": {
-                            "X": 2.0,
-                            "Y": 2.0,
-                            "Z": 2.0
-                        }
-                    },
-                    "ParentTransformComponentEntityName": "RootTransform"
-                },
-                {
-                    "ComponentType": 2,
-                    "MeshPrimitiveTopology": 2,
-                    "MeshSource": 2,
-                    "MeshUsage": 2,
-                    "ModelFileName": "..//Res//ConvertedAssets//bunny.InnoModel",
-                    "ProceduralMeshShape": 0,
-                    "SimulatePhysics": true,
-                    "TextureWrapMethod": 1
-                }
-            ],
-            "ObjectName": "bunny",
-            "UUID": 4473059275804923897
-        },
-        {
-            "ChildrenComponents": [
-                {
-                    "ComponentType": 1,
-                    "LocalTransformVector": {
-                        "Position": {
-                            "X": -120.0,
-                            "Y": 20.0,
-                            "Z": -60.0
-                        },
-                        "Rotation": {
-                            "W": 1.0,
-                            "X": 0.0,
-                            "Y": 0.0,
-                            "Z": 0.0
-                        },
-                        "Scale": {
-                            "X": 0.10000000149011612,
-                            "Y": 0.10000000149011612,
-                            "Z": 0.10000000149011612
-                        }
-                    },
-                    "ParentTransformComponentEntityName": "RootTransform"
-                },
-                {
-                    "ColorTemperature": 2000.0,
-                    "ComponentType": 3,
-                    "LightType": 1,
-                    "LuminousFlux": 2000.0,
-                    "RGBColor": {
-                        "W": 1.0,
-                        "X": 1.0,
-                        "Y": 0.5367385149002075,
-                        "Z": 0.054525695741176605
-                    },
-                    "Shape": {
-                        "W": 1.0,
-                        "X": 45.87382888793945,
-                        "Y": 0.0,
-                        "Z": 0.0
-                    },
-                    "UseColorTemperature": true
-                }
-            ],
-            "ObjectName": "pointLight",
-            "UUID": 2350353228693783725
-        },
-        {
-            "ChildrenComponents": [
-                {
-                    "ComponentType": 1,
-                    "LocalTransformVector": {
-                        "Position": {
-                            "X": -50.0,
-                            "Y": 30.0,
-                            "Z": -100.0
-                        },
-                        "Rotation": {
-                            "W": 1.0,
-                            "X": 0.0,
-                            "Y": 0.0,
-                            "Z": 0.0
-                        },
-                        "Scale": {
-                            "X": 3.200000047683716,
-                            "Y": 3.200000047683716,
-                            "Z": 3.200000047683716
-                        }
-                    },
-                    "ParentTransformComponentEntityName": "RootTransform"
-                },
-                {
-                    "ColorTemperature": 12000.0,
-                    "ComponentType": 3,
-                    "LightType": 3,
-                    "LuminousFlux": 60.0,
-                    "RGBColor": {
-                        "W": 1.0,
-                        "X": 0.7494089603424072,
-                        "Y": 0.8293917179107666,
-                        "Z": 1.0
-                    },
-                    "Shape": {
-                        "W": 1.0,
-                        "X": 3.200000047683716,
-                        "Y": 0.0,
-                        "Z": 0.0
-                    },
-                    "UseColorTemperature": true
-                }
-            ],
-            "ObjectName": "sphereLight",
-            "UUID": 3435377849861510255
-        },
-        {
-            "ChildrenComponents": [
-                {
-                    "ComponentType": 1,
-                    "LocalTransformVector": {
-                        "Position": {
-                            "X": -80.0,
-                            "Y": 35.0,
-                            "Z": -130.0
-                        },
-                        "Rotation": {
-                            "W": 1.0,
-                            "X": 0.0,
-                            "Y": 0.0,
-                            "Z": 0.0
-                        },
-                        "Scale": {
-                            "X": 1.0,
-                            "Y": 1.0,
-                            "Z": 1.0
-                        }
-                    },
-                    "ParentTransformComponentEntityName": "RootTransform"
-                },
-                {
-                    "ColorTemperature": 1200.0,
-                    "ComponentType": 3,
-                    "LightType": 1,
-                    "LuminousFlux": 10000.0,
-                    "RGBColor": {
-                        "W": 1.0,
-                        "X": 0.0,
-                        "Y": 0.20000000298023224,
-                        "Z": 1.0
-                    },
-                    "Shape": {
-                        "W": 1.0,
-                        "X": 63.22493362426758,
-                        "Y": 1.0,
-                        "Z": 1.0
-                    },
-                    "UseColorTemperature": false
-                }
-            ],
-            "ObjectName": "pointLight2",
-            "UUID": 3601626830508326052
-        },
-        {
-            "ChildrenComponents": [
-                {
-                    "ComponentType": 1,
-                    "LocalTransformVector": {
-                        "Position": {
-                            "X": 0.0,
-                            "Y": 2.0,
-                            "Z": 0.0
-                        },
-                        "Rotation": {
-                            "W": 0.25938373804092407,
-                            "X": 0.0,
-                            "Y": -0.9657743573188782,
-                            "Z": 0.0
-                        },
-                        "Scale": {
-                            "X": 1.0,
-                            "Y": 1.0,
-                            "Z": 1.0
-                        }
-                    },
-                    "ParentTransformComponentEntityName": "RootTransform"
-                },
-                {
-                    "ComponentType": 2,
-                    "MeshPrimitiveTopology": 2,
-                    "MeshSource": 1,
-                    "MeshUsage": 2,
-                    "ModelFileName": "",
-                    "ProceduralMeshShape": 6,
-                    "SimulatePhysics": true,
-                    "TextureWrapMethod": 2
-                }
-            ],
-            "ObjectName": "playerCharacter",
-            "UUID": 4589272266021438199
+          "ComponentType": 4,
+          "FOVX": 90.0,
+          "HeightScale": 9.0,
+          "WidthScale": 16.0,
+          "zFar": 2000.0,
+          "zNear": 0.10000000149011612,
+          "Aperture": 2.2,
+          "ShutterTime": 0.0005,
+          "ISO": 100.0
         }
-    ],
-    "SceneName": "..//Res//Scenes//GITestSibenik.InnoScene"
+      ],
+      "ObjectName": "playerCharacterCamera",
+      "UUID": 3923182475004370441
+    },
+    {
+      "ChildrenComponents": [
+        {
+          "ComponentType": 1,
+          "LocalTransformVector": {
+            "Position": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Rotation": {
+              "W": 0.3407185673713684,
+              "X": -0.9361168742179871,
+              "Y": 0.0298090111464262,
+              "Z": 0.08189961314201355
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "ParentTransformComponentEntityName": "RootTransform"
+        },
+        {
+          "ColorTemperature": 5780.0,
+          "ComponentType": 3,
+          "LightType": 0,
+          "LuminousFlux": 100000.0,
+          "RGBColor": {
+            "W": 1.0,
+            "X": 1.0,
+            "Y": 0.9507150650024414,
+            "Z": 0.9043404459953308
+          },
+          "Shape": {
+            "W": 1.0,
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 0.0
+          },
+          "UseColorTemperature": true
+        }
+      ],
+      "ObjectName": "sun",
+      "UUID": 2918096800655879221
+    },
+    {
+      "ChildrenComponents": [
+        {
+          "ComponentType": 1,
+          "LocalTransformVector": {
+            "Position": {
+              "X": -80.0,
+              "Y": 150.0,
+              "Z": -120.0
+            },
+            "Rotation": {
+              "W": 0.7071067690849304,
+              "X": 0.0,
+              "Y": 0.7071067690849304,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 10.0,
+              "Y": 10.0,
+              "Z": 10.0
+            }
+          },
+          "ParentTransformComponentEntityName": "RootTransform"
+        },
+        {
+          "ComponentType": 2,
+          "MeshPrimitiveTopology": 2,
+          "MeshSource": 2,
+          "MeshUsage": 1,
+          "ModelFileName": "..//Res//ConvertedAssets//sibenik.InnoModel",
+          "ProceduralMeshShape": 0,
+          "SimulatePhysics": true,
+          "TextureWrapMethod": 1
+        }
+      ],
+      "ObjectName": "Sibenik",
+      "UUID": 4558299410344432917
+    },
+    {
+      "ChildrenComponents": [
+        {
+          "ComponentType": 1,
+          "LocalTransformVector": {
+            "Position": {
+              "X": -80.0,
+              "Y": 0.0,
+              "Z": -95.0
+            },
+            "Rotation": {
+              "W": 0.30070582032203674,
+              "X": 0.0,
+              "Y": -0.9537169337272644,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 2.0,
+              "Y": 2.0,
+              "Z": 2.0
+            }
+          },
+          "ParentTransformComponentEntityName": "RootTransform"
+        },
+        {
+          "ComponentType": 2,
+          "MeshPrimitiveTopology": 2,
+          "MeshSource": 2,
+          "MeshUsage": 2,
+          "ModelFileName": "..//Res//ConvertedAssets//Orb.InnoModel",
+          "ProceduralMeshShape": 0,
+          "SimulatePhysics": true,
+          "TextureWrapMethod": 1
+        }
+      ],
+      "ObjectName": "orb",
+      "UUID": 4262995648767452588
+    },
+    {
+      "ChildrenComponents": [
+        {
+          "ComponentType": 1,
+          "LocalTransformVector": {
+            "Position": {
+              "X": -85.0,
+              "Y": 1.5,
+              "Z": -80.0
+            },
+            "Rotation": {
+              "W": 0.8767267465591431,
+              "X": 0.0,
+              "Y": 0.4809887707233429,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 2.0,
+              "Y": 2.0,
+              "Z": 2.0
+            }
+          },
+          "ParentTransformComponentEntityName": "RootTransform"
+        },
+        {
+          "ComponentType": 2,
+          "MeshPrimitiveTopology": 2,
+          "MeshSource": 2,
+          "MeshUsage": 2,
+          "ModelFileName": "..//Res//ConvertedAssets//bunny.InnoModel",
+          "ProceduralMeshShape": 0,
+          "SimulatePhysics": true,
+          "TextureWrapMethod": 1
+        }
+      ],
+      "ObjectName": "bunny",
+      "UUID": 4473059275804923897
+    },
+    {
+      "ChildrenComponents": [
+        {
+          "ComponentType": 1,
+          "LocalTransformVector": {
+            "Position": {
+              "X": -120.0,
+              "Y": 20.0,
+              "Z": -60.0
+            },
+            "Rotation": {
+              "W": 1.0,
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 0.10000000149011612,
+              "Y": 0.10000000149011612,
+              "Z": 0.10000000149011612
+            }
+          },
+          "ParentTransformComponentEntityName": "RootTransform"
+        },
+        {
+          "ColorTemperature": 2000.0,
+          "ComponentType": 3,
+          "LightType": 1,
+          "LuminousFlux": 2000.0,
+          "RGBColor": {
+            "W": 1.0,
+            "X": 1.0,
+            "Y": 0.5367385149002075,
+            "Z": 0.054525695741176605
+          },
+          "Shape": {
+            "W": 1.0,
+            "X": 45.87382888793945,
+            "Y": 0.0,
+            "Z": 0.0
+          },
+          "UseColorTemperature": true
+        }
+      ],
+      "ObjectName": "pointLight",
+      "UUID": 2350353228693783725
+    },
+    {
+      "ChildrenComponents": [
+        {
+          "ComponentType": 1,
+          "LocalTransformVector": {
+            "Position": {
+              "X": -50.0,
+              "Y": 30.0,
+              "Z": -100.0
+            },
+            "Rotation": {
+              "W": 1.0,
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 3.200000047683716,
+              "Y": 3.200000047683716,
+              "Z": 3.200000047683716
+            }
+          },
+          "ParentTransformComponentEntityName": "RootTransform"
+        },
+        {
+          "ColorTemperature": 12000.0,
+          "ComponentType": 3,
+          "LightType": 3,
+          "LuminousFlux": 60.0,
+          "RGBColor": {
+            "W": 1.0,
+            "X": 0.7494089603424072,
+            "Y": 0.8293917179107666,
+            "Z": 1.0
+          },
+          "Shape": {
+            "W": 1.0,
+            "X": 3.200000047683716,
+            "Y": 0.0,
+            "Z": 0.0
+          },
+          "UseColorTemperature": true
+        }
+      ],
+      "ObjectName": "sphereLight",
+      "UUID": 3435377849861510255
+    },
+    {
+      "ChildrenComponents": [
+        {
+          "ComponentType": 1,
+          "LocalTransformVector": {
+            "Position": {
+              "X": -80.0,
+              "Y": 35.0,
+              "Z": -130.0
+            },
+            "Rotation": {
+              "W": 1.0,
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "ParentTransformComponentEntityName": "RootTransform"
+        },
+        {
+          "ColorTemperature": 1200.0,
+          "ComponentType": 3,
+          "LightType": 1,
+          "LuminousFlux": 10000.0,
+          "RGBColor": {
+            "W": 1.0,
+            "X": 0.0,
+            "Y": 0.20000000298023224,
+            "Z": 1.0
+          },
+          "Shape": {
+            "W": 1.0,
+            "X": 63.22493362426758,
+            "Y": 1.0,
+            "Z": 1.0
+          },
+          "UseColorTemperature": false
+        }
+      ],
+      "ObjectName": "pointLight2",
+      "UUID": 3601626830508326052
+    },
+    {
+      "ChildrenComponents": [
+        {
+          "ComponentType": 1,
+          "LocalTransformVector": {
+            "Position": {
+              "X": 0.0,
+              "Y": 2.0,
+              "Z": 0.0
+            },
+            "Rotation": {
+              "W": 0.25938373804092407,
+              "X": 0.0,
+              "Y": -0.9657743573188782,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "ParentTransformComponentEntityName": "RootTransform"
+        },
+        {
+          "ComponentType": 2,
+          "MeshPrimitiveTopology": 2,
+          "MeshSource": 1,
+          "MeshUsage": 2,
+          "ModelFileName": "",
+          "ProceduralMeshShape": 6,
+          "SimulatePhysics": true,
+          "TextureWrapMethod": 2
+        }
+      ],
+      "ObjectName": "playerCharacter",
+      "UUID": 4589272266021438199
+    }
+  ],
+  "SceneName": "..//Res//Scenes//GITestSibenik.InnoScene"
 }

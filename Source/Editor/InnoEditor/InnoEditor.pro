@@ -24,6 +24,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++17
 
 SOURCES += \
+    cameracomponentpropertyeditor.cpp \
     innodirectorylistviewer.cpp \
     innodirectorytreeviewer.cpp \
     innodirectoryviewer.cpp \
@@ -44,6 +45,7 @@ SOURCES += \
 
 
 HEADERS += \
+    cameracomponentpropertyeditor.h \
     innodirectorylistviewer.h \
     innodirectorytreeviewer.h \
     innodirectoryviewer.h \

@@ -69,7 +69,10 @@
           "HeightScale": 9.0,
           "WidthScale": 16.0,
           "zFar": 2000.0,
-          "zNear": 0.10000000149011612
+          "zNear": 0.10000000149011612,
+          "Aperture": 2.2,
+          "ShutterTime": 0.0005,
+          "ISO": 100.0
         }
       ],
       "ObjectName": "playerCharacterCamera",
