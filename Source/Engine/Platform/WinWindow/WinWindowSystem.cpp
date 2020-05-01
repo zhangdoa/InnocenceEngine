@@ -160,7 +160,7 @@ ObjectStatus WinWindowSystem::getStatus()
 	return WinWindowSystemNS::m_ObjectStatus;
 }
 
-IWindowSurface * WinWindowSystem::getWindowSurface()
+IWindowSurface* WinWindowSystem::getWindowSurface()
 {
 	return WinWindowSystemNS::m_windowSurface;
 }
@@ -227,45 +227,39 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 {
 	for (auto i : m_windowEventCallbackFunctor)
 	{
-		(*i)(hwnd, umsg, (uint32_t)wparam, (int32_t)lparam);
+		(*i)(hwnd, umsg, (uint64_t)wparam, (int64_t)lparam);
 	}
 
 	switch (umsg)
 	{
 	case WM_KEYDOWN:
 	{
-		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ (int32_t)wparam, true });
-		m_buttonState[(int32_t)wparam].m_isPressed = true;
+		m_buttonState[(uint64_t)wparam].m_isPressed = true;
 		return 0;
 	}
 	case WM_KEYUP:
 	{
-		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ (int32_t)wparam, ButtonStatus::Released });
-		m_buttonState[(int32_t)wparam].m_isPressed = false;
+		m_buttonState[(uint64_t)wparam].m_isPressed = false;
 		return 0;
 	}
 	case WM_LBUTTONDOWN:
 	{
-		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_LEFT, true });
 		m_buttonState[INNO_MOUSE_BUTTON_LEFT].m_isPressed = true;
 		return 0;
 	}
 	case WM_LBUTTONUP:
 	{
-		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_LEFT, ButtonStatus::Released });
 		m_buttonState[INNO_MOUSE_BUTTON_LEFT].m_isPressed = false;
 
 		return 0;
 	}
 	case WM_RBUTTONDOWN:
 	{
-		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, true });
 		m_buttonState[INNO_MOUSE_BUTTON_RIGHT].m_isPressed = true;
 		return 0;
 	}
 	case WM_RBUTTONUP:
 	{
-		//g_pModuleManager->getEventSystem()->buttonStatusCallback(ButtonData{ INNO_MOUSE_BUTTON_RIGHT, ButtonStatus::Released });
 		m_buttonState[INNO_MOUSE_BUTTON_RIGHT].m_isPressed = false;
 		return 0;
 	}

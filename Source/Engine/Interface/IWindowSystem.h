@@ -3,7 +3,7 @@
 #include "../Common/InnoClassTemplate.h"
 #include "IWindowSurface.h"
 
-using WindowEventCallbackFunctor = std::function<void(void*, uint32_t, uint32_t, int32_t)>;
+using WindowEventCallbackFunctor = std::function<void(void*, uint32_t, uint64_t, int64_t)>;
 
 class IWindowSystem
 {

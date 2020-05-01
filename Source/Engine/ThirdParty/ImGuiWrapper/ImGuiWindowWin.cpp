@@ -15,7 +15,7 @@ extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam
 
 bool ImGuiWindowWin::setup()
 {
-	ImGuiWindowWinNS::m_windowEventCallbackFunctor = [](void* hWnd, uint32_t msg, uint32_t wParam, int32_t lParam) {
+	ImGuiWindowWinNS::m_windowEventCallbackFunctor = [](void* hWnd, uint32_t msg, uint64_t wParam, int64_t lParam) {
 		ImGui_ImplWin32_WndProcHandler((HWND)hWnd, msg, wParam, lParam);
 	};
 	g_pModuleManager->getWindowSystem()->addEventCallback(&ImGuiWindowWinNS::m_windowEventCallbackFunctor);
