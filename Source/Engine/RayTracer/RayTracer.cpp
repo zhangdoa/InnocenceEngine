@@ -13,6 +13,10 @@ namespace InnoRayTracerNS
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	std::atomic<bool> m_isWorking;
 	const int m_maxDepth = 16;
+	const int m_maxSamplePerPixel = 16;
+	std::default_random_engine m_generator;
+	std::uniform_real_distribution<float> m_randomDirDelta(-1.0f, 1.0f);
+
 	TextureDataComponent* m_TDC;
 }
 
@@ -116,7 +120,8 @@ bool HitableSphere::Hit(const Ray& r, float tMin, float tMax, HitResult& hitResu
 		{
 			hitResult.t = temp;
 			hitResult.HitPoint = r.m_origin + r.m_direction * temp;
-			Vec4 outward_normal = (hitResult.HitPoint - m_Sphere.m_center) / m_Sphere.m_radius;
+			auto outward_normal = (hitResult.HitPoint - m_Sphere.m_center) / m_Sphere.m_radius;
+			outward_normal = outward_normal.normalize();
 			hitResult.setFaceNormal(r, outward_normal);
 			return true;
 		}
@@ -126,7 +131,8 @@ bool HitableSphere::Hit(const Ray& r, float tMin, float tMax, HitResult& hitResu
 		{
 			hitResult.t = temp;
 			hitResult.HitPoint = r.m_origin + r.m_direction * temp;
-			Vec4 outward_normal = (hitResult.HitPoint - m_Sphere.m_center) / m_Sphere.m_radius;
+			auto outward_normal = (hitResult.HitPoint - m_Sphere.m_center) / m_Sphere.m_radius;
+			outward_normal = outward_normal.normalize();
 			hitResult.setFaceNormal(r, outward_normal);
 			return true;
 		}
@@ -161,24 +167,18 @@ bool HitableList::Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult
 
 Vec4 RandomDirectionInUnitDisk()
 {
-	std::default_random_engine l_generator;
-	std::uniform_real_distribution<float> l_randomDirDelta(0.0f, 1.0f);
-
 	Vec4 p;
 	do {
-		p = Vec4(l_randomDirDelta(l_generator), l_randomDirDelta(l_generator), 0.0f, 0.0f) * 2.0f - Vec4(1.0f, 1.0f, 0.0f, 0.0f);
+		p = Vec4(m_randomDirDelta(m_generator), m_randomDirDelta(m_generator), 0.0f, 0.0f);
 	} while (p * p >= 1.0f);
 	return p;
 }
 
 Vec4 RandomDirectionInUnitSphere()
 {
-	std::default_random_engine l_generator;
-	std::uniform_real_distribution<float> l_randomDirDelta(-1.0f, 1.0f);
-
 	Vec4 p;
 	do {
-		p = Vec4(l_randomDirDelta(l_generator), l_randomDirDelta(l_generator), l_randomDirDelta(l_generator), 0.0f);
+		p = Vec4(m_randomDirDelta(m_generator), m_randomDirDelta(m_generator), m_randomDirDelta(m_generator), 0.0f);
 	} while (p * p >= 1.0f);
 	return p;
 }
@@ -203,9 +203,8 @@ public:
 
 	Ray GetRay(float s, float t)
 	{
-		Vec4 rd = RandomDirectionInUnitDisk() * lens_radius;
-		//Vec4 offset = u * rd.x + v * rd.y;
-		Vec4 offset = Vec4();
+		Vec4 rd = RandomDirectionInUnitDisk() * lens_radius * 0.5 + 0.5;
+		Vec4 offset = u * rd.x + v * rd.y;
 
 		Ray l_result;
 		l_result.m_origin = origin + offset;
@@ -225,12 +224,12 @@ public:
 Vec4 CalcRadiance(const Ray& r, Hitable* world, int32_t depth)
 {
 	HitResult l_result;
-	Vec4 color;
+	Vec4 color = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	static bool l_visualizeNormal = false;
 
 	if (depth < m_maxDepth)
 	{
-		if (world->Hit(r, 0.001f, std::numeric_limits<float>::max(), l_result))
+		if (world->Hit(r, 0.001f, std::numeric_limits<float>::infinity(), l_result))
 		{
 			if (l_visualizeNormal)
 			{
@@ -253,8 +252,6 @@ Vec4 CalcRadiance(const Ray& r, Hitable* world, int32_t depth)
 		}
 	}
 
-	color.w = 1.0f;
-
 	return color;
 }
 
@@ -269,7 +266,7 @@ bool ExecuteRayTracing()
 	auto l_up = InnoMath::getDirection(Direction::Up, l_cameraTransformComponent->m_globalTransformVector.m_rot);
 	auto l_vfov = l_camera->m_FOVX / l_camera->m_WHRatio;
 
-	RayTracingCamera l_rayTracingCamera(l_lookfrom, l_lookat, l_up, l_vfov, l_camera->m_WHRatio, l_camera->m_aperture, 1000.0f);
+	RayTracingCamera l_rayTracingCamera(l_lookfrom, l_lookat, l_up, l_vfov, l_camera->m_WHRatio, 1.0f / l_camera->m_aperture, 1000.0f);
 
 	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
 
@@ -370,17 +367,25 @@ bool ExecuteRayTracing()
 		{
 			float u = float(i) / float(nx);
 			float v = float(j) / float(ny);
-			Vec4 color = CalcRadiance(l_rayTracingCamera.GetRay(u, v), l_hitableList, 0);
-			color.x = sqrtf(color.x);
-			color.y = sqrtf(color.y);
-			color.z = sqrtf(color.z);
+
+			Vec4 l_totalColor = Vec4();
+			for (int32_t k = 0; k < m_maxSamplePerPixel; k++)
+			{
+				auto l_singleSampleColor = CalcRadiance(l_rayTracingCamera.GetRay(u, v), l_hitableList, 0);
+				l_singleSampleColor = l_singleSampleColor / (float)m_maxSamplePerPixel;
+
+				l_totalColor = l_totalColor + l_singleSampleColor;
+			}
+
+			l_totalColor.x = sqrtf(l_totalColor.x);
+			l_totalColor.y = sqrtf(l_totalColor.y);
+			l_totalColor.z = sqrtf(l_totalColor.z);
 
 			TVec4<uint8_t> l_colorUint8;
-			l_colorUint8.x = uint8_t(255.99 * color.x);
-			l_colorUint8.y = uint8_t(255.99 * color.y);
-			l_colorUint8.z = uint8_t(255.99 * color.z);
+			l_colorUint8.x = uint8_t(255.99 * l_totalColor.x);
+			l_colorUint8.y = uint8_t(255.99 * l_totalColor.y);
+			l_colorUint8.z = uint8_t(255.99 * l_totalColor.z);
 			l_colorUint8.w = uint8_t(255);
-
 			l_result.emplace_back(l_colorUint8);
 		}
 	}
