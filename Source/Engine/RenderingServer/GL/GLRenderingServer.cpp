@@ -101,12 +101,12 @@ namespace GLRenderingServerNS
 	std::atomic_bool m_needResize = false;
 }
 
-GLResourceBinder* addResourcesBinder()
+inline GLResourceBinder* addResourcesBinder()
 {
 	return InnoMemory::Spawn<GLResourceBinder>(GLRenderingServerNS::m_ResourcesBinderPool);
 }
 
-GLPipelineStateObject* addPSO()
+inline GLPipelineStateObject* addPSO()
 {
 	return InnoMemory::Spawn<GLPipelineStateObject>(GLRenderingServerNS::m_PSOPool);
 }

@@ -4,10 +4,10 @@ git submodule update
 cd ../Source/External/GitSubmodules
 
 mkdir -p ../Include/assimp
-cp -R assimp/include/assimp/ ../Include/assimp/
+cp -R assimp/include/assimp/* ../Include/assimp/
 
 mkdir -p ../Include/vulkan
-cp -R Vulkan-Headers/include/vulkan/ ../Include/vulkan/
+cp -R Vulkan-Headers/include/vulkan/* ../Include/vulkan/
 
 mkdir -p ../Include/stb
 cp stb/stb_image.h ../Include/stb/

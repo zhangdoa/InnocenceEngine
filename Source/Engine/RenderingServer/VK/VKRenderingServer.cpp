@@ -536,32 +536,32 @@ bool VKRenderingServerNS::createSwapChain()
 
 using namespace VKRenderingServerNS;
 
-VKResourceBinder* addResourcesBinder()
+inline VKResourceBinder* addResourcesBinder()
 {
 	return InnoMemory::Spawn<VKResourceBinder>(m_ResourcesBinderPool);
 }
 
-VKPipelineStateObject* addPSO()
+inline VKPipelineStateObject* addPSO()
 {
 	return InnoMemory::Spawn<VKPipelineStateObject>(m_PSOPool);
 }
 
-VKCommandQueue* addCommandQueue()
+inline VKCommandQueue* addCommandQueue()
 {
 	return InnoMemory::Spawn<VKCommandQueue>(m_CommandQueuePool);
 }
 
-VKCommandList* addCommandList()
+inline VKCommandList* addCommandList()
 {
 	return InnoMemory::Spawn<VKCommandList>(m_CommandListPool);
 }
 
-VKSemaphore* addSemaphore()
+inline VKSemaphore* addSemaphore()
 {
 	return InnoMemory::Spawn<VKSemaphore>(m_SemaphorePool);
 }
 
-VKFence* addFence()
+inline VKFence* addFence()
 {
 	return InnoMemory::Spawn<VKFence>(m_FencePool);
 }

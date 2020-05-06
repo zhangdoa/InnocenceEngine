@@ -733,6 +733,7 @@ BVHNode* InnoPhysicsSystem::getRootBVHNode()
 
 bool InnoPhysicsSystem::addForce(VisibleComponent* VC, Vec4 force)
 {
+#if defined INNO_PLATFORM_WIN
 	auto l_result = m_ComponentOwnerLUT.find(VC);
 	if (l_result != m_ComponentOwnerLUT.end())
 	{
@@ -744,6 +745,7 @@ bool InnoPhysicsSystem::addForce(VisibleComponent* VC, Vec4 force)
 			PhysXWrapper::get().addForce(l_PDC, force);
 		}
 	}
+#endif
 	return true;
 }
 

@@ -130,14 +130,14 @@ std::string IOService::getWorkingDirectory()
 std::string IOService::validateFileName(const char* filePath)
 {
 	std::string l_result(filePath);
-	std::replace(l_result.begin(), l_result.end(), '\|', '-');
+	std::replace(l_result.begin(), l_result.end(), '|', '-');
 	std::replace(l_result.begin(), l_result.end(), '\\', '-');
-	std::replace(l_result.begin(), l_result.end(), '\/', '-');
+	std::replace(l_result.begin(), l_result.end(), '/', '-');
 	std::replace(l_result.begin(), l_result.end(), '\"', '-');
-	std::replace(l_result.begin(), l_result.end(), '\<', '-');
-	std::replace(l_result.begin(), l_result.end(), '\>', '-');
-	std::replace(l_result.begin(), l_result.end(), '\:', '-');
-	std::replace(l_result.begin(), l_result.end(), '\*', '-');
-	std::replace(l_result.begin(), l_result.end(), '\?', '-');
+	std::replace(l_result.begin(), l_result.end(), '<', '-');
+	std::replace(l_result.begin(), l_result.end(), '>', '-');
+	std::replace(l_result.begin(), l_result.end(), ':', '-');
+	std::replace(l_result.begin(), l_result.end(), '*', '-');
+	std::replace(l_result.begin(), l_result.end(), '?', '-');
 	return l_result;
 }

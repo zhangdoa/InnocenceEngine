@@ -18,7 +18,7 @@ environment:
 
   - job_name: Windows build
     appveyor_build_worker_image: Visual Studio 2017
-    
+
 # job-specific configurations
 for:
 
@@ -38,7 +38,7 @@ for:
     - sh: bash SetupLinux.sh
     - sh: bash BuildAssimpLinux.sh
     - sh: bash BuildGLADLinux.sh
-    - sh: bash BuildEngineLinux.sh.sh
+    - sh: bash BuildEngineLinux.sh
 
   -
     matrix:

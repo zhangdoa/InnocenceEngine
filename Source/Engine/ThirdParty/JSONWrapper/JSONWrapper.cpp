@@ -550,7 +550,7 @@ MaterialDataComponent* JSONWrapper::processMaterialJsonData(const json& j, const
 		for (auto i : j["Textures"])
 		{
 			std::string l_textureFile = i["File"];
-			auto l_textureSlotIndex = i["TextureSlotIndex"];
+			size_t l_textureSlotIndex = i["TextureSlotIndex"];
 
 			auto l_TDC = g_pModuleManager->getAssetSystem()->loadTexture(l_textureFile.c_str());
 			if (l_TDC)
