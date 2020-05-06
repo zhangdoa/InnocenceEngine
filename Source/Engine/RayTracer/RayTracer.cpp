@@ -12,23 +12,36 @@ namespace InnoRayTracerNS
 {
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	std::atomic<bool> m_isWorking;
-	const int m_maxDepth = 4;
+	const int m_maxDepth = 16;
 	TextureDataComponent* m_TDC;
 }
 
 using namespace InnoRayTracerNS;
 
+struct Material
+{
+	Vec4 Albedo;
+	Vec4 MRAT;
+};
+
 struct HitResult
 {
 	Vec4 HitPoint;
 	Vec4 HitNormal;
-	Vec4 Albedo;
+	Vec4 Color;
 	float t;
+	bool FrontFace;
+
+	inline void setFaceNormal(const Ray& r, const Vec4& outward_normal)
+	{
+		FrontFace = (r.m_direction * outward_normal) < 0;
+		HitNormal = FrontFace ? outward_normal : outward_normal * -1.0f;
+	}
 };
 
 struct Hitable
 {
-	VisibleComponent* m_VisibleComponent;
+	Material m_Material;
 	virtual bool Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult) = 0;
 };
 
@@ -60,14 +73,9 @@ bool HitableCube::Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult
 		return false;
 	}
 
-	for (uint64_t j = 0; j < m_VisibleComponent->m_model->meshMaterialPairs.m_count; j++)
-	{
-		auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(m_VisibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
-		hitResult.Albedo.x = l_pair->material->m_materialAttributes.AlbedoR;
-		hitResult.Albedo.y = l_pair->material->m_materialAttributes.AlbedoG;
-		hitResult.Albedo.z = l_pair->material->m_materialAttributes.AlbedoB;
-		break;
-	}
+	hitResult.Color.x = m_Material.Albedo.x;
+	hitResult.Color.y = m_Material.Albedo.y;
+	hitResult.Color.z = m_Material.Albedo.z;
 
 	if (tmin < 0.0f)
 	{
@@ -91,37 +99,35 @@ bool HitableSphere::Hit(const Ray& r, float tMin, float tMax, HitResult& hitResu
 {
 	auto oc = r.m_origin - m_Sphere.m_center;
 	auto a = r.m_direction * r.m_direction;
-	auto b = oc * r.m_direction * 2.0f;
+	auto half_b = oc * r.m_direction;
 	auto c = oc * oc - m_Sphere.m_radius * m_Sphere.m_radius;
-	auto dis = b * b - 4 * a * c;
+	auto dis = half_b * half_b - a * c;
 
 	if (dis > 0)
 	{
-		for (uint64_t j = 0; j < m_VisibleComponent->m_model->meshMaterialPairs.m_count; j++)
-		{
-			auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(m_VisibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
-			hitResult.Albedo.x = l_pair->material->m_materialAttributes.AlbedoR;
-			hitResult.Albedo.y = l_pair->material->m_materialAttributes.AlbedoG;
-			hitResult.Albedo.z = l_pair->material->m_materialAttributes.AlbedoB;
-			break;
-		}
+		hitResult.Color.x = m_Material.Albedo.x;
+		hitResult.Color.y = m_Material.Albedo.y;
+		hitResult.Color.z = m_Material.Albedo.z;
 
-		float temp = (-b - sqrt(dis)) / a;
+		auto root = sqrt(dis);
+
+		auto temp = (-half_b - root) / a;
 		if (temp < tMax && temp > tMin)
 		{
 			hitResult.t = temp;
 			hitResult.HitPoint = r.m_origin + r.m_direction * temp;
-			hitResult.HitNormal = (hitResult.HitPoint - m_Sphere.m_center) / m_Sphere.m_radius;
-			hitResult.HitNormal = hitResult.HitNormal.normalize();
+			Vec4 outward_normal = (hitResult.HitPoint - m_Sphere.m_center) / m_Sphere.m_radius;
+			hitResult.setFaceNormal(r, outward_normal);
 			return true;
 		}
-		temp = (-b + sqrt(dis)) / a;
+
+		temp = (-half_b + root) / a;
 		if (temp < tMax && temp > tMin)
 		{
 			hitResult.t = temp;
 			hitResult.HitPoint = r.m_origin + r.m_direction * temp;
-			hitResult.HitNormal = (hitResult.HitPoint - m_Sphere.m_center) / m_Sphere.m_radius;
-			hitResult.HitNormal = hitResult.HitNormal.normalize();
+			Vec4 outward_normal = (hitResult.HitPoint - m_Sphere.m_center) / m_Sphere.m_radius;
+			hitResult.setFaceNormal(r, outward_normal);
 			return true;
 		}
 	}
@@ -168,11 +174,11 @@ Vec4 RandomDirectionInUnitDisk()
 Vec4 RandomDirectionInUnitSphere()
 {
 	std::default_random_engine l_generator;
-	std::uniform_real_distribution<float> l_randomDirDelta(0.0f, 1.0f);
+	std::uniform_real_distribution<float> l_randomDirDelta(-1.0f, 1.0f);
 
 	Vec4 p;
 	do {
-		p = Vec4(l_randomDirDelta(l_generator), l_randomDirDelta(l_generator), l_randomDirDelta(l_generator), 0.0f) * 2.0f - Vec4(1.0f, 1.0f, 1.0f, 0.0f);
+		p = Vec4(l_randomDirDelta(l_generator), l_randomDirDelta(l_generator), l_randomDirDelta(l_generator), 0.0f);
 	} while (p * p >= 1.0f);
 	return p;
 }
@@ -198,7 +204,9 @@ public:
 	Ray GetRay(float s, float t)
 	{
 		Vec4 rd = RandomDirectionInUnitDisk() * lens_radius;
-		Vec4 offset = u * rd.x + v * rd.y;
+		//Vec4 offset = u * rd.x + v * rd.y;
+		Vec4 offset = Vec4();
+
 		Ray l_result;
 		l_result.m_origin = origin + offset;
 		l_result.m_direction = lower_left_corner + horizontal * s + vertical * t - origin - offset;
@@ -218,18 +226,24 @@ Vec4 CalcRadiance(const Ray& r, Hitable* world, int32_t depth)
 {
 	HitResult l_result;
 	Vec4 color;
+	static bool l_visualizeNormal = false;
 
 	if (depth < m_maxDepth)
 	{
-		if (world->Hit(r, 0.0f, std::numeric_limits<float>::max(), l_result))
+		if (world->Hit(r, 0.001f, std::numeric_limits<float>::max(), l_result))
 		{
-			Ray l_ray;
-			l_ray.m_origin = l_result.HitPoint;
-			l_ray.m_direction = l_result.HitNormal + RandomDirectionInUnitSphere();
-			color = l_result.Albedo;
+			if (l_visualizeNormal)
+			{
+				color = l_result.HitNormal;
+			}
+			else
+			{
+				Ray l_ray;
+				l_ray.m_origin = l_result.HitPoint;
+				l_ray.m_direction = l_result.HitNormal + RandomDirectionInUnitSphere();
 
-			auto l_incoming_color = CalcRadiance(l_ray, world, depth + 1) * 0.5f;
-			color = color + l_incoming_color;
+				color = CalcRadiance(l_ray, world, depth + 1) * 0.5f;
+			}
 		}
 		else
 		{
@@ -255,38 +269,89 @@ bool ExecuteRayTracing()
 	auto l_up = InnoMath::getDirection(Direction::Up, l_cameraTransformComponent->m_globalTransformVector.m_rot);
 	auto l_vfov = l_camera->m_FOVX / l_camera->m_WHRatio;
 
-	RayTracingCamera l_rayTracingCamera(l_lookfrom, l_lookat, l_up, l_vfov, l_camera->m_WHRatio, 0.1f, 1000.0f);
+	RayTracingCamera l_rayTracingCamera(l_lookfrom, l_lookat, l_up, l_vfov, l_camera->m_WHRatio, l_camera->m_aperture, 1000.0f);
 
 	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
 
 	std::vector<Hitable*> l_hitableListVector;
 	l_hitableListVector.reserve(l_visibleComponents.size());
 
-	for (auto l_visibleComponent : l_visibleComponents)
-	{
-		auto l_transformComponent = GetComponent(TransformComponent, l_visibleComponent->m_ParentEntity);
-		if (l_visibleComponent->m_proceduralMeshShape == ProceduralMeshShape::Cube)
-		{
-			auto l_hitable = new HitableCube();
-			l_hitable->m_VisibleComponent = l_visibleComponent;
-			l_hitable->m_AABB.m_center = l_transformComponent->m_globalTransformVector.m_pos;
-			l_hitable->m_AABB.m_extend = l_transformComponent->m_globalTransformVector.m_scale;
-			l_hitable->m_AABB.m_extend.w = 0.0f;
-			l_hitable->m_AABB.m_boundMax = l_hitable->m_AABB.m_center + l_hitable->m_AABB.m_extend * 0.5f;
-			l_hitable->m_AABB.m_boundMin = l_hitable->m_AABB.m_center - l_hitable->m_AABB.m_extend * 0.5f;
+	//for (auto l_visibleComponent : l_visibleComponents)
+	//{
+	//	auto l_transformComponent = GetComponent(TransformComponent, l_visibleComponent->m_ParentEntity);
+	//	if (l_visibleComponent->m_proceduralMeshShape == ProceduralMeshShape::Cube)
+	//	{
+	//		for (uint64_t j = 0; j < l_visibleComponent->m_model->meshMaterialPairs.m_count; j++)
+	//		{
+	//			auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(l_visibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
+	//			if (l_pair->material->m_ShaderModel == ShaderModel::Opaque)
+	//			{
+	//				auto l_hitable = new HitableSphere();
+	//				l_hitable->m_Material.Albedo.x = l_pair->material->m_materialAttributes.AlbedoR;
+	//				l_hitable->m_Material.Albedo.y = l_pair->material->m_materialAttributes.AlbedoG;
+	//				l_hitable->m_Material.Albedo.z = l_pair->material->m_materialAttributes.AlbedoB;
+	//				l_hitable->m_Material.MRAT.x = l_pair->material->m_materialAttributes.Metallic;
+	//				l_hitable->m_Material.MRAT.y = l_pair->material->m_materialAttributes.Roughness;
 
-			l_hitableListVector.emplace_back(l_hitable);
-		}
-		else if (l_visibleComponent->m_proceduralMeshShape == ProceduralMeshShape::Sphere)
-		{
-			auto l_hitable = new HitableSphere();
-			l_hitable->m_VisibleComponent = l_visibleComponent;
-			l_hitable->m_Sphere.m_center = l_transformComponent->m_globalTransformVector.m_pos;
-			l_hitable->m_Sphere.m_radius = 1.0f;
+	//				auto l_extend = l_transformComponent->m_globalTransformVector.m_scale;
+	//				auto l_maxRadius = std::max(std::max(l_extend.x, l_extend.y), l_extend.z);
 
-			l_hitableListVector.emplace_back(l_hitable);
-		}
-	}
+	//				l_hitable->m_Sphere.m_center = l_transformComponent->m_globalTransformVector.m_pos - l_maxRadius;
+	//				l_hitable->m_Sphere.m_center.w = 1.0f;
+	//				l_hitable->m_Sphere.m_radius = l_maxRadius;
+
+	//				l_hitableListVector.emplace_back(l_hitable);
+	//				break;
+	//			}
+	//		}
+	//	}
+	//	else if (l_visibleComponent->m_proceduralMeshShape == ProceduralMeshShape::Sphere)
+	//	{
+	//		for (uint64_t j = 0; j < l_visibleComponent->m_model->meshMaterialPairs.m_count; j++)
+	//		{
+	//			auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(l_visibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
+	//			if (l_pair->material->m_ShaderModel == ShaderModel::Transparent)
+	//			{
+	//				auto l_hitable = new HitableSphere();
+	//				l_hitable->m_Material.Albedo.x = l_pair->material->m_materialAttributes.AlbedoR;
+	//				l_hitable->m_Material.Albedo.y = l_pair->material->m_materialAttributes.AlbedoG;
+	//				l_hitable->m_Material.Albedo.z = l_pair->material->m_materialAttributes.AlbedoB;
+	//				l_hitable->m_Material.MRAT.x = l_pair->material->m_materialAttributes.Metallic;
+	//				l_hitable->m_Material.MRAT.y = l_pair->material->m_materialAttributes.Roughness;
+
+	//				l_hitable->m_Sphere.m_center = l_transformComponent->m_globalTransformVector.m_pos;
+	//				l_hitable->m_Sphere.m_radius = 1.0f;
+
+	//				l_hitableListVector.emplace_back(l_hitable);
+	//				break;
+	//			}
+	//		}
+	//	}
+	//}
+
+	auto l_hitable = new HitableSphere();
+	l_hitable->m_Material.Albedo.x = 1.0f;
+	l_hitable->m_Material.Albedo.y = 1.0f;
+	l_hitable->m_Material.Albedo.z = 1.0f;
+	l_hitable->m_Material.MRAT.x = 0.0f;
+	l_hitable->m_Material.MRAT.y = 1.0f;
+
+	l_hitable->m_Sphere.m_center = Vec4(0.0f, -200.0f, 0.0f, 1.0f);
+	l_hitable->m_Sphere.m_radius = 200.0f;
+
+	l_hitableListVector.emplace_back(l_hitable);
+
+	l_hitable = new HitableSphere();
+	l_hitable->m_Material.Albedo.x = 1.0f;
+	l_hitable->m_Material.Albedo.y = 1.0f;
+	l_hitable->m_Material.Albedo.z = 1.0f;
+	l_hitable->m_Material.MRAT.x = 0.0f;
+	l_hitable->m_Material.MRAT.y = 1.0f;
+
+	l_hitable->m_Sphere.m_center = Vec4(0.0f, 1.0f, 0.0f, 1.0f);
+	l_hitable->m_Sphere.m_radius = 1.0f;
+
+	l_hitableListVector.emplace_back(l_hitable);
 
 	HitableList* l_hitableList = new HitableList();
 	l_hitableList->m_List = l_hitableListVector.data();
