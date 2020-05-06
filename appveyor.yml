@@ -9,8 +9,6 @@ skip_commits:
 environment:
 
   matrix:
-  - job_name: Windows build
-    appveyor_build_worker_image: Visual Studio 2017
 
   - job_name: Linux build
     appveyor_build_worker_image: Ubuntu
@@ -18,11 +16,47 @@ environment:
   - job_name: macOS build
     appveyor_build_worker_image: macOS
 
-matrix:
-  fast_finish: true
-
+  - job_name: Windows build
+    appveyor_build_worker_image: Visual Studio 2017
+    
 # job-specific configurations
 for:
+
+  -
+    matrix:
+      only:
+        - job_name: Linux build
+
+    clone_script:
+    - sh: git clone -q --branch=$APPVEYOR_REPO_BRANCH https://github.com/$APPVEYOR_REPO_NAME.git $APPVEYOR_BUILD_FOLDER
+    - sh: cd $APPVEYOR_BUILD_FOLDER
+    - sh: git checkout -q $APPVEYOR_REPO_COMMIT
+    - sh: git submodule update --init --recursive
+
+    build_script:
+    - sh: cd Script
+    - sh: bash SetupLinux.sh
+    - sh: bash BuildAssimpLinux.sh
+    - sh: bash BuildGLADLinux.sh
+    - sh: bash BuildEngineLinux.sh.sh
+
+  -
+    matrix:
+      only:
+        - job_name: macOS build
+
+    clone_script:
+    - sh: git clone -q --branch=$APPVEYOR_REPO_BRANCH https://github.com/$APPVEYOR_REPO_NAME.git $APPVEYOR_BUILD_FOLDER
+    - sh: cd $APPVEYOR_BUILD_FOLDER
+    - sh: git checkout -q $APPVEYOR_REPO_COMMIT
+    - sh: git submodule update --init --recursive
+
+    build_script:
+    - sh: cd Script
+    - sh: bash SetupMac.sh
+    - sh: bash BuildAssimpMac-Xcode.sh
+    - sh: bash BuildGLADMac-Xcode.sh
+    - sh: bash BuildEngineMac-Clang.sh
 
   -
     matrix:
@@ -42,39 +76,3 @@ for:
     - cmd: powershell -ExecutionPolicy RemoteSigned -File BuildPhysXWin-VS15.ps1 -Wait
     - cmd: powershell -ExecutionPolicy RemoteSigned -File BuildGLADWin-VS15.ps1 -Wait
     - cmd: powershell -ExecutionPolicy RemoteSigned -File BuildEngineWin-VS15.ps1 -Wait
-
-  -
-    matrix:
-      only:
-        - job_name: Linux build
-
-    clone_script:
-    - sh: git clone -q --branch=%APPVEYOR_REPO_BRANCH% https://github.com/%APPVEYOR_REPO_NAME%.git %APPVEYOR_BUILD_FOLDER%
-    - sh: cd %APPVEYOR_BUILD_FOLDER%
-    - sh: git checkout -q %APPVEYOR_REPO_COMMIT%
-    - sh: git submodule update --init --recursive
-
-    build_script:
-    - sh: cd Script
-    - sh: bash SetupLinux.sh
-    - sh: bash BuildAssimpLinux.sh
-    - sh: bash BuildGLADLinux.sh
-    - sh: bash BuildEngineLinux.sh.sh
-
-  -
-    matrix:
-      only:
-        - job_name: macOS build
-
-    clone_script:
-    - sh: git clone -q --branch=%APPVEYOR_REPO_BRANCH% https://github.com/%APPVEYOR_REPO_NAME%.git %APPVEYOR_BUILD_FOLDER%
-    - sh: cd %APPVEYOR_BUILD_FOLDER%
-    - sh: git checkout -q %APPVEYOR_REPO_COMMIT%
-    - sh: git submodule update --init --recursive
-
-    build_script:
-    - sh: cd Script
-    - sh: bash SetupMac.sh
-    - sh: bash BuildAssimpMac-Xcode.sh
-    - sh: bash BuildGLADMac-Xcode.sh
-    - sh: bash BuildEngineMac-Clang.sh
