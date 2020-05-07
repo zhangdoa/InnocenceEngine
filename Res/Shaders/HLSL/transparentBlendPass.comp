@@ -12,24 +12,30 @@ struct ComputeInputType
 
 RWTexture2D<uint> in_headPtr : register(u0);
 RWStructuredBuffer<uint4> in_transparentPassRT0 : register(u1);
-RWTexture2D<float4> out_blendPassRT0 : register(u2);
+RWStructuredBuffer<uint4> in_transparentPassRT1 : register(u2);
+RWTexture2D<float4> out_blendPassRT0 : register(u3);
 
-uint getFragmentList(inout uint4 fragmentList[MAX_FRAG], int2 coord)
+uint getFragmentList(out uint4 fragmentListRT0[MAX_FRAG], out uint4 fragmentListRT1[MAX_FRAG], int2 coord)
 {
 	uint current = in_headPtr[coord];
 	uint fragCount = 0;
 
 	while (current != 0xFFFFFFFF && fragCount < MAX_FRAG)
 	{
-		uint4 item = in_transparentPassRT0[current];
-		current = item.x;
-		fragmentList[fragCount] = item;
+		uint4 itemRT0 = in_transparentPassRT0[current];
+		uint4 itemRT1 = in_transparentPassRT1[current];
+
+		current = itemRT0.x;
+
+		fragmentListRT0[fragCount] = itemRT0;
+		fragmentListRT1[fragCount] = itemRT1;
+
 		fragCount++;
 	}
 	return fragCount;
 }
 
-void sortFragmentList(inout uint4 fragmentList[MAX_FRAG], uint count)
+void sortFragmentList(inout uint4 fragmentListRT0[MAX_FRAG], inout uint4 fragmentListRT1[MAX_FRAG], uint count)
 {
 	uint i;
 	uint j;
@@ -37,39 +43,43 @@ void sortFragmentList(inout uint4 fragmentList[MAX_FRAG], uint count)
 	{
 		for (j = i + 1; j < count; j++)
 		{
-			float depth_i = asfloat(fragmentList[i].z);
-			float depth_j = asfloat(fragmentList[j].z);
+			float depth_i = asfloat(fragmentListRT0[i].z);
+			float depth_j = asfloat(fragmentListRT0[j].z);
 
 			if (depth_i > depth_j)
 			{
-				uint4 temp = fragmentList[i];
-				fragmentList[i] = fragmentList[j];
-				fragmentList[j] = temp;
+				uint4 tempRT0 = fragmentListRT0[i];
+				fragmentListRT0[i] = fragmentListRT0[j];
+				fragmentListRT0[j] = tempRT0;
+
+				uint4 tempRT1 = fragmentListRT1[i];
+				fragmentListRT1[i] = fragmentListRT1[j];
+				fragmentListRT1[j] = tempRT1;
 			}
 		}
 	}
 }
 
-float4 blend(float4 currentColor, float4 newColor)
+float4 blend(float4 Cb, float4 Cs, float4 Tr)
 {
-	return lerp(currentColor, newColor, newColor.a);
+	return float4(Cs.a * (Cs.rgb + Tr.rgb * Cb.rgb) + (1.0 - Cs.a) * Cb.rgb, 1.0);
 }
 
-float4 getPixelValue(in uint4 fragmentList[MAX_FRAG], uint count)
+float4 getPixelValue(in uint4 fragmentListRT0[MAX_FRAG], inout uint4 fragmentListRT1[MAX_FRAG], uint count)
 {
-	float4 finalColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	float4 Cb = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
 	uint i;
 
 	for (i = 0; i < count; i++)
 	{
-		uint encodedColor = fragmentList[i].y;
-		float4 fragColor = DecodeColor(encodedColor);
-		finalColor += fragColor;
-		//finalColor = blend(finalColor, fragColor);
+		uint encodedCs = fragmentListRT0[i].y;
+		float4 Cs = DecodeColor(encodedCs);
+		float4 Tr = float4(asfloat(fragmentListRT1[i].x), asfloat(fragmentListRT1[i].y), asfloat(fragmentListRT1[i].z), 1.0f);
+		Cb = blend(Cb, Cs, Tr);
 	}
 
-	return finalColor;
+	return Cb;
 }
 
 static float4 heatArray[8] = {
@@ -88,17 +98,17 @@ void main(ComputeInputType input)
 {
 	int2 coord = input.dispatchThreadID.xy;
 
-	out_blendPassRT0[coord] = float4(0.0f, 0.0f, 0.0f, 0.0f);
-
-	uint4 fragmentList[MAX_FRAG];
+	uint4 fragmentListRT0[MAX_FRAG];
+	uint4 fragmentListRT1[MAX_FRAG];
 
 	[unroll]
 	for (uint i = 0; i < MAX_FRAG; i++)
 	{
-		fragmentList[i] = uint4(0, 0, 0, 0);
+		fragmentListRT0[i] = uint4(0, 0, 0, 0);
+		fragmentListRT1[i] = uint4(0, 0, 0, 0);
 	}
 
-	uint fragCount = getFragmentList(fragmentList, coord);
-	sortFragmentList(fragmentList, fragCount);
-	out_blendPassRT0[coord] = getPixelValue(fragmentList, fragCount);
+	uint fragCount = getFragmentList(fragmentListRT0, fragmentListRT1, coord);
+	sortFragmentList(fragmentListRT0, fragmentListRT1, fragCount);
+	out_blendPassRT0[coord] += getPixelValue(fragmentListRT0, fragmentListRT1, fragCount);
 }

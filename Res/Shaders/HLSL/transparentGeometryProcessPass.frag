@@ -51,10 +51,8 @@ void main(PixelInputType input)
 
 	float4 RT0 = float4(Cs, materialCBuffer.albedo.a);
 
-	// alpha channel as the mask
-	float4 RT1 = float4(Tr, 1.0f);
-
-	uint encodedColor = EncodeColor(RT0);
+	uint encodedRT0 = EncodeColor(RT0);
+	uint4 encodedRT1 = uint4(asuint(Tr.x), asuint(Tr.y), asuint(Tr.z), 0);
 	uint depth = asuint(input.posCS.z);
 
 	int2 writeCoord = (int2)input.posCS.xy;
@@ -62,6 +60,8 @@ void main(PixelInputType input)
 	uint oldPtr;
 	InterlockedExchange(out_headPtr[writeCoord], newPtr, oldPtr);
 
-	uint4 item = uint4(oldPtr, encodedColor, depth, 0);
-	out_transparentPassRT0[newPtr] = item;
+	uint4 itemRT0 = uint4(oldPtr, encodedRT0, depth, 0);
+
+	out_transparentPassRT0[newPtr] = itemRT0;
+	out_transparentPassRT1[newPtr] = encodedRT1;
 }

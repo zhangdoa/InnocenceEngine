@@ -25,6 +25,7 @@ namespace TransparentPass
 
 	GPUBufferDataComponent* m_atomicCounterGBDC;
 	GPUBufferDataComponent* m_geometryProcessRT0GBDC;
+	GPUBufferDataComponent* m_geometryProcessRT1GBDC;
 
 	TextureDataComponent* m_blendPassRT0TDC;
 }
@@ -121,7 +122,7 @@ bool TransparentPass::setupBlendPass()
 
 	m_blendRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_blendRPDC->m_ResourceBinderLayoutDescs.resize(3);
+	m_blendRPDC->m_ResourceBinderLayoutDescs.resize(4);
 
 	m_blendRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
 	m_blendRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
@@ -136,12 +137,18 @@ bool TransparentPass::setupBlendPass()
 	m_blendRPDC->m_ResourceBinderLayoutDescs[1].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_blendRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
 
-	m_blendRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Image;
+	m_blendRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_blendRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
 	m_blendRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 2;
 	m_blendRPDC->m_ResourceBinderLayoutDescs[2].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_blendRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_blendRPDC->m_ResourceBinderLayoutDescs[2].m_IndirectBinding = true;
+
+	m_blendRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Image;
+	m_blendRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 0;
+	m_blendRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 3;
+	m_blendRPDC->m_ResourceBinderLayoutDescs[3].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_blendRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_blendRPDC->m_ResourceBinderLayoutDescs[3].m_IndirectBinding = true;
 
 	m_blendRPDC->m_ShaderProgram = m_blendSPC;
 
@@ -164,6 +171,11 @@ bool TransparentPass::Setup()
 	m_geometryProcessRT0GBDC->m_ElementSize = sizeof(TVec4<uint32_t>);
 	m_geometryProcessRT0GBDC->m_ElementCount = l_RenderPassDesc.m_RenderTargetDesc.Width * l_RenderPassDesc.m_RenderTargetDesc.Height * l_averangeFragmentPerPixel;
 
+	m_geometryProcessRT1GBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("TransparentGeometryProcessPassRT1/");
+	m_geometryProcessRT1GBDC->m_GPUAccessibility = Accessibility::ReadWrite;
+	m_geometryProcessRT1GBDC->m_ElementSize = sizeof(TVec4<uint32_t>);
+	m_geometryProcessRT1GBDC->m_ElementCount = l_RenderPassDesc.m_RenderTargetDesc.Width * l_RenderPassDesc.m_RenderTargetDesc.Height * l_averangeFragmentPerPixel;
+
 	m_blendPassRT0TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("TransparentBlendPassRT0/");
 	m_blendPassRT0TDC->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
@@ -179,6 +191,7 @@ bool TransparentPass::Initialize()
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_atomicCounterGBDC);
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_geometryProcessRT0GBDC);
+	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_geometryProcessRT1GBDC);
 	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_blendPassRT0TDC);
 
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_geometryProcessSPC);
@@ -194,6 +207,7 @@ bool TransparentPass::geometryProcess()
 	static uint32_t zero = 0;
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_atomicCounterGBDC, &zero);
 	g_pModuleManager->getRenderingServer()->ClearGPUBufferDataComponent(m_geometryProcessRT0GBDC);
+	g_pModuleManager->getRenderingServer()->ClearGPUBufferDataComponent(m_geometryProcessRT1GBDC);
 
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
@@ -202,13 +216,13 @@ bool TransparentPass::geometryProcess()
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_geometryProcessRPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_geometryProcessRPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_geometryProcessRPDC);
-	//g_pModuleManager->getRenderingServer()->CopyColorBuffer(PreTAAPass::GetRPDC(), 0, m_RPDC, 0);
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, m_atomicCounterGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, m_geometryProcessRPDC->m_RenderTargetsResourceBinders[0], 4, 1, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, m_geometryProcessRT0GBDC->m_ResourceBinder, 5, 2, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, m_geometryProcessRT1GBDC->m_ResourceBinder, 6, 3, Accessibility::ReadWrite);
 
 	auto& l_drawCallInfo = g_pModuleManager->getRenderingFrontend()->getDrawCallInfo();
 	auto l_drawCallCount = l_drawCallInfo.size();
@@ -234,6 +248,7 @@ bool TransparentPass::geometryProcess()
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, m_atomicCounterGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, m_geometryProcessRPDC->m_RenderTargetsResourceBinders[0], 4, 1, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, m_geometryProcessRT0GBDC->m_ResourceBinder, 5, 2, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, m_geometryProcessRT1GBDC->m_ResourceBinder, 6, 3, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_geometryProcessRPDC);
 
@@ -248,13 +263,15 @@ bool TransparentPass::blend()
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_blendRPDC, ShaderStage::Compute, m_geometryProcessRPDC->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_blendRPDC, ShaderStage::Compute, m_geometryProcessRT0GBDC->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_blendRPDC, ShaderStage::Compute, m_blendPassRT0TDC->m_ResourceBinder, 2, 2, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_blendRPDC, ShaderStage::Compute, m_geometryProcessRT1GBDC->m_ResourceBinder, 2, 2, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_blendRPDC, ShaderStage::Compute, PreTAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 3, 3, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_blendRPDC, 160, 90, 1);
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_blendRPDC, ShaderStage::Compute, m_geometryProcessRPDC->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_blendRPDC, ShaderStage::Compute, m_geometryProcessRT0GBDC->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_blendRPDC, ShaderStage::Compute, m_blendPassRT0TDC->m_ResourceBinder, 2, 2, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_blendRPDC, ShaderStage::Compute, m_geometryProcessRT0GBDC->m_ResourceBinder, 2, 2, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_blendRPDC, ShaderStage::Compute, PreTAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 3, 3, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_blendRPDC);
 
