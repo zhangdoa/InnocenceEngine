@@ -113,7 +113,6 @@ bool SSAOPass::Setup()
 	m_SSAOKernelGPUBuffer->m_ElementSize = sizeof(Vec4);
 	m_SSAOKernelGPUBuffer->m_ElementCount = m_kernelSize;
 	m_SSAOKernelGPUBuffer->m_InitialData = &m_SSAOKernel[0];
-	m_SSAOKernelGPUBuffer->m_BindingPoint = 9;
 
 	// Noise
 	auto l_textureSize = 4;

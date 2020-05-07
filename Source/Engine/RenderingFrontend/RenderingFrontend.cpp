@@ -149,7 +149,6 @@ void InnoRenderingFrontendNS::initializeAnimation(AnimationDataComponent* rhs)
 	l_keyData->m_ElementCount = rhs->m_KeyData.capacity();
 	l_keyData->m_ElementSize = sizeof(KeyData);
 	l_keyData->m_GPUAccessibility = Accessibility::ReadWrite;
-	l_keyData->m_BindingPoint = 0;
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(l_keyData);
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_keyData, &rhs->m_KeyData[0]);

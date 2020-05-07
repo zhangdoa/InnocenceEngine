@@ -11,7 +11,7 @@ public:
 	size_t m_ElementCount = 0;
 	size_t m_ElementSize = 0;
 	size_t m_TotalSize = 0;
-	size_t m_BindingPoint = 0;
+	bool m_isAtomicCounter = false;
 	void* m_InitialData = 0;
 	IResourceBinder* m_ResourceBinder = 0;
 };

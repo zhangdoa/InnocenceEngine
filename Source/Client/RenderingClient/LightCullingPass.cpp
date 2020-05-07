@@ -57,7 +57,6 @@ bool LightCullingPass::createGridFrustumsBuffer()
 	m_tileFrustumGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_tileFrustumGBDC->m_ElementCount = l_elementCount;
 	m_tileFrustumGBDC->m_ElementSize = 64;
-	m_tileFrustumGBDC->m_BindingPoint = 0;
 
 	return true;
 }
@@ -70,7 +69,6 @@ bool LightCullingPass::createLightIndexCounterBuffer()
 	m_lightListIndexCounterGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_lightListIndexCounterGBDC->m_ElementCount = 1;
 	m_lightListIndexCounterGBDC->m_ElementSize = sizeof(uint32_t);
-	m_lightListIndexCounterGBDC->m_BindingPoint = 1;
 	m_lightListIndexCounterGBDC->m_InitialData = &l_initialIndexCount;
 
 	return true;
@@ -94,7 +92,6 @@ bool LightCullingPass::createLightIndexListBuffer()
 	m_lightIndexListGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_lightIndexListGBDC->m_ElementCount = l_elementCount;
 	m_lightIndexListGBDC->m_ElementSize = sizeof(uint32_t);
-	m_lightIndexListGBDC->m_BindingPoint = 1;
 
 	return true;
 }

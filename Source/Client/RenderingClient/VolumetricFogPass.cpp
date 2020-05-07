@@ -263,7 +263,6 @@ bool VolumetricFogPass::Setup()
 	m_froxelizationCBufferGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("FroxelizationPassGPUBuffer/");
 	m_froxelizationCBufferGBDC->m_ElementCount = 1;
 	m_froxelizationCBufferGBDC->m_ElementSize = sizeof(VoxelizationConstantBuffer);
-	m_froxelizationCBufferGBDC->m_BindingPoint = 11;
 
 	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("VolumetricFogPass/");
 

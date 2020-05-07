@@ -31,42 +31,36 @@ bool DefaultGPUBuffers::Initialize()
 	m_PerFrameCBufferGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("PerFrameCBuffer/");
 	m_PerFrameCBufferGBDC->m_ElementCount = 1;
 	m_PerFrameCBufferGBDC->m_ElementSize = sizeof(PerFrameConstantBuffer);
-	m_PerFrameCBufferGBDC->m_BindingPoint = 0;
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_PerFrameCBufferGBDC);
 
 	m_MeshGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("PerObjectCBuffer/");
 	m_MeshGBDC->m_ElementCount = l_RenderingCapability.maxMeshes;
 	m_MeshGBDC->m_ElementSize = sizeof(PerObjectConstantBuffer);
-	m_MeshGBDC->m_BindingPoint = 1;
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_MeshGBDC);
 
 	m_MaterialGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("MaterialCBuffer/");
 	m_MaterialGBDC->m_ElementCount = l_RenderingCapability.maxMaterials;
 	m_MaterialGBDC->m_ElementSize = sizeof(MaterialConstantBuffer);
-	m_MaterialGBDC->m_BindingPoint = 2;
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_MaterialGBDC);
 
 	m_PointLightGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("PointLightCBuffer/");
 	m_PointLightGBDC->m_ElementCount = l_RenderingCapability.maxPointLights;
 	m_PointLightGBDC->m_ElementSize = sizeof(PointLightConstantBuffer);
-	m_PointLightGBDC->m_BindingPoint = 4;
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_PointLightGBDC);
 
 	m_SphereLightGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("SphereLightCBuffer/");
 	m_SphereLightGBDC->m_ElementCount = l_RenderingCapability.maxSphereLights;
 	m_SphereLightGBDC->m_ElementSize = sizeof(SphereLightConstantBuffer);
-	m_SphereLightGBDC->m_BindingPoint = 5;
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_SphereLightGBDC);
 
 	m_CSMGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("CSMCBuffer/");
 	m_CSMGBDC->m_ElementCount = l_RenderingCapability.maxCSMSplits;
 	m_CSMGBDC->m_ElementSize = sizeof(CSMConstantBuffer);
-	m_CSMGBDC->m_BindingPoint = 6;
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_CSMGBDC);
 
@@ -74,28 +68,24 @@ bool DefaultGPUBuffers::Initialize()
 	m_dispatchParamsGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("DispatchParamsCBuffer/");
 	m_dispatchParamsGBDC->m_ElementCount = 8;
 	m_dispatchParamsGBDC->m_ElementSize = sizeof(DispatchParamsConstantBuffer);
-	m_dispatchParamsGBDC->m_BindingPoint = 8;
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_dispatchParamsGBDC);
 
 	m_GICBufferGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("GICBuffer/");
 	m_GICBufferGBDC->m_ElementSize = sizeof(GIConstantBuffer);
 	m_GICBufferGBDC->m_ElementCount = 1;
-	m_GICBufferGBDC->m_BindingPoint = 10;
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_GICBufferGBDC);
 
 	m_animationGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("AnimationCBuffer/");
 	m_animationGBDC->m_ElementCount = 512;
 	m_animationGBDC->m_ElementSize = sizeof(AnimationConstantBuffer);
-	m_animationGBDC->m_BindingPoint = 0;
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_animationGBDC);
 
 	m_billboardGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("BillboardCBuffer/");
 	m_billboardGBDC->m_ElementCount = l_RenderingCapability.maxMeshes;
 	m_billboardGBDC->m_ElementSize = sizeof(PerObjectConstantBuffer);
-	m_billboardGBDC->m_BindingPoint = 12;
 	m_billboardGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_billboardGBDC);

@@ -50,19 +50,16 @@ bool DebugPass::Setup()
 	m_debugSphereMeshGBDC->m_ElementCount = m_maxDebugMeshes;
 	m_debugSphereMeshGBDC->m_ElementSize = sizeof(DebugPerObjectConstantBuffer);
 	m_debugSphereMeshGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
-	m_debugSphereMeshGBDC->m_BindingPoint = 0;
 
 	m_debugCubeMeshGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("DebugCubeMeshGPUBuffer/");
 	m_debugCubeMeshGBDC->m_ElementCount = m_maxDebugMeshes;
 	m_debugCubeMeshGBDC->m_ElementSize = sizeof(DebugPerObjectConstantBuffer);
 	m_debugCubeMeshGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
-	m_debugCubeMeshGBDC->m_BindingPoint = 0;
 
 	m_debugMaterialGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("DebugMaterialGPUBuffer/");
 	m_debugMaterialGBDC->m_ElementCount = m_maxDebugMaterial;
 	m_debugMaterialGBDC->m_ElementSize = sizeof(DebugMaterialConstantBuffer);
 	m_debugMaterialGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
-	m_debugMaterialGBDC->m_BindingPoint = 1;
 
 	////
 	m_SPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("DebugPass/");

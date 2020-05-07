@@ -81,7 +81,6 @@ bool GIResolvePass::InitializeGPUBuffers()
 				m_surfelGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 				m_surfelGBDC->m_ElementCount = l_surfels.size();
 				m_surfelGBDC->m_ElementSize = sizeof(Surfel);
-				m_surfelGBDC->m_BindingPoint = 0;
 				m_surfelGBDC->m_InitialData = &l_surfels[0];
 
 				g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_surfelGBDC);
@@ -91,7 +90,6 @@ bool GIResolvePass::InitializeGPUBuffers()
 				m_surfelIrradianceGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 				m_surfelIrradianceGBDC->m_ElementCount = l_surfels.size();
 				m_surfelIrradianceGBDC->m_ElementSize = sizeof(Vec4);
-				m_surfelIrradianceGBDC->m_BindingPoint = 1;
 
 				g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_surfelIrradianceGBDC);
 
@@ -124,7 +122,6 @@ bool GIResolvePass::InitializeGPUBuffers()
 				m_brickGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 				m_brickGBDC->m_ElementCount = l_bricks.size();
 				m_brickGBDC->m_ElementSize = sizeof(uint32_t) * 2;
-				m_brickGBDC->m_BindingPoint = 0;
 				m_brickGBDC->m_InitialData = &l_brickConstantBuffer[0];
 
 				g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_brickGBDC);
@@ -134,7 +131,6 @@ bool GIResolvePass::InitializeGPUBuffers()
 				m_brickIrradianceGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 				m_brickIrradianceGBDC->m_ElementCount = l_bricks.size();
 				m_brickIrradianceGBDC->m_ElementSize = sizeof(Vec4);
-				m_brickIrradianceGBDC->m_BindingPoint = 1;
 
 				g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_brickIrradianceGBDC);
 
@@ -145,7 +141,6 @@ bool GIResolvePass::InitializeGPUBuffers()
 				m_brickFactorGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 				m_brickFactorGBDC->m_ElementCount = l_brickFactors.size();
 				m_brickFactorGBDC->m_ElementSize = sizeof(BrickFactor);
-				m_brickFactorGBDC->m_BindingPoint = 2;
 				m_brickFactorGBDC->m_InitialData = &l_brickFactors[0];
 
 				g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_brickFactorGBDC);
@@ -225,7 +220,6 @@ bool GIResolvePass::InitializeGPUBuffers()
 				m_probeGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 				m_probeGBDC->m_ElementCount = l_probes.size();
 				m_probeGBDC->m_ElementSize = sizeof(Probe);
-				m_probeGBDC->m_BindingPoint = 3;
 				m_probeGBDC->m_InitialData = &l_probes[0];
 
 				g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_probeGBDC);
@@ -420,7 +414,6 @@ bool GIResolvePass::setupSky()
 	m_skyIrradianceGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_skyIrradianceGBDC->m_ElementCount = 6;
 	m_skyIrradianceGBDC->m_ElementSize = sizeof(Vec4);
-	m_skyIrradianceGBDC->m_BindingPoint = 4;
 
 	return true;
 }

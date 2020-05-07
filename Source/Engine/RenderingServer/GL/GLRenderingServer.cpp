@@ -601,7 +601,7 @@ bool GLRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent*
 	glGenBuffers(1, &l_rhs->m_Handle);
 	glBindBuffer(l_rhs->m_BufferType, l_rhs->m_Handle);
 	glBufferData(l_rhs->m_BufferType, l_rhs->m_TotalSize, l_rhs->m_InitialData, GL_DYNAMIC_DRAW);
-	glBindBufferRange(l_rhs->m_BufferType, (GLuint)l_rhs->m_BindingPoint, l_rhs->m_Handle, 0, l_rhs->m_TotalSize);
+	glBindBufferRange(l_rhs->m_BufferType, 0, l_rhs->m_Handle, 0, l_rhs->m_TotalSize);
 
 #ifdef _DEBUG
 	auto l_GPUBufferName = std::string(l_rhs->m_Name.c_str());

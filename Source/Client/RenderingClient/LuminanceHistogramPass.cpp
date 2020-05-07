@@ -99,14 +99,12 @@ bool LuminanceHistogramPass::Setup()
 	m_LuminanceHistogramGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_LuminanceHistogramGBDC->m_ElementCount = 256;
 	m_LuminanceHistogramGBDC->m_ElementSize = sizeof(uint32_t);
-	m_LuminanceHistogramGBDC->m_BindingPoint = 0;
 
 	m_LuminanceAverageGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("LuminanceAverageGPUBuffer/");
 	m_LuminanceAverageGBDC->m_CPUAccessibility = Accessibility::Immutable;
 	m_LuminanceAverageGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_LuminanceAverageGBDC->m_ElementCount = 1;
 	m_LuminanceAverageGBDC->m_ElementSize = sizeof(float);
-	m_LuminanceAverageGBDC->m_BindingPoint = 0;
 
 	return true;
 }

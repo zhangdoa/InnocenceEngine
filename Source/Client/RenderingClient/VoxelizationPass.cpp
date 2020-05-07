@@ -524,7 +524,6 @@ bool VoxelizationPass::Setup()
 	m_voxelizationPassCBufferGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("VoxelizationPassCBuffer/");
 	m_voxelizationPassCBufferGBDC->m_ElementCount = 1;
 	m_voxelizationPassCBufferGBDC->m_ElementSize = sizeof(VoxelizationConstantBuffer);
-	m_voxelizationPassCBufferGBDC->m_BindingPoint = 0;
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_voxelizationPassCBufferGBDC);
 
@@ -532,7 +531,6 @@ bool VoxelizationPass::Setup()
 	m_geometryProcessSBufferGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("VoxelGeometryProcessSBuffer/");
 	m_geometryProcessSBufferGBDC->m_ElementCount = m_voxelizationResolution * m_voxelizationResolution * m_voxelizationResolution * 2;
 	m_geometryProcessSBufferGBDC->m_ElementSize = sizeof(uint32_t);
-	m_geometryProcessSBufferGBDC->m_BindingPoint = 0;
 	m_geometryProcessSBufferGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_geometryProcessSBufferGBDC);
@@ -574,7 +572,6 @@ bool VoxelizationPass::Setup()
 	m_rayTracingRaySBufferGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("VoxelRayTracingRaySBuffer/");
 	m_rayTracingRaySBufferGBDC->m_ElementCount = m_maxRay * m_maxRay;
 	m_rayTracingRaySBufferGBDC->m_ElementSize = sizeof(Vec4);
-	m_rayTracingRaySBufferGBDC->m_BindingPoint = 0;
 	m_rayTracingRaySBufferGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_rayTracingRaySBufferGBDC->m_InitialData = &m_rayTracingRay[0];
 
@@ -584,7 +581,6 @@ bool VoxelizationPass::Setup()
 	m_rayTracingProbeIndexSBufferGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("VoxelRayTracingProbeIndexSBuffer/");
 	m_rayTracingProbeIndexSBufferGBDC->m_ElementCount = m_maxProbe;
 	m_rayTracingProbeIndexSBufferGBDC->m_ElementSize = sizeof(TVec4<uint32_t>);
-	m_rayTracingProbeIndexSBufferGBDC->m_BindingPoint = 0;
 	m_rayTracingProbeIndexSBufferGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_rayTracingProbeIndexSBufferGBDC);

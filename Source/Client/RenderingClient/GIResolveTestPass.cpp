@@ -41,7 +41,6 @@ bool GIResolveTestPass::Setup()
 	m_probeSphereMeshGBDC->m_ElementCount = 4096;
 	m_probeSphereMeshGBDC->m_ElementSize = sizeof(ProbeMeshData);
 	m_probeSphereMeshGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
-	m_probeSphereMeshGBDC->m_BindingPoint = 0;
 
 	m_probeSphereMeshData.reserve(4096);
 
