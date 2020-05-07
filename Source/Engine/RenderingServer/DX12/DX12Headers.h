@@ -28,7 +28,6 @@ struct DX12UAV
 	D3D12_GPU_DESCRIPTOR_HANDLE ShaderVisibleGPUHandle;
 	D3D12_CPU_DESCRIPTOR_HANDLE ShaderNonVisibleCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE ShaderNonVisibleGPUHandle;
-	ComPtr<ID3D12Resource> m_Counter = 0;
 };
 
 struct DX12Sampler

@@ -11,6 +11,7 @@ public:
 	DX12TextureDataComponent* m_Texture = 0;
 	ComPtr<ID3D12Resource> m_DefaultHeapBuffer = 0;
 	ComPtr<ID3D12Resource> m_UploadHeapBuffer = 0;
+	bool isAtomicCounter = false;
 };
 
 class DX12PipelineStateObject : public IPipelineStateObject

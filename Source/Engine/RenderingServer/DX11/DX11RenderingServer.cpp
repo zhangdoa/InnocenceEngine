@@ -800,7 +800,7 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 	l_rhs->m_BufferDesc.Usage = l_isStructuredBuffer ? D3D11_USAGE_DEFAULT : D3D11_USAGE_DYNAMIC;
 	l_rhs->m_BufferDesc.BindFlags = l_isStructuredBuffer ? (D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS) : D3D11_BIND_CONSTANT_BUFFER;
 	l_rhs->m_BufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	l_rhs->m_BufferDesc.MiscFlags = l_isStructuredBuffer ? D3D11_RESOURCE_MISC_BUFFER_STRUCTURED : 0;
+	l_rhs->m_BufferDesc.MiscFlags |= l_isStructuredBuffer ? D3D11_RESOURCE_MISC_BUFFER_STRUCTURED : 0;
 	l_rhs->m_BufferDesc.StructureByteStride = l_isStructuredBuffer ? (uint32_t)l_rhs->m_ElementSize : 0;
 
 	HRESULT l_HResult;
@@ -861,7 +861,7 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 		l_UAVDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
 		l_UAVDesc.Buffer.FirstElement = 0;
 		l_UAVDesc.Buffer.NumElements = (uint32_t)l_rhs->m_ElementCount;
-		l_UAVDesc.Buffer.Flags = 0;
+		l_UAVDesc.Buffer.Flags = l_rhs->m_isAtomicCounter ? D3D11_BUFFER_UAV_FLAG_COUNTER : 0;
 
 		l_HResult = m_device->CreateUnorderedAccessView(l_rhs->m_BufferPtr, &l_UAVDesc, &l_rhs->m_UAV);
 
