@@ -1,0 +1,104 @@
+// shadertype=hlsl
+#include "common/coneTrace.hlsl"
+#define MAX_FRAG 8
+
+struct ComputeInputType
+{
+	uint3 groupID : SV_GroupID;           // 3D index of the thread group in the dispatch.
+	uint3 groupThreadID : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
+	uint3 dispatchThreadID : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
+	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
+};
+
+RWTexture2D<uint> in_headPtr : register(u0);
+RWStructuredBuffer<uint4> in_transparentPassRT0 : register(u1);
+RWTexture2D<float4> out_blendPassRT0 : register(u2);
+
+uint getFragmentList(inout uint4 fragmentList[MAX_FRAG], int2 coord)
+{
+	uint current = in_headPtr[coord];
+	uint fragCount = 0;
+
+	while (current != 0xFFFFFFFF && fragCount < MAX_FRAG)
+	{
+		uint4 item = in_transparentPassRT0[current];
+		current = item.x;
+		fragmentList[fragCount] = item;
+		fragCount++;
+	}
+	return fragCount;
+}
+
+void sortFragmentList(inout uint4 fragmentList[MAX_FRAG], uint count)
+{
+	uint i;
+	uint j;
+	for (i = 0; i < count; i++)
+	{
+		for (j = i + 1; j < count; j++)
+		{
+			float depth_i = asfloat(fragmentList[i].z);
+			float depth_j = asfloat(fragmentList[j].z);
+
+			if (depth_i > depth_j)
+			{
+				uint4 temp = fragmentList[i];
+				fragmentList[i] = fragmentList[j];
+				fragmentList[j] = temp;
+			}
+		}
+	}
+}
+
+float4 blend(float4 currentColor, float4 newColor)
+{
+	return lerp(currentColor, newColor, newColor.a);
+}
+
+float4 getPixelValue(in uint4 fragmentList[MAX_FRAG], uint count)
+{
+	float4 finalColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
+
+	uint i;
+
+	for (i = 0; i < count; i++)
+	{
+		uint encodedColor = fragmentList[i].y;
+		float4 fragColor = DecodeColor(encodedColor);
+		finalColor += fragColor;
+		//finalColor = blend(finalColor, fragColor);
+	}
+
+	return finalColor;
+}
+
+static float4 heatArray[8] = {
+	float4(0.0f, 0.0f, 0.5f, 1.0f),
+	float4(0.0f, 0.0f, 1.0f, 1.0f),
+	float4(0.0f, 1.0f, 0.5f, 1.0f),
+	float4(0.0f, 1.0f, 1.0f, 1.0f),
+	float4(0.0f, 0.5f, 0.0f, 1.0f),
+	float4(0.0f, 1.0f, 0.0f, 1.0f),
+	float4(1.0f, 1.0f, 0.0f, 1.0f),
+	float4(1.0f, 0.0f, 0.0f, 1.0f)
+};
+
+[numthreads(8, 8, 1)]
+void main(ComputeInputType input)
+{
+	int2 coord = input.dispatchThreadID.xy;
+
+	out_blendPassRT0[coord] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+
+	uint4 fragmentList[MAX_FRAG];
+
+	[unroll]
+	for (uint i = 0; i < MAX_FRAG; i++)
+	{
+		fragmentList[i] = uint4(0, 0, 0, 0);
+	}
+
+	uint fragCount = getFragmentList(fragmentList, coord);
+	sortFragmentList(fragmentList, fragCount);
+	out_blendPassRT0[coord] = getPixelValue(fragmentList, fragCount);
+}

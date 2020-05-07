@@ -195,7 +195,6 @@ bool DefaultRenderingClient::Setup()
 				SkyPass::PrepareCommandList();
 			}
 			PreTAAPass::PrepareCommandList();
-			TransparentPass::PrepareCommandList();
 			//VolumetricFogPass::PrepareCommandList();
 
 			g_pModuleManager->getRenderingServer()->ExecuteCommandList(LightPass::GetRPDC());
@@ -207,13 +206,12 @@ bool DefaultRenderingClient::Setup()
 			g_pModuleManager->getRenderingServer()->ExecuteCommandList(PreTAAPass::GetRPDC());
 			g_pModuleManager->getRenderingServer()->WaitForFrame(PreTAAPass::GetRPDC());
 
-			g_pModuleManager->getRenderingServer()->ExecuteCommandList(TransparentPass::GetRPDC());
-			g_pModuleManager->getRenderingServer()->WaitForFrame(TransparentPass::GetRPDC());
+			//TransparentPass::Render();
 
 			VolumetricFogPass::Render(false);
 
 			l_canvas = PreTAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
-			l_canvas = TransparentPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
+			//l_canvas = TransparentPass::GetResult();
 			//l_canvas = VolumetricFogPass::GetFroxelVisualizationResult();
 		}
 

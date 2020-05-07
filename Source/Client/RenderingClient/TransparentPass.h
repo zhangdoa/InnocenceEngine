@@ -5,9 +5,11 @@ namespace TransparentPass
 {
 	bool Setup();
 	bool Initialize();
-	bool PrepareCommandList();
+	bool Render();
 	bool Terminate();
 
 	RenderPassDataComponent* GetRPDC();
 	ShaderProgramComponent* GetSPC();
+
+	IResourceBinder* GetResult();
 };
