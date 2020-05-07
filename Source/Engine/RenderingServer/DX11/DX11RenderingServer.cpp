@@ -662,6 +662,8 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 
 	CreateStateObjects(l_rhs, m_InputLayoutDummyShaderBuffer, m_device);
 
+	l_rhs->m_UAVForPixelShader.resize(16);
+
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
@@ -1302,21 +1304,16 @@ bool BindUAV(ShaderStage shaderStage, uint32_t slot, ID3D11UnorderedAccessView* 
 	else if (shaderStage == ShaderStage::Pixel)
 	{
 		auto l_DSV = renderPass->m_DSV;
+		static uint32_t l_initialCounts = 0;
 
-		if (UAV)
+		if (!UAV)
 		{
 			l_DSV = 0;
 		}
 
-		if (renderPass->m_RenderPassDesc.m_UseMultiFrames)
-		{
-			m_deviceContext->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, l_DSV, 0, 1, &UAV, nullptr);
-		}
-		else
-		{
-			auto l_RTCount = (uint32_t)renderPass->m_RenderPassDesc.m_RenderTargetCount;
-			m_deviceContext->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, l_DSV, 0, l_RTCount, &UAV, nullptr);
-		}
+		renderPass->m_UAVForPixelShader[slot] = UAV;
+
+		m_deviceContext->OMSetRenderTargetsAndUnorderedAccessViews(0, NULL, l_DSV, 0, (uint32_t)renderPass->m_UAVForPixelShader.size(), renderPass->m_UAVForPixelShader.data(), &l_initialCounts);
 	}
 	else
 	{

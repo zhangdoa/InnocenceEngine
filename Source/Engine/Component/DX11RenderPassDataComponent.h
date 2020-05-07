@@ -49,4 +49,6 @@ public:
 
 	D3D11_DEPTH_STENCIL_VIEW_DESC m_DSVDesc = {};
 	ID3D11DepthStencilView* m_DSV = 0;
+
+	std::vector<ID3D11UnorderedAccessView*> m_UAVForPixelShader;
 };
