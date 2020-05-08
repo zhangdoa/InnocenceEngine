@@ -1,0 +1,18 @@
+Texture3D<float4> SrcTexture : register(t0);
+RWTexture3D<float4> DstTexture : register(u0);
+SamplerState BilinearClamp : register(s0);
+
+cbuffer CB : register(b0)
+{
+	float3 TexelSize;
+}
+
+[numthreads(8, 8, 8)]
+void main(uint3 DTid : SV_DispatchThreadID)
+{
+	float3 texcoords = TexelSize * (DTid.xyz + 0.5);
+
+	float4 color = SrcTexture.SampleLevel(BilinearClamp, texcoords, 0);
+
+	DstTexture[DTid.xyz] = color;
+}

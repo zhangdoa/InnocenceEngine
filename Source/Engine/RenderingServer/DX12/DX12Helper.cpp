@@ -21,7 +21,7 @@ ComPtr<ID3D12GraphicsCommandList> DX12Helper::BeginSingleTimeCommands(ComPtr<ID3
 	auto l_HResult = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, globalCommandAllocator.Get(), NULL, IID_PPV_ARGS(&l_commandList));
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create command list!");
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create command list for single time command!");
 		return nullptr;
 	}
 
@@ -33,20 +33,20 @@ bool DX12Helper::EndSingleTimeCommands(ComPtr<ID3D12GraphicsCommandList> command
 	auto l_HResult = commandList->Close();
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't close the command list for single command!");
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't close the command list for single time command!");
 	}
 
 	ComPtr<ID3D12Fence1> l_uploadFinishFence;
 	l_HResult = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&l_uploadFinishFence));
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create fence for single command!");
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create fence for single time command!");
 	}
 
 	auto l_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 	if (l_fenceEvent == nullptr)
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create fence event for single command!");
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create fence event for single time command!");
 	}
 
 	ID3D12CommandList* ppCommandLists[] = { commandList.Get() };

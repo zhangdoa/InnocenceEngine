@@ -114,8 +114,10 @@ namespace DX12RenderingServerNS
 	DX12ShaderProgramComponent* m_SwapChainSPC = 0;
 	DX12SamplerDataComponent* m_SwapChainSDC = 0;
 
-	ID3D12RootSignature* mipMapRootSignature = 0;
-	ID3D12PipelineState* psoMipMaps = 0;
+	ID3D12RootSignature* m_2DMipmapRootSignature = 0;
+	ID3D12RootSignature* m_3DMipmapRootSignature = 0;
+	ID3D12PipelineState* m_2DMipmapPSO = 0;
+	ID3D12PipelineState* m_3DMipmapPSO = 0;
 }
 
 bool CheckWriteState(DX12TextureDataComponent* rhs, DX12CommandList* commandList)
@@ -475,14 +477,6 @@ bool DX12RenderingServerNS::CreateGlobalSamplerHeap()
 
 bool DX12RenderingServerNS::CreateMipmapGenerator()
 {
-	CD3DX12_DESCRIPTOR_RANGE srvCbvRanges[2];
-	CD3DX12_ROOT_PARAMETER rootParameters[3];
-	srvCbvRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0);
-	srvCbvRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0);
-	rootParameters[0].InitAsConstants(2, 0);
-	rootParameters[1].InitAsDescriptorTable(1, &srvCbvRanges[0]);
-	rootParameters[2].InitAsDescriptorTable(1, &srvCbvRanges[1]);
-
 	D3D12_STATIC_SAMPLER_DESC samplerDesc = {};
 	samplerDesc.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
 	samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
@@ -498,24 +492,62 @@ bool DX12RenderingServerNS::CreateMipmapGenerator()
 	samplerDesc.RegisterSpace = 0;
 	samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
-	ID3DBlob* signature;
-	ID3DBlob* error;
-	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-	rootSignatureDesc.Init(_countof(rootParameters), rootParameters, 1, &samplerDesc, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-	D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
-	m_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&mipMapRootSignature));
+	{
+		CD3DX12_DESCRIPTOR_RANGE srvCbvRanges[2];
+		CD3DX12_ROOT_PARAMETER rootParameters[3];
+		srvCbvRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0);
+		srvCbvRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0);
+		rootParameters[0].InitAsConstants(3, 0);
+		rootParameters[1].InitAsDescriptorTable(1, &srvCbvRanges[0]);
+		rootParameters[2].InitAsDescriptorTable(1, &srvCbvRanges[1]);
 
-	ShaderFilePath l_path = "mipmapGenerator.comp/";
-	ID3DBlob* l_mipMapComputeShader;
+		ID3DBlob* signature;
+		ID3DBlob* error;
+		CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
+		rootSignatureDesc.Init(_countof(rootParameters), rootParameters, 1, &samplerDesc, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+		D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
+		m_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_3DMipmapRootSignature));
 
-	LoadShaderFile(&l_mipMapComputeShader, ShaderStage::Compute, l_path);
+		ShaderFilePath l_3DPath = "mipmapGenerator3D.comp/";
+		ID3DBlob* l_3DmipmapComputeShader;
 
-	D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
-	psoDesc.pRootSignature = mipMapRootSignature;
-	psoDesc.CS = { reinterpret_cast<UINT8*>(l_mipMapComputeShader->GetBufferPointer()), l_mipMapComputeShader->GetBufferSize() };
-	m_device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&psoMipMaps));
+		LoadShaderFile(&l_3DmipmapComputeShader, ShaderStage::Compute, l_3DPath);
 
-	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Mipmap generator has been created.");
+		D3D12_COMPUTE_PIPELINE_STATE_DESC l_3DPSODesc = {};
+		l_3DPSODesc.pRootSignature = m_3DMipmapRootSignature;
+		l_3DPSODesc.CS = { reinterpret_cast<UINT8*>(l_3DmipmapComputeShader->GetBufferPointer()), l_3DmipmapComputeShader->GetBufferSize() };
+		m_device->CreateComputePipelineState(&l_3DPSODesc, IID_PPV_ARGS(&m_3DMipmapPSO));
+
+		InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Mipmap generator for 3D texture has been created.");
+	}
+	{
+		CD3DX12_DESCRIPTOR_RANGE srvCbvRanges[2];
+		CD3DX12_ROOT_PARAMETER rootParameters[3];
+		srvCbvRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0);
+		srvCbvRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0);
+		rootParameters[0].InitAsConstants(2, 0);
+		rootParameters[1].InitAsDescriptorTable(1, &srvCbvRanges[0]);
+		rootParameters[2].InitAsDescriptorTable(1, &srvCbvRanges[1]);
+
+		ID3DBlob* signature;
+		ID3DBlob* error;
+		CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
+		rootSignatureDesc.Init(_countof(rootParameters), rootParameters, 1, &samplerDesc, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+		D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
+		m_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_2DMipmapRootSignature));
+
+		ShaderFilePath l_2DPath = "mipmapGenerator2D.comp/";
+		ID3DBlob* l_2DmipmapComputeShader;
+
+		LoadShaderFile(&l_2DmipmapComputeShader, ShaderStage::Compute, l_2DPath);
+
+		D3D12_COMPUTE_PIPELINE_STATE_DESC l_2DPSODesc = {};
+		l_2DPSODesc.pRootSignature = m_2DMipmapRootSignature;
+		l_2DPSODesc.CS = { reinterpret_cast<UINT8*>(l_2DmipmapComputeShader->GetBufferPointer()), l_2DmipmapComputeShader->GetBufferSize() };
+		m_device->CreateComputePipelineState(&l_2DPSODesc, IID_PPV_ARGS(&m_2DMipmapPSO));
+
+		InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Mipmap generator for 2D texture has been created.");
+	}
 
 	return true;
 }
@@ -539,7 +571,7 @@ bool DX12RenderingServerNS::GenerateMipmap(DX12TextureDataComponent* DX12TDC)
 
 	if (!DX12TDC->m_TextureDesc.UseMipMap)
 	{
-		InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Attempt to generate mipmaps for texture without mipmaps.");
+		InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Attempt to generate mipmaps for texture without mipmaps requirement.");
 
 		return false;
 	}
@@ -550,11 +582,19 @@ bool DX12RenderingServerNS::GenerateMipmap(DX12TextureDataComponent* DX12TDC)
 
 	auto commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
 
-	commandList->SetComputeRootSignature(mipMapRootSignature);
-	commandList->SetPipelineState(psoMipMaps);
+	if (DX12TDC->m_TextureDesc.Sampler == TextureSampler::Sampler3D)
+	{
+		commandList->SetComputeRootSignature(m_3DMipmapRootSignature);
+		commandList->SetPipelineState(m_3DMipmapPSO);
+	}
+	else
+	{
+		commandList->SetComputeRootSignature(m_2DMipmapRootSignature);
+		commandList->SetPipelineState(m_2DMipmapPSO);
+	}
 	commandList->SetDescriptorHeaps(1, l_heaps);
 
-	if (DX12TDC->m_CurrentState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+	if (!(DX12TDC->m_CurrentState & D3D12_RESOURCE_STATE_UNORDERED_ACCESS))
 	{
 		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(DX12TDC->m_ResourceHandle.Get(), DX12TDC->m_CurrentState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 	}
@@ -568,20 +608,27 @@ bool DX12RenderingServerNS::GenerateMipmap(DX12TextureDataComponent* DX12TDC)
 	{
 		uint32_t dstWidth = std::max(DX12TDC->m_TextureDesc.Width >> (TopMip + 1), (uint32_t)1);
 		uint32_t dstHeight = std::max(DX12TDC->m_TextureDesc.Height >> (TopMip + 1), (uint32_t)1);
+		uint32_t dstDepth = 1;
 
 		commandList->SetComputeRoot32BitConstant(0, DWParam(1.0f / dstWidth).Uint, 0);
 		commandList->SetComputeRoot32BitConstant(0, DWParam(1.0f / dstHeight).Uint, 1);
 
+		if (DX12TDC->m_TextureDesc.Sampler == TextureSampler::Sampler3D)
+		{
+			dstDepth = std::max(DX12TDC->m_TextureDesc.DepthOrArraySize >> (TopMip + 1), (uint32_t)1);
+			commandList->SetComputeRoot32BitConstant(0, DWParam(1.0f / dstDepth).Uint, 2);
+		}
+
 		commandList->SetComputeRootDescriptorTable(1, l_SRV);
 		commandList->SetComputeRootDescriptorTable(2, l_UAV);
 
-		commandList->Dispatch(std::max(dstWidth / 8, 1u), std::max(dstHeight / 8, 1u), 1);
+		commandList->Dispatch(std::max(dstWidth / 8, 1u), std::max(dstHeight / 8, 1u), std::max(dstDepth / 8, 1u));
 
 		l_SRV.ptr += l_CSUDescSize;
 		l_UAV.ptr += l_CSUDescSize;
 	}
 
-	if (DX12TDC->m_CurrentState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+	if (!(DX12TDC->m_CurrentState & D3D12_RESOURCE_STATE_UNORDERED_ACCESS))
 	{
 		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(DX12TDC->m_ResourceHandle.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, DX12TDC->m_CurrentState));
 	}
@@ -1540,33 +1587,34 @@ bool PreparePipeline(DX12RenderPassDataComponent* renderPass, DX12CommandList* c
 		commandList->m_GraphicsCommandList->RSSetViewports(1, &PSO->m_Viewport);
 		commandList->m_GraphicsCommandList->RSSetScissorRects(1, &PSO->m_Scissor);
 
-		D3D12_CPU_DESCRIPTOR_HANDLE* l_DSVDescriptorCPUHandle = NULL;
+		D3D12_CPU_DESCRIPTOR_HANDLE* l_DSV = NULL;
 
 		if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 		{
-			l_DSVDescriptorCPUHandle = &renderPass->m_DSVDescriptorCPUHandle;
+			l_DSV = &renderPass->m_DSVDescriptorCPUHandle;
 		}
+
+		D3D12_CPU_DESCRIPTOR_HANDLE* l_RTVs = NULL;
+		uint32_t l_RTCount = 0;
 
 		if (renderPass->m_RenderPassDesc.m_UseOutputMerger)
 		{
-			D3D12_CPU_DESCRIPTOR_HANDLE* RTVs = NULL;
-			uint32_t RTCount = 0;
 			if (renderPass->m_RenderPassDesc.m_RenderTargetCount)
 			{
 				if (renderPass->m_RenderPassDesc.m_UseMultiFrames)
 				{
-					RTVs = &renderPass->m_RTVDescriptorCPUHandles[renderPass->m_CurrentFrame];
-					RTCount = 1;
+					l_RTVs = &renderPass->m_RTVDescriptorCPUHandles[renderPass->m_CurrentFrame];
+					l_RTCount = 1;
 				}
 				else
 				{
-					RTVs = &renderPass->m_RTVDescriptorCPUHandles[0];
-					RTCount = (uint32_t)renderPass->m_RenderPassDesc.m_RenderTargetCount;
+					l_RTVs = &renderPass->m_RTVDescriptorCPUHandles[0];
+					l_RTCount = (uint32_t)renderPass->m_RenderPassDesc.m_RenderTargetCount;
 				}
 			}
-
-			commandList->m_GraphicsCommandList->OMSetRenderTargets(RTCount, RTVs, FALSE, l_DSVDescriptorCPUHandle);
 		}
+
+		commandList->m_GraphicsCommandList->OMSetRenderTargets(l_RTCount, l_RTVs, FALSE, l_DSV);
 
 		if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable)
 		{
@@ -1812,7 +1860,10 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent* render
 			}
 		}
 	}
-
+	else
+	{
+		InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Empty resource binder in render pass: ", renderPass->m_Name.c_str(), ", global slot: ", globalSlot, ", local slot: ", localSlot);
+	}
 	return true;
 }
 
