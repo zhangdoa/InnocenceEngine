@@ -20,35 +20,38 @@ bool WinDXWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 {
 	m_initConfig = g_pModuleManager->getInitConfig();
 
-	// Setup the windows class with default settings.
-	auto l_windowName = g_pModuleManager->getApplicationName();
-
-	WNDCLASSEX wcex;
-	ZeroMemory(&wcex, sizeof(wcex));
-	wcex.cbSize = sizeof(wcex);
-	wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-	wcex.lpfnWndProc = (WNDPROC)WindowProc;
-	wcex.hInstance = reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHInstance();
-	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wcex.lpszClassName = reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getApplicationName();
-
-	auto l_windowClass = MAKEINTATOM(RegisterClassEx(&wcex));
-
-	// Determine the resolution of the clients desktop screen.
-	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
-	auto l_screenWidth = (int32_t)l_screenResolution.x;
-	auto l_screenHeight = (int32_t)l_screenResolution.y;
-
-	auto l_posX = (GetSystemMetrics(SM_CXSCREEN) - l_screenWidth) / 2;
-	auto l_posY = (GetSystemMetrics(SM_CYSCREEN) - l_screenHeight) / 2;
-
 	if (m_initConfig.engineMode == EngineMode::Host)
 	{
+		// Setup the windows class with default settings.
+		auto l_windowName = g_pModuleManager->getApplicationName();
+
+		WNDCLASSEX wcex;
+		ZeroMemory(&wcex, sizeof(wcex));
+		wcex.cbSize = sizeof(wcex);
+		wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+		wcex.lpfnWndProc = (WNDPROC)WindowProc;
+		wcex.hInstance = reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHInstance();
+		wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
+		wcex.lpszClassName = reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getApplicationName();
+
+		auto l_windowClass = MAKEINTATOM(RegisterClassEx(&wcex));
+
+		// Determine the resolution of the clients desktop screen.
+		auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+		auto l_screenWidth = (int32_t)l_screenResolution.x;
+		auto l_screenHeight = (int32_t)l_screenResolution.y;
+
+		RECT l_rect;
+		l_rect.right = (GetSystemMetrics(SM_CXSCREEN) - l_screenWidth) / 2;
+		l_rect.bottom = (GetSystemMetrics(SM_CYSCREEN) - l_screenHeight) / 2;
+
+		AdjustWindowRect(&l_rect, WS_OVERLAPPEDWINDOW, false);
+
 		// create a new window and context
 		auto l_hwnd = CreateWindow(
 			l_windowClass, reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getApplicationName(), // class name, window name
 			WS_OVERLAPPEDWINDOW, // styles
-			l_posX, l_posY, // posx, posy. If x is set to CW_USEDEFAULT y is ignored
+			l_rect.right, l_rect.bottom, // posx, posy. If x is set to CW_USEDEFAULT y is ignored
 			l_screenWidth, l_screenHeight, // width, height
 			NULL, NULL, // parent window, menu
 			reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHInstance(), NULL); // instance, param
