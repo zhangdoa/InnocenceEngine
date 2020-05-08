@@ -1,5 +1,5 @@
 #include "WinGLWindowSurface.h"
-#include "../../../Component/WinWindowSystemComponent.h"
+#include "../WinWindowSystem.h"
 #include "../../Engine/Core/InnoLogger.h"
 
 #include "glad/glad.h"
@@ -17,8 +17,8 @@ namespace WinGLWindowSurfaceNS
 	bool update();
 	bool terminate();
 
+	HDC m_HDC;
 	HGLRC m_HGLRC;
-
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	InitConfig m_initConfig;
 }
@@ -32,9 +32,9 @@ bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 	wcex.cbSize = sizeof(wcex);
 	wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 	wcex.lpfnWndProc = (WNDPROC)WindowProc;
-	wcex.hInstance = WinWindowSystemComponent::get().m_hInstance;
+	wcex.hInstance = reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHInstance();
 	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wcex.lpszClassName = WinWindowSystemComponent::get().m_applicationName;
+	wcex.lpszClassName = reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getApplicationName();
 
 	auto l_windowClass = MAKEINTATOM(RegisterClassEx(&wcex));
 
@@ -46,7 +46,7 @@ bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 		0, 0,						// position x, y
 		1, 1,						// width, height
 		NULL, NULL,					// parent window, menu
-		WinWindowSystemComponent::get().m_hInstance, NULL);			// instance, param
+		reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHInstance(), NULL);			// instance, param
 
 	HDC fakeDC = GetDC(fakeWND);	// Device Context
 
@@ -122,21 +122,21 @@ bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 
 	if (m_initConfig.engineMode == EngineMode::Host)
 	{
-		auto l_windowName = g_pModuleManager->getApplicationName();
-
 		// create a new window and context
-		WinWindowSystemComponent::get().m_hwnd = CreateWindow(
-			l_windowClass, (LPCSTR)l_windowName.c_str(),	// class name, window name
-			WS_OVERLAPPEDWINDOW,	// styles
-			l_posX, l_posY,		// posx, posy. If x is set to CW_USEDEFAULT y is ignored
-			l_screenWidth, l_screenHeight,	// width, height
-			NULL, NULL,						// parent window, menu
-			WinWindowSystemComponent::get().m_hInstance, NULL);				// instance, param
+		auto l_hwnd = CreateWindow(
+			l_windowClass, reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getApplicationName(), // class name, window name
+			WS_OVERLAPPEDWINDOW, // styles
+			l_posX, l_posY, // posx, posy. If x is set to CW_USEDEFAULT y is ignored
+			l_screenWidth, l_screenHeight, // width, height
+			NULL, NULL, // parent window, menu
+			reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHInstance(), NULL); // instance, param
+
+		reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->setHwnd(l_hwnd);
 	}
 
 	auto f_CreateGLContextTask = [&]()
 	{
-		WinWindowSystemComponent::get().m_HDC = GetDC(WinWindowSystemComponent::get().m_hwnd);
+		m_HDC = GetDC(reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHwnd());
 
 		const int32_t pixelAttribs[] = {
 			WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
@@ -155,7 +155,7 @@ bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 
 		int32_t pixelFormatID;
 		UINT numFormats;
-		const bool status = wglChoosePixelFormatARB(WinWindowSystemComponent::get().m_HDC, pixelAttribs, NULL, 1, &pixelFormatID, &numFormats);
+		const bool status = wglChoosePixelFormatARB(m_HDC, pixelAttribs, NULL, 1, &pixelFormatID, &numFormats);
 
 		if (status == false || numFormats == 0)
 		{
@@ -164,8 +164,8 @@ bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 		}
 
 		PIXELFORMATDESCRIPTOR PFD;
-		DescribePixelFormat(WinWindowSystemComponent::get().m_HDC, pixelFormatID, sizeof(PFD), &PFD);
-		SetPixelFormat(WinWindowSystemComponent::get().m_HDC, pixelFormatID, &PFD);
+		DescribePixelFormat(m_HDC, pixelFormatID, sizeof(PFD), &PFD);
+		SetPixelFormat(m_HDC, pixelFormatID, &PFD);
 
 		const int32_t major_min = 4, minor_min = 6;
 		std::vector<int32_t> contextAttribs =
@@ -181,7 +181,7 @@ bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 #endif // _DEBUG
 		contextAttribs.emplace_back(0);
 
-		m_HGLRC = wglCreateContextAttribsARB(WinWindowSystemComponent::get().m_HDC, 0, &contextAttribs[0]);
+		m_HGLRC = wglCreateContextAttribsARB(m_HDC, 0, &contextAttribs[0]);
 
 		if (m_HGLRC == NULL)
 		{
@@ -201,7 +201,7 @@ bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 
 	auto f_ActivateGLContextTask = [&]()
 	{
-		if (!wglMakeCurrent(WinWindowSystemComponent::get().m_HDC, m_HGLRC))
+		if (!wglMakeCurrent(m_HDC, m_HGLRC))
 		{
 			m_ObjectStatus = ObjectStatus::Created;
 			InnoLogger::Log(LogLevel::Error, "WinWindowSystem: wglMakeCurrent() failed.");
@@ -236,9 +236,9 @@ bool WinGLWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 
 	if (m_initConfig.engineMode == EngineMode::Host)
 	{
-		ShowWindow(WinWindowSystemComponent::get().m_hwnd, true);
-		SetForegroundWindow(WinWindowSystemComponent::get().m_hwnd);
-		SetFocus(WinWindowSystemComponent::get().m_hwnd);
+		ShowWindow(reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHwnd(), true);
+		SetForegroundWindow(reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHwnd());
+		SetFocus(reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHwnd());
 	}
 
 	m_ObjectStatus = ObjectStatus::Activated;
@@ -293,7 +293,7 @@ ObjectStatus WinGLWindowSurface::getStatus()
 
 bool WinGLWindowSurface::swapBuffer()
 {
-	SwapBuffers(WinWindowSystemComponent::get().m_HDC);
+	SwapBuffers(WinGLWindowSurfaceNS::m_HDC);
 
 	return true;
 }

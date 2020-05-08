@@ -1,5 +1,4 @@
 #include "WinWindowSystem.h"
-#include "../../Component/WinWindowSystemComponent.h"
 #include "../../Core/InnoLogger.h"
 
 #include "DXWindowSurface/WinDXWindowSurface.h"
@@ -36,8 +35,13 @@ namespace WinWindowSystemNS
 	IWindowSurface* m_windowSurface;
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	InitConfig m_initConfig;
+
 	std::vector<ButtonState> m_buttonState;
 	std::set<WindowEventCallbackFunctor*> m_windowEventCallbackFunctor;
+
+	HINSTANCE m_hInstance;
+	LPCSTR m_applicationName;
+	HWND m_hwnd;
 };
 
 using namespace WinWindowSystemNS;
@@ -51,14 +55,14 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 		m_buttonState[i].m_code = (uint32_t)i;
 	}
 
-	WinWindowSystemComponent::get().m_hInstance = static_cast<HINSTANCE>(hInstance);
+	m_hInstance = static_cast<HINSTANCE>(hInstance);
 
 	if (hwnd)
 	{
-		WinWindowSystemComponent::get().m_hwnd = *reinterpret_cast<HWND*>(hwnd);
+		m_hwnd = *reinterpret_cast<HWND*>(hwnd);
 	}
 
-	WinWindowSystemComponent::get().m_applicationName = "InnocenceEngineWindow";
+	m_applicationName = g_pModuleManager->getApplicationName().c_str();
 
 	ApplicationHandle = &windowCallbackWrapper::get();
 
@@ -89,7 +93,7 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 		break;
 	}
 
-	WinWindowSystemNS::m_windowSurface->setup(WinWindowSystemComponent::get().m_hInstance, WinWindowSystemComponent::get().m_hwnd, WindowProc);
+	WinWindowSystemNS::m_windowSurface->setup(m_hInstance, m_hwnd, WindowProc);
 
 	WinWindowSystemNS::m_ObjectStatus = ObjectStatus::Activated;
 	InnoLogger::Log(LogLevel::Success, "WinWindowSystem setup finished.");
@@ -135,14 +139,14 @@ bool WinWindowSystem::terminate()
 		ShowCursor(true);
 
 		// Remove the window.
-		DestroyWindow(WinWindowSystemComponent::get().m_hwnd);
-		WinWindowSystemComponent::get().m_hwnd = NULL;
+		DestroyWindow(m_hwnd);
+		m_hwnd = NULL;
 
 		InnoLogger::Log(LogLevel::Warning, "WinWindowSystem: Window closed.");
 
 		// Remove the application instance.
-		UnregisterClass(WinWindowSystemComponent::get().m_applicationName, WinWindowSystemComponent::get().m_hInstance);
-		WinWindowSystemComponent::get().m_hInstance = NULL;
+		UnregisterClass(m_applicationName, m_hInstance);
+		m_hInstance = NULL;
 
 		// Release the pointer to this class.
 		ApplicationHandle = NULL;
@@ -172,7 +176,7 @@ const std::vector<ButtonState>& WinWindowSystem::getButtonState()
 
 bool WinWindowSystem::sendEvent(uint32_t umsg, uint32_t WParam, int32_t LParam)
 {
-	WindowProc(WinWindowSystemComponent::get().m_hwnd, umsg, WParam, LParam);
+	WindowProc(m_hwnd, umsg, WParam, LParam);
 	return true;
 }
 
@@ -182,10 +186,31 @@ bool WinWindowSystem::addEventCallback(WindowEventCallbackFunctor* functor)
 	return true;
 }
 
+LPCSTR WinWindowSystem::getApplicationName()
+{
+	return m_applicationName;
+}
+
+HINSTANCE WinWindowSystem::getHInstance()
+{
+	return m_hInstance;
+}
+
+HWND WinWindowSystem::getHwnd()
+{
+	return m_hwnd;
+}
+
+bool WinWindowSystem::setHwnd(HWND rhs)
+{
+	m_hwnd = rhs;
+	return true;
+}
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	// For to eliminate fake OpenGL window handle event
-	if (hwnd != WinWindowSystemComponent::get().m_hwnd)
+	if (hwnd != m_hwnd)
 	{
 		return ApplicationHandle->MessageHandler(hwnd, uMsg, wParam, lParam);
 	}

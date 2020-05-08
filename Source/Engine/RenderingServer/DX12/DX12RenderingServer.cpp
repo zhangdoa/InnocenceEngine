@@ -7,7 +7,7 @@
 #include "../../Component/DX12SamplerDataComponent.h"
 #include "../../Component/DX12GPUBufferDataComponent.h"
 
-#include "../../Component/WinWindowSystemComponent.h"
+#include "../../Engine/Platform/WinWindow/WinWindowSystem.h"
 
 #include "DX12Helper.h"
 #include <DXProgrammableCapture.h>
@@ -743,7 +743,7 @@ bool DX12RenderingServer::Initialize()
 		IDXGISwapChain1* l_swapChain1;
 		auto l_hResult = m_factory->CreateSwapChainForHwnd(
 			l_commandQueue->m_CommandQueue.Get(),
-			WinWindowSystemComponent::get().m_hwnd,
+			reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHwnd(),
 			&m_swapChainDesc,
 			nullptr,
 			nullptr,

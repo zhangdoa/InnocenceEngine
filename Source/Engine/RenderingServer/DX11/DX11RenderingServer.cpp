@@ -7,7 +7,7 @@
 #include "../../Component/DX11SamplerDataComponent.h"
 #include "../../Component/DX11GPUBufferDataComponent.h"
 
-#include "../../Component/WinWindowSystemComponent.h"
+#include "../../Engine/Platform/WinWindow/WinWindowSystem.h"
 
 #include "DX11Helper.h"
 
@@ -219,7 +219,7 @@ bool DX11RenderingServer::Setup()
 	m_swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 
 	// Set the handle for the window to render to.
-	m_swapChainDesc.OutputWindow = WinWindowSystemComponent::get().m_hwnd;
+	m_swapChainDesc.OutputWindow = reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHwnd();
 
 	// Turn multisampling off.
 	m_swapChainDesc.SampleDesc.Count = 1;

@@ -1,5 +1,5 @@
 #include "ImGuiWindowWin.h"
-#include "../../Component/WinWindowSystemComponent.h"
+#include "../../Engine/Platform/WinWindow/WinWindowSystem.h"
 
 #include "../ImGui/imgui_impl_win32.cpp"
 
@@ -27,7 +27,7 @@ bool ImGuiWindowWin::setup()
 
 bool ImGuiWindowWin::initialize()
 {
-	ImGui_ImplWin32_Init(WinWindowSystemComponent::get().m_hwnd);
+	ImGui_ImplWin32_Init(reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHwnd());
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowWin has been initialized.");
 
 	return true;
