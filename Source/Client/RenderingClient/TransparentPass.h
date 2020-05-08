@@ -5,7 +5,7 @@ namespace TransparentPass
 {
 	bool Setup();
 	bool Initialize();
-	bool Render();
+	bool Render(IResourceBinder* canvas);
 	bool Terminate();
 
 	RenderPassDataComponent* GetRPDC();

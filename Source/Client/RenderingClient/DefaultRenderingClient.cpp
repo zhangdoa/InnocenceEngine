@@ -34,17 +34,18 @@ namespace DefaultRenderingClientNS
 	std::function<void()> f_showLightHeatmap;
 	std::function<void()> f_showProbe;
 	std::function<void()> f_showVoxel;
+	std::function<void()> f_showTransparent;
 	std::function<void()> f_saveScreenCapture;
 
 	std::function<void()> f_SetupJob;
 	std::function<void()> f_InitializeJob;
 	std::function<void()> f_RenderJob;
-	std::function<void()> f_ExecuteCommandListJob;
 	std::function<void()> f_TerminateJob;
 
 	bool m_showLightHeatmap = false;
 	bool m_showProbe = false;
 	bool m_showVoxel = false;
+	bool m_showTransparent = false;
 	bool m_saveScreenCapture = false;
 	static bool m_drawBRDFTest = false;
 }
@@ -61,6 +62,9 @@ bool DefaultRenderingClient::Setup()
 
 	f_showVoxel = [&]() { m_showVoxel = !m_showVoxel; };
 	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_V, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showVoxel });
+
+	f_showTransparent = [&]() { m_showTransparent = !m_showTransparent; };
+	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_T, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showTransparent });
 
 	f_saveScreenCapture = [&]() { m_saveScreenCapture = !m_saveScreenCapture; };
 	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_C, true }, ButtonEvent{ EventLifeTime::OneShot, &f_saveScreenCapture });
@@ -175,6 +179,11 @@ bool DefaultRenderingClient::Setup()
 			GIResolveTestPass::Render();
 			l_canvas = GIResolveTestPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
 		}
+		else if (m_showTransparent)
+		{
+			TransparentPass::Render(0);
+			l_canvas = TransparentPass::GetResult();
+		}
 		else
 		{
 			//GIResolvePass::PrepareCommandList();
@@ -195,7 +204,6 @@ bool DefaultRenderingClient::Setup()
 				SkyPass::PrepareCommandList();
 			}
 			PreTAAPass::PrepareCommandList();
-			//VolumetricFogPass::PrepareCommandList();
 
 			g_pModuleManager->getRenderingServer()->ExecuteCommandList(LightPass::GetRPDC());
 			g_pModuleManager->getRenderingServer()->ExecuteCommandList(SkyPass::GetRPDC());
@@ -206,13 +214,12 @@ bool DefaultRenderingClient::Setup()
 			g_pModuleManager->getRenderingServer()->ExecuteCommandList(PreTAAPass::GetRPDC());
 			g_pModuleManager->getRenderingServer()->WaitForFrame(PreTAAPass::GetRPDC());
 
-			//TransparentPass::Render();
-
-			VolumetricFogPass::Render(false);
-
-			l_canvas = PreTAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
-			//l_canvas = TransparentPass::GetResult();
+			//VolumetricFogPass::PrepareCommandList();
+			//VolumetricFogPass::Render(false);
 			//l_canvas = VolumetricFogPass::GetFroxelVisualizationResult();
+
+			TransparentPass::Render(PreTAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0]);
+			l_canvas = PreTAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
 		}
 
 		LuminanceHistogramPass::Render(l_canvas);
@@ -245,11 +252,6 @@ bool DefaultRenderingClient::Setup()
 			//g_pModuleManager->getRenderingServer()->DeleteTextureDataComponent(l_TDC);
 			m_saveScreenCapture = false;
 		}
-	};
-
-	f_ExecuteCommandListJob = [&]()
-	{
-		//GIResolvePass::ExecuteCommandList();
 	};
 
 	f_TerminateJob = [&]()

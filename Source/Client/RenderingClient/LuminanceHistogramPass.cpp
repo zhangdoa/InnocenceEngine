@@ -111,6 +111,8 @@ bool LuminanceHistogramPass::Setup()
 
 bool LuminanceHistogramPass::Initialize()
 {
+	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
+
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_LuminanceHistogram);
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_LuminanceHistogram);
 

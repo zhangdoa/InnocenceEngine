@@ -35,18 +35,18 @@ uint getFragmentList(out uint4 fragmentListRT0[MAX_FRAG], out uint4 fragmentList
 	return fragCount;
 }
 
-void sortFragmentList(inout uint4 fragmentListRT0[MAX_FRAG], inout uint4 fragmentListRT1[MAX_FRAG], uint count)
+void sortFragmentList(inout uint4 fragmentListRT0[MAX_FRAG], inout uint4 fragmentListRT1[MAX_FRAG], uint fragCount)
 {
 	uint i;
 	uint j;
-	for (i = 0; i < count; i++)
+	for (i = 0; i < fragCount; i++)
 	{
-		for (j = i + 1; j < count; j++)
+		for (j = i + 1; j < fragCount; j++)
 		{
 			float depth_i = asfloat(fragmentListRT0[i].z);
 			float depth_j = asfloat(fragmentListRT0[j].z);
 
-			if (depth_i > depth_j)
+			if (depth_i < depth_j)
 			{
 				uint4 tempRT0 = fragmentListRT0[i];
 				fragmentListRT0[i] = fragmentListRT0[j];
@@ -62,20 +62,19 @@ void sortFragmentList(inout uint4 fragmentListRT0[MAX_FRAG], inout uint4 fragmen
 
 float4 blend(float4 Cb, float4 Cs, float4 Tr)
 {
-	return float4(Cs.a * (Cs.rgb + Tr.rgb * Cb.rgb) + (1.0 - Cs.a) * Cb.rgb, 1.0);
+	return float4(Cs.a * (Cs.rgb + Tr.rgb * Cb.rgb) + (1.0 - Cs.a) * Cb.rgb, 1.0f);
 }
 
-float4 getPixelValue(in uint4 fragmentListRT0[MAX_FRAG], inout uint4 fragmentListRT1[MAX_FRAG], uint count)
+float4 getPixelValue(in uint4 fragmentListRT0[MAX_FRAG], inout uint4 fragmentListRT1[MAX_FRAG], float4 Cb, uint fragCount)
 {
-	float4 Cb = float4(0.0f, 0.0f, 0.0f, 0.0f);
-
 	uint i;
 
-	for (i = 0; i < count; i++)
+	for (i = 0; i < fragCount; i++)
 	{
 		uint encodedCs = fragmentListRT0[i].y;
 		float4 Cs = DecodeColor(encodedCs);
 		float4 Tr = float4(asfloat(fragmentListRT1[i].x), asfloat(fragmentListRT1[i].y), asfloat(fragmentListRT1[i].z), 1.0f);
+		Cs.a = asfloat(fragmentListRT1[i].w);
 		Cb = blend(Cb, Cs, Tr);
 	}
 
@@ -101,14 +100,7 @@ void main(ComputeInputType input)
 	uint4 fragmentListRT0[MAX_FRAG];
 	uint4 fragmentListRT1[MAX_FRAG];
 
-	[unroll]
-	for (uint i = 0; i < MAX_FRAG; i++)
-	{
-		fragmentListRT0[i] = uint4(0, 0, 0, 0);
-		fragmentListRT1[i] = uint4(0, 0, 0, 0);
-	}
-
 	uint fragCount = getFragmentList(fragmentListRT0, fragmentListRT1, coord);
 	sortFragmentList(fragmentListRT0, fragmentListRT1, fragCount);
-	out_blendPassRT0[coord] += getPixelValue(fragmentListRT0, fragmentListRT1, fragCount);
+	out_blendPassRT0[coord] = getPixelValue(fragmentListRT0, fragmentListRT1, out_blendPassRT0[coord], fragCount);
 }

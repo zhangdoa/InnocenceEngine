@@ -306,7 +306,7 @@ namespace GameClientNS
 	bool setupReferenceSpheres();
 	bool setupOcclusionCubes();
 	bool setupOpaqueSpheres();
-	bool setupTransparentSpheres();
+	bool setupTransparentCubes();
 	bool setupPointLights();
 
 	bool initialize();
@@ -515,11 +515,10 @@ bool GameClientNS::setupOpaqueSpheres()
 	return true;
 }
 
-bool GameClientNS::setupTransparentSpheres()
+bool GameClientNS::setupTransparentCubes()
 {
-	uint32_t l_matrixDim = 8;
 	float l_breadthInterval = 4.0f;
-	auto l_containerSize = l_matrixDim * l_matrixDim;
+	uint32_t l_containerSize = 8;
 
 	m_transparentSphereTransformComponents.clear();
 	m_transparentSphereVisibleComponents.clear();
@@ -543,26 +542,22 @@ bool GameClientNS::setupTransparentSpheres()
 	{
 		m_transparentSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
 		m_transparentSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
-		m_transparentSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		m_transparentSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f * i, 1.0f * i, 0.5f, 1.0f);
 		m_transparentSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
-		m_transparentSphereVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Sphere;
+		m_transparentSphereVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Cube;
 		m_transparentSphereVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
 		m_transparentSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
 		m_transparentSphereVisibleComponents[i]->m_simulatePhysics = true;
 	}
 
-	for (uint32_t i = 0; i < l_matrixDim; i++)
+	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
-		for (uint32_t j = 0; j < l_matrixDim; j++)
-		{
-			m_transparentSphereTransformComponents[i * l_matrixDim + j]->m_localTransformVector.m_pos =
-				Vec4(
-					(-(l_matrixDim - 1.0f) * l_breadthInterval / 2.0f)
-					+ (i * l_breadthInterval),
-					5.0f,
-					(j * l_breadthInterval) - 2.0f * (l_matrixDim - 1),
-					1.0f);
-		}
+		m_transparentSphereTransformComponents[i]->m_localTransformVector.m_pos =
+			Vec4(
+				0.0f,
+				2.0f * i,
+				-(i * l_breadthInterval) - 4.0f,
+				1.0f);
 	}
 
 	return true;
@@ -662,7 +657,7 @@ bool GameClientNS::setup()
 		setupReferenceSpheres();
 		//setupOcclusionCubes();
 		setupOpaqueSpheres();
-		setupTransparentSpheres();
+		setupTransparentCubes();
 		//setupPointLights();
 
 		m_ObjectStatus = ObjectStatus::Activated;

@@ -16,6 +16,7 @@ RWStructuredBuffer<uint4> out_transparentPassRT1 : register(u3);
 
 #include "common/BSDF.hlsl"
 
+[earlydepthstencil]
 void main(PixelInputType input)
 {
 	float3 N = normalize(input.Normal);
@@ -26,16 +27,18 @@ void main(PixelInputType input)
 	float NdotV = max(dot(N, V), 0.0);
 	float NdotH = max(dot(N, H), 0.0);
 	float NdotL = max(dot(N, L), 0.0);
+	float LdotH = max(dot(L, H), 0.0);
 
 	float3 F0 = materialCBuffer.albedo.rgb;
+	float F90 = 1.0;
+	float metallic = materialCBuffer.MRAT.x;
+	float roughness = materialCBuffer.MRAT.y;
 
 	// Specular BRDF
-	float roughness = materialCBuffer.MRAT.y;
-	float f90 = 1.0;
-	float3 F = fresnelSchlick(F0, f90, NdotV);
+	float3 FresnelFactor = fresnelSchlick(F0, F90, NdotV);
 	float G = Unreal_GeometrySmith(NdotV, NdotL, roughness);
 	float D = D_GGX(NdotH, roughness);
-	float3 Frss = F * D * G / PI;
+	float3 Frss = FresnelFactor * D * G / PI;
 
 	// "Real-Time Rendering", 4th edition, pg. 624, "14.5.1 Coverage and Transmittance"
 	float thickness = materialCBuffer.MRAT.w;
@@ -47,16 +50,17 @@ void main(PixelInputType input)
 	float3 Tr = exp(-sigma * d);
 
 	// surface radiance
-	float3 Cs = Frss * materialCBuffer.albedo.rgb * perFrameCBuffer.sun_illuminance.xyz * NdotL;
+	float3 Cs = Frss * perFrameCBuffer.sun_illuminance.xyz * NdotL * (1.0 - materialCBuffer.MRAT.z);
 
-	float4 RT0 = float4(Cs, materialCBuffer.albedo.a);
+	float4 RT0 = float4(Cs, 0.0);
 
 	uint encodedRT0 = EncodeColor(RT0);
-	uint4 encodedRT1 = uint4(asuint(Tr.x), asuint(Tr.y), asuint(Tr.z), 0);
+	uint4 encodedRT1 = uint4(asuint(Tr.x), asuint(Tr.y), asuint(Tr.z), asuint(materialCBuffer.albedo.a));
 	uint depth = asuint(input.posCS.z);
 
 	int2 writeCoord = (int2)input.posCS.xy;
 	uint newPtr = in_atomicCounter.IncrementCounter();
+
 	uint oldPtr;
 	InterlockedExchange(out_headPtr[writeCoord], newPtr, oldPtr);
 
