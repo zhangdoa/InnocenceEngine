@@ -35,6 +35,8 @@ public:
 	bool DeleteSamplerDataComponent(SamplerDataComponent* rhs) override;
 	bool DeleteGPUBufferDataComponent(GPUBufferDataComponent* rhs) override;
 
+	bool ClearTextureDataComponent(TextureDataComponent* rhs) override;
+
 	bool UploadGPUBufferDataComponentImpl(GPUBufferDataComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range) override;
 	bool ClearGPUBufferDataComponent(GPUBufferDataComponent* rhs) override;
 

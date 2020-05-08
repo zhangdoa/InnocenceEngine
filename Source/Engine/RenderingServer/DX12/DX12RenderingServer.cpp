@@ -1483,6 +1483,42 @@ bool DX12RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent* r
 	return true;
 }
 
+bool DX12RenderingServer::ClearTextureDataComponent(TextureDataComponent* rhs)
+{
+	auto l_rhs = reinterpret_cast<DX12TextureDataComponent*>(rhs);
+	auto l_resourceBinder = reinterpret_cast<DX12ResourceBinder*>(l_rhs->m_ResourceBinder);
+
+	auto l_commandList = BeginSingleTimeCommands(m_device, m_globalCommandAllocator);
+	l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_ResourceHandle.Get(), l_rhs->m_CurrentState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+
+	if (l_rhs->m_TextureDesc.PixelDataType < TexturePixelDataType::Float16)
+	{
+		l_commandList->ClearUnorderedAccessViewUint(
+			l_resourceBinder->m_UAV.ShaderNonVisibleGPUHandle,
+			l_resourceBinder->m_UAV.ShaderNonVisibleCPUHandle,
+			l_rhs->m_ResourceHandle.Get(),
+			(UINT*)&l_rhs->m_TextureDesc.ClearColor[0],
+			0,
+			NULL);
+	}
+	else
+	{
+		l_commandList->ClearUnorderedAccessViewFloat(
+			l_resourceBinder->m_UAV.ShaderNonVisibleGPUHandle,
+			l_resourceBinder->m_UAV.ShaderNonVisibleCPUHandle,
+			l_rhs->m_ResourceHandle.Get(),
+			&l_rhs->m_TextureDesc.ClearColor[0],
+			0,
+			NULL);
+	}
+
+	l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_ResourceHandle.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, l_rhs->m_CurrentState));
+
+	EndSingleTimeCommands(l_commandList, m_device, m_globalCommandQueue);
+
+	return true;
+}
+
 bool DX12RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range)
 {
 	auto l_rhs = reinterpret_cast<DX12GPUBufferDataComponent*>(rhs);

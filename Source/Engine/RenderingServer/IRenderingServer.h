@@ -45,6 +45,8 @@ public:
 	virtual	bool DeleteSamplerDataComponent(SamplerDataComponent* rhs) = 0;
 	virtual	bool DeleteGPUBufferDataComponent(GPUBufferDataComponent* rhs) = 0;
 
+	virtual bool ClearTextureDataComponent(TextureDataComponent* rhs) = 0;
+
 protected:
 	virtual bool UploadGPUBufferDataComponentImpl(GPUBufferDataComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range) = 0;
 

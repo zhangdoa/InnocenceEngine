@@ -1044,6 +1044,21 @@ bool DX11RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent* r
 	return true;
 }
 
+bool DX11RenderingServer::ClearTextureDataComponent(TextureDataComponent* rhs)
+{
+	auto l_rhs = reinterpret_cast<DX11TextureDataComponent*>(rhs);
+	if (l_rhs->m_TextureDesc.PixelDataType < TexturePixelDataType::Float16)
+	{
+		m_deviceContext->ClearUnorderedAccessViewUint(l_rhs->m_UAV, (UINT*)&l_rhs->m_TextureDesc.ClearColor[0]);
+	}
+	else
+	{
+		m_deviceContext->ClearUnorderedAccessViewFloat(l_rhs->m_UAV, &l_rhs->m_TextureDesc.ClearColor[0]);
+	}
+
+	return true;
+}
+
 bool DX11RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range)
 {
 	auto l_rhs = reinterpret_cast<DX11GPUBufferDataComponent*>(rhs);

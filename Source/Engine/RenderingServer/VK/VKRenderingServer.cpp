@@ -1023,6 +1023,11 @@ bool VKRenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent* rhs
 	return true;
 }
 
+bool VKRenderingServer::ClearTextureDataComponent(TextureDataComponent* rhs)
+{
+	return true;
+}
+
 bool VKRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range)
 {
 	return true;

@@ -28,16 +28,17 @@ namespace InnoType
 	{
 		Accessibility CPUAccessibility = Accessibility::Immutable;
 		Accessibility GPUAccessibility = Accessibility::ReadWrite;
-		TextureSampler Sampler;
-		TextureUsage Usage;
+		TextureSampler Sampler = TextureSampler::Invalid;
+		TextureUsage Usage = TextureUsage::Invalid;
 		bool IsSRGB = false;
-		TexturePixelDataFormat PixelDataFormat;
-		TexturePixelDataType PixelDataType;
+		TexturePixelDataFormat PixelDataFormat = TexturePixelDataFormat::Invalid;
+		TexturePixelDataType PixelDataType = TexturePixelDataType::Invalid;
 		bool UseMipMap = false;
 		uint32_t Width = 0;
 		uint32_t Height = 0;
 		uint32_t DepthOrArraySize = 0;
-		float BorderColor[4];
+		float BorderColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+		float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	};
 
 	enum class ComparisionFunction

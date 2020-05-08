@@ -766,6 +766,16 @@ bool GLRenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent* rhs
 	return true;
 }
 
+bool GLRenderingServer::ClearTextureDataComponent(TextureDataComponent* rhs)
+{
+	auto l_rhs = reinterpret_cast<GLTextureDataComponent*>(rhs);
+
+	glBindTexture(l_rhs->m_GLTextureDesc.TextureSampler, l_rhs->m_TO);
+	glClearTexImage(l_rhs->m_TO, 0, l_rhs->m_GLTextureDesc.PixelDataFormat, l_rhs->m_GLTextureDesc.PixelDataType, &l_rhs->m_TextureDesc.ClearColor[0]);
+
+	return true;
+}
+
 bool GLRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range)
 {
 	auto l_rhs = reinterpret_cast<GLGPUBufferDataComponent*>(rhs);
