@@ -5,20 +5,24 @@ struct PixelInputType
 {
 	float4 posCS : SV_POSITION;
 	float4 posCS_orig : POSITION;
-	float4 AABB : AABB;
+	float4 posWS : POS_WS;
+	nointerpolation float4 AABB : AABB;
+	float4 normal : NORMAL;
+	float2 texcoord : TEXCOORD;
 };
 
 RWTexture3D<float4> out_froxelizationPassRT0 : register(u0);
 
 void main(PixelInputType input)
 {
-	if (isnan(input.posCS_orig.z))
-	{
-		discard;
-	}
-	float4 posCS_orig = input.posCS_orig;
-	posCS_orig.xy = posCS_orig.xy * 0.5 + 0.5;
-	int3 writeCoord = int3((posCS_orig.xyz) * 64);
+	float3 powWS = input.posCS_orig.xyz;
 
-	out_froxelizationPassRT0[writeCoord] = float4(posCS_orig.xyz, 1.0f);
+	float3 writeCoord = (input.posCS_orig.xyz * 0.5 + 0.5 * 64);
+	int3 writeCoordInt = int3(writeCoord);
+	float transparency = 1.0;
+
+	float3 out_Albedo;
+	out_Albedo = materialCBuffer.albedo.rgb;
+
+	out_froxelizationPassRT0[writeCoordInt] = float4(out_Albedo, 1.0f);
 }

@@ -35,6 +35,22 @@ struct PixelOutputType
 
 static const float sunAngularRadius = 0.000071;
 
+float4 GetFog(in Texture3D<float4> voxelTexture,
+	in SamplerState SamplerTypePoint,
+	in float3 P,
+	in float3 N,
+	in VoxelizationPass_CB voxelizationPassCBuffer)
+{
+	float3 tc = P;
+	tc = tc - voxelizationPassCBuffer.volumeCenter.xyz;
+	tc /= (voxelizationPassCBuffer.volumeExtend * 0.5);
+	tc = tc * float3(0.5f, 0.5f, 0.5f) + 0.5f;
+
+	float4 result = voxelTexture.Sample(SamplerTypePoint, tc);
+
+	return result;
+}
+
 PixelOutputType main(PixelInputType input) : SV_TARGET
 {
 	PixelOutputType output;
@@ -211,9 +227,6 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	//float3 GISampleCoord = (posWS - GICBuffer.irradianceVolumeOffset.xyz) / perFrameCBuffer.posWSNormalizer.xyz;
 	//int3 isOutside = ((GISampleCoord > 1.0) || (GISampleCoord < 0.0));
 
-	//// Volumetric Fog
-	//float4 fog = in_VolumetricFog.Sample(SamplerTypePoint, GISampleCoord.xyz);
-	//Lo += fog.xyz;
 
 	//GISampleCoord.z /= 6.0;
 
@@ -270,9 +283,12 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	Lo += indirectDiffuse * indirectFt;
 	Lo += indirectSpecular * indirectFr;
 
+	// Volumetric Fog
+	float4 fog = GetFog(in_VolumetricFog, SamplerTypePoint, posWS, normalWS, voxelizationPassCBuffer);
+	Lo += fog.xyz;
+
 	// ambient occlusion
 	Lo *= ao;
-
 #endif
 
 	output.lightPassRT0 = float4(Lo, 1.0);

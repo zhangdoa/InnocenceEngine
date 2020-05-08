@@ -96,40 +96,40 @@ void main(ComputeInputType input)
 		posWS *= (voxelizationPassCBuffer.volumeExtend * 0.5);
 		posWS += voxelizationPassCBuffer.volumeCenter;
 
-		//if (froxel.a != 0.0)
-		//{
-		float2 frag_coord = l_readCoord.xy;
-		frag_coord = frag_coord * 2.0 - 1.0;
-		float4 device_normal = float4(frag_coord, 0.0, 1.0);
-		float4 eye_normal = mul(device_normal, perFrameCBuffer.p_inv);
-		eye_normal = eye_normal / eye_normal.w;
-		float3 eyedir = normalize(eye_normal.xyz);
+		if (froxel.a != 0.0)
+		{
+			float2 frag_coord = l_readCoord.xy;
+			frag_coord = frag_coord * 2.0 - 1.0;
+			float4 device_normal = float4(frag_coord, 0.0, 1.0);
+			float4 eye_normal = mul(device_normal, perFrameCBuffer.p_inv);
+			eye_normal = eye_normal / eye_normal.w;
+			float3 eyedir = normalize(eye_normal.xyz);
 
-		float3 lightdir = -perFrameCBuffer.sun_direction.xyz;
-		float3 eye_position = float3(0.0, 0.0, 0.0);
+			float3 lightdir = -perFrameCBuffer.sun_direction.xyz;
+			float3 eye_position = float3(0.0, 0.0, 0.0);
 
-		float3 color = float3(0.0, 0.0, 0.0);
+			float3 color = float3(0.0, 0.0, 0.0);
 
-		color = rayMarching(
-			l_readCoord,
-			eyedir,							// normalized ray direction
-			eye_position,					// ray origin
-			lightdir,                       // position of the sun
-			perFrameCBuffer.sun_illuminance.xyz, // intensity of the sun
-			rayleigh_coeff(float3(1, 1, 1)),	// Rayleigh scattering coefficient
-			21e-6,							// Mie scattering coefficient
-			0.758                           // Mie preferred scattering direction
-		);
+			color = rayMarching(
+				l_readCoord,
+				eyedir,							// normalized ray direction
+				eye_position,					// ray origin
+				lightdir,                       // position of the sun
+				perFrameCBuffer.sun_illuminance.xyz, // intensity of the sun
+				rayleigh_coeff(froxel.xyz),	// Rayleigh scattering coefficient
+				21e-6,							// Mie scattering coefficient
+				0.758                           // Mie preferred scattering direction
+			);
 
-		color *= 1.0 - SunShadowResolver(posWS, SamplerTypePoint);
+			color *= 1.0 - SunShadowResolver(posWS, SamplerTypePoint);
 
-		float4 l_result = float4(color, 1.0);
+			float4 l_result = float4(color, 1.0);
 
-		out_result[l_writeCoord] = l_result;
-		//}
-		//else
-		//{
-		//	out_result[l_writeCoord] = float4(0.0f, 0.0f, 0.0f, 0.0f);
-		//}
+			out_result[l_writeCoord] = l_result;
+		}
+		else
+		{
+			out_result[l_writeCoord] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+		}
 	}
 }
