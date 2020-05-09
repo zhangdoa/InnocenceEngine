@@ -12,8 +12,8 @@ namespace InnoRayTracerNS
 {
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	std::atomic<bool> m_isWorking;
-	const int m_maxDepth = 16;
-	const int m_maxSamplePerPixel = 16;
+	const int m_maxDepth = 64;
+	const int m_maxSamplePerPixel = 8;
 	std::default_random_engine m_generator;
 	std::uniform_real_distribution<float> m_randomDirDelta(-1.0f, 1.0f);
 
@@ -22,17 +22,45 @@ namespace InnoRayTracerNS
 
 using namespace InnoRayTracerNS;
 
-struct Material
+Vec4 RandomDirectionInUnitDisk()
 {
-	Vec4 Albedo;
-	Vec4 MRAT;
-};
+	Vec4 p;
+	do {
+		p = Vec4(m_randomDirDelta(m_generator), m_randomDirDelta(m_generator), 0.0f, 0.0f);
+	} while (p * p >= 1.0f);
+	return p;
+}
+
+Vec4 RandomDirectionInUnitSphere()
+{
+	Vec4 p;
+	do {
+		p = Vec4(m_randomDirDelta(m_generator), m_randomDirDelta(m_generator), m_randomDirDelta(m_generator), 0.0f);
+	} while (p * p >= 1.0f);
+	return p;
+}
+
+Vec4 RandomUnitVector()
+{
+	auto a = (m_randomDirDelta(m_generator) + 1.0f) * PI<float>;
+	auto z = m_randomDirDelta(m_generator);
+	auto r = sqrt(1 - z * z);
+	return Vec4(r * cos(a), r * sin(a), z, 0.0f);
+}
+
+Vec4 Reflect(const Vec4& v, const Vec4& n)
+{
+	float NdotL = v * n;
+	return v - n * 2 * NdotL;
+}
+
+struct Material;
 
 struct HitResult
 {
 	Vec4 HitPoint;
 	Vec4 HitNormal;
-	Vec4 Color;
+	Material* HitMaterial;
 	float t;
 	bool FrontFace;
 
@@ -43,9 +71,41 @@ struct HitResult
 	}
 };
 
+struct Material
+{
+	Vec4 Albedo;
+	Vec4 MRAT;
+
+	virtual bool scatter(const Ray& r, const HitResult& result, Vec4& attenuation, Ray& scattered) const = 0;
+};
+
+struct Lambertian : public Material
+{
+	virtual bool scatter(const Ray& r, const HitResult& result, Vec4& attenuation, Ray& scattered) const
+	{
+		Vec4 scatterDir = result.HitNormal + RandomUnitVector();
+		scattered.m_origin = result.HitPoint;
+		scattered.m_direction = scatterDir;
+		attenuation = Albedo;
+		return true;
+	}
+};
+
+struct Metal : public Material
+{
+	virtual bool scatter(const Ray& r, const HitResult& result, Vec4& attenuation, Ray& scattered) const
+	{
+		Vec4 reflected = Reflect(r.m_direction.normalize(), result.HitNormal);
+		scattered.m_origin = result.HitPoint;
+		scattered.m_direction = reflected;
+		attenuation = Albedo;
+		return (scattered.m_direction * result.HitNormal > 0);
+	}
+};
+
 struct Hitable
 {
-	Material m_Material;
+	Material* m_Material;
 	virtual bool Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult) = 0;
 };
 
@@ -77,9 +137,7 @@ bool HitableCube::Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult
 		return false;
 	}
 
-	hitResult.Color.x = m_Material.Albedo.x;
-	hitResult.Color.y = m_Material.Albedo.y;
-	hitResult.Color.z = m_Material.Albedo.z;
+	hitResult.HitMaterial = m_Material;
 
 	if (tmin < 0.0f)
 	{
@@ -109,9 +167,7 @@ bool HitableSphere::Hit(const Ray& r, float tMin, float tMax, HitResult& hitResu
 
 	if (dis > 0)
 	{
-		hitResult.Color.x = m_Material.Albedo.x;
-		hitResult.Color.y = m_Material.Albedo.y;
-		hitResult.Color.z = m_Material.Albedo.z;
+		hitResult.HitMaterial = m_Material;
 
 		auto root = sqrt(dis);
 
@@ -163,24 +219,6 @@ bool HitableList::Hit(const Ray& r, float tMin, float tMax, HitResult& hitResult
 		}
 	}
 	return hit_anything;
-}
-
-Vec4 RandomDirectionInUnitDisk()
-{
-	Vec4 p;
-	do {
-		p = Vec4(m_randomDirDelta(m_generator), m_randomDirDelta(m_generator), 0.0f, 0.0f);
-	} while (p * p >= 1.0f);
-	return p;
-}
-
-Vec4 RandomDirectionInUnitSphere()
-{
-	Vec4 p;
-	do {
-		p = Vec4(m_randomDirDelta(m_generator), m_randomDirDelta(m_generator), m_randomDirDelta(m_generator), 0.0f);
-	} while (p * p >= 1.0f);
-	return p;
 }
 
 class RayTracingCamera
@@ -237,11 +275,12 @@ Vec4 CalcRadiance(const Ray& r, Hitable* world, int32_t depth)
 			}
 			else
 			{
-				Ray l_ray;
-				l_ray.m_origin = l_result.HitPoint;
-				l_ray.m_direction = l_result.HitNormal + RandomDirectionInUnitSphere();
-
-				color = CalcRadiance(l_ray, world, depth + 1) * 0.5f;
+				Ray scattered;
+				Vec4 attenuation;
+				if (l_result.HitMaterial->scatter(r, l_result, attenuation, scattered))
+				{
+					color = attenuation.scale(CalcRadiance(scattered, world, depth + 1));
+				}
 			}
 		}
 		else
@@ -273,82 +312,71 @@ bool ExecuteRayTracing()
 	std::vector<Hitable*> l_hitableListVector;
 	l_hitableListVector.reserve(l_visibleComponents.size());
 
-	//for (auto l_visibleComponent : l_visibleComponents)
-	//{
-	//	auto l_transformComponent = GetComponent(TransformComponent, l_visibleComponent->m_ParentEntity);
-	//	if (l_visibleComponent->m_proceduralMeshShape == ProceduralMeshShape::Cube)
-	//	{
-	//		for (uint64_t j = 0; j < l_visibleComponent->m_model->meshMaterialPairs.m_count; j++)
-	//		{
-	//			auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(l_visibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
-	//			if (l_pair->material->m_ShaderModel == ShaderModel::Opaque)
-	//			{
-	//				auto l_hitable = new HitableSphere();
-	//				l_hitable->m_Material.Albedo.x = l_pair->material->m_materialAttributes.AlbedoR;
-	//				l_hitable->m_Material.Albedo.y = l_pair->material->m_materialAttributes.AlbedoG;
-	//				l_hitable->m_Material.Albedo.z = l_pair->material->m_materialAttributes.AlbedoB;
-	//				l_hitable->m_Material.MRAT.x = l_pair->material->m_materialAttributes.Metallic;
-	//				l_hitable->m_Material.MRAT.y = l_pair->material->m_materialAttributes.Roughness;
+	for (auto l_visibleComponent : l_visibleComponents)
+	{
+		if (l_visibleComponent->m_proceduralMeshShape == ProceduralMeshShape::Sphere)
+		{
+			auto l_transformComponent = GetComponent(TransformComponent, l_visibleComponent->m_ParentEntity);
+			for (uint64_t j = 0; j < l_visibleComponent->m_model->meshMaterialPairs.m_count; j++)
+			{
+				auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(l_visibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
+				if (l_pair->material->m_ShaderModel == ShaderModel::Opaque)
+				{
+					auto l_hitable = new HitableSphere();
+					l_hitable->m_Material = new Lambertian();
+					l_hitable->m_Material->Albedo.x = l_pair->material->m_materialAttributes.AlbedoR;
+					l_hitable->m_Material->Albedo.y = l_pair->material->m_materialAttributes.AlbedoG;
+					l_hitable->m_Material->Albedo.z = l_pair->material->m_materialAttributes.AlbedoB;
+					l_hitable->m_Material->MRAT.x = l_pair->material->m_materialAttributes.Metallic;
+					l_hitable->m_Material->MRAT.y = l_pair->material->m_materialAttributes.Roughness;
 
-	//				auto l_extend = l_transformComponent->m_globalTransformVector.m_scale;
-	//				auto l_maxRadius = std::max(std::max(l_extend.x, l_extend.y), l_extend.z);
+					l_hitable->m_Sphere.m_center = l_transformComponent->m_globalTransformVector.m_pos;
+					l_hitable->m_Sphere.m_radius = 1.0f;
 
-	//				l_hitable->m_Sphere.m_center = l_transformComponent->m_globalTransformVector.m_pos - l_maxRadius;
-	//				l_hitable->m_Sphere.m_center.w = 1.0f;
-	//				l_hitable->m_Sphere.m_radius = l_maxRadius;
-
-	//				l_hitableListVector.emplace_back(l_hitable);
-	//				break;
-	//			}
-	//		}
-	//	}
-	//	else if (l_visibleComponent->m_proceduralMeshShape == ProceduralMeshShape::Sphere)
-	//	{
-	//		for (uint64_t j = 0; j < l_visibleComponent->m_model->meshMaterialPairs.m_count; j++)
-	//		{
-	//			auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(l_visibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
-	//			if (l_pair->material->m_ShaderModel == ShaderModel::Transparent)
-	//			{
-	//				auto l_hitable = new HitableSphere();
-	//				l_hitable->m_Material.Albedo.x = l_pair->material->m_materialAttributes.AlbedoR;
-	//				l_hitable->m_Material.Albedo.y = l_pair->material->m_materialAttributes.AlbedoG;
-	//				l_hitable->m_Material.Albedo.z = l_pair->material->m_materialAttributes.AlbedoB;
-	//				l_hitable->m_Material.MRAT.x = l_pair->material->m_materialAttributes.Metallic;
-	//				l_hitable->m_Material.MRAT.y = l_pair->material->m_materialAttributes.Roughness;
-
-	//				l_hitable->m_Sphere.m_center = l_transformComponent->m_globalTransformVector.m_pos;
-	//				l_hitable->m_Sphere.m_radius = 1.0f;
-
-	//				l_hitableListVector.emplace_back(l_hitable);
-	//				break;
-	//			}
-	//		}
-	//	}
-	//}
+					l_hitableListVector.emplace_back(l_hitable);
+					break;
+				}
+			}
+		}
+	}
 
 	auto l_hitable = new HitableSphere();
-	l_hitable->m_Material.Albedo.x = 1.0f;
-	l_hitable->m_Material.Albedo.y = 1.0f;
-	l_hitable->m_Material.Albedo.z = 1.0f;
-	l_hitable->m_Material.MRAT.x = 0.0f;
-	l_hitable->m_Material.MRAT.y = 1.0f;
+	l_hitable->m_Material = new Lambertian();
+	l_hitable->m_Material->Albedo.x = 1.0f;
+	l_hitable->m_Material->Albedo.y = 1.0f;
+	l_hitable->m_Material->Albedo.z = 1.0f;
+	l_hitable->m_Material->MRAT.x = 0.0f;
+	l_hitable->m_Material->MRAT.y = 1.0f;
 
 	l_hitable->m_Sphere.m_center = Vec4(0.0f, -200.0f, 0.0f, 1.0f);
 	l_hitable->m_Sphere.m_radius = 200.0f;
 
 	l_hitableListVector.emplace_back(l_hitable);
 
-	l_hitable = new HitableSphere();
-	l_hitable->m_Material.Albedo.x = 1.0f;
-	l_hitable->m_Material.Albedo.y = 1.0f;
-	l_hitable->m_Material.Albedo.z = 1.0f;
-	l_hitable->m_Material.MRAT.x = 0.0f;
-	l_hitable->m_Material.MRAT.y = 1.0f;
+	for (size_t i = 0; i < 32; i++)
+	{
+		l_hitable = new HitableSphere();
 
-	l_hitable->m_Sphere.m_center = Vec4(0.0f, 1.0f, 0.0f, 1.0f);
-	l_hitable->m_Sphere.m_radius = 1.0f;
+		if (m_randomDirDelta(m_generator) > 0.0f)
+		{
+			l_hitable->m_Material = new Metal();
+		}
+		else
+		{
+			l_hitable->m_Material = new Lambertian();
+		}
 
-	l_hitableListVector.emplace_back(l_hitable);
+		l_hitable->m_Material->Albedo.x = m_randomDirDelta(m_generator) * 0.5f + 0.5f;
+		l_hitable->m_Material->Albedo.y = m_randomDirDelta(m_generator) * 0.5f + 0.5f;
+		l_hitable->m_Material->Albedo.z = m_randomDirDelta(m_generator) * 0.5f + 0.5f;
+		l_hitable->m_Material->MRAT.x = 0.0f;
+		l_hitable->m_Material->MRAT.y = 1.0f;
+
+		l_hitable->m_Sphere.m_radius = (m_randomDirDelta(m_generator) + 1.5f);
+		l_hitable->m_Sphere.m_center = Vec4(m_randomDirDelta(m_generator) * 10.0f, l_hitable->m_Sphere.m_radius, m_randomDirDelta(m_generator) * 10.0f, 1.0f);
+
+		l_hitableListVector.emplace_back(l_hitable);
+	}
 
 	HitableList* l_hitableList = new HitableList();
 	l_hitableList->m_List = l_hitableListVector.data();
