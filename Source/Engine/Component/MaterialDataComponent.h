@@ -3,7 +3,7 @@
 #include "../Common/InnoGraphicsPrimitive.h"
 #include "TextureDataComponent.h"
 
-enum class ShaderModel { Invalid, Opaque, Transparent, Emissive, Debug };
+enum class ShaderModel { Invalid, Opaque, Transparent, Emissive, Volumetric, Debug };
 
 struct TextureSlot
 {
