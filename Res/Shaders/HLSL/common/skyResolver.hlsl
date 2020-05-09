@@ -21,16 +21,16 @@ float mie_HG(float cosTheta, float g)
 {
 	float g2 = pow(g, 2.0);
 	float nom = 1.0 - g2;
-	float denom = 4 * PI * pow(1.0 + g2 - 2.0 * g * cosTheta, 1.5) + 0.0001;
+	float denom = 4 * PI * pow(1.0 + g2 - 2.0 * g * cosTheta, 1.5) + 0.00001;
 	return nom / denom;
 }
 
 // Schlick approximation
 float mie_Schlick(float cosTheta, float g)
 {
-	float k = 1.55 * g - 0.55 * pow(g, 3.0);
+	float k = 1.55 * g - 0.55 * pow(g, 2.0);
 	float nom = 1.0 - pow(k, 2.0);
-	float denom = 4 * PI * pow((1.0 + k * cosTheta), 2.0) + 0.0001;
+	float denom = 4 * PI * pow((1.0 - k * cosTheta), 2.0) + 0.00001;
 	return nom / denom;
 }
 
