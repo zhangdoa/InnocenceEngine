@@ -134,6 +134,8 @@ namespace PlayerComponentCollection
 	std::function<void()> f_sceneLoadingFinishCallback;
 };
 
+using namespace PlayerComponentCollection;
+
 bool PlayerComponentCollection::setup()
 {
 	f_sceneLoadingFinishCallback = [&]() {
@@ -289,9 +291,13 @@ namespace GameClientNS
 	std::vector<TransformComponent*> m_opaqueSphereTransformComponents;
 	std::vector<VisibleComponent*> m_opaqueSphereVisibleComponents;
 
-	std::vector<InnoEntity*> m_transparentSphereEntites;
-	std::vector<TransformComponent*> m_transparentSphereTransformComponents;
-	std::vector<VisibleComponent*> m_transparentSphereVisibleComponents;
+	std::vector<InnoEntity*> m_transparentCubeEntites;
+	std::vector<TransformComponent*> m_transparentCubeTransformComponents;
+	std::vector<VisibleComponent*> m_transparentCubeVisibleComponents;
+
+	std::vector<InnoEntity*> m_volumetricCubeEntites;
+	std::vector<TransformComponent*> m_volumetricCubeTransformComponents;
+	std::vector<VisibleComponent*> m_volumetricCubeVisibleComponents;
 
 	std::vector<InnoEntity*> m_occlusionCubeEntites;
 	std::vector<TransformComponent*> m_occlusionCubeTransformComponents;
@@ -301,12 +307,16 @@ namespace GameClientNS
 	std::vector<TransformComponent*> m_pointLightTransformComponents;
 	std::vector<LightComponent*> m_pointLightComponents;
 
+	Vec4 m_posOffset;
+	std::default_random_engine m_generator;
+
 	bool setup();
 
 	bool setupReferenceSpheres();
 	bool setupOcclusionCubes();
 	bool setupOpaqueSpheres();
 	bool setupTransparentCubes();
+	bool setupVolumetricCubes();
 	bool setupPointLights();
 
 	bool initialize();
@@ -370,11 +380,12 @@ bool GameClientNS::setupReferenceSpheres()
 		for (uint32_t j = 0; j < l_matrixDim; j++)
 		{
 			m_referenceSphereTransformComponents[i * l_matrixDim + j]->m_localTransformVector.m_pos =
+				m_posOffset +
 				Vec4(
 					(-(l_matrixDim - 1.0f) * l_breadthInterval / 2.0f) + (i * l_breadthInterval) + 100.0f,
 					2.0f,
 					(j * l_breadthInterval) - 2.0f * (l_matrixDim - 1),
-					1.0f);
+					0.0f);
 		}
 	}
 
@@ -416,7 +427,6 @@ bool GameClientNS::setupOcclusionCubes()
 		m_occlusionCubeVisibleComponents[i]->m_simulatePhysics = true;
 	}
 
-	std::default_random_engine l_generator(42);
 	std::uniform_real_distribution<float> l_randomRotDelta(0.0f, 180.0f);
 	std::uniform_real_distribution<float> l_randomHeightDelta(16.0f, 48.0f);
 	std::uniform_real_distribution<float> l_randomWidthDelta(4.0f, 6.0f);
@@ -434,19 +444,20 @@ bool GameClientNS::setupOcclusionCubes()
 			auto l_heightOffset = l_halfMatrixDim * 3.0f - std::abs((float)i - l_halfMatrixDim) - std::abs((float)j - l_halfMatrixDim);
 			l_heightOffset *= 4.0f;
 			l_currentComponent->m_localTransformVector.m_scale =
-				Vec4(l_randomWidthDelta(l_generator), l_heightOffset, l_randomDepthDelta(l_generator), 1.0f);
+				Vec4(l_randomWidthDelta(m_generator), l_heightOffset, l_randomDepthDelta(m_generator), 1.0f);
 
 			l_currentComponent->m_localTransformVector.m_pos =
+				m_posOffset +
 				Vec4(
 					(i * l_breadthInterval) - l_offset,
 					l_currentComponent->m_localTransformVector.m_scale.y / 2.0f,
 					(j * l_breadthInterval) - l_offset,
-					1.0f);
+					0.0f);
 
 			l_currentComponent->m_localTransformVector.m_rot =
 				InnoMath::calcRotatedLocalRotator(l_currentComponent->m_localTransformVector.m_rot,
 					Vec4(0.0f, 1.0f, 0.0f, 0.0f),
-					l_randomRotDelta(l_generator));
+					l_randomRotDelta(m_generator));
 		}
 	}
 
@@ -489,7 +500,6 @@ bool GameClientNS::setupOpaqueSpheres()
 		m_opaqueSphereVisibleComponents[i]->m_simulatePhysics = true;
 	}
 
-	std::default_random_engine l_generator;
 	std::uniform_real_distribution<float> l_randomPosDelta(0.0f, 1.0f);
 	std::uniform_real_distribution<float> l_randomRotDelta(0.0f, 180.0f);
 
@@ -499,16 +509,17 @@ bool GameClientNS::setupOpaqueSpheres()
 		{
 			auto l_currentComponent = m_opaqueSphereTransformComponents[i * l_matrixDim + j];
 			l_currentComponent->m_localTransformVector.m_pos =
+				m_posOffset +
 				Vec4(
 					(-(l_matrixDim - 1.0f) * l_breadthInterval / 2.0f) + (i * l_breadthInterval),
-					l_randomPosDelta(l_generator) * 50.0f,
+					l_randomPosDelta(m_generator) * 50.0f,
 					(j * l_breadthInterval) - 2.0f * (l_matrixDim - 1),
-					1.0f);
+					0.0f);
 
 			l_currentComponent->m_localTransformVector.m_rot =
 				InnoMath::calcRotatedLocalRotator(l_currentComponent->m_localTransformVector.m_rot,
-					Vec4(l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), l_randomPosDelta(l_generator), 0.0f).normalize(),
-					l_randomRotDelta(l_generator));
+					Vec4(l_randomPosDelta(m_generator), l_randomPosDelta(m_generator), l_randomPosDelta(m_generator), 0.0f).normalize(),
+					l_randomRotDelta(m_generator));
 		}
 	}
 
@@ -520,44 +531,84 @@ bool GameClientNS::setupTransparentCubes()
 	float l_breadthInterval = 4.0f;
 	uint32_t l_containerSize = 8;
 
-	m_transparentSphereTransformComponents.clear();
-	m_transparentSphereVisibleComponents.clear();
-	m_transparentSphereEntites.clear();
+	m_transparentCubeTransformComponents.clear();
+	m_transparentCubeVisibleComponents.clear();
+	m_transparentCubeEntites.clear();
 
-	m_transparentSphereTransformComponents.reserve(l_containerSize);
-	m_transparentSphereVisibleComponents.reserve(l_containerSize);
-	m_transparentSphereEntites.reserve(l_containerSize);
+	m_transparentCubeTransformComponents.reserve(l_containerSize);
+	m_transparentCubeVisibleComponents.reserve(l_containerSize);
+	m_transparentCubeEntites.reserve(l_containerSize);
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
-		m_transparentSphereTransformComponents.emplace_back();
-		m_transparentSphereVisibleComponents.emplace_back();
-		auto l_entityName = std::string("PhysicsTestTransparentSphere_" + std::to_string(i) + "/");
-		m_transparentSphereEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Client, l_entityName.c_str()));
+		m_transparentCubeTransformComponents.emplace_back();
+		m_transparentCubeVisibleComponents.emplace_back();
+		auto l_entityName = std::string("PhysicsTestTransparentCube_" + std::to_string(i) + "/");
+		m_transparentCubeEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Client, l_entityName.c_str()));
 	}
 
 	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
-		m_transparentSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
-		m_transparentSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
-		m_transparentSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f * i, 1.0f * i, 0.5f, 1.0f);
-		m_transparentSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_transparentSphereEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
-		m_transparentSphereVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Cube;
-		m_transparentSphereVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
-		m_transparentSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
-		m_transparentSphereVisibleComponents[i]->m_simulatePhysics = true;
+		m_transparentCubeTransformComponents[i] = SpawnComponent(TransformComponent, m_transparentCubeEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
+		m_transparentCubeTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
+		m_transparentCubeTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f * i, 1.0f * i, 0.5f, 1.0f);
+		m_transparentCubeVisibleComponents[i] = SpawnComponent(VisibleComponent, m_transparentCubeEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
+		m_transparentCubeVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Cube;
+		m_transparentCubeVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
+		m_transparentCubeVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
+		m_transparentCubeVisibleComponents[i]->m_simulatePhysics = true;
 	}
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
-		m_transparentSphereTransformComponents[i]->m_localTransformVector.m_pos =
-			Vec4(
-				0.0f,
-				2.0f * i,
-				-(i * l_breadthInterval) - 4.0f,
-				1.0f);
+		m_transparentCubeTransformComponents[i]->m_localTransformVector.m_pos = Vec4(0.0f, 2.0f * i, -(i * l_breadthInterval) - 4.0f, 1.0f);
+	}
+
+	return true;
+}
+
+bool GameClientNS::setupVolumetricCubes()
+{
+	float l_breadthInterval = 4.0f;
+	uint32_t l_containerSize = 8;
+
+	m_volumetricCubeTransformComponents.clear();
+	m_volumetricCubeVisibleComponents.clear();
+	m_volumetricCubeEntites.clear();
+
+	m_volumetricCubeTransformComponents.reserve(l_containerSize);
+	m_volumetricCubeVisibleComponents.reserve(l_containerSize);
+	m_volumetricCubeEntites.reserve(l_containerSize);
+
+	for (uint32_t i = 0; i < l_containerSize; i++)
+	{
+		m_volumetricCubeTransformComponents.emplace_back();
+		m_volumetricCubeVisibleComponents.emplace_back();
+		auto l_entityName = std::string("PhysicsTestVolumetricCube_" + std::to_string(i) + "/");
+		m_volumetricCubeEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Client, l_entityName.c_str()));
+	}
+
+	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
+
+	for (uint32_t i = 0; i < l_containerSize; i++)
+	{
+		m_volumetricCubeTransformComponents[i] = SpawnComponent(TransformComponent, m_volumetricCubeEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
+		m_volumetricCubeTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
+		m_volumetricCubeTransformComponents[i]->m_localTransformVector.m_scale = Vec4(4.0f, 4.0f, 4.0f, 1.0f);
+		m_volumetricCubeVisibleComponents[i] = SpawnComponent(VisibleComponent, m_volumetricCubeEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
+		m_volumetricCubeVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Cube;
+		m_volumetricCubeVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
+		m_volumetricCubeVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
+		m_volumetricCubeVisibleComponents[i]->m_simulatePhysics = true;
+	}
+
+	std::uniform_real_distribution<float> l_randomPosDelta(-40.0f, 40.0f);
+
+	for (uint32_t i = 0; i < l_containerSize; i++)
+	{
+		m_volumetricCubeTransformComponents[i]->m_localTransformVector.m_pos = Vec4(l_randomPosDelta(m_generator), 2.0f, l_randomPosDelta(m_generator), 1.0f);
 	}
 
 	return true;
@@ -578,7 +629,6 @@ bool GameClientNS::setupPointLights()
 	m_pointLightComponents.reserve(l_containerSize);
 	m_pointLightEntites.reserve(l_containerSize);
 
-	std::default_random_engine l_generator;
 	std::uniform_real_distribution<float> l_randomPosDelta(0.0f, 1.0f);
 	std::uniform_real_distribution<float> l_randomLuminousFlux(10.0f, 100.0f);
 	std::uniform_real_distribution<float> l_randomColorTemperature(2000.0f, 14000.0f);
@@ -600,8 +650,8 @@ bool GameClientNS::setupPointLights()
 		m_pointLightTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		m_pointLightComponents[i] = SpawnComponent(LightComponent, m_pointLightEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
 		m_pointLightComponents[i]->m_LightType = LightType::Point;
-		m_pointLightComponents[i]->m_LuminousFlux = l_randomLuminousFlux(l_generator);
-		m_pointLightComponents[i]->m_ColorTemperature = l_randomColorTemperature(l_generator);
+		m_pointLightComponents[i]->m_LuminousFlux = l_randomLuminousFlux(m_generator);
+		m_pointLightComponents[i]->m_ColorTemperature = l_randomColorTemperature(m_generator);
 	}
 
 	for (uint32_t i = 0; i < l_matrixDim; i++)
@@ -609,11 +659,12 @@ bool GameClientNS::setupPointLights()
 		for (uint32_t j = 0; j < l_matrixDim; j++)
 		{
 			m_pointLightTransformComponents[i * l_matrixDim + j]->m_localTransformVector.m_pos =
+				m_playerCameraTransformComponent->m_localTransformVector.m_pos +
 				Vec4(
-					(-(l_matrixDim - 1.0f) * l_breadthInterval * l_randomPosDelta(l_generator) / 2.0f)
-					+ (i * l_breadthInterval), l_randomPosDelta(l_generator) * 32.0f,
+					(-(l_matrixDim - 1.0f) * l_breadthInterval * l_randomPosDelta(m_generator) / 2.0f)
+					+ (i * l_breadthInterval), l_randomPosDelta(m_generator) * 32.0f,
 					(j * l_breadthInterval) - 2.0f * (l_matrixDim - 1),
-					1.0f);
+					0.0f);
 		}
 	}
 
@@ -622,15 +673,13 @@ bool GameClientNS::setupPointLights()
 
 bool GameClientNS::setup()
 {
-	auto l_testQuatToMat = []() -> bool {
-		std::default_random_engine generator;
-
+	auto l_testQuatToMat = [&]() -> bool {
 		std::uniform_real_distribution<float> randomAxis(0.0f, 1.0f);
-		auto axisSample = Vec4(randomAxis(generator) * 2.0f - 1.0f, randomAxis(generator) * 2.0f - 1.0f, randomAxis(generator) * 2.0f - 1.0f, 0.0f);
+		auto axisSample = Vec4(randomAxis(m_generator) * 2.0f - 1.0f, randomAxis(m_generator) * 2.0f - 1.0f, randomAxis(m_generator) * 2.0f - 1.0f, 0.0f);
 		axisSample = axisSample.normalize();
 
 		std::uniform_real_distribution<float> randomAngle(0.0f, 360.0f);
-		auto angleSample = randomAngle(generator);
+		auto angleSample = randomAngle(m_generator);
 
 		Vec4 originalRot = InnoMath::getQuatRotator(axisSample, angleSample);
 		Mat4 rotMat = InnoMath::toRotationMatrix(originalRot);
@@ -654,10 +703,16 @@ bool GameClientNS::setup()
 	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_F, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseGame });
 
 	f_sceneLoadingFinishCallback = [&]() {
+		m_posOffset = m_playerCameraTransformComponent->m_localTransformVector.m_pos;
+		m_posOffset.z -= 75.0f;
+
+		m_posOffset = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
 		setupReferenceSpheres();
 		//setupOcclusionCubes();
 		setupOpaqueSpheres();
 		setupTransparentCubes();
+		setupVolumetricCubes();
 		//setupPointLights();
 
 		m_ObjectStatus = ObjectStatus::Activated;
@@ -887,12 +942,20 @@ void GameClientNS::updateSpheres()
 		updateMaterial(m_opaqueSphereVisibleComponents[i + 3]->m_model, l_albedo4, Vec4(l_MRATFactor3, l_MRATFactor1, 0.0f, 0.0f));
 	}
 
-	for (uint32_t i = 0; i < m_transparentSphereVisibleComponents.size(); i++)
+	for (uint32_t i = 0; i < m_transparentCubeVisibleComponents.size(); i++)
 	{
 		auto l_albedo = InnoMath::HSVtoRGB(Vec4((sin(seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
 		l_albedo.w = sin(seed / 6.0f + i) * 0.5f + 0.5f;
 		auto l_MRAT = Vec4(0.0f, sin(seed / 4.0f + i) * 0.5f + 0.5f, 1.0f, clamp((float)sin(seed / 5.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f));
-		updateMaterial(m_transparentSphereVisibleComponents[i]->m_model, l_albedo, l_MRAT, ShaderModel::Transparent);
+		updateMaterial(m_transparentCubeVisibleComponents[i]->m_model, l_albedo, l_MRAT, ShaderModel::Transparent);
+	}
+
+	for (uint32_t i = 0; i < m_volumetricCubeVisibleComponents.size(); i++)
+	{
+		auto l_albedo = InnoMath::HSVtoRGB(Vec4((sin(seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
+		l_albedo.w = sin(seed / 6.0f + i) * 0.5f + 0.5f;
+		auto l_MRAT = Vec4(0.0f, sin(seed / 4.0f + i) * 0.5f + 0.5f, 1.0f, clamp((float)sin(seed / 5.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f));
+		updateMaterial(m_volumetricCubeVisibleComponents[i]->m_model, l_albedo, l_MRAT, ShaderModel::Volumetric);
 	}
 
 	uint32_t l_matrixDim = 8;
