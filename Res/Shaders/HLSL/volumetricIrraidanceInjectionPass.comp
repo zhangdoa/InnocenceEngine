@@ -30,7 +30,7 @@ float4 getLuminance(float3 eyeDir, float3 eyePos, float3 sunPos, float3 sunIllum
 	float4 Lo = float4(sunIlluminance * pMie * albedo, 0.0f);
 
 	// Visibility
-	//Lo *= 1.0 - SunShadowResolver(eyePos, SamplerTypePoint);
+	Lo *= 1.0 - SunShadowResolver(eyePos, SamplerTypePoint);
 
 	return Lo;
 }
@@ -46,10 +46,11 @@ void main(ComputeInputType input)
 
 		float3 l_readCoord = float3(input.dispatchThreadID) / float3(dispatchParams[6].numThreads.xyz);
 
-		float3 posWS = l_readCoord;
-		posWS = posWS * 2.0 - 1.0;
-		posWS *= (voxelizationPassCBuffer.volumeExtend * 0.5);
-		posWS += voxelizationPassCBuffer.volumeCenter;
+		float4 posWS = float4(l_readCoord, 1.0);
+		posWS.xyz = posWS.xyz * 2.0 - 1.0;
+		posWS = mul(posWS, perFrameCBuffer.p_inv);
+		posWS /= posWS.w;
+		posWS = mul(posWS, perFrameCBuffer.v_inv);
 
 		if (albedo.a != 0.0)
 		{
@@ -62,8 +63,12 @@ void main(ComputeInputType input)
 
 			float3 lightdir = -perFrameCBuffer.sun_direction.xyz;
 
-			float4 Lo = getLuminance(eyedir, posWS, lightdir, perFrameCBuffer.sun_illuminance.xyz, albedo.xyz, 0.758);
+			float4 Lo = getLuminance(eyedir, posWS.xyz, lightdir, perFrameCBuffer.sun_illuminance.xyz, albedo.xyz, 0.758);
 
+			float depth = 1.0 / (float)dispatchParams[6].numThreads.z;
+			Lo *= exp(-depth);
+
+			Lo.a = 1.0f;
 			out_result[input.dispatchThreadID] = Lo;
 		}
 		else

@@ -14,12 +14,6 @@ RWTexture3D<float4> out_result : register(u0);
 
 SamplerState SamplerTypeLinear : register(s0);
 
-// Beer-Lambert law for extinction
-float getExtiction(float3 pos)
-{
-	return exp(-length(pos));
-}
-
 [numthreads(8, 8, 8)]
 void main(ComputeInputType input)
 {
@@ -29,10 +23,6 @@ void main(ComputeInputType input)
 	{
 		int l_stepCount = dispatchParams[7].numThreads.z - input.dispatchThreadID.z;
 
-		float3 posVS = float3(input.dispatchThreadID) / float3(dispatchParams[7].numThreads.xyz);
-		posVS /= dispatchParams[7].numThreads;
-		posVS *= (voxelizationPassCBuffer.volumeExtend * 0.5);
-
 		float4 Lo = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
 		int3 l_readCoord = input.dispatchThreadID;
@@ -41,9 +31,21 @@ void main(ComputeInputType input)
 		{
 			l_readCoord.z = input.dispatchThreadID.z + i;
 			float4 Lscat = in_irradianceVolume[l_readCoord];
-			Lscat *= getExtiction(posVS);
-			Lo += Lscat;
+
+			if (Lscat.a)
+			{
+				float depth = (float)l_readCoord.z / (float)dispatchParams[7].numThreads.z;
+				depth *= (perFrameCBuffer.zFar - perFrameCBuffer.zNear);
+				float sigma = exp(-depth);
+
+				Lscat *= 1.0 - sigma;
+				Lo += Lscat;
+			}
 		}
+
+		float depth = (float)input.dispatchThreadID.z / (float)dispatchParams[7].numThreads.z;
+		depth *= (perFrameCBuffer.zFar - perFrameCBuffer.zNear);
+		Lo.a = exp(-depth);
 
 		out_result[input.dispatchThreadID] = Lo;
 	}

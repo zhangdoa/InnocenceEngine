@@ -8,7 +8,7 @@ SamplerState SamplerTypePoint : register(s0);
 struct PixelInputType
 {
 	float4 posCS : SV_POSITION;
-	float3 posWS : POSITION;
+	float3 posVS : POS_VS;
 	float2 TexCoord : TEXCOORD;
 	float3 Normal : NORMAL;
 };
@@ -22,8 +22,7 @@ PixelOutputType main(PixelInputType input)
 {
 	PixelOutputType output;
 
-	float3 tc = input.posCS.xyz;
-	tc.xy /= perFrameCBuffer.viewportSize.xy;
+	float3 tc = input.posVS.xyz;
 	tc.xy = tc.xy * 0.5f + 0.5f;
 
 	float4 result = in_volume.Sample(SamplerTypePoint, tc);

@@ -15,9 +15,10 @@ RWTexture3D<float4> out_froxelizationPassRT0 : register(u0);
 
 void main(PixelInputType input)
 {
-	float3 powWS = input.posCS_orig.xyz;
+	float3 writeCoord = input.posCS_orig.xyz;
+	writeCoord.xy = (writeCoord.xy * 0.5 + 0.5) * 64;
+	writeCoord.z *= 64;
 
-	float3 writeCoord = (input.posCS_orig.xyz * 0.5 + 0.5 * 64);
 	int3 writeCoordInt = int3(writeCoord);
 	float transparency = 1.0;
 

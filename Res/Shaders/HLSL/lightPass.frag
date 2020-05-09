@@ -41,12 +41,14 @@ float4 GetFog(in Texture3D<float4> voxelTexture,
 	in float3 N,
 	in VoxelizationPass_CB voxelizationPassCBuffer)
 {
-	float4 posCS = mul(float4(P, 1.0), perFrameCBuffer.v);
-	posCS = mul(posCS, perFrameCBuffer.p_original);
+	float4 posVS = mul(float4(P, 1.0), perFrameCBuffer.v);
+	float4 posCS = mul(posVS, perFrameCBuffer.p_original);
 	posCS /= posCS.w;
+	posCS.z = -posVS.z / (perFrameCBuffer.zFar - perFrameCBuffer.zNear);
+	posCS.z = 1.0 - exp(-posCS.z * 16);
 
 	float3 tc = posCS.xyz;
-	tc = tc * 0.5f + 0.5f;
+	tc.xy = tc.xy * 0.5f + 0.5f;
 
 	float4 result = voxelTexture.Sample(SamplerTypePoint, tc);
 
@@ -285,8 +287,12 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	Lo += indirectSpecular * indirectFr;
 
 	// Volumetric Fog
-	float4 fog = GetFog(in_VolumetricFog, SamplerTypePoint, posWS, normalWS, voxelizationPassCBuffer);
-	Lo += fog.xyz;
+	//float4 fog = GetFog(in_VolumetricFog, SamplerTypePoint, posWS, normalWS, voxelizationPassCBuffer);
+
+	//if (fog.a)
+	//{
+	//	Lo = fog.a * Lo + fog.xyz;
+	//}
 
 	// ambient occlusion
 	Lo *= ao;
