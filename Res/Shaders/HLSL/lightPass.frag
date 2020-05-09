@@ -41,10 +41,12 @@ float4 GetFog(in Texture3D<float4> voxelTexture,
 	in float3 N,
 	in VoxelizationPass_CB voxelizationPassCBuffer)
 {
-	float3 tc = P;
-	tc = tc - voxelizationPassCBuffer.volumeCenter.xyz;
-	tc /= (voxelizationPassCBuffer.volumeExtend * 0.5);
-	tc = tc * float3(0.5f, 0.5f, 0.5f) + 0.5f;
+	float4 posCS = mul(float4(P, 1.0), perFrameCBuffer.v);
+	posCS = mul(posCS, perFrameCBuffer.p_original);
+	posCS /= posCS.w;
+
+	float3 tc = posCS.xyz;
+	tc = tc * 0.5f + 0.5f;
 
 	float4 result = voxelTexture.Sample(SamplerTypePoint, tc);
 
@@ -226,7 +228,6 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	//int3 isNegative = (N < 0.0);
 	//float3 GISampleCoord = (posWS - GICBuffer.irradianceVolumeOffset.xyz) / perFrameCBuffer.posWSNormalizer.xyz;
 	//int3 isOutside = ((GISampleCoord > 1.0) || (GISampleCoord < 0.0));
-
 
 	//GISampleCoord.z /= 6.0;
 

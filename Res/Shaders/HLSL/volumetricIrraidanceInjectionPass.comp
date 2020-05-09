@@ -1,0 +1,74 @@
+// shadertype=hlsl
+#include "common/common.hlsl"
+
+struct ComputeInputType
+{
+	uint3 groupID : SV_GroupID;           // 3D index of the thread group in the dispatch.
+	uint3 groupThreadID : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
+	uint3 dispatchThreadID : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
+	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
+};
+
+RWTexture3D<float4> out_result : register(u0);
+RWTexture3D<float4> in_froxelVolume : register(u1);
+Texture2DArray in_SunShadow : register(t0);
+
+SamplerState SamplerTypePoint : register(s0);
+
+#include "common/skyResolver.hlsl"
+#include "common/shadowResolver.hlsl"
+
+float4 getLuminance(float3 eyeDir, float3 eyePos, float3 sunPos, float3 sunIlluminance, float3 albedo, float g)
+{
+	sunPos = normalize(sunPos);
+	eyeDir = normalize(eyeDir);
+
+	// Mie scattering phases
+	float cosTheta = dot(eyeDir, sunPos);
+	float pMie = mie_Schlick(cosTheta, g);
+
+	float4 Lo = float4(sunIlluminance * pMie * albedo, 0.0f);
+
+	// Visibility
+	//Lo *= 1.0 - SunShadowResolver(eyePos, SamplerTypePoint);
+
+	return Lo;
+}
+
+[numthreads(8, 8, 8)]
+void main(ComputeInputType input)
+{
+	if (input.dispatchThreadID.x < dispatchParams[6].numThreads.x
+		&& input.dispatchThreadID.y < dispatchParams[6].numThreads.y
+		&& input.dispatchThreadID.z < dispatchParams[6].numThreads.z)
+	{
+		float4 albedo = in_froxelVolume[input.dispatchThreadID];
+
+		float3 l_readCoord = float3(input.dispatchThreadID) / float3(dispatchParams[6].numThreads.xyz);
+
+		float3 posWS = l_readCoord;
+		posWS = posWS * 2.0 - 1.0;
+		posWS *= (voxelizationPassCBuffer.volumeExtend * 0.5);
+		posWS += voxelizationPassCBuffer.volumeCenter;
+
+		if (albedo.a != 0.0)
+		{
+			float2 fragCoord = l_readCoord.xy;
+			fragCoord = fragCoord * 2.0 - 1.0;
+			float4 deviceNormal = float4(fragCoord, 0.0, 1.0);
+			float4 eyeNormal = mul(deviceNormal, perFrameCBuffer.p_inv);
+			eyeNormal = eyeNormal / eyeNormal.w;
+			float3 eyedir = normalize(eyeNormal.xyz);
+
+			float3 lightdir = -perFrameCBuffer.sun_direction.xyz;
+
+			float4 Lo = getLuminance(eyedir, posWS, lightdir, perFrameCBuffer.sun_illuminance.xyz, albedo.xyz, 0.758);
+
+			out_result[input.dispatchThreadID] = Lo;
+		}
+		else
+		{
+			out_result[input.dispatchThreadID] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+		}
+	}
+}

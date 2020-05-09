@@ -1,7 +1,7 @@
 #pragma once
 #include "../../Engine/RenderingServer/IRenderingServer.h"
 
-namespace VolumetricFogPass
+namespace VolumetricPass
 {
 	bool Setup();
 	bool Initialize();
@@ -9,5 +9,5 @@ namespace VolumetricFogPass
 	bool Terminate();
 
 	IResourceBinder* GetRayMarchingResult();
-	IResourceBinder* GetFroxelVisualizationResult();
+	IResourceBinder* GetVisualizationResult();
 };

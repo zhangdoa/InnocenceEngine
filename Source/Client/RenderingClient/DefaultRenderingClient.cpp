@@ -14,7 +14,7 @@
 #include "SkyPass.h"
 #include "PreTAAPass.h"
 #include "TransparentPass.h"
-#include "VolumetricFogPass.h"
+#include "VolumetricPass.h"
 #include "VoxelizationPass.h"
 #include "TAAPass.h"
 #include "PostTAAPass.h"
@@ -35,6 +35,7 @@ namespace DefaultRenderingClientNS
 	std::function<void()> f_showProbe;
 	std::function<void()> f_showVoxel;
 	std::function<void()> f_showTransparent;
+	std::function<void()> f_showVolumetric;
 	std::function<void()> f_saveScreenCapture;
 
 	std::function<void()> f_SetupJob;
@@ -46,6 +47,7 @@ namespace DefaultRenderingClientNS
 	bool m_showProbe = false;
 	bool m_showVoxel = false;
 	bool m_showTransparent = false;
+	bool m_showVolumetric = false;
 	bool m_saveScreenCapture = false;
 	static bool m_drawBRDFTest = false;
 }
@@ -65,6 +67,9 @@ bool DefaultRenderingClient::Setup()
 
 	f_showTransparent = [&]() { m_showTransparent = !m_showTransparent; };
 	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_T, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showTransparent });
+
+	f_showVolumetric = [&]() { m_showVolumetric = !m_showVolumetric; };
+	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_J, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showVolumetric });
 
 	f_saveScreenCapture = [&]() { m_saveScreenCapture = !m_saveScreenCapture; };
 	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_C, true }, ButtonEvent{ EventLifeTime::OneShot, &f_saveScreenCapture });
@@ -90,7 +95,7 @@ bool DefaultRenderingClient::Setup()
 		SkyPass::Setup();
 		PreTAAPass::Setup();
 		TransparentPass::Setup();
-		VolumetricFogPass::Setup();
+		VolumetricPass::Setup();
 		TAAPass::Setup();
 		PostTAAPass::Setup();
 		MotionBlurPass::Setup();
@@ -127,7 +132,7 @@ bool DefaultRenderingClient::Setup()
 		SkyPass::Initialize();
 		PreTAAPass::Initialize();
 		TransparentPass::Initialize();
-		VolumetricFogPass::Initialize();
+		VolumetricPass::Initialize();
 		TAAPass::Initialize();
 		PostTAAPass::Initialize();
 		MotionBlurPass::Initialize();
@@ -184,6 +189,11 @@ bool DefaultRenderingClient::Setup()
 			TransparentPass::Render(0);
 			l_canvas = TransparentPass::GetResult();
 		}
+		else if (m_showVolumetric)
+		{
+			VolumetricPass::Render(true);
+			l_canvas = VolumetricPass::GetVisualizationResult();
+		}
 		else
 		{
 			//GIResolvePass::PrepareCommandList();
@@ -197,6 +207,8 @@ bool DefaultRenderingClient::Setup()
 			g_pModuleManager->getRenderingServer()->WaitForFrame(AnimationPass::GetRPDC());
 
 			SSAOPass::Render();
+
+			VolumetricPass::Render(false);
 
 			LightPass::PrepareCommandList();
 			if (l_renderingConfig.drawSky)
@@ -213,10 +225,6 @@ bool DefaultRenderingClient::Setup()
 
 			g_pModuleManager->getRenderingServer()->ExecuteCommandList(PreTAAPass::GetRPDC());
 			g_pModuleManager->getRenderingServer()->WaitForFrame(PreTAAPass::GetRPDC());
-
-			//VolumetricFogPass::PrepareCommandList();
-			//VolumetricFogPass::Render(false);
-			//l_canvas = VolumetricFogPass::GetFroxelVisualizationResult();
 
 			TransparentPass::Render(PreTAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0]);
 			l_canvas = PreTAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
@@ -272,7 +280,7 @@ bool DefaultRenderingClient::Setup()
 		SkyPass::Terminate();
 		PreTAAPass::Terminate();
 		TransparentPass::Terminate();
-		VolumetricFogPass::Terminate();
+		VolumetricPass::Terminate();
 		TAAPass::Terminate();
 		PostTAAPass::Terminate();
 		MotionBlurPass::Terminate();
