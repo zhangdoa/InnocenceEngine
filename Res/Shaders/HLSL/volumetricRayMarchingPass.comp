@@ -9,10 +9,25 @@ struct ComputeInputType
 	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
+#include "common/skyResolver.hlsl"
+
 Texture3D<float4> in_irradianceVolume : register(t0);
-RWTexture3D<float4> out_result : register(u0);
+Texture3D<float4> in_materialVolume : register(t1);
+
+RWTexture3D<float4> out_integrationResult : register(u0);
 
 SamplerState SamplerTypeLinear : register(s0);
+
+void getParticipatingMedia(out float sigmaS, out float3 sigmaE, in float3 albedo)
+{
+	const float constantFog = 0.02;
+
+	sigmaS = constantFog;
+
+	float sigmaA = 0.0;
+	//float3 safeAlbedo = saturate(albedo + eps);
+	sigmaE = max(eps, sigmaA + sigmaS);// / safeAlbedo;
+}
 
 [numthreads(8, 8, 8)]
 void main(ComputeInputType input)
@@ -21,32 +36,45 @@ void main(ComputeInputType input)
 		&& input.dispatchThreadID.y < dispatchParams[7].numThreads.y
 		&& input.dispatchThreadID.z < dispatchParams[7].numThreads.z)
 	{
+		float3 sunPos = normalize(-perFrameCBuffer.sun_direction.xyz);
+
+		float sigmaS = 0.0;
+		float3 sigmaE = float3(0.0, 0.0, 0.0);
+
+		float transmittance = 1.0;
+		float3 scatteredLight = float3(0.0, 0.0, 0.0);
+
+		// Mie scattering phases
+		float cosTheta = -sunPos.z;
+		float pMie = mie_Schlick(cosTheta, 0.758);
+
+		float4 Lo = float4(0.0f, 0.0f, 0.0f, 1.0f);
+
 		int l_stepCount = dispatchParams[7].numThreads.z - input.dispatchThreadID.z;
 
-		float4 Lo = float4(0.0f, 0.0f, 0.0f, 0.0f);
+		float3 eyePos = float3(float3(input.dispatchThreadID.xyz) / float3(dispatchParams[7].numThreads.xyz));
+		float dd = (perFrameCBuffer.zFar - perFrameCBuffer.zNear) / float(dispatchParams[7].numThreads.z);
 
-		int3 l_readCoord = input.dispatchThreadID;
-
-		for (int i = 0; i < l_stepCount; i++)
+		for (int i = 0; i < l_stepCount - 1; i++)
 		{
-			l_readCoord.z = input.dispatchThreadID.z + i;
-			float4 Lscat = in_irradianceVolume[l_readCoord];
+			float3 p = eyePos;
+			p.z += float(i + 1) / float(l_stepCount);
 
-			if (Lscat.a)
-			{
-				float depth = (float)l_readCoord.z / (float)dispatchParams[7].numThreads.z;
-				depth *= (perFrameCBuffer.zFar - perFrameCBuffer.zNear);
-				float sigma = exp(-depth);
+			float4 Lscat = in_irradianceVolume.SampleLevel(SamplerTypeLinear, p, 0);
+			float4 albedo = in_materialVolume.SampleLevel(SamplerTypeLinear, p, 0);
 
-				Lscat *= 1.0 - sigma;
-				Lo += Lscat;
-			}
+			getParticipatingMedia(sigmaS, sigmaE, albedo.xyz);
+
+			float3 S = Lscat * sigmaS * pMie;
+			float3 Sint = (S - S * exp(-sigmaE * dd)) / sigmaE;
+			scatteredLight += transmittance * Sint;
+
+			transmittance *= exp(-sigmaE * dd);
+
+			Lo.rgb += scatteredLight;
+			Lo.a *= transmittance;
 		}
 
-		float depth = (float)input.dispatchThreadID.z / (float)dispatchParams[7].numThreads.z;
-		depth *= (perFrameCBuffer.zFar - perFrameCBuffer.zNear);
-		Lo.a = exp(-depth);
-
-		out_result[input.dispatchThreadID] = Lo;
+		out_integrationResult[input.dispatchThreadID.xyz] = Lo;
 	}
 }

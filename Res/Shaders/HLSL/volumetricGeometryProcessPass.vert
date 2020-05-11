@@ -27,7 +27,7 @@ GeometryInputType main(VertexInputType input)
 	output.posCS = mul(posVS, perFrameCBuffer.p_original);
 	output.posWS = output.posCS / output.posCS.w;
 	output.posWS.z = -posVS.z / (perFrameCBuffer.zFar - perFrameCBuffer.zNear);
-	output.posWS.z = 1.0 - exp(-output.posWS.z * 16);
+	output.posWS.z = 1.0 - exp(-output.posWS.z * 8);
 	output.texcoord = input.texcoord;
 	output.normal = mul(input.normal, perObjectCBuffer.normalMat);
 

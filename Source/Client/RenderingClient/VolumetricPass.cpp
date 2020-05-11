@@ -40,7 +40,7 @@ namespace VolumetricPass
 	TextureDataComponent* m_irraidanceInjectionResult;
 	TextureDataComponent* m_rayMarchingResult;
 
-	uint32_t m_voxelizationResolution = 64;
+	TVec4<uint32_t> m_voxelizationResolution = TVec4<uint32_t>(160, 90, 64, 0);
 }
 
 bool VolumetricPass::setupGeometryProcessPass()
@@ -64,11 +64,11 @@ bool VolumetricPass::setupGeometryProcessPass()
 	l_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler3D;
 	l_RenderPassDesc.m_RenderTargetDesc.Usage = TextureUsage::Sample;
 	l_RenderPassDesc.m_RenderTargetDesc.GPUAccessibility = Accessibility::ReadWrite;
-	l_RenderPassDesc.m_RenderTargetDesc.Width = m_voxelizationResolution;
-	l_RenderPassDesc.m_RenderTargetDesc.Height = m_voxelizationResolution;
-	l_RenderPassDesc.m_RenderTargetDesc.DepthOrArraySize = m_voxelizationResolution;
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)m_voxelizationResolution;
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)m_voxelizationResolution;
+	l_RenderPassDesc.m_RenderTargetDesc.Width = m_voxelizationResolution.x;
+	l_RenderPassDesc.m_RenderTargetDesc.Height = m_voxelizationResolution.y;
+	l_RenderPassDesc.m_RenderTargetDesc.DepthOrArraySize = m_voxelizationResolution.z;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = (float)m_voxelizationResolution.x;
+	l_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = (float)m_voxelizationResolution.y;
 
 	m_froxelizationRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -171,7 +171,7 @@ bool VolumetricPass::setupRayMarchingPass()
 
 	m_rayMarchingRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs.resize(5);
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs.resize(6);
 	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 6;
@@ -184,20 +184,27 @@ bool VolumetricPass::setupRayMarchingPass()
 	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
 
 	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Image;
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[2].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[2].m_BinderAccessibility = Accessibility::ReadOnly;
 	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 0;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 1;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 1;
 	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[2].m_IndirectBinding = true;
 
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Sampler;
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Image;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[3].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 2;
 	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
 	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[3].m_IndirectBinding = true;
 
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 0;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Sampler;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 3;
 	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 0;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[4].m_IndirectBinding = true;
+
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 0;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 0;
 
 	m_rayMarchingRPDC->m_ShaderProgram = m_rayMarchingSPC;
 
@@ -273,12 +280,14 @@ bool VolumetricPass::Setup()
 
 	////
 	auto l_textureDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc().m_RenderTargetDesc;
+
 	l_textureDesc.Sampler = TextureSampler::Sampler3D;
 	l_textureDesc.Usage = TextureUsage::Sample;
 	l_textureDesc.GPUAccessibility = Accessibility::ReadWrite;
-	l_textureDesc.Width = m_voxelizationResolution;
-	l_textureDesc.Height = m_voxelizationResolution;
-	l_textureDesc.DepthOrArraySize = m_voxelizationResolution;
+	l_textureDesc.Width = m_voxelizationResolution.x;
+	l_textureDesc.Height = m_voxelizationResolution.y;
+	l_textureDesc.DepthOrArraySize = m_voxelizationResolution.z;
+	l_textureDesc.PixelDataType = TexturePixelDataType::Float32;
 
 	m_irraidanceInjectionResult = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("VolumetricIrraidanceInjectionResult/");
 	m_irraidanceInjectionResult->m_TextureDesc = l_textureDesc;
@@ -358,12 +367,15 @@ bool VolumetricPass::irraidanceInjection()
 	auto l_CSMGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::CSM);
 	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::ComputeDispatchParam);
 
-	auto l_numThreadsX = m_voxelizationResolution;
-	auto l_numThreadsY = m_voxelizationResolution;
-	auto l_numThreadsZ = m_voxelizationResolution;
+	auto l_numThreadsX = m_voxelizationResolution.x;
+	auto l_numThreadsY = m_voxelizationResolution.y;
+	auto l_numThreadsZ = m_voxelizationResolution.z;
+	auto l_numThreadGroupsX = (uint32_t)std::ceil((float)l_numThreadsX / 8.0f);
+	auto l_numThreadGroupsY = (uint32_t)std::ceil((float)l_numThreadsY / 8.0f);
+	auto l_numThreadGroupsZ = (uint32_t)std::ceil((float)l_numThreadsZ / 8.0f);
 
 	DispatchParamsConstantBuffer l_irraidanceInjectionWorkload;
-	l_irraidanceInjectionWorkload.numThreadGroups = TVec4<uint32_t>(l_numThreadsX / 8, l_numThreadsY / 8, l_numThreadsZ / 8, 0);
+	l_irraidanceInjectionWorkload.numThreadGroups = TVec4<uint32_t>(l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ, 0);
 	l_irraidanceInjectionWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_dispatchParamsGBDC, &l_irraidanceInjectionWorkload, 6, 1);
@@ -381,7 +393,7 @@ bool VolumetricPass::irraidanceInjection()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irraidanceInjectionRPDC, ShaderStage::Compute, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 4, 1, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_irraidanceInjectionRPDC, ShaderStage::Compute, SunShadowPass::GetShadowMap(), 5, 0, Accessibility::ReadOnly);
 
-	g_pModuleManager->getRenderingServer()->DispatchCompute(m_irraidanceInjectionRPDC, 8, 8, 8);
+	g_pModuleManager->getRenderingServer()->DispatchCompute(m_irraidanceInjectionRPDC, l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ);
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_irraidanceInjectionRPDC, ShaderStage::Compute, m_irraidanceInjectionResult->m_ResourceBinder, 3, 0, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_irraidanceInjectionRPDC, ShaderStage::Compute, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 4, 1, Accessibility::ReadWrite);
@@ -397,12 +409,15 @@ bool VolumetricPass::rayMarching()
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::ComputeDispatchParam);
 
-	auto l_numThreadsX = m_voxelizationResolution;
-	auto l_numThreadsY = m_voxelizationResolution;
-	auto l_numThreadsZ = m_voxelizationResolution;
+	auto l_numThreadsX = m_voxelizationResolution.x;
+	auto l_numThreadsY = m_voxelizationResolution.y;
+	auto l_numThreadsZ = m_voxelizationResolution.z;
+	auto l_numThreadGroupsX = (uint32_t)std::ceil((float)l_numThreadsX / 8.0f);
+	auto l_numThreadGroupsY = (uint32_t)std::ceil((float)l_numThreadsY / 8.0f);
+	auto l_numThreadGroupsZ = (uint32_t)std::ceil((float)l_numThreadsZ / 8.0f);
 
 	DispatchParamsConstantBuffer l_rayMarchingWorkload;
-	l_rayMarchingWorkload.numThreadGroups = TVec4<uint32_t>(l_numThreadsX / 8, l_numThreadsY / 8, l_numThreadsZ / 8, 0);
+	l_rayMarchingWorkload.numThreadGroups = TVec4<uint32_t>(l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ, 0);
 	l_rayMarchingWorkload.numThreads = TVec4<uint32_t>(l_numThreadsX, l_numThreadsY, l_numThreadsZ, 0);
 
 	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_dispatchParamsGBDC, &l_rayMarchingWorkload, 7, 1);
@@ -411,17 +426,19 @@ bool VolumetricPass::rayMarching()
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_rayMarchingRPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_rayMarchingRPDC);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_SDC->m_ResourceBinder, 3, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_SDC->m_ResourceBinder, 4, 0, Accessibility::ReadOnly);
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 0, 6, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_irraidanceInjectionResult->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_rayMarchingResult->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 4, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 2, 1, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_rayMarchingResult->m_ResourceBinder, 3, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 5, 0, Accessibility::ReadOnly);
 
-	g_pModuleManager->getRenderingServer()->DispatchCompute(m_rayMarchingRPDC, 8, 8, 8);
+	g_pModuleManager->getRenderingServer()->DispatchCompute(m_rayMarchingRPDC, l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ);
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_irraidanceInjectionResult->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_rayMarchingResult->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 2, 1, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_rayMarchingResult->m_ResourceBinder, 3, 0, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_rayMarchingRPDC);
 

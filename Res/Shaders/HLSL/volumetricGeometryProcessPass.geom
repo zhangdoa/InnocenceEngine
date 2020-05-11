@@ -13,7 +13,6 @@ struct PixelInputType
 {
 	float4 posCS : SV_POSITION;
 	float4 posCS_orig : POSITION;
-	float4 posWS : POS_WS;
 	nointerpolation float4 AABB : AABB;
 	float4 normal : NORMAL;
 	float2 texcoord : TEXCOORD;
@@ -122,23 +121,13 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 		pos[i].z = 1;
 	}
 
-	// Conservative Rasterization setup:
-	float2 side0N = normalize(pos[1].xy - pos[0].xy);
-	float2 side1N = normalize(pos[2].xy - pos[1].xy);
-	float2 side2N = normalize(pos[0].xy - pos[2].xy);
-	const float texelSize = 1.0f / 64.0f;
-	pos[0].xy += normalize(-side0N + side2N) * texelSize;
-	pos[1].xy += normalize(side0N - side1N) * texelSize;
-	pos[2].xy += normalize(side1N - side2N) * texelSize;
-
 	[unroll(3)]
 	for (int i = 0; i < 3; i++)
 	{
 		output[i].posCS = pos[i];
-		output[i].posWS = input[i].posWS;
 		output[i].texcoord = texcoord[i];
 		output[i].normal = normal[i];
-		output[i].AABB = getAABB(pos, float2(texelSize, texelSize));
+		output[i].AABB = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
 		outStream.Append(output[i]);
 	}

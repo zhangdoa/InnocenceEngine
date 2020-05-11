@@ -45,11 +45,10 @@ float4 GetFog(in Texture3D<float4> voxelTexture,
 	float4 posCS = mul(posVS, perFrameCBuffer.p_original);
 	posCS /= posCS.w;
 	posCS.z = -posVS.z / (perFrameCBuffer.zFar - perFrameCBuffer.zNear);
-	posCS.z = 1.0 - exp(-posCS.z * 16);
+	posCS.z = 1.0 - exp(-posCS.z * 8);
 
 	float3 tc = posCS.xyz;
 	tc.xy = tc.xy * 0.5f + 0.5f;
-
 	float4 result = voxelTexture.Sample(SamplerTypePoint, tc);
 
 	return result;
