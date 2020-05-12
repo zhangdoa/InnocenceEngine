@@ -1,5 +1,6 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
+#define MIN_SIGMA 0.00002
 
 struct ComputeInputType
 {
@@ -18,17 +19,6 @@ RWTexture3D<float4> out_integrationResult : register(u0);
 
 SamplerState SamplerTypeLinear : register(s0);
 
-void getParticipatingMedia(out float sigmaS, out float3 sigmaE, in float3 albedo)
-{
-	const float constantFog = 0.02;
-
-	sigmaS = constantFog;
-
-	float sigmaA = 0.0;
-	//float3 safeAlbedo = saturate(albedo + eps);
-	sigmaE = max(eps, sigmaA + sigmaS);// / safeAlbedo;
-}
-
 [numthreads(8, 8, 8)]
 void main(ComputeInputType input)
 {
@@ -38,7 +28,7 @@ void main(ComputeInputType input)
 	{
 		float3 sunPos = normalize(-perFrameCBuffer.sun_direction.xyz);
 
-		float sigmaS = 0.0;
+		float3 sigmaS = float3(0.0, 0.0, 0.0);
 		float3 sigmaE = float3(0.0, 0.0, 0.0);
 
 		float transmittance = 1.0;
@@ -50,34 +40,36 @@ void main(ComputeInputType input)
 
 		float4 Lo = float4(0.0f, 0.0f, 0.0f, 1.0f);
 
-		int l_stepCount = input.dispatchThreadID.z;
-
-		float3 eyePos = float3(float3(input.dispatchThreadID.xyz) / float3(dispatchParams[7].numThreads.xyz));
-		float dd = 1.0;
-
-		for (int i = 0; i < l_stepCount; i++)
+		for (int i = 0; i < 64; i++)
 		{
-			float3 p = eyePos;
-			p.z += float(i + 1) / float(l_stepCount);
+			float dd1 = float(i) / float(64);
+			dd1 = 1.0 - exp(-dd1 * 8);
+			float dd2 = float(i + 1) / float(64);
+			dd2 = 1.0 - exp(-dd2 * 8);
+			float dd = dd2 - dd1;
+			dd *= (perFrameCBuffer.zFar - perFrameCBuffer.zNear);
 
-			float4 Lscat = in_irradianceVolume.SampleLevel(SamplerTypeLinear, p, 0);
-			//if (Lscat.a)
+			int3 p = int3(input.dispatchThreadID.xy, i);
+
+			float4 Lscat = in_irradianceVolume[p];
+			if (Lscat.w)
 			{
-				float4 albedo = in_materialVolume.SampleLevel(SamplerTypeLinear, p, 0);
-
-				getParticipatingMedia(sigmaS, sigmaE, albedo.xyz);
-
-				float3 S = Lscat * sigmaS * pMie;
-				float3 Sint = (S - S * exp(-sigmaE * dd)) / sigmaE;
-				scatteredLight += transmittance * Sint;
-
-				transmittance *= exp(-sigmaE * dd);
-
-				Lo.rgb += scatteredLight;
-				Lo.a *= transmittance;
+				sigmaS = in_materialVolume[p].xyz;
+				sigmaE = float3(Lscat.w, Lscat.w, Lscat.w);
 			}
-		}
+			sigmaS = max(sigmaS, MIN_SIGMA);
+			sigmaE = max(sigmaE, MIN_SIGMA);
 
-		out_integrationResult[input.dispatchThreadID.xyz] = Lo;
+			float3 S = Lscat.xyz * sigmaS * pMie;
+			float3 Sint = (S - S * exp(-sigmaE * dd)) / sigmaE;
+			scatteredLight += transmittance * Sint;
+
+			transmittance *= exp(-sigmaE * dd);
+
+			Lo.rgb += scatteredLight;
+			Lo.a *= transmittance;
+
+			out_integrationResult[p] = Lo;
+		}
 	}
 }

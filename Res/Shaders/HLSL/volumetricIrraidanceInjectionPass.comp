@@ -10,7 +10,7 @@ struct ComputeInputType
 };
 
 RWTexture3D<float4> out_irradianceVolume : register(u0);
-RWTexture3D<float4> in_froxelVolume : register(u1);
+RWTexture3D<float4> in_materialVolume : register(u1);
 Texture2DArray in_SunShadow : register(t0);
 Texture2D<uint2> in_LightGrid : register(t1);
 StructuredBuffer<uint> in_LightIndexList : register(t2);
@@ -29,45 +29,43 @@ void main(ComputeInputType input)
 	{
 		out_irradianceVolume[input.dispatchThreadID] = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
-		float4 albedo = in_froxelVolume[input.dispatchThreadID];
+		float4 Lo = float4(perFrameCBuffer.sun_illuminance.xyz, 1.0f);
+		float3 l_readCoord = float3(input.dispatchThreadID) / float3(dispatchParams[6].numThreads.xyz);
 
-		//if (albedo.a)
+		float4 eyePos = float4(l_readCoord, 1.0);
+		eyePos.xyz = eyePos.xyz * 2.0 - 1.0;
+		eyePos = mul(eyePos, perFrameCBuffer.p_inv);
+		eyePos /= eyePos.w;
+		eyePos = mul(eyePos, perFrameCBuffer.v_inv);
+
+		//Lo *= 1.0 - SunShadowResolver(eyePos, SamplerTypePoint);
+
+		uint2 tileIndex = uint2(floor(input.dispatchThreadID.xy * 8 / BLOCK_SIZE));
+
+		uint startOffset = in_LightGrid[tileIndex].x;
+		uint lightCount = in_LightGrid[tileIndex].y;
+
+		[loop]
+		for (uint i = 0; i < lightCount; ++i)
 		{
-			float4 Lo = float4(perFrameCBuffer.sun_illuminance.xyz, 1.0f);
-			float3 l_readCoord = float3(input.dispatchThreadID) / float3(dispatchParams[6].numThreads.xyz);
+			uint lightIndex = in_LightIndexList[startOffset + i];
+			PointLight_CB light = pointLights[lightIndex];
 
-			float4 eyePos = float4(l_readCoord, 1.0);
-			eyePos.xyz = eyePos.xyz * 2.0 - 1.0;
-			eyePos = mul(eyePos, perFrameCBuffer.p_inv);
-			eyePos /= eyePos.w;
-			eyePos = mul(eyePos, perFrameCBuffer.v_inv);
+			float3 unormalizedL = light.position.xyz - eyePos.xyz;
+			float lightAttRadius = light.luminousFlux.w;
 
-			Lo *= 1.0 - SunShadowResolver(eyePos, SamplerTypePoint);
+			float attenuation = 1.0;
+			float invSqrAttRadius = 1.0 / max(lightAttRadius * lightAttRadius, eps);
+			attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
 
-			uint2 tileIndex = uint2(floor(input.dispatchThreadID.xy * 8 / BLOCK_SIZE));
+			float3 luminousFlux = light.luminousFlux.xyz * attenuation;
 
-			uint startOffset = in_LightGrid[tileIndex].x;
-			uint lightCount = in_LightGrid[tileIndex].y;
-
-			[loop]
-			for (uint i = 0; i < lightCount; ++i)
-			{
-				uint lightIndex = in_LightIndexList[startOffset + i];
-				PointLight_CB light = pointLights[lightIndex];
-
-				float3 unormalizedL = light.position.xyz - eyePos.xyz;
-				float lightAttRadius = light.luminousFlux.w;
-
-				float attenuation = 1.0;
-				float invSqrAttRadius = 1.0 / max(lightAttRadius * lightAttRadius, eps);
-				attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
-
-				float3 luminousFlux = light.luminousFlux.xyz * attenuation;
-
-				Lo.xyz += luminousFlux;
-			}
-
-			out_irradianceVolume[input.dispatchThreadID] = Lo;
+			Lo.xyz += luminousFlux;
 		}
+
+		float4 SE = in_materialVolume[input.dispatchThreadID];
+		Lo.w = SE.w;
+
+		out_irradianceVolume[input.dispatchThreadID] = Lo;
 	}
 }

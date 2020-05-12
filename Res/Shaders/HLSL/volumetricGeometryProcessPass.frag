@@ -25,8 +25,6 @@ void main(PixelInputType input)
 
 	int3 writeCoordInt = int3(writeCoord);
 
-	float3 out_Albedo;
-	out_Albedo = materialCBuffer.albedo.rgb;
-
-	out_froxelizationPassRT0[writeCoordInt] = float4(out_Albedo, 1.0f);
+	// scattering RGB + extinction A
+	out_froxelizationPassRT0[writeCoordInt] = materialCBuffer.albedo;
 }

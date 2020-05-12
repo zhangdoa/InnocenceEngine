@@ -435,10 +435,10 @@ bool VolumetricPass::rayMarching()
 
 	auto l_numThreadsX = m_voxelizationResolution.x;
 	auto l_numThreadsY = m_voxelizationResolution.y;
-	auto l_numThreadsZ = m_voxelizationResolution.z;
+	auto l_numThreadsZ = 1;
 	auto l_numThreadGroupsX = (uint32_t)std::ceil((float)l_numThreadsX / 8.0f);
 	auto l_numThreadGroupsY = (uint32_t)std::ceil((float)l_numThreadsY / 8.0f);
-	auto l_numThreadGroupsZ = (uint32_t)std::ceil((float)l_numThreadsZ / 8.0f);
+	auto l_numThreadGroupsZ = 1;
 
 	DispatchParamsConstantBuffer l_rayMarchingWorkload;
 	l_rayMarchingWorkload.numThreadGroups = TVec4<uint32_t>(l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ, 0);
