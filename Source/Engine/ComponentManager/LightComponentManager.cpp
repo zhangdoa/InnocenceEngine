@@ -120,9 +120,13 @@ void LightComponentManagerNS::UpdateSingleSMData(LightComponent* rhs)
 
 	auto l_transformComponent = GetComponent(TransformComponent, rhs->m_ParentEntity);
 	auto l_r = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-	m_viewMatrices.emplace_back(l_r.inverse());
+	auto l_sunDir = InnoMath::getDirection(Direction::Forward, l_transformComponent->m_globalTransformVector.m_rot);
+	auto l_pos = l_sunDir * l_sphereRadius + l_totalSceneAABB.m_center;
+	auto l_t = InnoMath::toTranslationMatrix(l_pos);
+	auto l_m = l_t * l_r;
+	m_viewMatrices.emplace_back(l_m.inverse());
 
-	Mat4 l_p = InnoMath::generateOrthographicMatrix(-l_sphereRadius, l_sphereRadius, -l_sphereRadius, l_sphereRadius, -l_sphereRadius, l_sphereRadius);
+	Mat4 l_p = InnoMath::generateOrthographicMatrix(-l_sphereRadius, l_sphereRadius, -l_sphereRadius, l_sphereRadius, 0.0f, l_sphereRadius * 2.0f);
 	m_projectionMatrices.emplace_back(l_p);
 }
 
