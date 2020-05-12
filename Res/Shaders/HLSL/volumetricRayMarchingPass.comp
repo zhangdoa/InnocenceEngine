@@ -50,29 +50,32 @@ void main(ComputeInputType input)
 
 		float4 Lo = float4(0.0f, 0.0f, 0.0f, 1.0f);
 
-		int l_stepCount = dispatchParams[7].numThreads.z - input.dispatchThreadID.z;
+		int l_stepCount = input.dispatchThreadID.z;
 
 		float3 eyePos = float3(float3(input.dispatchThreadID.xyz) / float3(dispatchParams[7].numThreads.xyz));
-		float dd = (perFrameCBuffer.zFar - perFrameCBuffer.zNear) / float(dispatchParams[7].numThreads.z);
+		float dd = 1.0;
 
-		for (int i = 0; i < l_stepCount - 1; i++)
+		for (int i = 0; i < l_stepCount; i++)
 		{
 			float3 p = eyePos;
 			p.z += float(i + 1) / float(l_stepCount);
 
 			float4 Lscat = in_irradianceVolume.SampleLevel(SamplerTypeLinear, p, 0);
-			float4 albedo = in_materialVolume.SampleLevel(SamplerTypeLinear, p, 0);
+			//if (Lscat.a)
+			{
+				float4 albedo = in_materialVolume.SampleLevel(SamplerTypeLinear, p, 0);
 
-			getParticipatingMedia(sigmaS, sigmaE, albedo.xyz);
+				getParticipatingMedia(sigmaS, sigmaE, albedo.xyz);
 
-			float3 S = Lscat * sigmaS * pMie;
-			float3 Sint = (S - S * exp(-sigmaE * dd)) / sigmaE;
-			scatteredLight += transmittance * Sint;
+				float3 S = Lscat * sigmaS * pMie;
+				float3 Sint = (S - S * exp(-sigmaE * dd)) / sigmaE;
+				scatteredLight += transmittance * Sint;
 
-			transmittance *= exp(-sigmaE * dd);
+				transmittance *= exp(-sigmaE * dd);
 
-			Lo.rgb += scatteredLight;
-			Lo.a *= transmittance;
+				Lo.rgb += scatteredLight;
+				Lo.a *= transmittance;
+			}
 		}
 
 		out_integrationResult[input.dispatchThreadID.xyz] = Lo;

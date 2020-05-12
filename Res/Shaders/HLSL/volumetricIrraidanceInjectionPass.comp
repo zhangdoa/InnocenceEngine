@@ -27,42 +27,47 @@ void main(ComputeInputType input)
 		&& input.dispatchThreadID.y < dispatchParams[6].numThreads.y
 		&& input.dispatchThreadID.z < dispatchParams[6].numThreads.z)
 	{
+		out_irradianceVolume[input.dispatchThreadID] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+
 		float4 albedo = in_froxelVolume[input.dispatchThreadID];
 
-		float4 Lo = float4(perFrameCBuffer.sun_illuminance.xyz, 1.0f);
-		float3 l_readCoord = float3(input.dispatchThreadID) / float3(dispatchParams[6].numThreads.xyz);
-
-		float4 eyePos = float4(l_readCoord, 1.0);
-		eyePos.xyz = eyePos.xyz * 2.0 - 1.0;
-		eyePos = mul(eyePos, perFrameCBuffer.p_inv);
-		eyePos /= eyePos.w;
-		eyePos = mul(eyePos, perFrameCBuffer.v_inv);
-
-		Lo *= 1.0 - SunShadowResolver(eyePos, SamplerTypePoint);
-
-		uint2 tileIndex = uint2(floor(input.dispatchThreadID.xy * 8 / BLOCK_SIZE));
-
-		uint startOffset = in_LightGrid[tileIndex].x;
-		uint lightCount = in_LightGrid[tileIndex].y;
-
-		[loop]
-		for (uint i = 0; i < lightCount; ++i)
+		//if (albedo.a)
 		{
-			uint lightIndex = in_LightIndexList[startOffset + i];
-			PointLight_CB light = pointLights[lightIndex];
+			float4 Lo = float4(perFrameCBuffer.sun_illuminance.xyz, 1.0f);
+			float3 l_readCoord = float3(input.dispatchThreadID) / float3(dispatchParams[6].numThreads.xyz);
 
-			float3 unormalizedL = light.position.xyz - eyePos.xyz;
-			float lightAttRadius = light.luminousFlux.w;
+			float4 eyePos = float4(l_readCoord, 1.0);
+			eyePos.xyz = eyePos.xyz * 2.0 - 1.0;
+			eyePos = mul(eyePos, perFrameCBuffer.p_inv);
+			eyePos /= eyePos.w;
+			eyePos = mul(eyePos, perFrameCBuffer.v_inv);
 
-			float attenuation = 1.0;
-			float invSqrAttRadius = 1.0 / max(lightAttRadius * lightAttRadius, eps);
-			attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
+			Lo *= 1.0 - SunShadowResolver(eyePos, SamplerTypePoint);
 
-			float3 luminousFlux = light.luminousFlux.xyz * attenuation;
+			uint2 tileIndex = uint2(floor(input.dispatchThreadID.xy * 8 / BLOCK_SIZE));
 
-			Lo.xyz += luminousFlux;
+			uint startOffset = in_LightGrid[tileIndex].x;
+			uint lightCount = in_LightGrid[tileIndex].y;
+
+			[loop]
+			for (uint i = 0; i < lightCount; ++i)
+			{
+				uint lightIndex = in_LightIndexList[startOffset + i];
+				PointLight_CB light = pointLights[lightIndex];
+
+				float3 unormalizedL = light.position.xyz - eyePos.xyz;
+				float lightAttRadius = light.luminousFlux.w;
+
+				float attenuation = 1.0;
+				float invSqrAttRadius = 1.0 / max(lightAttRadius * lightAttRadius, eps);
+				attenuation *= getDistanceAtt(unormalizedL, invSqrAttRadius);
+
+				float3 luminousFlux = light.luminousFlux.xyz * attenuation;
+
+				Lo.xyz += luminousFlux;
+			}
+
+			out_irradianceVolume[input.dispatchThreadID] = Lo;
 		}
-
-		out_irradianceVolume[input.dispatchThreadID] = Lo;
 	}
 }
