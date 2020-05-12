@@ -144,7 +144,13 @@ void InnoAssetSystemNS::addPentagon(MeshDataComponent* meshDataComponent)
 	generateIndicesForPolygon(meshDataComponent, 5);
 }
 
-void generateNormal(MeshDataComponent* meshDataComponent)
+void InnoAssetSystemNS::addHexagon(MeshDataComponent* meshDataComponent)
+{
+	generateVerticesForPolygon(meshDataComponent, 6);
+	generateIndicesForPolygon(meshDataComponent, 6);
+}
+
+void generateVertexBasedNormal(MeshDataComponent* meshDataComponent)
 {
 	auto l_verticesCount = meshDataComponent->m_vertices.size();
 	for (size_t i = 0; i < l_verticesCount; i++)
@@ -155,48 +161,80 @@ void generateNormal(MeshDataComponent* meshDataComponent)
 	}
 }
 
-void InnoAssetSystemNS::addHexagon(MeshDataComponent* meshDataComponent)
+void generateFaceBasedNormal(MeshDataComponent* meshDataComponent, uint32_t verticesPerFace)
 {
-	generateVerticesForPolygon(meshDataComponent, 6);
-	generateIndicesForPolygon(meshDataComponent, 6);
+	auto l_face = meshDataComponent->m_indices.size() / verticesPerFace;
+
+	for (size_t i = 0; i < l_face; i++)
+	{
+		auto l_normal = Vec4(0.0f, 0.0f, 0.0f, 0.0f);
+
+		for (size_t j = 0; j < verticesPerFace; j++)
+		{
+			l_normal = l_normal + meshDataComponent->m_vertices[i * verticesPerFace + j].m_pos;
+		}
+		l_normal = l_normal / (float)verticesPerFace;
+		l_normal.w = 0.0f;
+		l_normal = l_normal.normalize();
+
+		for (size_t j = 0; j < verticesPerFace; j++)
+		{
+			meshDataComponent->m_vertices[i * verticesPerFace + j].m_normal = l_normal;
+		}
+	}
+}
+
+void fulfillVerticesAndIndicesForPolyhedron(MeshDataComponent* meshDataComponent, const std::vector<Index>& indices, const std::vector<Vec4>& vertices, uint32_t verticesPerFace = 0)
+{
+	meshDataComponent->m_vertices.reserve(indices.size());
+	meshDataComponent->m_vertices.fulfill();
+
+	for (uint32_t i = 0; i < indices.size(); i++)
+	{
+		meshDataComponent->m_vertices[i].m_pos = vertices[indices[i]];
+	}
+
+	meshDataComponent->m_indices.reserve(indices.size());
+	meshDataComponent->m_indices.fulfill();
+
+	for (uint32_t i = 0; i < indices.size(); i++)
+	{
+		meshDataComponent->m_indices[i] = i;
+	}
+
+	meshDataComponent->m_indicesSize = meshDataComponent->m_indices.size();
+
+	if (verticesPerFace)
+	{
+		generateFaceBasedNormal(meshDataComponent, verticesPerFace);
+	}
+	else
+	{
+		generateVertexBasedNormal(meshDataComponent);
+	}
 }
 
 void InnoAssetSystemNS::addTetrahedron(MeshDataComponent* meshDataComponent)
 {
-	meshDataComponent->m_vertices.reserve(4);
-	meshDataComponent->m_vertices.fulfill();
-
-	meshDataComponent->m_vertices[0].m_pos = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	meshDataComponent->m_vertices[1].m_pos = Vec4(1.0f, -1.0f, -1.0f, 1.0f);
-	meshDataComponent->m_vertices[2].m_pos = Vec4(-1.0f, 1.0f, -1.0f, 1.0f);
-	meshDataComponent->m_vertices[3].m_pos = Vec4(-1.0f, -1.0f, 1.0f, 1.0f);
-
-	generateNormal(meshDataComponent);
-
 	std::vector<Index> l_indices =
 	{
 		0, 3, 1, 0, 2, 3,
 		0, 1, 2, 1, 3, 2
 	};
 
-	meshDataComponent->m_indices.reserve(12);
-	meshDataComponent->m_indices.fulfill();
-
-	for (uint32_t i = 0; i < 12; i++)
+	std::vector<Vec4> l_vertices =
 	{
-		meshDataComponent->m_indices[i] = l_indices[i];
-	}
+		Vec4(1.0f, 1.0f, 1.0f, 1.0f),
+		Vec4(1.0f, -1.0f, -1.0f, 1.0f),
+		Vec4(-1.0f, 1.0f, -1.0f, 1.0f),
+		Vec4(-1.0f, -1.0f, 1.0f, 1.0f)
+	};
 
-	meshDataComponent->m_indicesSize = meshDataComponent->m_indices.size();
+	fulfillVerticesAndIndicesForPolyhedron(meshDataComponent, l_indices, l_vertices, 3);
 }
 
 void InnoAssetSystemNS::addCube(MeshDataComponent* meshDataComponent)
 {
-	meshDataComponent->m_vertices.reserve(8);
-	meshDataComponent->m_vertices.fulfill();
-
-	InnoMath::generateNDC(&meshDataComponent->m_vertices[0]);
-
 	std::vector<Index> l_indices =
 	{
 		0, 3, 1, 1, 3, 2,
@@ -207,31 +245,23 @@ void InnoAssetSystemNS::addCube(MeshDataComponent* meshDataComponent)
 		1, 2, 5, 5, 2, 6
 	};
 
-	meshDataComponent->m_indices.reserve(36);
-	meshDataComponent->m_indices.fulfill();
-
-	for (uint32_t i = 0; i < 36; i++)
+	std::vector<Vec4> l_vertices =
 	{
-		meshDataComponent->m_indices[i] = l_indices[i];
-	}
+		Vec4(1.0f, 1.0f, 1.0f, 1.0f),
+		Vec4(1.0f, -1.0f, 1.0f, 1.0f),
+		Vec4(-1.0f, -1.0f, 1.0f, 1.0f),
+		Vec4(-1.0f, 1.0f, 1.0f, 1.0f),
+		Vec4(1.0f, 1.0f, -1.0f, 1.0f),
+		Vec4(1.0f, -1.0f, -1.0f, 1.0f),
+		Vec4(-1.0f, -1.0f, -1.0f, 1.0f),
+		Vec4(-1.0f, 1.0f, -1.0f, 1.0f)
+	};
 
-	meshDataComponent->m_indicesSize = meshDataComponent->m_indices.size();
+	fulfillVerticesAndIndicesForPolyhedron(meshDataComponent, l_indices, l_vertices, 6);
 }
 
 void InnoAssetSystemNS::addOctahedron(MeshDataComponent* meshDataComponent)
 {
-	meshDataComponent->m_vertices.reserve(6);
-	meshDataComponent->m_vertices.fulfill();
-
-	meshDataComponent->m_vertices[0].m_pos = Vec4(1.0f, 0.0f, 0.0f, 1.0f);
-	meshDataComponent->m_vertices[1].m_pos = Vec4(-1.0f, 0.0f, 0.0f, 1.0f);
-	meshDataComponent->m_vertices[2].m_pos = Vec4(0.0f, 1.0f, 0.0f, 1.0f);
-	meshDataComponent->m_vertices[3].m_pos = Vec4(0.0f, -1.0f, 0.0f, 1.0f);
-	meshDataComponent->m_vertices[4].m_pos = Vec4(0.0f, 0.0f, 1.0f, 1.0f);
-	meshDataComponent->m_vertices[5].m_pos = Vec4(0.0f, 0.0f, -1.0f, 1.0f);
-
-	generateNormal(meshDataComponent);
-
 	std::vector<Index> l_indices =
 	{
 		0, 2, 4, 4, 2, 1,
@@ -240,45 +270,21 @@ void InnoAssetSystemNS::addOctahedron(MeshDataComponent* meshDataComponent)
 		1, 5, 3, 5, 0, 3
 	};
 
-	meshDataComponent->m_indices.reserve(24);
-	meshDataComponent->m_indices.fulfill();
-
-	for (uint32_t i = 0; i < 24; i++)
+	std::vector<Vec4> l_vertices =
 	{
-		meshDataComponent->m_indices[i] = l_indices[i];
-	}
+		Vec4(1.0f, 0.0f, 0.0f, 1.0f),
+		Vec4(-1.0f, 0.0f, 0.0f, 1.0f),
+		Vec4(0.0f, 1.0f, 0.0f, 1.0f),
+		Vec4(0.0f, -1.0f, 0.0f, 1.0f),
+		Vec4(0.0f, 0.0f, 1.0f, 1.0f),
+		Vec4(0.0f, 0.0f, -1.0f, 1.0f)
+	};
 
-	meshDataComponent->m_indicesSize = meshDataComponent->m_indices.size();
+	fulfillVerticesAndIndicesForPolyhedron(meshDataComponent, l_indices, l_vertices, 3);
 }
 
 void InnoAssetSystemNS::addDodecahedron(MeshDataComponent* meshDataComponent)
 {
-	meshDataComponent->m_vertices.reserve(20);
-	meshDataComponent->m_vertices.fulfill();
-
-	meshDataComponent->m_vertices[0].m_pos = Vec4(0.0f, 1.61803398875f, 0.61803398875f, 1.0f);
-	meshDataComponent->m_vertices[1].m_pos = Vec4(-1.0f, 1.0f, 1.0f, 1.0f);
-	meshDataComponent->m_vertices[2].m_pos = Vec4(-0.61803398875f, 0.0f, 1.61803398875f, 1.0f);
-	meshDataComponent->m_vertices[3].m_pos = Vec4(0.61803398875f, 0.0f, 1.61803398875f, 1.0f);
-	meshDataComponent->m_vertices[4].m_pos = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	meshDataComponent->m_vertices[5].m_pos = Vec4(0.0f, 1.61803398875f, -0.61803398875f, 1.0f);
-	meshDataComponent->m_vertices[6].m_pos = Vec4(1.0f, 1.0f, -1.0f, 1.0f);
-	meshDataComponent->m_vertices[7].m_pos = Vec4(0.61803398875f, 0.0f, -1.61803398875f, 1.0f);
-	meshDataComponent->m_vertices[8].m_pos = Vec4(-0.61803398875f, 0.0f, -1.61803398875f, 1.0f);
-	meshDataComponent->m_vertices[9].m_pos = Vec4(-1.0f, 1.0f, -1.0f, 1.0f);
-	meshDataComponent->m_vertices[10].m_pos = Vec4(0.0f, -1.61803398875f, 0.61803398875f, 1.0f);
-	meshDataComponent->m_vertices[11].m_pos = Vec4(1.0f, -1.0f, 1.0f, 1.0f);
-	meshDataComponent->m_vertices[12].m_pos = Vec4(-1.0f, -1.0f, 1.0f, 1.0f);
-	meshDataComponent->m_vertices[13].m_pos = Vec4(0.0f, -1.61803398875f, -0.61803398875f, 1.0f);
-	meshDataComponent->m_vertices[14].m_pos = Vec4(-1.0f, -1.0f, -1.0f, 1.0f);
-	meshDataComponent->m_vertices[15].m_pos = Vec4(1.0f, -1.0f, -1.0f, 1.0f);
-	meshDataComponent->m_vertices[16].m_pos = Vec4(1.61803398875f, -0.61803398875f, 0.0f, 1.0f);
-	meshDataComponent->m_vertices[17].m_pos = Vec4(1.61803398875f, 0.61803398875f, 0.0f, 1.0f);
-	meshDataComponent->m_vertices[18].m_pos = Vec4(-1.61803398875f, 0.61803398875f, 0.0f, 1.0f);
-	meshDataComponent->m_vertices[19].m_pos = Vec4(-1.61803398875f, -0.61803398875f, 0.0f, 1.0f);
-
-	generateNormal(meshDataComponent);
-
 	std::vector<Index> l_indices =
 	{
 		0, 1, 4, 1, 2, 4, 2, 3, 4,
@@ -297,37 +303,35 @@ void InnoAssetSystemNS::addDodecahedron(MeshDataComponent* meshDataComponent)
 		19, 14, 12, 14, 13, 12, 13, 10, 12
 	};
 
-	meshDataComponent->m_indices.reserve(108);
-	meshDataComponent->m_indices.fulfill();
-
-	for (uint32_t i = 0; i < 108; i++)
+	std::vector<Vec4> l_vertices =
 	{
-		meshDataComponent->m_indices[i] = l_indices[i];
-	}
+		Vec4(0.0f, 1.61803398875f, 0.61803398875f, 1.0f),
+		Vec4(-1.0f, 1.0f, 1.0f, 1.0f),
+		Vec4(-0.61803398875f, 0.0f, 1.61803398875f, 1.0f),
+		Vec4(0.61803398875f, 0.0f, 1.61803398875f, 1.0f),
+		Vec4(1.0f, 1.0f, 1.0f, 1.0f),
+		Vec4(0.0f, 1.61803398875f, -0.61803398875f, 1.0f),
+		Vec4(1.0f, 1.0f, -1.0f, 1.0f),
+		Vec4(0.61803398875f, 0.0f, -1.61803398875f, 1.0f),
+		Vec4(-0.61803398875f, 0.0f, -1.61803398875f, 1.0f),
+		Vec4(-1.0f, 1.0f, -1.0f, 1.0f),
+		Vec4(0.0f, -1.61803398875f, 0.61803398875f, 1.0f),
+		Vec4(1.0f, -1.0f, 1.0f, 1.0f),
+		Vec4(-1.0f, -1.0f, 1.0f, 1.0f),
+		Vec4(0.0f, -1.61803398875f, -0.61803398875f, 1.0f),
+		Vec4(-1.0f, -1.0f, -1.0f, 1.0f),
+		Vec4(1.0f, -1.0f, -1.0f, 1.0f),
+		Vec4(1.61803398875f, -0.61803398875f, 0.0f, 1.0f),
+		Vec4(1.61803398875f, 0.61803398875f, 0.0f, 1.0f),
+		Vec4(-1.61803398875f, 0.61803398875f, 0.0f, 1.0f),
+		Vec4(-1.61803398875f, -0.61803398875f, 0.0f, 1.0f)
+	};
 
-	meshDataComponent->m_indicesSize = meshDataComponent->m_indices.size();
+	fulfillVerticesAndIndicesForPolyhedron(meshDataComponent, l_indices, l_vertices, 9);
 }
 
 void InnoAssetSystemNS::addIcosahedron(MeshDataComponent* meshDataComponent)
 {
-	meshDataComponent->m_vertices.reserve(12);
-	meshDataComponent->m_vertices.fulfill();
-
-	meshDataComponent->m_vertices[0].m_pos = Vec4(1.0f, 0.0f, 0.0f, 1.0f);
-	meshDataComponent->m_vertices[1].m_pos = Vec4(0.447213595500f, 0.894427191000f, 0.0f, 1.0f);
-	meshDataComponent->m_vertices[2].m_pos = Vec4(0.447213595500f, 0.276393202252f, 0.850650808354f, 1.0f);
-	meshDataComponent->m_vertices[3].m_pos = Vec4(0.447213595500f, -0.723606797748f, 0.525731112119f, 1.0f);
-	meshDataComponent->m_vertices[4].m_pos = Vec4(0.447213595500f, -0.723606797748f, -0.525731112119f, 1.0f);
-	meshDataComponent->m_vertices[5].m_pos = Vec4(0.447213595500f, 0.276393202252f, -0.850650808354f, 1.0f);
-	meshDataComponent->m_vertices[6].m_pos = Vec4(-0.447213595500f, -0.894427191000f, 0.0f, 1.0f);
-	meshDataComponent->m_vertices[7].m_pos = Vec4(-0.447213595500f, -0.276393202252f, 0.850650808354f, 1.0f);
-	meshDataComponent->m_vertices[8].m_pos = Vec4(-0.447213595500f, 0.723606797748f, 0.525731112119f, 1.0f);
-	meshDataComponent->m_vertices[9].m_pos = Vec4(-0.447213595500f, 0.723606797748f, -0.525731112119f, 1.0f);
-	meshDataComponent->m_vertices[10].m_pos = Vec4(-0.447213595500f, -0.276393202252f, -0.850650808354f, 1.0f);
-	meshDataComponent->m_vertices[11].m_pos = Vec4(-1.0f, 0.0f, 0.0f, 1.0f);
-
-	generateNormal(meshDataComponent);
-
 	std::vector<Index> l_indices =
 	{
 		0, 1, 2, 0, 2, 3,
@@ -341,15 +345,24 @@ void InnoAssetSystemNS::addIcosahedron(MeshDataComponent* meshDataComponent)
 		11, 8, 9, 11, 7, 8,
 		11, 6, 7, 11, 10, 6
 	};
-	meshDataComponent->m_indices.reserve(60);
-	meshDataComponent->m_indices.fulfill();
 
-	for (uint32_t i = 0; i < 60; i++)
+	std::vector<Vec4> l_vertices =
 	{
-		meshDataComponent->m_indices[i] = l_indices[i];
-	}
+		Vec4(1.0f, 0.0f, 0.0f, 1.0f),
+		Vec4(0.447213595500f, 0.894427191000f, 0.0f, 1.0f),
+		Vec4(0.447213595500f, 0.276393202252f, 0.850650808354f, 1.0f),
+		Vec4(0.447213595500f, -0.723606797748f, 0.525731112119f, 1.0f),
+		Vec4(0.447213595500f, -0.723606797748f, -0.525731112119f, 1.0f),
+		Vec4(0.447213595500f, 0.276393202252f, -0.850650808354f, 1.0f),
+		Vec4(-0.447213595500f, -0.894427191000f, 0.0f, 1.0f),
+		Vec4(-0.447213595500f, -0.276393202252f, 0.850650808354f, 1.0f),
+		Vec4(-0.447213595500f, 0.723606797748f, 0.525731112119f, 1.0f),
+		Vec4(-0.447213595500f, 0.723606797748f, -0.525731112119f, 1.0f),
+		Vec4(-0.447213595500f, -0.276393202252f, -0.850650808354f, 1.0f),
+		Vec4(-1.0f, 0.0f, 0.0f, 1.0f)
+	};
 
-	meshDataComponent->m_indicesSize = meshDataComponent->m_indices.size();
+	fulfillVerticesAndIndicesForPolyhedron(meshDataComponent, l_indices, l_vertices, 3);
 }
 
 void InnoAssetSystemNS::addSphere(MeshDataComponent* meshDataComponent)
