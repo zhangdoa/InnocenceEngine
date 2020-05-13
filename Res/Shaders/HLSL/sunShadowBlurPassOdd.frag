@@ -43,7 +43,9 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 
 	for (int i = 0; i < 7; i++)
 	{
-		color += in_shadowPassRT0.SampleLevel(SamplerTypePoint, float3(input.texcoord + float2(gaussFilter[i].x, gaussFilter[i].x) * texelSize, input.rtvId), 0) * gaussFilter[i].y;
+		int3 coord = int3(input.texcoord * renderTargetSize + float2(gaussFilter[i].x, gaussFilter[i].x), input.rtvId);
+
+		color += in_shadowPassRT0[coord] * gaussFilter[i].y;
 	}
 
 	output.shadowBlurRT0 = color;
