@@ -37,13 +37,13 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float elements;
 
 	in_shadowPassRT0.GetDimensions(0, renderTargetSize.x, renderTargetSize.y, elements, level);
-	float2 texelSize = 1.0 / renderTargetSize;
-
 	float4 color = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
+	[unroll]
 	for (int i = 0; i < 7; i++)
 	{
-		int3 coord = int3(input.texcoord * renderTargetSize + float2(gaussFilter[i].x, gaussFilter[i].x), input.rtvId);
+		float2 offset = float2(gaussFilter[i].x, gaussFilter[i].x);
+		int3 coord = int3(input.texcoord * renderTargetSize + offset, input.rtvId);
 
 		color += in_shadowPassRT0[coord] * gaussFilter[i].y;
 	}
