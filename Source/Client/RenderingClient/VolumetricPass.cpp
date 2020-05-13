@@ -39,9 +39,11 @@ namespace VolumetricPass
 	ShaderProgramComponent* m_rayMarchingSPC;
 
 	TextureDataComponent* m_irraidanceInjectionResult;
-	TextureDataComponent* m_rayMarchingResult;
+	TextureDataComponent* m_rayMarchingResult_A;
+	TextureDataComponent* m_rayMarchingResult_B;
 
 	TVec4<uint32_t> m_voxelizationResolution = TVec4<uint32_t>(160, 90, 64, 0);
+	static bool m_isPassA = true;
 }
 
 bool VolumetricPass::setupGeometryProcessPass()
@@ -56,7 +58,7 @@ bool VolumetricPass::setupGeometryProcessPass()
 
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
-	l_RenderPassDesc.m_RenderTargetCount = 1;
+	l_RenderPassDesc.m_RenderTargetCount = 2;
 	l_RenderPassDesc.m_IsOffScreen = true;
 	l_RenderPassDesc.m_UseOutputMerger = false;
 
@@ -73,7 +75,7 @@ bool VolumetricPass::setupGeometryProcessPass()
 
 	m_froxelizationRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_froxelizationRPDC->m_ResourceBinderLayoutDescs.resize(4);
+	m_froxelizationRPDC->m_ResourceBinderLayoutDescs.resize(5);
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
@@ -92,6 +94,13 @@ bool VolumetricPass::setupGeometryProcessPass()
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[3].m_IndirectBinding = true;
+
+	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Image;
+	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 4;
+	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 1;
+	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_IndirectBinding = true;
 
 	m_froxelizationRPDC->m_ShaderProgram = m_froxelizationSPC;
 
@@ -189,40 +198,54 @@ bool VolumetricPass::setupRayMarchingPass()
 
 	m_rayMarchingRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs.resize(6);
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs.resize(8);
 	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 6;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Image;
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[1].m_BinderAccessibility = Accessibility::ReadOnly;
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 0;
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 6;
 
 	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Image;
 	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[2].m_BinderAccessibility = Accessibility::ReadOnly;
 	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 1;
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 1;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 0;
 	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[2].m_IndirectBinding = true;
 
 	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Image;
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[3].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[3].m_BinderAccessibility = Accessibility::ReadOnly;
 	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 2;
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 1;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 1;
 	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[3].m_IndirectBinding = true;
 
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Sampler;
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 3;
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 0;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Image;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[4].m_BinderAccessibility = Accessibility::ReadOnly;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 1;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 2;
 	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[4].m_IndirectBinding = true;
 
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 0;
-	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 0;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Image;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[5].m_BinderAccessibility = Accessibility::ReadOnly;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 1;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 3;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[5].m_IndirectBinding = true;
+
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Image;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[6].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 2;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 0;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[6].m_IndirectBinding = true;
+
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[7].m_ResourceBinderType = ResourceBinderType::Sampler;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[7].m_DescriptorSetIndex = 3;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[7].m_DescriptorIndex = 0;
+	m_rayMarchingRPDC->m_ResourceBinderLayoutDescs[7].m_IndirectBinding = true;
 
 	m_rayMarchingRPDC->m_ShaderProgram = m_rayMarchingSPC;
 
@@ -310,8 +333,11 @@ bool VolumetricPass::Setup()
 	m_irraidanceInjectionResult = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("VolumetricIrraidanceInjectionResult/");
 	m_irraidanceInjectionResult->m_TextureDesc = l_textureDesc;
 
-	m_rayMarchingResult = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("VolumetricRayMarchingResult/");
-	m_rayMarchingResult->m_TextureDesc = l_textureDesc;
+	m_rayMarchingResult_A = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("VolumetricRayMarchingResult_A/");
+	m_rayMarchingResult_A->m_TextureDesc = l_textureDesc;
+
+	m_rayMarchingResult_B = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("VolumetricRayMarchingResult_B/");
+	m_rayMarchingResult_B->m_TextureDesc = l_textureDesc;
 
 	return true;
 }
@@ -333,7 +359,8 @@ bool VolumetricPass::Initialize()
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_visualizationRPDC);
 
 	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_irraidanceInjectionResult);
-	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_rayMarchingResult);
+	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_rayMarchingResult_A);
+	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_rayMarchingResult_B);
 
 	return true;
 }
@@ -350,6 +377,7 @@ bool VolumetricPass::froxelization()
 
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelizationRPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelizationRPDC, ShaderStage::Pixel, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 3, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_froxelizationRPDC, ShaderStage::Pixel, m_froxelizationRPDC->m_RenderTargetsResourceBinders[1], 4, 1, Accessibility::ReadWrite);
 
 	auto& l_drawCallInfo = g_pModuleManager->getRenderingFrontend()->getDrawCallInfo();
 	auto l_drawCallCount = l_drawCallInfo.size();
@@ -373,6 +401,7 @@ bool VolumetricPass::froxelization()
 	}
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_froxelizationRPDC, ShaderStage::Pixel, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 3, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_froxelizationRPDC, ShaderStage::Pixel, m_froxelizationRPDC->m_RenderTargetsResourceBinders[1], 4, 1, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_froxelizationRPDC);
 
@@ -430,6 +459,22 @@ bool VolumetricPass::irraidanceInjection()
 
 bool VolumetricPass::rayMarching()
 {
+	IResourceBinder* l_currentResultBinder;
+	IResourceBinder* l_historyResultBinder;
+
+	if (m_isPassA)
+	{
+		l_currentResultBinder = m_rayMarchingResult_A->m_ResourceBinder;
+		l_historyResultBinder = m_rayMarchingResult_B->m_ResourceBinder;
+		m_isPassA = false;
+	}
+	else
+	{
+		l_currentResultBinder = m_rayMarchingResult_B->m_ResourceBinder;
+		l_historyResultBinder = m_rayMarchingResult_A->m_ResourceBinder;
+		m_isPassA = true;
+	}
+
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 	auto l_dispatchParamsGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::ComputeDispatchParam);
 
@@ -450,19 +495,23 @@ bool VolumetricPass::rayMarching()
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_rayMarchingRPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_rayMarchingRPDC);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_SDC->m_ResourceBinder, 4, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_SDC->m_ResourceBinder, 7, 0, Accessibility::ReadOnly);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 0, 6, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_irraidanceInjectionResult->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 2, 1, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_rayMarchingResult->m_ResourceBinder, 3, 0, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 5, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 1, 6, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_irraidanceInjectionResult->m_ResourceBinder, 2, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 3, 1, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_froxelizationRPDC->m_RenderTargetsResourceBinders[1], 4, 2, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, l_historyResultBinder, 5, 3, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, l_currentResultBinder, 6, 0, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_rayMarchingRPDC, l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_irraidanceInjectionResult->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 2, 1, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_rayMarchingResult->m_ResourceBinder, 3, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_irraidanceInjectionResult->m_ResourceBinder, 2, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 3, 1, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_froxelizationRPDC->m_RenderTargetsResourceBinders[1], 4, 2, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, l_historyResultBinder, 5, 3, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, l_currentResultBinder, 6, 0, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_rayMarchingRPDC);
 
@@ -521,7 +570,7 @@ bool VolumetricPass::Render(bool visualize)
 
 	if (visualize)
 	{
-		visualization(m_rayMarchingResult->m_ResourceBinder);
+		visualization(m_rayMarchingResult_A->m_ResourceBinder);
 	}
 
 	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_froxelizationRPDC);
@@ -554,7 +603,14 @@ bool VolumetricPass::Terminate()
 
 IResourceBinder* VolumetricPass::GetRayMarchingResult()
 {
-	return m_rayMarchingResult->m_ResourceBinder;
+	if (m_isPassA)
+	{
+		return m_rayMarchingResult_B->m_ResourceBinder;
+	}
+	else
+	{
+		return m_rayMarchingResult_A->m_ResourceBinder;
+	}
 }
 
 IResourceBinder* VolumetricPass::GetVisualizationResult()

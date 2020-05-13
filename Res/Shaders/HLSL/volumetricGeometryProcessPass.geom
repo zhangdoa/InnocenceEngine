@@ -4,17 +4,17 @@
 struct GeometryInputType
 {
 	float4 posCS : SV_POSITION;
-	float4 posWS : POS_WS;
+	float4 posCS_orig : POSITION_ORIG;
+	float4 posCS_prev : POSITION_PREV;
 	float2 texcoord : TEXCOORD;
-	float4 normal : NORMAL;
 };
 
 struct PixelInputType
 {
 	float4 posCS : SV_POSITION;
-	float4 posCS_orig : POSITION;
+	float4 posCS_orig : POSITION_ORIG;
+	float4 posCS_prev : POSITION_PREV;
 	nointerpolation float4 AABB : AABB;
-	float4 normal : NORMAL;
 	float2 texcoord : TEXCOORD;
 };
 
@@ -62,15 +62,16 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 	PixelInputType output[3];
 
 	float4 pos[3];
-	float4 normal[3];
 	float2 texcoord[3];
 
 	[unroll(3)]
 	for (int j = 0; j < 3; j++)
 	{
-		pos[j] = input[j].posWS;
-		normal[j] = input[j].normal;
+		pos[j] = input[j].posCS_orig;
 		texcoord[j] = input[j].texcoord;
+
+		output[j].posCS_orig = input[j].posCS_orig;
+		output[j].posCS_prev = input[j].posCS_prev;
 	}
 
 	int selectedIndex = CalculateAxis(pos);
@@ -78,8 +79,6 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 	[unroll(3)]
 	for (int i = 0; i < 3; i++)
 	{
-		output[i].posCS_orig = pos[i];
-
 		// project along the dominant axis
 		[flatten]
 		if (selectedIndex == 0)
@@ -102,15 +101,12 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 	if (dot(trianglePlane.xyz, float3(0.0, 0.0, 1.0)) < 0.0)
 	{
 		float4 vertexTemp = pos[2];
-		float4 normalTemp = normal[2];
 		float2 texcoordTemp = texcoord[2];
 
 		pos[2] = pos[1];
-		normal[2] = normal[1];
 		texcoord[2] = texcoord[1];
 
 		pos[1] = vertexTemp;
-		normal[1] = normalTemp;
 		texcoord[1] = texcoordTemp;
 	}
 
@@ -125,8 +121,8 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 	for (int i = 0; i < 3; i++)
 	{
 		output[i].posCS = pos[i];
+		output[i].posCS.w = 1.0f;
 		output[i].texcoord = texcoord[i];
-		output[i].normal = normal[i];
 		output[i].AABB = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
 		outStream.Append(output[i]);

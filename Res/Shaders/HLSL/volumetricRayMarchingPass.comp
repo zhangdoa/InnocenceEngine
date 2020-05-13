@@ -14,6 +14,8 @@ struct ComputeInputType
 
 Texture3D<float4> in_irradianceVolume : register(t0);
 Texture3D<float4> in_materialVolume : register(t1);
+Texture3D<float4> in_motionVectorVolume : register(t2);
+Texture3D<float4> in_integrationResult_history : register(t3);
 
 RWTexture3D<float4> out_integrationResult : register(u0);
 
@@ -52,6 +54,7 @@ void main(ComputeInputType input)
 			int3 p = int3(input.dispatchThreadID.xy, i);
 
 			float4 Lscat = in_irradianceVolume[p];
+
 			if (Lscat.w)
 			{
 				sigmaS = in_materialVolume[p].xyz;
@@ -69,6 +72,15 @@ void main(ComputeInputType input)
 			Lo.rgb += scatteredLight;
 			Lo.a *= transmittance;
 
+			float3 motionVector = in_motionVectorVolume[p].xyz;
+			float3 coordHistory = float3(p);
+			coordHistory.xy /= float2(dispatchParams[7].numThreads.xy);
+			coordHistory.z /= 64.0f;
+			coordHistory -= motionVector;
+
+			float4 Lo_History = in_integrationResult_history.SampleLevel(SamplerTypeLinear, coordHistory, 0);
+
+			//out_integrationResult[p] = lerp(Lo_History, Lo, 0.05);
 			out_integrationResult[p] = Lo;
 		}
 	}
