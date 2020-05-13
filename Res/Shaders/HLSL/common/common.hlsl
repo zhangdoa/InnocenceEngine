@@ -11,6 +11,26 @@ static const int NR_CSM_SPLITS = 4;
 static const float FLT_MIN = 1.175494351e-38;
 static const float FLT_MAX = 3.402823466e+38;
 
+// Listing 45 [https://google.github.io/filament/Filament.md.html]
+static const float4 debugColors[16] = {
+	float4(0.0, 0.0, 0.0, 0.0),         // black
+	float4(0.0, 0.0, 0.1647, 0.0),      // darkest blue
+	float4(0.0, 0.0, 0.3647, 0.0),      // darker blue
+	float4(0.0, 0.0, 0.6647, 0.0),      // dark blue
+	float4(0.0, 0.0, 0.9647, 0.0),      // blue
+	float4(0.0, 0.9255, 0.9255, 0.0),   // cyan
+	float4(0.0, 0.5647, 0.0, 0.0),      // dark green
+	float4(0.0, 0.7843, 0.0, 0.0),      // green
+	float4(1.0, 1.0, 0.0, 0.0),         // yellow
+	float4(0.90588, 0.75294, 0.0, 0.0), // yellow-orange
+	float4(1.0, 0.5647, 0.0, 0.0),      // orange
+	float4(1.0, 0.0, 0.0, 0.0),         // bright red
+	float4(0.8392, 0.0, 0.0, 0.0),      // red
+	float4(1.0, 0.0, 1.0, 0.0),         // magenta
+	float4(0.6, 0.3333, 0.7882, 0.0),   // purple
+	float4(1.0, 1.0, 1.0, 0.0)          // white
+};
+
 #define BLOCK_SIZE 16
 
 struct PerFrame_CB

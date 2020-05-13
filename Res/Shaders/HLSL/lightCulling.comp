@@ -25,17 +25,6 @@ groupshared uint l_LightCount;
 groupshared uint l_LightIndexStartOffset;
 groupshared uint l_LightList[1024];
 
-static float4 heatArray[8] = {
-	float4(0.0f, 0.0f, 0.5f, 1.0f),
-	float4(0.0f, 0.0f, 1.0f, 1.0f),
-	float4(0.0f, 1.0f, 0.5f, 1.0f),
-	float4(0.0f, 1.0f, 1.0f, 1.0f),
-	float4(0.0f, 0.5f, 0.0f, 1.0f),
-	float4(0.0f, 1.0f, 0.0f, 1.0f),
-	float4(1.0f, 1.0f, 0.0f, 1.0f),
-	float4(1.0f, 0.0f, 0.0f, 1.0f)
-};
-
 void AppendLight(uint lightIndex)
 {
 	uint index; // Index into the visible lights array.
@@ -136,13 +125,13 @@ void main(ComputeInputType input)
 	{
 		float4 heat;
 
-		if (l_LightCount >= 8)
+		if (l_LightCount >= 16)
 		{
-			heat = heatArray[7];
+			heat = debugColors[15];
 		}
 		else
 		{
-			heat = heatArray[l_LightCount - 1];
+			heat = debugColors[l_LightCount - 1];
 		}
 		g_DebugTexture[texCoord] = heat;
 	}
