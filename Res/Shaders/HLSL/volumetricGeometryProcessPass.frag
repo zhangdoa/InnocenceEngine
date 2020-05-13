@@ -32,6 +32,7 @@ void main(PixelInputType input)
 
 		// scattering RGB + extinction A
 		out_froxelizationPassRT0[writeCoordInt] = materialCBuffer.albedo;
-		out_froxelizationPassRT1[writeCoordInt] = float4(motionVector, 1.0);
+		// motion vector + phase function
+		out_froxelizationPassRT1[writeCoordInt] = float4(motionVector, materialCBuffer.MRAT.x);
 	}
 }

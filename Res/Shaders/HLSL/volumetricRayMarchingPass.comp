@@ -32,13 +32,13 @@ void main(ComputeInputType input)
 
 		float3 sigmaS = float3(0.0, 0.0, 0.0);
 		float3 sigmaE = float3(0.0, 0.0, 0.0);
+		float pMie = 0.0;
 
 		float transmittance = 1.0;
 		float3 scatteredLight = float3(0.0, 0.0, 0.0);
 
 		// Mie scattering phases
 		float cosTheta = -sunPos.z;
-		float pMie = mie_Schlick(cosTheta, 0.758);
 
 		float4 Lo = float4(0.0f, 0.0f, 0.0f, 1.0f);
 
@@ -58,10 +58,12 @@ void main(ComputeInputType input)
 			if (Lscat.w)
 			{
 				sigmaS = in_materialVolume[p].xyz;
+				pMie = mie_Schlick(cosTheta, in_materialVolume[p].w);
 				sigmaE = float3(Lscat.w, Lscat.w, Lscat.w);
 			}
 			sigmaS = max(sigmaS, MIN_SIGMA);
 			sigmaE = max(sigmaE, MIN_SIGMA);
+			pMie = max(pMie, eps);
 
 			float3 S = Lscat.xyz * sigmaS * pMie;
 			float3 Sint = (S - S * exp(-sigmaE * dd)) / sigmaE;

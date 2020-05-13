@@ -601,7 +601,7 @@ bool GameClientNS::setupVolumetricCubes()
 		m_volumetricCubeVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Cube;
 		m_volumetricCubeVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
 		m_volumetricCubeVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
-		m_volumetricCubeVisibleComponents[i]->m_simulatePhysics = true;
+		m_volumetricCubeVisibleComponents[i]->m_simulatePhysics = false;
 	}
 
 	std::uniform_real_distribution<float> l_randomPosDelta(-40.0f, 40.0f);
@@ -953,8 +953,8 @@ void GameClientNS::updateSpheres()
 	for (uint32_t i = 0; i < m_volumetricCubeVisibleComponents.size(); i++)
 	{
 		auto l_albedo = InnoMath::HSVtoRGB(Vec4((sin(seed / 6.0f + i) * 0.5f + 0.5f) * 360.0f, 1.0f, 1.0f, 0.5f));
-		l_albedo.w = sin(seed / 6.0f + i) * 0.5f + 0.5f;
-		auto l_MRAT = Vec4(0.0f, sin(seed / 4.0f + i) * 0.5f + 0.5f, 1.0f, clamp((float)sin(seed / 5.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f));
+		l_albedo.w = clamp((float)sin(seed / 7.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f);
+		auto l_MRAT = Vec4(clamp((float)sin(seed / 5.0f + i) * 0.5f + 0.5f, epsilon<float, 4>, 1.0f), 1.0f, 1.0f, 1.0f);
 		updateMaterial(m_volumetricCubeVisibleComponents[i]->m_model, l_albedo, l_MRAT, ShaderModel::Volumetric);
 	}
 
