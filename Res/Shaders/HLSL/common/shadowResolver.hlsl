@@ -52,6 +52,7 @@ float SunShadowResolver(float3 fragPos, SamplerState Sampler)
 	float shadow = 0.0;
 
 	int splitIndex = NR_CSM_SPLITS;
+	[unroll]
 	for (int i = 0; i < NR_CSM_SPLITS; i++)
 	{
 		if (fragPos.x >= CSMs[i].AABBMin.x &&
@@ -82,10 +83,15 @@ float SunShadowResolver(float3 fragPos, SamplerState Sampler)
 		lightSpacePos = mul(lightSpacePos, CSMs[splitIndex].p);
 		lightSpacePos = lightSpacePos / lightSpacePos.w;
 		float3 projCoords = lightSpacePos.xyz;
+		if (projCoords.x > 1.0 || projCoords.x < -1.0 || projCoords.y > 1.0 || projCoords.y < -1.0 || projCoords.z > 1.0 || projCoords.z < -1.0)
+		{
+			return 0.0;
+		}
 
 		// transform to [0,1] range
 		projCoords = projCoords * 0.5 + 0.5;
 		projCoords.y = 1.0 - projCoords.y;
+
 		// get depth of current fragment from light's perspective
 		float currentDepth = projCoords.z;
 
@@ -108,7 +114,12 @@ float SunShadowResolver(float3 fragPos, SamplerState Sampler)
 	float4 lightSpacePos = mul(float4(fragPos, 1.0f), CSMs[0].v);
 	lightSpacePos = mul(lightSpacePos, CSMs[0].p);
 	lightSpacePos = lightSpacePos / lightSpacePos.w;
+
 	float3 projCoords = lightSpacePos.xyz;
+	if (projCoords.x > 1.0 || projCoords.x < -1.0 || projCoords.y > 1.0 || projCoords.y < -1.0 || projCoords.z > 1.0 || projCoords.z < -1.0)
+	{
+		return 0.0;
+	}
 
 	// transform to [0,1] range
 	projCoords = projCoords * 0.5 + 0.5;
@@ -116,11 +127,6 @@ float SunShadowResolver(float3 fragPos, SamplerState Sampler)
 
 	// get depth of current fragment from light's perspective
 	float currentDepth = projCoords.z;
-
-	if (currentDepth > 1.0)
-	{
-		return 0.0;
-	}
 
 	shadow = PCFResolver(projCoords, in_SunShadow, Sampler, 0, currentDepth, texelSize);
 
