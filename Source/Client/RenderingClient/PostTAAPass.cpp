@@ -67,13 +67,13 @@ bool PostTAAPass::Render()
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 1, 0);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, TAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 0, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, TAAPass::GetResult(), 0, 0);
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
 
 	g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_mesh);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, TAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 0, 0);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, TAAPass::GetResult(), 0, 0);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
 

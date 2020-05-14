@@ -1,23 +1,19 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
-
 #define Use_YCoCg 0
-Texture2D in_preTAAPassRT0 : register(t0);
+
+struct ComputeInputType
+{
+	uint3 groupID : SV_GroupID;           // 3D index of the thread group in the dispatch.
+	uint3 groupThreadID : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
+	uint3 dispatchThreadID : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
+	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
+};
+
+Texture2D in_current : register(t0);
 Texture2D in_history : register(t1);
-Texture2D in_opaquePassRT3 : register(t2);
-
-SamplerState SampleTypePoint : register(s0);
-
-struct PixelInputType
-{
-	float4 position : SV_POSITION;
-	float2 texcoord : TEXCOORD0;
-};
-
-struct PixelOutputType
-{
-	float4 TAAPassRT0 : SV_Target0;
-};
+Texture2D in_motionVector : register(t2);
+RWTexture2D<float4> TAAPassRT0 : register(u0);
 
 // [https://software.intel.com/en-us/node/503873]
 float3 RGB_YCoCg(float3 c)
@@ -62,35 +58,30 @@ float luma(float3 color)
 	return dot(color, float3(0.2126, 0.7152, 0.0722));
 }
 
-PixelOutputType main(PixelInputType input) : SV_TARGET
+[numthreads(8, 8, 1)]
+void main(ComputeInputType input)
 {
-	PixelOutputType output;
+	float2 MotionVector = in_motionVector[input.dispatchThreadID.xy].xy;
+	int2 historyTexCoords = input.dispatchThreadID.xy - MotionVector * perFrameCBuffer.viewportSize.xy;
 
-	float2 renderTargetSize;
-	float level;
-	in_preTAAPassRT0.GetDimensions(0, renderTargetSize.x, renderTargetSize.y, level);
-	float2 texelSize = 1.0 / renderTargetSize;
-	float2 screenTexCoords = input.position.xy * texelSize;
-	float3 currentColor = in_preTAAPassRT0.Sample(SampleTypePoint, screenTexCoords).rgb;
+	float3 currentColor = in_current[input.dispatchThreadID.xy].rgb;
+	float lumaCurrentColor = luma(currentColor);
 
-	float2 MotionVector = in_opaquePassRT3.Sample(SampleTypePoint, screenTexCoords).xy;
-	float2 historyTexCoords = screenTexCoords - MotionVector;
-	historyTexCoords = saturate(historyTexCoords);
-
-	float3 historyColor = in_history.Sample(SampleTypePoint, historyTexCoords).rgb;
+	float3 historyColor = in_history[input.dispatchThreadID.xy].rgb;
+	float lumaHistoryColor = luma(historyColor);
 
 	float3 maxNeighbor = float3(FLT_MIN, FLT_MIN, FLT_MIN);
 	float3 minNeighbor = float3(FLT_MAX, FLT_MAX, FLT_MAX);
 
 	float3 neighborSum = float3(0.0, 0.0, 0.0);
 
-	for (int x = -1; x <= 1; x++) {
-		for (int y = -1; y <= 1; y++) {
-			float2 neighborTexCoords = screenTexCoords + float2(float(x) / renderTargetSize.x, float(y) / renderTargetSize.y);
+	for (int x = -1; x <= 1; x++)
+	{
+		for (int y = -1; y <= 1; y++)
+		{
+			int2 neighborTexCoords = input.dispatchThreadID.xy + int2(x, y);
 
-			neighborTexCoords = saturate(neighborTexCoords);
-
-			float3 neighborColor = in_preTAAPassRT0.Sample(SampleTypePoint, neighborTexCoords).rgb;
+			float3 neighborColor = in_current[neighborTexCoords].rgb;
 
 			maxNeighbor = max(maxNeighbor, neighborColor);
 			minNeighbor = min(minNeighbor, neighborColor);
@@ -118,8 +109,6 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float lumaCurrentColor = currentColor.x;
 	float lumaHistoryColor = historyColor.x;
 #else
-	float lumaCurrentColor = luma(currentColor);
-	float lumaHistoryColor = luma(historyColor);
 #endif
 
 	historyColor = clamp(historyColor, minNeighbor, maxNeighbor);
@@ -136,7 +125,5 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	finalColor = YCoCg_RGB(finalColor);
 #endif
 
-	output.TAAPassRT0 = float4(finalColor, lumaCurrentColor);
-
-	return output;
+	TAAPassRT0[input.dispatchThreadID.xy] = float4(finalColor, lumaCurrentColor);
 }

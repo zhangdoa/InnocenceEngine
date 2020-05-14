@@ -10,4 +10,5 @@ namespace TAAPass
 
 	RenderPassDataComponent* GetRPDC();
 	ShaderProgramComponent* GetSPC();
+	IResourceBinder* GetResult();
 };
