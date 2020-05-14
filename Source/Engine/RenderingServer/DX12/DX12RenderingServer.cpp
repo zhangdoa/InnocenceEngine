@@ -1784,6 +1784,14 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent* render
 	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
 
+	if ((l_renderPass->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Compute && shaderStage != ShaderStage::Compute)
+		|| (l_renderPass->m_RenderPassDesc.m_RenderPassUsage != RenderPassUsage::Compute && shaderStage == ShaderStage::Compute))
+	{
+		InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Trying to activate resource binder in global slot: ", globalSlot, ", local slot: ", localSlot, " with incompatible render pass: ", renderPass->m_Name.c_str());
+
+		return false;
+	}
+
 	if (l_resourceBinder)
 	{
 		if (shaderStage == ShaderStage::Compute)
