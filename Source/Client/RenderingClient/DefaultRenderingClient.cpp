@@ -157,8 +157,8 @@ bool DefaultRenderingClient::Setup()
 		g_pModuleManager->getRenderingServer()->WaitForFrame(LightCullingPass::GetLightCullingRPDC());
 
 		SunShadowPass::PrepareCommandList();
-		g_pModuleManager->getRenderingServer()->ExecuteCommandList(SunShadowPass::GetSunShadowRPDC());
-		g_pModuleManager->getRenderingServer()->WaitForFrame(SunShadowPass::GetSunShadowRPDC());
+		g_pModuleManager->getRenderingServer()->ExecuteCommandList(SunShadowPass::GetGeometryProcessRPDC());
+		g_pModuleManager->getRenderingServer()->WaitForFrame(SunShadowPass::GetGeometryProcessRPDC());
 		g_pModuleManager->getRenderingServer()->ExecuteCommandList(SunShadowPass::GetBlurRPDCOdd());
 		g_pModuleManager->getRenderingServer()->WaitForFrame(SunShadowPass::GetBlurRPDCOdd());
 		g_pModuleManager->getRenderingServer()->ExecuteCommandList(SunShadowPass::GetBlurRPDCEven());
