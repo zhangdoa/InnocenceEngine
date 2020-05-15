@@ -1,13 +1,9 @@
 #include "IOService.h"
 
 #include "../Common/STL17.h"
-#ifdef __GNUC__
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
-#else
+
 #include <filesystem>
 namespace fs = std::filesystem;
-#endif
 
 #include "InnoLogger.h"
 
