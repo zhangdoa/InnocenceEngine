@@ -17,67 +17,64 @@ RWStructuredBuffer<uint4> in_index : register(u2);
 
 SamplerState SamplerTypePoint : register(s0);
 
-[numthreads(8, 8, 8)]
+groupshared float4 result;
+groupshared uint3 writeCoord;
+groupshared float3 posWS;
+
+[numthreads(4, 4, 4)]
 void main(ComputeInputType input)
 {
-	int flattenIndex = input.dispatchThreadID.x + input.dispatchThreadID.y * 8 + input.dispatchThreadID.z * 8 * 8;
-	//uint3 writeCoord = in_index[flattenIndex].xyz;
-
-	uint3 writeCoord = input.dispatchThreadID;
-	out_luminanceVolume[writeCoord] = float4(0.0f, 0.0f, 0.0f, 0.0f);
-
-	float3 posWS = float3(writeCoord) / 128.0f;
-	//posWS = posWS * 2.0 - 1.0;
-
-	//posWS *= (voxelizationPassCBuffer.volumeExtend / 2.0);
-	//posWS += voxelizationPassCBuffer.volumeCenter.xyz;
-	//posWS += normal * voxelizationPassCBuffer.voxelSize * SQRT2;
-
-	float4 totalResult = float4(0.0f, 0.0f, 0.0f, 1.0f);
-	float maxDist = 32.0f;
-	int maxRay = 32;
-	int rayCount = 0;
-
-	for (int i = 0; i < maxRay; i++)
+	if (input.groupIndex == 0)
 	{
-		float4 rayResult = float4(0.0f, 0.0f, 0.0f, 1.0f);
-		bool sampled = false;
-		float dist = 1.0f;
-		float4 ray = in_ray[i];
-		ray *= voxelizationPassCBuffer.volumeResolutionRcp;
+		uint flattenIndex = input.groupID.x + input.groupID.y * 8 + input.groupID.z * 8 * 8;
+		writeCoord = in_index[flattenIndex].xyz;
+		posWS = float3(writeCoord) / 128.0f;
+		//posWS = posWS * 2.0 - 1.0;
 
-		while (!sampled && (dist < maxDist))
-		{
-			float3 tc = posWS + ray.xyz * dist;
+		//posWS *= (voxelizationPassCBuffer.volumeExtend / 2.0);
+		//posWS += voxelizationPassCBuffer.volumeCenter.xyz;
+		//posWS += normal * voxelizationPassCBuffer.voxelSize * SQRT2;
 
-			int is_saturated = (tc.x > 1.0) || (tc.y > 1.0) || (tc.z > 1.0);
+		result = float4(0.0f, 0.0f, 0.0f, 1.0f);
 
-			if (!is_saturated)
-			{
-				float4 sam = in_luminanceVolume.SampleLevel(SamplerTypePoint, tc, 0);
-
-				if (sam.a)
-				{
-					rayResult.xyz += sam.xyz;
-					sampled = true;
-				}
-			}
-			else
-			{
-				break;
-			}
-
-			dist += 1.0f;
-		}
-
-		if (sampled)
-		{
-			rayCount++;
-		}
-		rayResult /= dist;
-		totalResult += rayResult;
+		out_luminanceVolume[writeCoord] = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	}
 
-	totalResult.xyz /= maxRay;
-	out_luminanceVolume[writeCoord] = totalResult;
+	GroupMemoryBarrierWithGroupSync();
+
+	float maxDist = 64.0f;
+
+	bool sampled = false;
+	float dist = 1.0f;
+	float4 ray = in_ray[input.groupIndex];
+	ray *= voxelizationPassCBuffer.volumeResolutionRcp;
+
+	while (!sampled && (dist < maxDist))
+	{
+		float3 tc = posWS + ray.xyz * dist;
+
+		int is_saturated = (tc.x > 1.0) || (tc.y > 1.0) || (tc.z > 1.0);
+
+		if (!is_saturated)
+		{
+			float4 sam = in_luminanceVolume.SampleLevel(SamplerTypePoint, tc, 0);
+
+			if (sam.a)
+			{
+				result.xyz += sam.xyz / dist;
+				sampled = true;
+				break;
+			}
+		}
+
+		dist += 1.0f;
+	}
+
+	GroupMemoryBarrierWithGroupSync();
+
+	if (input.groupIndex == 0)
+	{
+		out_luminanceVolume[writeCoord] = result;
+		out_luminanceVolume[writeCoord] /= 64.0f;
+	}
 }

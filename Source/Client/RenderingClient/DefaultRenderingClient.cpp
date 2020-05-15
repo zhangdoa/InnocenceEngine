@@ -164,13 +164,9 @@ bool DefaultRenderingClient::Setup()
 		g_pModuleManager->getRenderingServer()->ExecuteCommandList(SunShadowPass::GetBlurRPDCEven());
 		g_pModuleManager->getRenderingServer()->WaitForFrame(SunShadowPass::GetBlurRPDCEven());
 
-		VoxelizationPass::Render(m_showVoxel);
+		VoxelizationPass::Render(m_showVoxel, 0, false);
 
-		if (m_showVoxel)
-		{
-			l_canvas = VoxelizationPass::GetVisualizationResult();
-		}
-		else if (m_drawBRDFTest)
+		if (m_drawBRDFTest)
 		{
 			BSDFTestPass::Render();
 			l_canvas = BSDFTestPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
@@ -228,6 +224,11 @@ bool DefaultRenderingClient::Setup()
 
 			TransparentPass::Render(PreTAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0]);
 			l_canvas = PreTAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
+		}
+
+		if (m_showVoxel)
+		{
+			l_canvas = VoxelizationPass::GetVisualizationResult();
 		}
 
 		LuminanceHistogramPass::Render(l_canvas);
