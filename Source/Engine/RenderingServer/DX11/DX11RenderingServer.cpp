@@ -1059,6 +1059,16 @@ bool DX11RenderingServer::ClearTextureDataComponent(TextureDataComponent* rhs)
 	return true;
 }
 
+bool DX11RenderingServer::CopyTextureDataComponent(TextureDataComponent* lhs, TextureDataComponent* rhs)
+{
+	auto l_src = reinterpret_cast<DX11TextureDataComponent*>(lhs);
+	auto l_dest = reinterpret_cast<DX11TextureDataComponent*>(rhs);
+
+	m_deviceContext->CopyResource(l_dest->m_ResourceHandle, l_src->m_ResourceHandle);
+
+	return true;
+}
+
 bool DX11RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range)
 {
 	auto l_rhs = reinterpret_cast<DX11GPUBufferDataComponent*>(rhs);
@@ -1646,26 +1656,6 @@ bool DX11RenderingServer::Present()
 bool DX11RenderingServer::DispatchCompute(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
 {
 	m_deviceContext->Dispatch(threadGroupX, threadGroupY, threadGroupZ);
-
-	return true;
-}
-
-bool DX11RenderingServer::CopyDepthStencilBuffer(RenderPassDataComponent* src, RenderPassDataComponent* dest)
-{
-	auto l_src = reinterpret_cast<DX11TextureDataComponent*>(src->m_DepthStencilRenderTarget);
-	auto l_dest = reinterpret_cast<DX11TextureDataComponent*>(dest->m_DepthStencilRenderTarget);
-
-	m_deviceContext->CopyResource(l_dest->m_ResourceHandle, l_src->m_ResourceHandle);
-
-	return true;
-}
-
-bool DX11RenderingServer::CopyColorBuffer(RenderPassDataComponent* src, size_t srcIndex, RenderPassDataComponent* dest, size_t destIndex)
-{
-	auto l_src = reinterpret_cast<DX11TextureDataComponent*>(src->m_RenderTargets[srcIndex]);
-	auto l_dest = reinterpret_cast<DX11TextureDataComponent*>(dest->m_RenderTargets[srcIndex]);
-
-	m_deviceContext->CopyResource(l_dest->m_ResourceHandle, l_src->m_ResourceHandle);
 
 	return true;
 }

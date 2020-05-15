@@ -46,6 +46,7 @@ public:
 	virtual	bool DeleteGPUBufferDataComponent(GPUBufferDataComponent* rhs) = 0;
 
 	virtual bool ClearTextureDataComponent(TextureDataComponent* rhs) = 0;
+	virtual bool CopyTextureDataComponent(TextureDataComponent* lhs, TextureDataComponent* rhs) = 0;
 
 protected:
 	virtual bool UploadGPUBufferDataComponentImpl(GPUBufferDataComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range) = 0;
@@ -82,9 +83,6 @@ public:
 	virtual bool Present() = 0;
 
 	virtual bool DispatchCompute(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) = 0;
-
-	virtual bool CopyDepthStencilBuffer(RenderPassDataComponent* src, RenderPassDataComponent* dest) = 0;
-	virtual bool CopyColorBuffer(RenderPassDataComponent* src, size_t srcIndex, RenderPassDataComponent* dest, size_t destIndex) = 0;
 
 	virtual Vec4 ReadRenderTargetSample(RenderPassDataComponent* rhs, size_t renderTargetIndex, size_t x, size_t y) = 0;
 	virtual std::vector<Vec4> ReadTextureBackToCPU(RenderPassDataComponent* canvas, TextureDataComponent* TDC) = 0;

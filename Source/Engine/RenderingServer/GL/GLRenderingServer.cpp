@@ -776,6 +776,16 @@ bool GLRenderingServer::ClearTextureDataComponent(TextureDataComponent* rhs)
 	return true;
 }
 
+bool GLRenderingServer::CopyTextureDataComponent(TextureDataComponent* lhs, TextureDataComponent* rhs)
+{
+	auto l_src = reinterpret_cast<GLTextureDataComponent*>(lhs);
+	auto l_dest = reinterpret_cast<GLTextureDataComponent*>(rhs);
+
+	glCopyImageSubData(l_src->m_TO, l_src->m_GLTextureDesc.TextureSampler, 0, 0, 0, 0, l_dest->m_TO, l_dest->m_GLTextureDesc.TextureSampler, 0, 0, 0, 0, l_src->m_GLTextureDesc.Width, l_src->m_GLTextureDesc.Height, l_src->m_GLTextureDesc.DepthOrArraySize);
+
+	return true;
+}
+
 bool GLRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range)
 {
 	auto l_rhs = reinterpret_cast<GLGPUBufferDataComponent*>(rhs);
@@ -1010,41 +1020,6 @@ bool GLRenderingServer::DispatchCompute(RenderPassDataComponent* renderPass, uin
 {
 	glDispatchCompute(threadGroupX, threadGroupY, threadGroupZ);
 	glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-	return true;
-}
-
-bool GLRenderingServer::CopyDepthStencilBuffer(RenderPassDataComponent* src, RenderPassDataComponent* dest)
-{
-	auto l_src = reinterpret_cast<GLRenderPassDataComponent*>(src);
-	auto l_dest = reinterpret_cast<GLRenderPassDataComponent*>(dest);
-
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, l_src->m_FBO);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, l_dest->m_FBO);
-	glBlitFramebuffer(0, 0,
-		l_src->m_RenderPassDesc.m_RenderTargetDesc.Width, l_src->m_RenderPassDesc.m_RenderTargetDesc.Height,
-		0, 0,
-		l_dest->m_RenderPassDesc.m_RenderTargetDesc.Width, l_dest->m_RenderPassDesc.m_RenderTargetDesc.Height,
-		GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT, GL_NEAREST);
-
-	return true;
-}
-
-bool GLRenderingServer::CopyColorBuffer(RenderPassDataComponent* src, size_t srcIndex, RenderPassDataComponent* dest, size_t destIndex)
-{
-	auto l_src = reinterpret_cast<GLRenderPassDataComponent*>(src);
-	auto l_dest = reinterpret_cast<GLRenderPassDataComponent*>(dest);
-
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, l_src->m_FBO);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, l_dest->m_FBO);
-	glReadBuffer(GL_COLOR_ATTACHMENT0 + (uint32_t)srcIndex);
-	glDrawBuffer(GL_COLOR_ATTACHMENT0 + (uint32_t)destIndex);
-
-	glBlitFramebuffer(0, 0,
-		l_src->m_RenderPassDesc.m_RenderTargetDesc.Width, l_src->m_RenderPassDesc.m_RenderTargetDesc.Height,
-		0, 0,
-		l_dest->m_RenderPassDesc.m_RenderTargetDesc.Width, l_dest->m_RenderPassDesc.m_RenderTargetDesc.Height,
-		GL_COLOR_BUFFER_BIT, GL_LINEAR);
 
 	return true;
 }

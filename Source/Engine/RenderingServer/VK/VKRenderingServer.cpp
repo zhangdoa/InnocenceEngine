@@ -1028,6 +1028,11 @@ bool VKRenderingServer::ClearTextureDataComponent(TextureDataComponent* rhs)
 	return true;
 }
 
+bool VKRenderingServer::CopyTextureDataComponent(TextureDataComponent* lhs, TextureDataComponent* rhs)
+{
+	return true;
+}
+
 bool VKRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range)
 {
 	return true;
@@ -1105,16 +1110,6 @@ bool VKRenderingServer::Present()
 }
 
 bool VKRenderingServer::DispatchCompute(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
-{
-	return true;
-}
-
-bool VKRenderingServer::CopyDepthStencilBuffer(RenderPassDataComponent* src, RenderPassDataComponent* dest)
-{
-	return true;
-}
-
-bool VKRenderingServer::CopyColorBuffer(RenderPassDataComponent* src, size_t srcIndex, RenderPassDataComponent* dest, size_t destIndex)
 {
 	return true;
 }
