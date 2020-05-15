@@ -262,7 +262,7 @@ bool SunShadowPass::blur()
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_blurRPDC_Even, m_shadowMapResolution / 8, m_shadowMapResolution / 8, 1);
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_blurRPDC_Even, ShaderStage::Compute, m_oddTDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_blurRPDC_Even, ShaderStage::Compute, m_evenTDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_blurRPDC_Even, ShaderStage::Compute, m_evenTDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_blurRPDC_Even);
 
