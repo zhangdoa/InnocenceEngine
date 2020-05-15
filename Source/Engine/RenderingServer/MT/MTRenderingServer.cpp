@@ -134,9 +134,25 @@ bool MTRenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent * rh
 	return true;
 }
 
+
+bool MTRenderingServer::ClearTextureDataComponent(TextureDataComponent *rhs)
+{
+    return true;
+}
+
+bool MTRenderingServer::CopyTextureDataComponent(TextureDataComponent *lhs, TextureDataComponent *rhs)
+{
+    return true;
+}
+
 bool MTRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue, size_t startOffset, size_t range)
 {
 	return true;
+}
+
+bool MTRenderingServer::ClearGPUBufferDataComponent(GPUBufferDataComponent *rhs)
+{
+    return true;
 }
 
 bool MTRenderingServer::CommandListBegin(RenderPassDataComponent * rhs, size_t frameIndex)
@@ -194,22 +210,17 @@ bool MTRenderingServer::SetUserPipelineOutput(RenderPassDataComponent * rhs)
 	return true;
 }
 
+RenderPassDataComponent *MTRenderingServer::GetUserPipelineOutput()
+{
+    return nullptr;
+}
+
 bool MTRenderingServer::Present()
 {
 	return true;
 }
 
 bool MTRenderingServer::DispatchCompute(RenderPassDataComponent * renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
-{
-	return true;
-}
-
-bool MTRenderingServer::CopyDepthStencilBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest)
-{
-	return true;
-}
-
-bool MTRenderingServer::CopyColorBuffer(RenderPassDataComponent * src, size_t srcIndex, RenderPassDataComponent * dest, size_t destIndex)
 {
 	return true;
 }
@@ -224,6 +235,11 @@ std::vector<Vec4> MTRenderingServer::ReadTextureBackToCPU(RenderPassDataComponen
 	return std::vector<Vec4>();
 }
 
+bool MTRenderingServer::GenerateMipmap(TextureDataComponent *rhs)
+{
+    return true;
+}
+
 bool MTRenderingServer::Resize()
 {
 	return true;
@@ -233,4 +249,14 @@ void MTRenderingServer::setBridge(MTRenderingServerBridge* bridge)
 {
 	MTRenderingServerNS::m_bridge = bridge;
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "MTRenderingServer: Bridge connected at ", bridge);
+}
+
+bool MTRenderingServer::BeginCapture()
+{
+    return true;
+}
+
+bool MTRenderingServer::EndCapture()
+{
+    return true;
 }

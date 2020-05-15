@@ -35,8 +35,13 @@ public:
 	bool DeleteShaderProgramComponent(ShaderProgramComponent * rhs) override;
 	bool DeleteSamplerDataComponent(SamplerDataComponent * rhs) override;
 	bool DeleteGPUBufferDataComponent(GPUBufferDataComponent * rhs) override;
+    
+    bool ClearTextureDataComponent(TextureDataComponent* rhs) override;
+    bool CopyTextureDataComponent(TextureDataComponent* lhs, TextureDataComponent* rhs) override;
+    
 	bool UploadGPUBufferDataComponentImpl(GPUBufferDataComponent * rhs, const void * GPUBufferValue, size_t startOffset, size_t range) override;
-
+    bool ClearGPUBufferDataComponent(GPUBufferDataComponent* rhs) override;
+    
 	bool CommandListBegin(RenderPassDataComponent * rhs, size_t frameIndex) override;
 	bool BindRenderPassDataComponent(RenderPassDataComponent * rhs) override;
 	bool CleanRenderTargets(RenderPassDataComponent * rhs) override;
@@ -48,17 +53,19 @@ public:
 	bool ExecuteCommandList(RenderPassDataComponent * rhs) override;
 	bool WaitForFrame(RenderPassDataComponent * rhs) override;
 	bool SetUserPipelineOutput(RenderPassDataComponent * rhs) override;
+    RenderPassDataComponent* GetUserPipelineOutput() override;
 	bool Present() override;
 
 	bool DispatchCompute(RenderPassDataComponent * renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) override;
 
-	bool CopyDepthStencilBuffer(RenderPassDataComponent * src, RenderPassDataComponent * dest) override;
-	bool CopyColorBuffer(RenderPassDataComponent * src, size_t srcIndex, RenderPassDataComponent * dest, size_t destIndex) override;
-
 	Vec4 ReadRenderTargetSample(RenderPassDataComponent * rhs, size_t renderTargetIndex, size_t x, size_t y) override;
 	std::vector<Vec4> ReadTextureBackToCPU(RenderPassDataComponent * canvas, TextureDataComponent * TDC) override;
-
+    bool GenerateMipmap(TextureDataComponent* rhs) override;
+    
 	bool Resize() override;
-
-  void setBridge(MTRenderingServerBridge* bridge);
+    
+    bool BeginCapture() override;
+    bool EndCapture() override;
+    
+    void setBridge(MTRenderingServerBridge* bridge);
 };
