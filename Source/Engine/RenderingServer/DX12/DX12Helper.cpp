@@ -391,7 +391,7 @@ D3D12_TEXTURE_ADDRESS_MODE DX12Helper::GetWrapMode(TextureWrapMethod textureWrap
 
 	switch (textureWrapMethod)
 	{
-	case TextureWrapMethod::Edge: l_result = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	case TextureWrapMethod::Edge: l_result = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 		break;
 	case TextureWrapMethod::Repeat: l_result = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 		break;
