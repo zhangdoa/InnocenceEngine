@@ -25,7 +25,6 @@ namespace SunShadowPass
 	ShaderProgramComponent* m_blurSPC_Even;
 	TextureDataComponent* m_oddTDC;
 	TextureDataComponent* m_evenTDC;
-	SamplerDataComponent* m_blurSDC;
 
 	uint32_t m_shadowMapResolution = 1024;
 }
@@ -169,11 +168,6 @@ bool SunShadowPass::Setup()
 	m_geometryProcessSDC->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_geometryProcessSDC->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
-	m_blurSDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("SunShadowBlurPass/");
-
-	m_blurSDC->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Edge;
-	m_blurSDC->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Edge;
-
 	return true;
 }
 
@@ -187,7 +181,6 @@ bool SunShadowPass::Initialize()
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_blurSPC_Even);
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_blurRPDC_Odd);
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_blurRPDC_Even);
-	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_blurSDC);
 
 	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_oddTDC);
 	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_evenTDC);
@@ -251,7 +244,7 @@ bool SunShadowPass::blur()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_blurRPDC_Odd, ShaderStage::Compute, m_geometryProcessRPDC->m_RenderTargetsResourceBinders[0], 1, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_blurRPDC_Odd, ShaderStage::Compute, m_oddTDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
 
-	g_pModuleManager->getRenderingServer()->DispatchCompute(m_blurRPDC_Odd, 128, 128, 1);
+	g_pModuleManager->getRenderingServer()->DispatchCompute(m_blurRPDC_Odd, m_shadowMapResolution / 8, m_shadowMapResolution / 8, 1);
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_blurRPDC_Odd, ShaderStage::Compute, m_geometryProcessRPDC->m_RenderTargetsResourceBinders[0], 1, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_blurRPDC_Odd, ShaderStage::Compute, m_oddTDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
@@ -266,7 +259,7 @@ bool SunShadowPass::blur()
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_blurRPDC_Even, ShaderStage::Compute, m_oddTDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_blurRPDC_Even, ShaderStage::Compute, m_evenTDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
 
-	g_pModuleManager->getRenderingServer()->DispatchCompute(m_blurRPDC_Even, 128, 128, 1);
+	g_pModuleManager->getRenderingServer()->DispatchCompute(m_blurRPDC_Even, m_shadowMapResolution / 8, m_shadowMapResolution / 8, 1);
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_blurRPDC_Even, ShaderStage::Compute, m_oddTDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_blurRPDC_Even, ShaderStage::Compute, m_evenTDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);

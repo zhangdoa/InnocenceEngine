@@ -27,9 +27,8 @@ float VSMKernel(float4 shadowMapValue, float currentDepth)
 	float Ex = shadowMapValue.r;
 	float E_x2 = shadowMapValue.g;
 	float variance = E_x2 - (Ex * Ex);
-	variance = max(variance, eps);
 	float mD = Ex - currentDepth;
-	float p = variance / (variance + mD * mD);
+	float p = variance / max(variance + mD * mD, eps);
 
 	shadow = max(p, float(currentDepth >= Ex));
 
@@ -95,7 +94,7 @@ float SunShadowResolver(float3 fragPos, SamplerState Sampler)
 		// get depth of current fragment from light's perspective
 		float currentDepth = projCoords.z;
 
-		shadow = PCFResolver(projCoords, in_SunShadow, Sampler, splitIndex, currentDepth, texelSize);
+		shadow = VSMResolver(projCoords, in_SunShadow, Sampler, splitIndex, currentDepth);
 	}
 
 	return shadow;
@@ -128,7 +127,7 @@ float SunShadowResolver(float3 fragPos, SamplerState Sampler)
 	// get depth of current fragment from light's perspective
 	float currentDepth = projCoords.z;
 
-	shadow = PCFResolver(projCoords, in_SunShadow, Sampler, 0, currentDepth, texelSize);
+	shadow = VSMResolver(projCoords, in_SunShadow, Sampler, 0, currentDepth);
 
 	return shadow;
 }
