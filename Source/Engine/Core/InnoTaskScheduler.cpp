@@ -161,7 +161,7 @@ inline const RingBuffer<InnoTaskReport, true>& InnoThread::GetTaskReport()
 inline std::shared_ptr<IInnoTask> InnoThread::AddTask(std::shared_ptr<IInnoTask>&& task)
 {
 	std::shared_ptr<IInnoTask> l_result{ task };
-	m_WorkQueue.push(task);
+	m_WorkQueue.push(std::move(task));
 	return l_result;
 }
 

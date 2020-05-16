@@ -348,7 +348,14 @@ public:
 		return true;
 	}
 
-	void push(T value)
+	void push(const T& value)
+	{
+		std::lock_guard<std::shared_mutex> lock{ m_mutex };
+		m_queue.push(value);
+		m_condition.notify_one();
+	}
+
+	void push(T&& value)
 	{
 		std::lock_guard<std::shared_mutex> lock{ m_mutex };
 		m_queue.push(std::move(value));
