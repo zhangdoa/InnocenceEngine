@@ -1,0 +1,42 @@
+// shadertype=hlsl
+#include "common/common.hlsl"
+
+struct ComputeInputType
+{
+	uint3 groupID : SV_GroupID;           // 3D index of the thread group in the dispatch.
+	uint3 groupThreadID : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
+	uint3 dispatchThreadID : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
+	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
+};
+
+Texture2D in_opaquePassRT3 : register(t0);
+Texture2D in_TAAPassRT0 : register(t1);
+RWTexture2D<float4> out_motionBlurPassRT0 : register(u0);
+
+SamplerState SamplerTypePoint : register(s0);
+
+static int MAX_SAMPLES = 16;
+
+[numthreads(8, 8, 1)]
+void main(ComputeInputType input)
+{
+	float2 readCoord = (float2)input.dispatchThreadID.xy / perFrameCBuffer.viewportSize.xy;
+	float2 MotionVector = in_opaquePassRT3[input.dispatchThreadID.xy].xy;
+	float3 result = in_TAAPassRT0[input.dispatchThreadID.xy].xyz;
+
+	float half_samples = float(MAX_SAMPLES / 2);
+
+	// sample half samples along motion vector and another half in opposite direction
+	for (int i = 1; i <= half_samples; i++)
+	{
+		float2 offset = MotionVector * (float(i) / float(MAX_SAMPLES));
+		float2 negativeCoords = readCoord - offset;
+		float2 positiveCoords = readCoord + offset;
+		result += in_TAAPassRT0.SampleLevel(SamplerTypePoint, negativeCoords, 0);
+		result += in_TAAPassRT0.SampleLevel(SamplerTypePoint, positiveCoords, 0);
+	}
+
+	result /= float(MAX_SAMPLES + 1);
+
+	out_motionBlurPassRT0[input.dispatchThreadID.xy] = float4(result, 1.0);
+}

@@ -243,7 +243,7 @@ bool DefaultRenderingClient::Setup()
 		if (l_renderingConfig.useMotionBlur)
 		{
 			MotionBlurPass::Render(l_canvas);
-			l_canvas = MotionBlurPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
+			l_canvas = MotionBlurPass::GetResult();
 		}
 
 		BillboardPass::Render();
@@ -253,9 +253,11 @@ bool DefaultRenderingClient::Setup()
 
 		if (m_saveScreenCapture)
 		{
+			auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+
 			auto l_textureData = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(FinalBlendPass::GetRPDC(), FinalBlendPass::GetRPDC()->m_RenderTargets[0]);
 			auto l_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
-			l_TDC->m_TextureDesc = FinalBlendPass::GetRPDC()->m_RenderTargets[0]->m_TextureDesc;
+			l_TDC->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 			l_TDC->m_TextureData = l_textureData.data();
 			g_pModuleManager->getAssetSystem()->saveTexture("ScreenCapture", l_TDC);
 			//g_pModuleManager->getRenderingServer()->DeleteTextureDataComponent(l_TDC);

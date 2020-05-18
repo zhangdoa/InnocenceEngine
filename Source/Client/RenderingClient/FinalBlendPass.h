@@ -10,4 +10,5 @@ namespace FinalBlendPass
 
 	RenderPassDataComponent* GetRPDC();
 	ShaderProgramComponent* getSPC();
+	IResourceBinder* GetResult();
 };

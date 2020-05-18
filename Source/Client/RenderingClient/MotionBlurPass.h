@@ -10,4 +10,5 @@ namespace MotionBlurPass
 
 	RenderPassDataComponent* GetRPDC();
 	ShaderProgramComponent* GetSPC();
+	IResourceBinder* GetResult();
 };
