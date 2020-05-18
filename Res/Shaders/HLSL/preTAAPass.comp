@@ -1,0 +1,36 @@
+// shadertype=hlsl
+#include "common/common.hlsl"
+
+struct ComputeInputType
+{
+	uint3 groupID : SV_GroupID;           // 3D index of the thread group in the dispatch.
+	uint3 groupThreadID : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
+	uint3 dispatchThreadID : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
+	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
+};
+
+Texture2D in_lightPassRT0 : register(t0);
+Texture2D in_skyPassRT0 : register(t1);
+RWTexture2D<float4> out_preTAAPassRT0 : register(u0);
+
+[numthreads(8, 8, 1)]
+void main(ComputeInputType input)
+{
+	float2 flipYTexCoord = input.dispatchThreadID.xy;
+
+	float4 lightPassRT0 = in_lightPassRT0[input.dispatchThreadID.xy];
+	float4 skyPassRT0 = in_skyPassRT0[input.dispatchThreadID.xy];
+
+	float3 finalColor = float3(0.0, 0.0, 0.0);
+
+	if (lightPassRT0.a == 0.0)
+	{
+		finalColor += skyPassRT0.rgb;
+	}
+	else
+	{
+		finalColor += lightPassRT0.rgb;
+	}
+
+	out_preTAAPassRT0[input.dispatchThreadID.xy] = float4(finalColor, 1.0);
+}

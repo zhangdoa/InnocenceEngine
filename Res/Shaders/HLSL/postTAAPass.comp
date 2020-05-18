@@ -1,0 +1,25 @@
+// shadertype=hlsl
+#include "common/common.hlsl"
+
+struct ComputeInputType
+{
+	uint3 groupID : SV_GroupID;           // 3D index of the thread group in the dispatch.
+	uint3 groupThreadID : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
+	uint3 dispatchThreadID : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
+	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
+};
+
+Texture2D in_TAAPassRT0 : register(t0);
+RWTexture2D<float4> out_postTAAPassRT0 : register(u0);
+
+[numthreads(8, 8, 1)]
+void main(ComputeInputType input)
+{
+	float4 TAAResult = in_TAAPassRT0[input.dispatchThreadID.xy];
+	float3 currentColor = TAAResult.rgb;
+
+	// Undo tone mapping
+	float3 finalColor = TonemapInvertReinhardLuma(currentColor);
+
+	out_postTAAPassRT0[input.dispatchThreadID.xy] = float4(currentColor, 1.0);
+}

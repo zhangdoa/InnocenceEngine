@@ -10,4 +10,5 @@ namespace SkyPass
 
 	RenderPassDataComponent* GetRPDC();
 	ShaderProgramComponent* GetSPC();
+	IResourceBinder* GetResult();
 };

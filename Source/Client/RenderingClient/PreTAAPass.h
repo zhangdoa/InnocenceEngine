@@ -10,4 +10,5 @@ namespace PreTAAPass
 
 	RenderPassDataComponent* GetRPDC();
 	ShaderProgramComponent* GetSPC();
+	IResourceBinder* GetResult();
 };

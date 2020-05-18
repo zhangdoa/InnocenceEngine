@@ -222,8 +222,8 @@ bool DefaultRenderingClient::Setup()
 			g_pModuleManager->getRenderingServer()->ExecuteCommandList(PreTAAPass::GetRPDC());
 			g_pModuleManager->getRenderingServer()->WaitForFrame(PreTAAPass::GetRPDC());
 
-			TransparentPass::Render(PreTAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0]);
-			l_canvas = PreTAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
+			TransparentPass::Render(PreTAAPass::GetResult());
+			l_canvas = PreTAAPass::GetResult();
 		}
 
 		if (m_showVoxel)
@@ -237,7 +237,7 @@ bool DefaultRenderingClient::Setup()
 		{
 			TAAPass::Render(l_canvas);
 			PostTAAPass::Render();
-			l_canvas = PostTAAPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
+			l_canvas = PostTAAPass::GetResult();
 		}
 
 		if (l_renderingConfig.useMotionBlur)
