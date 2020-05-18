@@ -108,13 +108,12 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 		out_AO = materialCBuffer.MRAT.b;
 	}
 
-	output.opaquePassRT0 = float4(input.posWS, out_Metallic);
-	output.opaquePassRT1 = float4(normalInWorldSpace, out_Roughness);
-	output.opaquePassRT2 = float4(out_Albedo, out_AO);
-
 	float4 motionVec = (input.posCS_orig / input.posCS_orig.w - input.posCS_prev / input.posCS_prev.w);
 
-	output.opaquePassRT3 = float4(motionVec.xyz * 0.5, transparency);
+	output.opaquePassRT0 = float4(input.posWS, 1.0);
+	output.opaquePassRT1 = float4(normalInWorldSpace, out_Metallic);
+	output.opaquePassRT2 = float4(out_Albedo, out_Roughness);
+	output.opaquePassRT3 = float4(motionVec.xy * 0.5, out_AO, transparency);
 
   return output;
 }

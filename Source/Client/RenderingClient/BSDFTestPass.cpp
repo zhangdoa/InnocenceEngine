@@ -25,7 +25,7 @@ bool BSDFTestPass::Setup()
 {
 	m_SPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("BSDFTestPass/");
 
-	m_SPC->m_ShaderFilePaths.m_VSPath = "opaquePass.vert/";
+	m_SPC->m_ShaderFilePaths.m_VSPath = "opaqueGeometryProcessPass.vert/";
 	m_SPC->m_ShaderFilePaths.m_PSPath = "BSDFTestPass.frag/";
 
 	m_RPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("BSDFTestPass/");
