@@ -10,4 +10,5 @@ namespace SSAOPass
 
 	RenderPassDataComponent* GetRPDC();
 	ShaderProgramComponent* GetSPC();
+	IResourceBinder* GetResult();
 };

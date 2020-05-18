@@ -13,6 +13,7 @@ namespace SSAOPass
 {
 	RenderPassDataComponent* m_RPDC;
 	ShaderProgramComponent* m_SPC;
+	TextureDataComponent* m_TDC;
 	SamplerDataComponent* m_SDC;
 	SamplerDataComponent* m_SDC_RandomRot;
 
@@ -28,20 +29,18 @@ bool SSAOPass::Setup()
 {
 	m_SPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("SSAONoisePass/");
 
-	m_SPC->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
-	m_SPC->m_ShaderFilePaths.m_PSPath = "SSAONoisePass.frag/";
+	m_SPC->m_ShaderFilePaths.m_CSPath = "SSAONoisePass.comp/";
 
 	m_RPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("SSAONoisePass/");
 
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
-	l_RenderPassDesc.m_RenderTargetCount = 1;
-
-	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
+	l_RenderPassDesc.m_RenderTargetCount = 0;
+	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
 
 	m_RPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC->m_ResourceBinderLayoutDescs.resize(7);
+	m_RPDC->m_ResourceBinderLayoutDescs.resize(8);
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
@@ -75,11 +74,16 @@ bool SSAOPass::Setup()
 	m_RPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 1;
 	m_RPDC->m_ResourceBinderLayoutDescs[6].m_IndirectBinding = true;
 
+	m_RPDC->m_ResourceBinderLayoutDescs[7].m_ResourceBinderType = ResourceBinderType::Image;
+	m_RPDC->m_ResourceBinderLayoutDescs[7].m_DescriptorSetIndex = 3;
+	m_RPDC->m_ResourceBinderLayoutDescs[7].m_DescriptorIndex = 0;
+	m_RPDC->m_ResourceBinderLayoutDescs[7].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_RPDC->m_ResourceBinderLayoutDescs[7].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RPDC->m_ResourceBinderLayoutDescs[7].m_IndirectBinding = true;
+
 	m_RPDC->m_ShaderProgram = m_SPC;
 
 	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("SSAONoisePass/");
-
-	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
 
 	m_SDC_RandomRot = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("SSAONoisePass_RandomRot/");
 
@@ -87,6 +91,9 @@ bool SSAOPass::Setup()
 	m_SDC_RandomRot->m_SamplerDesc.m_MagFilterMethod = TextureFilterMethod::Nearest;
 	m_SDC_RandomRot->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SDC_RandomRot->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
+
+	m_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("SSAONoisePass/");
+	m_TDC->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
 	// Kernel
 	std::uniform_real_distribution<float> l_randomFloats(0.0f, 1.0f);
@@ -146,6 +153,8 @@ bool SSAOPass::Initialize()
 {
 	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
 	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
+	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_TDC);
+	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
 	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC_RandomRot);
 	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_SSAOKernelGPUBuffer);
 	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_SSAONoiseTDC);
@@ -155,27 +164,28 @@ bool SSAOPass::Initialize()
 
 bool SSAOPass::Render()
 {
+	auto l_viewportSize = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 5, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC_RandomRot->m_ResourceBinder, 6, 1);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, m_SDC->m_ResourceBinder, 5, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, m_SDC_RandomRot->m_ResourceBinder, 6, 1);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SSAOKernelGPUBuffer->m_ResourceBinder, 1, 7, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[0], 2, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[1], 3, 1);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SSAONoiseTDC->m_ResourceBinder, 4, 2);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, m_SSAOKernelGPUBuffer->m_ResourceBinder, 1, 7, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[0], 2, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[1], 3, 1);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, m_SSAONoiseTDC->m_ResourceBinder, 4, 2);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, m_TDC->m_ResourceBinder, 7, 0, Accessibility::ReadWrite);
 
-	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
+	g_pModuleManager->getRenderingServer()->DispatchCompute(m_RPDC, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_mesh);
-
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[0], 2, 0);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[1], 3, 1);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SSAONoiseTDC->m_ResourceBinder, 4, 2);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[0], 2, 0);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[1], 3, 1);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, m_SSAONoiseTDC->m_ResourceBinder, 4, 2);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, m_TDC->m_ResourceBinder, 7, 0, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
 
@@ -200,4 +210,9 @@ RenderPassDataComponent* SSAOPass::GetRPDC()
 ShaderProgramComponent* SSAOPass::GetSPC()
 {
 	return m_SPC;
+}
+
+IResourceBinder* SSAOPass::GetResult()
+{
+	return m_TDC->m_ResourceBinder;
 }
