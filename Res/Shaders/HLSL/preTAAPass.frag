@@ -4,7 +4,7 @@
 Texture2D in_lightPassRT0 : register(t0);
 Texture2D in_skyPassRT0 : register(t1);
 
-SamplerState SampleTypePoint : register(s0);
+SamplerState SamplerTypePoint : register(s0);
 
 struct PixelInputType
 {
@@ -24,8 +24,8 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 	float2 flipYTexCoord = input.texcoord;
 	flipYTexCoord.y = 1.0 - flipYTexCoord.y;
 
-	float4 lightPassRT0 = in_lightPassRT0.Sample(SampleTypePoint, input.texcoord);
-	float4 skyPassRT0 = in_skyPassRT0.Sample(SampleTypePoint, flipYTexCoord);
+	float4 lightPassRT0 = in_lightPassRT0.Sample(SamplerTypePoint, input.texcoord);
+	float4 skyPassRT0 = in_skyPassRT0.Sample(SamplerTypePoint, flipYTexCoord);
 
 	float3 finalColor = float3(0.0, 0.0, 0.0);
 

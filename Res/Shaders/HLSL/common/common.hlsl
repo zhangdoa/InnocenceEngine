@@ -295,6 +295,158 @@ float4 DecodeNormal(in uint normalMask)
 	return float4(normal, 1.0f);
 }
 
+float GetLuma(float3 color)
+{
+	return dot(color, float3(0.2126, 0.7152, 0.0722));
+}
+
+static const float3x3 RGB_XYZ_Factor = float3x3(
+	0.4124564, 0.3575761, 0.1804375,
+	0.2126729, 0.7151522, 0.0721750,
+	0.0193339, 0.1191920, 0.9503041
+	);
+
+static const float3x3 XYZ_RGB_Factor = float3x3(
+	3.2404542, -1.5371385, -0.4985314,
+	-0.9692660, 1.8760108, 0.0415560,
+	0.0556434, -0.2040259, 1.0572252
+	);
+
+float3 RGB_XYZ(float3 rgb)
+{
+	return mul(rgb, RGB_XYZ_Factor);
+}
+
+float3 XYZ_RGB(float3 xyz)
+{
+	return mul(xyz, XYZ_RGB_Factor);
+}
+
+float3 XYZ_XYY(float3 xyz)
+{
+	float Y = xyz.y;
+	float x = xyz.x / (xyz.x + xyz.y + xyz.z);
+	float y = xyz.y / (xyz.x + xyz.y + xyz.z);
+	return float3(x, y, Y);
+}
+
+float3 XYY_XYZ(float3 xyY)
+{
+	float Y = xyY.z;
+	float x = Y * xyY.x / xyY.y;
+	float z = Y * (1.0 - xyY.x - xyY.y) / xyY.y;
+	return float3(x, Y, z);
+}
+
+float3 RGB_XYY(float3 rgb)
+{
+	float3 xyz = RGB_XYZ(rgb);
+	return XYZ_XYY(xyz);
+}
+
+float3 XYY_RGB(float3 xyY)
+{
+	float3 xyz = XYY_XYZ(xyY);
+	return XYZ_RGB(xyz);
+}
+
+// [https://software.intel.com/en-us/node/503873]
+float3 RGB_YCoCg(float3 c)
+{
+	// Y = R/4 + G/2 + B/4
+	// Co = R/2 - B/2
+	// Cg = -R/4 + G/2 - B/4
+	return float3(
+		c.x / 4.0 + c.y / 2.0 + c.z / 4.0,
+		c.x / 2.0 - c.z / 2.0,
+		-c.x / 4.0 + c.y / 2.0 - c.z / 4.0
+		);
+}
+
+// [https://software.intel.com/en-us/node/503873]
+float3 YCoCg_RGB(float3 c)
+{
+	// R = Y + Co - Cg
+	// G = Y + Cg
+	// B = Y - Co - Cg
+	return float3(
+		c.x + c.y - c.z,
+		c.x + c.z,
+		c.x - c.y - c.z
+		);
+}
+
+float3 TonemapReinhard(float3 color)
+{
+	return color / (1.0f + color);
+}
+
+// [http://graphicrants.blogspot.com/2013/12/tone-mapping.html]
+float3 TonemapReinhardLuma(float3 color)
+{
+	float luma = GetLuma(color);
+	return color / (1.0f + luma);
+}
+
+// [http://graphicrants.blogspot.com/2013/12/tone-mapping.html]
+float3 TonemapInvertReinhardLuma(float3 color)
+{
+	float luma = GetLuma(color);
+	return color / (1.0f - luma);
+}
+
+// [https://gpuopen.com/learn/optimized-reversible-tonemapper-for-resolve/]
+float3 TonemapMax3(float3 color)
+{
+	float maxValue = max(max(color.x, color.y), color.z);
+	return color / (1.0f + maxValue);
+}
+
+// [https://gpuopen.com/learn/optimized-reversible-tonemapper-for-resolve/]
+float3 TonemapInvertMax3(float3 color)
+{
+	float maxValue = max(max(color.x, color.y), color.z);
+	return color / (1.0f - maxValue);
+}
+
+// Academy Color Encoding System
+// [http://www.oscars.org/science-technology/sci-tech-projects/aces]
+float3 TonemapACES(const float3 x)
+{
+	const float a = 2.51;
+	const float b = 0.03;
+	const float c = 2.43;
+	const float d = 0.59;
+	const float e = 0.14;
+	return saturate((x * (a * x + b)) / (x * (c * x + d) + e));
+}
+
+// gamma correction with respect to human eyes non-linearity
+// [https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf]
+float3 AccurateLinearToSRGB(float3 linearCol)
+{
+	float3 sRGBLo = linearCol * 12.92;
+	float3 sRGBHi = (pow(abs(linearCol), 1.0 / 2.4) * 1.055) - 0.055;
+	float3 sRGB = (linearCol <= 0.0031308) ? sRGBLo : sRGBHi;
+
+	return sRGB;
+}
+
+float ComputeEV100(float aperture, float shutterTime, float ISO)
+{
+	return log2(aperture * aperture / shutterTime * 100 / ISO);
+}
+
+float ComputeEV100FromAvgLuminance(float avgLuminance)
+{
+	return log2(avgLuminance * 100.0f / 12.5f);
+}
+float ConvertEV100ToExposure(float EV100)
+{
+	float maxLuminance = 1.2f * pow(2.0f, EV100);
+	return 1.0f / maxLuminance;
+}
+
 struct Surfel
 {
 	float4 pos;
