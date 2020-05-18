@@ -37,12 +37,14 @@ bool PreTAAPass::Setup()
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 1;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_BinderAccessibility = Accessibility::ReadOnly;
+	m_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Image;
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_BinderAccessibility = Accessibility::ReadOnly;
+	m_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Image;
@@ -77,13 +79,13 @@ bool PreTAAPass::PrepareCommandList()
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
 	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, LightPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 0, 0);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, LightPass::GetResult(0), 0, 0);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, SkyPass::GetResult(), 1, 1);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, m_TDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->DispatchCompute(m_RPDC, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, LightPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 0, 0);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, LightPass::GetResult(0), 0, 0);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, SkyPass::GetResult(), 1, 1);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, m_TDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
 

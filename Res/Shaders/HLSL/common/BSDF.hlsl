@@ -111,10 +111,10 @@ float3 getFrMS(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePo
 {
 	float3 f_averange = AverangeFresnel(F0);
 
-	float rsF1_averange = BRDFMSLUT.Sample(SampleTypePoint, float2(0.0, roughness)).r;
+	float rsF1_averange = BRDFMSLUT.SampleLevel(SampleTypePoint, float2(0.0, roughness), 0).r;
 
-	float rsF1_l = BRDFLUT.Sample(SampleTypePoint, float2(NdotL, roughness)).b;
-	float rsF1_v = BRDFLUT.Sample(SampleTypePoint, float2(NdotV, roughness)).b;
+	float rsF1_l = BRDFLUT.SampleLevel(SampleTypePoint, float2(NdotL, roughness), 0).b;
+	float rsF1_v = BRDFLUT.SampleLevel(SampleTypePoint, float2(NdotV, roughness), 0).b;
 
 	float beta1 = 1.0 - rsF1_averange;
 	float beta2 = 1.0 - rsF1_l;

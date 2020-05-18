@@ -329,7 +329,7 @@ bool VoxelizationPass::setupScreenSpaceFeedbackPass()
 
 	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
 
-	m_SSFeedBackVolume = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("VoxelRayTracingVolume/");
+	m_SSFeedBackVolume = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("VoxelScreenSpaceFeedbackVolume/");
 	m_SSFeedBackVolume->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
 	m_SSFeedBackVolume->m_TextureDesc.Width = m_rayTracingVolumeResolution;
@@ -741,6 +741,7 @@ bool VoxelizationPass::multiBounce(TextureDataComponent* input, TextureDataCompo
 
 bool VoxelizationPass::screenSpaceFeedback(TextureDataComponent* output)
 {
+	auto l_viewportSize = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
 	auto l_perFrameGBDC = DefaultGPUBuffers::GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_SSFeedBackRPDC, 0);
@@ -750,13 +751,13 @@ bool VoxelizationPass::screenSpaceFeedback(TextureDataComponent* output)
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, l_perFrameGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, m_voxelizationPassCBufferGBDC->m_ResourceBinder, 4, 9, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, LightPass::GetRPDC()->m_RenderTargetsResourceBinders[1], 1, 1, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, LightPass::GetResult(1), 1, 1, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, output->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
 
-	g_pModuleManager->getRenderingServer()->DispatchCompute(m_SSFeedBackRPDC, 160, 90, 1);
+	g_pModuleManager->getRenderingServer()->DispatchCompute(m_SSFeedBackRPDC, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, LightPass::GetRPDC()->m_RenderTargetsResourceBinders[1], 1, 1, Accessibility::ReadOnly);
+	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, LightPass::GetResult(1), 1, 1, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, output->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_SSFeedBackRPDC);
