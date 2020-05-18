@@ -93,7 +93,7 @@ namespace GLRenderingServerNS
 	std::unordered_set<MaterialDataComponent*> m_initializedMaterials;
 	std::vector<GLRenderPassDataComponent*> m_RPDCs;
 
-	GLRenderPassDataComponent* m_userPipelineOutput = 0;
+	IResourceBinder* m_userPipelineOutput = 0;
 	GLRenderPassDataComponent* m_SwapChainRPDC = 0;
 	GLShaderProgramComponent* m_SwapChainSPC = 0;
 	GLSamplerDataComponent* m_SwapChainSDC = 0;
@@ -971,14 +971,14 @@ bool GLRenderingServer::WaitForFrame(RenderPassDataComponent* rhs)
 	return true;
 }
 
-bool GLRenderingServer::SetUserPipelineOutput(RenderPassDataComponent* rhs)
+bool GLRenderingServer::SetUserPipelineOutput(IResourceBinder* rhs)
 {
-	m_userPipelineOutput = reinterpret_cast<GLRenderPassDataComponent*>(rhs);
+	m_userPipelineOutput = rhs;
 
 	return true;
 }
 
-RenderPassDataComponent* GLRenderingServer::GetUserPipelineOutput()
+IResourceBinder* GLRenderingServer::GetUserPipelineOutput()
 {
 	return m_userPipelineOutput;
 }
@@ -993,13 +993,13 @@ bool GLRenderingServer::Present()
 
 	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_SwapChainSDC->m_ResourceBinder, 0, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
 
-	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
 
 	DispatchDrawCall(m_SwapChainRPDC, l_mesh, 1);
 
-	DeactivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	DeactivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	CommandListEnd(m_SwapChainRPDC);
 

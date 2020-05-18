@@ -109,7 +109,7 @@ namespace DX12RenderingServerNS
 	D3D12_CPU_DESCRIPTOR_HANDLE m_currentSamplerCPUHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE m_currentSamplerGPUHandle;
 
-	DX12RenderPassDataComponent* m_userPipelineOutput = 0;
+	IResourceBinder* m_userPipelineOutput = 0;
 	DX12RenderPassDataComponent* m_SwapChainRPDC = 0;
 	DX12ShaderProgramComponent* m_SwapChainSPC = 0;
 	DX12SamplerDataComponent* m_SwapChainSDC = 0;
@@ -2012,14 +2012,14 @@ bool DX12RenderingServer::WaitForFrame(RenderPassDataComponent* rhs)
 	return true;
 }
 
-bool DX12RenderingServer::SetUserPipelineOutput(RenderPassDataComponent* rhs)
+bool DX12RenderingServer::SetUserPipelineOutput(IResourceBinder* rhs)
 {
-	m_userPipelineOutput = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
+	m_userPipelineOutput = rhs;
 
 	return true;
 }
 
-RenderPassDataComponent* DX12RenderingServer::GetUserPipelineOutput()
+IResourceBinder* DX12RenderingServer::GetUserPipelineOutput()
 {
 	return m_userPipelineOutput;
 }
@@ -2041,13 +2041,13 @@ bool DX12RenderingServer::Present()
 
 	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_SwapChainSDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
-	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
 
 	DispatchDrawCall(m_SwapChainRPDC, l_mesh, 1);
 
-	DeactivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	DeactivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	CheckReadState(l_DX12TDC, l_commandList);
 
@@ -2268,10 +2268,10 @@ bool DX12RenderingServer::GenerateMipmap(TextureDataComponent* rhs)
 	auto l_rhs = reinterpret_cast<DX12TextureDataComponent*>(rhs);
 
 	// @TODO: support sRGB
-	if (!l_rhs->m_TextureDesc.IsSRGB)
-	{
-		return DX12RenderingServerNS::GenerateMipmap(l_rhs);
-	}
+	//if (!l_rhs->m_TextureDesc.IsSRGB)
+	//{
+	//	return DX12RenderingServerNS::GenerateMipmap(l_rhs);
+	//}
 
 	return false;
 }

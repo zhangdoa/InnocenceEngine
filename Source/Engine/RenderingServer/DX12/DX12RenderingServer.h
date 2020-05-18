@@ -52,8 +52,8 @@ public:
 	bool CommandListEnd(RenderPassDataComponent* rhs) override;
 	bool ExecuteCommandList(RenderPassDataComponent* rhs) override;
 	bool WaitForFrame(RenderPassDataComponent* rhs) override;
-	bool SetUserPipelineOutput(RenderPassDataComponent* rhs) override;
-	RenderPassDataComponent* GetUserPipelineOutput() override;
+	bool SetUserPipelineOutput(IResourceBinder* rhs) override;
+	IResourceBinder* GetUserPipelineOutput() override;
 	bool Present() override;
 
 	bool DispatchCompute(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) override;
