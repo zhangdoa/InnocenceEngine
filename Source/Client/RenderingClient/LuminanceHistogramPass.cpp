@@ -127,6 +127,11 @@ bool LuminanceHistogramPass::Initialize()
 
 bool LuminanceHistogramPass::CalculateHistogram(IResourceBinder* input)
 {
+	auto l_viewportSize = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+
+	auto l_numThreadGroupsX = std::ceil(l_viewportSize.x / 16);
+	auto l_numThreadGroupsY = std::ceil(l_viewportSize.y / 16);
+
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_LuminanceHistogram, 0);
@@ -138,7 +143,7 @@ bool LuminanceHistogramPass::CalculateHistogram(IResourceBinder* input)
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, m_LuminanceHistogramGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
 	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadOnly);
 
-	g_pModuleManager->getRenderingServer()->DispatchCompute(m_RPDC_LuminanceHistogram, 80, 45, 1);
+	g_pModuleManager->getRenderingServer()->DispatchCompute(m_RPDC_LuminanceHistogram, (uint32_t)l_numThreadGroupsX, (uint32_t)l_numThreadGroupsY, 1);
 
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, input, 0, 0, Accessibility::ReadOnly);
 	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, m_LuminanceHistogramGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
