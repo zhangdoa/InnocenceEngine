@@ -1033,11 +1033,8 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent* r
 			|| l_rhs->m_TextureDesc.Usage == TextureUsage::DepthStencilAttachment)
 		{
 			D3D12_CLEAR_VALUE l_clearValue;
-			if (l_rhs->m_TextureDesc.Usage == TextureUsage::ColorAttachment)
-			{
-				l_clearValue = D3D12_CLEAR_VALUE{ l_rhs->m_DX12TextureDesc.Format, { 0.0f, 0.0f, 0.0f, 0.0f } };
-			}
-			else if (l_rhs->m_TextureDesc.Usage == TextureUsage::DepthAttachment)
+
+			if (l_rhs->m_TextureDesc.Usage == TextureUsage::DepthAttachment)
 			{
 				l_clearValue.Format = DXGI_FORMAT_D32_FLOAT;
 				l_clearValue.DepthStencil = D3D12_DEPTH_STENCIL_VALUE{ 1.0f, 0x00 };
@@ -1046,6 +1043,14 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent* r
 			{
 				l_clearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 				l_clearValue.DepthStencil = D3D12_DEPTH_STENCIL_VALUE{ 1.0f, 0x00 };
+			}
+			else
+			{
+				l_clearValue.Format = l_rhs->m_DX12TextureDesc.Format;
+				l_clearValue.Color[0] = l_rhs->m_TextureDesc.ClearColor[0];
+				l_clearValue.Color[1] = l_rhs->m_TextureDesc.ClearColor[1];
+				l_clearValue.Color[2] = l_rhs->m_TextureDesc.ClearColor[2];
+				l_clearValue.Color[3] = l_rhs->m_TextureDesc.ClearColor[3];
 			}
 			l_rhs->m_ResourceHandle = CreateDefaultHeapBuffer(&l_rhs->m_DX12TextureDesc, m_device, &l_clearValue);
 		}
@@ -1712,13 +1717,13 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 			{
 				if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 				{
-					l_commandList->m_GraphicsCommandList->ClearRenderTargetView(l_rhs->m_RTVDescriptorCPUHandles[l_rhs->m_CurrentFrame], l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor, 0, nullptr);
+					l_commandList->m_GraphicsCommandList->ClearRenderTargetView(l_rhs->m_RTVDescriptorCPUHandles[l_rhs->m_CurrentFrame], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
 				}
 				else
 				{
 					for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
 					{
-						l_commandList->m_GraphicsCommandList->ClearRenderTargetView(l_rhs->m_RTVDescriptorCPUHandles[i], l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor, 0, nullptr);
+						l_commandList->m_GraphicsCommandList->ClearRenderTargetView(l_rhs->m_RTVDescriptorCPUHandles[i], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor, 0, nullptr);
 					}
 				}
 			}
@@ -1736,7 +1741,7 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 							l_resourceBinder->m_UAV.ShaderNonVisibleGPUHandle,
 							l_resourceBinder->m_UAV.ShaderNonVisibleCPUHandle,
 							l_RT->m_ResourceHandle.Get(),
-							(UINT*)l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor,
+							(UINT*)l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
 							0,
 							NULL);
 					}
@@ -1746,7 +1751,7 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 							l_resourceBinder->m_UAV.ShaderNonVisibleGPUHandle,
 							l_resourceBinder->m_UAV.ShaderNonVisibleCPUHandle,
 							l_RT->m_ResourceHandle.Get(),
-							l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor,
+							l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
 							0,
 							NULL);
 					}
@@ -1764,7 +1769,7 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 								l_resourceBinder->m_UAV.ShaderNonVisibleGPUHandle,
 								l_resourceBinder->m_UAV.ShaderNonVisibleCPUHandle,
 								l_RT->m_ResourceHandle.Get(),
-								(UINT*)l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor,
+								(UINT*)l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
 								0,
 								NULL);
 						}
@@ -1774,7 +1779,7 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 								l_resourceBinder->m_UAV.ShaderNonVisibleGPUHandle,
 								l_resourceBinder->m_UAV.ShaderNonVisibleCPUHandle,
 								l_RT->m_ResourceHandle.Get(),
-								l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor,
+								l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
 								0,
 								NULL);
 						}

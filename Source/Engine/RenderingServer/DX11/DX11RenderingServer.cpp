@@ -1211,13 +1211,13 @@ bool DX11RenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 				{
 					if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 					{
-						m_deviceContext->ClearRenderTargetView(l_rhs->m_RTVs[l_rhs->m_CurrentFrame], l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
+						m_deviceContext->ClearRenderTargetView(l_rhs->m_RTVs[l_rhs->m_CurrentFrame], l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor);
 					}
 					else
 					{
 						for (auto i : l_rhs->m_RTVs)
 						{
-							m_deviceContext->ClearRenderTargetView(i, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
+							m_deviceContext->ClearRenderTargetView(i, l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor);
 						}
 					}
 				}
@@ -1229,11 +1229,11 @@ bool DX11RenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 
 						if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
 						{
-							m_deviceContext->ClearUnorderedAccessViewUint(l_RT->m_UAV, (UINT*)l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
+							m_deviceContext->ClearUnorderedAccessViewUint(l_RT->m_UAV, (UINT*)l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor);
 						}
 						else
 						{
-							m_deviceContext->ClearUnorderedAccessViewFloat(l_RT->m_UAV, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
+							m_deviceContext->ClearUnorderedAccessViewFloat(l_RT->m_UAV, l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor);
 						}
 					}
 					else
@@ -1244,11 +1244,11 @@ bool DX11RenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 
 							if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
 							{
-								m_deviceContext->ClearUnorderedAccessViewUint(l_RT->m_UAV, (UINT*)l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
+								m_deviceContext->ClearUnorderedAccessViewUint(l_RT->m_UAV, (UINT*)l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor);
 							}
 							else
 							{
-								m_deviceContext->ClearUnorderedAccessViewFloat(l_RT->m_UAV, l_rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor);
+								m_deviceContext->ClearUnorderedAccessViewFloat(l_RT->m_UAV, l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor);
 							}
 						}
 					}

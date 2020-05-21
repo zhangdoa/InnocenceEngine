@@ -850,7 +850,7 @@ bool GLRenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 {
 	if (rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
 	{
-		auto l_cleanColor = rhs->m_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor;
+		auto l_cleanColor = rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor;
 		glClearColor(l_cleanColor[0], l_cleanColor[1], l_cleanColor[2], l_cleanColor[3]);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClear(GL_DEPTH_BUFFER_BIT);
