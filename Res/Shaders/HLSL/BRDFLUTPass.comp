@@ -1,17 +1,6 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
 
-struct PixelInputType
-{
-	float4 position : SV_POSITION;
-	float2 texcoord : TEXCOORD0;
-};
-
-struct PixelOutputType
-{
-	float4 brdfLUT : SV_Target0;
-};
-
 // ----------------------------------------------------------------------------
 // http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
 // efficient VanDerCorpus calculation.
@@ -35,7 +24,7 @@ float3 ImportanceSampleGGX(float2 Xi, float3 N, float roughness)
 	float a = roughness * roughness;
 
 	float phi = 2.0 * PI * Xi.x;
-	float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (a*a - 1.0) * Xi.y));
+	float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (a * a - 1.0) * Xi.y));
 	float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
 
 	// from spherical coordinates to cartesian coordinates - halfway floattor
@@ -57,7 +46,7 @@ float D_GGX(float NdotH, float roughness)
 {
 	float a = roughness * roughness;
 	float a2 = a * a;
-	float f = (NdotH * NdotH) *(a2 - 1) + 1;
+	float f = (NdotH * NdotH) * (a2 - 1) + 1;
 	return a2 / pow(f, 2.0);
 }
 // ----------------------------------------------------------------------------
@@ -143,11 +132,19 @@ float4 IntegrateBRDF(float NdotV, float roughness)
 	RsF1 /= float(SAMPLE_COUNT);
 	return float4(A, B, RsF1, 1.0);
 }
-// ----------------------------------------------------------------------------
-PixelOutputType main(PixelInputType input) : SV_TARGET
-{
-	PixelOutputType output;
 
-	output.brdfLUT = IntegrateBRDF(input.texcoord.x, input.texcoord.y);
-	return output;
+struct ComputeInputType
+{
+	uint3 groupID : SV_GroupID;           // 3D index of the thread group in the dispatch.
+	uint3 groupThreadID : SV_GroupThreadID;     // 3D index of local thread ID in a thread group.
+	uint3 dispatchThreadID : SV_DispatchThreadID;  // 3D index of global thread ID in the dispatch.
+	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
+};
+
+RWTexture2D<float4> out_BRDFLUTPassRT0 : register(u0);
+
+[numthreads(16, 16, 1)]
+void main(ComputeInputType input)
+{
+	out_BRDFLUTPassRT0[input.dispatchThreadID.xy] = IntegrateBRDF(((float)input.dispatchThreadID.x + 0.5) / 512.0, ((float)input.dispatchThreadID.y + 0.5) / 512.0);
 }
