@@ -39,10 +39,10 @@ bool BSDFTestPass::Setup()
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite = true;
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthComparisionFunction = ComparisionFunction::LessEqual;
 
-	l_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor[0] = 1.0f;
-	l_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor[1] = 1.0f;
-	l_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor[2] = 1.0f;
-	l_RenderPassDesc.m_GraphicsPipelineDesc.CleanColor[3] = 1.0f;
+	l_RenderPassDesc.m_RenderTargetDesc.ClearColor[0] = 1.0f;
+	l_RenderPassDesc.m_RenderTargetDesc.ClearColor[1] = 1.0f;
+	l_RenderPassDesc.m_RenderTargetDesc.ClearColor[2] = 1.0f;
+	l_RenderPassDesc.m_RenderTargetDesc.ClearColor[3] = 1.0f;
 
 	l_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 
