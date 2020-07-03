@@ -3,11 +3,14 @@
 [![Trello website](https://img.shields.io/badge/Trello-Roadmap-00bfff.svg)](https://trello.com/b/iEYu58hu/innocence-engine)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/3c0ea60f7c46491d87236822f6de35a6)](https://www.codacy.com/app/zhangdoa/InnocenceEngine?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=zhangdoa/InnocenceEngine&amp;utm_campaign=Badge_Grade)
 [![CodeFactor](https://www.codefactor.io/repository/github/zhangdoa/innocenceengine/badge)](https://www.codefactor.io/repository/github/zhangdoa/innocenceengine)
-[![Build status](https://ci.appveyor.com/api/projects/status/hl31o0q6nbmlf83i?svg=true)](https://ci.appveyor.com/project/zhangdoa/innocenceengine)
 [![GPL-3.0 licensed](https://img.shields.io/badge/license-GPL--3.0-brightgreen.svg)](LICENSE.md)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine?ref=badge_shield)
 [![Blog](https://img.shields.io/badge/My-Blog-ff884d.svg)](http://zhangdoa.com/)
 [![Twitter Follow](https://img.shields.io/twitter/follow/espadrine.svg?style=social&label=Follow)](https://twitter.com/zhangdoa)
+
+[![Appveyor Windows](https://img.shields.io/appveyor/job/build/zhangdoa/innocenceengine/Windows%20build?label=Windows&logo=windows)](https://ci.appveyor.com/project/zhangdoa/innocenceengine)
+[![Appveyor macOS](https://img.shields.io/appveyor/job/build/zhangdoa/innocenceengine/macOS%20build?label=macOS&logo=apple)](https://ci.appveyor.com/project/zhangdoa/innocenceengine)
+[![Appveyor Linux](https://img.shields.io/appveyor/job/build/zhangdoa/innocenceengine/Linux%20build?label=Linux&logo=ubuntu)](https://ci.appveyor.com/project/zhangdoa/innocenceengine)
 > "A poet once said, 'The whole universe is in a glass of wine.'"
 > -- Richard Feynman, 1963
 
