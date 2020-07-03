@@ -56,7 +56,7 @@ for:
     - sh: bash SetupMac.sh
     - sh: bash BuildAssimpMac-Xcode.sh
     - sh: bash BuildGLADMac-Xcode.sh
-    - sh: bash BuildEngineMac-Clang.sh
+    - sh: bash BuildEngineMac-Xcode.sh
 
   -
     matrix:
