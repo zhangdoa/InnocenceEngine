@@ -9,10 +9,10 @@
 #import "MetalDelegate.h"
 #import <Foundation/Foundation.h>
 #import <simd/simd.h>
-#include "../../../Common/GPUDataStructure.h"
-#include "../../../Component/MTMeshDataComponent.h"
+#include "../../Common/GPUDataStructure.h"
+#include "../../Component/MTMeshDataComponent.h"
 
-#include "../../../Interface/IModuleManager.h"
+#include "../../Interface/IModuleManager.h"
 
 extern IModuleManager* g_pModuleManager;
 

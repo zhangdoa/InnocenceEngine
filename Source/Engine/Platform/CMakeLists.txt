@@ -6,6 +6,7 @@ add_subdirectory("WinWindow")
 endif (INNO_PLATFORM_WIN)
 
 if (INNO_PLATFORM_MAC)
+add_subdirectory("MacMain")
 add_subdirectory("MacWindow")
 endif (INNO_PLATFORM_MAC)
 

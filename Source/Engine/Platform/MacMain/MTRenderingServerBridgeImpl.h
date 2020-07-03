@@ -9,7 +9,7 @@
 #ifndef MTRenderingServerBridgeImpl_h
 #define MTRenderingServerBridgeImpl_h
 
-#import "../../../RenderingServer/MT/MTRenderingServerBridge.h"
+#import "../../RenderingServer/MT/MTRenderingServerBridge.h"
 #import "MacWindowDelegate.h"
 #import "MetalDelegate.h"
 

@@ -9,7 +9,7 @@
 #import "InnoNSApplication.h"
 #import "MacWindowDelegate.h"
 
-#import "../../ApplicationEntry/InnoApplicationEntry.h"
+#import "../ApplicationEntry/InnoApplicationEntry.h"
 #import "MacWindowSystemBridgeImpl.h"
 #import "MTRenderingServerBridgeImpl.h"
 

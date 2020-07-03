@@ -13,7 +13,7 @@
 int main(int argc, const char * argv[]) {
     NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
     Class principalClass =
-    NSClassFromString([infoDictionary objectForKey:@"NSPrincipalClass"]);
+    NSClassFromString(@"InnoNSApplication");
     NSApplication *applicationObject = [principalClass sharedApplication];
     
     if ([applicationObject respondsToSelector:@selector(run)])

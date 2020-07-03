@@ -18,7 +18,7 @@ namespace MacWindowSystemNS
 bool MacWindowSystem::setup(void* hInstance, void* hwnd)
 {
 	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
-  bool result = MacWindowSystemNS::m_bridge->setup(l_screenResolution.x, l_screenResolution.y);
+    bool result = MacWindowSystemNS::m_bridge->setup(l_screenResolution.x, l_screenResolution.y);
 
 	MacWindowSystemNS::m_ObjectStatus = ObjectStatus::Created;
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "MacWindowSystem setup finished.");

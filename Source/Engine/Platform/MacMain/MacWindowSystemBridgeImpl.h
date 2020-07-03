@@ -9,7 +9,7 @@
 #ifndef MacWindowSystemBridgeImpl_h
 #define MacWindowSystemBridgeImpl_h
 
-#import "../../MacWindow/MacWindowSystemBridge.h"
+#import "../MacWindow/MacWindowSystemBridge.h"
 #import "MacWindowDelegate.h"
 #import "MetalDelegate.h"
 
