@@ -215,7 +215,7 @@ Run following scripts:
 echo | SetupMac.sh
 echo | BuildAssimpMac-Xcode.sh
 echo | BuildGLADMac-Xcode.sh
-echo | BuildEngineMac.sh
+echo | BuildEngineMac-Xcode.sh
 echo | PostBuildMac.sh
 ```
 
@@ -242,9 +242,8 @@ echo | PostBuildMac.sh
 
 ### macOS
 
-1. Use Atom to load the working copy folder
-2. Open Source/Engine/Platform/MacOS/InnoMain.InnoMain.xcodeproj
-3. Select "Product" - "Run" (⌘ + R)
+1. Open Build/InnocenceEngine.xcodeproj
+2. Select "Product" - "Run" (⌘ + R)
 
 ## How to bake scene?
 

@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     paths:
-    - '*'    
+    - '*'
     - '!/Res/*'
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
        git submodule init
        git submodule update
        cd Script
-       @echo | SetupWin.bat
+       cmd.exe /C SetupWin.bat
        powershell.exe ./BuildAssimpWinImpl.ps1 -buildType Debug -Wait
        powershell.exe ./BuildPhysXWin-VS15.ps1 -Wait
        powershell.exe ./BuildGLADImpl.ps1 -buildType Debug -Wait
@@ -29,7 +29,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Linux Build
-      run: |       
+      run: |
        git submodule init
        git submodule update
        cd Script/
@@ -51,4 +51,4 @@ jobs:
        bash SetupMac.sh
        bash BuildAssimpMac-Xcode.sh
        bash BuildGLADMac-Xcode.sh
-       bash BuildEngineMac.sh
+       bash BuildEngineMac-Xcode.sh
