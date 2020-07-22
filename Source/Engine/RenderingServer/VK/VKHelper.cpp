@@ -262,7 +262,7 @@ bool VKHelper::createCommandPool(VkPhysicalDevice physicalDevice, VkSurfaceKHR w
 		return false;
 	}
 
-	InnoLogger::Log(LogLevel::Success, "VKRenderingServer: CommandPool has been created.");
+	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: CommandPool has been created.");
 	return true;
 }
 
@@ -1045,28 +1045,35 @@ bool VKHelper::updateDescriptorSet(VkDevice device, VkWriteDescriptorSet* writeD
 
 bool VKHelper::reserveRenderTargets(VKRenderPassDataComponent* VKRPDC, IRenderingServer* renderingServer)
 {
-	size_t l_framebufferNumber = 0;
-	if (VKRPDC->m_RenderPassDesc.m_UseMultiFrames)
+	if (VKRPDC->m_RenderPassDesc.m_UseColorBuffer)
 	{
-		l_framebufferNumber = VKRPDC->m_RenderPassDesc.m_RenderTargetCount;
-		VKRPDC->m_RenderTargets.reserve(1);
-		VKRPDC->m_RenderTargets.emplace_back();
-	}
-	else
-	{
-		l_framebufferNumber = 1;
-		VKRPDC->m_RenderTargets.reserve(VKRPDC->m_RenderPassDesc.m_RenderTargetCount);
-		for (size_t i = 0; i < VKRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+		size_t l_framebufferNumber = 0;
+		if (VKRPDC->m_RenderPassDesc.m_UseMultiFrames)
 		{
+			l_framebufferNumber = VKRPDC->m_RenderPassDesc.m_RenderTargetCount;
+			VKRPDC->m_RenderTargets.reserve(1);
 			VKRPDC->m_RenderTargets.emplace_back();
 		}
-	}
+		else
+		{
+			l_framebufferNumber = 1;
+			VKRPDC->m_RenderTargets.reserve(VKRPDC->m_RenderPassDesc.m_RenderTargetCount);
+			for (size_t i = 0; i < VKRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+			{
+				VKRPDC->m_RenderTargets.emplace_back();
+			}
+		}
 
-	// Reserve vectors and emplace empty objects
-	VKRPDC->m_Framebuffers.reserve(l_framebufferNumber);
-	for (size_t i = 0; i < l_framebufferNumber; i++)
-	{
-		VKRPDC->m_Framebuffers.emplace_back();
+		InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: ", VKRPDC->m_Name.c_str(), " render targets have been allocated.");
+
+		// Reserve vectors and emplace empty objects
+		VKRPDC->m_Framebuffers.reserve(l_framebufferNumber);
+		for (size_t i = 0; i < l_framebufferNumber; i++)
+		{
+			VKRPDC->m_Framebuffers.emplace_back();
+		}
+
+		InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: ", VKRPDC->m_Name.c_str(), " framebuffers have been allocated.");
 	}
 
 	return true;
@@ -1106,7 +1113,7 @@ bool VKHelper::createRenderTargets(VKRenderPassDataComponent* VKRPDC, IRendering
 		renderingServer->InitializeTextureDataComponent(VKRPDC->m_DepthStencilRenderTarget);
 	}
 
-	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: Render targets have been created.");
+	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: ", VKRPDC->m_Name.c_str(), " render targets have been created.");
 
 	return true;
 }
@@ -1203,11 +1210,11 @@ bool VKHelper::createRenderPass(VkDevice device, VKRenderPassDataComponent* VKRP
 
 	if (vkCreateRenderPass(device, &l_PSO->m_RenderPassCInfo, nullptr, &l_PSO->m_RenderPass) != VK_SUCCESS)
 	{
-		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkRenderPass!");
+		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: ", VKRPDC->m_Name.c_str(), " failed to create VkRenderPass!");
 		return false;
 	}
 
-	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkRenderPass has been created.");
+	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkRenderPass has been created for ", VKRPDC->m_Name.c_str());
 	return true;
 }
 
@@ -1231,67 +1238,73 @@ bool VKHelper::createViewportAndScissor(VKRenderPassDataComponent* VKRPDC)
 
 bool VKHelper::createSingleFramebuffer(VkDevice device, VKRenderPassDataComponent* VKRPDC)
 {
-	// create frame buffer and attach image view
-	auto l_PSO = reinterpret_cast<VKPipelineStateObject*>(VKRPDC->m_PipelineStateObject);
-
-	std::vector<VkImageView> attachments(l_PSO->m_AttachmentDescs.size());
-
-	for (size_t i = 0; i < VKRPDC->m_RenderTargets.size(); i++)
+	if (VKRPDC->m_RenderPassDesc.m_UseColorBuffer)
 	{
-		auto l_VKTDC = reinterpret_cast<VKTextureDataComponent*>(VKRPDC->m_RenderTargets[i]);
-		attachments[i] = l_VKTDC->m_imageView;
+		// create frame buffer and attach image view
+		auto l_PSO = reinterpret_cast<VKPipelineStateObject*>(VKRPDC->m_PipelineStateObject);
+
+		std::vector<VkImageView> attachments(l_PSO->m_AttachmentDescs.size());
+
+		for (size_t i = 0; i < VKRPDC->m_RenderTargets.size(); i++)
+		{
+			auto l_VKTDC = reinterpret_cast<VKTextureDataComponent*>(VKRPDC->m_RenderTargets[i]);
+			attachments[i] = l_VKTDC->m_imageView;
+		}
+
+		if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
+		{
+			auto l_VKTDC = reinterpret_cast<VKTextureDataComponent*>(VKRPDC->m_DepthStencilRenderTarget);
+			attachments[l_PSO->m_AttachmentDescs.size() - 1] = l_VKTDC->m_imageView;
+		}
+
+		VkFramebufferCreateInfo framebufferInfo = {};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = l_PSO->m_RenderPass;
+		framebufferInfo.attachmentCount = (uint32_t)attachments.size();
+		framebufferInfo.pAttachments = &attachments[0];
+		framebufferInfo.width = (uint32_t)l_PSO->m_Viewport.width;
+		framebufferInfo.height = (uint32_t)l_PSO->m_Viewport.height;
+		framebufferInfo.layers = 1;
+
+		if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &VKRPDC->m_Framebuffers[0]) != VK_SUCCESS)
+		{
+			InnoLogger::Log(LogLevel::Error, "VKRenderingServer: ", VKRPDC->m_Name.c_str(), " failed to create VkFramebuffer!");
+		}
+
+		InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: Single VkFramebuffer has been created for ", VKRPDC->m_Name.c_str());
 	}
-
-	if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
-	{
-		auto l_VKTDC = reinterpret_cast<VKTextureDataComponent*>(VKRPDC->m_DepthStencilRenderTarget);
-		attachments[l_PSO->m_AttachmentDescs.size() - 1] = l_VKTDC->m_imageView;
-	}
-
-	VkFramebufferCreateInfo framebufferInfo = {};
-	framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-	framebufferInfo.renderPass = l_PSO->m_RenderPass;
-	framebufferInfo.attachmentCount = (uint32_t)attachments.size();
-	framebufferInfo.pAttachments = &attachments[0];
-	framebufferInfo.width = (uint32_t)l_PSO->m_Viewport.width;
-	framebufferInfo.height = (uint32_t)l_PSO->m_Viewport.height;
-	framebufferInfo.layers = 1;
-
-	if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &VKRPDC->m_Framebuffers[0]) != VK_SUCCESS)
-	{
-		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkFramebuffer!");
-	}
-
-	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: Single VkFramebuffer has been created.");
 	return true;
 }
 
 bool VKHelper::createMultipleFramebuffers(VkDevice device, VKRenderPassDataComponent* VKRPDC)
 {
-	auto l_PSO = reinterpret_cast<VKPipelineStateObject*>(VKRPDC->m_PipelineStateObject);
-
-	for (size_t i = 0; i < VKRPDC->m_RenderTargets.size(); i++)
+	if (VKRPDC->m_RenderPassDesc.m_UseColorBuffer)
 	{
-		// create frame buffer and attach image view
-		auto l_VKTDC = reinterpret_cast<VKTextureDataComponent*>(VKRPDC->m_DepthStencilRenderTarget);
-		VkImageView attachments[] = { l_VKTDC->m_imageView };
+		auto l_PSO = reinterpret_cast<VKPipelineStateObject*>(VKRPDC->m_PipelineStateObject);
 
-		VkFramebufferCreateInfo framebufferInfo = {};
-		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass = l_PSO->m_RenderPass;
-		framebufferInfo.attachmentCount = 1;
-		framebufferInfo.pAttachments = attachments;
-		framebufferInfo.width = (uint32_t)l_PSO->m_Viewport.width;
-		framebufferInfo.height = (uint32_t)l_PSO->m_Viewport.height;
-		framebufferInfo.layers = 1;
-
-		if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &VKRPDC->m_Framebuffers[i]) != VK_SUCCESS)
+		for (size_t i = 0; i < VKRPDC->m_RenderTargets.size(); i++)
 		{
-			InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkFramebuffer!");
-		}
-	}
+			// create frame buffer and attach image view
+			auto l_VKTDC = reinterpret_cast<VKTextureDataComponent*>(VKRPDC->m_DepthStencilRenderTarget);
+			VkImageView attachments[] = { l_VKTDC->m_imageView };
 
-	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: Multiple VkFramebuffers have been created.");
+			VkFramebufferCreateInfo framebufferInfo = {};
+			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			framebufferInfo.renderPass = l_PSO->m_RenderPass;
+			framebufferInfo.attachmentCount = 1;
+			framebufferInfo.pAttachments = attachments;
+			framebufferInfo.width = (uint32_t)l_PSO->m_Viewport.width;
+			framebufferInfo.height = (uint32_t)l_PSO->m_Viewport.height;
+			framebufferInfo.layers = 1;
+
+			if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &VKRPDC->m_Framebuffers[i]) != VK_SUCCESS)
+			{
+				InnoLogger::Log(LogLevel::Error, "VKRenderingServer: ", VKRPDC->m_Name.c_str(), " failed to create VkFramebuffer!");
+			}
+		}
+
+		InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: Multiple VkFramebuffers have been created for ", VKRPDC->m_Name.c_str());
+	}
 	return true;
 }
 
@@ -1431,7 +1444,7 @@ bool VKHelper::createPipelineLayout(VkDevice device, VKRenderPassDataComponent* 
 		return false;
 	}
 
-	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkPipelineLayout has been created.");
+	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkPipelineLayout has been created for ", VKRPDC->m_Name.c_str());
 	return true;
 }
 
@@ -1578,8 +1591,11 @@ bool VKHelper::GenerateBlendState(BlendDesc blendDesc, size_t RTCount, VKPipelin
 	PSO->m_ColorBlendStateCInfo.blendConstants[2] = 0.0f;
 	PSO->m_ColorBlendStateCInfo.blendConstants[3] = 0.0f;
 
-	PSO->m_ColorBlendStateCInfo.attachmentCount = (uint32_t)PSO->m_ColorBlendAttachmentStates.size();
-	PSO->m_ColorBlendStateCInfo.pAttachments = &PSO->m_ColorBlendAttachmentStates[0];
+	if (PSO->m_ColorBlendAttachmentStates.size())
+	{
+		PSO->m_ColorBlendStateCInfo.attachmentCount = (uint32_t)PSO->m_ColorBlendAttachmentStates.size();
+		PSO->m_ColorBlendStateCInfo.pAttachments = &PSO->m_ColorBlendAttachmentStates[0];
+	}
 
 	return true;
 }
@@ -1640,7 +1656,7 @@ bool VKHelper::createGraphicsPipelines(VkDevice device, VKRenderPassDataComponen
 		return false;
 	}
 
-	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkPipeline for GraphicsPipeline has been created.");
+	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkPipeline for GraphicsPipeline has been created for ", VKRPDC->m_Name.c_str());
 	return true;
 }
 
@@ -1662,7 +1678,7 @@ bool VKHelper::createComputePipelines(VkDevice device, VKRenderPassDataComponent
 		return false;
 	}
 
-	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkPipeline for ComputePipeline has been created.");
+	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkPipeline for ComputePipeline has been created for ", VKRPDC->m_Name.c_str());
 	return true;
 }
 
@@ -1686,7 +1702,7 @@ bool VKHelper::createCommandBuffers(VkDevice device, VKRenderPassDataComponent* 
 		}
 	}
 
-	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkCommandBuffer has been created.");
+	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkCommandBuffer has been created for ", VKRPDC->m_Name.c_str());
 	return true;
 }
 
@@ -1717,7 +1733,7 @@ bool VKHelper::createSyncPrimitives(VkDevice device, VKRenderPassDataComponent* 
 		}
 	}
 
-	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: Synchronization primitives has been created.");
+	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: Synchronization primitives has been created for ", VKRPDC->m_Name.c_str());
 
 	return true;
 }
@@ -1738,7 +1754,7 @@ bool VKHelper::createShaderModule(VkDevice device, VkShaderModule& vkShaderModul
 		return false;
 	}
 
-	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: innoShader: ", shaderFilePath.c_str(), " has been loaded.");
+	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: ", shaderFilePath.c_str(), " has been loaded.");
 	return true;
 }
 
