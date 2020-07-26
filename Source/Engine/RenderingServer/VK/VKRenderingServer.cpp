@@ -68,8 +68,6 @@ namespace VKRenderingServerNS
 
 	VkInstance m_instance;
 	VkSurfaceKHR m_windowSurface;
-	VkSurfaceFormatKHR m_windowSurfaceFormat;
-	VkExtent2D m_windowSurfaceExtent;
 	std::vector<VkImage> m_swapChainImages;
 	VkQueue m_presentQueue;
 	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
@@ -104,10 +102,6 @@ namespace VKRenderingServerNS
 	VkDescriptorSetLayout m_materialDescriptorLayout;
 	VkDescriptorSetLayout m_dummyEmptyDescriptorLayout;
 
-	VkDeviceMemory m_vertexBufferMemory;
-	VkDeviceMemory m_indexBufferMemory;
-	VkDeviceMemory m_textureImageMemory;
-
 	IResourceBinder* m_userPipelineOutput = 0;
 	VKRenderPassDataComponent* m_SwapChainRPDC = 0;
 	VKShaderProgramComponent* m_SwapChainSPC = 0;
@@ -116,9 +110,10 @@ namespace VKRenderingServerNS
 
 VkResult VKRenderingServerNS::createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pCallback)
 {
-	auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-	if (func != nullptr) {
-		return func(instance, pCreateInfo, pAllocator, pCallback);
+	auto l_func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+	if (l_func != nullptr)
+	{
+		return l_func(instance, pCreateInfo, pAllocator, pCallback);
 	}
 	else {
 		return VK_ERROR_EXTENSION_NOT_PRESENT;
@@ -127,16 +122,17 @@ VkResult VKRenderingServerNS::createDebugUtilsMessengerEXT(VkInstance instance, 
 
 void VKRenderingServerNS::destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT callback, const VkAllocationCallbacks* pAllocator)
 {
-	auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-	if (func != nullptr) {
-		func(instance, callback, pAllocator);
+	auto l_func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+	if (l_func != nullptr)
+	{
+		l_func(instance, callback, pAllocator);
 	}
 }
 
 std::vector<const char*> VKRenderingServerNS::getRequiredExtensions()
 {
 #if defined INNO_PLATFORM_WIN
-	std::vector<const char*> extensions = { "VK_KHR_surface", "VK_KHR_win32_surface" };
+	std::vector<const char*> l_extensions = { "VK_KHR_surface", "VK_KHR_win32_surface" };
 #elif  defined INNO_PLATFORM_MAC
 	std::vector<const char*> extensions = { "VK_KHR_surface", "VK_MVK_macos_surface" };
 #elif  defined INNO_PLATFORM_LINUX
@@ -145,11 +141,11 @@ std::vector<const char*> VKRenderingServerNS::getRequiredExtensions()
 
 	if (m_enableValidationLayers)
 	{
-		extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-		extensions.emplace_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+		l_extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+		l_extensions.emplace_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 	}
 
-	return extensions;
+	return l_extensions;
 }
 
 bool VKRenderingServerNS::createVkInstance()
@@ -166,9 +162,9 @@ bool VKRenderingServerNS::createVkInstance()
 	VkApplicationInfo l_appInfo = {};
 	l_appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	l_appInfo.pApplicationName = g_pModuleManager->getApplicationName().c_str();
-	l_appInfo.applicationVersion = VK_MAKE_VERSION(0, 0, 7);
+	l_appInfo.applicationVersion = VK_MAKE_VERSION(0, 0, 9);
 	l_appInfo.pEngineName = "Innocence Engine";
-	l_appInfo.engineVersion = VK_MAKE_VERSION(0, 0, 7);
+	l_appInfo.engineVersion = VK_MAKE_VERSION(0, 0, 9);
 	l_appInfo.apiVersion = VK_API_VERSION_1_0;
 
 	// set Vulkan instance create info with app info
@@ -177,9 +173,9 @@ bool VKRenderingServerNS::createVkInstance()
 	l_createInfo.pApplicationInfo = &l_appInfo;
 
 	// set window extension info
-	auto extensions = getRequiredExtensions();
-	l_createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-	l_createInfo.ppEnabledExtensionNames = extensions.data();
+	auto l_extensions = getRequiredExtensions();
+	l_createInfo.enabledExtensionCount = static_cast<uint32_t>(l_extensions.size());
+	l_createInfo.ppEnabledExtensionNames = l_extensions.data();
 
 	if (m_enableValidationLayers)
 	{
@@ -235,7 +231,8 @@ bool VKRenderingServerNS::createPysicalDevice()
 	uint32_t l_deviceCount = 0;
 	vkEnumeratePhysicalDevices(m_instance, &l_deviceCount, nullptr);
 
-	if (l_deviceCount == 0) {
+	if (l_deviceCount == 0)
+	{
 		m_ObjectStatus = ObjectStatus::Suspended;
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to find GPUs with Vulkan support!");
 		return false;
@@ -245,11 +242,11 @@ bool VKRenderingServerNS::createPysicalDevice()
 	std::vector<VkPhysicalDevice> l_devices(l_deviceCount);
 	vkEnumeratePhysicalDevices(m_instance, &l_deviceCount, l_devices.data());
 
-	for (const auto& device : l_devices)
+	for (const auto& l_device : l_devices)
 	{
-		if (isDeviceSuitable(device, m_windowSurface, m_deviceExtensions))
+		if (isDeviceSuitable(l_device, m_windowSurface, m_deviceExtensions))
 		{
-			m_physicalDevice = device;
+			m_physicalDevice = l_device;
 			break;
 		}
 	}
@@ -273,11 +270,11 @@ bool VKRenderingServerNS::createLogicalDevice()
 	std::set<uint32_t> l_uniqueQueueFamilies = { l_indices.m_graphicsFamily.value(), l_indices.m_presentFamily.value() };
 
 	float l_queuePriority = 1.0f;
-	for (uint32_t queueFamily : l_uniqueQueueFamilies)
+	for (uint32_t l_queueFamily : l_uniqueQueueFamilies)
 	{
 		VkDeviceQueueCreateInfo l_queueCreateInfo = {};
 		l_queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		l_queueCreateInfo.queueFamilyIndex = queueFamily;
+		l_queueCreateInfo.queueFamilyIndex = l_queueFamily;
 		l_queueCreateInfo.queueCount = 1;
 		l_queueCreateInfo.pQueuePriorities = &l_queuePriority;
 		l_queueCreateInfos.push_back(l_queueCreateInfo);
@@ -452,11 +449,10 @@ bool VKRenderingServerNS::createGlobalCommandPool()
 bool VKRenderingServerNS::createSwapChain()
 {
 	// choose device supported formats, modes and maximum back buffers
-	SwapChainSupportDetails l_swapChainSupport = querySwapChainSupport(m_physicalDevice, m_windowSurface);
-
-	m_windowSurfaceFormat = chooseSwapSurfaceFormat(l_swapChainSupport.m_formats);
-	VkPresentModeKHR l_presentMode = chooseSwapPresentMode(l_swapChainSupport.m_presentModes);
-	m_windowSurfaceExtent = chooseSwapExtent(l_swapChainSupport.m_capabilities);
+	auto l_swapChainSupport = querySwapChainSupport(m_physicalDevice, m_windowSurface);
+	auto l_windowSurfaceExtent = chooseSwapExtent(l_swapChainSupport.m_capabilities);
+	auto l_windowSurfaceFormat = chooseSwapSurfaceFormat(l_swapChainSupport.m_formats);
+	auto l_presentMode = chooseSwapPresentMode(l_swapChainSupport.m_presentModes);
 
 	uint32_t l_imageCount = l_swapChainSupport.m_capabilities.minImageCount + 1;
 	if (l_swapChainSupport.m_capabilities.maxImageCount > 0 && l_imageCount > l_swapChainSupport.m_capabilities.maxImageCount)
@@ -468,9 +464,9 @@ bool VKRenderingServerNS::createSwapChain()
 	l_createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	l_createInfo.surface = m_windowSurface;
 	l_createInfo.minImageCount = l_imageCount;
-	l_createInfo.imageFormat = m_windowSurfaceFormat.format;
-	l_createInfo.imageColorSpace = m_windowSurfaceFormat.colorSpace;
-	l_createInfo.imageExtent = m_windowSurfaceExtent;
+	l_createInfo.imageFormat = l_windowSurfaceFormat.format;
+	l_createInfo.imageColorSpace = l_windowSurfaceFormat.colorSpace;
+	l_createInfo.imageExtent = l_windowSurfaceExtent;
 	l_createInfo.imageArrayLayers = 1;
 	l_createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
@@ -633,6 +629,42 @@ AddComponent(VK, ShaderProgram);
 AddComponent(VK, SamplerData);
 AddComponent(VK, GPUBufferData);
 
+template<typename T>
+bool transferBufferFromHostToDevice(const Array<T>& hostRawMem, VkBufferUsageFlagBits usageFlags, VkBuffer& buffer, VkDeviceMemory& memory)
+{
+	auto l_bufferSize = sizeof(T) * hostRawMem.size();
+
+	VkBuffer l_stagingBuffer;
+	VkDeviceMemory l_stagingBufferMemory;
+	VkBufferCreateInfo l_stageBufferCInfo = {};
+	l_stageBufferCInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	l_stageBufferCInfo.size = l_bufferSize;
+	l_stageBufferCInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+	l_stageBufferCInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+	createBuffer(m_physicalDevice, m_device, l_stageBufferCInfo, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, l_stagingBuffer, l_stagingBufferMemory);
+
+	void* l_mappedMemory;
+	vkMapMemory(m_device, l_stagingBufferMemory, 0, l_bufferSize, 0, &l_mappedMemory);
+	std::memcpy(l_mappedMemory, &hostRawMem[0], (size_t)l_bufferSize);
+	vkUnmapMemory(m_device, l_stagingBufferMemory);
+
+	VkBufferCreateInfo l_localBufferCInfo = {};
+	l_localBufferCInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	l_localBufferCInfo.size = l_bufferSize;
+	l_localBufferCInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | usageFlags;
+	l_localBufferCInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+	createBuffer(m_physicalDevice, m_device, l_localBufferCInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, buffer, memory);
+
+	copyBuffer(m_device, m_commandPool, m_graphicsQueue, l_stagingBuffer, buffer, l_bufferSize);
+
+	vkDestroyBuffer(m_device, l_stagingBuffer, nullptr);
+	vkFreeMemory(m_device, l_stagingBufferMemory, nullptr);
+
+	return true;
+}
+
 bool VKRenderingServer::InitializeMeshDataComponent(MeshDataComponent* rhs)
 {
 	if (m_initializedMeshes.find(rhs) != m_initializedMeshes.end())
@@ -641,42 +673,11 @@ bool VKRenderingServer::InitializeMeshDataComponent(MeshDataComponent* rhs)
 	}
 
 	auto l_rhs = reinterpret_cast<VKMeshDataComponent*>(rhs);
-	VkDeviceSize l_bufferSize = sizeof(Vertex) * l_rhs->m_vertices.size();
 
-	VkBuffer l_stagingBuffer;
-	VkDeviceMemory l_stagingBufferMemory;
-	createBuffer(m_physicalDevice, m_device, l_bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, l_stagingBuffer, l_stagingBufferMemory);
-
-	void* l_mappedVerticesMemory;
-	vkMapMemory(m_device, l_stagingBufferMemory, 0, l_bufferSize, 0, &l_mappedVerticesMemory);
-	std::memcpy(l_mappedVerticesMemory, &l_rhs->m_vertices[0], (size_t)l_bufferSize);
-	vkUnmapMemory(m_device, l_stagingBufferMemory);
-
-	createBuffer(m_physicalDevice, m_device, l_bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, l_rhs->m_VBO, m_vertexBufferMemory);
-
-	copyBuffer(m_device, m_commandPool, m_graphicsQueue, l_stagingBuffer, l_rhs->m_VBO, l_bufferSize);
-
-	vkDestroyBuffer(m_device, l_stagingBuffer, nullptr);
-	vkFreeMemory(m_device, l_stagingBufferMemory, nullptr);
-
+	transferBufferFromHostToDevice(l_rhs->m_vertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, l_rhs->m_VBO, l_rhs->m_VBMemory);
 	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VBO ", l_rhs->m_VBO, " is initialized.");
 
-	l_bufferSize = sizeof(Index) * l_rhs->m_indices.size();
-
-	createBuffer(m_physicalDevice, m_device, l_bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, l_stagingBuffer, l_stagingBufferMemory);
-
-	void* l_mappedIndicesMemory;
-	vkMapMemory(m_device, l_stagingBufferMemory, 0, l_bufferSize, 0, &l_mappedIndicesMemory);
-	std::memcpy(l_mappedIndicesMemory, &l_rhs->m_indices[0], (size_t)l_bufferSize);
-	vkUnmapMemory(m_device, l_stagingBufferMemory);
-
-	createBuffer(m_physicalDevice, m_device, l_bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, l_rhs->m_IBO, m_indexBufferMemory);
-
-	copyBuffer(m_device, m_commandPool, m_graphicsQueue, l_stagingBuffer, l_rhs->m_IBO, l_bufferSize);
-
-	vkDestroyBuffer(m_device, l_stagingBuffer, nullptr);
-	vkFreeMemory(m_device, l_stagingBufferMemory, nullptr);
-
+	transferBufferFromHostToDevice(l_rhs->m_indices, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, l_rhs->m_IBO, l_rhs->m_IBMemory);
 	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: IBO ", l_rhs->m_IBO, " is initialized.");
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
@@ -697,68 +698,57 @@ bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent* rhs
 	l_rhs->m_VKTextureDesc = getVKTextureDesc(rhs->m_TextureDesc);
 	l_rhs->m_ImageCreateInfo = getImageCreateInfo(rhs->m_TextureDesc, l_rhs->m_VKTextureDesc);
 
+	createImage(m_physicalDevice, m_device, l_rhs->m_ImageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, l_rhs->m_image, l_rhs->m_imageMemory);
+
 	VkBuffer l_stagingBuffer;
 	VkDeviceMemory l_stagingBufferMemory;
-	createBuffer(m_physicalDevice, m_device, l_rhs->m_VKTextureDesc.imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, l_stagingBuffer, l_stagingBufferMemory);
-
 	if (l_rhs->m_TextureData != nullptr)
 	{
-		void* l_dstData;
-		vkMapMemory(m_device, l_stagingBufferMemory, 0, l_rhs->m_VKTextureDesc.imageSize, 0, &l_dstData);
-		std::memcpy(l_dstData, l_rhs->m_TextureData, static_cast<size_t>(l_rhs->m_VKTextureDesc.imageSize));
+		VkBufferCreateInfo l_stageBufferCInfo = {};
+		l_stageBufferCInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		l_stageBufferCInfo.size = l_rhs->m_VKTextureDesc.imageSize;
+		l_stageBufferCInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+		l_stageBufferCInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+		createBuffer(m_physicalDevice, m_device, l_stageBufferCInfo, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, l_stagingBuffer, l_stagingBufferMemory);
+
+		void* l_mappedMemory;
+		vkMapMemory(m_device, l_stagingBufferMemory, 0, l_rhs->m_VKTextureDesc.imageSize, 0, &l_mappedMemory);
+		std::memcpy(l_mappedMemory, l_rhs->m_TextureData, static_cast<size_t>(l_rhs->m_VKTextureDesc.imageSize));
 		vkUnmapMemory(m_device, l_stagingBufferMemory);
 	}
-
-	if (vkCreateImage(m_device, &l_rhs->m_ImageCreateInfo, nullptr, &l_rhs->m_image) != VK_SUCCESS)
-	{
-		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkImage!");
-		return false;
-	}
-
-	VkMemoryRequirements memRequirements;
-	vkGetImageMemoryRequirements(m_device, l_rhs->m_image, &memRequirements);
-
-	VkMemoryAllocateInfo allocInfo = {};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = findMemoryType(m_physicalDevice, memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-	if (vkAllocateMemory(m_device, &allocInfo, nullptr, &m_textureImageMemory) != VK_SUCCESS)
-	{
-		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to allocate VkDeviceMemory for VkImage!");
-		return false;
-	}
-
-	vkBindImageMemory(m_device, l_rhs->m_image, m_textureImageMemory, 0);
 
 	VkCommandBuffer l_commandBuffer = beginSingleTimeCommands(m_device, m_commandPool);
 
 	if (rhs->m_TextureDesc.Usage == TextureUsage::ColorAttachment)
 	{
-		transitionImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		transitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	}
 	else if (rhs->m_TextureDesc.Usage == TextureUsage::DepthAttachment)
 	{
-		transitionImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+		transitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 	}
 	else if (rhs->m_TextureDesc.Usage == TextureUsage::DepthStencilAttachment)
 	{
-		transitionImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+		transitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 	}
 	else
 	{
-		transitionImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		transitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 		if (l_rhs->m_TextureData != nullptr)
 		{
 			copyBufferToImage(l_commandBuffer, l_stagingBuffer, l_rhs->m_image, l_rhs->m_VKTextureDesc.aspectFlags, static_cast<uint32_t>(l_rhs->m_ImageCreateInfo.extent.width), static_cast<uint32_t>(l_rhs->m_ImageCreateInfo.extent.height));
 		}
-		transitionImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		transitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	}
 
 	endSingleTimeCommands(m_device, m_commandPool, m_graphicsQueue, l_commandBuffer);
 
-	vkDestroyBuffer(m_device, l_stagingBuffer, nullptr);
-	vkFreeMemory(m_device, l_stagingBufferMemory, nullptr);
+	if (l_rhs->m_TextureData != nullptr)
+	{
+		vkDestroyBuffer(m_device, l_stagingBuffer, nullptr);
+		vkFreeMemory(m_device, l_stagingBufferMemory, nullptr);
+	}
 
 	createImageView(m_device, l_rhs);
 

@@ -266,15 +266,9 @@ bool VKHelper::createCommandPool(VkPhysicalDevice physicalDevice, VkSurfaceKHR w
 	return true;
 }
 
-bool VKHelper::createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+bool VKHelper::createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, const VkBufferCreateInfo& bufferCInfo, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 {
-	VkBufferCreateInfo bufferInfo = {};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = size;
-	bufferInfo.usage = usage;
-	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-	if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
+	if (vkCreateBuffer(device, &bufferCInfo, nullptr, &buffer) != VK_SUCCESS)
 	{
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkBuffer!");
 		return false;
@@ -308,6 +302,33 @@ bool VKHelper::copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue co
 	vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
 	endSingleTimeCommands(device, commandPool, commandQueue, commandBuffer);
+
+	return true;
+}
+
+bool VKHelper::createImage(VkPhysicalDevice physicalDevice, VkDevice device, const VkImageCreateInfo& imageCInfo, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
+{
+	if (vkCreateImage(device, &imageCInfo, nullptr, &image) != VK_SUCCESS)
+	{
+		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkImage!");
+		return false;
+	}
+
+	VkMemoryRequirements l_memRequirements;
+	vkGetImageMemoryRequirements(device, image, &l_memRequirements);
+
+	VkMemoryAllocateInfo l_allocInfo = {};
+	l_allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	l_allocInfo.allocationSize = l_memRequirements.size;
+	l_allocInfo.memoryTypeIndex = findMemoryType(physicalDevice, l_memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+	if (vkAllocateMemory(device, &l_allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
+	{
+		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to allocate VkDeviceMemory for VkImage!");
+		return false;
+	}
+
+	vkBindImageMemory(device, image, imageMemory, 0);
 
 	return true;
 }
@@ -744,7 +765,7 @@ VkImageCreateInfo VKHelper::getImageCreateInfo(TextureDesc textureDesc, VKTextur
 	return l_result;
 }
 
-bool VKHelper::transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout)
+bool VKHelper::transitImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout)
 {
 	VkImageMemoryBarrier barrier = {};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
