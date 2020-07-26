@@ -41,8 +41,9 @@ namespace VKHelper
 
 	bool createCommandPool(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface, VkDevice device, VkCommandPool& commandPool);
 
-	bool createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+	bool createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, const VkBufferCreateInfo& bufferCInfo, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	bool copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue commandQueue, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+	bool createImage(VkPhysicalDevice physicalDevice, VkDevice device, const VkImageCreateInfo& imageCInfo, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 
 	VKTextureDesc getVKTextureDesc(TextureDesc textureDesc);
 	VkImageType getImageType(TextureSampler textureSampler);
@@ -55,7 +56,7 @@ namespace VKHelper
 	VkImageAspectFlagBits getImageAspectFlags(TextureUsage textureUsage);
 	VkImageCreateInfo getImageCreateInfo(TextureDesc textureDesc, VKTextureDesc vKTextureDesc);
 
-	bool transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout);
+	bool transitImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout);
 	bool copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, VkImageAspectFlags aspectFlags, uint32_t width, uint32_t height);
 	bool createImageView(VkDevice device, VKTextureDataComponent* VKTDC);
 

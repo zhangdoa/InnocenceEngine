@@ -18,6 +18,7 @@ class VKTextureDataComponent : public TextureDataComponent
 {
 public:
 	VkImage m_image;
+	VkDeviceMemory m_imageMemory;
 	VkImageView m_imageView;
 	VKTextureDesc m_VKTextureDesc = {};
 	VkImageCreateInfo m_ImageCreateInfo = {};
