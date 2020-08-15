@@ -18,14 +18,14 @@ jobs:
        git submodule update
        cd Script
        cmd.exe /C SetupWin.bat
-       powershell.exe ./BuildAssimpWinImpl.ps1 -buildType Debug -Wait
-       powershell.exe ./BuildPhysXWin-VS15.ps1 -Wait
-       powershell.exe ./BuildGLADImpl.ps1 -buildType Debug -Wait
-       powershell.exe ./BuildEngineImpl.ps1 -buildType Debug -Wait
+       powershell -ExecutionPolicy RemoteSigned -File ./BuildAssimpWin-VS15.ps1 -Wait
+       powershell -ExecutionPolicy RemoteSigned -File ./BuildPhysXWin-VS15.ps1 -Wait
+       powershell -ExecutionPolicy RemoteSigned -File ./BuildGLADWin-VS15.ps1 -Wait
+       powershell -ExecutionPolicy RemoteSigned -File ./BuildEngineWin-VS15.ps1 -Wait
 
   build-linux:
     name: Linux Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v1
     - name: Linux Build

@@ -33,17 +33,17 @@ xcopy /e/s/y QDarkStyleSheet\qdarkstyle\rc\* ..\..\Editor\InnoEditor\qdarkstyle\
 xcopy /y QDarkStyleSheet\qdarkstyle\style.qss ..\..\Editor\InnoEditor\qdarkstyle\
 xcopy /y QDarkStyleSheet\qdarkstyle\style.qrc ..\..\Editor\InnoEditor\qdarkstyle\
 
-mkdir ..\Include\GL
-powershell -Command "Invoke-WebRequest https://www.khronos.org/registry/OpenGL/api/GL/wglext.h -OutFile ..\Include\GL\wglext.h"
-powershell -Command "Invoke-WebRequest https://www.khronos.org/registry/OpenGL/api/GL/glext.h -OutFile ..\Include\GL\glext.h"
-mkdir ..\Include\DX12
-powershell -Command "Invoke-WebRequest https://raw.githubusercontent.com/Microsoft/DirectX-Graphics-Samples/master/Libraries/D3DX12/d3dx12.h -OutFile ..\Include\DX12\d3dx12.h"
-
 cd ../
+
+mkdir Include\GL
+powershell -Command "Invoke-WebRequest https://www.khronos.org/registry/OpenGL/api/GL/wglext.h -OutFile Include\GL\wglext.h"
+powershell -Command "Invoke-WebRequest https://www.khronos.org/registry/OpenGL/api/GL/glext.h -OutFile Include\GL\glext.h"
+mkdir Include\DX12
+powershell -Command "Invoke-WebRequest https://raw.githubusercontent.com/Microsoft/DirectX-Graphics-Samples/master/Libraries/D3DX12/d3dx12.h -OutFile Include\DX12\d3dx12.h"
 
 mkdir DLL\Win\Debug
 mkdir Lib\Win\Debug
 mkdir DLL\Win\Release
 mkdir Lib\Win\Release
 
-pause
+cd ../../Script
