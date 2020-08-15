@@ -1074,14 +1074,18 @@ bool VKHelper::reserveRenderTargets(VKRenderPassDataComponent* VKRPDC, IRenderin
 			l_framebufferNumber = VKRPDC->m_RenderPassDesc.m_RenderTargetCount;
 			VKRPDC->m_RenderTargets.reserve(1);
 			VKRPDC->m_RenderTargets.emplace_back();
+			VKRPDC->m_RenderTargetsResourceBinders.reserve(1);
+			VKRPDC->m_RenderTargetsResourceBinders.emplace_back();
 		}
 		else
 		{
 			l_framebufferNumber = 1;
 			VKRPDC->m_RenderTargets.reserve(VKRPDC->m_RenderPassDesc.m_RenderTargetCount);
+			VKRPDC->m_RenderTargetsResourceBinders.reserve(VKRPDC->m_RenderPassDesc.m_RenderTargetCount);
 			for (size_t i = 0; i < VKRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 			{
 				VKRPDC->m_RenderTargets.emplace_back();
+				VKRPDC->m_RenderTargetsResourceBinders.emplace_back();
 			}
 		}
 
@@ -1095,6 +1099,23 @@ bool VKHelper::reserveRenderTargets(VKRenderPassDataComponent* VKRPDC, IRenderin
 		}
 
 		InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: ", VKRPDC->m_Name.c_str(), " framebuffers have been allocated.");
+	}
+
+	if (VKRPDC->m_RenderPassDesc.m_RenderTargetCount)
+	{
+		if (VKRPDC->m_RenderPassDesc.m_UseMultiFrames)
+		{
+			VKRPDC->m_RenderTargetsResourceBinders.reserve(1);
+			VKRPDC->m_RenderTargetsResourceBinders.emplace_back();
+		}
+		else
+		{
+			VKRPDC->m_RenderTargetsResourceBinders.reserve(VKRPDC->m_RenderPassDesc.m_RenderTargetCount);
+			for (size_t i = 0; i < VKRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+			{
+				VKRPDC->m_RenderTargetsResourceBinders.emplace_back();
+			}
+		}
 	}
 
 	return true;
@@ -1111,6 +1132,8 @@ bool VKHelper::createRenderTargets(VKRenderPassDataComponent* VKRPDC, IRendering
 		VKRPDC->m_RenderTargets[i]->m_TextureData = nullptr;
 
 		renderingServer->InitializeTextureDataComponent(VKRPDC->m_RenderTargets[i]);
+
+		VKRPDC->m_RenderTargetsResourceBinders[i] = VKRPDC->m_RenderTargets[i]->m_ResourceBinder;
 	}
 
 	if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
