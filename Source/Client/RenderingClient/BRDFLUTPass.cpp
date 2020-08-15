@@ -16,7 +16,6 @@ namespace BRDFLUTPass
 	RenderPassDataComponent* m_RPDC_MS;
 	ShaderProgramComponent* m_SPC;
 	ShaderProgramComponent* m_SPC_MS;
-
 	TextureDataComponent* m_TDC;
 	TextureDataComponent* m_TDC_MS;
 }
@@ -89,7 +88,7 @@ bool BRDFLUTPass::Initialize()
 	return true;
 }
 
-bool BRDFLUTPass::PrepareCommandList()
+bool BRDFLUTPass::Render()
 {
 	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
@@ -116,6 +115,11 @@ bool BRDFLUTPass::PrepareCommandList()
 
 	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC_MS);
 
+	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
+	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);
+	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC_MS);
+	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC_MS);
+
 	return true;
 }
 
@@ -125,16 +129,6 @@ bool BRDFLUTPass::Terminate()
 	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC_MS);
 
 	return true;
-}
-
-RenderPassDataComponent* BRDFLUTPass::GetBRDFLUTRPDC()
-{
-	return m_RPDC;
-}
-
-RenderPassDataComponent* BRDFLUTPass::GetBRDFMSLUTRPDC()
-{
-	return m_RPDC_MS;
 }
 
 IResourceBinder* BRDFLUTPass::GetBRDFLUT()

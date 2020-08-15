@@ -5,11 +5,8 @@ namespace BRDFLUTPass
 {
 	bool Setup();
 	bool Initialize();
-	bool PrepareCommandList();
+	bool Render();
 	bool Terminate();
-
-	RenderPassDataComponent* GetBRDFLUTRPDC();
-	RenderPassDataComponent* GetBRDFMSLUTRPDC();
 
 	IResourceBinder* GetBRDFLUT();
 	IResourceBinder* GetBRDFMSLUT();

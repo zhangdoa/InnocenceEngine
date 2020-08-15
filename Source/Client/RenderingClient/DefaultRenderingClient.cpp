@@ -111,11 +111,7 @@ bool DefaultRenderingClient::Setup()
 		DefaultGPUBuffers::Initialize();
 		GIDataLoader::Initialize();
 		BRDFLUTPass::Initialize();
-		BRDFLUTPass::PrepareCommandList();
-		g_pModuleManager->getRenderingServer()->ExecuteCommandList(BRDFLUTPass::GetBRDFLUTRPDC());
-		g_pModuleManager->getRenderingServer()->WaitForFrame(BRDFLUTPass::GetBRDFLUTRPDC());
-		g_pModuleManager->getRenderingServer()->ExecuteCommandList(BRDFLUTPass::GetBRDFMSLUTRPDC());
-		g_pModuleManager->getRenderingServer()->WaitForFrame(BRDFLUTPass::GetBRDFMSLUTRPDC());
+		BRDFLUTPass::Render();
 
 		LightCullingPass::Initialize();
 		LuminanceHistogramPass::Initialize();
