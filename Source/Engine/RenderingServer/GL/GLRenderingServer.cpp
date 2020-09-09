@@ -20,6 +20,7 @@ extern IModuleManager* g_pModuleManager;
 #include "../../Core/InnoLogger.h"
 #include "../../Core/InnoMemory.h"
 #include "../../Core/InnoRandomizer.h"
+#include "../../Template/ObjectPool.h"
 
 namespace GLRenderingServerNS
 {
@@ -78,15 +79,15 @@ namespace GLRenderingServerNS
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-	IObjectPool* m_MeshDataComponentPool = 0;
-	IObjectPool* m_MaterialDataComponentPool = 0;
-	IObjectPool* m_TextureDataComponentPool = 0;
-	IObjectPool* m_RenderPassDataComponentPool = 0;
-	IObjectPool* m_ResourcesBinderPool = 0;
-	IObjectPool* m_PSOPool = 0;
-	IObjectPool* m_ShaderProgramComponentPool = 0;
-	IObjectPool* m_SamplerDataComponentPool = 0;
-	IObjectPool* m_GPUBufferDataComponentPool = 0;
+	TObjectPool<GLMeshDataComponent>* m_MeshDataComponentPool = 0;
+	TObjectPool<GLMaterialDataComponent>* m_MaterialDataComponentPool = 0;
+	TObjectPool<GLTextureDataComponent>* m_TextureDataComponentPool = 0;
+	TObjectPool<GLRenderPassDataComponent>* m_RenderPassDataComponentPool = 0;
+	TObjectPool<GLResourceBinder>* m_ResourceBinderPool = 0;
+	TObjectPool<GLPipelineStateObject>* m_PSOPool = 0;
+	TObjectPool<GLShaderProgramComponent>* m_ShaderProgramComponentPool = 0;
+	TObjectPool<GLSamplerDataComponent>* m_SamplerDataComponentPool = 0;
+	TObjectPool<GLGPUBufferDataComponent>* m_GPUBufferDataComponentPool = 0;
 
 	std::unordered_set<MeshDataComponent*> m_initializedMeshes;
 	std::unordered_set<TextureDataComponent*> m_initializedTextures;
@@ -101,14 +102,16 @@ namespace GLRenderingServerNS
 	std::atomic_bool m_needResize = false;
 }
 
-inline GLResourceBinder* addResourcesBinder()
+using namespace GLRenderingServerNS;
+
+GLResourceBinder* addResourcesBinder()
 {
-	return InnoMemory::Spawn<GLResourceBinder>(GLRenderingServerNS::m_ResourcesBinderPool);
+	return m_ResourceBinderPool->Spawn();
 }
 
-inline GLPipelineStateObject* addPSO()
+GLPipelineStateObject* addPSO()
 {
-	return InnoMemory::Spawn<GLPipelineStateObject>(GLRenderingServerNS::m_PSOPool);
+	return m_PSOPool->Spawn();
 }
 
 bool GLRenderingServerNS::resizeImpl()
@@ -140,7 +143,7 @@ bool GLRenderingServerNS::resizeImpl()
 				l_renderingServer->DeleteTextureDataComponent(i->m_DepthStencilRenderTarget);
 			}
 
-			m_PSOPool->Destroy(i->m_PipelineStateObject);
+			m_PSOPool->Destroy(reinterpret_cast<GLPipelineStateObject*>(i->m_PipelineStateObject));
 
 			i->m_RenderPassDesc.m_RenderTargetDesc.Width = l_screenResolution.x;
 			i->m_RenderPassDesc.m_RenderTargetDesc.Height = l_screenResolution.y;
@@ -163,7 +166,7 @@ bool GLRenderingServerNS::resizeImpl()
 			CreateStateObjects(i);
 		}
 
-		m_PSOPool->Destroy(m_SwapChainRPDC->m_PipelineStateObject);
+		m_PSOPool->Destroy(reinterpret_cast<GLPipelineStateObject*>(m_SwapChainRPDC->m_PipelineStateObject));
 
 		m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc.Width = l_screenResolution.x;
 		m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc.Height = l_screenResolution.y;
@@ -185,15 +188,15 @@ bool GLRenderingServer::Setup()
 {
 	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
-	m_MeshDataComponentPool = InnoMemory::CreateObjectPool<GLMeshDataComponent>(l_renderingCapability.maxMeshes);
-	m_TextureDataComponentPool = InnoMemory::CreateObjectPool<GLTextureDataComponent>(l_renderingCapability.maxTextures);
-	m_MaterialDataComponentPool = InnoMemory::CreateObjectPool<GLMaterialDataComponent>(l_renderingCapability.maxMaterials);
-	m_RenderPassDataComponentPool = InnoMemory::CreateObjectPool<GLRenderPassDataComponent>(128);
-	m_ResourcesBinderPool = InnoMemory::CreateObjectPool<GLResourceBinder>(16384);
-	m_PSOPool = InnoMemory::CreateObjectPool<GLPipelineStateObject>(128);
-	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool<GLShaderProgramComponent>(256);
-	m_SamplerDataComponentPool = InnoMemory::CreateObjectPool<GLSamplerDataComponent>(256);
-	m_GPUBufferDataComponentPool = InnoMemory::CreateObjectPool<GLGPUBufferDataComponent>(256);
+	m_MeshDataComponentPool = TObjectPool<GLMeshDataComponent>::Create(l_renderingCapability.maxMeshes);
+	m_TextureDataComponentPool = TObjectPool<GLTextureDataComponent>::Create(l_renderingCapability.maxTextures);
+	m_MaterialDataComponentPool = TObjectPool<GLMaterialDataComponent>::Create(l_renderingCapability.maxMaterials);
+	m_RenderPassDataComponentPool = TObjectPool<GLRenderPassDataComponent>::Create(128);
+	m_ResourceBinderPool = TObjectPool<GLResourceBinder>::Create(16384);
+	m_PSOPool = TObjectPool<GLPipelineStateObject>::Create(128);
+	m_ShaderProgramComponentPool = TObjectPool<GLShaderProgramComponent>::Create(256);
+	m_SamplerDataComponentPool = TObjectPool<GLSamplerDataComponent>::Create(256);
+	m_GPUBufferDataComponentPool = TObjectPool<GLGPUBufferDataComponent>::Create(256);
 
 	m_RPDCs.reserve(128);
 
@@ -650,7 +653,7 @@ bool GLRenderingServer::DeleteTextureDataComponent(TextureDataComponent* rhs)
 
 	if (l_rhs->m_ResourceBinder)
 	{
-		m_ResourcesBinderPool->Destroy(l_rhs->m_ResourceBinder);
+		m_ResourceBinderPool->Destroy(reinterpret_cast<GLResourceBinder*>(l_rhs->m_ResourceBinder));
 	}
 
 	m_TextureDataComponentPool->Destroy(l_rhs);
@@ -664,7 +667,7 @@ bool GLRenderingServer::DeleteMaterialDataComponent(MaterialDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<GLMaterialDataComponent*>(rhs);
 
-	m_MaterialDataComponentPool->Destroy(l_rhs);
+	m_MaterialDataComponentPool->Destroy(reinterpret_cast<GLMaterialDataComponent*>(l_rhs));
 
 	m_initializedMaterials.erase(l_rhs);
 
@@ -690,7 +693,7 @@ bool GLRenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent* r
 	for (size_t i = 0; i < l_rhs->m_RenderTargets.size(); i++)
 	{
 		DeleteTextureDataComponent(l_rhs->m_RenderTargets[i]);
-		m_ResourcesBinderPool->Destroy(l_rhs->m_RenderTargetsResourceBinders[i]);
+		m_ResourceBinderPool->Destroy(reinterpret_cast<GLResourceBinder*>(l_rhs->m_RenderTargetsResourceBinders[i]));
 	}
 
 	m_RenderPassDataComponentPool->Destroy(l_rhs);
@@ -742,7 +745,7 @@ bool GLRenderingServer::DeleteSamplerDataComponent(SamplerDataComponent* rhs)
 
 	if (l_rhs->m_ResourceBinder)
 	{
-		m_ResourcesBinderPool->Destroy(l_rhs->m_ResourceBinder);
+		m_ResourceBinderPool->Destroy(reinterpret_cast<GLResourceBinder*>(l_rhs->m_ResourceBinder));
 	}
 
 	m_SamplerDataComponentPool->Destroy(l_rhs);
@@ -758,7 +761,7 @@ bool GLRenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent* rhs
 
 	if (l_rhs->m_ResourceBinder)
 	{
-		m_ResourcesBinderPool->Destroy(l_rhs->m_ResourceBinder);
+		m_ResourceBinderPool->Destroy(reinterpret_cast<GLResourceBinder*>(l_rhs->m_ResourceBinder));
 	}
 
 	m_GPUBufferDataComponentPool->Destroy(l_rhs);

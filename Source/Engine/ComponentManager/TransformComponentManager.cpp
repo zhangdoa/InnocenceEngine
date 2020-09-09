@@ -1,5 +1,6 @@
 #include "TransformComponentManager.h"
 #include "../Component/TransformComponent.h"
+#include "../Template/ObjectPool.h"
 #include "../Core/InnoMemory.h"
 #include "../Core/InnoRandomizer.h"
 #include "../Core/InnoLogger.h"
@@ -14,7 +15,7 @@ namespace TransformComponentManagerNS
 {
 	const size_t m_MaxComponentCount = 32768;
 	size_t m_CurrentComponentIndex = 0;
-	IObjectPool* m_ComponentPool;
+	TObjectPool<TransformComponent>* m_ComponentPool;
 	ThreadSafeVector<TransformComponent*> m_Components;
 	ThreadSafeUnorderedMap<InnoEntity*, TransformComponent*> m_ComponentsMap;
 	InnoEntity* m_RootTransformEntity;
@@ -77,7 +78,7 @@ using namespace TransformComponentManagerNS;
 
 bool InnoTransformComponentManager::Setup()
 {
-	m_ComponentPool = InnoMemory::CreateObjectPool<TransformComponent>(m_MaxComponentCount);
+	m_ComponentPool = TObjectPool<TransformComponent>::Create(m_MaxComponentCount);
 	m_Components.reserve(m_MaxComponentCount);
 	m_ComponentsMap.reserve(m_MaxComponentCount);
 

@@ -1,4 +1,5 @@
 #include "EntityManager.h"
+#include "../Template/ObjectPool.h"
 #include "../Core/InnoLogger.h"
 #include "../Core/InnoRandomizer.h"
 
@@ -9,7 +10,7 @@ extern IModuleManager* g_pModuleManager;
 namespace EntityManagerNS
 {
 	const size_t m_MaxEntity = 65536;
-	IObjectPool* m_EntityPool;
+	TObjectPool<InnoEntity>* m_EntityPool;
 	ThreadSafeVector<InnoEntity*> m_Entities;
 
 	std::function<void()> f_SceneLoadingStartCallback;
@@ -19,7 +20,7 @@ using namespace EntityManagerNS;
 
 bool InnoEntityManager::Setup()
 {
-	m_EntityPool = InnoMemory::CreateObjectPool<InnoEntity>(m_MaxEntity);
+	m_EntityPool = TObjectPool<InnoEntity>::Create(m_MaxEntity);
 
 	f_SceneLoadingStartCallback = [&]() {
 		for (auto i : m_Entities)
@@ -60,7 +61,7 @@ bool InnoEntityManager::Terminate()
 
 InnoEntity* InnoEntityManager::Spawn(ObjectSource objectSource, ObjectOwnership objectUsage, const char* entityName)
 {
-	auto l_Entity = InnoMemory::Spawn<InnoEntity>(m_EntityPool);
+	auto l_Entity = m_EntityPool->Spawn();
 
 	if (l_Entity)
 	{

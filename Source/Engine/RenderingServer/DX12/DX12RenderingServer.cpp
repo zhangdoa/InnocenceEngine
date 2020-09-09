@@ -1,4 +1,5 @@
 #include "DX12RenderingServer.h"
+
 #include "../../Component/DX12MeshDataComponent.h"
 #include "../../Component/DX12TextureDataComponent.h"
 #include "../../Component/DX12MaterialDataComponent.h"
@@ -28,6 +29,7 @@ extern IModuleManager* g_pModuleManager;
 #include "../../Core/InnoLogger.h"
 #include "../../Core/InnoMemory.h"
 #include "../../Core/InnoRandomizer.h"
+#include "../../Template/ObjectPool.h"
 
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -47,18 +49,18 @@ namespace DX12RenderingServerNS
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-	IObjectPool* m_MeshDataComponentPool = 0;
-	IObjectPool* m_MaterialDataComponentPool = 0;
-	IObjectPool* m_TextureDataComponentPool = 0;
-	IObjectPool* m_RenderPassDataComponentPool = 0;
-	IObjectPool* m_ResourcesBinderPool = 0;
-	IObjectPool* m_PSOPool = 0;
-	IObjectPool* m_CommandQueuePool = 0;
-	IObjectPool* m_CommandListPool = 0;
-	IObjectPool* m_FencePool = 0;
-	IObjectPool* m_ShaderProgramComponentPool = 0;
-	IObjectPool* m_SamplerDataComponentPool = 0;
-	IObjectPool* m_GPUBufferDataComponentPool = 0;
+	TObjectPool<DX12MeshDataComponent>* m_MeshDataComponentPool = 0;
+	TObjectPool<DX12MaterialDataComponent>* m_MaterialDataComponentPool = 0;
+	TObjectPool<DX12TextureDataComponent>* m_TextureDataComponentPool = 0;
+	TObjectPool<DX12RenderPassDataComponent>* m_RenderPassDataComponentPool = 0;
+	TObjectPool<DX12ResourceBinder>* m_ResourceBinderPool = 0;
+	TObjectPool<DX12PipelineStateObject>* m_PSOPool = 0;
+	TObjectPool<DX12CommandQueue>* m_CommandQueuePool = 0;
+	TObjectPool<DX12CommandList>* m_CommandListPool = 0;
+	TObjectPool<DX12Fence>* m_FencePool = 0;
+	TObjectPool<DX12ShaderProgramComponent>* m_ShaderProgramComponentPool = 0;
+	TObjectPool<DX12SamplerDataComponent>* m_SamplerDataComponentPool = 0;
+	TObjectPool<DX12GPUBufferDataComponent>* m_GPUBufferDataComponentPool = 0;
 
 	std::unordered_set<MeshDataComponent*> m_initializedMeshes;
 	std::unordered_set<TextureDataComponent*> m_initializedTextures;
@@ -642,45 +644,45 @@ using namespace DX12RenderingServerNS;
 
 DX12ResourceBinder* addResourcesBinder()
 {
-	return InnoMemory::Spawn<DX12ResourceBinder>(m_ResourcesBinderPool);
+	return m_ResourceBinderPool->Spawn();
 }
 
 DX12PipelineStateObject* addPSO()
 {
-	return InnoMemory::Spawn<DX12PipelineStateObject>(m_PSOPool);
+	return m_PSOPool->Spawn();
 }
 
 DX12CommandQueue* addCommandQueue()
 {
-	return InnoMemory::Spawn<DX12CommandQueue>(m_CommandQueuePool);
+	return m_CommandQueuePool->Spawn();
 }
 
 DX12CommandList* addCommandList()
 {
-	return InnoMemory::Spawn<DX12CommandList>(m_CommandListPool);
+	return m_CommandListPool->Spawn();
 }
 
 DX12Fence* addFence()
 {
-	return InnoMemory::Spawn<DX12Fence>(m_FencePool);
+	return m_FencePool->Spawn();
 }
 
 bool DX12RenderingServer::Setup()
 {
 	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
-	m_MeshDataComponentPool = InnoMemory::CreateObjectPool<DX12MeshDataComponent>(l_renderingCapability.maxMeshes);
-	m_TextureDataComponentPool = InnoMemory::CreateObjectPool<DX12TextureDataComponent>(l_renderingCapability.maxTextures);
-	m_MaterialDataComponentPool = InnoMemory::CreateObjectPool<DX12MaterialDataComponent>(l_renderingCapability.maxMaterials);
-	m_RenderPassDataComponentPool = InnoMemory::CreateObjectPool<DX12RenderPassDataComponent>(128);
-	m_ResourcesBinderPool = InnoMemory::CreateObjectPool<DX12ResourceBinder>(16384);
-	m_PSOPool = InnoMemory::CreateObjectPool<DX12PipelineStateObject>(128);
-	m_CommandQueuePool = InnoMemory::CreateObjectPool<DX12CommandQueue>(128);
-	m_CommandListPool = InnoMemory::CreateObjectPool<DX12CommandList>(256);
-	m_FencePool = InnoMemory::CreateObjectPool<DX12Fence>(256);
-	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool<DX12ShaderProgramComponent>(256);
-	m_SamplerDataComponentPool = InnoMemory::CreateObjectPool<DX12SamplerDataComponent>(256);
-	m_GPUBufferDataComponentPool = InnoMemory::CreateObjectPool<DX12GPUBufferDataComponent>(256);
+	m_MeshDataComponentPool = TObjectPool<DX12MeshDataComponent>::Create(l_renderingCapability.maxMeshes);
+	m_TextureDataComponentPool = TObjectPool<DX12TextureDataComponent>::Create(l_renderingCapability.maxTextures);
+	m_MaterialDataComponentPool = TObjectPool<DX12MaterialDataComponent>::Create(l_renderingCapability.maxMaterials);
+	m_RenderPassDataComponentPool = TObjectPool<DX12RenderPassDataComponent>::Create(128);
+	m_ResourceBinderPool = TObjectPool<DX12ResourceBinder>::Create(16384);
+	m_PSOPool = TObjectPool<DX12PipelineStateObject>::Create(128);
+	m_CommandQueuePool = TObjectPool<DX12CommandQueue>::Create(128);
+	m_CommandListPool = TObjectPool<DX12CommandList>::Create(256);
+	m_FencePool = TObjectPool<DX12Fence>::Create(256);
+	m_ShaderProgramComponentPool = TObjectPool<DX12ShaderProgramComponent>::Create(256);
+	m_SamplerDataComponentPool = TObjectPool<DX12SamplerDataComponent>::Create(256);
+	m_GPUBufferDataComponentPool = TObjectPool<DX12GPUBufferDataComponent>::Create(256);
 
 	bool l_result = true;
 
@@ -1394,7 +1396,7 @@ bool DX12RenderingServer::DeleteMeshDataComponent(MeshDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12MeshDataComponent*>(rhs);
 
-	InnoMemory::Destroy(m_MeshDataComponentPool, l_rhs);
+	m_MeshDataComponentPool->Destroy(l_rhs);
 
 	m_initializedMeshes.erase(l_rhs);
 
@@ -1407,10 +1409,10 @@ bool DX12RenderingServer::DeleteTextureDataComponent(TextureDataComponent* rhs)
 
 	if (l_rhs->m_ResourceBinder)
 	{
-		InnoMemory::Destroy(m_ResourcesBinderPool, l_rhs->m_ResourceBinder);
+		m_ResourceBinderPool->Destroy(reinterpret_cast<DX12ResourceBinder*>(l_rhs->m_ResourceBinder));
 	}
 
-	InnoMemory::Destroy(m_TextureDataComponentPool, l_rhs);
+	m_TextureDataComponentPool->Destroy(l_rhs);
 
 	m_initializedTextures.erase(l_rhs);
 
@@ -1421,7 +1423,7 @@ bool DX12RenderingServer::DeleteMaterialDataComponent(MaterialDataComponent* rhs
 {
 	auto l_rhs = reinterpret_cast<DX12MaterialDataComponent*>(rhs);
 
-	InnoMemory::Destroy(m_MaterialDataComponentPool, l_rhs);
+	m_MaterialDataComponentPool->Destroy(l_rhs);
 
 	m_initializedMaterials.erase(l_rhs);
 
@@ -1433,7 +1435,7 @@ bool DX12RenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent*
 	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(rhs);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(l_rhs->m_PipelineStateObject);
 
-	InnoMemory::Destroy(m_PSOPool, l_PSO);
+	m_PSOPool->Destroy(l_PSO);
 
 	if (l_rhs->m_DepthStencilRenderTarget)
 	{
@@ -1443,10 +1445,10 @@ bool DX12RenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent*
 	for (size_t i = 0; i < l_rhs->m_RenderTargets.size(); i++)
 	{
 		DeleteTextureDataComponent(l_rhs->m_RenderTargets[i]);
-		InnoMemory::Destroy(m_ResourcesBinderPool, l_rhs->m_RenderTargetsResourceBinders[i]);
+		m_ResourceBinderPool->Destroy(reinterpret_cast<DX12ResourceBinder*>(l_rhs->m_RenderTargetsResourceBinders[i]));
 	}
 
-	InnoMemory::Destroy(m_RenderPassDataComponentPool, l_rhs);
+	m_RenderPassDataComponentPool->Destroy(l_rhs);
 
 	return true;
 }
@@ -1455,7 +1457,7 @@ bool DX12RenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent* r
 {
 	auto l_rhs = reinterpret_cast<DX12ShaderProgramComponent*>(rhs);
 
-	InnoMemory::Destroy(m_ShaderProgramComponentPool, l_rhs);
+	m_ShaderProgramComponentPool->Destroy(l_rhs);
 
 	return true;
 }
@@ -1466,10 +1468,10 @@ bool DX12RenderingServer::DeleteSamplerDataComponent(SamplerDataComponent* rhs)
 
 	if (l_rhs->m_ResourceBinder)
 	{
-		InnoMemory::Destroy(m_ResourcesBinderPool, l_rhs->m_ResourceBinder);
+		m_ResourceBinderPool->Destroy(reinterpret_cast<DX12ResourceBinder*>(l_rhs->m_ResourceBinder));
 	}
 
-	InnoMemory::Destroy(m_SamplerDataComponentPool, l_rhs);
+	m_SamplerDataComponentPool->Destroy(l_rhs);
 
 	return false;
 }
@@ -1480,10 +1482,10 @@ bool DX12RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent* r
 
 	if (l_rhs->m_ResourceBinder)
 	{
-		InnoMemory::Destroy(m_ResourcesBinderPool, l_rhs->m_ResourceBinder);
+		m_ResourceBinderPool->Destroy(reinterpret_cast<DX12ResourceBinder*>(l_rhs->m_ResourceBinder));
 	}
 
-	InnoMemory::Destroy(m_GPUBufferDataComponentPool, l_rhs);
+	m_GPUBufferDataComponentPool->Destroy(l_rhs);
 
 	return true;
 }

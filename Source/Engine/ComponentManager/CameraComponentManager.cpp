@@ -1,5 +1,6 @@
 #include "CameraComponentManager.h"
 #include "../Component/CameraComponent.h"
+#include "../Template/ObjectPool.h"
 #include "../Core/InnoMemory.h"
 #include "../Core/InnoRandomizer.h"
 #include "../Core/InnoLogger.h"
@@ -17,7 +18,7 @@ namespace CameraComponentManagerNS
 {
 	const size_t m_MaxComponentCount = 32;
 	size_t m_CurrentComponentIndex = 0;
-	IObjectPool* m_ComponentPool;
+	TObjectPool<CameraComponent>* m_ComponentPool;
 	ThreadSafeVector<CameraComponent*> m_Components;
 	ThreadSafeUnorderedMap<InnoEntity*, CameraComponent*> m_ComponentsMap;
 
@@ -66,7 +67,7 @@ using namespace CameraComponentManagerNS;
 
 bool InnoCameraComponentManager::Setup()
 {
-	m_ComponentPool = InnoMemory::CreateObjectPool<CameraComponent>(m_MaxComponentCount);
+	m_ComponentPool = TObjectPool<CameraComponent>::Create(m_MaxComponentCount);
 	m_Components.reserve(m_MaxComponentCount);
 	m_ComponentsMap.reserve(m_MaxComponentCount);
 

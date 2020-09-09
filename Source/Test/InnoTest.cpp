@@ -4,6 +4,7 @@
 #include "../Engine/Core/InnoLogger.h"
 #include "../Engine/Core/InnoMemory.h"
 #include "../Engine/Core/InnoTaskScheduler.h"
+#include "../Engine/Template/ObjectPool.h"
 
 void TestIToA(size_t testCaseCount)
 {
@@ -83,10 +84,10 @@ struct TestStruct
 };
 void TestInnoMemory(size_t testCaseCount)
 {
-	std::vector<void*> l_objectInCustomPool(testCaseCount);
+	std::vector<uint32_t*> l_objectInCustomPool(testCaseCount);
 	std::vector<void*> l_objectRaw(testCaseCount);
 
-	auto l_objectPool = InnoMemory::CreateObjectPool<TestStruct>((uint32_t)testCaseCount);
+	auto l_objectPool = TObjectPool<uint32_t>::Create(testCaseCount);
 
 	auto l_StartTime1 = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
 
@@ -130,8 +131,8 @@ void TestInnoMemory(size_t testCaseCount)
 
 	InnoLogger::Log(LogLevel::Success, "Custom object pool deallocation VS free() speed ratio is ", l_SpeedRatio1);
 
-	InnoMemory::ClearObjectPool(l_objectPool);
-	InnoMemory::DestroyObjectPool(l_objectPool);
+	TObjectPool<uint32_t>::Clear(l_objectPool);
+	TObjectPool<uint32_t>::Destruct(l_objectPool);
 }
 
 template <typename T>

@@ -17,8 +17,7 @@ m_Components.erase( \
 m_ComponentsMap.erase_if([&](auto val) { return val.second->m_ObjectOwnership == ObjectOwnership::Client; });
 
 #define SpawnComponentImpl( className ) \
-	auto l_rawPtr= m_ComponentPool->Spawn(); \
-	auto l_Component = new(l_rawPtr)className(); \
+	auto l_Component = m_ComponentPool->Spawn(); \
 	if (l_Component) \
 	{ \
 		l_Component->m_UUID = InnoRandomizer::GenerateUUID(); \
@@ -47,7 +46,7 @@ m_ComponentsMap.erase_if([&](auto val) { return val.second->m_ObjectOwnership ==
 	component->m_ObjectStatus = ObjectStatus::Terminated; \
 	m_Components.eraseByValue(reinterpret_cast<className*>(component)); \
 	m_ComponentsMap.erase(component->m_ParentEntity); \
-	m_ComponentPool->Destroy(component);
+	m_ComponentPool->Destroy(reinterpret_cast<className*>(component));
 
 #define GetComponentImpl( className, parentEntity ) \
 	auto l_parentEntity = const_cast<InnoEntity*>(parentEntity); \

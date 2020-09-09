@@ -6,6 +6,7 @@
 #include "../ThirdParty/JSONWrapper/JSONWrapper.h"
 #include "../ThirdParty/STBWrapper/STBWrapper.h"
 #include "../ThirdParty/AssimpWrapper/AssimpWrapper.h"
+#include "../Template/ObjectPool.h"
 
 #include "../Interface/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
@@ -50,8 +51,8 @@ namespace InnoAssetSystemNS
 	void addSphere(MeshDataComponent* meshDataComponent);
 	void addTerrain(MeshDataComponent* meshDataComponent);
 
-	IObjectPool* m_meshMaterialPairPool;
-	IObjectPool* m_modelPool;
+	TObjectPool<MeshMaterialPair>* m_meshMaterialPairPool;
+	TObjectPool<Model>* m_modelPool;
 	std::vector<MeshMaterialPair*> m_meshMaterialPairList;
 
 	std::unordered_map<std::string, MeshMaterialPair*> m_loadedMeshMaterialPair;
@@ -502,9 +503,9 @@ void InnoAssetSystemNS::addTerrain(MeshDataComponent* meshDataComponent)
 
 bool InnoAssetSystem::setup()
 {
-	m_meshMaterialPairPool = InnoMemory::CreateObjectPool<MeshMaterialPair>(65536);
+	m_meshMaterialPairPool = TObjectPool<MeshMaterialPair>::Create(65536);
 	m_meshMaterialPairList.reserve(65536);
-	m_modelPool = InnoMemory::CreateObjectPool<Model>(4096);
+	m_modelPool = TObjectPool<Model>::Create(4096);
 
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
@@ -648,7 +649,7 @@ ArrayRangeInfo InnoAssetSystem::addMeshMaterialPairs(uint64_t count)
 
 	for (size_t i = 0; i < count; i++)
 	{
-		m_meshMaterialPairList.emplace_back(InnoMemory::Spawn<MeshMaterialPair>(m_meshMaterialPairPool));
+		m_meshMaterialPairList.emplace_back(m_meshMaterialPairPool->Spawn());
 	}
 
 	return l_result;
@@ -663,7 +664,7 @@ Model* InnoAssetSystem::addModel()
 {
 	std::unique_lock<std::shared_mutex> lock{ m_mutexModel };
 
-	return InnoMemory::Spawn<Model>(m_modelPool);
+	return m_modelPool->Spawn();
 }
 
 Model* InnoAssetSystem::addProceduralModel(ProceduralMeshShape shape, ShaderModel shaderModel)

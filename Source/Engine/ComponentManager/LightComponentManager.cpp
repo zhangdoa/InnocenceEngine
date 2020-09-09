@@ -1,5 +1,6 @@
 #include "LightComponentManager.h"
 #include "../Component/LightComponent.h"
+#include "../Template/ObjectPool.h"
 #include "../Core/InnoMemory.h"
 #include "../Core/InnoRandomizer.h"
 #include "../Core/InnoLogger.h"
@@ -24,7 +25,7 @@ namespace LightComponentManagerNS
 
 	const size_t m_MaxComponentCount = 8192;
 	size_t m_CurrentComponentIndex = 0;
-	IObjectPool* m_ComponentPool;
+	TObjectPool<LightComponent>* m_ComponentPool;
 	ThreadSafeVector<LightComponent*> m_Components;
 	ThreadSafeUnorderedMap<InnoEntity*, LightComponent*> m_ComponentsMap;
 
@@ -313,7 +314,7 @@ using namespace LightComponentManagerNS;
 
 bool InnoLightComponentManager::Setup()
 {
-	m_ComponentPool = InnoMemory::CreateObjectPool<LightComponent>(m_MaxComponentCount);
+	m_ComponentPool = TObjectPool<LightComponent>::Create(m_MaxComponentCount);
 	m_Components.reserve(m_MaxComponentCount);
 	m_ComponentsMap.reserve(m_MaxComponentCount);
 	m_frustumsCornerPos.reserve(20);

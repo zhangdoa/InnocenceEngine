@@ -20,6 +20,7 @@ extern IModuleManager* g_pModuleManager;
 #include "../../Core/InnoLogger.h"
 #include "../../Core/InnoMemory.h"
 #include "../../Core/InnoRandomizer.h"
+#include "../../Template/ObjectPool.h"
 
 namespace VKRenderingServerNS
 {
@@ -48,19 +49,19 @@ namespace VKRenderingServerNS
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-	IObjectPool* m_MeshDataComponentPool = 0;
-	IObjectPool* m_MaterialDataComponentPool = 0;
-	IObjectPool* m_TextureDataComponentPool = 0;
-	IObjectPool* m_RenderPassDataComponentPool = 0;
-	IObjectPool* m_ResourcesBinderPool = 0;
-	IObjectPool* m_PSOPool = 0;
-	IObjectPool* m_CommandQueuePool = 0;
-	IObjectPool* m_CommandListPool = 0;
-	IObjectPool* m_SemaphorePool = 0;
-	IObjectPool* m_FencePool = 0;
-	IObjectPool* m_ShaderProgramComponentPool = 0;
-	IObjectPool* m_SamplerDataComponentPool = 0;
-	IObjectPool* m_GPUBufferDataComponentPool = 0;
+	TObjectPool<VKMeshDataComponent>* m_MeshDataComponentPool = 0;
+	TObjectPool<VKMaterialDataComponent>* m_MaterialDataComponentPool = 0;
+	TObjectPool<VKTextureDataComponent>* m_TextureDataComponentPool = 0;
+	TObjectPool<VKRenderPassDataComponent>* m_RenderPassDataComponentPool = 0;
+	TObjectPool<VKResourceBinder>* m_ResourceBinderPool = 0;
+	TObjectPool<VKPipelineStateObject>* m_PSOPool = 0;
+	TObjectPool<VKCommandQueue>* m_CommandQueuePool = 0;
+	TObjectPool<VKCommandList>* m_CommandListPool = 0;
+	TObjectPool<VKSemaphore>* m_SemaphorePool = 0;
+	TObjectPool<VKFence>* m_FencePool = 0;
+	TObjectPool<VKShaderProgramComponent>* m_ShaderProgramComponentPool = 0;
+	TObjectPool<VKSamplerDataComponent>* m_SamplerDataComponentPool = 0;
+	TObjectPool<VKGPUBufferDataComponent>* m_GPUBufferDataComponentPool = 0;
 
 	std::unordered_set<MeshDataComponent*> m_initializedMeshes;
 	std::unordered_set<TextureDataComponent*> m_initializedTextures;
@@ -532,53 +533,53 @@ bool VKRenderingServerNS::createSwapChain()
 
 using namespace VKRenderingServerNS;
 
-inline VKResourceBinder* addResourcesBinder()
+VKResourceBinder* addResourcesBinder()
 {
-	return InnoMemory::Spawn<VKResourceBinder>(m_ResourcesBinderPool);
+	return m_ResourceBinderPool->Spawn();
 }
 
-inline VKPipelineStateObject* addPSO()
+VKPipelineStateObject* addPSO()
 {
-	return InnoMemory::Spawn<VKPipelineStateObject>(m_PSOPool);
+	return m_PSOPool->Spawn();
 }
 
-inline VKCommandQueue* addCommandQueue()
+VKCommandQueue* addCommandQueue()
 {
-	return InnoMemory::Spawn<VKCommandQueue>(m_CommandQueuePool);
+	return m_CommandQueuePool->Spawn();
 }
 
-inline VKCommandList* addCommandList()
+VKCommandList* addCommandList()
 {
-	return InnoMemory::Spawn<VKCommandList>(m_CommandListPool);
+	return m_CommandListPool->Spawn();
 }
 
-inline VKSemaphore* addSemaphore()
+VKSemaphore* addSemaphore()
 {
-	return InnoMemory::Spawn<VKSemaphore>(m_SemaphorePool);
+	return m_SemaphorePool->Spawn();
 }
 
-inline VKFence* addFence()
+VKFence* addFence()
 {
-	return InnoMemory::Spawn<VKFence>(m_FencePool);
+	return m_FencePool->Spawn();
 }
 
 bool VKRenderingServer::Setup()
 {
 	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
-	m_MeshDataComponentPool = InnoMemory::CreateObjectPool<VKMeshDataComponent>(l_renderingCapability.maxMeshes);
-	m_TextureDataComponentPool = InnoMemory::CreateObjectPool<VKTextureDataComponent>(l_renderingCapability.maxTextures);
-	m_MaterialDataComponentPool = InnoMemory::CreateObjectPool<VKMaterialDataComponent>(l_renderingCapability.maxMaterials);
-	m_RenderPassDataComponentPool = InnoMemory::CreateObjectPool<VKRenderPassDataComponent>(128);
-	m_ResourcesBinderPool = InnoMemory::CreateObjectPool<VKResourceBinder>(16384);
-	m_PSOPool = InnoMemory::CreateObjectPool<VKPipelineStateObject>(128);
-	m_CommandQueuePool = InnoMemory::CreateObjectPool<VKCommandQueue>(128);
-	m_CommandListPool = InnoMemory::CreateObjectPool<VKCommandList>(256);
-	m_SemaphorePool = InnoMemory::CreateObjectPool<VKSemaphore>(512);
-	m_FencePool = InnoMemory::CreateObjectPool<VKFence>(256);
-	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool<VKShaderProgramComponent>(256);
-	m_SamplerDataComponentPool = InnoMemory::CreateObjectPool<VKSamplerDataComponent>(256);
-	m_GPUBufferDataComponentPool = InnoMemory::CreateObjectPool<VKGPUBufferDataComponent>(256);
+	m_MeshDataComponentPool = TObjectPool<VKMeshDataComponent>::Create(l_renderingCapability.maxMeshes);
+	m_TextureDataComponentPool = TObjectPool<VKTextureDataComponent>::Create(l_renderingCapability.maxTextures);
+	m_MaterialDataComponentPool = TObjectPool<VKMaterialDataComponent>::Create(l_renderingCapability.maxMaterials);
+	m_RenderPassDataComponentPool = TObjectPool<VKRenderPassDataComponent>::Create(128);
+	m_ResourceBinderPool = TObjectPool<VKResourceBinder>::Create(16384);
+	m_PSOPool = TObjectPool<VKPipelineStateObject>::Create(128);
+	m_CommandQueuePool = TObjectPool<VKCommandQueue>::Create(128);
+	m_CommandListPool = TObjectPool<VKCommandList>::Create(256);
+	m_SemaphorePool = TObjectPool<VKSemaphore>::Create(512);
+	m_FencePool = TObjectPool<VKFence>::Create(256);
+	m_ShaderProgramComponentPool = TObjectPool<VKShaderProgramComponent>::Create(256);
+	m_SamplerDataComponentPool = TObjectPool<VKSamplerDataComponent>::Create(256);
+	m_GPUBufferDataComponentPool = TObjectPool<VKGPUBufferDataComponent>::Create(256);
 
 	m_SwapChainRPDC = reinterpret_cast<VKRenderPassDataComponent*>(AddRenderPassDataComponent("SwapChain/"));
 	m_SwapChainSPC = reinterpret_cast<VKShaderProgramComponent*>(AddShaderProgramComponent("SwapChain/"));

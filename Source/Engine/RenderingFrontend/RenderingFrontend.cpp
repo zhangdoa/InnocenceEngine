@@ -7,6 +7,7 @@
 
 #include "../Core/InnoLogger.h"
 #include "../Core/InnoMemory.h"
+#include "../Template/ObjectPool.h"
 
 #include "../Interface/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
@@ -67,8 +68,8 @@ namespace InnoRenderingFrontendNS
 
 	RenderingConfig m_renderingConfig = RenderingConfig();
 
-	IObjectPool* m_SkeletonDataComponentPool;
-	IObjectPool* m_AnimationDataComponentPool;
+	TObjectPool<SkeletonDataComponent>* m_SkeletonDataComponentPool;
+	TObjectPool<AnimationDataComponent>* m_AnimationDataComponentPool;
 
 	ThreadSafeQueue<MeshDataComponent*> m_uninitializedMeshes;
 	ThreadSafeQueue<MaterialDataComponent*> m_uninitializedMaterials;
@@ -251,8 +252,8 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
-	m_SkeletonDataComponentPool = InnoMemory::CreateObjectPool<SkeletonDataComponent>(2048);
-	m_AnimationDataComponentPool = InnoMemory::CreateObjectPool<AnimationDataComponent>(16384);
+	m_SkeletonDataComponentPool = TObjectPool<SkeletonDataComponent>::Create(2048);
+	m_AnimationDataComponentPool = TObjectPool<AnimationDataComponent>::Create(16384);
 
 	m_rayTracer->Setup();
 
@@ -862,7 +863,7 @@ MaterialDataComponent* InnoRenderingFrontend::addMaterialDataComponent()
 SkeletonDataComponent* InnoRenderingFrontend::addSkeletonDataComponent()
 {
 	static std::atomic<uint32_t> skeletonCount = 0;
-	auto l_SDC = InnoMemory::Spawn<SkeletonDataComponent>(m_SkeletonDataComponentPool);
+	auto l_SDC = m_SkeletonDataComponentPool->Spawn();
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Skeleton_" + std::to_string(skeletonCount) + "/").c_str());
 	l_SDC->m_ParentEntity = l_parentEntity;
 	l_SDC->m_ObjectStatus = ObjectStatus::Created;
@@ -876,7 +877,7 @@ SkeletonDataComponent* InnoRenderingFrontend::addSkeletonDataComponent()
 AnimationDataComponent* InnoRenderingFrontend::addAnimationDataComponent()
 {
 	static std::atomic<uint32_t> animationCount = 0;
-	auto l_ADC = InnoMemory::Spawn<AnimationDataComponent>(m_AnimationDataComponentPool);
+	auto l_ADC = m_AnimationDataComponentPool->Spawn();
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Animation_" + std::to_string(animationCount) + "/").c_str());
 	l_ADC->m_ParentEntity = l_parentEntity;
 	l_ADC->m_ObjectStatus = ObjectStatus::Created;

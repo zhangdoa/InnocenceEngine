@@ -8,6 +8,7 @@
 #include "../Common/InnoMathHelper.h"
 #include "../Core/InnoLogger.h"
 #include "../Core/InnoMemory.h"
+#include "../Template/ObjectPool.h"
 
 #if defined INNO_PLATFORM_WIN
 #include "../ThirdParty/PhysXWrapper/PhysXWrapper.h"
@@ -46,7 +47,7 @@ namespace InnoPhysicsSystemNS
 	PhysicsDataComponent* m_RootPhysicsDataComponent = 0;
 	BVHNode* m_RootBVHNode = 0;
 
-	IObjectPool* m_PhysicsDataComponentPool;
+	TObjectPool<PhysicsDataComponent>* m_PhysicsDataComponentPool;
 	std::shared_mutex m_mutex;
 
 	std::vector<PhysicsDataComponent*> m_Components;
@@ -66,7 +67,7 @@ using namespace InnoPhysicsSystemNS;
 
 bool InnoPhysicsSystemNS::setup()
 {
-	m_PhysicsDataComponentPool = InnoMemory::CreateObjectPool<PhysicsDataComponent>(32678);
+	m_PhysicsDataComponentPool = TObjectPool<PhysicsDataComponent>::Create(32678);
 
 	m_Components.reserve(16384);
 	m_IntermediateComponents.reserve(16384);
@@ -129,7 +130,7 @@ PhysicsDataComponent* InnoPhysicsSystemNS::AddPhysicsDataComponent(InnoEntity* p
 {
 	std::unique_lock<std::shared_mutex> lock{ m_mutex };
 
-	auto l_PDC = InnoMemory::Spawn<PhysicsDataComponent>(m_PhysicsDataComponentPool);
+	auto l_PDC = m_PhysicsDataComponentPool->Spawn();
 
 	l_PDC->m_ParentEntity = parentEntity;
 	l_PDC->m_ObjectSource = ObjectSource::Runtime;

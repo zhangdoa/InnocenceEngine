@@ -1,4 +1,5 @@
 #include "DX11RenderingServer.h"
+
 #include "../../Component/DX11MeshDataComponent.h"
 #include "../../Component/DX11TextureDataComponent.h"
 #include "../../Component/DX11MaterialDataComponent.h"
@@ -22,6 +23,7 @@ extern IModuleManager* g_pModuleManager;
 #include "../../Core/InnoLogger.h"
 #include "../../Core/InnoMemory.h"
 #include "../../Core/InnoRandomizer.h"
+#include "../../Template/ObjectPool.h"
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -32,15 +34,15 @@ namespace DX11RenderingServerNS
 {
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-	IObjectPool* m_MeshDataComponentPool = 0;
-	IObjectPool* m_MaterialDataComponentPool = 0;
-	IObjectPool* m_TextureDataComponentPool = 0;
-	IObjectPool* m_RenderPassDataComponentPool = 0;
-	IObjectPool* m_ResourcesBinderPool = 0;
-	IObjectPool* m_PSOPool = 0;
-	IObjectPool* m_ShaderProgramComponentPool = 0;
-	IObjectPool* m_SamplerDataComponentPool = 0;
-	IObjectPool* m_GPUBufferDataComponentPool = 0;
+	TObjectPool<DX11MeshDataComponent>* m_MeshDataComponentPool = 0;
+	TObjectPool<DX11MaterialDataComponent>* m_MaterialDataComponentPool = 0;
+	TObjectPool<DX11TextureDataComponent>* m_TextureDataComponentPool = 0;
+	TObjectPool<DX11RenderPassDataComponent>* m_RenderPassDataComponentPool = 0;
+	TObjectPool<DX11ResourceBinder>* m_ResourceBinderPool = 0;
+	TObjectPool<DX11PipelineStateObject>* m_PSOPool = 0;
+	TObjectPool<DX11ShaderProgramComponent>* m_ShaderProgramComponentPool = 0;
+	TObjectPool<DX11SamplerDataComponent>* m_SamplerDataComponentPool = 0;
+	TObjectPool<DX11GPUBufferDataComponent>* m_GPUBufferDataComponentPool = 0;
 
 	std::unordered_set<MeshDataComponent*> m_initializedMeshes;
 	std::unordered_set<TextureDataComponent*> m_initializedTextures;
@@ -77,27 +79,27 @@ using namespace DX11RenderingServerNS;
 
 DX11ResourceBinder* addResourcesBinder()
 {
-	return InnoMemory::Spawn<DX11ResourceBinder>(m_ResourcesBinderPool);
+	return m_ResourceBinderPool->Spawn();
 }
 
 DX11PipelineStateObject* addPSO()
 {
-	return InnoMemory::Spawn<DX11PipelineStateObject>(m_PSOPool);
+	return m_PSOPool->Spawn();
 }
 
 bool DX11RenderingServer::Setup()
 {
 	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
-	m_MeshDataComponentPool = InnoMemory::CreateObjectPool<DX11MeshDataComponent>(l_renderingCapability.maxMeshes);
-	m_TextureDataComponentPool = InnoMemory::CreateObjectPool<DX11TextureDataComponent>(l_renderingCapability.maxTextures);
-	m_MaterialDataComponentPool = InnoMemory::CreateObjectPool<DX11MaterialDataComponent>(l_renderingCapability.maxMaterials);
-	m_RenderPassDataComponentPool = InnoMemory::CreateObjectPool<DX11RenderPassDataComponent>(128);
-	m_ResourcesBinderPool = InnoMemory::CreateObjectPool<DX11ResourceBinder>(16384);
-	m_PSOPool = InnoMemory::CreateObjectPool<DX11PipelineStateObject>(128);
-	m_ShaderProgramComponentPool = InnoMemory::CreateObjectPool<DX11ShaderProgramComponent>(256);
-	m_SamplerDataComponentPool = InnoMemory::CreateObjectPool<DX11SamplerDataComponent>(256);
-	m_GPUBufferDataComponentPool = InnoMemory::CreateObjectPool<DX11GPUBufferDataComponent>(256);
+	m_MeshDataComponentPool = TObjectPool<DX11MeshDataComponent>::Create(l_renderingCapability.maxMeshes);
+	m_TextureDataComponentPool = TObjectPool<DX11TextureDataComponent>::Create(l_renderingCapability.maxTextures);
+	m_MaterialDataComponentPool = TObjectPool<DX11MaterialDataComponent>::Create(l_renderingCapability.maxMaterials);
+	m_RenderPassDataComponentPool = TObjectPool<DX11RenderPassDataComponent>::Create(128);
+	m_ResourceBinderPool = TObjectPool<DX11ResourceBinder>::Create(16384);
+	m_PSOPool = TObjectPool<DX11PipelineStateObject>::Create(128);
+	m_ShaderProgramComponentPool = TObjectPool<DX11ShaderProgramComponent>::Create(256);
+	m_SamplerDataComponentPool = TObjectPool<DX11SamplerDataComponent>::Create(256);
+	m_GPUBufferDataComponentPool = TObjectPool<DX11GPUBufferDataComponent>::Create(256);
 
 	HRESULT l_HResult;
 	uint32_t l_numModes;
@@ -922,7 +924,7 @@ bool DX11RenderingServer::DeleteTextureDataComponent(TextureDataComponent* rhs)
 
 	if (l_rhs->m_ResourceBinder)
 	{
-		m_ResourcesBinderPool->Destroy(l_rhs->m_ResourceBinder);
+		m_ResourceBinderPool->Destroy(reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinder));
 	}
 
 	m_TextureDataComponentPool->Destroy(l_rhs);
@@ -977,7 +979,7 @@ bool DX11RenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent*
 		{
 			DeleteTextureDataComponent(l_rhs->m_RenderTargets[i]);
 		}
-		m_ResourcesBinderPool->Destroy(l_rhs->m_RenderTargetsResourceBinders[i]);
+		m_ResourceBinderPool->Destroy(reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_RenderTargetsResourceBinders[i]));
 	}
 
 	m_RenderPassDataComponentPool->Destroy(l_rhs);
@@ -1027,7 +1029,7 @@ bool DX11RenderingServer::DeleteSamplerDataComponent(SamplerDataComponent* rhs)
 
 	if (l_rhs->m_ResourceBinder)
 	{
-		m_ResourcesBinderPool->Destroy(l_rhs->m_ResourceBinder);
+		m_ResourceBinderPool->Destroy(reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinder));
 	}
 
 	m_SamplerDataComponentPool->Destroy(l_rhs);
@@ -1043,7 +1045,7 @@ bool DX11RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent* r
 
 	if (l_rhs->m_ResourceBinder)
 	{
-		m_ResourcesBinderPool->Destroy(l_rhs->m_ResourceBinder);
+		m_ResourceBinderPool->Destroy(reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinder));
 	}
 
 	m_GPUBufferDataComponentPool->Destroy(l_rhs);

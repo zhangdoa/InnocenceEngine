@@ -1,5 +1,6 @@
 #include "VisibleComponentManager.h"
 #include "../Component/VisibleComponent.h"
+#include "../Template/ObjectPool.h"
 #include "../Core/InnoMemory.h"
 #include "../Core/InnoRandomizer.h"
 #include "../Core/InnoLogger.h"
@@ -15,7 +16,7 @@ namespace VisibleComponentManagerNS
 {
 	const size_t m_MaxComponentCount = 32768;
 	size_t m_CurrentComponentIndex = 0;
-	IObjectPool* m_ComponentPool;
+	TObjectPool<VisibleComponent>* m_ComponentPool;
 	ThreadSafeVector<VisibleComponent*> m_Components;
 	ThreadSafeUnorderedMap<InnoEntity*, VisibleComponent*> m_ComponentsMap;
 
@@ -30,7 +31,7 @@ using namespace VisibleComponentManagerNS;
 
 bool InnoVisibleComponentManager::Setup()
 {
-	m_ComponentPool = InnoMemory::CreateObjectPool<VisibleComponent>(m_MaxComponentCount);
+	m_ComponentPool = TObjectPool<VisibleComponent>::Create(m_MaxComponentCount);
 	m_Components.reserve(m_MaxComponentCount);
 	m_ComponentsMap.reserve(m_MaxComponentCount);
 
