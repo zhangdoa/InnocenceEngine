@@ -26,7 +26,8 @@ for:
     matrix:
       only:
         - job_name: Linux build
-
+    environment:
+        GCC_VERSION: 8
     clone_script:
     - sh: git clone -q --branch=$APPVEYOR_REPO_BRANCH https://github.com/$APPVEYOR_REPO_NAME.git $APPVEYOR_BUILD_FOLDER
     - sh: cd $APPVEYOR_BUILD_FOLDER
