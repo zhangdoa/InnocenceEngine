@@ -51,7 +51,8 @@ public:
 				m_CurrentFreeChunk = nullptr;
 				InnoLogger::Log(LogLevel::Warning, "InnoMemory: Last free chuck has been allocated!");
 			}
-			return reinterpret_cast<T*>(l_Object);
+
+			return new(l_Object) T();
 		}
 		else
 		{
