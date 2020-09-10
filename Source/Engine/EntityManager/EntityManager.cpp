@@ -25,7 +25,7 @@ bool InnoEntityManager::Setup()
 	f_SceneLoadingStartCallback = [&]() {
 		for (auto i : m_Entities)
 		{
-			if (i->m_ObjectOwnership == ObjectOwnership::Client)
+			if (i->m_ObjectLifespan == ObjectLifespan::Scene)
 			{
 				i->m_ObjectStatus = ObjectStatus::Terminated;
 				m_EntityPool->Destroy(i);
@@ -35,7 +35,7 @@ bool InnoEntityManager::Setup()
 		m_Entities.erase(
 			std::remove_if(m_Entities.begin(), m_Entities.end(),
 				[&](auto val) {
-					return val->m_ObjectOwnership == ObjectOwnership::Client;
+					return val->m_ObjectLifespan == ObjectLifespan::Scene;
 				}), m_Entities.end());
 	};
 
@@ -59,7 +59,7 @@ bool InnoEntityManager::Terminate()
 	return true;
 }
 
-InnoEntity* InnoEntityManager::Spawn(ObjectSource objectSource, ObjectOwnership objectUsage, const char* entityName)
+InnoEntity* InnoEntityManager::Spawn(bool serializable, ObjectLifespan objectLifespan, const char* entityName)
 {
 	auto l_Entity = m_EntityPool->Spawn();
 
@@ -71,8 +71,8 @@ InnoEntity* InnoEntityManager::Spawn(ObjectSource objectSource, ObjectOwnership 
 
 		l_Entity->m_UUID = l_UUID;
 		l_Entity->m_Name = entityName;
-		l_Entity->m_ObjectSource = objectSource;
-		l_Entity->m_ObjectOwnership = objectUsage;
+		l_Entity->m_Serializable = serializable;
+		l_Entity->m_ObjectLifespan = objectLifespan;
 		l_Entity->m_ObjectStatus = ObjectStatus::Activated;
 
 		InnoLogger::Log(LogLevel::Verbose, "EntityManager: Entity ", l_Entity->m_Name.c_str(), " has been created.");

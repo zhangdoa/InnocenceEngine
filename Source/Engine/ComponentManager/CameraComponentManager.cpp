@@ -106,7 +106,7 @@ bool InnoCameraComponentManager::Terminate()
 	return true;
 }
 
-InnoComponent* InnoCameraComponentManager::Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectOwnership objectUsage)
+InnoComponent* InnoCameraComponentManager::Spawn(const InnoEntity* parentEntity, bool serializable, ObjectLifespan objectLifespan)
 {
 	SpawnComponentImpl(CameraComponent);
 }

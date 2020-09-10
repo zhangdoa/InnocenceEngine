@@ -83,7 +83,7 @@ bool InnoVisibleComponentManager::Terminate()
 	return true;
 }
 
-InnoComponent* InnoVisibleComponentManager::Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectOwnership objectUsage)
+InnoComponent* InnoVisibleComponentManager::Spawn(const InnoEntity* parentEntity, bool serializable, ObjectLifespan objectLifespan)
 {
 	SpawnComponentImpl(VisibleComponent);
 }

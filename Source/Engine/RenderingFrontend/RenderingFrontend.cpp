@@ -864,11 +864,11 @@ SkeletonDataComponent* InnoRenderingFrontend::addSkeletonDataComponent()
 {
 	static std::atomic<uint32_t> skeletonCount = 0;
 	auto l_SDC = m_SkeletonDataComponentPool->Spawn();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Skeleton_" + std::to_string(skeletonCount) + "/").c_str());
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, ("Skeleton_" + std::to_string(skeletonCount) + "/").c_str());
 	l_SDC->m_ParentEntity = l_parentEntity;
+	l_SDC->m_Serializable = false;
 	l_SDC->m_ObjectStatus = ObjectStatus::Created;
-	l_SDC->m_ObjectSource = ObjectSource::Runtime;
-	l_SDC->m_ObjectOwnership = ObjectOwnership::Engine;
+	l_SDC->m_ObjectLifespan = ObjectLifespan::Persistence;
 	l_SDC->m_ComponentType = g_pModuleManager->getFileSystem()->getComponentTypeID("SkeletonDataComponent");
 	skeletonCount++;
 	return l_SDC;
@@ -878,11 +878,11 @@ AnimationDataComponent* InnoRenderingFrontend::addAnimationDataComponent()
 {
 	static std::atomic<uint32_t> animationCount = 0;
 	auto l_ADC = m_AnimationDataComponentPool->Spawn();
-	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Engine, ("Animation_" + std::to_string(animationCount) + "/").c_str());
+	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, ("Animation_" + std::to_string(animationCount) + "/").c_str());
 	l_ADC->m_ParentEntity = l_parentEntity;
+	l_ADC->m_Serializable = false;
 	l_ADC->m_ObjectStatus = ObjectStatus::Created;
-	l_ADC->m_ObjectSource = ObjectSource::Runtime;
-	l_ADC->m_ObjectOwnership = ObjectOwnership::Engine;
+	l_ADC->m_ObjectLifespan = ObjectLifespan::Persistence;
 	l_ADC->m_ComponentType = g_pModuleManager->getFileSystem()->getComponentTypeID("AnimationDataComponent");
 	animationCount++;
 	return l_ADC;

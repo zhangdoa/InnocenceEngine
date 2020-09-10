@@ -12,7 +12,7 @@ public:
 	virtual bool Initialize() = 0;
 	virtual bool Simulate() = 0;
 	virtual bool Terminate() = 0;
-	virtual InnoComponent* Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectOwnership objectUsage) = 0;
+	virtual InnoComponent* Spawn(const InnoEntity* parentEntity, bool serializable, ObjectLifespan objectLifespan) = 0;
 	virtual void Destroy(InnoComponent* component) = 0;
 	virtual InnoComponent* Find(const InnoEntity* parentEntity) = 0;
 };

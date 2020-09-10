@@ -133,8 +133,8 @@ PhysicsDataComponent* InnoPhysicsSystemNS::AddPhysicsDataComponent(InnoEntity* p
 	auto l_PDC = m_PhysicsDataComponentPool->Spawn();
 
 	l_PDC->m_ParentEntity = parentEntity;
-	l_PDC->m_ObjectSource = ObjectSource::Runtime;
-	l_PDC->m_ObjectOwnership = ObjectOwnership::Engine;
+	l_PDC->m_Serializable = false;
+	l_PDC->m_ObjectLifespan = ObjectLifespan::Persistence;
 	l_PDC->m_ComponentType = g_pModuleManager->getFileSystem()->getComponentTypeID("PhysicsDataComponent");
 
 	return l_PDC;

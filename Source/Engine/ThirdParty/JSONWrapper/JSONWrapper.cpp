@@ -14,7 +14,7 @@ extern IModuleManager* g_pModuleManager;
 namespace JSONWrapper
 {
 #define LoadComponentData(className, j, entity) \
-	{ auto l_result = SpawnComponent(className, entity, ObjectSource::Asset, ObjectOwnership::Client); \
+	{ auto l_result = SpawnComponent(className, entity, true, ObjectLifespan::Scene); \
 	from_json(j, *l_result); }
 
 	template<typename T>
@@ -593,7 +593,7 @@ bool JSONWrapper::saveScene(const char* fileName)
 	// save entities name and ID
 	for (auto i : g_pModuleManager->getEntityManager()->GetEntities())
 	{
-		if (i->m_ObjectSource == ObjectSource::Asset)
+		if (i->m_Serializable)
 		{
 			json j;
 			to_json(j, *i);
@@ -604,28 +604,28 @@ bool JSONWrapper::saveScene(const char* fileName)
 	// save children components
 	for (auto i : GetComponentManager(TransformComponent)->GetAllComponents())
 	{
-		if (i->m_ObjectSource == ObjectSource::Asset)
+		if (i->m_Serializable)
 		{
 			saveComponentData(topLevel, i);
 		}
 	}
 	for (auto i : GetComponentManager(VisibleComponent)->GetAllComponents())
 	{
-		if (i->m_ObjectSource == ObjectSource::Asset)
+		if (i->m_Serializable)
 		{
 			saveComponentData(topLevel, i);
 		}
 	}
 	for (auto i : GetComponentManager(LightComponent)->GetAllComponents())
 	{
-		if (i->m_ObjectSource == ObjectSource::Asset)
+		if (i->m_Serializable)
 		{
 			saveComponentData(topLevel, i);
 		}
 	}
 	for (auto i : GetComponentManager(CameraComponent)->GetAllComponents())
 	{
-		if (i->m_ObjectSource == ObjectSource::Asset)
+		if (i->m_Serializable)
 		{
 			saveComponentData(topLevel, i);
 		}
@@ -652,7 +652,7 @@ bool JSONWrapper::loadScene(const char* fileName)
 	{
 		std::string l_entityName = i["ObjectName"];
 		l_entityName += "/";
-		auto l_entity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Asset, ObjectOwnership::Client, l_entityName.c_str());
+		auto l_entity = g_pModuleManager->getEntityManager()->Spawn(true, ObjectLifespan::Scene, l_entityName.c_str());
 
 		for (auto k : i["ChildrenComponents"])
 		{

@@ -1,7 +1,7 @@
 #define CleanComponentContainers( className ) \
 for (auto i : m_Components) \
 { \
-	if (i->m_ObjectOwnership == ObjectOwnership::Client) \
+	if (i->m_ObjectLifespan == ObjectLifespan::Scene) \
 	{ \
 		i->m_ObjectStatus = ObjectStatus::Terminated; \
 		m_ComponentPool->Destroy(i); \
@@ -11,10 +11,10 @@ for (auto i : m_Components) \
 m_Components.erase( \
 	std::remove_if(m_Components.begin(), m_Components.end(), \
 		[&](auto val) { \
-	return val->m_ObjectOwnership == ObjectOwnership::Client; \
+	return val->m_ObjectLifespan == ObjectLifespan::Scene; \
 }), m_Components.end()); \
  \
-m_ComponentsMap.erase_if([&](auto val) { return val.second->m_ObjectOwnership == ObjectOwnership::Client; });
+m_ComponentsMap.erase_if([&](auto val) { return val.second->m_ObjectLifespan == ObjectLifespan::Scene; });
 
 #define SpawnComponentImpl( className ) \
 	auto l_Component = m_ComponentPool->Spawn(); \
@@ -22,8 +22,8 @@ m_ComponentsMap.erase_if([&](auto val) { return val.second->m_ObjectOwnership ==
 	{ \
 		l_Component->m_UUID = InnoRandomizer::GenerateUUID(); \
 		l_Component->m_ObjectStatus = ObjectStatus::Created; \
-		l_Component->m_ObjectSource = objectSource; \
-		l_Component->m_ObjectOwnership = objectUsage; \
+		l_Component->m_Serializable = serializable; \
+		l_Component->m_ObjectLifespan = objectLifespan; \
 		auto l_parentEntity = const_cast<InnoEntity*>(parentEntity); \
 		l_Component->m_ParentEntity = l_parentEntity; \
 		l_Component->m_ComponentType = g_pModuleManager->getFileSystem()->getComponentTypeID(#className); \

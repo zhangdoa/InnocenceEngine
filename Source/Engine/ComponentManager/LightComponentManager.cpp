@@ -387,7 +387,7 @@ bool InnoLightComponentManager::Terminate()
 	return true;
 }
 
-InnoComponent* InnoLightComponentManager::Spawn(const InnoEntity* parentEntity, ObjectSource objectSource, ObjectOwnership objectUsage)
+InnoComponent* InnoLightComponentManager::Spawn(const InnoEntity* parentEntity, bool serializable, ObjectLifespan objectLifespan)
 {
 	SpawnComponentImpl(LightComponent);
 }

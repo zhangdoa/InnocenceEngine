@@ -9,7 +9,7 @@ public:
 
 	uint64_t m_UUID = 0;
 
+	bool m_Serializable = false;
+	ObjectLifespan m_ObjectLifespan = ObjectLifespan::Invalid;
 	ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
-	ObjectSource m_ObjectSource = ObjectSource::Invalid;
-	ObjectOwnership m_ObjectOwnership = ObjectOwnership::Invalid;
 };

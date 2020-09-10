@@ -155,8 +155,8 @@ bool PlayerComponentCollection::setup()
 		}
 		else
 		{
-			m_playerCameraParentEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Client, "playerCharacterCamera/");
-			m_playerCameraTransformComponent = SpawnComponent(TransformComponent, m_playerParentEntity, ObjectSource::Runtime, ObjectOwnership::Client);
+			m_playerCameraParentEntity = g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Scene, "playerCharacterCamera/");
+			m_playerCameraTransformComponent = SpawnComponent(TransformComponent, m_playerParentEntity, false, ObjectLifespan::Scene);
 		}
 
 		m_targetCameraRotX = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -358,17 +358,17 @@ bool GameClientNS::setupReferenceSpheres()
 		m_referenceSphereTransformComponents.emplace_back();
 		m_referenceSphereVisibleComponents.emplace_back();
 		auto l_entityName = std::string("MaterialReferenceSphere_" + std::to_string(i) + "/");
-		m_referenceSphereEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Client, l_entityName.c_str()));
+		m_referenceSphereEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 	}
 
 	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
-		m_referenceSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
+		m_referenceSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_referenceSphereEntites[i], false, ObjectLifespan::Scene);
 		m_referenceSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_referenceSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_referenceSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_referenceSphereEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
+		m_referenceSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_referenceSphereEntites[i], false, ObjectLifespan::Scene);
 		m_referenceSphereVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Sphere;
 		m_referenceSphereVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
 		m_referenceSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
@@ -411,16 +411,16 @@ bool GameClientNS::setupOcclusionCubes()
 		m_occlusionCubeTransformComponents.emplace_back();
 		m_occlusionCubeVisibleComponents.emplace_back();
 		auto l_entityName = std::string("OcclusionCube_" + std::to_string(i) + "/");
-		m_occlusionCubeEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Client, l_entityName.c_str()));
+		m_occlusionCubeEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 	}
 
 	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
-		m_occlusionCubeTransformComponents[i] = SpawnComponent(TransformComponent, m_occlusionCubeEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
+		m_occlusionCubeTransformComponents[i] = SpawnComponent(TransformComponent, m_occlusionCubeEntites[i], false, ObjectLifespan::Scene);
 		m_occlusionCubeTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
-		m_occlusionCubeVisibleComponents[i] = SpawnComponent(VisibleComponent, m_occlusionCubeEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
+		m_occlusionCubeVisibleComponents[i] = SpawnComponent(VisibleComponent, m_occlusionCubeEntites[i], false, ObjectLifespan::Scene);
 		m_occlusionCubeVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Cube;
 		m_occlusionCubeVisibleComponents[i]->m_meshUsage = MeshUsage::Static;
 		m_occlusionCubeVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
@@ -483,17 +483,17 @@ bool GameClientNS::setupOpaqueSpheres()
 		m_opaqueSphereTransformComponents.emplace_back();
 		m_opaqueSphereVisibleComponents.emplace_back();
 		auto l_entityName = std::string("PhysicsTestOpaqueObject_" + std::to_string(i) + "/");
-		m_opaqueSphereEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Client, l_entityName.c_str()));
+		m_opaqueSphereEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 	}
 
 	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
-		m_opaqueSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
+		m_opaqueSphereTransformComponents[i] = SpawnComponent(TransformComponent, m_opaqueSphereEntites[i], false, ObjectLifespan::Scene);
 		m_opaqueSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_opaqueSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_opaqueSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_opaqueSphereEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
+		m_opaqueSphereVisibleComponents[i] = SpawnComponent(VisibleComponent, m_opaqueSphereEntites[i], false, ObjectLifespan::Scene);
 		m_opaqueSphereVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape(i % 6 + 5);
 		m_opaqueSphereVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
 		m_opaqueSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
@@ -544,17 +544,17 @@ bool GameClientNS::setupTransparentCubes()
 		m_transparentCubeTransformComponents.emplace_back();
 		m_transparentCubeVisibleComponents.emplace_back();
 		auto l_entityName = std::string("PhysicsTestTransparentCube_" + std::to_string(i) + "/");
-		m_transparentCubeEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Client, l_entityName.c_str()));
+		m_transparentCubeEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 	}
 
 	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
-		m_transparentCubeTransformComponents[i] = SpawnComponent(TransformComponent, m_transparentCubeEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
+		m_transparentCubeTransformComponents[i] = SpawnComponent(TransformComponent, m_transparentCubeEntites[i], false, ObjectLifespan::Scene);
 		m_transparentCubeTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_transparentCubeTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f * i, 1.0f * i, 0.5f, 1.0f);
-		m_transparentCubeVisibleComponents[i] = SpawnComponent(VisibleComponent, m_transparentCubeEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
+		m_transparentCubeVisibleComponents[i] = SpawnComponent(VisibleComponent, m_transparentCubeEntites[i], false, ObjectLifespan::Scene);
 		m_transparentCubeVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Cube;
 		m_transparentCubeVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
 		m_transparentCubeVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
@@ -587,17 +587,17 @@ bool GameClientNS::setupVolumetricCubes()
 		m_volumetricCubeTransformComponents.emplace_back();
 		m_volumetricCubeVisibleComponents.emplace_back();
 		auto l_entityName = std::string("PhysicsTestVolumetricCube_" + std::to_string(i) + "/");
-		m_volumetricCubeEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Client, l_entityName.c_str()));
+		m_volumetricCubeEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 	}
 
 	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
-		m_volumetricCubeTransformComponents[i] = SpawnComponent(TransformComponent, m_volumetricCubeEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
+		m_volumetricCubeTransformComponents[i] = SpawnComponent(TransformComponent, m_volumetricCubeEntites[i], false, ObjectLifespan::Scene);
 		m_volumetricCubeTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_volumetricCubeTransformComponents[i]->m_localTransformVector.m_scale = Vec4(4.0f, 4.0f, 4.0f, 1.0f);
-		m_volumetricCubeVisibleComponents[i] = SpawnComponent(VisibleComponent, m_volumetricCubeEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
+		m_volumetricCubeVisibleComponents[i] = SpawnComponent(VisibleComponent, m_volumetricCubeEntites[i], false, ObjectLifespan::Scene);
 		m_volumetricCubeVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Cube;
 		m_volumetricCubeVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
 		m_volumetricCubeVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
@@ -638,17 +638,17 @@ bool GameClientNS::setupPointLights()
 		m_pointLightTransformComponents.emplace_back();
 		m_pointLightComponents.emplace_back();
 		auto l_entityName = std::string("TestPointLight_" + std::to_string(i) + "/");
-		m_pointLightEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Client, l_entityName.c_str()));
+		m_pointLightEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 	}
 
 	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
-		m_pointLightTransformComponents[i] = SpawnComponent(TransformComponent, m_pointLightEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
+		m_pointLightTransformComponents[i] = SpawnComponent(TransformComponent, m_pointLightEntites[i], false, ObjectLifespan::Scene);
 		m_pointLightTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_pointLightTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_pointLightComponents[i] = SpawnComponent(LightComponent, m_pointLightEntites[i], ObjectSource::Runtime, ObjectOwnership::Client);
+		m_pointLightComponents[i] = SpawnComponent(LightComponent, m_pointLightEntites[i], false, ObjectLifespan::Scene);
 		m_pointLightComponents[i]->m_LightType = LightType::Point;
 		m_pointLightComponents[i]->m_LuminousFlux = l_randomLuminousFlux(m_generator);
 		m_pointLightComponents[i]->m_ColorTemperature = l_randomColorTemperature(m_generator);

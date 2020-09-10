@@ -311,7 +311,7 @@ void ImGuiWrapperNS::showWorldExplorer()
 
 		for (auto& i : l_sceneHierarchyMap)
 		{
-			if (i.first->m_ObjectSource == ObjectSource::Asset)
+			if (i.first->m_Serializable)
 			{
 				if (ImGui::TreeNode(i.first->m_Name.c_str()))
 				{

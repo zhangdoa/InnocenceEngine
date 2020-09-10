@@ -19,18 +19,12 @@ namespace Inno
 		Terminated,
 	};
 
-	enum class ObjectSource
+	enum class ObjectLifespan
 	{
 		Invalid,
-		Runtime,
-		Asset,
-	};
-
-	enum class ObjectOwnership
-	{
-		Invalid,
-		Engine,
-		Client,
+		Persistence,
+		Scene,
+		Frame,
 	};
 }
 
