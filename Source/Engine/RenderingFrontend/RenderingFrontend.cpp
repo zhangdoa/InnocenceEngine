@@ -143,10 +143,10 @@ void InnoRenderingFrontendNS::initializeHaltonSampler()
 
 void InnoRenderingFrontendNS::initializeAnimation(AnimationDataComponent* rhs)
 {
-	std::string l_name = rhs->m_Name.c_str();
+	std::string l_name = rhs->m_InstanceName.c_str();
 
 	auto l_keyData = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent((l_name + "_KeyData").c_str());
-	l_keyData->m_ParentEntity = rhs->m_ParentEntity;
+	l_keyData->m_Owner = rhs->m_Owner;
 	l_keyData->m_ElementCount = rhs->m_KeyData.capacity();
 	l_keyData->m_ElementSize = sizeof(KeyData);
 	l_keyData->m_GPUAccessibility = Accessibility::ReadWrite;
@@ -160,7 +160,7 @@ void InnoRenderingFrontendNS::initializeAnimation(AnimationDataComponent* rhs)
 	l_info.ADC = rhs;
 	l_info.keyData = l_keyData;
 
-	m_animationDataInfosLUT.emplace(rhs->m_Name.c_str(), l_info);
+	m_animationDataInfosLUT.emplace(rhs->m_InstanceName.c_str(), l_info);
 }
 
 AnimationData InnoRenderingFrontendNS::getAnimationData(const char* animationName)
@@ -427,7 +427,7 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 		return false;
 	}
 
-	auto l_mainCameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_ParentEntity);
+	auto l_mainCameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_Owner);
 
 	if (l_mainCameraTransformComponent == nullptr)
 	{
@@ -487,7 +487,7 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 		return false;
 	}
 
-	auto l_sunTransformComponent = GetComponent(TransformComponent, l_sun->m_ParentEntity);
+	auto l_sunTransformComponent = GetComponent(TransformComponent, l_sun->m_Owner);
 
 	if (l_sunTransformComponent == nullptr)
 	{
@@ -540,7 +540,7 @@ bool InnoRenderingFrontendNS::updateLightData()
 	{
 		for (size_t i = 0; i < l_lightComponentCount; i++)
 		{
-			auto l_transformCompoent = GetComponent(TransformComponent, l_lightComponents[i]->m_ParentEntity);
+			auto l_transformCompoent = GetComponent(TransformComponent, l_lightComponents[i]->m_Owner);
 			if (l_transformCompoent != nullptr)
 			{
 				if (l_lightComponents[i]->m_LightType == LightType::Point)
@@ -727,7 +727,7 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 	{
 		PerObjectConstantBuffer l_meshCB;
 
-		auto l_transformCompoent = GetComponent(TransformComponent, i->m_ParentEntity);
+		auto l_transformCompoent = GetComponent(TransformComponent, i->m_Owner);
 		if (l_transformCompoent != nullptr)
 		{
 			l_meshCB.m = InnoMath::toTranslationMatrix(l_transformCompoent->m_globalTransformVector.m_pos);
@@ -865,11 +865,10 @@ SkeletonDataComponent* InnoRenderingFrontend::addSkeletonDataComponent()
 	static std::atomic<uint32_t> skeletonCount = 0;
 	auto l_SDC = m_SkeletonDataComponentPool->Spawn();
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, ("Skeleton_" + std::to_string(skeletonCount) + "/").c_str());
-	l_SDC->m_ParentEntity = l_parentEntity;
+	l_SDC->m_Owner = l_parentEntity;
 	l_SDC->m_Serializable = false;
 	l_SDC->m_ObjectStatus = ObjectStatus::Created;
 	l_SDC->m_ObjectLifespan = ObjectLifespan::Persistence;
-	l_SDC->m_ComponentType = g_pModuleManager->getFileSystem()->getComponentTypeID("SkeletonDataComponent");
 	skeletonCount++;
 	return l_SDC;
 }
@@ -879,11 +878,10 @@ AnimationDataComponent* InnoRenderingFrontend::addAnimationDataComponent()
 	static std::atomic<uint32_t> animationCount = 0;
 	auto l_ADC = m_AnimationDataComponentPool->Spawn();
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, ("Animation_" + std::to_string(animationCount) + "/").c_str());
-	l_ADC->m_ParentEntity = l_parentEntity;
+	l_ADC->m_Owner = l_parentEntity;
 	l_ADC->m_Serializable = false;
 	l_ADC->m_ObjectStatus = ObjectStatus::Created;
 	l_ADC->m_ObjectLifespan = ObjectLifespan::Persistence;
-	l_ADC->m_ComponentType = g_pModuleManager->getFileSystem()->getComponentTypeID("AnimationDataComponent");
 	animationCount++;
 	return l_ADC;
 }

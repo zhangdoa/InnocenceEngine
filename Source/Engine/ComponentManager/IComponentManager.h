@@ -1,7 +1,7 @@
 #pragma once
 #include "../Common/InnoType.h"
 #include "../Common/InnoClassTemplate.h"
-#include "../Common/InnoComponent.h"
+#include "../Common/InnoObject.h"
 
 class IComponentManager
 {

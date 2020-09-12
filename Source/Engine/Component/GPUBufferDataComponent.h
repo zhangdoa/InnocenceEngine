@@ -1,11 +1,14 @@
 #pragma once
 #include "../Common/InnoType.h"
 #include "../Common/InnoGraphicsPrimitive.h"
-#include "../Common/InnoComponent.h"
+#include "../Common/InnoObject.h"
 
 class GPUBufferDataComponent : public InnoComponent
 {
 public:
+	static uint32_t GetTypeID() { return 14; };
+	static char* GetTypeName() { return "GPUBufferDataComponent"; };
+
 	Accessibility m_CPUAccessibility = Accessibility::WriteOnly;
 	Accessibility m_GPUAccessibility = Accessibility::ReadOnly;
 	size_t m_ElementCount = 0;

@@ -1,5 +1,5 @@
 #pragma once
-#include "../Common/InnoComponent.h"
+#include "../Common/InnoObject.h"
 #include "../Common/InnoGraphicsPrimitive.h"
 #include "TextureDataComponent.h"
 
@@ -14,6 +14,9 @@ struct TextureSlot
 class MaterialDataComponent : public InnoComponent
 {
 public:
+	static uint32_t GetTypeID() { return 7; };
+	static char* GetTypeName() { return "MaterialDataComponent"; };
+
 	MaterialAttributes m_materialAttributes = {};
 	TextureSlot m_TextureSlots[8];
 	ShaderModel m_ShaderModel = ShaderModel::Invalid;

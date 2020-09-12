@@ -775,7 +775,7 @@ bool DX11RenderingServer::InitializeSamplerDataComponent(SamplerDataComponent* r
 	auto l_HResult = m_device->CreateSamplerState(&l_rhs->m_DX11SamplerDesc, &l_rhs->m_SamplerState);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create sampler state object for ", rhs->m_Name.c_str(), "!");
+		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create sampler state object for ", rhs->m_InstanceName.c_str(), "!");
 		return false;
 	}
 

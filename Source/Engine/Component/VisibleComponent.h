@@ -1,5 +1,5 @@
 #pragma once
-#include "../Common/InnoComponent.h"
+#include "../Common/InnoObject.h"
 #include "MeshDataComponent.h"
 #include "MaterialDataComponent.h"
 
@@ -17,6 +17,9 @@ struct Model
 class VisibleComponent : public InnoComponent
 {
 public:
+	static uint32_t GetTypeID() { return 2; };
+	static char* GetTypeName() { return "VisibleComponent"; };
+
 	MeshPrimitiveTopology m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	TextureWrapMethod m_textureWrapMethod = TextureWrapMethod::Repeat;
 

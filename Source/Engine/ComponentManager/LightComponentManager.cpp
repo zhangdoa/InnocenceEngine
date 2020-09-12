@@ -119,7 +119,7 @@ void LightComponentManagerNS::UpdateSingleSMData(LightComponent* rhs)
 
 	m_SplitAABBWS.emplace_back(l_totalSceneAABB);
 
-	auto l_transformComponent = GetComponent(TransformComponent, rhs->m_ParentEntity);
+	auto l_transformComponent = GetComponent(TransformComponent, rhs->m_Owner);
 	auto l_r = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
 	auto l_sunDir = InnoMath::getDirection(Direction::Forward, l_transformComponent->m_globalTransformVector.m_rot);
 	auto l_pos = l_sunDir * l_sphereRadius + l_totalSceneAABB.m_center;
@@ -142,13 +142,13 @@ void LightComponentManagerNS::UpdateCSMData(LightComponent* rhs)
 	{
 		return;
 	}
-	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_cameraComponent->m_ParentEntity);
+	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_cameraComponent->m_Owner);
 	if (l_cameraTransformComponent == nullptr)
 	{
 		return;
 	}
 
-	auto l_transformComponent = GetComponent(TransformComponent, rhs->m_ParentEntity);
+	auto l_transformComponent = GetComponent(TransformComponent, rhs->m_Owner);
 	auto l_r = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
 	auto l_sunDir = InnoMath::getDirection(Direction::Forward, l_transformComponent->m_globalTransformVector.m_rot);
 

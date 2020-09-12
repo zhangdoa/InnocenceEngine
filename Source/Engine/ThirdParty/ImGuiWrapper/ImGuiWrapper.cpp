@@ -313,14 +313,14 @@ void ImGuiWrapperNS::showWorldExplorer()
 		{
 			if (i.first->m_Serializable)
 			{
-				if (ImGui::TreeNode(i.first->m_Name.c_str()))
+				if (ImGui::TreeNode(i.first->m_InstanceName.c_str()))
 				{
 					for (auto& j : i.second)
 					{
-						if (ImGui::Selectable(j->m_Name.c_str(), selectedComponent == j))
+						if (ImGui::Selectable(j->m_InstanceName.c_str(), selectedComponent == j))
 						{
 							selectedComponent = j;
-							selectedComponentType = j->m_ComponentType;
+							//selectedComponentType = j->GetTypeID();
 						}
 					}
 					ImGui::TreePop();
@@ -438,7 +438,7 @@ void ImGuiWrapperNS::showVisiableComponentPropertyEditor(void* rhs)
 			{
 				auto l_meshMaterialPair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(l_rhs->m_model->meshMaterialPairs.m_startOffset + j);
 
-				if (ImGui::Selectable(l_meshMaterialPair->mesh->m_ParentEntity->m_Name.c_str(), selectedComponent == l_meshMaterialPair->material))
+				if (ImGui::Selectable(l_meshMaterialPair->mesh->m_Owner->m_InstanceName.c_str(), selectedComponent == l_meshMaterialPair->material))
 				{
 					selectedComponent = l_meshMaterialPair->material;
 				}

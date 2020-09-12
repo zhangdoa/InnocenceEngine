@@ -18,9 +18,6 @@ public:
 	std::vector<char> loadFile(const char* filePath, IOMode openMode) override;
 	bool saveFile(const char* filePath, const std::vector<char>& content, IOMode saveMode) override;
 
-	const char* getComponentTypeName(uint32_t typeID) override;
-	uint32_t getComponentTypeID(const char* typeName) override;
-
 	std::string getCurrentSceneName() override;
 	bool loadScene(const char* fileName, bool AsyncLoad) override;
 	bool saveScene(const char* fileName) override;

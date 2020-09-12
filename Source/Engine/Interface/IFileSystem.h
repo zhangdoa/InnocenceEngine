@@ -31,9 +31,6 @@ public:
 	virtual std::vector<char> loadFile(const char* filePath, IOMode openMode) = 0;
 	virtual bool saveFile(const char* filePath, const std::vector<char>& content, IOMode saveMode) = 0;
 
-	virtual const char* getComponentTypeName(uint32_t typeID) = 0;
-	virtual uint32_t getComponentTypeID(const char* typeName) = 0;
-
 	virtual std::string getCurrentSceneName() = 0;
 	virtual bool loadScene(const char* fileName, bool AsyncLoad = true) = 0;
 	virtual bool saveScene(const char* fileName = "") = 0;

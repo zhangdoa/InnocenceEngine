@@ -867,7 +867,7 @@ Vec4 GameClientNS::getMousePositionInWorldSpace()
 	{
 		return Vec4();
 	}
-	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_ParentEntity);
+	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_Owner);
 	if (l_cameraTransformComponent == nullptr)
 	{
 		return Vec4();

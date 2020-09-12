@@ -9,7 +9,7 @@ namespace DX11Helper
 	template <typename U, typename T>
 	bool SetObjectName(U* owner, T* rhs, const char* objectType)
 	{
-		auto l_Name = std::string(owner->m_Name.c_str());
+		auto l_Name = std::string(owner->m_InstanceName.c_str());
 		l_Name += "_";
 		l_Name += objectType;
 		auto l_HResult = rhs->SetPrivateData(WKPDID_D3DDebugObjectName, (uint32_t)l_Name.size(), l_Name.c_str());

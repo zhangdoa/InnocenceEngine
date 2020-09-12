@@ -1,7 +1,7 @@
 #pragma once
 #include "../Common/InnoType.h"
 #include "../Common/InnoClassTemplate.h"
-#include "../Common/InnoEntity.h"
+#include "../Common/InnoObject.h"
 #include "../Common/STL17.h"
 
 class IEntityManager

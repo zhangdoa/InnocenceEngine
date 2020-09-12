@@ -1,7 +1,7 @@
 #pragma once
 #include "../Common/InnoType.h"
 #include "../Common/InnoGraphicsPrimitive.h"
-#include "../Common/InnoComponent.h"
+#include "../Common/InnoObject.h"
 
 struct SamplerDesc
 {
@@ -20,6 +20,9 @@ struct SamplerDesc
 class SamplerDataComponent : public InnoComponent
 {
 public:
+	static uint32_t GetTypeID() { return 13; };
+	static char* GetTypeName() { return "SamplerDataComponent"; };
+
 	SamplerDesc m_SamplerDesc = {};
 	IResourceBinder* m_ResourceBinder = 0;
 };

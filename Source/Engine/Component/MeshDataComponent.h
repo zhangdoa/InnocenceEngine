@@ -1,12 +1,15 @@
 #pragma once
 #include "../Common/InnoType.h"
 #include "../Common/InnoGraphicsPrimitive.h"
-#include "../Common/InnoComponent.h"
+#include "../Common/InnoObject.h"
 #include "SkeletonDataComponent.h"
 
 class MeshDataComponent : public InnoComponent
 {
 public:
+	static uint32_t GetTypeID() { return 6; };
+	static char* GetTypeName() { return "MeshDataComponent"; };
+
 	MeshPrimitiveTopology m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 	MeshSource m_meshSource = MeshSource::Procedural;
 	ProceduralMeshShape m_proceduralMeshShape = ProceduralMeshShape::Triangle;

@@ -1816,7 +1816,7 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent* render
 	if ((l_renderPass->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Compute && shaderStage != ShaderStage::Compute)
 		|| (l_renderPass->m_RenderPassDesc.m_RenderPassUsage != RenderPassUsage::Compute && shaderStage == ShaderStage::Compute))
 	{
-		InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Trying to activate resource binder in global slot: ", globalSlot, ", local slot: ", localSlot, " with incompatible render pass: ", renderPass->m_Name.c_str());
+		InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Trying to activate resource binder in global slot: ", globalSlot, ", local slot: ", localSlot, " with incompatible render pass: ", renderPass->m_InstanceName.c_str());
 
 		return false;
 	}
@@ -1935,7 +1935,7 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent* render
 	}
 	else
 	{
-		InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Empty resource binder in render pass: ", renderPass->m_Name.c_str(), ", global slot: ", globalSlot, ", local slot: ", localSlot);
+		InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Empty resource binder in render pass: ", renderPass->m_InstanceName.c_str(), ", global slot: ", globalSlot, ", local slot: ", localSlot);
 	}
 	return true;
 }

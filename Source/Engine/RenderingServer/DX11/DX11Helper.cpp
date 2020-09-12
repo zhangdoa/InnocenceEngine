@@ -664,7 +664,7 @@ bool DX11Helper::ReserveRenderTargets(DX11RenderPassDataComponent* DX11RPDC, IRe
 		for (size_t i = 0; i < DX11RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 		{
 			DX11RPDC->m_RenderTargets.emplace_back();
-			DX11RPDC->m_RenderTargets[i] = renderingServer->AddTextureDataComponent((std::string(DX11RPDC->m_Name.c_str()) + "_" + std::to_string(i) + "/").c_str());
+			DX11RPDC->m_RenderTargets[i] = renderingServer->AddTextureDataComponent((std::string(DX11RPDC->m_InstanceName.c_str()) + "_" + std::to_string(i) + "/").c_str());
 		}
 	}
 
@@ -689,7 +689,7 @@ bool DX11Helper::CreateRenderTargets(DX11RenderPassDataComponent* DX11RPDC, IRen
 
 	if (DX11RPDC->m_RenderPassDesc.m_UseDepthBuffer)
 	{
-		DX11RPDC->m_DepthStencilRenderTarget = renderingServer->AddTextureDataComponent((std::string(DX11RPDC->m_Name.c_str()) + "_DS/").c_str());
+		DX11RPDC->m_DepthStencilRenderTarget = renderingServer->AddTextureDataComponent((std::string(DX11RPDC->m_InstanceName.c_str()) + "_DS/").c_str());
 		DX11RPDC->m_DepthStencilRenderTarget->m_TextureDesc = DX11RPDC->m_RenderPassDesc.m_RenderTargetDesc;
 
 		if (DX11RPDC->m_RenderPassDesc.m_UseStencilBuffer)
@@ -743,7 +743,7 @@ bool DX11Helper::CreateViews(DX11RenderPassDataComponent* DX11RPDC, ID3D11Device
 			auto l_HResult = device->CreateRenderTargetView(l_DX11TDC->m_ResourceHandle, &DX11RPDC->m_RTVDesc, &DX11RPDC->m_RTVs[i]);
 			if (FAILED(l_HResult))
 			{
-				InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create RTV for ", DX11RPDC->m_Name.c_str(), "!");
+				InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create RTV for ", DX11RPDC->m_InstanceName.c_str(), "!");
 				return false;
 			}
 #ifdef  _DEBUG
@@ -765,7 +765,7 @@ bool DX11Helper::CreateViews(DX11RenderPassDataComponent* DX11RPDC, ID3D11Device
 			auto l_HResult = device->CreateDepthStencilView(l_DX11TDC->m_ResourceHandle, &DX11RPDC->m_DSVDesc, &DX11RPDC->m_DSV);
 			if (FAILED(l_HResult))
 			{
-				InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the DSV for ", DX11RPDC->m_Name.c_str(), "!");
+				InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the DSV for ", DX11RPDC->m_InstanceName.c_str(), "!");
 				return false;
 			}
 #ifdef  _DEBUG
@@ -774,7 +774,7 @@ bool DX11Helper::CreateViews(DX11RenderPassDataComponent* DX11RPDC, ID3D11Device
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: ", DX11RPDC->m_Name.c_str(), " depth (and stencil) test is enable, but no depth-stencil render target is bound!");
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: ", DX11RPDC->m_InstanceName.c_str(), " depth (and stencil) test is enable, but no depth-stencil render target is bound!");
 		}
 	}
 
@@ -849,7 +849,7 @@ bool DX11Helper::CreateStateObjects(DX11RenderPassDataComponent* DX11RPDC, ID3D1
 		auto l_HResult = device->CreateDepthStencilState(&l_PSO->m_DepthStencilDesc, &l_PSO->m_DepthStencilState);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the depth stencil state object for ", DX11RPDC->m_Name.c_str(), "!");
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the depth stencil state object for ", DX11RPDC->m_InstanceName.c_str(), "!");
 			return false;
 		}
 	}
@@ -860,7 +860,7 @@ bool DX11Helper::CreateStateObjects(DX11RenderPassDataComponent* DX11RPDC, ID3D1
 		auto l_HResult = device->CreateBlendState(&l_PSO->m_BlendDesc, &l_PSO->m_BlendState);
 		if (FAILED(l_HResult))
 		{
-			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the blend state object for ", DX11RPDC->m_Name.c_str(), "!");
+			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the blend state object for ", DX11RPDC->m_InstanceName.c_str(), "!");
 			return false;
 		}
 	}
@@ -869,7 +869,7 @@ bool DX11Helper::CreateStateObjects(DX11RenderPassDataComponent* DX11RPDC, ID3D1
 	l_HResult = device->CreateRasterizerState(&l_PSO->m_RasterizerDesc, &l_PSO->m_RasterizerState);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the rasterizer state object for ", DX11RPDC->m_Name.c_str(), "!");
+		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the rasterizer state object for ", DX11RPDC->m_InstanceName.c_str(), "!");
 		return false;
 	}
 

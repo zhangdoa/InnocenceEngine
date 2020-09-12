@@ -1,5 +1,5 @@
 #pragma once
-#include "../Common/InnoComponent.h"
+#include "../Common/InnoObject.h"
 #include "../Common/InnoMathHelper.h"
 
 struct BoneData
@@ -10,5 +10,8 @@ struct BoneData
 class SkeletonDataComponent : public InnoComponent
 {
 public:
+	static uint32_t GetTypeID() { return 9; };
+	static char* GetTypeName() { return "SkeletonDataComponent"; };
+
 	Array<BoneData> m_BoneData;
 };

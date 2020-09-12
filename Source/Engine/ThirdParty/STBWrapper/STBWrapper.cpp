@@ -33,7 +33,7 @@ TextureDataComponent* STBWrapper::loadTexture(const char* fileName)
 	{
 		auto l_TDC = g_pModuleManager->getRenderingFrontend()->addTextureDataComponent();
 
-		l_TDC->m_Name = (std::string(fileName) + "/").c_str();
+		l_TDC->m_InstanceName = (std::string(fileName) + "/").c_str();
 
 		l_TDC->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat(nrChannels);
 		l_TDC->m_TextureDesc.PixelDataType = l_isHDR ? TexturePixelDataType::Float16 : TexturePixelDataType::UByte;

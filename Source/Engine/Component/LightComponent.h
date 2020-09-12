@@ -1,5 +1,5 @@
 #pragma once
-#include "../Common/InnoComponent.h"
+#include "../Common/InnoObject.h"
 #include "../Common/InnoMathHelper.h"
 
 enum class LightType { Directional, Point, Spot, Sphere, Disk, Tube, Rectangle };
@@ -7,6 +7,9 @@ enum class LightType { Directional, Point, Spot, Sphere, Disk, Tube, Rectangle }
 class LightComponent : public InnoComponent
 {
 public:
+	static uint32_t GetTypeID() { return 3; };
+	static char* GetTypeName() { return "LightComponent"; };
+
 	// Unitless: use clamped range from 0.0 to 1.0
 	// CIE 1931 RGB color space
 	Vec4 m_RGBColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);

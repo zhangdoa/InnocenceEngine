@@ -19,9 +19,8 @@ l_result->m_ObjectStatus = ObjectStatus::Created; \
 l_result->m_Serializable = false; \
 l_result->m_ObjectLifespan = ObjectLifespan::Persistence; \
 auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, l_name.c_str()); \
-l_result->m_ParentEntity = l_parentEntity; \
-l_result->m_ComponentType = g_pModuleManager->getFileSystem()->getComponentTypeID(#component"Component"); \
-l_result->m_Name = l_name.c_str(); \
+l_result->m_Owner = l_parentEntity; \
+l_result->m_InstanceName = l_name.c_str(); \
  \
 return l_result; \
 }

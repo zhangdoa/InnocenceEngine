@@ -287,7 +287,7 @@ bool DebugPass::Render()
 			{
 				if (i->m_meshUsage == MeshUsage::Skeletal && i->m_model)
 				{
-					auto l_transformCompoent = GetComponent(TransformComponent, i->m_ParentEntity);
+					auto l_transformCompoent = GetComponent(TransformComponent, i->m_Owner);
 					auto l_m = l_transformCompoent->m_globalTransformMatrix.m_transformationMat;
 
 					for (size_t j = 0; j < i->m_model->meshMaterialPairs.m_count; j++)

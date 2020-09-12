@@ -39,7 +39,7 @@ void CameraComponentManagerNS::generateProjectionMatrix(CameraComponent* cameraC
 
 void CameraComponentManagerNS::generateFrustum(CameraComponent* cameraComponent)
 {
-	auto l_transformComponent = GetComponent(TransformComponent, cameraComponent->m_ParentEntity);
+	auto l_transformComponent = GetComponent(TransformComponent, cameraComponent->m_Owner);
 
 	if (l_transformComponent != nullptr)
 	{
@@ -54,7 +54,7 @@ void CameraComponentManagerNS::generateFrustum(CameraComponent* cameraComponent)
 
 void CameraComponentManagerNS::generateRayOfEye(CameraComponent* cameraComponent)
 {
-	auto l_transformComponent = GetComponent(TransformComponent, cameraComponent->m_ParentEntity);
+	auto l_transformComponent = GetComponent(TransformComponent, cameraComponent->m_Owner);
 
 	if (l_transformComponent != nullptr)
 	{

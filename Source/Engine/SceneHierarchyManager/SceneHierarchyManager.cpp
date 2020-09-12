@@ -51,19 +51,19 @@ bool InnoSceneHierarchyManager::Terminate()
 	auto l_Components = GetComponentManager(className)->GetAllComponents(); \
 	for (auto i : l_Components) \
 	{ \
-		auto l_result = m_SceneHierarchyMap.find(i->m_ParentEntity); \
+		auto l_result = m_SceneHierarchyMap.find(i->m_Owner); \
 		if (l_result != m_SceneHierarchyMap.end()) \
 		{ \
 			l_result->second.emplace(i); \
 		} \
 		else \
 		{ \
-			m_SceneHierarchyMap.emplace(i->m_ParentEntity, std::set<InnoComponent*>{ i }); \
+			m_SceneHierarchyMap.emplace(i->m_Owner, std::set<InnoComponent*>{ i }); \
 		} \
 	}\
 }
 
-const SceneHierarchyMap & InnoSceneHierarchyManager::GetSceneHierarchyMap()
+const SceneHierarchyMap& InnoSceneHierarchyManager::GetSceneHierarchyMap()
 {
 	if (m_needUpdate)
 	{

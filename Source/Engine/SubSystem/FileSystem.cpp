@@ -22,9 +22,6 @@ namespace InnoFileSystemNS
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-	std::unordered_map<uint32_t, std::string> m_componentIDToNameLUT;
-	std::unordered_map<std::string, uint32_t> m_componentNameToIDLUT;
-
 	std::vector<SceneLoadingCallback> m_sceneLoadingStartCallbacks;
 	std::vector<SceneLoadingCallback> m_sceneLoadingFinishCallbacks;
 
@@ -102,16 +99,6 @@ bool InnoFileSystem::setup()
 {
 	IOService::setupWorkingDirectory();
 
-	json j;
-
-	JSONWrapper::loadJsonDataFromDisk("..//Source//Engine//Common//ComponentType.json", j);
-
-	for (auto i : j)
-	{
-		m_componentIDToNameLUT.emplace(i["ID"], i["Name"]);
-		m_componentNameToIDLUT.emplace(i["Name"], i["ID"]);
-	}
-
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
 }
@@ -179,34 +166,6 @@ std::vector<char> InnoFileSystem::loadFile(const char* filePath, IOMode openMode
 bool InnoFileSystem::saveFile(const char* filePath, const std::vector<char>& content, IOMode saveMode)
 {
 	return IOService::saveFile(filePath, content, saveMode);
-}
-
-const char* InnoFileSystem::getComponentTypeName(uint32_t typeID)
-{
-	auto l_result = m_componentIDToNameLUT.find(typeID);
-	if (l_result != m_componentIDToNameLUT.end())
-	{
-		return l_result->second.c_str();
-	}
-	else
-	{
-		InnoLogger::Log(LogLevel::Error, "FileSystem: Unknown ComponentTypeID: ", typeID);
-		return nullptr;
-	}
-}
-
-uint32_t InnoFileSystem::getComponentTypeID(const char* typeName)
-{
-	auto l_result = m_componentNameToIDLUT.find(typeName);
-	if (l_result != m_componentNameToIDLUT.end())
-	{
-		return l_result->second;
-	}
-	else
-	{
-		InnoLogger::Log(LogLevel::Error, "FileSystem: Unknown ComponentTypeName: ", typeName);
-		return 0;
-	}
 }
 
 std::string InnoFileSystem::getCurrentSceneName()

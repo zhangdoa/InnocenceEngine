@@ -70,12 +70,12 @@ InnoEntity* InnoEntityManager::Spawn(bool serializable, ObjectLifespan objectLif
 		auto l_UUID = InnoRandomizer::GenerateUUID();
 
 		l_Entity->m_UUID = l_UUID;
-		l_Entity->m_Name = entityName;
+		l_Entity->m_InstanceName = entityName;
 		l_Entity->m_Serializable = serializable;
 		l_Entity->m_ObjectLifespan = objectLifespan;
 		l_Entity->m_ObjectStatus = ObjectStatus::Activated;
 
-		InnoLogger::Log(LogLevel::Verbose, "EntityManager: Entity ", l_Entity->m_Name.c_str(), " has been created.");
+		InnoLogger::Log(LogLevel::Verbose, "EntityManager: Entity ", l_Entity->m_InstanceName.c_str(), " has been created.");
 	}
 	else
 	{
@@ -88,7 +88,7 @@ InnoEntity* InnoEntityManager::Spawn(bool serializable, ObjectLifespan objectLif
 bool InnoEntityManager::Destroy(InnoEntity* entity)
 {
 	m_Entities.eraseByValue(entity);
-	InnoLogger::Log(LogLevel::Verbose, "EntityManager: Entity ", entity->m_Name.c_str(), " has been removed.");
+	InnoLogger::Log(LogLevel::Verbose, "EntityManager: Entity ", entity->m_InstanceName.c_str(), " has been removed.");
 	m_EntityPool->Destroy(entity);
 	return true;
 }
@@ -99,7 +99,7 @@ std::optional<InnoEntity*> InnoEntityManager::Find(const char* entityName)
 		m_Entities.begin(),
 		m_Entities.end(),
 		[&](auto val) -> bool {
-			return val->m_Name == entityName;
+			return val->m_InstanceName == entityName;
 		});
 
 	if (l_FindResult != m_Entities.end())

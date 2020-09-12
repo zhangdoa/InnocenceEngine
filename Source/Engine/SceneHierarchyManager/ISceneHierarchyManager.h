@@ -1,8 +1,7 @@
 #pragma once
 #include "../Common/InnoType.h"
 #include "../Common/InnoClassTemplate.h"
-#include "../Common/InnoEntity.h"
-#include "../Common/InnoComponent.h"
+#include "../Common/InnoObject.h"
 
 using SceneHierarchyMap = std::unordered_map<InnoEntity*, std::set<InnoComponent*>>;
 

@@ -7,6 +7,9 @@
 class RenderPassDataComponent : public InnoComponent
 {
 public:
+	static uint32_t GetTypeID() { return 11; };
+	static char* GetTypeName() { return "RenderPassDataComponent"; };
+
 	ShaderProgramComponent* m_ShaderProgram = 0;
 
 	RenderPassDesc m_RenderPassDesc = {};

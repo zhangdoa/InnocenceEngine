@@ -27,7 +27,7 @@ namespace JSONWrapper
 			topLevel["SceneEntities"].begin(),
 			topLevel["SceneEntities"].end(),
 			[&](auto val) -> bool {
-				return val["UUID"] == rhs->m_ParentEntity->m_UUID;
+				return val["UUID"] == rhs->m_Owner->m_UUID;
 			});
 
 		if (l_result != topLevel["SceneEntities"].end())
@@ -37,7 +37,7 @@ namespace JSONWrapper
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Warning, "FileSystem: saveComponentData<T>: UUID ", rhs->m_ParentEntity->m_UUID, " is invalid.");
+			InnoLogger::Log(LogLevel::Warning, "FileSystem: saveComponentData<T>: UUID ", rhs->m_Owner->m_UUID, " is invalid.");
 			return false;
 		}
 	}
@@ -88,7 +88,7 @@ void JSONWrapper::to_json(json& j, const InnoEntity& p)
 	j = json
 	{
 		{"UUID", p.m_UUID},
-		{"ObjectName", p.m_Name.c_str()},
+		{"ObjectName", p.m_InstanceName.c_str()},
 	};
 }
 
@@ -209,11 +209,11 @@ void JSONWrapper::to_json(json& j, const TransformComponent& p)
 
 	to_json(localTransformVector, p.m_localTransformVector);
 
-	auto parentTransformComponentEntityName = p.m_parentTransformComponent->m_ParentEntity->m_Name;
+	auto parentTransformComponentEntityName = p.m_parentTransformComponent->m_Owner->m_InstanceName;
 
 	j = json
 	{
-		{"ComponentType", p.m_ComponentType},
+		{"ComponentType", p.GetTypeID()},
 		{"ParentTransformComponentEntityName", parentTransformComponentEntityName.c_str()},
 		{"LocalTransformVector", localTransformVector },
 	};
@@ -223,7 +223,7 @@ void JSONWrapper::to_json(json& j, const VisibleComponent& p)
 {
 	j = json
 	{
-		{"ComponentType", p.m_ComponentType},
+		{"ComponentType", p.GetTypeID()},
 		{"MeshPrimitiveTopology", p.m_meshPrimitiveTopology},
 		{"TextureWrapMethod", p.m_textureWrapMethod},
 		{"MeshUsage", p.m_meshUsage},
@@ -244,7 +244,7 @@ void JSONWrapper::to_json(json& j, const LightComponent& p)
 
 	j = json
 	{
-		{"ComponentType", p.m_ComponentType},
+		{"ComponentType", p.GetTypeID()},
 		{"RGBColor", color},
 		{"Shape", shape},
 		{"LightType", p.m_LightType},
@@ -258,7 +258,7 @@ void JSONWrapper::to_json(json& j, const CameraComponent& p)
 {
 	j = json
 	{
-		{"ComponentType", p.m_ComponentType},
+		{"ComponentType", p.GetTypeID()},
 		{"FOVX", p.m_FOVX},
 		{"WidthScale", p.m_widthScale},
 		{"HeightScale", p.m_heightScale},
@@ -389,7 +389,7 @@ bool JSONWrapper::processAnimationJsonData(const json& j, bool AsyncUploadGPURes
 		}
 
 		auto l_ADC = g_pModuleManager->getRenderingFrontend()->addAnimationDataComponent();
-		l_ADC->m_Name = (l_animationFileName + "//").c_str();
+		l_ADC->m_InstanceName = (l_animationFileName + "//").c_str();
 
 		std::streamoff l_offset = 0;
 
@@ -459,7 +459,7 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadG
 				}
 
 				auto l_mesh = g_pModuleManager->getRenderingFrontend()->addMeshDataComponent();
-				l_mesh->m_Name = (l_meshFileName + "//").c_str();
+				l_mesh->m_InstanceName = (l_meshFileName + "//").c_str();
 
 				size_t l_verticesNumber = i["VerticesNumber"];
 				size_t l_indicesNumber = i["IndicesNumber"];
@@ -519,7 +519,7 @@ SkeletonDataComponent* JSONWrapper::processSkeletonJsonData(const json& j, const
 	else
 	{
 		l_SDC = g_pModuleManager->getRenderingFrontend()->addSkeletonDataComponent();
-		l_SDC->m_Name = (std::string(name) + ("//")).c_str();
+		l_SDC->m_InstanceName = (std::string(name) + ("//")).c_str();
 
 		auto l_size = j["Bones"].size();
 		l_SDC->m_BoneData.reserve(l_size);
@@ -542,7 +542,7 @@ SkeletonDataComponent* JSONWrapper::processSkeletonJsonData(const json& j, const
 MaterialDataComponent* JSONWrapper::processMaterialJsonData(const json& j, const char* name, bool AsyncUploadGPUResource)
 {
 	auto l_MDC = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
-	l_MDC->m_Name = (std::string(name) + ("//")).c_str();
+	l_MDC->m_InstanceName = (std::string(name) + ("//")).c_str();
 	auto l_defaultMaterial = g_pModuleManager->getRenderingFrontend()->getDefaultMaterialDataComponent();
 
 	if (j.find("Textures") != j.end())

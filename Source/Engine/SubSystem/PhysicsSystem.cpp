@@ -132,10 +132,9 @@ PhysicsDataComponent* InnoPhysicsSystemNS::AddPhysicsDataComponent(InnoEntity* p
 
 	auto l_PDC = m_PhysicsDataComponentPool->Spawn();
 
-	l_PDC->m_ParentEntity = parentEntity;
+	l_PDC->m_Owner = parentEntity;
 	l_PDC->m_Serializable = false;
 	l_PDC->m_ObjectLifespan = ObjectLifespan::Persistence;
-	l_PDC->m_ComponentType = g_pModuleManager->getFileSystem()->getComponentTypeID("PhysicsDataComponent");
 
 	return l_PDC;
 }
@@ -143,14 +142,14 @@ PhysicsDataComponent* InnoPhysicsSystemNS::AddPhysicsDataComponent(InnoEntity* p
 PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(MeshMaterialPair* meshMaterialPair)
 {
 	auto l_MDC = meshMaterialPair->mesh;
-	auto l_PDC = AddPhysicsDataComponent(l_MDC->m_ParentEntity);
+	auto l_PDC = AddPhysicsDataComponent(l_MDC->m_Owner);
 
 	l_PDC->m_AABBLS = InnoMath::generateAABB(&l_MDC->m_vertices[0], l_MDC->m_vertices.size());
 	l_PDC->m_SphereLS = InnoMath::generateBoundSphere(l_PDC->m_AABBLS);
 
 	l_PDC->m_MeshMaterialPair = meshMaterialPair;
 
-	InnoLogger::Log(LogLevel::Verbose, "PhysicsSystem: PhysicsDataComponent has been generated for MeshDataComponent:", l_MDC->m_ParentEntity->m_Name.c_str(), ".");
+	InnoLogger::Log(LogLevel::Verbose, "PhysicsSystem: PhysicsDataComponent has been generated for MeshDataComponent:", l_MDC->m_Owner->m_InstanceName.c_str(), ".");
 
 	m_Components.emplace_back(l_PDC);
 
@@ -173,7 +172,7 @@ ArrayRangeInfo InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent* VC)
 	l_result.m_startOffset = m_Components.size();
 	l_result.m_count = VC->m_model->meshMaterialPairs.m_count;
 
-	auto l_transformComponent = GetComponent(TransformComponent, VC->m_ParentEntity);
+	auto l_transformComponent = GetComponent(TransformComponent, VC->m_Owner);
 	auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
 	for (uint64_t j = 0; j < VC->m_model->meshMaterialPairs.m_count; j++)
@@ -445,7 +444,7 @@ bool generateBVHLeafNodes(BVHNode* parentNode)
 
 		if (l_leftChildrenPDCs.size() != 1)
 		{
-			auto l_leftPDC = AddPhysicsDataComponent(parentNode->intermediatePDC->m_ParentEntity);
+			auto l_leftPDC = AddPhysicsDataComponent(parentNode->intermediatePDC->m_Owner);
 
 			l_leftPDC->m_AABBWS = InnoMath::generateAABB(l_midMax, parentNode->intermediatePDC->m_AABBWS.m_boundMin);
 			l_leftPDC->m_SphereWS = InnoMath::generateBoundSphere(l_leftPDC->m_AABBWS);
@@ -470,7 +469,7 @@ bool generateBVHLeafNodes(BVHNode* parentNode)
 
 		if (l_rightChildrenPDCs.size() != 1)
 		{
-			auto l_rightPDC = AddPhysicsDataComponent(parentNode->intermediatePDC->m_ParentEntity);
+			auto l_rightPDC = AddPhysicsDataComponent(parentNode->intermediatePDC->m_Owner);
 
 			l_rightPDC->m_AABBWS = InnoMath::generateAABB(parentNode->intermediatePDC->m_AABBWS.m_boundMax, l_midMin);
 			l_rightPDC->m_SphereWS = InnoMath::generateBoundSphere(l_rightPDC->m_AABBWS);
@@ -569,7 +568,7 @@ void PlainCulling(const CameraComponent* camera, std::vector<CullingData>& culli
 
 void SunShadowCulling(const LightComponent* sun, std::vector<CullingData>& cullingDatas)
 {
-	auto l_sunTransformComponent = GetComponent(TransformComponent, sun->m_ParentEntity);
+	auto l_sunTransformComponent = GetComponent(TransformComponent, sun->m_Owner);
 
 	if (l_sunTransformComponent == nullptr)
 	{
@@ -609,7 +608,7 @@ void SunShadowCulling(const LightComponent* sun, std::vector<CullingData>& culli
 
 CullingData generateCullingData(const Frustum& frustum, PhysicsDataComponent* PDC)
 {
-	auto l_transformComponent = GetComponent(TransformComponent, PDC->m_VisibleComponent->m_ParentEntity);
+	auto l_transformComponent = GetComponent(TransformComponent, PDC->m_VisibleComponent->m_Owner);
 	auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
 	if (PDC->m_VisibleComponent->m_meshUsage == MeshUsage::Dynamic)

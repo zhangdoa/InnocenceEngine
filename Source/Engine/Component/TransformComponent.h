@@ -1,10 +1,13 @@
 #pragma once
-#include "../Common/InnoComponent.h"
+#include "../Common/InnoObject.h"
 #include "../Common/InnoMathHelper.h"
 
 class TransformComponent : public InnoComponent
 {
 public:
+	static uint32_t GetTypeID() { return 1; };
+	static char* GetTypeName() { return "TransformComponent"; };
+
 	TransformVector m_localTransformVector;
 	TransformVector m_localTransformVector_target;
 	TransformVector m_globalTransformVector;

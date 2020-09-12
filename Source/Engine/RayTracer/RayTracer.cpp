@@ -299,7 +299,7 @@ bool ExecuteRayTracing()
 	InnoLogger::Log(LogLevel::Verbose, "InnoRayTracer: Start ray tracing...");
 
 	auto l_camera = GetComponentManager(CameraComponent)->GetAllComponents()[0];
-	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_camera->m_ParentEntity);
+	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_camera->m_Owner);
 	auto l_lookfrom = l_cameraTransformComponent->m_globalTransformVector.m_pos;
 	auto l_lookat = l_lookfrom + InnoMath::getDirection(Direction::Backward, l_cameraTransformComponent->m_globalTransformVector.m_rot);
 	auto l_up = InnoMath::getDirection(Direction::Up, l_cameraTransformComponent->m_globalTransformVector.m_rot);
@@ -316,7 +316,7 @@ bool ExecuteRayTracing()
 	{
 		if (l_visibleComponent->m_proceduralMeshShape == ProceduralMeshShape::Sphere)
 		{
-			auto l_transformComponent = GetComponent(TransformComponent, l_visibleComponent->m_ParentEntity);
+			auto l_transformComponent = GetComponent(TransformComponent, l_visibleComponent->m_Owner);
 			for (uint64_t j = 0; j < l_visibleComponent->m_model->meshMaterialPairs.m_count; j++)
 			{
 				auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(l_visibleComponent->m_model->meshMaterialPairs.m_startOffset + j);

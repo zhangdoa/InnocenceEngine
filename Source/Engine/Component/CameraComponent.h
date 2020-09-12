@@ -1,10 +1,13 @@
 #pragma once
-#include "../Common/InnoComponent.h"
+#include "../Common/InnoObject.h"
 #include "../Common/InnoMathHelper.h"
 
 class CameraComponent : public InnoComponent
 {
 public:
+	static uint32_t GetTypeID() { return 4; };
+	static char* GetTypeName() { return "CameraComponent"; };
+
 	Mat4 m_projectionMatrix;
 	Frustum m_frustum;
 	Ray m_rayOfEye;
