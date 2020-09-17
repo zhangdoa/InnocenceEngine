@@ -29,6 +29,9 @@ move /y temp.h.new ..\..\Engine\ThirdParty\ImGui\imgui_impl_opengl3.h
 
 xcopy /y json\single_include\nlohmann\json.hpp ..\Include\json\
 
+xcopy /e/s/y PhysX\physx\include\* ..\Include\PhysX\
+xcopy /e/s/y PhysX\pxshared\include\* ..\Include\PhysX\
+
 xcopy /e/s/y QDarkStyleSheet\qdarkstyle\rc\* ..\..\Editor\InnoEditor\qdarkstyle\rc\
 xcopy /y QDarkStyleSheet\qdarkstyle\style.qss ..\..\Editor\InnoEditor\qdarkstyle\
 xcopy /y QDarkStyleSheet\qdarkstyle\style.qrc ..\..\Editor\InnoEditor\qdarkstyle\

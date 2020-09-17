@@ -27,6 +27,10 @@ mv -f temp.h.new ../../Engine/ThirdParty/ImGui/imgui_impl_opengl3.h
 mkdir -p ../Include/json/
 cp json/single_include/nlohmann/json.hpp ../Include/json/
 
+mkdir -p ../Include/PhysX/
+cp -R PhysX/physx/include/ ../Include/PhysX/
+cp -R PhysX/pxshared/include/ ../Include/PhysX/
+
 mkdir -p ../../editor/InnoEditor/qdarkstyle/
 mkdir -p ../../editor/InnoEditor/qdarkstyle/rc/
 cp QDarkStyleSheet/qdarkstyle/rc/* ../../Editor/InnoEditor/qdarkstyle/rc/

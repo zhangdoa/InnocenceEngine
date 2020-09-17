@@ -1,7 +1,7 @@
 #include "PhysXWrapper.h"
 
 #if defined INNO_PLATFORM_WIN
-#include "PxPhysicsAPI.h"
+#include "PhysX/PxPhysicsAPI.h"
 #endif
 
 #include "../../Core/InnoLogger.h"
