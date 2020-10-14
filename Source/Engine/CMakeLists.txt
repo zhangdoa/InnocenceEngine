@@ -7,7 +7,6 @@ add_subdirectory("RayTracer")
 
 add_subdirectory("EntityManager")
 add_subdirectory("ComponentManager")
-add_subdirectory("SceneHierarchyManager")
 add_subdirectory("ModuleManager")
 
 if(BUILD_GAME)

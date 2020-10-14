@@ -249,8 +249,8 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 		m_billboardPassDrawCallInfoVector.SetValue(std::move(l_billboardPassDrawCallInfoVectorB));
 	};
 
-	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
-	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
+	g_pModuleManager->getSceneSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
+	g_pModuleManager->getSceneSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
 	m_SkeletonDataComponentPool = TObjectPool<SkeletonDataComponent>::Create(2048);
 	m_AnimationDataComponentPool = TObjectPool<AnimationDataComponent>::Create(16384);

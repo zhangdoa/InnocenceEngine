@@ -111,7 +111,7 @@ bool InnoPhysicsSystemNS::setup()
 		m_staticSceneBoundMin.w = 1.0f;
 	};
 
-	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
+	g_pModuleManager->getSceneSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;

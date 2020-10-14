@@ -31,13 +31,5 @@ public:
 	virtual std::vector<char> loadFile(const char* filePath, IOMode openMode) = 0;
 	virtual bool saveFile(const char* filePath, const std::vector<char>& content, IOMode saveMode) = 0;
 
-	virtual std::string getCurrentSceneName() = 0;
-	virtual bool loadScene(const char* fileName, bool AsyncLoad = true) = 0;
-	virtual bool saveScene(const char* fileName = "") = 0;
-	virtual bool isLoadingScene() = 0;
-
-	virtual bool addSceneLoadingStartCallback(std::function<void()>* functor, int32_t priority = -1) = 0;
-	virtual bool addSceneLoadingFinishCallback(std::function<void()>* functor, int32_t priority = -1) = 0;
-
 	virtual bool addCPPClassFiles(const CPPClassDesc& desc) = 0;
 };

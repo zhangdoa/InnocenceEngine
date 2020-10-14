@@ -216,7 +216,7 @@ bool PlayerComponentCollection::setup()
 
 		AnimationStateMachine::setup();
 	};
-	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback, 0);
+	g_pModuleManager->getSceneSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback, 0);
 
 	return true;
 }
@@ -718,7 +718,7 @@ bool GameClientNS::setup()
 		m_ObjectStatus = ObjectStatus::Activated;
 	};
 
-	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback, 0);
+	g_pModuleManager->getSceneSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback, 0);
 
 	return true;
 }
@@ -727,10 +727,10 @@ bool GameClientNS::initialize()
 {
 	f_loadTestScene = []()
 	{
-		//g_pModuleManager->getFileSystem()->loadScene("..//Res//Scenes//GITestBox.InnoScene");
-		//g_pModuleManager->getFileSystem()->loadScene("..//Res//Scenes//GITestSibenik.InnoScene");
-		//g_pModuleManager->getFileSystem()->loadScene("..//Res//Scenes//GITestSponza.InnoScene");
-		g_pModuleManager->getFileSystem()->loadScene("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
+		//g_pModuleManager->getSceneSystem()->loadScene("..//Res//Scenes//GITestBox.InnoScene");
+		//g_pModuleManager->getSceneSystem()->loadScene("..//Res//Scenes//GITestSibenik.InnoScene");
+		//g_pModuleManager->getSceneSystem()->loadScene("..//Res//Scenes//GITestSponza.InnoScene");
+		g_pModuleManager->getSceneSystem()->loadScene("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
 	};
 
 	f_convertModel = []()
@@ -776,12 +776,12 @@ bool DefaultLogicClient::setup()
 bool DefaultLogicClient::initialize()
 {
 	bool l_result = true;
-	g_pModuleManager->getFileSystem()->loadScene("..//Res//Scenes//default.InnoScene");
+	g_pModuleManager->getSceneSystem()->loadScene("..//Res//Scenes//default.InnoScene");
 
-	//g_pModuleManager->getFileSystem()->loadScene("..//Res//Scenes//GITestBox.InnoScene");
-	//g_pModuleManager->getFileSystem()->loadScene("..//Res//Scenes//GITestSibenik.InnoScene");
-	//g_pModuleManager->getFileSystem()->loadScene("..//Res//Scenes//GITestSponza.InnoScene");
-	//g_pModuleManager->getFileSystem()->loadScene("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
+	//g_pModuleManager->getSceneSystem()->loadScene("..//Res//Scenes//GITestBox.InnoScene");
+	//g_pModuleManager->getSceneSystem()->loadScene("..//Res//Scenes//GITestSibenik.InnoScene");
+	//g_pModuleManager->getSceneSystem()->loadScene("..//Res//Scenes//GITestSponza.InnoScene");
+	//g_pModuleManager->getSceneSystem()->loadScene("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
 
 	l_result = l_result && PlayerComponentCollection::initialize();
 	l_result = l_result && GameClientNS::initialize();

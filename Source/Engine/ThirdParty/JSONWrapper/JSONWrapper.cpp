@@ -37,7 +37,7 @@ namespace JSONWrapper
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Warning, "FileSystem: saveComponentData<T>: UUID ", rhs->m_Owner->m_UUID, " is invalid.");
+			InnoLogger::Log(LogLevel::Warning, "JSONWrapper: saveComponentData<T>: UUID ", rhs->m_Owner->m_UUID, " is invalid.");
 			return false;
 		}
 	}
@@ -61,7 +61,7 @@ bool JSONWrapper::loadJsonDataFromDisk(const char* fileName, json& data)
 
 	if (!i.is_open())
 	{
-		InnoLogger::Log(LogLevel::Error, "FileSystem: Can't open JSON file : ", fileName, "!");
+		InnoLogger::Log(LogLevel::Error, "JSONWrapper: Can't open JSON file : ", fileName, "!");
 		return false;
 	}
 
@@ -78,7 +78,7 @@ bool JSONWrapper::saveJsonDataToDisk(const char* fileName, const json& data)
 	o << std::setw(4) << data << std::endl;
 	o.close();
 
-	InnoLogger::Log(LogLevel::Verbose, "FileSystem: JSON file : ", fileName, " has been saved.");
+	InnoLogger::Log(LogLevel::Verbose, "JSONWrapper: JSON file : ", fileName, " has been saved.");
 
 	return true;
 }
@@ -384,7 +384,7 @@ bool JSONWrapper::processAnimationJsonData(const json& j, bool AsyncUploadGPURes
 
 		if (!l_animationFile.is_open())
 		{
-			InnoLogger::Log(LogLevel::Error, "FileSystem: std::ifstream: can't open file ", l_animationFileName.c_str(), "!");
+			InnoLogger::Log(LogLevel::Error, "JSONWrapper: std::ifstream: can't open file ", l_animationFileName.c_str(), "!");
 			return false;
 		}
 
@@ -455,7 +455,7 @@ ArrayRangeInfo JSONWrapper::processMeshJsonData(const json& j, bool AsyncUploadG
 
 				if (!l_meshFile.is_open())
 				{
-					InnoLogger::Log(LogLevel::Error, "FileSystem: std::ifstream: can't open file ", l_meshFileName.c_str(), "!");
+					InnoLogger::Log(LogLevel::Error, "JSONWrapper: std::ifstream: can't open file ", l_meshFileName.c_str(), "!");
 				}
 
 				auto l_mesh = g_pModuleManager->getRenderingFrontend()->addMeshDataComponent();
@@ -633,7 +633,7 @@ bool JSONWrapper::saveScene(const char* fileName)
 
 	saveJsonDataToDisk(fileName, topLevel);
 
-	InnoLogger::Log(LogLevel::Success, "FileSystem: Scene ", fileName, " has been saved.");
+	InnoLogger::Log(LogLevel::Success, "JSONWrapper: Scene ", fileName, " has been saved.");
 
 	return true;
 }
@@ -681,7 +681,7 @@ bool JSONWrapper::loadScene(const char* fileName)
 		}
 	}
 
-	InnoLogger::Log(LogLevel::Success, "FileSystem: Scene loading finished.");
+	InnoLogger::Log(LogLevel::Success, "JSONWrapper: Scene loading finished.");
 
 	assignComponentRuntimeData();
 
@@ -703,7 +703,7 @@ bool JSONWrapper::assignComponentRuntimeData()
 			}
 			else
 			{
-				InnoLogger::Log(LogLevel::Error, "FileSystem: Can't find TransformComponent with entity name", l_orphan.second.c_str(), "!");
+				InnoLogger::Log(LogLevel::Error, "JSONWrapper: Can't find TransformComponent with entity name", l_orphan.second.c_str(), "!");
 			}
 		}
 	}

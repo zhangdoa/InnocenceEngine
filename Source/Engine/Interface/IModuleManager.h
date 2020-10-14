@@ -10,7 +10,7 @@
 #include "IFileSystem.h"
 #include "../EntityManager/IEntityManager.h"
 #include "../ComponentManager/IComponentManager.h"
-#include "../SceneHierarchyManager/ISceneHierarchyManager.h"
+#include "ISceneSystem.h"
 #include "IAssetSystem.h"
 #include "IPhysicsSystem.h"
 #include "IEventSystem.h"
@@ -53,7 +53,7 @@ public:
 	INNO_ENGINE_API virtual IFileSystem* getFileSystem() = 0;
 	INNO_ENGINE_API virtual IEntityManager* getEntityManager() = 0;
 	INNO_ENGINE_API virtual IComponentManager* getComponentManager(uint32_t componentTypeID) = 0;
-	INNO_ENGINE_API virtual ISceneHierarchyManager* getSceneHierarchyManager() = 0;
+	INNO_ENGINE_API virtual ISceneSystem* getSceneSystem() = 0;
 	INNO_ENGINE_API virtual IAssetSystem* getAssetSystem() = 0;
 	INNO_ENGINE_API virtual IPhysicsSystem* getPhysicsSystem() = 0;
 	INNO_ENGINE_API virtual IEventSystem* getEventSystem() = 0;

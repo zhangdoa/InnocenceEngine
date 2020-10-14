@@ -34,13 +34,13 @@ namespace GIDataLoader
 	auto m_sampleCountPerFace = m_testCubemapResolution * m_testCubemapResolution;
 
 	std::vector<Vec4> m_cubemapTextureSamples(m_sampleCountPerFace * 6);
-	std::vector<Vec4> m_3DTextureSamples(m_testCubemapResolution * m_testCubemapResolution * m_testCubemapResolution);
+	std::vector<Vec4> m_3DTextureSamples(m_testCubemapResolution* m_testCubemapResolution* m_testCubemapResolution);
 }
 
 bool GIDataLoader::loadGIData()
 {
 	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
-	auto l_currentSceneName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
+	auto l_currentSceneName = g_pModuleManager->getSceneSystem()->getCurrentSceneName();
 
 	std::ifstream l_surfelFile;
 	l_surfelFile.open(l_filePath + "..//Res//Scenes//" + l_currentSceneName + ".InnoSurfel", std::ios::binary);
@@ -105,7 +105,7 @@ bool GIDataLoader::Setup()
 		loadGIData();
 	};
 
-	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
+	g_pModuleManager->getSceneSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
 	////
 	m_testSampleCubemap = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("TestSampleCubemap/");

@@ -265,11 +265,11 @@ void ImGuiWrapperNS::showApplicationProfiler()
 
 	if (ImGui::Button("Save scene"))
 	{
-		g_pModuleManager->getFileSystem()->saveScene(scene_filePath);
+		g_pModuleManager->getSceneSystem()->saveScene(scene_filePath);
 	}
 	if (ImGui::Button("Load scene"))
 	{
-		g_pModuleManager->getFileSystem()->loadScene(scene_filePath);
+		g_pModuleManager->getSceneSystem()->loadScene(scene_filePath);
 	}
 
 	ImGui::End();
@@ -307,7 +307,7 @@ void ImGuiWrapperNS::showWorldExplorer()
 
 	ImGui::Begin("World Explorer", 0);
 	{
-		auto l_sceneHierarchyMap = g_pModuleManager->getSceneHierarchyManager()->GetSceneHierarchyMap();
+		auto l_sceneHierarchyMap = g_pModuleManager->getSceneSystem()->getSceneHierarchyMap();
 
 		for (auto& i : l_sceneHierarchyMap)
 		{

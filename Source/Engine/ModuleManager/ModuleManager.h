@@ -21,7 +21,7 @@ public:
 	IFileSystem* getFileSystem() override;
 	IEntityManager* getEntityManager() override;
 	IComponentManager* getComponentManager(uint32_t componentTypeID) override;
-	ISceneHierarchyManager* getSceneHierarchyManager() override;
+	ISceneSystem* getSceneSystem() override;
 	IAssetSystem* getAssetSystem() override;
 	IPhysicsSystem* getPhysicsSystem() override;
 	IEventSystem* getEventSystem() override;

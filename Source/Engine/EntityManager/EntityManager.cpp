@@ -39,7 +39,7 @@ bool InnoEntityManager::Setup()
 				}), m_Entities.end());
 	};
 
-	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_SceneLoadingStartCallback);
+	g_pModuleManager->getSceneSystem()->addSceneLoadingStartCallback(&f_SceneLoadingStartCallback);
 
 	return true;
 }

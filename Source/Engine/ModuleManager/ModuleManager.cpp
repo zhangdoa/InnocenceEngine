@@ -11,7 +11,7 @@
 #include "../ComponentManager/VisibleComponentManager.h"
 #include "../ComponentManager/LightComponentManager.h"
 #include "../ComponentManager/CameraComponentManager.h"
-#include "../SceneHierarchyManager/SceneHierarchyManager.h"
+#include "../SubSystem/SceneSystem.h"
 #include "../SubSystem/AssetSystem.h"
 #include "../SubSystem/PhysicsSystem.h"
 #include "../SubSystem/EventSystem.h"
@@ -146,7 +146,7 @@ namespace InnoModuleManagerNS
 	std::unique_ptr<ILightComponentManager> m_LightComponentManager;
 	std::unique_ptr<ICameraComponentManager> m_CameraComponentManager;
 
-	std::unique_ptr<ISceneHierarchyManager> m_SceneHierarchyManager;
+	std::unique_ptr<ISceneSystem> m_SceneSystem;
 	std::unique_ptr<IAssetSystem> m_AssetSystem;
 	std::unique_ptr<IPhysicsSystem> m_PhysicsSystem;
 	std::unique_ptr<IEventSystem> m_EventSystem;
@@ -321,7 +321,7 @@ bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook
 	createSubSystemInstanceDefi(LightComponentManager);
 	createSubSystemInstanceDefi(CameraComponentManager);
 
-	createSubSystemInstanceDefi(SceneHierarchyManager);
+	createSubSystemInstanceDefi(SceneSystem);
 	createSubSystemInstanceDefi(AssetSystem);
 	createSubSystemInstanceDefi(PhysicsSystem);
 	createSubSystemInstanceDefi(EventSystem);
@@ -474,12 +474,7 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	ComponentManagerSetup(LightComponent);
 	ComponentManagerSetup(CameraComponent);
 
-	if (!m_SceneHierarchyManager->Setup())
-	{
-		return false;
-	}
-	InnoLogger::Log(LogLevel::Success, "ModuleManager: SceneHierarchyManager setup finished.");
-
+	subSystemSetup(SceneSystem);
 	subSystemSetup(PhysicsSystem);
 	subSystemSetup(EventSystem);
 
@@ -559,11 +554,7 @@ bool InnoModuleManagerNS::initialize()
 	ComponentManagerInit(LightComponent);
 	ComponentManagerInit(CameraComponent);
 
-	if (!m_SceneHierarchyManager->Initialize())
-	{
-		return false;
-	}
-
+	subSystemInit(SceneSystem);
 	subSystemInit(AssetSystem);
 	subSystemInit(PhysicsSystem);
 	subSystemInit(EventSystem);
@@ -606,6 +597,7 @@ bool InnoModuleManagerNS::update()
 
 		subSystemUpdate(TestSystem);
 		subSystemUpdate(FileSystem);
+		subSystemUpdate(SceneSystem);
 
 		if (!m_EntityManager->Simulate())
 		{
@@ -627,7 +619,7 @@ bool InnoModuleManagerNS::update()
 
 		subSystemUpdate(EventSystem);
 
-		if (!m_FileSystem->isLoadingScene())
+		if (!m_SceneSystem->isLoadingScene())
 		{
 			if (m_WindowSystem->getStatus() == ObjectStatus::Activated)
 			{
@@ -687,12 +679,7 @@ bool InnoModuleManagerNS::terminate()
 	subSystemTerm(EventSystem);
 	subSystemTerm(PhysicsSystem);
 	subSystemTerm(AssetSystem);
-
-	if (!m_SceneHierarchyManager->Terminate())
-	{
-		InnoLogger::Log(LogLevel::Error, "ModuleManager: SceneHierarchyManager can't be terminated!");
-		return false;
-	}
+	subSystemTerm(SceneSystem);
 
 	ComponentManagerTerm(TransformComponent);
 	ComponentManagerTerm(VisibleComponent);
@@ -755,7 +742,7 @@ subSystemGetDefi(TestSystem);
 subSystemGetDefi(FileSystem);
 
 subSystemGetDefi(EntityManager);
-subSystemGetDefi(SceneHierarchyManager);
+subSystemGetDefi(SceneSystem);
 subSystemGetDefi(AssetSystem);
 subSystemGetDefi(PhysicsSystem);
 subSystemGetDefi(EventSystem);

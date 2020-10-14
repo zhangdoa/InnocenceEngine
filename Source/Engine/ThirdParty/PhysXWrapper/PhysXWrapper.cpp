@@ -134,7 +134,7 @@ bool PhysXWrapperNS::setup()
 		InnoLogger::Log(LogLevel::Success, "PhysXWrapper: All PhysX Actors has been removed.");
 	};
 
-	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
+	g_pModuleManager->getSceneSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 
 	f_pauseSimulate = [&]() { m_needSimulate = !m_needSimulate; };
 

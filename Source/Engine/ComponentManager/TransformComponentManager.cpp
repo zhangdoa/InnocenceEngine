@@ -101,8 +101,8 @@ bool InnoTransformComponentManager::Setup()
 		}
 	};
 
-	g_pModuleManager->getFileSystem()->addSceneLoadingStartCallback(&f_SceneLoadingStartCallback);
-	g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_SceneLoadingFinishCallback);
+	g_pModuleManager->getSceneSystem()->addSceneLoadingStartCallback(&f_SceneLoadingStartCallback);
+	g_pModuleManager->getSceneSystem()->addSceneLoadingFinishCallback(&f_SceneLoadingFinishCallback);
 
 	m_RootTransformEntity = g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, "RootTransform/");
 

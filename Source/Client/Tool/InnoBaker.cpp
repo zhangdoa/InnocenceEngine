@@ -1379,12 +1379,12 @@ void InnoBaker::Setup()
 
 void InnoBaker::BakeProbeCache(const char* sceneName)
 {
-	g_pModuleManager->getFileSystem()->loadScene(sceneName, false);
+	g_pModuleManager->getSceneSystem()->loadScene(sceneName, false);
 	GetComponentManager(LightComponent)->Simulate();
 
 	g_pModuleManager->getPhysicsSystem()->updateCulling();
 	g_pModuleManager->getRenderingFrontend()->update();
-	m_exportFileName = g_pModuleManager->getFileSystem()->getCurrentSceneName();
+	m_exportFileName = g_pModuleManager->getSceneSystem()->getCurrentSceneName();
 
 	std::vector<Probe> l_probes;
 
