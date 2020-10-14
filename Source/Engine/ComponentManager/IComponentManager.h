@@ -16,4 +16,5 @@ public:
 	virtual InnoComponent* Spawn(const InnoEntity* parentEntity, bool serializable, ObjectLifespan objectLifespan) = 0;
 	virtual void Destroy(InnoComponent* component) = 0;
 	virtual InnoComponent* Find(const InnoEntity* parentEntity) = 0;
+	virtual void LoadAssetsForComponents(bool AsyncLoad = true) = 0;
 };

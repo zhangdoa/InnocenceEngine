@@ -17,4 +17,5 @@ public:
 
 	LightComponent* Get(std::size_t index) override;
 	const std::vector<LightComponent*>& GetAllComponents() override;
+	void LoadAssetsForComponents(bool AsyncLoad) override;
 };

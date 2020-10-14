@@ -17,4 +17,5 @@ public:
 
 	TransformComponent* Get(std::size_t index) override;
 	const std::vector<TransformComponent*>& GetAllComponents() override;
+	void LoadAssetsForComponents(bool AsyncLoad) override;
 };

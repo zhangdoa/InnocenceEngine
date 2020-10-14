@@ -172,3 +172,7 @@ const std::vector<TransformComponent*>& InnoTransformComponentManager::GetAllCom
 {
 	return m_Components.getRawData();
 }
+
+void InnoTransformComponentManager::LoadAssetsForComponents(bool AsyncLoad)
+{
+}

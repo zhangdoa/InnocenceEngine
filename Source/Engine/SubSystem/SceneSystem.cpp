@@ -17,8 +17,8 @@ using SceneLoadingCallback = std::pair<std::function<void()>*, int32_t>;
 namespace InnoSceneSystemNS
 {
 	bool saveScene(const char* fileName);
-	bool prepareForLoadingScene(const char* fileName);
 	bool loadScene(const char* fileName);
+	bool loadSceneAsync(const char* fileName);
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -52,15 +52,10 @@ bool InnoSceneSystemNS::saveScene(const char* fileName)
 	}
 }
 
-bool InnoSceneSystemNS::prepareForLoadingScene(const char* fileName)
+bool InnoSceneSystemNS::loadSceneAsync(const char* fileName)
 {
 	if (!m_isLoadingScene)
 	{
-		if (m_currentScene == fileName)
-		{
-			InnoLogger::Log(LogLevel::Warning, "SceneSystem: Scene ", fileName, " has already loaded now.");
-			return true;
-		}
 		m_nextLoadingScene = fileName;
 		m_prepareForLoadingScene = true;
 	}
@@ -70,6 +65,9 @@ bool InnoSceneSystemNS::prepareForLoadingScene(const char* fileName)
 
 bool InnoSceneSystemNS::loadScene(const char* fileName)
 {
+	m_isLoadingScene = true;
+	g_pModuleManager->getTaskSystem()->waitAllTasksToFinish();
+
 	m_currentScene = fileName;
 
 	std::sort(m_sceneLoadingStartCallbacks.begin(), m_sceneLoadingStartCallbacks.end(),
@@ -93,6 +91,11 @@ bool InnoSceneSystemNS::loadScene(const char* fileName)
 	{
 		(*i.first)();
 	}
+
+	GetComponentManager(TransformComponent)->LoadAssetsForComponents();
+	GetComponentManager(VisibleComponent)->LoadAssetsForComponents();
+	GetComponentManager(LightComponent)->LoadAssetsForComponents();
+	GetComponentManager(CameraComponent)->LoadAssetsForComponents();
 
 	m_isLoadingScene = false;
 
@@ -141,10 +144,8 @@ bool InnoSceneSystem::update()
 		if (m_prepareForLoadingScene)
 		{
 			m_prepareForLoadingScene = false;
-			m_isLoadingScene = true;
-			g_pModuleManager->getTaskSystem()->waitAllTasksToFinish();
+
 			InnoSceneSystemNS::loadScene(m_nextLoadingScene.c_str());
-			GetComponentManager(VisibleComponent)->LoadAssetsForComponents();
 		}
 		return true;
 	}
@@ -182,18 +183,19 @@ bool InnoSceneSystem::loadScene(const char* fileName, bool AsyncLoad)
 		return true;
 	}
 
+	if (m_nextLoadingScene == fileName)
+	{
+		InnoLogger::Log(LogLevel::Warning, "SceneSystem: Scene ", fileName, " has been scheduled for loading.");
+		return true;
+	}
+
 	if (AsyncLoad)
 	{
-		return prepareForLoadingScene(fileName);
+		return InnoSceneSystemNS::loadSceneAsync(fileName);
 	}
 	else
 	{
-		m_nextLoadingScene = fileName;
-		m_isLoadingScene = true;
-		g_pModuleManager->getTaskSystem()->waitAllTasksToFinish();
-		InnoSceneSystemNS::loadScene(m_nextLoadingScene.c_str());
-		GetComponentManager(VisibleComponent)->LoadAssetsForComponents(AsyncLoad);
-		return true;
+		return InnoSceneSystemNS::loadScene(fileName);
 	}
 }
 
