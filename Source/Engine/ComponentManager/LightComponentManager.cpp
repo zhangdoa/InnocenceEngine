@@ -132,7 +132,7 @@ void LightComponentManagerNS::UpdateCSMData(LightComponent* rhs)
 	rhs->m_ProjectionMatrices.clear();
 
 	//1. get frustum vertices in view space
-	auto l_cameraComponent = GetComponentManager(CameraComponent)->GetMainCamera();
+	auto l_cameraComponent = GetComponentManager(CameraComponent)->GetAllComponents()[0];
 	if (l_cameraComponent == nullptr)
 	{
 		return;

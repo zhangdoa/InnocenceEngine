@@ -420,7 +420,7 @@ bool InnoRenderingFrontendNS::initialize()
 
 bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 {
-	auto l_mainCamera = GetComponentManager(CameraComponent)->GetMainCamera();
+	auto l_mainCamera = GetComponentManager(CameraComponent)->GetAllComponents()[0];
 
 	if (l_mainCamera == nullptr)
 	{

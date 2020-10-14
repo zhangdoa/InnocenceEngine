@@ -15,5 +15,4 @@ public:
 	InnoComponent* Find(const InnoEntity* parentEntity) override;
 
 	const std::vector<CameraComponent*>& GetAllComponents() override;
-	CameraComponent * GetMainCamera() override;
 };
