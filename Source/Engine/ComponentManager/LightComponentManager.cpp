@@ -29,17 +29,12 @@ namespace LightComponentManagerNS
 	ThreadSafeVector<LightComponent*> m_Components;
 	ThreadSafeUnorderedMap<InnoEntity*, LightComponent*> m_ComponentsMap;
 
-	LightComponent* m_Sun = 0;
 	std::function<void()> f_SceneLoadingStartCallback;
 	std::function<void()> f_SceneLoadingFinishCallback;
 
 	std::vector<float> m_CSMSplitFactors = { 0.05f, 0.25f, 0.55f, 1.0f };
 	std::vector<Vec4> m_frustumsCornerPos;
 	std::vector<Vertex> m_frustumsCornerVertices;
-	std::vector<AABB> m_SplitAABBWS;
-	std::vector<AABB> m_SplitAABBLS;
-	std::vector<Mat4> m_viewMatrices;
-	std::vector<Mat4> m_projectionMatrices;
 }
 
 void LightComponentManagerNS::splitVerticesToAABBs(const std::vector<Vertex>& frustumsVertices, const std::vector<float>& splitFactors, std::vector<AABB>& splitAABB)
@@ -103,9 +98,9 @@ void LightComponentManagerNS::splitVerticesToAABBs(const std::vector<Vertex>& fr
 
 void LightComponentManagerNS::UpdateSingleSMData(LightComponent* rhs)
 {
-	m_viewMatrices.clear();
-	m_projectionMatrices.clear();
-	m_SplitAABBWS.clear();
+	rhs->m_ViewMatrices.clear();
+	rhs->m_ProjectionMatrices.clear();
+	rhs->m_SplitAABBWS.clear();
 
 	auto l_totalSceneAABB = g_pModuleManager->getPhysicsSystem()->getVisibleSceneAABB();
 
@@ -117,7 +112,7 @@ void LightComponentManagerNS::UpdateSingleSMData(LightComponent* rhs)
 
 	l_totalSceneAABB = InnoMath::generateAABB(l_boundMax, l_boundMin);
 
-	m_SplitAABBWS.emplace_back(l_totalSceneAABB);
+	rhs->m_SplitAABBWS.emplace_back(l_totalSceneAABB);
 
 	auto l_transformComponent = GetComponent(TransformComponent, rhs->m_Owner);
 	auto l_r = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
@@ -125,16 +120,16 @@ void LightComponentManagerNS::UpdateSingleSMData(LightComponent* rhs)
 	auto l_pos = l_sunDir * l_sphereRadius + l_totalSceneAABB.m_center;
 	auto l_t = InnoMath::toTranslationMatrix(l_pos);
 	auto l_m = l_t * l_r;
-	m_viewMatrices.emplace_back(l_m.inverse());
+	rhs->m_ViewMatrices.emplace_back(l_m.inverse());
 
 	Mat4 l_p = InnoMath::generateOrthographicMatrix(-l_sphereRadius, l_sphereRadius, -l_sphereRadius, l_sphereRadius, 0.0f, l_sphereRadius * 2.0f);
-	m_projectionMatrices.emplace_back(l_p);
+	rhs->m_ProjectionMatrices.emplace_back(l_p);
 }
 
 void LightComponentManagerNS::UpdateCSMData(LightComponent* rhs)
 {
-	m_viewMatrices.clear();
-	m_projectionMatrices.clear();
+	rhs->m_ViewMatrices.clear();
+	rhs->m_ProjectionMatrices.clear();
 
 	//1. get frustum vertices in view space
 	auto l_cameraComponent = GetComponentManager(CameraComponent)->GetMainCamera();
@@ -238,7 +233,7 @@ void LightComponentManagerNS::UpdateCSMData(LightComponent* rhs)
 	auto l_frustumVerticesWS = InnoMath::viewToWorldSpace(l_frustumVerticesVS, l_tCamera, l_rCamera);
 
 	//2. calculate AABBs in world space
-	splitVerticesToAABBs(l_frustumVerticesWS, m_CSMSplitFactors, m_SplitAABBWS);
+	splitVerticesToAABBs(l_frustumVerticesWS, m_CSMSplitFactors, rhs->m_SplitAABBWS);
 
 	//4. transform frustum vertices to light space
 	auto l_frustumVerticesLS = l_frustumVerticesWS;
@@ -254,29 +249,29 @@ void LightComponentManagerNS::UpdateCSMData(LightComponent* rhs)
 	}
 
 	//5.calculate AABBs in light space
-	splitVerticesToAABBs(l_frustumVerticesLS, m_CSMSplitFactors, m_SplitAABBLS);
+	splitVerticesToAABBs(l_frustumVerticesLS, m_CSMSplitFactors, rhs->m_SplitAABBLS);
 
 	//6. extend AABB to include the bound sphere, for to eliminate rotation conflict
 	//7. generate projection matrices
 	for (size_t i = 0; i < 4; i++)
 	{
-		auto sphereRadius = (m_SplitAABBLS[i].m_boundMax - m_SplitAABBLS[i].m_center).length();
-		auto l_boundMax = m_SplitAABBLS[i].m_center + sphereRadius;
+		auto sphereRadius = (rhs->m_SplitAABBLS[i].m_boundMax - rhs->m_SplitAABBLS[i].m_center).length();
+		auto l_boundMax = rhs->m_SplitAABBLS[i].m_center + sphereRadius;
 		l_boundMax.w = 1.0f;
-		auto l_boundMin = m_SplitAABBLS[i].m_center - sphereRadius;
+		auto l_boundMin = rhs->m_SplitAABBLS[i].m_center - sphereRadius;
 		l_boundMin.w = 1.0f;
-		m_SplitAABBLS[i] = InnoMath::generateAABB(l_boundMax, l_boundMin);
+		rhs->m_SplitAABBLS[i] = InnoMath::generateAABB(l_boundMax, l_boundMin);
 
 		// The light camera position in light space
-		auto l_sunShadowPos = m_SplitAABBLS[i].m_center + l_sunDir * sphereRadius;
+		auto l_sunShadowPos = rhs->m_SplitAABBLS[i].m_center + l_sunDir * sphereRadius;
 
 		auto l_t = InnoMath::toTranslationMatrix(l_sunShadowPos);
 		auto l_m = l_t * l_r;
 
-		m_viewMatrices.emplace_back(l_m.inverse());
+		rhs->m_ViewMatrices.emplace_back(l_m.inverse());
 
 		Mat4 p = InnoMath::generateOrthographicMatrix(-sphereRadius, sphereRadius, -sphereRadius, sphereRadius, 0.0f, sphereRadius * 2.0f);
-		m_projectionMatrices.emplace_back(p);
+		rhs->m_ProjectionMatrices.emplace_back(p);
 	}
 }
 
@@ -319,9 +314,6 @@ bool InnoLightComponentManager::Setup()
 	m_ComponentsMap.reserve(m_MaxComponentCount);
 	m_frustumsCornerPos.reserve(20);
 	m_frustumsCornerVertices.resize(32);
-	m_SplitAABBWS.reserve(4);
-	m_SplitAABBLS.reserve(4);
-	m_projectionMatrices.reserve(4);
 
 	f_SceneLoadingStartCallback = [&]() {
 		CleanComponentContainers(LightComponent);
@@ -352,7 +344,6 @@ bool InnoLightComponentManager::Simulate()
 		{
 		case LightType::Directional:
 			// @TODO: Better to limit the directional light count
-			m_Sun = i;
 			if (l_renderingConfig.useCSM)
 			{
 				UpdateCSMData(i);
@@ -405,24 +396,4 @@ InnoComponent* InnoLightComponentManager::Find(const InnoEntity* parentEntity)
 const std::vector<LightComponent*>& InnoLightComponentManager::GetAllComponents()
 {
 	return m_Components.getRawData();
-}
-
-const LightComponent* InnoLightComponentManager::GetSun()
-{
-	return m_Sun;
-}
-
-const std::vector<AABB>& InnoLightComponentManager::GetSunSplitAABB()
-{
-	return m_SplitAABBWS;
-}
-
-const std::vector<Mat4>& InnoLightComponentManager::GetSunViewMatrices()
-{
-	return m_viewMatrices;
-}
-
-const std::vector<Mat4>& InnoLightComponentManager::GetSunProjectionMatrices()
-{
-	return m_projectionMatrices;
 }

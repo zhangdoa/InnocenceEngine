@@ -676,7 +676,7 @@ void InnoPhysicsSystem::updateCulling()
 		return;
 	}
 
-	auto l_sun = GetComponentManager(LightComponent)->GetSun();
+	auto l_sun = GetComponentManager(LightComponent)->GetAllComponents()[0];
 
 	if (l_sun == nullptr)
 	{

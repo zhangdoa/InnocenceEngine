@@ -33,4 +33,9 @@ public:
 	float m_LuminousFlux = 1.0f;
 
 	bool m_UseColorTemperature = true;
+
+	std::vector<AABB> m_SplitAABBWS;
+	std::vector<AABB> m_SplitAABBLS;
+	std::vector<Mat4> m_ViewMatrices;
+	std::vector<Mat4> m_ProjectionMatrices;
 };
