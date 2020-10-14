@@ -15,5 +15,6 @@ public:
 	void Destroy(InnoComponent* component) override;
 	InnoComponent* Find(const InnoEntity* parentEntity) override;
 
+	CameraComponent* Get(std::size_t index) override;
 	const std::vector<CameraComponent*>& GetAllComponents() override;
 };

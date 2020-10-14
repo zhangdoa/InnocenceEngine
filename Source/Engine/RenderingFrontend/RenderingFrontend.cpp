@@ -420,7 +420,7 @@ bool InnoRenderingFrontendNS::initialize()
 
 bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 {
-	auto l_mainCamera = GetComponentManager(CameraComponent)->GetAllComponents()[0];
+	auto l_mainCamera = GetComponentManager(CameraComponent)->Get(0);
 
 	if (l_mainCamera == nullptr)
 	{
@@ -480,7 +480,7 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 	l_PerFrameCB.shutterTime = l_mainCamera->m_shutterTime;
 	l_PerFrameCB.ISO = l_mainCamera->m_ISO;
 
-	auto l_sun = GetComponentManager(LightComponent)->GetAllComponents()[0];
+	auto l_sun = GetComponentManager(LightComponent)->Get(0);
 
 	if (l_sun == nullptr)
 	{
@@ -499,9 +499,9 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 
 	m_perFrameCB.SetValue(std::move(l_PerFrameCB));
 
-	auto& l_SplitAABB = GetComponentManager(LightComponent)->GetAllComponents()[0]->m_SplitAABBWS;
-	auto& l_ViewMatrices = GetComponentManager(LightComponent)->GetAllComponents()[0]->m_ViewMatrices;
-	auto& l_ProjectionMatrices = GetComponentManager(LightComponent)->GetAllComponents()[0]->m_ProjectionMatrices;
+	auto& l_SplitAABB = l_sun->m_SplitAABBWS;
+	auto& l_ViewMatrices = l_sun->m_ViewMatrices;
+	auto& l_ProjectionMatrices = l_sun->m_ProjectionMatrices;
 
 	auto& l_CSMCBVector = m_CSMCBVector.GetValue();
 	l_CSMCBVector.clear();

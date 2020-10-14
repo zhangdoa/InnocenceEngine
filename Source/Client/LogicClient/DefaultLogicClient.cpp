@@ -862,7 +862,7 @@ Vec4 GameClientNS::getMousePositionInWorldSpace()
 	auto l_w = 1.0f;
 	Vec4 l_ndcSpace = Vec4(l_x, l_y, l_z, l_w);
 
-	auto l_mainCamera = GetComponentManager(CameraComponent)->GetMainCamera();
+	auto l_mainCamera = GetComponentManager(CameraComponent)->Get(0);
 	if (l_mainCamera == nullptr)
 	{
 		return Vec4();

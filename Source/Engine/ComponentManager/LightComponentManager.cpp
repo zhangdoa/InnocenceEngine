@@ -132,7 +132,7 @@ void LightComponentManagerNS::UpdateCSMData(LightComponent* rhs)
 	rhs->m_ProjectionMatrices.clear();
 
 	//1. get frustum vertices in view space
-	auto l_cameraComponent = GetComponentManager(CameraComponent)->GetAllComponents()[0];
+	auto l_cameraComponent = GetComponentManager(CameraComponent)->Get(0);
 	if (l_cameraComponent == nullptr)
 	{
 		return;
@@ -396,6 +396,15 @@ void InnoLightComponentManager::Destroy(InnoComponent* component)
 InnoComponent* InnoLightComponentManager::Find(const InnoEntity* parentEntity)
 {
 	GetComponentImpl(LightComponent, parentEntity);
+}
+
+LightComponent* InnoLightComponentManager::Get(std::size_t index)
+{
+	if (index >= m_Components.size())
+	{
+		return nullptr;
+	}
+	return m_Components[index];
 }
 
 const std::vector<LightComponent*>& InnoLightComponentManager::GetAllComponents()

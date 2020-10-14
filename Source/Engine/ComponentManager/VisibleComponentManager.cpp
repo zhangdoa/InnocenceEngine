@@ -103,6 +103,15 @@ InnoComponent* InnoVisibleComponentManager::Find(const InnoEntity* parentEntity)
 	GetComponentImpl(VisibleComponent, parentEntity);
 }
 
+VisibleComponent* InnoVisibleComponentManager::Get(std::size_t index)
+{
+	if (index >= m_Components.size())
+	{
+		return nullptr;
+	}
+	return m_Components[index];
+}
+
 const std::vector<VisibleComponent*>& InnoVisibleComponentManager::GetAllComponents()
 {
 	return m_Components.getRawData();

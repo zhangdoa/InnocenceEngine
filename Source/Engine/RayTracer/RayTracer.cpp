@@ -298,7 +298,7 @@ bool ExecuteRayTracing()
 {
 	InnoLogger::Log(LogLevel::Verbose, "InnoRayTracer: Start ray tracing...");
 
-	auto l_camera = GetComponentManager(CameraComponent)->GetAllComponents()[0];
+	auto l_camera = GetComponentManager(CameraComponent)->Get(0);
 	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_camera->m_Owner);
 	auto l_lookfrom = l_cameraTransformComponent->m_globalTransformVector.m_pos;
 	auto l_lookat = l_lookfrom + InnoMath::getDirection(Direction::Backward, l_cameraTransformComponent->m_globalTransformVector.m_rot);

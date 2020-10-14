@@ -126,6 +126,15 @@ InnoComponent* InnoCameraComponentManager::Find(const InnoEntity* parentEntity)
 	GetComponentImpl(CameraComponent, parentEntity);
 }
 
+CameraComponent* InnoCameraComponentManager::Get(std::size_t index)
+{
+	if (index >= m_Components.size())
+	{
+		return nullptr;
+	}
+	return m_Components[index];
+}
+
 const std::vector<CameraComponent*>& InnoCameraComponentManager::GetAllComponents()
 {
 	return m_Components.getRawData();

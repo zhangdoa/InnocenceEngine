@@ -669,14 +669,14 @@ void BVHCulling(BVHNode* node, const Frustum& frustum, std::vector<CullingData>&
 
 void InnoPhysicsSystem::updateCulling()
 {
-	auto l_mainCamera = GetComponentManager(CameraComponent)->GetAllComponents()[0];
+	auto l_mainCamera = GetComponentManager(CameraComponent)->Get(0);
 
 	if (l_mainCamera == nullptr)
 	{
 		return;
 	}
 
-	auto l_sun = GetComponentManager(LightComponent)->GetAllComponents()[0];
+	auto l_sun = GetComponentManager(LightComponent)->Get(0);
 
 	if (l_sun == nullptr)
 	{

@@ -164,6 +164,15 @@ const TransformComponent* InnoTransformComponentManager::GetRootTransformCompone
 	return m_RootTransformComponent;
 }
 
+TransformComponent* InnoTransformComponentManager::Get(std::size_t index)
+{
+	if (index >= m_Components.size())
+	{
+		return nullptr;
+	}
+	return m_Components[index];
+}
+
 const std::vector<TransformComponent*>& InnoTransformComponentManager::GetAllComponents()
 {
 	return m_Components.getRawData();

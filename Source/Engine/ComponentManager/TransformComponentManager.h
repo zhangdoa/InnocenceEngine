@@ -15,6 +15,7 @@ public:
 	void Destroy(InnoComponent* component) override;
 	InnoComponent* Find(const InnoEntity* parentEntity) override;
 
+	TransformComponent* Get(std::size_t index) override;
 	const std::vector<TransformComponent*>& GetAllComponents() override;
 	const TransformComponent* GetRootTransformComponent() const override;
 };
