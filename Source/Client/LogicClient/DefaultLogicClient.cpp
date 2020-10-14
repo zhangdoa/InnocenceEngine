@@ -361,7 +361,7 @@ bool GameClientNS::setupReferenceSpheres()
 		m_referenceSphereEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 	}
 
-	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
+	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->Get(0));
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
@@ -414,7 +414,7 @@ bool GameClientNS::setupOcclusionCubes()
 		m_occlusionCubeEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 	}
 
-	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
+	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->Get(0));
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
@@ -486,7 +486,7 @@ bool GameClientNS::setupOpaqueSpheres()
 		m_opaqueSphereEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 	}
 
-	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
+	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->Get(0));
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
@@ -547,7 +547,7 @@ bool GameClientNS::setupTransparentCubes()
 		m_transparentCubeEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 	}
 
-	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
+	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->Get(0));
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
@@ -590,7 +590,7 @@ bool GameClientNS::setupVolumetricCubes()
 		m_volumetricCubeEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 	}
 
-	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
+	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->Get(0));
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
@@ -641,7 +641,7 @@ bool GameClientNS::setupPointLights()
 		m_pointLightEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 	}
 
-	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
+	auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->Get(0));
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{

@@ -159,11 +159,6 @@ InnoComponent* InnoTransformComponentManager::Find(const InnoEntity* parentEntit
 	GetComponentImpl(TransformComponent, parentEntity);
 }
 
-const TransformComponent* InnoTransformComponentManager::GetRootTransformComponent() const
-{
-	return m_RootTransformComponent;
-}
-
 TransformComponent* InnoTransformComponentManager::Get(std::size_t index)
 {
 	if (index >= m_Components.size())

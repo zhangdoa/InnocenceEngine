@@ -284,7 +284,7 @@ void JSONWrapper::from_json(const json& j, TransformComponent& p)
 	auto l_parentTransformComponentEntityName = j["ParentTransformComponentEntityName"];
 	if (l_parentTransformComponentEntityName == "RootTransform")
 	{
-		auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->GetRootTransformComponent());
+		auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->Get(0));
 		p.m_parentTransformComponent = l_rootTranformComponent;
 	}
 	else

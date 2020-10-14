@@ -17,5 +17,4 @@ public:
 
 	TransformComponent* Get(std::size_t index) override;
 	const std::vector<TransformComponent*>& GetAllComponents() override;
-	const TransformComponent* GetRootTransformComponent() const override;
 };
