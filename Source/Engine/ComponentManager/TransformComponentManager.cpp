@@ -130,6 +130,15 @@ bool InnoTransformComponentManager::Simulate()
 	return true;
 }
 
+bool InnoTransformComponentManager::PostFrame()
+{
+	std::for_each(m_Components.begin(), m_Components.end(), [&](TransformComponent* val)
+		{
+			val->m_globalTransformMatrix_prev = val->m_globalTransformMatrix;
+		});
+	return true;
+}
+
 bool InnoTransformComponentManager::Terminate()
 {
 	return true;
@@ -148,14 +157,6 @@ void InnoTransformComponentManager::Destroy(InnoComponent* component)
 InnoComponent* InnoTransformComponentManager::Find(const InnoEntity* parentEntity)
 {
 	GetComponentImpl(TransformComponent, parentEntity);
-}
-
-void InnoTransformComponentManager::SaveCurrentFrameTransform()
-{
-	std::for_each(m_Components.begin(), m_Components.end(), [&](TransformComponent* val)
-		{
-			val->m_globalTransformMatrix_prev = val->m_globalTransformMatrix;
-		});
 }
 
 const TransformComponent* InnoTransformComponentManager::GetRootTransformComponent() const

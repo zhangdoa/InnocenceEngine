@@ -78,6 +78,11 @@ bool InnoVisibleComponentManager::Simulate()
 	return true;
 }
 
+bool InnoVisibleComponentManager::PostFrame()
+{
+	return true;
+}
+
 bool InnoVisibleComponentManager::Terminate()
 {
 	return true;

@@ -101,8 +101,15 @@ if (!m_##className##Manager->Initialize()) \
 	return false; \
 } \
 
-#define ComponentManagerUpdate( className ) \
+#define ComponentManagerSimulate( className ) \
 if (!m_##className##Manager->Simulate()) \
+{ \
+m_ObjectStatus = ObjectStatus::Suspended; \
+return false; \
+}
+
+#define ComponentManagerPostFrame( className ) \
+if (!m_##className##Manager->PostFrame()) \
 { \
 m_ObjectStatus = ObjectStatus::Suspended; \
 return false; \
@@ -605,10 +612,10 @@ bool InnoModuleManagerNS::update()
 			return false;
 		}
 
-		ComponentManagerUpdate(TransformComponent);
-		ComponentManagerUpdate(VisibleComponent);
-		ComponentManagerUpdate(LightComponent);
-		ComponentManagerUpdate(CameraComponent);
+		ComponentManagerSimulate(TransformComponent);
+		ComponentManagerSimulate(VisibleComponent);
+		ComponentManagerSimulate(LightComponent);
+		ComponentManagerSimulate(CameraComponent);
 
 		subSystemUpdate(AssetSystem);
 
@@ -633,7 +640,10 @@ bool InnoModuleManagerNS::update()
 				auto l_RenderingServerTask = g_pModuleManager->getTaskSystem()->submit("RenderingServerTask", 2, l_RenderingFrontendUpdateTask, f_RenderingServerUpdateJob);
 				l_RenderingServerTask->Wait();
 
-				m_TransformComponentManager->SaveCurrentFrameTransform();
+				ComponentManagerPostFrame(TransformComponent);
+				ComponentManagerPostFrame(VisibleComponent);
+				ComponentManagerPostFrame(LightComponent);
+				ComponentManagerPostFrame(CameraComponent);
 			}
 			else
 			{

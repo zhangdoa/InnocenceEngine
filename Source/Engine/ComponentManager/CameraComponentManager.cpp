@@ -101,6 +101,11 @@ bool InnoCameraComponentManager::Simulate()
 	return true;
 }
 
+bool InnoCameraComponentManager::PostFrame()
+{
+	return true;
+}
+
 bool InnoCameraComponentManager::Terminate()
 {
 	return true;

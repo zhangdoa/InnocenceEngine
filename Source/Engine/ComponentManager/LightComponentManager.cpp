@@ -373,6 +373,11 @@ bool InnoLightComponentManager::Simulate()
 	return true;
 }
 
+bool InnoLightComponentManager::PostFrame()
+{
+	return true;
+}
+
 bool InnoLightComponentManager::Terminate()
 {
 	return true;
