@@ -139,7 +139,3 @@ const std::vector<CameraComponent*>& InnoCameraComponentManager::GetAllComponent
 {
 	return m_Components.getRawData();
 }
-
-void InnoCameraComponentManager::LoadAssetsForComponents(bool AsyncLoad)
-{
-}

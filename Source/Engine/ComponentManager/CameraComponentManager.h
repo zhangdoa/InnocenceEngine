@@ -17,5 +17,4 @@ public:
 
 	CameraComponent* Get(std::size_t index) override;
 	const std::vector<CameraComponent*>& GetAllComponents() override;
-	void LoadAssetsForComponents(bool AsyncLoad) override;
 };

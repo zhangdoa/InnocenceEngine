@@ -27,6 +27,8 @@ public:
 	virtual TextureDataComponent* loadTexture(const char* fileName) = 0;
 	virtual bool saveTexture(const char* fileName, TextureDataComponent* TDC) = 0;
 
+	virtual bool loadAssetsForComponents(bool AsyncLoad = true) = 0;
+
 	virtual bool recordLoadedMeshMaterialPair(const char* fileName, MeshMaterialPair* pair) = 0;
 	virtual bool findLoadedMeshMaterialPair(const char* fileName, MeshMaterialPair*& pair) = 0;
 

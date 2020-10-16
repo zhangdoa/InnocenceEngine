@@ -17,5 +17,4 @@ public:
 
 	VisibleComponent* Get(std::size_t index) override;
 	const std::vector<VisibleComponent*>& GetAllComponents() override;
-	void LoadAssetsForComponents(bool AsyncLoad) override;
 };

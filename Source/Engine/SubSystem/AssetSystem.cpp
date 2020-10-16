@@ -1,5 +1,6 @@
 #include "AssetSystem.h"
 #include "../Common/ComponentHeaders.h"
+#include "../Common/CommonMacro.inl"
 #include "../Common/InnoMathHelper.h"
 #include "../Core/InnoLogger.h"
 #include "../Core/IOService.h"
@@ -7,6 +8,7 @@
 #include "../ThirdParty/STBWrapper/STBWrapper.h"
 #include "../ThirdParty/AssimpWrapper/AssimpWrapper.h"
 #include "../Template/ObjectPool.h"
+#include "../ComponentManager/IVisibleComponentManager.h"
 
 #include "../Interface/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
@@ -50,6 +52,10 @@ namespace InnoAssetSystemNS
 	void addIcosahedron(MeshDataComponent* meshDataComponent);
 	void addSphere(MeshDataComponent* meshDataComponent);
 	void addTerrain(MeshDataComponent* meshDataComponent);
+
+	std::function<void(VisibleComponent*, bool)> f_LoadModelTask;
+	std::function<void(VisibleComponent*, bool)> f_AssignProceduralModelTask;
+	std::function<void(VisibleComponent*)> f_GeneratePDCTask;
 
 	TObjectPool<MeshMaterialPair>* m_meshMaterialPairPool;
 	TObjectPool<Model>* m_modelPool;
@@ -503,6 +509,25 @@ void InnoAssetSystemNS::addTerrain(MeshDataComponent* meshDataComponent)
 
 bool InnoAssetSystem::setup()
 {
+	f_LoadModelTask = [=](VisibleComponent* i, bool AsyncLoad)
+	{
+		i->m_model = loadModel(i->m_modelFileName.c_str(), AsyncLoad);
+	};
+
+	f_AssignProceduralModelTask = [=](VisibleComponent* i, bool AsyncLoad)
+	{
+		i->m_model = addProceduralModel(i->m_proceduralMeshShape, ShaderModel::Opaque);
+		auto l_pair = getMeshMaterialPair(i->m_model->meshMaterialPairs.m_startOffset);
+		g_pModuleManager->getRenderingFrontend()->registerMaterialDataComponent(l_pair->material, AsyncLoad);
+	};
+
+	// @TODO: Concurrency
+	f_GeneratePDCTask = [=](VisibleComponent* i)
+	{
+		g_pModuleManager->getPhysicsSystem()->generatePhysicsProxy(i);
+		i->m_ObjectStatus = ObjectStatus::Activated;
+	};
+
 	m_meshMaterialPairPool = TObjectPool<MeshMaterialPair>::Create(65536);
 	m_meshMaterialPairList.reserve(65536);
 	m_modelPool = TObjectPool<Model>::Create(4096);
@@ -620,6 +645,51 @@ TextureDataComponent* InnoAssetSystem::loadTexture(const char* fileName)
 bool InnoAssetSystem::saveTexture(const char* fileName, TextureDataComponent* TDC)
 {
 	return STBWrapper::saveTexture(fileName, TDC);
+}
+
+bool InnoAssetSystem::loadAssetsForComponents(bool AsyncLoad)
+{
+	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
+
+	// @TODO: Load unit model first
+	for (auto i : l_visibleComponents)
+	{
+		if (i->m_meshSource != MeshSource::Customized)
+		{
+			if (AsyncLoad)
+			{
+				auto l_loadModelTask = g_pModuleManager->getTaskSystem()->submit("AssignProceduralModelTask", 4, nullptr, f_AssignProceduralModelTask, i, true);
+				g_pModuleManager->getTaskSystem()->submit("PDCTask", 4, l_loadModelTask, f_GeneratePDCTask, i);
+			}
+			else
+			{
+				f_AssignProceduralModelTask(i, false);
+				f_GeneratePDCTask(i);
+			}
+		}
+		else
+		{
+			if (!i->m_modelFileName.empty())
+			{
+				if (AsyncLoad)
+				{
+					auto l_loadModelTask = g_pModuleManager->getTaskSystem()->submit("LoadModelTask", 4, nullptr, f_LoadModelTask, i, true);
+					g_pModuleManager->getTaskSystem()->submit("PDCTask", 4, l_loadModelTask, f_GeneratePDCTask, i);
+				}
+				else
+				{
+					f_LoadModelTask(i, false);
+					f_GeneratePDCTask(i);
+				}
+			}
+			else
+			{
+				InnoLogger::Log(LogLevel::Warning, "VisibleComponentManager: Custom shape mesh specified without a model preset file.");
+			}
+		}
+	}
+
+	return true;
 }
 
 recordLoaded(MeshMaterialPair, MeshMaterialPair*, pair)

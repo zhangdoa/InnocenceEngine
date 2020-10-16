@@ -92,10 +92,7 @@ bool InnoSceneSystemNS::loadScene(const char* fileName)
 		(*i.first)();
 	}
 
-	GetComponentManager(TransformComponent)->LoadAssetsForComponents();
-	GetComponentManager(VisibleComponent)->LoadAssetsForComponents();
-	GetComponentManager(LightComponent)->LoadAssetsForComponents();
-	GetComponentManager(CameraComponent)->LoadAssetsForComponents();
+	g_pModuleManager->getAssetSystem()->loadAssetsForComponents();
 
 	m_isLoadingScene = false;
 
@@ -114,8 +111,8 @@ bool InnoSceneSystem::setup()
 		m_needUpdate = true;
 	};
 
-	g_pModuleManager->getSceneSystem()->addSceneLoadingStartCallback(&f_SceneLoadingStartCallback);
-	g_pModuleManager->getSceneSystem()->addSceneLoadingFinishCallback(&f_SceneLoadingFinishCallback);
+	addSceneLoadingStartCallback(&f_SceneLoadingStartCallback, -1);
+	addSceneLoadingFinishCallback(&f_SceneLoadingFinishCallback, -1);
 
 	m_ObjectStatus = ObjectStatus::Created;
 

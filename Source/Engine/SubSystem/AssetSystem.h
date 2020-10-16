@@ -18,6 +18,8 @@ public:
 	TextureDataComponent* loadTexture(const char* fileName) override;
 	bool saveTexture(const char* fileName, TextureDataComponent* TDC) override;
 
+	bool loadAssetsForComponents(bool AsyncLoad) override;
+
 	bool recordLoadedMeshMaterialPair(const char* fileName, MeshMaterialPair* pair) override;
 	bool findLoadedMeshMaterialPair(const char* fileName, MeshMaterialPair*& pair) override;
 

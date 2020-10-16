@@ -411,7 +411,3 @@ const std::vector<LightComponent*>& InnoLightComponentManager::GetAllComponents(
 {
 	return m_Components.getRawData();
 }
-
-void InnoLightComponentManager::LoadAssetsForComponents(bool AsyncLoad)
-{
-}
