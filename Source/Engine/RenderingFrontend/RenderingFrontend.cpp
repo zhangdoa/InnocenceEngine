@@ -1,13 +1,6 @@
 #include "RenderingFrontend.h"
-#include "../Common/CommonMacro.inl"
-#include "../ComponentManager/ITransformComponentManager.h"
-#include "../ComponentManager/IVisibleComponentManager.h"
-#include "../ComponentManager/ILightComponentManager.h"
-#include "../ComponentManager/ICameraComponentManager.h"
 
 #include "../Core/InnoLogger.h"
-#include "../Core/InnoMemory.h"
-#include "../Template/ObjectPool.h"
 
 #include "../Interface/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
@@ -68,9 +61,6 @@ namespace InnoRenderingFrontendNS
 
 	RenderingConfig m_renderingConfig = RenderingConfig();
 
-	TObjectPool<SkeletonDataComponent>* m_SkeletonDataComponentPool;
-	TObjectPool<AnimationDataComponent>* m_AnimationDataComponentPool;
-
 	ThreadSafeQueue<MeshDataComponent*> m_uninitializedMeshes;
 	ThreadSafeQueue<MaterialDataComponent*> m_uninitializedMaterials;
 	ThreadSafeQueue<AnimationDataComponent*> m_uninitializedAnimations;
@@ -96,11 +86,11 @@ namespace InnoRenderingFrontendNS
 
 	MaterialDataComponent* m_defaultMaterial;
 
-	bool setup(IRenderingServer* renderingServer);
+	bool Setup(ISystemConfig* systemConfig);
 	bool loadDefaultAssets();
-	bool initialize();
-	bool update();
-	bool terminate();
+	bool Initialize();
+	bool Update();
+	bool Terminate();
 
 	float radicalInverse(uint32_t n, uint32_t base);
 	void initializeHaltonSampler();
@@ -176,9 +166,11 @@ AnimationData InnoRenderingFrontendNS::getAnimationData(const char* animationNam
 	}
 }
 
-bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
+bool InnoRenderingFrontendNS::Setup(ISystemConfig* systemConfig)
 {
-	m_renderingServer = renderingServer;
+	auto l_renderingFrontendConfig = reinterpret_cast<IRenderingFrontendConfig*>(systemConfig);
+
+	m_renderingServer = l_renderingFrontendConfig->m_RenderingServer;
 	m_rayTracer = new InnoRayTracer();
 
 	m_renderingConfig.useCSM = true;
@@ -252,8 +244,8 @@ bool InnoRenderingFrontendNS::setup(IRenderingServer* renderingServer)
 	g_pModuleManager->getSceneSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 	g_pModuleManager->getSceneSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
-	m_SkeletonDataComponentPool = TObjectPool<SkeletonDataComponent>::Create(2048);
-	m_AnimationDataComponentPool = TObjectPool<AnimationDataComponent>::Create(16384);
+	g_pModuleManager->getComponentManager()->RegisterType<SkeletonDataComponent>(2048);
+	g_pModuleManager->getComponentManager()->RegisterType<AnimationDataComponent>(16384);
 
 	m_rayTracer->Setup();
 
@@ -398,7 +390,7 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 	return true;
 }
 
-bool InnoRenderingFrontendNS::initialize()
+bool InnoRenderingFrontendNS::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
@@ -420,14 +412,14 @@ bool InnoRenderingFrontendNS::initialize()
 
 bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 {
-	auto l_mainCamera = GetComponentManager(CameraComponent)->Get(0);
+	auto l_mainCamera = g_pModuleManager->getComponentManager()->Get<CameraComponent>(0);
 
 	if (l_mainCamera == nullptr)
 	{
 		return false;
 	}
 
-	auto l_mainCameraTransformComponent = GetComponent(TransformComponent, l_mainCamera->m_Owner);
+	auto l_mainCameraTransformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(l_mainCamera->m_Owner);
 
 	if (l_mainCameraTransformComponent == nullptr)
 	{
@@ -480,14 +472,14 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 	l_PerFrameCB.shutterTime = l_mainCamera->m_shutterTime;
 	l_PerFrameCB.ISO = l_mainCamera->m_ISO;
 
-	auto l_sun = GetComponentManager(LightComponent)->Get(0);
+	auto l_sun = g_pModuleManager->getComponentManager()->Get<LightComponent>(0);
 
 	if (l_sun == nullptr)
 	{
 		return false;
 	}
 
-	auto l_sunTransformComponent = GetComponent(TransformComponent, l_sun->m_Owner);
+	auto l_sunTransformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(l_sun->m_Owner);
 
 	if (l_sunTransformComponent == nullptr)
 	{
@@ -533,14 +525,14 @@ bool InnoRenderingFrontendNS::updateLightData()
 	l_PointLightCB.clear();
 	l_SphereLightCB.clear();
 
-	auto& l_lightComponents = GetComponentManager(LightComponent)->GetAllComponents();
+	auto& l_lightComponents = g_pModuleManager->getComponentManager()->GetAll<LightComponent>();
 	auto l_lightComponentCount = l_lightComponents.size();
 
 	if (l_lightComponentCount > 0)
 	{
 		for (size_t i = 0; i < l_lightComponentCount; i++)
 		{
-			auto l_transformCompoent = GetComponent(TransformComponent, l_lightComponents[i]->m_Owner);
+			auto l_transformCompoent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(l_lightComponents[i]->m_Owner);
 			if (l_transformCompoent != nullptr)
 			{
 				if (l_lightComponents[i]->m_LightType == LightType::Point)
@@ -696,7 +688,7 @@ bool InnoRenderingFrontendNS::simulateAnimation()
 
 bool InnoRenderingFrontendNS::updateBillboardPassData()
 {
-	auto& l_lightComponents = GetComponentManager(LightComponent)->GetAllComponents();
+	auto& l_lightComponents = g_pModuleManager->getComponentManager()->GetAll<LightComponent>();
 
 	auto l_totalBillboardDrawCallCount = l_lightComponents.size();
 
@@ -727,7 +719,7 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 	{
 		PerObjectConstantBuffer l_meshCB;
 
-		auto l_transformCompoent = GetComponent(TransformComponent, i->m_Owner);
+		auto l_transformCompoent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(i->m_Owner);
 		if (l_transformCompoent != nullptr)
 		{
 			l_meshCB.m = InnoMath::toTranslationMatrix(l_transformCompoent->m_globalTransformVector.m_pos);
@@ -778,7 +770,7 @@ bool InnoRenderingFrontendNS::updateDebuggerPassData()
 	return true;
 }
 
-bool InnoRenderingFrontendNS::update()
+bool InnoRenderingFrontendNS::Update()
 {
 	if (m_ObjectStatus == ObjectStatus::Activated)
 	{
@@ -806,7 +798,7 @@ bool InnoRenderingFrontendNS::update()
 	}
 }
 
-bool InnoRenderingFrontendNS::terminate()
+bool InnoRenderingFrontendNS::Terminate()
 {
 	m_rayTracer->Terminate();
 
@@ -815,27 +807,27 @@ bool InnoRenderingFrontendNS::terminate()
 	return true;
 }
 
-bool InnoRenderingFrontend::setup(IRenderingServer* renderingServer)
+bool InnoRenderingFrontend::Setup(ISystemConfig* systemConfig)
 {
-	return InnoRenderingFrontendNS::setup(renderingServer);
+	return InnoRenderingFrontendNS::Setup(systemConfig);
 }
 
-bool InnoRenderingFrontend::initialize()
+bool InnoRenderingFrontend::Initialize()
 {
-	return InnoRenderingFrontendNS::initialize();
+	return InnoRenderingFrontendNS::Initialize();
 }
 
-bool InnoRenderingFrontend::update()
+bool InnoRenderingFrontend::Update()
 {
-	return InnoRenderingFrontendNS::update();
+	return InnoRenderingFrontendNS::Update();
 }
 
-bool InnoRenderingFrontend::terminate()
+bool InnoRenderingFrontend::Terminate()
 {
-	return InnoRenderingFrontendNS::terminate();
+	return InnoRenderingFrontendNS::Terminate();
 }
 
-ObjectStatus InnoRenderingFrontend::getStatus()
+ObjectStatus InnoRenderingFrontend::GetStatus()
 {
 	return InnoRenderingFrontendNS::m_ObjectStatus;
 }
@@ -863,8 +855,8 @@ MaterialDataComponent* InnoRenderingFrontend::addMaterialDataComponent()
 SkeletonDataComponent* InnoRenderingFrontend::addSkeletonDataComponent()
 {
 	static std::atomic<uint32_t> skeletonCount = 0;
-	auto l_SDC = m_SkeletonDataComponentPool->Spawn();
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, ("Skeleton_" + std::to_string(skeletonCount) + "/").c_str());
+	auto l_SDC = g_pModuleManager->getComponentManager()->Spawn<SkeletonDataComponent>(l_parentEntity, false, ObjectLifespan::Persistence);
 	l_SDC->m_Owner = l_parentEntity;
 	l_SDC->m_Serializable = false;
 	l_SDC->m_ObjectStatus = ObjectStatus::Created;
@@ -876,8 +868,8 @@ SkeletonDataComponent* InnoRenderingFrontend::addSkeletonDataComponent()
 AnimationDataComponent* InnoRenderingFrontend::addAnimationDataComponent()
 {
 	static std::atomic<uint32_t> animationCount = 0;
-	auto l_ADC = m_AnimationDataComponentPool->Spawn();
 	auto l_parentEntity = g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, ("Animation_" + std::to_string(animationCount) + "/").c_str());
+	auto l_ADC = g_pModuleManager->getComponentManager()->Spawn<AnimationDataComponent>(l_parentEntity, false, ObjectLifespan::Persistence);
 	l_ADC->m_Owner = l_parentEntity;
 	l_ADC->m_Serializable = false;
 	l_ADC->m_ObjectStatus = ObjectStatus::Created;

@@ -12,10 +12,10 @@ public:
 		static PhysXWrapper instance;
 		return instance;
 	}
-	bool setup();
-	bool initialize();
-	bool update();
-	bool terminate();
+	bool Setup();
+	bool Initialize();
+	bool Update();
+	bool Terminate();
 
 	bool createPxSphere(PhysicsDataComponent* rhs, float radius, bool isDynamic);
 	bool createPxBox(PhysicsDataComponent* rhs, bool isDynamic);

@@ -1,9 +1,5 @@
 #include "RayTracer.h"
 #include "../Core/InnoLogger.h"
-#include "../Common/CommonMacro.inl"
-#include "../ComponentManager/ITransformComponentManager.h"
-#include "../ComponentManager/IVisibleComponentManager.h"
-#include "../ComponentManager/ICameraComponentManager.h"
 
 #include "../Interface/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
@@ -298,8 +294,8 @@ bool ExecuteRayTracing()
 {
 	InnoLogger::Log(LogLevel::Verbose, "InnoRayTracer: Start ray tracing...");
 
-	auto l_camera = GetComponentManager(CameraComponent)->Get(0);
-	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_camera->m_Owner);
+	auto l_camera = g_pModuleManager->getComponentManager()->Get<CameraComponent>(0);
+	auto l_cameraTransformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(l_camera->m_Owner);
 	auto l_lookfrom = l_cameraTransformComponent->m_globalTransformVector.m_pos;
 	auto l_lookat = l_lookfrom + InnoMath::getDirection(Direction::Backward, l_cameraTransformComponent->m_globalTransformVector.m_rot);
 	auto l_up = InnoMath::getDirection(Direction::Up, l_cameraTransformComponent->m_globalTransformVector.m_rot);
@@ -307,7 +303,7 @@ bool ExecuteRayTracing()
 
 	RayTracingCamera l_rayTracingCamera(l_lookfrom, l_lookat, l_up, l_vfov, l_camera->m_WHRatio, 1.0f / l_camera->m_aperture, 1000.0f);
 
-	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
+	auto l_visibleComponents = g_pModuleManager->getComponentManager()->GetAll<VisibleComponent>();
 
 	std::vector<Hitable*> l_hitableListVector;
 	l_hitableListVector.reserve(l_visibleComponents.size());
@@ -316,7 +312,7 @@ bool ExecuteRayTracing()
 	{
 		if (l_visibleComponent->m_proceduralMeshShape == ProceduralMeshShape::Sphere)
 		{
-			auto l_transformComponent = GetComponent(TransformComponent, l_visibleComponent->m_Owner);
+			auto l_transformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(l_camera->m_Owner);
 			for (uint64_t j = 0; j < l_visibleComponent->m_model->meshMaterialPairs.m_count; j++)
 			{
 				auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(l_visibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
@@ -428,7 +424,7 @@ bool ExecuteRayTracing()
 	return true;
 }
 
-bool InnoRayTracer::Setup()
+bool InnoRayTracer::Setup(ISystemConfig* systemConfig)
 {
 	InnoRayTracerNS::m_ObjectStatus = ObjectStatus::Created;
 	return true;

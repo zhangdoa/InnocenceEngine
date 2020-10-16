@@ -667,7 +667,7 @@ DX12Fence* addFence()
 	return m_FencePool->Spawn();
 }
 
-bool DX12RenderingServer::Setup()
+bool DX12RenderingServer::Setup(ISystemConfig* systemConfig)
 {
 	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
@@ -701,7 +701,7 @@ bool DX12RenderingServer::Setup()
 	m_SwapChainSDC = reinterpret_cast<DX12SamplerDataComponent*>(AddSamplerDataComponent("SwapChain/"));
 
 	m_ObjectStatus = ObjectStatus::Created;
-	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer setup finished.");
+	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer Setup finished.");
 
 	return l_result;
 }

@@ -46,8 +46,10 @@ namespace WinWindowSystemNS
 
 using namespace WinWindowSystemNS;
 
-bool WinWindowSystem::setup(void* hInstance, void* hwnd)
+bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 {
+	auto l_systemConfig = reinterpret_cast<IWindowSystemConfig*>(systemConfig);
+
 	m_buttonState.resize(g_pModuleManager->getEventSystem()->getInputConfig().totalKeyCodes);
 
 	for (size_t i = 0; i < m_buttonState.size(); i++)
@@ -55,11 +57,11 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 		m_buttonState[i].m_code = (uint32_t)i;
 	}
 
-	m_hInstance = static_cast<HINSTANCE>(hInstance);
+	m_hInstance = static_cast<HINSTANCE>(l_systemConfig->m_AppHook);
 
-	if (hwnd)
+	if (l_systemConfig->m_ExtraHook)
 	{
-		m_hwnd = *reinterpret_cast<HWND*>(hwnd);
+		m_hwnd = *reinterpret_cast<HWND*>(l_systemConfig->m_ExtraHook);
 	}
 
 	m_applicationName = g_pModuleManager->getApplicationName().c_str();
@@ -93,26 +95,31 @@ bool WinWindowSystem::setup(void* hInstance, void* hwnd)
 		break;
 	}
 
-	WinWindowSystemNS::m_windowSurface->setup(m_hInstance, m_hwnd, WindowProc);
+	IWindowSurfaceConfig l_surfaceConfig;
+	l_surfaceConfig.hInstance = m_hInstance;
+	l_surfaceConfig.hwnd = m_hwnd;
+	l_surfaceConfig.WindowProc = WindowProc;
+
+	WinWindowSystemNS::m_windowSurface->Setup(&l_surfaceConfig);
 
 	WinWindowSystemNS::m_ObjectStatus = ObjectStatus::Activated;
-	InnoLogger::Log(LogLevel::Success, "WinWindowSystem setup finished.");
+	InnoLogger::Log(LogLevel::Success, "WinWindowSystem Setup finished.");
 
 	return true;
 }
 
-bool WinWindowSystem::initialize()
+bool WinWindowSystem::Initialize()
 {
-	WinWindowSystemNS::m_windowSurface->initialize();
+	WinWindowSystemNS::m_windowSurface->Initialize();
 	InnoLogger::Log(LogLevel::Success, "WinWindowSystem has been initialized.");
 	return true;
 }
 
-bool WinWindowSystem::update()
+bool WinWindowSystem::Update()
 {
 	if (WinWindowSystemNS::m_initConfig.engineMode == EngineMode::Host)
 	{
-		//update window
+		//Update window
 		MSG msg;
 
 		// Initialize the message structure.
@@ -129,9 +136,9 @@ bool WinWindowSystem::update()
 	return true;
 }
 
-bool WinWindowSystem::terminate()
+bool WinWindowSystem::Terminate()
 {
-	WinWindowSystemNS::m_windowSurface->terminate();
+	WinWindowSystemNS::m_windowSurface->Terminate();
 
 	if (WinWindowSystemNS::m_initConfig.engineMode == EngineMode::Host)
 	{
@@ -159,7 +166,7 @@ bool WinWindowSystem::terminate()
 	return true;
 }
 
-ObjectStatus WinWindowSystem::getStatus()
+ObjectStatus WinWindowSystem::GetStatus()
 {
 	return WinWindowSystemNS::m_ObjectStatus;
 }
@@ -231,7 +238,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	}
 	case WM_SIZE:
 	{
-		if (lParam && g_pModuleManager->getStatus() == ObjectStatus::Activated)
+		if (lParam && g_pModuleManager->GetStatus() == ObjectStatus::Activated)
 		{
 			auto l_width = lParam & 0xffff;
 			auto l_height = (lParam & 0xffff0000) >> 16;

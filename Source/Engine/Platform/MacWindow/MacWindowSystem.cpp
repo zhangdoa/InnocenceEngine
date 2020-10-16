@@ -12,49 +12,49 @@ namespace MacWindowSystemNS
 	std::vector<ButtonState> m_buttonState;
 	std::set<WindowEventCallbackFunctor*> m_windowEventCallbackFunctor;
 
-  MacWindowSystemBridge* m_bridge;
+	MacWindowSystemBridge* m_bridge;
 }
 
-bool MacWindowSystem::setup(void* hInstance, void* hwnd)
+bool MacWindowSystem::Setup(void* hInstance, void* hwnd)
 {
 	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
-    bool result = MacWindowSystemNS::m_bridge->setup(l_screenResolution.x, l_screenResolution.y);
+	bool result = MacWindowSystemNS::m_bridge->Setup(l_screenResolution.x, l_screenResolution.y);
 
 	MacWindowSystemNS::m_ObjectStatus = ObjectStatus::Created;
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "MacWindowSystem setup finished.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "MacWindowSystem Setup finished.");
 
 	return true;
 }
 
-bool MacWindowSystem::initialize()
+bool MacWindowSystem::Initialize()
 {
-	bool result = MacWindowSystemNS::m_bridge->initialize();
+	bool result = MacWindowSystemNS::m_bridge->Initialize();
 
 	MacWindowSystemNS::m_ObjectStatus = ObjectStatus::Activated;
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "MacWindowSystem has been initialized.");
 	return true;
 }
 
-bool MacWindowSystem::update()
+bool MacWindowSystem::Update()
 {
-	bool result = MacWindowSystemNS::m_bridge->update();
+	bool result = MacWindowSystemNS::m_bridge->Update();
 	return true;
 }
 
-bool MacWindowSystem::terminate()
+bool MacWindowSystem::Terminate()
 {
-	bool result = MacWindowSystemNS::m_bridge->terminate();
+	bool result = MacWindowSystemNS::m_bridge->Terminate();
 	MacWindowSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "MacWindowSystem has been terminated.");
 	return true;
 }
 
-ObjectStatus MacWindowSystem::getStatus()
+ObjectStatus MacWindowSystem::GetStatus()
 {
 	return MacWindowSystemNS::m_ObjectStatus;
 }
 
-IWindowSurface * MacWindowSystem::getWindowSurface()
+IWindowSurface* MacWindowSystem::getWindowSurface()
 {
 	return MacWindowSystemNS::m_windowSurface;
 }

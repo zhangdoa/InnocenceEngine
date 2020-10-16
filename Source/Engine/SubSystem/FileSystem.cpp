@@ -1,8 +1,4 @@
 #include "FileSystem.h"
-#include "../Common/CommonMacro.inl"
-#include "../Component/MeshDataComponent.h"
-#include "../Component/TextureDataComponent.h"
-#include "../ComponentManager/IVisibleComponentManager.h"
 #include "../Core/InnoLogger.h"
 
 #include "../Interface/IModuleManager.h"
@@ -17,7 +13,7 @@ namespace InnoFileSystemNS
 
 using namespace InnoFileSystemNS;
 
-bool InnoFileSystem::setup()
+bool InnoFileSystem::Setup(ISystemConfig* systemConfig)
 {
 	IOService::setupWorkingDirectory();
 
@@ -25,7 +21,7 @@ bool InnoFileSystem::setup()
 	return true;
 }
 
-bool InnoFileSystem::initialize()
+bool InnoFileSystem::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
@@ -40,7 +36,7 @@ bool InnoFileSystem::initialize()
 	}
 }
 
-bool InnoFileSystem::update()
+bool InnoFileSystem::Update()
 {
 	if (m_ObjectStatus == ObjectStatus::Activated)
 	{
@@ -55,14 +51,14 @@ bool InnoFileSystem::update()
 	return true;
 }
 
-bool InnoFileSystem::terminate()
+bool InnoFileSystem::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
 
 	return true;
 }
 
-ObjectStatus InnoFileSystem::getStatus()
+ObjectStatus InnoFileSystem::GetStatus()
 {
 	return m_ObjectStatus;
 }
@@ -165,11 +161,11 @@ bool InnoFileSystem::addCPPClassFiles(const CPPClassDesc& desc)
 	}
 
 	l_headerFile << std::endl;
-	l_headerFile << "  bool setup();" << std::endl;
-	l_headerFile << "  bool initialize();" << std::endl;
-	l_headerFile << "  bool update();" << std::endl;
-	l_headerFile << "  bool terminate();" << std::endl;
-	l_headerFile << "  ObjectStatus getStatus();" << std::endl;
+	l_headerFile << "  bool Setup();" << std::endl;
+	l_headerFile << "  bool Initialize();" << std::endl;
+	l_headerFile << "  bool Update();" << std::endl;
+	l_headerFile << "  bool Terminate();" << std::endl;
+	l_headerFile << "  ObjectStatus GetStatus();" << std::endl;
 
 	l_headerFile << std::endl;
 	l_headerFile << "private:" << std::endl;

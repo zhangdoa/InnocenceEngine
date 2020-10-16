@@ -10,10 +10,10 @@ using MouseMovementEventMap = std::unordered_map<MouseMovementAxis, std::set<Mou
 
 namespace InnoEventSystemNS
 {
-	bool setup();
-	bool initialize();
-	bool update();
-	bool terminate();
+	bool Setup();
+	bool Initialize();
+	bool Update();
+	bool Terminate();
 
 	bool addButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent);
 	bool addMouseMovementCallback(MouseMovementAxis mouseMovementAxis, MouseMovementEvent mouseMovementEvent);
@@ -42,13 +42,13 @@ namespace InnoEventSystemNS
 	Vec4 m_mousePositionInWorldSpace;
 };
 
-bool InnoEventSystemNS::setup()
+bool InnoEventSystemNS::Setup()
 {
 	InnoEventSystemNS::m_ObjectStatus = ObjectStatus::Created;
 	return true;
 }
 
-bool InnoEventSystemNS::initialize()
+bool InnoEventSystemNS::Initialize()
 {
 	if (InnoEventSystemNS::m_ObjectStatus == ObjectStatus::Created)
 	{
@@ -64,7 +64,7 @@ bool InnoEventSystemNS::initialize()
 	}
 }
 
-bool InnoEventSystemNS::update()
+bool InnoEventSystemNS::Update()
 {
 	if (InnoEventSystemNS::m_ObjectStatus == ObjectStatus::Activated)
 	{
@@ -111,7 +111,7 @@ bool InnoEventSystemNS::update()
 	return true;
 }
 
-bool InnoEventSystemNS::terminate()
+bool InnoEventSystemNS::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
 	InnoLogger::Log(LogLevel::Success, "EventSystem has been terminated.");
@@ -202,24 +202,24 @@ void InnoEventSystemNS::scrollCallback(float xoffset, float yoffset)
 {
 }
 
-bool InnoEventSystem::setup()
+bool InnoEventSystem::Setup(ISystemConfig* systemConfig)
 {
-	return InnoEventSystemNS::setup();
+	return InnoEventSystemNS::Setup();
 }
 
-bool InnoEventSystem::initialize()
+bool InnoEventSystem::Initialize()
 {
-	return InnoEventSystemNS::initialize();
+	return InnoEventSystemNS::Initialize();
 }
 
-bool InnoEventSystem::update()
+bool InnoEventSystem::Update()
 {
-	return InnoEventSystemNS::update();
+	return InnoEventSystemNS::Update();
 }
 
-bool InnoEventSystem::terminate()
+bool InnoEventSystem::Terminate()
 {
-	return InnoEventSystemNS::terminate();
+	return InnoEventSystemNS::Terminate();
 }
 
 InputConfig InnoEventSystem::getInputConfig()
@@ -262,7 +262,7 @@ Vec2 InnoEventSystem::getMousePosition()
 	return InnoEventSystemNS::getMousePosition();
 }
 
-ObjectStatus InnoEventSystem::getStatus()
+ObjectStatus InnoEventSystem::GetStatus()
 {
 	return InnoEventSystemNS::m_ObjectStatus;
 }

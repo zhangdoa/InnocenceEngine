@@ -21,10 +21,10 @@ struct PhysXActor
 
 namespace PhysXWrapperNS
 {
-	bool setup();
-	bool initialize();
-	bool update();
-	bool terminate();
+	bool Setup();
+	bool Initialize();
+	bool Update();
+	bool Terminate();
 
 	bool createPxSphere(PhysicsDataComponent* rhs, Vec4 globalPos, float radius, bool isDynamic);
 	bool createPxBox(PhysicsDataComponent* rhs, Vec4 globalPos, Vec4 rot, Vec4 size, bool isDynamic);
@@ -62,7 +62,7 @@ namespace PhysXWrapperNS
 	std::mutex m_mutex;
 }
 
-bool PhysXWrapperNS::setup()
+bool PhysXWrapperNS::Setup()
 {
 	gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gDefaultAllocatorCallback,
 		gDefaultErrorCallback);
@@ -143,12 +143,12 @@ bool PhysXWrapperNS::setup()
 	return true;
 }
 
-bool PhysXWrapperNS::initialize()
+bool PhysXWrapperNS::Initialize()
 {
 	return true;
 }
 
-bool PhysXWrapperNS::update()
+bool PhysXWrapperNS::Update()
 {
 	if (m_needSimulate)
 	{
@@ -189,7 +189,7 @@ bool PhysXWrapperNS::update()
 	return true;
 }
 
-bool PhysXWrapperNS::terminate()
+bool PhysXWrapperNS::Terminate()
 {
 	if (m_currentTask != nullptr)
 	{
@@ -404,7 +404,7 @@ PxTriangleMesh* PhysXWrapperNS::createBV33TriangleMesh(PhysicsDataComponent* rhs
 	// Create BVH33 midphase
 	params.midphaseDesc = PxMeshMidPhase::eBVH33;
 
-	// setup common cooking params
+	// Setup common cooking params
 	setupCommonCookingParams(params, skipMeshCleanup, skipEdgeData);
 
 	// The COOKING_PERFORMANCE flag for BVH33 midphase enables a fast cooking path at the expense of somewhat lower quality BVH construction.
@@ -500,7 +500,7 @@ PxTriangleMesh* PhysXWrapperNS::createBV34TriangleMesh(PhysicsDataComponent* rhs
 	// Create BVH34 midphase
 	params.midphaseDesc = PxMeshMidPhase::eBVH34;
 
-	// setup common cooking params
+	// Setup common cooking params
 	setupCommonCookingParams(params, skipMeshCleanup, skipEdgeData);
 
 	// Cooking mesh with less triangles per leaf produces larger meshes with better runtime performance
@@ -623,24 +623,24 @@ bool PhysXWrapperNS::createPxMesh(PhysicsDataComponent* rhs, Vec4 globalPos, Vec
 	return true;
 }
 
-bool PhysXWrapper::setup()
+bool PhysXWrapper::Setup()
 {
-	return PhysXWrapperNS::setup();
+	return PhysXWrapperNS::Setup();
 }
 
-bool PhysXWrapper::initialize()
+bool PhysXWrapper::Initialize()
 {
-	return PhysXWrapperNS::initialize();
+	return PhysXWrapperNS::Initialize();
 }
 
-bool PhysXWrapper::update()
+bool PhysXWrapper::Update()
 {
-	return PhysXWrapperNS::update();
+	return PhysXWrapperNS::Update();
 }
 
-bool PhysXWrapper::terminate()
+bool PhysXWrapper::Terminate()
 {
-	return PhysXWrapperNS::terminate();
+	return PhysXWrapperNS::Terminate();
 }
 
 bool PhysXWrapper::createPxSphere(PhysicsDataComponent* rhs, float radius, bool isDynamic)

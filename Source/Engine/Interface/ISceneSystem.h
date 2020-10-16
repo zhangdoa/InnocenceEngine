@@ -1,21 +1,12 @@
 #pragma once
-#include "../Common/InnoType.h"
-#include "../Common/InnoClassTemplate.h"
-#include "../Common/InnoObject.h"
+#include "ISystem.h"
 
 using SceneHierarchyMap = std::unordered_map<InnoEntity*, std::set<InnoComponent*>>;
 
-class ISceneSystem
+class ISceneSystem : public ISystem
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(ISceneSystem);
-
-	virtual bool setup() = 0;
-	virtual bool initialize() = 0;
-	virtual bool update() = 0;
-	virtual bool terminate() = 0;
-
-	virtual ObjectStatus getStatus() = 0;
 
 	virtual std::string getCurrentSceneName() = 0;
 	virtual bool loadScene(const char* fileName, bool AsyncLoad = true) = 0;

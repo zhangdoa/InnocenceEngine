@@ -8,34 +8,34 @@ namespace ImGuiRendererMTNS
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
-bool ImGuiRendererMT::setup()
+bool ImGuiRendererMT::Setup(ISystemConfig* systemConfig)
 {
 	ImGuiRendererMTNS::m_ObjectStatus = ObjectStatus::Activated;
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererMT setup finished.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererMT Setup finished.");
 
 	return true;
 }
 
-bool ImGuiRendererMT::initialize()
+bool ImGuiRendererMT::Initialize()
 {
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererMT has been initialized.");
 
 	return true;
 }
 
-bool ImGuiRendererMT::newFrame()
+bool ImGuiRendererMT::NewFrame()
 {
 	return true;
 }
 
-bool ImGuiRendererMT::render()
+bool ImGuiRendererMT::Render()
 {
 	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
 
 	return true;
 }
 
-bool ImGuiRendererMT::terminate()
+bool ImGuiRendererMT::Terminate()
 {
 	ImGuiRendererMTNS::m_ObjectStatus = ObjectStatus::Terminated;
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererMT has been terminated.");
@@ -43,12 +43,12 @@ bool ImGuiRendererMT::terminate()
 	return true;
 }
 
-ObjectStatus ImGuiRendererMT::getStatus()
+ObjectStatus ImGuiRendererMT::GetStatus()
 {
 	return ImGuiRendererMTNS::m_ObjectStatus;
 }
 
-void ImGuiRendererMT::showRenderResult(RenderPassType renderPassType)
+void ImGuiRendererMT::ShowRenderResult(RenderPassType renderPassType)
 {
 	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
 	auto l_renderTargetSize = ImVec2((float)l_screenResolution.x / 4.0f, (float)l_screenResolution.y / 4.0f);

@@ -9,7 +9,7 @@
 #include "ITestSystem.h"
 #include "IFileSystem.h"
 #include "../EntityManager/IEntityManager.h"
-#include "../ComponentManager/IComponentManager.h"
+#include "../Template/ComponentManager.h"
 #include "ISceneSystem.h"
 #include "IAssetSystem.h"
 #include "IPhysicsSystem.h"
@@ -38,12 +38,12 @@ class IModuleManager
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IModuleManager);
 
-	INNO_ENGINE_API virtual bool setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient) = 0;
-	INNO_ENGINE_API virtual bool initialize() = 0;
-	INNO_ENGINE_API virtual bool run() = 0;
-	INNO_ENGINE_API virtual bool terminate() = 0;
+	INNO_ENGINE_API virtual bool Setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient) = 0;
+	INNO_ENGINE_API virtual bool Initialize() = 0;
+	INNO_ENGINE_API virtual bool Run() = 0;
+	INNO_ENGINE_API virtual bool Terminate() = 0;
 
-	INNO_ENGINE_API virtual ObjectStatus getStatus() = 0;
+	INNO_ENGINE_API virtual ObjectStatus GetStatus() = 0;
 
 	INNO_ENGINE_API virtual ITimeSystem* getTimeSystem() = 0;
 	INNO_ENGINE_API virtual ILogSystem* getLogSystem() = 0;
@@ -52,7 +52,7 @@ public:
 	INNO_ENGINE_API virtual ITestSystem* getTestSystem() = 0;
 	INNO_ENGINE_API virtual IFileSystem* getFileSystem() = 0;
 	INNO_ENGINE_API virtual IEntityManager* getEntityManager() = 0;
-	INNO_ENGINE_API virtual IComponentManager* getComponentManager(uint32_t componentTypeID) = 0;
+	INNO_ENGINE_API virtual ComponentManager* getComponentManager() = 0;
 	INNO_ENGINE_API virtual ISceneSystem* getSceneSystem() = 0;
 	INNO_ENGINE_API virtual IAssetSystem* getAssetSystem() = 0;
 	INNO_ENGINE_API virtual IPhysicsSystem* getPhysicsSystem() = 0;

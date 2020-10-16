@@ -93,15 +93,15 @@ extern IModuleManager* g_pModuleManager;
     - (void)createBuffer
     {
         /*
-         * Metal setup: Vertices
+         * Metal Setup: Vertices
          */
         /*
-         * Metal setup: Uniforms
+         * Metal Setup: Uniforms
          */
         _perFrameUBO = createUBO(sizeof(PerFrameConstantBuffer));
         
         /*
-         * Metal setup: Command queue
+         * Metal Setup: Command queue
          */
         _commandQueue = [_device newCommandQueue];
     }

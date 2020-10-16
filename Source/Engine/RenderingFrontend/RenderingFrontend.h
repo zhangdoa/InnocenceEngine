@@ -6,12 +6,12 @@ class InnoRenderingFrontend : public IRenderingFrontend
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoRenderingFrontend);
 
-	bool setup(IRenderingServer* renderingServer) override;
-	bool initialize() override;
-	bool update() override;
-	bool terminate() override;
+	bool Setup(ISystemConfig* systemConfig) override;
+	bool Initialize() override;
+	bool Update() override;
+	bool Terminate() override;
 
-	ObjectStatus getStatus() override;
+	ObjectStatus GetStatus() override;
 
 	bool runRayTrace() override;
 

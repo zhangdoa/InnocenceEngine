@@ -6,11 +6,11 @@ class InnoGUISystem : public IGUISystem
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoGUISystem);
 
-	bool setup() override;
-	bool initialize() override;
-	bool update() override;
-	bool render() override;
-	bool terminate() override;
+	bool Setup(ISystemConfig* systemConfig) override;
+	bool Initialize() override;
+	bool Update() override;
+	bool Render() override;
+	bool Terminate() override;
 
-	ObjectStatus getStatus() override;
+	ObjectStatus GetStatus() override;
 };

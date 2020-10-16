@@ -9,7 +9,7 @@
 #import <Foundation/Foundation.h>
 #import "MacWindowSystemBridgeImpl.h"
 
-bool MacWindowSystemBridgeImpl::setup(uint32_t sizeX, uint32_t sizeY) {
+bool MacWindowSystemBridgeImpl::Setup(uint32_t sizeX, uint32_t sizeY) {
     NSRect frame = NSMakeRect(0, 0, sizeX, sizeY);
     
     [m_macWindowDelegate initWithContentRect:frame
@@ -26,13 +26,13 @@ bool MacWindowSystemBridgeImpl::setup(uint32_t sizeX, uint32_t sizeY) {
     return true;
 }
 
-bool MacWindowSystemBridgeImpl::initialize() {
+bool MacWindowSystemBridgeImpl::Initialize() {
     [m_macWindowDelegate setView:[m_metalDelegate getView]];
         m_ObjectStatus = ObjectStatus::Activated;
     return true;
 }
 
-bool MacWindowSystemBridgeImpl::update() {
+bool MacWindowSystemBridgeImpl::Update() {
     NSEvent *event =
     [app
      nextEventMatchingMask:NSEventMaskAny
@@ -45,11 +45,11 @@ bool MacWindowSystemBridgeImpl::update() {
     return true;
 }
 
-bool MacWindowSystemBridgeImpl::terminate() {
+bool MacWindowSystemBridgeImpl::Terminate() {
     return true;
 }
 
-ObjectStatus MacWindowSystemBridgeImpl::getStatus() {
+ObjectStatus MacWindowSystemBridgeImpl::GetStatus() {
     if(![m_macWindowDelegate isAlive])
     {
         m_ObjectStatus = ObjectStatus::Suspended;

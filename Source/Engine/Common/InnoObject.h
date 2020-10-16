@@ -25,6 +25,8 @@ public:
 
 	static uint32_t GetTypeID() { return 0; }
 	static char* GetTypeName() { return "InnoEntity"; }
+
+	std::bitset<MaxComponentType> m_ComponentsMask;
 };
 
 class InnoComponent : public InnoObject

@@ -7,8 +7,6 @@
 #include "../ThirdParty/JSONWrapper/JSONWrapper.h"
 #include "../ThirdParty/STBWrapper/STBWrapper.h"
 #include "../ThirdParty/AssimpWrapper/AssimpWrapper.h"
-#include "../Template/ObjectPool.h"
-#include "../ComponentManager/IVisibleComponentManager.h"
 
 #include "../Interface/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
@@ -507,8 +505,10 @@ void InnoAssetSystemNS::addTerrain(MeshDataComponent* meshDataComponent)
 	meshDataComponent->m_indicesSize = meshDataComponent->m_indices.size();
 }
 
-bool InnoAssetSystem::setup()
+bool InnoAssetSystem::Setup(ISystemConfig* systemConfig)
 {
+	g_pModuleManager->getComponentManager()->RegisterType<VisibleComponent>(32768);
+
 	f_LoadModelTask = [=](VisibleComponent* i, bool AsyncLoad)
 	{
 		i->m_model = loadModel(i->m_modelFileName.c_str(), AsyncLoad);
@@ -536,7 +536,7 @@ bool InnoAssetSystem::setup()
 	return true;
 }
 
-bool InnoAssetSystem::initialize()
+bool InnoAssetSystem::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
@@ -551,7 +551,7 @@ bool InnoAssetSystem::initialize()
 	}
 }
 
-bool InnoAssetSystem::update()
+bool InnoAssetSystem::Update()
 {
 	if (m_ObjectStatus == ObjectStatus::Activated)
 	{
@@ -564,14 +564,14 @@ bool InnoAssetSystem::update()
 	}
 }
 
-bool InnoAssetSystem::terminate()
+bool InnoAssetSystem::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
 	InnoLogger::Log(LogLevel::Success, "AssetSystem has been terminated.");
 	return true;
 }
 
-ObjectStatus InnoAssetSystem::getStatus()
+ObjectStatus InnoAssetSystem::GetStatus()
 {
 	return m_ObjectStatus;
 }
@@ -649,7 +649,7 @@ bool InnoAssetSystem::saveTexture(const char* fileName, TextureDataComponent* TD
 
 bool InnoAssetSystem::loadAssetsForComponents(bool AsyncLoad)
 {
-	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
+	auto l_visibleComponents = g_pModuleManager->getComponentManager()->GetAll<VisibleComponent>();
 
 	// @TODO: Load unit model first
 	for (auto i : l_visibleComponents)

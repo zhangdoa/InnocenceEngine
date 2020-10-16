@@ -5,23 +5,23 @@
 class InnoBakerLogicClient : public ILogicClient
 {
 	// Inherited via ILogicClient
-	bool setup() override
+	bool Setup(ISystemConfig* systemConfig) override
 	{
 		return true;
 	}
-	bool initialize() override
+	bool Initialize() override
 	{
 		return true;
 	}
-	bool update() override
+	bool Update() override
 	{
 		return true;
 	}
-	bool terminate() override
+	bool Terminate() override
 	{
 		return true;
 	}
-	ObjectStatus getStatus() override
+	ObjectStatus GetStatus() override
 	{
 		return ObjectStatus();
 	}
@@ -79,12 +79,12 @@ int main(int argc, char* argv[])
 		return false;
 	}
 
-	if (!m_pModuleManager.get()->setup(appHook, extraHook, pScmdline, m_pRenderingClient.get(), m_pLogicClient.get()))
+	if (!m_pModuleManager.get()->Setup(appHook, extraHook, pScmdline, m_pRenderingClient.get(), m_pLogicClient.get()))
 	{
 		return false;
 	}
 
-	if (!m_pModuleManager->initialize())
+	if (!m_pModuleManager->Initialize())
 	{
 		return false;
 	}
@@ -143,7 +143,7 @@ int main(int argc, char* argv[])
 	InnoBaker::BakeBrickFactor("..//Res//Scenes//GITest.InnoBrick");
 #endif
 
-	m_pModuleManager->terminate();
+	m_pModuleManager->Terminate();
 
 	return 0;
 }

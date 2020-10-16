@@ -1,7 +1,5 @@
 #pragma once
-#include "../Common/InnoType.h"
-
-#include "../Common/InnoClassTemplate.h"
+#include "ISystem.h"
 
 #include "../Component/PhysicsDataComponent.h"
 #include "../Common/GPUDataStructure.h"
@@ -30,17 +28,10 @@ struct BVHNode
 	std::vector<PhysicsDataComponent*> childrenPDCs;
 };
 
-class IPhysicsSystem
+class IPhysicsSystem : public ISystem
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IPhysicsSystem);
-
-	virtual bool setup() = 0;
-	virtual bool initialize() = 0;
-	virtual bool update() = 0;
-	virtual bool terminate() = 0;
-
-	virtual ObjectStatus getStatus() = 0;
 
 	virtual bool generatePhysicsProxy(VisibleComponent* VC) = 0;
 	virtual void updateBVH() = 0;

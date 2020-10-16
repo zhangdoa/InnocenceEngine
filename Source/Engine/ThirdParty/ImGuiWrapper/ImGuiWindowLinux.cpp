@@ -7,14 +7,14 @@ namespace ImGuiWindowLinuxNS
 {
 }
 
-bool ImGuiWindowLinux::setup()
+bool ImGuiWindowLinux::Setup(ISystemConfig* systemConfig)
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowLinux setup finished.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowLinux Setup finished.");
 
 	return true;
 }
 
-bool ImGuiWindowLinux::initialize()
+bool ImGuiWindowLinux::Initialize()
 {
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowLinux has been initialized.");
 
@@ -26,7 +26,7 @@ bool ImGuiWindowLinux::newFrame()
 	return true;
 }
 
-bool ImGuiWindowLinux::terminate()
+bool ImGuiWindowLinux::Terminate()
 {
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowLinux has been terminated.");
 

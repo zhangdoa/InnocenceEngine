@@ -7,14 +7,14 @@ namespace ImGuiWindowMacNS
 {
 }
 
-bool ImGuiWindowMac::setup()
+bool ImGuiWindowMac::Setup(ISystemConfig* systemConfig)
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowMac setup finished.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowMac Setup finished.");
 
 	return true;
 }
 
-bool ImGuiWindowMac::initialize()
+bool ImGuiWindowMac::Initialize()
 {
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowMac has been initialized.");
 
@@ -26,7 +26,7 @@ bool ImGuiWindowMac::newFrame()
 	return true;
 }
 
-bool ImGuiWindowMac::terminate()
+bool ImGuiWindowMac::Terminate()
 {
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowMac has been terminated.");
 

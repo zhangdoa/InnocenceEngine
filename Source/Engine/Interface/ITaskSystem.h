@@ -1,19 +1,11 @@
 #pragma once
-#include "../Common/InnoType.h"
-#include "../Common/InnoClassTemplate.h"
+#include "ISystem.h"
 #include "../Core/InnoTaskScheduler.h"
 
-class ITaskSystem
+class ITaskSystem : public ISystem
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(ITaskSystem);
-
-	virtual bool setup() = 0;
-	virtual bool initialize() = 0;
-	virtual bool update() = 0;
-	virtual bool terminate() = 0;
-
-	virtual ObjectStatus getStatus() = 0;
 
 	virtual void waitAllTasksToFinish() = 0;
 

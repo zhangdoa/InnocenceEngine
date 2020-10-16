@@ -184,7 +184,7 @@ bool GLRenderingServerNS::resizeImpl()
 
 using namespace GLRenderingServerNS;
 
-bool GLRenderingServer::Setup()
+bool GLRenderingServer::Setup(ISystemConfig* systemConfig)
 {
 	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
@@ -218,7 +218,7 @@ bool GLRenderingServer::Setup()
 	m_SwapChainSDC = reinterpret_cast<GLSamplerDataComponent*>(AddSamplerDataComponent("SwapChain/"));
 
 	m_ObjectStatus = ObjectStatus::Created;
-	InnoLogger::Log(LogLevel::Success, "GLRenderingServer setup finished.");
+	InnoLogger::Log(LogLevel::Success, "GLRenderingServer Setup finished.");
 
 	return true;
 }

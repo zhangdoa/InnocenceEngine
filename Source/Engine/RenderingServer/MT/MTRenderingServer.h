@@ -6,7 +6,7 @@ class MTRenderingServer : public IRenderingServer
 {
 public:
 	// Inherited via IRenderingServer
-	bool Setup() override;
+	bool Setup(ISystemConfig* systemConfig) override;
 	bool Initialize() override;
 	bool Terminate() override;
 

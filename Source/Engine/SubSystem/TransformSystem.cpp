@@ -1,33 +1,26 @@
-#include "TransformComponentManager.h"
+#include "TransformSystem.h"
 #include "../Component/TransformComponent.h"
-#include "../Template/ObjectPool.h"
-#include "../Core/InnoMemory.h"
 #include "../Core/InnoRandomizer.h"
 #include "../Core/InnoLogger.h"
-#include "../Common/CommonMacro.inl"
-#include "CommonFunctionDefinitionMacro.inl"
 
 #include "../Interface/IModuleManager.h"
 
 extern IModuleManager* g_pModuleManager;
 
-namespace TransformComponentManagerNS
+namespace TransformSystemNS
 {
 	const size_t m_MaxComponentCount = 32768;
-	size_t m_CurrentComponentIndex = 0;
-	TObjectPool<TransformComponent>* m_ComponentPool;
-	ThreadSafeVector<TransformComponent*> m_Components;
-	ThreadSafeUnorderedMap<InnoEntity*, TransformComponent*> m_ComponentsMap;
 	InnoEntity* m_RootTransformEntity;
 	TransformComponent* m_RootTransformComponent;
 
-	std::function<void()> f_SceneLoadingStartCallback;
 	std::function<void()> f_SceneLoadingFinishCallback;
 
 	void SortTransformComponentsVector()
 	{
+		auto l_component = g_pModuleManager->getComponentManager()->GetAll<TransformComponent>();
+
 		//construct the hierarchy tree
-		for (auto i : m_Components)
+		for (auto i : l_component)
 		{
 			if (i->m_parentTransformComponent)
 			{
@@ -36,7 +29,7 @@ namespace TransformComponentManagerNS
 		}
 
 		//from top to bottom
-		std::sort(m_Components.begin(), m_Components.end(), [&](TransformComponent* a, TransformComponent* b)
+		std::sort(l_component.begin(), l_component.end(), [&](TransformComponent* a, TransformComponent* b)
 			{
 				return a->m_transformHierarchyLevel < b->m_transformHierarchyLevel;
 			});
@@ -48,7 +41,9 @@ namespace TransformComponentManagerNS
 		auto l_ratio = (1.0f - l_tickTime / 100.0f);
 		l_ratio = InnoMath::clamp(l_ratio, 0.01f, 0.99f);
 
-		std::for_each(m_Components.begin(), m_Components.end(), [&](TransformComponent* val)
+		auto l_component = g_pModuleManager->getComponentManager()->GetAll<TransformComponent>();
+
+		std::for_each(l_component.begin(), l_component.end(), [&](TransformComponent* val)
 			{
 				if (!InnoMath::isCloseEnough<float, 4>(val->m_localTransformVector.m_pos, val->m_localTransformVector_target.m_pos))
 				{
@@ -74,22 +69,18 @@ namespace TransformComponentManagerNS
 	}
 }
 
-using namespace TransformComponentManagerNS;
+using namespace TransformSystemNS;
 
-bool InnoTransformComponentManager::Setup()
+bool InnoTransformSystem::Setup(ISystemConfig* systemConfig)
 {
-	m_ComponentPool = TObjectPool<TransformComponent>::Create(m_MaxComponentCount);
-	m_Components.reserve(m_MaxComponentCount);
-	m_ComponentsMap.reserve(m_MaxComponentCount);
-
-	f_SceneLoadingStartCallback = [&]() {
-		CleanComponentContainers(TransformComponent);
-	};
+	g_pModuleManager->getComponentManager()->RegisterType<TransformComponent>(m_MaxComponentCount);
 
 	f_SceneLoadingFinishCallback = [&]() {
 		SortTransformComponentsVector();
 
-		for (auto i : m_Components)
+		auto l_component = g_pModuleManager->getComponentManager()->GetAll<TransformComponent>();
+
+		for (auto i : l_component)
 		{
 			i->m_localTransformVector_target = i->m_localTransformVector;
 
@@ -101,12 +92,11 @@ bool InnoTransformComponentManager::Setup()
 		}
 	};
 
-	g_pModuleManager->getSceneSystem()->addSceneLoadingStartCallback(&f_SceneLoadingStartCallback);
 	g_pModuleManager->getSceneSystem()->addSceneLoadingFinishCallback(&f_SceneLoadingFinishCallback);
 
 	m_RootTransformEntity = g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, "RootTransform/");
 
-	m_RootTransformComponent = SpawnComponent(TransformComponent, m_RootTransformEntity, false, ObjectLifespan::Persistence);
+	m_RootTransformComponent = g_pModuleManager->getComponentManager()->Spawn<TransformComponent>(m_RootTransformEntity, false, ObjectLifespan::Persistence);
 
 	m_RootTransformComponent->m_localTransformVector_target = m_RootTransformComponent->m_localTransformVector;
 	m_RootTransformComponent->m_globalTransformVector = m_RootTransformComponent->m_localTransformVector;
@@ -115,12 +105,12 @@ bool InnoTransformComponentManager::Setup()
 	return true;
 }
 
-bool InnoTransformComponentManager::Initialize()
+bool InnoTransformSystem::Initialize()
 {
 	return true;
 }
 
-bool InnoTransformComponentManager::Simulate()
+bool InnoTransformSystem::Update()
 {
 	auto l_SimulateTask = g_pModuleManager->getTaskSystem()->submit("TransformComponentsSimulateTask", 0, nullptr, [&]()
 		{
@@ -130,45 +120,23 @@ bool InnoTransformComponentManager::Simulate()
 	return true;
 }
 
-bool InnoTransformComponentManager::PostFrame()
+bool InnoTransformSystem::OnFrameEnd()
 {
-	std::for_each(m_Components.begin(), m_Components.end(), [&](TransformComponent* val)
+	auto l_component = g_pModuleManager->getComponentManager()->GetAll<TransformComponent>();
+
+	std::for_each(l_component.begin(), l_component.end(), [&](TransformComponent* val)
 		{
 			val->m_globalTransformMatrix_prev = val->m_globalTransformMatrix;
 		});
 	return true;
 }
 
-bool InnoTransformComponentManager::Terminate()
+bool InnoTransformSystem::Terminate()
 {
 	return true;
 }
 
-InnoComponent* InnoTransformComponentManager::Spawn(const InnoEntity* parentEntity, bool serializable, ObjectLifespan objectLifespan)
+ObjectStatus InnoTransformSystem::GetStatus()
 {
-	SpawnComponentImpl(TransformComponent);
-}
-
-void InnoTransformComponentManager::Destroy(InnoComponent* component)
-{
-	DestroyComponentImpl(TransformComponent);
-}
-
-InnoComponent* InnoTransformComponentManager::Find(const InnoEntity* parentEntity)
-{
-	GetComponentImpl(TransformComponent, parentEntity);
-}
-
-TransformComponent* InnoTransformComponentManager::Get(std::size_t index)
-{
-	if (index >= m_Components.size())
-	{
-		return nullptr;
-	}
-	return m_Components[index];
-}
-
-const std::vector<TransformComponent*>& InnoTransformComponentManager::GetAllComponents()
-{
-	return m_Components.getRawData();
+	return ObjectStatus();
 }

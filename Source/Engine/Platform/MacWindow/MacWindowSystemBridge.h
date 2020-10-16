@@ -6,15 +6,15 @@
 class MacWindowSystemBridge
 {
 public:
-  MacWindowSystemBridge() {};
-  virtual ~MacWindowSystemBridge() {};
+	MacWindowSystemBridge() {};
+	virtual ~MacWindowSystemBridge() {};
 
-  virtual bool setup(uint32_t sizeX, uint32_t sizeY) = 0;
-	virtual bool initialize() = 0;
-	virtual bool update() = 0;
-	virtual bool terminate() = 0;
+	virtual bool Setup(uint32_t sizeX, uint32_t sizeY) = 0;
+	virtual bool Initialize() = 0;
+	virtual bool Update() = 0;
+	virtual bool Terminate() = 0;
 
-	virtual ObjectStatus getStatus() = 0;
+	virtual ObjectStatus GetStatus() = 0;
 };
 
 #endif /* MacWindowSystemBridge_h */

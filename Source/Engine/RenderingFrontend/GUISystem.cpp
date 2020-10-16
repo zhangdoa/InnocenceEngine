@@ -12,46 +12,46 @@ namespace GUISystemNS
 
 using namespace GUISystemNS;
 
-bool InnoGUISystem::setup()
+bool InnoGUISystem::Setup(ISystemConfig* systemConfig)
 {
 	f_toggleshowImGui = [&]() {
 		m_showImGui = !m_showImGui;
 	};
 	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_I, true }, ButtonEvent{ EventLifeTime::OneShot, &f_toggleshowImGui });
 
-	return 	ImGuiWrapper::get().setup();
+	return 	ImGuiWrapper::Get().Setup();
 }
 
-bool InnoGUISystem::initialize()
+bool InnoGUISystem::Initialize()
 {
-	return ImGuiWrapper::get().initialize();
+	return ImGuiWrapper::Get().Initialize();
 }
 
-bool InnoGUISystem::update()
+bool InnoGUISystem::Update()
 {
 	if (m_showImGui)
 	{
-		ImGuiWrapper::get().update();
+		ImGuiWrapper::Get().Update();
 	}
 
 	return true;
 }
 
-bool InnoGUISystem::render()
+bool InnoGUISystem::Render()
 {
 	if (m_showImGui)
 	{
-		ImGuiWrapper::get().render();
+		ImGuiWrapper::Get().Render();
 	}
 	return true;
 }
 
-bool InnoGUISystem::terminate()
+bool InnoGUISystem::Terminate()
 {
-	return ImGuiWrapper::get().terminate();
+	return ImGuiWrapper::Get().Terminate();
 }
 
-ObjectStatus InnoGUISystem::getStatus()
+ObjectStatus InnoGUISystem::GetStatus()
 {
 	return ObjectStatus();
 }

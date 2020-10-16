@@ -1,6 +1,5 @@
 #pragma once
-#include "../Common/InnoType.h"
-#include "../Common/InnoClassTemplate.h"
+#include "../Interface/ISystem.h"
 
 #include "../Component/MeshDataComponent.h"
 #include "../Component/TextureDataComponent.h"
@@ -10,16 +9,10 @@
 #include "../Component/SamplerDataComponent.h"
 #include "../Component/GPUBufferDataComponent.h"
 
-class IRenderingServer
+class IRenderingServer : public ISystem
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IRenderingServer);
-
-	virtual bool Setup() = 0;
-	virtual bool Initialize() = 0;
-	virtual bool Terminate() = 0;
-
-	virtual ObjectStatus GetStatus() = 0;
 
 	virtual MeshDataComponent* AddMeshDataComponent(const char* name = "") = 0;
 	virtual TextureDataComponent* AddTextureDataComponent(const char* name = "") = 0;

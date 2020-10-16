@@ -1,26 +1,17 @@
 #pragma once
-#include "../Common/InnoType.h"
+#include "ISystem.h"
 
-#include "../Common/InnoClassTemplate.h"
 #include "../Component/MeshDataComponent.h"
 #include "../Component/MaterialDataComponent.h"
 #include "../Component/TextureDataComponent.h"
 #include "../Component/SkeletonDataComponent.h"
 #include "../Component/AnimationDataComponent.h"
-
 #include "../Component/VisibleComponent.h"
 
-class IAssetSystem
+class IAssetSystem : public ISystem
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IAssetSystem);
-
-	virtual bool setup() = 0;
-	virtual bool initialize() = 0;
-	virtual bool update() = 0;
-	virtual bool terminate() = 0;
-
-	virtual ObjectStatus getStatus() = 0;
 
 	virtual bool convertModel(const char* fileName, const char* exportPath) = 0;
 	virtual Model* loadModel(const char* fileName, bool AsyncUploadGPUResource = true) = 0;

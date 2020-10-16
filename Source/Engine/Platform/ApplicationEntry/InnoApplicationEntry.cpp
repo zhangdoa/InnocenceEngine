@@ -40,7 +40,7 @@ bool InnoApplicationEntry::Setup(void* appHook, void* extraHook, char* pScmdline
 		return false;
 	}
 
-	if (!m_pModuleManager.get()->setup(appHook, extraHook, pScmdline, m_pRenderingClient.get(), m_pLogicClient.get()))
+	if (!m_pModuleManager.get()->Setup(appHook, extraHook, pScmdline, m_pRenderingClient.get(), m_pLogicClient.get()))
 	{
 		return false;
 	}
@@ -50,15 +50,15 @@ bool InnoApplicationEntry::Setup(void* appHook, void* extraHook, char* pScmdline
 
 bool InnoApplicationEntry::Initialize()
 {
-	return m_pModuleManager->initialize();
+	return m_pModuleManager->Initialize();
 }
 
 bool InnoApplicationEntry::Run()
 {
-	return m_pModuleManager->run();
+	return m_pModuleManager->Run();
 }
 
 bool InnoApplicationEntry::Terminate()
 {
-	return m_pModuleManager->terminate();
+	return m_pModuleManager->Terminate();
 }

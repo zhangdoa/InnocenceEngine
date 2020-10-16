@@ -13,15 +13,15 @@ namespace ImGuiRendererDX11NS
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
-bool ImGuiRendererDX11::setup()
+bool ImGuiRendererDX11::Setup(ISystemConfig* systemConfig)
 {
 	ImGuiRendererDX11NS::m_ObjectStatus = ObjectStatus::Activated;
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererDX11 setup finished.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererDX11 Setup finished.");
 
 	return true;
 }
 
-bool ImGuiRendererDX11::initialize()
+bool ImGuiRendererDX11::Initialize()
 {
 	auto l_renderingServer = reinterpret_cast<DX11RenderingServer*>(g_pModuleManager->getRenderingServer());
 	auto l_device = reinterpret_cast<ID3D11Device*>(l_renderingServer->GetDevice());
@@ -33,13 +33,13 @@ bool ImGuiRendererDX11::initialize()
 	return true;
 }
 
-bool ImGuiRendererDX11::newFrame()
+bool ImGuiRendererDX11::NewFrame()
 {
 	ImGui_ImplDX11_NewFrame();
 	return true;
 }
 
-bool ImGuiRendererDX11::render()
+bool ImGuiRendererDX11::Render()
 {
 	auto l_userPipelineOutputRPDC = reinterpret_cast<DX11RenderPassDataComponent*>(g_pModuleManager->getRenderingServer()->GetUserPipelineOutput());
 	auto l_renderingServer = reinterpret_cast<DX11RenderingServer*>(g_pModuleManager->getRenderingServer());
@@ -51,7 +51,7 @@ bool ImGuiRendererDX11::render()
 	return true;
 }
 
-bool ImGuiRendererDX11::terminate()
+bool ImGuiRendererDX11::Terminate()
 {
 	ImGui_ImplDX11_Shutdown();
 	ImGuiRendererDX11NS::m_ObjectStatus = ObjectStatus::Terminated;
@@ -60,12 +60,12 @@ bool ImGuiRendererDX11::terminate()
 	return true;
 }
 
-ObjectStatus ImGuiRendererDX11::getStatus()
+ObjectStatus ImGuiRendererDX11::GetStatus()
 {
 	return ImGuiRendererDX11NS::m_ObjectStatus;
 }
 
-void ImGuiRendererDX11::showRenderResult(RenderPassType renderPassType)
+void ImGuiRendererDX11::ShowRenderResult(RenderPassType renderPassType)
 {
 	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
 	auto l_renderTargetSize = ImVec2((float)l_screenResolution.x / 4.0f, (float)l_screenResolution.y / 4.0f);

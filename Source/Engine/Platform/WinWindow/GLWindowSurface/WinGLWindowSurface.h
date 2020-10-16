@@ -6,12 +6,12 @@ class WinGLWindowSurface : public IWindowSurface
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(WinGLWindowSurface);
 
-	bool setup(void* hInstance, void* hwnd, void* WindowProc) override;
-	bool initialize() override;
-	bool update() override;
-	bool terminate() override;
+	bool Setup(ISystemConfig* systemConfig) override;
+	bool Initialize() override;
+	bool Update() override;
+	bool Terminate() override;
 
-	ObjectStatus getStatus() override;
+	ObjectStatus GetStatus() override;
 
 	bool swapBuffer() override;
 };

@@ -11,17 +11,19 @@ extern IModuleManager* g_pModuleManager;
 
 namespace WinVKWindowSurfaceNS
 {
-	bool setup(void* hInstance, void* hwnd, void* WindowProc);
-	bool initialize();
-	bool update();
-	bool terminate();
+	bool Setup(ISystemConfig* systemConfig);
+	bool Initialize();
+	bool Update();
+	bool Terminate();
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	InitConfig m_initConfig;
 }
 
-bool WinVKWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
+bool WinVKWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 {
+	auto l_windowSurfaceConfig = reinterpret_cast<IWindowSurfaceConfig*>(systemConfig);
+
 	m_initConfig = g_pModuleManager->getInitConfig();
 
 	if (m_initConfig.engineMode == EngineMode::Host)
@@ -33,7 +35,7 @@ bool WinVKWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 		ZeroMemory(&wcex, sizeof(wcex));
 		wcex.cbSize = sizeof(wcex);
 		wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-		wcex.lpfnWndProc = (WNDPROC)WindowProc;
+		wcex.lpfnWndProc = (WNDPROC)l_windowSurfaceConfig->WindowProc;
 		wcex.hInstance = reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHInstance();
 		wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
 		wcex.lpszClassName = reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getApplicationName();
@@ -62,12 +64,12 @@ bool WinVKWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 	}
 
 	m_ObjectStatus = ObjectStatus::Activated;
-	InnoLogger::Log(LogLevel::Success, "WinVKWindowSurface setup finished.");
+	InnoLogger::Log(LogLevel::Success, "WinVKWindowSurface Setup finished.");
 
 	return true;
 }
 
-bool WinVKWindowSurfaceNS::initialize()
+bool WinVKWindowSurfaceNS::Initialize()
 {
 	VkWin32SurfaceCreateInfoKHR l_createInfo = {};
 	l_createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
@@ -98,12 +100,12 @@ bool WinVKWindowSurfaceNS::initialize()
 	return true;
 }
 
-bool WinVKWindowSurfaceNS::update()
+bool WinVKWindowSurfaceNS::Update()
 {
 	return true;
 }
 
-bool WinVKWindowSurfaceNS::terminate()
+bool WinVKWindowSurfaceNS::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
 	InnoLogger::Log(LogLevel::Success, "WinVKWindowSurfaceNS has been terminated.");
@@ -111,27 +113,27 @@ bool WinVKWindowSurfaceNS::terminate()
 	return true;
 }
 
-bool WinVKWindowSurface::setup(void* hInstance, void* hwnd, void* WindowProc)
+bool WinVKWindowSurface::Setup(ISystemConfig* systemConfig)
 {
-	return WinVKWindowSurfaceNS::setup(hInstance, hwnd, WindowProc);
+	return WinVKWindowSurfaceNS::Setup(systemConfig);
 }
 
-bool WinVKWindowSurface::initialize()
+bool WinVKWindowSurface::Initialize()
 {
-	return WinVKWindowSurfaceNS::initialize();
+	return WinVKWindowSurfaceNS::Initialize();
 }
 
-bool WinVKWindowSurface::update()
+bool WinVKWindowSurface::Update()
 {
-	return WinVKWindowSurfaceNS::update();
+	return WinVKWindowSurfaceNS::Update();
 }
 
-bool WinVKWindowSurface::terminate()
+bool WinVKWindowSurface::Terminate()
 {
-	return WinVKWindowSurfaceNS::terminate();
+	return WinVKWindowSurfaceNS::Terminate();
 }
 
-ObjectStatus WinVKWindowSurface::getStatus()
+ObjectStatus WinVKWindowSurface::GetStatus()
 {
 	return WinVKWindowSurfaceNS::m_ObjectStatus;
 }

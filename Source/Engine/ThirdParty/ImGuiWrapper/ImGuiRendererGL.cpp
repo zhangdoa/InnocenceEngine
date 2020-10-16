@@ -11,15 +11,15 @@ namespace ImGuiRendererGLNS
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
-bool ImGuiRendererGL::setup()
+bool ImGuiRendererGL::Setup(ISystemConfig* systemConfig)
 {
 	ImGuiRendererGLNS::m_ObjectStatus = ObjectStatus::Activated;
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererGL setup finished.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererGL Setup finished.");
 
 	return true;
 }
 
-bool ImGuiRendererGL::initialize()
+bool ImGuiRendererGL::Initialize()
 {
 	ImGui_ImplOpenGL3_Init(NULL);
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererGL has been initialized.");
@@ -27,13 +27,13 @@ bool ImGuiRendererGL::initialize()
 	return true;
 }
 
-bool ImGuiRendererGL::newFrame()
+bool ImGuiRendererGL::NewFrame()
 {
 	ImGui_ImplOpenGL3_NewFrame();
 	return true;
 }
 
-bool ImGuiRendererGL::render()
+bool ImGuiRendererGL::Render()
 {
 	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
 	auto l_userPipelineOutputRPDC = reinterpret_cast<GLRenderPassDataComponent*>(g_pModuleManager->getRenderingServer()->GetUserPipelineOutput());
@@ -46,7 +46,7 @@ bool ImGuiRendererGL::render()
 	return true;
 }
 
-bool ImGuiRendererGL::terminate()
+bool ImGuiRendererGL::Terminate()
 {
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGuiRendererGLNS::m_ObjectStatus = ObjectStatus::Terminated;
@@ -55,12 +55,12 @@ bool ImGuiRendererGL::terminate()
 	return true;
 }
 
-ObjectStatus ImGuiRendererGL::getStatus()
+ObjectStatus ImGuiRendererGL::GetStatus()
 {
 	return ImGuiRendererGLNS::m_ObjectStatus;
 }
 
-void ImGuiRendererGL::showRenderResult(RenderPassType renderPassType)
+void ImGuiRendererGL::ShowRenderResult(RenderPassType renderPassType)
 {
 	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
 	auto l_RTSize = ImVec2((float)l_screenResolution.x / 4.0f, (float)l_screenResolution.y / 4.0f);

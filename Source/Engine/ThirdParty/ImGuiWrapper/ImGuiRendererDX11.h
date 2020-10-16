@@ -6,13 +6,13 @@ class ImGuiRendererDX11 : public IImGuiRenderer
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(ImGuiRendererDX11);
 
-	bool setup() override;
-	bool initialize() override;
-	bool newFrame() override;
-	bool render() override;
-	bool terminate() override;
+	bool Setup(ISystemConfig* systemConfig) override;
+	bool Initialize() override;
+	bool NewFrame() override;
+	bool Render() override;
+	bool Terminate() override;
 
-	ObjectStatus getStatus() override;
+	ObjectStatus GetStatus() override;
 
-	void showRenderResult(RenderPassType renderPassType) override;
+	void ShowRenderResult(RenderPassType renderPassType) override;
 };

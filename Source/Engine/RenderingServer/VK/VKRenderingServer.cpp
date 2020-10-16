@@ -563,7 +563,7 @@ VKFence* addFence()
 	return m_FencePool->Spawn();
 }
 
-bool VKRenderingServer::Setup()
+bool VKRenderingServer::Setup(ISystemConfig* systemConfig)
 {
 	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
@@ -589,7 +589,7 @@ bool VKRenderingServer::Setup()
 	createDebugCallback();
 
 	m_ObjectStatus = ObjectStatus::Created;
-	InnoLogger::Log(LogLevel::Success, "VKRenderingServer setup finished.");
+	InnoLogger::Log(LogLevel::Success, "VKRenderingServer Setup finished.");
 
 	return true;
 }

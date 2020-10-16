@@ -18,7 +18,7 @@ namespace EntityManagerNS
 
 using namespace EntityManagerNS;
 
-bool InnoEntityManager::Setup()
+bool InnoEntityManager::Setup(ISystemConfig* systemConfig)
 {
 	m_EntityPool = TObjectPool<InnoEntity>::Create(m_MaxEntity);
 
@@ -49,7 +49,7 @@ bool InnoEntityManager::Initialize()
 	return true;
 }
 
-bool InnoEntityManager::Simulate()
+bool InnoEntityManager::Update()
 {
 	return true;
 }
@@ -57,6 +57,11 @@ bool InnoEntityManager::Simulate()
 bool InnoEntityManager::Terminate()
 {
 	return true;
+}
+
+ObjectStatus InnoEntityManager::GetStatus()
+{
+	return ObjectStatus();
 }
 
 InnoEntity* InnoEntityManager::Spawn(bool serializable, ObjectLifespan objectLifespan, const char* entityName)

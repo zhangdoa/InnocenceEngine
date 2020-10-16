@@ -87,7 +87,7 @@ DX11PipelineStateObject* addPSO()
 	return m_PSOPool->Spawn();
 }
 
-bool DX11RenderingServer::Setup()
+bool DX11RenderingServer::Setup(ISystemConfig* systemConfig)
 {
 	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
 
@@ -298,7 +298,7 @@ bool DX11RenderingServer::Setup()
 	m_SwapChainSDC = reinterpret_cast<DX11SamplerDataComponent*>(AddSamplerDataComponent("SwapChain/"));
 
 	m_ObjectStatus = ObjectStatus::Created;
-	InnoLogger::Log(LogLevel::Success, "DX11RenderingServer setup finished.");
+	InnoLogger::Log(LogLevel::Success, "DX11RenderingServer Setup finished.");
 
 	return true;
 }

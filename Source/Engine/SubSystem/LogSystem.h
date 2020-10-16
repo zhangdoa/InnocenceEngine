@@ -7,12 +7,12 @@ public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoLogSystem);
 
 	// Inherited via ILogSystem
-	bool setup() override;
-	bool initialize() override;
-	bool update() override;
-	bool terminate() override;
+	bool Setup(ISystemConfig* systemConfig) override;
+	bool Initialize() override;
+	bool Update() override;
+	bool Terminate() override;
 
-	ObjectStatus getStatus() override;
+	ObjectStatus GetStatus() override;
 
 	void SetDefaultLogLevel(LogLevel logLevel) override;
 
@@ -22,7 +22,7 @@ public:
 
 	void LogEndOfLine() override;
 
-	void LogImpl(const void * logMessage) override;
+	void LogImpl(const void* logMessage) override;
 	void LogImpl(bool logMessage) override;
 	void LogImpl(uint8_t logMessage) override;
 	void LogImpl(uint16_t logMessage) override;
@@ -34,5 +34,5 @@ public:
 	void LogImpl(int64_t logMessage) override;
 	void LogImpl(float logMessage) override;
 	void LogImpl(double logMessage) override;
-	void LogImpl(const char * logMessage) override;
+	void LogImpl(const char* logMessage) override;
 };

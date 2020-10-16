@@ -7,17 +7,19 @@ extern IModuleManager* g_pModuleManager;
 
 namespace WinDXWindowSurfaceNS
 {
-	bool setup(void* hInstance, void* hwnd, void* WindowProc);
-	bool initialize();
-	bool update();
-	bool terminate();
+	bool Setup(ISystemConfig* systemConfig);
+	bool Initialize();
+	bool Update();
+	bool Terminate();
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	InitConfig m_initConfig;
 }
 
-bool WinDXWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
+bool WinDXWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 {
+	auto l_windowSurfaceConfig = reinterpret_cast<IWindowSurfaceConfig*>(systemConfig);
+
 	m_initConfig = g_pModuleManager->getInitConfig();
 
 	if (m_initConfig.engineMode == EngineMode::Host)
@@ -29,7 +31,7 @@ bool WinDXWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 		ZeroMemory(&wcex, sizeof(wcex));
 		wcex.cbSize = sizeof(wcex);
 		wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-		wcex.lpfnWndProc = (WNDPROC)WindowProc;
+		wcex.lpfnWndProc = (WNDPROC)l_windowSurfaceConfig->WindowProc;
 		wcex.hInstance = reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHInstance();
 		wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
 		wcex.lpszClassName = reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getApplicationName();
@@ -60,12 +62,12 @@ bool WinDXWindowSurfaceNS::setup(void* hInstance, void* hwnd, void* WindowProc)
 	}
 
 	m_ObjectStatus = ObjectStatus::Activated;
-	InnoLogger::Log(LogLevel::Success, "WinDXWindowSurface setup finished.");
+	InnoLogger::Log(LogLevel::Success, "WinDXWindowSurface Setup finished.");
 
 	return true;
 }
 
-bool WinDXWindowSurfaceNS::initialize()
+bool WinDXWindowSurfaceNS::Initialize()
 {
 	if (m_initConfig.engineMode == EngineMode::Host)
 	{
@@ -79,12 +81,12 @@ bool WinDXWindowSurfaceNS::initialize()
 	return true;
 }
 
-bool WinDXWindowSurfaceNS::update()
+bool WinDXWindowSurfaceNS::Update()
 {
 	return true;
 }
 
-bool WinDXWindowSurfaceNS::terminate()
+bool WinDXWindowSurfaceNS::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
 	InnoLogger::Log(LogLevel::Success, "WinGLWindowSystemNS has been terminated.");
@@ -92,27 +94,27 @@ bool WinDXWindowSurfaceNS::terminate()
 	return true;
 }
 
-bool WinDXWindowSurface::setup(void* hInstance, void* hwnd, void* WindowProc)
+bool WinDXWindowSurface::Setup(ISystemConfig* systemConfig)
 {
-	return WinDXWindowSurfaceNS::setup(hInstance, hwnd, WindowProc);
+	return WinDXWindowSurfaceNS::Setup(systemConfig);
 }
 
-bool WinDXWindowSurface::initialize()
+bool WinDXWindowSurface::Initialize()
 {
-	return WinDXWindowSurfaceNS::initialize();
+	return WinDXWindowSurfaceNS::Initialize();
 }
 
-bool WinDXWindowSurface::update()
+bool WinDXWindowSurface::Update()
 {
-	return WinDXWindowSurfaceNS::update();
+	return WinDXWindowSurfaceNS::Update();
 }
 
-bool WinDXWindowSurface::terminate()
+bool WinDXWindowSurface::Terminate()
 {
-	return WinDXWindowSurfaceNS::terminate();
+	return WinDXWindowSurfaceNS::Terminate();
 }
 
-ObjectStatus WinDXWindowSurface::getStatus()
+ObjectStatus WinDXWindowSurface::GetStatus()
 {
 	return WinDXWindowSurfaceNS::m_ObjectStatus;
 }

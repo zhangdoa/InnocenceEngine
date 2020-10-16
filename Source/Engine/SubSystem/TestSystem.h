@@ -6,12 +6,12 @@ class InnoTestSystem : public ITestSystem
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoTestSystem);
 
-	bool setup() override;
-	bool initialize() override;
-	bool update() override;
-	bool terminate() override;
+	bool Setup(ISystemConfig* systemConfig) override;
+	bool Initialize() override;
+	bool Update() override;
+	bool Terminate() override;
 
-	ObjectStatus getStatus() override;
+	ObjectStatus GetStatus() override;
 
 	bool measure(const std::string& functorName, const std::function<void()>& functor) override;
 };

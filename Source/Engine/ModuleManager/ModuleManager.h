@@ -6,12 +6,12 @@ class InnoModuleManager : public IModuleManager
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoModuleManager);
 
-	bool setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient) override;
-	bool initialize() override;
-	bool run() override;
-	bool terminate() override;
+	bool Setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient) override;
+	bool Initialize() override;
+	bool Run() override;
+	bool Terminate() override;
 
-	ObjectStatus getStatus() override;
+	ObjectStatus GetStatus() override;
 
 	ITimeSystem* getTimeSystem() override;
 	ILogSystem* getLogSystem() override;
@@ -20,7 +20,7 @@ public:
 	ITestSystem* getTestSystem() override;
 	IFileSystem* getFileSystem() override;
 	IEntityManager* getEntityManager() override;
-	IComponentManager* getComponentManager(uint32_t componentTypeID) override;
+	ComponentManager* getComponentManager() override;
 	ISceneSystem* getSceneSystem() override;
 	IAssetSystem* getAssetSystem() override;
 	IPhysicsSystem* getPhysicsSystem() override;

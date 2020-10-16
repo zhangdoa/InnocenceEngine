@@ -58,7 +58,7 @@ namespace ImGuiWrapperNS
 
 using namespace ImGuiWrapperNS;
 
-bool ImGuiWrapper::setup()
+bool ImGuiWrapper::Setup()
 {
 	auto l_initConfig = g_pModuleManager->getInitConfig();
 
@@ -109,8 +109,8 @@ bool ImGuiWrapper::setup()
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 
-		ImGuiWrapperNS::m_windowImpl->setup();
-		ImGuiWrapperNS::m_rendererImpl->setup();
+		ImGuiWrapperNS::m_windowImpl->Setup();
+		ImGuiWrapperNS::m_rendererImpl->Setup();
 	}
 
 	auto l_maxThreads = g_pModuleManager->getTaskSystem()->GetTotalThreadsNumber();
@@ -119,12 +119,12 @@ bool ImGuiWrapper::setup()
 	return true;
 }
 
-bool ImGuiWrapper::initialize()
+bool ImGuiWrapper::Initialize()
 {
 	if (ImGuiWrapperNS::m_isParity)
 	{
-		ImGuiWrapperNS::m_windowImpl->initialize();
-		ImGuiWrapperNS::m_rendererImpl->initialize();
+		ImGuiWrapperNS::m_windowImpl->Initialize();
+		ImGuiWrapperNS::m_rendererImpl->Initialize();
 
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 
@@ -188,17 +188,17 @@ bool ImGuiWrapper::initialize()
 	return true;
 }
 
-bool ImGuiWrapper::update()
+bool ImGuiWrapper::Update()
 {
 	return true;
 }
 
-bool ImGuiWrapper::render()
+bool ImGuiWrapper::Render()
 {
 	if (ImGuiWrapperNS::m_isParity)
 	{
-		ImGuiWrapperNS::m_rendererImpl->newFrame();
-		ImGuiWrapperNS::m_windowImpl->newFrame();
+		ImGuiWrapperNS::m_rendererImpl->NewFrame();
+		ImGuiWrapperNS::m_windowImpl->NewFrame();
 
 		ImGui::NewFrame();
 		{
@@ -209,17 +209,17 @@ bool ImGuiWrapper::render()
 		}
 		ImGui::Render();
 
-		ImGuiWrapperNS::m_rendererImpl->render();
+		ImGuiWrapperNS::m_rendererImpl->Render();
 	}
 	return true;
 }
 
-bool ImGuiWrapper::terminate()
+bool ImGuiWrapper::Terminate()
 {
 	if (ImGuiWrapperNS::m_isParity)
 	{
-		ImGuiWrapperNS::m_windowImpl->terminate();
-		ImGuiWrapperNS::m_rendererImpl->terminate();
+		ImGuiWrapperNS::m_windowImpl->Terminate();
+		ImGuiWrapperNS::m_rendererImpl->Terminate();
 		ImGui::DestroyContext();
 	}
 	return true;
@@ -252,7 +252,7 @@ void ImGuiWrapperNS::showApplicationProfiler()
 
 	if (m_showRenderPassResult)
 	{
-		ImGuiWrapperNS::m_rendererImpl->showRenderResult(RenderPassType(l_showRenderPassResultItem));
+		ImGuiWrapperNS::m_rendererImpl->ShowRenderResult(RenderPassType(l_showRenderPassResultItem));
 	}
 
 	if (ImGui::Button("Run ray trace"))

@@ -7,10 +7,9 @@
 #include "../SubSystem/TestSystem.h"
 #include "../SubSystem/FileSystem.h"
 #include "../EntityManager/EntityManager.h"
-#include "../ComponentManager/TransformComponentManager.h"
-#include "../ComponentManager/VisibleComponentManager.h"
-#include "../ComponentManager/LightComponentManager.h"
-#include "../ComponentManager/CameraComponentManager.h"
+#include "../SubSystem/TransformSystem.h"
+#include "../SubSystem/LightSystem.h"
+#include "../SubSystem/CameraSystem.h"
 #include "../SubSystem/SceneSystem.h"
 #include "../SubSystem/AssetSystem.h"
 #include "../SubSystem/PhysicsSystem.h"
@@ -49,86 +48,60 @@
 
 INNO_ENGINE_API IModuleManager* g_pModuleManager;
 
-#define createSubSystemInstanceDefi( className ) \
+#define createSystemInstanceDefi( className ) \
 m_##className = std::make_unique<Inno##className>(); \
 if (!m_##className.get()) \
 { \
 	return false; \
 } \
 
-#define subSystemSetup( className ) \
-if (!g_pModuleManager->get##className()->setup()) \
+#define SystemSetup( className ) \
+if (!m_##className->Setup()) \
 { \
 	return false; \
 } \
-InnoLogger::Log(LogLevel::Success, "ModuleManager: ", #className, " setup finished."); \
+InnoLogger::Log(LogLevel::Success, "ModuleManager: ", #className, " Setup finished."); \
 
-#define subSystemInit( className ) \
-if (!g_pModuleManager->get##className()->initialize()) \
+#define SystemInit( className ) \
+if (!m_##className->Initialize()) \
 { \
 	return false; \
 } \
 
-#define subSystemUpdate( className ) \
-if (!g_pModuleManager->get##className()->update()) \
+#define SystemUpdate( className ) \
+if (!m_##className->Update()) \
 { \
 m_ObjectStatus = ObjectStatus::Suspended; \
 return false; \
 }
 
-#define subSystemTerm( className ) \
-if (!g_pModuleManager->get##className()->terminate()) \
+#define SystemOnFrameEnd( className ) \
+if (!m_##className##->OnFrameEnd()) \
+{ \
+m_ObjectStatus = ObjectStatus::Suspended; \
+return false; \
+}
+
+#define SystemTerm( className ) \
+if (!m_##className->Terminate()) \
 { \
 	return false; \
 } \
 
-#define subSystemGetDefi( className ) \
+#define SystemGetDefi( className ) \
 I##className * InnoModuleManager::get##className() \
 { \
 	return m_##className.get(); \
 } \
 
-#define ComponentManagerSetup( className ) \
-if (!m_##className##Manager->Setup()) \
-{ \
-	return false; \
-} \
-InnoLogger::Log(LogLevel::Success, "ModuleManager: ", #className, " setup finished."); \
-
-#define ComponentManagerInit( className ) \
-if (!m_##className##Manager->Initialize()) \
-{ \
-	return false; \
-} \
-
-#define ComponentManagerSimulate( className ) \
-if (!m_##className##Manager->Simulate()) \
-{ \
-m_ObjectStatus = ObjectStatus::Suspended; \
-return false; \
-}
-
-#define ComponentManagerPostFrame( className ) \
-if (!m_##className##Manager->PostFrame()) \
-{ \
-m_ObjectStatus = ObjectStatus::Suspended; \
-return false; \
-}
-
-#define ComponentManagerTerm( className ) \
-if (!m_##className##Manager->Terminate()) \
-{ \
-	return false; \
-} \
-
 namespace InnoModuleManagerNS
 {
 	InitConfig parseInitConfig(const std::string& arg);
-	bool createSubSystemInstance(void* appHook, void* extraHook, char* pScmdline);
-	bool setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient);
-	bool initialize();
-	bool update();
-	bool terminate();
+	bool createSystemInstance(void* appHook, void* extraHook, char* pScmdline);
+	bool Setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient);
+	bool Initialize();
+	bool Update();
+	bool Terminate();
 
 	InitConfig m_initConfig;
 
@@ -141,10 +114,10 @@ namespace InnoModuleManagerNS
 	std::unique_ptr<IFileSystem> m_FileSystem;
 
 	std::unique_ptr<IEntityManager> m_EntityManager;
-	std::unique_ptr<ITransformComponentManager> m_TransformComponentManager;
-	std::unique_ptr<IVisibleComponentManager> m_VisibleComponentManager;
-	std::unique_ptr<ILightComponentManager> m_LightComponentManager;
-	std::unique_ptr<ICameraComponentManager> m_CameraComponentManager;
+	std::unique_ptr<ComponentManager> m_CM;
+	std::unique_ptr<InnoTransformSystem> m_TransformSystem;
+	std::unique_ptr<InnoLightSystem> m_LightSystem;
+	std::unique_ptr<InnoCameraSystem> m_CameraSystem;
 
 	std::unique_ptr<ISceneSystem> m_SceneSystem;
 	std::unique_ptr<IAssetSystem> m_AssetSystem;
@@ -305,26 +278,26 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 	return l_result;
 }
 
-bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook, char* pScmdline)
+bool InnoModuleManagerNS::createSystemInstance(void* appHook, void* extraHook, char* pScmdline)
 {
-	createSubSystemInstanceDefi(TimeSystem);
-	createSubSystemInstanceDefi(LogSystem);
-	createSubSystemInstanceDefi(MemorySystem);
-	createSubSystemInstanceDefi(TaskSystem);
+	createSystemInstanceDefi(TimeSystem);
+	createSystemInstanceDefi(LogSystem);
+	createSystemInstanceDefi(MemorySystem);
+	createSystemInstanceDefi(TaskSystem);
 
-	createSubSystemInstanceDefi(TestSystem);
-	createSubSystemInstanceDefi(FileSystem);
+	createSystemInstanceDefi(TestSystem);
+	createSystemInstanceDefi(FileSystem);
 
-	createSubSystemInstanceDefi(EntityManager);
-	createSubSystemInstanceDefi(TransformComponentManager);
-	createSubSystemInstanceDefi(VisibleComponentManager);
-	createSubSystemInstanceDefi(LightComponentManager);
-	createSubSystemInstanceDefi(CameraComponentManager);
+	createSystemInstanceDefi(EntityManager);
+	m_CM = std::make_unique<ComponentManager>();
+	createSystemInstanceDefi(TransformSystem);
+	createSystemInstanceDefi(LightSystem);
+	createSystemInstanceDefi(CameraSystem);
 
-	createSubSystemInstanceDefi(SceneSystem);
-	createSubSystemInstanceDefi(AssetSystem);
-	createSubSystemInstanceDefi(PhysicsSystem);
-	createSubSystemInstanceDefi(EventSystem);
+	createSystemInstanceDefi(SceneSystem);
+	createSystemInstanceDefi(AssetSystem);
+	createSystemInstanceDefi(PhysicsSystem);
+	createSystemInstanceDefi(EventSystem);
 
 	std::string l_windowArguments = pScmdline;
 	m_initConfig = parseInitConfig(l_windowArguments);
@@ -419,7 +392,7 @@ bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook
 		break;
 	}
 
-	// Objective-C++ bridge class instances passed as the 1st and 2nd parameters of setup()
+	// Objective-C++ bridge class instances passed as the 1st and 2nd parameters of Setup()
 #if defined INNO_PLATFORM_MAC
 	auto l_windowSystem = reinterpret_cast<MacWindowSystem*>(m_WindowSystem.get());
 	auto l_windowSystemBridge = reinterpret_cast<MacWindowSystemBridge*>(appHook);
@@ -435,81 +408,87 @@ bool InnoModuleManagerNS::createSubSystemInstance(void* appHook, void* extraHook
 	return true;
 }
 
-bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient)
+bool InnoModuleManagerNS::Setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient)
 {
 	m_RenderingClient = renderingClient;
 	m_LogicClient = logicClient;
 
 	m_applicationName = m_LogicClient->getApplicationName().c_str();
 
-	if (!createSubSystemInstance(appHook, extraHook, pScmdline))
+	if (!createSystemInstance(appHook, extraHook, pScmdline))
 	{
 		return false;
 	}
 
-	subSystemSetup(TimeSystem);
-	subSystemSetup(LogSystem);
-	subSystemSetup(MemorySystem);
-	subSystemSetup(TaskSystem);
+	SystemSetup(TimeSystem);
+	SystemSetup(LogSystem);
+	SystemSetup(MemorySystem);
+	SystemSetup(TaskSystem);
 
-	subSystemSetup(TestSystem);
+	SystemSetup(TestSystem);
 
-	if (!m_WindowSystem->setup(appHook, extraHook))
+	IWindowSystemConfig l_windowSystemConfig;
+	l_windowSystemConfig.m_AppHook = appHook;
+	l_windowSystemConfig.m_ExtraHook = extraHook;
+
+	if (!m_WindowSystem->Setup(&l_windowSystemConfig))
 	{
 		return false;
 	}
-	InnoLogger::Log(LogLevel::Success, "ModuleManager: WindowSystem setup finished.");
+	InnoLogger::Log(LogLevel::Success, "ModuleManager: WindowSystem Setup finished.");
 
-	subSystemSetup(AssetSystem);
-	subSystemSetup(FileSystem);
+	SystemSetup(AssetSystem);
+	SystemSetup(FileSystem);
 
 	if (!m_EntityManager->Setup())
 	{
 		return false;
 	}
-	InnoLogger::Log(LogLevel::Success, "ModuleManager: EntityManager setup finished.");
+	InnoLogger::Log(LogLevel::Success, "ModuleManager: EntityManager Setup finished.");
 
-	ComponentManagerSetup(TransformComponent);
-	ComponentManagerSetup(VisibleComponent);
-	ComponentManagerSetup(LightComponent);
-	ComponentManagerSetup(CameraComponent);
+	SystemSetup(TransformSystem);
+	SystemSetup(LightSystem);
+	SystemSetup(CameraSystem);
 
-	subSystemSetup(SceneSystem);
-	subSystemSetup(PhysicsSystem);
-	subSystemSetup(EventSystem);
+	SystemSetup(SceneSystem);
+	SystemSetup(PhysicsSystem);
+	SystemSetup(EventSystem);
 
-	if (!m_RenderingFrontend->setup(m_RenderingServer.get()))
+	IRenderingFrontendConfig l_renderingFrontendConfig;
+	l_renderingFrontendConfig.m_RenderingServer = m_RenderingServer.get();
+
+	if (!m_RenderingFrontend->Setup(&l_renderingFrontendConfig))
 	{
 		return false;
 	}
-	InnoLogger::Log(LogLevel::Success, "ModuleManager: RenderingFrontend setup finished.");
+	InnoLogger::Log(LogLevel::Success, "ModuleManager: RenderingFrontend Setup finished.");
 
-	if (!m_GUISystem->setup())
+	if (!m_GUISystem->Setup())
 	{
 		return false;
 	}
-	InnoLogger::Log(LogLevel::Success, "ModuleManager: GUISystem setup finished.");
+	InnoLogger::Log(LogLevel::Success, "ModuleManager: GUISystem Setup finished.");
 
 	if (!m_RenderingServer->Setup())
 	{
 		return false;
 	}
-	InnoLogger::Log(LogLevel::Success, "ModuleManager: RenderingServer setup finished.");
+	InnoLogger::Log(LogLevel::Success, "ModuleManager: RenderingServer Setup finished.");
 
 	if (!m_RenderingClient->Setup())
 	{
 		return false;
 	}
 
-	if (!m_LogicClient->setup())
+	if (!m_LogicClient->Setup())
 	{
 		return false;
 	}
 
-	f_LogicClientUpdateJob = [&]() {m_LogicClient->update(); };
+	f_LogicClientUpdateJob = [&]() {m_LogicClient->Update(); };
 	f_PhysicsSystemUpdateBVHJob = [&]() {m_PhysicsSystem->updateBVH(); };
 	f_PhysicsSystemCullingJob = [&]() {m_PhysicsSystem->updateCulling(); };
-	f_RenderingFrontendUpdateJob = [&]() {m_RenderingFrontend->update(); };
+	f_RenderingFrontendUpdateJob = [&]() {m_RenderingFrontend->Update(); };
 	f_RenderingServerUpdateJob = [&]() {
 		auto l_tickStartTime = m_TimeSystem->getCurrentTimeFromEpoch();
 
@@ -517,7 +496,7 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 
 		m_RenderingClient->Render();
 
-		m_GUISystem->render();
+		m_GUISystem->Render();
 
 		m_RenderingServer->Present();
 
@@ -529,48 +508,47 @@ bool InnoModuleManagerNS::setup(void* appHook, void* extraHook, char* pScmdline,
 	};
 
 	m_ObjectStatus = ObjectStatus::Created;
-	InnoLogger::Log(LogLevel::Success, "ModuleManager: Engine setup finished.");
+	InnoLogger::Log(LogLevel::Success, "ModuleManager: Engine Setup finished.");
 
 	return true;
 }
 
-bool InnoModuleManagerNS::initialize()
+bool InnoModuleManagerNS::Initialize()
 {
-	subSystemInit(TimeSystem);
-	subSystemInit(LogSystem);
-	subSystemInit(MemorySystem);
-	subSystemInit(TaskSystem);
+	SystemInit(TimeSystem);
+	SystemInit(LogSystem);
+	SystemInit(MemorySystem);
+	SystemInit(TaskSystem);
 
-	subSystemInit(TestSystem);
-	subSystemInit(FileSystem);
+	SystemInit(TestSystem);
+	SystemInit(FileSystem);
 
 	if (!m_EntityManager->Initialize())
 	{
 		return false;
 	}
 
-	ComponentManagerInit(TransformComponent);
-	ComponentManagerInit(VisibleComponent);
-	ComponentManagerInit(LightComponent);
-	ComponentManagerInit(CameraComponent);
+	SystemInit(TransformSystem);
+	SystemInit(LightSystem);
+	SystemInit(CameraSystem);
 
-	subSystemInit(SceneSystem);
-	subSystemInit(AssetSystem);
-	subSystemInit(PhysicsSystem);
-	subSystemInit(EventSystem);
-	subSystemInit(WindowSystem);
+	SystemInit(SceneSystem);
+	SystemInit(AssetSystem);
+	SystemInit(PhysicsSystem);
+	SystemInit(EventSystem);
+	SystemInit(WindowSystem);
 
 	m_RenderingServer->Initialize();
 
-	subSystemInit(RenderingFrontend);
-	subSystemInit(GUISystem);
+	SystemInit(RenderingFrontend);
+	SystemInit(GUISystem);
 
 	if (!m_RenderingClient->Initialize())
 	{
 		return false;
 	}
 
-	if (!m_LogicClient->initialize())
+	if (!m_LogicClient->Initialize())
 	{
 		return false;
 	}
@@ -584,58 +562,56 @@ bool InnoModuleManagerNS::initialize()
 	return true;
 }
 
-bool InnoModuleManagerNS::update()
+bool InnoModuleManagerNS::Update()
 {
 	while (1)
 	{
 		auto l_LogicClientUpdateTask = g_pModuleManager->getTaskSystem()->submit("LogicClientUpdateTask", 0, nullptr, f_LogicClientUpdateJob);
 
-		subSystemUpdate(TimeSystem);
-		subSystemUpdate(LogSystem);
-		subSystemUpdate(MemorySystem);
-		subSystemUpdate(TaskSystem);
+		SystemUpdate(TimeSystem);
+		SystemUpdate(LogSystem);
+		SystemUpdate(MemorySystem);
+		SystemUpdate(TaskSystem);
 
-		subSystemUpdate(TestSystem);
-		subSystemUpdate(FileSystem);
-		subSystemUpdate(SceneSystem);
+		SystemUpdate(TestSystem);
+		SystemUpdate(FileSystem);
+		SystemUpdate(SceneSystem);
 
-		if (!m_EntityManager->Simulate())
+		if (!m_EntityManager->Update())
 		{
 			return false;
 		}
 
-		ComponentManagerSimulate(TransformComponent);
-		ComponentManagerSimulate(VisibleComponent);
-		ComponentManagerSimulate(LightComponent);
-		ComponentManagerSimulate(CameraComponent);
+		SystemUpdate(TransformSystem);
+		SystemUpdate(LightSystem);
+		SystemUpdate(CameraSystem);
 
-		subSystemUpdate(AssetSystem);
+		SystemUpdate(AssetSystem);
 
 		f_PhysicsSystemUpdateBVHJob();
 
-		subSystemUpdate(PhysicsSystem);
+		SystemUpdate(PhysicsSystem);
 
 		auto l_PhysicsSystemCullingTask = g_pModuleManager->getTaskSystem()->submit("PhysicsSystemCullingTask", 1, l_LogicClientUpdateTask, f_PhysicsSystemCullingJob);
 
-		subSystemUpdate(EventSystem);
+		SystemUpdate(EventSystem);
 
 		if (!m_SceneSystem->isLoadingScene())
 		{
-			if (m_WindowSystem->getStatus() == ObjectStatus::Activated)
+			if (m_WindowSystem->GetStatus() == ObjectStatus::Activated)
 			{
-				m_WindowSystem->update();
+				m_WindowSystem->Update();
 
 				auto l_RenderingFrontendUpdateTask = g_pModuleManager->getTaskSystem()->submit("RenderingFrontendUpdateTask", 1, l_PhysicsSystemCullingTask, f_RenderingFrontendUpdateJob);
 
-				m_GUISystem->update();
+				m_GUISystem->Update();
 
 				auto l_RenderingServerTask = g_pModuleManager->getTaskSystem()->submit("RenderingServerTask", 2, l_RenderingFrontendUpdateTask, f_RenderingServerUpdateJob);
 				l_RenderingServerTask->Wait();
 
-				ComponentManagerPostFrame(TransformComponent);
-				ComponentManagerPostFrame(VisibleComponent);
-				ComponentManagerPostFrame(LightComponent);
-				ComponentManagerPostFrame(CameraComponent);
+				SystemOnFrameEnd(TransformSystem);
+				SystemOnFrameEnd(LightSystem);
+				SystemOnFrameEnd(CameraSystem);
 			}
 			else
 			{
@@ -649,7 +625,7 @@ bool InnoModuleManagerNS::update()
 	}
 }
 
-bool InnoModuleManagerNS::terminate()
+bool InnoModuleManagerNS::Terminate()
 {
 	m_TaskSystem->waitAllTasksToFinish();
 
@@ -659,7 +635,7 @@ bool InnoModuleManagerNS::terminate()
 		return false;
 	}
 
-	if (!m_LogicClient->terminate())
+	if (!m_LogicClient->Terminate())
 	{
 		InnoLogger::Log(LogLevel::Error, "ModuleManager: Logic client can't be terminated!");
 		return false;
@@ -671,20 +647,19 @@ bool InnoModuleManagerNS::terminate()
 		return false;
 	}
 
-	subSystemTerm(GUISystem);
-	subSystemTerm(RenderingFrontend);
+	SystemTerm(GUISystem);
+	SystemTerm(RenderingFrontend);
 
-	subSystemTerm(WindowSystem);
+	SystemTerm(WindowSystem);
 
-	subSystemTerm(EventSystem);
-	subSystemTerm(PhysicsSystem);
-	subSystemTerm(AssetSystem);
-	subSystemTerm(SceneSystem);
+	SystemTerm(EventSystem);
+	SystemTerm(PhysicsSystem);
+	SystemTerm(AssetSystem);
+	SystemTerm(SceneSystem);
 
-	ComponentManagerTerm(TransformComponent);
-	ComponentManagerTerm(VisibleComponent);
-	ComponentManagerTerm(LightComponent);
-	ComponentManagerTerm(CameraComponent);
+	SystemTerm(TransformSystem);
+	SystemTerm(LightSystem);
+	SystemTerm(CameraSystem);
 
 	if (!m_EntityManager->Terminate())
 	{
@@ -692,13 +667,13 @@ bool InnoModuleManagerNS::terminate()
 		return false;
 	}
 
-	subSystemTerm(FileSystem);
-	subSystemTerm(TestSystem);
+	SystemTerm(FileSystem);
+	SystemTerm(TestSystem);
 
-	subSystemTerm(TaskSystem);
-	subSystemTerm(MemorySystem);
-	subSystemTerm(LogSystem);
-	subSystemTerm(TimeSystem);
+	SystemTerm(TaskSystem);
+	SystemTerm(MemorySystem);
+	SystemTerm(LogSystem);
+	SystemTerm(TimeSystem);
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 	InnoLogger::Log(LogLevel::Success, "Engine has been terminated.");
@@ -706,77 +681,54 @@ bool InnoModuleManagerNS::terminate()
 	return true;
 }
 
-bool InnoModuleManager::setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient)
+bool InnoModuleManager::Setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient)
 {
 	g_pModuleManager = this;
 
-	return InnoModuleManagerNS::setup(appHook, extraHook, pScmdline, renderingClient, logicClient);
+	return InnoModuleManagerNS::Setup(appHook, extraHook, pScmdline, renderingClient, logicClient);
 }
 
-bool InnoModuleManager::initialize()
+bool InnoModuleManager::Initialize()
 {
-	return InnoModuleManagerNS::initialize();
+	return InnoModuleManagerNS::Initialize();
 }
 
-bool InnoModuleManager::run()
+bool InnoModuleManager::Run()
 {
-	return InnoModuleManagerNS::update();
+	return InnoModuleManagerNS::Update();
 }
 
-bool InnoModuleManager::terminate()
+bool InnoModuleManager::Terminate()
 {
-	return InnoModuleManagerNS::terminate();
+	return InnoModuleManagerNS::Terminate();
 }
 
-ObjectStatus InnoModuleManager::getStatus()
+ObjectStatus InnoModuleManager::GetStatus()
 {
 	return m_ObjectStatus;
 }
 
-subSystemGetDefi(TimeSystem);
-subSystemGetDefi(LogSystem);
-subSystemGetDefi(MemorySystem);
-subSystemGetDefi(TaskSystem);
+SystemGetDefi(TimeSystem);
+SystemGetDefi(LogSystem);
+SystemGetDefi(MemorySystem);
+SystemGetDefi(TaskSystem);
 
-subSystemGetDefi(TestSystem);
-subSystemGetDefi(FileSystem);
+SystemGetDefi(TestSystem);
+SystemGetDefi(FileSystem);
 
-subSystemGetDefi(EntityManager);
-subSystemGetDefi(SceneSystem);
-subSystemGetDefi(AssetSystem);
-subSystemGetDefi(PhysicsSystem);
-subSystemGetDefi(EventSystem);
-subSystemGetDefi(WindowSystem);
-subSystemGetDefi(RenderingFrontend);
-subSystemGetDefi(GUISystem);
-subSystemGetDefi(RenderingServer);
+SystemGetDefi(EntityManager);
+SystemGetDefi(SceneSystem);
+SystemGetDefi(AssetSystem);
+SystemGetDefi(PhysicsSystem);
+SystemGetDefi(EventSystem);
+SystemGetDefi(WindowSystem);
+SystemGetDefi(RenderingFrontend);
+SystemGetDefi(GUISystem);
+SystemGetDefi(RenderingServer);
 
-IComponentManager* InnoModuleManager::getComponentManager(uint32_t componentTypeID)
+ComponentManager* InnoModuleManager::getComponentManager()
 {
-	IComponentManager* l_result = nullptr;
-
-	if (componentTypeID == 1)
-	{
-		l_result = m_TransformComponentManager.get();
-	}
-	else if (componentTypeID == 2)
-	{
-		l_result = m_VisibleComponentManager.get();
-	}
-	else if (componentTypeID == 3)
-	{
-		l_result = m_LightComponentManager.get();
-	}
-	else if (componentTypeID == 4)
-	{
-		l_result = m_CameraComponentManager.get();
-	}
-	else
-	{
-		InnoLogger::Log(LogLevel::Error, "ModuleManager: Unknown component manager, ComponentTypeID: ", componentTypeID);
-	}
-
-	return l_result;
+	return m_CM.get();
 }
 
 InitConfig InnoModuleManager::getInitConfig()

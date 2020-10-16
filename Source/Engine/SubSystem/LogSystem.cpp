@@ -6,7 +6,7 @@ namespace InnoLogSystemNS
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
-ObjectStatus InnoLogSystem::getStatus()
+ObjectStatus InnoLogSystem::GetStatus()
 {
 	return InnoLogSystemNS::m_ObjectStatus;
 }
@@ -31,7 +31,7 @@ void InnoLogSystem::LogEndOfLine()
 	InnoLogger::LogEndOfLine();
 }
 
-void InnoLogSystem::LogImpl(const void * logMessage)
+void InnoLogSystem::LogImpl(const void* logMessage)
 {
 	InnoLogger::LogImpl(logMessage);
 }
@@ -91,18 +91,18 @@ void InnoLogSystem::LogImpl(double logMessage)
 	InnoLogger::LogImpl(logMessage);
 }
 
-void InnoLogSystem::LogImpl(const char * logMessage)
+void InnoLogSystem::LogImpl(const char* logMessage)
 {
 	InnoLogger::LogImpl(logMessage);
 }
 
-bool InnoLogSystem::setup()
+bool InnoLogSystem::Setup(ISystemConfig* systemConfig)
 {
 	InnoLogSystemNS::m_ObjectStatus = ObjectStatus::Created;
 	return InnoLogger::Setup();
 }
 
-bool InnoLogSystem::initialize()
+bool InnoLogSystem::Initialize()
 {
 	if (InnoLogSystemNS::m_ObjectStatus == ObjectStatus::Created)
 	{
@@ -115,7 +115,7 @@ bool InnoLogSystem::initialize()
 	}
 }
 
-bool InnoLogSystem::update()
+bool InnoLogSystem::Update()
 {
 	if (InnoLogSystemNS::m_ObjectStatus == ObjectStatus::Activated)
 	{
@@ -128,7 +128,7 @@ bool InnoLogSystem::update()
 	}
 }
 
-bool InnoLogSystem::terminate()
+bool InnoLogSystem::Terminate()
 {
 	InnoLogSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
 	return InnoLogger::Terminate();

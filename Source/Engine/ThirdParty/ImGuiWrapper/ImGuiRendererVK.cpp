@@ -8,32 +8,32 @@ namespace ImGuiRendererVKNS
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
-bool ImGuiRendererVK::setup()
+bool ImGuiRendererVK::Setup(ISystemConfig* systemConfig)
 {
 	ImGuiRendererVKNS::m_ObjectStatus = ObjectStatus::Activated;
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererVK setup finished.");
+	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererVK Setup finished.");
 
 	return true;
 }
 
-bool ImGuiRendererVK::initialize()
+bool ImGuiRendererVK::Initialize()
 {
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererVK has been initialized.");
 
 	return true;
 }
 
-bool ImGuiRendererVK::newFrame()
+bool ImGuiRendererVK::NewFrame()
 {
 	return true;
 }
 
-bool ImGuiRendererVK::render()
+bool ImGuiRendererVK::Render()
 {
 	return true;
 }
 
-bool ImGuiRendererVK::terminate()
+bool ImGuiRendererVK::Terminate()
 {
 	ImGuiRendererVKNS::m_ObjectStatus = ObjectStatus::Terminated;
 	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererVK has been terminated.");
@@ -41,11 +41,11 @@ bool ImGuiRendererVK::terminate()
 	return true;
 }
 
-ObjectStatus ImGuiRendererVK::getStatus()
+ObjectStatus ImGuiRendererVK::GetStatus()
 {
 	return ImGuiRendererVKNS::m_ObjectStatus;
 }
 
-void ImGuiRendererVK::showRenderResult(RenderPassType renderPassType)
+void ImGuiRendererVK::ShowRenderResult(RenderPassType renderPassType)
 {
 }

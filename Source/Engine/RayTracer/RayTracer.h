@@ -6,7 +6,7 @@ class InnoRayTracer : public IRayTracer
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoRayTracer);
 
-	bool Setup() override;
+	bool Setup(ISystemConfig* systemConfig) override;
 	bool Initialize() override;
 	bool Execute() override;
 	bool Terminate() override;

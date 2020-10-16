@@ -1,8 +1,15 @@
+#pragma once
 #include "../Core/InnoMemory.h"
 #include "../Core/InnoLogger.h"
 
+class IObjectPool
+{
+public:
+	virtual ~IObjectPool() = default;
+};
+
 template <typename T>
-class TObjectPool
+class TObjectPool : public IObjectPool
 {
 	//Single-linked-list
 	struct Chunk

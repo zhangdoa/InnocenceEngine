@@ -6,12 +6,12 @@ class InnoSceneSystem : public ISceneSystem
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoSceneSystem);
 
-	bool setup() override;
-	bool initialize() override;
-	bool update() override;
-	bool terminate() override;
+	bool Setup(ISystemConfig* systemConfig) override;
+	bool Initialize() override;
+	bool Update() override;
+	bool Terminate() override;
 
-	ObjectStatus getStatus() override;
+	ObjectStatus GetStatus() override;
 
 	std::string getCurrentSceneName() override;
 	bool loadScene(const char* fileName, bool AsyncLoad) override;

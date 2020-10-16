@@ -5,18 +5,18 @@ namespace InnoTaskSystemNS
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
-ObjectStatus InnoTaskSystem::getStatus()
+ObjectStatus InnoTaskSystem::GetStatus()
 {
 	return InnoTaskSystemNS::m_ObjectStatus;
 }
 
-bool InnoTaskSystem::setup()
+bool InnoTaskSystem::Setup(ISystemConfig* systemConfig)
 {
 	InnoTaskSystemNS::m_ObjectStatus = ObjectStatus::Created;
 	return InnoTaskScheduler::Setup();
 }
 
-bool InnoTaskSystem::initialize()
+bool InnoTaskSystem::Initialize()
 {
 	if (InnoTaskSystemNS::m_ObjectStatus == ObjectStatus::Created)
 	{
@@ -29,7 +29,7 @@ bool InnoTaskSystem::initialize()
 	}
 }
 
-bool InnoTaskSystem::update()
+bool InnoTaskSystem::Update()
 {
 	if (InnoTaskSystemNS::m_ObjectStatus == ObjectStatus::Activated)
 	{
@@ -42,7 +42,7 @@ bool InnoTaskSystem::update()
 	}
 }
 
-bool InnoTaskSystem::terminate()
+bool InnoTaskSystem::Terminate()
 {
 	InnoTaskSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
 	return InnoTaskScheduler::Terminate();

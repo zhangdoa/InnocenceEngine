@@ -4,21 +4,21 @@
 
 namespace InnoTestSystemNS
 {
-	bool setup();
-	bool initialize();
-	bool update();
-	bool terminate();
+	bool Setup();
+	bool Initialize();
+	bool Update();
+	bool Terminate();
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 }
 
-bool InnoTestSystemNS::setup()
+bool InnoTestSystemNS::Setup()
 {
 	InnoTestSystemNS::m_ObjectStatus = ObjectStatus::Created;
 	return true;
 }
 
-bool InnoTestSystemNS::initialize()
+bool InnoTestSystemNS::Initialize()
 {
 	if (InnoTestSystemNS::m_ObjectStatus == ObjectStatus::Created)
 	{
@@ -33,7 +33,7 @@ bool InnoTestSystemNS::initialize()
 	}
 }
 
-bool InnoTestSystemNS::update()
+bool InnoTestSystemNS::Update()
 {
 	if (InnoTestSystemNS::m_ObjectStatus == ObjectStatus::Activated)
 	{
@@ -46,7 +46,7 @@ bool InnoTestSystemNS::update()
 	}
 }
 
-bool InnoTestSystemNS::terminate()
+bool InnoTestSystemNS::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
 	InnoLogger::Log(LogLevel::Success, "TestSystem has been terminated.");
@@ -54,27 +54,27 @@ bool InnoTestSystemNS::terminate()
 	return true;
 }
 
-bool InnoTestSystem::setup()
+bool InnoTestSystem::Setup(ISystemConfig* systemConfig)
 {
-	return InnoTestSystemNS::setup();
+	return InnoTestSystemNS::Setup();
 }
 
-bool InnoTestSystem::initialize()
+bool InnoTestSystem::Initialize()
 {
-	return InnoTestSystemNS::initialize();
+	return InnoTestSystemNS::Initialize();
 }
 
-bool InnoTestSystem::update()
+bool InnoTestSystem::Update()
 {
-	return InnoTestSystemNS::update();
+	return InnoTestSystemNS::Update();
 }
 
-bool InnoTestSystem::terminate()
+bool InnoTestSystem::Terminate()
 {
-	return InnoTestSystemNS::terminate();
+	return InnoTestSystemNS::Terminate();
 }
 
-ObjectStatus InnoTestSystem::getStatus()
+ObjectStatus InnoTestSystem::GetStatus()
 {
 	return InnoTestSystemNS::m_ObjectStatus;
 }

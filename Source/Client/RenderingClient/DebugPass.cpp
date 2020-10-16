@@ -1,8 +1,6 @@
 #include "DebugPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 #include "../../Engine/Common/CommonMacro.inl"
-#include "../../Engine/ComponentManager/ITransformComponentManager.h"
-#include "../../Engine/ComponentManager/IVisibleComponentManager.h"
 
 #include "GIDataLoader.h"
 #include "OpaquePass.h"
@@ -281,13 +279,13 @@ bool DebugPass::Render()
 		static bool l_drawSkeletons = true;
 		if (l_drawSkeletons)
 		{
-			auto& l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
+			auto l_visibleComponents = g_pModuleManager->getComponentManager()->GetAll<VisibleComponent>();
 
 			for (auto i : l_visibleComponents)
 			{
 				if (i->m_meshUsage == MeshUsage::Skeletal && i->m_model)
 				{
-					auto l_transformCompoent = GetComponent(TransformComponent, i->m_Owner);
+					auto l_transformCompoent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(i->m_Owner);
 					auto l_m = l_transformCompoent->m_globalTransformMatrix.m_transformationMat;
 
 					for (size_t j = 0; j < i->m_model->meshMaterialPairs.m_count; j++)

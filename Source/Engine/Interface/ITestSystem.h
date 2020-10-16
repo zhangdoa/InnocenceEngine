@@ -1,19 +1,10 @@
 #pragma once
-#include "../Common/InnoType.h"
+#include "ISystem.h"
 
-#include "../Common/InnoClassTemplate.h"
-
-class ITestSystem
+class ITestSystem : public ISystem
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(ITestSystem);
-
-	virtual bool setup() = 0;
-	virtual bool initialize() = 0;
-	virtual bool update() = 0;
-	virtual bool terminate() = 0;
-
-	virtual ObjectStatus getStatus() = 0;
 
 	virtual bool measure(const std::string& functorName, const std::function<void()>& functor) = 0;
 };

@@ -6,13 +6,13 @@ namespace InnoTimeSystemNS
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 };
 
-bool InnoTimeSystem::setup()
+bool InnoTimeSystem::Setup(ISystemConfig* systemConfig)
 {
 	InnoTimeSystemNS::m_ObjectStatus = ObjectStatus::Created;
 	return InnoTimer::Setup();
 }
 
-bool InnoTimeSystem::initialize()
+bool InnoTimeSystem::Initialize()
 {
 	if (InnoTimeSystemNS::m_ObjectStatus == ObjectStatus::Created)
 	{
@@ -25,7 +25,7 @@ bool InnoTimeSystem::initialize()
 	}
 }
 
-bool InnoTimeSystem::update()
+bool InnoTimeSystem::Update()
 {
 	if (InnoTimeSystemNS::m_ObjectStatus == ObjectStatus::Activated)
 	{
@@ -38,7 +38,7 @@ bool InnoTimeSystem::update()
 	}
 }
 
-bool InnoTimeSystem::terminate()
+bool InnoTimeSystem::Terminate()
 {
 	InnoTimeSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
 	return InnoTimer::Terminate();
@@ -66,7 +66,7 @@ const int64_t InnoTimeSystem::getCurrentTimeFromEpoch()
 	return InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
 }
 
-ObjectStatus InnoTimeSystem::getStatus()
+ObjectStatus InnoTimeSystem::GetStatus()
 {
 	return InnoTimeSystemNS::m_ObjectStatus;
 }

@@ -9,7 +9,7 @@
 #import <Foundation/Foundation.h>
 #import "MTRenderingServerBridgeImpl.h"
 
-bool MTRenderingServerBridgeImpl::setup() {
+bool MTRenderingServerBridgeImpl::Setup(ISystemConfig* systemConfig) {
     [m_metalDelegate createDevice];
 
     [m_metalDelegate createView:[m_macWindowDelegate getFrame]];
@@ -17,7 +17,7 @@ bool MTRenderingServerBridgeImpl::setup() {
     return true;
 }
 
-bool MTRenderingServerBridgeImpl::initialize() {
+bool MTRenderingServerBridgeImpl::Initialize() {
     [m_metalDelegate createLibrary];
 
     [m_metalDelegate createPipeline];
@@ -26,7 +26,7 @@ bool MTRenderingServerBridgeImpl::initialize() {
     return true;
 }
 
-bool MTRenderingServerBridgeImpl::update() {
+bool MTRenderingServerBridgeImpl::Update() {
     return true;
 }
 
@@ -39,11 +39,11 @@ bool MTRenderingServerBridgeImpl::present() {
     return true;
 }
 
-bool MTRenderingServerBridgeImpl::terminate() {
+bool MTRenderingServerBridgeImpl::Terminate() {
     return true;
 }
 
-ObjectStatus MTRenderingServerBridgeImpl::getStatus() {
+ObjectStatus MTRenderingServerBridgeImpl::GetStatus() {
     return m_ObjectStatus;
 }
 

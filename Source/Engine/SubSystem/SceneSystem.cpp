@@ -1,10 +1,5 @@
 #include "SceneSystem.h"
 #include "../Core/InnoLogger.h"
-#include "../Common/CommonMacro.inl"
-#include "../ComponentManager/ITransformComponentManager.h"
-#include "../ComponentManager/IVisibleComponentManager.h"
-#include "../ComponentManager/ILightComponentManager.h"
-#include "../ComponentManager/ICameraComponentManager.h"
 
 #include "../Interface/IModuleManager.h"
 extern IModuleManager* g_pModuleManager;
@@ -101,10 +96,11 @@ bool InnoSceneSystemNS::loadScene(const char* fileName)
 	return true;
 }
 
-bool InnoSceneSystem::setup()
+bool InnoSceneSystem::Setup(ISystemConfig* systemConfig)
 {
 	f_SceneLoadingStartCallback = [&]() {
 		m_SceneHierarchyMap.clear();
+		// @TODO: cleanup the loaded components
 	};
 
 	f_SceneLoadingFinishCallback = [&]() {
@@ -119,7 +115,7 @@ bool InnoSceneSystem::setup()
 	return true;
 }
 
-bool InnoSceneSystem::initialize()
+bool InnoSceneSystem::Initialize()
 {
 	if (m_ObjectStatus == ObjectStatus::Created)
 	{
@@ -134,7 +130,7 @@ bool InnoSceneSystem::initialize()
 	}
 }
 
-bool InnoSceneSystem::update()
+bool InnoSceneSystem::Update()
 {
 	if (m_ObjectStatus == ObjectStatus::Activated)
 	{
@@ -153,14 +149,14 @@ bool InnoSceneSystem::update()
 	}
 }
 
-bool InnoSceneSystem::terminate()
+bool InnoSceneSystem::Terminate()
 {
 	m_ObjectStatus = ObjectStatus::Terminated;
 	InnoLogger::Log(LogLevel::Success, "SceneSystem has been terminated.");
 	return true;
 }
 
-ObjectStatus InnoSceneSystem::getStatus()
+ObjectStatus InnoSceneSystem::GetStatus()
 {
 	return m_ObjectStatus;
 }
@@ -218,20 +214,21 @@ bool InnoSceneSystem::addSceneLoadingFinishCallback(std::function<void()>* funct
 	return true;
 }
 
-#define AddComponentToSceneHierarchyMap( className ) \
-{ \
-	auto l_Components = GetComponentManager(className)->GetAllComponents(); \
-	for (auto i : l_Components) \
-	{ \
-		auto l_result = m_SceneHierarchyMap.find(i->m_Owner); \
-		if (l_result != m_SceneHierarchyMap.end()) \
-		{ \
-			l_result->second.emplace(i); \
-		} \
-		else \
-		{ \
-			m_SceneHierarchyMap.emplace(i->m_Owner, std::set<InnoComponent*>{ i }); \
-		} \
+template<typename T>
+void AddComponentToSceneHierarchyMap()
+{
+	auto l_Components = g_pModuleManager->getComponentManager()->GetAll<T>();
+	for (auto i : l_Components)
+	{
+		auto l_result = m_SceneHierarchyMap.find(i->m_Owner);
+		if (l_result != m_SceneHierarchyMap.end())
+		{
+			l_result->second.emplace(i);
+		}
+		else
+		{
+			m_SceneHierarchyMap.emplace(i->m_Owner, std::set<InnoComponent*>{ i });
+		}
 	}\
 }
 
@@ -239,10 +236,10 @@ const SceneHierarchyMap& InnoSceneSystem::getSceneHierarchyMap()
 {
 	if (m_needUpdate)
 	{
-		AddComponentToSceneHierarchyMap(TransformComponent);
-		AddComponentToSceneHierarchyMap(VisibleComponent);
-		AddComponentToSceneHierarchyMap(LightComponent);
-		AddComponentToSceneHierarchyMap(CameraComponent);
+		AddComponentToSceneHierarchyMap<TransformComponent>();
+		AddComponentToSceneHierarchyMap<VisibleComponent>();
+		AddComponentToSceneHierarchyMap<LightComponent>();
+		AddComponentToSceneHierarchyMap<CameraComponent>();
 
 		m_needUpdate = false;
 	}

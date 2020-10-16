@@ -54,7 +54,7 @@ namespace DefaultRenderingClientNS
 
 using namespace DefaultRenderingClientNS;
 
-bool DefaultRenderingClient::Setup()
+bool DefaultRenderingClient::Setup(ISystemConfig* systemConfig)
 {
 	f_showLightHeatmap = [&]() { m_showLightHeatmap = !m_showLightHeatmap; };
 	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_H, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showLightHeatmap });
@@ -316,4 +316,9 @@ bool DefaultRenderingClient::Terminate()
 	f_TerminateJob();
 
 	return true;
+}
+
+ObjectStatus DefaultRenderingClient::GetStatus()
+{
+	return ObjectStatus();
 }

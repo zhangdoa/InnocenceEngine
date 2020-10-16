@@ -1,9 +1,4 @@
 #include "JSONWrapper.h"
-#include "../../Common/CommonMacro.inl"
-#include "../../ComponentManager/ITransformComponentManager.h"
-#include "../../ComponentManager/IVisibleComponentManager.h"
-#include "../../ComponentManager/ILightComponentManager.h"
-#include "../../ComponentManager/ICameraComponentManager.h"
 #include "../../Core/InnoLogger.h"
 
 #include "../../Interface/IModuleManager.h"
@@ -13,9 +8,12 @@ extern IModuleManager* g_pModuleManager;
 
 namespace JSONWrapper
 {
-#define LoadComponentData(className, j, entity) \
-	{ auto l_result = SpawnComponent(className, entity, true, ObjectLifespan::Scene); \
-	from_json(j, *l_result); }
+	template<typename T>
+	inline void loadComponentData(const json& j, InnoEntity* entity)
+	{
+		auto l_result = g_pModuleManager->getComponentManager()->Spawn<T>(entity, true, ObjectLifespan::Scene);
+		from_json(j, *l_result);
+	}
 
 	template<typename T>
 	inline bool saveComponentData(json& topLevel, T* rhs)
@@ -284,7 +282,7 @@ void JSONWrapper::from_json(const json& j, TransformComponent& p)
 	auto l_parentTransformComponentEntityName = j["ParentTransformComponentEntityName"];
 	if (l_parentTransformComponentEntityName == "RootTransform")
 	{
-		auto l_rootTranformComponent = const_cast<TransformComponent*>(GetComponentManager(TransformComponent)->Get(0));
+		auto l_rootTranformComponent = g_pModuleManager->getComponentManager()->Get<TransformComponent>(0);
 		p.m_parentTransformComponent = l_rootTranformComponent;
 	}
 	else
@@ -601,29 +599,30 @@ bool JSONWrapper::saveScene(const char* fileName)
 		}
 	}
 
+	// @TODO: Use ComponentManager to iterate over types
 	// save children components
-	for (auto i : GetComponentManager(TransformComponent)->GetAllComponents())
+	for (auto i : g_pModuleManager->getComponentManager()->GetAll<TransformComponent>())
 	{
 		if (i->m_Serializable)
 		{
 			saveComponentData(topLevel, i);
 		}
 	}
-	for (auto i : GetComponentManager(VisibleComponent)->GetAllComponents())
+	for (auto i : g_pModuleManager->getComponentManager()->GetAll<TransformComponent>())
 	{
 		if (i->m_Serializable)
 		{
 			saveComponentData(topLevel, i);
 		}
 	}
-	for (auto i : GetComponentManager(LightComponent)->GetAllComponents())
+	for (auto i : g_pModuleManager->getComponentManager()->GetAll<TransformComponent>())
 	{
 		if (i->m_Serializable)
 		{
 			saveComponentData(topLevel, i);
 		}
 	}
-	for (auto i : GetComponentManager(CameraComponent)->GetAllComponents())
+	for (auto i : g_pModuleManager->getComponentManager()->GetAll<TransformComponent>())
 	{
 		if (i->m_Serializable)
 		{
@@ -660,19 +659,19 @@ bool JSONWrapper::loadScene(const char* fileName)
 
 			if (componentTypeID == 1)
 			{
-				LoadComponentData(TransformComponent, k, l_entity)
+				loadComponentData<TransformComponent>(k, l_entity);
 			}
 			else if (componentTypeID == 2)
 			{
-				LoadComponentData(VisibleComponent, k, l_entity)
+				loadComponentData<VisibleComponent>(k, l_entity);
 			}
 			else if (componentTypeID == 3)
 			{
-				LoadComponentData(LightComponent, k, l_entity)
+				loadComponentData<LightComponent>(k, l_entity);
 			}
 			else if (componentTypeID == 4)
 			{
-				LoadComponentData(CameraComponent, k, l_entity)
+				loadComponentData<CameraComponent>(k, l_entity);
 			}
 			else
 			{
@@ -699,7 +698,7 @@ bool JSONWrapper::assignComponentRuntimeData()
 
 			if (l_entity.has_value())
 			{
-				l_orphan.first->m_parentTransformComponent = GetComponent(TransformComponent, *l_entity);
+				l_orphan.first->m_parentTransformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(*l_entity);
 			}
 			else
 			{

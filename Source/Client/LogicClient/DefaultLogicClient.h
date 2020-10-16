@@ -6,12 +6,12 @@ class DefaultLogicClient : public ILogicClient
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(DefaultLogicClient);
 
-	bool setup() override;
-	bool initialize() override;
-	bool update() override;
-	bool terminate() override;
+	bool Setup(ISystemConfig* systemConfig) override;
+	bool Initialize() override;
+	bool Update() override;
+	bool Terminate() override;
 
-	ObjectStatus getStatus() override;
+	ObjectStatus GetStatus() override;
 
 	std::string getApplicationName() override;
 };

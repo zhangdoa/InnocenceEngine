@@ -1,7 +1,5 @@
 #pragma once
-#include "../Common/InnoType.h"
-
-#include "../Common/InnoClassTemplate.h"
+#include "ISystem.h"
 #include "../Common/ComponentHeaders.h"
 
 struct CPPClassDesc
@@ -14,17 +12,10 @@ struct CPPClassDesc
 	std::string filePath;
 };
 
-class IFileSystem
+class IFileSystem : public ISystem
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IFileSystem);
-
-	virtual bool setup() = 0;
-	virtual bool initialize() = 0;
-	virtual bool update() = 0;
-	virtual bool terminate() = 0;
-
-	virtual ObjectStatus getStatus() = 0;
 
 	virtual std::string getWorkingDirectory() = 0;
 

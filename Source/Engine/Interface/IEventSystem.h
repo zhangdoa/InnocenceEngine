@@ -1,8 +1,6 @@
 #pragma once
-#include "../Common/InnoType.h"
+#include "ISystem.h"
 #include "../Common/InnoMathHelper.h"
-
-#include "../Common/InnoClassTemplate.h"
 
 struct InputConfig
 {
@@ -18,14 +16,14 @@ struct InnoEvent
 	EventLifeTime m_eventLifeTime = EventLifeTime::OneShot;
 	T* m_eventHandle = 0;
 
-	bool operator==(const InnoEvent &other) const
+	bool operator==(const InnoEvent& other) const
 	{
 		return (m_eventLifeTime == other.m_eventLifeTime
 			&& m_eventHandle == other.m_eventHandle
 			);
 	}
 
-	bool operator<(const InnoEvent &other) const
+	bool operator<(const InnoEvent& other) const
 	{
 		return m_eventHandle < other.m_eventHandle;
 	}
@@ -35,15 +33,10 @@ using ButtonEvent = InnoEvent<void>;
 using MouseMovementEvent = InnoEvent<std::function<void(float)>>;
 enum class MouseMovementAxis { Horizontal, Vertical };
 
-class IEventSystem
+class IEventSystem : public ISystem
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IEventSystem);
-
-	virtual bool setup() = 0;
-	virtual bool initialize() = 0;
-	virtual bool update() = 0;
-	virtual bool terminate() = 0;
 
 	virtual InputConfig getInputConfig() = 0;
 
@@ -56,6 +49,4 @@ public:
 	virtual void scrollCallback(float xoffset, float yoffset) = 0;
 
 	virtual Vec2 getMousePosition() = 0;
-
-	virtual ObjectStatus getStatus() = 0;
 };

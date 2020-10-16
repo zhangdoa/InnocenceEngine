@@ -1,7 +1,5 @@
 #pragma once
-#include "../Common/InnoType.h"
-
-#include "../Common/InnoClassTemplate.h"
+#include "../Interface/ISystem.h"
 
 #include "../RenderingServer/IRenderingServer.h"
 
@@ -62,17 +60,16 @@ struct AnimationDrawCallInfo
 
 enum class WorldEditorIconType { DIRECTIONAL_LIGHT, POINT_LIGHT, SPHERE_LIGHT, UNKNOWN };
 
-class IRenderingFrontend
+class IRenderingFrontendConfig : public ISystemConfig
+{
+public:
+	IRenderingServer* m_RenderingServer;
+};
+
+class IRenderingFrontend : public ISystem
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IRenderingFrontend);
-
-	virtual bool setup(IRenderingServer* renderingServer) = 0;
-	virtual bool initialize() = 0;
-	virtual bool update() = 0;
-	virtual bool terminate() = 0;
-
-	virtual ObjectStatus getStatus() = 0;
 
 	virtual bool runRayTrace() = 0;
 

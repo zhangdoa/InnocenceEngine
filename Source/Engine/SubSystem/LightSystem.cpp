@@ -1,43 +1,29 @@
-#include "LightComponentManager.h"
+#include "LightSystem.h"
 #include "../Component/LightComponent.h"
-#include "../Template/ObjectPool.h"
-#include "../Core/InnoMemory.h"
 #include "../Core/InnoRandomizer.h"
 #include "../Core/InnoLogger.h"
-#include "../Common/CommonMacro.inl"
-#include "CommonFunctionDefinitionMacro.inl"
 #include "../Common/InnoMathHelper.h"
-
-#include "ITransformComponentManager.h"
-#include "ICameraComponentManager.h"
 
 #include "../Interface/IModuleManager.h"
 
 extern IModuleManager* g_pModuleManager;
 
-namespace LightComponentManagerNS
+namespace LightSystemNS
 {
+	const size_t m_MaxComponentCount = 8192;
+
 	void splitVerticesToAABBs(const std::vector<Vertex>& frustumsVertices, const std::vector<float>& splitFactors, std::vector<AABB>& splitAABB);
 	void UpdateSingleSMData(LightComponent* rhs);
 	void UpdateCSMData(LightComponent* rhs);
 	void UpdateColorTemperature(LightComponent* rhs);
 	void UpdateAttenuationRadius(LightComponent* rhs);
 
-	const size_t m_MaxComponentCount = 8192;
-	size_t m_CurrentComponentIndex = 0;
-	TObjectPool<LightComponent>* m_ComponentPool;
-	ThreadSafeVector<LightComponent*> m_Components;
-	ThreadSafeUnorderedMap<InnoEntity*, LightComponent*> m_ComponentsMap;
-
-	std::function<void()> f_SceneLoadingStartCallback;
-	std::function<void()> f_SceneLoadingFinishCallback;
-
 	std::vector<float> m_CSMSplitFactors = { 0.05f, 0.25f, 0.55f, 1.0f };
 	std::vector<Vec4> m_frustumsCornerPos;
 	std::vector<Vertex> m_frustumsCornerVertices;
 }
 
-void LightComponentManagerNS::splitVerticesToAABBs(const std::vector<Vertex>& frustumsVertices, const std::vector<float>& splitFactors, std::vector<AABB>& splitAABB)
+void LightSystemNS::splitVerticesToAABBs(const std::vector<Vertex>& frustumsVertices, const std::vector<float>& splitFactors, std::vector<AABB>& splitAABB)
 {
 	m_frustumsCornerPos.clear();
 	splitAABB.clear();
@@ -96,7 +82,7 @@ void LightComponentManagerNS::splitVerticesToAABBs(const std::vector<Vertex>& fr
 	}
 }
 
-void LightComponentManagerNS::UpdateSingleSMData(LightComponent* rhs)
+void LightSystemNS::UpdateSingleSMData(LightComponent* rhs)
 {
 	rhs->m_ViewMatrices.clear();
 	rhs->m_ProjectionMatrices.clear();
@@ -114,7 +100,7 @@ void LightComponentManagerNS::UpdateSingleSMData(LightComponent* rhs)
 
 	rhs->m_SplitAABBWS.emplace_back(l_totalSceneAABB);
 
-	auto l_transformComponent = GetComponent(TransformComponent, rhs->m_Owner);
+	auto l_transformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(rhs->m_Owner);
 	auto l_r = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
 	auto l_sunDir = InnoMath::getDirection(Direction::Forward, l_transformComponent->m_globalTransformVector.m_rot);
 	auto l_pos = l_sunDir * l_sphereRadius + l_totalSceneAABB.m_center;
@@ -126,24 +112,24 @@ void LightComponentManagerNS::UpdateSingleSMData(LightComponent* rhs)
 	rhs->m_ProjectionMatrices.emplace_back(l_p);
 }
 
-void LightComponentManagerNS::UpdateCSMData(LightComponent* rhs)
+void LightSystemNS::UpdateCSMData(LightComponent* rhs)
 {
 	rhs->m_ViewMatrices.clear();
 	rhs->m_ProjectionMatrices.clear();
 
 	//1. get frustum vertices in view space
-	auto l_cameraComponent = GetComponentManager(CameraComponent)->Get(0);
+	auto l_cameraComponent = g_pModuleManager->getComponentManager()->Get<CameraComponent>(0);
 	if (l_cameraComponent == nullptr)
 	{
 		return;
 	}
-	auto l_cameraTransformComponent = GetComponent(TransformComponent, l_cameraComponent->m_Owner);
+	auto l_cameraTransformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(l_cameraComponent->m_Owner);
 	if (l_cameraTransformComponent == nullptr)
 	{
 		return;
 	}
 
-	auto l_transformComponent = GetComponent(TransformComponent, rhs->m_Owner);
+	auto l_transformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(rhs->m_Owner);
 	auto l_r = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
 	auto l_sunDir = InnoMath::getDirection(Direction::Forward, l_transformComponent->m_globalTransformVector.m_rot);
 
@@ -275,7 +261,7 @@ void LightComponentManagerNS::UpdateCSMData(LightComponent* rhs)
 	}
 }
 
-void LightComponentManagerNS::UpdateColorTemperature(LightComponent* rhs)
+void LightSystemNS::UpdateColorTemperature(LightComponent* rhs)
 {
 	if (rhs->m_UseColorTemperature)
 	{
@@ -283,7 +269,7 @@ void LightComponentManagerNS::UpdateColorTemperature(LightComponent* rhs)
 	}
 }
 
-void LightComponentManagerNS::UpdateAttenuationRadius(LightComponent* rhs)
+void LightSystemNS::UpdateAttenuationRadius(LightComponent* rhs)
 {
 	auto l_RGBColor = rhs->m_RGBColor.normalize();
 	// "Real-Time Rendering", 4th Edition, p.278
@@ -305,39 +291,28 @@ void LightComponentManagerNS::UpdateAttenuationRadius(LightComponent* rhs)
 #endif
 }
 
-using namespace LightComponentManagerNS;
+using namespace LightSystemNS;
 
-bool InnoLightComponentManager::Setup()
+bool InnoLightSystem::Setup(ISystemConfig* systemConfig)
 {
-	m_ComponentPool = TObjectPool<LightComponent>::Create(m_MaxComponentCount);
-	m_Components.reserve(m_MaxComponentCount);
-	m_ComponentsMap.reserve(m_MaxComponentCount);
+	g_pModuleManager->getComponentManager()->RegisterType<LightComponent>(m_MaxComponentCount);
+
 	m_frustumsCornerPos.reserve(20);
 	m_frustumsCornerVertices.resize(32);
 
-	f_SceneLoadingStartCallback = [&]() {
-		CleanComponentContainers(LightComponent);
-	};
-
-	f_SceneLoadingFinishCallback = [&]() {
-	};
-
-	g_pModuleManager->getSceneSystem()->addSceneLoadingStartCallback(&f_SceneLoadingStartCallback);
-	g_pModuleManager->getSceneSystem()->addSceneLoadingFinishCallback(&f_SceneLoadingFinishCallback);
-
 	return true;
 }
 
-bool InnoLightComponentManager::Initialize()
+bool InnoLightSystem::Initialize()
 {
 	return true;
 }
 
-bool InnoLightComponentManager::Simulate()
+bool InnoLightSystem::Update()
 {
 	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
-
-	for (auto i : m_Components)
+	auto l_components = g_pModuleManager->getComponentManager()->GetAll<LightComponent>();
+	for (auto i : l_components)
 	{
 		UpdateColorTemperature(i);
 		switch (i->m_LightType)
@@ -373,41 +348,17 @@ bool InnoLightComponentManager::Simulate()
 	return true;
 }
 
-bool InnoLightComponentManager::PostFrame()
+bool InnoLightSystem::OnFrameEnd()
 {
 	return true;
 }
 
-bool InnoLightComponentManager::Terminate()
+bool InnoLightSystem::Terminate()
 {
 	return true;
 }
 
-InnoComponent* InnoLightComponentManager::Spawn(const InnoEntity* parentEntity, bool serializable, ObjectLifespan objectLifespan)
+ObjectStatus InnoLightSystem::GetStatus()
 {
-	SpawnComponentImpl(LightComponent);
-}
-
-void InnoLightComponentManager::Destroy(InnoComponent* component)
-{
-	DestroyComponentImpl(LightComponent);
-}
-
-InnoComponent* InnoLightComponentManager::Find(const InnoEntity* parentEntity)
-{
-	GetComponentImpl(LightComponent, parentEntity);
-}
-
-LightComponent* InnoLightComponentManager::Get(std::size_t index)
-{
-	if (index >= m_Components.size())
-	{
-		return nullptr;
-	}
-	return m_Components[index];
-}
-
-const std::vector<LightComponent*>& InnoLightComponentManager::GetAllComponents()
-{
-	return m_Components.getRawData();
+	return ObjectStatus();
 }

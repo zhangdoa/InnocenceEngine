@@ -1,14 +1,7 @@
 #include "PhysicsSystem.h"
-#include "../Common/CommonMacro.inl"
-#include "../ComponentManager/ITransformComponentManager.h"
-#include "../ComponentManager/IVisibleComponentManager.h"
-#include "../ComponentManager/ICameraComponentManager.h"
-#include "../ComponentManager/ILightComponentManager.h"
 
 #include "../Common/InnoMathHelper.h"
 #include "../Core/InnoLogger.h"
-#include "../Core/InnoMemory.h"
-#include "../Template/ObjectPool.h"
 
 #if defined INNO_PLATFORM_WIN
 #include "../ThirdParty/PhysXWrapper/PhysXWrapper.h"
@@ -19,8 +12,8 @@ extern IModuleManager* g_pModuleManager;
 
 namespace InnoPhysicsSystemNS
 {
-	bool setup();
-	bool update();
+	bool Setup();
+	bool Update();
 
 	PhysicsDataComponent* AddPhysicsDataComponent(InnoEntity* parentEntity);
 
@@ -34,6 +27,7 @@ namespace InnoPhysicsSystemNS
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
+	const size_t m_MaxComponentCount = 32768;
 	Vec4 m_visibleSceneBoundMax;
 	Vec4 m_visibleSceneBoundMin;
 	AABB m_visibleSceneAABB;
@@ -44,10 +38,10 @@ namespace InnoPhysicsSystemNS
 
 	Vec4 m_staticSceneBoundMax;
 	Vec4 m_staticSceneBoundMin;
+	InnoEntity* m_RootPDCEntity = 0;
 	PhysicsDataComponent* m_RootPhysicsDataComponent = 0;
 	BVHNode* m_RootBVHNode = 0;
 
-	TObjectPool<PhysicsDataComponent>* m_PhysicsDataComponentPool;
 	std::shared_mutex m_mutex;
 
 	std::vector<PhysicsDataComponent*> m_Components;
@@ -65,16 +59,15 @@ namespace InnoPhysicsSystemNS
 
 using namespace InnoPhysicsSystemNS;
 
-bool InnoPhysicsSystemNS::setup()
+bool InnoPhysicsSystemNS::Setup()
 {
-	m_PhysicsDataComponentPool = TObjectPool<PhysicsDataComponent>::Create(32678);
-
-	m_Components.reserve(16384);
+	g_pModuleManager->getComponentManager()->RegisterType<PhysicsDataComponent>(m_MaxComponentCount);
+	m_RootPDCEntity = g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, "RootPDCEntity/");
 	m_IntermediateComponents.reserve(16384);
 	m_BVHNodes.reserve(32678);
 
 #if defined INNO_PLATFORM_WIN
-	PhysXWrapper::get().setup();
+	PhysXWrapper::get().Setup();
 #endif
 
 	f_sceneLoadingStartCallback = [&]()
@@ -82,22 +75,21 @@ bool InnoPhysicsSystemNS::setup()
 		auto l_intermediatePDCCount = m_IntermediateComponents.size();
 		for (size_t i = 0; i < l_intermediatePDCCount; i++)
 		{
-			m_PhysicsDataComponentPool->Destroy(m_IntermediateComponents[i]);
+			g_pModuleManager->getComponentManager()->Destroy(m_IntermediateComponents[i]);
 		}
 		auto l_PDCCount = m_Components.size();
 		for (size_t i = 0; i < l_PDCCount; i++)
 		{
-			m_PhysicsDataComponentPool->Destroy(m_Components[i]);
+			g_pModuleManager->getComponentManager()->Destroy(m_Components[i]);
 		}
-		m_Components.clear();
 		m_IntermediateComponents.clear();
 		m_BVHNodes.clear();
 
 		if (m_RootPhysicsDataComponent)
 		{
-			m_PhysicsDataComponentPool->Destroy(m_RootPhysicsDataComponent);
+			g_pModuleManager->getComponentManager()->Destroy(m_RootPhysicsDataComponent);
 		}
-		m_RootPhysicsDataComponent = AddPhysicsDataComponent(nullptr);
+		m_RootPhysicsDataComponent = AddPhysicsDataComponent(m_RootPDCEntity);
 		m_RootPhysicsDataComponent->m_IsIntermediate = true;
 
 		m_totalSceneBoundMax = InnoMath::minVec4<float>;
@@ -117,10 +109,10 @@ bool InnoPhysicsSystemNS::setup()
 	return true;
 }
 
-bool InnoPhysicsSystemNS::update()
+bool InnoPhysicsSystemNS::Update()
 {
 #if defined INNO_PLATFORM_WIN
-	PhysXWrapper::get().update();
+	PhysXWrapper::get().Update();
 #endif
 
 	return true;
@@ -130,11 +122,7 @@ PhysicsDataComponent* InnoPhysicsSystemNS::AddPhysicsDataComponent(InnoEntity* p
 {
 	std::unique_lock<std::shared_mutex> lock{ m_mutex };
 
-	auto l_PDC = m_PhysicsDataComponentPool->Spawn();
-
-	l_PDC->m_Owner = parentEntity;
-	l_PDC->m_Serializable = false;
-	l_PDC->m_ObjectLifespan = ObjectLifespan::Persistence;
+	auto l_PDC = g_pModuleManager->getComponentManager()->Spawn<PhysicsDataComponent>(parentEntity, false, ObjectLifespan::Persistence);
 
 	return l_PDC;
 }
@@ -172,7 +160,7 @@ ArrayRangeInfo InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent* VC)
 	l_result.m_startOffset = m_Components.size();
 	l_result.m_count = VC->m_model->meshMaterialPairs.m_count;
 
-	auto l_transformComponent = GetComponent(TransformComponent, VC->m_Owner);
+	auto l_transformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(VC->m_Owner);
 	auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
 	for (uint64_t j = 0; j < VC->m_model->meshMaterialPairs.m_count; j++)
@@ -263,12 +251,12 @@ void InnoPhysicsSystemNS::updateStaticSceneBoundary(const AABB& rhs)
 	m_RootPhysicsDataComponent->m_SphereWS = InnoMath::generateBoundSphere(m_RootPhysicsDataComponent->m_AABBWS);
 }
 
-bool InnoPhysicsSystem::setup()
+bool InnoPhysicsSystem::Setup(ISystemConfig* systemConfig)
 {
-	return InnoPhysicsSystemNS::setup();
+	return InnoPhysicsSystemNS::Setup();
 }
 
-bool InnoPhysicsSystem::initialize()
+bool InnoPhysicsSystem::Initialize()
 {
 	if (InnoPhysicsSystemNS::m_ObjectStatus == ObjectStatus::Created)
 	{
@@ -284,19 +272,19 @@ bool InnoPhysicsSystem::initialize()
 	return true;
 }
 
-bool InnoPhysicsSystem::update()
+bool InnoPhysicsSystem::Update()
 {
-	return InnoPhysicsSystemNS::update();
+	return InnoPhysicsSystemNS::Update();
 }
 
-bool InnoPhysicsSystem::terminate()
+bool InnoPhysicsSystem::Terminate()
 {
 	InnoPhysicsSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
 	InnoLogger::Log(LogLevel::Success, "PhysicsSystem has been terminated.");
 	return true;
 }
 
-ObjectStatus InnoPhysicsSystem::getStatus()
+ObjectStatus InnoPhysicsSystem::GetStatus()
 {
 	return InnoPhysicsSystemNS::m_ObjectStatus;
 }
@@ -507,7 +495,7 @@ void InnoPhysicsSystem::updateBVH()
 	{
 		for (size_t i = 0; i < m_IntermediateComponents.size(); i++)
 		{
-			m_PhysicsDataComponentPool->Destroy(m_IntermediateComponents[i]);
+			g_pModuleManager->getComponentManager()->Destroy(m_IntermediateComponents[i]);
 		}
 
 		m_IntermediateComponents.clear();
@@ -568,7 +556,7 @@ void PlainCulling(const CameraComponent* camera, std::vector<CullingData>& culli
 
 void SunShadowCulling(const LightComponent* sun, std::vector<CullingData>& cullingDatas)
 {
-	auto l_sunTransformComponent = GetComponent(TransformComponent, sun->m_Owner);
+	auto l_sunTransformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(sun->m_Owner);
 
 	if (l_sunTransformComponent == nullptr)
 	{
@@ -608,7 +596,7 @@ void SunShadowCulling(const LightComponent* sun, std::vector<CullingData>& culli
 
 CullingData generateCullingData(const Frustum& frustum, PhysicsDataComponent* PDC)
 {
-	auto l_transformComponent = GetComponent(TransformComponent, PDC->m_VisibleComponent->m_Owner);
+	auto l_transformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(PDC->m_VisibleComponent->m_Owner);
 	auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
 	if (PDC->m_VisibleComponent->m_meshUsage == MeshUsage::Dynamic)
@@ -669,14 +657,14 @@ void BVHCulling(BVHNode* node, const Frustum& frustum, std::vector<CullingData>&
 
 void InnoPhysicsSystem::updateCulling()
 {
-	auto l_mainCamera = GetComponentManager(CameraComponent)->Get(0);
+	auto l_mainCamera = g_pModuleManager->getComponentManager()->Get<CameraComponent>(0);
 
 	if (l_mainCamera == nullptr)
 	{
 		return;
 	}
 
-	auto l_sun = GetComponentManager(LightComponent)->Get(0);
+	auto l_sun = g_pModuleManager->getComponentManager()->Get<LightComponent>(0);
 
 	if (l_sun == nullptr)
 	{
@@ -689,7 +677,7 @@ void InnoPhysicsSystem::updateCulling()
 	m_visibleSceneBoundMin = InnoMath::maxVec4<float>;
 	m_visibleSceneBoundMin.w = 1.0f;
 
-	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
+	auto l_visibleComponents = g_pModuleManager->getComponentManager()->GetAll<VisibleComponent>();
 	auto& l_cullingDataVector = m_cullingData.GetValue();
 	l_cullingDataVector.clear();
 

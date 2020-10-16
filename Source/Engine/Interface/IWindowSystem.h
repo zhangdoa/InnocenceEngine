@@ -1,21 +1,20 @@
 #pragma once
-#include "../Common/InnoType.h"
-#include "../Common/InnoClassTemplate.h"
+#include "ISystem.h"
 #include "IWindowSurface.h"
 
 using WindowEventCallbackFunctor = std::function<void(void*, uint32_t, uint64_t, int64_t)>;
 
-class IWindowSystem
+class IWindowSystemConfig : public ISystemConfig
+{
+public:
+	void* m_AppHook;
+	void* m_ExtraHook;
+};
+
+class IWindowSystem : public ISystem
 {
 public:
 	INNO_CLASS_INTERFACE_NON_COPYABLE(IWindowSystem);
-
-	virtual bool setup(void* hInstance, void* hwnd) = 0;
-	virtual bool initialize() = 0;
-	virtual bool update() = 0;
-	virtual bool terminate() = 0;
-
-	virtual ObjectStatus getStatus() = 0;
 
 	virtual IWindowSurface* getWindowSurface() = 0;
 	virtual const std::vector<ButtonState>& getButtonState() = 0;

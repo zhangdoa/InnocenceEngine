@@ -26,6 +26,8 @@ namespace Inno
 		Scene,
 		Frame,
 	};
+
+	const uint32_t MaxComponentType = 512;
 }
 
 using namespace Inno;

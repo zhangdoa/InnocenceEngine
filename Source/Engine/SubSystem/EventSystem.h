@@ -6,10 +6,12 @@ class InnoEventSystem : public IEventSystem
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoEventSystem);
 
-	bool setup() override;
-	bool initialize() override;
-	bool update() override;
-	bool terminate() override;
+	bool Setup(ISystemConfig* systemConfig) override;
+	bool Initialize() override;
+	bool Update() override;
+	bool Terminate() override;
+
+	ObjectStatus GetStatus() override;
 
 	InputConfig getInputConfig() override;
 
@@ -22,6 +24,4 @@ public:
 	void scrollCallback(float xoffset, float yoffset) override;
 
 	Vec2 getMousePosition() override;
-
-	ObjectStatus getStatus() override;
 };

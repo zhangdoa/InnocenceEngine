@@ -6,12 +6,12 @@ class InnoAssetSystem : public IAssetSystem
 public:
 	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoAssetSystem);
 
-	bool setup() override;
-	bool initialize() override;
-	bool update() override;
-	bool terminate() override;
+	bool Setup(ISystemConfig* systemConfig) override;
+	bool Initialize() override;
+	bool Update() override;
+	bool Terminate() override;
 
-	ObjectStatus getStatus() override;
+	ObjectStatus GetStatus() override;
 
 	bool convertModel(const char* fileName, const char* exportPath) override;
 	Model* loadModel(const char* fileName, bool AsyncUploadGPUResource = true) override;

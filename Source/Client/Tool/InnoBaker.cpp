@@ -1,9 +1,6 @@
 #include "InnoBaker.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 #include "../../Engine/Common/CommonMacro.inl"
-#include "../../Engine/ComponentManager/ITransformComponentManager.h"
-#include "../../Engine/ComponentManager/IVisibleComponentManager.h"
-#include "../../Engine/ComponentManager/ILightComponentManager.h"
 
 #include "../../Engine/Common/InnoMathHelper.h"
 
@@ -103,12 +100,12 @@ bool InnoBakerNS::gatherStaticMeshData()
 
 	uint32_t l_index = 0;
 
-	auto l_visibleComponents = GetComponentManager(VisibleComponent)->GetAllComponents();
+	auto l_visibleComponents = g_pModuleManager->getComponentManager()->GetAll<VisibleComponent>();
 	for (auto visibleComponent : l_visibleComponents)
 	{
 		if (visibleComponent->m_ObjectStatus == ObjectStatus::Activated && visibleComponent->m_meshUsage == MeshUsage::Static)
 		{
-			auto l_transformComponent = GetComponent(TransformComponent, visibleComponent->m_Owner);
+			auto l_transformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(visibleComponent->m_Owner);
 			auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
 			for (uint64_t j = 0; j < visibleComponent->m_model->meshMaterialPairs.m_count; j++)
@@ -1380,10 +1377,10 @@ void InnoBaker::Setup()
 void InnoBaker::BakeProbeCache(const char* sceneName)
 {
 	g_pModuleManager->getSceneSystem()->loadScene(sceneName, false);
-	GetComponentManager(LightComponent)->Simulate();
+	//GetComponentManager(LightComponent)->Simulate();
 
-	g_pModuleManager->getPhysicsSystem()->updateCulling();
-	g_pModuleManager->getRenderingFrontend()->update();
+	//g_pModuleManager->getPhysicsSystem()->updateCulling();
+	//g_pModuleManager->getRenderingFrontend()->update();
 	m_exportFileName = g_pModuleManager->getSceneSystem()->getCurrentSceneName();
 
 	std::vector<Probe> l_probes;
@@ -1492,7 +1489,7 @@ void InnoBaker::BakeBrickFactor(const char* brickFileName)
 	}
 }
 
-bool InnoBakerRenderingClient::Setup()
+bool InnoBakerRenderingClient::Setup(ISystemConfig* systemConfig)
 {
 	auto l_InnoBakerRenderingClientSetupTask = g_pModuleManager->getTaskSystem()->submit("InnoBakerRenderingClientSetupTask", 2, nullptr,
 		[]() {
@@ -1525,4 +1522,9 @@ bool InnoBakerRenderingClient::Terminate()
 	DefaultGPUBuffers::Terminate();
 
 	return true;
+}
+
+ObjectStatus InnoBakerRenderingClient::GetStatus()
+{
+	return ObjectStatus();
 }
