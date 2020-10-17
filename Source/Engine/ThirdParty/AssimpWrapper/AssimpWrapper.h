@@ -1,7 +1,10 @@
 #pragma once
 #include "../../Common/InnoType.h"
 
-namespace AssimpWrapper
+namespace Inno
 {
-	bool convertModel(const char* fileName, const char* exportPath);
-};
+	namespace AssimpWrapper
+	{
+		bool convertModel(const char* fileName, const char* exportPath);
+	};
+}

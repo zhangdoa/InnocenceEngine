@@ -1,9 +1,10 @@
 #include "LuminanceHistogramPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
-#include "../../Engine/Interface/IModuleManager.h"
+#include "../../Engine/Interface/IEngine.h"
 
-INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern INNO_ENGINE_API IEngine* g_Engine;
 
 using namespace DefaultGPUBuffers;
 
@@ -24,16 +25,16 @@ namespace LuminanceHistogramPass
 
 bool LuminanceHistogramPass::Setup()
 {
-	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
 
-	m_SPC_LuminanceHistogram = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("LuminanceHistogramPass/");
+	m_SPC_LuminanceHistogram = g_Engine->getRenderingServer()->AddShaderProgramComponent("LuminanceHistogramPass/");
 
 	m_SPC_LuminanceHistogram->m_ShaderFilePaths.m_CSPath = "luminanceHistogramPass.comp/";
 
-	m_RPDC_LuminanceHistogram = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("LuminanceHistogramPass/");
+	m_RPDC_LuminanceHistogram = g_Engine->getRenderingServer()->AddRenderPassDataComponent("LuminanceHistogramPass/");
 
 	m_RPDC_LuminanceHistogram->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -63,11 +64,11 @@ bool LuminanceHistogramPass::Setup()
 	m_RPDC_LuminanceHistogram->m_ShaderProgram = m_SPC_LuminanceHistogram;
 
 	////
-	m_SPC_LuminanceAverage = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("LuminanceAveragePass/");
+	m_SPC_LuminanceAverage = g_Engine->getRenderingServer()->AddShaderProgramComponent("LuminanceAveragePass/");
 
 	m_SPC_LuminanceAverage->m_ShaderFilePaths.m_CSPath = "luminanceAveragePass.comp/";
 
-	m_RPDC_LuminanceAverage = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("LuminanceAveragePass/");
+	m_RPDC_LuminanceAverage = g_Engine->getRenderingServer()->AddRenderPassDataComponent("LuminanceAveragePass/");
 
 	m_RPDC_LuminanceAverage->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -91,16 +92,16 @@ bool LuminanceHistogramPass::Setup()
 	m_RPDC_LuminanceAverage->m_ShaderProgram = m_SPC_LuminanceAverage;
 
 	////
-	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("LuminanceHistogramPass/");
+	m_SDC = g_Engine->getRenderingServer()->AddSamplerDataComponent("LuminanceHistogramPass/");
 
 	////
-	m_LuminanceHistogramGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("LuminanceHistogramGPUBuffer/");
+	m_LuminanceHistogramGBDC = g_Engine->getRenderingServer()->AddGPUBufferDataComponent("LuminanceHistogramGPUBuffer/");
 	m_LuminanceHistogramGBDC->m_CPUAccessibility = Accessibility::Immutable;
 	m_LuminanceHistogramGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_LuminanceHistogramGBDC->m_ElementCount = 256;
 	m_LuminanceHistogramGBDC->m_ElementSize = sizeof(uint32_t);
 
-	m_LuminanceAverageGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("LuminanceAverageGPUBuffer/");
+	m_LuminanceAverageGBDC = g_Engine->getRenderingServer()->AddGPUBufferDataComponent("LuminanceAverageGPUBuffer/");
 	m_LuminanceAverageGBDC->m_CPUAccessibility = Accessibility::Immutable;
 	m_LuminanceAverageGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_LuminanceAverageGBDC->m_ElementCount = 1;
@@ -111,44 +112,44 @@ bool LuminanceHistogramPass::Setup()
 
 bool LuminanceHistogramPass::Initialize()
 {
-	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
+	g_Engine->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
 
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_LuminanceHistogram);
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_LuminanceHistogram);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_LuminanceHistogram);
+	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_LuminanceHistogram);
 
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_LuminanceAverage);
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_LuminanceAverage);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_LuminanceAverage);
+	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_LuminanceAverage);
 
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_LuminanceHistogramGBDC);
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_LuminanceAverageGBDC);
+	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_LuminanceHistogramGBDC);
+	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_LuminanceAverageGBDC);
 
 	return true;
 }
 
 bool LuminanceHistogramPass::CalculateHistogram(IResourceBinder* input)
 {
-	auto l_viewportSize = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+	auto l_viewportSize = g_Engine->getRenderingFrontend()->getScreenResolution();
 
 	auto l_numThreadGroupsX = std::ceil(l_viewportSize.x / 16);
 	auto l_numThreadGroupsY = std::ceil(l_viewportSize.y / 16);
 
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 
-	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_LuminanceHistogram, 0);
-	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_LuminanceHistogram);
-	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_LuminanceHistogram);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, m_SDC->m_ResourceBinder, 2, 0);
+	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC_LuminanceHistogram, 0);
+	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_LuminanceHistogram);
+	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC_LuminanceHistogram);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, m_SDC->m_ResourceBinder, 2, 0);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, input, 0, 0, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, m_LuminanceHistogramGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, input, 0, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, m_LuminanceHistogramGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadOnly);
 
-	g_pModuleManager->getRenderingServer()->DispatchCompute(m_RPDC_LuminanceHistogram, (uint32_t)l_numThreadGroupsX, (uint32_t)l_numThreadGroupsY, 1);
+	g_Engine->getRenderingServer()->DispatchCompute(m_RPDC_LuminanceHistogram, (uint32_t)l_numThreadGroupsX, (uint32_t)l_numThreadGroupsY, 1);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, input, 0, 0, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, m_LuminanceHistogramGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, input, 0, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, m_LuminanceHistogramGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
 
-	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC_LuminanceHistogram);
+	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC_LuminanceHistogram);
 
 	return true;
 }
@@ -157,20 +158,20 @@ bool LuminanceHistogramPass::CalculateAverage()
 {
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 
-	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_LuminanceAverage, 0);
-	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_LuminanceAverage);
-	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_LuminanceAverage);
+	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC_LuminanceAverage, 0);
+	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_LuminanceAverage);
+	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC_LuminanceAverage);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LuminanceAverage, ShaderStage::Compute, m_LuminanceHistogramGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LuminanceAverage, ShaderStage::Compute, m_LuminanceAverageGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_LuminanceAverage, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_LuminanceAverage, ShaderStage::Compute, m_LuminanceHistogramGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_LuminanceAverage, ShaderStage::Compute, m_LuminanceAverageGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_LuminanceAverage, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadOnly);
 
-	g_pModuleManager->getRenderingServer()->DispatchCompute(m_RPDC_LuminanceAverage, 1, 1, 1);
+	g_Engine->getRenderingServer()->DispatchCompute(m_RPDC_LuminanceAverage, 1, 1, 1);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LuminanceAverage, ShaderStage::Compute, m_LuminanceHistogramGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LuminanceAverage, ShaderStage::Compute, m_LuminanceAverageGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LuminanceAverage, ShaderStage::Compute, m_LuminanceHistogramGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LuminanceAverage, ShaderStage::Compute, m_LuminanceAverageGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
 
-	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC_LuminanceAverage);
+	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC_LuminanceAverage);
 
 	return true;
 }
@@ -180,22 +181,22 @@ bool LuminanceHistogramPass::Render(IResourceBinder* input)
 	CalculateHistogram(input);
 	CalculateAverage();
 
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC_LuminanceHistogram);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC_LuminanceHistogram);
 
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC_LuminanceHistogram);
+	g_Engine->getRenderingServer()->WaitForFrame(m_RPDC_LuminanceHistogram);
 
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC_LuminanceAverage);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC_LuminanceAverage);
 
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC_LuminanceAverage);
+	g_Engine->getRenderingServer()->WaitForFrame(m_RPDC_LuminanceAverage);
 
 	return true;
 }
 
 bool LuminanceHistogramPass::Terminate()
 {
-	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC_LuminanceHistogram);
+	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC_LuminanceHistogram);
 
-	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC_LuminanceAverage);
+	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC_LuminanceAverage);
 
 	return true;
 }

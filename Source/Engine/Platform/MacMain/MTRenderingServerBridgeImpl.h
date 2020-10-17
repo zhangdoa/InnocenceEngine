@@ -13,30 +13,32 @@
 #import "MacWindowDelegate.h"
 #import "MetalDelegate.h"
 
-class MTRenderingServerBridgeImpl : public MTRenderingServerBridge
+namespace Inno
 {
-public:
-	explicit MTRenderingServerBridgeImpl(MacWindowDelegate* macWindowDelegate, MetalDelegate* metalDelegate);
-	~MTRenderingServerBridgeImpl();
+	class MTRenderingServerBridgeImpl : public MTRenderingServerBridge
+	{
+	public:
+		explicit MTRenderingServerBridgeImpl(MacWindowDelegate* macWindowDelegate, MetalDelegate* metalDelegate);
+		~MTRenderingServerBridgeImpl();
 
-	bool Setup(ISystemConfig* systemConfig) override;
-	bool Initialize() override;
-	bool Update() override;
-	bool render() override;
-	bool present() override;
-	bool Terminate() override;
+		bool Setup(ISystemConfig* systemConfig) override;
+		bool Initialize() override;
+		bool Update() override;
+		bool render() override;
+		bool present() override;
+		bool Terminate() override;
 
-	ObjectStatus GetStatus() override;
+		ObjectStatus GetStatus() override;
 
-	bool resize() override;
+		bool resize() override;
 
-	bool initializeMTMeshDataComponent(MTMeshDataComponent* rhs) override;
-	bool initializeMTTextureDataComponent(MTTextureDataComponent* rhs) override;
+		bool initializeMTMeshDataComponent(MTMeshDataComponent* rhs) override;
+		bool initializeMTTextureDataComponent(MTTextureDataComponent* rhs) override;
 
-private:
-	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
-	MacWindowDelegate* m_macWindowDelegate = nullptr;
-	MetalDelegate* m_metalDelegate = nullptr;
-};
-
+	private:
+		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+		MacWindowDelegate* m_macWindowDelegate = nullptr;
+		MetalDelegate* m_metalDelegate = nullptr;
+	};
+}
 #endif /* MTRenderingServerBridgeImpl_h */

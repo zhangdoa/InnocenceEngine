@@ -1,8 +1,9 @@
 #include "GUISystem.h"
 #include "../ThirdParty/ImGuiWrapper/ImGuiWrapper.h"
 
-#include "../Interface/IModuleManager.h"
-extern IModuleManager* g_pModuleManager;
+#include "../Interface/IEngine.h"
+using namespace Inno;
+extern IEngine* g_Engine;
 
 namespace GUISystemNS
 {
@@ -17,7 +18,7 @@ bool InnoGUISystem::Setup(ISystemConfig* systemConfig)
 	f_toggleshowImGui = [&]() {
 		m_showImGui = !m_showImGui;
 	};
-	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_I, true }, ButtonEvent{ EventLifeTime::OneShot, &f_toggleshowImGui });
+	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_I, true }, ButtonEvent{ EventLifeTime::OneShot, &f_toggleshowImGui });
 
 	return 	ImGuiWrapper::Get().Setup();
 }

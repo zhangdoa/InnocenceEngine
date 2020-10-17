@@ -1,8 +1,10 @@
 #include "DefaultLogicClient.h"
 #include "../../Engine/Common/CommonMacro.inl"
 
-#include "../../Engine/Interface/IModuleManager.h"
-INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
+#include "../../Engine/Interface/IEngine.h"
+
+using namespace Inno;
+extern INNO_ENGINE_API IEngine* g_Engine;
 
 namespace AnimationStateMachine
 {
@@ -21,18 +23,18 @@ namespace AnimationStateMachine
 
 	bool setup()
 	{
-		auto l_entity = g_pModuleManager->getEntityManager()->Find("playerCharacter");
+		auto l_entity = g_Engine->getEntityManager()->Find("playerCharacter");
 		if (l_entity.has_value())
 		{
 			m_entity = *l_entity;
-			m_visibleComponent = g_pModuleManager->getComponentManager()->Find<VisibleComponent>(*l_entity);
+			m_visibleComponent = g_Engine->getComponentManager()->Find<VisibleComponent>(*l_entity);
 
 			std::function<void()> f_idle = [&]() {
-				g_pModuleManager->getRenderingFrontend()->playAnimation(m_visibleComponent, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Idle_.InnoAnimation/", true);
+				g_Engine->getRenderingFrontend()->playAnimation(m_visibleComponent, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Idle_.InnoAnimation/", true);
 			};
 
 			std::function<void()> f_run = [&]() {
-				g_pModuleManager->getRenderingFrontend()->playAnimation(m_visibleComponent, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Run_Cycle_.InnoAnimation/", true);
+				g_Engine->getRenderingFrontend()->playAnimation(m_visibleComponent, "..//Res//ConvertedAssets//Wolf_Wolf_Skeleton-Wolf_Run_Cycle_.InnoAnimation/", true);
 			};
 
 			m_states.emplace("Idle", f_idle);
@@ -55,7 +57,7 @@ namespace AnimationStateMachine
 			auto l_func = m_states.find(m_currentState);
 			if (l_func != m_states.end())
 			{
-				g_pModuleManager->getRenderingFrontend()->stopAnimation(m_visibleComponent, "");
+				g_Engine->getRenderingFrontend()->stopAnimation(m_visibleComponent, "");
 				l_func->second();
 				isStateChanged = false;
 
@@ -135,24 +137,24 @@ using namespace PlayerComponentCollection;
 bool PlayerComponentCollection::setup()
 {
 	f_sceneLoadingFinishCallback = [&]() {
-		auto l_playerParentEntity = g_pModuleManager->getEntityManager()->Find("playerCharacter");
+		auto l_playerParentEntity = g_Engine->getEntityManager()->Find("playerCharacter");
 		if (l_playerParentEntity.has_value())
 		{
 			m_playerParentEntity = *l_playerParentEntity;
-			m_playerTransformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(m_playerParentEntity);
-			m_playerVisibleComponent = g_pModuleManager->getComponentManager()->Find<VisibleComponent>(m_playerParentEntity);
+			m_playerTransformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(m_playerParentEntity);
+			m_playerVisibleComponent = g_Engine->getComponentManager()->Find<VisibleComponent>(m_playerParentEntity);
 		}
 
-		auto l_playerCameraParentEntity = g_pModuleManager->getEntityManager()->Find("playerCharacterCamera");
+		auto l_playerCameraParentEntity = g_Engine->getEntityManager()->Find("playerCharacterCamera");
 		if (l_playerCameraParentEntity.has_value())
 		{
 			m_playerCameraParentEntity = *l_playerCameraParentEntity;
-			m_playerCameraTransformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(m_playerCameraParentEntity);
+			m_playerCameraTransformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(m_playerCameraParentEntity);
 		}
 		else
 		{
-			m_playerCameraParentEntity = g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Scene, "playerCharacterCamera/");
-			m_playerCameraTransformComponent = g_pModuleManager->getComponentManager()->Spawn<TransformComponent>(m_playerParentEntity, false, ObjectLifespan::Scene);
+			m_playerCameraParentEntity = g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Scene, "playerCharacterCamera/");
+			m_playerCameraTransformComponent = g_Engine->getComponentManager()->Spawn<TransformComponent>(m_playerParentEntity, false, ObjectLifespan::Scene);
 		}
 
 		m_targetCameraRotX = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -178,33 +180,33 @@ bool PlayerComponentCollection::setup()
 		f_addForce = [&]() {
 			auto l_force = InnoMath::getDirection(Direction::Backward, m_playerTransformComponent->m_localTransformVector.m_rot);
 			l_force = l_force * 10.0f;
-			g_pModuleManager->getPhysicsSystem()->addForce(m_playerVisibleComponent, l_force);
+			g_Engine->getPhysicsSystem()->addForce(m_playerVisibleComponent, l_force);
 		};
 
-		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_S, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveForward });
-		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_W, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveBackward });
-		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_A, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveLeft });
-		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_D, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveRight });
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_S, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveForward });
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_W, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveBackward });
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_A, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveLeft });
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_D, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveRight });
 
-		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_S, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
-		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_W, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
-		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_A, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
-		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_D, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_S, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_W, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_A, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_D, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
 
-		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_S, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
-		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_W, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
-		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_A, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
-		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_D, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_S, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_W, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_A, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_D, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
 
-		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_E, true }, ButtonEvent{ EventLifeTime::OneShot, &f_addForce });
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_E, true }, ButtonEvent{ EventLifeTime::OneShot, &f_addForce });
 
-		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_SPACE, true }, ButtonEvent{ EventLifeTime::Continuous, &f_speedUp });
-		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_SPACE, false }, ButtonEvent{ EventLifeTime::Continuous, &f_speedDown });
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_SPACE, true }, ButtonEvent{ EventLifeTime::Continuous, &f_speedUp });
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_SPACE, false }, ButtonEvent{ EventLifeTime::Continuous, &f_speedDown });
 
-		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_MOUSE_BUTTON_RIGHT, true }, ButtonEvent{ EventLifeTime::Continuous, &f_allowMove });
-		g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_MOUSE_BUTTON_RIGHT, false }, ButtonEvent{ EventLifeTime::Continuous, &f_forbidMove });
-		g_pModuleManager->getEventSystem()->addMouseMovementCallback(MouseMovementAxis::Horizontal, MouseMovementEvent{ EventLifeTime::OneShot, &f_rotateAroundPositiveYAxis });
-		g_pModuleManager->getEventSystem()->addMouseMovementCallback(MouseMovementAxis::Vertical, MouseMovementEvent{ EventLifeTime::OneShot,&f_rotateAroundRightAxis });
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_MOUSE_BUTTON_RIGHT, true }, ButtonEvent{ EventLifeTime::Continuous, &f_allowMove });
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_MOUSE_BUTTON_RIGHT, false }, ButtonEvent{ EventLifeTime::Continuous, &f_forbidMove });
+		g_Engine->getEventSystem()->addMouseMovementCallback(MouseMovementAxis::Horizontal, MouseMovementEvent{ EventLifeTime::OneShot, &f_rotateAroundPositiveYAxis });
+		g_Engine->getEventSystem()->addMouseMovementCallback(MouseMovementAxis::Vertical, MouseMovementEvent{ EventLifeTime::OneShot,&f_rotateAroundRightAxis });
 
 		m_initialMoveSpeed = 0.5f;
 		m_moveSpeed = m_initialMoveSpeed;
@@ -212,7 +214,7 @@ bool PlayerComponentCollection::setup()
 
 		AnimationStateMachine::setup();
 	};
-	g_pModuleManager->getSceneSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback, 0);
+	g_Engine->getSceneSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback, 0);
 
 	return true;
 }
@@ -354,17 +356,17 @@ bool GameClientNS::setupReferenceSpheres()
 		m_referenceSphereTransformComponents.emplace_back();
 		m_referenceSphereVisibleComponents.emplace_back();
 		auto l_entityName = std::string("MaterialReferenceSphere_" + std::to_string(i) + "/");
-		m_referenceSphereEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
+		m_referenceSphereEntites.emplace_back(g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 	}
 
-	auto l_rootTranformComponent = g_pModuleManager->getComponentManager()->Get<TransformComponent>(0);
+	auto l_rootTranformComponent = g_Engine->getComponentManager()->Get<TransformComponent>(0);
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
-		m_referenceSphereTransformComponents[i] = g_pModuleManager->getComponentManager()->Spawn<TransformComponent>(m_referenceSphereEntites[i], false, ObjectLifespan::Scene);
+		m_referenceSphereTransformComponents[i] = g_Engine->getComponentManager()->Spawn<TransformComponent>(m_referenceSphereEntites[i], false, ObjectLifespan::Scene);
 		m_referenceSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_referenceSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_referenceSphereVisibleComponents[i] = g_pModuleManager->getComponentManager()->Spawn<VisibleComponent>(m_referenceSphereEntites[i], false, ObjectLifespan::Scene);
+		m_referenceSphereVisibleComponents[i] = g_Engine->getComponentManager()->Spawn<VisibleComponent>(m_referenceSphereEntites[i], false, ObjectLifespan::Scene);
 		m_referenceSphereVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Sphere;
 		m_referenceSphereVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
 		m_referenceSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
@@ -407,16 +409,16 @@ bool GameClientNS::setupOcclusionCubes()
 		m_occlusionCubeTransformComponents.emplace_back();
 		m_occlusionCubeVisibleComponents.emplace_back();
 		auto l_entityName = std::string("OcclusionCube_" + std::to_string(i) + "/");
-		m_occlusionCubeEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
+		m_occlusionCubeEntites.emplace_back(g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 	}
 
-	auto l_rootTranformComponent = g_pModuleManager->getComponentManager()->Get<TransformComponent>(0);
+	auto l_rootTranformComponent = g_Engine->getComponentManager()->Get<TransformComponent>(0);
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
-		m_occlusionCubeTransformComponents[i] = g_pModuleManager->getComponentManager()->Spawn<TransformComponent>(m_occlusionCubeEntites[i], false, ObjectLifespan::Scene);
+		m_occlusionCubeTransformComponents[i] = g_Engine->getComponentManager()->Spawn<TransformComponent>(m_occlusionCubeEntites[i], false, ObjectLifespan::Scene);
 		m_occlusionCubeTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
-		m_occlusionCubeVisibleComponents[i] = g_pModuleManager->getComponentManager()->Spawn<VisibleComponent>(m_occlusionCubeEntites[i], false, ObjectLifespan::Scene);
+		m_occlusionCubeVisibleComponents[i] = g_Engine->getComponentManager()->Spawn<VisibleComponent>(m_occlusionCubeEntites[i], false, ObjectLifespan::Scene);
 		m_occlusionCubeVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Cube;
 		m_occlusionCubeVisibleComponents[i]->m_meshUsage = MeshUsage::Static;
 		m_occlusionCubeVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
@@ -479,17 +481,17 @@ bool GameClientNS::setupOpaqueSpheres()
 		m_opaqueSphereTransformComponents.emplace_back();
 		m_opaqueSphereVisibleComponents.emplace_back();
 		auto l_entityName = std::string("PhysicsTestOpaqueObject_" + std::to_string(i) + "/");
-		m_opaqueSphereEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
+		m_opaqueSphereEntites.emplace_back(g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 	}
 
-	auto l_rootTranformComponent = g_pModuleManager->getComponentManager()->Get<TransformComponent>(0);
+	auto l_rootTranformComponent = g_Engine->getComponentManager()->Get<TransformComponent>(0);
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
-		m_opaqueSphereTransformComponents[i] = g_pModuleManager->getComponentManager()->Spawn<TransformComponent>(m_opaqueSphereEntites[i], false, ObjectLifespan::Scene);
+		m_opaqueSphereTransformComponents[i] = g_Engine->getComponentManager()->Spawn<TransformComponent>(m_opaqueSphereEntites[i], false, ObjectLifespan::Scene);
 		m_opaqueSphereTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_opaqueSphereTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_opaqueSphereVisibleComponents[i] = g_pModuleManager->getComponentManager()->Spawn<VisibleComponent>(m_opaqueSphereEntites[i], false, ObjectLifespan::Scene);
+		m_opaqueSphereVisibleComponents[i] = g_Engine->getComponentManager()->Spawn<VisibleComponent>(m_opaqueSphereEntites[i], false, ObjectLifespan::Scene);
 		m_opaqueSphereVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape(i % 6 + 5);
 		m_opaqueSphereVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
 		m_opaqueSphereVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
@@ -540,17 +542,17 @@ bool GameClientNS::setupTransparentCubes()
 		m_transparentCubeTransformComponents.emplace_back();
 		m_transparentCubeVisibleComponents.emplace_back();
 		auto l_entityName = std::string("PhysicsTestTransparentCube_" + std::to_string(i) + "/");
-		m_transparentCubeEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
+		m_transparentCubeEntites.emplace_back(g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 	}
 
-	auto l_rootTranformComponent = g_pModuleManager->getComponentManager()->Get<TransformComponent>(0);
+	auto l_rootTranformComponent = g_Engine->getComponentManager()->Get<TransformComponent>(0);
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
-		m_transparentCubeTransformComponents[i] = g_pModuleManager->getComponentManager()->Spawn<TransformComponent>(m_transparentCubeEntites[i], false, ObjectLifespan::Scene);
+		m_transparentCubeTransformComponents[i] = g_Engine->getComponentManager()->Spawn<TransformComponent>(m_transparentCubeEntites[i], false, ObjectLifespan::Scene);
 		m_transparentCubeTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_transparentCubeTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f * i, 1.0f * i, 0.5f, 1.0f);
-		m_transparentCubeVisibleComponents[i] = g_pModuleManager->getComponentManager()->Spawn<VisibleComponent>(m_transparentCubeEntites[i], false, ObjectLifespan::Scene);
+		m_transparentCubeVisibleComponents[i] = g_Engine->getComponentManager()->Spawn<VisibleComponent>(m_transparentCubeEntites[i], false, ObjectLifespan::Scene);
 		m_transparentCubeVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Cube;
 		m_transparentCubeVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
 		m_transparentCubeVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
@@ -583,17 +585,17 @@ bool GameClientNS::setupVolumetricCubes()
 		m_volumetricCubeTransformComponents.emplace_back();
 		m_volumetricCubeVisibleComponents.emplace_back();
 		auto l_entityName = std::string("PhysicsTestVolumetricCube_" + std::to_string(i) + "/");
-		m_volumetricCubeEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
+		m_volumetricCubeEntites.emplace_back(g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 	}
 
-	auto l_rootTranformComponent = g_pModuleManager->getComponentManager()->Get<TransformComponent>(0);
+	auto l_rootTranformComponent = g_Engine->getComponentManager()->Get<TransformComponent>(0);
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
-		m_volumetricCubeTransformComponents[i] = g_pModuleManager->getComponentManager()->Spawn<TransformComponent>(m_volumetricCubeEntites[i], false, ObjectLifespan::Scene);
+		m_volumetricCubeTransformComponents[i] = g_Engine->getComponentManager()->Spawn<TransformComponent>(m_volumetricCubeEntites[i], false, ObjectLifespan::Scene);
 		m_volumetricCubeTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_volumetricCubeTransformComponents[i]->m_localTransformVector.m_scale = Vec4(4.0f, 4.0f, 4.0f, 1.0f);
-		m_volumetricCubeVisibleComponents[i] = g_pModuleManager->getComponentManager()->Spawn<VisibleComponent>(m_volumetricCubeEntites[i], false, ObjectLifespan::Scene);
+		m_volumetricCubeVisibleComponents[i] = g_Engine->getComponentManager()->Spawn<VisibleComponent>(m_volumetricCubeEntites[i], false, ObjectLifespan::Scene);
 		m_volumetricCubeVisibleComponents[i]->m_proceduralMeshShape = ProceduralMeshShape::Cube;
 		m_volumetricCubeVisibleComponents[i]->m_meshUsage = MeshUsage::Dynamic;
 		m_volumetricCubeVisibleComponents[i]->m_meshPrimitiveTopology = MeshPrimitiveTopology::TriangleStrip;
@@ -634,17 +636,17 @@ bool GameClientNS::setupPointLights()
 		m_pointLightTransformComponents.emplace_back();
 		m_pointLightComponents.emplace_back();
 		auto l_entityName = std::string("TestPointLight_" + std::to_string(i) + "/");
-		m_pointLightEntites.emplace_back(g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
+		m_pointLightEntites.emplace_back(g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Scene, l_entityName.c_str()));
 	}
 
-	auto l_rootTranformComponent = g_pModuleManager->getComponentManager()->Get<TransformComponent>(0);
+	auto l_rootTranformComponent = g_Engine->getComponentManager()->Get<TransformComponent>(0);
 
 	for (uint32_t i = 0; i < l_containerSize; i++)
 	{
-		m_pointLightTransformComponents[i] = g_pModuleManager->getComponentManager()->Spawn<TransformComponent>(m_pointLightEntites[i], false, ObjectLifespan::Scene);
+		m_pointLightTransformComponents[i] = g_Engine->getComponentManager()->Spawn<TransformComponent>(m_pointLightEntites[i], false, ObjectLifespan::Scene);
 		m_pointLightTransformComponents[i]->m_parentTransformComponent = l_rootTranformComponent;
 		m_pointLightTransformComponents[i]->m_localTransformVector.m_scale = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		m_pointLightComponents[i] = g_pModuleManager->getComponentManager()->Spawn<LightComponent>(m_pointLightEntites[i], false, ObjectLifespan::Scene);
+		m_pointLightComponents[i] = g_Engine->getComponentManager()->Spawn<LightComponent>(m_pointLightEntites[i], false, ObjectLifespan::Scene);
 		m_pointLightComponents[i]->m_LightType = LightType::Point;
 		m_pointLightComponents[i]->m_LuminousFlux = l_randomLuminousFlux(m_generator);
 		m_pointLightComponents[i]->m_ColorTemperature = l_randomColorTemperature(m_generator);
@@ -692,11 +694,11 @@ bool GameClientNS::setup()
 
 	runTest(512, l_testQuatToMat);
 
-	f_runRayTracing = [&]() { g_pModuleManager->getRenderingFrontend()->runRayTrace(); };
+	f_runRayTracing = [&]() { g_Engine->getRenderingFrontend()->runRayTrace(); };
 	f_pauseGame = [&]() { allowUpdate = !allowUpdate; };
 
-	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_N, true }, ButtonEvent{ EventLifeTime::OneShot, &f_runRayTracing });
-	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_F, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseGame });
+	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_N, true }, ButtonEvent{ EventLifeTime::OneShot, &f_runRayTracing });
+	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_F, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseGame });
 
 	f_sceneLoadingFinishCallback = [&]() {
 		m_posOffset = m_playerCameraTransformComponent->m_localTransformVector.m_pos;
@@ -714,7 +716,7 @@ bool GameClientNS::setup()
 		m_ObjectStatus = ObjectStatus::Activated;
 	};
 
-	g_pModuleManager->getSceneSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback, 0);
+	g_Engine->getSceneSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback, 0);
 
 	return true;
 }
@@ -723,18 +725,18 @@ bool GameClientNS::initialize()
 {
 	f_loadTestScene = []()
 	{
-		//g_pModuleManager->getSceneSystem()->loadScene("..//Res//Scenes//GITestBox.InnoScene");
-		//g_pModuleManager->getSceneSystem()->loadScene("..//Res//Scenes//GITestSibenik.InnoScene");
-		//g_pModuleManager->getSceneSystem()->loadScene("..//Res//Scenes//GITestSponza.InnoScene");
-		g_pModuleManager->getSceneSystem()->loadScene("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
+		//g_Engine->getSceneSystem()->loadScene("..//Res//Scenes//GITestBox.InnoScene");
+		//g_Engine->getSceneSystem()->loadScene("..//Res//Scenes//GITestSibenik.InnoScene");
+		//g_Engine->getSceneSystem()->loadScene("..//Res//Scenes//GITestSponza.InnoScene");
+		g_Engine->getSceneSystem()->loadScene("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
 	};
 
 	f_convertModel = []()
 	{
-		g_pModuleManager->getAssetSystem()->convertModel("..//Res//Models//Wolf//Wolf.fbx", "..//Res//ConvertedAssets//");
+		g_Engine->getAssetSystem()->convertModel("..//Res//Models//Wolf//Wolf.fbx", "..//Res//ConvertedAssets//");
 	};
-	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadTestScene });
-	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_Y, true }, ButtonEvent{ EventLifeTime::OneShot, &f_convertModel });
+	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadTestScene });
+	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_Y, true }, ButtonEvent{ EventLifeTime::OneShot, &f_convertModel });
 
 	return true;
 }
@@ -745,7 +747,7 @@ bool GameClientNS::updateMaterial(Model* model, Vec4 albedo, Vec4 MRAT, ShaderMo
 	{
 		for (uint64_t j = 0; j < model->meshMaterialPairs.m_count; j++)
 		{
-			auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(model->meshMaterialPairs.m_startOffset + j);
+			auto l_pair = g_Engine->getAssetSystem()->getMeshMaterialPair(model->meshMaterialPairs.m_startOffset + j);
 			l_pair->material->m_materialAttributes.AlbedoR = albedo.x;
 			l_pair->material->m_materialAttributes.AlbedoG = albedo.y;
 			l_pair->material->m_materialAttributes.AlbedoB = albedo.z;
@@ -772,12 +774,12 @@ bool DefaultLogicClient::Setup(ISystemConfig* systemConfig)
 bool DefaultLogicClient::Initialize()
 {
 	bool l_result = true;
-	g_pModuleManager->getSceneSystem()->loadScene("..//Res//Scenes//default.InnoScene");
+	g_Engine->getSceneSystem()->loadScene("..//Res//Scenes//default.InnoScene");
 
-	//g_pModuleManager->getSceneSystem()->loadScene("..//Res//Scenes//GITestBox.InnoScene");
-	//g_pModuleManager->getSceneSystem()->loadScene("..//Res//Scenes//GITestSibenik.InnoScene");
-	//g_pModuleManager->getSceneSystem()->loadScene("..//Res//Scenes//GITestSponza.InnoScene");
-	//g_pModuleManager->getSceneSystem()->loadScene("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
+	//g_Engine->getSceneSystem()->loadScene("..//Res//Scenes//GITestBox.InnoScene");
+	//g_Engine->getSceneSystem()->loadScene("..//Res//Scenes//GITestSibenik.InnoScene");
+	//g_Engine->getSceneSystem()->loadScene("..//Res//Scenes//GITestSponza.InnoScene");
+	//g_Engine->getSceneSystem()->loadScene("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
 
 	l_result = l_result && PlayerComponentCollection::initialize();
 	l_result = l_result && GameClientNS::initialize();
@@ -812,7 +814,7 @@ bool GameClientNS::update()
 	{
 		if (allowUpdate)
 		{
-			auto l_tickTime = g_pModuleManager->getTickTime();
+			auto l_tickTime = g_Engine->getTickTime();
 			seed += (l_tickTime / 1000.0f);
 
 			auto l_seed = (1.0f - l_tickTime / 100.0f);
@@ -835,22 +837,22 @@ bool GameClientNS::update()
 
 void GameClientNS::runTest(uint32_t testTime, std::function<bool()> testCase)
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "Start test...");
+	g_Engine->getLogSystem()->Log(LogLevel::Verbose, "Start test...");
 	for (uint32_t i = 0; i < testTime; i++)
 	{
 		auto l_result = testCase();
 		if (!l_result)
 		{
-			g_pModuleManager->getLogSystem()->Log(LogLevel::Warning, "Test failure.");
+			g_Engine->getLogSystem()->Log(LogLevel::Warning, "Test failure.");
 		}
 	}
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "Finished test for ", testTime, " times.");
+	g_Engine->getLogSystem()->Log(LogLevel::Verbose, "Finished test for ", testTime, " times.");
 }
 
 Vec4 GameClientNS::getMousePositionInWorldSpace()
 {
-	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
-	auto l_mousePositionSS = g_pModuleManager->getEventSystem()->getMousePosition();
+	auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
+	auto l_mousePositionSS = g_Engine->getEventSystem()->getMousePosition();
 
 	auto l_x = 2.0f * l_mousePositionSS.x / l_screenResolution.x - 1.0f;
 	auto l_y = 1.0f - 2.0f * l_mousePositionSS.y / l_screenResolution.y;
@@ -858,12 +860,12 @@ Vec4 GameClientNS::getMousePositionInWorldSpace()
 	auto l_w = 1.0f;
 	Vec4 l_ndcSpace = Vec4(l_x, l_y, l_z, l_w);
 
-	auto l_mainCamera = g_pModuleManager->getComponentManager()->Get<CameraComponent>(0);
+	auto l_mainCamera = g_Engine->getComponentManager()->Get<CameraComponent>(0);
 	if (l_mainCamera == nullptr)
 	{
 		return Vec4();
 	}
-	auto l_cameraTransformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(l_mainCamera->m_Owner);
+	auto l_cameraTransformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(l_mainCamera->m_Owner);
 	if (l_cameraTransformComponent == nullptr)
 	{
 		return Vec4();

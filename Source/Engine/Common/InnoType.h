@@ -28,89 +28,87 @@ namespace Inno
 	};
 
 	const uint32_t MaxComponentType = 512;
+
+	struct ArrayRangeInfo
+	{
+		uint64_t m_startOffset;
+		uint64_t m_count;
+	};
+
+	using ObjectName = FixedSizeString<128>;
+
+	struct TimeData
+	{
+		int32_t Year;
+		uint32_t Month;
+		uint32_t Day;
+		uint32_t Hour;
+		uint32_t Minute;
+		int64_t Second;
+		int64_t Millisecond;
+	};
+
+	enum class LogLevel { Verbose, Success, Warning, Error };
+
+	enum class IOMode { Text, Binary };
+
+	// shader custom types
+	enum class ShaderStage
+	{
+		Vertex,
+		Hull,
+		Domain,
+		Geometry,
+		Pixel,
+		Compute
+	};
+
+	using ShaderFilePath = FixedSizeString<128>;
+
+	struct ShaderFilePaths
+	{
+		ShaderFilePath m_VSPath = "";
+		ShaderFilePath m_HSPath = "";
+		ShaderFilePath m_DSPath = "";
+		ShaderFilePath m_GSPath = "";
+		ShaderFilePath m_PSPath = "";
+		ShaderFilePath m_CSPath = "";
+	};
+
+	struct MaterialAttributes
+	{
+		float AlbedoR = 1.0f;
+		float AlbedoG = 1.0f;
+		float AlbedoB = 1.0f;
+		float Alpha = 1.0f;
+		float Metallic = 0.0f;
+		float Roughness = 1.0f;
+		float AO = 0.0f;
+		float Thickness = 1.0f;
+	};
+
+	struct ButtonState
+	{
+		int32_t m_code = 0;
+		bool m_isPressed = false;
+
+		bool operator==(const ButtonState& other) const
+		{
+			return (
+				m_code == other.m_code
+				&& m_isPressed == other.m_isPressed
+				);
+		}
+	};
+
+	struct ButtonStateHasher
+	{
+		std::size_t operator()(const ButtonState& k) const
+		{
+			return std::hash<int32_t>()(k.m_code) ^ (std::hash<bool>()(k.m_isPressed) << 1);
+		}
+	};
 }
-
-using namespace Inno;
-
-struct ArrayRangeInfo
-{
-	uint64_t m_startOffset;
-	uint64_t m_count;
-};
-
-using ObjectName = FixedSizeString<128>;
-
-struct TimeData
-{
-	int32_t Year;
-	uint32_t Month;
-	uint32_t Day;
-	uint32_t Hour;
-	uint32_t Minute;
-	int64_t Second;
-	int64_t Millisecond;
-};
-
-enum class LogLevel { Verbose, Success, Warning, Error };
-
-enum class IOMode { Text, Binary };
-
-// shader custom types
-enum class ShaderStage
-{
-	Vertex,
-	Hull,
-	Domain,
-	Geometry,
-	Pixel,
-	Compute
-};
-
-using ShaderFilePath = FixedSizeString<128>;
-
-struct ShaderFilePaths
-{
-	ShaderFilePath m_VSPath = "";
-	ShaderFilePath m_HSPath = "";
-	ShaderFilePath m_DSPath = "";
-	ShaderFilePath m_GSPath = "";
-	ShaderFilePath m_PSPath = "";
-	ShaderFilePath m_CSPath = "";
-};
-
-struct MaterialAttributes
-{
-	float AlbedoR = 1.0f;
-	float AlbedoG = 1.0f;
-	float AlbedoB = 1.0f;
-	float Alpha = 1.0f;
-	float Metallic = 0.0f;
-	float Roughness = 1.0f;
-	float AO = 0.0f;
-	float Thickness = 1.0f;
-};
-
-struct ButtonState
-{
-	int32_t m_code = 0;
-	bool m_isPressed = false;
-
-	bool operator==(const ButtonState& other) const
-	{
-		return (
-			m_code == other.m_code
-			&& m_isPressed == other.m_isPressed
-			);
-	}
-};
-
-struct ButtonStateHasher
-{
-	std::size_t operator()(const ButtonState& k) const
-	{
-		return std::hash<int32_t>()(k.m_code) ^ (std::hash<bool>()(k.m_isPressed) << 1);
-	}
-};
 
 #define INNO_KEY_SPACE              32
 #define INNO_KEY_APOSTROPHE         39  /* ' */

@@ -2,9 +2,10 @@
 
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
-#include "../../Engine/Interface/IModuleManager.h"
+#include "../../Engine/Interface/IEngine.h"
 
-INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern INNO_ENGINE_API IEngine* g_Engine;
 
 using namespace DefaultGPUBuffers;
 
@@ -17,14 +18,14 @@ namespace OpaquePass
 
 bool OpaquePass::Setup()
 {
-	m_SPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("OpaquePass/");
+	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("OpaquePass/");
 
 	m_SPC->m_ShaderFilePaths.m_VSPath = "opaqueGeometryProcessPass.vert/";
 	m_SPC->m_ShaderFilePaths.m_PSPath = "opaqueGeometryProcessPass.frag/";
 
-	m_RPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("OpaquePass/");
+	m_RPDC = g_Engine->getRenderingServer()->AddRenderPassDataComponent("OpaquePass/");
 
-	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 4;
 	l_RenderPassDesc.m_UseDepthBuffer = true;
@@ -88,7 +89,7 @@ bool OpaquePass::Setup()
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 
-	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("OpaquePass/");
+	m_SDC = g_Engine->getRenderingServer()->AddSamplerDataComponent("OpaquePass/");
 
 	m_SDC->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SDC->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
@@ -98,9 +99,9 @@ bool OpaquePass::Setup()
 
 bool OpaquePass::Initialize()
 {
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
-	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
+	g_Engine->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
 
 	return true;
 }
@@ -111,14 +112,14 @@ bool OpaquePass::PrepareCommandList()
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
 	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
 
-	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
-	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
-	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
+	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC, 0);
+	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
+	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 8, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 8, 0);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 
-	auto& l_drawCallInfo = g_pModuleManager->getRenderingFrontend()->getDrawCallInfo();
+	auto& l_drawCallInfo = g_Engine->getRenderingFrontend()->getDrawCallInfo();
 	auto l_drawCallCount = l_drawCallInfo.size();
 
 	for (uint32_t i = 0; i < l_drawCallCount; i++)
@@ -132,35 +133,35 @@ bool OpaquePass::PrepareCommandList()
 			{
 				if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 				{
-					g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
-					g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_drawCallData.materialConstantBufferIndex, 1);
+					g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
+					g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_drawCallData.materialConstantBufferIndex, 1);
 
-					g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[0].m_Texture->m_ResourceBinder, 3, 0);
-					g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1].m_Texture->m_ResourceBinder, 4, 1);
-					g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[2].m_Texture->m_ResourceBinder, 5, 2);
-					g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[3].m_Texture->m_ResourceBinder, 6, 3);
-					g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[4].m_Texture->m_ResourceBinder, 7, 4);
+					g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[0].m_Texture->m_ResourceBinder, 3, 0);
+					g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1].m_Texture->m_ResourceBinder, 4, 1);
+					g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[2].m_Texture->m_ResourceBinder, 5, 2);
+					g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[3].m_Texture->m_ResourceBinder, 6, 3);
+					g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[4].m_Texture->m_ResourceBinder, 7, 4);
 
-					g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_drawCallData.mesh);
+					g_Engine->getRenderingServer()->DispatchDrawCall(m_RPDC, l_drawCallData.mesh);
 
-					g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[0].m_Texture->m_ResourceBinder, 3, 0);
-					g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1].m_Texture->m_ResourceBinder, 4, 1);
-					g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[2].m_Texture->m_ResourceBinder, 5, 2);
-					g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[3].m_Texture->m_ResourceBinder, 6, 3);
-					g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[4].m_Texture->m_ResourceBinder, 7, 4);
+					g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[0].m_Texture->m_ResourceBinder, 3, 0);
+					g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1].m_Texture->m_ResourceBinder, 4, 1);
+					g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[2].m_Texture->m_ResourceBinder, 5, 2);
+					g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[3].m_Texture->m_ResourceBinder, 6, 3);
+					g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[4].m_Texture->m_ResourceBinder, 7, 4);
 				}
 			}
 		}
 	}
 
-	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
+	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
 
 	return true;
 }
 
 bool OpaquePass::Terminate()
 {
-	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
 
 	return true;
 }

@@ -1,7 +1,8 @@
 #include "DefaultGPUBuffers.h"
-#include "../../Engine/Interface/IModuleManager.h"
+#include "../../Engine/Interface/IEngine.h"
 
-INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern INNO_ENGINE_API IEngine* g_Engine;
 
 namespace DefaultGPUBuffers
 {
@@ -26,114 +27,114 @@ bool DefaultGPUBuffers::Setup()
 
 bool DefaultGPUBuffers::Initialize()
 {
-	auto l_RenderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
+	auto l_RenderingCapability = g_Engine->getRenderingFrontend()->getRenderingCapability();
 
-	m_PerFrameCBufferGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("PerFrameCBuffer/");
+	m_PerFrameCBufferGBDC = g_Engine->getRenderingServer()->AddGPUBufferDataComponent("PerFrameCBuffer/");
 	m_PerFrameCBufferGBDC->m_ElementCount = 1;
 	m_PerFrameCBufferGBDC->m_ElementSize = sizeof(PerFrameConstantBuffer);
 
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_PerFrameCBufferGBDC);
+	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_PerFrameCBufferGBDC);
 
-	m_MeshGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("PerObjectCBuffer/");
+	m_MeshGBDC = g_Engine->getRenderingServer()->AddGPUBufferDataComponent("PerObjectCBuffer/");
 	m_MeshGBDC->m_ElementCount = l_RenderingCapability.maxMeshes;
 	m_MeshGBDC->m_ElementSize = sizeof(PerObjectConstantBuffer);
 
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_MeshGBDC);
+	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_MeshGBDC);
 
-	m_MaterialGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("MaterialCBuffer/");
+	m_MaterialGBDC = g_Engine->getRenderingServer()->AddGPUBufferDataComponent("MaterialCBuffer/");
 	m_MaterialGBDC->m_ElementCount = l_RenderingCapability.maxMaterials;
 	m_MaterialGBDC->m_ElementSize = sizeof(MaterialConstantBuffer);
 
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_MaterialGBDC);
+	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_MaterialGBDC);
 
-	m_PointLightGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("PointLightCBuffer/");
+	m_PointLightGBDC = g_Engine->getRenderingServer()->AddGPUBufferDataComponent("PointLightCBuffer/");
 	m_PointLightGBDC->m_ElementCount = l_RenderingCapability.maxPointLights;
 	m_PointLightGBDC->m_ElementSize = sizeof(PointLightConstantBuffer);
 
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_PointLightGBDC);
+	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_PointLightGBDC);
 
-	m_SphereLightGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("SphereLightCBuffer/");
+	m_SphereLightGBDC = g_Engine->getRenderingServer()->AddGPUBufferDataComponent("SphereLightCBuffer/");
 	m_SphereLightGBDC->m_ElementCount = l_RenderingCapability.maxSphereLights;
 	m_SphereLightGBDC->m_ElementSize = sizeof(SphereLightConstantBuffer);
 
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_SphereLightGBDC);
+	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_SphereLightGBDC);
 
-	m_CSMGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("CSMCBuffer/");
+	m_CSMGBDC = g_Engine->getRenderingServer()->AddGPUBufferDataComponent("CSMCBuffer/");
 	m_CSMGBDC->m_ElementCount = l_RenderingCapability.maxCSMSplits;
 	m_CSMGBDC->m_ElementSize = sizeof(CSMConstantBuffer);
 
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_CSMGBDC);
+	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_CSMGBDC);
 
 	// @TODO: get rid of hard-code stuffs
-	m_dispatchParamsGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("DispatchParamsCBuffer/");
+	m_dispatchParamsGBDC = g_Engine->getRenderingServer()->AddGPUBufferDataComponent("DispatchParamsCBuffer/");
 	m_dispatchParamsGBDC->m_ElementCount = 8;
 	m_dispatchParamsGBDC->m_ElementSize = sizeof(DispatchParamsConstantBuffer);
 
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_dispatchParamsGBDC);
+	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_dispatchParamsGBDC);
 
-	m_GICBufferGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("GICBuffer/");
+	m_GICBufferGBDC = g_Engine->getRenderingServer()->AddGPUBufferDataComponent("GICBuffer/");
 	m_GICBufferGBDC->m_ElementSize = sizeof(GIConstantBuffer);
 	m_GICBufferGBDC->m_ElementCount = 1;
 
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_GICBufferGBDC);
+	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_GICBufferGBDC);
 
-	m_animationGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("AnimationCBuffer/");
+	m_animationGBDC = g_Engine->getRenderingServer()->AddGPUBufferDataComponent("AnimationCBuffer/");
 	m_animationGBDC->m_ElementCount = 512;
 	m_animationGBDC->m_ElementSize = sizeof(AnimationConstantBuffer);
 
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_animationGBDC);
+	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_animationGBDC);
 
-	m_billboardGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("BillboardCBuffer/");
+	m_billboardGBDC = g_Engine->getRenderingServer()->AddGPUBufferDataComponent("BillboardCBuffer/");
 	m_billboardGBDC->m_ElementCount = l_RenderingCapability.maxMeshes;
 	m_billboardGBDC->m_ElementSize = sizeof(PerObjectConstantBuffer);
 	m_billboardGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_billboardGBDC);
+	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_billboardGBDC);
 
 	return true;
 }
 
 bool DefaultGPUBuffers::Upload()
 {
-	auto l_PerFrameConstantBuffer = g_pModuleManager->getRenderingFrontend()->getPerFrameConstantBuffer();
-	auto& l_PerObjectConstantBuffer = g_pModuleManager->getRenderingFrontend()->getPerObjectConstantBuffer();
+	auto l_PerFrameConstantBuffer = g_Engine->getRenderingFrontend()->getPerFrameConstantBuffer();
+	auto& l_PerObjectConstantBuffer = g_Engine->getRenderingFrontend()->getPerObjectConstantBuffer();
 	auto l_TotalDrawCallCount = l_PerObjectConstantBuffer.size();
-	auto& l_MaterialConstantBuffer = g_pModuleManager->getRenderingFrontend()->getMaterialConstantBuffer();
-	auto& l_PointLightConstantBuffer = g_pModuleManager->getRenderingFrontend()->getPointLightConstantBuffer();
-	auto& l_SphereLightConstantBuffer = g_pModuleManager->getRenderingFrontend()->getSphereLightConstantBuffer();
-	auto& l_CSMConstantBuffer = g_pModuleManager->getRenderingFrontend()->getCSMConstantBuffer();
-	auto& l_animationConstantBuffer = g_pModuleManager->getRenderingFrontend()->getAnimationConstantBuffer();
-	auto& l_billboardPassPerObjectConstantBuffer = g_pModuleManager->getRenderingFrontend()->getBillboardPassPerObjectConstantBuffer();
+	auto& l_MaterialConstantBuffer = g_Engine->getRenderingFrontend()->getMaterialConstantBuffer();
+	auto& l_PointLightConstantBuffer = g_Engine->getRenderingFrontend()->getPointLightConstantBuffer();
+	auto& l_SphereLightConstantBuffer = g_Engine->getRenderingFrontend()->getSphereLightConstantBuffer();
+	auto& l_CSMConstantBuffer = g_Engine->getRenderingFrontend()->getCSMConstantBuffer();
+	auto& l_animationConstantBuffer = g_Engine->getRenderingFrontend()->getAnimationConstantBuffer();
+	auto& l_billboardPassPerObjectConstantBuffer = g_Engine->getRenderingFrontend()->getBillboardPassPerObjectConstantBuffer();
 
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_PerFrameCBufferGBDC, &l_PerFrameConstantBuffer);
+	g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(m_PerFrameCBufferGBDC, &l_PerFrameConstantBuffer);
 
 	if (l_PerObjectConstantBuffer.size() > 0)
 	{
-		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_MeshGBDC, l_PerObjectConstantBuffer, 0, l_TotalDrawCallCount);
+		g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(m_MeshGBDC, l_PerObjectConstantBuffer, 0, l_TotalDrawCallCount);
 	}
 	if (l_MaterialConstantBuffer.size() > 0)
 	{
-		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_MaterialGBDC, l_MaterialConstantBuffer, 0, l_TotalDrawCallCount);
+		g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(m_MaterialGBDC, l_MaterialConstantBuffer, 0, l_TotalDrawCallCount);
 	}
 	if (l_PointLightConstantBuffer.size() > 0)
 	{
-		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_PointLightGBDC, l_PointLightConstantBuffer, 0, l_PointLightConstantBuffer.size());
+		g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(m_PointLightGBDC, l_PointLightConstantBuffer, 0, l_PointLightConstantBuffer.size());
 	}
 	if (l_SphereLightConstantBuffer.size() > 0)
 	{
-		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_SphereLightGBDC, l_SphereLightConstantBuffer, 0, l_SphereLightConstantBuffer.size());
+		g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(m_SphereLightGBDC, l_SphereLightConstantBuffer, 0, l_SphereLightConstantBuffer.size());
 	}
 	if (l_CSMConstantBuffer.size() > 0)
 	{
-		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_CSMGBDC, l_CSMConstantBuffer);
+		g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(m_CSMGBDC, l_CSMConstantBuffer);
 	}
 	if (l_animationConstantBuffer.size() > 0)
 	{
-		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_animationGBDC, l_animationConstantBuffer);
+		g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(m_animationGBDC, l_animationConstantBuffer);
 	}
 	if (l_billboardPassPerObjectConstantBuffer.size() > 0)
 	{
-		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_billboardGBDC, l_billboardPassPerObjectConstantBuffer, 0, l_billboardPassPerObjectConstantBuffer.size());
+		g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(m_billboardGBDC, l_billboardPassPerObjectConstantBuffer, 0, l_billboardPassPerObjectConstantBuffer.size());
 	}
 
 	return true;
@@ -141,22 +142,22 @@ bool DefaultGPUBuffers::Upload()
 
 bool DefaultGPUBuffers::Terminate()
 {
-	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_PerFrameCBufferGBDC);
-	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_MeshGBDC);
-	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_MaterialGBDC);
-	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_PointLightGBDC);
-	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_SphereLightGBDC);
-	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_CSMGBDC);
-	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_dispatchParamsGBDC);
-	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_GICBufferGBDC);
-	g_pModuleManager->getRenderingServer()->DeleteGPUBufferDataComponent(m_billboardGBDC);
+	g_Engine->getRenderingServer()->DeleteGPUBufferDataComponent(m_PerFrameCBufferGBDC);
+	g_Engine->getRenderingServer()->DeleteGPUBufferDataComponent(m_MeshGBDC);
+	g_Engine->getRenderingServer()->DeleteGPUBufferDataComponent(m_MaterialGBDC);
+	g_Engine->getRenderingServer()->DeleteGPUBufferDataComponent(m_PointLightGBDC);
+	g_Engine->getRenderingServer()->DeleteGPUBufferDataComponent(m_SphereLightGBDC);
+	g_Engine->getRenderingServer()->DeleteGPUBufferDataComponent(m_CSMGBDC);
+	g_Engine->getRenderingServer()->DeleteGPUBufferDataComponent(m_dispatchParamsGBDC);
+	g_Engine->getRenderingServer()->DeleteGPUBufferDataComponent(m_GICBufferGBDC);
+	g_Engine->getRenderingServer()->DeleteGPUBufferDataComponent(m_billboardGBDC);
 
 	return true;
 }
 
-GPUBufferDataComponent* DefaultGPUBuffers::GetGPUBufferDataComponent(GPUBufferUsageType usageType)
+Inno::GPUBufferDataComponent* DefaultGPUBuffers::GetGPUBufferDataComponent(GPUBufferUsageType usageType)
 {
-	GPUBufferDataComponent* l_result;
+	Inno::GPUBufferDataComponent* l_result;
 
 	switch (usageType)
 	{

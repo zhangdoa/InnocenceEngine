@@ -2,8 +2,9 @@
 #include "../WinWindowSystem.h"
 #include "../../Engine/Core/InnoLogger.h"
 
-#include "../../../Interface/IModuleManager.h"
-extern IModuleManager* g_pModuleManager;
+#include "../../../Interface/IEngine.h"
+using namespace Inno;
+extern IEngine* g_Engine;
 
 namespace WinDXWindowSurfaceNS
 {
@@ -20,26 +21,26 @@ bool WinDXWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 {
 	auto l_windowSurfaceConfig = reinterpret_cast<IWindowSurfaceConfig*>(systemConfig);
 
-	m_initConfig = g_pModuleManager->getInitConfig();
+	m_initConfig = g_Engine->getInitConfig();
 
 	if (m_initConfig.engineMode == EngineMode::Host)
 	{
 		// Setup the windows class with default settings.
-		auto l_windowName = g_pModuleManager->getApplicationName();
+		auto l_windowName = g_Engine->getApplicationName();
 
 		WNDCLASSEX wcex;
 		ZeroMemory(&wcex, sizeof(wcex));
 		wcex.cbSize = sizeof(wcex);
 		wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 		wcex.lpfnWndProc = (WNDPROC)l_windowSurfaceConfig->WindowProc;
-		wcex.hInstance = reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHInstance();
+		wcex.hInstance = reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHInstance();
 		wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-		wcex.lpszClassName = reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getApplicationName();
+		wcex.lpszClassName = reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getApplicationName();
 
 		auto l_windowClass = MAKEINTATOM(RegisterClassEx(&wcex));
 
 		// Determine the resolution of the clients desktop screen.
-		auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+		auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
 		auto l_screenWidth = (int32_t)l_screenResolution.x;
 		auto l_screenHeight = (int32_t)l_screenResolution.y;
 
@@ -51,14 +52,14 @@ bool WinDXWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 
 		// create a new window and context
 		auto l_hwnd = CreateWindow(
-			l_windowClass, reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getApplicationName(), // class name, window name
+			l_windowClass, reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getApplicationName(), // class name, window name
 			WS_OVERLAPPEDWINDOW, // styles
 			l_rect.right, l_rect.bottom, // posx, posy. If x is set to CW_USEDEFAULT y is ignored
 			l_screenWidth, l_screenHeight, // width, height
 			NULL, NULL, // parent window, menu
-			reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHInstance(), NULL); // instance, param
+			reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHInstance(), NULL); // instance, param
 
-		reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->setHwnd(l_hwnd);
+		reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->setHwnd(l_hwnd);
 	}
 
 	m_ObjectStatus = ObjectStatus::Activated;
@@ -72,9 +73,9 @@ bool WinDXWindowSurfaceNS::Initialize()
 	if (m_initConfig.engineMode == EngineMode::Host)
 	{
 		// Bring the window up on the screen and set it as main focus.
-		ShowWindow(reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHwnd(), true);
-		SetForegroundWindow(reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHwnd());
-		SetFocus(reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHwnd());
+		ShowWindow(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHwnd(), true);
+		SetForegroundWindow(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHwnd());
+		SetFocus(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHwnd());
 	}
 
 	InnoLogger::Log(LogLevel::Success, "WinDXWindowSurface has been initialized.");

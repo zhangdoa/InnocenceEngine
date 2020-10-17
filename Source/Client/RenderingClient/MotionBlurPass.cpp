@@ -3,9 +3,10 @@
 
 #include "OpaquePass.h"
 
-#include "../../Engine/Interface/IModuleManager.h"
+#include "../../Engine/Interface/IEngine.h"
 
-INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern INNO_ENGINE_API IEngine* g_Engine;
 
 using namespace DefaultGPUBuffers;
 
@@ -19,13 +20,13 @@ namespace MotionBlurPass
 
 bool MotionBlurPass::Setup()
 {
-	m_SPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("MotionBlurPass/");
+	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("MotionBlurPass/");
 
 	m_SPC->m_ShaderFilePaths.m_CSPath = "motionBlurPass.comp/";
 
-	m_RPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("MotionBlurPass/");
+	m_RPDC = g_Engine->getRenderingServer()->AddRenderPassDataComponent("MotionBlurPass/");
 
-	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
@@ -63,11 +64,11 @@ bool MotionBlurPass::Setup()
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 
-	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("MotionBlurPass/");
+	m_SDC = g_Engine->getRenderingServer()->AddSamplerDataComponent("MotionBlurPass/");
 	m_SDC->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Border;
 	m_SDC->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Border;
 
-	m_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("MotionBlurPass/");
+	m_TDC = g_Engine->getRenderingServer()->AddTextureDataComponent("MotionBlurPass/");
 	m_TDC->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
 	return true;
@@ -75,47 +76,47 @@ bool MotionBlurPass::Setup()
 
 bool MotionBlurPass::Initialize()
 {
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
-	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
-	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_TDC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
+	g_Engine->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
+	g_Engine->getRenderingServer()->InitializeTextureDataComponent(m_TDC);
 
 	return true;
 }
 
 bool MotionBlurPass::Render(IResourceBinder* input)
 {
-	auto l_viewportSize = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+	auto l_viewportSize = g_Engine->getRenderingFrontend()->getScreenResolution();
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 
-	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
-	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
-	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, m_SDC->m_ResourceBinder, 3, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 4, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC, 0);
+	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
+	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, m_SDC->m_ResourceBinder, 3, 0);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 4, 0, Accessibility::ReadOnly);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[3], 0, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, input, 1, 1);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, m_TDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[3], 0, 0);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, input, 1, 1);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, m_TDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
 
-	g_pModuleManager->getRenderingServer()->DispatchCompute(m_RPDC, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+	g_Engine->getRenderingServer()->DispatchCompute(m_RPDC, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[3], 0, 0);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, input, 1, 1);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, m_TDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[3], 0, 0);
+	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, input, 1, 1);
+	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, m_TDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
 
-	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
+	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
 
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC);
 
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);
+	g_Engine->getRenderingServer()->WaitForFrame(m_RPDC);
 
 	return true;
 }
 
 bool MotionBlurPass::Terminate()
 {
-	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
 
 	return true;
 }

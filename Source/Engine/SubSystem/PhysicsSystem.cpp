@@ -7,8 +7,9 @@
 #include "../ThirdParty/PhysXWrapper/PhysXWrapper.h"
 #endif
 
-#include "../Interface/IModuleManager.h"
-extern IModuleManager* g_pModuleManager;
+#include "../Interface/IEngine.h"
+using namespace Inno;
+extern IEngine* g_Engine;
 
 namespace InnoPhysicsSystemNS
 {
@@ -61,8 +62,8 @@ using namespace InnoPhysicsSystemNS;
 
 bool InnoPhysicsSystemNS::Setup()
 {
-	g_pModuleManager->getComponentManager()->RegisterType<PhysicsDataComponent>(m_MaxComponentCount);
-	m_RootPDCEntity = g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, "RootPDCEntity/");
+	g_Engine->getComponentManager()->RegisterType<PhysicsDataComponent>(m_MaxComponentCount);
+	m_RootPDCEntity = g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, "RootPDCEntity/");
 	m_IntermediateComponents.reserve(16384);
 	m_BVHNodes.reserve(32678);
 
@@ -75,19 +76,19 @@ bool InnoPhysicsSystemNS::Setup()
 		auto l_intermediatePDCCount = m_IntermediateComponents.size();
 		for (size_t i = 0; i < l_intermediatePDCCount; i++)
 		{
-			g_pModuleManager->getComponentManager()->Destroy(m_IntermediateComponents[i]);
+			g_Engine->getComponentManager()->Destroy(m_IntermediateComponents[i]);
 		}
 		auto l_PDCCount = m_Components.size();
 		for (size_t i = 0; i < l_PDCCount; i++)
 		{
-			g_pModuleManager->getComponentManager()->Destroy(m_Components[i]);
+			g_Engine->getComponentManager()->Destroy(m_Components[i]);
 		}
 		m_IntermediateComponents.clear();
 		m_BVHNodes.clear();
 
 		if (m_RootPhysicsDataComponent)
 		{
-			g_pModuleManager->getComponentManager()->Destroy(m_RootPhysicsDataComponent);
+			g_Engine->getComponentManager()->Destroy(m_RootPhysicsDataComponent);
 		}
 		m_RootPhysicsDataComponent = AddPhysicsDataComponent(m_RootPDCEntity);
 		m_RootPhysicsDataComponent->m_IsIntermediate = true;
@@ -103,7 +104,7 @@ bool InnoPhysicsSystemNS::Setup()
 		m_staticSceneBoundMin.w = 1.0f;
 	};
 
-	g_pModuleManager->getSceneSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
+	g_Engine->getSceneSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 
 	m_ObjectStatus = ObjectStatus::Created;
 	return true;
@@ -122,7 +123,7 @@ PhysicsDataComponent* InnoPhysicsSystemNS::AddPhysicsDataComponent(InnoEntity* p
 {
 	std::unique_lock<std::shared_mutex> lock{ m_mutex };
 
-	auto l_PDC = g_pModuleManager->getComponentManager()->Spawn<PhysicsDataComponent>(parentEntity, false, ObjectLifespan::Persistence);
+	auto l_PDC = g_Engine->getComponentManager()->Spawn<PhysicsDataComponent>(parentEntity, false, ObjectLifespan::Persistence);
 
 	return l_PDC;
 }
@@ -160,12 +161,12 @@ ArrayRangeInfo InnoPhysicsSystemNS::generatePhysicsProxy(VisibleComponent* VC)
 	l_result.m_startOffset = m_Components.size();
 	l_result.m_count = VC->m_model->meshMaterialPairs.m_count;
 
-	auto l_transformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(VC->m_Owner);
+	auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(VC->m_Owner);
 	auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
 	for (uint64_t j = 0; j < VC->m_model->meshMaterialPairs.m_count; j++)
 	{
-		auto l_meshMaterialPair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(VC->m_model->meshMaterialPairs.m_startOffset + j);
+		auto l_meshMaterialPair = g_Engine->getAssetSystem()->getMeshMaterialPair(VC->m_model->meshMaterialPairs.m_startOffset + j);
 
 		auto l_PDC = generatePhysicsDataComponent(l_meshMaterialPair);
 		l_PDC->m_TransformComponent = l_transformComponent;
@@ -495,7 +496,7 @@ void InnoPhysicsSystem::updateBVH()
 	{
 		for (size_t i = 0; i < m_IntermediateComponents.size(); i++)
 		{
-			g_pModuleManager->getComponentManager()->Destroy(m_IntermediateComponents[i]);
+			g_Engine->getComponentManager()->Destroy(m_IntermediateComponents[i]);
 		}
 
 		m_IntermediateComponents.clear();
@@ -556,7 +557,7 @@ void PlainCulling(const CameraComponent* camera, std::vector<CullingData>& culli
 
 void SunShadowCulling(const LightComponent* sun, std::vector<CullingData>& cullingDatas)
 {
-	auto l_sunTransformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(sun->m_Owner);
+	auto l_sunTransformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(sun->m_Owner);
 
 	if (l_sunTransformComponent == nullptr)
 	{
@@ -596,7 +597,7 @@ void SunShadowCulling(const LightComponent* sun, std::vector<CullingData>& culli
 
 CullingData generateCullingData(const Frustum& frustum, PhysicsDataComponent* PDC)
 {
-	auto l_transformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(PDC->m_VisibleComponent->m_Owner);
+	auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(PDC->m_VisibleComponent->m_Owner);
 	auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
 	if (PDC->m_VisibleComponent->m_meshUsage == MeshUsage::Dynamic)
@@ -657,14 +658,14 @@ void BVHCulling(BVHNode* node, const Frustum& frustum, std::vector<CullingData>&
 
 void InnoPhysicsSystem::updateCulling()
 {
-	auto l_mainCamera = g_pModuleManager->getComponentManager()->Get<CameraComponent>(0);
+	auto l_mainCamera = g_Engine->getComponentManager()->Get<CameraComponent>(0);
 
 	if (l_mainCamera == nullptr)
 	{
 		return;
 	}
 
-	auto l_sun = g_pModuleManager->getComponentManager()->Get<LightComponent>(0);
+	auto l_sun = g_Engine->getComponentManager()->Get<LightComponent>(0);
 
 	if (l_sun == nullptr)
 	{
@@ -677,7 +678,7 @@ void InnoPhysicsSystem::updateCulling()
 	m_visibleSceneBoundMin = InnoMath::maxVec4<float>;
 	m_visibleSceneBoundMin.w = 1.0f;
 
-	auto l_visibleComponents = g_pModuleManager->getComponentManager()->GetAll<VisibleComponent>();
+	auto l_visibleComponents = g_Engine->getComponentManager()->GetAll<VisibleComponent>();
 	auto& l_cullingDataVector = m_cullingData.GetValue();
 	l_cullingDataVector.clear();
 

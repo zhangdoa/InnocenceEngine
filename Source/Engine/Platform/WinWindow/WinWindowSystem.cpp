@@ -5,9 +5,10 @@
 #include "GLWindowSurface/WinGLWindowSurface.h"
 #include "VKWindowSurface/WinVKWindowSurface.h"
 
-#include "../../Interface/IModuleManager.h"
+#include "../../Interface/IEngine.h"
 
-extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern IEngine* g_Engine;
 
 class windowCallbackWrapper
 {
@@ -50,7 +51,7 @@ bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 {
 	auto l_systemConfig = reinterpret_cast<IWindowSystemConfig*>(systemConfig);
 
-	m_buttonState.resize(g_pModuleManager->getEventSystem()->getInputConfig().totalKeyCodes);
+	m_buttonState.resize(g_Engine->getEventSystem()->getInputConfig().totalKeyCodes);
 
 	for (size_t i = 0; i < m_buttonState.size(); i++)
 	{
@@ -64,12 +65,12 @@ bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 		m_hwnd = *reinterpret_cast<HWND*>(l_systemConfig->m_ExtraHook);
 	}
 
-	m_applicationName = g_pModuleManager->getApplicationName().c_str();
+	m_applicationName = g_Engine->getApplicationName().c_str();
 
 	ApplicationHandle = &windowCallbackWrapper::get();
 
 	// create window surface for different rendering backend
-	WinWindowSystemNS::m_initConfig = g_pModuleManager->getInitConfig();
+	WinWindowSystemNS::m_initConfig = g_Engine->getInitConfig();
 
 	switch (WinWindowSystemNS::m_initConfig.renderingServer)
 	{
@@ -238,14 +239,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	}
 	case WM_SIZE:
 	{
-		if (lParam && g_pModuleManager->GetStatus() == ObjectStatus::Activated)
+		if (lParam && g_Engine->GetStatus() == ObjectStatus::Activated)
 		{
 			auto l_width = lParam & 0xffff;
 			auto l_height = (lParam & 0xffff0000) >> 16;
 
 			TVec2<uint32_t> l_newResolution = TVec2<uint32_t>((uint32_t)l_width, (uint32_t)l_height);
-			g_pModuleManager->getRenderingFrontend()->setScreenResolution(l_newResolution);
-			g_pModuleManager->getRenderingServer()->Resize();
+			g_Engine->getRenderingFrontend()->setScreenResolution(l_newResolution);
+			g_Engine->getRenderingServer()->Resize();
 		}
 	}
 	default:
@@ -300,7 +301,7 @@ LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wpara
 	{
 		auto l_mouseCurrentX = GET_X_LPARAM(lparam);
 		auto l_mouseCurrentY = GET_Y_LPARAM(lparam);
-		g_pModuleManager->getEventSystem()->mouseMovementCallback((float)l_mouseCurrentX, (float)l_mouseCurrentY);
+		g_Engine->getEventSystem()->mouseMovementCallback((float)l_mouseCurrentX, (float)l_mouseCurrentY);
 		return 0;
 	}
 	// Any other messages send to the default message handler as our application won't make use of them.

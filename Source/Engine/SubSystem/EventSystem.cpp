@@ -2,8 +2,9 @@
 #include "../Common/CommonMacro.inl"
 #include "../Core/InnoLogger.h"
 
-#include "../Interface/IModuleManager.h"
-extern IModuleManager* g_pModuleManager;
+#include "../Interface/IEngine.h"
+using namespace Inno;
+extern IEngine* g_Engine;
 
 using ButtonEventMap = std::unordered_multimap<ButtonState, ButtonEvent, ButtonStateHasher>;
 using MouseMovementEventMap = std::unordered_map<MouseMovementAxis, std::set<MouseMovementEvent>>;
@@ -68,7 +69,7 @@ bool InnoEventSystemNS::Update()
 {
 	if (InnoEventSystemNS::m_ObjectStatus == ObjectStatus::Activated)
 	{
-		auto l_buttonStates = g_pModuleManager->getWindowSystem()->getButtonState();
+		auto l_buttonStates = g_Engine->getWindowSystem()->getButtonState();
 
 		for (auto& i : l_buttonStates)
 		{
@@ -185,8 +186,8 @@ void InnoEventSystemNS::buttonStateCallback(ButtonState buttonState)
 void InnoEventSystemNS::windowSizeCallback(int32_t width, int32_t height)
 {
 	TVec2<uint32_t> l_newScreenResolution = TVec2<uint32_t>(width, height);
-	g_pModuleManager->getRenderingFrontend()->setScreenResolution(l_newScreenResolution);
-	g_pModuleManager->getRenderingServer()->Resize();
+	g_Engine->getRenderingFrontend()->setScreenResolution(l_newScreenResolution);
+	g_Engine->getRenderingServer()->Resize();
 }
 
 void InnoEventSystemNS::mouseMovementCallback(float mouseXPos, float mouseYPos)

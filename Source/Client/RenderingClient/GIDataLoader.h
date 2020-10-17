@@ -2,6 +2,7 @@
 #include "../../Engine/RenderingServer/IRenderingServer.h"
 #include "../../Engine/Common/GPUDataStructure.h"
 
+using namespace Inno;
 namespace GIDataLoader
 {
 	bool Setup();

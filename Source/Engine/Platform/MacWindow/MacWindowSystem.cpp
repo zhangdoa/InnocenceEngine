@@ -1,8 +1,9 @@
 #include "MacWindowSystem.h"
 
-#include "../../Interface/IModuleManager.h"
+#include "../../Interface/IEngine.h"
 
-extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern IEngine* g_Engine;
 
 namespace MacWindowSystemNS
 {
@@ -17,11 +18,11 @@ namespace MacWindowSystemNS
 
 bool MacWindowSystem::Setup(void* hInstance, void* hwnd)
 {
-	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
 	bool result = MacWindowSystemNS::m_bridge->Setup(l_screenResolution.x, l_screenResolution.y);
 
 	MacWindowSystemNS::m_ObjectStatus = ObjectStatus::Created;
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "MacWindowSystem Setup finished.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "MacWindowSystem Setup finished.");
 
 	return true;
 }
@@ -31,7 +32,7 @@ bool MacWindowSystem::Initialize()
 	bool result = MacWindowSystemNS::m_bridge->Initialize();
 
 	MacWindowSystemNS::m_ObjectStatus = ObjectStatus::Activated;
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "MacWindowSystem has been initialized.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "MacWindowSystem has been initialized.");
 	return true;
 }
 
@@ -45,7 +46,7 @@ bool MacWindowSystem::Terminate()
 {
 	bool result = MacWindowSystemNS::m_bridge->Terminate();
 	MacWindowSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "MacWindowSystem has been terminated.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "MacWindowSystem has been terminated.");
 	return true;
 }
 
@@ -78,5 +79,5 @@ bool MacWindowSystem::addEventCallback(WindowEventCallbackFunctor* functor)
 void MacWindowSystem::setBridge(MacWindowSystemBridge* bridge)
 {
 	MacWindowSystemNS::m_bridge = bridge;
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "MacWindowSystem: Bridge connected at ", bridge);
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "MacWindowSystem: Bridge connected at ", bridge);
 }

@@ -1,8 +1,12 @@
 #include "TaskSystem.h"
 
-namespace InnoTaskSystemNS
+using namespace Inno;
+namespace Inno
 {
-	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+	namespace InnoTaskSystemNS
+	{
+		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+	}
 }
 
 ObjectStatus InnoTaskSystem::GetStatus()

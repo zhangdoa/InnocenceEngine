@@ -1,13 +1,16 @@
 #pragma once
 #include "../../Engine/Interface/IRenderingClient.h"
 
-class DefaultRenderingClient : public IRenderingClient
+namespace Inno
 {
-	// Inherited via IRenderingClient
-	bool Setup(ISystemConfig* systemConfig) override;
-	bool Initialize() override;
-	bool Render() override;
-	bool Terminate() override;
+	class DefaultRenderingClient : public IRenderingClient
+	{
+		// Inherited via IRenderingClient
+		bool Setup(ISystemConfig* systemConfig) override;
+		bool Initialize() override;
+		bool Render() override;
+		bool Terminate() override;
 
-	ObjectStatus GetStatus() override;
-};
+		ObjectStatus GetStatus() override;
+	};
+}

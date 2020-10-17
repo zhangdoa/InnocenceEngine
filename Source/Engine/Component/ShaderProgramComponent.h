@@ -2,11 +2,14 @@
 #include "../Common/InnoType.h"
 #include "../Common/InnoObject.h"
 
-class ShaderProgramComponent : public InnoComponent
+namespace Inno
 {
-public:
-	static uint32_t GetTypeID() { return 12; };
-	static char* GetTypeName() { return "ShaderProgramComponent"; };
+	class ShaderProgramComponent : public InnoComponent
+	{
+	public:
+		static uint32_t GetTypeID() { return 12; };
+		static char* GetTypeName() { return "ShaderProgramComponent"; };
 
-	ShaderFilePaths m_ShaderFilePaths = {};
-};
+		ShaderFilePaths m_ShaderFilePaths = {};
+	};
+}

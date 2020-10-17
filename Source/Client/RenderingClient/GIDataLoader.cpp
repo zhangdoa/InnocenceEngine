@@ -3,8 +3,10 @@
 
 #include "../../Engine/Common/InnoMathHelper.h"
 
-#include "../../Engine/Interface/IModuleManager.h"
-INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
+#include "../../Engine/Interface/IEngine.h"
+
+using namespace Inno;
+extern INNO_ENGINE_API IEngine* g_Engine;
 
 #include "../../Engine/Core/IOService.h"
 
@@ -39,8 +41,8 @@ namespace GIDataLoader
 
 bool GIDataLoader::loadGIData()
 {
-	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
-	auto l_currentSceneName = g_pModuleManager->getSceneSystem()->getCurrentSceneName();
+	auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
+	auto l_currentSceneName = g_Engine->getSceneSystem()->getCurrentSceneName();
 
 	std::ifstream l_surfelFile;
 	l_surfelFile.open(l_filePath + "..//Res//Scenes//" + l_currentSceneName + ".InnoSurfel", std::ios::binary);
@@ -105,10 +107,10 @@ bool GIDataLoader::Setup()
 		loadGIData();
 	};
 
-	g_pModuleManager->getSceneSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
+	g_Engine->getSceneSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
 	////
-	m_testSampleCubemap = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("TestSampleCubemap/");
+	m_testSampleCubemap = g_Engine->getRenderingServer()->AddTextureDataComponent("TestSampleCubemap/");
 
 	std::vector<Vec4> l_faceColors = {
 	Vec4(1.0f, 0.0f, 0.0f, 1.0f),
@@ -128,7 +130,7 @@ bool GIDataLoader::Setup()
 		}
 	}
 
-	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	m_testSampleCubemap->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_testSampleCubemap->m_TextureDesc.Sampler = TextureSampler::SamplerCubemap;
@@ -153,7 +155,7 @@ bool GIDataLoader::Setup()
 		}
 	}
 
-	m_testSample3DTexture = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("TestSample3D/");
+	m_testSample3DTexture = g_Engine->getRenderingServer()->AddTextureDataComponent("TestSample3D/");
 
 	m_testSample3DTexture->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 	m_testSample3DTexture->m_TextureDesc.Sampler = TextureSampler::Sampler3D;
@@ -170,8 +172,8 @@ bool GIDataLoader::Setup()
 
 bool GIDataLoader::Initialize()
 {
-	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_testSampleCubemap);
-	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_testSample3DTexture);
+	g_Engine->getRenderingServer()->InitializeTextureDataComponent(m_testSampleCubemap);
+	g_Engine->getRenderingServer()->InitializeTextureDataComponent(m_testSample3DTexture);
 
 	return true;
 }

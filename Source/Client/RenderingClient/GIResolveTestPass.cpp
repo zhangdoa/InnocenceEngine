@@ -5,9 +5,10 @@
 #include "OpaquePass.h"
 #include "GIDataLoader.h"
 
-#include "../../Engine/Interface/IModuleManager.h"
+#include "../../Engine/Interface/IEngine.h"
 
-INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern INNO_ENGINE_API IEngine* g_Engine;
 
 using namespace DefaultGPUBuffers;
 
@@ -37,7 +38,7 @@ namespace GIResolveTestPass
 
 bool GIResolveTestPass::Setup()
 {
-	m_probeSphereMeshGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("ProbeSphereMeshGPUBuffer/");
+	m_probeSphereMeshGBDC = g_Engine->getRenderingServer()->AddGPUBufferDataComponent("ProbeSphereMeshGPUBuffer/");
 	m_probeSphereMeshGBDC->m_ElementCount = 4096;
 	m_probeSphereMeshGBDC->m_ElementSize = sizeof(ProbeMeshData);
 	m_probeSphereMeshGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
@@ -45,14 +46,14 @@ bool GIResolveTestPass::Setup()
 	m_probeSphereMeshData.reserve(4096);
 
 	////
-	m_probeSPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIResolveTestProbePass/");
+	m_probeSPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("GIResolveTestProbePass/");
 
 	m_probeSPC->m_ShaderFilePaths.m_VSPath = "GIResolveTestProbePass.vert/";
 	m_probeSPC->m_ShaderFilePaths.m_PSPath = "GIResolveTestProbePass.frag/";
 
-	m_probeRPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIResolveTestProbePass/");
+	m_probeRPDC = g_Engine->getRenderingServer()->AddRenderPassDataComponent("GIResolveTestProbePass/");
 
-	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_UseDepthBuffer = true;
@@ -98,7 +99,7 @@ bool GIResolveTestPass::Setup()
 
 	m_probeRPDC->m_ShaderProgram = m_probeSPC;
 
-	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("GIResolveTestProbePass/");
+	m_SDC = g_Engine->getRenderingServer()->AddSamplerDataComponent("GIResolveTestProbePass/");
 
 	return true;
 }
@@ -107,10 +108,10 @@ bool GIResolveTestPass::Initialize()
 {
 	m_probeRPDC->m_DepthStencilRenderTarget = OpaquePass::GetRPDC()->m_DepthStencilRenderTarget;
 
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_probeSphereMeshGBDC);
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_probeSPC);
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_probeRPDC);
-	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
+	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_probeSphereMeshGBDC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_probeSPC);
+	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_probeRPDC);
+	g_Engine->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
 
 	return true;
 }
@@ -210,30 +211,30 @@ bool GIResolveTestPass::Render()
 			m_probeSphereMeshData.emplace_back(l_probeMeshData);
 		}
 
-		auto l_sphere = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Sphere);
+		auto l_sphere = g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Sphere);
 
-		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_probeSphereMeshGBDC, m_probeSphereMeshData, 0, m_probeSphereMeshData.size());
+		g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(m_probeSphereMeshGBDC, m_probeSphereMeshData, 0, m_probeSphereMeshData.size());
 
-		g_pModuleManager->getRenderingServer()->CommandListBegin(m_probeRPDC, 0);
-		g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_probeRPDC);
-		g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_probeRPDC);
+		g_Engine->getRenderingServer()->CommandListBegin(m_probeRPDC, 0);
+		g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_probeRPDC);
+		g_Engine->getRenderingServer()->CleanRenderTargets(m_probeRPDC);
 
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 4, 0);
+		g_Engine->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 4, 0);
 
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, l_GIGBDC->m_ResourceBinder, 1, 8, Accessibility::ReadOnly);
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Vertex, m_probeSphereMeshGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadOnly);
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3, 1, Accessibility::ReadOnly);
+		g_Engine->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
+		g_Engine->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, l_GIGBDC->m_ResourceBinder, 1, 8, Accessibility::ReadOnly);
+		g_Engine->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Vertex, m_probeSphereMeshGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadOnly);
+		g_Engine->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3, 1, Accessibility::ReadOnly);
 
-		g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_probeRPDC, l_sphere, m_probeSphereMeshData.size());
+		g_Engine->getRenderingServer()->DispatchDrawCall(m_probeRPDC, l_sphere, m_probeSphereMeshData.size());
 
-		g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3, 1, Accessibility::ReadOnly);
+		g_Engine->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3, 1, Accessibility::ReadOnly);
 
-		g_pModuleManager->getRenderingServer()->CommandListEnd(m_probeRPDC);
+		g_Engine->getRenderingServer()->CommandListEnd(m_probeRPDC);
 
-		g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_probeRPDC);
+		g_Engine->getRenderingServer()->ExecuteCommandList(m_probeRPDC);
 
-		g_pModuleManager->getRenderingServer()->WaitForFrame(m_probeRPDC);
+		g_Engine->getRenderingServer()->WaitForFrame(m_probeRPDC);
 	}
 
 	return true;
@@ -241,7 +242,7 @@ bool GIResolveTestPass::Render()
 
 bool GIResolveTestPass::Terminate()
 {
-	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_probeRPDC);
+	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_probeRPDC);
 
 	return true;
 }

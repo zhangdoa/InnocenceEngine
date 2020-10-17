@@ -1,6 +1,7 @@
 #pragma once
 #include "../../Engine/Component/GPUBufferDataComponent.h"
 
+using namespace Inno;
 namespace DefaultGPUBuffers
 {
 	enum class GPUBufferUsageType
@@ -22,6 +23,5 @@ namespace DefaultGPUBuffers
 	bool Upload();
 	bool Terminate();
 
-	GPUBufferDataComponent* GetGPUBufferDataComponent(GPUBufferUsageType usageType);
 	GPUBufferDataComponent* GetGPUBufferDataComponent(GPUBufferUsageType usageType);
 };

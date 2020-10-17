@@ -1,4 +1,4 @@
-#include "../../Engine/ModuleManager/ModuleManager.h"
+#include "../../Engine/Engine/Engine.h"
 #include "../../Engine/Interface/ILogicClient.h"
 #include "InnoBaker.h"
 
@@ -33,7 +33,7 @@ class InnoBakerLogicClient : public ILogicClient
 
 namespace InnoBaker
 {
-	std::unique_ptr<InnoModuleManager> m_pModuleManager;
+	std::unique_ptr<Engine> m_pModuleManager;
 	std::unique_ptr<InnoBakerRenderingClient> m_pRenderingClient;
 	std::unique_ptr<InnoBakerLogicClient> m_pLogicClient;
 }
@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
 	auto extraHook = nullptr;
 #endif // INNO_PLATFORM_WIN
 
-	m_pModuleManager = std::make_unique<InnoModuleManager>();
+	m_pModuleManager = std::make_unique<Engine>();
 	if (!m_pModuleManager.get())
 	{
 		return false;

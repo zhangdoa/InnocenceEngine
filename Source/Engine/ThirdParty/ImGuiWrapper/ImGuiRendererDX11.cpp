@@ -5,8 +5,9 @@
 #include "../../RenderingServer/DX11/DX11RenderingServer.h"
 #include "../../Component/DX11RenderPassDataComponent.h"
 
-#include "../../Interface/IModuleManager.h"
-extern IModuleManager* g_pModuleManager;
+#include "../../Interface/IEngine.h"
+using namespace Inno;
+extern IEngine* g_Engine;
 
 namespace ImGuiRendererDX11NS
 {
@@ -16,19 +17,19 @@ namespace ImGuiRendererDX11NS
 bool ImGuiRendererDX11::Setup(ISystemConfig* systemConfig)
 {
 	ImGuiRendererDX11NS::m_ObjectStatus = ObjectStatus::Activated;
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererDX11 Setup finished.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererDX11 Setup finished.");
 
 	return true;
 }
 
 bool ImGuiRendererDX11::Initialize()
 {
-	auto l_renderingServer = reinterpret_cast<DX11RenderingServer*>(g_pModuleManager->getRenderingServer());
+	auto l_renderingServer = reinterpret_cast<DX11RenderingServer*>(g_Engine->getRenderingServer());
 	auto l_device = reinterpret_cast<ID3D11Device*>(l_renderingServer->GetDevice());
 	auto l_deviceContext = reinterpret_cast<ID3D11DeviceContext*>(l_renderingServer->GetDeviceContext());
 
 	ImGui_ImplDX11_Init(l_device, l_deviceContext);
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererDX11 has been initialized.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererDX11 has been initialized.");
 
 	return true;
 }
@@ -41,8 +42,8 @@ bool ImGuiRendererDX11::NewFrame()
 
 bool ImGuiRendererDX11::Render()
 {
-	auto l_userPipelineOutputRPDC = reinterpret_cast<DX11RenderPassDataComponent*>(g_pModuleManager->getRenderingServer()->GetUserPipelineOutput());
-	auto l_renderingServer = reinterpret_cast<DX11RenderingServer*>(g_pModuleManager->getRenderingServer());
+	auto l_userPipelineOutputRPDC = reinterpret_cast<DX11RenderPassDataComponent*>(g_Engine->getRenderingServer()->GetUserPipelineOutput());
+	auto l_renderingServer = reinterpret_cast<DX11RenderingServer*>(g_Engine->getRenderingServer());
 	auto l_deviceContext = reinterpret_cast<ID3D11DeviceContext*>(l_renderingServer->GetDeviceContext());
 
 	l_deviceContext->OMSetRenderTargets(1, &l_userPipelineOutputRPDC->m_RTVs[l_userPipelineOutputRPDC->m_CurrentFrame], NULL);
@@ -55,7 +56,7 @@ bool ImGuiRendererDX11::Terminate()
 {
 	ImGui_ImplDX11_Shutdown();
 	ImGuiRendererDX11NS::m_ObjectStatus = ObjectStatus::Terminated;
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererDX11 has been terminated.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererDX11 has been terminated.");
 
 	return true;
 }
@@ -67,6 +68,6 @@ ObjectStatus ImGuiRendererDX11::GetStatus()
 
 void ImGuiRendererDX11::ShowRenderResult(RenderPassType renderPassType)
 {
-	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
 	auto l_renderTargetSize = ImVec2((float)l_screenResolution.x / 4.0f, (float)l_screenResolution.y / 4.0f);
 }

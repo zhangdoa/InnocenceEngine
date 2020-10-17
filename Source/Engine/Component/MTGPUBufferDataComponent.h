@@ -1,7 +1,10 @@
 #pragma once
 #include "GPUBufferDataComponent.h"
 
-class MTGPUBufferDataComponent : public GPUBufferDataComponent
+namespace Inno
 {
-public:
-};
+	class MTGPUBufferDataComponent : public GPUBufferDataComponent
+	{
+	public:
+	};
+}

@@ -10,7 +10,6 @@
 
 #include "../../Engine/Platform/WinWindow/WinWindowSystem.h"
 
-#include "DX12Helper.h"
 #include <DXProgrammableCapture.h>
 #include <DXGIDebug.h>
 
@@ -18,13 +17,15 @@
 #undef max
 #endif
 
-using namespace DX12Helper;
-
 #include "../CommonFunctionDefinationMacro.inl"
 
-#include "../../Interface/IModuleManager.h"
+#include "../../Interface/IEngine.h"
 
-extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern IEngine* g_Engine;
+
+#include "DX12Helper.h"
+using namespace DX12Helper;
 
 #include "../../Core/InnoLogger.h"
 #include "../../Core/InnoMemory.h"
@@ -275,7 +276,7 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 
 	// Now go through all the display modes and find the one that matches the screen width and height.
 	// When a match is found store the numerator and denominator of the refresh rate for that monitor.
-	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
 
 	for (uint32_t i = 0; i < l_numModes; i++)
 	{
@@ -669,7 +670,7 @@ DX12Fence* addFence()
 
 bool DX12RenderingServer::Setup(ISystemConfig* systemConfig)
 {
-	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
+	auto l_renderingCapability = g_Engine->getRenderingFrontend()->getRenderingCapability();
 
 	m_MeshDataComponentPool = TObjectPool<DX12MeshDataComponent>::Create(l_renderingCapability.maxMeshes);
 	m_TextureDataComponentPool = TObjectPool<DX12TextureDataComponent>::Create(l_renderingCapability.maxTextures);
@@ -718,7 +719,7 @@ bool DX12RenderingServer::Initialize()
 		InitializeSamplerDataComponent(m_SwapChainSDC);
 
 		// Create command queue first
-		auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+		auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 		l_RenderPassDesc.m_RenderTargetCount = m_swapChainImageCount;
 
@@ -759,7 +760,7 @@ bool DX12RenderingServer::Initialize()
 		// Set the swap chain to use double buffering.
 		m_swapChainDesc.BufferCount = m_swapChainImageCount;
 
-		auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+		auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
 
 		// Set the width and height of the back buffer.
 		m_swapChainDesc.Width = (UINT)l_screenResolution.x;
@@ -792,7 +793,7 @@ bool DX12RenderingServer::Initialize()
 		IDXGISwapChain1* l_swapChain1;
 		auto l_hResult = m_factory->CreateSwapChainForHwnd(
 			l_commandQueue->m_CommandQueue.Get(),
-			reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHwnd(),
+			reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHwnd(),
 			&m_swapChainDesc,
 			nullptr,
 			nullptr,
@@ -1175,7 +1176,7 @@ bool DX12RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent*
 
 	auto l_rhs = reinterpret_cast<DX12MaterialDataComponent*>(rhs);
 
-	auto l_defaultMaterial = g_pModuleManager->getRenderingFrontend()->getDefaultMaterialDataComponent();
+	auto l_defaultMaterial = g_Engine->getRenderingFrontend()->getDefaultMaterialDataComponent();
 
 	for (size_t i = 0; i < 8; i++)
 	{
@@ -2050,7 +2051,7 @@ bool DX12RenderingServer::Present()
 
 	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
-	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
+	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
 
 	DispatchDrawCall(m_SwapChainRPDC, l_mesh, 1);
 

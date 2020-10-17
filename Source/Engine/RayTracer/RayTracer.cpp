@@ -1,8 +1,9 @@
 #include "RayTracer.h"
 #include "../Core/InnoLogger.h"
 
-#include "../Interface/IModuleManager.h"
-extern IModuleManager* g_pModuleManager;
+#include "../Interface/IEngine.h"
+using namespace Inno;
+extern IEngine* g_Engine;
 
 namespace InnoRayTracerNS
 {
@@ -294,8 +295,8 @@ bool ExecuteRayTracing()
 {
 	InnoLogger::Log(LogLevel::Verbose, "InnoRayTracer: Start ray tracing...");
 
-	auto l_camera = g_pModuleManager->getComponentManager()->Get<CameraComponent>(0);
-	auto l_cameraTransformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(l_camera->m_Owner);
+	auto l_camera = g_Engine->getComponentManager()->Get<CameraComponent>(0);
+	auto l_cameraTransformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(l_camera->m_Owner);
 	auto l_lookfrom = l_cameraTransformComponent->m_globalTransformVector.m_pos;
 	auto l_lookat = l_lookfrom + InnoMath::getDirection(Direction::Backward, l_cameraTransformComponent->m_globalTransformVector.m_rot);
 	auto l_up = InnoMath::getDirection(Direction::Up, l_cameraTransformComponent->m_globalTransformVector.m_rot);
@@ -303,7 +304,7 @@ bool ExecuteRayTracing()
 
 	RayTracingCamera l_rayTracingCamera(l_lookfrom, l_lookat, l_up, l_vfov, l_camera->m_WHRatio, 1.0f / l_camera->m_aperture, 1000.0f);
 
-	auto l_visibleComponents = g_pModuleManager->getComponentManager()->GetAll<VisibleComponent>();
+	auto l_visibleComponents = g_Engine->getComponentManager()->GetAll<VisibleComponent>();
 
 	std::vector<Hitable*> l_hitableListVector;
 	l_hitableListVector.reserve(l_visibleComponents.size());
@@ -312,10 +313,10 @@ bool ExecuteRayTracing()
 	{
 		if (l_visibleComponent->m_proceduralMeshShape == ProceduralMeshShape::Sphere)
 		{
-			auto l_transformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(l_camera->m_Owner);
+			auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(l_camera->m_Owner);
 			for (uint64_t j = 0; j < l_visibleComponent->m_model->meshMaterialPairs.m_count; j++)
 			{
-				auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(l_visibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
+				auto l_pair = g_Engine->getAssetSystem()->getMeshMaterialPair(l_visibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
 				if (l_pair->material->m_ShaderModel == ShaderModel::Opaque)
 				{
 					auto l_hitable = new HitableSphere();
@@ -416,8 +417,8 @@ bool ExecuteRayTracing()
 
 	m_TDC->m_TextureData = &l_result[0];
 
-	auto l_textureFileName = "..//Res//Intermediate//RayTracingResult_" + std::to_string(g_pModuleManager->getTimeSystem()->getCurrentTimeFromEpoch());
-	g_pModuleManager->getAssetSystem()->saveTexture(l_textureFileName.c_str(), m_TDC);
+	auto l_textureFileName = "..//Res//Intermediate//RayTracingResult_" + std::to_string(g_Engine->getTimeSystem()->getCurrentTimeFromEpoch());
+	g_Engine->getAssetSystem()->saveTexture(l_textureFileName.c_str(), m_TDC);
 
 	InnoLogger::Log(LogLevel::Success, "InnoRayTracer: Ray tracing finished.");
 
@@ -434,9 +435,9 @@ bool InnoRayTracer::Initialize()
 {
 	const int l_denom = 2;
 
-	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
 
-	m_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("RayTracingResult/");
+	m_TDC = g_Engine->getRenderingServer()->AddTextureDataComponent("RayTracingResult/");
 
 	m_TDC->m_TextureDesc.Sampler = TextureSampler::Sampler2D;
 	m_TDC->m_TextureDesc.Usage = TextureUsage::Sample;
@@ -455,7 +456,7 @@ bool InnoRayTracer::Execute()
 	{
 		InnoRayTracerNS::m_isWorking = true;
 
-		auto l_rayTracingTask = g_pModuleManager->getTaskSystem()->submit("RayTracingTask", 4, nullptr, [&]() { ExecuteRayTracing(); InnoRayTracerNS::m_isWorking = false; });
+		auto l_rayTracingTask = g_Engine->getTaskSystem()->submit("RayTracingTask", 4, nullptr, [&]() { ExecuteRayTracing(); InnoRayTracerNS::m_isWorking = false; });
 	}
 
 	return true;

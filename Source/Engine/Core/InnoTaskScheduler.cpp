@@ -3,58 +3,62 @@
 #include "InnoLogger.h"
 #include "InnoTimer.h"
 
-enum class ThreadState { Idle, Busy };
-
-class InnoThread
+using namespace Inno;
+namespace Inno
 {
-public:
-	explicit InnoThread(uint32_t ThreadIndex)
-	{
-		m_ThreadHandle = new std::thread(&InnoThread::Worker, this, ThreadIndex);
-		m_TaskReport.reserve(256);
-	};
+	enum class ThreadState { Idle, Busy };
 
-	~InnoThread(void)
+	class InnoThread
 	{
-		m_Done = true;
-		m_WorkQueue.invalidate();
-		if (m_ThreadHandle->joinable())
+	public:
+		explicit InnoThread(uint32_t ThreadIndex)
 		{
-			m_ThreadHandle->join();
-			delete m_ThreadHandle;
-		}
+			m_ThreadHandle = new std::thread(&InnoThread::Worker, this, ThreadIndex);
+			m_TaskReport.reserve(256);
+		};
+
+		~InnoThread(void)
+		{
+			m_Done = true;
+			m_WorkQueue.invalidate();
+			if (m_ThreadHandle->joinable())
+			{
+				m_ThreadHandle->join();
+				delete m_ThreadHandle;
+			}
+		};
+
+		InnoThread(const InnoThread& rhs) = delete;
+		InnoThread& operator=(const InnoThread& rhs) = delete;
+		InnoThread(InnoThread&& other) = default;
+		InnoThread& operator=(InnoThread&& other) = default;
+
+		ThreadState GetState() const;
+		size_t GetUnfinishedWorkCount();
+		const RingBuffer<InnoTaskReport, true>& GetTaskReport();
+
+		std::shared_ptr<IInnoTask> AddTask(std::shared_ptr<IInnoTask>&& task);
+
+	private:
+		std::string GetThreadID();
+
+		void Worker(uint32_t ThreadIndex);
+
+		void ExecuteTask(std::shared_ptr<IInnoTask>&& task);
+
+		std::thread* m_ThreadHandle;
+		std::pair<uint32_t, std::thread::id> m_ID;
+		std::atomic<ThreadState> m_ThreadState;
+		std::atomic_bool m_Done = false;
+		ThreadSafeQueue<std::shared_ptr<IInnoTask>> m_WorkQueue;
+		RingBuffer<InnoTaskReport, true> m_TaskReport;
 	};
 
-	InnoThread(const InnoThread& rhs) = delete;
-	InnoThread& operator=(const InnoThread& rhs) = delete;
-	InnoThread(InnoThread&& other) = default;
-	InnoThread& operator=(InnoThread&& other) = default;
-
-	ThreadState GetState() const;
-	size_t GetUnfinishedWorkCount();
-	const RingBuffer<InnoTaskReport, true>& GetTaskReport();
-
-	std::shared_ptr<IInnoTask> AddTask(std::shared_ptr<IInnoTask>&& task);
-
-private:
-	std::string GetThreadID();
-
-	void Worker(uint32_t ThreadIndex);
-
-	void ExecuteTask(std::shared_ptr<IInnoTask>&& task);
-
-	std::thread* m_ThreadHandle;
-	std::pair<uint32_t, std::thread::id> m_ID;
-	std::atomic<ThreadState> m_ThreadState;
-	std::atomic_bool m_Done = false;
-	ThreadSafeQueue<std::shared_ptr<IInnoTask>> m_WorkQueue;
-	RingBuffer<InnoTaskReport, true> m_TaskReport;
-};
-
-namespace InnoTaskSchedulerNS
-{
-	std::atomic_size_t m_NumThreads = 0;
-	std::vector<std::unique_ptr<InnoThread>> m_Threads;
+	namespace InnoTaskSchedulerNS
+	{
+		std::atomic_size_t m_NumThreads = 0;
+		std::vector<std::unique_ptr<InnoThread>> m_Threads;
+	}
 }
 
 using namespace InnoTaskSchedulerNS;

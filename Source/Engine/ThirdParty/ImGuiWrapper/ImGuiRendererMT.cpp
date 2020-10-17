@@ -1,7 +1,8 @@
 #include "ImGuiRendererMT.h"
 
-#include "../../Interface/IModuleManager.h"
-extern IModuleManager* g_pModuleManager;
+#include "../../Interface/IEngine.h"
+using namespace Inno;
+extern IEngine* g_Engine;
 
 namespace ImGuiRendererMTNS
 {
@@ -11,14 +12,14 @@ namespace ImGuiRendererMTNS
 bool ImGuiRendererMT::Setup(ISystemConfig* systemConfig)
 {
 	ImGuiRendererMTNS::m_ObjectStatus = ObjectStatus::Activated;
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererMT Setup finished.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererMT Setup finished.");
 
 	return true;
 }
 
 bool ImGuiRendererMT::Initialize()
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererMT has been initialized.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererMT has been initialized.");
 
 	return true;
 }
@@ -30,7 +31,7 @@ bool ImGuiRendererMT::NewFrame()
 
 bool ImGuiRendererMT::Render()
 {
-	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
 
 	return true;
 }
@@ -38,7 +39,7 @@ bool ImGuiRendererMT::Render()
 bool ImGuiRendererMT::Terminate()
 {
 	ImGuiRendererMTNS::m_ObjectStatus = ObjectStatus::Terminated;
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererMT has been terminated.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererMT has been terminated.");
 
 	return true;
 }
@@ -50,6 +51,6 @@ ObjectStatus ImGuiRendererMT::GetStatus()
 
 void ImGuiRendererMT::ShowRenderResult(RenderPassType renderPassType)
 {
-	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
 	auto l_renderTargetSize = ImVec2((float)l_screenResolution.x / 4.0f, (float)l_screenResolution.y / 4.0f);
 }

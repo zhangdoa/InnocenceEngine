@@ -5,9 +5,10 @@
 #include "DebugPass.h"
 #include "LuminanceHistogramPass.h"
 
-#include "../../Engine/Interface/IModuleManager.h"
+#include "../../Engine/Interface/IEngine.h"
 
-INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern INNO_ENGINE_API IEngine* g_Engine;
 
 using namespace DefaultGPUBuffers;
 
@@ -20,13 +21,13 @@ namespace FinalBlendPass
 
 bool FinalBlendPass::Setup()
 {
-	m_SPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("FinalBlendPass/");
+	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("FinalBlendPass/");
 
 	m_SPC->m_ShaderFilePaths.m_CSPath = "finalBlendPass.comp/";
 
-	m_RPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("FinalBlendPass/");
+	m_RPDC = g_Engine->getRenderingServer()->AddRenderPassDataComponent("FinalBlendPass/");
 
-	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;
 	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
@@ -68,7 +69,7 @@ bool FinalBlendPass::Setup()
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 
-	m_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent("FinalBlendPass/");
+	m_TDC = g_Engine->getRenderingServer()->AddTextureDataComponent("FinalBlendPass/");
 	m_TDC->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
 	return true;
@@ -76,50 +77,50 @@ bool FinalBlendPass::Setup()
 
 bool FinalBlendPass::Initialize()
 {
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
-	g_pModuleManager->getRenderingServer()->InitializeTextureDataComponent(m_TDC);
-	g_pModuleManager->getRenderingServer()->SetUserPipelineOutput(m_TDC->m_ResourceBinder);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
+	g_Engine->getRenderingServer()->InitializeTextureDataComponent(m_TDC);
+	g_Engine->getRenderingServer()->SetUserPipelineOutput(m_TDC->m_ResourceBinder);
 
 	return true;
 }
 
 bool FinalBlendPass::Render(IResourceBinder* input)
 {
-	auto l_viewportSize = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+	auto l_viewportSize = g_Engine->getRenderingFrontend()->getScreenResolution();
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 
-	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
-	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
-	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
+	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC, 0);
+	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
+	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, input, 0, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, BillboardPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 1, 1);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, DebugPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 2, 2);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, LuminanceHistogramPass::GetAverageLuminance()->m_ResourceBinder, 3, 3, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, m_TDC->m_ResourceBinder, 4, 0, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 5, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, input, 0, 0);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, BillboardPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 1, 1);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, DebugPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 2, 2);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, LuminanceHistogramPass::GetAverageLuminance()->m_ResourceBinder, 3, 3, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, m_TDC->m_ResourceBinder, 4, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 5, 0, Accessibility::ReadOnly);
 
-	g_pModuleManager->getRenderingServer()->DispatchCompute(m_RPDC, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+	g_Engine->getRenderingServer()->DispatchCompute(m_RPDC, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, input, 0, 0);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, BillboardPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 1, 1);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, DebugPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 2, 2);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, m_TDC->m_ResourceBinder, 4, 0, Accessibility::ReadWrite);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, LuminanceHistogramPass::GetAverageLuminance()->m_ResourceBinder, 3, 3, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, input, 0, 0);
+	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, BillboardPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 1, 1);
+	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, DebugPass::GetRPDC()->m_RenderTargetsResourceBinders[0], 2, 2);
+	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, m_TDC->m_ResourceBinder, 4, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, LuminanceHistogramPass::GetAverageLuminance()->m_ResourceBinder, 3, 3, Accessibility::ReadOnly);
 
-	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
+	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
 
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC);
 
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);
+	g_Engine->getRenderingServer()->WaitForFrame(m_RPDC);
 
 	return true;
 }
 
 bool FinalBlendPass::Terminate()
 {
-	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
 
 	return true;
 }

@@ -6,14 +6,18 @@ using Days = std::chrono::duration<int32_t, std::ratio_multiply<std::chrono::hou
 using Months = std::chrono::duration<int32_t, std::ratio_multiply<std::chrono::hours::period, std::ratio<744>>::type>;
 using Years = std::chrono::duration<int32_t, std::ratio_multiply<std::chrono::hours::period, std::ratio<8760>>::type>;
 
-namespace InnoTimerNS
+using namespace Inno;
+namespace Inno
 {
-	double m_FrameLength;
-	HRClock::time_point m_EngineStartTime;
-	HRClock::time_point m_UpdateStartTime;
-	double m_DeltaTime;
-	double m_UnprocessedTime;
-};
+	namespace InnoTimerNS
+	{
+		double m_FrameLength;
+		HRClock::time_point m_EngineStartTime;
+		HRClock::time_point m_UpdateStartTime;
+		double m_DeltaTime;
+		double m_UnprocessedTime;
+	}
+}
 
 bool InnoTimer::Setup()
 {

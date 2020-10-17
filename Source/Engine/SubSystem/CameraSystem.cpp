@@ -4,9 +4,10 @@
 #include "../Core/InnoLogger.h"
 #include "../Common/InnoMathHelper.h"
 
-#include "../Interface/IModuleManager.h"
+#include "../Interface/IEngine.h"
 
-extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern IEngine* g_Engine;
 
 namespace CameraSystemNS
 {
@@ -19,14 +20,14 @@ namespace CameraSystemNS
 
 void CameraSystemNS::generateProjectionMatrix(CameraComponent* cameraComponent)
 {
-	auto l_resolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+	auto l_resolution = g_Engine->getRenderingFrontend()->getScreenResolution();
 	cameraComponent->m_WHRatio = (float)l_resolution.x / (float)l_resolution.y;
 	cameraComponent->m_projectionMatrix = InnoMath::generatePerspectiveMatrix((cameraComponent->m_FOVX / 180.0f) * PI<float>, cameraComponent->m_WHRatio, cameraComponent->m_zNear, cameraComponent->m_zFar);
 }
 
 void CameraSystemNS::generateFrustum(CameraComponent* cameraComponent)
 {
-	auto l_transformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(cameraComponent->m_Owner);
+	auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(cameraComponent->m_Owner);
 
 	if (l_transformComponent != nullptr)
 	{
@@ -41,7 +42,7 @@ void CameraSystemNS::generateFrustum(CameraComponent* cameraComponent)
 
 void CameraSystemNS::generateRayOfEye(CameraComponent* cameraComponent)
 {
-	auto l_transformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(cameraComponent->m_Owner);
+	auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(cameraComponent->m_Owner);
 
 	if (l_transformComponent != nullptr)
 	{
@@ -54,7 +55,7 @@ using namespace CameraSystemNS;
 
 bool InnoCameraSystem::Setup(ISystemConfig* systemConfig)
 {
-	g_pModuleManager->getComponentManager()->RegisterType<CameraComponent>(m_MaxComponentCount);
+	g_Engine->getComponentManager()->RegisterType<CameraComponent>(m_MaxComponentCount);
 
 	return true;
 }
@@ -66,7 +67,7 @@ bool InnoCameraSystem::Initialize()
 
 bool InnoCameraSystem::Update()
 {
-	auto l_components = g_pModuleManager->getComponentManager()->GetAll<CameraComponent>();
+	auto l_components = g_Engine->getComponentManager()->GetAll<CameraComponent>();
 
 	for (auto i : l_components)
 	{

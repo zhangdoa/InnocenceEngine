@@ -6,9 +6,10 @@
 #include "GL/glext.h"
 #include "GL/wglext.h"
 
-#include "../../../Interface/IModuleManager.h"
+#include "../../../Interface/IEngine.h"
 
-extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern IEngine* g_Engine;
 
 namespace WinGLWindowSurfaceNS
 {
@@ -27,16 +28,16 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 {
 	auto l_windowSurfaceConfig = reinterpret_cast<IWindowSurfaceConfig*>(systemConfig);
 
-	m_initConfig = g_pModuleManager->getInitConfig();
+	m_initConfig = g_Engine->getInitConfig();
 
 	WNDCLASSEX wcex;
 	ZeroMemory(&wcex, sizeof(wcex));
 	wcex.cbSize = sizeof(wcex);
 	wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 	wcex.lpfnWndProc = (WNDPROC)l_windowSurfaceConfig->WindowProc;
-	wcex.hInstance = reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHInstance();
+	wcex.hInstance = reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHInstance();
 	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wcex.lpszClassName = reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getApplicationName();
+	wcex.lpszClassName = reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getApplicationName();
 
 	auto l_windowClass = MAKEINTATOM(RegisterClassEx(&wcex));
 
@@ -48,7 +49,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 		0, 0,						// position x, y
 		1, 1,						// width, height
 		NULL, NULL,					// parent window, menu
-		reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHInstance(), NULL);			// instance, param
+		reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHInstance(), NULL);			// instance, param
 
 	HDC fakeDC = GetDC(fakeWND);	// Device Context
 
@@ -117,7 +118,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 	if (m_initConfig.engineMode == EngineMode::Host)
 	{
 		// Determine the resolution of the clients desktop screen.
-		auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+		auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
 		auto l_screenWidth = (int32_t)l_screenResolution.x;
 		auto l_screenHeight = (int32_t)l_screenResolution.y;
 
@@ -129,19 +130,19 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 
 		// create a new window and context
 		auto l_hwnd = CreateWindow(
-			l_windowClass, reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getApplicationName(), // class name, window name
+			l_windowClass, reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getApplicationName(), // class name, window name
 			WS_OVERLAPPEDWINDOW, // styles
 			l_rect.right, l_rect.bottom, // posx, posy. If x is set to CW_USEDEFAULT y is ignored
 			l_screenWidth, l_screenHeight, // width, height
 			NULL, NULL, // parent window, menu
-			reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHInstance(), NULL); // instance, param
+			reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHInstance(), NULL); // instance, param
 
-		reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->setHwnd(l_hwnd);
+		reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->setHwnd(l_hwnd);
 	}
 
 	auto f_CreateGLContextTask = [&]()
 	{
-		m_HDC = GetDC(reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHwnd());
+		m_HDC = GetDC(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHwnd());
 
 		const int32_t pixelAttribs[] = {
 			WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
@@ -195,7 +196,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 		}
 	};
 
-	auto l_CreateGLContextTask = g_pModuleManager->getTaskSystem()->submit("CreateGLContextTask", 2, nullptr, f_CreateGLContextTask);
+	auto l_CreateGLContextTask = g_Engine->getTaskSystem()->submit("CreateGLContextTask", 2, nullptr, f_CreateGLContextTask);
 	l_CreateGLContextTask->Wait();
 
 	// delete temporary context and window
@@ -221,7 +222,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 			InnoLogger::Log(LogLevel::Error, "WinWindowSystem: Failed to Initialize GLAD.");
 		}
 
-		auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
+		auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
 
 		if (!l_renderingConfig.VSync)
 		{
@@ -236,14 +237,14 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 		}
 	};
 
-	auto l_ActivateGLContextTask = g_pModuleManager->getTaskSystem()->submit("ActivateGLContextTask", 2, nullptr, f_ActivateGLContextTask);
+	auto l_ActivateGLContextTask = g_Engine->getTaskSystem()->submit("ActivateGLContextTask", 2, nullptr, f_ActivateGLContextTask);
 	l_ActivateGLContextTask->Wait();
 
 	if (m_initConfig.engineMode == EngineMode::Host)
 	{
-		ShowWindow(reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHwnd(), true);
-		SetForegroundWindow(reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHwnd());
-		SetFocus(reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHwnd());
+		ShowWindow(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHwnd(), true);
+		SetForegroundWindow(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHwnd());
+		SetFocus(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHwnd());
 	}
 
 	m_ObjectStatus = ObjectStatus::Activated;

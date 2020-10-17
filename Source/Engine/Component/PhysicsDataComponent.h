@@ -4,20 +4,23 @@
 #include "TransformComponent.h"
 #include "VisibleComponent.h"
 
-class PhysicsDataComponent : public InnoComponent
+namespace Inno
 {
-public:
-	static uint32_t GetTypeID() { return 5; };
-	static char* GetTypeName() { return "PhysicsDataComponent"; };
+	class PhysicsDataComponent : public InnoComponent
+	{
+	public:
+		static uint32_t GetTypeID() { return 5; };
+		static char* GetTypeName() { return "PhysicsDataComponent"; };
 
-	AABB m_AABBLS = {};
-	AABB m_AABBWS = {};
-	Sphere m_SphereLS = {};
-	Sphere m_SphereWS = {};
-	bool m_IsIntermediate = false;
-	MeshUsage m_MeshUsage;
-	TransformComponent* m_TransformComponent;
-	VisibleComponent* m_VisibleComponent;
-	MeshMaterialPair* m_MeshMaterialPair;
-	void* m_Proxy;
-};
+		AABB m_AABBLS = {};
+		AABB m_AABBWS = {};
+		Sphere m_SphereLS = {};
+		Sphere m_SphereWS = {};
+		bool m_IsIntermediate = false;
+		MeshUsage m_MeshUsage;
+		TransformComponent* m_TransformComponent;
+		VisibleComponent* m_VisibleComponent;
+		MeshMaterialPair* m_MeshMaterialPair;
+		void* m_Proxy;
+	};
+}

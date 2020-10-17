@@ -3,9 +3,10 @@
 #include "../Core/InnoLogger.h"
 #include "../Core/InnoRandomizer.h"
 
-#include "../Interface/IModuleManager.h"
+#include "../Interface/IEngine.h"
 
-extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern IEngine* g_Engine;
 
 namespace EntityManagerNS
 {
@@ -39,7 +40,7 @@ bool InnoEntityManager::Setup(ISystemConfig* systemConfig)
 				}), m_Entities.end());
 	};
 
-	g_pModuleManager->getSceneSystem()->addSceneLoadingStartCallback(&f_SceneLoadingStartCallback);
+	g_Engine->getSceneSystem()->addSceneLoadingStartCallback(&f_SceneLoadingStartCallback);
 
 	return true;
 }

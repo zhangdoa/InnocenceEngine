@@ -2,27 +2,30 @@
 #include "../../Common/InnoMathHelper.h"
 #include "../../Component/PhysicsDataComponent.h"
 
-class PhysXWrapper
+namespace Inno
 {
-public:
-	~PhysXWrapper() {};
-
-	static PhysXWrapper& get()
+	class PhysXWrapper
 	{
-		static PhysXWrapper instance;
-		return instance;
-	}
-	bool Setup();
-	bool Initialize();
-	bool Update();
-	bool Terminate();
+	public:
+		~PhysXWrapper() {};
 
-	bool createPxSphere(PhysicsDataComponent* rhs, float radius, bool isDynamic);
-	bool createPxBox(PhysicsDataComponent* rhs, bool isDynamic);
-	bool createPxMesh(PhysicsDataComponent* rhs, bool isDynamic, bool isConvex);
+		static PhysXWrapper& get()
+		{
+			static PhysXWrapper instance;
+			return instance;
+		}
+		bool Setup();
+		bool Initialize();
+		bool Update();
+		bool Terminate();
 
-	bool addForce(PhysicsDataComponent* rhs, Vec4 force);
+		bool createPxSphere(PhysicsDataComponent* rhs, float radius, bool isDynamic);
+		bool createPxBox(PhysicsDataComponent* rhs, bool isDynamic);
+		bool createPxMesh(PhysicsDataComponent* rhs, bool isDynamic, bool isConvex);
 
-private:
-	PhysXWrapper() {};
-};
+		bool addForce(PhysicsDataComponent* rhs, Vec4 force);
+
+	private:
+		PhysXWrapper() {};
+	};
+}

@@ -5,9 +5,10 @@
 #include "GIDataLoader.h"
 #include "OpaquePass.h"
 
-#include "../../Engine/Interface/IModuleManager.h"
+#include "../../Engine/Interface/IEngine.h"
 
-INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern INNO_ENGINE_API IEngine* g_Engine;
 
 using namespace DefaultGPUBuffers;
 
@@ -44,29 +45,29 @@ namespace DebugPass
 
 bool DebugPass::Setup()
 {
-	m_debugSphereMeshGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("DebugSphereMeshGPUBuffer/");
+	m_debugSphereMeshGBDC = g_Engine->getRenderingServer()->AddGPUBufferDataComponent("DebugSphereMeshGPUBuffer/");
 	m_debugSphereMeshGBDC->m_ElementCount = m_maxDebugMeshes;
 	m_debugSphereMeshGBDC->m_ElementSize = sizeof(DebugPerObjectConstantBuffer);
 	m_debugSphereMeshGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 
-	m_debugCubeMeshGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("DebugCubeMeshGPUBuffer/");
+	m_debugCubeMeshGBDC = g_Engine->getRenderingServer()->AddGPUBufferDataComponent("DebugCubeMeshGPUBuffer/");
 	m_debugCubeMeshGBDC->m_ElementCount = m_maxDebugMeshes;
 	m_debugCubeMeshGBDC->m_ElementSize = sizeof(DebugPerObjectConstantBuffer);
 	m_debugCubeMeshGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 
-	m_debugMaterialGBDC = g_pModuleManager->getRenderingServer()->AddGPUBufferDataComponent("DebugMaterialGPUBuffer/");
+	m_debugMaterialGBDC = g_Engine->getRenderingServer()->AddGPUBufferDataComponent("DebugMaterialGPUBuffer/");
 	m_debugMaterialGBDC->m_ElementCount = m_maxDebugMaterial;
 	m_debugMaterialGBDC->m_ElementSize = sizeof(DebugMaterialConstantBuffer);
 	m_debugMaterialGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 
 	////
-	m_SPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("DebugPass/");
+	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("DebugPass/");
 
 	m_SPC->m_ShaderFilePaths.m_VSPath = "debugPass.vert/";
 	m_SPC->m_ShaderFilePaths.m_PSPath = "debugPass.frag/";
-	m_RPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("DebugPass/");
+	m_RPDC = g_Engine->getRenderingServer()->AddRenderPassDataComponent("DebugPass/");
 
-	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_UseDepthBuffer = true;
@@ -108,11 +109,11 @@ bool DebugPass::Setup()
 
 bool DebugPass::Initialize()
 {
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_debugSphereMeshGBDC);
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_debugCubeMeshGBDC);
-	g_pModuleManager->getRenderingServer()->InitializeGPUBufferDataComponent(m_debugMaterialGBDC);
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
+	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_debugSphereMeshGBDC);
+	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_debugCubeMeshGBDC);
+	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_debugMaterialGBDC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
 
 	return true;
 }
@@ -176,13 +177,13 @@ bool DebugPass::AddBVHNode(BVHNode* node)
 
 bool DebugPass::Render()
 {
-	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
+	auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
 
 	if (l_renderingConfig.drawDebugObject)
 	{
 		auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
-		auto l_sphere = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Sphere);
-		auto l_cube = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Cube);
+		auto l_sphere = g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Sphere);
+		auto l_cube = g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Cube);
 
 		m_debugSphereConstantBuffer.clear();
 		m_debugCubeConstantBuffer.clear();
@@ -271,7 +272,7 @@ bool DebugPass::Render()
 		static bool l_drawBVHNodes = false;
 		if (l_drawBVHNodes)
 		{
-			auto l_rootBVHNode = g_pModuleManager->getPhysicsSystem()->getRootBVHNode();
+			auto l_rootBVHNode = g_Engine->getPhysicsSystem()->getRootBVHNode();
 
 			AddBVHNode(l_rootBVHNode);
 		}
@@ -279,18 +280,18 @@ bool DebugPass::Render()
 		static bool l_drawSkeletons = true;
 		if (l_drawSkeletons)
 		{
-			auto l_visibleComponents = g_pModuleManager->getComponentManager()->GetAll<VisibleComponent>();
+			auto l_visibleComponents = g_Engine->getComponentManager()->GetAll<VisibleComponent>();
 
 			for (auto i : l_visibleComponents)
 			{
 				if (i->m_meshUsage == MeshUsage::Skeletal && i->m_model)
 				{
-					auto l_transformCompoent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(i->m_Owner);
+					auto l_transformCompoent = g_Engine->getComponentManager()->Find<TransformComponent>(i->m_Owner);
 					auto l_m = l_transformCompoent->m_globalTransformMatrix.m_transformationMat;
 
 					for (size_t j = 0; j < i->m_model->meshMaterialPairs.m_count; j++)
 					{
-						auto l_pair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(i->m_model->meshMaterialPairs.m_startOffset + j);
+						auto l_pair = g_Engine->getAssetSystem()->getMeshMaterialPair(i->m_model->meshMaterialPairs.m_startOffset + j);
 						auto l_skeleton = l_pair->mesh->m_SDC;
 
 						for (auto k : l_skeleton->m_BoneData)
@@ -317,57 +318,57 @@ bool DebugPass::Render()
 			}
 		}
 
-		g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_debugMaterialGBDC, m_debugMaterialConstantBuffer, 0, m_debugMaterialConstantBuffer.size());
+		g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(m_debugMaterialGBDC, m_debugMaterialConstantBuffer, 0, m_debugMaterialConstantBuffer.size());
 		if (m_debugSphereConstantBuffer.size())
 		{
-			g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_debugSphereMeshGBDC, m_debugSphereConstantBuffer, 0, m_debugSphereConstantBuffer.size());
+			g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(m_debugSphereMeshGBDC, m_debugSphereConstantBuffer, 0, m_debugSphereConstantBuffer.size());
 		}
 		if (m_debugCubeConstantBuffer.size())
 		{
-			g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(m_debugCubeMeshGBDC, m_debugCubeConstantBuffer, 0, m_debugCubeConstantBuffer.size());
+			g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(m_debugCubeMeshGBDC, m_debugCubeConstantBuffer, 0, m_debugCubeConstantBuffer.size());
 		}
 
-		g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
-		g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
-		g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
+		g_Engine->getRenderingServer()->CommandListBegin(m_RPDC, 0);
+		g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
+		g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC);
 
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
+		g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_debugMaterialGBDC->m_ResourceBinder, 2, 1, Accessibility::ReadOnly);
+		g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_debugMaterialGBDC->m_ResourceBinder, 2, 1, Accessibility::ReadOnly);
 
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, m_debugSphereMeshGBDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
+		g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, m_debugSphereMeshGBDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
 		if (m_debugSphereConstantBuffer.size())
 		{
-			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_sphere, m_debugSphereConstantBuffer.size());
+			g_Engine->getRenderingServer()->DispatchDrawCall(m_RPDC, l_sphere, m_debugSphereConstantBuffer.size());
 		}
 
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, m_debugCubeMeshGBDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
+		g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, m_debugCubeMeshGBDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
 		if (m_debugCubeConstantBuffer.size())
 		{
-			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_cube, m_debugCubeConstantBuffer.size());
+			g_Engine->getRenderingServer()->DispatchDrawCall(m_RPDC, l_cube, m_debugCubeConstantBuffer.size());
 		}
 
-		g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
+		g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
 	}
 	else
 	{
-		g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
-		g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
-		g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
+		g_Engine->getRenderingServer()->CommandListBegin(m_RPDC, 0);
+		g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
+		g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC);
 
-		g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
+		g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
 	}
 
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC);
 
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);
+	g_Engine->getRenderingServer()->WaitForFrame(m_RPDC);
 
 	return true;
 }
 
 bool DebugPass::Terminate()
 {
-	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
 
 	return true;
 }

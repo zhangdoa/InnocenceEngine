@@ -1,10 +1,14 @@
 #include "TimeSystem.h"
 #include "../Core/InnoTimer.h"
 
-namespace InnoTimeSystemNS
+using namespace Inno;
+namespace Inno
 {
-	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
-};
+	namespace InnoTimeSystemNS
+	{
+		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+	}
+}
 
 bool InnoTimeSystem::Setup(ISystemConfig* systemConfig)
 {

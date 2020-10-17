@@ -1,22 +1,25 @@
 #pragma once
 #include "../../Common/InnoType.h"
 
-class ImGuiWrapper
+namespace Inno
 {
-public:
-	~ImGuiWrapper() {};
-
-	static ImGuiWrapper& Get()
+	class ImGuiWrapper
 	{
-		static ImGuiWrapper instance;
-		return instance;
-	}
-	bool Setup();
-	bool Initialize();
-	bool Update();
-	bool Render();
-	bool Terminate();
+	public:
+		~ImGuiWrapper() {};
 
-private:
-	ImGuiWrapper() {};
-};
+		static ImGuiWrapper& Get()
+		{
+			static ImGuiWrapper instance;
+			return instance;
+		}
+		bool Setup();
+		bool Initialize();
+		bool Update();
+		bool Render();
+		bool Terminate();
+
+	private:
+		ImGuiWrapper() {};
+	};
+}

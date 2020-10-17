@@ -2,72 +2,76 @@
 #include <string>
 #include "InnoTimer.h"
 
-namespace InnoLoggerNS
+using namespace Inno;
+namespace Inno
 {
-	inline std::ostream& GetTimestamp(std::ostream &s)
+	namespace InnoLoggerNS
 	{
-		auto l_timeData = InnoTimer::GetCurrentTime(8);
-		s
-			<< "["
-			<< l_timeData.Year
-			<< "-"
-			<< l_timeData.Month
-			<< "-"
-			<< l_timeData.Day
-			<< "-"
-			<< l_timeData.Hour
-			<< "-"
-			<< l_timeData.Minute
-			<< "-"
-			<< l_timeData.Second
-			<< "-"
-			<< l_timeData.Millisecond
-			<< "]";
-		return s;
-	}
+		inline std::ostream& GetTimestamp(std::ostream& s)
+		{
+			auto l_timeData = InnoTimer::GetCurrentTime(8);
+			s
+				<< "["
+				<< l_timeData.Year
+				<< "-"
+				<< l_timeData.Month
+				<< "-"
+				<< l_timeData.Day
+				<< "-"
+				<< l_timeData.Hour
+				<< "-"
+				<< l_timeData.Minute
+				<< "-"
+				<< l_timeData.Second
+				<< "-"
+				<< l_timeData.Millisecond
+				<< "]";
+			return s;
+		}
 
 #if defined INNO_PLATFORM_WIN
 #include <windows.h>
-	inline std::ostream& redColor(std::ostream &s)
-	{
-		HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-		SetConsoleTextAttribute(hStdout,
-			FOREGROUND_RED | FOREGROUND_INTENSITY);
-		return s;
-	}
-	inline std::ostream& greenColor(std::ostream &s)
-	{
-		HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-		SetConsoleTextAttribute(hStdout,
-			FOREGROUND_GREEN | FOREGROUND_INTENSITY);
-		return s;
-	}
-	inline std::ostream& blueColor(std::ostream &s)
-	{
-		HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-		SetConsoleTextAttribute(hStdout,
-			FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-		return s;
-	}
-	inline std::ostream& yellowColor(std::ostream &s)
-	{
-		HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-		SetConsoleTextAttribute(hStdout,
-			FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY);
-		return s;
-	}
-	inline std::ostream& whiteColor(std::ostream &s)
-	{
-		HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-		SetConsoleTextAttribute(hStdout,
-			FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
-		return s;
-	}
+		inline std::ostream& redColor(std::ostream& s)
+		{
+			HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+			SetConsoleTextAttribute(hStdout,
+				FOREGROUND_RED | FOREGROUND_INTENSITY);
+			return s;
+		}
+		inline std::ostream& greenColor(std::ostream& s)
+		{
+			HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+			SetConsoleTextAttribute(hStdout,
+				FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+			return s;
+		}
+		inline std::ostream& blueColor(std::ostream& s)
+		{
+			HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+			SetConsoleTextAttribute(hStdout,
+				FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+			return s;
+		}
+		inline std::ostream& yellowColor(std::ostream& s)
+		{
+			HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+			SetConsoleTextAttribute(hStdout,
+				FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY);
+			return s;
+		}
+		inline std::ostream& whiteColor(std::ostream& s)
+		{
+			HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+			SetConsoleTextAttribute(hStdout,
+				FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+			return s;
+		}
 #endif
 
-	std::ofstream m_LogFile;
-	std::mutex m_Mutex;
-	LogLevel m_LogLevel;
+		std::ofstream m_LogFile;
+		std::mutex m_Mutex;
+		LogLevel m_LogLevel;
+	}
 }
 
 void InnoLogger::SetDefaultLogLevel(LogLevel logLevel)
@@ -109,7 +113,7 @@ void InnoLogger::LogEndOfLine()
 	InnoLoggerNS::m_Mutex.unlock();
 }
 
-void InnoLogger::LogImpl(const void * logMessage)
+void InnoLogger::LogImpl(const void* logMessage)
 {
 	std::cout << logMessage;
 	InnoLoggerNS::m_LogFile << logMessage;

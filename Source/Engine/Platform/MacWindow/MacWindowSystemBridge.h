@@ -3,18 +3,20 @@
 
 #include "../../Common/InnoType.h"
 
-class MacWindowSystemBridge
+namespace Inno
 {
-public:
-	MacWindowSystemBridge() {};
-	virtual ~MacWindowSystemBridge() {};
+	class MacWindowSystemBridge
+	{
+	public:
+		MacWindowSystemBridge() {};
+		virtual ~MacWindowSystemBridge() {};
 
-	virtual bool Setup(uint32_t sizeX, uint32_t sizeY) = 0;
-	virtual bool Initialize() = 0;
-	virtual bool Update() = 0;
-	virtual bool Terminate() = 0;
+		virtual bool Setup(uint32_t sizeX, uint32_t sizeY) = 0;
+		virtual bool Initialize() = 0;
+		virtual bool Update() = 0;
+		virtual bool Terminate() = 0;
 
-	virtual ObjectStatus GetStatus() = 0;
-};
-
+		virtual ObjectStatus GetStatus() = 0;
+	};
+}
 #endif /* MacWindowSystemBridge_h */

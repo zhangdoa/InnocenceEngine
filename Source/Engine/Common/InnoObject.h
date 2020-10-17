@@ -1,39 +1,42 @@
 #pragma once
 #include "InnoType.h"
 
-class InnoObject
+namespace Inno
 {
-public:
-	InnoObject() = default;
-	~InnoObject() = default;
+	class InnoObject
+	{
+	public:
+		InnoObject() = default;
+		~InnoObject() = default;
 
-	uint64_t m_UUID = 0;
-	bool m_Serializable = false;
-	ObjectLifespan m_ObjectLifespan = ObjectLifespan::Invalid;
-	ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
+		uint64_t m_UUID = 0;
+		bool m_Serializable = false;
+		ObjectLifespan m_ObjectLifespan = ObjectLifespan::Invalid;
+		ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
 
 #ifdef _DEBUG
-	ObjectName m_InstanceName;
+		ObjectName m_InstanceName;
 #endif
-};
+	};
 
-class InnoEntity : public InnoObject
-{
-public:
-	InnoEntity() = default;
-	~InnoEntity() = default;
+	class InnoEntity : public InnoObject
+	{
+	public:
+		InnoEntity() = default;
+		~InnoEntity() = default;
 
-	static uint32_t GetTypeID() { return 0; }
-	static char* GetTypeName() { return "InnoEntity"; }
+		static uint32_t GetTypeID() { return 0; }
+		static char* GetTypeName() { return "InnoEntity"; }
 
-	std::bitset<MaxComponentType> m_ComponentsMask;
-};
+		std::bitset<MaxComponentType> m_ComponentsMask;
+	};
 
-class InnoComponent : public InnoObject
-{
-public:
-	InnoComponent() = default;
-	~InnoComponent() = default;
+	class InnoComponent : public InnoObject
+	{
+	public:
+		InnoComponent() = default;
+		~InnoComponent() = default;
 
-	InnoEntity* m_Owner = 0;
-};
+		InnoEntity* m_Owner = 0;
+	};
+}

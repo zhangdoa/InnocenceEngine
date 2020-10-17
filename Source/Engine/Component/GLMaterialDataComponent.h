@@ -2,7 +2,10 @@
 #include "MaterialDataComponent.h"
 #include "../RenderingServer/GL/GLHeaders.h"
 
-class GLMaterialDataComponent : public MaterialDataComponent
+namespace Inno
 {
-public:
-};
+	class GLMaterialDataComponent : public MaterialDataComponent
+	{
+	public:
+	};
+}

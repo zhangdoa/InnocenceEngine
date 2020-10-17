@@ -1,16 +1,19 @@
 #pragma once
 #include "../Interface/ISystem.h"
 
-class InnoLightSystem : public ISystem
+namespace Inno
 {
-public:
-	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoLightSystem);
+	class InnoLightSystem : public ISystem
+	{
+	public:
+		INNO_CLASS_CONCRETE_NON_COPYABLE(InnoLightSystem);
 
-	bool Setup(ISystemConfig* systemConfig = nullptr) override;
-	bool Initialize() override;
-	bool Update() override;
-	bool OnFrameEnd() override;
-	bool Terminate() override;
+		bool Setup(ISystemConfig* systemConfig = nullptr) override;
+		bool Initialize() override;
+		bool Update() override;
+		bool OnFrameEnd() override;
+		bool Terminate() override;
 
-	ObjectStatus GetStatus() override;
-};
+		ObjectStatus GetStatus() override;
+	};
+}

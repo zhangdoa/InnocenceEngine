@@ -3,8 +3,11 @@
 #include "TextureDataComponent.h"
 #include "MTTextureDataComponent.h"
 
-class MTRenderPassDataComponent
+namespace Inno
 {
-public:
-	std::vector<MTTextureDataComponent*> m_MTTDCs;
-};
+	class MTRenderPassDataComponent
+	{
+	public:
+		std::vector<MTTextureDataComponent*> m_MTTDCs;
+	};
+}

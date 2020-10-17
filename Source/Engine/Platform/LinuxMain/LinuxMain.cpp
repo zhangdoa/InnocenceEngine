@@ -1,17 +1,17 @@
-#include "../ApplicationEntry/InnoApplicationEntry.h"
+#include "../ApplicationEntry/ApplicationEntry.h"
 
-int32_t main(int32_t argc, char *argv[])
+int32_t main(int32_t argc, char* argv[])
 {
-	if (!InnoApplicationEntry::Setup(nullptr, nullptr, argv[1]))
+	if (!ApplicationEntry::Setup(nullptr, nullptr, argv[1]))
 	{
 		return 0;
 	}
-	if (!InnoApplicationEntry::Initialize())
+	if (!ApplicationEntry::Initialize())
 	{
 		return 0;
 	}
-	InnoApplicationEntry::Run();
-	InnoApplicationEntry::Terminate();
+	ApplicationEntry::Run();
+	ApplicationEntry::Terminate();
 
 	return 0;
 }

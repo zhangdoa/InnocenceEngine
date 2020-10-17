@@ -2,9 +2,13 @@
 #include "../Core/InnoMemory.h"
 #include "../Core/InnoLogger.h"
 
-namespace InnoMemorySystemNS
+using namespace Inno;
+namespace Inno
 {
-	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+	namespace InnoMemorySystemNS
+	{
+		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+	}
 }
 
 bool InnoMemorySystem::Setup(ISystemConfig* systemConfig)

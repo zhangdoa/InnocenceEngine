@@ -2,15 +2,19 @@
 #include "../../Core/InnoLogger.h"
 #include "DX12RenderingServer.h"
 
-#include "../../Interface/IModuleManager.h"
+#include "../../Interface/IEngine.h"
 
-extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern IEngine* g_Engine;
 
-namespace DX12Helper
+namespace Inno
 {
-	UINT GetMipLevels(TextureDesc textureDesc);
+	namespace DX12Helper
+	{
+		UINT GetMipLevels(TextureDesc textureDesc);
 
-	const wchar_t* m_shaderRelativePath = L"..//Res//Shaders//HLSL//";
+		const wchar_t* m_shaderRelativePath = L"..//Res//Shaders//HLSL//";
+	}
 }
 
 ComPtr<ID3D12GraphicsCommandList> DX12Helper::BeginSingleTimeCommands(ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandAllocator> globalCommandAllocator)
@@ -1589,7 +1593,7 @@ bool DX12Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderStage shaderStage, const
 #endif
 
 	ComPtr<ID3D10Blob> l_errorMessage = 0;
-	auto l_workingDir = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	auto l_workingDir = g_Engine->getFileSystem()->getWorkingDirectory();
 	auto l_workingDirW = std::wstring(l_workingDir.begin(), l_workingDir.end());
 	auto l_shadeFilePathW = std::wstring(shaderFilePath.begin(), shaderFilePath.end());
 	auto l_HResult = D3DCompileFromFile((l_workingDirW + m_shaderRelativePath + l_shadeFilePathW).c_str(), NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", l_shaderTypeName, l_compileFlags, 0, rhs, &l_errorMessage);

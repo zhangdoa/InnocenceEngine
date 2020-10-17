@@ -3,9 +3,10 @@
 #include "../Core/InnoRandomizer.h"
 #include "../Core/InnoLogger.h"
 
-#include "../Interface/IModuleManager.h"
+#include "../Interface/IEngine.h"
 
-extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern IEngine* g_Engine;
 
 namespace TransformSystemNS
 {
@@ -17,7 +18,7 @@ namespace TransformSystemNS
 
 	void SortTransformComponentsVector()
 	{
-		auto l_component = g_pModuleManager->getComponentManager()->GetAll<TransformComponent>();
+		auto l_component = g_Engine->getComponentManager()->GetAll<TransformComponent>();
 
 		//construct the hierarchy tree
 		for (auto i : l_component)
@@ -37,11 +38,11 @@ namespace TransformSystemNS
 
 	void SimulateTransformComponents()
 	{
-		auto l_tickTime = g_pModuleManager->getTickTime();
+		auto l_tickTime = g_Engine->getTickTime();
 		auto l_ratio = (1.0f - l_tickTime / 100.0f);
 		l_ratio = InnoMath::clamp(l_ratio, 0.01f, 0.99f);
 
-		auto l_component = g_pModuleManager->getComponentManager()->GetAll<TransformComponent>();
+		auto l_component = g_Engine->getComponentManager()->GetAll<TransformComponent>();
 
 		std::for_each(l_component.begin(), l_component.end(), [&](TransformComponent* val)
 			{
@@ -73,12 +74,12 @@ using namespace TransformSystemNS;
 
 bool InnoTransformSystem::Setup(ISystemConfig* systemConfig)
 {
-	g_pModuleManager->getComponentManager()->RegisterType<TransformComponent>(m_MaxComponentCount);
+	g_Engine->getComponentManager()->RegisterType<TransformComponent>(m_MaxComponentCount);
 
 	f_SceneLoadingFinishCallback = [&]() {
 		SortTransformComponentsVector();
 
-		auto l_component = g_pModuleManager->getComponentManager()->GetAll<TransformComponent>();
+		auto l_component = g_Engine->getComponentManager()->GetAll<TransformComponent>();
 
 		for (auto i : l_component)
 		{
@@ -92,11 +93,11 @@ bool InnoTransformSystem::Setup(ISystemConfig* systemConfig)
 		}
 	};
 
-	g_pModuleManager->getSceneSystem()->addSceneLoadingFinishCallback(&f_SceneLoadingFinishCallback);
+	g_Engine->getSceneSystem()->addSceneLoadingFinishCallback(&f_SceneLoadingFinishCallback);
 
-	m_RootTransformEntity = g_pModuleManager->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, "RootTransform/");
+	m_RootTransformEntity = g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, "RootTransform/");
 
-	m_RootTransformComponent = g_pModuleManager->getComponentManager()->Spawn<TransformComponent>(m_RootTransformEntity, false, ObjectLifespan::Persistence);
+	m_RootTransformComponent = g_Engine->getComponentManager()->Spawn<TransformComponent>(m_RootTransformEntity, false, ObjectLifespan::Persistence);
 
 	m_RootTransformComponent->m_localTransformVector_target = m_RootTransformComponent->m_localTransformVector;
 	m_RootTransformComponent->m_globalTransformVector = m_RootTransformComponent->m_localTransformVector;
@@ -112,7 +113,7 @@ bool InnoTransformSystem::Initialize()
 
 bool InnoTransformSystem::Update()
 {
-	auto l_SimulateTask = g_pModuleManager->getTaskSystem()->submit("TransformComponentsSimulateTask", 0, nullptr, [&]()
+	auto l_SimulateTask = g_Engine->getTaskSystem()->submit("TransformComponentsSimulateTask", 0, nullptr, [&]()
 		{
 			SimulateTransformComponents();
 		});
@@ -122,7 +123,7 @@ bool InnoTransformSystem::Update()
 
 bool InnoTransformSystem::OnFrameEnd()
 {
-	auto l_component = g_pModuleManager->getComponentManager()->GetAll<TransformComponent>();
+	auto l_component = g_Engine->getComponentManager()->GetAll<TransformComponent>();
 
 	std::for_each(l_component.begin(), l_component.end(), [&](TransformComponent* val)
 		{

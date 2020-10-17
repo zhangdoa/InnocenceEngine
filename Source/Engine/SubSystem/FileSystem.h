@@ -1,22 +1,25 @@
 #pragma once
 #include "../Interface/IFileSystem.h"
 
-class InnoFileSystem : public IFileSystem
+namespace Inno
 {
-public:
-	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoFileSystem);
+	class InnoFileSystem : public IFileSystem
+	{
+	public:
+		INNO_CLASS_CONCRETE_NON_COPYABLE(InnoFileSystem);
 
-	bool Setup(ISystemConfig* systemConfig) override;
-	bool Initialize() override;
-	bool Update() override;
-	bool Terminate() override;
+		bool Setup(ISystemConfig* systemConfig) override;
+		bool Initialize() override;
+		bool Update() override;
+		bool Terminate() override;
 
-	ObjectStatus GetStatus() override;
+		ObjectStatus GetStatus() override;
 
-	std::string getWorkingDirectory() override;
+		std::string getWorkingDirectory() override;
 
-	std::vector<char> loadFile(const char* filePath, IOMode openMode) override;
-	bool saveFile(const char* filePath, const std::vector<char>& content, IOMode saveMode) override;
+		std::vector<char> loadFile(const char* filePath, IOMode openMode) override;
+		bool saveFile(const char* filePath, const std::vector<char>& content, IOMode saveMode) override;
 
-	bool addCPPClassFiles(const CPPClassDesc& desc) override;
-};
+		bool addCPPClassFiles(const CPPClassDesc& desc) override;
+	};
+}

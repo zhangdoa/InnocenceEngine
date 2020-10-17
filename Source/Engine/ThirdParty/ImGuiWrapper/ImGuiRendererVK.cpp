@@ -1,7 +1,8 @@
 #include "ImGuiRendererVK.h"
 
-#include "../../Interface/IModuleManager.h"
-extern IModuleManager* g_pModuleManager;
+#include "../../Interface/IEngine.h"
+using namespace Inno;
+extern IEngine* g_Engine;
 
 namespace ImGuiRendererVKNS
 {
@@ -11,14 +12,14 @@ namespace ImGuiRendererVKNS
 bool ImGuiRendererVK::Setup(ISystemConfig* systemConfig)
 {
 	ImGuiRendererVKNS::m_ObjectStatus = ObjectStatus::Activated;
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererVK Setup finished.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererVK Setup finished.");
 
 	return true;
 }
 
 bool ImGuiRendererVK::Initialize()
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererVK has been initialized.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererVK has been initialized.");
 
 	return true;
 }
@@ -36,7 +37,7 @@ bool ImGuiRendererVK::Render()
 bool ImGuiRendererVK::Terminate()
 {
 	ImGuiRendererVKNS::m_ObjectStatus = ObjectStatus::Terminated;
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererVK has been terminated.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiRendererVK has been terminated.");
 
 	return true;
 }

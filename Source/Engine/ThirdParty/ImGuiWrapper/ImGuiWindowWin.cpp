@@ -4,8 +4,9 @@
 
 #include "../ImGui/imgui_impl_win32.cpp"
 
-#include "../../Interface/IModuleManager.h"
-extern IModuleManager* g_pModuleManager;
+#include "../../Interface/IEngine.h"
+using namespace Inno;
+extern IEngine* g_Engine;
 
 namespace ImGuiWindowWinNS
 {
@@ -23,22 +24,22 @@ bool ImGuiWindowWin::Setup(ISystemConfig* systemConfig)
 	ImGuiWindowWinNS::m_windowEventCallbackFunctor = [](void* hWnd, uint32_t msg, uint64_t wParam, int64_t lParam) {
 		ImGui_ImplWin32_WndProcHandler((HWND)hWnd, msg, wParam, lParam);
 	};
-	g_pModuleManager->getWindowSystem()->addEventCallback(&ImGuiWindowWinNS::m_windowEventCallbackFunctor);
+	g_Engine->getWindowSystem()->addEventCallback(&ImGuiWindowWinNS::m_windowEventCallbackFunctor);
 
 	m_ObjectStatus = ObjectStatus::Created;
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowWin Setup finished.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowWin Setup finished.");
 
 	return true;
 }
 
 bool ImGuiWindowWin::Initialize()
 {
-	ImGui_ImplWin32_Init(reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHwnd());
+	ImGui_ImplWin32_Init(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHwnd());
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowWin has been initialized.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowWin has been initialized.");
 
 	return true;
 }
@@ -55,7 +56,7 @@ bool ImGuiWindowWin::Terminate()
 
 	m_ObjectStatus = ObjectStatus::Terminated;
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowWin has been terminated.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowWin has been terminated.");
 
 	return true;
 }

@@ -1,7 +1,8 @@
 #include "ImGuiWindowLinux.h"
 
-#include "../ModuleManager/IModuleManager.h"
-extern IModuleManager* g_pModuleManager;
+#include "../ModuleManager/IEngine.h"
+using namespace Inno;
+extern IEngine* g_Engine;
 
 namespace ImGuiWindowLinuxNS
 {
@@ -9,14 +10,14 @@ namespace ImGuiWindowLinuxNS
 
 bool ImGuiWindowLinux::Setup(ISystemConfig* systemConfig)
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowLinux Setup finished.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowLinux Setup finished.");
 
 	return true;
 }
 
 bool ImGuiWindowLinux::Initialize()
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowLinux has been initialized.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowLinux has been initialized.");
 
 	return true;
 }
@@ -28,7 +29,7 @@ bool ImGuiWindowLinux::newFrame()
 
 bool ImGuiWindowLinux::Terminate()
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowLinux has been terminated.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "ImGuiWindowLinux has been terminated.");
 
 	return true;
 }

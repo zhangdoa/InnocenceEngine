@@ -9,28 +9,32 @@
 #include "assimp/postprocess.h"
 #include "../../Core/InnoLogger.h"
 
-#include "../../Interface/IModuleManager.h"
-extern IModuleManager* g_pModuleManager;
+#include "../../Interface/IEngine.h"
+using namespace Inno;
+extern IEngine* g_Engine;
 
 #include "../../Core/IOService.h"
 #include "../JSONWrapper/JSONWrapper.h"
 
-namespace AssimpWrapper
+namespace Inno
 {
-	void to_json(json& j, const aiMatrix4x4& m);
-	void from_json(const json& j, aiMatrix4x4& m);
+	namespace AssimpWrapper
+	{
+		void to_json(json& j, const aiMatrix4x4& m);
+		void from_json(const json& j, aiMatrix4x4& m);
 
-	void processAssimpScene(json& j, const aiScene* scene, const char* exportName);
-	void processAssimpNode(const std::function<void(json&, const aiNode*, const aiScene*, const char*)>& nodeFunctor, json& j, const aiNode* node, const aiScene* scene, const char* exportName);
-	void processAssimpMesh(json& j, const aiScene* scene, const char* exportName, uint32_t meshIndex);
-	size_t processMeshData(const aiMesh* mesh, const char* exportFileRelativePath);
-	void processAssimpBone(json& j, const aiMesh* mesh);
-	void processAssimpMaterial(json& j, const aiMaterial* material);
-	void processTextureData(json& j, const char* fileName, TextureSampler sampler, TextureUsage usage, bool IsSRGB, uint32_t textureSlotIndex);
-	void processAssimpAnimation(json& j, const aiScene* scene, const aiAnimation* animation, const std::unordered_map<std::string, uint32_t>& boneNameIDMap, const std::unordered_map<std::string, Mat4>& boneNameOffsetMap, const char* exportFileRelativePath);
-	void mergeTransformation(json& j, const aiNode* node);
-	void decomposeTransformation(json& j, const aiMatrix4x4& m);
-};
+		void processAssimpScene(json& j, const aiScene* scene, const char* exportName);
+		void processAssimpNode(const std::function<void(json&, const aiNode*, const aiScene*, const char*)>& nodeFunctor, json& j, const aiNode* node, const aiScene* scene, const char* exportName);
+		void processAssimpMesh(json& j, const aiScene* scene, const char* exportName, uint32_t meshIndex);
+		size_t processMeshData(const aiMesh* mesh, const char* exportFileRelativePath);
+		void processAssimpBone(json& j, const aiMesh* mesh);
+		void processAssimpMaterial(json& j, const aiMaterial* material);
+		void processTextureData(json& j, const char* fileName, TextureSampler sampler, TextureUsage usage, bool IsSRGB, uint32_t textureSlotIndex);
+		void processAssimpAnimation(json& j, const aiScene* scene, const aiAnimation* animation, const std::unordered_map<std::string, uint32_t>& boneNameIDMap, const std::unordered_map<std::string, Mat4>& boneNameOffsetMap, const char* exportFileRelativePath);
+		void mergeTransformation(json& j, const aiNode* node);
+		void decomposeTransformation(json& j, const aiMatrix4x4& m);
+	};
+}
 
 void AssimpWrapper::to_json(json& j, const aiMatrix4x4& m)
 {
@@ -129,7 +133,7 @@ bool AssimpWrapper::convertModel(const char* fileName, const char* exportPath)
 
 void AssimpWrapper::processAssimpScene(json& j, const aiScene* scene, const char* exportName)
 {
-	auto l_timeData = g_pModuleManager->getTimeSystem()->getCurrentTime();
+	auto l_timeData = g_Engine->getTimeSystem()->getCurrentTime();
 	auto l_timeDataStr =
 		"["
 		+ std::to_string(l_timeData.Year)

@@ -1,6 +1,7 @@
 #include "../../Engine/Common/InnoType.h"
 #include "../../Engine/Interface/IRenderingClient.h"
 
+using namespace Inno;
 namespace InnoBaker
 {
 	void Setup();

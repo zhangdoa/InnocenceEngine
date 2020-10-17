@@ -1,6 +1,7 @@
 #pragma once
 #include "../../Engine/RenderingServer/IRenderingServer.h"
 
+using namespace Inno;
 namespace MotionBlurPass
 {
 	bool Setup();

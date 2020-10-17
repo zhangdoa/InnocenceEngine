@@ -1,18 +1,22 @@
 #include "GLHelper.h"
 #include "../../Core/InnoLogger.h"
 
-#include "../../Interface/IModuleManager.h"
+#include "../../Interface/IEngine.h"
 
-extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern IEngine* g_Engine;
 
 //#define INNO_COMPILE_GLSL_ONTHEFLY
-namespace GLHelper
+namespace Inno
 {
+	namespace GLHelper
+	{
 #ifdef INNO_COMPILE_GLSL_ONTHEFLY
-	const char* m_shaderRelativePath = "..//Res//Shaders//GLSL//";
+		const char* m_shaderRelativePath = "..//Res//Shaders//GLSL//";
 #else
-	const char* m_shaderRelativePath = "..//Res//Shaders//SPIRV//";
+		const char* m_shaderRelativePath = "..//Res//Shaders//SPIRV//";
 #endif
+	}
 }
 
 GLTextureDesc GLHelper::GetGLTextureDesc(TextureDesc textureDesc)
@@ -849,7 +853,7 @@ bool GLHelper::AddShaderObject(GLuint& shaderID, GLuint shaderStage, const Shade
 			return l_glslExtensionPos;
 		};
 
-		auto l_rawContent = g_pModuleManager->getFileSystem()->loadFile((m_shaderRelativePath + path).c_str(), IOMode::Text);
+		auto l_rawContent = g_Engine->getFileSystem()->loadFile((m_shaderRelativePath + path).c_str(), IOMode::Text);
 
 		std::string l_content = &l_rawContent[0];
 		auto l_includePos = f_findIncludeFilePath(l_content);
@@ -887,7 +891,7 @@ bool GLHelper::AddShaderObject(GLuint& shaderID, GLuint shaderStage, const Shade
 #else
 	// load shader
 	auto l_shaderFileName = m_shaderRelativePath + std::string(shaderFilePath.c_str()) + ".spv";
-	auto l_shaderCodeContent = g_pModuleManager->getFileSystem()->loadFile(l_shaderFileName.c_str(), IOMode::Binary);
+	auto l_shaderCodeContent = g_Engine->getFileSystem()->loadFile(l_shaderFileName.c_str(), IOMode::Binary);
 
 	if (l_shaderCodeContent.empty())
 	{

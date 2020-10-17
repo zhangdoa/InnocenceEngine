@@ -6,6 +6,8 @@
 #include "../Engine/Core/InnoTaskScheduler.h"
 #include "../Engine/Template/ObjectPool.h"
 
+using namespace Inno;
+
 void TestIToA(size_t testCaseCount)
 {
 	int64_t int64 = std::numeric_limits<int64_t>::max();
@@ -413,7 +415,7 @@ private:
 	unsigned char* m_CurrentFreeChunk;
 };
 
-void * StackAllocator::Allocate(const std::size_t size)
+void* StackAllocator::Allocate(const std::size_t size)
 {
 	auto l_result = m_CurrentFreeChunk;
 	m_CurrentFreeChunk += size;
@@ -421,7 +423,7 @@ void * StackAllocator::Allocate(const std::size_t size)
 	return l_result;
 }
 
-void StackAllocator::Deallocate(void * const ptr)
+void StackAllocator::Deallocate(void* const ptr)
 {
 	m_CurrentFreeChunk = static_cast<unsigned char*>(ptr);
 }
@@ -440,7 +442,7 @@ void TestStackAllocator(size_t testCaseCount)
 	DispatchTestTasks(testCaseCount, ExampleJob_StackAllocator);
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
 	InnoTaskScheduler::Setup();
 	InnoTaskScheduler::Initialize();

@@ -4,9 +4,10 @@
 #include "../Core/InnoLogger.h"
 #include "../Common/InnoMathHelper.h"
 
-#include "../Interface/IModuleManager.h"
+#include "../Interface/IEngine.h"
 
-extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern IEngine* g_Engine;
 
 namespace LightSystemNS
 {
@@ -46,7 +47,7 @@ void LightSystemNS::splitVerticesToAABBs(const std::vector<Vertex>& frustumsVert
 	}
 	//https://docs.microsoft.com/windows/desktop/DxTechArts/common-techniques-to-improve-shadow-depth-maps
 	//3. assemble split frustum corners
-	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
+	auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
 
 	if (l_renderingConfig.CSMFitToScene)
 	{
@@ -88,7 +89,7 @@ void LightSystemNS::UpdateSingleSMData(LightComponent* rhs)
 	rhs->m_ProjectionMatrices.clear();
 	rhs->m_SplitAABBWS.clear();
 
-	auto l_totalSceneAABB = g_pModuleManager->getPhysicsSystem()->getVisibleSceneAABB();
+	auto l_totalSceneAABB = g_Engine->getPhysicsSystem()->getVisibleSceneAABB();
 
 	auto l_sphereRadius = (l_totalSceneAABB.m_boundMax - l_totalSceneAABB.m_center).length();
 	auto l_boundMax = l_totalSceneAABB.m_center + l_sphereRadius;
@@ -100,7 +101,7 @@ void LightSystemNS::UpdateSingleSMData(LightComponent* rhs)
 
 	rhs->m_SplitAABBWS.emplace_back(l_totalSceneAABB);
 
-	auto l_transformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(rhs->m_Owner);
+	auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(rhs->m_Owner);
 	auto l_r = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
 	auto l_sunDir = InnoMath::getDirection(Direction::Forward, l_transformComponent->m_globalTransformVector.m_rot);
 	auto l_pos = l_sunDir * l_sphereRadius + l_totalSceneAABB.m_center;
@@ -118,18 +119,18 @@ void LightSystemNS::UpdateCSMData(LightComponent* rhs)
 	rhs->m_ProjectionMatrices.clear();
 
 	//1. get frustum vertices in view space
-	auto l_cameraComponent = g_pModuleManager->getComponentManager()->Get<CameraComponent>(0);
+	auto l_cameraComponent = g_Engine->getComponentManager()->Get<CameraComponent>(0);
 	if (l_cameraComponent == nullptr)
 	{
 		return;
 	}
-	auto l_cameraTransformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(l_cameraComponent->m_Owner);
+	auto l_cameraTransformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(l_cameraComponent->m_Owner);
 	if (l_cameraTransformComponent == nullptr)
 	{
 		return;
 	}
 
-	auto l_transformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(rhs->m_Owner);
+	auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(rhs->m_Owner);
 	auto l_r = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
 	auto l_sunDir = InnoMath::getDirection(Direction::Forward, l_transformComponent->m_globalTransformVector.m_rot);
 
@@ -138,7 +139,7 @@ void LightSystemNS::UpdateCSMData(LightComponent* rhs)
 	auto l_frustumVerticesVS = InnoMath::generateFrustumVerticesVS(l_cameraComponent->m_projectionMatrix);
 
 	// extend scene AABB to include the bound sphere, for to eliminate rotation conflict
-	auto l_totalSceneAABB = g_pModuleManager->getPhysicsSystem()->getVisibleSceneAABB();
+	auto l_totalSceneAABB = g_Engine->getPhysicsSystem()->getVisibleSceneAABB();
 	//auto l_sphereRadius = (l_totalSceneAABB.m_boundMax - l_totalSceneAABB.m_center).length();
 	//auto l_boundMax = l_totalSceneAABB.m_center + l_sphereRadius;
 	//l_boundMax.w = 1.0f;
@@ -150,7 +151,7 @@ void LightSystemNS::UpdateCSMData(LightComponent* rhs)
 	auto l_sceneAABBVerticesVS = InnoMath::worldToViewSpace(l_sceneAABBVerticesWS, l_tCamera, l_rCamera);
 	auto l_sceneAABBVS = InnoMath::generateAABB(&l_sceneAABBVerticesVS[0], l_sceneAABBVerticesVS.size());
 
-	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
+	auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
 
 	if (l_renderingConfig.CSMAdjustDrawDistance)
 	{
@@ -295,7 +296,7 @@ using namespace LightSystemNS;
 
 bool InnoLightSystem::Setup(ISystemConfig* systemConfig)
 {
-	g_pModuleManager->getComponentManager()->RegisterType<LightComponent>(m_MaxComponentCount);
+	g_Engine->getComponentManager()->RegisterType<LightComponent>(m_MaxComponentCount);
 
 	m_frustumsCornerPos.reserve(20);
 	m_frustumsCornerVertices.resize(32);
@@ -310,8 +311,8 @@ bool InnoLightSystem::Initialize()
 
 bool InnoLightSystem::Update()
 {
-	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
-	auto l_components = g_pModuleManager->getComponentManager()->GetAll<LightComponent>();
+	auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
+	auto l_components = g_Engine->getComponentManager()->GetAll<LightComponent>();
 	for (auto i : l_components)
 	{
 		UpdateColorTemperature(i);

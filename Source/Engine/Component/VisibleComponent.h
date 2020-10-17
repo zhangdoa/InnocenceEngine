@@ -3,32 +3,35 @@
 #include "MeshDataComponent.h"
 #include "MaterialDataComponent.h"
 
-struct MeshMaterialPair
+namespace Inno
 {
-	MeshDataComponent* mesh;
-	MaterialDataComponent* material;
-};
+	struct MeshMaterialPair
+	{
+		MeshDataComponent* mesh;
+		MaterialDataComponent* material;
+	};
 
-struct Model
-{
-	ArrayRangeInfo meshMaterialPairs;
-};
+	struct Model
+	{
+		ArrayRangeInfo meshMaterialPairs;
+	};
 
-class VisibleComponent : public InnoComponent
-{
-public:
-	static uint32_t GetTypeID() { return 2; };
-	static char* GetTypeName() { return "VisibleComponent"; };
+	class VisibleComponent : public InnoComponent
+	{
+	public:
+		static uint32_t GetTypeID() { return 2; };
+		static char* GetTypeName() { return "VisibleComponent"; };
 
-	MeshPrimitiveTopology m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
-	TextureWrapMethod m_textureWrapMethod = TextureWrapMethod::Repeat;
+		MeshPrimitiveTopology m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
+		TextureWrapMethod m_textureWrapMethod = TextureWrapMethod::Repeat;
 
-	MeshUsage m_meshUsage = MeshUsage::Static;
-	MeshSource m_meshSource = MeshSource::Procedural;
-	ProceduralMeshShape m_proceduralMeshShape = ProceduralMeshShape::Triangle;
+		MeshUsage m_meshUsage = MeshUsage::Static;
+		MeshSource m_meshSource = MeshSource::Procedural;
+		ProceduralMeshShape m_proceduralMeshShape = ProceduralMeshShape::Triangle;
 
-	std::string m_modelFileName;
-	bool m_simulatePhysics = false;
+		std::string m_modelFileName;
+		bool m_simulatePhysics = false;
 
-	Model* m_model;
-};
+		Model* m_model;
+	};
+}

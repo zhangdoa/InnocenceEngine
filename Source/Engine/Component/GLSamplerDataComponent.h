@@ -2,8 +2,11 @@
 #include "SamplerDataComponent.h"
 #include "../RenderingServer/GL/GLHeaders.h"
 
-class GLSamplerDataComponent : public SamplerDataComponent
+namespace Inno
 {
-public:
-	GLuint m_SO = 0;
-};
+	class GLSamplerDataComponent : public SamplerDataComponent
+	{
+	public:
+		GLuint m_SO = 0;
+	};
+}

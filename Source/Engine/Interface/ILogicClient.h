@@ -2,10 +2,13 @@
 #include "ISystem.h"
 #include "../Common/ComponentHeaders.h"
 
-class ILogicClient : public ISystem
+namespace Inno
 {
-public:
-	INNO_CLASS_INTERFACE_NON_COPYABLE(ILogicClient);
+	class ILogicClient : public ISystem
+	{
+	public:
+		INNO_CLASS_INTERFACE_NON_COPYABLE(ILogicClient);
 
-	virtual std::string getApplicationName() = 0;
-};
+		virtual std::string getApplicationName() = 0;
+	};
+}

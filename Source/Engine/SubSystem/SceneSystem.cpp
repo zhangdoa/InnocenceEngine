@@ -1,8 +1,9 @@
 #include "SceneSystem.h"
 #include "../Core/InnoLogger.h"
 
-#include "../Interface/IModuleManager.h"
-extern IModuleManager* g_pModuleManager;
+#include "../Interface/IEngine.h"
+using namespace Inno;
+extern IEngine* g_Engine;
 
 #include "../ThirdParty/AssimpWrapper/AssimpWrapper.h"
 #include "../ThirdParty/JSONWrapper/JSONWrapper.h"
@@ -61,7 +62,7 @@ bool InnoSceneSystemNS::loadSceneAsync(const char* fileName)
 bool InnoSceneSystemNS::loadScene(const char* fileName)
 {
 	m_isLoadingScene = true;
-	g_pModuleManager->getTaskSystem()->waitAllTasksToFinish();
+	g_Engine->getTaskSystem()->waitAllTasksToFinish();
 
 	m_currentScene = fileName;
 
@@ -87,7 +88,7 @@ bool InnoSceneSystemNS::loadScene(const char* fileName)
 		(*i.first)();
 	}
 
-	g_pModuleManager->getAssetSystem()->loadAssetsForComponents();
+	g_Engine->getAssetSystem()->loadAssetsForComponents();
 
 	m_isLoadingScene = false;
 
@@ -217,7 +218,7 @@ bool InnoSceneSystem::addSceneLoadingFinishCallback(std::function<void()>* funct
 template<typename T>
 void AddComponentToSceneHierarchyMap()
 {
-	auto l_Components = g_pModuleManager->getComponentManager()->GetAll<T>();
+	auto l_Components = g_Engine->getComponentManager()->GetAll<T>();
 	for (auto i : l_Components)
 	{
 		auto l_result = m_SceneHierarchyMap.find(i->m_Owner);

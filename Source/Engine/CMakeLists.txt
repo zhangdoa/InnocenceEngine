@@ -6,7 +6,7 @@ add_subdirectory("RenderingServer")
 add_subdirectory("RayTracer")
 
 add_subdirectory("EntityManager")
-add_subdirectory("ModuleManager")
+add_subdirectory("Engine")
 
 if(BUILD_GAME)
 add_subdirectory("Platform")

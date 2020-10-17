@@ -5,9 +5,10 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #include "vulkan/vulkan.h"
 #include "../../../RenderingServer/VK/VKRenderingServer.h"
-#include "../../../Interface/IModuleManager.h"
+#include "../../../Interface/IEngine.h"
 
-extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern IEngine* g_Engine;
 
 namespace WinVKWindowSurfaceNS
 {
@@ -24,26 +25,26 @@ bool WinVKWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 {
 	auto l_windowSurfaceConfig = reinterpret_cast<IWindowSurfaceConfig*>(systemConfig);
 
-	m_initConfig = g_pModuleManager->getInitConfig();
+	m_initConfig = g_Engine->getInitConfig();
 
 	if (m_initConfig.engineMode == EngineMode::Host)
 	{
 		// Setup the windows class with default settings.
-		auto l_windowName = g_pModuleManager->getApplicationName();
+		auto l_windowName = g_Engine->getApplicationName();
 
 		WNDCLASSEX wcex;
 		ZeroMemory(&wcex, sizeof(wcex));
 		wcex.cbSize = sizeof(wcex);
 		wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 		wcex.lpfnWndProc = (WNDPROC)l_windowSurfaceConfig->WindowProc;
-		wcex.hInstance = reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHInstance();
+		wcex.hInstance = reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHInstance();
 		wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-		wcex.lpszClassName = reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getApplicationName();
+		wcex.lpszClassName = reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getApplicationName();
 
 		auto l_windowClass = MAKEINTATOM(RegisterClassEx(&wcex));
 
 		// Determine the resolution of the clients desktop screen.
-		auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+		auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
 		auto l_screenWidth = (int32_t)l_screenResolution.x;
 		auto l_screenHeight = (int32_t)l_screenResolution.y;
 
@@ -53,14 +54,14 @@ bool WinVKWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 
 		// create a new window and context
 		auto l_hwnd = CreateWindow(
-			l_windowClass, reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getApplicationName(), // class name, window name
+			l_windowClass, reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getApplicationName(), // class name, window name
 			WS_OVERLAPPEDWINDOW, // styles
 			l_rect.right, l_rect.bottom, // posx, posy. If x is set to CW_USEDEFAULT y is ignored
 			l_screenWidth, l_screenHeight, // width, height
 			NULL, NULL, // parent window, menu
-			reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHInstance(), NULL); // instance, param
+			reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHInstance(), NULL); // instance, param
 
-		reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->setHwnd(l_hwnd);
+		reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->setHwnd(l_hwnd);
 	}
 
 	m_ObjectStatus = ObjectStatus::Activated;
@@ -74,10 +75,10 @@ bool WinVKWindowSurfaceNS::Initialize()
 	VkWin32SurfaceCreateInfoKHR l_createInfo = {};
 	l_createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
 	l_createInfo.pNext = NULL;
-	l_createInfo.hinstance = reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHInstance();
-	l_createInfo.hwnd = reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHwnd();
+	l_createInfo.hinstance = reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHInstance();
+	l_createInfo.hwnd = reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHwnd();
 
-	auto l_renderingServer = reinterpret_cast<VKRenderingServer*>(g_pModuleManager->getRenderingServer());
+	auto l_renderingServer = reinterpret_cast<VKRenderingServer*>(g_Engine->getRenderingServer());
 	auto l_VkInstance = reinterpret_cast<VkInstance>(l_renderingServer->GetVkInstance());
 	auto l_VkSurface = reinterpret_cast<VkSurfaceKHR*>(l_renderingServer->GetVkSurface());
 
@@ -91,9 +92,9 @@ bool WinVKWindowSurfaceNS::Initialize()
 	if (m_initConfig.engineMode == EngineMode::Host)
 	{
 		// Bring the window up on the screen and set it as main focus.
-		ShowWindow(reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHwnd(), true);
-		SetForegroundWindow(reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHwnd());
-		SetFocus(reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHwnd());
+		ShowWindow(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHwnd(), true);
+		SetForegroundWindow(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHwnd());
+		SetFocus(reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHwnd());
 	}
 
 	InnoLogger::Log(LogLevel::Success, "WinVKWindowSurface has been initialized.");

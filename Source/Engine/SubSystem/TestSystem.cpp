@@ -2,14 +2,18 @@
 #include "../Core/InnoLogger.h"
 #include "../Core/InnoTimer.h"
 
-namespace InnoTestSystemNS
+using namespace Inno;
+namespace Inno
 {
-	bool Setup();
-	bool Initialize();
-	bool Update();
-	bool Terminate();
+	namespace InnoTestSystemNS
+	{
+		bool Setup();
+		bool Initialize();
+		bool Update();
+		bool Terminate();
 
-	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+	}
 }
 
 bool InnoTestSystemNS::Setup()

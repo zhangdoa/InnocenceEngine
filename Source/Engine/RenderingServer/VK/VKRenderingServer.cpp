@@ -7,15 +7,15 @@
 #include "../../Component/VKSamplerDataComponent.h"
 #include "../../Component/VKGPUBufferDataComponent.h"
 
-#include "VKHelper.h"
-
-using namespace VKHelper;
-
 #include "../CommonFunctionDefinationMacro.inl"
 
-#include "../../Interface/IModuleManager.h"
+#include "../../Interface/IEngine.h"
 
-extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern IEngine* g_Engine;
+
+#include "VKHelper.h"
+using namespace VKHelper;
 
 #include "../../Core/InnoLogger.h"
 #include "../../Core/InnoMemory.h"
@@ -162,7 +162,7 @@ bool VKRenderingServerNS::createVkInstance()
 	// set Vulkan app info
 	VkApplicationInfo l_appInfo = {};
 	l_appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	l_appInfo.pApplicationName = g_pModuleManager->getApplicationName().c_str();
+	l_appInfo.pApplicationName = g_Engine->getApplicationName().c_str();
 	l_appInfo.applicationVersion = VK_MAKE_VERSION(0, 0, 9);
 	l_appInfo.pEngineName = "Innocence Engine";
 	l_appInfo.engineVersion = VK_MAKE_VERSION(0, 0, 9);
@@ -394,7 +394,7 @@ bool VKRenderingServerNS::createVertexInputAttributions()
 
 bool VKRenderingServerNS::createMaterialDescriptorPool()
 {
-	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
+	auto l_renderingCapability = g_Engine->getRenderingFrontend()->getRenderingCapability();
 
 	VkDescriptorPoolSize l_descriptorPoolSize = {};
 	l_descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
@@ -565,7 +565,7 @@ VKFence* addFence()
 
 bool VKRenderingServer::Setup(ISystemConfig* systemConfig)
 {
-	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
+	auto l_renderingCapability = g_Engine->getRenderingFrontend()->getRenderingCapability();
 
 	m_MeshDataComponentPool = TObjectPool<VKMeshDataComponent>::Create(l_renderingCapability.maxMeshes);
 	m_TextureDataComponentPool = TObjectPool<VKTextureDataComponent>::Create(l_renderingCapability.maxTextures);
@@ -782,7 +782,7 @@ bool VKRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent* r
 
 	l_rhs->m_writeDescriptorSets.resize(8);
 
-	auto l_defaultMaterial = g_pModuleManager->getRenderingFrontend()->getDefaultMaterialDataComponent();
+	auto l_defaultMaterial = g_Engine->getRenderingFrontend()->getDefaultMaterialDataComponent();
 
 	for (size_t i = 0; i < 8; i++)
 	{

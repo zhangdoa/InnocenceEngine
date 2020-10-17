@@ -2,7 +2,10 @@
 #include "SamplerDataComponent.h"
 #include "vulkan/vulkan.h"
 
-class VKSamplerDataComponent : public SamplerDataComponent
+namespace Inno
 {
-public:
-};
+	class VKSamplerDataComponent : public SamplerDataComponent
+	{
+	public:
+	};
+}

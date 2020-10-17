@@ -1,10 +1,13 @@
 #pragma once
 #include "../Common/STL14.h"
 
-class InnoRandomizer
+namespace Inno
 {
-public:
-	static bool Setup();
+	class InnoRandomizer
+	{
+	public:
+		static bool Setup();
 
-	static uint64_t GenerateUUID();
-};
+		static uint64_t GenerateUUID();
+	};
+}

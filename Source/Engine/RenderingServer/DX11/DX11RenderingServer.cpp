@@ -10,15 +10,15 @@
 
 #include "../../Engine/Platform/WinWindow/WinWindowSystem.h"
 
-#include "DX11Helper.h"
-
-using namespace DX11Helper;
-
 #include "../CommonFunctionDefinationMacro.inl"
 
-#include "../../Interface/IModuleManager.h"
+#include "../../Interface/IEngine.h"
 
-extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern IEngine* g_Engine;
+
+#include "DX11Helper.h"
+using namespace DX11Helper;
 
 #include "../../Core/InnoLogger.h"
 #include "../../Core/InnoMemory.h"
@@ -30,49 +30,52 @@ extern IModuleManager* g_pModuleManager;
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "dxguid.lib")
 
-namespace DX11RenderingServerNS
+namespace Inno
 {
-	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+	namespace DX11RenderingServerNS
+	{
+		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-	TObjectPool<DX11MeshDataComponent>* m_MeshDataComponentPool = 0;
-	TObjectPool<DX11MaterialDataComponent>* m_MaterialDataComponentPool = 0;
-	TObjectPool<DX11TextureDataComponent>* m_TextureDataComponentPool = 0;
-	TObjectPool<DX11RenderPassDataComponent>* m_RenderPassDataComponentPool = 0;
-	TObjectPool<DX11ResourceBinder>* m_ResourceBinderPool = 0;
-	TObjectPool<DX11PipelineStateObject>* m_PSOPool = 0;
-	TObjectPool<DX11ShaderProgramComponent>* m_ShaderProgramComponentPool = 0;
-	TObjectPool<DX11SamplerDataComponent>* m_SamplerDataComponentPool = 0;
-	TObjectPool<DX11GPUBufferDataComponent>* m_GPUBufferDataComponentPool = 0;
+		TObjectPool<DX11MeshDataComponent>* m_MeshDataComponentPool = 0;
+		TObjectPool<DX11MaterialDataComponent>* m_MaterialDataComponentPool = 0;
+		TObjectPool<DX11TextureDataComponent>* m_TextureDataComponentPool = 0;
+		TObjectPool<DX11RenderPassDataComponent>* m_RenderPassDataComponentPool = 0;
+		TObjectPool<DX11ResourceBinder>* m_ResourceBinderPool = 0;
+		TObjectPool<DX11PipelineStateObject>* m_PSOPool = 0;
+		TObjectPool<DX11ShaderProgramComponent>* m_ShaderProgramComponentPool = 0;
+		TObjectPool<DX11SamplerDataComponent>* m_SamplerDataComponentPool = 0;
+		TObjectPool<DX11GPUBufferDataComponent>* m_GPUBufferDataComponentPool = 0;
 
-	std::unordered_set<MeshDataComponent*> m_initializedMeshes;
-	std::unordered_set<TextureDataComponent*> m_initializedTextures;
-	std::unordered_set<MaterialDataComponent*> m_initializedMaterials;
+		std::unordered_set<MeshDataComponent*> m_initializedMeshes;
+		std::unordered_set<TextureDataComponent*> m_initializedTextures;
+		std::unordered_set<MaterialDataComponent*> m_initializedMaterials;
 
-	TVec2<uint32_t> m_refreshRate = TVec2<uint32_t>(0, 1);
+		TVec2<uint32_t> m_refreshRate = TVec2<uint32_t>(0, 1);
 
-	int32_t m_videoCardMemory = 0;
-	char m_videoCardDescription[128];
+		int32_t m_videoCardMemory = 0;
+		char m_videoCardDescription[128];
 
-	IDXGIFactory* m_factory = 0;
+		IDXGIFactory* m_factory = 0;
 
-	DXGI_ADAPTER_DESC m_adapterDesc = {};
-	IDXGIAdapter* m_adapter = 0;
-	IDXGIOutput* m_adapterOutput = 0;
+		DXGI_ADAPTER_DESC m_adapterDesc = {};
+		IDXGIAdapter* m_adapter = 0;
+		IDXGIOutput* m_adapterOutput = 0;
 
-	ID3D11Device5* m_device = 0;
-	ID3D11DeviceContext4* m_deviceContext = 0;
+		ID3D11Device5* m_device = 0;
+		ID3D11DeviceContext4* m_deviceContext = 0;
 
-	DXGI_SWAP_CHAIN_DESC m_swapChainDesc = {};
-	IDXGISwapChain4* m_swapChain = 0;
-	const uint32_t m_swapChainImageCount = 3;
-	std::vector<ID3D11Texture2D*> m_swapChainTextures;
+		DXGI_SWAP_CHAIN_DESC m_swapChainDesc = {};
+		IDXGISwapChain4* m_swapChain = 0;
+		const uint32_t m_swapChainImageCount = 3;
+		std::vector<ID3D11Texture2D*> m_swapChainTextures;
 
-	ID3D10Blob* m_InputLayoutDummyShaderBuffer = 0;
+		ID3D10Blob* m_InputLayoutDummyShaderBuffer = 0;
 
-	IResourceBinder* m_userPipelineOutput = 0;
-	DX11RenderPassDataComponent* m_SwapChainRPDC = 0;
-	DX11ShaderProgramComponent* m_SwapChainSPC = 0;
-	DX11SamplerDataComponent* m_SwapChainSDC = 0;
+		IResourceBinder* m_userPipelineOutput = 0;
+		DX11RenderPassDataComponent* m_SwapChainRPDC = 0;
+		DX11ShaderProgramComponent* m_SwapChainSPC = 0;
+		DX11SamplerDataComponent* m_SwapChainSDC = 0;
+	}
 }
 
 using namespace DX11RenderingServerNS;
@@ -89,7 +92,7 @@ DX11PipelineStateObject* addPSO()
 
 bool DX11RenderingServer::Setup(ISystemConfig* systemConfig)
 {
-	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
+	auto l_renderingCapability = g_Engine->getRenderingFrontend()->getRenderingCapability();
 
 	m_MeshDataComponentPool = TObjectPool<DX11MeshDataComponent>::Create(l_renderingCapability.maxMeshes);
 	m_TextureDataComponentPool = TObjectPool<DX11TextureDataComponent>::Create(l_renderingCapability.maxTextures);
@@ -155,7 +158,7 @@ bool DX11RenderingServer::Setup(ISystemConfig* systemConfig)
 
 	// Now go through all the display modes and find the one that matches the screen width and height.
 	// When a match is found store the numerator and denominator of the refresh rate for that monitor.
-	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+	auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
 
 	for (uint32_t i = 0; i < l_numModes; i++)
 	{
@@ -204,7 +207,7 @@ bool DX11RenderingServer::Setup(ISystemConfig* systemConfig)
 	m_swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
 	// Set the refresh rate of the back buffer.
-	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
+	auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
 
 	if (l_renderingConfig.VSync)
 	{
@@ -221,7 +224,7 @@ bool DX11RenderingServer::Setup(ISystemConfig* systemConfig)
 	m_swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 
 	// Set the handle for the window to render to.
-	m_swapChainDesc.OutputWindow = reinterpret_cast<WinWindowSystem*>(g_pModuleManager->getWindowSystem())->getHwnd();
+	m_swapChainDesc.OutputWindow = reinterpret_cast<WinWindowSystem*>(g_Engine->getWindowSystem())->getHwnd();
 
 	// Turn multisampling off.
 	m_swapChainDesc.SampleDesc.Count = 1;
@@ -314,7 +317,7 @@ bool DX11RenderingServer::Initialize()
 
 		InitializeSamplerDataComponent(m_SwapChainSDC);
 
-		auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+		auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 		l_RenderPassDesc.m_RenderTargetCount = 1;
 
@@ -624,7 +627,7 @@ bool DX11RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent*
 
 	auto l_rhs = reinterpret_cast<DX11MaterialDataComponent*>(rhs);
 
-	auto l_defaultMaterial = g_pModuleManager->getRenderingFrontend()->getDefaultMaterialDataComponent();
+	auto l_defaultMaterial = g_Engine->getRenderingFrontend()->getDefaultMaterialDataComponent();
 
 	for (size_t i = 0; i < 8; i++)
 	{
@@ -1636,7 +1639,7 @@ bool DX11RenderingServer::Present()
 
 	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
-	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
+	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
 
 	DispatchDrawCall(m_SwapChainRPDC, l_mesh, 1);
 
@@ -1648,7 +1651,7 @@ bool DX11RenderingServer::Present()
 
 	WaitForFrame(m_SwapChainRPDC);
 
-	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
+	auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
 
 	if (l_renderingConfig.VSync)
 	{

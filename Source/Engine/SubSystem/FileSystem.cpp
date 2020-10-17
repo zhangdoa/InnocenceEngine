@@ -1,8 +1,9 @@
 #include "FileSystem.h"
 #include "../Core/InnoLogger.h"
 
-#include "../Interface/IModuleManager.h"
-extern IModuleManager* g_pModuleManager;
+#include "../Interface/IEngine.h"
+using namespace Inno;
+extern IEngine* g_Engine;
 
 #include "../Core/IOService.h"
 

@@ -4,8 +4,9 @@
 
 #include "../../Core/IOService.h"
 
-#include "../../Interface/IModuleManager.h"
-extern IModuleManager* g_pModuleManager;
+#include "../../Interface/IEngine.h"
+using namespace Inno;
+extern IEngine* g_Engine;
 
 #include "stb/stb_image.h"
 #include "stb/stb_image_write.h"
@@ -31,7 +32,7 @@ TextureDataComponent* STBWrapper::loadTexture(const char* fileName)
 	}
 	if (l_rawData)
 	{
-		auto l_TDC = g_pModuleManager->getRenderingFrontend()->addTextureDataComponent();
+		auto l_TDC = g_Engine->getRenderingFrontend()->addTextureDataComponent();
 
 		l_TDC->m_InstanceName = (std::string(fileName) + "/").c_str();
 

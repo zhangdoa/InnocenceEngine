@@ -2,9 +2,12 @@
 #include "GPUBufferDataComponent.h"
 #include "vulkan/vulkan.h"
 
-class VKGPUBufferDataComponent : public GPUBufferDataComponent
+namespace Inno
 {
-public:
-	VkBuffer m_Buffer;
-	VkDeviceMemory m_DeviceMemory;
-};
+	class VKGPUBufferDataComponent : public GPUBufferDataComponent
+	{
+	public:
+		VkBuffer m_Buffer;
+		VkDeviceMemory m_DeviceMemory;
+	};
+}

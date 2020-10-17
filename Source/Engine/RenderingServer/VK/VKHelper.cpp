@@ -1,13 +1,17 @@
 #include "VKHelper.h"
 #include "../../Core/InnoLogger.h"
 
-#include "../../Interface/IModuleManager.h"
+#include "../../Interface/IEngine.h"
 
-extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern IEngine* g_Engine;
 
-namespace VKHelper
+namespace Inno
 {
-	const char* m_shaderRelativePath = "..//Res//Shaders//SPIRV//";
+	namespace VKHelper
+	{
+		const char* m_shaderRelativePath = "..//Res//Shaders//SPIRV//";
+	}
 }
 
 bool VKHelper::checkValidationLayerSupport(const std::vector<const char*>& validationLayers)
@@ -140,7 +144,7 @@ VkExtent2D VKHelper::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabiliti
 	}
 	else
 	{
-		auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+		auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
 
 		VkExtent2D l_actualExtent;
 		l_actualExtent.width = l_screenResolution.x;
@@ -1785,7 +1789,7 @@ bool VKHelper::createSyncPrimitives(VkDevice device, VKRenderPassDataComponent* 
 bool VKHelper::createShaderModule(VkDevice device, VkShaderModule& vkShaderModule, const ShaderFilePath& shaderFilePath)
 {
 	auto l_shaderFileName = m_shaderRelativePath + std::string(shaderFilePath.c_str()) + ".spv";
-	auto l_shaderContent = g_pModuleManager->getFileSystem()->loadFile(l_shaderFileName.c_str(), IOMode::Binary);
+	auto l_shaderContent = g_Engine->getFileSystem()->loadFile(l_shaderFileName.c_str(), IOMode::Binary);
 
 	VkShaderModuleCreateInfo l_createInfo = {};
 	l_createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;

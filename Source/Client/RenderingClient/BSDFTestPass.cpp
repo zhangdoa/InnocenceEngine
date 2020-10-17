@@ -3,9 +3,10 @@
 
 #include "BRDFLUTPass.h"
 
-#include "../../Engine/Interface/IModuleManager.h"
+#include "../../Engine/Interface/IEngine.h"
 
-INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern INNO_ENGINE_API IEngine* g_Engine;
 
 using namespace DefaultGPUBuffers;
 
@@ -23,14 +24,14 @@ namespace BSDFTestPass
 
 bool BSDFTestPass::Setup()
 {
-	m_SPC = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("BSDFTestPass/");
+	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("BSDFTestPass/");
 
 	m_SPC->m_ShaderFilePaths.m_VSPath = "opaqueGeometryProcessPass.vert/";
 	m_SPC->m_ShaderFilePaths.m_PSPath = "BSDFTestPass.frag/";
 
-	m_RPDC = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("BSDFTestPass/");
+	m_RPDC = g_Engine->getRenderingServer()->AddRenderPassDataComponent("BSDFTestPass/");
 
-	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 1;
 	l_RenderPassDesc.m_UseDepthBuffer = true;
@@ -78,10 +79,10 @@ bool BSDFTestPass::Setup()
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 
-	m_SDC = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("BSDFTestPass/");
+	m_SDC = g_Engine->getRenderingServer()->AddSamplerDataComponent("BSDFTestPass/");
 
 	//
-	auto l_RenderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
+	auto l_RenderingCapability = g_Engine->getRenderingFrontend()->getRenderingCapability();
 
 	m_meshConstantBuffer.resize(l_RenderingCapability.maxMeshes);
 	m_materialConstantBuffer.resize(l_RenderingCapability.maxMaterials);
@@ -116,9 +117,9 @@ bool BSDFTestPass::Setup()
 
 bool BSDFTestPass::Initialize()
 {
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
-	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
+	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
+	g_Engine->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
 
 	return true;
 }
@@ -129,48 +130,48 @@ bool BSDFTestPass::Render()
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
 	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
 
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MeshGBDC, m_meshConstantBuffer);
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MaterialGBDC, m_materialConstantBuffer);
+	g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(l_MeshGBDC, m_meshConstantBuffer);
+	g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(l_MaterialGBDC, m_materialConstantBuffer);
 
-	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC, 0);
-	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
-	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 5, 0);
+	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC, 0);
+	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
+	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 5, 0);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, BRDFLUTPass::GetBRDFLUT(), 3, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, BRDFLUTPass::GetBRDFMSLUT(), 4, 1);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, BRDFLUTPass::GetBRDFLUT(), 3, 0);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, BRDFLUTPass::GetBRDFMSLUT(), 4, 1);
 
-	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Sphere);
+	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Sphere);
 
 	uint32_t l_offset = 0;
 
 	for (size_t i = 0; i < m_shpereCount * m_shpereCount; i++)
 	{
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_offset, 1);
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_offset, 1);
-		g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC, l_mesh);
+		g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_offset, 1);
+		g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_offset, 1);
+		g_Engine->getRenderingServer()->DispatchDrawCall(m_RPDC, l_mesh);
 
 		l_offset++;
 	}
 
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, BRDFLUTPass::GetBRDFLUT(), 3, 0);
-	g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, BRDFLUTPass::GetBRDFMSLUT(), 4, 1);
+	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, BRDFLUTPass::GetBRDFLUT(), 3, 0);
+	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, BRDFLUTPass::GetBRDFMSLUT(), 4, 1);
 
-	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC);
+	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
 
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC);
 
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC);
+	g_Engine->getRenderingServer()->WaitForFrame(m_RPDC);
 
 	return true;
 }
 
 bool BSDFTestPass::Terminate()
 {
-	g_pModuleManager->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
 
 	return true;
 }

@@ -12,9 +12,10 @@
 #include "../../Common/GPUDataStructure.h"
 #include "../../Component/MTMeshDataComponent.h"
 
-#include "../../Interface/IModuleManager.h"
+#include "../../Interface/IEngine.h"
 
-extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern IEngine* g_Engine;
 
 @implementation MetalDelegate
     
@@ -119,7 +120,7 @@ extern IModuleManager* g_pModuleManager;
     
 - (void)render
 {
-        auto l_perFrameGPUData = g_pModuleManager->getRenderingFrontend()->getPerFrameConstantBuffer();
+        auto l_perFrameGPUData = g_Engine->getRenderingFrontend()->getPerFrameConstantBuffer();
         updateUBO(_perFrameUBO, &l_perFrameGPUData, sizeof(l_perFrameGPUData));
     
         MTLRenderPassDescriptor* passDescriptor = [_view currentRenderPassDescriptor];
@@ -131,7 +132,7 @@ extern IModuleManager* g_pModuleManager;
         [commandEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
         [commandEncoder setCullMode:MTLCullModeFront];
     
-        auto l_MDC = reinterpret_cast<MTMeshDataComponent*>(g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square));
+        auto l_MDC = reinterpret_cast<MTMeshDataComponent*>(g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square));
         encodeDrawCall(commandEncoder, l_MDC);
         [commandEncoder endEncoding];
         [commandBuffer presentDrawable:drawable];

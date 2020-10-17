@@ -7,15 +7,15 @@
 #include "../../Component/GLSamplerDataComponent.h"
 #include "../../Component/GLGPUBufferDataComponent.h"
 
-#include "GLHelper.h"
-
-using namespace GLHelper;
-
 #include "../CommonFunctionDefinationMacro.inl"
 
-#include "../../Interface/IModuleManager.h"
+#include "../../Interface/IEngine.h"
 
-extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern IEngine* g_Engine;
+
+#include "GLHelper.h"
+using namespace GLHelper;
 
 #include "../../Core/InnoLogger.h"
 #include "../../Core/InnoMemory.h"
@@ -116,8 +116,8 @@ GLPipelineStateObject* addPSO()
 
 bool GLRenderingServerNS::resizeImpl()
 {
-	auto l_renderingServer = reinterpret_cast<GLRenderingServer*>(g_pModuleManager->getRenderingServer());
-	auto l_screenResolution = g_pModuleManager->getRenderingFrontend()->getScreenResolution();
+	auto l_renderingServer = reinterpret_cast<GLRenderingServer*>(g_Engine->getRenderingServer());
+	auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
 
 	for (auto i : m_RPDCs)
 	{
@@ -186,7 +186,7 @@ using namespace GLRenderingServerNS;
 
 bool GLRenderingServer::Setup(ISystemConfig* systemConfig)
 {
-	auto l_renderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
+	auto l_renderingCapability = g_Engine->getRenderingFrontend()->getRenderingCapability();
 
 	m_MeshDataComponentPool = TObjectPool<GLMeshDataComponent>::Create(l_renderingCapability.maxMeshes);
 	m_TextureDataComponentPool = TObjectPool<GLTextureDataComponent>::Create(l_renderingCapability.maxTextures);
@@ -200,7 +200,7 @@ bool GLRenderingServer::Setup(ISystemConfig* systemConfig)
 
 	m_RPDCs.reserve(128);
 
-	auto l_GLRenderingServerSetupTask = g_pModuleManager->getTaskSystem()->submit("GLRenderingServerSetupTask", 2, nullptr,
+	auto l_GLRenderingServerSetupTask = g_Engine->getTaskSystem()->submit("GLRenderingServerSetupTask", 2, nullptr,
 		[&]() {
 			glEnable(GL_DEBUG_OUTPUT);
 			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -230,13 +230,13 @@ bool GLRenderingServer::Initialize()
 		m_SwapChainSPC->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
 		m_SwapChainSPC->m_ShaderFilePaths.m_PSPath = "swapChain.frag/";
 
-		auto l_GLRenderingServerInitializeTask = g_pModuleManager->getTaskSystem()->submit("GLRenderingServerInitializeTask", 2, nullptr,
+		auto l_GLRenderingServerInitializeTask = g_Engine->getTaskSystem()->submit("GLRenderingServerInitializeTask", 2, nullptr,
 			[&]() {
 				InitializeShaderProgramComponent(m_SwapChainSPC);
 
 				InitializeSamplerDataComponent(m_SwapChainSDC);
 
-				auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+				auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 				l_RenderPassDesc.m_RenderTargetCount = 1;
 
@@ -452,7 +452,7 @@ bool GLRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent* r
 
 	auto l_rhs = reinterpret_cast<GLMaterialDataComponent*>(rhs);
 
-	auto l_defaultMaterial = g_pModuleManager->getRenderingFrontend()->getDefaultMaterialDataComponent();
+	auto l_defaultMaterial = g_Engine->getRenderingFrontend()->getDefaultMaterialDataComponent();
 
 	for (size_t i = 0; i < 8; i++)
 	{
@@ -998,7 +998,7 @@ bool GLRenderingServer::Present()
 
 	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
-	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
+	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
 
 	DispatchDrawCall(m_SwapChainRPDC, l_mesh, 1);
 

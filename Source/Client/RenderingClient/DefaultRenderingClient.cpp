@@ -25,9 +25,10 @@
 
 #include "BSDFTestPass.h"
 
-#include "../../Engine/Interface/IModuleManager.h"
+#include "../../Engine/Interface/IEngine.h"
 
-INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern INNO_ENGINE_API IEngine* g_Engine;
 
 namespace DefaultRenderingClientNS
 {
@@ -57,22 +58,22 @@ using namespace DefaultRenderingClientNS;
 bool DefaultRenderingClient::Setup(ISystemConfig* systemConfig)
 {
 	f_showLightHeatmap = [&]() { m_showLightHeatmap = !m_showLightHeatmap; };
-	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_H, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showLightHeatmap });
+	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_H, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showLightHeatmap });
 
 	f_showProbe = [&]() { m_showProbe = !m_showProbe; };
-	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_G, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showProbe });
+	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_G, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showProbe });
 
 	f_showVoxel = [&]() { m_showVoxel = !m_showVoxel; };
-	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_V, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showVoxel });
+	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_V, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showVoxel });
 
 	f_showTransparent = [&]() { m_showTransparent = !m_showTransparent; };
-	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_T, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showTransparent });
+	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_T, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showTransparent });
 
 	f_showVolumetric = [&]() { m_showVolumetric = !m_showVolumetric; };
-	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_J, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showVolumetric });
+	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_J, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showVolumetric });
 
 	f_saveScreenCapture = [&]() { m_saveScreenCapture = !m_saveScreenCapture; };
-	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_C, true }, ButtonEvent{ EventLifeTime::OneShot, &f_saveScreenCapture });
+	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_C, true }, ButtonEvent{ EventLifeTime::OneShot, &f_saveScreenCapture });
 
 	f_SetupJob = [&]()
 	{
@@ -141,24 +142,24 @@ bool DefaultRenderingClient::Setup(ISystemConfig* systemConfig)
 
 	f_RenderJob = [&]()
 	{
-		auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
+		auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
 		IResourceBinder* l_canvas;
 
 		DefaultGPUBuffers::Upload();
 
 		LightCullingPass::PrepareCommandList();
-		g_pModuleManager->getRenderingServer()->ExecuteCommandList(LightCullingPass::GetTileFrustumRPDC());
-		g_pModuleManager->getRenderingServer()->WaitForFrame(LightCullingPass::GetTileFrustumRPDC());
-		g_pModuleManager->getRenderingServer()->ExecuteCommandList(LightCullingPass::GetLightCullingRPDC());
-		g_pModuleManager->getRenderingServer()->WaitForFrame(LightCullingPass::GetLightCullingRPDC());
+		g_Engine->getRenderingServer()->ExecuteCommandList(LightCullingPass::GetTileFrustumRPDC());
+		g_Engine->getRenderingServer()->WaitForFrame(LightCullingPass::GetTileFrustumRPDC());
+		g_Engine->getRenderingServer()->ExecuteCommandList(LightCullingPass::GetLightCullingRPDC());
+		g_Engine->getRenderingServer()->WaitForFrame(LightCullingPass::GetLightCullingRPDC());
 
 		SunShadowPass::PrepareCommandList();
-		g_pModuleManager->getRenderingServer()->ExecuteCommandList(SunShadowPass::GetGeometryProcessRPDC());
-		g_pModuleManager->getRenderingServer()->WaitForFrame(SunShadowPass::GetGeometryProcessRPDC());
-		g_pModuleManager->getRenderingServer()->ExecuteCommandList(SunShadowPass::GetBlurRPDCOdd());
-		g_pModuleManager->getRenderingServer()->WaitForFrame(SunShadowPass::GetBlurRPDCOdd());
-		g_pModuleManager->getRenderingServer()->ExecuteCommandList(SunShadowPass::GetBlurRPDCEven());
-		g_pModuleManager->getRenderingServer()->WaitForFrame(SunShadowPass::GetBlurRPDCEven());
+		g_Engine->getRenderingServer()->ExecuteCommandList(SunShadowPass::GetGeometryProcessRPDC());
+		g_Engine->getRenderingServer()->WaitForFrame(SunShadowPass::GetGeometryProcessRPDC());
+		g_Engine->getRenderingServer()->ExecuteCommandList(SunShadowPass::GetBlurRPDCOdd());
+		g_Engine->getRenderingServer()->WaitForFrame(SunShadowPass::GetBlurRPDCOdd());
+		g_Engine->getRenderingServer()->ExecuteCommandList(SunShadowPass::GetBlurRPDCEven());
+		g_Engine->getRenderingServer()->WaitForFrame(SunShadowPass::GetBlurRPDCEven());
 
 		VoxelizationPass::Render(m_showVoxel, 0, false);
 
@@ -193,10 +194,10 @@ bool DefaultRenderingClient::Setup(ISystemConfig* systemConfig)
 			OpaquePass::PrepareCommandList();
 			AnimationPass::PrepareCommandList();
 
-			g_pModuleManager->getRenderingServer()->ExecuteCommandList(OpaquePass::GetRPDC());
-			g_pModuleManager->getRenderingServer()->WaitForFrame(OpaquePass::GetRPDC());
-			g_pModuleManager->getRenderingServer()->ExecuteCommandList(AnimationPass::GetRPDC());
-			g_pModuleManager->getRenderingServer()->WaitForFrame(AnimationPass::GetRPDC());
+			g_Engine->getRenderingServer()->ExecuteCommandList(OpaquePass::GetRPDC());
+			g_Engine->getRenderingServer()->WaitForFrame(OpaquePass::GetRPDC());
+			g_Engine->getRenderingServer()->ExecuteCommandList(AnimationPass::GetRPDC());
+			g_Engine->getRenderingServer()->WaitForFrame(AnimationPass::GetRPDC());
 
 			SSAOPass::Render();
 
@@ -209,14 +210,14 @@ bool DefaultRenderingClient::Setup(ISystemConfig* systemConfig)
 			}
 			PreTAAPass::PrepareCommandList();
 
-			g_pModuleManager->getRenderingServer()->ExecuteCommandList(LightPass::GetRPDC());
-			g_pModuleManager->getRenderingServer()->ExecuteCommandList(SkyPass::GetRPDC());
+			g_Engine->getRenderingServer()->ExecuteCommandList(LightPass::GetRPDC());
+			g_Engine->getRenderingServer()->ExecuteCommandList(SkyPass::GetRPDC());
 
-			g_pModuleManager->getRenderingServer()->WaitForFrame(LightPass::GetRPDC());
-			g_pModuleManager->getRenderingServer()->WaitForFrame(SkyPass::GetRPDC());
+			g_Engine->getRenderingServer()->WaitForFrame(LightPass::GetRPDC());
+			g_Engine->getRenderingServer()->WaitForFrame(SkyPass::GetRPDC());
 
-			g_pModuleManager->getRenderingServer()->ExecuteCommandList(PreTAAPass::GetRPDC());
-			g_pModuleManager->getRenderingServer()->WaitForFrame(PreTAAPass::GetRPDC());
+			g_Engine->getRenderingServer()->ExecuteCommandList(PreTAAPass::GetRPDC());
+			g_Engine->getRenderingServer()->WaitForFrame(PreTAAPass::GetRPDC());
 
 			TransparentPass::Render(PreTAAPass::GetResult());
 			l_canvas = PreTAAPass::GetResult();
@@ -249,14 +250,14 @@ bool DefaultRenderingClient::Setup(ISystemConfig* systemConfig)
 
 		if (m_saveScreenCapture)
 		{
-			auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+			auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 
-			auto l_textureData = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(FinalBlendPass::GetRPDC(), FinalBlendPass::GetRPDC()->m_RenderTargets[0]);
-			auto l_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
+			auto l_textureData = g_Engine->getRenderingServer()->ReadTextureBackToCPU(FinalBlendPass::GetRPDC(), FinalBlendPass::GetRPDC()->m_RenderTargets[0]);
+			auto l_TDC = g_Engine->getRenderingServer()->AddTextureDataComponent();
 			l_TDC->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 			l_TDC->m_TextureData = l_textureData.data();
-			g_pModuleManager->getAssetSystem()->saveTexture("ScreenCapture", l_TDC);
-			//g_pModuleManager->getRenderingServer()->DeleteTextureDataComponent(l_TDC);
+			g_Engine->getAssetSystem()->saveTexture("ScreenCapture", l_TDC);
+			//g_Engine->getRenderingServer()->DeleteTextureDataComponent(l_TDC);
 			m_saveScreenCapture = false;
 		}
 	};
@@ -290,7 +291,7 @@ bool DefaultRenderingClient::Setup(ISystemConfig* systemConfig)
 		BSDFTestPass::Terminate();
 	};
 
-	auto l_DefaultRenderingClientSetupTask = g_pModuleManager->getTaskSystem()->submit("DefaultRenderingClientSetupTask", 2, nullptr, f_SetupJob);
+	auto l_DefaultRenderingClientSetupTask = g_Engine->getTaskSystem()->submit("DefaultRenderingClientSetupTask", 2, nullptr, f_SetupJob);
 	l_DefaultRenderingClientSetupTask->Wait();
 
 	return true;
@@ -298,7 +299,7 @@ bool DefaultRenderingClient::Setup(ISystemConfig* systemConfig)
 
 bool DefaultRenderingClient::Initialize()
 {
-	auto l_DefaultRenderingClientInitializeTask = g_pModuleManager->getTaskSystem()->submit("DefaultRenderingClientInitializeTask", 2, nullptr, f_InitializeJob);
+	auto l_DefaultRenderingClientInitializeTask = g_Engine->getTaskSystem()->submit("DefaultRenderingClientInitializeTask", 2, nullptr, f_InitializeJob);
 	l_DefaultRenderingClientInitializeTask->Wait();
 
 	return true;

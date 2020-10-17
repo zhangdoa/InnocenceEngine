@@ -1,8 +1,9 @@
 #include "MTRenderingServer.h"
 
-#include "../../Interface/IModuleManager.h"
+#include "../../Interface/IEngine.h"
 
-extern IModuleManager* g_pModuleManager;
+using namespace Inno;
+extern IEngine* g_Engine;
 
 namespace MTRenderingServerNS
 {
@@ -247,7 +248,7 @@ bool MTRenderingServer::Resize()
 void MTRenderingServer::setBridge(MTRenderingServerBridge* bridge)
 {
 	MTRenderingServerNS::m_bridge = bridge;
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "MTRenderingServer: Bridge connected at ", bridge);
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "MTRenderingServer: Bridge connected at ", bridge);
 }
 
 bool MTRenderingServer::BeginCapture()

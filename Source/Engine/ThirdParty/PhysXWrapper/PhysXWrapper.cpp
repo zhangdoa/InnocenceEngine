@@ -6,8 +6,9 @@
 
 #include "../../Core/InnoLogger.h"
 
-#include "../../Interface/IModuleManager.h"
-extern IModuleManager* g_pModuleManager;
+#include "../../Interface/IEngine.h"
+using namespace Inno;
+extern IEngine* g_Engine;
 
 using namespace physx;
 
@@ -134,11 +135,11 @@ bool PhysXWrapperNS::Setup()
 		InnoLogger::Log(LogLevel::Success, "PhysXWrapper: All PhysX Actors has been removed.");
 	};
 
-	g_pModuleManager->getSceneSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
+	g_Engine->getSceneSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 
 	f_pauseSimulate = [&]() { m_needSimulate = !m_needSimulate; };
 
-	g_pModuleManager->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_P, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseSimulate });
+	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_P, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseSimulate });
 
 	return true;
 }
@@ -156,9 +157,9 @@ bool PhysXWrapperNS::Update()
 		{
 			m_allowUpdate = false;
 
-			m_currentTask = g_pModuleManager->getTaskSystem()->submit("PhysXUpdateTask", 3, nullptr, [&]()
+			m_currentTask = g_Engine->getTaskSystem()->submit("PhysXUpdateTask", 3, nullptr, [&]()
 				{
-					gScene->simulate(g_pModuleManager->getTickTime() / 1000.0f);
+					gScene->simulate(g_Engine->getTickTime() / 1000.0f);
 					gScene->fetchResults(true);
 
 					for (auto i : PhysXActors)
@@ -311,7 +312,7 @@ PxConvexMesh* PhysXWrapperNS::createPxConvexMesh(PhysicsDataComponent* rhs, PxCo
 	PxU32 meshSize = 0;
 	PxConvexMesh* convex = nullptr;
 
-	auto startTime = g_pModuleManager->getTimeSystem()->getCurrentTimeFromEpoch();
+	auto startTime = g_Engine->getTimeSystem()->getCurrentTimeFromEpoch();
 
 	if (directInsertion)
 	{
@@ -335,7 +336,7 @@ PxConvexMesh* PhysXWrapperNS::createPxConvexMesh(PhysicsDataComponent* rhs, PxCo
 	}
 
 	// Print the elapsed time for comparison
-	auto stopTime = g_pModuleManager->getTimeSystem()->getCurrentTimeFromEpoch();
+	auto stopTime = g_Engine->getTimeSystem()->getCurrentTimeFromEpoch();
 	auto elapsedTime = stopTime - startTime;
 	InnoLogger::Log(LogLevel::Verbose, "Create convex mesh with ", desc.points.count, " triangles: ");
 	directInsertion ? InnoLogger::Log(LogLevel::Verbose, "Direct mesh insertion enabled.") : InnoLogger::Log(LogLevel::Verbose, "Direct mesh insertion disabled.");
@@ -389,7 +390,7 @@ PxTriangleMesh* PhysXWrapperNS::createBV33TriangleMesh(PhysicsDataComponent* rhs
 		return l_result->second;
 	}
 
-	auto startTime = g_pModuleManager->getTimeSystem()->getCurrentTimeFromEpoch();
+	auto startTime = g_Engine->getTimeSystem()->getCurrentTimeFromEpoch();
 
 	PxTriangleMeshDesc meshDesc;
 	meshDesc.points.count = (PxU32)rhs->m_MeshMaterialPair->mesh->m_vertices.size();
@@ -456,7 +457,7 @@ PxTriangleMesh* PhysXWrapperNS::createBV33TriangleMesh(PhysicsDataComponent* rhs
 	}
 
 	// Print the elapsed time for comparison
-	auto stopTime = g_pModuleManager->getTimeSystem()->getCurrentTimeFromEpoch();
+	auto stopTime = g_Engine->getTimeSystem()->getCurrentTimeFromEpoch();
 	auto elapsedTime = stopTime - startTime;
 	InnoLogger::Log(LogLevel::Verbose, "\t -----------------------------------------------\n");
 	InnoLogger::Log(LogLevel::Verbose, "\t Create triangle mesh with %d triangles: \n", rhs->m_MeshMaterialPair->mesh->m_indicesSize / 3);
@@ -485,7 +486,7 @@ PxTriangleMesh* PhysXWrapperNS::createBV34TriangleMesh(PhysicsDataComponent* rhs
 		return l_result->second;
 	}
 
-	auto startTime = g_pModuleManager->getTimeSystem()->getCurrentTimeFromEpoch();
+	auto startTime = g_Engine->getTimeSystem()->getCurrentTimeFromEpoch();
 
 	PxTriangleMeshDesc meshDesc;
 	meshDesc.points.count = (PxU32)rhs->m_MeshMaterialPair->mesh->m_vertices.size();
@@ -538,7 +539,7 @@ PxTriangleMesh* PhysXWrapperNS::createBV34TriangleMesh(PhysicsDataComponent* rhs
 	}
 
 	// Print the elapsed time for comparison
-	auto stopTime = g_pModuleManager->getTimeSystem()->getCurrentTimeFromEpoch();
+	auto stopTime = g_Engine->getTimeSystem()->getCurrentTimeFromEpoch();
 	auto elapsedTime = stopTime - startTime;
 	InnoLogger::Log(LogLevel::Verbose, "\t -----------------------------------------------\n");
 	InnoLogger::Log(LogLevel::Verbose, "\t Create triangle mesh with %d triangles: \n", rhs->m_MeshMaterialPair->mesh->m_indicesSize / 3);

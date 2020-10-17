@@ -2,51 +2,54 @@
 #include "ISystem.h"
 #include "../Common/InnoMathHelper.h"
 
-struct InputConfig
+namespace Inno
 {
-	int32_t totalKeyCodes;
-	int32_t totalMouseCodes;
-};
-
-enum class EventLifeTime { OneShot, Continuous };
-
-template<typename T>
-struct InnoEvent
-{
-	EventLifeTime m_eventLifeTime = EventLifeTime::OneShot;
-	T* m_eventHandle = 0;
-
-	bool operator==(const InnoEvent& other) const
+	struct InputConfig
 	{
-		return (m_eventLifeTime == other.m_eventLifeTime
-			&& m_eventHandle == other.m_eventHandle
-			);
-	}
+		int32_t totalKeyCodes;
+		int32_t totalMouseCodes;
+	};
 
-	bool operator<(const InnoEvent& other) const
+	enum class EventLifeTime { OneShot, Continuous };
+
+	template<typename T>
+	struct InnoEvent
 	{
-		return m_eventHandle < other.m_eventHandle;
-	}
-};
+		EventLifeTime m_eventLifeTime = EventLifeTime::OneShot;
+		T* m_eventHandle = 0;
 
-using ButtonEvent = InnoEvent<void>;
-using MouseMovementEvent = InnoEvent<std::function<void(float)>>;
-enum class MouseMovementAxis { Horizontal, Vertical };
+		bool operator==(const InnoEvent& other) const
+		{
+			return (m_eventLifeTime == other.m_eventLifeTime
+				&& m_eventHandle == other.m_eventHandle
+				);
+		}
 
-class IEventSystem : public ISystem
-{
-public:
-	INNO_CLASS_INTERFACE_NON_COPYABLE(IEventSystem);
+		bool operator<(const InnoEvent& other) const
+		{
+			return m_eventHandle < other.m_eventHandle;
+		}
+	};
 
-	virtual InputConfig getInputConfig() = 0;
+	using ButtonEvent = InnoEvent<void>;
+	using MouseMovementEvent = InnoEvent<std::function<void(float)>>;
+	enum class MouseMovementAxis { Horizontal, Vertical };
 
-	virtual void addButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent) = 0;
-	virtual void addMouseMovementCallback(MouseMovementAxis mouseMovementAxis, MouseMovementEvent mouseMovementEvent) = 0;
+	class IEventSystem : public ISystem
+	{
+	public:
+		INNO_CLASS_INTERFACE_NON_COPYABLE(IEventSystem);
 
-	virtual void buttonStateCallback(ButtonState buttonState) = 0;
-	virtual void windowSizeCallback(int32_t width, int32_t height) = 0;
-	virtual void mouseMovementCallback(float mouseXPos, float mouseYPos) = 0;
-	virtual void scrollCallback(float xoffset, float yoffset) = 0;
+		virtual InputConfig getInputConfig() = 0;
 
-	virtual Vec2 getMousePosition() = 0;
-};
+		virtual void addButtonStateCallback(ButtonState buttonState, ButtonEvent buttonEvent) = 0;
+		virtual void addMouseMovementCallback(MouseMovementAxis mouseMovementAxis, MouseMovementEvent mouseMovementEvent) = 0;
+
+		virtual void buttonStateCallback(ButtonState buttonState) = 0;
+		virtual void windowSizeCallback(int32_t width, int32_t height) = 0;
+		virtual void mouseMovementCallback(float mouseXPos, float mouseYPos) = 0;
+		virtual void scrollCallback(float xoffset, float yoffset) = 0;
+
+		virtual Vec2 getMousePosition() = 0;
+	};
+}

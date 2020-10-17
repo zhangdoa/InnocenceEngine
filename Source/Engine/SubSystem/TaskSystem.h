@@ -1,23 +1,26 @@
 #pragma once
 #include "../Interface/ITaskSystem.h"
 
-class InnoTaskSystem : public ITaskSystem
+namespace Inno
 {
-public:
-	INNO_CLASS_CONCRETE_NON_COPYABLE(InnoTaskSystem);
+	class InnoTaskSystem : public ITaskSystem
+	{
+	public:
+		INNO_CLASS_CONCRETE_NON_COPYABLE(InnoTaskSystem);
 
-	bool Setup(ISystemConfig* systemConfig) override;
-	bool Initialize() override;
-	bool Update() override;
-	bool Terminate() override;
+		bool Setup(ISystemConfig* systemConfig) override;
+		bool Initialize() override;
+		bool Update() override;
+		bool Terminate() override;
 
-	ObjectStatus GetStatus()  override;
+		ObjectStatus GetStatus()  override;
 
-	void waitAllTasksToFinish() override;
+		void waitAllTasksToFinish() override;
 
-	const RingBuffer<InnoTaskReport, true>& GetTaskReport(int32_t threadID) override;
-	size_t GetTotalThreadsNumber() override;
+		const RingBuffer<InnoTaskReport, true>& GetTaskReport(int32_t threadID) override;
+		size_t GetTotalThreadsNumber() override;
 
-protected:
-	std::shared_ptr<IInnoTask> addTaskImpl(std::unique_ptr<IInnoTask>&& task, int32_t threadID) override;
-};
+	protected:
+		std::shared_ptr<IInnoTask> addTaskImpl(std::unique_ptr<IInnoTask>&& task, int32_t threadID) override;
+	};
+}

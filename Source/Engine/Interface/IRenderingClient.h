@@ -1,10 +1,13 @@
 #pragma once
 #include "ISystem.h"
 
-class IRenderingClient : public ISystem
+namespace Inno
 {
-public:
-	INNO_CLASS_INTERFACE_NON_COPYABLE(IRenderingClient);
+	class IRenderingClient : public ISystem
+	{
+	public:
+		INNO_CLASS_INTERFACE_NON_COPYABLE(IRenderingClient);
 
-	virtual bool Render() = 0;
-};
+		virtual bool Render() = 0;
+	};
+}

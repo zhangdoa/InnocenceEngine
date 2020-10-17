@@ -35,18 +35,18 @@ MetalDelegate* m_metalDelegate;
 
     //Start the engine C++ module
     const char* l_args = "-renderer 4 -mode 0 -loglevel 1";
-    if (!InnoApplicationEntry::Setup(m_macWindowSystemBridge, m_metalRenderingServerBridge, (char*)l_args))
+    if (!Inno::ApplicationEntry::Setup(m_macWindowSystemBridge, m_metalRenderingServerBridge, (char*)l_args))
     {
         return;
     }
-    if (!InnoApplicationEntry::Initialize())
+    if (!Inno::ApplicationEntry::Initialize())
     {
         return;
     }
 
-    InnoApplicationEntry::Run();
+    Inno::ApplicationEntry::Run();
 
-    InnoApplicationEntry::Terminate();
+    Inno::ApplicationEntry::Terminate();
 
     delete m_metalRenderingServerBridge;
     delete m_macWindowSystemBridge;

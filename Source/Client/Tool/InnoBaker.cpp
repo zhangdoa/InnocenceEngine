@@ -4,8 +4,10 @@
 
 #include "../../Engine/Common/InnoMathHelper.h"
 
-#include "../../Engine/Interface/IModuleManager.h"
-INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
+#include "../../Engine/Interface/IEngine.h"
+
+using namespace Inno;
+extern INNO_ENGINE_API IEngine* g_Engine;
 
 #include "../../Engine/Core/IOService.h"
 
@@ -96,21 +98,21 @@ std::string InnoBakerNS::parseFileName(const char* fileName)
 
 bool InnoBakerNS::gatherStaticMeshData()
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Gathering static meshes...");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Gathering static meshes...");
 
 	uint32_t l_index = 0;
 
-	auto l_visibleComponents = g_pModuleManager->getComponentManager()->GetAll<VisibleComponent>();
+	auto l_visibleComponents = g_Engine->getComponentManager()->GetAll<VisibleComponent>();
 	for (auto visibleComponent : l_visibleComponents)
 	{
 		if (visibleComponent->m_ObjectStatus == ObjectStatus::Activated && visibleComponent->m_meshUsage == MeshUsage::Static)
 		{
-			auto l_transformComponent = g_pModuleManager->getComponentManager()->Find<TransformComponent>(visibleComponent->m_Owner);
+			auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(visibleComponent->m_Owner);
 			auto l_globalTm = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
 			for (uint64_t j = 0; j < visibleComponent->m_model->meshMaterialPairs.m_count; j++)
 			{
-				auto l_meshMaterialPair = g_pModuleManager->getAssetSystem()->getMeshMaterialPair(visibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
+				auto l_meshMaterialPair = g_Engine->getAssetSystem()->getMeshMaterialPair(visibleComponent->m_model->meshMaterialPairs.m_startOffset + j);
 
 				if (l_meshMaterialPair->material->m_ShaderModel == ShaderModel::Opaque)
 				{
@@ -148,22 +150,22 @@ bool InnoBakerNS::gatherStaticMeshData()
 
 	m_staticMeshDrawCallCount = l_index;
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: There are ", m_staticMeshDrawCallCount, " static meshes in current scene.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: There are ", m_staticMeshDrawCallCount, " static meshes in current scene.");
 
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
 	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
 
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MeshGBDC, m_staticMeshPerObjectConstantBuffer, 0, m_staticMeshPerObjectConstantBuffer.size());
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MaterialGBDC, m_staticMeshMaterialConstantBuffer, 0, m_staticMeshMaterialConstantBuffer.size());
+	g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(l_MeshGBDC, m_staticMeshPerObjectConstantBuffer, 0, m_staticMeshPerObjectConstantBuffer.size());
+	g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(l_MaterialGBDC, m_staticMeshMaterialConstantBuffer, 0, m_staticMeshMaterialConstantBuffer.size());
 
 	return true;
 }
 
 bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Generate probe caches...");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Generate probe caches...");
 
-	auto l_sceneAABB = g_pModuleManager->getPhysicsSystem()->getStaticSceneAABB();
+	auto l_sceneAABB = g_Engine->getPhysicsSystem()->getStaticSceneAABB();
 
 	auto l_eyePos = l_sceneAABB.m_center;
 	auto l_extendedAxisSize = l_sceneAABB.m_extend;
@@ -176,16 +178,16 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 	l_GICameraConstantBuffer[1] = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 1.0f), Vec4(0.0f, 0.0f, 1.0f, 0.0f));
 	l_GICameraConstantBuffer[7] = InnoMath::getInvertTranslationMatrix(l_eyePos);
 
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(GetGPUBufferDataComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
+	g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(GetGPUBufferDataComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to draw probe height map...");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to draw probe height map...");
 
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
 
-	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_Probe, 0);
-	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_Probe);
-	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_Probe);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Probe, ShaderStage::Vertex, GetGPUBufferDataComponent(GPUBufferUsageType::GI)->m_ResourceBinder, 0, 8, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC_Probe, 0);
+	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_Probe);
+	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC_Probe);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_Probe, ShaderStage::Vertex, GetGPUBufferDataComponent(GPUBufferUsageType::GI)->m_ResourceBinder, 0, 8, Accessibility::ReadOnly);
 
 	uint32_t l_offset = 0;
 
@@ -195,37 +197,37 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 
 		if (l_staticPerObjectConstantBuffer.mesh->m_ObjectStatus == ObjectStatus::Activated)
 		{
-			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Probe, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_offset, 1);
+			g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_Probe, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_offset, 1);
 
-			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC_Probe, l_staticPerObjectConstantBuffer.mesh);
+			g_Engine->getRenderingServer()->DispatchDrawCall(m_RPDC_Probe, l_staticPerObjectConstantBuffer.mesh);
 		}
 
 		l_offset++;
 	}
 
-	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC_Probe);
+	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC_Probe);
 
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC_Probe);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC_Probe);
 
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC_Probe);
+	g_Engine->getRenderingServer()->WaitForFrame(m_RPDC_Probe);
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to generate probe location...");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to generate probe location...");
 
 	// Read back results and generate probes
-	auto l_probePosTextureResults = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Probe, m_RPDC_Probe->m_RenderTargets[0]);
+	auto l_probePosTextureResults = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Probe, m_RPDC_Probe->m_RenderTargets[0]);
 
 	//#ifdef DEBUG_
-	auto l_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
+	auto l_TDC = g_Engine->getRenderingServer()->AddTextureDataComponent();
 	l_TDC->m_TextureDesc = m_RPDC_Probe->m_RenderTargets[0]->m_TextureDesc;
 	l_TDC->m_TextureData = l_probePosTextureResults.data();
-	g_pModuleManager->getAssetSystem()->saveTexture("..//Res//Intermediate//ProbePosTexture", l_TDC);
+	g_Engine->getAssetSystem()->saveTexture("..//Res//Intermediate//ProbePosTexture", l_TDC);
 	//#endif // DEBUG_
 
 	auto l_probeInfos = generateProbes(probes, l_probePosTextureResults, m_probeInterval);
 
 	serializeProbeInfos(l_probeInfos);
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", probes.size(), " probes generated.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", probes.size(), " probes generated.");
 
 	return true;
 }
@@ -320,7 +322,7 @@ bool InnoBakerNS::generateProbesAlongTheSurface(std::vector<Probe>& probes, cons
 		}
 	}
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", probes.size(), " probe location generated over the surface.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", probes.size(), " probe location generated over the surface.");
 
 	return true;
 }
@@ -428,14 +430,14 @@ uint32_t InnoBakerNS::generateProbesAlongTheWall(std::vector<Probe>& probes, con
 	probes.insert(probes.end(), l_wallProbes.begin(), l_wallProbes.end());
 	probes.shrink_to_fit();
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", probes.size() - l_probesCount, " probe location generated along the wall.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", probes.size() - l_probesCount, " probe location generated along the wall.");
 
 	return l_maxVerticalProbesCount;
 }
 
 bool InnoBakerNS::serializeProbeInfos(const ProbeInfo& probeInfo)
 {
-	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
 
 	std::ofstream l_file;
 	l_file.open(l_filePath + "..//Res//Scenes//" + m_exportFileName + ".InnoProbeInfo", std::ios::out | std::ios::trunc | std::ios::binary);
@@ -447,9 +449,9 @@ bool InnoBakerNS::serializeProbeInfos(const ProbeInfo& probeInfo)
 
 bool InnoBakerNS::captureSurfels(std::vector<Probe>& probes)
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to capture surfels...");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to capture surfels...");
 
-	auto l_perFrameConstantBuffer = g_pModuleManager->getRenderingFrontend()->getPerFrameConstantBuffer();
+	auto l_perFrameConstantBuffer = g_Engine->getRenderingFrontend()->getPerFrameConstantBuffer();
 
 	auto l_p = InnoMath::generatePerspectiveMatrix((90.0f / 180.0f) * PI<float>, 1.0f, l_perFrameConstantBuffer.zNear, l_perFrameConstantBuffer.zFar);
 
@@ -476,10 +478,10 @@ bool InnoBakerNS::captureSurfels(std::vector<Probe>& probes)
 
 		readBackSurfelCaches(probes[i], l_surfelCaches);
 
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Progress: ", (float)i * 100.0f / (float)l_probeForSurfelCachesCount, "%...");
+		g_Engine->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Progress: ", (float)i * 100.0f / (float)l_probeForSurfelCachesCount, "%...");
 	}
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_surfelCaches.size(), " surfel caches captured.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_surfelCaches.size(), " surfel caches captured.");
 
 	serializeProbes(probes);
 
@@ -502,16 +504,16 @@ bool InnoBakerNS::drawObjects(Probe& probeCache, const Mat4& p, const std::vecto
 	}
 	l_GICameraConstantBuffer[7] = l_t;
 
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(GetGPUBufferDataComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
+	g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(GetGPUBufferDataComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
 
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
 	auto l_MaterialGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Material);
 
-	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_Surfel, 0);
-	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_Surfel);
-	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_Surfel);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, m_SDC_Surfel->m_ResourceBinder, 8, 0);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Geometry, GetGPUBufferDataComponent(GPUBufferUsageType::GI)->m_ResourceBinder, 0, 8, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC_Surfel, 0);
+	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_Surfel);
+	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC_Surfel);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, m_SDC_Surfel->m_ResourceBinder, 8, 0);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Geometry, GetGPUBufferDataComponent(GPUBufferUsageType::GI)->m_ResourceBinder, 0, 8, Accessibility::ReadOnly);
 
 	uint32_t l_offset = 0;
 
@@ -521,38 +523,38 @@ bool InnoBakerNS::drawObjects(Probe& probeCache, const Mat4& p, const std::vecto
 
 		if (l_staticPerObjectConstantBuffer.mesh->m_ObjectStatus == ObjectStatus::Activated)
 		{
-			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_offset, 1);
-			g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_offset, 1);
+			g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_offset, 1);
+			g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_offset, 1);
 
 			if (l_staticPerObjectConstantBuffer.material->m_ObjectStatus == ObjectStatus::Activated)
 			{
-				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[0].m_Texture->m_ResourceBinder, 3, 0);
-				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[1].m_Texture->m_ResourceBinder, 4, 1);
-				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[2].m_Texture->m_ResourceBinder, 5, 2);
-				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[3].m_Texture->m_ResourceBinder, 6, 3);
-				g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[4].m_Texture->m_ResourceBinder, 7, 4);
+				g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[0].m_Texture->m_ResourceBinder, 3, 0);
+				g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[1].m_Texture->m_ResourceBinder, 4, 1);
+				g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[2].m_Texture->m_ResourceBinder, 5, 2);
+				g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[3].m_Texture->m_ResourceBinder, 6, 3);
+				g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[4].m_Texture->m_ResourceBinder, 7, 4);
 			}
 
-			g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC_Surfel, l_staticPerObjectConstantBuffer.mesh);
+			g_Engine->getRenderingServer()->DispatchDrawCall(m_RPDC_Surfel, l_staticPerObjectConstantBuffer.mesh);
 
 			if (l_staticPerObjectConstantBuffer.material->m_ObjectStatus == ObjectStatus::Activated)
 			{
-				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[0].m_Texture->m_ResourceBinder, 3, 0);
-				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[1].m_Texture->m_ResourceBinder, 4, 1);
-				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[2].m_Texture->m_ResourceBinder, 5, 2);
-				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[3].m_Texture->m_ResourceBinder, 6, 3);
-				g_pModuleManager->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[4].m_Texture->m_ResourceBinder, 7, 4);
+				g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[0].m_Texture->m_ResourceBinder, 3, 0);
+				g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[1].m_Texture->m_ResourceBinder, 4, 1);
+				g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[2].m_Texture->m_ResourceBinder, 5, 2);
+				g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[3].m_Texture->m_ResourceBinder, 6, 3);
+				g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[4].m_Texture->m_ResourceBinder, 7, 4);
 			}
 		}
 
 		l_offset++;
 	}
 
-	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC_Surfel);
+	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC_Surfel);
 
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC_Surfel);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC_Surfel);
 
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC_Surfel);
+	g_Engine->getRenderingServer()->WaitForFrame(m_RPDC_Surfel);
 
 	return true;
 }
@@ -561,15 +563,15 @@ bool InnoBakerNS::readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfel
 {
 	static uint32_t l_index = 0;
 
-	auto l_posWSMetallic = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_RenderTargets[0]);
-	auto l_normalRoughness = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_RenderTargets[1]);
-	auto l_albedoAO = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_RenderTargets[2]);
-	auto l_depthStencilRT = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_DepthStencilRenderTarget);
+	auto l_posWSMetallic = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_RenderTargets[0]);
+	auto l_normalRoughness = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_RenderTargets[1]);
+	auto l_albedoAO = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_RenderTargets[2]);
+	auto l_depthStencilRT = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_Surfel, m_RPDC_Surfel->m_DepthStencilRenderTarget);
 
-	auto l_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
+	auto l_TDC = g_Engine->getRenderingServer()->AddTextureDataComponent();
 	l_TDC->m_TextureDesc = m_RPDC_Surfel->m_RenderTargets[0]->m_TextureDesc;
 	l_TDC->m_TextureData = l_albedoAO.data();
-	g_pModuleManager->getAssetSystem()->saveTexture(("..//Res//Intermediate//SurfelTextureAlbedo_" + std::to_string(l_index)).c_str(), l_TDC);
+	g_Engine->getAssetSystem()->saveTexture(("..//Res//Intermediate//SurfelTextureAlbedo_" + std::to_string(l_index)).c_str(), l_TDC);
 
 	auto l_surfelsCount = m_surfelSampleCountPerFace * m_surfelSampleCountPerFace * 6;
 	auto l_sampleStep = m_captureResolution / m_surfelSampleCountPerFace;
@@ -612,10 +614,10 @@ bool InnoBakerNS::readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfel
 		probe.skyVisibility[i] = 1.0f - ((float)l_stencil / (float)l_depthStencilRTSize);
 	}
 
-	auto l_DSTDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
+	auto l_DSTDC = g_Engine->getRenderingServer()->AddTextureDataComponent();
 	l_DSTDC->m_TextureDesc = m_RPDC_Surfel->m_RenderTargets[0]->m_TextureDesc;
 	l_DSTDC->m_TextureData = l_DSTDCData.data();
-	g_pModuleManager->getAssetSystem()->saveTexture(("..//Res//Intermediate//SurfelTextureDS_" + std::to_string(l_index)).c_str(), l_DSTDC);
+	g_Engine->getAssetSystem()->saveTexture(("..//Res//Intermediate//SurfelTextureDS_" + std::to_string(l_index)).c_str(), l_DSTDC);
 
 	surfelCaches.insert(surfelCaches.end(), l_surfels.begin(), l_surfels.end());
 
@@ -626,7 +628,7 @@ bool InnoBakerNS::readBackSurfelCaches(Probe& probe, std::vector<Surfel>& surfel
 
 bool InnoBakerNS::eliminateDuplicatedSurfels(std::vector<Surfel>& surfelCaches)
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to eliminate duplicated surfels...");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to eliminate duplicated surfels...");
 
 	std::sort(surfelCaches.begin(), surfelCaches.end(), [&](Surfel A, Surfel B)
 		{
@@ -642,28 +644,28 @@ bool InnoBakerNS::eliminateDuplicatedSurfels(std::vector<Surfel>& surfelCaches)
 	surfelCaches.erase(std::unique(surfelCaches.begin(), surfelCaches.end()), surfelCaches.end());
 	surfelCaches.shrink_to_fit();
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Duplicated surfels have been removed, there are ", surfelCaches.size(), " surfels now.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Duplicated surfels have been removed, there are ", surfelCaches.size(), " surfels now.");
 
 	return true;
 }
 
 bool InnoBakerNS::serializeSurfelCaches(const std::vector<Surfel>& surfelCaches)
 {
-	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
 
 	std::ofstream l_file;
 	l_file.open(l_filePath + "..//Res//Intermediate//" + m_exportFileName + ".InnoSurfelCache", std::ios::out | std::ios::trunc | std::ios::binary);
 	IOService::serializeVector(l_file, surfelCaches);
 	l_file.close();
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "..//Res//Intermediate//", m_exportFileName.c_str(), ".InnoSurfelCache has been saved.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "..//Res//Intermediate//", m_exportFileName.c_str(), ".InnoSurfelCache has been saved.");
 
 	return true;
 }
 
 bool InnoBakerNS::generateBrickCaches(std::vector<Surfel>& surfelCaches)
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to generate brick caches...");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to generate brick caches...");
 
 	// Find bound corner position
 	auto l_surfelsCount = surfelCaches.size();
@@ -768,7 +770,7 @@ bool InnoBakerNS::generateBrickCaches(std::vector<Surfel>& surfelCaches)
 
 		l_brickCaches[l_brickIndex].surfelCaches.emplace_back(surfelCaches[i]);
 
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Progress: ", (float)i * 100.0f / (float)l_totalBricksWorkCount, "%...");
+		g_Engine->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Progress: ", (float)i * 100.0f / (float)l_totalBricksWorkCount, "%...");
 	}
 
 	// Remove empty bricks
@@ -787,7 +789,7 @@ bool InnoBakerNS::generateBrickCaches(std::vector<Surfel>& surfelCaches)
 		l_brickCaches[i].surfelCaches.shrink_to_fit();
 	}
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_brickCaches.size(), " brick caches have been generated.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_brickCaches.size(), " brick caches have been generated.");
 
 	serializeBrickCaches(l_brickCaches);
 
@@ -799,7 +801,7 @@ bool InnoBakerNS::serializeBrickCaches(const std::vector<BrickCache>& brickCache
 	auto l_brickCacheCount = brickCaches.size();
 
 	// Serialize metadata
-	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
 	std::ofstream l_summaryFile;
 	l_summaryFile.open(l_filePath + "..//Res//Intermediate//" + m_exportFileName + ".InnoBrickCacheSummary", std::ios::out | std::ios::trunc | std::ios::binary);
 
@@ -831,7 +833,7 @@ bool InnoBakerNS::serializeBrickCaches(const std::vector<BrickCache>& brickCache
 	}
 	l_surfelCacheFile.close();
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "..//Res//Intermediate//", m_exportFileName.c_str(), ".InnoBrickCacheSummary has been saved.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "..//Res//Intermediate//", m_exportFileName.c_str(), ".InnoBrickCacheSummary has been saved.");
 
 	return true;
 }
@@ -841,7 +843,7 @@ bool InnoBakerNS::deserializeBrickCaches(const std::vector<BrickCacheSummary>& b
 	auto l_brickCount = brickCacheSummaries.size();
 	brickCaches.reserve(l_brickCount);
 
-	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
 
 	std::ifstream l_file;
 	l_file.open(l_filePath + "..//Res//Intermediate//" + m_exportFileName + ".InnoBrickCache", std::ios::binary);
@@ -868,7 +870,7 @@ bool InnoBakerNS::deserializeBrickCaches(const std::vector<BrickCacheSummary>& b
 
 bool InnoBakerNS::generateBricks(const std::vector<BrickCache>& brickCaches)
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to generate bricks...");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to generate bricks...");
 
 	// Generate real bricks with surfel range
 	auto l_bricksCount = brickCaches.size();
@@ -899,10 +901,10 @@ bool InnoBakerNS::generateBricks(const std::vector<BrickCache>& brickCaches)
 
 		l_bricks.emplace_back(l_brick);
 
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Progress: ", (float)i * 100.0f / (float)l_bricksCount, "%...");
+		g_Engine->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Progress: ", (float)i * 100.0f / (float)l_bricksCount, "%...");
 	}
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_bricksCount, " bricks have been generated.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_bricksCount, " bricks have been generated.");
 
 	serializeSurfels(l_surfels);
 	serializeBricks(l_bricks);
@@ -912,35 +914,35 @@ bool InnoBakerNS::generateBricks(const std::vector<BrickCache>& brickCaches)
 
 bool InnoBakerNS::serializeSurfels(const std::vector<Surfel>& surfels)
 {
-	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
 
 	std::ofstream l_file;
 	l_file.open(l_filePath + "..//Res//Scenes//" + m_exportFileName + ".InnoSurfel", std::ios::out | std::ios::trunc | std::ios::binary);
 	IOService::serializeVector(l_file, surfels);
 	l_file.close();
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "..//Res//Scenes//", m_exportFileName.c_str(), ".InnoSurfel has been saved.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "..//Res//Scenes//", m_exportFileName.c_str(), ".InnoSurfel has been saved.");
 
 	return true;
 }
 
 bool InnoBakerNS::serializeBricks(const std::vector<Brick>& bricks)
 {
-	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
 
 	std::ofstream l_file;
 	l_file.open(l_filePath + "..//Res//Scenes//" + m_exportFileName + ".InnoBrick", std::ios::out | std::ios::trunc | std::ios::binary);
 	IOService::serializeVector(l_file, bricks);
 	l_file.close();
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "..//Res//Scenes//", m_exportFileName.c_str(), ".InnoBrick has been saved.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "..//Res//Scenes//", m_exportFileName.c_str(), ".InnoBrick has been saved.");
 
 	return true;
 }
 
 bool InnoBakerNS::assignBrickFactorToProbesByGPU(const std::vector<Brick>& bricks, std::vector<Probe>& probes)
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to generate brick factor and assign to probes...");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to generate brick factor and assign to probes...");
 
 	// Upload camera data and brick cubes data to GPU memory
 	auto l_rPX = InnoMath::lookAt(Vec4(0.0f, 0.0f, 0.0f, 1.0f), Vec4(1.0f, 0.0f, 0.0f, 1.0f), Vec4(0.0f, -1.0f, 0.0f, 0.0f));
@@ -978,7 +980,7 @@ bool InnoBakerNS::assignBrickFactorToProbesByGPU(const std::vector<Brick>& brick
 	}
 
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(l_MeshGBDC, l_bricksCubePerObjectConstantBuffer, 0, l_bricksCubePerObjectConstantBuffer.size());
+	g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(l_MeshGBDC, l_bricksCubePerObjectConstantBuffer, 0, l_bricksCubePerObjectConstantBuffer.size());
 
 	// assign bricks to probe by the depth test result
 	auto l_probesCount = probes.size();
@@ -991,12 +993,12 @@ bool InnoBakerNS::assignBrickFactorToProbesByGPU(const std::vector<Brick>& brick
 		drawBricks(probes[i].pos, (uint32_t)l_bricksCount, l_p, l_v);
 		readBackBrickFactors(probes[i], l_brickFactors, bricks);
 
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Progress: ", (float)i * 100.0f / (float)l_probesCount, "%...");
+		g_Engine->getLogSystem()->Log(LogLevel::Verbose, "InnoBakerNS: Progress: ", (float)i * 100.0f / (float)l_probesCount, "%...");
 	}
 
 	l_brickFactors.shrink_to_fit();
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_brickFactors.size(), " brick factors have been generated.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_brickFactors.size(), " brick factors have been generated.");
 
 	serializeBrickFactors(l_brickFactors);
 	serializeProbes(probes);
@@ -1014,33 +1016,33 @@ bool InnoBakerNS::drawBricks(Vec4 pos, uint32_t bricksCount, const Mat4& p, cons
 	}
 	l_GICameraConstantBuffer[7] = InnoMath::getInvertTranslationMatrix(pos);
 
-	g_pModuleManager->getRenderingServer()->UploadGPUBufferDataComponent(GetGPUBufferDataComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
+	g_Engine->getRenderingServer()->UploadGPUBufferDataComponent(GetGPUBufferDataComponent(GPUBufferUsageType::GI), l_GICameraConstantBuffer);
 
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
 
-	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Cube);
+	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Cube);
 
 	uint32_t l_offset = 0;
 
-	g_pModuleManager->getRenderingServer()->CommandListBegin(m_RPDC_BrickFactor, 0);
-	g_pModuleManager->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_BrickFactor);
-	g_pModuleManager->getRenderingServer()->CleanRenderTargets(m_RPDC_BrickFactor);
-	g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_BrickFactor, ShaderStage::Geometry, GetGPUBufferDataComponent(GPUBufferUsageType::GI)->m_ResourceBinder, 0, 8, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC_BrickFactor, 0);
+	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_BrickFactor);
+	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC_BrickFactor);
+	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_BrickFactor, ShaderStage::Geometry, GetGPUBufferDataComponent(GPUBufferUsageType::GI)->m_ResourceBinder, 0, 8, Accessibility::ReadOnly);
 
 	for (uint32_t i = 0; i < bricksCount; i++)
 	{
-		g_pModuleManager->getRenderingServer()->ActivateResourceBinder(m_RPDC_BrickFactor, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_offset, 1);
+		g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_BrickFactor, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_offset, 1);
 
-		g_pModuleManager->getRenderingServer()->DispatchDrawCall(m_RPDC_BrickFactor, l_mesh);
+		g_Engine->getRenderingServer()->DispatchDrawCall(m_RPDC_BrickFactor, l_mesh);
 
 		l_offset++;
 	}
 
-	g_pModuleManager->getRenderingServer()->CommandListEnd(m_RPDC_BrickFactor);
+	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC_BrickFactor);
 
-	g_pModuleManager->getRenderingServer()->ExecuteCommandList(m_RPDC_BrickFactor);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC_BrickFactor);
 
-	g_pModuleManager->getRenderingServer()->WaitForFrame(m_RPDC_BrickFactor);
+	g_Engine->getRenderingServer()->WaitForFrame(m_RPDC_BrickFactor);
 
 	return true;
 }
@@ -1049,12 +1051,12 @@ bool InnoBakerNS::readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& b
 {
 	static int l_index = 0;
 
-	auto l_brickIDResults = g_pModuleManager->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_BrickFactor, m_RPDC_BrickFactor->m_RenderTargets[0]);
+	auto l_brickIDResults = g_Engine->getRenderingServer()->ReadTextureBackToCPU(m_RPDC_BrickFactor, m_RPDC_BrickFactor->m_RenderTargets[0]);
 
-	auto l_TDC = g_pModuleManager->getRenderingServer()->AddTextureDataComponent();
+	auto l_TDC = g_Engine->getRenderingServer()->AddTextureDataComponent();
 	l_TDC->m_TextureDesc = m_RPDC_BrickFactor->m_RenderTargets[0]->m_TextureDesc;
 	l_TDC->m_TextureData = l_brickIDResults.data();
-	g_pModuleManager->getAssetSystem()->saveTexture(("..//Res//Intermediate//BrickTexture_" + std::to_string(l_index)).c_str(), l_TDC);
+	g_Engine->getAssetSystem()->saveTexture(("..//Res//Intermediate//BrickTexture_" + std::to_string(l_index)).c_str(), l_TDC);
 	l_index++;
 
 	auto l_brickIDResultSize = l_brickIDResults.size();
@@ -1157,28 +1159,28 @@ bool InnoBakerNS::readBackBrickFactors(Probe& probe, std::vector<BrickFactor>& b
 
 bool InnoBakerNS::serializeBrickFactors(const std::vector<BrickFactor>& brickFactors)
 {
-	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
 
 	std::ofstream l_file;
 	l_file.open(l_filePath + "..//Res//Scenes//" + m_exportFileName + ".InnoBrickFactor", std::ios::out | std::ios::trunc | std::ios::binary);
 	IOService::serializeVector(l_file, brickFactors);
 	l_file.close();
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "..//Res//Scenes//", m_exportFileName.c_str(), ".InnoBrickFactor has been saved.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "..//Res//Scenes//", m_exportFileName.c_str(), ".InnoBrickFactor has been saved.");
 
 	return true;
 }
 
 bool InnoBakerNS::serializeProbes(const std::vector<Probe>& probes)
 {
-	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
 
 	std::ofstream l_file;
 	l_file.open(l_filePath + "..//Res//Scenes//" + m_exportFileName + ".InnoProbe", std::ios::out | std::ios::trunc | std::ios::binary);
 	IOService::serializeVector(l_file, probes);
 	l_file.close();
 
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "..//Res//Scenes//", m_exportFileName.c_str(), ".InnoProbe has been saved.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: ", l_filePath.c_str(), "..//Res//Scenes//", m_exportFileName.c_str(), ".InnoProbe has been saved.");
 
 	return true;
 }
@@ -1186,25 +1188,25 @@ bool InnoBakerNS::serializeProbes(const std::vector<Probe>& probes)
 void InnoBaker::Setup()
 {
 	////
-	auto l_RenderingCapability = g_pModuleManager->getRenderingFrontend()->getRenderingCapability();
+	auto l_RenderingCapability = g_Engine->getRenderingFrontend()->getRenderingCapability();
 
 	m_staticMeshDrawCallInfo.reserve(l_RenderingCapability.maxMeshes);
 	m_staticMeshPerObjectConstantBuffer.reserve(l_RenderingCapability.maxMeshes);
 	m_staticMeshMaterialConstantBuffer.reserve(l_RenderingCapability.maxMaterials);
 
-	auto l_RenderPassDesc = g_pModuleManager->getRenderingFrontend()->getDefaultRenderPassDesc();
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 	l_RenderPassDesc.m_UseDepthBuffer = true;
 	l_RenderPassDesc.m_UseStencilBuffer = true;
 
 	////
-	m_SPC_Probe = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIBakeProbePass/");
+	m_SPC_Probe = g_Engine->getRenderingServer()->AddShaderProgramComponent("GIBakeProbePass/");
 
 	m_SPC_Probe->m_ShaderFilePaths.m_VSPath = "GIBakeProbePass.vert/";
 	m_SPC_Probe->m_ShaderFilePaths.m_PSPath = "GIBakeProbePass.frag/";
 
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_Probe);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_Probe);
 
-	m_RPDC_Probe = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIBakeProbePass/");
+	m_RPDC_Probe = g_Engine->getRenderingServer()->AddRenderPassDataComponent("GIBakeProbePass/");
 
 	m_RPDC_Probe->m_RenderPassDesc = l_RenderPassDesc;
 	m_RPDC_Probe->m_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::Sampler2D;
@@ -1233,18 +1235,18 @@ void InnoBaker::Setup()
 
 	m_RPDC_Probe->m_ShaderProgram = m_SPC_Probe;
 
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_Probe);
+	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_Probe);
 
 	////
-	m_SPC_Surfel = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIBakeSurfelPass/");
+	m_SPC_Surfel = g_Engine->getRenderingServer()->AddShaderProgramComponent("GIBakeSurfelPass/");
 
 	m_SPC_Surfel->m_ShaderFilePaths.m_VSPath = "GIBakeSurfelPass.vert/";
 	m_SPC_Surfel->m_ShaderFilePaths.m_GSPath = "GIBakeSurfelPass.geom/";
 	m_SPC_Surfel->m_ShaderFilePaths.m_PSPath = "GIBakeSurfelPass.frag/";
 
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_Surfel);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_Surfel);
 
-	m_RPDC_Surfel = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIBakeSurfelPass/");
+	m_RPDC_Surfel = g_Engine->getRenderingServer()->AddRenderPassDataComponent("GIBakeSurfelPass/");
 
 	m_RPDC_Surfel->m_RenderPassDesc = l_RenderPassDesc;
 
@@ -1318,25 +1320,25 @@ void InnoBaker::Setup()
 
 	m_RPDC_Surfel->m_ShaderProgram = m_SPC_Surfel;
 
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_Surfel);
+	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_Surfel);
 
-	m_SDC_Surfel = g_pModuleManager->getRenderingServer()->AddSamplerDataComponent("GIBakeSurfelPass/");
+	m_SDC_Surfel = g_Engine->getRenderingServer()->AddSamplerDataComponent("GIBakeSurfelPass/");
 
 	m_SDC_Surfel->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SDC_Surfel->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
-	g_pModuleManager->getRenderingServer()->InitializeSamplerDataComponent(m_SDC_Surfel);
+	g_Engine->getRenderingServer()->InitializeSamplerDataComponent(m_SDC_Surfel);
 
 	////
-	m_SPC_BrickFactor = g_pModuleManager->getRenderingServer()->AddShaderProgramComponent("GIBakeBrickFactorPass/");
+	m_SPC_BrickFactor = g_Engine->getRenderingServer()->AddShaderProgramComponent("GIBakeBrickFactorPass/");
 
 	m_SPC_BrickFactor->m_ShaderFilePaths.m_VSPath = "GIBakeBrickFactorPass.vert/";
 	m_SPC_BrickFactor->m_ShaderFilePaths.m_GSPath = "GIBakeBrickFactorPass.geom/";
 	m_SPC_BrickFactor->m_ShaderFilePaths.m_PSPath = "GIBakeBrickFactorPass.frag/";
 
-	g_pModuleManager->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_BrickFactor);
+	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC_BrickFactor);
 
-	m_RPDC_BrickFactor = g_pModuleManager->getRenderingServer()->AddRenderPassDataComponent("GIBakeBrickFactorPass/");
+	m_RPDC_BrickFactor = g_Engine->getRenderingServer()->AddRenderPassDataComponent("GIBakeBrickFactorPass/");
 
 	m_RPDC_BrickFactor->m_RenderPassDesc = l_RenderPassDesc;
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_RenderTargetDesc.Sampler = TextureSampler::SamplerCubemap;
@@ -1371,21 +1373,21 @@ void InnoBaker::Setup()
 
 	m_RPDC_BrickFactor->m_ShaderProgram = m_SPC_BrickFactor;
 
-	g_pModuleManager->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_BrickFactor);
+	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC_BrickFactor);
 }
 
 void InnoBaker::BakeProbeCache(const char* sceneName)
 {
-	g_pModuleManager->getSceneSystem()->loadScene(sceneName, false);
+	g_Engine->getSceneSystem()->loadScene(sceneName, false);
 	//GetComponentManager(LightComponent)->Simulate();
 
-	//g_pModuleManager->getPhysicsSystem()->updateCulling();
-	//g_pModuleManager->getRenderingFrontend()->update();
-	m_exportFileName = g_pModuleManager->getSceneSystem()->getCurrentSceneName();
+	//g_Engine->getPhysicsSystem()->updateCulling();
+	//g_Engine->getRenderingFrontend()->update();
+	m_exportFileName = g_Engine->getSceneSystem()->getCurrentSceneName();
 
 	std::vector<Probe> l_probes;
 
-	auto l_InnoBakerProbeCacheTask = g_pModuleManager->getTaskSystem()->submit("InnoBakerProbeCacheTask", 2, nullptr,
+	auto l_InnoBakerProbeCacheTask = g_Engine->getTaskSystem()->submit("InnoBakerProbeCacheTask", 2, nullptr,
 		[&]() {
 			gatherStaticMeshData();
 			generateProbeCaches(l_probes);
@@ -1397,7 +1399,7 @@ void InnoBaker::BakeProbeCache(const char* sceneName)
 
 void InnoBaker::BakeBrickCache(const char* surfelCacheFileName)
 {
-	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
 	m_exportFileName = parseFileName(surfelCacheFileName);
 
 	std::ifstream l_surfelCacheFile;
@@ -1413,13 +1415,13 @@ void InnoBaker::BakeBrickCache(const char* surfelCacheFileName)
 	}
 	else
 	{
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "InnoBakerNS: Surfel cache file not exists!");
+		g_Engine->getLogSystem()->Log(LogLevel::Error, "InnoBakerNS: Surfel cache file not exists!");
 	}
 }
 
 void InnoBaker::BakeBrick(const char* brickCacheFileName)
 {
-	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
 	m_exportFileName = parseFileName(brickCacheFileName);
 
 	std::ifstream l_brickCacheSummaryFile;
@@ -1438,13 +1440,13 @@ void InnoBaker::BakeBrick(const char* brickCacheFileName)
 	}
 	else
 	{
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "InnoBakerNS: Brick cache file not exists!");
+		g_Engine->getLogSystem()->Log(LogLevel::Error, "InnoBakerNS: Brick cache file not exists!");
 	}
 }
 
 void InnoBaker::BakeBrickFactor(const char* brickFileName)
 {
-	auto l_filePath = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+	auto l_filePath = g_Engine->getFileSystem()->getWorkingDirectory();
 	m_exportFileName = parseFileName(brickFileName);
 
 	std::ifstream l_brickFile;
@@ -1471,7 +1473,7 @@ void InnoBaker::BakeBrickFactor(const char* brickFileName)
 
 			l_probeFile.close();
 
-			auto l_InnoBakerBrickFactorTask = g_pModuleManager->getTaskSystem()->submit("InnoBakerBrickFactorTask", 2, nullptr,
+			auto l_InnoBakerBrickFactorTask = g_Engine->getTaskSystem()->submit("InnoBakerBrickFactorTask", 2, nullptr,
 				[&]() {
 					assignBrickFactorToProbesByGPU(l_bricks, l_probes);
 				});
@@ -1480,18 +1482,18 @@ void InnoBaker::BakeBrickFactor(const char* brickFileName)
 		}
 		else
 		{
-			g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "InnoBakerNS: Probe cache file not exists!");
+			g_Engine->getLogSystem()->Log(LogLevel::Error, "InnoBakerNS: Probe cache file not exists!");
 		}
 	}
 	else
 	{
-		g_pModuleManager->getLogSystem()->Log(LogLevel::Error, "InnoBakerNS: Brick file not exists!");
+		g_Engine->getLogSystem()->Log(LogLevel::Error, "InnoBakerNS: Brick file not exists!");
 	}
 }
 
 bool InnoBakerRenderingClient::Setup(ISystemConfig* systemConfig)
 {
-	auto l_InnoBakerRenderingClientSetupTask = g_pModuleManager->getTaskSystem()->submit("InnoBakerRenderingClientSetupTask", 2, nullptr,
+	auto l_InnoBakerRenderingClientSetupTask = g_Engine->getTaskSystem()->submit("InnoBakerRenderingClientSetupTask", 2, nullptr,
 		[]() {
 			DefaultGPUBuffers::Setup();
 			InnoBaker::Setup();
@@ -1503,7 +1505,7 @@ bool InnoBakerRenderingClient::Setup(ISystemConfig* systemConfig)
 
 bool InnoBakerRenderingClient::Initialize()
 {
-	auto l_InnoBakerRenderingClientInitializeTask = g_pModuleManager->getTaskSystem()->submit("InnoBakerRenderingClientInitializeTask", 2, nullptr,
+	auto l_InnoBakerRenderingClientInitializeTask = g_Engine->getTaskSystem()->submit("InnoBakerRenderingClientInitializeTask", 2, nullptr,
 		[]() {
 			DefaultGPUBuffers::Initialize();
 		});

@@ -8,8 +8,9 @@
 #include "../ThirdParty/STBWrapper/STBWrapper.h"
 #include "../ThirdParty/AssimpWrapper/AssimpWrapper.h"
 
-#include "../Interface/IModuleManager.h"
-extern IModuleManager* g_pModuleManager;
+#include "../Interface/IEngine.h"
+using namespace Inno;
+extern IEngine* g_Engine;
 
 #define recordLoaded( funcName, type, value ) \
 bool InnoAssetSystem::recordLoaded##funcName(const char * fileName, type value) \
@@ -507,7 +508,7 @@ void InnoAssetSystemNS::addTerrain(MeshDataComponent* meshDataComponent)
 
 bool InnoAssetSystem::Setup(ISystemConfig* systemConfig)
 {
-	g_pModuleManager->getComponentManager()->RegisterType<VisibleComponent>(32768);
+	g_Engine->getComponentManager()->RegisterType<VisibleComponent>(32768);
 
 	f_LoadModelTask = [=](VisibleComponent* i, bool AsyncLoad)
 	{
@@ -518,13 +519,13 @@ bool InnoAssetSystem::Setup(ISystemConfig* systemConfig)
 	{
 		i->m_model = addProceduralModel(i->m_proceduralMeshShape, ShaderModel::Opaque);
 		auto l_pair = getMeshMaterialPair(i->m_model->meshMaterialPairs.m_startOffset);
-		g_pModuleManager->getRenderingFrontend()->registerMaterialDataComponent(l_pair->material, AsyncLoad);
+		g_Engine->getRenderingFrontend()->registerMaterialDataComponent(l_pair->material, AsyncLoad);
 	};
 
 	// @TODO: Concurrency
 	f_GeneratePDCTask = [=](VisibleComponent* i)
 	{
-		g_pModuleManager->getPhysicsSystem()->generatePhysicsProxy(i);
+		g_Engine->getPhysicsSystem()->generatePhysicsProxy(i);
 		i->m_ObjectStatus = ObjectStatus::Activated;
 	};
 
@@ -583,7 +584,7 @@ bool InnoAssetSystem::convertModel(const char* fileName, const char* exportPath)
 
 	if (l_extension == ".obj" || l_extension == ".OBJ" || l_extension == ".fbx" || l_extension == ".FBX" || l_extension == ".gltf" || l_extension == ".GLTF" || l_extension == ".md5mesh")
 	{
-		auto tempTask = g_pModuleManager->getTaskSystem()->submit("ConvertModelTask", -1, nullptr, [=]()
+		auto tempTask = g_Engine->getTaskSystem()->submit("ConvertModelTask", -1, nullptr, [=]()
 			{
 				AssimpWrapper::convertModel(l_fileName.c_str(), exportPath);
 			});
@@ -649,7 +650,7 @@ bool InnoAssetSystem::saveTexture(const char* fileName, TextureDataComponent* TD
 
 bool InnoAssetSystem::loadAssetsForComponents(bool AsyncLoad)
 {
-	auto l_visibleComponents = g_pModuleManager->getComponentManager()->GetAll<VisibleComponent>();
+	auto l_visibleComponents = g_Engine->getComponentManager()->GetAll<VisibleComponent>();
 
 	// @TODO: Load unit model first
 	for (auto i : l_visibleComponents)
@@ -658,8 +659,8 @@ bool InnoAssetSystem::loadAssetsForComponents(bool AsyncLoad)
 		{
 			if (AsyncLoad)
 			{
-				auto l_loadModelTask = g_pModuleManager->getTaskSystem()->submit("AssignProceduralModelTask", 4, nullptr, f_AssignProceduralModelTask, i, true);
-				g_pModuleManager->getTaskSystem()->submit("PDCTask", 4, l_loadModelTask, f_GeneratePDCTask, i);
+				auto l_loadModelTask = g_Engine->getTaskSystem()->submit("AssignProceduralModelTask", 4, nullptr, f_AssignProceduralModelTask, i, true);
+				g_Engine->getTaskSystem()->submit("PDCTask", 4, l_loadModelTask, f_GeneratePDCTask, i);
 			}
 			else
 			{
@@ -673,8 +674,8 @@ bool InnoAssetSystem::loadAssetsForComponents(bool AsyncLoad)
 			{
 				if (AsyncLoad)
 				{
-					auto l_loadModelTask = g_pModuleManager->getTaskSystem()->submit("LoadModelTask", 4, nullptr, f_LoadModelTask, i, true);
-					g_pModuleManager->getTaskSystem()->submit("PDCTask", 4, l_loadModelTask, f_GeneratePDCTask, i);
+					auto l_loadModelTask = g_Engine->getTaskSystem()->submit("LoadModelTask", 4, nullptr, f_LoadModelTask, i, true);
+					g_Engine->getTaskSystem()->submit("PDCTask", 4, l_loadModelTask, f_GeneratePDCTask, i);
 				}
 				else
 				{
@@ -739,8 +740,8 @@ Model* InnoAssetSystem::addModel()
 
 Model* InnoAssetSystem::addProceduralModel(ProceduralMeshShape shape, ShaderModel shaderModel)
 {
-	auto l_mesh = g_pModuleManager->getRenderingFrontend()->getMeshDataComponent(shape);
-	auto l_material = g_pModuleManager->getRenderingFrontend()->addMaterialDataComponent();
+	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshDataComponent(shape);
+	auto l_material = g_Engine->getRenderingFrontend()->addMaterialDataComponent();
 	l_material->m_ShaderModel = shaderModel;
 	l_material->m_ObjectStatus = ObjectStatus::Created;
 

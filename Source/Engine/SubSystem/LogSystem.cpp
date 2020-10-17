@@ -1,9 +1,13 @@
 #include "LogSystem.h"
 #include "../Core/InnoLogger.h"
 
-namespace InnoLogSystemNS
+using namespace Inno;
+namespace Inno
 {
-	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+	namespace InnoLogSystemNS
+	{
+		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+	}
 }
 
 ObjectStatus InnoLogSystem::GetStatus()

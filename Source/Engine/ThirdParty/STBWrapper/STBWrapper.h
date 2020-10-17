@@ -2,8 +2,11 @@
 #include "../../Common/InnoType.h"
 #include "../../Component/VisibleComponent.h"
 
-namespace STBWrapper
+namespace Inno
 {
-	TextureDataComponent* loadTexture(const char* fileName);
-	bool saveTexture(const char* fileName, TextureDataComponent* TDC);
-};
+	namespace STBWrapper
+	{
+		TextureDataComponent* loadTexture(const char* fileName);
+		bool saveTexture(const char* fileName, TextureDataComponent* TDC);
+	};
+}

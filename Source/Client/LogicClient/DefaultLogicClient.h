@@ -1,17 +1,20 @@
 #pragma once
 #include "../../Engine/Interface/ILogicClient.h"
 
-class DefaultLogicClient : public ILogicClient
+namespace Inno
 {
-public:
-	INNO_CLASS_CONCRETE_NON_COPYABLE(DefaultLogicClient);
+	class DefaultLogicClient : public ILogicClient
+	{
+	public:
+		INNO_CLASS_CONCRETE_NON_COPYABLE(DefaultLogicClient);
 
-	bool Setup(ISystemConfig* systemConfig) override;
-	bool Initialize() override;
-	bool Update() override;
-	bool Terminate() override;
+		bool Setup(ISystemConfig* systemConfig) override;
+		bool Initialize() override;
+		bool Update() override;
+		bool Terminate() override;
 
-	ObjectStatus GetStatus() override;
+		ObjectStatus GetStatus() override;
 
-	std::string getApplicationName() override;
-};
+		std::string getApplicationName() override;
+	};
+}

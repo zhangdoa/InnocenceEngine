@@ -1,4 +1,4 @@
-#include "ModuleManager.h"
+#include "Engine.h"
 #include "../Core/InnoLogger.h"
 #include "../SubSystem/TimeSystem.h"
 #include "../SubSystem/LogSystem.h"
@@ -46,7 +46,8 @@
 #include "../RenderingServer/MT/MTRenderingServer.h"
 #endif
 
-INNO_ENGINE_API IModuleManager* g_pModuleManager;
+using namespace Inno;
+INNO_ENGINE_API IEngine* g_Engine;
 
 #define createSystemInstanceDefi( className ) \
 m_##className = std::make_unique<Inno##className>(); \
@@ -60,7 +61,7 @@ if (!m_##className->Setup()) \
 { \
 	return false; \
 } \
-InnoLogger::Log(LogLevel::Success, "ModuleManager: ", #className, " Setup finished."); \
+InnoLogger::Log(LogLevel::Success, "Engine: ", #className, " Setup finished."); \
 
 #define SystemInit( className ) \
 if (!m_##className->Initialize()) \
@@ -89,73 +90,76 @@ if (!m_##className->Terminate()) \
 } \
 
 #define SystemGetDefi( className ) \
-I##className * InnoModuleManager::get##className() \
+I##className * Engine::get##className() \
 { \
 	return m_##className.get(); \
 } \
 
-namespace InnoModuleManagerNS
+namespace Inno
 {
-	InitConfig parseInitConfig(const std::string& arg);
-	bool createSystemInstance(void* appHook, void* extraHook, char* pScmdline);
-	bool Setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient);
-	bool Initialize();
-	bool Update();
-	bool Terminate();
+	namespace EngineNS
+	{
+		InitConfig parseInitConfig(const std::string& arg);
+		bool createSystemInstance(void* appHook, void* extraHook, char* pScmdline);
+		bool Setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient);
+		bool Initialize();
+		bool Update();
+		bool Terminate();
 
-	InitConfig m_initConfig;
+		InitConfig m_initConfig;
 
-	std::unique_ptr<ITimeSystem> m_TimeSystem;
-	std::unique_ptr<ILogSystem> m_LogSystem;
-	std::unique_ptr<IMemorySystem> m_MemorySystem;
-	std::unique_ptr<ITaskSystem> m_TaskSystem;
-	std::unique_ptr<ITestSystem> m_TestSystem;
+		std::unique_ptr<ITimeSystem> m_TimeSystem;
+		std::unique_ptr<ILogSystem> m_LogSystem;
+		std::unique_ptr<IMemorySystem> m_MemorySystem;
+		std::unique_ptr<ITaskSystem> m_TaskSystem;
+		std::unique_ptr<ITestSystem> m_TestSystem;
 
-	std::unique_ptr<IFileSystem> m_FileSystem;
+		std::unique_ptr<IFileSystem> m_FileSystem;
 
-	std::unique_ptr<IEntityManager> m_EntityManager;
-	std::unique_ptr<ComponentManager> m_CM;
-	std::unique_ptr<InnoTransformSystem> m_TransformSystem;
-	std::unique_ptr<InnoLightSystem> m_LightSystem;
-	std::unique_ptr<InnoCameraSystem> m_CameraSystem;
+		std::unique_ptr<IEntityManager> m_EntityManager;
+		std::unique_ptr<ComponentManager> m_CM;
+		std::unique_ptr<InnoTransformSystem> m_TransformSystem;
+		std::unique_ptr<InnoLightSystem> m_LightSystem;
+		std::unique_ptr<InnoCameraSystem> m_CameraSystem;
 
-	std::unique_ptr<ISceneSystem> m_SceneSystem;
-	std::unique_ptr<IAssetSystem> m_AssetSystem;
-	std::unique_ptr<IPhysicsSystem> m_PhysicsSystem;
-	std::unique_ptr<IEventSystem> m_EventSystem;
-	std::unique_ptr<IWindowSystem> m_WindowSystem;
-	std::unique_ptr<IRenderingFrontend> m_RenderingFrontend;
-	std::unique_ptr<IGUISystem> m_GUISystem;
-	std::unique_ptr<IRenderingServer> m_RenderingServer;
+		std::unique_ptr<ISceneSystem> m_SceneSystem;
+		std::unique_ptr<IAssetSystem> m_AssetSystem;
+		std::unique_ptr<IPhysicsSystem> m_PhysicsSystem;
+		std::unique_ptr<IEventSystem> m_EventSystem;
+		std::unique_ptr<IWindowSystem> m_WindowSystem;
+		std::unique_ptr<IRenderingFrontend> m_RenderingFrontend;
+		std::unique_ptr<IGUISystem> m_GUISystem;
+		std::unique_ptr<IRenderingServer> m_RenderingServer;
 
-	IRenderingClient* m_RenderingClient;
-	ILogicClient* m_LogicClient;
+		IRenderingClient* m_RenderingClient;
+		ILogicClient* m_LogicClient;
 
-	FixedSizeString<128> m_applicationName;
+		FixedSizeString<128> m_applicationName;
 
-	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-	std::atomic<bool> m_isRendering = false;
-	std::atomic<bool> m_allowRender = false;
+		std::atomic<bool> m_isRendering = false;
+		std::atomic<bool> m_allowRender = false;
 
-	std::function<void()> f_LogicClientUpdateJob;
-	std::function<void()> f_PhysicsSystemUpdateBVHJob;
-	std::function<void()> f_PhysicsSystemCullingJob;
-	std::function<void()> f_RenderingFrontendUpdateJob;
-	std::function<void()> f_RenderingServerUpdateJob;
+		std::function<void()> f_LogicClientUpdateJob;
+		std::function<void()> f_PhysicsSystemUpdateBVHJob;
+		std::function<void()> f_PhysicsSystemCullingJob;
+		std::function<void()> f_RenderingFrontendUpdateJob;
+		std::function<void()> f_RenderingServerUpdateJob;
 
-	float m_tickTime = 0;
+		float m_tickTime = 0;
+	}
 }
 
-using namespace InnoModuleManagerNS;
+using namespace EngineNS;
 
-InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
+InitConfig EngineNS::parseInitConfig(const std::string& arg)
 {
 	InitConfig l_result;
 
 	if (arg == "")
 	{
-		InnoLogger::Log(LogLevel::Warning, "ModuleManager: No arguments found, use default settings.");
+		InnoLogger::Log(LogLevel::Warning, "Engine: No arguments found, use default settings.");
 		return l_result;
 	}
 
@@ -163,7 +167,7 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 
 	if (l_engineModeArgPos == std::string::npos)
 	{
-		InnoLogger::Log(LogLevel::Warning, "ModuleManager: No engine mode argument found, use default game mode.");
+		InnoLogger::Log(LogLevel::Warning, "Engine: No engine mode argument found, use default game mode.");
 	}
 	else
 	{
@@ -173,16 +177,16 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 		if (l_engineModeArguments == "0")
 		{
 			l_result.engineMode = EngineMode::Host;
-			InnoLogger::Log(LogLevel::Success, "ModuleManager: Launch in host mode, engine will handle OS event.");
+			InnoLogger::Log(LogLevel::Success, "Engine: Launch in host mode, engine will handle OS event.");
 		}
 		else if (l_engineModeArguments == "1")
 		{
 			l_result.engineMode = EngineMode::Slave;
-			InnoLogger::Log(LogLevel::Success, "ModuleManager: Launch in slave mode, engine requires client handle OS event.");
+			InnoLogger::Log(LogLevel::Success, "Engine: Launch in slave mode, engine requires client handle OS event.");
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Warning, "ModuleManager: Unsupported engine mode.");
+			InnoLogger::Log(LogLevel::Warning, "Engine: Unsupported engine mode.");
 		}
 	}
 
@@ -190,7 +194,7 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 
 	if (l_renderingServerArgPos == std::string::npos)
 	{
-		InnoLogger::Log(LogLevel::Warning, "ModuleManager: No rendering backend argument found, use default OpenGL rendering backend.");
+		InnoLogger::Log(LogLevel::Warning, "Engine: No rendering backend argument found, use default OpenGL rendering backend.");
 	}
 	else
 	{
@@ -202,7 +206,7 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 #if defined INNO_RENDERER_OPENGL
 			l_result.renderingServer = RenderingServer::GL;
 #else
-			InnoLogger::Log(LogLevel::Warning, "ModuleManager: OpenGL is not supported on current platform, no rendering backend will be launched.");
+			InnoLogger::Log(LogLevel::Warning, "Engine: OpenGL is not supported on current platform, no rendering backend will be launched.");
 #endif
 		}
 		else if (l_rendererArguments == "1")
@@ -210,7 +214,7 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 #if defined INNO_RENDERER_DIRECTX
 			l_result.renderingServer = RenderingServer::DX11;
 #else
-			InnoLogger::Log(LogLevel::Warning, "ModuleManager: DirectX 11 is not supported on current platform, use default OpenGL rendering backend.");
+			InnoLogger::Log(LogLevel::Warning, "Engine: DirectX 11 is not supported on current platform, use default OpenGL rendering backend.");
 #endif
 		}
 		else if (l_rendererArguments == "2")
@@ -218,7 +222,7 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 #if defined INNO_RENDERER_DIRECTX
 			l_result.renderingServer = RenderingServer::DX12;
 #else
-			InnoLogger::Log(LogLevel::Warning, "ModuleManager: DirectX 12 is not supported on current platform, use default OpenGL rendering backend.");
+			InnoLogger::Log(LogLevel::Warning, "Engine: DirectX 12 is not supported on current platform, use default OpenGL rendering backend.");
 #endif
 		}
 		else if (l_rendererArguments == "3")
@@ -226,7 +230,7 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 #if defined INNO_RENDERER_VULKAN
 			l_result.renderingServer = RenderingServer::VK;
 #else
-			InnoLogger::Log(LogLevel::Warning, "ModuleManager: Vulkan is not supported on current platform, use default OpenGL rendering backend.");
+			InnoLogger::Log(LogLevel::Warning, "Engine: Vulkan is not supported on current platform, use default OpenGL rendering backend.");
 #endif
 		}
 		else if (l_rendererArguments == "4")
@@ -234,12 +238,12 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 #if defined INNO_RENDERER_METAL
 			l_result.renderingServer = RenderingServer::MT;
 #else
-			InnoLogger::Log(LogLevel::Warning, "ModuleManager: Metal is not supported on current platform, use default OpenGL rendering backend.");
+			InnoLogger::Log(LogLevel::Warning, "Engine: Metal is not supported on current platform, use default OpenGL rendering backend.");
 #endif
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Warning, "ModuleManager: Unsupported rendering backend, use default OpenGL rendering backend.");
+			InnoLogger::Log(LogLevel::Warning, "Engine: Unsupported rendering backend, use default OpenGL rendering backend.");
 		}
 	}
 
@@ -271,14 +275,14 @@ InitConfig InnoModuleManagerNS::parseInitConfig(const std::string& arg)
 		}
 		else
 		{
-			InnoLogger::Log(LogLevel::Warning, "ModuleManager: Unsupported log level.");
+			InnoLogger::Log(LogLevel::Warning, "Engine: Unsupported log level.");
 		}
 	}
 
 	return l_result;
 }
 
-bool InnoModuleManagerNS::createSystemInstance(void* appHook, void* extraHook, char* pScmdline)
+bool EngineNS::createSystemInstance(void* appHook, void* extraHook, char* pScmdline)
 {
 	createSystemInstanceDefi(TimeSystem);
 	createSystemInstanceDefi(LogSystem);
@@ -408,7 +412,7 @@ bool InnoModuleManagerNS::createSystemInstance(void* appHook, void* extraHook, c
 	return true;
 }
 
-bool InnoModuleManagerNS::Setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient)
+bool EngineNS::Setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient)
 {
 	m_RenderingClient = renderingClient;
 	m_LogicClient = logicClient;
@@ -435,7 +439,7 @@ bool InnoModuleManagerNS::Setup(void* appHook, void* extraHook, char* pScmdline,
 	{
 		return false;
 	}
-	InnoLogger::Log(LogLevel::Success, "ModuleManager: WindowSystem Setup finished.");
+	InnoLogger::Log(LogLevel::Success, "Engine: WindowSystem Setup finished.");
 
 	SystemSetup(AssetSystem);
 	SystemSetup(FileSystem);
@@ -444,7 +448,7 @@ bool InnoModuleManagerNS::Setup(void* appHook, void* extraHook, char* pScmdline,
 	{
 		return false;
 	}
-	InnoLogger::Log(LogLevel::Success, "ModuleManager: EntityManager Setup finished.");
+	InnoLogger::Log(LogLevel::Success, "Engine: EntityManager Setup finished.");
 
 	SystemSetup(TransformSystem);
 	SystemSetup(LightSystem);
@@ -461,29 +465,31 @@ bool InnoModuleManagerNS::Setup(void* appHook, void* extraHook, char* pScmdline,
 	{
 		return false;
 	}
-	InnoLogger::Log(LogLevel::Success, "ModuleManager: RenderingFrontend Setup finished.");
+	InnoLogger::Log(LogLevel::Success, "Engine: RenderingFrontend Setup finished.");
 
 	if (!m_GUISystem->Setup())
 	{
 		return false;
 	}
-	InnoLogger::Log(LogLevel::Success, "ModuleManager: GUISystem Setup finished.");
+	InnoLogger::Log(LogLevel::Success, "Engine: GUISystem Setup finished.");
 
 	if (!m_RenderingServer->Setup())
 	{
 		return false;
 	}
-	InnoLogger::Log(LogLevel::Success, "ModuleManager: RenderingServer Setup finished.");
+	InnoLogger::Log(LogLevel::Success, "Engine: RenderingServer Setup finished.");
 
 	if (!m_RenderingClient->Setup())
 	{
 		return false;
 	}
+	InnoLogger::Log(LogLevel::Success, "Engine: RenderingClient Setup finished.");
 
 	if (!m_LogicClient->Setup())
 	{
 		return false;
 	}
+	InnoLogger::Log(LogLevel::Success, "Engine: LogicClient Setup finished.");
 
 	f_LogicClientUpdateJob = [&]() {m_LogicClient->Update(); };
 	f_PhysicsSystemUpdateBVHJob = [&]() {m_PhysicsSystem->updateBVH(); };
@@ -500,7 +506,7 @@ bool InnoModuleManagerNS::Setup(void* appHook, void* extraHook, char* pScmdline,
 
 		m_RenderingServer->Present();
 
-		g_pModuleManager->getWindowSystem()->getWindowSurface()->swapBuffer();
+		g_Engine->getWindowSystem()->getWindowSurface()->swapBuffer();
 
 		auto l_tickEndTime = m_TimeSystem->getCurrentTimeFromEpoch();
 
@@ -508,12 +514,12 @@ bool InnoModuleManagerNS::Setup(void* appHook, void* extraHook, char* pScmdline,
 	};
 
 	m_ObjectStatus = ObjectStatus::Created;
-	InnoLogger::Log(LogLevel::Success, "ModuleManager: Engine Setup finished.");
+	InnoLogger::Log(LogLevel::Success, "Engine: Engine Setup finished.");
 
 	return true;
 }
 
-bool InnoModuleManagerNS::Initialize()
+bool EngineNS::Initialize()
 {
 	SystemInit(TimeSystem);
 	SystemInit(LogSystem);
@@ -558,15 +564,15 @@ bool InnoModuleManagerNS::Initialize()
 	f_RenderingFrontendUpdateJob();
 
 	m_ObjectStatus = ObjectStatus::Activated;
-	InnoLogger::Log(LogLevel::Success, "ModuleManager: Engine has been initialized.");
+	InnoLogger::Log(LogLevel::Success, "Engine: Engine has been initialized.");
 	return true;
 }
 
-bool InnoModuleManagerNS::Update()
+bool EngineNS::Update()
 {
 	while (1)
 	{
-		auto l_LogicClientUpdateTask = g_pModuleManager->getTaskSystem()->submit("LogicClientUpdateTask", 0, nullptr, f_LogicClientUpdateJob);
+		auto l_LogicClientUpdateTask = g_Engine->getTaskSystem()->submit("LogicClientUpdateTask", 0, nullptr, f_LogicClientUpdateJob);
 
 		SystemUpdate(TimeSystem);
 		SystemUpdate(LogSystem);
@@ -592,7 +598,7 @@ bool InnoModuleManagerNS::Update()
 
 		SystemUpdate(PhysicsSystem);
 
-		auto l_PhysicsSystemCullingTask = g_pModuleManager->getTaskSystem()->submit("PhysicsSystemCullingTask", 1, l_LogicClientUpdateTask, f_PhysicsSystemCullingJob);
+		auto l_PhysicsSystemCullingTask = g_Engine->getTaskSystem()->submit("PhysicsSystemCullingTask", 1, l_LogicClientUpdateTask, f_PhysicsSystemCullingJob);
 
 		SystemUpdate(EventSystem);
 
@@ -602,11 +608,11 @@ bool InnoModuleManagerNS::Update()
 			{
 				m_WindowSystem->Update();
 
-				auto l_RenderingFrontendUpdateTask = g_pModuleManager->getTaskSystem()->submit("RenderingFrontendUpdateTask", 1, l_PhysicsSystemCullingTask, f_RenderingFrontendUpdateJob);
+				auto l_RenderingFrontendUpdateTask = g_Engine->getTaskSystem()->submit("RenderingFrontendUpdateTask", 1, l_PhysicsSystemCullingTask, f_RenderingFrontendUpdateJob);
 
 				m_GUISystem->Update();
 
-				auto l_RenderingServerTask = g_pModuleManager->getTaskSystem()->submit("RenderingServerTask", 2, l_RenderingFrontendUpdateTask, f_RenderingServerUpdateJob);
+				auto l_RenderingServerTask = g_Engine->getTaskSystem()->submit("RenderingServerTask", 2, l_RenderingFrontendUpdateTask, f_RenderingServerUpdateJob);
 				l_RenderingServerTask->Wait();
 
 				SystemOnFrameEnd(TransformSystem);
@@ -616,7 +622,7 @@ bool InnoModuleManagerNS::Update()
 			else
 			{
 				m_ObjectStatus = ObjectStatus::Suspended;
-				InnoLogger::Log(LogLevel::Warning, "ModuleManager: Engine is stand-by.");
+				InnoLogger::Log(LogLevel::Warning, "Engine: Engine is stand-by.");
 				return true;
 			}
 		}
@@ -625,25 +631,25 @@ bool InnoModuleManagerNS::Update()
 	}
 }
 
-bool InnoModuleManagerNS::Terminate()
+bool EngineNS::Terminate()
 {
 	m_TaskSystem->waitAllTasksToFinish();
 
 	if (!m_RenderingClient->Terminate())
 	{
-		InnoLogger::Log(LogLevel::Error, "ModuleManager: Rendering client can't be terminated!");
+		InnoLogger::Log(LogLevel::Error, "Engine: Rendering client can't be terminated!");
 		return false;
 	}
 
 	if (!m_LogicClient->Terminate())
 	{
-		InnoLogger::Log(LogLevel::Error, "ModuleManager: Logic client can't be terminated!");
+		InnoLogger::Log(LogLevel::Error, "Engine: Logic client can't be terminated!");
 		return false;
 	}
 
 	if (!m_RenderingServer->Terminate())
 	{
-		InnoLogger::Log(LogLevel::Error, "ModuleManager: RenderingServer can't be terminated!");
+		InnoLogger::Log(LogLevel::Error, "Engine: RenderingServer can't be terminated!");
 		return false;
 	}
 
@@ -663,7 +669,7 @@ bool InnoModuleManagerNS::Terminate()
 
 	if (!m_EntityManager->Terminate())
 	{
-		InnoLogger::Log(LogLevel::Error, "ModuleManager: EntityManager can't be terminated!");
+		InnoLogger::Log(LogLevel::Error, "Engine: EntityManager can't be terminated!");
 		return false;
 	}
 
@@ -681,29 +687,29 @@ bool InnoModuleManagerNS::Terminate()
 	return true;
 }
 
-bool InnoModuleManager::Setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient)
+bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient)
 {
-	g_pModuleManager = this;
+	g_Engine = this;
 
-	return InnoModuleManagerNS::Setup(appHook, extraHook, pScmdline, renderingClient, logicClient);
+	return EngineNS::Setup(appHook, extraHook, pScmdline, renderingClient, logicClient);
 }
 
-bool InnoModuleManager::Initialize()
+bool Engine::Initialize()
 {
-	return InnoModuleManagerNS::Initialize();
+	return EngineNS::Initialize();
 }
 
-bool InnoModuleManager::Run()
+bool Engine::Run()
 {
-	return InnoModuleManagerNS::Update();
+	return EngineNS::Update();
 }
 
-bool InnoModuleManager::Terminate()
+bool Engine::Terminate()
 {
-	return InnoModuleManagerNS::Terminate();
+	return EngineNS::Terminate();
 }
 
-ObjectStatus InnoModuleManager::GetStatus()
+ObjectStatus Engine::GetStatus()
 {
 	return m_ObjectStatus;
 }
@@ -726,22 +732,22 @@ SystemGetDefi(RenderingFrontend);
 SystemGetDefi(GUISystem);
 SystemGetDefi(RenderingServer);
 
-ComponentManager* InnoModuleManager::getComponentManager()
+ComponentManager* Engine::getComponentManager()
 {
 	return m_CM.get();
 }
 
-InitConfig InnoModuleManager::getInitConfig()
+InitConfig Engine::getInitConfig()
 {
 	return m_initConfig;
 }
 
-float InnoModuleManager::getTickTime()
+float Engine::getTickTime()
 {
 	return  m_tickTime;
 }
 
-const FixedSizeString<128>& InnoModuleManager::getApplicationName()
+const FixedSizeString<128>& Engine::getApplicationName()
 {
 	return m_applicationName;
 }

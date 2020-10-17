@@ -1,26 +1,26 @@
 #include <windows.h>
 #include <windowsx.h>
 
-#include "../ApplicationEntry/InnoApplicationEntry.h"
+#include "../ApplicationEntry/ApplicationEntry.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int nCmdshow)
 {
 	AllocConsole();
 
 	errno_t err;
-	FILE *stream;
+	FILE* stream;
 	err = freopen_s(&stream, "CONOUT$", "w", stdout);
 	SetConsoleTitle("Innocence Engine Debug Console");
 
-	if (!InnoApplicationEntry::Setup(hInstance, nullptr, pScmdline))
+	if (!Inno::ApplicationEntry::Setup(hInstance, nullptr, pScmdline))
 	{
 		return 0;
 	}
-	if (!InnoApplicationEntry::Initialize())
+	if (!Inno::ApplicationEntry::Initialize())
 	{
 		return 0;
 	}
-	InnoApplicationEntry::Run();
-	InnoApplicationEntry::Terminate();
+	Inno::ApplicationEntry::Run();
+	Inno::ApplicationEntry::Terminate();
 	return 0;
 }

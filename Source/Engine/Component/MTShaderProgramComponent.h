@@ -1,7 +1,10 @@
 #pragma once
 #include "ShaderProgramComponent.h"
 
-class MTShaderProgramComponent : public ShaderProgramComponent
+namespace Inno
 {
-public:
-};
+	class MTShaderProgramComponent : public ShaderProgramComponent
+	{
+	public:
+	};
+}
