@@ -9,6 +9,7 @@ namespace Inno
 	{
 	public:
 		virtual ~IComponentFactory() = default;
+		virtual bool CleanUp(ObjectLifespan objectLifespan) = 0;
 	};
 
 	template<typename T>
@@ -26,6 +27,19 @@ namespace Inno
 		}
 
 		~TComponentFactory() = default;
+
+		bool CleanUp(ObjectLifespan objectLifespan)
+		{
+			std::vector<T*> l_componentPtrs = m_ComponentPointers.getRawData();
+			for (auto i : l_componentPtrs)
+			{
+				if (i->m_ObjectLifespan == objectLifespan)
+				{
+					Destroy(i);
+				}
+			}
+			return true;
+		}
 
 		T* Spawn(const InnoEntity* owner, bool serializable, ObjectLifespan objectLifespan)
 		{
@@ -170,6 +184,15 @@ namespace Inno
 		const std::vector<T*>& GetAll()
 		{
 			return GetComponentFactory<T>()->GetAll<T>();
+		}
+
+		bool CleanUp(ObjectLifespan objectLifespan)
+		{
+			for (auto& i : m_ComponentFactorys)
+			{
+				i.second->CleanUp(objectLifespan);
+			}
+			return true;
 		}
 
 	private:

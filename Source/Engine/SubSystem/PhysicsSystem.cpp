@@ -83,6 +83,7 @@ bool InnoPhysicsSystemNS::Setup()
 		{
 			g_Engine->getComponentManager()->Destroy(m_Components[i]);
 		}
+		m_Components.clear();
 		m_IntermediateComponents.clear();
 		m_BVHNodes.clear();
 

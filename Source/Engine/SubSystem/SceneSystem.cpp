@@ -101,7 +101,7 @@ bool InnoSceneSystem::Setup(ISystemConfig* systemConfig)
 {
 	f_SceneLoadingStartCallback = [&]() {
 		m_SceneHierarchyMap.clear();
-		// @TODO: cleanup the loaded components
+		g_Engine->getComponentManager()->CleanUp(ObjectLifespan::Scene);
 	};
 
 	f_SceneLoadingFinishCallback = [&]() {
