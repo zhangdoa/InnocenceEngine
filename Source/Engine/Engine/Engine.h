@@ -10,8 +10,10 @@ namespace Inno
 
 		bool Setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient) override;
 		bool Initialize() override;
-		bool Run() override;
+		bool Update() override;
 		bool Terminate() override;
+
+		bool Run() override;
 
 		ObjectStatus GetStatus() override;
 

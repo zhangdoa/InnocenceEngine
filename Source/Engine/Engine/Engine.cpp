@@ -106,6 +106,8 @@ namespace Inno
 		bool Update();
 		bool Terminate();
 
+		bool Run();
+
 		InitConfig m_initConfig;
 
 		std::unique_ptr<ITimeSystem> m_TimeSystem;
@@ -570,65 +572,64 @@ bool EngineNS::Initialize()
 
 bool EngineNS::Update()
 {
-	while (1)
+	auto l_LogicClientUpdateTask = g_Engine->getTaskSystem()->submit("LogicClientUpdateTask", 0, nullptr, f_LogicClientUpdateJob);
+
+	SystemUpdate(TimeSystem);
+	SystemUpdate(LogSystem);
+	SystemUpdate(MemorySystem);
+	SystemUpdate(TaskSystem);
+
+	SystemUpdate(TestSystem);
+	SystemUpdate(FileSystem);
+	SystemUpdate(SceneSystem);
+
+	if (!m_EntityManager->Update())
 	{
-		auto l_LogicClientUpdateTask = g_Engine->getTaskSystem()->submit("LogicClientUpdateTask", 0, nullptr, f_LogicClientUpdateJob);
+		return false;
+	}
 
-		SystemUpdate(TimeSystem);
-		SystemUpdate(LogSystem);
-		SystemUpdate(MemorySystem);
-		SystemUpdate(TaskSystem);
+	SystemUpdate(TransformSystem);
+	SystemUpdate(LightSystem);
+	SystemUpdate(CameraSystem);
 
-		SystemUpdate(TestSystem);
-		SystemUpdate(FileSystem);
-		SystemUpdate(SceneSystem);
+	SystemUpdate(AssetSystem);
 
-		if (!m_EntityManager->Update())
+	f_PhysicsSystemUpdateBVHJob();
+
+	SystemUpdate(PhysicsSystem);
+
+	auto l_PhysicsSystemCullingTask = g_Engine->getTaskSystem()->submit("PhysicsSystemCullingTask", 1, l_LogicClientUpdateTask, f_PhysicsSystemCullingJob);
+
+	SystemUpdate(EventSystem);
+
+	if (!m_SceneSystem->isLoadingScene())
+	{
+		if (m_WindowSystem->GetStatus() == ObjectStatus::Activated)
 		{
+			m_WindowSystem->Update();
+
+			auto l_RenderingFrontendUpdateTask = g_Engine->getTaskSystem()->submit("RenderingFrontendUpdateTask", 1, l_PhysicsSystemCullingTask, f_RenderingFrontendUpdateJob);
+
+			m_GUISystem->Update();
+
+			auto l_RenderingServerUpdateTask = g_Engine->getTaskSystem()->submit("RenderingServerUpdateTask", 2, l_RenderingFrontendUpdateTask, f_RenderingServerUpdateJob);
+			l_RenderingServerUpdateTask->Wait();
+
+			SystemOnFrameEnd(TransformSystem);
+			SystemOnFrameEnd(LightSystem);
+			SystemOnFrameEnd(CameraSystem);
+		}
+		else
+		{
+			m_ObjectStatus = ObjectStatus::Suspended;
+			InnoLogger::Log(LogLevel::Warning, "Engine: Engine is stand-by.");
 			return false;
 		}
-
-		SystemUpdate(TransformSystem);
-		SystemUpdate(LightSystem);
-		SystemUpdate(CameraSystem);
-
-		SystemUpdate(AssetSystem);
-
-		f_PhysicsSystemUpdateBVHJob();
-
-		SystemUpdate(PhysicsSystem);
-
-		auto l_PhysicsSystemCullingTask = g_Engine->getTaskSystem()->submit("PhysicsSystemCullingTask", 1, l_LogicClientUpdateTask, f_PhysicsSystemCullingJob);
-
-		SystemUpdate(EventSystem);
-
-		if (!m_SceneSystem->isLoadingScene())
-		{
-			if (m_WindowSystem->GetStatus() == ObjectStatus::Activated)
-			{
-				m_WindowSystem->Update();
-
-				auto l_RenderingFrontendUpdateTask = g_Engine->getTaskSystem()->submit("RenderingFrontendUpdateTask", 1, l_PhysicsSystemCullingTask, f_RenderingFrontendUpdateJob);
-
-				m_GUISystem->Update();
-
-				auto l_RenderingServerTask = g_Engine->getTaskSystem()->submit("RenderingServerTask", 2, l_RenderingFrontendUpdateTask, f_RenderingServerUpdateJob);
-				l_RenderingServerTask->Wait();
-
-				SystemOnFrameEnd(TransformSystem);
-				SystemOnFrameEnd(LightSystem);
-				SystemOnFrameEnd(CameraSystem);
-			}
-			else
-			{
-				m_ObjectStatus = ObjectStatus::Suspended;
-				InnoLogger::Log(LogLevel::Warning, "Engine: Engine is stand-by.");
-				return true;
-			}
-		}
-
-		m_TaskSystem->waitAllTasksToFinish();
 	}
+
+	m_TaskSystem->waitAllTasksToFinish();
+
+	return true;
 }
 
 bool EngineNS::Terminate()
@@ -687,6 +688,18 @@ bool EngineNS::Terminate()
 	return true;
 }
 
+bool EngineNS::Run()
+{
+	while (1)
+	{
+		if (!EngineNS::Update())
+		{
+			return false;
+		};
+	}
+	return true;
+}
+
 bool Engine::Setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient)
 {
 	g_Engine = this;
@@ -699,7 +712,7 @@ bool Engine::Initialize()
 	return EngineNS::Initialize();
 }
 
-bool Engine::Run()
+bool Engine::Update()
 {
 	return EngineNS::Update();
 }
@@ -707,6 +720,11 @@ bool Engine::Run()
 bool Engine::Terminate()
 {
 	return EngineNS::Terminate();
+}
+
+bool Engine::Run()
+{
+	return EngineNS::Run();
 }
 
 ObjectStatus Engine::GetStatus()

@@ -42,8 +42,10 @@ namespace Inno
 
 		INNO_ENGINE_API virtual bool Setup(void* appHook, void* extraHook, char* pScmdline, IRenderingClient* renderingClient, ILogicClient* logicClient) = 0;
 		INNO_ENGINE_API virtual bool Initialize() = 0;
-		INNO_ENGINE_API virtual bool Run() = 0;
+		INNO_ENGINE_API virtual bool Update() = 0;
 		INNO_ENGINE_API virtual bool Terminate() = 0;
+
+		INNO_ENGINE_API virtual bool Run() = 0;
 
 		INNO_ENGINE_API virtual ObjectStatus GetStatus() = 0;
 
