@@ -22,7 +22,7 @@ namespace Inno
 		AABB getVisibleSceneAABB() override;
 		AABB getStaticSceneAABB() override;
 		AABB getTotalSceneAABB() override;
-		BVHNode* getRootBVHNode() override;
+		const std::vector<BVHNode>& getBVHNodes() override;
 
 		bool addForce(VisibleComponent* VC, Vec4 force) override;
 	};

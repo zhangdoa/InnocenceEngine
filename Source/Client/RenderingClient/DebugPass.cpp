@@ -26,8 +26,7 @@ struct DebugMaterialConstantBuffer
 
 namespace DebugPass
 {
-	bool AddPDCMeshData(PhysicsDataComponent* PDC);
-	bool AddBVHNode(BVHNode* node);
+	bool AddBVHData(const BVHNode& node);
 
 	RenderPassDataComponent* m_RPDC;
 	ShaderProgramComponent* m_SPC;
@@ -118,59 +117,17 @@ bool DebugPass::Initialize()
 	return true;
 }
 
-bool DebugPass::AddPDCMeshData(PhysicsDataComponent* PDC)
+bool DebugPass::AddBVHData(const BVHNode& node)
 {
 	DebugPerObjectConstantBuffer l_cubeMeshData;
 
-	l_cubeMeshData.m = InnoMath::toTranslationMatrix(PDC->m_AABBWS.m_center);
-	l_cubeMeshData.m.m00 *= PDC->m_AABBWS.m_extend.x / 2.0f;
-	l_cubeMeshData.m.m11 *= PDC->m_AABBWS.m_extend.y / 2.0f;
-	l_cubeMeshData.m.m22 *= PDC->m_AABBWS.m_extend.z / 2.0f;
-	l_cubeMeshData.materialID = 4;
+	l_cubeMeshData.m = InnoMath::toTranslationMatrix(node.m_AABB.m_center);
+	l_cubeMeshData.m.m00 *= node.m_AABB.m_extend.x / 2.0f;
+	l_cubeMeshData.m.m11 *= node.m_AABB.m_extend.y / 2.0f;
+	l_cubeMeshData.m.m22 *= node.m_AABB.m_extend.z / 2.0f;
+	l_cubeMeshData.materialID = node.PDC == nullptr ? 4 : 3;
 
 	m_debugCubeConstantBuffer.emplace_back(l_cubeMeshData);
-
-	DebugPerObjectConstantBuffer l_sphereMeshData;
-
-	l_sphereMeshData.m = InnoMath::toTranslationMatrix(PDC->m_SphereWS.m_center);
-	l_sphereMeshData.m.m00 *= 0.5f;
-	l_sphereMeshData.m.m11 *= 0.5f;
-	l_sphereMeshData.m.m22 *= 0.5f;
-	l_sphereMeshData.materialID = 3;
-
-	m_debugSphereConstantBuffer.emplace_back(l_sphereMeshData);
-
-	return true;
-}
-
-bool DebugPass::AddBVHNode(BVHNode* node)
-{
-	if (node)
-	{
-		if (node->intermediatePDC)
-		{
-			AddPDCMeshData(node->intermediatePDC);
-			if (node->leftChildNode)
-			{
-				AddBVHNode(node->leftChildNode);
-			}
-			if (node->rightChildNode)
-			{
-				AddBVHNode(node->rightChildNode);
-			}
-		}
-
-		auto l_PDCCount = node->childrenPDCs.size();
-
-		if (l_PDCCount)
-		{
-			for (size_t i = 0; i < l_PDCCount; i++)
-			{
-				auto l_PDC = node->childrenPDCs[i];
-				AddPDCMeshData(l_PDC);
-			}
-		}
-	}
 
 	return true;
 }
@@ -272,9 +229,12 @@ bool DebugPass::Render()
 		static bool l_drawBVHNodes = false;
 		if (l_drawBVHNodes)
 		{
-			auto l_rootBVHNode = g_Engine->getPhysicsSystem()->getRootBVHNode();
+			auto l_BVHNodes = g_Engine->getPhysicsSystem()->getBVHNodes();
 
-			AddBVHNode(l_rootBVHNode);
+			for (auto& i : l_BVHNodes)
+			{
+				AddBVHData(i);
+			}
 		}
 
 		static bool l_drawSkeletons = true;

@@ -20,14 +20,23 @@ namespace Inno
 
 	struct BVHNode
 	{
-		BVHNode* parentNode = 0;
-		BVHNode* leftChildNode = 0;
-		BVHNode* rightChildNode = 0;
+		AABB m_AABB;
 
+		std::vector<BVHNode>::iterator parentNode;
+		std::vector<BVHNode>::iterator leftChildNode;
+		std::vector<BVHNode>::iterator rightChildNode;
 		size_t depth = 0;
 
-		PhysicsDataComponent* intermediatePDC;
-		std::vector<PhysicsDataComponent*> childrenPDCs;
+		PhysicsDataComponent* PDC = 0;
+
+		bool operator==(const BVHNode& other) const
+		{
+			return (
+				parentNode == other.parentNode
+				&& leftChildNode == other.leftChildNode
+				&& rightChildNode == other.rightChildNode
+				);
+		}
 	};
 
 	class IPhysicsSystem : public ISystem
@@ -42,7 +51,7 @@ namespace Inno
 		virtual AABB getVisibleSceneAABB() = 0;
 		virtual AABB getStaticSceneAABB() = 0;
 		virtual AABB getTotalSceneAABB() = 0;
-		virtual BVHNode* getRootBVHNode() = 0;
+		virtual const std::vector<BVHNode>& getBVHNodes() = 0;
 
 		virtual bool addForce(VisibleComponent* VC, Vec4 force) = 0;
 	};

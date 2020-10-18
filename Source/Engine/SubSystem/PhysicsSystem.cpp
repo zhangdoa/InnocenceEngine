@@ -28,7 +28,7 @@ namespace InnoPhysicsSystemNS
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-	const size_t m_MaxComponentCount = 32768;
+	const size_t m_MaxComponentCount = 16384;
 	Vec4 m_visibleSceneBoundMax;
 	Vec4 m_visibleSceneBoundMin;
 	AABB m_visibleSceneAABB;
@@ -41,18 +41,18 @@ namespace InnoPhysicsSystemNS
 	Vec4 m_staticSceneBoundMin;
 	InnoEntity* m_RootPDCEntity = 0;
 	PhysicsDataComponent* m_RootPhysicsDataComponent = 0;
-	BVHNode* m_RootBVHNode = 0;
 
 	std::shared_mutex m_mutex;
 
 	std::vector<PhysicsDataComponent*> m_Components;
-	std::vector<PhysicsDataComponent*> m_IntermediateComponents;
 	std::vector<BVHNode> m_BVHNodes;
+	std::vector<BVHNode> m_TempBVHNodes;
+
 	std::unordered_map<VisibleComponent*, ArrayRangeInfo> m_ComponentOwnerLUT;
 
 	DoubleBuffer<std::vector<CullingData>, true> m_cullingData;
 
-	size_t m_maxBVHDepth = 16;
+	size_t m_maxBVHDepth = 256;
 	std::atomic<size_t> m_BVHWorkloadCount = 0;
 
 	std::function<void()> f_sceneLoadingStartCallback;
@@ -64,8 +64,8 @@ bool InnoPhysicsSystemNS::Setup()
 {
 	g_Engine->getComponentManager()->RegisterType<PhysicsDataComponent>(m_MaxComponentCount);
 	m_RootPDCEntity = g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, "RootPDCEntity/");
-	m_IntermediateComponents.reserve(16384);
-	m_BVHNodes.reserve(32678);
+	m_BVHNodes.reserve(m_MaxComponentCount);
+	m_TempBVHNodes.reserve(m_MaxComponentCount * 2);
 
 #if defined INNO_PLATFORM_WIN
 	PhysXWrapper::get().Setup();
@@ -73,26 +73,20 @@ bool InnoPhysicsSystemNS::Setup()
 
 	f_sceneLoadingStartCallback = [&]()
 	{
-		auto l_intermediatePDCCount = m_IntermediateComponents.size();
-		for (size_t i = 0; i < l_intermediatePDCCount; i++)
-		{
-			g_Engine->getComponentManager()->Destroy(m_IntermediateComponents[i]);
-		}
-		auto l_PDCCount = m_Components.size();
-		for (size_t i = 0; i < l_PDCCount; i++)
+		auto l_componentsCount = m_Components.size();
+		for (size_t i = 0; i < l_componentsCount; i++)
 		{
 			g_Engine->getComponentManager()->Destroy(m_Components[i]);
 		}
 		m_Components.clear();
-		m_IntermediateComponents.clear();
 		m_BVHNodes.clear();
+		m_TempBVHNodes.clear();
 
 		if (m_RootPhysicsDataComponent)
 		{
 			g_Engine->getComponentManager()->Destroy(m_RootPhysicsDataComponent);
 		}
 		m_RootPhysicsDataComponent = AddPhysicsDataComponent(m_RootPDCEntity);
-		m_RootPhysicsDataComponent->m_IsIntermediate = true;
 
 		m_totalSceneBoundMax = InnoMath::minVec4<float>;
 		m_totalSceneBoundMax.w = 1.0f;
@@ -142,6 +136,10 @@ PhysicsDataComponent* InnoPhysicsSystemNS::generatePhysicsDataComponent(MeshMate
 	InnoLogger::Log(LogLevel::Verbose, "PhysicsSystem: PhysicsDataComponent has been generated for MeshDataComponent:", l_MDC->m_Owner->m_InstanceName.c_str(), ".");
 
 	m_Components.emplace_back(l_PDC);
+
+	BVHNode l_BVHNode;
+	l_BVHNode.PDC = l_PDC;
+	m_BVHNodes.emplace_back(l_BVHNode);
 
 	m_BVHWorkloadCount++;
 
@@ -291,229 +289,129 @@ ObjectStatus InnoPhysicsSystem::GetStatus()
 	return InnoPhysicsSystemNS::m_ObjectStatus;
 }
 
-bool generateBVHLeafNodes(BVHNode* parentNode)
+AABB generateAABB(std::vector<BVHNode>::iterator begin, std::vector<BVHNode>::iterator end)
 {
-	if (parentNode->childrenPDCs.size() == 1)
+	auto l_BoundMax = InnoMath::minVec4<float>;
+	l_BoundMax.w = 1.0f;
+	auto l_BoundMin = InnoMath::maxVec4<float>;
+	l_BoundMin.w = 1.0f;
+
+	for (auto it = begin; it != end; it++)
+	{
+		l_BoundMax = InnoMath::elementWiseMax(it->m_AABB.m_boundMax, l_BoundMax);
+		l_BoundMin = InnoMath::elementWiseMin(it->m_AABB.m_boundMin, l_BoundMin);
+	}
+
+	return generateAABB(l_BoundMax, l_BoundMin);
+}
+
+bool generateBVH(std::vector<BVHNode>::iterator node, size_t begin, size_t end, std::vector<BVHNode>& nodes)
+{
+	if (end - begin < 3)
 	{
 		return true;
 	}
-	// Find max axis
-	float l_maxAxisLength;
-	uint32_t l_maxAxis;
-	if (parentNode->intermediatePDC->m_AABBWS.m_extend.x > parentNode->intermediatePDC->m_AABBWS.m_extend.y)
+
+	if (node->depth >= m_maxBVHDepth)
 	{
-		if (parentNode->intermediatePDC->m_AABBWS.m_extend.x > parentNode->intermediatePDC->m_AABBWS.m_extend.z)
+		return true;
+	}
+
+	// Find max axis
+	uint32_t l_maxAxis;
+	if (node->m_AABB.m_extend.x > node->m_AABB.m_extend.y)
+	{
+		if (node->m_AABB.m_extend.x > node->m_AABB.m_extend.z)
 		{
-			l_maxAxisLength = parentNode->intermediatePDC->m_AABBWS.m_extend.x;
 			l_maxAxis = 0;
 		}
 		else
 		{
-			l_maxAxisLength = parentNode->intermediatePDC->m_AABBWS.m_extend.z;
 			l_maxAxis = 2;
 		}
 	}
 	else
 	{
-		if (parentNode->intermediatePDC->m_AABBWS.m_extend.y > parentNode->intermediatePDC->m_AABBWS.m_extend.z)
+		if (node->m_AABB.m_extend.y > node->m_AABB.m_extend.z)
 		{
-			l_maxAxisLength = parentNode->intermediatePDC->m_AABBWS.m_extend.y;
 			l_maxAxis = 1;
 		}
 		else
 		{
-			l_maxAxisLength = parentNode->intermediatePDC->m_AABBWS.m_extend.z;
 			l_maxAxis = 2;
 		}
 	}
 
+	auto l_begin = nodes.begin() + begin;
+	auto l_end = nodes.begin() + end;
+
 	// Sort children nodes
-	if (l_maxAxis == 0)
-	{
-		std::sort(parentNode->childrenPDCs.begin(), parentNode->childrenPDCs.end(), [&](PhysicsDataComponent* A, PhysicsDataComponent* B)
-			{
-				return A->m_AABBWS.m_boundMin.x < B->m_AABBWS.m_boundMin.x;
-			});
-	}
-	else if (l_maxAxis == 1)
-	{
-		std::sort(parentNode->childrenPDCs.begin(), parentNode->childrenPDCs.end(), [&](PhysicsDataComponent* A, PhysicsDataComponent* B)
-			{
-				return A->m_AABBWS.m_boundMin.y < B->m_AABBWS.m_boundMin.y;
-			});
-	}
-	else
-	{
-		std::sort(parentNode->childrenPDCs.begin(), parentNode->childrenPDCs.end(), [&](PhysicsDataComponent* A, PhysicsDataComponent* B)
-			{
-				return A->m_AABBWS.m_boundMin.z < B->m_AABBWS.m_boundMin.z;
-			});
-	}
-
-	// Construct middle split points
-	auto l_midMin = parentNode->intermediatePDC->m_AABBWS.m_boundMin;
-	auto l_midMax = parentNode->intermediatePDC->m_AABBWS.m_boundMax;
-
-	//And sort children nodes
-	if (l_maxAxis == 0)
-	{
-		l_midMin.x += l_maxAxisLength / 2.0f;
-		l_midMax.x -= l_maxAxisLength / 2.0f;
-	}
-	else if (l_maxAxis == 1)
-	{
-		l_midMin.y += l_maxAxisLength / 2.0f;
-		l_midMax.y -= l_maxAxisLength / 2.0f;
-	}
-	else
-	{
-		l_midMin.z += l_maxAxisLength / 2.0f;
-		l_midMax.z -= l_maxAxisLength / 2.0f;
-	}
-
-	// Split children nodes
-	std::vector<PhysicsDataComponent*> l_leftChildrenPDCs;
-	std::vector<PhysicsDataComponent*> l_rightChildrenPDCs;
-
-	auto l_totalChildrenPDCCount = parentNode->childrenPDCs.size();
-
-	l_leftChildrenPDCs.reserve(l_totalChildrenPDCCount);
-	l_rightChildrenPDCs.reserve(l_totalChildrenPDCCount);
-
-	for (size_t i = 0; i < l_totalChildrenPDCCount; i++)
-	{
-		if (l_maxAxis == 0)
+	std::sort(l_begin, l_end, [&](BVHNode A, BVHNode B)
 		{
-			if (parentNode->childrenPDCs[i]->m_AABBWS.m_boundMax.x < l_midMin.x)
-			{
-				l_leftChildrenPDCs.emplace_back(parentNode->childrenPDCs[i]);
-			}
-			else
-			{
-				l_rightChildrenPDCs.emplace_back(parentNode->childrenPDCs[i]);
-			}
-		}
-		else if (l_maxAxis == 1)
-		{
-			if (parentNode->childrenPDCs[i]->m_AABBWS.m_boundMax.y < l_midMin.y)
-			{
-				l_leftChildrenPDCs.emplace_back(parentNode->childrenPDCs[i]);
-			}
-			else
-			{
-				l_rightChildrenPDCs.emplace_back(parentNode->childrenPDCs[i]);
-			}
-		}
-		else
-		{
-			if (parentNode->childrenPDCs[i]->m_AABBWS.m_boundMax.z < l_midMin.z)
-			{
-				l_leftChildrenPDCs.emplace_back(parentNode->childrenPDCs[i]);
-			}
-			else
-			{
-				l_rightChildrenPDCs.emplace_back(parentNode->childrenPDCs[i]);
-			}
-		}
-	}
+			return A.m_AABB.m_boundMin[l_maxAxis] < B.m_AABB.m_boundMin[l_maxAxis];
+		});
 
-	parentNode->childrenPDCs.clear();
-	parentNode->childrenPDCs.shrink_to_fit();
+#define SPATIAL_DIVIDE 0
+#if SPATIAL_DIVIDE
+	auto l_maxAxisLength = node->m_AABB.m_extend[l_maxAxis];
+	auto l_middleMaxAxis = node->m_AABB.m_boundMin[l_maxAxis] + l_maxAxisLength / 2.0f;
+	auto l_middle = std::find_if(l_begin, l_end, [&](BVHNode A)
+		{
+			return A.m_AABB.m_boundMin[l_maxAxis] > l_middleMaxAxis;
+		});
+#else
+	auto l_middle = l_begin + (end - begin) / 2;
+#endif
 
-	// Add intermediate nodes and store children PDC
-	if (l_leftChildrenPDCs.size() > 0)
+	// Add intermediate nodes
+	if (l_middle != l_end && l_middle != l_begin)
 	{
-		m_BVHNodes.emplace_back();
-		auto l_leftBVHNode = &m_BVHNodes[m_BVHNodes.size() - 1];
+		BVHNode l_leftChildNode;
+		l_leftChildNode.parentNode = node;
+		l_leftChildNode.depth = node->depth + 1;
+		l_leftChildNode.m_AABB = generateAABB(l_begin, l_middle);
 
-		parentNode->leftChildNode = l_leftBVHNode;
-		l_leftBVHNode->parentNode = parentNode;
-		l_leftBVHNode->depth = parentNode->depth + 1;
-		l_leftBVHNode->childrenPDCs = std::move(l_leftChildrenPDCs);
-		l_leftBVHNode->childrenPDCs.shrink_to_fit();
+		BVHNode l_rightChildNode;
+		l_rightChildNode.parentNode = node;
+		l_rightChildNode.depth = node->depth + 1;
+		l_rightChildNode.m_AABB = generateAABB(l_middle, l_end);
 
-		if (l_leftChildrenPDCs.size() != 1)
-		{
-			auto l_leftPDC = AddPhysicsDataComponent(parentNode->intermediatePDC->m_Owner);
+		nodes.emplace_back(l_leftChildNode);
+		node->leftChildNode = nodes.end() - 1;
 
-			l_leftPDC->m_AABBWS = InnoMath::generateAABB(l_midMax, parentNode->intermediatePDC->m_AABBWS.m_boundMin);
-			l_leftPDC->m_SphereWS = InnoMath::generateBoundSphere(l_leftPDC->m_AABBWS);
-			l_leftPDC->m_IsIntermediate = true;
+		nodes.emplace_back(l_rightChildNode);
+		node->rightChildNode = nodes.end() - 1;
 
-			m_IntermediateComponents.emplace_back(l_leftPDC);
-
-			l_leftBVHNode->intermediatePDC = l_leftPDC;
-		}
-	}
-
-	if (l_rightChildrenPDCs.size() > 0)
-	{
-		m_BVHNodes.emplace_back();
-		auto l_rightBVHNode = &m_BVHNodes[m_BVHNodes.size() - 1];
-
-		parentNode->rightChildNode = l_rightBVHNode;
-		l_rightBVHNode->parentNode = parentNode;
-		l_rightBVHNode->depth = parentNode->depth + 1;
-		l_rightBVHNode->childrenPDCs = std::move(l_rightChildrenPDCs);
-		l_rightBVHNode->childrenPDCs.shrink_to_fit();
-
-		if (l_rightChildrenPDCs.size() != 1)
-		{
-			auto l_rightPDC = AddPhysicsDataComponent(parentNode->intermediatePDC->m_Owner);
-
-			l_rightPDC->m_AABBWS = InnoMath::generateAABB(parentNode->intermediatePDC->m_AABBWS.m_boundMax, l_midMin);
-			l_rightPDC->m_SphereWS = InnoMath::generateBoundSphere(l_rightPDC->m_AABBWS);
-			l_rightPDC->m_IsIntermediate = true;
-
-			m_IntermediateComponents.emplace_back(l_rightPDC);
-
-			l_rightBVHNode->intermediatePDC = l_rightPDC;
-		}
+		auto l_middleRelativeIndex = std::distance(l_begin, l_middle);
+		generateBVH(node->leftChildNode, begin, begin + l_middleRelativeIndex, nodes);
+		generateBVH(node->rightChildNode, begin + l_middleRelativeIndex, end, nodes);
 	}
 
 	return true;
-}
-
-void generateBVH(BVHNode* node)
-{
-	if (node)
-	{
-		if (node->intermediatePDC)
-		{
-			generateBVHLeafNodes(node);
-		}
-
-		if (node->depth < m_maxBVHDepth)
-		{
-			generateBVH(node->leftChildNode);
-			generateBVH(node->rightChildNode);
-		}
-	}
 }
 
 void InnoPhysicsSystem::updateBVH()
 {
 	if (m_BVHWorkloadCount)
 	{
-		for (size_t i = 0; i < m_IntermediateComponents.size(); i++)
-		{
-			g_Engine->getComponentManager()->Destroy(m_IntermediateComponents[i]);
-		}
-
-		m_IntermediateComponents.clear();
-		m_BVHNodes.clear();
-
-		// Result
-		m_BVHNodes.emplace_back();
-		m_RootBVHNode = &m_BVHNodes[m_BVHNodes.size() - 1];
-
-		m_RootBVHNode->intermediatePDC = m_RootPhysicsDataComponent;
-		m_RootBVHNode->childrenPDCs = m_Components;
-
-		generateBVH(m_RootBVHNode);
-
 		m_BVHWorkloadCount = 0;
 	}
+
+	m_TempBVHNodes.clear();
+
+	for (auto& i : m_BVHNodes)
+	{
+		i.m_AABB = i.PDC->m_AABBWS;
+	}
+
+	// the root node
+	BVHNode l_BVHNode;
+	l_BVHNode.m_AABB = m_totalSceneAABB;
+
+	m_TempBVHNodes.emplace_back(l_BVHNode);
+	m_TempBVHNodes.insert(m_TempBVHNodes.end(), m_BVHNodes.begin(), m_BVHNodes.end());
+
+	generateBVH(m_TempBVHNodes.begin(), 1, m_TempBVHNodes.size(), m_TempBVHNodes);
 }
 
 void PlainCulling(const CameraComponent* camera, std::vector<CullingData>& cullingDatas)
@@ -631,27 +529,23 @@ CullingData generateCullingData(const Frustum& frustum, PhysicsDataComponent* PD
 	return l_cullingData;
 }
 
-void BVHCulling(BVHNode* node, const Frustum& frustum, std::vector<CullingData>& cullingDatas)
+void BVHCulling(std::vector<BVHNode>::iterator node, const Frustum& frustum, std::vector<CullingData>& cullingDatas)
 {
-	if (node->intermediatePDC)
+	if (InnoMath::intersectCheck(frustum, node->m_AABB))
 	{
-		if (InnoMath::intersectCheck(frustum, node->intermediatePDC->m_SphereWS))
+		if (node->leftChildNode != m_TempBVHNodes.end())
 		{
-			if (node->leftChildNode)
-			{
-				BVHCulling(node->leftChildNode, frustum, cullingDatas);
-			}
-			if (node->rightChildNode)
-			{
-				BVHCulling(node->rightChildNode, frustum, cullingDatas);
-			}
+			BVHCulling(node->leftChildNode, frustum, cullingDatas);
+		}
+		if (node->rightChildNode != m_TempBVHNodes.end())
+		{
+			BVHCulling(node->rightChildNode, frustum, cullingDatas);
 		}
 	}
-	auto l_PDCCount = node->childrenPDCs.size();
-	for (size_t i = 0; i < l_PDCCount; i++)
+
+	if (node->PDC)
 	{
-		auto l_PDC = node->childrenPDCs[i];
-		auto l_cullingData = generateCullingData(frustum, l_PDC);
+		auto l_cullingData = generateCullingData(frustum, node->PDC);
 
 		cullingDatas.emplace_back(l_cullingData);
 	}
@@ -689,8 +583,8 @@ void InnoPhysicsSystem::updateCulling()
 	}
 
 	PlainCulling(l_mainCamera, l_cullingDataVector);
+	//BVHCulling(m_TempBVHNodes.begin() + 1, l_mainCamera->m_frustum, l_cullingDataVector);
 	SunShadowCulling(l_sun, l_cullingDataVector);
-	//BVHCulling(m_RootBVHNode, l_cameraFrustum, l_cullingDataVector);
 
 	m_visibleSceneAABB = InnoMath::generateAABB(InnoPhysicsSystemNS::m_visibleSceneBoundMax, InnoPhysicsSystemNS::m_visibleSceneBoundMin);
 	m_totalSceneAABB = InnoMath::generateAABB(InnoPhysicsSystemNS::m_totalSceneBoundMax, InnoPhysicsSystemNS::m_totalSceneBoundMin);
@@ -716,9 +610,9 @@ AABB InnoPhysicsSystem::getTotalSceneAABB()
 	return InnoPhysicsSystemNS::m_totalSceneAABB;
 }
 
-BVHNode* InnoPhysicsSystem::getRootBVHNode()
+const std::vector<BVHNode>& InnoPhysicsSystem::getBVHNodes()
 {
-	return InnoPhysicsSystemNS::m_RootBVHNode;
+	return InnoPhysicsSystemNS::m_TempBVHNodes;
 }
 
 bool InnoPhysicsSystem::addForce(VisibleComponent* VC, Vec4 force)

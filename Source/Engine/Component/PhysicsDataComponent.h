@@ -16,7 +16,6 @@ namespace Inno
 		AABB m_AABBWS = {};
 		Sphere m_SphereLS = {};
 		Sphere m_SphereWS = {};
-		bool m_IsIntermediate = false;
 		MeshUsage m_MeshUsage;
 		TransformComponent* m_TransformComponent;
 		VisibleComponent* m_VisibleComponent;
