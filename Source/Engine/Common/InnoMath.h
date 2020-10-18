@@ -95,6 +95,11 @@ namespace Inno
 				return *this;
 			}
 
+			auto operator[](size_t i) -> T&
+			{
+				return (&x)[i];
+			}
+
 			~TVec2()
 			{
 			}
@@ -196,6 +201,11 @@ namespace Inno
 				z = rhs.z;
 				w = rhs.w;
 				return *this;
+			}
+
+			auto operator[](size_t i) -> T&
+			{
+				return (&x)[i];
 			}
 
 			~TVec4()

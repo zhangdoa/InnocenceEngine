@@ -6,13 +6,13 @@ namespace Inno
 	namespace InnoMath
 	{
 		template<class T>
-		TVec2<T> minVec2 = TVec2<T>(std::numeric_limits<T>::min(), std::numeric_limits<T>::min());
+		TVec2<T> minVec2 = TVec2<T>(-std::numeric_limits<T>::max(), -std::numeric_limits<T>::max());
 
 		template<class T>
 		TVec2<T> maxVec2 = TVec2<T>(std::numeric_limits<T>::max(), std::numeric_limits<T>::max());
 
 		template<class T>
-		TVec4<T> minVec4 = TVec4<T>(std::numeric_limits<T>::min(), std::numeric_limits<T>::min(), std::numeric_limits<T>::min(), std::numeric_limits<T>::min());
+		TVec4<T> minVec4 = TVec4<T>(-std::numeric_limits<T>::max(), -std::numeric_limits<T>::max(), -std::numeric_limits<T>::max(), -std::numeric_limits<T>::max());
 
 		template<class T>
 		TVec4<T> maxVec4 = TVec4<T>(std::numeric_limits<T>::max(), std::numeric_limits<T>::max(), std::numeric_limits<T>::max(), std::numeric_limits<T>::max());
