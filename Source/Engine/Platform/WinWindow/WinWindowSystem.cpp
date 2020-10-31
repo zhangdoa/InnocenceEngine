@@ -10,29 +10,12 @@
 using namespace Inno;
 extern IEngine* g_Engine;
 
-class windowCallbackWrapper
-{
-public:
-	~windowCallbackWrapper() {};
-
-	static windowCallbackWrapper& get()
-	{
-		static windowCallbackWrapper instance;
-		return instance;
-	}
-
-	LRESULT CALLBACK MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam);
-
-private:
-	windowCallbackWrapper() {};
-};
-
-static windowCallbackWrapper* ApplicationHandle = 0;
-
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 namespace WinWindowSystemNS
 {
+	LRESULT CALLBACK MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam);
+
 	IWindowSurface* m_windowSurface;
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 	InitConfig m_initConfig;
@@ -46,6 +29,62 @@ namespace WinWindowSystemNS
 };
 
 using namespace WinWindowSystemNS;
+
+LRESULT WinWindowSystemNS::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
+{
+	for (auto i : m_windowEventCallbackFunctor)
+	{
+		(*i)(hwnd, umsg, (uint64_t)wparam, (int64_t)lparam);
+	}
+
+	switch (umsg)
+	{
+	case WM_KEYDOWN:
+	{
+		m_buttonState[(uint64_t)wparam].m_isPressed = true;
+		return 0;
+	}
+	case WM_KEYUP:
+	{
+		m_buttonState[(uint64_t)wparam].m_isPressed = false;
+		return 0;
+	}
+	case WM_LBUTTONDOWN:
+	{
+		m_buttonState[INNO_MOUSE_BUTTON_LEFT].m_isPressed = true;
+		return 0;
+	}
+	case WM_LBUTTONUP:
+	{
+		m_buttonState[INNO_MOUSE_BUTTON_LEFT].m_isPressed = false;
+
+		return 0;
+	}
+	case WM_RBUTTONDOWN:
+	{
+		m_buttonState[INNO_MOUSE_BUTTON_RIGHT].m_isPressed = true;
+		return 0;
+	}
+	case WM_RBUTTONUP:
+	{
+		m_buttonState[INNO_MOUSE_BUTTON_RIGHT].m_isPressed = false;
+		return 0;
+	}
+
+	case WM_MOUSEMOVE:
+	{
+		auto l_mouseCurrentX = GET_X_LPARAM(lparam);
+		auto l_mouseCurrentY = GET_Y_LPARAM(lparam);
+		g_Engine->getEventSystem()->mouseMovementCallback((float)l_mouseCurrentX, (float)l_mouseCurrentY);
+		return 0;
+	}
+	// Any other messages send to the default message handler as our application won't make use of them.
+	default:
+	{
+		return DefWindowProc(hwnd, umsg, wparam, lparam);
+	}
+	}
+}
 
 bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 {
@@ -66,8 +105,6 @@ bool WinWindowSystem::Setup(ISystemConfig* systemConfig)
 	}
 
 	m_applicationName = g_Engine->getApplicationName().c_str();
-
-	ApplicationHandle = &windowCallbackWrapper::get();
 
 	// create window surface for different rendering backend
 	WinWindowSystemNS::m_initConfig = g_Engine->getInitConfig();
@@ -155,9 +192,6 @@ bool WinWindowSystem::Terminate()
 		// Remove the application instance.
 		UnregisterClass(m_applicationName, m_hInstance);
 		m_hInstance = NULL;
-
-		// Release the pointer to this class.
-		ApplicationHandle = NULL;
 	}
 
 	PostQuitMessage(0);
@@ -220,7 +254,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	// For to eliminate fake OpenGL window handle event
 	if (hwnd != m_hwnd)
 	{
-		return ApplicationHandle->MessageHandler(hwnd, uMsg, wParam, lParam);
+		return MessageHandler(hwnd, uMsg, wParam, lParam);
 	}
 
 	switch (uMsg)
@@ -251,63 +285,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	}
 	default:
 	{
-		return ApplicationHandle->MessageHandler(hwnd, uMsg, wParam, lParam);
-	}
-	}
-}
-
-LRESULT windowCallbackWrapper::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
-{
-	for (auto i : m_windowEventCallbackFunctor)
-	{
-		(*i)(hwnd, umsg, (uint64_t)wparam, (int64_t)lparam);
-	}
-
-	switch (umsg)
-	{
-	case WM_KEYDOWN:
-	{
-		m_buttonState[(uint64_t)wparam].m_isPressed = true;
-		return 0;
-	}
-	case WM_KEYUP:
-	{
-		m_buttonState[(uint64_t)wparam].m_isPressed = false;
-		return 0;
-	}
-	case WM_LBUTTONDOWN:
-	{
-		m_buttonState[INNO_MOUSE_BUTTON_LEFT].m_isPressed = true;
-		return 0;
-	}
-	case WM_LBUTTONUP:
-	{
-		m_buttonState[INNO_MOUSE_BUTTON_LEFT].m_isPressed = false;
-
-		return 0;
-	}
-	case WM_RBUTTONDOWN:
-	{
-		m_buttonState[INNO_MOUSE_BUTTON_RIGHT].m_isPressed = true;
-		return 0;
-	}
-	case WM_RBUTTONUP:
-	{
-		m_buttonState[INNO_MOUSE_BUTTON_RIGHT].m_isPressed = false;
-		return 0;
-	}
-
-	case WM_MOUSEMOVE:
-	{
-		auto l_mouseCurrentX = GET_X_LPARAM(lparam);
-		auto l_mouseCurrentY = GET_Y_LPARAM(lparam);
-		g_Engine->getEventSystem()->mouseMovementCallback((float)l_mouseCurrentX, (float)l_mouseCurrentY);
-		return 0;
-	}
-	// Any other messages send to the default message handler as our application won't make use of them.
-	default:
-	{
-		return DefWindowProc(hwnd, umsg, wparam, lparam);
+		return MessageHandler(hwnd, uMsg, wParam, lParam);
 	}
 	}
 }
