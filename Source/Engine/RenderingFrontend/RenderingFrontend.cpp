@@ -180,7 +180,7 @@ bool InnoRenderingFrontendNS::Setup(ISystemConfig* systemConfig)
 	//m_renderingConfig.useBloom = true;
 	m_renderingConfig.drawSky = true;
 	//m_renderingConfig.drawTerrain = true;
-	//m_renderingConfig.drawDebugObject = true;
+	m_renderingConfig.drawDebugObject = true;
 	m_renderingConfig.CSMFitToScene = true;
 	m_renderingConfig.CSMAdjustDrawDistance = true;
 	m_renderingConfig.CSMAdjustSidePlane = false;
@@ -359,7 +359,7 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 	m_unitSphereMesh->m_proceduralMeshShape = ProceduralMeshShape::Sphere;
 	m_unitSphereMesh->m_ObjectStatus = ObjectStatus::Created;
 
-	auto l_DefaultAssetInitializeTask = g_Engine->getTaskSystem()->submit("DefaultAssetInitializeTask", 2, nullptr,
+	auto l_DefaultAssetInitializeTask = g_Engine->getTaskSystem()->Submit("DefaultAssetInitializeTask", 2, nullptr,
 		[&]() {
 			m_renderingServer->InitializeMeshDataComponent(m_unitTriangleMesh);
 			m_renderingServer->InitializeMeshDataComponent(m_unitSquareMesh);
@@ -386,7 +386,7 @@ bool InnoRenderingFrontendNS::loadDefaultAssets()
 			m_renderingServer->InitializeMaterialDataComponent(m_defaultMaterial);
 		});
 
-	l_DefaultAssetInitializeTask->Wait();
+	l_DefaultAssetInitializeTask.m_Future->Get();
 
 	return true;
 }
@@ -986,9 +986,9 @@ bool InnoRenderingFrontend::registerMeshDataComponent(MeshDataComponent* rhs, bo
 	}
 	else
 	{
-		auto l_MeshDataComponentInitializeTask = g_Engine->getTaskSystem()->submit("MeshDataComponentInitializeTask", 2, nullptr,
+		auto l_MeshDataComponentInitializeTask = g_Engine->getTaskSystem()->Submit("MeshDataComponentInitializeTask", 2, nullptr,
 			[=]() { m_renderingServer->InitializeMeshDataComponent(rhs); });
-		l_MeshDataComponentInitializeTask->Wait();
+		l_MeshDataComponentInitializeTask.m_Future->Get();
 	}
 
 	return true;
@@ -1002,9 +1002,9 @@ bool InnoRenderingFrontend::registerMaterialDataComponent(MaterialDataComponent*
 	}
 	else
 	{
-		auto l_MaterialDataComponentInitializeTask = g_Engine->getTaskSystem()->submit("MaterialDataComponentInitializeTask", 2, nullptr,
+		auto l_MaterialDataComponentInitializeTask = g_Engine->getTaskSystem()->Submit("MaterialDataComponentInitializeTask", 2, nullptr,
 			[=]() { m_renderingServer->InitializeMaterialDataComponent(rhs); });
-		l_MaterialDataComponentInitializeTask->Wait();
+		l_MaterialDataComponentInitializeTask.m_Future->Get();
 	}
 
 	return true;
@@ -1025,9 +1025,9 @@ bool InnoRenderingFrontend::registerAnimationDataComponent(AnimationDataComponen
 	}
 	else
 	{
-		auto l_AnimationDataComponentInitializeTask = g_Engine->getTaskSystem()->submit("AnimationDataComponentInitializeTask", 2, nullptr,
+		auto l_AnimationDataComponentInitializeTask = g_Engine->getTaskSystem()->Submit("AnimationDataComponentInitializeTask", 2, nullptr,
 			[=]() { initializeAnimation(rhs); });
-		l_AnimationDataComponentInitializeTask->Wait();
+		l_AnimationDataComponentInitializeTask.m_Future->Get();
 	}
 
 	return true;

@@ -196,8 +196,8 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 		}
 	};
 
-	auto l_CreateGLContextTask = g_Engine->getTaskSystem()->submit("CreateGLContextTask", 2, nullptr, f_CreateGLContextTask);
-	l_CreateGLContextTask->Wait();
+	auto l_CreateGLContextTask = g_Engine->getTaskSystem()->Submit("CreateGLContextTask", 2, nullptr, f_CreateGLContextTask);
+	l_CreateGLContextTask.m_Future->Get();
 
 	// delete temporary context and window
 	wglMakeCurrent(NULL, NULL);
@@ -237,8 +237,8 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 		}
 	};
 
-	auto l_ActivateGLContextTask = g_Engine->getTaskSystem()->submit("ActivateGLContextTask", 2, nullptr, f_ActivateGLContextTask);
-	l_ActivateGLContextTask->Wait();
+	auto l_ActivateGLContextTask = g_Engine->getTaskSystem()->Submit("ActivateGLContextTask", 2, nullptr, f_ActivateGLContextTask);
+	l_ActivateGLContextTask.m_Future->Get();
 
 	if (m_initConfig.engineMode == EngineMode::Host)
 	{

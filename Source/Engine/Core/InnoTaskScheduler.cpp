@@ -35,23 +35,23 @@ namespace Inno
 
 		ThreadState GetState() const;
 		size_t GetUnfinishedWorkCount();
-		const RingBuffer<InnoTaskReport, true>& GetTaskReport();
+		const RingBuffer<TaskReport, true>& GetTaskReport();
 
-		std::shared_ptr<IInnoTask> AddTask(std::shared_ptr<IInnoTask>&& task);
+		std::shared_ptr<ITask> AddTask(std::shared_ptr<ITask>&& task);
 
 	private:
 		std::string GetThreadID();
 
 		void Worker(uint32_t ThreadIndex);
 
-		void ExecuteTask(std::shared_ptr<IInnoTask>&& task);
+		void ExecuteTask(std::shared_ptr<ITask>&& task);
 
 		std::thread* m_ThreadHandle;
 		std::pair<uint32_t, std::thread::id> m_ID;
 		std::atomic<ThreadState> m_ThreadState;
 		std::atomic_bool m_Done = false;
-		ThreadSafeQueue<std::shared_ptr<IInnoTask>> m_WorkQueue;
-		RingBuffer<InnoTaskReport, true> m_TaskReport;
+		ThreadSafeQueue<std::shared_ptr<ITask>> m_WorkQueue;
+		RingBuffer<TaskReport, true> m_TaskReport;
 	};
 
 	namespace InnoTaskSchedulerNS
@@ -63,7 +63,7 @@ namespace Inno
 
 using namespace InnoTaskSchedulerNS;
 
-bool InnoTaskScheduler::Setup()
+bool TaskScheduler::Setup()
 {
 	m_NumThreads = std::max<size_t>(std::thread::hardware_concurrency(), 2u);
 
@@ -85,17 +85,17 @@ bool InnoTaskScheduler::Setup()
 	return true;
 }
 
-bool InnoTaskScheduler::Initialize()
+bool TaskScheduler::Initialize()
 {
 	return true;
 }
 
-bool InnoTaskScheduler::Update()
+bool TaskScheduler::Update()
 {
 	return true;
 }
 
-bool InnoTaskScheduler::Terminate()
+bool TaskScheduler::Terminate()
 {
 	for (size_t i = 0; i < m_Threads.size(); i++)
 	{
@@ -104,7 +104,7 @@ bool InnoTaskScheduler::Terminate()
 	return true;
 }
 
-void InnoTaskScheduler::WaitSync()
+void TaskScheduler::WaitSync()
 {
 	std::atomic_bool l_isAllThreadsIdle = false;
 
@@ -119,7 +119,7 @@ void InnoTaskScheduler::WaitSync()
 	InnoLogger::Log(LogLevel::Verbose, "InnoTaskScheduler: Reached synchronization point");
 }
 
-std::shared_ptr<IInnoTask> InnoTaskScheduler::AddTaskImpl(std::unique_ptr<IInnoTask>&& task, int32_t threadID)
+std::shared_ptr<ITask> TaskScheduler::AddTask(std::unique_ptr<ITask>&& task, int32_t threadID)
 {
 	int32_t l_ThreadIndex;
 	if (threadID != -1)
@@ -137,12 +137,12 @@ std::shared_ptr<IInnoTask> InnoTaskScheduler::AddTaskImpl(std::unique_ptr<IInnoT
 	return m_Threads[l_ThreadIndex]->AddTask(std::move(task));
 }
 
-size_t InnoTaskScheduler::GetTotalThreadsNumber()
+size_t TaskScheduler::GetThreadCounts()
 {
 	return m_NumThreads;
 }
 
-const RingBuffer<InnoTaskReport, true>& InnoTaskScheduler::GetTaskReport(int32_t threadID)
+const RingBuffer<TaskReport, true>& TaskScheduler::GetTaskReport(int32_t threadID)
 {
 	return m_Threads[threadID]->GetTaskReport();
 }
@@ -157,14 +157,14 @@ size_t InnoThread::GetUnfinishedWorkCount()
 	return m_WorkQueue.size();
 }
 
-inline const RingBuffer<InnoTaskReport, true>& InnoThread::GetTaskReport()
+inline const RingBuffer<TaskReport, true>& InnoThread::GetTaskReport()
 {
 	return m_TaskReport;
 }
 
-inline std::shared_ptr<IInnoTask> InnoThread::AddTask(std::shared_ptr<IInnoTask>&& task)
+inline std::shared_ptr<ITask> InnoThread::AddTask(std::shared_ptr<ITask>&& task)
 {
-	std::shared_ptr<IInnoTask> l_result{ task };
+	std::shared_ptr<ITask> l_result{ task };
 	m_WorkQueue.push(std::move(task));
 	return l_result;
 }
@@ -176,7 +176,7 @@ inline std::string InnoThread::GetThreadID()
 	return ss.str();
 }
 
-inline void InnoThread::ExecuteTask(std::shared_ptr<IInnoTask>&& task)
+inline void InnoThread::ExecuteTask(std::shared_ptr<ITask>&& task)
 {
 #if defined _DEBUG
 	auto l_StartTime = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
@@ -186,7 +186,7 @@ inline void InnoThread::ExecuteTask(std::shared_ptr<IInnoTask>&& task)
 
 #if defined _DEBUG
 	auto l_FinishTime = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
-	InnoTaskReport l_TaskReport = { l_StartTime, l_FinishTime, m_ID.first, task->GetName() };
+	TaskReport l_TaskReport = { l_StartTime, l_FinishTime, m_ID.first, task->GetName() };
 	m_TaskReport.emplace_back(l_TaskReport);
 #endif
 }
@@ -200,7 +200,7 @@ inline void InnoThread::Worker(uint32_t ThreadIndex)
 
 	while (!m_Done)
 	{
-		std::shared_ptr<IInnoTask> pTask{ nullptr };
+		std::shared_ptr<ITask> pTask{ nullptr };
 		if (m_WorkQueue.waitPop(pTask))
 		{
 			m_ThreadState = ThreadState::Busy;

@@ -10,28 +10,31 @@ extern IEngine* g_Engine;
 
 using SceneLoadingCallback = std::pair<std::function<void()>*, int32_t>;
 
-namespace InnoSceneSystemNS
+namespace Inno
 {
-	bool saveScene(const char* fileName);
-	bool loadScene(const char* fileName);
-	bool loadSceneAsync(const char* fileName);
+	namespace InnoSceneSystemNS
+	{
+		bool saveScene(const char* fileName);
+		bool loadScene(const char* fileName);
+		bool loadSceneAsync(const char* fileName);
 
-	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-	std::vector<SceneLoadingCallback> m_sceneLoadingStartCallbacks;
-	std::vector<SceneLoadingCallback> m_sceneLoadingFinishCallbacks;
+		std::vector<SceneLoadingCallback> m_sceneLoadingStartCallbacks;
+		std::vector<SceneLoadingCallback> m_sceneLoadingFinishCallbacks;
 
-	std::atomic<bool> m_isLoadingScene = false;
-	std::atomic<bool> m_prepareForLoadingScene = false;
+		std::atomic<bool> m_isLoadingScene = false;
+		std::atomic<bool> m_prepareForLoadingScene = false;
 
-	std::string m_nextLoadingScene;
-	std::string m_currentScene;
+		std::string m_nextLoadingScene;
+		std::string m_currentScene;
 
-	SceneHierarchyMap m_SceneHierarchyMap;
-	std::atomic<bool> m_needUpdate = true;
+		SceneHierarchyMap m_SceneHierarchyMap;
+		std::atomic<bool> m_needUpdate = true;
 
-	std::function<void()> f_SceneLoadingStartCallback;
-	std::function<void()> f_SceneLoadingFinishCallback;
+		std::function<void()> f_SceneLoadingStartCallback;
+		std::function<void()> f_SceneLoadingFinishCallback;
+	}
 }
 
 using namespace InnoSceneSystemNS;
@@ -62,7 +65,7 @@ bool InnoSceneSystemNS::loadSceneAsync(const char* fileName)
 bool InnoSceneSystemNS::loadScene(const char* fileName)
 {
 	m_isLoadingScene = true;
-	g_Engine->getTaskSystem()->waitAllTasksToFinish();
+	g_Engine->getTaskSystem()->WaitSync();
 
 	m_currentScene = fileName;
 

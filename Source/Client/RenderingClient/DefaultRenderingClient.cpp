@@ -291,16 +291,16 @@ bool DefaultRenderingClient::Setup(ISystemConfig* systemConfig)
 		BSDFTestPass::Terminate();
 	};
 
-	auto l_DefaultRenderingClientSetupTask = g_Engine->getTaskSystem()->submit("DefaultRenderingClientSetupTask", 2, nullptr, f_SetupJob);
-	l_DefaultRenderingClientSetupTask->Wait();
+	auto l_DefaultRenderingClientSetupTask = g_Engine->getTaskSystem()->Submit("DefaultRenderingClientSetupTask", 2, nullptr, f_SetupJob);
+	l_DefaultRenderingClientSetupTask.m_Future->Get();
 
 	return true;
 }
 
 bool DefaultRenderingClient::Initialize()
 {
-	auto l_DefaultRenderingClientInitializeTask = g_Engine->getTaskSystem()->submit("DefaultRenderingClientInitializeTask", 2, nullptr, f_InitializeJob);
-	l_DefaultRenderingClientInitializeTask->Wait();
+	auto l_DefaultRenderingClientInitializeTask = g_Engine->getTaskSystem()->Submit("DefaultRenderingClientInitializeTask", 2, nullptr, f_InitializeJob);
+	l_DefaultRenderingClientInitializeTask.m_Future->Get();
 
 	return true;
 }

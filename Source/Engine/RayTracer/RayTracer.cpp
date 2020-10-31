@@ -456,7 +456,7 @@ bool InnoRayTracer::Execute()
 	{
 		InnoRayTracerNS::m_isWorking = true;
 
-		auto l_rayTracingTask = g_Engine->getTaskSystem()->submit("RayTracingTask", 4, nullptr, [&]() { ExecuteRayTracing(); InnoRayTracerNS::m_isWorking = false; });
+		auto l_rayTracingTask = g_Engine->getTaskSystem()->Submit("RayTracingTask", 4, nullptr, [&]() { ExecuteRayTracing(); InnoRayTracerNS::m_isWorking = false; });
 	}
 
 	return true;

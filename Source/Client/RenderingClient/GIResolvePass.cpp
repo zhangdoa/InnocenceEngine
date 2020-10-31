@@ -75,7 +75,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 
 	if (l_surfels.size())
 	{
-		auto l_GIResolvePassInitializeGPUBuffersTask = g_Engine->getTaskSystem()->submit("GIResolvePassInitializeGPUBuffersTask", 2, nullptr,
+		auto l_GIResolvePassInitializeGPUBuffersTask = g_Engine->getTaskSystem()->Submit("GIResolvePassInitializeGPUBuffersTask", 2, nullptr,
 			[&]() {
 				m_surfelGBDC = g_Engine->getRenderingServer()->AddGPUBufferDataComponent("SurfelGPUBuffer/");
 				m_surfelGBDC->m_CPUAccessibility = Accessibility::Immutable;
@@ -254,7 +254,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 				m_GIDataLoaded = true;
 			});
 
-		l_GIResolvePassInitializeGPUBuffersTask->Wait();
+		l_GIResolvePassInitializeGPUBuffersTask.m_Future->Get();
 	}
 
 	return true;
@@ -262,7 +262,7 @@ bool GIResolvePass::InitializeGPUBuffers()
 
 bool GIResolvePass::DeleteGPUBuffers()
 {
-	auto l_GIResolvePassDeleteGPUBuffersTask = g_Engine->getTaskSystem()->submit("GIResolvePassDeleteGPUBuffersTask", 2, nullptr,
+	auto l_GIResolvePassDeleteGPUBuffersTask = g_Engine->getTaskSystem()->Submit("GIResolvePassDeleteGPUBuffersTask", 2, nullptr,
 		[&]() {
 			if (m_surfelGBDC)
 			{
@@ -296,7 +296,7 @@ bool GIResolvePass::DeleteGPUBuffers()
 			m_GIDataLoaded = false;
 		});
 
-	l_GIResolvePassDeleteGPUBuffersTask->Wait();
+	l_GIResolvePassDeleteGPUBuffersTask.m_Future->Get();
 
 	return true;
 }

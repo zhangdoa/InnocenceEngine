@@ -493,11 +493,12 @@ bool EngineNS::Setup(void* appHook, void* extraHook, char* pScmdline, IRendering
 	}
 	InnoLogger::Log(LogLevel::Success, "Engine: LogicClient Setup finished.");
 
-	f_LogicClientUpdateJob = [&]() {m_LogicClient->Update(); };
-	f_PhysicsSystemUpdateBVHJob = [&]() {m_PhysicsSystem->updateBVH(); };
-	f_PhysicsSystemCullingJob = [&]() {m_PhysicsSystem->updateCulling(); };
-	f_RenderingFrontendUpdateJob = [&]() {m_RenderingFrontend->Update(); };
-	f_RenderingServerUpdateJob = [&]() {
+	f_LogicClientUpdateJob = [&]() { m_LogicClient->Update(); };
+	f_PhysicsSystemUpdateBVHJob = [&]() { m_PhysicsSystem->updateBVH(); };
+	f_PhysicsSystemCullingJob = [&]() { m_PhysicsSystem->updateCulling(); };
+	f_RenderingFrontendUpdateJob = [&]() { m_RenderingFrontend->Update(); };
+	f_RenderingServerUpdateJob = [&]()
+	{
 		auto l_tickStartTime = m_TimeSystem->getCurrentTimeFromEpoch();
 
 		m_RenderingFrontend->transferDataToGPU();
@@ -508,11 +509,17 @@ bool EngineNS::Setup(void* appHook, void* extraHook, char* pScmdline, IRendering
 
 		m_RenderingServer->Present();
 
-		g_Engine->getWindowSystem()->getWindowSurface()->swapBuffer();
+		m_WindowSystem->getWindowSurface()->swapBuffer();
 
 		auto l_tickEndTime = m_TimeSystem->getCurrentTimeFromEpoch();
 
 		m_tickTime = float(l_tickEndTime - l_tickStartTime) / 1000.0f;
+
+		SystemOnFrameEnd(TransformSystem);
+		SystemOnFrameEnd(LightSystem);
+		SystemOnFrameEnd(CameraSystem);
+
+		return true;
 	};
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -572,7 +579,7 @@ bool EngineNS::Initialize()
 
 bool EngineNS::Update()
 {
-	auto l_LogicClientUpdateTask = g_Engine->getTaskSystem()->submit("LogicClientUpdateTask", 0, nullptr, f_LogicClientUpdateJob);
+	auto l_LogicClientUpdateTask = g_Engine->getTaskSystem()->Submit("LogicClientUpdateTask", 0, nullptr, f_LogicClientUpdateJob);
 
 	SystemUpdate(TimeSystem);
 	SystemUpdate(LogSystem);
@@ -598,7 +605,7 @@ bool EngineNS::Update()
 
 	SystemUpdate(PhysicsSystem);
 
-	auto l_PhysicsSystemCullingTask = g_Engine->getTaskSystem()->submit("PhysicsSystemCullingTask", 1, l_LogicClientUpdateTask, f_PhysicsSystemCullingJob);
+	auto l_PhysicsSystemCullingTask = g_Engine->getTaskSystem()->Submit("PhysicsSystemCullingTask", 1, l_LogicClientUpdateTask.m_Task, f_PhysicsSystemCullingJob);
 
 	SystemUpdate(EventSystem);
 
@@ -608,16 +615,11 @@ bool EngineNS::Update()
 		{
 			m_WindowSystem->Update();
 
-			auto l_RenderingFrontendUpdateTask = g_Engine->getTaskSystem()->submit("RenderingFrontendUpdateTask", 1, l_PhysicsSystemCullingTask, f_RenderingFrontendUpdateJob);
+			auto l_RenderingFrontendUpdateTask = g_Engine->getTaskSystem()->Submit("RenderingFrontendUpdateTask", 1, l_PhysicsSystemCullingTask.m_Task, f_RenderingFrontendUpdateJob);
 
 			m_GUISystem->Update();
 
-			auto l_RenderingServerUpdateTask = g_Engine->getTaskSystem()->submit("RenderingServerUpdateTask", 2, l_RenderingFrontendUpdateTask, f_RenderingServerUpdateJob);
-			l_RenderingServerUpdateTask->Wait();
-
-			SystemOnFrameEnd(TransformSystem);
-			SystemOnFrameEnd(LightSystem);
-			SystemOnFrameEnd(CameraSystem);
+			auto l_RenderingServerUpdateTask = g_Engine->getTaskSystem()->Submit("RenderingServerUpdateTask", 2, l_RenderingFrontendUpdateTask.m_Task, f_RenderingServerUpdateJob);
 		}
 		else
 		{
@@ -627,14 +629,14 @@ bool EngineNS::Update()
 		}
 	}
 
-	m_TaskSystem->waitAllTasksToFinish();
+	m_TaskSystem->WaitSync();
 
 	return true;
 }
 
 bool EngineNS::Terminate()
 {
-	m_TaskSystem->waitAllTasksToFinish();
+	m_TaskSystem->WaitSync();
 
 	if (!m_RenderingClient->Terminate())
 	{

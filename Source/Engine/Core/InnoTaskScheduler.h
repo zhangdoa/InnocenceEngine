@@ -6,37 +6,37 @@
 
 namespace Inno
 {
-	class IInnoTask
+	class ITask
 	{
 	public:
-		IInnoTask() = default;
-		virtual ~IInnoTask(void) = default;
-		IInnoTask(const IInnoTask& rhs) = delete;
-		IInnoTask& operator=(const IInnoTask& rhs) = delete;
-		IInnoTask(IInnoTask&& other) = default;
-		IInnoTask& operator=(IInnoTask&& other) = default;
+		ITask() = default;
+		virtual ~ITask(void) = default;
+		ITask(const ITask& rhs) = delete;
+		ITask& operator=(const ITask& rhs) = delete;
+		ITask(ITask&& other) = default;
+		ITask& operator=(ITask&& other) = default;
 
 		virtual void Execute() = 0;
 		virtual const char* GetName() = 0;
-		virtual const std::shared_ptr<IInnoTask>& GetUpstreamTask() = 0;
+		virtual const std::shared_ptr<ITask>& GetUpstreamTask() = 0;
 		virtual bool IsFinished() = 0;
 		virtual void Wait() = 0;
 	};
 
 	template <typename Functor>
-	class InnoTask : public IInnoTask
+	class Task : public ITask
 	{
 	public:
-		InnoTask(Functor&& functor, const char* name, const std::shared_ptr<IInnoTask>& upstreamTask)
+		Task(Functor&& functor, const char* name, const std::shared_ptr<ITask>& upstreamTask)
 			:m_Functor{ std::move(functor) }, m_Name{ name }, m_UpstreamTask{ upstreamTask }
 		{
 		}
 
-		~InnoTask() override = default;
-		InnoTask(const InnoTask& rhs) = delete;
-		InnoTask& operator=(const InnoTask& rhs) = delete;
-		InnoTask(InnoTask&& other) = default;
-		InnoTask& operator=(InnoTask&& other) = default;
+		~Task() override = default;
+		Task(const Task& rhs) = delete;
+		Task& operator=(const Task& rhs) = delete;
+		Task(Task&& other) = default;
+		Task& operator=(Task&& other) = default;
 
 		void Execute() override
 		{
@@ -49,7 +49,7 @@ namespace Inno
 			return m_Name;
 		}
 
-		const std::shared_ptr<IInnoTask>& GetUpstreamTask() override
+		const std::shared_ptr<ITask>& GetUpstreamTask() override
 		{
 			return m_UpstreamTask;
 		}
@@ -67,11 +67,42 @@ namespace Inno
 	private:
 		Functor m_Functor;
 		const char* m_Name;
-		std::shared_ptr<IInnoTask> m_UpstreamTask;
+		std::shared_ptr<ITask> m_UpstreamTask;
 		std::atomic_bool m_IsFinished = false;
 	};
 
-	struct InnoTaskReport
+	template <typename T>
+	class Future
+	{
+	public:
+		Future(std::future<T>&& future)
+			:m_Future{ std::move(future) }
+		{
+		}
+
+		~Future(void)
+		{
+			if (m_Future.valid())
+			{
+				m_Future.get();
+			}
+		}
+
+		Future(const Future& rhs) = delete;
+		Future& operator=(const Future& rhs) = delete;
+		Future(Future&& other) = default;
+		Future& operator=(Future&& other) = default;
+
+		auto Get(void)
+		{
+			return m_Future.get();
+		}
+
+	private:
+		std::future<T> m_Future;
+	};
+
+	struct TaskReport
 	{
 		uint64_t m_StartTime;
 		uint64_t m_FinishTime;
@@ -79,7 +110,7 @@ namespace Inno
 		const char* m_TaskName;
 	};
 
-	class InnoTaskScheduler
+	class TaskScheduler
 	{
 	public:
 		static bool Setup();
@@ -89,9 +120,9 @@ namespace Inno
 
 		static void WaitSync();
 
-		static std::shared_ptr<IInnoTask> AddTaskImpl(std::unique_ptr<IInnoTask>&& task, int32_t threadID);
-		static size_t GetTotalThreadsNumber();
+		static std::shared_ptr<ITask> AddTask(std::unique_ptr<ITask>&& task, int32_t threadID);
+		static size_t GetThreadCounts();
 
-		static const RingBuffer<InnoTaskReport, true>& GetTaskReport(int32_t threadID);
+		static const RingBuffer<TaskReport, true>& GetTaskReport(int32_t threadID);
 	};
 }

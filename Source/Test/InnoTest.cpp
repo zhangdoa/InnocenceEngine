@@ -185,7 +185,7 @@ private:
 Atomic<uint32_t> l_atomicBuffer;
 std::atomic<uint32_t> l_finishedTaskCount;
 
-bool CheckCyclic(std::vector<std::shared_ptr<IInnoTask>> tasks, size_t initialIndex, size_t targetIndex)
+bool CheckCyclic(std::vector<std::shared_ptr<ITask>> tasks, size_t initialIndex, size_t targetIndex)
 {
 	auto l_currentTask = tasks[initialIndex];
 	auto l_targetTask = tasks[targetIndex];
@@ -213,23 +213,23 @@ bool CheckCyclic(std::vector<std::shared_ptr<IInnoTask>> tasks, size_t initialIn
 }
 
 template <typename Func, typename... Args>
-std::shared_ptr<IInnoTask> submit(const char* name, int32_t threadID, const std::shared_ptr<IInnoTask>& upstreamTask, Func&& func, Args&&... args)
+std::shared_ptr<ITask> Submit(const char* name, int32_t threadID, const std::shared_ptr<ITask>& upstreamTask, Func&& func, Args&&... args)
 {
 	auto BoundTask = std::bind(std::forward<Func>(func), std::forward<Args>(args)...);
 	using ResultType = std::invoke_result_t<decltype(BoundTask)>;
 	using PackagedTask = std::packaged_task<ResultType()>;
-	using TaskType = InnoTask<PackagedTask>;
+	using TaskType = Task<PackagedTask>;
 
 	PackagedTask Task{ std::move(BoundTask) };
 	auto l_task = std::make_unique<TaskType>(std::move(Task), name, upstreamTask);
-	return InnoTaskScheduler::AddTaskImpl(std::move(l_task), threadID);
+	return TaskScheduler::AddTask(std::move(l_task), threadID);
 }
 
 void DispatchTestTasks(size_t testCaseCount, const std::function<void()>& job)
 {
 	InnoLogger::Log(LogLevel::Verbose, "Generate test async tasks...");
 
-	std::vector<std::shared_ptr<IInnoTask>> l_Tasks;
+	std::vector<std::shared_ptr<ITask>> l_Tasks;
 	std::vector<std::string> l_TaskNames;
 	l_Tasks.reserve(testCaseCount);
 	l_TaskNames.reserve(testCaseCount);
@@ -247,7 +247,7 @@ void DispatchTestTasks(size_t testCaseCount, const std::function<void()>& job)
 
 	for (size_t i = 0; i < testCaseCount; i++)
 	{
-		std::shared_ptr<IInnoTask> l_UpstreamTask;
+		std::shared_ptr<ITask> l_UpstreamTask;
 
 		if (i > 1)
 		{
@@ -263,7 +263,7 @@ void DispatchTestTasks(size_t testCaseCount, const std::function<void()>& job)
 			l_UpstreamTask = l_Tasks[l_UpstreamTaskIndex];
 		}
 
-		auto l_Task = submit(l_TaskNames[i].c_str(), -1, l_UpstreamTask, job);
+		auto l_Task = Submit(l_TaskNames[i].c_str(), -1, l_UpstreamTask, job);
 
 		l_Tasks.emplace_back(l_Task);
 	}
@@ -272,7 +272,7 @@ void DispatchTestTasks(size_t testCaseCount, const std::function<void()>& job)
 	{
 	}
 
-	InnoTaskScheduler::WaitSync();
+	TaskScheduler::WaitSync();
 
 	InnoLogger::Log(LogLevel::Verbose, "All jobs finished.");
 }
@@ -444,8 +444,8 @@ void TestStackAllocator(size_t testCaseCount)
 
 int main(int argc, char* argv[])
 {
-	InnoTaskScheduler::Setup();
-	InnoTaskScheduler::Initialize();
+	TaskScheduler::Setup();
+	TaskScheduler::Initialize();
 
 	TestIToA(8192);
 	TestArray(8192);
@@ -454,7 +454,7 @@ int main(int argc, char* argv[])
 	TestAtomicDoubleBuffer(128);
 	TestInnoRingBuffer(128);
 	TestStackAllocator(128);
-	InnoTaskScheduler::Terminate();
+	TaskScheduler::Terminate();
 
 	return 0;
 }

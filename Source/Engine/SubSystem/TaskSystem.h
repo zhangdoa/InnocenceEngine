@@ -15,12 +15,12 @@ namespace Inno
 
 		ObjectStatus GetStatus()  override;
 
-		void waitAllTasksToFinish() override;
+		void WaitSync() override;
 
-		const RingBuffer<InnoTaskReport, true>& GetTaskReport(int32_t threadID) override;
-		size_t GetTotalThreadsNumber() override;
+		const RingBuffer<TaskReport, true>& GetTaskReport(int32_t threadID) override;
+		size_t GetThreadCounts() override;
 
 	protected:
-		std::shared_ptr<IInnoTask> addTaskImpl(std::unique_ptr<IInnoTask>&& task, int32_t threadID) override;
+		std::shared_ptr<ITask> AddTask(std::unique_ptr<ITask>&& task, int32_t threadID) override;
 	};
 }

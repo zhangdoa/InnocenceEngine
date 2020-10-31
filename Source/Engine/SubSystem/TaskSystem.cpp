@@ -17,7 +17,7 @@ ObjectStatus InnoTaskSystem::GetStatus()
 bool InnoTaskSystem::Setup(ISystemConfig* systemConfig)
 {
 	InnoTaskSystemNS::m_ObjectStatus = ObjectStatus::Created;
-	return InnoTaskScheduler::Setup();
+	return TaskScheduler::Setup();
 }
 
 bool InnoTaskSystem::Initialize()
@@ -25,7 +25,7 @@ bool InnoTaskSystem::Initialize()
 	if (InnoTaskSystemNS::m_ObjectStatus == ObjectStatus::Created)
 	{
 		InnoTaskSystemNS::m_ObjectStatus = ObjectStatus::Activated;
-		return InnoTaskScheduler::Initialize();
+		return TaskScheduler::Initialize();
 	}
 	else
 	{
@@ -37,7 +37,7 @@ bool InnoTaskSystem::Update()
 {
 	if (InnoTaskSystemNS::m_ObjectStatus == ObjectStatus::Activated)
 	{
-		return 	InnoTaskScheduler::Update();
+		return 	TaskScheduler::Update();
 	}
 	else
 	{
@@ -49,25 +49,25 @@ bool InnoTaskSystem::Update()
 bool InnoTaskSystem::Terminate()
 {
 	InnoTaskSystemNS::m_ObjectStatus = ObjectStatus::Terminated;
-	return InnoTaskScheduler::Terminate();
+	return TaskScheduler::Terminate();
 }
 
-void InnoTaskSystem::waitAllTasksToFinish()
+void InnoTaskSystem::WaitSync()
 {
-	InnoTaskScheduler::WaitSync();
+	TaskScheduler::WaitSync();
 }
 
-const RingBuffer<InnoTaskReport, true>& InnoTaskSystem::GetTaskReport(int32_t threadID)
+const RingBuffer<TaskReport, true>& InnoTaskSystem::GetTaskReport(int32_t threadID)
 {
-	return InnoTaskScheduler::GetTaskReport(threadID);
+	return TaskScheduler::GetTaskReport(threadID);
 }
 
-size_t InnoTaskSystem::GetTotalThreadsNumber()
+size_t InnoTaskSystem::GetThreadCounts()
 {
-	return InnoTaskScheduler::GetTotalThreadsNumber();
+	return TaskScheduler::GetThreadCounts();
 }
 
-std::shared_ptr<IInnoTask> InnoTaskSystem::addTaskImpl(std::unique_ptr<IInnoTask>&& task, int32_t threadID)
+std::shared_ptr<ITask> InnoTaskSystem::AddTask(std::unique_ptr<ITask>&& task, int32_t threadID)
 {
-	return InnoTaskScheduler::AddTaskImpl(std::move(task), threadID);
+	return TaskScheduler::AddTask(std::move(task), threadID);
 }

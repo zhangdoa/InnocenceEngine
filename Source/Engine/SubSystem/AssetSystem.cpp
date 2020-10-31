@@ -584,7 +584,7 @@ bool InnoAssetSystem::convertModel(const char* fileName, const char* exportPath)
 
 	if (l_extension == ".obj" || l_extension == ".OBJ" || l_extension == ".fbx" || l_extension == ".FBX" || l_extension == ".gltf" || l_extension == ".GLTF" || l_extension == ".md5mesh")
 	{
-		auto tempTask = g_Engine->getTaskSystem()->submit("ConvertModelTask", -1, nullptr, [=]()
+		auto tempTask = g_Engine->getTaskSystem()->Submit("ConvertModelTask", -1, nullptr, [=]()
 			{
 				AssimpWrapper::convertModel(l_fileName.c_str(), exportPath);
 			});
@@ -659,8 +659,8 @@ bool InnoAssetSystem::loadAssetsForComponents(bool AsyncLoad)
 		{
 			if (AsyncLoad)
 			{
-				auto l_loadModelTask = g_Engine->getTaskSystem()->submit("AssignProceduralModelTask", 4, nullptr, f_AssignProceduralModelTask, i, true);
-				g_Engine->getTaskSystem()->submit("PDCTask", 4, l_loadModelTask, f_GeneratePDCTask, i);
+				auto l_loadModelTask = g_Engine->getTaskSystem()->Submit("AssignProceduralModelTask", 4, nullptr, f_AssignProceduralModelTask, i, true);
+				g_Engine->getTaskSystem()->Submit("PDCTask", 4, l_loadModelTask.m_Task, f_GeneratePDCTask, i);
 			}
 			else
 			{
@@ -674,8 +674,8 @@ bool InnoAssetSystem::loadAssetsForComponents(bool AsyncLoad)
 			{
 				if (AsyncLoad)
 				{
-					auto l_loadModelTask = g_Engine->getTaskSystem()->submit("LoadModelTask", 4, nullptr, f_LoadModelTask, i, true);
-					g_Engine->getTaskSystem()->submit("PDCTask", 4, l_loadModelTask, f_GeneratePDCTask, i);
+					auto l_loadModelTask = g_Engine->getTaskSystem()->Submit("LoadModelTask", 4, nullptr, f_LoadModelTask, i, true);
+					g_Engine->getTaskSystem()->Submit("PDCTask", 4, l_loadModelTask.m_Task, f_GeneratePDCTask, i);
 				}
 				else
 				{

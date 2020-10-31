@@ -51,7 +51,7 @@ namespace ImGuiWrapperNS
 	static bool m_useZoom = false;
 	static bool m_showRenderPassResult = false;
 	static bool m_showConcurrencyProfiler = false;
-	std::vector<RingBuffer<InnoTaskReport, true>> m_taskReports;
+	std::vector<RingBuffer<TaskReport, true>> m_taskReports;
 
 	IImGuiWindow* m_windowImpl;
 	IImGuiRenderer* m_rendererImpl;
@@ -114,7 +114,7 @@ bool ImGuiWrapper::Setup()
 		ImGuiWrapperNS::m_rendererImpl->Setup();
 	}
 
-	auto l_maxThreads = g_Engine->getTaskSystem()->GetTotalThreadsNumber();
+	auto l_maxThreads = g_Engine->getTaskSystem()->GetThreadCounts();
 	m_taskReports.resize(l_maxThreads);
 
 	return true;
@@ -568,7 +568,7 @@ void ImGuiWrapperNS::showConcurrencyProfiler()
 {
 	if (m_showConcurrencyProfiler)
 	{
-		auto l_maxThreads = g_Engine->getTaskSystem()->GetTotalThreadsNumber();
+		auto l_maxThreads = g_Engine->getTaskSystem()->GetThreadCounts();
 
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 1));
 		ImGui::Begin("ConcurrencyProfiler", 0);

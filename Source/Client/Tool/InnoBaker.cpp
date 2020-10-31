@@ -1384,14 +1384,14 @@ void InnoBaker::BakeProbeCache(const char* sceneName)
 
 	std::vector<Probe> l_probes;
 
-	auto l_InnoBakerProbeCacheTask = g_Engine->getTaskSystem()->submit("InnoBakerProbeCacheTask", 2, nullptr,
+	auto l_InnoBakerProbeCacheTask = g_Engine->getTaskSystem()->Submit("InnoBakerProbeCacheTask", 2, nullptr,
 		[&]() {
 			gatherStaticMeshData();
 			generateProbeCaches(l_probes);
 			captureSurfels(l_probes);
 		});
 
-	l_InnoBakerProbeCacheTask->Wait();
+	l_InnoBakerProbeCacheTask.m_Future->Get();
 }
 
 void InnoBaker::BakeBrickCache(const char* surfelCacheFileName)
@@ -1470,12 +1470,12 @@ void InnoBaker::BakeBrickFactor(const char* brickFileName)
 
 			l_probeFile.close();
 
-			auto l_InnoBakerBrickFactorTask = g_Engine->getTaskSystem()->submit("InnoBakerBrickFactorTask", 2, nullptr,
+			auto l_InnoBakerBrickFactorTask = g_Engine->getTaskSystem()->Submit("InnoBakerBrickFactorTask", 2, nullptr,
 				[&]() {
 					assignBrickFactorToProbesByGPU(l_bricks, l_probes);
 				});
 
-			l_InnoBakerBrickFactorTask->Wait();
+			l_InnoBakerBrickFactorTask.m_Future->Get();
 		}
 		else
 		{
@@ -1490,23 +1490,23 @@ void InnoBaker::BakeBrickFactor(const char* brickFileName)
 
 bool InnoBakerRenderingClient::Setup(ISystemConfig* systemConfig)
 {
-	auto l_InnoBakerRenderingClientSetupTask = g_Engine->getTaskSystem()->submit("InnoBakerRenderingClientSetupTask", 2, nullptr,
+	auto l_InnoBakerRenderingClientSetupTask = g_Engine->getTaskSystem()->Submit("InnoBakerRenderingClientSetupTask", 2, nullptr,
 		[]() {
 			DefaultGPUBuffers::Setup();
 			InnoBaker::Setup();
 		});
-	l_InnoBakerRenderingClientSetupTask->Wait();
+	l_InnoBakerRenderingClientSetupTask.m_Future->Get();
 
 	return true;
 }
 
 bool InnoBakerRenderingClient::Initialize()
 {
-	auto l_InnoBakerRenderingClientInitializeTask = g_Engine->getTaskSystem()->submit("InnoBakerRenderingClientInitializeTask", 2, nullptr,
+	auto l_InnoBakerRenderingClientInitializeTask = g_Engine->getTaskSystem()->Submit("InnoBakerRenderingClientInitializeTask", 2, nullptr,
 		[]() {
 			DefaultGPUBuffers::Initialize();
 		});
-	l_InnoBakerRenderingClientInitializeTask->Wait();
+	l_InnoBakerRenderingClientInitializeTask.m_Future->Get();
 
 	return true;
 }

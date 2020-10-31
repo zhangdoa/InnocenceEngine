@@ -59,7 +59,6 @@ namespace PhysXWrapperNS
 	std::function<void()> f_sceneLoadingStartCallback;
 	std::function<void()> f_pauseSimulate;
 
-	std::shared_ptr<IInnoTask> m_currentTask;
 	std::mutex m_mutex;
 }
 
@@ -120,11 +119,6 @@ bool PhysXWrapperNS::Setup()
 	f_sceneLoadingStartCallback = [&]() {
 		m_needSimulate = false;
 
-		if (m_currentTask != nullptr)
-		{
-			m_currentTask->Wait();
-		}
-
 		for (auto i : PhysXActors)
 		{
 			gScene->removeActor(*i.m_PxRigidActor);
@@ -157,7 +151,7 @@ bool PhysXWrapperNS::Update()
 		{
 			m_allowUpdate = false;
 
-			m_currentTask = g_Engine->getTaskSystem()->submit("PhysXUpdateTask", 3, nullptr, [&]()
+			g_Engine->getTaskSystem()->Submit("PhysXUpdateTask", 3, nullptr, [&]()
 				{
 					gScene->simulate(g_Engine->getTickTime() / 1000.0f);
 					gScene->fetchResults(true);
@@ -192,10 +186,6 @@ bool PhysXWrapperNS::Update()
 
 bool PhysXWrapperNS::Terminate()
 {
-	if (m_currentTask != nullptr)
-	{
-		m_currentTask->Wait();
-	}
 	gScene->release();
 	gDispatcher->release();
 	gPhysics->release();
