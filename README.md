@@ -23,17 +23,18 @@
 
 ```cpp
 // the "E"
-auto l_testEntity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Runtime, ObjectOwnership::Client, "testEntity/");
+auto l_testEntity = g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Scene, "testEntity/");
 
 // the "C"
-auto l_testTransformComponent = SpawnComponent(TransformComponent, l_testEntity, ObjectSource::Runtime, ObjectOwnership::Client);
+auto l_testTransformComponent = g_Engine->getComponentManager()->Spawn<TransformComponent>(l_testEntity, false, ObjectLifespan::Scene);
 
 l_testTransformComponent->m_localTransformVector.m_pos = Vec4(42.0f, 1.0f, PI<float>, 1.0f);
 
-// the engine provided "S" will take care of other businesses
+// the engine has several "S" to handle the engine-side businesses, while users have the freedom to implement their own systems
+class TestSystem : public ISystem {};
 ```
 
-- Custom container, string and math classes, no STL overhead/No 3rd-party math library dependency.
+- Custom container, string and math classes, minimum STL overhead/No 3rd-party math library dependency.
 
 ```cpp
 RingBuffer<float> l_testRingBuffer(32);
@@ -63,22 +64,25 @@ auto l_testAABB = InnoMath::generateAABB(l_maxPoint, l_minPoint);
 std::function<void()> f_JobA;
 f_JobA = []()
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Warning, "I'm worried that C++ would be quite a mess for me.");
+	g_Engine->getLogSystem()->Log(LogLevel::Warning, "I'm worried that C++ would be quite a mess for me.");
 };
 
 auto f_JobB = [=](int val)
 {
-	g_pModuleManager->getLogSystem()->Log(LogLevel::Success, "There are always some user-friendly programming languages waiting for you, just search for more than ", val, " seconds you'll find them.");
+	g_Engine->getLogSystem()->Log(LogLevel::Success, "There are always some user-friendly programming languages waiting for you, just search for more than ", val, " seconds you'll find them.");
+	return true;
 };
 
 // Job A will be executed on thread 5 as soon as possible
-auto l_testTaskA = g_pModuleManager->getTaskSystem()->submit("ANonSenseTask", 5, nullptr, f_JobA);
+auto l_testTaskHandleA = g_Engine->getTaskSystem()->Submit("ANonSenseTask", 5, nullptr, f_JobA);
 
 // Job B will be executed with a parameter just after Job A finished
-auto l_testTaskB = g_pModuleManager->getTaskSystem()->submit("NotANonSenseTask", 2, l_testTaskA, f_JobB, std::numeric_limits<int>::max());
+auto l_testTaskHandleB = g_Engine->getTaskSystem()->Submit("NotANonSenseTask", 2, l_testTaskHandleA.m_Task, f_JobB, std::numeric_limits<int>::max());
 
 // Blocking-wait on the caller thread
-l_testTaskB->Wait();
+l_testTaskHandleB.m_Task->Wait();
+// Or use with a Producer-Customer model
+auto l_testResult = l_testTaskHandleB.m_Future->Get();
 ```
 
 - Object pool memory model, O(1) allocation/deallocation.
@@ -91,21 +95,21 @@ struct POD
 	void* m_Ptr;
 };
 
-auto l_objectPoolInstance = InnoMemory::CreateObjectPool<POD>(65536);
-auto l_PODInstance = InnoMemory::Spawn<POD>(l_objectPoolInstance);
+auto l_objectPoolInstance = TObjectPool<POD>::Create(65536);
+auto l_PODInstance =l_objectPoolInstance->Spawn();
 l_PODInstance->m_Float = 42.0f;
-InnoMemory::Destroy(l_objectPoolInstance, l_PODInstance);
-InnoMemory::DestroyObjectPool(l_objectPoolInstance);
+l_objectPoolInstance->Destroy(l_PODInstance);
+TObjectPool<POD>::Destruct(l_objectPoolInstance);
 ```
 
-- Logic Client as the plugin, the only coding rule is using the engine's interface to write your logic code and write whatever you want.
+- Logic Client-as-a-plugin style, the only coding rule is using the engine's interfaces to write your gameplay code and write whatever you want.
 
 - The major graphics API support, from OpenGL 4.6 to DirectX 11, from DirectX 12 to Vulkan, and Metal, all supported by one unified interface.
 
-- Client-Server rendering architecture, allow any kind of user-designed rendering pipeline from the first triangle draw call to the last swap chain presentation.
+- Client-Server rendering architecture, supports any kind of user-designed rendering pipeline from the first triangle draw call to the last swap chain presentation.
 
 ```cpp
-auto l_renderingServer = g_pModuleManager->getRenderingServer();
+auto l_renderingServer = g_Engine->getRenderingServer();
 
 // m_RPDC = l_renderingServer->AddRenderPassDataComponent("LightPass/");
 l_renderingServer->CommandListBegin(m_RPDC, 0);
