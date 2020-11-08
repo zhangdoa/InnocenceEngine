@@ -2,7 +2,7 @@
 
 #include "../../Engine/Interface/IModuleManager.h"
 
-INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
+INNO_ENGINE_API extern IModuleManager* g_Engine;
 
 #include "../../Engine/Common/CommonMacro.inl"
 #include "../../Engine/ComponentManager/ITransformComponentManager.h"
@@ -24,7 +24,7 @@ void InnoWorldExplorer::buildTree()
     m_rootItem->setText(0, "Entities");
     this->addTopLevelItem(m_rootItem);
 
-    auto l_sceneHierarchyMap = g_pModuleManager->getSceneHierarchyManager()->GetSceneHierarchyMap();
+    auto l_sceneHierarchyMap = g_Engine->getSceneHierarchyManager()->GetSceneHierarchyMap();
 
     for (auto& i : l_sceneHierarchyMap)
     {
@@ -64,7 +64,7 @@ void InnoWorldExplorer::initialize(InnoPropertyEditor* propertyEditor)
         buildTree();
     };
 
-    g_pModuleManager->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
+    g_Engine->getFileSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 }
 
 void InnoWorldExplorer::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
@@ -134,7 +134,7 @@ void InnoWorldExplorer::endRename()
 
 void InnoWorldExplorer::addEntity()
 {
-    auto l_entity = g_pModuleManager->getEntityManager()->Spawn(ObjectSource::Asset, ObjectOwnership::Client, "newEntity/");
+    auto l_entity = g_Engine->getEntityManager()->Spawn(ObjectSource::Asset, ObjectOwnership::Client, "newEntity/");
 
     QTreeWidgetItem* l_entityItem = new QTreeWidgetItem();
 
@@ -164,7 +164,7 @@ void InnoWorldExplorer::deleteEntity()
             destroyComponent(l_componentPtr);
         }
 
-        g_pModuleManager->getEntityManager()->Destroy(l_entityPtr);
+        g_Engine->getEntityManager()->Destroy(l_entityPtr);
 
         item->parent()->removeChild(item);
     }

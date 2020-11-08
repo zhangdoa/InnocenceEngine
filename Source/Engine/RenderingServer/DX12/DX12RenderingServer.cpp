@@ -189,9 +189,9 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 {
 	// Create a DirectX graphics interface factory.
 	UINT l_DXGIFlag = 0;
-#ifdef _DEBUG
+#ifdef INNO_DEBUG
 	l_DXGIFlag |= DXGI_CREATE_FACTORY_DEBUG;
-#endif // _DEBUG
+#endif // INNO_DEBUG
 
 	auto l_HResult = CreateDXGIFactory2(l_DXGIFlag, IID_PPV_ARGS(&m_factory));
 	if (FAILED(l_HResult))
@@ -373,9 +373,9 @@ bool DX12RenderingServerNS::CreateGlobalCommandAllocator()
 		return false;
 	}
 
-#ifdef _DEBUG
+#ifdef INNO_DEBUG
 	m_globalCommandAllocator->SetName(L"GlobalCommandAllocator");
-#endif // _DEBUG
+#endif // INNO_DEBUG
 
 	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Global CommandAllocator has been created.");
 
@@ -388,9 +388,9 @@ bool DX12RenderingServerNS::CreateGlobalCommandAllocator()
 			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create graphics CommandAllocator!");
 			return false;
 		}
-#ifdef _DEBUG
+#ifdef INNO_DEBUG
 		m_graphicsCommandAllocators[i]->SetName((L"GraphicsCommandAllocator_" + std::to_wstring(i)).c_str());
-#endif // _DEBUG
+#endif // INNO_DEBUG
 
 		InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Graphics CommandAllocator has been created.");
 	}
@@ -687,7 +687,7 @@ bool DX12RenderingServer::Setup(ISystemConfig* systemConfig)
 
 	bool l_result = true;
 
-#ifdef _DEBUG
+#ifdef INNO_DEBUG
 	l_result &= CreateDebugCallback();
 #endif
 	l_result &= CreatePhysicalDevices();
@@ -871,7 +871,7 @@ bool DX12RenderingServer::Terminate()
 	DeleteShaderProgramComponent(m_SwapChainSPC);
 	//DeleteRenderPassDataComponent(m_SwapChainRPDC);
 
-#ifdef _DEBUG
+#ifdef INNO_DEBUG
 	IDXGIDebug1* pDebug = nullptr;
 	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&pDebug))))
 	{
@@ -925,9 +925,9 @@ bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent* rhs)
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't create vertex buffer!");
 		return false;
 	}
-#ifdef  _DEBUG
+#ifdef  INNO_DEBUG
 	SetObjectName(l_rhs, l_rhs->m_vertexBuffer, "VB");
-#endif //  _DEBUG
+#endif //  INNO_DEBUG
 
 	auto l_vertexUploadHeapBuffer = CreateUploadHeapBuffer(&l_verticesResourceDesc, m_device);
 
@@ -963,9 +963,9 @@ bool DX12RenderingServer::InitializeMeshDataComponent(MeshDataComponent* rhs)
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't create index buffer!");
 		return false;
 	}
-#ifdef  _DEBUG
+#ifdef  INNO_DEBUG
 	SetObjectName(l_rhs, l_rhs->m_indexBuffer, "IB");
-#endif //  _DEBUG
+#endif //  INNO_DEBUG
 
 	auto l_indexUploadHeapBuffer = CreateUploadHeapBuffer(&l_indicesResourceDesc, m_device);
 
@@ -1067,9 +1067,9 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent* r
 			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't create texture!");
 			return false;
 		}
-#ifdef _DEBUG
+#ifdef INNO_DEBUG
 		SetObjectName(l_rhs, l_rhs->m_ResourceHandle, "Texture");
-#endif // _DEBUG
+#endif // INNO_DEBUG
 
 		std::vector<ComPtr<ID3D12Resource>> l_uploadBuffers;
 
@@ -1347,9 +1347,9 @@ bool DX12RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 	auto l_resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(l_rhs->m_TotalSize);
 	l_rhs->m_UploadHeapResourceHandle = CreateUploadHeapBuffer(&l_resourceDesc, m_device);
 
-#ifdef _DEBUG
+#ifdef INNO_DEBUG
 	SetObjectName(rhs, l_rhs->m_UploadHeapResourceHandle, "UploadHeapGPUBuffer");
-#endif // _DEBUG
+#endif // INNO_DEBUG
 
 	if (l_rhs->m_GPUAccessibility != Accessibility::ReadOnly)
 	{
@@ -1362,9 +1362,9 @@ bool DX12RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 			l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_DefaultHeapResourceHandle.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 			EndSingleTimeCommands(l_commandList, m_device, m_globalCommandQueue);
 
-#ifdef _DEBUG
+#ifdef INNO_DEBUG
 			SetObjectName(rhs, l_rhs->m_DefaultHeapResourceHandle, "DefaultHeapGPUBuffer");
-#endif // _DEBUG
+#endif // INNO_DEBUG
 
 			l_resourceBinder->m_UAV = CreateUAV(l_rhs);
 		}

@@ -8,7 +8,7 @@ namespace Inno
 	{
 	public:
 		static uint32_t GetTypeID() { return 4; };
-		static char* GetTypeName() { return "CameraComponent"; };
+		static const char* GetTypeName() { return "CameraComponent"; };
 
 		Mat4 m_projectionMatrix;
 		Frustum m_frustum;

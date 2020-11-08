@@ -9,6 +9,7 @@
 #import <Foundation/Foundation.h>
 #import "MacWindowSystemBridgeImpl.h"
 
+using namespace Inno;
 bool MacWindowSystemBridgeImpl::Setup(uint32_t sizeX, uint32_t sizeY) {
     NSRect frame = NSMakeRect(0, 0, sizeX, sizeY);
     

@@ -9,7 +9,7 @@ namespace Inno
 	{
 	public:
 		static uint32_t GetTypeID() { return 14; };
-		static char* GetTypeName() { return "GPUBufferDataComponent"; };
+		static const char* GetTypeName() { return "GPUBufferDataComponent"; };
 
 		Accessibility m_CPUAccessibility = Accessibility::WriteOnly;
 		Accessibility m_GPUAccessibility = Accessibility::ReadOnly;

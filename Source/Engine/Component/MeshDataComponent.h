@@ -10,7 +10,7 @@ namespace Inno
 	{
 	public:
 		static uint32_t GetTypeID() { return 6; };
-		static char* GetTypeName() { return "MeshDataComponent"; };
+		static const char* GetTypeName() { return "MeshDataComponent"; };
 
 		MeshPrimitiveTopology m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 		MeshSource m_meshSource = MeshSource::Procedural;

@@ -10,7 +10,7 @@ namespace Inno
 	{
 	public:
 		static uint32_t GetTypeID() { return 5; };
-		static char* GetTypeName() { return "PhysicsDataComponent"; };
+		static const char* GetTypeName() { return "PhysicsDataComponent"; };
 
 		AABB m_AABBLS = {};
 		AABB m_AABBWS = {};

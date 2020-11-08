@@ -9,10 +9,11 @@
 #import "InnoNSApplication.h"
 #import "MacWindowDelegate.h"
 
-#import "../ApplicationEntry/InnoApplicationEntry.h"
+#import "../ApplicationEntry/ApplicationEntry.h"
 #import "MacWindowSystemBridgeImpl.h"
 #import "MTRenderingServerBridgeImpl.h"
 
+using namespace Inno;
 @implementation InnoNSApplication
 MacWindowSystemBridgeImpl* m_macWindowSystemBridge;
 MTRenderingServerBridgeImpl* m_metalRenderingServerBridge;

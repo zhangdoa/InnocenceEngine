@@ -9,7 +9,8 @@
 #import <Foundation/Foundation.h>
 #import "MTRenderingServerBridgeImpl.h"
 
-bool MTRenderingServerBridgeImpl::Setup(ISystemConfig* systemConfig) {
+using namespace Inno;
+bool MTRenderingServerBridgeImpl::Setup() {
     [m_metalDelegate createDevice];
 
     [m_metalDelegate createView:[m_macWindowDelegate getFrame]];

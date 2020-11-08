@@ -10,7 +10,7 @@ namespace Inno
 	{
 	public:
 		static uint32_t GetTypeID() { return 3; };
-		static char* GetTypeName() { return "LightComponent"; };
+		static const char* GetTypeName() { return "LightComponent"; };
 
 		// Unitless: use clamped range from 0.0 to 1.0
 		// CIE 1931 RGB color space

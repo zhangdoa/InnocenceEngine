@@ -3,7 +3,7 @@
 
 #include "../../Engine/Interface/IModuleManager.h"
 
-INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
+INNO_ENGINE_API extern IModuleManager* g_Engine;
 
 InnoDirectoryTreeViewer::InnoDirectoryTreeViewer(QWidget *parent) : QTreeView(parent)
 {

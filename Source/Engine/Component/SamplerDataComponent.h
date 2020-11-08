@@ -23,7 +23,7 @@ namespace Inno
 	{
 	public:
 		static uint32_t GetTypeID() { return 13; };
-		static char* GetTypeName() { return "SamplerDataComponent"; };
+		static const char* GetTypeName() { return "SamplerDataComponent"; };
 
 		SamplerDesc m_SamplerDesc = {};
 		IResourceBinder* m_ResourceBinder = 0;

@@ -21,7 +21,7 @@ namespace Inno
 		explicit MTRenderingServerBridgeImpl(MacWindowDelegate* macWindowDelegate, MetalDelegate* metalDelegate);
 		~MTRenderingServerBridgeImpl();
 
-		bool Setup(ISystemConfig* systemConfig) override;
+		bool Setup() override;
 		bool Initialize() override;
 		bool Update() override;
 		bool render() override;

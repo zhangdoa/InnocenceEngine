@@ -10,7 +10,7 @@ namespace Inno
 	{
 	public:
 		static uint32_t GetTypeID() { return 11; };
-		static char* GetTypeName() { return "RenderPassDataComponent"; };
+		static const char* GetTypeName() { return "RenderPassDataComponent"; };
 
 		ShaderProgramComponent* m_ShaderProgram = 0;
 

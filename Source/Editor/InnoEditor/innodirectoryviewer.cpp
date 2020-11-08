@@ -2,7 +2,7 @@
 
 #include "../../Engine/Interface/IModuleManager.h"
 
-INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
+INNO_ENGINE_API extern IModuleManager* g_Engine;
 
 InnoDirectoryViewer::InnoDirectoryViewer(QWidget *parent) : QSplitter(parent)
 {
@@ -27,7 +27,7 @@ InnoDirectoryViewer::InnoDirectoryViewer(QWidget *parent) : QSplitter(parent)
 
 void InnoDirectoryViewer::Initialize()
 {
-    auto l_workingDir = g_pModuleManager->getFileSystem()->getWorkingDirectory();
+    auto l_workingDir = g_Engine->getFileSystem()->getWorkingDirectory();
     l_workingDir += "..//Res//";
 
     m_listViewer->SetRootPath(l_workingDir.c_str());

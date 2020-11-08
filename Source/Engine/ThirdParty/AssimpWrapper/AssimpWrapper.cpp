@@ -96,7 +96,7 @@ bool AssimpWrapper::convertModel(const char* fileName, const char* exportPath)
 	if (IOService::isFileExist(fileName))
 	{
 		InnoLogger::Log(LogLevel::Verbose, "AssimpWrapper: Converting ", fileName, "...");
-#if defined _DEBUG
+#if defined INNO_DEBUG
 		std::string l_logFilePath = IOService::getWorkingDirectory() + "..//Res//Logs//AssimpLog_" + l_exportFileName + ".txt";
 		Assimp::DefaultLogger::create(l_logFilePath.c_str(), Assimp::Logger::VERBOSE);
 #endif

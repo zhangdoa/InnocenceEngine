@@ -9,7 +9,7 @@ namespace Inno
 	public:
 		INNO_CLASS_CONCRETE_NON_COPYABLE(MacWindowSystem);
 
-		bool Setup(void* hInstance, void* hwnd) override;
+		bool Setup(ISystemConfig* systemConfig) override;
 		bool Initialize() override;
 		bool Update() override;
 		bool Terminate() override;

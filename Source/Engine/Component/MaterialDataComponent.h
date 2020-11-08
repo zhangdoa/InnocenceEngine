@@ -17,7 +17,7 @@ namespace Inno
 	{
 	public:
 		static uint32_t GetTypeID() { return 7; };
-		static char* GetTypeName() { return "MaterialDataComponent"; };
+		static const char* GetTypeName() { return "MaterialDataComponent"; };
 
 		MaterialAttributes m_materialAttributes = {};
 		TextureSlot m_TextureSlots[8];

@@ -53,7 +53,7 @@ namespace Inno
 				auto l_owner = const_cast<InnoEntity*>(owner);
 				l_Component->m_Owner = l_owner;
 				auto l_componentIndex = m_CurrentComponentIndex;
-#ifdef _DEBUG
+#ifdef INNO_DEBUG
 				auto l_instanceName = ObjectName((std::string(owner->m_InstanceName.c_str()) + "." + std::string(T::GetTypeName()) + "_" + std::to_string(l_componentIndex) + "/").c_str());
 				l_Component->m_InstanceName = l_instanceName;
 #endif
@@ -94,7 +94,6 @@ namespace Inno
 			}
 		}
 
-		template<typename T>
 		T* Get(std::size_t index)
 		{
 			if (index >= m_ComponentPointers.size())
@@ -104,7 +103,6 @@ namespace Inno
 			return m_ComponentPointers[index];
 		}
 
-		template<typename T>
 		const std::vector<T*>& GetAll()
 		{
 			return m_ComponentPointers.getRawData();
@@ -144,7 +142,7 @@ namespace Inno
 		template<typename T>
 		uint32_t GetTypeIndex()
 		{
-			auto l_TypeInfo = typeid(T);
+			auto& l_TypeInfo = typeid(T);
 			auto l_typeHashCode = l_TypeInfo.hash_code();
 
 			if (m_ComponentTypeIndexLUT.find(l_typeHashCode) != m_ComponentTypeIndexLUT.end())
@@ -177,13 +175,13 @@ namespace Inno
 		template<typename T>
 		T* Get(std::size_t index)
 		{
-			return GetComponentFactory<T>()->Get<T>(index);
+			return GetComponentFactory<T>()->Get(index);
 		}
 
 		template<typename T>
 		const std::vector<T*>& GetAll()
 		{
-			return GetComponentFactory<T>()->GetAll<T>();
+			return GetComponentFactory<T>()->GetAll();
 		}
 
 		bool CleanUp(ObjectLifespan objectLifespan)

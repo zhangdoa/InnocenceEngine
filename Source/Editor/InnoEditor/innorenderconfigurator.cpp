@@ -4,7 +4,7 @@
 
 #include "../../Engine/Interface/IModuleManager.h"
 
-INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
+INNO_ENGINE_API extern IModuleManager* g_Engine;
 
 InnoRenderConfigurator::InnoRenderConfigurator(QWidget* parent) : QComboBox(parent)
 {
@@ -90,7 +90,7 @@ void InnoRenderConfigurator::SetRenderConfig()
 	l_renderingConfig.drawTerrain = l_status[4];
 	l_renderingConfig.drawDebugObject = l_status[5];
 
-	g_pModuleManager->getRenderingFrontend()->setRenderingConfig(l_renderingConfig);
+	g_Engine->getRenderingFrontend()->setRenderingConfig(l_renderingConfig);
 }
 
 void InnoRenderConfigurator::GetRenderConfig()
@@ -100,7 +100,7 @@ void InnoRenderConfigurator::GetRenderConfig()
 		return;
 	}
 
-	auto l_renderingConfig = g_pModuleManager->getRenderingFrontend()->getRenderingConfig();
+	auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
 
 	m_model->item(0)->setCheckState(l_renderingConfig.useMotionBlur ? Qt::Checked : Qt::Unchecked);
 	m_model->item(1)->setCheckState(l_renderingConfig.useTAA ? Qt::Checked : Qt::Unchecked);

@@ -13,23 +13,26 @@
 #import "MacWindowDelegate.h"
 #import "MetalDelegate.h"
 
-class MacWindowSystemBridgeImpl : public MacWindowSystemBridge
+namespace Inno
 {
-public:
-	explicit MacWindowSystemBridgeImpl(MacWindowDelegate* macWindowDelegate, MetalDelegate* metalDelegate);
-	~MacWindowSystemBridgeImpl();
+	class MacWindowSystemBridgeImpl : public MacWindowSystemBridge
+	{
+	public:
+		explicit MacWindowSystemBridgeImpl(MacWindowDelegate *macWindowDelegate, MetalDelegate *metalDelegate);
+		~MacWindowSystemBridgeImpl();
 
-	bool Setup(uint32_t sizeX, uint32_t sizeY) override;
-	bool Initialize() override;
-	bool Update() override;
-	bool Terminate() override;
+		bool Setup(uint32_t sizeX, uint32_t sizeY) override;
+		bool Initialize() override;
+		bool Update() override;
+		bool Terminate() override;
 
-	ObjectStatus GetStatus() override;
-private:
-	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
-	MacWindowDelegate* m_macWindowDelegate = nullptr;
-	MetalDelegate* m_metalDelegate = nullptr;
-	NSApplication* app;
-};
+		ObjectStatus GetStatus() override;
 
+	private:
+		ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
+		MacWindowDelegate *m_macWindowDelegate = nullptr;
+		MetalDelegate *m_metalDelegate = nullptr;
+		NSApplication *app;
+	};
+} // namespace Inno
 #endif /* MacWindowSystemBridgeImpl_h */

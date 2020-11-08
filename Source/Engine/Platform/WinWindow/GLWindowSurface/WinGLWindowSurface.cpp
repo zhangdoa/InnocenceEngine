@@ -182,9 +182,9 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 			WGL_CONTEXT_FLAGS_ARB
 		};
 
-#ifdef _DEBUG
+#ifdef INNO_DEBUG
 		contextAttribs.emplace_back(WGL_CONTEXT_DEBUG_BIT_ARB);
-#endif // _DEBUG
+#endif // INNO_DEBUG
 		contextAttribs.emplace_back(0);
 
 		m_HGLRC = wglCreateContextAttribsARB(m_HDC, 0, &contextAttribs[0]);

@@ -381,7 +381,7 @@ bool GLHelper::CreateFramebuffer(GLRenderPassDataComponent* GLRPDC)
 	glGenFramebuffers(1, &GLRPDC->m_FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, GLRPDC->m_FBO);
 
-#ifdef _DEBUG
+#ifdef INNO_DEBUG
 	auto l_FBOName = std::string(GLRPDC->m_InstanceName.c_str());
 	l_FBOName += "_FBO";
 	glObjectLabel(GL_FRAMEBUFFER, GLRPDC->m_FBO, (GLsizei)l_FBOName.size(), l_FBOName.c_str());
@@ -404,7 +404,7 @@ bool GLHelper::CreateFramebuffer(GLRenderPassDataComponent* GLRPDC)
 		glGenRenderbuffers(1, &GLRPDC->m_RBO);
 		glBindRenderbuffer(GL_RENDERBUFFER, GLRPDC->m_RBO);
 
-#ifdef _DEBUG
+#ifdef INNO_DEBUG
 		auto l_RBOName = std::string(GLRPDC->m_InstanceName.c_str());
 		l_RBOName += "_RBO";
 		glObjectLabel(GL_RENDERBUFFER, GLRPDC->m_RBO, (GLsizei)l_RBOName.size(), l_RBOName.c_str());

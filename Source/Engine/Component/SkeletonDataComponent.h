@@ -13,7 +13,7 @@ namespace Inno
 	{
 	public:
 		static uint32_t GetTypeID() { return 9; };
-		static char* GetTypeName() { return "SkeletonDataComponent"; };
+		static const char* GetTypeName() { return "SkeletonDataComponent"; };
 
 		Array<BoneData> m_BoneData;
 	};

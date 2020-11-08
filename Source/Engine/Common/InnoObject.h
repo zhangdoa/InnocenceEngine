@@ -14,7 +14,7 @@ namespace Inno
 		ObjectLifespan m_ObjectLifespan = ObjectLifespan::Invalid;
 		ObjectStatus m_ObjectStatus = ObjectStatus::Invalid;
 
-#ifdef _DEBUG
+#ifdef INNO_DEBUG
 		ObjectName m_InstanceName;
 #endif
 	};
@@ -26,7 +26,7 @@ namespace Inno
 		~InnoEntity() = default;
 
 		static uint32_t GetTypeID() { return 0; }
-		static char* GetTypeName() { return "InnoEntity"; }
+        static const char* GetTypeName() { return "InnoEntity"; }
 
 		std::bitset<MaxComponentType> m_ComponentsMask;
 	};

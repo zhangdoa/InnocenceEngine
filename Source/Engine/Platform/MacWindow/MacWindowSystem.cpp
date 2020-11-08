@@ -16,7 +16,7 @@ namespace MacWindowSystemNS
 	MacWindowSystemBridge* m_bridge;
 }
 
-bool MacWindowSystem::Setup(void* hInstance, void* hwnd)
+bool MacWindowSystem::Setup(ISystemConfig* systemConfig)
 {
 	auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
 	bool result = MacWindowSystemNS::m_bridge->Setup(l_screenResolution.x, l_screenResolution.y);

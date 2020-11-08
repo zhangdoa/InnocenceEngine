@@ -83,7 +83,7 @@ namespace VKRenderingServerNS
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	};
 
-#ifdef _DEBUG
+#ifdef INNO_DEBUG
 	const bool m_enableValidationLayers = true;
 #else
 	const bool m_enableValidationLayers = false;

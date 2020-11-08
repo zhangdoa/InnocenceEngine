@@ -20,7 +20,7 @@ namespace Inno
 	{
 	public:
 		static uint32_t GetTypeID() { return 2; };
-		static char* GetTypeName() { return "VisibleComponent"; };
+		static const char* GetTypeName() { return "VisibleComponent"; };
 
 		MeshPrimitiveTopology m_meshPrimitiveTopology = MeshPrimitiveTopology::Triangle;
 		TextureWrapMethod m_textureWrapMethod = TextureWrapMethod::Repeat;

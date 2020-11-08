@@ -8,7 +8,7 @@ namespace Inno
 	{
 	public:
 		static uint32_t GetTypeID() { return 1; };
-		static char* GetTypeName() { return "TransformComponent"; };
+		static const char* GetTypeName() { return "TransformComponent"; };
 
 		TransformVector m_localTransformVector;
 		TransformVector m_localTransformVector_target;

@@ -77,7 +77,7 @@ return false; \
 }
 
 #define SystemOnFrameEnd( className ) \
-if (!m_##className##->OnFrameEnd()) \
+if (!m_##className->OnFrameEnd()) \
 { \
 m_ObjectStatus = ObjectStatus::Suspended; \
 return false; \

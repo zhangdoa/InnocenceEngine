@@ -3,7 +3,7 @@
 
 #include "../../Engine/Interface/IModuleManager.h"
 
-INNO_ENGINE_API extern IModuleManager* g_pModuleManager;
+INNO_ENGINE_API extern IModuleManager* g_Engine;
 
 InnoDirectoryListViewer::InnoDirectoryListViewer(QWidget* parent) : QListView(parent)
 {
@@ -49,7 +49,7 @@ QString InnoDirectoryListViewer::GetSelectionPath()
     {
     auto l_fileInfo = m_fileModel->fileInfo(index);
 
-    auto l_relativeRoot = g_pModuleManager->getFileSystem()->getWorkingDirectory() + "..//Res//";
+    auto l_relativeRoot = g_Engine->getFileSystem()->getWorkingDirectory() + "..//Res//";
 
     if (l_fileInfo.isDir())
     {
@@ -78,10 +78,10 @@ QString InnoDirectoryListViewer::GetSelectionPath()
                     QMessageBox::Cancel))
         {
         case QMessageBox::Yes:
-            g_pModuleManager->getAssetSystem()->convertModel(l_relativePath.toStdString().c_str(), "..//Res//convertedAssets//");
+            g_Engine->getAssetSystem()->convertModel(l_relativePath.toStdString().c_str(), "..//Res//convertedAssets//");
             break;
         case QMessageBox::No:
-            g_pModuleManager->getLogSystem()->Log(LogLevel::Success, l_relativePath.toStdString().c_str());
+            g_Engine->getLogSystem()->Log(LogLevel::Success, l_relativePath.toStdString().c_str());
 
             break;
         case QMessageBox::Cancel:
@@ -107,7 +107,7 @@ QString InnoDirectoryListViewer::GetSelectionPath()
                     QMessageBox::Cancel))
         {
         case QMessageBox::Yes:
-            g_pModuleManager->getFileSystem()->loadScene(l_relativePath.toStdString().c_str());
+            g_Engine->getFileSystem()->loadScene(l_relativePath.toStdString().c_str());
             break;
         case QMessageBox::No:
             break;
@@ -125,5 +125,5 @@ void InnoDirectoryListViewer::OpenFileMenu(QModelIndex index)
 
 void InnoDirectoryListViewer::SaveScene()
 {
-    g_pModuleManager->getFileSystem()->saveScene();
+    g_Engine->getFileSystem()->saveScene();
 }

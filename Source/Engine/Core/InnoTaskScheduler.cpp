@@ -30,8 +30,6 @@ namespace Inno
 
 		InnoThread(const InnoThread& rhs) = delete;
 		InnoThread& operator=(const InnoThread& rhs) = delete;
-		InnoThread(InnoThread&& other) = default;
-		InnoThread& operator=(InnoThread&& other) = default;
 
 		ThreadState GetState() const;
 		size_t GetUnfinishedWorkCount();
@@ -178,13 +176,13 @@ inline std::string InnoThread::GetThreadID()
 
 inline void InnoThread::ExecuteTask(std::shared_ptr<ITask>&& task)
 {
-#if defined _DEBUG
+#if defined INNO_DEBUG
 	auto l_StartTime = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
 #endif
 
 	task->Execute();
 
-#if defined _DEBUG
+#if defined INNO_DEBUG
 	auto l_FinishTime = InnoTimer::GetCurrentTimeFromEpoch(TimeUnit::Microsecond);
 	TaskReport l_TaskReport = { l_StartTime, l_FinishTime, m_ID.first, task->GetName() };
 	m_TaskReport.emplace_back(l_TaskReport);

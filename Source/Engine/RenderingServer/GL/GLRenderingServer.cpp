@@ -311,7 +311,7 @@ bool GLRenderingServer::InitializeMeshDataComponent(MeshDataComponent* rhs)
 	glGenBuffers(1, &l_rhs->m_IBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, l_rhs->m_IBO);
 
-#ifdef _DEBUG
+#ifdef INNO_DEBUG
 	auto l_VAOName = std::string(l_rhs->m_InstanceName.c_str());
 	l_VAOName += "_VAO";
 	glObjectLabel(GL_VERTEX_ARRAY, l_rhs->m_VAO, (GLsizei)l_VAOName.size(), l_VAOName.c_str());
@@ -375,7 +375,7 @@ bool GLRenderingServer::InitializeTextureDataComponent(TextureDataComponent* rhs
 
 	glBindTexture(l_rhs->m_GLTextureDesc.TextureSampler, l_rhs->m_TO);
 
-#ifdef _DEBUG
+#ifdef INNO_DEBUG
 	auto l_TOName = std::string(l_rhs->m_InstanceName.c_str());
 	l_TOName += "_TO";
 	glObjectLabel(GL_TEXTURE, l_rhs->m_TO, (GLsizei)l_TOName.size(), l_TOName.c_str());
@@ -606,7 +606,7 @@ bool GLRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent*
 	glBufferData(l_rhs->m_BufferType, l_rhs->m_TotalSize, l_rhs->m_InitialData, GL_DYNAMIC_DRAW);
 	glBindBufferRange(l_rhs->m_BufferType, 0, l_rhs->m_Handle, 0, l_rhs->m_TotalSize);
 
-#ifdef _DEBUG
+#ifdef INNO_DEBUG
 	auto l_GPUBufferName = std::string(l_rhs->m_InstanceName.c_str());
 	if (l_rhs->m_GPUAccessibility == Accessibility::ReadOnly)
 	{

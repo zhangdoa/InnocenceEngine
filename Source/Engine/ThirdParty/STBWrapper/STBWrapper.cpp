@@ -33,9 +33,11 @@ TextureDataComponent* STBWrapper::loadTexture(const char* fileName)
 	if (l_rawData)
 	{
 		auto l_TDC = g_Engine->getRenderingFrontend()->addTextureDataComponent();
-
-		l_TDC->m_InstanceName = (std::string(fileName) + "/").c_str();
-
+#ifdef INNO_DEBUG
+        auto l_fileName = std::string(fileName);
+        l_fileName += "/";
+		l_TDC->m_InstanceName = l_fileName.c_str();
+#endif
 		l_TDC->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat(nrChannels);
 		l_TDC->m_TextureDesc.PixelDataType = l_isHDR ? TexturePixelDataType::Float16 : TexturePixelDataType::UByte;
 		l_TDC->m_TextureDesc.UseMipMap = true;

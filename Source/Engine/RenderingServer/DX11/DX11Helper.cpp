@@ -750,10 +750,10 @@ bool DX11Helper::CreateViews(DX11RenderPassDataComponent* DX11RPDC, ID3D11Device
 				InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create RTV for ", DX11RPDC->m_InstanceName.c_str(), "!");
 				return false;
 			}
-#ifdef  _DEBUG
+#ifdef  INNO_DEBUG
 			auto l_RTVName = "RTV_" + std::to_string(i);
 			SetObjectName(DX11RPDC, DX11RPDC->m_RTVs[i], l_RTVName.c_str());
-#endif //  _DEBUG
+#endif //  INNO_DEBUG
 		}
 	}
 
@@ -772,9 +772,9 @@ bool DX11Helper::CreateViews(DX11RenderPassDataComponent* DX11RPDC, ID3D11Device
 				InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create the DSV for ", DX11RPDC->m_InstanceName.c_str(), "!");
 				return false;
 			}
-#ifdef  _DEBUG
+#ifdef  INNO_DEBUG
 			SetObjectName(DX11RPDC, DX11RPDC->m_DSV, "DSV");
-#endif //  _DEBUG
+#endif //  INNO_DEBUG
 		}
 		else
 		{
@@ -843,9 +843,9 @@ bool DX11Helper::CreateStateObjects(DX11RenderPassDataComponent* DX11RPDC, ID3D1
 		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create input layout object!");
 		return false;
 	}
-#ifdef  _DEBUG
+#ifdef  INNO_DEBUG
 	SetObjectName(DX11RPDC, l_PSO->m_InputLayout, "ILO");
-#endif //  _DEBUG
+#endif //  INNO_DEBUG
 
 	// Depth stencil state object
 	if (DX11RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)

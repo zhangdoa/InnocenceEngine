@@ -13,7 +13,7 @@ namespace Inno
 	{
 	public:
 		static uint32_t GetTypeID() { return 10; };
-		static char* GetTypeName() { return "AnimationDataComponent"; };
+		static const char* GetTypeName() { return "AnimationDataComponent"; };
 
 		float m_Duration = 0.0f;
 		uint32_t m_NumChannels = 0;

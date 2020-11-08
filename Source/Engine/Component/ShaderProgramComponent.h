@@ -8,7 +8,7 @@ namespace Inno
 	{
 	public:
 		static uint32_t GetTypeID() { return 12; };
-		static char* GetTypeName() { return "ShaderProgramComponent"; };
+		static const char* GetTypeName() { return "ShaderProgramComponent"; };
 
 		ShaderFilePaths m_ShaderFilePaths = {};
 	};

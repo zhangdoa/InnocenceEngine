@@ -249,9 +249,9 @@ bool DX11RenderingServer::Setup(ISystemConfig* systemConfig)
 
 	// Create the swap chain, Direct3D device, and Direct3D device context.
 	uint32_t creationFlags = 0;
-#ifdef _DEBUG
+#ifdef INNO_DEBUG
 	creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
-#endif // _DEBUG
+#endif // INNO_DEBUG
 
 	ID3D11Device* l_device;
 	ID3D11DeviceContext* l_deviceContext;
@@ -445,9 +445,9 @@ bool DX11RenderingServer::InitializeMeshDataComponent(MeshDataComponent* rhs)
 		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create Vertex Buffer!");
 		return false;
 	}
-#ifdef  _DEBUG
+#ifdef  INNO_DEBUG
 	SetObjectName(l_rhs, l_rhs->m_vertexBuffer, "VB");
-#endif //  _DEBUG
+#endif //  INNO_DEBUG
 
 	InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: Vertex Buffer: ", l_rhs->m_vertexBuffer, " is initialized.");
 
@@ -475,9 +475,9 @@ bool DX11RenderingServer::InitializeMeshDataComponent(MeshDataComponent* rhs)
 		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create Index Buffer!");
 		return false;
 	}
-#ifdef  _DEBUG
+#ifdef  INNO_DEBUG
 	SetObjectName(l_rhs, l_rhs->m_indexBuffer, "IB");
-#endif //  _DEBUG
+#endif //  INNO_DEBUG
 
 	InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: Index Buffer: ", l_rhs->m_indexBuffer, " is initialized.");
 
@@ -552,9 +552,9 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent* r
 			m_deviceContext->UpdateSubresource(l_rhs->m_ResourceHandle, 0, NULL, l_rhs->m_TextureData, l_rowPitch, 0);
 		}
 	}
-#ifdef  _DEBUG
+#ifdef  INNO_DEBUG
 	SetObjectName(l_rhs, l_rhs->m_ResourceHandle, "Texture");
-#endif //  _DEBUG
+#endif //  INNO_DEBUG
 
 	InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: Texture: ", l_rhs->m_ResourceHandle, " is initialized.");
 
@@ -569,9 +569,9 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent* r
 			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create SRV for texture!");
 			return false;
 		}
-#ifdef  _DEBUG
+#ifdef  INNO_DEBUG
 		SetObjectName(l_rhs, l_rhs->m_SRV, "SRV");
-#endif //  _DEBUG
+#endif //  INNO_DEBUG
 
 		InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: SRV: ", l_rhs->m_SRV, " is initialized.");
 
@@ -595,9 +595,9 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent* r
 					InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create UAV for texture!");
 					return false;
 				}
-#ifdef  _DEBUG
+#ifdef  INNO_DEBUG
 				SetObjectName(l_rhs, l_rhs->m_UAV, "UAV");
-#endif //  _DEBUG
+#endif //  INNO_DEBUG
 
 				InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: UAV: ", l_rhs->m_SRV, " is initialized.");
 			}
@@ -837,7 +837,7 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create Buffer object!");
 		return false;
 	}
-#ifdef  _DEBUG
+#ifdef  INNO_DEBUG
 	if (l_isStructuredBuffer)
 	{
 		SetObjectName(l_rhs, l_rhs->m_BufferPtr, "SBuffer");
@@ -846,7 +846,7 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 	{
 		SetObjectName(l_rhs, l_rhs->m_BufferPtr, "CBuffer");
 	}
-#endif //  _DEBUG
+#endif //  INNO_DEBUG
 
 	if (l_isStructuredBuffer)
 	{
@@ -863,9 +863,9 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create SRV for Buffer object!");
 			return false;
 		}
-#ifdef  _DEBUG
+#ifdef  INNO_DEBUG
 		SetObjectName(l_rhs, l_rhs->m_SRV, "SRV");
-#endif //  _DEBUG
+#endif //  INNO_DEBUG
 		l_resourceBinder->m_SRV = l_rhs->m_SRV;
 
 		D3D11_UNORDERED_ACCESS_VIEW_DESC l_UAVDesc;
@@ -882,9 +882,9 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 			InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't create UAV for Buffer object!");
 			return false;
 		}
-#ifdef  _DEBUG
+#ifdef  INNO_DEBUG
 		SetObjectName(l_rhs, l_rhs->m_UAV, "UAV");
-#endif //  _DEBUG
+#endif //  INNO_DEBUG
 		l_resourceBinder->m_UAV = l_rhs->m_UAV;
 	}
 
