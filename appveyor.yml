@@ -26,8 +26,6 @@ for:
     matrix:
       only:
         - job_name: Linux build
-    environment:
-        GCC_VERSION: 8
     clone_script:
     - sh: git clone -q --branch=$APPVEYOR_REPO_BRANCH https://github.com/$APPVEYOR_REPO_NAME.git $APPVEYOR_BUILD_FOLDER
     - sh: cd $APPVEYOR_BUILD_FOLDER
@@ -35,6 +33,7 @@ for:
     - sh: git submodule update --init --recursive
 
     build_script:
+    - sh: sudo update-alternatives --set gcc /usr/bin/gcc-8
     - sh: cd Script
     - sh: bash SetupLinux.sh
     - sh: bash BuildAssimpLinux.sh
