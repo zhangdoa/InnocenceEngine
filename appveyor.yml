@@ -34,6 +34,7 @@ for:
 
     build_script:
     - sh: sudo update-alternatives --set gcc /usr/bin/gcc-8
+    - sh: sudo apt install x11 libdevel libxrandr-dev libxinerama-dev -y
     - sh: cd Script
     - sh: bash SetupLinux.sh
     - sh: bash BuildAssimpLinux.sh
