@@ -1,0 +1,20 @@
+{
+    "version": "0.0.0",
+    "configurations": [
+        {
+            "name": "(Windows) Launch",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Bin/Debug/InnoMain.exe",
+            "args": [
+                "-mode 0",
+                "-renderer 2",
+                "-loglevel 1"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/Bin",
+            "environment": [],
+            "externalConsole": false
+        }
+    ]
+}
