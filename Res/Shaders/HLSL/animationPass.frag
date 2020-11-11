@@ -1,12 +1,18 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
 
+[[vk::binding(0, 1)]]
 Texture2D t2d_normal : register(t0);
+[[vk::binding(1, 1)]]
 Texture2D t2d_albedo : register(t1);
+[[vk::binding(2, 1)]]
 Texture2D t2d_metallic : register(t2);
+[[vk::binding(3, 1)]]
 Texture2D t2d_roughness : register(t3);
+[[vk::binding(4, 1)]]
 Texture2D t2d_ao : register(t4);
 
+[[vk::binding(0, 2)]]
 SamplerState SampleTypeWrap : register(s0);
 
 struct PixelInputType
@@ -27,7 +33,7 @@ struct PixelOutputType
 	float4 opaquePassRT3 : SV_Target3;
 };
 
-PixelOutputType main(PixelInputType input) : SV_TARGET
+PixelOutputType main(PixelInputType input)
 {
 	PixelOutputType output;
 

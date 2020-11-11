@@ -63,9 +63,11 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 
 	float4 pos[3];
 	float2 texcoord[3];
+	int i = 0;
+	int j = 0;
 
 	[unroll(3)]
-	for (int j = 0; j < 3; j++)
+	for (j = 0; j < 3; j++)
 	{
 		pos[j] = input[j].posCS_orig;
 		texcoord[j] = input[j].texcoord;
@@ -77,7 +79,7 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 	int selectedIndex = CalculateAxis(pos);
 
 	[unroll(3)]
-	for (int i = 0; i < 3; i++)
+	for (i = 0; i < 3; i++)
 	{
 		// project along the dominant axis
 		[flatten]
@@ -112,13 +114,13 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 
 	// for rasterization set z to 1
 	[unroll(3)]
-	for (int i = 0; i < 3; i++)
+	for (i = 0; i < 3; i++)
 	{
 		pos[i].z = 1;
 	}
 
 	[unroll(3)]
-	for (int i = 0; i < 3; i++)
+	for (i = 0; i < 3; i++)
 	{
 		output[i].posCS = pos[i];
 		output[i].posCS.w = 1.0f;

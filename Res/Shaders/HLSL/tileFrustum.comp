@@ -9,6 +9,7 @@ struct ComputeInputType
 	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
+[[vk::binding(0, 1)]]
 RWStructuredBuffer<Frustum> out_Frustums : register(u0);
 
 [numthreads(BLOCK_SIZE, BLOCK_SIZE, 1)]
@@ -33,7 +34,7 @@ void main(ComputeInputType input)
 	// Now convert the screen space points to view space
 	for (int i = 0; i < 4; i++)
 	{
-		viewSpace[i] = ScreenToView(screenSpace[i], perFrameCBuffer.viewportSize, perFrameCBuffer.p_inv).xyz;
+		viewSpace[i] = ScreenToView(screenSpace[i], perFrameCBuffer.viewportSize.xy, perFrameCBuffer.p_inv).xyz;
 	}
 
 	// Now build the frustum planes from the view space points

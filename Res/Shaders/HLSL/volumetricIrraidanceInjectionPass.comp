@@ -9,12 +9,17 @@ struct ComputeInputType
 	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
+[[vk::binding(0, 1)]]
 RWTexture3D<float4> out_irradianceVolume : register(u0);
+[[vk::binding(1, 1)]]
 RWTexture3D<float4> in_materialVolume : register(u1);
+[[vk::binding(0, 2)]]
 Texture2DArray in_SunShadow : register(t0);
+[[vk::binding(1, 2)]]
 Texture2D<uint2> in_LightGrid : register(t1);
+[[vk::binding(2, 2)]]
 StructuredBuffer<uint> in_LightIndexList : register(t2);
-
+[[vk::binding(0, 3)]]
 SamplerState SamplerTypePoint : register(s0);
 
 #include "common/BSDF.hlsl"

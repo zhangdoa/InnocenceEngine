@@ -9,6 +9,7 @@ using namespace Microsoft::WRL;
 
 namespace Inno
 {
+	#define USE_DXIL
 	struct DX12CBV
 	{
 		D3D12_CONSTANT_BUFFER_VIEW_DESC CBVDesc = {};

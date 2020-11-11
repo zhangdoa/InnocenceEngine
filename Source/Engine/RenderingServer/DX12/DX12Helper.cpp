@@ -1,5 +1,6 @@
 #include "DX12Helper.h"
 #include "../../Core/InnoLogger.h"
+#include "../../Core/IOService.h"
 #include "DX12RenderingServer.h"
 
 #include "../../Interface/IEngine.h"
@@ -13,7 +14,11 @@ namespace Inno
 	{
 		UINT GetMipLevels(TextureDesc textureDesc);
 
+#ifdef USE_DXIL
+		const char* m_shaderRelativePath = "..//Res//Shaders//DXIL//";
+#else
 		const wchar_t* m_shaderRelativePath = L"..//Res//Shaders//HLSL//";
+#endif
 	}
 }
 
@@ -1114,6 +1119,43 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12D
 		l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
 		l_PSO->m_GraphicsPSODesc.InputLayout = { l_polygonLayout, l_numElements };
 
+#ifdef USE_DXIL
+		if (l_DX12SPC->m_VSBuffer.size())
+		{
+			D3D12_SHADER_BYTECODE l_VSBytecode;
+			l_VSBytecode.pShaderBytecode = &l_DX12SPC->m_VSBuffer[0];
+			l_VSBytecode.BytecodeLength = l_DX12SPC->m_VSBuffer.size();
+			l_PSO->m_GraphicsPSODesc.VS = l_VSBytecode;
+		}
+		if (l_DX12SPC->m_HSBuffer.size())
+		{
+			D3D12_SHADER_BYTECODE l_HSBytecode;
+			l_HSBytecode.pShaderBytecode = &l_DX12SPC->m_HSBuffer[0];
+			l_HSBytecode.BytecodeLength = l_DX12SPC->m_HSBuffer.size();
+			l_PSO->m_GraphicsPSODesc.HS = l_HSBytecode;
+		}
+		if (l_DX12SPC->m_DSBuffer.size())
+		{
+			D3D12_SHADER_BYTECODE l_DSBytecode;
+			l_DSBytecode.pShaderBytecode = &l_DX12SPC->m_DSBuffer[0];
+			l_DSBytecode.BytecodeLength = l_DX12SPC->m_DSBuffer.size();
+			l_PSO->m_GraphicsPSODesc.DS = l_DSBytecode;
+		}
+		if (l_DX12SPC->m_GSBuffer.size())
+		{
+			D3D12_SHADER_BYTECODE l_GSBytecode;
+			l_GSBytecode.pShaderBytecode = &l_DX12SPC->m_GSBuffer[0];
+			l_GSBytecode.BytecodeLength = l_DX12SPC->m_GSBuffer.size();
+			l_PSO->m_GraphicsPSODesc.GS = l_GSBytecode;
+		}
+		if (l_DX12SPC->m_PSBuffer.size())
+		{
+			D3D12_SHADER_BYTECODE l_PSBytecode;
+			l_PSBytecode.pShaderBytecode = &l_DX12SPC->m_PSBuffer[0];
+			l_PSBytecode.BytecodeLength = l_DX12SPC->m_PSBuffer.size();
+			l_PSO->m_GraphicsPSODesc.PS = l_PSBytecode;
+		}
+#else
 		if (l_DX12SPC->m_VSBuffer)
 		{
 			D3D12_SHADER_BYTECODE l_VSBytecode;
@@ -1149,7 +1191,7 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12D
 			l_PSBytecode.BytecodeLength = l_DX12SPC->m_PSBuffer->GetBufferSize();
 			l_PSO->m_GraphicsPSODesc.PS = l_PSBytecode;
 		}
-
+#endif
 		if (DX12RPDC->m_RenderPassDesc.m_UseOutputMerger)
 		{
 			l_PSO->m_GraphicsPSODesc.NumRenderTargets = (uint32_t)DX12RPDC->m_RenderPassDesc.m_RenderTargetCount;
@@ -1178,7 +1220,15 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12D
 	else
 	{
 		l_PSO->m_ComputePSODesc.pRootSignature = DX12RPDC->m_RootSignature.Get();
-
+#ifdef USE_DXIL
+		if (l_DX12SPC->m_CSBuffer.size())
+		{
+			D3D12_SHADER_BYTECODE l_CSBytecode;
+			l_CSBytecode.pShaderBytecode = &l_DX12SPC->m_CSBuffer[0];
+			l_CSBytecode.BytecodeLength = l_DX12SPC->m_CSBuffer.size();
+			l_PSO->m_ComputePSODesc.CS = l_CSBytecode;
+		}
+#else
 		if (l_DX12SPC->m_CSBuffer)
 		{
 			D3D12_SHADER_BYTECODE l_CSBytecode;
@@ -1186,7 +1236,7 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12D
 			l_CSBytecode.BytecodeLength = l_DX12SPC->m_CSBuffer->GetBufferSize();
 			l_PSO->m_ComputePSODesc.CS = l_CSBytecode;
 		}
-
+#endif
 		auto l_HResult = device->CreateComputePipelineState(&l_PSO->m_ComputePSODesc, IID_PPV_ARGS(&l_PSO->m_PSO));
 
 		if (FAILED(l_HResult))
@@ -1562,7 +1612,14 @@ bool DX12Helper::GenerateViewportStateDesc(ViewportDesc viewportDesc, DX12Pipeli
 
 	return true;
 }
-
+#ifdef USE_DXIL
+bool DX12Helper::LoadShaderFile(std::vector<char> &rhs, const ShaderFilePath &shaderFilePath)
+{
+	auto l_path = std::string(m_shaderRelativePath) + shaderFilePath.c_str() + ".dxil";
+	rhs = IOService::loadFile(l_path.c_str(), IOMode::Binary);
+	return true;
+}
+#else
 bool DX12Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderStage shaderStage, const ShaderFilePath& shaderFilePath)
 {
 	const char* l_shaderTypeName;
@@ -1619,3 +1676,4 @@ bool DX12Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderStage shaderStage, const
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", shaderFilePath.c_str(), " has been compiled.");
 	return true;
 }
+#endif

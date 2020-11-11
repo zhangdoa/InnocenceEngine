@@ -9,13 +9,19 @@ struct ComputeInputType
 	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
+[[vk::binding(0, 1)]]
 RWStructuredBuffer<Frustum> in_Frustums : register(u0);
+[[vk::binding(1, 1)]]
 RWStructuredBuffer<uint> g_LightIndexCounter : register(u1);
+[[vk::binding(2, 1)]]
 RWStructuredBuffer<uint> g_LightIndexList : register(u2);
+[[vk::binding(3, 1)]]
 RWTexture2D<uint2> g_LightGrid : register(u3);
+[[vk::binding(4, 1)]]
 RWTexture2D<float4> g_DebugTexture : register(u4);
-
+[[vk::binding(0, 2)]]
 Texture2D DepthTextureVS : register(t0);
+[[vk::binding(0, 3)]]
 SamplerState SampleTypePoint : register(s0);
 
 groupshared uint l_uMinDepth;
@@ -75,7 +81,8 @@ void main(ComputeInputType input)
 	Plane minPlane = { float3(0, 0, -1), -minDepthVS };
 
 	// Cull point light
-	for (uint i = input.groupIndex; i < NR_POINT_LIGHTS; i += BLOCK_SIZE * BLOCK_SIZE)
+	uint i = 0u;
+	for (i = input.groupIndex; i < NR_POINT_LIGHTS; i += BLOCK_SIZE * BLOCK_SIZE)
 	{
 		PointLight_CB light = pointLights[i];
 		// w component of luminousFlux is the attenuation radius
@@ -105,7 +112,7 @@ void main(ComputeInputType input)
 	GroupMemoryBarrierWithGroupSync();
 
 	// Write to global light index list
-	for (int i = input.groupIndex; i < l_LightCount; i += BLOCK_SIZE * BLOCK_SIZE)
+	for (i = input.groupIndex; i < l_LightCount; i += BLOCK_SIZE * BLOCK_SIZE)
 	{
 		g_LightIndexList[l_LightIndexStartOffset + i] = l_LightList[i];
 	}

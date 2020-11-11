@@ -10,11 +10,15 @@ struct ComputeInputType
 	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
+[[vk::binding(0, 1)]]
 Texture2D in_basePassRT0 : register(t0);
+[[vk::binding(1, 1)]]
 Texture2D in_billboardPassRT0 : register(t1);
+[[vk::binding(2, 1)]]
 Texture2D in_debugPassRT0 : register(t2);
+[[vk::binding(3, 1)]]
 StructuredBuffer<float> in_luminanceAverage : register(t3);
-
+[[vk::binding(0, 2)]]
 RWTexture2D<float4> out_finalBlendPassRT0 : register(u0);
 
 [numthreads(8, 8, 1)]

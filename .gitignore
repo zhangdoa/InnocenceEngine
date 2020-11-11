@@ -71,3 +71,5 @@ xcuserdata/
 
 #Packaged files
 /Package/*
+
+*.dxil

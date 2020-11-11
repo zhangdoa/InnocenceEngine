@@ -8,6 +8,7 @@ struct ProbeMeshData
 	float4 padding[3];
 };
 
+[[vk::binding(0, 1)]]
 StructuredBuffer<ProbeMeshData> probeMeshSBuffer : register(t0);
 
 struct VertexInputType

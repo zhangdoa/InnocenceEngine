@@ -60,7 +60,7 @@ float2 raySphereIntersection(float3 eyePos, float3 rayDir, float shpereRadius)
 }
 
 //[https://github.com/wwwtyro/glsl-atmosphere]
-float3 atmosphere(float3 eyeDir, float3 eyePos, float3 sunPos, float sunIntensity, float planetRadius, float atmosphereRadius, float3 kRlh, float kMie, float shRlh, float shMie, float g)
+float3 atmosphere(float3 eyeDir, float3 eyePos, float3 sunPos, float3 sunIntensity, float planetRadius, float atmosphereRadius, float3 kRlh, float kMie, float shRlh, float shMie, float g)
 {
 	sunPos = normalize(sunPos);
 	eyeDir = normalize(eyeDir);

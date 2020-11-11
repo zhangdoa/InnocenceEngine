@@ -9,9 +9,11 @@ struct ComputeInputType
 	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
+[[vk::binding(0, 1)]]
 RWStructuredBuffer<Surfel> in_surfels : register(u0);
+[[vk::binding(1, 1)]]
 RWStructuredBuffer<float4> out_irradiance : register(u1);
-
+[[vk::binding(0, 2)]]
 Texture2DArray<float4> in_shadowMap : register(t0);
 
 #include "common/BSDF.hlsl"
@@ -56,7 +58,7 @@ float SunShadowResolver(float3 fragPos)
 
 		float4 shadowMapValue = in_shadowMap[float3(projCoords.xy * 2048, splitIndex)];
 
-		shadow = currentDepth > shadowMapValue ? 1.0 : 0.0;
+		shadow = currentDepth > shadowMapValue.x ? 1.0 : 0.0;
 	}
 
 	return shadow;
@@ -80,7 +82,7 @@ void main(ComputeInputType input)
 			float3 albedo = l_surfel.albedo.xyz;
 
 			float3 N = normalize(normalWS);
-			float3 V = normalize(perFrameCBuffer.camera_posWS - posWS);
+			float3 V = normalize(perFrameCBuffer.camera_posWS.xyz - posWS);
 			float3 L = normalize(-perFrameCBuffer.sun_direction.xyz);
 
 			float NdotL = max(dot(N, L), 0.0);

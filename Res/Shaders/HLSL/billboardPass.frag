@@ -1,7 +1,10 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
 
+[[vk::binding(0, 1)]]
 Texture2D iconTexture : register(t0);
+
+[[vk::binding(0, 2)]]
 SamplerState SampleTypePoint : register(s0);
 
 struct PixelInputType
@@ -15,7 +18,7 @@ struct PixelOutputType
 	float4 billboardPass : SV_Target0;
 };
 
-PixelOutputType main(PixelInputType input) : SV_TARGET
+PixelOutputType main(PixelInputType input)
 {
 	PixelOutputType output;
 

@@ -17,6 +17,7 @@ struct GeometryInputType
 	float4 color : COLOR;
 };
 
+[[vk::binding(0, 1)]]
 Texture3D<float4> in_volume : register(t0);
 
 GeometryInputType main(VertexInputType input)

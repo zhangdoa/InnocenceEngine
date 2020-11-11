@@ -1,12 +1,21 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
 
+[[vk::binding(0, 1)]]
+RWStructuredBuffer<uint> out_geometryProcessResult : register(u0);
+[[vk::binding(0, 2)]]
 Texture2D t2d_normal : register(t0);
+[[vk::binding(1, 2)]]
 Texture2D t2d_albedo : register(t1);
+[[vk::binding(2, 2)]]
 Texture2D t2d_metallic : register(t2);
+[[vk::binding(3, 2)]]
 Texture2D t2d_roughness : register(t3);
+[[vk::binding(4, 2)]]
 Texture2D t2d_ao : register(t4);
+[[vk::binding(5, 2)]]
 Texture2DArray in_SunShadow : register(t5);
+[[vk::binding(0, 3)]]
 SamplerState SamplerTypePoint : register(s0);
 
 #include "common/shadowResolver.hlsl"
@@ -22,8 +31,6 @@ struct PixelInputType
 	float4 normal : NORMAL;
 	float2 texcoord : TEXCOORD;
 };
-
-RWStructuredBuffer<uint> out_geometryProcessResult : register(u0);
 
 void main(PixelInputType input)
 {

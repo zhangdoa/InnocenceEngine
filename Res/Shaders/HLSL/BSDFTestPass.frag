@@ -1,9 +1,11 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
 
+[[vk::binding(0, 1)]]
 Texture2D in_BRDFLUT : register(t0);
+[[vk::binding(1, 1)]]
 Texture2D in_BRDFMSLUT : register(t1);
-
+[[vk::binding(0, 2)]]
 SamplerState SampleTypePoint : register(s0);
 
 #include "common/BSDF.hlsl"
@@ -23,12 +25,12 @@ struct PixelOutputType
 	float4 RT : SV_Target0;
 };
 
-PixelOutputType main(PixelInputType input) : SV_TARGET
+PixelOutputType main(PixelInputType input)
 {
 	PixelOutputType output;
 
 	float3 N = input.frag_Normal;
-	float3 V = normalize(perFrameCBuffer.camera_posWS - input.frag_WorldSpacePos);
+	float3 V = normalize(perFrameCBuffer.camera_posWS.xyz - input.frag_WorldSpacePos);
 	float3 L = N;
 	float3 H = normalize(V + L);
 

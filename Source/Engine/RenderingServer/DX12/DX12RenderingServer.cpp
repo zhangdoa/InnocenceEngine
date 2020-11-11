@@ -512,13 +512,19 @@ bool DX12RenderingServerNS::CreateMipmapGenerator()
 		m_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_3DMipmapRootSignature));
 
 		ShaderFilePath l_3DPath = "mipmapGenerator3D.comp/";
-		ID3DBlob* l_3DmipmapComputeShader;
-
-		LoadShaderFile(&l_3DmipmapComputeShader, ShaderStage::Compute, l_3DPath);
 
 		D3D12_COMPUTE_PIPELINE_STATE_DESC l_3DPSODesc = {};
 		l_3DPSODesc.pRootSignature = m_3DMipmapRootSignature;
+
+#ifdef USE_DXIL
+		std::vector<char> l_3DmipmapComputeShader;
+		LoadShaderFile(l_3DmipmapComputeShader, l_3DPath);
+		l_3DPSODesc.CS = { &l_3DmipmapComputeShader[0], l_3DmipmapComputeShader.size() };
+#else
+		ID3DBlob* l_3DmipmapComputeShader;
+		LoadShaderFile(&l_3DmipmapComputeShader, ShaderStage::Compute, l_3DPath);
 		l_3DPSODesc.CS = { reinterpret_cast<UINT8*>(l_3DmipmapComputeShader->GetBufferPointer()), l_3DmipmapComputeShader->GetBufferSize() };
+#endif
 		m_device->CreateComputePipelineState(&l_3DPSODesc, IID_PPV_ARGS(&m_3DMipmapPSO));
 
 		InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Mipmap generator for 3D texture has been created.");
@@ -540,13 +546,18 @@ bool DX12RenderingServerNS::CreateMipmapGenerator()
 		m_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_2DMipmapRootSignature));
 
 		ShaderFilePath l_2DPath = "mipmapGenerator2D.comp/";
-		ID3DBlob* l_2DmipmapComputeShader;
-
-		LoadShaderFile(&l_2DmipmapComputeShader, ShaderStage::Compute, l_2DPath);
-
 		D3D12_COMPUTE_PIPELINE_STATE_DESC l_2DPSODesc = {};
 		l_2DPSODesc.pRootSignature = m_2DMipmapRootSignature;
+		
+#ifdef USE_DXIL
+		std::vector<char> l_2DmipmapComputeShader;
+		LoadShaderFile(l_2DmipmapComputeShader, l_2DPath);
+		l_2DPSODesc.CS = { &l_2DmipmapComputeShader[0], l_2DmipmapComputeShader.size() };
+#else
+		ID3DBlob* l_2DmipmapComputeShader;
+		LoadShaderFile(&l_2DmipmapComputeShader, ShaderStage::Compute, l_2DPath);
 		l_2DPSODesc.CS = { reinterpret_cast<UINT8*>(l_2DmipmapComputeShader->GetBufferPointer()), l_2DmipmapComputeShader->GetBufferSize() };
+#endif
 		m_device->CreateComputePipelineState(&l_2DPSODesc, IID_PPV_ARGS(&m_2DMipmapPSO));
 
 		InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Mipmap generator for 2D texture has been created.");
@@ -1263,7 +1274,32 @@ bool DX12RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 bool DX12RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX12ShaderProgramComponent*>(rhs);
-
+#ifdef USE_DXIL
+	if (l_rhs->m_ShaderFilePaths.m_VSPath != "")
+	{
+		LoadShaderFile(l_rhs->m_VSBuffer, l_rhs->m_ShaderFilePaths.m_VSPath);
+	}
+	if (l_rhs->m_ShaderFilePaths.m_HSPath != "")
+	{
+		LoadShaderFile(l_rhs->m_HSBuffer, l_rhs->m_ShaderFilePaths.m_HSPath);
+	}
+	if (l_rhs->m_ShaderFilePaths.m_DSPath != "")
+	{
+		LoadShaderFile(l_rhs->m_DSBuffer, l_rhs->m_ShaderFilePaths.m_DSPath);
+	}
+	if (l_rhs->m_ShaderFilePaths.m_GSPath != "")
+	{
+		LoadShaderFile(l_rhs->m_GSBuffer, l_rhs->m_ShaderFilePaths.m_GSPath);
+	}
+	if (l_rhs->m_ShaderFilePaths.m_PSPath != "")
+	{
+		LoadShaderFile(l_rhs->m_PSBuffer, l_rhs->m_ShaderFilePaths.m_PSPath);
+	}
+	if (l_rhs->m_ShaderFilePaths.m_CSPath != "")
+	{
+		LoadShaderFile(l_rhs->m_CSBuffer, l_rhs->m_ShaderFilePaths.m_CSPath);
+	}
+#else
 	if (l_rhs->m_ShaderFilePaths.m_VSPath != "")
 	{
 		LoadShaderFile(&l_rhs->m_VSBuffer, ShaderStage::Vertex, l_rhs->m_ShaderFilePaths.m_VSPath);
@@ -1288,7 +1324,7 @@ bool DX12RenderingServer::InitializeShaderProgramComponent(ShaderProgramComponen
 	{
 		LoadShaderFile(&l_rhs->m_CSBuffer, ShaderStage::Compute, l_rhs->m_ShaderFilePaths.m_CSPath);
 	}
-
+#endif
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;

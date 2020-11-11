@@ -94,7 +94,8 @@ float4 IntegrateBRDF(float NdotV, float roughness)
 	float3 N = float3(0.0, 0.0, 1.0);
 
 	const uint SAMPLE_COUNT = 1024u;
-	for (uint i = 0u; i < SAMPLE_COUNT; ++i)
+	uint i = 0u;
+	for (i = 0u; i < SAMPLE_COUNT; ++i)
 	{
 		// generates a sample floattor that's biased towards the
 		// preferred alignment direction (importance sampling).
@@ -117,7 +118,7 @@ float4 IntegrateBRDF(float NdotV, float roughness)
 		}
 	}
 
-	for (uint i = 0u; i < SAMPLE_COUNT; ++i)
+	for (i = 0u; i < SAMPLE_COUNT; ++i)
 	{
 		float NdotL = float(i) / float(SAMPLE_COUNT);
 		float NdotH = (NdotL + NdotV) / 2.0;
@@ -141,6 +142,7 @@ struct ComputeInputType
 	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
+[[vk::binding(0, 0)]]
 RWTexture2D<float4> out_BRDFLUTPassRT0 : register(u0);
 
 [numthreads(16, 16, 1)]

@@ -8,22 +8,35 @@ struct ComputeInputType
 	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
+[[vk::binding(0, 1)]]
 Texture2D in_opaquePassRT0 : register(t0);
+[[vk::binding(1, 1)]]
 Texture2D in_opaquePassRT1 : register(t1);
+[[vk::binding(2, 1)]]
 Texture2D in_opaquePassRT2 : register(t2);
+[[vk::binding(3, 1)]]
 Texture2D in_opaquePassRT3 : register(t3);
+[[vk::binding(4, 1)]]
 Texture2D in_BRDFLUT : register(t4);
+[[vk::binding(5, 1)]]
 Texture2D in_BRDFMSLUT : register(t5);
+[[vk::binding(6, 1)]]
 Texture2D in_SSAO : register(t6);
+[[vk::binding(7, 1)]]
 Texture2DArray in_SunShadow : register(t7);
+[[vk::binding(8, 1)]]
 Texture2D<uint2> in_LightGrid : register(t8);
+[[vk::binding(9, 1)]]
 Texture3D<float4> in_IrradianceVolume : register(t9);
+[[vk::binding(10, 1)]]
 Texture3D<float4> in_VolumetricFog : register(t10);
+[[vk::binding(11, 1)]]
 StructuredBuffer<uint> in_LightIndexList : register(t11);
-
+[[vk::binding(0, 2)]]
 SamplerState SamplerTypePoint : register(s0);
-
+[[vk::binding(0, 3)]]
 RWTexture2D<float4> out_lightPassRT0 : register(u0);
+[[vk::binding(1, 3)]]
 RWTexture2D<float4> out_lightPassRT1 : register(u1);
 
 #include "common/coneTrace.hlsl"
@@ -126,7 +139,7 @@ void main(ComputeInputType input)
 		float3 F0 = float3(0.04, 0.04, 0.04);
 		F0 = lerp(F0, albedo, metallic);
 
-		float3 V = normalize(perFrameCBuffer.camera_posWS - posWS);
+		float3 V = normalize(perFrameCBuffer.camera_posWS.xyz - posWS);
 		float NdotV = max(dot(N, V), 0.0);
 
 		// direction light, sun light
@@ -191,44 +204,44 @@ void main(ComputeInputType input)
 			Lo += getOutLuminance(in_BRDFLUT, in_BRDFMSLUT, SamplerTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, metallic, F0, albedo, luminousFlux);
 		}
 
-		// sphere area light
-		[loop]
-		for (int i = 0; i < NR_SPHERE_LIGHTS; ++i)
-		{
-			float3 unormalizedL = sphereLights[i].position.xyz - posWS;
-			float lightSphereRadius = sphereLights[i].luminousFlux.w;
+		// // sphere area light
+		// [loop]
+		// for (uint i = 0; i < NR_SPHERE_LIGHTS; ++i)
+		// {
+		// 	float3 unormalizedL = sphereLights[i].position.xyz - posWS;
+		// 	float lightSphereRadius = sphereLights[i].luminousFlux.w;
 
-			float3 L = normalize(unormalizedL);
-			float3 H = normalize(V + L);
+		// 	float3 L = normalize(unormalizedL);
+		// 	float3 H = normalize(V + L);
 
-			float LdotH = max(dot(L, H), 0.0);
-			float NdotH = max(dot(N, H), 0.0);
-			float NdotL = max(dot(N, L), 0.0);
+		// 	float LdotH = max(dot(L, H), 0.0);
+		// 	float NdotH = max(dot(N, H), 0.0);
+		// 	float NdotL = max(dot(N, L), 0.0);
 
-			float sqrDist = dot(unormalizedL, unormalizedL);
+		// 	float sqrDist = dot(unormalizedL, unormalizedL);
 
-			float Beta = acos(NdotL);
-			float H2 = sqrt(sqrDist);
-			float h = H2 / lightSphereRadius;
-			float x = sqrt(max(h * h - 1, eps));
-			float y = -x * (1 / tan(Beta));
-			//y = clamp(y, -1.0, 1.0);
-			float illuminance = 0;
+		// 	float Beta = acos(NdotL);
+		// 	float H2 = sqrt(sqrDist);
+		// 	float h = H2 / lightSphereRadius;
+		// 	float x = sqrt(max(h * h - 1, eps));
+		// 	float y = -x * (1 / tan(Beta));
+		// 	//y = clamp(y, -1.0, 1.0);
+		// 	float illuminance = 0;
 
-			if (h * cos(Beta) > 1)
-			{
-				illuminance = cos(Beta) / (h * h);
-			}
-			else
-			{
-				illuminance = (1 / max(PI * h * h, eps))
-					* (cos(Beta) * acos(y) - x * sin(Beta) * sqrt(max(1 - y * y, eps)))
-					+ (1 / PI) * atan((sin(Beta) * sqrt(max(1 - y * y, eps)) / x));
-			}
-			illuminance *= PI;
+		// 	if (h * cos(Beta) > 1)
+		// 	{
+		// 		illuminance = cos(Beta) / (h * h);
+		// 	}
+		// 	else
+		// 	{
+		// 		illuminance = (1 / max(PI * h * h, eps))
+		// 			* (cos(Beta) * acos(y) - x * sin(Beta) * sqrt(max(1 - y * y, eps)))
+		// 			+ (1 / PI) * atan((sin(Beta) * sqrt(max(1 - y * y, eps)) / x));
+		// 	}
+		// 	illuminance *= PI;
 
-			Lo += getOutLuminance(in_BRDFLUT, in_BRDFMSLUT, SamplerTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, metallic, F0, albedo, illuminance * sphereLights[i].luminousFlux.xyz);
-		}
+		// 	Lo += getOutLuminance(in_BRDFLUT, in_BRDFMSLUT, SamplerTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, metallic, F0, albedo, illuminance * sphereLights[i].luminousFlux.xyz);
+		// }
 
 		//// GI
 		//// [https://steamcdn-a.akamaihd.net/apps/valve/2006/SIGGRAPH06_Course_ShadingInValvesSourceEngine.pdf]

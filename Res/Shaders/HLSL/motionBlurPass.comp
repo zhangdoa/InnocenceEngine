@@ -9,10 +9,13 @@ struct ComputeInputType
 	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
+[[vk::binding(0, 1)]]
 Texture2D in_opaquePassRT3 : register(t0);
+[[vk::binding(1, 1)]]
 Texture2D in_TAAPassRT0 : register(t1);
+[[vk::binding(0, 2)]]
 RWTexture2D<float4> out_motionBlurPassRT0 : register(u0);
-
+[[vk::binding(0, 3)]]
 SamplerState SamplerTypePoint : register(s0);
 
 static int MAX_SAMPLES = 16;
@@ -32,8 +35,8 @@ void main(ComputeInputType input)
 		float2 offset = MotionVector * (float(i) / float(MAX_SAMPLES));
 		float2 negativeCoords = readCoord - offset;
 		float2 positiveCoords = readCoord + offset;
-		result += in_TAAPassRT0.SampleLevel(SamplerTypePoint, negativeCoords, 0);
-		result += in_TAAPassRT0.SampleLevel(SamplerTypePoint, positiveCoords, 0);
+		result += in_TAAPassRT0.SampleLevel(SamplerTypePoint, negativeCoords, 0).xyz;
+		result += in_TAAPassRT0.SampleLevel(SamplerTypePoint, positiveCoords, 0).xyz;
 	}
 
 	result /= float(MAX_SAMPLES + 1);

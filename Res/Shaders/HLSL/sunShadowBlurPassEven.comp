@@ -20,7 +20,9 @@ static const float2 gaussFilter[7] =
 	3.0,	0.015625
 };
 
+[[vk::binding(0, 1)]]
 Texture2DArray in_shadow : register(t0);
+[[vk::binding(0, 2)]]
 RWTexture2DArray<float4> out_shadow : register(u0);
 
 [numthreads(8, 8, 4)]

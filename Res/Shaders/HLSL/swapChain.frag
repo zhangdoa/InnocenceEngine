@@ -7,7 +7,9 @@ struct PixelInputType
 	float2 texcoord : TEXCOORD0;
 };
 
+[[vk::binding(0, 0)]]
 Texture2D pipelineResult : register(t0);
+[[vk::binding(0, 1)]]
 SamplerState SamplerTypePoint : register(s0);
 
 float4 main(PixelInputType input) : SV_TARGET

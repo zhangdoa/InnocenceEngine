@@ -10,9 +10,13 @@ struct ComputeInputType
 	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
+[[vk::binding(0, 1)]]
 RWTexture2D<uint> in_headPtr : register(u0);
+[[vk::binding(1, 1)]]
 RWStructuredBuffer<uint4> in_transparentPassRT0 : register(u1);
+[[vk::binding(2, 1)]]
 RWStructuredBuffer<uint4> in_transparentPassRT1 : register(u2);
+[[vk::binding(3, 1)]]
 RWTexture2D<float4> out_blendPassRT0 : register(u3);
 
 uint getFragmentList(out uint4 fragmentListRT0[MAX_FRAG], out uint4 fragmentListRT1[MAX_FRAG], int2 coord)

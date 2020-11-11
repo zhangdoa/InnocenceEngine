@@ -64,9 +64,11 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 	float4 pos[3];
 	float4 normal[3];
 	float2 texcoord[3];
+	int i = 0;
+	int j = 0;
 
 	[unroll(3)]
-	for (int j = 0; j < 3; j++)
+	for (j = 0; j < 3; j++)
 	{
 		pos[j] = input[j].posWS;
 		normal[j] = input[j].normal;
@@ -76,7 +78,7 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 	int selectedIndex = CalculateAxis(pos);
 
 	[unroll(3)]
-	for (int i = 0; i < 3; i++)
+	for (i = 0; i < 3; i++)
 	{
 		// to voxel volume space
 		pos[i] = pos[i] - voxelizationPassCBuffer.volumeCenter;
@@ -123,7 +125,7 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 
 	// for rasterization set z to 1
 	[unroll(3)]
-	for (int i = 0; i < 3; i++)
+	for (i = 0; i < 3; i++)
 	{
 		pos[i].z = 1;
 	}
@@ -138,7 +140,7 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 	pos[2].xy += normalize(side1N - side2N) * texelSize;
 
 	[unroll(3)]
-	for (int i = 0; i < 3; i++)
+	for (i = 0; i < 3; i++)
 	{
 		output[i].posCS = pos[i];
 		output[i].posWS = input[i].posWS;

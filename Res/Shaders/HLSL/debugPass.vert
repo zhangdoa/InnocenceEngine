@@ -8,6 +8,7 @@ struct DebugMeshData
 	uint padding[15];
 };
 
+[[vk::binding(0, 1)]]
 StructuredBuffer<DebugMeshData> debugMeshSBuffer : register(t0);
 
 struct VertexInputType

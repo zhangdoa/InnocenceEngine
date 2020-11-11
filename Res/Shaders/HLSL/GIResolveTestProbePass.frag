@@ -1,8 +1,9 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
 
+[[vk::binding(1, 1)]]
 Texture3D<float4> probeVolume : register(t1);
-
+[[vk::binding(0, 2)]]
 SamplerState SamplerTypeLinear : register(s0);
 
 struct PixelInputType
@@ -18,7 +19,7 @@ struct PixelOutputType
 	float4 probeTestPassRT0 : SV_Target0;
 };
 
-PixelOutputType main(PixelInputType input) : SV_TARGET
+PixelOutputType main(PixelInputType input)
 {
 	PixelOutputType output;
 
@@ -39,27 +40,27 @@ PixelOutputType main(PixelInputType input) : SV_TARGET
 
 	if (isNegative.x)
 	{
-		indirectLight += nSquared.x * probeVolume.Sample(SamplerTypeLinear, GISampleCoordNX);
+		indirectLight += nSquared.x * probeVolume.Sample(SamplerTypeLinear, GISampleCoordNX).xyz;
 	}
 	else
 	{
-		indirectLight += nSquared.x * probeVolume.Sample(SamplerTypeLinear, GISampleCoordPX);
+		indirectLight += nSquared.x * probeVolume.Sample(SamplerTypeLinear, GISampleCoordPX).xyz;
 	}
 	if (isNegative.y)
 	{
-		indirectLight += nSquared.y * probeVolume.Sample(SamplerTypeLinear, GISampleCoordNY);
+		indirectLight += nSquared.y * probeVolume.Sample(SamplerTypeLinear, GISampleCoordNY).xyz;
 	}
 	else
 	{
-		indirectLight += nSquared.y * probeVolume.Sample(SamplerTypeLinear, GISampleCoordPY);
+		indirectLight += nSquared.y * probeVolume.Sample(SamplerTypeLinear, GISampleCoordPY).xyz;
 	}
 	if (isNegative.z)
 	{
-		indirectLight += nSquared.z * probeVolume.Sample(SamplerTypeLinear, GISampleCoordNZ);
+		indirectLight += nSquared.z * probeVolume.Sample(SamplerTypeLinear, GISampleCoordNZ).xyz;
 	}
 	else
 	{
-		indirectLight += nSquared.z * probeVolume.Sample(SamplerTypeLinear, GISampleCoordPZ);
+		indirectLight += nSquared.z * probeVolume.Sample(SamplerTypeLinear, GISampleCoordPZ).xyz;
 	}
 	output.probeTestPassRT0 = float4(indirectLight, 1.0);
 

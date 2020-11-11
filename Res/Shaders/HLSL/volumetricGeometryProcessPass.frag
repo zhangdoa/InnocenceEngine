@@ -10,7 +10,9 @@ struct PixelInputType
 	float2 texcoord : TEXCOORD;
 };
 
+[[vk::binding(0, 1)]]
 RWTexture3D<float4> out_froxelizationPassRT0 : register(u0);
+[[vk::binding(1, 1)]]
 RWTexture3D<float4> out_froxelizationPassRT1 : register(u1);
 
 void main(PixelInputType input)
@@ -23,7 +25,7 @@ void main(PixelInputType input)
 	}
 	else
 	{
-		writeCoord.xy = (writeCoord.xy * 0.5 + 0.5) * perFrameCBuffer.viewportSize / 8;
+		writeCoord.xy = (writeCoord.xy * 0.5 + 0.5) * perFrameCBuffer.viewportSize.xy / 8;
 		writeCoord.z = input.posCS_orig.w;
 		writeCoord.z *= 64;
 

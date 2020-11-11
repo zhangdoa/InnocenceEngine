@@ -11,7 +11,9 @@ struct ComputeInputType
 
 #define RGB_TO_LUM float3(0.2125, 0.7154, 0.0721)
 
+[[vk::binding(0, 1)]]
 Texture2D<float4> in_luminance : register(t0);
+[[vk::binding(1, 1)]]
 RWStructuredBuffer<uint> out_histogram : register(u1);
 
 groupshared uint histogramShared[256];

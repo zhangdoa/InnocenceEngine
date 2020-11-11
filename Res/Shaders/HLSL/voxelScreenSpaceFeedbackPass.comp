@@ -9,8 +9,11 @@ struct ComputeInputType
 	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
+[[vk::binding(0, 1)]]
 Texture2D<float4> in_pos : register(t0);
+[[vk::binding(1, 1)]]
 Texture2D<float4> in_lightPassResult : register(t1);
+[[vk::binding(0, 2)]]
 RWTexture3D<float4> out_luminanceVolume : register(u0);
 
 [numthreads(8, 8, 1)]
@@ -18,7 +21,7 @@ void main(ComputeInputType input)
 {
 	int2 texcoord = input.dispatchThreadID.xy;
 
-	float3 posWS = in_pos[texcoord];
+	float3 posWS = in_pos[texcoord].xyz;
 	posWS -= voxelizationPassCBuffer.volumeCenter.xyz;
 	posWS -= voxelizationPassCBuffer.voxelSize / 2.0;
 	posWS /= (voxelizationPassCBuffer.volumeExtend / 2.0);

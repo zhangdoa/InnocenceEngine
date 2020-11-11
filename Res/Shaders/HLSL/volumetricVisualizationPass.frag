@@ -1,8 +1,9 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
 
+[[vk::binding(0, 1)]]
 Texture3D in_volume : register(t0);
-
+[[vk::binding(0, 2)]]
 SamplerState SamplerTypePoint : register(s0);
 
 struct PixelInputType

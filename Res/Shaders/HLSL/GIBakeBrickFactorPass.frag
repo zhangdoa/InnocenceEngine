@@ -14,7 +14,7 @@ struct PixelOutputType
 	float4 GIBrickFactorPassRT0 : SV_Target0;
 };
 
-PixelOutputType main(PixelInputType input) : SV_TARGET
+PixelOutputType main(PixelInputType input)
 {
 	PixelOutputType output;
 

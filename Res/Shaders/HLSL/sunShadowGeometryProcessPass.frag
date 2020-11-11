@@ -1,8 +1,9 @@
 // shadertype=hlsl
 #include "common/common.hlsl"
 
+[[vk::binding(0, 1)]]
 Texture2D t2d_albedo : register(t0);
-
+[[vk::binding(0, 2)]]
 SamplerState SampleTypeWrap : register(s0);
 
 struct PixelInputType

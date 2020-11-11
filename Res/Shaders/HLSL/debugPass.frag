@@ -6,6 +6,7 @@ struct DebugMaterialData
 	float4 color;
 };
 
+[[vk::binding(1, 1)]]
 StructuredBuffer<DebugMaterialData> debugMaterialSBuffer : register(t1);
 
 struct PixelInputType
@@ -19,7 +20,7 @@ struct PixelOutputType
 	float4 debugPassRT0 : SV_Target0;
 };
 
-PixelOutputType main(PixelInputType input) : SV_TARGET
+PixelOutputType main(PixelInputType input)
 {
 	PixelOutputType output;
 

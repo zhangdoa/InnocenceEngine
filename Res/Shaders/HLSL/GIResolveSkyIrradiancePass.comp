@@ -9,7 +9,9 @@ struct ComputeInputType
 	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
+[[vk::binding(0, 0)]]
 RWTexture3D<float4> in_skyRadiance : register(u0);
+[[vk::binding(1, 0)]]
 RWStructuredBuffer<float4> out_skyIrradiance : register(u1);
 
 [numthreads(8, 8, 8)]

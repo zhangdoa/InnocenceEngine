@@ -9,10 +9,14 @@ struct PixelInputType
 	float3 Normal : NORMAL;
 };
 
-RWStructuredBuffer<uint> in_atomicCounter : register(u0);
-RWTexture2D<uint> out_headPtr : register(u1);
-RWStructuredBuffer<uint4> out_transparentPassRT0 : register(u2);
-RWStructuredBuffer<uint4> out_transparentPassRT1 : register(u3);
+[[vk::binding(0, 1)]]
+RWTexture2D<uint> out_headPtr : register(u0);
+[[vk::binding(1, 1)]]
+RWStructuredBuffer<uint4> out_transparentPassRT0 : register(u1);
+[[vk::binding(2, 1)]]
+RWStructuredBuffer<uint4> out_transparentPassRT1 : register(u2);
+[[vk::binding(3, 1)]]
+RWStructuredBuffer<uint> in_atomicCounter : register(u3);
 
 #include "common/BSDF.hlsl"
 
@@ -21,7 +25,7 @@ void main(PixelInputType input)
 {
 	float3 N = normalize(input.Normal);
 
-	float3 V = normalize(perFrameCBuffer.camera_posWS - input.posWS.xyz);
+	float3 V = normalize(perFrameCBuffer.camera_posWS.xyz - input.posWS.xyz);
 	float3 L = normalize(-perFrameCBuffer.sun_direction.xyz);
 	float3 H = normalize(V + L);
 	float NdotV = max(dot(N, V), 0.0);
