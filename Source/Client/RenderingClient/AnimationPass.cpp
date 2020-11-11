@@ -88,11 +88,11 @@ bool AnimationPass::Setup()
 	m_RPDC->m_ResourceBinderLayoutDescs[8].m_IndirectBinding = true;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[9].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_RPDC->m_ResourceBinderLayoutDescs[9].m_DescriptorSetIndex = 3;
+	m_RPDC->m_ResourceBinderLayoutDescs[9].m_DescriptorSetIndex = 0;
 	m_RPDC->m_ResourceBinderLayoutDescs[9].m_DescriptorIndex = 10;
 
 	m_RPDC->m_ResourceBinderLayoutDescs[10].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_RPDC->m_ResourceBinderLayoutDescs[10].m_DescriptorSetIndex = 4;
+	m_RPDC->m_ResourceBinderLayoutDescs[10].m_DescriptorSetIndex = 0;
 	m_RPDC->m_ResourceBinderLayoutDescs[10].m_DescriptorIndex = 5;
 	m_RPDC->m_ResourceBinderLayoutDescs[10].m_BinderAccessibility = Accessibility::ReadOnly;
 	m_RPDC->m_ResourceBinderLayoutDescs[10].m_ResourceAccessibility = Accessibility::ReadWrite;

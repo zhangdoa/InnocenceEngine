@@ -139,7 +139,7 @@ void SunShadowPass::setupBlurPass()
 	l_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
 
 	l_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Image;
-	l_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 1;
+	l_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
 	l_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 0;
 	l_ResourceBinderLayoutDescs[2].m_BinderAccessibility = Accessibility::ReadWrite;
 	l_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;

@@ -121,65 +121,65 @@ bool VoxelizationPass::setupGeometryProcessPass()
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
 
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 2;
 
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 0;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 9;
 
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Buffer;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[4].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 4;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 1;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 0;
 
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Image;
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 5;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 2;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 0;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceCount = 1;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[5].m_IndirectBinding = true;
 
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Image;
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 6;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 2;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 1;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceCount = 1;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[6].m_IndirectBinding = true;
 
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[7].m_ResourceBinderType = ResourceBinderType::Image;
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[7].m_DescriptorSetIndex = 7;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[7].m_DescriptorSetIndex = 2;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[7].m_DescriptorIndex = 2;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[7].m_ResourceCount = 1;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[7].m_IndirectBinding = true;
 
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[8].m_ResourceBinderType = ResourceBinderType::Image;
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[8].m_DescriptorSetIndex = 8;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[8].m_DescriptorSetIndex = 2;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[8].m_DescriptorIndex = 3;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[8].m_ResourceCount = 1;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[8].m_IndirectBinding = true;
 
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[9].m_ResourceBinderType = ResourceBinderType::Image;
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[9].m_DescriptorSetIndex = 9;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[9].m_DescriptorSetIndex = 2;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[9].m_DescriptorIndex = 4;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[9].m_ResourceCount = 1;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[9].m_IndirectBinding = true;
 
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[10].m_ResourceBinderType = ResourceBinderType::Image;
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[10].m_DescriptorSetIndex = 10;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[10].m_DescriptorSetIndex = 2;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[10].m_DescriptorIndex = 5;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[10].m_IndirectBinding = true;
 
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[11].m_ResourceBinderType = ResourceBinderType::Sampler;
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[11].m_DescriptorSetIndex = 11;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[11].m_DescriptorSetIndex = 3;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[11].m_DescriptorIndex = 0;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[11].m_IndirectBinding = true;
 
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[12].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[12].m_DescriptorSetIndex = 12;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[12].m_DescriptorSetIndex = 0;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[12].m_DescriptorIndex = 5;
 
 	m_geometryProcessRPDC->m_ShaderProgram = m_geometryProcessSPC;
@@ -232,19 +232,19 @@ bool VoxelizationPass::setupConvertPass()
 	m_convertRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Image;
 	m_convertRPDC->m_ResourceBinderLayoutDescs[1].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_convertRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_convertRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 2;
+	m_convertRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
 	m_convertRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
 	m_convertRPDC->m_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
 
 	m_convertRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Image;
 	m_convertRPDC->m_ResourceBinderLayoutDescs[2].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_convertRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_convertRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 3;
+	m_convertRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 1;
 	m_convertRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 2;
 	m_convertRPDC->m_ResourceBinderLayoutDescs[2].m_IndirectBinding = true;
 
 	m_convertRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_convertRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 4;
+	m_convertRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 0;
 	m_convertRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 9;
 
 	m_convertRPDC->m_ShaderProgram = m_convertSPC;
@@ -497,16 +497,16 @@ bool VoxelizationPass::setupVisualizationPass()
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[0].m_BinderAccessibility = Accessibility::ReadOnly;
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_visualizationRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_visualizationRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 1;
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
 
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_visualizationRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_visualizationRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 0;
 
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_visualizationRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
+	m_visualizationRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 9;
 
 	m_visualizationRPDC->m_ShaderProgram = m_visualizationSPC;

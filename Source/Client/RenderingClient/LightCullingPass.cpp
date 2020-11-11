@@ -195,14 +195,14 @@ bool LightCullingPass::Setup()
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Image;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 2;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 1;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 3;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_IndirectBinding = true;
 
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_ResourceBinderType = ResourceBinderType::Image;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_DescriptorSetIndex = 2;
+	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_DescriptorSetIndex = 1;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_DescriptorIndex = 4;
 	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_IndirectBinding = true;
 

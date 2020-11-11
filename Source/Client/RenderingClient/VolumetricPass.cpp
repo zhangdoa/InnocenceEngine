@@ -82,24 +82,24 @@ bool VolumetricPass::setupGeometryProcessPass()
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
 
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
+	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 2;
 
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Image;
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[3].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
+	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 1;
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[3].m_IndirectBinding = true;
 
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Image;
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 4;
+	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 1;
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 1;
 	m_froxelizationRPDC->m_ResourceBinderLayoutDescs[4].m_IndirectBinding = true;
 
@@ -287,22 +287,22 @@ bool VolumetricPass::setupVisualizationPass()
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_visualizationRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_visualizationRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
 
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_visualizationRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
+	m_visualizationRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 2;
 
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Image;
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[3].m_BinderAccessibility = Accessibility::ReadOnly;
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_visualizationRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
+	m_visualizationRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 1;
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[3].m_IndirectBinding = true;
 
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Sampler;
-	m_visualizationRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 4;
+	m_visualizationRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 2;
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 0;
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[4].m_IndirectBinding = true;
 

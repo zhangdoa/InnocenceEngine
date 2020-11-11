@@ -386,14 +386,14 @@ bool GIResolvePass::setupSky()
 
 	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs.resize(2);
 	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
-	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 1;
+	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
 
 	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
 	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
 	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[1].m_BinderAccessibility = Accessibility::ReadWrite;
 	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
