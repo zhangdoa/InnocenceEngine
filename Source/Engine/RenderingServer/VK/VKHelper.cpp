@@ -875,6 +875,10 @@ bool VKHelper::createImageView(VkDevice device, VKTextureDataComponent* VKTDC)
 	{
 		viewInfo.subresourceRange.layerCount = VKTDC->m_TextureDesc.DepthOrArraySize;
 	}
+	else if(VKTDC->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap)
+	{
+		viewInfo.subresourceRange.layerCount = 6;
+	}
 	else
 	{
 		viewInfo.subresourceRange.layerCount = 1;

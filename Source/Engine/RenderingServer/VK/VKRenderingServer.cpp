@@ -29,8 +29,18 @@ namespace VKRenderingServerNS
 	std::vector<const char*> getRequiredExtensions();
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
-	{
-		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Validation Layer: ", pCallbackData->pMessage);
+	{	
+		LogLevel l_logLevel = LogLevel::Verbose;
+		if(messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+		{
+			l_logLevel = LogLevel::Warning;
+		}
+		else if(messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+		{
+			l_logLevel = LogLevel::Error;
+		}
+
+		InnoLogger::Log(l_logLevel, "VKRenderingServer: Validation Layer: ", pCallbackData->pMessage);
 		return VK_FALSE;
 	}
 
@@ -91,7 +101,7 @@ namespace VKRenderingServerNS
 
 	const std::vector<const char*> m_validationLayers =
 	{
-	"VK_LAYER_LUNARG_standard_validation"
+	"VK_LAYER_KHRONOS_validation"
 	};
 
 	VkDebugUtilsMessengerEXT m_messengerCallback;
