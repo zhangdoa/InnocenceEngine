@@ -459,11 +459,30 @@ VkSamplerAddressMode VKHelper::getSamplerAddressMode(TextureWrapMethod textureWr
 	return l_result;
 }
 
-VkSamplerMipmapMode VKHelper::getTextureFilterParam(TextureFilterMethod textureFilterMethod)
+VkFilter VKHelper::getFilter(TextureFilterMethod textureFilterMethod)
+{
+	VkFilter l_result;
+
+	switch (textureFilterMethod)
+	{
+	case TextureFilterMethod::Nearest:
+		l_result = VkFilter::VK_FILTER_NEAREST;
+		break;
+	case TextureFilterMethod::Linear:
+		l_result = VkFilter::VK_FILTER_LINEAR;
+		break;
+	default:
+		break;
+	}
+
+	return l_result;
+}
+
+VkSamplerMipmapMode VKHelper::getSamplerMipmapMode(TextureFilterMethod minFilterMethod)
 {
 	VkSamplerMipmapMode l_result;
 
-	switch (textureFilterMethod)
+	switch (minFilterMethod)
 	{
 	case TextureFilterMethod::Nearest:
 		l_result = VkSamplerMipmapMode::VK_SAMPLER_MIPMAP_MODE_NEAREST;

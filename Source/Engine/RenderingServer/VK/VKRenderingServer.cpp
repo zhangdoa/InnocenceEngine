@@ -93,7 +93,8 @@ namespace VKRenderingServerNS
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 		VK_KHR_MAINTENANCE2_EXTENSION_NAME, // For imageless framebuffer
 		VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME, // For imageless framebuffer
-		VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME
+		VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME,
+		VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME
 	};
 
 #ifdef INNO_DEBUG
@@ -316,6 +317,12 @@ bool VKRenderingServerNS::createLogicalDevice()
 	l_imagelessFramebufferFeatures.sType = 	VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES;
 	l_imagelessFramebufferFeatures.imagelessFramebuffer = true;
 	l_createInfo.pNext = &l_imagelessFramebufferFeatures;
+
+	VkPhysicalDeviceCustomBorderColorFeaturesEXT l_CustomBorderColorFeaturesEXT = {};
+	l_CustomBorderColorFeaturesEXT.sType = 	VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT;
+	l_CustomBorderColorFeaturesEXT.customBorderColors = true;
+	l_CustomBorderColorFeaturesEXT.customBorderColorWithoutFormat = true;
+	l_imagelessFramebufferFeatures.pNext = &l_CustomBorderColorFeaturesEXT;
 
 	l_createInfo.enabledExtensionCount = static_cast<uint32_t>(m_deviceExtensions.size());
 	l_createInfo.ppEnabledExtensionNames = m_deviceExtensions.data();
@@ -988,6 +995,42 @@ bool VKRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent*
 
 bool VKRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent* rhs)
 {
+	auto l_rhs = reinterpret_cast<VKSamplerDataComponent*>(rhs);
+	auto l_resourceBinder = addResourcesBinder();
+
+	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Sampler;
+
+	l_rhs->m_samplerCInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	l_rhs->m_samplerCInfo.minFilter = getFilter(l_rhs->m_SamplerDesc.m_MinFilterMethod);
+	l_rhs->m_samplerCInfo.magFilter = getFilter(l_rhs->m_SamplerDesc.m_MagFilterMethod);
+	l_rhs->m_samplerCInfo.mipmapMode = getSamplerMipmapMode(l_rhs->m_SamplerDesc.m_MinFilterMethod);
+	l_rhs->m_samplerCInfo.addressModeU = getSamplerAddressMode(l_rhs->m_SamplerDesc.m_WrapMethodU);
+	l_rhs->m_samplerCInfo.addressModeV = getSamplerAddressMode(l_rhs->m_SamplerDesc.m_WrapMethodV);
+	l_rhs->m_samplerCInfo.addressModeW = getSamplerAddressMode(l_rhs->m_SamplerDesc.m_WrapMethodW);
+	l_rhs->m_samplerCInfo.mipLodBias = 0.0f;
+	l_rhs->m_samplerCInfo.maxAnisotropy = l_rhs->m_SamplerDesc.m_MaxAnisotropy;
+	l_rhs->m_samplerCInfo.compareOp = VkCompareOp::VK_COMPARE_OP_ALWAYS;
+	l_rhs->m_samplerCInfo.borderColor = VkBorderColor::VK_BORDER_COLOR_FLOAT_CUSTOM_EXT;
+	l_rhs->m_samplerCInfo.minLod = l_rhs->m_SamplerDesc.m_MinLOD;
+	l_rhs->m_samplerCInfo.maxLod = l_rhs->m_SamplerDesc.m_MaxLOD;
+
+	VkSamplerCustomBorderColorCreateInfoEXT l_samplerCustomBorderColorCInfoEXT = {};
+	l_samplerCustomBorderColorCInfoEXT.sType = VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT;
+	l_samplerCustomBorderColorCInfoEXT.customBorderColor.float32[0] = l_rhs->m_SamplerDesc.m_BorderColor[0];
+	l_samplerCustomBorderColorCInfoEXT.customBorderColor.float32[1] = l_rhs->m_SamplerDesc.m_BorderColor[1];
+	l_samplerCustomBorderColorCInfoEXT.customBorderColor.float32[2] = l_rhs->m_SamplerDesc.m_BorderColor[2];
+	l_samplerCustomBorderColorCInfoEXT.customBorderColor.float32[3] = l_rhs->m_SamplerDesc.m_BorderColor[3];
+	l_samplerCustomBorderColorCInfoEXT.format = VK_FORMAT_UNDEFINED;
+
+	l_rhs->m_samplerCInfo.pNext = &l_samplerCustomBorderColorCInfoEXT;
+
+	if (vkCreateSampler(m_device, &l_rhs->m_samplerCInfo, nullptr, &l_rhs->m_sampler) != VK_SUCCESS) 
+	{
+		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create sampler!");
+    }
+
+	l_rhs->m_ResourceBinder = l_resourceBinder;
+
 	return true;
 }
 

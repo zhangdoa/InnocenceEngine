@@ -7,5 +7,7 @@ namespace Inno
 	class VKSamplerDataComponent : public SamplerDataComponent
 	{
 	public:
+		VkSamplerCreateInfo m_samplerCInfo = {};
+		VkSampler m_sampler;
 	};
 }

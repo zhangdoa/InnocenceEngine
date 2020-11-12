@@ -52,7 +52,8 @@ namespace Inno
 		VkImageViewType getImageViewType(TextureSampler textureSampler);
 		VkImageUsageFlags getImageUsageFlags(TextureUsage textureUsage);
 		VkSamplerAddressMode getSamplerAddressMode(TextureWrapMethod textureWrapMethod);
-		VkSamplerMipmapMode getTextureFilterParam(TextureFilterMethod textureFilterMethod);
+		VkFilter getFilter(TextureFilterMethod textureFilterMethod);
+		VkSamplerMipmapMode getSamplerMipmapMode(TextureFilterMethod minFilterMethod);
 		VkFormat getTextureFormat(TextureDesc textureDesc);
 		VkDeviceSize getImageSize(TextureDesc textureDesc);
 		VkImageAspectFlagBits getImageAspectFlags(TextureUsage textureUsage);
