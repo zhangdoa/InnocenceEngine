@@ -90,7 +90,10 @@ namespace VKRenderingServerNS
 
 	const std::vector<const char*> m_deviceExtensions =
 	{
-	VK_KHR_SWAPCHAIN_EXTENSION_NAME
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		VK_KHR_MAINTENANCE2_EXTENSION_NAME, // For imageless framebuffer
+		VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME, // For imageless framebuffer
+		VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME
 	};
 
 #ifdef INNO_DEBUG
@@ -309,6 +312,10 @@ bool VKRenderingServerNS::createLogicalDevice()
 	l_createInfo.pQueueCreateInfos = l_queueCreateInfos.data();
 
 	l_createInfo.pEnabledFeatures = &l_deviceFeatures;
+	VkPhysicalDeviceImagelessFramebufferFeatures l_imagelessFramebufferFeatures = {};
+	l_imagelessFramebufferFeatures.sType = 	VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES;
+	l_imagelessFramebufferFeatures.imagelessFramebuffer = true;
+	l_createInfo.pNext = &l_imagelessFramebufferFeatures;
 
 	l_createInfo.enabledExtensionCount = static_cast<uint32_t>(m_deviceExtensions.size());
 	l_createInfo.ppEnabledExtensionNames = m_deviceExtensions.data();

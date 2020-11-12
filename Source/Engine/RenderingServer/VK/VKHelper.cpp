@@ -4,17 +4,17 @@
 #include "../../Interface/IEngine.h"
 
 using namespace Inno;
-extern IEngine* g_Engine;
+extern IEngine *g_Engine;
 
 namespace Inno
 {
 	namespace VKHelper
 	{
-		const char* m_shaderRelativePath = "..//Res//Shaders//SPIRV//";
+		const char *m_shaderRelativePath = "..//Res//Shaders//SPIRV//";
 	}
-}
+} // namespace Inno
 
-bool VKHelper::checkValidationLayerSupport(const std::vector<const char*>& validationLayers)
+bool VKHelper::checkValidationLayerSupport(const std::vector<const char *> &validationLayers)
 {
 	uint32_t l_layerCount;
 	vkEnumerateInstanceLayerProperties(&l_layerCount, nullptr);
@@ -22,11 +22,11 @@ bool VKHelper::checkValidationLayerSupport(const std::vector<const char*>& valid
 	std::vector<VkLayerProperties> l_availableLayers(l_layerCount);
 	vkEnumerateInstanceLayerProperties(&l_layerCount, l_availableLayers.data());
 
-	for (const char* layerName : validationLayers)
+	for (const char *layerName : validationLayers)
 	{
 		bool layerFound = false;
 
-		for (const auto& layerProperties : l_availableLayers)
+		for (const auto &layerProperties : l_availableLayers)
 		{
 			if (strcmp(layerName, layerProperties.layerName) == 0)
 			{
@@ -44,7 +44,7 @@ bool VKHelper::checkValidationLayerSupport(const std::vector<const char*>& valid
 	return true;
 }
 
-bool VKHelper::checkDeviceExtensionSupport(VkPhysicalDevice device, const std::vector<const char*>& deviceExtensions)
+bool VKHelper::checkDeviceExtensionSupport(VkPhysicalDevice device, const std::vector<const char *> &deviceExtensions)
 {
 	uint32_t extensionCount;
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
@@ -54,7 +54,7 @@ bool VKHelper::checkDeviceExtensionSupport(VkPhysicalDevice device, const std::v
 
 	std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
 
-	for (const auto& extension : availableExtensions)
+	for (const auto &extension : availableExtensions)
 	{
 		requiredExtensions.erase(extension.extensionName);
 	}
@@ -73,7 +73,7 @@ QueueFamilyIndices VKHelper::findQueueFamilies(VkPhysicalDevice device, VkSurfac
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
 	int32_t i = 0;
-	for (const auto& queueFamily : queueFamilies)
+	for (const auto &queueFamily : queueFamilies)
 	{
 		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
 		{
@@ -99,14 +99,14 @@ QueueFamilyIndices VKHelper::findQueueFamilies(VkPhysicalDevice device, VkSurfac
 	return indices;
 }
 
-VkSurfaceFormatKHR VKHelper::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+VkSurfaceFormatKHR VKHelper::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats)
 {
 	if (availableFormats.size() == 1 && availableFormats[0].format == VK_FORMAT_UNDEFINED)
 	{
-		return { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+		return {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
 	}
 
-	for (const auto& availableFormat : availableFormats)
+	for (const auto &availableFormat : availableFormats)
 	{
 		if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
 		{
@@ -117,11 +117,11 @@ VkSurfaceFormatKHR VKHelper::chooseSwapSurfaceFormat(const std::vector<VkSurface
 	return availableFormats[0];
 }
 
-VkPresentModeKHR VKHelper::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+VkPresentModeKHR VKHelper::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes)
 {
 	VkPresentModeKHR l_bestMode = VK_PRESENT_MODE_FIFO_KHR;
 
-	for (const auto& availablePresentMode : availablePresentModes)
+	for (const auto &availablePresentMode : availablePresentModes)
 	{
 		if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
 		{
@@ -136,7 +136,7 @@ VkPresentModeKHR VKHelper::chooseSwapPresentMode(const std::vector<VkPresentMode
 	return l_bestMode;
 }
 
-VkExtent2D VKHelper::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+VkExtent2D VKHelper::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities)
 {
 	if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
 	{
@@ -184,7 +184,7 @@ SwapChainSupportDetails VKHelper::querySwapChainSupport(VkPhysicalDevice device,
 	return l_details;
 }
 
-bool VKHelper::isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR windowSurface, const std::vector<const char*>& deviceExtensions)
+bool VKHelper::isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR windowSurface, const std::vector<const char *> &deviceExtensions)
 {
 	QueueFamilyIndices indices = findQueueFamilies(device, windowSurface);
 
@@ -251,7 +251,7 @@ uint32_t VKHelper::findMemoryType(VkPhysicalDevice physicalDevice, uint32_t type
 	return 0;
 }
 
-bool VKHelper::createCommandPool(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface, VkDevice device, VkCommandPool& commandPool)
+bool VKHelper::createCommandPool(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface, VkDevice device, VkCommandPool &commandPool)
 {
 	QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice, windowSurface);
 
@@ -270,7 +270,7 @@ bool VKHelper::createCommandPool(VkPhysicalDevice physicalDevice, VkSurfaceKHR w
 	return true;
 }
 
-bool VKHelper::createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, const VkBufferCreateInfo& bufferCInfo, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+bool VKHelper::createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, const VkBufferCreateInfo &bufferCInfo, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory)
 {
 	if (vkCreateBuffer(device, &bufferCInfo, nullptr, &buffer) != VK_SUCCESS)
 	{
@@ -310,7 +310,7 @@ bool VKHelper::copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue co
 	return true;
 }
 
-bool VKHelper::createImage(VkPhysicalDevice physicalDevice, VkDevice device, const VkImageCreateInfo& imageCInfo, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
+bool VKHelper::createImage(VkPhysicalDevice physicalDevice, VkDevice device, const VkImageCreateInfo &imageCInfo, VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory)
 {
 	if (vkCreateImage(device, &imageCInfo, nullptr, &image) != VK_SUCCESS)
 	{
@@ -500,136 +500,252 @@ VkFormat VKHelper::getTextureFormat(TextureDesc textureDesc)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
-			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R8_UNORM; break;
-			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R8G8_UNORM; break;
-			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R8G8B8A8_UNORM; break;
-			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R8G8B8A8_UNORM; break;
-			case TexturePixelDataFormat::BGRA: l_internalFormat = VK_FORMAT_B8G8R8A8_UNORM; break;
-			default: break;
+			case TexturePixelDataFormat::R:
+				l_internalFormat = VK_FORMAT_R8_UNORM;
+				break;
+			case TexturePixelDataFormat::RG:
+				l_internalFormat = VK_FORMAT_R8G8_UNORM;
+				break;
+			case TexturePixelDataFormat::RGB:
+				l_internalFormat = VK_FORMAT_R8G8B8A8_UNORM;
+				break;
+			case TexturePixelDataFormat::RGBA:
+				l_internalFormat = VK_FORMAT_R8G8B8A8_UNORM;
+				break;
+			case TexturePixelDataFormat::BGRA:
+				l_internalFormat = VK_FORMAT_B8G8R8A8_UNORM;
+				break;
+			default:
+				break;
 			}
 		}
 		else if (textureDesc.PixelDataType == TexturePixelDataType::SByte)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
-			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R8_SNORM; break;
-			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R8G8_SNORM; break;
-			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R8G8B8A8_SNORM; break;
-			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R8G8B8A8_SNORM; break;
-			case TexturePixelDataFormat::BGRA: l_internalFormat = VK_FORMAT_B8G8R8A8_SNORM; break;
-			default: break;
+			case TexturePixelDataFormat::R:
+				l_internalFormat = VK_FORMAT_R8_SNORM;
+				break;
+			case TexturePixelDataFormat::RG:
+				l_internalFormat = VK_FORMAT_R8G8_SNORM;
+				break;
+			case TexturePixelDataFormat::RGB:
+				l_internalFormat = VK_FORMAT_R8G8B8A8_SNORM;
+				break;
+			case TexturePixelDataFormat::RGBA:
+				l_internalFormat = VK_FORMAT_R8G8B8A8_SNORM;
+				break;
+			case TexturePixelDataFormat::BGRA:
+				l_internalFormat = VK_FORMAT_B8G8R8A8_SNORM;
+				break;
+			default:
+				break;
 			}
 		}
 		else if (textureDesc.PixelDataType == TexturePixelDataType::UShort)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
-			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R16_UNORM; break;
-			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R16G16_UNORM; break;
-			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R16G16B16A16_UNORM; break;
-			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R16G16B16A16_UNORM; break;
-			default: break;
+			case TexturePixelDataFormat::R:
+				l_internalFormat = VK_FORMAT_R16_UNORM;
+				break;
+			case TexturePixelDataFormat::RG:
+				l_internalFormat = VK_FORMAT_R16G16_UNORM;
+				break;
+			case TexturePixelDataFormat::RGB:
+				l_internalFormat = VK_FORMAT_R16G16B16A16_UNORM;
+				break;
+			case TexturePixelDataFormat::RGBA:
+				l_internalFormat = VK_FORMAT_R16G16B16A16_UNORM;
+				break;
+			default:
+				break;
 			}
 		}
 		else if (textureDesc.PixelDataType == TexturePixelDataType::SShort)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
-			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R16_SNORM; break;
-			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R16G16_SNORM; break;
-			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R16G16B16A16_SNORM; break;
-			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R16G16B16A16_SNORM; break;
-			default: break;
+			case TexturePixelDataFormat::R:
+				l_internalFormat = VK_FORMAT_R16_SNORM;
+				break;
+			case TexturePixelDataFormat::RG:
+				l_internalFormat = VK_FORMAT_R16G16_SNORM;
+				break;
+			case TexturePixelDataFormat::RGB:
+				l_internalFormat = VK_FORMAT_R16G16B16A16_SNORM;
+				break;
+			case TexturePixelDataFormat::RGBA:
+				l_internalFormat = VK_FORMAT_R16G16B16A16_SNORM;
+				break;
+			default:
+				break;
 			}
 		}
 		else if (textureDesc.PixelDataType == TexturePixelDataType::UInt8)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
-			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R8_UINT; break;
-			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R8G8_UINT; break;
-			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R8G8B8A8_UINT; break;
-			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R8G8B8A8_UINT; break;
-			case TexturePixelDataFormat::BGRA: l_internalFormat = VK_FORMAT_B8G8R8A8_UINT; break;
-			default: break;
+			case TexturePixelDataFormat::R:
+				l_internalFormat = VK_FORMAT_R8_UINT;
+				break;
+			case TexturePixelDataFormat::RG:
+				l_internalFormat = VK_FORMAT_R8G8_UINT;
+				break;
+			case TexturePixelDataFormat::RGB:
+				l_internalFormat = VK_FORMAT_R8G8B8A8_UINT;
+				break;
+			case TexturePixelDataFormat::RGBA:
+				l_internalFormat = VK_FORMAT_R8G8B8A8_UINT;
+				break;
+			case TexturePixelDataFormat::BGRA:
+				l_internalFormat = VK_FORMAT_B8G8R8A8_UINT;
+				break;
+			default:
+				break;
 			}
 		}
 		else if (textureDesc.PixelDataType == TexturePixelDataType::SInt8)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
-			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R8_SINT; break;
-			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R8G8_SINT; break;
-			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R8G8B8A8_SINT; break;
-			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R8G8B8A8_SINT; break;
-			case TexturePixelDataFormat::BGRA: l_internalFormat = VK_FORMAT_B8G8R8A8_SINT; break;
-			default: break;
+			case TexturePixelDataFormat::R:
+				l_internalFormat = VK_FORMAT_R8_SINT;
+				break;
+			case TexturePixelDataFormat::RG:
+				l_internalFormat = VK_FORMAT_R8G8_SINT;
+				break;
+			case TexturePixelDataFormat::RGB:
+				l_internalFormat = VK_FORMAT_R8G8B8A8_SINT;
+				break;
+			case TexturePixelDataFormat::RGBA:
+				l_internalFormat = VK_FORMAT_R8G8B8A8_SINT;
+				break;
+			case TexturePixelDataFormat::BGRA:
+				l_internalFormat = VK_FORMAT_B8G8R8A8_SINT;
+				break;
+			default:
+				break;
 			}
 		}
 		else if (textureDesc.PixelDataType == TexturePixelDataType::UInt16)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
-			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R16_UINT; break;
-			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R16G16_UINT; break;
-			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R16G16B16A16_UINT; break;
-			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R16G16B16A16_UINT; break;
-			default: break;
+			case TexturePixelDataFormat::R:
+				l_internalFormat = VK_FORMAT_R16_UINT;
+				break;
+			case TexturePixelDataFormat::RG:
+				l_internalFormat = VK_FORMAT_R16G16_UINT;
+				break;
+			case TexturePixelDataFormat::RGB:
+				l_internalFormat = VK_FORMAT_R16G16B16A16_UINT;
+				break;
+			case TexturePixelDataFormat::RGBA:
+				l_internalFormat = VK_FORMAT_R16G16B16A16_UINT;
+				break;
+			default:
+				break;
 			}
 		}
 		else if (textureDesc.PixelDataType == TexturePixelDataType::SInt16)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
-			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R16_SINT; break;
-			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R16G16_SINT; break;
-			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R16G16B16A16_SINT; break;
-			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R16G16B16A16_SINT; break;
-			default: break;
+			case TexturePixelDataFormat::R:
+				l_internalFormat = VK_FORMAT_R16_SINT;
+				break;
+			case TexturePixelDataFormat::RG:
+				l_internalFormat = VK_FORMAT_R16G16_SINT;
+				break;
+			case TexturePixelDataFormat::RGB:
+				l_internalFormat = VK_FORMAT_R16G16B16A16_SINT;
+				break;
+			case TexturePixelDataFormat::RGBA:
+				l_internalFormat = VK_FORMAT_R16G16B16A16_SINT;
+				break;
+			default:
+				break;
 			}
 		}
 		else if (textureDesc.PixelDataType == TexturePixelDataType::UInt32)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
-			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R32_UINT; break;
-			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R32G32_UINT; break;
-			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R32G32B32A32_UINT; break;
-			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R32G32B32A32_UINT; break;
-			default: break;
+			case TexturePixelDataFormat::R:
+				l_internalFormat = VK_FORMAT_R32_UINT;
+				break;
+			case TexturePixelDataFormat::RG:
+				l_internalFormat = VK_FORMAT_R32G32_UINT;
+				break;
+			case TexturePixelDataFormat::RGB:
+				l_internalFormat = VK_FORMAT_R32G32B32A32_UINT;
+				break;
+			case TexturePixelDataFormat::RGBA:
+				l_internalFormat = VK_FORMAT_R32G32B32A32_UINT;
+				break;
+			default:
+				break;
 			}
 		}
 		else if (textureDesc.PixelDataType == TexturePixelDataType::SInt32)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
-			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R32_SINT; break;
-			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R32G32_SINT; break;
-			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R32G32B32A32_SINT; break;
-			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R32G32B32A32_SINT; break;
-			default: break;
+			case TexturePixelDataFormat::R:
+				l_internalFormat = VK_FORMAT_R32_SINT;
+				break;
+			case TexturePixelDataFormat::RG:
+				l_internalFormat = VK_FORMAT_R32G32_SINT;
+				break;
+			case TexturePixelDataFormat::RGB:
+				l_internalFormat = VK_FORMAT_R32G32B32A32_SINT;
+				break;
+			case TexturePixelDataFormat::RGBA:
+				l_internalFormat = VK_FORMAT_R32G32B32A32_SINT;
+				break;
+			default:
+				break;
 			}
 		}
 		else if (textureDesc.PixelDataType == TexturePixelDataType::Float16)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
-			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R16_SFLOAT; break;
-			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R16G16_SFLOAT; break;
-			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R16G16B16A16_SFLOAT; break;
-			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R16G16B16A16_SFLOAT; break;
-			default: break;
+			case TexturePixelDataFormat::R:
+				l_internalFormat = VK_FORMAT_R16_SFLOAT;
+				break;
+			case TexturePixelDataFormat::RG:
+				l_internalFormat = VK_FORMAT_R16G16_SFLOAT;
+				break;
+			case TexturePixelDataFormat::RGB:
+				l_internalFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+				break;
+			case TexturePixelDataFormat::RGBA:
+				l_internalFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+				break;
+			default:
+				break;
 			}
 		}
 		else if (textureDesc.PixelDataType == TexturePixelDataType::Float32)
 		{
 			switch (textureDesc.PixelDataFormat)
 			{
-			case TexturePixelDataFormat::R: l_internalFormat = VK_FORMAT_R32_SFLOAT; break;
-			case TexturePixelDataFormat::RG: l_internalFormat = VK_FORMAT_R32G32_SFLOAT; break;
-			case TexturePixelDataFormat::RGB: l_internalFormat = VK_FORMAT_R32G32B32A32_SFLOAT; break;
-			case TexturePixelDataFormat::RGBA: l_internalFormat = VK_FORMAT_R32G32B32A32_SFLOAT; break;
-			default: break;
+			case TexturePixelDataFormat::R:
+				l_internalFormat = VK_FORMAT_R32_SFLOAT;
+				break;
+			case TexturePixelDataFormat::RG:
+				l_internalFormat = VK_FORMAT_R32G32_SFLOAT;
+				break;
+			case TexturePixelDataFormat::RGB:
+				l_internalFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
+				break;
+			case TexturePixelDataFormat::RGBA:
+				l_internalFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
+				break;
+			default:
+				break;
 			}
 		}
 	}
@@ -645,31 +761,69 @@ VkDeviceSize VKHelper::getImageSize(TextureDesc textureDesc)
 
 	switch (textureDesc.PixelDataType)
 	{
-	case TexturePixelDataType::UByte:l_singlePixelSize = 1; break;
-	case TexturePixelDataType::SByte:l_singlePixelSize = 1; break;
-	case TexturePixelDataType::UShort:l_singlePixelSize = 2; break;
-	case TexturePixelDataType::SShort:l_singlePixelSize = 2; break;
-	case TexturePixelDataType::UInt8:l_singlePixelSize = 1; break;
-	case TexturePixelDataType::SInt8:l_singlePixelSize = 1; break;
-	case TexturePixelDataType::UInt16:l_singlePixelSize = 2; break;
-	case TexturePixelDataType::SInt16:l_singlePixelSize = 2; break;
-	case TexturePixelDataType::UInt32:l_singlePixelSize = 4; break;
-	case TexturePixelDataType::SInt32:l_singlePixelSize = 4; break;
-	case TexturePixelDataType::Float16:l_singlePixelSize = 2; break;
-	case TexturePixelDataType::Float32:l_singlePixelSize = 4; break;
-	case TexturePixelDataType::Double:l_singlePixelSize = 8; break;
+	case TexturePixelDataType::UByte:
+		l_singlePixelSize = 1;
+		break;
+	case TexturePixelDataType::SByte:
+		l_singlePixelSize = 1;
+		break;
+	case TexturePixelDataType::UShort:
+		l_singlePixelSize = 2;
+		break;
+	case TexturePixelDataType::SShort:
+		l_singlePixelSize = 2;
+		break;
+	case TexturePixelDataType::UInt8:
+		l_singlePixelSize = 1;
+		break;
+	case TexturePixelDataType::SInt8:
+		l_singlePixelSize = 1;
+		break;
+	case TexturePixelDataType::UInt16:
+		l_singlePixelSize = 2;
+		break;
+	case TexturePixelDataType::SInt16:
+		l_singlePixelSize = 2;
+		break;
+	case TexturePixelDataType::UInt32:
+		l_singlePixelSize = 4;
+		break;
+	case TexturePixelDataType::SInt32:
+		l_singlePixelSize = 4;
+		break;
+	case TexturePixelDataType::Float16:
+		l_singlePixelSize = 2;
+		break;
+	case TexturePixelDataType::Float32:
+		l_singlePixelSize = 4;
+		break;
+	case TexturePixelDataType::Double:
+		l_singlePixelSize = 8;
+		break;
 	}
 
 	VkDeviceSize l_channelSize;
 
 	switch (textureDesc.PixelDataFormat)
 	{
-	case TexturePixelDataFormat::R:l_channelSize = 1; break;
-	case TexturePixelDataFormat::RG:l_channelSize = 2; break;
-	case TexturePixelDataFormat::RGB:l_channelSize = 3; break;
-	case TexturePixelDataFormat::RGBA:l_channelSize = 4; break;
-	case TexturePixelDataFormat::Depth:l_channelSize = 1; break;
-	case TexturePixelDataFormat::DepthStencil:l_channelSize = 1; break;
+	case TexturePixelDataFormat::R:
+		l_channelSize = 1;
+		break;
+	case TexturePixelDataFormat::RG:
+		l_channelSize = 2;
+		break;
+	case TexturePixelDataFormat::RGB:
+		l_channelSize = 3;
+		break;
+	case TexturePixelDataFormat::RGBA:
+		l_channelSize = 4;
+		break;
+	case TexturePixelDataFormat::Depth:
+		l_channelSize = 1;
+		break;
+	case TexturePixelDataFormat::DepthStencil:
+		l_channelSize = 1;
+		break;
 	}
 
 	switch (textureDesc.Sampler)
@@ -831,8 +985,7 @@ bool VKHelper::transitImageLayout(VkCommandBuffer commandBuffer, VkImage image, 
 		0,
 		0, nullptr,
 		0, nullptr,
-		1, &barrier
-	);
+		1, &barrier);
 
 	return true;
 }
@@ -847,19 +1000,18 @@ bool VKHelper::copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer,
 	region.imageSubresource.mipLevel = 0;
 	region.imageSubresource.baseArrayLayer = 0;
 	region.imageSubresource.layerCount = 1;
-	region.imageOffset = { 0, 0, 0 };
+	region.imageOffset = {0, 0, 0};
 	region.imageExtent = {
 		width,
 		height,
-		1
-	};
+		1};
 
 	vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
 	return true;
 }
 
-bool VKHelper::createImageView(VkDevice device, VKTextureDataComponent* VKTDC)
+bool VKHelper::createImageView(VkDevice device, VKTextureDataComponent *VKTDC)
 {
 	VkImageViewCreateInfo viewInfo = {};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -875,7 +1027,7 @@ bool VKHelper::createImageView(VkDevice device, VKTextureDataComponent* VKTDC)
 	{
 		viewInfo.subresourceRange.layerCount = VKTDC->m_TextureDesc.DepthOrArraySize;
 	}
-	else if(VKTDC->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap)
+	else if (VKTDC->m_TextureDesc.Sampler == TextureSampler::SamplerCubemap)
 	{
 		viewInfo.subresourceRange.layerCount = 6;
 	}
@@ -895,17 +1047,15 @@ bool VKHelper::createImageView(VkDevice device, VKTextureDataComponent* VKTDC)
 	return true;
 }
 
-bool VKHelper::createDescriptorSetLayoutBindings(VKRenderPassDataComponent* VKRPDC)
+bool VKHelper::createDescriptorSetLayoutBindings(VKRenderPassDataComponent *VKRPDC)
 {
-	std::sort(VKRPDC->m_ResourceBinderLayoutDescs.begin(), VKRPDC->m_ResourceBinderLayoutDescs.end(), [&](ResourceBinderLayoutDesc A, ResourceBinderLayoutDesc B)
-		{
-			return A.m_DescriptorIndex < B.m_DescriptorIndex;
-		});
+	std::sort(VKRPDC->m_ResourceBinderLayoutDescs.begin(), VKRPDC->m_ResourceBinderLayoutDescs.end(), [&](ResourceBinderLayoutDesc A, ResourceBinderLayoutDesc B) {
+		return A.m_DescriptorIndex < B.m_DescriptorIndex;
+	});
 
-	std::sort(VKRPDC->m_ResourceBinderLayoutDescs.begin(), VKRPDC->m_ResourceBinderLayoutDescs.end(), [&](ResourceBinderLayoutDesc A, ResourceBinderLayoutDesc B)
-		{
-			return A.m_DescriptorSetIndex < B.m_DescriptorSetIndex;
-		});
+	std::sort(VKRPDC->m_ResourceBinderLayoutDescs.begin(), VKRPDC->m_ResourceBinderLayoutDescs.end(), [&](ResourceBinderLayoutDesc A, ResourceBinderLayoutDesc B) {
+		return A.m_DescriptorSetIndex < B.m_DescriptorSetIndex;
+	});
 
 	auto l_resourceBinderLayoutDescsSize = VKRPDC->m_ResourceBinderLayoutDescs.size();
 
@@ -1006,7 +1156,7 @@ bool VKHelper::createDescriptorSetLayoutBindings(VKRenderPassDataComponent* VKRP
 	return true;
 }
 
-bool VKHelper::createDescriptorPool(VkDevice device, VkDescriptorPoolSize* poolSize, uint32_t poolSizeCount, uint32_t maxSets, VkDescriptorPool& poolHandle)
+bool VKHelper::createDescriptorPool(VkDevice device, VkDescriptorPoolSize *poolSize, uint32_t poolSizeCount, uint32_t maxSets, VkDescriptorPool &poolHandle)
 {
 	VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -1024,7 +1174,7 @@ bool VKHelper::createDescriptorPool(VkDevice device, VkDescriptorPoolSize* poolS
 	return true;
 }
 
-bool VKHelper::createDescriptorSetLayout(VkDevice device, VkDescriptorSetLayoutBinding* setLayoutBindings, uint32_t setLayoutBindingsCount, VkDescriptorSetLayout& setLayout)
+bool VKHelper::createDescriptorSetLayout(VkDevice device, VkDescriptorSetLayoutBinding *setLayoutBindings, uint32_t setLayoutBindingsCount, VkDescriptorSetLayout &setLayout)
 {
 	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -1041,7 +1191,7 @@ bool VKHelper::createDescriptorSetLayout(VkDevice device, VkDescriptorSetLayoutB
 	return true;
 }
 
-bool VKHelper::createDescriptorSets(VkDevice device, VkDescriptorPool pool, VkDescriptorSetLayout& setLayout, VkDescriptorSet& setHandle, uint32_t count)
+bool VKHelper::createDescriptorSets(VkDevice device, VkDescriptorPool pool, VkDescriptorSetLayout &setLayout, VkDescriptorSet &setHandle, uint32_t count)
 {
 	VkDescriptorSetAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -1059,7 +1209,7 @@ bool VKHelper::createDescriptorSets(VkDevice device, VkDescriptorPool pool, VkDe
 	return true;
 }
 
-bool VKHelper::updateDescriptorSet(VkDevice device, VkWriteDescriptorSet* writeDescriptorSets, uint32_t writeDescriptorSetsCount)
+bool VKHelper::updateDescriptorSet(VkDevice device, VkWriteDescriptorSet *writeDescriptorSets, uint32_t writeDescriptorSetsCount)
 {
 	vkUpdateDescriptorSets(
 		device,
@@ -1072,14 +1222,14 @@ bool VKHelper::updateDescriptorSet(VkDevice device, VkWriteDescriptorSet* writeD
 	return true;
 }
 
-bool VKHelper::reserveRenderTargets(VKRenderPassDataComponent* VKRPDC, IRenderingServer* renderingServer)
+bool VKHelper::reserveRenderTargets(VKRenderPassDataComponent *VKRPDC, IRenderingServer *renderingServer)
 {
 	if (VKRPDC->m_RenderPassDesc.m_UseColorBuffer)
 	{
-		size_t l_framebufferNumber = 0;
+		size_t l_framebufferCount = 0;
 		if (VKRPDC->m_RenderPassDesc.m_UseMultiFrames)
 		{
-			l_framebufferNumber = VKRPDC->m_RenderPassDesc.m_RenderTargetCount;
+			l_framebufferCount = VKRPDC->m_RenderPassDesc.m_RenderTargetCount;
 			VKRPDC->m_RenderTargets.reserve(1);
 			VKRPDC->m_RenderTargets.emplace_back();
 			VKRPDC->m_RenderTargetsResourceBinders.reserve(1);
@@ -1087,7 +1237,7 @@ bool VKHelper::reserveRenderTargets(VKRenderPassDataComponent* VKRPDC, IRenderin
 		}
 		else
 		{
-			l_framebufferNumber = 1;
+			l_framebufferCount = 1;
 			VKRPDC->m_RenderTargets.reserve(VKRPDC->m_RenderPassDesc.m_RenderTargetCount);
 			VKRPDC->m_RenderTargetsResourceBinders.reserve(VKRPDC->m_RenderPassDesc.m_RenderTargetCount);
 			for (size_t i = 0; i < VKRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
@@ -1100,8 +1250,8 @@ bool VKHelper::reserveRenderTargets(VKRenderPassDataComponent* VKRPDC, IRenderin
 		InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: ", VKRPDC->m_InstanceName.c_str(), " render targets have been allocated.");
 
 		// Reserve vectors and emplace empty objects
-		VKRPDC->m_Framebuffers.reserve(l_framebufferNumber);
-		for (size_t i = 0; i < l_framebufferNumber; i++)
+		VKRPDC->m_Framebuffers.reserve(l_framebufferCount);
+		for (size_t i = 0; i < l_framebufferCount; i++)
 		{
 			VKRPDC->m_Framebuffers.emplace_back();
 		}
@@ -1129,7 +1279,7 @@ bool VKHelper::reserveRenderTargets(VKRenderPassDataComponent* VKRPDC, IRenderin
 	return true;
 }
 
-bool VKHelper::createRenderTargets(VKRenderPassDataComponent* VKRPDC, IRenderingServer* renderingServer)
+bool VKHelper::createRenderTargets(VKRenderPassDataComponent *VKRPDC, IRenderingServer *renderingServer)
 {
 	for (size_t i = 0; i < VKRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
@@ -1160,7 +1310,7 @@ bool VKHelper::createRenderTargets(VKRenderPassDataComponent* VKRPDC, IRendering
 			VKRPDC->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
 			VKRPDC->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataFormat = TexturePixelDataFormat::Depth;
 		}
-		VKRPDC->m_DepthStencilRenderTarget->m_TextureData = { nullptr };
+		VKRPDC->m_DepthStencilRenderTarget->m_TextureData = {nullptr};
 
 		renderingServer->InitializeTextureDataComponent(VKRPDC->m_DepthStencilRenderTarget);
 	}
@@ -1170,92 +1320,98 @@ bool VKHelper::createRenderTargets(VKRenderPassDataComponent* VKRPDC, IRendering
 	return true;
 }
 
-bool VKHelper::createRenderPass(VkDevice device, VKRenderPassDataComponent* VKRPDC)
+bool VKHelper::createRenderPass(VkDevice device, VKRenderPassDataComponent *VKRPDC)
 {
-	auto l_PSO = reinterpret_cast<VKPipelineStateObject*>(VKRPDC->m_PipelineStateObject);
+	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(VKRPDC->m_PipelineStateObject);
 
 	l_PSO->m_RenderPassCInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 
-	l_PSO->m_ColorAttachmentRefs.reserve(VKRPDC->m_RenderPassDesc.m_RenderTargetCount);
-
-	for (size_t i = 0; i < VKRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+	if (VKRPDC->m_RenderPassDesc.m_UseOutputMerger)
 	{
-		VkAttachmentReference l_colorAttachmentRef = {};
-		l_colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		l_colorAttachmentRef.attachment = (uint32_t)i;
+		l_PSO->m_ColorAttachmentRefs.reserve(VKRPDC->m_RenderPassDesc.m_RenderTargetCount);
 
-		l_PSO->m_ColorAttachmentRefs.emplace_back(l_colorAttachmentRef);
-	}
-
-	VkAttachmentDescription l_colorAttachmentDesc = {};
-	l_colorAttachmentDesc.format = getTextureFormat(VKRPDC->m_RenderPassDesc.m_RenderTargetDesc);
-	l_colorAttachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
-	l_colorAttachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	l_colorAttachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	l_colorAttachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	l_colorAttachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	l_colorAttachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	l_colorAttachmentDesc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	for (size_t i = 0; i < VKRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
-	{
-		l_PSO->m_AttachmentDescs.emplace_back(l_colorAttachmentDesc);
-	}
-
-	// last attachment is depth attachment
-	if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
-	{
-		l_PSO->m_DepthAttachmentRef.attachment = (uint32_t)VKRPDC->m_RenderPassDesc.m_RenderTargetCount;
-		l_PSO->m_DepthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-		VkAttachmentDescription l_depthAttachmentDesc = {};
-
-		if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable)
+		for (size_t i = 0; i < VKRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 		{
-			l_depthAttachmentDesc.format = VK_FORMAT_D24_UNORM_S8_UINT;
-		}
-		else
-		{
-			l_depthAttachmentDesc.format = VK_FORMAT_D32_SFLOAT;
-		}
-		l_depthAttachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
-		l_depthAttachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		l_depthAttachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		l_depthAttachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		l_depthAttachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		l_depthAttachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		l_depthAttachmentDesc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+			VkAttachmentReference l_colorAttachmentRef = {};
+			l_colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+			l_colorAttachmentRef.attachment = (uint32_t)i;
 
-		l_PSO->m_AttachmentDescs.emplace_back(l_depthAttachmentDesc);
+			l_PSO->m_ColorAttachmentRefs.emplace_back(l_colorAttachmentRef);
+		}
+
+		VkAttachmentDescription l_colorAttachmentDesc = {};
+		l_colorAttachmentDesc.format = getTextureFormat(VKRPDC->m_RenderPassDesc.m_RenderTargetDesc);
+		l_colorAttachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
+		l_colorAttachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		l_colorAttachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		l_colorAttachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		l_colorAttachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		l_colorAttachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		l_colorAttachmentDesc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+		for (size_t i = 0; i < VKRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+		{
+			l_PSO->m_AttachmentDescs.emplace_back(l_colorAttachmentDesc);
+		}
+
+		// last attachment is depth attachment
+		if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
+		{
+			l_PSO->m_DepthAttachmentRef.attachment = (uint32_t)VKRPDC->m_RenderPassDesc.m_RenderTargetCount;
+			l_PSO->m_DepthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+			VkAttachmentDescription l_depthAttachmentDesc = {};
+
+			if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable)
+			{
+				l_depthAttachmentDesc.format = VK_FORMAT_D24_UNORM_S8_UINT;
+			}
+			else
+			{
+				l_depthAttachmentDesc.format = VK_FORMAT_D32_SFLOAT;
+			}
+			l_depthAttachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
+			l_depthAttachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+			l_depthAttachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+			l_depthAttachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+			l_depthAttachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+			l_depthAttachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			l_depthAttachmentDesc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+			l_PSO->m_AttachmentDescs.emplace_back(l_depthAttachmentDesc);
+		}
 	}
 
 	l_PSO->m_RenderPassCInfo.subpassCount = 1;
 	l_PSO->m_SubpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-	if (VKRPDC->m_RenderPassDesc.m_UseMultiFrames)
+	if (VKRPDC->m_RenderPassDesc.m_UseOutputMerger)
 	{
-		l_PSO->m_SubpassDesc.colorAttachmentCount = 1;
-		l_PSO->m_RenderPassCInfo.attachmentCount = 1;
-	}
-	else
-	{
-		l_PSO->m_SubpassDesc.colorAttachmentCount = (uint32_t)VKRPDC->m_RenderPassDesc.m_RenderTargetCount;
-		l_PSO->m_RenderPassCInfo.attachmentCount = (uint32_t)l_PSO->m_AttachmentDescs.size();
-	}
+		if (VKRPDC->m_RenderPassDesc.m_UseMultiFrames)
+		{
+			l_PSO->m_SubpassDesc.colorAttachmentCount = 1;
+			l_PSO->m_RenderPassCInfo.attachmentCount = 1;
+		}
+		else
+		{
+			l_PSO->m_SubpassDesc.colorAttachmentCount = (uint32_t)VKRPDC->m_RenderPassDesc.m_RenderTargetCount;
+			l_PSO->m_RenderPassCInfo.attachmentCount = (uint32_t)l_PSO->m_AttachmentDescs.size();
+		}
 
-	if (l_PSO->m_SubpassDesc.colorAttachmentCount)
-	{
-		l_PSO->m_SubpassDesc.pColorAttachments = &l_PSO->m_ColorAttachmentRefs[0];
-	}
+		if (l_PSO->m_SubpassDesc.colorAttachmentCount)
+		{
+			l_PSO->m_SubpassDesc.pColorAttachments = &l_PSO->m_ColorAttachmentRefs[0];
+		}
 
-	if (l_PSO->m_DepthAttachmentRef.attachment)
-	{
-		l_PSO->m_SubpassDesc.pDepthStencilAttachment = &l_PSO->m_DepthAttachmentRef;
-	}
+		if (l_PSO->m_DepthAttachmentRef.attachment)
+		{
+			l_PSO->m_SubpassDesc.pDepthStencilAttachment = &l_PSO->m_DepthAttachmentRef;
+		}
 
-	if (l_PSO->m_RenderPassCInfo.attachmentCount)
-	{
-		l_PSO->m_RenderPassCInfo.pAttachments = &l_PSO->m_AttachmentDescs[0];
+		if (l_PSO->m_RenderPassCInfo.attachmentCount)
+		{
+			l_PSO->m_RenderPassCInfo.pAttachments = &l_PSO->m_AttachmentDescs[0];
+		}
 	}
 
 	l_PSO->m_RenderPassCInfo.pSubpasses = &l_PSO->m_SubpassDesc;
@@ -1270,9 +1426,9 @@ bool VKHelper::createRenderPass(VkDevice device, VKRenderPassDataComponent* VKRP
 	return true;
 }
 
-bool VKHelper::createViewportAndScissor(VKRenderPassDataComponent* VKRPDC)
+bool VKHelper::createViewportAndScissor(VKRenderPassDataComponent *VKRPDC)
 {
-	auto l_PSO = reinterpret_cast<VKPipelineStateObject*>(VKRPDC->m_PipelineStateObject);
+	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(VKRPDC->m_PipelineStateObject);
 
 	l_PSO->m_Viewport.width = VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width;
 	l_PSO->m_Viewport.height = VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height;
@@ -1281,46 +1437,51 @@ bool VKHelper::createViewportAndScissor(VKRenderPassDataComponent* VKRPDC)
 	l_PSO->m_Viewport.x = VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_OriginX;
 	l_PSO->m_Viewport.y = VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_OriginY;
 
-	l_PSO->m_Scissor.offset = { 0, 0 };
+	l_PSO->m_Scissor.offset = {0, 0};
 	l_PSO->m_Scissor.extent.width = (uint32_t)l_PSO->m_Viewport.width;
 	l_PSO->m_Scissor.extent.height = (uint32_t)l_PSO->m_Viewport.height;
 
 	return true;
 }
 
-bool VKHelper::createSingleFramebuffer(VkDevice device, VKRenderPassDataComponent* VKRPDC)
+bool VKHelper::createSingleFramebuffer(VkDevice device, VKRenderPassDataComponent *VKRPDC)
 {
 	if (VKRPDC->m_RenderPassDesc.m_UseColorBuffer)
 	{
-		// create frame buffer and attach image view
-		auto l_PSO = reinterpret_cast<VKPipelineStateObject*>(VKRPDC->m_PipelineStateObject);
+		auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(VKRPDC->m_PipelineStateObject);
+		VkFramebufferCreateInfo framebufferCInfo = {};
+		framebufferCInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferCInfo.renderPass = l_PSO->m_RenderPass;
+		framebufferCInfo.width = (uint32_t)l_PSO->m_Viewport.width;
+		framebufferCInfo.height = (uint32_t)l_PSO->m_Viewport.height;
+		framebufferCInfo.layers = 1;
 
 		std::vector<VkImageView> attachments(l_PSO->m_AttachmentDescs.size());
 
-		for (size_t i = 0; i < VKRPDC->m_RenderTargets.size(); i++)
+		VkFramebufferAttachmentsCreateInfo l_framebufferAttachmentsCInfo = {};
+		l_framebufferAttachmentsCInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO;
+		l_framebufferAttachmentsCInfo.attachmentImageInfoCount = 0;
+
+		if(VKRPDC->m_RenderPassDesc.m_UseOutputMerger)
 		{
-			auto l_VKTDC = reinterpret_cast<VKTextureDataComponent*>(VKRPDC->m_RenderTargets[i]);
-			attachments[i] = l_VKTDC->m_imageView;
+			for (size_t i = 0; i < VKRPDC->m_RenderTargets.size(); i++)
+			{
+				auto l_VKTDC = reinterpret_cast<VKTextureDataComponent *>(VKRPDC->m_RenderTargets[i]);
+				attachments[i] = l_VKTDC->m_imageView;
+			}
+
+			if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
+			{
+				auto l_VKTDC = reinterpret_cast<VKTextureDataComponent *>(VKRPDC->m_DepthStencilRenderTarget);
+				attachments[attachments.size() - 1] = l_VKTDC->m_imageView;
+			}
+			framebufferCInfo.attachmentCount = (uint32_t)attachments.size();
+			framebufferCInfo.pAttachments = &attachments[0];
 		}
-
-		if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
+		else
 		{
-			auto l_VKTDC = reinterpret_cast<VKTextureDataComponent*>(VKRPDC->m_DepthStencilRenderTarget);
-			attachments[l_PSO->m_AttachmentDescs.size() - 1] = l_VKTDC->m_imageView;
-		}
-
-		VkFramebufferCreateInfo framebufferInfo = {};
-		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass = l_PSO->m_RenderPass;
-		framebufferInfo.attachmentCount = (uint32_t)attachments.size();
-		framebufferInfo.pAttachments = &attachments[0];
-		framebufferInfo.width = (uint32_t)l_PSO->m_Viewport.width;
-		framebufferInfo.height = (uint32_t)l_PSO->m_Viewport.height;
-		framebufferInfo.layers = 1;
-
-		if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &VKRPDC->m_Framebuffers[0]) != VK_SUCCESS)
-		{
-			InnoLogger::Log(LogLevel::Error, "VKRenderingServer: ", VKRPDC->m_InstanceName.c_str(), " failed to create VkFramebuffer!");
+			framebufferCInfo.flags |= VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
+			framebufferCInfo.pNext = &l_framebufferAttachmentsCInfo;
 		}
 
 		InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: Single VkFramebuffer has been created for ", VKRPDC->m_InstanceName.c_str());
@@ -1328,28 +1489,42 @@ bool VKHelper::createSingleFramebuffer(VkDevice device, VKRenderPassDataComponen
 	return true;
 }
 
-bool VKHelper::createMultipleFramebuffers(VkDevice device, VKRenderPassDataComponent* VKRPDC)
+bool VKHelper::createMultipleFramebuffers(VkDevice device, VKRenderPassDataComponent *VKRPDC)
 {
 	if (VKRPDC->m_RenderPassDesc.m_UseColorBuffer)
 	{
-		auto l_PSO = reinterpret_cast<VKPipelineStateObject*>(VKRPDC->m_PipelineStateObject);
+		auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(VKRPDC->m_PipelineStateObject);
+
+		VkFramebufferCreateInfo framebufferCInfo = {};
+		framebufferCInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferCInfo.renderPass = l_PSO->m_RenderPass;
+		framebufferCInfo.width = (uint32_t)l_PSO->m_Viewport.width;
+		framebufferCInfo.height = (uint32_t)l_PSO->m_Viewport.height;
+		framebufferCInfo.layers = 1;
 
 		for (size_t i = 0; i < VKRPDC->m_RenderTargets.size(); i++)
 		{
-			// create frame buffer and attach image view
-			auto l_VKTDC = reinterpret_cast<VKTextureDataComponent*>(VKRPDC->m_DepthStencilRenderTarget);
-			VkImageView attachments[] = { l_VKTDC->m_imageView };
+			auto l_attachmentCount = VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable ? 2 : 1;
+			std::vector<VkImageView> attachments(l_attachmentCount);
 
-			VkFramebufferCreateInfo framebufferInfo = {};
-			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			framebufferInfo.renderPass = l_PSO->m_RenderPass;
-			framebufferInfo.attachmentCount = 1;
-			framebufferInfo.pAttachments = attachments;
-			framebufferInfo.width = (uint32_t)l_PSO->m_Viewport.width;
-			framebufferInfo.height = (uint32_t)l_PSO->m_Viewport.height;
-			framebufferInfo.layers = 1;
+			if(VKRPDC->m_RenderPassDesc.m_UseOutputMerger)
+			{
+				auto l_VKTDC = reinterpret_cast<VKTextureDataComponent*>(VKRPDC->m_RenderTargets[i]);
+				attachments[0] = l_VKTDC->m_imageView;
+				if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
+				{
+					auto l_VKTDC = reinterpret_cast<VKTextureDataComponent *>(VKRPDC->m_DepthStencilRenderTarget);
+					attachments[1] = l_VKTDC->m_imageView;
+				}
+				framebufferCInfo.attachmentCount = (uint32_t)attachments.size();
+				framebufferCInfo.pAttachments = &attachments[0];
+			}
+			else
+			{
+				framebufferCInfo.flags |= VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
+			}
 
-			if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &VKRPDC->m_Framebuffers[i]) != VK_SUCCESS)
+			if (vkCreateFramebuffer(device, &framebufferCInfo, nullptr, &VKRPDC->m_Framebuffers[i]) != VK_SUCCESS)
 			{
 				InnoLogger::Log(LogLevel::Error, "VKRenderingServer: ", VKRPDC->m_InstanceName.c_str(), " failed to create VkFramebuffer!");
 			}
@@ -1366,21 +1541,29 @@ VkCompareOp VKHelper::GetComparisionFunctionEnum(ComparisionFunction comparision
 
 	switch (comparisionFunction)
 	{
-	case ComparisionFunction::Never: l_result = VkCompareOp::VK_COMPARE_OP_NEVER;
+	case ComparisionFunction::Never:
+		l_result = VkCompareOp::VK_COMPARE_OP_NEVER;
 		break;
-	case ComparisionFunction::Less: l_result = VkCompareOp::VK_COMPARE_OP_LESS;
+	case ComparisionFunction::Less:
+		l_result = VkCompareOp::VK_COMPARE_OP_LESS;
 		break;
-	case ComparisionFunction::Equal: l_result = VkCompareOp::VK_COMPARE_OP_EQUAL;
+	case ComparisionFunction::Equal:
+		l_result = VkCompareOp::VK_COMPARE_OP_EQUAL;
 		break;
-	case ComparisionFunction::LessEqual: l_result = VkCompareOp::VK_COMPARE_OP_LESS_OR_EQUAL;
+	case ComparisionFunction::LessEqual:
+		l_result = VkCompareOp::VK_COMPARE_OP_LESS_OR_EQUAL;
 		break;
-	case ComparisionFunction::Greater: l_result = VkCompareOp::VK_COMPARE_OP_GREATER;
+	case ComparisionFunction::Greater:
+		l_result = VkCompareOp::VK_COMPARE_OP_GREATER;
 		break;
-	case ComparisionFunction::NotEqual: l_result = VkCompareOp::VK_COMPARE_OP_NOT_EQUAL;
+	case ComparisionFunction::NotEqual:
+		l_result = VkCompareOp::VK_COMPARE_OP_NOT_EQUAL;
 		break;
-	case ComparisionFunction::GreaterEqual: l_result = VkCompareOp::VK_COMPARE_OP_GREATER_OR_EQUAL;
+	case ComparisionFunction::GreaterEqual:
+		l_result = VkCompareOp::VK_COMPARE_OP_GREATER_OR_EQUAL;
 		break;
-	case ComparisionFunction::Always: l_result = VkCompareOp::VK_COMPARE_OP_ALWAYS;
+	case ComparisionFunction::Always:
+		l_result = VkCompareOp::VK_COMPARE_OP_ALWAYS;
 		break;
 	default:
 		break;
@@ -1395,21 +1578,29 @@ VkStencilOp VKHelper::GetStencilOperationEnum(StencilOperation stencilOperation)
 
 	switch (stencilOperation)
 	{
-	case StencilOperation::Keep: l_result = VkStencilOp::VK_STENCIL_OP_KEEP;
+	case StencilOperation::Keep:
+		l_result = VkStencilOp::VK_STENCIL_OP_KEEP;
 		break;
-	case StencilOperation::Zero: l_result = VkStencilOp::VK_STENCIL_OP_ZERO;
+	case StencilOperation::Zero:
+		l_result = VkStencilOp::VK_STENCIL_OP_ZERO;
 		break;
-	case StencilOperation::Replace: l_result = VkStencilOp::VK_STENCIL_OP_REPLACE;
+	case StencilOperation::Replace:
+		l_result = VkStencilOp::VK_STENCIL_OP_REPLACE;
 		break;
-	case StencilOperation::IncreaseSat: l_result = VkStencilOp::VK_STENCIL_OP_INCREMENT_AND_WRAP;
+	case StencilOperation::IncreaseSat:
+		l_result = VkStencilOp::VK_STENCIL_OP_INCREMENT_AND_WRAP;
 		break;
-	case StencilOperation::DecreaseSat: l_result = VkStencilOp::VK_STENCIL_OP_DECREMENT_AND_WRAP;
+	case StencilOperation::DecreaseSat:
+		l_result = VkStencilOp::VK_STENCIL_OP_DECREMENT_AND_WRAP;
 		break;
-	case StencilOperation::Invert: l_result = VkStencilOp::VK_STENCIL_OP_INVERT;
+	case StencilOperation::Invert:
+		l_result = VkStencilOp::VK_STENCIL_OP_INVERT;
 		break;
-	case StencilOperation::Increase: l_result = VkStencilOp::VK_STENCIL_OP_INCREMENT_AND_CLAMP;
+	case StencilOperation::Increase:
+		l_result = VkStencilOp::VK_STENCIL_OP_INCREMENT_AND_CLAMP;
 		break;
-	case StencilOperation::Decrease: l_result = VkStencilOp::VK_STENCIL_OP_DECREMENT_AND_CLAMP;
+	case StencilOperation::Decrease:
+		l_result = VkStencilOp::VK_STENCIL_OP_DECREMENT_AND_CLAMP;
 		break;
 	default:
 		break;
@@ -1424,33 +1615,47 @@ VkBlendFactor VKHelper::GetBlendFactorEnum(BlendFactor blendFactor)
 
 	switch (blendFactor)
 	{
-	case BlendFactor::Zero: l_result = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
+	case BlendFactor::Zero:
+		l_result = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
 		break;
-	case BlendFactor::One: l_result = VkBlendFactor::VK_BLEND_FACTOR_ONE;
+	case BlendFactor::One:
+		l_result = VkBlendFactor::VK_BLEND_FACTOR_ONE;
 		break;
-	case BlendFactor::SrcColor: l_result = VkBlendFactor::VK_BLEND_FACTOR_SRC_COLOR;
+	case BlendFactor::SrcColor:
+		l_result = VkBlendFactor::VK_BLEND_FACTOR_SRC_COLOR;
 		break;
-	case BlendFactor::OneMinusSrcColor: l_result = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+	case BlendFactor::OneMinusSrcColor:
+		l_result = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
 		break;
-	case BlendFactor::SrcAlpha: l_result = VkBlendFactor::VK_BLEND_FACTOR_SRC_ALPHA;
+	case BlendFactor::SrcAlpha:
+		l_result = VkBlendFactor::VK_BLEND_FACTOR_SRC_ALPHA;
 		break;
-	case BlendFactor::OneMinusSrcAlpha: l_result = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+	case BlendFactor::OneMinusSrcAlpha:
+		l_result = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
 		break;
-	case BlendFactor::DestColor: l_result = VkBlendFactor::VK_BLEND_FACTOR_DST_COLOR;
+	case BlendFactor::DestColor:
+		l_result = VkBlendFactor::VK_BLEND_FACTOR_DST_COLOR;
 		break;
-	case BlendFactor::OneMinusDestColor: l_result = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+	case BlendFactor::OneMinusDestColor:
+		l_result = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
 		break;
-	case BlendFactor::DestAlpha: l_result = VkBlendFactor::VK_BLEND_FACTOR_DST_ALPHA;
+	case BlendFactor::DestAlpha:
+		l_result = VkBlendFactor::VK_BLEND_FACTOR_DST_ALPHA;
 		break;
-	case BlendFactor::OneMinusDestAlpha: l_result = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+	case BlendFactor::OneMinusDestAlpha:
+		l_result = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
 		break;
-	case BlendFactor::Src1Color: l_result = VkBlendFactor::VK_BLEND_FACTOR_SRC1_COLOR;
+	case BlendFactor::Src1Color:
+		l_result = VkBlendFactor::VK_BLEND_FACTOR_SRC1_COLOR;
 		break;
-	case BlendFactor::OneMinusSrc1Color: l_result = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
+	case BlendFactor::OneMinusSrc1Color:
+		l_result = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
 		break;
-	case BlendFactor::Src1Alpha: l_result = VkBlendFactor::VK_BLEND_FACTOR_SRC1_ALPHA;
+	case BlendFactor::Src1Alpha:
+		l_result = VkBlendFactor::VK_BLEND_FACTOR_SRC1_ALPHA;
 		break;
-	case BlendFactor::OneMinusSrc1Alpha: l_result = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
+	case BlendFactor::OneMinusSrc1Alpha:
+		l_result = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
 		break;
 	default:
 		break;
@@ -1465,9 +1670,11 @@ VkBlendOp VKHelper::GetBlendOperation(BlendOperation blendOperation)
 
 	switch (blendOperation)
 	{
-	case BlendOperation::Add: l_result = VkBlendOp::VK_BLEND_OP_ADD;
+	case BlendOperation::Add:
+		l_result = VkBlendOp::VK_BLEND_OP_ADD;
 		break;
-	case BlendOperation::Substruct: l_result = VkBlendOp::VK_BLEND_OP_SUBTRACT;
+	case BlendOperation::Substruct:
+		l_result = VkBlendOp::VK_BLEND_OP_SUBTRACT;
 		break;
 	default:
 		break;
@@ -1476,9 +1683,9 @@ VkBlendOp VKHelper::GetBlendOperation(BlendOperation blendOperation)
 	return l_result;
 }
 
-bool VKHelper::createPipelineLayout(VkDevice device, VKRenderPassDataComponent* VKRPDC)
+bool VKHelper::createPipelineLayout(VkDevice device, VKRenderPassDataComponent *VKRPDC)
 {
-	auto l_PSO = reinterpret_cast<VKPipelineStateObject*>(VKRPDC->m_PipelineStateObject);
+	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(VKRPDC->m_PipelineStateObject);
 
 	l_PSO->m_PipelineLayoutCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	l_PSO->m_PipelineLayoutCInfo.setLayoutCount = static_cast<uint32_t>(VKRPDC->m_DescriptorSetLayouts.size());
@@ -1500,7 +1707,7 @@ bool VKHelper::createPipelineLayout(VkDevice device, VKRenderPassDataComponent* 
 	return true;
 }
 
-bool VKHelper::GenerateViewportState(ViewportDesc viewportDesc, VKPipelineStateObject* PSO)
+bool VKHelper::GenerateViewportState(ViewportDesc viewportDesc, VKPipelineStateObject *PSO)
 {
 	PSO->m_ViewportStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 	PSO->m_ViewportStateCInfo.viewportCount = 1;
@@ -1511,7 +1718,7 @@ bool VKHelper::GenerateViewportState(ViewportDesc viewportDesc, VKPipelineStateO
 	return true;
 }
 
-bool VKHelper::GenerateRasterizerState(RasterizerDesc rasterizerDesc, VKPipelineStateObject* PSO)
+bool VKHelper::GenerateRasterizerState(RasterizerDesc rasterizerDesc, VKPipelineStateObject *PSO)
 {
 	PSO->m_InputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 
@@ -1583,7 +1790,7 @@ bool VKHelper::GenerateRasterizerState(RasterizerDesc rasterizerDesc, VKPipeline
 	return true;
 }
 
-bool VKHelper::GenerateDepthStencilState(DepthStencilDesc depthStencilDesc, VKPipelineStateObject* PSO)
+bool VKHelper::GenerateDepthStencilState(DepthStencilDesc depthStencilDesc, VKPipelineStateObject *PSO)
 {
 	PSO->m_DepthStencilStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 	PSO->m_DepthStencilStateCInfo.depthTestEnable = depthStencilDesc.m_DepthEnable;
@@ -1614,7 +1821,7 @@ bool VKHelper::GenerateDepthStencilState(DepthStencilDesc depthStencilDesc, VKPi
 	return true;
 }
 
-bool VKHelper::GenerateBlendState(BlendDesc blendDesc, size_t RTCount, VKPipelineStateObject* PSO)
+bool VKHelper::GenerateBlendState(BlendDesc blendDesc, size_t RTCount, VKPipelineStateObject *PSO)
 {
 	PSO->m_ColorBlendStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 
@@ -1652,9 +1859,9 @@ bool VKHelper::GenerateBlendState(BlendDesc blendDesc, size_t RTCount, VKPipelin
 	return true;
 }
 
-bool VKHelper::createGraphicsPipelines(VkDevice device, VKRenderPassDataComponent* VKRPDC)
+bool VKHelper::createGraphicsPipelines(VkDevice device, VKRenderPassDataComponent *VKRPDC)
 {
-	auto l_PSO = reinterpret_cast<VKPipelineStateObject*>(VKRPDC->m_PipelineStateObject);
+	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(VKRPDC->m_PipelineStateObject);
 
 	GenerateViewportState(VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
 	GenerateRasterizerState(VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
@@ -1662,7 +1869,7 @@ bool VKHelper::createGraphicsPipelines(VkDevice device, VKRenderPassDataComponen
 	GenerateBlendState(VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, VKRPDC->m_RenderPassDesc.m_RenderTargetCount, l_PSO);
 
 	// attach shader module and create pipeline
-	auto l_VKSPC = reinterpret_cast<VKShaderProgramComponent*>(VKRPDC->m_ShaderProgram);
+	auto l_VKSPC = reinterpret_cast<VKShaderProgramComponent *>(VKRPDC->m_ShaderProgram);
 	std::vector<VkPipelineShaderStageCreateInfo> l_shaderStageCInfos;
 	l_shaderStageCInfos.reserve(6);
 
@@ -1712,12 +1919,12 @@ bool VKHelper::createGraphicsPipelines(VkDevice device, VKRenderPassDataComponen
 	return true;
 }
 
-bool VKHelper::createComputePipelines(VkDevice device, VKRenderPassDataComponent* VKRPDC)
+bool VKHelper::createComputePipelines(VkDevice device, VKRenderPassDataComponent *VKRPDC)
 {
-	auto l_PSO = reinterpret_cast<VKPipelineStateObject*>(VKRPDC->m_PipelineStateObject);
+	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(VKRPDC->m_PipelineStateObject);
 
 	// attach shader module and create pipeline
-	auto l_VKSPC = reinterpret_cast<VKShaderProgramComponent*>(VKRPDC->m_ShaderProgram);
+	auto l_VKSPC = reinterpret_cast<VKShaderProgramComponent *>(VKRPDC->m_ShaderProgram);
 
 	l_PSO->m_ComputePipelineCInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
 	l_PSO->m_ComputePipelineCInfo.stage = l_VKSPC->m_CSCInfo;
@@ -1734,7 +1941,7 @@ bool VKHelper::createComputePipelines(VkDevice device, VKRenderPassDataComponent
 	return true;
 }
 
-bool VKHelper::createCommandBuffers(VkDevice device, VKRenderPassDataComponent* VKRPDC)
+bool VKHelper::createCommandBuffers(VkDevice device, VKRenderPassDataComponent *VKRPDC)
 {
 	VKRPDC->m_CommandLists.resize(VKRPDC->m_Framebuffers.size());
 
@@ -1746,7 +1953,7 @@ bool VKHelper::createCommandBuffers(VkDevice device, VKRenderPassDataComponent* 
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		allocInfo.commandBufferCount = 1;
 
-		auto l_VKCommandList = reinterpret_cast<VKCommandList*>(VKRPDC->m_CommandLists[i]);
+		auto l_VKCommandList = reinterpret_cast<VKCommandList *>(VKRPDC->m_CommandLists[i]);
 		if (vkAllocateCommandBuffers(device, &allocInfo, &l_VKCommandList->m_CommandBuffer) != VK_SUCCESS)
 		{
 			InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to allocate VkCommandBuffer!");
@@ -1758,7 +1965,7 @@ bool VKHelper::createCommandBuffers(VkDevice device, VKRenderPassDataComponent* 
 	return true;
 }
 
-bool VKHelper::createSyncPrimitives(VkDevice device, VKRenderPassDataComponent* VKRPDC)
+bool VKHelper::createSyncPrimitives(VkDevice device, VKRenderPassDataComponent *VKRPDC)
 {
 	VKRPDC->m_SignalSemaphores.resize(VKRPDC->m_Framebuffers.size());
 	VKRPDC->m_Fences.resize(VKRPDC->m_Framebuffers.size());
@@ -1774,8 +1981,8 @@ bool VKHelper::createSyncPrimitives(VkDevice device, VKRenderPassDataComponent* 
 
 	for (size_t i = 0; i < VKRPDC->m_Framebuffers.size(); i++)
 	{
-		auto l_VKSemaphore = reinterpret_cast<VKSemaphore*>(VKRPDC->m_SignalSemaphores[i]);
-		auto l_VKFence = reinterpret_cast<VKFence*>(VKRPDC->m_Fences[i]);
+		auto l_VKSemaphore = reinterpret_cast<VKSemaphore *>(VKRPDC->m_SignalSemaphores[i]);
+		auto l_VKFence = reinterpret_cast<VKFence *>(VKRPDC->m_Fences[i]);
 
 		if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &l_VKSemaphore->m_Semaphore) != VK_SUCCESS ||
 			vkCreateFence(device, &fenceInfo, nullptr, &l_VKFence->m_Fence) != VK_SUCCESS)
@@ -1790,7 +1997,7 @@ bool VKHelper::createSyncPrimitives(VkDevice device, VKRenderPassDataComponent* 
 	return true;
 }
 
-bool VKHelper::createShaderModule(VkDevice device, VkShaderModule& vkShaderModule, const ShaderFilePath& shaderFilePath)
+bool VKHelper::createShaderModule(VkDevice device, VkShaderModule &vkShaderModule, const ShaderFilePath &shaderFilePath)
 {
 	auto l_shaderFileName = m_shaderRelativePath + std::string(shaderFilePath.c_str()) + ".spv";
 	auto l_shaderContent = g_Engine->getFileSystem()->loadFile(l_shaderFileName.c_str(), IOMode::Binary);
@@ -1798,7 +2005,7 @@ bool VKHelper::createShaderModule(VkDevice device, VkShaderModule& vkShaderModul
 	VkShaderModuleCreateInfo l_createInfo = {};
 	l_createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 	l_createInfo.codeSize = l_shaderContent.size();
-	l_createInfo.pCode = reinterpret_cast<const uint32_t*>(l_shaderContent.data());
+	l_createInfo.pCode = reinterpret_cast<const uint32_t *>(l_shaderContent.data());
 
 	if (vkCreateShaderModule(device, &l_createInfo, nullptr, &vkShaderModule) != VK_SUCCESS)
 	{
@@ -1810,7 +2017,7 @@ bool VKHelper::createShaderModule(VkDevice device, VkShaderModule& vkShaderModul
 	return true;
 }
 
-VkWriteDescriptorSet VKHelper::createWriteDescriptorSet(const VkDescriptorImageInfo& imageInfo, uint32_t dstBinding, VkDescriptorSet descriptorSet)
+VkWriteDescriptorSet VKHelper::createWriteDescriptorSet(const VkDescriptorImageInfo &imageInfo, uint32_t dstBinding, VkDescriptorSet descriptorSet)
 {
 	VkWriteDescriptorSet l_result = {};
 	l_result.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
