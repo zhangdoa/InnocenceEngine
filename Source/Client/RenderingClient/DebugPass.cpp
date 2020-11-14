@@ -299,13 +299,13 @@ bool DebugPass::Render()
 		g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, m_debugSphereMeshGBDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
 		if (m_debugSphereConstantBuffer.size())
 		{
-			g_Engine->getRenderingServer()->DispatchDrawCall(m_RPDC, l_sphere, m_debugSphereConstantBuffer.size());
+			g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RPDC, l_sphere, m_debugSphereConstantBuffer.size());
 		}
 
 		g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, m_debugCubeMeshGBDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
 		if (m_debugCubeConstantBuffer.size())
 		{
-			g_Engine->getRenderingServer()->DispatchDrawCall(m_RPDC, l_cube, m_debugCubeConstantBuffer.size());
+			g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RPDC, l_cube, m_debugCubeConstantBuffer.size());
 		}
 
 		g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);

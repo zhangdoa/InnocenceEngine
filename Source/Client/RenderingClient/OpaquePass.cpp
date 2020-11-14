@@ -142,7 +142,7 @@ bool OpaquePass::PrepareCommandList()
 					g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[3].m_Texture->m_ResourceBinder, 6, 3);
 					g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[4].m_Texture->m_ResourceBinder, 7, 4);
 
-					g_Engine->getRenderingServer()->DispatchDrawCall(m_RPDC, l_drawCallData.mesh);
+					g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RPDC, l_drawCallData.mesh);
 
 					g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[0].m_Texture->m_ResourceBinder, 3, 0);
 					g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1].m_Texture->m_ResourceBinder, 4, 1);

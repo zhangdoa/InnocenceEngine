@@ -221,7 +221,7 @@ bool SunShadowPass::geometryProcess()
 
 						g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1].m_Texture->m_ResourceBinder, 3, 0);
 
-						g_Engine->getRenderingServer()->DispatchDrawCall(m_geometryProcessRPDC, l_drawCallData.mesh);
+						g_Engine->getRenderingServer()->DrawIndexedInstanced(m_geometryProcessRPDC, l_drawCallData.mesh);
 
 						g_Engine->getRenderingServer()->DeactivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1].m_Texture->m_ResourceBinder, 3, 0);
 					}
@@ -245,7 +245,7 @@ bool SunShadowPass::blur()
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_blurRPDC_Odd, ShaderStage::Compute, m_geometryProcessRPDC->m_RenderTargetsResourceBinders[0], 1, 0, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_blurRPDC_Odd, ShaderStage::Compute, m_oddTDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
 
-	g_Engine->getRenderingServer()->DispatchCompute(m_blurRPDC_Odd, m_shadowMapResolution / 8, m_shadowMapResolution / 8, 1);
+	g_Engine->getRenderingServer()->Dispatch(m_blurRPDC_Odd, m_shadowMapResolution / 8, m_shadowMapResolution / 8, 1);
 
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_blurRPDC_Odd, ShaderStage::Compute, m_geometryProcessRPDC->m_RenderTargetsResourceBinders[0], 1, 0, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_blurRPDC_Odd, ShaderStage::Compute, m_oddTDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
@@ -260,7 +260,7 @@ bool SunShadowPass::blur()
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_blurRPDC_Even, ShaderStage::Compute, m_oddTDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_blurRPDC_Even, ShaderStage::Compute, m_evenTDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
 
-	g_Engine->getRenderingServer()->DispatchCompute(m_blurRPDC_Even, m_shadowMapResolution / 8, m_shadowMapResolution / 8, 1);
+	g_Engine->getRenderingServer()->Dispatch(m_blurRPDC_Even, m_shadowMapResolution / 8, m_shadowMapResolution / 8, 1);
 
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_blurRPDC_Even, ShaderStage::Compute, m_oddTDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_blurRPDC_Even, ShaderStage::Compute, m_evenTDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);

@@ -152,7 +152,7 @@ bool BSDFTestPass::Render()
 	{
 		g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_offset, 1);
 		g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_offset, 1);
-		g_Engine->getRenderingServer()->DispatchDrawCall(m_RPDC, l_mesh);
+		g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RPDC, l_mesh);
 
 		l_offset++;
 	}

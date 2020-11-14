@@ -175,12 +175,12 @@ bool MTRenderingServer::ActivateResourceBinder(RenderPassDataComponent* renderPa
 	return true;
 }
 
-bool MTRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh, size_t instanceCount)
+bool MTRenderingServer::DrawIndexedInstanced(RenderPassDataComponent* renderPass, MeshDataComponent* mesh, size_t instanceCount)
 {
 	return true;
 }
 
-bool MTRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, size_t instanceCount)
+bool MTRenderingServer::DrawInstanced(RenderPassDataComponent* renderPass, size_t instanceCount)
 {
 	return true;
 }
@@ -220,7 +220,7 @@ bool MTRenderingServer::Present()
 	return true;
 }
 
-bool MTRenderingServer::DispatchCompute(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
+bool MTRenderingServer::Dispatch(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
 {
 	return true;
 }

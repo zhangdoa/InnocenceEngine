@@ -73,7 +73,7 @@ bool PostTAAPass::Render()
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, TAAPass::GetResult(), 0, 0);
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, m_TDC->m_ResourceBinder, 1, 0, Accessibility::ReadWrite);
 
-	g_Engine->getRenderingServer()->DispatchCompute(m_RPDC, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+	g_Engine->getRenderingServer()->Dispatch(m_RPDC, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, TAAPass::GetResult(), 0, 0);
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, m_TDC->m_ResourceBinder, 1, 0, Accessibility::ReadWrite);

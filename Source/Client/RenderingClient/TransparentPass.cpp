@@ -244,7 +244,7 @@ bool TransparentPass::geometryProcess()
 					g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
 					g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_drawCallData.materialConstantBufferIndex, 1);
 
-					g_Engine->getRenderingServer()->DispatchDrawCall(m_geometryProcessRPDC, l_drawCallData.mesh);
+					g_Engine->getRenderingServer()->DrawIndexedInstanced(m_geometryProcessRPDC, l_drawCallData.mesh);
 				}
 			}
 		}
@@ -275,7 +275,7 @@ bool TransparentPass::blend(IResourceBinder* canvas)
 
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_blendRPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 4, 0, Accessibility::ReadOnly);
 
-	g_Engine->getRenderingServer()->DispatchCompute(m_blendRPDC, 160, 90, 1);
+	g_Engine->getRenderingServer()->Dispatch(m_blendRPDC, 160, 90, 1);
 
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_blendRPDC, ShaderStage::Compute, m_geometryProcessHeadPtrTDC->m_ResourceBinder, 0, 0, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_blendRPDC, ShaderStage::Compute, m_geometryProcessRT0GBDC->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);

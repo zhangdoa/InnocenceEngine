@@ -132,7 +132,7 @@ bool LuminanceHistogramPass::CalculateHistogram(IResourceBinder* input)
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, m_LuminanceHistogramGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadOnly);
 
-	g_Engine->getRenderingServer()->DispatchCompute(m_RPDC_LuminanceHistogram, (uint32_t)l_numThreadGroupsX, (uint32_t)l_numThreadGroupsY, 1);
+	g_Engine->getRenderingServer()->Dispatch(m_RPDC_LuminanceHistogram, (uint32_t)l_numThreadGroupsX, (uint32_t)l_numThreadGroupsY, 1);
 
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, input, 0, 0, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LuminanceHistogram, ShaderStage::Compute, m_LuminanceHistogramGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
@@ -154,7 +154,7 @@ bool LuminanceHistogramPass::CalculateAverage()
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_LuminanceAverage, ShaderStage::Compute, m_LuminanceAverageGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_LuminanceAverage, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadOnly);
 
-	g_Engine->getRenderingServer()->DispatchCompute(m_RPDC_LuminanceAverage, 1, 1, 1);
+	g_Engine->getRenderingServer()->Dispatch(m_RPDC_LuminanceAverage, 1, 1, 1);
 
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LuminanceAverage, ShaderStage::Compute, m_LuminanceHistogramGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LuminanceAverage, ShaderStage::Compute, m_LuminanceAverageGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);

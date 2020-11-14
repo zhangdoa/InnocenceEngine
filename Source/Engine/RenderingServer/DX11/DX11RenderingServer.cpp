@@ -1523,7 +1523,7 @@ bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent* rend
 	return true;
 }
 
-bool DX11RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh, size_t instanceCount)
+bool DX11RenderingServer::DrawIndexedInstanced(RenderPassDataComponent* renderPass, MeshDataComponent* mesh, size_t instanceCount)
 {
 	auto l_rhs = reinterpret_cast<DX11MeshDataComponent*>(mesh);
 
@@ -1539,7 +1539,7 @@ bool DX11RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, 
 	return true;
 }
 
-bool DX11RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, size_t instanceCount)
+bool DX11RenderingServer::DrawInstanced(RenderPassDataComponent* renderPass, size_t instanceCount)
 {
 	m_deviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
 
@@ -1641,7 +1641,7 @@ bool DX11RenderingServer::Present()
 
 	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
 
-	DispatchDrawCall(m_SwapChainRPDC, l_mesh, 1);
+	DrawIndexedInstanced(m_SwapChainRPDC, l_mesh, 1);
 
 	DeactivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
@@ -1665,7 +1665,7 @@ bool DX11RenderingServer::Present()
 	return true;
 }
 
-bool DX11RenderingServer::DispatchCompute(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
+bool DX11RenderingServer::Dispatch(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
 {
 	m_deviceContext->Dispatch(threadGroupX, threadGroupY, threadGroupZ);
 

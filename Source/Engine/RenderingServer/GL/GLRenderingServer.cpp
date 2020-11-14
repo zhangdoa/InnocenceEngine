@@ -925,7 +925,7 @@ bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent* renderPa
 	return true;
 }
 
-bool GLRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh, size_t instanceCount)
+bool GLRenderingServer::DrawIndexedInstanced(RenderPassDataComponent* renderPass, MeshDataComponent* mesh, size_t instanceCount)
 {
 	auto l_GLPSO = reinterpret_cast<GLPipelineStateObject*>(renderPass->m_PipelineStateObject);
 	auto l_mesh = reinterpret_cast<GLMeshDataComponent*>(mesh);
@@ -936,7 +936,7 @@ bool GLRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, Me
 	return true;
 }
 
-bool GLRenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, size_t instanceCount)
+bool GLRenderingServer::DrawInstanced(RenderPassDataComponent* renderPass, size_t instanceCount)
 {
 	auto l_GLPSO = reinterpret_cast<GLPipelineStateObject*>(renderPass->m_PipelineStateObject);
 
@@ -1000,7 +1000,7 @@ bool GLRenderingServer::Present()
 
 	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
 
-	DispatchDrawCall(m_SwapChainRPDC, l_mesh, 1);
+	DrawIndexedInstanced(m_SwapChainRPDC, l_mesh, 1);
 
 	DeactivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
@@ -1019,7 +1019,7 @@ bool GLRenderingServer::Present()
 	return true;
 }
 
-bool GLRenderingServer::DispatchCompute(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
+bool GLRenderingServer::Dispatch(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
 {
 	glDispatchCompute(threadGroupX, threadGroupY, threadGroupZ);
 	glMemoryBarrier(GL_ALL_BARRIER_BITS);

@@ -670,7 +670,7 @@ bool VoxelizationPass::geometryProcess()
 					g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[3].m_Texture->m_ResourceBinder, 8, 3);
 					g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[4].m_Texture->m_ResourceBinder, 9, 4);
 
-					g_Engine->getRenderingServer()->DispatchDrawCall(m_geometryProcessRPDC, l_drawCallData.mesh);
+					g_Engine->getRenderingServer()->DrawIndexedInstanced(m_geometryProcessRPDC, l_drawCallData.mesh);
 
 					g_Engine->getRenderingServer()->DeactivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[0].m_Texture->m_ResourceBinder, 5, 0);
 					g_Engine->getRenderingServer()->DeactivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1].m_Texture->m_ResourceBinder, 6, 1);
@@ -701,7 +701,7 @@ bool VoxelizationPass::convert()
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_convertRPDC, ShaderStage::Compute, m_normalVolume->m_ResourceBinder, 2, 2, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_convertRPDC, ShaderStage::Compute, m_voxelizationPassCBufferGBDC->m_ResourceBinder, 3, 9, Accessibility::ReadOnly);
 
-	g_Engine->getRenderingServer()->DispatchCompute(m_convertRPDC, m_voxelizationResolution / 8, m_voxelizationResolution / 8, m_voxelizationResolution / 8);
+	g_Engine->getRenderingServer()->Dispatch(m_convertRPDC, m_voxelizationResolution / 8, m_voxelizationResolution / 8, m_voxelizationResolution / 8);
 
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_convertRPDC, ShaderStage::Compute, m_geometryProcessSBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_convertRPDC, ShaderStage::Compute, m_initialBounceVolume->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
@@ -728,7 +728,7 @@ bool VoxelizationPass::multiBounce(TextureDataComponent* input, TextureDataCompo
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_multiBounceRPDC, ShaderStage::Compute, input->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_multiBounceRPDC, ShaderStage::Compute, output->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
 
-	g_Engine->getRenderingServer()->DispatchCompute(m_multiBounceRPDC, m_voxelizationResolution / 8, m_voxelizationResolution / 8, m_voxelizationResolution / 8);
+	g_Engine->getRenderingServer()->Dispatch(m_multiBounceRPDC, m_voxelizationResolution / 8, m_voxelizationResolution / 8, m_voxelizationResolution / 8);
 
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_multiBounceRPDC, ShaderStage::Compute, input->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_multiBounceRPDC, ShaderStage::Compute, output->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
@@ -755,7 +755,7 @@ bool VoxelizationPass::screenSpaceFeedback(TextureDataComponent* output)
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, LightPass::GetResult(1), 1, 1, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, output->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
 
-	g_Engine->getRenderingServer()->DispatchCompute(m_SSFeedBackRPDC, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+	g_Engine->getRenderingServer()->Dispatch(m_SSFeedBackRPDC, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, LightPass::GetResult(1), 1, 1, Accessibility::ReadOnly);
@@ -780,7 +780,7 @@ bool VoxelizationPass::rayTracing(TextureDataComponent* input, TextureDataCompon
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_rayTracingRPDC, ShaderStage::Compute, m_rayTracingRaySBufferGBDC->m_ResourceBinder, 5, 1, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_rayTracingRPDC, ShaderStage::Compute, m_rayTracingProbeIndexSBufferGBDC->m_ResourceBinder, 6, 2, Accessibility::ReadWrite);
 
-	g_Engine->getRenderingServer()->DispatchCompute(m_rayTracingRPDC, 8, 8, 8);
+	g_Engine->getRenderingServer()->Dispatch(m_rayTracingRPDC, 8, 8, 8);
 
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_rayTracingRPDC, ShaderStage::Compute, input->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_rayTracingRPDC, ShaderStage::Compute, m_normalVolume->m_ResourceBinder, 1, 1, Accessibility::ReadOnly);
@@ -806,7 +806,7 @@ bool VoxelizationPass::visualization(TextureDataComponent* input)
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_visualizationRPDC, ShaderStage::Vertex, m_voxelizationPassCBufferGBDC->m_ResourceBinder, 2, 9, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_visualizationRPDC, ShaderStage::Geometry, m_voxelizationPassCBufferGBDC->m_ResourceBinder, 2, 9, Accessibility::ReadOnly);
 
-	g_Engine->getRenderingServer()->DispatchDrawCall(m_visualizationRPDC, m_voxelizationResolution * m_voxelizationResolution * m_voxelizationResolution);
+	g_Engine->getRenderingServer()->DrawInstanced(m_visualizationRPDC, m_voxelizationResolution * m_voxelizationResolution * m_voxelizationResolution);
 
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_visualizationRPDC, ShaderStage::Vertex, input->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 

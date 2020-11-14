@@ -226,7 +226,7 @@ bool GIResolveTestPass::Render()
 		g_Engine->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Vertex, m_probeSphereMeshGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadOnly);
 		g_Engine->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3, 1, Accessibility::ReadOnly);
 
-		g_Engine->getRenderingServer()->DispatchDrawCall(m_probeRPDC, l_sphere, m_probeSphereMeshData.size());
+		g_Engine->getRenderingServer()->DrawIndexedInstanced(m_probeRPDC, l_sphere, m_probeSphereMeshData.size());
 
 		g_Engine->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3, 1, Accessibility::ReadOnly);
 

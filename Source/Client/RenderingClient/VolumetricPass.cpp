@@ -395,7 +395,7 @@ bool VolumetricPass::froxelization()
 					g_Engine->getRenderingServer()->ActivateResourceBinder(m_froxelizationRPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
 					g_Engine->getRenderingServer()->ActivateResourceBinder(m_froxelizationRPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_drawCallData.materialConstantBufferIndex, 1);
 
-					g_Engine->getRenderingServer()->DispatchDrawCall(m_froxelizationRPDC, l_drawCallData.mesh);
+					g_Engine->getRenderingServer()->DrawIndexedInstanced(m_froxelizationRPDC, l_drawCallData.mesh);
 				}
 			}
 		}
@@ -445,7 +445,7 @@ bool VolumetricPass::irraidanceInjection()
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_irraidanceInjectionRPDC, ShaderStage::Compute, LightCullingPass::GetLightGrid(), 7, 1, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_irraidanceInjectionRPDC, ShaderStage::Compute, LightCullingPass::GetLightIndexList(), 8, 2, Accessibility::ReadOnly);
 
-	g_Engine->getRenderingServer()->DispatchCompute(m_irraidanceInjectionRPDC, l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ);
+	g_Engine->getRenderingServer()->Dispatch(m_irraidanceInjectionRPDC, l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ);
 
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_irraidanceInjectionRPDC, ShaderStage::Compute, m_irraidanceInjectionResult->m_ResourceBinder, 4, 0, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_irraidanceInjectionRPDC, ShaderStage::Compute, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 5, 1, Accessibility::ReadWrite);
@@ -506,7 +506,7 @@ bool VolumetricPass::rayMarching()
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, l_historyResultBinder, 5, 3, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, l_currentResultBinder, 6, 0, Accessibility::ReadWrite);
 
-	g_Engine->getRenderingServer()->DispatchCompute(m_rayMarchingRPDC, l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ);
+	g_Engine->getRenderingServer()->Dispatch(m_rayMarchingRPDC, l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ);
 
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_irraidanceInjectionResult->m_ResourceBinder, 2, 0, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_rayMarchingRPDC, ShaderStage::Compute, m_froxelizationRPDC->m_RenderTargetsResourceBinders[0], 3, 1, Accessibility::ReadOnly);
@@ -550,7 +550,7 @@ bool VolumetricPass::visualization(IResourceBinder* input)
 					g_Engine->getRenderingServer()->ActivateResourceBinder(m_visualizationRPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
 					g_Engine->getRenderingServer()->ActivateResourceBinder(m_visualizationRPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_drawCallData.materialConstantBufferIndex, 1);
 
-					g_Engine->getRenderingServer()->DispatchDrawCall(m_visualizationRPDC, l_drawCallData.mesh);
+					g_Engine->getRenderingServer()->DrawIndexedInstanced(m_visualizationRPDC, l_drawCallData.mesh);
 				}
 			}
 		}

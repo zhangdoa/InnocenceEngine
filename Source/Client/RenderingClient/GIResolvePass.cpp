@@ -648,7 +648,7 @@ bool GIResolvePass::generateSkyRadiance()
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_skyRadianceRPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_skyRadianceRPDC, ShaderStage::Compute, m_skyRadianceVolume->m_ResourceBinder, 1, 0, Accessibility::ReadWrite);
 
-	g_Engine->getRenderingServer()->DispatchCompute(m_skyRadianceRPDC, 1, 1, 1);
+	g_Engine->getRenderingServer()->Dispatch(m_skyRadianceRPDC, 1, 1, 1);
 
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_skyRadianceRPDC, ShaderStage::Compute, m_skyRadianceVolume->m_ResourceBinder, 1, 0, Accessibility::ReadWrite);
 
@@ -666,7 +666,7 @@ bool GIResolvePass::generateSkyIrradiance()
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_skyIrradianceRPDC, ShaderStage::Compute, m_skyRadianceVolume->m_ResourceBinder, 0, 0, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_skyIrradianceRPDC, ShaderStage::Compute, m_skyIrradianceGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
 
-	g_Engine->getRenderingServer()->DispatchCompute(m_skyIrradianceRPDC, 1, 1, 1);
+	g_Engine->getRenderingServer()->Dispatch(m_skyIrradianceRPDC, 1, 1, 1);
 
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_skyIrradianceRPDC, ShaderStage::Compute, m_skyRadianceVolume->m_ResourceBinder, 0, 0, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_skyIrradianceRPDC, ShaderStage::Compute, m_skyIrradianceGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
@@ -709,7 +709,7 @@ bool GIResolvePass::litSurfels()
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 5, 1, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, SunShadowPass::GetShadowMap(), 6, 0);
 
-	g_Engine->getRenderingServer()->DispatchCompute(m_surfelRPDC, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide);
+	g_Engine->getRenderingServer()->Dispatch(m_surfelRPDC, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide);
 
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC->m_ResourceBinder, 4, 0, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 5, 1, Accessibility::ReadWrite);
@@ -749,7 +749,7 @@ bool GIResolvePass::litBricks()
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 3, 1, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_brickIrradianceGBDC->m_ResourceBinder, 4, 2, Accessibility::ReadWrite);
 
-	g_Engine->getRenderingServer()->DispatchCompute(m_brickRPDC, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide);
+	g_Engine->getRenderingServer()->Dispatch(m_brickRPDC, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide);
 
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_brickGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_brickRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC->m_ResourceBinder, 3, 1, Accessibility::ReadWrite);
@@ -792,7 +792,7 @@ bool GIResolvePass::litProbes()
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_brickIrradianceGBDC->m_ResourceBinder, 5, 2, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_probeVolume->m_ResourceBinder, 6, 3, Accessibility::ReadWrite);
 
-	g_Engine->getRenderingServer()->DispatchCompute(m_probeRPDC, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide);
+	g_Engine->getRenderingServer()->Dispatch(m_probeRPDC, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide);
 
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_probeGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_probeRPDC, ShaderStage::Compute, m_brickFactorGBDC->m_ResourceBinder, 4, 1, Accessibility::ReadWrite);
@@ -834,7 +834,7 @@ bool GIResolvePass::generateIrradianceVolume()
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, m_skyIrradianceGBDC->m_ResourceBinder, 5, 1, Accessibility::ReadWrite);
 
 	// @TODO: Buggy on OpenGL + Nvidia
-	g_Engine->getRenderingServer()->DispatchCompute(m_irradianceVolumeRPDC, 8, 4, 8);
+	g_Engine->getRenderingServer()->Dispatch(m_irradianceVolumeRPDC, 8, 4, 8);
 
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, m_probeVolume->m_ResourceBinder, 3, 0, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_irradianceVolumeRPDC, ShaderStage::Compute, m_irradianceVolume->m_ResourceBinder, 4, 0, Accessibility::ReadWrite);

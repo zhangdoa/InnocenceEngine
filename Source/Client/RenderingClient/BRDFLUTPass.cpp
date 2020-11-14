@@ -96,7 +96,7 @@ bool BRDFLUTPass::Render()
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC);
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, m_TDC->m_ResourceBinder, 0, 0, Accessibility::ReadWrite);
 
-	g_Engine->getRenderingServer()->DispatchCompute(m_RPDC, 32, 32, 1);
+	g_Engine->getRenderingServer()->Dispatch(m_RPDC, 32, 32, 1);
 
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, m_TDC->m_ResourceBinder, 0, 0, Accessibility::ReadWrite);
 
@@ -109,7 +109,7 @@ bool BRDFLUTPass::Render()
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_MS, ShaderStage::Compute, m_TDC->m_ResourceBinder, 0, 0);
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_MS, ShaderStage::Compute, m_TDC_MS->m_ResourceBinder, 1, 0, Accessibility::ReadWrite);
 
-	g_Engine->getRenderingServer()->DispatchCompute(m_RPDC_MS, 32, 32, 1);
+	g_Engine->getRenderingServer()->Dispatch(m_RPDC_MS, 32, 32, 1);
 
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC_MS, ShaderStage::Compute, m_TDC->m_ResourceBinder, 0, 0);
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC_MS, ShaderStage::Compute, m_TDC_MS->m_ResourceBinder, 1, 0, Accessibility::ReadWrite);

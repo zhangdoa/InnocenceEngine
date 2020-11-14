@@ -67,8 +67,8 @@ namespace Inno
 		// globalSlot: The root descriptor table index in DirectX 12/The first set index in Vulkan
 		// localSlot: The local type-related register slot index, like "binding = 5" in GLSL or  "t(4)"/"c(3)" in HLSL
 		virtual bool ActivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility = Accessibility::ReadOnly, size_t startOffset = 0, size_t elementCount = SIZE_MAX) = 0;
-		virtual bool DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh, size_t instanceCount = 1) = 0;
-		virtual bool DispatchDrawCall(RenderPassDataComponent* renderPass, size_t instanceCount = 1) = 0;
+		virtual bool DrawIndexedInstanced(RenderPassDataComponent* renderPass, MeshDataComponent* mesh, size_t instanceCount = 1) = 0;
+		virtual bool DrawInstanced(RenderPassDataComponent* renderPass, size_t instanceCount = 1) = 0;
 		virtual bool DeactivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility = Accessibility::ReadOnly, size_t startOffset = 0, size_t elementCount = SIZE_MAX) = 0;
 		virtual bool CommandListEnd(RenderPassDataComponent* rhs) = 0;
 		virtual bool ExecuteCommandList(RenderPassDataComponent* rhs) = 0;
@@ -77,7 +77,7 @@ namespace Inno
 		virtual IResourceBinder* GetUserPipelineOutput() = 0;
 		virtual bool Present() = 0;
 
-		virtual bool DispatchCompute(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) = 0;
+		virtual bool Dispatch(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) = 0;
 
 		virtual Vec4 ReadRenderTargetSample(RenderPassDataComponent* rhs, size_t renderTargetIndex, size_t x, size_t y) = 0;
 		virtual std::vector<Vec4> ReadTextureBackToCPU(RenderPassDataComponent* canvas, TextureDataComponent* TDC) = 0;

@@ -47,8 +47,8 @@ namespace Inno
 		bool BindRenderPassDataComponent(RenderPassDataComponent* rhs) override;
 		bool CleanRenderTargets(RenderPassDataComponent* rhs) override;
 		bool ActivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount) override;
-		bool DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh, size_t instanceCount) override;
-		bool DispatchDrawCall(RenderPassDataComponent* renderPass, size_t instanceCount) override;
+		bool DrawIndexedInstanced(RenderPassDataComponent* renderPass, MeshDataComponent* mesh, size_t instanceCount) override;
+		bool DrawInstanced(RenderPassDataComponent* renderPass, size_t instanceCount) override;
 		bool DeactivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount) override;
 		bool CommandListEnd(RenderPassDataComponent* rhs) override;
 		bool ExecuteCommandList(RenderPassDataComponent* rhs) override;
@@ -57,7 +57,7 @@ namespace Inno
 		IResourceBinder* GetUserPipelineOutput() override;
 		bool Present() override;
 
-		bool DispatchCompute(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) override;
+		bool Dispatch(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) override;
 
 		Vec4 ReadRenderTargetSample(RenderPassDataComponent* rhs, size_t renderTargetIndex, size_t x, size_t y) override;
 		std::vector<Vec4> ReadTextureBackToCPU(RenderPassDataComponent* canvas, TextureDataComponent* TDC) override;

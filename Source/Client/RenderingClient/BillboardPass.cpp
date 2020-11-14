@@ -104,7 +104,7 @@ bool BillboardPass::Render()
 
 		g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_iconTexture->m_ResourceBinder, 2, 0);
 
-		g_Engine->getRenderingServer()->DispatchDrawCall(m_RPDC, l_mesh, l_instanceCount);
+		g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RPDC, l_mesh, l_instanceCount);
 
 		g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Pixel, l_iconTexture->m_ResourceBinder, 2, 0);
 	}

@@ -1186,7 +1186,8 @@ bool DX12RenderingServer::InitializeMaterialDataComponent(MaterialDataComponent*
 	}
 
 	auto l_rhs = reinterpret_cast<DX12MaterialDataComponent*>(rhs);
-
+	l_rhs->m_ResourceBinder = addResourcesBinder();
+	
 	auto l_defaultMaterial = g_Engine->getRenderingFrontend()->getDefaultMaterialDataComponent();
 
 	for (size_t i = 0; i < 8; i++)
@@ -1977,7 +1978,7 @@ bool DX12RenderingServer::ActivateResourceBinder(RenderPassDataComponent* render
 	return true;
 }
 
-bool DX12RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, MeshDataComponent* mesh, size_t instanceCount)
+bool DX12RenderingServer::DrawIndexedInstanced(RenderPassDataComponent* renderPass, MeshDataComponent* mesh, size_t instanceCount)
 {
 	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
@@ -1992,7 +1993,7 @@ bool DX12RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, 
 	return true;
 }
 
-bool DX12RenderingServer::DispatchDrawCall(RenderPassDataComponent* renderPass, size_t instanceCount)
+bool DX12RenderingServer::DrawInstanced(RenderPassDataComponent* renderPass, size_t instanceCount)
 {
 	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
@@ -2089,7 +2090,7 @@ bool DX12RenderingServer::Present()
 
 	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
 
-	DispatchDrawCall(m_SwapChainRPDC, l_mesh, 1);
+	DrawIndexedInstanced(m_SwapChainRPDC, l_mesh, 1);
 
 	DeactivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
@@ -2112,7 +2113,7 @@ bool DX12RenderingServer::Present()
 	return true;
 }
 
-bool DX12RenderingServer::DispatchCompute(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
+bool DX12RenderingServer::Dispatch(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
 {
 	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent*>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList*>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);

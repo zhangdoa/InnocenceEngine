@@ -276,7 +276,7 @@ bool LightCullingPass::PrepareCommandList()
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_TileFrustum, ShaderStage::Compute, l_dispatchParamsGBDC->m_ResourceBinder, 1, 6, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_TileFrustum, ShaderStage::Compute, m_tileFrustumGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite, 0);
 
-	g_Engine->getRenderingServer()->DispatchCompute(m_RPDC_TileFrustum, m_tileFrustumNumThreadGroups.x, m_tileFrustumNumThreadGroups.y, m_tileFrustumNumThreadGroups.z);
+	g_Engine->getRenderingServer()->Dispatch(m_RPDC_TileFrustum, m_tileFrustumNumThreadGroups.x, m_tileFrustumNumThreadGroups.y, m_tileFrustumNumThreadGroups.z);
 
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC_TileFrustum, ShaderStage::Compute, m_tileFrustumGBDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite, 0);
 
@@ -300,7 +300,7 @@ bool LightCullingPass::PrepareCommandList()
 	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, OpaquePass::GetRPDC()->m_DepthStencilRenderTarget->m_ResourceBinder, 8, 0, Accessibility::ReadOnly);
 
 	// @TODO: Buggy on OpenGL + Nvidia
-	g_Engine->getRenderingServer()->DispatchCompute(m_RPDC_LightCulling, m_lightCullingNumThreadGroups.x, m_lightCullingNumThreadGroups.y, m_lightCullingNumThreadGroups.z);
+	g_Engine->getRenderingServer()->Dispatch(m_RPDC_LightCulling, m_lightCullingNumThreadGroups.x, m_lightCullingNumThreadGroups.y, m_lightCullingNumThreadGroups.z);
 
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_tileFrustumGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadWrite, 0);
 	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC_LightCulling, ShaderStage::Compute, m_lightListIndexCounterGBDC->m_ResourceBinder, 4, 1, Accessibility::ReadWrite, 0);

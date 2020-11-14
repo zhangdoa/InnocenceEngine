@@ -199,7 +199,7 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 		{
 			g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_Probe, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_offset, 1);
 
-			g_Engine->getRenderingServer()->DispatchDrawCall(m_RPDC_Probe, l_staticPerObjectConstantBuffer.mesh);
+			g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RPDC_Probe, l_staticPerObjectConstantBuffer.mesh);
 		}
 
 		l_offset++;
@@ -535,7 +535,7 @@ bool InnoBakerNS::drawObjects(Probe& probeCache, const Mat4& p, const std::vecto
 				g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[4].m_Texture->m_ResourceBinder, 7, 4);
 			}
 
-			g_Engine->getRenderingServer()->DispatchDrawCall(m_RPDC_Surfel, l_staticPerObjectConstantBuffer.mesh);
+			g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RPDC_Surfel, l_staticPerObjectConstantBuffer.mesh);
 
 			if (l_staticPerObjectConstantBuffer.material->m_ObjectStatus == ObjectStatus::Activated)
 			{
@@ -1033,7 +1033,7 @@ bool InnoBakerNS::drawBricks(Vec4 pos, uint32_t bricksCount, const Mat4& p, cons
 	{
 		g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC_BrickFactor, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_offset, 1);
 
-		g_Engine->getRenderingServer()->DispatchDrawCall(m_RPDC_BrickFactor, l_mesh);
+		g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RPDC_BrickFactor, l_mesh);
 
 		l_offset++;
 	}

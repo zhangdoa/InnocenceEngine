@@ -163,7 +163,7 @@ bool AnimationPass::PrepareCommandList()
 					g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, i.drawCallInfo.material->m_TextureSlots[4].m_Texture->m_ResourceBinder, 7, 4);
 				}
 
-				g_Engine->getRenderingServer()->DispatchDrawCall(m_RPDC, i.drawCallInfo.mesh);
+				g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RPDC, i.drawCallInfo.mesh);
 
 				if (i.drawCallInfo.material->m_ObjectStatus == ObjectStatus::Activated)
 				{
