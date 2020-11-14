@@ -4,18 +4,18 @@
 #include "../../Engine/Interface/IEngine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine* g_Engine;
+extern INNO_ENGINE_API IEngine *g_Engine;
 
 namespace AnimationStateMachine
 {
 	bool setup();
 	bool simulate();
-	bool changeState(const std::string& state);
+	bool changeState(const std::string &state);
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-	InnoEntity* m_entity;
-	VisibleComponent* m_visibleComponent;
+	InnoEntity *m_entity;
+	VisibleComponent *m_visibleComponent;
 	std::string m_currentState;
 	bool isStateChanged;
 
@@ -67,7 +67,7 @@ namespace AnimationStateMachine
 		return false;
 	}
 
-	bool changeState(const std::string& state)
+	bool changeState(const std::string &state)
 	{
 		if (state != m_currentState)
 		{
@@ -77,8 +77,9 @@ namespace AnimationStateMachine
 		}
 		return false;
 	}
-}
+} // namespace AnimationStateMachine
 
+#define EDITOR_MODE
 namespace PlayerComponentCollection
 {
 	bool setup();
@@ -86,12 +87,12 @@ namespace PlayerComponentCollection
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-	InnoEntity* m_playerParentEntity;
-	InnoEntity* m_playerCameraParentEntity;
+	InnoEntity *m_playerParentEntity;
+	InnoEntity *m_playerCameraParentEntity;
 
-	TransformComponent* m_playerTransformComponent;
-	VisibleComponent* m_playerVisibleComponent;
-	TransformComponent* m_playerCameraTransformComponent;
+	TransformComponent *m_playerTransformComponent;
+	VisibleComponent *m_playerVisibleComponent;
+	TransformComponent *m_playerCameraTransformComponent;
 
 	std::function<void()> f_moveForward;
 	std::function<void()> f_moveBackward;
@@ -116,9 +117,13 @@ namespace PlayerComponentCollection
 	float m_rotateSpeed = 0;
 	bool m_canMove = false;
 	bool m_canSlerp = false;
+#ifdef EDITOR_MODE
+	bool m_smoothInterp = false;
+	bool m_isTP = false;
+#else
 	bool m_smoothInterp = true;
 	bool m_isTP = true;
-
+#endif
 	void move(Direction direction, float length);
 	Vec4 m_targetCameraRotX;
 	Vec4 m_targetCameraRotY;
@@ -130,7 +135,7 @@ namespace PlayerComponentCollection
 	void rotateAroundRightAxis(float offset);
 
 	std::function<void()> f_sceneLoadingFinishCallback;
-};
+}; // namespace PlayerComponentCollection
 
 using namespace PlayerComponentCollection;
 
@@ -178,35 +183,35 @@ bool PlayerComponentCollection::setup()
 		f_rotateAroundRightAxis = std::bind(&rotateAroundRightAxis, std::placeholders::_1);
 
 		f_addForce = [&]() {
-			auto l_force = InnoMath::getDirection(Direction::Backward, m_playerTransformComponent->m_localTransformVector.m_rot);
+			auto l_force = InnoMath::getDirection(Direction::Backward, m_playerCameraTransformComponent->m_localTransformVector.m_rot);
 			l_force = l_force * 10.0f;
 			g_Engine->getPhysicsSystem()->addForce(m_playerVisibleComponent, l_force);
 		};
 
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_S, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveForward });
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_W, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveBackward });
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_A, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveLeft });
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_D, true }, ButtonEvent{ EventLifeTime::Continuous, &f_moveRight });
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_S, true}, ButtonEvent{EventLifeTime::Continuous, &f_moveForward});
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_W, true}, ButtonEvent{EventLifeTime::Continuous, &f_moveBackward});
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_A, true}, ButtonEvent{EventLifeTime::Continuous, &f_moveLeft});
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_D, true}, ButtonEvent{EventLifeTime::Continuous, &f_moveRight});
 
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_S, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_W, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_A, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_D, true }, ButtonEvent{ EventLifeTime::OneShot, &f_move });
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_S, true}, ButtonEvent{EventLifeTime::OneShot, &f_move});
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_W, true}, ButtonEvent{EventLifeTime::OneShot, &f_move});
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_A, true}, ButtonEvent{EventLifeTime::OneShot, &f_move});
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_D, true}, ButtonEvent{EventLifeTime::OneShot, &f_move});
 
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_S, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_W, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_A, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_D, false }, ButtonEvent{ EventLifeTime::OneShot, &f_stop });
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_S, false}, ButtonEvent{EventLifeTime::OneShot, &f_stop});
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_W, false}, ButtonEvent{EventLifeTime::OneShot, &f_stop});
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_A, false}, ButtonEvent{EventLifeTime::OneShot, &f_stop});
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_D, false}, ButtonEvent{EventLifeTime::OneShot, &f_stop});
 
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_E, true }, ButtonEvent{ EventLifeTime::OneShot, &f_addForce });
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_E, true}, ButtonEvent{EventLifeTime::OneShot, &f_addForce});
 
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_SPACE, true }, ButtonEvent{ EventLifeTime::Continuous, &f_speedUp });
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_SPACE, false }, ButtonEvent{ EventLifeTime::Continuous, &f_speedDown });
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_SPACE, true}, ButtonEvent{EventLifeTime::Continuous, &f_speedUp});
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_SPACE, false}, ButtonEvent{EventLifeTime::Continuous, &f_speedDown});
 
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_MOUSE_BUTTON_RIGHT, true }, ButtonEvent{ EventLifeTime::Continuous, &f_allowMove });
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_MOUSE_BUTTON_RIGHT, false }, ButtonEvent{ EventLifeTime::Continuous, &f_forbidMove });
-		g_Engine->getEventSystem()->addMouseMovementCallback(MouseMovementAxis::Horizontal, MouseMovementEvent{ EventLifeTime::OneShot, &f_rotateAroundPositiveYAxis });
-		g_Engine->getEventSystem()->addMouseMovementCallback(MouseMovementAxis::Vertical, MouseMovementEvent{ EventLifeTime::OneShot,&f_rotateAroundRightAxis });
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_MOUSE_BUTTON_RIGHT, true}, ButtonEvent{EventLifeTime::Continuous, &f_allowMove});
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_MOUSE_BUTTON_RIGHT, false}, ButtonEvent{EventLifeTime::Continuous, &f_forbidMove});
+		g_Engine->getEventSystem()->addMouseMovementCallback(MouseMovementAxis::Horizontal, MouseMovementEvent{EventLifeTime::OneShot, &f_rotateAroundPositiveYAxis});
+		g_Engine->getEventSystem()->addMouseMovementCallback(MouseMovementAxis::Vertical, MouseMovementEvent{EventLifeTime::OneShot, &f_rotateAroundRightAxis});
 
 		m_initialMoveSpeed = 0.5f;
 		m_moveSpeed = m_initialMoveSpeed;
@@ -233,12 +238,20 @@ void PlayerComponentCollection::move(Direction direction, float length)
 			auto l_playerDir = InnoMath::getDirection(direction, m_playerTransformComponent->m_localTransformVector.m_rot);
 			auto l_currentPlayerPos = m_playerTransformComponent->m_localTransformVector.m_pos;
 			m_playerTransformComponent->m_localTransformVector_target.m_pos = InnoMath::moveTo(l_currentPlayerPos, l_playerDir, length);
+			if(!m_smoothInterp)
+			{
+				m_playerTransformComponent->m_localTransformVector.m_pos = m_playerTransformComponent->m_localTransformVector_target.m_pos;
+			}
 		}
 		else
 		{
 			auto l_cameraDir = InnoMath::getDirection(direction, m_playerCameraTransformComponent->m_localTransformVector.m_rot);
 			auto l_currentCameraPos = m_playerCameraTransformComponent->m_localTransformVector.m_pos;
 			m_playerCameraTransformComponent->m_localTransformVector_target.m_pos = InnoMath::moveTo(l_currentCameraPos, l_cameraDir, length);
+			if(!m_smoothInterp)
+			{
+				m_playerCameraTransformComponent->m_localTransformVector.m_pos = m_playerCameraTransformComponent->m_localTransformVector_target.m_pos;
+			}
 		}
 	}
 }
@@ -247,14 +260,20 @@ void PlayerComponentCollection::rotateAroundPositiveYAxis(float offset)
 {
 	if (m_canMove)
 	{
-		m_canSlerp = false;
 		m_targetCameraRotY = InnoMath::getQuatRotator(
 			Vec4(0.0f, 1.0f, 0.0f, 0.0f),
-			((-offset * m_rotateSpeed) / 180.0f) * PI<float>
-		);
+			((-offset * m_rotateSpeed) / 180.0f) * PI<float>);
+
+		m_canSlerp = false;
+
 		m_playerTransformComponent->m_localTransformVector_target.m_rot = m_targetCameraRotY.quatMul(m_playerTransformComponent->m_localTransformVector_target.m_rot);
 		m_playerCameraTransformComponent->m_localTransformVector_target.m_rot = m_targetCameraRotY.quatMul(m_playerCameraTransformComponent->m_localTransformVector_target.m_rot);
 
+		if (!m_smoothInterp)
+		{
+			m_playerTransformComponent->m_localTransformVector.m_rot = m_playerTransformComponent->m_localTransformVector_target.m_rot;
+			m_playerCameraTransformComponent->m_localTransformVector.m_rot = m_playerCameraTransformComponent->m_localTransformVector_target.m_rot;
+		}
 		m_canSlerp = true;
 	}
 }
@@ -268,9 +287,13 @@ void PlayerComponentCollection::rotateAroundRightAxis(float offset)
 		auto l_right = InnoMath::getDirection(Direction::Right, m_playerCameraTransformComponent->m_localTransformVector_target.m_rot);
 		m_targetCameraRotX = InnoMath::getQuatRotator(
 			l_right,
-			((offset * m_rotateSpeed) / 180.0f) * PI<float>
-		);
+			((offset * m_rotateSpeed) / 180.0f) * PI<float>);
 		m_playerCameraTransformComponent->m_localTransformVector_target.m_rot = m_targetCameraRotX.quatMul(m_playerCameraTransformComponent->m_localTransformVector_target.m_rot);
+
+		if (!m_smoothInterp)
+		{
+			m_playerCameraTransformComponent->m_localTransformVector.m_rot = m_playerCameraTransformComponent->m_localTransformVector_target.m_rot;
+		}
 
 		m_canSlerp = true;
 	}
@@ -281,29 +304,29 @@ namespace GameClientNS
 	float seed = 0.0f;
 	bool allowUpdate = true;
 
-	std::vector<InnoEntity*> m_referenceSphereEntites;
-	std::vector<TransformComponent*> m_referenceSphereTransformComponents;
-	std::vector<VisibleComponent*> m_referenceSphereVisibleComponents;
+	std::vector<InnoEntity *> m_referenceSphereEntites;
+	std::vector<TransformComponent *> m_referenceSphereTransformComponents;
+	std::vector<VisibleComponent *> m_referenceSphereVisibleComponents;
 
-	std::vector<InnoEntity*> m_opaqueSphereEntites;
-	std::vector<TransformComponent*> m_opaqueSphereTransformComponents;
-	std::vector<VisibleComponent*> m_opaqueSphereVisibleComponents;
+	std::vector<InnoEntity *> m_opaqueSphereEntites;
+	std::vector<TransformComponent *> m_opaqueSphereTransformComponents;
+	std::vector<VisibleComponent *> m_opaqueSphereVisibleComponents;
 
-	std::vector<InnoEntity*> m_transparentCubeEntites;
-	std::vector<TransformComponent*> m_transparentCubeTransformComponents;
-	std::vector<VisibleComponent*> m_transparentCubeVisibleComponents;
+	std::vector<InnoEntity *> m_transparentCubeEntites;
+	std::vector<TransformComponent *> m_transparentCubeTransformComponents;
+	std::vector<VisibleComponent *> m_transparentCubeVisibleComponents;
 
-	std::vector<InnoEntity*> m_volumetricCubeEntites;
-	std::vector<TransformComponent*> m_volumetricCubeTransformComponents;
-	std::vector<VisibleComponent*> m_volumetricCubeVisibleComponents;
+	std::vector<InnoEntity *> m_volumetricCubeEntites;
+	std::vector<TransformComponent *> m_volumetricCubeTransformComponents;
+	std::vector<VisibleComponent *> m_volumetricCubeVisibleComponents;
 
-	std::vector<InnoEntity*> m_occlusionCubeEntites;
-	std::vector<TransformComponent*> m_occlusionCubeTransformComponents;
-	std::vector<VisibleComponent*> m_occlusionCubeVisibleComponents;
+	std::vector<InnoEntity *> m_occlusionCubeEntites;
+	std::vector<TransformComponent *> m_occlusionCubeTransformComponents;
+	std::vector<VisibleComponent *> m_occlusionCubeVisibleComponents;
 
-	std::vector<InnoEntity*> m_pointLightEntites;
-	std::vector<TransformComponent*> m_pointLightTransformComponents;
-	std::vector<LightComponent*> m_pointLightComponents;
+	std::vector<InnoEntity *> m_pointLightEntites;
+	std::vector<TransformComponent *> m_pointLightTransformComponents;
+	std::vector<LightComponent *> m_pointLightComponents;
 
 	Vec4 m_posOffset;
 	std::default_random_engine m_generator;
@@ -320,7 +343,7 @@ namespace GameClientNS
 	bool initialize();
 
 	bool update();
-	bool updateMaterial(Model* model, Vec4 albedo, Vec4 MRAT, ShaderModel shaderModel = ShaderModel::Opaque);
+	bool updateMaterial(Model *model, Vec4 albedo, Vec4 MRAT, ShaderModel shaderModel = ShaderModel::Opaque);
 	void updateSpheres();
 
 	void runTest(uint32_t testTime, std::function<bool()> testCase);
@@ -335,7 +358,7 @@ namespace GameClientNS
 	std::function<void()> f_pauseGame;
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
-}
+} // namespace GameClientNS
 
 bool GameClientNS::setupReferenceSpheres()
 {
@@ -454,8 +477,8 @@ bool GameClientNS::setupOcclusionCubes()
 
 			l_currentComponent->m_localTransformVector.m_rot =
 				InnoMath::calcRotatedLocalRotator(l_currentComponent->m_localTransformVector.m_rot,
-					Vec4(0.0f, 1.0f, 0.0f, 0.0f),
-					l_randomRotDelta(m_generator));
+												  Vec4(0.0f, 1.0f, 0.0f, 0.0f),
+												  l_randomRotDelta(m_generator));
 		}
 	}
 
@@ -516,8 +539,8 @@ bool GameClientNS::setupOpaqueSpheres()
 
 			l_currentComponent->m_localTransformVector.m_rot =
 				InnoMath::calcRotatedLocalRotator(l_currentComponent->m_localTransformVector.m_rot,
-					Vec4(l_randomPosDelta(m_generator), l_randomPosDelta(m_generator), l_randomPosDelta(m_generator), 0.0f).normalize(),
-					l_randomRotDelta(m_generator));
+												  Vec4(l_randomPosDelta(m_generator), l_randomPosDelta(m_generator), l_randomPosDelta(m_generator), 0.0f).normalize(),
+												  l_randomRotDelta(m_generator));
 		}
 	}
 
@@ -659,8 +682,7 @@ bool GameClientNS::setupPointLights()
 			m_pointLightTransformComponents[i * l_matrixDim + j]->m_localTransformVector.m_pos =
 				m_playerCameraTransformComponent->m_localTransformVector.m_pos +
 				Vec4(
-					(-(l_matrixDim - 1.0f) * l_breadthInterval * l_randomPosDelta(m_generator) / 2.0f)
-					+ (i * l_breadthInterval), l_randomPosDelta(m_generator) * 32.0f,
+					(-(l_matrixDim - 1.0f) * l_breadthInterval * l_randomPosDelta(m_generator) / 2.0f) + (i * l_breadthInterval), l_randomPosDelta(m_generator) * 32.0f,
 					(j * l_breadthInterval) - 2.0f * (l_matrixDim - 1),
 					0.0f);
 		}
@@ -697,8 +719,8 @@ bool GameClientNS::setup()
 	f_runRayTracing = [&]() { g_Engine->getRenderingFrontend()->runRayTrace(); };
 	f_pauseGame = [&]() { allowUpdate = !allowUpdate; };
 
-	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_N, true }, ButtonEvent{ EventLifeTime::OneShot, &f_runRayTracing });
-	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_F, true }, ButtonEvent{ EventLifeTime::OneShot, &f_pauseGame });
+	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_N, true}, ButtonEvent{EventLifeTime::OneShot, &f_runRayTracing});
+	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_F, true}, ButtonEvent{EventLifeTime::OneShot, &f_pauseGame});
 
 	f_sceneLoadingFinishCallback = [&]() {
 		m_posOffset = m_playerCameraTransformComponent->m_localTransformVector.m_pos;
@@ -723,25 +745,23 @@ bool GameClientNS::setup()
 
 bool GameClientNS::initialize()
 {
-	f_loadTestScene = []()
-	{
+	f_loadTestScene = []() {
 		//g_Engine->getSceneSystem()->loadScene("..//Res//Scenes//GITestBox.InnoScene");
 		//g_Engine->getSceneSystem()->loadScene("..//Res//Scenes//GITestSibenik.InnoScene");
 		//g_Engine->getSceneSystem()->loadScene("..//Res//Scenes//GITestSponza.InnoScene");
 		g_Engine->getSceneSystem()->loadScene("..//Res//Scenes//GITestFireplaceRoom.InnoScene");
 	};
 
-	f_convertModel = []()
-	{
+	f_convertModel = []() {
 		g_Engine->getAssetSystem()->convertModel("..//Res//Models//Wolf//Wolf.fbx", "..//Res//ConvertedAssets//");
 	};
-	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_R, true }, ButtonEvent{ EventLifeTime::OneShot, &f_loadTestScene });
-	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_Y, true }, ButtonEvent{ EventLifeTime::OneShot, &f_convertModel });
+	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_R, true}, ButtonEvent{EventLifeTime::OneShot, &f_loadTestScene});
+	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_Y, true}, ButtonEvent{EventLifeTime::OneShot, &f_convertModel});
 
 	return true;
 }
 
-bool GameClientNS::updateMaterial(Model* model, Vec4 albedo, Vec4 MRAT, ShaderModel shaderModel)
+bool GameClientNS::updateMaterial(Model *model, Vec4 albedo, Vec4 MRAT, ShaderModel shaderModel)
 {
 	if (model)
 	{
@@ -762,7 +782,7 @@ bool GameClientNS::updateMaterial(Model* model, Vec4 albedo, Vec4 MRAT, ShaderMo
 	return true;
 };
 
-bool DefaultLogicClient::Setup(ISystemConfig* systemConfig)
+bool DefaultLogicClient::Setup(ISystemConfig *systemConfig)
 {
 	bool l_result = true;
 	l_result = l_result && PlayerComponentCollection::setup();
@@ -873,12 +893,10 @@ Vec4 GameClientNS::getMousePositionInWorldSpace()
 	auto pCamera = l_mainCamera->m_projectionMatrix;
 	auto rCamera =
 		InnoMath::getInvertRotationMatrix(
-			l_cameraTransformComponent->m_globalTransformVector.m_rot
-		);
+			l_cameraTransformComponent->m_globalTransformVector.m_rot);
 	auto tCamera =
 		InnoMath::getInvertTranslationMatrix(
-			l_cameraTransformComponent->m_globalTransformVector.m_pos
-		);
+			l_cameraTransformComponent->m_globalTransformVector.m_pos);
 	//Column-Major memory layout
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 	l_ndcSpace = InnoMath::mul(l_ndcSpace, pCamera.inverse());
