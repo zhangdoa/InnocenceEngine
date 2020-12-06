@@ -28,7 +28,7 @@ struct ConeTraceResult
 
 inline ConeTraceResult ConeTrace(
 	in Texture3D<float4> voxelTexture,
-	in SamplerState SamplerTypePoint,
+	in SamplerState samplerTypePoint,
 	in float3 P,
 	in float3 N,
 	in float3 coneDirection,
@@ -55,7 +55,7 @@ inline ConeTraceResult ConeTrace(
 		if (!is_saturated || (mip >= 4))
 			break;
 
-		float4 sam = voxelTexture.SampleLevel(SamplerTypePoint, tc, mip);
+		float4 sam = voxelTexture.SampleLevel(samplerTypePoint, tc, mip);
 
 		color += sam.rgb;
 		if (sam.a == 1.0)
@@ -74,7 +74,7 @@ inline ConeTraceResult ConeTrace(
 
 inline float4 ConeTraceRadianceDiffuse(
 	in Texture3D<float4> voxelTexture,
-	in SamplerState SamplerTypePoint,
+	in SamplerState samplerTypePoint,
 	in float3 P,
 	in float3 N,
 	in VoxelizationPass_CB voxelizationPassCBuffer
@@ -88,7 +88,7 @@ inline float4 ConeTraceRadianceDiffuse(
 
 		coneDirection *= dot(coneDirection, N) < 0 ? -1 : 1;
 
-		radiance += ConeTrace(voxelTexture, SamplerTypePoint, P, N, coneDirection, tan(PI * 0.5f * 0.33f), voxelizationPassCBuffer).color;
+		radiance += ConeTrace(voxelTexture, samplerTypePoint, P, N, coneDirection, tan(PI * 0.5f * 0.33f), voxelizationPassCBuffer).color;
 	}
 
 	radiance *= voxelizationPassCBuffer.numConesRcp;
@@ -98,7 +98,7 @@ inline float4 ConeTraceRadianceDiffuse(
 
 inline float4 ConeTraceRadianceSpecular(
 	in Texture3D<float4> voxelTexture,
-	in SamplerState SamplerTypePoint,
+	in SamplerState samplerTypePoint,
 	in float3 P,
 	in float3 N,
 	in float3 R,
@@ -107,7 +107,7 @@ inline float4 ConeTraceRadianceSpecular(
 {
 	float3 coneDirection = normalize(R);
 
-	ConeTraceResult l_result = ConeTrace(voxelTexture, SamplerTypePoint, P, N, coneDirection, 0, voxelizationPassCBuffer);
+	ConeTraceResult l_result = ConeTrace(voxelTexture, samplerTypePoint, P, N, coneDirection, 0, voxelizationPassCBuffer);
 
 	return l_result.color / (l_result.info.x * l_result.info.x);
 }

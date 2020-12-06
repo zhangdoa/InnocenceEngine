@@ -4,12 +4,12 @@
 [[vk::binding(0, 1)]]
 Texture2D t2d_albedo : register(t0);
 [[vk::binding(0, 2)]]
-SamplerState SampleTypeWrap : register(s0);
+SamplerState in_samplerTypeWrap : register(s0);
 
 struct PixelInputType
 {
 	float4 posCS : SV_POSITION;
-	float2 texcoord : TEXCOORD;
+	float2 texCoord : TEXCOORD;
 	uint rtvId : SV_RenderTargetArrayIndex;
 };
 
@@ -29,7 +29,7 @@ PixelOutputType main(PixelInputType input)
 	float transparency;
 	if (materialCBuffer.textureSlotMask & 0x00000002)
 	{
-		float4 l_albedo = t2d_albedo.Sample(SampleTypeWrap, input.texcoord);
+		float4 l_albedo = t2d_albedo.Sample(in_samplerTypeWrap, input.texCoord);
 		transparency = l_albedo.a;
 	}
 	else

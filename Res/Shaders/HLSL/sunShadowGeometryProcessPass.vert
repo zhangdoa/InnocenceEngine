@@ -3,25 +3,25 @@
 
 struct VertexInputType
 {
-	float4 position : POSITION;
-	float2 texcoord : TEXCOORD;
+	float4 posLS : POSITION;
+	float2 texCoord : TEXCOORD;
 	float2 pada : PADA;
-	float4 normal : NORMAL;
+	float4 normalLS : NORMAL;
 	float4 padb : PADB;
 };
 
 struct GeometryInputType
 {
 	float4 posWS : SV_POSITION;
-	float2 texcoord : TEXCOORD;
+	float2 texCoord : TEXCOORD;
 };
 
 GeometryInputType main(VertexInputType input)
 {
 	GeometryInputType output;
 
-	output.posWS = mul(input.position, perObjectCBuffer.m);
-	output.texcoord = input.texcoord;
+	output.posWS = mul(input.posLS, perObjectCBuffer.m);
+	output.texCoord = input.texCoord;
 
 	return output;
 }

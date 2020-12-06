@@ -20,7 +20,7 @@ Texture2D<uint2> in_LightGrid : register(t1);
 [[vk::binding(2, 2)]]
 StructuredBuffer<uint> in_LightIndexList : register(t2);
 [[vk::binding(0, 3)]]
-SamplerState SamplerTypePoint : register(s0);
+SamplerState in_samplerTypePoint : register(s0);
 
 #include "common/BSDF.hlsl"
 #include "common/shadowResolver.hlsl"
@@ -43,7 +43,7 @@ void main(ComputeInputType input)
 		eyePos /= eyePos.w;
 		eyePos = mul(eyePos, perFrameCBuffer.v_inv);
 
-		//Lo *= 1.0 - SunShadowResolver(eyePos, SamplerTypePoint);
+		//Lo *= 1.0 - SunShadowResolver(eyePos, in_SunShadow, in_samplerTypePoint);
 
 		uint2 tileIndex = uint2(floor(input.dispatchThreadID.xy * 8 / BLOCK_SIZE));
 

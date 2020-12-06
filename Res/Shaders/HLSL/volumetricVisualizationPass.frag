@@ -4,7 +4,7 @@
 [[vk::binding(0, 1)]]
 Texture3D in_volume : register(t0);
 [[vk::binding(0, 2)]]
-SamplerState SamplerTypePoint : register(s0);
+SamplerState in_samplerTypePoint : register(s0);
 
 struct PixelInputType
 {
@@ -26,7 +26,7 @@ PixelOutputType main(PixelInputType input)
 	tc = tc * 0.5f + 0.5f;
 	tc.z = input.posCS.z;
 
-	float4 result = in_volume.Sample(SamplerTypePoint, tc);
+	float4 result = in_volume.Sample(in_samplerTypePoint, tc);
 
 	output.visualizationPassRT0 = float4(result.xyz, 1.0);
 

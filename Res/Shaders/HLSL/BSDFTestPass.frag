@@ -6,7 +6,7 @@ Texture2D in_BRDFLUT : register(t0);
 [[vk::binding(1, 1)]]
 Texture2D in_BRDFMSLUT : register(t1);
 [[vk::binding(0, 2)]]
-SamplerState SampleTypePoint : register(s0);
+SamplerState in_samplerTypePoint : register(s0);
 
 #include "common/BSDF.hlsl"
 
@@ -53,7 +53,7 @@ PixelOutputType main(PixelInputType input)
 	float D = D_GGX(NdotH, out_roughness);
 	float3 Frss = F * G * D;
 
-	float3 Frms = getFrMS(in_BRDFLUT, in_BRDFMSLUT, SampleTypePoint, NdotL, NdotV, F0, out_roughness);
+	float3 Frms = getFrMS(in_BRDFLUT, in_BRDFMSLUT, in_samplerTypePoint, NdotL, NdotV, F0, out_roughness);
 
 	float3 Fr = Frss + Frms;
 

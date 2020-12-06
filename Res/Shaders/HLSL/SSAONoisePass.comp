@@ -20,9 +20,9 @@ Texture2D in_normal : register(t1);
 [[vk::binding(2, 1)]]
 Texture2D in_randomRot : register(t2);
 [[vk::binding(0, 2)]]
-SamplerState SamplerTypePoint : register(s0);
+SamplerState in_samplerTypePoint : register(s0);
 [[vk::binding(1, 2)]]
-SamplerState SamplerTypeWrap : register(s1);
+SamplerState in_samplerTypeWrap : register(s1);
 [[vk::binding(0, 3)]]
 RWTexture2D<float4> out_SSAOPassRT0 : register(u0);
 
@@ -32,7 +32,7 @@ void main(ComputeInputType input)
 	float2 readCoord = (float2)input.dispatchThreadID.xy;
 
 	// Repeat address mode
-	float3 randomRot = in_randomRot.SampleLevel(SamplerTypeWrap, readCoord, 0.0).xyz;
+	float3 randomRot = in_randomRot.SampleLevel(in_samplerTypeWrap, readCoord, 0.0).xyz;
 
 	// alpha channel is used previously, remove its unwanted influence
 	// world space position to view space
@@ -70,7 +70,7 @@ void main(ComputeInputType input)
 		randomCoord.y = 1.0 - randomCoord.y;
 
 		// get sample depth
-		float4 randomFragSamplePos = in_position.SampleLevel(SamplerTypePoint, randomCoord.xy, 0.0);
+		float4 randomFragSamplePos = in_position.SampleLevel(in_samplerTypePoint, randomCoord.xy, 0.0);
 
 		// alpha channel is used previously, remove its unwanted influence
 		randomFragSamplePos.w = 1.0f;

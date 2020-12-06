@@ -6,7 +6,7 @@ struct PixelInputType
 	float4 posCS : SV_POSITION;
 	float3 posWS : POSITION;
 	float2 TexCoord : TEXCOORD;
-	float3 Normal : NORMAL;
+	float3 normalWS : NORMAL;
 };
 
 [[vk::binding(0, 1)]]
@@ -23,7 +23,7 @@ RWStructuredBuffer<uint> in_atomicCounter : register(u3);
 [earlydepthstencil]
 void main(PixelInputType input)
 {
-	float3 N = normalize(input.Normal);
+	float3 N = normalize(input.normalWS);
 
 	float3 V = normalize(perFrameCBuffer.camera_posWS.xyz - input.posWS.xyz);
 	float3 L = normalize(-perFrameCBuffer.sun_direction.xyz);

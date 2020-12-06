@@ -15,10 +15,10 @@ StructuredBuffer<billboardMeshData> billboardSBuffer : register(t12);
 
 struct VertexInputType
 {
-	float4 position : POSITION;
-	float2 texcoord : TEXCOORD;
+	float4 posLS : POSITION;
+	float2 texCoord : TEXCOORD;
 	float2 pada : PADA;
-	float4 normal : NORMAL;
+	float4 normalLS : NORMAL;
 	float4 padb : PADB;
 	uint instanceId : SV_InstanceID;
 };
@@ -26,7 +26,7 @@ struct VertexInputType
 struct PixelInputType
 {
 	float4 posCS : SV_POSITION;
-	float2 texcoord : TEXCOORD;
+	float2 texCoord : TEXCOORD;
 };
 
 PixelInputType main(VertexInputType input)
@@ -40,8 +40,8 @@ PixelInputType main(VertexInputType input)
 	output.posCS /= output.posCS.w;
 	float denom = distance;
 	float2 shearingRatio = float2(perFrameCBuffer.viewportSize.y / perFrameCBuffer.viewportSize.x, 1.0) / clamp(denom, 1.0, distance);
-	output.posCS.xy += input.position.xy * shearingRatio;
-	output.texcoord = input.texcoord;
+	output.posCS.xy += input.posLS.xy * shearingRatio;
+	output.texCoord = input.texCoord;
 
 	return output;
 }

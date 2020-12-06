@@ -12,14 +12,14 @@ Texture2D t2d_roughness : register(t3);
 [[vk::binding(4, 1)]]
 Texture2D t2d_ao : register(t4);
 [[vk::binding(0, 2)]]
-SamplerState SampleTypeWrap : register(s0);
+SamplerState in_samplerTypeWrap : register(s0);
 
 struct PixelInputType
 {
 	float4 posCS : SV_POSITION;
 	float4 posWS : POSITION;
 	float2 texCoord : TEXCOORD;
-	float4 normal : NORMAL;
+	float4 normalWS : NORMAL;
 	uint rtvId : SV_RenderTargetArrayIndex;
 };
 
@@ -34,7 +34,7 @@ PixelOutputType main(PixelInputType input)
 {
 	PixelOutputType output;
 
-	float3 normalInWorldSpace;
+	float3 normalWS;
 	if (materialCBuffer.textureSlotMask & 0x00000001)
 	{
 		// get edge vectors of the pixel triangle
@@ -44,7 +44,7 @@ PixelOutputType main(PixelInputType input)
 		float2 duv2 = ddy_fine(input.texCoord);
 
 		// solve the linear system
-		float3 N = normalize(input.normal.xyz);
+		float3 N = normalize(input.normalWS.xyz);
 
 		float3 dp2perp = cross(dp2, N);
 		float3 dp1perp = cross(N, dp1);
@@ -53,19 +53,19 @@ PixelOutputType main(PixelInputType input)
 
 		float3x3 TBN = float3x3(T, B, N);
 
-		float3 normalInTangentSpace = normalize(t2d_normal.Sample(SampleTypeWrap, input.texCoord).rgb * 2.0f - 1.0f);
-		normalInWorldSpace = normalize(mul(normalInTangentSpace, TBN));
+		float3 normalTS = normalize(t2d_normal.Sample(in_samplerTypeWrap, input.texCoord).rgb * 2.0f - 1.0f);
+		normalWS = normalize(mul(normalTS, TBN));
 	}
 	else
 	{
-		normalInWorldSpace = normalize(input.normal.xyz);
+		normalWS = normalize(input.normalWS.xyz);
 	}
 
 	float transparency = 1.0;
 	float3 out_Albedo;
 	if (materialCBuffer.textureSlotMask & 0x00000002)
 	{
-		float4 l_albedo = t2d_albedo.Sample(SampleTypeWrap, input.texCoord);
+		float4 l_albedo = t2d_albedo.Sample(in_samplerTypeWrap, input.texCoord);
 		transparency = l_albedo.a;
 		if (transparency < 0.1)
 		{
@@ -84,7 +84,7 @@ PixelOutputType main(PixelInputType input)
 	float out_Metallic;
 	if (materialCBuffer.textureSlotMask & 0x00000004)
 	{
-		out_Metallic = t2d_metallic.Sample(SampleTypeWrap, input.texCoord).r;
+		out_Metallic = t2d_metallic.Sample(in_samplerTypeWrap, input.texCoord).r;
 	}
 	else
 	{
@@ -94,7 +94,7 @@ PixelOutputType main(PixelInputType input)
 	float out_Roughness;
 	if (materialCBuffer.textureSlotMask & 0x00000008)
 	{
-		out_Roughness = t2d_roughness.Sample(SampleTypeWrap, input.texCoord).r;
+		out_Roughness = t2d_roughness.Sample(in_samplerTypeWrap, input.texCoord).r;
 	}
 	else
 	{
@@ -104,7 +104,7 @@ PixelOutputType main(PixelInputType input)
 	float out_AO;
 	if (materialCBuffer.textureSlotMask & 0x00000010)
 	{
-		out_AO = t2d_ao.Sample(SampleTypeWrap, input.texCoord).r;
+		out_AO = t2d_ao.Sample(in_samplerTypeWrap, input.texCoord).r;
 	}
 	else
 	{
@@ -113,7 +113,7 @@ PixelOutputType main(PixelInputType input)
 
 	output.opaquePassRT0 = float4(input.posWS.xyz, out_Metallic);
 
-	output.opaquePassRT1 = float4(normalInWorldSpace, out_Roughness);
+	output.opaquePassRT1 = float4(normalWS, out_Roughness);
 
 	output.opaquePassRT2 = float4(out_Albedo, out_AO);
 

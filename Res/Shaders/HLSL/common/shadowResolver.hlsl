@@ -1,7 +1,7 @@
 #define useCSM
 
 // ----------------------------------------------------------------------------
-float PCFResolver(float3 projCoords, Texture2DArray shadowMap, SamplerState Sampler, int index, float currentDepth, float2 texelSize)
+float PCFResolver(float3 projCoords, Texture2DArray shadowMap, SamplerState in_sampler, int index, float currentDepth, float2 texelSize)
 {
 	// PCF
 	float shadow = 0.0;
@@ -11,7 +11,7 @@ float PCFResolver(float3 projCoords, Texture2DArray shadowMap, SamplerState Samp
 		for (int y = -1; y <= 1; ++y)
 		{
 			float3 coord = float3(projCoords.xy + float2(x, y) * texelSize, (float)index);
-			float4 shadowSample = shadowMap.SampleLevel(Sampler, coord, 0);
+			float4 shadowSample = shadowMap.SampleLevel(in_sampler, coord, 0);
 			float pcfDepth = shadowSample.r + 0.0005;
 			shadow += currentDepth > pcfDepth ? 1.0 : 0.0;
 		}
@@ -35,10 +35,10 @@ float VSMKernel(float4 shadowMapValue, float currentDepth)
 	return shadow;
 }
 // ----------------------------------------------------------------------------
-float VSMResolver(float3 projCoords, Texture2DArray shadowMap, SamplerState Sampler, int index, float currentDepth)
+float VSMResolver(float3 projCoords, Texture2DArray shadowMap, SamplerState in_sampler, int index, float currentDepth)
 {
 	// VSM
-	float4 shadowMapValue = shadowMap.SampleLevel(Sampler, float3(projCoords.xy, index), 0);
+	float4 shadowMapValue = shadowMap.SampleLevel(in_sampler, float3(projCoords.xy, index), 0);
 
 	float shadow = VSMKernel(shadowMapValue, currentDepth);
 	return shadow;
@@ -46,7 +46,7 @@ float VSMResolver(float3 projCoords, Texture2DArray shadowMap, SamplerState Samp
 
 #ifdef useCSM
 // ----------------------------------------------------------------------------
-float SunShadowResolver(float3 fragPos, SamplerState Sampler)
+float SunShadowResolver(float3 fragPos, Texture2DArray shadowMap, SamplerState in_sampler)
 {
 	float shadow = 0.0;
 
@@ -75,7 +75,7 @@ float SunShadowResolver(float3 fragPos, SamplerState Sampler)
 		float2 renderTargetSize;
 		float level;
 		float elements;
-		in_SunShadow.GetDimensions(0, renderTargetSize.x, renderTargetSize.y, elements, level);
+		shadowMap.GetDimensions(0, renderTargetSize.x, renderTargetSize.y, elements, level);
 		float2 texelSize = 1.0 / renderTargetSize;
 
 		float4 lightSpacePos = mul(float4(fragPos, 1.0f), CSMs[splitIndex].v);
@@ -94,20 +94,20 @@ float SunShadowResolver(float3 fragPos, SamplerState Sampler)
 		// get depth of current fragment from light's perspective
 		float currentDepth = projCoords.z;
 
-		shadow = VSMResolver(projCoords, in_SunShadow, Sampler, splitIndex, currentDepth);
+		shadow = VSMResolver(projCoords, shadowMap, in_sampler, splitIndex, currentDepth);
 	}
 
 	return shadow;
 }
 #else
-float SunShadowResolver(float3 fragPos, SamplerState Sampler)
+float SunShadowResolver(float3 fragPos, Texture2DArray shadowMap, SamplerState in_sampler)
 {
 	float shadow = 0.0;
 
 	float2 renderTargetSize;
 	float level;
 	float elements;
-	in_SunShadow.GetDimensions(0, renderTargetSize.x, renderTargetSize.y, elements, level);
+	shadowMap.GetDimensions(0, renderTargetSize.x, renderTargetSize.y, elements, level);
 	float2 texelSize = 1.0 / renderTargetSize;
 
 	float4 lightSpacePos = mul(float4(fragPos, 1.0f), CSMs[0].v);
@@ -127,7 +127,7 @@ float SunShadowResolver(float3 fragPos, SamplerState Sampler)
 	// get depth of current fragment from light's perspective
 	float currentDepth = projCoords.z;
 
-	shadow = VSMResolver(projCoords, in_SunShadow, Sampler, 0, currentDepth);
+	shadow = VSMResolver(projCoords, shadowMap, in_sampler, 0, currentDepth);
 
 	return shadow;
 }

@@ -107,14 +107,14 @@ float3 AverangeFresnel(float3 F0)
 {
 	return (F0 * 20.0 / 21.0) + 1.0 / 21.0;
 }
-float3 getFrMS(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePoint, float NdotL, float NdotV, float3 F0, float roughness)
+float3 getFrMS(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState samplerTypePoint, float NdotL, float NdotV, float3 F0, float roughness)
 {
 	float3 f_averange = AverangeFresnel(F0);
 
-	float rsF1_averange = BRDFMSLUT.SampleLevel(SampleTypePoint, float2(0.0, roughness), 0).r;
+	float rsF1_averange = BRDFMSLUT.SampleLevel(samplerTypePoint, float2(0.0, roughness), 0).r;
 
-	float rsF1_l = BRDFLUT.SampleLevel(SampleTypePoint, float2(NdotL, roughness), 0).b;
-	float rsF1_v = BRDFLUT.SampleLevel(SampleTypePoint, float2(NdotV, roughness), 0).b;
+	float rsF1_l = BRDFLUT.SampleLevel(samplerTypePoint, float2(NdotL, roughness), 0).b;
+	float rsF1_v = BRDFLUT.SampleLevel(samplerTypePoint, float2(NdotV, roughness), 0).b;
 
 	float beta1 = 1.0 - rsF1_averange;
 	float beta2 = 1.0 - rsF1_l;
@@ -126,28 +126,28 @@ float3 getFrMS(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePo
 	return frMS * fresnelMultiplier;
 }
 // ----------------------------------------------------------------------------
-float3 getBRDF(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePoint, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float3 F0, float3 FresnelFactor)
+float3 getBRDF(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState samplerTypePoint, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float3 F0, float3 FresnelFactor)
 {
 	float G = V_SmithGGXCorrelated(NdotV, NdotL, roughness);
 	float D = D_GGX(NdotH, roughness);
 	float3 Frss = FresnelFactor * G * D;
 
 	// Real-Time Rendering", 4th edition, pg. 341, "9.8 BRDF Models for Surface Reflection, the 4 * NdV * NdL has already been cancelled by G function
-	float3 Frms = getFrMS(BRDFLUT, BRDFMSLUT, SampleTypePoint, NdotL, NdotV, F0, roughness);
+	float3 Frms = getFrMS(BRDFLUT, BRDFMSLUT, samplerTypePoint, NdotL, NdotV, F0, roughness);
 
 	float3 Fr = Frss + Frms;
 
 	return Fr;
 }
 // ----------------------------------------------------------------------------
-float3 getBRDF_Indirect(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePoint, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float3 F0, float3 FresnelFactor)
+float3 getBRDF_Indirect(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState samplerTypePoint, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float3 F0, float3 FresnelFactor)
 {
 	float G = Unreal_GeometrySmith(NdotV, NdotL, roughness);
 	float D = D_GGX(NdotH, roughness);
 	float3 Frss = FresnelFactor * G * D;
 
 	// Real-Time Rendering", 4th edition, pg. 341, "9.8 BRDF Models for Surface Reflection, the 4 * NdV * NdL has already been cancelled by G function
-	float3 Frms = getFrMS(BRDFLUT, BRDFMSLUT, SampleTypePoint, NdotL, NdotV, F0, roughness);
+	float3 Frms = getFrMS(BRDFLUT, BRDFMSLUT, samplerTypePoint, NdotL, NdotV, F0, roughness);
 
 	float3 Fr = Frss + Frms;
 
@@ -163,19 +163,19 @@ float3 getBTDF(float NdotV, float NdotL, float LdotH, float roughness, float met
 
 	return kD * Ft;
 }
-float3 getBSDF(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePoint, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float metallic, float3 F0, float3 FresnelFactor, float3 albedo)
+float3 getBSDF(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState samplerTypePoint, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float metallic, float3 F0, float3 FresnelFactor, float3 albedo)
 {
 	float3 Ft = getBTDF(NdotV, NdotL, LdotH, roughness, metallic, FresnelFactor, albedo);
-	float3 Fr = getBRDF(BRDFLUT, BRDFMSLUT, SampleTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, F0, FresnelFactor);
+	float3 Fr = getBRDF(BRDFLUT, BRDFMSLUT, samplerTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, F0, FresnelFactor);
 	return (Ft + Fr);
 }
 // ----------------------------------------------------------------------------
-float3 getOutLuminance(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState SampleTypePoint, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float metallic, float3 F0, float3 albedo, float3 luminousFlux)
+float3 getOutLuminance(Texture2D BRDFLUT, Texture2D BRDFMSLUT, SamplerState samplerTypePoint, float NdotV, float NdotL, float NdotH, float LdotH, float roughness, float metallic, float3 F0, float3 albedo, float3 luminousFlux)
 {
 	float F90 = 1.0;
 	float3 FresnelFactor = fresnelSchlick(F0, F90, LdotH);
 
-	float3 BRDF = getBSDF(BRDFLUT, BRDFMSLUT, SampleTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, metallic, F0, FresnelFactor, albedo);
+	float3 BRDF = getBSDF(BRDFLUT, BRDFMSLUT, samplerTypePoint, NdotV, NdotL, NdotH, LdotH, roughness, metallic, F0, FresnelFactor, albedo);
 
 	return BRDF * luminousFlux * NdotL;
 }

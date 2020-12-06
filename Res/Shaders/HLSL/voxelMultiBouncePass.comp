@@ -16,7 +16,7 @@ Texture3D<float4> in_normalVolume : register(t1);
 [[vk::binding(0, 2)]]
 RWTexture3D<float4> out_luminanceVolume : register(u0);
 [[vk::binding(0, 3)]]
-SamplerState SamplerTypePoint : register(s0);
+SamplerState in_samplerTypePoint : register(s0);
 
 [numthreads(8, 8, 8)]
 void main(ComputeInputType input)
@@ -37,8 +37,8 @@ void main(ComputeInputType input)
 		normalWS.xyz = float3(0.0, 1.0, 0.0);
 	}
 
-	float4 indirectDiffuse = ConeTraceRadianceDiffuse(in_luminanceVolume, SamplerTypePoint, posWS, normalWS.xyz, voxelizationPassCBuffer);
-	//float4 indirectSpecular = ConeTraceRadianceSpecular(in_IrradianceVolume, SamplerTypePoint, posWS, normalWS.xyz, V, voxelizationPassCBuffer);
+	float4 indirectDiffuse = ConeTraceRadianceDiffuse(in_luminanceVolume, in_samplerTypePoint, posWS, normalWS.xyz, voxelizationPassCBuffer);
+	//float4 indirectSpecular = ConeTraceRadianceSpecular(in_IrradianceVolume, in_samplerTypePoint, posWS, normalWS.xyz, V, voxelizationPassCBuffer);
 
 	out_luminanceVolume[input.dispatchThreadID] = indirectDiffuse + in_luminanceVolume[input.dispatchThreadID];
 }

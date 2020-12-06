@@ -4,8 +4,8 @@
 struct GeometryInputType
 {
 	float4 posWS : SV_POSITION;
-	float4 normal : NORMAL;
-	float2 texcoord : TEXCOORD;
+	float4 normalWS : NORMAL;
+	float2 texCoord : TEXCOORD;
 };
 
 struct PixelInputType
@@ -14,8 +14,8 @@ struct PixelInputType
 	float4 posCS_orig : POSITION;
 	float4 posWS : POS_WS;
 	nointerpolation float4 AABB : AABB;
-	float4 normal : NORMAL;
-	float2 texcoord : TEXCOORD;
+	float4 normalWS : NORMAL;
+	float2 texCoord : TEXCOORD;
 };
 
 int CalculateAxis(float4 pos[3])
@@ -62,8 +62,8 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 	PixelInputType output[3];
 
 	float4 pos[3];
-	float4 normal[3];
-	float2 texcoord[3];
+	float4 normalWS[3];
+	float2 texCoord[3];
 	int i = 0;
 	int j = 0;
 
@@ -71,8 +71,8 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 	for (j = 0; j < 3; j++)
 	{
 		pos[j] = input[j].posWS;
-		normal[j] = input[j].normal;
-		texcoord[j] = input[j].texcoord;
+		normalWS[j] = input[j].normalWS;
+		texCoord[j] = input[j].texCoord;
 	}
 
 	int selectedIndex = CalculateAxis(pos);
@@ -111,16 +111,16 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 	if (dot(trianglePlane.xyz, float3(0.0, 0.0, 1.0)) < 0.0)
 	{
 		float4 vertexTemp = pos[2];
-		float4 normalTemp = normal[2];
-		float2 texcoordTemp = texcoord[2];
+		float4 normalWSTemp = normalWS[2];
+		float2 texCoordTemp = texCoord[2];
 
 		pos[2] = pos[1];
-		normal[2] = normal[1];
-		texcoord[2] = texcoord[1];
+		normalWS[2] = normalWS[1];
+		texCoord[2] = texCoord[1];
 
 		pos[1] = vertexTemp;
-		normal[1] = normalTemp;
-		texcoord[1] = texcoordTemp;
+		normalWS[1] = normalWSTemp;
+		texCoord[1] = texCoordTemp;
 	}
 
 	// for rasterization set z to 1
@@ -144,8 +144,8 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 	{
 		output[i].posCS = pos[i];
 		output[i].posWS = input[i].posWS;
-		output[i].texcoord = texcoord[i];
-		output[i].normal = normal[i];
+		output[i].texCoord = texCoord[i];
+		output[i].normalWS = normalWS[i];
 		output[i].AABB = getAABB(pos, float2(texelSize, texelSize));
 
 		outStream.Append(output[i]);

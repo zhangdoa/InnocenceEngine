@@ -11,10 +11,10 @@ StructuredBuffer<AnimationKeyData_SB> animationKeyDataSBuffer : register(t5);
 
 struct VertexInputType
 {
-	float4 position : POSITION;
-	float2 texcoord : TEXCOORD;
+	float4 posBS : POSITION;
+	float2 texCoord : TEXCOORD;
 	float2 pada : PADA;
-	float4 normal : NORMAL;
+	float4 normalLS : NORMAL;
 	float4 padb : PADB;
 };
 
@@ -25,7 +25,7 @@ struct PixelInputType
 	float4 posCS_prev : POSITION_PREV;
 	float3 posWS : POSITION;
 	float2 texCoord : TEXCOORD;
-	float3 normal : NORMAL;
+	float3 normalWS : NORMAL;
 };
 
 PixelInputType main(VertexInputType input)
@@ -43,8 +43,8 @@ PixelInputType main(VertexInputType input)
 	float weight2 = input.padb.y;
 	int boneID3 = int(input.padb.z);
 	float weight3 = input.padb.w;
-	int boneID4 = int(input.position.w);
-	float weight4 = input.normal.w;
+	int boneID4 = int(input.posBS.w);
+	float weight4 = input.normalLS.w;
 
 	float4x4 m1 = animationKeyDataSBuffer[currentTickGlobalIndex + boneID1].m;
 	float4x4 m2 = animationKeyDataSBuffer[currentTickGlobalIndex + boneID2].m;
@@ -53,7 +53,7 @@ PixelInputType main(VertexInputType input)
 
 	float4x4 m = m1 * weight1 + m2 * weight2 + m3 * weight3 + m4 * weight4;
 
-	float4 posBS = float4(input.position.xyz, 1.0f);
+	float4 posBS = float4(input.posBS.xyz, 1.0f);
 	float4 posLS = mul(posBS, m);
 
 	float4 posWS = mul(posLS, perObjectCBuffer.m);
@@ -67,9 +67,9 @@ PixelInputType main(VertexInputType input)
 	output.posCS = mul(posVS, perFrameCBuffer.p_jittered);
 
 	output.posWS = posWS.xyz;
-	output.texCoord = input.texcoord;
-	float4 normal = float4(input.normal.xyz, 0.0f);
-	output.normal = mul(input.normal, perObjectCBuffer.normalMat).xyz;
+	output.texCoord = input.texCoord;
+	float4 normalLS = float4(input.normalLS.xyz, 0.0f);
+	output.normalWS = mul(input.normalLS, perObjectCBuffer.normalMat).xyz;
 
 	return output;
 }

@@ -13,10 +13,10 @@ StructuredBuffer<ProbeMeshData> probeMeshSBuffer : register(t0);
 
 struct VertexInputType
 {
-	float4 position : POSITION;
-	float2 texcoord : TEXCOORD;
+	float4 posLS : POSITION;
+	float2 texCoord : TEXCOORD;
 	float2 pada : PADA;
-	float4 normal : NORMAL;
+	float4 normalLS : NORMAL;
 	float4 padb : PADB;
 	uint instanceId : SV_InstanceID;
 };
@@ -26,7 +26,7 @@ struct PixelInputType
 	float4 posCS : SV_POSITION;
 	float4 posWS : POSITION_WS;
 	float4 probeIndex : PROBE_INDEX;
-	float4 normal : NORMAL;
+	float4 normalWS : NORMAL;
 };
 
 PixelInputType main(VertexInputType input)
@@ -34,9 +34,9 @@ PixelInputType main(VertexInputType input)
 	PixelInputType output;
 
 	output.probeIndex = probeMeshSBuffer[input.instanceId].index;
-	output.normal = input.normal;
+	output.normalWS = input.normalLS;
 
-	output.posWS = mul(input.position, probeMeshSBuffer[input.instanceId].m);
+	output.posWS = mul(input.posLS, probeMeshSBuffer[input.instanceId].m);
 	output.posCS = mul(output.posWS, perFrameCBuffer.v);
 	output.posCS = mul(output.posCS, perFrameCBuffer.p_original);
 

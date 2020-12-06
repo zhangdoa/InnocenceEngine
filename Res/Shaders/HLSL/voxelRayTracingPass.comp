@@ -20,7 +20,7 @@ RWStructuredBuffer<float4> in_ray : register(u1);
 [[vk::binding(2, 2)]]
 RWStructuredBuffer<uint4> in_index : register(u2);
 [[vk::binding(0, 3)]]
-SamplerState SamplerTypePoint : register(s0);
+SamplerState in_samplerTypePoint : register(s0);
 
 groupshared float4 result;
 groupshared uint3 writeCoord;
@@ -62,7 +62,7 @@ void main(ComputeInputType input)
 
 		if (!is_saturated)
 		{
-			float4 sam = in_luminanceVolume.SampleLevel(SamplerTypePoint, tc, 0);
+			float4 sam = in_luminanceVolume.SampleLevel(in_samplerTypePoint, tc, 0);
 
 			if (sam.a)
 			{

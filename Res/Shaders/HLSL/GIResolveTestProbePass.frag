@@ -11,7 +11,7 @@ struct PixelInputType
 	float4 posCS : SV_POSITION;
 	float4 posWS : POSITION_WS;
 	float4 probeIndex : PROBE_INDEX;
-	float4 normal : NORMAL;
+	float4 normalWS : NORMAL;
 };
 
 struct PixelOutputType
@@ -23,7 +23,7 @@ PixelOutputType main(PixelInputType input)
 {
 	PixelOutputType output;
 
-	float3 N = normalize(input.normal.xyz);
+	float3 N = normalize(input.normalWS.xyz);
 	float3 nSquared = N * N;
 	int3 isNegative = (N < 0.0);
 	float3 GISampleCoord = (input.posWS.xyz - GICBuffer.irradianceVolumeOffset.xyz) / perFrameCBuffer.posWSNormalizer.xyz;

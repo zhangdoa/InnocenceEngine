@@ -3,10 +3,10 @@
 
 struct VertexInputType
 {
-	float4 position : POSITION;
-	float2 texcoord : TEXCOORD;
+	float4 posLS : POSITION;
+	float2 texCoord : TEXCOORD;
 	float2 pada : PADA;
-	float4 normal : NORMAL;
+	float4 normalLS : NORMAL;
 	float4 padb : PADB;
 };
 
@@ -21,11 +21,11 @@ PixelInputType main(VertexInputType input)
 {
 	PixelInputType output;
 
-	float4 posWS = mul(input.position, perObjectCBuffer.m);
+	float4 posWS = mul(input.posLS, perObjectCBuffer.m);
 	float4 posVS = mul(posWS, perFrameCBuffer.v);
 	output.posCS = mul(posVS, perFrameCBuffer.p_original);
-	output.TexCoord = input.texcoord;
-	output.Normal = mul(input.normal, perObjectCBuffer.normalMat).xyz;
+	output.TexCoord = input.texCoord;
+	output.Normal = mul(input.normalLS, perObjectCBuffer.normalMat).xyz;
 
 	return output;
 }

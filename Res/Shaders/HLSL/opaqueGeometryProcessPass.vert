@@ -3,40 +3,41 @@
 
 struct VertexInputType
 {
-	float4 position : POSITION;
-	float2 texcoord : TEXCOORD;
+	float4 posLS : POSITION;
+	float2 texCoord : TEXCOORD;
 	float2 pada : PADA;
-	float4 normal : NORMAL;
+	float4 normalLS : NORMAL;
 	float4 padb : PADB;
 };
 
 struct PixelInputType
 {
-	float4 frag_ClipSpacePos : SV_POSITION;
-	float4 frag_ClipSpacePos_orig : POSITION_ORIG;
-	float4 frag_ClipSpacePos_prev : POSITION_PREV;
-	float3 frag_WorldSpacePos : POSITION;
-	float2 frag_TexCoord : TEXCOORD;
-	float3 frag_Normal : NORMAL;
+	float4 posCS : SV_POSITION;
+	float4 posCS_orig : POSITION_ORIG;
+	float4 posCS_prev : POSITION_PREV;
+	float3 posWS : POSITION;
+	float2 texCoord : TEXCOORD;
+	float3 normalWS : NORMAL;
 };
 
 PixelInputType main(VertexInputType input)
 {
 	PixelInputType output;
 
-	float4 frag_WorldSpacePos = mul(input.position, perObjectCBuffer.m);
-	float4 frag_CameraSpacePos = mul(frag_WorldSpacePos, perFrameCBuffer.v);
-	output.frag_ClipSpacePos_orig = mul(frag_CameraSpacePos, perFrameCBuffer.p_original);
+	float4 PosLS = float4(input.posLS.xyz, 1.0f);
+	float4 posWS = mul(PosLS, perObjectCBuffer.m);
+	float4 posVS = mul(posWS, perFrameCBuffer.v);
+	output.posCS_orig = mul(posVS, perFrameCBuffer.p_original);
 
-	float4 frag_WorldSpacePos_prev = mul(input.position, perObjectCBuffer.m_prev);
-	float4 frag_CameraSpacePos_prev = mul(frag_WorldSpacePos_prev, perFrameCBuffer.v_prev);
-	output.frag_ClipSpacePos_prev = mul(frag_CameraSpacePos_prev, perFrameCBuffer.p_original);
+	float4 posWS_prev = mul(PosLS, perObjectCBuffer.m_prev);
+	float4 posVS_prev = mul(posWS_prev, perFrameCBuffer.v_prev);
+	output.posCS_prev = mul(posVS_prev, perFrameCBuffer.p_original);
 
-	output.frag_ClipSpacePos = mul(frag_CameraSpacePos, perFrameCBuffer.p_jittered);
+	output.posCS = mul(posVS, perFrameCBuffer.p_jittered);
 
-	output.frag_WorldSpacePos = frag_WorldSpacePos.xyz;
-	output.frag_TexCoord = input.texcoord;
-	output.frag_Normal = mul(input.normal, perObjectCBuffer.normalMat).xyz;
+	output.posWS = posWS.xyz;
+	output.texCoord = input.texCoord;
+	output.normalWS = mul(input.normalLS, perObjectCBuffer.normalMat).xyz;
 
 	return output;
 }

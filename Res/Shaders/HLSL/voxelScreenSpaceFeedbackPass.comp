@@ -19,9 +19,9 @@ RWTexture3D<float4> out_luminanceVolume : register(u0);
 [numthreads(8, 8, 1)]
 void main(ComputeInputType input)
 {
-	int2 texcoord = input.dispatchThreadID.xy;
+	int2 texCoord = input.dispatchThreadID.xy;
 
-	float3 posWS = in_pos[texcoord].xyz;
+	float3 posWS = in_pos[texCoord].xyz;
 	posWS -= voxelizationPassCBuffer.volumeCenter.xyz;
 	posWS -= voxelizationPassCBuffer.voxelSize / 2.0;
 	posWS /= (voxelizationPassCBuffer.volumeExtend / 2.0);
@@ -34,7 +34,7 @@ void main(ComputeInputType input)
 
 	if (!is_saturated)
 	{
-		float4 lightPassResult = in_lightPassResult[texcoord];
+		float4 lightPassResult = in_lightPassResult[texCoord];
 		out_luminanceVolume[writeCoord] = lightPassResult;
 	}
 }

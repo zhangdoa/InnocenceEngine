@@ -22,7 +22,7 @@ RWTexture2D<float4> g_DebugTexture : register(u4);
 [[vk::binding(0, 2)]]
 Texture2D DepthTextureVS : register(t0);
 [[vk::binding(0, 3)]]
-SamplerState SampleTypePoint : register(s0);
+SamplerState in_samplerTypePoint : register(s0);
 
 groupshared uint l_uMinDepth;
 groupshared uint l_uMaxDepth;

@@ -7,7 +7,7 @@ struct PixelInputType
 	float4 posCS_orig : POSITION_ORIG;
 	float4 posCS_prev : POSITION_PREV;
 	nointerpolation float4 AABB : AABB;
-	float2 texcoord : TEXCOORD;
+	float2 texCoord : TEXCOORD;
 };
 
 [[vk::binding(0, 1)]]
