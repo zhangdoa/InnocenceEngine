@@ -528,15 +528,11 @@ bool VoxelizationPass::Setup()
 	m_voxelizationPassCBufferGBDC->m_ElementCount = 1;
 	m_voxelizationPassCBufferGBDC->m_ElementSize = sizeof(VoxelizationConstantBuffer);
 
-	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_voxelizationPassCBufferGBDC);
-
 	////
 	m_geometryProcessSBufferGBDC = g_Engine->getRenderingServer()->AddGPUBufferDataComponent("VoxelGeometryProcessSBuffer/");
 	m_geometryProcessSBufferGBDC->m_ElementCount = m_voxelizationResolution * m_voxelizationResolution * m_voxelizationResolution * 2;
 	m_geometryProcessSBufferGBDC->m_ElementSize = sizeof(uint32_t);
 	m_geometryProcessSBufferGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
-
-	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_geometryProcessSBufferGBDC);
 
 	////
 	m_rayTracingRay.reserve(m_maxRay * m_maxRay);
@@ -578,15 +574,11 @@ bool VoxelizationPass::Setup()
 	m_rayTracingRaySBufferGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
 	m_rayTracingRaySBufferGBDC->m_InitialData = &m_rayTracingRay[0];
 
-	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_rayTracingRaySBufferGBDC);
-
 	////
 	m_rayTracingProbeIndexSBufferGBDC = g_Engine->getRenderingServer()->AddGPUBufferDataComponent("VoxelRayTracingProbeIndexSBuffer/");
 	m_rayTracingProbeIndexSBufferGBDC->m_ElementCount = m_maxProbe * m_maxProbe * m_maxProbe;
 	m_rayTracingProbeIndexSBufferGBDC->m_ElementSize = sizeof(TVec4<uint32_t>);
 	m_rayTracingProbeIndexSBufferGBDC->m_GPUAccessibility = Accessibility::ReadWrite;
-
-	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_rayTracingProbeIndexSBufferGBDC);
 
 	setupGeometryProcessPass();
 	setupConvertPass();
@@ -600,6 +592,11 @@ bool VoxelizationPass::Setup()
 
 bool VoxelizationPass::Initialize()
 {
+	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_voxelizationPassCBufferGBDC);
+	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_geometryProcessSBufferGBDC);
+	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_rayTracingRaySBufferGBDC);
+	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_rayTracingProbeIndexSBufferGBDC);
+
 	g_Engine->getRenderingServer()->InitializeTextureDataComponent(m_initialBounceVolume);
 	g_Engine->getRenderingServer()->InitializeTextureDataComponent(m_normalVolume);
 	g_Engine->getRenderingServer()->InitializeTextureDataComponent(m_multiBounceVolume);
