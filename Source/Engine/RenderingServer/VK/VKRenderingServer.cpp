@@ -1057,6 +1057,42 @@ bool VKRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent* rhs
 
 bool VKRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent* rhs)
 {
+	auto l_rhs = reinterpret_cast<VKGPUBufferDataComponent*>(rhs);
+
+	l_rhs->m_TotalSize = l_rhs->m_ElementCount * l_rhs->m_ElementSize;
+
+	auto l_resourceBinder = addResourcesBinder();
+	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Buffer;
+	l_resourceBinder->m_GPUAccessibility = l_rhs->m_GPUAccessibility;
+	l_resourceBinder->m_ElementCount = l_rhs->m_ElementCount;
+	l_resourceBinder->m_ElementSize = l_rhs->m_ElementSize;
+	l_resourceBinder->m_TotalSize = l_rhs->m_TotalSize;
+
+	createHostStagingBuffer(l_rhs->m_TotalSize, VkBufferUsageFlagBits(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT), l_rhs->m_HostStagingBuffer, l_rhs->m_HostStagingMemory);
+
+	if(l_rhs->m_InitialData != nullptr)
+	{
+		copyHostMemoryToDeviceMemory(l_rhs->m_InitialData, l_rhs->m_TotalSize, l_rhs->m_HostStagingMemory);		
+	}
+
+	if (l_rhs->m_GPUAccessibility != Accessibility::ReadOnly)
+	{
+		if (l_rhs->m_CPUAccessibility == Accessibility::Immutable || l_rhs->m_CPUAccessibility == Accessibility::WriteOnly)
+		{
+			createDeviceLocalBuffer(l_rhs->m_TotalSize, VkBufferUsageFlagBits(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT), l_rhs->m_DeviceLocalBuffer, l_rhs->m_DeviceLocalMemory);
+			if(l_rhs->m_InitialData != nullptr)
+			{
+				copyBuffer(m_device, m_commandPool, m_graphicsQueue, l_rhs->m_HostStagingBuffer, l_rhs->m_DeviceLocalBuffer, l_rhs->m_TotalSize);
+			}
+		}
+		else
+		{
+			InnoLogger::Log(LogLevel::Warning, "VKRenderingServer: Not support CPU-readable default heap GPU buffer currently.");
+		}
+	}
+
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
+
 	return true;
 }
 
