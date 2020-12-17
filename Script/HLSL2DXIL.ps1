@@ -23,7 +23,7 @@ foreach ($file in $files) {
         $target_profile="cs_5_0"
     }
     
-    $genCall = "dxc -Wno-ignored-attributes -T $target_profile -E main -Fo ../DXIL/$name.dxil $file"
+    $genCall = "dxc -Wno-ignored-attributes -T $target_profile -E main -Fo ../DXIL/$name.dxil $file /Zi /Zss"
     Invoke-Expression $genCall
 }
 pause
