@@ -654,40 +654,60 @@ AddComponent(VK, ShaderProgram);
 AddComponent(VK, SamplerData);
 AddComponent(VK, GPUBufferData);
 
-template<typename T>
-bool transferBufferFromHostToDevice(const Array<T>& hostRawMem, VkBufferUsageFlagBits usageFlags, VkBuffer& buffer, VkDeviceMemory& memory)
+bool createHostStagingBuffer(size_t bufferSize, VkBufferUsageFlagBits usageFlags, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
 {
-	auto l_bufferSize = sizeof(T) * hostRawMem.size();
+	VkBufferCreateInfo l_stagingBufferCInfo = {};
+	l_stagingBufferCInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	l_stagingBufferCInfo.size = bufferSize;
+	l_stagingBufferCInfo.usage = usageFlags;
+	l_stagingBufferCInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-	VkBuffer l_stagingBuffer;
-	VkDeviceMemory l_stagingBufferMemory;
-	VkBufferCreateInfo l_stageBufferCInfo = {};
-	l_stageBufferCInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	l_stageBufferCInfo.size = l_bufferSize;
-	l_stageBufferCInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-	l_stageBufferCInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	return createBuffer(m_physicalDevice, m_device, l_stagingBufferCInfo, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffer, deviceMemory);
+}
 
-	createBuffer(m_physicalDevice, m_device, l_stageBufferCInfo, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, l_stagingBuffer, l_stagingBufferMemory);
-
-	void* l_mappedMemory;
-	vkMapMemory(m_device, l_stagingBufferMemory, 0, l_bufferSize, 0, &l_mappedMemory);
-	std::memcpy(l_mappedMemory, &hostRawMem[0], (size_t)l_bufferSize);
-	vkUnmapMemory(m_device, l_stagingBufferMemory);
-
+bool createDeviceLocalBuffer(size_t bufferSize, VkBufferUsageFlagBits usageFlags, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
+{
 	VkBufferCreateInfo l_localBufferCInfo = {};
 	l_localBufferCInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	l_localBufferCInfo.size = l_bufferSize;
-	l_localBufferCInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | usageFlags;
+	l_localBufferCInfo.size = bufferSize;
+	l_localBufferCInfo.usage = usageFlags;
 	l_localBufferCInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-	createBuffer(m_physicalDevice, m_device, l_localBufferCInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, buffer, memory);
+	return createBuffer(m_physicalDevice, m_device, l_localBufferCInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, buffer, deviceMemory);
+}
 
-	copyBuffer(m_device, m_commandPool, m_graphicsQueue, l_stagingBuffer, buffer, l_bufferSize);
+bool copyHostMemoryToDeviceMemory(void* hostMemory, size_t bufferSize, VkDeviceMemory& deviceMemory)
+{
+	void* l_mappedMemory;
+	vkMapMemory(m_device, deviceMemory, 0, bufferSize, 0, &l_mappedMemory);
+	std::memcpy(l_mappedMemory, hostMemory, (size_t)bufferSize);
+	vkUnmapMemory(m_device, deviceMemory);
+	
+	return true;
+}
+bool initializeDeviceLocalBuffer(void* hostMemory, size_t bufferSize, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
+{
+	VkBuffer l_stagingBuffer;
+	VkDeviceMemory l_stagingBufferMemory;
+
+	createHostStagingBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, l_stagingBuffer, l_stagingBufferMemory);
+
+	copyHostMemoryToDeviceMemory(hostMemory, bufferSize, l_stagingBufferMemory);
+
+	copyBuffer(m_device, m_commandPool, m_graphicsQueue, l_stagingBuffer, buffer, bufferSize);
 
 	vkDestroyBuffer(m_device, l_stagingBuffer, nullptr);
 	vkFreeMemory(m_device, l_stagingBufferMemory, nullptr);
 
 	return true;
+}
+
+template<typename T>
+bool initializeDeviceLocalBuffer(Array<T>& hostMemory, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
+{
+	auto l_bufferSize = sizeof(T) * hostMemory.size();
+
+	return initializeDeviceLocalBuffer(&hostMemory[0], l_bufferSize, buffer, deviceMemory);
 }
 
 bool VKRenderingServer::InitializeMeshDataComponent(MeshDataComponent* rhs)
@@ -699,10 +719,17 @@ bool VKRenderingServer::InitializeMeshDataComponent(MeshDataComponent* rhs)
 
 	auto l_rhs = reinterpret_cast<VKMeshDataComponent*>(rhs);
 
-	transferBufferFromHostToDevice(l_rhs->m_vertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, l_rhs->m_VBO, l_rhs->m_VBMemory);
+	auto l_VBSize = sizeof(Vertex) * l_rhs->m_vertices.size();
+	auto l_IBSize = sizeof(Index) * l_rhs->m_indices.size();
+
+	
+	createDeviceLocalBuffer(l_VBSize, VkBufferUsageFlagBits(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT), l_rhs->m_VBO, l_rhs->m_VBMemory);
+	createDeviceLocalBuffer(l_IBSize, VkBufferUsageFlagBits(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT), l_rhs->m_IBO, l_rhs->m_IBMemory);
+
+	initializeDeviceLocalBuffer(l_rhs->m_vertices, l_rhs->m_VBO, l_rhs->m_VBMemory);
 	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VBO ", l_rhs->m_VBO, " is initialized.");
 
-	transferBufferFromHostToDevice(l_rhs->m_indices, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, l_rhs->m_IBO, l_rhs->m_IBMemory);
+	initializeDeviceLocalBuffer(l_rhs->m_indices, l_rhs->m_IBO, l_rhs->m_IBMemory);
 	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: IBO ", l_rhs->m_IBO, " is initialized.");
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
@@ -729,13 +756,7 @@ bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent* rhs
 	VkDeviceMemory l_stagingBufferMemory;
 	if (l_rhs->m_TextureData != nullptr)
 	{
-		VkBufferCreateInfo l_stageBufferCInfo = {};
-		l_stageBufferCInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		l_stageBufferCInfo.size = l_rhs->m_VKTextureDesc.imageSize;
-		l_stageBufferCInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-		l_stageBufferCInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-		createBuffer(m_physicalDevice, m_device, l_stageBufferCInfo, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, l_stagingBuffer, l_stagingBufferMemory);
+		createHostStagingBuffer(l_rhs->m_VKTextureDesc.imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, l_stagingBuffer, l_stagingBufferMemory);
 
 		void* l_mappedMemory;
 		vkMapMemory(m_device, l_stagingBufferMemory, 0, l_rhs->m_VKTextureDesc.imageSize, 0, &l_mappedMemory);
