@@ -1,5 +1,4 @@
 #include "DefaultLogicClient.h"
-#include "../../Engine/Common/CommonMacro.inl"
 
 #include "../../Engine/Interface/IEngine.h"
 

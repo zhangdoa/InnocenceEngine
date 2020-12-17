@@ -1,6 +1,5 @@
 #include "AssetSystem.h"
 #include "../Common/ComponentHeaders.h"
-#include "../Common/CommonMacro.inl"
 #include "../Common/InnoMathHelper.h"
 #include "../Core/InnoLogger.h"
 #include "../Core/IOService.h"

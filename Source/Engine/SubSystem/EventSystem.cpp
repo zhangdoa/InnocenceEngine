@@ -1,5 +1,4 @@
 #include "EventSystem.h"
-#include "../Common/CommonMacro.inl"
 #include "../Core/InnoLogger.h"
 
 #include "../Interface/IEngine.h"

@@ -1,6 +1,5 @@
 #include "DebugPass.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
-#include "../../Engine/Common/CommonMacro.inl"
 
 #include "GIDataLoader.h"
 #include "OpaquePass.h"
