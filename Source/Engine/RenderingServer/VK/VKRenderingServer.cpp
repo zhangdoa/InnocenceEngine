@@ -361,7 +361,7 @@ bool VKRenderingServerNS::createTextureSamplers()
 	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 	samplerInfo.anisotropyEnable = VK_TRUE;
-	samplerInfo.maxAnisotropy = 16;
+	samplerInfo.maxAnisotropy = 16.0f;
 	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
 	samplerInfo.unnormalizedCoordinates = VK_FALSE;
 	samplerInfo.compareEnable = VK_FALSE;
@@ -1029,7 +1029,7 @@ bool VKRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent* rhs
 	l_rhs->m_samplerCInfo.addressModeV = getSamplerAddressMode(l_rhs->m_SamplerDesc.m_WrapMethodV);
 	l_rhs->m_samplerCInfo.addressModeW = getSamplerAddressMode(l_rhs->m_SamplerDesc.m_WrapMethodW);
 	l_rhs->m_samplerCInfo.mipLodBias = 0.0f;
-	l_rhs->m_samplerCInfo.maxAnisotropy = l_rhs->m_SamplerDesc.m_MaxAnisotropy;
+	l_rhs->m_samplerCInfo.maxAnisotropy = float(l_rhs->m_SamplerDesc.m_MaxAnisotropy);
 	l_rhs->m_samplerCInfo.compareOp = VkCompareOp::VK_COMPARE_OP_ALWAYS;
 	l_rhs->m_samplerCInfo.borderColor = VkBorderColor::VK_BORDER_COLOR_FLOAT_CUSTOM_EXT;
 	l_rhs->m_samplerCInfo.minLod = l_rhs->m_SamplerDesc.m_MinLOD;
