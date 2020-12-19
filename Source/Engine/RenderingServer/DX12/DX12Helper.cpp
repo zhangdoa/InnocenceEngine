@@ -22,45 +22,95 @@ namespace Inno
 	}
 }
 
-ComPtr<ID3D12GraphicsCommandList> DX12Helper::BeginSingleTimeCommands(ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandAllocator> globalCommandAllocator)
+ComPtr<ID3D12CommandQueue> DX12Helper::CreateCommandQueue(D3D12_COMMAND_QUEUE_DESC * commandQueueDesc, ComPtr<ID3D12Device> device, const wchar_t *name)
+{
+	ComPtr<ID3D12CommandQueue> l_commandQueue;
+
+	auto l_HResult = device->CreateCommandQueue(commandQueueDesc, IID_PPV_ARGS(&l_commandQueue));
+	if (FAILED(l_HResult))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create CommandQueue!");
+		return nullptr;
+	}
+
+#ifdef INNO_DEBUG
+	l_commandQueue->SetName(name);
+#endif // INNO_DEBUG
+
+	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: CommandQueue has been created.");
+
+	return l_commandQueue;
+}
+ 
+ComPtr<ID3D12CommandAllocator> DX12Helper::CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12Device> device, const wchar_t *name)
+{
+	ComPtr<ID3D12CommandAllocator> l_commandAllocator;
+
+	auto l_HResult = device->CreateCommandAllocator(commandListType, IID_PPV_ARGS(&l_commandAllocator));
+	if (FAILED(l_HResult))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create CommandAllocator!");
+		return nullptr;
+	}
+
+#ifdef INNO_DEBUG
+	l_commandAllocator->SetName(name);
+#endif // INNO_DEBUG
+
+	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: CommandAllocator has been created.");
+
+	return l_commandAllocator;
+}
+
+ComPtr<ID3D12GraphicsCommandList> DX12Helper::CreateCommandList(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandAllocator> commandAllocator, const wchar_t *name)
 {
 	ComPtr<ID3D12GraphicsCommandList> l_commandList;
 
-	// Create a basic command list.
-	auto l_HResult = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, globalCommandAllocator.Get(), NULL, IID_PPV_ARGS(&l_commandList));
+	auto l_HResult = device->CreateCommandList(0, commandListType, commandAllocator.Get(), NULL, IID_PPV_ARGS(&l_commandList));
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create command list for single time command!");
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create CommandList!");
 		return nullptr;
 	}
+
+#ifdef INNO_DEBUG
+	l_commandList->SetName(name);
+#endif // INNO_DEBUG
 
 	return l_commandList;
 }
 
-bool DX12Helper::EndSingleTimeCommands(ComPtr<ID3D12GraphicsCommandList> commandList, ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandQueue> globalCommandQueue)
+ComPtr<ID3D12GraphicsCommandList> DX12Helper::OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandAllocator> commandAllocator)
+{
+	static uint64_t index = 0;
+
+	return CreateCommandList(commandListType, device, commandAllocator, (L"TemporaryCommandList_" + std::to_wstring(index++)).c_str());
+}
+
+bool DX12Helper::CloseTemporaryCommandList(ComPtr<ID3D12GraphicsCommandList> commandList, ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandQueue> commandQueue)
 {
 	auto l_HResult = commandList->Close();
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't close the command list for single time command!");
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't close temporary command list!");
 	}
 
 	ComPtr<ID3D12Fence1> l_uploadFinishFence;
 	l_HResult = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&l_uploadFinishFence));
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create fence for single time command!");
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create fence for temporary command list!");
 	}
 
 	auto l_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 	if (l_fenceEvent == nullptr)
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create fence event for single time command!");
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create fence event for temporary command list!");
 	}
 
 	ID3D12CommandList* ppCommandLists[] = { commandList.Get() };
-	globalCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-	globalCommandQueue->Signal(l_uploadFinishFence.Get(), 1);
+	commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+	commandQueue->Signal(l_uploadFinishFence.Get(), 1);
 	l_uploadFinishFence->SetEventOnCompletion(1, l_fenceEvent);
 	WaitForSingleObject(l_fenceEvent, INFINITE);
 	CloseHandle(l_fenceEvent);
@@ -481,8 +531,7 @@ uint32_t DX12Helper::GetTexturePixelDataSize(TextureDesc textureDesc)
 
 D3D12_RESOURCE_STATES DX12Helper::GetTextureWriteState(TextureDesc textureDesc)
 {
-	D3D12_RESOURCE_STATES l_result = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-
+	D3D12_RESOURCE_STATES l_result;
 	if (textureDesc.Usage == TextureUsage::ColorAttachment)
 	{
 		l_result = D3D12_RESOURCE_STATE_RENDER_TARGET;
@@ -492,10 +541,14 @@ D3D12_RESOURCE_STATES DX12Helper::GetTextureWriteState(TextureDesc textureDesc)
 	{
 		l_result = D3D12_RESOURCE_STATE_DEPTH_WRITE;
 	}
-
-	if (textureDesc.UseMipMap)
+	else
 	{
-		l_result |= D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+		l_result = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+
+		if (textureDesc.UseMipMap)
+		{
+			l_result |= D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+		}
 	}
 
 	return l_result;
@@ -1251,89 +1304,6 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12D
 #endif // INNO_DEBUG
 
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_InstanceName.c_str(), " PSO has been created.");
-
-	return true;
-}
-
-bool DX12Helper::CreateCommandQueue(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12Device> device)
-{
-	auto l_CommandQueue = reinterpret_cast<DX12CommandQueue*>(DX12RPDC->m_CommandQueue);
-
-	// Set up the description of the command queue.
-	l_CommandQueue->m_CommandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-	l_CommandQueue->m_CommandQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
-	l_CommandQueue->m_CommandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-	l_CommandQueue->m_CommandQueueDesc.NodeMask = 0;
-
-	// Create the command queue.
-	auto l_HResult = device->CreateCommandQueue(&l_CommandQueue->m_CommandQueueDesc, IID_PPV_ARGS(&l_CommandQueue->m_CommandQueue));
-	if (FAILED(l_HResult))
-	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_InstanceName.c_str(), " Can't create CommandQueue!");
-		return false;
-	}
-#ifdef INNO_DEBUG
-	SetObjectName(DX12RPDC, l_CommandQueue->m_CommandQueue, "CommandQueue");
-#endif // INNO_DEBUG
-
-	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_InstanceName.c_str(), " CommandQueue has been created.");
-
-	return true;
-}
-
-bool DX12Helper::CreateCommandLists(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12Device> device, const std::vector<ComPtr<ID3D12CommandAllocator>>& commandAllocators)
-{
-	for (size_t i = 0; i < DX12RPDC->m_CommandLists.size(); i++)
-	{
-		auto l_CommandList = reinterpret_cast<DX12CommandList*>(DX12RPDC->m_CommandLists[i]);
-
-		auto l_HResult = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocators[i].Get(), NULL, IID_PPV_ARGS(&l_CommandList->m_GraphicsCommandList));
-		if (FAILED(l_HResult))
-		{
-			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_InstanceName.c_str(), " Can't create CommandList!");
-			return false;
-		}
-#ifdef INNO_DEBUG
-		SetObjectName(DX12RPDC, l_CommandList->m_GraphicsCommandList, ("CommandList_" + std::to_string(i)).c_str());
-#endif // INNO_DEBUG
-
-		l_CommandList->m_GraphicsCommandList->Close();
-	}
-
-	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_InstanceName.c_str(), " CommandList has been created.");
-
-	return true;
-}
-
-bool DX12Helper::CreateSyncPrimitives(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12Device> device)
-{
-	for (size_t i = 0; i < DX12RPDC->m_Fences.size(); i++)
-	{
-		auto l_Fence = reinterpret_cast<DX12Fence*>(DX12RPDC->m_Fences[i]);
-
-		// Create a fence for GPU synchronization.
-		auto l_HResult = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&l_Fence->m_Fence));
-		if (FAILED(l_HResult))
-		{
-			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_InstanceName.c_str(), " Can't create Fence!");
-			return false;
-		}
-#ifdef INNO_DEBUG
-		SetObjectName(DX12RPDC, l_Fence->m_Fence, ("Fence_" + std::to_string(i)).c_str());
-#endif // INNO_DEBUG
-
-		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_InstanceName.c_str(), " Fence has been created.");
-
-		// Create an event object for the fence.
-		l_Fence->m_FenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
-		if (l_Fence->m_FenceEvent == NULL)
-		{
-			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_InstanceName.c_str(), " Can't create fence event!");
-			return false;
-		}
-
-		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", DX12RPDC->m_InstanceName.c_str(), " Fence event has been created.");
-	}
 
 	return true;
 }

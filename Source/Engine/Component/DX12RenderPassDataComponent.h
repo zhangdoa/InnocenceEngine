@@ -36,14 +36,13 @@ namespace Inno
 	class DX12CommandList : public ICommandList
 	{
 	public:
-		ComPtr<ID3D12GraphicsCommandList> m_GraphicsCommandList = 0;
+		ComPtr<ID3D12GraphicsCommandList> m_DirectCommandList = 0;
+		ComPtr<ID3D12GraphicsCommandList> m_ComputeCommandList = 0;
+		ComPtr<ID3D12GraphicsCommandList> m_CopyCommandList = 0;
 	};
 
 	class DX12CommandQueue : public ICommandQueue
 	{
-	public:
-		D3D12_COMMAND_QUEUE_DESC m_CommandQueueDesc = {};
-		ComPtr<ID3D12CommandQueue> m_CommandQueue = 0;
 	};
 
 	class DX12Semaphore : public ISemaphore
@@ -52,10 +51,6 @@ namespace Inno
 
 	class DX12Fence : public IFence
 	{
-	public:
-		ComPtr<ID3D12Fence> m_Fence = 0;
-		HANDLE m_FenceEvent = 0;
-		uint64_t m_FenceStatus = 0;
 	};
 
 	class DX12RenderPassDataComponent : public RenderPassDataComponent

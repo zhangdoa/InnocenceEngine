@@ -24,8 +24,11 @@ namespace Inno
 			return true;
 		}
 
-		ComPtr<ID3D12GraphicsCommandList> BeginSingleTimeCommands(ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandAllocator> globalCommandAllocator);
-		bool EndSingleTimeCommands(ComPtr<ID3D12GraphicsCommandList> commandList, ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandQueue> globalCommandQueue);
+		ComPtr<ID3D12CommandQueue> CreateCommandQueue(D3D12_COMMAND_QUEUE_DESC * commandQueueDesc, ComPtr<ID3D12Device> device, const wchar_t *name = L"");
+		ComPtr<ID3D12CommandAllocator> CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12Device> device, const wchar_t *name = L"");
+		ComPtr<ID3D12GraphicsCommandList> CreateCommandList(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandAllocator> commandAllocator, const wchar_t *name = L"");
+		ComPtr<ID3D12GraphicsCommandList> OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE commandListType, ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandAllocator> commandAllocator);
+		bool CloseTemporaryCommandList(ComPtr<ID3D12GraphicsCommandList> commandList, ComPtr<ID3D12Device> device, ComPtr<ID3D12CommandQueue> commandQueue);
 		ComPtr<ID3D12Resource> CreateUploadHeapBuffer(D3D12_RESOURCE_DESC *resourceDesc, ComPtr<ID3D12Device> device, const char *name = "");
 		ComPtr<ID3D12Resource> CreateDefaultHeapBuffer(D3D12_RESOURCE_DESC *resourceDesc, ComPtr<ID3D12Device> device, D3D12_CLEAR_VALUE *clearValue = nullptr, const char *name = "");
 		ComPtr<ID3D12Resource> CreateReadBackHeapBuffer(UINT64 size, ComPtr<ID3D12Device> device, const char *name = "");
@@ -51,9 +54,6 @@ namespace Inno
 		bool CreateViews(DX12RenderPassDataComponent *DX12RPDC, ComPtr<ID3D12Device> device);
 		bool CreateRootSignature(DX12RenderPassDataComponent *DX12RPDC, ComPtr<ID3D12Device> device);
 		bool CreatePSO(DX12RenderPassDataComponent *DX12RPDC, ComPtr<ID3D12Device> device);
-		bool CreateCommandQueue(DX12RenderPassDataComponent *DX12RPDC, ComPtr<ID3D12Device> device);
-		bool CreateCommandLists(DX12RenderPassDataComponent *DX12RPDC, ComPtr<ID3D12Device> device, const std::vector<ComPtr<ID3D12CommandAllocator>> &commandAllocators);
-		bool CreateSyncPrimitives(DX12RenderPassDataComponent *DX12RPDC, ComPtr<ID3D12Device> device);
 
 		D3D12_COMPARISON_FUNC GetComparisionFunction(ComparisionFunction comparisionFunction);
 		D3D12_STENCIL_OP GetStencilOperation(StencilOperation stencilOperation);
