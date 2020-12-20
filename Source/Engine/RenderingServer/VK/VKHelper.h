@@ -27,72 +27,73 @@ namespace Inno
 
 	namespace VKHelper
 	{
-		bool checkValidationLayerSupport(const std::vector<const char*>& validationLayers);
-		bool checkDeviceExtensionSupport(VkPhysicalDevice device, const std::vector<const char*>& deviceExtensions);
-		QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR windowSurface);
-		VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
-		VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
-		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
-		SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR windowSurface);
-		bool isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR windowSurface, const std::vector<const char*>& deviceExtensions);
+		bool CheckValidationLayerSupport(const std::vector<const char*>& validationLayers);
+		bool CheckDeviceExtensionSupport(VkPhysicalDevice device, const std::vector<const char*>& deviceExtensions);
+		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR windowSurface);
+		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+		VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+		VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR windowSurface);
+		bool IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR windowSurface, const std::vector<const char*>& deviceExtensions);
 
-		VkCommandBuffer beginSingleTimeCommands(VkDevice device, VkCommandPool commandPool);
-		void endSingleTimeCommands(VkDevice device, VkCommandPool commandPool, VkQueue commandQueue, VkCommandBuffer commandBuffer);
+		VkCommandBuffer OpenTemporaryCommandBuffer(VkDevice device, VkCommandPool commandPool);
+		void CloseTemporaryCommandBuffer(VkDevice device, VkCommandPool commandPool, VkQueue commandQueue, VkCommandBuffer commandBuffer);
 
-		uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
+		uint32_t FindMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
-		bool createCommandPool(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface, VkDevice device, VkCommandPool& commandPool);
+		bool CreateCommandPool(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface, VkDevice device, VkCommandPool& commandPool);
 
-		bool createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, const VkBufferCreateInfo& bufferCInfo, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-		bool copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue commandQueue, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-		bool createImage(VkPhysicalDevice physicalDevice, VkDevice device, const VkImageCreateInfo& imageCInfo, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+		bool CreateBuffer(VkPhysicalDevice physicalDevice, VkDevice device, const VkBufferCreateInfo& bufferCInfo, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+		bool CopyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue commandQueue, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+		bool CreateImage(VkPhysicalDevice physicalDevice, VkDevice device, const VkImageCreateInfo& imageCInfo, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 
-		VKTextureDesc getVKTextureDesc(TextureDesc textureDesc);
-		VkImageType getImageType(TextureSampler textureSampler);
-		VkImageViewType getImageViewType(TextureSampler textureSampler);
-		VkImageUsageFlags getImageUsageFlags(TextureUsage textureUsage);
-		VkSamplerAddressMode getSamplerAddressMode(TextureWrapMethod textureWrapMethod);
-		VkFilter getFilter(TextureFilterMethod textureFilterMethod);
-		VkSamplerMipmapMode getSamplerMipmapMode(TextureFilterMethod minFilterMethod);
-		VkFormat getTextureFormat(TextureDesc textureDesc);
-		VkDeviceSize getImageSize(TextureDesc textureDesc);
-		VkImageAspectFlagBits getImageAspectFlags(TextureUsage textureUsage);
-		VkImageCreateInfo getImageCreateInfo(TextureDesc textureDesc, VKTextureDesc vKTextureDesc);
+		VKTextureDesc GetVKTextureDesc(TextureDesc textureDesc);
+		VkImageType GetImageType(TextureSampler textureSampler);
+		VkImageViewType GetImageViewType(TextureSampler textureSampler);
+		VkImageUsageFlags GetImageUsageFlags(TextureUsage textureUsage);
+		VkSamplerAddressMode GetSamplerAddressMode(TextureWrapMethod textureWrapMethod);
+		VkFilter GetFilter(TextureFilterMethod textureFilterMethod);
+		VkSamplerMipmapMode GetSamplerMipmapMode(TextureFilterMethod minFilterMethod);
+		VkFormat GetTextureFormat(TextureDesc textureDesc);
+		VkDeviceSize GetImageSize(TextureDesc textureDesc);
+		VkImageAspectFlagBits GetImageAspectFlags(TextureUsage textureUsage);
+		VkImageCreateInfo GetImageCreateInfo(TextureDesc textureDesc, VKTextureDesc vKTextureDesc);
 
-		bool transitImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout);
+		bool TransitImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout);
 		bool copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, VkImageAspectFlags aspectFlags, uint32_t width, uint32_t height);
-		bool createImageView(VkDevice device, VKTextureDataComponent* VKTDC);
+		bool CreateImageView(VkDevice device, VKTextureDataComponent* VKTDC);
 
-		bool createDescriptorSetLayoutBindings(VKRenderPassDataComponent* VKRPDC);
+		bool CreateDescriptorSetLayoutBindings(VKRenderPassDataComponent* VKRPDC);
 		bool createDescriptorPool(VkDevice device, VkDescriptorPoolSize* poolSize, uint32_t poolSizeCount, uint32_t maxSets, VkDescriptorPool& poolHandle);
 		bool createDescriptorSetLayout(VkDevice device, VkDescriptorSetLayoutBinding* setLayoutBindings, uint32_t setLayoutBindingsCount, VkDescriptorSetLayout& setLayout);
 		bool createDescriptorSets(VkDevice device, VkDescriptorPool pool, VkDescriptorSetLayout& setLayout, VkDescriptorSet& setHandle, uint32_t count);
-		bool updateDescriptorSet(VkDevice device, VkWriteDescriptorSet* writeDescriptorSets, uint32_t writeDescriptorSetsCount);
+		bool UpdateDescriptorSet(VkDevice device, VkWriteDescriptorSet* writeDescriptorSets, uint32_t writeDescriptorSetsCount);
 
-		bool reserveRenderTargets(VKRenderPassDataComponent* VKRPDC, IRenderingServer* renderingServer);
-		bool createRenderTargets(VKRenderPassDataComponent* VKRPDC, IRenderingServer* renderingServer);
-		bool createRenderPass(VkDevice device, VKRenderPassDataComponent* VKRPDC);
-		bool createViewportAndScissor(VKRenderPassDataComponent* VKRPDC);
-		bool createSingleFramebuffer(VkDevice device, VKRenderPassDataComponent* VKRPDC);
-		bool createMultipleFramebuffers(VkDevice device, VKRenderPassDataComponent* VKRPDC);
+		bool ReserveRenderTargets(VKRenderPassDataComponent* VKRPDC, IRenderingServer* renderingServer);
+		bool CreateRenderTargets(VKRenderPassDataComponent* VKRPDC, IRenderingServer* renderingServer);
+		bool CreateResourcesBinder(VKRenderPassDataComponent *VKRPDC);
+		bool CreateRenderPass(VkDevice device, VKRenderPassDataComponent* VKRPDC);
+		bool CreateViewportAndScissor(VKRenderPassDataComponent* VKRPDC);
+		bool CreateSingleFramebuffer(VkDevice device, VKRenderPassDataComponent* VKRPDC);
+		bool CreateMultipleFramebuffers(VkDevice device, VKRenderPassDataComponent* VKRPDC);
 
 		VkCompareOp GetComparisionFunctionEnum(ComparisionFunction comparisionFunction);
 		VkStencilOp GetStencilOperationEnum(StencilOperation stencilOperation);
 		VkBlendFactor GetBlendFactorEnum(BlendFactor blendFactor);
 		VkBlendOp GetBlendOperation(BlendOperation blendOperation);
 
-		bool createPipelineLayout(VkDevice device, VKRenderPassDataComponent* VKRPDC);
+		bool CreatePipelineLayout(VkDevice device, VKRenderPassDataComponent* VKRPDC);
 		bool GenerateViewportState(ViewportDesc viewportDesc, VKPipelineStateObject* PSO);
 		bool GenerateRasterizerState(RasterizerDesc rasterizerDesc, VKPipelineStateObject* PSO);
 		bool GenerateDepthStencilState(DepthStencilDesc depthStencilDesc, VKPipelineStateObject* PSO);
 		bool GenerateBlendState(BlendDesc blendDesc, size_t RTCount, VKPipelineStateObject* PSO);
-		bool createGraphicsPipelines(VkDevice device, VKRenderPassDataComponent* VKRPDC);
-		bool createComputePipelines(VkDevice device, VKRenderPassDataComponent* VKRPDC);
-		bool createCommandBuffers(VkDevice device, VKRenderPassDataComponent* VKRPDC);
-		bool createSyncPrimitives(VkDevice device, VKRenderPassDataComponent* VKRPDC);
+		bool CreateGraphicsPipelines(VkDevice device, VKRenderPassDataComponent* VKRPDC);
+		bool CreateComputePipelines(VkDevice device, VKRenderPassDataComponent* VKRPDC);
+		bool CreateCommandBuffers(VkDevice device, VKRenderPassDataComponent* VKRPDC);
+		bool CreateSyncPrimitives(VkDevice device, VKRenderPassDataComponent* VKRPDC);
 
-		bool createShaderModule(VkDevice device, VkShaderModule& vkShaderModule, const ShaderFilePath& shaderFilePath);
+		bool CreateShaderModule(VkDevice device, VkShaderModule& vkShaderModule, const ShaderFilePath& shaderFilePath);
 
-		VkWriteDescriptorSet createWriteDescriptorSet(const VkDescriptorImageInfo& imageInfo, uint32_t dstBinding, VkDescriptorSet descriptorSet);
+		VkWriteDescriptorSet GetWriteDescriptorSet(const VkDescriptorImageInfo& imageInfo, uint32_t dstBinding, VkDescriptorSet descriptorSet);
 	}
 }

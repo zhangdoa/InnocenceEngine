@@ -166,7 +166,7 @@ std::vector<const char*> VKRenderingServerNS::getRequiredExtensions()
 bool VKRenderingServerNS::createVkInstance()
 {
 	// check support for validation layer
-	if (m_enableValidationLayers && !checkValidationLayerSupport(m_validationLayers))
+	if (m_enableValidationLayers && !CheckValidationLayerSupport(m_validationLayers))
 	{
 		m_ObjectStatus = ObjectStatus::Suspended;
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Validation layers requested, but not available!");
@@ -259,7 +259,7 @@ bool VKRenderingServerNS::createPysicalDevice()
 
 	for (const auto& l_device : l_devices)
 	{
-		if (isDeviceSuitable(l_device, m_windowSurface, m_deviceExtensions))
+		if (IsDeviceSuitable(l_device, m_windowSurface, m_deviceExtensions))
 		{
 			m_physicalDevice = l_device;
 			break;
@@ -279,7 +279,7 @@ bool VKRenderingServerNS::createPysicalDevice()
 
 bool VKRenderingServerNS::createLogicalDevice()
 {
-	QueueFamilyIndices l_indices = findQueueFamilies(m_physicalDevice, m_windowSurface);
+	QueueFamilyIndices l_indices = FindQueueFamilies(m_physicalDevice, m_windowSurface);
 
 	std::vector<VkDeviceQueueCreateInfo> l_queueCreateInfos;
 	std::set<uint32_t> l_uniqueQueueFamilies = { l_indices.m_graphicsFamily.value(), l_indices.m_presentFamily.value() };
@@ -468,16 +468,16 @@ bool VKRenderingServerNS::createMaterialDescriptorPool()
 
 bool VKRenderingServerNS::createGlobalCommandPool()
 {
-	return createCommandPool(m_physicalDevice, m_windowSurface, m_device, m_commandPool);
+	return CreateCommandPool(m_physicalDevice, m_windowSurface, m_device, m_commandPool);
 }
 
 bool VKRenderingServerNS::createSwapChain()
 {
 	// choose device supported formats, modes and maximum back buffers
-	auto l_swapChainSupport = querySwapChainSupport(m_physicalDevice, m_windowSurface);
-	auto l_windowSurfaceExtent = chooseSwapExtent(l_swapChainSupport.m_capabilities);
-	auto l_windowSurfaceFormat = chooseSwapSurfaceFormat(l_swapChainSupport.m_formats);
-	auto l_presentMode = chooseSwapPresentMode(l_swapChainSupport.m_presentModes);
+	auto l_swapChainSupport = QuerySwapChainSupport(m_physicalDevice, m_windowSurface);
+	auto l_windowSurfaceExtent = ChooseSwapExtent(l_swapChainSupport.m_capabilities);
+	auto l_windowSurfaceFormat = ChooseSwapSurfaceFormat(l_swapChainSupport.m_formats);
+	auto l_presentMode = ChooseSwapPresentMode(l_swapChainSupport.m_presentModes);
 
 	uint32_t l_imageCount = l_swapChainSupport.m_capabilities.minImageCount + 1;
 	if (l_swapChainSupport.m_capabilities.maxImageCount > 0 && l_imageCount > l_swapChainSupport.m_capabilities.maxImageCount)
@@ -495,7 +495,7 @@ bool VKRenderingServerNS::createSwapChain()
 	l_createInfo.imageArrayLayers = 1;
 	l_createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-	QueueFamilyIndices l_indices = findQueueFamilies(m_physicalDevice, m_windowSurface);
+	QueueFamilyIndices l_indices = FindQueueFamilies(m_physicalDevice, m_windowSurface);
 	uint32_t l_queueFamilyIndices[] = { l_indices.m_graphicsFamily.value(), l_indices.m_presentFamily.value() };
 
 	if (l_indices.m_graphicsFamily.value() != l_indices.m_presentFamily.value())
@@ -662,7 +662,7 @@ bool createHostStagingBuffer(size_t bufferSize, VkBufferUsageFlagBits usageFlags
 	l_stagingBufferCInfo.usage = usageFlags;
 	l_stagingBufferCInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-	return createBuffer(m_physicalDevice, m_device, l_stagingBufferCInfo, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffer, deviceMemory);
+	return CreateBuffer(m_physicalDevice, m_device, l_stagingBufferCInfo, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffer, deviceMemory);
 }
 
 bool createDeviceLocalBuffer(size_t bufferSize, VkBufferUsageFlagBits usageFlags, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
@@ -673,7 +673,7 @@ bool createDeviceLocalBuffer(size_t bufferSize, VkBufferUsageFlagBits usageFlags
 	l_localBufferCInfo.usage = usageFlags;
 	l_localBufferCInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-	return createBuffer(m_physicalDevice, m_device, l_localBufferCInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, buffer, deviceMemory);
+	return CreateBuffer(m_physicalDevice, m_device, l_localBufferCInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, buffer, deviceMemory);
 }
 
 bool copyHostMemoryToDeviceMemory(void* hostMemory, size_t bufferSize, VkDeviceMemory& deviceMemory)
@@ -694,7 +694,7 @@ bool initializeDeviceLocalBuffer(void* hostMemory, size_t bufferSize, VkBuffer& 
 
 	copyHostMemoryToDeviceMemory(hostMemory, bufferSize, l_stagingBufferMemory);
 
-	copyBuffer(m_device, m_commandPool, m_graphicsQueue, l_stagingBuffer, buffer, bufferSize);
+	CopyBuffer(m_device, m_commandPool, m_graphicsQueue, l_stagingBuffer, buffer, bufferSize);
 
 	vkDestroyBuffer(m_device, l_stagingBuffer, nullptr);
 	vkFreeMemory(m_device, l_stagingBufferMemory, nullptr);
@@ -747,10 +747,10 @@ bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent* rhs
 	}
 
 	auto l_rhs = reinterpret_cast<VKTextureDataComponent*>(rhs);
-	l_rhs->m_VKTextureDesc = getVKTextureDesc(rhs->m_TextureDesc);
-	l_rhs->m_ImageCreateInfo = getImageCreateInfo(rhs->m_TextureDesc, l_rhs->m_VKTextureDesc);
+	l_rhs->m_VKTextureDesc = GetVKTextureDesc(rhs->m_TextureDesc);
+	l_rhs->m_ImageCreateInfo = GetImageCreateInfo(rhs->m_TextureDesc, l_rhs->m_VKTextureDesc);
 
-	createImage(m_physicalDevice, m_device, l_rhs->m_ImageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, l_rhs->m_image, l_rhs->m_imageMemory);
+	CreateImage(m_physicalDevice, m_device, l_rhs->m_ImageCreateInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, l_rhs->m_image, l_rhs->m_imageMemory);
 
 	VkBuffer l_stagingBuffer;
 	VkDeviceMemory l_stagingBufferMemory;
@@ -764,31 +764,31 @@ bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent* rhs
 		vkUnmapMemory(m_device, l_stagingBufferMemory);
 	}
 
-	VkCommandBuffer l_commandBuffer = beginSingleTimeCommands(m_device, m_commandPool);
+	VkCommandBuffer l_commandBuffer = OpenTemporaryCommandBuffer(m_device, m_commandPool);
 
 	if (rhs->m_TextureDesc.Usage == TextureUsage::ColorAttachment)
 	{
-		transitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		TransitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	}
 	else if (rhs->m_TextureDesc.Usage == TextureUsage::DepthAttachment)
 	{
-		transitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+		TransitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 	}
 	else if (rhs->m_TextureDesc.Usage == TextureUsage::DepthStencilAttachment)
 	{
-		transitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+		TransitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 	}
 	else
 	{
-		transitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		TransitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 		if (l_rhs->m_TextureData != nullptr)
 		{
 			copyBufferToImage(l_commandBuffer, l_stagingBuffer, l_rhs->m_image, l_rhs->m_VKTextureDesc.aspectFlags, static_cast<uint32_t>(l_rhs->m_ImageCreateInfo.extent.width), static_cast<uint32_t>(l_rhs->m_ImageCreateInfo.extent.height));
 		}
-		transitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		TransitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	}
 
-	endSingleTimeCommands(m_device, m_commandPool, m_graphicsQueue, l_commandBuffer);
+	CloseTemporaryCommandBuffer(m_device, m_commandPool, m_graphicsQueue, l_commandBuffer);
 
 	if (l_rhs->m_TextureData != nullptr)
 	{
@@ -796,7 +796,7 @@ bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent* rhs
 		vkFreeMemory(m_device, l_stagingBufferMemory, nullptr);
 	}
 
-	createImageView(m_device, l_rhs);
+	CreateImageView(m_device, l_rhs);
 
 	l_rhs->m_DescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	l_rhs->m_DescriptorImageInfo.imageView = l_rhs->m_imageView;
@@ -836,19 +836,19 @@ bool VKRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent* r
 		if (l_texture)
 		{
 			InitializeTextureDataComponent(l_texture);
-			l_rhs->m_writeDescriptorSets[i] = createWriteDescriptorSet(l_texture->m_DescriptorImageInfo, 0, l_rhs->m_descriptorSet);
+			l_rhs->m_writeDescriptorSets[i] = GetWriteDescriptorSet(l_texture->m_DescriptorImageInfo, 0, l_rhs->m_descriptorSet);
 			l_rhs->m_TextureSlots[i].m_Texture = l_texture;
 			l_rhs->m_TextureSlots[i].m_Activate = true;
 		}
 		else
 		{
 			auto l_texture = reinterpret_cast<VKTextureDataComponent*>(l_defaultMaterial->m_TextureSlots[i].m_Texture);
-			l_rhs->m_writeDescriptorSets[i] = createWriteDescriptorSet(l_texture->m_DescriptorImageInfo, 0, l_rhs->m_descriptorSet);
+			l_rhs->m_writeDescriptorSets[i] = GetWriteDescriptorSet(l_texture->m_DescriptorImageInfo, 0, l_rhs->m_descriptorSet);
 			l_rhs->m_TextureSlots[i].m_Texture = l_texture;
 		}
 	}
 
-	updateDescriptorSet(m_device, &l_rhs->m_writeDescriptorSets[0], (uint32_t)l_rhs->m_writeDescriptorSets.size());
+	UpdateDescriptorSet(m_device, &l_rhs->m_writeDescriptorSets[0], (uint32_t)l_rhs->m_writeDescriptorSets.size());
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
@@ -863,30 +863,35 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 
 	bool l_result = true;
 
-	l_result &= reserveRenderTargets(l_rhs, this);
+	l_result &= ReserveRenderTargets(l_rhs, this);
 
-	l_result &= createRenderTargets(l_rhs, this);
+	l_result &= CreateRenderTargets(l_rhs, this);
+
+	l_rhs->m_RenderTargetsResourceBinders.resize(l_rhs->m_RenderPassDesc.m_RenderTargetCount);
+	for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		l_rhs->m_RenderTargetsResourceBinders[i] = addResourcesBinder();
+	}
+
+	l_result &= CreateResourcesBinder(l_rhs);
 
 	l_rhs->m_PipelineStateObject = addPSO();
 
-	if (l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
-	{
-		l_result &= createRenderPass(m_device, l_rhs);
-		l_result &= createViewportAndScissor(l_rhs);
+	l_result &= CreateRenderPass(m_device, l_rhs);
+	l_result &= CreateViewportAndScissor(l_rhs);
 
-		if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
-		{
-			l_result &= createMultipleFramebuffers(m_device, l_rhs);
-		}
-		else
-		{
-			l_result &= createSingleFramebuffer(m_device, l_rhs);
-		}
+	if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+	{
+		l_result &= CreateMultipleFramebuffers(m_device, l_rhs);
+	}
+	else
+	{
+		l_result &= CreateSingleFramebuffer(m_device, l_rhs);
 	}
 
 	if (l_rhs->m_ResourceBinderLayoutDescs.size())
 	{
-		l_result &= createDescriptorSetLayoutBindings(l_rhs);
+		l_result &= CreateDescriptorSetLayoutBindings(l_rhs);
 
 		auto l_descriptorLayoutsSize = l_rhs->m_DescriptorSetLayoutBindingIndices.size();
 		auto l_maximumSetIndex = l_rhs->m_DescriptorSetLayoutBindingIndices[l_descriptorLayoutsSize - 1].m_SetIndex;
@@ -913,26 +918,34 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 		l_rhs->m_DescriptorSetLayouts[0] = m_dummyEmptyDescriptorLayout;
 	}
 
-	l_result &= createPipelineLayout(m_device, l_rhs);
+	l_result &= CreatePipelineLayout(m_device, l_rhs);
 
 	if (l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
 	{
-		l_result &= createGraphicsPipelines(m_device, l_rhs);
+		l_result &= CreateGraphicsPipelines(m_device, l_rhs);
 	}
 	else
 	{
-		l_result &= createComputePipelines(m_device, l_rhs);
+		l_result &= CreateComputePipelines(m_device, l_rhs);
 	}
 
-	l_result &= createCommandPool(m_physicalDevice, m_windowSurface, m_device, l_rhs->m_CommandPool);
+	l_result &= CreateCommandPool(m_physicalDevice, m_windowSurface, m_device, l_rhs->m_CommandPool);
 
-	l_rhs->m_CommandLists.resize(l_rhs->m_Framebuffers.size());
+	if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
+	{
+		l_rhs->m_CommandLists.resize(l_rhs->m_RenderPassDesc.m_RenderTargetCount);
+	}
+	else
+	{
+		l_rhs->m_CommandLists.resize(1);
+	}
+
 	for (size_t i = 0; i < l_rhs->m_CommandLists.size(); i++)
 	{
 		l_rhs->m_CommandLists[i] = addCommandList();
 	}
 
-	l_result &= createCommandBuffers(m_device, l_rhs);
+	l_result &= CreateCommandBuffers(m_device, l_rhs);
 
 	l_rhs->m_SignalSemaphores.resize(l_rhs->m_Framebuffers.size());
 	l_rhs->m_WaitSemaphores.resize(l_rhs->m_Framebuffers.size());
@@ -945,7 +958,7 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 		l_rhs->m_Fences[i] = addFence();
 	}
 
-	l_result &= createSyncPrimitives(m_device, l_rhs);
+	l_result &= CreateSyncPrimitives(m_device, l_rhs);
 
 	return l_result;
 }
@@ -964,7 +977,7 @@ bool VKRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent*
 
 	if (l_rhs->m_ShaderFilePaths.m_VSPath != "")
 	{
-		l_result &= createShaderModule(m_device, l_rhs->m_VSHandle, l_rhs->m_ShaderFilePaths.m_VSPath);
+		l_result &= CreateShaderModule(m_device, l_rhs->m_VSHandle, l_rhs->m_ShaderFilePaths.m_VSPath);
 		l_rhs->m_VSCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		l_rhs->m_VSCInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
 		l_rhs->m_VSCInfo.module = l_rhs->m_VSHandle;
@@ -972,7 +985,7 @@ bool VKRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent*
 	}
 	if (l_rhs->m_ShaderFilePaths.m_HSPath != "")
 	{
-		l_result &= createShaderModule(m_device, l_rhs->m_HSHandle, l_rhs->m_ShaderFilePaths.m_HSPath);
+		l_result &= CreateShaderModule(m_device, l_rhs->m_HSHandle, l_rhs->m_ShaderFilePaths.m_HSPath);
 		l_rhs->m_HSCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		l_rhs->m_HSCInfo.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
 		l_rhs->m_HSCInfo.module = l_rhs->m_HSHandle;
@@ -980,7 +993,7 @@ bool VKRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent*
 	}
 	if (l_rhs->m_ShaderFilePaths.m_DSPath != "")
 	{
-		l_result &= createShaderModule(m_device, l_rhs->m_DSHandle, l_rhs->m_ShaderFilePaths.m_DSPath);
+		l_result &= CreateShaderModule(m_device, l_rhs->m_DSHandle, l_rhs->m_ShaderFilePaths.m_DSPath);
 		l_rhs->m_DSCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		l_rhs->m_DSCInfo.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
 		l_rhs->m_DSCInfo.module = l_rhs->m_DSHandle;
@@ -988,7 +1001,7 @@ bool VKRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent*
 	}
 	if (l_rhs->m_ShaderFilePaths.m_GSPath != "")
 	{
-		l_result &= createShaderModule(m_device, l_rhs->m_GSHandle, l_rhs->m_ShaderFilePaths.m_GSPath);
+		l_result &= CreateShaderModule(m_device, l_rhs->m_GSHandle, l_rhs->m_ShaderFilePaths.m_GSPath);
 		l_rhs->m_GSCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		l_rhs->m_GSCInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
 		l_rhs->m_GSCInfo.module = l_rhs->m_GSHandle;
@@ -996,7 +1009,7 @@ bool VKRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent*
 	}
 	if (l_rhs->m_ShaderFilePaths.m_PSPath != "")
 	{
-		l_result &= createShaderModule(m_device, l_rhs->m_PSHandle, l_rhs->m_ShaderFilePaths.m_PSPath);
+		l_result &= CreateShaderModule(m_device, l_rhs->m_PSHandle, l_rhs->m_ShaderFilePaths.m_PSPath);
 		l_rhs->m_PSCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		l_rhs->m_PSCInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
 		l_rhs->m_PSCInfo.module = l_rhs->m_PSHandle;
@@ -1004,7 +1017,7 @@ bool VKRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent*
 	}
 	if (l_rhs->m_ShaderFilePaths.m_CSPath != "")
 	{
-		l_result &= createShaderModule(m_device, l_rhs->m_CSHandle, l_rhs->m_ShaderFilePaths.m_CSPath);
+		l_result &= CreateShaderModule(m_device, l_rhs->m_CSHandle, l_rhs->m_ShaderFilePaths.m_CSPath);
 		l_rhs->m_CSCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		l_rhs->m_CSCInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
 		l_rhs->m_CSCInfo.module = l_rhs->m_CSHandle;
@@ -1022,12 +1035,12 @@ bool VKRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent* rhs
 	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Sampler;
 
 	l_rhs->m_samplerCInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	l_rhs->m_samplerCInfo.minFilter = getFilter(l_rhs->m_SamplerDesc.m_MinFilterMethod);
-	l_rhs->m_samplerCInfo.magFilter = getFilter(l_rhs->m_SamplerDesc.m_MagFilterMethod);
-	l_rhs->m_samplerCInfo.mipmapMode = getSamplerMipmapMode(l_rhs->m_SamplerDesc.m_MinFilterMethod);
-	l_rhs->m_samplerCInfo.addressModeU = getSamplerAddressMode(l_rhs->m_SamplerDesc.m_WrapMethodU);
-	l_rhs->m_samplerCInfo.addressModeV = getSamplerAddressMode(l_rhs->m_SamplerDesc.m_WrapMethodV);
-	l_rhs->m_samplerCInfo.addressModeW = getSamplerAddressMode(l_rhs->m_SamplerDesc.m_WrapMethodW);
+	l_rhs->m_samplerCInfo.minFilter = GetFilter(l_rhs->m_SamplerDesc.m_MinFilterMethod);
+	l_rhs->m_samplerCInfo.magFilter = GetFilter(l_rhs->m_SamplerDesc.m_MagFilterMethod);
+	l_rhs->m_samplerCInfo.mipmapMode = GetSamplerMipmapMode(l_rhs->m_SamplerDesc.m_MinFilterMethod);
+	l_rhs->m_samplerCInfo.addressModeU = GetSamplerAddressMode(l_rhs->m_SamplerDesc.m_WrapMethodU);
+	l_rhs->m_samplerCInfo.addressModeV = GetSamplerAddressMode(l_rhs->m_SamplerDesc.m_WrapMethodV);
+	l_rhs->m_samplerCInfo.addressModeW = GetSamplerAddressMode(l_rhs->m_SamplerDesc.m_WrapMethodW);
 	l_rhs->m_samplerCInfo.mipLodBias = 0.0f;
 	l_rhs->m_samplerCInfo.maxAnisotropy = float(l_rhs->m_SamplerDesc.m_MaxAnisotropy);
 	l_rhs->m_samplerCInfo.compareOp = VkCompareOp::VK_COMPARE_OP_ALWAYS;
@@ -1082,7 +1095,7 @@ bool VKRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent*
 			createDeviceLocalBuffer(l_rhs->m_TotalSize, VkBufferUsageFlagBits(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT), l_rhs->m_DeviceLocalBuffer, l_rhs->m_DeviceLocalMemory);
 			if(l_rhs->m_InitialData != nullptr)
 			{
-				copyBuffer(m_device, m_commandPool, m_graphicsQueue, l_rhs->m_HostStagingBuffer, l_rhs->m_DeviceLocalBuffer, l_rhs->m_TotalSize);
+				CopyBuffer(m_device, m_commandPool, m_graphicsQueue, l_rhs->m_HostStagingBuffer, l_rhs->m_DeviceLocalBuffer, l_rhs->m_TotalSize);
 			}
 		}
 		else
@@ -1143,21 +1156,107 @@ bool VKRenderingServer::CopyTextureDataComponent(TextureDataComponent* lhs, Text
 
 bool VKRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range)
 {
+	auto l_rhs = reinterpret_cast<VKGPUBufferDataComponent*>(rhs);
+
+	auto l_size = l_rhs->m_TotalSize;
+	if (range != SIZE_MAX)
+	{
+		l_size = range * l_rhs->m_ElementSize;
+	}
+
+	void* l_mappedMemory;
+	vkMapMemory(m_device, l_rhs->m_HostStagingMemory, startOffset, l_size, 0, &l_mappedMemory);
+	std::memcpy(l_mappedMemory, GPUBufferValue, l_size);
+	vkUnmapMemory(m_device, l_rhs->m_HostStagingMemory);
+
+	if (l_rhs->m_GPUAccessibility != Accessibility::ReadOnly)
+	{
+		CopyBuffer(m_device, m_commandPool, m_graphicsQueue, l_rhs->m_HostStagingBuffer, l_rhs->m_DeviceLocalBuffer, l_size);
+	}
+
 	return true;
 }
 
 bool VKRenderingServer::ClearGPUBufferDataComponent(GPUBufferDataComponent* rhs)
 {
+	auto l_rhs = reinterpret_cast<VKGPUBufferDataComponent*>(rhs);
+
+	auto l_commandBuffer = OpenTemporaryCommandBuffer(m_device, m_commandPool);
+
+	vkCmdFillBuffer(l_commandBuffer, l_rhs->m_HostStagingBuffer, 0, 0, 0);
+	if (l_rhs->m_GPUAccessibility != Accessibility::ReadOnly)
+	{
+		vkCmdFillBuffer(l_commandBuffer, l_rhs->m_DeviceLocalBuffer, 0, 0, 0);
+	}
+
+	CloseTemporaryCommandBuffer(m_device, m_commandPool, m_graphicsQueue, l_commandBuffer);
+
 	return true;
 }
 
 bool VKRenderingServer::CommandListBegin(RenderPassDataComponent* rhs, size_t frameIndex)
-{
+{	
+	auto l_rhs = reinterpret_cast<VKRenderPassDataComponent*>(rhs);
+	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+
+	VkCommandBufferBeginInfo l_beginInfo = {};
+	l_beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	l_beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+
+	if (vkBeginCommandBuffer(l_commandList->m_CommandBuffer, &l_beginInfo) != VK_SUCCESS)
+	{
+		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to begin recording command buffer!");
+		return false;
+	}
+
 	return true;
 }
 
 bool VKRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent* rhs)
-{
+{	
+	auto l_rhs = reinterpret_cast<VKRenderPassDataComponent*>(rhs);
+	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(l_rhs->m_PipelineStateObject);
+
+	VkRenderPassBeginInfo l_renderPassBeginInfo = {};
+	l_renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	l_renderPassBeginInfo.renderPass = l_PSO->m_RenderPass;
+	l_renderPassBeginInfo.framebuffer = l_rhs->m_Framebuffers[l_rhs->m_CurrentFrame];
+	l_renderPassBeginInfo.renderArea.offset = { 0, 0 };
+	l_renderPassBeginInfo.renderArea.extent = l_PSO->m_Scissor.extent;
+
+	VkClearValue l_clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+	std::vector<VkClearValue> l_clearValues;
+
+	for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
+	{
+		l_clearValues.emplace_back(l_clearColor);
+	}
+
+	if (l_rhs->m_RenderPassDesc.m_UseDepthBuffer)
+	{
+		l_clearValues.emplace_back();
+		l_clearValues[l_rhs->m_RenderPassDesc.m_RenderTargetCount].depthStencil = { 1.0f, 0 };
+	}
+
+	l_renderPassBeginInfo.clearValueCount = (uint32_t)l_clearValues.size();
+	if(l_clearValues.size())
+	{
+		l_renderPassBeginInfo.pClearValues = &l_clearValues[0];
+	}
+
+	vkCmdBeginRenderPass(l_commandList->m_CommandBuffer, &l_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	if(l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
+	{
+		vkCmdBindPipeline(l_commandList->m_CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, l_PSO->m_Pipeline);
+	}
+	else if(l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Compute)
+	{
+		vkCmdBindPipeline(l_commandList->m_CommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, l_PSO->m_Pipeline);	
+	}
+
 	return true;
 }
 
@@ -1167,17 +1266,37 @@ bool VKRenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 }
 
 bool VKRenderingServer::ActivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
-{
+{	
+	auto l_resourceBinder = reinterpret_cast<VKResourceBinder *>(binder);
+	auto l_renderPass = reinterpret_cast<VKRenderPassDataComponent *>(renderPass);
+	auto l_commandList = reinterpret_cast<VKCommandList *>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
+
 	return true;
 }
 
 bool VKRenderingServer::DrawIndexedInstanced(RenderPassDataComponent* renderPass, MeshDataComponent* mesh, size_t instanceCount)
-{
+{		
+	auto l_renderPass = reinterpret_cast<VKRenderPassDataComponent *>(renderPass);
+	auto l_commandList = reinterpret_cast<VKCommandList *>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
+	auto l_mesh = reinterpret_cast<VKMeshDataComponent*>(mesh);
+
+	VkBuffer vertexBuffers[] = { l_mesh->m_VBO };
+	VkDeviceSize offsets[] = { 0 };
+
+	vkCmdBindVertexBuffers(l_commandList->m_CommandBuffer, 0, 1, vertexBuffers, offsets);
+	vkCmdBindIndexBuffer(l_commandList->m_CommandBuffer, l_mesh->m_IBO, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdDrawIndexed(l_commandList->m_CommandBuffer, static_cast<uint32_t>(l_mesh->m_indicesSize), 1, 0, 0, 0);
+
 	return true;
 }
 
 bool VKRenderingServer::DrawInstanced(RenderPassDataComponent* renderPass, size_t instanceCount)
-{
+{	
+	auto l_renderPass = reinterpret_cast<VKRenderPassDataComponent *>(renderPass);
+	auto l_commandList = reinterpret_cast<VKCommandList *>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
+
+	vkCmdDraw(l_commandList->m_CommandBuffer, 1, static_cast<uint32_t>(instanceCount), 0, 0);
+
 	return true;
 }
 
@@ -1188,6 +1307,18 @@ bool VKRenderingServer::DeactivateResourceBinder(RenderPassDataComponent* render
 
 bool VKRenderingServer::CommandListEnd(RenderPassDataComponent* rhs)
 {
+	auto l_rhs = reinterpret_cast<VKRenderPassDataComponent*>(rhs);
+	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(l_rhs->m_PipelineStateObject);
+
+	vkCmdEndRenderPass(l_commandList->m_CommandBuffer);
+
+	if (vkEndCommandBuffer(l_commandList->m_CommandBuffer) != VK_SUCCESS)
+	{
+		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to end recording command buffer!");
+		return false;
+	}
+
 	return true;
 }
 
