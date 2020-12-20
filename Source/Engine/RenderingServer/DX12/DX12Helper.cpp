@@ -799,8 +799,6 @@ bool DX12Helper::ReserveRenderTargets(DX12RenderPassDataComponent* DX12RPDC, IRe
 
 bool DX12Helper::CreateRenderTargets(DX12RenderPassDataComponent* DX12RPDC, IRenderingServer* renderingServer)
 {
-	auto l_DX12RenderingServer = reinterpret_cast<DX12RenderingServer*>(renderingServer);
-
 	if (DX12RPDC->m_RenderPassDesc.m_UseColorBuffer)
 	{
 		for (size_t i = 0; i < DX12RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
@@ -843,10 +841,8 @@ bool DX12Helper::CreateRenderTargets(DX12RenderPassDataComponent* DX12RPDC, IRen
 	return true;
 }
 
-bool DX12Helper::CreateResourcesBinder(DX12RenderPassDataComponent* DX12RPDC, IRenderingServer* renderingServer)
+bool DX12Helper::CreateResourcesBinder(DX12RenderPassDataComponent* DX12RPDC)
 {
-	auto l_DX12RenderingServer = reinterpret_cast<DX12RenderingServer*>(renderingServer);
-
 	for (size_t i = 0; i < DX12RPDC->m_RenderTargetsResourceBinders.size(); i++)
 	{
 		DX12RPDC->m_RenderTargetsResourceBinders[i] = DX12RPDC->m_RenderTargets[i]->m_ResourceBinder;

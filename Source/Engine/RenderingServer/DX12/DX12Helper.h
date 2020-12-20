@@ -50,7 +50,7 @@ namespace Inno
 
 		bool ReserveRenderTargets(DX12RenderPassDataComponent *DX12RPDC, IRenderingServer *renderingServer);
 		bool CreateRenderTargets(DX12RenderPassDataComponent *DX12RPDC, IRenderingServer *renderingServer);
-		bool CreateResourcesBinder(DX12RenderPassDataComponent *DX12RPDC, IRenderingServer *renderingServer);
+		bool CreateResourcesBinder(DX12RenderPassDataComponent *DX12RPDC);
 		bool CreateViews(DX12RenderPassDataComponent *DX12RPDC, ComPtr<ID3D12Device> device);
 		bool CreateRootSignature(DX12RenderPassDataComponent *DX12RPDC, ComPtr<ID3D12Device> device);
 		bool CreatePSO(DX12RenderPassDataComponent *DX12RPDC, ComPtr<ID3D12Device> device);

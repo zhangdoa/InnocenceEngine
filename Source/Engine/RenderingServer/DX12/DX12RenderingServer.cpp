@@ -915,7 +915,7 @@ bool DX12RenderingServer::Initialize()
 			m_SwapChainRPDC->m_RenderTargetsResourceBinders[i] = l_resourceBinder;
 		}
 
-		CreateResourcesBinder(m_SwapChainRPDC, this);
+		CreateResourcesBinder(m_SwapChainRPDC);
 
 		CreateRootSignature(m_SwapChainRPDC, m_device);
 
@@ -1286,7 +1286,7 @@ bool DX12RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 		l_rhs->m_RenderTargetsResourceBinders[i] = addResourcesBinder();
 	}
 
-	l_result &= CreateResourcesBinder(l_rhs, this);
+	l_result &= CreateResourcesBinder(l_rhs);
 
 	l_rhs->m_PipelineStateObject = addPSO();
 
