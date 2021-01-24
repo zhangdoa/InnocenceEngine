@@ -115,8 +115,8 @@ auto l_renderingServer = g_Engine->getRenderingServer();
 l_renderingServer->CommandListBegin(m_RPDC, 0);
 l_renderingServer->BindRenderPassDataComponent(m_RPDC);
 l_renderingServer->CleanRenderTargets(m_RPDC);
-l_renderingServer->ActivateResourceBinder(m_RPDC, ShaderStage::Pixel, m_SDC->m_ResourceBinder, 17, 0);
-l_renderingServer->DispatchDrawCall(m_RPDC, m_quadMesh);
+l_renderingServer->BindGPUResource(m_RPDC, ShaderStage::Pixel, m_SDC, 17, 0);
+l_renderingServer->DrawIndexedInstanced(m_RPDC, m_quadMesh);
 l_renderingServer->CommandListEnd(m_RPDC);
 
 // Execute on separate threads
