@@ -40,7 +40,6 @@ namespace Inno
 		TObjectPool<DX11MaterialDataComponent>* m_MaterialDataComponentPool = 0;
 		TObjectPool<DX11TextureDataComponent>* m_TextureDataComponentPool = 0;
 		TObjectPool<DX11RenderPassDataComponent>* m_RenderPassDataComponentPool = 0;
-		TObjectPool<DX11ResourceBinder>* m_ResourceBinderPool = 0;
 		TObjectPool<DX11PipelineStateObject>* m_PSOPool = 0;
 		TObjectPool<DX11ShaderProgramComponent>* m_ShaderProgramComponentPool = 0;
 		TObjectPool<DX11SamplerDataComponent>* m_SamplerDataComponentPool = 0;
@@ -71,7 +70,7 @@ namespace Inno
 
 		ID3D10Blob* m_InputLayoutDummyShaderBuffer = 0;
 
-		IResourceBinder* m_userPipelineOutput = 0;
+		GPUResourceComponent* m_userPipelineOutput = 0;
 		DX11RenderPassDataComponent* m_SwapChainRPDC = 0;
 		DX11ShaderProgramComponent* m_SwapChainSPC = 0;
 		DX11SamplerDataComponent* m_SwapChainSDC = 0;
@@ -79,11 +78,6 @@ namespace Inno
 }
 
 using namespace DX11RenderingServerNS;
-
-DX11ResourceBinder* addResourcesBinder()
-{
-	return m_ResourceBinderPool->Spawn();
-}
 
 DX11PipelineStateObject* addPSO()
 {
@@ -98,7 +92,6 @@ bool DX11RenderingServer::Setup(ISystemConfig* systemConfig)
 	m_TextureDataComponentPool = TObjectPool<DX11TextureDataComponent>::Create(l_renderingCapability.maxTextures);
 	m_MaterialDataComponentPool = TObjectPool<DX11MaterialDataComponent>::Create(l_renderingCapability.maxMaterials);
 	m_RenderPassDataComponentPool = TObjectPool<DX11RenderPassDataComponent>::Create(128);
-	m_ResourceBinderPool = TObjectPool<DX11ResourceBinder>::Create(16384);
 	m_PSOPool = TObjectPool<DX11PipelineStateObject>::Create(128);
 	m_ShaderProgramComponentPool = TObjectPool<DX11ShaderProgramComponent>::Create(256);
 	m_SamplerDataComponentPool = TObjectPool<DX11SamplerDataComponent>::Create(256);
@@ -326,13 +319,13 @@ bool DX11RenderingServer::Initialize()
 		m_SwapChainRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 
 		m_SwapChainRPDC->m_ResourceBinderLayoutDescs.resize(2);
-		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
 		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
 		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
-		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceCount = 1;
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_SubresourceCount = 1;
 		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
 
-		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Sampler;
+		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Sampler;
 		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
 		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 0;
 		m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
@@ -341,17 +334,12 @@ bool DX11RenderingServer::Initialize()
 
 		ReserveRenderTargets(m_SwapChainRPDC, this);
 
-		m_SwapChainRPDC->m_RenderTargetsResourceBinders.resize(m_SwapChainRPDC->m_RenderTargets.size());
-
 		auto l_DX11TDC = reinterpret_cast<DX11TextureDataComponent*>(m_SwapChainRPDC->m_RenderTargets[0]);
 
 		l_DX11TDC->m_ResourceHandle = m_swapChainTextures[0];
 		l_DX11TDC->m_ObjectStatus = ObjectStatus::Activated;
-		m_SwapChainRPDC->m_RenderTargetsResourceBinders[0] = addResourcesBinder();
 
 		CreateViews(m_SwapChainRPDC, m_device);
-
-		CreateResourcesBinder(m_SwapChainRPDC);
 
 		m_SwapChainRPDC->m_PipelineStateObject = addPSO();
 
@@ -602,15 +590,9 @@ bool DX11RenderingServer::InitializeTextureDataComponent(TextureDataComponent* r
 				InnoLogger::Log(LogLevel::Verbose, "DX11RenderingServer: UAV: ", l_rhs->m_SRV, " is initialized.");
 			}
 		}
-
-		auto l_resourceBinder = addResourcesBinder();
-		l_resourceBinder->m_GPUAccessibility = l_rhs->m_TextureDesc.GPUAccessibility;
-		l_resourceBinder->m_SRV = l_rhs->m_SRV;
-		l_resourceBinder->m_UAV = l_rhs->m_UAV;
-		l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
-		l_rhs->m_ResourceBinder = l_resourceBinder;
 	}
-
+	
+	l_rhs->m_GPUResourceType = GPUResourceType::Image;
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	m_initializedTextures.emplace(l_rhs);
@@ -661,14 +643,6 @@ bool DX11RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 	CreateRenderTargets(l_rhs, this);
 
 	CreateViews(l_rhs, m_device);
-
-	l_rhs->m_RenderTargetsResourceBinders.resize(l_rhs->m_RenderPassDesc.m_RenderTargetCount);
-	for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
-	{
-		l_rhs->m_RenderTargetsResourceBinders[i] = addResourcesBinder();
-	}
-
-	CreateResourcesBinder(l_rhs);
 
 	l_rhs->m_PipelineStateObject = addPSO();
 
@@ -782,12 +756,7 @@ bool DX11RenderingServer::InitializeSamplerDataComponent(SamplerDataComponent* r
 		return false;
 	}
 
-	auto l_resourceBinder = addResourcesBinder();
-	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Sampler;
-	l_resourceBinder->m_Sampler = l_rhs->m_SamplerState;
-
-	l_rhs->m_ResourceBinder = l_resourceBinder;
-
+	l_rhs->m_GPUResourceType = GPUResourceType::Sampler;
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
@@ -798,13 +767,6 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 	auto l_rhs = reinterpret_cast<DX11GPUBufferDataComponent*>(rhs);
 
 	l_rhs->m_TotalSize = l_rhs->m_ElementCount * l_rhs->m_ElementSize;
-
-	auto l_resourceBinder = addResourcesBinder();
-	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Buffer;
-	l_resourceBinder->m_GPUAccessibility = l_rhs->m_GPUAccessibility;
-	l_resourceBinder->m_ElementCount = l_rhs->m_ElementCount;
-	l_resourceBinder->m_ElementSize = l_rhs->m_ElementSize;
-	l_resourceBinder->m_TotalSize = l_rhs->m_TotalSize;
 
 	auto l_isStructuredBuffer = (l_rhs->m_GPUAccessibility == Accessibility::ReadWrite);
 
@@ -824,13 +786,12 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 		l_subresourceData.SysMemPitch = 0;
 		l_subresourceData.SysMemSlicePitch = 0;
 
-		l_HResult = m_device->CreateBuffer(&l_rhs->m_BufferDesc, &l_subresourceData, &l_rhs->m_BufferPtr);
+		l_HResult = m_device->CreateBuffer(&l_rhs->m_BufferDesc, &l_subresourceData, &l_rhs->m_Buffer);
 	}
 	else
 	{
-		l_HResult = m_device->CreateBuffer(&l_rhs->m_BufferDesc, NULL, &l_rhs->m_BufferPtr);
+		l_HResult = m_device->CreateBuffer(&l_rhs->m_BufferDesc, NULL, &l_rhs->m_Buffer);
 	}
-	l_resourceBinder->m_Buffer = l_rhs->m_BufferPtr;
 
 	if (FAILED(l_HResult))
 	{
@@ -840,11 +801,11 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 #ifdef  INNO_DEBUG
 	if (l_isStructuredBuffer)
 	{
-		SetObjectName(l_rhs, l_rhs->m_BufferPtr, "SBuffer");
+		SetObjectName(l_rhs, l_rhs->m_Buffer, "SBuffer");
 	}
 	else
 	{
-		SetObjectName(l_rhs, l_rhs->m_BufferPtr, "CBuffer");
+		SetObjectName(l_rhs, l_rhs->m_Buffer, "CBuffer");
 	}
 #endif //  INNO_DEBUG
 
@@ -856,7 +817,7 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 		l_SRVDesc.Buffer.FirstElement = 0;
 		l_SRVDesc.Buffer.NumElements = (uint32_t)l_rhs->m_ElementCount;
 
-		l_HResult = m_device->CreateShaderResourceView(l_rhs->m_BufferPtr, &l_SRVDesc, &l_rhs->m_SRV);
+		l_HResult = m_device->CreateShaderResourceView(l_rhs->m_Buffer, &l_SRVDesc, &l_rhs->m_SRV);
 
 		if (FAILED(l_HResult))
 		{
@@ -866,7 +827,6 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 #ifdef  INNO_DEBUG
 		SetObjectName(l_rhs, l_rhs->m_SRV, "SRV");
 #endif //  INNO_DEBUG
-		l_resourceBinder->m_SRV = l_rhs->m_SRV;
 
 		D3D11_UNORDERED_ACCESS_VIEW_DESC l_UAVDesc;
 		l_UAVDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -875,7 +835,7 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 		l_UAVDesc.Buffer.NumElements = (uint32_t)l_rhs->m_ElementCount;
 		l_UAVDesc.Buffer.Flags = l_rhs->m_isAtomicCounter ? D3D11_BUFFER_UAV_FLAG_COUNTER : 0;
 
-		l_HResult = m_device->CreateUnorderedAccessView(l_rhs->m_BufferPtr, &l_UAVDesc, &l_rhs->m_UAV);
+		l_HResult = m_device->CreateUnorderedAccessView(l_rhs->m_Buffer, &l_UAVDesc, &l_rhs->m_UAV);
 
 		if (FAILED(l_HResult))
 		{
@@ -885,11 +845,9 @@ bool DX11RenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponen
 #ifdef  INNO_DEBUG
 		SetObjectName(l_rhs, l_rhs->m_UAV, "UAV");
 #endif //  INNO_DEBUG
-		l_resourceBinder->m_UAV = l_rhs->m_UAV;
 	}
 
-	l_rhs->m_ResourceBinder = l_resourceBinder;
-
+	l_rhs->m_GPUResourceType = GPUResourceType::Buffer;
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
@@ -923,11 +881,6 @@ bool DX11RenderingServer::DeleteTextureDataComponent(TextureDataComponent* rhs)
 	if (l_rhs->m_UAV)
 	{
 		l_rhs->m_UAV->Release();
-	}
-
-	if (l_rhs->m_ResourceBinder)
-	{
-		m_ResourceBinderPool->Destroy(reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinder));
 	}
 
 	m_TextureDataComponentPool->Destroy(l_rhs);
@@ -982,7 +935,6 @@ bool DX11RenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent*
 		{
 			DeleteTextureDataComponent(l_rhs->m_RenderTargets[i]);
 		}
-		m_ResourceBinderPool->Destroy(reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_RenderTargetsResourceBinders[i]));
 	}
 
 	m_RenderPassDataComponentPool->Destroy(l_rhs);
@@ -1030,11 +982,6 @@ bool DX11RenderingServer::DeleteSamplerDataComponent(SamplerDataComponent* rhs)
 
 	l_rhs->m_SamplerState->Release();
 
-	if (l_rhs->m_ResourceBinder)
-	{
-		m_ResourceBinderPool->Destroy(reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinder));
-	}
-
 	m_SamplerDataComponentPool->Destroy(l_rhs);
 
 	return true;
@@ -1044,12 +991,7 @@ bool DX11RenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent* r
 {
 	auto l_rhs = reinterpret_cast<DX11GPUBufferDataComponent*>(rhs);
 
-	l_rhs->m_BufferPtr->Release();
-
-	if (l_rhs->m_ResourceBinder)
-	{
-		m_ResourceBinderPool->Destroy(reinterpret_cast<DX11ResourceBinder*>(l_rhs->m_ResourceBinder));
-	}
+	l_rhs->m_Buffer->Release();
 
 	m_GPUBufferDataComponentPool->Destroy(l_rhs);
 
@@ -1098,7 +1040,7 @@ bool DX11RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponen
 
 	D3D11_MAPPED_SUBRESOURCE l_MappedResource;
 
-	auto l_HResult = m_deviceContext->Map(l_rhs->m_BufferPtr, 0, l_mapMethod, 0, &l_MappedResource);
+	auto l_HResult = m_deviceContext->Map(l_rhs->m_Buffer, 0, l_mapMethod, 0, &l_MappedResource);
 	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX11RenderingServer: Can't lock GPU Buffer!");
@@ -1115,7 +1057,7 @@ bool DX11RenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponen
 
 	std::memcpy(l_dataPtr + startOffset * l_rhs->m_ElementSize, GPUBufferValue, l_size);
 
-	m_deviceContext->Unmap(l_rhs->m_BufferPtr, 0);
+	m_deviceContext->Unmap(l_rhs->m_Buffer, 0);
 
 	return true;
 }
@@ -1422,30 +1364,29 @@ bool BindPartialConstantBuffer(uint32_t slot, ID3D11Buffer* buffer, ShaderStage 
 	return true;
 }
 
-bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool DX11RenderingServer::BindGPUResource(RenderPassDataComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	auto l_renderPass = reinterpret_cast<DX11RenderPassDataComponent*>(renderPass);
-	auto l_resourceBinder = reinterpret_cast<DX11ResourceBinder*>(binder);
 
-	if (l_resourceBinder)
+	if (resource)
 	{
-		switch (l_resourceBinder->m_ResourceBinderType)
+		switch (resource->m_GPUResourceType)
 		{
-		case ResourceBinderType::Sampler:
-			BindSampler(shaderStage, (uint32_t)(localSlot), l_resourceBinder->m_Sampler);
+		case GPUResourceType::Sampler:
+			BindSampler(shaderStage, (uint32_t)(localSlot),  reinterpret_cast<DX11SamplerDataComponent*>(resource)->m_SamplerState);
 			break;
-		case ResourceBinderType::Image:
+		case GPUResourceType::Image:
 			if (accessibility != Accessibility::ReadOnly)
 			{
-				BindUAV(shaderStage, (uint32_t)(localSlot), l_resourceBinder->m_UAV, l_renderPass);
+				BindUAV(shaderStage, (uint32_t)(localSlot), reinterpret_cast<DX11TextureDataComponent*>(resource)->m_UAV, l_renderPass);
 			}
 			else
 			{
-				BindSRV(shaderStage, (uint32_t)(localSlot), l_resourceBinder->m_SRV);
+				BindSRV(shaderStage, (uint32_t)(localSlot), reinterpret_cast<DX11TextureDataComponent*>(resource)->m_SRV);
 			}
 			break;
-		case ResourceBinderType::Buffer:
-			if (l_resourceBinder->m_GPUAccessibility == Accessibility::ReadOnly)
+		case GPUResourceType::Buffer:
+			if (resource->m_GPUAccessibility == Accessibility::ReadOnly)
 			{
 				if (accessibility != Accessibility::ReadOnly)
 				{
@@ -1453,22 +1394,22 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent* render
 				}
 				if (elementCount != SIZE_MAX)
 				{
-					BindPartialConstantBuffer((uint32_t)localSlot, l_resourceBinder->m_Buffer, shaderStage, startOffset, l_resourceBinder->m_ElementSize);
+					BindPartialConstantBuffer((uint32_t)localSlot, reinterpret_cast<DX11GPUBufferDataComponent*>(resource)->m_Buffer, shaderStage, startOffset, reinterpret_cast<DX11GPUBufferDataComponent*>(resource)->m_ElementSize);
 				}
 				else
 				{
-					BindConstantBuffer((uint32_t)localSlot, l_resourceBinder->m_Buffer, shaderStage);
+					BindConstantBuffer((uint32_t)localSlot, reinterpret_cast<DX11GPUBufferDataComponent*>(resource)->m_Buffer, shaderStage);
 				}
 			}
 			else
 			{
 				if (accessibility != Accessibility::ReadOnly)
 				{
-					BindUAV(shaderStage, (uint32_t)(localSlot), l_resourceBinder->m_UAV, l_renderPass);
+					BindUAV(shaderStage, (uint32_t)(localSlot), reinterpret_cast<DX11TextureDataComponent*>(resource)->m_UAV, l_renderPass);
 				}
 				else
 				{
-					BindSRV(shaderStage, (uint32_t)(localSlot), l_resourceBinder->m_SRV);
+					BindSRV(shaderStage, (uint32_t)(localSlot), reinterpret_cast<DX11TextureDataComponent*>(resource)->m_SRV);
 				}
 			}
 			break;
@@ -1480,19 +1421,18 @@ bool DX11RenderingServer::ActivateResourceBinder(RenderPassDataComponent* render
 	return true;
 }
 
-bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool DX11RenderingServer::UnbindGPUResource(RenderPassDataComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	auto l_renderPass = reinterpret_cast<DX11RenderPassDataComponent*>(renderPass);
-	auto l_resourceBinder = reinterpret_cast<DX11ResourceBinder*>(binder);
 
-	if (l_resourceBinder)
+	if (resource)
 	{
-		switch (l_resourceBinder->m_ResourceBinderType)
+		switch (resource->m_GPUResourceType)
 		{
-		case ResourceBinderType::Sampler:
+		case GPUResourceType::Sampler:
 			m_deviceContext->PSSetSamplers((uint32_t)localSlot, 1, 0);
 			break;
-		case ResourceBinderType::Image:
+		case GPUResourceType::Image:
 			if (accessibility != Accessibility::ReadOnly)
 			{
 				BindUAV(shaderStage, (uint32_t)(localSlot), 0, l_renderPass);
@@ -1502,8 +1442,8 @@ bool DX11RenderingServer::DeactivateResourceBinder(RenderPassDataComponent* rend
 				BindSRV(shaderStage, (uint32_t)(localSlot), 0);
 			}
 			break;
-		case ResourceBinderType::Buffer:
-			if (l_resourceBinder->m_GPUAccessibility != Accessibility::ReadOnly)
+		case GPUResourceType::Buffer:
+			if (resource->m_GPUAccessibility != Accessibility::ReadOnly)
 			{
 				if (accessibility != Accessibility::ReadOnly)
 				{
@@ -1615,14 +1555,14 @@ bool DX11RenderingServer::WaitForFrame(RenderPassDataComponent* rhs)
 	return true;
 }
 
-bool DX11RenderingServer::SetUserPipelineOutput(IResourceBinder* rhs)
+bool DX11RenderingServer::SetUserPipelineOutput(GPUResourceComponent* rhs)
 {
 	m_userPipelineOutput = rhs;
 
 	return true;
 }
 
-IResourceBinder* DX11RenderingServer::GetUserPipelineOutput()
+GPUResourceComponent* DX11RenderingServer::GetUserPipelineOutput()
 {
 	return m_userPipelineOutput;
 }
@@ -1635,15 +1575,15 @@ bool DX11RenderingServer::Present()
 
 	CleanRenderTargets(m_SwapChainRPDC);
 
-	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_SwapChainSDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	BindGPUResource(m_SwapChainRPDC, ShaderStage::Pixel, m_SwapChainSDC, 1, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
-	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	BindGPUResource(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
 
 	DrawIndexedInstanced(m_SwapChainRPDC, l_mesh, 1);
 
-	DeactivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	UnbindGPUResource(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	CommandListEnd(m_SwapChainRPDC);
 

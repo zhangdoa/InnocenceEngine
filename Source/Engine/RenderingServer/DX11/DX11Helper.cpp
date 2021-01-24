@@ -717,16 +717,6 @@ bool DX11Helper::CreateRenderTargets(DX11RenderPassDataComponent* DX11RPDC, IRen
 	return true;
 }
 
-bool DX11Helper::CreateResourcesBinder(DX11RenderPassDataComponent* DX11RPDC)
-{
-	for (size_t i = 0; i < DX11RPDC->m_RenderTargetsResourceBinders.size(); i++)
-	{
-		DX11RPDC->m_RenderTargetsResourceBinders[i] = DX11RPDC->m_RenderTargets[i]->m_ResourceBinder;
-	}
-
-	return true;
-}
-
 bool DX11Helper::CreateViews(DX11RenderPassDataComponent* DX11RPDC, ID3D11Device* device)
 {
 	if (DX11RPDC->m_RenderPassDesc.m_UseOutputMerger)
