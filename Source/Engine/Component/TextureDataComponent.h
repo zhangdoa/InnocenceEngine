@@ -1,10 +1,9 @@
 #pragma once
-#include "../Common/InnoGraphicsPrimitive.h"
-#include "../Common/InnoObject.h"
+#include "GPUResourceComponent.h"
 
 namespace Inno
 {
-	class TextureDataComponent : public InnoComponent
+	class TextureDataComponent : public GPUResourceComponent
 	{
 	public:
 		static uint32_t GetTypeID() { return 8; };
@@ -12,6 +11,5 @@ namespace Inno
 
 		TextureDesc m_TextureDesc = {};
 		void* m_TextureData = 0;
-		IResourceBinder* m_ResourceBinder = 0;
 	};
 }

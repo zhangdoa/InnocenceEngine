@@ -201,30 +201,22 @@ namespace Inno
 
 		class IPipelineStateObject {};
 
-		enum class ResourceBinderType {
+		enum class GPUResourceType 
+		{
+			Invalid,
 			Sampler,
 			Image,
 			Buffer
 		};
 
-		class IResourceBinder
+		struct ResourceBindingLayoutDesc
 		{
-		public:
-			ResourceBinderType m_ResourceBinderType = ResourceBinderType::Sampler;
-			Accessibility m_GPUAccessibility = Accessibility::ReadOnly;
-			size_t m_ElementCount = 0;
-			size_t m_ElementSize = 0;
-			size_t m_TotalSize = 0;
-		};
-
-		struct ResourceBinderLayoutDesc
-		{
-			ResourceBinderType m_ResourceBinderType = ResourceBinderType::Sampler;
-			Accessibility m_BinderAccessibility = Accessibility::ReadOnly;
+			GPUResourceType m_GPUResourceType = GPUResourceType::Sampler;
+			Accessibility m_BindingAccessibility = Accessibility::ReadOnly;
 			Accessibility m_ResourceAccessibility = Accessibility::ReadOnly;
 			size_t m_DescriptorSetIndex = 0;
 			size_t m_DescriptorIndex = 0;
-			size_t m_ResourceCount = 1;
+			size_t m_SubresourceCount = 1;
 			bool m_IndirectBinding = false;
 		};
 	}

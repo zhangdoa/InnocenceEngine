@@ -1,6 +1,5 @@
 #pragma once
-#include "../Common/InnoObject.h"
-#include "../Common/InnoGraphicsPrimitive.h"
+#include "GPUResourceComponent.h"
 #include "TextureDataComponent.h"
 
 namespace Inno
@@ -13,7 +12,7 @@ namespace Inno
 		bool m_Activate = false;
 	};
 
-	class MaterialDataComponent : public InnoComponent
+	class MaterialDataComponent : public GPUResourceComponent
 	{
 	public:
 		static uint32_t GetTypeID() { return 7; };
@@ -22,6 +21,5 @@ namespace Inno
 		MaterialAttributes m_materialAttributes = {};
 		TextureSlot m_TextureSlots[8];
 		ShaderModel m_ShaderModel = ShaderModel::Invalid;
-		IResourceBinder* m_ResourceBinder = 0;
 	};
 }

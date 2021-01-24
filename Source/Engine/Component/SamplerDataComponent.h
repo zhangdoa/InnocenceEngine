@@ -1,7 +1,5 @@
 #pragma once
-#include "../Common/InnoType.h"
-#include "../Common/InnoGraphicsPrimitive.h"
-#include "../Common/InnoObject.h"
+#include "GPUResourceComponent.h"
 
 namespace Inno
 {
@@ -19,13 +17,12 @@ namespace Inno
 		uint32_t m_MaxAnisotropy = 1;
 	};
 
-	class SamplerDataComponent : public InnoComponent
+	class SamplerDataComponent : public GPUResourceComponent
 	{
 	public:
 		static uint32_t GetTypeID() { return 13; };
 		static const char* GetTypeName() { return "SamplerDataComponent"; };
 
 		SamplerDesc m_SamplerDesc = {};
-		IResourceBinder* m_ResourceBinder = 0;
 	};
 }

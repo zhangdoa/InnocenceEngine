@@ -6,6 +6,11 @@
 
 namespace Inno
 {
+	struct RenderTarget
+	{
+
+	};
+	
 	class RenderPassDataComponent : public InnoComponent
 	{
 	public:
@@ -18,8 +23,7 @@ namespace Inno
 
 		std::vector<TextureDataComponent*> m_RenderTargets;
 		TextureDataComponent* m_DepthStencilRenderTarget = 0;
-		std::vector<IResourceBinder*> m_RenderTargetsResourceBinders;
-		std::vector<ResourceBinderLayoutDesc> m_ResourceBinderLayoutDescs;
+		std::vector<ResourceBindingLayoutDesc> m_ResourceBinderLayoutDescs;
 
 		IPipelineStateObject* m_PipelineStateObject = 0;
 
