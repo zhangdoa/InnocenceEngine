@@ -63,7 +63,6 @@ namespace VKRenderingServerNS
 	TObjectPool<VKMaterialDataComponent>* m_MaterialDataComponentPool = 0;
 	TObjectPool<VKTextureDataComponent>* m_TextureDataComponentPool = 0;
 	TObjectPool<VKRenderPassDataComponent>* m_RenderPassDataComponentPool = 0;
-	TObjectPool<VKResourceBinder>* m_ResourceBinderPool = 0;
 	TObjectPool<VKPipelineStateObject>* m_PSOPool = 0;
 	TObjectPool<VKCommandQueue>* m_CommandQueuePool = 0;
 	TObjectPool<VKCommandList>* m_CommandListPool = 0;
@@ -117,7 +116,7 @@ namespace VKRenderingServerNS
 	VkDescriptorSetLayout m_materialDescriptorLayout;
 	VkDescriptorSetLayout m_dummyEmptyDescriptorLayout;
 
-	IResourceBinder* m_userPipelineOutput = 0;
+	GPUResourceComponent* m_userPipelineOutput = 0;
 	VKRenderPassDataComponent* m_SwapChainRPDC = 0;
 	VKShaderProgramComponent* m_SwapChainSPC = 0;
 	VKSamplerDataComponent* m_SwapChainSDC = 0;
@@ -557,11 +556,6 @@ bool VKRenderingServerNS::createSwapChain()
 
 using namespace VKRenderingServerNS;
 
-VKResourceBinder* addResourcesBinder()
-{
-	return m_ResourceBinderPool->Spawn();
-}
-
 VKPipelineStateObject* addPSO()
 {
 	return m_PSOPool->Spawn();
@@ -595,7 +589,6 @@ bool VKRenderingServer::Setup(ISystemConfig* systemConfig)
 	m_TextureDataComponentPool = TObjectPool<VKTextureDataComponent>::Create(l_renderingCapability.maxTextures);
 	m_MaterialDataComponentPool = TObjectPool<VKMaterialDataComponent>::Create(l_renderingCapability.maxMaterials);
 	m_RenderPassDataComponentPool = TObjectPool<VKRenderPassDataComponent>::Create(128);
-	m_ResourceBinderPool = TObjectPool<VKResourceBinder>::Create(16384);
 	m_PSOPool = TObjectPool<VKPipelineStateObject>::Create(128);
 	m_CommandQueuePool = TObjectPool<VKCommandQueue>::Create(128);
 	m_CommandListPool = TObjectPool<VKCommandList>::Create(256);
@@ -801,15 +794,12 @@ bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent* rhs
 	l_rhs->m_DescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	l_rhs->m_DescriptorImageInfo.imageView = l_rhs->m_imageView;
 
-	auto l_resourceBinder = addResourcesBinder();
-	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
-	l_rhs->m_ResourceBinder = l_resourceBinder;
-
-	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkImage ", l_rhs->m_image, " is initialized.");
-
+	l_rhs->m_GPUResourceType = GPUResourceType::Image;
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	m_initializedTextures.emplace(l_rhs);
+
+	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkImage ", l_rhs->m_image, " is initialized.");
 
 	return true;
 }
@@ -866,14 +856,6 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 	l_result &= ReserveRenderTargets(l_rhs, this);
 
 	l_result &= CreateRenderTargets(l_rhs, this);
-
-	l_rhs->m_RenderTargetsResourceBinders.resize(l_rhs->m_RenderPassDesc.m_RenderTargetCount);
-	for (size_t i = 0; i < l_rhs->m_RenderPassDesc.m_RenderTargetCount; i++)
-	{
-		l_rhs->m_RenderTargetsResourceBinders[i] = addResourcesBinder();
-	}
-
-	l_result &= CreateResourcesBinder(l_rhs);
 
 	l_rhs->m_PipelineStateObject = addPSO();
 
@@ -959,6 +941,7 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 	}
 
 	l_result &= CreateSyncPrimitives(m_device, l_rhs);
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return l_result;
 }
@@ -1024,15 +1007,14 @@ bool VKRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent*
 		l_rhs->m_CSCInfo.pName = "main";
 	}
 
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
+
 	return l_result;
 }
 
 bool VKRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<VKSamplerDataComponent*>(rhs);
-	auto l_resourceBinder = addResourcesBinder();
-
-	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Sampler;
 
 	l_rhs->m_samplerCInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 	l_rhs->m_samplerCInfo.minFilter = GetFilter(l_rhs->m_SamplerDesc.m_MinFilterMethod);
@@ -1063,7 +1045,8 @@ bool VKRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent* rhs
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create sampler!");
     }
 
-	l_rhs->m_ResourceBinder = l_resourceBinder;
+	l_rhs->m_GPUResourceType = GPUResourceType::Sampler;
+	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
@@ -1073,13 +1056,6 @@ bool VKRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent*
 	auto l_rhs = reinterpret_cast<VKGPUBufferDataComponent*>(rhs);
 
 	l_rhs->m_TotalSize = l_rhs->m_ElementCount * l_rhs->m_ElementSize;
-
-	auto l_resourceBinder = addResourcesBinder();
-	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Buffer;
-	l_resourceBinder->m_GPUAccessibility = l_rhs->m_GPUAccessibility;
-	l_resourceBinder->m_ElementCount = l_rhs->m_ElementCount;
-	l_resourceBinder->m_ElementSize = l_rhs->m_ElementSize;
-	l_resourceBinder->m_TotalSize = l_rhs->m_TotalSize;
 
 	createHostStagingBuffer(l_rhs->m_TotalSize, VkBufferUsageFlagBits(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT), l_rhs->m_HostStagingBuffer, l_rhs->m_HostStagingMemory);
 
@@ -1104,6 +1080,7 @@ bool VKRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent*
 		}
 	}
 
+	l_rhs->m_GPUResourceType = GPUResourceType::Buffer;
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
@@ -1265,11 +1242,53 @@ bool VKRenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 	return true;
 }
 
-bool VKRenderingServer::ActivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
-{	
-	auto l_resourceBinder = reinterpret_cast<VKResourceBinder *>(binder);
+bool VKRenderingServer::BindGPUResource(RenderPassDataComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
+{
 	auto l_renderPass = reinterpret_cast<VKRenderPassDataComponent *>(renderPass);
 	auto l_commandList = reinterpret_cast<VKCommandList *>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
+
+	if (resource == nullptr)
+	{
+		InnoLogger::Log(LogLevel::Warning, "VKRenderingServer: Empty GPU resource in render pass: ", renderPass->m_InstanceName.c_str(), ", global slot: ", globalSlot, ", local slot: ", localSlot);
+		return false;
+	}
+
+	switch (resource->m_GPUResourceType)
+	{
+	case GPUResourceType::Sampler:
+		break;
+	case GPUResourceType::Image:
+		if (accessibility != Accessibility::ReadOnly)
+		{
+		}
+		else
+		{
+		}
+		break;
+	case GPUResourceType::Buffer:
+		if (resource->m_GPUAccessibility == Accessibility::ReadOnly)
+		{
+			if (accessibility != Accessibility::ReadOnly)
+			{
+			}
+			else
+			{
+			}
+		}
+		else
+		{
+			if (accessibility != Accessibility::ReadOnly)
+			{
+			}
+			else
+			{
+			}
+		}
+
+		break;
+	default:
+		break;
+	}
 
 	return true;
 }
@@ -1300,7 +1319,7 @@ bool VKRenderingServer::DrawInstanced(RenderPassDataComponent* renderPass, size_
 	return true;
 }
 
-bool VKRenderingServer::DeactivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool VKRenderingServer::UnbindGPUResource(RenderPassDataComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	return true;
 }
@@ -1332,13 +1351,13 @@ bool VKRenderingServer::WaitForFrame(RenderPassDataComponent* rhs)
 	return true;
 }
 
-bool VKRenderingServer::SetUserPipelineOutput(IResourceBinder* rhs)
+bool VKRenderingServer::SetUserPipelineOutput(GPUResourceComponent* rhs)
 {
 	m_userPipelineOutput = rhs;
 	return true;
 }
 
-IResourceBinder* VKRenderingServer::GetUserPipelineOutput()
+GPUResourceComponent* VKRenderingServer::GetUserPipelineOutput()
 {
 	return m_userPipelineOutput;
 }

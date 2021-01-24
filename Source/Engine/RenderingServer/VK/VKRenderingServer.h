@@ -46,15 +46,15 @@ namespace Inno
 		bool CommandListBegin(RenderPassDataComponent* rhs, size_t frameIndex) override;
 		bool BindRenderPassDataComponent(RenderPassDataComponent* rhs) override;
 		bool CleanRenderTargets(RenderPassDataComponent* rhs) override;
-		bool ActivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount) override;
+		bool BindGPUResource(RenderPassDataComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount) override;
 		bool DrawIndexedInstanced(RenderPassDataComponent* renderPass, MeshDataComponent* mesh, size_t instanceCount) override;
 		bool DrawInstanced(RenderPassDataComponent* renderPass, size_t instanceCount) override;
-		bool DeactivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount) override;
+		bool UnbindGPUResource(RenderPassDataComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount) override;
 		bool CommandListEnd(RenderPassDataComponent* rhs) override;
 		bool ExecuteCommandList(RenderPassDataComponent* rhs) override;
 		bool WaitForFrame(RenderPassDataComponent* rhs) override;
-		bool SetUserPipelineOutput(IResourceBinder* rhs) override;
-		IResourceBinder* GetUserPipelineOutput() override;
+		bool SetUserPipelineOutput(GPUResourceComponent* rhs) override;
+		GPUResourceComponent* GetUserPipelineOutput() override;
 		bool Present() override;
 
 		bool Dispatch(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ) override;

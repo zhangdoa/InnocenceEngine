@@ -71,7 +71,6 @@ namespace Inno
 
 		bool ReserveRenderTargets(VKRenderPassDataComponent* VKRPDC, IRenderingServer* renderingServer);
 		bool CreateRenderTargets(VKRenderPassDataComponent* VKRPDC, IRenderingServer* renderingServer);
-		bool CreateResourcesBinder(VKRenderPassDataComponent *VKRPDC);
 		bool CreateRenderPass(VkDevice device, VKRenderPassDataComponent* VKRPDC);
 		bool CreateViewportAndScissor(VKRenderPassDataComponent* VKRPDC);
 		bool CreateSingleFramebuffer(VkDevice device, VKRenderPassDataComponent* VKRPDC);

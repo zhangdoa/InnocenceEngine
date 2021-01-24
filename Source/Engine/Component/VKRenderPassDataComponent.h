@@ -6,11 +6,6 @@
 
 namespace Inno
 {
-	class VKResourceBinder : public IResourceBinder
-	{
-	public:
-	};
-
 	class VKPipelineStateObject : public IPipelineStateObject
 	{
 	public:

@@ -1068,11 +1068,11 @@ bool VKHelper::CreateImageView(VkDevice device, VKTextureDataComponent *VKTDC)
 
 bool VKHelper::CreateDescriptorSetLayoutBindings(VKRenderPassDataComponent *VKRPDC)
 {
-	std::sort(VKRPDC->m_ResourceBinderLayoutDescs.begin(), VKRPDC->m_ResourceBinderLayoutDescs.end(), [&](ResourceBinderLayoutDesc A, ResourceBinderLayoutDesc B) {
+	std::sort(VKRPDC->m_ResourceBinderLayoutDescs.begin(), VKRPDC->m_ResourceBinderLayoutDescs.end(), [&](ResourceBindingLayoutDesc A, ResourceBindingLayoutDesc B) {
 		return A.m_DescriptorIndex < B.m_DescriptorIndex;
 	});
 
-	std::sort(VKRPDC->m_ResourceBinderLayoutDescs.begin(), VKRPDC->m_ResourceBinderLayoutDescs.end(), [&](ResourceBinderLayoutDesc A, ResourceBinderLayoutDesc B) {
+	std::sort(VKRPDC->m_ResourceBinderLayoutDescs.begin(), VKRPDC->m_ResourceBinderLayoutDescs.end(), [&](ResourceBindingLayoutDesc A, ResourceBindingLayoutDesc B) {
 		return A.m_DescriptorSetIndex < B.m_DescriptorSetIndex;
 	});
 
@@ -1109,13 +1109,13 @@ bool VKHelper::CreateDescriptorSetLayoutBindings(VKRenderPassDataComponent *VKRP
 		l_descriptorLayoutBinding.pImmutableSamplers = nullptr;
 		l_descriptorLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
 
-		switch (l_resourceBinderLayoutDesc.m_ResourceBinderType)
+		switch (l_resourceBinderLayoutDesc.m_GPUResourceType)
 		{
-		case ResourceBinderType::Sampler:
+		case GPUResourceType::Sampler:
 			l_descriptorLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
 			break;
-		case ResourceBinderType::Image:
-			if (l_resourceBinderLayoutDesc.m_BinderAccessibility == Accessibility::ReadOnly)
+		case GPUResourceType::Image:
+			if (l_resourceBinderLayoutDesc.m_BindingAccessibility == Accessibility::ReadOnly)
 			{
 				l_descriptorLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 			}
@@ -1131,8 +1131,8 @@ bool VKHelper::CreateDescriptorSetLayoutBindings(VKRenderPassDataComponent *VKRP
 				}
 			}
 			break;
-		case ResourceBinderType::Buffer:
-			if (l_resourceBinderLayoutDesc.m_BinderAccessibility == Accessibility::ReadOnly)
+		case GPUResourceType::Buffer:
+			if (l_resourceBinderLayoutDesc.m_BindingAccessibility == Accessibility::ReadOnly)
 			{
 				if (l_resourceBinderLayoutDesc.m_ResourceAccessibility == Accessibility::ReadOnly)
 				{
@@ -1315,16 +1315,6 @@ bool VKHelper::CreateRenderTargets(VKRenderPassDataComponent *VKRPDC, IRendering
 	}
 
 	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: ", VKRPDC->m_InstanceName.c_str(), " render targets have been created.");
-
-	return true;
-}
-
-bool VKHelper::CreateResourcesBinder(VKRenderPassDataComponent* VKRPDC)
-{
-	for (size_t i = 0; i < VKRPDC->m_RenderTargetsResourceBinders.size(); i++)
-	{
-		VKRPDC->m_RenderTargetsResourceBinders[i] = VKRPDC->m_RenderTargets[i]->m_ResourceBinder;
-	}
 
 	return true;
 }
