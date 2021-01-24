@@ -13,7 +13,7 @@ namespace LightCullingPass
 	RenderPassDataComponent* GetTileFrustumRPDC();
 	RenderPassDataComponent* GetLightCullingRPDC();
 
-	IResourceBinder* GetLightGrid();
-	IResourceBinder* GetLightIndexList();
-	IResourceBinder* GetHeatMap();
+	GPUResourceComponent* GetLightGrid();
+	GPUResourceComponent* GetLightIndexList();
+	GPUResourceComponent* GetHeatMap();
 };

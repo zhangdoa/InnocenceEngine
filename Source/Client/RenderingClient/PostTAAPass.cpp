@@ -33,15 +33,15 @@ bool PostTAAPass::Setup()
 	m_RPDC->m_RenderPassDesc = l_RenderPassDesc;
 
 	m_RPDC->m_ResourceBinderLayoutDescs.resize(2);
-	m_RPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
+	m_RPDC->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 1;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 	m_RPDC->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
 
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Image;
+	m_RPDC->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Image;
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 2;
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 0;
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_RPDC->m_ResourceBinderLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RPDC->m_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
 
@@ -70,13 +70,13 @@ bool PostTAAPass::Render()
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC);
 
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, TAAPass::GetResult(), 0, 0);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_RPDC, ShaderStage::Compute, m_TDC->m_ResourceBinder, 1, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, TAAPass::GetResult(), 0, 0);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, m_TDC, 1, 0, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->Dispatch(m_RPDC, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, TAAPass::GetResult(), 0, 0);
-	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_RPDC, ShaderStage::Compute, m_TDC->m_ResourceBinder, 1, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, TAAPass::GetResult(), 0, 0);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, m_TDC, 1, 0, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
 
@@ -104,7 +104,7 @@ ShaderProgramComponent* PostTAAPass::GetSPC()
 	return m_SPC;
 }
 
-IResourceBinder* PostTAAPass::GetResult()
+GPUResourceComponent* PostTAAPass::GetResult()
 {
-	return m_TDC->m_ResourceBinder;
+	return m_TDC;
 }

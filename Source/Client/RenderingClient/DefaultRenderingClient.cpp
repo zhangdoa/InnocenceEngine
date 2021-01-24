@@ -143,7 +143,7 @@ bool DefaultRenderingClient::Setup(ISystemConfig* systemConfig)
 	f_RenderJob = [&]()
 	{
 		auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
-		IResourceBinder* l_canvas;
+		GPUResourceComponent* l_canvas;
 
 		DefaultGPUBuffers::Upload();
 
@@ -166,7 +166,7 @@ bool DefaultRenderingClient::Setup(ISystemConfig* systemConfig)
 		if (m_drawBRDFTest)
 		{
 			BSDFTestPass::Render();
-			l_canvas = BSDFTestPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
+			l_canvas = BSDFTestPass::GetRPDC()->m_RenderTargets[0];
 		}
 		else if (m_showLightHeatmap)
 		{
@@ -175,7 +175,7 @@ bool DefaultRenderingClient::Setup(ISystemConfig* systemConfig)
 		else if (m_showProbe)
 		{
 			GIResolveTestPass::Render();
-			l_canvas = GIResolveTestPass::GetRPDC()->m_RenderTargetsResourceBinders[0];
+			l_canvas = GIResolveTestPass::GetRPDC()->m_RenderTargets[0];
 		}
 		else if (m_showTransparent)
 		{

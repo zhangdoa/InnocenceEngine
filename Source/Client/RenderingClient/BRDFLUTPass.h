@@ -9,6 +9,6 @@ namespace BRDFLUTPass
 	bool Render();
 	bool Terminate();
 
-	IResourceBinder* GetBRDFLUT();
-	IResourceBinder* GetBRDFMSLUT();
+	GPUResourceComponent* GetBRDFLUT();
+	GPUResourceComponent* GetBRDFMSLUT();
 };

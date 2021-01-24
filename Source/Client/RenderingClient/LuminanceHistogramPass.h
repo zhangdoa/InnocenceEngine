@@ -6,7 +6,7 @@ namespace LuminanceHistogramPass
 {
 	bool Setup();
 	bool Initialize();
-	bool Render(IResourceBinder* input);
+	bool Render(GPUResourceComponent* input);
 	bool Terminate();
 
 	RenderPassDataComponent* GetRPDC();

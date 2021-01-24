@@ -11,5 +11,5 @@ namespace LightPass
 
 	RenderPassDataComponent* GetRPDC();
 	ShaderProgramComponent* GetSPC();
-	IResourceBinder* GetResult(uint32_t index);
+	GPUResourceComponent* GetResult(uint32_t index);
 };

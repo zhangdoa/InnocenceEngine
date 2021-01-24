@@ -69,25 +69,25 @@ void SunShadowPass::setupGeometryProcessPass()
 	m_geometryProcessRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs.resize(5);
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 1;
 
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 2;
 
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 5;
 
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Image;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[3].m_GPUResourceType = GPUResourceType::Image;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 1;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceCount = 1;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[3].m_SubresourceCount = 1;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[3].m_IndirectBinding = true;
 
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Sampler;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[4].m_GPUResourceType = GPUResourceType::Sampler;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 2;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 0;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[4].m_IndirectBinding = true;
@@ -125,23 +125,23 @@ void SunShadowPass::setupBlurPass()
 	m_blurRPDC_Odd->m_RenderPassDesc = l_RenderPassDesc;
 	m_blurRPDC_Even->m_RenderPassDesc = l_RenderPassDesc;
 
-	std::vector<ResourceBinderLayoutDesc> l_ResourceBinderLayoutDescs(3);
+	std::vector<ResourceBindingLayoutDesc> l_ResourceBinderLayoutDescs(3);
 
-	l_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
+	l_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
 	l_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
 	l_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 
-	l_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Image;
+	l_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Image;
 	l_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
 	l_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 0;
-	l_ResourceBinderLayoutDescs[2].m_BinderAccessibility = Accessibility::ReadOnly;
+	l_ResourceBinderLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadOnly;
 	l_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
 	l_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
 
-	l_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Image;
+	l_ResourceBinderLayoutDescs[2].m_GPUResourceType = GPUResourceType::Image;
 	l_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
 	l_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 0;
-	l_ResourceBinderLayoutDescs[2].m_BinderAccessibility = Accessibility::ReadWrite;
+	l_ResourceBinderLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadWrite;
 	l_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
 	l_ResourceBinderLayoutDescs[2].m_IndirectBinding = true;
 
@@ -198,8 +198,8 @@ bool SunShadowPass::geometryProcess()
 	g_Engine->getRenderingServer()->CommandListBegin(m_geometryProcessRPDC, 0);
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_geometryProcessRPDC);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_geometryProcessRPDC);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Geometry, l_CSMGBDC->m_ResourceBinder, 2, 5, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, m_geometryProcessSDC->m_ResourceBinder, 4, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_geometryProcessRPDC, ShaderStage::Geometry, l_CSMGBDC, 2, 5, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_geometryProcessRPDC, ShaderStage::Pixel, m_geometryProcessSDC, 4, 0, Accessibility::ReadOnly);
 
 	auto& l_drawCallInfo = g_Engine->getRenderingFrontend()->getDrawCallInfo();
 	auto l_drawCallCount = l_drawCallInfo.size();
@@ -216,14 +216,14 @@ bool SunShadowPass::geometryProcess()
 				{
 					if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 					{
-						g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 0, 1, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
-						g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 1, 2, Accessibility::ReadOnly, l_drawCallData.materialConstantBufferIndex, 1);
+						g_Engine->getRenderingServer()->BindGPUResource(m_geometryProcessRPDC, ShaderStage::Vertex, l_MeshGBDC, 0, 1, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
+						g_Engine->getRenderingServer()->BindGPUResource(m_geometryProcessRPDC, ShaderStage::Pixel, l_MaterialGBDC, 1, 2, Accessibility::ReadOnly, l_drawCallData.materialConstantBufferIndex, 1);
 
-						g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1].m_Texture->m_ResourceBinder, 3, 0);
+						g_Engine->getRenderingServer()->BindGPUResource(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1].m_Texture, 3, 0);
 
 						g_Engine->getRenderingServer()->DrawIndexedInstanced(m_geometryProcessRPDC, l_drawCallData.mesh);
 
-						g_Engine->getRenderingServer()->DeactivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1].m_Texture->m_ResourceBinder, 3, 0);
+						g_Engine->getRenderingServer()->UnbindGPUResource(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1].m_Texture, 3, 0);
 					}
 				}
 			}
@@ -241,14 +241,14 @@ bool SunShadowPass::blur()
 	g_Engine->getRenderingServer()->CommandListBegin(m_blurRPDC_Odd, 0);
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_blurRPDC_Odd);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_blurRPDC_Odd);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_blurRPDC_Odd, ShaderStage::Compute, l_perFrameGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_blurRPDC_Odd, ShaderStage::Compute, m_geometryProcessRPDC->m_RenderTargetsResourceBinders[0], 1, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_blurRPDC_Odd, ShaderStage::Compute, m_oddTDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_blurRPDC_Odd, ShaderStage::Compute, l_perFrameGBDC, 0, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_blurRPDC_Odd, ShaderStage::Compute, m_geometryProcessRPDC->m_RenderTargets[0], 1, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_blurRPDC_Odd, ShaderStage::Compute, m_oddTDC, 2, 0, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->Dispatch(m_blurRPDC_Odd, m_shadowMapResolution / 8, m_shadowMapResolution / 8, 1);
 
-	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_blurRPDC_Odd, ShaderStage::Compute, m_geometryProcessRPDC->m_RenderTargetsResourceBinders[0], 1, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_blurRPDC_Odd, ShaderStage::Compute, m_oddTDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_blurRPDC_Odd, ShaderStage::Compute, m_geometryProcessRPDC->m_RenderTargets[0], 1, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_blurRPDC_Odd, ShaderStage::Compute, m_oddTDC, 2, 0, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_blurRPDC_Odd);
 
@@ -256,14 +256,14 @@ bool SunShadowPass::blur()
 	g_Engine->getRenderingServer()->CommandListBegin(m_blurRPDC_Even, 0);
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_blurRPDC_Even);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_blurRPDC_Even);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_blurRPDC_Even, ShaderStage::Compute, l_perFrameGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_blurRPDC_Even, ShaderStage::Compute, m_oddTDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_blurRPDC_Even, ShaderStage::Compute, m_evenTDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_blurRPDC_Even, ShaderStage::Compute, l_perFrameGBDC, 0, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_blurRPDC_Even, ShaderStage::Compute, m_oddTDC, 1, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_blurRPDC_Even, ShaderStage::Compute, m_evenTDC, 2, 0, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->Dispatch(m_blurRPDC_Even, m_shadowMapResolution / 8, m_shadowMapResolution / 8, 1);
 
-	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_blurRPDC_Even, ShaderStage::Compute, m_oddTDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_blurRPDC_Even, ShaderStage::Compute, m_evenTDC->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_blurRPDC_Even, ShaderStage::Compute, m_oddTDC, 1, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_blurRPDC_Even, ShaderStage::Compute, m_evenTDC, 2, 0, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_blurRPDC_Even);
 
@@ -307,7 +307,7 @@ ShaderProgramComponent* SunShadowPass::GetSPC()
 	return m_geometryProcessSPC;
 }
 
-IResourceBinder* SunShadowPass::GetShadowMap()
+GPUResourceComponent* SunShadowPass::GetShadowMap()
 {
-	return m_evenTDC->m_ResourceBinder;
+	return m_evenTDC;
 }

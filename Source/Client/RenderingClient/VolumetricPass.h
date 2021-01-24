@@ -9,6 +9,6 @@ namespace VolumetricPass
 	bool Render(bool visualize);
 	bool Terminate();
 
-	IResourceBinder* GetRayMarchingResult();
-	IResourceBinder* GetVisualizationResult();
+	GPUResourceComponent* GetRayMarchingResult();
+	GPUResourceComponent* GetVisualizationResult();
 };

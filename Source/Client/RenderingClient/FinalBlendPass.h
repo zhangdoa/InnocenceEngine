@@ -6,10 +6,10 @@ namespace FinalBlendPass
 {
 	bool Setup();
 	bool Initialize();
-	bool Render(IResourceBinder* input);
+	bool Render(GPUResourceComponent* input);
 	bool Terminate();
 
 	RenderPassDataComponent* GetRPDC();
 	ShaderProgramComponent* getSPC();
-	IResourceBinder* GetResult();
+	GPUResourceComponent* GetResult();
 };

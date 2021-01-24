@@ -13,5 +13,5 @@ namespace SunShadowPass
 	RenderPassDataComponent* GetBlurRPDCOdd();
 	RenderPassDataComponent* GetBlurRPDCEven();
 	ShaderProgramComponent* GetSPC();
-	IResourceBinder* GetShadowMap();
+	GPUResourceComponent* GetShadowMap();
 };

@@ -116,69 +116,69 @@ bool VoxelizationPass::setupGeometryProcessPass()
 	m_geometryProcessRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs.resize(13);
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
 
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 2;
 
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[3].m_GPUResourceType = GPUResourceType::Buffer;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 0;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 9;
 
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[4].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[4].m_GPUResourceType = GPUResourceType::Buffer;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[4].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 1;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 0;
 
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Image;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[5].m_GPUResourceType = GPUResourceType::Image;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 2;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 0;
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceCount = 1;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[5].m_SubresourceCount = 1;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[5].m_IndirectBinding = true;
 
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Image;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[6].m_GPUResourceType = GPUResourceType::Image;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 2;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 1;
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceCount = 1;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[6].m_SubresourceCount = 1;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[6].m_IndirectBinding = true;
 
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[7].m_ResourceBinderType = ResourceBinderType::Image;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[7].m_GPUResourceType = GPUResourceType::Image;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[7].m_DescriptorSetIndex = 2;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[7].m_DescriptorIndex = 2;
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[7].m_ResourceCount = 1;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[7].m_SubresourceCount = 1;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[7].m_IndirectBinding = true;
 
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[8].m_ResourceBinderType = ResourceBinderType::Image;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[8].m_GPUResourceType = GPUResourceType::Image;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[8].m_DescriptorSetIndex = 2;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[8].m_DescriptorIndex = 3;
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[8].m_ResourceCount = 1;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[8].m_SubresourceCount = 1;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[8].m_IndirectBinding = true;
 
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[9].m_ResourceBinderType = ResourceBinderType::Image;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[9].m_GPUResourceType = GPUResourceType::Image;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[9].m_DescriptorSetIndex = 2;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[9].m_DescriptorIndex = 4;
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[9].m_ResourceCount = 1;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[9].m_SubresourceCount = 1;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[9].m_IndirectBinding = true;
 
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[10].m_ResourceBinderType = ResourceBinderType::Image;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[10].m_GPUResourceType = GPUResourceType::Image;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[10].m_DescriptorSetIndex = 2;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[10].m_DescriptorIndex = 5;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[10].m_IndirectBinding = true;
 
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[11].m_ResourceBinderType = ResourceBinderType::Sampler;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[11].m_GPUResourceType = GPUResourceType::Sampler;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[11].m_DescriptorSetIndex = 3;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[11].m_DescriptorIndex = 0;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[11].m_IndirectBinding = true;
 
-	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[12].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[12].m_GPUResourceType = GPUResourceType::Buffer;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[12].m_DescriptorSetIndex = 0;
 	m_geometryProcessRPDC->m_ResourceBinderLayoutDescs[12].m_DescriptorIndex = 5;
 
@@ -223,27 +223,27 @@ bool VoxelizationPass::setupConvertPass()
 
 	m_convertRPDC->m_ResourceBinderLayoutDescs.resize(4);
 
-	m_convertRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_convertRPDC->m_ResourceBinderLayoutDescs[0].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_convertRPDC->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_convertRPDC->m_ResourceBinderLayoutDescs[0].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_convertRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_convertRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 1;
 	m_convertRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 
-	m_convertRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Image;
-	m_convertRPDC->m_ResourceBinderLayoutDescs[1].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_convertRPDC->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Image;
+	m_convertRPDC->m_ResourceBinderLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_convertRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_convertRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
 	m_convertRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
 	m_convertRPDC->m_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
 
-	m_convertRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Image;
-	m_convertRPDC->m_ResourceBinderLayoutDescs[2].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_convertRPDC->m_ResourceBinderLayoutDescs[2].m_GPUResourceType = GPUResourceType::Image;
+	m_convertRPDC->m_ResourceBinderLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_convertRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_convertRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 1;
 	m_convertRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 2;
 	m_convertRPDC->m_ResourceBinderLayoutDescs[2].m_IndirectBinding = true;
 
-	m_convertRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_convertRPDC->m_ResourceBinderLayoutDescs[3].m_GPUResourceType = GPUResourceType::Buffer;
 	m_convertRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 0;
 	m_convertRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 9;
 
@@ -280,33 +280,33 @@ bool VoxelizationPass::setupMultiBouncePass()
 
 	m_multiBounceRPDC->m_ResourceBinderLayoutDescs.resize(5);
 
-	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
-	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[0].m_BinderAccessibility = Accessibility::ReadOnly;
+	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
+	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[0].m_BindingAccessibility = Accessibility::ReadOnly;
 	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 1;
 	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
 
-	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Image;
-	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[1].m_BinderAccessibility = Accessibility::ReadOnly;
+	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Image;
+	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadOnly;
 	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
 	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
 	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
 
-	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Image;
-	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[2].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[2].m_GPUResourceType = GPUResourceType::Image;
+	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
 	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 0;
 	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[2].m_IndirectBinding = true;
 
-	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Sampler;
+	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[3].m_GPUResourceType = GPUResourceType::Sampler;
 	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
 	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
 	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[3].m_IndirectBinding = true;
 
-	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[4].m_GPUResourceType = GPUResourceType::Buffer;
 	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 0;
 	m_multiBounceRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 9;
 
@@ -348,32 +348,32 @@ bool VoxelizationPass::setupScreenSpaceFeedbackPass()
 
 	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs.resize(5);
 
-	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
-	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[0].m_BinderAccessibility = Accessibility::ReadOnly;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[0].m_BindingAccessibility = Accessibility::ReadOnly;
 	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadOnly;
 	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 1;
 	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
 
-	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Image;
-	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[1].m_BinderAccessibility = Accessibility::ReadOnly;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Image;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadOnly;
 	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadOnly;
 	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
 	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
 	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
 
-	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Image;
-	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[2].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[2].m_GPUResourceType = GPUResourceType::Image;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
 	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 0;
 	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[2].m_IndirectBinding = true;
 
-	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[3].m_GPUResourceType = GPUResourceType::Buffer;
 	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 0;
 	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
 
-	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[4].m_GPUResourceType = GPUResourceType::Buffer;
 	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 0;
 	m_SSFeedBackRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 9;
 
@@ -410,44 +410,44 @@ bool VoxelizationPass::setupRayTracingPass()
 
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs.resize(7);
 
-	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
-	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[0].m_BinderAccessibility = Accessibility::ReadOnly;
+	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
+	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[0].m_BindingAccessibility = Accessibility::ReadOnly;
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 1;
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
 
-	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Image;
-	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[1].m_BinderAccessibility = Accessibility::ReadOnly;
+	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Image;
+	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadOnly;
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
 
-	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Image;
-	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[2].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[2].m_GPUResourceType = GPUResourceType::Image;
+	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 0;
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[2].m_IndirectBinding = true;
 
-	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceBinderType = ResourceBinderType::Sampler;
+	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[3].m_GPUResourceType = GPUResourceType::Sampler;
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[3].m_IndirectBinding = true;
 
-	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[4].m_GPUResourceType = GPUResourceType::Buffer;
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 0;
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 9;
 
-	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[5].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[5].m_GPUResourceType = GPUResourceType::Buffer;
+	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[5].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 2;
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 1;
 
-	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceBinderType = ResourceBinderType::Buffer;
-	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[6].m_BinderAccessibility = Accessibility::ReadWrite;
+	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[6].m_GPUResourceType = GPUResourceType::Buffer;
+	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[6].m_BindingAccessibility = Accessibility::ReadWrite;
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 2;
 	m_rayTracingRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 2;
@@ -494,18 +494,18 @@ bool VoxelizationPass::setupVisualizationPass()
 
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs.resize(3);
 
-	m_visualizationRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
-	m_visualizationRPDC->m_ResourceBinderLayoutDescs[0].m_BinderAccessibility = Accessibility::ReadOnly;
+	m_visualizationRPDC->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
+	m_visualizationRPDC->m_ResourceBinderLayoutDescs[0].m_BindingAccessibility = Accessibility::ReadOnly;
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 1;
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
 
-	m_visualizationRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_visualizationRPDC->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 0;
 
-	m_visualizationRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceBinderType = ResourceBinderType::Buffer;
+	m_visualizationRPDC->m_ResourceBinderLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
 	m_visualizationRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 9;
 
@@ -638,13 +638,13 @@ bool VoxelizationPass::geometryProcess()
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_geometryProcessRPDC);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_geometryProcessRPDC);
 
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, m_geometryProcessSDC->m_ResourceBinder, 11, 0);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Geometry, m_voxelizationPassCBufferGBDC->m_ResourceBinder, 3, 9, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, m_voxelizationPassCBufferGBDC->m_ResourceBinder, 3, 9, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, m_geometryProcessSBufferGBDC->m_ResourceBinder, 4, 0, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, SunShadowPass::GetShadowMap(), 10, 5, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, l_CSMGBDC->m_ResourceBinder, 12, 5, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_geometryProcessRPDC, ShaderStage::Pixel, m_geometryProcessSDC, 11, 0);
+	g_Engine->getRenderingServer()->BindGPUResource(m_geometryProcessRPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC, 0, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_geometryProcessRPDC, ShaderStage::Geometry, m_voxelizationPassCBufferGBDC, 3, 9, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_geometryProcessRPDC, ShaderStage::Pixel, m_voxelizationPassCBufferGBDC, 3, 9, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_geometryProcessRPDC, ShaderStage::Pixel, m_geometryProcessSBufferGBDC, 4, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_geometryProcessRPDC, ShaderStage::Pixel, SunShadowPass::GetShadowMap(), 10, 5, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_geometryProcessRPDC, ShaderStage::Pixel, l_CSMGBDC, 12, 5, Accessibility::ReadOnly);
 
 	auto& l_drawCallInfo = g_Engine->getRenderingFrontend()->getDrawCallInfo();
 	auto l_drawCallCount = l_drawCallInfo.size();
@@ -658,29 +658,29 @@ bool VoxelizationPass::geometryProcess()
 			{
 				if (l_drawCallData.mesh->m_ObjectStatus == ObjectStatus::Activated)
 				{
-					g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Vertex, l_MeshGBDC->m_ResourceBinder, 1, 1, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
-					g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, l_MaterialGBDC->m_ResourceBinder, 2, 2, Accessibility::ReadOnly, l_drawCallData.materialConstantBufferIndex, 1);
+					g_Engine->getRenderingServer()->BindGPUResource(m_geometryProcessRPDC, ShaderStage::Vertex, l_MeshGBDC, 1, 1, Accessibility::ReadOnly, l_drawCallData.meshConstantBufferIndex, 1);
+					g_Engine->getRenderingServer()->BindGPUResource(m_geometryProcessRPDC, ShaderStage::Pixel, l_MaterialGBDC, 2, 2, Accessibility::ReadOnly, l_drawCallData.materialConstantBufferIndex, 1);
 
-					g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[0].m_Texture->m_ResourceBinder, 5, 0);
-					g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1].m_Texture->m_ResourceBinder, 6, 1);
-					g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[2].m_Texture->m_ResourceBinder, 7, 2);
-					g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[3].m_Texture->m_ResourceBinder, 8, 3);
-					g_Engine->getRenderingServer()->ActivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[4].m_Texture->m_ResourceBinder, 9, 4);
+					g_Engine->getRenderingServer()->BindGPUResource(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[0].m_Texture, 5, 0);
+					g_Engine->getRenderingServer()->BindGPUResource(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1].m_Texture, 6, 1);
+					g_Engine->getRenderingServer()->BindGPUResource(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[2].m_Texture, 7, 2);
+					g_Engine->getRenderingServer()->BindGPUResource(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[3].m_Texture, 8, 3);
+					g_Engine->getRenderingServer()->BindGPUResource(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[4].m_Texture, 9, 4);
 
 					g_Engine->getRenderingServer()->DrawIndexedInstanced(m_geometryProcessRPDC, l_drawCallData.mesh);
 
-					g_Engine->getRenderingServer()->DeactivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[0].m_Texture->m_ResourceBinder, 5, 0);
-					g_Engine->getRenderingServer()->DeactivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1].m_Texture->m_ResourceBinder, 6, 1);
-					g_Engine->getRenderingServer()->DeactivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[2].m_Texture->m_ResourceBinder, 7, 2);
-					g_Engine->getRenderingServer()->DeactivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[3].m_Texture->m_ResourceBinder, 8, 3);
-					g_Engine->getRenderingServer()->DeactivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[4].m_Texture->m_ResourceBinder, 9, 4);
+					g_Engine->getRenderingServer()->UnbindGPUResource(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[0].m_Texture, 5, 0);
+					g_Engine->getRenderingServer()->UnbindGPUResource(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[1].m_Texture, 6, 1);
+					g_Engine->getRenderingServer()->UnbindGPUResource(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[2].m_Texture, 7, 2);
+					g_Engine->getRenderingServer()->UnbindGPUResource(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[3].m_Texture, 8, 3);
+					g_Engine->getRenderingServer()->UnbindGPUResource(m_geometryProcessRPDC, ShaderStage::Pixel, l_drawCallData.material->m_TextureSlots[4].m_Texture, 9, 4);
 				}
 			}
 		}
 	}
 
-	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, m_geometryProcessSBufferGBDC->m_ResourceBinder, 4, 0, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_geometryProcessRPDC, ShaderStage::Pixel, SunShadowPass::GetShadowMap(), 10, 5, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_geometryProcessRPDC, ShaderStage::Pixel, m_geometryProcessSBufferGBDC, 4, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_geometryProcessRPDC, ShaderStage::Pixel, SunShadowPass::GetShadowMap(), 10, 5, Accessibility::ReadOnly);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_geometryProcessRPDC);
 
@@ -693,16 +693,16 @@ bool VoxelizationPass::convert()
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_convertRPDC);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_convertRPDC);
 
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_convertRPDC, ShaderStage::Compute, m_geometryProcessSBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_convertRPDC, ShaderStage::Compute, m_initialBounceVolume->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_convertRPDC, ShaderStage::Compute, m_normalVolume->m_ResourceBinder, 2, 2, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_convertRPDC, ShaderStage::Compute, m_voxelizationPassCBufferGBDC->m_ResourceBinder, 3, 9, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_convertRPDC, ShaderStage::Compute, m_geometryProcessSBufferGBDC, 0, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_convertRPDC, ShaderStage::Compute, m_initialBounceVolume, 1, 1, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_convertRPDC, ShaderStage::Compute, m_normalVolume, 2, 2, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_convertRPDC, ShaderStage::Compute, m_voxelizationPassCBufferGBDC, 3, 9, Accessibility::ReadOnly);
 
 	g_Engine->getRenderingServer()->Dispatch(m_convertRPDC, m_voxelizationResolution / 8, m_voxelizationResolution / 8, m_voxelizationResolution / 8);
 
-	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_convertRPDC, ShaderStage::Compute, m_geometryProcessSBufferGBDC->m_ResourceBinder, 0, 0, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_convertRPDC, ShaderStage::Compute, m_initialBounceVolume->m_ResourceBinder, 1, 1, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_convertRPDC, ShaderStage::Compute, m_normalVolume->m_ResourceBinder, 2, 2, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_convertRPDC, ShaderStage::Compute, m_geometryProcessSBufferGBDC, 0, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_convertRPDC, ShaderStage::Compute, m_initialBounceVolume, 1, 1, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_convertRPDC, ShaderStage::Compute, m_normalVolume, 2, 2, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_convertRPDC);
 
@@ -718,19 +718,19 @@ bool VoxelizationPass::multiBounce(TextureDataComponent* input, TextureDataCompo
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_multiBounceRPDC);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_multiBounceRPDC);
 
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_multiBounceRPDC, ShaderStage::Compute, m_voxelizationPassCBufferGBDC->m_ResourceBinder, 4, 9, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_multiBounceRPDC, ShaderStage::Compute, m_normalVolume->m_ResourceBinder, 1, 1, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_multiBounceRPDC, ShaderStage::Compute, m_multiBounceSDC->m_ResourceBinder, 3, 0);
+	g_Engine->getRenderingServer()->BindGPUResource(m_multiBounceRPDC, ShaderStage::Compute, m_voxelizationPassCBufferGBDC, 4, 9, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_multiBounceRPDC, ShaderStage::Compute, m_normalVolume, 1, 1, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_multiBounceRPDC, ShaderStage::Compute, m_multiBounceSDC, 3, 0);
 
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_multiBounceRPDC, ShaderStage::Compute, input->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_multiBounceRPDC, ShaderStage::Compute, output->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_multiBounceRPDC, ShaderStage::Compute, input, 0, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_multiBounceRPDC, ShaderStage::Compute, output, 2, 0, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->Dispatch(m_multiBounceRPDC, m_voxelizationResolution / 8, m_voxelizationResolution / 8, m_voxelizationResolution / 8);
 
-	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_multiBounceRPDC, ShaderStage::Compute, input->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_multiBounceRPDC, ShaderStage::Compute, output->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_multiBounceRPDC, ShaderStage::Compute, input, 0, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_multiBounceRPDC, ShaderStage::Compute, output, 2, 0, Accessibility::ReadWrite);
 
-	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_multiBounceRPDC, ShaderStage::Compute, m_normalVolume->m_ResourceBinder, 1, 1, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_multiBounceRPDC, ShaderStage::Compute, m_normalVolume, 1, 1, Accessibility::ReadOnly);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_multiBounceRPDC);
 
@@ -746,17 +746,17 @@ bool VoxelizationPass::screenSpaceFeedback(TextureDataComponent* output)
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_SSFeedBackRPDC);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_SSFeedBackRPDC);
 
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, l_perFrameGBDC->m_ResourceBinder, 3, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, m_voxelizationPassCBufferGBDC->m_ResourceBinder, 4, 9, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, LightPass::GetResult(1), 1, 1, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, output->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_SSFeedBackRPDC, ShaderStage::Compute, l_perFrameGBDC, 3, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_SSFeedBackRPDC, ShaderStage::Compute, m_voxelizationPassCBufferGBDC, 4, 9, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_SSFeedBackRPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargets[0], 0, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_SSFeedBackRPDC, ShaderStage::Compute, LightPass::GetResult(1), 1, 1, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_SSFeedBackRPDC, ShaderStage::Compute, output, 2, 0, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->Dispatch(m_SSFeedBackRPDC, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargetsResourceBinders[0], 0, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, LightPass::GetResult(1), 1, 1, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_SSFeedBackRPDC, ShaderStage::Compute, output->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_SSFeedBackRPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargets[0], 0, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_SSFeedBackRPDC, ShaderStage::Compute, LightPass::GetResult(1), 1, 1, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_SSFeedBackRPDC, ShaderStage::Compute, output, 2, 0, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_SSFeedBackRPDC);
 
@@ -769,21 +769,21 @@ bool VoxelizationPass::rayTracing(TextureDataComponent* input, TextureDataCompon
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_rayTracingRPDC);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_rayTracingRPDC);
 
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_rayTracingRPDC, ShaderStage::Compute, m_voxelizationPassCBufferGBDC->m_ResourceBinder, 4, 9, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_rayTracingRPDC, ShaderStage::Compute, input->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_rayTracingRPDC, ShaderStage::Compute, m_normalVolume->m_ResourceBinder, 1, 1, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_rayTracingRPDC, ShaderStage::Compute, output->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_rayTracingRPDC, ShaderStage::Compute, m_rayTracingSDC->m_ResourceBinder, 3, 0);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_rayTracingRPDC, ShaderStage::Compute, m_rayTracingRaySBufferGBDC->m_ResourceBinder, 5, 1, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_rayTracingRPDC, ShaderStage::Compute, m_rayTracingProbeIndexSBufferGBDC->m_ResourceBinder, 6, 2, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_rayTracingRPDC, ShaderStage::Compute, m_voxelizationPassCBufferGBDC, 4, 9, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_rayTracingRPDC, ShaderStage::Compute, input, 0, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_rayTracingRPDC, ShaderStage::Compute, m_normalVolume, 1, 1, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_rayTracingRPDC, ShaderStage::Compute, output, 2, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_rayTracingRPDC, ShaderStage::Compute, m_rayTracingSDC, 3, 0);
+	g_Engine->getRenderingServer()->BindGPUResource(m_rayTracingRPDC, ShaderStage::Compute, m_rayTracingRaySBufferGBDC, 5, 1, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_rayTracingRPDC, ShaderStage::Compute, m_rayTracingProbeIndexSBufferGBDC, 6, 2, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->Dispatch(m_rayTracingRPDC, 8, 8, 8);
 
-	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_rayTracingRPDC, ShaderStage::Compute, input->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_rayTracingRPDC, ShaderStage::Compute, m_normalVolume->m_ResourceBinder, 1, 1, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_rayTracingRPDC, ShaderStage::Compute, output->m_ResourceBinder, 2, 0, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_rayTracingRPDC, ShaderStage::Compute, m_rayTracingRaySBufferGBDC->m_ResourceBinder, 5, 1, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_rayTracingRPDC, ShaderStage::Compute, m_rayTracingProbeIndexSBufferGBDC->m_ResourceBinder, 6, 2, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_rayTracingRPDC, ShaderStage::Compute, input, 0, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_rayTracingRPDC, ShaderStage::Compute, m_normalVolume, 1, 1, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_rayTracingRPDC, ShaderStage::Compute, output, 2, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_rayTracingRPDC, ShaderStage::Compute, m_rayTracingRaySBufferGBDC, 5, 1, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_rayTracingRPDC, ShaderStage::Compute, m_rayTracingProbeIndexSBufferGBDC, 6, 2, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_rayTracingRPDC);
 
@@ -798,14 +798,14 @@ bool VoxelizationPass::visualization(TextureDataComponent* input)
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_visualizationRPDC);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_visualizationRPDC);
 
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_visualizationRPDC, ShaderStage::Vertex, input->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_visualizationRPDC, ShaderStage::Geometry, l_PerFrameCBufferGBDC->m_ResourceBinder, 1, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_visualizationRPDC, ShaderStage::Vertex, m_voxelizationPassCBufferGBDC->m_ResourceBinder, 2, 9, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->ActivateResourceBinder(m_visualizationRPDC, ShaderStage::Geometry, m_voxelizationPassCBufferGBDC->m_ResourceBinder, 2, 9, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_visualizationRPDC, ShaderStage::Vertex, input, 0, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_visualizationRPDC, ShaderStage::Geometry, l_PerFrameCBufferGBDC, 1, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_visualizationRPDC, ShaderStage::Vertex, m_voxelizationPassCBufferGBDC, 2, 9, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_visualizationRPDC, ShaderStage::Geometry, m_voxelizationPassCBufferGBDC, 2, 9, Accessibility::ReadOnly);
 
 	g_Engine->getRenderingServer()->DrawInstanced(m_visualizationRPDC, m_voxelizationResolution * m_voxelizationResolution * m_voxelizationResolution);
 
-	g_Engine->getRenderingServer()->DeactivateResourceBinder(m_visualizationRPDC, ShaderStage::Vertex, input->m_ResourceBinder, 0, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_visualizationRPDC, ShaderStage::Vertex, input, 0, 0, Accessibility::ReadOnly);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_visualizationRPDC);
 
@@ -960,17 +960,17 @@ bool VoxelizationPass::Terminate()
 	return true;
 }
 
-IResourceBinder* VoxelizationPass::GetVoxelizationLuminanceVolume()
+GPUResourceComponent* VoxelizationPass::GetVoxelizationLuminanceVolume()
 {
-	return m_resultVolume->m_ResourceBinder;
+	return m_resultVolume;
 }
 
-IResourceBinder* VoxelizationPass::GetVisualizationResult()
+GPUResourceComponent* VoxelizationPass::GetVisualizationResult()
 {
-	return m_visualizationRPDC->m_RenderTargets[0]->m_ResourceBinder;
+	return m_visualizationRPDC->m_RenderTargets[0];
 }
 
-IResourceBinder* VoxelizationPass::GetVoxelizationCBuffer()
+GPUResourceComponent* VoxelizationPass::GetVoxelizationCBuffer()
 {
-	return m_voxelizationPassCBufferGBDC->m_ResourceBinder;
+	return m_voxelizationPassCBufferGBDC;
 }
