@@ -170,7 +170,7 @@ bool MTRenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 	return true;
 }
 
-bool MTRenderingServer::ActivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool MTRenderingServer::BindGPUResource(RenderPassDataComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	return true;
 }
@@ -185,7 +185,7 @@ bool MTRenderingServer::DrawInstanced(RenderPassDataComponent* renderPass, size_
 	return true;
 }
 
-bool MTRenderingServer::DeactivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool MTRenderingServer::UnbindGPUResource(RenderPassDataComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	return true;
 }
@@ -205,12 +205,12 @@ bool MTRenderingServer::WaitForFrame(RenderPassDataComponent* rhs)
 	return true;
 }
 
-bool MTRenderingServer::SetUserPipelineOutput(IResourceBinder* rhs)
+bool MTRenderingServer::SetUserPipelineOutput(GPUResourceComponent* rhs)
 {
 	return true;
 }
 
-IResourceBinder* MTRenderingServer::GetUserPipelineOutput()
+GPUResourceComponent* MTRenderingServer::GetUserPipelineOutput()
 {
 	return nullptr;
 }
