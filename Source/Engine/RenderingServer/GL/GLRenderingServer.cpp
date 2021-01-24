@@ -83,7 +83,6 @@ namespace GLRenderingServerNS
 	TObjectPool<GLMaterialDataComponent>* m_MaterialDataComponentPool = 0;
 	TObjectPool<GLTextureDataComponent>* m_TextureDataComponentPool = 0;
 	TObjectPool<GLRenderPassDataComponent>* m_RenderPassDataComponentPool = 0;
-	TObjectPool<GLResourceBinder>* m_ResourceBinderPool = 0;
 	TObjectPool<GLPipelineStateObject>* m_PSOPool = 0;
 	TObjectPool<GLShaderProgramComponent>* m_ShaderProgramComponentPool = 0;
 	TObjectPool<GLSamplerDataComponent>* m_SamplerDataComponentPool = 0;
@@ -94,7 +93,7 @@ namespace GLRenderingServerNS
 	std::unordered_set<MaterialDataComponent*> m_initializedMaterials;
 	std::vector<GLRenderPassDataComponent*> m_RPDCs;
 
-	IResourceBinder* m_userPipelineOutput = 0;
+	GPUResourceComponent* m_userPipelineOutput = 0;
 	GLRenderPassDataComponent* m_SwapChainRPDC = 0;
 	GLShaderProgramComponent* m_SwapChainSPC = 0;
 	GLSamplerDataComponent* m_SwapChainSDC = 0;
@@ -103,11 +102,6 @@ namespace GLRenderingServerNS
 }
 
 using namespace GLRenderingServerNS;
-
-GLResourceBinder* addResourcesBinder()
-{
-	return m_ResourceBinderPool->Spawn();
-}
 
 GLPipelineStateObject* addPSO()
 {
@@ -136,8 +130,6 @@ bool GLRenderingServerNS::resizeImpl()
 
 			i->m_RenderTargets.clear();
 
-			i->m_RenderTargetsResourceBinders.clear();
-
 			if (i->m_DepthStencilRenderTarget)
 			{
 				l_renderingServer->DeleteTextureDataComponent(i->m_DepthStencilRenderTarget);
@@ -156,10 +148,6 @@ bool GLRenderingServerNS::resizeImpl()
 			ReserveRenderTargets(i, l_renderingServer);
 
 			CreateRenderTargets(i, l_renderingServer);
-
-			i->m_RenderTargetsResourceBinders.resize(i->m_RenderPassDesc.m_RenderTargetCount);
-
-			CreateResourcesBinder(i);
 
 			i->m_PipelineStateObject = addPSO();
 
@@ -192,7 +180,6 @@ bool GLRenderingServer::Setup(ISystemConfig* systemConfig)
 	m_TextureDataComponentPool = TObjectPool<GLTextureDataComponent>::Create(l_renderingCapability.maxTextures);
 	m_MaterialDataComponentPool = TObjectPool<GLMaterialDataComponent>::Create(l_renderingCapability.maxMaterials);
 	m_RenderPassDataComponentPool = TObjectPool<GLRenderPassDataComponent>::Create(128);
-	m_ResourceBinderPool = TObjectPool<GLResourceBinder>::Create(16384);
 	m_PSOPool = TObjectPool<GLPipelineStateObject>::Create(128);
 	m_ShaderProgramComponentPool = TObjectPool<GLShaderProgramComponent>::Create(256);
 	m_SamplerDataComponentPool = TObjectPool<GLSamplerDataComponent>::Create(256);
@@ -245,12 +232,12 @@ bool GLRenderingServer::Initialize()
 				m_SwapChainRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 
 				m_SwapChainRPDC->m_ResourceBinderLayoutDescs.resize(2);
-				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceBinderType = ResourceBinderType::Image;
+				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
 				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
 				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
 				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
 
-				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceBinderType = ResourceBinderType::Sampler;
+				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Sampler;
 				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
 				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 0;
 				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
@@ -431,11 +418,7 @@ bool GLRenderingServer::InitializeTextureDataComponent(TextureDataComponent* rhs
 
 	InnoLogger::Log(LogLevel::Verbose, "GLRenderingServer: TO ", l_rhs->m_TO, " is initialized.");
 
-	auto l_resourceBinder = addResourcesBinder();
-	l_resourceBinder->m_TO = l_rhs;
-	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Image;
-	l_rhs->m_ResourceBinder = l_resourceBinder;
-
+	l_rhs->m_GPUResourceType = GPUResourceType::Image;
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	m_initializedTextures.emplace(l_rhs);
@@ -486,10 +469,6 @@ bool GLRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 	ReserveRenderTargets(l_rhs, this);
 
 	CreateRenderTargets(l_rhs, this);
-
-	l_rhs->m_RenderTargetsResourceBinders.resize(l_rhs->m_RenderPassDesc.m_RenderTargetCount);
-
-	CreateResourcesBinder(l_rhs);
 
 	l_rhs->m_PipelineStateObject = addPSO();
 
@@ -568,12 +547,7 @@ bool GLRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent* rhs
 	glSamplerParameteri(l_rhs->m_SO, GL_TEXTURE_MAG_FILTER, l_magFilterParam);
 	glSamplerParameterfv(l_rhs->m_SO, GL_TEXTURE_BORDER_COLOR, l_rhs->m_SamplerDesc.m_BorderColor);
 
-	auto l_resourceBinder = addResourcesBinder();
-	l_resourceBinder->m_SO = l_rhs->m_SO;
-	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Sampler;
-
-	l_rhs->m_ResourceBinder = l_resourceBinder;
-
+	l_rhs->m_GPUResourceType = GPUResourceType::Sampler;
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
@@ -584,13 +558,6 @@ bool GLRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent*
 	auto l_rhs = reinterpret_cast<GLGPUBufferDataComponent*>(rhs);
 
 	l_rhs->m_TotalSize = l_rhs->m_ElementCount * l_rhs->m_ElementSize;
-
-	auto l_resourceBinder = addResourcesBinder();
-	l_resourceBinder->m_ResourceBinderType = ResourceBinderType::Buffer;
-	l_resourceBinder->m_GPUAccessibility = l_rhs->m_GPUAccessibility;
-	l_resourceBinder->m_ElementCount = l_rhs->m_ElementCount;
-	l_resourceBinder->m_ElementSize = l_rhs->m_ElementSize;
-	l_resourceBinder->m_TotalSize = l_rhs->m_TotalSize;
 
 	if (l_rhs->m_GPUAccessibility == Accessibility::ReadOnly)
 	{
@@ -621,10 +588,7 @@ bool GLRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent*
 
 	glBindBuffer(l_rhs->m_BufferType, 0);
 
-	l_resourceBinder->m_BO = l_rhs->m_Handle;
-
-	l_rhs->m_ResourceBinder = l_resourceBinder;
-
+	l_rhs->m_GPUResourceType = GPUResourceType::Buffer;
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
@@ -650,11 +614,6 @@ bool GLRenderingServer::DeleteTextureDataComponent(TextureDataComponent* rhs)
 	auto l_rhs = reinterpret_cast<GLTextureDataComponent*>(rhs);
 
 	glDeleteTextures(1, &l_rhs->m_TO);
-
-	if (l_rhs->m_ResourceBinder)
-	{
-		m_ResourceBinderPool->Destroy(reinterpret_cast<GLResourceBinder*>(l_rhs->m_ResourceBinder));
-	}
 
 	m_TextureDataComponentPool->Destroy(l_rhs);
 
@@ -693,7 +652,6 @@ bool GLRenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent* r
 	for (size_t i = 0; i < l_rhs->m_RenderTargets.size(); i++)
 	{
 		DeleteTextureDataComponent(l_rhs->m_RenderTargets[i]);
-		m_ResourceBinderPool->Destroy(reinterpret_cast<GLResourceBinder*>(l_rhs->m_RenderTargetsResourceBinders[i]));
 	}
 
 	m_RenderPassDataComponentPool->Destroy(l_rhs);
@@ -743,11 +701,6 @@ bool GLRenderingServer::DeleteSamplerDataComponent(SamplerDataComponent* rhs)
 
 	glDeleteSamplers(1, &l_rhs->m_SO);
 
-	if (l_rhs->m_ResourceBinder)
-	{
-		m_ResourceBinderPool->Destroy(reinterpret_cast<GLResourceBinder*>(l_rhs->m_ResourceBinder));
-	}
-
 	m_SamplerDataComponentPool->Destroy(l_rhs);
 
 	return true;
@@ -758,11 +711,6 @@ bool GLRenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent* rhs
 	auto l_rhs = reinterpret_cast<GLGPUBufferDataComponent*>(rhs);
 
 	glDeleteBuffers(1, &l_rhs->m_Handle);
-
-	if (l_rhs->m_ResourceBinder)
-	{
-		m_ResourceBinderPool->Destroy(reinterpret_cast<GLResourceBinder*>(l_rhs->m_ResourceBinder));
-	}
 
 	m_GPUBufferDataComponentPool->Destroy(l_rhs);
 
@@ -890,32 +838,30 @@ bool BindGPUBuffer(Accessibility accessibility, GLuint BO, size_t localSlot, siz
 	return true;
 }
 
-bool GLRenderingServer::ActivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool GLRenderingServer::BindGPUResource(RenderPassDataComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
-	auto l_resourceBinder = reinterpret_cast<GLResourceBinder*>(binder);
-
-	if (l_resourceBinder)
+	if (resource)
 	{
-		switch (l_resourceBinder->m_ResourceBinderType)
+		switch (resource->m_GPUResourceType)
 		{
-		case ResourceBinderType::Sampler:
+		case GPUResourceType::Sampler:
 			for (size_t i = 0; i < 16; i++)
 			{
-				glBindSampler((GLuint)i, l_resourceBinder->m_SO);
+				glBindSampler((GLuint)i, reinterpret_cast<GLGPUBufferDataComponent*>(resource)->m_Handle);
 			}
 			break;
-		case ResourceBinderType::Image:
+		case GPUResourceType::Image:
 			if (accessibility == Accessibility::ReadOnly)
 			{
-				ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(l_resourceBinder->m_TO), (uint32_t)localSlot);
+				ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(resource), (uint32_t)localSlot);
 			}
 			else
 			{
-				BindTextureAsImage(reinterpret_cast<GLTextureDataComponent*>(l_resourceBinder->m_TO), (uint32_t)localSlot, accessibility);
+				BindTextureAsImage(reinterpret_cast<GLTextureDataComponent*>(resource), (uint32_t)localSlot, accessibility);
 			}
 			break;
-		case ResourceBinderType::Buffer:
-			BindGPUBuffer(l_resourceBinder->m_GPUAccessibility, l_resourceBinder->m_BO, localSlot, startOffset, l_resourceBinder->m_ElementSize, l_resourceBinder->m_TotalSize, elementCount);
+		case GPUResourceType::Buffer:
+			BindGPUBuffer(resource->m_GPUAccessibility, reinterpret_cast<GLGPUBufferDataComponent*>(resource)->m_Handle, localSlot, startOffset, reinterpret_cast<GLGPUBufferDataComponent*>(resource)->m_ElementSize, reinterpret_cast<GLGPUBufferDataComponent*>(resource)->m_TotalSize, elementCount);
 			break;
 		default:
 			break;
@@ -946,7 +892,7 @@ bool GLRenderingServer::DrawInstanced(RenderPassDataComponent* renderPass, size_
 	return true;
 }
 
-bool GLRenderingServer::DeactivateResourceBinder(RenderPassDataComponent* renderPass, ShaderStage shaderStage, IResourceBinder* binder, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool GLRenderingServer::UnbindGPUResource(RenderPassDataComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	return true;
 }
@@ -974,14 +920,14 @@ bool GLRenderingServer::WaitForFrame(RenderPassDataComponent* rhs)
 	return true;
 }
 
-bool GLRenderingServer::SetUserPipelineOutput(IResourceBinder* rhs)
+bool GLRenderingServer::SetUserPipelineOutput(GPUResourceComponent* rhs)
 {
 	m_userPipelineOutput = rhs;
 
 	return true;
 }
 
-IResourceBinder* GLRenderingServer::GetUserPipelineOutput()
+GPUResourceComponent* GLRenderingServer::GetUserPipelineOutput()
 {
 	return m_userPipelineOutput;
 }
@@ -994,15 +940,15 @@ bool GLRenderingServer::Present()
 
 	CleanRenderTargets(m_SwapChainRPDC);
 
-	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_SwapChainSDC->m_ResourceBinder, 0, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
+	BindGPUResource(m_SwapChainRPDC, ShaderStage::Pixel, m_SwapChainSDC, 0, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
 
-	ActivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	BindGPUResource(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
 
 	DrawIndexedInstanced(m_SwapChainRPDC, l_mesh, 1);
 
-	DeactivateResourceBinder(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	UnbindGPUResource(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	CommandListEnd(m_SwapChainRPDC);
 

@@ -496,16 +496,6 @@ bool GLHelper::CreateRenderTargets(GLRenderPassDataComponent* GLRPDC, IRendering
 	return true;
 }
 
-bool GLHelper::CreateResourcesBinder(GLRenderPassDataComponent* GLRPDC)
-{
-	for (size_t i = 0; i < GLRPDC->m_RenderTargetsResourceBinders.size(); i++)
-	{
-		GLRPDC->m_RenderTargetsResourceBinders[i] = GLRPDC->m_RenderTargets[i]->m_ResourceBinder;
-	}
-
-	return true;
-}
-
 bool GLHelper::CreateStateObjects(GLRenderPassDataComponent* GLRPDC)
 {
 	auto l_PSO = reinterpret_cast<GLPipelineStateObject*>(GLRPDC->m_PipelineStateObject);

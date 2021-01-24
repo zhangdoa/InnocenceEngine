@@ -12,14 +12,6 @@ namespace Inno
 		GLenum m_GLPrimitiveTopology = 0;
 	};
 
-	class GLResourceBinder : public IResourceBinder
-	{
-	public:
-		void* m_TO = 0;
-		GLuint m_SO = 0;
-		GLuint m_BO = 0;
-	};
-
 	class GLCommandList : public ICommandList
 	{
 	};

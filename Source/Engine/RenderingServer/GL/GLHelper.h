@@ -19,7 +19,6 @@ namespace Inno
 		bool CreateFramebuffer(GLRenderPassDataComponent* GLRPDC);
 		bool ReserveRenderTargets(GLRenderPassDataComponent* GLRPDC, IRenderingServer* renderingServer);
 		bool CreateRenderTargets(GLRenderPassDataComponent* GLRPDC, IRenderingServer* renderingServer);
-		bool CreateResourcesBinder(GLRenderPassDataComponent* GLRPDC);
 		bool CreateStateObjects(GLRenderPassDataComponent* GLRPDC);
 
 		GLenum GetComparisionFunctionEnum(ComparisionFunction comparisionFunction);
