@@ -4,18 +4,6 @@
 
 namespace Inno
 {
-	class DX12ResourceBinder : public IResourceBinder
-	{
-	public:
-		DX12SRV m_SRV = {};
-		DX12UAV m_UAV = {};
-		DX12Sampler m_Sampler = {};
-		DX12TextureDataComponent* m_Texture = 0;
-		ComPtr<ID3D12Resource> m_DefaultHeapBuffer = 0;
-		ComPtr<ID3D12Resource> m_UploadHeapBuffer = 0;
-		bool isAtomicCounter = false;
-	};
-
 	class DX12PipelineStateObject : public IPipelineStateObject
 	{
 	public:

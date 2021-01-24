@@ -7,5 +7,6 @@ namespace Inno
 	class DX12SamplerDataComponent : public SamplerDataComponent
 	{
 	public:
+		DX12Sampler m_Sampler = {};
 	};
 }

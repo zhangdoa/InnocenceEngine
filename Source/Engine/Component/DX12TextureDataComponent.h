@@ -11,6 +11,8 @@ namespace Inno
 		ComPtr<ID3D12Resource> m_ResourceHandle = 0;
 		D3D12_RESOURCE_DESC m_DX12TextureDesc = {};
 		uint32_t m_PixelDataSize = 0;
+		DX12SRV m_SRV = {};
+		DX12UAV m_UAV = {};
 		D3D12_RESOURCE_STATES m_WriteState;
 		D3D12_RESOURCE_STATES m_ReadState;
 		D3D12_RESOURCE_STATES m_CurrentState;
