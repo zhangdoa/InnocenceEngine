@@ -12,7 +12,7 @@
 #include "../../Interface/IEngine.h"
 
 using namespace Inno;
-extern IEngine* g_Engine;
+extern IEngine *g_Engine;
 
 #include "VKHelper.h"
 using namespace VKHelper;
@@ -24,18 +24,18 @@ using namespace VKHelper;
 
 namespace VKRenderingServerNS
 {
-	VkResult createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pCallback);
-	void destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT callback, const VkAllocationCallbacks* pAllocator);
-	std::vector<const char*> getRequiredExtensions();
+	VkResult createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pCallback);
+	void destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT callback, const VkAllocationCallbacks *pAllocator);
+	std::vector<const char *> getRequiredExtensions();
 
-	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
-	{	
+	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData)
+	{
 		LogLevel l_logLevel = LogLevel::Verbose;
-		if(messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+		if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
 		{
 			l_logLevel = LogLevel::Warning;
 		}
-		else if(messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+		else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 		{
 			l_logLevel = LogLevel::Error;
 		}
@@ -59,22 +59,22 @@ namespace VKRenderingServerNS
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
-	TObjectPool<VKMeshDataComponent>* m_MeshDataComponentPool = 0;
-	TObjectPool<VKMaterialDataComponent>* m_MaterialDataComponentPool = 0;
-	TObjectPool<VKTextureDataComponent>* m_TextureDataComponentPool = 0;
-	TObjectPool<VKRenderPassDataComponent>* m_RenderPassDataComponentPool = 0;
-	TObjectPool<VKPipelineStateObject>* m_PSOPool = 0;
-	TObjectPool<VKCommandQueue>* m_CommandQueuePool = 0;
-	TObjectPool<VKCommandList>* m_CommandListPool = 0;
-	TObjectPool<VKSemaphore>* m_SemaphorePool = 0;
-	TObjectPool<VKFence>* m_FencePool = 0;
-	TObjectPool<VKShaderProgramComponent>* m_ShaderProgramComponentPool = 0;
-	TObjectPool<VKSamplerDataComponent>* m_SamplerDataComponentPool = 0;
-	TObjectPool<VKGPUBufferDataComponent>* m_GPUBufferDataComponentPool = 0;
+	TObjectPool<VKMeshDataComponent> *m_MeshDataComponentPool = 0;
+	TObjectPool<VKMaterialDataComponent> *m_MaterialDataComponentPool = 0;
+	TObjectPool<VKTextureDataComponent> *m_TextureDataComponentPool = 0;
+	TObjectPool<VKRenderPassDataComponent> *m_RenderPassDataComponentPool = 0;
+	TObjectPool<VKPipelineStateObject> *m_PSOPool = 0;
+	TObjectPool<VKCommandQueue> *m_CommandQueuePool = 0;
+	TObjectPool<VKCommandList> *m_CommandListPool = 0;
+	TObjectPool<VKSemaphore> *m_SemaphorePool = 0;
+	TObjectPool<VKFence> *m_FencePool = 0;
+	TObjectPool<VKShaderProgramComponent> *m_ShaderProgramComponentPool = 0;
+	TObjectPool<VKSamplerDataComponent> *m_SamplerDataComponentPool = 0;
+	TObjectPool<VKGPUBufferDataComponent> *m_GPUBufferDataComponentPool = 0;
 
-	std::unordered_set<MeshDataComponent*> m_initializedMeshes;
-	std::unordered_set<TextureDataComponent*> m_initializedTextures;
-	std::unordered_set<MaterialDataComponent*> m_initializedMaterials;
+	std::unordered_set<MeshDataComponent *> m_initializedMeshes;
+	std::unordered_set<TextureDataComponent *> m_initializedTextures;
+	std::unordered_set<MaterialDataComponent *> m_initializedMaterials;
 
 	VkInstance m_instance;
 	VkSurfaceKHR m_windowSurface;
@@ -87,14 +87,13 @@ namespace VKRenderingServerNS
 
 	VkSwapchainKHR m_swapChain = 0;
 
-	const std::vector<const char*> m_deviceExtensions =
-	{
-		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-		VK_KHR_MAINTENANCE2_EXTENSION_NAME, // For imageless framebuffer
-		VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME, // For imageless framebuffer
-		VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME,
-		VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME
-	};
+	const std::vector<const char *> m_deviceExtensions =
+		{
+			VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+			VK_KHR_MAINTENANCE2_EXTENSION_NAME,		 // For imageless framebuffer
+			VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME, // For imageless framebuffer
+			VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME,
+			VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME};
 
 #ifdef INNO_DEBUG
 	const bool m_enableValidationLayers = true;
@@ -102,10 +101,9 @@ namespace VKRenderingServerNS
 	const bool m_enableValidationLayers = false;
 #endif
 
-	const std::vector<const char*> m_validationLayers =
-	{
-	"VK_LAYER_KHRONOS_validation"
-	};
+	const std::vector<const char *> m_validationLayers =
+		{
+			"VK_LAYER_KHRONOS_validation"};
 
 	VkDebugUtilsMessengerEXT m_messengerCallback;
 
@@ -116,25 +114,26 @@ namespace VKRenderingServerNS
 	VkDescriptorSetLayout m_materialDescriptorLayout;
 	VkDescriptorSetLayout m_dummyEmptyDescriptorLayout;
 
-	GPUResourceComponent* m_userPipelineOutput = 0;
-	VKRenderPassDataComponent* m_SwapChainRPDC = 0;
-	VKShaderProgramComponent* m_SwapChainSPC = 0;
-	VKSamplerDataComponent* m_SwapChainSDC = 0;
-}
+	GPUResourceComponent *m_userPipelineOutput = 0;
+	VKRenderPassDataComponent *m_SwapChainRPDC = 0;
+	VKShaderProgramComponent *m_SwapChainSPC = 0;
+	VKSamplerDataComponent *m_SwapChainSDC = 0;
+} // namespace VKRenderingServerNS
 
-VkResult VKRenderingServerNS::createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pCallback)
+VkResult VKRenderingServerNS::createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pCallback)
 {
 	auto l_func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
 	if (l_func != nullptr)
 	{
 		return l_func(instance, pCreateInfo, pAllocator, pCallback);
 	}
-	else {
+	else
+	{
 		return VK_ERROR_EXTENSION_NOT_PRESENT;
 	}
 }
 
-void VKRenderingServerNS::destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT callback, const VkAllocationCallbacks* pAllocator)
+void VKRenderingServerNS::destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT callback, const VkAllocationCallbacks *pAllocator)
 {
 	auto l_func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
 	if (l_func != nullptr)
@@ -143,14 +142,14 @@ void VKRenderingServerNS::destroyDebugUtilsMessengerEXT(VkInstance instance, VkD
 	}
 }
 
-std::vector<const char*> VKRenderingServerNS::getRequiredExtensions()
+std::vector<const char *> VKRenderingServerNS::getRequiredExtensions()
 {
 #if defined INNO_PLATFORM_WIN
-	std::vector<const char*> l_extensions = { "VK_KHR_surface", "VK_KHR_win32_surface" };
-#elif  defined INNO_PLATFORM_MAC
-	std::vector<const char*> extensions = { "VK_KHR_surface", "VK_MVK_macos_surface" };
-#elif  defined INNO_PLATFORM_LINUX
-	std::vector<const char*> extensions = { "VK_KHR_surface", "VK_KHR_xcb_surface" };
+	std::vector<const char *> l_extensions = {"VK_KHR_surface", "VK_KHR_win32_surface"};
+#elif defined INNO_PLATFORM_MAC
+	std::vector<const char *> extensions = {"VK_KHR_surface", "VK_MVK_macos_surface"};
+#elif defined INNO_PLATFORM_LINUX
+	std::vector<const char *> extensions = {"VK_KHR_surface", "VK_KHR_xcb_surface"};
 #endif
 
 	if (m_enableValidationLayers)
@@ -256,7 +255,7 @@ bool VKRenderingServerNS::createPysicalDevice()
 	std::vector<VkPhysicalDevice> l_devices(l_deviceCount);
 	vkEnumeratePhysicalDevices(m_instance, &l_deviceCount, l_devices.data());
 
-	for (const auto& l_device : l_devices)
+	for (const auto &l_device : l_devices)
 	{
 		if (IsDeviceSuitable(l_device, m_windowSurface, m_deviceExtensions))
 		{
@@ -281,7 +280,7 @@ bool VKRenderingServerNS::createLogicalDevice()
 	QueueFamilyIndices l_indices = FindQueueFamilies(m_physicalDevice, m_windowSurface);
 
 	std::vector<VkDeviceQueueCreateInfo> l_queueCreateInfos;
-	std::set<uint32_t> l_uniqueQueueFamilies = { l_indices.m_graphicsFamily.value(), l_indices.m_presentFamily.value() };
+	std::set<uint32_t> l_uniqueQueueFamilies = {l_indices.m_graphicsFamily.value(), l_indices.m_presentFamily.value()};
 
 	float l_queuePriority = 1.0f;
 	for (uint32_t l_queueFamily : l_uniqueQueueFamilies)
@@ -313,12 +312,12 @@ bool VKRenderingServerNS::createLogicalDevice()
 
 	l_createInfo.pEnabledFeatures = &l_deviceFeatures;
 	VkPhysicalDeviceImagelessFramebufferFeatures l_imagelessFramebufferFeatures = {};
-	l_imagelessFramebufferFeatures.sType = 	VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES;
+	l_imagelessFramebufferFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES;
 	l_imagelessFramebufferFeatures.imagelessFramebuffer = true;
 	l_createInfo.pNext = &l_imagelessFramebufferFeatures;
 
 	VkPhysicalDeviceCustomBorderColorFeaturesEXT l_CustomBorderColorFeaturesEXT = {};
-	l_CustomBorderColorFeaturesEXT.sType = 	VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT;
+	l_CustomBorderColorFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT;
 	l_CustomBorderColorFeaturesEXT.customBorderColors = true;
 	l_CustomBorderColorFeaturesEXT.customBorderColorWithoutFormat = true;
 	l_imagelessFramebufferFeatures.pNext = &l_CustomBorderColorFeaturesEXT;
@@ -423,7 +422,7 @@ bool VKRenderingServerNS::createMaterialDescriptorPool()
 	l_descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 	l_descriptorPoolSize.descriptorCount = l_renderingCapability.maxMaterials * 8;
 
-	VkDescriptorPoolSize l_descriptorPoolSizes[] = { l_descriptorPoolSize };
+	VkDescriptorPoolSize l_descriptorPoolSizes[] = {l_descriptorPoolSize};
 
 	if (!createDescriptorPool(m_device, l_descriptorPoolSizes, 1, l_renderingCapability.maxMaterials, m_materialDescriptorPool))
 	{
@@ -495,7 +494,7 @@ bool VKRenderingServerNS::createSwapChain()
 	l_createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
 	QueueFamilyIndices l_indices = FindQueueFamilies(m_physicalDevice, m_windowSurface);
-	uint32_t l_queueFamilyIndices[] = { l_indices.m_graphicsFamily.value(), l_indices.m_presentFamily.value() };
+	uint32_t l_queueFamilyIndices[] = {l_indices.m_graphicsFamily.value(), l_indices.m_presentFamily.value()};
 
 	if (l_indices.m_graphicsFamily.value() != l_indices.m_presentFamily.value())
 	{
@@ -556,32 +555,32 @@ bool VKRenderingServerNS::createSwapChain()
 
 using namespace VKRenderingServerNS;
 
-VKPipelineStateObject* addPSO()
+VKPipelineStateObject *addPSO()
 {
 	return m_PSOPool->Spawn();
 }
 
-VKCommandQueue* addCommandQueue()
+VKCommandQueue *addCommandQueue()
 {
 	return m_CommandQueuePool->Spawn();
 }
 
-VKCommandList* addCommandList()
+VKCommandList *addCommandList()
 {
 	return m_CommandListPool->Spawn();
 }
 
-VKSemaphore* addSemaphore()
+VKSemaphore *addSemaphore()
 {
 	return m_SemaphorePool->Spawn();
 }
 
-VKFence* addFence()
+VKFence *addFence()
 {
 	return m_FencePool->Spawn();
 }
 
-bool VKRenderingServer::Setup(ISystemConfig* systemConfig)
+bool VKRenderingServer::Setup(ISystemConfig *systemConfig)
 {
 	auto l_renderingCapability = g_Engine->getRenderingFrontend()->getRenderingCapability();
 
@@ -598,9 +597,9 @@ bool VKRenderingServer::Setup(ISystemConfig* systemConfig)
 	m_SamplerDataComponentPool = TObjectPool<VKSamplerDataComponent>::Create(256);
 	m_GPUBufferDataComponentPool = TObjectPool<VKGPUBufferDataComponent>::Create(256);
 
-	m_SwapChainRPDC = reinterpret_cast<VKRenderPassDataComponent*>(AddRenderPassDataComponent("SwapChain/"));
-	m_SwapChainSPC = reinterpret_cast<VKShaderProgramComponent*>(AddShaderProgramComponent("SwapChain/"));
-	m_SwapChainSDC = reinterpret_cast<VKSamplerDataComponent*>(AddSamplerDataComponent("SwapChain/"));
+	m_SwapChainRPDC = reinterpret_cast<VKRenderPassDataComponent *>(AddRenderPassDataComponent("SwapChain/"));
+	m_SwapChainSPC = reinterpret_cast<VKShaderProgramComponent *>(AddShaderProgramComponent("SwapChain/"));
+	m_SwapChainSDC = reinterpret_cast<VKSamplerDataComponent *>(AddSamplerDataComponent("SwapChain/"));
 
 	createVkInstance();
 	createDebugCallback();
@@ -647,7 +646,7 @@ AddComponent(VK, ShaderProgram);
 AddComponent(VK, SamplerData);
 AddComponent(VK, GPUBufferData);
 
-bool createHostStagingBuffer(size_t bufferSize, VkBufferUsageFlagBits usageFlags, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
+bool createHostStagingBuffer(size_t bufferSize, VkBufferUsageFlagBits usageFlags, VkBuffer &buffer, VkDeviceMemory &deviceMemory)
 {
 	VkBufferCreateInfo l_stagingBufferCInfo = {};
 	l_stagingBufferCInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -658,7 +657,7 @@ bool createHostStagingBuffer(size_t bufferSize, VkBufferUsageFlagBits usageFlags
 	return CreateBuffer(m_physicalDevice, m_device, l_stagingBufferCInfo, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffer, deviceMemory);
 }
 
-bool createDeviceLocalBuffer(size_t bufferSize, VkBufferUsageFlagBits usageFlags, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
+bool createDeviceLocalBuffer(size_t bufferSize, VkBufferUsageFlagBits usageFlags, VkBuffer &buffer, VkDeviceMemory &deviceMemory)
 {
 	VkBufferCreateInfo l_localBufferCInfo = {};
 	l_localBufferCInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -669,16 +668,16 @@ bool createDeviceLocalBuffer(size_t bufferSize, VkBufferUsageFlagBits usageFlags
 	return CreateBuffer(m_physicalDevice, m_device, l_localBufferCInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, buffer, deviceMemory);
 }
 
-bool copyHostMemoryToDeviceMemory(void* hostMemory, size_t bufferSize, VkDeviceMemory& deviceMemory)
+bool copyHostMemoryToDeviceMemory(void *hostMemory, size_t bufferSize, VkDeviceMemory &deviceMemory)
 {
-	void* l_mappedMemory;
+	void *l_mappedMemory;
 	vkMapMemory(m_device, deviceMemory, 0, bufferSize, 0, &l_mappedMemory);
 	std::memcpy(l_mappedMemory, hostMemory, (size_t)bufferSize);
 	vkUnmapMemory(m_device, deviceMemory);
-	
+
 	return true;
 }
-bool initializeDeviceLocalBuffer(void* hostMemory, size_t bufferSize, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
+bool initializeDeviceLocalBuffer(void *hostMemory, size_t bufferSize, VkBuffer &buffer, VkDeviceMemory &deviceMemory)
 {
 	VkBuffer l_stagingBuffer;
 	VkDeviceMemory l_stagingBufferMemory;
@@ -695,27 +694,26 @@ bool initializeDeviceLocalBuffer(void* hostMemory, size_t bufferSize, VkBuffer& 
 	return true;
 }
 
-template<typename T>
-bool initializeDeviceLocalBuffer(Array<T>& hostMemory, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
+template <typename T>
+bool initializeDeviceLocalBuffer(Array<T> &hostMemory, VkBuffer &buffer, VkDeviceMemory &deviceMemory)
 {
 	auto l_bufferSize = sizeof(T) * hostMemory.size();
 
 	return initializeDeviceLocalBuffer(&hostMemory[0], l_bufferSize, buffer, deviceMemory);
 }
 
-bool VKRenderingServer::InitializeMeshDataComponent(MeshDataComponent* rhs)
+bool VKRenderingServer::InitializeMeshDataComponent(MeshDataComponent *rhs)
 {
 	if (m_initializedMeshes.find(rhs) != m_initializedMeshes.end())
 	{
 		return true;
 	}
 
-	auto l_rhs = reinterpret_cast<VKMeshDataComponent*>(rhs);
+	auto l_rhs = reinterpret_cast<VKMeshDataComponent *>(rhs);
 
 	auto l_VBSize = sizeof(Vertex) * l_rhs->m_vertices.size();
 	auto l_IBSize = sizeof(Index) * l_rhs->m_indices.size();
 
-	
 	createDeviceLocalBuffer(l_VBSize, VkBufferUsageFlagBits(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT), l_rhs->m_VBO, l_rhs->m_VBMemory);
 	createDeviceLocalBuffer(l_IBSize, VkBufferUsageFlagBits(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT), l_rhs->m_IBO, l_rhs->m_IBMemory);
 
@@ -732,14 +730,14 @@ bool VKRenderingServer::InitializeMeshDataComponent(MeshDataComponent* rhs)
 	return true;
 }
 
-bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent* rhs)
+bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent *rhs)
 {
 	if (m_initializedTextures.find(rhs) != m_initializedTextures.end())
 	{
 		return true;
 	}
 
-	auto l_rhs = reinterpret_cast<VKTextureDataComponent*>(rhs);
+	auto l_rhs = reinterpret_cast<VKTextureDataComponent *>(rhs);
 	l_rhs->m_VKTextureDesc = GetVKTextureDesc(rhs->m_TextureDesc);
 	l_rhs->m_ImageCreateInfo = GetImageCreateInfo(rhs->m_TextureDesc, l_rhs->m_VKTextureDesc);
 
@@ -751,7 +749,7 @@ bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent* rhs
 	{
 		createHostStagingBuffer(l_rhs->m_VKTextureDesc.imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, l_stagingBuffer, l_stagingBufferMemory);
 
-		void* l_mappedMemory;
+		void *l_mappedMemory;
 		vkMapMemory(m_device, l_stagingBufferMemory, 0, l_rhs->m_VKTextureDesc.imageSize, 0, &l_mappedMemory);
 		std::memcpy(l_mappedMemory, l_rhs->m_TextureData, static_cast<size_t>(l_rhs->m_VKTextureDesc.imageSize));
 		vkUnmapMemory(m_device, l_stagingBufferMemory);
@@ -791,9 +789,6 @@ bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent* rhs
 
 	CreateImageView(m_device, l_rhs);
 
-	l_rhs->m_DescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	l_rhs->m_DescriptorImageInfo.imageView = l_rhs->m_imageView;
-
 	l_rhs->m_GPUResourceType = GPUResourceType::Image;
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
@@ -804,41 +799,33 @@ bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent* rhs
 	return true;
 }
 
-bool VKRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent* rhs)
+bool VKRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent *rhs)
 {
 	if (m_initializedMaterials.find(rhs) != m_initializedMaterials.end())
 	{
 		return true;
 	}
 
-	auto l_rhs = reinterpret_cast<VKMaterialDataComponent*>(rhs);
-
-	createDescriptorSets(m_device, m_materialDescriptorPool, m_materialDescriptorLayout, l_rhs->m_descriptorSet, 1);
-
-	l_rhs->m_writeDescriptorSets.resize(8);
+	auto l_rhs = reinterpret_cast<VKMaterialDataComponent *>(rhs);
 
 	auto l_defaultMaterial = g_Engine->getRenderingFrontend()->getDefaultMaterialDataComponent();
 
 	for (size_t i = 0; i < 8; i++)
 	{
-		auto l_texture = reinterpret_cast<VKTextureDataComponent*>(l_rhs->m_TextureSlots[i].m_Texture);
+		auto l_texture = reinterpret_cast<VKTextureDataComponent *>(l_rhs->m_TextureSlots[i].m_Texture);
 
 		if (l_texture)
 		{
 			InitializeTextureDataComponent(l_texture);
-			l_rhs->m_writeDescriptorSets[i] = GetWriteDescriptorSet(l_texture->m_DescriptorImageInfo, 0, l_rhs->m_descriptorSet);
 			l_rhs->m_TextureSlots[i].m_Texture = l_texture;
 			l_rhs->m_TextureSlots[i].m_Activate = true;
 		}
 		else
 		{
-			auto l_texture = reinterpret_cast<VKTextureDataComponent*>(l_defaultMaterial->m_TextureSlots[i].m_Texture);
-			l_rhs->m_writeDescriptorSets[i] = GetWriteDescriptorSet(l_texture->m_DescriptorImageInfo, 0, l_rhs->m_descriptorSet);
+			auto l_texture = reinterpret_cast<VKTextureDataComponent *>(l_defaultMaterial->m_TextureSlots[i].m_Texture);
 			l_rhs->m_TextureSlots[i].m_Texture = l_texture;
 		}
 	}
-
-	UpdateDescriptorSet(m_device, &l_rhs->m_writeDescriptorSets[0], (uint32_t)l_rhs->m_writeDescriptorSets.size());
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
@@ -847,9 +834,9 @@ bool VKRenderingServer::InitializeMaterialDataComponent(MaterialDataComponent* r
 	return true;
 }
 
-bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponent* rhs)
+bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<VKRenderPassDataComponent*>(rhs);
+	auto l_rhs = reinterpret_cast<VKRenderPassDataComponent *>(rhs);
 
 	bool l_result = true;
 
@@ -879,27 +866,35 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 		auto l_maximumSetIndex = l_rhs->m_DescriptorSetLayoutBindingIndices[l_descriptorLayoutsSize - 1].m_SetIndex;
 
 		l_rhs->m_DescriptorSetLayouts.resize(l_maximumSetIndex + 1);
-
-		for (size_t i = 0; i < l_maximumSetIndex; i++)
+		for (size_t i = 0; i < l_rhs->m_DescriptorSetLayouts.size(); i++)
 		{
 			l_rhs->m_DescriptorSetLayouts[i] = m_dummyEmptyDescriptorLayout;
 		}
+		l_rhs->m_DescriptorSets.resize(l_maximumSetIndex + 1);
 
 		for (size_t i = 0; i < l_descriptorLayoutsSize; i++)
 		{
 			auto l_descriptorSetLayoutBindingIndex = l_rhs->m_DescriptorSetLayoutBindingIndices[i];
 			l_result &= createDescriptorSetLayout(m_device,
-				&l_rhs->m_DescriptorSetLayoutBindings[l_descriptorSetLayoutBindingIndex.m_LayoutBindingOffset],
-				static_cast<uint32_t>(l_descriptorSetLayoutBindingIndex.m_BindingCount),
-				l_rhs->m_DescriptorSetLayouts[l_descriptorSetLayoutBindingIndex.m_SetIndex]);
+												  &l_rhs->m_DescriptorSetLayoutBindings[l_descriptorSetLayoutBindingIndex.m_LayoutBindingOffset],
+												  static_cast<uint32_t>(l_descriptorSetLayoutBindingIndex.m_BindingCount),
+												  l_rhs->m_DescriptorSetLayouts[l_descriptorSetLayoutBindingIndex.m_SetIndex]);
 		}
 	}
 	else
 	{
 		l_rhs->m_DescriptorSetLayouts.resize(1);
 		l_rhs->m_DescriptorSetLayouts[0] = m_dummyEmptyDescriptorLayout;
+		l_rhs->m_DescriptorSets.resize(1);
 	}
 
+	l_result &= createDescriptorPool(m_device, l_rhs);
+
+	for (size_t i = 0; i < l_rhs->m_DescriptorSetLayouts.size(); i++)
+	{
+		l_result &= createDescriptorSets(m_device, l_rhs->m_DescriptorPool, &l_rhs->m_DescriptorSetLayouts[i], l_rhs->m_DescriptorSets[i], 1);
+	}
+	
 	l_result &= CreatePipelineLayout(m_device, l_rhs);
 
 	if (l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
@@ -946,9 +941,9 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 	return l_result;
 }
 
-bool VKRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent* rhs)
+bool VKRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<VKShaderProgramComponent*>(rhs);
+	auto l_rhs = reinterpret_cast<VKShaderProgramComponent *>(rhs);
 
 	bool l_result = true;
 
@@ -1012,9 +1007,9 @@ bool VKRenderingServer::InitializeShaderProgramComponent(ShaderProgramComponent*
 	return l_result;
 }
 
-bool VKRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent* rhs)
+bool VKRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<VKSamplerDataComponent*>(rhs);
+	auto l_rhs = reinterpret_cast<VKSamplerDataComponent *>(rhs);
 
 	l_rhs->m_samplerCInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 	l_rhs->m_samplerCInfo.minFilter = GetFilter(l_rhs->m_SamplerDesc.m_MinFilterMethod);
@@ -1040,10 +1035,10 @@ bool VKRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent* rhs
 
 	l_rhs->m_samplerCInfo.pNext = &l_samplerCustomBorderColorCInfoEXT;
 
-	if (vkCreateSampler(m_device, &l_rhs->m_samplerCInfo, nullptr, &l_rhs->m_sampler) != VK_SUCCESS) 
+	if (vkCreateSampler(m_device, &l_rhs->m_samplerCInfo, nullptr, &l_rhs->m_sampler) != VK_SUCCESS)
 	{
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create sampler!");
-    }
+	}
 
 	l_rhs->m_GPUResourceType = GPUResourceType::Sampler;
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
@@ -1051,17 +1046,17 @@ bool VKRenderingServer::InitializeSamplerDataComponent(SamplerDataComponent* rhs
 	return true;
 }
 
-bool VKRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent* rhs)
+bool VKRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<VKGPUBufferDataComponent*>(rhs);
+	auto l_rhs = reinterpret_cast<VKGPUBufferDataComponent *>(rhs);
 
 	l_rhs->m_TotalSize = l_rhs->m_ElementCount * l_rhs->m_ElementSize;
 
 	createHostStagingBuffer(l_rhs->m_TotalSize, VkBufferUsageFlagBits(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT), l_rhs->m_HostStagingBuffer, l_rhs->m_HostStagingMemory);
 
-	if(l_rhs->m_InitialData != nullptr)
+	if (l_rhs->m_InitialData != nullptr)
 	{
-		copyHostMemoryToDeviceMemory(l_rhs->m_InitialData, l_rhs->m_TotalSize, l_rhs->m_HostStagingMemory);		
+		copyHostMemoryToDeviceMemory(l_rhs->m_InitialData, l_rhs->m_TotalSize, l_rhs->m_HostStagingMemory);
 	}
 
 	if (l_rhs->m_GPUAccessibility != Accessibility::ReadOnly)
@@ -1069,7 +1064,7 @@ bool VKRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent*
 		if (l_rhs->m_CPUAccessibility == Accessibility::Immutable || l_rhs->m_CPUAccessibility == Accessibility::WriteOnly)
 		{
 			createDeviceLocalBuffer(l_rhs->m_TotalSize, VkBufferUsageFlagBits(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT), l_rhs->m_DeviceLocalBuffer, l_rhs->m_DeviceLocalMemory);
-			if(l_rhs->m_InitialData != nullptr)
+			if (l_rhs->m_InitialData != nullptr)
 			{
 				CopyBuffer(m_device, m_commandPool, m_graphicsQueue, l_rhs->m_HostStagingBuffer, l_rhs->m_DeviceLocalBuffer, l_rhs->m_TotalSize);
 			}
@@ -1086,54 +1081,54 @@ bool VKRenderingServer::InitializeGPUBufferDataComponent(GPUBufferDataComponent*
 	return true;
 }
 
-bool VKRenderingServer::DeleteMeshDataComponent(MeshDataComponent* rhs)
+bool VKRenderingServer::DeleteMeshDataComponent(MeshDataComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeleteTextureDataComponent(TextureDataComponent* rhs)
+bool VKRenderingServer::DeleteTextureDataComponent(TextureDataComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeleteMaterialDataComponent(MaterialDataComponent* rhs)
+bool VKRenderingServer::DeleteMaterialDataComponent(MaterialDataComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent* rhs)
+bool VKRenderingServer::DeleteRenderPassDataComponent(RenderPassDataComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent* rhs)
+bool VKRenderingServer::DeleteShaderProgramComponent(ShaderProgramComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeleteSamplerDataComponent(SamplerDataComponent* rhs)
+bool VKRenderingServer::DeleteSamplerDataComponent(SamplerDataComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent* rhs)
+bool VKRenderingServer::DeleteGPUBufferDataComponent(GPUBufferDataComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::ClearTextureDataComponent(TextureDataComponent* rhs)
+bool VKRenderingServer::ClearTextureDataComponent(TextureDataComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::CopyTextureDataComponent(TextureDataComponent* lhs, TextureDataComponent* rhs)
+bool VKRenderingServer::CopyTextureDataComponent(TextureDataComponent *lhs, TextureDataComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent* rhs, const void* GPUBufferValue, size_t startOffset, size_t range)
+bool VKRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent *rhs, const void *GPUBufferValue, size_t startOffset, size_t range)
 {
-	auto l_rhs = reinterpret_cast<VKGPUBufferDataComponent*>(rhs);
+	auto l_rhs = reinterpret_cast<VKGPUBufferDataComponent *>(rhs);
 
 	auto l_size = l_rhs->m_TotalSize;
 	if (range != SIZE_MAX)
@@ -1141,7 +1136,7 @@ bool VKRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent*
 		l_size = range * l_rhs->m_ElementSize;
 	}
 
-	void* l_mappedMemory;
+	void *l_mappedMemory;
 	vkMapMemory(m_device, l_rhs->m_HostStagingMemory, startOffset, l_size, 0, &l_mappedMemory);
 	std::memcpy(l_mappedMemory, GPUBufferValue, l_size);
 	vkUnmapMemory(m_device, l_rhs->m_HostStagingMemory);
@@ -1154,9 +1149,9 @@ bool VKRenderingServer::UploadGPUBufferDataComponentImpl(GPUBufferDataComponent*
 	return true;
 }
 
-bool VKRenderingServer::ClearGPUBufferDataComponent(GPUBufferDataComponent* rhs)
+bool VKRenderingServer::ClearGPUBufferDataComponent(GPUBufferDataComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<VKGPUBufferDataComponent*>(rhs);
+	auto l_rhs = reinterpret_cast<VKGPUBufferDataComponent *>(rhs);
 
 	auto l_commandBuffer = OpenTemporaryCommandBuffer(m_device, m_commandPool);
 
@@ -1171,9 +1166,9 @@ bool VKRenderingServer::ClearGPUBufferDataComponent(GPUBufferDataComponent* rhs)
 	return true;
 }
 
-bool VKRenderingServer::CommandListBegin(RenderPassDataComponent* rhs, size_t frameIndex)
-{	
-	auto l_rhs = reinterpret_cast<VKRenderPassDataComponent*>(rhs);
+bool VKRenderingServer::CommandListBegin(RenderPassDataComponent *rhs, size_t frameIndex)
+{
+	auto l_rhs = reinterpret_cast<VKRenderPassDataComponent *>(rhs);
 	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 
 	VkCommandBufferBeginInfo l_beginInfo = {};
@@ -1189,9 +1184,9 @@ bool VKRenderingServer::CommandListBegin(RenderPassDataComponent* rhs, size_t fr
 	return true;
 }
 
-bool VKRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent* rhs)
-{	
-	auto l_rhs = reinterpret_cast<VKRenderPassDataComponent*>(rhs);
+bool VKRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent *rhs)
+{
+	auto l_rhs = reinterpret_cast<VKRenderPassDataComponent *>(rhs);
 	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(l_rhs->m_PipelineStateObject);
 
@@ -1199,10 +1194,10 @@ bool VKRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent* rhs
 	l_renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	l_renderPassBeginInfo.renderPass = l_PSO->m_RenderPass;
 	l_renderPassBeginInfo.framebuffer = l_rhs->m_Framebuffers[l_rhs->m_CurrentFrame];
-	l_renderPassBeginInfo.renderArea.offset = { 0, 0 };
+	l_renderPassBeginInfo.renderArea.offset = {0, 0};
 	l_renderPassBeginInfo.renderArea.extent = l_PSO->m_Scissor.extent;
 
-	VkClearValue l_clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+	VkClearValue l_clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
 
 	std::vector<VkClearValue> l_clearValues;
 
@@ -1214,35 +1209,35 @@ bool VKRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent* rhs
 	if (l_rhs->m_RenderPassDesc.m_UseDepthBuffer)
 	{
 		l_clearValues.emplace_back();
-		l_clearValues[l_rhs->m_RenderPassDesc.m_RenderTargetCount].depthStencil = { 1.0f, 0 };
+		l_clearValues[l_rhs->m_RenderPassDesc.m_RenderTargetCount].depthStencil = {1.0f, 0};
 	}
 
 	l_renderPassBeginInfo.clearValueCount = (uint32_t)l_clearValues.size();
-	if(l_clearValues.size())
+	if (l_clearValues.size())
 	{
 		l_renderPassBeginInfo.pClearValues = &l_clearValues[0];
 	}
 
 	vkCmdBeginRenderPass(l_commandList->m_CommandBuffer, &l_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	if(l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
+	if (l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
 	{
 		vkCmdBindPipeline(l_commandList->m_CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, l_PSO->m_Pipeline);
 	}
-	else if(l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Compute)
+	else if (l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Compute)
 	{
-		vkCmdBindPipeline(l_commandList->m_CommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, l_PSO->m_Pipeline);	
+		vkCmdBindPipeline(l_commandList->m_CommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, l_PSO->m_Pipeline);
 	}
 
 	return true;
 }
 
-bool VKRenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
+bool VKRenderingServer::CleanRenderTargets(RenderPassDataComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::BindGPUResource(RenderPassDataComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool VKRenderingServer::BindGPUResource(RenderPassDataComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	auto l_renderPass = reinterpret_cast<VKRenderPassDataComponent *>(renderPass);
 	auto l_commandList = reinterpret_cast<VKCommandList *>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
@@ -1253,38 +1248,60 @@ bool VKRenderingServer::BindGPUResource(RenderPassDataComponent* renderPass, Sha
 		return false;
 	}
 
+	VkWriteDescriptorSet l_writeDescriptorSet = {};
+	VkDescriptorImageInfo l_descriptorImageInfo = {};
+	VkDescriptorBufferInfo l_descriptorBufferInfo = {};
 	switch (resource->m_GPUResourceType)
 	{
 	case GPUResourceType::Sampler:
+		l_writeDescriptorSet = GetWriteDescriptorSet((uint32_t)localSlot, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, l_renderPass->m_DescriptorSets[globalSlot]);
+		UpdateDescriptorSet(m_device, &l_writeDescriptorSet, 1);
 		break;
-	case GPUResourceType::Image:
+	case GPUResourceType::Image:	
+		l_descriptorImageInfo.imageView = reinterpret_cast<VKTextureDataComponent *>(resource)->m_imageView;
 		if (accessibility != Accessibility::ReadOnly)
 		{
+			l_descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+			l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorImageInfo, (uint32_t)localSlot, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, l_renderPass->m_DescriptorSets[globalSlot]);
 		}
 		else
 		{
+			l_descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorImageInfo, (uint32_t)localSlot, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, l_renderPass->m_DescriptorSets[globalSlot]);
 		}
+		UpdateDescriptorSet(m_device, &l_writeDescriptorSet, 1);
 		break;
 	case GPUResourceType::Buffer:
 		if (resource->m_GPUAccessibility == Accessibility::ReadOnly)
 		{
 			if (accessibility != Accessibility::ReadOnly)
 			{
+				InnoLogger::Log(LogLevel::Warning, "VKRenderingServer: Not allow GPU write to Constant Buffer!");
 			}
 			else
 			{
+				l_descriptorBufferInfo.buffer = reinterpret_cast<VKGPUBufferDataComponent *>(resource)->m_HostStagingBuffer;
+				l_descriptorBufferInfo.offset = startOffset;
+				l_descriptorBufferInfo.range = elementCount;
+				l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorBufferInfo, (uint32_t)localSlot, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, l_renderPass->m_DescriptorSets[globalSlot]);
+				UpdateDescriptorSet(m_device, &l_writeDescriptorSet, 1);
 			}
 		}
 		else
 		{
-			if (accessibility != Accessibility::ReadOnly)
-			{
-			}
-			else
-			{
-			}
+			//if (accessibility != Accessibility::ReadOnly)
+			//{
+			VkDescriptorBufferInfo l_descriptorBufferInfo = {};
+			l_descriptorBufferInfo.buffer = reinterpret_cast<VKGPUBufferDataComponent *>(resource)->m_DeviceLocalBuffer;
+			l_descriptorBufferInfo.offset = startOffset;
+			l_descriptorBufferInfo.range = elementCount;
+			l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorBufferInfo, (uint32_t)localSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, l_renderPass->m_DescriptorSets[globalSlot]);
+			UpdateDescriptorSet(m_device, &l_writeDescriptorSet, 1);
+			// }
+			// else
+			// {
+			// }
 		}
-
 		break;
 	default:
 		break;
@@ -1293,14 +1310,14 @@ bool VKRenderingServer::BindGPUResource(RenderPassDataComponent* renderPass, Sha
 	return true;
 }
 
-bool VKRenderingServer::DrawIndexedInstanced(RenderPassDataComponent* renderPass, MeshDataComponent* mesh, size_t instanceCount)
-{		
+bool VKRenderingServer::DrawIndexedInstanced(RenderPassDataComponent *renderPass, MeshDataComponent *mesh, size_t instanceCount)
+{
 	auto l_renderPass = reinterpret_cast<VKRenderPassDataComponent *>(renderPass);
 	auto l_commandList = reinterpret_cast<VKCommandList *>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
-	auto l_mesh = reinterpret_cast<VKMeshDataComponent*>(mesh);
+	auto l_mesh = reinterpret_cast<VKMeshDataComponent *>(mesh);
 
-	VkBuffer vertexBuffers[] = { l_mesh->m_VBO };
-	VkDeviceSize offsets[] = { 0 };
+	VkBuffer vertexBuffers[] = {l_mesh->m_VBO};
+	VkDeviceSize offsets[] = {0};
 
 	vkCmdBindVertexBuffers(l_commandList->m_CommandBuffer, 0, 1, vertexBuffers, offsets);
 	vkCmdBindIndexBuffer(l_commandList->m_CommandBuffer, l_mesh->m_IBO, 0, VK_INDEX_TYPE_UINT32);
@@ -1309,8 +1326,8 @@ bool VKRenderingServer::DrawIndexedInstanced(RenderPassDataComponent* renderPass
 	return true;
 }
 
-bool VKRenderingServer::DrawInstanced(RenderPassDataComponent* renderPass, size_t instanceCount)
-{	
+bool VKRenderingServer::DrawInstanced(RenderPassDataComponent *renderPass, size_t instanceCount)
+{
 	auto l_renderPass = reinterpret_cast<VKRenderPassDataComponent *>(renderPass);
 	auto l_commandList = reinterpret_cast<VKCommandList *>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
 
@@ -1319,14 +1336,14 @@ bool VKRenderingServer::DrawInstanced(RenderPassDataComponent* renderPass, size_
 	return true;
 }
 
-bool VKRenderingServer::UnbindGPUResource(RenderPassDataComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool VKRenderingServer::UnbindGPUResource(RenderPassDataComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	return true;
 }
 
-bool VKRenderingServer::CommandListEnd(RenderPassDataComponent* rhs)
+bool VKRenderingServer::CommandListEnd(RenderPassDataComponent *rhs)
 {
-	auto l_rhs = reinterpret_cast<VKRenderPassDataComponent*>(rhs);
+	auto l_rhs = reinterpret_cast<VKRenderPassDataComponent *>(rhs);
 	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(l_rhs->m_PipelineStateObject);
 
@@ -1341,23 +1358,23 @@ bool VKRenderingServer::CommandListEnd(RenderPassDataComponent* rhs)
 	return true;
 }
 
-bool VKRenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs)
+bool VKRenderingServer::ExecuteCommandList(RenderPassDataComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::WaitForFrame(RenderPassDataComponent* rhs)
+bool VKRenderingServer::WaitForFrame(RenderPassDataComponent *rhs)
 {
 	return true;
 }
 
-bool VKRenderingServer::SetUserPipelineOutput(GPUResourceComponent* rhs)
+bool VKRenderingServer::SetUserPipelineOutput(GPUResourceComponent *rhs)
 {
 	m_userPipelineOutput = rhs;
 	return true;
 }
 
-GPUResourceComponent* VKRenderingServer::GetUserPipelineOutput()
+GPUResourceComponent *VKRenderingServer::GetUserPipelineOutput()
 {
 	return m_userPipelineOutput;
 }
@@ -1367,22 +1384,22 @@ bool VKRenderingServer::Present()
 	return true;
 }
 
-bool VKRenderingServer::Dispatch(RenderPassDataComponent* renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
+bool VKRenderingServer::Dispatch(RenderPassDataComponent *renderPass, uint32_t threadGroupX, uint32_t threadGroupY, uint32_t threadGroupZ)
 {
 	return true;
 }
 
-Vec4 VKRenderingServer::ReadRenderTargetSample(RenderPassDataComponent* rhs, size_t renderTargetIndex, size_t x, size_t y)
+Vec4 VKRenderingServer::ReadRenderTargetSample(RenderPassDataComponent *rhs, size_t renderTargetIndex, size_t x, size_t y)
 {
 	return Vec4();
 }
 
-std::vector<Vec4> VKRenderingServer::ReadTextureBackToCPU(RenderPassDataComponent* canvas, TextureDataComponent* TDC)
+std::vector<Vec4> VKRenderingServer::ReadTextureBackToCPU(RenderPassDataComponent *canvas, TextureDataComponent *TDC)
 {
 	return std::vector<Vec4>();
 }
 
-bool VKRenderingServer::GenerateMipmap(TextureDataComponent* rhs)
+bool VKRenderingServer::GenerateMipmap(TextureDataComponent *rhs)
 {
 	return true;
 }
@@ -1402,12 +1419,12 @@ bool VKRenderingServer::EndCapture()
 	return false;
 }
 
-void* VKRenderingServer::GetVkInstance()
+void *VKRenderingServer::GetVkInstance()
 {
 	return m_instance;
 }
 
-void* VKRenderingServer::GetVkSurface()
+void *VKRenderingServer::GetVkSurface()
 {
 	return &m_windowSurface;
 }

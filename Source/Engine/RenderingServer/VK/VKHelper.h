@@ -65,8 +65,9 @@ namespace Inno
 
 		bool CreateDescriptorSetLayoutBindings(VKRenderPassDataComponent* VKRPDC);
 		bool createDescriptorPool(VkDevice device, VkDescriptorPoolSize* poolSize, uint32_t poolSizeCount, uint32_t maxSets, VkDescriptorPool& poolHandle);
+		bool createDescriptorPool(VkDevice device, VKRenderPassDataComponent* VKRPDC);
 		bool createDescriptorSetLayout(VkDevice device, VkDescriptorSetLayoutBinding* setLayoutBindings, uint32_t setLayoutBindingsCount, VkDescriptorSetLayout& setLayout);
-		bool createDescriptorSets(VkDevice device, VkDescriptorPool pool, VkDescriptorSetLayout& setLayout, VkDescriptorSet& setHandle, uint32_t count);
+		bool createDescriptorSets(VkDevice device, VkDescriptorPool pool, const VkDescriptorSetLayout* setLayout, VkDescriptorSet& setHandle, uint32_t count);
 		bool UpdateDescriptorSet(VkDevice device, VkWriteDescriptorSet* writeDescriptorSets, uint32_t writeDescriptorSetsCount);
 
 		bool ReserveRenderTargets(VKRenderPassDataComponent* VKRPDC, IRenderingServer* renderingServer);
@@ -93,6 +94,8 @@ namespace Inno
 
 		bool CreateShaderModule(VkDevice device, VkShaderModule& vkShaderModule, const ShaderFilePath& shaderFilePath);
 
-		VkWriteDescriptorSet GetWriteDescriptorSet(const VkDescriptorImageInfo& imageInfo, uint32_t dstBinding, VkDescriptorSet descriptorSet);
+		VkWriteDescriptorSet GetWriteDescriptorSet(uint32_t dstBinding, VkDescriptorType descriptorType, const VkDescriptorSet& descriptorSet);
+		VkWriteDescriptorSet GetWriteDescriptorSet(const VkDescriptorImageInfo& imageInfo, uint32_t dstBinding, VkDescriptorType descriptorType, const VkDescriptorSet& descriptorSet);
+		VkWriteDescriptorSet GetWriteDescriptorSet(const VkDescriptorBufferInfo& bufferInfo, uint32_t dstBinding, VkDescriptorType descriptorType, const VkDescriptorSet& descriptorSet);
 	}
 }

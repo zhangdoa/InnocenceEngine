@@ -415,24 +415,26 @@ VkImageViewType VKHelper::GetImageViewType(TextureSampler textureSampler)
 
 VkImageUsageFlags VKHelper::GetImageUsageFlags(TextureUsage textureUsage)
 {
-	VkImageUsageFlags l_result;
+	VkImageUsageFlags l_result = VK_IMAGE_USAGE_SAMPLED_BIT;
 
 	if (textureUsage == TextureUsage::ColorAttachment)
 	{
-		l_result = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+		l_result |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
 	}
 	else if (textureUsage == TextureUsage::DepthAttachment)
 	{
-		l_result = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+		l_result |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 	}
 	else if (textureUsage == TextureUsage::DepthStencilAttachment)
 	{
-		l_result = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+		l_result |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 	}
 	else
 	{
-		l_result = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+		l_result |= VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
 	}
+
+	
 
 	return l_result;
 }
@@ -1193,6 +1195,35 @@ bool VKHelper::createDescriptorPool(VkDevice device, VkDescriptorPoolSize *poolS
 	return true;
 }
 
+bool VKHelper::createDescriptorPool(VkDevice device, VKRenderPassDataComponent *VKRPDC)
+{
+	// Currently support less than 10 descriptor types actually
+	std::array<uint32_t, 10> l_descriptorTypeCount = {};
+
+	for (auto i : VKRPDC->m_DescriptorSetLayoutBindings)
+	{
+		l_descriptorTypeCount[i.descriptorType]++;
+	}
+
+	// What a name
+	auto l_VkDescriptorPoolSizesSize = std::count_if(l_descriptorTypeCount.begin(), l_descriptorTypeCount.end(), [](uint32_t i) { return i != 0; });
+
+	std::vector<VkDescriptorPoolSize> l_descriptorPoolSizes(l_VkDescriptorPoolSizesSize);
+
+	size_t l_index = 0;
+	for (size_t i = 0; i < l_descriptorTypeCount.size(); i++)
+	{
+		if (l_descriptorTypeCount[i])
+		{
+			l_descriptorPoolSizes[l_index].type = VkDescriptorType(i);
+			l_descriptorPoolSizes[l_index].descriptorCount = l_descriptorTypeCount[i];
+			l_index++;
+		}
+	}
+
+	return createDescriptorPool(device, &l_descriptorPoolSizes[0], (uint32_t)l_descriptorPoolSizes.size(), (uint32_t)VKRPDC->m_ResourceBinderLayoutDescs[VKRPDC->m_ResourceBinderLayoutDescs.size() - 1].m_DescriptorSetIndex + 1, VKRPDC->m_DescriptorPool);
+}
+
 bool VKHelper::createDescriptorSetLayout(VkDevice device, VkDescriptorSetLayoutBinding *setLayoutBindings, uint32_t setLayoutBindingsCount, VkDescriptorSetLayout &setLayout)
 {
 	VkDescriptorSetLayoutCreateInfo l_layoutCInfo = {};
@@ -1210,13 +1241,13 @@ bool VKHelper::createDescriptorSetLayout(VkDevice device, VkDescriptorSetLayoutB
 	return true;
 }
 
-bool VKHelper::createDescriptorSets(VkDevice device, VkDescriptorPool pool, VkDescriptorSetLayout &setLayout, VkDescriptorSet &setHandle, uint32_t count)
+bool VKHelper::createDescriptorSets(VkDevice device, VkDescriptorPool pool, const VkDescriptorSetLayout *setLayout, VkDescriptorSet &setHandle, uint32_t count)
 {
 	VkDescriptorSetAllocateInfo l_allocCInfo = {};
 	l_allocCInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	l_allocCInfo.descriptorPool = pool;
 	l_allocCInfo.descriptorSetCount = count;
-	l_allocCInfo.pSetLayouts = &setLayout;
+	l_allocCInfo.pSetLayouts = setLayout;
 
 	if (vkAllocateDescriptorSets(device, &l_allocCInfo, &setHandle) != VK_SUCCESS)
 	{
@@ -1242,9 +1273,9 @@ bool VKHelper::UpdateDescriptorSet(VkDevice device, VkWriteDescriptorSet *writeD
 }
 
 bool VKHelper::ReserveRenderTargets(VKRenderPassDataComponent *VKRPDC, IRenderingServer *renderingServer)
-{	
+{
 	auto l_framebufferCount = VKRPDC->m_RenderPassDesc.m_UseMultiFrames ? VKRPDC->m_RenderPassDesc.m_RenderTargetCount : 1;
-	
+
 	if (VKRPDC->m_RenderPassDesc.m_UseColorBuffer)
 	{
 		if (VKRPDC->m_RenderPassDesc.m_UseMultiFrames)
@@ -1262,7 +1293,6 @@ bool VKHelper::ReserveRenderTargets(VKRenderPassDataComponent *VKRPDC, IRenderin
 		}
 
 		InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: ", VKRPDC->m_InstanceName.c_str(), " render targets have been allocated.");
-
 	}
 
 	VKRPDC->m_Framebuffers.reserve(l_framebufferCount);
@@ -1382,7 +1412,7 @@ bool VKHelper::CreateRenderPass(VkDevice device, VKRenderPassDataComponent *VKRP
 
 	l_PSO->m_RenderPassCInfo.subpassCount = 1;
 
-	l_PSO->m_SubpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;	
+	l_PSO->m_SubpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
 	if (VKRPDC->m_RenderPassDesc.m_UseOutputMerger)
 	{
@@ -1459,7 +1489,7 @@ bool VKHelper::CreateSingleFramebuffer(VkDevice device, VKRenderPassDataComponen
 	l_framebufferAttachmentsCInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO;
 	l_framebufferAttachmentsCInfo.attachmentImageInfoCount = 0;
 
-	if(VKRPDC->m_RenderPassDesc.m_UseOutputMerger)
+	if (VKRPDC->m_RenderPassDesc.m_UseOutputMerger)
 	{
 		for (size_t i = 0; i < VKRPDC->m_RenderTargets.size(); i++)
 		{
@@ -1473,7 +1503,7 @@ bool VKHelper::CreateSingleFramebuffer(VkDevice device, VKRenderPassDataComponen
 			l_attachments[l_attachments.size() - 1] = l_VKTDC->m_imageView;
 		}
 		l_framebufferCInfo.attachmentCount = (uint32_t)l_attachments.size();
-		if(l_attachments.size())
+		if (l_attachments.size())
 		{
 			l_framebufferCInfo.pAttachments = &l_attachments[0];
 		}
@@ -1488,7 +1518,7 @@ bool VKHelper::CreateSingleFramebuffer(VkDevice device, VKRenderPassDataComponen
 	{
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: ", VKRPDC->m_InstanceName.c_str(), " failed to create VkFramebuffer!");
 	}
-	
+
 	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: Single VkFramebuffer has been created for ", VKRPDC->m_InstanceName.c_str());
 
 	return true;
@@ -1510,9 +1540,9 @@ bool VKHelper::CreateMultipleFramebuffers(VkDevice device, VKRenderPassDataCompo
 		auto l_attachmentCount = VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable ? 2 : 1;
 		std::vector<VkImageView> l_attachments(l_attachmentCount);
 
-		if(VKRPDC->m_RenderPassDesc.m_UseOutputMerger)
+		if (VKRPDC->m_RenderPassDesc.m_UseOutputMerger)
 		{
-			auto l_VKTDC = reinterpret_cast<VKTextureDataComponent*>(VKRPDC->m_RenderTargets[i]);
+			auto l_VKTDC = reinterpret_cast<VKTextureDataComponent *>(VKRPDC->m_RenderTargets[i]);
 			l_attachments[0] = l_VKTDC->m_imageView;
 			if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 			{
@@ -1534,7 +1564,7 @@ bool VKHelper::CreateMultipleFramebuffers(VkDevice device, VKRenderPassDataCompo
 	}
 
 	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: Multiple VkFramebuffers have been created for ", VKRPDC->m_InstanceName.c_str());
-	
+
 	return true;
 }
 
@@ -2023,16 +2053,40 @@ bool VKHelper::CreateShaderModule(VkDevice device, VkShaderModule &vkShaderModul
 	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: ", shaderFilePath.c_str(), " has been loaded.");
 	return true;
 }
-
-VkWriteDescriptorSet VKHelper::GetWriteDescriptorSet(const VkDescriptorImageInfo &imageInfo, uint32_t dstBinding, VkDescriptorSet descriptorSet)
+VkWriteDescriptorSet VKHelper::GetWriteDescriptorSet(uint32_t dstBinding, VkDescriptorType descriptorType, const VkDescriptorSet &descriptorSet)
 {
 	VkWriteDescriptorSet l_result = {};
 	l_result.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	l_result.dstBinding = dstBinding;
 	l_result.dstArrayElement = 0;
-	l_result.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+	l_result.descriptorType = descriptorType;
+	l_result.descriptorCount = 1;
+	l_result.dstSet = descriptorSet;
+
+	return l_result;
+}
+VkWriteDescriptorSet VKHelper::GetWriteDescriptorSet(const VkDescriptorImageInfo &imageInfo, uint32_t dstBinding, VkDescriptorType descriptorType, const VkDescriptorSet &descriptorSet)
+{
+	VkWriteDescriptorSet l_result = {};
+	l_result.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	l_result.dstBinding = dstBinding;
+	l_result.dstArrayElement = 0;
+	l_result.descriptorType = descriptorType;
 	l_result.descriptorCount = 1;
 	l_result.pImageInfo = &imageInfo;
+	l_result.dstSet = descriptorSet;
+
+	return l_result;
+}
+VkWriteDescriptorSet VKHelper::GetWriteDescriptorSet(const VkDescriptorBufferInfo &bufferInfo, uint32_t dstBinding, VkDescriptorType descriptorType, const VkDescriptorSet &descriptorSet)
+{
+	VkWriteDescriptorSet l_result = {};
+	l_result.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	l_result.dstBinding = dstBinding;
+	l_result.dstArrayElement = 0;
+	l_result.descriptorType = descriptorType;
+	l_result.descriptorCount = 1;
+	l_result.pBufferInfo = &bufferInfo;
 	l_result.dstSet = descriptorSet;
 
 	return l_result;

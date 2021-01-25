@@ -76,7 +76,6 @@ namespace Inno
 		std::vector<VKDescriptorSetLayoutBindingIndex> m_DescriptorSetLayoutBindingIndices;
 		std::vector<VkDescriptorSetLayout> m_DescriptorSetLayouts;
 		std::vector<VkDescriptorSet> m_DescriptorSets;
-		std::vector<VkWriteDescriptorSet> m_WriteDescriptorSets;
 		std::vector<VkPushConstantRange> m_PushConstantRanges;
 
 		VkCommandPool m_CommandPool;
