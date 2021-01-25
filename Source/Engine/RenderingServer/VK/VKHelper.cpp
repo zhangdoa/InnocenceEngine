@@ -1263,15 +1263,15 @@ bool VKHelper::ReserveRenderTargets(VKRenderPassDataComponent *VKRPDC, IRenderin
 
 		InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: ", VKRPDC->m_InstanceName.c_str(), " render targets have been allocated.");
 
-		// Reserve vectors and emplace empty objects
-		VKRPDC->m_Framebuffers.reserve(l_framebufferCount);
-		for (size_t i = 0; i < l_framebufferCount; i++)
-		{
-			VKRPDC->m_Framebuffers.emplace_back();
-		}
-
-		InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: ", VKRPDC->m_InstanceName.c_str(), " framebuffers have been allocated.");
 	}
+
+	VKRPDC->m_Framebuffers.reserve(l_framebufferCount);
+	for (size_t i = 0; i < l_framebufferCount; i++)
+	{
+		VKRPDC->m_Framebuffers.emplace_back();
+	}
+
+	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: ", VKRPDC->m_InstanceName.c_str(), " framebuffers have been allocated.");
 
 	return true;
 }
@@ -1291,13 +1291,12 @@ bool VKHelper::CreateRenderTargets(VKRenderPassDataComponent *VKRPDC, IRendering
 			renderingServer->InitializeTextureDataComponent(VKRPDC->m_RenderTargets[i]);
 		}
 	}
-
-	if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
+	if (VKRPDC->m_RenderPassDesc.m_UseDepthBuffer)
 	{
 		VKRPDC->m_DepthStencilRenderTarget = renderingServer->AddTextureDataComponent((std::string(VKRPDC->m_InstanceName.c_str()) + "_DS/").c_str());
 		VKRPDC->m_DepthStencilRenderTarget->m_TextureDesc = VKRPDC->m_RenderPassDesc.m_RenderTargetDesc;
 
-		if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_StencilEnable)
+		if (VKRPDC->m_RenderPassDesc.m_UseStencilBuffer)
 		{
 			VKRPDC->m_DepthStencilRenderTarget->m_TextureDesc.Usage = TextureUsage::DepthStencilAttachment;
 			VKRPDC->m_DepthStencilRenderTarget->m_TextureDesc.PixelDataType = TexturePixelDataType::Float32;
@@ -1446,100 +1445,96 @@ bool VKHelper::CreateViewportAndScissor(VKRenderPassDataComponent *VKRPDC)
 
 bool VKHelper::CreateSingleFramebuffer(VkDevice device, VKRenderPassDataComponent *VKRPDC)
 {
-	if (VKRPDC->m_RenderPassDesc.m_UseColorBuffer)
+	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(VKRPDC->m_PipelineStateObject);
+	VkFramebufferCreateInfo l_framebufferCInfo = {};
+	l_framebufferCInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+	l_framebufferCInfo.renderPass = l_PSO->m_RenderPass;
+	l_framebufferCInfo.width = (uint32_t)l_PSO->m_Viewport.width;
+	l_framebufferCInfo.height = (uint32_t)l_PSO->m_Viewport.height;
+	l_framebufferCInfo.layers = 1;
+
+	std::vector<VkImageView> l_attachments(l_PSO->m_AttachmentDescs.size());
+
+	VkFramebufferAttachmentsCreateInfo l_framebufferAttachmentsCInfo = {};
+	l_framebufferAttachmentsCInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO;
+	l_framebufferAttachmentsCInfo.attachmentImageInfoCount = 0;
+
+	if(VKRPDC->m_RenderPassDesc.m_UseOutputMerger)
 	{
-		auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(VKRPDC->m_PipelineStateObject);
-		VkFramebufferCreateInfo l_framebufferCInfo = {};
-		l_framebufferCInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		l_framebufferCInfo.renderPass = l_PSO->m_RenderPass;
-		l_framebufferCInfo.width = (uint32_t)l_PSO->m_Viewport.width;
-		l_framebufferCInfo.height = (uint32_t)l_PSO->m_Viewport.height;
-		l_framebufferCInfo.layers = 1;
-
-		std::vector<VkImageView> l_attachments(l_PSO->m_AttachmentDescs.size());
-
-		VkFramebufferAttachmentsCreateInfo l_framebufferAttachmentsCInfo = {};
-		l_framebufferAttachmentsCInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO;
-		l_framebufferAttachmentsCInfo.attachmentImageInfoCount = 0;
-
-		if(VKRPDC->m_RenderPassDesc.m_UseOutputMerger)
+		for (size_t i = 0; i < VKRPDC->m_RenderTargets.size(); i++)
 		{
-			for (size_t i = 0; i < VKRPDC->m_RenderTargets.size(); i++)
-			{
-				auto l_VKTDC = reinterpret_cast<VKTextureDataComponent *>(VKRPDC->m_RenderTargets[i]);
-				l_attachments[i] = l_VKTDC->m_imageView;
-			}
-
-			if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
-			{
-				auto l_VKTDC = reinterpret_cast<VKTextureDataComponent *>(VKRPDC->m_DepthStencilRenderTarget);
-				l_attachments[l_attachments.size() - 1] = l_VKTDC->m_imageView;
-			}
-			l_framebufferCInfo.attachmentCount = (uint32_t)l_attachments.size();
-			if(l_attachments.size())
-			{
-				l_framebufferCInfo.pAttachments = &l_attachments[0];
-			}
-		}
-		else
-		{
-			l_framebufferCInfo.flags |= VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
-			l_framebufferCInfo.pNext = &l_framebufferAttachmentsCInfo;
+			auto l_VKTDC = reinterpret_cast<VKTextureDataComponent *>(VKRPDC->m_RenderTargets[i]);
+			l_attachments[i] = l_VKTDC->m_imageView;
 		}
 
-		if (vkCreateFramebuffer(device, &l_framebufferCInfo, nullptr, &VKRPDC->m_Framebuffers[0]) != VK_SUCCESS)
+		if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 		{
-			InnoLogger::Log(LogLevel::Error, "VKRenderingServer: ", VKRPDC->m_InstanceName.c_str(), " failed to create VkFramebuffer!");
+			auto l_VKTDC = reinterpret_cast<VKTextureDataComponent *>(VKRPDC->m_DepthStencilRenderTarget);
+			l_attachments[l_attachments.size() - 1] = l_VKTDC->m_imageView;
 		}
-		
-		InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: Single VkFramebuffer has been created for ", VKRPDC->m_InstanceName.c_str());
+		l_framebufferCInfo.attachmentCount = (uint32_t)l_attachments.size();
+		if(l_attachments.size())
+		{
+			l_framebufferCInfo.pAttachments = &l_attachments[0];
+		}
 	}
+	else
+	{
+		l_framebufferCInfo.flags |= VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
+		l_framebufferCInfo.pNext = &l_framebufferAttachmentsCInfo;
+	}
+
+	if (vkCreateFramebuffer(device, &l_framebufferCInfo, nullptr, &VKRPDC->m_Framebuffers[0]) != VK_SUCCESS)
+	{
+		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: ", VKRPDC->m_InstanceName.c_str(), " failed to create VkFramebuffer!");
+	}
+	
+	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: Single VkFramebuffer has been created for ", VKRPDC->m_InstanceName.c_str());
+
 	return true;
 }
 
 bool VKHelper::CreateMultipleFramebuffers(VkDevice device, VKRenderPassDataComponent *VKRPDC)
 {
-	if (VKRPDC->m_RenderPassDesc.m_UseColorBuffer)
+	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(VKRPDC->m_PipelineStateObject);
+
+	VkFramebufferCreateInfo l_framebufferCInfo = {};
+	l_framebufferCInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+	l_framebufferCInfo.renderPass = l_PSO->m_RenderPass;
+	l_framebufferCInfo.width = (uint32_t)l_PSO->m_Viewport.width;
+	l_framebufferCInfo.height = (uint32_t)l_PSO->m_Viewport.height;
+	l_framebufferCInfo.layers = 1;
+
+	for (size_t i = 0; i < VKRPDC->m_RenderTargets.size(); i++)
 	{
-		auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(VKRPDC->m_PipelineStateObject);
+		auto l_attachmentCount = VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable ? 2 : 1;
+		std::vector<VkImageView> l_attachments(l_attachmentCount);
 
-		VkFramebufferCreateInfo l_framebufferCInfo = {};
-		l_framebufferCInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		l_framebufferCInfo.renderPass = l_PSO->m_RenderPass;
-		l_framebufferCInfo.width = (uint32_t)l_PSO->m_Viewport.width;
-		l_framebufferCInfo.height = (uint32_t)l_PSO->m_Viewport.height;
-		l_framebufferCInfo.layers = 1;
-
-		for (size_t i = 0; i < VKRPDC->m_RenderTargets.size(); i++)
+		if(VKRPDC->m_RenderPassDesc.m_UseOutputMerger)
 		{
-			auto l_attachmentCount = VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable ? 2 : 1;
-			std::vector<VkImageView> l_attachments(l_attachmentCount);
-
-			if(VKRPDC->m_RenderPassDesc.m_UseOutputMerger)
+			auto l_VKTDC = reinterpret_cast<VKTextureDataComponent*>(VKRPDC->m_RenderTargets[i]);
+			l_attachments[0] = l_VKTDC->m_imageView;
+			if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 			{
-				auto l_VKTDC = reinterpret_cast<VKTextureDataComponent*>(VKRPDC->m_RenderTargets[i]);
-				l_attachments[0] = l_VKTDC->m_imageView;
-				if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
-				{
-					auto l_VKTDC = reinterpret_cast<VKTextureDataComponent *>(VKRPDC->m_DepthStencilRenderTarget);
-					l_attachments[1] = l_VKTDC->m_imageView;
-				}
-				l_framebufferCInfo.attachmentCount = (uint32_t)l_attachments.size();
-				l_framebufferCInfo.pAttachments = &l_attachments[0];
+				auto l_VKTDC = reinterpret_cast<VKTextureDataComponent *>(VKRPDC->m_DepthStencilRenderTarget);
+				l_attachments[1] = l_VKTDC->m_imageView;
 			}
-			else
-			{
-				l_framebufferCInfo.flags |= VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
-			}
-
-			if (vkCreateFramebuffer(device, &l_framebufferCInfo, nullptr, &VKRPDC->m_Framebuffers[i]) != VK_SUCCESS)
-			{
-				InnoLogger::Log(LogLevel::Error, "VKRenderingServer: ", VKRPDC->m_InstanceName.c_str(), " failed to create VkFramebuffer!");
-			}
+			l_framebufferCInfo.attachmentCount = (uint32_t)l_attachments.size();
+			l_framebufferCInfo.pAttachments = &l_attachments[0];
+		}
+		else
+		{
+			l_framebufferCInfo.flags |= VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
 		}
 
-		InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: Multiple VkFramebuffers have been created for ", VKRPDC->m_InstanceName.c_str());
+		if (vkCreateFramebuffer(device, &l_framebufferCInfo, nullptr, &VKRPDC->m_Framebuffers[i]) != VK_SUCCESS)
+		{
+			InnoLogger::Log(LogLevel::Error, "VKRenderingServer: ", VKRPDC->m_InstanceName.c_str(), " failed to create VkFramebuffer!");
+		}
 	}
+
+	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: Multiple VkFramebuffers have been created for ", VKRPDC->m_InstanceName.c_str());
+	
 	return true;
 }
 
