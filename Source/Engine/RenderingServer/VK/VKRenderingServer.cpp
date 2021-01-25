@@ -858,7 +858,7 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 		l_result &= CreateSingleFramebuffer(m_device, l_rhs);
 	}
 
-	if (l_rhs->m_ResourceBinderLayoutDescs.size())
+	if (l_rhs->m_ResourceBindingLayoutDescs.size())
 	{
 		l_result &= CreateDescriptorSetLayoutBindings(l_rhs);
 
@@ -1237,24 +1237,26 @@ bool VKRenderingServer::CleanRenderTargets(RenderPassDataComponent *rhs)
 	return true;
 }
 
-bool VKRenderingServer::BindGPUResource(RenderPassDataComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool VKRenderingServer::BindGPUResource(RenderPassDataComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	auto l_renderPass = reinterpret_cast<VKRenderPassDataComponent *>(renderPass);
 	auto l_commandList = reinterpret_cast<VKCommandList *>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
 
 	if (resource == nullptr)
 	{
-		InnoLogger::Log(LogLevel::Warning, "VKRenderingServer: Empty GPU resource in render pass: ", renderPass->m_InstanceName.c_str(), ", global slot: ", globalSlot, ", local slot: ", localSlot);
+		InnoLogger::Log(LogLevel::Warning, "VKRenderingServer: Empty GPU resource in render pass: ", renderPass->m_InstanceName.c_str(), ", at: ", resourceBindingLayoutDescIndex);
 		return false;
 	}
 
 	VkWriteDescriptorSet l_writeDescriptorSet = {};
 	VkDescriptorImageInfo l_descriptorImageInfo = {};
 	VkDescriptorBufferInfo l_descriptorBufferInfo = {};
+	auto l_descriptorSetIndex = (uint32_t)l_renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex].m_DescriptorSetIndex;
+	auto l_descriptorIndex = (uint32_t)l_renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex].m_DescriptorIndex;
 	switch (resource->m_GPUResourceType)
 	{
 	case GPUResourceType::Sampler:
-		l_writeDescriptorSet = GetWriteDescriptorSet((uint32_t)localSlot, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, l_renderPass->m_DescriptorSets[globalSlot]);
+		l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorIndex, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, l_renderPass->m_DescriptorSets[l_descriptorSetIndex]);
 		UpdateDescriptorSet(m_device, &l_writeDescriptorSet, 1);
 		break;
 	case GPUResourceType::Image:	
@@ -1262,12 +1264,12 @@ bool VKRenderingServer::BindGPUResource(RenderPassDataComponent *renderPass, Sha
 		if (accessibility != Accessibility::ReadOnly)
 		{
 			l_descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-			l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorImageInfo, (uint32_t)localSlot, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, l_renderPass->m_DescriptorSets[globalSlot]);
+			l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorImageInfo, l_descriptorIndex, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, l_renderPass->m_DescriptorSets[l_descriptorSetIndex]);
 		}
 		else
 		{
 			l_descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorImageInfo, (uint32_t)localSlot, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, l_renderPass->m_DescriptorSets[globalSlot]);
+			l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorImageInfo, l_descriptorIndex, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, l_renderPass->m_DescriptorSets[l_descriptorSetIndex]);
 		}
 		UpdateDescriptorSet(m_device, &l_writeDescriptorSet, 1);
 		break;
@@ -1283,7 +1285,7 @@ bool VKRenderingServer::BindGPUResource(RenderPassDataComponent *renderPass, Sha
 				l_descriptorBufferInfo.buffer = reinterpret_cast<VKGPUBufferDataComponent *>(resource)->m_HostStagingBuffer;
 				l_descriptorBufferInfo.offset = startOffset;
 				l_descriptorBufferInfo.range = elementCount;
-				l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorBufferInfo, (uint32_t)localSlot, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, l_renderPass->m_DescriptorSets[globalSlot]);
+				l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorBufferInfo, l_descriptorIndex, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, l_renderPass->m_DescriptorSets[l_descriptorSetIndex]);
 				UpdateDescriptorSet(m_device, &l_writeDescriptorSet, 1);
 			}
 		}
@@ -1295,7 +1297,7 @@ bool VKRenderingServer::BindGPUResource(RenderPassDataComponent *renderPass, Sha
 			l_descriptorBufferInfo.buffer = reinterpret_cast<VKGPUBufferDataComponent *>(resource)->m_DeviceLocalBuffer;
 			l_descriptorBufferInfo.offset = startOffset;
 			l_descriptorBufferInfo.range = elementCount;
-			l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorBufferInfo, (uint32_t)localSlot, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, l_renderPass->m_DescriptorSets[globalSlot]);
+			l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorBufferInfo, l_descriptorIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, l_renderPass->m_DescriptorSets[l_descriptorSetIndex]);
 			UpdateDescriptorSet(m_device, &l_writeDescriptorSet, 1);
 			// }
 			// else
@@ -1336,7 +1338,7 @@ bool VKRenderingServer::DrawInstanced(RenderPassDataComponent *renderPass, size_
 	return true;
 }
 
-bool VKRenderingServer::UnbindGPUResource(RenderPassDataComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool VKRenderingServer::UnbindGPUResource(RenderPassDataComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	return true;
 }

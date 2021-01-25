@@ -434,8 +434,6 @@ VkImageUsageFlags VKHelper::GetImageUsageFlags(TextureUsage textureUsage)
 		l_result |= VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
 	}
 
-	
-
 	return l_result;
 }
 
@@ -1070,22 +1068,22 @@ bool VKHelper::CreateImageView(VkDevice device, VKTextureDataComponent *VKTDC)
 
 bool VKHelper::CreateDescriptorSetLayoutBindings(VKRenderPassDataComponent *VKRPDC)
 {
-	std::sort(VKRPDC->m_ResourceBinderLayoutDescs.begin(), VKRPDC->m_ResourceBinderLayoutDescs.end(), [&](ResourceBindingLayoutDesc A, ResourceBindingLayoutDesc B) {
+	std::sort(VKRPDC->m_ResourceBindingLayoutDescs.begin(), VKRPDC->m_ResourceBindingLayoutDescs.end(), [&](ResourceBindingLayoutDesc A, ResourceBindingLayoutDesc B) {
 		return A.m_DescriptorIndex < B.m_DescriptorIndex;
 	});
 
-	std::sort(VKRPDC->m_ResourceBinderLayoutDescs.begin(), VKRPDC->m_ResourceBinderLayoutDescs.end(), [&](ResourceBindingLayoutDesc A, ResourceBindingLayoutDesc B) {
+	std::sort(VKRPDC->m_ResourceBindingLayoutDescs.begin(), VKRPDC->m_ResourceBindingLayoutDescs.end(), [&](ResourceBindingLayoutDesc A, ResourceBindingLayoutDesc B) {
 		return A.m_DescriptorSetIndex < B.m_DescriptorSetIndex;
 	});
 
-	auto l_resourceBinderLayoutDescsSize = VKRPDC->m_ResourceBinderLayoutDescs.size();
+	auto l_resourceBinderLayoutDescsSize = VKRPDC->m_ResourceBindingLayoutDescs.size();
 
 	size_t l_currentSetAbsoluteIndex = 0;
 	size_t l_currentSetRelativeIndex = 0;
 
 	for (size_t i = 0; i < l_resourceBinderLayoutDescsSize; i++)
 	{
-		auto l_resourceBinderLayoutDesc = VKRPDC->m_ResourceBinderLayoutDescs[i];
+		auto l_resourceBinderLayoutDesc = VKRPDC->m_ResourceBindingLayoutDescs[i];
 
 		if (l_currentSetAbsoluteIndex != l_resourceBinderLayoutDesc.m_DescriptorSetIndex)
 		{
@@ -1103,7 +1101,7 @@ bool VKHelper::CreateDescriptorSetLayoutBindings(VKRenderPassDataComponent *VKRP
 
 	for (size_t i = 0; i < l_resourceBinderLayoutDescsSize; i++)
 	{
-		auto l_resourceBinderLayoutDesc = VKRPDC->m_ResourceBinderLayoutDescs[i];
+		auto l_resourceBinderLayoutDesc = VKRPDC->m_ResourceBindingLayoutDescs[i];
 
 		VkDescriptorSetLayoutBinding l_descriptorLayoutBinding = {};
 		l_descriptorLayoutBinding.binding = (uint32_t)l_resourceBinderLayoutDesc.m_DescriptorIndex;
@@ -1221,7 +1219,7 @@ bool VKHelper::createDescriptorPool(VkDevice device, VKRenderPassDataComponent *
 		}
 	}
 
-	return createDescriptorPool(device, &l_descriptorPoolSizes[0], (uint32_t)l_descriptorPoolSizes.size(), (uint32_t)VKRPDC->m_ResourceBinderLayoutDescs[VKRPDC->m_ResourceBinderLayoutDescs.size() - 1].m_DescriptorSetIndex + 1, VKRPDC->m_DescriptorPool);
+	return createDescriptorPool(device, &l_descriptorPoolSizes[0], (uint32_t)l_descriptorPoolSizes.size(), (uint32_t)VKRPDC->m_ResourceBindingLayoutDescs[VKRPDC->m_ResourceBindingLayoutDescs.size() - 1].m_DescriptorSetIndex + 1, VKRPDC->m_DescriptorPool);
 }
 
 bool VKHelper::createDescriptorSetLayout(VkDevice device, VkDescriptorSetLayoutBinding *setLayoutBindings, uint32_t setLayoutBindingsCount, VkDescriptorSetLayout &setLayout)
