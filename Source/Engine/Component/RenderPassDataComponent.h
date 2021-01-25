@@ -23,7 +23,7 @@ namespace Inno
 
 		std::vector<TextureDataComponent*> m_RenderTargets;
 		TextureDataComponent* m_DepthStencilRenderTarget = 0;
-		std::vector<ResourceBindingLayoutDesc> m_ResourceBinderLayoutDescs;
+		std::vector<ResourceBindingLayoutDesc> m_ResourceBindingLayoutDescs;
 
 		IPipelineStateObject* m_PipelineStateObject = 0;
 
