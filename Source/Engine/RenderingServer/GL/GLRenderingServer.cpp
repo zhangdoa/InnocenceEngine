@@ -231,16 +231,16 @@ bool GLRenderingServer::Initialize()
 				m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UByte;
 				m_SwapChainRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
 
-				m_SwapChainRPDC->m_ResourceBinderLayoutDescs.resize(2);
-				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
-				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
-				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
+				m_SwapChainRPDC->m_ResourceBindingLayoutDescs.resize(2);
+				m_SwapChainRPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
+				m_SwapChainRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+				m_SwapChainRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+				m_SwapChainRPDC->m_ResourceBindingLayoutDescs[0].m_IndirectBinding = true;
 
-				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Sampler;
-				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
-				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 0;
-				m_SwapChainRPDC->m_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
+				m_SwapChainRPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Sampler;
+				m_SwapChainRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+				m_SwapChainRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
+				m_SwapChainRPDC->m_ResourceBindingLayoutDescs[1].m_IndirectBinding = true;
 
 				m_SwapChainRPDC->m_ShaderProgram = m_SwapChainSPC;
 				m_SwapChainRPDC->m_FBO = 0;
@@ -838,10 +838,11 @@ bool BindGPUBuffer(Accessibility accessibility, GLuint BO, size_t localSlot, siz
 	return true;
 }
 
-bool GLRenderingServer::BindGPUResource(RenderPassDataComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool GLRenderingServer::BindGPUResource(RenderPassDataComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	if (resource)
 	{
+		auto l_localSlot = renderPass->m_ResourceBindingLayoutDescs[resourceBindingLayoutDescIndex].m_DescriptorIndex;
 		switch (resource->m_GPUResourceType)
 		{
 		case GPUResourceType::Sampler:
@@ -853,15 +854,15 @@ bool GLRenderingServer::BindGPUResource(RenderPassDataComponent* renderPass, Sha
 		case GPUResourceType::Image:
 			if (accessibility == Accessibility::ReadOnly)
 			{
-				ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(resource), (uint32_t)localSlot);
+				ActivateTexture(reinterpret_cast<GLTextureDataComponent*>(resource), (uint32_t)l_localSlot);
 			}
 			else
 			{
-				BindTextureAsImage(reinterpret_cast<GLTextureDataComponent*>(resource), (uint32_t)localSlot, accessibility);
+				BindTextureAsImage(reinterpret_cast<GLTextureDataComponent*>(resource), (uint32_t)l_localSlot, accessibility);
 			}
 			break;
 		case GPUResourceType::Buffer:
-			BindGPUBuffer(resource->m_GPUAccessibility, reinterpret_cast<GLGPUBufferDataComponent*>(resource)->m_Handle, localSlot, startOffset, reinterpret_cast<GLGPUBufferDataComponent*>(resource)->m_ElementSize, reinterpret_cast<GLGPUBufferDataComponent*>(resource)->m_TotalSize, elementCount);
+			BindGPUBuffer(resource->m_GPUAccessibility, reinterpret_cast<GLGPUBufferDataComponent*>(resource)->m_Handle, l_localSlot, startOffset, reinterpret_cast<GLGPUBufferDataComponent*>(resource)->m_ElementSize, reinterpret_cast<GLGPUBufferDataComponent*>(resource)->m_TotalSize, elementCount);
 			break;
 		default:
 			break;
@@ -892,7 +893,7 @@ bool GLRenderingServer::DrawInstanced(RenderPassDataComponent* renderPass, size_
 	return true;
 }
 
-bool GLRenderingServer::UnbindGPUResource(RenderPassDataComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t globalSlot, size_t localSlot, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool GLRenderingServer::UnbindGPUResource(RenderPassDataComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	return true;
 }
@@ -940,15 +941,15 @@ bool GLRenderingServer::Present()
 
 	CleanRenderTargets(m_SwapChainRPDC);
 
-	BindGPUResource(m_SwapChainRPDC, ShaderStage::Pixel, m_SwapChainSDC, 0, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
+	BindGPUResource(m_SwapChainRPDC, ShaderStage::Pixel, m_SwapChainSDC, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
 
-	BindGPUResource(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	BindGPUResource(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
 
 	DrawIndexedInstanced(m_SwapChainRPDC, l_mesh, 1);
 
-	UnbindGPUResource(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+	UnbindGPUResource(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
 	CommandListEnd(m_SwapChainRPDC);
 
