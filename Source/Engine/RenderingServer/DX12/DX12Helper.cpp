@@ -938,13 +938,13 @@ bool DX12Helper::CreateViews(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D1
 
 bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12Device> device)
 {
-	std::vector<CD3DX12_ROOT_PARAMETER1> l_rootParameters(DX12RPDC->m_ResourceBinderLayoutDescs.size());
+	std::vector<CD3DX12_ROOT_PARAMETER1> l_rootParameters(DX12RPDC->m_ResourceBindingLayoutDescs.size());
 
 	size_t l_rootDescriptorTableCount = 0;
 
 	for (size_t i = 0; i < l_rootParameters.size(); i++)
 	{
-		auto l_resourceBinderLayoutDesc = DX12RPDC->m_ResourceBinderLayoutDescs[i];
+		auto l_resourceBinderLayoutDesc = DX12RPDC->m_ResourceBindingLayoutDescs[i];
 
 		if (l_resourceBinderLayoutDesc.m_IndirectBinding)
 		{
@@ -958,7 +958,7 @@ bool DX12Helper::CreateRootSignature(DX12RenderPassDataComponent* DX12RPDC, ComP
 
 	for (size_t i = 0; i < l_rootParameters.size(); i++)
 	{
-		auto l_resourceBinderLayoutDesc = DX12RPDC->m_ResourceBinderLayoutDescs[i];
+		auto l_resourceBinderLayoutDesc = DX12RPDC->m_ResourceBindingLayoutDescs[i];
 
 		if (l_resourceBinderLayoutDesc.m_IndirectBinding)
 		{
