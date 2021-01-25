@@ -140,20 +140,20 @@ bool LightCullingPass::Setup()
 	m_RPDC_TileFrustum = g_Engine->getRenderingServer()->AddRenderPassDataComponent("ComputePass_TileFrustum/");
 	m_RPDC_TileFrustum->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs.resize(3);
-	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
+	m_RPDC_TileFrustum->m_ResourceBindingLayoutDescs.resize(3);
+	m_RPDC_TileFrustum->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC_TileFrustum->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_RPDC_TileFrustum->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
 
-	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 6;
+	m_RPDC_TileFrustum->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC_TileFrustum->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_RPDC_TileFrustum->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 6;
 
-	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 1;
-	m_RPDC_TileFrustum->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 0;
+	m_RPDC_TileFrustum->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC_TileFrustum->m_ResourceBindingLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_RPDC_TileFrustum->m_ResourceBindingLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RPDC_TileFrustum->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 1;
+	m_RPDC_TileFrustum->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 0;
 
 	m_RPDC_TileFrustum->m_ShaderProgram = m_SPC_TileFrustum;
 
@@ -161,60 +161,60 @@ bool LightCullingPass::Setup()
 	m_RPDC_LightCulling = g_Engine->getRenderingServer()->AddRenderPassDataComponent("ComputePass_LightCulling/");
 	m_RPDC_LightCulling->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs.resize(10);
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs.resize(10);
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
 
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 3;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 3;
 
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 6;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 0;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 6;
 
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[3].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[3].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 1;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[3].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 0;
 
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[4].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[4].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 1;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 1;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[4].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 1;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 1;
 
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[5].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[5].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[5].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 1;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 2;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[5].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[5].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[5].m_DescriptorSetIndex = 1;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex = 2;
 
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 1;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 3;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[6].m_IndirectBinding = true;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[6].m_GPUResourceType = GPUResourceType::Image;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[6].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[6].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[6].m_DescriptorSetIndex = 1;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[6].m_DescriptorIndex = 3;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[6].m_IndirectBinding = true;
 
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_DescriptorSetIndex = 1;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_DescriptorIndex = 4;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[7].m_IndirectBinding = true;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[7].m_GPUResourceType = GPUResourceType::Image;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[7].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[7].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[7].m_DescriptorSetIndex = 1;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[7].m_DescriptorIndex = 4;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[7].m_IndirectBinding = true;
 
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[8].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[8].m_DescriptorSetIndex = 2;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[8].m_DescriptorIndex = 0;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[8].m_IndirectBinding = true;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[8].m_GPUResourceType = GPUResourceType::Image;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[8].m_DescriptorSetIndex = 2;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[8].m_DescriptorIndex = 0;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[8].m_IndirectBinding = true;
 
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_GPUResourceType = GPUResourceType::Sampler;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_DescriptorSetIndex = 3;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_DescriptorIndex = 0;
-	m_RPDC_LightCulling->m_ResourceBinderLayoutDescs[9].m_IndirectBinding = true;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[9].m_GPUResourceType = GPUResourceType::Sampler;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[9].m_DescriptorSetIndex = 3;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[9].m_DescriptorIndex = 0;
+	m_RPDC_LightCulling->m_ResourceBindingLayoutDescs[9].m_IndirectBinding = true;
 
 	m_RPDC_LightCulling->m_ShaderProgram = m_SPC_LightCulling;
 
@@ -272,13 +272,13 @@ bool LightCullingPass::PrepareCommandList()
 	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC_TileFrustum, 0);
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_TileFrustum);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC_TileFrustum);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_TileFrustum, ShaderStage::Compute, l_PerFrameCBufferGBDC, 0, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_TileFrustum, ShaderStage::Compute, l_dispatchParamsGBDC, 1, 6, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_TileFrustum, ShaderStage::Compute, m_tileFrustumGBDC, 2, 0, Accessibility::ReadWrite, 0);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_TileFrustum, ShaderStage::Compute, l_PerFrameCBufferGBDC, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_TileFrustum, ShaderStage::Compute, l_dispatchParamsGBDC, 1, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_TileFrustum, ShaderStage::Compute, m_tileFrustumGBDC, 2, Accessibility::ReadWrite, 0);
 
 	g_Engine->getRenderingServer()->Dispatch(m_RPDC_TileFrustum, m_tileFrustumNumThreadGroups.x, m_tileFrustumNumThreadGroups.y, m_tileFrustumNumThreadGroups.z);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_TileFrustum, ShaderStage::Compute, m_tileFrustumGBDC, 2, 0, Accessibility::ReadWrite, 0);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_TileFrustum, ShaderStage::Compute, m_tileFrustumGBDC, 2, Accessibility::ReadWrite, 0);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC_TileFrustum);
 
@@ -287,27 +287,27 @@ bool LightCullingPass::PrepareCommandList()
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_LightCulling);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC_LightCulling);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, m_SDC_LightCulling, 9, 0);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, m_SDC_LightCulling, 9);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, l_PerFrameCBufferGBDC, 0, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, l_PointLightGBDC, 1, 3, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, l_dispatchParamsGBDC, 2, 6, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, m_tileFrustumGBDC, 3, 0, Accessibility::ReadWrite, 0);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, m_lightListIndexCounterGBDC, 4, 1, Accessibility::ReadWrite, 0);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, m_lightIndexListGBDC, 5, 2, Accessibility::ReadWrite, 0);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, m_lightGridTDC, 6, 3, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, m_heatMapTDC, 7, 4, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, OpaquePass::GetRPDC()->m_DepthStencilRenderTarget, 8, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, l_PerFrameCBufferGBDC, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, l_PointLightGBDC, 1, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, l_dispatchParamsGBDC, 2, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, m_tileFrustumGBDC, 3, Accessibility::ReadWrite, 0);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, m_lightListIndexCounterGBDC, 4, Accessibility::ReadWrite, 0);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, m_lightIndexListGBDC, 5, Accessibility::ReadWrite, 0);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, m_lightGridTDC, 6, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, m_heatMapTDC, 7, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, OpaquePass::GetRPDC()->m_DepthStencilRenderTarget, 8, Accessibility::ReadOnly);
 
 	// @TODO: Buggy on OpenGL + Nvidia
 	g_Engine->getRenderingServer()->Dispatch(m_RPDC_LightCulling, m_lightCullingNumThreadGroups.x, m_lightCullingNumThreadGroups.y, m_lightCullingNumThreadGroups.z);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, m_tileFrustumGBDC, 3, 0, Accessibility::ReadWrite, 0);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, m_lightListIndexCounterGBDC, 4, 1, Accessibility::ReadWrite, 0);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, m_lightIndexListGBDC, 5, 2, Accessibility::ReadWrite, 0);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, m_lightGridTDC, 6, 3, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, m_heatMapTDC, 7, 4, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, OpaquePass::GetRPDC()->m_DepthStencilRenderTarget, 8, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, m_tileFrustumGBDC, 3, Accessibility::ReadWrite, 0);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, m_lightListIndexCounterGBDC, 4, Accessibility::ReadWrite, 0);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, m_lightIndexListGBDC, 5, Accessibility::ReadWrite, 0);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, m_lightGridTDC, 6, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, m_heatMapTDC, 7, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_LightCulling, ShaderStage::Compute, OpaquePass::GetRPDC()->m_DepthStencilRenderTarget, 8, Accessibility::ReadOnly);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC_LightCulling);
 

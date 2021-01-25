@@ -186,7 +186,7 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC_Probe, 0);
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_Probe);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC_Probe);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Probe, ShaderStage::Vertex, GetGPUBufferDataComponent(GPUBufferUsageType::GI), 0, 8, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Probe, ShaderStage::Vertex, GetGPUBufferDataComponent(GPUBufferUsageType::GI), 0, Accessibility::ReadOnly);
 
 	uint32_t l_offset = 0;
 
@@ -196,7 +196,7 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 
 		if (l_staticPerObjectConstantBuffer.mesh->m_ObjectStatus == ObjectStatus::Activated)
 		{
-			g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Probe, ShaderStage::Vertex, l_MeshGBDC, 1, 1, Accessibility::ReadOnly, l_offset, 1);
+			g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Probe, ShaderStage::Vertex, l_MeshGBDC, 1, Accessibility::ReadOnly, l_offset, 1);
 
 			g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RPDC_Probe, l_staticPerObjectConstantBuffer.mesh);
 		}
@@ -511,8 +511,8 @@ bool InnoBakerNS::drawObjects(Probe& probeCache, const Mat4& p, const std::vecto
 	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC_Surfel, 0);
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_Surfel);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC_Surfel);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, m_SDC_Surfel, 8, 0);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Geometry, GetGPUBufferDataComponent(GPUBufferUsageType::GI), 0, 8, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, m_SDC_Surfel, 8);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Geometry, GetGPUBufferDataComponent(GPUBufferUsageType::GI), 0, Accessibility::ReadOnly);
 
 	uint32_t l_offset = 0;
 
@@ -522,27 +522,27 @@ bool InnoBakerNS::drawObjects(Probe& probeCache, const Mat4& p, const std::vecto
 
 		if (l_staticPerObjectConstantBuffer.mesh->m_ObjectStatus == ObjectStatus::Activated)
 		{
-			g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Vertex, l_MeshGBDC, 1, 1, Accessibility::ReadOnly, l_offset, 1);
-			g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_MaterialGBDC, 2, 2, Accessibility::ReadOnly, l_offset, 1);
+			g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Vertex, l_MeshGBDC, 1, Accessibility::ReadOnly, l_offset, 1);
+			g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_MaterialGBDC, 2, Accessibility::ReadOnly, l_offset, 1);
 
 			if (l_staticPerObjectConstantBuffer.material->m_ObjectStatus == ObjectStatus::Activated)
 			{
-				g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[0].m_Texture, 3, 0);
-				g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[1].m_Texture, 4, 1);
-				g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[2].m_Texture, 5, 2);
-				g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[3].m_Texture, 6, 3);
-				g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[4].m_Texture, 7, 4);
+				g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[0].m_Texture, 3);
+				g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[1].m_Texture, 4);
+				g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[2].m_Texture, 5);
+				g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[3].m_Texture, 6);
+				g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[4].m_Texture, 7);
 			}
 
 			g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RPDC_Surfel, l_staticPerObjectConstantBuffer.mesh);
 
 			if (l_staticPerObjectConstantBuffer.material->m_ObjectStatus == ObjectStatus::Activated)
 			{
-				g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[0].m_Texture, 3, 0);
-				g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[1].m_Texture, 4, 1);
-				g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[2].m_Texture, 5, 2);
-				g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[3].m_Texture, 6, 3);
-				g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[4].m_Texture, 7, 4);
+				g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[0].m_Texture, 3);
+				g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[1].m_Texture, 4);
+				g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[2].m_Texture, 5);
+				g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[3].m_Texture, 6);
+				g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_Surfel, ShaderStage::Pixel, l_staticPerObjectConstantBuffer.material->m_TextureSlots[4].m_Texture, 7);
 			}
 		}
 
@@ -1026,11 +1026,11 @@ bool InnoBakerNS::drawBricks(Vec4 pos, uint32_t bricksCount, const Mat4& p, cons
 	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC_BrickFactor, 0);
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_BrickFactor);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC_BrickFactor);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_BrickFactor, ShaderStage::Geometry, GetGPUBufferDataComponent(GPUBufferUsageType::GI), 0, 8, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_BrickFactor, ShaderStage::Geometry, GetGPUBufferDataComponent(GPUBufferUsageType::GI), 0, Accessibility::ReadOnly);
 
 	for (uint32_t i = 0; i < bricksCount; i++)
 	{
-		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_BrickFactor, ShaderStage::Vertex, l_MeshGBDC, 1, 1, Accessibility::ReadOnly, l_offset, 1);
+		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_BrickFactor, ShaderStage::Vertex, l_MeshGBDC, 1, Accessibility::ReadOnly, l_offset, 1);
 
 		g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RPDC_BrickFactor, l_mesh);
 
@@ -1223,14 +1223,14 @@ void InnoBaker::Setup()
 	m_RPDC_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = m_probeMapResolution;
 	m_RPDC_Probe->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = m_probeMapResolution;
 
-	m_RPDC_Probe->m_ResourceBinderLayoutDescs.resize(2);
-	m_RPDC_Probe->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_Probe->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_RPDC_Probe->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 8;
+	m_RPDC_Probe->m_ResourceBindingLayoutDescs.resize(2);
+	m_RPDC_Probe->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC_Probe->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_RPDC_Probe->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 8;
 
-	m_RPDC_Probe->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_Probe->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_RPDC_Probe->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
+	m_RPDC_Probe->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC_Probe->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_RPDC_Probe->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
 
 	m_RPDC_Probe->m_ShaderProgram = m_SPC_Probe;
 
@@ -1273,49 +1273,49 @@ void InnoBaker::Setup()
 	m_RPDC_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = m_captureResolution;
 	m_RPDC_Surfel->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = m_captureResolution;
 
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs.resize(9);
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 8;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs.resize(9);
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 8;
 
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
 
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 2;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 0;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 2;
 
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[3].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 1;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[3].m_IndirectBinding = true;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Image;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 0;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[3].m_IndirectBinding = true;
 
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[4].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 1;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 1;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[4].m_IndirectBinding = true;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Image;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 1;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 1;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[4].m_IndirectBinding = true;
 
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[5].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 1;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 2;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[5].m_SubresourceCount = 1;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[5].m_IndirectBinding = true;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Image;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[5].m_DescriptorSetIndex = 1;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex = 2;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[5].m_SubresourceCount = 1;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[5].m_IndirectBinding = true;
 
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[6].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 1;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 3;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[6].m_IndirectBinding = true;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[6].m_GPUResourceType = GPUResourceType::Image;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[6].m_DescriptorSetIndex = 1;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[6].m_DescriptorIndex = 3;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[6].m_IndirectBinding = true;
 
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[7].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[7].m_DescriptorSetIndex = 1;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[7].m_DescriptorIndex = 4;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[7].m_IndirectBinding = true;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[7].m_GPUResourceType = GPUResourceType::Image;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[7].m_DescriptorSetIndex = 1;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[7].m_DescriptorIndex = 4;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[7].m_IndirectBinding = true;
 
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[8].m_GPUResourceType = GPUResourceType::Sampler;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[8].m_DescriptorSetIndex = 2;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[8].m_DescriptorIndex = 0;
-	m_RPDC_Surfel->m_ResourceBinderLayoutDescs[8].m_IndirectBinding = true;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[8].m_GPUResourceType = GPUResourceType::Sampler;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[8].m_DescriptorSetIndex = 2;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[8].m_DescriptorIndex = 0;
+	m_RPDC_Surfel->m_ResourceBindingLayoutDescs[8].m_IndirectBinding = true;
 
 	m_RPDC_Surfel->m_ShaderProgram = m_SPC_Surfel;
 
@@ -1361,14 +1361,14 @@ void InnoBaker::Setup()
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = 64;
 	m_RPDC_BrickFactor->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = 64;
 
-	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs.resize(2);
-	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 8;
+	m_RPDC_BrickFactor->m_ResourceBindingLayoutDescs.resize(2);
+	m_RPDC_BrickFactor->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC_BrickFactor->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_RPDC_BrickFactor->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 8;
 
-	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_RPDC_BrickFactor->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
+	m_RPDC_BrickFactor->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC_BrickFactor->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_RPDC_BrickFactor->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
 
 	m_RPDC_BrickFactor->m_ShaderProgram = m_SPC_BrickFactor;
 

@@ -72,30 +72,30 @@ bool GIResolveTestPass::Setup()
 
 	m_probeRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_probeRPDC->m_ResourceBinderLayoutDescs.resize(5);
-	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
+	m_probeRPDC->m_ResourceBindingLayoutDescs.resize(5);
+	m_probeRPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
 
-	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 8;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 8;
 
-	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 1;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 0;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadOnly;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 1;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 0;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
 
-	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_GPUResourceType = GPUResourceType::Image;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 1;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 1;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_IndirectBinding = true;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Image;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 1;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[3].m_IndirectBinding = true;
 
-	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_GPUResourceType = GPUResourceType::Sampler;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 2;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 0;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_IndirectBinding = true;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Sampler;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 2;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 0;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[4].m_IndirectBinding = true;
 
 	m_probeRPDC->m_ShaderProgram = m_probeSPC;
 
@@ -219,16 +219,16 @@ bool GIResolveTestPass::Render()
 		g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_probeRPDC);
 		g_Engine->getRenderingServer()->CleanRenderTargets(m_probeRPDC);
 
-		g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Pixel, m_SDC, 4, 0);
+		g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Pixel, m_SDC, 4);
 
-		g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC, 0, 0, Accessibility::ReadOnly);
-		g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Pixel, l_GIGBDC, 1, 8, Accessibility::ReadOnly);
-		g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Vertex, m_probeSphereMeshGBDC, 2, 0, Accessibility::ReadOnly);
-		g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3, 1, Accessibility::ReadOnly);
+		g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC, 0, Accessibility::ReadOnly);
+		g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Pixel, l_GIGBDC, 1, Accessibility::ReadOnly);
+		g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Vertex, m_probeSphereMeshGBDC, 2, Accessibility::ReadOnly);
+		g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3, Accessibility::ReadOnly);
 
 		g_Engine->getRenderingServer()->DrawIndexedInstanced(m_probeRPDC, l_sphere, m_probeSphereMeshData.size());
 
-		g_Engine->getRenderingServer()->UnbindGPUResource(m_probeRPDC, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3, 1, Accessibility::ReadOnly);
+		g_Engine->getRenderingServer()->UnbindGPUResource(m_probeRPDC, ShaderStage::Pixel, GIResolvePass::GetProbeVolume(), 3, Accessibility::ReadOnly);
 
 		g_Engine->getRenderingServer()->CommandListEnd(m_probeRPDC);
 

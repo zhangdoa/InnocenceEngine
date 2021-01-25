@@ -37,23 +37,23 @@ bool LuminanceHistogramPass::Setup()
 
 	m_RPDC_LuminanceHistogram->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs.resize(3);
-	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 1;
-	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
-	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[0].m_BindingAccessibility = Accessibility::ReadOnly;
-	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadOnly;
-	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
+	m_RPDC_LuminanceHistogram->m_ResourceBindingLayoutDescs.resize(3);
+	m_RPDC_LuminanceHistogram->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
+	m_RPDC_LuminanceHistogram->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 1;
+	m_RPDC_LuminanceHistogram->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+	m_RPDC_LuminanceHistogram->m_ResourceBindingLayoutDescs[0].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_RPDC_LuminanceHistogram->m_ResourceBindingLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadOnly;
+	m_RPDC_LuminanceHistogram->m_ResourceBindingLayoutDescs[0].m_IndirectBinding = true;
 
-	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
-	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
-	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RPDC_LuminanceHistogram->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC_LuminanceHistogram->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_RPDC_LuminanceHistogram->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
+	m_RPDC_LuminanceHistogram->m_ResourceBindingLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_RPDC_LuminanceHistogram->m_ResourceBindingLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
 
-	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
-	m_RPDC_LuminanceHistogram->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 0;
+	m_RPDC_LuminanceHistogram->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC_LuminanceHistogram->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 0;
+	m_RPDC_LuminanceHistogram->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 0;
 
 	m_RPDC_LuminanceHistogram->m_ShaderProgram = m_SPC_LuminanceHistogram;
 
@@ -66,22 +66,22 @@ bool LuminanceHistogramPass::Setup()
 
 	m_RPDC_LuminanceAverage->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC_LuminanceAverage->m_ResourceBinderLayoutDescs.resize(3);
-	m_RPDC_LuminanceAverage->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_LuminanceAverage->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 1;
-	m_RPDC_LuminanceAverage->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
-	m_RPDC_LuminanceAverage->m_ResourceBinderLayoutDescs[0].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_RPDC_LuminanceAverage->m_ResourceBinderLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RPDC_LuminanceAverage->m_ResourceBindingLayoutDescs.resize(3);
+	m_RPDC_LuminanceAverage->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC_LuminanceAverage->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 1;
+	m_RPDC_LuminanceAverage->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+	m_RPDC_LuminanceAverage->m_ResourceBindingLayoutDescs[0].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_RPDC_LuminanceAverage->m_ResourceBindingLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadWrite;
 
-	m_RPDC_LuminanceAverage->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_LuminanceAverage->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
-	m_RPDC_LuminanceAverage->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
-	m_RPDC_LuminanceAverage->m_ResourceBinderLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_RPDC_LuminanceAverage->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RPDC_LuminanceAverage->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC_LuminanceAverage->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_RPDC_LuminanceAverage->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
+	m_RPDC_LuminanceAverage->m_ResourceBindingLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_RPDC_LuminanceAverage->m_ResourceBindingLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
 
-	m_RPDC_LuminanceAverage->m_ResourceBinderLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC_LuminanceAverage->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
-	m_RPDC_LuminanceAverage->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 0;
+	m_RPDC_LuminanceAverage->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC_LuminanceAverage->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 0;
+	m_RPDC_LuminanceAverage->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 0;
 
 	m_RPDC_LuminanceAverage->m_ShaderProgram = m_SPC_LuminanceAverage;
 
@@ -128,14 +128,14 @@ bool LuminanceHistogramPass::CalculateHistogram(GPUResourceComponent* input)
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_LuminanceHistogram);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC_LuminanceHistogram);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LuminanceHistogram, ShaderStage::Compute, input, 0, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LuminanceHistogram, ShaderStage::Compute, m_LuminanceHistogramGBDC, 1, 1, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LuminanceHistogram, ShaderStage::Compute, l_PerFrameCBufferGBDC, 2, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LuminanceHistogram, ShaderStage::Compute, input, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LuminanceHistogram, ShaderStage::Compute, m_LuminanceHistogramGBDC, 1, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LuminanceHistogram, ShaderStage::Compute, l_PerFrameCBufferGBDC, 2, Accessibility::ReadOnly);
 
 	g_Engine->getRenderingServer()->Dispatch(m_RPDC_LuminanceHistogram, (uint32_t)l_numThreadGroupsX, (uint32_t)l_numThreadGroupsY, 1);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_LuminanceHistogram, ShaderStage::Compute, input, 0, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_LuminanceHistogram, ShaderStage::Compute, m_LuminanceHistogramGBDC, 1, 1, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_LuminanceHistogram, ShaderStage::Compute, input, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_LuminanceHistogram, ShaderStage::Compute, m_LuminanceHistogramGBDC, 1, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC_LuminanceHistogram);
 
@@ -150,14 +150,14 @@ bool LuminanceHistogramPass::CalculateAverage()
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC_LuminanceAverage);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC_LuminanceAverage);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LuminanceAverage, ShaderStage::Compute, m_LuminanceHistogramGBDC, 0, 0, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LuminanceAverage, ShaderStage::Compute, m_LuminanceAverageGBDC, 1, 1, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LuminanceAverage, ShaderStage::Compute, l_PerFrameCBufferGBDC, 2, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LuminanceAverage, ShaderStage::Compute, m_LuminanceHistogramGBDC, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LuminanceAverage, ShaderStage::Compute, m_LuminanceAverageGBDC, 1, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC_LuminanceAverage, ShaderStage::Compute, l_PerFrameCBufferGBDC, 2, Accessibility::ReadOnly);
 
 	g_Engine->getRenderingServer()->Dispatch(m_RPDC_LuminanceAverage, 1, 1, 1);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_LuminanceAverage, ShaderStage::Compute, m_LuminanceHistogramGBDC, 0, 0, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_LuminanceAverage, ShaderStage::Compute, m_LuminanceAverageGBDC, 1, 1, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_LuminanceAverage, ShaderStage::Compute, m_LuminanceHistogramGBDC, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC_LuminanceAverage, ShaderStage::Compute, m_LuminanceAverageGBDC, 1, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC_LuminanceAverage);
 

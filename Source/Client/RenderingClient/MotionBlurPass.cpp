@@ -33,34 +33,34 @@ bool MotionBlurPass::Setup()
 
 	m_RPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC->m_ResourceBinderLayoutDescs.resize(5);
-	m_RPDC->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 1;
-	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
-	m_RPDC->m_ResourceBinderLayoutDescs[0].m_BindingAccessibility = Accessibility::ReadOnly;
-	m_RPDC->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
+	m_RPDC->m_ResourceBindingLayoutDescs.resize(5);
+	m_RPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
+	m_RPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 1;
+	m_RPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+	m_RPDC->m_ResourceBindingLayoutDescs[0].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_RPDC->m_ResourceBindingLayoutDescs[0].m_IndirectBinding = true;
 
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadOnly;
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
+	m_RPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Image;
+	m_RPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_RPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
+	m_RPDC->m_ResourceBindingLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_RPDC->m_ResourceBindingLayoutDescs[1].m_IndirectBinding = true;
 
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 2;
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 0;
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_IndirectBinding = true;
+	m_RPDC->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Image;
+	m_RPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 2;
+	m_RPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 0;
+	m_RPDC->m_ResourceBindingLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_RPDC->m_ResourceBindingLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RPDC->m_ResourceBindingLayoutDescs[2].m_IndirectBinding = true;
 
-	m_RPDC->m_ResourceBinderLayoutDescs[3].m_GPUResourceType = GPUResourceType::Sampler;
-	m_RPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 3;
-	m_RPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
-	m_RPDC->m_ResourceBinderLayoutDescs[3].m_IndirectBinding = true;
+	m_RPDC->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Sampler;
+	m_RPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 3;
+	m_RPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 0;
+	m_RPDC->m_ResourceBindingLayoutDescs[3].m_IndirectBinding = true;
 
-	m_RPDC->m_ResourceBinderLayoutDescs[4].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 0;
-	m_RPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 0;
+	m_RPDC->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 0;
+	m_RPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 0;
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 
@@ -92,18 +92,18 @@ bool MotionBlurPass::Render(GPUResourceComponent* input)
 	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, m_SDC, 3, 0);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC, 4, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, m_SDC, 3);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC, 4, Accessibility::ReadOnly);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargets[3], 0, 0);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, input, 1, 1);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, m_TDC, 2, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargets[3], 0);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, input, 1);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, m_TDC, 2, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->Dispatch(m_RPDC, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargets[3], 0, 0);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, input, 1, 1);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, m_TDC, 2, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargets[3], 0);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, input, 1);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, m_TDC, 2, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
 

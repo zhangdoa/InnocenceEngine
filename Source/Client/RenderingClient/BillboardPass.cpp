@@ -38,26 +38,26 @@ bool BillboardPass::Setup()
 
 	m_RPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC->m_ResourceBinderLayoutDescs.resize(4);
-	m_RPDC->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
+	m_RPDC->m_ResourceBindingLayoutDescs.resize(4);
+	m_RPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_RPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
 
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 12;
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadOnly;
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_RPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 12;
+	m_RPDC->m_ResourceBindingLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_RPDC->m_ResourceBindingLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
 
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_GPUResourceType = GPUResourceType::Image;
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 1;
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 0;
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_IndirectBinding = true;
+	m_RPDC->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Image;
+	m_RPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 1;
+	m_RPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 0;
+	m_RPDC->m_ResourceBindingLayoutDescs[2].m_IndirectBinding = true;
 
-	m_RPDC->m_ResourceBinderLayoutDescs[3].m_GPUResourceType = GPUResourceType::Sampler;
-	m_RPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 2;
-	m_RPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
-	m_RPDC->m_ResourceBinderLayoutDescs[3].m_IndirectBinding = true;
+	m_RPDC->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Sampler;
+	m_RPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 2;
+	m_RPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 0;
+	m_RPDC->m_ResourceBindingLayoutDescs[3].m_IndirectBinding = true;
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 
@@ -86,8 +86,8 @@ bool BillboardPass::Render()
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Pixel, m_SDC, 3, 0);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC, 0, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Pixel, m_SDC, 3);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC, 0, Accessibility::ReadOnly);
 
 	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
 
@@ -100,13 +100,13 @@ bool BillboardPass::Render()
 		auto l_offset = l_billboardPassDrawCallInfo[i].meshConstantBufferOffset;
 		auto l_instanceCount = l_billboardPassDrawCallInfo[i].instanceCount;
 
-		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Vertex, l_BillboardGBDC, 1, 12, Accessibility::ReadOnly, l_offset, l_instanceCount);
+		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Vertex, l_BillboardGBDC, 1, Accessibility::ReadOnly, l_offset, l_instanceCount);
 
-		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Pixel, l_iconTexture, 2, 0);
+		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Pixel, l_iconTexture, 2);
 
 		g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RPDC, l_mesh, l_instanceCount);
 
-		g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Pixel, l_iconTexture, 2, 0);
+		g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Pixel, l_iconTexture, 2);
 	}
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);

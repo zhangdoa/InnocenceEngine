@@ -362,17 +362,17 @@ bool GIResolvePass::setupSky()
 
 	m_skyRadianceRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs.resize(2);
-	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
+	m_skyRadianceRPDC->m_ResourceBindingLayoutDescs.resize(2);
+	m_skyRadianceRPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_skyRadianceRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_skyRadianceRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
 
-	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Image;
-	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
-	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 0;
-	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_skyRadianceRPDC->m_ResourceBinderLayoutDescs[1].m_IndirectBinding = true;
+	m_skyRadianceRPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Image;
+	m_skyRadianceRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_skyRadianceRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 0;
+	m_skyRadianceRPDC->m_ResourceBindingLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_skyRadianceRPDC->m_ResourceBindingLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_skyRadianceRPDC->m_ResourceBindingLayoutDescs[1].m_IndirectBinding = true;
 
 	m_skyRadianceRPDC->m_ShaderProgram = m_skyRadianceSPC;
 
@@ -384,19 +384,19 @@ bool GIResolvePass::setupSky()
 
 	m_skyIrradianceRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs.resize(2);
-	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
-	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
-	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[0].m_IndirectBinding = true;
+	m_skyIrradianceRPDC->m_ResourceBindingLayoutDescs.resize(2);
+	m_skyIrradianceRPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
+	m_skyIrradianceRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_skyIrradianceRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+	m_skyIrradianceRPDC->m_ResourceBindingLayoutDescs[0].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_skyIrradianceRPDC->m_ResourceBindingLayoutDescs[0].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_skyIrradianceRPDC->m_ResourceBindingLayoutDescs[0].m_IndirectBinding = true;
 
-	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 1;
-	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_skyIrradianceRPDC->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_skyIrradianceRPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_skyIrradianceRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_skyIrradianceRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 1;
+	m_skyIrradianceRPDC->m_ResourceBindingLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_skyIrradianceRPDC->m_ResourceBindingLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
 
 	m_skyIrradianceRPDC->m_ShaderProgram = m_skyIrradianceSPC;
 
@@ -433,39 +433,39 @@ bool GIResolvePass::setupSurfels()
 
 	m_surfelRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_surfelRPDC->m_ResourceBinderLayoutDescs.resize(7);
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs.resize(7);
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
 
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 5;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 5;
 
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 6;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 0;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 6;
 
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[3].m_GPUResourceType = GPUResourceType::Buffer;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 0;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 8;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Buffer;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 0;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 8;
 
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_GPUResourceType = GPUResourceType::Buffer;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 1;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 0;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Buffer;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[4].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 1;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 0;
 
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_GPUResourceType = GPUResourceType::Buffer;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 1;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 1;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Buffer;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[5].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[5].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[5].m_DescriptorSetIndex = 1;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex = 1;
 
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_GPUResourceType = GPUResourceType::Image;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 2;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 0;
-	m_surfelRPDC->m_ResourceBinderLayoutDescs[6].m_IndirectBinding = true;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[6].m_GPUResourceType = GPUResourceType::Image;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[6].m_DescriptorSetIndex = 2;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[6].m_DescriptorIndex = 0;
+	m_surfelRPDC->m_ResourceBindingLayoutDescs[6].m_IndirectBinding = true;
 
 	m_surfelRPDC->m_ShaderProgram = m_surfelSPC;
 
@@ -486,32 +486,32 @@ bool GIResolvePass::setupBricks()
 
 	m_brickRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_brickRPDC->m_ResourceBinderLayoutDescs.resize(5);
-	m_brickRPDC->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 6;
+	m_brickRPDC->m_ResourceBindingLayoutDescs.resize(5);
+	m_brickRPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_brickRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_brickRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 6;
 
-	m_brickRPDC->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 8;
+	m_brickRPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_brickRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_brickRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 8;
 
-	m_brickRPDC->m_ResourceBinderLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 1;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 0;
+	m_brickRPDC->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
+	m_brickRPDC->m_ResourceBindingLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_brickRPDC->m_ResourceBindingLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_brickRPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 1;
+	m_brickRPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 0;
 
-	m_brickRPDC->m_ResourceBinderLayoutDescs[3].m_GPUResourceType = GPUResourceType::Buffer;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[3].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 1;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 1;
+	m_brickRPDC->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Buffer;
+	m_brickRPDC->m_ResourceBindingLayoutDescs[3].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_brickRPDC->m_ResourceBindingLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_brickRPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
+	m_brickRPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 1;
 
-	m_brickRPDC->m_ResourceBinderLayoutDescs[4].m_GPUResourceType = GPUResourceType::Buffer;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[4].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 1;
-	m_brickRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 2;
+	m_brickRPDC->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Buffer;
+	m_brickRPDC->m_ResourceBindingLayoutDescs[4].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_brickRPDC->m_ResourceBindingLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_brickRPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 1;
+	m_brickRPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 2;
 
 	m_brickRPDC->m_ShaderProgram = m_brickSPC;
 
@@ -532,43 +532,43 @@ bool GIResolvePass::setupProbes()
 
 	m_probeRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_probeRPDC->m_ResourceBinderLayoutDescs.resize(7);
-	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
+	m_probeRPDC->m_ResourceBindingLayoutDescs.resize(7);
+	m_probeRPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
 
-	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 6;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 6;
 
-	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 8;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 0;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 8;
 
-	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_GPUResourceType = GPUResourceType::Buffer;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 1;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Buffer;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[3].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 0;
 
-	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_GPUResourceType = GPUResourceType::Buffer;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 1;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 1;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Buffer;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[4].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 1;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 1;
 
-	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_GPUResourceType = GPUResourceType::Buffer;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 1;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 2;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Buffer;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[5].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[5].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[5].m_DescriptorSetIndex = 1;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex = 2;
 
-	m_probeRPDC->m_ResourceBinderLayoutDescs[6].m_GPUResourceType = GPUResourceType::Image;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[6].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[6].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 1;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 3;
-	m_probeRPDC->m_ResourceBinderLayoutDescs[6].m_IndirectBinding = true;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[6].m_GPUResourceType = GPUResourceType::Image;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[6].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[6].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[6].m_DescriptorSetIndex = 1;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[6].m_DescriptorIndex = 3;
+	m_probeRPDC->m_ResourceBindingLayoutDescs[6].m_IndirectBinding = true;
 
 	m_probeRPDC->m_ShaderProgram = m_probeSPC;
 
@@ -589,43 +589,43 @@ bool GIResolvePass::setupIrradianceVolume()
 
 	m_irradianceVolumeRPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs.resize(7);
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs.resize(7);
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
 
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 0;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 6;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 0;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 6;
 
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 0;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 8;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 0;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 8;
 
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_GPUResourceType = GPUResourceType::Image;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_BindingAccessibility = Accessibility::ReadOnly;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorSetIndex = 1;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_DescriptorIndex = 0;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[3].m_IndirectBinding = true;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[3].m_GPUResourceType = GPUResourceType::Image;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[3].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[3].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorSetIndex = 1;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[3].m_DescriptorIndex = 0;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[3].m_IndirectBinding = true;
 
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[4].m_GPUResourceType = GPUResourceType::Image;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[4].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorSetIndex = 2;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[4].m_DescriptorIndex = 0;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[4].m_IndirectBinding = true;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[4].m_GPUResourceType = GPUResourceType::Image;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[4].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[4].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorSetIndex = 2;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[4].m_DescriptorIndex = 0;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[4].m_IndirectBinding = true;
 
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[5].m_GPUResourceType = GPUResourceType::Buffer;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[5].m_BindingAccessibility = Accessibility::ReadWrite;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[5].m_ResourceAccessibility = Accessibility::ReadWrite;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorSetIndex = 2;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[5].m_DescriptorIndex = 1;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[5].m_GPUResourceType = GPUResourceType::Buffer;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[5].m_BindingAccessibility = Accessibility::ReadWrite;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[5].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[5].m_DescriptorSetIndex = 2;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[5].m_DescriptorIndex = 1;
 
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[6].m_GPUResourceType = GPUResourceType::Sampler;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorSetIndex = 3;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[6].m_DescriptorIndex = 0;
-	m_irradianceVolumeRPDC->m_ResourceBinderLayoutDescs[6].m_IndirectBinding = true;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[6].m_GPUResourceType = GPUResourceType::Sampler;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[6].m_DescriptorSetIndex = 3;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[6].m_DescriptorIndex = 0;
+	m_irradianceVolumeRPDC->m_ResourceBindingLayoutDescs[6].m_IndirectBinding = true;
 
 	m_irradianceVolumeRPDC->m_ShaderProgram = m_irradianceVolumeSPC;
 	m_irradianceVolumeSDC = g_Engine->getRenderingServer()->AddSamplerDataComponent("GIResolveIrradianceVolumePass/");
@@ -645,12 +645,12 @@ bool GIResolvePass::generateSkyRadiance()
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_skyRadianceRPDC);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_skyRadianceRPDC);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_skyRadianceRPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC, 0, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_skyRadianceRPDC, ShaderStage::Compute, m_skyRadianceVolume, 1, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_skyRadianceRPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_skyRadianceRPDC, ShaderStage::Compute, m_skyRadianceVolume, 1, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->Dispatch(m_skyRadianceRPDC, 1, 1, 1);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_skyRadianceRPDC, ShaderStage::Compute, m_skyRadianceVolume, 1, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_skyRadianceRPDC, ShaderStage::Compute, m_skyRadianceVolume, 1, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_skyRadianceRPDC);
 
@@ -663,13 +663,13 @@ bool GIResolvePass::generateSkyIrradiance()
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_skyIrradianceRPDC);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_skyIrradianceRPDC);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_skyIrradianceRPDC, ShaderStage::Compute, m_skyRadianceVolume, 0, 0, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_skyIrradianceRPDC, ShaderStage::Compute, m_skyIrradianceGBDC, 1, 1, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_skyIrradianceRPDC, ShaderStage::Compute, m_skyRadianceVolume, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_skyIrradianceRPDC, ShaderStage::Compute, m_skyIrradianceGBDC, 1, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->Dispatch(m_skyIrradianceRPDC, 1, 1, 1);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_skyIrradianceRPDC, ShaderStage::Compute, m_skyRadianceVolume, 0, 0, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_skyIrradianceRPDC, ShaderStage::Compute, m_skyIrradianceGBDC, 1, 1, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_skyIrradianceRPDC, ShaderStage::Compute, m_skyRadianceVolume, 0, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_skyIrradianceRPDC, ShaderStage::Compute, m_skyIrradianceGBDC, 1, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_skyIrradianceRPDC);
 
@@ -701,19 +701,19 @@ bool GIResolvePass::litSurfels()
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_surfelRPDC);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_surfelRPDC);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_surfelRPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC, 0, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_surfelRPDC, ShaderStage::Compute, l_CSMGBDC, 1, 5, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_surfelRPDC, ShaderStage::Compute, l_dispatchParamsGBDC, 2, 6, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_surfelRPDC, ShaderStage::Compute, l_GIGBDC, 3, 8, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC, 4, 0, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC, 5, 1, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_surfelRPDC, ShaderStage::Compute, SunShadowPass::GetShadowMap(), 6, 0);
+	g_Engine->getRenderingServer()->BindGPUResource(m_surfelRPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_surfelRPDC, ShaderStage::Compute, l_CSMGBDC, 1, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_surfelRPDC, ShaderStage::Compute, l_dispatchParamsGBDC, 2, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_surfelRPDC, ShaderStage::Compute, l_GIGBDC, 3, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC, 4, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC, 5, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_surfelRPDC, ShaderStage::Compute, SunShadowPass::GetShadowMap(), 6);
 
 	g_Engine->getRenderingServer()->Dispatch(m_surfelRPDC, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC, 4, 0, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC, 5, 1, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_surfelRPDC, ShaderStage::Compute, SunShadowPass::GetShadowMap(), 6, 0);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC, 4, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC, 5, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_surfelRPDC, ShaderStage::Compute, SunShadowPass::GetShadowMap(), 6);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_surfelRPDC);
 
@@ -743,17 +743,17 @@ bool GIResolvePass::litBricks()
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_brickRPDC);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_brickRPDC);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_brickRPDC, ShaderStage::Compute, l_dispatchParamsGBDC, 0, 6, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_brickRPDC, ShaderStage::Compute, l_GIGBDC, 1, 8, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_brickRPDC, ShaderStage::Compute, m_brickGBDC, 2, 0, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_brickRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC, 3, 1, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_brickRPDC, ShaderStage::Compute, m_brickIrradianceGBDC, 4, 2, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_brickRPDC, ShaderStage::Compute, l_dispatchParamsGBDC, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_brickRPDC, ShaderStage::Compute, l_GIGBDC, 1, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_brickRPDC, ShaderStage::Compute, m_brickGBDC, 2, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_brickRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC, 3, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_brickRPDC, ShaderStage::Compute, m_brickIrradianceGBDC, 4, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->Dispatch(m_brickRPDC, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_brickRPDC, ShaderStage::Compute, m_brickGBDC, 2, 0, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_brickRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC, 3, 1, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_brickRPDC, ShaderStage::Compute, m_brickIrradianceGBDC, 4, 2, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_brickRPDC, ShaderStage::Compute, m_brickGBDC, 2, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_brickRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC, 3, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_brickRPDC, ShaderStage::Compute, m_brickIrradianceGBDC, 4, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_brickRPDC);
 
@@ -784,20 +784,20 @@ bool GIResolvePass::litProbes()
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_probeRPDC);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_probeRPDC);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC, 0, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Compute, l_dispatchParamsGBDC, 1, 6, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Compute, l_GIGBDC, 2, 8, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Compute, m_probeGBDC, 3, 0, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Compute, m_brickFactorGBDC, 4, 1, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Compute, m_brickIrradianceGBDC, 5, 2, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Compute, m_probeVolume, 6, 3, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Compute, l_dispatchParamsGBDC, 1, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Compute, l_GIGBDC, 2, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Compute, m_probeGBDC, 3, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Compute, m_brickFactorGBDC, 4, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Compute, m_brickIrradianceGBDC, 5, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_probeRPDC, ShaderStage::Compute, m_probeVolume, 6, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->Dispatch(m_probeRPDC, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_probeRPDC, ShaderStage::Compute, m_probeGBDC, 3, 0, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_probeRPDC, ShaderStage::Compute, m_brickFactorGBDC, 4, 1, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_probeRPDC, ShaderStage::Compute, m_brickIrradianceGBDC, 5, 2, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_probeRPDC, ShaderStage::Compute, m_probeVolume, 6, 3, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_probeRPDC, ShaderStage::Compute, m_probeGBDC, 3, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_probeRPDC, ShaderStage::Compute, m_brickFactorGBDC, 4, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_probeRPDC, ShaderStage::Compute, m_brickIrradianceGBDC, 5, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_probeRPDC, ShaderStage::Compute, m_probeVolume, 6, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_probeRPDC);
 
@@ -824,21 +824,21 @@ bool GIResolvePass::generateIrradianceVolume()
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_irradianceVolumeRPDC);
 	g_Engine->getRenderingServer()->CleanRenderTargets(m_irradianceVolumeRPDC);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_irradianceVolumeRPDC, ShaderStage::Compute, m_irradianceVolumeSDC, 6, 0);
+	g_Engine->getRenderingServer()->BindGPUResource(m_irradianceVolumeRPDC, ShaderStage::Compute, m_irradianceVolumeSDC, 6);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_irradianceVolumeRPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC, 0, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_irradianceVolumeRPDC, ShaderStage::Compute, l_dispatchParamsGBDC, 1, 6, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_irradianceVolumeRPDC, ShaderStage::Compute, l_GIGBDC, 2, 8, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_irradianceVolumeRPDC, ShaderStage::Compute, m_probeVolume, 3, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_irradianceVolumeRPDC, ShaderStage::Compute, m_irradianceVolume, 4, 0, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_irradianceVolumeRPDC, ShaderStage::Compute, m_skyIrradianceGBDC, 5, 1, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_irradianceVolumeRPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC, 0, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_irradianceVolumeRPDC, ShaderStage::Compute, l_dispatchParamsGBDC, 1, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_irradianceVolumeRPDC, ShaderStage::Compute, l_GIGBDC, 2, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_irradianceVolumeRPDC, ShaderStage::Compute, m_probeVolume, 3, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_irradianceVolumeRPDC, ShaderStage::Compute, m_irradianceVolume, 4, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_irradianceVolumeRPDC, ShaderStage::Compute, m_skyIrradianceGBDC, 5, Accessibility::ReadWrite);
 
 	// @TODO: Buggy on OpenGL + Nvidia
 	g_Engine->getRenderingServer()->Dispatch(m_irradianceVolumeRPDC, 8, 4, 8);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_irradianceVolumeRPDC, ShaderStage::Compute, m_probeVolume, 3, 0, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_irradianceVolumeRPDC, ShaderStage::Compute, m_irradianceVolume, 4, 0, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_irradianceVolumeRPDC, ShaderStage::Compute, m_skyIrradianceGBDC, 5, 1, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_irradianceVolumeRPDC, ShaderStage::Compute, m_probeVolume, 3, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_irradianceVolumeRPDC, ShaderStage::Compute, m_irradianceVolume, 4, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_irradianceVolumeRPDC, ShaderStage::Compute, m_skyIrradianceGBDC, 5, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_irradianceVolumeRPDC);
 

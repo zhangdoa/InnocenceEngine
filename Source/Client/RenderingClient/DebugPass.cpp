@@ -79,22 +79,22 @@ bool DebugPass::Setup()
 
 	m_RPDC->m_RenderPassDesc = l_RenderPassDesc;
 
-	m_RPDC->m_ResourceBinderLayoutDescs.resize(3);
-	m_RPDC->m_ResourceBinderLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorSetIndex = 0;
-	m_RPDC->m_ResourceBinderLayoutDescs[0].m_DescriptorIndex = 0;
+	m_RPDC->m_ResourceBindingLayoutDescs.resize(3);
+	m_RPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_RPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
 
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorSetIndex = 1;
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_DescriptorIndex = 0;
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadOnly;
-	m_RPDC->m_ResourceBinderLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_RPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 0;
+	m_RPDC->m_ResourceBindingLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_RPDC->m_ResourceBindingLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
 
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorSetIndex = 1;
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_DescriptorIndex = 1;
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadOnly;
-	m_RPDC->m_ResourceBinderLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RPDC->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Buffer;
+	m_RPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorSetIndex = 1;
+	m_RPDC->m_ResourceBindingLayoutDescs[2].m_DescriptorIndex = 1;
+	m_RPDC->m_ResourceBindingLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_RPDC->m_ResourceBindingLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
 
 	m_RPDC->m_ShaderProgram = m_SPC;
 
@@ -291,17 +291,17 @@ bool DebugPass::Render()
 		g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
 		g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC);
 
-		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC, 0, 0, Accessibility::ReadOnly);
+		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC, 0, Accessibility::ReadOnly);
 
-		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Pixel, m_debugMaterialGBDC, 2, 1, Accessibility::ReadOnly);
+		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Pixel, m_debugMaterialGBDC, 2, Accessibility::ReadOnly);
 
-		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Vertex, m_debugSphereMeshGBDC, 1, 0, Accessibility::ReadOnly);
+		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Vertex, m_debugSphereMeshGBDC, 1, Accessibility::ReadOnly);
 		if (m_debugSphereConstantBuffer.size())
 		{
 			g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RPDC, l_sphere, m_debugSphereConstantBuffer.size());
 		}
 
-		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Vertex, m_debugCubeMeshGBDC, 1, 0, Accessibility::ReadOnly);
+		g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Vertex, m_debugCubeMeshGBDC, 1, Accessibility::ReadOnly);
 		if (m_debugCubeConstantBuffer.size())
 		{
 			g_Engine->getRenderingServer()->DrawIndexedInstanced(m_RPDC, l_cube, m_debugCubeConstantBuffer.size());
