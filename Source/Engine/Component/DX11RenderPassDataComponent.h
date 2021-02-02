@@ -22,10 +22,6 @@ namespace Inno
 	{
 	};
 
-	class DX11CommandQueue : public ICommandQueue
-	{
-	};
-
 	class DX11Semaphore : public ISemaphore
 	{
 	};
