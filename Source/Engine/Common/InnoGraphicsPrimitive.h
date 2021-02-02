@@ -222,7 +222,6 @@ namespace Inno
 	}
 
 	class ICommandList {};
-	class ICommandQueue {};
 	class ISemaphore {};
 	class IFence {};
 }

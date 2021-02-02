@@ -26,8 +26,6 @@ namespace Inno
 		std::vector<ResourceBindingLayoutDesc> m_ResourceBindingLayoutDescs;
 
 		IPipelineStateObject* m_PipelineStateObject = 0;
-
-		ICommandQueue* m_CommandQueue = 0;
 		std::vector<ICommandList*> m_CommandLists;
 
 		size_t m_CurrentFrame = 0;
