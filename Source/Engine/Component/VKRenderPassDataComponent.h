@@ -41,12 +41,6 @@ namespace Inno
 		VkCommandBuffer m_CommandBuffer;
 	};
 
-	class VKCommandQueue : public ICommandQueue
-	{
-	public:
-		VkQueue m_CommandQueue;
-	};
-
 	class VKSemaphore : public ISemaphore
 	{
 	public:

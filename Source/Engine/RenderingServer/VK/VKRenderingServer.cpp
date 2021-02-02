@@ -64,7 +64,6 @@ namespace VKRenderingServerNS
 	TObjectPool<VKTextureDataComponent> *m_TextureDataComponentPool = 0;
 	TObjectPool<VKRenderPassDataComponent> *m_RenderPassDataComponentPool = 0;
 	TObjectPool<VKPipelineStateObject> *m_PSOPool = 0;
-	TObjectPool<VKCommandQueue> *m_CommandQueuePool = 0;
 	TObjectPool<VKCommandList> *m_CommandListPool = 0;
 	TObjectPool<VKSemaphore> *m_SemaphorePool = 0;
 	TObjectPool<VKFence> *m_FencePool = 0;
@@ -560,11 +559,6 @@ VKPipelineStateObject *addPSO()
 	return m_PSOPool->Spawn();
 }
 
-VKCommandQueue *addCommandQueue()
-{
-	return m_CommandQueuePool->Spawn();
-}
-
 VKCommandList *addCommandList()
 {
 	return m_CommandListPool->Spawn();
@@ -589,7 +583,6 @@ bool VKRenderingServer::Setup(ISystemConfig *systemConfig)
 	m_MaterialDataComponentPool = TObjectPool<VKMaterialDataComponent>::Create(l_renderingCapability.maxMaterials);
 	m_RenderPassDataComponentPool = TObjectPool<VKRenderPassDataComponent>::Create(128);
 	m_PSOPool = TObjectPool<VKPipelineStateObject>::Create(128);
-	m_CommandQueuePool = TObjectPool<VKCommandQueue>::Create(128);
 	m_CommandListPool = TObjectPool<VKCommandList>::Create(256);
 	m_SemaphorePool = TObjectPool<VKSemaphore>::Create(512);
 	m_FencePool = TObjectPool<VKFence>::Create(256);
@@ -894,7 +887,7 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 	{
 		l_result &= createDescriptorSets(m_device, l_rhs->m_DescriptorPool, &l_rhs->m_DescriptorSetLayouts[i], l_rhs->m_DescriptorSets[i], 1);
 	}
-	
+
 	l_result &= CreatePipelineLayout(m_device, l_rhs);
 
 	if (l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
