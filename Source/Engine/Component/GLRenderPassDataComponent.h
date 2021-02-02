@@ -16,10 +16,6 @@ namespace Inno
 	{
 	};
 
-	class GLCommandQueue : public ICommandQueue
-	{
-	};
-
 	class GLSemaphore : public ISemaphore
 	{
 	};
