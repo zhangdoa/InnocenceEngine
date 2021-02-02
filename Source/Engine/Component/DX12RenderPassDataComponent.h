@@ -29,10 +29,6 @@ namespace Inno
 		ComPtr<ID3D12GraphicsCommandList> m_CopyCommandList = 0;
 	};
 
-	class DX12CommandQueue : public ICommandQueue
-	{
-	};
-
 	class DX12Semaphore : public ISemaphore
 	{
 	};

@@ -57,7 +57,6 @@ namespace DX12RenderingServerNS
 	TObjectPool<DX12TextureDataComponent> *m_TextureDataComponentPool = 0;
 	TObjectPool<DX12RenderPassDataComponent> *m_RenderPassDataComponentPool = 0;
 	TObjectPool<DX12PipelineStateObject> *m_PSOPool = 0;
-	TObjectPool<DX12CommandQueue> *m_CommandQueuePool = 0;
 	TObjectPool<DX12CommandList> *m_CommandListPool = 0;
 	TObjectPool<DX12Fence> *m_FencePool = 0;
 	TObjectPool<DX12ShaderProgramComponent> *m_ShaderProgramComponentPool = 0;
@@ -89,7 +88,7 @@ namespace DX12RenderingServerNS
 	ComPtr<ID3D12CommandQueue> m_copyCommandQueue = 0;
 
 	uint64_t m_directCommandQueueSemaphore = 0;
-	uint64_t m_computeCommandQueueSemaphore= 0;
+	uint64_t m_computeCommandQueueSemaphore = 0;
 	uint64_t m_copyCommandQueueSemaphore = 0;
 	ComPtr<ID3D12Fence> m_directCommandQueueFence = 0;
 	ComPtr<ID3D12Fence> m_computeCommandQueueFence = 0;
@@ -412,51 +411,51 @@ bool DX12RenderingServerNS::CreateGlobalCommandAllocators()
 
 bool DX12RenderingServerNS::CreateSyncPrimitives()
 {
-		if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_directCommandQueueFence))))
-		{
-			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create Fence for direct CommandQueue!");
-			return false;
-		}
-		if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_computeCommandQueueFence))))
-		{
-			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create Fence for compute CommandQueue!");
-			return false;
-		}
-		if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_copyCommandQueueFence))))
-		{
-			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create Fence for copy CommandQueue!");
-			return false;
-		}
+	if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_directCommandQueueFence))))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create Fence for direct CommandQueue!");
+		return false;
+	}
+	if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_computeCommandQueueFence))))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create Fence for compute CommandQueue!");
+		return false;
+	}
+	if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_copyCommandQueueFence))))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create Fence for copy CommandQueue!");
+		return false;
+	}
 #ifdef INNO_DEBUG
-		m_directCommandQueueFence->SetName(L"DirectCommandQueueFence");
-		m_computeCommandQueueFence->SetName(L"ComputeCommandQueueFence");
-		m_copyCommandQueueFence->SetName(L"CopyCommandQueueFence");
+	m_directCommandQueueFence->SetName(L"DirectCommandQueueFence");
+	m_computeCommandQueueFence->SetName(L"ComputeCommandQueueFence");
+	m_copyCommandQueueFence->SetName(L"CopyCommandQueueFence");
 #endif // INNO_DEBUG
 
-		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer:  Fences have been created.");
+	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer:  Fences have been created.");
 
-		m_directCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
-		if (m_directCommandQueueFenceEvent == NULL)
-		{
-			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create fence event for direct CommandQueue!");
-			return false;
-		}
+	m_directCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
+	if (m_directCommandQueueFenceEvent == NULL)
+	{
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create fence event for direct CommandQueue!");
+		return false;
+	}
 
-		m_computeCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
-		if (m_computeCommandQueueFenceEvent == NULL)
-		{
-			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create fence event for compute CommandQueue!");
-			return false;
-		}
+	m_computeCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
+	if (m_computeCommandQueueFenceEvent == NULL)
+	{
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create fence event for compute CommandQueue!");
+		return false;
+	}
 
-		m_copyCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
-		if (m_copyCommandQueueFenceEvent == NULL)
-		{
-			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create fence event for copy CommandQueue!");
-			return false;
-		}
+	m_copyCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
+	if (m_copyCommandQueueFenceEvent == NULL)
+	{
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create fence event for copy CommandQueue!");
+		return false;
+	}
 
-		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: Fence events have been created.");
+	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: Fence events have been created.");
 
 	return true;
 }
@@ -721,11 +720,6 @@ DX12PipelineStateObject *addPSO()
 	return m_PSOPool->Spawn();
 }
 
-DX12CommandQueue *addCommandQueue()
-{
-	return m_CommandQueuePool->Spawn();
-}
-
 DX12CommandList *addCommandList()
 {
 	return m_CommandListPool->Spawn();
@@ -745,7 +739,6 @@ bool DX12RenderingServer::Setup(ISystemConfig *systemConfig)
 	m_MaterialDataComponentPool = TObjectPool<DX12MaterialDataComponent>::Create(l_renderingCapability.maxMaterials);
 	m_RenderPassDataComponentPool = TObjectPool<DX12RenderPassDataComponent>::Create(128);
 	m_PSOPool = TObjectPool<DX12PipelineStateObject>::Create(128);
-	m_CommandQueuePool = TObjectPool<DX12CommandQueue>::Create(128);
 	m_CommandListPool = TObjectPool<DX12CommandList>::Create(256);
 	m_FencePool = TObjectPool<DX12Fence>::Create(256);
 	m_ShaderProgramComponentPool = TObjectPool<DX12ShaderProgramComponent>::Create(256);
@@ -811,8 +804,6 @@ bool DX12RenderingServer::Initialize()
 		m_SwapChainRPDC->m_ShaderProgram = m_SwapChainSPC;
 
 		ReserveRenderTargets(m_SwapChainRPDC, this);
-
-		m_SwapChainRPDC->m_CommandQueue = addCommandQueue();
 
 		m_SwapChainRPDC->m_CommandLists.resize(m_swapChainImageCount);
 		for (size_t i = 0; i < m_SwapChainRPDC->m_CommandLists.size(); i++)
@@ -1194,7 +1185,6 @@ bool DX12RenderingServer::InitializeTextureDataComponent(TextureDataComponent *r
 		}
 	}
 
-
 	l_rhs->m_GPUResourceType = GPUResourceType::Image;
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
@@ -1255,8 +1245,6 @@ bool DX12RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 	l_rhs->m_PipelineStateObject = addPSO();
 
 	l_result &= CreatePSO(l_rhs, m_device);
-
-	l_rhs->m_CommandQueue = addCommandQueue();
 
 	if (l_rhs->m_RenderPassDesc.m_UseMultiFrames)
 	{
@@ -1639,7 +1627,7 @@ bool PrepareRenderTargets(DX12RenderPassDataComponent *renderPass, DX12CommandLi
 	{
 		if (renderPass->m_RenderPassDesc.m_UseMultiFrames)
 		{
-			auto l_rhs = reinterpret_cast<DX12TextureDataComponent*>(renderPass->m_RenderTargets[renderPass->m_CurrentFrame]);
+			auto l_rhs = reinterpret_cast<DX12TextureDataComponent *>(renderPass->m_RenderTargets[renderPass->m_CurrentFrame]);
 
 			CheckWriteState(l_rhs, commandList);
 		}
@@ -1837,7 +1825,7 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent *rhs)
 	return true;
 }
 
-bool DX12RenderingServer::BindGPUResource(RenderPassDataComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
+bool DX12RenderingServer::BindGPUResource(RenderPassDataComponent *renderPass, ShaderStage shaderStage, GPUResourceComponent *resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount)
 {
 	auto l_renderPass = reinterpret_cast<DX12RenderPassDataComponent *>(renderPass);
 	auto l_commandList = reinterpret_cast<DX12CommandList *>(l_renderPass->m_CommandLists[l_renderPass->m_CurrentFrame]);
@@ -1856,18 +1844,18 @@ bool DX12RenderingServer::BindGPUResource(RenderPassDataComponent* renderPass, S
 			switch (resource->m_GPUResourceType)
 			{
 			case GPUResourceType::Sampler:
-				l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12SamplerDataComponent*>(resource)->m_Sampler.GPUHandle);
+				l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12SamplerDataComponent *>(resource)->m_Sampler.GPUHandle);
 				break;
 			case GPUResourceType::Image:
 				if (accessibility != Accessibility::ReadOnly)
 				{
-					CheckWriteState(reinterpret_cast<DX12TextureDataComponent*>(resource), l_commandList);
-					l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureDataComponent*>(resource)->m_UAV.ShaderVisibleGPUHandle);
+					CheckWriteState(reinterpret_cast<DX12TextureDataComponent *>(resource), l_commandList);
+					l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureDataComponent *>(resource)->m_UAV.ShaderVisibleGPUHandle);
 				}
 				else
 				{
-					CheckReadState(reinterpret_cast<DX12TextureDataComponent*>(resource), l_commandList);
-					l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureDataComponent*>(resource)->m_SRV.GPUHandle);
+					CheckReadState(reinterpret_cast<DX12TextureDataComponent *>(resource), l_commandList);
+					l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureDataComponent *>(resource)->m_SRV.GPUHandle);
 				}
 				break;
 			case GPUResourceType::Buffer:
@@ -1879,25 +1867,25 @@ bool DX12RenderingServer::BindGPUResource(RenderPassDataComponent* renderPass, S
 					}
 					else
 					{
-						l_commandList->m_ComputeCommandList->SetComputeRootConstantBufferView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent*>(resource)->m_UploadHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferDataComponent*>(resource)->m_ElementSize);
+						l_commandList->m_ComputeCommandList->SetComputeRootConstantBufferView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_UploadHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_ElementSize);
 					}
 				}
 				else
 				{
 					if (accessibility != Accessibility::ReadOnly)
 					{
-						if (reinterpret_cast<DX12GPUBufferDataComponent*>(resource)->m_isAtomicCounter)
+						if (reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_isAtomicCounter)
 						{
-							l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent*>(resource)->m_UAV.ShaderVisibleGPUHandle);
+							l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_UAV.ShaderVisibleGPUHandle);
 						}
 						else
 						{
-							l_commandList->m_ComputeCommandList->SetComputeRootUnorderedAccessView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent*>(resource)->m_DefaultHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferDataComponent*>(resource)->m_ElementSize);
+							l_commandList->m_ComputeCommandList->SetComputeRootUnorderedAccessView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_DefaultHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_ElementSize);
 						}
 					}
 					else
 					{
-						l_commandList->m_ComputeCommandList->SetComputeRootShaderResourceView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent*>(resource)->m_DefaultHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferDataComponent*>(resource)->m_ElementSize);
+						l_commandList->m_ComputeCommandList->SetComputeRootShaderResourceView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_DefaultHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_ElementSize);
 					}
 				}
 
@@ -1911,18 +1899,18 @@ bool DX12RenderingServer::BindGPUResource(RenderPassDataComponent* renderPass, S
 			switch (resource->m_GPUResourceType)
 			{
 			case GPUResourceType::Sampler:
-				l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12SamplerDataComponent*>(resource)->m_Sampler.GPUHandle);
+				l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12SamplerDataComponent *>(resource)->m_Sampler.GPUHandle);
 				break;
 			case GPUResourceType::Image:
 				if (accessibility != Accessibility::ReadOnly)
 				{
-					CheckWriteState(reinterpret_cast<DX12TextureDataComponent*>(resource), l_commandList);
-					l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureDataComponent*>(resource)->m_UAV.ShaderVisibleGPUHandle);
+					CheckWriteState(reinterpret_cast<DX12TextureDataComponent *>(resource), l_commandList);
+					l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureDataComponent *>(resource)->m_UAV.ShaderVisibleGPUHandle);
 				}
 				else
 				{
-					CheckReadState(reinterpret_cast<DX12TextureDataComponent*>(resource), l_commandList);
-					l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureDataComponent*>(resource)->m_SRV.GPUHandle);
+					CheckReadState(reinterpret_cast<DX12TextureDataComponent *>(resource), l_commandList);
+					l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureDataComponent *>(resource)->m_SRV.GPUHandle);
 				}
 				break;
 			case GPUResourceType::Buffer:
@@ -1934,25 +1922,25 @@ bool DX12RenderingServer::BindGPUResource(RenderPassDataComponent* renderPass, S
 					}
 					else
 					{
-						l_commandList->m_DirectCommandList->SetGraphicsRootConstantBufferView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent*>(resource)->m_UploadHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferDataComponent*>(resource)->m_ElementSize);
+						l_commandList->m_DirectCommandList->SetGraphicsRootConstantBufferView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_UploadHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_ElementSize);
 					}
 				}
 				else
 				{
 					if (accessibility != Accessibility::ReadOnly)
 					{
-						if (reinterpret_cast<DX12GPUBufferDataComponent*>(resource)->m_isAtomicCounter)
+						if (reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_isAtomicCounter)
 						{
-							l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent*>(resource)->m_UAV.ShaderVisibleGPUHandle);
+							l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_UAV.ShaderVisibleGPUHandle);
 						}
 						else
 						{
-							l_commandList->m_DirectCommandList->SetGraphicsRootUnorderedAccessView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent*>(resource)->m_DefaultHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferDataComponent*>(resource)->m_ElementSize);
+							l_commandList->m_DirectCommandList->SetGraphicsRootUnorderedAccessView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_DefaultHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_ElementSize);
 						}
 					}
 					else
 					{
-						l_commandList->m_DirectCommandList->SetGraphicsRootShaderResourceView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent*>(resource)->m_DefaultHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferDataComponent*>(resource)->m_ElementSize);
+						l_commandList->m_DirectCommandList->SetGraphicsRootShaderResourceView((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_DefaultHeapResourceHandle->GetGPUVirtualAddress() + startOffset * reinterpret_cast<DX12GPUBufferDataComponent *>(resource)->m_ElementSize);
 					}
 				}
 				break;
@@ -2070,7 +2058,6 @@ bool DX12RenderingServer::Present()
 	CommandListBegin(m_SwapChainRPDC, m_SwapChainRPDC->m_CurrentFrame);
 
 	auto l_commandList = reinterpret_cast<DX12CommandList *>(m_SwapChainRPDC->m_CommandLists[m_SwapChainRPDC->m_CurrentFrame]);
-	auto l_commandQueue = reinterpret_cast<DX12CommandQueue *>(m_SwapChainRPDC->m_CommandQueue);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject *>(m_SwapChainRPDC->m_PipelineStateObject);
 	auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent *>(m_SwapChainRPDC->m_RenderTargets[m_SwapChainRPDC->m_CurrentFrame]);
 
