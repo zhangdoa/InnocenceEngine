@@ -1,5 +1,4 @@
 #include "OpaquePass.h"
-
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
 #include "../../Engine/Interface/IEngine.h"
@@ -9,14 +8,7 @@ extern INNO_ENGINE_API IEngine* g_Engine;
 
 using namespace DefaultGPUBuffers;
 
-namespace OpaquePass
-{
-	RenderPassDataComponent* m_RPDC;
-	ShaderProgramComponent* m_SPC;
-	SamplerDataComponent* m_SDC;
-}
-
-bool OpaquePass::Setup()
+bool OpaquePass::Setup(ISystemConfig *systemConfig)
 {
 	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("OpaquePass/");
 
@@ -94,6 +86,8 @@ bool OpaquePass::Setup()
 	m_SDC->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SDC->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
+	m_ObjectStatus = ObjectStatus::Created;
+	
 	return true;
 }
 
@@ -103,10 +97,26 @@ bool OpaquePass::Initialize()
 	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
 	g_Engine->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
 
+	m_ObjectStatus = ObjectStatus::Activated;
+
 	return true;
 }
 
-bool OpaquePass::PrepareCommandList()
+bool OpaquePass::Terminate()
+{
+	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+
+	m_ObjectStatus = ObjectStatus::Terminated;
+
+	return true;
+}
+
+ObjectStatus OpaquePass::GetStatus()
+{
+	return m_ObjectStatus;
+}
+
+bool OpaquePass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
@@ -159,19 +169,7 @@ bool OpaquePass::PrepareCommandList()
 	return true;
 }
 
-bool OpaquePass::Terminate()
-{
-	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
-
-	return true;
-}
-
 RenderPassDataComponent* OpaquePass::GetRPDC()
 {
 	return m_RPDC;
-}
-
-ShaderProgramComponent* OpaquePass::GetSPC()
-{
-	return m_SPC;
 }

@@ -2,7 +2,7 @@
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
 #include "GIDataLoader.h"
-#include "SunShadowPass.h"
+#include "SunShadowBlurEvenPass.h"
 
 #include "../../Engine/Interface/IEngine.h"
 
@@ -707,13 +707,13 @@ bool GIResolvePass::litSurfels()
 	g_Engine->getRenderingServer()->BindGPUResource(m_surfelRPDC, ShaderStage::Compute, l_GIGBDC, 3, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->BindGPUResource(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC, 4, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->BindGPUResource(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC, 5, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_surfelRPDC, ShaderStage::Compute, SunShadowPass::GetShadowMap(), 6);
+	g_Engine->getRenderingServer()->BindGPUResource(m_surfelRPDC, ShaderStage::Compute, SunShadowBlurEvenPass::Get().GetResult(), 6);
 
 	g_Engine->getRenderingServer()->Dispatch(m_surfelRPDC, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide, l_averangeThreadGroupsCountPerSide);
 
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_surfelRPDC, ShaderStage::Compute, m_surfelGBDC, 4, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_surfelRPDC, ShaderStage::Compute, m_surfelIrradianceGBDC, 5, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_surfelRPDC, ShaderStage::Compute, SunShadowPass::GetShadowMap(), 6);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_surfelRPDC, ShaderStage::Compute, SunShadowBlurEvenPass::Get().GetResult(), 6);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_surfelRPDC);
 
@@ -887,29 +887,12 @@ bool GIResolvePass::PrepareCommandList()
 		litProbes();
 		generateIrradianceVolume();
 
-		g_Engine->getRenderingServer()->ExecuteCommandList(m_skyRadianceRPDC);
-
-		g_Engine->getRenderingServer()->WaitForFrame(m_skyRadianceRPDC);
-
-		g_Engine->getRenderingServer()->ExecuteCommandList(m_skyIrradianceRPDC);
-
-		g_Engine->getRenderingServer()->WaitForFrame(m_skyIrradianceRPDC);
-
-		g_Engine->getRenderingServer()->ExecuteCommandList(m_surfelRPDC);
-
-		g_Engine->getRenderingServer()->WaitForFrame(m_surfelRPDC);
-
-		g_Engine->getRenderingServer()->ExecuteCommandList(m_brickRPDC);
-
-		g_Engine->getRenderingServer()->WaitForFrame(m_brickRPDC);
-
-		g_Engine->getRenderingServer()->ExecuteCommandList(m_probeRPDC);
-
-		g_Engine->getRenderingServer()->WaitForFrame(m_probeRPDC);
-
-		g_Engine->getRenderingServer()->ExecuteCommandList(m_irradianceVolumeRPDC);
-
-		g_Engine->getRenderingServer()->WaitForFrame(m_irradianceVolumeRPDC);
+		g_Engine->getRenderingServer()->ExecuteCommandList(m_skyRadianceRPDC, RenderPassUsage::Graphics);
+		g_Engine->getRenderingServer()->ExecuteCommandList(m_skyIrradianceRPDC, RenderPassUsage::Graphics);
+		g_Engine->getRenderingServer()->ExecuteCommandList(m_surfelRPDC, RenderPassUsage::Graphics);
+		g_Engine->getRenderingServer()->ExecuteCommandList(m_brickRPDC, RenderPassUsage::Graphics);
+		g_Engine->getRenderingServer()->ExecuteCommandList(m_probeRPDC, RenderPassUsage::Graphics);
+		g_Engine->getRenderingServer()->ExecuteCommandList(m_irradianceVolumeRPDC, RenderPassUsage::Graphics);	
 	}
 
 	return true;

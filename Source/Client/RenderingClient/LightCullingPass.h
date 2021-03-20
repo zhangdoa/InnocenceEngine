@@ -1,19 +1,46 @@
 #pragma once
-#include "../../Engine/RenderingServer/IRenderingServer.h"
+#include "../../Engine/Interface/IRenderPass.h"
 
-using namespace Inno;
-namespace LightCullingPass
+namespace Inno
 {
-	bool Setup();
-	bool Initialize();
-	bool PrepareCommandList();
+	class LightCullingPassRenderingContext : public IRenderingContext
+	{
+		public:
+		GPUResourceComponent *m_input;
+	};
 
-	bool Terminate();
+	class LightCullingPass : IRenderPass
+	{
+	public:
+		INNO_CLASS_SINGLETON(LightCullingPass)
 
-	RenderPassDataComponent* GetTileFrustumRPDC();
-	RenderPassDataComponent* GetLightCullingRPDC();
+		bool Setup(ISystemConfig *systemConfig = nullptr) override;
+		bool Initialize() override;
+		bool Terminate() override;
+		ObjectStatus GetStatus() override;
 
-	GPUResourceComponent* GetLightGrid();
-	GPUResourceComponent* GetLightIndexList();
-	GPUResourceComponent* GetHeatMap();
-};
+		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
+		RenderPassDataComponent *GetRPDC() override;
+
+		GPUResourceComponent *GetResult();
+		GPUResourceComponent* GetLightGrid();
+		GPUResourceComponent* GetLightIndexList();
+		GPUResourceComponent* GetHeatMap();
+
+	private:
+		ObjectStatus m_ObjectStatus;
+		RenderPassDataComponent *m_RPDC;
+		ShaderProgramComponent *m_SPC;
+		SamplerDataComponent *m_SDC;
+
+		GPUBufferDataComponent* m_lightListIndexCounter;
+		GPUBufferDataComponent* m_lightIndexList;
+
+		TextureDataComponent* m_lightGrid;
+		TextureDataComponent* m_heatMap;
+
+		const uint32_t m_tileSize = 16;
+		InnoMath::TVec4<uint32_t> m_numThreads;
+		InnoMath::TVec4<uint32_t> m_numThreadGroups;
+	};
+} // namespace Inno

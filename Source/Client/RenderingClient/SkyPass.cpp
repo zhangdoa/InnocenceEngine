@@ -8,14 +8,7 @@ extern INNO_ENGINE_API IEngine* g_Engine;
 
 using namespace DefaultGPUBuffers;
 
-namespace SkyPass
-{
-	RenderPassDataComponent* m_RPDC;
-	ShaderProgramComponent* m_SPC;
-	TextureDataComponent* m_TDC;
-}
-
-bool SkyPass::Setup()
+bool SkyPass::Setup(ISystemConfig *systemConfig)
 {
 	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("SkyPass/");
 
@@ -47,6 +40,8 @@ bool SkyPass::Setup()
 	m_TDC = g_Engine->getRenderingServer()->AddTextureDataComponent("SkyPass/");
 	m_TDC->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
+	m_ObjectStatus = ObjectStatus::Created;
+	
 	return true;
 }
 
@@ -56,10 +51,26 @@ bool SkyPass::Initialize()
 	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
 	g_Engine->getRenderingServer()->InitializeTextureDataComponent(m_TDC);
 
+	m_ObjectStatus = ObjectStatus::Activated;
+
 	return true;
 }
 
-bool SkyPass::PrepareCommandList()
+bool SkyPass::Terminate()
+{
+	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+
+	m_ObjectStatus = ObjectStatus::Terminated;
+
+	return true;
+}
+
+ObjectStatus SkyPass::GetStatus()
+{
+	return m_ObjectStatus;
+}
+
+bool SkyPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	auto l_viewportSize = g_Engine->getRenderingFrontend()->getScreenResolution();
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
@@ -79,21 +90,9 @@ bool SkyPass::PrepareCommandList()
 	return true;
 }
 
-bool SkyPass::Terminate()
-{
-	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
-
-	return true;
-}
-
 RenderPassDataComponent* SkyPass::GetRPDC()
 {
 	return m_RPDC;
-}
-
-ShaderProgramComponent* SkyPass::GetSPC()
-{
-	return m_SPC;
 }
 
 GPUResourceComponent* SkyPass::GetResult()

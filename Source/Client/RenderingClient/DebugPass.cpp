@@ -11,38 +11,8 @@ extern INNO_ENGINE_API IEngine* g_Engine;
 
 using namespace DefaultGPUBuffers;
 
-struct DebugPerObjectConstantBuffer
-{
-	Mat4 m;
-	uint32_t materialID;
-	uint32_t padding[15];
-};
-
-struct DebugMaterialConstantBuffer
-{
-	Vec4 color;
-};
-
-namespace DebugPass
-{
-	bool AddBVHData(const BVHNode& node);
-
-	RenderPassDataComponent* m_RPDC;
-	ShaderProgramComponent* m_SPC;
-
-	GPUBufferDataComponent* m_debugSphereMeshGBDC;
-	GPUBufferDataComponent* m_debugCubeMeshGBDC;
-	GPUBufferDataComponent* m_debugMaterialGBDC;
-
-	const size_t m_maxDebugMeshes = 65536;
-	const size_t m_maxDebugMaterial = 512;
-	std::vector<DebugPerObjectConstantBuffer> m_debugSphereConstantBuffer;
-	std::vector<DebugPerObjectConstantBuffer> m_debugCubeConstantBuffer;
-	std::vector<DebugMaterialConstantBuffer> m_debugMaterialConstantBuffer;
-}
-
-bool DebugPass::Setup()
-{
+bool DebugPass::Setup(ISystemConfig *systemConfig)
+{	
 	m_debugSphereMeshGBDC = g_Engine->getRenderingServer()->AddGPUBufferDataComponent("DebugSphereMeshGPUBuffer/");
 	m_debugSphereMeshGBDC->m_ElementCount = m_maxDebugMeshes;
 	m_debugSphereMeshGBDC->m_ElementSize = sizeof(DebugPerObjectConstantBuffer);
@@ -102,38 +72,41 @@ bool DebugPass::Setup()
 	m_debugCubeConstantBuffer.reserve(m_maxDebugMeshes);
 	m_debugMaterialConstantBuffer.reserve(m_maxDebugMaterial);
 
+	m_ObjectStatus = ObjectStatus::Created;
+	
 	return true;
 }
 
 bool DebugPass::Initialize()
-{
+{	
 	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_debugSphereMeshGBDC);
 	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_debugCubeMeshGBDC);
 	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_debugMaterialGBDC);
 	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
 	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
 
-	return true;
-}
-
-bool DebugPass::AddBVHData(const BVHNode& node)
-{
-	DebugPerObjectConstantBuffer l_cubeMeshData;
-
-	l_cubeMeshData.m = InnoMath::toTranslationMatrix(node.m_AABB.m_center);
-	l_cubeMeshData.m.m00 *= node.m_AABB.m_extend.x / 2.0f;
-	l_cubeMeshData.m.m11 *= node.m_AABB.m_extend.y / 2.0f;
-	l_cubeMeshData.m.m22 *= node.m_AABB.m_extend.z / 2.0f;
-	l_cubeMeshData.materialID = node.PDC == nullptr ? 4 : 3;
-
-	m_debugCubeConstantBuffer.emplace_back(l_cubeMeshData);
+	m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
 
-bool DebugPass::Render()
+bool DebugPass::Terminate()
 {
-	auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
+	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+
+	m_ObjectStatus = ObjectStatus::Terminated;
+
+	return true;
+}
+
+ObjectStatus DebugPass::GetStatus()
+{
+	return m_ObjectStatus;
+}
+
+bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
+{
+		auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
 
 	if (l_renderingConfig.drawDebugObject)
 	{
@@ -225,7 +198,7 @@ bool DebugPass::Render()
 			}
 		}
 
-		static bool l_drawBVHNodes = false;
+		static bool l_drawBVHNodes = true;
 		if (l_drawBVHNodes)
 		{
 			auto l_BVHNodes = g_Engine->getPhysicsSystem()->getBVHNodes();
@@ -318,17 +291,6 @@ bool DebugPass::Render()
 		g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
 	}
 
-	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC);
-
-	g_Engine->getRenderingServer()->WaitForFrame(m_RPDC);
-
-	return true;
-}
-
-bool DebugPass::Terminate()
-{
-	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
-
 	return true;
 }
 
@@ -337,7 +299,17 @@ RenderPassDataComponent* DebugPass::GetRPDC()
 	return m_RPDC;
 }
 
-ShaderProgramComponent* DebugPass::GetSPC()
+bool DebugPass::AddBVHData(const BVHNode& node)
 {
-	return m_SPC;
+	DebugPerObjectConstantBuffer l_cubeMeshData;
+
+	l_cubeMeshData.m = InnoMath::toTranslationMatrix(node.m_AABB.m_center);
+	l_cubeMeshData.m.m00 *= node.m_AABB.m_extend.x / 2.0f;
+	l_cubeMeshData.m.m11 *= node.m_AABB.m_extend.y / 2.0f;
+	l_cubeMeshData.m.m22 *= node.m_AABB.m_extend.z / 2.0f;
+	l_cubeMeshData.materialID = node.PDC == nullptr ? 4 : 3;
+
+	m_debugCubeConstantBuffer.emplace_back(l_cubeMeshData);
+
+	return true;
 }

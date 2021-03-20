@@ -16,7 +16,7 @@ class InnoBakerRenderingClient : public IRenderingClient
 	// Inherited via IRenderingClient
 	bool Setup(ISystemConfig* systemConfig) override;
 	bool Initialize() override;
-	bool Render() override;
+	bool Render(IRenderingConfig* renderingConfig = nullptr) override;
 	bool Terminate() override;
 
 	ObjectStatus GetStatus() override;

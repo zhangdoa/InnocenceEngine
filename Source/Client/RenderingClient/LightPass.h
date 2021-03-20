@@ -1,15 +1,30 @@
 #pragma once
-#include "../../Engine/RenderingServer/IRenderingServer.h"
+#include "../../Engine/Interface/IRenderPass.h"
 
-using namespace Inno;
-namespace LightPass
+namespace Inno
 {
-	bool Setup();
-	bool Initialize();
-	bool PrepareCommandList();
-	bool Terminate();
+	class LightPass : IRenderPass
+	{
+	public:
+		INNO_CLASS_SINGLETON(LightPass)
 
-	RenderPassDataComponent* GetRPDC();
-	ShaderProgramComponent* GetSPC();
-	GPUResourceComponent* GetResult(uint32_t index);
-};
+		bool Setup(ISystemConfig *systemConfig = nullptr) override;
+		bool Initialize() override;
+		bool Terminate() override;
+		ObjectStatus GetStatus() override;
+
+		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
+		RenderPassDataComponent *GetRPDC() override;
+
+		TextureDataComponent *GetLuminanceResult();
+		TextureDataComponent *GetIlluminanceResult();
+
+	private:
+		ObjectStatus m_ObjectStatus;
+		RenderPassDataComponent *m_RPDC;
+		ShaderProgramComponent *m_SPC;
+		SamplerDataComponent *m_SDC;	
+		TextureDataComponent *m_TDC_Luminance;
+		TextureDataComponent *m_TDC_Illuminance;
+	};
+} // namespace Inno

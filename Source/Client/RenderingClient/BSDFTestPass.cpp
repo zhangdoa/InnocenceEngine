@@ -2,27 +2,16 @@
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
 
 #include "BRDFLUTPass.h"
+#include "BRDFLUTMSPass.h"
 
 #include "../../Engine/Interface/IEngine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine* g_Engine;
+extern INNO_ENGINE_API IEngine *g_Engine;
 
 using namespace DefaultGPUBuffers;
 
-namespace BSDFTestPass
-{
-	RenderPassDataComponent* m_RPDC;
-	ShaderProgramComponent* m_SPC;
-	SamplerDataComponent* m_SDC;
-
-	std::vector<PerObjectConstantBuffer> m_meshConstantBuffer;
-	std::vector<MaterialConstantBuffer> m_materialConstantBuffer;
-
-	const size_t m_shpereCount = 10;
-}
-
-bool BSDFTestPass::Setup()
+bool BSDFTestPass::Setup(ISystemConfig *systemConfig)
 {
 	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("BSDFTestPass/");
 
@@ -112,6 +101,8 @@ bool BSDFTestPass::Setup()
 		}
 	}
 
+	m_ObjectStatus = ObjectStatus::Created;
+	
 	return true;
 }
 
@@ -121,10 +112,26 @@ bool BSDFTestPass::Initialize()
 	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
 	g_Engine->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
 
+	m_ObjectStatus = ObjectStatus::Activated;
+
 	return true;
 }
 
-bool BSDFTestPass::Render()
+bool BSDFTestPass::Terminate()
+{
+	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+
+	m_ObjectStatus = ObjectStatus::Terminated;
+
+	return true;
+}
+
+ObjectStatus BSDFTestPass::GetStatus()
+{
+	return m_ObjectStatus;
+}
+
+bool BSDFTestPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
@@ -141,8 +148,8 @@ bool BSDFTestPass::Render()
 	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Vertex, l_PerFrameCBufferGBDC, 0, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Pixel, l_PerFrameCBufferGBDC, 0, Accessibility::ReadOnly);
 
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Pixel, BRDFLUTPass::GetBRDFLUT(), 3);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Pixel, BRDFLUTPass::GetBRDFMSLUT(), 4);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Pixel, BRDFLUTPass::Get().GetResult(), 3);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Pixel, BRDFLUTMSPass::Get().GetResult(), 4);
 
 	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Sphere);
 
@@ -157,21 +164,10 @@ bool BSDFTestPass::Render()
 		l_offset++;
 	}
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Pixel, BRDFLUTPass::GetBRDFLUT(), 3);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Pixel, BRDFLUTPass::GetBRDFMSLUT(), 4);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Pixel, BRDFLUTPass::Get().GetResult(), 3);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Pixel, BRDFLUTMSPass::Get().GetResult(), 4);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
-
-	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC);
-
-	g_Engine->getRenderingServer()->WaitForFrame(m_RPDC);
-
-	return true;
-}
-
-bool BSDFTestPass::Terminate()
-{
-	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
 
 	return true;
 }
@@ -179,9 +175,4 @@ bool BSDFTestPass::Terminate()
 RenderPassDataComponent* BSDFTestPass::GetRPDC()
 {
 	return m_RPDC;
-}
-
-ShaderProgramComponent* BSDFTestPass::GetSPC()
-{
-	return m_SPC;
 }

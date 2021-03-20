@@ -1,21 +1,27 @@
 #include "DefaultRenderingClient.h"
 #include "../DefaultGPUBuffers/DefaultGPUBuffers.h"
+#include "BRDFLUTPass.h"
+#include "BRDFLUTMSPass.h"
+#include "TiledFrustumGenerationPass.h"
 #include "LightCullingPass.h"
 #include "GIDataLoader.h"
 #include "GIResolvePass.h"
-#include "GIResolveTestPass.h"
+#include "SurfelGITestPass.h"
 #include "LuminanceHistogramPass.h"
-#include "BRDFLUTPass.h"
-#include "SunShadowPass.h"
+#include "LuminanceAveragePass.h"
+#include "SunShadowGeometryProcessPass.h"
+#include "SunShadowBlurOddPass.h"
+#include "SunShadowBlurEvenPass.h"
 #include "OpaquePass.h"
 #include "AnimationPass.h"
 #include "SSAOPass.h"
 #include "LightPass.h"
 #include "SkyPass.h"
 #include "PreTAAPass.h"
-#include "TransparentPass.h"
+#include "TransparentGeometryProcessPass.h"
+#include "TransparentBlendPass.h"
 #include "VolumetricPass.h"
-#include "VoxelizationPass.h"
+#include "VXGIRenderer.h"
 #include "TAAPass.h"
 #include "PostTAAPass.h"
 #include "MotionBlurPass.h"
@@ -28,7 +34,7 @@
 #include "../../Engine/Interface/IEngine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine* g_Engine;
+extern INNO_ENGINE_API IEngine *g_Engine;
 
 namespace DefaultRenderingClientNS
 {
@@ -51,249 +57,365 @@ namespace DefaultRenderingClientNS
 	bool m_showVolumetric = false;
 	bool m_saveScreenCapture = false;
 	static bool m_drawBRDFTest = false;
-}
+} // namespace DefaultRenderingClientNS
 
 using namespace DefaultRenderingClientNS;
 
-bool DefaultRenderingClient::Setup(ISystemConfig* systemConfig)
+bool DefaultRenderingClient::Setup(ISystemConfig *systemConfig)
 {
 	f_showLightHeatmap = [&]() { m_showLightHeatmap = !m_showLightHeatmap; };
-	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_H, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showLightHeatmap });
+	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_H, true}, ButtonEvent{EventLifeTime::OneShot, &f_showLightHeatmap});
 
 	f_showProbe = [&]() { m_showProbe = !m_showProbe; };
-	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_G, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showProbe });
+	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_G, true}, ButtonEvent{EventLifeTime::OneShot, &f_showProbe});
 
 	f_showVoxel = [&]() { m_showVoxel = !m_showVoxel; };
-	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_V, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showVoxel });
+	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_V, true}, ButtonEvent{EventLifeTime::OneShot, &f_showVoxel});
 
 	f_showTransparent = [&]() { m_showTransparent = !m_showTransparent; };
-	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_T, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showTransparent });
+	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_T, true}, ButtonEvent{EventLifeTime::OneShot, &f_showTransparent});
 
 	f_showVolumetric = [&]() { m_showVolumetric = !m_showVolumetric; };
-	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_J, true }, ButtonEvent{ EventLifeTime::OneShot, &f_showVolumetric });
+	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_J, true}, ButtonEvent{EventLifeTime::OneShot, &f_showVolumetric});
 
 	f_saveScreenCapture = [&]() { m_saveScreenCapture = !m_saveScreenCapture; };
-	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{ INNO_KEY_C, true }, ButtonEvent{ EventLifeTime::OneShot, &f_saveScreenCapture });
+	g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_C, true}, ButtonEvent{EventLifeTime::OneShot, &f_saveScreenCapture});
 
-	f_SetupJob = [&]()
-	{
+	f_SetupJob = [&]() {
 		DefaultGPUBuffers::Setup();
 		GIDataLoader::Setup();
-		BRDFLUTPass::Setup();
+		BRDFLUTPass::Get().Setup();
+		BRDFLUTMSPass::Get().Setup();
 
-		LightCullingPass::Setup();
+		LightCullingPass::Get().Setup();
 		GIResolvePass::Setup();
-		GIResolveTestPass::Setup();
-		LuminanceHistogramPass::Setup();
+		SurfelGITestPass::Get().Setup();
+		LuminanceHistogramPass::Get().Setup();
+		LuminanceAveragePass::Get().Setup();
 
-		SunShadowPass::Setup();
-		VoxelizationPass::Setup();
-		OpaquePass::Setup();
-		AnimationPass::Setup();
+		SunShadowGeometryProcessPass::Get().Setup();
+		SunShadowBlurOddPass::Get().Setup();
+		SunShadowBlurEvenPass::Get().Setup();
+		VXGIRenderer::Get().Setup();
+		OpaquePass::Get().Setup();
+		AnimationPass::Get().Setup();
 
-		SSAOPass::Setup();
-		LightPass::Setup();
-		SkyPass::Setup();
-		PreTAAPass::Setup();
-		TransparentPass::Setup();
+		SSAOPass::Get().Setup();
+		LightPass::Get().Setup();
+		SkyPass::Get().Setup();
+		PreTAAPass::Get().Setup();
+		TransparentGeometryProcessPass::Get().Setup();
+		TransparentBlendPass::Get().Setup();
 		VolumetricPass::Setup();
-		TAAPass::Setup();
-		PostTAAPass::Setup();
-		MotionBlurPass::Setup();
-		BillboardPass::Setup();
-		DebugPass::Setup();
-		FinalBlendPass::Setup();
+		TAAPass::Get().Setup();
+		PostTAAPass::Get().Setup();
+		MotionBlurPass::Get().Setup();
+		BillboardPass::Get().Setup();
+		DebugPass::Get().Setup();
+		FinalBlendPass::Get().Setup();
 
-		BSDFTestPass::Setup();
+		BSDFTestPass::Get().Setup();
 	};
 
-	f_InitializeJob = [&]()
-	{
+	f_InitializeJob = [&]() {
+		auto l_renderingServer = g_Engine->getRenderingServer();
+
 		DefaultGPUBuffers::Initialize();
 		GIDataLoader::Initialize();
-		BRDFLUTPass::Initialize();
-		BRDFLUTPass::Render();
+		BRDFLUTPass::Get().Initialize();
+		BRDFLUTMSPass::Get().Initialize();
 
-		LightCullingPass::Initialize();
-		LuminanceHistogramPass::Initialize();
+		BRDFLUTPass::Get().PrepareCommandList();
+		BRDFLUTMSPass::Get().PrepareCommandList();
+		l_renderingServer->ExecuteCommandList(BRDFLUTPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+		l_renderingServer->ExecuteCommandList(BRDFLUTPass::Get().GetRPDC(), RenderPassUsage::Compute);
+		l_renderingServer->WaitFence(RenderPassUsage::Compute);
+		l_renderingServer->ExecuteCommandList(BRDFLUTMSPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+		l_renderingServer->ExecuteCommandList(BRDFLUTMSPass::Get().GetRPDC(), RenderPassUsage::Compute);
+		l_renderingServer->WaitFence(RenderPassUsage::Compute);
+
+		LightCullingPass::Get().Initialize();
 		GIResolvePass::Initialize();
-		GIResolveTestPass::Initialize();
+		SurfelGITestPass::Get().Initialize();
+		LuminanceHistogramPass::Get().Initialize();
+		LuminanceAveragePass::Get().Initialize();
 
-		SunShadowPass::Initialize();
-		VoxelizationPass::Initialize();
-		OpaquePass::Initialize();
-		AnimationPass::Initialize();
+		SunShadowGeometryProcessPass::Get().Initialize();
+		SunShadowBlurOddPass::Get().Initialize();
+		SunShadowBlurEvenPass::Get().Initialize();
+		VXGIRenderer::Get().Initialize();
+		OpaquePass::Get().Initialize();
+		AnimationPass::Get().Initialize();
 
-		SSAOPass::Initialize();
-		LightPass::Initialize();
-		SkyPass::Initialize();
-		PreTAAPass::Initialize();
-		TransparentPass::Initialize();
+		SSAOPass::Get().Initialize();
+		LightPass::Get().Initialize();
+		SkyPass::Get().Initialize();
+		PreTAAPass::Get().Initialize();
+		TransparentGeometryProcessPass::Get().Initialize();
+		TransparentBlendPass::Get().Initialize();
 		VolumetricPass::Initialize();
-		TAAPass::Initialize();
-		PostTAAPass::Initialize();
-		MotionBlurPass::Initialize();
-		BillboardPass::Initialize();
-		DebugPass::Initialize();
-		FinalBlendPass::Initialize();
+		TAAPass::Get().Initialize();
+		PostTAAPass::Get().Initialize();
+		MotionBlurPass::Get().Initialize();
+		BillboardPass::Get().Initialize();
+		DebugPass::Get().Initialize();
+		FinalBlendPass::Get().Initialize();
 
-		BSDFTestPass::Initialize();
+		BSDFTestPass::Get().Initialize();
 	};
 
-	f_RenderJob = [&]()
-	{
+	f_RenderJob = [&]() {
 		auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
-		GPUResourceComponent* l_canvas;
+		auto l_renderingServer = g_Engine->getRenderingServer();
+		GPUResourceComponent *l_canvas;
 
 		DefaultGPUBuffers::Upload();
 
-		LightCullingPass::PrepareCommandList();
-		g_Engine->getRenderingServer()->ExecuteCommandList(LightCullingPass::GetTileFrustumRPDC());
-		g_Engine->getRenderingServer()->WaitForFrame(LightCullingPass::GetTileFrustumRPDC());
-		g_Engine->getRenderingServer()->ExecuteCommandList(LightCullingPass::GetLightCullingRPDC());
-		g_Engine->getRenderingServer()->WaitForFrame(LightCullingPass::GetLightCullingRPDC());
+		TiledFrustumGenerationPass::Get().PrepareCommandList();
+		LightCullingPass::Get().PrepareCommandList();
 
-		SunShadowPass::PrepareCommandList();
-		g_Engine->getRenderingServer()->ExecuteCommandList(SunShadowPass::GetGeometryProcessRPDC());
-		g_Engine->getRenderingServer()->WaitForFrame(SunShadowPass::GetGeometryProcessRPDC());
-		g_Engine->getRenderingServer()->ExecuteCommandList(SunShadowPass::GetBlurRPDCOdd());
-		g_Engine->getRenderingServer()->WaitForFrame(SunShadowPass::GetBlurRPDCOdd());
-		g_Engine->getRenderingServer()->ExecuteCommandList(SunShadowPass::GetBlurRPDCEven());
-		g_Engine->getRenderingServer()->WaitForFrame(SunShadowPass::GetBlurRPDCEven());
+		l_renderingServer->ExecuteCommandList(TiledFrustumGenerationPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+		l_renderingServer->ExecuteCommandList(TiledFrustumGenerationPass::Get().GetRPDC(), RenderPassUsage::Compute);
+		l_renderingServer->WaitFence(RenderPassUsage::Compute);
 
-		VoxelizationPass::Render(m_showVoxel, 0, false);
+		l_renderingServer->ExecuteCommandList(LightCullingPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+		l_renderingServer->ExecuteCommandList(LightCullingPass::Get().GetRPDC(), RenderPassUsage::Compute);
+		l_renderingServer->WaitFence(RenderPassUsage::Compute);
+
+		SunShadowGeometryProcessPass::Get().PrepareCommandList();
+		SunShadowBlurOddPass::Get().PrepareCommandList();
+		SunShadowBlurEvenPass::Get().PrepareCommandList();
+
+		l_renderingServer->ExecuteCommandList(SunShadowGeometryProcessPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+		l_renderingServer->ExecuteCommandList(SunShadowGeometryProcessPass::Get().GetRPDC(), RenderPassUsage::Compute);
+		l_renderingServer->WaitFence(RenderPassUsage::Compute);
+
+		l_renderingServer->ExecuteCommandList(SunShadowBlurOddPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+		l_renderingServer->ExecuteCommandList(SunShadowBlurOddPass::Get().GetRPDC(), RenderPassUsage::Compute);
+		l_renderingServer->WaitFence(RenderPassUsage::Compute);
+
+		l_renderingServer->ExecuteCommandList(SunShadowBlurEvenPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+		l_renderingServer->ExecuteCommandList(SunShadowBlurEvenPass::Get().GetRPDC(), RenderPassUsage::Compute);
+		l_renderingServer->WaitFence(RenderPassUsage::Compute);
+
+		//VXGIRenderer::Render();
 
 		if (m_drawBRDFTest)
 		{
-			BSDFTestPass::Render();
-			l_canvas = BSDFTestPass::GetRPDC()->m_RenderTargets[0];
+			BSDFTestPass::Get().PrepareCommandList();
+			l_renderingServer->ExecuteCommandList(BSDFTestPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+			l_renderingServer->ExecuteCommandList(BSDFTestPass::Get().GetRPDC(), RenderPassUsage::Compute);
+			l_renderingServer->WaitFence(RenderPassUsage::Compute);
+			l_canvas = BSDFTestPass::Get().GetRPDC()->m_RenderTargets[0];
 		}
 		else if (m_showLightHeatmap)
 		{
-			l_canvas = LightCullingPass::GetHeatMap();
+			l_canvas = LightCullingPass::Get().GetHeatMap();
 		}
 		else if (m_showProbe)
 		{
-			GIResolveTestPass::Render();
-			l_canvas = GIResolveTestPass::GetRPDC()->m_RenderTargets[0];
+			SurfelGITestPass::Get().PrepareCommandList();
+			l_renderingServer->ExecuteCommandList(BSDFTestPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+			l_renderingServer->ExecuteCommandList(BSDFTestPass::Get().GetRPDC(), RenderPassUsage::Compute);
+			l_renderingServer->WaitFence(RenderPassUsage::Compute);
+			l_canvas = SurfelGITestPass::Get().GetRPDC()->m_RenderTargets[0];
 		}
 		else if (m_showTransparent)
 		{
-			TransparentPass::Render(0);
-			l_canvas = TransparentPass::GetResult();
+			TransparentGeometryProcessPass::Get().PrepareCommandList();
+			TransparentBlendPass::Get().PrepareCommandList();
+			l_renderingServer->ExecuteCommandList(TransparentGeometryProcessPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+			l_renderingServer->ExecuteCommandList(TransparentGeometryProcessPass::Get().GetRPDC(), RenderPassUsage::Compute);
+			l_renderingServer->WaitFence(RenderPassUsage::Compute);
+			l_renderingServer->ExecuteCommandList(TransparentBlendPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+			l_renderingServer->ExecuteCommandList(TransparentBlendPass::Get().GetRPDC(), RenderPassUsage::Compute);
+			l_renderingServer->WaitFence(RenderPassUsage::Compute);			
+			l_canvas = TransparentBlendPass::Get().GetResult();
 		}
 		else if (m_showVolumetric)
 		{
 			VolumetricPass::Render(true);
+			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
 			l_canvas = VolumetricPass::GetVisualizationResult();
 		}
 		else
 		{
 			//GIResolvePass::PrepareCommandList();
 
-			OpaquePass::PrepareCommandList();
-			AnimationPass::PrepareCommandList();
+			OpaquePass::Get().PrepareCommandList();
+			AnimationPass::Get().PrepareCommandList();
 
-			g_Engine->getRenderingServer()->ExecuteCommandList(OpaquePass::GetRPDC());
-			g_Engine->getRenderingServer()->WaitForFrame(OpaquePass::GetRPDC());
-			g_Engine->getRenderingServer()->ExecuteCommandList(AnimationPass::GetRPDC());
-			g_Engine->getRenderingServer()->WaitForFrame(AnimationPass::GetRPDC());
+			l_renderingServer->ExecuteCommandList(OpaquePass::Get().GetRPDC(), RenderPassUsage::Graphics);
+			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
 
-			SSAOPass::Render();
+			l_canvas = OpaquePass::Get().GetRPDC()->m_RenderTargets[0];
+			l_renderingServer->ExecuteCommandList(AnimationPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+
+			SSAOPass::Get().PrepareCommandList();
 
 			VolumetricPass::Render(false);
 
-			LightPass::PrepareCommandList();
+			LightPass::Get().PrepareCommandList();
+
 			if (l_renderingConfig.drawSky)
 			{
-				SkyPass::PrepareCommandList();
+				SkyPass::Get().PrepareCommandList();
 			}
-			PreTAAPass::PrepareCommandList();
+			PreTAAPass::Get().PrepareCommandList();
+			TransparentGeometryProcessPass::Get().PrepareCommandList();
+			TransparentBlendPass::Get().PrepareCommandList();
+			
+			l_renderingServer->ExecuteCommandList(LightPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+			l_renderingServer->WaitFence(RenderPassUsage::Compute);
 
-			g_Engine->getRenderingServer()->ExecuteCommandList(LightPass::GetRPDC());
-			g_Engine->getRenderingServer()->ExecuteCommandList(SkyPass::GetRPDC());
+			l_renderingServer->ExecuteCommandList(SkyPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+			l_renderingServer->WaitFence(RenderPassUsage::Compute);
 
-			g_Engine->getRenderingServer()->WaitForFrame(LightPass::GetRPDC());
-			g_Engine->getRenderingServer()->WaitForFrame(SkyPass::GetRPDC());
+			l_renderingServer->ExecuteCommandList(PreTAAPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+			l_renderingServer->WaitFence(RenderPassUsage::Compute);
 
-			g_Engine->getRenderingServer()->ExecuteCommandList(PreTAAPass::GetRPDC());
-			g_Engine->getRenderingServer()->WaitForFrame(PreTAAPass::GetRPDC());
+			l_renderingServer->ExecuteCommandList(TransparentGeometryProcessPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+			l_renderingServer->ExecuteCommandList(TransparentGeometryProcessPass::Get().GetRPDC(), RenderPassUsage::Compute);
+			l_renderingServer->WaitFence(RenderPassUsage::Compute);
+			l_renderingServer->ExecuteCommandList(TransparentBlendPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+			l_renderingServer->ExecuteCommandList(TransparentBlendPass::Get().GetRPDC(), RenderPassUsage::Compute);
+			l_renderingServer->WaitFence(RenderPassUsage::Compute);	
 
-			TransparentPass::Render(PreTAAPass::GetResult());
-			l_canvas = PreTAAPass::GetResult();
+			l_canvas = PreTAAPass::Get().GetResult();
 		}
 
 		if (m_showVoxel)
 		{
-			l_canvas = VoxelizationPass::GetVisualizationResult();
+			l_canvas = VXGIRenderer::Get().GetVisualizationResult();
+			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+			l_renderingServer->WaitFence(RenderPassUsage::Compute);
 		}
 
-		LuminanceHistogramPass::Render(l_canvas);
+		LuminanceHistogramPass::Get().PrepareCommandList();
+		LuminanceAveragePass::Get().PrepareCommandList();
+
+		l_renderingServer->ExecuteCommandList(LuminanceHistogramPass::Get().GetRPDC(), RenderPassUsage::Compute);
+		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+		l_renderingServer->WaitFence(RenderPassUsage::Compute);
+
+		l_renderingServer->ExecuteCommandList(LuminanceAveragePass::Get().GetRPDC(), RenderPassUsage::Compute);
+		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+		l_renderingServer->WaitFence(RenderPassUsage::Compute);
 
 		if (l_renderingConfig.useTAA)
 		{
-			TAAPass::Render(l_canvas);
-			PostTAAPass::Render();
-			l_canvas = PostTAAPass::GetResult();
+			TAAPass::Get().PrepareCommandList();
+
+			l_renderingServer->ExecuteCommandList(TAAPass::Get().GetRPDC(), RenderPassUsage::Compute);
+			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+			l_renderingServer->WaitFence(RenderPassUsage::Compute);
+
+			PostTAAPass::Get().PrepareCommandList();
+
+			l_renderingServer->ExecuteCommandList(PostTAAPass::Get().GetRPDC(), RenderPassUsage::Compute);
+			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+			l_renderingServer->WaitFence(RenderPassUsage::Compute);
+
+			l_canvas = PostTAAPass::Get().GetResult();
 		}
 
 		if (l_renderingConfig.useMotionBlur)
 		{
-			MotionBlurPass::Render(l_canvas);
-			l_canvas = MotionBlurPass::GetResult();
+			MotionBlurPass::Get().PrepareCommandList();
+			l_renderingServer->ExecuteCommandList(MotionBlurPass::Get().GetRPDC(), RenderPassUsage::Compute);
+			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+			l_renderingServer->WaitFence(RenderPassUsage::Compute);
+
+			l_canvas = MotionBlurPass::Get().GetResult();
 		}
 
-		BillboardPass::Render();
-		DebugPass::Render();
+		BillboardPass::Get().PrepareCommandList();
+		DebugPass::Get().PrepareCommandList();
+		l_renderingServer->ExecuteCommandList(BillboardPass::Get().GetRPDC(), RenderPassUsage::Compute);
+		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+		l_renderingServer->WaitFence(RenderPassUsage::Compute);
 
-		FinalBlendPass::Render(l_canvas);
+		l_renderingServer->ExecuteCommandList(DebugPass::Get().GetRPDC(), RenderPassUsage::Compute);
+		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+		l_renderingServer->WaitFence(RenderPassUsage::Compute);
+
+		FinalBlendPass::Get().PrepareCommandList();
+		l_renderingServer->ExecuteCommandList(FinalBlendPass::Get().GetRPDC(), RenderPassUsage::Compute);
+		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+		l_renderingServer->WaitFence(RenderPassUsage::Compute);
 
 		if (m_saveScreenCapture)
 		{
 			auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 
-			auto l_textureData = g_Engine->getRenderingServer()->ReadTextureBackToCPU(FinalBlendPass::GetRPDC(), FinalBlendPass::GetRPDC()->m_RenderTargets[0]);
-			auto l_TDC = g_Engine->getRenderingServer()->AddTextureDataComponent();
+			auto l_textureData = l_renderingServer->ReadTextureBackToCPU(FinalBlendPass::Get().GetRPDC(), FinalBlendPass::Get().GetRPDC()->m_RenderTargets[0]);
+			auto l_TDC = l_renderingServer->AddTextureDataComponent();
 			l_TDC->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 			l_TDC->m_TextureData = l_textureData.data();
 			g_Engine->getAssetSystem()->saveTexture("ScreenCapture", l_TDC);
-			//g_Engine->getRenderingServer()->DeleteTextureDataComponent(l_TDC);
+			//l_renderingServer->DeleteTextureDataComponent(l_TDC);
 			m_saveScreenCapture = false;
 		}
 	};
 
-	f_TerminateJob = [&]()
-	{
+	f_TerminateJob = [&]() {
 		DefaultGPUBuffers::Terminate();
-		LightCullingPass::Terminate();
-		GIResolvePass::Terminate();
-		GIResolveTestPass::Terminate();
-		LuminanceHistogramPass::Terminate();
-		GIDataLoader::Terminate();
-		BRDFLUTPass::Terminate();
-		SunShadowPass::Terminate();
-		VoxelizationPass::Terminate();
-		OpaquePass::Terminate();
-		AnimationPass::Terminate();
-		SSAOPass::Terminate();
-		LightPass::Terminate();
-		SkyPass::Terminate();
-		PreTAAPass::Terminate();
-		TransparentPass::Terminate();
-		VolumetricPass::Terminate();
-		TAAPass::Terminate();
-		PostTAAPass::Terminate();
-		MotionBlurPass::Terminate();
-		BillboardPass::Terminate();
-		DebugPass::Terminate();
-		FinalBlendPass::Terminate();
 
-		BSDFTestPass::Terminate();
+		BRDFLUTPass::Get().Terminate();
+		BRDFLUTMSPass::Get().Terminate();
+
+		LightCullingPass::Get().Terminate();
+		GIResolvePass::Terminate();
+		SurfelGITestPass::Get().Terminate();
+		LuminanceHistogramPass::Get().Terminate();
+		LuminanceAveragePass::Get().Terminate();
+
+		SunShadowGeometryProcessPass::Get().Terminate();
+		SunShadowBlurOddPass::Get().Terminate();
+		SunShadowBlurEvenPass::Get().Terminate();
+		VXGIRenderer::Get().Terminate();
+		OpaquePass::Get().Terminate();
+		AnimationPass::Get().Terminate();
+
+		SSAOPass::Get().Terminate();
+		LightPass::Get().Terminate();
+		SkyPass::Get().Terminate();
+		PreTAAPass::Get().Terminate();
+		TransparentGeometryProcessPass::Get().Terminate();
+		TransparentBlendPass::Get().Terminate();
+		VolumetricPass::Terminate();
+		TAAPass::Get().Terminate();
+		PostTAAPass::Get().Terminate();
+		MotionBlurPass::Get().Terminate();
+		BillboardPass::Get().Terminate();
+		DebugPass::Get().Terminate();
+		FinalBlendPass::Get().Terminate();
+
+		BSDFTestPass::Get().Terminate();
 	};
 
 	auto l_DefaultRenderingClientSetupTask = g_Engine->getTaskSystem()->Submit("DefaultRenderingClientSetupTask", 2, nullptr, f_SetupJob);
 	l_DefaultRenderingClientSetupTask.m_Future->Get();
 
+	m_ObjectStatus = ObjectStatus::Created;
+	
 	return true;
 }
 
@@ -301,13 +423,15 @@ bool DefaultRenderingClient::Initialize()
 {
 	auto l_DefaultRenderingClientInitializeTask = g_Engine->getTaskSystem()->Submit("DefaultRenderingClientInitializeTask", 2, nullptr, f_InitializeJob);
 	l_DefaultRenderingClientInitializeTask.m_Future->Get();
+	
+	m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
 
-bool DefaultRenderingClient::Render()
+bool DefaultRenderingClient::Render(IRenderingConfig* renderingConfig)
 {
-	f_RenderJob();
+	//f_RenderJob();
 
 	return true;
 }
@@ -315,11 +439,13 @@ bool DefaultRenderingClient::Render()
 bool DefaultRenderingClient::Terminate()
 {
 	f_TerminateJob();
+	
+	m_ObjectStatus = ObjectStatus::Terminated;
 
 	return true;
 }
 
 ObjectStatus DefaultRenderingClient::GetStatus()
 {
-	return ObjectStatus();
+	return m_ObjectStatus;
 }

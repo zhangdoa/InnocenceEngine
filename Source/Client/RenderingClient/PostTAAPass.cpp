@@ -10,14 +10,7 @@ extern INNO_ENGINE_API IEngine* g_Engine;
 
 using namespace DefaultGPUBuffers;
 
-namespace PostTAAPass
-{
-	RenderPassDataComponent* m_RPDC;
-	ShaderProgramComponent* m_SPC;
-	TextureDataComponent* m_TDC;
-}
-
-bool PostTAAPass::Setup()
+bool PostTAAPass::Setup(ISystemConfig *systemConfig)
 {
 	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("PostTAAPass/");
 
@@ -50,6 +43,8 @@ bool PostTAAPass::Setup()
 	m_TDC = g_Engine->getRenderingServer()->AddTextureDataComponent("PostTAAPass/");
 	m_TDC->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
+	m_ObjectStatus = ObjectStatus::Created;
+	
 	return true;
 }
 
@@ -59,30 +54,7 @@ bool PostTAAPass::Initialize()
 	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
 	g_Engine->getRenderingServer()->InitializeTextureDataComponent(m_TDC);
 
-	return true;
-}
-
-bool PostTAAPass::Render()
-{
-	auto l_viewportSize = g_Engine->getRenderingFrontend()->getScreenResolution();
-
-	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC, 0);
-	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
-	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC);
-
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, TAAPass::GetResult(), 0);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, m_TDC, 1, Accessibility::ReadWrite);
-
-	g_Engine->getRenderingServer()->Dispatch(m_RPDC, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
-
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, TAAPass::GetResult(), 0);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, m_TDC, 1, Accessibility::ReadWrite);
-
-	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
-
-	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC);
-
-	g_Engine->getRenderingServer()->WaitForFrame(m_RPDC);
+	m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
@@ -90,6 +62,36 @@ bool PostTAAPass::Render()
 bool PostTAAPass::Terminate()
 {
 	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+
+	m_ObjectStatus = ObjectStatus::Terminated;
+
+	return true;
+}
+
+ObjectStatus PostTAAPass::GetStatus()
+{
+	return m_ObjectStatus;
+}
+
+bool PostTAAPass::PrepareCommandList(IRenderingContext* renderingContext)
+{
+	auto l_viewportSize = g_Engine->getRenderingFrontend()->getScreenResolution();
+
+	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC, 0);
+	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
+	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC);
+
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, TAAPass::Get().GetResult(), 0);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, m_TDC, 1, Accessibility::ReadWrite);
+
+	g_Engine->getRenderingServer()->Dispatch(m_RPDC, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, TAAPass::Get().GetResult(), 0);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, m_TDC, 1, Accessibility::ReadWrite);
+
+	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
+
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC, RenderPassUsage::Compute);
 
 	return true;
 }
@@ -99,12 +101,7 @@ RenderPassDataComponent* PostTAAPass::GetRPDC()
 	return m_RPDC;
 }
 
-ShaderProgramComponent* PostTAAPass::GetSPC()
-{
-	return m_SPC;
-}
-
-GPUResourceComponent* PostTAAPass::GetResult()
+GPUResourceComponent *PostTAAPass::GetResult()
 {
 	return m_TDC;
 }

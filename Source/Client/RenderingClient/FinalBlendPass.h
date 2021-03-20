@@ -1,15 +1,33 @@
 #pragma once
-#include "../../Engine/RenderingServer/IRenderingServer.h"
+#include "../../Engine/Interface/IRenderPass.h"
 
-using namespace Inno;
-namespace FinalBlendPass
+namespace Inno
 {
-	bool Setup();
-	bool Initialize();
-	bool Render(GPUResourceComponent* input);
-	bool Terminate();
+	class FinalBlendPassRenderingContext : public IRenderingContext
+	{
+		public:
+		GPUResourceComponent *m_input;
+	};
 
-	RenderPassDataComponent* GetRPDC();
-	ShaderProgramComponent* getSPC();
-	GPUResourceComponent* GetResult();
-};
+	class FinalBlendPass : IRenderPass
+	{
+	public:
+		INNO_CLASS_SINGLETON(FinalBlendPass)
+
+		bool Setup(ISystemConfig *systemConfig = nullptr) override;
+		bool Initialize() override;
+		bool Terminate() override;
+		ObjectStatus GetStatus() override;
+
+		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
+		RenderPassDataComponent *GetRPDC() override;
+
+		GPUResourceComponent *GetResult();
+
+	private:
+		ObjectStatus m_ObjectStatus;
+		RenderPassDataComponent *m_RPDC;
+		ShaderProgramComponent *m_SPC;
+		TextureDataComponent *m_TDC;
+	};
+} // namespace Inno

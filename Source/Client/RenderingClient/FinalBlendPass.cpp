@@ -12,14 +12,7 @@ extern INNO_ENGINE_API IEngine* g_Engine;
 
 using namespace DefaultGPUBuffers;
 
-namespace FinalBlendPass
-{
-	RenderPassDataComponent* m_RPDC;
-	ShaderProgramComponent* m_SPC;
-	TextureDataComponent* m_TDC;
-}
-
-bool FinalBlendPass::Setup()
+bool FinalBlendPass::Setup(ISystemConfig *systemConfig)
 {
 	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("FinalBlendPass/");
 
@@ -72,48 +65,19 @@ bool FinalBlendPass::Setup()
 	m_TDC = g_Engine->getRenderingServer()->AddTextureDataComponent("FinalBlendPass/");
 	m_TDC->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
+	m_ObjectStatus = ObjectStatus::Created;
+	
 	return true;
 }
 
 bool FinalBlendPass::Initialize()
-{
+{	
 	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
 	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
 	g_Engine->getRenderingServer()->InitializeTextureDataComponent(m_TDC);
 	g_Engine->getRenderingServer()->SetUserPipelineOutput(m_TDC);
 
-	return true;
-}
-
-bool FinalBlendPass::Render(GPUResourceComponent* input)
-{
-	auto l_viewportSize = g_Engine->getRenderingFrontend()->getScreenResolution();
-	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
-
-	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC, 0);
-	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
-	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC);
-
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, input, 0);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, BillboardPass::GetRPDC()->m_RenderTargets[0], 1);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, DebugPass::GetRPDC()->m_RenderTargets[0], 2);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, LuminanceHistogramPass::GetAverageLuminance(), 3, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, m_TDC, 4, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC, 5, Accessibility::ReadOnly);
-
-	g_Engine->getRenderingServer()->Dispatch(m_RPDC, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
-
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, input, 0);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, BillboardPass::GetRPDC()->m_RenderTargets[0], 1);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, DebugPass::GetRPDC()->m_RenderTargets[0], 2);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, m_TDC, 4, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, LuminanceHistogramPass::GetAverageLuminance(), 3, Accessibility::ReadOnly);
-
-	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
-
-	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC);
-
-	g_Engine->getRenderingServer()->WaitForFrame(m_RPDC);
+	m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
@@ -122,17 +86,49 @@ bool FinalBlendPass::Terminate()
 {
 	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
 
+	m_ObjectStatus = ObjectStatus::Terminated;
+
+	return true;
+}
+
+ObjectStatus FinalBlendPass::GetStatus()
+{
+	return m_ObjectStatus;
+}
+
+bool FinalBlendPass::PrepareCommandList(IRenderingContext* renderingContext)
+{	
+	auto l_renderingContext = reinterpret_cast<FinalBlendPassRenderingContext*>(renderingContext);
+	auto l_viewportSize = g_Engine->getRenderingFrontend()->getScreenResolution();
+	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
+
+	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC, 0);
+	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
+	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC);
+
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, l_renderingContext->m_input, 0);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, BillboardPass::Get().GetRPDC()->m_RenderTargets[0], 1);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, DebugPass::Get().GetRPDC()->m_RenderTargets[0], 2);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, LuminanceHistogramPass::Get().GetResult(), 3, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, m_TDC, 4, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC, 5, Accessibility::ReadOnly);
+
+	g_Engine->getRenderingServer()->Dispatch(m_RPDC, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
+
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, l_renderingContext->m_input, 0);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, BillboardPass::Get().GetRPDC()->m_RenderTargets[0], 1);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, DebugPass::Get().GetRPDC()->m_RenderTargets[0], 2);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, m_TDC, 4, Accessibility::ReadWrite);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, LuminanceHistogramPass::Get().GetResult(), 3, Accessibility::ReadOnly);
+
+	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
+
 	return true;
 }
 
 RenderPassDataComponent* FinalBlendPass::GetRPDC()
 {
 	return m_RPDC;
-}
-
-ShaderProgramComponent* FinalBlendPass::getSPC()
-{
-	return m_SPC;
 }
 
 GPUResourceComponent* FinalBlendPass::GetResult()

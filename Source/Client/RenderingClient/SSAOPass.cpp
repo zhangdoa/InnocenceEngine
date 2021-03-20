@@ -10,23 +10,7 @@ extern INNO_ENGINE_API IEngine* g_Engine;
 
 using namespace DefaultGPUBuffers;
 
-namespace SSAOPass
-{
-	RenderPassDataComponent* m_RPDC;
-	ShaderProgramComponent* m_SPC;
-	TextureDataComponent* m_TDC;
-	SamplerDataComponent* m_SDC;
-	SamplerDataComponent* m_SDC_RandomRot;
-
-	uint32_t m_kernelSize = 64;
-	std::vector<Vec4> m_SSAOKernel;
-	std::vector<Vec4> m_SSAONoise;
-
-	GPUBufferDataComponent* m_SSAOKernelGPUBuffer;
-	TextureDataComponent* m_SSAONoiseTDC;
-}
-
-bool SSAOPass::Setup()
+bool SSAOPass::Setup(ISystemConfig *systemConfig)
 {
 	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("SSAONoisePass/");
 
@@ -147,6 +131,8 @@ bool SSAOPass::Setup()
 
 	m_SSAONoiseTDC->m_TextureData = &m_SSAONoise[0];
 
+	m_ObjectStatus = ObjectStatus::Created;
+	
 	return true;
 }
 
@@ -160,10 +146,26 @@ bool SSAOPass::Initialize()
 	g_Engine->getRenderingServer()->InitializeGPUBufferDataComponent(m_SSAOKernelGPUBuffer);
 	g_Engine->getRenderingServer()->InitializeTextureDataComponent(m_SSAONoiseTDC);
 
+	m_ObjectStatus = ObjectStatus::Activated;
+
 	return true;
 }
 
-bool SSAOPass::Render()
+bool SSAOPass::Terminate()
+{
+	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+
+	m_ObjectStatus = ObjectStatus::Terminated;
+
+	return true;
+}
+
+ObjectStatus SSAOPass::GetStatus()
+{
+	return m_ObjectStatus;
+}
+
+bool SSAOPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	auto l_viewportSize = g_Engine->getRenderingFrontend()->getScreenResolution();
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
@@ -176,29 +178,19 @@ bool SSAOPass::Render()
 
 	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC, 0, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, m_SSAOKernelGPUBuffer, 1, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargets[0], 2);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargets[1], 3);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, OpaquePass::Get().GetRPDC()->m_RenderTargets[0], 2);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, OpaquePass::Get().GetRPDC()->m_RenderTargets[1], 3);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, m_SSAONoiseTDC, 4);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, m_TDC, 7, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->Dispatch(m_RPDC, uint32_t(l_viewportSize.x / 8.0f), uint32_t(l_viewportSize.y / 8.0f), 1);
 
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargets[0], 2);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, OpaquePass::GetRPDC()->m_RenderTargets[1], 3);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, OpaquePass::Get().GetRPDC()->m_RenderTargets[0], 2);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, OpaquePass::Get().GetRPDC()->m_RenderTargets[1], 3);
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, m_SSAONoiseTDC, 4);
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, m_TDC, 7, Accessibility::ReadWrite);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
-
-	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC);
-	g_Engine->getRenderingServer()->WaitForFrame(m_RPDC);
-
-	return true;
-}
-
-bool SSAOPass::Terminate()
-{
-	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
 
 	return true;
 }
@@ -208,12 +200,7 @@ RenderPassDataComponent* SSAOPass::GetRPDC()
 	return m_RPDC;
 }
 
-ShaderProgramComponent* SSAOPass::GetSPC()
-{
-	return m_SPC;
-}
-
-GPUResourceComponent* SSAOPass::GetResult()
+GPUResourceComponent *SSAOPass::GetResult()
 {
 	return m_TDC;
 }

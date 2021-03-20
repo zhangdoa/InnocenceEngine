@@ -1,14 +1,52 @@
 #pragma once
-#include "../../Engine/RenderingServer/IRenderingServer.h"
+#include "../../Engine/Interface/IRenderPass.h"
+#include "../../Engine/Interface/IPhysicsSystem.h"
 
-using namespace Inno;
-namespace DebugPass
+namespace Inno
 {
-	bool Setup();
-	bool Initialize();
-	bool Render();
-	bool Terminate();
+	struct DebugPerObjectConstantBuffer
+	{
+		InnoMath::Mat4 m;
+		uint32_t materialID;
+		uint32_t padding[15];
+	};
 
-	RenderPassDataComponent* GetRPDC();
-	ShaderProgramComponent* GetSPC();
-};
+	struct DebugMaterialConstantBuffer
+	{
+		InnoMath::Vec4 color;
+	};
+
+	class DebugPass : IRenderPass
+	{
+	public:
+		INNO_CLASS_SINGLETON(DebugPass)
+
+		bool Setup(ISystemConfig *systemConfig = nullptr) override;
+		bool Initialize() override;
+		bool Terminate() override;
+		ObjectStatus GetStatus() override;
+
+		bool PrepareCommandList(IRenderingContext* renderingContext = nullptr) override;
+		RenderPassDataComponent *GetRPDC() override;
+
+		GPUResourceComponent *GetResult();
+
+	private:
+		ObjectStatus m_ObjectStatus;
+		RenderPassDataComponent *m_RPDC;
+		ShaderProgramComponent *m_SPC;
+		SamplerDataComponent *m_SDC;
+
+		bool AddBVHData(const BVHNode& node);
+
+		GPUBufferDataComponent* m_debugSphereMeshGBDC;
+		GPUBufferDataComponent* m_debugCubeMeshGBDC;
+		GPUBufferDataComponent* m_debugMaterialGBDC;
+
+		const size_t m_maxDebugMeshes = 65536;
+		const size_t m_maxDebugMaterial = 512;
+		std::vector<DebugPerObjectConstantBuffer> m_debugSphereConstantBuffer;
+		std::vector<DebugPerObjectConstantBuffer> m_debugCubeConstantBuffer;
+		std::vector<DebugMaterialConstantBuffer> m_debugMaterialConstantBuffer;
+	};
+} // namespace Inno

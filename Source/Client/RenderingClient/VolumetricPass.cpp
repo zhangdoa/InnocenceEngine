@@ -3,13 +3,13 @@
 
 #include "OpaquePass.h"
 #include "PreTAAPass.h"
-#include "SunShadowPass.h"
+#include "SunShadowBlurEvenPass.h"
 #include "LightCullingPass.h"
 
 #include "../../Engine/Interface/IEngine.h"
 
 using namespace Inno;
-extern INNO_ENGINE_API IEngine* g_Engine;
+extern INNO_ENGINE_API IEngine *g_Engine;
 
 using namespace DefaultGPUBuffers;
 
@@ -23,29 +23,29 @@ namespace VolumetricPass
 	bool froxelization();
 	bool irraidanceInjection();
 	bool rayMarching();
-	bool visualization(GPUResourceComponent* input);
+	bool visualization(GPUResourceComponent *input);
 
-	SamplerDataComponent* m_SDC;
+	SamplerDataComponent *m_SDC;
 
-	RenderPassDataComponent* m_froxelizationRPDC;
-	ShaderProgramComponent* m_froxelizationSPC;
+	RenderPassDataComponent *m_froxelizationRPDC;
+	ShaderProgramComponent *m_froxelizationSPC;
 
-	RenderPassDataComponent* m_visualizationRPDC;
-	ShaderProgramComponent* m_visualizationSPC;
+	RenderPassDataComponent *m_visualizationRPDC;
+	ShaderProgramComponent *m_visualizationSPC;
 
-	RenderPassDataComponent* m_irraidanceInjectionRPDC;
-	ShaderProgramComponent* m_irraidanceInjectionSPC;
+	RenderPassDataComponent *m_irraidanceInjectionRPDC;
+	ShaderProgramComponent *m_irraidanceInjectionSPC;
 
-	RenderPassDataComponent* m_rayMarchingRPDC;
-	ShaderProgramComponent* m_rayMarchingSPC;
+	RenderPassDataComponent *m_rayMarchingRPDC;
+	ShaderProgramComponent *m_rayMarchingSPC;
 
-	TextureDataComponent* m_irraidanceInjectionResult;
-	TextureDataComponent* m_rayMarchingResult_A;
-	TextureDataComponent* m_rayMarchingResult_B;
+	TextureDataComponent *m_irraidanceInjectionResult;
+	TextureDataComponent *m_rayMarchingResult_A;
+	TextureDataComponent *m_rayMarchingResult_B;
 
 	TVec4<uint32_t> m_voxelizationResolution = TVec4<uint32_t>(160, 90, 64, 0);
 	static bool m_isPassA = true;
-}
+} // namespace VolumetricPass
 
 bool VolumetricPass::setupGeometryProcessPass()
 {
@@ -380,7 +380,7 @@ bool VolumetricPass::froxelization()
 	g_Engine->getRenderingServer()->BindGPUResource(m_froxelizationRPDC, ShaderStage::Pixel, m_froxelizationRPDC->m_RenderTargets[0], 3, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->BindGPUResource(m_froxelizationRPDC, ShaderStage::Pixel, m_froxelizationRPDC->m_RenderTargets[1], 4, Accessibility::ReadWrite);
 
-	auto& l_drawCallInfo = g_Engine->getRenderingFrontend()->getDrawCallInfo();
+	auto &l_drawCallInfo = g_Engine->getRenderingFrontend()->getDrawCallInfo();
 	auto l_drawCallCount = l_drawCallInfo.size();
 
 	for (uint32_t i = 0; i < l_drawCallCount; i++)
@@ -441,17 +441,17 @@ bool VolumetricPass::irraidanceInjection()
 	g_Engine->getRenderingServer()->BindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, l_dispatchParamsGBDC, 3, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->BindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, m_irraidanceInjectionResult, 4, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->BindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, m_froxelizationRPDC->m_RenderTargets[0], 5, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->BindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, SunShadowPass::GetShadowMap(), 6, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, LightCullingPass::GetLightGrid(), 7, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->BindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, LightCullingPass::GetLightIndexList(), 8, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, SunShadowBlurEvenPass::Get().GetResult(), 6, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, LightCullingPass::Get().GetLightGrid(), 7, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, LightCullingPass::Get().GetLightIndexList(), 8, Accessibility::ReadOnly);
 
 	g_Engine->getRenderingServer()->Dispatch(m_irraidanceInjectionRPDC, l_numThreadGroupsX, l_numThreadGroupsY, l_numThreadGroupsZ);
 
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, m_irraidanceInjectionResult, 4, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, m_froxelizationRPDC->m_RenderTargets[0], 5, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, SunShadowPass::GetShadowMap(), 6, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, LightCullingPass::GetLightGrid(), 7, Accessibility::ReadOnly);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, LightCullingPass::GetLightIndexList(), 8, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, SunShadowBlurEvenPass::Get().GetResult(), 6, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, LightCullingPass::Get().GetLightGrid(), 7, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_irraidanceInjectionRPDC, ShaderStage::Compute, LightCullingPass::Get().GetLightIndexList(), 8, Accessibility::ReadOnly);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_irraidanceInjectionRPDC);
 
@@ -460,8 +460,8 @@ bool VolumetricPass::irraidanceInjection()
 
 bool VolumetricPass::rayMarching()
 {
-	GPUResourceComponent* l_currentResultBinder;
-	GPUResourceComponent* l_historyResultBinder;
+	GPUResourceComponent *l_currentResultBinder;
+	GPUResourceComponent *l_historyResultBinder;
 
 	if (m_isPassA)
 	{
@@ -519,7 +519,7 @@ bool VolumetricPass::rayMarching()
 	return true;
 }
 
-bool VolumetricPass::visualization(GPUResourceComponent* input)
+bool VolumetricPass::visualization(GPUResourceComponent *input)
 {
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
@@ -535,7 +535,7 @@ bool VolumetricPass::visualization(GPUResourceComponent* input)
 	g_Engine->getRenderingServer()->BindGPUResource(m_visualizationRPDC, ShaderStage::Pixel, l_PerFrameCBufferGBDC, 0, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->BindGPUResource(m_visualizationRPDC, ShaderStage::Pixel, input, 3, Accessibility::ReadOnly);
 
-	auto& l_drawCallInfo = g_Engine->getRenderingFrontend()->getDrawCallInfo();
+	auto &l_drawCallInfo = g_Engine->getRenderingFrontend()->getDrawCallInfo();
 	auto l_drawCallCount = l_drawCallInfo.size();
 
 	for (uint32_t i = 0; i < l_drawCallCount; i++)
@@ -574,19 +574,23 @@ bool VolumetricPass::Render(bool visualize)
 		visualization(m_rayMarchingResult_A);
 	}
 
-	g_Engine->getRenderingServer()->ExecuteCommandList(m_froxelizationRPDC);
-	g_Engine->getRenderingServer()->WaitForFrame(m_froxelizationRPDC);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_froxelizationRPDC, RenderPassUsage::Graphics);
+	g_Engine->getRenderingServer()->WaitFence(RenderPassUsage::Graphics);
+	g_Engine->getRenderingServer()->WaitFence(RenderPassUsage::Compute);
 
-	g_Engine->getRenderingServer()->ExecuteCommandList(m_irraidanceInjectionRPDC);
-	g_Engine->getRenderingServer()->WaitForFrame(m_irraidanceInjectionRPDC);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_irraidanceInjectionRPDC, RenderPassUsage::Graphics);
+	g_Engine->getRenderingServer()->WaitFence(RenderPassUsage::Graphics);
+	g_Engine->getRenderingServer()->WaitFence(RenderPassUsage::Compute);
 
-	g_Engine->getRenderingServer()->ExecuteCommandList(m_rayMarchingRPDC);
-	g_Engine->getRenderingServer()->WaitForFrame(m_rayMarchingRPDC);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_rayMarchingRPDC, RenderPassUsage::Graphics);
+	g_Engine->getRenderingServer()->WaitFence(RenderPassUsage::Graphics);
+	g_Engine->getRenderingServer()->WaitFence(RenderPassUsage::Compute);
 
 	if (visualize)
 	{
-		g_Engine->getRenderingServer()->ExecuteCommandList(m_visualizationRPDC);
-		g_Engine->getRenderingServer()->WaitForFrame(m_visualizationRPDC);
+		g_Engine->getRenderingServer()->ExecuteCommandList(m_visualizationRPDC, RenderPassUsage::Graphics);
+		g_Engine->getRenderingServer()->WaitFence(RenderPassUsage::Graphics);
+		g_Engine->getRenderingServer()->WaitFence(RenderPassUsage::Compute);
 	}
 
 	return true;
@@ -602,7 +606,7 @@ bool VolumetricPass::Terminate()
 	return true;
 }
 
-GPUResourceComponent* VolumetricPass::GetRayMarchingResult()
+GPUResourceComponent *VolumetricPass::GetRayMarchingResult()
 {
 	if (m_isPassA)
 	{
@@ -614,7 +618,7 @@ GPUResourceComponent* VolumetricPass::GetRayMarchingResult()
 	}
 }
 
-GPUResourceComponent* VolumetricPass::GetVisualizationResult()
+GPUResourceComponent *VolumetricPass::GetVisualizationResult()
 {
 	return m_visualizationRPDC->m_RenderTargets[0];
 }

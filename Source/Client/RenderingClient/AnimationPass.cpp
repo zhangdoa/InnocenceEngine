@@ -9,14 +9,7 @@ extern INNO_ENGINE_API IEngine* g_Engine;
 
 using namespace DefaultGPUBuffers;
 
-namespace AnimationPass
-{
-	RenderPassDataComponent* m_RPDC;
-	ShaderProgramComponent* m_SPC;
-	SamplerDataComponent* m_SDC;
-}
-
-bool AnimationPass::Setup()
+bool AnimationPass::Setup(ISystemConfig *systemConfig)
 {
 	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("AnimationPass/");
 
@@ -104,6 +97,8 @@ bool AnimationPass::Setup()
 	m_SDC->m_SamplerDesc.m_WrapMethodU = TextureWrapMethod::Repeat;
 	m_SDC->m_SamplerDesc.m_WrapMethodV = TextureWrapMethod::Repeat;
 
+	m_ObjectStatus = ObjectStatus::Created;
+	
 	return true;
 }
 
@@ -113,19 +108,35 @@ bool AnimationPass::Initialize()
 
 	for (size_t i = 0; i < m_RPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 	{
-		m_RPDC->m_RenderTargets[i] = OpaquePass::GetRPDC()->m_RenderTargets[i];
+		m_RPDC->m_RenderTargets[i] = OpaquePass::Get().GetRPDC()->m_RenderTargets[i];
 	}
 
-	m_RPDC->m_DepthStencilRenderTarget = OpaquePass::GetRPDC()->m_DepthStencilRenderTarget;
+	m_RPDC->m_DepthStencilRenderTarget = OpaquePass::Get().GetRPDC()->m_DepthStencilRenderTarget;
 
 	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
 	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
 	g_Engine->getRenderingServer()->InitializeSamplerDataComponent(m_SDC);
 
+	m_ObjectStatus = ObjectStatus::Activated;
+
 	return true;
 }
 
-bool AnimationPass::PrepareCommandList()
+bool AnimationPass::Terminate()
+{
+	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+
+	m_ObjectStatus = ObjectStatus::Terminated;
+
+	return true;
+}
+
+ObjectStatus AnimationPass::GetStatus()
+{
+	return m_ObjectStatus;
+}
+
+bool AnimationPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 	auto l_MeshGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Mesh);
@@ -187,26 +198,10 @@ bool AnimationPass::PrepareCommandList()
 		g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
 	}
 
-	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC);
-
-	g_Engine->getRenderingServer()->WaitForFrame(m_RPDC);
-
-	return true;
-}
-
-bool AnimationPass::Terminate()
-{
-	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
-
 	return true;
 }
 
 RenderPassDataComponent* AnimationPass::GetRPDC()
 {
 	return m_RPDC;
-}
-
-ShaderProgramComponent* AnimationPass::GetSPC()
-{
-	return m_SPC;
 }

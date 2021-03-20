@@ -206,9 +206,9 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC_Probe);
 
-	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC_Probe);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC_Probe, RenderPassUsage::Graphics);
 
-	g_Engine->getRenderingServer()->WaitForFrame(m_RPDC_Probe);
+	
 
 	g_Engine->getLogSystem()->Log(LogLevel::Success, "InnoBakerNS: Start to generate probe location...");
 
@@ -551,9 +551,9 @@ bool InnoBakerNS::drawObjects(Probe& probeCache, const Mat4& p, const std::vecto
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC_Surfel);
 
-	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC_Surfel);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC_Surfel, RenderPassUsage::Graphics);
 
-	g_Engine->getRenderingServer()->WaitForFrame(m_RPDC_Surfel);
+	
 
 	return true;
 }
@@ -1039,9 +1039,9 @@ bool InnoBakerNS::drawBricks(Vec4 pos, uint32_t bricksCount, const Mat4& p, cons
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC_BrickFactor);
 
-	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC_BrickFactor);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC_BrickFactor, RenderPassUsage::Graphics);
 
-	g_Engine->getRenderingServer()->WaitForFrame(m_RPDC_BrickFactor);
+	
 
 	return true;
 }
@@ -1510,7 +1510,7 @@ bool InnoBakerRenderingClient::Initialize()
 	return true;
 }
 
-bool InnoBakerRenderingClient::Render()
+bool InnoBakerRenderingClient::Render(IRenderingConfig* renderingConfig)
 {
 	return true;
 }

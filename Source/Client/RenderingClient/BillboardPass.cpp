@@ -10,14 +10,7 @@ extern INNO_ENGINE_API IEngine* g_Engine;
 
 using namespace DefaultGPUBuffers;
 
-namespace BillboardPass
-{
-	RenderPassDataComponent* m_RPDC;
-	ShaderProgramComponent* m_SPC;
-	SamplerDataComponent* m_SDC;
-}
-
-bool BillboardPass::Setup()
+bool BillboardPass::Setup(ISystemConfig *systemConfig)
 {
 	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("BillboardPass/");
 
@@ -68,7 +61,7 @@ bool BillboardPass::Setup()
 
 bool BillboardPass::Initialize()
 {
-	m_RPDC->m_DepthStencilRenderTarget = OpaquePass::GetRPDC()->m_DepthStencilRenderTarget;
+	m_RPDC->m_DepthStencilRenderTarget = OpaquePass::Get().GetRPDC()->m_DepthStencilRenderTarget;
 
 	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
 	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
@@ -77,7 +70,21 @@ bool BillboardPass::Initialize()
 	return true;
 }
 
-bool BillboardPass::Render()
+bool BillboardPass::Terminate()
+{
+	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
+
+	m_ObjectStatus = ObjectStatus::Terminated;
+
+	return true;
+}
+
+ObjectStatus BillboardPass::GetStatus()
+{
+	return m_ObjectStatus;
+}
+
+bool BillboardPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);
 	auto l_BillboardGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::Billboard);
@@ -111,26 +118,10 @@ bool BillboardPass::Render()
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
 
-	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC);
-
-	g_Engine->getRenderingServer()->WaitForFrame(m_RPDC);
-
-	return true;
-}
-
-bool BillboardPass::Terminate()
-{
-	g_Engine->getRenderingServer()->DeleteRenderPassDataComponent(m_RPDC);
-
 	return true;
 }
 
 RenderPassDataComponent* BillboardPass::GetRPDC()
 {
 	return m_RPDC;
-}
-
-ShaderProgramComponent* BillboardPass::GetSPC()
-{
-	return m_SPC;
 }
