@@ -911,12 +911,12 @@ bool GLRenderingServer::CommandListEnd(RenderPassDataComponent* rhs)
 	return true;
 }
 
-bool GLRenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs)
+bool GLRenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, RenderPassUsage renderPassUsage)
 {
 	return true;
 }
 
-bool GLRenderingServer::WaitForFrame(RenderPassDataComponent* rhs)
+bool GLRenderingServer::WaitFence(RenderPassUsage renderPassUsage)
 {
 	return true;
 }
@@ -953,9 +953,9 @@ bool GLRenderingServer::Present()
 
 	CommandListEnd(m_SwapChainRPDC);
 
-	ExecuteCommandList(m_SwapChainRPDC);
+	ExecuteCommandList(m_SwapChainRPDC, RenderPassUsage::Graphics);
 
-	WaitForFrame(m_SwapChainRPDC);
+	WaitFence(RenderPassUsage::Graphics);
 
 	if (m_needResize)
 	{

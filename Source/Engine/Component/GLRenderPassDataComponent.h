@@ -20,10 +20,6 @@ namespace Inno
 	{
 	};
 
-	class GLFence : public IFence
-	{
-	};
-
 	class GLRenderPassDataComponent : public RenderPassDataComponent
 	{
 	public:
