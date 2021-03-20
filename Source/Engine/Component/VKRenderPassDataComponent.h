@@ -47,12 +47,6 @@ namespace Inno
 		VkSemaphore m_Semaphore;
 	};
 
-	class VKFence : public IFence
-	{
-	public:
-		VkFence m_Fence;
-	};
-
 	struct VKDescriptorSetLayoutBindingIndex
 	{
 		size_t m_SetIndex = 0;

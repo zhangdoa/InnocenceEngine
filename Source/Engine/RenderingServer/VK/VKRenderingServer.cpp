@@ -54,6 +54,7 @@ namespace VKRenderingServerNS
 	bool createVertexInputAttributions();
 	bool createMaterialDescriptorPool();
 	bool createGlobalCommandPool();
+	bool CreateSyncPrimitives();
 
 	bool createSwapChain();
 
@@ -66,7 +67,6 @@ namespace VKRenderingServerNS
 	TObjectPool<VKPipelineStateObject> *m_PSOPool = 0;
 	TObjectPool<VKCommandList> *m_CommandListPool = 0;
 	TObjectPool<VKSemaphore> *m_SemaphorePool = 0;
-	TObjectPool<VKFence> *m_FencePool = 0;
 	TObjectPool<VKShaderProgramComponent> *m_ShaderProgramComponentPool = 0;
 	TObjectPool<VKSamplerDataComponent> *m_SamplerDataComponentPool = 0;
 	TObjectPool<VKGPUBufferDataComponent> *m_GPUBufferDataComponentPool = 0;
@@ -82,6 +82,7 @@ namespace VKRenderingServerNS
 	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
 	VkDevice m_device;
 	VkQueue m_graphicsQueue;
+	VkFence m_graphicsQueueFence;
 	VkCommandPool m_commandPool;
 
 	VkSwapchainKHR m_swapChain = 0;
@@ -468,6 +469,22 @@ bool VKRenderingServerNS::createGlobalCommandPool()
 	return CreateCommandPool(m_physicalDevice, m_windowSurface, m_device, m_commandPool);
 }
 
+bool VKRenderingServerNS::CreateSyncPrimitives()
+{	
+	VkFenceCreateInfo l_fenceInfo = {};
+	l_fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	l_fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+	if (vkCreateFence(m_device, &l_fenceInfo, nullptr, &m_graphicsQueueFence) != VK_SUCCESS)
+	{
+		m_ObjectStatus = ObjectStatus::Suspended;
+		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create fence for GraphicsQueue!");
+		return false;
+	}
+
+	return true;
+}
+
 bool VKRenderingServerNS::createSwapChain()
 {
 	// choose device supported formats, modes and maximum back buffers
@@ -569,11 +586,6 @@ VKSemaphore *addSemaphore()
 	return m_SemaphorePool->Spawn();
 }
 
-VKFence *addFence()
-{
-	return m_FencePool->Spawn();
-}
-
 bool VKRenderingServer::Setup(ISystemConfig *systemConfig)
 {
 	auto l_renderingCapability = g_Engine->getRenderingFrontend()->getRenderingCapability();
@@ -585,7 +597,6 @@ bool VKRenderingServer::Setup(ISystemConfig *systemConfig)
 	m_PSOPool = TObjectPool<VKPipelineStateObject>::Create(128);
 	m_CommandListPool = TObjectPool<VKCommandList>::Create(256);
 	m_SemaphorePool = TObjectPool<VKSemaphore>::Create(512);
-	m_FencePool = TObjectPool<VKFence>::Create(256);
 	m_ShaderProgramComponentPool = TObjectPool<VKShaderProgramComponent>::Create(256);
 	m_SamplerDataComponentPool = TObjectPool<VKSamplerDataComponent>::Create(256);
 	m_GPUBufferDataComponentPool = TObjectPool<VKGPUBufferDataComponent>::Create(256);
@@ -612,6 +623,7 @@ bool VKRenderingServer::Initialize()
 	createTextureSamplers();
 	createMaterialDescriptorPool();
 	createGlobalCommandPool();
+	CreateSyncPrimitives();
 
 	createSwapChain();
 
@@ -917,15 +929,11 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 
 	l_result &= CreateCommandBuffers(m_device, l_rhs);
 
-	l_rhs->m_SignalSemaphores.resize(l_rhs->m_Framebuffers.size());
-	l_rhs->m_WaitSemaphores.resize(l_rhs->m_Framebuffers.size());
-	l_rhs->m_Fences.resize(l_rhs->m_Framebuffers.size());
+	l_rhs->m_Semaphores.resize(l_rhs->m_Framebuffers.size());
 
-	for (size_t i = 0; i < l_rhs->m_SignalSemaphores.size(); i++)
+	for (size_t i = 0; i < l_rhs->m_Semaphores.size(); i++)
 	{
-		l_rhs->m_SignalSemaphores[i] = addSemaphore();
-		l_rhs->m_WaitSemaphores[i] = addSemaphore();
-		l_rhs->m_Fences[i] = addFence();
+		l_rhs->m_Semaphores[i] = addSemaphore();
 	}
 
 	l_result &= CreateSyncPrimitives(m_device, l_rhs);
@@ -1249,10 +1257,11 @@ bool VKRenderingServer::BindGPUResource(RenderPassDataComponent *renderPass, Sha
 	switch (resource->m_GPUResourceType)
 	{
 	case GPUResourceType::Sampler:
-		l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorIndex, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, l_renderPass->m_DescriptorSets[l_descriptorSetIndex]);
+		l_descriptorImageInfo.sampler = reinterpret_cast<VKSamplerDataComponent *>(resource)->m_sampler;
+		l_writeDescriptorSet = GetWriteDescriptorSet(l_descriptorImageInfo, l_descriptorIndex, VK_DESCRIPTOR_TYPE_SAMPLER, l_renderPass->m_DescriptorSets[l_descriptorSetIndex]);
 		UpdateDescriptorSet(m_device, &l_writeDescriptorSet, 1);
 		break;
-	case GPUResourceType::Image:	
+	case GPUResourceType::Image:
 		l_descriptorImageInfo.imageView = reinterpret_cast<VKTextureDataComponent *>(resource)->m_imageView;
 		if (accessibility != Accessibility::ReadOnly)
 		{
@@ -1353,13 +1362,35 @@ bool VKRenderingServer::CommandListEnd(RenderPassDataComponent *rhs)
 	return true;
 }
 
-bool VKRenderingServer::ExecuteCommandList(RenderPassDataComponent *rhs)
+bool VKRenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, RenderPassUsage renderPassUsage)
 {
+	auto l_rhs = reinterpret_cast<VKRenderPassDataComponent *>(rhs);
+	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+	auto l_semaphore = reinterpret_cast<VKSemaphore *>(l_rhs->m_Semaphores[l_rhs->m_CurrentFrame]);
+
+	VkSubmitInfo l_submitInfo;
+	l_submitInfo.commandBufferCount = 1;
+	l_submitInfo.pCommandBuffers = &l_commandList->m_CommandBuffer;
+	l_submitInfo.signalSemaphoreCount = 1;
+	l_submitInfo.pSignalSemaphores = &l_semaphore->m_Semaphore;
+	l_submitInfo.waitSemaphoreCount = 1;
+	l_submitInfo.pWaitSemaphores = &l_semaphore->m_Semaphore;
+
+	vkResetFences(m_device, 1, &m_graphicsQueueFence);
+
+	if (vkQueueSubmit(m_graphicsQueue, 1, &l_submitInfo, m_graphicsQueueFence) != VK_SUCCESS)
+	{
+		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to submit command buffer!");
+		return false;
+	}
+
 	return true;
 }
 
-bool VKRenderingServer::WaitForFrame(RenderPassDataComponent *rhs)
+bool VKRenderingServer::WaitFence(RenderPassUsage renderPassUsage)
 {
+	//vkWaitForFrames(m_device, 1, &m_graphicsQueueFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+
 	return true;
 }
 

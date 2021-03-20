@@ -2008,19 +2008,13 @@ bool VKHelper::CreateSyncPrimitives(VkDevice device, VKRenderPassDataComponent *
 	VkSemaphoreCreateInfo l_semaphoreInfo = {};
 	l_semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-	VkFenceCreateInfo l_fenceInfo = {};
-	l_fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	l_fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
 	VKRPDC->m_SubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-	for (size_t i = 0; i < VKRPDC->m_SignalSemaphores.size(); i++)
+	for (size_t i = 0; i < VKRPDC->m_Semaphores.size(); i++)
 	{
-		auto l_VKSemaphore = reinterpret_cast<VKSemaphore *>(VKRPDC->m_SignalSemaphores[i]);
-		auto l_VKFence = reinterpret_cast<VKFence *>(VKRPDC->m_Fences[i]);
+		auto l_VKSemaphore = reinterpret_cast<VKSemaphore *>(VKRPDC->m_Semaphores[i]);
 
-		if (vkCreateSemaphore(device, &l_semaphoreInfo, nullptr, &l_VKSemaphore->m_Semaphore) != VK_SUCCESS ||
-			vkCreateFence(device, &l_fenceInfo, nullptr, &l_VKFence->m_Fence) != VK_SUCCESS)
+		if (vkCreateSemaphore(device, &l_semaphoreInfo, nullptr, &l_VKSemaphore->m_Semaphore) != VK_SUCCESS)
 		{
 			InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create synchronization primitives!");
 			return false;
