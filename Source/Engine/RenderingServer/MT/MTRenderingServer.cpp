@@ -195,7 +195,7 @@ bool MTRenderingServer::CommandListEnd(RenderPassDataComponent* rhs)
 	return true;
 }
 
-bool MTRenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs)
+bool MTRenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, RenderPassUsage renderPassUsage)
 {
 	return true;
 }
