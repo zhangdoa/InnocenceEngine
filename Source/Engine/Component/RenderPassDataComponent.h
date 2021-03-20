@@ -26,12 +26,9 @@ namespace Inno
 		std::vector<ResourceBindingLayoutDesc> m_ResourceBindingLayoutDescs;
 
 		IPipelineStateObject* m_PipelineStateObject = 0;
-		std::vector<ICommandList*> m_CommandLists;
-
 		size_t m_CurrentFrame = 0;
 
-		std::vector<ISemaphore*> m_WaitSemaphores;
-		std::vector<ISemaphore*> m_SignalSemaphores;
-		std::vector<IFence*> m_Fences;
+		std::vector<ICommandList*> m_CommandLists;
+		std::vector<ISemaphore*> m_Semaphores;
 	};
 }
