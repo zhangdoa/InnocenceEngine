@@ -222,8 +222,8 @@ namespace Inno
 	}
 
 	class ICommandList {};
+	// For GPU - GPU synchronization
 	class ISemaphore {};
-	class IFence {};
 }
 
 using namespace Inno::InnoType;
