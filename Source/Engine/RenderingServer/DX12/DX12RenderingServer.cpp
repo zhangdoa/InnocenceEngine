@@ -58,7 +58,6 @@ namespace DX12RenderingServerNS
 	TObjectPool<DX12RenderPassDataComponent> *m_RenderPassDataComponentPool = 0;
 	TObjectPool<DX12PipelineStateObject> *m_PSOPool = 0;
 	TObjectPool<DX12CommandList> *m_CommandListPool = 0;
-	TObjectPool<DX12Fence> *m_FencePool = 0;
 	TObjectPool<DX12ShaderProgramComponent> *m_ShaderProgramComponentPool = 0;
 	TObjectPool<DX12SamplerDataComponent> *m_SamplerDataComponentPool = 0;
 	TObjectPool<DX12GPUBufferDataComponent> *m_GPUBufferDataComponentPool = 0;
@@ -87,9 +86,9 @@ namespace DX12RenderingServerNS
 	ComPtr<ID3D12CommandQueue> m_computeCommandQueue = 0;
 	ComPtr<ID3D12CommandQueue> m_copyCommandQueue = 0;
 
-	uint64_t m_directCommandQueueSemaphore = 0;
-	uint64_t m_computeCommandQueueSemaphore = 0;
-	uint64_t m_copyCommandQueueSemaphore = 0;
+	std::atomic<uint64_t> m_directCommandQueueSemaphore = 1;
+	std::atomic<uint64_t> m_computeCommandQueueSemaphore = 1;
+	std::atomic<uint64_t> m_copyCommandQueueSemaphore = 1;
 	ComPtr<ID3D12Fence> m_directCommandQueueFence = 0;
 	ComPtr<ID3D12Fence> m_computeCommandQueueFence = 0;
 	ComPtr<ID3D12Fence> m_copyCommandQueueFence = 0;
@@ -725,11 +724,6 @@ DX12CommandList *addCommandList()
 	return m_CommandListPool->Spawn();
 }
 
-DX12Fence *addFence()
-{
-	return m_FencePool->Spawn();
-}
-
 bool DX12RenderingServer::Setup(ISystemConfig *systemConfig)
 {
 	auto l_renderingCapability = g_Engine->getRenderingFrontend()->getRenderingCapability();
@@ -740,7 +734,6 @@ bool DX12RenderingServer::Setup(ISystemConfig *systemConfig)
 	m_RenderPassDataComponentPool = TObjectPool<DX12RenderPassDataComponent>::Create(128);
 	m_PSOPool = TObjectPool<DX12PipelineStateObject>::Create(128);
 	m_CommandListPool = TObjectPool<DX12CommandList>::Create(256);
-	m_FencePool = TObjectPool<DX12Fence>::Create(256);
 	m_ShaderProgramComponentPool = TObjectPool<DX12ShaderProgramComponent>::Create(256);
 	m_SamplerDataComponentPool = TObjectPool<DX12SamplerDataComponent>::Create(256);
 	m_GPUBufferDataComponentPool = TObjectPool<DX12GPUBufferDataComponent>::Create(256);
@@ -892,12 +885,6 @@ bool DX12RenderingServer::Initialize()
 		m_SwapChainRPDC->m_PipelineStateObject = addPSO();
 
 		CreatePSO(m_SwapChainRPDC, m_device);
-
-		m_SwapChainRPDC->m_Fences.resize(m_SwapChainRPDC->m_CommandLists.size());
-		for (size_t i = 0; i < m_SwapChainRPDC->m_Fences.size(); i++)
-		{
-			m_SwapChainRPDC->m_Fences[i] = addFence();
-		}
 
 		m_SwapChainRPDC->m_ObjectStatus = ObjectStatus::Activated;
 	}
@@ -1263,12 +1250,6 @@ bool DX12RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 	CreateCommandLists(l_rhs);
 
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", l_rhs->m_InstanceName.c_str(), " CommandList has been created.");
-
-	l_rhs->m_Fences.resize(l_rhs->m_CommandLists.size());
-	for (size_t i = 0; i < l_rhs->m_Fences.size(); i++)
-	{
-		l_rhs->m_Fences[i] = addFence();
-	}
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
@@ -2001,43 +1982,48 @@ bool DX12RenderingServer::CommandListEnd(RenderPassDataComponent *rhs)
 	return true;
 }
 
-bool DX12RenderingServer::ExecuteCommandList(RenderPassDataComponent *rhs)
+bool DX12RenderingServer::ExecuteCommandList(RenderPassDataComponent *rhs, RenderPassUsage renderPassUsage)
 {
 	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent *>(rhs);
 	auto l_commandList = reinterpret_cast<DX12CommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
-	auto l_fence = reinterpret_cast<DX12Fence *>(l_rhs->m_Fences[l_rhs->m_CurrentFrame]);
 
-	ID3D12CommandList *l_directCommandLists[] = {l_commandList->m_DirectCommandList.Get()};
-	m_directCommandQueue->ExecuteCommandLists(1, l_directCommandLists);
-	const UINT64 l_directCommandFinishedSemaphore = m_directCommandQueueSemaphore + 1;
-	m_directCommandQueue->Signal(m_directCommandQueueFence.Get(), l_directCommandFinishedSemaphore);
-
-	const UINT64 l_currentDirectCommandSemaphore = m_directCommandQueueFence->GetCompletedValue();
-	if (l_currentDirectCommandSemaphore < l_directCommandFinishedSemaphore)
+	if (renderPassUsage == RenderPassUsage::Graphics)
 	{
+		ID3D12CommandList *l_directCommandLists[] = {l_commandList->m_DirectCommandList.Get()};
+		//m_directCommandQueue->Wait(m_directCommandQueueFence.Get(), m_directCommandQueueSemaphore);
+		m_directCommandQueue->ExecuteCommandLists(1, l_directCommandLists);
+
+		const UINT64 l_directCommandFinishedSemaphore = m_directCommandQueueSemaphore;
+		m_directCommandQueue->Signal(m_directCommandQueueFence.Get(), l_directCommandFinishedSemaphore);
+		m_directCommandQueueSemaphore++;
 		m_directCommandQueueFence->SetEventOnCompletion(l_directCommandFinishedSemaphore, m_directCommandQueueFenceEvent);
-		WaitForSingleObject(m_directCommandQueueFenceEvent, INFINITE);
 	}
-	m_directCommandQueueSemaphore = l_directCommandFinishedSemaphore;
-
-	ID3D12CommandList *l_computeCommandLists[] = {l_commandList->m_ComputeCommandList.Get()};
-	m_computeCommandQueue->ExecuteCommandLists(1, l_computeCommandLists);
-	const UINT64 l_computeCommandFinishedSemaphore = m_computeCommandQueueSemaphore + 1;
-	m_computeCommandQueue->Signal(m_computeCommandQueueFence.Get(), l_computeCommandFinishedSemaphore);
-
-	const UINT64 l_currentComputeCommandSemaphore = m_computeCommandQueueFence->GetCompletedValue();
-	if (l_currentComputeCommandSemaphore < l_computeCommandFinishedSemaphore)
+	else if (renderPassUsage == RenderPassUsage::Compute)
 	{
+		ID3D12CommandList *l_computeCommandLists[] = {l_commandList->m_ComputeCommandList.Get()};
+		//m_computeCommandQueue->Wait(m_computeCommandQueueFence.Get(), m_computeCommandQueueSemaphore);
+		m_computeCommandQueue->ExecuteCommandLists(1, l_computeCommandLists);
+
+		const UINT64 l_computeCommandFinishedSemaphore = m_computeCommandQueueSemaphore;
+		m_computeCommandQueue->Signal(m_computeCommandQueueFence.Get(), l_computeCommandFinishedSemaphore);
+		m_computeCommandQueueSemaphore++;
 		m_computeCommandQueueFence->SetEventOnCompletion(l_computeCommandFinishedSemaphore, m_computeCommandQueueFenceEvent);
-		WaitForSingleObject(m_computeCommandQueueFenceEvent, INFINITE);
 	}
-	m_computeCommandQueueSemaphore = l_computeCommandFinishedSemaphore;
 
 	return true;
 }
 
-bool DX12RenderingServer::WaitForFrame(RenderPassDataComponent *rhs)
+bool DX12RenderingServer::WaitFence(RenderPassUsage renderPassUsage)
 {
+	if (renderPassUsage == RenderPassUsage::Graphics)
+	{
+		WaitForSingleObject(m_directCommandQueueFenceEvent, INFINITE);
+	}
+	else if (renderPassUsage == RenderPassUsage::Compute)
+	{
+		WaitForSingleObject(m_computeCommandQueueFenceEvent, INFINITE);
+	}
+
 	return true;
 }
 
@@ -2081,12 +2067,12 @@ bool DX12RenderingServer::Present()
 
 	CommandListEnd(m_SwapChainRPDC);
 
-	ExecuteCommandList(m_SwapChainRPDC);
+	ExecuteCommandList(m_SwapChainRPDC, RenderPassUsage::Graphics);
+
+	WaitFence(RenderPassUsage::Graphics);
 
 	// Present the frame.
 	m_swapChain->Present(0, 0);
-
-	WaitForFrame(m_SwapChainRPDC);
 
 	m_directCommandAllocators[m_SwapChainRPDC->m_CurrentFrame]->Reset();
 	m_computeCommandAllocators[m_SwapChainRPDC->m_CurrentFrame]->Reset();

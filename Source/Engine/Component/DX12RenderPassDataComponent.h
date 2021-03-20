@@ -33,10 +33,6 @@ namespace Inno
 	{
 	};
 
-	class DX12Fence : public IFence
-	{
-	};
-
 	class DX12RenderPassDataComponent : public RenderPassDataComponent
 	{
 	public:
