@@ -26,10 +26,6 @@ namespace Inno
 	{
 	};
 
-	class DX11Fence : public IFence
-	{
-	};
-
 	class DX11RenderPassDataComponent : public RenderPassDataComponent
 	{
 	public:

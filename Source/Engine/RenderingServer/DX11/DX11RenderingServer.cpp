@@ -1546,12 +1546,12 @@ bool DX11RenderingServer::CommandListEnd(RenderPassDataComponent* rhs)
 	return true;
 }
 
-bool DX11RenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs)
+bool DX11RenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, RenderPassUsage renderPassUsage)
 {
 	return true;
 }
 
-bool DX11RenderingServer::WaitForFrame(RenderPassDataComponent* rhs)
+bool DX11RenderingServer::WaitFence(RenderPassUsage renderPassUsage)
 {
 	return true;
 }
@@ -1588,9 +1588,9 @@ bool DX11RenderingServer::Present()
 
 	CommandListEnd(m_SwapChainRPDC);
 
-	ExecuteCommandList(m_SwapChainRPDC);
-
-	WaitForFrame(m_SwapChainRPDC);
+	ExecuteCommandList(m_SwapChainRPDC, RenderPassUsage::Graphics);
+	
+	WaitFence(RenderPassUsage::Graphics);
 
 	auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
 
