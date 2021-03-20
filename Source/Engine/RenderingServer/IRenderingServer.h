@@ -69,8 +69,8 @@ namespace Inno
 		virtual bool DrawInstanced(RenderPassDataComponent* renderPass, size_t instanceCount = 1) = 0;
 		virtual bool UnbindGPUResource(RenderPassDataComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility = Accessibility::ReadOnly, size_t startOffset = 0, size_t elementCount = SIZE_MAX) = 0;
 		virtual bool CommandListEnd(RenderPassDataComponent* rhs) = 0;
-		virtual bool ExecuteCommandList(RenderPassDataComponent* rhs) = 0;
-		virtual bool WaitForFrame(RenderPassDataComponent* rhs) = 0;
+		virtual bool ExecuteCommandList(RenderPassDataComponent* rhs, RenderPassUsage renderPassUsage) = 0;
+		virtual bool WaitFence(RenderPassUsage renderPassUsage) = 0;
 		virtual bool SetUserPipelineOutput(GPUResourceComponent* rhs) = 0;
 		virtual GPUResourceComponent* GetUserPipelineOutput() = 0;
 		virtual bool Present() = 0;
