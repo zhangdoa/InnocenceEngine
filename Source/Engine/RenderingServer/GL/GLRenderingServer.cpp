@@ -916,6 +916,11 @@ bool GLRenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, RenderP
 	return true;
 }
 
+bool GLRenderingServer::WaitCommandQueue(RenderPassDataComponent* rhs, RenderPassUsage queueType, RenderPassUsage semaphoreType)
+{
+	return true;
+}
+
 bool GLRenderingServer::WaitFence(RenderPassUsage renderPassUsage)
 {
 	return true;
