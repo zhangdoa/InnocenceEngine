@@ -1100,7 +1100,7 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12D
 {
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(DX12RPDC->m_PipelineStateObject);
 	auto l_DX12SPC = reinterpret_cast<DX12ShaderProgramComponent*>(DX12RPDC->m_ShaderProgram);
-
+	
 	if (DX12RPDC->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
 	{
 		GenerateDepthStencilStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
@@ -1158,6 +1158,17 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12D
 		l_numElements = sizeof(l_polygonLayout) / sizeof(l_polygonLayout[0]);
 		l_PSO->m_GraphicsPSODesc.InputLayout = { l_polygonLayout, l_numElements };
 
+		// A compute shader could only be bound to a Compute pipeline
+#ifdef USE_DXIL
+		if (l_DX12SPC->m_CSBuffer.size())
+		{
+#else
+		if (l_DX12SPC->m_CSBuffer)
+		{
+#endif
+			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_InstanceName.c_str(), " RenderPassUsage can't be Graphics if there is a Compute shader attached!");
+			return false;
+		}
 #ifdef USE_DXIL
 		if (l_DX12SPC->m_VSBuffer.size())
 		{
@@ -1582,17 +1593,17 @@ bool DX12Helper::LoadShaderFile(ID3D10Blob** rhs, ShaderStage shaderStage, const
 
 	switch (shaderStage)
 	{
-	case ShaderStage::Vertex: l_shaderTypeName = "vs_5_0";
+	case ShaderStage::Vertex: l_shaderTypeName = "vs_6_0";
 		break;
-	case ShaderStage::Hull: l_shaderTypeName = "hs_5_0";
+	case ShaderStage::Hull: l_shaderTypeName = "hs_6_0";
 		break;
-	case ShaderStage::Domain: l_shaderTypeName = "ds_5_0";
+	case ShaderStage::Domain: l_shaderTypeName = "ds_6_0";
 		break;
-	case ShaderStage::Geometry: l_shaderTypeName = "gs_5_0";
+	case ShaderStage::Geometry: l_shaderTypeName = "gs_6_0";
 		break;
-	case ShaderStage::Pixel: l_shaderTypeName = "ps_5_0";
+	case ShaderStage::Pixel: l_shaderTypeName = "ps_6_0";
 		break;
-	case ShaderStage::Compute: l_shaderTypeName = "cs_5_0";
+	case ShaderStage::Compute: l_shaderTypeName = "cs_6_0";
 		break;
 	default:
 		break;

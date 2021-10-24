@@ -75,13 +75,13 @@ namespace DX12RenderingServerNS
 	ComPtr<ID3D12Debug1> m_debugInterface = 0;
 	ComPtr<IDXGraphicsAnalysis> m_graphicsAnalysis = 0;
 
-	ComPtr<IDXGIFactory4> m_factory = 0;
+	ComPtr<IDXGIFactory7> m_factory = 0;
 
 	DXGI_ADAPTER_DESC m_adapterDesc = {};
 	ComPtr<IDXGIAdapter4> m_adapter = 0;
-	ComPtr<IDXGIOutput1> m_adapterOutput = 0;
+	ComPtr<IDXGIOutput6> m_adapterOutput = 0;
 
-	ComPtr<ID3D12Device2> m_device = 0;
+	ComPtr<ID3D12Device8> m_device = 0;
 
 	ComPtr<ID3D12CommandQueue> m_directCommandQueue = 0;
 	ComPtr<ID3D12CommandQueue> m_computeCommandQueue = 0;
@@ -137,13 +137,16 @@ namespace DX12RenderingServerNS
 
 bool DX12RenderingServerNS::CreateCommandLists(DX12RenderPassDataComponent *DX12RPDC)
 {
+	auto l_tempName = std::string(DX12RPDC->m_InstanceName.c_str());
+	auto l_tempNameL = std::wstring(l_tempName.begin(), l_tempName.end());
+
 	for (size_t i = 0; i < DX12RPDC->m_CommandLists.size(); i++)
 	{
 		auto l_CommandList = reinterpret_cast<DX12CommandList *>(DX12RPDC->m_CommandLists[i]);
 
-		l_CommandList->m_DirectCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[i].Get());
-		l_CommandList->m_ComputeCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_COMPUTE, m_device, m_computeCommandAllocators[i].Get());
-		l_CommandList->m_CopyCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_COPY, m_device, m_copyCommandAllocator);
+		l_CommandList->m_DirectCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[i].Get(), (l_tempNameL + L"_DirectCommandList_" + std::to_wstring(i)).c_str());
+		l_CommandList->m_ComputeCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_COMPUTE, m_device, m_computeCommandAllocators[i].Get(), (l_tempNameL + L"_ComputeCommandList_" + std::to_wstring(i)).c_str());
+		l_CommandList->m_CopyCommandList = CreateCommandList(D3D12_COMMAND_LIST_TYPE_COPY, m_device, m_copyCommandAllocator, (l_tempNameL + L"_CopyCommandList_" + std::to_wstring(i)).c_str());
 
 		l_CommandList->m_DirectCommandList->Close();
 		l_CommandList->m_ComputeCommandList->Close();
@@ -232,52 +235,62 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 
 	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: DXGI factory has been created.");
 
-	// Use the factory to create an adapter for the primary graphics interface (video card).
-	IDXGIAdapter1 *l_adapter1;
-
-	for (UINT adapterIndex = 0; DXGI_ERROR_NOT_FOUND != m_factory->EnumAdapters1(adapterIndex, &l_adapter1); ++adapterIndex)
+	// Choose a dedicated adapter
+	IDXGIAdapter1 *l_adapter;
+	UINT adapterIndex = 0;
+	l_HResult = m_factory->EnumAdapterByGpuPreference(adapterIndex, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&l_adapter));
+	if (FAILED(l_HResult))
 	{
-		DXGI_ADAPTER_DESC1 l_adapterDesc;
-		l_adapter1->GetDesc1(&l_adapterDesc);
-
-		if (l_adapterDesc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+		InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: Can't find a high-performance GPU.");
+		l_HResult = m_factory->EnumAdapterByGpuPreference(adapterIndex, DXGI_GPU_PREFERENCE_UNSPECIFIED, IID_PPV_ARGS(&l_adapter));
+		if (FAILED(l_HResult))
 		{
-			// Don't select the Basic Render Driver adapter.
-			// If you want a software adapter, pass in "/warp" on the command line.
-			continue;
-		}
-
-		// Check to see if the adapter supports Direct3D 12, but don't create the
-		// actual device yet.
-		if (SUCCEEDED(D3D12CreateDevice(l_adapter1, D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr)))
-		{
-			break;
+			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't find any capable GPU!");
+			m_ObjectStatus = ObjectStatus::Suspended;
+			return false;
 		}
 	}
 
-	if (l_adapter1 == nullptr)
+	// Check to see if the adapter supports Direct3D 12, but don't create the
+	// actual device yet.
+	if (FAILED(D3D12CreateDevice(l_adapter, D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr)))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Adapter doesn't support DirectX 12!");
+		m_ObjectStatus = ObjectStatus::Suspended;
+		return false;
+	}
+
+	if (l_adapter == nullptr)
 	{
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create a suitable video card adapter!");
 		m_ObjectStatus = ObjectStatus::Suspended;
 		return false;
 	}
 
-	m_adapter = reinterpret_cast<IDXGIAdapter4 *>(l_adapter1);
+	m_adapter = reinterpret_cast<IDXGIAdapter4 *>(l_adapter);
 
-	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Video card adapter has been created.");
+	DXGI_ADAPTER_DESC3 l_adapter_desc;
+	m_adapter->GetDesc3(&l_adapter_desc);
+	std::wstring l_descL = std::wstring(l_adapter_desc.Description);
+
+	using convert_type = std::codecvt_utf8<wchar_t>;
+	std::wstring_convert<convert_type, wchar_t> converter;
+	std::string l_desc = converter.to_bytes(l_descL);
+
+	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Adapter for: ", l_desc.c_str(), " has been created.");
 
 	// Enumerate the primary adapter output (monitor).
 	IDXGIOutput *l_adapterOutput;
-
 	l_HResult = m_adapter->EnumOutputs(0, &l_adapterOutput);
 	if (FAILED(l_HResult))
 	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: can't create monitor adapter!");
-		m_ObjectStatus = ObjectStatus::Suspended;
-		return false;
+		InnoLogger::Log(LogLevel::Warning, "DX12RenderingServer: the primary output of the adapter is not connected.");
+		// @TODO: Find a way to enumerate until we get the actual monitor
 	}
-
-	l_HResult = l_adapterOutput->QueryInterface(IID_PPV_ARGS(&m_adapterOutput));
+	else
+	{
+		l_HResult = l_adapterOutput->QueryInterface(IID_PPV_ARGS(&m_adapterOutput));
+	}
 
 	uint32_t l_numModes;
 	uint64_t l_stringLength;
@@ -1641,7 +1654,7 @@ bool PrepareRenderTargets(DX12RenderPassDataComponent *renderPass, DX12CommandLi
 			}
 		}
 
-		if (renderPass->m_DepthStencilRenderTarget)
+		if (renderPass->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_AllowDepthWrite)
 		{
 			auto l_rhs = reinterpret_cast<DX12TextureDataComponent *>(renderPass->m_DepthStencilRenderTarget);
 
@@ -2131,10 +2144,6 @@ bool DX12RenderingServer::Present()
 	// Present the frame.
 	m_swapChain->Present(0, 0);
 
-	m_directCommandAllocators[m_SwapChainRPDC->m_CurrentFrame]->Reset();
-	m_computeCommandAllocators[m_SwapChainRPDC->m_CurrentFrame]->Reset();
-	m_copyCommandAllocator->Reset();
-
 	m_SwapChainRPDC->m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
 
 	return true;
@@ -2186,7 +2195,8 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 		break;
 	}
 
-	auto f_readBackCommand = [](DX12TextureDataComponent *l_srcTDC, DX12TextureDataComponent *l_destTDC, DXGI_FORMAT l_format, uint32_t l_pixelDataSize, uint32_t srcIndex, uint32_t destIndex) {
+	auto f_readBackCommand = [](DX12TextureDataComponent *l_srcTDC, DX12TextureDataComponent *l_destTDC, DXGI_FORMAT l_format, uint32_t l_pixelDataSize, uint32_t srcIndex, uint32_t destIndex)
+	{
 		D3D12_TEXTURE_COPY_LOCATION l_srcLocation;
 		l_srcLocation.pResource = l_srcTDC->m_ResourceHandle.Get();
 		l_srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
@@ -2225,7 +2235,8 @@ std::vector<Vec4> DX12RenderingServer::ReadTextureBackToCPU(RenderPassDataCompon
 		CloseTemporaryCommandList(l_commandList, m_device, m_copyCommandQueue);
 	};
 
-	auto f_copyCommand = [](DX12TextureDataComponent *l_srcTDC, DX12TextureDataComponent *l_destTDC, size_t l_pixelCount) -> std::vector<unsigned char> {
+	auto f_copyCommand = [](DX12TextureDataComponent *l_srcTDC, DX12TextureDataComponent *l_destTDC, size_t l_pixelCount) -> std::vector<unsigned char>
+	{
 		std::vector<unsigned char> l_result;
 
 		l_result.resize(l_pixelCount * l_srcTDC->m_PixelDataSize);
