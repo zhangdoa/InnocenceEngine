@@ -1551,6 +1551,11 @@ bool DX11RenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, Rende
 	return true;
 }
 
+bool DX11RenderingServer::WaitCommandQueue(RenderPassDataComponent* rhs, RenderPassUsage queueType, RenderPassUsage semaphoreType)
+{
+	return true;
+}
+
 bool DX11RenderingServer::WaitFence(RenderPassUsage renderPassUsage)
 {
 	return true;
