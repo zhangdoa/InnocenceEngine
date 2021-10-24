@@ -1387,6 +1387,11 @@ bool VKRenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, RenderP
 	return true;
 }
 
+bool VKRenderingServer::WaitCommandQueue(RenderPassDataComponent* rhs, RenderPassUsage queueType, RenderPassUsage semaphoreType)
+{
+	return true;
+}
+
 bool VKRenderingServer::WaitFence(RenderPassUsage renderPassUsage)
 {
 	//vkWaitForFrames(m_device, 1, &m_graphicsQueueFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
