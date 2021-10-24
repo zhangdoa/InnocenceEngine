@@ -4,6 +4,9 @@
 #include <cstring>
 
 #include <string>
+#include <locale>
+#include <codecvt>
+
 #include <utility>
 #include <array>
 #include <queue>
@@ -16,7 +19,7 @@
 #include <bitset>
 
 #include <random>
-#include<functional>
+#include <functional>
 #include <algorithm>
 
 #include <cassert>
