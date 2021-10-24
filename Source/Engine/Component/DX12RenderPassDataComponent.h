@@ -30,7 +30,11 @@ namespace Inno
 	};
 
 	class DX12Semaphore : public ISemaphore
-	{
+	{	
+	public:
+		std::atomic<uint64_t> m_DirectCommandQueueSemaphore = 0;
+		std::atomic<uint64_t> m_ComputeCommandQueueSemaphore = 0;
+		std::atomic<uint64_t> m_CopyCommandQueueSemaphore = 0;
 	};
 
 	class DX12RenderPassDataComponent : public RenderPassDataComponent

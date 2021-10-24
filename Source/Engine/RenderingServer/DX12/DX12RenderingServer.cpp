@@ -58,6 +58,7 @@ namespace DX12RenderingServerNS
 	TObjectPool<DX12RenderPassDataComponent> *m_RenderPassDataComponentPool = 0;
 	TObjectPool<DX12PipelineStateObject> *m_PSOPool = 0;
 	TObjectPool<DX12CommandList> *m_CommandListPool = 0;
+	TObjectPool<DX12Semaphore> *m_SemaphorePool = 0;
 	TObjectPool<DX12ShaderProgramComponent> *m_ShaderProgramComponentPool = 0;
 	TObjectPool<DX12SamplerDataComponent> *m_SamplerDataComponentPool = 0;
 	TObjectPool<DX12GPUBufferDataComponent> *m_GPUBufferDataComponentPool = 0;
@@ -86,9 +87,9 @@ namespace DX12RenderingServerNS
 	ComPtr<ID3D12CommandQueue> m_computeCommandQueue = 0;
 	ComPtr<ID3D12CommandQueue> m_copyCommandQueue = 0;
 
-	std::atomic<uint64_t> m_directCommandQueueSemaphore = 1;
-	std::atomic<uint64_t> m_computeCommandQueueSemaphore = 1;
-	std::atomic<uint64_t> m_copyCommandQueueSemaphore = 1;
+	std::atomic<uint64_t> m_directCommandQueueSemaphore = 0;
+	std::atomic<uint64_t> m_computeCommandQueueSemaphore = 0;
+	std::atomic<uint64_t> m_copyCommandQueueSemaphore = 0;
 	ComPtr<ID3D12Fence> m_directCommandQueueFence = 0;
 	ComPtr<ID3D12Fence> m_computeCommandQueueFence = 0;
 	ComPtr<ID3D12Fence> m_copyCommandQueueFence = 0;
@@ -724,6 +725,11 @@ DX12CommandList *addCommandList()
 	return m_CommandListPool->Spawn();
 }
 
+DX12Semaphore *addSemaphore()
+{
+	return m_SemaphorePool->Spawn();
+}
+
 bool DX12RenderingServer::Setup(ISystemConfig *systemConfig)
 {
 	auto l_renderingCapability = g_Engine->getRenderingFrontend()->getRenderingCapability();
@@ -734,6 +740,7 @@ bool DX12RenderingServer::Setup(ISystemConfig *systemConfig)
 	m_RenderPassDataComponentPool = TObjectPool<DX12RenderPassDataComponent>::Create(128);
 	m_PSOPool = TObjectPool<DX12PipelineStateObject>::Create(128);
 	m_CommandListPool = TObjectPool<DX12CommandList>::Create(256);
+	m_SemaphorePool = TObjectPool<DX12Semaphore>::Create(256);
 	m_ShaderProgramComponentPool = TObjectPool<DX12ShaderProgramComponent>::Create(256);
 	m_SamplerDataComponentPool = TObjectPool<DX12SamplerDataComponent>::Create(256);
 	m_GPUBufferDataComponentPool = TObjectPool<DX12GPUBufferDataComponent>::Create(256);
@@ -805,6 +812,12 @@ bool DX12RenderingServer::Initialize()
 		}
 
 		CreateCommandLists(m_SwapChainRPDC);
+
+		m_SwapChainRPDC->m_Semaphores.resize(m_SwapChainRPDC->m_CommandLists.size());
+		for (size_t i = 0; i < m_SwapChainRPDC->m_CommandLists.size(); i++)
+		{
+			m_SwapChainRPDC->m_Semaphores[i] = addSemaphore();
+		}
 
 		// Create swap chain
 		// Set the swap chain to use double buffering.
@@ -1248,8 +1261,14 @@ bool DX12RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 	}
 
 	CreateCommandLists(l_rhs);
-
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", l_rhs->m_InstanceName.c_str(), " CommandList has been created.");
+
+	l_rhs->m_Semaphores.resize(l_rhs->m_CommandLists.size());
+	for (size_t i = 0; i < l_rhs->m_CommandLists.size(); i++)
+	{
+		l_rhs->m_Semaphores[i] = addSemaphore();
+	}
+	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", l_rhs->m_InstanceName.c_str(), " Semaphore has been created.");
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
@@ -1986,28 +2005,66 @@ bool DX12RenderingServer::ExecuteCommandList(RenderPassDataComponent *rhs, Rende
 {
 	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent *>(rhs);
 	auto l_commandList = reinterpret_cast<DX12CommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
-
+	auto l_semaphore = reinterpret_cast<DX12Semaphore *>(l_rhs->m_Semaphores[l_rhs->m_CurrentFrame]);
+	
 	if (renderPassUsage == RenderPassUsage::Graphics)
 	{
 		ID3D12CommandList *l_directCommandLists[] = {l_commandList->m_DirectCommandList.Get()};
-		//m_directCommandQueue->Wait(m_directCommandQueueFence.Get(), m_directCommandQueueSemaphore);
 		m_directCommandQueue->ExecuteCommandLists(1, l_directCommandLists);
 
-		const UINT64 l_directCommandFinishedSemaphore = m_directCommandQueueSemaphore;
+		UINT64 l_directCommandFinishedSemaphore = ++m_directCommandQueueSemaphore;
+		l_semaphore->m_DirectCommandQueueSemaphore = l_directCommandFinishedSemaphore;
 		m_directCommandQueue->Signal(m_directCommandQueueFence.Get(), l_directCommandFinishedSemaphore);
-		m_directCommandQueueSemaphore++;
+
 		m_directCommandQueueFence->SetEventOnCompletion(l_directCommandFinishedSemaphore, m_directCommandQueueFenceEvent);
 	}
 	else if (renderPassUsage == RenderPassUsage::Compute)
 	{
 		ID3D12CommandList *l_computeCommandLists[] = {l_commandList->m_ComputeCommandList.Get()};
-		//m_computeCommandQueue->Wait(m_computeCommandQueueFence.Get(), m_computeCommandQueueSemaphore);
 		m_computeCommandQueue->ExecuteCommandLists(1, l_computeCommandLists);
 
-		const UINT64 l_computeCommandFinishedSemaphore = m_computeCommandQueueSemaphore;
+		UINT64 l_computeCommandFinishedSemaphore = ++m_computeCommandQueueSemaphore;
+		l_semaphore->m_ComputeCommandQueueSemaphore = l_computeCommandFinishedSemaphore;
 		m_computeCommandQueue->Signal(m_computeCommandQueueFence.Get(), l_computeCommandFinishedSemaphore);
 		m_computeCommandQueueSemaphore++;
+
 		m_computeCommandQueueFence->SetEventOnCompletion(l_computeCommandFinishedSemaphore, m_computeCommandQueueFenceEvent);
+	}
+
+	return true;
+}
+
+bool DX12RenderingServer::WaitCommandQueue(RenderPassDataComponent* rhs, RenderPassUsage queueType, RenderPassUsage semaphoreType)
+{	
+	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent *>(rhs);
+	auto l_semaphore = reinterpret_cast<DX12Semaphore *>(l_rhs->m_Semaphores[l_rhs->m_CurrentFrame]);
+	ID3D12CommandQueue* commandQueue = nullptr;
+	ID3D12Fence* fence = nullptr;
+	uint64_t semaphore = 0;
+
+	if (queueType == RenderPassUsage::Graphics)
+	{
+		commandQueue = m_directCommandQueue.Get();
+	}
+	else if (queueType == RenderPassUsage::Compute)
+	{
+		commandQueue = m_computeCommandQueue.Get();
+	}
+
+	if (semaphoreType == RenderPassUsage::Graphics)
+	{
+		fence = m_directCommandQueueFence.Get();
+		semaphore = l_semaphore->m_DirectCommandQueueSemaphore;
+	}
+	else if (semaphoreType == RenderPassUsage::Compute)
+	{
+		fence = m_computeCommandQueueFence.Get();
+		semaphore = l_semaphore->m_ComputeCommandQueueSemaphore;
+	}
+
+	if(commandQueue && fence)
+	{
+		commandQueue->Wait(fence, semaphore);
 	}
 
 	return true;

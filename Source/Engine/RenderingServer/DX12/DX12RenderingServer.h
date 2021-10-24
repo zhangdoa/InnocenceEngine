@@ -53,6 +53,7 @@ namespace Inno
 		bool UnbindGPUResource(RenderPassDataComponent* renderPass, ShaderStage shaderStage, GPUResourceComponent* resource, size_t resourceBindingLayoutDescIndex, Accessibility accessibility, size_t startOffset, size_t elementCount) override;
 		bool CommandListEnd(RenderPassDataComponent* rhs) override;
 		bool ExecuteCommandList(RenderPassDataComponent* rhs, RenderPassUsage renderPassUsage) override;
+		bool WaitCommandQueue(RenderPassDataComponent* rhs, RenderPassUsage queueType, RenderPassUsage semaphoreType) override;
 		bool WaitFence(RenderPassUsage renderPassUsage) override;
 		bool SetUserPipelineOutput(GPUResourceComponent* rhs) override;
 		GPUResourceComponent* GetUserPipelineOutput() override;
