@@ -157,7 +157,7 @@ Tested OS version: Windows 10 version 1903, 1909
 
 ##### Prerequisites
 
-- MSVC 19.00 or higher
+- MSVC 19.00 or higher (Environment Variable table should have manually added `VS2017INSTALLDIR` or `VS2019INSTALLDIR`)
 - CMake 3.10 or higher
 - Qt Creator 5.13 or higher
 
@@ -277,8 +277,8 @@ BakeScene.ps1 -sceneName [scene file name without extension]
 ```
 | Value | --- | Notes |
 | --- | --- | --- |
-| 0 | OpenGL | Not available on macOS, currently supported version 4.6 |
-| 1 | DirectX 11 |  Only available on Windows, currently supported version 11.4 |
+| 0 | OpenGL | Not available on macOS, currently supported version 4.6 (Deprecated) |
+| 1 | DirectX 11 |  Only available on Windows, currently supported version 11.4 (Deprecated) |
 | 2 | DirectX 12 | Only available on Windows, currently supported version 12.1 |
 | 3 | Vulkan | Not available on macOS, currently supported 1.1.92.1 (WIP) |
 | 4 | Metal | Only available on macOS, currently supported version 2 (WIP) |
@@ -295,11 +295,11 @@ BakeScene.ps1 -sceneName [scene file name without extension]
 
 ## Shader languages compatibilities
 
-- OpenGL rendering server requires SPIR-V binary format shader file for release build, please use `ParseGLShader.bat` and `CompileGLShaderToSPIR-V.bat` to generate them.
+You need [DirectXShaderCompiler](https://github.com/microsoft/DirectXShaderCompiler/releases) to generate compiled shader for runtime
 
-- Vulkan rendering server requires SPIR-V binary format shader file,  please use `CompileVKShaderToSPIR-V.bat` to generate them.
-
-- Use `ConvertSPIR-VToGLSL.bat` and `ConvertSPIR-VToHLSL.bat` to generate human readable GLSL and HLSL files from SPIR-V binary shader file.
+- Run `Scripts/HLSL2DXIL.ps1` to generate DXIL file from HLSL shader file for DirextX 12
+- Run `Scripts/HLSL2SPIR-V.ps1` to generate SPIR-V file from HLSL shader file for Vulkan
+- Run `Scripts/ParseGLSL.bat` then `GLSL2SPIR-V.bat` to generate SPIR-V file from GLSL shader file for OpenGL (Deprecated)
 
 ## License
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fzhangdoa%2FInnocenceEngine?ref=badge_large)
