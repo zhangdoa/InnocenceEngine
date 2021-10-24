@@ -87,6 +87,7 @@ bool DefaultRenderingClient::Setup(ISystemConfig *systemConfig)
 		BRDFLUTPass::Get().Setup();
 		BRDFLUTMSPass::Get().Setup();
 
+		TiledFrustumGenerationPass::Get().Setup();
 		LightCullingPass::Get().Setup();
 		GIResolvePass::Setup();
 		SurfelGITestPass::Get().Setup();
@@ -128,14 +129,15 @@ bool DefaultRenderingClient::Setup(ISystemConfig *systemConfig)
 		BRDFLUTPass::Get().PrepareCommandList();
 		BRDFLUTMSPass::Get().PrepareCommandList();
 		l_renderingServer->ExecuteCommandList(BRDFLUTPass::Get().GetRPDC(), RenderPassUsage::Graphics);
-		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+		l_renderingServer->WaitCommandQueue(BRDFLUTPass::Get().GetRPDC(), RenderPassUsage::Compute, RenderPassUsage::Graphics);
 		l_renderingServer->ExecuteCommandList(BRDFLUTPass::Get().GetRPDC(), RenderPassUsage::Compute);
-		l_renderingServer->WaitFence(RenderPassUsage::Compute);
+		l_renderingServer->WaitCommandQueue(BRDFLUTPass::Get().GetRPDC(), RenderPassUsage::Graphics, RenderPassUsage::Compute);
 		l_renderingServer->ExecuteCommandList(BRDFLUTMSPass::Get().GetRPDC(), RenderPassUsage::Graphics);
-		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+		l_renderingServer->WaitCommandQueue(BRDFLUTMSPass::Get().GetRPDC(), RenderPassUsage::Compute, RenderPassUsage::Graphics);
 		l_renderingServer->ExecuteCommandList(BRDFLUTMSPass::Get().GetRPDC(), RenderPassUsage::Compute);
 		l_renderingServer->WaitFence(RenderPassUsage::Compute);
 
+		TiledFrustumGenerationPass::Get().Initialize();
 		LightCullingPass::Get().Initialize();
 		GIResolvePass::Initialize();
 		SurfelGITestPass::Get().Initialize();
@@ -164,12 +166,15 @@ bool DefaultRenderingClient::Setup(ISystemConfig *systemConfig)
 		FinalBlendPass::Get().Initialize();
 
 		BSDFTestPass::Get().Initialize();
+
+		g_Engine->getRenderingServer()->SetUserPipelineOutput(FinalBlendPass::Get().GetResult());
 	};
 
 	f_RenderJob = [&]() {
 		auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
 		auto l_renderingServer = g_Engine->getRenderingServer();
-		GPUResourceComponent *l_canvas;
+		GPUResourceComponent* l_canvas;
+		RenderPassDataComponent* l_canvasOwner;
 
 		DefaultGPUBuffers::Upload();
 
@@ -177,48 +182,46 @@ bool DefaultRenderingClient::Setup(ISystemConfig *systemConfig)
 		LightCullingPass::Get().PrepareCommandList();
 
 		l_renderingServer->ExecuteCommandList(TiledFrustumGenerationPass::Get().GetRPDC(), RenderPassUsage::Graphics);
-		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+		l_renderingServer->WaitCommandQueue(TiledFrustumGenerationPass::Get().GetRPDC(), RenderPassUsage::Compute, RenderPassUsage::Graphics);
 		l_renderingServer->ExecuteCommandList(TiledFrustumGenerationPass::Get().GetRPDC(), RenderPassUsage::Compute);
-		l_renderingServer->WaitFence(RenderPassUsage::Compute);
-
+		l_renderingServer->WaitCommandQueue(TiledFrustumGenerationPass::Get().GetRPDC(), RenderPassUsage::Graphics, RenderPassUsage::Compute);
 		l_renderingServer->ExecuteCommandList(LightCullingPass::Get().GetRPDC(), RenderPassUsage::Graphics);
-		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+		l_renderingServer->WaitCommandQueue(LightCullingPass::Get().GetRPDC(), RenderPassUsage::Compute, RenderPassUsage::Graphics);
 		l_renderingServer->ExecuteCommandList(LightCullingPass::Get().GetRPDC(), RenderPassUsage::Compute);
-		l_renderingServer->WaitFence(RenderPassUsage::Compute);
 
 		SunShadowGeometryProcessPass::Get().PrepareCommandList();
 		SunShadowBlurOddPass::Get().PrepareCommandList();
 		SunShadowBlurEvenPass::Get().PrepareCommandList();
 
 		l_renderingServer->ExecuteCommandList(SunShadowGeometryProcessPass::Get().GetRPDC(), RenderPassUsage::Graphics);
-		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+		l_renderingServer->WaitCommandQueue(SunShadowGeometryProcessPass::Get().GetRPDC(), RenderPassUsage::Compute, RenderPassUsage::Graphics);
 		l_renderingServer->ExecuteCommandList(SunShadowGeometryProcessPass::Get().GetRPDC(), RenderPassUsage::Compute);
-		l_renderingServer->WaitFence(RenderPassUsage::Compute);
 
+		l_renderingServer->WaitCommandQueue(SunShadowGeometryProcessPass::Get().GetRPDC(), RenderPassUsage::Graphics, RenderPassUsage::Compute);
 		l_renderingServer->ExecuteCommandList(SunShadowBlurOddPass::Get().GetRPDC(), RenderPassUsage::Graphics);
-		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+		l_renderingServer->WaitCommandQueue(SunShadowBlurOddPass::Get().GetRPDC(), RenderPassUsage::Compute, RenderPassUsage::Graphics);
 		l_renderingServer->ExecuteCommandList(SunShadowBlurOddPass::Get().GetRPDC(), RenderPassUsage::Compute);
-		l_renderingServer->WaitFence(RenderPassUsage::Compute);
 
+		l_renderingServer->WaitCommandQueue(SunShadowBlurOddPass::Get().GetRPDC(), RenderPassUsage::Graphics, RenderPassUsage::Compute);
 		l_renderingServer->ExecuteCommandList(SunShadowBlurEvenPass::Get().GetRPDC(), RenderPassUsage::Graphics);
-		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+		l_renderingServer->WaitCommandQueue(SunShadowBlurEvenPass::Get().GetRPDC(), RenderPassUsage::Compute, RenderPassUsage::Graphics);
 		l_renderingServer->ExecuteCommandList(SunShadowBlurEvenPass::Get().GetRPDC(), RenderPassUsage::Compute);
-		l_renderingServer->WaitFence(RenderPassUsage::Compute);
 
-		//VXGIRenderer::Render();
+		VXGIRenderer::Get().Render();
 
 		if (m_drawBRDFTest)
 		{
 			BSDFTestPass::Get().PrepareCommandList();
 			l_renderingServer->ExecuteCommandList(BSDFTestPass::Get().GetRPDC(), RenderPassUsage::Graphics);
-			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
+			l_renderingServer->WaitCommandQueue(BSDFTestPass::Get().GetRPDC(), RenderPassUsage::Compute, RenderPassUsage::Graphics);
 			l_renderingServer->ExecuteCommandList(BSDFTestPass::Get().GetRPDC(), RenderPassUsage::Compute);
-			l_renderingServer->WaitFence(RenderPassUsage::Compute);
 			l_canvas = BSDFTestPass::Get().GetRPDC()->m_RenderTargets[0];
+			l_canvasOwner = BSDFTestPass::Get().GetRPDC();
 		}
 		else if (m_showLightHeatmap)
 		{
 			l_canvas = LightCullingPass::Get().GetHeatMap();
+			l_canvasOwner = LightCullingPass::Get().GetRPDC();
 		}
 		else if (m_showProbe)
 		{
@@ -228,6 +231,7 @@ bool DefaultRenderingClient::Setup(ISystemConfig *systemConfig)
 			l_renderingServer->ExecuteCommandList(BSDFTestPass::Get().GetRPDC(), RenderPassUsage::Compute);
 			l_renderingServer->WaitFence(RenderPassUsage::Compute);
 			l_canvas = SurfelGITestPass::Get().GetRPDC()->m_RenderTargets[0];
+			l_canvasOwner = SurfelGITestPass::Get().GetRPDC();
 		}
 		else if (m_showTransparent)
 		{
@@ -240,13 +244,13 @@ bool DefaultRenderingClient::Setup(ISystemConfig *systemConfig)
 			l_renderingServer->ExecuteCommandList(TransparentBlendPass::Get().GetRPDC(), RenderPassUsage::Graphics);
 			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
 			l_renderingServer->ExecuteCommandList(TransparentBlendPass::Get().GetRPDC(), RenderPassUsage::Compute);
-			l_renderingServer->WaitFence(RenderPassUsage::Compute);			
+			l_renderingServer->WaitFence(RenderPassUsage::Compute);
 			l_canvas = TransparentBlendPass::Get().GetResult();
+			l_canvasOwner = TransparentBlendPass::Get().GetRPDC();
 		}
 		else if (m_showVolumetric)
 		{
 			VolumetricPass::Render(true);
-			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
 			l_canvas = VolumetricPass::GetVisualizationResult();
 		}
 		else
@@ -255,17 +259,22 @@ bool DefaultRenderingClient::Setup(ISystemConfig *systemConfig)
 
 			OpaquePass::Get().PrepareCommandList();
 			AnimationPass::Get().PrepareCommandList();
-
-			l_renderingServer->ExecuteCommandList(OpaquePass::Get().GetRPDC(), RenderPassUsage::Graphics);
-			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
-
-			l_canvas = OpaquePass::Get().GetRPDC()->m_RenderTargets[0];
-			l_renderingServer->ExecuteCommandList(AnimationPass::Get().GetRPDC(), RenderPassUsage::Graphics);
-			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
-
 			SSAOPass::Get().PrepareCommandList();
 
-			VolumetricPass::Render(false);
+			l_renderingServer->ExecuteCommandList(OpaquePass::Get().GetRPDC(), RenderPassUsage::Graphics);
+
+			l_renderingServer->WaitCommandQueue(OpaquePass::Get().GetRPDC(), RenderPassUsage::Graphics, RenderPassUsage::Graphics);
+			l_renderingServer->ExecuteCommandList(AnimationPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+
+			l_renderingServer->WaitCommandQueue(AnimationPass::Get().GetRPDC(), RenderPassUsage::Graphics, RenderPassUsage::Graphics);
+			l_renderingServer->ExecuteCommandList(SSAOPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+			l_renderingServer->WaitCommandQueue(SSAOPass::Get().GetRPDC(), RenderPassUsage::Compute, RenderPassUsage::Graphics);
+			l_renderingServer->ExecuteCommandList(SSAOPass::Get().GetRPDC(), RenderPassUsage::Compute);
+
+			//VolumetricPass::Render(false);
+			
+			l_renderingServer->WaitCommandQueue(AnimationPass::Get().GetRPDC(), RenderPassUsage::Graphics, RenderPassUsage::Graphics);
+			l_renderingServer->WaitCommandQueue(SSAOPass::Get().GetRPDC(), RenderPassUsage::Graphics, RenderPassUsage::Compute);
 
 			LightPass::Get().PrepareCommandList();
 
@@ -274,92 +283,120 @@ bool DefaultRenderingClient::Setup(ISystemConfig *systemConfig)
 				SkyPass::Get().PrepareCommandList();
 			}
 			PreTAAPass::Get().PrepareCommandList();
-			TransparentGeometryProcessPass::Get().PrepareCommandList();
-			TransparentBlendPass::Get().PrepareCommandList();
-			
-			l_renderingServer->ExecuteCommandList(LightPass::Get().GetRPDC(), RenderPassUsage::Graphics);
-			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
-			l_renderingServer->WaitFence(RenderPassUsage::Compute);
-
-			l_renderingServer->ExecuteCommandList(SkyPass::Get().GetRPDC(), RenderPassUsage::Graphics);
-			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
-			l_renderingServer->WaitFence(RenderPassUsage::Compute);
-
-			l_renderingServer->ExecuteCommandList(PreTAAPass::Get().GetRPDC(), RenderPassUsage::Graphics);
-			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
-			l_renderingServer->WaitFence(RenderPassUsage::Compute);
-
-			l_renderingServer->ExecuteCommandList(TransparentGeometryProcessPass::Get().GetRPDC(), RenderPassUsage::Graphics);
-			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
-			l_renderingServer->ExecuteCommandList(TransparentGeometryProcessPass::Get().GetRPDC(), RenderPassUsage::Compute);
-			l_renderingServer->WaitFence(RenderPassUsage::Compute);
-			l_renderingServer->ExecuteCommandList(TransparentBlendPass::Get().GetRPDC(), RenderPassUsage::Graphics);
-			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
-			l_renderingServer->ExecuteCommandList(TransparentBlendPass::Get().GetRPDC(), RenderPassUsage::Compute);
-			l_renderingServer->WaitFence(RenderPassUsage::Compute);	
-
 			l_canvas = PreTAAPass::Get().GetResult();
+			l_canvasOwner = PreTAAPass::Get().GetRPDC();
+
+			TransparentGeometryProcessPass::Get().PrepareCommandList();
+
+			TransparentBlendPassRenderingContext l_transparentBlendPassRenderingContext;
+			l_transparentBlendPassRenderingContext.m_output = l_canvas;
+			TransparentBlendPass::Get().PrepareCommandList(&l_transparentBlendPassRenderingContext);
+
+			l_renderingServer->ExecuteCommandList(LightPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+			l_renderingServer->WaitCommandQueue(LightPass::Get().GetRPDC(), RenderPassUsage::Compute, RenderPassUsage::Graphics);
+			l_renderingServer->ExecuteCommandList(LightPass::Get().GetRPDC(), RenderPassUsage::Compute);
+			
+			if (l_renderingConfig.drawSky)
+			{
+				l_renderingServer->ExecuteCommandList(SkyPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+				l_renderingServer->WaitCommandQueue(SkyPass::Get().GetRPDC(), RenderPassUsage::Compute, RenderPassUsage::Graphics);
+				l_renderingServer->ExecuteCommandList(SkyPass::Get().GetRPDC(), RenderPassUsage::Compute);
+			}
+
+			l_renderingServer->WaitCommandQueue(LightPass::Get().GetRPDC(), RenderPassUsage::Graphics, RenderPassUsage::Compute);
+			l_renderingServer->WaitCommandQueue(SkyPass::Get().GetRPDC(), RenderPassUsage::Graphics, RenderPassUsage::Compute);
+			l_renderingServer->ExecuteCommandList(PreTAAPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+			l_renderingServer->WaitCommandQueue(PreTAAPass::Get().GetRPDC(), RenderPassUsage::Compute, RenderPassUsage::Graphics);
+			l_renderingServer->ExecuteCommandList(PreTAAPass::Get().GetRPDC(), RenderPassUsage::Compute);
+
+			l_renderingServer->WaitCommandQueue(PreTAAPass::Get().GetRPDC(), RenderPassUsage::Graphics, RenderPassUsage::Compute);
+			l_renderingServer->ExecuteCommandList(TransparentGeometryProcessPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+			l_renderingServer->WaitCommandQueue(TransparentGeometryProcessPass::Get().GetRPDC(), RenderPassUsage::Compute, RenderPassUsage::Graphics);
+			l_renderingServer->ExecuteCommandList(TransparentGeometryProcessPass::Get().GetRPDC(), RenderPassUsage::Compute);
+			l_renderingServer->WaitCommandQueue(TransparentGeometryProcessPass::Get().GetRPDC(), RenderPassUsage::Graphics, RenderPassUsage::Compute);
+			l_renderingServer->ExecuteCommandList(TransparentBlendPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+			l_renderingServer->WaitCommandQueue(TransparentBlendPass::Get().GetRPDC(), RenderPassUsage::Compute, RenderPassUsage::Graphics);
+			l_renderingServer->ExecuteCommandList(TransparentBlendPass::Get().GetRPDC(), RenderPassUsage::Compute);	
 		}
 
-		if (m_showVoxel)
-		{
-			l_canvas = VXGIRenderer::Get().GetVisualizationResult();
-			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
-			l_renderingServer->WaitFence(RenderPassUsage::Compute);
-		}
+		// if (m_showVoxel)
+		// {
+		// 	l_canvas = VXGIRenderer::Get().GetVisualizationResult();
+		// }
 
-		LuminanceHistogramPass::Get().PrepareCommandList();
+		LuminanceHistogramPassRenderingContext l_LuminanceHistogramPassRenderingContext;
+		l_LuminanceHistogramPassRenderingContext.m_input = l_canvas;
+		LuminanceHistogramPass::Get().PrepareCommandList(&l_LuminanceHistogramPassRenderingContext);
+
 		LuminanceAveragePass::Get().PrepareCommandList();
 
+		l_renderingServer->WaitCommandQueue(TransparentBlendPass::Get().GetRPDC(), RenderPassUsage::Graphics, RenderPassUsage::Compute);
+		l_renderingServer->ExecuteCommandList(LuminanceHistogramPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+		l_renderingServer->WaitCommandQueue(LuminanceHistogramPass::Get().GetRPDC(), RenderPassUsage::Compute, RenderPassUsage::Graphics);
 		l_renderingServer->ExecuteCommandList(LuminanceHistogramPass::Get().GetRPDC(), RenderPassUsage::Compute);
-		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
-		l_renderingServer->WaitFence(RenderPassUsage::Compute);
 
+		l_renderingServer->WaitCommandQueue(LuminanceHistogramPass::Get().GetRPDC(), RenderPassUsage::Graphics, RenderPassUsage::Compute);
+		l_renderingServer->ExecuteCommandList(LuminanceAveragePass::Get().GetRPDC(), RenderPassUsage::Graphics);
+		l_renderingServer->WaitCommandQueue(LuminanceAveragePass::Get().GetRPDC(), RenderPassUsage::Compute, RenderPassUsage::Graphics);	
 		l_renderingServer->ExecuteCommandList(LuminanceAveragePass::Get().GetRPDC(), RenderPassUsage::Compute);
-		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
-		l_renderingServer->WaitFence(RenderPassUsage::Compute);
 
 		if (l_renderingConfig.useTAA)
 		{
-			TAAPass::Get().PrepareCommandList();
+			TAAPassRenderingContext l_TAAPassRenderingContext;
+			l_TAAPassRenderingContext.m_input = l_canvas;
 
-			l_renderingServer->ExecuteCommandList(TAAPass::Get().GetRPDC(), RenderPassUsage::Compute);
-			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
-			l_renderingServer->WaitFence(RenderPassUsage::Compute);
+			TAAPass::Get().PrepareCommandList(&l_TAAPassRenderingContext);
 
 			PostTAAPass::Get().PrepareCommandList();
 
+			l_renderingServer->WaitCommandQueue(l_canvasOwner, RenderPassUsage::Graphics, RenderPassUsage::Compute);
+			l_renderingServer->ExecuteCommandList(TAAPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+			l_renderingServer->WaitCommandQueue(TAAPass::Get().GetRPDC(), RenderPassUsage::Compute, RenderPassUsage::Graphics);
+			l_renderingServer->ExecuteCommandList(TAAPass::Get().GetRPDC(), RenderPassUsage::Compute);
+
+			l_renderingServer->WaitCommandQueue(TAAPass::Get().GetRPDC(), RenderPassUsage::Graphics, RenderPassUsage::Compute);		
+			l_renderingServer->ExecuteCommandList(PostTAAPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+			l_renderingServer->WaitCommandQueue(PostTAAPass::Get().GetRPDC(), RenderPassUsage::Compute, RenderPassUsage::Graphics);
 			l_renderingServer->ExecuteCommandList(PostTAAPass::Get().GetRPDC(), RenderPassUsage::Compute);
-			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
-			l_renderingServer->WaitFence(RenderPassUsage::Compute);
 
 			l_canvas = PostTAAPass::Get().GetResult();
+			l_canvasOwner = PostTAAPass::Get().GetRPDC();
 		}
 
 		if (l_renderingConfig.useMotionBlur)
 		{
-			MotionBlurPass::Get().PrepareCommandList();
+			MotionBlurPassRenderingContext l_MotionBlurPassRenderingContext;
+			l_MotionBlurPassRenderingContext.m_input = l_canvas;
+			MotionBlurPass::Get().PrepareCommandList(&l_MotionBlurPassRenderingContext);
+
+			l_renderingServer->WaitCommandQueue(l_canvasOwner, RenderPassUsage::Graphics, RenderPassUsage::Compute);
+			l_renderingServer->ExecuteCommandList(MotionBlurPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+			l_renderingServer->WaitCommandQueue(MotionBlurPass::Get().GetRPDC(), RenderPassUsage::Compute, RenderPassUsage::Graphics);
 			l_renderingServer->ExecuteCommandList(MotionBlurPass::Get().GetRPDC(), RenderPassUsage::Compute);
-			l_renderingServer->WaitFence(RenderPassUsage::Graphics);
-			l_renderingServer->WaitFence(RenderPassUsage::Compute);
 
 			l_canvas = MotionBlurPass::Get().GetResult();
+			l_canvasOwner = MotionBlurPass::Get().GetRPDC();
 		}
 
 		BillboardPass::Get().PrepareCommandList();
 		DebugPass::Get().PrepareCommandList();
-		l_renderingServer->ExecuteCommandList(BillboardPass::Get().GetRPDC(), RenderPassUsage::Compute);
-		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
-		l_renderingServer->WaitFence(RenderPassUsage::Compute);
 
-		l_renderingServer->ExecuteCommandList(DebugPass::Get().GetRPDC(), RenderPassUsage::Compute);
-		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
-		l_renderingServer->WaitFence(RenderPassUsage::Compute);
+		l_renderingServer->ExecuteCommandList(BillboardPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+		l_renderingServer->ExecuteCommandList(DebugPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+			
+		FinalBlendPassRenderingContext l_FinalBlendPassRenderingContext;
+		l_FinalBlendPassRenderingContext.m_input = l_canvas;
+		FinalBlendPass::Get().PrepareCommandList(&l_FinalBlendPassRenderingContext);
 
-		FinalBlendPass::Get().PrepareCommandList();
+		l_renderingServer->WaitCommandQueue(l_canvasOwner, RenderPassUsage::Graphics, RenderPassUsage::Compute);
+		l_renderingServer->WaitCommandQueue(LuminanceAveragePass::Get().GetRPDC(), RenderPassUsage::Graphics, RenderPassUsage::Compute);
+		l_renderingServer->WaitCommandQueue(BillboardPass::Get().GetRPDC(), RenderPassUsage::Graphics, RenderPassUsage::Graphics);
+		l_renderingServer->WaitCommandQueue(DebugPass::Get().GetRPDC(), RenderPassUsage::Graphics, RenderPassUsage::Graphics);
+		
+		l_renderingServer->ExecuteCommandList(FinalBlendPass::Get().GetRPDC(), RenderPassUsage::Graphics);
+		l_renderingServer->WaitCommandQueue(FinalBlendPass::Get().GetRPDC(), RenderPassUsage::Compute, RenderPassUsage::Graphics);
 		l_renderingServer->ExecuteCommandList(FinalBlendPass::Get().GetRPDC(), RenderPassUsage::Compute);
-		l_renderingServer->WaitFence(RenderPassUsage::Graphics);
-		l_renderingServer->WaitFence(RenderPassUsage::Compute);
+		l_renderingServer->WaitCommandQueue(FinalBlendPass::Get().GetRPDC(), RenderPassUsage::Graphics, RenderPassUsage::Compute);
 
 		if (m_saveScreenCapture)
 		{
@@ -381,6 +418,7 @@ bool DefaultRenderingClient::Setup(ISystemConfig *systemConfig)
 		BRDFLUTPass::Get().Terminate();
 		BRDFLUTMSPass::Get().Terminate();
 
+		TiledFrustumGenerationPass::Get().Terminate();
 		LightCullingPass::Get().Terminate();
 		GIResolvePass::Terminate();
 		SurfelGITestPass::Get().Terminate();
@@ -415,7 +453,7 @@ bool DefaultRenderingClient::Setup(ISystemConfig *systemConfig)
 	l_DefaultRenderingClientSetupTask.m_Future->Get();
 
 	m_ObjectStatus = ObjectStatus::Created;
-	
+
 	return true;
 }
 
@@ -423,15 +461,15 @@ bool DefaultRenderingClient::Initialize()
 {
 	auto l_DefaultRenderingClientInitializeTask = g_Engine->getTaskSystem()->Submit("DefaultRenderingClientInitializeTask", 2, nullptr, f_InitializeJob);
 	l_DefaultRenderingClientInitializeTask.m_Future->Get();
-	
+
 	m_ObjectStatus = ObjectStatus::Activated;
 
 	return true;
 }
 
-bool DefaultRenderingClient::Render(IRenderingConfig* renderingConfig)
+bool DefaultRenderingClient::Render(IRenderingConfig *renderingConfig)
 {
-	//f_RenderJob();
+	f_RenderJob();
 
 	return true;
 }
@@ -439,7 +477,7 @@ bool DefaultRenderingClient::Render(IRenderingConfig* renderingConfig)
 bool DefaultRenderingClient::Terminate()
 {
 	f_TerminateJob();
-	
+
 	m_ObjectStatus = ObjectStatus::Terminated;
 
 	return true;

@@ -6,7 +6,7 @@ namespace Inno
 	class TransparentBlendPassRenderingContext : public IRenderingContext
 	{
 		public:
-		GPUResourceComponent *m_input;
+		GPUResourceComponent *m_output;
 	};
 
 	class TransparentBlendPass : IRenderPass

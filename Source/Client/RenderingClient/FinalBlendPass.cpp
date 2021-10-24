@@ -3,7 +3,7 @@
 
 #include "BillboardPass.h"
 #include "DebugPass.h"
-#include "LuminanceHistogramPass.h"
+#include "LuminanceAveragePass.h"
 
 #include "../../Engine/Interface/IEngine.h"
 
@@ -75,7 +75,6 @@ bool FinalBlendPass::Initialize()
 	g_Engine->getRenderingServer()->InitializeShaderProgramComponent(m_SPC);
 	g_Engine->getRenderingServer()->InitializeRenderPassDataComponent(m_RPDC);
 	g_Engine->getRenderingServer()->InitializeTextureDataComponent(m_TDC);
-	g_Engine->getRenderingServer()->SetUserPipelineOutput(m_TDC);
 
 	m_ObjectStatus = ObjectStatus::Activated;
 
@@ -109,7 +108,7 @@ bool FinalBlendPass::PrepareCommandList(IRenderingContext* renderingContext)
 	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, l_renderingContext->m_input, 0);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, BillboardPass::Get().GetRPDC()->m_RenderTargets[0], 1);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, DebugPass::Get().GetRPDC()->m_RenderTargets[0], 2);
-	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, LuminanceHistogramPass::Get().GetResult(), 3, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, LuminanceAveragePass::Get().GetResult(), 3, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, m_TDC, 4, Accessibility::ReadWrite);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, l_PerFrameCBufferGBDC, 5, Accessibility::ReadOnly);
 
@@ -119,7 +118,7 @@ bool FinalBlendPass::PrepareCommandList(IRenderingContext* renderingContext)
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, BillboardPass::Get().GetRPDC()->m_RenderTargets[0], 1);
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, DebugPass::Get().GetRPDC()->m_RenderTargets[0], 2);
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, m_TDC, 4, Accessibility::ReadWrite);
-	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, LuminanceHistogramPass::Get().GetResult(), 3, Accessibility::ReadOnly);
+	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, LuminanceAveragePass::Get().GetResult(), 3, Accessibility::ReadOnly);
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
 

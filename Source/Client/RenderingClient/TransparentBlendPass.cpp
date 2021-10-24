@@ -104,7 +104,7 @@ bool TransparentBlendPass::PrepareCommandList(IRenderingContext* renderingContex
 	else
 	{
 		auto l_renderingContext = reinterpret_cast<TransparentBlendPassRenderingContext*>(renderingContext);
-		l_canvas = l_renderingContext->m_input;
+		l_canvas = l_renderingContext->m_output;
 	}
 
 	auto l_PerFrameCBufferGBDC = GetGPUBufferDataComponent(GPUBufferUsageType::PerFrame);

@@ -39,7 +39,9 @@ bool LightCullingPass::Setup(ISystemConfig *systemConfig)
 	m_lightIndexList->m_ElementSize = sizeof(uint32_t);
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
-
+	l_RenderPassDesc.m_RenderTargetCount = 0;
+	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
+	
 	m_lightGrid = g_Engine->getRenderingServer()->AddTextureDataComponent("LightGrid/");
 	m_lightGrid->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 

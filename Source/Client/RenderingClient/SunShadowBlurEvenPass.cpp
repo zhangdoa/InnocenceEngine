@@ -37,6 +37,7 @@ bool SunShadowBlurEvenPass::Setup(ISystemConfig *systemConfig)
 
 	m_RPDC->m_RenderPassDesc = l_RenderPassDesc;
 
+	m_RPDC->m_ResourceBindingLayoutDescs.resize(3);
 	m_RPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Buffer;
 	m_RPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
 	m_RPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
@@ -44,8 +45,8 @@ bool SunShadowBlurEvenPass::Setup(ISystemConfig *systemConfig)
 	m_RPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Image;
 	m_RPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
 	m_RPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 0;
-	m_RPDC->m_ResourceBindingLayoutDescs[2].m_BindingAccessibility = Accessibility::ReadOnly;
-	m_RPDC->m_ResourceBindingLayoutDescs[2].m_ResourceAccessibility = Accessibility::ReadWrite;
+	m_RPDC->m_ResourceBindingLayoutDescs[1].m_BindingAccessibility = Accessibility::ReadOnly;
+	m_RPDC->m_ResourceBindingLayoutDescs[1].m_ResourceAccessibility = Accessibility::ReadWrite;
 	m_RPDC->m_ResourceBindingLayoutDescs[1].m_IndirectBinding = true;
 
 	m_RPDC->m_ResourceBindingLayoutDescs[2].m_GPUResourceType = GPUResourceType::Image;
