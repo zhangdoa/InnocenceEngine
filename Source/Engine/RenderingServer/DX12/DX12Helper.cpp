@@ -1101,7 +1101,7 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12D
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject*>(DX12RPDC->m_PipelineStateObject);
 	auto l_DX12SPC = reinterpret_cast<DX12ShaderProgramComponent*>(DX12RPDC->m_ShaderProgram);
 	
-	if (DX12RPDC->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
+	if (DX12RPDC->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
 		GenerateDepthStencilStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
 		GenerateBlendStateDesc(DX12RPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, l_PSO);
@@ -1166,7 +1166,7 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12D
 		if (l_DX12SPC->m_CSBuffer)
 		{
 #endif
-			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_InstanceName.c_str(), " RenderPassUsage can't be Graphics if there is a Compute shader attached!");
+			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_InstanceName.c_str(), " GPUEngineType can't be Graphics if there is a Compute shader attached!");
 			return false;
 		}
 #ifdef USE_DXIL

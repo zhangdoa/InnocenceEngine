@@ -778,7 +778,7 @@ bool GLRenderingServer::CommandListBegin(RenderPassDataComponent* rhs, size_t fr
 bool GLRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<GLRenderPassDataComponent*>(rhs);
-	if (l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
+	if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
 		auto l_GLPSO = reinterpret_cast<GLPipelineStateObject*>(l_rhs->m_PipelineStateObject);
 
@@ -799,7 +799,7 @@ bool GLRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent* rhs
 
 bool GLRenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 {
-	if (rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
+	if (rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
 		auto l_cleanColor = rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor;
 		glClearColor(l_cleanColor[0], l_cleanColor[1], l_cleanColor[2], l_cleanColor[3]);
@@ -911,17 +911,17 @@ bool GLRenderingServer::CommandListEnd(RenderPassDataComponent* rhs)
 	return true;
 }
 
-bool GLRenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, RenderPassUsage renderPassUsage)
+bool GLRenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, GPUEngineType GPUEngineType)
 {
 	return true;
 }
 
-bool GLRenderingServer::WaitCommandQueue(RenderPassDataComponent* rhs, RenderPassUsage queueType, RenderPassUsage semaphoreType)
+bool GLRenderingServer::WaitCommandQueue(RenderPassDataComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType)
 {
 	return true;
 }
 
-bool GLRenderingServer::WaitFence(RenderPassUsage renderPassUsage)
+bool GLRenderingServer::WaitFence(GPUEngineType GPUEngineType)
 {
 	return true;
 }
@@ -958,9 +958,9 @@ bool GLRenderingServer::Present()
 
 	CommandListEnd(m_SwapChainRPDC);
 
-	ExecuteCommandList(m_SwapChainRPDC, RenderPassUsage::Graphics);
+	ExecuteCommandList(m_SwapChainRPDC, GPUEngineType::Graphics);
 
-	WaitFence(RenderPassUsage::Graphics);
+	WaitFence(GPUEngineType::Graphics);
 
 	if (m_needResize)
 	{

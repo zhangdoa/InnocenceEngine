@@ -1107,7 +1107,7 @@ bool DX11RenderingServer::BindRenderPassDataComponent(RenderPassDataComponent* r
 		m_deviceContext->CSSetShader(l_shaderProgram->m_CSHandle, NULL, 0);
 	}
 
-	if (l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
+	if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
 		m_deviceContext->IASetInputLayout(l_PSO->m_InputLayout);
 		m_deviceContext->IASetPrimitiveTopology(l_PSO->m_PrimitiveTopology);
@@ -1147,7 +1147,7 @@ bool DX11RenderingServer::CleanRenderTargets(RenderPassDataComponent* rhs)
 {
 	auto l_rhs = reinterpret_cast<DX11RenderPassDataComponent*>(rhs);
 
-	if (l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
+	if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
 		if (l_rhs->m_RenderPassDesc.m_RenderTargetCount)
 		{
@@ -1523,7 +1523,7 @@ bool DX11RenderingServer::CommandListEnd(RenderPassDataComponent* rhs)
 		m_deviceContext->CSSetShader(0, NULL, 0);
 	}
 
-	if (l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
+	if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
 		m_deviceContext->IASetInputLayout(NULL);
 		m_deviceContext->RSSetState(NULL);
@@ -1546,17 +1546,17 @@ bool DX11RenderingServer::CommandListEnd(RenderPassDataComponent* rhs)
 	return true;
 }
 
-bool DX11RenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, RenderPassUsage renderPassUsage)
+bool DX11RenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, GPUEngineType GPUEngineType)
 {
 	return true;
 }
 
-bool DX11RenderingServer::WaitCommandQueue(RenderPassDataComponent* rhs, RenderPassUsage queueType, RenderPassUsage semaphoreType)
+bool DX11RenderingServer::WaitCommandQueue(RenderPassDataComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType)
 {
 	return true;
 }
 
-bool DX11RenderingServer::WaitFence(RenderPassUsage renderPassUsage)
+bool DX11RenderingServer::WaitFence(GPUEngineType GPUEngineType)
 {
 	return true;
 }
@@ -1593,9 +1593,9 @@ bool DX11RenderingServer::Present()
 
 	CommandListEnd(m_SwapChainRPDC);
 
-	ExecuteCommandList(m_SwapChainRPDC, RenderPassUsage::Graphics);
+	ExecuteCommandList(m_SwapChainRPDC, GPUEngineType::Graphics);
 	
-	WaitFence(RenderPassUsage::Graphics);
+	WaitFence(GPUEngineType::Graphics);
 
 	auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
 

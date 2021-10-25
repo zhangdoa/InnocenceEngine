@@ -178,7 +178,7 @@ namespace Inno
 			ViewportDesc m_ViewportDesc = {};
 		};
 
-		enum class RenderPassUsage
+		enum class GPUEngineType
 		{
 			Invalid,
 			Graphics,
@@ -189,7 +189,7 @@ namespace Inno
 		{
 			bool m_UseMultiFrames = false;
 			bool m_IsOffScreen = false;
-			RenderPassUsage m_RenderPassUsage = RenderPassUsage::Graphics;
+			GPUEngineType m_GPUEngineType = GPUEngineType::Graphics;
 			size_t m_RenderTargetCount = 0;
 			bool m_UseColorBuffer = true;
 			bool m_UseDepthBuffer = false;

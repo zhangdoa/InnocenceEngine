@@ -902,7 +902,7 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 
 	l_result &= CreatePipelineLayout(m_device, l_rhs);
 
-	if (l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
+	if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
 		l_result &= CreateGraphicsPipelines(m_device, l_rhs);
 	}
@@ -1221,11 +1221,11 @@ bool VKRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent *rhs
 
 	vkCmdBeginRenderPass(l_commandList->m_CommandBuffer, &l_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	if (l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Graphics)
+	if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
 	{
 		vkCmdBindPipeline(l_commandList->m_CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, l_PSO->m_Pipeline);
 	}
-	else if (l_rhs->m_RenderPassDesc.m_RenderPassUsage == RenderPassUsage::Compute)
+	else if (l_rhs->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
 	{
 		vkCmdBindPipeline(l_commandList->m_CommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, l_PSO->m_Pipeline);
 	}
@@ -1362,7 +1362,7 @@ bool VKRenderingServer::CommandListEnd(RenderPassDataComponent *rhs)
 	return true;
 }
 
-bool VKRenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, RenderPassUsage renderPassUsage)
+bool VKRenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, GPUEngineType GPUEngineType)
 {
 	auto l_rhs = reinterpret_cast<VKRenderPassDataComponent *>(rhs);
 	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
@@ -1387,12 +1387,12 @@ bool VKRenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, RenderP
 	return true;
 }
 
-bool VKRenderingServer::WaitCommandQueue(RenderPassDataComponent* rhs, RenderPassUsage queueType, RenderPassUsage semaphoreType)
+bool VKRenderingServer::WaitCommandQueue(RenderPassDataComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType)
 {
 	return true;
 }
 
-bool VKRenderingServer::WaitFence(RenderPassUsage renderPassUsage)
+bool VKRenderingServer::WaitFence(GPUEngineType GPUEngineType)
 {
 	//vkWaitForFrames(m_device, 1, &m_graphicsQueueFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
 

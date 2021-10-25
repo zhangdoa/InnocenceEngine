@@ -195,7 +195,7 @@ bool MTRenderingServer::CommandListEnd(RenderPassDataComponent* rhs)
 	return true;
 }
 
-bool MTRenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, RenderPassUsage renderPassUsage)
+bool MTRenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, GPUEngineType GPUEngineType)
 {
 	return true;
 }
