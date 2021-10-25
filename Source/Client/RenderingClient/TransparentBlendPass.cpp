@@ -24,7 +24,7 @@ bool TransparentBlendPass::Setup(ISystemConfig *systemConfig)
 	m_RPDC = g_Engine->getRenderingServer()->AddRenderPassDataComponent("TransparentBlendPass/");
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;
-	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
+	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 
 	m_RPDC->m_RenderPassDesc = l_RenderPassDesc;
 

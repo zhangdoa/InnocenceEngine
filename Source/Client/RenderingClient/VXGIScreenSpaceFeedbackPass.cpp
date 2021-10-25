@@ -33,7 +33,7 @@ bool VXGIScreenSpaceFeedbackPass::Setup(ISystemConfig *systemConfig)
 	m_TDC->m_TextureDesc.UseMipMap = true;
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;
-	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
+	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
 
 	m_RPDC->m_RenderPassDesc = l_RenderPassDesc;

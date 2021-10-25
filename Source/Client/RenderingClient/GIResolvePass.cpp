@@ -352,7 +352,7 @@ bool GIResolvePass::setupSky()
 {
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
-	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
+	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
 
 	m_skyRadianceSPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("GIResolveSkyRadiancePass/");
@@ -428,7 +428,7 @@ bool GIResolvePass::setupSurfels()
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
-	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
+	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
 
 	m_surfelRPDC->m_RenderPassDesc = l_RenderPassDesc;
@@ -481,7 +481,7 @@ bool GIResolvePass::setupBricks()
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
-	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
+	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
 
 	m_brickRPDC->m_RenderPassDesc = l_RenderPassDesc;
@@ -527,7 +527,7 @@ bool GIResolvePass::setupProbes()
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
-	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
+	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
 
 	m_probeRPDC->m_RenderPassDesc = l_RenderPassDesc;
@@ -584,7 +584,7 @@ bool GIResolvePass::setupIrradianceVolume()
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
-	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
+	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
 
 	m_irradianceVolumeRPDC->m_RenderPassDesc = l_RenderPassDesc;
@@ -887,12 +887,12 @@ bool GIResolvePass::PrepareCommandList()
 		litProbes();
 		generateIrradianceVolume();
 
-		g_Engine->getRenderingServer()->ExecuteCommandList(m_skyRadianceRPDC, RenderPassUsage::Graphics);
-		g_Engine->getRenderingServer()->ExecuteCommandList(m_skyIrradianceRPDC, RenderPassUsage::Graphics);
-		g_Engine->getRenderingServer()->ExecuteCommandList(m_surfelRPDC, RenderPassUsage::Graphics);
-		g_Engine->getRenderingServer()->ExecuteCommandList(m_brickRPDC, RenderPassUsage::Graphics);
-		g_Engine->getRenderingServer()->ExecuteCommandList(m_probeRPDC, RenderPassUsage::Graphics);
-		g_Engine->getRenderingServer()->ExecuteCommandList(m_irradianceVolumeRPDC, RenderPassUsage::Graphics);	
+		g_Engine->getRenderingServer()->ExecuteCommandList(m_skyRadianceRPDC, GPUEngineType::Graphics);
+		g_Engine->getRenderingServer()->ExecuteCommandList(m_skyIrradianceRPDC, GPUEngineType::Graphics);
+		g_Engine->getRenderingServer()->ExecuteCommandList(m_surfelRPDC, GPUEngineType::Graphics);
+		g_Engine->getRenderingServer()->ExecuteCommandList(m_brickRPDC, GPUEngineType::Graphics);
+		g_Engine->getRenderingServer()->ExecuteCommandList(m_probeRPDC, GPUEngineType::Graphics);
+		g_Engine->getRenderingServer()->ExecuteCommandList(m_irradianceVolumeRPDC, GPUEngineType::Graphics);	
 	}
 
 	return true;

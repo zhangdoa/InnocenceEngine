@@ -13,7 +13,7 @@ bool LuminanceHistogramPass::Setup(ISystemConfig *systemConfig)
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 
 	l_RenderPassDesc.m_RenderTargetCount = 0;
-	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
+	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 
 	m_SPC = g_Engine->getRenderingServer()->AddShaderProgramComponent("LuminanceHistogramPass/");
 

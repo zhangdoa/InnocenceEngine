@@ -217,7 +217,7 @@ bool SurfelGITestPass::PrepareCommandList(IRenderingContext* renderingContext)
 
 		g_Engine->getRenderingServer()->CommandListEnd(m_RPDC);
 
-		g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC, RenderPassUsage::Graphics);
+		g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC, GPUEngineType::Graphics);
 
 		
 	}

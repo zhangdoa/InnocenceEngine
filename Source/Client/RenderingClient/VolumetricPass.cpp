@@ -116,7 +116,7 @@ bool VolumetricPass::setupIrradianceInjectionPass()
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
-	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
+	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
 
 	m_irraidanceInjectionRPDC = g_Engine->getRenderingServer()->AddRenderPassDataComponent("VolumetricIrraidanceInjectionPass/");
@@ -192,7 +192,7 @@ bool VolumetricPass::setupRayMarchingPass()
 
 	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
 	l_RenderPassDesc.m_RenderTargetCount = 0;
-	l_RenderPassDesc.m_RenderPassUsage = RenderPassUsage::Compute;
+	l_RenderPassDesc.m_GPUEngineType = GPUEngineType::Compute;
 	l_RenderPassDesc.m_IsOffScreen = true;
 
 	m_rayMarchingRPDC = g_Engine->getRenderingServer()->AddRenderPassDataComponent("VolumetricRayMarchingPass/");
@@ -574,23 +574,23 @@ bool VolumetricPass::Render(bool visualize)
 		visualization(m_rayMarchingResult_A);
 	}
 
-	g_Engine->getRenderingServer()->ExecuteCommandList(m_froxelizationRPDC, RenderPassUsage::Graphics);
-	g_Engine->getRenderingServer()->WaitFence(RenderPassUsage::Graphics);
-	g_Engine->getRenderingServer()->WaitFence(RenderPassUsage::Compute);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_froxelizationRPDC, GPUEngineType::Graphics);
+	g_Engine->getRenderingServer()->WaitFence(GPUEngineType::Graphics);
+	g_Engine->getRenderingServer()->WaitFence(GPUEngineType::Compute);
 
-	g_Engine->getRenderingServer()->ExecuteCommandList(m_irraidanceInjectionRPDC, RenderPassUsage::Graphics);
-	g_Engine->getRenderingServer()->WaitFence(RenderPassUsage::Graphics);
-	g_Engine->getRenderingServer()->WaitFence(RenderPassUsage::Compute);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_irraidanceInjectionRPDC, GPUEngineType::Graphics);
+	g_Engine->getRenderingServer()->WaitFence(GPUEngineType::Graphics);
+	g_Engine->getRenderingServer()->WaitFence(GPUEngineType::Compute);
 
-	g_Engine->getRenderingServer()->ExecuteCommandList(m_rayMarchingRPDC, RenderPassUsage::Graphics);
-	g_Engine->getRenderingServer()->WaitFence(RenderPassUsage::Graphics);
-	g_Engine->getRenderingServer()->WaitFence(RenderPassUsage::Compute);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_rayMarchingRPDC, GPUEngineType::Graphics);
+	g_Engine->getRenderingServer()->WaitFence(GPUEngineType::Graphics);
+	g_Engine->getRenderingServer()->WaitFence(GPUEngineType::Compute);
 
 	if (visualize)
 	{
-		g_Engine->getRenderingServer()->ExecuteCommandList(m_visualizationRPDC, RenderPassUsage::Graphics);
-		g_Engine->getRenderingServer()->WaitFence(RenderPassUsage::Graphics);
-		g_Engine->getRenderingServer()->WaitFence(RenderPassUsage::Compute);
+		g_Engine->getRenderingServer()->ExecuteCommandList(m_visualizationRPDC, GPUEngineType::Graphics);
+		g_Engine->getRenderingServer()->WaitFence(GPUEngineType::Graphics);
+		g_Engine->getRenderingServer()->WaitFence(GPUEngineType::Compute);
 	}
 
 	return true;

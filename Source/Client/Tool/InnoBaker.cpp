@@ -206,7 +206,7 @@ bool InnoBakerNS::generateProbeCaches(std::vector<Probe>& probes)
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC_Probe);
 
-	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC_Probe, RenderPassUsage::Graphics);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC_Probe, GPUEngineType::Graphics);
 
 	
 
@@ -551,7 +551,7 @@ bool InnoBakerNS::drawObjects(Probe& probeCache, const Mat4& p, const std::vecto
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC_Surfel);
 
-	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC_Surfel, RenderPassUsage::Graphics);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC_Surfel, GPUEngineType::Graphics);
 
 	
 
@@ -1039,7 +1039,7 @@ bool InnoBakerNS::drawBricks(Vec4 pos, uint32_t bricksCount, const Mat4& p, cons
 
 	g_Engine->getRenderingServer()->CommandListEnd(m_RPDC_BrickFactor);
 
-	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC_BrickFactor, RenderPassUsage::Graphics);
+	g_Engine->getRenderingServer()->ExecuteCommandList(m_RPDC_BrickFactor, GPUEngineType::Graphics);
 
 	
 
