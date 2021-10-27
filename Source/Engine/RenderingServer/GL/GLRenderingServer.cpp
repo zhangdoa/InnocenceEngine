@@ -921,7 +921,7 @@ bool GLRenderingServer::WaitCommandQueue(RenderPassDataComponent* rhs, GPUEngine
 	return true;
 }
 
-bool GLRenderingServer::WaitFence(GPUEngineType GPUEngineType)
+bool GLRenderingServer::WaitFence(RenderPassDataComponent* rhs, GPUEngineType GPUEngineType)
 {
 	return true;
 }
@@ -960,7 +960,7 @@ bool GLRenderingServer::Present()
 
 	ExecuteCommandList(m_SwapChainRPDC, GPUEngineType::Graphics);
 
-	WaitFence(GPUEngineType::Graphics);
+	WaitFence(m_SwapChainRPDC, GPUEngineType::Graphics);
 
 	if (m_needResize)
 	{
