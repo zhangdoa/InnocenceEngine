@@ -2083,15 +2083,24 @@ bool DX12RenderingServer::WaitCommandQueue(RenderPassDataComponent* rhs, GPUEngi
 	return true;
 }
 
-bool DX12RenderingServer::WaitFence(GPUEngineType GPUEngineType)
-{
+bool DX12RenderingServer::WaitFence(RenderPassDataComponent* rhs, GPUEngineType GPUEngineType)
+{	
+	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent *>(rhs);
+	auto l_semaphore = reinterpret_cast<DX12Semaphore *>(l_rhs->m_Semaphores[l_rhs->m_CurrentFrame]);
+
 	if (GPUEngineType == GPUEngineType::Graphics)
 	{
-		WaitForSingleObject(m_directCommandQueueFenceEvent, INFINITE);
+		if(m_directCommandQueueFence->GetCompletedValue() <l_semaphore->m_DirectCommandQueueSemaphore)
+		{
+			WaitForSingleObject(m_directCommandQueueFenceEvent, INFINITE);
+		}
 	}
 	else if (GPUEngineType == GPUEngineType::Compute)
-	{
-		WaitForSingleObject(m_computeCommandQueueFenceEvent, INFINITE);
+	{	
+		if(m_computeCommandQueueFence->GetCompletedValue() <l_semaphore->m_ComputeCommandQueueSemaphore)
+		{
+			WaitForSingleObject(m_computeCommandQueueFenceEvent, INFINITE);
+		}
 	}
 
 	return true;
@@ -2111,11 +2120,12 @@ GPUResourceComponent *DX12RenderingServer::GetUserPipelineOutput()
 
 bool DX12RenderingServer::Present()
 {
-	CommandListBegin(m_SwapChainRPDC, m_SwapChainRPDC->m_CurrentFrame);
-
 	auto l_commandList = reinterpret_cast<DX12CommandList *>(m_SwapChainRPDC->m_CommandLists[m_SwapChainRPDC->m_CurrentFrame]);
 	auto l_PSO = reinterpret_cast<DX12PipelineStateObject *>(m_SwapChainRPDC->m_PipelineStateObject);
 	auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent *>(m_SwapChainRPDC->m_RenderTargets[m_SwapChainRPDC->m_CurrentFrame]);
+	auto l_semaphore = reinterpret_cast<DX12Semaphore *>(m_SwapChainRPDC->m_Semaphores[m_SwapChainRPDC->m_CurrentFrame]);
+
+	CommandListBegin(m_SwapChainRPDC, m_SwapChainRPDC->m_CurrentFrame);
 
 	PrepareRenderTargets(m_SwapChainRPDC, l_commandList);
 
@@ -2137,14 +2147,25 @@ bool DX12RenderingServer::Present()
 
 	CommandListEnd(m_SwapChainRPDC);
 
-	ExecuteCommandList(m_SwapChainRPDC, GPUEngineType::Graphics);
+	ID3D12CommandList *l_directCommandLists[] = {l_commandList->m_DirectCommandList.Get()};
+	m_directCommandQueue->ExecuteCommandLists(1, l_directCommandLists);
 
-	WaitFence(GPUEngineType::Graphics);
-
-	// Present the frame.
 	m_swapChain->Present(0, 0);
 
+	UINT64 l_directCommandFinishedSemaphore = ++m_directCommandQueueSemaphore;
+	l_semaphore->m_DirectCommandQueueSemaphore = l_directCommandFinishedSemaphore;
+	m_directCommandQueue->Signal(m_directCommandQueueFence.Get(), l_directCommandFinishedSemaphore);
+
+	m_directCommandQueueFence->SetEventOnCompletion(l_directCommandFinishedSemaphore, m_directCommandQueueFenceEvent);
+	
+	WaitFence(m_SwapChainRPDC, GPUEngineType::Graphics);
+	WaitFence(m_SwapChainRPDC, GPUEngineType::Compute);
+
 	m_SwapChainRPDC->m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
+
+	m_directCommandAllocators[m_SwapChainRPDC->m_CurrentFrame]->Reset();
+	m_computeCommandAllocators[m_SwapChainRPDC->m_CurrentFrame]->Reset();
+	m_copyCommandAllocator->Reset();
 
 	return true;
 }

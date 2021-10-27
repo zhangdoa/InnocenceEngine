@@ -95,8 +95,8 @@ bool DX12Helper::CloseTemporaryCommandList(ComPtr<ID3D12GraphicsCommandList> com
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't close temporary command list!");
 	}
 
-	ComPtr<ID3D12Fence1> l_uploadFinishFence;
-	l_HResult = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&l_uploadFinishFence));
+	ComPtr<ID3D12Fence1> l_temporaryCommandListFence;
+	l_HResult = device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&l_temporaryCommandListFence));
 	if (FAILED(l_HResult))
 	{
 		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create fence for temporary command list!");
@@ -110,8 +110,8 @@ bool DX12Helper::CloseTemporaryCommandList(ComPtr<ID3D12GraphicsCommandList> com
 
 	ID3D12CommandList* ppCommandLists[] = { commandList.Get() };
 	commandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-	commandQueue->Signal(l_uploadFinishFence.Get(), 1);
-	l_uploadFinishFence->SetEventOnCompletion(1, l_fenceEvent);
+	commandQueue->Signal(l_temporaryCommandListFence.Get(), 1);
+	l_temporaryCommandListFence->SetEventOnCompletion(1, l_fenceEvent);
 	WaitForSingleObject(l_fenceEvent, INFINITE);
 	CloseHandle(l_fenceEvent);
 
