@@ -71,7 +71,7 @@ namespace Inno
 		virtual bool CommandListEnd(RenderPassDataComponent* rhs) = 0;
 		virtual bool ExecuteCommandList(RenderPassDataComponent* rhs, GPUEngineType GPUEngineType) = 0;
 		virtual bool WaitCommandQueue(RenderPassDataComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType) = 0;
-		virtual bool WaitFence(GPUEngineType GPUEngineType) = 0;
+		virtual bool WaitFence(RenderPassDataComponent* rhs, GPUEngineType GPUEngineType) = 0;
 		virtual bool SetUserPipelineOutput(GPUResourceComponent* rhs) = 0;
 		virtual GPUResourceComponent* GetUserPipelineOutput() = 0;
 		virtual bool Present() = 0;
