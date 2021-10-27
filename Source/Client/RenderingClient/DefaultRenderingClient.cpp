@@ -135,7 +135,8 @@ bool DefaultRenderingClient::Setup(ISystemConfig *systemConfig)
 		l_renderingServer->ExecuteCommandList(BRDFLUTMSPass::Get().GetRPDC(), GPUEngineType::Graphics);
 		l_renderingServer->WaitCommandQueue(BRDFLUTMSPass::Get().GetRPDC(), GPUEngineType::Compute, GPUEngineType::Graphics);
 		l_renderingServer->ExecuteCommandList(BRDFLUTMSPass::Get().GetRPDC(), GPUEngineType::Compute);
-		l_renderingServer->WaitFence(GPUEngineType::Compute);
+		l_renderingServer->WaitFence(BRDFLUTMSPass::Get().GetRPDC(), GPUEngineType::Graphics);
+		l_renderingServer->WaitFence(BRDFLUTMSPass::Get().GetRPDC(), GPUEngineType::Compute);
 
 		TiledFrustumGenerationPass::Get().Initialize();
 		LightCullingPass::Get().Initialize();
@@ -227,9 +228,8 @@ bool DefaultRenderingClient::Setup(ISystemConfig *systemConfig)
 		{
 			SurfelGITestPass::Get().PrepareCommandList();
 			l_renderingServer->ExecuteCommandList(BSDFTestPass::Get().GetRPDC(), GPUEngineType::Graphics);
-			l_renderingServer->WaitFence(GPUEngineType::Graphics);
+			l_renderingServer->WaitCommandQueue(BSDFTestPass::Get().GetRPDC(), GPUEngineType::Compute, GPUEngineType::Graphics);
 			l_renderingServer->ExecuteCommandList(BSDFTestPass::Get().GetRPDC(), GPUEngineType::Compute);
-			l_renderingServer->WaitFence(GPUEngineType::Compute);
 			l_canvas = SurfelGITestPass::Get().GetRPDC()->m_RenderTargets[0];
 			l_canvasOwner = SurfelGITestPass::Get().GetRPDC();
 		}
@@ -238,13 +238,12 @@ bool DefaultRenderingClient::Setup(ISystemConfig *systemConfig)
 			TransparentGeometryProcessPass::Get().PrepareCommandList();
 			TransparentBlendPass::Get().PrepareCommandList();
 			l_renderingServer->ExecuteCommandList(TransparentGeometryProcessPass::Get().GetRPDC(), GPUEngineType::Graphics);
-			l_renderingServer->WaitFence(GPUEngineType::Graphics);
+			l_renderingServer->WaitCommandQueue(TransparentGeometryProcessPass::Get().GetRPDC(), GPUEngineType::Compute, GPUEngineType::Graphics);
 			l_renderingServer->ExecuteCommandList(TransparentGeometryProcessPass::Get().GetRPDC(), GPUEngineType::Compute);
-			l_renderingServer->WaitFence(GPUEngineType::Compute);
+			l_renderingServer->WaitCommandQueue(TransparentGeometryProcessPass::Get().GetRPDC(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			l_renderingServer->ExecuteCommandList(TransparentBlendPass::Get().GetRPDC(), GPUEngineType::Graphics);
-			l_renderingServer->WaitFence(GPUEngineType::Graphics);
+			l_renderingServer->WaitCommandQueue(TransparentBlendPass::Get().GetRPDC(), GPUEngineType::Compute, GPUEngineType::Graphics);
 			l_renderingServer->ExecuteCommandList(TransparentBlendPass::Get().GetRPDC(), GPUEngineType::Compute);
-			l_renderingServer->WaitFence(GPUEngineType::Compute);
 			l_canvas = TransparentBlendPass::Get().GetResult();
 			l_canvasOwner = TransparentBlendPass::Get().GetRPDC();
 		}
@@ -272,9 +271,6 @@ bool DefaultRenderingClient::Setup(ISystemConfig *systemConfig)
 			l_renderingServer->ExecuteCommandList(SSAOPass::Get().GetRPDC(), GPUEngineType::Compute);
 
 			//VolumetricPass::Render(false);
-			
-			l_renderingServer->WaitCommandQueue(AnimationPass::Get().GetRPDC(), GPUEngineType::Graphics, GPUEngineType::Graphics);
-			l_renderingServer->WaitCommandQueue(SSAOPass::Get().GetRPDC(), GPUEngineType::Graphics, GPUEngineType::Compute);
 
 			LightPass::Get().PrepareCommandList();
 
@@ -291,7 +287,11 @@ bool DefaultRenderingClient::Setup(ISystemConfig *systemConfig)
 			TransparentBlendPassRenderingContext l_transparentBlendPassRenderingContext;
 			l_transparentBlendPassRenderingContext.m_output = l_canvas;
 			TransparentBlendPass::Get().PrepareCommandList(&l_transparentBlendPassRenderingContext);
-
+			
+			l_renderingServer->WaitCommandQueue(AnimationPass::Get().GetRPDC(), GPUEngineType::Graphics, GPUEngineType::Graphics);
+			l_renderingServer->WaitCommandQueue(SSAOPass::Get().GetRPDC(), GPUEngineType::Graphics, GPUEngineType::Compute);
+			l_renderingServer->WaitCommandQueue(LightCullingPass::Get().GetRPDC(), GPUEngineType::Graphics, GPUEngineType::Graphics);
+			l_renderingServer->WaitCommandQueue(SunShadowBlurEvenPass::Get().GetRPDC(), GPUEngineType::Graphics, GPUEngineType::Compute);
 			l_renderingServer->ExecuteCommandList(LightPass::Get().GetRPDC(), GPUEngineType::Graphics);
 			l_renderingServer->WaitCommandQueue(LightPass::Get().GetRPDC(), GPUEngineType::Compute, GPUEngineType::Graphics);
 			l_renderingServer->ExecuteCommandList(LightPass::Get().GetRPDC(), GPUEngineType::Compute);
