@@ -1392,7 +1392,7 @@ bool VKRenderingServer::WaitCommandQueue(RenderPassDataComponent* rhs, GPUEngine
 	return true;
 }
 
-bool VKRenderingServer::WaitFence(GPUEngineType GPUEngineType)
+bool VKRenderingServer::WaitFence(RenderPassDataComponent* rhs, GPUEngineType GPUEngineType)
 {
 	//vkWaitForFrames(m_device, 1, &m_graphicsQueueFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
 
