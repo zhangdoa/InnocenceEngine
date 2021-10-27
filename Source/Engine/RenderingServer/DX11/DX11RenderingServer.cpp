@@ -1556,7 +1556,7 @@ bool DX11RenderingServer::WaitCommandQueue(RenderPassDataComponent* rhs, GPUEngi
 	return true;
 }
 
-bool DX11RenderingServer::WaitFence(GPUEngineType GPUEngineType)
+bool DX11RenderingServer::WaitFence(RenderPassDataComponent* rhs, GPUEngineType GPUEngineType)
 {
 	return true;
 }
@@ -1595,7 +1595,7 @@ bool DX11RenderingServer::Present()
 
 	ExecuteCommandList(m_SwapChainRPDC, GPUEngineType::Graphics);
 	
-	WaitFence(GPUEngineType::Graphics);
+	WaitFence(m_SwapChainRPDC, GPUEngineType::Graphics);
 
 	auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
 
