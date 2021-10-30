@@ -74,7 +74,7 @@ using namespace TransformSystemNS;
 
 bool InnoTransformSystem::Setup(ISystemConfig* systemConfig)
 {
-	g_Engine->getComponentManager()->RegisterType<TransformComponent>(m_MaxComponentCount);
+	g_Engine->getComponentManager()->RegisterType<TransformComponent>(m_MaxComponentCount, this);
 
 	f_SceneLoadingFinishCallback = [&]() {
 		SortTransformComponentsVector();

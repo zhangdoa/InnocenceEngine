@@ -119,7 +119,7 @@ namespace Inno
 		std::unique_ptr<IFileSystem> m_FileSystem;
 
 		std::unique_ptr<IEntityManager> m_EntityManager;
-		std::unique_ptr<ComponentManager> m_CM;
+		std::unique_ptr<ComponentManager> m_ComponentManager;
 		std::unique_ptr<InnoTransformSystem> m_TransformSystem;
 		std::unique_ptr<InnoLightSystem> m_LightSystem;
 		std::unique_ptr<InnoCameraSystem> m_CameraSystem;
@@ -295,7 +295,7 @@ bool EngineNS::createSystemInstance(void* appHook, void* extraHook, char* pScmdl
 	createSystemInstanceDefi(FileSystem);
 
 	createSystemInstanceDefi(EntityManager);
-	m_CM = std::make_unique<ComponentManager>();
+	m_ComponentManager = std::make_unique<ComponentManager>();
 	createSystemInstanceDefi(TransformSystem);
 	createSystemInstanceDefi(LightSystem);
 	createSystemInstanceDefi(CameraSystem);
@@ -754,7 +754,7 @@ SystemGetDefi(RenderingServer);
 
 ComponentManager* Engine::getComponentManager()
 {
-	return m_CM.get();
+	return m_ComponentManager.get();
 }
 
 InitConfig Engine::getInitConfig()

@@ -62,7 +62,6 @@ using namespace InnoPhysicsSystemNS;
 
 bool InnoPhysicsSystemNS::Setup()
 {
-	g_Engine->getComponentManager()->RegisterType<PhysicsDataComponent>(m_MaxComponentCount);
 	m_RootPDCEntity = g_Engine->getEntityManager()->Spawn(false, ObjectLifespan::Persistence, "RootPDCEntity/");
 	m_BVHNodes.reserve(m_MaxComponentCount);
 	m_TempBVHNodes.reserve(m_MaxComponentCount * 2);
@@ -253,6 +252,7 @@ void InnoPhysicsSystemNS::updateStaticSceneBoundary(const AABB& rhs)
 
 bool InnoPhysicsSystem::Setup(ISystemConfig* systemConfig)
 {
+	g_Engine->getComponentManager()->RegisterType<PhysicsDataComponent>(m_MaxComponentCount, this);
 	return InnoPhysicsSystemNS::Setup();
 }
 

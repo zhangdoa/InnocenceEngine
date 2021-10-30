@@ -3,7 +3,7 @@
 
 namespace Inno
 {
-	class InnoCameraSystem : public ISystem
+	class InnoCameraSystem : public IComponentSystem
 	{
 	public:
 		INNO_CLASS_CONCRETE_NON_COPYABLE(InnoCameraSystem);

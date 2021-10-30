@@ -3,7 +3,7 @@
 
 namespace Inno
 {
-	class InnoLightSystem : public ISystem
+	class InnoLightSystem : public IComponentSystem
 	{
 	public:
 		INNO_CLASS_CONCRETE_NON_COPYABLE(InnoLightSystem);

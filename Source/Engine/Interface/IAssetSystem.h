@@ -10,7 +10,7 @@
 
 namespace Inno
 {
-	class IAssetSystem : public ISystem
+	class IAssetSystem : public IComponentSystem
 	{
 	public:
 		INNO_CLASS_INTERFACE_NON_COPYABLE(IAssetSystem);

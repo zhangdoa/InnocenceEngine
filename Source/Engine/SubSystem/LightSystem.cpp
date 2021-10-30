@@ -296,7 +296,7 @@ using namespace LightSystemNS;
 
 bool InnoLightSystem::Setup(ISystemConfig* systemConfig)
 {
-	g_Engine->getComponentManager()->RegisterType<LightComponent>(m_MaxComponentCount);
+	g_Engine->getComponentManager()->RegisterType<LightComponent>(m_MaxComponentCount, this);
 
 	m_frustumsCornerPos.reserve(20);
 	m_frustumsCornerVertices.resize(32);

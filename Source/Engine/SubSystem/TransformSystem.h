@@ -3,7 +3,7 @@
 
 namespace Inno
 {
-	class InnoTransformSystem : public ISystem
+	class InnoTransformSystem : public IComponentSystem
 	{
 	public:
 		INNO_CLASS_CONCRETE_NON_COPYABLE(InnoTransformSystem);

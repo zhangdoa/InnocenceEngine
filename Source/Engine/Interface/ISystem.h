@@ -21,4 +21,11 @@ namespace Inno
 		virtual bool Terminate() = 0;
 		virtual ObjectStatus GetStatus() = 0;
 	};
+
+	class IComponentSystem : public ISystem
+	{		
+	public:
+		INNO_CLASS_INTERFACE_NON_COPYABLE(IComponentSystem);
+	};
+
 }

@@ -55,7 +55,7 @@ using namespace CameraSystemNS;
 
 bool InnoCameraSystem::Setup(ISystemConfig* systemConfig)
 {
-	g_Engine->getComponentManager()->RegisterType<CameraComponent>(m_MaxComponentCount);
+	g_Engine->getComponentManager()->RegisterType<CameraComponent>(m_MaxComponentCount, this);
 
 	return true;
 }

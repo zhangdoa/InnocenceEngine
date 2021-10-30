@@ -120,7 +120,7 @@ namespace Inno
 	{
 	public:
 		template<typename T>
-		bool RegisterType(uint32_t maxComponentCount)
+		bool RegisterType(uint32_t maxComponentCount, IComponentSystem* componentSystem)
 		{
 			auto& l_TypeInfo = typeid(T);
 			auto l_typeHashCode = l_TypeInfo.hash_code();
@@ -132,7 +132,8 @@ namespace Inno
 			}
 
 			m_ComponentTypeIndexLUT.emplace(l_typeHashCode, m_ComponentTypeIndexTracker);
-			m_ComponentFactorys.emplace(l_typeHashCode, std::make_shared<TComponentFactory<T>>(maxComponentCount));
+			m_ComponentFactories.emplace(l_typeHashCode, std::make_shared<TComponentFactory<T>>(maxComponentCount));
+			m_ComponentSystems.emplace(l_typeHashCode, componentSystem);
 
 			++m_ComponentTypeIndexTracker;
 
@@ -152,6 +153,22 @@ namespace Inno
 
 			InnoLogger::Log(LogLevel::Error, "Component type: ", l_TypeInfo.name(), " is not registered!");
 			return -1;
+		}
+
+		template<typename T>
+		IComponentSystem* GetComponentSystem()
+		{
+			const std::type_info& l_TypeInfo = typeid(T);
+			auto l_typeHashCode = l_TypeInfo.hash_code();
+
+			if (m_ComponentTypeIndexLUT.find(l_typeHashCode) != m_ComponentTypeIndexLUT.end())
+			{
+				return m_ComponentSystems[l_typeHashCode];
+			}
+
+			InnoLogger::Log(LogLevel::Error, "Component type: ", l_TypeInfo.name(), " is not registered!");
+
+			return nullptr;
 		}
 
 		template<typename T>
@@ -186,7 +203,7 @@ namespace Inno
 
 		bool CleanUp(ObjectLifespan objectLifespan)
 		{
-			for (auto& i : m_ComponentFactorys)
+			for (auto& i : m_ComponentFactories)
 			{
 				i.second->CleanUp(objectLifespan);
 			}
@@ -195,7 +212,9 @@ namespace Inno
 
 	private:
 		std::unordered_map<size_t, uint32_t> m_ComponentTypeIndexLUT;
-		std::unordered_map<size_t, std::shared_ptr<IComponentFactory>> m_ComponentFactorys;
+		std::unordered_map<size_t, std::shared_ptr<IComponentFactory>> m_ComponentFactories;
+		std::unordered_map<size_t, IComponentSystem*> m_ComponentSystems;
+
 		std::atomic<uint32_t> m_ComponentTypeIndexTracker = 0;
 
 		template<typename T>
@@ -206,7 +225,7 @@ namespace Inno
 
 			if (m_ComponentTypeIndexLUT.find(l_typeHashCode) != m_ComponentTypeIndexLUT.end())
 			{
-				return std::static_pointer_cast<TComponentFactory<T>>(m_ComponentFactorys[l_typeHashCode]);
+				return std::static_pointer_cast<TComponentFactory<T>>(m_ComponentFactories[l_typeHashCode]);
 			}
 
 			InnoLogger::Log(LogLevel::Error, "Component type: ", l_TypeInfo.name(), " is not registered!");

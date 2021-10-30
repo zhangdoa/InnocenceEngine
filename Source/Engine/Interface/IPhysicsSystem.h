@@ -39,7 +39,7 @@ namespace Inno
 		}
 	};
 
-	class IPhysicsSystem : public ISystem
+	class IPhysicsSystem : public IComponentSystem
 	{
 	public:
 		INNO_CLASS_INTERFACE_NON_COPYABLE(IPhysicsSystem);

@@ -68,7 +68,7 @@ namespace Inno
 		IRenderingServer* m_RenderingServer;
 	};
 
-	class IRenderingFrontend : public ISystem
+	class IRenderingFrontend : public IComponentSystem
 	{
 	public:
 		INNO_CLASS_INTERFACE_NON_COPYABLE(IRenderingFrontend);

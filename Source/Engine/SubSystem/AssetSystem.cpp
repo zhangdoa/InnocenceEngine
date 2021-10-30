@@ -507,7 +507,7 @@ void InnoAssetSystemNS::addTerrain(MeshDataComponent* meshDataComponent)
 
 bool InnoAssetSystem::Setup(ISystemConfig* systemConfig)
 {
-	g_Engine->getComponentManager()->RegisterType<VisibleComponent>(32768);
+	g_Engine->getComponentManager()->RegisterType<VisibleComponent>(32768, this);
 
 	f_LoadModelTask = [=](VisibleComponent* i, bool AsyncLoad)
 	{

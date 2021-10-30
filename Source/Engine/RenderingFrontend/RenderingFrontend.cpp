@@ -245,9 +245,6 @@ bool InnoRenderingFrontendNS::Setup(ISystemConfig* systemConfig)
 	g_Engine->getSceneSystem()->addSceneLoadingStartCallback(&f_sceneLoadingStartCallback);
 	g_Engine->getSceneSystem()->addSceneLoadingFinishCallback(&f_sceneLoadingFinishCallback);
 
-	g_Engine->getComponentManager()->RegisterType<SkeletonDataComponent>(2048);
-	g_Engine->getComponentManager()->RegisterType<AnimationDataComponent>(16384);
-
 	m_rayTracer->Setup();
 
 	m_ObjectStatus = ObjectStatus::Created;
@@ -821,7 +818,10 @@ bool InnoRenderingFrontendNS::Terminate()
 }
 
 bool InnoRenderingFrontend::Setup(ISystemConfig* systemConfig)
-{
+{	
+	g_Engine->getComponentManager()->RegisterType<SkeletonDataComponent>(2048, this);
+	g_Engine->getComponentManager()->RegisterType<AnimationDataComponent>(16384, this);
+	
 	return InnoRenderingFrontendNS::Setup(systemConfig);
 }
 
