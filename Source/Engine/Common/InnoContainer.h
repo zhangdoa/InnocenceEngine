@@ -1052,7 +1052,35 @@ namespace Inno
 			~DoubleBuffer() = default;
 
 			template <typename U = T &>
-			EnableType<U, ThreadSafe> GetValue()
+			EnableType<U, ThreadSafe> GetOldValue()
+			{
+				std::shared_lock<std::shared_mutex> lock{m_Mutex};
+
+				if (m_IsAReady)
+				{
+					return m_B;
+				}
+				else
+				{
+					return m_A;
+				}
+			}
+
+			template <typename U = T &>
+			DisableType<U, ThreadSafe> GetOldValue()
+			{
+				if (m_IsAReady)
+				{
+					return m_B;
+				}
+				else
+				{
+					return m_A;
+				}
+			}
+
+			template <typename U = T &>
+			EnableType<U, ThreadSafe> GetNewValue()
 			{
 				std::shared_lock<std::shared_mutex> lock{m_Mutex};
 
@@ -1067,7 +1095,7 @@ namespace Inno
 			}
 
 			template <typename U = T &>
-			DisableType<U, ThreadSafe> GetValue()
+			DisableType<U, ThreadSafe> GetNewValue()
 			{
 				if (m_IsAReady)
 				{
@@ -1128,7 +1156,7 @@ namespace Inno
 			}
 
 		private:
-			std::atomic<bool> m_IsAReady = true;
+			std::atomic<bool> m_IsAReady = false;
 			mutable std::shared_mutex m_Mutex;
 			T m_A;
 			T m_B;

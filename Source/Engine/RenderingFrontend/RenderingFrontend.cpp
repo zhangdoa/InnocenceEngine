@@ -496,7 +496,7 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 	auto& l_ViewMatrices = l_sun->m_ViewMatrices;
 	auto& l_ProjectionMatrices = l_sun->m_ProjectionMatrices;
 
-	auto& l_CSMCBVector = m_CSMCBVector.GetValue();
+	auto& l_CSMCBVector = m_CSMCBVector.GetOldValue();
 	l_CSMCBVector.clear();
 
 	if (l_SplitAABB.size() > 0 && l_ViewMatrices.size() > 0 && l_ProjectionMatrices.size() > 0)
@@ -515,13 +515,15 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 		}
 	}
 
+	m_CSMCBVector.SetValue(std::move(l_CSMCBVector));
+
 	return true;
 }
 
 bool InnoRenderingFrontendNS::updateLightData()
 {
-	auto& l_PointLightCB = m_pointLightCBVector.GetValue();
-	auto& l_SphereLightCB = m_sphereLightCBVector.GetValue();
+	auto& l_PointLightCB = m_pointLightCBVector.GetOldValue();
+	auto& l_SphereLightCB = m_sphereLightCBVector.GetOldValue();
 
 	l_PointLightCB.clear();
 	l_SphereLightCB.clear();
@@ -556,16 +558,19 @@ bool InnoRenderingFrontendNS::updateLightData()
 		}
 	}
 
+	m_pointLightCBVector.SetValue(std::move(l_PointLightCB));
+	m_sphereLightCBVector.SetValue(std::move(l_SphereLightCB));
+
 	return true;
 }
 
 bool InnoRenderingFrontendNS::updateMeshData()
 {
-	auto& l_drawCallInfoVector = m_drawCallInfoVector.GetValue();
-	auto& l_perObjectCBVector = m_perObjectCBVector.GetValue();
-	auto& l_materialCBVector = m_materialCBVector.GetValue();
-	auto& l_animationDrawCallInfoVector = m_animationDrawCallInfoVector.GetValue();
-	auto& l_animationCBVector = m_animationCBVector.GetValue();
+	auto& l_drawCallInfoVector = m_drawCallInfoVector.GetOldValue();
+	auto& l_perObjectCBVector = m_perObjectCBVector.GetOldValue();
+	auto& l_materialCBVector = m_materialCBVector.GetOldValue();
+	auto& l_animationDrawCallInfoVector = m_animationDrawCallInfoVector.GetOldValue();
+	auto& l_animationCBVector = m_animationCBVector.GetOldValue();
 
 	l_drawCallInfoVector.clear();
 	l_perObjectCBVector.clear();
@@ -644,6 +649,12 @@ bool InnoRenderingFrontendNS::updateMeshData()
 		}
 	}
 
+	m_drawCallInfoVector.SetValue(std::move(l_drawCallInfoVector));
+	m_perObjectCBVector.SetValue(std::move(l_perObjectCBVector));
+	m_materialCBVector.SetValue(std::move(l_materialCBVector));
+	m_animationDrawCallInfoVector.SetValue(std::move(l_animationDrawCallInfoVector));
+	m_animationCBVector.SetValue(std::move(l_animationCBVector));
+
 	// @TODO: use GPU to do OIT
 
 	return true;
@@ -698,11 +709,11 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 		return false;
 	}
 
-	auto& l_billboardPassDrawCallInfoVector = m_billboardPassDrawCallInfoVector.GetValue();
-	auto& l_billboardPassPerObjectCB = m_billboardPassPerObjectCB.GetValue();
-	auto& l_directionalLightPerObjectCB = m_directionalLightPerObjectCB.GetValue();
-	auto& l_pointLightPerObjectCB = m_pointLightPerObjectCB.GetValue();
-	auto& l_sphereLightPerObjectCB = m_sphereLightPerObjectCB.GetValue();
+	auto& l_billboardPassDrawCallInfoVector = m_billboardPassDrawCallInfoVector.GetOldValue();
+	auto& l_billboardPassPerObjectCB = m_billboardPassPerObjectCB.GetOldValue();
+	auto& l_directionalLightPerObjectCB = m_directionalLightPerObjectCB.GetOldValue();
+	auto& l_pointLightPerObjectCB = m_pointLightPerObjectCB.GetOldValue();
+	auto& l_sphereLightPerObjectCB = m_sphereLightPerObjectCB.GetOldValue();
 
 	auto l_billboardPassDrawCallInfoCount = l_billboardPassDrawCallInfoVector.size();
 	for (size_t i = 0; i < l_billboardPassDrawCallInfoCount; i++)
@@ -760,6 +771,7 @@ bool InnoRenderingFrontendNS::updateBillboardPassData()
 	l_billboardPassPerObjectCB.insert(l_billboardPassPerObjectCB.end(), l_directionalLightPerObjectCB.begin(), l_directionalLightPerObjectCB.end());
 	l_billboardPassPerObjectCB.insert(l_billboardPassPerObjectCB.end(), l_pointLightPerObjectCB.begin(), l_pointLightPerObjectCB.end());
 	l_billboardPassPerObjectCB.insert(l_billboardPassPerObjectCB.end(), l_sphereLightPerObjectCB.begin(), l_sphereLightPerObjectCB.end());
+
 
 	return true;
 }
@@ -1101,65 +1113,65 @@ bool InnoRenderingFrontend::stopAnimation(VisibleComponent* rhs, const char* ani
 
 const PerFrameConstantBuffer& InnoRenderingFrontend::getPerFrameConstantBuffer()
 {
-	return m_perFrameCB.GetValue();
+	return m_perFrameCB.GetNewValue();
 }
 
 const std::vector<CSMConstantBuffer>& InnoRenderingFrontend::getCSMConstantBuffer()
 {
-	return m_CSMCBVector.GetValue();
+	return m_CSMCBVector.GetNewValue();
 }
 
 const std::vector<PointLightConstantBuffer>& InnoRenderingFrontend::getPointLightConstantBuffer()
 {
-	return m_pointLightCBVector.GetValue();
+	return m_pointLightCBVector.GetNewValue();
 }
 
 const std::vector<SphereLightConstantBuffer>& InnoRenderingFrontend::getSphereLightConstantBuffer()
 {
-	return m_sphereLightCBVector.GetValue();
+	return m_sphereLightCBVector.GetNewValue();
 }
 
 const std::vector<DrawCallInfo>& InnoRenderingFrontend::getDrawCallInfo()
 {
-	return m_drawCallInfoVector.GetValue();
+	return m_drawCallInfoVector.GetNewValue();
 }
 
 const std::vector<PerObjectConstantBuffer>& InnoRenderingFrontend::getPerObjectConstantBuffer()
 {
-	return m_perObjectCBVector.GetValue();
+	return m_perObjectCBVector.GetNewValue();
 }
 
 const std::vector<MaterialConstantBuffer>& InnoRenderingFrontend::getMaterialConstantBuffer()
 {
-	return m_materialCBVector.GetValue();
+	return m_materialCBVector.GetNewValue();
 }
 
 const std::vector<AnimationDrawCallInfo>& InnoRenderingFrontend::getAnimationDrawCallInfo()
 {
-	return m_animationDrawCallInfoVector.GetValue();
+	return m_animationDrawCallInfoVector.GetNewValue();
 }
 
 const std::vector<AnimationConstantBuffer>& InnoRenderingFrontend::getAnimationConstantBuffer()
 {
-	return m_animationCBVector.GetValue();
+	return m_animationCBVector.GetNewValue();
 }
 
 const std::vector<BillboardPassDrawCallInfo>& InnoRenderingFrontend::getBillboardPassDrawCallInfo()
 {
-	return m_billboardPassDrawCallInfoVector.GetValue();
+	return m_billboardPassDrawCallInfoVector.GetNewValue();
 }
 
 const std::vector<PerObjectConstantBuffer>& InnoRenderingFrontend::getBillboardPassPerObjectConstantBuffer()
 {
-	return m_billboardPassPerObjectCB.GetValue();
+	return m_billboardPassPerObjectCB.GetNewValue();
 }
 
 const std::vector<DebugPassDrawCallInfo>& InnoRenderingFrontend::getDebugPassDrawCallInfo()
 {
-	return m_debugPassDrawCallInfoVector.GetValue();
+	return m_debugPassDrawCallInfoVector.GetNewValue();
 }
 
 const std::vector<PerObjectConstantBuffer>& InnoRenderingFrontend::getDebugPassPerObjectConstantBuffer()
 {
-	return m_debugPassPerObjectCB.GetValue();
+	return m_debugPassPerObjectCB.GetNewValue();
 }

@@ -574,7 +574,7 @@ void InnoPhysicsSystem::updateCulling()
 	m_visibleSceneBoundMin.w = 1.0f;
 
 	auto l_visibleComponents = g_Engine->getComponentManager()->GetAll<VisibleComponent>();
-	auto& l_cullingDataVector = m_cullingData.GetValue();
+	auto& l_cullingDataVector = m_cullingData.GetOldValue();
 	l_cullingDataVector.clear();
 
 	if (l_cullingDataVector.capacity() < l_visibleComponents.size())
@@ -586,13 +586,15 @@ void InnoPhysicsSystem::updateCulling()
 	//BVHCulling(m_TempBVHNodes.begin() + 1, l_mainCamera->m_frustum, l_cullingDataVector);
 	SunShadowCulling(l_sun, l_cullingDataVector);
 
+	m_cullingData.SetValue(std::move(l_cullingDataVector));
+
 	m_visibleSceneAABB = InnoMath::generateAABB(InnoPhysicsSystemNS::m_visibleSceneBoundMax, InnoPhysicsSystemNS::m_visibleSceneBoundMin);
 	m_totalSceneAABB = InnoMath::generateAABB(InnoPhysicsSystemNS::m_totalSceneBoundMax, InnoPhysicsSystemNS::m_totalSceneBoundMin);
 }
 
 const std::vector<CullingData>& InnoPhysicsSystem::getCullingData()
 {
-	return InnoPhysicsSystemNS::m_cullingData.GetValue();
+	return InnoPhysicsSystemNS::m_cullingData.GetNewValue();
 }
 
 AABB InnoPhysicsSystem::getVisibleSceneAABB()
