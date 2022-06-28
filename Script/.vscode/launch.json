@@ -1,0 +1,40 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "PowerShell: Launch BuildAssimpImpl",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "${workspaceRoot}/BuildAssimpImpl.ps1",
+            "cwd": "${workspaceFolder}",
+            "args": ["-buildType \"Debug\""]
+        },
+        {
+            "name": "PowerShell: Launch BuildGLADImpl",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "${workspaceRoot}/BuildGLADImpl.ps1",
+            "cwd": "${workspaceFolder}",
+            "args": ["-buildType \"Debug\""]
+        },
+        {
+            "name": "PowerShell: Launch BuildPhysXImpl",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "${workspaceRoot}/BuildPhysXImpl.ps1",
+            "cwd": "${workspaceFolder}",
+            "args": ["-buildType \"Debug\""]
+        },
+        {
+            "name": "PowerShell: Launch BuildEngineImpl",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "${workspaceRoot}/BuildEngineImpl.ps1",
+            "cwd": "${workspaceFolder}",
+            "args": ["-buildType \"Debug\""]
+        }
+    ]
+}

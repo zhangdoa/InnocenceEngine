@@ -10,6 +10,7 @@
 /Source/External/Include
 /Source/External/Lib
 /Source/External/DLL
+/Source/Tools
 
 # For macOS
 \.DS_Store

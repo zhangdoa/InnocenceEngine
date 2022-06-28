@@ -1,21 +1,18 @@
  param (
-    [string]$buildType,[string]$toolchain
+    [string]$buildType
  )
 
-Set-Location ../Source/External/GitSubmodules/assimp/build
+Set-Location ../Source/External/Tools
+$msbuildPath = .\vswhere.exe -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe | select-object -first 1
+
+Set-Location ../GitSubmodules/assimp/build
 
 mkdir $buildType
 Set-Location $buildType
 
 Write-Output "Generate projects for "$buildType"..."
 
-$genArgs = @('-DASSIMP_BUILD_ASSIMP_TOOLS=OFF -DASSIMP_BUILD_TESTS=OFF ../../')
-
-Switch ($toolchain)
-{
-   {$_ -match 'VS15'} {$genArgs += '-G "Visual Studio 15 Win64"'}
-   {$_ -match 'VS16'} {$genArgs += '-G "Visual Studio 16"'}
-}
+$genArgs = @('-DASSIMP_BUILD_ASSIMP_TOOLS=OFF -DASSIMP_BUILD_TESTS=OFF ../../ -G "Visual Studio 16"')
 
 Write-Output "Build solution..."
 
@@ -24,14 +21,7 @@ $genCall = ('cmake {0}' -f ($genArgs -Join ' '))
 Write-Host $genCall
 Invoke-Expression $genCall
 
-$msbuildArgs= "Assimp.sln /property:Configuration=" + $buildType + " /m"
-$msbuildPath
-
-Switch ($toolchain)
-{
-   {$_ -match 'VS15'} {$msbuildPath = $Env:VS2017INSTALLDIR + "\MSBuild\15.0\Bin\msbuild.exe"}
-   {$_ -match 'VS16'} {$msbuildPath = $Env:VS2019INSTALLDIR + "\MSBuild\Current\Bin\msbuild.exe"}
-}
+$msbuildArgs = "Assimp.sln /property:Configuration=" + $buildType + " /m"
 
 Start-Process $msbuildPath -ArgumentList $msbuildArgs -Wait
 
@@ -42,13 +32,7 @@ xcopy /s/e/y include\assimp\config.h ..\..\..\..\Include\assimp\
 xcopy /s/e/y code\$buildType\*.dll ..\..\..\..\DLL\Win\$buildType\
 xcopy /s/e/y code\$buildType\*.lib ..\..\..\..\Lib\Win\$buildType\
 
-$libName
-
-Switch ($toolchain)
-{
-   {$_ -match 'VS15'} {$libName = 'assimp-vc141'}
-   {$_ -match 'VS16'} {$libName = 'assimp-vc142'}
-}
+$libName = 'assimp-vc142'
 
 Switch ($buildType)
 {
