@@ -27,10 +27,8 @@ namespace Inno
 	struct DX12UAV
 	{
 		D3D12_UNORDERED_ACCESS_VIEW_DESC UAVDesc = {};
-		D3D12_CPU_DESCRIPTOR_HANDLE ShaderVisibleCPUHandle;
 		D3D12_GPU_DESCRIPTOR_HANDLE ShaderVisibleGPUHandle;
 		D3D12_CPU_DESCRIPTOR_HANDLE ShaderNonVisibleCPUHandle;
-		D3D12_GPU_DESCRIPTOR_HANDLE ShaderNonVisibleGPUHandle;
 	};
 
 	struct DX12Sampler

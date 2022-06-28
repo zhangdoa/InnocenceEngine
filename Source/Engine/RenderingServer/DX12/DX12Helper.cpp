@@ -1305,6 +1305,35 @@ bool DX12Helper::CreatePSO(DX12RenderPassDataComponent* DX12RPDC, ComPtr<ID3D12D
 	return true;
 }
 
+bool DX12Helper::CreateFenceEvents(DX12RenderPassDataComponent *DX12RPDC)
+{
+	bool result = true;
+	for (size_t i = 0; i < DX12RPDC->m_Semaphores.size(); i++)
+	{
+		auto l_semaphore = reinterpret_cast<DX12Semaphore*>(DX12RPDC->m_Semaphores[i]);
+		l_semaphore->m_DirectCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
+		if (l_semaphore->m_DirectCommandQueueFenceEvent == NULL)
+		{
+			InnoLogger::Log(LogLevel::Error,"DX12RenderingServer: ", DX12RPDC->m_InstanceName.c_str(),  " Can't create fence event for direct CommandQueue!");
+			result = false;
+		}
+
+		l_semaphore->m_ComputeCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
+		if (l_semaphore->m_ComputeCommandQueueFenceEvent == NULL)
+		{
+			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: ", DX12RPDC->m_InstanceName.c_str(), " Can't create fence event for compute CommandQueue!");
+			result = false;
+		}
+	}
+
+	if(result)
+	{
+		InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: Fence events have been created.");
+	}
+
+	return result;
+}
+
 D3D12_COMPARISON_FUNC DX12Helper::GetComparisionFunction(ComparisionFunction comparisionFunction)
 {
 	D3D12_COMPARISON_FUNC l_result;

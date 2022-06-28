@@ -93,9 +93,8 @@ namespace DX12RenderingServerNS
 	ComPtr<ID3D12Fence> m_directCommandQueueFence = 0;
 	ComPtr<ID3D12Fence> m_computeCommandQueueFence = 0;
 	ComPtr<ID3D12Fence> m_copyCommandQueueFence = 0;
-	HANDLE m_directCommandQueueFenceEvent = 0;
-	HANDLE m_computeCommandQueueFenceEvent = 0;
-	HANDLE m_copyCommandQueueFenceEvent = 0;
+	std::atomic<HANDLE> m_directCommandQueueFenceEvent = 0;
+	std::atomic<HANDLE> m_computeCommandQueueFenceEvent = 0;
 
 	DXGI_SWAP_CHAIN_DESC1 m_swapChainDesc = {};
 	ComPtr<IDXGISwapChain4> m_swapChain = 0;
@@ -106,23 +105,16 @@ namespace DX12RenderingServerNS
 	ComPtr<ID3D12CommandAllocator> m_copyCommandAllocator = 0;
 
 	ComPtr<ID3D12DescriptorHeap> m_CSUHeap = 0;
-	D3D12_CPU_DESCRIPTOR_HANDLE m_initialCSUCPUHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE m_initialCSUGPUHandle;
-	D3D12_CPU_DESCRIPTOR_HANDLE m_currentCSUCPUHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE m_currentCSUGPUHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE m_CSUDescHeapCPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE m_CSUDescHeapGPUHandle;
 
 	ComPtr<ID3D12DescriptorHeap> m_ShaderNonVisibleCSUHeap = 0;
-	D3D12_CPU_DESCRIPTOR_HANDLE m_initialShaderNonVisibleCSUCPUHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE m_initialShaderNonVisibleCSUGPUHandle;
-	D3D12_CPU_DESCRIPTOR_HANDLE m_currentShaderNonVisibleCSUCPUHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE m_currentShaderNonVisibleCSUGPUHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE m_ShaderNonVisibleCSUDescHeapCPUHandle;
 
 	ComPtr<ID3D12DescriptorHeap> m_samplerHeap = 0;
 	D3D12_DESCRIPTOR_HEAP_DESC m_samplerHeapDesc = {};
-	D3D12_CPU_DESCRIPTOR_HANDLE m_initialSamplerCPUHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE m_initialSamplerGPUHandle;
-	D3D12_CPU_DESCRIPTOR_HANDLE m_currentSamplerCPUHandle;
-	D3D12_GPU_DESCRIPTOR_HANDLE m_currentSamplerGPUHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE m_SamplerDescHeapCPUHandle;
+	D3D12_GPU_DESCRIPTOR_HANDLE m_SamplerDescHeapGPUHandle;
 
 	GPUResourceComponent *m_userPipelineOutput = 0;
 	DX12RenderPassDataComponent *m_SwapChainRPDC = 0;
@@ -204,7 +196,7 @@ bool DX12RenderingServerNS::CreateDebugCallback()
 	}
 
 	m_debugInterface->EnableDebugLayer();
-	//m_debugInterface->SetEnableGPUBasedValidation(true);
+	// m_debugInterface->SetEnableGPUBasedValidation(true);
 
 	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Debug layer and GPU based validation has been enabled.");
 
@@ -374,7 +366,7 @@ bool DX12RenderingServerNS::CreatePhysicalDevices()
 
 	l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
 	l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
-	//l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, TRUE);
+	// l_pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, TRUE);
 
 	return true;
 }
@@ -447,29 +439,6 @@ bool DX12RenderingServerNS::CreateSyncPrimitives()
 
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer:  Fences have been created.");
 
-	m_directCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
-	if (m_directCommandQueueFenceEvent == NULL)
-	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create fence event for direct CommandQueue!");
-		return false;
-	}
-
-	m_computeCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
-	if (m_computeCommandQueueFenceEvent == NULL)
-	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create fence event for compute CommandQueue!");
-		return false;
-	}
-
-	m_copyCommandQueueFenceEvent = CreateEventEx(NULL, FALSE, FALSE, EVENT_ALL_ACCESS);
-	if (m_copyCommandQueueFenceEvent == NULL)
-	{
-		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create fence event for copy CommandQueue!");
-		return false;
-	}
-
-	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: Fence events have been created.");
-
 	return true;
 }
 
@@ -491,11 +460,8 @@ bool DX12RenderingServerNS::CreateGlobalCSUHeap()
 
 	m_CSUHeap->SetName(L"ShaderVisibleGlobalCSUHeap");
 
-	m_initialCSUCPUHandle = m_CSUHeap->GetCPUDescriptorHandleForHeapStart();
-	m_initialCSUGPUHandle = m_CSUHeap->GetGPUDescriptorHandleForHeapStart();
-
-	m_currentCSUCPUHandle = m_initialCSUCPUHandle;
-	m_currentCSUGPUHandle = m_initialCSUGPUHandle;
+	m_CSUDescHeapCPUHandle = m_CSUHeap->GetCPUDescriptorHandleForHeapStart();
+	m_CSUDescHeapGPUHandle = m_CSUHeap->GetGPUDescriptorHandleForHeapStart();
 
 	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Shader-visible DescriptorHeap for CBV/SRV/UAV has been created.");
 
@@ -515,11 +481,7 @@ bool DX12RenderingServerNS::CreateGlobalCSUHeap()
 
 	m_ShaderNonVisibleCSUHeap->SetName(L"ShaderNonVisibleGlobalCSUHeap");
 
-	m_initialShaderNonVisibleCSUCPUHandle = m_ShaderNonVisibleCSUHeap->GetCPUDescriptorHandleForHeapStart();
-	m_initialShaderNonVisibleCSUGPUHandle = m_ShaderNonVisibleCSUHeap->GetGPUDescriptorHandleForHeapStart();
-
-	m_currentShaderNonVisibleCSUCPUHandle = m_initialShaderNonVisibleCSUCPUHandle;
-	m_currentShaderNonVisibleCSUGPUHandle = m_initialShaderNonVisibleCSUGPUHandle;
+	m_ShaderNonVisibleCSUDescHeapCPUHandle = m_ShaderNonVisibleCSUHeap->GetCPUDescriptorHandleForHeapStart();
 
 	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Shader-non-visible DescriptorHeap for CBV/SRV/UAV has been created.");
 
@@ -542,11 +504,8 @@ bool DX12RenderingServerNS::CreateGlobalSamplerHeap()
 
 	m_samplerHeap->SetName(L"GlobalSamplerHeap");
 
-	m_initialSamplerCPUHandle = m_samplerHeap->GetCPUDescriptorHandleForHeapStart();
-	m_initialSamplerGPUHandle = m_samplerHeap->GetGPUDescriptorHandleForHeapStart();
-
-	m_currentSamplerCPUHandle = m_initialSamplerCPUHandle;
-	m_currentSamplerGPUHandle = m_initialSamplerGPUHandle;
+	m_SamplerDescHeapCPUHandle = m_samplerHeap->GetCPUDescriptorHandleForHeapStart();
+	m_SamplerDescHeapGPUHandle = m_samplerHeap->GetGPUDescriptorHandleForHeapStart();
 
 	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: DescriptorHeap for Sampler has been created.");
 
@@ -832,6 +791,8 @@ bool DX12RenderingServer::Initialize()
 			m_SwapChainRPDC->m_Semaphores[i] = addSemaphore();
 		}
 
+		CreateFenceEvents(m_SwapChainRPDC);
+
 		// Create swap chain
 		// Set the swap chain to use double buffering.
 		m_swapChainDesc.BufferCount = m_swapChainImageCount;
@@ -922,7 +883,7 @@ bool DX12RenderingServer::Terminate()
 {
 	DeleteSamplerDataComponent(m_SwapChainSDC);
 	DeleteShaderProgramComponent(m_SwapChainSPC);
-	//DeleteRenderPassDataComponent(m_SwapChainRPDC);
+	// DeleteRenderPassDataComponent(m_SwapChainRPDC);
 
 #ifdef INNO_DEBUG
 	IDXGIDebug1 *pDebug = nullptr;
@@ -1281,7 +1242,10 @@ bool DX12RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 	{
 		l_rhs->m_Semaphores[i] = addSemaphore();
 	}
+	
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", l_rhs->m_InstanceName.c_str(), " Semaphore has been created.");
+
+	CreateFenceEvents(l_rhs);
 
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
 
@@ -1365,15 +1329,15 @@ bool DX12RenderingServer::InitializeSamplerDataComponent(SamplerDataComponent *r
 	l_rhs->m_Sampler.SamplerDesc.MinLOD = l_rhs->m_SamplerDesc.m_MinLOD;
 	l_rhs->m_Sampler.SamplerDesc.MaxLOD = l_rhs->m_SamplerDesc.m_MaxLOD;
 
-	l_rhs->m_Sampler.CPUHandle = m_currentSamplerCPUHandle;
-	l_rhs->m_Sampler.GPUHandle = m_currentSamplerGPUHandle;
+	l_rhs->m_Sampler.CPUHandle = m_SamplerDescHeapCPUHandle;
+	l_rhs->m_Sampler.GPUHandle = m_SamplerDescHeapGPUHandle;
 
 	m_device->CreateSampler(&l_rhs->m_Sampler.SamplerDesc, l_rhs->m_Sampler.CPUHandle);
 
 	auto l_samplerDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 
-	m_currentSamplerCPUHandle.ptr += l_samplerDescSize;
-	m_currentSamplerGPUHandle.ptr += l_samplerDescSize;
+	m_SamplerDescHeapCPUHandle.ptr += l_samplerDescSize;
+	m_SamplerDescHeapGPUHandle.ptr += l_samplerDescSize;
 
 	l_rhs->m_GPUResourceType = GPUResourceType::Sampler;
 	l_rhs->m_ObjectStatus = ObjectStatus::Activated;
@@ -1522,12 +1486,16 @@ bool DX12RenderingServer::ClearTextureDataComponent(TextureDataComponent *rhs)
 	auto l_rhs = reinterpret_cast<DX12TextureDataComponent *>(rhs);
 
 	auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRPDC->m_CurrentFrame]);
+	
+	ID3D12DescriptorHeap *l_heaps[] = {m_CSUHeap.Get()};
+	l_commandList->SetDescriptorHeaps(1, l_heaps);
+	
 	l_commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(l_rhs->m_ResourceHandle.Get(), l_rhs->m_CurrentState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
 	if (l_rhs->m_TextureDesc.PixelDataType < TexturePixelDataType::Float16)
 	{
 		l_commandList->ClearUnorderedAccessViewUint(
-			l_rhs->m_UAV.ShaderNonVisibleGPUHandle,
+			l_rhs->m_UAV.ShaderVisibleGPUHandle,
 			l_rhs->m_UAV.ShaderNonVisibleCPUHandle,
 			l_rhs->m_ResourceHandle.Get(),
 			(UINT *)&l_rhs->m_TextureDesc.ClearColor[0],
@@ -1537,7 +1505,7 @@ bool DX12RenderingServer::ClearTextureDataComponent(TextureDataComponent *rhs)
 	else
 	{
 		l_commandList->ClearUnorderedAccessViewFloat(
-			l_rhs->m_UAV.ShaderNonVisibleGPUHandle,
+			l_rhs->m_UAV.ShaderVisibleGPUHandle,
 			l_rhs->m_UAV.ShaderNonVisibleCPUHandle,
 			l_rhs->m_ResourceHandle.Get(),
 			&l_rhs->m_TextureDesc.ClearColor[0],
@@ -1607,8 +1575,11 @@ bool DX12RenderingServer::ClearGPUBufferDataComponent(GPUBufferDataComponent *rh
 
 	auto l_commandList = OpenTemporaryCommandList(D3D12_COMMAND_LIST_TYPE_DIRECT, m_device, m_directCommandAllocators[m_SwapChainRPDC->m_CurrentFrame]);
 
+	ID3D12DescriptorHeap *l_heaps[] = {m_CSUHeap.Get()};
+	l_commandList->SetDescriptorHeaps(1, l_heaps);
+
 	l_commandList->ClearUnorderedAccessViewUint(
-		l_rhs->m_UAV.ShaderNonVisibleGPUHandle,
+		l_rhs->m_UAV.ShaderVisibleGPUHandle,
 		l_rhs->m_UAV.ShaderNonVisibleCPUHandle,
 		l_rhs->m_DefaultHeapResourceHandle.Get(),
 		&zero,
@@ -1775,7 +1746,7 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent *rhs)
 					if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
 					{
 						l_commandList->m_DirectCommandList->ClearUnorderedAccessViewUint(
-							l_RT->m_UAV.ShaderNonVisibleGPUHandle,
+							l_RT->m_UAV.ShaderVisibleGPUHandle,
 							l_RT->m_UAV.ShaderNonVisibleCPUHandle,
 							l_RT->m_ResourceHandle.Get(),
 							(UINT *)l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
@@ -1785,7 +1756,7 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent *rhs)
 					else
 					{
 						l_commandList->m_DirectCommandList->ClearUnorderedAccessViewFloat(
-							l_RT->m_UAV.ShaderNonVisibleGPUHandle,
+							l_RT->m_UAV.ShaderVisibleGPUHandle,
 							l_RT->m_UAV.ShaderNonVisibleCPUHandle,
 							l_RT->m_ResourceHandle.Get(),
 							l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
@@ -1802,7 +1773,7 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent *rhs)
 						if (l_rhs->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType < TexturePixelDataType::Float16)
 						{
 							l_commandList->m_DirectCommandList->ClearUnorderedAccessViewUint(
-								l_RT->m_UAV.ShaderNonVisibleGPUHandle,
+								l_RT->m_UAV.ShaderVisibleGPUHandle,
 								l_RT->m_UAV.ShaderNonVisibleCPUHandle,
 								l_RT->m_ResourceHandle.Get(),
 								(UINT *)l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
@@ -1812,7 +1783,7 @@ bool DX12RenderingServer::CleanRenderTargets(RenderPassDataComponent *rhs)
 						else
 						{
 							l_commandList->m_DirectCommandList->ClearUnorderedAccessViewFloat(
-								l_RT->m_UAV.ShaderNonVisibleGPUHandle,
+								l_RT->m_UAV.ShaderVisibleGPUHandle,
 								l_RT->m_UAV.ShaderNonVisibleCPUHandle,
 								l_RT->m_ResourceHandle.Get(),
 								l_rhs->m_RenderPassDesc.m_RenderTargetDesc.ClearColor,
@@ -1863,6 +1834,7 @@ bool DX12RenderingServer::BindGPUResource(RenderPassDataComponent *renderPass, S
 				if (accessibility != Accessibility::ReadOnly)
 				{
 					CheckWriteState(reinterpret_cast<DX12TextureDataComponent *>(resource), l_commandList);
+					auto l = reinterpret_cast<DX12TextureDataComponent *>(resource)->m_UAV.ShaderVisibleGPUHandle;
 					l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureDataComponent *>(resource)->m_UAV.ShaderVisibleGPUHandle);
 				}
 				else
@@ -2014,22 +1986,22 @@ bool DX12RenderingServer::CommandListEnd(RenderPassDataComponent *rhs)
 	return true;
 }
 
-bool DX12RenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, GPUEngineType GPUEngineType)
+bool DX12RenderingServer::ExecuteCommandList(RenderPassDataComponent *rhs, GPUEngineType GPUEngineType)
 {
 	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent *>(rhs);
 	auto l_commandList = reinterpret_cast<DX12CommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 	auto l_semaphore = reinterpret_cast<DX12Semaphore *>(l_rhs->m_Semaphores[l_rhs->m_CurrentFrame]);
-	
+
 	if (GPUEngineType == GPUEngineType::Graphics)
 	{
 		ID3D12CommandList *l_directCommandLists[] = {l_commandList->m_DirectCommandList.Get()};
 		m_directCommandQueue->ExecuteCommandLists(1, l_directCommandLists);
 
 		UINT64 l_directCommandFinishedSemaphore = ++m_directCommandQueueSemaphore;
+		m_directCommandQueueFence->SetEventOnCompletion(l_directCommandFinishedSemaphore, l_semaphore->m_DirectCommandQueueFenceEvent);
 		l_semaphore->m_DirectCommandQueueSemaphore = l_directCommandFinishedSemaphore;
+		m_directCommandQueueFenceEvent = l_semaphore->m_DirectCommandQueueFenceEvent;
 		m_directCommandQueue->Signal(m_directCommandQueueFence.Get(), l_directCommandFinishedSemaphore);
-
-		m_directCommandQueueFence->SetEventOnCompletion(l_directCommandFinishedSemaphore, m_directCommandQueueFenceEvent);
 	}
 	else if (GPUEngineType == GPUEngineType::Compute)
 	{
@@ -2037,22 +2009,21 @@ bool DX12RenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, GPUEn
 		m_computeCommandQueue->ExecuteCommandLists(1, l_computeCommandLists);
 
 		UINT64 l_computeCommandFinishedSemaphore = ++m_computeCommandQueueSemaphore;
+		m_computeCommandQueueFence->SetEventOnCompletion(l_computeCommandFinishedSemaphore, l_semaphore->m_ComputeCommandQueueFenceEvent);
 		l_semaphore->m_ComputeCommandQueueSemaphore = l_computeCommandFinishedSemaphore;
+		m_computeCommandQueueFenceEvent = l_semaphore->m_ComputeCommandQueueFenceEvent;
 		m_computeCommandQueue->Signal(m_computeCommandQueueFence.Get(), l_computeCommandFinishedSemaphore);
-		m_computeCommandQueueSemaphore++;
-
-		m_computeCommandQueueFence->SetEventOnCompletion(l_computeCommandFinishedSemaphore, m_computeCommandQueueFenceEvent);
 	}
 
 	return true;
 }
 
-bool DX12RenderingServer::WaitCommandQueue(RenderPassDataComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType)
-{	
+bool DX12RenderingServer::WaitCommandQueue(RenderPassDataComponent *rhs, GPUEngineType queueType, GPUEngineType semaphoreType)
+{
 	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent *>(rhs);
 	auto l_semaphore = reinterpret_cast<DX12Semaphore *>(l_rhs->m_Semaphores[l_rhs->m_CurrentFrame]);
-	ID3D12CommandQueue* commandQueue = nullptr;
-	ID3D12Fence* fence = nullptr;
+	ID3D12CommandQueue *commandQueue = nullptr;
+	ID3D12Fence *fence = nullptr;
 	uint64_t semaphore = 0;
 
 	if (queueType == GPUEngineType::Graphics)
@@ -2075,7 +2046,7 @@ bool DX12RenderingServer::WaitCommandQueue(RenderPassDataComponent* rhs, GPUEngi
 		semaphore = l_semaphore->m_ComputeCommandQueueSemaphore;
 	}
 
-	if(commandQueue && fence)
+	if (commandQueue && fence)
 	{
 		commandQueue->Wait(fence, semaphore);
 	}
@@ -2083,24 +2054,56 @@ bool DX12RenderingServer::WaitCommandQueue(RenderPassDataComponent* rhs, GPUEngi
 	return true;
 }
 
-bool DX12RenderingServer::WaitFence(RenderPassDataComponent* rhs, GPUEngineType GPUEngineType)
-{	
-	auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent *>(rhs);
-	auto l_semaphore = reinterpret_cast<DX12Semaphore *>(l_rhs->m_Semaphores[l_rhs->m_CurrentFrame]);
+bool DX12RenderingServer::WaitFence(RenderPassDataComponent *rhs, GPUEngineType GPUEngineType)
+{
+	UINT64 semaphore = 0;
+	HANDLE fenceEvent = 0;
+
+	if (rhs == nullptr)
+	{
+		if (GPUEngineType == GPUEngineType::Graphics)
+		{
+			semaphore = m_directCommandQueueSemaphore;
+			fenceEvent = m_directCommandQueueFenceEvent;
+		}
+		else if (GPUEngineType == GPUEngineType::Compute)
+		{
+			semaphore = m_computeCommandQueueSemaphore;
+			fenceEvent = m_computeCommandQueueFenceEvent;
+		}
+	}
+	else
+	{
+		auto l_rhs = reinterpret_cast<DX12RenderPassDataComponent *>(rhs);
+		auto l_semaphore = reinterpret_cast<DX12Semaphore *>(l_rhs->m_Semaphores[l_rhs->m_CurrentFrame]);
+
+		if (GPUEngineType == GPUEngineType::Graphics)
+		{
+			semaphore = l_semaphore->m_DirectCommandQueueSemaphore;
+			fenceEvent = l_semaphore->m_DirectCommandQueueFenceEvent;
+		}
+		else if (GPUEngineType == GPUEngineType::Compute)
+		{
+			semaphore = l_semaphore->m_ComputeCommandQueueSemaphore;
+			fenceEvent = l_semaphore->m_ComputeCommandQueueFenceEvent;
+		}
+	}
 
 	if (GPUEngineType == GPUEngineType::Graphics)
 	{
-		if(m_directCommandQueueFence->GetCompletedValue() <l_semaphore->m_DirectCommandQueueSemaphore)
+		if (m_directCommandQueueFence->GetCompletedValue() < semaphore)
 		{
-			WaitForSingleObject(m_directCommandQueueFenceEvent, INFINITE);
+			WaitForSingleObject(fenceEvent, INFINITE);
 		}
+		ResetEvent(fenceEvent);
 	}
 	else if (GPUEngineType == GPUEngineType::Compute)
-	{	
-		if(m_computeCommandQueueFence->GetCompletedValue() <l_semaphore->m_ComputeCommandQueueSemaphore)
+	{
+		if (m_computeCommandQueueFence->GetCompletedValue() < semaphore)
 		{
-			WaitForSingleObject(m_computeCommandQueueFenceEvent, INFINITE);
+			WaitForSingleObject(fenceEvent, INFINITE);
 		}
+		ResetEvent(fenceEvent);
 	}
 
 	return true;
@@ -2153,13 +2156,12 @@ bool DX12RenderingServer::Present()
 	m_swapChain->Present(0, 0);
 
 	UINT64 l_directCommandFinishedSemaphore = ++m_directCommandQueueSemaphore;
-	l_semaphore->m_DirectCommandQueueSemaphore = l_directCommandFinishedSemaphore;
+	m_directCommandQueueFence->SetEventOnCompletion(l_directCommandFinishedSemaphore, l_semaphore->m_DirectCommandQueueFenceEvent);
 	m_directCommandQueue->Signal(m_directCommandQueueFence.Get(), l_directCommandFinishedSemaphore);
+	l_semaphore->m_DirectCommandQueueSemaphore = l_directCommandFinishedSemaphore;
 
-	m_directCommandQueueFence->SetEventOnCompletion(l_directCommandFinishedSemaphore, m_directCommandQueueFenceEvent);
-	
-	WaitFence(m_SwapChainRPDC, GPUEngineType::Graphics);
-	WaitFence(m_SwapChainRPDC, GPUEngineType::Compute);
+	WaitFence(nullptr, GPUEngineType::Graphics);
+	WaitFence(nullptr, GPUEngineType::Compute);
 
 	m_SwapChainRPDC->m_CurrentFrame = m_swapChain->GetCurrentBackBufferIndex();
 
@@ -2370,7 +2372,7 @@ bool DX12RenderingServer::GenerateMipmap(TextureDataComponent *rhs)
 	auto l_rhs = reinterpret_cast<DX12TextureDataComponent *>(rhs);
 
 	// @TODO: support sRGB
-	//if (!l_rhs->m_TextureDesc.IsSRGB)
+	// if (!l_rhs->m_TextureDesc.IsSRGB)
 	//{
 	//	return DX12RenderingServerNS::GenerateMipmap(l_rhs);
 	//}
@@ -2392,11 +2394,11 @@ DX12SRV DX12RenderingServer::CreateSRV(TextureDataComponent *rhs, uint32_t mostD
 
 	l_result.SRVDesc = GetSRVDesc(l_rhs->m_TextureDesc, l_rhs->m_DX12TextureDesc, mostDetailedMip);
 
-	l_result.CPUHandle = m_currentCSUCPUHandle;
-	l_result.GPUHandle = m_currentCSUGPUHandle;
+	l_result.CPUHandle = m_CSUDescHeapCPUHandle;
+	l_result.GPUHandle = m_CSUDescHeapGPUHandle;
 
-	m_currentCSUCPUHandle.ptr += l_CSUDescSize;
-	m_currentCSUGPUHandle.ptr += l_CSUDescSize;
+	m_CSUDescHeapCPUHandle.ptr += l_CSUDescSize;
+	m_CSUDescHeapGPUHandle.ptr += l_CSUDescSize;
 
 	m_device->CreateShaderResourceView(l_rhs->m_ResourceHandle.Get(), &l_result.SRVDesc, l_result.CPUHandle);
 
@@ -2405,23 +2407,22 @@ DX12SRV DX12RenderingServer::CreateSRV(TextureDataComponent *rhs, uint32_t mostD
 
 DX12UAV createUAVImpl(D3D12_UNORDERED_ACCESS_VIEW_DESC desc, ComPtr<ID3D12Resource> resourceHandle, bool isAtomicCounter)
 {
-	DX12UAV l_result = {};
-	l_result.UAVDesc = desc;
-	l_result.ShaderNonVisibleCPUHandle = m_currentShaderNonVisibleCSUCPUHandle;
-	l_result.ShaderNonVisibleGPUHandle = m_currentShaderNonVisibleCSUGPUHandle;
-	l_result.ShaderVisibleCPUHandle = m_currentCSUCPUHandle;
-	l_result.ShaderVisibleGPUHandle = m_currentCSUGPUHandle;
-
 	auto l_CSUDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	m_currentCSUCPUHandle.ptr += l_CSUDescSize;
-	m_currentCSUGPUHandle.ptr += l_CSUDescSize;
-	m_currentShaderNonVisibleCSUCPUHandle.ptr += l_CSUDescSize;
-	m_currentShaderNonVisibleCSUGPUHandle.ptr += l_CSUDescSize;
+	DX12UAV l_result = {};
+	l_result.UAVDesc = desc;
+	l_result.ShaderNonVisibleCPUHandle = m_ShaderNonVisibleCSUDescHeapCPUHandle;
+	l_result.ShaderVisibleGPUHandle = m_CSUDescHeapGPUHandle;
+
+	auto l_CSUDescHeapCPUHandle = m_CSUDescHeapCPUHandle;
+
+	m_ShaderNonVisibleCSUDescHeapCPUHandle.ptr += l_CSUDescSize;
+	m_CSUDescHeapCPUHandle.ptr += l_CSUDescSize;
+	m_CSUDescHeapGPUHandle.ptr += l_CSUDescSize;
 
 	m_device->CreateUnorderedAccessView(resourceHandle.Get(), isAtomicCounter ? resourceHandle.Get() : 0, &l_result.UAVDesc, l_result.ShaderNonVisibleCPUHandle);
-	m_device->CreateUnorderedAccessView(resourceHandle.Get(), isAtomicCounter ? resourceHandle.Get() : 0, &l_result.UAVDesc, l_result.ShaderVisibleCPUHandle);
-
+	m_device->CreateUnorderedAccessView(resourceHandle.Get(), isAtomicCounter ? resourceHandle.Get() : 0, &l_result.UAVDesc, l_CSUDescHeapCPUHandle);
+	
 	return l_result;
 }
 
@@ -2455,13 +2456,13 @@ DX12CBV DX12RenderingServer::CreateCBV(GPUBufferDataComponent *rhs)
 	l_result.CBVDesc.BufferLocation = l_rhs->m_UploadHeapResourceHandle->GetGPUVirtualAddress();
 	l_result.CBVDesc.SizeInBytes = (uint32_t)l_rhs->m_ElementSize;
 
-	l_result.CPUHandle = m_currentCSUCPUHandle;
-	l_result.GPUHandle = m_currentCSUGPUHandle;
+	l_result.CPUHandle = m_CSUDescHeapCPUHandle;
+	l_result.GPUHandle = m_CSUDescHeapGPUHandle;
 
 	auto l_CSUDescSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	m_currentCSUCPUHandle.ptr += l_CSUDescSize;
-	m_currentCSUGPUHandle.ptr += l_CSUDescSize;
+	m_CSUDescHeapCPUHandle.ptr += l_CSUDescSize;
+	m_CSUDescHeapGPUHandle.ptr += l_CSUDescSize;
 
 	m_device->CreateConstantBufferView(&l_result.CBVDesc, l_result.CPUHandle);
 

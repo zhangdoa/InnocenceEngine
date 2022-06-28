@@ -53,6 +53,7 @@ namespace Inno
 		bool CreateViews(DX12RenderPassDataComponent *DX12RPDC, ComPtr<ID3D12Device> device);
 		bool CreateRootSignature(DX12RenderPassDataComponent *DX12RPDC, ComPtr<ID3D12Device> device);
 		bool CreatePSO(DX12RenderPassDataComponent *DX12RPDC, ComPtr<ID3D12Device> device);
+		bool CreateFenceEvents(DX12RenderPassDataComponent *DX12RPDC);
 
 		D3D12_COMPARISON_FUNC GetComparisionFunction(ComparisionFunction comparisionFunction);
 		D3D12_STENCIL_OP GetStencilOperation(StencilOperation stencilOperation);
