@@ -119,7 +119,7 @@ void LightSystemNS::UpdateCSMData(LightComponent* rhs)
 	rhs->m_ProjectionMatrices.clear();
 
 	//1. get frustum vertices in view space
-	auto l_cameraComponent = g_Engine->getComponentManager()->Get<CameraComponent>(0);
+	auto l_cameraComponent = static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->GetMainCamera();
 	if (l_cameraComponent == nullptr)
 	{
 		return;
@@ -150,7 +150,6 @@ void LightSystemNS::UpdateCSMData(LightComponent* rhs)
 	auto l_sceneAABBVerticesWS = InnoMath::generateAABBVertices(l_totalSceneAABB.m_boundMax, l_totalSceneAABB.m_boundMin);
 	auto l_sceneAABBVerticesVS = InnoMath::worldToViewSpace(l_sceneAABBVerticesWS, l_tCamera, l_rCamera);
 	auto l_sceneAABBVS = InnoMath::generateAABB(&l_sceneAABBVerticesVS[0], l_sceneAABBVerticesVS.size());
-
 	auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
 
 	if (l_renderingConfig.CSMAdjustDrawDistance)
@@ -254,7 +253,7 @@ void LightSystemNS::UpdateCSMData(LightComponent* rhs)
 
 		auto l_t = InnoMath::toTranslationMatrix(l_sunShadowPos);
 		auto l_m = l_t * l_r;
-
+		
 		rhs->m_ViewMatrices.emplace_back(l_m.inverse());
 
 		Mat4 p = InnoMath::generateOrthographicMatrix(-sphereRadius, sphereRadius, -sphereRadius, sphereRadius, 0.0f, sphereRadius * 2.0f);

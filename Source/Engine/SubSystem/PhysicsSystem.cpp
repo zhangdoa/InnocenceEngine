@@ -553,7 +553,7 @@ void BVHCulling(std::vector<BVHNode>::iterator node, const Frustum& frustum, std
 
 void InnoPhysicsSystem::updateCulling()
 {
-	auto l_mainCamera = g_Engine->getComponentManager()->Get<CameraComponent>(0);
+	auto l_mainCamera = static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->GetMainCamera();
 
 	if (l_mainCamera == nullptr)
 	{

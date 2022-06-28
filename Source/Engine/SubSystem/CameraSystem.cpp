@@ -16,6 +16,9 @@ namespace CameraSystemNS
 	void generateProjectionMatrix(CameraComponent* cameraComponent);
 	void generateFrustum(CameraComponent* cameraComponent);
 	void generateRayOfEye(CameraComponent* cameraComponent);
+
+	CameraComponent* m_MainCamera;
+	CameraComponent* m_ActiveCamera;
 }
 
 void CameraSystemNS::generateProjectionMatrix(CameraComponent* cameraComponent)
@@ -92,4 +95,24 @@ bool InnoCameraSystem::Terminate()
 ObjectStatus InnoCameraSystem::GetStatus()
 {
 	return ObjectStatus();
+}
+
+void InnoCameraSystem::SetMainCamera(CameraComponent* cameraComponent)
+{
+	CameraSystemNS::m_MainCamera = cameraComponent;
+}
+
+CameraComponent* InnoCameraSystem::GetMainCamera()
+{
+	return CameraSystemNS::m_MainCamera;
+}
+
+void InnoCameraSystem::SetActiveCamera(CameraComponent* cameraComponent)
+{
+	CameraSystemNS::m_ActiveCamera = cameraComponent;
+}
+
+CameraComponent* InnoCameraSystem::GetActiveCamera()
+{
+	return CameraSystemNS::m_ActiveCamera;
 }

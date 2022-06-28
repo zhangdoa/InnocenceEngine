@@ -410,23 +410,23 @@ bool InnoRenderingFrontendNS::Initialize()
 
 bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 {
-	auto l_mainCamera = g_Engine->getComponentManager()->Get<CameraComponent>(0);
+	auto l_camera = static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->GetActiveCamera();
 
-	if (l_mainCamera == nullptr)
+	if (l_camera == nullptr)
 	{
 		return false;
 	}
 
-	auto l_mainCameraTransformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(l_mainCamera->m_Owner);
+	auto l_cameraTransformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(l_camera->m_Owner);
 
-	if (l_mainCameraTransformComponent == nullptr)
+	if (l_cameraTransformComponent == nullptr)
 	{
 		return false;
 	}
 
 	PerFrameConstantBuffer l_PerFrameCB;
 
-	auto l_p = l_mainCamera->m_projectionMatrix;
+	auto l_p = l_camera->m_projectionMatrix;
 
 	l_PerFrameCB.p_original = l_p;
 	l_PerFrameCB.p_jittered = l_p;
@@ -444,21 +444,21 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 		l_currentHaltonStep += 1;
 	}
 
-	auto r = InnoMath::getInvertRotationMatrix(l_mainCameraTransformComponent->m_globalTransformVector.m_rot);
+	auto r = InnoMath::getInvertRotationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_rot);
 
-	auto t = InnoMath::getInvertTranslationMatrix(l_mainCameraTransformComponent->m_globalTransformVector.m_pos);
+	auto t = InnoMath::getInvertTranslationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_pos);
 
-	l_PerFrameCB.camera_posWS = l_mainCameraTransformComponent->m_globalTransformVector.m_pos;
+	l_PerFrameCB.camera_posWS = l_cameraTransformComponent->m_globalTransformVector.m_pos;
 
 	l_PerFrameCB.v = r * t;
 
-	auto r_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_rotationMat.inverse();
-	auto t_prev = l_mainCameraTransformComponent->m_globalTransformMatrix_prev.m_translationMat.inverse();
+	auto r_prev = l_cameraTransformComponent->m_globalTransformMatrix_prev.m_rotationMat.inverse();
+	auto t_prev = l_cameraTransformComponent->m_globalTransformMatrix_prev.m_translationMat.inverse();
 
 	l_PerFrameCB.v_prev = r_prev * t_prev;
 
-	l_PerFrameCB.zNear = l_mainCamera->m_zNear;
-	l_PerFrameCB.zFar = l_mainCamera->m_zFar;
+	l_PerFrameCB.zNear = l_camera->m_zNear;
+	l_PerFrameCB.zFar = l_camera->m_zFar;
 
 	l_PerFrameCB.p_inv = l_p.inverse();
 	l_PerFrameCB.v_inv = l_PerFrameCB.v.inverse();
@@ -466,9 +466,9 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 	l_PerFrameCB.viewportSize.y = (float)m_screenResolution.y;
 	l_PerFrameCB.minLogLuminance = -10.0f;
 	l_PerFrameCB.maxLogLuminance = 16.0f;
-	l_PerFrameCB.aperture = l_mainCamera->m_aperture;
-	l_PerFrameCB.shutterTime = l_mainCamera->m_shutterTime;
-	l_PerFrameCB.ISO = l_mainCamera->m_ISO;
+	l_PerFrameCB.aperture = l_camera->m_aperture;
+	l_PerFrameCB.shutterTime = l_camera->m_shutterTime;
+	l_PerFrameCB.ISO = l_camera->m_ISO;
 
 	auto l_sun = g_Engine->getComponentManager()->Get<LightComponent>(0);
 
