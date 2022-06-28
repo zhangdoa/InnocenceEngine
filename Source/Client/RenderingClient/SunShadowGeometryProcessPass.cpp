@@ -115,7 +115,13 @@ bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderi
 
 	g_Engine->getRenderingServer()->CommandListBegin(m_RPDC, 0);
 	g_Engine->getRenderingServer()->BindRenderPassDataComponent(m_RPDC);
-	g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC);
+
+	// Only clear the RT when a round finished
+	if(g_Engine->getRenderingFrontend()->getPerFrameConstantBuffer().activeCascade == 0)
+	{
+		g_Engine->getRenderingServer()->CleanRenderTargets(m_RPDC);
+	}
+
 	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Geometry, l_CSMGBDC, 2, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Pixel, m_SDC, 4, Accessibility::ReadOnly);
 
@@ -156,6 +162,11 @@ bool SunShadowGeometryProcessPass::PrepareCommandList(IRenderingContext* renderi
 RenderPassDataComponent* SunShadowGeometryProcessPass::GetRPDC()
 {
 	return m_RPDC;
+}
+
+GPUResourceComponent* SunShadowGeometryProcessPass::GetResult()
+{
+	return m_RPDC->m_RenderTargets[0];
 }
 
 uint32_t SunShadowGeometryProcessPass::GetShadowMapResolution()

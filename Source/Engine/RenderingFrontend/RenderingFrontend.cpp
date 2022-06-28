@@ -487,6 +487,9 @@ bool InnoRenderingFrontendNS::updatePerFrameConstantBuffer()
 	l_PerFrameCB.sun_direction = InnoMath::getDirection(Direction::Backward, l_sunTransformComponent->m_globalTransformVector.m_rot);
 	l_PerFrameCB.sun_illuminance = l_sun->m_RGBColor * l_sun->m_LuminousFlux;
 
+	static uint32_t currentCascade = 0;
+	currentCascade = currentCascade < m_renderingCapability.maxCSMSplits - 1 ? ++currentCascade : 0;
+	l_PerFrameCB.activeCascade = currentCascade;
 	m_perFrameCB.SetValue(std::move(l_PerFrameCB));
 
 	auto& l_SplitAABB = l_sun->m_SplitAABBWS;

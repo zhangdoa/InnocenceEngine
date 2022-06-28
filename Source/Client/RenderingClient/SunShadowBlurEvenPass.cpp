@@ -64,6 +64,9 @@ bool SunShadowBlurEvenPass::Setup(ISystemConfig *systemConfig)
 
 	m_TDC->m_TextureDesc = l_RenderPassDesc.m_RenderTargetDesc;
 
+	m_numThreads = TVec4<uint32_t>(16, 16, 1, 0);
+	m_numThreadGroups = TVec4<uint32_t>(l_shadowMapResolution / 16, l_shadowMapResolution / 16, 1, 0);
+	
 	m_ObjectStatus = ObjectStatus::Created;
 	
 	return true;
@@ -107,7 +110,7 @@ bool SunShadowBlurEvenPass::PrepareCommandList(IRenderingContext* renderingConte
 	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, SunShadowBlurOddPass::Get().GetResult(), 1, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->BindGPUResource(m_RPDC, ShaderStage::Compute, m_TDC, 2, Accessibility::ReadWrite);
 
-	g_Engine->getRenderingServer()->Dispatch(m_RPDC, l_shadowMapResolution, l_shadowMapResolution, 1);
+	g_Engine->getRenderingServer()->Dispatch(m_RPDC, m_numThreadGroups.x, m_numThreadGroups.y, m_numThreadGroups.z);
 
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, SunShadowBlurOddPass::Get().GetResult(), 1, Accessibility::ReadOnly);
 	g_Engine->getRenderingServer()->UnbindGPUResource(m_RPDC, ShaderStage::Compute, m_TDC, 2, Accessibility::ReadWrite);

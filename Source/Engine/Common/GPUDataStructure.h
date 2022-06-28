@@ -54,7 +54,8 @@ namespace Inno
 		float aperture;
 		float shutterTime;
 		float ISO;
-		float padding[5];
+		uint32_t activeCascade;
+		float padding[4];
 	};
 
 	struct alignas(16) CSMConstantBuffer

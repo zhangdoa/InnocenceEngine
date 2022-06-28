@@ -25,19 +25,19 @@ Texture2DArray in_shadow : register(t0);
 [[vk::binding(0, 2)]]
 RWTexture2DArray<float4> out_shadow : register(u0);
 
-[numthreads(16, 16, 4)]
+[numthreads(16, 16, 1)]
 void main(ComputeInputType input)
 {
 	float4 color = float4(0.0f, 0.0f, 0.0f, 0.0f);
-
+	
 	[unroll]
 	for (int i = 0; i < 7; i++)
 	{
 		float2 offset = float2(gaussFilter[i].x, gaussFilter[i].x);
-		int3 coord = int3(input.dispatchThreadID.xy + offset, input.dispatchThreadID.z);
+		int3 coord = int3(input.dispatchThreadID.xy + offset, perFrameCBuffer.activeCascade);
 
 		color += in_shadow[coord] * gaussFilter[i].y;
 	}
 
-	out_shadow[input.dispatchThreadID.xyz] = color;
+	out_shadow[int3(input.dispatchThreadID.xy, perFrameCBuffer.activeCascade)] = color;
 }

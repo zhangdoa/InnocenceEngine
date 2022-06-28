@@ -53,6 +53,7 @@ struct PerFrame_CB
 	float aperture; // Tight packing 30
 	float shutterTime; // Tight packing 30
 	float ISO; // Tight packing 30
+	uint activeCascade; // Tight packing 30
 	float4 padding; // 31
 };
 
