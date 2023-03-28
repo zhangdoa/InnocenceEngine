@@ -1,9 +1,9 @@
 #pragma once
 #include <wrl/client.h>
+#include "DX12/directx/d3dx12.h"
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <d3dcompiler.h>
-#include "DX12/d3dx12.h"
 
 using namespace Microsoft::WRL;
 
