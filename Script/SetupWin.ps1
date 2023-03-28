@@ -5,6 +5,8 @@ mkdir ../Source/External/GitSubmodules/GLAD/build
 mkdir ../Source/External/Include/GL
 mkdir ../Source/External/Include/vulkan
 mkdir ../Source/External/Include/DX12
+mkdir ../Source/External/Include/json
+mkdir ../Source/External/Include/stb
 mkdir ../Source/External/DLL/Win/Debug
 mkdir ../Source/External/Lib/Win/Debug
 mkdir ../Source/External/DLL/Win/Release
@@ -22,6 +24,7 @@ Copy-Item -Recurse -Force Vulkan-Headers\include\* ..\Include\vulkan\
 Copy-Item -Recurse -Force DirectX-Headers\include\* ..\Include\DX12\
 
 Copy-Item -Recurse -Force assimp\include\assimp\* ..\Include\assimp\
+Copy-Item -Force assimp\include\assimp\* ..\Include\assimp\
 
 Copy-Item -Force stb\stb_image.h ..\Include\stb\
 Copy-Item -Force stb\stb_image_write.h ..\Include\stb\
