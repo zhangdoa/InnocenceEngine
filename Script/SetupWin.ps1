@@ -29,16 +29,15 @@ Copy-Item -Force stb\stb_image_write.h ..\Include\stb\
 Copy-Item -Force imgui\*.h ..\..\Engine\ThirdParty\ImGui\
 Copy-Item -Force imgui\*.cpp ..\..\Engine\ThirdParty\ImGui\
 
-Copy-Item -Force imgui\examples\imgui_impl_win32.h ..\..\Engine\ThirdParty\ImGui\
-Copy-Item -Force imgui\examples\imgui_impl_win32.cpp ..\..\Engine\ThirdParty\ImGui\
+Copy-Item -Force imgui\backends\imgui_impl_win32.h ..\..\Engine\ThirdParty\ImGui\
+Copy-Item -Force imgui\backends\imgui_impl_win32.cpp ..\..\Engine\ThirdParty\ImGui\
 
-Copy-Item -Force imgui\examples\imgui_impl_dx11.h ..\..\Engine\ThirdParty\ImGui\
-Copy-Item -Force imgui\examples\imgui_impl_dx11.cpp ..\..\Engine\ThirdParty\ImGui\
+Copy-Item -Force imgui\backends\imgui_impl_dx11.h ..\..\Engine\ThirdParty\ImGui\
+Copy-Item -Force imgui\backends\imgui_impl_dx11.cpp ..\..\Engine\ThirdParty\ImGui\
 
-Copy-Item -Force imgui\examples\imgui_impl_opengl3.h ..\..\Engine\ThirdParty\ImGui\
-Copy-Item -Force imgui\examples\imgui_impl_opengl3.cpp ..\..\Engine\ThirdParty\ImGui\
-
-Set-Content -Path ..\..\Engine\ThirdParty\ImGui\imgui_impl_opengl3.h -Value "#define IMGUI_IMPL_OPENGL_LOADER_GLAD`r`n$(Get-Content -Path ..\..\Engine\ThirdParty\ImGui\imgui_impl_opengl3.h)"
+Copy-Item -Force imgui\backends\imgui_impl_opengl3.h ..\..\Engine\ThirdParty\ImGui\
+Copy-Item -Force imgui\backends\imgui_impl_opengl3.cpp ..\..\Engine\ThirdParty\ImGui\
+Copy-Item -Force imgui\backends\imgui_impl_opengl3_loader.h ..\..\Engine\ThirdParty\ImGui\
 
 Copy-Item -Recurse -Force json\single_include\nlohmann\json.hpp ..\Include\json\
 

@@ -14,6 +14,14 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/../Bin)
 
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
+set(PYTHON_VENV_PATH ${CMAKE_BINARY_DIR}/venv)
+find_package(PythonInterp REQUIRED)
+execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} -m venv ${PYTHON_VENV_PATH}
+    )
+unset(PYTHON_EXECUTABLE)
+set(PYTHON_EXECUTABLE ${PYTHON_VENV_PATH}/Scripts/python)
+
 include_directories("${CMAKE_SOURCE_DIR}/External/Include" "${CMAKE_SOURCE_DIR}/External/GitSubmodules")
 
 set(INNO_LOGIC_CLIENT DefaultLogicClient)
