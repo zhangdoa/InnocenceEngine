@@ -8,8 +8,8 @@
 using namespace Inno;
 extern IEngine* g_Engine;
 
-#include "stb/stb_image.h"
-#include "stb/stb_image_write.h"
+#include "stb_image.h"
+#include "stb_image_write.h"
 
 TextureDataComponent* STBWrapper::loadTexture(const char* fileName)
 {

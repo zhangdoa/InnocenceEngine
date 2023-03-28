@@ -1,10 +1,10 @@
 #include "WinGLWindowSurface.h"
 #include "../WinWindowSystem.h"
-#include "../../Engine/Core/InnoLogger.h"
+#include "../../../Engine/Core/InnoLogger.h"
 
-#include "glad/glad.h"
-#include "GL/glext.h"
-#include "GL/wglext.h"
+#include "glad/gl.h"
+#include "glext.h"
+#include "wglext.h"
 
 #include "../../../Interface/IEngine.h"
 
@@ -216,7 +216,7 @@ bool WinGLWindowSurfaceNS::Setup(ISystemConfig* systemConfig)
 		// init opengl loader here (extra safe version)
 		// glad: load all OpenGL function pointers
 		// ---------------------------------------
-		if (!gladLoadGL())
+		if (!gladLoadGL(nullptr))
 		{
 			m_ObjectStatus = ObjectStatus::Created;
 			InnoLogger::Log(LogLevel::Error, "WinWindowSystem: Failed to Initialize GLAD.");

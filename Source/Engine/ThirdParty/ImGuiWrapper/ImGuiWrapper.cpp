@@ -462,7 +462,7 @@ void ImGuiWrapperNS::showVisiableComponentPropertyEditor(void* rhs)
 
 				static ImVec4 albedo = ImColor(l_material->AlbedoR, l_material->AlbedoG, l_material->AlbedoB, l_material->Alpha);
 
-				if (ImGui::ColorPicker4("Albedo color", (float*)&albedo, ImGuiColorEditFlags_RGB))
+				if (ImGui::ColorPicker4("Albedo color", (float*)&albedo, ImGuiColorEditFlags_DisplayRGB))
 				{
 					l_material->AlbedoR = albedo.x;
 					l_material->AlbedoG = albedo.y;
@@ -513,7 +513,7 @@ void ImGuiWrapperNS::showLightComponentPropertyEditor(void* rhs)
 	{
 		static ImVec4 radiance = ImColor(l_rhs->m_RGBColor.x, l_rhs->m_RGBColor.y, l_rhs->m_RGBColor.z, l_rhs->m_RGBColor.w);
 
-		if (ImGui::ColorPicker4("Radiance color", (float*)&radiance, ImGuiColorEditFlags_RGB))
+		if (ImGui::ColorPicker4("Radiance color", (float*)&radiance, ImGuiColorEditFlags_DisplayRGB))
 		{
 			l_rhs->m_RGBColor.x = radiance.x;
 			l_rhs->m_RGBColor.y = radiance.y;

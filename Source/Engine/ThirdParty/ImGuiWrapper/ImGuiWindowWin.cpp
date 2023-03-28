@@ -1,6 +1,6 @@
 #include "ImGuiWindowWin.h"
 #include "ImGuiWindowWin.h"
-#include "../../Engine/Platform/WinWindow/WinWindowSystem.h"
+#include "../../Platform/WinWindow/WinWindowSystem.h"
 
 #include "../ImGui/imgui_impl_win32.cpp"
 

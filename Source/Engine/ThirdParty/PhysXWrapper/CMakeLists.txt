@@ -1,6 +1,7 @@
 add_library(PhysXWrapper PhysXWrapper.h PhysXWrapper.cpp)
 set_property(TARGET PhysXWrapper PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_target_properties(PhysXWrapper PROPERTIES FOLDER ThirdParty)
+target_include_directories(PhysXWrapper PRIVATE "${INNO_INCLUDE_DIRECTORIES}/PhysX")
 
 find_library(PHYSX PhysX_64)
 target_link_libraries(PhysXWrapper "${PHYSX}")

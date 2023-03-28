@@ -11,4 +11,8 @@ else ()
 find_library(ASSIMP assimp)
 endif (APPLE)
 
+target_include_directories(AssimpWrapper PRIVATE "${INNO_INCLUDE_DIRECTORIES}")
+target_include_directories(AssimpWrapper PRIVATE "${INNO_INCLUDE_DIRECTORIES}/json")
+target_include_directories(AssimpWrapper PRIVATE "${INNO_INCLUDE_DIRECTORIES}/assimp")
+target_include_directories(AssimpWrapper PRIVATE "${INNO_INCLUDE_DIRECTORIES}/stb")
 target_link_libraries(AssimpWrapper "${ASSIMP}")

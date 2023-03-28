@@ -22,7 +22,7 @@ execute_process(
 unset(PYTHON_EXECUTABLE)
 set(PYTHON_EXECUTABLE ${PYTHON_VENV_PATH}/Scripts/python)
 
-include_directories("${CMAKE_SOURCE_DIR}/External/Include" "${CMAKE_SOURCE_DIR}/External/GitSubmodules")
+set(INNO_INCLUDE_DIRECTORIES ${CMAKE_SOURCE_DIR}/External/Include)
 
 set(INNO_LOGIC_CLIENT DefaultLogicClient)
 set(INNO_RENDERING_CLIENT DefaultRenderingClient)

@@ -1,5 +1,5 @@
 #pragma once
-#include "../../Engine/Interface/ISystem.h"
+#include "../../Interface/ISystem.h"
 #include "../ImGui/imgui.h"
 
 namespace Inno

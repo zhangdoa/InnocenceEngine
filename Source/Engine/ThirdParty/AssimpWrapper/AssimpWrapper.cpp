@@ -1,12 +1,12 @@
 #include "AssimpWrapper.h"
 
-#include "stb/stb_image_write.h"
+#include "stb_image_write.h"
 
-#include "assimp/Importer.hpp"
-#include "assimp/Exporter.hpp"
-#include "assimp/DefaultLogger.hpp"
-#include "assimp/scene.h"
-#include "assimp/postprocess.h"
+#include "Importer.hpp"
+#include "Exporter.hpp"
+#include "DefaultLogger.hpp"
+#include "scene.h"
+#include "postprocess.h"
 #include "../../Core/InnoLogger.h"
 
 #include "../../Interface/IEngine.h"

@@ -1,9 +1,9 @@
 #include "WinVKWindowSurface.h"
 #include "../WinWindowSystem.h"
-#include "../../Engine/Core/InnoLogger.h"
+#include "../../../Engine/Core/InnoLogger.h"
 
 #define VK_USE_PLATFORM_WIN32_KHR
-#include "vulkan/vulkan/vulkan.h"
+#include "vulkan/vulkan.h"
 #include "../../../RenderingServer/VK/VKRenderingServer.h"
 #include "../../../Interface/IEngine.h"
 

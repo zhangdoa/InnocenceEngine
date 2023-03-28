@@ -9,6 +9,7 @@ execute_process(
 
 # Path to glad cmake files
 add_subdirectory("${GLAD_SOURCES_DIR}/cmake" glad_cmake)
+set(GL_HEADER_LIB_NAME glad_gl_core_46 CACHE INTERNAL "The GLAD lib name")
 
 # Specify glad settings
-glad_add_library(glad_gl_core_46 REPRODUCIBLE API gl:compatibility=4.6)
+glad_add_library(${GL_HEADER_LIB_NAME} REPRODUCIBLE API gl:compatibility=4.6)

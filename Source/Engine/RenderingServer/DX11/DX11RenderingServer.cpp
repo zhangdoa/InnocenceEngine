@@ -8,7 +8,7 @@
 #include "../../Component/DX11SamplerDataComponent.h"
 #include "../../Component/DX11GPUBufferDataComponent.h"
 
-#include "../../Engine/Platform/WinWindow/WinWindowSystem.h"
+#include "../../Platform/WinWindow/WinWindowSystem.h"
 
 #include "../CommonFunctionDefinationMacro.inl"
 

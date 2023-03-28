@@ -1,6 +1,6 @@
 #pragma once
 #include "../Common/InnoType.h"
-#include "vulkan/vulkan/vulkan.h"
+#include "vulkan/vulkan.h"
 #include "TextureDataComponent.h"
 
 namespace Inno

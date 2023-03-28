@@ -8,7 +8,7 @@
 #include "../../Component/DX12SamplerDataComponent.h"
 #include "../../Component/DX12GPUBufferDataComponent.h"
 
-#include "../../Engine/Platform/WinWindow/WinWindowSystem.h"
+#include "../../Platform/WinWindow/WinWindowSystem.h"
 
 #include <DXProgrammableCapture.h>
 #include <DXGIDebug.h>

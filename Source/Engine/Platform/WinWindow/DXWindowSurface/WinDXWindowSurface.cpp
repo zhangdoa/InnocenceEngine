@@ -1,6 +1,6 @@
 #include "WinDXWindowSurface.h"
 #include "../WinWindowSystem.h"
-#include "../../Engine/Core/InnoLogger.h"
+#include "../../../Core/InnoLogger.h"
 
 #include "../../../Interface/IEngine.h"
 using namespace Inno;

@@ -1,7 +1,7 @@
 #pragma once
 #include "../../Common/InnoType.h"
 
-#include "json/json.hpp"
+#include "json.hpp"
 using json = nlohmann::json;
 
 #include "../../Common/ComponentHeaders.h"
