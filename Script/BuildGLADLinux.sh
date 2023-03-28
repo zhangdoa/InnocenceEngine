@@ -1,5 +1,6 @@
 #!/bin/sh
 cd ../Source/External/GitSubmodules/GLAD/
+
 mkdir Build
 cd Build
 mkdir Debug

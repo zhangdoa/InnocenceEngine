@@ -8,32 +8,32 @@
             "name": "PowerShell: Launch BuildAssimpImpl",
             "type": "PowerShell",
             "request": "launch",
-            "script": "${workspaceRoot}/BuildAssimpImpl.ps1",
-            "cwd": "${workspaceFolder}",
+            "script": "${workspaceFolder}/Script/BuildAssimpImpl.ps1",
+            "cwd": "${workspaceFolder}/Script",
             "args": ["-buildType \"Debug\""]
         },
         {
             "name": "PowerShell: Launch BuildGLADImpl",
             "type": "PowerShell",
             "request": "launch",
-            "script": "${workspaceRoot}/BuildGLADImpl.ps1",
-            "cwd": "${workspaceFolder}",
+            "script": "${workspaceFolder}/Script/BuildGLADImpl.ps1",
+            "cwd": "${workspaceFolder}/Script",
             "args": ["-buildType \"Debug\""]
         },
         {
             "name": "PowerShell: Launch BuildPhysXImpl",
             "type": "PowerShell",
             "request": "launch",
-            "script": "${workspaceRoot}/BuildPhysXImpl.ps1",
-            "cwd": "${workspaceFolder}",
+            "script": "${workspaceFolder}/Script/BuildPhysXImpl.ps1",
+            "cwd": "${workspaceFolder}/Script",
             "args": ["-buildType \"Debug\""]
         },
         {
             "name": "PowerShell: Launch BuildEngineImpl",
             "type": "PowerShell",
             "request": "launch",
-            "script": "${workspaceRoot}/BuildEngineImpl.ps1",
-            "cwd": "${workspaceFolder}",
+            "script": "${workspaceFolder}/Script/BuildEngineImpl.ps1",
+            "cwd": "${workspaceFolder}/Script",
             "args": ["-buildType \"Debug\""]
         }
     ]

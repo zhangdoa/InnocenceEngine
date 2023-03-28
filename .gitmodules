@@ -10,10 +10,6 @@
 	path = Source/External/GitSubmodules/Vulkan-Headers
 	url = https://github.com/KhronosGroup/Vulkan-Headers
 	ignore = dirty
-[submodule "Source/External/GitSubmodules/PhysX"]
-	path = Source/External/GitSubmodules/PhysX
-	url = https://github.com/NVIDIAGameWorks/PhysX
-	ignore = dirty
 [submodule "Source/External/GitSubmodules/stb"]
 	path = Source/External/GitSubmodules/stb
 	url = https://github.com/nothings/stb
@@ -29,4 +25,8 @@
 [submodule "Source/External/GitSubmodules/QDarkStyleSheet"]
 	path = Source/External/GitSubmodules/QDarkStyleSheet
 	url = https://github.com/ColinDuquesnoy/QDarkStyleSheet
+	ignore = dirty
+[submodule "Source/External/GitSubmodules/PhysX"]
+	path = Source/External/GitSubmodules/PhysX
+	url = https://github.com/NVIDIA-Omniverse/PhysX
 	ignore = dirty

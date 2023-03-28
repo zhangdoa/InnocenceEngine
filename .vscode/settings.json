@@ -4,5 +4,5 @@
         "BUILD_GAME": "ON",
         "CMAKE_BUILD_TYPE": "Debug"
     },
-    "cmake.generator":"Visual Studio 16"
+    "cmake.generator":"Visual Studio 17"
 }

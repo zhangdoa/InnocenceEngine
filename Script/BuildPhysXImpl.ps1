@@ -2,13 +2,16 @@
     [string]$buildType
  )
 
-Set-Location ../Source/External/Tools
-$msbuildPath = .\vswhere.exe -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe | select-object -first 1
+ Set-Location ../Source/External/Tools
+ $msbuildPath = .\vswhere.exe -latest -products Microsoft.VisualStudio.Product.BuildTools -find MSBuild\**\Bin\MSBuild.exe | select-object -first 1
+ if ($msbuildPath -eq '') {
+    $msbuildPath = .\vswhere.exe -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe | select-object -first 1
+ }
 
 Set-Location ../GitSubmodules/PhysX/physx
 
-$config = 'vc16'
-$vc_version = 'vc142'
+$config = 'vc17'
+$vc_version = 'vc143'
 
 $config += 'win64'
 
@@ -24,15 +27,21 @@ Write-Output "Disable building samples..."
 $con | ForEach-Object { $_.Replace("`"PX_BUILDPUBLICSAMPLES`" value=`"True`"", "`"PX_BUILDPUBLICSAMPLES`" value=`"False`"") } | Set-Content .\buildtools\presets\public\$config.xml
 
 Write-Output "Generate projects with current settings..."
-Start-Process generate_projects.bat $config -Wait
+Start-Process generate_projects.bat $config -NoNewWindow -Wait
 
 Write-Output "Build solution..."
 
 $msbuildArgs= "compiler/$config/PhysXSDK.sln /property:Configuration=$buildType /m"
 
-Start-Process $msbuildPath -ArgumentList $msbuildArgs -Wait
+Start-Process $msbuildPath -ArgumentList $msbuildArgs -NoNewWindow -Wait
 
 $buildTypeLowerCase = $buildType.ToLower()
 xcopy /s/e/y bin\Win.x86_64.$vc_version.md\$buildTypeLowerCase\*.dll ..\..\..\DLL\Win\$buildType\
 xcopy /s/e/y bin\Win.x86_64.$vc_version.md\$buildTypeLowerCase\*.lib ..\..\..\Lib\Win\$buildType\
 xcopy /s/e/y bin\Win.x86_64.$vc_version.md\$buildTypeLowerCase\*.pdb ..\..\..\Lib\Win\$buildType\
+
+# Check if the previous command exited with an error
+if ($LASTEXITCODE -ne 0) {
+   Read-Host -Prompt "Press Enter to continue"
+   exit 1
+}

@@ -9,8 +9,8 @@ for /d %%f in (*) do (
   REM Reset workspace to last committed state
   git reset --hard HEAD
   
-  REM Remove untracked files and directories
-  git clean -f -d
+  REM Remove untracked files and directories, including those that are ignored by .gitignore
+  git clean -f -d -x
   
   cd ..
 )

@@ -20,7 +20,7 @@ git pull
 cd ../
 
 cd PhysX
-git checkout 4.0
+git checkout release/104.2
 git pull
 cd ../
 
