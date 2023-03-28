@@ -42,7 +42,7 @@ mkdir Include\GL
 powershell -Command "Invoke-WebRequest https://www.khronos.org/registry/OpenGL/api/GL/wglext.h -OutFile Include\GL\wglext.h"
 powershell -Command "Invoke-WebRequest https://www.khronos.org/registry/OpenGL/api/GL/glext.h -OutFile Include\GL\glext.h"
 mkdir Include\DX12
-powershell -Command "Invoke-WebRequest https://raw.githubusercontent.com/Microsoft/DirectX-Graphics-Samples/master/Libraries/D3DX12/d3dx12.h -OutFile Include\DX12\d3dx12.h"
+powershell -Command "Invoke-WebRequest https://raw.githubusercontent.com/microsoft/DirectX-Headers/main/include/directx/d3dx12.h -OutFile Include\DX12\d3dx12.h"
 
 mkdir Tools
 powershell -Command "Invoke-WebRequest https://github.com/microsoft/vswhere/releases/download/3.0.3/vswhere.exe -OutFile Tools\vswhere.exe"
