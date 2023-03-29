@@ -106,7 +106,7 @@ ObjectStatus DebugPass::GetStatus()
 
 bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 {
-		auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
+	auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
 
 	if (l_renderingConfig.drawDebugObject)
 	{
@@ -209,6 +209,50 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 			}
 		}
 
+		static bool l_drawCameraFrustums = true;
+		if (l_drawCameraFrustums)
+		{
+			auto l_cameraComponent = static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->GetMainCamera();
+			if(l_cameraComponent)
+			{
+				auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(l_cameraComponent->m_Owner);
+				auto l_m = l_transformComponent->m_globalTransformMatrix.m_translationMat;
+
+				auto l_pCamera = l_cameraComponent->m_projectionMatrix;
+				auto l_rCamera = InnoMath::toRotationMatrix(l_transformComponent->m_globalTransformVector.m_rot);
+				auto l_tCamera = InnoMath::toTranslationMatrix(l_transformComponent->m_globalTransformVector.m_pos);
+
+				auto l_vertices = InnoMath::generateFrustumVerticesWS(l_pCamera, l_rCamera, l_tCamera);
+
+				for (auto& j : l_vertices)
+				{
+					DebugPerObjectConstantBuffer l_meshData;
+					auto l_s = InnoMath::toScaleMatrix(Vec4(1.0f, 1.0f, 1.0f, 1.0f));
+					l_meshData.m = InnoMath::toTranslationMatrix(j.m_pos);
+					l_meshData.m = l_meshData.m * l_s;
+					l_meshData.materialID = 4;
+					m_debugSphereConstantBuffer.emplace_back(l_meshData);
+				}
+			}
+
+			auto l_lightComponents = g_Engine->getComponentManager()->GetAll<LightComponent>();
+			for (auto& i : l_lightComponents)
+			{
+				if(i->m_LightType == LightType::Directional)
+				{
+					for(auto& j : i->m_SplitAABBWS)
+					{
+						DebugPerObjectConstantBuffer l_meshData;
+						auto l_s = InnoMath::toScaleMatrix(j.m_extend);
+						l_meshData.m = InnoMath::toTranslationMatrix(j.m_center);
+						l_meshData.m = l_meshData.m * l_s;
+						l_meshData.materialID = 4;
+						m_debugCubeConstantBuffer.emplace_back(l_meshData);
+					}
+				}
+			}
+		}
+
 		static bool l_drawSkeletons = true;
 		if (l_drawSkeletons)
 		{
@@ -218,8 +262,8 @@ bool DebugPass::PrepareCommandList(IRenderingContext* renderingContext)
 			{
 				if (i->m_meshUsage == MeshUsage::Skeletal && i->m_model)
 				{
-					auto l_transformCompoent = g_Engine->getComponentManager()->Find<TransformComponent>(i->m_Owner);
-					auto l_m = l_transformCompoent->m_globalTransformMatrix.m_transformationMat;
+					auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(i->m_Owner);
+					auto l_m = l_transformComponent->m_globalTransformMatrix.m_transformationMat;
 
 					for (size_t j = 0; j < i->m_model->meshMaterialPairs.m_count; j++)
 					{
