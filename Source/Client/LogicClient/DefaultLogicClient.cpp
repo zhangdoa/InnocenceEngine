@@ -199,17 +199,8 @@ bool PlayerComponentCollection::setup()
 		m_targetCameraRotY = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
 		m_cameraPlayerDistance = m_playerCameraTransformComponent->m_localTransformVector.m_pos - m_playerTransformComponent->m_localTransformVector.m_pos;
 
+		// -z actually so Direction::Backward
 		f_moveForward = [&]() {
-				if(m_activeCameraTransformComponent == m_playerCameraTransformComponent)
-				{
-					move(m_playerTransformComponent, Direction::Forward, m_moveSpeed);
-				}
-				if(!m_isTP)
-				{
-					move(m_activeCameraTransformComponent, Direction::Forward, m_moveSpeed); 
-				}
-			};
-		f_moveBackward = [&]() {
 				if(m_activeCameraTransformComponent == m_playerCameraTransformComponent)
 				{
 					move(m_playerTransformComponent, Direction::Backward, m_moveSpeed);
@@ -217,6 +208,17 @@ bool PlayerComponentCollection::setup()
 				if(!m_isTP)
 				{
 					move(m_activeCameraTransformComponent, Direction::Backward, m_moveSpeed); 
+				}
+			};
+		// +z actually so Direction::Backward
+		f_moveBackward = [&]() {
+				if(m_activeCameraTransformComponent == m_playerCameraTransformComponent)
+				{
+					move(m_playerTransformComponent, Direction::Forward, m_moveSpeed);
+				}
+				if(!m_isTP)
+				{
+					move(m_activeCameraTransformComponent, Direction::Forward, m_moveSpeed); 
 				}
 			};
 		f_moveLeft = [&]() {
@@ -272,18 +274,18 @@ bool PlayerComponentCollection::setup()
 			static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->SetActiveCamera(m_activeCameraComponent);
 		};
 
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_S, true}, ButtonEvent{EventLifeTime::Continuous, &f_moveForward});
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_W, true}, ButtonEvent{EventLifeTime::Continuous, &f_moveBackward});
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_W, true}, ButtonEvent{EventLifeTime::Continuous, &f_moveForward});
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_S, true}, ButtonEvent{EventLifeTime::Continuous, &f_moveBackward});
 		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_A, true}, ButtonEvent{EventLifeTime::Continuous, &f_moveLeft});
 		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_D, true}, ButtonEvent{EventLifeTime::Continuous, &f_moveRight});
 
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_S, true}, ButtonEvent{EventLifeTime::OneShot, &f_move});
 		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_W, true}, ButtonEvent{EventLifeTime::OneShot, &f_move});
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_S, true}, ButtonEvent{EventLifeTime::OneShot, &f_move});
 		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_A, true}, ButtonEvent{EventLifeTime::OneShot, &f_move});
 		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_D, true}, ButtonEvent{EventLifeTime::OneShot, &f_move});
 
-		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_S, false}, ButtonEvent{EventLifeTime::OneShot, &f_stop});
 		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_W, false}, ButtonEvent{EventLifeTime::OneShot, &f_stop});
+		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_S, false}, ButtonEvent{EventLifeTime::OneShot, &f_stop});
 		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_A, false}, ButtonEvent{EventLifeTime::OneShot, &f_stop});
 		g_Engine->getEventSystem()->addButtonStateCallback(ButtonState{INNO_KEY_D, false}, ButtonEvent{EventLifeTime::OneShot, &f_stop});
 
