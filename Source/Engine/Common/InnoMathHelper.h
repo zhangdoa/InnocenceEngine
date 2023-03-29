@@ -754,6 +754,10 @@ namespace Inno
 		{
 			TMat4<T> l_m;
 
+			assert(right != left);
+			assert(up != bottom);
+			assert(zNear != zFar);
+
 			l_m.m00 = (two<T> / (right - left));
 			l_m.m03 = (-(right + left) / (right - left));
 			l_m.m11 = (two<T> / (up - bottom));

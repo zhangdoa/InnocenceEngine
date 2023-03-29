@@ -145,6 +145,7 @@ namespace Inno
 
 			auto operator/(T rhs) const -> TVec2<T>
 			{
+				assert(rhs);
 				return TVec2<T>(x / rhs, y / rhs);
 			}
 
@@ -155,7 +156,13 @@ namespace Inno
 
 			auto normalize() const -> TVec2<T>
 			{
-				return TVec2<T>(x / length(), y / length());
+				auto l_length = length();
+				if(l_length != T())
+				{
+					return TVec2<T>(x / l_length, y / l_length);
+				}
+
+				return TVec2<T>();
 			}
 		};
 
@@ -254,6 +261,7 @@ namespace Inno
 
 			auto operator/(T rhs) const -> TVec4<T>
 			{
+				assert(rhs);
 				return TVec4<T>(x / rhs, y / rhs, z / rhs, w / rhs);
 			}
 
@@ -310,7 +318,12 @@ namespace Inno
 			{
 				// @TODO: replace with SIMD impl
 				auto l_length = length();
-				return TVec4(x / l_length, y / l_length, z / l_length, w / l_length);
+				if (l_length != T())
+				{
+					return TVec4(x / l_length, y / l_length, z / l_length, w / l_length);
+				}
+
+				return TVec4<T>();
 			}
 
 			bool operator!=(const TVec4<T>& rhs) const
