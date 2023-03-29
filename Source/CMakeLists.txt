@@ -29,6 +29,7 @@ set(INNO_RENDERING_CLIENT DefaultRenderingClient)
 
 option(INNO_DEBUG OFF)
 option(INNO_RELEASE OFF)
+option(INNO_BUILD_TOOLS OFF)
 
 set(USE_ROW_MAJOR_MEMORY_LAYOUT ON)
 set(USE_COLUMN_MAJOR_MEMORY_LAYOUT OFF)
@@ -81,6 +82,9 @@ endif (OPENGL_FOUND AND NOT INNO_PLATFORM_MAC)
 configure_file ("${CMAKE_SOURCE_DIR}/Engine/Common/Config.h.in" "${CMAKE_SOURCE_DIR}/Engine/Common/Config.h" @ONLY)
 set(CMAKE_PREFIX_PATH ${CMAKE_SOURCE_DIR}/External/Lib/${PLATFORM_NAME}/${CMAKE_BUILD_TYPE})
 
-add_subdirectory("Test")
 add_subdirectory("Engine")
+add_subdirectory("Test")
 add_subdirectory("Client")
+if(INNO_BUILD_TOOLS)
+add_subdirectory("Tool")
+endif (INNO_BUILD_TOOLS)

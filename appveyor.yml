@@ -17,7 +17,7 @@ environment:
     appveyor_build_worker_image: macOS
 
   - job_name: Windows build
-    appveyor_build_worker_image: Visual Studio 2017
+    appveyor_build_worker_image: Visual Studio 2022
 
 # job-specific configurations
 for:
@@ -72,8 +72,7 @@ for:
 
     build_script:
     - cmd: cd Script
-    - cmd: echo | SetupWin.bat
-    - cmd: powershell -ExecutionPolicy RemoteSigned -File BuildAssimpWin-VS15.ps1 -Wait
-    - cmd: powershell -ExecutionPolicy RemoteSigned -File BuildPhysXWin-VS15.ps1 -Wait
-    - cmd: powershell -ExecutionPolicy RemoteSigned -File BuildGLADWin-VS15.ps1 -Wait
-    - cmd: powershell -ExecutionPolicy RemoteSigned -File BuildEngineWin-VS15.ps1 -Wait
+    - cmd: powershell -ExecutionPolicy RemoteSigned -File SetupWin.ps1 -Wait
+    - cmd: powershell -ExecutionPolicy RemoteSigned -File BuildAssimpWin.ps1 -Wait
+    - cmd: powershell -ExecutionPolicy RemoteSigned -File BuildPhysXWin.ps1 -Wait
+    - cmd: powershell -ExecutionPolicy RemoteSigned -File BuildEngineWin.ps1 -Wait
