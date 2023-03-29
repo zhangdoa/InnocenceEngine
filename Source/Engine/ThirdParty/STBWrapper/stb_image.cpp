@@ -3,4 +3,4 @@
 #define STBI_REALLOC(p,newsz)     Inno::InnoMemory::Reallocate(p,newsz)
 #define STBI_FREE(p)              Inno::InnoMemory::Deallocate(p)
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb/stb_image.h"
+#include "stb_image.h"
