@@ -27,6 +27,7 @@ void main(triangle GeometryInputType input[3], inout TriangleStream<PixelInputTy
 			output.rtvId = CSMSplitIndex;
 			output.posCS = mul(input[i].posWS, CSMs[CSMSplitIndex].v);
 			output.posCS = mul(output.posCS, CSMs[CSMSplitIndex].p);
+			output.posCS /= output.posCS.w;
 			output.texCoord = input[i].texCoord;
 			outStream.Append(output);
 		}

@@ -24,7 +24,6 @@ PixelOutputType main(PixelInputType input)
 
 	float depth = input.posCS.z;
 	depth = depth * 0.5 + 0.5;
-	depth = saturate(depth);
 
 	float transparency;
 	if (materialCBuffer.textureSlotMask & 0x00000002)
