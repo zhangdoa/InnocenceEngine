@@ -9,16 +9,12 @@ struct ComputeInputType
 	uint  groupIndex : SV_GroupIndex;        // Flattened local index of the thread within a thread group.
 };
 
-static const float2 gaussFilter[7] =
-{
-	-3.0,	0.015625,
-	-2.0,	0.09375,
-	-1.0,	0.234375,
-	0.0,	0.3125,
-	1.0,	0.234375,
-	2.0,	0.09375,
-	3.0,	0.015625
-};
+static const float coefficients[21] = 
+    {0.000272337, 0.00089296, 0.002583865, 0.00659813, 0.014869116,
+     0.029570767, 0.051898313, 0.080381679, 0.109868729, 0.132526984,
+     0.14107424,
+     0.132526984, 0.109868729, 0.080381679, 0.051898313, 0.029570767,
+     0.014869116, 0.00659813, 0.002583865, 0.00089296, 0.000272337};
 
 [[vk::binding(0, 1)]]
 Texture2DArray in_shadow : register(t0);
@@ -31,13 +27,13 @@ void main(ComputeInputType input)
 	float4 color = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	
 	[unroll]
-	for (int i = 0; i < 7; i++)
+	for (int i = 0; i < 21; i++)
 	{
-		float2 offset = float2(gaussFilter[i].x, gaussFilter[i].x);
-		int3 coord = int3(input.dispatchThreadID.xy + offset, perFrameCBuffer.activeCascade);
+		int3 coord = int3(input.dispatchThreadID.x + i - 10, input.dispatchThreadID.y, perFrameCBuffer.activeCascade);
 
-		color += in_shadow[coord] * gaussFilter[i].y;
+		color += in_shadow[coord] * coefficients[i];
 	}
 
-	out_shadow[int3(input.dispatchThreadID.xy, perFrameCBuffer.activeCascade)] = color;
+	int3 writeCoord = int3(input.dispatchThreadID.xy, perFrameCBuffer.activeCascade);
+	out_shadow[writeCoord] = color;
 }

@@ -27,10 +27,10 @@ float VSMKernel(float4 shadowMapValue, float currentDepth)
 	float Ex = shadowMapValue.r;
 	float E_x2 = shadowMapValue.g;
 	float variance = E_x2 - (Ex * Ex);
-	float mD = Ex - currentDepth;
-	float p = variance / max(variance + mD * mD, eps);
-
-	shadow = max(p, float(currentDepth >= Ex));
+	variance = max(variance, eps);
+	float mD = currentDepth - Ex;
+	float pMax = variance / (variance + (mD * mD));
+	shadow = max(pMax, float(currentDepth >= Ex));
 
 	return shadow;
 }

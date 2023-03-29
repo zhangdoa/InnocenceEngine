@@ -448,6 +448,44 @@ float ConvertEV100ToExposure(float EV100)
 	return 1.0f / maxLuminance;
 }
 
+float3 HSVToRGB(float3 hsv)
+{
+    float c = hsv.z * hsv.y; // Chroma
+    float h = hsv.x / 60.0f; // Hue segment
+    float x = c * (1.0f - abs(fmod(h, 2.0f) - 1.0f)); // Intermediate value
+    float3 rgb;
+
+    if (h < 1.0f)
+    {
+        rgb = float3(c, x, 0.0f);
+    }
+    else if (h < 2.0f)
+    {
+        rgb = float3(x, c, 0.0f);
+    }
+    else if (h < 3.0f)
+    {
+        rgb = float3(0.0f, c, x);
+    }
+    else if (h < 4.0f)
+    {
+        rgb = float3(0.0f, x, c);
+    }
+    else if (h < 5.0f)
+    {
+        rgb = float3(x, 0.0f, c);
+    }
+    else
+    {
+        rgb = float3(c, 0.0f, x);
+    }
+
+    float m = hsv.z - c;
+    rgb += m;
+
+    return rgb;
+}
+
 struct Surfel
 {
 	float4 pos;

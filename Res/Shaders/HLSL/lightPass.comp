@@ -97,7 +97,6 @@ void main(ComputeInputType input)
 		float NdotL = max(dot(N, L), 0.0);
 
 		Lo = float3(NdotL, NdotL, NdotL);
-		Lo *= 1.0 - SunShadowResolver(posWS, in_SunShadow, in_samplerTypePoint);
 
 		int splitIndex = NR_CSM_SPLITS;
 		for (int i = 0; i < NR_CSM_SPLITS; i++)
@@ -133,6 +132,8 @@ void main(ComputeInputType input)
 			Lo.r = 0;
 			Lo.g = 0;
 		}
+
+		Lo *= 1.0 - SunShadowResolver(posWS, in_SunShadow, in_samplerTypePoint);
 #endif
 
 #if !defined (uni_drawCSMSplitedArea)
