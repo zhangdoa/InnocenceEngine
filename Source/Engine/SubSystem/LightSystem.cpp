@@ -13,26 +13,47 @@ namespace LightSystemNS
 {
 	const size_t m_MaxComponentCount = 8192;
 
-	void splitVerticesToAABBs(const std::vector<Vertex>& frustumsVertices, const std::vector<float>& splitFactors, std::vector<AABB>& splitAABB);
+	AABB QuantilizeAABBToShadowMap(const AABB& rhs, float shadowMapResolution);
+	void SplitVertices(const std::vector<Vertex>& frustumsVertices, const std::vector<float>& splitFactors, std::vector<Vertex> &splitVertices);
 	void UpdateSingleSMData(LightComponent* rhs);
 	void UpdateCSMData(LightComponent* rhs);
 	void UpdateColorTemperature(LightComponent* rhs);
 	void UpdateAttenuationRadius(LightComponent* rhs);
 
 	std::vector<float> m_CSMSplitFactors = { 0.05f, 0.25f, 0.55f, 1.0f };
-	std::vector<Vec4> m_frustumsCornerPos;
-	std::vector<Vertex> m_frustumsCornerVertices;
 }
 
-void LightSystemNS::splitVerticesToAABBs(const std::vector<Vertex>& frustumsVertices, const std::vector<float>& splitFactors, std::vector<AABB>& splitAABB)
+AABB LightSystemNS::QuantilizeAABBToShadowMap(const AABB &rhs, float shadowMapResolution)
+{	
+	// Extend the AABB to prevent rotational artifacts
+	auto l_sphereRadius = (rhs.m_boundMax - rhs.m_center).length();
+	auto l_boundMax = rhs.m_center + l_sphereRadius;
+	auto l_boundMin = rhs.m_center - l_sphereRadius;
+
+	float fWorldUnitsPerTexel = l_sphereRadius * 2.0f / shadowMapResolution;
+	auto vWorldUnitsPerTexel = Vec4(fWorldUnitsPerTexel, fWorldUnitsPerTexel, 0.0f, 0.0f);
+	auto vTexelPerWorldUnit = vWorldUnitsPerTexel.reciprocal();
+	l_boundMax.scale(vTexelPerWorldUnit);
+	l_boundMax = Vec4(floor(l_boundMax.x), floor(l_boundMax.y), floor(l_boundMax.z), floor(l_boundMax.w));
+	l_boundMax.scale(vWorldUnitsPerTexel);
+	l_boundMin.scale(vTexelPerWorldUnit);
+	l_boundMin = Vec4(floor(l_boundMin.x), floor(l_boundMin.y), floor(l_boundMin.z), floor(l_boundMin.w));
+	l_boundMin.scale(vWorldUnitsPerTexel);
+	l_boundMax.w = 1.0f;
+	l_boundMin.w = 1.0f;
+
+	return InnoMath::generateAABB(l_boundMax, l_boundMin);
+}
+
+void LightSystemNS::SplitVertices(const std::vector<Vertex> &frustumsVertices, const std::vector<float> &splitFactors, std::vector<Vertex> &splitVertices)
 {
-	m_frustumsCornerPos.clear();
-	splitAABB.clear();
+	std::vector<Vec4> l_frustumsCornerPos;
+	l_frustumsCornerPos.reserve(20);
 
 	//1. first 4 corner
 	for (size_t i = 0; i < 4; i++)
 	{
-		m_frustumsCornerPos.emplace_back(frustumsVertices[i].m_pos);
+		l_frustumsCornerPos.emplace_back(frustumsVertices[i].m_pos);
 	}
 
 	//2. other 16 corner based on the split factors
@@ -42,9 +63,10 @@ void LightSystemNS::splitVerticesToAABBs(const std::vector<Vertex>& frustumsVert
 		{
 			auto l_direction = (frustumsVertices[j + 4].m_pos - frustumsVertices[j].m_pos);
 			auto l_splitPlaneCornerPos = frustumsVertices[j].m_pos + l_direction * splitFactors[i];
-			m_frustumsCornerPos.emplace_back(l_splitPlaneCornerPos);
+			l_frustumsCornerPos.emplace_back(l_splitPlaneCornerPos);
 		}
 	}
+
 	//https://docs.microsoft.com/windows/desktop/DxTechArts/common-techniques-to-improve-shadow-depth-maps
 	//3. assemble split frustum corners
 	auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
@@ -53,14 +75,14 @@ void LightSystemNS::splitVerticesToAABBs(const std::vector<Vertex>& frustumsVert
 	{
 		for (size_t i = 0; i < 4; i++)
 		{
-			m_frustumsCornerVertices[i * 8].m_pos = m_frustumsCornerPos[0];
-			m_frustumsCornerVertices[i * 8 + 1].m_pos = m_frustumsCornerPos[1];
-			m_frustumsCornerVertices[i * 8 + 2].m_pos = m_frustumsCornerPos[2];
-			m_frustumsCornerVertices[i * 8 + 3].m_pos = m_frustumsCornerPos[3];
+			splitVertices[i * 8].m_pos = l_frustumsCornerPos[0];
+			splitVertices[i * 8 + 1].m_pos = l_frustumsCornerPos[1];
+			splitVertices[i * 8 + 2].m_pos = l_frustumsCornerPos[2];
+			splitVertices[i * 8 + 3].m_pos = l_frustumsCornerPos[3];
 
 			for (size_t j = 4; j < 8; j++)
 			{
-				m_frustumsCornerVertices[i * 8 + j].m_pos = m_frustumsCornerPos[i * 4 + j];
+				splitVertices[i * 8 + j].m_pos = l_frustumsCornerPos[i * 4 + j];
 			}
 		}
 	}
@@ -71,15 +93,9 @@ void LightSystemNS::splitVerticesToAABBs(const std::vector<Vertex>& frustumsVert
 		{
 			for (size_t j = 0; j < 8; j++)
 			{
-				m_frustumsCornerVertices[i * 8 + j].m_pos = m_frustumsCornerPos[i * 4 + j];
+				splitVertices[i * 8 + j].m_pos = l_frustumsCornerPos[i * 4 + j];
 			}
 		}
-	}
-
-	//4. generate AABBs for the split frustums
-	for (size_t i = 0; i < 4; i++)
-	{
-		splitAABB.emplace_back(InnoMath::generateAABB(&m_frustumsCornerVertices[i * 8], 8));
 	}
 }
 
@@ -90,35 +106,24 @@ void LightSystemNS::UpdateSingleSMData(LightComponent* rhs)
 	rhs->m_SplitAABBWS.clear();
 
 	auto l_totalSceneAABB = g_Engine->getPhysicsSystem()->getVisibleSceneAABB();
-
-	auto l_sphereRadius = (l_totalSceneAABB.m_boundMax - l_totalSceneAABB.m_center).length();
-	auto l_boundMax = l_totalSceneAABB.m_center + l_sphereRadius;
-	l_boundMax.w = 1.0f;
-	auto l_boundMin = l_totalSceneAABB.m_center - l_sphereRadius;
-	l_boundMin.w = 1.0f;
-
-	l_totalSceneAABB = InnoMath::generateAABB(l_boundMax, l_boundMin);
-
+	l_totalSceneAABB = QuantilizeAABBToShadowMap(l_totalSceneAABB, 1024.0f);
 	rhs->m_SplitAABBWS.emplace_back(l_totalSceneAABB);
 
 	auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(rhs->m_Owner);
 	auto l_r = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-	auto l_sunDir = InnoMath::getDirection(Direction::Forward, l_transformComponent->m_globalTransformVector.m_rot);
-	auto l_pos = l_sunDir * l_sphereRadius + l_totalSceneAABB.m_center;
-	auto l_t = InnoMath::toTranslationMatrix(l_pos);
-	auto l_m = l_t * l_r;
-	rhs->m_ViewMatrices.emplace_back(l_m.inverse());
+	rhs->m_ViewMatrices.emplace_back(l_r.inverse());
 
-	Mat4 l_p = InnoMath::generateOrthographicMatrix(-l_sphereRadius, l_sphereRadius, -l_sphereRadius, l_sphereRadius, 0.0f, l_sphereRadius * 2.0f);
+	Mat4 l_p = InnoMath::generateOrthographicMatrix(l_totalSceneAABB.m_boundMin.x, l_totalSceneAABB.m_boundMax.x, l_totalSceneAABB.m_boundMin.y, l_totalSceneAABB.m_boundMax.y, l_totalSceneAABB.m_boundMin.z, l_totalSceneAABB.m_boundMax.z);
 	rhs->m_ProjectionMatrices.emplace_back(l_p);
 }
 
 void LightSystemNS::UpdateCSMData(LightComponent* rhs)
-{
+{	
 	rhs->m_ViewMatrices.clear();
 	rhs->m_ProjectionMatrices.clear();
+	rhs->m_SplitAABBWS.clear();
 
-	//1. get frustum vertices in view space
+	// get frustum vertices in view space
 	auto l_cameraComponent = static_cast<ICameraSystem*>(g_Engine->getComponentManager()->GetComponentSystem<CameraComponent>())->GetMainCamera();
 	if (l_cameraComponent == nullptr)
 	{
@@ -132,22 +137,21 @@ void LightSystemNS::UpdateCSMData(LightComponent* rhs)
 
 	auto l_transformComponent = g_Engine->getComponentManager()->Find<TransformComponent>(rhs->m_Owner);
 	auto l_r = l_transformComponent->m_globalTransformMatrix.m_rotationMat;
-	auto l_sunDir = InnoMath::getDirection(Direction::Forward, l_transformComponent->m_globalTransformVector.m_rot);
 
 	auto l_rCamera = InnoMath::toRotationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_rot);
 	auto l_tCamera = InnoMath::toTranslationMatrix(l_cameraTransformComponent->m_globalTransformVector.m_pos);
 	auto l_frustumVerticesVS = InnoMath::generateFrustumVerticesVS(l_cameraComponent->m_projectionMatrix);
 
-	// extend scene AABB to include the bound sphere, for to eliminate rotation conflict
+	// extend scene AABB to include the bound sphere to eliminate rotation conflict
 	auto l_totalSceneAABB = g_Engine->getPhysicsSystem()->getVisibleSceneAABB();
-	//auto l_sphereRadius = (l_totalSceneAABB.m_boundMax - l_totalSceneAABB.m_center).length();
-	//auto l_boundMax = l_totalSceneAABB.m_center + l_sphereRadius;
-	//l_boundMax.w = 1.0f;
-	//auto l_boundMin = l_totalSceneAABB.m_center - l_sphereRadius;
-	//l_boundMin.w = 1.0f;
+	auto l_sphereRadius = (l_totalSceneAABB.m_boundMax - l_totalSceneAABB.m_center).length();
+	auto l_boundMax = l_totalSceneAABB.m_center + l_sphereRadius;
+	l_boundMax.w = 1.0f;
+	auto l_boundMin = l_totalSceneAABB.m_center - l_sphereRadius;
+	l_boundMin.w = 1.0f;
 
 	// transform scene AABB vertices to view space
-	auto l_sceneAABBVerticesWS = InnoMath::generateAABBVertices(l_totalSceneAABB.m_boundMax, l_totalSceneAABB.m_boundMin);
+	auto l_sceneAABBVerticesWS = InnoMath::generateAABBVertices(l_boundMax, l_boundMin);
 	auto l_sceneAABBVerticesVS = InnoMath::worldToViewSpace(l_sceneAABBVerticesWS, l_tCamera, l_rCamera);
 	auto l_sceneAABBVS = InnoMath::generateAABB(&l_sceneAABBVerticesVS[0], l_sceneAABBVerticesVS.size());
 	auto l_renderingConfig = g_Engine->getRenderingFrontend()->getRenderingConfig();
@@ -216,47 +220,37 @@ void LightSystemNS::UpdateCSMData(LightComponent* rhs)
 		}
 	}
 
+	// calculate split vertices in world space and assemble AABBs
 	auto l_frustumVerticesWS = InnoMath::viewToWorldSpace(l_frustumVerticesVS, l_tCamera, l_rCamera);
+	std::vector<Vertex> l_splitFrustumVerticesWS;
+	l_splitFrustumVerticesWS.resize(32);
+	SplitVertices(l_frustumVerticesWS, m_CSMSplitFactors, l_splitFrustumVerticesWS);
 
-	//2. calculate AABBs in world space
-	splitVerticesToAABBs(l_frustumVerticesWS, m_CSMSplitFactors, rhs->m_SplitAABBWS);
+	// transform frustum vertices to light space
+	auto l_splitfrustumVerticesLS = l_splitFrustumVerticesWS;
 
-	//4. transform frustum vertices to light space
-	auto l_frustumVerticesLS = l_frustumVerticesWS;
-
-	for (size_t i = 0; i < l_frustumVerticesLS.size(); i++)
+	for (size_t i = 0; i < l_splitfrustumVerticesLS.size(); i++)
 	{
 #ifdef USE_COLUMN_MAJOR_MEMORY_LAYOUT
 		l_frustumVerticesLS[i].m_pos = InnoMath::mul(l_frustumVerticesLS[i].m_pos, l_r.inverse());
 #endif
 #ifdef USE_ROW_MAJOR_MEMORY_LAYOUT
-		l_frustumVerticesLS[i].m_pos = InnoMath::mul(l_r.inverse(), l_frustumVerticesLS[i].m_pos);
+		l_splitfrustumVerticesLS[i].m_pos = InnoMath::mul(l_r.inverse(), l_splitfrustumVerticesLS[i].m_pos);
 #endif
 	}
 
-	//5.calculate AABBs in light space
-	splitVerticesToAABBs(l_frustumVerticesLS, m_CSMSplitFactors, rhs->m_SplitAABBLS);
-
-	//6. extend AABB to include the bound sphere, for to eliminate rotation conflict
-	//7. generate projection matrices
+	// calculate AABBs in light space and generate the matrices
+	auto l_m = l_r;
 	for (size_t i = 0; i < 4; i++)
-	{
-		auto sphereRadius = (rhs->m_SplitAABBLS[i].m_boundMax - rhs->m_SplitAABBLS[i].m_center).length();
-		auto l_boundMax = rhs->m_SplitAABBLS[i].m_center + sphereRadius;
-		l_boundMax.w = 1.0f;
-		auto l_boundMin = rhs->m_SplitAABBLS[i].m_center - sphereRadius;
-		l_boundMin.w = 1.0f;
-		rhs->m_SplitAABBLS[i] = InnoMath::generateAABB(l_boundMax, l_boundMin);
-
-		// The light camera position in light space
-		auto l_sunShadowPos = rhs->m_SplitAABBLS[i].m_center + l_sunDir * sphereRadius;
-
-		auto l_t = InnoMath::toTranslationMatrix(l_sunShadowPos);
-		auto l_m = l_t * l_r;
-		
+	{		
 		rhs->m_ViewMatrices.emplace_back(l_m.inverse());
 
-		Mat4 p = InnoMath::generateOrthographicMatrix(-sphereRadius, sphereRadius, -sphereRadius, sphereRadius, 0.0f, sphereRadius * 2.0f);
+		AABB l_aabbWS = InnoMath::generateAABB(&l_splitFrustumVerticesWS[i * 8], 8);
+		rhs->m_SplitAABBWS.emplace_back(l_aabbWS);
+
+		AABB l_aabbLS = InnoMath::generateAABB(&l_splitfrustumVerticesLS[i * 8], 8);
+		l_aabbLS = QuantilizeAABBToShadowMap(l_aabbLS, 1024.0f);
+		Mat4 p = InnoMath::generateOrthographicMatrix(l_aabbLS.m_boundMin.x, l_aabbLS.m_boundMax.x, l_aabbLS.m_boundMin.y, l_aabbLS.m_boundMax.y, l_aabbLS.m_boundMin.z, l_aabbLS.m_boundMax.z);
 		rhs->m_ProjectionMatrices.emplace_back(p);
 	}
 }
@@ -296,9 +290,6 @@ using namespace LightSystemNS;
 bool InnoLightSystem::Setup(ISystemConfig* systemConfig)
 {
 	g_Engine->getComponentManager()->RegisterType<LightComponent>(m_MaxComponentCount, this);
-
-	m_frustumsCornerPos.reserve(20);
-	m_frustumsCornerVertices.resize(32);
 
 	return true;
 }
