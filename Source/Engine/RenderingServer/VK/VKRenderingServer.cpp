@@ -81,15 +81,20 @@ namespace VKRenderingServerNS
 	VkQueue m_presentQueue;
 	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
 	VkDevice m_device;
+	VkCommandPool m_commandPool;
 	VkQueue m_graphicsQueue;
 	VkFence m_graphicsQueueFence;
-	VkCommandPool m_commandPool;
+	VkQueue m_computeQueue;
+	VkFence m_computeQueueFence;
+	std::atomic<uint64_t> m_graphicCommandQueueSemaphore = 0;
+	std::atomic<uint64_t> m_computeCommandQueueSemaphore = 0;
 
 	VkSwapchainKHR m_swapChain = 0;
 
 	const std::vector<const char *> m_deviceExtensions =
 		{
 			VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+			VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
 			VK_KHR_MAINTENANCE2_EXTENSION_NAME,		 // For imageless framebuffer
 			VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME, // For imageless framebuffer
 			VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME,
@@ -178,7 +183,7 @@ bool VKRenderingServerNS::createVkInstance()
 	l_appInfo.applicationVersion = VK_MAKE_VERSION(0, 0, 9);
 	l_appInfo.pEngineName = "Innocence Engine";
 	l_appInfo.engineVersion = VK_MAKE_VERSION(0, 0, 9);
-	l_appInfo.apiVersion = VK_API_VERSION_1_0;
+	l_appInfo.apiVersion = VK_API_VERSION_1_2;
 
 	// set Vulkan instance create info with app info
 	VkInstanceCreateInfo l_createInfo = {};
@@ -322,6 +327,11 @@ bool VKRenderingServerNS::createLogicalDevice()
 	l_CustomBorderColorFeaturesEXT.customBorderColorWithoutFormat = true;
 	l_imagelessFramebufferFeatures.pNext = &l_CustomBorderColorFeaturesEXT;
 
+	VkPhysicalDeviceTimelineSemaphoreFeaturesKHR l_TimelineSemaphoreFeaturesKHR = {};
+	l_TimelineSemaphoreFeaturesKHR.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES_KHR;
+	l_TimelineSemaphoreFeaturesKHR.timelineSemaphore = true;
+	l_CustomBorderColorFeaturesEXT.pNext = &l_TimelineSemaphoreFeaturesKHR;
+
 	l_createInfo.enabledExtensionCount = static_cast<uint32_t>(m_deviceExtensions.size());
 	l_createInfo.ppEnabledExtensionNames = m_deviceExtensions.data();
 
@@ -344,6 +354,7 @@ bool VKRenderingServerNS::createLogicalDevice()
 
 	vkGetDeviceQueue(m_device, l_indices.m_graphicsFamily.value(), 0, &m_graphicsQueue);
 	vkGetDeviceQueue(m_device, l_indices.m_presentFamily.value(), 0, &m_presentQueue);
+	vkGetDeviceQueue(m_device, l_indices.m_computeFamily.value(), 0, &m_computeQueue);
 
 	InnoLogger::Log(LogLevel::Success, "VKRenderingServer: VkDevice has been created.");
 	return true;
@@ -479,6 +490,13 @@ bool VKRenderingServerNS::CreateSyncPrimitives()
 	{
 		m_ObjectStatus = ObjectStatus::Suspended;
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create fence for GraphicsQueue!");
+		return false;
+	}
+
+	if (vkCreateFence(m_device, &l_fenceInfo, nullptr, &m_computeQueueFence) != VK_SUCCESS)
+	{
+		m_ObjectStatus = ObjectStatus::Suspended;
+		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create fence for ComputeQueue!");
 		return false;
 	}
 
@@ -1367,8 +1385,20 @@ bool VKRenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, GPUEngi
 	auto l_rhs = reinterpret_cast<VKRenderPassDataComponent *>(rhs);
 	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
 	auto l_semaphore = reinterpret_cast<VKSemaphore *>(l_rhs->m_Semaphores[l_rhs->m_CurrentFrame]);
+	l_semaphore->m_WaitValue = l_semaphore->m_SignalValue;
+	l_semaphore->m_SignalValue = l_semaphore->m_WaitValue + 1;
 
-	VkSubmitInfo l_submitInfo;
+	VkTimelineSemaphoreSubmitInfo timelineInfo = {};
+	timelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+	timelineInfo.pNext = NULL;
+	timelineInfo.waitSemaphoreValueCount = 1;
+	timelineInfo.pWaitSemaphoreValues = &l_semaphore->m_WaitValue;
+	timelineInfo.signalSemaphoreValueCount = 1;
+	timelineInfo.pSignalSemaphoreValues = &l_semaphore->m_SignalValue;
+
+	VkSubmitInfo l_submitInfo = {};
+	l_submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	l_submitInfo.pNext = &timelineInfo;
 	l_submitInfo.commandBufferCount = 1;
 	l_submitInfo.pCommandBuffers = &l_commandList->m_CommandBuffer;
 	l_submitInfo.signalSemaphoreCount = 1;
@@ -1376,9 +1406,21 @@ bool VKRenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, GPUEngi
 	l_submitInfo.waitSemaphoreCount = 1;
 	l_submitInfo.pWaitSemaphores = &l_semaphore->m_Semaphore;
 
-	vkResetFences(m_device, 1, &m_graphicsQueueFence);
+	VkQueue& queue = m_graphicsQueue;
+	VkFence& fence = m_graphicsQueueFence;
+	
+	VkPipelineStageFlags waitDstStageMask[] = { VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT };
+	l_submitInfo.pWaitDstStageMask = &waitDstStageMask[0];
 
-	if (vkQueueSubmit(m_graphicsQueue, 1, &l_submitInfo, m_graphicsQueueFence) != VK_SUCCESS)
+	if (GPUEngineType == GPUEngineType::Compute)
+	{
+		queue = m_computeQueue;
+		fence = m_computeQueueFence;
+		waitDstStageMask[0] = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+	}
+
+	vkResetFences(m_device, 1, &fence);
+	if (vkQueueSubmit(queue, 1, &l_submitInfo, fence) != VK_SUCCESS)
 	{
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to submit command buffer!");
 		return false;
@@ -1388,13 +1430,32 @@ bool VKRenderingServer::ExecuteCommandList(RenderPassDataComponent* rhs, GPUEngi
 }
 
 bool VKRenderingServer::WaitCommandQueue(RenderPassDataComponent* rhs, GPUEngineType queueType, GPUEngineType semaphoreType)
-{
+{	
+	auto l_rhs = reinterpret_cast<VKRenderPassDataComponent *>(rhs);
+	auto l_commandList = reinterpret_cast<VKCommandList *>(l_rhs->m_CommandLists[l_rhs->m_CurrentFrame]);
+	auto l_semaphore = reinterpret_cast<VKSemaphore *>(l_rhs->m_Semaphores[l_rhs->m_CurrentFrame]);
+
+	VkSemaphoreWaitInfo waitInfo = {};
+	waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
+	waitInfo.pSemaphores = &l_semaphore->m_Semaphore;
+	waitInfo.semaphoreCount = 1;
+	waitInfo.pValues = &l_semaphore->m_SignalValue;
+
+	vkWaitSemaphores(m_device, &waitInfo, std::numeric_limits<uint64_t>::max());
+
 	return true;
 }
 
 bool VKRenderingServer::WaitFence(RenderPassDataComponent* rhs, GPUEngineType GPUEngineType)
-{
-	//vkWaitForFrames(m_device, 1, &m_graphicsQueueFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+{	
+	if (GPUEngineType == GPUEngineType::Compute)
+	{
+		vkWaitForFences(m_device, 1, &m_graphicsQueueFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+	}
+	else if (GPUEngineType == GPUEngineType::Compute)
+	{
+		vkWaitForFences(m_device, 1, &m_computeQueueFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+	}
 
 	return true;
 }
@@ -1412,6 +1473,92 @@ GPUResourceComponent *VKRenderingServer::GetUserPipelineOutput()
 
 bool VKRenderingServer::Present()
 {
+	auto l_commandList = reinterpret_cast<VKCommandList *>(m_SwapChainRPDC->m_CommandLists[m_SwapChainRPDC->m_CurrentFrame]);
+	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(m_SwapChainRPDC->m_PipelineStateObject);
+	auto l_DX12TDC = reinterpret_cast<VKTextureDataComponent *>(m_SwapChainRPDC->m_RenderTargets[m_SwapChainRPDC->m_CurrentFrame]);
+	auto l_semaphore = reinterpret_cast<VKSemaphore *>(m_SwapChainRPDC->m_Semaphores[m_SwapChainRPDC->m_CurrentFrame]);
+
+	CommandListBegin(m_SwapChainRPDC, m_SwapChainRPDC->m_CurrentFrame);
+
+	CleanRenderTargets(m_SwapChainRPDC);
+
+	BindGPUResource(m_SwapChainRPDC, ShaderStage::Pixel, m_SwapChainSDC, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
+
+	BindGPUResource(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+
+	auto l_mesh = g_Engine->getRenderingFrontend()->getMeshDataComponent(ProceduralMeshShape::Square);
+
+	DrawIndexedInstanced(m_SwapChainRPDC, l_mesh, 1);
+
+	UnbindGPUResource(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
+
+	CommandListEnd(m_SwapChainRPDC);
+
+	// acquire an image from swap chain
+	thread_local uint32_t imageIndex;
+	VkSemaphore l_availableSemaphores;
+	vkAcquireNextImageKHR(
+		m_device,
+		m_swapChain,
+		std::numeric_limits<uint64_t>::max(),
+		l_availableSemaphores,
+		VK_NULL_HANDLE,
+		&imageIndex);
+
+	l_semaphore->m_WaitValue = l_semaphore->m_SignalValue;
+	l_semaphore->m_SignalValue = l_semaphore->m_WaitValue + 1;
+
+	VkTimelineSemaphoreSubmitInfo timelineInfo = {};
+	timelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+	timelineInfo.pNext = NULL;
+	timelineInfo.waitSemaphoreValueCount = 1;
+	timelineInfo.pWaitSemaphoreValues = &l_semaphore->m_WaitValue;
+	timelineInfo.signalSemaphoreValueCount = 1;
+	timelineInfo.pSignalSemaphoreValues = &l_semaphore->m_SignalValue;
+
+	VkSubmitInfo l_submitInfo = {};
+	l_submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	l_submitInfo.pNext = &timelineInfo;
+	l_submitInfo.commandBufferCount = 1;
+	l_submitInfo.pCommandBuffers = &l_commandList->m_CommandBuffer;
+	l_submitInfo.signalSemaphoreCount = 1;
+	l_submitInfo.pSignalSemaphores = &l_semaphore->m_Semaphore;
+
+	VkSemaphore l_waitSemaphores[] = { l_availableSemaphores, l_semaphore->m_Semaphore };
+	l_submitInfo.waitSemaphoreCount = 2;
+	l_submitInfo.pWaitSemaphores = &l_waitSemaphores[0];
+	
+	VkPipelineStageFlags waitDstStageMask[] = { VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT };
+	l_submitInfo.pWaitDstStageMask = &waitDstStageMask[0];
+
+	VkQueue& queue = m_graphicsQueue;
+	VkFence& fence = m_graphicsQueueFence;
+
+	vkResetFences(m_device, 1, &fence);
+	if (vkQueueSubmit(queue, 1, &l_submitInfo, fence) != VK_SUCCESS)
+	{
+		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to submit command buffer for the swap chain RPDC!");
+		return false;
+	}
+
+	// present the swap chain image to the front screen
+	VkPresentInfoKHR presentInfo = {};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+	// wait semaphore
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = &l_semaphore->m_Semaphore;
+
+	// swap chain
+	VkSwapchainKHR swapChains[] = { m_swapChain };
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = swapChains;
+	presentInfo.pImageIndices = &imageIndex;
+
+	vkQueuePresentKHR(m_presentQueue, &presentInfo);
+
+	m_SwapChainRPDC->m_CurrentFrame = imageIndex;
+
 	return true;
 }
 

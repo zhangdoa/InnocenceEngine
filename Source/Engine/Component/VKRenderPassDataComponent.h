@@ -45,6 +45,8 @@ namespace Inno
 	{
 	public:
 		VkSemaphore m_Semaphore;
+		uint64_t m_WaitValue = 0;
+		uint64_t m_SignalValue = 0;
 	};
 
 	struct VKDescriptorSetLayoutBindingIndex

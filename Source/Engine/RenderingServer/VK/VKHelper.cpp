@@ -74,7 +74,17 @@ QueueFamilyIndices VKHelper::FindQueueFamilies(VkPhysicalDevice device, VkSurfac
 
 	int32_t i = 0;
 	for (const auto &queueFamily : queueFamilies)
-	{
+	{	
+		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
+		{
+			indices.m_computeFamily = i;
+		}
+
+		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT)
+		{
+			indices.m_transferFamily = i;
+		}
+
 		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
 		{
 			indices.m_graphicsFamily = i;
@@ -1350,6 +1360,7 @@ bool VKHelper::CreateRenderPass(VkDevice device, VKRenderPassDataComponent *VKRP
 {
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(VKRPDC->m_PipelineStateObject);
 
+	l_PSO->m_RenderPassCInfo = {};
 	l_PSO->m_RenderPassCInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 
 	if (VKRPDC->m_RenderPassDesc.m_UseOutputMerger)
@@ -1718,6 +1729,7 @@ bool VKHelper::CreatePipelineLayout(VkDevice device, VKRenderPassDataComponent *
 {
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(VKRPDC->m_PipelineStateObject);
 
+	l_PSO->m_PipelineLayoutCInfo = {};
 	l_PSO->m_PipelineLayoutCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	l_PSO->m_PipelineLayoutCInfo.setLayoutCount = static_cast<uint32_t>(VKRPDC->m_DescriptorSetLayouts.size());
 	l_PSO->m_PipelineLayoutCInfo.pSetLayouts = &VKRPDC->m_DescriptorSetLayouts[0];
@@ -1740,6 +1752,7 @@ bool VKHelper::CreatePipelineLayout(VkDevice device, VKRenderPassDataComponent *
 
 bool VKHelper::GenerateViewportState(ViewportDesc viewportDesc, VKPipelineStateObject *PSO)
 {
+	PSO->m_ViewportStateCInfo = {};
 	PSO->m_ViewportStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 	PSO->m_ViewportStateCInfo.viewportCount = 1;
 	PSO->m_ViewportStateCInfo.pViewports = &PSO->m_Viewport;
@@ -1751,6 +1764,7 @@ bool VKHelper::GenerateViewportState(ViewportDesc viewportDesc, VKPipelineStateO
 
 bool VKHelper::GenerateRasterizerState(RasterizerDesc rasterizerDesc, VKPipelineStateObject *PSO)
 {
+	PSO->m_InputAssemblyStateCInfo = {};
 	PSO->m_InputAssemblyStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 
 	switch (rasterizerDesc.m_PrimitiveTopology)
@@ -1822,7 +1836,8 @@ bool VKHelper::GenerateRasterizerState(RasterizerDesc rasterizerDesc, VKPipeline
 }
 
 bool VKHelper::GenerateDepthStencilState(DepthStencilDesc depthStencilDesc, VKPipelineStateObject *PSO)
-{
+{	
+	PSO->m_DepthStencilStateCInfo = {};
 	PSO->m_DepthStencilStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 	PSO->m_DepthStencilStateCInfo.depthTestEnable = depthStencilDesc.m_DepthEnable;
 	PSO->m_DepthStencilStateCInfo.depthWriteEnable = depthStencilDesc.m_AllowDepthWrite;
@@ -1854,6 +1869,7 @@ bool VKHelper::GenerateDepthStencilState(DepthStencilDesc depthStencilDesc, VKPi
 
 bool VKHelper::GenerateBlendState(BlendDesc blendDesc, size_t RTCount, VKPipelineStateObject *PSO)
 {
+	PSO->m_ColorBlendStateCInfo = {};
 	PSO->m_ColorBlendStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 
 	VkPipelineColorBlendAttachmentState l_colorBlendAttachmentState = {};
@@ -1925,6 +1941,7 @@ bool VKHelper::CreateGraphicsPipelines(VkDevice device, VKRenderPassDataComponen
 		l_shaderStageCInfos.emplace_back(l_VKSPC->m_PSCInfo);
 	}
 
+	l_PSO->m_GraphicsPipelineCInfo = {};
 	l_PSO->m_GraphicsPipelineCInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	l_PSO->m_GraphicsPipelineCInfo.stageCount = (uint32_t)l_shaderStageCInfos.size();
 	l_PSO->m_GraphicsPipelineCInfo.pStages = &l_shaderStageCInfos[0];
@@ -1957,6 +1974,7 @@ bool VKHelper::CreateComputePipelines(VkDevice device, VKRenderPassDataComponent
 	// attach shader module and create pipeline
 	auto l_VKSPC = reinterpret_cast<VKShaderProgramComponent *>(VKRPDC->m_ShaderProgram);
 
+	l_PSO->m_ComputePipelineCInfo = {};
 	l_PSO->m_ComputePipelineCInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
 	l_PSO->m_ComputePipelineCInfo.stage = l_VKSPC->m_CSCInfo;
 	l_PSO->m_ComputePipelineCInfo.layout = l_PSO->m_PipelineLayout;
@@ -2005,10 +2023,18 @@ bool VKHelper::CreateCommandBuffers(VkDevice device, VKRenderPassDataComponent *
 
 bool VKHelper::CreateSyncPrimitives(VkDevice device, VKRenderPassDataComponent *VKRPDC)
 {
-	VkSemaphoreCreateInfo l_semaphoreInfo = {};
-	l_semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	VkSemaphoreTypeCreateInfo l_timelineCreateInfo = {};
+	l_timelineCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO;
+	l_timelineCreateInfo.pNext = NULL;
+	l_timelineCreateInfo.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+	l_timelineCreateInfo.initialValue = 0;
 
-	VKRPDC->m_SubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	VkSemaphoreCreateInfo l_semaphoreInfo;
+	l_semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	l_semaphoreInfo.pNext = &l_timelineCreateInfo;
+	l_semaphoreInfo.flags = 0;
+
+	VKRPDC->m_SubmitInfo = {};
 
 	for (size_t i = 0; i < VKRPDC->m_Semaphores.size(); i++)
 	{
