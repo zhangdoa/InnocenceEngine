@@ -62,19 +62,20 @@ namespace Inno
 		VkImageCreateInfo GetImageCreateInfo(TextureDesc textureDesc, VKTextureDesc vKTextureDesc);
 
 		bool TransitImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout);
-		bool copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, VkImageAspectFlags aspectFlags, uint32_t width, uint32_t height);
+		bool CopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, VkImageAspectFlags aspectFlags, uint32_t width, uint32_t height);
 		bool CreateImageView(VkDevice device, VKTextureDataComponent* VKTDC);
 
 		bool CreateDescriptorSetLayoutBindings(VKRenderPassDataComponent* VKRPDC);
-		bool createDescriptorPool(VkDevice device, VkDescriptorPoolSize* poolSize, uint32_t poolSizeCount, uint32_t maxSets, VkDescriptorPool& poolHandle);
-		bool createDescriptorPool(VkDevice device, VKRenderPassDataComponent* VKRPDC);
-		bool createDescriptorSetLayout(VkDevice device, VkDescriptorSetLayoutBinding* setLayoutBindings, uint32_t setLayoutBindingsCount, VkDescriptorSetLayout& setLayout);
-		bool createDescriptorSets(VkDevice device, VkDescriptorPool pool, const VkDescriptorSetLayout* setLayout, VkDescriptorSet& setHandle, uint32_t count);
+		bool CreateDescriptorPool(VkDevice device, VkDescriptorPoolSize* poolSize, uint32_t poolSizeCount, uint32_t maxSets, VkDescriptorPool& poolHandle);
+		bool CreateDescriptorPool(VkDevice device, VKRenderPassDataComponent* VKRPDC);
+		bool CreateDescriptorSetLayout(VkDevice device, VkDescriptorSetLayoutBinding* setLayoutBindings, uint32_t setLayoutBindingsCount, VkDescriptorSetLayout& setLayout);
+		bool CreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayout& dummyEmptyDescriptorLayout, VKRenderPassDataComponent* VKRPDC);
+		bool CreateDescriptorSets(VkDevice device, VkDescriptorPool pool, const VkDescriptorSetLayout* setLayout, VkDescriptorSet& setHandle, uint32_t count);
+		bool CreateDescriptorSets(VkDevice device, VKRenderPassDataComponent* VKRPDC);
 		bool UpdateDescriptorSet(VkDevice device, VkWriteDescriptorSet* writeDescriptorSets, uint32_t writeDescriptorSetsCount);
-
 		bool ReserveRenderTargets(VKRenderPassDataComponent* VKRPDC, IRenderingServer* renderingServer);
 		bool CreateRenderTargets(VKRenderPassDataComponent* VKRPDC, IRenderingServer* renderingServer);
-		bool CreateRenderPass(VkDevice device, VKRenderPassDataComponent* VKRPDC);
+		bool CreateRenderPass(VkDevice device, VKRenderPassDataComponent* VKRPDC, VkFormat* overrideFormat = nullptr);
 		bool CreateViewportAndScissor(VKRenderPassDataComponent* VKRPDC);
 		bool CreateSingleFramebuffer(VkDevice device, VKRenderPassDataComponent* VKRPDC);
 		bool CreateMultipleFramebuffers(VkDevice device, VKRenderPassDataComponent* VKRPDC);

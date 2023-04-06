@@ -1019,7 +1019,7 @@ bool VKHelper::TransitImageLayout(VkCommandBuffer commandBuffer, VkImage image, 
 	return true;
 }
 
-bool VKHelper::copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, VkImageAspectFlags aspectFlags, uint32_t width, uint32_t height)
+bool VKHelper::CopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, VkImageAspectFlags aspectFlags, uint32_t width, uint32_t height)
 {
 	VkBufferImageCopy l_region = {};
 	l_region.bufferOffset = 0;
@@ -1185,7 +1185,7 @@ bool VKHelper::CreateDescriptorSetLayoutBindings(VKRenderPassDataComponent *VKRP
 	return true;
 }
 
-bool VKHelper::createDescriptorPool(VkDevice device, VkDescriptorPoolSize *poolSize, uint32_t poolSizeCount, uint32_t maxSets, VkDescriptorPool &poolHandle)
+bool VKHelper::CreateDescriptorPool(VkDevice device, VkDescriptorPoolSize *poolSize, uint32_t poolSizeCount, uint32_t maxSets, VkDescriptorPool &poolHandle)
 {
 	VkDescriptorPoolCreateInfo l_poolCInfo = {};
 	l_poolCInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -1203,7 +1203,7 @@ bool VKHelper::createDescriptorPool(VkDevice device, VkDescriptorPoolSize *poolS
 	return true;
 }
 
-bool VKHelper::createDescriptorPool(VkDevice device, VKRenderPassDataComponent *VKRPDC)
+bool VKHelper::CreateDescriptorPool(VkDevice device, VKRenderPassDataComponent *VKRPDC)
 {
 	// Currently support less than 10 descriptor types actually
 	std::array<uint32_t, 10> l_descriptorTypeCount = {};
@@ -1229,10 +1229,10 @@ bool VKHelper::createDescriptorPool(VkDevice device, VKRenderPassDataComponent *
 		}
 	}
 
-	return createDescriptorPool(device, &l_descriptorPoolSizes[0], (uint32_t)l_descriptorPoolSizes.size(), (uint32_t)VKRPDC->m_ResourceBindingLayoutDescs[VKRPDC->m_ResourceBindingLayoutDescs.size() - 1].m_DescriptorSetIndex + 1, VKRPDC->m_DescriptorPool);
+	return CreateDescriptorPool(device, &l_descriptorPoolSizes[0], (uint32_t)l_descriptorPoolSizes.size(), (uint32_t)VKRPDC->m_ResourceBindingLayoutDescs[VKRPDC->m_ResourceBindingLayoutDescs.size() - 1].m_DescriptorSetIndex + 1, VKRPDC->m_DescriptorPool);
 }
 
-bool VKHelper::createDescriptorSetLayout(VkDevice device, VkDescriptorSetLayoutBinding *setLayoutBindings, uint32_t setLayoutBindingsCount, VkDescriptorSetLayout &setLayout)
+bool VKHelper::CreateDescriptorSetLayout(VkDevice device, VkDescriptorSetLayoutBinding *setLayoutBindings, uint32_t setLayoutBindingsCount, VkDescriptorSetLayout &setLayout)
 {
 	VkDescriptorSetLayoutCreateInfo l_layoutCInfo = {};
 	l_layoutCInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -1249,7 +1249,43 @@ bool VKHelper::createDescriptorSetLayout(VkDevice device, VkDescriptorSetLayoutB
 	return true;
 }
 
-bool VKHelper::createDescriptorSets(VkDevice device, VkDescriptorPool pool, const VkDescriptorSetLayout *setLayout, VkDescriptorSet &setHandle, uint32_t count)
+bool VKHelper::CreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayout& dummyEmptyDescriptorLayout, VKRenderPassDataComponent *VKRPDC)
+{
+	bool l_result = true;
+	if (VKRPDC->m_ResourceBindingLayoutDescs.size())
+	{
+		l_result &= CreateDescriptorSetLayoutBindings(VKRPDC);
+
+		auto l_descriptorLayoutsSize = VKRPDC->m_DescriptorSetLayoutBindingIndices.size();
+		auto l_maximumSetIndex = VKRPDC->m_DescriptorSetLayoutBindingIndices[l_descriptorLayoutsSize - 1].m_SetIndex;
+
+		VKRPDC->m_DescriptorSetLayouts.resize(l_maximumSetIndex + 1);
+		for (size_t i = 0; i < VKRPDC->m_DescriptorSetLayouts.size(); i++)
+		{
+			VKRPDC->m_DescriptorSetLayouts[i] = dummyEmptyDescriptorLayout;
+		}
+		VKRPDC->m_DescriptorSets.resize(l_maximumSetIndex + 1);
+
+		for (size_t i = 0; i < l_descriptorLayoutsSize; i++)
+		{
+			auto l_descriptorSetLayoutBindingIndex = VKRPDC->m_DescriptorSetLayoutBindingIndices[i];
+			l_result &= CreateDescriptorSetLayout(device,
+												  &VKRPDC->m_DescriptorSetLayoutBindings[l_descriptorSetLayoutBindingIndex.m_LayoutBindingOffset],
+												  static_cast<uint32_t>(l_descriptorSetLayoutBindingIndex.m_BindingCount),
+												  VKRPDC->m_DescriptorSetLayouts[l_descriptorSetLayoutBindingIndex.m_SetIndex]);
+		}
+	}
+	else
+	{
+		VKRPDC->m_DescriptorSetLayouts.resize(1);
+		VKRPDC->m_DescriptorSetLayouts[0] = dummyEmptyDescriptorLayout;
+		VKRPDC->m_DescriptorSets.resize(1);
+	}
+
+	return true;
+}
+
+bool VKHelper::CreateDescriptorSets(VkDevice device, VkDescriptorPool pool, const VkDescriptorSetLayout *setLayout, VkDescriptorSet &setHandle, uint32_t count)
 {
 	VkDescriptorSetAllocateInfo l_allocCInfo = {};
 	l_allocCInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -1265,6 +1301,17 @@ bool VKHelper::createDescriptorSets(VkDevice device, VkDescriptorPool pool, cons
 
 	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkDescriptorSet has been allocated.");
 	return true;
+}
+
+bool VKHelper::CreateDescriptorSets(VkDevice device, VKRenderPassDataComponent *VKRPDC)
+{
+	bool l_result = true;
+	for (size_t i = 0; i < VKRPDC->m_DescriptorSetLayouts.size(); i++)
+	{
+		l_result &= CreateDescriptorSets(device, VKRPDC->m_DescriptorPool, &VKRPDC->m_DescriptorSetLayouts[i], VKRPDC->m_DescriptorSets[i], 1);
+	}
+
+    return l_result;
 }
 
 bool VKHelper::UpdateDescriptorSet(VkDevice device, VkWriteDescriptorSet *writeDescriptorSets, uint32_t writeDescriptorSetsCount)
@@ -1286,19 +1333,20 @@ bool VKHelper::ReserveRenderTargets(VKRenderPassDataComponent *VKRPDC, IRenderin
 
 	if (VKRPDC->m_RenderPassDesc.m_UseColorBuffer)
 	{
-		if (VKRPDC->m_RenderPassDesc.m_UseMultiFrames)
-		{
-			VKRPDC->m_RenderTargets.reserve(1);
-			VKRPDC->m_RenderTargets.emplace_back();
-		}
-		else
-		{
+		// if (VKRPDC->m_RenderPassDesc.m_UseMultiFrames)
+		// {
+		// 	VKRPDC->m_RenderTargets.reserve(1);
+		// 	VKRPDC->m_RenderTargets.emplace_back();
+		// }
+		// else
+		// {
 			VKRPDC->m_RenderTargets.reserve(VKRPDC->m_RenderPassDesc.m_RenderTargetCount);
 			for (size_t i = 0; i < VKRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 			{
 				VKRPDC->m_RenderTargets.emplace_back();
+				VKRPDC->m_RenderTargets[i] = renderingServer->AddTextureDataComponent((std::string(VKRPDC->m_InstanceName.c_str()) + "_" + std::to_string(i) + "/").c_str());
 			}
-		}
+		// }
 
 		InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: ", VKRPDC->m_InstanceName.c_str(), " render targets have been allocated.");
 	}
@@ -1320,8 +1368,6 @@ bool VKHelper::CreateRenderTargets(VKRenderPassDataComponent *VKRPDC, IRendering
 	{
 		for (size_t i = 0; i < VKRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
 		{
-			VKRPDC->m_RenderTargets[i] = renderingServer->AddTextureDataComponent((std::string(VKRPDC->m_InstanceName.c_str()) + "_" + std::to_string(i) + "/").c_str());
-
 			VKRPDC->m_RenderTargets[i]->m_TextureDesc = VKRPDC->m_RenderPassDesc.m_RenderTargetDesc;
 
 			VKRPDC->m_RenderTargets[i]->m_TextureData = nullptr;
@@ -1356,18 +1402,22 @@ bool VKHelper::CreateRenderTargets(VKRenderPassDataComponent *VKRPDC, IRendering
 	return true;
 }
 
-bool VKHelper::CreateRenderPass(VkDevice device, VKRenderPassDataComponent *VKRPDC)
+bool VKHelper::CreateRenderPass(VkDevice device, VKRenderPassDataComponent *VKRPDC, VkFormat* overrideFormat)
 {
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(VKRPDC->m_PipelineStateObject);
 
 	l_PSO->m_RenderPassCInfo = {};
 	l_PSO->m_RenderPassCInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	l_PSO->m_RenderPassCInfo.subpassCount = 1;
+
+	l_PSO->m_SubpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
 	if (VKRPDC->m_RenderPassDesc.m_UseOutputMerger)
 	{
-		l_PSO->m_ColorAttachmentRefs.reserve(VKRPDC->m_RenderPassDesc.m_RenderTargetCount);
+		size_t colorAttachmentCount = VKRPDC->m_RenderPassDesc.m_UseMultiFrames ? 1 : VKRPDC->m_RenderPassDesc.m_RenderTargetCount;
+		l_PSO->m_ColorAttachmentRefs.reserve(colorAttachmentCount);
 
-		for (size_t i = 0; i < VKRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+		for (size_t i = 0; i < colorAttachmentCount; i++)
 		{
 			VkAttachmentReference l_colorAttachmentRef = {};
 			l_colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -1377,7 +1427,7 @@ bool VKHelper::CreateRenderPass(VkDevice device, VKRenderPassDataComponent *VKRP
 		}
 
 		VkAttachmentDescription l_colorAttachmentDesc = {};
-		l_colorAttachmentDesc.format = GetTextureFormat(VKRPDC->m_RenderPassDesc.m_RenderTargetDesc);
+		l_colorAttachmentDesc.format = overrideFormat ? *overrideFormat : GetTextureFormat(VKRPDC->m_RenderPassDesc.m_RenderTargetDesc);
 		l_colorAttachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
 		l_colorAttachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		l_colorAttachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -1386,7 +1436,7 @@ bool VKHelper::CreateRenderPass(VkDevice device, VKRenderPassDataComponent *VKRP
 		l_colorAttachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		l_colorAttachmentDesc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-		for (size_t i = 0; i < VKRPDC->m_RenderPassDesc.m_RenderTargetCount; i++)
+		for (size_t i = 0; i < colorAttachmentCount; i++)
 		{
 			l_PSO->m_AttachmentDescs.emplace_back(l_colorAttachmentDesc);
 		}
@@ -1394,7 +1444,7 @@ bool VKHelper::CreateRenderPass(VkDevice device, VKRenderPassDataComponent *VKRP
 		// last attachment is depth attachment
 		if (VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc.m_DepthEnable)
 		{
-			l_PSO->m_DepthAttachmentRef.attachment = (uint32_t)VKRPDC->m_RenderPassDesc.m_RenderTargetCount;
+			l_PSO->m_DepthAttachmentRef.attachment = (uint32_t)colorAttachmentCount;
 			l_PSO->m_DepthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 			VkAttachmentDescription l_depthAttachmentDesc = {};
@@ -1417,24 +1467,9 @@ bool VKHelper::CreateRenderPass(VkDevice device, VKRenderPassDataComponent *VKRP
 
 			l_PSO->m_AttachmentDescs.emplace_back(l_depthAttachmentDesc);
 		}
-	}
 
-	l_PSO->m_RenderPassCInfo.subpassCount = 1;
-
-	l_PSO->m_SubpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-
-	if (VKRPDC->m_RenderPassDesc.m_UseOutputMerger)
-	{
-		if (VKRPDC->m_RenderPassDesc.m_UseMultiFrames)
-		{
-			l_PSO->m_SubpassDesc.colorAttachmentCount = 1;
-			l_PSO->m_RenderPassCInfo.attachmentCount = 1;
-		}
-		else
-		{
-			l_PSO->m_SubpassDesc.colorAttachmentCount = (uint32_t)VKRPDC->m_RenderPassDesc.m_RenderTargetCount;
-			l_PSO->m_RenderPassCInfo.attachmentCount = (uint32_t)l_PSO->m_AttachmentDescs.size();
-		}
+		l_PSO->m_SubpassDesc.colorAttachmentCount = (uint32_t)colorAttachmentCount;
+		l_PSO->m_RenderPassCInfo.attachmentCount = (uint32_t)l_PSO->m_AttachmentDescs.size();
 
 		if (l_PSO->m_SubpassDesc.colorAttachmentCount)
 		{
@@ -1867,7 +1902,7 @@ bool VKHelper::GenerateDepthStencilState(DepthStencilDesc depthStencilDesc, VKPi
 	return true;
 }
 
-bool VKHelper::GenerateBlendState(BlendDesc blendDesc, size_t RTCount, VKPipelineStateObject *PSO)
+bool VKHelper::GenerateBlendState(BlendDesc blendDesc, size_t colorBlendAttachmentCount, VKPipelineStateObject *PSO)
 {
 	PSO->m_ColorBlendStateCInfo = {};
 	PSO->m_ColorBlendStateCInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -1882,9 +1917,9 @@ bool VKHelper::GenerateBlendState(BlendDesc blendDesc, size_t RTCount, VKPipelin
 	l_colorBlendAttachmentState.colorBlendOp = GetBlendOperation(blendDesc.m_BlendOperation);
 	l_colorBlendAttachmentState.alphaBlendOp = GetBlendOperation(blendDesc.m_BlendOperation);
 
-	PSO->m_ColorBlendAttachmentStates.reserve(RTCount);
+	PSO->m_ColorBlendAttachmentStates.reserve(colorBlendAttachmentCount);
 
-	for (size_t i = 0; i < RTCount; i++)
+	for (size_t i = 0; i < colorBlendAttachmentCount; i++)
 	{
 		PSO->m_ColorBlendAttachmentStates.emplace_back(l_colorBlendAttachmentState);
 	}
@@ -1909,11 +1944,12 @@ bool VKHelper::GenerateBlendState(BlendDesc blendDesc, size_t RTCount, VKPipelin
 bool VKHelper::CreateGraphicsPipelines(VkDevice device, VKRenderPassDataComponent *VKRPDC)
 {
 	auto l_PSO = reinterpret_cast<VKPipelineStateObject *>(VKRPDC->m_PipelineStateObject);
+	size_t colorAttachmentCount = VKRPDC->m_RenderPassDesc.m_UseMultiFrames ? 1 : VKRPDC->m_RenderPassDesc.m_RenderTargetCount;
 
 	GenerateViewportState(VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc, l_PSO);
 	GenerateRasterizerState(VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc, l_PSO);
 	GenerateDepthStencilState(VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_DepthStencilDesc, l_PSO);
-	GenerateBlendState(VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, VKRPDC->m_RenderPassDesc.m_RenderTargetCount, l_PSO);
+	GenerateBlendState(VKRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_BlendDesc, colorAttachmentCount, l_PSO);
 
 	// attach shader module and create pipeline
 	auto l_VKSPC = reinterpret_cast<VKShaderProgramComponent *>(VKRPDC->m_ShaderProgram);

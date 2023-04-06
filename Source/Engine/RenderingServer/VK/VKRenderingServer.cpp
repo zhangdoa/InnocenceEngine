@@ -47,16 +47,15 @@ namespace VKRenderingServerNS
 	bool createVkInstance();
 	bool createDebugCallback();
 
-	bool createPysicalDevice();
-	bool createLogicalDevice();
+	bool CreatePysicalDevice();
+	bool CreateLogicalDevice();
 
-	bool createTextureSamplers();
-	bool createVertexInputAttributions();
-	bool createMaterialDescriptorPool();
-	bool createGlobalCommandPool();
+	bool CreateTextureSamplers();
+	bool CreateVertexInputAttributions();
+	bool CreateMaterialDescriptorPool();
+	bool CreateGlobalCommandPool();
+	bool CreateSwapChain();
 	bool CreateSyncPrimitives();
-
-	bool createSwapChain();
 
 	ObjectStatus m_ObjectStatus = ObjectStatus::Terminated;
 
@@ -88,8 +87,11 @@ namespace VKRenderingServerNS
 	VkFence m_computeQueueFence;
 	std::atomic<uint64_t> m_graphicCommandQueueSemaphore = 0;
 	std::atomic<uint64_t> m_computeCommandQueueSemaphore = 0;
-
+	std::vector<VkSemaphore> m_imageAvailableSemaphores;
+	std::vector<VkSemaphore> m_swapChainRenderedSemaphores;	
 	VkSwapchainKHR m_swapChain = 0;
+	VkExtent2D m_presentSurfaceExtent = {};
+	VkFormat m_presentSurfaceFormat = {};
 
 	const std::vector<const char *> m_deviceExtensions =
 		{
@@ -243,7 +245,7 @@ bool VKRenderingServerNS::createDebugCallback()
 	}
 }
 
-bool VKRenderingServerNS::createPysicalDevice()
+bool VKRenderingServerNS::CreatePysicalDevice()
 {
 	// check if there is any suitable physical GPU
 	uint32_t l_deviceCount = 0;
@@ -280,7 +282,7 @@ bool VKRenderingServerNS::createPysicalDevice()
 	return true;
 }
 
-bool VKRenderingServerNS::createLogicalDevice()
+bool VKRenderingServerNS::CreateLogicalDevice()
 {
 	QueueFamilyIndices l_indices = FindQueueFamilies(m_physicalDevice, m_windowSurface);
 
@@ -360,7 +362,7 @@ bool VKRenderingServerNS::createLogicalDevice()
 	return true;
 }
 
-bool VKRenderingServerNS::createTextureSamplers()
+bool VKRenderingServerNS::CreateTextureSamplers()
 {
 	VkSamplerCreateInfo samplerInfo = {};
 	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -388,7 +390,7 @@ bool VKRenderingServerNS::createTextureSamplers()
 	return true;
 }
 
-bool VKRenderingServerNS::createVertexInputAttributions()
+bool VKRenderingServerNS::CreateVertexInputAttributions()
 {
 	m_vertexBindingDescription = {};
 	m_vertexBindingDescription.binding = 0;
@@ -425,7 +427,7 @@ bool VKRenderingServerNS::createVertexInputAttributions()
 	return true;
 }
 
-bool VKRenderingServerNS::createMaterialDescriptorPool()
+bool VKRenderingServerNS::CreateMaterialDescriptorPool()
 {
 	auto l_renderingCapability = g_Engine->getRenderingFrontend()->getRenderingCapability();
 
@@ -435,7 +437,7 @@ bool VKRenderingServerNS::createMaterialDescriptorPool()
 
 	VkDescriptorPoolSize l_descriptorPoolSizes[] = {l_descriptorPoolSize};
 
-	if (!createDescriptorPool(m_device, l_descriptorPoolSizes, 1, l_renderingCapability.maxMaterials, m_materialDescriptorPool))
+	if (!CreateDescriptorPool(m_device, l_descriptorPoolSizes, 1, l_renderingCapability.maxMaterials, m_materialDescriptorPool))
 	{
 		m_ObjectStatus = ObjectStatus::Suspended;
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkDescriptorPool for material!");
@@ -456,7 +458,7 @@ bool VKRenderingServerNS::createMaterialDescriptorPool()
 		l_textureLayoutBindings[i] = l_textureLayoutBinding;
 	}
 
-	if (!createDescriptorSetLayout(m_device, &l_textureLayoutBindings[0], (uint32_t)l_textureLayoutBindings.size(), m_materialDescriptorLayout))
+	if (!CreateDescriptorSetLayout(m_device, &l_textureLayoutBindings[0], (uint32_t)l_textureLayoutBindings.size(), m_materialDescriptorLayout))
 	{
 		m_ObjectStatus = ObjectStatus::Suspended;
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkDescriptorSetLayout for material!");
@@ -465,7 +467,7 @@ bool VKRenderingServerNS::createMaterialDescriptorPool()
 
 	InnoLogger::Log(LogLevel::Success, "VKRenderingServer: VkDescriptorSetLayout for material has been created.");
 
-	if (!createDescriptorSetLayout(m_device, nullptr, 0, m_dummyEmptyDescriptorLayout))
+	if (!CreateDescriptorSetLayout(m_device, nullptr, 0, m_dummyEmptyDescriptorLayout))
 	{
 		m_ObjectStatus = ObjectStatus::Suspended;
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create DummyEmptyDescriptorLayout!");
@@ -475,7 +477,7 @@ bool VKRenderingServerNS::createMaterialDescriptorPool()
 	return true;
 }
 
-bool VKRenderingServerNS::createGlobalCommandPool()
+bool VKRenderingServerNS::CreateGlobalCommandPool()
 {
 	return CreateCommandPool(m_physicalDevice, m_windowSurface, m_device, m_commandPool);
 }
@@ -500,16 +502,51 @@ bool VKRenderingServerNS::CreateSyncPrimitives()
 		return false;
 	}
 
+	m_imageAvailableSemaphores.resize(m_swapChainImages.size());
+	m_swapChainRenderedSemaphores.resize(m_swapChainImages.size());
+
+	VkSemaphoreCreateInfo semaphoreInfo = {};
+	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	for (size_t i = 0; i < m_swapChainImages.size(); i++)
+	{
+		if (vkCreateSemaphore(
+			m_device,
+			&semaphoreInfo,
+			nullptr,
+			&m_imageAvailableSemaphores[i])
+			!= VK_SUCCESS)
+		{
+			InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create swap chain image available semaphores!");
+			return false;
+		}
+
+		if (vkCreateSemaphore(
+			m_device,
+			&semaphoreInfo,
+			nullptr,
+			&m_swapChainRenderedSemaphores[i])
+			!= VK_SUCCESS)
+		{
+			InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create swap chain image rendered semaphores!");
+			return false;
+		}
+
+		
+	}
+
 	return true;
 }
 
-bool VKRenderingServerNS::createSwapChain()
+bool VKRenderingServerNS::CreateSwapChain()
 {
 	// choose device supported formats, modes and maximum back buffers
 	auto l_swapChainSupport = QuerySwapChainSupport(m_physicalDevice, m_windowSurface);
 	auto l_windowSurfaceExtent = ChooseSwapExtent(l_swapChainSupport.m_capabilities);
 	auto l_windowSurfaceFormat = ChooseSwapSurfaceFormat(l_swapChainSupport.m_formats);
 	auto l_presentMode = ChooseSwapPresentMode(l_swapChainSupport.m_presentModes);
+	m_presentSurfaceExtent = l_windowSurfaceExtent;
+	m_presentSurfaceFormat = l_windowSurfaceFormat.format;
 
 	uint32_t l_imageCount = l_swapChainSupport.m_capabilities.minImageCount + 1;
 	if (l_swapChainSupport.m_capabilities.maxImageCount > 0 && l_imageCount > l_swapChainSupport.m_capabilities.maxImageCount)
@@ -521,9 +558,9 @@ bool VKRenderingServerNS::createSwapChain()
 	l_createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	l_createInfo.surface = m_windowSurface;
 	l_createInfo.minImageCount = l_imageCount;
-	l_createInfo.imageFormat = l_windowSurfaceFormat.format;
+	l_createInfo.imageFormat = m_presentSurfaceFormat;
 	l_createInfo.imageColorSpace = l_windowSurfaceFormat.colorSpace;
-	l_createInfo.imageExtent = l_windowSurfaceExtent;
+	l_createInfo.imageExtent = m_presentSurfaceExtent;
 	l_createInfo.imageArrayLayers = 1;
 	l_createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
@@ -634,18 +671,104 @@ bool VKRenderingServer::Setup(ISystemConfig *systemConfig)
 
 bool VKRenderingServer::Initialize()
 {
-	createPysicalDevice();
-	createLogicalDevice();
+	bool l_result = true;
 
-	createVertexInputAttributions();
-	createTextureSamplers();
-	createMaterialDescriptorPool();
-	createGlobalCommandPool();
-	CreateSyncPrimitives();
+	l_result &= CreatePysicalDevice();
+	l_result &= CreateLogicalDevice();
 
-	createSwapChain();
+	l_result &= CreateVertexInputAttributions();
+	l_result &= CreateTextureSamplers();
+	l_result &= CreateMaterialDescriptorPool();
+	l_result &= CreateGlobalCommandPool();
+	l_result &= CreateSwapChain();
+	l_result &= CreateSyncPrimitives();
 
-	return true;
+	m_SwapChainSPC->m_ShaderFilePaths.m_VSPath = "2DImageProcess.vert/";
+	m_SwapChainSPC->m_ShaderFilePaths.m_PSPath = "swapChain.frag/";
+
+	l_result &= InitializeShaderProgramComponent(m_SwapChainSPC);
+
+	l_result &= InitializeSamplerDataComponent(m_SwapChainSDC);
+
+	auto l_RenderPassDesc = g_Engine->getRenderingFrontend()->getDefaultRenderPassDesc();
+
+	l_RenderPassDesc.m_RenderTargetCount = m_swapChainImages.size();
+
+	m_SwapChainRPDC->m_RenderPassDesc = l_RenderPassDesc;
+	m_SwapChainRPDC->m_RenderPassDesc.m_UseMultiFrames = true;
+	m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc.PixelDataType = TexturePixelDataType::UByte;
+	m_SwapChainRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_RasterizerDesc.m_UseCulling = false;
+
+	m_SwapChainRPDC->m_ResourceBindingLayoutDescs.resize(2);
+	m_SwapChainRPDC->m_ResourceBindingLayoutDescs[0].m_GPUResourceType = GPUResourceType::Image;
+	m_SwapChainRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorSetIndex = 0;
+	m_SwapChainRPDC->m_ResourceBindingLayoutDescs[0].m_DescriptorIndex = 0;
+	m_SwapChainRPDC->m_ResourceBindingLayoutDescs[0].m_SubresourceCount = 1;
+	m_SwapChainRPDC->m_ResourceBindingLayoutDescs[0].m_IndirectBinding = true;
+
+	m_SwapChainRPDC->m_ResourceBindingLayoutDescs[1].m_GPUResourceType = GPUResourceType::Sampler;
+	m_SwapChainRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorSetIndex = 1;
+	m_SwapChainRPDC->m_ResourceBindingLayoutDescs[1].m_DescriptorIndex = 0;
+	m_SwapChainRPDC->m_ResourceBindingLayoutDescs[1].m_IndirectBinding = true;
+
+	m_SwapChainRPDC->m_ShaderProgram = m_SwapChainSPC;
+
+	l_result &= ReserveRenderTargets(m_SwapChainRPDC, this);
+
+	// use device created swap chain textures
+	for (size_t i = 0; i < m_swapChainImages.size(); i++)
+	{
+		auto l_VKTDC = reinterpret_cast<VKTextureDataComponent *>(m_SwapChainRPDC->m_RenderTargets[i]);
+		l_VKTDC->m_TextureDesc = m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetDesc;
+		l_VKTDC->m_image = m_swapChainImages[i];
+		l_VKTDC->m_VKTextureDesc = GetVKTextureDesc(l_VKTDC->m_TextureDesc);
+		l_VKTDC->m_VKTextureDesc.format = m_presentSurfaceFormat;
+		CreateImageView(m_device, l_VKTDC);
+		l_VKTDC->m_GPUResourceType = GPUResourceType::Image;
+		l_VKTDC->m_ObjectStatus = ObjectStatus::Activated;
+	}
+
+	m_SwapChainRPDC->m_PipelineStateObject = addPSO();
+	m_SwapChainRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Width = static_cast<float>(m_presentSurfaceExtent.width);
+	m_SwapChainRPDC->m_RenderPassDesc.m_GraphicsPipelineDesc.m_ViewportDesc.m_Height = static_cast<float>(m_presentSurfaceExtent.height);
+
+	l_result &= CreateRenderPass(m_device, m_SwapChainRPDC, &m_presentSurfaceFormat);
+	l_result &= CreateViewportAndScissor(m_SwapChainRPDC);
+
+	l_result &= CreateMultipleFramebuffers(m_device, m_SwapChainRPDC);
+
+	l_result &= CreateDescriptorSetLayout(m_device, m_dummyEmptyDescriptorLayout, m_SwapChainRPDC);
+
+	l_result &= CreateDescriptorPool(m_device, m_SwapChainRPDC);
+
+	l_result &= CreateDescriptorSets(m_device, m_SwapChainRPDC);
+
+	l_result &= CreatePipelineLayout(m_device, m_SwapChainRPDC);
+
+	l_result &= CreateGraphicsPipelines(m_device, m_SwapChainRPDC);
+
+	l_result &= CreateCommandPool(m_physicalDevice, m_windowSurface, m_device, m_SwapChainRPDC->m_CommandPool);
+
+	m_SwapChainRPDC->m_CommandLists.resize(m_SwapChainRPDC->m_RenderPassDesc.m_RenderTargetCount);
+
+	for (size_t i = 0; i < m_SwapChainRPDC->m_CommandLists.size(); i++)
+	{
+		m_SwapChainRPDC->m_CommandLists[i] = addCommandList();
+	}
+
+	l_result &= CreateCommandBuffers(m_device, m_SwapChainRPDC);
+
+	m_SwapChainRPDC->m_Semaphores.resize(m_SwapChainRPDC->m_Framebuffers.size());
+
+	for (size_t i = 0; i < m_SwapChainRPDC->m_Semaphores.size(); i++)
+	{
+		m_SwapChainRPDC->m_Semaphores[i] = addSemaphore();
+	}
+
+	l_result &= CreateSyncPrimitives(m_device, m_SwapChainRPDC);
+	m_SwapChainRPDC->m_ObjectStatus = ObjectStatus::Activated;
+
+	return l_result;
 }
 
 bool VKRenderingServer::Terminate()
@@ -797,7 +920,7 @@ bool VKRenderingServer::InitializeTextureDataComponent(TextureDataComponent *rhs
 		TransitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 		if (l_rhs->m_TextureData != nullptr)
 		{
-			copyBufferToImage(l_commandBuffer, l_stagingBuffer, l_rhs->m_image, l_rhs->m_VKTextureDesc.aspectFlags, static_cast<uint32_t>(l_rhs->m_ImageCreateInfo.extent.width), static_cast<uint32_t>(l_rhs->m_ImageCreateInfo.extent.height));
+			CopyBufferToImage(l_commandBuffer, l_stagingBuffer, l_rhs->m_image, l_rhs->m_VKTextureDesc.aspectFlags, static_cast<uint32_t>(l_rhs->m_ImageCreateInfo.extent.width), static_cast<uint32_t>(l_rhs->m_ImageCreateInfo.extent.height));
 		}
 		TransitImageLayout(l_commandBuffer, l_rhs->m_image, l_rhs->m_ImageCreateInfo.format, l_rhs->m_VKTextureDesc.aspectFlags, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	}
@@ -881,42 +1004,11 @@ bool VKRenderingServer::InitializeRenderPassDataComponent(RenderPassDataComponen
 		l_result &= CreateSingleFramebuffer(m_device, l_rhs);
 	}
 
-	if (l_rhs->m_ResourceBindingLayoutDescs.size())
-	{
-		l_result &= CreateDescriptorSetLayoutBindings(l_rhs);
+	l_result &= CreateDescriptorSetLayout(m_device, m_dummyEmptyDescriptorLayout, l_rhs);
 
-		auto l_descriptorLayoutsSize = l_rhs->m_DescriptorSetLayoutBindingIndices.size();
-		auto l_maximumSetIndex = l_rhs->m_DescriptorSetLayoutBindingIndices[l_descriptorLayoutsSize - 1].m_SetIndex;
+	l_result &= CreateDescriptorPool(m_device, l_rhs);
 
-		l_rhs->m_DescriptorSetLayouts.resize(l_maximumSetIndex + 1);
-		for (size_t i = 0; i < l_rhs->m_DescriptorSetLayouts.size(); i++)
-		{
-			l_rhs->m_DescriptorSetLayouts[i] = m_dummyEmptyDescriptorLayout;
-		}
-		l_rhs->m_DescriptorSets.resize(l_maximumSetIndex + 1);
-
-		for (size_t i = 0; i < l_descriptorLayoutsSize; i++)
-		{
-			auto l_descriptorSetLayoutBindingIndex = l_rhs->m_DescriptorSetLayoutBindingIndices[i];
-			l_result &= createDescriptorSetLayout(m_device,
-												  &l_rhs->m_DescriptorSetLayoutBindings[l_descriptorSetLayoutBindingIndex.m_LayoutBindingOffset],
-												  static_cast<uint32_t>(l_descriptorSetLayoutBindingIndex.m_BindingCount),
-												  l_rhs->m_DescriptorSetLayouts[l_descriptorSetLayoutBindingIndex.m_SetIndex]);
-		}
-	}
-	else
-	{
-		l_rhs->m_DescriptorSetLayouts.resize(1);
-		l_rhs->m_DescriptorSetLayouts[0] = m_dummyEmptyDescriptorLayout;
-		l_rhs->m_DescriptorSets.resize(1);
-	}
-
-	l_result &= createDescriptorPool(m_device, l_rhs);
-
-	for (size_t i = 0; i < l_rhs->m_DescriptorSetLayouts.size(); i++)
-	{
-		l_result &= createDescriptorSets(m_device, l_rhs->m_DescriptorPool, &l_rhs->m_DescriptorSetLayouts[i], l_rhs->m_DescriptorSets[i], 1);
-	}
+	l_result &= CreateDescriptorSets(m_device, l_rhs);
 
 	l_result &= CreatePipelineLayout(m_device, l_rhs);
 
@@ -1248,6 +1340,13 @@ bool VKRenderingServer::BindRenderPassDataComponent(RenderPassDataComponent *rhs
 		vkCmdBindPipeline(l_commandList->m_CommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, l_PSO->m_Pipeline);
 	}
 
+	vkCmdBindDescriptorSets(l_commandList->m_CommandBuffer,
+							VK_PIPELINE_BIND_POINT_GRAPHICS,
+							l_PSO->m_PipelineLayout,
+							0,
+							l_rhs->m_DescriptorSets.size(),
+							&l_rhs->m_DescriptorSets[0], 0, nullptr);
+
 	return true;
 }
 
@@ -1480,6 +1579,8 @@ bool VKRenderingServer::Present()
 
 	CommandListBegin(m_SwapChainRPDC, m_SwapChainRPDC->m_CurrentFrame);
 
+	BindRenderPassDataComponent(m_SwapChainRPDC);
+
 	CleanRenderTargets(m_SwapChainRPDC);
 
 	BindGPUResource(m_SwapChainRPDC, ShaderStage::Pixel, m_SwapChainSDC, 1, Accessibility::ReadOnly, 0, SIZE_MAX);
@@ -1496,38 +1597,41 @@ bool VKRenderingServer::Present()
 
 	// acquire an image from swap chain
 	thread_local uint32_t imageIndex;
-	VkSemaphore l_availableSemaphores;
 	vkAcquireNextImageKHR(
 		m_device,
 		m_swapChain,
 		std::numeric_limits<uint64_t>::max(),
-		l_availableSemaphores,
+		m_imageAvailableSemaphores[m_SwapChainRPDC->m_CurrentFrame],
 		VK_NULL_HANDLE,
 		&imageIndex);
 
 	l_semaphore->m_WaitValue = l_semaphore->m_SignalValue;
 	l_semaphore->m_SignalValue = l_semaphore->m_WaitValue + 1;
 
+	const uint64_t signalSemaphoreValues[2] = {
+		l_semaphore->m_SignalValue,
+		0 // ignored for the swapchain
+	};
+	const VkSemaphore signalSemaphores[2] = {
+		l_semaphore->m_Semaphore,
+		m_swapChainRenderedSemaphores[m_SwapChainRPDC->m_CurrentFrame]};
+
 	VkTimelineSemaphoreSubmitInfo timelineInfo = {};
 	timelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
 	timelineInfo.pNext = NULL;
-	timelineInfo.waitSemaphoreValueCount = 1;
-	timelineInfo.pWaitSemaphoreValues = &l_semaphore->m_WaitValue;
-	timelineInfo.signalSemaphoreValueCount = 1;
-	timelineInfo.pSignalSemaphoreValues = &l_semaphore->m_SignalValue;
+	timelineInfo.signalSemaphoreValueCount = 2;
+	timelineInfo.pSignalSemaphoreValues = signalSemaphoreValues;
 
 	VkSubmitInfo l_submitInfo = {};
 	l_submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	l_submitInfo.pNext = &timelineInfo;
 	l_submitInfo.commandBufferCount = 1;
 	l_submitInfo.pCommandBuffers = &l_commandList->m_CommandBuffer;
-	l_submitInfo.signalSemaphoreCount = 1;
-	l_submitInfo.pSignalSemaphores = &l_semaphore->m_Semaphore;
+	l_submitInfo.waitSemaphoreCount = 1;
+	l_submitInfo.pWaitSemaphores = &m_imageAvailableSemaphores[m_SwapChainRPDC->m_CurrentFrame];
+	l_submitInfo.signalSemaphoreCount = 2;
+	l_submitInfo.pSignalSemaphores =  &signalSemaphores[0];
 
-	VkSemaphore l_waitSemaphores[] = { l_availableSemaphores, l_semaphore->m_Semaphore };
-	l_submitInfo.waitSemaphoreCount = 2;
-	l_submitInfo.pWaitSemaphores = &l_waitSemaphores[0];
-	
 	VkPipelineStageFlags waitDstStageMask[] = { VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT };
 	l_submitInfo.pWaitDstStageMask = &waitDstStageMask[0];
 
@@ -1542,12 +1646,16 @@ bool VKRenderingServer::Present()
 	}
 
 	// present the swap chain image to the front screen
+	VkTimelineSemaphoreSubmitInfo swapChainTimelineInfo = {};
+	swapChainTimelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+	swapChainTimelineInfo.pNext = NULL;
+	swapChainTimelineInfo.waitSemaphoreValueCount = 1;
+	swapChainTimelineInfo.pWaitSemaphoreValues = &l_semaphore->m_WaitValue;
+
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-	// wait semaphore
 	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = &l_semaphore->m_Semaphore;
+	presentInfo.pWaitSemaphores = &m_swapChainRenderedSemaphores[m_SwapChainRPDC->m_CurrentFrame];
 
 	// swap chain
 	VkSwapchainKHR swapChains[] = { m_swapChain };
