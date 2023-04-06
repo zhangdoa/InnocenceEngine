@@ -46,6 +46,7 @@ namespace DX12RenderingServerNS
 	bool CreateGlobalCSUHeap();
 	bool CreateGlobalSamplerHeap();
 	bool CreateMipmapGenerator();
+	bool CreateSwapChain();
 
 	bool CreateCommandLists(DX12RenderPassDataComponent *DX12RPDC);
 	bool GenerateMipmap(DX12TextureDataComponent *DX12TDC);
@@ -600,6 +601,62 @@ bool DX12RenderingServerNS::CreateMipmapGenerator()
 	return true;
 }
 
+bool DX12RenderingServerNS::CreateSwapChain()
+{
+	// Set the swap chain to use double buffering.
+	m_swapChainDesc.BufferCount = m_swapChainImageCount;
+
+	auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
+
+	// Set the width and height of the back buffer.
+	m_swapChainDesc.Width = (UINT)l_screenResolution.x;
+	m_swapChainDesc.Height = (UINT)l_screenResolution.y;
+
+	// Set regular 32-bit surface for the back buffer.
+	m_swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+	// Set the usage of the back buffer.
+	m_swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_BACK_BUFFER;
+
+	// Turn multisampling off.
+	m_swapChainDesc.SampleDesc.Count = 1;
+	m_swapChainDesc.SampleDesc.Quality = 0;
+
+	// Set to full screen or windowed mode.
+	// @TODO: finish this feature
+
+	// Discard the back buffer contents after presenting.
+	m_swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+
+	// Don't set the advanced flags.
+	m_swapChainDesc.Flags = 0;
+
+	m_swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+
+	// Finally create the swap chain
+	IDXGISwapChain1 *l_swapChain1;
+	auto l_hResult = m_factory->CreateSwapChainForHwnd(
+		m_directCommandQueue.Get(),
+		reinterpret_cast<WinWindowSystem *>(g_Engine->getWindowSystem())->getHwnd(),
+		&m_swapChainDesc,
+		nullptr,
+		nullptr,
+		&l_swapChain1);
+
+	l_hResult = l_swapChain1->QueryInterface(IID_PPV_ARGS(&m_swapChain));
+
+	if (FAILED(l_hResult))
+	{
+		InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create swap chain!");
+		m_ObjectStatus = ObjectStatus::Suspended;
+		return false;
+	}
+
+	InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Swap chain has been created.");
+
+	return true;
+}
+
 bool DX12RenderingServerNS::GenerateMipmap(DX12TextureDataComponent *DX12TDC)
 {
 	struct DWParam
@@ -729,6 +786,7 @@ bool DX12RenderingServer::Setup(ISystemConfig *systemConfig)
 	l_result &= CreateGlobalCSUHeap();
 	l_result &= CreateGlobalSamplerHeap();
 	l_result &= CreateMipmapGenerator();
+	l_result &= CreateSwapChain();
 
 	m_SwapChainRPDC = reinterpret_cast<DX12RenderPassDataComponent *>(AddRenderPassDataComponent("SwapChain/"));
 	m_SwapChainSPC = reinterpret_cast<DX12ShaderProgramComponent *>(AddShaderProgramComponent("SwapChain/"));
@@ -777,75 +835,7 @@ bool DX12RenderingServer::Initialize()
 
 		ReserveRenderTargets(m_SwapChainRPDC, this);
 
-		m_SwapChainRPDC->m_CommandLists.resize(m_swapChainImageCount);
-		for (size_t i = 0; i < m_SwapChainRPDC->m_CommandLists.size(); i++)
-		{
-			m_SwapChainRPDC->m_CommandLists[i] = addCommandList();
-		}
-
-		CreateCommandLists(m_SwapChainRPDC);
-
-		m_SwapChainRPDC->m_Semaphores.resize(m_SwapChainRPDC->m_CommandLists.size());
-		for (size_t i = 0; i < m_SwapChainRPDC->m_CommandLists.size(); i++)
-		{
-			m_SwapChainRPDC->m_Semaphores[i] = addSemaphore();
-		}
-
-		CreateFenceEvents(m_SwapChainRPDC);
-
-		// Create swap chain
-		// Set the swap chain to use double buffering.
-		m_swapChainDesc.BufferCount = m_swapChainImageCount;
-
-		auto l_screenResolution = g_Engine->getRenderingFrontend()->getScreenResolution();
-
-		// Set the width and height of the back buffer.
-		m_swapChainDesc.Width = (UINT)l_screenResolution.x;
-		m_swapChainDesc.Height = (UINT)l_screenResolution.y;
-
-		// Set regular 32-bit surface for the back buffer.
-		m_swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-
-		// Set the usage of the back buffer.
-		m_swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_BACK_BUFFER;
-
-		// Turn multisampling off.
-		m_swapChainDesc.SampleDesc.Count = 1;
-		m_swapChainDesc.SampleDesc.Quality = 0;
-
-		// Set to full screen or windowed mode.
-		// @TODO: finish this feature
-
-		// Discard the back buffer contents after presenting.
-		m_swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-
-		// Don't set the advanced flags.
-		m_swapChainDesc.Flags = 0;
-
-		m_swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-
-		// Finally create the swap chain
-		IDXGISwapChain1 *l_swapChain1;
-		auto l_hResult = m_factory->CreateSwapChainForHwnd(
-			m_directCommandQueue.Get(),
-			reinterpret_cast<WinWindowSystem *>(g_Engine->getWindowSystem())->getHwnd(),
-			&m_swapChainDesc,
-			nullptr,
-			nullptr,
-			&l_swapChain1);
-
-		l_hResult = l_swapChain1->QueryInterface(IID_PPV_ARGS(&m_swapChain));
-
-		if (FAILED(l_hResult))
-		{
-			InnoLogger::Log(LogLevel::Error, "DX12RenderingServer: Can't create swap chain!");
-			m_ObjectStatus = ObjectStatus::Suspended;
-			return false;
-		}
-
-		InnoLogger::Log(LogLevel::Success, "DX12RenderingServer: Swap chain has been created.");
-
-		// use device created swap chain textures
+		// use device created swap chain textures as render targets
 		for (size_t i = 0; i < m_swapChainImageCount; i++)
 		{
 			auto l_HResult = m_swapChain->GetBuffer((uint32_t)i, IID_PPV_ARGS(&m_swapChainImages[i]));
@@ -864,7 +854,6 @@ bool DX12RenderingServer::Initialize()
 			l_DX12TDC->m_ObjectStatus = ObjectStatus::Activated;
 		}
 
-		// Initialize manually
 		CreateViews(m_SwapChainRPDC, m_device);
 
 		CreateRootSignature(m_SwapChainRPDC, m_device);
@@ -872,6 +861,22 @@ bool DX12RenderingServer::Initialize()
 		m_SwapChainRPDC->m_PipelineStateObject = addPSO();
 
 		CreatePSO(m_SwapChainRPDC, m_device);
+
+		m_SwapChainRPDC->m_CommandLists.resize(m_swapChainImageCount);
+		for (size_t i = 0; i < m_SwapChainRPDC->m_CommandLists.size(); i++)
+		{
+			m_SwapChainRPDC->m_CommandLists[i] = addCommandList();
+		}
+
+		CreateCommandLists(m_SwapChainRPDC);
+
+		m_SwapChainRPDC->m_Semaphores.resize(m_SwapChainRPDC->m_CommandLists.size());
+		for (size_t i = 0; i < m_SwapChainRPDC->m_Semaphores.size(); i++)
+		{
+			m_SwapChainRPDC->m_Semaphores[i] = addSemaphore();
+		}
+
+		CreateFenceEvents(m_SwapChainRPDC);
 
 		m_SwapChainRPDC->m_ObjectStatus = ObjectStatus::Activated;
 	}
@@ -1238,7 +1243,7 @@ bool DX12RenderingServer::InitializeRenderPassDataComponent(RenderPassDataCompon
 	InnoLogger::Log(LogLevel::Verbose, "DX12RenderingServer: ", l_rhs->m_InstanceName.c_str(), " CommandList has been created.");
 
 	l_rhs->m_Semaphores.resize(l_rhs->m_CommandLists.size());
-	for (size_t i = 0; i < l_rhs->m_CommandLists.size(); i++)
+	for (size_t i = 0; i < l_rhs->m_Semaphores.size(); i++)
 	{
 		l_rhs->m_Semaphores[i] = addSemaphore();
 	}
@@ -2130,9 +2135,7 @@ bool DX12RenderingServer::Present()
 
 	CommandListBegin(m_SwapChainRPDC, m_SwapChainRPDC->m_CurrentFrame);
 
-	PrepareRenderTargets(m_SwapChainRPDC, l_commandList);
-
-	PreparePipeline(m_SwapChainRPDC, l_commandList, l_PSO);
+	BindRenderPassDataComponent(m_SwapChainRPDC);
 
 	CleanRenderTargets(m_SwapChainRPDC);
 
