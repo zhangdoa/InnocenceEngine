@@ -12,7 +12,7 @@ namespace Inno
 		std::vector<VkAttachmentReference> m_ColorAttachmentRefs = {};
 		VkAttachmentReference m_DepthAttachmentRef = {};
 		VkSubpassDescription m_SubpassDesc = {};
-
+		std::vector<VkSubpassDependency> m_SubpassDeps = {};
 		std::vector<VkAttachmentDescription> m_AttachmentDescs;
 		VkRenderPassCreateInfo m_RenderPassCInfo = {};
 

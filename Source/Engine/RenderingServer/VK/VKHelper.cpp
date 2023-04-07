@@ -952,6 +952,101 @@ VkImageCreateInfo VKHelper::GetImageCreateInfo(TextureDesc textureDesc, VKTextur
 	return l_result;
 }
 
+VkImageLayout VKHelper::GetTextureWriteImageLayout(TextureDesc textureDesc)
+{
+	VkImageLayout l_result = VK_IMAGE_LAYOUT_GENERAL;
+	if (textureDesc.Usage == TextureUsage::ColorAttachment)
+	{
+		l_result = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	}
+	else if (textureDesc.Usage == TextureUsage::DepthAttachment)
+	{
+		l_result = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+	}
+	else if (textureDesc.Usage == TextureUsage::DepthStencilAttachment)
+	{
+		l_result = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	}
+
+	return l_result;
+}
+
+VkImageLayout VKHelper::GetTextureReadImageLayout(TextureDesc textureDesc)
+{
+	VkImageLayout l_result = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+	if (textureDesc.Usage == TextureUsage::DepthAttachment)
+	{
+		l_result = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
+	}
+	else if (textureDesc.Usage == TextureUsage::DepthStencilAttachment)
+	{
+		l_result = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+	}
+
+	return l_result;
+}
+
+VkAccessFlagBits VKHelper::GetAccessMask(const VkImageLayout& imageLayout)
+{
+	if (imageLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+	{
+		return VK_ACCESS_TRANSFER_READ_BIT;
+	}
+	if (imageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+	{
+		return VK_ACCESS_TRANSFER_WRITE_BIT;
+	}
+	if(imageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+	{
+	 	return VK_ACCESS_SHADER_READ_BIT;
+	}
+	if(imageLayout == VK_IMAGE_LAYOUT_GENERAL)
+	{
+	 	return VkAccessFlagBits(VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+	}
+	if(imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+	{
+	 	return VkAccessFlagBits(VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+	}
+	if(imageLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+	{
+	 	return VkAccessFlagBits(VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
+	}
+
+	return VK_ACCESS_NONE;
+}
+
+VkPipelineStageFlags VKHelper::GetPipelineStageFlags(const VkImageLayout& imageLayout)
+{
+	if (imageLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+	{
+		return VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	if (imageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+	{
+		return VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	if(imageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+	{
+		return VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	if(imageLayout == VK_IMAGE_LAYOUT_GENERAL)
+	{
+		return VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	if(imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+	{
+		return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	}
+	if(imageLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+	{
+		return VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+	}
+
+	return VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+}
+
 bool VKHelper::TransitImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout)
 {
 	VkImageMemoryBarrier l_barrier = {};
@@ -961,57 +1056,21 @@ bool VKHelper::TransitImageLayout(VkCommandBuffer commandBuffer, VkImage image, 
 	l_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	l_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	l_barrier.image = image;
+	l_barrier.srcAccessMask = GetAccessMask(oldLayout);
+	l_barrier.dstAccessMask = GetAccessMask(newLayout);
 	l_barrier.subresourceRange.aspectMask = aspectFlags;
 	l_barrier.subresourceRange.baseMipLevel = 0;
 	l_barrier.subresourceRange.levelCount = 1;
 	l_barrier.subresourceRange.baseArrayLayer = 0;
 	l_barrier.subresourceRange.layerCount = 1;
 
-	VkPipelineStageFlags l_sourceStage;
-	VkPipelineStageFlags l_destinationStage;
-
-	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
-	{
-		l_barrier.srcAccessMask = 0;
-		l_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-		l_sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		l_destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-	}
-	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-	{
-		l_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		l_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-		l_sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-		l_destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	}
-	else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-	{
-		l_barrier.srcAccessMask = 0;
-		l_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-		l_sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		l_destinationStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	}
-	else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-	{
-		l_barrier.srcAccessMask = 0;
-		l_barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-		l_sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		l_destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-	}
-	else
-	{
-		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Unsupported transition!");
-		return false;
-	}
+	auto l_sourceStage = GetPipelineStageFlags(oldLayout);
+	auto l_destinationStage = GetPipelineStageFlags(newLayout);
 
 	vkCmdPipelineBarrier(
 		commandBuffer,
 		l_sourceStage, l_destinationStage,
-		0,
+		VK_DEPENDENCY_BY_REGION_BIT,
 		0, nullptr,
 		0, nullptr,
 		1, &l_barrier);
@@ -1333,6 +1392,7 @@ bool VKHelper::ReserveRenderTargets(VKRenderPassDataComponent *VKRPDC, IRenderin
 
 	if (VKRPDC->m_RenderPassDesc.m_UseColorBuffer)
 	{
+		// @TODO: reconsider how to implement multi-frame support properly
 		// if (VKRPDC->m_RenderPassDesc.m_UseMultiFrames)
 		// {
 		// 	VKRPDC->m_RenderTargets.reserve(1);
@@ -1410,6 +1470,7 @@ bool VKHelper::CreateRenderPass(VkDevice device, VKRenderPassDataComponent *VKRP
 	l_PSO->m_RenderPassCInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	l_PSO->m_RenderPassCInfo.subpassCount = 1;
 
+	// @TODO: add support for compute pipeline
 	l_PSO->m_SubpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
 	if (VKRPDC->m_RenderPassDesc.m_UseOutputMerger)
@@ -1488,6 +1549,34 @@ bool VKHelper::CreateRenderPass(VkDevice device, VKRenderPassDataComponent *VKRP
 	}
 
 	l_PSO->m_RenderPassCInfo.pSubpasses = &l_PSO->m_SubpassDesc;
+	l_PSO->m_SubpassDeps.resize(3);
+
+	l_PSO->m_SubpassDeps[0].srcSubpass = 0;
+	l_PSO->m_SubpassDeps[0].dstSubpass = 0;
+	l_PSO->m_SubpassDeps[0].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	l_PSO->m_SubpassDeps[0].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+	l_PSO->m_SubpassDeps[0].srcAccessMask =  VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+	l_PSO->m_SubpassDeps[0].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+	l_PSO->m_SubpassDeps[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+	l_PSO->m_SubpassDeps[1].srcSubpass = 0;
+	l_PSO->m_SubpassDeps[1].dstSubpass = 0;
+	l_PSO->m_SubpassDeps[1].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	l_PSO->m_SubpassDeps[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	l_PSO->m_SubpassDeps[1].srcAccessMask =  VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+	l_PSO->m_SubpassDeps[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	l_PSO->m_SubpassDeps[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+	l_PSO->m_SubpassDeps[2].srcSubpass = 0;
+	l_PSO->m_SubpassDeps[2].dstSubpass = 0;
+	l_PSO->m_SubpassDeps[2].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	l_PSO->m_SubpassDeps[2].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	l_PSO->m_SubpassDeps[2].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	l_PSO->m_SubpassDeps[2].dstAccessMask =  VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+	l_PSO->m_SubpassDeps[2].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+	l_PSO->m_RenderPassCInfo.dependencyCount = l_PSO->m_SubpassDeps.size();
+	l_PSO->m_RenderPassCInfo.pDependencies = &l_PSO->m_SubpassDeps[0];
 
 	if (vkCreateRenderPass(device, &l_PSO->m_RenderPassCInfo, nullptr, &l_PSO->m_RenderPass) != VK_SUCCESS)
 	{

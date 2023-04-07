@@ -24,5 +24,8 @@ namespace Inno
 		VkImageView m_imageView;
 		VKTextureDesc m_VKTextureDesc = {};
 		VkImageCreateInfo m_ImageCreateInfo = {};
+		VkImageLayout m_WriteImageLayout;
+		VkImageLayout m_ReadImageLayout;
+		VkImageLayout m_CurrentImageLayout;
 	};
 }

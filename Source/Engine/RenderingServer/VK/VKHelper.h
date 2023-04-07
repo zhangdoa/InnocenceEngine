@@ -60,7 +60,11 @@ namespace Inno
 		VkDeviceSize GetImageSize(TextureDesc textureDesc);
 		VkImageAspectFlagBits GetImageAspectFlags(TextureUsage textureUsage);
 		VkImageCreateInfo GetImageCreateInfo(TextureDesc textureDesc, VKTextureDesc vKTextureDesc);
-
+		
+		VkImageLayout GetTextureWriteImageLayout(TextureDesc textureDesc);
+		VkImageLayout GetTextureReadImageLayout(TextureDesc textureDesc);
+		VkAccessFlagBits GetAccessMask(const VkImageLayout& imageLayout);
+		VkPipelineStageFlags GetPipelineStageFlags(const VkImageLayout& imageLayout);
 		bool TransitImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout);
 		bool CopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, VkImageAspectFlags aspectFlags, uint32_t width, uint32_t height);
 		bool CreateImageView(VkDevice device, VKTextureDataComponent* VKTDC);
