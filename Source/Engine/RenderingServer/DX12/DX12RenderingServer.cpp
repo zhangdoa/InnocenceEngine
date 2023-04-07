@@ -148,28 +148,14 @@ bool DX12RenderingServerNS::CreateCommandLists(DX12RenderPassDataComponent *DX12
 
 	return true;
 }
-bool CheckWriteState(DX12TextureDataComponent *rhs, DX12CommandList *commandList)
+bool TryToTransitState(DX12TextureDataComponent *rhs, DX12CommandList *commandList, const D3D12_RESOURCE_STATES& newState)
 {
-	if (rhs->m_CurrentState != rhs->m_WriteState)
+	if (rhs->m_CurrentState != newState)
 	{
 		commandList->m_DirectCommandList->ResourceBarrier(1,
 														  &CD3DX12_RESOURCE_BARRIER::Transition(
-															  rhs->m_ResourceHandle.Get(), rhs->m_CurrentState, rhs->m_WriteState));
-		rhs->m_CurrentState = rhs->m_WriteState;
-		return true;
-	}
-
-	return false;
-}
-
-bool CheckReadState(DX12TextureDataComponent *rhs, DX12CommandList *commandList)
-{
-	if (rhs->m_CurrentState != rhs->m_ReadState)
-	{
-		commandList->m_DirectCommandList->ResourceBarrier(1,
-														  &CD3DX12_RESOURCE_BARRIER::Transition(
-															  rhs->m_ResourceHandle.Get(), rhs->m_CurrentState, rhs->m_ReadState));
-		rhs->m_CurrentState = rhs->m_ReadState;
+															  rhs->m_ResourceHandle.Get(), rhs->m_CurrentState, newState));
+		rhs->m_CurrentState = newState;
 		return true;
 	}
 
@@ -1618,7 +1604,7 @@ bool PrepareRenderTargets(DX12RenderPassDataComponent *renderPass, DX12CommandLi
 		{
 			auto l_rhs = reinterpret_cast<DX12TextureDataComponent *>(renderPass->m_RenderTargets[renderPass->m_CurrentFrame]);
 
-			CheckWriteState(l_rhs, commandList);
+			TryToTransitState(l_rhs, commandList, l_rhs->m_WriteState);
 		}
 		else
 		{
@@ -1626,7 +1612,7 @@ bool PrepareRenderTargets(DX12RenderPassDataComponent *renderPass, DX12CommandLi
 			{
 				auto l_rhs = reinterpret_cast<DX12TextureDataComponent *>(renderPass->m_RenderTargets[i]);
 
-				CheckWriteState(l_rhs, commandList);
+				TryToTransitState(l_rhs, commandList, l_rhs->m_WriteState);
 			}
 		}
 
@@ -1634,7 +1620,7 @@ bool PrepareRenderTargets(DX12RenderPassDataComponent *renderPass, DX12CommandLi
 		{
 			auto l_rhs = reinterpret_cast<DX12TextureDataComponent *>(renderPass->m_DepthStencilRenderTarget);
 
-			CheckWriteState(l_rhs, commandList);
+			TryToTransitState(l_rhs, commandList, l_rhs->m_WriteState);
 		}
 	}
 
@@ -1836,18 +1822,20 @@ bool DX12RenderingServer::BindGPUResource(RenderPassDataComponent *renderPass, S
 				l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12SamplerDataComponent *>(resource)->m_Sampler.GPUHandle);
 				break;
 			case GPUResourceType::Image:
+			{
+				auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent *>(resource);
 				if (accessibility != Accessibility::ReadOnly)
 				{
-					CheckWriteState(reinterpret_cast<DX12TextureDataComponent *>(resource), l_commandList);
-					auto l = reinterpret_cast<DX12TextureDataComponent *>(resource)->m_UAV.ShaderVisibleGPUHandle;
+					TryToTransitState(l_DX12TDC, l_commandList, l_DX12TDC->m_WriteState);
 					l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureDataComponent *>(resource)->m_UAV.ShaderVisibleGPUHandle);
 				}
 				else
 				{
-					CheckReadState(reinterpret_cast<DX12TextureDataComponent *>(resource), l_commandList);
+					TryToTransitState(l_DX12TDC, l_commandList, l_DX12TDC->m_ReadState);
 					l_commandList->m_ComputeCommandList->SetComputeRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureDataComponent *>(resource)->m_SRV.GPUHandle);
 				}
 				break;
+			}
 			case GPUResourceType::Buffer:
 				if (resource->m_GPUAccessibility == Accessibility::ReadOnly)
 				{
@@ -1892,17 +1880,20 @@ bool DX12RenderingServer::BindGPUResource(RenderPassDataComponent *renderPass, S
 				l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12SamplerDataComponent *>(resource)->m_Sampler.GPUHandle);
 				break;
 			case GPUResourceType::Image:
+			{
+				auto l_DX12TDC = reinterpret_cast<DX12TextureDataComponent *>(resource);
 				if (accessibility != Accessibility::ReadOnly)
 				{
-					CheckWriteState(reinterpret_cast<DX12TextureDataComponent *>(resource), l_commandList);
+					TryToTransitState(l_DX12TDC, l_commandList, l_DX12TDC->m_WriteState);
 					l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureDataComponent *>(resource)->m_UAV.ShaderVisibleGPUHandle);
 				}
 				else
 				{
-					CheckReadState(reinterpret_cast<DX12TextureDataComponent *>(resource), l_commandList);
+					TryToTransitState(l_DX12TDC, l_commandList, l_DX12TDC->m_ReadState);
 					l_commandList->m_DirectCommandList->SetGraphicsRootDescriptorTable((uint32_t)resourceBindingLayoutDescIndex, reinterpret_cast<DX12TextureDataComponent *>(resource)->m_SRV.GPUHandle);
 				}
 				break;
+			}
 			case GPUResourceType::Buffer:
 				if (resource->m_GPUAccessibility == Accessibility::ReadOnly)
 				{
@@ -2149,7 +2140,7 @@ bool DX12RenderingServer::Present()
 
 	UnbindGPUResource(m_SwapChainRPDC, ShaderStage::Pixel, m_userPipelineOutput, 0, Accessibility::ReadOnly, 0, SIZE_MAX);
 
-	CheckReadState(l_DX12TDC, l_commandList);
+	TryToTransitState(l_DX12TDC, l_commandList,l_DX12TDC->m_ReadState);
 
 	CommandListEnd(m_SwapChainRPDC);
 
