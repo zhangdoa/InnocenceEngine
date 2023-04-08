@@ -29,6 +29,33 @@ namespace Inno
 
 	namespace VKHelper
 	{
+		VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pCallback);
+		void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT callback, const VkAllocationCallbacks *pAllocator);
+		VkResult SetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT *pNameInfo);
+
+		template <typename U, typename T>
+		bool SetObjectName(VkDevice device, U *owner, const T &rhs, VkObjectType objectType, const char *objectTypeSuffix)
+		{
+			auto l_Name = std::string(owner->m_InstanceName.c_str());
+			l_Name += "_";
+			l_Name += objectTypeSuffix;
+
+			VkDebugUtilsObjectNameInfoEXT nameInfo = {};
+			nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+			nameInfo.pNext = nullptr;
+			nameInfo.objectType = objectType;
+			nameInfo.objectHandle = (uint64_t)rhs;
+			nameInfo.pObjectName = l_Name.c_str();
+
+			auto l_result = SetDebugUtilsObjectNameEXT(device, &nameInfo);
+			if (l_result != VK_SUCCESS)
+			{
+				InnoLogger::Log(LogLevel::Warning, "VKRenderingServer: Can't name ", objectType, " with ", l_Name.c_str());
+				return false;
+			}
+			return true;
+		}
+
 		bool CheckValidationLayerSupport(const std::vector<const char*>& validationLayers);
 		bool CheckDeviceExtensionSupport(VkPhysicalDevice device, const std::vector<const char*>& deviceExtensions);
 		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR windowSurface);
@@ -43,7 +70,7 @@ namespace Inno
 
 		uint32_t FindMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
-		bool CreateCommandPool(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface, VkDevice device, VkCommandPool& commandPool);
+		bool CreateCommandPool(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface, VkDevice device, GPUEngineType GPUEngineType, VkCommandPool &commandPool);
 
 		bool CreateBuffer(VkPhysicalDevice physicalDevice, VkDevice device, const VkBufferCreateInfo& bufferCInfo, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 		bool CopyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue commandQueue, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
@@ -64,8 +91,8 @@ namespace Inno
 		VkImageLayout GetTextureWriteImageLayout(TextureDesc textureDesc);
 		VkImageLayout GetTextureReadImageLayout(TextureDesc textureDesc);
 		VkAccessFlagBits GetAccessMask(const VkImageLayout& imageLayout);
-		VkPipelineStageFlags GetPipelineStageFlags(const VkImageLayout& imageLayout);
-		bool TransitImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout);
+		VkPipelineStageFlags GetPipelineStageFlags(const VkImageLayout& imageLayout, ShaderStage shaderStage);
+		bool TransitImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout, ShaderStage shaderStage = ShaderStage::Invalid);
 		bool CopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, VkImageAspectFlags aspectFlags, uint32_t width, uint32_t height);
 		bool CreateImageView(VkDevice device, VKTextureDataComponent* VKTDC);
 

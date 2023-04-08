@@ -68,7 +68,8 @@ namespace Inno
 		std::vector<VkDescriptorSet> m_DescriptorSets;
 		std::vector<VkPushConstantRange> m_PushConstantRanges;
 
-		VkCommandPool m_CommandPool;
+		VkCommandPool m_GraphicsCommandPool;
+		VkCommandPool m_ComputeCommandPool;
 		VkSubmitInfo m_SubmitInfo;
 	};
 }

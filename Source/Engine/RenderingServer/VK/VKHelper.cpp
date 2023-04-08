@@ -14,6 +14,41 @@ namespace Inno
 	}
 } // namespace Inno
 
+VkResult VKHelper::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pCallback)
+{
+	auto l_func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+	if (l_func != nullptr)
+	{
+		return l_func(instance, pCreateInfo, pAllocator, pCallback);
+	}
+	else
+	{
+		return VK_ERROR_EXTENSION_NOT_PRESENT;
+	}
+}
+
+void VKHelper::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT callback, const VkAllocationCallbacks *pAllocator)
+{
+	auto l_func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+	if (l_func != nullptr)
+	{
+		l_func(instance, callback, pAllocator);
+	}
+}
+
+VkResult VKHelper::SetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT *pNameInfo)
+{
+	auto l_func = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetDeviceProcAddr(device, "vkSetDebugUtilsObjectNameEXT");
+	if (l_func != nullptr)
+	{
+		return l_func(device, pNameInfo);
+	}
+	else
+	{
+		return VK_ERROR_EXTENSION_NOT_PRESENT;
+	}
+}
+
 bool VKHelper::CheckValidationLayerSupport(const std::vector<const char *> &validationLayers)
 {
 	uint32_t l_layerCount;
@@ -261,13 +296,16 @@ uint32_t VKHelper::FindMemoryType(VkPhysicalDevice physicalDevice, uint32_t type
 	return 0;
 }
 
-bool VKHelper::CreateCommandPool(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface, VkDevice device, VkCommandPool &commandPool)
+bool VKHelper::CreateCommandPool(VkPhysicalDevice physicalDevice, VkSurfaceKHR windowSurface, VkDevice device, GPUEngineType GPUEngineType, VkCommandPool &commandPool)
 {
 	QueueFamilyIndices queueFamilyIndices = FindQueueFamilies(physicalDevice, windowSurface);
 
 	VkCommandPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	poolInfo.queueFamilyIndex = queueFamilyIndices.m_graphicsFamily.value();
+	if(GPUEngineType == GPUEngineType::Graphics)
+		poolInfo.queueFamilyIndex = queueFamilyIndices.m_graphicsFamily.value();
+	else if (GPUEngineType == GPUEngineType::Compute)
+		poolInfo.queueFamilyIndex = queueFamilyIndices.m_computeFamily.value();
 	poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
 	if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS)
@@ -1017,7 +1055,7 @@ VkAccessFlagBits VKHelper::GetAccessMask(const VkImageLayout& imageLayout)
 	return VK_ACCESS_NONE;
 }
 
-VkPipelineStageFlags VKHelper::GetPipelineStageFlags(const VkImageLayout& imageLayout)
+VkPipelineStageFlags VKHelper::GetPipelineStageFlags(const VkImageLayout& imageLayout, ShaderStage shaderStage)
 {
 	if (imageLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
 	{
@@ -1029,10 +1067,14 @@ VkPipelineStageFlags VKHelper::GetPipelineStageFlags(const VkImageLayout& imageL
 	}
 	if(imageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 	{
+		if(shaderStage == ShaderStage::Compute)
+			return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 		return VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	}
 	if(imageLayout == VK_IMAGE_LAYOUT_GENERAL)
 	{
+		if(shaderStage == ShaderStage::Compute)
+			return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 		return VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	}
 	if(imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
@@ -1047,7 +1089,7 @@ VkPipelineStageFlags VKHelper::GetPipelineStageFlags(const VkImageLayout& imageL
 	return VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 }
 
-bool VKHelper::TransitImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout)
+bool VKHelper::TransitImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout, ShaderStage shaderStage)
 {
 	VkImageMemoryBarrier l_barrier = {};
 	l_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -1064,8 +1106,8 @@ bool VKHelper::TransitImageLayout(VkCommandBuffer commandBuffer, VkImage image, 
 	l_barrier.subresourceRange.baseArrayLayer = 0;
 	l_barrier.subresourceRange.layerCount = 1;
 
-	auto l_sourceStage = GetPipelineStageFlags(oldLayout);
-	auto l_destinationStage = GetPipelineStageFlags(newLayout);
+	auto l_sourceStage = GetPipelineStageFlags(oldLayout, shaderStage);
+	auto l_destinationStage = GetPipelineStageFlags(newLayout, shaderStage);
 
 	vkCmdPipelineBarrier(
 		commandBuffer,
@@ -1129,6 +1171,10 @@ bool VKHelper::CreateImageView(VkDevice device, VKTextureDataComponent *VKTDC)
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkImageView!");
 		return false;
 	}
+
+#ifdef INNO_DEBUG
+	SetObjectName(device, VKTDC, VKTDC->m_imageView, VK_OBJECT_TYPE_IMAGE_VIEW, "ImageView");
+#endif //  INNO_DEBUG
 
 	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkImageView ", VKTDC->m_imageView, " is initialized.");
 
@@ -1288,7 +1334,14 @@ bool VKHelper::CreateDescriptorPool(VkDevice device, VKRenderPassDataComponent *
 		}
 	}
 
-	return CreateDescriptorPool(device, &l_descriptorPoolSizes[0], (uint32_t)l_descriptorPoolSizes.size(), (uint32_t)VKRPDC->m_ResourceBindingLayoutDescs[VKRPDC->m_ResourceBindingLayoutDescs.size() - 1].m_DescriptorSetIndex + 1, VKRPDC->m_DescriptorPool);
+	auto l_result = CreateDescriptorPool(device, &l_descriptorPoolSizes[0], (uint32_t)l_descriptorPoolSizes.size(), (uint32_t)VKRPDC->m_ResourceBindingLayoutDescs[VKRPDC->m_ResourceBindingLayoutDescs.size() - 1].m_DescriptorSetIndex + 1, VKRPDC->m_DescriptorPool);
+#ifdef INNO_DEBUG
+	if (l_result == VK_SUCCESS)
+	{
+		SetObjectName(device, VKRPDC, VKRPDC->m_DescriptorPool, VK_OBJECT_TYPE_DESCRIPTOR_POOL, "DescriptorPool");
+	}
+#endif //  INNO_DEBUG
+	return l_result;
 }
 
 bool VKHelper::CreateDescriptorSetLayout(VkDevice device, VkDescriptorSetLayoutBinding *setLayoutBindings, uint32_t setLayoutBindingsCount, VkDescriptorSetLayout &setLayout)
@@ -1470,7 +1523,6 @@ bool VKHelper::CreateRenderPass(VkDevice device, VKRenderPassDataComponent *VKRP
 	l_PSO->m_RenderPassCInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	l_PSO->m_RenderPassCInfo.subpassCount = 1;
 
-	// @TODO: add support for compute pipeline
 	l_PSO->m_SubpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
 	if (VKRPDC->m_RenderPassDesc.m_UseOutputMerger)
@@ -1549,13 +1601,14 @@ bool VKHelper::CreateRenderPass(VkDevice device, VKRenderPassDataComponent *VKRP
 	}
 
 	l_PSO->m_RenderPassCInfo.pSubpasses = &l_PSO->m_SubpassDesc;
+
 	l_PSO->m_SubpassDeps.resize(3);
 
 	l_PSO->m_SubpassDeps[0].srcSubpass = 0;
 	l_PSO->m_SubpassDeps[0].dstSubpass = 0;
 	l_PSO->m_SubpassDeps[0].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	l_PSO->m_SubpassDeps[0].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-	l_PSO->m_SubpassDeps[0].srcAccessMask =  VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+	l_PSO->m_SubpassDeps[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
 	l_PSO->m_SubpassDeps[0].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 	l_PSO->m_SubpassDeps[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
@@ -1563,7 +1616,7 @@ bool VKHelper::CreateRenderPass(VkDevice device, VKRenderPassDataComponent *VKRP
 	l_PSO->m_SubpassDeps[1].dstSubpass = 0;
 	l_PSO->m_SubpassDeps[1].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	l_PSO->m_SubpassDeps[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	l_PSO->m_SubpassDeps[1].srcAccessMask =  VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+	l_PSO->m_SubpassDeps[1].srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
 	l_PSO->m_SubpassDeps[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 	l_PSO->m_SubpassDeps[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
@@ -1572,7 +1625,7 @@ bool VKHelper::CreateRenderPass(VkDevice device, VKRenderPassDataComponent *VKRP
 	l_PSO->m_SubpassDeps[2].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	l_PSO->m_SubpassDeps[2].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	l_PSO->m_SubpassDeps[2].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	l_PSO->m_SubpassDeps[2].dstAccessMask =  VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+	l_PSO->m_SubpassDeps[2].dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
 	l_PSO->m_SubpassDeps[2].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
 	l_PSO->m_RenderPassCInfo.dependencyCount = l_PSO->m_SubpassDeps.size();
@@ -1583,6 +1636,10 @@ bool VKHelper::CreateRenderPass(VkDevice device, VKRenderPassDataComponent *VKRP
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: ", VKRPDC->m_InstanceName.c_str(), " failed to create VkRenderPass!");
 		return false;
 	}
+
+#ifdef INNO_DEBUG
+	SetObjectName(device, VKRPDC, l_PSO->m_RenderPass, VK_OBJECT_TYPE_RENDER_PASS, "RenderPass");
+#endif //  INNO_DEBUG
 
 	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkRenderPass has been created for ", VKRPDC->m_InstanceName.c_str());
 	return true;
@@ -1652,6 +1709,10 @@ bool VKHelper::CreateSingleFramebuffer(VkDevice device, VKRenderPassDataComponen
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: ", VKRPDC->m_InstanceName.c_str(), " failed to create VkFramebuffer!");
 	}
 
+#ifdef INNO_DEBUG
+	SetObjectName(device, VKRPDC, VKRPDC->m_Framebuffers[0], VK_OBJECT_TYPE_FRAMEBUFFER, "FrameBuffer");
+#endif //  INNO_DEBUG
+
 	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: Single VkFramebuffer has been created for ", VKRPDC->m_InstanceName.c_str());
 
 	return true;
@@ -1693,7 +1754,13 @@ bool VKHelper::CreateMultipleFramebuffers(VkDevice device, VKRenderPassDataCompo
 		if (vkCreateFramebuffer(device, &l_framebufferCInfo, nullptr, &VKRPDC->m_Framebuffers[i]) != VK_SUCCESS)
 		{
 			InnoLogger::Log(LogLevel::Error, "VKRenderingServer: ", VKRPDC->m_InstanceName.c_str(), " failed to create VkFramebuffer!");
+			continue;
 		}
+
+#ifdef INNO_DEBUG
+	auto l_name = "FrameBuffer_" + std::to_string(i);
+	SetObjectName(device, VKRPDC, VKRPDC->m_Framebuffers[i], VK_OBJECT_TYPE_FRAMEBUFFER, l_name.c_str());
+#endif //  INNO_DEBUG
 	}
 
 	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: Multiple VkFramebuffers have been created for ", VKRPDC->m_InstanceName.c_str());
@@ -1869,6 +1936,10 @@ bool VKHelper::CreatePipelineLayout(VkDevice device, VKRenderPassDataComponent *
 		InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create VkPipelineLayout!");
 		return false;
 	}
+
+#ifdef INNO_DEBUG
+	SetObjectName(device, VKRPDC, l_PSO->m_PipelineLayout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "PipelineLayout");
+#endif //  INNO_DEBUG
 
 	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkPipelineLayout has been created for ", VKRPDC->m_InstanceName.c_str());
 	return true;
@@ -2088,6 +2159,10 @@ bool VKHelper::CreateGraphicsPipelines(VkDevice device, VKRenderPassDataComponen
 		return false;
 	}
 
+#ifdef INNO_DEBUG
+	SetObjectName(device, VKRPDC, l_PSO->m_Pipeline, VK_OBJECT_TYPE_PIPELINE, "GraphicsPipeline");
+#endif //  INNO_DEBUG
+
 	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkPipeline for GraphicsPipeline has been created for ", VKRPDC->m_InstanceName.c_str());
 	return true;
 }
@@ -2111,6 +2186,10 @@ bool VKHelper::CreateComputePipelines(VkDevice device, VKRenderPassDataComponent
 		return false;
 	}
 
+#ifdef INNO_DEBUG
+	SetObjectName(device, VKRPDC, l_PSO->m_Pipeline, VK_OBJECT_TYPE_PIPELINE, "ComputePipeline");
+#endif //  INNO_DEBUG
+
 	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkPipeline for ComputePipeline has been created for ", VKRPDC->m_InstanceName.c_str());
 	return true;
 }
@@ -2130,7 +2209,15 @@ bool VKHelper::CreateCommandBuffers(VkDevice device, VKRenderPassDataComponent *
 	{
 		VkCommandBufferAllocateInfo l_allocInfo = {};
 		l_allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		l_allocInfo.commandPool = VKRPDC->m_CommandPool;
+		if (VKRPDC->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Graphics)
+		{
+			l_allocInfo.commandPool = VKRPDC->m_GraphicsCommandPool;
+		}
+		else if (VKRPDC->m_RenderPassDesc.m_GPUEngineType == GPUEngineType::Compute)
+		{
+			l_allocInfo.commandPool = VKRPDC->m_ComputeCommandPool;
+		}
+
 		l_allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		l_allocInfo.commandBufferCount = 1;
 
@@ -2140,6 +2227,11 @@ bool VKHelper::CreateCommandBuffers(VkDevice device, VKRenderPassDataComponent *
 			InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to allocate VkCommandBuffer!");
 			return false;
 		}
+
+#ifdef INNO_DEBUG
+	auto l_name = "CommandBuffer_" + std::to_string(i);
+	SetObjectName(device, VKRPDC, l_VKCommandList->m_CommandBuffer, VK_OBJECT_TYPE_COMMAND_BUFFER, l_name.c_str());
+#endif //  INNO_DEBUG
 	}
 
 	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: VkCommandBuffer has been created for ", VKRPDC->m_InstanceName.c_str());
@@ -2170,6 +2262,11 @@ bool VKHelper::CreateSyncPrimitives(VkDevice device, VKRenderPassDataComponent *
 			InnoLogger::Log(LogLevel::Error, "VKRenderingServer: Failed to create synchronization primitives!");
 			return false;
 		}
+		
+#ifdef INNO_DEBUG
+	auto l_name = "Semaphore_" + std::to_string(i);
+	SetObjectName(device, VKRPDC, l_VKSemaphore->m_Semaphore, VK_OBJECT_TYPE_SEMAPHORE, l_name.c_str());
+#endif //  INNO_DEBUG
 	}
 
 	InnoLogger::Log(LogLevel::Verbose, "VKRenderingServer: Synchronization primitives has been created for ", VKRPDC->m_InstanceName.c_str());
