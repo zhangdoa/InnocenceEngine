@@ -55,6 +55,7 @@ namespace Inno
 	// shader custom types
 	enum class ShaderStage
 	{
+		Invalid,
 		Vertex,
 		Hull,
 		Domain,
