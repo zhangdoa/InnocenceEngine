@@ -19,7 +19,7 @@ namespace Inno
 
 		void SetMainCamera(CameraComponent* cameraComponent) override;
 		CameraComponent* GetMainCamera() override;
-		void SetActiveCamera(CameraComponent* cameraComponent);
-		CameraComponent* GetActiveCamera();
+		void SetActiveCamera(CameraComponent* cameraComponent) override;
+		CameraComponent* GetActiveCamera() override;
 	};
 }
