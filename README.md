@@ -153,32 +153,31 @@ All scripts are in /Script folder
 
 ### Windows
 
-Tested OS version: Windows 10 version 1903, 1909
+Tested OS version: Windows 11 version 22H2
 
 ##### Prerequisites
 
-- MSVC 19.00 or higher (Environment Variable table should have manually added `VS2017INSTALLDIR` or `VS2019INSTALLDIR`)
-- CMake 3.10 or higher
-- Qt Creator 5.13 or higher
+- MSVC 17.53+ (engine-only)
+- CMake 3.26+
+- Qt Creator 10.0.0+
+- MSVC 16.11.25+ (editor-only)
 
 #### Build Engine
 
 Run following scripts will build Debug and Release configurations in parallel:
 
-``` cmd
-@echo | SetupWin.bat
-```
 ```powershell
-BuildAssimpWin-VS15.ps1
-BuildPhysXWin-VS15.ps1
-BuildGLADWin-VS15.ps1
-BuildEngineWin-VS15.ps1
+SetupWin.ps1
+BuildAssimpWin.ps1
+BuildPhysXWin.ps1
+BuildGLADWin.ps1
+BuildEngineWin.ps1
 PostBuildWin.ps1
 ```
 
 #### Build Editor
 
-1. Open `Source\Editor\InnocenceEditor\InnocenceEditor.pro` with Qt Creator
+1. Open `Source\Editor\InnoEditor\InnoEditor.pro` with Qt Creator
 2. Change "Projects - Build Settings - General - Build directory" to `..\..\..\Bin` for Debug, Profile and Release build configurations
 3. Change "Projects - Run Settings - Run - Working directory" to `..\..\..\Bin`
 4. Build the project
@@ -236,8 +235,8 @@ echo | PostBuildMac.sh
 
 ### Windows
 
-1. Open Build/InnocenceEngine.sln
-2. Set debug launch arguments and default launch project to InnoMain
+1. Open the workspace folder in VSCode.
+2. Set debug launch arguments in `./vscode/launch.json`.
 3. Start debug with "Launch" button (default F5)
 
 ### Linux
