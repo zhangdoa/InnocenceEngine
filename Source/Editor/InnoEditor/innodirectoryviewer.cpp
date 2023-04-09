@@ -1,8 +1,9 @@
 #include "innodirectoryviewer.h"
 
-#include "../../Engine/Interface/IModuleManager.h"
+#include "../../Engine/Interface/IEngine.h"
 
-INNO_ENGINE_API extern IModuleManager* g_Engine;
+using namespace Inno;
+extern INNO_ENGINE_API IEngine *g_Engine;
 
 InnoDirectoryViewer::InnoDirectoryViewer(QWidget *parent) : QSplitter(parent)
 {

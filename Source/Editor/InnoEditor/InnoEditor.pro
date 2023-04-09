@@ -80,6 +80,10 @@ win32:CONFIG(release, debug|release):LIBS += -L$$PWD/../../../Build/Release/LibA
 else:win32:CONFIG(debug, debug|release):LIBS += -L$$PWD/../../../Build/Debug/LibArchive/Debug/ -lInnoApplicationEntry
 else:unix: LIBS += -L$$PWD/../../../Build/LibArchive/ -lInnoApplicationEntry
 
+win32:CONFIG(release, debug|release):LIBS += -L$$PWD/../../../Build/Release/LibArchive/Release/ -lInnoCore
+else:win32:CONFIG(debug, debug|release):LIBS += -L$$PWD/../../../Build/Debug/LibArchive/Debug/ -lInnoCore
+else:unix: LIBS += -L$$PWD/../../../Build/LibArchive/ -lInnoCore
+
 win32:CONFIG(release, debug|release):LIBS += -L$$PWD/../../../Build/Release/LibArchive/Release/ -lInnoEngine
 else:win32:CONFIG(debug, debug|release):LIBS += -L$$PWD/../../../Build/Debug/LibArchive/Debug/ -lInnoEngine
 else:unix: LIBS += -L$$PWD/../../../Build/LibArchive/ -lInnoEngine

@@ -35,8 +35,8 @@ private slots:
 
 	void deleteComponent();
 private:
-	void addChild(QTreeWidgetItem* parent, QTreeWidgetItem* child);
-	void destroyComponent(InnoComponent* component);
+    void addChild(QTreeWidgetItem* parent, QTreeWidgetItem* child);
+    void destroyComponent(Inno::InnoComponent* component);
 
 	InnoPropertyEditor* m_propertyEditor;
 

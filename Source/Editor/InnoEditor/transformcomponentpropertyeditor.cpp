@@ -1,8 +1,9 @@
 #include "transformcomponentpropertyeditor.h"
 
-#include "../../Engine/Interface/IModuleManager.h"
+#include "../../Engine/Interface/IEngine.h"
 
-INNO_ENGINE_API extern IModuleManager* g_Engine;
+using namespace Inno;
+extern INNO_ENGINE_API IEngine *g_Engine;
 
 TransformComponentPropertyEditor::TransformComponentPropertyEditor()
 {
@@ -11,7 +12,7 @@ TransformComponentPropertyEditor::TransformComponentPropertyEditor()
 void TransformComponentPropertyEditor::initialize()
 {
 	m_gridLayout = new QGridLayout();
-	m_gridLayout->setMargin(4);
+    m_gridLayout->setContentsMargins(4, 4, 4, 4);
 
 	m_title = new QLabel("TransformComponent");
 	m_title->setStyleSheet(

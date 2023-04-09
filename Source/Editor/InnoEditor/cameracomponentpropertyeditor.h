@@ -36,7 +36,7 @@ private:
     ComboLabelText* m_shutterTime;
     ComboLabelText* m_ISO;
 
-    CameraComponent* m_component;
+    Inno::CameraComponent* m_component;
 
 public slots:
     void SetFOV();

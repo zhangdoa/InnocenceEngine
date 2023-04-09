@@ -46,7 +46,7 @@ private:
     QLabel* m_useColorTemperatureLabel;
 	QCheckBox* m_useColorTemperature;
 
-	LightComponent* m_component;
+    Inno::LightComponent* m_component;
 
 public slots:
 	void SetColor();

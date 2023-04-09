@@ -1,7 +1,6 @@
 #include "adjustlabel.h"
 #include <QMouseEvent>
 #include <QApplication>
-#include <QDesktopWidget>
 
 AdjustLabel::AdjustLabel(QWidget *parent) : QLabel(parent)
 {
@@ -77,7 +76,7 @@ QPoint AdjustLabel::GetMousePosLocal()
 void AdjustLabel::RepositionMouseOnScreenEdge()
 {
     QPoint mousePos = QCursor::pos();
-    QRect screen = QApplication::desktop()->screenGeometry();
+    QRect screen = QApplication::primaryScreen()->geometry();
 
     if (mousePos.x() == 0)
     {

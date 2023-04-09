@@ -1,7 +1,8 @@
 #include "innomenubar.h"
-#include "../../Engine/Interface/IModuleManager.h"
+#include "../../Engine/Interface/IEngine.h"
 
-INNO_ENGINE_API extern IModuleManager* g_Engine;
+using namespace Inno;
+extern INNO_ENGINE_API IEngine *g_Engine;
 
 InnoMenuBar::InnoMenuBar(QWidget* parent) : QMenuBar(parent)
 {
@@ -17,5 +18,5 @@ void InnoMenuBar::openScene()
 
 void InnoMenuBar::saveScene()
 {
-    g_Engine->getFileSystem()->saveScene();
+    g_Engine->getSceneSystem()->saveScene();
 }

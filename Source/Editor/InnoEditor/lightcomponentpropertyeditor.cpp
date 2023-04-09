@@ -7,7 +7,7 @@ LightComponentPropertyEditor::LightComponentPropertyEditor()
 void LightComponentPropertyEditor::initialize()
 {
 	m_gridLayout = new QGridLayout();
-	m_gridLayout->setMargin(4);
+    m_gridLayout->setContentsMargins(4, 4, 4, 4);
 
 	m_title = new QLabel("LightComponent");
 	m_title->setStyleSheet(
@@ -127,7 +127,7 @@ void LightComponentPropertyEditor::initialize()
 
 void LightComponentPropertyEditor::edit(void *component)
 {
-	m_component = reinterpret_cast<LightComponent*>(component);
+    m_component = reinterpret_cast<Inno::LightComponent*>(component);
 
 	GetColor();
     GetShape();

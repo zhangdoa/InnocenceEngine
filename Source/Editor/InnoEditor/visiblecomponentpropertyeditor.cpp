@@ -1,8 +1,9 @@
 #include "visiblecomponentpropertyeditor.h"
 
-#include "../../Engine/Interface/IModuleManager.h"
+#include "../../Engine/Interface/IEngine.h"
 
-INNO_ENGINE_API extern IModuleManager* g_Engine;
+using namespace Inno;
+extern INNO_ENGINE_API IEngine *g_Engine;
 
 VisibleComponentPropertyEditor::VisibleComponentPropertyEditor()
 {
@@ -18,7 +19,7 @@ void VisibleComponentPropertyEditor::initialize()
     m_dirViewer->hide();
 
     m_gridLayout = new QGridLayout();
-    m_gridLayout->setMargin(4);
+    m_gridLayout->setContentsMargins(4, 4, 4, 4);
 
     m_title = new QLabel("VisibleComponent");
     m_title->setStyleSheet(
@@ -172,7 +173,7 @@ void VisibleComponentPropertyEditor::tableItemClicked(int row, int column)
     else
     {
         auto l_material = static_cast<MaterialComponent*>(item->data(Qt::UserRole).value<void*>());
-        m_MeshCompEditor->edit(l_material);
+        m_MaterialCompEditor->edit(l_material);
     }
 }
 
@@ -196,13 +197,13 @@ void VisibleComponentPropertyEditor::GetModelMap()
     {
         auto l_pair = g_Engine->getAssetSystem()->getMeshMaterialPair(m_component->m_model->meshMaterialPairs.m_startOffset + j);
         auto l_meshItem = new QTableWidgetItem();
-        l_meshItem->setText(l_pair->mesh->m_Name.c_str());
+        l_meshItem->setText(l_pair->mesh->m_InstanceName.c_str());
         l_meshItem->setData(Qt::UserRole, QVariant::fromValue(static_cast<void*>(l_pair->mesh)));
         l_meshItem->setFlags(l_meshItem->flags() & ~Qt::ItemIsEditable);
         m_modelList->setItem(index, 0, l_meshItem);
 
         auto l_materialItem = new QTableWidgetItem();
-        l_materialItem->setText(l_pair->material->m_Name.c_str());
+        l_materialItem->setText(l_pair->material->m_InstanceName.c_str());
         l_materialItem->setData(Qt::UserRole, QVariant::fromValue(static_cast<void*>(l_pair->material)));
         l_materialItem->setFlags(l_materialItem->flags() & ~Qt::ItemIsEditable);
         m_modelList->setItem(index, 1, l_materialItem);

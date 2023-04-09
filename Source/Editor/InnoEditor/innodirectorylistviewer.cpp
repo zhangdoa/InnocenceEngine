@@ -1,9 +1,10 @@
 #include "innodirectorylistviewer.h"
 #include <QMessageBox>
 
-#include "../../Engine/Interface/IModuleManager.h"
+#include "../../Engine/Interface/IEngine.h"
 
-INNO_ENGINE_API extern IModuleManager* g_Engine;
+using namespace Inno;
+extern INNO_ENGINE_API IEngine *g_Engine;
 
 InnoDirectoryListViewer::InnoDirectoryListViewer(QWidget* parent) : QListView(parent)
 {
@@ -107,7 +108,7 @@ QString InnoDirectoryListViewer::GetSelectionPath()
                     QMessageBox::Cancel))
         {
         case QMessageBox::Yes:
-            g_Engine->getFileSystem()->loadScene(l_relativePath.toStdString().c_str());
+            g_Engine->getSceneSystem()->loadScene(l_relativePath.toStdString().c_str());
             break;
         case QMessageBox::No:
             break;
@@ -125,5 +126,5 @@ void InnoDirectoryListViewer::OpenFileMenu(QModelIndex index)
 
 void InnoDirectoryListViewer::SaveScene()
 {
-    g_Engine->getFileSystem()->saveScene();
+    g_Engine->getSceneSystem()->saveScene();
 }

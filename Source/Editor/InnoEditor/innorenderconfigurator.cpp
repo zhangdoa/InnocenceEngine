@@ -2,9 +2,10 @@
 #include <QLineEdit>
 #include <QListView>
 
-#include "../../Engine/Interface/IModuleManager.h"
+#include "../../Engine/Interface/IEngine.h"
 
-INNO_ENGINE_API extern IModuleManager* g_Engine;
+using namespace Inno;
+extern INNO_ENGINE_API IEngine *g_Engine;
 
 InnoRenderConfigurator::InnoRenderConfigurator(QWidget* parent) : QComboBox(parent)
 {

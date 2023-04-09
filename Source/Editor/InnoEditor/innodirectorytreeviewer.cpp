@@ -1,9 +1,10 @@
 #include "innodirectorytreeviewer.h"
 #include <QMessageBox>
 
-#include "../../Engine/Interface/IModuleManager.h"
+#include "../../Engine/Interface/IEngine.h"
 
-INNO_ENGINE_API extern IModuleManager* g_Engine;
+using namespace Inno;
+extern INNO_ENGINE_API IEngine *g_Engine;
 
 InnoDirectoryTreeViewer::InnoDirectoryTreeViewer(QWidget *parent) : QTreeView(parent)
 {

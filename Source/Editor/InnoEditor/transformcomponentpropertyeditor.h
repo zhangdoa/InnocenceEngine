@@ -37,7 +37,7 @@ private:
 	ComboLabelText* m_scaleY;
 	ComboLabelText* m_scaleZ;
 
-	TransformComponent* m_component;
+    Inno::TransformComponent* m_component;
 
 public slots:
 	void SetPosition();

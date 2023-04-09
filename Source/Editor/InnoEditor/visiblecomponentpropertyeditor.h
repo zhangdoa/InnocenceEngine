@@ -43,7 +43,7 @@ private:
 	MaterialComponentPropertyEditor* m_MaterialCompEditor;
 	InnoDirectoryViewer* m_dirViewer;
 
-	VisibleComponent* m_component;
+    Inno::VisibleComponent* m_component;
 
 public slots:
 	void SetMeshPrimitiveTopology();

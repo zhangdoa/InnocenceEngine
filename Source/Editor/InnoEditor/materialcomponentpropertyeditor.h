@@ -35,7 +35,7 @@ private:
 
     ComboLabelText* m_shaderModel;
 
-    MaterialComponent* m_component;
+    Inno::MaterialComponent* m_component;
 
 public slots:
     void SetMaterialAttributes();

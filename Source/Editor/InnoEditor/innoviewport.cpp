@@ -2,10 +2,11 @@
 #include <qt_windows.h>
 #include <QFuture>
 #include <QtConcurrent/QtConcurrentRun>
-#include "../../Engine/Platform/ApplicationEntry/InnoApplicationEntry.h"
-#include "../../Engine/Interface/IModuleManager.h"
+#include "../../Engine/Platform/ApplicationEntry/ApplicationEntry.h"
+#include "../../Engine/Interface/IEngine.h"
 
-INNO_ENGINE_API extern IModuleManager* g_Engine;
+using namespace Inno;
+extern INNO_ENGINE_API IEngine *g_Engine;
 #define MOUSE_SENSITIVITY 16.0
 
 InnoViewport::InnoViewport(QWidget *parent)
@@ -21,13 +22,13 @@ InnoViewport::InnoViewport(QWidget *parent)
 
     void* hInstance = reinterpret_cast<void*>(::GetModuleHandle(nullptr));
     WId l_hwnd = QWidget::winId();
-    auto l_args = "-renderer 1 -mode 1 -loglevel 1";
-    InnoApplicationEntry::Setup(hInstance, &l_hwnd, const_cast<char*>(l_args));
-    InnoApplicationEntry::Initialize();
+    auto l_args = "-renderer 2 -mode 1 -loglevel 1";
+    Inno::ApplicationEntry::Setup(hInstance, &l_hwnd, const_cast<char*>(l_args));
+    Inno::ApplicationEntry::Initialize();
 
     auto l_engine = [&]() {
-        InnoApplicationEntry::Run();
-        InnoApplicationEntry::Terminate();
+        Inno::ApplicationEntry::Run();
+        Inno::ApplicationEntry::Terminate();
     };
     QFuture<void> future = QtConcurrent::run(l_engine);
 }
@@ -71,7 +72,7 @@ void InnoViewport::Resize(float width, float height)
 {
     if (g_Engine)
     {
-        if (g_Engine->getStatus() == ObjectStatus::Activated)
+        if (g_Engine->GetStatus() == ObjectStatus::Activated)
         {
             TVec2<unsigned int> l_newResolution = TVec2<unsigned int>(width, height);
             g_Engine->getRenderingFrontend()->setScreenResolution(l_newResolution);
