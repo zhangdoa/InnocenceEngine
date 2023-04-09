@@ -1,6 +1,7 @@
 #pragma once
 #include "../Common/InnoObject.h"
 #include "../Common/InnoMathHelper.h"
+#include "../Interface/ISystem.h"
 
 namespace Inno
 {
@@ -19,5 +20,13 @@ namespace Inno
 
 		uint32_t m_transformHierarchyLevel = 0;
 		TransformComponent* m_parentTransformComponent = 0;
+	};
+
+	class ITransformSystem : public IComponentSystem
+	{
+	public:
+		INNO_CLASS_INTERFACE_NON_COPYABLE(ITransformSystem);
+
+		virtual const TransformComponent* GetRootTransformComponent() = 0;
 	};
 }

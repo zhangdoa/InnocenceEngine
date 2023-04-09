@@ -141,3 +141,8 @@ ObjectStatus InnoTransformSystem::GetStatus()
 {
 	return ObjectStatus();
 }
+
+const TransformComponent *Inno::InnoTransformSystem::GetRootTransformComponent()
+{
+    return m_RootTransformComponent;
+}
